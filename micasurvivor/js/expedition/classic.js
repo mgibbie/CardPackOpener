@@ -88,7 +88,10 @@ G.ExpClassic = (() => {
     // the zone's band; zone 1 also those below it): a minority, so a map keeps its identity. RARE5: zone 3's rarity-5 elite pack
     // (the pseudo-legendaries, the Paradox...; n). ROAM: a legendary roams zones 2-3 (ROAM_P a zone) and leaves after life s.
     WANDER: 0.12, WANDER_N: 6, RARE5_N: 3, RARE5_AT: [300, 470], ROAM_P: 0.35, ROAM_AT: [200, 420],
-    ROAM: { hp: 16, dmg: 1.4, xp: 10, scale: 1.4, life: 90 }
+    ROAM: { hp: 16, dmg: 1.4, xp: 10, scale: 1.4, life: 90 },
+    // MicaSurvivor U3 (owner decision #3: "Megas as enemies = rare elites and bosses ... Expedition zone 3"): zone 3 has one Mega
+    // elite (any of the 93, its own stream: every Mega over the seeds), MEGA_AT s in; MEGA: its numbers (an elite, a bit more)
+    MEGA_AT: [240, 520], MEGA: { hp: 8, dmg: 1.4, xp: 8, scale: 1.3 }
   };
   const KINDS = ['alpha', 'swarm', 'stampede', 'flock', 'rockslide', 'elite', 'totem', 'summoner', 'roam'];   // (D20: + roam)
   // zone 1's timeline (study 2.8, rescaled); 'a|b' = one of them, by the zone's stream. Plus a flock (170-280 s), a
@@ -214,6 +217,12 @@ G.ExpClassic = (() => {
       if (zone === 3 && r5.length) events.push({ at: Math.max(30, intR(rd, K.RARE5_AT[0], K.RARE5_AT[1]) - shift), kind: 'elite', n: K.RARE5_N, dex: [pickR(rd, r5), pickR(rd, r5)], seed: Math.floor(rd() * 4294967296) >>> 0, rare: 1 });
       if (zone >= 2 && rl.length && rd() < K.ROAM_P) events.push({ at: Math.max(30, intR(rd, K.ROAM_AT[0], K.ROAM_AT[1]) - shift), kind: 'roam', n: 1, dex: [pickR(rd, rl)], seed: Math.floor(rd() * 4294967296) >>> 0 });
       events.sort((a, b) => a.at - b.at);   // (stable: the D3 timeline's order kept)
+    }
+    // (MicaSurvivor U3, its own stream after every draw above: zone 3's Mega elite)
+    if (zone === 3 && G.Megas && G.Megas.foes().length) {
+      const rm = zoneStream(seed, map, zone, 0x3E6A), shift = K.SHIFT[zi] + TR.early;
+      events.push({ at: Math.max(30, intR(rm, K.MEGA_AT[0], K.MEGA_AT[1]) - shift), kind: 'elite', n: 1, dex: [G.Megas.pick(rm)], seed: Math.floor(rm() * 4294967296) >>> 0, mega: 1 });
+      events.sort((a, b) => a.at - b.at);
     }
     return { map, zone, diff, guardian, legend: M.legend, cards, events, wander };
   }
@@ -652,6 +661,10 @@ G.ExpClassic = (() => {
         entry.spawned++;
       }
       say('¡Avalancha! Sal de los círculos', 2.6); G.Audio.sfx('surge');
+    } else if (ev.kind === 'elite' && ev.mega) {   // (U3: a Mega elite)
+      const dex = ev.dex[0], pt = spot(rng, p, rng() * 6.2832, G.Sprites.hovers(dex)), X = K.MEGA;
+      if (pt) add(spawn(dex, pt[0], pt[1], t, { ti: 1, hp: X.hp, dmg: X.dmg, xp: X.xp, scale: X.scale, kind: 'elite' }));
+      say(G.I18n.f('¡{x} salvaje aparece!', name(dex)), 3.2); G.Audio.sfx('boss');
     } else if (ev.kind === 'elite') {
       const a0 = rng() * 6.2832;
       for (let i = 0; i < ev.n; i++) {

@@ -22,11 +22,11 @@ G.Spawner = (() => {
   // hacia el minuto 6, cuando ya tienes ataques para tumbarlos.
   const hpK = t => 3.3 + Math.min(1.7, t / 210);
   const SHINY_RATE = 1 / 4096;
-  let acc = 0, bossIdx = 0, surgeT = 32, announce = null, announceT = 0, preloadT = 0;
+  let acc = 0, bossIdx = 0, megaIdx = 0, surgeT = 32, announce = null, announceT = 0, preloadT = 0;
   let forceShiny = 0;           // para pruebas: los N próximos salen shiny
 
   function reset() {
-    acc = 0; bossIdx = 0; surgeT = 32; announce = null; announceT = 0; preloadT = 0;
+    acc = 0; bossIdx = 0; megaIdx = 0; surgeT = 32; announce = null; announceT = 0; preloadT = 0;
     G.Enemies.rollRun();
     G.Sprites.preload(G.Enemies.upcomingDex(0, 80));
   }
@@ -109,6 +109,22 @@ G.Spawner = (() => {
     return e;
   }
 
+  /** (MicaSurvivor U3) A Mega elite of run time t: the trickle's scaling x G.Enemies.MEGA, bigger, announced. */
+  function spawnMega(pl, t, dex) {
+    const def = G.Enemies.megaDef(dex, t), K = G.Enemies.MEGA;
+    const pt = freePoint(pl, Math.random() * 6.2832, G.Sprites.hovers(dex));
+    if (!pt) return null;
+    const e = new G.Enemy(def, pt[0], pt[1], scaled(G.Enemies.scale(t), G.Coop.scaleHp(players.length) * hpK(t)));
+    e.dmg *= DMG_K; e.xp = Math.round(e.xp * XP_K);
+    e.scale = K.scale; e.anim = new G.Sprites.Animator(dex, K.scale, false);
+    e.r = G.Sprites.bodyRadius(dex, K.scale); e.bodyH = G.Sprites.bodyHeight(dex, K.scale);
+    e.xmega = 1;
+    G.EnemyMgr.add(e);
+    say(G.I18n.f('¡Un {x} salvaje anda cerca!', G.I18n.t(e.name)), 3);
+    G.Audio.sfx('boss');
+    return e;
+  }
+
   /** @param who  el jugador o la lista de jugadores (cooperativo) */
   function update(dt, who, t) {
     players = Array.isArray(who) ? who : [who];
@@ -130,6 +146,9 @@ G.Spawner = (() => {
     // --- jefes ---
     const b = G.Enemies.BOSSES[bossIdx];
     if (b && t >= b.at) { spawnBoss(anchor(), t, b); bossIdx++; }
+    // (MicaSurvivor U3: from 15:00 the run's Mega elites, js/data/enemies.js megaRoll)
+    const mg = G.Enemies.MEGAS[megaIdx];
+    if (mg && t >= mg.at && (spawnMega(anchor(), t, mg.dex) || t > mg.at + 10)) megaIdx++;   // (no room on the ring: next step, for 10 s)
 
     // Combate de jefe: las oleadas bajan al 25% y no hay mareas, para que el
     // jefe sea un momento propio y se le pueda apuntar entre la multitud.
@@ -191,6 +210,6 @@ G.Spawner = (() => {
   /** Invitado en cooperativo: sólo corre el reloj del aviso. */
   function tickBanner(dt) { if (announceT > 0) announceT -= dt; }
 
-  return { reset, update, ahead, burst, tickBanner, banner, say, rate, SHINY_RATE, CAP, spawnOne, spawnBoss, incense,
+  return { reset, update, ahead, burst, tickBanner, banner, say, rate, SHINY_RATE, CAP, spawnOne, spawnBoss, spawnMega, incense,
            debugForceShiny(n = 1) { forceShiny = n; } };
 })();

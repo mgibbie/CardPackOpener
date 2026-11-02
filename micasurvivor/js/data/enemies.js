@@ -182,6 +182,12 @@ G.Enemies = (() => {
 
   let cast = null;      // [{ from, list: [def] }]
   let bosses = null;    // [def de jefe]
+  // (MicaSurvivor U3, owner decision #3: "Megas as enemies = rare elites and bosses, Survival after ~15 min"): from MEGA.from s a
+  // Mega elite comes every MEGA.every s (one of the 93, drawn uniformly: every Mega over the runs), x MEGA.hp / dmg / xp, bigger;
+  // and MEGA.bossP of the runs the last boss (15:00) is a Mega. Drawn from a stream of the run's bioSeed (G.Megas.stream), never
+  // Math.random, so the rest of the run's draws are what they were. The Type mode: Megas of that type only (none: no Megas).
+  const MEGA = { from: 900, every: [70, 110], hp: 3, dmg: 1.3, xp: 4, scale: 1.3, bossP: 0.5 };
+  let megas = [];       // [{at, dex}]
   // (M5 lote 9) Extras de bioma de la run: bio[tramo][bioma] = [def], elegidos al necesitarlos. Se sortean con
   // su propia semilla (la del día en el Desafío diario, sin gastar el azar sembrado del montaje), así el
   // Diario sigue igual para todos.
@@ -222,7 +228,32 @@ G.Enemies = (() => {
         shotDmg: Math.round(slot.dmg * 0.55), shotCd: 1.1, range: 260
       };
     });
+    megaRoll(only);
     return { cast, bosses };
+  }
+  /** (U3) The run's Megas: the elites' times and species, and whether the 15:00 boss is a Mega (from the run's bioSeed). */
+  function megaRoll(only) {
+    megas = [];
+    const M = G.Megas;
+    if (!M) return;
+    const pool = M.foes().filter(d => !only || G.DEX_BY[d].types.includes(only));
+    if (!pool.length) return;
+    const r = M.stream((bioSeed ^ 0x3E6A0) >>> 0), pk = () => pool[Math.min(pool.length - 1, Math.floor(r() * pool.length))];
+    for (let at = MEGA.from + Math.floor(r() * 40); at < 1800; at += MEGA.every[0] + Math.floor(r() * (MEGA.every[1] - MEGA.every[0]))) megas.push({ at, dex: pk() });
+    const last = bosses[bosses.length - 1];
+    if (last && last.at >= MEGA.from && r() < MEGA.bossP) {
+      const p = G.DEX_BY[pk()];
+      Object.assign(last, { dex: p.dex, name: p.name, spd: Math.round(G.U.clamp(40 + baseSpd(p) * 0.5, 40, 100)),
+        behavior: behaviorOf(p) === 'ranged' ? 'ranged' : (baseSpd(p) > 90 ? 'charger' : 'chase'), mega: 1 });
+    }
+  }
+  /** (U3) A Mega elite's definition at run time t (its own stats from its base stats, the tier's numbers x MEGA). */
+  function megaDef(dex, t) {
+    const ti = tierAt(t), d = defFor(G.DEX_BY[dex], TIERS[ti], ti);
+    d.hp = Math.round(d.hp * MEGA.hp); d.dmg = Math.round(d.dmg * MEGA.dmg); d.xp = Math.round(d.xp * MEGA.xp);
+    if (d.shotDmg) d.shotDmg = Math.round(d.shotDmg * MEGA.dmg);
+    d.mega = 1;
+    return d;
   }
 
   // (El "tiempo extra" del minuto 60 se quitó al llegar la Sentencia de Arceus,
@@ -339,6 +370,7 @@ G.Enemies = (() => {
       cast.forEach((tier, ti) => { if (tier.from <= t + ahead) for (const k of [key, nx]) for (const e of bioExtra(ti, k)) out.push(e.dex); });
     }
     for (const b of bosses) if (b.at <= t + ahead) out.push(b.dex);
+    for (const m of megas) if (m.at >= t && m.at <= t + ahead) out.push(m.dex);   // (U3)
     return out;
   }
 
@@ -348,6 +380,7 @@ G.Enemies = (() => {
     // (M5 lote 9: biomas y apoyos)
     BIOME_TYPES, BIOME_DEX, BIOME_EXTRA, BIOME_W_MUL, BASE_BIOMES, PLAIN, SUPPORT, SUPPORT_CAPS, biomeKey, biomeTypes, fitsBiome, biomeNow, bioExtra,
     get BOSSES() { if (!bosses) rollRun(); return bosses; },
+    MEGA, megaDef, get MEGAS() { if (!bosses) rollRun(); return megas; },   // (U3: the run's Mega elites)
     get cast() { if (!cast) rollRun(); return cast; }
   };
 })();

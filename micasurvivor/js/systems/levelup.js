@@ -119,6 +119,9 @@ G.LevelUp = (() => {
     // and Maturity happen here, and a branch evolution's choice replaces the cards. No listener / a base run: undefined.
     const pre = G.Hooks.first('levelup.offer', pl, n);
     if (pre) return pre;
+    // (MicaSurvivor U3: a base run's Mega Evolution, from Lv 40: that level's cards are the Megas and "Not yet", js/systems/forms.js)
+    const mega = G.Megas && G.Megas.baseCards(pl);
+    if (mega) return mega;
     const pool = candidates(pl);
     const picked = [];
     const used = new Set();
