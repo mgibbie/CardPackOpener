@@ -249,7 +249,17 @@ const MSURV_SNAPSHOT_MAX = 24_000;         // one serialized snapshot (a busy la
 const MSURV_REPLAY_MAX = 1_200_000;        // the packed code (measured: a busy 30-min run, ~65 foes on screen, packs to 679 KB)
 const MSURV_REPLAY_UNPACKED = 8_000_000;   // gunzip stops here
 const MSURV_REPLAY_FRAMES = 30_000;        // frames in one replay (4 h at 2 a second)
-const MSURV_REPLAY_PER_USER = 10;
+const MSURV_REPLAY_PER_USER = 10;          // stored replays per player: a v1 tape, a one-segment v2 tape or a SESSION each
+// MICASURVIVOR replay SESSIONS (U4, format v2; micasurvivor/js/mica/replay.js): a long run is cut into segments (each one
+// packed tape under MSURV_REPLAY_MAX, starting with a keyframe), uploaded as the run goes by the HOST (or a solo player):
+//   msurvsess:<8 hex>         {by, sid, when, upd, idx:[{seg, t0, t1, n, bytes, mk}], players, meta, done, end}: the index
+//   msurvseg:<8 hex>:<seg>    {code}: one segment (PUBLIC to read, like a replay)
+// The cap is per session (MSURV_SESSION_SEGS segments, ~10 h of run at 5 minutes each), never per run; a session counts
+// as ONE of the player's MSURV_REPLAY_PER_USER replays. One uploaded in the background (not shared yet: `bg` in the
+// player's list) is the first to go past the cap; Share (micasurvivor-replay-keep, or a put with keep) keeps it.
+// A one-segment session shared at the end is stored as a plain msurvreplay:<id> row (its code is v2), as before.
+const MSURV_SEG_FRAMES = 4_000;            // frames in one segment (the client closes one at 3000, or after 5 min)
+const MSURV_SESSION_SEGS = 120;
 const msurvNow = () => (typeof globalThis.__msurvClock === 'function' ? globalThis.__msurvClock() : Date.now());
 // the "in a run" beacon of `who` -> the row if live (fresh and not over), else null
 async function msurvLiveOf(store, who, now) {
@@ -274,9 +284,11 @@ function cleanMsurvReplayMeta(m) {
 	const int = (v, lo, hi) => Math.max(lo, Math.min(hi, Math.floor(Number(v)) || 0));
 	return {
 		dex: int(m.dex, 0, 2000), shiny: !!m.shiny, mon: str(m.mon, 32), mode: /^[a-z]{1,12}$/.test(String(m.mode)) || /^exp-[a-z]{1,12}$/.test(String(m.mode)) ? m.mode : 'normal',
-		time: int(m.time, 0, 4 * 3600), level: int(m.level, 0, 9999), kills: int(m.kills, 0, 1e8), bosses: int(m.bosses, 0, 1e5),
+		time: int(m.time, 0, 12 * 3600), level: int(m.level, 0, 9999), kills: int(m.kills, 0, 1e8), bosses: int(m.bosses, 0, 1e5),
 		dead: !!m.dead, coop: (Array.isArray(m.coop) ? m.coop : []).map(x => str(x, 40)).filter(x => /^[a-z0-9_.-]{1,40}$/.test(x)).slice(0, 4),
-		frames: int(m.frames, 0, MSURV_REPLAY_FRAMES),
+		frames: int(m.frames, 0, MSURV_SESSION_SEGS * MSURV_SEG_FRAMES),
+		// U4: a session's segments and players (absent on a v1 tape)
+		...(m.segs != null ? { segs: int(m.segs, 0, MSURV_SESSION_SEGS) } : {}), ...(m.np != null ? { np: int(m.np, 0, 8) } : {}),
 		// DLC D0b: an Expedition run's content version + map / difficulty (absent for a base run)
 		...(Number.isInteger(m.dv) && m.dv >= 1 && m.dv <= 9999 ? { dv: m.dv, map: /^[a-z]{1,16}$/.test(String(m.map)) ? m.map : '', diff: /^[a-z]{1,16}$/.test(String(m.diff)) ? m.diff : '' } : {}),
 	};
@@ -785,7 +797,7 @@ const RATE_LIMITS = {
 	// MicaSurvivor spectating + replays (M5 batch 12c): a watched run publishes ~1/s (an unwatched one checks for
 	// watchers every ~10 s), a watcher polls ~1/s; a replay upload is one per finished run (and its retries)
 	'publish-micasurvivor': [30, 10_000], 'micasurvivor-state': [30, 10_000],
-	'micasurvivor-replay-put': [20, 60_000], 'micasurvivor-replay-list': [20, 60_000],
+	'micasurvivor-replay-put': [40, 60_000], 'micasurvivor-replay-list': [20, 60_000], 'micasurvivor-replay-keep': [20, 60_000],
 	// async (correspondence) matches: whole turns, not per-action traffic
 	'async-create': [10, 60_000], 'async-move': [30, 60_000], 'async-act': [60, 60_000],
 	'set-email': [10, 60_000], // changing the recovery email is a rare, deliberate action
@@ -866,6 +878,7 @@ const GC_TABLE = [
 	['msurvstate:', 1 * HR], ['msurvspec:', 1 * HR], ['msurvlive:', 6 * HR], ['msurvspecbudget:', 48 * HR],
 	['msurvreplay:', 30 * 24 * HR], // a MicaSurvivor run replay — a month, like the Micatro ones
 	['msurvreplays:', 60 * 24 * HR], // the per-player replay index (self-heals against swept replays on read)
+	['msurvsess:', 30 * 24 * HR], ['msurvseg:', 30 * 24 * HR], // U4: a replay session's index and its segments — a month too
 	['msurvseason:', 42 * 24 * HR], // MicaSurvivor Expedition weekly season boards (DLC D9): 4 past seasons stay readable
 ];
 
@@ -1677,9 +1690,20 @@ export default async function handler(req, env) {
 		if (!(await rateLimit(store, 'rget:' + clientIp(req), RGET_LIMIT[0], RGET_LIMIT[1]))) return json({ error: 'slow down' }, 429);
 		const id = String(body.id || '');
 		if (!REPLAY_ID_RE.test(id)) return json({ error: 'bad id' }, 400);
+		// U4: one segment of a session ({id, seg})
+		if (body.seg != null) {
+			const seg = Number(body.seg);
+			if (!Number.isInteger(seg) || seg < 0 || seg >= MSURV_SESSION_SEGS) return json({ error: 'bad segment' }, 400);
+			const sg = await store.get('msurvseg:' + id + ':' + seg);
+			if (!sg || !sg.code) return json({ error: 'not found' }, 404);
+			return json({ code: sg.code, seg });
+		}
 		const rec = await store.get('msurvreplay:' + id);
-		if (!rec || !rec.code) return json({ error: 'not found' }, 404);
-		return json({ code: rec.code, meta: rec.meta || {}, by: rec.by || '', when: rec.when || 0 });
+		if (rec && rec.code) return json({ code: rec.code, meta: rec.meta || {}, by: rec.by || '', when: rec.when || 0 });
+		// U4: a session -> its index (the viewer fetches the segments it needs)
+		const sess = await store.get('msurvsess:' + id);
+		if (!sess || !Array.isArray(sess.idx) || !sess.idx.length) return json({ error: 'not found' }, 404);
+		return json({ session: { v: 2, idx: sess.idx, players: sess.players || [], done: !!sess.done, end: sess.end || null }, meta: sess.meta || {}, by: sess.by || '', when: sess.when || 0 });
 	}
 
 	// live art/sprite tuning overrides — PUBLIC read: every game client fetches
@@ -2369,7 +2393,7 @@ export default async function handler(req, env) {
 			let replay = '';
 			if (body.replay != null) {
 				const rid = String(body.replay);
-				const rr = REPLAY_ID_RE.test(rid) ? await store.get('msurvreplay:' + rid) : null;
+				const rr = REPLAY_ID_RE.test(rid) ? (await store.get('msurvreplay:' + rid)) || (await store.get('msurvsess:' + rid)) : null;   // (U4: or a session)
 				const m = rr && rr.meta;
 				if (!rr || rr.by !== username || !m || m.mode !== body.expMode || m.map !== body.map || m.diff !== body.diff
 					|| Math.abs((m.time | 0) - time) > 2 || (parts && (m.kills | 0) !== parts.kills)) return json({ error: 'replay does not match this run' }, 400);
@@ -3700,25 +3724,104 @@ export default async function handler(req, env) {
 		const IKEY = 'msurvreplays:' + username;
 		const idx = (await store.get(IKEY)) || { ids: [] };
 		const list = Array.isArray(idx.ids) ? idx.ids.filter(e => e && REPLAY_ID_RE.test(String(e.id))) : [];
-		if (rid) { const dup = list.find(e => e.rid === rid); if (dup && (await store.get('msurvreplay:' + dup.id))) return json({ ok: true, id: dup.id, again: true }); }
+		const v2 = body.v === 2;
+		const seg = v2 ? Number(body.seg) : 0, last = v2 ? !!body.last : true, keep = v2 ? !!body.keep : true;
+		if (v2 && (!rid || !Number.isInteger(seg) || seg < 0)) return json({ error: 'bad segment' }, 400);
+		if (v2 && seg >= MSURV_SESSION_SEGS) return json({ error: 'session full', max: MSURV_SESSION_SEGS }, 413);
+		const dup = rid ? list.find(e => e.rid === rid) : null;
+		const single = !v2 || (seg === 0 && last && !(dup && dup.v === 2));
+		if (single && dup && !dup.v && (await store.get('msurvreplay:' + dup.id))) {
+			if (keep && dup.bg) { delete dup.bg; await store.setJSON(IKEY, { ids: list }); }
+			return json({ ok: true, id: dup.id, again: true });
+		}
 		const text = await unpackCapped(code, MSURV_REPLAY_UNPACKED);
 		let r = null;
 		try { r = text ? JSON.parse(text) : null; } catch { r = null; }
-		if (!r || typeof r !== 'object' || Array.isArray(r) || r.v !== 1 || !r.h || typeof r.h !== 'object' || Array.isArray(r.h)
+		if (!r || typeof r !== 'object' || Array.isArray(r) || (r.v !== 1 && r.v !== 2) || !r.h || typeof r.h !== 'object' || Array.isArray(r.h)
 			|| !Array.isArray(r.f) || !r.f.length || !r.f.every(x => Array.isArray(x)) || (r.ev != null && !Array.isArray(r.ev))) return json({ error: 'not a run replay' }, 400);
-		if (r.f.length > MSURV_REPLAY_FRAMES) return json({ error: 'too many frames', max: MSURV_REPLAY_FRAMES }, 413);
-		const meta = { ...cleanMsurvReplayMeta(body.meta), frames: r.f.length };
-		let id = null;
-		for (let i = 0; i < 8; i++) { id = randomBytes(4).toString('hex'); if (!(await store.get('msurvreplay:' + id))) break; }
-		await store.setJSON('msurvreplay:' + id, { code, meta, by: username, when: now });
-		const next = [{ id, when: now, ...(rid ? { rid } : {}) }, ...list.filter(e => e.id !== id)];
-		const evicted = [];
-		for (const e of next.slice(MSURV_REPLAY_PER_USER)) {
-			const old = await store.get('msurvreplay:' + e.id);
-			if (old && old.by === username) { await store.delete('msurvreplay:' + e.id); evicted.push(e.id); }   // only your own row
+		// a v2 segment says which session and segment it is (its header), and must match the request
+		if (v2 && (r.v !== 2 || r.h.sid !== rid || r.h.seg !== seg)) return json({ error: 'segment does not match' }, 400);
+		if (!v2 && r.v !== 1 && !(r.v === 2 && r.h.seg === 0)) return json({ error: 'not a run replay' }, 400);
+		if (r.f.length > (r.v === 2 ? MSURV_SEG_FRAMES : MSURV_REPLAY_FRAMES)) return json({ error: 'too many frames', max: r.v === 2 ? MSURV_SEG_FRAMES : MSURV_REPLAY_FRAMES }, 413);
+		// the player's list past the cap: background sessions (not shared) go first, then the oldest; only your own rows
+		const evictPast = async (next, keepId) => {
+			const evicted = [];
+			while (next.length > MSURV_REPLAY_PER_USER) {
+				let i = -1;
+				for (let j = next.length - 1; j >= 0; j--) if (next[j].bg && next[j].id !== keepId) { i = j; break; }
+				if (i < 0) i = next.length - 1;
+				const [e] = next.splice(i, 1);
+				if (e.v === 2) {
+					const ss = await store.get('msurvsess:' + e.id);
+					if (ss && ss.by === username) {
+						for (let k = 0; k < (Array.isArray(ss.idx) ? ss.idx.length : 0); k++) await store.delete('msurvseg:' + e.id + ':' + k);
+						await store.delete('msurvsess:' + e.id); evicted.push(e.id);
+					}
+				} else {
+					const old = await store.get('msurvreplay:' + e.id);
+					if (old && old.by === username) { await store.delete('msurvreplay:' + e.id); evicted.push(e.id); }
+				}
+			}
+			return evicted;
+		};
+		const newId = async (prefix) => { let id = null; for (let i = 0; i < 8; i++) { id = randomBytes(4).toString('hex'); if (!(await store.get(prefix + id))) break; } return id; };
+		if (single) {
+			const meta = { ...cleanMsurvReplayMeta(body.meta), frames: r.f.length };
+			const id = await newId('msurvreplay:');
+			await store.setJSON('msurvreplay:' + id, { code, meta, by: username, when: now });
+			const next = [{ id, when: now, ...(rid ? { rid } : {}), ...(keep ? {} : { bg: 1 }) }, ...list.filter(e => e.id !== id)];
+			const evicted = await evictPast(next, id);
+			await store.setJSON(IKEY, { ids: next });
+			return json({ ok: true, id, evicted, max: MSURV_REPLAY_PER_USER });
 		}
-		await store.setJSON(IKEY, { ids: next.slice(0, MSURV_REPLAY_PER_USER) });
-		return json({ ok: true, id, evicted, max: MSURV_REPLAY_PER_USER });
+		// U4: a segment of a session
+		let id = dup && dup.v === 2 ? dup.id : null;
+		let sess = id ? await store.get('msurvsess:' + id) : null;
+		if (sess && sess.by !== username) return json({ error: 'not yours' }, 403);
+		if (!sess) {
+			if (seg !== 0) return json({ error: 'session missing', next: 0 }, 409);
+			id = await newId('msurvsess:');
+			sess = { by: username, sid: rid, when: now, idx: [], players: [], meta: {}, done: false };
+		}
+		if (seg > sess.idx.length) return json({ error: 'segment gap', next: sess.idx.length }, 409);
+		if (sess.done && seg >= sess.idx.length) return json({ error: 'session closed' }, 409);
+		const str = (v, n) => String(v ?? '').replace(/[\u0000-\u001f]/g, '').slice(0, n).trim();
+		let t = 0;
+		for (let i = 0; i < r.f.length; i++) t += Number(r.f[i][0]) || 0;   // (a segment's first frame carries the run time)
+		const mk = (Array.isArray(r.ev) ? r.ev : []).filter(e => Array.isArray(e) && ['bs', 'bk', 'z', 'dx'].includes(e[1])).slice(0, 30).map(e => [Math.max(0, Math.floor(Number(e[0]) || 0)), e[1]]);
+		await store.setJSON('msurvseg:' + id + ':' + seg, { code });
+		sess.idx[seg] = { seg, t0: Math.max(0, Number(r.f[0][0]) || 0) / 10, t1: t / 10, n: r.f.length, bytes: code.length, ...(mk.length ? { mk } : {}) };
+		if (Array.isArray(r.h.players)) sess.players = r.h.players.slice(0, 8).map(p => ({ name: str(p && p.name, 40), dex: Math.max(0, Math.min(99999, Math.floor(Number(p && p.dex)) || 0)), shiny: p && p.shiny ? 1 : 0, k: ['me', 'l', 'o'].includes(p && p.k) ? p.k : 'o', c: Math.max(0, Math.min(7, Math.floor(Number(p && p.c)) || 0)) }));
+		sess.meta = { ...cleanMsurvReplayMeta(body.meta), frames: sess.idx.reduce((a, x) => a + ((x && x.n) || 0), 0), segs: sess.idx.length };
+		if (last) {
+			sess.done = true;
+			const e = r.h.end && typeof r.h.end === 'object' ? r.h.end : {};
+			const int = (v, lo, hi) => Math.max(lo, Math.min(hi, Math.floor(Number(v)) || 0));
+			sess.end = { time: int(e.time, 0, 12 * 3600), level: int(e.level, 0, 9999), kills: int(e.kills, 0, 1e8), bosses: int(e.bosses, 0, 1e5), dead: !!e.dead,
+				moves: (Array.isArray(e.moves) ? e.moves : []).slice(0, 16).filter(m => Array.isArray(m)).map(m => [str(m[0], 32), int(m[1], 0, 99)]), ...(e.lim ? { lim: 1 } : {}) };
+		}
+		sess.upd = now;
+		await store.setJSON('msurvsess:' + id, sess);
+		let evicted = [];
+		const mine = list.find(e => e.id === id);
+		if (!mine) {
+			const next = [{ id, when: sess.when, rid, v: 2, ...(keep ? {} : { bg: 1 }) }, ...list];
+			evicted = await evictPast(next, id);
+			await store.setJSON(IKEY, { ids: next });
+		} else if (keep && mine.bg) { delete mine.bg; await store.setJSON(IKEY, { ids: list }); }
+		return json({ ok: true, id, seg, n: sess.idx.length, done: !!sess.done, evicted, max: MSURV_SESSION_SEGS });
+	}
+	// U4: Share on a session already uploaded in the background: it is kept (no longer the first to go past the cap)
+	if (action === 'micasurvivor-replay-keep') {
+		const id = String(body.id || '');
+		if (!REPLAY_ID_RE.test(id)) return json({ error: 'bad id' }, 400);
+		const IKEY = 'msurvreplays:' + username;
+		const idx = (await store.get(IKEY)) || { ids: [] };
+		const list = Array.isArray(idx.ids) ? idx.ids : [];
+		const e = list.find(x => x && x.id === id);
+		if (!e) return json({ error: 'not found' }, 404);
+		if (e.bg) { delete e.bg; await store.setJSON(IKEY, { ids: list }); }
+		return json({ ok: true, id });
 	}
 	// your stored replays (newest first), with their display meta
 	if (action === 'micasurvivor-replay-list') {
@@ -3726,8 +3829,8 @@ export default async function handler(req, env) {
 		const out = [];
 		for (const e of (Array.isArray(idx.ids) ? idx.ids : []).slice(0, MSURV_REPLAY_PER_USER)) {
 			if (!e || !REPLAY_ID_RE.test(String(e.id))) continue;
-			const rec = await store.get('msurvreplay:' + e.id);
-			if (rec && rec.by === username) out.push({ id: e.id, when: rec.when || e.when || 0, meta: rec.meta || {} });
+			const rec = await store.get((e.v === 2 ? 'msurvsess:' : 'msurvreplay:') + e.id);   // (U4: or a session)
+			if (rec && rec.by === username) out.push({ id: e.id, when: rec.when || e.when || 0, meta: rec.meta || {}, ...(e.v === 2 ? { session: true, done: !!rec.done } : {}), ...(e.bg ? { bg: true } : {}) });
 		}
 		return json({ replays: out, max: MSURV_REPLAY_PER_USER });
 	}

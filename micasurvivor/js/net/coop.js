@@ -316,6 +316,7 @@ G.Coop = (() => {
         }
         case 'c':
           G.Combat.ghostCast(m.pl, ev[1], ev[2], ev[3], ev[4]);
+          if (G.Replay) G.Replay.cast(m.pl, ev[1], ev[2], ev[3], ev[4]);   // (MicaSurvivor U4: the host's session tape has every player's casts)
           emit(['c', from, ev[1], ev[2], ev[3], ev[4]], from);
           break;
         case 'pb':
@@ -408,7 +409,7 @@ G.Coop = (() => {
         G.Projectiles.spawn({ x: ev[1], y: ev[2], vx: ev[3], vy: ev[4], dmg: ev[5], r: ev[6], life: ev[7],
                               friendly: false, color: '#ff7a9e', vis: G.VFX.forType(ev[8]), mtype: ev[8] });
         break;
-      case 'c': { const m = mates.get(ev[1]); if (m) G.Combat.ghostCast(m.pl, ev[2], ev[3], ev[4], ev[5]); break; }
+      case 'c': { const m = mates.get(ev[1]); if (m) { G.Combat.ghostCast(m.pl, ev[2], ev[3], ev[4], ev[5]); if (G.Replay) G.Replay.cast(m.pl, ev[2], ev[3], ev[4], ev[5]); } break; }
       case 'item': api.item(ev[1]); break;
       case 'pk': G.Pickups.addRemote(ev[1], ev[2], ev[3], ev[4], ev[5]); break;
       case 'pc': G.Pickups.removeId(ev[1]); break;
