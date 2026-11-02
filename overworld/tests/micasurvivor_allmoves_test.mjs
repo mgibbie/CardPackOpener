@@ -347,7 +347,7 @@ try {
 		G.Projectiles.clearOrbs(p);
 		return { len: row.length, f15: row[15], f7: row[7], old, now, orbs, orbits };
 	});
-	A(b6.len === 16 && JSON.stringify(b6.f15) === JSON.stringify(b6.orbits.map(id => [id, 2])) && b6.f7 === b6.orbits[0], 'a co-op frame\'s field 15 lists EVERY orbit move; fields 7-8 keep one for an old reader', JSON.stringify(b6));
+	A(b6.len === 17 && /* (U2 appended field 16, the player's dex) */ JSON.stringify(b6.f15) === JSON.stringify(b6.orbits.map(id => [id, 2])) && b6.f7 === b6.orbits[0], 'a co-op frame\'s field 15 lists EVERY orbit move; fields 7-8 keep one for an old reader', JSON.stringify(b6));
 	A(JSON.stringify(b6.old) === JSON.stringify([b6.orbits[0] + ':2']) && JSON.stringify(b6.now) === JSON.stringify(b6.orbits.map(id => id + ':2')) && b6.orbs.length === 2,
 		'an OLD frame (15 fields, one move) still reads; a new one gives the puppet both orbit moves, and both show their orbs', JSON.stringify(b6));
 	// B7: tapes: a new one, and an old one (no af) made from it
