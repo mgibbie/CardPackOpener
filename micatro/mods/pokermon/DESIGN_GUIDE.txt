@@ -126,9 +126,8 @@ Notable gaps:
     Cosmog line, the Ruinous four, Koraidon and Miraidon.
   - Fossils: the four Galar fossils are still missing; the Tirtouga and Archen lines (Gen 5) and the Tyrunt and
     Amaura lines (Gen 6) are now house fossils on the "Ancient" mechanic (2.5).
-  - Ultra Beasts: Nihilego, Buzzwole, Pheromosa, Xurkitree, Celesteela, Kartana, Guzzlord,
-    Poipole/Naganadel, Stakataka and Blacephalon are all missing. There is no shared UB mechanic
-    yet.
+  - Ultra Beasts: all 11 are now the owner's designs (Gen 7 batch 3, contentRev 66), on a shared UB mechanic,
+    Beast Boost (house pattern, 2.1), and the `ultra_beast` attribute.
   - Paradox Pokemon: all 20 are missing. Each is a Rare single-stage Basic in the wiki's guess.
 
 
@@ -630,6 +629,25 @@ retrigger / game over) destroys 1 random HELD card (seeded; poke_remove_card, so
 House pattern: a SUIT CONVERTER per Blind (the Gen 6 Diancie, Diamond Storm; diamond_storm): the Regis' setting_blind conversion with a suit
 (change_suit keeps rank, enhancement, seal and edition; is_suit with the debuff bypassed picks a non-Diamond; never Stone), feeding its own
 per-card payoff (scored Diamonds $1 fixed + X1.2 `Xmult_multi`). Blueprint copies the conversion (a second card).
+House pattern: BEAST BOOST, the Ultra Beasts' shared growth (the Gen 7 batch 3 Ultra Beasts; beast_boost / beast_value):
+  - Each Boss Blind beaten (the main end_of_round pass with beat_boss; not on a game over, not Blueprint, not a joker retrigger) adds 1 to
+    `beast_boosts` on the card (a count, in no energy_values). The center names its MAIN number (`poke_beast_boost: 'Xmult'`, 'mult',
+    'Xmult_multi', a gain rate, or a bank); the joker reads it through beast_value(card) = ex[field] (as Energy left it) + boosts x 10% x
+    center.config.extra[field] (the UNENERGIZED base). So a boost is always 10% of the base (Buzzwole X3: +X0.3; Xurkitree +4 Mult: +0.4),
+    Energy never scales a boost, a boost never scales an Energy, and the order they come in doesn't matter (X3 + 1 Energy + 1 Boss = X3.9
+    either way). Each joker's text has a Beast Boost box: the step and "(Beast Boost: +n)", the total so far.
+  - A count, odds or retrigger is never the main number: the joker's X is (Kartana's 3 retriggers stay; its X2 per scoring grows). A banked
+    X (Guzzlord's `gluttony_Xmult` from X1) boosts by 10% of the bank's base (+X0.1), beside the bank, never inside it.
+  - The count carries through evolution (poke_custom_values_to_keep): Poipole's boosts become Naganadel's, each worth Naganadel's own step.
+  - A joker with no number of its own (Nihilego, a copier) has no Beast Boost; its text says so.
+House pattern: a MIRRORED BLUEPRINT (the Gen 7 Nihilego, Parasite): blueprint_effect on the Joker directly to its LEFT (none at the row's left
+end), the compatible / incompatible line (blueprint_compat_line in loc_vars main_end, Smeargle's update for the badge). No number:
+Energy-inert (poke_no_energy_field). A Blueprint directly to its left and Nihilego copy each other: nothing (the copy depth guard).
+House pattern: a SELF-DEBUFF, the glass cannon (the Gen 7 Pheromosa): a big X on the round's first N hands (current_round.hands_played < N
+while scoring), then in the `after` pass of the Nth hand smods_debuff_card(card, true, 'pheromosa'), an SMODS debuff source on the card, so
+it is saved, resumed and replayed with the card. A debuffed joker is never calculated, so it can't undebuff itself: a mod hook
+(index.js end_round_start, run.js end_round's first step, before any joker's end_of_round) drops the source, so the round's end (and its
+Beast Boost) sees it fresh. Blueprint copies the X only while it is fresh.
 
 House pattern: SCORING A DEBUFFED CARD, and debuffs as a resource (the owner's Snivy line, Contrary; jokers/pokejokers_designs.js
 contrary_held / contrary_lifts):
@@ -1112,7 +1130,9 @@ Steel X1.75), targets (Mienfoo's top-N), Xmult_cap (Bouffalant's X4), the banks 
 Skiddo / Gogoat's base Chips (`chips`) and per-other-Grass Chips (`chips1`), both +30%;
 the Gen 6 batch 2 fixed fields: aroma_money (Spritzee's $), card_limit (Slurpuff's slot), the banks sweet_mult / curse_mult / bat_mult /
 bat_Xmult (their gains mult_mod / Xmult_mod are energized), ancient_money (Amaura's $3);
-the Gen 6 Legendaries' fixed fields: oblivion_Xmult (Yveltal's bank), cells / complete_size (Zygarde), diamond_money (Diancie's $1), used (Hoopa).
+the Gen 6 Legendaries' fixed fields: oblivion_Xmult (Yveltal's bank), cells / complete_size (Zygarde), diamond_money (Diancie's $1), used (Hoopa);
+the Ultra Beasts' fixed fields: beast_boosts (the Beast Boost count), h_size (Buzzwole's -1), val_gain (Celesteela's $1), retriggers (Kartana),
+gluttony_Xmult (Guzzlord's bank; its gain Xmult_mod is energized), recoil (Blacephalon's $2), rounds (Poipole).
 
 Designer consequences:
   1. The field name is a balance choice. A joker-wide X stored as Xmult grows 20% of its base

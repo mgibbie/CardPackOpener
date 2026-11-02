@@ -8,7 +8,7 @@
 //   TYPE  owner rule: the type the CARD shows wins. The art typer (tools/micatro/pokermon_art_type.mjs, type-icon template matching)
 //         is first validated leave-one-out on the registered Pokermon jokers (100%); then every wiki card with upstream art has
 //         ptype = its art's type (type_source 'art'), the mapping only where no card / icon exists ('mapping'); mapped_ptype is
-//         the mapping's guess; spot checks of cards whose art differs from the mapping (Guzzlord Dragon, Toedscool Grass...)
+//         the mapping's guess; spot checks of cards whose art differs from the mapping (Solgaleo Metal, Toedscool Grass...)
 //   ART   UPSTREAM FIRST: every species Pokermon 3.9.1's sprite table draws (tools/micatro/specs/pokermon_391_sprite_table.json
 //         — checked against the game's own lookups, data391.js sprites and the owner's jokers' poke_sprite391 — with a non-empty
 //         cell on the shipped sheet) uses that card, pixel-identical to the sheet's cell (+ its soul layer); only the rest are
@@ -95,8 +95,8 @@ try {
 	A(!tBad.length, `every wiki card's type is the type its card art shows (${D.species.filter(s => s.type_source === 'art').length} from the art)`, tBad.slice(0, 8).join(', '));
 	A(!srcWrong.length && D.species.every(s => ['art', 'mapping'].includes(s.type_source)), 'type_source records where each type came from (art, else mapping)', srcWrong.slice(0, 8).join(', '));
 	A(D.counts.typeSource.art + D.counts.typeSource.mapping === D.species.length && D.counts.typeFromArtDiffers === D.species.filter(s => s.ptype !== s.mapped_ptype).length, 'counts.typeSource / typeFromArtDiffers match the list');
-	A(!sp0('Latias') && sp0('Guzzlord')?.ptype === 'Dragon' && sp0('Toedscool')?.ptype === 'Grass' && sp0('Cutiefly')?.ptype === 'Fairy' && sp0('Chien-Pao')?.ptype === 'Water' && sp0('Iron Thorns')?.ptype === 'Lightning'
-		&& sp0('Bewear')?.ptype === 'Fighting' && sp0('Bewear')?.type_source === 'art' && sp0('Bewear')?.mapped_ptype === 'Colorless', 'spot check (the card wins; Latias, Dwebble, Venipede, Sandile, Kyurem, Keldeo, Stunfisk, Tyrunt and Phantump are in the game now): Guzzlord Dragon, Toedscool Grass, Cutiefly Fairy, Chien-Pao Water, Iron Thorns Lightning; Bewear Fighting from its art (the mapping said Colorless)');
+	A(!sp0('Latias') && !sp0('Guzzlord') && sp0('Solgaleo')?.ptype === 'Metal' && sp0('Toedscool')?.ptype === 'Grass' && sp0('Cutiefly')?.ptype === 'Fairy' && sp0('Chien-Pao')?.ptype === 'Water' && sp0('Iron Thorns')?.ptype === 'Lightning'
+		&& sp0('Bewear')?.ptype === 'Fighting' && sp0('Bewear')?.type_source === 'art' && sp0('Bewear')?.mapped_ptype === 'Colorless', 'spot check (the card wins; Latias, Dwebble, Venipede, Sandile, Kyurem, Keldeo, Stunfisk, Tyrunt, Phantump and the Ultra Beasts are in the game now): Solgaleo Metal, Toedscool Grass, Cutiefly Fairy, Chien-Pao Water, Iron Thorns Lightning; Bewear Fighting from its art (the mapping said Colorless)');
 	A(D.species.every(s => ['Basic', 'One', 'Two', 'Baby', 'Legendary'].includes(s.stage) && s.line.some(l => l.dex === s.dex)), 'every species has an upstream stage and sits in its own line');
 	const sp = sp0;
 	A(sp('Toucannon')?.stage === 'Two' && sp('Trumbeak')?.stage === 'One' && sp('Toxel')?.stage === 'Baby' && sp('Tapu Koko')?.stage === 'Legendary' && sp('Corviknight')?.ptype === 'Metal' && sp('Jangmo-o')?.ptype === 'Dragon',

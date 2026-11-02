@@ -98,6 +98,13 @@
 // becomes a Diamond each Blind), Hoopa (Psychic; Hyperspace Hole: a Tarot or Planet at the end of each shop, Unbound after 15 consumables
 // used: a Spectral instead) and Volcanion (Fire; +1 discard; X2 + X0.25 per discard used this round) — upstream 3.9.1 draws them all with
 // their souls and form cells (Natdex {22,47} / {26,47} / {0,48}; Gen 6 sheet {2,11}-{11,11}).
+// Gen 7, batch 3: the Ultra Beasts (contentRev 66; the owner's "Yes", 2026-11-02), Rare $7 (Poipole C $5 -> Naganadel S $8), all with the
+// `ultra_beast` attribute and (but Nihilego) Beast Boost (each Boss Blind beaten: +10% of the main number's unenergized base): Nihilego (Dark;
+// copies the Joker to its left), Buzzwole (Fighting; X3, -1 hand size), Pheromosa (Grass; X3 on 2 hands, then debuffed for the round),
+// Xurkitree (Lightning; held cards +4 Mult), Celesteela (Metal; +$1 sell value a round, X0.05 per $1), Kartana (Grass; a lone scoring card
+// retriggers 3 times, X2 each), Guzzlord (Dragon; eats the leftmost consumable each Blind, +X0.2 banked), Poipole -> Naganadel (Dark ->
+// Dragon; +2 Mult / X1.5 + X0.25 per Dragon Joker), Stakataka (Earth; held Stone cards X1.25), Blacephalon (Psychic; X3, $2 a hand) —
+// upstream 3.9.1 draws them all with their souls (Natdex {24,52}-{21,53}).
 // The Gen 8 starters (contentRev 49; the starters spec): Scorbunny -> Raboot -> Cinderace (Fire, +1 discard; +3 / +5 Mult per discard left,
 // then Libero X(1 + 0.5 per discard left)) and Sobble -> Drizzile -> Inteleon (Water, +1 hand; +20 / +35 Chips per played card that doesn't
 // score, then Snipe Shot X2 on the highest-ranked scored card) — upstream 3.9.1 draws them (Natdex 4-14, 54).
@@ -161,8 +168,9 @@ import {
   find_pokemon_type, is_type, apply_type_sticker, remove_type_stickers, type_sticker_applied, get_type, multitype, wildcard_type, POKETYPES,
   add_card, detailed, energy_values, poke_remove_card, ease_dollars, ease_discard, juice_card_until, find_card, get_total_energy, POST_EVOLVE, can_evolve,
   poke_change_growth_level,
-  poke_get_adjacent_jokers, emit, find_joker, poke_drain, level_up_hand, poke_evolve,
+  poke_get_adjacent_jokers, emit, find_joker, poke_drain, level_up_hand, poke_evolve, smods_debuff_card, blueprint_compat_line,
 } from '../api.js';
+import { blueprint_effect } from './pokejokers_08.js';
 import * as BN from '../../../js/engine/bignum.js'; // the Blind's requirement (Poison Gas) may be a big number in modded runs
 import { number_format } from '../../../js/engine/core.js';
 import { rulesRev } from '../../../js/mods/pins.js';
@@ -1808,6 +1816,67 @@ function hyperspace_hole(card, context) {
 }
 /** Volcanion, Steam Eruption: X(`Xmult` + `Xmult_mod` per discard used this round), read when it scores (a discard before the hand counts). */
 const steam_x = (card) => r9(card.ability.extra.Xmult + card.ability.extra.Xmult_mod * discards_used());
+
+// ---------------------------------------------------------------- Gen 7, batch 3: the Ultra Beasts (contentRev 66; 793-799, 803-806)
+/** Beast Boost (the Ultra Beasts' shared ability, solo): each Boss Blind beaten (the main end_of_round pass with beat_boss, not on a game over,
+ *  not Blueprint, not a joker retrigger) adds 1 to the card's `beast_boosts` (a count, in no energy_values; it carries through evolution:
+ *  poke_custom_values_to_keep). The joker's MAIN number is the field its center names (`poke_beast_boost`); its effective value is
+ *    ex[field] (the energized value) + beast_boosts x BEAST_BOOST x center.config.extra[field] (the UNENERGIZED base)
+ *  so a boost is always 10% of the base: Energy never scales a boost and a boost never scales an Energy (neither is retroactive on the
+ *  other; the order they come in doesn't matter). Nihilego has no number of its own: no field, no count. */
+export const BEAST_BOOST = 0.1;
+const beast_step = (card) => { const f = card.config.center.poke_beast_boost; return f ? r9(BEAST_BOOST * ((card.config.center.config.extra || {})[f] || 0)) : 0; };
+const beast_bonus = (card) => r9((card.ability.extra.beast_boosts || 0) * beast_step(card));
+/** The effective main number: the field (as Energy left it) + the Beast Boosts. */
+export const beast_value = (card, field = card.config.center.poke_beast_boost) => r9((card.ability.extra[field] || 0) + (field === card.config.center.poke_beast_boost ? beast_bonus(card) : 0));
+function beast_boost(card, context) {
+  if (!(round_end(context) && context.beat_boss && !context.game_over) || context.blueprint || context.retrigger_joker) return false;
+  if (!card.config.center.poke_beast_boost) return false;
+  const ex = card.ability.extra;
+  ex.beast_boosts = (ex.beast_boosts || 0) + 1;
+  card_eval_status_text(card, 'extra', null, null, null, { message: 'Beast Boost!', colour: 'FILTER' });
+  return true;
+}
+/** The tooltip's "(Beast Boost: +n)": the total the boosts add (n = boosts x step). */
+const beast_vars = (card) => [r3(beast_step(card)), r3(beast_bonus(card))];
+/** Nihilego, Parasite: the Joker directly to its LEFT (Blueprint mirrored; none at the row's left end). */
+const nihilego_target = (card) => { const i = G.jokers && G.jokers.cards ? G.jokers.cards.indexOf(card) : -1; return i > 0 ? G.jokers.cards[i - 1] : undefined; };
+/** Pheromosa: X on the round's first 2 hands (current_round.hands_played, the hands BEFORE this one, < pheromosa_hands); after the 2nd
+ *  hand (or any later one) has scored it is debuffed (an SMODS debuff source, 'pheromosa', on the card) until the round ends. */
+export const PHEROMOSA_HANDS = 2;
+function pheromosa_tire(card, context) {
+  if (!context.after || context.blueprint || context.retrigger_joker) return false;
+  if ((G.GAME.current_round.hands_played || 0) < PHEROMOSA_HANDS - 1) return true;
+  smods_debuff_card(card, true, 'pheromosa');
+  card_eval_status_text(card, 'extra', null, null, null, { message: 'Tired!', colour: 'RED' });
+  return true;
+}
+/** The end of the round (run.js end_round's first step, before any joker's end_of_round — index.js hook end_round_start): every
+ *  tired Pheromosa recovers (the source dropped; the card re-evaluated), so it is undebuffed for the round's end and its Beast Boost. */
+export function pheromosa_rest() {
+  for (const j of ((G.jokers && G.jokers.cards) || []).slice()) {
+    if (j.ability && j.ability.debuff_sources && j.ability.debuff_sources.pheromosa) smods_debuff_card(j, null, 'pheromosa');
+  }
+}
+/** Celesteela, Launch: X(1 + Xmult_mod per $1 of its current sell value). */
+const launch_x = (card) => r9(1 + beast_value(card) * (card.sell_cost || 0));
+/** Guzzlord, Gluttony: when a Blind is selected (not Blueprint), the LEFTMOST consumable (Shuckle's choice; one already being sliced is
+ *  skipped) is destroyed and the bank `gluttony_Xmult` (from X1, no energy field) gains `Xmult_mod`. No consumable, nothing. */
+function gluttony(card, context) {
+  if (!context.setting_blind || context.blueprint || context.retrigger_joker || card.getting_sliced) return false;
+  const meal = ((G.consumeables && G.consumeables.cards) || []).find((c) => !c.getting_sliced);
+  if (!meal) return true;
+  meal.getting_sliced = true;
+  const ex = card.ability.extra;
+  ex.gluttony_Xmult = r9(ex.gluttony_Xmult + ex.Xmult_mod);
+  G.E_MANAGER.add_event(() => { meal.start_dissolve(); });
+  card_eval_status_text(card, 'extra', null, null, null, { message: a_xmult(r3(beast_value(card))), colour: 'XMULT' });
+  return true;
+}
+/** Poipole / Naganadel: undebuffed Dragon Jokers (is_type: a Tera sticker counts), the joker itself included when it is one. */
+const dragon_count = () => ((G.jokers && G.jokers.cards) || []).filter((j) => !j.debuff && is_type(j, 'Dragon')).length;
+const poipole_mult = (card) => r3(beast_value(card) * dragon_count());
+const naganadel_x = (card) => r9(beast_value(card) + card.ability.extra.Xmult_mod * dragon_count());
 
 // ---------------------------------------------------------------- the Gen 7 starters (Rowlet / Litten / Popplio lines)
 /** Rowlet line: the RIGHTMOST scored card (by position, as the Shellos line's East Sea: a debuffed card there gets nothing, the end
@@ -3469,6 +3538,208 @@ defineJokers({
       return { message: a_xmult(r3(x)), colour: 'XMULT', Xmult_mod: x };
     },
     ...discards,
+  },
+
+  // ---------------------------------------------------------------- Gen 7, batch 3: the Ultra Beasts, 793-799 / 803-806 (contentRev 66)
+  // The owner's design ("Yes build it and merge when the gate passes", 2026-11-02). Rare $7 single-stage Basics, but Poipole (Common $5)
+  // -> Naganadel (Safari $8, after 5 rounds). Types from the card art (pokermon_art_type.mjs): Nihilego Dark, Buzzwole Fighting, Pheromosa
+  // Grass, Xurkitree Lightning, Celesteela Metal, Kartana Grass, Guzzlord Dragon, Poipole Dark, Naganadel Dragon, Stakataka Earth,
+  // Blacephalon Psychic. Every one carries the `ultra_beast` attribute (nothing reads it yet but the wiki). Neither Nacho nor Pokermon+
+  // has any. Art: upstream 3.9.1's own Natdex cells with their floating souls ({24,52} ... {20,53}). After Drampa (780) in Pokédex order.
+  // BEAST BOOST (shared, solo): each Boss Blind beaten permanently raises the joker's main number (`poke_beast_boost`) by 10% of its
+  // UNENERGIZED base (`beast_boosts`, a count: beast_value above). Energy raises the main number at its standard rate, the rest is fixed.
+  //
+  // Nihilego 793 (Dark), Parasite: copies the ability of the Joker to its LEFT (Blueprint mirrored; the compatible / incompatible line).
+  // No number of its own: Beast Boost has nothing to raise and it is Energy-inert (poke_no_energy_field).
+  nihilego: {
+    name: 'nihilego', poke_sprite391: sprite('Natdex', 24, 52, [25, 52]),
+    config: { extra: {} },
+    rarity: 3, cost: 7, stage: 'Basic', ptype: 'Dark', gen: 7, blueprint_compat: true,
+    attributes: ['ultra_beast', 'copy'], poke_after: 'mega_drampa',
+    poke_no_energy_field: true,
+    loc_vars(self, info_queue, card) {
+      type_tooltip(self, info_queue, card);
+      const main_end = G.jokers && card.area === G.jokers ? blueprint_compat_line(nihilego_target(card)) : undefined;
+      return { vars: [], main_end };
+    },
+    calculate(self, card, context) {
+      const left = nihilego_target(card);
+      if (!left) return undefined;
+      const ret = blueprint_effect(card, left, context);
+      if (ret) ret.colour = 'BLACK';
+      return ret;
+    },
+    update(self, card) {
+      if (G.jokers && card.area === G.jokers) {
+        const left = nihilego_target(card);
+        card.ability.blueprint_compat = (left && !left.debuff && left.config.center.blueprint_compat && 'compatible') || 'incompatible';
+      }
+    },
+  },
+  // Buzzwole 794 (Fighting), Muscle: X3 Mult (`Xmult` +20%: 3.6 / 4.2 / 4.8; Beast Boost +X0.3 each) and -1 hand size (fixed).
+  buzzwole: {
+    name: 'buzzwole', poke_sprite391: sprite('Natdex', 26, 52, [27, 52]),
+    config: { extra: { Xmult: 3, h_size: -1, beast_boosts: 0 } },
+    rarity: 3, cost: 7, stage: 'Basic', ptype: 'Fighting', gen: 7, blueprint_compat: true,
+    attributes: ['ultra_beast', 'xmult', 'hand_size', 'scaling'], poke_after: 'nihilego', poke_beast_boost: 'Xmult',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); return { vars: [r3(beast_value(card)), -card.ability.extra.h_size, ...beast_vars(card)] }; },
+    calculate(self, card, context) {
+      if (beast_boost(card, context)) return undefined;
+      if (context.joker_main) { const x = beast_value(card); return { message: a_xmult(r3(x)), colour: 'XMULT', Xmult_mod: x }; }
+      return undefined;
+    },
+    ...hand_size,
+  },
+  // Pheromosa 795 (Grass), Glass Cannon: X3 Mult on the first 2 hands of each round (`Xmult` +20%: 3.6 / 4.2 / 4.8; Beast Boost +X0.3);
+  // after the 2nd hand scores it is debuffed (source 'pheromosa') until the round ends, when it recovers (index.js end_round_start:
+  // before any end_of_round, so it still takes its Beast Boost). Blueprint copies the X while Pheromosa is fresh.
+  pheromosa: {
+    name: 'pheromosa', poke_sprite391: sprite('Natdex', 28, 52, [29, 52]),
+    config: { extra: { Xmult: 3, beast_boosts: 0 } },
+    rarity: 3, cost: 7, stage: 'Basic', ptype: 'Grass', gen: 7, blueprint_compat: true,
+    attributes: ['ultra_beast', 'xmult', 'scaling', 'debuff'], poke_after: 'buzzwole', poke_beast_boost: 'Xmult',
+    loc_vars(self, info_queue, card) {
+      type_tooltip(self, info_queue, card);
+      const tired = !!(card.ability.debuff_sources && card.ability.debuff_sources.pheromosa);
+      const left = tired ? 0 : Math.max(0, PHEROMOSA_HANDS - ((G.GAME && G.GAME.facing_blind && G.GAME.current_round.hands_played) || 0));
+      return { vars: [r3(beast_value(card)), PHEROMOSA_HANDS, ...beast_vars(card), tired ? 'Tired until the round ends' : left + '/' + PHEROMOSA_HANDS + ' hands left'] };
+    },
+    calculate(self, card, context) {
+      if (pheromosa_tire(card, context) || beast_boost(card, context)) return undefined;
+      if (context.joker_main && (G.GAME.current_round.hands_played || 0) < PHEROMOSA_HANDS) {
+        const x = beast_value(card);
+        return { message: a_xmult(r3(x)), colour: 'XMULT', Xmult_mod: x };
+      }
+      return undefined;
+    },
+  },
+  // Xurkitree 796 (Lightning), Live Wire: each card held in hand (not debuffed) gives +4 Mult when a hand scores (Baron's held shape:
+  // Mime retriggers it). `mult` +40%: 5.6 / 7.2 / 8.8; Beast Boost +0.4 each.
+  xurkitree: {
+    name: 'xurkitree', poke_sprite391: sprite('Natdex', 0, 53, [1, 53]),
+    config: { extra: { mult: 4, beast_boosts: 0 } },
+    rarity: 3, cost: 7, stage: 'Basic', ptype: 'Lightning', gen: 7, blueprint_compat: true,
+    attributes: ['ultra_beast', 'mult', 'scaling'], poke_after: 'pheromosa', poke_beast_boost: 'mult',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); return { vars: [r3(beast_value(card)), ...beast_vars(card)] }; },
+    calculate(self, card, context) {
+      if (beast_boost(card, context)) return undefined;
+      if (context.individual && context.cardarea === G.hand && !context.end_of_round && !context.other_card.debuff) return { h_mult: beast_value(card), card };
+      return undefined;
+    },
+  },
+  // Celesteela 797 (Metal), Launch: its sell value rises by $1 at the end of each round (Egg's way: extra_value, `val_gain` fixed; not
+  // Blueprint) and it gives X1 plus X0.05 per $1 of its CURRENT sell value (`Xmult_mod` +20%: 0.06 / 0.07 / 0.08; Beast Boost +X0.005
+  // per $1 each). Blueprint copies the X.
+  celesteela: {
+    name: 'celesteela', poke_sprite391: sprite('Natdex', 2, 53, [3, 53]),
+    config: { extra: { Xmult_mod: 0.05, val_gain: 1, beast_boosts: 0 } },
+    rarity: 3, cost: 7, stage: 'Basic', ptype: 'Metal', gen: 7, blueprint_compat: true,
+    attributes: ['ultra_beast', 'xmult', 'economy', 'scaling'], poke_after: 'xurkitree', poke_beast_boost: 'Xmult_mod',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); return { vars: [r3(beast_value(card)), card.ability.extra.val_gain, ...beast_vars(card), r3(launch_x(card))] }; },
+    calculate(self, card, context) {
+      beast_boost(card, context);
+      if (round_end(context) && !context.blueprint && !context.retrigger_joker) {
+        card.ability.extra_value = (card.ability.extra_value || 0) + card.ability.extra.val_gain;
+        card.set_cost();
+        card_eval_status_text(card, 'extra', null, null, null, { message: localize('k_val_up'), colour: 'MONEY' });
+        return undefined;
+      }
+      if (context.joker_main) { const x = launch_x(card); if (x > 1) return { message: a_xmult(r3(x)), colour: 'XMULT', Xmult_mod: x }; }
+      return undefined;
+    },
+  },
+  // Kartana 798 (Grass), Sacred Sword: when the played hand has exactly 1 scoring card, that card retriggers 3 times (`retriggers`, fixed)
+  // and gives X2 each time it scores (`Xmult_multi` +5%: 2.1 / 2.2 / 2.3; Beast Boost +X0.2 each). Blueprint copies both.
+  kartana: {
+    name: 'kartana', poke_sprite391: sprite('Natdex', 4, 53, [5, 53]),
+    config: { extra: { Xmult_multi: 2, retriggers: 3, beast_boosts: 0 } },
+    rarity: 3, cost: 7, stage: 'Basic', ptype: 'Grass', gen: 7, blueprint_compat: true,
+    attributes: ['ultra_beast', 'xmult', 'retrigger', 'scaling'], poke_after: 'celesteela', poke_beast_boost: 'Xmult_multi',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); return { vars: [r3(beast_value(card)), card.ability.extra.retriggers, ...beast_vars(card)] }; },
+    calculate(self, card, context) {
+      if (beast_boost(card, context)) return undefined;
+      const lone = context.cardarea === G.play && !context.end_of_round && context.scoring_hand && context.scoring_hand.length === 1 && context.other_card === context.scoring_hand[0];
+      if (lone && context.repetition && !context.other_card.debuff) return { message: localize('k_again_ex'), repetitions: card.ability.extra.retriggers, card };
+      if (lone && context.individual) return { x_mult: r3(beast_value(card)), card };
+      return undefined;
+    },
+  },
+  // Guzzlord 799 (Dragon), Gluttony: when a Blind is selected, destroys your LEFTMOST consumable and gains X0.2 Mult (`gluttony_Xmult`
+  // from X1, no energy field; the gain `Xmult_mod` +20%: 0.24 / 0.28 / 0.32, future meals only). Nothing held, nothing. Beast Boost +X0.1
+  // each (10% of the X1 base). Not Blueprint for the meal; Blueprint copies the X.
+  guzzlord: {
+    name: 'guzzlord', poke_sprite391: sprite('Natdex', 6, 53, [7, 53]),
+    config: { extra: { gluttony_Xmult: 1, Xmult_mod: 0.2, beast_boosts: 0 } },
+    rarity: 3, cost: 7, stage: 'Basic', ptype: 'Dragon', gen: 7, blueprint_compat: true,
+    attributes: ['ultra_beast', 'xmult', 'scaling', 'consumable'], poke_after: 'kartana', poke_beast_boost: 'gluttony_Xmult',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); return { vars: [r3(card.ability.extra.Xmult_mod), r3(beast_value(card)), ...beast_vars(card)] }; },
+    calculate(self, card, context) {
+      if (gluttony(card, context) || beast_boost(card, context)) return undefined;
+      if (context.joker_main) { const x = beast_value(card); if (x > 1) return { message: a_xmult(r3(x)), colour: 'XMULT', Xmult_mod: x }; }
+      return undefined;
+    },
+  },
+  // Poipole 803 (Dark, Common $5): +2 Mult for each Dragon Joker (undebuffed, is_type: a Tera sticker counts; Poipole itself isn't one).
+  // `mult` +40%: 2.8 / 3.6 / 4.4; Beast Boost +0.2 each. Evolves after 5 rounds into Naganadel (its Beast Boosts and Energy carry over).
+  poipole: {
+    name: 'poipole', poke_sprite391: sprite('Natdex', 14, 53, [15, 53]),
+    config: { extra: { mult: 2, rounds: 5, beast_boosts: 0 } },
+    rarity: 1, cost: 5, stage: 'Basic', ptype: 'Dark', gen: 7, blueprint_compat: true,
+    attributes: ['ultra_beast', 'mult', 'types', 'scaling', 'round_evo'], poke_after: 'guzzlord', poke_beast_boost: 'mult',
+    poke_custom_values_to_keep: ['beast_boosts'],
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(beast_value(card)), dragon_count(), r3(poipole_mult(card)), ...beast_vars(card), ex.rounds] }; },
+    calculate(self, card, context) {
+      beast_boost(card, context);
+      if (context.joker_main) { const m = poipole_mult(card); if (m > 0) return { message: a_mult(m), colour: 'MULT', mult_mod: m }; }
+      return level_evo(self, card, context, 'j_poke_naganadel');
+    },
+  },
+  // Naganadel 804 (Dragon, Safari $8), Dragon Pulse: X1.5 Mult plus X0.25 for each Dragon Joker, itself included (`Xmult` +20%: 1.8 / 2.1
+  // / 2.4, `Xmult_mod` +20%: 0.3 / 0.35 / 0.4; Beast Boost +X0.15 each, on the X1.5).
+  naganadel: {
+    name: 'naganadel', poke_sprite391: sprite('Natdex', 16, 53, [17, 53]),
+    config: { extra: { Xmult: 1.5, Xmult_mod: 0.25, beast_boosts: 0 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Dragon', gen: 7, blueprint_compat: true,
+    attributes: ['ultra_beast', 'xmult', 'types', 'scaling'], poke_after: 'poipole', poke_beast_boost: 'Xmult',
+    poke_custom_values_to_keep: ['beast_boosts'],
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); return { vars: [r3(beast_value(card)), r3(card.ability.extra.Xmult_mod), r3(naganadel_x(card)), ...beast_vars(card)] }; },
+    calculate(self, card, context) {
+      if (beast_boost(card, context)) return undefined;
+      if (context.joker_main) { const x = naganadel_x(card); return { message: a_xmult(r3(x)), colour: 'XMULT', Xmult_mod: x }; }
+      return undefined;
+    },
+  },
+  // Stakataka 805 (Earth), Stone Wall: each Stone card held in hand (not debuffed) gives X1.25 Mult when a hand scores — the joker's own
+  // held-card pass (Baron's shape: Mime retriggers it; a Stone card has no held effect of its own). `Xmult_multi` +5%: 1.3125 / 1.375 /
+  // 1.4375; Beast Boost +X0.125 each.
+  stakataka: {
+    name: 'stakataka', poke_sprite391: sprite('Natdex', 18, 53, [19, 53]),
+    config: { extra: { Xmult_multi: 1.25, beast_boosts: 0 } },
+    rarity: 3, cost: 7, stage: 'Basic', ptype: 'Earth', gen: 7, blueprint_compat: true,
+    attributes: ['ultra_beast', 'xmult', 'enhancements', 'scaling'], poke_after: 'naganadel', poke_beast_boost: 'Xmult_multi',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); info_queue.push(P_CENTERS.m_stone); return { vars: [r3(beast_value(card)), ...beast_vars(card)] }; },
+    calculate(self, card, context) {
+      if (beast_boost(card, context)) return undefined;
+      if (context.individual && context.cardarea === G.hand && !context.end_of_round && !context.other_card.debuff && has_enhancement(context.other_card, 'm_stone')) {
+        return { x_mult: r3(beast_value(card)), card };
+      }
+      return undefined;
+    },
+  },
+  // Blacephalon 806 (Psychic), Mind Blown: X3 Mult (`Xmult` +20%: 3.6 / 4.2 / 4.8; Beast Boost +X0.3 each); each hand played costs $2
+  // (`recoil`, fixed; Staraptor's Recoil: never past the debt limit). Blueprint copies the X only.
+  blacephalon: {
+    name: 'blacephalon', poke_sprite391: sprite('Natdex', 20, 53, [21, 53]),
+    config: { extra: { Xmult: 3, recoil: 2, beast_boosts: 0 } },
+    rarity: 3, cost: 7, stage: 'Basic', ptype: 'Psychic', gen: 7, blueprint_compat: true,
+    attributes: ['ultra_beast', 'xmult', 'economy', 'scaling'], poke_after: 'stakataka', poke_beast_boost: 'Xmult',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); return { vars: [r3(beast_value(card)), card.ability.extra.recoil, ...beast_vars(card)] }; },
+    calculate(self, card, context) {
+      recoil(card, context);
+      if (beast_boost(card, context)) return undefined;
+      if (context.joker_main) { const x = beast_value(card); return { message: a_xmult(r3(x)), colour: 'XMULT', Xmult_mod: x }; }
+      return undefined;
+    },
   },
 
   // ---------------------------------------------------------------- the Gen 7 starters (contentRev 48)
@@ -7191,10 +7462,13 @@ export const DESIGN_FAMILIES = [
   ['phantump', 'trevenant'],
   ['bergmite', 'avalugg'],
   ['noibat', 'noivern'],
+  ['poipole', 'naganadel'],
 ];
 
 /** Their text (Pokermon loc style: #n# filled by loc_vars), from the design guide; index.js merges it into descriptions.Joker. */
 const EVOLVES_ROUNDS = (n) => '{C:inactive,s:0.8}(Evolves after {C:attention,s:0.8}#' + n + '#{C:inactive,s:0.8} rounds)';
+/** The Ultra Beasts' Beast Boost box (Gen 7 batch 3): `gain` names the step (#n-1#); #n# is what the boosts add up to so far. */
+const BEAST_BOOST_BOX = (gain, n) => ['{C:attention}Beast Boost:{} each {C:attention}Boss Blind{}', 'defeated permanently adds', gain, '{C:inactive}(Beast Boost: +#' + n + '#)'];
 const ROLLOUT = (c, m) => ['{C:attention}Rollout:{} {C:chips}+#' + c + '#{} Chips, doubled', 'for each consecutive hand of', 'the same poker hand {C:inactive}(max #' + m + '# doublings)'];
 const PAIR = ['Played cards that share a rank', 'with another scored card give', '{C:mult}+#1#{} Mult when scored'];
 const TRAIN = (x) => ['Gains {X:mult,C:white} X#' + x + '# {} Mult when a hand', 'with exactly {C:attention}1{} or exactly {C:attention}5{}', 'scoring cards is played', '{C:inactive}(Can\'t be debuffed)'];
@@ -7365,6 +7639,32 @@ export const DESIGN_LOC = {
       ['{C:red}+#1#{} discard each round'],
       ['{C:attention}Steam Eruption:{} {X:mult,C:white} X#2# {} Mult,', 'plus {X:mult,C:white} X#3# {} for each', 'discard used this round', '{C:inactive}(Currently {X:mult,C:white} X#4# {C:inactive} Mult)'],
     ] },
+    j_poke_nihilego: { name: 'Nihilego', text: ['{C:attention}Parasite:{} copies the ability', 'of the {C:attention}Joker{} to its {C:attention}left{}', '{C:inactive,s:0.8}(Beast Boost: no number to raise)'] },
+    j_poke_buzzwole: { name: 'Buzzwole', text: [['{C:attention}Muscle:{} {X:mult,C:white} X#1# {} Mult', '{C:red}-#2#{} hand size'], BEAST_BOOST_BOX('{X:mult,C:white} X#3# {} Mult', 4)] },
+    j_poke_pheromosa: { name: 'Pheromosa', text: [
+      ['{C:attention}Glass Cannon:{} {X:mult,C:white} X#1# {} Mult', 'on the first {C:attention}#2#{} hands of', 'each round; then {C:red}debuffed{}', 'until the round ends', '{C:inactive}(#5#)'],
+      BEAST_BOOST_BOX('{X:mult,C:white} X#3# {} Mult', 4)] },
+    j_poke_xurkitree: { name: 'Xurkitree', text: [['{C:attention}Live Wire:{} each card', 'held in hand gives', '{C:mult}+#1#{} Mult'], BEAST_BOOST_BOX('{C:mult}+#2#{} Mult', 3)] },
+    j_poke_celesteela: { name: 'Celesteela', text: [
+      ['{C:attention}Launch:{} gains {C:money}$#2#{} of', 'sell value at end of round', '{X:mult,C:white} X1 {} Mult, plus {X:mult,C:white} X#1# {}', 'for each {C:money}$1{} of its sell value', '{C:inactive}(Currently {X:mult,C:white} X#5# {C:inactive} Mult)'],
+      BEAST_BOOST_BOX('{X:mult,C:white} X#3# {} per {C:money}$1{}', 4)] },
+    j_poke_kartana: { name: 'Kartana', text: [
+      ['{C:attention}Sacred Sword:{} if the played', 'hand has exactly {C:attention}1{} scoring', 'card, it retriggers {C:attention}#2#{} times', 'and gives {X:mult,C:white} X#1# {} Mult each time'],
+      BEAST_BOOST_BOX('{X:mult,C:white} X#3# {} Mult', 4)] },
+    j_poke_guzzlord: { name: 'Guzzlord', text: [
+      ['{C:attention}Gluttony:{} when a {C:attention}Blind{} is', 'selected, destroys your', '{C:attention}leftmost{} consumable and', 'gains {X:mult,C:white} X#1# {} Mult', '{C:inactive}(Currently {X:mult,C:white} X#2# {C:inactive} Mult)'],
+      BEAST_BOOST_BOX('{X:mult,C:white} X#3# {} Mult', 4)] },
+    j_poke_poipole: { name: 'Poipole', text: [
+      ['{C:mult}+#1#{} Mult for each', '{X:poke_dragon,C:white}Dragon{} Joker', '{C:inactive}(Currently {C:mult}+#3#{C:inactive} Mult)'],
+      [...BEAST_BOOST_BOX('{C:mult}+#4#{} Mult', 5), EVOLVES_ROUNDS(6)]] },
+    j_poke_naganadel: { name: 'Naganadel', text: [
+      ['{C:attention}Dragon Pulse:{} {X:mult,C:white} X#1# {} Mult,', 'plus {X:mult,C:white} X#2# {} for each', '{X:poke_dragon,C:white}Dragon{} Joker', '{C:inactive}(Itself included)', '{C:inactive}(Currently {X:mult,C:white} X#3# {C:inactive} Mult)'],
+      BEAST_BOOST_BOX('{X:mult,C:white} X#4# {} Mult', 5)] },
+    j_poke_stakataka: { name: 'Stakataka', text: [['{C:attention}Stone Wall:{} each {C:attention}Stone{}', 'card held in hand gives', '{X:mult,C:white} X#1# {} Mult'], BEAST_BOOST_BOX('{X:mult,C:white} X#2# {} Mult', 3)] },
+    j_poke_blacephalon: { name: 'Blacephalon', text: [
+      ['{X:mult,C:white} X#1# {} Mult'],
+      ['{C:attention}Mind Blown:{} lose {C:money}$#2#{} each', 'hand played', '{C:inactive,s:0.8}(Never past your debt limit)'],
+      BEAST_BOOST_BOX('{X:mult,C:white} X#3# {} Mult', 4)] },
     j_poke_rowlet: { name: 'Rowlet', text: ['{C:attention}+#1#{} hand size', 'Retrigger the {C:attention}rightmost{}', 'scored card', '{C:inactive,s:0.8}(Energy carries to Decidueye)', EVOLVES_ROUNDS(3)] },
     j_poke_dartrix: { name: 'Dartrix', text: ['{C:attention}+#1#{} hand size', 'Retrigger the {C:attention}rightmost{}', 'scored card {C:attention}#2#{} times', '{C:inactive,s:0.8}(Energy carries to Decidueye)', EVOLVES_ROUNDS(3)] },
     j_poke_decidueye: { name: 'Decidueye', text: [
