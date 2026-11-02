@@ -676,6 +676,184 @@ try {
 		await toMenu();
 	}
 
+	// ================= 9. U2: 2-4 local players with FULL kits, from the Play flow =================
+	if (!ONLY.length || ONLY.includes('9')) {
+		await uncalm();
+		// four pads: player 1 on pad 0 (a press makes it theirs), pads 1-3 free
+		await E(() => { window.__pads = [0, 1, 2, 3].map(i => window.__mkPad(i, 'Synthetic Pad ' + i + ' (STANDARD GAMEPAD)')); });
+		await press(13, 0); await sleep(200);
+		await E(() => { G.UI.hideAll(); G.Flow.goMenu(); G.PlayUI.open(); });
+		await waitFor(() => visible('scr-play'), 4000);
+		await E(() => document.getElementById('mx-next').click()); await sleep(100);
+		await E(() => document.querySelector('[data-cat="survival"]').click()); await sleep(100);
+		await E(() => document.querySelector('[data-var="normal"]').click()); await sleep(150);
+		const tiles = await E(() => [...document.querySelectorAll('#scr-play [data-players]')].map(b => [b.dataset.players, b.getAttribute('aria-disabled') === 'true']));
+		A(JSON.stringify(tiles) === '[["solo",false],["local",false],["local4",false],["online",false]]', 'with 3 extra pads, Local 2 and Local 3-4 are offered on Normal', JSON.stringify(tiles));
+		await E(() => document.querySelector('[data-players="local4"]').click()); await sleep(200);
+		const j0 = await E(() => ({ rows: document.querySelectorAll('#scr-play [data-join]').length, on: document.querySelectorAll('#scr-play .mx-joinrow.on').length, dis: document.getElementById('mx-start').getAttribute('aria-disabled'), txt: document.querySelector('#scr-play .mx-go').innerText }));
+		A(j0.rows === 3 && j0.on === 0 && j0.dis === 'true' && /Press A on 2 or 3 controllers/.test(j0.txt), 'Local 3-4: three join rows (players 2-4), Start waits for 2 pads to join', JSON.stringify(j0));
+		await press(0, 1); await press(0, 2); await sleep(250);
+		const j1 = await E(() => ({ on: [...document.querySelectorAll('#scr-play .mx-joinrow.on')].map(r => r.innerText.replace(/\s+/g, ' ')), dis: document.getElementById('mx-start').getAttribute('aria-disabled'), st: G.PlayUI.state.step }));
+		A(j1.on.length === 2 && /Player 2 · Controller 2/.test(j1.on[0]) && /Player 3 · Controller 3/.test(j1.on[1]) && j1.dis !== 'true' && j1.st === 5, 'A on pads 2 and 3 joins players 2 and 3 (the rows say so); Start is on', JSON.stringify(j1));
+		await E(() => { window.__subSolo = 0; const o = G.Ranking.submitSolo; G.Ranking.submitSolo = (...a) => { window.__subSolo++; return o(...a); }; });
+		await E(() => document.getElementById('mx-start').click());
+		A(await waitFor(() => E(() => G.Game.state === 'playing' && G.LocalCoop.on), 15000), 'Start: a Normal run with 3 players on this device');
+		await calm();
+		const r3 = await E(() => {
+			const L = G.LocalCoop, rows = L.rows;
+			return { mode: G.Game.mode, full: L.full, ran: L.ran, n: rows.map(M => M.n), ctrl: rows.map(M => M.ctrl), pads: rows.map(M => M.padIdx), tags: rows.map(M => M.pl.tag),
+				dex: [G.Game.player.dex, ...rows.map(M => M.pl.dex)], moves: rows.map(M => M.pl.moves.map(m => m.id)), af: rows.map(M => M.pl.afDmg), p1: G.Pad.active };
+		});
+		A(r3.mode === 'normal' && r3.full && r3.ran === 3 && JSON.stringify(r3.n) === '[2,3]' && JSON.stringify(r3.ctrl) === '["pad","pad"]' && JSON.stringify(r3.pads) === '[1,2]' && JSON.stringify(r3.tags) === '["J2","J3"]',
+			'the run is Normal (not the old co-op mode) with players 2 and 3 on pads 2 and 3', JSON.stringify(r3));
+		A(new Set(r3.dex).size === 3 && r3.moves.every(m => m.length >= 1) && r3.af.every(a => a === 0.85), 'each plays its own Pokémon with its own kit (its start move, the run\'s all-fire factor)', JSON.stringify(r3));
+		// player 3's stick moves player 3 only
+		const mv = await E(async () => {
+			const M = G.LocalCoop.rows[1], p = M.pl, q = G.LocalCoop.rows[0].pl, me = G.Game.player;
+			p.x = me.x; p.y = me.y + 40; const x0 = p.x, qx = q.x, mx = me.x;
+			window.__axes(2, 1, 0);
+			await new Promise(r => setTimeout(r, 500));
+			window.__axes(2, 0, 0);
+			return { d: p.x - x0, other: Math.abs(q.x - qx), me: Math.abs(me.x - mx) };
+		});
+		A(mv.d > 30 && mv.other < 25 && mv.me < 2, 'pad 3\'s stick walks player 3 (not player 2, not you)', JSON.stringify(mv));
+		// its moves fire on their own: a foe in reach takes player 3's shots (owner: player 3)
+		const shot3 = await E(async () => {
+			const M = G.LocalCoop.rows[1], p = M.pl;
+			const d = { dex: 19, name: 'x', behavior: 'melee', hp: 1e6, spd: 0, dmg: 0, xp: 0 };
+			const e = new G.Enemy(d, p.x + 60, p.y, { hp: 1, spd: 0, dmg: 0 }); e.spd = 0; G.EnemyMgr.add(e);
+			const hp0 = e.hp, casts = p.moves.map(m => m.castAt || 0);
+			await new Promise(r => setTimeout(r, 2500));
+			return { lost: hp0 - e.hp, cast: p.moves.some((m, i) => (m.castAt || 0) > casts[i]), dealt: Math.round(p.dmgDealt) };
+		});
+		A(shot3.cast && shot3.lost > 0, 'player 3\'s kit fires on its own and hurts a foe', JSON.stringify(shot3));
+		await calm();
+		// a held item it walks over goes on ITS slot
+		const it = await E(async () => {
+			const p = G.LocalCoop.rows[0].pl, id = G.Items.LIST.find(x => !x.instant && x.id !== 'rarecandy').id;
+			G.Pickups.addRemote(987654, 'item', p.x, p.y, id);
+			await new Promise(r => setTimeout(r, 400));
+			return { id, mate: p.item, me: G.Game.player.item };
+		});
+		A(it.mate === it.id && it.me !== it.id, 'a held item player 2 walks over is equipped on player 2 (its own slot)', JSON.stringify(it));
+		// a level-up: you pick a card, each partner takes one too
+		const lv0 = await E(() => G.LocalCoop.rows.map(M => Object.values(M.pl.statsTaken).reduce((a, b) => a + b, 0) + M.pl.moves.reduce((a, m) => a + m.lvl, 0)));
+		await E(() => G.Game.debugLevelUp());
+		await waitFor(() => visible('scr-levelup'), 4000);
+		await E(() => document.querySelector('#cards .card').click());
+		await waitFor(() => E(() => G.Game.state === 'playing'), 4000);
+		const lv1 = await E(() => G.LocalCoop.rows.map(M => Object.values(M.pl.statsTaken).reduce((a, b) => a + b, 0) + M.pl.moves.reduce((a, m) => a + m.lvl, 0)));
+		A(lv1.every((v, i) => v === lv0[i] + 1), 'a level-up: you pick your card and each partner takes one of its own (a move, a level or a stat)', JSON.stringify([lv0, lv1]));
+		// replays / spectate: a row per local partner
+		const sn = await E(() => { const s = G.Spectate.snap(); return (s.mt || []).map(m => [m[0], m[9], m[10]]); });
+		A(sn.length === 2 && sn.every(m => m[1] === 'l' && m[2] === 1) && sn[0][0] !== sn[1][0], 'the live / replay snapshot has a row per local partner (named apart)', JSON.stringify(sn));
+		// pad 2 unplugged: the AI takes player 2
+		await E(() => { window.__pads[1] = null; });
+		await sleep(300);
+		const dc = await E(() => ({ ctrl: G.LocalCoop.rows.map(M => M.ctrl), toasts: window.__toasts.slice(-3) }));
+		A(dc.ctrl[0] === 'ai' && dc.toasts.some(t => /Player 2: controller disconnected/.test(t)), 'pad 2 unplugged: the AI takes player 2 (and says so)', JSON.stringify(dc));
+		await E(() => { window.__pads[1] = window.__mkPad(1, 'Synthetic Pad 1 (STANDARD GAMEPAD)'); });
+		// the end: off the solo board, the local co-op coins and line
+		await E(() => { G.Game.player.coins += 10; G.Game.quit(); });
+		await waitFor(() => visible('scr-over'), 8000);
+		const ov = await E(() => ({ sub: window.__subSolo, lines: document.getElementById('scr-over').innerText, ran: G.LocalCoop.ran }));
+		A(ov.sub === 0 && /Local · 3 players/.test(ov.lines), 'a 3-player Normal run never goes on the solo board; its result says "Local · 3 players"', JSON.stringify(ov).slice(0, 300));
+		await toMenu();
+
+		// 4 players in the Dive: PokéDive's kit for each, specials on X / Y, the Ultimate on RB
+		await E(() => { G.UI.hideAll(); G.Flow.goMenu(); G.PlayUI.open(); });
+		await waitFor(() => visible('scr-play'), 4000);
+		await E(() => document.getElementById('mx-next').click()); await sleep(100);
+		await E(() => document.querySelector('[data-cat="dive"]').click());
+		await waitFor(() => E(() => G.PlayUI.state.step === 3), 15000);
+		await E(() => document.querySelector('[data-var="dive"]').click()); await sleep(150);
+		await E(() => document.querySelector('[data-players="local4"]').click()); await sleep(200);
+		await press(1, 1); await press(1, 2); await press(1, 3); await sleep(250);
+		A(await E(() => document.querySelectorAll('#scr-play .mx-joinrow.on').length) === 3, 'three pads join (their right face button works too)');
+		await E(() => document.getElementById('mx-start').click());
+		A(await waitFor(() => E(() => G.Game.state === 'playing' && G.LocalCoop.on && G.Modes.run.mode === 'exp-dive'), 20000), 'Start: a Dive with 4 players on this device');
+		await calm();
+		await sleep(500);
+		const dk = await E(() => G.LocalCoop.rows.map(M => ({ n: M.n, ctrl: M.ctrl, slots: M.pl.slots.length, max: M.pl.maxMoves, man: M.pl.slots.map(g => !!g[0].xman), xkit: !!M.pl.xkit, af: M.pl.afDmg, member: M.member })));
+		A(dk.length === 3 && dk.every(d => d.ctrl === 'pad' && d.slots === 3 && d.max === 3 && JSON.stringify(d.man) === '[false,true,true]' && d.xkit && d.af === 1.1 && d.member > 0),
+			'each partner has PokéDive\'s kit: its League member\'s basic + 2 specials (pressed), 3 slots, the Expedition damage factor', JSON.stringify(dk));
+		const sp = await E(async () => {
+			const M = G.LocalCoop.rows[2], p = M.pl;
+			for (const g of p.slots) for (const m of g) m.t = 0;
+			const d = { dex: 19, name: 'x', behavior: 'melee', hp: 1e6, spd: 0, dmg: 0, xp: 0 };
+			const e = new G.Enemy(d, p.x + 50, p.y, { hp: 1, spd: 0, dmg: 0 }); e.spd = 0; G.EnemyMgr.add(e);
+			const c0 = p.slots[1][0].castAt || 0;
+			window.__btn(2, true, 3); await new Promise(r => setTimeout(r, 120)); window.__btn(2, false, 3);
+			await new Promise(r => setTimeout(r, 600));
+			return { fired: (p.slots[1][0].castAt || 0) > c0, cd: p.slots[1][0].t };
+		});
+		A(sp.fired, 'X on pad 4 fires player 4\'s first special', JSON.stringify(sp));
+		const ul = await E(async () => {
+			const M = G.LocalCoop.rows[0]; M.ult.c = 1;
+			window.__btn(5, true, 1); await new Promise(r => setTimeout(r, 120)); window.__btn(5, false, 1);
+			await new Promise(r => setTimeout(r, 300));
+			return { casting: !!M.ult.fx, n: M.ults || 0, c: M.ult.c };
+		});
+		A(ul.n === 1 && ul.c < 0.05, 'RB on pad 2 casts player 2\'s Ultimate (its meter full)', JSON.stringify(ul));
+		await E(() => G.Game.quit());
+		await waitFor(() => visible('scr-over'), 10000);
+		await E(() => document.getElementById('btn-again') && document.getElementById('btn-again').click());
+		await waitFor(() => visible('scr-menu'), 8000);
+
+		// Expedition Classic, 2 players: the League kit, hop on A, the Ultimate on Y
+		await E(() => { G.UI.hideAll(); G.Flow.goMenu(); G.PlayUI.open(); });
+		await waitFor(() => visible('scr-play'), 4000);
+		await E(() => document.getElementById('mx-next').click()); await sleep(100);
+		await E(() => document.querySelector('[data-cat="expedition"]').click());
+		await waitFor(() => E(() => G.PlayUI.state.step === 3), 15000);
+		await E(() => document.querySelector('[data-var="exp-classic"]').click()); await sleep(150);
+		await E(() => document.querySelector('[data-players="local"]').click()); await sleep(200);
+		await press(0, 1); await sleep(250);
+		await E(() => document.getElementById('mx-start').click());
+		A(await waitFor(() => E(() => G.Game.state === 'playing' && G.LocalCoop.on && G.Modes.run.mode === 'exp-classic'), 20000), 'Start: Expedition Classic with 2 players');
+		await calm();
+		await sleep(400);
+		const ck = await E(() => { const M = G.LocalCoop.rows[0]; return { n: G.LocalCoop.rows.length, ctrl: M.ctrl, pad: M.padIdx, xkit: !!M.pl.xkit, kit0: M.kit[0], has: M.pl.hasMove(M.kit[0]), af: M.pl.afDmg, member: M.member }; });
+		A(ck.n === 1 && ck.ctrl === 'pad' && ck.pad === 1 && ck.xkit && ck.has && ck.af === 1.1 && ck.member > 0, 'player 2 plays its League member\'s kit (its first kit move, the Expedition damage factor)', JSON.stringify(ck));
+		const hop = await E(async () => {
+			const p = G.LocalCoop.rows[0].pl; p.air = null;
+			window.__btn(0, true, 1); await new Promise(r => setTimeout(r, 90)); const air = !!p.air; window.__btn(0, false, 1);
+			await new Promise(r => setTimeout(r, 60));
+			return { air: air || !!p.air };
+		});
+		A(hop.air, 'A on pad 2 makes player 2 hop', JSON.stringify(hop));
+		const ul2 = await E(async () => {
+			const M = G.LocalCoop.rows[0]; M.ult.c = 1;
+			window.__btn(3, true, 1); await new Promise(r => setTimeout(r, 120)); window.__btn(3, false, 1);
+			await new Promise(r => setTimeout(r, 200));
+			return { n: M.ults || 0 };
+		});
+		A(ul2.n === 1, 'Y on pad 2 casts player 2\'s Ultimate', JSON.stringify(ul2));
+		await E(() => G.Game.quit());
+		await waitFor(() => visible('scr-over'), 10000);
+		await E(() => document.getElementById('btn-again') && document.getElementById('btn-again').click());
+		await waitFor(() => visible('scr-menu'), 8000);
+
+		// no extra pads: Local 2 = one AI partner with a full kit
+		await E(() => { window.__pads = [window.__pads[0]]; });
+		await E(() => { G.UI.hideAll(); G.Flow.goMenu(); G.PlayUI.open(); });
+		await waitFor(() => visible('scr-play'), 4000);
+		await E(() => document.getElementById('mx-next').click()); await sleep(100);
+		await E(() => document.querySelector('[data-cat="survival"]').click()); await sleep(100);
+		await E(() => document.querySelector('[data-var="tower"]').click()); await sleep(150);
+		const t4 = await E(() => ({ l4: document.querySelector('[data-players="local4"]').getAttribute('aria-disabled'), tag: document.querySelector('[data-players="local4"] .t-tag').innerText }));
+		A(t4.l4 === 'true' && /Connect 3 or 4 controllers/.test(t4.tag), 'with one pad, Local 3-4 asks for 3 or 4 controllers', JSON.stringify(t4));
+		await E(() => document.querySelector('[data-players="local"]').click()); await sleep(200);
+		A(/Player 2 · AI/.test(await E(() => document.querySelector('#scr-play [data-join="2"]').innerText.replace(/\s+/g, ' '))), 'Local 2 with no other pad: player 2 is the AI');
+		await E(() => document.getElementById('mx-start').click());
+		A(await waitFor(() => E(() => G.Game.state === 'playing' && G.LocalCoop.on), 15000), 'a Tower run with an AI partner');
+		const ai = await E(() => ({ mode: G.Game.mode, rows: G.LocalCoop.rows.map(M => [M.ctrl, M.pl.tag, M.full]), tower: G.Tower.on }));
+		A(ai.mode === 'tower' && ai.tower && JSON.stringify(ai.rows) === '[["ai","IA",true]]', 'Tower + Local 2: one AI partner with a full kit', JSON.stringify(ai));
+		await E(() => G.Game.quit());
+		await toMenu();
+		await calm();
+	}
+
 	// ================= 8. no Spanish on the canvas; the Lexicon =================
 	if (!ONLY.length || ONLY.includes('8')) {
 		const drawn = await E((src) => {

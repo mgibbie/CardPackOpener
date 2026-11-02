@@ -148,6 +148,7 @@ G.Game = (() => {
     deathT = 0;
     // MicaSurvivor (DLC D0b): the Expedition seam (js/core/hooks.js; no listener in a base page: nothing happens)
     G.Hooks.call('run.start', cfg, pl);
+    G.LocalCoop.afterStart(pl);   // (MicaSurvivor U2: the local partners' Expedition / Dive kits, after yours)
 
     state = 'playing';
     // MicaSurvivor (M5 lote 12c): la repetición se graba desde aquí, y tus amigos pueden verte en directo
@@ -416,7 +417,8 @@ G.Game = (() => {
     // MicaSurvivor (M5 lote 6): los rankings sólo cuentan partidas normales (los otros modos cambian las reglas).
     // MicaSurvivor: y sin modificadores (Veloces, Horda... cambian la partida igual que un modo); vale para los
     // dos rankings (el de upstream, solo y grupo, y el de Magepunk). Los récords personales del modo siguen igual.
-    const ok = clean() && G.Modes.is('normal') && !G.Modes.mods.length;
+    // (MicaSurvivor U2: and never a run of 2-4 local players: a solo board is solo)
+    const ok = clean() && G.Modes.is('normal') && !G.Modes.mods.length && !(G.LocalCoop.ran > 1);
     const sent = ok && !coop ? G.Ranking.submitSolo(Object.assign(mark, { dex: pl.dex, shiny: pl.shiny }))
                : ok && wasHost ? G.Ranking.submitGroup(Object.assign(mark, { members: team })) : null;
     if (sent) sent.then(b => { if (b && b.some(p => p !== 'a')) G.DB.commit(true); }).catch(() => {});
@@ -473,6 +475,7 @@ G.Game = (() => {
     G.RunUI.showLevelUp(pl.level, G.LevelUp.offer(pl), card => {
       G.Audio.sfx('confirm');
       card.apply(pl);
+      G.LocalCoop.levelUp();   // (MicaSurvivor U2: each local partner takes its own card)
       state = 'playing';
     });
   }
@@ -612,6 +615,8 @@ G.Game = (() => {
     }
     if (p.kind === 'item') {
       if (mine) offerItem(p.value);
+      // (MicaSurvivor U2: a local partner's pick-up goes on ITS slot; a Rare Candy or an Expedition item is the team's: yours)
+      else if (who.isMate && !G.LocalCoop.takeItem(who, p.value)) offerItem(p.value);
       return;
     }
     if (p.kind === 'ticket' || p.kind === 'ticket10') {
@@ -623,6 +628,7 @@ G.Game = (() => {
     }
     if (p.kind === 'heal') {
       if (mine) pl.heal(pl.maxHp * 0.3 * G.Tower.healK());   // (M5 lote 8: el pacto Ayuno, main.gd 5371)
+      else if (who.isMate) who.heal(who.maxHp * 0.3);           // (U2: a local partner's)
       G.FX.ring(who.x, who.y, 6, 60, '#5fe08a', 0.4, 3);
       return;
     }
@@ -825,7 +831,8 @@ G.Game = (() => {
       for (const p of G.Coop.puppets()) { p.netUpdate(dt); G.Combat.ghostOrbit(p, dt, time); }
       if (pl.dead) reviveTick(dt);
     }
-    G.Camera.follow(pl.x, pl.y, dt);
+    // (MicaSurvivor U2: 2-4 local players: the camera frames everyone on a pad; alone, you as always)
+    if (G.LocalCoop.full) { const c = G.LocalCoop.camTarget(pl); G.Camera.follow(c[0], c[1], dt); } else G.Camera.follow(pl.x, pl.y, dt);
     G.World.update(dt, G.Camera);
 
     const all = everyone();
@@ -842,7 +849,7 @@ G.Game = (() => {
     G.ZMoves.update(dt, pl);        // MicaSurvivor (M5 lote 4): el Movimiento Z y su enfriamiento
     G.ZMoves.updateWorld(dt);
     G.Dynamax.update(dt, pl);       // MicaSurvivor (M5 lote 5): Dynamax (crecer, ondas Max, final) y su enfriamiento
-    G.Pickups.update(dt, all, onCollect);
+    G.Pickups.update(dt, G.LocalCoop.full ? all.concat(G.LocalCoop.collectors(pl)) : all, onCollect);   // (U2: local partners pick things up too)
     G.Hazards.update(dt);
     G.Interact.update(dt, pl);
     // MicaSurvivor (M5 lote 8, main.gd 1007 / 3249-3253 / 5863): en el Rush de Jefes y la Torre no hay

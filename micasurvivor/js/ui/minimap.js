@@ -244,9 +244,11 @@ G.Minimap = (() => {
     }
     // MicaSurvivor (M5 lote 12a): el compañero del Modo Cooperativo, con el segundo color del grupo (tampoco en el port)
     if (G.LocalCoop && G.LocalCoop.visible(pl)) {
-      const o = G.LocalCoop.mate, q = edge(pt(o.x, o.y, pl));
-      circle(ctx, q.x, q.y, 6, '#ffffff'); circle(ctx, q.x, q.y, 4.5, G.LocalCoop.COLOR);
-      rec('mate', q);
+      for (const M of G.LocalCoop.rows) {   // (U2: every local partner, in its colour)
+        const o = M.pl, q = edge(pt(o.x, o.y, pl));
+        circle(ctx, q.x, q.y, 6, '#ffffff'); circle(ctx, q.x, q.y, 4.5, M.full ? M.color : G.LocalCoop.COLOR);
+        rec('mate', q);
+      }
     }
     // jefes (siempre, en el borde si están lejos)
     for (const e of foes) {

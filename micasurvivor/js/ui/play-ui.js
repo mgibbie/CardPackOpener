@@ -88,7 +88,14 @@ G.I18n.add({
   'En línea: todos los de la sala deben haber llegado a ese piso.': 'Online: everyone in the lobby must have reached that floor.',
   'No han llegado al piso {x} de esta ruta: {x}': "Haven't reached floor {x} on this route: {x}",
   'No han llegado al piso de salida de esta ruta: {x}': "Haven't reached this route's start floor: {x}",
-  'Local · {x} jugadores': 'Local · {x} players'
+  'Local · {x} jugadores': 'Local · {x} players',
+  // (U2: local players)
+  'Conecta 3 o 4 mandos': 'Connect 3 or 4 controllers', 'Un segundo mando lleva al jugador 2, con todo su equipo.': 'A second controller plays player 2, with a full kit.',
+  'Sin otro mando, la IA lleva a tu compañero.': 'With no other controller, the AI plays your partner.',
+  'Hasta 4 jugadores en un mismo aparato, cada uno con su mando.': 'Up to 4 players on one device, each on their own controller.',
+  'Mandos de más conectados: {x}': 'Extra controllers connected: {x}', 'Toca el Pokémon del jugador {x}': "Tap player {x}'s Pokémon",
+  'Pulsa A en tu mando para unirte.': 'Press A on your controller to join.', 'Mando {x}': 'Controller {x}', 'IA': 'AI', 'Jugador {x}': 'Player {x}',
+  'Pulsa A en otro mando para unirte': 'Press A on another controller to join', 'Pulsa A en 2 o 3 mandos para unirlos': 'Press A on 2 or 3 controllers to join them'
 });
 
 G.PlayUI = (() => {
@@ -110,17 +117,19 @@ G.PlayUI = (() => {
   };
   /** The mode G.Flow.play gets for a variant (+ players: Survival normal with a local partner is the base 'coop' mode). */
   const MODE = { dive: 'exp-dive', weekly: 'exp-dive' };
-  const modeOf = (v, players) => (v === 'normal' && players === 'local' ? 'coop' : MODE[v] || v);
+  // (U2: local players are a count on every variant, js/systems/localcoop.js setPlayers; the old 'coop' mode id stays for old
+  //  saves, replays and the old screen's card, never planned here)
+  const modeOf = v => MODE[v] || v;
   const catOf = v => Object.keys(VARIANTS).find(c => VARIANTS[c].includes(v)) || 'survival';
   const PLAYERS = ['solo', 'local', 'local4', 'online'];
-  const LOCAL_OK = ['normal', 'exp-classic', 'exp-survival', 'dive'];
+  const LOCAL_OK = ['normal', 'daily', 'rush', 'party', 'tower', 'rifts', 'type', 'team', 'exp-classic', 'exp-survival', 'dive', 'weekly'];
   // (U2: online plays every variant: the lobby carries the host's mode and options, js/systems/modes.js coopPlan)
   const ONLINE_OK = ['normal', 'daily', 'rush', 'party', 'tower', 'rifts', 'type', 'team', 'exp-classic', 'exp-survival', 'dive', 'weekly'];
   const MOD_TXT = { glass: 'pegas y recibes ×1,5', horde: '+2 enemigos por grupo', swift: 'enemigos ×1,25 de velocidad', iron: 'enemigos ×1,4 de vida' };
   const KEY = 'micasurvivor_playflow';
 
   // ---------------- state (the last category / variant / players are remembered on this device: a convenience) ----------------
-  const st = { step: 1, cat: 'survival', variant: 'normal', players: 'solo', gen: 1, sub: null, subGen: 1, busy: false,
+  const st = { step: 1, cat: 'survival', variant: 'normal', players: 'solo', gen: 1, sub: null, subGen: 1, busy: false, joined: [],
                map: null, diff: null, route: null };
   try {
     const v = JSON.parse(localStorage.getItem(KEY) || 'null');
@@ -161,6 +170,7 @@ G.PlayUI = (() => {
     st.step = step; st.sub = null;
     if (step === 5) initSetup();
     render();
+    joinWatch();
   }
 
   // ---------------- the Expedition: loaded only when a Expedition / Dive category is chosen ----------------
@@ -362,7 +372,7 @@ G.PlayUI = (() => {
     return {
       solo: null,
       local: LOCAL_OK.includes(v) ? null : 'Próximamente',
-      local4: 'Próximamente',
+      local4: !LOCAL_OK.includes(v) ? 'Próximamente' : padsOther() >= 2 ? null : 'Conecta 3 o 4 mandos',
       online: !ONLINE_OK.includes(v) ? 'Próximamente' : loggedIn() ? null : 'Inicia sesión para jugar con amigos'
     };
   }
@@ -370,8 +380,8 @@ G.PlayUI = (() => {
     const why = playersOf(), base = st.cat === 'survival';
     const P = {
       solo: ['Solo', 'ball', 'blue', ['Tú solo.']],
-      local: ['Local · 2 jugadores', 'm_coop', 'green', [base ? 'Un segundo mando mueve a tu compañero.' : 'Tu compañero te acompaña; un segundo mando lo mueve.']],
-      local4: ['Local · 3-4 jugadores', 'm_coop', 'grey', ['Hasta 4 jugadores en un mismo aparato.']],
+      local: ['Local · 2 jugadores', 'm_coop', 'green', [padsOther() ? 'Un segundo mando lleva al jugador 2, con todo su equipo.' : 'Sin otro mando, la IA lleva a tu compañero.']],
+      local4: ['Local · 3-4 jugadores', 'm_coop', 'purple', ['Hasta 4 jugadores en un mismo aparato, cada uno con su mando.', F('Mandos de más conectados: {x}', padsOther())]],
       online: ['En línea con amigos', 'friends', 'orange', ['Crea una sala e invita a tus amigos (hasta 4).', 'Cada uno juega con su Pokémon; el anfitrión elige el modo.']]
     };
     const box = document.createElement('div');
@@ -408,6 +418,7 @@ G.PlayUI = (() => {
     const pw = playersOf(v)[st.players];
     if (pw) return { mode, ok: false, why: pw };
     if (v === 'team' && !G.Team.unlocked()) return { mode, ok: false, why: 'Consigue otro Pokémon primero' };
+    if (st.players === 'local4' && st.joined.length < 2) return { mode, ok: false, why: 'Pulsa A en 2 o 3 mandos para unirlos' };
     if (v === 'exp-classic' || v === 'exp-survival') {
       if (!G.ExpTier) return { mode, ok: false, why: 'Cargando…' };
       if (!G.ExpTier.isOpen(st.map, st.diff)) return { mode, ok: false, why: 'Bloqueado' };
@@ -453,7 +464,6 @@ G.PlayUI = (() => {
       }
       if (v === 'party') html += `<div class="mx-row in"><span class="grow">${esc(F('Pokémon de la fiesta: {x}', nameOf(p.party)))}</span><button type="button" class="mx-btn blue" id="mx-sub-party">${esc(T('Elegir'))}</button></div>`;
       if (v === 'team') html += `<div class="mx-row in"><span class="grow">${esc(F('Equipo: {x}', G.Team.list(s).map(nameOf).join(', ')))}</span><button type="button" class="mx-btn blue" id="mx-sub-team">${esc(T('Elegir equipo'))}</button></div>`;
-      if (v === 'normal' && st.players === 'local') html += `<div class="mx-row in"><span class="grow">${esc(F('Compañero: {x}', nameOf(G.LocalCoop.dex(s))))}</span><button type="button" class="mx-btn blue" id="mx-sub-coop">${esc(T('Elegir compañero'))}</button></div>`;
       if (v !== 'daily' && v !== 'party') {
         html += `<div class="in"><h3 class="mx-h">${esc(T('Modificadores'))} <span class="mx-note mx-money">${esc(T('+25% de monedas por cada uno.'))}</span></h3><div class="mx-mods">`
           + M.MOD_IDS.map(id => { const on = p.mods.includes(id), m = M.MOD[id]; return `<button type="button" class="mx-mod${on ? ' on' : ''}" data-mod="${id}" aria-pressed="${on}" data-sfx="select">${G.Icons.html(m.icon, 24)}<span class="m-t"><b>${esc(T(m.name))}</b><small>${esc(T(m.desc))}</small></span><span class="m-sw">${esc(T(on ? 'Sí' : 'No'))}</span></button>`; }).join('')
@@ -482,6 +492,7 @@ G.PlayUI = (() => {
       html += `<div class="mx-row in"><span class="grow">${esc(T('Ruta de la semana'))}: <b>${esc(T(X.DIVE_NAME[w.route]))}</b></span></div>`
         + `<div class="mx-row in"><span class="grow">${esc(T('Regla de la semana'))}: <b>${esc(T(G.ExpDive.MOD_NAME[w.mod]))}</b> (${esc(T(MOD_TXT[w.mod]))})</span></div>`;
     }
+    if (isLocal()) html += joinRows();
     const pl = plan();
     html += `<div class="mx-go in"><span class="mx-note attn">${pl.ok ? '' : esc(T(pl.why))}</span>
       <button type="button" class="mx-btn big orange" id="mx-start"${pl.ok ? ' data-sfx="confirm"' : ' aria-disabled="true"'}>${esc(T(online ? (G.Social.room ? 'Ir a tu sala' : 'Crear sala') : 'Empezar'))}</button></div>`;
@@ -493,7 +504,7 @@ G.PlayUI = (() => {
     opts.querySelectorAll('[data-mod]').forEach(b => { b.onclick = () => { M.toggleMod(b.dataset.mod); refocusAfter(`[data-mod="${b.dataset.mod}"]`); }; });
     if ($('mx-sub-party')) $('mx-sub-party').onclick = () => openSub('party');
     if ($('mx-sub-team')) $('mx-sub-team').onclick = () => openSub('team');
-    if ($('mx-sub-coop')) $('mx-sub-coop').onclick = () => openSub('coop');
+    opts.querySelectorAll('[data-sub-coop]').forEach(b => { b.onclick = () => openSub('coop' + b.dataset.subCoop); });
     $('mx-start').onclick = start;
     return $('mx-start').getAttribute('aria-disabled') === 'true' ? opts.querySelector('.mx-arrow') || $('mx-start') : $('mx-start');
   }
@@ -535,7 +546,7 @@ G.PlayUI = (() => {
   // ---- the sub pickers on the setup step: party Pokémon (any), team (yours, up to 3), co-op partner (yours) ----
   function openSub(kind) {
     if (kind === 'team') G.Team.pickStart();   // (as the old picker: the team starts from scratch)
-    const cur = kind === 'party' ? G.Modes.prefs().party : kind === 'coop' ? G.LocalCoop.dex() : save().partner;
+    const cur = kind === 'party' ? G.Modes.prefs().party : /^coop/.test(kind) ? G.LocalCoop.dex(save(), save().partner, coopN(kind)) : save().partner;
     st.sub = kind; st.subGen = (G.DEX_BY[cur] || { gen: 1 }).gen;
     render();
   }
@@ -543,7 +554,7 @@ G.PlayUI = (() => {
     const kind = st.sub;
     const box = document.createElement('div');
     box.className = 'mx-panel mx-pick in';
-    const head = { party: 'Toca un Pokémon para la fiesta', team: 'Toca hasta 3 Pokémon tuyos para el equipo', coop: 'Toca el Pokémon que será tu compañero' }[kind];
+    const head = /^coop/.test(kind) ? F('Toca el Pokémon del jugador {x}', coopN(kind)) : { party: 'Toca un Pokémon para la fiesta', team: 'Toca hasta 3 Pokémon tuyos para el equipo' }[kind];
     const team = kind === 'team' ? G.Team.picked() : null;
     box.innerHTML = `<div class="mx-row"><span class="grow">${esc(T(head))}${team ? ' · ' + esc(F('Equipo: {x} / {x}', team.length, G.Team.MAX)) : ''}</span>${kind === 'team' ? `<button type="button" class="mx-btn green" id="mx-sub-done">${esc(T('Hecho'))}</button>` : ''}</div>`;
     body.appendChild(box);
@@ -551,9 +562,10 @@ G.PlayUI = (() => {
     if (kind === 'party') {
       list = G.DEX.filter(p => G.SPRITE_META[p.dex]).map(p => p.dex); sel = G.Modes.prefs().party;
       onPick = d => { G.Modes.setParty(d); st.sub = null; render(); };
-    } else if (kind === 'coop') {
-      list = G.LocalCoop.owned().slice().sort((a, b) => a - b); sel = G.LocalCoop.dex();
-      onPick = d => { if (!G.LocalCoop.pick(d)) { G.Audio.sfx('error'); return; } st.sub = null; render(); };
+    } else if (/^coop/.test(kind)) {
+      const n = coopN(kind);
+      list = G.LocalCoop.owned().slice().sort((a, b) => a - b); sel = G.LocalCoop.dex(save(), save().partner, n);
+      onPick = d => { if (!G.LocalCoop.pick(d, n)) { G.Audio.sfx('error'); return; } st.sub = null; render(); joinWatch(); };
     } else {
       list = G.Team.owned().slice().sort((a, b) => a - b); sel = team;
       onPick = d => {
@@ -574,8 +586,10 @@ G.PlayUI = (() => {
     const mode = pl.mode;
     if (st.players === 'online') return startOnline(mode);
     if (G.Social.room) { G.LobbyUI.open(); return Promise.resolve(false); }   // (in a lobby: its run, as the old screen did)
+    // (U2: how many play on this device: players 2-4 with full kits, on the pads that joined; 1 = solo)
+    G.LocalCoop.setPlayers(localCount(), st.joined.slice());
     if (X.isExp(mode)) {
-      try { localStorage.setItem('micasurvivorexp_mate', st.players === 'local' ? '1' : '0'); } catch (e) { /* a convenience */ }
+      try { localStorage.setItem('micasurvivorexp_mate', '0'); } catch (e) { /* a convenience (U2: the old local partner is off: the players count instead) */ }
       syncLeague();
       if (v === 'weekly') X.playWeekly();
     }
@@ -607,6 +621,48 @@ G.PlayUI = (() => {
     if (!room) { refuse(T('No se pudo crear la sala.')); return false; }
     G.LobbyUI.open();
     return true;
+  }
+
+  // ---------------- U2: local players (2-4 pads): the join rows on the setup step ----------------
+  function padsOther() { return G.Pad && G.Pad.others ? G.Pad.others().length : 0; }
+  const isLocal = () => st.players === 'local' || st.players === 'local4';
+  const coopN = kind => +(kind.slice(4) || 2) || 2;
+  /** Players this run: Local 2 = you + one partner (a pad that joined, else the AI); Local 3-4 = you + every pad that joined. */
+  const localCount = () => (st.players === 'local' ? 2 : st.players === 'local4' ? 1 + Math.min(3, st.joined.length) : 1);
+  function joinRows() {
+    const s = save(), max = st.players === 'local' ? 2 : 4, taken = [+s.partner];
+    let html = `<div class="in"><h3 class="mx-h">${esc(T('Jugadores'))} <span class="mx-note">${esc(T('Pulsa A en tu mando para unirte.'))}</span></h3><div class="mx-join">`;
+    for (let n = 2; n <= max; n++) {
+      const idx = st.joined[n - 2], d = G.LocalCoop.dex(s, s.partner, n, taken);
+      taken.push(d);
+      const who = idx != null ? F('Mando {x}', idx + 1) : n === 2 && st.players === 'local' ? T('IA') : null;
+      html += `<div class="mx-row mx-joinrow${who ? ' on' : ''}" data-join="${n}"><span class="grow"><b style="color:${G.LocalCoop.COLORS[n - 1]}">${esc(F('Jugador {x}', n))}</b> · ${who ? esc(who) + ' · ' + esc(nameOf(d)) : esc(T('Pulsa A en otro mando para unirte'))}</span>`
+        + (who ? `<button type="button" class="mx-btn blue small" data-sub-coop="${n}">${esc(T('Elegir'))}</button>` : '') + '</div>';
+    }
+    return html + '</div></div>';
+  }
+  /** While the setup of a local run is open: a press of A / B on a pad that isn't player 1's joins it (unplugged: it leaves). */
+  let joinTimer = null;
+  const prevBtn = new Map();
+  function joinWatch() {
+    const on = isOpen() && st.step === 5 && !st.sub && isLocal();
+    if (!on) { if (joinTimer) { clearInterval(joinTimer); joinTimer = null; } prevBtn.clear(); return; }
+    if (joinTimer) return;
+    joinTimer = setInterval(() => {
+      if (!(isOpen() && st.step === 5 && !st.sub && isLocal())) { joinWatch(); return; }
+      const pads = G.Pad && G.Pad.others ? G.Pad.others() : [], max = st.players === 'local' ? 1 : 3;
+      let changed = false;
+      const live = new Set(pads.map(p => p.index));
+      const kept = st.joined.filter(i => live.has(i));
+      if (kept.length !== st.joined.length) { st.joined = kept; changed = true; }
+      for (const p of pads) {
+        const b = p.buttons || [], dn = i => !!(b[i] && (b[i].pressed || b[i].value > 0.5));
+        const now = dn(0) || dn(1), was = prevBtn.get(p.index);
+        prevBtn.set(p.index, now);
+        if (now && !was && !st.joined.includes(p.index) && st.joined.length < max) { st.joined.push(p.index); changed = true; G.Audio.sfx('confirm'); }
+      }
+      if (changed) refocusAfter('#mx-start');
+    }, 50);
   }
 
   /** Step 5's state from the saved picks (the carousels start where your last run was). */

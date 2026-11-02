@@ -279,7 +279,7 @@ try {
 			const want = await d.E(v => { const m = G.PlayUI.plan().mode; if (v === 'weekly') G.Expedition.playWeekly(); return { m, plan: G.Modes.plan(m) }; }, v);
 			await d.click('#mx-start');
 			const ok = await waitFor(() => d.E(() => G.Game.state === 'playing'), 15000);
-			const got = await d.E(() => ({ run: G.Modes.run, coop: !!(G.LocalCoop && G.LocalCoop.on), mate: localStorage.getItem('micasurvivorexp_mate') }));
+			const got = await d.E(() => ({ run: G.Modes.run, coop: !!(G.LocalCoop && G.LocalCoop.on), mate: localStorage.getItem('micasurvivorexp_mate'), full: !!(G.LocalCoop && G.LocalCoop.full), ran: G.LocalCoop ? G.LocalCoop.ran : 0 }));
 			await endRun(d);
 			await waitFor(() => d.visible('scr-menu'), 5000);
 			return { ok, want, got, st5 };
@@ -383,20 +383,22 @@ try {
 		A(r.got.map === 'dive:fungal' && r.got.start === 26 && JSON.stringify(pickKeys(r.want)) === JSON.stringify(pickKeys(r.got)), 'Dive: the run is that route from floor 26', JSON.stringify(pickKeys(r.got)));
 		await d.E(() => { G.Expedition.diveStart(1); G.Expedition.diveRoute('forest'); });
 
-		// 5. players: local co-op works where it does today; the rest is aria-disabled and starts nothing
+		// 5. players (U2): Local is a players count on every variant (full kits, js/systems/localcoop.js); no extra pad = an AI partner
 		r = await startVariant('survival', 'normal', 'local');
-		A(!r.err && r.ok && r.got.run.mode === 'coop' && r.got.coop, 'Survival normal + Local 2 players = the base co-op mode (a partner)', JSON.stringify(r.err ? r : r.got));
+		A(!r.err && r.ok && r.got.run.mode === 'normal' && r.got.coop && r.got.full && r.got.ran === 2, 'Survival normal + Local 2 players = a Normal run with a full-kit partner (the AI: no other pad)', JSON.stringify(r.err ? r : r.got));
 		r = await startVariant('expedition', 'exp-classic', 'local');
-		A(!r.err && r.ok && r.got.run.mode === 'exp-classic' && r.got.mate === '1' && r.got.coop, 'Expedition Classic + Local: the Expedition\'s local partner comes (micasurvivorexp_mate = 1)', JSON.stringify(r.err ? r : r.got));
+		A(!r.err && r.ok && r.got.run.mode === 'exp-classic' && r.got.mate === '0' && r.got.coop && r.got.full, 'Expedition Classic + Local: a full-kit partner (the old local-partner setting off)', JSON.stringify(r.err ? r : r.got));
+		r = await startVariant('survival', 'daily', 'local');
+		A(!r.err && r.ok && r.got.run.mode === 'daily' && r.got.full && r.got.ran === 2, 'Daily + Local 2: the Daily with a partner', JSON.stringify(r.err ? r : r.got));
 		await d.E(() => G.PlayUI.open());
 		await d.click('#mx-next'); await d.click('[data-cat="survival"]'); await d.click('[data-var="daily"]');
 		const pl = await d.E(() => [...document.querySelectorAll('#scr-play [data-players]')].map(b => ({ k: b.dataset.players, dis: b.getAttribute('aria-disabled'), tag: (b.querySelector('.t-tag') || {}).innerText || '' })));
-		A(pl.find(x => x.k === 'solo').dis !== 'true' && pl.filter(x => x.k !== 'solo').every(x => x.dis === 'true'), 'Daily: only Solo; Local / 3-4 / Online are aria-disabled', JSON.stringify(pl));
-		A(/Coming soon/.test(pl.find(x => x.k === 'local').tag) && /Coming soon/.test(pl.find(x => x.k === 'local4').tag) && /Coming soon/.test(pl.find(x => x.k === 'online').tag), 'each says why ("Coming soon")', JSON.stringify(pl));
+		A(pl.find(x => x.k === 'solo').dis !== 'true' && pl.find(x => x.k === 'local').dis !== 'true' && pl.find(x => x.k === 'local4').dis === 'true' && pl.find(x => x.k === 'online').dis === 'true', 'Daily: Solo and Local 2 offered; Local 3-4 needs pads; Online needs an account', JSON.stringify(pl));
+		A(/Connect 3 or 4 controllers/.test(pl.find(x => x.k === 'local4').tag) && /Sign in to play with friends/.test(pl.find(x => x.k === 'online').tag), 'each says why ("Connect 3 or 4 controllers", "Sign in")', JSON.stringify(pl));
 		await d.shot('play_4_players_daily_desktop.png');
 		await d.hideToast();
-		await d.click('[data-players="local"]'); await sleep(150);
-		A((await d.state()).step === 4 && /coming soon/i.test(await d.toast()) && await d.E(() => G.Game.state === 'ui'), 'pressing a disabled combination stays on step 4, says so, starts nothing', await d.toast());
+		await d.click('[data-players="local4"]'); await sleep(150);
+		A((await d.state()).step === 4 && /Connect 3 or 4 controllers/i.test(await d.toast()) && await d.E(() => G.Game.state === 'ui'), 'pressing a disabled combination stays on step 4, says why, starts nothing', await d.toast());
 		// a guest's Online on Normal: "Sign in to play with friends"
 		await d.click('#mx-back'); await d.click('[data-var="normal"]');
 		const on = await d.E(() => { const b = document.querySelector('#scr-play [data-players=online]'); return { dis: b.getAttribute('aria-disabled'), tag: b.querySelector('.t-tag').innerText, local: document.querySelector('#scr-play [data-players=local]').getAttribute('aria-disabled') }; });
@@ -496,10 +498,10 @@ try {
 		A(await d.navTo('#scr-play [data-var=type]'), 'pad: the D-pad reaches Type Survival');
 		await d.press(1); await sleep(200);
 		A(await d.E(() => document.querySelector('.pad-focus') && document.querySelector('.pad-focus').dataset.players === 'solo'), 'pad: step 4 focuses Solo');
-		A(await d.navTo('#scr-play [data-players=local]'), 'pad: the D-pad reaches a disabled tile (Local on Type)');
+		A(await d.navTo('#scr-play [data-players=local4]'), 'pad: the D-pad reaches a disabled tile (Local 3-4 with one pad)');
 		await d.hideToast();
 		await d.press(1); await sleep(200);
-		A((await d.state()).step === 4 && /coming soon/i.test(await d.toast()), 'pad: confirm on it says "coming soon" and stays', await d.toast());
+		A((await d.state()).step === 4 && /Connect 3 or 4 controllers/i.test(await d.toast()), 'pad: confirm on it says why and stays', await d.toast());
 		A(await d.navTo('#scr-play [data-players=solo]'), 'pad: back to Solo');
 		await d.press(1); await sleep(200);
 		A(await d.E(() => document.querySelector('.pad-focus') && document.querySelector('.pad-focus').id === 'mx-start'), 'pad: Setup focuses START');
