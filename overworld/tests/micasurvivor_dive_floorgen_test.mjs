@@ -40,8 +40,8 @@ function walk(L, from) {
 	return d;
 }
 
-const errs = { det: [], size: [], border: [], open: [], stairs: [], far: [], rescue: [], groups: [], chests: [], cadence: [] };
-let n = 0, shapes = {};
+const errs = { pockets: [], det: [], size: [], border: [], open: [], stairs: [], far: [], rescue: [], groups: [], chests: [], cadence: [] };
+let n = 0, shapes = {}, plugN = 0, plugKinds = {};
 for (const route of D.ROUTE_IDS) for (let floor = 1; floor <= 60; floor++) for (const seed of [1, 777, 123456789]) {
 	const L = D.layout({ seed, route, floor }), tag = `${route}/${floor}/${seed}`;
 	n++; shapes[L.shape] = (shapes[L.shape] || 0) + 1;
@@ -64,6 +64,17 @@ for (const route of D.ROUTE_IDS) for (let floor = 1; floor <= 60; floor++) for (
 		if (L.chests.length < 1 || L.chests.length > 3 || L.chests.some(c => L.kind[c[1] * L.w + c[0]] !== 0)
 			|| L.chests.some((c, i) => L.chests.some((o, j) => j > i && Math.abs(c[0] - o[0]) + Math.abs(c[1] - o[1]) < 10))) errs.chests.push(tag);
 	}
+	// secret pockets: the chest unreachable on foot; with the plug open, reachable; never the path, the stairs, a group or the rescue
+	for (const pg of L.plugs || []) {
+		plugN++; plugKinds[pg.kind] = (plugKinds[pg.kind] || 0) + 1;
+		const pi = pg.at[1] * L.w + pg.at[0], ci = pg.chest[1] * L.w + pg.chest[0];
+		if (L.kind[pi] !== 1 || L.kind[ci] !== 0 || di(pg.chest) >= 0) { errs.pockets.push(tag + ' sealed'); continue; }
+		const k2 = L.kind.slice(); k2[pi] = 0;
+		const d2 = walk(Object.assign({}, L, { kind: k2 }), L.spawn);
+		if (!(d2[ci] > 0)) errs.pockets.push(tag + ' opens');
+		if ((L.groups || []).some(g => d2[g.at[1] * L.w + g.at[0]] >= 0 && d[g.at[1] * L.w + g.at[0]] < 0)) errs.pockets.push(tag + ' group inside');
+		if (L.rescue && di(L.rescue) < 0) errs.pockets.push(tag + ' rescue inside');
+	}
 	const c = L.cadence;
 	if (c.arena !== (floor % 5 === 0) || c.guardian !== (floor % 25 === 0) || c.rope !== (floor % 10 === 0 || floor % 25 === 0)
 		|| (c.guardian ? L.shape !== 'guardian' : c.arena ? L.shape !== 'clearing' : L.shape === 'guardian')
@@ -78,6 +89,7 @@ A(!errs.far.length, 'the stairs are far: the path is about the longest walk on t
 A(!errs.rescue.length, 'every non-guardian floor has its lost Pokémon, reachable, 35-80 % of the way to the stairs', show('rescue'));
 A(!errs.groups.length, 'foe groups on every carved floor, none within 16 steps of the spawn', show('groups'));
 A(!errs.chests.length, '1-3 chests on floor tiles, >= 10 tiles apart', show('chests'));
+A(!errs.pockets.length && plugN > n * 0.7 && plugKinds.boulder > 0 && plugKinds.thicket > 0, `secret pockets (${plugN} on ${n} floors, ${JSON.stringify(plugKinds)}): sealed behind their plug, the chest reachable once it opens, nothing else inside`, errs.pockets.slice(0, 5).join(', '));
 A(!errs.cadence.length, 'the cadence: alpha arena every 5th, guardian arena every 25th, rope on 10 / 20 / 25s, no landmark on an arena', show('cadence'));
 A(['caves', 'clearing', 'islands', 'maze', 'guardian'].every(s => shapes[s] > 0), 'all the shapes appear (caves, clearing, islands, maze, guardian)', JSON.stringify(shapes));
 A(D.layout({ seed: 5, route: 'crater', floor: 3 }).shape !== 'islands' && D.ROUTES.crater.noIslands, 'the crater never rolls islands');

@@ -351,3 +351,12 @@ Gate per the owner's batching rule: stack V0–V3 on `feat/micasurvivor-dive`, g
     - The foes' difficulty curve wants real playtests.
     - The shared party pot.
     - The secret pockets.
+- **Follow-ups (2026-11-02, branch `feat/micasurvivor-dive-2`):**
+  - **Secret pockets:** natural one-tile necks, plus carved tunnel-and-room pockets, ~1.1 a floor. Each is plugged by a boulder (opened by Rock / Ground / Fighting / Steel) or a thicket (opened by Fire). Lean on it for 0.6 s; there's a tip if your type can't open it. A chest waits behind it. The opened plugs sync to viewers (`pg`).
+  - **Co-op team pot:** already Expedition's. The host holds the team's ₽, and a guest's buy at the Meowth/Kecleon shop is paid from it (an `xb` request). Now tested for Dive.
+  - **Difficulty:** `tools/micasurvivor/dive_sim.mjs` is a rushing bot (stairs, alphas, specials, Ultimate, dodges red ground). It led to:
+    - HP_K 2.8, DMG_K 1.68, 13 s per floor, a tier every 80 BST
+    - alpha ×7 / ×1.2, guardian ×50 / ×1.4
+    - slam ×1.35, charge ×1.6
+
+    Bot result: fresh ~floor 11, half-upgraded ~18, maxed ~27, sometimes past the floor-25 guardian. Human playtests should still confirm it, since the bot skips fights and under-levels.

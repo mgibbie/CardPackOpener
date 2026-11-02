@@ -58,7 +58,7 @@ G.I18n.add({
   'Llega al nivel {x} en una partida': 'Reach level {x} in a run', 'Ten {x} miembros de la Liga': 'Have {x} League members',
   'Llegará con la tanda {x}': 'Comes with batch {x}', 'Más miembros de la Liga': 'More League members',
   'EVOLUCIÓN': 'EVOLUTION', '¡{x} evoluciona a {x}!': '{x} evolved into {x}!', '¡{x} alcanza la madurez {x}!': '{x} reached Maturity {x}!',
-  'Movimiento del kit: {x} ({x}/4)': 'Kit move: {x} ({x}/4)', 'Elige su evolución': 'Choose its evolution',
+  'Movimiento del kit: {x} ({x}/4)': 'Kit move: {x} ({x}/4)', 'Empezar como': 'Start as', 'Tenlo en tu colección o alcánzalo en una partida': 'Own it in your collection or reach it in a run', 'Elige su evolución': 'Choose its evolution',
   '{x} · Vida {x} → {x}': '{x} · HP {x} → {x}', '¿En qué evoluciona {x}?': 'What does {x} evolve into?',
   'Liga: {x}': 'League: {x}', '¡Nuevo miembro de la Liga: {x}!': 'New League member: {x}!', 'madurez {x}': 'Maturity {x}',
   'Ya disponible': 'Available now', 'Empieza con él': 'Start with it',
@@ -199,6 +199,15 @@ G.ExpLeague = (() => {
 
   // ---------------- the pick (this device) ----------------
   function readPick() { try { return +localStorage.getItem(K.PICK_KEY) || 0; } catch (e) { return 0; } }
+  // ---------------- the starting form (owner 2026-11-02: "how come I can't play expedition as Annihilape") ----------------
+  // A run may START as a later stage of its family: any stage you own in the base collection or reached in an Expedition run
+  // (the set league.form). The base form is always open. Later evolutions still come at their levels.
+  const FORM_KEY = 'micasurvivorexp_pickform';
+  const formOpen = d => !!(G.DEX_BY[d] && FAM[d] != null && BY[FAM[d]]) && (d === FAM[d] || !!(G.DB && G.DB.save && G.DB.owns && G.DB.owns(d)) || Sv().has('league.form', d));
+  function readForm() { try { return +localStorage.getItem(FORM_KEY) || 0; } catch (e) { return 0; } }
+  /** The form a run of `member` starts as: the pick if it is that family's and open, else the member itself. */
+  const formFor = member => { const f = readForm(); return f && f !== member && FAM[f] === member && formOpen(f) ? f : member; };
+  function setForm(d) { if (!formOpen(d)) return false; try { localStorage.setItem(FORM_KEY, String(d)); } catch (e) { /* a convenience */ } return true; }
   function setPick(d) { if (!playable(d)) return false; try { localStorage.setItem(K.PICK_KEY, String(d)); } catch (e) { /* the pick is a convenience */ } return true; }
   /** The member a new run of `mode` starts with (G.Modes.plan): your pick if you can play it, else Bulbasaur. */
   const pickFor = () => { const d = readPick(); return playable(d) ? d : K.DEFAULT; };
@@ -278,6 +287,9 @@ G.ExpLeague = (() => {
     if (tm && G.Moves.BY_ID[tm] && pl.addMove(tm)) { scaleMove(pl.moves.find(x => x.id === tm), S.st); S.kit = 1; S.tm = tm; S.log.push([1, 'tm', tm]); }
     else learnKit(pl, 0);
     if (P.startMoves >= 2 && learnKit(pl, 1)) S.log.push([1, 'kit', m.kit[1]]);
+    // (the starting form: that stage's body and stats, quietly; not an evolution of this run)
+    const f0 = formFor(d);
+    if (f0 !== d) { body(pl, f0); applyStats(pl, f0, statsOf(d)); G.Abilities.set(pl, S.ability); pl.hp = pl.maxHp; S.form = f0; S.start = f0; S.log.push([1, 'start', f0]); }
     pl.setActive(0);
     return S;
   }
@@ -448,6 +460,9 @@ G.ExpLeague = (() => {
     Svv.bump('lg.runs.' + m.dex);
     Svv.best('lg.best.' + m.dex, sum.level || 1);
     Svv.add('league.played', m.dex);
+    // (the forms this run reached: they can start a run from now on)
+    Svv.add('league.form', S.form);
+    for (const e of S.log) if (e[1] === 'evo') Svv.add('league.form', e[2]);
     if (S.mega) { Svv.bump('lg.mega'); Svv.add('mega.seen', S.mega); }   // (D14)
     return checkChallenges();
   }
@@ -488,6 +503,8 @@ G.ExpLeague = (() => {
     st.id = 'exp-d13-league';
     st.textContent = `
 .lg-gens { display: flex; flex-wrap: wrap; gap: 4px; margin: 4px 0 0; }
+.lg-forms { display: flex; flex-wrap: wrap; gap: 3px 4px; align-items: center; margin: 3px 0 0; font-size: 11px; }
+.lg-forms .chip { padding: 1px 7px; font-size: 11px; min-height: 0; line-height: 1.5; }
 .lg-gens .chip small, .lg-pages .chip small { opacity: .75; font-weight: 600; margin-left: 2px; }
 .lg-pages { display: flex; flex-wrap: wrap; gap: 4px; margin: 0 auto 0 10px; }   /* (D19: next to the count, so a phone keeps the grid's height) */
 .lg-plays { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 8px; }
@@ -544,7 +561,7 @@ G.ExpLeague = (() => {
           ${G.UI.abilityLine(finalsOf(m)[0], true, G.Abilities.of(finalsOf(m)[0]))}
           <div class="lg-sec">${T.t('Kit')}</div><ul class="lg-kit">${kit}</ul>
           <div class="lg-sec">${T.t('Evolución')}</div><div class="lg-evo">${esc(evoTxt || T.t('No evoluciona: madura a Nv. 24 y 44'))}</div>
-          <div class="lg-mat">${T.t('Madura a Nv. 24 y 44 cuando ya no evoluciona (+12 % de daño y vida)')}</div>
+          ${ok && stagesOf(m).length > 1 ? `<div class="lg-forms"><b>${T.t('Empezar como')}:</b>${stagesOf(m).map(f => { const open1 = formOpen(f), on = formFor(m.dex) === f; return `<button type="button" class="chip${on ? ' on' : ''}" data-form="${f}"${open1 ? '' : ' aria-disabled="true"'} title="${esc(open1 ? '' : T.t('Tenlo en tu colección o alcánzalo en una partida'))}">${open1 ? '' : G.Icons.html('ban', 12) + ' '}${esc(name(f))}</button>`; }).join('')}</div>` : `<div class="lg-mat">${T.t('Madura a Nv. 24 y 44 cuando ya no evoluciona (+12 % de daño y vida)')}</div>`}
           ${megaTxt ? `<div class="lg-sec">${T.t('Megaevolución')}</div><div class="lg-evo lg-mega">${esc(megaTxt)}</div>` : ''}
           <div class="lg-stats">${esc(T.f('Vida {x} · Ataque {x} · Defensa {x} · At. Esp. {x} · Def. Esp. {x} · Velocidad {x}', ...b))}</div>
           ${extra}
@@ -584,6 +601,7 @@ G.ExpLeague = (() => {
     if (bk) bk.onclick = () => { if (onBack) onBack(); };
     const goB = box.querySelector('#league-go');
     if (goB) goB.onclick = () => choose(m.dex);
+    for (const c of box.querySelectorAll('[data-form]')) c.onclick = () => { const f = +c.dataset.form; if (!setForm(f)) { G.UI.toast(T.t('Tenlo en tu colección o alcánzalo en una partida')); G.Audio.sfx('error'); return; } G.Audio.sfx('select'); renderPicker(box, onPick, onBack, opts); };
     for (const p of box.querySelectorAll('[data-play]')) p.onclick = () => { if (!setPick(m.dex)) { G.Audio.sfx('error'); return; } G.Audio.sfx('confirm'); if (opts.onPlay) opts.onPlay(p.dataset.play, m.dex); };
     function choose(d) { if (!setPick(d)) { G.Audio.sfx('error'); return; } G.Audio.sfx('confirm'); if (hub) renderPicker(box, onPick, onBack, opts); if (onPick) onPick(d); }
     // keep the selected cell in view (a long roster on a phone): the grid scrolls, never the screen round it
@@ -606,7 +624,7 @@ G.ExpLeague = (() => {
     K, D, BY, FAM, PHYS, STATUS, stagesOf, finalsOf, nextOf, evoLevel, statsOf, classOf, factorOf,
     free, own, met, wild, playable, roster, progress, checkChallenges, counter, chText, readPick, setPick, pickFor,
     begin, reset, process, evolve, offerHook, cardsHook, row, applyRow, record, lines, renderPicker, select, genOf, GENS, records, ultOf,
-    statsFrom, megaCards, megaEvolve, learnKit,   // (Dive V4: learnKit, the kit's 2nd and 3rd moves at the start)
+    statsFrom, megaCards, megaEvolve, learnKit, formOpen, formFor, setForm,   // (Dive V4: learnKit, the kit's 2nd and 3rd moves at the start)
     get run() { return S; }, get on() { return !!S && G.Modes.isExp(); }
   };
 })();
