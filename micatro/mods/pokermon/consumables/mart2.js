@@ -10,7 +10,7 @@ import {
   pseudorandom_probability, get_probability_vars, poke_unhighlight_cards, poke_remove_card,
   poke_vary_rank, poke_total_chips, poke_add_card, change_base, juice_flip, juice_flip_hand,
   apply_type_sticker, type_sticker_applied, is_type, energy_increase, POKETYPES, any,
-  object_weights, poll_enhancement_weighted,
+  object_weights, poll_enhancement_weighted, type_colour,
 } from '../api.js';
 import { get_current_pool } from '../../../js/engine/core.js';
 
@@ -364,7 +364,7 @@ defineConsumables({
     loc_vars(self, info_queue, center) {
       info_queue.push({ set: 'Other', key: 'energize' });
       const info = (center && center.ability && center.ability.extra) || self.config.extra;
-      const colour = info.change_to_type.toLowerCase();
+      const colour = type_colour(info.change_to_type); // (its hex: a bare 'grass' draws nothing, systems/types.js type_colour)
       info_queue.push({ set: 'Other', key: 'typechanger', vars: [info.change_to_type], colours: [colour] });
       return { vars: [info.change_to_type], colours: [colour, info.change_to_type !== 'Lightning' ? 'WHITE' : 'BLACK'] };
     },

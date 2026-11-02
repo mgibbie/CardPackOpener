@@ -10,7 +10,7 @@ import {
   play_sound, math_random, pseudorandom_element, pseudoseed, all_cards, scale_card, calculate_effect, add_card, create_consumeable,
   find_card, find_pokemon_type, is_type, energize, ease_poke_dollars, poke_is_odd, find_playing_card, get_depleted, get_enhancements,
   get_target_card_enhancements, get_poke_target_card_ranks, add_target_cards_to_vars,
-  copy_card, poke_add_card, calculate_context,
+  copy_card, poke_add_card, calculate_context, type_colour, blueprint_compat_line,
 } from '../api.js';
 import { blueprint_effect } from './pokejokers_08.js';
 
@@ -157,6 +157,21 @@ defineJokers({
 
 const isTable = (x) => x !== null && typeof x === 'object';
 const skitty_type = () => G.GAME.current_round.cattype || 'Grass';
+/**
+ * Skitty / Delcatty's tooltip (3.9.1 loc_vars): the round's type as a pill in its type colour, and, held, the compatible /
+ * incompatible line for the joker to the right (pokermon.ui.blueprint_compat(is_type(other_joker, cattype) and other_joker)).
+ */
+function skitty_loc(card, vars) {
+  const cattype = skitty_type();
+  const highlight_colour = cattype !== 'Lightning' ? 'WHITE' : 'BLACK';
+  let main_end;
+  const found_pos = card && G.jokers && card.area === G.jokers ? G.jokers.cards.indexOf(card) : -1;
+  if (found_pos >= 0) {
+    const other_joker = G.jokers.cards[found_pos + 1];
+    main_end = blueprint_compat_line(other_joker && is_type(other_joker, cattype) && other_joker);
+  }
+  return { vars: [cattype, ...vars], colours: [type_colour(cattype), highlight_colour], main_end };
+}
 /** Plusle: SMODS.get_card_areas('jokers') = the joker row, the consumables and the vouchers; its Jokers and consumables. */
 function jokers_and_consumables() {
   let count = 0;
@@ -228,9 +243,7 @@ defineJokers({
   delcatty: {
     loc_vars(self, info_queue, card) {
       type_tooltip(self, info_queue, card);
-      const cattype = skitty_type();
-      const highlight_colour = cattype !== 'Lightning' ? 'WHITE' : 'BLACK';
-      return { vars: [cattype, card.ability.extra.energy_buff], colours: [cattype.toLowerCase(), highlight_colour] };
+      return skitty_loc(card, [card.ability.extra.energy_buff]);
     },
     calculate(self, card, context) {
       const found_pos = G.jokers.cards.indexOf(card);

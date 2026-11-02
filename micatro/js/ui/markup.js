@@ -1,5 +1,6 @@
 // Balatro description markup -> HTML.  "{C:mult}+4{} Mult", "{X:mult,C:white} X2 {}",
-// "{s:0.8}", "{C:attention,T:tag_double}..." ({T:}/{E:}/{V:} are accepted and ignored).
+// "{s:0.8}", "{C:attention,T:tag_double}..." ({T:}/{E:} are accepted and ignored). {V:n} / {B:n} are the text / background
+// colour of the description's n-th colour (loc_vars `colours`): Pokermon's "{B:1,V:2}Grass{}" is a type pill (Skitty, Kecleon).
 import { CENTERS, LOC, CARDS, MODREG, modType, cssColour, modFont } from './assets.js';
 import { isBig, from as bigFrom, formatBig } from '../engine/bignum.js';
 
@@ -40,6 +41,8 @@ export function markup(line, colours) {
         if (k === 'C') { if (v === 'dark_edition') cls += ' dark-ed'; else st.push('color:' + (COL[v] || modColour(v) || typeColour(v) || '#4f6367')); }
         else if (k === 'X') { st.push('background:' + (COL[v] || modColour(v) || '#fe5f55')); cls += ' xbox'; }
         else if (k === 'V') { const c = colours && colours[(parseInt(v, 10) || 1) - 1]; const css = cssCol(c); if (css) st.push('color:' + css); }
+        // (Balatro's B:n: the text box's colour. Without it a type pill's white text sat on the white tooltip, invisible.)
+        else if (k === 'B') { const c = colours && colours[(parseInt(v, 10) || 1) - 1]; const css = cssCol(c); if (css) { st.push('background:' + css); cls += ' xbox'; } }
         else if (k === 's') { const n = parseFloat(v); if (n) st.push("font-size:" + Math.round(Math.min(1.6, n) * 100) + "%"); }
         else if (k === 'f') { const ff = modFont((v0 || '').trim()); if (ff) st.push("font-family:'" + ff + "',m6x11,sans-serif"); } // (a mod font: AutumnCircus' Noto Emoji)
       }

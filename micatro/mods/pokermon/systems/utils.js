@@ -27,6 +27,16 @@ export const MOD_ID = 'pokermon';
 /** Pokermon config option for the current run (pokermon_config.<key> in the Lua). */
 export const cfg = (key) => opt(MOD_ID, key);
 
+/**
+ * pokermon.ui.blueprint_compat(copy) (3.9.1 functions/uifunctions.lua): a copier's "compatible" / "incompatible" line under its
+ * text (loc_vars main_end), as the engine draws vanilla Blueprint's. `copy` is the joker it would copy, or falsy when it would
+ * copy nothing (Skitty: the joker to the right isn't of the round's type).
+ */
+export function blueprint_compat_line(copy) {
+  const compatible = !!(copy && copy.config && copy.config.center && copy.config.center.blueprint_compat);
+  return [(compatible ? '{C:green}' : '{C:red}') + ' ' + localize('k_' + (compatible ? 'compatible' : 'incompatible')) + ' {}'];
+}
+
 // ------------------------------------------------------------ SMODS shims
 /** SMODS.find_card(key, count_debuffed): jokers + consumables with this CENTER KEY. */
 export function find_card(key, count_debuffed) {
