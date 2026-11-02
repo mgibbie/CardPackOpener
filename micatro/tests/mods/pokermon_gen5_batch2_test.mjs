@@ -11,7 +11,8 @@
 //   Maractus 556 (Grass, R $7)                     each Hazard card held in hand +8 Mult.
 //   Dwebble 557 -> Crustle (Earth)                 +5 / +10 Chips per Stone card in the full deck. 5 rounds.
 //   Sigilyph 561 (Psychic, R $7)                   +2 Foresight; a Planet for Pair levels it 1 extra time.
-//   Yamask 562 -> Cofagrigus (Psychic)             X0.1 / X0.2 per other Joker sold; Mummy: the round's first Joker sold stays, Negative,
+//   Yamask 562 -> Cofagrigus (Psychic)             X0.1 / X0.2 per other Joker sold (the first 1 / 2 a round since r58: the cap is
+//                                                  pokermon_yamask_nerf_test.mjs); Mummy: the Ante's (r58; was the round's) first Joker sold stays, Negative,
 //                                                  no money (a Negative one sells as usual; it counts for the X). 5 rounds.
 //   Tirtouga 564 -> Carracosta (Water)             Ancient 9s: 1+ +30 Chips, 2+ scored 9s +5 Chips for good, 3+ +50; Carracosta 4+
 //                                                  retriggers the 9s. Evolves after the 3+ tier fires 5 times.
@@ -517,7 +518,7 @@ await sec('mummy', () => {
   ok(G.GAME.dollars === d0, '... no money is paid', [d0, G.GAME.dollars]);
   ok(G.jokers.cards.length === n0 && G.jokers.config.card_limit === lim0 + 1, '... its Negative +1 slot: 3 jokers, 6 slots (it takes no slot)', [G.jokers.cards.length, G.jokers.config.card_limit]);
   ok(near(ex(cof).grudge_Xmult, 1.2), '... and it counts as a sale: X0.2', ex(cof).grudge_Xmult);
-  ok(/Mummy: used this round/.test(plain(cof)), 'the tooltip: used this round', plain(cof));
+  ok(/Mummy: used this Ante/.test(plain(cof)), 'the tooltip: used this Ante', plain(cof));
   const bc = b.sell_cost;
   sell(b);
   ok(!G.jokers.cards.includes(b) && G.GAME.dollars === d0 + bc && near(ex(cof).grudge_Xmult, 1.4), 'the second Joker this round sells as usual ($ paid), X0.2 more', [G.GAME.dollars - d0, ex(cof).grudge_Xmult]);
@@ -525,34 +526,29 @@ await sec('mummy', () => {
   ok(ac > 1, 'the mummified Joker\'s sell value is a Negative\'s now', ac);
   sell(a);
   ok(!G.jokers.cards.includes(a) && G.GAME.dollars === d0 + bc + ac && G.jokers.config.card_limit === lim0, 'sold later: paid its (Negative) sell value, and its slot goes with it', [G.GAME.dollars - d0, G.jokers.config.card_limit]);
-  // a new round: ready again; a Negative Joker first sells as usual and uses it up
+  // contentRev 58: Mummy is once an ANTE. A new round in the same Ante: still used
   endRound(); advance();
-  ok(/Mummy: ready/.test(plain(cof)), 'a new round: Mummy ready', plain(cof));
+  ok(G.GAME.round_resets.ante === 1 && /Mummy: used this Ante/.test(plain(cof)), 'a new round in the same Ante: Mummy still used (once an Ante)', [G.GAME.round_resets.ante, plain(cof)]);
+  const r2 = add('j_joker');
+  sell(r2);
+  ok(!G.jokers.cards.includes(r2), '... so the first sale of that round is a sale', G.jokers.cards.includes(r2));
+  // the Boss beaten: the shop after it is the next Ante, Mummy ready; a Negative Joker first sells as usual and uses it up
+  endRound(); advance();
+  ok(G.GAME.round_resets.ante === 1 && /Mummy: used this Ante/.test(plain(cof)), 'the Boss Blind is still Ante 1: used', plain(cof));
+  endRound();
+  if (G.STATE === STATES.ROUND_EVAL) act({ type: 'cash_out' });
+  ok(state() === 'SHOP' && G.GAME.round_resets.ante === 2 && /Mummy: ready/.test(plain(cof)), 'the shop after the Boss is Ante 2: Mummy ready', [state(), G.GAME.round_resets.ante, plain(cof)]);
   const neg = add('j_joker', 'negative'), c2 = add('j_joker');
   const d1 = G.GAME.dollars, nc = neg.sell_cost;
   sell(neg);
   ok(!G.jokers.cards.includes(neg) && G.GAME.dollars === d1 + nc, 'an already Negative Joker is sold as usual', [G.GAME.dollars - d1, nc]);
   const cc = c2.sell_cost;
   sell(c2);
-  ok(!G.jokers.cards.includes(c2) && G.GAME.dollars === d1 + nc + cc, '... and it was the round\'s first sale: the next one sells too', G.GAME.dollars - d1);
-  // the shop belongs to the round it follows: used in that Blind, used in its shop too
-  endRound();
-  if (G.STATE === STATES.ROUND_EVAL) act({ type: 'cash_out' });
-  ok(state() === 'SHOP', 'in the shop');
+  ok(!G.jokers.cards.includes(c2) && G.GAME.dollars === d1 + nc + cc, '... and it was the Ante\'s first sale: the next one sells too', G.GAME.dollars - d1);
+  act({ type: 'next_round' }); G.GAME.round_resets.blind_choices.Boss = 'bl_wall'; act({ type: 'select_blind' }); flush(); clearHand();
   const sh = add('j_joker');
   sell(sh);
-  ok(!G.jokers.cards.includes(sh), 'the shop after a Blind whose Mummy was used: sold as usual', G.jokers.cards.includes(sh));
-  act({ type: 'next_round' }); G.GAME.round_resets.blind_choices.Boss = 'bl_wall'; act({ type: 'select_blind' }); flush(); clearHand();
-  // a Blind with no sale: the first sale in its shop is caught
-  endRound();
-  if (G.STATE === STATES.ROUND_EVAL) act({ type: 'cash_out' });
-  const sh2 = add('j_joker');
-  sell(sh2);
-  ok(G.jokers.cards.includes(sh2) && sh2.edition && sh2.edition.negative, 'a Blind with no sale: the first sale in its shop is mummified (once a round: the Blind and its shop)', sh2.edition);
-  const sh3 = add('j_joker');
-  sell(sh3);
-  ok(!G.jokers.cards.includes(sh3), '... once', G.jokers.cards.includes(sh3));
-  act({ type: 'next_round' }); G.GAME.round_resets.blind_choices.Boss = 'bl_wall'; act({ type: 'select_blind' }); flush(); clearHand();
+  ok(!G.jokers.cards.includes(sh), 'the next Blind of that Ante: still used, sold as usual', G.jokers.cards.includes(sh));
   // Cofagrigus itself sells as usual
   const d2 = G.GAME.dollars, cofc = cof.sell_cost;
   sell(cof);
@@ -568,7 +564,7 @@ await sec('mummy', () => {
   const bp = add('j_blueprint'); const cb = add('j_poke_cofagrigus'); const m1 = add('j_joker'), m2 = add('j_joker');
   ok(G.jokers.cards.indexOf(bp) + 1 === G.jokers.cards.indexOf(cb), 'Blueprint copies Cofagrigus (its right neighbour)');
   sell(m1); sell(m2);
-  ok(G.jokers.cards.includes(m1) && !G.jokers.cards.includes(m2), 'with Blueprint copying it: still ONE Mummy a round (the second sells)', [G.jokers.cards.includes(m1), G.jokers.cards.includes(m2)]);
+  ok(G.jokers.cards.includes(m1) && !G.jokers.cards.includes(m2), 'with Blueprint copying it: still ONE Mummy (the second sells)', [G.jokers.cards.includes(m1), G.jokers.cards.includes(m2)]);
   ok(near(ex(cb).grudge_Xmult, 1.4), 'Blueprint never banks: X0.2 a sale on Cofagrigus only (X1.4)', ex(cb).grudge_Xmult);
   start('MUMBP2');
   add('j_blueprint'); const yk = add('j_poke_yamask'); const m3 = add('j_joker');

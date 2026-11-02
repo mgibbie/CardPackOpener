@@ -3074,6 +3074,7 @@ evolver: Sewaddle, Venipede; 5 otherwise); the fossils by the Ancient convention
   Planet whose `hand_type` is Pair, after its own level). Not Blueprint; Energy-inert.
 - **Yamask** (C $5, 5) / **Cofagrigus** (S $8): **X0.1 / X0.2 for each other Joker you sell** (`grudge_Xmult`, banked; carried). Cofagrigus,
   **Mummy**: the **first Joker you sell each round** (the Blind and the shop after it; one Mummy for the whole row) **is not sold**: it stays,
+  *(contentRev 58, "The Yamask nerf" below: only the first 1 / 2 sales a round grow the X, and Mummy is once an Ante)*
   becomes **Negative** (its own +1 slot), and **no money** is paid. The choices: it **still counts as a sale for the X** (Yamask's and
   Cofagrigus's), but for no other joker (no `selling_card`: nothing was sold); **a Negative Joker sells as usual and uses the round's Mummy
   up**; never Cofagrigus itself, never a consumable; a debuffed Cofagrigus catches nothing; **Blueprint can't copy it** (the `sell_instead`
@@ -3241,6 +3242,29 @@ own `config` (the def's static fields replace data391's `config_all`) and `attri
   origin/main 96545c1c).
 - **Tests**: `micatro/tests/mods/pokermon_espeon_idol_test.mjs` plays real hands; `pokejokers_07_test` re-pinned to the new ability;
   re-recorded pins: `modpin_test`, `pokermon_391_data_test`, `pokermon_new_jokers_test`, `micatro_mod_version_pin`.
+
+### The Yamask nerf (2026-11-01, branch `feat/pokermon-yamask-nerf`)
+
+contentRev **58**. Testers: Yamask grew without limit (sell any number of cheap or free Jokers each round) and Mummy handed out a
+free Negative Joker every round. The owner's approved nerf; the X values and Energy are unchanged (X0.1 / X0.2 a counted sale, Energy
+`Xmult_mod` +20%).
+- **Yamask: only the first 1 Joker sold each round grows it; Cofagrigus: the first 2.** "Round" = Mummy's old window, `G.GAME.round`
+  (from selecting a Blind to selecting the next, its shop included). Kept per card in `ability.extra`: `grudge_round` + `grudge_count`
+  (neither is an energy field), carried through the evolution with `grudge_Xmult` (`poke_custom_values_to_keep`): a Yamask that banked
+  its 1 this round evolves into a Cofagrigus with 1 left, so that round is 2 in all, never a fresh 2. A sale Mummy catches uses one up
+  like any sale. The cap itself is fixed (GRUDGE_CAP by key), never energized.
+- **Mummy: once an Ante** (was once a round): `G.GAME.poke_mummy_ante = G.GAME.round_resets.ante`. It re-arms when the Ante goes up,
+  i.e. when the Boss Blind is beaten: the shop after the Boss is already the next Ante's (as Seasons). An already Negative Joker sold
+  first still uses the Ante's Mummy up.
+- Tooltips: `(Grudges left this round: 1/2)` on both (`#4#` the cap, `#5#` what is left), Cofagrigus's `(Mummy: ready / used this Ante)`.
+- **Never retroactive** (a new mechanism, `js/mods/pins.js` `RULES` / `pinsAt` / `rulesRev`): a run is its recipe, re-simulated on
+  resume, so an r57 run that farmed sales would lose its X on the new rules. session.js now sets `RULES.pins` to the pins each move was
+  RECORDED with (the recipe's own, or a `repinned` entry's `from` for moves before a "Continue anyway") while it re-plays that move, and
+  clears it after; live play reads the loaded pins. `grudge` / `mummy_sell` read `rulesRev('pokermon') >= 58`: an r57 move banks every
+  sale and keys Mummy per round (`poke_mummy_round`) as it did, so the bank stays. Those moves still record `grudge_count`, and an old
+  `poke_mummy_round` equal to the current round reads as used for the rest of that Ante, so a run that switches rules mid-round gets no
+  fresh allowance. Fixture `micatro/tests/fixtures/pokermon_yamask_r57_recipe.json` (recorded on r57: 4 sales in one round, X1.4 / X1.8).
+- Test: `micatro/tests/mods/pokermon_yamask_nerf_test.mjs`; `pokermon_gen5_batch2_test.mjs`'s Mummy section follows the new rules.
 
 ### Pending from the 3.9.1 joker rework (after batch 10b)
 Every existing joker is on 3.9.1: `rework_hold` (still on 3.2.1) is empty. What waits, by the batch it waits on (`rework_deferred` =

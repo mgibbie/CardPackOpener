@@ -43,7 +43,7 @@ sec('static', () => {
   const e = c.config.extra;
   ok(e.scry === 2 && e.Xmult_multi === 2.5 && e.Xmult_multi2 === 1.5 && e.retriggers === 1 && e.Xmult === undefined, 'config: +2 Foresight, X2.5 / X1.5 per card, 1 retrigger (no old Xmult)', e);
   ok(c.blueprint_compat === true, 'Blueprint-compatible');
-  ok(MODS.pokermon.contentRev === 57 && PINS.modPin('pokermon') === '3.9.1+r57' && PINS.LEGACY_MOD_VERSIONS.pokermon === '3.2.1+r1', 'pinned 3.9.1+r57; LEGACY_MOD_VERSIONS untouched', PINS.modPin('pokermon'));
+  ok(MODS.pokermon.contentRev >= 57 && PINS.modPin('pokermon') === '3.9.1+r' + MODS.pokermon.contentRev && PINS.LEGACY_MOD_VERSIONS.pokermon === '3.2.1+r1', 'pinned 3.9.1+r57 or later (r58 the Yamask nerf); LEGACY_MOD_VERSIONS untouched', PINS.modPin('pokermon'));
   const ev = add('j_poke_eevee'); ev.ability.extra.evolve = 'sunstone';
   G.GAME.chips = G.GAME.blind.chips; play(hand(['S_2']), { keepChips: true }); flush();
   ok(key(ev) === 'j_poke_espeon', 'Eevee + Sun Stone still evolves into Espeon', key(ev));
@@ -211,7 +211,7 @@ sec('save and resume', () => {
   const card0 = [cr.espeon_rank, cr.espeon_id, cr.espeon_suit];
   s.act({ type: 'highlight', ids: G.hand.cards.slice(0, 5).map((c) => c.sort_id) }); s.act({ type: 'play' }); flush();
   const rec = JSON.parse(JSON.stringify(s.recipe));
-  ok(rec.modVersions.pokermon === '3.9.1+r57', 'a new run records 3.9.1+r57', rec.modVersions);
+  ok(rec.modVersions.pokermon === PINS.modPin('pokermon'), 'a new run records the current pin (3.9.1+r57 or later)', rec.modVersions);
   const r = Session.fromRecipe(rec); flush();
   const j2 = G.jokers.cards.find((c) => key(c) === 'j_poke_espeon');
   ok(!r.stoppedAt && j2 && ex(j2).Xmult_multi === 2.5 && ex(j2).Xmult_multi2 === 1.5 && ex(j2).retriggers === 1 && G.GAME.scry_amount === 2, 'resume: Espeon comes back with its fields and +2 Foresight', [r.stoppedAt, j2 && ex(j2), G.GAME.scry_amount]);
@@ -225,7 +225,7 @@ sec('old recipe (r56)', () => {
   for (const [name, rec] of [['mid', FIX.mid], ['full', FIX.full]]) {
     ok(rec.modVersions.pokermon === '3.9.1+r56', `${name}: recorded on 3.9.1+r56`, rec.modVersions);
     const diff = Session.pinDiff(rec);
-    ok(diff.length === 1 && diff[0].id === 'pokermon' && diff[0].current === '3.9.1+r57', `${name}: the resume prompt names the Pokermon change`, diff);
+    ok(diff.length === 1 && diff[0].id === 'pokermon' && diff[0].current === PINS.modPin('pokermon'), `${name}: the resume prompt names the Pokermon change`, diff);
     let s = null;
     try { s = Session.fromRecipe(rec, { repin: true }); } catch (e) { ok(false, name + ': fromRecipe threw ' + e.message); continue; }
     flush();
@@ -233,7 +233,7 @@ sec('old recipe (r56)', () => {
     if (name === 'mid') ok(!s.stoppedAt, 'mid: every move replays', s.stoppedAt);
     const jk = G.jokers.cards.filter((c) => key(c) === 'j_poke_espeon');
     ok(jk.length === 1 && ex(jk[0]).Xmult_multi === 2.5 && ex(jk[0]).retriggers === 1 && ex(jk[0]).Xmult === undefined, `${name}: Espeon is there on the new ability`, jk.map((c) => ex(c)));
-    ok(s.recipe.modVersions.pokermon === '3.9.1+r57' && Session.pinDiff(s.recipe).length === 0, `${name}: re-pinned`, s.recipe.modVersions);
+    ok(s.recipe.modVersions.pokermon === PINS.modPin('pokermon') && Session.pinDiff(s.recipe).length === 0, `${name}: re-pinned`, s.recipe.modVersions);
     const st = G.STATE;
     ok([STATES.BLIND_SELECT, STATES.SELECTING_HAND, STATES.SHOP, STATES.ROUND_EVAL].includes(st), `${name}: a live run state`, st);
   }

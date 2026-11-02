@@ -738,13 +738,21 @@ House pattern: MUMMY, a sale that isn't one (the Gen 5 Cofagrigus; mummy_sell, t
   - An ENGINE seam: run.js asks callHook('sell_instead', card) for a player's sale, after can_sell_card; a yes means nothing was sold, so
     neither selling_self nor selling_card runs and no money is paid (vanilla never asks: the fuzz is unchanged). Use it only for "the sale
     doesn't happen"; a joker that merely reacts to a sale uses selling_card (Spiritomb, Yamask).
-  - Cofagrigus: the FIRST Joker you sell each round (G.GAME.poke_mummy_round = G.GAME.round: the Blind and the shop after it; one for the
+  - Cofagrigus: the FIRST Joker you sell each ANTE (contentRev 58, the owner's nerf; was each round. G.GAME.poke_mummy_ante =
+    G.GAME.round_resets.ante: it re-arms when the Boss Blind is beaten, so the shop after a Boss is already the next Ante's; one for the
     whole row however many Cofagrigus) stays and becomes Negative (its old edition replaced; set_edition gives the Negative's +1 Joker slot,
     so a full row stays legal). Rules to state: a Cofagrigus never mummifies itself; an already Negative Joker is sold as usual and uses the
-    round's Mummy up (it was the first sale); consumables are never caught; a debuffed Cofagrigus catches nothing.
+    Ante's Mummy up (it was the first sale); consumables are never caught; a debuffed Cofagrigus catches nothing. A free Negative Joker
+    every ROUND was too strong (testers): give a "free slot / free copy" effect an Ante cadence, not a round one.
   - Blueprint can't copy it: the hook finds the real Cofagrigus (find_card skips debuffed cards and Blueprint isn't one), so copying it adds
     no second Mummy. The mummified Joker counts as SOLD for the line's own X (Yamask / Cofagrigus +X0.1 / +X0.2 per Joker sold, a bank:
     Energy raises only the gain) but for nothing else (Campfire, Spiritomb: nothing was sold). Later, it sells at its Negative sell value.
+  - CAP a "per Joker sold" bank (contentRev 58): uncapped, it was farmed by selling cheap / free Jokers (Yamask grew without limit). Only
+    the first 1 (Yamask) / 2 (Cofagrigus) sales a round count; the count lives on the card (grudge_round + grudge_count, carried through
+    the evolution so evolving mid-round gives no fresh allowance) and the tooltip shows it: "(Grudges left this round: 1/2)". Mummy's
+    caught sale uses one up like any other.
+  - A nerf to a BANK must never take back what was earned: a run is a recipe re-simulated on resume, so gate the new rule on
+    rulesRev(modId) (js/mods/pins.js RULES: the pin each move was recorded with) and the old moves re-play on the old rules.
 House pattern: a HAZARD-HELD payoff (the Gen 5 Maractus):
   - Pokermon's Hazard layer deals Hazard cards into the first hand as a COST (no rank, no suit, a hand slot). A held-in-hand payoff turns
     them into fuel: each Hazard card HELD (individual on G.hand, has_enhancement 'm_poke_hazard', not debuffed) gives +8 Mult (h_mult, Baron's
@@ -1003,7 +1011,7 @@ Fields Energy never touches: rounds, retriggers, h_size, hands, d_size, card_lim
 slot), slow_start (Regigigas's wait), lake_mod (the Lake trio's +X0.25 per other guardian),
 steal / drain (Purrloin's $ and sell-value theft), lucky_odds (Pidove's +1), stamp_money (Woobat's $1), rival_x / rival_mult (Dojo Rivals),
 chip_loss (the Venipede line's -Chips poison), flower_money (Petilil's $), ancient_money (Archen's $3), link_cap (Cinccino's max 5), levels
-(Sigilyph's extra Pair level), prank_draw / tidy_draws (the temporary hand size), the banks moxie_mult / moxie_Xmult / grudge_Xmult; sword_mod
+(Sigilyph's extra Pair level), prank_draw / tidy_draws (the temporary hand size), the banks moxie_mult / moxie_Xmult / grudge_Xmult (and its per-round count grudge_round / grudge_count); sword_mod
 (the Swords of Justice's +X0.1), tao_mod (Truth vs Ideals' +0.25), storm_money / dem2 (Thundurus's $1 and Therian odds);
 the Gen 5 batch 3 fixed fields: static_money / money_cap (Emolga's and Stunfisk's $), together (the trade count), steel_x (Escavalier's
 Steel X1.75), targets (Mienfoo's top-N), Xmult_cap (Bouffalant's X4), the banks charge_Xmult / ant_Xmult.

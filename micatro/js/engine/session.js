@@ -7,7 +7,7 @@
 import { G } from './core.js';
 import { newRun, act } from './run.js';
 import { toView } from './view.js';
-import { stampRecipe, recordLegacyAssumption, pinDiff, repin } from '../mods/pins.js';
+import { stampRecipe, recordLegacyAssumption, pinDiff, repin, RULES, pinsAt } from '../mods/pins.js';
 
 // The recipe FORMAT version (a saved run with another `v` is not offered). Not the rules: those are pinned per
 // run in recipe.modVersions / recipe.engineRev (mods/pins.js ENGINE_CONTENT_REV) — bumping this would drop saves.
@@ -75,7 +75,9 @@ export class Session {
     s.stoppedAt = null;
     for (let i = 0; i < all.length; i++) {
       let r;
-      try { r = act(all[i]); } catch (e) { r = { ok: false, error: 'engine error: ' + (e && e.message) }; }
+      // (each move on the rules it was recorded with, where a mod gates on them: mods/pins.js RULES)
+      RULES.pins = pinsAt(recipe, i);
+      try { r = act(all[i]); } catch (e) { r = { ok: false, error: 'engine error: ' + (e && e.message) }; } finally { RULES.pins = null; }
       if (!r.ok) { s.stoppedAt = { index: i, total: all.length, error: r.error || 'rejected' }; break; }
       s.recipe.actions.push(all[i]);
     }
@@ -183,7 +185,8 @@ export class ReplayStepper {
     if (this.done) return null;
     const a = this.actions[this.index];
     let r;
-    try { r = act(a); } catch (e) { r = { ok: false, error: 'engine error: ' + (e && e.message), events: [] }; }
+    RULES.pins = pinsAt(this.recipe, this.index);
+    try { r = act(a); } catch (e) { r = { ok: false, error: 'engine error: ' + (e && e.message), events: [] }; } finally { RULES.pins = null; }
     G.ui_events.length = 0;
     if (!r.ok) {
       this.error = { index: this.index, action: a, error: r.error || 'rejected' };
