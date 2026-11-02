@@ -311,6 +311,14 @@ const MSURV_EXP_COUNTERS_MAX = 8000;
 const MSURV_EXP_MAPS = ['viridian', 'mtmoon', 'cerulean'];
 const MSURV_EXP_DIFFS = ['normal', 'hard', 'nightmare'];
 const MSURV_EXP_MODE_RE = /^exp-[a-z]{1,12}$/;
+// MicaSurvivor Dive V8 (micasurvivor/js/expedition/dive.js): Expedition · Dive's boards
+//   runboard:micasurvivor_expedition:dive:<route>          the DEEPEST FLOOR per player (then the faster), top 100
+//   runboard:micasurvivor_expedition:dive:weekly:<week>    the Weekly Dive: the same seed, route and modifier for everyone,
+//                                                          always from floor 1; <week> = whole weeks since Mon 2026-01-05 UTC
+// A floor takes at least MSURV_DIVE_SEC_PER_FLOOR s (the stairs and a whole floor between): a faster claim is refused.
+const MSURV_DIVE_ROUTES = ['forest', 'canyon', 'crater', 'reef', 'grotto', 'marsh', 'ruins', 'fungal', 'origin'];
+const MSURV_DIVE_SEC_PER_FLOOR = 4, MSURV_DIVE_MAX_FLOOR = 5000;
+const msurvDiveWeek = now => Math.floor((now - Date.UTC(2026, 0, 5)) / 604800000);
 const MSURV_EXP_NAME_RE = /^[a-z][a-z0-9_.:-]{0,63}$/;
 const MSURV_EXP_ID_RE = /^[A-Za-z0-9_.:-]{1,64}$/;
 const msurvExpDvOk = dv => Number.isInteger(dv) && dv >= 1 && dv <= 9999;
@@ -2168,6 +2176,44 @@ export default async function handler(req, env) {
 		const expFields = ['expMode', 'dv', 'map', 'diff'].filter(f => body[f] != null);
 		if (mode === 'micasurvivor' && action === 'run-score' && expFields.length) {
 			return json({ error: 'an Expedition score goes to the micasurvivor_expedition board', fields: expFields }, 400);
+		}
+		// Dive V8: Expedition · Dive (its own boards: the deepest floor per route, the Weekly Dive): scores and reads
+		if (mode === 'micasurvivor_expedition' && (body.expMode === 'exp-dive' || body.board === 'dive')) {
+			const int = (v) => (typeof v === 'number' && Number.isFinite(v) ? Math.floor(v) : NaN);
+			const weekly = body.weekly === true, wk = msurvDiveWeek(Date.now());
+			if (!weekly && !MSURV_DIVE_ROUTES.includes(body.route)) return json({ error: 'a Dive board needs its route', routes: MSURV_DIVE_ROUTES }, 400);
+			const week = action === 'run-score' ? wk : (Number.isInteger(body.week) && body.week >= 0 && body.week <= wk ? body.week : wk);
+			if (weekly && action === 'run-score' && body.week !== wk) return json({ error: 'that Weekly Dive is over', week: wk }, 400);
+			const sub = weekly ? 'weekly:' + week : body.route;
+			const dKey = 'runboard:micasurvivor_expedition:dive:' + sub, bestKey = 'micasurvivor_expedition:dive:' + sub;
+			user.runBest = user.runBest || {};
+			const cmp = (a, b) => (a.floor - b.floor) || (b.time - a.time);
+			if (action === 'run-score') {
+				const floor = int(body.floor), time = int(body.time), start = weekly ? 1 : (int(body.start) || 1);
+				if (!(floor >= 1 && floor <= MSURV_DIVE_MAX_FLOOR)) return json({ error: 'bad floor', max: MSURV_DIVE_MAX_FLOOR }, 400);
+				if (!(time >= 0 && time <= MICASURVIVOR_MAX_TIME)) return json({ error: 'bad time', max: MICASURVIVOR_MAX_TIME }, 400);
+				if (!(start === 1 || (start > 25 && (start - 1) % 25 === 0)) || start > floor) return json({ error: 'bad start floor' }, 400);
+				if ((floor - start) * MSURV_DIVE_SEC_PER_FLOOR > time + 30) return json({ error: 'implausible depth', min: (floor - start) * MSURV_DIVE_SEC_PER_FLOOR - 30 }, 400);
+				if (!msurvExpDvOk(body.dv)) return json({ error: 'a Dive score needs its content version' }, 400);
+				const dex = int(body.dex);
+				const run = { score: floor, floor, time, start, escaped: body.escaped === true, route: weekly ? String(body.route || '').slice(0, 12) : body.route,
+					kills: Math.max(0, Math.min(10_000_000, int(body.kills) || 0)), level: Math.max(1, Math.min(9999, int(body.level) || 1)),
+					dex: dex >= 1 && dex <= 2000 ? dex : 0, shiny: body.shiny === true, expMode: 'exp-dive', dv: body.dv };
+				const now = Date.now(), prev = user.runBest[bestKey];
+				const better = !prev || typeof prev.floor !== 'number' || cmp(run, prev) > 0;
+				if (better) { user.runBest[bestKey] = { ...run, when: now }; await store.setJSON(username, user); }
+				const best = user.runBest[bestKey] || null;
+				const board = ((await store.get(dKey)) || []).filter(e => e.name !== username);
+				if (best) board.push({ name: username, ...best });
+				board.sort((a, b) => cmp(b, a) || a.when - b.when);
+				const capped = board.slice(0, 100);
+				if (better) await store.setJSON(dKey, capped);
+				const rank = capped.findIndex(e => e.name === username) + 1;
+				return json({ ok: true, better, best, rank: rank || null, board: dKey.slice('runboard:'.length), week: weekly ? wk : undefined });
+			}
+			const board = (await store.get(dKey)) || [];
+			const r = board.findIndex(e => e.name === username) + 1, mine = user.runBest[bestKey];
+			return json({ board: dKey.slice('runboard:'.length), top: board.slice(0, 50), you: mine ? { ...mine, rank: r || null } : null, week: weekly ? week : undefined });
 		}
 		let expSub = '';
 		// DLC D13: the League board (no map or difficulty): read here; it is written by micasurvivor-exp-save-put from the saved

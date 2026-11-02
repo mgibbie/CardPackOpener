@@ -269,7 +269,7 @@ G.Exp = (() => {
         SV().record();
       }
       // Dive V2: the floor reached, the loot (banked / at stake), the escape or the fall; its pay goes through meta.js (divePay)
-      if (sum.mode === 'exp-dive' && DV_() && DV_().run) {
+      if (sum.mode === 'exp-dive' && DV_() && (DV_().run || DV_().view)) {   // (V8: a co-op guest: from the host's block)
         const dr = DV_().result();
         sum.parts = DV_().scoreParts(sum); sum.won = dr.won; sum.zone = sum.parts.zone; sum.score = sum.parts.deepest;
         out.lines = out.lines.concat(dr.lines, DV_().record());
@@ -300,7 +300,7 @@ G.Exp = (() => {
       if (RX() && RX().run) { out.lines = out.lines.concat(RX().record(sum)); G.ExpSave.commit(); }
       // D10: the pay (x the tier's; D11: Pokémonedas through G.Expedition.wallet), research, tasks (today's date, passed in), achievements (after every counter above)
       if (MT() && MT().run) { out.lines = out.lines.concat(MT().record(sum, Date.now())); G.ExpSave.commit(); }
-      if (boardOk(sum)) submitScore(sum);
+      if (boardOk(sum)) { if (sum.mode === 'exp-dive') { if (DV_()) DV_().submit(sum); } else submitScore(sum); }   // (Dive V8: its own boards)
       cur = null;
       return out;
     });
@@ -674,7 +674,7 @@ G.Exp = (() => {
   }
 
   /** D11: a run reaches its board only clean, solo and without a local partner (a co-op run, online or local, never does). */
-  const boardOk = sum => !!(sum && sum.clean && !sum.group && !(cur && cur.mate)) && sum.mode !== 'exp-dive';   // (Dive V2: its boards come in V8)
+  const boardOk = sum => !!(sum && sum.clean && !sum.group && !(cur && cur.mate));
 
   /** D11: an Expedition run brings the local partner (js/systems/localcoop.js) when player 2's pad is connected or the
    *  "local partner" setting is on (localStorage micasurvivorexp_mate = '1'). */

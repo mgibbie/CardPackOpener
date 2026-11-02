@@ -594,7 +594,9 @@ try {
 			for (let i = 0; i < 100 && !(G.World.zone && G.World.zone.hash === rec.hash); i++) await wait(50);
 			H.deliver('alice', Object.assign({}, frame, { t: 2 }));
 			const v3 = G.ExpDive.view;
-			out.guest = { hash: G.World.zone && G.World.zone.hash, floor: v3 && v3.floor, bank: v3 && v3.bank };
+			await wait(50);
+			const gp = G.Game.player, TS = G.World.TS;
+			out.guest = { hash: G.World.zone && G.World.zone.hash, floor: v3 && v3.floor, bank: v3 && v3.bank, px: Math.round(gp.x), py: Math.round(gp.y), onFloor: G.World.maskAt(Math.floor(gp.x / TS), Math.floor(gp.y / TS)) > 0 };
 			G.Coop.end(); G.Game.quit();
 			return out;
 		}, rec);
@@ -602,7 +604,7 @@ try {
 			'a live spectator (a fresh page) sees the same floor, the HUD line and the red ground', JSON.stringify(g.spec || g));
 		A(g.replay && g.replay.at >= 0 && g.replay.floor === 2 && g.replay.zone === 2 && g.replay.map === 'dive:forest' && /^FLOOR 2/.test(g.replay.hud || ''),
 			'a replay viewer seeks to floor 2: the same floor rebuilt, its HUD line', JSON.stringify(g.replay || g));
-		A(g.guest && g.guest.hash === rec.hash && g.guest.floor === 2 && g.guest.bank === 33, 'a co-op guest rebuilds the floor from a host frame and shows its loot', JSON.stringify(g.guest || g));
+		A(g.guest && g.guest.hash === rec.hash && g.guest.floor === 2 && g.guest.bank === 33 && Math.abs(g.guest.px) <= 80 && g.guest.py === 0 && g.guest.onFloor, 'a co-op guest rebuilds the floor from a host frame, shows its loot, and stands on its spawn (V8: follows the host down)', JSON.stringify(g.guest || g));
 		await d.ctx.close();
 	}
 
@@ -715,6 +717,88 @@ try {
 		});
 		A(ph.routes === 9 && ph.side <= 2 && ph.goIn, 'the phone: the picker fits (no sideways scroll), the start button reachable', JSON.stringify(ph));
 		await ctx2.close();
+	}
+
+	// ======================== 11. V8: the Weekly Dive, the boards, the co-op rope
+	{
+		const d = await bootPage();
+		const pg = d.page;
+		const wk = await E(pg, async () => {
+			const H = window.__t, X = G.Expedition, out = {};
+			const w = X.diveWeekly(), w2 = X.diveWeekly(Date.now() + 1000), wNext = X.diveWeekly(Date.now() + 7 * 864e5);
+			out.w = w; out.same = JSON.stringify(w) === JSON.stringify(w2); out.next = wNext.week === w.week + 1 && wNext.seed !== w.seed;
+			const seeds = [], wait = ms => new Promise(r => setTimeout(r, ms));
+			/** back to the menu (a run quits to its run-over screen first), then a new run; tags prove it's a new one */
+			const fresh = async () => { if (G.Game.state === 'playing') G.Game.quit(); await wait(250); if (G.Game.toUI) G.Game.toUI(); await wait(100); };
+			for (let i = 0; i < 2; i++) {
+				await fresh();
+				X.playWeekly(); await G.Flow.play('exp-dive'); H.freeze();
+				const S = G.ExpDive.run;
+				out['new' + i] = !S.tag; S.tag = 1;
+				seeds.push(G.World.seed);
+				out['r' + i] = { route: S.route, floor: S.floor, weekly: S.weekly && S.weekly.week, mod: S.weekly && S.weekly.mod, hash: G.World.zone.hash, mode: G.Modes.run.weekly };
+			}
+			out.seeds = seeds;
+			// a plain dive afterwards is not the weekly
+			await fresh();
+			G.Expedition.diveRoute('forest'); G.Expedition.diveStart(1);
+			await G.Flow.play('exp-dive'); H.freeze(); H.sturdy();
+			out.plain = { isNew: !G.ExpDive.run.tag, weekly: G.ExpDive.run.weekly, seedDiffers: G.World.seed !== seeds[0] };
+			// Glass Cannon: x1.5 dealt and taken (forced for the check)
+			const S = G.ExpDive.run, pl = G.Game.player;
+			S.weekly = { week: w.week, mod: 'glass' };
+			out.glass = [+G.ExpDive.out(1, pl, null, null).toFixed(3), +G.ExpDive.hurtK(10).toFixed(3)];
+			S.weekly = null;
+			// the rope in co-op: a second player away from the circle holds it back
+			H.downTo(10); H.thin();
+			const L = G.World.zone.dive, [rx, ry] = H.wpos(L.spawn), mate = { x: rx + 400, y: ry, dead: false };
+			H.put(rx, ry);
+			for (let i = 0; i < 120; i++) G.ExpDive.update(1 / 30, [pl, mate], 0);
+			out.ropeHeld = !S.escaped && S.ropeT === 0;
+			mate.x = rx + 4;
+			for (let i = 0; i < 120 && !S.escaped; i++) G.ExpDive.update(1 / 30, [pl, mate], 0);
+			out.ropeBoth = S.escaped;
+			return out;
+		});
+		A(wk.same && wk.next && wk.w.route && wk.w.mod, 'the Weekly Dive: the same all week (route, modifier, seed), another next week', JSON.stringify(wk.w));
+		A(wk.r0 && wk.r0.weekly === wk.w.week && wk.r0.route === wk.w.route && wk.r0.floor === 1 && wk.r0.mod === wk.w.mod && wk.r0.mode === wk.w.week,
+			'playing it: this week\'s route and modifier, from floor 1', JSON.stringify(wk.r0));
+		A(wk.new0 && wk.new1 && wk.seeds[0] === wk.seeds[1] && wk.r0.hash === wk.r1.hash, 'two weekly runs get the same world seed and the same first floor (the same for everyone)', JSON.stringify({ s: wk.seeds, h: [wk.r0.hash, wk.r1.hash] }));
+		A(wk.plain && wk.plain.isNew && wk.plain.weekly === null && wk.plain.seedDiffers, 'a plain dive after it is not the weekly (another seed)', JSON.stringify(wk.plain));
+		A(JSON.stringify(wk.glass) === '[1.5,15]', 'Glass Cannon: x1.5 dealt and taken', JSON.stringify(wk.glass));
+		A(wk.ropeHeld && wk.ropeBoth, 'co-op: the rope waits while a partner is out of the circle; with both in it, still, you all leave', JSON.stringify(wk));
+		// the score to the board, and the picker's board / weekly card
+		const sb = await E(pg, async () => {
+			const calls = [];
+			G.MicaAccount.name = () => 'diver';
+			G.MicaAccount.call = async (action, body) => { calls.push([action, body]); return action === 'run-leaderboard'
+				? { ok: true, body: { top: [{ name: 'diver', floor: 31 }, { name: 'zed', floor: 12 }], you: { rank: 1, floor: 31 } } } : { ok: true, body: { better: true, rank: 1 } }; };
+			const S = G.ExpDive.run;
+			S.deepest = 31; S.floor = 31; S.start = 26; S.escaped = false;
+			const r = await G.ExpDive.submit({ time: 400, kills: 120, level: 20, dex: 1 });
+			const body = calls[0] && calls[0][1];
+			return { r, body };
+		});
+		A(sb.body && sb.body.expMode === 'exp-dive' && sb.body.mode === 'micasurvivor_expedition' && sb.body.route === 'forest' && sb.body.floor === 31 && sb.body.start === 26 && sb.body.time === 400 && !sb.body.weekly,
+			'a run\'s score goes to the Dive board: route, deepest floor, start, time', JSON.stringify(sb.body));
+		await E(pg, async () => { G.Game.quit(); await new Promise(r => setTimeout(r, 250)); if (G.Game.toUI) G.Game.toUI(); });
+		await sleep(400);
+		const ui0 = await E(pg, () => { if (G.ModesUI && G.ModesUI.open) G.ModesUI.open(); return { state: G.Game.state, shown: [...document.querySelectorAll('.scr:not(.hidden)')].map(e => e.id) }; });
+		const shown = await waitFor(() => d.visible('modes-dive-pick'), 5000);
+		A(shown, 'back from the run: the mode screen and the Dive card button', JSON.stringify(ui0));
+		await pg.click('#modes-dive-pick');
+		await waitFor(() => d.visible('modes-xdive'), 6000);
+		await sleep(300);
+		const pk = await E(pg, () => ({ weekly: document.querySelector('#modes-xdive .xd-weekly').innerText.replace(/\s+/g, ' '), list: document.getElementById('xd-list').innerText.replace(/\s+/g, ' ') }));
+		A(/Weekly Dive/.test(pk.weekly) && /from floor 1/.test(pk.weekly) && /#1 diver floor 31/.test(pk.list) && /You: rank #1, floor 31/.test(pk.list), 'the picker: the Weekly Dive card; the route\'s board (top and your rank)', JSON.stringify(pk));
+		await pg.click('#modes-xdive [data-board=weekly]');
+		await sleep(200);
+		const wq = await E(pg, () => window.__lastBoardBody || null);
+		await pg.click('#xd-weekly');
+		await waitFor(() => E(pg, () => G.Game.state === 'playing' && G.ExpDive.run), 15000);
+		const wp = await E(pg, () => ({ weekly: G.ExpDive.run.weekly && G.ExpDive.run.weekly.week, w: G.Expedition.diveWeekly().week, line: G.ExpClassic.hudLine(G.Game.player) }));
+		A(wp.weekly === wp.w, 'the picker\'s "Play the weekly" starts this week\'s Weekly Dive', JSON.stringify(wp));
+		await d.ctx.close();
 	}
 
 	const pageErrs = errors.filter(e => !/AudioContext|play\(\) failed|NotAllowedError/.test(e));

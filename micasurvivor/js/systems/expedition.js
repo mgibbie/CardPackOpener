@@ -100,7 +100,10 @@ G.Expedition = (() => {
   /** The map / difficulty a new Expedition run gets. DLC D9: the device's pick (G.ExpTier.pick: clamped to a playable map
    *  and an unlocked tier, once the Expedition code is loaded; before that, the saved pick as it is, for the button's label). */
   function pick(mode) {
-    if (mode === 'exp-dive') return { map: 'dive:' + diveRoute(), diff: 'normal', start: diveStart() };   // (Dive V2: the route is the map; no tiers. V7: the start floor)
+    if (mode === 'exp-dive') {   // (Dive V2: the route is the map; no tiers. V7: the start floor. V8: the Weekly Dive, once, when asked)
+      if (diveWeeklyNext) { diveWeeklyNext = false; const w = diveWeekly(); return { map: 'dive:' + w.route, diff: 'normal', extra: { start: 1, seed: w.seed, weekly: w.week } }; }
+      return { map: 'dive:' + diveRoute(), diff: 'normal', extra: { start: diveStart() } };
+    }
     if (G.ExpTier) return G.ExpTier.pick();
     let p = null;
     try { p = JSON.parse(localStorage.getItem('micasurvivorexp_tier') || 'null'); } catch (e) { /* the pick is a convenience */ }
@@ -110,6 +113,16 @@ G.Expedition = (() => {
   const DIVE_ROUTES = ['forest', 'canyon', 'crater', 'reef', 'grotto', 'marsh', 'ruins', 'fungal', 'origin'];   // (V7: + the Route of Origin)
   const DIVE_NAME = { forest: 'Bosque Musgoso', canyon: 'Cañón Dorado', crater: 'Cráter Ascua', reef: 'Arrecife Hundido', grotto: 'Gruta Helada',
     marsh: 'Pantano Lúgubre', ruins: 'Ruinas Olvidadas', fungal: 'Bosque Fúngico', origin: 'Ruta del Origen' };
+  /** Dive V8: the Weekly Dive: the same for everyone this week (whole weeks since Mon 2026-01-05 UTC, as server/mp.mjs):
+   *  {week, seed, route (one of the 8, in turn), mod (glass / horde / swift / iron, in turn)}. */
+  const DIVE_MODS = ['glass', 'horde', 'swift', 'iron'];
+  function diveWeekly(now = Date.now()) {
+    const week = Math.floor((now - Date.UTC(2026, 0, 5)) / 604800000);
+    return { week, seed: ((Math.imul(week + 1, 2654435761) >>> 0) | 1), route: DIVE_ROUTES[((week % 8) + 8) % 8], mod: DIVE_MODS[((week % 4) + 4) % 4] };
+  }
+  let diveWeeklyNext = false;
+  /** The next Dive run planned is this week's Weekly Dive (the picker's button). */
+  const playWeekly = () => { diveWeeklyNext = true; };
   /** Dive V7: the floor this device starts a dive on (1, or a saved stage 26, 51...: checked against the save at the start). */
   function diveStart(set) {
     try {
@@ -255,7 +268,7 @@ G.Expedition = (() => {
 
   return {
     DV, MODES, NAME, DESC, ICON, MAPS, DIFFS, BOARD, ENABLED, SCRIPTS, HUB,
-    isExp, enabled, hub, pick, leaguePick, diveRoute, diveStart, DIVE_ROUTES, DIVE_NAME, freezeBase, load, lobbyOk, replayOk, viewNotice, dvOk, wallet, viewZone, coopPlan,
+    isExp, enabled, hub, pick, leaguePick, diveRoute, diveStart, diveWeekly, playWeekly, DIVE_ROUTES, DIVE_NAME, DIVE_MODS, freezeBase, load, lobbyOk, replayOk, viewNotice, dvOk, wallet, viewZone, coopPlan,
     get loaded() { return loaded; }, get frozen() { return frozen; },
     /** For tests: turn an Expedition mode on in this page (D0b ships none playable). */
     debugEnable(m) { if (isExp(m)) ENABLED.add(m); return enabled(m); }

@@ -326,3 +326,18 @@ Gate per the owner's batching rule: stack V0–V3 on `feat/micasurvivor-dive`, g
   - **Starting a run:** a dive starts on a saved stage, checked against the Expedition save.
   - **Seals:** `dive.seal` is awakened by a route's first guardian: +10% damage and −10% damage taken on that route.
   - **Route of Origin:** all 8 Seals unlock it, with Arceus as its guardian.
+- **V8:**
+  - **Co-op:**
+    - Guests follow the host's floors: they are placed on the new floor's spawn once their own copy of that floor is rebuilt.
+    - The rope needs every player standing still in its circle (the unanimous vote).
+    - A guest's run-over screen, pay and progress come from the host's block.
+  - **Boards** (`server/mp.mjs`): `runboard:micasurvivor_expedition:dive:<route>` (deepest floor, then the faster time) and `...:dive:weekly:<week>`.
+    - Validation covers the route, floor and start, plus a 4-seconds-a-floor plausibility check.
+    - The picker shows the route board and the weekly board; a run's score is submitted at the end of a clean solo run.
+  - **Weekly Dive:**
+    - Same for everyone each week: its seed, route and modifier (Glass Cannon / Horde / Swift / Iron) all come from the week number.
+    - Always from floor 1, with no stages, Seals or records.
+    - `game.js` seeds its setup the way the Daily does.
+  - **Not done:**
+    - The shared party pot (each player keeps their own ₽ at Meowth).
+    - Secret pockets.

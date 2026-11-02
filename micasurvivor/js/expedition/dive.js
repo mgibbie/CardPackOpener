@@ -67,7 +67,13 @@ G.I18n.add({
   'Récord: piso {x}': 'Best: floor {x}', 'Etapa: piso {x}': 'Stage: floor {x}', 'Sin etapa aún': 'No stage yet', 'Despierta los 8 Sellos ({x}/8)': 'Awaken the 8 Seals ({x}/8)',
   'Sello despierto': 'Seal awakened', '¡Sello despertado!': 'Seal awakened!', 'Inmersión · ruta y piso inicial': 'Dive · route and start floor', 'Empezar en:': 'Start on:', 'Piso {x}': 'Floor {x}',
   'Vence al guardián de cada 25 pisos para guardar una etapa. El primero de cada ruta despierta su Sello: +10 % de daño y −10 % de daño recibido en esa ruta.': 'Beat the guardian every 25 floors to save a stage. The first on each route awakens its Seal: +10% damage and −10% damage taken on that route.',
-  '¡A bucear!': 'Dive!'
+  '¡A bucear!': 'Dive!',
+  'Cañón de cristal': 'Glass Cannon', 'Horda': 'Horde', 'Veloces': 'Swift', 'Hierro': 'Iron', 'pegas y recibes ×1,5': 'you hit and are hit ×1.5', '+2 enemigos por grupo': '+2 foes a group',
+  'enemigos ×1,25 de velocidad': 'foes ×1.25 speed', 'enemigos ×1,4 de vida': 'foes ×1.4 HP', 'Inmersión semanal · {x}': 'Weekly Dive · {x}',
+  '¡Nueva marca en la Inmersión semanal! Puesto #{x}': 'New Weekly Dive record! Rank #{x}', '¡Nueva marca de Inmersión! Puesto #{x}': 'New Dive record! Rank #{x}',
+  'Inmersión semanal': 'Weekly Dive', 'La misma para todos esta semana, desde el piso 1: {x} · {x} ({x}).': 'The same for everyone this week, from floor 1: {x} · {x} ({x}).',
+  'Jugar la semanal': 'Play the weekly', 'Clasificación': 'Leaderboard', 'Esta ruta': 'This route', 'Semanal': 'Weekly', 'Inicia sesión para ver la clasificación': 'Sign in to see the leaderboard',
+  'Nadie aún': 'Nobody yet', 'piso {x}': 'floor {x}', 'Cargando…': 'Loading…', 'Tú: puesto #{x}, piso {x}': 'You: rank #{x}, floor {x}'
 });
 
 G.ExpDive = (() => {
@@ -142,10 +148,13 @@ G.ExpDive = (() => {
   function begin(cfg) {
     let route = routeOf(cfg.map);
     if (!routeOpen(route)) route = 'forest';   // (V7: the Route of Origin needs the 8 Seals)
+    const wk = cfg.weekly != null ? G.Expedition.diveWeekly() : null;   // (V8: the Weekly Dive: its route and modifier)
+    if (wk && wk.week === cfg.weekly) route = wk.route;
     S = { route, floor: 0, seed: G.World.seed | 0, bank: 0, stake: 0, rescued: [], rescuedBank: 0, kills: 0, alphas: 0, guardians: 0,
           ended: false, escaped: false, groups: [], boss: null, stairsT: 0, ropeT: 0, ropeHurt: false, lost: null, deepest: 0, t0: 0 };
     // (V7: a saved stage: the dive starts on that floor)
-    const st = startOf(route, cfg.start);
+    S.weekly = wk && wk.week === cfg.weekly ? wk : null;
+    const st = S.weekly ? 1 : startOf(route, cfg.start);
     S.start = st;
     if (st > 1) G.Exp.enterZone(st);
     startFloor(st, 0);
@@ -160,7 +169,7 @@ G.ExpDive = (() => {
     S.deepest = Math.max(S.deepest, f);
     if (!L) return;
     const r = rng(S.route, f, 0xD1), P = pool(S.route, f);
-    const n = Math.min(K.GROUP[1], K.GROUP[0] + Math.floor(f / 8));
+    const n = Math.min(K.GROUP[1], K.GROUP[0] + Math.floor(f / 8)) + (S.weekly && S.weekly.mod === 'horde' ? 2 : 0);   // (V8: Horde)
     const pre = [];
     for (const [gi, g] of L.groups.entries()) {
       const k = Math.max(1, n + (g.guard ? K.GUARD_PLUS : 0) + Math.floor(r() * 3) - 1), [x, y] = wpos(g.at), list = [];
@@ -204,6 +213,8 @@ G.ExpDive = (() => {
     const hp = sc.hp * G.Coop.scaleHp(n) * (K.HP_K + Math.min(1.7, teff / 210)) * (X ? X.hp : 1);
     const e = new G.Enemy(def, x, y, { hp, dmg: sc.dmg, spd: sc.spd }, !!o.boss);
     e.dmg *= K.DMG_K * (X ? X.dmg : 1);
+    if (S.weekly && S.weekly.mod === 'iron') e.maxHp = e.hp = Math.round(e.maxHp * WEEKLY.IRON);   // (V8: the Weekly Dive's modifiers)
+    if (S.weekly && S.weekly.mod === 'swift') e.spd *= WEEKLY.SWIFT;
     e.xp = Math.round(e.xp * K.XP_K * (X ? X.xp : 1));
     if (X) {
       e.scale = X.scale; e.anim = new G.Sprites.Animator(e.dex, X.scale, e.shiny);
@@ -244,14 +255,15 @@ G.ExpDive = (() => {
     const L = S.L;
     // the rope (on a rope floor): stand still in the circle by the spawn
     if (L.cadence.rope) {
-      const pl = alive[0], [rx, ry] = wpos(L.spawn), inR = G.U.dist2(pl.x, pl.y, rx, ry) < (K.ROPE_R * R) ** 2;
-      const still = S.ropeAt && G.U.dist2(pl.x, pl.y, S.ropeAt[0], S.ropeAt[1]) < 4;
+      // (V8: in co-op every player standing must be in the circle and still: PokéDive's unanimous vote)
+      const [rx, ry] = wpos(L.spawn), inR = alive.every(p => G.U.dist2(p.x, p.y, rx, ry) < (K.ROPE_R * R) ** 2);
+      const at = alive.map(p => [p.x, p.y]), still = S.ropeAt && S.ropeAt.length === at.length && at.every((q, i) => G.U.dist2(q[0], q[1], S.ropeAt[i][0], S.ropeAt[i][1]) < 4);
       if (inR && still && !S.ropeHurt) {
         if (S.ropeT === 0) say(T().t('Cuerda Huida: quédate quieto…'), K.ROPE_T);
         S.ropeT += dt;
         if (S.ropeT >= K.ROPE_T) { escape(); return; }
       } else S.ropeT = 0;
-      S.ropeAt = [pl.x, pl.y]; S.ropeHurt = false;
+      S.ropeAt = at; S.ropeHurt = false;
     }
     // the stairs
     const [sx, sy] = wpos(L.stairs), onS = alive.some(p => G.U.dist2(p.x, p.y, sx, sy) < (K.STAIRS_R * R) ** 2);
@@ -284,7 +296,7 @@ G.ExpDive = (() => {
       loot(K.LOOT.guard + K.LOOT.guardPer * S.floor);
       secure();
       S.stage = S.floor + 1;
-      if (X() && X().add('dive.seal', S.route)) { S.newSeal = true; say(T().t('¡Sello despertado!') + ' ' + T().t(NAME[S.route]), 3.6); }   // (V7)
+      if (!S.weekly && X() && X().add('dive.seal', S.route)) { S.newSeal = true; say(T().t('¡Sello despertado!') + ' ' + T().t(NAME[S.route]), 3.6); }   // (V7)
       say(T().t('¡Guardián derrotado! Etapa guardada'), 3.4);
       G.Audio.sfx('victory'); G.Game.flash('#ffe9a0', 0.6);
     } else {
@@ -398,6 +410,7 @@ G.ExpDive = (() => {
   function out(k, pl, e, src) {
     if (on()) k *= obeliskK();   // (V6: the obelisk)
     if (sealK()) k *= 1 + SEAL.DMG;   // (V7: the route's Seal)
+    if (glass()) k *= WEEKLY.GLASS;   // (V8: Glass Cannon)
     if (!live() || !pl || !src || !pl.slots) return k;
     const id = typeof src.mid === 'string' ? src.mid : src.def && typeof src.id === 'string' ? src.id : null;
     if (!id) return k;
@@ -466,30 +479,36 @@ G.ExpDive = (() => {
 
   // ---------------- the end ----------------
   /** The run's Pokémonedas (bank + stake on an escape, + a quarter of it on a faint). */
-  const pay = () => (S ? S.bank + (S.escaped ? S.stake : Math.floor(S.stake * K.FAINT_KEEP)) : 0);
+  const pay = () => { const S = cur(); return S ? S.bank + (S.escaped ? S.stake : Math.floor(S.stake * K.FAINT_KEEP)) : 0; };
+  const rescuedOf = S => (S.rescued && S.rescued.length ? (S.escaped ? S.rescued.length : S.rescuedBank || 0) : S.rescuedN || 0);
   function scoreParts(sum) {
-    return { floor: S.floor, deepest: S.deepest, route: S.route, kills: sum.kills || 0, time: sum.time || 0, alphas: S.alphas, guardians: S.guardians,
-             rescued: S.escaped ? S.rescued.length : S.rescuedBank, escaped: S.escaped, divePay: pay(), zone: Math.min(4, 1 + Math.floor(S.floor / 10)) };
+    const S = cur();
+    return { floor: S.floor, deepest: S.deepest || S.floor, route: S.route, kills: sum.kills || 0, time: sum.time || 0, alphas: S.alphas || 0, guardians: S.guardians || 0,
+             rescued: rescuedOf(S), escaped: !!S.escaped, divePay: pay(), zone: Math.min(4, 1 + Math.floor(S.floor / 10)), start: S.start || 1,
+             weekly: S.weekly ? S.weekly.week : null };
   }
   function result() {
-    const lines = [T().f('Inmersión · {x}: piso {x}', T().t(NAME[S.route]), S.floor),
+    const S = cur();
+    const lines = [S.weekly ? T().f('Inmersión semanal · {x}', T().t(MOD_NAME[S.weekly.mod])) : null,T().f('Inmersión · {x}: piso {x}', T().t(NAME[S.route]), S.floor),
       T().f('Botín asegurado: {x} · en juego: {x}', S.bank, S.stake),
       T().t(S.escaped ? 'Escapaste: te llevas todo el botín' : 'Caíste: conservas lo asegurado y una cuarta parte del resto'),
-      T().f('Rescatados: {x}', S.escaped ? S.rescued.length : S.rescuedBank), T().f('Alfas: {x} · Guardianes: {x}', S.alphas, S.guardians),
-      T().f('Mejor racha: {x}', S.combo ? S.combo.best : 0)];
+      T().f('Rescatados: {x}', rescuedOf(S)), T().f('Alfas: {x} · Guardianes: {x}', S.alphas || 0, S.guardians || 0),
+      T().f('Mejor racha: {x}', S.combo && S.combo.best ? S.combo.best : 0)].filter(Boolean);
     return { lines, title: S.escaped ? T().t('¡Escapas con todo!') : null, won: S.escaped };
   }
   /** Into the Expedition save: the deepest floor and the stage per route, the counters. -> lines */
   function record() {
-    const X = G.ExpSave, out = [];
+    const X = G.ExpSave, out = [], S = cur();
     if (!X || !S) return out;
+    S.deepest = S.deepest || S.floor;
     const k = 'dive.' + S.route;
     X.bump('dive.runs');
     if (S.escaped) X.bump('dive.escapes');
     if (S.deepest > (X.get(k + '.best') || 0)) out.push(bang(T().f('Nuevo récord en {x}: piso {x}', T().t(NAME[S.route]), S.deepest)));
+    if (S.weekly) { X.bump('dive.weekly'); X.commit(); return out; }   // (V8: the Weekly Dive keeps no record, stage or Seal)
     X.best(k + '.best', S.deepest);
     if (S.stage) X.best(k + '.stage', S.stage);
-    X.bump('dive.rescued', S.escaped ? S.rescued.length : S.rescuedBank);
+    X.bump('dive.rescued', rescuedOf(S));
     X.commit();
     return out;
   }
@@ -497,6 +516,52 @@ G.ExpDive = (() => {
 
 
 
+
+
+  // ---------------- V8: the Weekly Dive, the boards, co-op ----------------
+  // The Weekly Dive (G.Expedition.diveWeekly): this week's seed, route and modifier for everyone, from floor 1, no stages or
+  // Seals: Glass Cannon (you hit and are hit x1.5), Horde (+2 foes a group), Swift (foes x1.25 speed), Iron (foes x1.4 HP).
+  // Boards (server/mp.mjs, the deepest floor): one per route, one per week. Co-op: a guest follows the host's floors (placed
+  // on the new floor's spawn once its rebuild of the floor is in); the rope takes EVERY player standing still in its circle.
+  const WEEKLY = { GLASS: 1.5, SWIFT: 1.25, IRON: 1.4 };
+  const MOD_NAME = { glass: 'Cañón de cristal', horde: 'Horda', swift: 'Veloces', iron: 'Hierro' };
+  const MOD_TXT = { glass: 'pegas y recibes ×1,5', horde: '+2 enemigos por grupo', swift: 'enemigos ×1,25 de velocidad', iron: 'enemigos ×1,4 de vida' };
+  const glass = () => { const c = cur(); if (c && c.weekly) return c.weekly.mod === 'glass'; const r = G.Modes.run; return !!(live() && r && r.weekly != null && G.Expedition.diveWeekly().week === r.weekly && G.Expedition.diveWeekly().mod === 'glass'); };
+  /** The run's score to its board (core.js run.end, a clean solo run). -> Promise of the server's answer */
+  async function submit(sum) {
+    const A = G.MicaAccount, S = cur();
+    if (!A || !A.name() || !S) return { error: 'not logged in' };
+    const p = sum.parts || scoreParts(sum);
+    const body = { mode: G.Expedition.BOARD, expMode: 'exp-dive', dv: G.Expedition.DV, route: p.route, floor: p.deepest, start: p.start || 1, time: Math.floor(sum.time || 0),
+                   escaped: !!p.escaped, kills: Math.floor(sum.kills || 0), level: Math.floor(sum.level || 1), dex: sum.dex | 0, shiny: !!sum.shiny };
+    if (p.weekly != null) { body.weekly = true; body.week = p.weekly; }
+    const d = await A.call('run-score', body);
+    if (d.ok && d.body && d.body.better && d.body.rank) G.UI.toast(T().f(p.weekly != null ? '¡Nueva marca en la Inmersión semanal! Puesto #{x}' : '¡Nueva marca de Inmersión! Puesto #{x}', d.body.rank), 3400);
+    return d.ok ? d.body : { error: (d.body && d.body.error) || 'offline' };
+  }
+  /** A board: {top, you} (route: a route's; weekly: this week's). */
+  async function board(o) {
+    const A = G.MicaAccount;
+    if (!A || !A.name()) return { top: [], you: null, error: 'not logged in' };
+    const body = { mode: G.Expedition.BOARD, expMode: 'exp-dive', board: 'dive' };
+    if (o && o.weekly) { body.weekly = true; body.week = G.Expedition.diveWeekly().week; } else body.route = (o && o.route) || 'forest';
+    const d = await A.call('run-leaderboard', body);
+    if (!d.ok) return { top: [], you: null, error: (d.body && d.body.error) || 'offline' };
+    return { top: d.body.top || [], you: d.body.you || null };
+  }
+  /** A co-op guest: the host moved to another floor -> once this page's floor is that one, stand on its spawn. */
+  let guestFloor = 0;
+  function guestFollow(f) {
+    if (!(G.Coop && G.Coop.active && !G.Coop.isHost)) { guestFloor = 0; return; }
+    const pl = G.Game && G.Game.player, z = G.World.zone;
+    if (!pl || pl.remote || !z || !z.dive || z.zone !== f || guestFloor === f) return;
+    const first = guestFloor === 0;
+    guestFloor = f;
+    if (first && f === 1) return;   // (the run's start: already on the spawn)
+    pl.x = 20 * (1 + (G.Coop.slot ? G.Coop.slot() : 1)); pl.y = 0; pl.zMask = null; pl.air = null; pl.airZ = 0; pl._px = null;
+    G.Camera.x = pl.x; G.Camera.y = pl.y;
+    G.Game.flash('#000000', 0.5);
+  }
 
   // ---------------- V7: routes, stages, Seals, the Route of Origin, the picker ----------------
   // A route's STAGE (the Expedition save: dive.<route>.stage) is the floor after its deepest guardian beaten: 26, 51, ...;
@@ -518,10 +583,19 @@ G.ExpDive = (() => {
   /** The seal on the run's route (host or guest: each player's own save). */
   const sealK = () => { const r = routeOf(G.Modes.run && G.Modes.run.map); return live() && sealOf(r); };
   /** player.hurt (core.js): the Seal's -10 %. */
-  const hurtK = d => (sealK() ? d * (1 - SEAL.TAKEN) : d);
+  const hurtK = d => (sealK() ? d * (1 - SEAL.TAKEN) : d) * (glass() ? WEEKLY.GLASS : 1);
 
   let pel = null, ponClose = null, pscroll = 0;
-  const pui = { route: 'forest' };
+  const pui = { route: 'forest', board: 'route', tok: 0 };
+  /** The picker's board (the route's or this week's), fetched; a newer render wins. */
+  async function loadBoard() {
+    const tok = ++pui.tok, t = T(), el2 = () => document.getElementById('xd-list');
+    const d = await board(pui.board === 'weekly' ? { weekly: true } : { route: pui.route });
+    if (tok !== pui.tok || !el2()) return;
+    if (d.error === 'not logged in') { el2().textContent = t.t('Inicia sesión para ver la clasificación'); return; }
+    const rows = (d.top || []).slice(0, 10).map((e, i) => `<div class="rk-row"><span class="rk-n">#${i + 1}</span> <b>${esc(e.name)}</b> <span>${esc(t.f('piso {x}', e.floor))}</span></div>`).join('');
+    el2().innerHTML = (rows || esc(t.t('Nadie aún'))) + (d.you && d.you.rank ? `<div class="rk-me">${esc(t.f('Tú: puesto #{x}, piso {x}', d.you.rank, d.you.floor))}</div>` : '');
+  }
   const PCSS = `
 #modes-xdive .xd-head h3 { margin: 0; font-size: 18px; }
 #modes-xdive .xd-routes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 8px 0; }
@@ -533,6 +607,8 @@ G.ExpDive = (() => {
 #modes-xdive .xd-route .xd-row { color: #aab6c8; }
 #modes-xdive .xd-starts { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 6px 0; }
 #modes-xdive .xd-note { color: #aab6c8; font-size: 12px; margin: 4px 0 0; }
+#modes-xdive .xd-weekly, #modes-xdive .xd-board { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; }
+#modes-xdive .xd-list { flex-basis: 100%; max-height: 180px; overflow: auto; font-size: 13px; }
 @media (max-width: 600px) { #modes-xdive .xd-routes { grid-template-columns: 1fr 1fr; } }
 @media (max-height: 520px) { #modes-xdive .xd-route { padding: 3px 7px; } #modes-xdive .xd-route .xd-row { display: none; } #modes-xdive .xd-routes { grid-template-columns: repeat(5, 1fr); gap: 5px; } }
 `;
@@ -571,7 +647,7 @@ G.ExpDive = (() => {
   const back = () => (pel && !pel.classList.contains('hidden') ? closePicker() : false);
   function prender() {
     if (!pel) return;
-    const t = T(), cur0 = G.Expedition.diveStart(), sts = starts(pui.route), st = sts.includes(cur0) ? cur0 : 1;
+    const t = T(), cur0 = G.Expedition.diveStart(), sts = starts(pui.route), st = sts.includes(cur0) ? cur0 : 1, wk = G.Expedition.diveWeekly();
     const card = r => {
       const open1 = routeOpen(r), on = r === pui.route, sealed = sealOf(r), best = bestOf(r), stage = stageOf(r);
       const types = DG().ROUTES[r].types.map(x => t.t(G.U.TYPE_NAME[x] || x)).join(' · ');
@@ -586,7 +662,11 @@ G.ExpDive = (() => {
       <div class="xd-routes">${G.Expedition.DIVE_ROUTES.map(card).join('')}</div>
       <div class="xd-starts"><b>${esc(t.t('Empezar en:'))}</b>${sts.map(f => `<button type="button" class="chip${f === st ? ' on' : ''}" data-start="${f}">${esc(t.f('Piso {x}', f))}</button>`).join('')}</div>
       <p class="xd-note">${esc(t.t('Vence al guardián de cada 25 pisos para guardar una etapa. El primero de cada ruta despierta su Sello: +10 % de daño y −10 % de daño recibido en esa ruta.'))}</p>
-      <button type="button" class="btn primary" id="xd-go">${esc(t.t('¡A bucear!'))}</button>`;
+      <button type="button" class="btn primary" id="xd-go">${esc(t.t('¡A bucear!'))}</button>
+      <div class="xd-weekly"><b>${esc(t.t('Inmersión semanal'))}</b> <span class="xd-note">${esc(t.f('La misma para todos esta semana, desde el piso 1: {x} · {x} ({x}).', t.t(NAME[wk.route]), t.t(MOD_NAME[wk.mod]), t.t(MOD_TXT[wk.mod])))}</span>
+        <button type="button" class="btn" id="xd-weekly">${esc(t.t('Jugar la semanal'))}</button></div>
+      <div class="xd-board"><b>${esc(t.t('Clasificación'))}</b> <span class="filters">${[['route', 'Esta ruta'], ['weekly', 'Semanal']].map(([k, l]) => `<button type="button" class="chip${pui.board === k ? ' on' : ''}" data-board="${k}">${esc(t.t(l))}</button>`).join('')}</span>
+        <div id="xd-list" class="rk-list xd-list">${esc(t.t('Cargando…'))}</div></div>`;
     document.getElementById('xd-back').onclick = () => closePicker();
     pel.querySelectorAll('[data-route]').forEach(b => { b.onclick = () => {
       const r = b.dataset.route;
@@ -597,6 +677,9 @@ G.ExpDive = (() => {
     }; });
     pel.querySelectorAll('[data-start]').forEach(b => { b.onclick = () => { G.Expedition.diveStart(+b.dataset.start); prender(); }; });
     document.getElementById('xd-go').onclick = () => { closePicker(true); G.Flow.play('exp-dive'); };
+    document.getElementById('xd-weekly').onclick = () => { closePicker(true); G.Expedition.playWeekly(); G.Flow.play('exp-dive'); };
+    pel.querySelectorAll('[data-board]').forEach(b => { b.onclick = () => { pui.board = b.dataset.board; prender(); }; });
+    loadBoard();
   }
 
   // ---------------- V6: the escort, the landmarks, the floor's interactables ----------------
@@ -822,6 +905,8 @@ G.ExpDive = (() => {
     const c = { dv: 1, f: S.floor, r: DG().ROUTE_IDS.indexOf(S.route), b: S.bank, s: S.stake, n: S.rescued.length,
                 q: (S.sealed ? 1 : 0) | (S.lost && S.lost.done ? 2 : 0) | (S.escaped ? 4 : 0) | (S.lost && S.lost.follow ? 8 : 0) | (S.lmUsed ? 16 : 0) | (S.obeliskT > 0 ? 32 : 0), o: Math.round(S.ropeT * 4) };
     if (S.lost) c.l = [S.lost.dex, Math.round(S.lost.x), Math.round(S.lost.y)];
+    if (S.weekly) c.w = [S.weekly.week, G.Expedition.DIVE_MODS.indexOf(S.weekly.mod)];   // (V8)
+    if (S.start > 1) c.st = S.start;
     if (S.boss && !S.boss.dead) c.e = S.boss.id;
     if (S.combo && S.combo.n >= 2) c.k = [S.combo.n, Math.round(S.combo.t * 10 / COMBO.WINDOW)];   // (V5: the combo, its window in tenths)
     if (S.tg && S.tg.length) c.tg = S.tg.map(t => [t.k === 'slam' ? 1 : t.k === 'charge' ? 2 : 3, Math.round(t.x), Math.round(t.y), Math.round(t.k === 'slam' ? t.r : t.len),
@@ -834,7 +919,8 @@ G.ExpDive = (() => {
     const route = DG().ROUTE_IDS[c.r | 0] || 'forest', old = view;
     const lost = c.l ? { dex: c.l[0], x: c.l[1], y: c.l[2], done: !!(c.q & 2), follow: !!(c.q & 8), anim: old && old.lost && old.lost.dex === c.l[0] ? old.lost.anim : null } : null;
     const K3 = [null, 'slam', 'charge', 'dash'];
-    view = { lmUsed: !!(c.q & 16), obeliskT: c.q & 32 ? 1 : 0, floor: c.f | 0, route, bank: c.b | 0, stake: c.s | 0, sealed: !!(c.q & 1), escaped: !!(c.q & 4), ropeT: (c.o || 0) / 4, lost,
+    if (c.f) queueMicrotask(() => guestFollow(c.f | 0));   // (V8)
+    view = { weekly: c.w ? { week: c.w[0], mod: G.Expedition.DIVE_MODS[c.w[1]] } : null, rescuedN: c.n | 0, start: c.st || 1, lmUsed: !!(c.q & 16), obeliskT: c.q & 32 ? 1 : 0, floor: c.f | 0, route, bank: c.b | 0, stake: c.s | 0, sealed: !!(c.q & 1), escaped: !!(c.q & 4), ropeT: (c.o || 0) / 4, lost,
              rescued: [], combo: c.k ? { n: c.k[0], t: c.k[1] / 10 * COMBO.WINDOW } : null, tg: (c.tg || []).map(a => ({ k: K3[a[0]], x: a[1], y: a[2], r: a[3], len: a[3], a: a[4] / 100, w: a[5], t: a[6] / 10, T: 1, e: G.EnemyMgr.get ? G.EnemyMgr.get(a[7]) : null })) };
   }
 
@@ -931,6 +1017,7 @@ G.ExpDive = (() => {
 
   return { K, NAME, GUARDIANS, target, pool, guardianOf, routeOf, begin, reset, update, hurt, onKill, pay, scoreParts, result, record,
            setup, roles, press, pad, tick, out, drawButtons, offerLearn, LEARN_AT, get rects() { return rects; },
+           submit, board, guestFollow, WEEKLY, MOD_NAME,
            openPicker, closePicker, back, starts, startOf, stageOf, bestOf, sealOf, seals, routeOpen, hurtK, SEAL, MAIN,
            live, shown, dBlock, applyD, TELE, COMBO, HITSTOP, hold, ecoLayout, LM, ESCORT, get view() { return view; },
            drawGround, drawHud, drawMini, hudLine, hudColor, on, get run() { return S; } };
