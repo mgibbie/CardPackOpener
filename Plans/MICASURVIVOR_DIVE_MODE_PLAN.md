@@ -341,3 +341,13 @@ Gate per the owner's batching rule: stack V0–V3 on `feat/micasurvivor-dive`, g
   - **Not done:**
     - The shared party pot (each player keeps their own ₽ at Meowth).
     - Secret pockets.
+- **V9:**
+  - **Pay** (owner default #8):
+    - The loot table is rescaled so an escaped floor-25 dive pays about 1,565 Pokémonedas, against ~1,470 for a 15-minute base run.
+    - The model is `G.ExpDive.expectedPay`, pinned by a test.
+    - Fractional loot is kept (a KO is worth ~0.13) and rounded down only for display and pay.
+  - **Step cost:** a floor-26 step with 85 foes awake takes 0.17 ms of logic.
+  - **Still open:**
+    - The foes' difficulty curve wants real playtests.
+    - The shared party pot.
+    - The secret pockets.

@@ -207,7 +207,7 @@ try {
 		return out;
 	});
 	A(rs.follow && !rs.doneAtTouch && rs.followed !== false, 'reaching the lost Pokémon: it follows you (not rescued yet)', JSON.stringify(rs));
-	A(rs.rescued.length === 1 && rs.stake >= 12 && rs.floor === 2, 'taking the stairs with it rescues it and puts its loot at stake', JSON.stringify(rs));
+	A(rs.rescued.length === 1 && rs.stake >= 2 && rs.floor === 2, 'taking the stairs with it rescues it and puts its loot at stake', JSON.stringify(rs));
 	A(rs.left === 1, 'a lost Pokémon left behind stays lost', JSON.stringify(rs));
 
 	// ======================== 4. the stairs
@@ -349,7 +349,7 @@ try {
 		return out;
 	});
 	A(combo.n === 10 && Math.abs(combo.xpK - 1.2) < 0.011, 'ten quick KOs: a x10 combo and +20 % XP', JSON.stringify(combo));
-	A(combo.milestone >= 3 + 10, 'the 10th pays its milestone loot (3) on top of the KOs\'', JSON.stringify(combo));
+	A(combo.milestone >= 0.5 + 10 * 0.12, 'the 10th pays its milestone loot on top of the KOs\'', JSON.stringify(combo));
 	const tr = await E(page, () => {
 		const keys = { '{x} rescatado': 'A rescued', '{x}, el guardián de la ruta': "A, the route's guardian", 'Nuevo récord en {x}: piso {x}': 'New record on A: floor B', 'Racha x{x}': 'Combo xA',
 			'¡{x} te sigue! Llévalo a las escaleras': 'A follows you! Take it to the stairs', '— Piso {x} · {x} —': '— Floor A · B —', 'Inmersión · {x}: piso {x}': 'Dive · A: floor B',
@@ -401,7 +401,7 @@ try {
 		out.stillOn5 = S.floor === 5;
 		const stake = S.stake, bank = S.bank;
 		b.hurt(b.maxHp * 2); H.step(3);
-		out.stakeAfter = S.stake; out.secured = S.bank >= bank + stake + 25 && S.stake < 40;   // (the stake + the alpha's own loot banked; a KO or two may land after)
+		out.stakeAfter = S.stake; out.secured = S.bank >= bank + stake + 6 && S.stake < 10;   // (the stake + the alpha's own loot banked; a KO or two may land after)
 		out.bank = S.bank; out.unsealed = !S.sealed;
 		H.toStairs(); H.step(24, 1 / 30, () => { if (S.floor !== 5) return false; H.toStairs(); });
 		out.after = S.floor;
@@ -439,7 +439,7 @@ try {
 	});
 	A(rp.floor === 10 && rp.rope, 'floor 10 has the rope circle', JSON.stringify(rp));
 	A(rp.cancel, 'a hit cancels the rope', JSON.stringify(rp));
-	A(rp.escaped && rp.over && rp.pay === rp.bank + rp.stake, 'standing still in it ends the run ESCAPED; the pay is bank + stake', JSON.stringify(rp));
+	A(rp.escaped && rp.over && rp.pay === Math.floor(rp.bank + rp.stake), 'standing still in it ends the run ESCAPED; the pay is bank + stake', JSON.stringify(rp));
 	await sleep(400);
 	const end = await E(page, () => ({ coins: G.DB.save.coins, best: G.ExpSave.get('dive.forest.best'), runs: G.ExpSave.get('dive.runs'), esc: G.ExpSave.get('dive.escapes'), txt: (document.getElementById('scr-over') || document.body).innerText.replace(/\s+/g, ' ').slice(0, 600) }));
 	A(end.coins > rp.coins0 && end.best === 10 && end.runs === 1 && end.esc === 1, 'the Pokémonedas land in the shared wallet; the Expedition save keeps dive.forest.best = 10, a run, an escape', JSON.stringify(end));
@@ -490,7 +490,7 @@ try {
 		G.Game.endRun(true);
 		return { pay: G.ExpDive.pay(), escaped: S.escaped, coins0 };
 	});
-	A(ft.pay === 100 + 20 && !ft.escaped, 'a faint pays the bank + a quarter of the stake (100 + 81 -> 120)', JSON.stringify(ft));
+	A(ft.pay === Math.floor(100 + 81 / 4) && !ft.escaped, 'a faint pays the bank + a quarter of the stake (100 + 81 -> 120)', JSON.stringify(ft));
 
 	// ======================== 7b. the red ground (PokéDive's telegraphs), on the host
 	const tele = await E(page, async () => {
@@ -799,6 +799,35 @@ try {
 		await waitFor(() => E(pg, () => G.Game.state === 'playing' && G.ExpDive.run), 15000);
 		const wp = await E(pg, () => ({ weekly: G.ExpDive.run.weekly && G.ExpDive.run.weekly.week, w: G.Expedition.diveWeekly().week, line: G.ExpClassic.hudLine(G.Game.player) }));
 		A(wp.weekly === wp.w, 'the picker\'s "Play the weekly" starts this week\'s Weekly Dive', JSON.stringify(wp));
+		await d.ctx.close();
+	}
+
+	// ======================== 12. V9: the pay (owner default #8) and the step cost
+	{
+		const d = await bootPage();
+		const bal = await E(d.page, async () => {
+			await G.Expedition.load();
+			const D = G.ExpDive, k = G.ExpMeta ? G.ExpMeta.K.SCALE : 3, coins = v => Math.round(v * k / 5) * 5;
+			// a 15-minute base run, as game.js endRun pays it: time / 5 + KOs / 4 + 80 a boss + the coins picked up (x1 mul)
+			const base15 = Math.floor(900 / 5) + Math.floor(3000 * 0.25) + 3 * 80 + 300;
+			return { base15, f25: coins(D.expectedPay(25)), f10: coins(D.expectedPay(10)), f50: coins(D.expectedPay(50)), faint25: coins(D.expectedPay(25) * 0.25) };
+		});
+		A(bal.f25 >= bal.base15 * 0.75 && bal.f25 <= bal.base15 * 1.25, `an escaped floor-25 dive pays about a 15-minute base run (${bal.f25} vs ${bal.base15} Pokémonedas)`, JSON.stringify(bal));
+		A(bal.f10 < bal.f25 * 0.5 && bal.f50 > bal.f25 * 2, 'deeper pays more than in proportion (floor 10 < half, floor 50 > twice)', JSON.stringify(bal));
+		// the step cost on a deep floor, every group awake (a phone is ~4x slower: the 16 ms frame keeps room for drawing)
+		const perf = await E(d.page, async () => {
+			const H = window.__t;
+			G.Expedition.diveRoute('reef'); G.ExpSave.best('dive.reef.stage', 26); G.Expedition.diveStart(26);
+			await G.Flow.play('exp-dive'); H.freeze(); H.sturdy();
+			const S = G.ExpDive.run;
+			for (const g of S.groups) for (const e of g.list) { e.xmove = null; e.x = G.Game.player.x + (Math.random() - 0.5) * 500; e.y = G.Game.player.y + (Math.random() - 0.5) * 300; }
+			for (const g of S.groups) g.awake = true;
+			const n = G.EnemyMgr.all().filter(e => !e.dead).length;
+			H.step(30);
+			const t0 = performance.now(); H.step(300); const ms = (performance.now() - t0) / 300;
+			return { floor: S.floor, foes: n, ms: +ms.toFixed(2) };
+		});
+		A(perf.floor === 26 && perf.foes >= 30 && perf.ms < 3, `a floor-26 step with every group awake (${perf.foes} foes): ${perf.ms} ms of logic (< 3 ms)`, JSON.stringify(perf));
 		await d.ctx.close();
 	}
 

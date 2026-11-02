@@ -88,7 +88,9 @@ G.ExpDive = (() => {
     HP_K: 3.3, DMG_K: 2.4, XP_K: 5.6,  // as Classic (js/expedition/classic.js K)
     ALPHA: { scale: 1.45, hp: 9, dmg: 1.5, xp: 8 },
     GUARD: { scale: 1.9, hp: 70, dmg: 1.8, xp: 30 },
-    LOOT: { ko: 1, koPer: 0.1, rescue: 12, rescuePer: 1, alpha: 25, alphaPer: 2, guard: 150, guardPer: 4, floor: 3, floorPer: 0.2 },
+    // V9 (owner default #8: an escaped floor-25 dive pays about a 15-minute base run, ~1,500 Pokémonedas): the loot in the
+    // Expedition's pay units (meta.js coinsOf: x K.SCALE 3). expectedPay() below is the model; micasurvivor_dive_test pins it.
+    LOOT: { ko: 0.12, koPer: 0.01, rescue: 2, rescuePer: 0.2, alpha: 6, alphaPer: 0.4, guard: 40, guardPer: 0.8, floor: 0.5, floorPer: 0.04 },
     FAINT_KEEP: 0.25,
     SLOTS: 3, SPECIAL_K: 1.25, BUFFER: 0.15, HOLD: 0.6   // V4: the kit; a press is kept HOLD s while it waits for a foe in reach
   };
@@ -273,7 +275,7 @@ G.ExpDive = (() => {
     if (S.stairsT >= K.STAIRS_T) nextFloor(t, players);
   }
 
-  function loot(n) { if (n > 0 && S) S.stake += Math.round(n); }
+  function loot(n) { if (n > 0 && S) S.stake += n; }   // (V9: fractions kept: a KO is worth ~0.13; shown and paid rounded down)
   function secure() { S.bank += S.stake; S.stake = 0; S.rescuedBank = S.rescued.length; }
   function rescue() {
     S.lost.follow = true;
@@ -477,9 +479,23 @@ G.ExpDive = (() => {
     return { hop: sp1, slide: dodge, sp2 };
   }
 
+  // ---------------- V9: the pay model ----------------
+  /** The loot (pay units, before meta.js coinsOf) of a dive from floor 1 down to `floors`, with `kos` KOs a floor, every
+   *  lost Pokémon escorted, every alpha / guardian beaten and `combo` KOs in a typical chain; escaped: the whole stake. */
+  function expectedPay(floors, kos = 35, combo = 20) {
+    const L = K.LOOT;
+    let v = 0;
+    for (let f = 1; f <= floors; f++) {
+      v += kos * (L.ko + L.koPer * f) + (f % 25 ? L.rescue + L.rescuePer * f : 0) + L.floor + L.floorPer * f;
+      if (f % 25 === 0) v += L.guard + L.guardPer * f; else if (f % 5 === 0) v += L.alpha + L.alphaPer * f;
+      for (let m = COMBO.MILESTONE; m <= combo; m += COMBO.MILESTONE) v += COMBO.COINS_PER * m / COMBO.MILESTONE * kos / Math.max(combo, 1);
+    }
+    return v;
+  }
+
   // ---------------- the end ----------------
   /** The run's Pokémonedas (bank + stake on an escape, + a quarter of it on a faint). */
-  const pay = () => { const S = cur(); return S ? S.bank + (S.escaped ? S.stake : Math.floor(S.stake * K.FAINT_KEEP)) : 0; };
+  const pay = () => { const S = cur(); return S ? Math.floor(S.bank + (S.escaped ? S.stake : S.stake * K.FAINT_KEEP)) : 0; };
   const rescuedOf = S => (S.rescued && S.rescued.length ? (S.escaped ? S.rescued.length : S.rescuedBank || 0) : S.rescuedN || 0);
   function scoreParts(sum) {
     const S = cur();
@@ -490,7 +506,7 @@ G.ExpDive = (() => {
   function result() {
     const S = cur();
     const lines = [S.weekly ? T().f('Inmersión semanal · {x}', T().t(MOD_NAME[S.weekly.mod])) : null,T().f('Inmersión · {x}: piso {x}', T().t(NAME[S.route]), S.floor),
-      T().f('Botín asegurado: {x} · en juego: {x}', S.bank, S.stake),
+      T().f('Botín asegurado: {x} · en juego: {x}', Math.floor(S.bank), Math.floor(S.stake)),
       T().t(S.escaped ? 'Escapaste: te llevas todo el botín' : 'Caíste: conservas lo asegurado y una cuarta parte del resto'),
       T().f('Rescatados: {x}', rescuedOf(S)), T().f('Alfas: {x} · Guardianes: {x}', S.alphas || 0, S.guardians || 0),
       T().f('Mejor racha: {x}', S.combo && S.combo.best ? S.combo.best : 0)].filter(Boolean);
@@ -761,7 +777,7 @@ G.ExpDive = (() => {
   // 10th pays 3 x (n / 10) loot at stake with a pop-up ("Combo x20!", orange from 20). The XP rides pl.xpMul (the previous
   // combo factor divided out, so the items / League factors on it stay). Hit-stops (the run.hold seam, as the Ultimate's):
   // an alpha / guardian down 0.16 s, the floor's last foe 0.12 s with a ring and a chime.
-  const COMBO = { WINDOW: 3, XP_PER: 0.02, XP_CAP: 0.3, MILESTONE: 10, COINS_PER: 3, HOT: 10, FIRE: 20 };
+  const COMBO = { WINDOW: 3, XP_PER: 0.02, XP_CAP: 0.3, MILESTONE: 10, COINS_PER: 0.5, HOT: 10, FIRE: 20 };   // (V9: milestone loot in pay units)
   const HITSTOP = { boss: 0.16, clear: 0.12 };
   function comboKo(e) {
     const c = S.combo = S.combo || { n: 0, t: 0, best: 0 };
@@ -902,7 +918,7 @@ G.ExpDive = (() => {
    *  Coarse on purpose (the replay keeps it only when it changes). */
   function dBlock() {
     if (!on()) return null;
-    const c = { dv: 1, f: S.floor, r: DG().ROUTE_IDS.indexOf(S.route), b: S.bank, s: S.stake, n: S.rescued.length,
+    const c = { dv: 1, f: S.floor, r: DG().ROUTE_IDS.indexOf(S.route), b: Math.floor(S.bank), s: Math.floor(S.stake), n: S.rescued.length,
                 q: (S.sealed ? 1 : 0) | (S.lost && S.lost.done ? 2 : 0) | (S.escaped ? 4 : 0) | (S.lost && S.lost.follow ? 8 : 0) | (S.lmUsed ? 16 : 0) | (S.obeliskT > 0 ? 32 : 0), o: Math.round(S.ropeT * 4) };
     if (S.lost) c.l = [S.lost.dex, Math.round(S.lost.x), Math.round(S.lost.y)];
     if (S.weekly) c.w = [S.weekly.week, G.Expedition.DIVE_MODS.indexOf(S.weekly.mod)];   // (V8)
@@ -984,7 +1000,7 @@ G.ExpDive = (() => {
   function hudLine() {
     const S = cur();
     if (!S) return '';
-    return T().f('PISO {x}', S.floor) + ' · ' + T().t(NAME[S.route]).toUpperCase() + ' · ' + T().f('{x} asegurado · {x} en juego', S.bank, S.stake);
+    return T().f('PISO {x}', S.floor) + ' · ' + T().t(NAME[S.route]).toUpperCase() + ' · ' + T().f('{x} asegurado · {x} en juego', Math.floor(S.bank), Math.floor(S.stake));
   }
   const hudColor = () => { const S = cur(); return S && S.sealed ? '#ff9a6b' : S && S.ropeT > 0 ? '#b48aff' : '#9fd8ff'; };
   function drawHud(ctx, w, h, pl, st, F) {
@@ -1017,7 +1033,7 @@ G.ExpDive = (() => {
 
   return { K, NAME, GUARDIANS, target, pool, guardianOf, routeOf, begin, reset, update, hurt, onKill, pay, scoreParts, result, record,
            setup, roles, press, pad, tick, out, drawButtons, offerLearn, LEARN_AT, get rects() { return rects; },
-           submit, board, guestFollow, WEEKLY, MOD_NAME,
+           submit, board, guestFollow, WEEKLY, MOD_NAME, expectedPay,
            openPicker, closePicker, back, starts, startOf, stageOf, bestOf, sealOf, seals, routeOpen, hurtK, SEAL, MAIN,
            live, shown, dBlock, applyD, TELE, COMBO, HITSTOP, hold, ecoLayout, LM, ESCORT, get view() { return view; },
            drawGround, drawHud, drawMini, hudLine, hudColor, on, get run() { return S; } };
