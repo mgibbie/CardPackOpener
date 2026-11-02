@@ -193,7 +193,7 @@ const server = http.createServer(async (req, res) => {
 const SAVE = name => ({
 	v: 3, name, created: 1, updated: 1, coins: 500,
 	// (the base collection: Bulbasaur, Pikachu -> Pichu's family, Vaporeon -> Eevee's, Kingambit -> Pawniard's)
-	owned: { 1: { at: 1, from: 'starter' }, 25: { at: 1, from: 'gacha' }, 134: { at: 1, from: 'gacha' }, 983: { at: 1, from: 'gacha' } },
+	owned: { 1: { at: 1, from: 'starter' }, 25: { at: 1, from: 'gacha' }, 134: { at: 1, from: 'gacha' }, 983: { at: 1, from: 'gacha' }, 133: { at: 1, from: 'gacha' }, 624: { at: 1, from: 'gacha' } },   // (owner 2026-11-02: a run starts only as an owned stage: Eevee and Pawniard owned too, to evolve from them)
 	shiny: {}, partner: 1, partnerShiny: false, starter: 1, personality: { trait: 'brave', scores: {} },
 	upgrades: {}, ptm: {}, pz: {}, zmis: {}, tickets: { t1: 0, t10: 0 }, pity: {}, legends: {}, arenas: {}, itemsFound: {},
 	evoMoves: {}, ach: {}, missions: {}, profile: { favs: [], title: '' }, modes: {}, pupgDone: true, pupg: {}, stats: {},

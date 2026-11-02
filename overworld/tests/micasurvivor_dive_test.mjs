@@ -920,7 +920,9 @@ try {
 			G.DB.save.owned[979] = { at: 1, from: 'gacha' };
 			out.family = G.FAMILY[979]; out.playable = LG().playable(56);
 			out.open = [LG().formOpen(56), LG().formOpen(57), LG().formOpen(979)];
-			out.lockedSet = LG().setForm(57);
+			out.lockedSet = LG().setForm(57); out.rootSet = LG().setForm(56);
+			try { localStorage.removeItem('micasurvivorexp_pickform'); } catch (e) { /* */ }
+			out.defaultForm = LG().formFor(56);
 			out.set = LG().setPick(56) && LG().setForm(979);
 			await G.Flow.play('exp-dive'); H.freeze();
 			const pl = G.Game.player, R = LG().run;
@@ -931,8 +933,8 @@ try {
 			out.charm1 = LG().formOpen(5);
 			return out;
 		});
-		A(fm.family === 56 && fm.playable && JSON.stringify(fm.open) === '[true,false,true]' && fm.lockedSet === false && fm.set,
-			'Annihilape owned: the Mankey family is playable and can start as Annihilape (Primeape, not owned, stays locked)', JSON.stringify(fm));
+		A(fm.family === 56 && fm.playable && JSON.stringify(fm.open) === '[false,false,true]' && fm.lockedSet === false && fm.rootSet === false && fm.defaultForm === 979 && fm.set,
+			'Annihilape owned: the Mankey family is playable, but only AS Annihilape (owner: unlocking one does not unlock the family; Mankey and Primeape stay locked)', JSON.stringify(fm));
 		A(fm.run && fm.run.dex === 979 && fm.run.form === 979 && fm.run.member === 56 && fm.run.evo === 0 && fm.run.hpFull, 'the run starts AS Annihilape (its body and stats; not counted as an evolution)', JSON.stringify(fm.run));
 		A(fm.charm0 === false && fm.charm1 === true, 'a form reached in a run (the league.form set) can start the next one', JSON.stringify(fm));
 		// the picker shows "Start as"
@@ -945,7 +947,7 @@ try {
 			G.ExpLeague.renderPicker(box, () => {}, () => {});
 			return { chips: [...box.querySelectorAll('[data-form]')].map(c => [+c.dataset.form, c.classList.contains('on'), c.getAttribute('aria-disabled') === 'true']), txt: box.innerText.includes('Start as') };
 		});
-		A(pk.txt && JSON.stringify(pk.chips) === '[[56,false,false],[57,false,true],[979,true,false]]', 'the League picker: "Start as" Mankey / Primeape (locked) / Annihilape (picked)', JSON.stringify(pk));
+		A(pk.txt && JSON.stringify(pk.chips) === '[[56,false,true],[57,false,true],[979,true,false]]', 'the League picker: "Start as" Mankey (locked) / Primeape (locked) / Annihilape (picked)', JSON.stringify(pk));
 		await d.ctx.close();
 	}
 
