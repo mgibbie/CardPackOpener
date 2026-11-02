@@ -98,6 +98,8 @@ G.WatchUI = (() => {
     A = a; B = b || a;
     const ex = !!exact || B === a;   // glide from frame a itself (a replay) or from where things are drawn now (live)
     world(a);
+    // (the props the run broke and the altars it used: the tape's field 15 / a live snapshot's wp. Owner bug 2026-11-02)
+    if (a.wp) G.World.viewProps(a.wp);
     // your Pokémon
     if (!pl || dexNow !== a.me[0]) {
       pl = puppet(a.me[0], a.me[1]); dexNow = a.me[0]; movesKey = ''; castT = new Map();

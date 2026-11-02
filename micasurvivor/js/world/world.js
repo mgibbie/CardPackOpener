@@ -49,6 +49,13 @@ G.World = (() => {
   let fade = null;                         // { from, images, t }
   const MAX_IMAGES = 48, MAX_DATA = 400;
   const broken = new Set();                // props destruidos: "tx,ty"
+  // MicaSurvivor (owner bug 2026-11-02: a used altar / a broken chest came back in the replay): the altars used ("tx,ty"),
+  // and, in the order they happened, the broken and used keys since the world was last cleared (gen): what the replay
+  // recorder reads (js/mica/replay.js field 15), so the viewer's world (rebuilt from the seed) shows them too (viewProps)
+  const used = new Set();
+  let blog = [], ulog = [], gen = 1;
+  const breakKey = k => { if (!broken.has(k)) { broken.add(k); blog.push(k); } };
+  const clearProps = () => { broken.clear(); used.clear(); blog = []; ulog = []; gen++; };
   let nextPropId = 1;
   // MicaSurvivor (DLC D1): an Expedition zone (js/expedition/terrain.js) or null. With null (every base mode) none of
   // the zone branches below run: the base world is exactly as before.
@@ -177,6 +184,7 @@ G.World = (() => {
       if (!type) continue;
 
       const p = makeProp(type, tx, ty, kind);
+      if (type === 'altar' && used.has(tx + ',' + ty)) p.used = true;   // (a chunk built again keeps its used altar)
       c.props.push(p);
       if (p.solid) c.propAt.set(tx + ',' + ty, p);
     }
@@ -483,11 +491,11 @@ G.World = (() => {
     if (broken.has(k)) return;
     const c = data.get(Math.floor(tx / N) + ',' + Math.floor(ty / N));
     const p = c && c.props.find(o => o.tx === tx && o.ty === ty);
-    if (p) destroyProp(p, true); else broken.add(k);
+    if (p) destroyProp(p, true); else breakKey(k);
   }
 
   function destroyProp(p, fromNet = false) {
-    broken.add(p.tx + ',' + p.ty);
+    breakKey(p.tx + ',' + p.ty);
     if (G.Coop.active && !fromNet) G.Coop.propBroken(p);
     const cx = Math.floor(p.tx / N), cy = Math.floor(p.ty / N);
     const c = data.get(cx + ',' + cy);
@@ -681,9 +689,75 @@ G.World = (() => {
 
   // ---------------- control ----------------
 
+  // ---------------- MicaSurvivor: the props' state for the replay / a live viewer ----------------
+
+  /** An altar used (js/systems/interact.js): kept by tile, so a chunk built again and the replay know it. */
+  function useSpecial(p) {
+    p.used = true;
+    const k = p.tx + ',' + p.ty;
+    if (!used.has(k)) { used.add(k); ulog.push(k); }
+  }
+  /** The recorder's view: {gen, b, u} (the logs in order; a new gen = the world was cleared). Read-only. */
+  const propLog = () => ({ gen, b: blog, u: ulog });
+  const propOf = k => {
+    const [tx, ty] = k.split(',').map(Number);
+    const c = data.get(Math.floor(tx / N) + ',' + Math.floor(ty / N));
+    return { c, p: c ? c.props.find(o => o.tx === tx && o.ty === ty) : null, ck: Math.floor(tx / N) + ',' + Math.floor(ty / N) };
+  };
+  /** The specials near (x, y) that aren't at rest: [tx, ty, %] (a spring's charge < 100 %, a locked chest being opened). */
+  function specialsLive(x, y, r) {
+    const out = [];
+    for (const p of specialsNear(x, y, r)) {
+      if (p.type === 'spring' && p.charge < 0.995) out.push(p.tx, p.ty, Math.round(p.charge * 100));
+      else if (p.type === 'bigchest' && p.open > 0) out.push(p.tx, p.ty, Math.round(Math.min(1, p.open / G.Interact.CHEST_TIME) * 100));
+    }
+    return out;
+  }
+  /** A live snapshot's props near (x, y): {w: [cx0, cy0, cx1, cy1] the chunks it covers, b / u: the broken / used tiles in them (flat)}. */
+  function propsNear(x, y, rc = 2) {
+    const cx = Math.floor(x / CW), cy = Math.floor(y / CW), w = [cx - rc, cy - rc, cx + rc, cy + rc];
+    const inW = k => { const i = k.indexOf(','), tx = +k.slice(0, i), ty = +k.slice(i + 1), a = Math.floor(tx / N), b = Math.floor(ty / N); return a >= w[0] && a <= w[2] && b >= w[1] && b <= w[3]; };
+    const flat = set => { const o = []; for (const k of set) if (inW(k)) { const i = k.indexOf(','); o.push(+k.slice(0, i), +k.slice(i + 1)); } return o; };
+    return { w, b: flat(broken), u: flat(used) };
+  }
+  let viewS = new Map();   // (a viewer: the specials its last frame set, "tx,ty" -> %)
+  /**
+   * A replay / live viewer: the props as the tape (or the snapshot) has them: wp = {b, u: the broken / used tiles (a Set of
+   * "tx,ty", or flat [tx, ty, ...]), s: [tx, ty, %] the specials not at rest, w?: the chunks it covers (a live snapshot: only
+   * those are made to match)}. Quietly: no effects, no loot. A prop broken later (seeking back) comes back.
+   */
+  function viewProps(wp) {
+    if (!wp) return;
+    const toSet = v => { if (v instanceof Set) return v; const o = new Set(); if (Array.isArray(v)) for (let i = 0; i + 1 < v.length; i += 2) o.add(v[i] + ',' + v[i + 1]); return o; };
+    const b = toSet(wp.b), u = toSet(wp.u), w = Array.isArray(wp.w) ? wp.w : null;
+    const inW = k => { if (!w) return true; const i = k.indexOf(','), a = Math.floor(+k.slice(0, i) / N), c = Math.floor(+k.slice(i + 1) / N); return a >= w[0] && a <= w[2] && c >= w[1] && c <= w[3]; };
+    // what the frame doesn't have any more (seeking back): their chunks are built again from the seed
+    const dirty = new Set();
+    for (const k of broken) if (!b.has(k) && inW(k)) { broken.delete(k); dirty.add(propOf(k).ck); }
+    for (const k of used) if (!u.has(k) && inW(k)) { used.delete(k); dirty.add(propOf(k).ck); }
+    for (const ck of dirty) data.delete(ck);
+    for (const k of b) if (!broken.has(k)) {
+      broken.add(k);
+      const { c, p } = propOf(k);
+      if (c && p) { c.props.splice(c.props.indexOf(p), 1); c.propAt.delete(k); }
+    }
+    for (const k of u) if (!used.has(k)) { used.add(k); const { p } = propOf(k); if (p) p.used = true; }
+    // the springs' charge, the locked chests' progress
+    const ns = new Map(), sl = Array.isArray(wp.s) ? wp.s : [];
+    for (let i = 0; i + 2 < sl.length; i += 3) ns.set(sl[i] + ',' + sl[i + 1], sl[i + 2]);
+    for (const k of new Set([...viewS.keys(), ...ns.keys()])) {
+      const { p } = propOf(k);
+      if (!p) continue;
+      const v = ns.has(k) ? ns.get(k) / 100 : null;
+      if (p.type === 'spring') p.charge = v == null ? 1 : v;
+      else if (p.type === 'bigchest') p.open = v == null ? 0 : v * G.Interact.CHEST_TIME;
+    }
+    viewS = ns;
+  }
+
   function reset(s) {
     seed = (s | 0) || 1;
-    data.clear(); images.clear(); broken.clear();
+    data.clear(); images.clear(); clearProps();
     fade = null; arena = null;
     zone = null;   // DLC D1: a new world has no Expedition zone until the Expedition sets one (setZone)
   }
@@ -719,7 +793,7 @@ G.World = (() => {
   return {
     TS, CW, reset, setBiome, biomeName, liquidKind, liquidEffect, walkable,
     kindAt, isWall, isLiquid, isFree, collide, projectileBlock, propsInCircle, nearestBreakable,
-    damageProp, breakAt, specialsNear, update,
+    damageProp, breakAt, specialsNear, update, useSpecial, propLog, propsNear, specialsLive, viewProps,
     // MicaSurvivor (M5 lote 10): el minimapa lee el terreno por casilla (0 suelo, 1 pared, 2 líquido) y los objetos
     terrain: terrainAt, propsAround,
     get seed() { return seed; },   // MicaSurvivor (M5 lote 6): el Desafío diario siembra el mundo (pruebas)
@@ -745,7 +819,7 @@ G.World = (() => {
     setZone(z) {
       zone = z || null;
       if (zone) zone.id = ++zoneIds;
-      data.clear(); images.clear(); broken.clear();
+      data.clear(); images.clear(); clearProps();
       if (fade) fade.images = new Map();
     },
     get zone() { return zone; }, maskAt, layerAt, ledgeDown

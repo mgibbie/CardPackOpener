@@ -38,6 +38,10 @@
  *                   14 A   the moves cast since the previous frame, by every player: [slot, move id, level, aim x 100,
  *                          evolved, time offset (tenths of a second, <= 0, from this frame's time)]: the viewer draws
  *                          every player's attacks as ghosts where they really aimed
+ *                   15 W   the world's props (2026-11-02): {c: from nothing, b: tiles broken since the previous frame, u: altars
+ *                          used since, s: the springs / locked chests near you not at rest}: the viewer's world is rebuilt from
+ *                          the seed, so without it a used altar or a broken chest / rock / patch of grass came back in the
+ *                          replay. Every segment's first frame has it (c); a tape from before has none (its world as built)
  *                 A v2 tape has no field 6 (the partners' rows are field 12). Flags (P and R): 1 fainted, 2 walking,
  *                 4 Dynamax, 8 co-op down, 16 hidden (Z-move), 32 airborne (a hop / glide), 64 a verb (dodge, slide).
  *   Viewing       G.Replay.session(...) -> a Session (segments loaded on demand, each a Reader with checkpoints;
@@ -156,7 +160,7 @@ G.Replay = (() => {
   /** The encoder's memory of the previous frame (a new segment starts from nothing: its first frame is a keyframe). */
   function resetEnc(r) {
     Object.assign(r, { P: null, C: null, S: '', E: { m: new Map(), v: new Map() }, Kp: { m: new Map(), v: new Map() }, M: '', t: 0,
-      XA: '', XW: '', XO: '', XF: '', XC: '', R: [], PS: '' });
+      XA: '', XW: '', XO: '', XF: '', XC: '', R: [], PS: '', WG: null, WB: 0, WU: 0, WS: '' });
   }
 
   /** Each frame of a run (game.js frame): ~a microsecond, a snapshot every REC_DT of run time. */
@@ -495,17 +499,40 @@ G.Replay = (() => {
     const A = r.casts.length ? r.casts.map(c => [c[0], c[1], c[2], c[3], c[4], Math.min(0, c[5] - s.t)]) : 0;
     r.casts = [];
     const first = !r.frames.length;
+    const W = worldOf(r, first);
     const f = [first ? s.t : s.t - r.t, diff(r.P, P), diff(r.C, C), S !== r.S ? JSON.parse(S) : 0, E.out, Kt.out, 0,
       XA !== r.XA ? (XA ? JSON.parse(XA) : {}) : 0, XW !== r.XW ? (XW ? JSON.parse(XW) : {}) : 0,
       XO !== r.XO ? (XO ? JSON.parse(XO) : {}) : 0, XF !== r.XF ? (XF ? JSON.parse(XF) : {}) : 0,
       XC !== r.XC ? (XC ? JSON.parse(XC) : {}) : 0,
-      any ? Rf : 0, PS !== r.PS ? JSON.parse(PS || '[]') : 0, A];
+      any ? Rf : 0, PS !== r.PS ? JSON.parse(PS || '[]') : 0, A, W];
     while (f.length > 1 && f[f.length - 1] === 0) f.pop();
     const txt = JSON.stringify(f);
     if (first) r.segT0 = s.t;
     r.frames.push(txt); r.bytes += txt.length + 1; r.total++;
     r.P = P; r.C = C; r.S = S; r.E = E.st; r.Kp = Kt.st; r.t = s.t; r.XA = XA; r.XW = XW; r.XO = XO; r.XF = XF; r.XC = XC;
     r.R = rows; r.PS = PS;
+  }
+
+  /**
+   * Field 15, the world's props (owner bug 2026-11-02: an altar used / a chest or rock broken came back in the replay, whose
+   * world is rebuilt from the seed): {c: 1 = from nothing (a segment's first frame, or the world was cleared: a new zone),
+   * b: the tiles broken since the previous frame [tx, ty, ...], u: the altars used since [tx, ty, ...], s: the specials
+   * near you that aren't at rest [tx, ty, %] (springs, locked chests), whole when it changed}; 0 = nothing new.
+   */
+  function worldOf(r, first) {
+    const W = G.World, log = W.propLog ? W.propLog() : null;
+    if (!log) return 0;
+    const pl = G.Game.player;
+    const flat = l => { const o = []; for (const k of l) { const i = k.indexOf(','); o.push(+k.slice(0, i), +k.slice(i + 1)); } return o; };
+    const sp = pl && W.specialsLive ? W.specialsLive(pl.x, pl.y, 900) : [];
+    const SS = sp.length ? sp.join(',') : '';
+    const out = {};
+    if (first || r.WG !== log.gen) { out.c = 1; r.WB = 0; r.WU = 0; r.WG = log.gen; }
+    if (log.b.length > r.WB) out.b = flat(log.b.slice(r.WB));
+    if (log.u.length > r.WU) out.u = flat(log.u.slice(r.WU));
+    if (SS !== r.WS || out.c) { if (sp.length || !out.c) out.s = sp; }
+    r.WB = log.b.length; r.WU = log.u.length; r.WS = SS;
+    return Object.keys(out).length ? out : 0;
   }
 
   /** U4: closes the segment being recorded (packed in the background; uploaded too once the session has two). */
@@ -622,7 +649,7 @@ G.Replay = (() => {
     const dE = { m: new Map(), v: new Map() }, dK = { m: new Map(), v: new Map() };
     let eE = { m: new Map(), v: new Map() }, eK = { m: new Map(), v: new Map() };
     let P = [0, 0, 0, 0, 0, 0, 0], C = [0, 0, 0, 0, 0, 0], pP = null, pC = null, dt = 0, died = [];
-    let R = [], pR = [], casts = [], t = 0, v2 = false;
+    let R = [], pR = [], casts = [], t = 0, v2 = false, W = null;   // (W: field 15 of the frames merged so far)
     const late = new Array(15).fill(0);   // the latest whole-value fields since the last frame out: 3 S, 6 M, 7-11 the x fields, 13 PS
     const sorted = st => [...st.m.values()].sort((a, b) => a[0] - b[0]);
     for (let i = 0; i < frames.length; i++) {
@@ -637,6 +664,13 @@ G.Replay = (() => {
       if (f.length > 12) v2 = true;
       if (f[12]) applyRows(R, f[12]);
       if (f[14]) for (const c of f[14]) casts.push([c[0], c[1], c[2], c[3], c[4], c[5] + t]);
+      if (f[15]) {   // (the world's props: from nothing again on c, the tiles of both frames, the latest specials)
+        const w = f[15];
+        if (w.c || !W) W = w.c ? { c: 1 } : {};
+        if (w.b) W.b = (W.b || []).concat(w.b);
+        if (w.u) W.u = (W.u || []).concat(w.u);
+        if (w.s) W.s = w.s;
+      }
       if (i % 2 === 0 && i !== frames.length - 1) continue;
       const E = table(eE, sorted(dE), ew, died), Kt = table(eK, sorted(dK), kw, null);
       eE = E.st; eK = Kt.st;
@@ -649,10 +683,10 @@ G.Replay = (() => {
         Rf = any ? l : 0;
       }
       const A = casts.length ? casts.map(c => [c[0], c[1], c[2], c[3], c[4], Math.min(0, c[5] - t)]) : 0;
-      const o = [dt, diff(pP, P), diff(pC, C), late[3], E.out, Kt.out, late[6], late[7], late[8], late[9], late[10], late[11], Rf, late[13], A];
+      const o = [dt, diff(pP, P), diff(pC, C), late[3], E.out, Kt.out, late[6], late[7], late[8], late[9], late[10], late[11], Rf, late[13], A, W || 0];
       while (o.length > 1 && o[o.length - 1] === 0) o.pop();
       out.push(JSON.stringify(o));
-      pP = P.slice(); pC = C.slice(); dt = 0; died = []; late.fill(0); pR = R.slice(); casts = [];
+      pP = P.slice(); pC = C.slice(); dt = 0; died = []; late.fill(0); pR = R.slice(); casts = []; W = null;
     }
     return out;
   }
@@ -663,8 +697,10 @@ G.Replay = (() => {
     const players = Array.isArray(h.players) ? h.players : [];
     const times = [];
     const tbl = () => ({ m: new Map(), v: new Map() }), ctbl = x => ({ m: new Map(x.m), v: new Map(x.v) });
-    const fresh = () => ({ i: -1, t: 0, P: [0, 0, 0, 0, 0, 0, 0], C: [0, 0, 0, 0, 0, 0], S: {}, E: tbl(), K: tbl(), M: [], A: null, W: null, O: null, F: null, X: null, kd: [], R: [], PS: null, CS: [] });
-    const clone = st => ({ i: st.i, t: st.t, P: st.P.slice(), C: st.C.slice(), S: st.S, E: ctbl(st.E), K: ctbl(st.K), M: st.M, A: st.A, W: st.W, O: st.O, F: st.F, X: st.X, kd: [], R: st.R.slice(), PS: st.PS, CS: st.CS });
+    const fresh = () => ({ i: -1, t: 0, P: [0, 0, 0, 0, 0, 0, 0], C: [0, 0, 0, 0, 0, 0], S: {}, E: tbl(), K: tbl(), M: [], A: null, W: null, O: null, F: null, X: null, kd: [], R: [], PS: null, CS: [], WB: null, WU: null, WS: null });
+    const clone = st => ({ i: st.i, t: st.t, P: st.P.slice(), C: st.C.slice(), S: st.S, E: ctbl(st.E), K: ctbl(st.K), M: st.M, A: st.A, W: st.W, O: st.O, F: st.F, X: st.X, kd: [], R: st.R.slice(), PS: st.PS, CS: st.CS, WB: st.WB, WU: st.WU, WS: st.WS });
+    // (field 15: the broken / used tiles as Sets of "tx,ty", copied on write: a checkpoint keeps its own)
+    const addTiles = (set, l) => { const o = new Set(set); for (let i = 0; i + 1 < l.length; i += 2) o.add(l[i] + ',' + l[i + 1]); return o; };
     function step(st) {
       const f = frames[st.i + 1];
       st.i++;
@@ -683,6 +719,13 @@ G.Replay = (() => {
       if (f[12]) { st.R = st.R.slice(); applyRows(st.R, f[12]); }   // (U4: the other players)
       if (f[13]) st.PS = f[13];
       st.CS = f[14] ? f[14].map(c => [c[0], c[1], c[2], c[3] / 100, c[4], st.t + (c[5] || 0)]) : [];   // (U4: this frame's casts, absolute times)
+      if (f[15]) {   // (the world's props; a tape from before has none: its viewer's world stays as the seed builds it)
+        const w = f[15];
+        if (w.c || !st.WB) { st.WB = new Set(); st.WU = new Set(); st.WS = []; }
+        if (w.b && w.b.length) st.WB = addTiles(st.WB, w.b);
+        if (w.u && w.u.length) st.WU = addTiles(st.WU, w.u);
+        if (w.s) st.WS = w.s;
+      }
     }
     // one pass: the frame times and a checkpoint every CHECK_EVERY frames
     const checks = [];
@@ -716,6 +759,7 @@ G.Replay = (() => {
       if (s.x && st.F && (st.F.v || st.F.r)) s.x = Object.assign({}, s.x, st.F.v ? { v: st.F.v } : {}, st.F.r ? { r: st.F.r } : {});   // (DLC D11)
       if (s.x && st.X) { s.x = Object.assign({}, s.x); if (Object.keys(st.X).length) s.x.c = st.X; else delete s.x.c; }   // (DLC D11)
       s.kd = st.kd;
+      if (st.WB) s.wp = { b: st.WB, u: st.WU, s: st.WS || [] };   // (field 15: js/world/world.js viewProps)
       if (v2) povOf(s, st, follow);
       return s;
     }
