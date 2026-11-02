@@ -375,6 +375,14 @@
 	},
 	"entries": [
 		{
+			"sha": "73fcf75",
+			"date": "2026-11-02",
+			"kind": "patch",
+			"title": "Micatro: Komala skipped by every mod's Joker destroyer; Noibat / Noivern stack",
+			"body": "Komala in other mods (each on its own contentRev, gated by the recorded pin so\nearlier runs replay as recorded; LEGACY_MOD_VERSIONS untouched):\n- Risk of Jesters r1: Egocentrism, Benthic Bloom pass over a joker a mod makes\n  act Eternal for destroy (they never skipped an Eternal and still don't)\n- Bunco r2: Carnival and a Scattering joker's neighbour use\n  can_be_destroyed_by_joker (Scattering destroyed Komala outright before)\n- Milatro r1: Betrayal; BETMMA r1: the Tentacle edition\n- More Fluff r3: Less Fluff (no X Mult for a Komala it can't destroy)\n\nPokermon r69, Noibat / Noivern: each undebuffed copy doubles the Glass roll's\nnumerator (as Oops! All 6s), so one copy 1 in 2, two always, Oops! doubles\nagain, Regice still blocks; a Tera'd copy counts. Tooltips show \"Now 1 in 2\" /\n\"Now always\" / \"Now never\". r62-r68 runs replay as recorded.\n\nThe Glass card's own tooltip shows its live odds (describe.js enh_live_vars ->\nprobability_vars, RNG restored; view.js enh_vars; ui/markup.js; js/engine/odds.js).\n\nTests: mod_komala_destroyers_test (every destroyer with Komala, an Eternal\nunchanged, old-pin rules + an old recipe replayed as recorded),\npokermon_glass_odds_tooltip_test, pokermon_gen6_batch2_test (stacking, played,\nTera, Regice, r68 rules). More Fluff fingerprints re-recorded on r3 (identical\napart from the pin).",
+			"cards": []
+		},
+		{
 			"sha": "1c94b70",
 			"date": "2026-11-02",
 			"kind": "patch",
