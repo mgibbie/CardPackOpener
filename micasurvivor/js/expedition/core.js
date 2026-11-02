@@ -177,6 +177,7 @@ G.Exp = (() => {
   const TR = () => G.ExpTier;
   const MT = () => G.ExpMeta;
   const SV = () => G.ExpSurv;
+  const DV_ = () => G.ExpDive;   // (Dive V2)
   const expRun = () => G.Modes.isExp();
   const guestRun = () => !!(G.Coop && G.Coop.active && !G.Coop.isHost);   // (D11: a co-op guest's Expedition run)
 
@@ -184,12 +185,14 @@ G.Exp = (() => {
     if (inited) return;
     inited = true;
     G.Hooks.on('run.start', cfg => {
-      if (!expRun()) { if (C()) C().reset(); if (LG()) LG().reset(); if (LV()) LV().reset(); if (UL()) UL().reset(); if (EC()) EC().reset(); if (CP()) CP().reset(); if (RX()) RX().reset(); if (MT()) MT().reset(); if (SV()) SV().reset(); return; }
+      if (!expRun()) { if (C()) C().reset(); if (LG()) LG().reset(); if (LV()) LV().reset(); if (UL()) UL().reset(); if (EC()) EC().reset(); if (CP()) CP().reset(); if (RX()) RX().reset(); if (MT()) MT().reset(); if (SV()) SV().reset(); if (DV_()) DV_().reset(); return; }
       cur = { mode: cfg.mode, dv: cfg.dv, map: cfg.map, diff: cfg.diff, zone: 0, th: '' };
       enterZone(1);
       // (D3: Classic's timeline; D11: Survival's too, on the same engine. A co-op guest runs neither: the host's `c` / `s` blocks)
       if (C()) C().reset();
       if ((cfg.mode === 'exp-classic' || cfg.mode === 'exp-survival') && C() && !guestRun()) C().begin(cfg);
+      if (DV_()) DV_().reset();
+      if (cfg.mode === 'exp-dive' && DV_() && !guestRun()) DV_().begin(cfg);   // (Dive V2: floor 1, its foes, the lost Pokémon)
       if (LG()) LG().begin(G.Game.player, cfg);                 // (D4: the League member)
       if (MT()) MT().begin(G.Game.player);                      // (D10: the Lab / perks / boosts row, before the level-ups read it)
       if (SV()) SV().begin(G.Game.player, cfg);                 // (D11: Survival's pacts, siege, wounds; a base / Classic run: none)
@@ -211,6 +214,7 @@ G.Exp = (() => {
     // (D6: an Ultimate's i-frames come first, so a cast never spends the shield; then the items; then the hurt charge)
     G.Hooks.on('player.hurt', (d, pl, type) => {
       if (UL() && UL().guard(pl)) return 0;
+      if (DV_() && d > 0) DV_().hurt(pl);   // (Dive V2: a hit cancels the Escape Rope)
       if (IT()) d = IT().hurt(d, pl, type);
       if (UL()) UL().hurt(d, pl);
       return d;
@@ -222,9 +226,9 @@ G.Exp = (() => {
     G.Hooks.on('combat.ghost', (pl, id, lvl, aim) => { if (MV()) MV().ghost(pl, id, lvl, aim); });
     G.Hooks.on('run.tick', (dt, pl) => { if (!expRun()) return; if (MV()) MV().tick(dt); if (IT()) IT().tick(dt, pl); if (LV()) LV().tick(dt); if (UL()) UL().tick(dt, pl); if (EC()) EC().tick(dt, pl); if (CP()) CP().tick(dt, pl); if (RX()) RX().tick(dt, pl); if (MT()) MT().tick(dt, pl); if (SV()) SV().tick(dt, pl); if (cur && G.LocalCoop && G.LocalCoop.on) cur.mate = true; });   // (D11: Survival, last: it reads what this step healed; a local partner keeps the run off the boards)
     // (D6: the Ultimate's charge from kills, and its hit-stop)
-    G.Hooks.on('enemy.ko', (e, pl) => { if (!expRun()) return; if (UL()) UL().onKill(e, pl); if (EC()) EC().onKill(e, pl); if (MT()) MT().onKill(e, pl); if (LV()) LV().onKill(e, pl); });   // (D17: a boss's held item)   // (D10: research)   // (D7: ₽ for the kill; D8: a capture target's faint is seen in run.tick)
+    G.Hooks.on('enemy.ko', (e, pl) => { if (!expRun()) return; if (UL()) UL().onKill(e, pl); if (EC()) EC().onKill(e, pl); if (MT()) MT().onKill(e, pl); if (LV()) LV().onKill(e, pl); if (DV_()) DV_().onKill(e, pl); });   // (Dive V2: the loot)   // (D17: a boss's held item)   // (D10: research)   // (D7: ₽ for the kill; D8: a capture target's faint is seen in run.tick)
     // (D7: the zone's interactables on the minimap, under the fog of war; the seam only runs in a zone)
-    G.Hooks.on('minimap.draw', (ctx, pl, api) => { if (EC()) EC().drawMini(ctx, pl, api); if (CP()) CP().drawMini(ctx, pl, api); });   // (D8: the encounters)
+    G.Hooks.on('minimap.draw', (ctx, pl, api) => { if (DV_()) DV_().drawMini(ctx, pl, api); if (EC()) EC().drawMini(ctx, pl, api); if (CP()) CP().drawMini(ctx, pl, api); });   // (D8: the encounters)
     G.Hooks.on('run.hold', (dt, pl) => { if (!expRun()) return undefined; const u = UL() ? UL().hold(dt, pl) : undefined; return u || (CP() ? CP().hold(dt, pl) : undefined); });   // (D8: the capture cinematic)
     G.Hooks.on('replay.header', h => {
       if (!expRun()) return h;
@@ -261,6 +265,14 @@ G.Exp = (() => {
         out.lines = out.lines.concat(sr.lines, [tr && tr.score !== 1 ? G.I18n.f('Puntuación: {x} (×{x} {x})', sum.score.toLocaleString('en'), tr.score, G.I18n.t(TR().DIFF_NAME[sum.diff])) : G.I18n.f('Puntuación: {x}', sum.score.toLocaleString('en'))]);
         out.score = sum.score;
         SV().record();
+      }
+      // Dive V2: the floor reached, the loot (banked / at stake), the escape or the fall; its pay goes through meta.js (divePay)
+      if (sum.mode === 'exp-dive' && DV_() && DV_().run) {
+        const dr = DV_().result();
+        sum.parts = DV_().scoreParts(sum); sum.won = dr.won; sum.zone = sum.parts.zone; sum.score = sum.parts.deepest;
+        out.lines = out.lines.concat(dr.lines, DV_().record());
+        if (dr.title) out.title = dr.title;
+        out.won = dr.won;
       }
       // D3: the Classic run's outcome (read before it is recorded, so the splits compare with the old bests)
       const res = sum.mode === 'exp-classic' && C() && C().run ? C().result() : null;
@@ -608,7 +620,7 @@ G.Exp = (() => {
 
   /** A viewer / guest: the same zone from the same seed + `x`. -> its hash, or null (an unknown schema). */
   function applyX(seed, x) {
-    if (!x || !READS.includes(x.xv) || !G.ExpTerrain.MAPS.includes(x.m)) { if (x) console.warn('[Exp] unknown terrain block', x); return null; }
+    if (!x || !READS.includes(x.xv) || !(G.ExpTerrain.MAPS.includes(x.m) || /^dive:[a-z]+$/.test(x.m))) { if (x) console.warn('[Exp] unknown terrain block', x); return null; }
     if ((G.World.seed | 0) !== (seed | 0)) return null;   // (the view has moved on to another run)
     const zone = C() ? C().build(seed, x.m, x.z) : G.ExpTerrain.generate({ seed, map: x.m, zone: x.z });   // (D3: zone 4 = the shrine)
     if (x.th && zone.hash !== x.th) console.warn('[Exp] terrain rebuild differs from the host (' + zone.hash + ' vs ' + x.th + ')');
@@ -660,7 +672,7 @@ G.Exp = (() => {
   }
 
   /** D11: a run reaches its board only clean, solo and without a local partner (a co-op run, online or local, never does). */
-  const boardOk = sum => !!(sum && sum.clean && !sum.group && !(cur && cur.mate));
+  const boardOk = sum => !!(sum && sum.clean && !sum.group && !(cur && cur.mate)) && sum.mode !== 'exp-dive';   // (Dive V2: its boards come in V8)
 
   /** D11: an Expedition run brings the local partner (js/systems/localcoop.js) when player 2's pad is connected or the
    *  "local partner" setting is on (localStorage micasurvivorexp_mate = '1'). */

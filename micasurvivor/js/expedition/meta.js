@@ -861,7 +861,8 @@ G.ExpMeta = (() => {
     if (!S) return [];
     const out = [], Svv = Sv();
     const p = sum.parts || { kills: sum.kills || 0, time: sum.time || 0, zone: sum.zone || 1, bosses: 0, won: !!sum.won, catches: CP() && CP().run ? CP().run.n : 0 };
-    const diff = sum.diff || 'normal', pay = payOf(sum.mode === 'exp-survival' ? Object.assign({}, p, { surv: true }) : p, diff);   // (D11: Survival's minutes)
+    const diff = sum.diff || 'normal', pay = sum.mode === 'exp-dive' && p.divePay != null ? { base: p.divePay, mul: 1, pay: coinsOf(p.divePay) }   // (Dive V2: the loot it banked)
+      : payOf(sum.mode === 'exp-survival' ? Object.assign({}, p, { surv: true }) : p, diff);   // (D11: Survival's minutes)
     reconcile();   // (a double payment from another device, undone before this run pays)
     refundRetired();   // (DLC D16 / D18: the retired Lab rows' refunds, once per account)
     if (pay.pay > 0) {

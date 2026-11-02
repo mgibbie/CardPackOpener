@@ -82,13 +82,13 @@ G.Expedition = (() => {
   const MAPS = ['viridian', 'mtmoon', 'cerulean'];
   const DIFFS = ['normal', 'hard', 'nightmare'];
   const BOARD = 'micasurvivor_expedition';
-  const ENABLED = new Set(['exp-classic', 'exp-survival', 'exp-league']);   // D3: Classic is playable; D11: Survival too; D13: League
+  const ENABLED = new Set(['exp-classic', 'exp-survival', 'exp-league', 'exp-dive']);   // D3: Classic is playable; D11: Survival too; D13: League; Dive V2
   // DLC D13: League mode is a SCREEN, not a run (study 5.3: "a roster screen with challenges, kits and Ultimates, the Lab,
   // research, tasks and boards"): its card opens the League (G.ExpMeta's League view); G.Modes.plan never plans it as a run.
   const HUB = new Set(['exp-league']);
   const SCRIPTS = ['js/expedition/save.js', 'js/expedition/terrain.js', 'js/expedition/verbs.js', 'js/expedition/classic.js',
     'js/expedition/league-data.js', 'js/expedition/league.js', 'js/expedition/mega-data.js', 'js/expedition/mega.js', 'js/expedition/moves.js', 'js/expedition/items.js', 'js/expedition/levelups.js',
-    'js/expedition/ultimates.js', 'js/expedition/economy.js', 'js/expedition/reactions.js', 'js/expedition/capture.js', 'js/expedition/tiers.js', 'js/expedition/meta.js', 'js/expedition/survival.js', 'js/expedition/dive-gen.js', 'js/expedition/core.js'];   // (D1: terrain.js; D2: verbs.js; D3: classic.js; D4: league-data.js, league.js; D5: moves.js, items.js, levelups.js; D6: ultimates.js; D7: economy.js; D8: reactions.js, capture.js; D9: tiers.js; D10: meta.js; D11: survival.js; D14: mega-data.js, mega.js; Dive V1: dive-gen.js)
+    'js/expedition/ultimates.js', 'js/expedition/economy.js', 'js/expedition/reactions.js', 'js/expedition/capture.js', 'js/expedition/tiers.js', 'js/expedition/meta.js', 'js/expedition/survival.js', 'js/expedition/dive-gen.js', 'js/expedition/dive.js', 'js/expedition/core.js'];   // (D1: terrain.js; D2: verbs.js; D3: classic.js; D4: league-data.js, league.js; D5: moves.js, items.js, levelups.js; D6: ultimates.js; D7: economy.js; D8: reactions.js, capture.js; D9: tiers.js; D10: meta.js; D11: survival.js; D14: mega-data.js, mega.js; Dive V1: dive-gen.js; V2: dive.js)
 
   const isExp = m => typeof m === 'string' && MODES.includes(m);
   const enabled = m => isExp(m) && ENABLED.has(m);
@@ -96,11 +96,21 @@ G.Expedition = (() => {
   const hub = m => HUB.has(m);
   /** The map / difficulty a new Expedition run gets. DLC D9: the device's pick (G.ExpTier.pick: clamped to a playable map
    *  and an unlocked tier, once the Expedition code is loaded; before that, the saved pick as it is, for the button's label). */
-  function pick() {
+  function pick(mode) {
+    if (mode === 'exp-dive') return { map: 'dive:' + diveRoute(), diff: 'normal' };   // (Dive V2: the route is the map; no tiers)
     if (G.ExpTier) return G.ExpTier.pick();
     let p = null;
     try { p = JSON.parse(localStorage.getItem('micasurvivorexp_tier') || 'null'); } catch (e) { /* the pick is a convenience */ }
     return { map: p && MAPS.includes(p.map) ? p.map : MAPS[0], diff: p && DIFFS.includes(p.diff) ? p.diff : DIFFS[0] };
+  }
+  /** Dive V2: the route this device dives (micasurvivorexp_dive; the 8 routes of js/expedition/dive-gen.js). */
+  const DIVE_ROUTES = ['forest', 'canyon', 'crater', 'reef', 'grotto', 'marsh', 'ruins', 'fungal'];
+  function diveRoute(set) {
+    try {
+      if (set && DIVE_ROUTES.includes(set)) localStorage.setItem('micasurvivorexp_dive', set);
+      const r = localStorage.getItem('micasurvivorexp_dive');
+      return DIVE_ROUTES.includes(r) ? r : DIVE_ROUTES[0];
+    } catch (e) { return set && DIVE_ROUTES.includes(set) ? set : DIVE_ROUTES[0]; }
   }
   /** DLC D4: the League member this device starts Classic with (the Expedition code checks you can play it: G.ExpLeague.pickFor). */
   function leaguePick() {
@@ -186,7 +196,7 @@ G.Expedition = (() => {
   function coopPlan(c) {
     if (!c || !loaded || !isExp(c.mode) || !enabled(c.mode) || !lobbyOk(c.dv)) return { mode: 'normal' };
     return { mode: c.mode, mods: [], type: null, dex: G.ExpLeague ? G.ExpLeague.pickFor(c.mode) : null, seed: 0, dv: DV,
-             map: MAPS.includes(c.map) ? c.map : MAPS[0], diff: DIFFS.includes(c.diff) ? c.diff : DIFFS[0], group: true };   // (group: an online co-op run: no local partner)
+             map: c.mode === 'exp-dive' ? (/^dive:[a-z]+$/.test(c.map || '') ? c.map : 'dive:' + DIVE_ROUTES[0]) : MAPS.includes(c.map) ? c.map : MAPS[0], diff: DIFFS.includes(c.diff) ? c.diff : DIFFS[0], group: true };   // (group: an online co-op run: no local partner)
   }
 
   // ---------------- version gates ----------------
@@ -232,7 +242,7 @@ G.Expedition = (() => {
 
   return {
     DV, MODES, NAME, DESC, ICON, MAPS, DIFFS, BOARD, ENABLED, SCRIPTS, HUB,
-    isExp, enabled, hub, pick, leaguePick, freezeBase, load, lobbyOk, replayOk, viewNotice, dvOk, wallet, viewZone, coopPlan,
+    isExp, enabled, hub, pick, leaguePick, diveRoute, DIVE_ROUTES, freezeBase, load, lobbyOk, replayOk, viewNotice, dvOk, wallet, viewZone, coopPlan,
     get loaded() { return loaded; }, get frozen() { return frozen; },
     /** For tests: turn an Expedition mode on in this page (D0b ships none playable). */
     debugEnable(m) { if (isExp(m)) ENABLED.add(m); return enabled(m); }

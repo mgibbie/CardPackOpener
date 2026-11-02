@@ -101,7 +101,8 @@ G.ExpLevel = (() => {
     for (let i = 0; i < 5; i++) { r -= w[i]; if (r < 0) return i; }
     return 0;
   }
-  const zone = () => { const r = G.ExpClassic && G.ExpClassic.run; return r ? Math.min(4, r.zone || 1) : (G.World.zone && G.World.zone.zone) || 1; };
+  const zone = () => { if (G.ExpDive && G.ExpDive.on()) return Math.min(4, 1 + Math.floor(G.ExpDive.run.floor / 10));   // (Dive V2: a zone every 10 floors)
+    const r = G.ExpClassic && G.ExpClassic.run; return r ? Math.min(4, r.zone || 1) : (G.World.zone && G.World.zone.zone) || 1; };
 
   // ---------------- the run ----------------
   let S = null;   // {draw, items, skips, log: [[level, kind, key, tier]]}
