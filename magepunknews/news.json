@@ -522,6 +522,198 @@
 	},
 	"entries": [
 		{
+			"sha": "bce3178",
+			"date": "2026-11-02",
+			"kind": "micatro",
+			"title": "Pokermon r66: Gen 7 batch 3, the 11 Ultra Beasts (#793-799, #803-806)",
+			"body": "",
+			"cards": [],
+			"micatroMods": [
+				{
+					"id": "pokermon",
+					"name": "Pokermon",
+					"added": [
+						{
+							"key": "j_poke_nihilego",
+							"name": "Nihilego",
+							"set": "Joker",
+							"rarity": "rare",
+							"cost": 7,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 24,
+								"y": 52
+							},
+							"soul": {
+								"x": 25,
+								"y": 52
+							}
+						},
+						{
+							"key": "j_poke_buzzwole",
+							"name": "Buzzwole",
+							"set": "Joker",
+							"rarity": "rare",
+							"cost": 7,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 26,
+								"y": 52
+							},
+							"soul": {
+								"x": 27,
+								"y": 52
+							}
+						},
+						{
+							"key": "j_poke_pheromosa",
+							"name": "Pheromosa",
+							"set": "Joker",
+							"rarity": "rare",
+							"cost": 7,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 28,
+								"y": 52
+							},
+							"soul": {
+								"x": 29,
+								"y": 52
+							}
+						},
+						{
+							"key": "j_poke_xurkitree",
+							"name": "Xurkitree",
+							"set": "Joker",
+							"rarity": "rare",
+							"cost": 7,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 0,
+								"y": 53
+							},
+							"soul": {
+								"x": 1,
+								"y": 53
+							}
+						},
+						{
+							"key": "j_poke_celesteela",
+							"name": "Celesteela",
+							"set": "Joker",
+							"rarity": "rare",
+							"cost": 7,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 2,
+								"y": 53
+							},
+							"soul": {
+								"x": 3,
+								"y": 53
+							}
+						},
+						{
+							"key": "j_poke_kartana",
+							"name": "Kartana",
+							"set": "Joker",
+							"rarity": "rare",
+							"cost": 7,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 4,
+								"y": 53
+							},
+							"soul": {
+								"x": 5,
+								"y": 53
+							}
+						},
+						{
+							"key": "j_poke_guzzlord",
+							"name": "Guzzlord",
+							"set": "Joker",
+							"rarity": "rare",
+							"cost": 7,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 6,
+								"y": 53
+							},
+							"soul": {
+								"x": 7,
+								"y": 53
+							}
+						},
+						{
+							"key": "j_poke_poipole",
+							"name": "Poipole",
+							"set": "Joker",
+							"rarity": "common",
+							"cost": 5,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 14,
+								"y": 53
+							},
+							"soul": {
+								"x": 15,
+								"y": 53
+							}
+						},
+						{
+							"key": "j_poke_naganadel",
+							"name": "Naganadel",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 8,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 16,
+								"y": 53
+							},
+							"soul": {
+								"x": 17,
+								"y": 53
+							}
+						},
+						{
+							"key": "j_poke_stakataka",
+							"name": "Stakataka",
+							"set": "Joker",
+							"rarity": "rare",
+							"cost": 7,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 18,
+								"y": 53
+							},
+							"soul": {
+								"x": 19,
+								"y": 53
+							}
+						},
+						{
+							"key": "j_poke_blacephalon",
+							"name": "Blacephalon",
+							"set": "Joker",
+							"rarity": "rare",
+							"cost": 7,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 20,
+								"y": 53
+							},
+							"soul": {
+								"x": 21,
+								"y": 53
+							}
+						}
+					]
+				}
+			]
+		},
+		{
 			"sha": "6acbbca",
 			"date": "2026-11-02",
 			"kind": "micatro",
