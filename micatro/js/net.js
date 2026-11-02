@@ -326,3 +326,12 @@ export async function clearRun({ id, outcome, actions = 0 } = {}) {
 	try { return (await MP.call('micatro-run-clear', { id, outcome, actions })) || { error: 'bad response' }; }
 	catch { return { error: 'offline' }; }
 }
+
+// ---------------------------------------------------------------- refused actions (testing aid)
+// The actions the engine refused (micatro/js/refusedlog.js batches them): appended to refused:<user>:<YYYYMMDD>.
+// Quiet: signed out sends nothing, and every failure is swallowed (a lost batch is only a lost log line).
+export async function sendRefused(entries, { keepalive = false } = {}) {
+	if (!isLoggedIn() || !Array.isArray(entries) || !entries.length) return { error: 'skip' };
+	try { return (await MP.call('micatro-refused', { entries }, keepalive ? { keepalive: true } : {})) || { error: 'bad response' }; }
+	catch { return { error: 'offline' }; }
+}

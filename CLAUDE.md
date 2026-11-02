@@ -66,6 +66,10 @@ change with a regression test.
 `Desktop/playtest-reports/<date>.md` (on a cloud session: just read its stdout).
 Investigate its ⚠ items. Message a tester via their bell: the `chat:dm:<user>` row
 (append `{from:'mgibbie', text≤140, emote:null, ts}` guarded on the row's length).
+Micatro **refused actions** (what a tester tried that the game refused — the run recipe only keeps what worked; read-only
+monitoring is pre-approved): `SELECT key, value FROM mp_store WHERE key LIKE 'refused:<user>:%'` (one row per UTC day,
+`refused:<user>:<YYYYMMDD>`, the last 200 `{ts, at, runId, ante, round, state, action, card, area, hl, targets, max, min, reason, ver, n}`;
+swept after 30 days). Written by `micatro/js/refusedlog.js` (signed-in players only).
 
 ## "do the bug report review list"
 1. Read: `npx wrangler d1 execute magepunk-users --remote --json --command "SELECT key, value FROM mp_store WHERE key LIKE 'bug:%'"`
