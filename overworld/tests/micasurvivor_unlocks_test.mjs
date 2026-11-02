@@ -69,12 +69,12 @@ try {
 	await waitFor(() => page.evaluate(() => !!(G.DB.save.owned[94])), 8000);
 	const r1 = await page.evaluate(() => {
 		const o = G.DB.save.owned, from = d => o[d] && o[d].from;
-		return { starters: G.STARTERS.slice(0, 27).map(s => s.dex).filter(d => !o[d]), extras: [54, 79].filter(d => o[d]), nStarters: G.STARTERS.length, s1: from(1), gengar: from(94), raichu: from(26), squirtle: from(7), mew: !!o[151], gastly: !!o[92], haunter: !!o[93], pichu: !!o[172], toast: document.body.innerText.includes('from the overworld unlocked') };
+		return { starters: G.STARTERS.map(s => s.dex).concat([172]).filter(d => !o[d]), extras: [54, 79, 172].filter(d => !o[d] || o[d].from !== 'starter' && o[d].from !== 'gacha'), nStarters: G.STARTERS.length, s1: from(1), gengar: from(94), raichu: from(26), squirtle: from(7), mew: !!o[151], gastly: !!o[92], haunter: !!o[93], pichu: !!o[172], toast: document.body.innerText.includes('from the overworld unlocked') };
 	});
-	A(r1.nStarters === 29 && r1.starters.length === 0 && r1.extras.length === 0 && r1.s1 === 'starter', 'the main menu: the 27 starter trios\' first stages are in the collection (free everywhere)', JSON.stringify(r1));
+	A(r1.nStarters === 29 && r1.starters.length === 0 && r1.extras.length === 0 && r1.s1 === 'starter', 'the main menu: every starter pick is free for all (the 27 trios, Psyduck, Slowpoke) and Pichu', JSON.stringify(r1));
 	A(r1.gengar === 'overworld' && r1.raichu === 'overworld', 'the overworld\'s caught Pokémon join the collection (Gengar; Alolan Raichu as Raichu)', JSON.stringify(r1));
 	A(r1.squirtle === 'starter' && !r1.mew, 'already unlocked stays as it was (Squirtle, a starter); a species only SEEN there is not unlocked (Mew)', JSON.stringify(r1));
-	A(!r1.gastly && !r1.haunter && !r1.pichu, 'only that species: Gengar caught leaves Gastly and Haunter locked; Raichu leaves Pichu locked', JSON.stringify(r1));
+	A(!r1.gastly && !r1.haunter, 'only that species: Gengar caught leaves Gastly and Haunter locked', JSON.stringify(r1));
 	// Expedition: the League plays the Gastly family only as Gengar; an evolution and a catch unlock their species
 	const r2 = await page.evaluate(async () => {
 		await G.Expedition.load(); await G.ExpSave.open();

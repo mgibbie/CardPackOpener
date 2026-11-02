@@ -7,7 +7,7 @@
  * The list is the base save's collection (save.owned, G.DB.owns): Survival's partner picker, Expedition's League and Dive
  * all read it. Every way in ADDS a species (never a family; never removes anything):
  *   gacha          the base game's pulls (as always)
- *   starters       the 27 starter trios' first stages, free for everyone (owner: "free everywhere")
+ *   starters       the starter picks, free for everyone: the 27 trios' first stages, Psyduck, Slowpoke and Pichu
  *   overworld      every species the overworld game's Pokédex has CAUGHT: the account's overworld save on the server
  *                  (micasurvivor-ow-caught), or this device's (localStorage magepunk_dex_v1) for a guest; ids mapped by
  *                  G.OW_SPECIES (js/data/ow-species.js)
@@ -33,9 +33,9 @@ G.Unlocks = (() => {
     if (n) G.DB.commit(true);
     return n;
   }
-  // (the 27 trios come first in G.STARTERS; its last two, Psyduck and Slowpoke, are the base game's extra starter picks, not free)
-  const TRIOS = 27;
-  const starters = () => add((G.STARTERS || []).slice(0, TRIOS).map(st => st.dex), 'starter');
+  // (owner 2026-11-02: every starter pick is free for all: the 27 trios' first stages, Psyduck and Slowpoke (G.STARTERS), and Pichu)
+  const EXTRA_FREE = [172];
+  const starters = () => add((G.STARTERS || []).map(st => st.dex).concat(EXTRA_FREE), 'starter');
   /** The overworld game's caught species (the account's server save, else this device's). -> Promise of the dex list */
   async function overworldCaught() {
     const ids = new Set();
