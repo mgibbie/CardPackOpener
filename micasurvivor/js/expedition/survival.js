@@ -89,6 +89,7 @@ G.ExpSurv = (() => {
     // (pinned and fired by micasurvivor_expedition_survivalcurve_test.mjs)
     CURVE: { DV: 20, FROM: 40, SCALE: 20, POW: 1.5 },
     LEGEND_EVERY: 3,             // ... every 3rd a legendary
+    MEGA_FROM: 900, MEGA_BOSS_P: 0.3,   // (U3: Mega elites from 15:00; a non-legendary milestone boss from then is a Mega MEGA_BOSS_P of the time)
     MEWTWO_AT: 2700, MEWTWO: 150, MEWTWO_TARGET: 90,   // Mewtwo at 45:00 (the 9th milestone): a 90 s fight from your DPS
     MILE_TARGET: [40, 50, 60], LEGEND_TARGET: 60,      // the bosses' target times by phase (D3's), legendaries 60 s
     MILE_HP: 0.06,               // + 6 % boss HP a milestone (on top of the DPS target and the curve)
@@ -177,6 +178,9 @@ G.ExpSurv = (() => {
     } else {
       const M = C() ? C().MAPS[map] || C().MAPS.viridian : null, zi = phaseOf(at - 1);
       dex = M ? pickR(R(mix(seed | 0, mapIdx(map), n, 0x6A2)), M.guardians[zi]) : 15;
+      // (U3: from 15:00, sometimes a Mega; its own stream)
+      const rm = R(mix(seed | 0, mapIdx(map), n, 0x3E6A));
+      if (at >= K.MEGA_FROM && G.Megas && G.Megas.foes().length && rm() < K.MEGA_BOSS_P) dex = G.Megas.pick(rm);
     }
     return { n, at, legend, mewtwo, dex };
   }
@@ -212,6 +216,12 @@ G.ExpSurv = (() => {
     const rd = R(mix(seed | 0, mapIdx(map), g, 0xD20)), CK = Cl.K, r5 = Cl.rare5 ? Cl.rare5() : [], rl = Cl.roamers ? Cl.roamers(map) : [];
     if (zi === 2 && r5.length) ev.push({ at: t0 + intR(rd, 60, 240), kind: 'elite', n: Math.round(CK.RARE5_N * Math.min(2, zk)), dex: [pickR(rd, r5), pickR(rd, r5)], seed: Math.floor(rd() * 4294967296) >>> 0, i: 90, rare: 1 });
     if (zi >= 1 && rl.length && rd() < CK.ROAM_P) ev.push({ at: t0 + intR(rd, 30, 270), kind: 'roam', n: 1, dex: [pickR(rd, rl)], seed: Math.floor(rd() * 4294967296) >>> 0, i: 91 });
+    // (MicaSurvivor U3, owner decision #3: "Megas ... Survival after ~15 min"; its own stream: from 15:00 each segment has a Mega
+    //  elite, classic.js's)
+    if (t0 >= K.MEGA_FROM && G.Megas && G.Megas.foes().length) {
+      const rm = R(mix(seed | 0, mapIdx(map), g, 0x3E6A));
+      ev.push({ at: t0 + intR(rm, 40, 260), kind: 'elite', n: 1, dex: [G.Megas.pick(rm)], seed: Math.floor(rm() * 4294967296) >>> 0, i: 92, mega: 1 });
+    }
     ev.sort((a, b) => a.at - b.at || a.i - b.i);
     ev.forEach(e => { delete e.i; });
     return ev;

@@ -21,6 +21,7 @@ the credit_names.txt at the repo root. Alternate-form folders (fetch_sprites.FOR
 are credited from their own folder.
 """
 import io
+import json
 import os
 import sys
 import urllib.request
@@ -32,6 +33,11 @@ from fetch_sprites import FORMS, ROOT  # noqa: E402
 RAW = 'https://raw.githubusercontent.com/PMDCollab/SpriteCollab/master'
 ASSETS = os.path.join(ROOT, 'assets', 'pokemon')
 OUT = os.path.join(ROOT, 'CREDITS.md')
+
+
+# (U3) the formes' and Megas' SpriteCollab form folders: {id: 'dddd/ffff'}
+_LIST = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'forms_sprites.json')
+COLLAB = {it['id']: it['collab'] for it in json.load(open(_LIST, encoding='utf-8'))['list'] if it['collab']} if os.path.exists(_LIST) else {}
 
 
 def fetch(url):
@@ -59,8 +65,9 @@ def main():
             names[display] = (display, contact)
 
     def one(dex):
-        base = f'{dex:04d}/{FORMS[dex]}' if dex in FORMS else f'{dex:04d}'
-        shiny = f'{base}/0001' if dex in FORMS else f'{base}/0000/0001'
+        # (U3: a regional forme / Mega, ids > 10000: its SpriteCollab form folder, tools/micasurvivor/forms_sprites.json)
+        base = COLLAB[dex] if dex in COLLAB else f'{dex:04d}/{FORMS[dex]}' if dex in FORMS else f'{dex:04d}'
+        shiny = f'{base}/0001' if dex in FORMS or dex in COLLAB else f'{base}/0000/0001'
         txt = fetch(f'{RAW}/sprite/{base}/credits.txt')
         if os.path.isdir(os.path.join(ASSETS, str(dex), 's')):
             txt += '\n' + fetch(f'{RAW}/sprite/{shiny}/credits.txt')

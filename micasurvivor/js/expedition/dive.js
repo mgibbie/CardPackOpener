@@ -37,6 +37,7 @@
  * combat stays Math.random, as in base. Viewers rebuild a floor from the zone block (core.js applyX: classic.build).
  */
 G.I18n.add({
+  'Un {x} legendario aparece': 'A legendary {x} appears',   // (U3)
   '— Piso {x} · {x} —': '— Floor {x} · {x} —',
   'B{x}F': 'F{x}', 'PISO {x}': 'FLOOR {x}',
   '{x} asegurado · {x} en juego': '{x} secured · {x} at stake',
@@ -97,6 +98,11 @@ G.ExpDive = (() => {
     // Expedition's pay units (meta.js coinsOf: x K.SCALE 3). expectedPay() below is the model; micasurvivor_dive_test pins it.
     LOOT: { ko: 0.12, koPer: 0.01, rescue: 2, rescuePer: 0.2, alpha: 6, alphaPer: 0.4, guard: 40, guardPer: 0.8, floor: 0.5, floorPer: 0.04 },
     FAINT_KEEP: 0.25,
+    // MicaSurvivor U3 (owner decision #3, "Megas ... Dive below floor 30, sometimes an alpha / boss"; and the 61 legendaries the
+    // guardians leave out, PokéDive's way): below floor MEGA.from a floor has a Mega elite MEGA.p of the time and an arena's alpha
+    // is a Mega MEGA.arenaP of the time; from floor LEGEND.from (below the first guardian) a floor has a legendary encounter
+    // LEGEND.p of the time, sure after LEGEND.pity floors without one. Both from their own streams; any of their pool (uniform).
+    MEGA: { from: 30, p: 0.2, arenaP: 0.35 }, LEGEND: { from: 26, p: 0.35, pity: 3, scale: 1.5, hp: 9, dmg: 1.3, xp: 10, loot: 5, lootPer: 0.3 },
     SLOTS: 3, SPECIAL_K: 1.25, BUFFER: 0.15, HOLD: 0.6   // V4: the kit; a press is kept HOLD s while it waits for a foe in reach
   };
   const NAME = G.Expedition.DIVE_NAME;   // (V7: one table, js/systems/expedition.js)
@@ -150,6 +156,23 @@ G.ExpDive = (() => {
   function draw(P, r) { const v = r() * P.sum; for (const [d, c] of P.list) if (c >= v) return d; return P.list[P.list.length - 1][0]; }
   /** A guardian floor's legendary: the route's list in turn (floor 25 -> 1st, 50 -> 2nd, ...). */
   const guardianOf = (route, floor) => GUARDIANS[route][(Math.max(1, Math.floor(floor / 25)) - 1) % 4];
+  // ---------------- U3: the Megas and the other legendaries (pure from the run's seed) ----------------
+  const GUARD_SET = new Set(Object.values(GUARDIANS).flat());
+  /** The legendaries (and mythicals, the Galarian birds too) that are no route's guardian: the encounters' pool. */
+  const legendPool = () => G.DEX.filter(p => p.leg && !GUARD_SET.has(p.dex) && G.SPRITE_META[p.dex]).map(p => p.dex);
+  const u3rng = (seed, route, f, k) => G.DLC.rng(DG().seedOf(seed | 0, route, f, k));
+  /** Floor f's legendary encounter draw: {hit (the chance alone, before the pity), dex}. Pure. */
+  function legendRoll(seed, route, f) {
+    const r = u3rng(seed, route, f, 0x1E9), L = legendPool();
+    const hit = r() < K.LEGEND.p;
+    return { hit, dex: L.length ? L[Math.min(L.length - 1, Math.floor(r() * L.length))] : 0 };
+  }
+  /** Floor f's Mega draw: {elite (a Mega elite on the floor), arena (the arena's alpha is a Mega), dex}. Pure. */
+  function megaRoll(seed, route, f) {
+    const r = u3rng(seed, route, f, 0x3E6A);
+    const elite = r() < K.MEGA.p, arena = r() < K.MEGA.arenaP, dex = G.Megas ? G.Megas.pick(r) : 0;
+    return { elite: elite && !!dex, arena: arena && !!dex, dex };
+  }
 
   // ---------------- the run ----------------
   function begin(cfg) {
@@ -203,21 +226,46 @@ G.ExpDive = (() => {
       if (e) { S.boss = e; S.sealed = true; pre.push(dex); say(bang(T().f('{x}, el guardián de la ruta', e.name)), 3.6); G.Audio.sfx('surge'); }
     } else if (L.cadence.arena) {
       const ar = rng(S.route, f, 0xA1), [x, y] = wpos(L.path[Math.max(0, L.path.length - 5)]);
-      const dex = draw(pool(S.route, f + 4), ar);
+      let dex = draw(pool(S.route, f + 4), ar);
+      const mg = f > K.MEGA.from ? megaRoll(S.seed, S.route, f) : null;   // (U3: below floor 30, sometimes a Mega alpha)
+      if (mg && mg.arena) dex = mg.dex;
       const e = spawn(dex, x, y, t, { alpha: true });
       if (e) { S.boss = e; S.sealed = true; pre.push(dex); say(T().t('¡Alfa! Derrótalo para abrir las escaleras'), 3.4); }
     }
+    if (!L.cadence.guardian) u3Floor(f, t, L, pre);
     G.Sprites.preload(pre, 8000);
-    if (!L.cadence.guardian && !L.cadence.arena) say(T().f('— Piso {x} · {x} —', f, T().t(NAME[S.route])), 2.8);
+    if (!L.cadence.guardian && !L.cadence.arena && !S.u3say) say(T().f('— Piso {x} · {x} —', f, T().t(NAME[S.route])), 2.8);
+    S.u3say = null;
   }
 
-  /** A foe of this floor. o: {alpha, boss} -> the enemy */
+  /** (U3) Floor f's Mega elite (below floor 30) and legendary encounter (from floor 26, with the pity): awake, alpha-sized. */
+  function u3Floor(f, t, L, pre) {
+    const spot = salt => { const r = u3rng(S.seed, S.route, f, salt), g = L.groups.length ? L.groups[Math.floor(r() * L.groups.length)] : null;
+      return g ? wpos(g.at) : wpos(L.path[Math.floor(L.path.length / 2)] || [L.w / 2, L.h / 2]); };
+    if (f > K.MEGA.from && !L.cadence.arena) {
+      const mg = megaRoll(S.seed, S.route, f);
+      if (mg.elite) {
+        const [x, y] = spot(0x3E6B), e = spawn(mg.dex, x, y, t, { alpha: true });
+        if (e) { e.xu3 = 'mega'; pre.push(mg.dex); S.u3say = 1; say(T().f('¡{x} salvaje aparece!', T().t(e.name)), 3.2); }
+      }
+    }
+    if (f >= K.LEGEND.from) {
+      const lr = legendRoll(S.seed, S.route, f);
+      S.legPity = S.legPity || 0;
+      if (lr.dex && (lr.hit || S.legPity >= K.LEGEND.pity)) {
+        S.legPity = 0;
+        const [x, y] = spot(0x1EA), e = spawn(lr.dex, x, y, t, { legend: true });
+        if (e) { e.xu3 = 'legend'; pre.push(lr.dex); S.u3say = 1; say(bang(T().f('Un {x} legendario aparece', T().t(e.name))), 3.4); G.Audio.sfx('boss'); }
+      } else S.legPity++;
+    }
+  }
+  /** A foe of this floor. o: {alpha, boss, legend (U3)} -> the enemy */
   function spawn(dex, x, y, t, o) {
     const C = G.ExpClassic, f = S.floor, teff = f * K.T_PER_FLOOR;
     const ti = G.U.clamp(Math.floor((target(f) - 260) / K.TIER_BST), 0, 5);   // (a stats tier every TIER_BST of the target)
     const def = C.defOf(dex, ti);
     const sc = G.Enemies.scale(teff), n = Math.max(1, G.Game.everyone ? G.Game.everyone().length : 1);
-    const X = o.boss ? K.GUARD : o.alpha ? K.ALPHA : null;
+    const X = o.boss ? K.GUARD : o.legend ? K.LEGEND : o.alpha ? K.ALPHA : null;
     const hp = sc.hp * G.Coop.scaleHp(n) * (K.HP_K + Math.min(1.7, teff / 210)) * (X ? X.hp : 1);
     const e = new G.Enemy(def, x, y, { hp, dmg: sc.dmg, spd: sc.spd }, !!o.boss);
     e.dmg *= K.DMG_K * (X ? X.dmg : 1);
@@ -229,7 +277,7 @@ G.ExpDive = (() => {
       e.r = G.Sprites.bodyRadius(e.dex, X.scale); e.bodyH = G.Sprites.bodyHeight(e.dex, X.scale);
       e.xk = o.boss ? 'guardian' : 'alpha';   // (not G.ExpCap.mark: a Dive alpha FALLS, it doesn't faint at 1 HP for the Friend Ball)
     }
-    if (!o.boss && !o.alpha) e.xmove = sleeper;
+    if (!o.boss && !o.alpha && !o.legend) e.xmove = sleeper;
     G.EnemyMgr.add(e);
     return e;
   }
@@ -346,6 +394,7 @@ G.ExpDive = (() => {
     if (!on() || !e) return;
     S.kills++;
     loot(K.LOOT.ko + K.LOOT.koPer * S.floor);
+    if (e.xu3) loot((e.xu3 === 'legend' ? K.LEGEND.loot : K.LOOT.alpha) + (e.xu3 === 'legend' ? K.LEGEND.lootPer : K.LOOT.alphaPer) * S.floor);   // (U3: a Mega elite pays an alpha's, a legendary more)
     comboKo(e);   // (V5)
   }
 
@@ -1098,7 +1147,7 @@ G.ExpDive = (() => {
     }
   }
 
-  return { K, NAME, GUARDIANS, target, pool, guardianOf, routeOf, begin, reset, update, hurt, onKill, pay, scoreParts, result, record,
+  return { K, NAME, GUARDIANS, target, pool, guardianOf, legendPool, legendRoll, megaRoll, routeOf, begin, reset, update, hurt, onKill, pay, scoreParts, result, record,
            setup, roles, press, pad, tick, out, drawButtons, offerLearn, LEARN_AT, get rects() { return rects; },
            submit, board, guestFollow, WEEKLY, MOD_NAME, expectedPay, openPlug, canOpen, PLUG,
            openPicker, closePicker, back, starts, startOf, stageOf, bestOf, sealOf, seals, routeOpen, hurtK, SEAL, MAIN,

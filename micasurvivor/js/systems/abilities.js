@@ -267,7 +267,8 @@ G.Abilities = (() => {
     'boss_dmg', 'tinted', 'crit', 'spd', 'wspd', 'wspd_k', 'cd', 'magnet', 'xp', 'coin', 'regen', 'taken', 'resist',
     'resist_k', 'se_taken', 'first_hit', 'sturdy', 'contact', 'contact_p', 'thorns', 'trapimm', 'wximm', 'stimm'];
 
-  const of = dex => BY_DEX[dex] || DEFAULT;
+  // (MicaSurvivor U3: a regional forme or a Mega has its species' ability)
+  const of = dex => BY_DEX[dex] || (G.Forms && BY_DEX[G.Forms.speciesOf(dex)]) || DEFAULT;
   const def = id => FX[id] || FX[DEFAULT];
   const fxOf = pl => (pl && pl.abFx) || {};
   const n = (pl, k) => +(fxOf(pl)[k] || 0);
