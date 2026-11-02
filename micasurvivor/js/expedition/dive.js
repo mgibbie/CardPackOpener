@@ -68,6 +68,9 @@ G.I18n.add({
   'Sello despierto': 'Seal awakened', '¡Sello despertado!': 'Seal awakened!', 'Inmersión · ruta y piso inicial': 'Dive · route and start floor', 'Empezar en:': 'Start on:', 'Piso {x}': 'Floor {x}',
   'Vence al guardián de cada 25 pisos para guardar una etapa. El primero de cada ruta despierta su Sello: +10 % de daño y −10 % de daño recibido en esa ruta.': 'Beat the guardian every 25 floors to save a stage. The first on each route awakens its Seal: +10% damage and −10% damage taken on that route.',
   '¡A bucear!': 'Dive!',
+  'Una roca: la rompe un Pokémon de tipo Roca, Tierra, Lucha o Acero': 'A boulder: a Rock, Ground, Fighting or Steel Pokémon breaks it',
+  'Maleza: la quema un Pokémon de tipo Fuego': 'A thicket: a Fire Pokémon burns it',
+  '¡La roca se rompe! Hay algo detrás': 'The boulder breaks! Something is behind it', '¡La maleza arde! Hay algo detrás': 'The thicket burns! Something is behind it',
   'Cañón de cristal': 'Glass Cannon', 'Horda': 'Horde', 'Veloces': 'Swift', 'Hierro': 'Iron', 'pegas y recibes ×1,5': 'you hit and are hit ×1.5', '+2 enemigos por grupo': '+2 foes a group',
   'enemigos ×1,25 de velocidad': 'foes ×1.25 speed', 'enemigos ×1,4 de vida': 'foes ×1.4 HP', 'Inmersión semanal · {x}': 'Weekly Dive · {x}',
   '¡Nueva marca en la Inmersión semanal! Puesto #{x}': 'New Weekly Dive record! Rank #{x}', '¡Nueva marca de Inmersión! Puesto #{x}': 'New Dive record! Rank #{x}',
@@ -84,10 +87,12 @@ G.ExpDive = (() => {
     RESCUE_R: 1.2,                     // tiles: reach the lost Pokémon
     GROUP: [2, 6], GUARD_PLUS: 1,      // foes a group (grows with depth), a guard group +1
     SIGMA: 45, TYPE_BIAS: 2,           // the species curve
-    T_PER_FLOOR: 18,                   // s of "run time" a floor is worth for the base stat curves (G.Enemies.scale)
-    HP_K: 3.3, DMG_K: 2.4, XP_K: 5.6,  // as Classic (js/expedition/classic.js K)
-    ALPHA: { scale: 1.45, hp: 9, dmg: 1.5, xp: 8 },
-    GUARD: { scale: 1.9, hp: 70, dmg: 1.8, xp: 30 },
+    T_PER_FLOOR: 13,                   // s of "run time" a floor is worth for the base stat curves (G.Enemies.scale)
+    // (balance 2026-11-02, tools/micasurvivor/dive_sim.mjs: Classic's 3.3 / 2.4 walled the bot near floor 10-20; x0.85 HP, x0.7 damage
+    //  -> a fresh partner ~floor 10, half the shop upgrades ~18-20, a maxed one at the floor-25 guardian and past it)
+    HP_K: 2.8, DMG_K: 1.68, XP_K: 5.6, TIER_BST: 80,
+    ALPHA: { scale: 1.45, hp: 7, dmg: 1.2, xp: 8 },
+    GUARD: { scale: 1.9, hp: 50, dmg: 1.4, xp: 30 },
     // V9 (owner default #8: an escaped floor-25 dive pays about a 15-minute base run, ~1,500 Pokémonedas): the loot in the
     // Expedition's pay units (meta.js coinsOf: x K.SCALE 3). expectedPay() below is the model; micasurvivor_dive_test pins it.
     LOOT: { ko: 0.12, koPer: 0.01, rescue: 2, rescuePer: 0.2, alpha: 6, alphaPer: 0.4, guard: 40, guardPer: 0.8, floor: 0.5, floorPer: 0.04 },
@@ -167,7 +172,7 @@ G.ExpDive = (() => {
   /** The floor's foes, the lost Pokémon, the alpha / guardian (the zone is already set: core.js enterZone). */
   function startFloor(f, t) {
     const L = G.World.zone && G.World.zone.dive;
-    Object.assign(S, { floor: f, ft: t, L, groups: [], boss: null, stairsT: 0, ropeT: 0, lost: null, sealed: false, tg: [], lmUsed: false, lmT: 0 });
+    Object.assign(S, { floor: f, ft: t, L, groups: [], boss: null, stairsT: 0, ropeT: 0, lost: null, sealed: false, tg: [], lmUsed: false, lmT: 0, plugsOpen: 0 });
     S.deepest = Math.max(S.deepest, f);
     if (!L) return;
     const r = rng(S.route, f, 0xD1), P = pool(S.route, f);
@@ -208,7 +213,7 @@ G.ExpDive = (() => {
   /** A foe of this floor. o: {alpha, boss} -> the enemy */
   function spawn(dex, x, y, t, o) {
     const C = G.ExpClassic, f = S.floor, teff = f * K.T_PER_FLOOR;
-    const ti = G.U.clamp(Math.floor((target(f) - 260) / 72), 0, 5);
+    const ti = G.U.clamp(Math.floor((target(f) - 260) / K.TIER_BST), 0, 5);   // (a stats tier every TIER_BST of the target)
     const def = C.defOf(dex, ti);
     const sc = G.Enemies.scale(teff), n = Math.max(1, G.Game.everyone ? G.Game.everyone().length : 1);
     const X = o.boss ? K.GUARD : o.alpha ? K.ALPHA : null;
@@ -250,6 +255,7 @@ G.ExpDive = (() => {
     // the lost Pokémon
     if (S.lost && !S.lost.done && !S.lost.follow && alive.some(p => G.U.dist2(p.x, p.y, S.lost.x, S.lost.y) < (K.RESCUE_R * R) ** 2)) rescue();
     escortTick(dt, alive);   // (V6)
+    plugTick(dt, alive);   // (the secret pockets)
     landmarkTick(dt, alive);
     if (S.obeliskT > 0) S.obeliskT -= dt;
     // the alpha / guardian down
@@ -698,6 +704,61 @@ G.ExpDive = (() => {
     loadBoard();
   }
 
+
+  // ---------------- secret pockets (PokéDive's): the generator's plugs (dive-gen.js L.plugs) ----------------
+  // A BOULDER breaks for a Rock / Ground / Fighting / Steel Pokémon, a THICKET burns for a Fire type: stand against it
+  // PLUG.T s (any input: you just walk into it). In co-op any player of the right type opens it for everyone. The first
+  // time someone without the type leans on one, a tip says what it needs. Behind it: a chest (a free Poké Ball, eco).
+  const PLUG = { T: 0.6, R: 1.25, TYPES: { boulder: ['rock', 'ground', 'fighting', 'steel'], thicket: ['fire'] } };
+  const typesOf = p => (p.mon && p.mon.types) || (G.DEX_BY[p.dex] && G.DEX_BY[p.dex].types) || [];
+  const canOpen = (p, kind) => typesOf(p).some(t => PLUG.TYPES[kind].includes(t));
+  /** Opens plug i of the current floor (the host, or a viewer from the block): its tile becomes floor. */
+  function openPlug(i) {
+    const z = G.World.zone, L = z && z.dive, pg = L && L.plugs && L.plugs[i];
+    if (!pg || pg.open) return false;
+    pg.open = true;
+    const idx = pg.at[1] * z.w + pg.at[0];
+    z.kind[idx] = DG().FLOOR; L.kind[idx] = DG().FLOOR;
+    G.World.setZone(z);   // (the world forgets its chunks and repaints; walkers re-learn their tile)
+    if (G.Path) G.Path.clear();
+    const [x, y] = wpos(pg.at);
+    G.FX.burst(x, y, pg.kind === 'boulder' ? '#b8a890' : '#ff9a3d', 20, 140);
+    return true;
+  }
+  function plugTick(dt, alive) {
+    const L = S.L;
+    if (!L || !L.plugs) return;
+    const R = TS();
+    L.plugs.forEach((pg, i) => {
+      if (pg.open) return;
+      const [x, y] = wpos(pg.at), by = alive.filter(p => G.U.dist2(p.x, p.y, x, y) < (PLUG.R * R) ** 2);
+      const ok = by.some(p => canOpen(p, pg.kind));
+      pg.t = ok ? (pg.t || 0) + dt : 0;
+      if (by.length && !ok && !S.plugTip) { S.plugTip = true; say(T().t(pg.kind === 'boulder' ? 'Una roca: la rompe un Pokémon de tipo Roca, Tierra, Lucha o Acero' : 'Maleza: la quema un Pokémon de tipo Fuego'), 3.2); }
+      if (pg.t >= PLUG.T && openPlug(i)) { S.plugsOpen = (S.plugsOpen | 0) | (1 << i); say(T().t(pg.kind === 'boulder' ? '¡La roca se rompe! Hay algo detrás' : '¡La maleza arde! Hay algo detrás'), 2.6); G.Audio.sfx(pg.kind === 'boulder' ? 'break' : 'grass'); }
+    });
+  }
+  function drawPlugs(ctx, L, cam) {
+    if (!L.plugs) return;
+    const R = TS();
+    for (const pg of L.plugs) {
+      if (pg.open) continue;
+      const [x, y] = wpos(pg.at);
+      if (!cam.sees(x, y, 40)) continue;
+      ctx.save();
+      if (pg.kind === 'boulder') {
+        ctx.fillStyle = '#8a8478'; ctx.beginPath(); ctx.ellipse(x, y - 2, R * 0.55, R * 0.48, 0, 0, 6.2832); ctx.fill();
+        ctx.strokeStyle = '#4f4a42'; ctx.lineWidth = 2; ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(x - 6, y - 8); ctx.lineTo(x - 1, y - 2); ctx.lineTo(x - 4, y + 4); ctx.moveTo(x + 5, y - 6); ctx.lineTo(x + 2, y + 1); ctx.stroke();
+      } else {
+        ctx.fillStyle = '#2f5a2a';
+        for (const [ox, oy, rr] of [[-6, 2, 8], [6, 1, 8], [0, -6, 9], [0, 4, 8]]) { ctx.beginPath(); ctx.arc(x + ox, y + oy, rr, 0, 6.2832); ctx.fill(); }
+        ctx.strokeStyle = '#7a4a22'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x - 8, y + 8); ctx.lineTo(x + 8, y - 6); ctx.moveTo(x + 7, y + 8); ctx.lineTo(x - 6, y - 7); ctx.stroke();
+      }
+      ctx.restore();
+    }
+  }
+
   // ---------------- V6: the escort, the landmarks, the floor's interactables ----------------
   // The lost Pokémon, once reached, FOLLOWS the nearest player (S.lost.follow) and is rescued when it leaves the floor with you
   // (the stairs or the rope: within ESCORT_R of a player). Leave it behind and it stays lost.
@@ -754,6 +815,7 @@ G.ExpDive = (() => {
     const L = z.dive, objs = [], r = G.DLC.rng(DG().seedOf(z.seed | 0, L.route, L.floor, 0xEC0));
     const put = (kind, p, v = 0) => objs.push({ i: objs.length, kind, tx: p[0] + z.x0, ty: p[1] + z.y0, x: (p[0] + z.x0 + 0.5) * ts, y: (p[1] + z.y0 + 0.5) * ts, v });
     for (const c of L.chests) put('freeball', c);
+    for (const pg of L.plugs || []) put('freeball', pg.chest);   // (the secret pockets' chests)
     const free = [];
     const near = (p, q, k) => Math.abs(p[0] - q[0]) + Math.abs(p[1] - q[1]) < k;
     for (let y = 2; y < L.h - 2; y++) for (let x = 2; x < L.w - 2; x++) {
@@ -836,7 +898,7 @@ G.ExpDive = (() => {
   // it, hitting what it crosses); a guardian slams wider and charges more often. The foe holds still while winding up.
   // Dodge (i-frames) or step out. Viewers see them through the block (tg, in 10 steps of their fill).
   const TELE = { slam: 0.8, slamR: 1.6, alphaR: 2.6, guardR: 3.4, charge: 0.9, chargeLen: 7, chargeW: 1.3, chargeT: 0.35,
-                 SLAM_DMG: 1.6, CHARGE_DMG: 2.0, CD: [2.6, 4.2], REACH: 2.2, ALPHA_CD: [2.2, 3.4], GUARD_CD: [1.6, 2.6] };
+                 SLAM_DMG: 1.35, CHARGE_DMG: 1.6, CD: [2.6, 4.2], REACH: 2.2, ALPHA_CD: [2.2, 3.4], GUARD_CD: [1.6, 2.6] };
   function teleTick(dt, alive) {
     const R = TS();
     S.tg = S.tg || [];
@@ -922,6 +984,7 @@ G.ExpDive = (() => {
                 q: (S.sealed ? 1 : 0) | (S.lost && S.lost.done ? 2 : 0) | (S.escaped ? 4 : 0) | (S.lost && S.lost.follow ? 8 : 0) | (S.lmUsed ? 16 : 0) | (S.obeliskT > 0 ? 32 : 0), o: Math.round(S.ropeT * 4) };
     if (S.lost) c.l = [S.lost.dex, Math.round(S.lost.x), Math.round(S.lost.y)];
     if (S.weekly) c.w = [S.weekly.week, G.Expedition.DIVE_MODS.indexOf(S.weekly.mod)];   // (V8)
+    if (S.plugsOpen) c.pg = S.plugsOpen;   // (the opened plugs, a bitmask)
     if (S.start > 1) c.st = S.start;
     if (S.boss && !S.boss.dead) c.e = S.boss.id;
     if (S.combo && S.combo.n >= 2) c.k = [S.combo.n, Math.round(S.combo.t * 10 / COMBO.WINDOW)];   // (V5: the combo, its window in tenths)
@@ -936,6 +999,7 @@ G.ExpDive = (() => {
     const lost = c.l ? { dex: c.l[0], x: c.l[1], y: c.l[2], done: !!(c.q & 2), follow: !!(c.q & 8), anim: old && old.lost && old.lost.dex === c.l[0] ? old.lost.anim : null } : null;
     const K3 = [null, 'slam', 'charge', 'dash'];
     if (c.f) queueMicrotask(() => guestFollow(c.f | 0));   // (V8)
+    if (c.pg && G.World.zone && G.World.zone.dive && G.World.zone.zone === (c.f | 0)) for (let i = 0; i < 8; i++) if (c.pg & (1 << i)) openPlug(i);   // (a viewer opens what the host did)
     view = { weekly: c.w ? { week: c.w[0], mod: G.Expedition.DIVE_MODS[c.w[1]] } : null, rescuedN: c.n | 0, start: c.st || 1, lmUsed: !!(c.q & 16), obeliskT: c.q & 32 ? 1 : 0, floor: c.f | 0, route, bank: c.b | 0, stake: c.s | 0, sealed: !!(c.q & 1), escaped: !!(c.q & 4), ropeT: (c.o || 0) / 4, lost,
              rescued: [], combo: c.k ? { n: c.k[0], t: c.k[1] / 10 * COMBO.WINDOW } : null, tg: (c.tg || []).map(a => ({ k: K3[a[0]], x: a[1], y: a[2], r: a[3], len: a[3], a: a[4] / 100, w: a[5], t: a[6] / 10, T: 1, e: G.EnemyMgr.get ? G.EnemyMgr.get(a[7]) : null })) };
   }
@@ -946,6 +1010,7 @@ G.ExpDive = (() => {
     if (!S || !G.World.zone || !G.World.zone.dive) return;
     const L = G.World.zone.dive, now = performance.now() / 1000, cam = G.Camera, R = TS();
     drawTele(ctx, S, now);
+    drawPlugs(ctx, L, cam);
     const [sx, sy] = wpos(L.stairs);
     if (cam.sees(sx, sy, 60)) {
       ctx.save();
@@ -1033,7 +1098,7 @@ G.ExpDive = (() => {
 
   return { K, NAME, GUARDIANS, target, pool, guardianOf, routeOf, begin, reset, update, hurt, onKill, pay, scoreParts, result, record,
            setup, roles, press, pad, tick, out, drawButtons, offerLearn, LEARN_AT, get rects() { return rects; },
-           submit, board, guestFollow, WEEKLY, MOD_NAME, expectedPay,
+           submit, board, guestFollow, WEEKLY, MOD_NAME, expectedPay, openPlug, canOpen, PLUG,
            openPicker, closePicker, back, starts, startOf, stageOf, bestOf, sealOf, seals, routeOpen, hurtK, SEAL, MAIN,
            live, shown, dBlock, applyD, TELE, COMBO, HITSTOP, hold, ecoLayout, LM, ESCORT, get view() { return view; },
            drawGround, drawHud, drawMini, hudLine, hudColor, on, get run() { return S; } };

@@ -378,7 +378,7 @@ try {
 		let chests = 0;
 		for (let f = 1; f <= 40; f++) {
 			const z = G.ExpClassic.build(4242, 'dive:forest', f), lay = G.ExpEco.layoutOf(z);
-			chests += z.dive.chests.length;
+			chests += z.dive.chests.length + (z.dive.plugs || []).length;   // (+ the secret pockets' chests)
 			for (const o of lay.objs) kinds[o.kind] = (kinds[o.kind] || 0) + 1;
 			if ((f % 5 === 0) && lay.objs.some(o => o.kind === 'meowth')) arenaShop.push(f);
 			for (const o of lay.objs) if (z.terr(o.tx, o.ty) !== 0) out.offFloor = (out.offFloor || 0) + 1;
@@ -813,6 +813,8 @@ try {
 			return { base15, f25: coins(D.expectedPay(25)), f10: coins(D.expectedPay(10)), f50: coins(D.expectedPay(50)), faint25: coins(D.expectedPay(25) * 0.25) };
 		});
 		A(bal.f25 >= bal.base15 * 0.75 && bal.f25 <= bal.base15 * 1.25, `an escaped floor-25 dive pays about a 15-minute base run (${bal.f25} vs ${bal.base15} Pokémonedas)`, JSON.stringify(bal));
+		const tune = await E(d.page, () => { const K = G.ExpDive.K, T = G.ExpDive.TELE; return [K.HP_K, K.DMG_K, K.T_PER_FLOOR, K.TIER_BST, K.ALPHA.hp, K.ALPHA.dmg, K.GUARD.hp, K.GUARD.dmg, T.SLAM_DMG, T.CHARGE_DMG]; });
+		A(JSON.stringify(tune) === '[2.8,1.68,13,80,7,1.2,50,1.4,1.35,1.6]', 'the difficulty tuning (tools/micasurvivor/dive_sim.mjs, 2026-11-02: fresh ~floor 11, half-upgraded ~18, maxed ~27) is what ships', JSON.stringify(tune));
 		A(bal.f10 < bal.f25 * 0.5 && bal.f50 > bal.f25 * 2, 'deeper pays more than in proportion (floor 10 < half, floor 50 > twice)', JSON.stringify(bal));
 		// the step cost on a deep floor, every group awake (a phone is ~4x slower: the 16 ms frame keeps room for drawing)
 		const perf = await E(d.page, async () => {
@@ -828,6 +830,83 @@ try {
 			return { floor: S.floor, foes: n, ms: +ms.toFixed(2) };
 		});
 		A(perf.floor === 26 && perf.foes >= 30 && perf.ms < 3, `a floor-26 step with every group awake (${perf.foes} foes): ${perf.ms} ms of logic (< 3 ms)`, JSON.stringify(perf));
+		await d.ctx.close();
+	}
+
+	// ======================== 13. secret pockets (boulders / thickets) and the co-op team pot at the shop
+	{
+		const d = await bootPage();
+		const pk = await E(d.page, async () => {
+			const H = window.__t, out = {};
+			G.Expedition.diveRoute('forest'); G.Expedition.diveStart(1);
+			await G.Flow.play('exp-dive'); H.freeze(); H.sturdy();
+			const S = G.ExpDive.run, pl = G.Game.player;
+			// down to a floor with a pocket
+			for (let k = 0; k < 12 && !(G.World.zone.dive.plugs || []).length; k++) H.downTo(S.floor + 1);
+			const L = G.World.zone.dive, pg = L.plugs[0], i = 0;
+			out.floor = S.floor; out.kind = pg && pg.kind;
+			if (!pg) return out;
+			const TS = H.TS(), z0w = G.World.zone;
+			// the open floor next to the plug (the cave side), where you lean on it
+			const side = [[1, 0], [-1, 0], [0, 1], [0, -1]].map(([dx, dy]) => [pg.at[0] + dx, pg.at[1] + dy]).find(([tx, ty]) => G.World.maskAt(tx + z0w.x0, ty + z0w.y0) > 0 && G.ExpDive.run && true);
+			const [x, y] = H.wpos(side || pg.at);
+			const closed = () => G.World.maskAt(pg.at[0] + G.World.zone.x0, pg.at[1] + G.World.zone.y0) === 0;
+			out.closed0 = closed();
+			// the chest behind it is one of the floor's free balls
+			out.chest = G.ExpEco.layoutOf(G.World.zone).objs.some(o => o.kind === 'freeball' && o.tx === pg.chest[0] + G.World.zone.x0 && o.ty === pg.chest[1] + G.World.zone.y0);
+			// the wrong type (Bulbasaur): it stays shut, a tip says what it needs
+			H.thin();
+			const mon0 = pl.mon;
+			pl.mon = Object.assign({}, mon0, { types: ['grass'] });
+			H.step(40, 1 / 30, () => { pl.x = x; pl.y = y; });
+			out.wrong = closed() && !(S.plugsOpen & 1) && !!S.plugTip;
+			// the right type: it opens
+			pl.mon = Object.assign({}, mon0, { types: pg.kind === 'boulder' ? ['fighting'] : ['fire'] });
+			H.step(30, 1 / 30, () => { pl.x = x; pl.y = y; });
+			out.opened = !closed() && (S.plugsOpen & 1) === 1 && pg.open === true;
+			const blk = JSON.parse(JSON.stringify(G.ExpDive.dBlock()));
+			out.blockPg = blk.pg;
+			pl.mon = mon0;
+			// a viewer: the floor rebuilt closed, then the host's block opens it
+			const z0 = G.World.zone, z2 = G.ExpClassic.build(G.World.seed, z0.map, z0.zone);
+			G.World.setZone(z2);
+			out.viewerClosed = G.World.maskAt(pg.at[0] + z2.x0, pg.at[1] + z2.y0) === 0;
+			G.ExpDive.applyD(blk);
+			await new Promise(r => setTimeout(r, 0));
+			out.viewerOpen = G.World.maskAt(pg.at[0] + z2.x0, pg.at[1] + z2.y0) > 0;
+			G.ExpDive.applyD(null); G.World.setZone(z0);
+			return out;
+		});
+		A(pk.kind && pk.closed0 && pk.chest, `a floor with a secret pocket (floor ${pk.floor}, a ${pk.kind}): shut, a chest behind it`, JSON.stringify(pk));
+		A(pk.wrong, 'leaning on it with the wrong type: it stays shut and a tip says what it needs', JSON.stringify(pk));
+		A(pk.opened && pk.blockPg === 1, 'the right type (Fighting / Fire): it opens; in the viewers\' block', JSON.stringify(pk));
+		A(pk.viewerClosed && pk.viewerOpen, 'a viewer\'s rebuilt floor opens the same plug from the block', JSON.stringify(pk));
+		// the team pot: in co-op the host keeps the team's ₽, and a guest's buy at the shop is paid from it
+		const pot = await E(d.page, async () => {
+			const H = window.__t, S = G.ExpDive.run, pl = G.Game.player, out = {};
+			// a shop floor ahead
+			let f = S.floor + 1;
+			for (; f < S.floor + 30; f++) { if (f % 5 === 0) continue; const lay = G.ExpEco.layoutOf(G.ExpClassic.build(G.World.seed, 'dive:forest', f)); if (lay.objs.some(o => o.kind === 'meowth')) break; }
+			H.downTo(f); H.thin(); H.step(10);
+			out.floor = S.floor;
+			const cb = new Proxy({}, { get: (t, k) => k === 'team' ? () => ({}) : () => {} });
+			G.Coop.begin({ seed: G.World.seed, host: G.Net.uid, members: [{ uid: G.Net.uid, name: 'me', dex: 1 }, { uid: 'bob', name: 'bob', dex: 4 }] }, pl, cb);
+			out.host = G.Coop.isHost;
+			H.step(5);
+			const eco = G.ExpEco, lay = eco.layoutOf(G.World.zone), shop = lay.objs.find(o => o.kind === 'meowth');
+			// the stock appears once the stall is open (it is, all floor)
+			H.put(shop.x, shop.y + 40); H.step(20);
+			pl.coins = 1000;
+			const m = G.Coop.mate('bob');
+			out.mate = !!m;
+			if (m) m.connected = true;
+			const q0 = m ? m.q.length : 0, c0 = pl.coins;
+			out.took = eco.netEvent(['xb', 0, shop.i], 'bob');
+			out.paid = c0 - pl.coins; out.sent = m ? m.q.slice(q0).map(e => e[0]) : [];
+			G.Coop.end();
+			return out;
+		});
+		A(pot.host && pot.took && pot.paid > 0 && pot.sent.includes('xgi'), `co-op: a guest's buy at the Kecleon / Meowth shop is paid from the team's ₽ (the host's: -${pot.paid}) and the item sent to the guest`, JSON.stringify(pot));
 		await d.ctx.close();
 	}
 

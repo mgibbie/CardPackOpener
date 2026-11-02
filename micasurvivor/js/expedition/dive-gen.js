@@ -22,6 +22,8 @@
  *                                 (at 55 % and 85 % of it)
  *                         chests  1, + 1 at 60 %, + 1 at 25 %; wall-hugging spots, >= 10 tiles apart
  *                         landmark  40 % of the plain floors: the route's own (LANDMARK)
+ *                         pockets 1-2 secret pockets (3-40 tiles) behind a plug (plugs: {at, kind boulder / thicket, size, chest});
+ *                                 the plug is a WALL in the grid until dive.js opens it
  *                       -> {w, h, kind, prop, spawn, stairs, stairsSteps, farSteps (the carved longest walk), rescue, groups, chests, landmark, path, shape, open, tries, ...}
  *                       kind: 0 floor, 1 wall, 2 liquid (G.ExpTerrain's FLOOR / WALL / LIQUID); prop: 3 = tall grass.
  *                       Every point is [tx, ty] in the grid (0..w-1, 0..h-1).
@@ -42,6 +44,7 @@ G.DiveGen = (() => {
     STAIRS_AT: 0.9, RESCUE: [0.35, 0.8], RESCUE_FAR: 12,
     GROUP_TILES: 62, GROUP_FAR: 16, GUARDS: [0.55, 0.85],
     CHEST: [0.6, 0.25], CHEST_GAP: 10, LANDMARK: 0.4,
+    POCKET: [3, 40], POCKET2: 0.45, POCKET_TRIES: 60,   // secret pockets: 3-40 tiles behind a plug; 2 of them 45 % of the time
     ARENA_R: 10
   };
   // The 8 routes (PokéDive's Mossy Woods ... Fungal Grove). types: the foes' bias; lakes / grass: blob counts;
@@ -278,6 +281,55 @@ G.DiveGen = (() => {
       for (let i = 0; i < N; i++) if (kind[i] === FLOOR && dl[i] < 0) kind[i] = LIQUID;
       if (dl[stairs] < 0) for (const i of path) kind[i] = FLOOR;
     }
+    // secret pockets (PokéDive's): a corridor tile off the path whose plugging seals 3-40 tiles from the rest becomes a BOULDER
+    // (a Rock / Ground / Fighting / Steel Pokémon breaks it) or a THICKET (a Fire type burns it); a chest waits at the far end.
+    // Placed before the rescue, the groups and the chests, which then only ever use what the spawn reaches.
+    const plugs = [];
+    if (shape !== 'guardian') {
+      const want = r() < K.POCKET2 ? 2 : 1, cand = [], sealed = new Set();   // (sealed: the tiles of the pockets made so far)
+      for (let y = 1; y < H - 1; y++) for (let x = 1; x < W - 1; x++) {
+        const i = at(x, y);
+        if (kind[i] !== FLOOR || onPath[i] || near(i, spawn, 6) || near(i, stairs, 4)) continue;
+        if (D4.filter(([dx, dy]) => kind[at(x + dx, y + dy)] === FLOOR).length === 2) cand.push(i);
+      }
+      for (let k = cand.length - 1; k > 0; k--) { const j = Math.floor(r() * (k + 1)); [cand[k], cand[j]] = [cand[j], cand[k]]; }
+      for (let t = 0; t < Math.min(cand.length, K.POCKET_TRIES) && plugs.length < want; t++) {
+        const i = cand[t];
+        if (kind[i] !== FLOOR || plugs.some(pg => near(i, at(pg.at[0], pg.at[1]), 6))) continue;
+        kind[i] = WALL;
+        const dd = bfs(kind, spawn, j => kind[j] === FLOOR), pocket = [];
+        let bad = dd[stairs] < 0;
+        for (let j = 0; j < N && !bad; j++) if (kind[j] === FLOOR && dd[j] < 0 && !sealed.has(j)) { pocket.push(j); if (onPath[j] || pocket.length > K.POCKET[1]) bad = true; }
+        if (bad || pocket.length < K.POCKET[0]) { kind[i] = FLOOR; continue; }
+        for (const j of pocket) sealed.add(j);
+        // the chest: the pocket tile farthest from the plug
+        let far = pocket[0], fd = -1;
+        for (const j of pocket) { const v = Math.abs(j % W - i % W) + Math.abs(((j / W) | 0) - ((i / W) | 0)); if (v > fd) { fd = v; far = j; } }
+        plugs.push({ at: pt(i), kind: route === 'crater' || r() < 0.5 ? 'boulder' : 'thicket', size: pocket.length, chest: pt(far) });
+      }
+      // too few natural ones: carve one into the rock: a floor tile at the cave's edge, a 2-tile tunnel straight into solid
+      // wall (its mouth is the plug), then a 3 x 3 room, all of it solid rock with a wall all round before
+      const solid = (x, y) => x > 1 && y > 1 && x < W - 2 && y < H - 2 && kind[at(x, y)] === WALL;
+      const edge = [], reach0 = bfs(kind, spawn, j => kind[j] === FLOOR);   // (only off the floor you can walk: never inside another pocket)
+      for (let y = 2; y < H - 2; y++) for (let x = 2; x < W - 2; x++) { const i = at(x, y); if (kind[i] === FLOOR && reach0[i] >= 0 && !onPath[i] && !near(i, spawn, 6) && !near(i, stairs, 5)) edge.push(i); }
+      for (let t = 0; t < 400 && plugs.length < want && edge.length; t++) {
+        const i = edge[Math.floor(r() * edge.length)], x = i % W, y = (i / W) | 0, [dx, dy] = D4[Math.floor(r() * 4)];
+        const tun = [[x + dx, y + dy], [x + 2 * dx, y + 2 * dy]], cx = x + 4 * dx, cy = y + 4 * dy, room = [];
+        for (let oy = -1; oy <= 1; oy++) for (let ox = -1; ox <= 1; ox++) room.push([cx + ox, cy + oy]);
+        // every carved tile and its whole ring must be rock (but the mouth, which touches the cave)
+        const carve = tun.concat(room), ring = new Set();
+        for (const [tx, ty] of carve) for (let oy = -1; oy <= 1; oy++) for (let ox = -1; ox <= 1; ox++) ring.add(at(tx + ox, ty + oy));
+        for (const [tx, ty] of carve) ring.delete(at(tx, ty));
+        ring.delete(i);
+        const mouth = at(tun[0][0], tun[0][1]);
+        let ok = carve.every(([tx, ty]) => solid(tx, ty));
+        if (ok) for (const j of ring) { if (kind[j] !== WALL && !(Math.abs(j % W - x) + Math.abs(((j / W) | 0) - y) <= 1)) { ok = false; break; } }
+        if (!ok || plugs.some(pg => near(mouth, at(pg.at[0], pg.at[1]), 6))) continue;
+        for (const [tx, ty] of carve) kind[at(tx, ty)] = FLOOR;
+        kind[mouth] = WALL;   // (the plug)
+        plugs.push({ at: [tun[0][0], tun[0][1]], kind: route === 'crater' || r() < 0.5 ? 'boulder' : 'thicket', size: carve.length - 1, chest: [cx + dx, cy + dy], carved: true });
+      }
+    }
     d = bfs(kind, spawn, j => kind[j] === FLOOR);
     const sd = d[stairs];
     // the lost Pokémon
@@ -328,7 +380,7 @@ G.DiveGen = (() => {
     }
     return { seed, route, floor, w: W, h: H, kind, prop, shape, open: Math.round(open * 1000) / 1000, tries,
              spawn: pt(spawn), stairs: pt(stairs), stairsSteps: sd, farSteps: far, path: path.map(pt), rescue: rescue != null ? pt(rescue) : null,
-             groups, chests, landmark, cadence: c, floorTiles: floorN };
+             groups, chests, landmark, plugs, cadence: c, floorTiles: floorN };
   }
 
   /** PokéDive's rhythm: the alpha every 5th floor, the guardian every 25th, the Escape Rope on the 10s and every 25th. */
