@@ -522,6 +522,246 @@
 	},
 	"entries": [
 		{
+			"sha": "3c8c765",
+			"date": "2026-11-02",
+			"kind": "micatro",
+			"title": "Pokermon r67: Gen 7 batch 4, the 14 Gen 7 Legendaries (#772-807)",
+			"body": "",
+			"cards": [],
+			"micatroMods": [
+				{
+					"id": "pokermon",
+					"name": "Pokermon",
+					"added": [
+						{
+							"key": "j_poke_typenull",
+							"name": "Type: Null",
+							"set": "Joker",
+							"rarity": "legendary",
+							"cost": 10,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 12,
+								"y": 51
+							},
+							"soul": {
+								"x": 13,
+								"y": 51
+							}
+						},
+						{
+							"key": "j_poke_silvally",
+							"name": "Silvally",
+							"set": "Joker",
+							"rarity": "legendary",
+							"cost": 20,
+							"atlas": "@poke_AtlasJokersBasicGen07391",
+							"pos": {
+								"x": 6,
+								"y": 1
+							},
+							"soul": {
+								"x": 7,
+								"y": 1
+							}
+						},
+						{
+							"key": "j_poke_tapu_koko",
+							"name": "Tapu Koko",
+							"set": "Joker",
+							"rarity": "legendary",
+							"cost": 20,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 8,
+								"y": 52
+							},
+							"soul": {
+								"x": 9,
+								"y": 52
+							}
+						},
+						{
+							"key": "j_poke_tapu_lele",
+							"name": "Tapu Lele",
+							"set": "Joker",
+							"rarity": "legendary",
+							"cost": 20,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 10,
+								"y": 52
+							},
+							"soul": {
+								"x": 11,
+								"y": 52
+							}
+						},
+						{
+							"key": "j_poke_tapu_bulu",
+							"name": "Tapu Bulu",
+							"set": "Joker",
+							"rarity": "legendary",
+							"cost": 20,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 12,
+								"y": 52
+							},
+							"soul": {
+								"x": 13,
+								"y": 52
+							}
+						},
+						{
+							"key": "j_poke_tapu_fini",
+							"name": "Tapu Fini",
+							"set": "Joker",
+							"rarity": "legendary",
+							"cost": 20,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 14,
+								"y": 52
+							},
+							"soul": {
+								"x": 15,
+								"y": 52
+							}
+						},
+						{
+							"key": "j_poke_cosmog",
+							"name": "Cosmog",
+							"set": "Joker",
+							"rarity": "legendary",
+							"cost": 10,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 16,
+								"y": 52
+							},
+							"soul": {
+								"x": 17,
+								"y": 52
+							}
+						},
+						{
+							"key": "j_poke_cosmoem",
+							"name": "Cosmoem",
+							"set": "Joker",
+							"rarity": "legendary",
+							"cost": 10,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 18,
+								"y": 52
+							},
+							"soul": {
+								"x": 19,
+								"y": 52
+							}
+						},
+						{
+							"key": "j_poke_solgaleo",
+							"name": "Solgaleo",
+							"set": "Joker",
+							"rarity": "legendary",
+							"cost": 20,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 20,
+								"y": 52
+							},
+							"soul": {
+								"x": 21,
+								"y": 52
+							}
+						},
+						{
+							"key": "j_poke_lunala",
+							"name": "Lunala",
+							"set": "Joker",
+							"rarity": "legendary",
+							"cost": 20,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 22,
+								"y": 52
+							},
+							"soul": {
+								"x": 23,
+								"y": 52
+							}
+						},
+						{
+							"key": "j_poke_necrozma",
+							"name": "Necrozma",
+							"set": "Joker",
+							"rarity": "legendary",
+							"cost": 20,
+							"atlas": "@poke_AtlasJokersBasicGen07391",
+							"pos": {
+								"x": 6,
+								"y": 4
+							},
+							"soul": {
+								"x": 7,
+								"y": 4
+							}
+						},
+						{
+							"key": "j_poke_magearna",
+							"name": "Magearna",
+							"set": "Joker",
+							"rarity": "legendary",
+							"cost": 20,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 10,
+								"y": 53
+							},
+							"soul": {
+								"x": 11,
+								"y": 53
+							}
+						},
+						{
+							"key": "j_poke_marshadow",
+							"name": "Marshadow",
+							"set": "Joker",
+							"rarity": "legendary",
+							"cost": 20,
+							"atlas": "@poke_AtlasJokersBasicGen07391",
+							"pos": {
+								"x": 2,
+								"y": 5
+							},
+							"soul": {
+								"x": 3,
+								"y": 5
+							}
+						},
+						{
+							"key": "j_poke_zeraora",
+							"name": "Zeraora",
+							"set": "Joker",
+							"rarity": "legendary",
+							"cost": 20,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 22,
+								"y": 53
+							},
+							"soul": {
+								"x": 23,
+								"y": 53
+							}
+						}
+					]
+				}
+			]
+		},
+		{
 			"sha": "bce3178",
 			"date": "2026-11-02",
 			"kind": "micatro",
