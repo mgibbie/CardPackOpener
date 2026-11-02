@@ -67,6 +67,8 @@ pokemon/1003/Shoot.png
 pokemon/1003/Walk.png
 pokemon/10033/battle/Idle.png
 pokemon/10033/battle/Walk.png
+pokemon/10033/front/Idle.png
+pokemon/10033/front/Walk.png
 pokemon/10034/Attack.png
 pokemon/10034/Charge.png
 pokemon/10034/Faint.png
@@ -83,8 +85,12 @@ pokemon/10034/s/Shoot.png
 pokemon/10034/s/Walk.png
 pokemon/10035/battle/Idle.png
 pokemon/10035/battle/Walk.png
+pokemon/10035/front/Idle.png
+pokemon/10035/front/Walk.png
 pokemon/10036/battle/Idle.png
 pokemon/10036/battle/Walk.png
+pokemon/10036/front/Idle.png
+pokemon/10036/front/Walk.png
 pokemon/10037/Attack.png
 pokemon/10037/Charge.png
 pokemon/10037/Faint.png
@@ -143,8 +149,12 @@ pokemon/1004/s/Shoot.png
 pokemon/1004/s/Walk.png
 pokemon/10040/battle/Idle.png
 pokemon/10040/battle/Walk.png
+pokemon/10040/front/Idle.png
+pokemon/10040/front/Walk.png
 pokemon/10041/battle/Idle.png
 pokemon/10041/battle/Walk.png
+pokemon/10041/front/Idle.png
+pokemon/10041/front/Walk.png
 pokemon/10042/Attack.png
 pokemon/10042/Charge.png
 pokemon/10042/Faint.png
@@ -161,6 +171,8 @@ pokemon/10042/s/Shoot.png
 pokemon/10042/s/Walk.png
 pokemon/10043/battle/Idle.png
 pokemon/10043/battle/Walk.png
+pokemon/10043/front/Idle.png
+pokemon/10043/front/Walk.png
 pokemon/10044/Attack.png
 pokemon/10044/Charge.png
 pokemon/10044/Faint.png
@@ -177,10 +189,16 @@ pokemon/10044/s/Shoot.png
 pokemon/10044/s/Walk.png
 pokemon/10045/battle/Idle.png
 pokemon/10045/battle/Walk.png
+pokemon/10045/front/Idle.png
+pokemon/10045/front/Walk.png
 pokemon/10046/battle/Idle.png
 pokemon/10046/battle/Walk.png
+pokemon/10046/front/Idle.png
+pokemon/10046/front/Walk.png
 pokemon/10047/battle/Idle.png
 pokemon/10047/battle/Walk.png
+pokemon/10047/front/Idle.png
+pokemon/10047/front/Walk.png
 pokemon/10048/Attack.png
 pokemon/10048/Charge.png
 pokemon/10048/Faint.png
@@ -218,6 +236,8 @@ pokemon/1005/s/Shoot.png
 pokemon/1005/s/Walk.png
 pokemon/10050/battle/Idle.png
 pokemon/10050/battle/Walk.png
+pokemon/10050/front/Idle.png
+pokemon/10050/front/Walk.png
 pokemon/10051/Attack.png
 pokemon/10051/Charge.png
 pokemon/10051/Faint.png
@@ -248,6 +268,8 @@ pokemon/10052/s/Shoot.png
 pokemon/10052/s/Walk.png
 pokemon/10053/battle/Idle.png
 pokemon/10053/battle/Walk.png
+pokemon/10053/front/Idle.png
+pokemon/10053/front/Walk.png
 pokemon/10054/Attack.png
 pokemon/10054/Charge.png
 pokemon/10054/Faint.png
@@ -299,6 +321,8 @@ pokemon/10057/s/Shoot.png
 pokemon/10057/s/Walk.png
 pokemon/10058/battle/Idle.png
 pokemon/10058/battle/Walk.png
+pokemon/10058/front/Idle.png
+pokemon/10058/front/Walk.png
 pokemon/10059/Attack.png
 pokemon/10059/Charge.png
 pokemon/10059/Faint.png
@@ -329,6 +353,8 @@ pokemon/1006/s/Shoot.png
 pokemon/1006/s/Walk.png
 pokemon/10060/battle/Idle.png
 pokemon/10060/battle/Walk.png
+pokemon/10060/front/Idle.png
+pokemon/10060/front/Walk.png
 pokemon/10062/Attack.png
 pokemon/10062/Charge.png
 pokemon/10062/Faint.png
@@ -359,6 +385,8 @@ pokemon/10063/s/Shoot.png
 pokemon/10063/s/Walk.png
 pokemon/10064/battle/Idle.png
 pokemon/10064/battle/Walk.png
+pokemon/10064/front/Idle.png
+pokemon/10064/front/Walk.png
 pokemon/10065/Attack.png
 pokemon/10065/Charge.png
 pokemon/10065/Faint.png
@@ -417,6 +445,8 @@ pokemon/10068/s/Shoot.png
 pokemon/10068/s/Walk.png
 pokemon/10069/battle/Idle.png
 pokemon/10069/battle/Walk.png
+pokemon/10069/front/Idle.png
+pokemon/10069/front/Walk.png
 pokemon/1007/Attack.png
 pokemon/1007/Charge.png
 pokemon/1007/Faint.png
@@ -468,6 +498,8 @@ pokemon/10072/s/Shoot.png
 pokemon/10072/s/Walk.png
 pokemon/10073/battle/Idle.png
 pokemon/10073/battle/Walk.png
+pokemon/10073/front/Idle.png
+pokemon/10073/front/Walk.png
 pokemon/10074/Attack.png
 pokemon/10074/Charge.png
 pokemon/10074/Faint.png
@@ -498,6 +530,8 @@ pokemon/10075/s/Shoot.png
 pokemon/10075/s/Walk.png
 pokemon/10076/battle/Idle.png
 pokemon/10076/battle/Walk.png
+pokemon/10076/front/Idle.png
+pokemon/10076/front/Walk.png
 pokemon/10079/Attack.png
 pokemon/10079/Charge.png
 pokemon/10079/Faint.png
@@ -556,6 +590,8 @@ pokemon/10088/s/Shoot.png
 pokemon/10088/s/Walk.png
 pokemon/10089/battle/Idle.png
 pokemon/10089/battle/Walk.png
+pokemon/10089/front/Idle.png
+pokemon/10089/front/Walk.png
 pokemon/1009/Attack.png
 pokemon/1009/Charge.png
 pokemon/1009/Faint.png
@@ -572,6 +608,8 @@ pokemon/1009/s/Shoot.png
 pokemon/1009/s/Walk.png
 pokemon/10090/battle/Idle.png
 pokemon/10090/battle/Walk.png
+pokemon/10090/front/Idle.png
+pokemon/10090/front/Walk.png
 pokemon/10091/Attack.png
 pokemon/10091/Charge.png
 pokemon/10091/Faint.png
@@ -1164,6 +1202,8 @@ pokemon/10177/s/Shoot.png
 pokemon/10177/s/Walk.png
 pokemon/10178/battle/Idle.png
 pokemon/10178/battle/Walk.png
+pokemon/10178/front/Idle.png
+pokemon/10178/front/Walk.png
 pokemon/10179/Attack.png
 pokemon/10179/Charge.png
 pokemon/10179/Faint.png
@@ -1194,6 +1234,8 @@ pokemon/1018/s/Shoot.png
 pokemon/1018/s/Walk.png
 pokemon/10180/battle/Idle.png
 pokemon/10180/battle/Walk.png
+pokemon/10180/front/Idle.png
+pokemon/10180/front/Walk.png
 pokemon/1019/Attack.png
 pokemon/1019/Charge.png
 pokemon/1019/Faint.png

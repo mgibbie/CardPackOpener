@@ -3349,7 +3349,7 @@ The last category / variant / players are remembered (`micasurvivor_playflow`). 
   Lv 40 like a League run (`G.Megas.baseCards` in `js/systems/levelup.js`: the Megas + "Not yet"); the dex stays the
   species, the look / types / stats are the Mega's, the net frame's field 16 is the Mega's id.
 - **Art**: `python tools/micasurvivor/fetch_form_sprites.py` (then `hover_flags.py`): ANIMATED SpriteCollab form folders
-  (56 formes, 42 Megas), the overworld battle front where there is none (2 formes, 19 Megas, `src: battle`), and an alias
+  (56 formes, 42 Megas), the overworld battle front where there is none (2 formes, 19 Megas, `src: front`, sized to the species' sheet; x1.12 a Mega), and an alias
   row (`al`: the species' sheet) for the other 32 Megas. Deployed with `npm run deploy-micasurvivor` (+ the manifest).
 - **Enemies**: the formes join every pool by their own BST / types (they are in `G.DEX`). Megas are rare elites and bosses:
   Survival from 15:00 (`G.Enemies.MEGAS`, every 70-110 s; half the runs' 15:00 boss), Expedition zone 3 (one elite a plan),

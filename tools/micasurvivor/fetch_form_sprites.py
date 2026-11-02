@@ -7,38 +7,92 @@ tools/micasurvivor/forms_sprites.json (written by gen_forms.mjs from SpriteColla
 
     python tools/micasurvivor/fetch_form_sprites.py            # every forme and Mega with no row yet
     python tools/micasurvivor/fetch_form_sprites.py --refresh  # all of them again
+    python tools/micasurvivor/fetch_form_sprites.py --static   # only re-size the battle-front rows
     python tools/micasurvivor/hover_flags.py                   # then: the hv flags of the new animated rows
 
 Owner decision (Plans/MICASURVIVOR_UNIFIED_PLAN.md #2): ANIMATED SpriteCollab sheets (the form folders, e.g.
 sprite/0026/0001 = Alolan Raichu, with its shiny in 0026/0001/0001), fetched exactly as fetch_sprites.py fetches a
 species (same FALLBACK table, same anchors, same palette PNGs). Where SpriteCollab has none:
-  - a forme (Galarian Stunfisk, Zen Galarian Darmanitan): the overworld's static battle front, made into a sheet exactly as
-    battle_sprites.py makes one ({id}/battle/, "src":"battle")
-  - a Mega with an overworld battle sprite (js/data/mega-data.js `spr`): the same ({id}/battle/)
+  - a forme (Galarian Stunfisk, Zen Galarian Darmanitan): the overworld's static battle front, laid out as
+    battle_sprites.py lays one out but SIZED TO ITS SPECIES' SHEET ({id}/front/, "src":"front"; build_matched)
+  - a Mega with an overworld battle sprite (js/data/mega-data.js `spr`): the same, x1.12 ({id}/front/)
   - any other Mega (32: the Legends Z-A ones, the Z forms): an ALIAS row, "al": <species>, its species' own row: the game
     draws the species' sheet with the Mega aura and keystone sign (js/systems/forms.js, js/expedition/mega.js). Existing
     art only, never a placeholder.
 """
 import io
 import json
-import math
 import os
 import sys
+
+from PIL import Image
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import fetch_sprites as FS  # noqa: E402
 import battle_sprites as BS  # noqa: E402
-from follow_sprites import heights, ids_by_dex  # noqa: E402
+
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 LIST = os.path.join(HERE, 'forms_sprites.json')
+
+
+MEGA_K = 1.12   # a Mega stands this much taller than its species (js/expedition/mega.js K.H_K)
+
+
+def species_height(sp, rows):
+    """The visible height (art px x its art scale k) of species sp's Walk, first frame, facing down."""
+    m = json.loads(rows[sp])
+    w = m['a'].get('Walk') or m['a']['Idle']
+    path = os.path.join(FS.OUT_ASSETS, str(m.get('al') or sp), m.get('src') or '', 'Walk.png')
+    if not os.path.exists(path):
+        path = path.replace('Walk.png', 'Idle.png')
+    im = Image.open(path).convert('RGBA').crop((0, 0, w['w'], w['h']))
+    b = im.getchannel('A').point(lambda a: 255 if a > 40 else 0).getbbox()
+    return ((b[3] - b[1]) if b else w['h']) * (m.get('k') or 1), m
+
+
+def fit(im, th):
+    """im cropped to its pixels at visible height th: nearest-neighbour up (pixel art stays crisp), battle_sprites' down."""
+    im = im.crop(im.getchannel('A').getbbox())
+    f = th / im.height
+    if f < 1:
+        return BS.scaled(im, f)
+    return im.resize((max(1, round(im.width * f)), max(1, round(im.height * f))), Image.NEAREST)
+
+
+def build_matched(it, rows):
+    """(meta, sheet) of a static battle front at its species' size; None when there's nothing to size it by."""
+    if it['sp'] not in rows:
+        return None, None
+    fpath = os.path.join(BS.OW, 'pokemon', it['front'])
+    if not os.path.exists(fpath):
+        return None, None
+    hb, bm = species_height(it['sp'], rows)
+    th = max(12, round(hb * (MEGA_K if it['kind'] == 'mega' else 1)))
+    fr = fit(Image.open(fpath).convert('RGBA'), th)
+    bpath = fpath.replace('.png', '-b.png')
+    back = fit(Image.open(bpath).convert('RGBA'), th) if os.path.exists(bpath) else fr
+    w = max(fr.width, back.width) + 2
+    w = max(w, round((bm['a'].get('Idle') or bm['a']['Walk'])['w'] * (bm.get('k') or 1)))   # (the frame as wide as the species': the same body radius)
+    w += w % 2
+    h = max(fr.height, back.height) + 2
+    sheet = Image.new('RGBA', (w, h * 2), (0, 0, 0, 0))
+    for r, im in enumerate((fr, back)):
+        sheet.paste(im, ((w - im.width) // 2, r * h + h - im.height), im)
+    geo = {'w': w, 'h': h, 'n': 1, 'r': 2, 'd': [8], 'ax': w / 2 - 0.5, 'ay': (h - 1) - BS.FEET}
+    meta = {'s': bm.get('s', 1), 'a': {'Idle': dict(geo), 'Walk': dict(geo)}, 'src': 'front', 'dm': BS.DIR_MAP, 'fx': BS.FLIP}
+    if bm.get('hv'):
+        meta['hv'] = 1
+    return meta, sheet
 
 
 def main():
     args = sys.argv[1:]
     items = json.load(open(LIST, encoding='utf-8'))['list']
     head, rows, nl = FS.read_existing()
-    if '--refresh' not in args:
+    if '--static' in args:     # rebuild only the battle-front rows (their sizes), nothing fetched
+        items = [it for it in items if it['id'] in rows and ('"src":"battle"' in rows[it['id']] or '"src":"front"' in rows[it['id']])]
+    elif '--refresh' not in args:
         items = [it for it in items if it['id'] not in rows]
     print(f'{len(items)} formes / Megas to do')
 
@@ -65,32 +119,23 @@ def main():
         rows[d] = json.dumps(m, separators=(',', ':'))
     print(f'  SpriteCollab: {len(got)} animated' + (f', failed {failed}' if failed else ''))
 
-    # 2. the overworld battle fronts (static), battle_sprites.py's sheet
+    # 2. the overworld battle fronts (static): battle_sprites.py's sheet layout, SIZED TO THE SPECIES' OWN SHEET (its Walk's
+    #    visible height x its art scale; a Mega x MEGA_K, as js/expedition/mega.js draws its fronts), so it stands as tall as
+    #    its species on the field (B1c's calibration over the large Gen 9 fronts shrank these small ones to a speck)
     rest = [it for it in items if it['id'] not in got and it['front']]
     static = []
-    if rest:
-        hts = heights()
-        ids = ids_by_dex()
-        cal = BS.calibration(rows, ids, hts)
-        osp = BS.sprite_of
-        BS.sprite_of = lambda sid: sid[5:] if sid.startswith('file:') else osp(sid)
-        for it in rest:
-            h = it.get('height') or hts.get(it['sp']) or 10
-            meta, sheet = BS.build(it['id'], 'file:' + it['front'], cal, math.log(h))
-            if not meta:
-                continue
-            out_dir = os.path.join(FS.OUT_ASSETS, str(it['id']), 'battle')
-            os.makedirs(out_dir, exist_ok=True)
-            buf = io.BytesIO()
-            sheet.save(buf, 'PNG')
-            for anim in ('Idle', 'Walk'):
-                FS.save_optimized(buf.getvalue(), os.path.join(out_dir, anim + '.png'))
-            base = json.loads(rows[it['sp']]) if it['sp'] in rows else {}
-            if base.get('hv'):
-                meta['hv'] = 1
-            rows[it['id']] = json.dumps(meta, separators=(',', ':'))
-            static.append(it['id'])
-        BS.sprite_of = osp
+    for it in rest:
+        meta, sheet = build_matched(it, rows)
+        if not meta:
+            continue
+        out_dir = os.path.join(FS.OUT_ASSETS, str(it['id']), 'front')   # (U3 fix: a new folder: published sheets never change, the old {id}/battle/ stays as it was)
+        os.makedirs(out_dir, exist_ok=True)
+        buf = io.BytesIO()
+        sheet.save(buf, 'PNG')
+        for anim in ('Idle', 'Walk'):
+            FS.save_optimized(buf.getvalue(), os.path.join(out_dir, anim + '.png'))
+        rows[it['id']] = json.dumps(meta, separators=(',', ':'))
+        static.append(it['id'])
     print(f'  battle fronts: {len(static)} static {static}')
 
     # 3. the alias rows: the species' own sheet

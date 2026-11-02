@@ -67,11 +67,11 @@ const fam = FORMS.filter(p => G.FAMILY[p.dex] !== (G.FAMILY[p.sp] || p.sp) || p.
 A(!fam.length && G.Families.rootOf(10100) === 172 && G.Families.membersOf(26).includes(10100), 'a forme\'s family is its species\' (Alolan Raichu: Pichu\'s; the per-family upgrades are shared), its gen its region\'s (the gacha banner)', JSON.stringify(fam.map(p => p.dex)));
 // sprites: animated SpriteCollab rows, the battle fronts only where SpriteCollab has none
 const M = d => G.SPRITE_META[d];
-const fStatic = FIDS.filter(d => M(d) && M(d).src === 'battle'), fAnim = FIDS.filter(d => M(d) && !M(d).src && !M(d).al && M(d).a.Walk && M(d).a.Walk.n > 1 && M(d).a.Attack);
+const fStatic = FIDS.filter(d => M(d) && M(d).src === 'front'), fAnim = FIDS.filter(d => M(d) && !M(d).src && !M(d).al && M(d).a.Walk && M(d).a.Walk.n > 1 && M(d).a.Attack);
 A(fAnim.length === 56 && JSON.stringify(fStatic) === '[10178,10180]' && FIDS.every(d => M(d)),
 	`the formes' art: ${fAnim.length} ANIMATED SpriteCollab sheets (Walk + Attack...), the overworld's static battle front only for Zen Galarian Darmanitan and Galarian Stunfisk`, JSON.stringify({ fAnim: fAnim.length, fStatic }));
 A(FIDS.filter(d => M(d).sh).length >= 50, 'and most have their SpriteCollab shiny (' + FIDS.filter(d => M(d).sh).length + ')');
-const mAnim = MEGAS.filter(d => M(d) && !M(d).src && !M(d).al), mBat = MEGAS.filter(d => M(d) && M(d).src === 'battle'), mAl = MEGAS.filter(d => M(d) && M(d).al);
+const mAnim = MEGAS.filter(d => M(d) && !M(d).src && !M(d).al), mBat = MEGAS.filter(d => M(d) && M(d).src === 'front'), mAl = MEGAS.filter(d => M(d) && M(d).al);
 A(MEGAS.length === 93 && MEGAS.every(d => P(d) && P(d).mega && !G.DEX.includes(P(d)) && M(d)) && mAnim.length === 42 && mBat.length === 19 && mAl.length === 32
 	&& mAl.every(d => M(d).al === P(d).sp) && G.Megas.foes().length === 93,
 	`the 93 Megas: in G.DEX_BY (not G.DEX: not collection entries), each drawable: ${mAnim.length} animated SpriteCollab, ${mBat.length} battle fronts, ${mAl.length} their species' sheet ("al") with the Mega aura`,
@@ -250,6 +250,42 @@ try {
 		return { n: hs.length, bad: ids.filter((d, i) => !hs[i].ready), alias: G.Sprites.sheet(10278, 'Idle').src };
 	}, FIDS.concat(MEGAS));
 	A(ld.n === 151 && !ld.bad.length && /assets\/pokemon\/36\/Idle\.png/.test(ld.alias), `the page loads all ${ld.n} forme / Mega Idle sheets (an "al" row loads its species' sheet: Mega Clefable -> 36/)`, JSON.stringify(ld));
+
+	// ---- (review fix) every forme / Mega is drawn at its species' size: as an Enemy (body radius, the drawn picture's height)
+	//      and in a sprite canvas (the picker, the Lexicon, the level-up card). The static fronts were a speck before
+	const sz = await E(async (ids) => {
+		const sp = d => G.Forms.speciesOf(d), all = [...new Set(ids.concat(ids.map(sp)))];
+		await G.Sprites.preload(all, 30000);
+		const aura = G.Megas.aura, emblem = G.Megas.emblem;
+		G.Megas.aura = G.Megas.emblem = () => {};   // (the picture alone: the aura / sign are not the Pokémon)
+		const drawnH = d => {
+			const cv = document.createElement('canvas'); cv.width = 400; cv.height = 400;
+			const c = cv.getContext('2d'), a = new G.Sprites.Animator(d, 1); a.loop('Idle'); a.draw(c, 200, 330);
+			const px = c.getImageData(0, 0, 400, 400).data; let top = 400, bot = -1, n = 0;
+			for (let y = 0; y < 400; y++) for (let x = 0; x < 400; x++) if (px[(y * 400 + x) * 4 + 3] > 200) { n++; if (y < top) top = y; if (y > bot) bot = y; }
+			return { h: bot >= top ? bot - top + 1 : 0, n };
+		};
+		const out = [];
+		for (const d of ids) {
+			const e = new G.Enemy({ dex: d, hp: 10, spd: 50, dmg: 1, xp: 1, behavior: 'chase' }, 0, 0, { hp: 1, spd: 1, dmg: 1 });
+			const b = new G.Enemy({ dex: sp(d), hp: 10, spd: 50, dmg: 1, xp: 1, behavior: 'chase' }, 0, 0, { hp: 1, spd: 1, dmg: 1 });
+			const de = drawnH(d), db = drawnH(sp(d));
+			out.push({ d, r: e.r / b.r, h: de.h / Math.max(1, db.h), n: de.n });
+		}
+		G.Megas.aura = aura; G.Megas.emblem = emblem;
+		// a sprite canvas (G.UI.spriteCanvas, the picker's / Lexicon's): its opaque pixels
+		const host = document.createElement('div'); host.style.cssText = 'position:fixed;left:0;top:0;z-index:99999;display:flex;flex-wrap:wrap;width:1280px';
+		document.body.appendChild(host);
+		const cvs = ids.map(d => { const cv = G.UI.spriteCanvas(d, 56, 48, { scale: 1, shadow: false }); host.appendChild(cv); return [d, cv]; });
+		await new Promise(r => setTimeout(r, 300));
+		for (let i = 0; i < 3; i++) { G.UI.tick(1 / 60); await new Promise(r => setTimeout(r, 30)); }
+		const canv = cvs.map(([d, cv]) => { const px = cv.getContext('2d').getImageData(0, 0, cv.width, cv.height).data; let n = 0; for (let i = 3; i < px.length; i += 4) if (px[i] > 200) n++; return [d, n]; });
+		host.remove();
+		return { small: out.filter(o => o.r < 0.6 || o.h < 0.7 || o.n < 80).map(o => [o.d, +o.r.toFixed(2), +o.h.toFixed(2), o.n]), n: out.length,
+			min: Math.min(...out.map(o => o.h)).toFixed(2), canvSmall: canv.filter(([, n]) => n < 60) };
+	}, FIDS.concat(MEGAS));
+	A(sz.n === 151 && !sz.small.length, `every forme / Mega as an Enemy is its species' size or more (drawn height >= 70 % of the species', body radius >= 60 %: some real sheets are narrower, Galarian Articuno 64 %; lowest height ${sz.min}): no speck`, JSON.stringify(sz.small.slice(0, 20)));
+	A(sz.canvSmall && !sz.canvSmall.length, 'and each sprite canvas (picker, Lexicon, cards) draws a real picture (>= 60 opaque px at scale 1)', JSON.stringify(sz.canvSmall));
 
 	// ---- a base run AS Alolan Vulpix; the gacha; the Play flow's picker
 	const b1 = await E(async () => {

@@ -170,7 +170,7 @@ versión shiny de estos dibujos. Pokémon © Nintendo / Creatures Inc. / GAME FR
 
 Los números mayores de 10000 de la tabla de artistas son ids de forma de PokéAPI: las 58 formas regionales (10091-10253) y las
 megaevoluciones (10033-10325), con las hojas de sus carpetas de forma de SpriteCollab (`tools/micasurvivor/fetch_form_sprites.py`).
-Sin hoja allí, el frente de *combate* del overworld, como en el lote B1c: Darmanitan de Galar (modo Daruma) 10178, Stunfisk de Galar
+Sin hoja allí, el frente de *combate* del overworld (a la altura de la hoja de su especie, `{id}/front/`): Darmanitan de Galar (modo Daruma) 10178, Stunfisk de Galar
 10180 y 19 megaevoluciones (10033, 10035, 10036, 10040, 10041, 10043, 10045, 10046, 10047, 10050, 10053, 10058, 10060, 10064, 10069,
 10073, 10076, 10089, 10090). Las otras 32 megaevoluciones dibujan la hoja de su especie con el aura y el signo de la piedra activadora
 hechos en código. Pokémon © Nintendo / Creatures Inc. / GAME FREAK.
