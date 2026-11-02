@@ -373,6 +373,59 @@ try {
 		A(keysB.length === 2 && keysB.every(k => /^msurvrelaybudget:al_ce:\d{8}$/.test(k)), 'one exact row per host per day', keysB.join(','));
 	}
 
+	// ===== 7. U2: lobbies carry the run (mode + options) and a co-op version =====
+	{
+		const fr = as('frank'), dr = as('dora');
+		const bad = async (cfg, extra = {}) => (await alx('msurv-lobby-create', Object.assign({ dex: 25, cv: 2, cfg }, extra))).status;
+		A(await bad({ bmode: 'coop' }) === 400 && await bad({ bmode: 'daily', opts: {} }) === 400 && await bad({}, { cv: 3 }) === 400 && await bad({ bmode: 'normal', opts: { mods: 'fast' } }) === 400,
+			'a bad mode (coop is local-only), a Daily without its day, an unknown co-op version or bad mods are refused (400)');
+		const c7 = await al('msurv-lobby-create', { dex: 25, cv: 2, rules: 2, cfg: { bmode: 'tower', opts: { tstart: 11, mods: ['fast', 'bogus', 'hard'], type: 'fire' } } });
+		const L7 = c7.body.lobby && c7.body.lobby.id;
+		A(c7.status === 200 && c7.body.lobby.cv === 2 && c7.body.lobby.bmode === 'tower' && JSON.stringify(c7.body.lobby.opts) === JSON.stringify({ mods: ['fast', 'hard'], tstart: 11 }),
+			'a U2 base lobby carries its mode and allow-listed options (unknown mods and other modes’ fields dropped)', JSON.stringify(c7.body));
+		const tb = await alx('msurv-lobby-create', { dex: 25, cv: 2, rules: 2, cfg: { bmode: 'tower', opts: { tstart: 12 } } });
+		A(tb.body.lobby.opts.tstart === 1, 'a Tower start that is not a checkpoint falls back to floor 1', JSON.stringify(tb.body.lobby.opts));
+		const old = await fr('msurv-lobby-join', { id: L7, dex: 4, rules: 2 });
+		A(old.status === 409 && /out of date: reload/.test(old.body.error), 'a client without the co-op version (an old cache) is refused with the "out of date: reload" message', JSON.stringify(old));
+		const newer = await fr('msurv-lobby-join', { id: L7, dex: 4, rules: 2, cv: 1 });
+		A(newer.status === 409, 'another co-op version is refused too');
+		const j7 = await fr('msurv-lobby-join', { id: L7, dex: 4, rules: 2, cv: 2 });
+		A(j7.status === 200 && j7.body.lobby.members.length === 2, 'the same version joins', JSON.stringify(j7.body));
+		await fr('msurv-lobby-update', { id: L7, ready: true });
+		A((await fr('msurv-lobby-update', { id: L7, cfg: { bmode: 'rush' } })).status === 403, 'only the host changes the run (403)');
+		const u7 = await al('msurv-lobby-update', { id: L7, cfg: { bmode: 'daily', opts: { dseed: 20261102, mods: ['fast'] } } });
+		A(u7.status === 200 && u7.body.lobby.bmode === 'daily' && u7.body.lobby.opts.dseed === 20261102 && !u7.body.lobby.opts.mods && !u7.body.lobby.members.find(m => m.name === 'frank').ready,
+			'the host switches the lobby to the Daily (the host’s day, no picked modifiers) and the guest must ready up again', JSON.stringify(u7.body.lobby));
+		await fr('msurv-lobby-update', { id: L7, ready: true });
+		const s7 = await al('msurv-lobby-update', { id: L7, start: { seed: 4242 } });
+		A(s7.status === 200 && s7.body.lobby.start.bmode === 'daily' && s7.body.lobby.start.opts.dseed === 20261102 && s7.body.lobby.start.cv === 2 && s7.body.lobby.start.rules === 2,
+			'the start carries the mode, its options and the co-op version for everyone', JSON.stringify(s7.body.lobby.start));
+		A((await al('msurv-lobby-update', { id: L7, cfg: { bmode: 'normal' } })).status === 409, 'the run cannot change once started');
+		// an old host's lobby (no cv) still takes a U2 guest, as before
+		const c8 = await al('msurv-lobby-create', { dex: 25, rules: 2 });
+		const j8 = await dr('msurv-lobby-join', { id: c8.body.lobby.id, dex: 7, rules: 2, cv: 2 });
+		A(j8.status === 200 && !j8.body.lobby.cv && !j8.body.lobby.bmode, 'a lobby made without a co-op version (an old host) still takes a new client (it plays Normal)', JSON.stringify(j8.body.lobby));
+		// a Dive lobby: route, start floor (everyone must have reached it), weekly
+		const c9 = await al('msurv-lobby-create', { dex: 1, mode: 'exp-dive', dv: 20, map: 'dive:reef', cv: 2, cfg: { opts: { start: 26 } }, dst: { reef: 26, forest: 51, bogus: 3 } });
+		const L9 = c9.body.lobby && c9.body.lobby.id;
+		A(c9.status === 200 && c9.body.lobby.map === 'dive:reef' && c9.body.lobby.opts.start === 26 && JSON.stringify(c9.body.lobby.members[0].dst) === JSON.stringify({ forest: 51, reef: 26 }),
+			'a Dive lobby carries its route, its start floor and the host’s stages (allow-listed routes)', JSON.stringify(c9.body.lobby));
+		A((await alx('msurv-lobby-create', { dex: 1, mode: 'exp-dive', dv: 20, map: 'dive:reef', cv: 2, cfg: { opts: { start: 27 } } })).status === 400, 'a start floor that is not a stage (26, 51...) is refused');
+		await dr('msurv-lobby-join', { id: L9, dex: 4, dv: 20, cv: 2, dst: { forest: 26 } });
+		await dr('msurv-lobby-update', { id: L9, ready: true });
+		const s9 = await al('msurv-lobby-update', { id: L9, start: { seed: 7 } });
+		A(s9.status === 409 && /not reached/.test(s9.body.error) && JSON.stringify(s9.body.who) === '["dora"]' && !row('msurvlobby:' + L9).start,
+			'the start is refused while a member has not reached that floor on the route, naming who', JSON.stringify(s9));
+		await dr('msurv-lobby-update', { id: L9, dst: { reef: 51 } });
+		const s9b = await al('msurv-lobby-update', { id: L9, start: { seed: 7 } });
+		A(s9b.status === 200 && s9b.body.lobby.start.opts.start === 26 && s9b.body.lobby.start.map === 'dive:reef' && s9b.body.lobby.start.mode === 'exp-dive',
+			'once everyone has the stage, the start carries the route and the start floor', JSON.stringify(s9b.body.lobby && s9b.body.lobby.start));
+		const c10 = await alx('msurv-lobby-create', { dex: 1, mode: 'exp-dive', dv: 20, map: 'dive:forest', cv: 2, cfg: { opts: { weekly: 43, start: 26 } } });
+		A(c10.status === 200 && c10.body.lobby.opts.weekly === 43 && c10.body.lobby.opts.start === 1, 'a Weekly Dive lobby carries its week and always starts on floor 1', JSON.stringify(c10.body.lobby.opts));
+		const c11 = await alx('msurv-lobby-create', { dex: 1, mode: 'exp-classic', dv: 20, map: 'mtmoon', diff: 'hard', cv: 2, cfg: { opts: { start: 26 } } });
+		A(c11.status === 200 && c11.body.lobby.map === 'mtmoon' && JSON.stringify(c11.body.lobby.opts) === '{}', 'a Classic lobby keeps its map and tier and takes no Dive options');
+	}
+
 	// ===== static: GC + rate limits =====
 	const sv = fs.readFileSync(path.join(ROOT, 'server/mp.mjs'), 'utf8');
 	A(/\['msurvsig:', 1 \* HR\], \['msurvrelay:', 1 \* HR\], \['msurvinv:', 1 \* HR\], \['msurvlobby:', 12 \* HR\]/.test(sv), 'every msurv* prefix is swept by the GC');

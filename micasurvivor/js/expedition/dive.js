@@ -161,7 +161,8 @@ G.ExpDive = (() => {
           ended: false, escaped: false, groups: [], boss: null, stairsT: 0, ropeT: 0, ropeHurt: false, lost: null, deepest: 0, t0: 0 };
     // (V7: a saved stage: the dive starts on that floor)
     S.weekly = wk && wk.week === cfg.weekly ? wk : null;
-    const st = S.weekly ? 1 : startOf(route, cfg.start);
+    // (MicaSurvivor U2: an online dive starts on the host's stage: the lobby refused the start until everyone had reached it)
+    const st = S.weekly ? 1 : cfg.group && cfg.start > 1 && (cfg.start - 1) % 25 === 0 ? cfg.start : startOf(route, cfg.start);
     S.start = st;
     if (st > 1) G.Exp.enterZone(st);
     startFloor(st, 0);

@@ -557,6 +557,14 @@ G.Player = class Player {
       else { this.x = G.U.damp(this.x, tx, 6, dt); this.y = G.U.damp(this.y, ty, 6, dt); }
     } else if (G.U.dist2(this.x, this.y, n.x, n.y) > 300 * 300) { this.x = n.x; this.y = n.y; }
     else { this.x = G.U.damp(this.x, n.x, 14, dt); this.y = G.U.damp(this.y, n.y, 14, dt); }
+    // (MicaSurvivor U2: a partner in Team mode switched Pokémon: its puppet shows the new one)
+    if (n.dex && n.dex !== this.dex && G.DEX_BY[n.dex] && !(G.Modes && G.Modes.isExp())) {
+      const dir = this.anim.dir;
+      this.mon = G.DEX_BY[n.dex]; this.dex = n.dex;
+      this.anim = new G.Sprites.Animator(n.dex, 1, false); this.anim.dir = dir;
+      this.r = G.Sprites.bodyRadius(n.dex); this.bodyH = G.Sprites.bodyHeight(n.dex);
+      G.Sprites.preload([n.dex], 8000, false);
+    }
     if (n.hp < this.hp - 0.5 && !n.dead) this.flash = 0.14;
     this.hp = n.hp; this.maxHp = n.maxHp;
     this.magnet = n.mag || this.magnet;

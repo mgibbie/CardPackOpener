@@ -308,8 +308,9 @@ G.Pad = (() => {
     }
     if (!cur) {
       // (M5 batch 12a: in a co-op run player 2's pad never takes over player 1's menus and moves)
-      const p2i = G.LocalCoop && G.LocalCoop.on ? G.LocalCoop.padIdx : null;
-      const p = pads.find(x => busy(x) && x.index !== p2i);
+      // (U2: nor players 3 and 4's)
+      const mine = G.LocalCoop && G.LocalCoop.on ? G.LocalCoop.padIdxs : [];
+      const p = pads.find(x => busy(x) && !mine.includes(x.index));
       if (p) { activeIdx = p.index; cur = p; G.UI && G.UI.toast(G.T('Mando conectado')); }
     }
     if (!cur || !core) return;
@@ -342,6 +343,14 @@ G.Pad = (() => {
     if (pads.length < 2) return null;
     const p1 = activeIdx != null && pads.some(p => p.index === activeIdx) ? activeIdx : pads[0].index;
     return pads.find(p => p.index !== p1) || null;
+  }
+  /** MicaSurvivor U2: every connected pad player 1 is not using (with no pad of player 1's yet, all but the first), by index:
+   *  the local players 2-4 (js/systems/localcoop.js; the Play flow's join row). */
+  function others() {
+    const pads = readAll().sort((a, b) => a.index - b.index);
+    if (!pads.length) return [];
+    const p1 = activeIdx != null && pads.some(p => p.index === activeIdx) ? activeIdx : pads[0].index;
+    return pads.filter(p => p.index !== p1);
   }
   /** Player 2's left stick: [x, y] with the port's 0.22 deadzone (not rescaled), at most length 1; null with no player 2. */
   function p2Axis() {
@@ -719,7 +728,7 @@ G.Pad = (() => {
   }
 
   return {
-    held, poll, axis, p2, p2Axis, rumble, glyphHTML, drawGlyph, refreshGlyphs, settingsHTML, wireSettings,
+    held, poll, axis, p2, p2Axis, others, rumble, glyphHTML, drawGlyph, refreshGlyphs, settingsHTML, wireSettings,
     layout, map, defaults, setBtn, reset, buttonName, ACTIONS, LAYOUTS,
     get mode() { return mode; }, get listening() { return listening ? listening.action : null; },
     get active() { return !!cur; }, get ready() { return !!core; },

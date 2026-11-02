@@ -322,6 +322,54 @@ const msurvDiveWeek = now => Math.floor((now - Date.UTC(2026, 0, 5)) / 604800000
 const MSURV_EXP_NAME_RE = /^[a-z][a-z0-9_.:-]{0,63}$/;
 const MSURV_EXP_ID_RE = /^[A-Za-z0-9_.:-]{1,64}$/;
 const msurvExpDvOk = dv => Number.isInteger(dv) && dv >= 1 && dv <= 9999;
+// MicaSurvivor U2 (Plans/MICASURVIVOR_UNIFIED_PLAN.md: online co-op for every variant). A lobby of a U2 client carries its co-op
+// version `cv` (body.cv on create / join): a join without the same cv is refused (409 "out of date", the old client's own
+// message), so an old client never joins a lobby whose run it would play differently. A lobby made without cv (an old host)
+// takes anyone, as before. It also carries what the host plays:
+//   base lobby   bmode (one of MSURV_BASE_MODES) + opts {mods (allow-listed), type, tstart (a Tower checkpoint), dseed (the
+//                host's day: YYYYMMDD)}; the host may change them while the lobby waits (msurv-lobby-update {cfg});
+//   Dive lobby   map 'dive:<route>' and opts {start (1, 26, 51...), weekly (the week's number)}; a start floor > 1 needs every
+//                member to have reached that stage: members send dst {route: stage} and the start is refused (409
+//                "a member has not reached that floor", who) until they have.
+// The start ({k:'start'}) copies bmode / opts / cv for everyone.
+const MSURV_COOP_V = 2;
+const MSURV_BASE_MODES = ['normal', 'daily', 'rush', 'party', 'tower', 'rifts', 'type', 'team'];
+const MSURV_MOD_IDS = ['fast', 'horde', 'tank', 'hard', 'frail', 'nohealing'];
+const MSURV_TYPE_IDS = ['normal', 'fire', 'water', 'grass', 'electric', 'ice', 'fighting', 'poison', 'ground', 'flying', 'psychic', 'bug', 'rock', 'ghost', 'dragon', 'dark', 'steel', 'fairy'];
+const MSURV_TOWER_STARTS = [1, 6, 11, 16, 21, 26];
+const msurvCvOf = v => (Number.isInteger(v) && v >= 1 && v <= MSURV_COOP_V ? v : 0);
+const msurvDiveStartOk = v => Number.isInteger(v) && (v === 1 || (v > 25 && v <= 10001 && (v - 1) % 25 === 0));
+/** A lobby's run config from a body {bmode, opts} (base) or {opts} (a Dive lobby): {bmode?, opts} or {error}. */
+function msurvLobbyCfg(c, exp, mode) {
+	if (c == null) c = {};
+	if (typeof c !== 'object' || Array.isArray(c)) return { error: 'bad lobby config' };
+	const o = c.opts && typeof c.opts === 'object' && !Array.isArray(c.opts) ? c.opts : {};
+	if (exp) {
+		if (mode !== 'exp-dive') return { opts: {} };
+		const out = {};
+		if (o.weekly != null) { const w = Math.floor(+o.weekly); if (!(w >= 0 && w < 100000)) return { error: 'bad weekly' }; out.weekly = w; out.start = 1; }
+		else if (o.start != null) { if (!msurvDiveStartOk(o.start)) return { error: 'bad start floor' }; out.start = o.start; }
+		return { opts: out };
+	}
+	const bmode = c.bmode == null ? 'normal' : c.bmode;
+	if (!MSURV_BASE_MODES.includes(bmode)) return { error: 'bad mode' };
+	const out = {};
+	if (bmode !== 'daily' && bmode !== 'party' && o.mods != null) {
+		if (!Array.isArray(o.mods) || o.mods.length > MSURV_MOD_IDS.length) return { error: 'bad mods' };
+		out.mods = MSURV_MOD_IDS.filter(id => o.mods.includes(id));
+	}
+	if (bmode === 'type') out.type = MSURV_TYPE_IDS.includes(o.type) ? o.type : 'fire';
+	if (bmode === 'tower') out.tstart = MSURV_TOWER_STARTS.includes(o.tstart) ? o.tstart : 1;
+	if (bmode === 'daily') { const d = Math.floor(+o.dseed); if (!(d >= 20200101 && d <= 29991231)) return { error: 'bad daily seed' }; out.dseed = d; }
+	return { bmode, opts: out };
+}
+/** A member's Dive stages {route: stage} (allow-listed routes, sane numbers), or null. */
+function msurvDstOf(v) {
+	if (!v || typeof v !== 'object' || Array.isArray(v)) return null;
+	const out = {};
+	for (const r of ['forest', 'canyon', 'crater', 'reef', 'grotto', 'marsh', 'ruins', 'fungal', 'origin']) { const n = Math.floor(+v[r]); if (n > 0 && n <= 100000) out[r] = n; }
+	return out;
+}
 // DLC D9 (micasurvivor/js/expedition/tiers.js, G.ExpTier): the score's parts, time attack and the weekly season.
 //   runboard:micasurvivor_expedition:<map>:<diff>        (D0b) best SCORE per player, top 100
 //   runboard:micasurvivor_expedition:<map>:<diff>:time   best CLEAR TIME (won runs only), top 100, with the medal
@@ -3138,8 +3186,10 @@ export default async function handler(req, env) {
 		const live = lb => !!lb && now - hostSeen(lb) < (lb.start ? MSURV_RUN_IDLE_MS : MSURV_LOBBY_IDLE_MS);
 		const view = lb => ({
 			id: lb.id, host: lb.host, open: !!lb.open, v: lb.rev || 0,
-			members: lb.members.map(m => ({ name: m.name, dex: m.dex, shiny: !!m.shiny, ready: m.name === lb.host || !!m.ready })),
+			members: lb.members.map(m => ({ name: m.name, dex: m.dex, shiny: !!m.shiny, ready: m.name === lb.host || !!m.ready, ...(m.dst ? { dst: m.dst } : {}) })),
 			start: lb.start || null,
+			...(lb.cv ? { cv: lb.cv, opts: lb.opts || {} } : {}),   // (U2: the co-op version and the run's options)
+			...(lb.cv && lb.dv == null ? { bmode: lb.bmode || 'normal' } : {}),   // (U2: a base lobby's mode)
 			...(lb.dv != null ? { mode: lb.mode, dv: lb.dv } : {}),   // (DLC D0b: an Expedition lobby only)
 			...(lb.dv == null && lb.rules ? { rules: lb.rules } : {}),   // (DLC D16: a base lobby's ruleset)
 			...(lb.dv != null && lb.map ? { map: lb.map, diff: lb.diff } : {}),   // (DLC D11: its map and tier)
@@ -3162,7 +3212,7 @@ export default async function handler(req, env) {
 			}
 			return { error: 'busy, try again', status: 503 };
 		};
-		const fail = r => json({ error: r.error, ...(r.closed ? { closed: true } : {}) }, r.status || 400);
+		const fail = r => json({ error: r.error, ...(r.closed ? { closed: true } : {}), ...(r.who ? { who: r.who } : {}) }, r.status || 400);
 		// the caller's lobby, for the signalling / relay actions: must be live and the caller in it
 		const myLobby = async () => {
 			if (!okId) return { error: 'bad lobby id', status: 400 };
@@ -3215,6 +3265,12 @@ export default async function handler(req, env) {
 			// (DLC D16: a base lobby's ruleset, 1 = an old client's (no field), 2 = every move fires; allow-listed)
 			const rules = msurvRulesOf(body.rules);
 			if (!rules) return json({ error: 'bad rules', max: MSURV_RULES }, 400);
+			// (U2: a U2 client's lobby: its co-op version and the run it plays, allow-listed)
+			const cv = body.cv == null ? 0 : msurvCvOf(body.cv);
+			if (body.cv != null && !cv) return json({ error: 'bad co-op version', max: MSURV_COOP_V }, 400);
+			const cfg = cv ? msurvLobbyCfg(body.cfg, exp, body.mode) : null;
+			if (cfg && cfg.error) return json({ error: cfg.error }, 400);
+			const dst = msurvDstOf(body.dst);
 			for (let i = 0; i < 4; i++) {
 				const nid = randomBytes(6).toString('hex');
 				const lb = { id: nid, host: username, open: true, rev: 1, at: now, ts: now, invited: {}, start: null,
@@ -3223,6 +3279,10 @@ export default async function handler(req, env) {
 				else if (rules > 1) lb.rules = rules;                  // (DLC D16: a base lobby's ruleset; an old client's has none)
 				// (DLC D11: and the map + tier everyone plays, allow-listed; optional, as a D0b client sends neither)
 				if (exp && MSURV_EXP_MAPS.includes(body.map) && MSURV_EXP_DIFFS.includes(body.diff)) { lb.map = body.map; lb.diff = body.diff; }
+				// (U2: a Dive lobby's route; the run's config and version)
+				else if (exp && body.mode === 'exp-dive' && typeof body.map === 'string' && MSURV_DIVE_ROUTES.includes(body.map.slice(5)) && body.map.startsWith('dive:')) { lb.map = body.map; lb.diff = 'normal'; }
+				if (cv) { lb.cv = cv; lb.opts = cfg.opts; if (!exp) lb.bmode = cfg.bmode; }
+				if (dst) lb.members[0].dst = dst;
 				if (await store.setIfRev(LKEY(nid), lb, 0)) return json({ lobby: view(lb) });
 			}
 			return json({ error: 'busy, try again' }, 503);
@@ -3242,12 +3302,18 @@ export default async function handler(req, env) {
 				const mine = msurvRulesOf(body.rules), theirs = lb0.rules || 1;
 				if (mine !== theirs) return json({ error: mine < theirs ? 'your game is out of date: reload' : 'the host is on an old version of the game (out of date)', rules: theirs }, 409);
 			}
+			// U2: a lobby of a co-op version takes only that version (an old client: its own "out of date: reload" message)
+			if (lb0.cv) {
+				const mine = msurvCvOf(body.cv);
+				if (mine !== lb0.cv) return json({ error: mine > lb0.cv ? 'the host is on an old version of the game (out of date)' : 'your game is out of date: reload', cv: lb0.cv }, 409);
+			}
+			const dst = msurvDstOf(body.dst);
 			const r = await mutate(lb => {
 				const me = member(lb, username);
-				if (me) { me.dex = dexOf(body.dex); me.shiny = !!body.shiny; me.seen = now; return; }
+				if (me) { me.dex = dexOf(body.dex); me.shiny = !!body.shiny; me.seen = now; if (dst) me.dst = dst; return; }
 				if (!lb.open || lb.start) return { error: 'already started', status: 409 };
 				if (lb.members.filter(m => m.name === lb.host || now - (m.seen || 0) < MSURV_MEMBER_IDLE_MS).length >= MSURV_MAX) return { error: 'lobby full', max: MSURV_MAX, status: 409 };
-				lb.members.push({ name: username, dex: dexOf(body.dex), shiny: !!body.shiny, ready: false, seen: now });
+				lb.members.push({ name: username, dex: dexOf(body.dex), shiny: !!body.shiny, ready: false, seen: now, ...(dst ? { dst } : {}) });
 			});
 			if (r.error) return fail(r);
 			await store.delete(IKEY(username, r.lb.host));   // the invite is used up
@@ -3294,6 +3360,19 @@ export default async function handler(req, env) {
 				if (body.dex != null) me.dex = dexOf(body.dex);
 				if (body.shiny != null) me.shiny = !!body.shiny;
 				if (body.ready != null && !isHost) me.ready = !!body.ready;
+				if (body.dst != null) { const d = msurvDstOf(body.dst); if (d) me.dst = d; }
+				// (U2: the host changes the run while the lobby waits; the guests are asked to ready up again)
+				if (body.cfg != null) {
+					if (!isHost) return { error: 'only the host can do that', status: 403 };
+					if (!lb.cv) return { error: 'this lobby has no options', status: 409 };
+					if (lb.start) return { error: 'already started', status: 409 };
+					const c = msurvLobbyCfg(body.cfg, lb.dv != null, lb.mode);
+					if (c.error) return { error: c.error, status: 400 };
+					const was = JSON.stringify([lb.bmode, lb.opts]);
+					lb.opts = c.opts; if (lb.dv == null) lb.bmode = c.bmode;
+					if (lb.dv != null && lb.mode === 'exp-dive' && typeof body.cfg.map === 'string' && body.cfg.map.startsWith('dive:') && MSURV_DIVE_ROUTES.includes(body.cfg.map.slice(5))) lb.map = body.cfg.map;
+					if (JSON.stringify([lb.bmode, lb.opts]) !== was) for (const m of lb.members) if (m.name !== lb.host) m.ready = false;
+				}
 				me.seen = now;
 				if (body.open === true) { lb.open = true; lb.start = null; for (const m of lb.members) if (m.name !== lb.host) m.ready = false; }
 				else if (body.open === false) lb.open = false;
@@ -3302,6 +3381,13 @@ export default async function handler(req, env) {
 					const live2 = lb.members.filter(m => m.name === lb.host || now - (m.seen || 0) < MSURV_MEMBER_IDLE_MS);
 					if (live2.length < 2) return { error: 'you need at least one friend in the lobby', status: 409 };
 					if (live2.some(m => m.name !== lb.host && !m.ready)) return { error: 'not everyone is ready', status: 409 };
+					// (U2: a Dive from a saved stage: everyone must have reached it on that route)
+					const dstart = lb.cv && lb.mode === 'exp-dive' && lb.opts ? lb.opts.start || 1 : 1;
+					if (dstart > 1) {
+						const route = String(lb.map || 'dive:forest').slice(5);
+						const short = live2.filter(m => !(m.dst && m.dst[route] >= dstart)).map(m => m.name);
+						if (short.length) return { error: 'a member has not reached that floor', who: short, status: 409 };
+					}
 					const seed = Math.floor(+body.start.seed);
 					lb.members = live2;
 					lb.open = false;
@@ -3310,6 +3396,7 @@ export default async function handler(req, env) {
 					if (lb.dv != null) { lb.start.mode = lb.mode; lb.start.dv = lb.dv; }   // (DLC D0b: an Expedition lobby's start)
 					else if (lb.rules) lb.start.rules = lb.rules;   // (DLC D16: a base lobby's ruleset)
 					if (lb.dv != null && lb.map) { lb.start.map = lb.map; lb.start.diff = lb.diff; }   // (DLC D11: its map and tier)
+					if (lb.cv) { lb.start.cv = lb.cv; lb.start.opts = lb.opts || {}; if (lb.dv == null) lb.start.bmode = lb.bmode || 'normal'; }   // (U2)
 				}
 			});
 			if (r.error) return fail(r);

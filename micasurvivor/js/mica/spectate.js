@@ -89,9 +89,12 @@ G.Spectate = (() => {
     }
     const LC = G.LocalCoop;
     if (LC && LC.on && LC.mate) {
-      const o = LC.mate;
-      const hp = LC.down ? LC.mateHp : o.hp, max = LC.down ? LC.mateMax : o.maxHp;
-      mt.push([o.mon.name, o.dex, o.shiny ? 1 : 0, r1(o.x), r1(o.y), Math.ceil(Math.max(0, hp || 0)), r1(max || 1), (o.dead ? 1 : 0) | (o.walking ? 2 : 0), o.anim.dir | 0, 'l', LC.ctrl === 'p2' ? 1 : 0]);
+      // (U2: one row per local partner, players 2-4; the 2nd and on are named with their player number, so rows stay apart)
+      LC.rows.forEach((M, i) => {
+        const o = M.pl, dn = LC.down && i === 0;
+        const hp = dn ? LC.mateHp : o.hp, max = dn ? LC.mateMax : o.maxHp;
+        mt.push([i ? o.mon.name + ' · J' + M.n : o.mon.name, o.dex, o.shiny ? 1 : 0, r1(o.x), r1(o.y), Math.ceil(Math.max(0, hp || 0)), r1(max || 1), (o.dead ? 1 : 0) | (o.walking ? 2 : 0), o.anim.dir | 0, 'l', M.ctrl === 'pad' ? 1 : 0]);
+      });
       if (LC.down) s.dn = Math.ceil(LC.downLeft);
     }
     if (mt.length) s.mt = mt;

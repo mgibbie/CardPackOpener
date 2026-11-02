@@ -99,7 +99,8 @@ G.Game = (() => {
     const save = G.DB.save;
     // (MicaSurvivor DLC D11: an Expedition lobby's start plays its Expedition mode, map and tier for everyone: G.Expedition.coopPlan;
     //  a base start, or a page without the Expedition code, is Normal as always)
-    const cfg = G.Modes.begin(coop ? (coop.mode && G.Expedition && G.Expedition.coopPlan ? G.Expedition.coopPlan(coop) : { mode: 'normal' }) : G.Modes.plan(mode));
+    // (MicaSurvivor U2: a base lobby's start plays the host's mode and options, G.Modes.coopPlan; an old host's start, Normal)
+    const cfg = G.Modes.begin(coop ? (coop.mode && G.Expedition && G.Expedition.coopPlan ? G.Expedition.coopPlan(coop) : coop.bmode ? G.Modes.coopPlan(coop) : { mode: 'normal' }) : G.Modes.plan(mode));
     // Diario y Fiesta: su propio Pokémon (el del día / el elegido, aunque no lo tengas). Equipo: el primero.
     const mon = G.DEX_BY[cfg.dex || save.partner];
     // (MicaSurvivor DLC D18: the upgrades of the Pokémon's FAMILY, the best level among its stages: the same in every mode)
@@ -147,6 +148,7 @@ G.Game = (() => {
     deathT = 0;
     // MicaSurvivor (DLC D0b): the Expedition seam (js/core/hooks.js; no listener in a base page: nothing happens)
     G.Hooks.call('run.start', cfg, pl);
+    G.LocalCoop.afterStart(pl);   // (MicaSurvivor U2: the local partners' Expedition / Dive kits, after yours)
 
     state = 'playing';
     // MicaSurvivor (M5 lote 12c): la repetición se graba desde aquí, y tus amigos pueden verte en directo
@@ -265,7 +267,7 @@ G.Game = (() => {
       if (d && d.t) time = d.t;
       if (d && d.why === 'host') G.UI.toast('El anfitrión ha terminado la partida', 3200);
       G.Spawner.say('', 0, true);   // (MicaSurvivor 12b: no "Paused: waiting for…" left behind the summary)
-      endRun(!(d && d.why === 'host'));
+      endRun(!(d && (d.why === 'host' || d.why === 'win')));   // (U2: 'win', a mode's own end: the Tower won, the rifts' clock)
     },
     // MicaSurvivor (M5 batch 12b): the host is gone (not just out of the run): out of its lobby too, so the
     // summary leads to the menu instead of a lobby nobody hosts. endRun saves your rewards as always.
@@ -415,7 +417,8 @@ G.Game = (() => {
     // MicaSurvivor (M5 lote 6): los rankings sólo cuentan partidas normales (los otros modos cambian las reglas).
     // MicaSurvivor: y sin modificadores (Veloces, Horda... cambian la partida igual que un modo); vale para los
     // dos rankings (el de upstream, solo y grupo, y el de Magepunk). Los récords personales del modo siguen igual.
-    const ok = clean() && G.Modes.is('normal') && !G.Modes.mods.length;
+    // (MicaSurvivor U2: and never a run of 2-4 local players: a solo board is solo)
+    const ok = clean() && G.Modes.is('normal') && !G.Modes.mods.length && !(G.LocalCoop.ran > 1);
     const sent = ok && !coop ? G.Ranking.submitSolo(Object.assign(mark, { dex: pl.dex, shiny: pl.shiny }))
                : ok && wasHost ? G.Ranking.submitGroup(Object.assign(mark, { members: team })) : null;
     if (sent) sent.then(b => { if (b && b.some(p => p !== 'a')) G.DB.commit(true); }).catch(() => {});
@@ -472,6 +475,7 @@ G.Game = (() => {
     G.RunUI.showLevelUp(pl.level, G.LevelUp.offer(pl), card => {
       G.Audio.sfx('confirm');
       card.apply(pl);
+      G.LocalCoop.levelUp();   // (MicaSurvivor U2: each local partner takes its own card)
       state = 'playing';
     });
   }
@@ -611,6 +615,8 @@ G.Game = (() => {
     }
     if (p.kind === 'item') {
       if (mine) offerItem(p.value);
+      // (MicaSurvivor U2: a local partner's pick-up goes on ITS slot; a Rare Candy or an Expedition item is the team's: yours)
+      else if (who.isMate && !G.LocalCoop.takeItem(who, p.value)) offerItem(p.value);
       return;
     }
     if (p.kind === 'ticket' || p.kind === 'ticket10') {
@@ -622,6 +628,7 @@ G.Game = (() => {
     }
     if (p.kind === 'heal') {
       if (mine) pl.heal(pl.maxHp * 0.3 * G.Tower.healK());   // (M5 lote 8: el pacto Ayuno, main.gd 5371)
+      else if (who.isMate) who.heal(who.maxHp * 0.3);           // (U2: a local partner's)
       G.FX.ring(who.x, who.y, 6, 60, '#5fe08a', 0.4, 3);
       return;
     }
@@ -801,7 +808,8 @@ G.Game = (() => {
     }
     time += dt;
     // MicaSurvivor (M5 lote 6, main.gd 966): la Contrarreloj de grietas acaba a los 8 minutos (fuera de la arena).
-    if (G.Modes.checkTime(time)) { G.Audio.sfx('bossDown'); endRun(false); return; }
+    // (U2: online, the host's clock ends it for everyone; a guest waits for the host's end)
+    if ((!coop || G.Coop.isHost) && G.Modes.checkTime(time)) { G.Audio.sfx('bossDown'); coopEnd(false); return; }
 
     // (M5 lote 8, main.gd 4705-4707: en el Rush cada 150 s desde un bioma al azar; en la Torre, uno por piso)
     // (MicaSurvivor DLC D3: an Expedition map keeps its own biome: it never cycles)
@@ -823,7 +831,8 @@ G.Game = (() => {
       for (const p of G.Coop.puppets()) { p.netUpdate(dt); G.Combat.ghostOrbit(p, dt, time); }
       if (pl.dead) reviveTick(dt);
     }
-    G.Camera.follow(pl.x, pl.y, dt);
+    // (MicaSurvivor U2: 2-4 local players: the camera frames everyone on a pad; alone, you as always)
+    if (G.LocalCoop.full) { const c = G.LocalCoop.camTarget(pl); G.Camera.follow(c[0], c[1], dt); } else G.Camera.follow(pl.x, pl.y, dt);
     G.World.update(dt, G.Camera);
 
     const all = everyone();
@@ -840,7 +849,7 @@ G.Game = (() => {
     G.ZMoves.update(dt, pl);        // MicaSurvivor (M5 lote 4): el Movimiento Z y su enfriamiento
     G.ZMoves.updateWorld(dt);
     G.Dynamax.update(dt, pl);       // MicaSurvivor (M5 lote 5): Dynamax (crecer, ondas Max, final) y su enfriamiento
-    G.Pickups.update(dt, all, onCollect);
+    G.Pickups.update(dt, G.LocalCoop.full ? all.concat(G.LocalCoop.collectors(pl)) : all, onCollect);   // (U2: local partners pick things up too)
     G.Hazards.update(dt);
     G.Interact.update(dt, pl);
     // MicaSurvivor (M5 lote 8, main.gd 1007 / 3249-3253 / 5863): en el Rush de Jefes y la Torre no hay
@@ -859,6 +868,12 @@ G.Game = (() => {
     if (!coop || G.Coop.isHost) maybeLevelUp();
     if (pl.bonds > 0) offerBond(true);
     if (G.Coop.isHost) checkAllDown(dt);
+  }
+
+  /** MicaSurvivor U2: the run ends (a mode's end: the Tower won, the rifts' clock): online, the host ends it for everyone. */
+  function coopEnd(dead) {
+    if (G.Coop.isHost) G.Coop.over(Object.assign(summary(), { why: dead ? undefined : 'win' }));
+    endRun(dead);
   }
 
   /** Caído en grupo: un compañero a tu lado te va levantando. */
@@ -1098,7 +1113,7 @@ G.Game = (() => {
   }
 
   return {
-    init, startRun, everyone, levelXp, flash, offerBond, offerItem, grantLevels, choiceStart, choiceEnd, endRun,
+    init, startRun, everyone, levelXp, flash, offerBond, offerItem, grantLevels, choiceStart, choiceEnd, endRun, coopEnd,
     watchEnter, watchExit, watchPlayer(p) { if (state === 'watch') pl = p; },   // MicaSurvivor (M5 lote 12c)
     get pendingLevels() { return pendingLevels; },
     /** Para pruebas: recoge un objeto del suelo como si lo tocaras (monedas, objetos...). */
@@ -1238,6 +1253,11 @@ G.Flow = {
       return;
     }
     // MicaSurvivor (DLC D16): a base lobby's start carries its ruleset (an old host's has none: 1): only the same rules play
+    // (MicaSurvivor U2: and its co-op version: another version's run would play differently)
+    if (cfg.cv != null && cfg.cv !== G.Social.COOP_V) {
+      G.UI.toast(cfg.cv > G.Social.COOP_V ? 'Tu juego no está actualizado: recarga la página.' : 'El juego del anfitrión no está actualizado: tiene que recargar la página.', 5000); G.Audio.sfx('error'); G.Social.leaveRoom();
+      return;
+    }
     if (cfg.dv == null && (cfg.rules || 1) !== G.Player.RULES) {
       G.UI.toast('El juego del anfitrión no está actualizado: tiene que recargar la página.', 5000); G.Audio.sfx('error'); G.Social.leaveRoom();
       return;

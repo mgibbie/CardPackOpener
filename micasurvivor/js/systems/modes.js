@@ -160,6 +160,35 @@ G.Modes = (() => {
     }
     return { mode, mods: p.mods.slice(), type: mode === 'type' ? p.type : null, dex: null, seed: 0 };
   }
+  /**
+   * MicaSurvivor U2: the run an online base lobby's start plays (game.js startRun), the host's mode and options for everyone:
+   *   daily   the HOST's day (opts.dseed): its rule and its seeded setup; each player keeps their OWN Pokémon (not the day's)
+   *   party   each player their own party pick (no save, no death: every device's own rule)
+   *   team    each player their own team (switching is per player: js/systems/team.js on each device)
+   *   tower   the host's start floor (opts.tstart) for everyone; floors, boss, rest and pacts sync (js/systems/tower.js)
+   *   type / rush / rifts / normal   the host's type / mode; the modifiers (opts.mods) for everyone
+   * group: true (an online run: no local partners, never a solo board). An unknown bmode plays Normal.
+   */
+  function coopPlan(c, s = save()) {
+    const o = (c && c.opts && typeof c.opts === 'object') ? c.opts : {}, p = prefs(s);
+    const mode = c && LIST.includes(c.bmode) && c.bmode !== 'coop' ? c.bmode : 'normal';
+    const out = { mode, mods: Array.isArray(o.mods) ? MOD_IDS.filter(id => o.mods.includes(id)) : [], type: null, dex: null, seed: 0, team: null, group: true };
+    if (mode === 'daily') { const seed = +o.dseed > 0 ? +o.dseed : dailySeed(); return Object.assign(out, { mods: [dailyMod(seed)], seed }); }
+    if (mode === 'party') return Object.assign(out, { mods: [], dex: p.party });
+    if (mode === 'type') out.type = TYPES.includes(o.type) ? o.type : 'fire';
+    if (mode === 'tower') out.tstart = [1, 6, 11, 16, 21, 26].includes(o.tstart) ? o.tstart : 1;
+    if (mode === 'team') { const team = G.Team ? G.Team.list(s) : []; out.team = team; out.dex = team[0] || null; }
+    return out;
+  }
+  /** The options a base lobby carries for `mode` (the setup's picks): {bmode, opts} for G.Social.createRoom / setCfg. */
+  function lobbyCfg(mode, s = save()) {
+    const p = prefs(s), bmode = LIST.includes(mode) && mode !== 'coop' ? mode : 'normal', opts = {};
+    if (bmode !== 'daily' && bmode !== 'party') opts.mods = p.mods.slice();
+    if (bmode === 'type') opts.type = p.type;
+    if (bmode === 'tower' && G.Tower) opts.tstart = G.Tower.startFloor(s);
+    if (bmode === 'daily') opts.dseed = dailySeed();
+    return { bmode, opts };
+  }
   /** Al empezar la partida (game.js startRun). En grupo, siempre normal y sin modificadores. */
   function begin(cfg) {
     run = Object.assign({ mode: 'normal', mods: [], type: null, dex: null, seed: 0, team: null }, cfg || {});
@@ -258,10 +287,12 @@ G.Modes = (() => {
     } else if (run.mode === 'tower') {
       // M5 lote 8 (main.gd 808-815 / 842-843): el piso, los últimos jefes; stats towerRuns (towerBest al superar cada piso)
       out.lines.push(...G.Tower.finish(S));
-    } else if (run.mode === 'coop') {
-      // M5 lote 12a (main.gd 815-817 / 838-841): -20 % de monedas (multiplica a todo); stats coopRuns y, desde 60 s, groupRuns
+    }
+    // M5 lote 12a (main.gd 815-817 / 838-841): -20 % de monedas (multiplica a todo); stats coopRuns y, desde 60 s, groupRuns
+    // (MicaSurvivor U2: and any mode played by 2-4 local players, G.LocalCoop.ran)
+    if (run.mode === 'coop' || (G.LocalCoop && G.LocalCoop.ran > 1)) {
       out.base *= COINS.coop;
-      out.lines.push(NAME.coop);
+      out.lines.push(run.mode === 'coop' ? NAME.coop : G.I18n.f('Local · {x} jugadores', G.LocalCoop.ran));
       if (G.LocalCoop) G.LocalCoop.finish(S, time);
     }
     if (run.mode !== 'daily') {
@@ -313,7 +344,7 @@ G.Modes = (() => {
     LIST, NAME, ICON, MOD_IDS, MOD, K, TYPES, RIFTS, COINS, TYPE_DONE_MIN, PARTY_DEX,
     dailySeed, dailyDex, dailyMod, dailyBest, rng, seeded,
     prefs, toggleMod, cycleType, setParty,
-    plan, begin, has, is, isExp, enemyAdded, spawnK, onlyType, startPlayer, resetHeal, healTick, noDeath, saves,
+    plan, coopPlan, lobbyCfg, begin, has, is, isExp, enemyAdded, spawnK, onlyType, startPlayer, resetHeal, healTick, noDeath, saves,
     rifts, riftWon, checkTime, timeLeft, finish, typeDoneCount, title, label, mergeDaily, sanitize,
     get run() { return run; }, get mode() { return run.mode; }, get dv() { return run.dv == null ? null : run.dv; }, get mods() { return run.mods.slice(); },
     get riftsWon() { return riftsWon; }, get timeUp() { return timeUp; }

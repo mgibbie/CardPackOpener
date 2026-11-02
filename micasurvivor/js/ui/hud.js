@@ -673,13 +673,19 @@ G.HUD = (() => {
    * - Si has caído (main.gd 8653-8661): "Espectando: revivirás en N s" y la vida de tu compañero.
    */
   function drawLocalCoop(ctx, w, h, pl, px, top) {
-    const LC = G.LocalCoop, o = LC.mate;
+    // (MicaSurvivor U2: one chip per local partner, players 2-4, each in its colour)
+    const LC = G.LocalCoop, rows = LC.rows || [];
+    rows.forEach((M, i) => drawMateChip(ctx, w, h, pl, px, top + i * 20, M, i));
+    if (rows.length) drawSpectating(ctx, w, h);
+  }
+  function drawMateChip(ctx, w, h, pl, px, top, M, idx) {
+    const LC = G.LocalCoop, o = M.pl;
     if (!o) return;
-    const col = LC.COLOR, p2 = LC.ctrl === 'p2';
+    const col = M.full ? M.color : LC.COLOR, p2 = M.ctrl === 'pad';
     ctx.save();
     ctx.textAlign = 'left';
     ctx.font = F(800, 10);
-    const label = o.mon.name + ' · ' + (p2 ? 'J2' : 'IA');
+    const label = o.mon.name + ' · ' + (p2 ? 'J' + M.n : 'IA');
     const tw = ctx.measureText(G.I18n.t(label)).width, cw = tw + 28 + (p2 ? 18 : 0);
     roundRect(ctx, px, top, cw, 17, 7);
     ctx.fillStyle = 'rgba(0,0,0,.55)'; ctx.fill();
@@ -687,7 +693,7 @@ G.HUD = (() => {
     ctx.fillStyle = col;
     ctx.fillText(label, px + 21, top + 12);
     if (p2 && G.Pad) G.Pad.drawGlyph(ctx, 'lstick', px + 23 + tw, top + 1, 15);
-    mark('coop', px, top, cw, 17);
+    mark(idx ? 'coop' + (idx + 1) : 'coop', px, top, cw, 17);
 
     // flecha hacia el compañero si no se ve
     if (LC.visible(pl)) {
@@ -719,7 +725,9 @@ G.HUD = (() => {
       }
     }
     ctx.restore();
-
+  }
+  function drawSpectating(ctx, w, h) {
+    const LC = G.LocalCoop;
     // caído: espectas a tu compañero
     if (LC.down) {
       const bw = Math.min(300, w - 40), x0 = w / 2 - bw / 2, y0 = Math.round(h * 0.62) - 30;
