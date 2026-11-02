@@ -79,7 +79,7 @@ import './consumables/mart2.js';
 import './boosters/packs1.js';
 import './jokers/zzzapril_fools.js';
 import { DESIGN_FAMILIES, DESIGN_LOC, regi_chip_bonus, regi_h_x_mult, regi_enh_vars, slot_cost_removed, drifblim_destroyed, contrary_lifts, mummy_sell,
-  freeze_keep, freeze_thaw, frozen_by, spore_first_deal, spore_hand_scored } from './jokers/pokejokers_designs.js';
+  freeze_keep, freeze_thaw, frozen_by, spore_first_deal, spore_hand_scored, malamar_chip_bonus } from './jokers/pokejokers_designs.js';
 
 import { poke_set_type_badge, type_badge, type_tooltip, TYPE_COLOURS } from './systems/types.js';
 import { pokemon_in_pool, pool_filter, init_game_object, evo_item_in_pool } from './systems/pools.js';
@@ -729,7 +729,14 @@ const hooks = {
   // The owner's Regi trio (jokers/pokejokers_designs.js): Regirock's Stone cards give +100 Chips instead of +50 (a Card:get_chip_bonus
   // wrap); Registeel's held Steel cards X2 instead of X1.5 (Card:get_chip_h_x_mult, so Mime / Red Seal retriggers repeat it). Both only
   // while an undebuffed one is owned: no Regi, no change.
-  chip_bonus: regi_chip_bonus,
+  // ... and the owner's Malamar (Gen 6 batch 2, malamar_chip_bonus): while an undebuffed one is held, a playing card's rank Chips are its
+  // FLIPPED rank's (2 <-> Ace, 3 <-> King, 4 <-> Queen, 5 <-> Jack, 6 <-> 10, 7 <-> 9); its enhancement bonus and perma_bonus stay. Stone
+  // cards (Regirock's) are never flipped, so the two never touch the same card.
+  chip_bonus(v, card) {
+    const a = regi_chip_bonus(v, card);
+    const b = malamar_chip_bonus(a === undefined ? v : a, card);
+    return b === undefined ? a : b;
+  },
   chip_h_x_mult: regi_h_x_mult,
   // ... and the Stone / Steel card's own tooltip shows it (+100 Chips / X2, energized too): the same two functions (describe.js enh_live_vars).
   enh_loc_vars: regi_enh_vars,
@@ -985,7 +992,11 @@ export const POKERMON = registerMod({
   // with ties counting (PORTING.md "The Swords of Justice tie rule").
   // 61 = the owner's Gen 6, batch 1 (jokers/pokejokers_designs.js "Gen 6, batch 1"): 15 jokers #661-678, the Fletchling, Scatterbug,
   // Flabébé, Skiddo, Pancham and Espurr lines and Furfrou (PORTING.md "Gen 6, batch 1"). New jokers only: nothing a recorded run held changes.
-  contentRev: 61,
+  // 62 = Gen 6 batch 2 (jokers/pokejokers_designs.js, #682-715): Spritzee / Aromatisse (Lucky $, Aroma Veil),
+  // Swirlix / Slurpuff (Tarot bank, +1 consumable slot), Inkay / Malamar (Topsy-Turvy: the chip_bonus hook flips rank Chips), Binacle /
+  // Barbaracle (7s), Skrelp / Dragalge (Hazard conversion), the Tyrunt and Amaura fossils (Ancient Kings / Queens), Hawlucha (Flying
+  // Press), Klefki (Key Ring), Phantump / Trevenant (destroyed-card bank, Seeds), Bergmite / Avalugg and Noibat / Noivern (Glass 1 in 2).
+  contentRev: 62,
   // Pokermon 3.9.1 pokermon.lua: SMODS.current_mod.optional_features = {quantum_enhancements = true, object_weights = true}.
   // object_weights sends create_card's key, the shop roll, tags, packs, bosses and vouchers through SMODS.poll_object
   // (js/engine/smods.js; batch 17). quantum_enhancements is the engine's check_enhancement, always on.

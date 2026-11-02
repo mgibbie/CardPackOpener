@@ -81,6 +81,11 @@ await sec('static', () => {
     && D.espurr === 'Psychic' && D.meowstic === 'Psychic',
   'Gen 6 batch 1: Fletchling Colorless (Normal/Flying), Fletchinder / Talonflame Fire, Scatterbug line (Bug) and Skiddo line Grass, Flabébé line Fairy, Pancham line Fighting (Pangoro Fighting/Dark: its card Fighting), Furfrou Colorless, Espurr line Psychic (the icons on their cards)',
   ['fletchling', 'fletchinder', 'scatterbug', 'flabebe', 'skiddo', 'pangoro', 'furfrou', 'meowstic'].map((n) => D[n]));
+  ok(['spritzee', 'aromatisse', 'swirlix', 'slurpuff'].every((n) => D[n] === 'Fairy') && ['inkay', 'malamar', 'skrelp', 'dragalge'].every((n) => D[n] === 'Dark')
+    && ['binacle', 'barbaracle', 'amaura', 'aurorus'].every((n) => D[n] === 'Earth') && ['tyrunt', 'tyrantrum', 'noibat', 'noivern'].every((n) => D[n] === 'Dragon')
+    && D.hawlucha === 'Fighting' && D.klefki === 'Metal' && D.phantump === 'Grass' && D.trevenant === 'Grass' && D.bergmite === 'Water' && D.avalugg === 'Water',
+  'Gen 6 batch 2: Spritzee / Swirlix lines Fairy, Inkay / Skrelp lines Dark (Skrelp Poison/Water: its card Dark), Binacle (Rock/Water) and Amaura (Rock/Ice) lines Earth, Tyrunt (Rock/Dragon) and Noibat lines Dragon, Hawlucha Fighting, Klefki Metal, Phantump line Grass (Ghost/Grass: its card Grass), Bergmite line Water (Ice: its card Water)',
+  ['spritzee', 'inkay', 'skrelp', 'binacle', 'amaura', 'tyrunt', 'noibat', 'hawlucha', 'klefki', 'phantump', 'bergmite'].map((n) => D[n]));
   ok(CASTFORM_FORMS.normal.ptype === 'Colorless' && CASTFORM_FORMS.sunny.ptype === 'Fire' && CASTFORM_FORMS.rainy.ptype === 'Water' && CASTFORM_FORMS.snowy.ptype === 'Water',
     'Castform: Normal Colorless, Sunny Fire, Rainy / Snowy Water');
 });

@@ -124,8 +124,8 @@ Notable gaps:
   - Legendaries and mythicals: most of Gens 4-9 (the Regis, the Lati twins, the weather trio, the
     creation trio, Regigigas, Arceus, the Lake trio, Cresselia, Manaphy and Phione, and all 12 Gen 5 Legendaries are now the owner's designs): Xerneas/Yveltal, the Tapus, the
     Cosmog line, the Ruinous four, Koraidon and Miraidon.
-  - Fossils: the Tirtouga, Archen, Tyrunt and Amaura lines, and the four Galar fossils, are all
-    missing. They are natural fits for the existing "Ancient" mechanic (2.5).
+  - Fossils: the four Galar fossils are still missing; the Tirtouga and Archen lines (Gen 5) and the Tyrunt and
+    Amaura lines (Gen 6) are now house fossils on the "Ancient" mechanic (2.5).
   - Ultra Beasts: Nihilego, Buzzwole, Pheromosa, Xurkitree, Celesteela, Kartana, Guzzlord,
     Poipole/Naganadel, Stakataka and Blacephalon are all missing. There is no shared UB mechanic
     yet.
@@ -865,6 +865,39 @@ House pattern: a TRIM PER ANTE (the Gen 6 Furfrou; furfrou_trim / TRIMS): Glameo
 House pattern: an EVOLUTION GATED ON A HELD TYPE (the Gen 6 Pancham: 5 rounds, then only at an end of round with an undebuffed Dark Joker;
   pancham_evo): Glameow's slot wait with a type test (is_type: a Dark Tera sticker counts; itself never). At 0 rounds without one it says
   "Needs a Dark Joker!" and waits; the tooltip reads "now: needs / has a Dark Joker". Everstone: as level_evo.
+House pattern: a FLIPPED-RANK chip rule, card level (the Gen 6 Malamar, Topsy-Turvy; malamar_chip_bonus, the chip_bonus hook):
+  - Regirock's seam (index.js chip_bonus, a Card:get_chip_bonus wrap; the two are composed there): while an undebuffed Malamar is held,
+    every playing card's RANK Chips are its flipped rank's (2 <-> Ace, 3 <-> King, 4 <-> Queen, 5 <-> Jack, 6 <-> 10, 7 <-> 9, 8 stays):
+    v - base.nominal + flipped. Only the rank part moves: the enhancement's bonus (a Bonus card's +30) and perma_bonus (Hiker's +5 a
+    score) stay on top; Stone / rankless cards are never touched; two Malamars flip once (a rule, not a bonus). Card level means every
+    retrigger (Hack, Hawlucha) and every reader of a card's Chips sees the flipped number. It turns low cards into high-Chip cards: pair it
+    with low-rank payoffs (its own Basic, Inkay: scored 2-5 +4 Mult). Energy-inert (no number).
+House pattern: the ENDS of the scoring hand retrigger (the Gen 6 Hawlucha, Flying Press; flying_press):
+  - scoring_hand[0] and scoring_hand[last] by POSITION (Cinccino's / Shellos's rule: a debuffed card there gets nothing, the ends never shift
+    inward); one scored card is both ends and retriggers ONCE, not twice (say it on the card). A single-stage Rare's whole ability.
+House pattern: a RUN RECORD read live (the Gen 6 Klefki, Key Ring; vouchers_redeemed):
+  - X1 + X0.25 per Voucher on G.GAME.used_vouchers (the run's own record: a deck's / challenge's starting Voucher is on it too). READ, not
+    banked: a Klefki bought late sees every Voucher before it, and Energy (`Xmult_mod` +20%) raises every Voucher's share at once.
+House pattern: a DESTROYED-CARD BANK that replants (the Gen 6 Phantump line, Forest's Curse; forest_curse):
+  - remove_playing_cards (every destroying path: Glass, Hanged Man, a Hazard's end-of-round roll, Gulpin's swallow) banks +3 / +5 Mult per
+    card (`curse_mult`, carried; gain `mult_mod` +20%). The Stage 1 gives back: each destroyed card plants a Seed in a random UNENHANCED
+    deck card (Cherubi's rule: none unenhanced, no Seed; never a card being destroyed). Giratina's X counts the same cards.
+House pattern: GLASS ODDS, a shatter engine (the Gen 6 Noibat line, Supersonic / Boomburst; supersonic / boomburst):
+  - The Glass roll (identifier 'glass') has its DENOMINATOR halved in the mod_probability pass (1 in 4 -> 1 in 2): Oops! All 6s still doubles
+    the numerator afterwards (2 in 2), Regice's fix_probability 0 still wins (the anti-synergy: with Regice nothing breaks). Copies never
+    stack (half of the card's own base at best). Odds and hand size (+1 / +2) are fixed.
+  - Each `shattered` card in remove_playing_cards banks +2 Mult (Noibat) / X0.1 (Noivern, from X1, Noibat's Mult kept): the Whismur line's
+    count, so every EXTRA break also grows Whismur / Loudred / Exploud. Noivern REFILLS: one random deck card becomes Glass per break
+    (unenhanced first, then any non-Glass), so the Glass count holds while the bank grows.
+House pattern: TAROT BANK + a consumable slot (the Gen 6 Swirlix line, Sweet Veil; sweet_veil / sweet_slot):
+  - Delphox's Mystical Fire moment (using_consumeable, a Tarot) as +Mult: +1 / +2 banked in `sweet_mult` (carried), given every hand;
+    Slurpuff adds +1 consumable slot (card_limit, fixed; Alakazam's, given / taken in add_to_deck / remove_from_deck) so the line holds the
+    Tarots it eats.
+House pattern: a deck HAZARD seeder with a payoff (the Gen 6 Skrelp line; skrelp_poison / hazards_in_deck / hazard_held_x):
+  - The Regis' conversion (setting_blind, 1 card, unenhanced first, then an overwrite; Blueprint copies it) into m_poke_hazard: the joker
+    MAKES the cost Maractus only pays off. Skrelp +3 Mult per Hazard in the FULL deck (`mult` +40%); Dragalge swaps it for the held side:
+    each Hazard held X1.2 (Galvantula's held X, `Xmult_multi` +5%). Held Hazards still roll their 1 in 3 destroy at end of round (deck
+    thinning, and fuel for Phantump).
 
 2.2 Rarity and cost conventions
 -------------------------------
@@ -1061,7 +1094,9 @@ the solo-rule counters destroyed (Giratina), hearts (Keldeo), therian_rounds, de
 the Gen 5 batch 3 fixed fields: static_money / money_cap (Emolga's and Stunfisk's $), together (the trade count), steel_x (Escavalier's
 Steel X1.75), targets (Mienfoo's top-N), Xmult_cap (Bouffalant's X4), the banks charge_Xmult / ant_Xmult; Gen 6 batch 1: retriggers
 (Talonflame / Floette / Florges), h_size (Gogoat), scry (Espurr), and the rolled forms (form). Two energy fields on one number pair:
-Skiddo / Gogoat's base Chips (`chips`) and per-other-Grass Chips (`chips1`), both +30%.
+Skiddo / Gogoat's base Chips (`chips`) and per-other-Grass Chips (`chips1`), both +30%;
+the Gen 6 batch 2 fixed fields: aroma_money (Spritzee's $), card_limit (Slurpuff's slot), the banks sweet_mult / curse_mult / bat_mult /
+bat_Xmult (their gains mult_mod / Xmult_mod are energized), ancient_money (Amaura's $3).
 
 Designer consequences:
   1. The field name is a balance choice. A joker-wide X stored as Xmult grows 20% of its base
@@ -1164,7 +1199,10 @@ Each keyword below has an info_queue tooltip. Reuse the keyword rather than inve
     Effects depend on how many of one rank are in the poker hand, in cumulative tiers "1+ / 2+ /
     3+" (Stage 1 adds "4+"). Used by the fossils: Omanyte (3s), Kabuto (2s), Aerodactyl (Aces),
     Lileep (8s), Anorith (7s), Relicanth (4s), and Nacho's Cranidos (5s) and Shieldon (6s); the Gen 5
-    house fossils Tirtouga (9s) and Archen (10s; Archeops halves it all on the final hand, Defeatist) (2.1).
+    house fossils Tirtouga (9s) and Archen (10s; Archeops halves it all on the final hand, Defeatist) (2.1); the Gen 6
+    house fossils Tyrunt (Kings: +5 Mult, X1.25, then every King retriggers; Tyrantrum 4+ X2) and Amaura (Queens: +40 Chips, the
+    leftmost non-Glass Queen turns Glass in `before`, $3; Aurorus 4+ X2). A 3+ tier that is a retrigger counts toward evolving ONCE a
+    hand (joker_main), never per retriggered card.
     Basics evolve after "Trigger 3+ ability 5 times".
   Foresight (scry)
     "+N Foresight" shows the top N cards of the deck (G.GAME.scry_amount). Foreseen cards are
@@ -1207,6 +1245,7 @@ Hazards (3.9.1 Hazard layer; enhancements/enhancement1.js and systems/utils.js)
       Ferroseed line    Hazard and Wild cards are also Steel
       Nacho's Carbink   Hazards also count as Gold
       Maractus (house)  +8 Mult per Hazard card held in hand (2.1, the Hazard-held payoff)
+      Skrelp (house)    each Blind a deck card becomes a Hazard; +3 Mult per Hazard in the deck; Dragalge held Hazards X1.2 (2.1)
   - Counter: Heavy-Duty Boots (reusable Item: Hazard probabilities become 0 for the round).
   - 19 non-Mega jokers mention Hazards, spread over Earth (5), Grass (6), Psychic, Metal, Dark,
     Water and Fairy.
@@ -1217,6 +1256,7 @@ Seeds and Flowers (3.9.1)
   - Flower card: X2 Mult if the poker hand contains 4+ suits. With Roserade (or the owner's Cherrim, or Lilligant) it
     needs only 3+ suits; with Shaymin or Shaymin Sky it gives X3. Cherrim in the sun: X2.5 instead of X2.
   - Growth level (+1 extra growth per score): Shiftry, Brambleghast, the owner's Cherubi and Cherrim.
+  - Seeds planted by a destroyed card: the Gen 6 Trevenant (Forest's Curse, 2.1).
   House pattern: a SEED GROWER (the owner's Cherubi / Cherrim, jokers/pokejokers_designs.js sweet_seeds):
     - A deck conversion when a Blind is selected (the Regi trio's moment, 2.1): 1 random UNENHANCED card of the full deck
       becomes a Seed (seeded pseudorandom_element; none unenhanced, nothing: it never overwrites another enhancement).

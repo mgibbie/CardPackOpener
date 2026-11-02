@@ -238,7 +238,11 @@ ok(STATUS.PORTED_FILES['pokemon/pokejokers_08.lua'].length === 34, 'defs: 34 fro
   ok(r.total.mult >= 1 + 2, 'corsola: scores its Mult (Pokermon 3.9.1)', r.total);
   G.jokers.config.card_limit = 3;
   winRound();
-  nextRound();
+  // (the made Basic Water joker is a seeded pick from a pool that grows with each batch: one that opens a pack on leaving the shop,
+  // Clamperl since Gen 6 batch 2's Bergmite, is skipped so the next Blind is selected)
+  act({ type: 'cash_out' }); act({ type: 'next_round' });
+  if (G.STATE !== STATES.BLIND_SELECT) act({ type: 'skip_booster' });
+  act({ type: 'select_blind' }); clearHand();
   ok(j.ability.extra.mult === 2 + 3 && G.jokers.cards.length === 3, 'corsola: 3 Water jokers -> +3; no room, no joker (Pokermon 3.9.1)', [j.ability.extra.mult, G.jokers.cards.length]);
 }
 
