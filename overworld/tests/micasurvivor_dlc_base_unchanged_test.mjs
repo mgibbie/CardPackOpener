@@ -17,16 +17,18 @@
 //   - records, per second of sim: a hash of the player, the enemies, the pickups, the projectiles and the rest (clock,
 //     state, biome, co-op partner, team), their counts and the Math.random draw count; the spawn log; the kill / XP /
 //     coin totals; then quits the run and records the final save (timestamps normalised)
-//   - Normal also records its 12c replay; a fresh context plays the FIXTURE replay through the replay player
-//     (G.WatchUI, stepped with debugStep) to its last frame and hashes it
+//   - Normal also records its replay (U4: format v2, one segment for this short run: replay_v2.json); a fresh context plays
+//     the FIXTURE replays through the replay player (G.WatchUI, stepped with debugStep) to their last frame and hashes them:
+//     the v2 one recorded now, and the 12c v1 one (replay.json, recorded before U4: v1 tapes must keep playing)
 //   - a run ends at SECONDS or when the player falls (Normal ~112 s, Daily ~74 s, Boss Rush ~49 s with this script)
 // Not covered: what render() does (the harness never draws), sound, online co-op, the network.
-// The fixtures are overworld/tests/fixtures/micasurvivor_golden/<mode>.json + replay.json (LF line endings).
+// The fixtures are overworld/tests/fixtures/micasurvivor_golden/<mode>.json + replay.json (v1) + replay_v2.json (LF line endings).
 // On a mismatch the test prints the FIRST divergent second and field (and the fixture vs. actual values).
 //
 // Regenerating (ONLY for a deliberate base change, e.g. a balance pass on a base mode; never to make a DLC batch pass):
 //   node overworld/tests/micasurvivor_dlc_base_unchanged_test.mjs --record
-// then review the fixture diff and say in the PR why the base changed.
+// then review the fixture diff and say in the PR why the base changed. A deliberate change of the replay FORMAT only (not of
+// the game): --record-replay rewrites replay_v2.json alone (never replay.json: the v1 tape stays as it was recorded).
 // Debugging: ONLY=normal,tower runs those modes; TRACE=1 prints [frame, state, hp, maxHp, x, y, dead, enemies] each
 // second; SECONDS=30 shortens the run (only with --record into a scratch dir: GOLDEN_DIR=<dir>).
 //   node overworld/tests/micasurvivor_dlc_base_unchanged_test.mjs
@@ -50,6 +52,7 @@ const CHROME = process.env.CHROME || [
 ].find(p => fs.existsSync(p));
 const PORT = 8842;
 const RECORD = process.argv.includes('--record');
+const RECORD_REPLAY = process.argv.includes('--record-replay');
 const DIR = process.env.GOLDEN_DIR || path.join(HERE, 'fixtures', 'micasurvivor_golden');
 const ONLY = (process.env.ONLY || '').split(',').filter(Boolean);
 const SECONDS = +process.env.SECONDS || 120;
@@ -288,7 +291,7 @@ try {
 		delete r.trace;
 		const env = await page.evaluate(() => ({ dex: G.DEX.length, ua: navigator.userAgent.match(/(Chrome|Edg)\/[\d.]+/g)?.join(' ') || '' }));
 		if (mode === 'normal') {
-			const rep = await page.evaluate(async () => { const e = G.Replay.last; if (!e) return null; await e.ready; const text = await G.Replay.unpack(e.code); return { code: e.code, raw: text.length, hash: window.__golden.fnv(text), frames: e.meta.frames }; });
+			const rep = await page.evaluate(async () => { const e = G.Replay.last; if (!e) return null; await e.ready; const code = e.segs && e.segs.length === 1 ? e.segs[0] : null; const text = await G.Replay.unpack(code); return text ? { code, raw: text.length, hash: window.__golden.fnv(text), frames: e.meta.frames, segs: e.segs.length } : { segs: e.segs && e.segs.length, error: 'not one segment' }; });
 			r.replay = rep;
 		}
 		await ctx.close();
@@ -315,21 +318,25 @@ try {
 		spawns: r.spawns, perSecond: r.seconds, save: r.save,
 	});
 
-	if (RECORD) {
+	// U4: the Normal run's v2 tape (one segment) -> replay_v2.json (replay.json, the 12c v1 tape, is never rewritten)
+	const writeReplayV2 = async (rep) => {
+		const play = await playReplay(rep.code);
+		A(play.finished, 'replay: the recorded replay plays to its end', JSON.stringify(play));
+		fs.writeFileSync(path.join(DIR, 'replay_v2.json'), JSON.stringify({
+			about: 'The Normal golden run\'s replay, format v2 (U4: one segment; G1 = gzip + base64url). rawHash = the unpacked text; finalFrame / view = the player\'s last frame.',
+			mode: 'normal', seed: SEED, rawHash: rep.hash, raw: rep.raw, frames: rep.frames, code: rep.code,
+			play: { finalFrame: play.finalFrame, view: play.view, frames: play.frames, ne: play.ne, nk: play.nk, finished: play.finished },
+		}) + '\n');
+	};
+	if (RECORD_REPLAY && !RECORD) {
+		if (results.normal && results.normal.r.replay) await writeReplayV2(results.normal.r.replay);
+		console.log('recorded replay_v2.json');
+	} else if (RECORD) {
 		fs.mkdirSync(DIR, { recursive: true });
 		for (const [mode, res] of Object.entries(results)) {
 			fs.writeFileSync(path.join(DIR, mode + '.json'), JSON.stringify(fixtureOf(mode, res)) + '\n');
 		}
-		if (results.normal && results.normal.r.replay) {
-			const rep = results.normal.r.replay;
-			const play = await playReplay(rep.code);
-			A(play.finished, 'replay: the recorded replay plays to its end', JSON.stringify(play));
-			fs.writeFileSync(path.join(DIR, 'replay.json'), JSON.stringify({
-				about: 'The Normal golden run\'s 12c replay (G1 = gzip + base64url). rawHash = the unpacked text; finalFrame / view = the player\'s last frame.',
-				mode: 'normal', seed: SEED, rawHash: rep.hash, raw: rep.raw, frames: rep.frames, code: rep.code,
-				play: { finalFrame: play.finalFrame, view: play.view, frames: play.frames, ne: play.ne, nk: play.nk, finished: play.finished },
-			}) + '\n');
-		}
+		if (results.normal && results.normal.r.replay) await writeReplayV2(results.normal.r.replay);
 		const sizes = fs.readdirSync(DIR).map(f => [f, fs.statSync(path.join(DIR, f)).size]);
 		console.log('recorded ' + sizes.map(([f, n]) => `${f} ${(n / 1024).toFixed(1)} KB`).join(', ') + ` · total ${(sizes.reduce((a, [, n]) => a + n, 0) / 1024).toFixed(1)} KB`);
 	} else {
@@ -350,13 +357,21 @@ try {
 			A(!sv, `${mode}: the final save blob matches (timestamps normalised)`, sv && `save${sv.path}: fixture ${sv.want} vs now ${sv.got}`);
 		}
 		if (results.normal) {
+			// U4: the v2 tape recorded now (one segment) against replay_v2.json, and both fixtures played back
+			const file2 = path.join(DIR, 'replay_v2.json');
+			if (!fs.existsSync(file2)) A(false, 'replay: fixture exists', file2);
+			else {
+				const want = JSON.parse(fs.readFileSync(file2, 'utf8')), rep = results.normal.r.replay;
+				A(!!rep && rep.segs === 1 && rep.hash === want.rawHash && rep.frames === want.frames, `replay: the Normal run records the same replay (v2, one segment, ${want.frames} frames, ${want.raw} chars)`, JSON.stringify(rep && { hash: rep.hash, frames: rep.frames, raw: rep.raw, segs: rep.segs }));
+				const play = await playReplay(want.code);
+				A(play.finished && play.finalFrame === want.play.finalFrame && play.view === want.play.view, `replay: the v2 fixture replay plays to the same final frame hash (${want.play.finalFrame} / ${want.play.view})`, JSON.stringify(play));
+			}
 			const file = path.join(DIR, 'replay.json');
 			if (!fs.existsSync(file)) A(false, 'replay: fixture exists', file);
 			else {
-				const want = JSON.parse(fs.readFileSync(file, 'utf8')), rep = results.normal.r.replay;
-				A(!!rep && rep.hash === want.rawHash && rep.frames === want.frames, `replay: the Normal run records the same replay (${want.frames} frames, ${want.raw} chars)`, JSON.stringify(rep && { hash: rep.hash, frames: rep.frames, raw: rep.raw }));
+				const want = JSON.parse(fs.readFileSync(file, 'utf8'));
 				const play = await playReplay(want.code);
-				A(play.finished && play.finalFrame === want.play.finalFrame && play.view === want.play.view, `replay: the fixture replay plays to the same final frame hash (${want.play.finalFrame} / ${want.play.view})`, JSON.stringify(play));
+				A(play.finished && play.finalFrame === want.play.finalFrame && play.view === want.play.view, `replay: the v1 fixture replay (12c, before U4) still plays to the same final frame hash (${want.play.finalFrame} / ${want.play.view})`, JSON.stringify(play));
 			}
 		}
 	}

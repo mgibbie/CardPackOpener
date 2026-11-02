@@ -599,6 +599,8 @@ G.Pad = (() => {
       if (!repeat && ['confirm', 'cancel', 'pause', 'back'].includes(a)) G.Judgment.skip();
       return;
     }
+    // MicaSurvivor U4: watching a replay of several players, LB / RB switch whose view is followed
+    if (game && game.state === 'watch' && G.WatchUI && G.WatchUI.mode === 'replay' && (a === 'prev' || a === 'next')) { if (!repeat) G.WatchUI.cycleFollow(a === 'prev' ? -1 : 1); return; }
     const { scope } = ensure();
     if (!scope) { if (!repeat) gameplay(a); return; }
     if (!wasPad) return;                       // coming from keyboard / mouse: this press only shows the ring

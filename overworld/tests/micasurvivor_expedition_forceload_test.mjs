@@ -23,7 +23,7 @@ const okLoads = loads.filter(l => l.startsWith('forceload: ok '));
 const sum = out.match(/\n(\d+) passed, (\d+) failed/);
 const fails = out.split('\n').filter(l => l.startsWith('FAIL'));
 const only = (process.env.ONLY || '').split(',').filter(Boolean);
-const pages = (only.length || 6) + (!only.length || only.includes('normal') ? 1 : 0);   // a page per mode + the replay player
+const pages = (only.length || 6) + (!only.length || only.includes('normal') ? 2 : 0);   // a page per mode + the replay player (U4: twice, the v2 and the v1 fixture)
 for (const l of loads) console.log('     ' + l);
 A(okLoads.length === pages && loads.length === pages, `every D0a page loaded the Expedition code first (${okLoads.length} / ${pages}: freeze, js/expedition/*, every seam attached)`, loads.filter(l => !l.startsWith('forceload: ok ')).join(' | '));
 A(okLoads.length > 0 && okLoads.every(l => / seams 1(\/1){3,} /.test(l)), 'in each, the Expedition listens on every seam once (run.start / run.end / replay.header / spectate.snap; D1: net.frame)');

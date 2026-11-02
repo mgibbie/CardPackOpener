@@ -11,6 +11,12 @@
  *   last two (live: one interval behind; replay: exactly between frame i and i+1 at the playback clock).
  *   URLs: /micasurvivor/?watch=<user> (live; needs your Magepunk login and that you are friends) and
  *   /micasurvivor/?replay=<id> (public; /msr/<id> redirects there). Leave goes back to the menu.
+ *   U4 (replay format v2, js/mica/replay.js): a replay is a SESSION of segments (a v1 tape is a session of one). The
+ *   player seeks by segment (a binary search on the index; a segment not here yet is fetched, the clock waiting on
+ *   it; the next one is fetched ahead) and then from the segment's nearest checkpoint. A session of several players
+ *   can follow any of them ("Following: <name>": the button, F / Tab / 1-4, or LB / RB on a pad): that player's
+ *   Pokémon, HUD and camera; everyone else drawn as partners with their names and HP. Every player's recorded casts
+ *   are drawn as ghosts, where they aimed (a v1 tape has none: its watched Pokémon's ghosts aim at the nearest foe).
  */
 G.WatchUI = (() => {
   const $ = id => document.getElementById(id);
@@ -35,7 +41,9 @@ G.WatchUI = (() => {
   let arriveAt = 0, interval = 1000, lastW = 0, status = 'wait', ended = null, info = {};
   // replay
   let rd = null, T = 0, idx = 0, playing = true, speed = 1, evAt = 0, done = false, shared = null;
-  const stats = { snaps: 0, frames: 0 };
+  // U4: the session, the segment playing, whose view, the segment being fetched, the casts of the interval shown
+  let ss = null, segK = -1, follow = 0, loading = null, castQ = [];
+  const stats = { snaps: 0, frames: 0, casts: 0, segLoads: 0 };
 
   // ---------------- building the puppets from a snapshot ----------------
 
@@ -108,18 +116,22 @@ G.WatchUI = (() => {
     // co-op partners (online and local)
     const seen = new Set();
     for (const m of a.mt || []) {
-      const name = m[9] === 'l' ? G.T((m[10] ? '{x} · J2' : '{x} · IA').replace('{x}', m[0])) : m[0];
-      seen.add(name);
-      let o = mates.get(name);
+      const v2 = m[9] === 'v';   // (U4: a v2 replay's player row, by slot: [..., 'v', colour, slot, moves])
+      const name = v2 ? m[0] : m[9] === 'l' ? G.T((m[10] ? '{x} · J2' : '{x} · IA').replace('{x}', m[0])) : m[0];
+      const key = v2 ? 'v' + m[11] : name;
+      seen.add(key);
+      let o = mates.get(key);
       if (!o || o.p.dex !== m[1]) {
         o = { p: puppet(m[1], m[2]) };
         o.p.x = m[3]; o.p.y = m[4];
         o.p.tag = name;
         o.p.tagColor = m[9] === 'l' ? (G.LocalCoop && G.LocalCoop.COLOR) || '#9ad0ff' : MATE_COL[m[10] | 0] || '#fff';
-        mates.set(name, o);
+        mates.set(key, o);
       }
       o.raw = m[0];   // (DLC D2: its name in the x block's air rows)
-      const nb = (B.mt || []).find(x => x[0] === m[0] && x[9] === m[9]) || m;
+      o.slot = v2 ? m[11] : null;
+      if (v2 && Array.isArray(m[12])) mateMoves(o, m[12]);
+      const nb = (B.mt || []).find(x => (v2 ? x[9] === 'v' && x[11] === m[11] : x[0] === m[0] && x[9] === m[9])) || m;
       o.from = ex ? [m[3], m[4]] : [o.p.x, o.p.y]; o.to = [nb[3], nb[4]];
       o.p.hp = m[5]; o.p.maxHp = m[6] || 1; o.kind = m[9]; o.ctrl = m[10];
       o.p.walking = !!(m[7] & 2); o.p.anim.dir = m[8] | 0;
@@ -127,9 +139,11 @@ G.WatchUI = (() => {
       else if (!(m[7] & 1) && o.p.dead) { o.p.dead = false; o.p.anim.loop('Idle'); }
     }
     for (const k of [...mates.keys()]) if (!seen.has(k)) mates.delete(k);
-    // in an online group, the watched player's name over its head too
+    // in an online group, the watched player's name over its head too (U4: a session's followed player, its own name)
     const group = (a.mt || []).some(m => m[9] === 'o');
-    pl.tag = group ? who || null : null; pl.tagColor = '#ffffff';
+    const fol = a.pi != null && ss && ss.players[a.pi];
+    pl.tag = fol && (a.mt || []).length ? fol.name || null : group ? who || null : null; pl.tagColor = fol && a.pi ? MATE_COL[fol.c | 0] || '#ffffff' : '#ffffff';
+    pl.slot = a.pi != null ? a.pi : 0;
     // enemies
     const bmap = new Map((B.e || []).map(e => [e[0], e]));
     const now = new Set();
@@ -202,10 +216,11 @@ G.WatchUI = (() => {
     if (!mode) return;
     if (mode === 'live') {
       if (A) blend((performance.now() - arriveAt) / interval);
-    } else if (rd && !done) {
-      if (playing) T = Math.min(rd.duration, T + dt * speed);
+    } else if (ss && !done) {
+      if (playing && loading == null) T = Math.min(ss.duration, T + dt * speed);
       seekTo(T, false);
-      if (T >= rd.duration && playing) finishReplay();
+      fireCasts();
+      if (T >= ss.duration && playing && loading == null) finishReplay();
       ctrlTick();
     }
     animate(dt);
@@ -241,9 +256,40 @@ G.WatchUI = (() => {
     G.Spawner.tickBanner(dt);
   }
 
+  /** U4: a partner's moves (a v2 row's), for its orbit ghosts. */
+  function mateMoves(o, mv) {
+    const key = JSON.stringify(mv);
+    if (key === o.mvKey) return;
+    o.mvKey = key;
+    G.Projectiles.clearOrbs(o.p);
+    o.p.moves = mv.filter(m => G.Moves.BY_ID[m[0]]).map(m => { const x = G.Moves.instance(m[0], m[1] || 1); if (m[2]) G.Moves.evolve(x); return x; });
+    o.p.af = true; o.p.slots = o.p.moves.map(m => [m]); o.p.active = 0;
+  }
+  /** U4: the recorded casts of the interval shown, each fired as a ghost when the playback clock reaches it. */
+  function fireCasts() {
+    if (!castQ.length || !playing) return;
+    const now = T * 10;
+    const keep = [];
+    for (const c of castQ) {
+      if (c[5] > now) { keep.push(c); continue; }
+      const who = c[0] === (pl && pl.slot) ? pl : (([...mates.values()].find(o => o.slot === c[0]) || {}).p);
+      if (!who || who.dead || who.zHidden) continue;
+      try { G.Combat.ghostCast(who, c[1], c[2], c[3], c[4]); stats.casts++; } catch (e) { /* a visual only */ }
+    }
+    castQ = keep;
+  }
+
   /** Harmless copies of the watched Pokémon's attacks (like a co-op partner's: they hit nothing). */
   function ghosts(dt) {
     if (!pl || pl.dead || pl.zHidden || pl.coopDown || (mode === 'replay' && !playing)) return;
+    // (U4: a v2 replay has every player's real casts (fireCasts): only the orbits are drawn here, everyone's)
+    if (mode === 'replay' && rd && rd.v === 2) {
+      try {
+        G.Combat.ghostOrbit(pl, dt, timeNow);
+        for (const o of mates.values()) if (o.slot != null && !o.p.dead && o.p.moves && o.p.moves.length) G.Combat.ghostOrbit(o.p, dt, timeNow);
+      } catch (e) { /* a visual only */ }
+      return;
+    }
     const g = pl.af ? pl.moves : pl.activeGroup();   // (DLC D16: a new tape / snapshot: every move; an old one: its active slot)
     try {
       G.Combat.ghostOrbit(pl, dt, timeNow);
@@ -289,6 +335,7 @@ G.WatchUI = (() => {
     let y = top;
     const x = W - 12;
     const s = A;
+    if (mode === 'replay' && loading != null) { chip(ctx, x, y, G.T('Cargando…'), '#cfe3ff'); y += 22; }
     if (s) {
       if (s.z) { chip(ctx, x, y, G.T('Movimiento Z') + ': ' + (G.U.TYPE_NAME[s.z[0]] || s.z[0]) + ' · ' + G.T(s.z[1] ? '¡en uso!' : s.z[2] ? 'usado' : 'listo'), '#ffd98a'); y += 22; }
       if (s.dy) { chip(ctx, x, y, 'Dynamax · ' + G.T(s.dy[0] ? '¡activo!' : s.dy[2] ? 'usado' : 'listo'), s.dy[0] ? '#ff8aa8' : '#ffb3c6'); y += 22; }
@@ -353,6 +400,7 @@ G.WatchUI = (() => {
     A = B = null; pl = null; dexNow = 0; mates.clear(); ents.clear(); movesKey = '';
     worldSeed = null; worldBiome = -1; arenaKey = ''; zoneKey = '';
     rd = null; T = 0; idx = 0; playing = true; speed = 1; done = false; ended = null; status = 'wait'; info = {}; notice = '';
+    ss = null; segK = -1; follow = 0; loading = null; castQ = [];
     G.FX.clear(); G.Projectiles.clear(); G.Combat.clearFields(); G.EnemyMgr.clear(); G.Pickups.clear(); G.Minimap.reset();
     G.World.setArena(null);
   }
@@ -408,37 +456,85 @@ G.WatchUI = (() => {
     if (el) el.textContent = n > 1 ? G.T('Mirando: {x}').replace('{x}', n) : '';
   }
 
-  /** Replay: a Reader (js/mica/replay.js); `meta` / `by` for the title. */
+  /** Replay: a Reader or a Session (js/mica/replay.js); `meta` / `by` for the title. */
   function playReplay(reader, opts = {}) {
-    enter('replay', opts.by || reader.h.by || '', opts.back);
+    // (a single tape -> a session of one segment, open at once: the player stays synchronous for it)
+    const S = reader.session ? reader : G.Replay.session([{ seg: 0, t0: reader.t0, t1: reader.duration, n: reader.length }], () => reader, { h: reader.h });
+    if (!reader.session) S.put(0, reader);
+    const h = S.h || {};
+    enter('replay', opts.by || h.by || '', opts.back);
     shared = opts;
-    rd = reader;
-    const name = opts.by || reader.h.by;
+    ss = S;
+    rd = S.get(0); segK = rd ? 0 : -1;
+    const name = opts.by || h.by;
     bar(name ? esc(G.T('Repetición de')) + ' <b translate="no">' + esc(name) + '</b>' : esc(G.T('Repetición')), false);
+    T = 0; idx = -1; playing = true; speed = 1; evAt = 0; done = false; follow = 0; castQ = [];
     buildCtrl();
-    T = 0; idx = -1; playing = true; speed = 1; evAt = 0; done = false;
     // DLC D0b: a replay of an unknown / newer Expedition version (dv) still plays, with a notice
-    if (G.Expedition && G.Expedition.viewNotice(reader.h.m, reader.h.dv)) { notice = 'Esta repetición es de una versión más nueva de la Expedición: recarga la página para verla bien.'; G.UI.toast(notice, 6000); }
+    if (G.Expedition && G.Expedition.viewNotice(h.m, h.dv)) { notice = 'Esta repetición es de una versión más nueva de la Expedición: recarga la página para verla bien.'; G.UI.toast(notice, 6000); }
     seekTo(0, true);
   }
 
+  /** U4: the last frame at or before t in a segment's times (a binary search). */
+  function frameAt(times, t) {
+    let lo = 0, hi = times.length - 1;
+    if (hi < 0 || times[0] > t) return 0;
+    while (lo < hi) { const m = (lo + hi + 1) >> 1; if (times[m] <= t) lo = m; else hi = m - 1; }
+    return lo;
+  }
   function seekTo(t, hard) {
-    if (!rd || !rd.length) return;
+    if (!ss) return;
+    // U4: the segment first (fetched if it is not here yet: the clock waits), then the frame from its nearest checkpoint
+    const k = ss.segAt(t);
+    const r = ss.get(k);
+    if (!r) {
+      if (loading == null) {
+        loading = k; stats.segLoads++;
+        ss.load(k).then(() => { if (loading === k) loading = null; if (mode === 'replay' && ss) seekTo(T, true); });
+      }
+      return;
+    }
+    if (loading != null && loading !== k) loading = null;
+    let switched = false;
+    if (k !== segK) { segK = k; rd = r; idx = -1; switched = true; }
+    if (k + 1 < ss.segs.length && !ss.get(k + 1) && t >= ss.segs[k].t1 - 30) ss.load(k + 1);   // (the next one, ahead of time)
+    if (!rd.length) return;
     const times = rd.times;
-    // the frame at or before t
-    let i = idx >= 0 && times[idx] <= t ? idx : 0;
-    while (i + 1 < times.length && times[i + 1] <= t) i++;
+    const i = frameAt(times, t);
     if (i !== idx || hard) {
-      const a = rd.at(i), b = i + 1 < rd.length ? rd.at(i + 1) : a;
+      const nx = ss.get(k + 1);
+      const a = rd.at(i, follow), b = i + 1 < rd.length ? rd.at(i + 1, follow) : nx && nx.length ? nx.at(Math.min(1, nx.length - 1), follow) : a;
       if (hard) { mates.clear(); ents.clear(); G.EnemyMgr.clear(); G.Pickups.clear(); G.Projectiles.clear(); G.FX.clear(); pl = null; dexNow = 0; }
       // events crossed while playing forward (not on a seek)
-      if (!hard && i > idx) say(rd.ev.filter(e => { const et = e[0] / 10; return et > (times[idx] || 0) && et <= times[i]; }));
+      if (!hard && !switched && i > idx) say(rd.ev.filter(e => { const et = e[0] / 10; return et > (times[idx] || 0) && et <= times[i]; }));
       setFrame(a, b, true);
+      // U4: the casts recorded on the frame being glided to happened in between: queued for fireCasts (a seek drops the past)
+      castQ = b !== a && b.cs ? b.cs.filter(c => !hard || c[5] >= t * 10) : [];
       idx = i;
     }
-    const t0 = times[i], t1 = i + 1 < times.length ? times[i + 1] : t0;
+    const t0 = times[i], t1 = i + 1 < times.length ? times[i + 1] : (B && B !== A ? B.t / 10 : t0);
     blend(t1 > t0 ? (t - t0) / (t1 - t0) : 1);
     timeNow = Math.max(timeNow, 0);
+  }
+
+  /** U4: whose view to follow (a slot of the session's players). */
+  function setFollow(k) {
+    const n = ss ? Math.max(1, ss.players.length) : 1;
+    k = ((k | 0) % n + n) % n;
+    if (!ss || k === follow) return follow;
+    follow = k;
+    seekTo(T, true);
+    followBtn();
+    const d = ss.players[k];
+    if (d && d.name) G.UI.toast(G.T('Siguiendo a {x}').replace('{x}', d.name), 1400);
+    return follow;
+  }
+  function cycleFollow(d) { return setFollow(follow + (d || 1)); }
+  function followBtn() {
+    const b = $('wc-follow');
+    if (!b || !ss) return;
+    const d = ss.players[follow] || {};
+    b.textContent = G.T('Siguiendo: {x}').replace('{x}', d.name || '?');
   }
 
   // ---------------- the replay controls ----------------
@@ -449,34 +545,37 @@ G.WatchUI = (() => {
     el.innerHTML = `<button class="btn small" id="wc-play" type="button" aria-label="Pausa">❚❚</button>`
       + SPEEDS.map(s => `<button class="btn small ghost wc-sp${s === 1 ? ' on' : ''}" data-sp="${s}" type="button">${s}×</button>`).join('')
       + `<div class="wc-seek"><div class="wc-marks" id="wc-marks"></div><input id="wc-range" type="range" min="0" max="1000" step="1" value="0" aria-label="Posición"></div>`
-      + `<span class="wc-time" id="wc-time" translate="no">0:00 / 0:00</span>`;
+      + `<span class="wc-time" id="wc-time" translate="no">0:00 / 0:00</span>`
+      + (ss && ss.players.length > 1 ? `<button class="btn small ghost" id="wc-follow" type="button" translate="no"></button>` : '');
     el.classList.remove('hidden');
+    if ($('wc-follow')) { $('wc-follow').onclick = () => cycleFollow(1); followBtn(); }
     $('wc-play').onclick = () => togglePlay();
     for (const b of el.querySelectorAll('.wc-sp')) b.onclick = () => setSpeed(+b.dataset.sp);
     const r = $('wc-range');
-    r.oninput = () => { const t = (+r.value / 1000) * rd.duration; T = t; done = false; seekTo(t, true); hideEnd(); ctrlTick(); };
-    // markers: bosses (red) and level-ups (blue) along the bar
+    r.oninput = () => { const t = (+r.value / 1000) * ss.duration; T = t; done = false; seekTo(t, true); hideEnd(); ctrlTick(); };
+    // markers: bosses (red) and level-ups (blue) along the bar (U4: the session's, from its index / its segments)
     const marks = $('wc-marks');
-    const dur = rd.duration || 1;
-    marks.innerHTML = rd.ev.filter(e => e[1] === 'bs' || e[1] === 'bk' || e[1] === 'z' || e[1] === 'dx').slice(0, 120)
+    const dur = ss.duration || 1;
+    const evs = ss.marks.length ? ss.marks : (rd ? rd.ev : []);
+    marks.innerHTML = evs.filter(e => e[1] === 'bs' || e[1] === 'bk' || e[1] === 'z' || e[1] === 'dx').slice(0, 120)
       .map(e => `<i class="wm wm-${e[1]}" style="left:${(100 * (e[0] / 10) / dur).toFixed(2)}%"></i>`).join('');
     ctrlTick();
   }
   let lastCtrl = '';
   function ctrlTick() {
-    if (!rd) return;
+    if (!ss) return;
     const key = Math.floor(T * 4) + '|' + playing + '|' + speed;
     if (key === lastCtrl) return;
     lastCtrl = key;
     const r = $('wc-range');
-    if (r && document.activeElement !== r) r.value = Math.round(1000 * T / (rd.duration || 1));
-    const tm = $('wc-time'); if (tm) tm.textContent = fmt(T) + ' / ' + fmt(rd.duration);
+    if (r && document.activeElement !== r) r.value = Math.round(1000 * T / (ss.duration || 1));
+    const tm = $('wc-time'); if (tm) tm.textContent = fmt(T) + ' / ' + fmt(ss.duration);
     const pb = $('wc-play'); if (pb) { pb.textContent = playing ? '❚❚' : '▶'; pb.setAttribute('aria-label', G.T(playing ? 'Pausa' : 'Reproducir')); }
     for (const b of document.querySelectorAll('#watch-ctrl .wc-sp')) b.classList.toggle('on', +b.dataset.sp === speed);
   }
   function togglePlay() {
-    if (!rd) return;
-    if (done || T >= rd.duration) { T = 0; done = false; hideEnd(); seekTo(0, true); playing = true; }
+    if (!ss) return;
+    if (done || T >= ss.duration) { T = 0; done = false; hideEnd(); seekTo(0, true); playing = true; }
     else playing = !playing;
     ctrlTick();
   }
@@ -484,7 +583,7 @@ G.WatchUI = (() => {
 
   function finishReplay() {
     done = true; playing = false; ctrlTick();
-    endCard({ summary: rd.h.end || null, replay: true });
+    endCard({ summary: ss.h.end || null, replay: true, limit: ss.limit });
   }
 
   // ---------------- the end card ----------------
@@ -503,7 +602,7 @@ G.WatchUI = (() => {
       $('watch-end-title').textContent = o.replay ? G.T('Fin de la repetición') : G.T('La partida de {x} ha terminado').replace('{x}', who);
       if (s) {
         const mv = (s.moves || []).filter(m => G.Moves.BY_ID[m[0]]).map(m => `${G.Icons.html('move:' + m[0], 16)} ${esc(G.T(G.Moves.BY_ID[m[0]].name))} <span>${esc(G.T('Nv.'))}${m[1]}</span>`).join(' · ');
-        const mon = G.DEX_BY[(rd && rd.h.dex) || (A && A.me[0])];
+        const mon = G.DEX_BY[(ss && ss.h.dex) || (A && A.me[0])];
         html = `<div class="stats">
           ${mon ? `<div style="grid-column:1/-1"><span>Pokémon</span><b translate="no">${esc(mon.name)}</b></div>` : ''}
           <div><span>${esc(G.T('Tiempo'))}</span><b>${fmt(s.time || 0)}</b></div>
@@ -513,6 +612,8 @@ G.WatchUI = (() => {
           ${mv ? `<div style="grid-column:1/-1"><span>${esc(G.T('Movimientos'))}</span><b style="font-size:14px">${mv}</b></div>` : ''}
           <div style="grid-column:1/-1;text-align:center"><span>${esc(G.T(s.dead ? 'Ha caído' : 'Partida terminada'))}</span></div></div>`;
       } else html = `<p class="sub">${esc(G.T('La partida ha terminado.'))}</p>`;
+      // (U4: a session that reached its cap says so: the replay ends there, nothing was cut silently)
+      if (o.limit) html = `<p class="sub" id="watch-limit">${esc(G.T('La repetición termina aquí (límite de la sesión).'))}</p>` + html;
     }
     box.innerHTML = html;
     $('watch-again').classList.toggle('hidden', !o.replay);
@@ -565,20 +666,26 @@ G.WatchUI = (() => {
   async function playLocal(entry, back) {
     if (!entry) return false;
     if (entry.ready) await entry.ready;
-    const rd2 = entry.code ? await G.Replay.open(entry.code) : null;
-    if (!rd2) { G.UI.toast(G.T('No se pudo abrir la repetición.'), 2600); return false; }
-    playReplay(rd2, { by: rd2.h.by, back: back || (() => G.Flow.goMenu()) });
+    const S = await G.Replay.openEntry(entry);   // (U4: every segment kept here, else fetched by its id)
+    if (!S) { G.UI.toast(G.T('No se pudo abrir la repetición.'), 2600); return false; }
+    playReplay(S, { by: S.h.by, back: back || (() => G.Flow.goMenu()) });
     return true;
   }
 
   function keys() {
     if (G.Input.tap('escape')) { if (!$('scr-watch-end').classList.contains('hidden') && mode === 'replay') hideEnd(); else leave(); return; }
     if (mode === 'replay' && (G.Input.tap('space') || G.Input.tap('keyk'))) togglePlay();
+    // U4: whose view (F / Tab: the next player; 1-4: that player)
+    if (mode === 'replay' && ss && ss.players.length > 1) {
+      if (G.Input.tap('keyf') || G.Input.tap('tab')) cycleFollow(1);
+      for (let i = 0; i < 4; i++) if (G.Input.tap('digit' + (i + 1)) && i < ss.players.length) setFollow(i);
+    }
   }
 
   return {
     pending, boot, watchLive, playReplay, playLocal, leave, tick, keys, drawables, drawOverlay, hudH, mateList, stats,
-    togglePlay, setSpeed, seek(t) { if (rd) { T = G.U.clamp(t, 0, rd.duration); done = false; hideEnd(); seekTo(T, true); ctrlTick(); } },
+    togglePlay, setSpeed, seek(t) { if (ss) { T = G.U.clamp(t, 0, ss.duration); done = false; hideEnd(); seekTo(T, true); ctrlTick(); } },
+    setFollow, cycleFollow, get follow() { return follow; }, get session() { return ss; }, get segment() { return segK; }, get loading() { return loading; },
     get mode() { return mode; }, get time() { return timeNow; }, get who() { return who; }, get status() { return status; },
     get notice() { return notice; }, get playing() { return playing; }, get speed() { return speed; }, get T() { return T; }, get reader() { return rd; },
     get player() { return pl; }, get frame() { return A; }, get done() { return done; }

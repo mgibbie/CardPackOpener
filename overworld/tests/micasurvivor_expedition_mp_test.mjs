@@ -496,22 +496,30 @@ try {
 		const t = G.Game.st.time, out = { ok, t: Math.round(t), miles: S.run.miles, downs: S.run.downs, mewtwo: S.run.mewtwo, lands: S.run.land, kills: G.Game.player.kills, maxE, ms: Math.round(performance.now() - t0) };
 		G.Game.quit(); await wait(400);
 		const e = G.Replay.last; if (e && e.ready) await e.ready;
-		out.code = e && e.code ? e.code.length : 0; out.frames = e && e.meta ? e.meta.frames : null; out.bytes = G.Replay.stats.frames;
-		const rd = e && e.code ? await G.Replay.open(e.code) : null;
-		out.readable = !!rd; out.last = rd ? (rd.at(rd.length - 1) || {}).x ? 'x' : '-' : null;
-		const txt = e && e.code ? await G.Replay.unpack(e.code) : null;
+		// (U4: a session's tape is cut into segments, each its own tape under the cap: the biggest one is measured, every one must open)
+		const segs = e && e.segs ? e.segs : [];
+		out.segs = segs.length; out.code = segs.length ? Math.max(...segs.map(c => c.length)) : 0; out.total = segs.reduce((a, c) => a + c.length, 0);
+		let big = null; for (const c of segs) if (!big || c.length > big.length) big = c;
+		const dts = []; let hdt = null;
+		for (const c of segs) { const d = JSON.parse(await G.Replay.unpack(c)); hdt = d.h.dt; dts.push(...d.f.slice(1).map(f => f[0] || 0)); }
+		dts.sort((a, b) => a - b);
+		out.frames = e && e.meta ? e.meta.frames : null; out.bytes = G.Replay.stats.frames;
+		const rds = []; for (const c of segs) rds.push(await G.Replay.open(c));
+		const rd = rds[rds.length - 1];
+		out.readable = rds.length > 0 && rds.every(Boolean); out.last = rd ? (rd.at(rd.length - 1) || {}).x ? 'x' : '-' : null;
+		const txt = big ? await G.Replay.unpack(big) : null;
 		out.parts = window.__t.parts(txt);
 		window.__survTxt = txt;
 		// (D11: the tape's frame intervals (tenths of a second): Survival's 1 s; the size steps of any Expedition tape)
-		if (txt) { const d = JSON.parse(txt), dts = d.f.slice(1).map(f => f[0] || 0).sort((a, b) => a - b); out.hdt = d.h.dt; out.dtMed = dts[dts.length >> 1]; out.dtMin = dts[0]; }
+		if (dts.length) { out.hdt = hdt; out.dtMed = dts[dts.length >> 1]; out.dtMin = dts[0]; }
 		out.thin = [0, 2999999, 3000000, 3300000, 3550000].map(b => G.Replay.thinDt({ dt: 1, bytes: b })).concat([G.Replay.thinDt({ dt: 0.5, bytes: 3400000 })]);
 		out.stop = G.Replay.K.THIN_STOP;
 		return out;
 	});
 	console.log('     survival tape by field: ' + JSON.stringify(survRep.parts));
-	console.log(`     replay: a 45-min Survival run (${survRep.kills} KOs, ${survRep.downs} milestone bosses, Mewtwo ${survRep.mewtwo}, ${survRep.lands} lands, up to ${survRep.maxE} foes) packs to ${survRep.code} chars, ${survRep.frames} frames (sim ${survRep.ms} ms)`);
+	console.log(`     replay: a 45-min Survival run (${survRep.kills} KOs, ${survRep.downs} milestone bosses, Mewtwo ${survRep.mewtwo}, ${survRep.lands} lands, up to ${survRep.maxE} foes) packs to ${survRep.segs} segments, ${survRep.total} chars in all (the biggest ${survRep.code}), ${survRep.frames} frames (sim ${survRep.ms} ms)`);
 	A(survRep.ok && survRep.t >= 2700 && survRep.mewtwo >= 1 && survRep.lands >= 4 && survRep.code > 0 && survRep.code < 1200000 && survRep.frames <= 30000 && survRep.readable,
-		'replay size: a 45-minute Survival run (to Mewtwo, through 3 migrations) packs under 1.2 MB (MSURV_REPLAY_MAX) and plays back', JSON.stringify(survRep));
+		'replay size: a 45-minute Survival run (to Mewtwo, through 3 migrations): every segment (U4: one per 5 minutes) packs under 1.2 MB (MSURV_REPLAY_MAX) and plays back', JSON.stringify(survRep));
 	const clRep = await sim.E(async () => {
 		const H = window.__t, wait = ms => new Promise(r => setTimeout(r, ms)), C = G.ExpClassic;
 		if (G.Game.state === 'over') { G.Flow.afterRun(); await wait(300); }
@@ -534,21 +542,28 @@ try {
 		if (G.Game.state !== 'over') { G.Game.quit(); await wait(400); }
 		await wait(300);
 		const e = G.Replay.last; if (e && e.ready) await e.ready;
-		out.code = e && e.code ? e.code.length : 0; out.frames = e && e.meta ? e.meta.frames : null;
-		const txt = e && e.code ? await G.Replay.unpack(e.code) : null;
+		// (U4: a session's tape is cut into segments, each its own tape under the cap: the biggest one is measured, every one must open)
+		const segs = e && e.segs ? e.segs : [];
+		out.segs = segs.length; out.code = segs.length ? Math.max(...segs.map(c => c.length)) : 0; out.total = segs.reduce((a, c) => a + c.length, 0);
+		let big = null; for (const c of segs) if (!big || c.length > big.length) big = c;
+		const dts = []; let hdt = null;
+		for (const c of segs) { const d = JSON.parse(await G.Replay.unpack(c)); hdt = d.h.dt; dts.push(...d.f.slice(1).map(f => f[0] || 0)); }
+		dts.sort((a, b) => a - b);
+		out.frames = e && e.meta ? e.meta.frames : null;
+		const txt = big ? await G.Replay.unpack(big) : null;
 		out.parts = window.__t.parts(txt);
-		if (txt) { const d = JSON.parse(txt), dts = d.f.slice(1).map(f => f[0] || 0).sort((a, b) => a - b); out.hdt = d.h.dt; out.dtMed = dts[dts.length >> 1]; }
+		if (dts.length) { out.hdt = hdt; out.dtMed = dts[dts.length >> 1]; }
 		return out;
 	});
-	console.log(`     replay: a full Classic clear (${clRep.t} s, zone ${clRep.zone}, won ${clRep.won}, ${clRep.kills} KOs, up to ${clRep.maxE} foes) packs to ${clRep.code} chars, ${clRep.frames} frames (sim ${clRep.ms} ms)`);
+	console.log(`     replay: a full Classic clear (${clRep.t} s, zone ${clRep.zone}, won ${clRep.won}, ${clRep.kills} KOs, up to ${clRep.maxE} foes) packs to ${clRep.segs} segments, ${clRep.total} chars in all (the biggest ${clRep.code}), ${clRep.frames} frames (sim ${clRep.ms} ms)`);
 	console.log('     classic tape by field: ' + JSON.stringify(clRep.parts));
-	A(clRep.ok && clRep.won && clRep.code > 0 && clRep.code < 1200000 && clRep.frames <= 30000, 'replay size: a full Classic clear (3 zones and the shrine) packs under 1.2 MB', JSON.stringify(clRep));
+	A(clRep.ok && clRep.won && clRep.code > 0 && clRep.code < 1200000 && clRep.frames <= 30000, 'replay size: a full Classic clear (3 zones and the shrine): every segment packs under 1.2 MB', JSON.stringify(clRep));
 	// (DLC D16: every move fires, so a 45-min Survival run KOs about twice as many foes and its tape thins sooner: its frames are
 	//  1 s apart or, past the thinning sizes, 2 s; never closer)
 	A(survRep.hdt === 1 && survRep.dtMed >= 10 && survRep.dtMed <= 20 && clRep.hdt === 0.5 && clRep.dtMed === 5,
 		"the Survival tape's frames are 1 s apart (header dt 1; 2 s once it thins); a Classic tape keeps 0.5 s", JSON.stringify({ s: [survRep.hdt, survRep.dtMed, survRep.dtMin], c: [clRep.hdt, clRep.dtMed] }));
 	A(JSON.stringify(survRep.thin) === '[1,1,1.5,2,3,1]' && survRep.stop === 4500000,
-		"an endless run's tape spaces its frames out as it grows (x1.5 at 3.0 M raw chars, x2 at 3.3 M, x3 at 3.55 M) and stops adding frames at 4.5 M", JSON.stringify([survRep.thin, survRep.stop]));
+		"an endless run's tape spaces its frames out as it grows (x1.5 at 3.0 M raw chars, x2 at 3.3 M, x3 at 3.55 M) ; at 4.5 M its segment closes and the next one starts (U4)", JSON.stringify([survRep.thin, survRep.stop]));
 	// the cap's last resort: a tape that still packs over it merges every two frames (halve), exactly
 	const hv = await sim.E(async () => {
 		const H = window.__t, wait = ms => new Promise(r => setTimeout(r, ms)), R = G.Replay, out = {};

@@ -470,6 +470,7 @@ G.LocalCoop = (() => {
       if (M.cd <= 0 && tg) {
         M.cd = M.move.cd * K.cd;
         fire(mate, pl, M.move);
+        if (G.Replay) G.Replay.cast(mate, M.move.id, M.move.lvl, mate.aim, M.move.evolved);   // (U4: noted for the replay)
       }
       return;
     }

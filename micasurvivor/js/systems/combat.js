@@ -100,6 +100,7 @@ G.Combat = (() => {
     m0.t = Math.max(0.05, m0.cd * pl.cdMul);
     pl.cast(m0);
     if (G.Coop.active) G.Coop.cast(pl, m0);
+    if (G.Replay) G.Replay.cast(pl, m0.id, m0.lvl, pl.aim, m0.evolved);   // (MicaSurvivor U4: noted for the replay, any player's)
     // Vínculo: su icono destella en el HUD al lanzarse (uno que explota pegado al
     // enemigo, como Ascuas tras Ataque Rápido, casi no se ve).
     m0.castAt = performance.now();

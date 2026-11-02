@@ -15,6 +15,10 @@
 //      frames 413), validation, the meta allow-list, a retried upload (same rid) returns the first id, the per-user cap
 //      (10: the oldest is deleted — only if it is the player's own row), the replay list
 //   6. no cross-user writes: every write lands on the caller's own keys
+//   7. U4 replay SESSIONS (format v2): segments put one by one ({v:2, sid, seg, last}: the session row holds the index),
+//      order (409 on a gap / a closed session), header checks, caps (4,000 frames a segment, 120 segments a session, 1.2 MB
+//      packed), the public read of the index and of each segment, keep (Share), a one-segment tape as one plain row, the
+//      per-user cap counting sessions (a background session goes first, with its segments), the GC
 //   node overworld/tests/micasurvivor_spectate_server_test.mjs
 import fs from 'fs';
 import os from 'os';
@@ -317,6 +321,89 @@ try {
 	const r12 = await al('micasurvivor-replay-put', { code: pack(replay(4)), meta: {} });
 	A(row('msurvreplay:' + bu.body.id) && !(r12.body.evicted || []).includes(bu.body.id), 'an eviction never deletes another player\'s replay (the row\'s `by` is checked)', JSON.stringify(r12.body));
 	A(since(w0).every(k => k === 'msurvreplay:' + r12.body.id || k === 'msurvreplays:al_ce' || (k.startsWith('msurvreplay:') && row(k) === null && ids.includes(k.slice(12)))), 'her upload touched only her own keys', since(w0).join());
+
+	// ===== 7. U4: replay SESSIONS (format v2): segments uploaded as the run goes, the index, the session cap =====
+	{
+		const SID = 'c0ffee00c0ffee00';
+		// a v2 segment: its header names the session and the segment; its first frame carries the run time (a keyframe)
+		const seg = (k, n = 4, extra = {}) => ({ v: 2, h: Object.assign({ v: 2, sid: SID, seg: k, sd: 5, m: 'normal', dex: 25, mon: 'Pikachu', players: [{ id: 'carl', name: 'carl', dex: 25, k: 'me' }, { id: 'J2', name: 'Eevee · J2<script>', dex: 133, k: 'l', c: 1, evil: 'x' }] }, extra),
+			f: Array.from({ length: n }, (_, i) => [i ? 5 : 3000 * k + 1, [1, 2, 0, 0, 0, 0, 0]]), ev: [[3000 * k + 5, 'bs', 150], [3000 * k + 6, 'lv', 4]] });
+		const put = (k, body = {}, who = carl) => who('micasurvivor-replay-put', Object.assign({ v: 2, rid: SID, sid: SID, seg: k, code: pack(seg(k)), meta: { dex: 25, mode: 'normal', time: 10 * k, segs: k + 1, np: 2 }, last: false }, body));
+		A(!row('msurvreplays:carl'), '(carl has no replays yet)');
+		let w0 = W();
+		const s0 = await put(0);
+		const sid = s0.body.id;
+		A(s0.status === 200 && /^[a-f0-9]{8}$/.test(sid || '') && s0.body.seg === 0 && s0.body.n === 1 && !s0.body.done, 'a session\'s first segment uploads -> the session id', JSON.stringify(s0.body));
+		A(since(w0).sort().join() === ['msurvseg:' + sid + ':0', 'msurvsess:' + sid, 'msurvreplays:carl'].sort().join(), 'the first segment = 3 writes: the segment, the session row (its index), his list', since(w0).join());
+		const ent = row('msurvreplays:carl').ids.find(e => e.id === sid);
+		A(ent && ent.v === 2 && ent.rid === SID && ent.bg === 1, 'his list holds the session as one entry (v 2), "background" until he shares it', JSON.stringify(ent));
+		const gap = await put(2);
+		A(gap.status === 409 && gap.body.next === 1, 'a segment past the next one is refused (409, with the next expected)', JSON.stringify(gap.body));
+		w0 = W();
+		const s1 = await put(1);
+		A(s1.status === 200 && s1.body.id === sid && s1.body.n === 2 && since(w0).sort().join() === ['msurvseg:' + sid + ':1', 'msurvsess:' + sid].sort().join(), 'the next segment joins the same session: 2 writes (the segment, the index)', JSON.stringify([s1.body, since(w0)]));
+		const again = await put(1);
+		A(again.status === 200 && again.body.id === sid && again.body.n === 2, 'a retried segment replaces itself (the index does not grow)', JSON.stringify(again.body));
+		w0 = W();
+		A((await put(2, { code: pack(seg(3)) })).status === 400, 'a segment whose header says another segment is refused');
+		A((await put(2, { code: pack(seg(2, 4, { sid: 'beefbeefbeefbeef' })) })).status === 400, '...or another session');
+		A((await put(2, { code: pack(seg(2, 4001)) })).status === 413, 'more than 4,000 frames in one segment is refused (413)');
+		A((await put(120, { code: pack(seg(120)) })).status === 413, 'a session has at most 120 segments (~10 h): past that, 413');
+		A((await put(2, { code: pack({ v: 2, h: { sid: SID, seg: 2 }, f: [] }) })).status === 400, 'an empty segment is refused');
+		A((await put(2, { code: 'G1.' + 'A'.repeat(1_200_001) })).status === 413, 'a segment over 1.2 MB packed is refused (413)');
+		A((await bob('micasurvivor-replay-put', { v: 2, rid: SID, sid: SID, seg: 2, code: pack(seg(2)), meta: {}, last: true })).status === 409, 'another player cannot add to his session (the session is looked up in YOUR list)');
+		A(W() === w0, 'refused segments write nothing');
+		const s2 = await put(2, { last: true, code: pack(seg(2, 6, { end: { time: 95, level: 7, kills: 40, bosses: 1, dead: true, moves: [['ember', 3]], lim: 1, evil: 'x' } })) });
+		const sess = row('msurvsess:' + sid);
+		A(s2.status === 200 && s2.body.done && sess.done && sess.idx.length === 3 && sess.meta.segs === 3 && sess.meta.frames === 14, 'the last segment closes the session: done, 3 segments, 14 frames', JSON.stringify([s2.body, sess.meta]));
+		A(JSON.stringify(sess.idx.map(x => [x.seg, x.t0, x.t1, x.n])) === JSON.stringify([[0, 0.1, 1.6, 4], [1, 300.1, 301.6, 4], [2, 600.1, 602.6, 6]]) && sess.idx[0].mk && sess.idx[0].mk.length === 1 && sess.idx[0].mk[0][1] === 'bs',
+			'the index: each segment\'s run-time span (from its keyframe), frame count, size and boss markers', JSON.stringify(sess.idx));
+		A(sess.end && sess.end.time === 95 && sess.end.lim === 1 && sess.end.dead && !('evil' in sess.end) && sess.players.length === 2 && sess.players[1].name === 'Eevee · J2<script>' && !('evil' in sess.players[1]) && sess.players[1].k === 'l',
+			'the summary (with the session-cap marker) and the players are allow-listed', JSON.stringify([sess.end, sess.players]));
+		A((await put(3)).status === 409, 'a closed session takes no more segments (409)');
+		// the public read: the index, then each segment
+		const g = await raw('micasurvivor-replay-get', { id: sid });
+		A(g.status === 200 && !g.body.code && g.body.session && g.body.session.v === 2 && g.body.session.idx.length === 3 && g.body.session.done && g.body.session.end.lim === 1 && g.body.by === 'carl' && g.body.meta.segs === 3,
+			'anyone reads a session by id WITHOUT a login: its index, players, summary (not the segments)', JSON.stringify(g.body).slice(0, 300));
+		const g1 = await raw('micasurvivor-replay-get', { id: sid, seg: 1 });
+		A(g1.status === 200 && g1.body.code === row('msurvseg:' + sid + ':1').code, '...and each segment by {id, seg}', JSON.stringify(g1.body).slice(0, 80));
+		A((await raw('micasurvivor-replay-get', { id: sid, seg: 7 })).status === 404 && (await raw('micasurvivor-replay-get', { id: sid, seg: -1 })).status === 400 && (await raw('micasurvivor-replay-get', { id: sid, seg: 'x' })).status === 400, 'a missing segment is 404, a bad one 400');
+		// Share: keep it
+		A((await bob('micasurvivor-replay-keep', { id: sid })).status === 404, 'keep: only for your own sessions');
+		w0 = W();
+		const kp = await carl('micasurvivor-replay-keep', { id: sid });
+		A(kp.status === 200 && !row('msurvreplays:carl').ids.find(e => e.id === sid).bg && since(w0).join() === 'msurvreplays:carl', 'Share keeps a background session: one write (his list), no segment again', JSON.stringify([kp.body, since(w0)]));
+		const lst = await carl('micasurvivor-replay-list', {});
+		A(lst.status === 200 && lst.body.replays.length === 1 && lst.body.replays[0].session && lst.body.replays[0].done && lst.body.replays[0].meta.segs === 3, 'his replay list shows the session (one entry)', JSON.stringify(lst.body));
+		// a short run: one segment, shared at the end -> one plain replay row, as before
+		w0 = W();
+		const one = await carl('micasurvivor-replay-put', { v: 2, rid: 'aaaabbbbccccdddd', sid: 'aaaabbbbccccdddd', seg: 0, last: true, keep: true, code: pack(seg(0, 5, { sid: 'aaaabbbbccccdddd' })), meta: { dex: 25 } });
+		A(one.status === 200 && row('msurvreplay:' + one.body.id) && row('msurvreplay:' + one.body.id).meta.frames === 5 && since(w0).sort().join() === ['msurvreplay:' + one.body.id, 'msurvreplays:carl'].sort().join(),
+			'a one-segment v2 tape is one msurvreplay:<id> row (2 writes), read like a v1 one', JSON.stringify([one.body, since(w0)]));
+		const og = await raw('micasurvivor-replay-get', { id: one.body.id });
+		A(og.status === 200 && og.body.code && !og.body.session, '...its public read returns the tape itself');
+		// the per-user cap counts sessions: past 10, a background session goes first (with its segments), only his own
+		{
+			const l = row('msurvreplays:carl');
+			const bgId = 'bb00bb00';
+			setRow('msurvsess:' + bgId, { by: 'carl', sid: 'bb', when: 5, idx: [{ seg: 0 }, { seg: 1 }], players: [], meta: {}, done: false });
+			setRow('msurvseg:' + bgId + ':0', { code: 'G1.x' }); setRow('msurvseg:' + bgId + ':1', { code: 'G1.x' });
+			l.ids.splice(1, 0, { id: bgId, when: 5, rid: 'bb', v: 2, bg: 1 });   // (a newer one than the oldest kept ones)
+			for (let i = 0; i < 7; i++) { const fid = (0xcc000000 + i).toString(16); setRow('msurvreplay:' + fid, { code: 'G1.x', meta: {}, by: 'carl', when: i }); l.ids.push({ id: fid, when: i }); }
+			setRow('msurvreplays:carl', l);
+		}
+		A(row('msurvreplays:carl').ids.length === 10, '(carl now has 10: a kept session, a background one, 8 tapes)');
+		const r11 = await carl('micasurvivor-replay-put', { v: 2, rid: 'eeeeffff00001111', sid: 'eeeeffff00001111', seg: 0, last: false, code: pack(seg(0, 4, { sid: 'eeeeffff00001111' })), meta: {} });
+		A(r11.status === 200 && (r11.body.evicted || []).join() === 'bb00bb00' && !row('msurvsess:bb00bb00') && !row('msurvseg:bb00bb00:0') && !row('msurvseg:bb00bb00:1') && row('msurvsess:' + sid) && row('msurvreplay:cc000000'),
+			'the 11th evicts the BACKGROUND session first (its index and segments), not his oldest kept replay', JSON.stringify(r11.body));
+		A(row('msurvreplays:carl').ids.length === 10, 'he keeps 10');
+		const sv2 = fs.readFileSync(path.join(ROOT, 'server/mp.mjs'), 'utf8');
+		const gc2 = sv2.slice(sv2.indexOf('const GC_TABLE'), sv2.indexOf('const GC_TABLE') + 4000);
+		A(/\['msurvsess:', 30 \* 24 \* HR\], \['msurvseg:', 30 \* 24 \* HR\]/.test(gc2), 'the GC sweeps sessions and segments after 30 days, like the tapes');
+		A(/rr = REPLAY_ID_RE\.test\(rid\) \? \(await store\.get\('msurvreplay:' \+ rid\)\) \|\| \(await store\.get\('msurvsess:' \+ rid\)\)/.test(sv2), 'an Expedition board mark may name a session as its replay');
+		const sessWrites = writes.filter(k => /^msurv(sess|seg):/.test(k));
+		A(sessWrites.every(k => { const id = k.split(':')[1]; const s = row('msurvsess:' + id); return !s || s.by === 'carl'; }), 'every session row written is the uploader\'s own');
+	}
 
 	// ===== 6. no cross-user writes (the whole run) =====
 	const touched = writes.filter(k => /^msurv(live|state|spec|specbudget|replay|replays):/.test(k));

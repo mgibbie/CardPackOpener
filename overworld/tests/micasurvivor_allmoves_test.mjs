@@ -362,6 +362,8 @@ try {
 		// the old tape: the same, without af / sg anywhere (what a tape recorded before D16 holds)
 		const o = JSON.parse(text); delete o.h.af;
 		for (const f of o.f) if (f[3] && typeof f[3] === 'object') { delete f[3].af; delete f[3].sg; }
+		// (U4: and a v1 tape: no players' rows or recorded casts, fields 12-14; its viewer ghosts the active move)
+		o.v = 1; o.h.v = 1; delete o.h.players; for (const f of o.f) { f.length = Math.min(f.length, 12); while (f.length > 1 && f[f.length - 1] === 0) f.pop(); }
 		const oldCode = await G.Replay.pack(JSON.stringify(o));
 		const play = async (code) => {
 			const rd = await G.Replay.open(code);
