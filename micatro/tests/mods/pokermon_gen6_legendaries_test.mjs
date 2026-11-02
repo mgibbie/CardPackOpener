@@ -76,7 +76,7 @@ const FLUSH5 = ['H_2', 'H_5', 'H_7', 'H_9', 'H_J'];
 
 // ------------------------------------------------------------------- the pin and the five centers
 await sec('pin', () => {
-  ok(MODS.pokermon.contentRev === 63 && PINS.modPin('pokermon') === '3.9.1+r63', 'Pokermon contentRev 63 (pin 3.9.1+r63; Gen 6 batch 3)', PINS.modPin('pokermon'));
+  ok(MODS.pokermon.contentRev >= 63 && PINS.rulesRev('pokermon') >= 63, 'Pokermon contentRev 63+ (Gen 6 batch 3; r67 Gen 7 batch 4)', PINS.modPin('pokermon'));
   ok(PINS.LEGACY_MOD_VERSIONS.pokermon === '3.2.1+r1', 'LEGACY_MOD_VERSIONS untouched');
   const want = { yveltal: 'Dark', zygarde: 'Dragon', diancie: 'Fairy', hoopa: 'Psychic', volcanion: 'Fire' };
   for (const [n, t] of Object.entries(want)) {

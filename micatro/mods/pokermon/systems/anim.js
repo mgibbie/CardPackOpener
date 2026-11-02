@@ -129,6 +129,22 @@ export const GEN6_LEGEND_FORMS = {
 };
 
 /**
+ * The Gen 7 Legendaries' forms (Gen 7 batch 4, jokers/pokejokers_designs.js): upstream 3.9.1 draws them on the Gen 7 sheet, each with its own
+ * floating soul. Silvally's Memories, one card per type (its view form = its current type; Colorless is its own card {6,1}; each cell's type
+ * icon checked with pokermon_art_type.mjs); Ultra Necrozma {0,5} (Dragon; from the X3 bank); Marshadow's Zenith card {4,5} (Fighting; during a
+ * Boss Blind, unlisted in pokespriteload.lua). Drawn by ui.js ownFace (+ the Shiny sheet's twins).
+ */
+const memory = (x, y) => ({ pos: { x, y }, soul_pos: { x: x + 1, y } });
+export const GEN7_LEGEND_FORMS = {
+  j_poke_silvally: {
+    Fighting: memory(8, 1), Earth: memory(10, 1), Metal: memory(0, 2), Fire: memory(2, 2), Water: memory(4, 2), Grass: memory(6, 2),
+    Lightning: memory(8, 2), Psychic: memory(10, 2), Dragon: memory(0, 3), Dark: memory(2, 3), Fairy: memory(4, 3),
+  },
+  j_poke_necrozma: { ultra: memory(0, 5) },
+  j_poke_marshadow: { zenith: memory(4, 5) },
+};
+
+/**
  * Deerling's and Sawsbuck's seasons (the owner's Gen 5 batch 3, jokers/pokejokers_designs.js SEASONS): upstream 3.9.1 draws all four forms
  * of both on the Gen 5 sheet, one after another (Deerling Spring {2,1}, Summer {4,1}, Autumn {6,1}, Winter {8,1}; Sawsbuck Spring {10,1},
  * Summer {0,2}, Autumn {2,2}, Winter {4,2}; pokespriteload.lua lists only the Spring ones) — by the view's form (the center's
