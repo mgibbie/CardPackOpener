@@ -139,6 +139,15 @@
 // (Colorless; X0.5 per first-hand win, max X4), Rufflet -> Braviary (Colorless; +10 Mult / X2 on Boss Blinds), Heatmor (Fire) + Durant
 // (Metal) (+4 Mult per discard used; held Steel X1.75; together Heatmor banks X0.1 a round), Larvesta -> Volcarona (Fire; +5 Mult doubled in
 // the sun; always sunny, each Fire Joker X1.25) — upstream 3.9.1 draws them all (Natdex {18,38}-{12,42}; Deerling / Sawsbuck Gen 5 {2,1}-{4,2}).
+// Gen 6, batch 2 (contentRev 62; the owner's "Yes", 2026-11-02), 22 jokers #682-715: Spritzee -> Aromatisse (Fairy; scored Lucky cards $1 / $2;
+// Aroma Veil: Lucky odds +1, Pidove's Super Luck), Swirlix -> Slurpuff (Fairy; +1 / +2 Mult banked per Tarot used; +1 consumable slot), Inkay ->
+// Malamar (Dark; scored 2-5 +4 Mult; Topsy-Turvy: every card scores its FLIPPED rank's Chips, the chip_bonus hook), Binacle -> Barbaracle
+// (Earth; scored 7s +20 Chips / and X1.3), Skrelp -> Dragalge (Dark; a deck card becomes a Hazard each Blind; +3 Mult per Hazard in the deck /
+// held Hazards X1.2), Tyrunt -> Tyrantrum (Dragon; Ancient Kings) and Amaura -> Aurorus (Earth; Ancient Queens, the 2+ tier turns a Queen
+// Glass), Hawlucha (Fighting; the first and last scored cards retrigger), Klefki (Metal; X0.25 per Voucher redeemed), Phantump -> Trevenant
+// (Grass; +3 / +5 Mult banked per destroyed card; Seeds), Bergmite -> Avalugg (Water; +50 / +150 Chips, X1.5 on the final hand), Noibat ->
+// Noivern (Dragon; Glass breaks 1 in 2; +2 Mult / X0.1 banked per break; a deck card turns Glass per break) — upstream 3.9.1 draws them all
+// (Natdex {12,45}-{18,47}).
 import {
   G, P_CENTERS, P_CENTER_POOLS, localize, card_eval_status_text, pseudorandom, pseudoseed, pseudorandom_element, ease_hands_played,
   create_card, copy_card, playing_card_joker_effects, defineJokers, type_tooltip, level_evo, scaling_evo, item_evo,
@@ -2608,6 +2617,231 @@ const sun_state = (card) => (cherrim_sunny(card) ? 'Sunny!' : G.GAME && G.GAME.f
  *  context (Manaphy's "each Water Joker gives"). */
 const fire_joker = (j) => !!(j && j.ability && j.ability.set === 'Joker' && !j.debuff && is_type(j, 'Fire'));
 const fire_count = (card) => ((G.jokers && G.jokers.cards) || []).filter((j) => j !== card && fire_joker(j)).length + (is_type(card, 'Fire') ? 1 : 0);
+
+// ------------------------------------------------------------ Gen 6, batch 2 (#682-715)
+/** Spritzee / Aromatisse, Healing Aroma: each scored Lucky card (has_enhancement: a quantum Lucky too; a debuffed card never scores
+ *  its effects) earns `aroma_money` (fixed: money takes no Energy), whether or not its own rolls hit (Heart Stamp's shape and
+ *  dollar_buffer). Blueprint copies it. Aromatisse also has Super Luck (+1 to both Lucky rolls, super_luck above). */
+function healing_aroma(card, context) {
+  if (!(context.individual && context.cardarea === G.play && !context.end_of_round && has_enhancement(context.other_card, 'm_lucky'))) return undefined;
+  const money = card.ability.extra.aroma_money;
+  G.GAME.dollar_buffer = (G.GAME.dollar_buffer || 0) + money;
+  G.E_MANAGER.add_event(() => { G.GAME.dollar_buffer = 0; });
+  return { dollars: money, card };
+}
+/** Swirlix / Slurpuff, Sweet Veil: every Tarot used (by anyone, while it is held) banks +mult_mod Mult in `sweet_mult` (no energy field:
+ *  what is banked keeps its worth; Energy raises only later gains; carried into Slurpuff), and it gives the bank in joker_main. Not
+ *  Blueprint for the gain (Delphox's Mystical Fire shape); Blueprint copies the Mult. */
+function sweet_veil(card, context) {
+  const ex = card.ability.extra;
+  if (context.using_consumeable && context.consumeable && context.consumeable.ability.set === 'Tarot') {
+    if (context.blueprint) return undefined;
+    ex.sweet_mult = r3(ex.sweet_mult + ex.mult_mod);
+    card_eval_status_text(card, 'extra', null, null, null, { message: localize('k_upgrade_ex'), colour: 'MULT' });
+    return undefined;
+  }
+  if (context.joker_main && ex.sweet_mult > 0) return { message: a_mult(r3(ex.sweet_mult)), colour: 'MULT', mult_mod: ex.sweet_mult };
+  return undefined;
+}
+/** Slurpuff: +card_limit consumable slots while held AND undebuffed (Alakazam's slot, given and taken at once; fixed). */
+const sweet_slot = {
+  add_to_deck(self, card) { G.consumeables.config.card_limit += card.ability.extra.card_limit; },
+  remove_from_deck(self, card) { G.consumeables.config.card_limit -= card.ability.extra.card_limit; },
+};
+/** Inkay: each scored 2, 3, 4 or 5 (a rankless Stone card never) gives +mult Mult. */
+const LOW_RANKS = [2, 3, 4, 5];
+function inkay_low(card, context) {
+  if (context.individual && context.cardarea === G.play && !context.end_of_round && !has_no_rank(context.other_card) && LOW_RANKS.includes(context.other_card.get_id())) {
+    return { mult: card.ability.extra.mult, card };
+  }
+  return undefined;
+}
+/** Malamar, Topsy-Turvy (hook chip_bonus, a Card:get_chip_bonus wrap, Regirock's seam): while an undebuffed Malamar is held, every playing
+ *  card's chip bonus uses the Chips of its FLIPPED rank instead of its own rank's (2 <-> Ace, 3 <-> King, 4 <-> Queen, 5 <-> Jack,
+ *  6 <-> 10, 7 <-> 9, 8 stays 8): a 2 scores 11, an Ace 2, a King 3, a 6 10. Only the rank's part changes: the enhancement's bonus (a
+ *  Bonus card's +30) and the card's own perma_bonus (Hiker's +5 a score, Tirtouga's +5) stay on top. A Stone card (no rank; it replaces
+ *  the base card) and any rankless card are unaffected; a debuffed card scores 0 as usual; a rank outside 2-Ace (an add-on's) keeps its
+ *  Chips. Two Malamars flip once (it is a rule, not a stacking bonus). Card level, so a retrigger (Hack, Hawlucha) scores the flipped
+ *  Chips again, and every reader of a card's Chips sees them. */
+const FLIP = { 2: 14, 3: 13, 4: 12, 5: 11, 6: 10, 7: 9, 8: 8, 9: 7, 10: 6, 11: 5, 12: 4, 13: 3, 14: 2 };
+const rank_chips = (id) => (id === 14 ? 11 : id >= 11 ? 10 : id);
+const malamar_on = () => ((G.jokers && G.jokers.cards) || []).some((j) => !j.debuff && j.config.center.key === 'j_poke_malamar');
+/** The flipped rank's Chips for a card (undefined: no flip applies). Exported for the tests / tooltips. */
+export function flipped_chips(card) {
+  if (!card || !card.base || card.ability.set === 'Joker' || card.ability.effect === 'Stone Card' || card.config.center.replace_base_card || card.config.center.no_rank) return undefined;
+  const f = FLIP[card.base.id];
+  return f === undefined ? undefined : rank_chips(f);
+}
+export function malamar_chip_bonus(v, card) {
+  if (!card || card.debuff || !G.jokers || !malamar_on()) return undefined;
+  const f = flipped_chips(card);
+  if (f === undefined || typeof card.base.nominal !== 'number') return undefined;
+  return v - card.base.nominal + f;
+}
+/** Binacle / Barbaracle: each scored 7 gives +chips Chips (Barbaracle also X(Xmult_multi)). */
+function seven_rocks(card, context, x) {
+  if (!(context.individual && context.cardarea === G.play && !context.end_of_round && !has_no_rank(context.other_card) && context.other_card.get_id() === 7)) return undefined;
+  const ex = card.ability.extra;
+  return x ? { chips: ex.chips, x_mult: ex.Xmult_multi, card } : { chips: ex.chips, card };
+}
+/** One random card of the FULL deck becomes `enh` (seeded): unenhanced cards first; once none is left, any card that isn't already
+ *  `enh` (its enhancement replaced; seal and edition kept), never a card being destroyed nor one in `skip`. -> the card, or undefined. */
+function deck_convert(enh, seed, skip) {
+  const live = (G.playing_cards || []).filter((c) => unbroken(c) && !(skip && skip.includes(c)));
+  const plain = live.filter((c) => c.config.center.key === 'c_base');
+  const pool = plain.length ? plain : live.filter((c) => c.config.center.key !== enh);
+  if (!pool.length) return undefined;
+  const [pick] = pseudorandom_element(pool, pseudoseed(seed));
+  pick.set_ability(P_CENTERS[enh], null, true);
+  G.E_MANAGER.add_event(() => { pick.juice_up(); });
+  return pick;
+}
+/** Skrelp / Dragalge, Poison Point: when a Blind is selected, 1 random card of the full deck becomes a Hazard card (unenhanced first:
+ *  the Regis' rule, so a fully enhanced deck loses an enhancement). Blueprint copies it (as Marble Joker). */
+function skrelp_poison(card, context) {
+  if (!context.setting_blind || card.getting_sliced || (context.blueprint_card && context.blueprint_card.getting_sliced)) return;
+  if (deck_convert('m_poke_hazard', 'poke_skrelp_hazard')) card_eval_status_text(context.blueprint_card || card, 'extra', null, null, null, { message: '+1 Hazard', colour: 'PURPLE' });
+}
+/** Skrelp: +mult Mult per Hazard card in the full deck (any card counting as one). */
+const hazards_in_deck = () => (G.playing_cards || []).filter((c) => unbroken(c) && has_enhancement(c, 'm_poke_hazard')).length;
+/** Dragalge: each Hazard card HELD in hand (not debuffed) gives X(Xmult_multi) (Galvantula's held shape: Mime repeats it). */
+function hazard_held_x(card, context) {
+  if (context.individual && context.cardarea === G.hand && !context.end_of_round && !context.other_card.debuff && has_enhancement(context.other_card, 'm_poke_hazard')) {
+    return { x_mult: card.ability.extra.Xmult_multi, card };
+  }
+  return undefined;
+}
+/** Tyrunt / Tyrantrum, Ancient Kings (ancient_tens' shape, read live): 1+ +mult Mult; 2+ X(Xmult); 3+ every scored King retriggers
+ *  (`retriggers`, fixed); Tyrantrum 4+ X(Xmult2) too (the tiers multiply). The 3+ tier counts once a HAND (joker_main), never from a
+ *  Blueprint or a joker retrigger. */
+function ancient_kings(card, context) {
+  const ex = card.ability.extra;
+  if (context.repetition && context.cardarea === G.play && context.scoring_hand && !has_no_rank(context.other_card)
+    && context.other_card.get_id() === 13 && ancient_count(context, 13) >= 3) {
+    return { message: localize('k_again_ex'), repetitions: ex.retriggers, card };
+  }
+  if (!context.joker_main || !context.scoring_hand) return undefined;
+  const n = ancient_count(context, 13);
+  if (n < 1) return undefined;
+  const r = { mult_mod: ex.mult };
+  let x = 1;
+  if (n >= 2) x *= ex.Xmult;
+  if (n >= 4 && ex.Xmult2 !== undefined) x *= ex.Xmult2;
+  if (x !== 1) r.Xmult_mod = r3(x);
+  if (n >= 3) ancient_third(card, context);
+  r.message = r.Xmult_mod ? a_xmult(r.Xmult_mod) : a_mult(r3(ex.mult));
+  r.colour = r.Xmult_mod ? 'XMULT' : 'MULT';
+  return r;
+}
+/** Amaura / Aurorus, Ancient Queens: 1+ +chips Chips; 2+ the LEFTMOST scored Queen that isn't Glass (nor debuffed) becomes Glass in
+ *  `before` (Midas Mask's moment: it scores as Glass this hand), one a hand, never from a Blueprint; 3+ earn $ancient_money (once a
+ *  hand, joker_main; fixed); Aurorus 4+ X(Xmult2). The 3+ tier counts once a hand toward evolving. */
+const queen_to_glass = (context) => (context.scoring_hand || []).find((c) => !c.debuff && !has_no_rank(c) && c.get_id() === 12 && !has_enhancement(c, 'm_glass'));
+function ancient_queens(card, context) {
+  const ex = card.ability.extra;
+  if (context.before && !context.blueprint && !context.retrigger_joker && context.scoring_hand && ancient_count(context, 12) >= 2) {
+    const q = queen_to_glass(context);
+    if (q) {
+      q.set_ability(P_CENTERS.m_glass, null, true);
+      G.E_MANAGER.add_event(() => { q.juice_up(); });
+      card_eval_status_text(card, 'extra', null, null, null, { message: 'Glass!', colour: 'CHIPS' });
+    }
+    return undefined;
+  }
+  if (!context.joker_main || !context.scoring_hand) return undefined;
+  const n = ancient_count(context, 12);
+  if (n < 1) return undefined;
+  const r = { chip_mod: ex.chips, message: a_chips(r3(ex.chips)), colour: 'CHIPS' };
+  if (n >= 4 && ex.Xmult2 !== undefined) { r.Xmult_mod = ex.Xmult2; r.message = a_xmult(r3(ex.Xmult2)); r.colour = 'XMULT'; }
+  if (n >= 3) { ancient_third(card, context); if (ex.ancient_money > 0) r.dollars = ex.ancient_money; }
+  return r;
+}
+/** Hawlucha, Flying Press: the FIRST and the LAST scored card (by position in the scoring hand, Cinccino's / Shellos's rule: a debuffed
+ *  card there gets nothing, the ends never shift inward) each retrigger `retriggers` time(s); a single scored card is both ends and
+ *  retriggers once in all (not twice). Blueprint copies it. */
+function flying_press(card, context) {
+  if (!(context.repetition && context.cardarea === G.play && context.scoring_hand && context.scoring_hand.length)) return undefined;
+  const sh = context.scoring_hand, c = context.other_card;
+  if (c === sh[0] || c === sh[sh.length - 1]) return { message: localize('k_again_ex'), repetitions: card.ability.extra.retriggers, card };
+  return undefined;
+}
+/** Klefki, Key Ring: the run's Voucher record (G.GAME.used_vouchers: every Voucher redeemed this run, read live, so one bought late
+ *  counts all those before it; a deck's or challenge's starting Voucher is on that record too). */
+export const vouchers_redeemed = () => Object.values((G.GAME && G.GAME.used_vouchers) || {}).filter(Boolean).length;
+const key_ring_x = (card) => r3(1 + card.ability.extra.Xmult_mod * vouchers_redeemed());
+/** Phantump / Trevenant, Forest's Curse: each playing card destroyed (remove_playing_cards, every destroying path: a Glass card
+ *  shattering, Hanged Man, a Hazard's end-of-round roll, Gulpin's swallow...) banks +mult_mod Mult in `curse_mult` (no energy field:
+ *  never retroactive; carried into Trevenant), given in joker_main. Trevenant also plants a Seed per destroyed card: a random
+ *  UNENHANCED card of the full deck (not one being destroyed) becomes a Seed card; none unenhanced, no Seed (Cherubi's rule: it never
+ *  overwrites). Not Blueprint for the gain or the Seeds; Blueprint copies the Mult. */
+function forest_curse(card, context, seeds) {
+  const ex = card.ability.extra;
+  if (context.remove_playing_cards && !context.blueprint && (context.removed || []).length) {
+    const n = context.removed.length;
+    ex.curse_mult = r3(ex.curse_mult + ex.mult_mod * n);
+    let planted = 0;
+    if (seeds) {
+      for (let i = 0; i < n; i++) {
+        const plain = (G.playing_cards || []).filter((c) => unbroken(c) && !context.removed.includes(c) && c.config.center.key === 'c_base');
+        if (!plain.length) break;
+        const [pick] = pseudorandom_element(plain, pseudoseed('poke_trevenant_seed'));
+        pick.set_ability(P_CENTERS.m_poke_seed, null, true);
+        planted++;
+      }
+    }
+    card_eval_status_text(card, 'extra', null, null, null, { message: planted ? '+' + planted + ' Seed' : a_mult(ex.curse_mult), colour: planted ? 'GREEN' : 'MULT' });
+    return undefined;
+  }
+  if (context.joker_main && ex.curse_mult > 0) return { message: a_mult(r3(ex.curse_mult)), colour: 'MULT', mult_mod: ex.curse_mult };
+  return undefined;
+}
+/** Noibat / Noivern, Supersonic: Glass cards break twice as often — the Glass roll (identifier 'glass': a Glass card's 1 in 4, a quantum
+ *  Glass's too) has its DENOMINATOR halved in the mod_probability pass (Super Luck's pass), so Oops! All 6s still doubles the numerator
+ *  afterwards (2 in 2: always) and Regice's Ice Body (fix_probability, 0) still wins: with Regice no Glass breaks at all. Copies never
+ *  stack (1 in 2 at best, from the card's own base). Not Blueprint. */
+const glass_den = (t) => (t && t.ability && t.ability.name === 'Glass Card' && typeof t.ability.extra === 'number' ? t.ability.extra : (P_CENTERS.m_glass.config.extra || 4));
+function supersonic(card, context) {
+  if (context.mod_probability && !context.blueprint && context.identifier === 'glass') {
+    return { denominator: Math.min(context.denominator, Math.max(1, glass_den(context.trigger_obj) / 2)) };
+  }
+  return undefined;
+}
+/** The odds a Glass card breaks now ([num, dem], Noibat's own halving counted from the shop too). */
+function glass_odds_vars(card) {
+  const held = G.jokers && G.jokers.cards.includes(card);
+  const [n, d] = get_probability_vars(card, 1, held ? 4 : 2, 'glass');
+  return [r3(n), r3(held ? d : Math.min(d, 2))];
+}
+/** Noibat: each Glass card that shatters (remove_playing_cards, the `shattered` ones: Whismur's count) banks +mult_mod Mult in `bat_mult`;
+ *  Noivern banks +Xmult_mod X Mult in `bat_Xmult` instead (Noibat's Mult carried and still given) and turns one random card of the
+ *  full deck into Glass for each (unenhanced first, then any non-Glass card; never one being destroyed). Banks never retroactive (no
+ *  energy field). Not Blueprint for the gains or the Glass; Blueprint copies the score. Every extra shatter also grows the Whismur line
+ *  (its own remove_playing_cards count). */
+function boomburst(card, context, x) {
+  const ex = card.ability.extra;
+  if (context.remove_playing_cards && !context.blueprint && context.removed) {
+    const broken = context.removed.filter((c) => c.shattered);
+    if (!broken.length) return undefined;
+    if (x) {
+      ex.bat_Xmult = r3(ex.bat_Xmult + ex.Xmult_mod * broken.length);
+      let made = 0;
+      for (let i = 0; i < broken.length; i++) if (deck_convert('m_glass', 'poke_noivern_glass', context.removed)) made++;
+      card_eval_status_text(card, 'extra', null, null, null, { message: made ? '+' + made + ' Glass' : a_xmult(ex.bat_Xmult), colour: 'XMULT' });
+    } else {
+      ex.bat_mult = r3(ex.bat_mult + ex.mult_mod * broken.length);
+      card_eval_status_text(card, 'extra', null, null, null, { message: a_mult(ex.bat_mult), colour: 'MULT' });
+    }
+    return undefined;
+  }
+  if (!context.joker_main) return undefined;
+  const r = {};
+  if (ex.bat_mult > 0) r.mult_mod = ex.bat_mult;
+  if (ex.bat_Xmult && ex.bat_Xmult > 1) r.Xmult_mod = ex.bat_Xmult;
+  if (!Object.keys(r).length) return undefined;
+  r.message = r.Xmult_mod ? a_xmult(r3(r.Xmult_mod)) : a_mult(r3(r.mult_mod));
+  r.colour = r.Xmult_mod ? 'XMULT' : 'MULT';
+  return r;
+}
 
 defineJokers({
   // ---------------------------------------------------------------- LINE A: Shinx -> Luxio -> Luxray (Lightning, Gen 4)
@@ -6074,6 +6308,262 @@ defineJokers({
       return undefined;
     },
   },
+  // ---------------------------------------------------------------- Gen 6, batch 2 (contentRev 62; the owner's "Yes", 2026-11-02), #682-715
+  // Spritzee 682 (Fairy, Common $5), Healing Aroma: each scored Lucky card earns $1 (`aroma_money`, fixed: Energy-inert). 5 rounds.
+  spritzee: {
+    name: 'spritzee', poke_sprite391: sprite('Natdex', 12, 45),
+    config: { extra: { aroma_money: 1, rounds: 5 } },
+    rarity: 1, cost: 5, stage: 'Basic', ptype: 'Fairy', gen: 6, blueprint_compat: true, poke_no_energy_field: true,
+    attributes: ['money', 'economy', 'enhancements', 'round_evo'], poke_after: 'aegislash',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); info_queue.push(P_CENTERS.m_lucky); const ex = card.ability.extra; return { vars: [ex.aroma_money, ex.rounds] }; },
+    calculate(self, card, context) { return healing_aroma(card, context) || level_evo(self, card, context, 'j_poke_aromatisse'); },
+  },
+  // Aromatisse 683 (Safari $8): each scored Lucky card earns $2, and Aroma Veil: Lucky cards' odds +1 (Pidove's Super Luck: the numerator
+  // of both rolls, before Oops! doubles it; stacks with Pidove's line and other copies, +1 each). Money and odds fixed: Energy-inert.
+  aromatisse: {
+    name: 'aromatisse', poke_sprite391: sprite('Natdex', 14, 45),
+    config: { extra: { aroma_money: 2, lucky_odds: 1 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Fairy', gen: 6, blueprint_compat: true, poke_no_energy_field: true,
+    attributes: ['money', 'economy', 'chance', 'enhancements'], poke_after: 'spritzee',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); info_queue.push(P_CENTERS.m_lucky); const ex = card.ability.extra; return { vars: [ex.aroma_money, ex.lucky_odds, ...lucky_odds_vars(card)] }; },
+    calculate(self, card, context) { return super_luck(card, context) || healing_aroma(card, context); },
+  },
+  // Swirlix 684 (Fairy, Common $5), Sweet Veil: permanently +1 Mult per Tarot used (`sweet_mult` banked; gain `mult_mod` +20%: 1.2 / 1.4 /
+  // 1.6). 5 rounds; the bank carries into Slurpuff.
+  swirlix: {
+    name: 'swirlix', poke_sprite391: sprite('Natdex', 16, 45),
+    config: { extra: { sweet_mult: 0, mult_mod: 1, rounds: 5 } },
+    rarity: 1, cost: 5, stage: 'Basic', ptype: 'Fairy', gen: 6, blueprint_compat: true,
+    attributes: ['mult', 'scaling', 'tarot', 'round_evo'], poke_after: 'aromatisse',
+    poke_custom_values_to_keep: ['sweet_mult'],
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.mult_mod), r3(ex.sweet_mult), ex.rounds] }; },
+    calculate(self, card, context) { return sweet_veil(card, context) || level_evo(self, card, context, 'j_poke_slurpuff'); },
+  },
+  // Slurpuff 685 (Safari $8): +2 Mult per Tarot used (`mult_mod` +20%: 2.4 / 2.8 / 3.2) on Swirlix's bank, and +1 consumable slot (fixed).
+  slurpuff: {
+    name: 'slurpuff', poke_sprite391: sprite('Natdex', 18, 45),
+    config: { extra: { sweet_mult: 0, mult_mod: 2, card_limit: 1 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Fairy', gen: 6, blueprint_compat: true,
+    attributes: ['mult', 'scaling', 'tarot', 'consumable_slot'], poke_after: 'swirlix',
+    poke_custom_values_to_keep: ['sweet_mult'],
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [ex.card_limit, r3(ex.mult_mod), r3(ex.sweet_mult)] }; },
+    calculate(self, card, context) { return sweet_veil(card, context); },
+    ...sweet_slot,
+  },
+  // Inkay 686 (Dark, Common $5): each scored 2, 3, 4 or 5 gives +4 Mult (`mult` +40%: 5.6 / 7.2 / 8.8). 5 rounds.
+  inkay: {
+    name: 'inkay', poke_sprite391: sprite('Natdex', 20, 45),
+    config: { extra: { mult: 4, rounds: 5 } },
+    rarity: 1, cost: 5, stage: 'Basic', ptype: 'Dark', gen: 6, blueprint_compat: true,
+    attributes: ['mult', 'rank', 'round_evo'], poke_after: 'slurpuff',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.mult), ex.rounds] }; },
+    calculate(self, card, context) { return inkay_low(card, context) || level_evo(self, card, context, 'j_poke_malamar'); },
+  },
+  // Malamar 687 (Safari $8), Topsy-Turvy: every scored card gives the Chips of its flipped rank instead of its own (the chip_bonus hook,
+  // malamar_chip_bonus). No number: Energy-inert.
+  malamar: {
+    name: 'malamar', poke_sprite391: sprite('Natdex', 22, 45),
+    config: { extra: {} },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Dark', gen: 6, blueprint_compat: false, poke_no_energy_field: true,
+    attributes: ['chips', 'rank', 'modify_card'], poke_after: 'inkay',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); return { vars: [] }; },
+  },
+  // Binacle 688 (Earth, Common $5): each scored 7 gives +20 Chips (`chips` +30%: 26 / 32 / 38). 5 rounds.
+  binacle: {
+    name: 'binacle', poke_sprite391: sprite('Natdex', 24, 45),
+    config: { extra: { chips: 20, rounds: 5 } },
+    rarity: 1, cost: 5, stage: 'Basic', ptype: 'Earth', gen: 6, blueprint_compat: true,
+    attributes: ['chips', 'rank', 'round_evo'], poke_after: 'malamar',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.chips), ex.rounds] }; },
+    calculate(self, card, context) { return seven_rocks(card, context, false) || level_evo(self, card, context, 'j_poke_barbaracle'); },
+  },
+  // Barbaracle 689 (Safari $8): each scored 7 gives +20 Chips and X1.3 (`chips` +30%: 26 / 32 / 38; `Xmult_multi` +5%: 1.365 / 1.43 / 1.495).
+  barbaracle: {
+    name: 'barbaracle', poke_sprite391: sprite('Natdex', 26, 45),
+    config: { extra: { chips: 20, Xmult_multi: 1.3 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Earth', gen: 6, blueprint_compat: true,
+    attributes: ['chips', 'xmult', 'rank'], poke_after: 'binacle',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.chips), r3(ex.Xmult_multi)] }; },
+    calculate(self, card, context) { return seven_rocks(card, context, true); },
+  },
+  // Skrelp 690 (Dark, Common $5), Poison Point: when a Blind is selected, 1 random deck card becomes a Hazard card (unenhanced first); +3
+  // Mult per Hazard card in the full deck (`mult` +40%: 4.2 / 5.4 / 6.6). 5 rounds.
+  skrelp: {
+    name: 'skrelp', poke_sprite391: sprite('Natdex', 28, 45),
+    config: { extra: { mult: 3, rounds: 5 } },
+    rarity: 1, cost: 5, stage: 'Basic', ptype: 'Dark', gen: 6, blueprint_compat: true,
+    attributes: ['mult', 'hazards', 'modify_card', 'full_deck', 'round_evo'], poke_after: 'barbaracle',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); info_queue.push(P_CENTERS.m_poke_hazard); const ex = card.ability.extra; return { vars: [r3(ex.mult), r3(ex.mult * hazards_in_deck()), ex.rounds] }; },
+    calculate(self, card, context) {
+      skrelp_poison(card, context);
+      if (context.joker_main) { const m = r3(card.ability.extra.mult * hazards_in_deck()); return m > 0 ? { message: a_mult(m), colour: 'MULT', mult_mod: m } : undefined; }
+      return level_evo(self, card, context, 'j_poke_dragalge');
+    },
+  },
+  // Dragalge 691 (Safari $8): the same conversion; each Hazard card held in hand gives X1.2 (`Xmult_multi` +5%: 1.26 / 1.32 / 1.38). Its
+  // Stage 1 swaps Skrelp's deck count for the held X (the spec's "the same conversion, and ...").
+  dragalge: {
+    name: 'dragalge', poke_sprite391: sprite('Natdex', 0, 46),
+    config: { extra: { Xmult_multi: 1.2 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Dark', gen: 6, blueprint_compat: true,
+    attributes: ['xmult', 'hazards', 'modify_card', 'full_deck'], poke_after: 'skrelp',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); info_queue.push(P_CENTERS.m_poke_hazard); return { vars: [r3(card.ability.extra.Xmult_multi)] }; },
+    calculate(self, card, context) { skrelp_poison(card, context); return hazard_held_x(card, context); },
+  },
+  // Tyrunt 696 (Dragon: its card; Common $5), Ancient Kings: 1+ +5 Mult (`mult` +40%: 7 / 9 / 11), 2+ X1.25 (`Xmult` +20%: 1.5 / 1.75 / 2),
+  // 3+ every scored King retriggers once (fixed). Evolves after its 3+ tier fires 5 times.
+  tyrunt: {
+    name: 'tyrunt', poke_sprite391: sprite('Natdex', 10, 46),
+    config: { evo_rqmt: 5, extra: { rank: 'King', mult: 5, Xmult: 1.25, retriggers: 1, third_times: 0 } },
+    rarity: 1, cost: 5, stage: 'Basic', ptype: 'Dragon', gen: 6, blueprint_compat: true,
+    attributes: ['mult', 'xmult', 'retrigger', 'ancient', 'rank', 'face', 'trigger_evo'], poke_after: 'dragalge',
+    loc_vars(self, info_queue, card) {
+      type_tooltip(self, info_queue, card); ancient_tip(info_queue, card.ability.extra.rank);
+      const ex = card.ability.extra;
+      return { vars: [localize(ex.rank, 'ranks'), r3(ex.mult), r3(ex.Xmult), Math.max(0, self.config.evo_rqmt - (ex.third_times || 0))] };
+    },
+    calculate(self, card, context) {
+      return ancient_kings(card, context) || scaling_evo(self, card, context, 'j_poke_tyrantrum', card.ability.extra.third_times || 0, self.config.evo_rqmt);
+    },
+  },
+  // Tyrantrum 697 (Safari $8): Tyrunt's tiers, the same numbers, and 4+ X2 (`Xmult2` +20%: 2.4 / 2.8 / 3.2).
+  tyrantrum: {
+    name: 'tyrantrum', poke_sprite391: sprite('Natdex', 12, 46),
+    config: { extra: { rank: 'King', mult: 5, Xmult: 1.25, retriggers: 1, Xmult2: 2 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Dragon', gen: 6, blueprint_compat: true,
+    attributes: ['mult', 'xmult', 'retrigger', 'ancient', 'rank', 'face'], poke_after: 'tyrunt',
+    loc_vars(self, info_queue, card) {
+      type_tooltip(self, info_queue, card); ancient_tip(info_queue, card.ability.extra.rank);
+      const ex = card.ability.extra;
+      return { vars: [localize(ex.rank, 'ranks'), r3(ex.mult), r3(ex.Xmult), r3(ex.Xmult2)] };
+    },
+    calculate(self, card, context) { return ancient_kings(card, context); },
+  },
+  // Amaura 698 (Earth: its card; Common $5), Ancient Queens: 1+ +40 Chips (`chips` +30%: 52 / 64 / 76), 2+ the leftmost scored Queen that
+  // isn't Glass becomes Glass (before scoring), 3+ earn $3 (`ancient_money`, fixed). Evolves after its 3+ tier fires 5 times.
+  amaura: {
+    name: 'amaura', poke_sprite391: sprite('Natdex', 14, 46),
+    config: { evo_rqmt: 5, extra: { rank: 'Queen', chips: 40, ancient_money: 3, third_times: 0 } },
+    rarity: 1, cost: 5, stage: 'Basic', ptype: 'Earth', gen: 6, blueprint_compat: true,
+    attributes: ['chips', 'money', 'ancient', 'rank', 'face', 'modify_card', 'enhancements', 'trigger_evo'], poke_after: 'tyrantrum',
+    loc_vars(self, info_queue, card) {
+      type_tooltip(self, info_queue, card); ancient_tip(info_queue, card.ability.extra.rank); info_queue.push(P_CENTERS.m_glass);
+      const ex = card.ability.extra;
+      return { vars: [localize(ex.rank, 'ranks'), r3(ex.chips), ex.ancient_money, Math.max(0, self.config.evo_rqmt - (ex.third_times || 0))] };
+    },
+    calculate(self, card, context) {
+      return ancient_queens(card, context) || scaling_evo(self, card, context, 'j_poke_aurorus', card.ability.extra.third_times || 0, self.config.evo_rqmt);
+    },
+  },
+  // Aurorus 699 (Safari $8): Amaura's tiers, the same numbers, and 4+ X2 (`Xmult2` +20%: 2.4 / 2.8 / 3.2).
+  aurorus: {
+    name: 'aurorus', poke_sprite391: sprite('Natdex', 16, 46),
+    config: { extra: { rank: 'Queen', chips: 40, ancient_money: 3, Xmult2: 2 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Earth', gen: 6, blueprint_compat: true,
+    attributes: ['chips', 'xmult', 'money', 'ancient', 'rank', 'face', 'modify_card', 'enhancements'], poke_after: 'amaura',
+    loc_vars(self, info_queue, card) {
+      type_tooltip(self, info_queue, card); ancient_tip(info_queue, card.ability.extra.rank); info_queue.push(P_CENTERS.m_glass);
+      const ex = card.ability.extra;
+      return { vars: [localize(ex.rank, 'ranks'), r3(ex.chips), ex.ancient_money, r3(ex.Xmult2)] };
+    },
+    calculate(self, card, context) { return ancient_queens(card, context); },
+  },
+  // Hawlucha 701 (Fighting, Rare $7, single-stage), Flying Press: the first and the last scored card each retrigger once (a lone scored card
+  // once in all). Retriggers fixed: Energy-inert.
+  hawlucha: {
+    name: 'hawlucha', poke_sprite391: sprite('Natdex', 20, 46),
+    config: { extra: { retriggers: 1 } },
+    rarity: 3, cost: 7, stage: 'Basic', ptype: 'Fighting', gen: 6, blueprint_compat: true, poke_no_energy_field: true,
+    attributes: ['retrigger'], poke_after: 'sylveon',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); return { vars: [] }; },
+    calculate(self, card, context) { return flying_press(card, context); },
+  },
+  // Klefki 707 (Metal, Rare $7, single-stage), Key Ring: X1, plus X0.25 for each Voucher redeemed this run (`Xmult_mod` +20%: 0.3 / 0.35 /
+  // 0.4; read from the run's record, so it is never banked: Energy raises every Voucher's share at once).
+  klefki: {
+    name: 'klefki', poke_sprite391: sprite('Natdex', 2, 47),
+    config: { extra: { Xmult_mod: 0.25 } },
+    rarity: 3, cost: 7, stage: 'Basic', ptype: 'Metal', gen: 6, blueprint_compat: true,
+    attributes: ['xmult', 'shop'], poke_after: 'hawlucha',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.Xmult_mod), vouchers_redeemed(), key_ring_x(card)] }; },
+    calculate(self, card, context) {
+      if (context.joker_main) { const x = key_ring_x(card); return x > 1 ? { message: a_xmult(x), colour: 'XMULT', Xmult_mod: x } : undefined; }
+      return undefined;
+    },
+  },
+  // Phantump 708 (Grass: its card; Common $5), Forest's Curse: permanently +3 Mult per playing card destroyed (`curse_mult` banked; gain
+  // `mult_mod` +20%: 3.6 / 4.2 / 4.8). 5 rounds; the bank carries into Trevenant.
+  phantump: {
+    name: 'phantump', poke_sprite391: sprite('Natdex', 4, 47),
+    config: { extra: { curse_mult: 0, mult_mod: 3, rounds: 5 } },
+    rarity: 1, cost: 5, stage: 'Basic', ptype: 'Grass', gen: 6, blueprint_compat: true,
+    attributes: ['mult', 'scaling', 'destroy_card', 'round_evo'], poke_after: 'klefki',
+    poke_custom_values_to_keep: ['curse_mult'],
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.mult_mod), r3(ex.curse_mult), ex.rounds] }; },
+    calculate(self, card, context) { return forest_curse(card, context, false) || level_evo(self, card, context, 'j_poke_trevenant'); },
+  },
+  // Trevenant 709 (Safari $8): +5 Mult per card destroyed (`mult_mod` +20%: 6 / 7 / 8) on Phantump's bank; each destroyed card plants a Seed
+  // (a random unenhanced deck card becomes a Seed card).
+  trevenant: {
+    name: 'trevenant', poke_sprite391: sprite('Natdex', 6, 47),
+    config: { extra: { curse_mult: 0, mult_mod: 5 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Grass', gen: 6, blueprint_compat: true,
+    attributes: ['mult', 'scaling', 'destroy_card', 'modify_card', 'enhancements'], poke_after: 'phantump',
+    poke_custom_values_to_keep: ['curse_mult'],
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); info_queue.push(P_CENTERS.m_poke_seed); const ex = card.ability.extra; return { vars: [r3(ex.mult_mod), r3(ex.curse_mult)] }; },
+    calculate(self, card, context) { return forest_curse(card, context, true); },
+  },
+  // Bergmite 712 (Water: its card; Common $5): +50 Chips (`chips` +30%: 65 / 80 / 95). 5 rounds.
+  bergmite: {
+    name: 'bergmite', poke_sprite391: sprite('Natdex', 12, 47),
+    config: { extra: { chips: 50, rounds: 5 } },
+    rarity: 1, cost: 5, stage: 'Basic', ptype: 'Water', gen: 6, blueprint_compat: true,
+    attributes: ['chips', 'round_evo'], poke_after: 'gourgeist',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.chips), ex.rounds] }; },
+    calculate(self, card, context) {
+      if (context.joker_main) return { message: a_chips(r3(card.ability.extra.chips)), colour: 'CHIPS', chip_mod: card.ability.extra.chips };
+      return level_evo(self, card, context, 'j_poke_avalugg');
+    },
+  },
+  // Avalugg 713 (Safari $8), Iceberg: +150 Chips (`chips` +30%: 195 / 240 / 285) and X1.5 on the round's final hand (`Xmult` +20%: 1.8 /
+  // 2.1 / 2.4).
+  avalugg: {
+    name: 'avalugg', poke_sprite391: sprite('Natdex', 14, 47),
+    config: { extra: { chips: 150, Xmult: 1.5 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Water', gen: 6, blueprint_compat: true,
+    attributes: ['chips', 'xmult', 'hands'], poke_after: 'bergmite',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.chips), r3(ex.Xmult), G.GAME && G.GAME.facing_blind && G.GAME.current_round.hands_left <= 1 ? 'Active!' : 'Inactive'] }; },
+    calculate(self, card, context) {
+      if (!context.joker_main) return undefined;
+      const ex = card.ability.extra, r = { chip_mod: ex.chips, message: a_chips(r3(ex.chips)), colour: 'CHIPS' };
+      if (G.GAME.facing_blind && final_hand()) { r.Xmult_mod = ex.Xmult; r.message = a_xmult(r3(ex.Xmult)); r.colour = 'XMULT'; }
+      return r;
+    },
+  },
+  // Noibat 714 (Dragon, Common $5), Supersonic: +1 hand size (fixed); Glass cards break 1 in 2 instead of 1 in 4 (the denominator halved,
+  // fixed); each Glass card that breaks permanently gives it +2 Mult (`bat_mult` banked; gain `mult_mod` +20%: 2.4 / 2.8 / 3.2). 5 rounds.
+  noibat: {
+    name: 'noibat', poke_sprite391: sprite('Natdex', 16, 47),
+    config: { extra: { h_size: 1, bat_mult: 0, mult_mod: 2, rounds: 5 } },
+    rarity: 1, cost: 5, stage: 'Basic', ptype: 'Dragon', gen: 6, blueprint_compat: true,
+    attributes: ['mult', 'scaling', 'hand_size', 'chance', 'enhancements', 'round_evo'], poke_after: 'avalugg',
+    poke_custom_values_to_keep: ['bat_mult'],
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); info_queue.push(P_CENTERS.m_glass); const ex = card.ability.extra; return { vars: [ex.h_size, ...glass_odds_vars(card), r3(ex.mult_mod), r3(ex.bat_mult), ex.rounds] }; },
+    calculate(self, card, context) { return supersonic(card, context) || boomburst(card, context, false) || level_evo(self, card, context, 'j_poke_noivern'); },
+    ...hand_size,
+  },
+  // Noivern 715 (Safari $8), Boomburst: +2 hand size, Glass still 1 in 2; each Glass card that breaks permanently gives it X0.1 (`bat_Xmult`
+  // banked from X1; gain `Xmult_mod` +20%: 0.12 / 0.14 / 0.16; Noibat's Mult kept and still given), and turns a random deck card Glass.
+  noivern: {
+    name: 'noivern', poke_sprite391: sprite('Natdex', 18, 47),
+    config: { extra: { h_size: 2, bat_mult: 0, bat_Xmult: 1, Xmult_mod: 0.1 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Dragon', gen: 6, blueprint_compat: true,
+    attributes: ['mult', 'xmult', 'scaling', 'hand_size', 'chance', 'enhancements', 'modify_card'], poke_after: 'noibat',
+    poke_custom_values_to_keep: ['bat_mult', 'bat_Xmult'],
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); info_queue.push(P_CENTERS.m_glass); const ex = card.ability.extra; return { vars: [ex.h_size, ...glass_odds_vars(card), r3(ex.Xmult_mod), r3(ex.bat_Xmult), r3(ex.bat_mult)] }; },
+    calculate(self, card, context) { return supersonic(card, context) || boomburst(card, context, true); },
+    ...hand_size,
+  },
 }, FILE);
 
 /** The families (functions/pokefamily.lua style): index.js adds them with set_family. */
@@ -6148,6 +6638,17 @@ export const DESIGN_FAMILIES = [
   ['mienfoo', 'mienshao'],
   ['rufflet', 'braviary'],
   ['larvesta', 'volcarona'],
+  // Gen 6, batch 2
+  ['spritzee', 'aromatisse'],
+  ['swirlix', 'slurpuff'],
+  ['inkay', 'malamar'],
+  ['binacle', 'barbaracle'],
+  ['skrelp', 'dragalge'],
+  ['tyrunt', 'tyrantrum'],
+  ['amaura', 'aurorus'],
+  ['phantump', 'trevenant'],
+  ['bergmite', 'avalugg'],
+  ['noibat', 'noivern'],
 ];
 
 /** Their text (Pokermon loc style: #n# filled by loc_vars), from the design guide; index.js merges it into descriptions.Joker. */
@@ -6243,6 +6744,13 @@ const TRADE_TEXT = (p) => ['{C:attention}Trade:{} evolves only together', 'with 
 const STEEL_TEXT = (n) => ['{C:attention}Steel{} cards held in hand', 'give {X:mult,C:white} X#' + n + '# {} Mult', 'instead of {X:mult,C:white} X1.5 {}', '{C:inactive,s:0.8}(Never stacks with Registeel,', '{C:inactive,s:0.8}Escavalier or Durant: the best wins)'];
 const TOP_NOTE = ['{C:inactive}(Aces high; a tie: the leftmost;', '{C:inactive}never a Stone or debuffed card)'];
 const SUN_NOTE = ['{C:inactive,s:0.8}(Sunny: Hearts + Diamonds held', '{C:inactive,s:0.8}most on the round\'s first deal,', '{C:inactive,s:0.8}a working Groudon, or Volcarona)'];
+const HEALING_AROMA = ['{C:attention}Healing Aroma:{} each scored', '{C:attention}Lucky{} card earns {C:money}$#1#{}'];
+const SWEET_VEIL = (m, b) => ['{C:attention}Sweet Veil:{} permanently', 'gains {C:mult}+#' + m + '#{} Mult for each', '{C:tarot}Tarot{} card used', '{C:inactive}(Currently {C:mult}+#' + b + '#{C:inactive} Mult)'];
+const HAZARD_POISON = ['{C:attention}Poison Point:{} when a {C:attention}Blind{}', 'is selected, a random card in', 'your deck becomes a {C:attention}Hazard{} card', '{C:inactive}(Unenhanced cards first)'];
+const ANCIENT_KINGS = ['{C:attention}Ancient #1#s{}', '{X:attention,C:white}1+{} : {C:mult}+#2#{} Mult', '{X:attention,C:white}2+{} : {X:mult,C:white} X#3# {} Mult', '{X:attention,C:white}3+{} : {}Retrigger all scored {C:attention}#1#s{}'];
+const ANCIENT_QUEENS = ['{C:attention}Ancient #1#s{}', '{X:attention,C:white}1+{} : {C:chips}+#2#{} Chips', '{X:attention,C:white}2+{} : {}The leftmost scored {C:attention}#1#{}', 'that isn\'t {C:attention}Glass{} becomes {C:attention}Glass{}', '{X:attention,C:white}3+{} : Earn {C:money}$#3#{}'];
+const FOREST_CURSE = ['{C:attention}Forest\'s Curse:{} permanently', 'gains {C:mult}+#1#{} Mult each time', 'a playing card is {C:attention}destroyed{}', '{C:inactive}(Currently {C:mult}+#2#{C:inactive} Mult)'];
+const GLASS_ODDS = (first) => [first, '{C:attention}Glass{} cards break', 'twice as often', '{C:inactive}(Now {C:green}#2# in #3#{C:inactive})'];
 export const DESIGN_LOC = {
   Joker: {
     j_poke_shinx: { name: 'Shinx', text: ['{C:purple}+#1# Foresight', 'Played cards that share a rank', 'with a {C:attention}Foreseen{} card', 'earn {C:money}$#2#{} when scored', EVOLVES_ROUNDS(3)] },
@@ -6783,6 +7291,29 @@ export const DESIGN_LOC = {
       ['{C:poke_sun}Sunny Day:{} while you have', 'this Joker it\'s always {C:poke_sun}sunny{}', '{C:inactive}(Castform Sunny unless Kyogre;', '{C:inactive}rain still falls)'],
       ['{C:attention}Quiver Dance:{} each {X:poke_fire,C:white}Fire{}', 'Joker gives {X:mult,C:white} X#1# {} Mult', '{C:inactive}(Itself included)', '{C:inactive}(Currently {C:attention}#2#{C:inactive}: {X:mult,C:white} X#3# {C:inactive} Mult)'],
     ] },
+    // Gen 6, batch 2 (the owner's "Yes", 2026-11-02)
+    j_poke_spritzee: { name: 'Spritzee', text: [...HEALING_AROMA, EVOLVES_ROUNDS(2)] },
+    j_poke_aromatisse: { name: 'Aromatisse', text: [HEALING_AROMA, ['{C:attention}Aroma Veil:{} {C:green}+#2#{} to the odds', 'of {C:attention}Lucky{} cards', '{C:inactive}(Currently {C:green}#3# in #4#{C:inactive} Mult,', '{C:green}#5# in #6#{C:inactive} money)']] },
+    j_poke_swirlix: { name: 'Swirlix', text: [...SWEET_VEIL(1, 2), EVOLVES_ROUNDS(3)] },
+    j_poke_slurpuff: { name: 'Slurpuff', text: [['{C:attention}+#1#{} consumable slot'], SWEET_VEIL(2, 3)] },
+    j_poke_inkay: { name: 'Inkay', text: ['Each scored {C:attention}2{}, {C:attention}3{},', '{C:attention}4{} or {C:attention}5{} gives {C:mult}+#1#{} Mult', EVOLVES_ROUNDS(2)] },
+    j_poke_malamar: { name: 'Malamar', text: ['{C:attention}Topsy-Turvy:{} each scored', 'card gives the Chips of its', '{C:attention}flipped{} rank instead of its own', '{C:inactive}(2-A, 3-K, 4-Q, 5-J, 6-10 and', '{C:inactive}7-9 swap; 8 stays 8)', '{C:inactive}(Bonus Chips on the card stay;', '{C:inactive}Stone cards are unchanged)'] },
+    j_poke_binacle: { name: 'Binacle', text: ['Each scored {C:attention}7{}', 'gives {C:chips}+#1#{} Chips', EVOLVES_ROUNDS(2)] },
+    j_poke_barbaracle: { name: 'Barbaracle', text: ['Each scored {C:attention}7{} gives', '{C:chips}+#1#{} Chips and {X:mult,C:white} X#2# {} Mult'] },
+    j_poke_skrelp: { name: 'Skrelp', text: [HAZARD_POISON, ['{C:mult}+#1#{} Mult for each', '{C:attention}Hazard{} card in your full deck', '{C:inactive}(Currently {C:mult}+#2#{C:inactive} Mult)', EVOLVES_ROUNDS(3)]] },
+    j_poke_dragalge: { name: 'Dragalge', text: [HAZARD_POISON, ['Each {C:attention}Hazard{} card held', 'in hand gives {X:mult,C:white} X#1# {} Mult']] },
+    j_poke_tyrunt: { name: 'Tyrunt', text: [...ANCIENT_KINGS, ANCIENT_EVO(4)] },
+    j_poke_tyrantrum: { name: 'Tyrantrum', text: [...ANCIENT_KINGS, '{X:attention,C:white}4+{} : {X:mult,C:white} X#4# {} Mult'] },
+    j_poke_amaura: { name: 'Amaura', text: [...ANCIENT_QUEENS, ANCIENT_EVO(4)] },
+    j_poke_aurorus: { name: 'Aurorus', text: [...ANCIENT_QUEENS, '{X:attention,C:white}4+{} : {X:mult,C:white} X#4# {} Mult'] },
+    j_poke_hawlucha: { name: 'Hawlucha', text: ['{C:attention}Flying Press:{} retrigger the', '{C:attention}first{} and the {C:attention}last{} scored card', '{C:inactive}(A lone scored card: once)'] },
+    j_poke_klefki: { name: 'Klefki', text: ['{C:attention}Key Ring:{} {X:mult,C:white} X1 {} Mult, plus', '{X:mult,C:white} X#1# {} for each {C:attention}Voucher{}', 'redeemed this run', '{C:inactive}(Currently #2#: {X:mult,C:white} X#3# {C:inactive} Mult)'] },
+    j_poke_phantump: { name: 'Phantump', text: [...FOREST_CURSE, EVOLVES_ROUNDS(3)] },
+    j_poke_trevenant: { name: 'Trevenant', text: [FOREST_CURSE, ['Each destroyed card plants a', '{C:attention}Seed{}: a random unenhanced', 'card in your deck becomes', 'a {C:attention}Seed{} card']] },
+    j_poke_bergmite: { name: 'Bergmite', text: ['{C:chips}+#1#{} Chips', EVOLVES_ROUNDS(2)] },
+    j_poke_avalugg: { name: 'Avalugg', text: ['{C:chips}+#1#{} Chips', '{X:mult,C:white} X#2# {} Mult on the', 'final hand of the round', '{C:inactive}(#3#)'] },
+    j_poke_noibat: { name: 'Noibat', text: [GLASS_ODDS('{C:attention}+#1#{} hand size'), [...GLASS_BREAKS('Gains {C:mult}+#4#{} Mult'), '{C:inactive}(Currently {C:mult}+#5#{C:inactive} Mult)', EVOLVES_ROUNDS(6)]] },
+    j_poke_noivern: { name: 'Noivern', text: [GLASS_ODDS('{C:attention}+#1#{} hand size'), ['{C:attention}Boomburst:{} gains {X:mult,C:white} X#4# {} Mult', 'each time a {C:attention}Glass{} card', 'breaks, and a random card in', 'your deck becomes {C:attention}Glass{}', '{C:inactive}(Currently {X:mult,C:white} X#5# {C:inactive} Mult', '{C:inactive}and {C:mult}+#6#{C:inactive} Mult)']] },
     // The owner's rework of an upstream joker (Espeon 196, Future Sight, contentRev 57; jokers/pokejokers_07.js): its text replaces 3.9.1's.
     j_poke_espeon: { name: 'Espeon', text: [
       ['{C:purple}+#1# Foresight', 'Each played {V:1}#2#{}', 'retriggers and gives', '{X:mult,C:white} X#3# {} Mult when scored'],
