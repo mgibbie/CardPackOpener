@@ -67,7 +67,7 @@ try {
 	A([...coveredDex].every(d => !listed.includes(d)), 'every species a mod joker covers (incl. Megas / forms) is off the list');
 	A(coveredDex.size + listed.length === 1025 && D.counts.covered === coveredDex.size && D.counts.missing === listed.length, `listed (${listed.length}) + covered (${coveredDex.size}) = 1025`);
 	for (const m of PM.MODS) A(D.counts.byMod[m].species === M.coverage[m].size, `${m}: ${D.counts.byMod[m].species} species covered`);
-	A(['Bulbasaur', 'Pikachu', 'Mewtwo'].every(n => !D.species.some(s => s.name === n)) && D.species.some(s => s.name === 'Pikipek'), 'spot check: Bulbasaur / Pikachu / Mewtwo have jokers, Pikipek does not');
+	A(['Bulbasaur', 'Pikachu', 'Mewtwo'].every(n => !D.species.some(s => s.name === n)) && D.species.some(s => s.name === 'Rookidee'), 'spot check: Bulbasaur / Pikachu / Mewtwo have jokers, Rookidee does not');
 	// the type table is the mods' own majority (every primary type that has a clear one; Flying has none upstream)
 	const badTypes = Object.entries(M.typeVotes).filter(([t, v]) => {
 		if (t === 'Flying') return false;
@@ -95,12 +95,12 @@ try {
 	A(!tBad.length, `every wiki card's type is the type its card art shows (${D.species.filter(s => s.type_source === 'art').length} from the art)`, tBad.slice(0, 8).join(', '));
 	A(!srcWrong.length && D.species.every(s => ['art', 'mapping'].includes(s.type_source)), 'type_source records where each type came from (art, else mapping)', srcWrong.slice(0, 8).join(', '));
 	A(D.counts.typeSource.art + D.counts.typeSource.mapping === D.species.length && D.counts.typeFromArtDiffers === D.species.filter(s => s.ptype !== s.mapped_ptype).length, 'counts.typeSource / typeFromArtDiffers match the list');
-	A(!sp0('Latias') && sp0('Guzzlord')?.ptype === 'Dragon' && sp0('Toedscool')?.ptype === 'Grass' && sp0('Cutiefly')?.ptype === 'Fairy' && sp0('Chien-Pao')?.ptype === 'Water' && sp0('Iron Thorns')?.ptype === 'Lightning'
-		&& sp0('Bewear')?.ptype === 'Fighting' && sp0('Bewear')?.type_source === 'art' && sp0('Bewear')?.mapped_ptype === 'Colorless', 'spot check (the card wins; Latias, Dwebble, Venipede, Sandile, Kyurem, Keldeo, Stunfisk, Tyrunt and Phantump are in the game now): Guzzlord Dragon, Toedscool Grass, Cutiefly Fairy, Chien-Pao Water, Iron Thorns Lightning; Bewear Fighting from its art (the mapping said Colorless)');
+	A(!sp0('Latias') && sp0('Guzzlord')?.ptype === 'Dragon' && sp0('Toedscool')?.ptype === 'Grass' && sp0('Comfey')?.ptype === 'Fairy' && sp0('Chien-Pao')?.ptype === 'Water' && sp0('Iron Thorns')?.ptype === 'Lightning'
+		&& sp0('Bewear')?.ptype === 'Fighting' && sp0('Bewear')?.type_source === 'art' && sp0('Bewear')?.mapped_ptype === 'Colorless', 'spot check (the card wins; Latias, Dwebble, Venipede, Sandile, Kyurem, Keldeo, Stunfisk, Tyrunt, Phantump and Cutiefly are in the game now): Guzzlord Dragon, Toedscool Grass, Comfey Fairy, Chien-Pao Water, Iron Thorns Lightning; Bewear Fighting from its art (the mapping said Colorless)');
 	A(D.species.every(s => ['Basic', 'One', 'Two', 'Baby', 'Legendary'].includes(s.stage) && s.line.some(l => l.dex === s.dex)), 'every species has an upstream stage and sits in its own line');
 	const sp = sp0;
-	A(sp('Toucannon')?.stage === 'Two' && sp('Trumbeak')?.stage === 'One' && sp('Toxel')?.stage === 'Baby' && sp('Tapu Koko')?.stage === 'Legendary' && sp('Corviknight')?.ptype === 'Metal' && sp('Jangmo-o')?.ptype === 'Dragon',
-		'spot check: Toucannon Stage 2, Trumbeak Stage 1, Toxel Baby, Tapu Koko Legendary (Yveltal is in the game now), Corviknight Metal, Jangmo-o Dragon');
+	A(sp('Kommo-o')?.stage === 'Two' && sp('Hakamo-o')?.stage === 'One' && sp('Toxel')?.stage === 'Baby' && sp('Tapu Koko')?.stage === 'Legendary' && sp('Corviknight')?.ptype === 'Metal' && sp('Jangmo-o')?.ptype === 'Dragon',
+		'spot check: Kommo-o Stage 2, Hakamo-o Stage 1 (the Pikipek line is in the game now), Toxel Baby, Tapu Koko Legendary (Yveltal is in the game now), Corviknight Metal, Jangmo-o Dragon');
 
 	// ================================================================== ART
 	// UPSTREAM FIRST: a species Pokermon 3.9.1's sprite table draws (tools/micatro/specs/pokermon_391_sprite_table.json, a
@@ -191,8 +191,8 @@ try {
 	A(!blank.length, 'no card is blank (142 x 190, 90%+ opaque — the corners are rounded —, 24+ colours, 8+ in the art window)', blank.slice(0, 5).join(' | '));
 	A(!thin.length, 'every composed card: the battle sprite painted 100+ pixels onto it', thin.slice(0, 8).join(', '));
 	// the composer stays working for species upstream doesn't draw (none today): a Basic, a Stage 1, a Baby and a Legendary
-	const fallback = ['Toucannon', 'Trumbeak', 'Toxel', 'Tapu Koko'].map(n => ctx.M.missing.find(s => s.name === n)).filter(Boolean).map(s => [s.name, MJ.composeSpecies(ctx, s)]);
-	A(fallback.length === 4 && fallback.every(([, r]) => r.normalPainted >= 100 && r.shinyPainted >= 100 && r.recipe.frame), 'the composer (the fallback) still composes a real card (Toucannon, Trumbeak, Toxel, Tapu Koko)', fallback.map(([n, r]) => n + ' ' + r.normalPainted).join(', '));
+	const fallback = ['Kommo-o', 'Hakamo-o', 'Toxel', 'Tapu Koko'].map(n => ctx.M.missing.find(s => s.name === n)).filter(Boolean).map(s => [s.name, MJ.composeSpecies(ctx, s)]);
+	A(fallback.length === 4 && fallback.every(([, r]) => r.normalPainted >= 100 && r.shinyPainted >= 100 && r.recipe.frame), 'the composer (the fallback) still composes a real card (Kommo-o, Hakamo-o, Toxel, Tapu Koko)', fallback.map(([n, r]) => n + ' ' + r.normalPainted).join(', '));
 	const extra = fs.readdirSync(path.join(ROOT, 'designwiki/sprites/pokermon_jokers')).filter(f => !D.species.some(s => s.art.normal.endsWith('/' + f) || s.art.shiny.endsWith('/' + f)));
 	A(!extra.length, 'no stale card art for species that now have jokers', extra.join(', '));
 	// re-running the generator (into a scratch folder) gives the committed JSON and art, byte for byte
@@ -256,29 +256,29 @@ try {
 	const w5 = await anon.page.$$eval('.pj-tile', ts => ts.map(t => t.dataset.ptype));
 	A(w5.length === byType[ft] && w5.length > 0 && w5.every(t => t === ft), `the type filter narrows to ${ft} (in Gen ${fg})`, w5.length);
 	await anon.page.select('#pjGen', ''); await anon.page.select('#pjType', '');
-	await anon.page.type('#pjQ', 'pikip');
-	A(await waitFor(async () => (await anon.page.$$eval('.pj-tile', ts => ts.map(t => t.textContent))).join('|').match(/Pikipek/) && await tiles(anon.page) === D.species.filter(s => /pikip/i.test(s.name)).length, 4000), 'search by name');
+	await anon.page.type('#pjQ', 'rooki');
+	A(await waitFor(async () => (await anon.page.$$eval('.pj-tile', ts => ts.map(t => t.textContent))).join('|').match(/Rookidee/) && await tiles(anon.page) === D.species.filter(s => /rooki/i.test(s.name)).length, 4000), 'search by name');
 	await anon.page.evaluate(() => { const q = document.getElementById('pjQ'); q.value = ''; q.dispatchEvent(new Event('input')); });
 	await anon.page.type('#pjQ', '#0848');
 	A(await waitFor(async () => await tiles(anon.page) === 1 && /Toxel/.test(await anon.page.$eval('.pj-tile', t => t.textContent)), 4000), 'search by dex number (#0848 = Toxel)');
 	await go(anon.page, '#/pokermon-jokers');
 	await shot(anon.page, 'desktop_index_signed_out');
-	await go(anon.page, '#/pokermon-jokers/733');
+	await go(anon.page, '#/pokermon-jokers/823');
 	const card = await anon.page.evaluate(() => ({
 		h1: document.querySelector('.pj-page h1')?.textContent, img: document.querySelector('.pj-art-big')?.naturalWidth, src: document.querySelector('.pj-art-big')?.getAttribute('src'),
 		facts: document.querySelector('.pj-facts')?.textContent, line: [...document.querySelectorAll('.pj-line li')].map(l => l.textContent), box: !!document.querySelector('.pj-owner, #pjSubmit'),
 		nullText: [...document.getElementById('content').childNodes].some(n => n.nodeType === 3 && /^\s*(null|undefined)\s*$/.test(n.textContent)),
 	}));
-	A(card.h1 === 'Toucannon #0733' && card.img === 142 && /0733\.png(\?|$)/.test(card.src), 'a card page shows the name, dex and its art', JSON.stringify(card));
+	A(card.h1 === 'Corviknight #0823' && card.img === 142 && /0823\.png(\?|$)/.test(card.src), 'a card page shows the name, dex and its art', JSON.stringify(card));
 	const LABEL = { upstream: 'Art: Pokermon upstream', composed: 'Art: composed (no upstream card yet)' };
 	const label = () => anon.page.evaluate(() => { const e = document.querySelector('.pj-page-art .pj-artsrc'); return e && { text: e.textContent, src: e.dataset.source }; });
-	const want733 = D.species.find(s => s.dex === 733).art.source;
-	A(JSON.stringify(await label()) === JSON.stringify({ text: LABEL[want733], src: want733 }), `the card is labelled with its art source (${LABEL[want733]})`, JSON.stringify(await label()));
-	A(/Colorless/.test(card.facts) && /Stage 2/.test(card.facts) && JSON.stringify(card.line) === '["Pikipek","Trumbeak","Toucannon"]', 'type, stage and evolution line', JSON.stringify(card));
+	const want823 = D.species.find(s => s.dex === 823).art.source;
+	A(JSON.stringify(await label()) === JSON.stringify({ text: LABEL[want823], src: want823 }), `the card is labelled with its art source (${LABEL[want823]})`, JSON.stringify(await label()));
+	A(/Metal/.test(card.facts) && /Stage 2/.test(card.facts) && JSON.stringify(card.line) === '["Rookidee","Corvisquire","Corviknight"]', 'type, stage and evolution line', JSON.stringify(card));
 	A(!card.box, 'signed out: no Submit design box');
 	A(!card.nullText, 'no stray null / undefined text where the box would be');
 	await anon.page.click('.pj-flip');
-	A(/0733_shiny\.png(\?|$)/.test(await anon.page.$eval('.pj-art-big', i => i.getAttribute('src'))), 'the Shiny toggle swaps in the Shiny card');
+	A(/0823_shiny\.png(\?|$)/.test(await anon.page.$eval('.pj-art-big', i => i.getAttribute('src'))), 'the Shiny toggle swaps in the Shiny card');
 	await shot(anon.page, 'desktop_card_signed_out');
 	// a Legendary (soul layer) card, and its label
 	await go(anon.page, '#/pokermon-jokers/785');
@@ -306,7 +306,7 @@ try {
 
 	// ---------- a non-owner: no box ----------
 	const pe = await open(peon, 'pjpeon');
-	await go(pe.page, '#/pokermon-jokers/733');
+	await go(pe.page, '#/pokermon-jokers/823');
 	A(!(await pe.page.$('.pj-owner')) && !(await pe.page.$('#pjSubmit')), 'a non-owner: no Submit design box');
 	await go(pe.page, '#/pokermon-jokers');
 	A(!pe.designCalls.length, 'a non-owner: the page never calls the joker-design API', pe.designCalls.join(','));
@@ -314,10 +314,10 @@ try {
 
 	// ---------- the owner: box, submission round-trip ----------
 	const ow = await open(owner, 'mgibbie');
-	await go(ow.page, '#/pokermon-jokers/733');
+	await go(ow.page, '#/pokermon-jokers/823');
 	A(await ow.page.$('.pj-owner #pjSubmit') !== null, 'the owner sees the Submit design box');
-	A(await ow.page.$eval('#pjRarity', s => s.value) === D.species.find(s => s.dex === 733).rarityLabel, 'the rarity defaults to the guess');
-	const typed = { ability: 'Retrigger every scored 3\nGains X0.5 Mult per Trumbeak sold', rarity: 'Rare', cost: '9', notes: 'Shiny: X2 instead' };
+	A(await ow.page.$eval('#pjRarity', s => s.value) === D.species.find(s => s.dex === 823).rarityLabel, 'the rarity defaults to the guess');
+	const typed = { ability: 'Retrigger every scored 3\nGains X0.5 Mult per Corvisquire sold', rarity: 'Rare', cost: '9', notes: 'Shiny: X2 instead' };
 	await ow.page.type('#pjAbility', typed.ability);
 	await ow.page.select('#pjRarity', typed.rarity);
 	await ow.page.type('#pjCost', typed.cost);
@@ -326,17 +326,17 @@ try {
 	A(await waitFor(() => ow.page.$eval('.pj-msg', m => /filed ✓ \(1 design in the joker design list\)/.test(m.textContent)), 8000), 'submitting shows the confirmation', await ow.page.$eval('.pj-msg', m => m.textContent));
 	const srv = await api('joker-design-list', {}, owner);
 	const got = srv.designs && srv.designs[0];
-	A(srv.designs?.length === 1 && got.dex === 733 && got.name === 'Toucannon' && got.ability === typed.ability && got.rarity === 'Rare' && got.cost === 9 && got.notes === typed.notes,
+	A(srv.designs?.length === 1 && got.dex === 823 && got.name === 'Corviknight' && got.ability === typed.ability && got.rarity === 'Rare' && got.cost === 9 && got.notes === typed.notes,
 		'the server holds exactly what was typed (owner_todo:jokers)', JSON.stringify(srv));
 	A(await waitFor(() => ow.page.$$eval('.pj-design', ds => ds.length === 1 && ds[0].textContent.includes('Retrigger every scored 3')), 5000), 'the filed design shows on the card');
 	A(await ow.page.$eval('#pjAbility', t => t.value) === '', 'the box clears after filing');
-	await go(ow.page, '#/pokermon-jokers/733');
+	await go(ow.page, '#/pokermon-jokers/823');
 	A(await waitFor(() => ow.page.$$eval('.pj-design', ds => ds.length === 1 && /Rare/.test(ds[0].textContent) && /\$9/.test(ds[0].textContent) && /Shiny: X2/.test(ds[0].textContent)), 5000), 'after a reload the design is still listed, read-only (rarity, cost, notes)');
 	A(await ow.page.$$eval('.pj-design textarea, .pj-design input', x => x.length) === 0, 'the filed designs are read-only');
 	await ow.page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
 	await shot(ow.page, 'desktop_card_owner');
 	await go(ow.page, '#/pokermon-jokers');
-	A(await waitFor(() => ow.page.$eval('.pj-tile[data-dex="733"] .pj-designed', e => e.textContent === '✎ 1'), 5000), 'the index marks the tile the owner designed');
+	A(await waitFor(() => ow.page.$eval('.pj-tile[data-dex="823"] .pj-designed', e => e.textContent === '✎ 1'), 5000), 'the index marks the tile the owner designed');
 	A(!ow.errors.length, 'no console errors (owner)', ow.errors.slice(0, 3).join(' | '));
 	await ow.ctx.close();
 
@@ -351,7 +351,7 @@ try {
 	await shot(phA.page, 'phone_card_signed_out');
 	await phA.ctx.close();
 	const phO = await open(owner, 'mgibbie', 390, 844);
-	await go(phO.page, '#/pokermon-jokers/733');
+	await go(phO.page, '#/pokermon-jokers/823');
 	A(await waitFor(() => phO.page.$$eval('.pj-design', d => d.length === 1), 5000) && await noHScroll(phO.page), '390 px card, owner: the box and the filed design fit with no horizontal scroll');
 	A(await phO.page.evaluate(() => { const b = document.querySelector('.pj-owner').getBoundingClientRect(); return b.left >= 0 && b.right <= window.innerWidth; }), '390 px: the owner box sits inside the screen');
 	await phO.page.evaluate(() => document.querySelector('.pj-owner').scrollIntoView());
