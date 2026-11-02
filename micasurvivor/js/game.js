@@ -99,7 +99,8 @@ G.Game = (() => {
     const save = G.DB.save;
     // (MicaSurvivor DLC D11: an Expedition lobby's start plays its Expedition mode, map and tier for everyone: G.Expedition.coopPlan;
     //  a base start, or a page without the Expedition code, is Normal as always)
-    const cfg = G.Modes.begin(coop ? (coop.mode && G.Expedition && G.Expedition.coopPlan ? G.Expedition.coopPlan(coop) : { mode: 'normal' }) : G.Modes.plan(mode));
+    // (MicaSurvivor U2: a base lobby's start plays the host's mode and options, G.Modes.coopPlan; an old host's start, Normal)
+    const cfg = G.Modes.begin(coop ? (coop.mode && G.Expedition && G.Expedition.coopPlan ? G.Expedition.coopPlan(coop) : coop.bmode ? G.Modes.coopPlan(coop) : { mode: 'normal' }) : G.Modes.plan(mode));
     // Diario y Fiesta: su propio Pokémon (el del día / el elegido, aunque no lo tengas). Equipo: el primero.
     const mon = G.DEX_BY[cfg.dex || save.partner];
     // (MicaSurvivor DLC D18: the upgrades of the Pokémon's FAMILY, the best level among its stages: the same in every mode)
@@ -265,7 +266,7 @@ G.Game = (() => {
       if (d && d.t) time = d.t;
       if (d && d.why === 'host') G.UI.toast('El anfitrión ha terminado la partida', 3200);
       G.Spawner.say('', 0, true);   // (MicaSurvivor 12b: no "Paused: waiting for…" left behind the summary)
-      endRun(!(d && d.why === 'host'));
+      endRun(!(d && (d.why === 'host' || d.why === 'win')));   // (U2: 'win', a mode's own end: the Tower won, the rifts' clock)
     },
     // MicaSurvivor (M5 batch 12b): the host is gone (not just out of the run): out of its lobby too, so the
     // summary leads to the menu instead of a lobby nobody hosts. endRun saves your rewards as always.
@@ -801,7 +802,8 @@ G.Game = (() => {
     }
     time += dt;
     // MicaSurvivor (M5 lote 6, main.gd 966): la Contrarreloj de grietas acaba a los 8 minutos (fuera de la arena).
-    if (G.Modes.checkTime(time)) { G.Audio.sfx('bossDown'); endRun(false); return; }
+    // (U2: online, the host's clock ends it for everyone; a guest waits for the host's end)
+    if ((!coop || G.Coop.isHost) && G.Modes.checkTime(time)) { G.Audio.sfx('bossDown'); coopEnd(false); return; }
 
     // (M5 lote 8, main.gd 4705-4707: en el Rush cada 150 s desde un bioma al azar; en la Torre, uno por piso)
     // (MicaSurvivor DLC D3: an Expedition map keeps its own biome: it never cycles)
@@ -859,6 +861,12 @@ G.Game = (() => {
     if (!coop || G.Coop.isHost) maybeLevelUp();
     if (pl.bonds > 0) offerBond(true);
     if (G.Coop.isHost) checkAllDown(dt);
+  }
+
+  /** MicaSurvivor U2: the run ends (a mode's end: the Tower won, the rifts' clock): online, the host ends it for everyone. */
+  function coopEnd(dead) {
+    if (G.Coop.isHost) G.Coop.over(Object.assign(summary(), { why: dead ? undefined : 'win' }));
+    endRun(dead);
   }
 
   /** Caído en grupo: un compañero a tu lado te va levantando. */
@@ -1098,7 +1106,7 @@ G.Game = (() => {
   }
 
   return {
-    init, startRun, everyone, levelXp, flash, offerBond, offerItem, grantLevels, choiceStart, choiceEnd, endRun,
+    init, startRun, everyone, levelXp, flash, offerBond, offerItem, grantLevels, choiceStart, choiceEnd, endRun, coopEnd,
     watchEnter, watchExit, watchPlayer(p) { if (state === 'watch') pl = p; },   // MicaSurvivor (M5 lote 12c)
     get pendingLevels() { return pendingLevels; },
     /** Para pruebas: recoge un objeto del suelo como si lo tocaras (monedas, objetos...). */
@@ -1238,6 +1246,11 @@ G.Flow = {
       return;
     }
     // MicaSurvivor (DLC D16): a base lobby's start carries its ruleset (an old host's has none: 1): only the same rules play
+    // (MicaSurvivor U2: and its co-op version: another version's run would play differently)
+    if (cfg.cv != null && cfg.cv !== G.Social.COOP_V) {
+      G.UI.toast(cfg.cv > G.Social.COOP_V ? 'Tu juego no está actualizado: recarga la página.' : 'El juego del anfitrión no está actualizado: tiene que recargar la página.', 5000); G.Audio.sfx('error'); G.Social.leaveRoom();
+      return;
+    }
     if (cfg.dv == null && (cfg.rules || 1) !== G.Player.RULES) {
       G.UI.toast('El juego del anfitrión no está actualizado: tiene que recargar la página.', 5000); G.Audio.sfx('error'); G.Social.leaveRoom();
       return;

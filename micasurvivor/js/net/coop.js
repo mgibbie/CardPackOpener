@@ -147,7 +147,7 @@ G.Coop = (() => {
     const m = orbs[0] || local.activeGroup()[0];
     return [r1(local.x), r1(local.y), r2(local.moveAngle), local.walking ? 1 : 0, r1(local.hp), r1(local.maxHp),
             local.dead ? 1 : 0, m ? m.id : '', m ? m.lvl : 1, r1(local.magnet), r2(local.aim), r2(local.xpMul),
-            r2(local.reviveT || 0), api.choosing && api.choosing() ? 1 : 0, doneSeq, orbs.map(x => [x.id, x.lvl])];
+            r2(local.reviveT || 0), api.choosing && api.choosing() ? 1 : 0, doneSeq, orbs.map(x => [x.id, x.lvl]), local.dex];   // (U2: field 16, the species you play now: Team mode switches it)
   }
 
   /**
@@ -168,7 +168,7 @@ G.Coop = (() => {
 
   function readState(a) {
     return { x: a[0], y: a[1], ang: a[2], walk: a[3], hp: a[4], maxHp: a[5], dead: a[6], mv: a[7], ml: a[8],
-             mag: a[9], aim: a[10], xpMul: a[11], rev: a[12], ch: a[13], ld: a[14], ms: Array.isArray(a[15]) ? a[15] : null };   // (DLC D16: ms)
+             mag: a[9], aim: a[10], xpMul: a[11], rev: a[12], ch: a[13], ld: a[14], ms: Array.isArray(a[15]) ? a[15] : null, dex: a[16] | 0 };   // (DLC D16: ms; U2: dex)
   }
 
   // ---------------- envío ----------------
@@ -212,6 +212,8 @@ G.Coop = (() => {
                 p, e: enemyList(m.pl), ev };
     const ja = G.Judgment.netState();       // Arceus en la Sentencia
     if (ja) f.ja = ja;
+    const tw = G.Tower && G.Tower.netState();   // (U2: the Tower's floor, clock and boss)
+    if (tw) f.tw = tw;
     // Siempre: quién está eligiendo y, si hay cartas de nivel, cuáles (ver arriba).
     f.ho = holdNames();
     if (waiting.size) f.lu = [levelSeq, levelNow];
@@ -324,6 +326,7 @@ G.Coop = (() => {
         case 'hs': holdOn(from); break;
         case 'he': holdOff(from); break;
         case 're': G.Rift.enterRequest(); break;
+        case 'twp': if (G.Tower) G.Tower.netPact(ev[1]); break;   // (U2: a guest's Tower pact)
         case 'bye': mateGone(from); break;
         default: G.Hooks.call('net.event', ev, from);   // MicaSurvivor (DLC D11): an Expedition guest's message (a base guest sends none)
       }
@@ -356,6 +359,7 @@ G.Coop = (() => {
     if (stalled) { stalled = false; updateAway(); }
     for (const ev of msg.ev || []) applyHostEvent(ev);
     if (msg.ja) G.Judgment.netApply(msg.ja);
+    if (msg.tw && G.Tower) G.Tower.netApply(msg.tw);   // (U2)
     // MicaSurvivor (DLC D1): the host's Expedition zone, rebuilt here from the run's seed + its `x` block (never streamed;
     // the Expedition code is loaded first if needed). A base host sends no `x`.
     if (msg.x && G.Expedition) G.Expedition.viewZone(G.World.seed, msg.x);
@@ -426,6 +430,7 @@ G.Coop = (() => {
       case 'ov': { const cb = api.over; const d = ev[1]; end(); cb(d); break; }
       case 'rift': case 'riftx': case 'arena': case 'aw': case 'al': G.Rift.onEvent(ev); break;
       case 'jd': case 'jk': G.Judgment.onEvent(ev); break;
+      case 'twc': if (G.Tower) G.Tower.netClear(ev[1]); break;   // (U2: the host cleared a Tower floor)
       case 'wx': G.Weather.onEvent(ev); break;
       case 'ev': G.Events.onNet(ev); break;
       case 'hz': G.Hazards.add(ev[1], true); break;

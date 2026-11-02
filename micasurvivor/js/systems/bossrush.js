@@ -41,6 +41,8 @@ G.BossRush = (() => {
     on = !!G.Game && G.Game.mode === 'rush';
     i = 0; rest = FIRST;
     biomeOff = on ? Math.floor(Math.random() * G.Tiles.CYCLE.length) : 0;   // (una posición en G.Tiles.CYCLE)
+    // (MicaSurvivor U2: online, every device the same biomes: from the run's world seed, the host's)
+    if (on && G.Modes.run && G.Modes.run.group) biomeOff = (G.World.seed >>> 0) % G.Tiles.CYCLE.length;
     return on;
   }
 

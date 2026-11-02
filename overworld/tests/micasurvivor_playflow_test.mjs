@@ -430,10 +430,28 @@ try {
 		A(await d.E(() => document.querySelector('#scr-play [data-players=online]').getAttribute('aria-disabled') !== 'true'), 'signed in: Online is offered on Normal');
 		await d.click('[data-players="online"]');
 		const lbl = await d.E(() => ({ txt: document.getElementById('mx-start').innerText, mods: !!document.querySelector('#scr-play [data-mod]') }));
-		A(lbl.txt === 'Create lobby' && !lbl.mods, 'online Normal: START says "Create lobby"; no modifiers (a base lobby plays Normal)', JSON.stringify(lbl));
+		A(lbl.txt === 'Create lobby' && lbl.mods, 'online Normal: START says "Create lobby"; the modifiers are offered (U2: the lobby carries them)', JSON.stringify(lbl));
 		await d.shot('play_5_online_desktop.png');
 		await d.click('#mx-start');
-		A(await waitFor(() => d.visible('scr-lobby'), 8000) && await d.E(() => !!G.Social.room && !G.Social.room.mode && G.Game.state === 'ui'), 'online Normal: START creates a base lobby and opens it (no run yet)');
+		A(await waitFor(() => d.visible('scr-lobby'), 8000) && await d.E(() => !!G.Social.room && !G.Social.room.mode && G.Social.room.bmode === 'normal' && G.Social.room.cv === 2 && G.Game.state === 'ui'), 'online Normal: START creates a base lobby (U2: its mode and co-op version) and opens it (no run yet)');
+		await d.E(() => G.Social.leaveRoom()); await sleep(400);
+		// U2: every Survival variant goes online: the Tower lobby carries the start floor and the modifiers
+		await d.E(() => { G.UI.hideAll(); G.Flow.goMenu(); G.Modes.prefs().mods = ['horde']; G.DB.commit(); G.PlayUI.open(); });
+		await d.click('#mx-next'); await d.click('[data-cat="survival"]');
+		const offs = await d.E(() => [...document.querySelectorAll('#scr-play [data-var]')].map(b => b.dataset.var));
+		const onl = [];
+		for (const v of offs) { await d.click('[data-var="' + v + '"]'); onl.push([v, await d.E(() => document.querySelector('#scr-play [data-players=online]').getAttribute('aria-disabled'))]); await d.click('#mx-back'); }
+		A(onl.length === 8 && onl.every(([v, dis]) => dis !== 'true' || v === 'team'), 'U2: Online is offered on every Survival variant (Team only once you have 2 Pokémon)', JSON.stringify(onl));
+		await d.click('[data-var="tower"]'); await d.click('[data-players="online"]'); await d.click('#mx-start');
+		A(await waitFor(() => d.visible('scr-lobby'), 8000) && await d.E(() => G.Social.room && G.Social.room.bmode === 'tower' && G.Social.room.opts.tstart === 1 && JSON.stringify(G.Social.room.opts.mods) === '["horde"]'),
+			'online Tower: START creates a Tower lobby with your start floor and modifiers', await d.E(() => JSON.stringify(G.Social.room && { b: G.Social.room.bmode, o: G.Social.room.opts })));
+		// the host goes back and picks the Daily: the same lobby switches (no second lobby)
+		const rid = await d.E(() => G.Social.room.id);
+		await d.E(() => { G.UI.hideAll(); G.PlayUI.open(); });
+		await d.click('#mx-next'); await d.click('[data-cat="survival"]'); await d.click('[data-var="daily"]'); await d.click('[data-players="online"]');
+		A(await d.E(() => document.getElementById('mx-start').innerText) === 'Go to your lobby', 'in a lobby, START says "Go to your lobby"');
+		await d.click('#mx-start');
+		A(await waitFor(() => d.E(id => G.Social.room && G.Social.room.id === id && G.Social.room.bmode === 'daily' && G.Social.room.opts.dseed > 0, rid), 8000), 'START from the Daily switches your lobby to the Daily (same lobby)');
 		await d.E(() => G.Social.leaveRoom()); await sleep(400);
 		await d.E(() => { G.UI.hideAll(); G.Flow.goMenu(); G.PlayUI.open(); });
 		await d.click('#mx-next'); await d.click('[data-cat="expedition"]'); await waitFor(async () => (await d.state()).step === 3, 6000);
@@ -444,7 +462,11 @@ try {
 		// weekly + online: not yet
 		await d.E(() => { G.UI.hideAll(); G.Flow.goMenu(); G.PlayUI.open(); });
 		await d.click('#mx-next'); await d.click('[data-cat="dive"]'); await waitFor(async () => (await d.state()).step === 3, 6000); await d.click('[data-var="weekly"]');
-		A(await d.E(() => document.querySelector('#scr-play [data-players=online]').getAttribute('aria-disabled') === 'true' && document.querySelector('#scr-play [data-players=local]').getAttribute('aria-disabled') === 'true'), 'Weekly Dive: Local and Online are "coming soon" (U2)');
+		A(await d.E(() => document.querySelector('#scr-play [data-players=online]').getAttribute('aria-disabled') !== 'true'), 'U2: Weekly Dive offers Online');
+		await d.click('[data-players="online"]'); await d.click('#mx-start');
+		A(await waitFor(() => d.visible('scr-lobby'), 8000) && await d.E(() => { const R = G.Social.room, w = G.Expedition.diveWeekly(); return !!R && R.mode === 'exp-dive' && R.opts.weekly === w.week && R.map === 'dive:' + w.route; }),
+			'online Weekly Dive: START creates a Dive lobby of this week (its week and route)', await d.E(() => JSON.stringify(G.Social.room && { m: G.Social.room.mode, o: G.Social.room.opts, map: G.Social.room.map })));
+		await d.E(() => G.Social.leaveRoom()); await sleep(400);
 		await d.ctx.close();
 	}
 

@@ -18,6 +18,19 @@
 G.Social = (() => {
   const UP = G.Social;                       // upstream's module (Firebase): only its profileData() is reused
   const MAX_PLAYERS = 4;
+  // MicaSurvivor U2: the co-op version this build plays (server/mp.mjs MSURV_COOP_V): a lobby carries it, and a client of
+  // another version is refused at the join ("out of date"). A U2 lobby also carries the run: bmode + opts (base) or opts
+  // {start, weekly} (Dive), and each member's Dive stages (dst) so a start from a saved stage can be checked.
+  const COOP_V = 2;
+  const ROUTES = ['forest', 'canyon', 'crater', 'reef', 'grotto', 'marsh', 'ruins', 'fungal', 'origin'];
+  /** Your Dive stages {route: stage} (once the Expedition code is loaded; else none). */
+  function dstOf() {
+    const D = G.ExpDive;
+    if (!D || !D.stageOf) return null;
+    const out = {};
+    for (const r of ROUTES) { const n = +D.stageOf(r) || 0; if (n > 0) out[r] = n; }
+    return out;
+  }
   const INVITE_TTL = 3 * 60 * 1000;
   // (window.__msurvNet {invMs, friendsMs}: tests shorten the slow polls)
   const H = window.__msurvNet || {};
@@ -175,7 +188,9 @@ G.Social = (() => {
   function memberInfo(exp) {
     const s = G.DB.save || {};
     // (DLC D11: in an Expedition lobby your card shows the League member you'll play)
-    if ((exp || (room && room.mode)) && G.Expedition) { const d = G.Expedition.leaguePick(); return { dex: d || s.partner || 25, shiny: false }; }
+    if ((exp || (room && room.mode)) && G.Expedition) { const d = G.Expedition.leaguePick(); const dst = dstOf(); return Object.assign({ dex: d || s.partner || 25, shiny: false }, dst ? { dst } : {}); }
+    // (U2: a Party lobby shows the Pokémon of your party pick; the others, your partner)
+    if (room && room.bmode === 'party' && G.Modes) return { dex: G.Modes.prefs().party || 25, shiny: false };
     return { dex: s.partner || 25, shiny: !!s.partnerShiny && G.DB.ownsShiny(s.partner) };
   }
 
@@ -191,6 +206,7 @@ G.Social = (() => {
     if (/already in/.test(e)) return 'Ya está en tu sala.';
     if (/slow down/.test(e)) return 'Demasiado deprisa: espera un momento.';
     if (/host.*out of date/.test(e)) return 'El juego del anfitrión no está actualizado: tiene que recargar la página.';   // (DLC D16: a base lobby of the old rules)
+    if (/not reached/.test(e)) return G.I18n.f('No han llegado al piso de salida de esta ruta: {x}', ((r.body && r.body.who) || []).join(', '));   // (U2: a Dive from a stage)
     if (/out of date/.test(e)) return 'Tu juego no está actualizado: recarga la página.';   // (DLC D0b: an Expedition lobby of another version)
     return 'No se pudo entrar en la sala.';
   }
@@ -199,12 +215,13 @@ G.Social = (() => {
   function applyLobby(lb) {
     if (!lb) return;
     const was = room;
-    const members = lb.members.map(m => ({ uid: m.name, name: m.name, dex: m.dex, shiny: !!m.shiny, ready: !!m.ready }))
+    const members = lb.members.map(m => ({ uid: m.name, name: m.name, dex: m.dex, shiny: !!m.shiny, ready: !!m.ready, dst: m.dst || null }))
       .sort((a, b) => (a.uid === lb.host ? -1 : b.uid === lb.host ? 1 : 0));
     room = { id: lb.id, host: lb.host, isHost: lb.host === uid, open: !!lb.open, v: lb.v, members, start: lb.start || null,
              mode: lb.mode || null, dv: lb.dv == null ? null : lb.dv,   // (DLC D0b: an Expedition lobby's mode + content version; base: null)
              rules: lb.rules || 1,                                       // (DLC D16: a base lobby's ruleset; an old host's: 1)
              map: lb.map || null, diff: lb.diff || null,                // (DLC D11: its map and tier)
+             cv: lb.cv || null, bmode: lb.bmode || null, opts: lb.opts || null,   // (U2: the co-op version and the run's options)
              invited: lb.invited || (was && was.id === lb.id ? was.invited : []) };
     lobbyAt = Date.now();
     emit('room');
@@ -222,7 +239,10 @@ G.Social = (() => {
     if (room) return room;
     const X = G.Expedition, exp = opts && X && X.isExp(opts.mode);
     // (DLC D16: a base lobby carries this build's ruleset: the server refuses a guest of other rules)
-    const r = await call('msurv-lobby-create', exp ? Object.assign(memberInfo(true), { mode: opts.mode, dv: X.DV }, opts.map ? { map: opts.map, diff: opts.diff } : {}) : Object.assign(memberInfo(), { rules: G.Player.RULES }));
+    // (U2: and its co-op version and the run: {bmode, opts} for a base lobby, {opts: {start, weekly}} for a Dive one)
+    const cfg = { opts: (opts && opts.opts) || {} };
+    if (!exp) cfg.bmode = (opts && opts.bmode) || 'normal';
+    const r = await call('msurv-lobby-create', Object.assign(exp ? Object.assign(memberInfo(true), { mode: opts.mode, dv: X.DV }, opts.map ? { map: opts.map, diff: opts.diff || 'normal' } : {}) : Object.assign(memberInfo(), { rules: G.Player.RULES }), { cv: COOP_V, cfg }));
     if (!r.ok || !r.body.lobby) return null;
     applyLobby(r.body.lobby);
     return room;
@@ -233,10 +253,12 @@ G.Social = (() => {
     if (room) await leaveRoom();
     // (DLC D0b: dv = this build's Expedition content version; the server refuses an Expedition lobby of another one)
     // (DLC D16: and rules = this build's ruleset; a base lobby of other rules refuses the join)
-    const r = await call('msurv-lobby-join', Object.assign({ id }, memberInfo(), G.Expedition ? { dv: G.Expedition.DV } : {}, { rules: G.Player.RULES }));
+    const r = await call('msurv-lobby-join', Object.assign({ id }, memberInfo(), G.Expedition ? { dv: G.Expedition.DV } : {}, { rules: G.Player.RULES, cv: COOP_V }, dstOf() ? { dst: dstOf() } : {}));
     if (!r.ok || !r.body.lobby) return { ok: false, error: errText(r) };
     applyLobby(r.body.lobby);
     if (room && room.mode && G.Expedition) refreshMember();   // (DLC D11: an Expedition lobby: your card shows your League member)
+    // (U2: a Dive lobby from a stage: load the Expedition code and save so your stages reach the host)
+    if (room && room.mode === 'exp-dive' && G.Expedition && !G.ExpDive) G.Expedition.load().then(() => (G.ExpSave && G.ExpSave.open ? G.ExpSave.open() : null)).then(() => refreshMember(), e => console.warn(e));
     return { ok: true };
   }
 
@@ -286,6 +308,8 @@ G.Social = (() => {
   /** Tu Pokémon en la sala (si cambias de compañero). */
   function refreshMember() { if (room) update(memberInfo()); }
   function setReady(ready) { return update({ ready: !!ready }); }
+  /** U2: the host changes the lobby's run ({bmode, opts} / {opts, map} for a Dive); the guests ready up again. */
+  function setCfg(cfg) { return update({ cfg }); }
   /** El anfitrión empieza: el servidor comprueba que estáis todos listos y guarda la semilla y los miembros. */
   async function startRoom(seed) {
     const r = await update({ start: { seed } });
@@ -299,7 +323,7 @@ G.Social = (() => {
 
   return {
     start, stop, request, invite, acceptInvite, declineInvite,
-    createRoom, joinRoom, leaveRoom, setOpen, refreshMember, setReady, startRoom, setPlaying, refreshPresence,
+    createRoom, joinRoom, leaveRoom, setOpen, refreshMember, setReady, setCfg, startRoom, dstOf, COOP_V, setPlaying, refreshPresence,
     pollRoom, pollInvites,
     // upstream's profile functions: no public profiles on Magepunk (yet), only your own preview
     claimNick: async () => ({ ok: false }),

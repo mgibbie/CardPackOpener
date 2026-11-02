@@ -261,6 +261,29 @@
       return (m.ready ? 'Listo' : 'No está listo') + ' · ' + modeText(G.Net.mode(m.uid));
     }
 
+    // ---- MicaSurvivor U2: what a lobby plays (its mode and options) ----
+    function baseLine(room) {
+      const M = G.Modes, T = s => G.I18n.t(s), o = room.opts || {}, b = room.bmode;
+      const parts = [T(b === 'normal' ? M.NAME.normal : M.NAME[b] || b)];
+      if (b === 'type' && o.type) parts.push(T(G.U.TYPE_NAME[o.type] || o.type));
+      if (b === 'tower' && o.tstart > 1) parts.push(G.I18n.f('Piso {x}', o.tstart));
+      if (b === 'daily' && o.dseed) parts.push(G.I18n.f('Regla del día: {x}', T(M.MOD[M.dailyMod(o.dseed)].name)));
+      for (const id of o.mods || []) if (M.MOD[id]) parts.push(T(M.MOD[id].name));
+      return parts.join(' · ');
+    }
+    function diveLine(room) {
+      const X = G.Expedition, T = s => G.I18n.t(s), o = room.opts || {}, r = String(room.map || 'dive:forest').slice(5);
+      if (o.weekly != null) return T('Inmersión semanal') + ' · ' + T(X.DIVE_NAME[r] || r);
+      return [T(X.NAME['exp-dive']), T(X.DIVE_NAME[r] || r), G.I18n.f('Piso {x}', o.start || 1)].join(' · ');
+    }
+    /** The members who haven't reached a Dive lobby's start floor (their dst, from the server). */
+    function shortOf(room) {
+      const st = room.mode === 'exp-dive' && room.opts ? room.opts.start || 1 : 1;
+      if (st <= 1 || (room.opts && room.opts.weekly != null)) return [];
+      const r = String(room.map || 'dive:forest').slice(5);
+      return room.members.filter(m => !(m.dst && m.dst[r] >= st)).map(m => m.name);
+    }
+
     function render() {
       const room = G.Social.room;
       if (!room) return;
@@ -273,7 +296,8 @@
       if (xl) {
         const X = G.Expedition, T = s => G.I18n.t(s);
         const MAPN = { viridian: 'Bosque Verde', mtmoon: 'Monte Moon', cerulean: 'Cabo Celeste' }, DIFN = { normal: 'Normal', hard: 'Difícil', nightmare: 'Pesadilla' };
-        xl.textContent = room.mode && X && X.NAME[room.mode] ? [T(X.NAME[room.mode]), room.map ? T(MAPN[room.map] || room.map) : '', room.diff ? T(DIFN[room.diff] || room.diff) : ''].filter(Boolean).join(' · ') : '';
+        xl.textContent = room.mode && X && X.NAME[room.mode] ? (room.mode === 'exp-dive' ? diveLine(room) : [T(X.NAME[room.mode]), room.map ? T(MAPN[room.map] || room.map) : '', room.diff ? T(DIFN[room.diff] || room.diff) : ''].filter(Boolean).join(' · '))
+          : room.bmode ? baseLine(room) : '';
         xl.classList.toggle('hidden', !xl.textContent);
       }
 
@@ -333,7 +357,8 @@
       const connecting = ms.some(m => m.uid !== room.host && G.Net.mode(m.uid) === 'connecting');
       const failed = ms.some(m => m.uid !== room.host && G.Net.mode(m.uid) === 'failed');
       const unready = ms.some(m => m.uid !== room.host && !m.ready);   // (MicaSurvivor 12b: everyone ready first)
-      btn.disabled = !room.isHost || ms.length < 2 || connecting || failed || unready || starting;
+      const short = shortOf(room);   // (U2: a Dive from a stage: who hasn't reached it)
+      btn.disabled = !room.isHost || ms.length < 2 || connecting || failed || unready || starting || short.length > 0;
       btn.textContent = 'Empezar partida (' + ms.length + '/' + G.Social.MAX_PLAYERS + ')';
       const mine = ms.find(m => m.uid === G.Social.uid);
       const rb = $('lobby-ready');
@@ -345,6 +370,7 @@
       const budgetOut = G.Net.budgetOut;
       const base = !room.isHost ? (mine && mine.ready ? 'Cuando el anfitrión empiece, entraréis todos a la vez.' : 'Pulsa "Estoy listo" cuando quieras empezar.')
         : ms.length < 2 ? 'Necesitas al menos un amigo en la sala.'
+        : short.length ? G.I18n.f('No han llegado al piso {x} de esta ruta: {x}', room.opts.start, short.join(', '))
         : budgetOut && failed ? ''
         : failed ? 'No se puede conectar con algún amigo: su red (o la tuya) no deja jugar en grupo. Probad con otra wifi o datos móviles; se reintenta solo.'
         : connecting ? 'Conectando con tus amigos…'

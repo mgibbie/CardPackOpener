@@ -193,11 +193,15 @@ G.Tower = (() => {
   let on = false, floor = 1, t = 0, boss = null, phase = 0, risks = [], shield = 0, surge = SURGE.first;
   let clears = 0, adaptHp = 1, adaptDmg = 1, adaptT = 0, init = false, bossT0 = -1, fightDmg = 0, log = [];
   let reap = 0, acc = 0, won = false, forceLegend = '', relicN = 0, start = 1, lastPick = null;
+  // MicaSurvivor U2 (online co-op, the host is the authority): teamRisks = the pacts the guests sealed (their ENEMY-side
+  // costs stack on the host's foes); netBoss = a guest's "the floor's boss is out" (from the host's frames)
+  let teamRisks = [], netBoss = false;
 
   function reset() {
     on = false; floor = 1; t = 0; boss = null; phase = 0; risks = []; shield = 0; surge = SURGE.first;
     clears = 0; adaptHp = 1; adaptDmg = 1; adaptT = 0; init = false; bossT0 = -1; fightDmg = 0; log = [];
     reap = 0; acc = 0; won = false; forceLegend = ''; relicN = 0; start = 1; lastPick = null;
+    teamRisks = []; netBoss = false;
   }
 
   /**
@@ -209,7 +213,9 @@ G.Tower = (() => {
     on = !!pl && !!G.Game && G.Game.mode === 'tower';
     if (!on) return false;
     const s = save();
-    start = floor = startFloor(s);
+    // (U2: an online run starts on the HOST's floor, G.Modes.run.tstart, for everyone)
+    const ts = G.Modes.run && G.Modes.run.group && G.Modes.run.tstart;
+    start = floor = ts && [1, 6, 11, 16, 21, 26].includes(ts) ? ts : startFloor(s);
     relicN = relics(s);
     pl.maxHp += RELIC.hp * relicN; pl.hp = pl.maxHp;
     pl.atkMul *= 1 + RELIC.atk * relicN;
@@ -219,6 +225,8 @@ G.Tower = (() => {
 
   /** Producto del efecto `key` de los pactos tomados (main.gd _rk). */
   function rk(key) { let v = 1; for (const id of risks) { const f = BY[id] && BY[id].fx; if (f && f[key] != null) v *= f[key]; } return v; }
+  /** U2: an enemy-side key (foes' HP / speed / spawns, the boss's HP / damage): your pacts AND, on a co-op host, the guests'. */
+  function rkE(key) { let v = rk(key); for (const id of teamRisks) { const f = BY[id] && BY[id].fx; if (f && f[key] != null) v *= f[key]; } return v; }
   /** Suma del efecto `key` (main.gd _rk_add). */
   function rkAdd(key) { let v = 0; for (const id of risks) { const f = BY[id] && BY[id].fx; if (f && f[key] != null) v += f[key]; } return v; }
   /** Pactos que cuentan para el tope de 6 (las legendarias no). */
@@ -242,12 +250,12 @@ G.Tower = (() => {
   function enemyAdded(e) {
     if (!on || !e || e.remote || e.towerDone) return;
     e.towerDone = true;
-    let ek = rk('ehp') * K.hp * adaptHp;
-    let es = rk('espd') * (1 + 0.02 * Math.max(0, floor - 10));
+    let ek = rkE('ehp') * K.hp * adaptHp;
+    let es = rkE('espd') * (1 + 0.02 * Math.max(0, floor - 10));
     e.dmg *= K.dmg * adaptDmg;
     if (e.boss) {
-      ek = rk('bossHp') * K.bossHp * Math.min(adaptHp, ADAPT.maxBoss);
-      e.dmg *= rk('bossdmg');
+      ek = rkE('bossHp') * K.bossHp * Math.min(adaptHp, ADAPT.maxBoss);
+      e.dmg *= rkE('bossdmg');
       es = 1 + (es - 1) * 0.5;
     }
     e.maxHp = Math.round(e.maxHp * ek); e.hp = e.maxHp;
@@ -310,7 +318,7 @@ G.Tower = (() => {
   /** Enemigos por segundo (main.gd 3381): la curva normal × caos (+6 % por piso desde el 11) × 1,12 × pactos × Horda × Incienso. */
   function rate() {
     const chaos = 1 + 0.06 * Math.max(0, floor - 10);
-    return G.Spawner.rate(dt()) * G.Modes.spawnK() * chaos * K.spawn * rk('spawn') * (G.Spawner.incense() ? G.Items.INCENSE.rate : 1);
+    return G.Spawner.rate(dt()) * G.Modes.spawnK() * chaos * K.spawn * rkE('spawn') * (G.Spawner.incense() ? G.Items.INCENSE.rate : 1);
   }
 
   function lastBreath(e) {
@@ -325,6 +333,8 @@ G.Tower = (() => {
 
   /** El jefe ha caído: piso superado (main.gd _tower_clear). */
   function clear() {
+    // (U2: on a co-op host, every guest clears it too: its own rewards, rest and pacts)
+    if (G.Coop && G.Coop.isHost) G.Coop.broadcast(['twc', floor]);
     const f = floor, pl = G.Game.player, s = save(), now = G.Game.st.time;
     const tw = rec(s);
     if (bossT0 >= 0) {
@@ -351,7 +361,8 @@ G.Tower = (() => {
     if (first) txt += ' +' + r.coins + ' monedas' + (f % RELIC.every === 0 ? ' · ¡Reliquia de la Torre!' : '');
     G.Spawner.say(txt, 3.6);
     // limpia el piso (main.gd 3456-3460)
-    G.EnemyMgr.clearAlive();
+    // (U2: a co-op guest's foes are the host's copies: the host clears them)
+    if (!(G.Coop && G.Coop.active && !G.Coop.isHost)) G.EnemyMgr.clearAlive();
     G.FX.ring(pl.x, pl.y, 8, 200, '#ffd23f', 0.7, 6);
     if (f >= FLOORS) { win(); return; }
     // vínculos de ataque al superar el 10 y el 20 (main.gd 3465-3470)
@@ -375,6 +386,7 @@ G.Tower = (() => {
   function restOpen() {
     phase = 1;
     G.Game.choiceStart();
+    if (G.Coop && G.Coop.active) G.Coop.holdStart();   // (U2: everyone picks their own rest and pact; the run waits for all)
     G.TowerUI.show('rest', 'Elige cómo descansar', 'Piso ' + (floor - 1) + ' superado', restCards(), restPick);
   }
   function restPick(id) {
@@ -417,6 +429,7 @@ G.Tower = (() => {
     if (id !== 'skip' && BY[id] && !risks.includes(id)) {
       apply(G.Game.player, id);
       G.Spawner.say('Pacto sellado: ' + BY[id].name, 2.4);
+      if (G.Coop && G.Coop.active && !G.Coop.isHost) G.Coop.toHost(['twp', id]);   // (U2: its enemy-side cost, on the host's foes)
       if (id === 'l_bag') { restDone(); G.Game.offerItem(G.Items.roll()); return; }
     }
     restDone();
@@ -425,6 +438,7 @@ G.Tower = (() => {
     phase = 0;
     G.TowerUI.hide();
     G.Game.choiceEnd();
+    if (G.Coop && G.Coop.active) G.Coop.holdEnd();
     G.Spawner.say('Piso ' + floor, 2);
   }
 
@@ -476,14 +490,34 @@ G.Tower = (() => {
 
   function win() {
     won = true;
-    G.Game.endRun(false);
+    // (U2: a co-op host ends it for everyone; a guest waits for the host's end)
+    if (G.Coop && G.Coop.active && !G.Coop.isHost) return;
+    if (G.Game.coopEnd) G.Game.coopEnd(false); else G.Game.endRun(false);
   }
+
+  // ---------------- U2: online co-op (the host's floor, boss and clears; the guests' pacts) ----------------
+  /** The host's frame: [floor, floor clock, boss out]. */
+  const netState = () => (on ? [floor, Math.round(t * 10) / 10, boss ? 1 : 0] : null);
+  /** A guest: the host's floor / clock / boss (the biome, the HUD). */
+  function netApply(a) {
+    if (!on || !Array.isArray(a) || G.Coop.isHost) return;
+    const f = a[0] | 0;
+    if (f >= 1 && f <= FLOORS && phase === 0) floor = Math.max(floor, f);
+    t = +a[1] || 0; netBoss = !!a[2];
+  }
+  /** A guest: the host cleared floor f: your own clear (rewards, bonds, rest and pacts). */
+  function netClear(f) {
+    if (!on || G.Coop.isHost || (f | 0) !== floor || phase !== 0) return;
+    clear();
+  }
+  /** The host: a guest sealed pact id. */
+  function netPact(id) { if (on && BY[id] && !BY[id].retired) teamRisks.push(id); }
 
   /** La línea del HUD bajo el reloj (main.gd 8711-8720), ya traducida por trozos. */
   function hudLine() {
     if (!on) return '';
     const T = G.I18n.t, parts = [T('Piso ' + floor + ' / ' + FLOORS)];
-    parts.push(boss ? T('¡Jefe!') : T('Jefe en ' + Math.ceil(Math.max(0, BOSS_AT - t)) + 's'));
+    parts.push(boss || netBoss ? T('¡Jefe!') : T('Jefe en ' + Math.ceil(Math.max(0, BOSS_AT - t)) + 's'));
     if (risks.length) parts.push(T('Pactos: ' + risks.length));
     if (risks.includes('l_reap')) parts.push(T('Sed de victoria +' + (REAP * 100 * reap).toFixed(1) + '%'));
     if (shield > 0) parts.push(T('Escudo') + ' ' + Math.ceil(shield));
@@ -508,7 +542,8 @@ G.Tower = (() => {
     BOND_FLOORS, SURGE, LAST, LOG_MAX, REAP, RISKS, LEGENDS, BY, REST_CARDS, SKIP,
     rec, relics, checkpoints, startFloor, cycleStart, reward, repeatCoins, merge, sanitize, def,
     reset, begin, rk, rkAdd, riskCount, dt, cap, rate, adapt, enemyAdded, update, clear, restOpen, restPick, riskCards, riskOpen, riskPick, restDone, apply,
-    takenK, absorb, healK, onKill, hudLine, finish, restHeal, biomeOf,
+    takenK, absorb, healK, onKill, hudLine, finish, restHeal, biomeOf, rkE, netState, netApply, netClear, netPact,
+    get teamRisks() { return teamRisks.slice(); },
     get on() { return on; }, get floor() { return floor; }, get t() { return t; }, get boss() { return boss; }, get phase() { return phase; },
     get risks() { return risks.slice(); }, get shield() { return shield; }, get clears() { return clears; }, get won() { return won; },
     get adaptHp() { return adaptHp; }, get adaptDmg() { return adaptDmg; }, get reap() { return reap; }, get log() { return log.slice(); },

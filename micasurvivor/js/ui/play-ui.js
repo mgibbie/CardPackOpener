@@ -82,7 +82,13 @@ G.I18n.add({
 'Consigue otro Pokémon primero': 'Get another Pokémon first',
   'Partida normal': 'Normal run', 'Desafío diario': 'Daily Challenge', 'Rush de Jefes': 'Boss Rush', 'Modo Fiesta': 'Party Mode',
   'Torre de pisos': 'Floor Tower', 'Contrarreloj de grietas': 'Rift Time Attack', 'Modo Equipo': 'Team Mode',
-  'Hasta 4 jugadores en un mismo aparato.': 'Up to 4 players on one device.', 'Teselia': 'Unova'
+  'Hasta 4 jugadores en un mismo aparato.': 'Up to 4 players on one device.', 'Teselia': 'Unova',
+  // (U2: online for every variant)
+  'Cada uno juega con su Pokémon; el anfitrión elige el modo.': 'Everyone plays their own Pokémon; the host picks the mode.',
+  'En línea: todos los de la sala deben haber llegado a ese piso.': 'Online: everyone in the lobby must have reached that floor.',
+  'No han llegado al piso {x} de esta ruta: {x}': "Haven't reached floor {x} on this route: {x}",
+  'No han llegado al piso de salida de esta ruta: {x}': "Haven't reached this route's start floor: {x}",
+  'Local · {x} jugadores': 'Local · {x} players'
 });
 
 G.PlayUI = (() => {
@@ -108,7 +114,8 @@ G.PlayUI = (() => {
   const catOf = v => Object.keys(VARIANTS).find(c => VARIANTS[c].includes(v)) || 'survival';
   const PLAYERS = ['solo', 'local', 'local4', 'online'];
   const LOCAL_OK = ['normal', 'exp-classic', 'exp-survival', 'dive'];
-  const ONLINE_OK = ['normal', 'exp-classic', 'exp-survival', 'dive'];
+  // (U2: online plays every variant: the lobby carries the host's mode and options, js/systems/modes.js coopPlan)
+  const ONLINE_OK = ['normal', 'daily', 'rush', 'party', 'tower', 'rifts', 'type', 'team', 'exp-classic', 'exp-survival', 'dive', 'weekly'];
   const MOD_TXT = { glass: 'pegas y recibes ×1,5', horde: '+2 enemigos por grupo', swift: 'enemigos ×1,25 de velocidad', iron: 'enemigos ×1,4 de vida' };
   const KEY = 'micasurvivor_playflow';
 
@@ -365,8 +372,7 @@ G.PlayUI = (() => {
       solo: ['Solo', 'ball', 'blue', ['Tú solo.']],
       local: ['Local · 2 jugadores', 'm_coop', 'green', [base ? 'Un segundo mando mueve a tu compañero.' : 'Tu compañero te acompaña; un segundo mando lo mueve.']],
       local4: ['Local · 3-4 jugadores', 'm_coop', 'grey', ['Hasta 4 jugadores en un mismo aparato.']],
-      online: ['En línea con amigos', 'friends', 'orange', ['Crea una sala e invita a tus amigos (hasta 4).',
-        st.variant === 'normal' ? 'Las salas en línea juegan la partida normal, sin modificadores.' : st.variant === 'dive' ? 'Desde el piso 1 por ahora.' : null]]
+      online: ['En línea con amigos', 'friends', 'orange', ['Crea una sala e invita a tus amigos (hasta 4).', 'Cada uno juega con su Pokémon; el anfitrión elige el modo.']]
     };
     const box = document.createElement('div');
     box.className = 'mx-tiles n4';
@@ -448,12 +454,11 @@ G.PlayUI = (() => {
       if (v === 'party') html += `<div class="mx-row in"><span class="grow">${esc(F('Pokémon de la fiesta: {x}', nameOf(p.party)))}</span><button type="button" class="mx-btn blue" id="mx-sub-party">${esc(T('Elegir'))}</button></div>`;
       if (v === 'team') html += `<div class="mx-row in"><span class="grow">${esc(F('Equipo: {x}', G.Team.list(s).map(nameOf).join(', ')))}</span><button type="button" class="mx-btn blue" id="mx-sub-team">${esc(T('Elegir equipo'))}</button></div>`;
       if (v === 'normal' && st.players === 'local') html += `<div class="mx-row in"><span class="grow">${esc(F('Compañero: {x}', nameOf(G.LocalCoop.dex(s))))}</span><button type="button" class="mx-btn blue" id="mx-sub-coop">${esc(T('Elegir compañero'))}</button></div>`;
-      if (v !== 'daily' && v !== 'party' && !online) {
+      if (v !== 'daily' && v !== 'party') {
         html += `<div class="in"><h3 class="mx-h">${esc(T('Modificadores'))} <span class="mx-note mx-money">${esc(T('+25% de monedas por cada uno.'))}</span></h3><div class="mx-mods">`
           + M.MOD_IDS.map(id => { const on = p.mods.includes(id), m = M.MOD[id]; return `<button type="button" class="mx-mod${on ? ' on' : ''}" data-mod="${id}" aria-pressed="${on}" data-sfx="select">${G.Icons.html(m.icon, 24)}<span class="m-t"><b>${esc(T(m.name))}</b><small>${esc(T(m.desc))}</small></span><span class="m-sw">${esc(T(on ? 'Sí' : 'No'))}</span></button>`; }).join('')
           + '</div></div>';
       }
-      if (online) html += `<div class="mx-note in">${esc(T('Las salas en línea juegan la partida normal, sin modificadores.'))}</div>`;
     } else if (v === 'exp-classic' || v === 'exp-survival') {
       const R = G.ExpTier, maps = R.MAP_ORDER, mi = Math.max(0, maps.indexOf(st.map)), di = Math.max(0, R.DIFFS.indexOf(st.diff));
       const mOpen = R.mapOpen(st.map), dOpen = R.isOpen(st.map, st.diff), tr = R.K.TIERS[st.diff];
@@ -467,11 +472,11 @@ G.PlayUI = (() => {
       const types = G.DiveGen.ROUTES[st.route].types.map(t => T(G.U.TYPE_NAME[t] || t)).join(' · ');
       const best = D.bestOf(st.route), stage = D.stageOf(st.route);
       html += carousel('route', 'Ruta', T(X.DIVE_NAME[st.route]), types + (open1 && best ? ' · ' + F('Récord: piso {x}', best) : '') + (D.sealOf(st.route) ? ' · ' + T('Sello despierto') : ''), ri, routes.length, !open1, F('Despierta los 8 Sellos ({x}/8)', D.seals()));
-      if (open1 && !online) {
+      if (open1) {
         const sts = D.starts(st.route), cur = sts.includes(X.diveStart()) ? X.diveStart() : 1, si = sts.indexOf(cur);
         html += carousel('start', 'Piso inicial', F('Piso {x}', cur), stage ? F('Etapa guardada: piso {x}', stage) : T('Vence al guardián del piso 25 para guardar una etapa.'), si, sts.length, false);
+        if (online && cur > 1) html += `<div class="mx-note in">${esc(T('En línea: todos los de la sala deben haber llegado a ese piso.'))}</div>`;
       }
-      if (online) html += `<div class="mx-note in">${esc(T('Desde el piso 1 por ahora.'))}</div>`;
     } else if (v === 'weekly') {
       const w = X.diveWeekly();
       html += `<div class="mx-row in"><span class="grow">${esc(T('Ruta de la semana'))}: <b>${esc(T(X.DIVE_NAME[w.route]))}</b></span></div>`
@@ -576,11 +581,29 @@ G.PlayUI = (() => {
     }
     return Promise.resolve(G.Flow.play(mode)).then(r => r !== false);
   }
+  /** U2: what an online lobby of this setup carries: {mode?, map?, diff?, bmode?, opts}. */
+  function lobbyOpts(mode) {
+    const v = st.variant, X = G.Expedition;
+    if (!X.isExp(mode)) return G.Modes.lobbyCfg(mode);
+    if (v === 'weekly') { const w = X.diveWeekly(); return { mode, map: 'dive:' + w.route, diff: 'normal', opts: { weekly: w.week } }; }
+    if (v === 'dive') { const sts = G.ExpDive ? G.ExpDive.starts(st.route) : [1], s0 = X.diveStart(); return { mode, map: 'dive:' + st.route, diff: 'normal', opts: { start: sts.includes(s0) ? s0 : 1 } }; }
+    return { mode, map: st.map, diff: st.diff, opts: {} };
+  }
   async function startOnline(mode) {
     if (!loggedIn()) { refuse(T('Inicia sesión para jugar con amigos')); return false; }
-    if (G.Expedition.isExp(mode)) { syncLeague(); return G.ModesUI.openExpCoop(mode); }
-    if (G.Social.room) { G.LobbyUI.open(); return true; }
-    const room = await G.Social.createRoom();
+    const X = G.Expedition, exp = X.isExp(mode), o = lobbyOpts(mode), R = G.Social.room;
+    if (exp) syncLeague();
+    if (R) {
+      // your lobby: the host's new pick replaces what it plays (same kind: base, or the same Expedition mode)
+      const same = exp ? R.mode === mode : !R.mode;
+      if (R.isHost && R.cv && same) {
+        const r = await G.Social.setCfg(exp ? { opts: o.opts, map: o.map } : { bmode: o.bmode, opts: o.opts });
+        if (!r.ok && r.error) G.UI.toast(r.error, 3000);
+      } else if (!same && R.isHost) { refuse(T('Sal de tu sala antes de crear otra.')); return false; }
+      G.LobbyUI.open();
+      return true;
+    }
+    const room = await G.Social.createRoom(o);
     if (!room) { refuse(T('No se pudo crear la sala.')); return false; }
     G.LobbyUI.open();
     return true;
@@ -596,7 +619,7 @@ G.PlayUI = (() => {
   }
 
   return {
-    init, open, back, render, start, plan, playersOf, modeOf, owned, syncLeague,
+    init, open, back, render, start, plan, playersOf, modeOf, owned, syncLeague, lobbyOpts,
     VARIANTS, CATS,
     get state() { return { step: st.step, cat: st.cat, variant: st.variant, players: st.players, sub: st.sub, map: st.map, diff: st.diff, route: st.route }; }
   };

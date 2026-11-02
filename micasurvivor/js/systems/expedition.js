@@ -223,7 +223,17 @@ G.Expedition = (() => {
   function coopPlan(c) {
     if (!c || !loaded || !isExp(c.mode) || !enabled(c.mode) || !lobbyOk(c.dv)) return { mode: 'normal' };
     return { mode: c.mode, mods: [], type: null, dex: G.ExpLeague ? G.ExpLeague.pickFor(c.mode) : null, seed: 0, dv: DV,
-             map: c.mode === 'exp-dive' ? (/^dive:[a-z]+$/.test(c.map || '') ? c.map : 'dive:' + DIVE_ROUTES[0]) : MAPS.includes(c.map) ? c.map : MAPS[0], diff: DIFFS.includes(c.diff) ? c.diff : DIFFS[0], group: true };   // (group: an online co-op run: no local partner)
+             map: c.mode === 'exp-dive' ? (/^dive:[a-z]+$/.test(c.map || '') ? c.map : 'dive:' + DIVE_ROUTES[0]) : MAPS.includes(c.map) ? c.map : MAPS[0], diff: DIFFS.includes(c.diff) ? c.diff : DIFFS[0], group: true,   // (group: an online co-op run: no local partner)
+             ...(c.mode === 'exp-dive' ? diveCoop(c.opts) : {}) };
+  }
+  /** MicaSurvivor U2: a Dive lobby's start floor (the host's stage: the lobby checked everyone has it) or this week's Weekly Dive
+   *  (its seed: the same floors for everyone). */
+  function diveCoop(o) {
+    o = o && typeof o === 'object' ? o : {};
+    const w = diveWeekly();
+    if (o.weekly != null && +o.weekly === w.week) return { start: 1, weekly: w.week, seed: w.seed };
+    const st = +o.start;
+    return { start: st === 1 || (st > 25 && (st - 1) % 25 === 0) ? st : 1 };
   }
 
   // ---------------- version gates ----------------
