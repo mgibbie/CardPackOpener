@@ -103,9 +103,10 @@ await sec('pin', () => {
   // Pokédex order
   const keys = MODS.pokermon.content.centers.filter((c) => c.set === 'Joker').map((c) => c.key.replace('j_poke_', ''));
   const after = (a, b) => keys.indexOf(b) === keys.indexOf(a) + 1;
-  ok(after('mudsdale', 'typenull') && after('typenull', 'silvally') && after('silvally', 'mimikyu'), 'Pokédex order: Mudsdale (750) > Type: Null > Silvally > Mimikyu (778)', keys.slice(keys.indexOf('mudsdale'), keys.indexOf('mudsdale') + 4));
-  const run = ['mega_drampa', 'tapu_koko', 'tapu_lele', 'tapu_bulu', 'tapu_fini', 'cosmog', 'cosmoem', 'solgaleo', 'lunala', 'necrozma', 'magearna', 'marshadow', 'zeraora'];
-  ok(run.every((n, i) => i === 0 || keys.indexOf(n) > keys.indexOf(run[i - 1])) && keys.indexOf('zeraora') < keys.indexOf('grookey'), 'Pokédex order: Drampa (780) < the Tapus < the Cosmog line < Necrozma < Magearna < Marshadow < Zeraora < Grookey (810)');
+  ok(after('pyukumuku', 'typenull') && after('typenull', 'silvally') && after('silvally', 'komala'), 'Pokédex order: Pyukumuku (771) > Type: Null > Silvally > Komala (775)', keys.slice(keys.indexOf('pyukumuku'), keys.indexOf('pyukumuku') + 4));
+  const chain = ['kommoo', 'tapu_koko', 'tapu_lele', 'tapu_bulu', 'tapu_fini', 'cosmog', 'cosmoem', 'solgaleo', 'lunala', 'nihilego'];
+  ok(chain.every((n, i) => i === 0 || after(chain[i - 1], n)) && after('guzzlord', 'necrozma') && after('necrozma', 'magearna') && after('magearna', 'marshadow') && after('marshadow', 'poipole') && after('blacephalon', 'zeraora') && after('zeraora', 'grookey'),
+    'Pokédex order: Kommo-o (784) > the Tapus > the Cosmog line > Nihilego (793); Guzzlord (799) > Necrozma > Magearna > Marshadow > Poipole (803); Blacephalon (806) > Zeraora > Grookey (810)');
 });
 
 // ------------------------------------------------------------------- Type: Null alone -> Silvally

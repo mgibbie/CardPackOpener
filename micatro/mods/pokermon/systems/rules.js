@@ -13,7 +13,7 @@
  *   set_debuff        debufffunctions.lua: fainted Baby Pokémon stay debuffed for the rest of
  *                     the round; Gholdengo can't be debuffed, Tangrowth protects Wild Cards,
  *                     Tentacruel protects 10s; the owner's designs: Kubfu / Urshifu can't be debuffed,
- *                     Single Strike Urshifu protects every playing card (Unseen Fist)
+ *                     Single Strike Urshifu protects every playing card (Unseen Fist); Komala can't be debuffed (Comatose)
  *   set_cost          Minun ($1 off Jokers, Boosters, consumables), Chimecho (free Vouchers), Rotom / Rotom Dex booster discounts, Gothita line planet discounts,
  *                     sell value at least $1, Unown sells for $0
  *   create_card       decks' forced seal on playing cards (Obituary / Revenant decks) and
@@ -92,6 +92,8 @@ export function set_debuff(card) {
   // (the owner's designs, jokers/pokejokers_designs.js: Inner Focus / Unseen Fist)
   if (card.ability.name === 'kubfu' || card.ability.name === 'urshifu_single' || card.ability.name === 'urshifu_rapid') return 'prevent_debuff';
   if ((card.ability.set === 'Default' || card.ability.set === 'Enhanced') && find_joker('urshifu_single').length) return 'prevent_debuff';
+  // (the owner's Komala, Gen 7 batch 2, Comatose: a Boss Blind, Perishable, a fainting rule... never debuff it)
+  if (card.ability.name === 'komala') return 'prevent_debuff';
   // (the owner's Cresselia, Lunar Blessing: the same rule; find_joker skips a debuffed Cresselia)
   if ((card.ability.set === 'Default' || card.ability.set === 'Enhanced') && find_joker('cresselia').length) return 'prevent_debuff';
   if (card.ability.name === 'Wild Card' && find_joker('tangrowth').length) return 'prevent_debuff';
@@ -331,6 +333,12 @@ export function calculate(context) {
   // with or without a Poli joker (the engine passes `after` here: js/engine/smods.js mod_calculate).
   // Upstream main (after 3.9.1, sub-batch 15b): the Lotad line's beat (2 / 4 cards) swaps there too (pokermon.change_beat).
   if (context.after) { poke_change_poli_suit(); poke_change_beat(); }
+  // The owner's Gen 7 batch 1 (contentRev 64; jokers/pokejokers_designs.js): two run records, kept with or without the jokers that read
+  // them, so a late buy sees the whole run. The LAST poker hand played (Yungoos / Gumshoos' Stakeout: set after the hand scored, a
+  // debuffed hand too, so during the next hand's scoring it still names the previous one), and the Boss Blinds beaten (Mareanie /
+  // Toxapex: +1 in the main end-of-round pass of a won Boss Blind).
+  if (context.after && context.scoring_name) G.GAME.poke_last_hand = context.scoring_name;
+  if (context.end_of_round && context.main_eval && context.beat_boss && !context.game_over) G.GAME.poke_bosses_beaten = (G.GAME.poke_bosses_beaten || 0) + 1;
   // Leafeon (3.9.1): count Lucky cards that successfully triggered this round (run-wide, Leafeon or not); reset at the
   // end of the round. (The engine passes `individual` / `end_of_round` here too: smods.js MOD_VANILLA_CONTEXTS.)
   if (context.individual && context.cardarea === G.play && context.other_card && context.other_card.lucky_trigger) {

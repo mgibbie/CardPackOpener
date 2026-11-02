@@ -79,7 +79,8 @@ import './consumables/mart2.js';
 import './boosters/packs1.js';
 import './jokers/zzzapril_fools.js';
 import { DESIGN_FAMILIES, DESIGN_LOC, regi_chip_bonus, regi_h_x_mult, regi_enh_vars, slot_cost_removed, drifblim_destroyed, contrary_lifts, mummy_sell,
-  freeze_keep, freeze_thaw, frozen_by, spore_first_deal, spore_hand_scored, malamar_chip_bonus } from './jokers/pokejokers_designs.js';
+  freeze_keep, freeze_thaw, frozen_by, spore_first_deal, spore_hand_scored, malamar_chip_bonus,
+  pyukumuku_destroyed, pheromosa_rest } from './jokers/pokejokers_designs.js';
 
 import { poke_set_type_badge, type_badge, type_tooltip, TYPE_COLOURS } from './systems/types.js';
 import { pokemon_in_pool, pool_filter, init_game_object, evo_item_in_pool } from './systems/pools.js';
@@ -711,8 +712,11 @@ const hooks = {
   // (the Debris Sleeve's alt on the Debris Deck: a Hazard card holds card_limit +1 — backs/backs1.js)
   set_ability: debris_hazard_card_limit,
   end_round: shiny_hooks.end_round,
-  // (the owner's Drifblim, Aftermath: an owned Drifblim being destroyed makes a Negative Spectral — jokers/pokejokers_designs.js)
-  start_dissolve: drifblim_destroyed,
+  // (the owner's Pheromosa, Gen 7 batch 3: tired after the round's 2nd hand, it recovers as the round ends — before any end_of_round)
+  end_round_start: pheromosa_rest,
+  // (the owner's Drifblim, Aftermath: an owned Drifblim being destroyed makes a Negative Spectral — jokers/pokejokers_designs.js;
+  // and the owner's Pyukumuku, Innards Out: a destroyed one pays $1 per round held)
+  start_dissolve(card) { drifblim_destroyed(card); pyukumuku_destroyed(card); },
   edition_weight(w, type) {
     // pokermon.lua: Jirachi's negative_edition_rate raises Negative and takes it back from Polychrome.
     const r = (G.GAME.negative_edition_rate || 1) - 1;
@@ -998,9 +1002,19 @@ export const POKERMON = registerMod({
   // Press), Klefki (Key Ring), Phantump / Trevenant (destroyed-card bank, Seeds), Bergmite / Avalugg and Noibat / Noivern (Glass 1 in 2).
   // 63 = Gen 6 batch 3, the Gen 6 Legendaries (jokers/pokejokers_designs.js, #717-721), each complete alone: Yveltal (Oblivion Wing),
   // Zygarde (Cells: 10% / 50% / Complete Forme), Diancie (Diamond Storm), Hoopa (Hyperspace Hole; Unbound) and Volcanion (Steam Eruption).
+  // 64 = Gen 7 batch 1 (jokers/pokejokers_designs.js, #731-756): Pikipek / Trumbeak / Toucannon (Multi-hit 2-5 / Skill Link), Yungoos /
+  // Gumshoos (Stakeout), Crabrawler / Crabominable (Power-Up Punch perma_mult), Oricorio (dance styles), Cutiefly / Ribombee (Fairy team),
+  // Wishiwashi (Schooling), Mareanie / Toxapex (Merciless: Boss Blinds beaten), Dewpider / Araquanid (Water Bubble, rain), Fomantis / Lurantis
+  // (Solar Blade, sun) and Morelull / Shiinotic (Lucky). Two run records join G.GAME (systems/rules.js): poke_last_hand, poke_bosses_beaten.
+  // 65 = Gen 7 batch 2 (jokers/pokejokers_designs.js "Gen 7, batch 2", #757-784; r64 is Gen 7 batch 1): Salandit / Salazzle (Queens;
+  // only a ♀ evolves), Stufful / Bewear (Strong Hug destroys the Joker to its right, 1 in 4), Comfey (Floral Gift: +1 Energy), Sandygast /
+  // Palossand (Stone banks), Pyukumuku (Innards Out: hooks.start_dissolve above), Komala (Comatose: systems/rules.js set_debuff + no_destroy),
+  // Bruxish (sealed cards retrigger) and Jangmo-o / Hakamo-o / Kommo-o (Full Houses). New jokers only: nothing a recorded run held changes.
+  // 66 = Gen 7 batch 3, the Ultra Beasts (jokers/pokejokers_designs.js, #793-799, #803-806; 64 / 65 are Gen 7 batches 1 / 2): Nihilego
+  // (Parasite: copies the Joker to its left), Buzzwole, Pheromosa (debuffed after 2 hands until the round ends: end_round_start below),
+  // Xurkitree, Celesteela, Kartana, Guzzlord, Stakataka, Blacephalon, Poipole -> Naganadel; all but Nihilego share Beast Boost.
   // 67 = Gen 7 batch 4, the Gen 7 Legendaries (jokers/pokejokers_designs.js, #772-807), each complete alone: Type: Null -> Silvally (RKS
   // System), the four Tapus, Cosmog -> Cosmoem -> Solgaleo / Lunala, Necrozma (Prism; Ultra Necrozma), Magearna, Marshadow and Zeraora.
-  // (64-66 are Gen 7 batches 1-3.)
   contentRev: 67,
   // Pokermon 3.9.1 pokermon.lua: SMODS.current_mod.optional_features = {quantum_enhancements = true, object_weights = true}.
   // object_weights sends create_card's key, the shop roll, tags, packs, bosses and vouchers through SMODS.poll_object

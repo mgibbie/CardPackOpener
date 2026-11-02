@@ -173,6 +173,17 @@ export const GEN6_FORM_SPRITES = {
   j_poke_meowstic: { female: { x: 4, y: 8 } },
 };
 
+/**
+ * Gen 7, batch 1's forms (the owner's Gen 7 batch 1, jokers/pokejokers_designs.js): upstream 3.9.1 draws them on the Gen 7 sheet beside each
+ * one's own card, UNLISTED in pokespriteload.lua (it lists only Oricorio {0,0} and Wishiwashi {2,1}) — Oricorio's four dance styles (Baile
+ * {0,0} red / Fire, Pom-Pom {2,0} yellow / Lightning, Pa'u {4,0} pink / Psychic, Sensu {6,0} purple / Psychic: by ability.extra.form) and
+ * Wishiwashi's School Form {4,1} beside its Solo card (by the view's form, its center's poke_view_form: live). Baile and Solo are their own
+ * cards. Drawn by ui.js ownFace (+ the Shiny sheet's twins). Each cell's type icon matches the type (pokermon_gen7_batch1_test 'art').
+ */
+export const GEN7_FORM_SPRITES = {
+  j_poke_oricorio: { pompom: { x: 2, y: 0 }, pau: { x: 4, y: 0 }, sensu: { x: 6, y: 0 } },
+  j_poke_wishiwashi: { school: { x: 4, y: 1 } },
+};
 export function view_card(card, v) {
   const c = card.config.center;
   const ex = card.ability.extra;

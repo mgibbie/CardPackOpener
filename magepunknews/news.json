@@ -71,6 +71,13 @@
 			"w": 4260,
 			"h": 13110
 		},
+		"@poke_AtlasJokersBasicGen07391": {
+			"src": "/micatro/mods/pokermon/assets/2x/Basic%20Series/AtlasJokersBasicGen07-391.png",
+			"cw": 142,
+			"ch": 190,
+			"w": 1704,
+			"h": 1330
+		},
 		"@poke_AtlasJokersBasicGen06391": {
 			"src": "/micatro/mods/pokermon/assets/2x/Basic%20Series/AtlasJokersBasicGen06-391.png",
 			"cw": 142,
@@ -119,13 +126,6 @@
 			"ch": 190,
 			"w": 568,
 			"h": 380
-		},
-		"@poke_AtlasJokersBasicGen07391": {
-			"src": "/micatro/mods/pokermon/assets/2x/Basic%20Series/AtlasJokersBasicGen07-391.png",
-			"cw": 142,
-			"ch": 190,
-			"w": 1704,
-			"h": 1330
 		},
 		"@sonfive_backs": {
 			"src": "/micatro/mods/pokermonplus/assets/2x/backs-120.png",
@@ -521,6 +521,422 @@
 		}
 	},
 	"entries": [
+		{
+			"sha": "6acbbca",
+			"date": "2026-11-02",
+			"kind": "micatro",
+			"title": "Pokermon r65: Gen 7 batch 2 (13 jokers, #757-784)",
+			"body": "",
+			"cards": [],
+			"micatroMods": [
+				{
+					"id": "pokermon",
+					"name": "Pokermon",
+					"added": [
+						{
+							"key": "j_poke_salandit",
+							"name": "Salandit",
+							"set": "Joker",
+							"rarity": "common",
+							"cost": 5,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 12,
+								"y": 50
+							}
+						},
+						{
+							"key": "j_poke_salazzle",
+							"name": "Salazzle",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 8,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 14,
+								"y": 50
+							}
+						},
+						{
+							"key": "j_poke_stufful",
+							"name": "Stufful",
+							"set": "Joker",
+							"rarity": "common",
+							"cost": 5,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 16,
+								"y": 50
+							}
+						},
+						{
+							"key": "j_poke_bewear",
+							"name": "Bewear",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 8,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 18,
+								"y": 50
+							}
+						},
+						{
+							"key": "j_poke_comfey",
+							"name": "Comfey",
+							"set": "Joker",
+							"rarity": "rare",
+							"cost": 7,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 26,
+								"y": 50
+							}
+						},
+						{
+							"key": "j_poke_sandygast",
+							"name": "Sandygast",
+							"set": "Joker",
+							"rarity": "common",
+							"cost": 5,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 6,
+								"y": 51
+							}
+						},
+						{
+							"key": "j_poke_palossand",
+							"name": "Palossand",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 8,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 8,
+								"y": 51
+							}
+						},
+						{
+							"key": "j_poke_pyukumuku",
+							"name": "Pyukumuku",
+							"set": "Joker",
+							"rarity": "rare",
+							"cost": 7,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 10,
+								"y": 51
+							}
+						},
+						{
+							"key": "j_poke_komala",
+							"name": "Komala",
+							"set": "Joker",
+							"rarity": "rare",
+							"cost": 7,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 18,
+								"y": 51
+							}
+						},
+						{
+							"key": "j_poke_bruxish",
+							"name": "Bruxish",
+							"set": "Joker",
+							"rarity": "rare",
+							"cost": 7,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 26,
+								"y": 51
+							}
+						},
+						{
+							"key": "j_poke_jangmoo",
+							"name": "Jangmo-o",
+							"set": "Joker",
+							"rarity": "uncommon",
+							"cost": 6,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 2,
+								"y": 52
+							}
+						},
+						{
+							"key": "j_poke_hakamoo",
+							"name": "Hakamo-o",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 8,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 4,
+								"y": 52
+							}
+						},
+						{
+							"key": "j_poke_kommoo",
+							"name": "Kommo-o",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 10,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 6,
+								"y": 52
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"sha": "f41e6a0",
+			"date": "2026-11-02",
+			"kind": "micatro",
+			"title": "Pokermon r64: Gen 7 batch 1 (19 jokers, #731-756)",
+			"body": "",
+			"cards": [],
+			"micatroMods": [
+				{
+					"id": "pokermon",
+					"name": "Pokermon",
+					"added": [
+						{
+							"key": "j_poke_pikipek",
+							"name": "Pikipek",
+							"set": "Joker",
+							"rarity": "uncommon",
+							"cost": 6,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 20,
+								"y": 48
+							}
+						},
+						{
+							"key": "j_poke_trumbeak",
+							"name": "Trumbeak",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 8,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 22,
+								"y": 48
+							}
+						},
+						{
+							"key": "j_poke_toucannon",
+							"name": "Toucannon",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 10,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 24,
+								"y": 48
+							}
+						},
+						{
+							"key": "j_poke_yungoos",
+							"name": "Yungoos",
+							"set": "Joker",
+							"rarity": "common",
+							"cost": 5,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 26,
+								"y": 48
+							}
+						},
+						{
+							"key": "j_poke_gumshoos",
+							"name": "Gumshoos",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 8,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 28,
+								"y": 48
+							}
+						},
+						{
+							"key": "j_poke_crabrawler",
+							"name": "Crabrawler",
+							"set": "Joker",
+							"rarity": "common",
+							"cost": 5,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 6,
+								"y": 49
+							}
+						},
+						{
+							"key": "j_poke_crabominable",
+							"name": "Crabominable",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 8,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 8,
+								"y": 49
+							}
+						},
+						{
+							"key": "j_poke_oricorio",
+							"name": "Oricorio",
+							"set": "Joker",
+							"rarity": "rare",
+							"cost": 7,
+							"atlas": "@poke_AtlasJokersBasicGen07391",
+							"pos": {
+								"x": 0,
+								"y": 0
+							}
+						},
+						{
+							"key": "j_poke_cutiefly",
+							"name": "Cutiefly",
+							"set": "Joker",
+							"rarity": "common",
+							"cost": 5,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 12,
+								"y": 49
+							}
+						},
+						{
+							"key": "j_poke_ribombee",
+							"name": "Ribombee",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 8,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 14,
+								"y": 49
+							}
+						},
+						{
+							"key": "j_poke_wishiwashi",
+							"name": "Wishiwashi",
+							"set": "Joker",
+							"rarity": "rare",
+							"cost": 7,
+							"atlas": "@poke_AtlasJokersBasicGen07391",
+							"pos": {
+								"x": 2,
+								"y": 1
+							}
+						},
+						{
+							"key": "j_poke_mareanie",
+							"name": "Mareanie",
+							"set": "Joker",
+							"rarity": "common",
+							"cost": 5,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 22,
+								"y": 49
+							}
+						},
+						{
+							"key": "j_poke_toxapex",
+							"name": "Toxapex",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 8,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 24,
+								"y": 49
+							}
+						},
+						{
+							"key": "j_poke_dewpider",
+							"name": "Dewpider",
+							"set": "Joker",
+							"rarity": "common",
+							"cost": 5,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 0,
+								"y": 50
+							}
+						},
+						{
+							"key": "j_poke_araquanid",
+							"name": "Araquanid",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 8,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 2,
+								"y": 50
+							}
+						},
+						{
+							"key": "j_poke_fomantis",
+							"name": "Fomantis",
+							"set": "Joker",
+							"rarity": "common",
+							"cost": 5,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 4,
+								"y": 50
+							}
+						},
+						{
+							"key": "j_poke_lurantis",
+							"name": "Lurantis",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 8,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 6,
+								"y": 50
+							}
+						},
+						{
+							"key": "j_poke_morelull",
+							"name": "Morelull",
+							"set": "Joker",
+							"rarity": "common",
+							"cost": 5,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 8,
+								"y": 50
+							}
+						},
+						{
+							"key": "j_poke_shiinotic",
+							"name": "Shiinotic",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 8,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 10,
+								"y": 50
+							}
+						}
+					]
+				}
+			]
+		},
 		{
 			"sha": "bddcc9e",
 			"date": "2026-11-02",
