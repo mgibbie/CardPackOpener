@@ -3,9 +3,11 @@
 //   Groudon 383 (Legendary $20, Earth)   Desolate Land: +1 discard each round; scored Hearts / Diamonds X1.25 each; Castform locked Sunny.
 //   Primal Clash (both, no Rayquaza): on the round's first deal the cards held decide (Clubs: Kyogre; Hearts + Diamonds: Groudon; Wild
 //     both; debuffed / Stone / Hazard neither); a tie: more Energy, else Kyogre. The other does nothing that round (its +1 too).
-//   Rayquaza 384 (Legendary $20, Dragon) Delta Stream: both work every round (Castform reads its normal forecast); Dragon Ascent: X0.2
+//   Rayquaza 384 (Legendary $20, Dragon) Delta Stream: +1 hand and +1 discard (contentRev 59), and both work every round (Castform
+//     reads its normal forecast); Dragon Ascent: X0.2
 //     per played hand containing a Straight or a Flush (a Straight Flush once).
-//   Latias 380 / Latios 381 (Legendary $20, Psychic): X0.15 per Tarot / per Planet used; Soul Dew (both held): either grows both.
+//   Latias 380 / Latios 381 (Legendary $20, Psychic): X0.15 per Tarot / per Planet used; Soul Dew (contentRev 59, solo): X0.075 per
+//   Planet / per Tarot (half from the other kind; before r59: both held, either grew both — still checked on the r58 rules).
 //   Energy: Groudon X1.25 -> X1.3125 / X1.375 / X1.4375; Rayquaza's gain 0.2 -> 0.24 / 0.28 / 0.32; Latias / Latios 0.15 -> 0.18 / 0.21
 //     / 0.24; Kyogre Energy-inert (poke_no_energy_field).
 // Every ability is FIRED through real rounds (act: select_blind deals the first hand) with exact numbers.
@@ -243,32 +245,32 @@ sec('dragon ascent', () => {
   ok(/X2\.12/.test(lines(r)) && /X0\.32/.test(lines(r)), 'tooltip: Currently X2.12, gains X0.32', lines(r));
 });
 
-// ------------------------------------------------------------------- Latias / Latios, Soul Dew
+// ------------------------------------------------------------------- Latias / Latios, Soul Dew (contentRev 59: solo)
+/** Run fn on the rules of a run recorded before r59 (js/mods/pins.js RULES, as a resume / replay of an old move does). */
+const oldRules = (fn) => { PINS.RULES.pins = { pokermon: '3.9.1+r58' }; try { return fn(); } finally { PINS.RULES.pins = null; } };
 sec('eon duo', () => {
   start('G3L6');
   const la = add('j_poke_latias');
   use('c_hermit');
   ok(near(ex(la).eon_Xmult, 1.15), 'Latias: a Tarot (The Hermit) +X0.15', ex(la).eon_Xmult);
   use('c_mercury');
-  ok(near(ex(la).eon_Xmult, 1.15), 'Latias alone: a Planet does nothing', ex(la).eon_Xmult);
+  ok(near(ex(la).eon_Xmult, 1.225), 'Latias alone: Soul Dew, a Planet +X0.075 (half)', ex(la).eon_Xmult);
   let t = play2(['S_2']);
-  ok(near(t.mult, 1.15), 'it scores X1.15', t);
+  ok(near(t.mult, 1.225), 'it scores X1.225', t);
   const lo = add('j_poke_latios');
   use('c_mercury');
-  ok(near(ex(lo).eon_Xmult, 1.15) && near(ex(la).eon_Xmult, 1.3), 'Soul Dew: a Planet grows Latios AND Latias', [ex(lo).eon_Xmult, ex(la).eon_Xmult]);
+  ok(near(ex(lo).eon_Xmult, 1.15) && near(ex(la).eon_Xmult, 1.3), 'a Planet: Latios +X0.15, Latias +X0.075 (no partner rule)', [ex(lo).eon_Xmult, ex(la).eon_Xmult]);
   use('c_hermit');
-  ok(near(ex(lo).eon_Xmult, 1.3) && near(ex(la).eon_Xmult, 1.45), 'Soul Dew: a Tarot grows both too', [ex(lo).eon_Xmult, ex(la).eon_Xmult]);
+  ok(near(ex(lo).eon_Xmult, 1.225) && near(ex(la).eon_Xmult, 1.45), 'a Tarot: Latias +X0.15, Latios +X0.075', [ex(lo).eon_Xmult, ex(la).eon_Xmult]);
   use('c_ectoplasm');
-  ok(near(ex(lo).eon_Xmult, 1.3) && near(ex(la).eon_Xmult, 1.45), 'a Spectral grows neither', [ex(lo).eon_Xmult, ex(la).eon_Xmult]);
-  // a debuffed partner breaks Soul Dew
+  ok(near(ex(lo).eon_Xmult, 1.225) && near(ex(la).eon_Xmult, 1.45), 'a Spectral grows neither', [ex(lo).eon_Xmult, ex(la).eon_Xmult]);
+  // a debuffed one grows nothing; the other is unaffected
   debuff(la);
   use('c_hermit');
-  ok(near(ex(lo).eon_Xmult, 1.3) && near(ex(la).eon_Xmult, 1.45), 'a debuffed Latias: a Tarot grows neither (Latios needs Soul Dew, Latias is out)', [ex(lo).eon_Xmult, ex(la).eon_Xmult]);
+  ok(near(ex(lo).eon_Xmult, 1.3) && near(ex(la).eon_Xmult, 1.45), 'a debuffed Latias: a Tarot still grows Latios by half (X1.3), Latias is out', [ex(lo).eon_Xmult, ex(la).eon_Xmult]);
   use('c_venus');
   ok(near(ex(lo).eon_Xmult, 1.45) && near(ex(la).eon_Xmult, 1.45), '... a Planet grows only Latios', [ex(lo).eon_Xmult, ex(la).eon_Xmult]);
-  ok(/needs Latias/.test(lines(lo)), 'Latios\'s tooltip: Soul Dew needs Latias', lines(lo));
-  la.ability.debuff_sources = {}; la.set_debuff();
-  ok(!la.debuff && /Soul Dew: \{C:attention\}?active|Soul Dew: active/.test(lines(lo)), 'undebuffed: Soul Dew active', lines(lo));
+  ok(/Soul Dew:\{\} also gains \| \{X:mult,C:white\} X0\.075 \{\} Mult each time \| you use a \{C:tarot\}Tarot\{\} card/.test(lines(lo)), 'Latios\'s tooltip: Soul Dew, X0.075 per Tarot', lines(lo));
   // Blueprint copies the X, never grows
   start('G3L6b');
   const la2 = add('j_poke_latias');
@@ -278,7 +280,7 @@ sec('eon duo', () => {
   ok(near(ex(la2).eon_Xmult, 1.15), 'a Blueprint beside Latias: one Tarot, one growth (X1.15)', ex(la2).eon_Xmult);
   t = play2(['S_2']);
   ok(near(t.mult, 1.15 * 1.15), '... and it copies the X (1.15 x 1.15)', t);
-  // Energy: the gain
+  // Energy: the gain (and its half)
   start('G3L6c');
   const la3 = add('j_poke_latias'), lo3 = add('j_poke_latios');
   const g = [];
@@ -286,8 +288,16 @@ sec('eon duo', () => {
   ok(g.every((v, n) => near(v, 0.15 + 0.03 * (n + 1))), 'Psychic Energy: Latias 0.15 -> 0.18 / 0.21 / 0.24', g);
   increment_energy(lo3, 'Psychic');
   use('c_hermit');
-  ok(near(ex(la3).eon_Xmult, 1.24) && near(ex(lo3).eon_Xmult, 1.18), 'a Tarot: Latias +0.24, Latios (1 Energy, via Soul Dew) +0.18', [ex(la3).eon_Xmult, ex(lo3).eon_Xmult]);
-  ok(/X1\.24/.test(lines(la3)) && /X0\.24/.test(lines(la3)) && /Soul Dew: active/.test(lines(la3).replace(/\{[^}]*\}/g, '')), 'Latias tooltip: Currently X1.24, X0.24, Soul Dew active', lines(la3));
+  ok(near(ex(la3).eon_Xmult, 1.24) && near(ex(lo3).eon_Xmult, 1.09), 'a Tarot: Latias +0.24, Latios (1 Energy) half of 0.18: +0.09', [ex(la3).eon_Xmult, ex(lo3).eon_Xmult]);
+  ok(/X1\.24/.test(lines(la3)) && /X0\.24/.test(lines(la3)) && /X0\.12/.test(lines(la3)), 'Latias tooltip: Currently X1.24, X0.24, Soul Dew X0.12', lines(la3));
+  // a run recorded before r59 keeps the partner rule
+  start('G3L6d');
+  const la4 = add('j_poke_latias'), lo4 = add('j_poke_latios');
+  oldRules(() => use('c_mercury'));
+  ok(near(ex(lo4).eon_Xmult, 1.15) && near(ex(la4).eon_Xmult, 1.15), 'before r59 (RULES r58): with both held a Planet grows both by the full X0.15', [ex(lo4).eon_Xmult, ex(la4).eon_Xmult]);
+  lo4.remove(); flush();
+  oldRules(() => use('c_mercury'));
+  ok(near(ex(la4).eon_Xmult, 1.15), '... and Latias alone gets nothing from a Planet', ex(la4).eon_Xmult);
 });
 
 // ------------------------------------------------------------------- Castform locked by Kyogre / Groudon

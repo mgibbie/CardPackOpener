@@ -3,8 +3,9 @@
 //   Uxie 480 (Psychic)      Knowledge: +2 Foresight; each Foreseen card gives X1.3 Mult (scored like a held card; a debuffed one: nothing).
 //   Mesprit 481 (Psychic)   Emotion: X1.5 Mult, or X2.5 on a hand whose poker hand hasn't been played yet this round.
 //   Azelf 482 (Psychic)     Willpower: X2.5 Mult on the final hand of each round.
-//   Lake Guardians: +X0.25 to each guardian's X values for each OTHER guardian species held, undebuffed (a twin never counts) — all three:
-//   Uxie X1.8 a Foreseen card, Mesprit X2 / X3, Azelf X3.
+//   Lake Guardians (contentRev 59, solo): +X0.25 to each guardian's X values for each OTHER Psychic Joker held, undebuffed, at most 2 —
+//   with two: Uxie X1.8 a Foreseen card, Mesprit X2 / X3, Azelf X3. (Before r59: each other guardian SPECIES, a twin never counting —
+//   checked below on the r58 rules; the non-guardian Psychic Jokers: pokermon_legendary_solo_test.)
 //   Cresselia 488 (Psychic) Lunar Blessing: while held, playing cards can't be debuffed (Boss Blinds, or anything else); X1.5 Mult.
 //   Phione 489 (Water)      Each Water Joker (itself included) gives +6 Mult.
 //   Manaphy 490 (Water)     Sea Guardian: each Water Joker (itself included) gives X1.2 Mult; Egg: at the end of each shop, with a free
@@ -191,14 +192,25 @@ await sec('lake trio scaling', () => {
     ok(near(r.mult, 2 * az * mes), (others.length + 1) + ' guardian(s): Azelf X' + az + ' on the final hand', [r.total, az, mes]);
     ok(js[0].ability.extra && plain(js[0]).includes('X' + az), 'Azelf tooltip: currently X' + az, plain(js[0]));
   }
-  // twins and debuffs: distinct OTHER species, undebuffed
+  // twins: a twin is another Psychic Joker (r59); the cap is 2
   const [a1, a2] = fresh('LAKET', ['azelf', 'azelf']);
   let r = play(['S_2'], { final: true });
-  ok(near(r.mult, 2.5 * 2.5), 'two Azelfs (a twin): each X2.5, a twin is never an "other guardian"', r.total);
+  ok(near(r.mult, 2.75 * 2.75), 'two Azelfs (a twin): each counts the other Psychic Joker, X2.75 each', r.total);
   fresh('LAKET2', ['azelf', 'mesprit', 'mesprit']);
   G.GAME.scry_amount = 0;
   r = play(['S_2'], { final: true });
-  ok(near(r.mult, 2.75 * 2.75 * 2.75), 'Azelf + two Mesprits: the Mesprits count once (X2.75), each Mesprit X2.75 (one other)', r.total);
+  ok(near(r.mult, 3 * 3 * 3), 'Azelf + two Mesprits: 2 other Psychic Jokers each, X3 each', r.total);
+  // the r58 rules (a run recorded before r59 re-plays on them): distinct OTHER guardian species
+  PINS.RULES.pins = { pokermon: '3.9.1+r58' };
+  try {
+    fresh('LAKET3', ['azelf', 'azelf']);
+    r = play(['S_2'], { final: true });
+    ok(near(r.mult, 2.5 * 2.5), 'r58 rules: two Azelfs (a twin): each X2.5, a twin was never an "other guardian"', r.total);
+    fresh('LAKET4', ['azelf', 'mesprit', 'mesprit']);
+    G.GAME.scry_amount = 0;
+    r = play(['S_2'], { final: true });
+    ok(near(r.mult, 2.75 * 2.75 * 2.75), 'r58 rules: Azelf + two Mesprits: the Mesprits counted once (X2.75), each Mesprit X2.75 (one other)', r.total);
+  } finally { PINS.RULES.pins = null; }
   const [az, me] = fresh('LAKED', ['azelf', 'mesprit']);
   debuff(me);
   r = play(['S_2'], { final: true });
@@ -420,7 +432,7 @@ await sec('texts', () => {
   ok(/Each Water Joker gives \+6 Mult/.test(T.phione), 'Phione text', T.phione);
   ok(/each Water Joker gives X1\.2 Mult/.test(T.manaphy) && /Egg: at the end of the shop, if you have a free Joker slot, 1 in 4 chance to create a Phione/.test(T.manaphy), 'Manaphy text', T.manaphy);
   // all six held: the guardians read 2 others each
-  ok(/Currently 2\/2 others/.test(flat(G.jokers.cards[0])) && /X1\.8 a card/.test(flat(G.jokers.cards[0])), 'with all three: Uxie reads 2/2 others, X1.8 a card', flat(G.jokers.cards[0]));
+  ok(/Psychic Joker \(max 2\) \(Currently 2\/2\)/.test(flat(G.jokers.cards[0])) && /X1\.8 a card/.test(flat(G.jokers.cards[0])), 'with all three: Uxie reads 2/2 (other Psychic Jokers, max 2), X1.8 a card', flat(G.jokers.cards[0]));
 });
 
 done();
