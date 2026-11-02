@@ -83,13 +83,20 @@ G.Combat = (() => {
     const m = eff(pl, m0);
     if (m.kind === 'orbit') { orbit(pl, m, dt, now); return; }
 
-    m0.t -= dt;
+    // MicaSurvivor (Dive V4): a Dive special (m0.xman, js/expedition/dive.js) only fires when its button is pressed: the
+    // press (m0.xreq, s it stays queued) waits for the cooldown; a base / Expedition move never has xman.
+    if (m0.xman) {
+      m0.t = Math.max(0, m0.t - dt);
+      if (m0.xreq > 0) m0.xreq -= dt;
+      if (m0.t > 0 || !(m0.xreq > 0)) return;
+    } else m0.t -= dt;
     if (m0.t > 0) return;
     // Los ataques que necesitan blanco esperan a tenerlo (no gastes animación al aire).
     if (needsTarget(m) && !(pl.target && G.U.dist(pl.x, pl.y, pl.target.x, pl.target.y) <= reach(m))) {
       m0.t = 0.05;
       return;
     }
+    if (m0.xman) m0.xreq = 0;
     m0.t = Math.max(0.05, m0.cd * pl.cdMul);
     pl.cast(m0);
     if (G.Coop.active) G.Coop.cast(pl, m0);

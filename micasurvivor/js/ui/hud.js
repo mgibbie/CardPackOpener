@@ -508,7 +508,7 @@ G.HUD = (() => {
     // ---------- MicaSurvivor (DLC D2): the HOP and SLIDE buttons, in an Expedition zone only (js/expedition/verbs.js) ----------
     if (G.World.zone && G.ExpVerbs && !pl.remote) {
       const vr = G.ExpVerbs.drawButtons(ctx, w, h, pl);
-      if (vr) for (const k of ['hop', 'slide']) mark(k, vr[k].x - 6, vr[k].y - 6, vr[k].s + 12, vr[k].s + 26);
+      if (vr) for (const k of ['hop', 'slide', 'sp2']) if (vr[k]) mark(k, vr[k].x - 6, vr[k].y - 6, vr[k].s + 12, vr[k].s + 26);   // (Dive V4: + SPECIAL 2)
     }
     // (M5 lote 10) la columna de la derecha: Z, MAX y el botón de cambiar (con su texto de debajo) y las fichas del equipo
     if (G.ZMoves && !pl.remote && G.ZMoves.activeType(pl) && !G.World.zone) { const r = G.ZMoves.buttonRect(w, h); mark('zmove', r.x - 6, r.y - 6, r.s + 12, r.s + 26); }
@@ -545,8 +545,10 @@ G.HUD = (() => {
       ctx.fillStyle = 'rgba(180,200,230,.55)';
       // (M5 lote 7: en el Modo Equipo, cómo se cambia de Pokémon)
       const team = G.Team && G.Team.on;
+      // (Dive V4: PokéDive's controls: the specials are pressed, Space dodges)
+      if (G.ExpDive && G.ExpDive.live()) ctx.fillText(touch ? 'Arrastra el dedo para moverte  ·  toca 1 / 2 para los especiales  ·  Esquivar' : 'WASD moverse  ·  1 / 2 o clic especiales  ·  Espacio esquivar  ·  3 definitivo  ·  Esc pausa', w / 2, h - 4);
       // (DLC D16: every move fires on its own; nothing to switch)
-      ctx.fillText(touch ? (team ? 'Arrastra el dedo para moverte  ·  tus movimientos atacan solos  ·  toca una ficha para cambiar de Pokémon' : 'Arrastra el dedo para moverte  ·  tus movimientos atacan solos')
+      else ctx.fillText(touch ? (team ? 'Arrastra el dedo para moverte  ·  tus movimientos atacan solos  ·  toca una ficha para cambiar de Pokémon' : 'Arrastra el dedo para moverte  ·  tus movimientos atacan solos')
                          : team ? 'WASD moverse  ·  tus movimientos atacan solos  ·  Tab cambiar de Pokémon  ·  Esc pausa'
                          : 'WASD moverse  ·  tus movimientos atacan solos  ·  Esc pausa', w / 2, h - 4);
     }
@@ -560,7 +562,9 @@ G.HUD = (() => {
 
   /** MicaSurvivor (M2): the bottom controls hint with the controller's glyphs. */
   function padHint(ctx, w, h) {
-    const parts = [['g', 'lstick'], ['t', 'moverse  ·  '], ['t', 'tus movimientos atacan solos  ·  '],   // (DLC D16: no LB / RB switching)
+    const parts = G.ExpDive && G.ExpDive.live()   // (Dive V4: X / Y the specials, A dodges, RT the Ultimate)
+      ? [['g', 'lstick'], ['t', 'moverse  ·  '], ['g', 'ban'], ['g', 'reroll'], ['t', 'especiales  ·  '], ['g', 'confirm'], ['t', 'esquivar  ·  '], ['g', 'pause'], ['t', 'pausa']]
+      : [['g', 'lstick'], ['t', 'moverse  ·  '], ['t', 'tus movimientos atacan solos  ·  '],   // (DLC D16: no LB / RB switching)
       ...(G.Team && G.Team.on ? [['g', 'swap'], ['t', 'cambiar de Pokémon  ·  ']] : []), ['g', 'pause'], ['t', 'pausa']];   // (M5 lote 7)
     const GS = 14;
     ctx.font = F(600, 10);

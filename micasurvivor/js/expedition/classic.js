@@ -720,6 +720,7 @@ G.ExpClassic = (() => {
    * special enemies, b: [boss id, exhaustion x10] while a boss is up}. Null outside a Classic run.
    */
   function xblockC() {
+    if (G.ExpDive && G.ExpDive.on()) return G.ExpDive.dBlock();   // (Dive V4: its own state rides in the c slot)
     if (!on()) return null;
     const c = { s: Math.round(S.zs * 10), p: S.ph, q: Math.round(S.charge * 8), f: (S.fs ? 1 : 0) | (S.won ? 2 : 0), n: S.n, d: diffIdx(S.diff) };
     if (S.surv) c.v = 1;   // (D11: a Survival run: no altar; its own state is the x block's `s`, js/expedition/survival.js)
@@ -731,6 +732,9 @@ G.ExpClassic = (() => {
   }
   /** A viewer / guest: a snapshot's / host frame's `c` (null: none). */
   function applyC(c) {
+    // (Dive V4: a Dive block {dv: 1, ...} is Dive's state, js/expedition/dive.js applyD)
+    if (G.ExpDive) G.ExpDive.applyD(c && c.dv ? c : null);
+    if (c && c.dv) { view = null; return; }
     if (!c) { view = null; return; }
     const prevN = view && view.z === (G.World.zone && G.World.zone.zone) ? view.n : null;
     view = { z: G.World.zone ? G.World.zone.zone : 0, zs: (c.s || 0) / 10, ph: c.p | 0, charge: (c.q || 0) / 8, fs: !!(c.f & 1), won: !!(c.f & 2), n: c.n | 0,
@@ -769,7 +773,7 @@ G.ExpClassic = (() => {
     if (view) return { zone: z.zone, zs: view.zs, ph: view.ph, charge: view.charge, fs: view.fs, won: view.won, bossEx: view.bossEx, boss: view.bossId ? G.EnemyMgr.get(view.bossId) : null, diff: view.diff, surv: view.surv };
     return null;
   }
-  const active = () => !!cur() || !!(G.ExpDive && G.ExpDive.on());   // (Dive V2: its HUD line too)
+  const active = () => !!cur() || !!(G.ExpDive && G.ExpDive.shown());   // (Dive V2: its HUD line too)
 
   // ---------------- drawing (in code, no image assets) ----------------
   const AURA = { alpha: '#ff4d5e', elite: '#ffcb3d', totem: '#c47bff', summoner: '#4fe0d0', guardian: null, legend: null };
@@ -782,7 +786,7 @@ G.ExpClassic = (() => {
     if (G.ExpRx) G.ExpRx.drawGround(ctx);     // (D8: wet and chilled foes)
     if (G.ExpCap) G.ExpCap.drawGround(ctx);   // (D8: the League / shiny encounters' auras)
     if (G.ExpSurv) G.ExpSurv.drawGround(ctx);   // (D11: Survival's hostile terrain)
-    if (G.ExpDive && G.ExpDive.on()) { G.ExpDive.drawGround(ctx); return; }   // (Dive V2: the stairs, the rope, the lost Pokémon)
+    if (G.ExpDive && G.ExpDive.shown()) { G.ExpDive.drawGround(ctx); return; }   // (Dive V2: the stairs, the rope, the lost Pokémon)
     const c = cur(), z = G.World.zone, si = c && sitesOf(z);
     if (!si) return;
     const now = performance.now() / 1000, [x, y] = siteXY(si.altar), cam = G.Camera;
@@ -875,7 +879,7 @@ G.ExpClassic = (() => {
   const mmss = s => G.U.mmss(Math.max(0, s));
   /** The line under the clock (already translated: drawn as a String object, like the Tower's). */
   function hudLine(pl, st) {
-    if (G.ExpDive && G.ExpDive.on()) return G.ExpDive.hudLine(pl, st);   // (Dive V2)
+    if (G.ExpDive && G.ExpDive.shown()) return G.ExpDive.hudLine(pl, st);   // (Dive V2)
     const c = cur();
     if (!c) return '';
     if (c.surv) return G.ExpSurv ? G.ExpSurv.hudLine(pl, st, c) : '';   // (D11)
@@ -892,13 +896,13 @@ G.ExpClassic = (() => {
     if (pl) parts.push('₽ ' + Math.floor(pl.coins || 0));   // (D7: the run's ₽)
     return parts.join('  ·  ');
   }
-  const hudColor = () => { if (G.ExpDive && G.ExpDive.on()) return G.ExpDive.hudColor(); const c = cur(); if (c && c.surv && G.ExpSurv) return G.ExpSurv.hudColor(c); return c && c.fs && c.ph < 2 ? (Math.sin(performance.now() / 150) > 0 ? '#ff6b7a' : '#ffb0b8') : c && c.ph === 4 ? '#ffd23f' : '#9fd8a8'; };
+  const hudColor = () => { if (G.ExpDive && G.ExpDive.shown()) return G.ExpDive.hudColor(); const c = cur(); if (c && c.surv && G.ExpSurv) return G.ExpSurv.hudColor(c); return c && c.fs && c.ph < 2 ? (Math.sin(performance.now() / 150) > 0 ? '#ff6b7a' : '#ffb0b8') : c && c.ph === 4 ? '#ffd23f' : '#9fd8a8'; };
   /** Over the HUD: an arrow to the altar / portal / shrine when it is off screen, and the boss's exhaustion. */
   function drawHud(ctx, w, h, pl, st, F, mark) {
     if (G.ExpEco) G.ExpEco.drawHud(ctx, w, h, pl, F, mark);   // (D7: the interactables' labels and the tips)
     if (G.ExpCap) G.ExpCap.drawHud(ctx, w, h, pl, F, mark);   // (D8: the Support Alphas' chips, the encounters' labels and arrows)
     if (G.ExpSurv) G.ExpSurv.drawHud(ctx, w, h, pl, F, mark);   // (D11: Survival's siege warning and the night / wounds chips)
-    if (G.ExpDive && G.ExpDive.on()) { G.ExpDive.drawHud(ctx, w, h, pl, st, F, mark); return; }   // (Dive V2)
+    if (G.ExpDive && G.ExpDive.shown()) { G.ExpDive.drawHud(ctx, w, h, pl, st, F, mark); return; }   // (Dive V2)
     const c = cur(), si = c && sitesOf(G.World.zone);
     if (!si || !pl) return;
     const k = G.HUD ? G.HUD.k : 1, cam = G.Camera, now = performance.now() / 1000;

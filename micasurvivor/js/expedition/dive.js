@@ -21,6 +21,16 @@
  *   pay        the run's Pokémonedas = bank (+ stake on an escape, + stake / 4 on a faint), through the Expedition's
  *              shared wallet (js/expedition/meta.js record: sum.parts.divePay).
  *   progress   the Expedition save: dive.<route>.best (deepest floor), dive.<route>.stage, dive.runs, dive.escapes.
+ *   moves      (V4, owner 2026-11-02: "for moves go with poke dive default") PokéDive's kit: slot 1 is the BASIC attack, it
+ *              fires on its own; slots 2 and 3 are SPECIALS that fire only when pressed (m.xman: js/systems/combat.js waits
+ *              for the press, m.xreq): keys 1 / 2 (J / K), left / right click, the pad's X / Y, the SPECIAL buttons. Auto-aimed
+ *              (the player's target); a press up to BUFFER s before the cool-down ends is kept. Specials hit x SPECIAL_K.
+ *              3 move slots (pl.maxMoves), + the held item. The Ultimate: 3 / Z / R, the pad's LB / LT / RT / L3.
+ *   dodge      (V4) Expedition's slide, PokéDive's way (js/expedition/verbs.js DODGE_*): 0.2 s, invulnerable, 1.2 s cool-down;
+ *              Space / Shift, the pad's A (and B), the DODGE button. No hop in a Dive run.
+ *   red ground (V4) PokéDive's telegraphs (TELE): brawlers slam, alphas / guardians slam wider and charge; dodge or step out.
+ *   viewers    (V4) dBlock() rides in the x block's c slot (classic.js xblockC / applyC): a spectator, a replay and a co-op
+ *              guest see the floor, the loot, the seal, the rope, the lost Pokémon and the red ground (applyD -> view).
  * Determinism: the floors, the groups' species and the lost Pokémon come from G.DLC.rng streams of {seed, route, floor};
  * combat stays Math.random, as in base. Viewers rebuild a floor from the zone block (core.js applyX: classic.build).
  */
@@ -44,6 +54,10 @@ G.I18n.add({
   'Caíste: conservas lo asegurado y una cuarta parte del resto': 'You fell: you keep what was secured and a quarter of the rest',
   'Rescatados: {x}': 'Rescued: {x}', 'Alfas: {x} · Guardianes: {x}': 'Alphas: {x} · Guardians: {x}',
   '¡Nuevo récord en {x}: piso {x}!': 'New record on {x}: floor {x}!',
+  'Arrastra el dedo para moverte  ·  toca 1 / 2 para los especiales  ·  Esquivar': 'Drag to move  ·  tap 1 / 2 for the specials  ·  Dodge',
+  'WASD moverse  ·  1 / 2 o clic especiales  ·  Espacio esquivar  ·  3 definitivo  ·  Esc pausa': 'WASD move  ·  1 / 2 or click: specials  ·  Space dodge  ·  3 Ultimate  ·  Esc pause',
+  'especiales': 'specials', 'esquivar': 'dodge',
+  'Esquivar': 'Dodge', 'Especial 1': 'Special 1', 'Especial 2': 'Special 2',
   'Bosque Musgoso': 'Mossy Woods', 'Cañón Dorado': 'Golden Canyon', 'Cráter Ascua': 'Ember Crater', 'Arrecife Hundido': 'Sunken Reef',
   'Gruta Helada': 'Frost Grotto', 'Pantano Lúgubre': 'Gloom Marsh', 'Ruinas Olvidadas': 'Forgotten Ruins', 'Bosque Fúngico': 'Fungal Grove'
 });
@@ -61,7 +75,8 @@ G.ExpDive = (() => {
     ALPHA: { scale: 1.45, hp: 9, dmg: 1.5, xp: 8 },
     GUARD: { scale: 1.9, hp: 70, dmg: 1.8, xp: 30 },
     LOOT: { ko: 1, koPer: 0.1, rescue: 12, rescuePer: 1, alpha: 25, alphaPer: 2, guard: 150, guardPer: 4, floor: 3, floorPer: 0.2 },
-    FAINT_KEEP: 0.25
+    FAINT_KEEP: 0.25,
+    SLOTS: 3, SPECIAL_K: 1.25, BUFFER: 0.15, HOLD: 0.6   // V4: the kit; a press is kept HOLD s while it waits for a foe in reach
   };
   const NAME = { forest: 'Bosque Musgoso', canyon: 'Cañón Dorado', crater: 'Cráter Ascua', reef: 'Arrecife Hundido',
                  grotto: 'Gruta Helada', marsh: 'Pantano Lúgubre', ruins: 'Ruinas Olvidadas', fungal: 'Bosque Fúngico' };
@@ -73,8 +88,15 @@ G.ExpDive = (() => {
   const DG = () => G.DiveGen;
   const T = () => G.I18n;
   const TS = () => G.World.TS;
-  let S = null;
-  const on = () => !!(S && G.Modes.is('exp-dive'));
+  let S = null;      // the host's run (null for a viewer / co-op guest)
+  let view = null;   // a viewer's / guest's copy of the host's block (applyD)
+  /** A Dive run on this page (the host's, or a co-op guest's: the kit, the inputs, the buttons). */
+  const live = () => G.Modes.is('exp-dive');
+  /** The host's Dive run (the floors, the foes, the loot). */
+  const on = () => !!(S && live());
+  /** Something to draw: the host's run or a viewer's block. */
+  const shown = () => on() || !!(view && G.World.zone && G.World.zone.dive);
+  const cur = () => (on() ? S : view);
   const routeOf = map => (typeof map === 'string' && map.startsWith('dive:') && DG().ROUTES[map.slice(5)] ? map.slice(5) : 'forest');
   const say = (t, s = 3) => G.Spawner.say(t, s);
   const rng = (route, floor, k) => G.DLC.rng(DG().seedOf(S ? S.seed : 0, route, floor, k));
@@ -114,12 +136,12 @@ G.ExpDive = (() => {
     startFloor(1, 0);
     return S;
   }
-  function reset() { S = null; pools.clear(); }
+  function reset() { S = null; view = null; pools.clear(); }
 
   /** The floor's foes, the lost Pokémon, the alpha / guardian (the zone is already set: core.js enterZone). */
   function startFloor(f, t) {
     const L = G.World.zone && G.World.zone.dive;
-    Object.assign(S, { floor: f, ft: t, L, groups: [], boss: null, stairsT: 0, ropeT: 0, lost: null, sealed: false });
+    Object.assign(S, { floor: f, ft: t, L, groups: [], boss: null, stairsT: 0, ropeT: 0, lost: null, sealed: false, tg: [] });
     S.deepest = Math.max(S.deepest, f);
     if (!L) return;
     const r = rng(S.route, f, 0xD1), P = pool(S.route, f);
@@ -196,6 +218,7 @@ G.ExpDive = (() => {
     const R = TS(), wr = (K.WAKE_R * R) ** 2;
     // the groups wake when someone comes close
     for (const g of S.groups) if (!g.awake && alive.some(p => G.U.dist2(p.x, p.y, g.at[0], g.at[1]) < wr)) wake(g);
+    teleTick(dt, alive);   // (V4: the red ground)
     // the lost Pokémon
     if (S.lost && !S.lost.done && alive.some(p => G.U.dist2(p.x, p.y, S.lost.x, S.lost.y) < (K.RESCUE_R * R) ** 2)) rescue();
     // the alpha / guardian down
@@ -278,6 +301,139 @@ G.ExpDive = (() => {
     loot(K.LOOT.ko + K.LOOT.koPer * S.floor);
   }
 
+  // ---------------- V4: PokéDive's kit (basic + 2 specials), the dodge, the inputs ----------------
+  /** After the League / level-up modules set the kit (core.js run.start): PokéDive starts you with the basic and both
+   *  specials, so the kit's 2nd and 3rd moves come now (the League would teach them at Lv 2 / 4); 3 slots. */
+  function setup(pl) {
+    if (!live() || !pl) return;
+    pl.maxMoves = K.SLOTS;
+    pl.xspare = []; pl.xlearnAt = {};
+    const LG = G.ExpLeague;
+    if (LG && LG.run && LG.learnKit) for (let i = 1; i < K.SLOTS && pl.slots.length < K.SLOTS; i++) LG.learnKit(pl, i);
+    while (pl.slots.length > K.SLOTS) pl.xspare.push(pl.slots.pop());
+    pl.setActive && pl.setActive(0);
+    roles(pl);
+  }
+  /** PokéDive's new special at Lv 4, 10, 16, 22...: the level's cards are "learn X, forget special 1" / "... special 2"
+   *  (Expedition's swap cards) and a training card to keep your moves. X: the kit's 4th move first, then a move of your
+   *  types / League (the level-ups' candidates), seeded. core.js levelup.offer; null on any other level. */
+  const LEARN_AT = L => L >= 4 && (L - 4) % 6 === 0;
+  function offerLearn(pl) {
+    if (!live() || !pl || pl.remote || !LEARN_AT(pl.level) || (pl.xlearnAt && pl.xlearnAt[pl.level])) return null;
+    const LV = G.ExpLevel, LG = G.ExpLeague;
+    if (!LV || !LV.swapCard) return null;
+    pl.xlearnAt = pl.xlearnAt || {}; pl.xlearnAt[pl.level] = 1;
+    const r = G.DLC.rng(DG().seedOf(G.World.seed | 0, 'learn', pl.level, 0x1EA));
+    const kit = LG && LG.run && LG.BY[LG.run.member] ? LG.BY[LG.run.member].kit || [] : [];
+    let id = kit.slice(K.SLOTS).find(k => k && !pl.hasMove(k)) || null;
+    if (!id) { const cs = LV.moveCands(pl).filter(c => !pl.hasMove(c.id)); if (cs.length) id = cs[Math.floor(r() * cs.length)].id; }
+    if (!id) return null;
+    const cards = [];
+    for (let i = 1; i < pl.slots.length; i++) { const old = pl.slots[i][0]; if (old) cards.push(LV.swapCard(pl, { id }, old, 0, r)); }
+    if (!cards.length) return null;
+    const keep = LV.trainCards(pl)[0];
+    if (keep) cards.push(keep);
+    return cards;
+  }
+  /** Slot 1 the basic (auto), slots 2-3 the specials (pressed): by slot, so a swapped-in move takes its slot's role. */
+  function roles(pl) { pl.slots.forEach((g, i) => { for (const m of g) { m.xman = i > 0; if (!(i > 0)) m.xreq = 0; } }); }
+  /** A special pressed (i = 1 or 2): kept if its cool-down is (nearly) over. -> true when it will fire */
+  function press(i, pl = G.Game && G.Game.player) {
+    if (!live() || !pl || pl.dead || pl.remote) return false;
+    const g = pl.slots[i];
+    if (!g || !g.length) return false;
+    let ok = false;
+    for (const m of g) if (m.t <= K.BUFFER) { m.xreq = K.HOLD; ok = true; }
+    return ok;
+  }
+  function ult() { if (G.ExpUlt) G.ExpUlt.press(); }
+  /** The pad's gameplay action in a Dive run (js/core/pad.js): true when Dive took it. */
+  function pad(a) {
+    if (a === 'confirm' || a === 'cancel') { if (G.ExpVerbs) G.ExpVerbs.press('slide'); return true; }
+    if (a === 'ban' || a === 'dynx') { press(1); return true; }
+    if (a === 'reroll') { press(2); return true; }
+    if (a === 'prev' || a === 'dtrigger' || a === 'ztrigger' || a === 'zmove') { ult(); return true; }
+    if (a === 'next') return true;
+    return false;
+  }
+  /** run.tick: the roles, the keys. */
+  function tick(dt, pl) {
+    if (!live() || !pl || pl.remote) return;
+    if (pl.slots.length > K.SLOTS) { pl.xspare = pl.xspare || []; while (pl.slots.length > K.SLOTS) pl.xspare.push(pl.slots.pop()); }
+    roles(pl);
+    const I = G.Input;
+    if (I.tap('digit1') || I.tap('numpad1') || I.tap('keyj')) press(1, pl);
+    if (I.tap('digit2') || I.tap('numpad2') || I.tap('keyk')) press(2, pl);
+    if (I.tap('digit3') || I.tap('numpad3') || I.tap('keyl')) ult();
+  }
+  /** combat.out: a special's hit is worth SPECIAL_K. */
+  function out(k, pl, e, src) {
+    if (!live() || !pl || !src || !pl.slots) return k;
+    const id = typeof src.mid === 'string' ? src.mid : src.def && typeof src.id === 'string' ? src.id : null;
+    if (!id) return k;
+    for (let i = 1; i < pl.slots.length; i++) if (pl.slots[i].some(m => m.id === id)) return k * K.SPECIAL_K;
+    return k;
+  }
+  // the buttons (screen px, set by drawButtons) and the pointer: a finger / pen / mouse on a button; a mouse click elsewhere
+  // on the game: left = special 1, right = special 2 (PokéDive's)
+  let rects = null;
+  const inR = (r, x, y) => !!r && x >= r.x - 6 && x <= r.x + r.s + 6 && y >= r.y - 6 && y <= r.y + r.s + 6;
+  addEventListener('pointerdown', e => {
+    if (!live() || !e.target || e.target.id !== 'game' || !G.Game || G.Game.state !== 'playing') return;
+    const x = e.clientX, y = e.clientY;
+    if (rects && inR(rects.sp1, x, y)) { press(1); return; }
+    if (rects && inR(rects.sp2, x, y)) { press(2); return; }
+    if (rects && inR(rects.dodge, x, y)) { if (G.ExpVerbs) G.ExpVerbs.press('slide'); return; }
+    if (e.pointerType !== 'mouse') return;
+    const hit = (G.Touch.buttonList ? G.Touch.buttonList() : []).some(b => x >= b.x - b.px && x <= b.x + b.w + b.px && y >= b.y - b.py && y <= b.y + b.h + b.py);
+    if (hit) return;
+    if (e.button === 0) press(1); else if (e.button === 2) press(2);
+  }, true);
+  addEventListener('contextmenu', e => { if (live() && e.target && e.target.id === 'game') e.preventDefault(); }, true);
+
+  /** The DODGE and SPECIAL 1 / 2 buttons (js/expedition/verbs.js drawButtons in a Dive run). R: verbs' rects (hop, slide). */
+  function drawButtons(ctx, w, h, pl, R, keyChip) {
+    const k = (G.HUD && G.HUD.k) || 1, F = (wt, sz) => wt + ' ' + sz + 'px Arial,Helvetica,sans-serif';
+    const padMode = G.Pad && G.Pad.mode === 'pad', touch = G.Touch.active;
+    const sp1 = R.hop, sp2 = { x: R.hop.x - R.hop.s - 14, y: R.hop.y, s: R.hop.s }, dodge = R.slide;
+    const VK = G.ExpVerbs.K;
+    const one = (r, kind) => {
+      const c = { x: r.x + r.s / 2, y: r.y + r.s / 2 }, Rr = 27;
+      const g = kind === 'dodge' ? null : pl.slots[kind === 'sp1' ? 1 : 2] || [], m = g && g[0];
+      const cdMax = kind === 'dodge' ? VK.DODGE_CD : m ? Math.max(0.05, m.cd * (pl.cdMul || 1)) : 1;
+      const left = kind === 'dodge' ? pl.slideCd || 0 : m ? Math.max(0, m.t) : 0, cool = left > 0.001, queued = m && m.xreq > 0;
+      ctx.save();
+      ctx.globalAlpha = kind !== 'dodge' && !m ? 0.45 : 1;
+      ctx.fillStyle = queued ? 'rgba(90,70,20,.92)' : (kind === 'dodge' && pl.slideT > 0) ? 'rgba(60,90,140,.9)' : 'rgba(13,18,36,.82)';
+      ctx.beginPath(); ctx.arc(c.x, c.y, Rr, 0, 6.2832); ctx.fill();
+      const col = kind === 'dodge' ? '#ffd08a' : kind === 'sp1' ? '#ff9a6b' : '#b48aff';
+      ctx.lineWidth = 3; ctx.strokeStyle = cool ? 'rgb(128,133,148)' : col;
+      ctx.beginPath(); ctx.arc(c.x, c.y, Rr, 0, 6.2832); ctx.stroke();
+      if (cool) { ctx.strokeStyle = col; ctx.beginPath(); ctx.arc(c.x, c.y, Rr, -Math.PI / 2, -Math.PI / 2 + 6.2832 * (1 - left / cdMax)); ctx.stroke(); }
+      ctx.strokeStyle = '#f4f8ff'; ctx.fillStyle = '#f4f8ff'; ctx.lineWidth = 3; ctx.lineCap = 'round';
+      if (kind === 'dodge') {
+        for (const [dy, l] of [[-7, 10], [0, 16], [7, 10]]) { ctx.beginPath(); ctx.moveTo(c.x - 14, c.y + dy); ctx.lineTo(c.x - 14 + l, c.y + dy); ctx.stroke(); }
+        ctx.beginPath(); ctx.moveTo(c.x + 6, c.y - 8); ctx.lineTo(c.x + 14, c.y); ctx.lineTo(c.x + 6, c.y + 8); ctx.stroke();
+      } else {
+        ctx.font = F(900, 20); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(kind === 'sp1' ? '1' : '2', c.x, c.y + 1);
+        if (cool) { ctx.font = F(800, 10); ctx.fillStyle = '#ffd23f'; ctx.fillText(left.toFixed(1), c.x, c.y + 15); }
+      }
+      ctx.textBaseline = 'alphabetic';
+      ctx.font = F(700, 10); ctx.textAlign = 'center';
+      const nm = m ? G.I18n.t((m.def && m.def.name) || m.name || '') : '';
+      const label = kind === 'dodge' ? G.I18n.t('Esquivar') : (nm || G.I18n.t(kind === 'sp1' ? 'Especial 1' : 'Especial 2'));
+      ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0,0,0,.7)'; ctx.strokeText(label, c.x, r.y + r.s + 11); ctx.fillStyle = 'rgb(214,222,238)'; ctx.fillText(label, c.x, r.y + r.s + 11);
+      if (padMode) G.Pad.drawGlyph(ctx, kind === 'dodge' ? 'confirm' : kind === 'sp1' ? 'ban' : 'reroll', r.x - 4, r.y - 4, 22);
+      else if (!touch) keyChip(ctx, r.x - 4, r.y - 4, kind === 'dodge' ? G.I18n.t('Espacio') : kind === 'sp1' ? '1' : '2');
+      ctx.restore();
+      G.Touch.addButton(r.x, r.y, r.s, r.s, () => {}, 6);   // (pressed by the pointerdown listener above; no joystick under it)
+    };
+    one(sp1, 'sp1'); one(sp2, 'sp2'); one(dodge, 'dodge');
+    rects = { sp1: { x: sp1.x * k, y: sp1.y * k, s: sp1.s * k }, sp2: { x: sp2.x * k, y: sp2.y * k, s: sp2.s * k }, dodge: { x: dodge.x * k, y: dodge.y * k, s: dodge.s * k } };
+    return { hop: sp1, slide: dodge, sp2 };
+  }
+
   // ---------------- the end ----------------
   /** The run's Pokémonedas (bank + stake on an escape, + a quarter of it on a faint). */
   const pay = () => (S ? S.bank + (S.escaped ? S.stake : Math.floor(S.stake * K.FAINT_KEEP)) : 0);
@@ -307,10 +463,119 @@ G.ExpDive = (() => {
     return out;
   }
 
+
+  // ---------------- V4: the red ground (PokéDive's telegraphs: slam / charge), the host's ----------------
+  // A brawler (a foe with no shot) that reaches you winds up a SLAM: a red circle round it fills for TELE.slam s, then
+  // everyone still inside is hit (dmg x SLAM_DMG). An alpha also CHARGES (a red lane toward you fills, then it dashes along
+  // it, hitting what it crosses); a guardian slams wider and charges more often. The foe holds still while winding up.
+  // Dodge (i-frames) or step out. Viewers see them through the block (tg, in 10 steps of their fill).
+  const TELE = { slam: 0.8, slamR: 1.6, alphaR: 2.6, guardR: 3.4, charge: 0.9, chargeLen: 7, chargeW: 1.3, chargeT: 0.35,
+                 SLAM_DMG: 1.6, CHARGE_DMG: 2.0, CD: [2.6, 4.2], REACH: 2.2, ALPHA_CD: [2.2, 3.4], GUARD_CD: [1.6, 2.6] };
+  function teleTick(dt, alive) {
+    const R = TS();
+    S.tg = S.tg || [];
+    for (const e of G.EnemyMgr.all()) {
+      if (e.dead || e.remote || (e.xmove && e.xmove === sleeper)) continue;
+      const big = e.xk === 'alpha' || e.xk === 'guardian';
+      if (!big && (e.shotCd || e.behavior === 'thief')) continue;
+      if (e.xtele) continue;
+      e.xtcd = (e.xtcd == null ? 1 + Math.random() * 1.5 : e.xtcd) - dt;
+      if (e.xtcd > 0) continue;
+      let tgt = null, d2 = Infinity;
+      for (const p of alive) { const d = G.U.dist2(p.x, p.y, e.x, e.y); if (d < d2) { d2 = d; tgt = p; } }
+      if (!tgt) continue;
+      const reach = (big ? TELE.chargeLen : TELE.REACH) * R;
+      if (d2 > reach * reach) { e.xtcd = 0.3; continue; }
+      const cdR = e.xk === 'guardian' ? TELE.GUARD_CD : big ? TELE.ALPHA_CD : TELE.CD;
+      e.xtcd = cdR[0] + Math.random() * (cdR[1] - cdR[0]);
+      const charge = big && (Math.sqrt(d2) > 2 * R || Math.random() < (e.xk === 'guardian' ? 0.45 : 0.35));
+      const t = charge
+        ? { k: 'charge', e, x: e.x, y: e.y, a: Math.atan2(tgt.y - e.y, tgt.x - e.x), len: TELE.chargeLen * R, w: TELE.chargeW * R, t: 0, T: TELE.charge }
+        : { k: 'slam', e, x: e.x, y: e.y, r: (e.xk === 'guardian' ? TELE.guardR : big ? TELE.alphaR : TELE.slamR) * R, t: 0, T: TELE.slam };
+      e.xtele = t; e.xmove0 = e.xmove; e.xmove = teleHold;
+      S.tg.push(t);
+    }
+    for (let i = S.tg.length - 1; i >= 0; i--) {
+      const t = S.tg[i], e = t.e;
+      if (e.dead) { S.tg.splice(i, 1); continue; }
+      t.t += dt;
+      if (t.k === 'dash') {
+        const u = Math.min(1, t.t / TELE.chargeT), px = t.x + Math.cos(t.a) * t.len * u, py = t.y + Math.sin(t.a) * t.len * u;
+        e.x = px; e.y = py; G.World.collide(e);
+        for (const p of alive) if (!t.hit.has(p) && G.U.dist2(p.x, p.y, e.x, e.y) < (t.w * 0.6 + (p.r || 10)) ** 2) { t.hit.add(p); p.hurt(e.dmg * TELE.CHARGE_DMG, 'normal'); }
+        if (u >= 1) { S.tg.splice(i, 1); release(e); }
+        continue;
+      }
+      if (t.t < t.T) continue;
+      if (t.k === 'slam') {
+        for (const p of alive) if (G.U.dist2(p.x, p.y, t.x, t.y) < t.r * t.r) p.hurt(e.dmg * TELE.SLAM_DMG, 'normal');
+        G.FX.burst(t.x, t.y, '#ff6b5a', 14, 120);
+        if (G.Camera.sees(t.x, t.y, 80)) G.Camera.kick(e.xk ? 0.35 : 0.12);
+        S.tg.splice(i, 1); release(e);
+      } else {   // the charge's wind-up is over: the dash
+        Object.assign(t, { k: 'dash', t: 0, hit: new Set() });
+      }
+    }
+  }
+  function teleHold() { this.anim.loop('Idle', 0.05); return true; }
+  function release(e) { e.xmove = e.xmove0 === teleHold ? null : e.xmove0 || null; e.xmove0 = null; e.xtele = null; }
+  function drawTele(ctx, S, now) {
+    const list = S.tg || [];
+    for (const t of list) {
+      const u = t.k === 'dash' ? 1 : G.U.clamp(t.t / t.T, 0, 1);
+      ctx.save();
+      ctx.fillStyle = 'rgba(255,60,50,' + (0.14 + 0.3 * u).toFixed(3) + ')';
+      ctx.strokeStyle = 'rgba(255,90,70,.9)'; ctx.lineWidth = 2;
+      if (t.k === 'slam') {
+        ctx.beginPath(); ctx.ellipse(t.x, t.y, t.r, t.r * 0.62, 0, 0, 6.2832); ctx.stroke();
+        ctx.beginPath(); ctx.ellipse(t.x, t.y, t.r * u, t.r * 0.62 * u, 0, 0, 6.2832); ctx.fill();
+      } else if (t.k === 'charge') {
+        ctx.translate(t.x, t.y); ctx.rotate(t.a);
+        ctx.strokeRect(0, -t.w / 2, t.len, t.w);
+        ctx.fillRect(0, -t.w / 2, t.len * u, t.w);
+      }
+      ctx.restore();
+      const e = t.e && t.e.id != null ? t.e : null;
+      if (e && t.k !== 'dash') {
+        ctx.save(); ctx.font = '900 14px Arial,Helvetica,sans-serif'; ctx.textAlign = 'center';
+        ctx.fillStyle = Math.sin(now * 18) > 0 ? '#ff4d4d' : '#ffd23f';
+        ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0,0,0,.8)';
+        const y = e.y - (e.bodyH || 30) - 10;
+        ctx.strokeText('!', e.x, y); ctx.fillText('!', e.x, y); ctx.restore();
+      }
+    }
+  }
+
+  // ---------------- V4: the viewers' block (the x block's c slot: snapshots, host frames, the replay's field 11) ----------------
+  /** The host's state: {dv: 1, f floor, r route index, b bank, s stake, n rescued, q flags (1 sealed, 2 lost rescued, 4 escaped),
+   *  o rope (quarters of a s), e the boss's id, l the lost Pokémon [dex, x, y], tg the telegraphs [k, x, y, r | len, a x100, w, fill 0-10, foe id]}.
+   *  Coarse on purpose (the replay keeps it only when it changes). */
+  function dBlock() {
+    if (!on()) return null;
+    const c = { dv: 1, f: S.floor, r: DG().ROUTE_IDS.indexOf(S.route), b: S.bank, s: S.stake, n: S.rescued.length,
+                q: (S.sealed ? 1 : 0) | (S.lost && S.lost.done ? 2 : 0) | (S.escaped ? 4 : 0), o: Math.round(S.ropeT * 4) };
+    if (S.lost) c.l = [S.lost.dex, Math.round(S.lost.x), Math.round(S.lost.y)];
+    if (S.boss && !S.boss.dead) c.e = S.boss.id;
+    if (S.tg && S.tg.length) c.tg = S.tg.map(t => [t.k === 'slam' ? 1 : t.k === 'charge' ? 2 : 3, Math.round(t.x), Math.round(t.y), Math.round(t.k === 'slam' ? t.r : t.len),
+      Math.round((t.a || 0) * 100), Math.round(t.w || 0), t.k === 'dash' ? 10 : Math.min(10, Math.floor(t.t / t.T * 10)), t.e ? t.e.id : 0]);
+    return c;
+  }
+  /** A viewer / co-op guest: the host's block (null: none). */
+  function applyD(c) {
+    if (!c) { view = null; return; }
+    const route = DG().ROUTE_IDS[c.r | 0] || 'forest', old = view;
+    const lost = c.l ? { dex: c.l[0], x: c.l[1], y: c.l[2], done: !!(c.q & 2), anim: old && old.lost && old.lost.dex === c.l[0] ? old.lost.anim : null } : null;
+    const K3 = [null, 'slam', 'charge', 'dash'];
+    view = { floor: c.f | 0, route, bank: c.b | 0, stake: c.s | 0, sealed: !!(c.q & 1), escaped: !!(c.q & 4), ropeT: (c.o || 0) / 4, lost,
+             rescued: [], tg: (c.tg || []).map(a => ({ k: K3[a[0]], x: a[1], y: a[2], r: a[3], len: a[3], a: a[4] / 100, w: a[5], t: a[6] / 10, T: 1, e: G.EnemyMgr.get ? G.EnemyMgr.get(a[7]) : null })) };
+  }
+
   // ---------------- drawing ----------------
   function drawGround(ctx) {
+    const S = cur();
     if (!S || !G.World.zone || !G.World.zone.dive) return;
     const L = G.World.zone.dive, now = performance.now() / 1000, cam = G.Camera, R = TS();
+    drawTele(ctx, S, now);
     const [sx, sy] = wpos(L.stairs);
     if (cam.sees(sx, sy, 60)) {
       ctx.save();
@@ -346,11 +611,13 @@ G.ExpDive = (() => {
     }
   }
   function hudLine() {
+    const S = cur();
     if (!S) return '';
     return T().f('PISO {x}', S.floor) + ' · ' + T().t(NAME[S.route]).toUpperCase() + ' · ' + T().f('{x} asegurado · {x} en juego', S.bank, S.stake);
   }
-  const hudColor = () => (S && S.sealed ? '#ff9a6b' : S && S.ropeT > 0 ? '#b48aff' : '#9fd8ff');
+  const hudColor = () => { const S = cur(); return S && S.sealed ? '#ff9a6b' : S && S.ropeT > 0 ? '#b48aff' : '#9fd8ff'; };
   function drawHud(ctx, w, h, pl, st, F) {
+    const S = cur();
     if (!S) return;
     // the route's 25 pips (every 5th: alpha, the 25th: the guardian)
     const pos = ((S.floor - 1) % 25) + 1, x0 = w / 2 - 25 * 5, y = 74;
@@ -365,6 +632,7 @@ G.ExpDive = (() => {
     ctx.restore();
   }
   function drawMini(ctx, pl, api) {
+    const S = cur();
     if (!S || !G.World.zone || !G.World.zone.dive) return;
     const L = G.World.zone.dive, pts = [[wpos(L.stairs), S.sealed ? '#ff6b7a' : '#ffd23f']];
     if (S.lost && !S.lost.done) pts.push([[S.lost.x, S.lost.y], '#7fe0ff']);
@@ -376,5 +644,7 @@ G.ExpDive = (() => {
   }
 
   return { K, NAME, GUARDIANS, target, pool, guardianOf, routeOf, begin, reset, update, hurt, onKill, pay, scoreParts, result, record,
+           setup, roles, press, pad, tick, out, drawButtons, offerLearn, LEARN_AT, get rects() { return rects; },
+           live, shown, dBlock, applyD, TELE, get view() { return view; },
            drawGround, drawHud, drawMini, hudLine, hudColor, on, get run() { return S; } };
 })();

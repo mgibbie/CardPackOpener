@@ -197,6 +197,7 @@ G.Exp = (() => {
       if (MT()) MT().begin(G.Game.player);                      // (D10: the Lab / perks / boosts row, before the level-ups read it)
       if (SV()) SV().begin(G.Game.player, cfg);                 // (D11: Survival's pacts, siege, wounds; a base / Classic run: none)
       if (LV()) LV().begin(G.Game.player);                      // (D5: the curve, the tools, the bag)
+      if (DV_()) DV_().setup(G.Game.player);                    // (Dive V4: PokéDive's kit: basic + 2 specials, 3 slots)
       if (UL()) UL().begin(G.Game.player);                      // (D6: the Ultimate's meter)
       if (EC()) EC().begin(G.Game.player);                      // (D7: ₽, the interactables, the fog, the tips)
       if (CP()) CP().begin(G.Game.player);                      // (D8: alphas, Support Alphas, League encounters, shinies)
@@ -205,7 +206,7 @@ G.Exp = (() => {
     });
     // (D4: a League run's level-ups: kit moves, evolutions and their choice, Maturity; a base run gets undefined / its cards)
     // (D5: then the Expedition's own cards, rarity-rolled: G.ExpLevel.offer; it adds the League's note itself)
-    G.Hooks.on('levelup.offer', (pl, n) => { const b = LG() ? LG().offerHook(pl) : undefined; return b !== undefined ? b : LV() ? LV().offer(pl, n) : undefined; });
+    G.Hooks.on('levelup.offer', (pl, n) => { const b = LG() ? LG().offerHook(pl) : undefined; if (b !== undefined) return b; const dl = DV_() && DV_().offerLearn(pl); if (dl) return dl; return LV() ? LV().offer(pl, n) : undefined; });   // (Dive V4: Lv 4 / 10 / 16 / 22 learn a special)
     G.Hooks.on('levelup.cards', (cards, pl) => (LG() ? LG().cardsHook(cards, pl) : cards));
     // (D5: the XP curve, the items, the procs, the new archetypes; each listener leaves a base run / another player alone)
     G.Hooks.on('xp.need', (v, L) => (LV() ? LV().xpNeed(v, L) : v));
@@ -221,10 +222,10 @@ G.Exp = (() => {
     });
     G.Hooks.on('player.ko', pl => { if (IT()) IT().ko(pl); });
     G.Hooks.on('player.dealt', (pl, d) => { if (IT()) IT().dealt(pl, d); });
-    G.Hooks.on('combat.out', (k, pl, e, src, dmg) => { if (IT()) k = IT().out(k, pl, e, src, dmg); if (RX()) k = RX().out(k, pl, e, src, dmg); return SV() ? SV().out(k, pl) : k; });   // (D8: reactions, weather; D11: the siege)
+    G.Hooks.on('combat.out', (k, pl, e, src, dmg) => { if (IT()) k = IT().out(k, pl, e, src, dmg); if (RX()) k = RX().out(k, pl, e, src, dmg); if (DV_()) k = DV_().out(k, pl, e, src); return SV() ? SV().out(k, pl) : k; });   // (Dive V4: the specials)   // (D8: reactions, weather; D11: the siege)
     G.Hooks.on('combat.run', (pl, m, ghost) => { if (MV()) MV().run(pl, m, ghost); });
     G.Hooks.on('combat.ghost', (pl, id, lvl, aim) => { if (MV()) MV().ghost(pl, id, lvl, aim); });
-    G.Hooks.on('run.tick', (dt, pl) => { if (!expRun()) return; if (MV()) MV().tick(dt); if (IT()) IT().tick(dt, pl); if (LV()) LV().tick(dt); if (UL()) UL().tick(dt, pl); if (EC()) EC().tick(dt, pl); if (CP()) CP().tick(dt, pl); if (RX()) RX().tick(dt, pl); if (MT()) MT().tick(dt, pl); if (SV()) SV().tick(dt, pl); if (cur && G.LocalCoop && G.LocalCoop.on) cur.mate = true; });   // (D11: Survival, last: it reads what this step healed; a local partner keeps the run off the boards)
+    G.Hooks.on('run.tick', (dt, pl) => { if (!expRun()) return; if (MV()) MV().tick(dt); if (IT()) IT().tick(dt, pl); if (LV()) LV().tick(dt); if (UL()) UL().tick(dt, pl); if (EC()) EC().tick(dt, pl); if (CP()) CP().tick(dt, pl); if (RX()) RX().tick(dt, pl); if (MT()) MT().tick(dt, pl); if (SV()) SV().tick(dt, pl); if (DV_()) DV_().tick(dt, pl); if (cur && G.LocalCoop && G.LocalCoop.on) cur.mate = true; });   // (D11: Survival, last: it reads what this step healed; a local partner keeps the run off the boards)
     // (D6: the Ultimate's charge from kills, and its hit-stop)
     G.Hooks.on('enemy.ko', (e, pl) => { if (!expRun()) return; if (UL()) UL().onKill(e, pl); if (EC()) EC().onKill(e, pl); if (MT()) MT().onKill(e, pl); if (LV()) LV().onKill(e, pl); if (DV_()) DV_().onKill(e, pl); });   // (Dive V2: the loot)   // (D17: a boss's held item)   // (D10: research)   // (D7: ₽ for the kill; D8: a capture target's faint is seen in run.tick)
     // (D7: the zone's interactables on the minimap, under the fog of war; the seam only runs in a zone)
@@ -559,7 +560,7 @@ G.Exp = (() => {
 
   // ---------------- D11: the co-op guest's own blocks, Survival's rows ----------------
   /** A snapshot's `c` / `o` / `s`: the host's own state, or (a co-op guest's snapshots) the host's as it last came. */
-  const cBlock = () => (C() && C().run ? C().xblockC() : lastHost.c);
+  const cBlock = () => (C() && C().run ? C().xblockC() : DV_() && DV_().on() ? DV_().dBlock() : lastHost.c);   // (Dive V4: Dive's block in the c slot)
   const oBlockNow = () => (guestRun() ? lastHost.o : EC() && EC().oBlock());
   const sBlockNow = () => (guestRun() ? lastHost.s : SV() && SV().sBlock());
   const lastHost = { c: null, o: null, s: null, p: null };

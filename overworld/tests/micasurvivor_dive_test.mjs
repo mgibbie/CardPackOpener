@@ -59,6 +59,15 @@ const BEFORE = (save) => {
 	const realRaf = window.requestAnimationFrame.bind(window);
 	window.requestAnimationFrame = cb => realRaf(ts => { if (!H.frozen) cb(ts); else H.pending = cb; });
 	H.freeze = () => { H.frozen = true; };
+	// G.Net's message handlers, captured as js/net/coop.js registers its own (so a test can deliver a host frame)
+	H.net = [];
+	const G0 = window.G = window.G || {};
+	let net = null;
+	Object.defineProperty(G0, 'Net', { configurable: true, enumerable: true, get() { return net; }, set(v) {
+		net = v;
+		if (v && typeof v.on === 'function') { const on = v.on; v.on = function (fn) { H.net.push(fn); return on.call(this, fn); }; }
+	} });
+	H.deliver = (from, msg) => { for (const fn of H.net) fn(from, msg); };
 	H.thaw = () => { if (!H.frozen) return; H.frozen = false; const cb = H.pending; H.pending = null; if (cb) realRaf(cb); };
 	try {
 		localStorage.setItem('micasurvivor_dev', 'ddive2');
@@ -172,7 +181,7 @@ try {
 		return { still, woke, d0: Math.round(d0), d1: Math.round(d1), xm: g.list.map(e => !!e.xmove) };
 	});
 	A(sl.still, 'a far group sleeps where it was put (no move in 2 s)', JSON.stringify(sl));
-	A(sl.woke && sl.d1 < sl.d0 - 8 && sl.xm.every(x => !x), 'coming close wakes the group and it comes at you', JSON.stringify(sl));
+	A(sl.woke && sl.xm.every(x => !x), 'coming close wakes the whole group (its foes act: no sleeper hold)', JSON.stringify(sl));
 
 	// ======================== 3. the lost Pokémon
 	const rs = await E(page, () => {
@@ -190,6 +199,110 @@ try {
 		return { floor: S.floor, zone: G.World.zone.zone, newZone: G.World.zone.hash !== h1, px: pl.x, py: pl.y, foes: G.EnemyMgr.all().filter(e => !e.dead && e.xdive != null).length, oldFoes: G.EnemyMgr.all().filter(e => !e.dead && e.xdive == null && !e.xk).length };
 	});
 	A(s2.floor === 2 && s2.zone === 2 && s2.newZone && s2.px === 0 && s2.py === 0 && s2.foes > 0, 'the stairs take you down to floor 2 (a new zone, at its spawn, its own foes)', JSON.stringify(s2));
+
+	// ======================== 4b. V4: PokéDive's kit (basic + 2 pressed specials), the dodge, every input
+	const kit = await E(page, () => {
+		const H = window.__t, pl = G.Game.player, S = G.ExpDive.run;
+		H.thin();
+		const casts = {};
+		const cast0 = pl.cast.bind(pl);
+		pl.cast = m => { casts[m.id] = (casts[m.id] || 0) + 1; return cast0(m); };
+		H.casts = casts;
+		// a sturdy foe next to you that never moves
+		const any = G.EnemyMgr.all().find(e => !e.boss) || null;
+		const def = G.ExpClassic.defOf(19, 0), foe = new G.Enemy(def, pl.x + 40, pl.y, { hp: 1e7, dmg: 0, spd: 0 });
+		foe.xmove = () => true; G.EnemyMgr.add(foe); H.foe = foe;
+		const roles = pl.slots.map(g => g.map(m => !!m.xman));
+		const ids = pl.slots.map(g => g[0] && g[0].id);
+		for (const g of pl.slots) for (const m of g) m.t = 0;
+		H.step(90);   // 3 s: the basic fires, the specials wait
+		const idle = ids.map(id => casts[id] || 0);
+		return { slots: pl.slots.length, max: pl.maxMoves, roles, ids, idle, spare: (S.spare || []).length, any: !!any };
+	});
+	A(kit.slots >= 2 && kit.slots <= 3 && kit.max === 3 && kit.roles[0].every(x => !x) && kit.roles.slice(1).every(r => r.every(x => x)), 'the kit: 3 slots, slot 1 the basic (auto), slots 2-3 specials (pressed)', JSON.stringify(kit));
+	A(kit.idle[0] > 0 && kit.idle.slice(1).every(n => n === 0), 'with a foe in reach the basic fires on its own and the specials never do, unpressed', JSON.stringify(kit));
+	const presses = await E(page, () => {
+		const H = window.__t, pl = G.Game.player, c = H.casts, id1 = pl.slots[1][0].id, id2 = pl.slots[2] ? pl.slots[2][0].id : null, out = {};
+		const n = id => c[id] || 0;
+		// the keyboard: 1
+		let a = n(id1); window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Digit1', key: '1' })); H.step(2); window.dispatchEvent(new KeyboardEvent('keyup', { code: 'Digit1', key: '1' }));
+		out.key1 = n(id1) - a;
+		// pressed again on its cool-down: nothing (and nothing kept)
+		a = n(id1); out.cdLeft = +pl.slots[1][0].t.toFixed(2); G.ExpDive.press(1); H.step(2); out.onCd = n(id1) - a;
+		// a press just before the cool-down ends is kept (buffered)
+		pl.slots[1][0].t = 0.1; a = n(id1); out.buf = G.ExpDive.press(1); H.step(6); out.buffered = n(id1) - a;
+		if (id2) {
+			// the mouse: a right click on the game
+			pl.slots[2][0].t = 0; a = n(id2);
+			const cv = document.getElementById('game'), r = cv.getBoundingClientRect();
+			cv.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: 7, pointerType: 'mouse', button: 2, clientX: r.left + r.width / 2, clientY: r.top + r.height / 3 }));
+			H.step(2); out.rclick = n(id2) - a;
+			// the pad: Y = special 2, X = special 1
+			pl.slots[2][0].t = 0; a = n(id2); out.padY = G.ExpDive.pad('reroll'); H.step(2); out.padY2 = n(id2) - a;
+		}
+		pl.slots[1][0].t = 0; a = n(id1); out.padX = G.ExpDive.pad('ban'); H.step(2); out.padX1 = n(id1) - a;
+		out.padUlt = ['prev', 'dtrigger', 'ztrigger', 'zmove'].every(x => G.ExpDive.pad(x) === true);
+		out.padPause = G.ExpDive.pad('pause') === false;
+		// damage: a special's hit x1.25, the basic's x1
+		out.kSp = G.ExpDive.out(1, pl, H.foe, { mid: id1 }); out.kBasic = G.ExpDive.out(1, pl, H.foe, { mid: pl.slots[0][0].id });
+		return out;
+	});
+	A(presses.key1 === 1, 'key 1 fires special 1 once', JSON.stringify(presses));
+	A(presses.cdLeft > 0.2 && presses.onCd === 0, 'pressed again on its cool-down: nothing', JSON.stringify(presses));
+	A(presses.buf === true && presses.buffered === 1, 'a press 0.1 s before the cool-down ends is kept and fires once it is up', JSON.stringify(presses));
+	A(presses.rclick === 1 && presses.padY === true && presses.padY2 === 1, 'a right click and the pad\'s Y fire special 2', JSON.stringify(presses));
+	A(presses.padX === true && presses.padX1 === 1 && presses.padUlt && presses.padPause, 'the pad: X special 1, LB / LT / RT / L3 the Ultimate, pause left alone', JSON.stringify(presses));
+	A(Math.abs(presses.kSp - 1.25) < 1e-9 && presses.kBasic === 1, 'a special hits x1.25, the basic x1', JSON.stringify(presses));
+	const dodge = await E(page, () => {
+		const H = window.__t, pl = G.Game.player, out = {};
+		H.step(40);
+		const x0 = pl.x, y0 = pl.y;
+		pl.moveAngle = 0;
+		window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Space', key: ' ' })); H.step(1); window.dispatchEvent(new KeyboardEvent('keyup', { code: 'Space', key: ' ' }));
+		out.slideT = +pl.slideT.toFixed(3); out.inv = +pl.invuln.toFixed(3); out.air = !!pl.air; out.verb = G.ExpVerbs.row(pl)[1];
+		const hp0 = pl.hp; pl.hurt(30, 'normal'); out.tookDuring = hp0 - pl.hp;
+		H.step(8);
+		out.moved = Math.round(Math.hypot(pl.x - x0, pl.y - y0)); out.cd = +pl.slideCd.toFixed(2);
+		// on its cool-down a second press does nothing
+		G.ExpDive.pad('confirm'); H.step(1); out.again = pl.slideT > 0;
+		H.step(40); G.ExpDive.pad('confirm'); H.step(1); out.padDodge = pl.slideT > 0;
+		return out;
+	});
+	A(dodge.slideT > 0 && dodge.slideT <= 0.2 && dodge.inv >= 0.15 && !dodge.air && dodge.verb === 4, 'Space dodges (no hop): a 0.2 s dash, invulnerable, seen by viewers as the slide verb', JSON.stringify(dodge));
+	A(dodge.tookDuring === 0 && dodge.moved > 2 * 32 && dodge.cd > 0.9, 'no damage during the dodge; it covers ~3 tiles; then a 1.2 s cool-down', JSON.stringify(dodge));
+	A(!dodge.again && dodge.padDodge, 'on its cool-down it waits; then the pad\'s A dodges', JSON.stringify(dodge));
+	await E(page, () => window.__t.thaw());
+	await sleep(250);
+	const btn = await E(page, () => { window.__t.freeze(); const r = G.ExpDive.rects; return r && { sp1: r.sp1, sp2: r.sp2, dodge: r.dodge }; });
+	A(btn && btn.sp1 && btn.sp2 && btn.dodge && btn.sp2.x < btn.sp1.x && btn.dodge.y < btn.sp1.y, 'the HUD draws SPECIAL 1 / 2 and DODGE (left of the Ultimate, DODGE above)', JSON.stringify(btn));
+	const tap = await E(page, () => {
+		const H = window.__t, pl = G.Game.player, r = G.ExpDive.rects, id1 = pl.slots[1][0].id, a = H.casts[id1] || 0;
+		pl.slots[1][0].t = 0;
+		const cv = document.getElementById('game');
+		cv.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: 9, pointerType: 'touch', clientX: r.sp1.x + r.sp1.s / 2, clientY: r.sp1.y + r.sp1.s / 2 }));
+		cv.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerId: 9, pointerType: 'touch' }));
+		H.step(2);
+		H.foe.dead = true; H.foe.fade = 0;
+		return (H.casts[id1] || 0) - a;
+	});
+	A(tap === 1, 'a finger on SPECIAL 1 fires it', tap);
+	await shoot(page, 'dive_buttons.png');
+	const learn = await E(page, () => {
+		const pl = G.Game.player, D = G.ExpDive, before = pl.slots.map(g => g[0].id), lv0 = pl.level;
+		const out = { before };
+		pl.level = 5; out.lv5 = D.offerLearn(pl);
+		pl.level = 4; const cards = D.offerLearn(pl) || [];
+		out.n = cards.length; out.types = cards.map(c => c.type); out.titles = cards.map(c => c.title + ' | ' + c.tag);
+		out.again = D.offerLearn(pl);
+		const sw = cards.find(c => c.type === 'swap');
+		if (sw) { sw.apply(pl); G.ExpDive.roles(pl); }
+		out.after = pl.slots.map(g => g[0].id); out.roles = pl.slots.map(g => !!g[0].xman); out.learnAt10 = D.LEARN_AT(10) && D.LEARN_AT(16) && D.LEARN_AT(22) && !D.LEARN_AT(7);
+		pl.level = lv0;
+		return out;
+	});
+	A(learn.lv5 === null && learn.n >= 2 && learn.types.filter(t => t === 'swap').length === learn.n - 1 && learn.again === null, 'Lv 4: a new special to learn, one card per special it can replace + a keep card (once; not on Lv 5)', JSON.stringify(learn));
+	A(learn.after[0] === learn.before[0] && learn.after.slice(1).some((id, i) => id !== learn.before[i + 1]) && JSON.stringify(learn.roles) === JSON.stringify(learn.before.map((x, i) => i > 0)) && learn.learnAt10, 'taking it replaces that special (the basic stays), the new move is a pressed special; again at 10 / 16 / 22', JSON.stringify(learn));
+
 
 	// ======================== 5. the alpha (floor 5)
 	const al = await E(page, () => {
@@ -245,6 +358,39 @@ try {
 	A(end.coins > rp.coins0 && end.best === 10 && end.runs === 1 && end.esc === 1, 'the Pokémonedas land in the shared wallet; the Expedition save keeps dive.forest.best = 10, a run, an escape', JSON.stringify(end));
 	A(/Dive · Mossy Woods: floor 10/.test(end.txt) && /You escaped/.test(end.txt) && !/Piso|asegurado|Escapaste/.test(end.txt), 'the run-over screen says it in English', end.txt);
 
+	// ======================== 6b. the phone (landscape 844 x 390, touch): the buttons fit, apart, clear of the Ultimate
+	{
+		const ctx2 = await browser.createBrowserContext();
+		const pg = await ctx2.newPage();
+		await pg.setViewport({ width: 844, height: 390, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+		await pg.evaluateOnNewDocument(BEFORE, SAVE);
+		pg.on('pageerror', e => errors.push('pageerr(phone): ' + e.message));
+		await pg.goto(`http://localhost:${PORT}/micasurvivor/`, { waitUntil: 'domcontentloaded' });
+		await waitFor(() => pg.evaluate(() => typeof G === 'object' && G.Game && document.getElementById('boot').classList.contains('hidden')), 30000);
+		await pg.evaluate(() => { const t = document.getElementById('tap-start'); if (t && !t.classList.contains('hidden')) t.click(); G.Audio.sfx = () => {}; G.Audio.music = () => {}; });
+		await sleep(400);
+		const ok = await E(pg, async () => { await G.Flow.play('exp-dive'); return G.Game.state; });
+		await pg.touchscreen.tap(420, 200);
+		await sleep(600);
+		const ph = await E(pg, () => {
+			const r = G.ExpDive.rects, k = (G.HUD && G.HUD.k) || 1, touch = G.Touch.active, W = innerWidth, H = innerHeight;
+			const ub = G.ZMoves.buttonRect(W / k, H / k), u = { x: ub.x * k, y: ub.y * k, s: ub.s * k };
+			const all = r ? { sp1: r.sp1, sp2: r.sp2, dodge: r.dodge, ult: u } : {};
+			const inside = Object.values(all).every(b => b.x >= 0 && b.y >= 0 && b.x + b.s <= W && b.y + b.s <= H);
+			const ks = Object.keys(all), over = [];
+			for (let i = 0; i < ks.length; i++) for (let j = i + 1; j < ks.length; j++) { const a = all[ks[i]], b = all[ks[j]]; if (a.x < b.x + b.s && b.x < a.x + a.s && a.y < b.y + b.s && b.y < a.y + a.s) over.push(ks[i] + '/' + ks[j]); }
+			return { touch, inside, over, all, W, H };
+		});
+		A(ok === 'playing' && ph.touch && ph.inside && ph.over.length === 0, 'the phone: SPECIAL 1 / 2, DODGE and the Ultimate on screen, none overlapping', JSON.stringify(ph));
+		const ptap = await E(pg, () => { const pl = G.Game.player; for (const g of pl.slots) for (const m of g) m.t = 0; const r = G.ExpDive.rects.dodge; return { x: r.x + r.s / 2, y: r.y + r.s / 2 }; });
+		await pg.touchscreen.tap(ptap.x, ptap.y);
+		await sleep(80);
+		const pd = await E(pg, () => ({ slide: G.Game.player.slideT > 0 || G.Game.player.slideCd > 0 }));
+		A(pd.slide, 'a real tap on DODGE dodges', JSON.stringify(pd));
+		if (SHOTS) { await sleep(300); fs.mkdirSync(SHOTS, { recursive: true }); await pg.screenshot({ path: path.join(SHOTS, 'dive_phone.png') }); console.log('     screenshot: dive_phone.png'); }
+		await ctx2.close();
+	}
+
 	// ======================== 7. a faint
 	const ft = await E(page, async () => {
 		const H = window.__t;
@@ -258,6 +404,121 @@ try {
 		return { pay: G.ExpDive.pay(), escaped: S.escaped, coins0 };
 	});
 	A(ft.pay === 100 + 20 && !ft.escaped, 'a faint pays the bank + a quarter of the stake (100 + 81 -> 120)', JSON.stringify(ft));
+
+	// ======================== 7b. the red ground (PokéDive's telegraphs), on the host
+	const tele = await E(page, async () => {
+		const H = window.__t, out = {};
+		G.Game.toUI && G.Game.toUI();
+		await new Promise(r => setTimeout(r, 200));
+		await G.Flow.play('exp-dive'); H.freeze(); H.sturdy();
+		const pl = G.Game.player, S = G.ExpDive.run;
+		H.thin(); for (const e of G.EnemyMgr.all()) { e.dead = true; e.fade = 0; }
+		pl.hurt = function (d) { if (this.invuln > 0) return; H.hit = (H.hit || 0) + d; this.invuln = 0.45; };
+		const brawler = G.DEX.find(p => !p.leg && p.bst < 400 && G.ExpClassic.defOf(p.dex, 0).shotCd == null && G.Enemies.behaviorOf(p) !== 'thief');
+		const mk = (dx, xk) => { const e = new G.Enemy(G.ExpClassic.defOf(brawler.dex, 0), pl.x + dx, pl.y, { hp: 1e7, dmg: 4, spd: 0.0001 }); e.dmg = 4; if (xk) e.xk = xk; G.EnemyMgr.add(e); e.xtcd = 0; return e; };
+		// a slam you stand in
+		const e1 = mk(30);
+		H.step(2);
+		out.slam = S.tg.length === 1 && S.tg[0].k === 'slam' && !!e1.xtele;
+		const x1 = e1.x; H.step(10); out.held = Math.abs(e1.x - x1) < 0.5;
+		out.block = JSON.parse(JSON.stringify(G.ExpDive.dBlock()));
+		H.hit = 0; for (let i = 0; i < 30 && S.tg.length; i++) H.step(1);
+		out.hitStanding = H.hit; out.released = !e1.xtele;
+		// a slam you dodge out of (the i-frames at the moment it lands)
+		pl.invuln = 0; e1.xtcd = 0; H.step(2);
+		const t1 = S.tg[0]; H.hit = 0;
+		while (t1 && t1.t < t1.T - 0.1) H.step(1);
+		pl.slideCd = 0; G.ExpDive.pad('confirm'); for (let i = 0; i < 6 && S.tg.length; i++) H.step(1);
+		out.hitDodging = H.hit;
+		e1.dead = true; e1.fade = 0;
+		// an alpha out of slam reach charges: a lane, then a dash along it
+		H.step(5); S.tg.length = 0;
+		const e2 = mk(4 * H.TS(), 'alpha'); e2.xtcd = 0;
+		H.step(2);
+		const t2 = S.tg.find(t => t.e === e2);
+		out.charge = t2 && t2.k; const x2 = e2.x;
+		for (let i = 0; i < 60 && S.tg.length; i++) H.step(1);
+		out.dashed = Math.round(Math.abs(e2.x - x2));
+		e2.dead = true;
+		return out;
+	});
+	A(tele.slam && tele.held, 'a brawler that reaches you winds up a slam (red circle) and holds still', JSON.stringify(tele));
+	A(tele.block && tele.block.dv === 1 && tele.block.tg && tele.block.tg.length === 1 && tele.block.tg[0][0] === 1, 'the slam is in the viewers\' block (tg)', JSON.stringify(tele.block));
+	A(tele.hitStanding > 0 && tele.released, 'standing in it when it lands: you are hit; then the foe moves again', JSON.stringify(tele));
+	A(tele.hitDodging === 0, 'dodging as it lands: no damage (the i-frames)', JSON.stringify(tele));
+	A(tele.charge === 'charge' && tele.dashed > 2 * 32, 'an alpha out of reach charges: a red lane, then it dashes along it', JSON.stringify(tele));
+
+	// ======================== 7c. viewers: a replay keeps the block; a fresh page as spectator, replay viewer, co-op guest
+	const rec = await E(page, async () => {
+		const H = window.__t, S = G.ExpDive.run, pl = G.Game.player;
+		H.thin(); H.toStairs(); H.step(24, 1 / 30, () => { if (S.floor !== 1) return false; H.toStairs(); });
+		S.stake = 77; S.bank = 33;
+		H.thin();
+		const e = new G.Enemy(G.ExpClassic.defOf(19, 0), pl.x + 30, pl.y, { hp: 1e7, dmg: 0, spd: 0.0001 }); G.EnemyMgr.add(e); e.xtcd = 0;
+		H.step(4);
+		const mid = JSON.parse(JSON.stringify(G.Spectate.snap()));
+		H.step(30);
+		G.Game.quit();
+		await new Promise(r => setTimeout(r, 300));
+		const last = G.Replay.last; await last.ready;
+		const rd = await G.Replay.open(last.code);
+		let n2 = 0, tg = 0;
+		for (let i = 0; i < rd.length; i++) { const s = rd.at(i), c = s.x && s.x.c; if (c && c.dv && c.f === 2) n2++; if (c && c.tg) tg++; }
+		return { seed: G.World.seed, mid, code: last.code, n2, tg, hash: mid.x && mid.x.th, bytes: last.code ? 1 : 0 };
+	});
+	A(rec.mid && rec.mid.x && rec.mid.x.c && rec.mid.x.c.dv === 1 && rec.mid.x.c.f === 2 && rec.mid.x.m === 'dive:forest' && rec.mid.x.z === 2, 'a live snapshot carries the Dive block (floor 2) and the floor\'s zone block', JSON.stringify(rec.mid && rec.mid.x));
+	A(rec.n2 > 0 && rec.tg > 0, `the replay keeps it (${rec.n2} frames on floor 2, ${rec.tg} with red ground)`, JSON.stringify({ n2: rec.n2, tg: rec.tg }));
+	{
+		const d = await bootPage();
+		const g = await E(d.page, async (rec) => {
+			const wait = ms => new Promise(r => setTimeout(r, ms));
+			const out = {};
+			// a live spectator
+			G.MicaAccount.name = () => 'viewer';
+			// (the Expedition code loaded first: a cold page's very first snapshot lands while it loads; a live view gets one every ~0.5 s)
+			await G.Expedition.load();
+			G.Spectate.watch = (u, h) => { h.snapshot(rec.mid, {}); };
+			G.WatchUI.watchLive('host');
+			for (let i = 0; i < 80 && !(G.World.zone && G.World.zone.hash === rec.hash); i++) await wait(50);
+			await wait(300);
+			const v = G.ExpDive.view;
+			out.spec = { hash: G.World.zone && G.World.zone.hash, floor: v && v.floor, stake: v && v.stake, tg: v && v.tg.length, shown: G.ExpDive.shown(), hud: G.ExpClassic.hudLine(G.WatchUI.player, G.Game.st) };
+			G.WatchUI.leave();
+			await wait(200);
+			// the replay viewer
+			const rd = await G.Replay.open(rec.code);
+			let at = -1;
+			for (let i = 0; i < rd.length; i++) { const s = rd.at(i); if (s.x && s.x.c && s.x.c.dv && s.x.c.f === 2) { at = i; break; } }
+			G.WatchUI.playReplay(rd, {});
+			for (let i = 0; i < 100 && !(G.World.zone && G.World.zone.dive); i++) { G.WatchUI.seek(rd.times[0]); await wait(50); }
+			G.WatchUI.togglePlay();
+			G.WatchUI.seek(rd.times[at]); await wait(200);
+			const v2 = G.ExpDive.view;
+			out.replay = { at, floor: v2 && v2.floor, zone: G.World.zone && G.World.zone.zone, map: G.World.zone && G.World.zone.map, hud: G.ExpClassic.hudLine(G.WatchUI.player, G.Game.st) };
+			G.WatchUI.leave();
+			await wait(200);
+			// a co-op guest: a host frame through G.Net's handler
+			const H = window.__t;
+			G.Flow.play('normal'); H.freeze();
+			G.World.reset(rec.seed);
+			const pl = G.Game.player, cb = new Proxy({}, { get: (t, k) => k === 'team' ? () => ({}) : () => {} });
+			G.Coop.begin({ seed: rec.seed, host: 'alice', members: [{ uid: 'alice', name: 'alice', dex: 4 }, { uid: G.Net.uid, name: 'me', dex: 4 }] }, pl, cb);
+			const frame = { k: 'f', t: 1, lv: 1, xp: 0, xn: 10, ki: 0, bo: 0, co: 0, tk: [0, 0], p: { alice: [0, 0, 0, 0, 100, 100, 0, '', 1, 78, 0, 1, 0, 0, 0] }, e: [], ev: [], ho: [], x: rec.mid.x };
+			H.deliver('alice', frame);
+			for (let i = 0; i < 100 && !(G.World.zone && G.World.zone.hash === rec.hash); i++) await wait(50);
+			H.deliver('alice', Object.assign({}, frame, { t: 2 }));
+			const v3 = G.ExpDive.view;
+			out.guest = { hash: G.World.zone && G.World.zone.hash, floor: v3 && v3.floor, bank: v3 && v3.bank };
+			G.Coop.end(); G.Game.quit();
+			return out;
+		}, rec);
+		A(g.spec && g.spec.hash === rec.hash && g.spec.floor === 2 && g.spec.stake === rec.mid.x.c.s && g.spec.tg >= 1 && g.spec.shown && new RegExp('^FLOOR 2 · MOSSY WOODS · 33 secured · ' + rec.mid.x.c.s + ' at stake').test(g.spec.hud || ''),
+			'a live spectator (a fresh page) sees the same floor, the HUD line and the red ground', JSON.stringify(g.spec || g));
+		A(g.replay && g.replay.at >= 0 && g.replay.floor === 2 && g.replay.zone === 2 && g.replay.map === 'dive:forest' && /^FLOOR 2/.test(g.replay.hud || ''),
+			'a replay viewer seeks to floor 2: the same floor rebuilt, its HUD line', JSON.stringify(g.replay || g));
+		A(g.guest && g.guest.hash === rec.hash && g.guest.floor === 2 && g.guest.bank === 33, 'a co-op guest rebuilds the floor from a host frame and shows its loot', JSON.stringify(g.guest || g));
+		await d.ctx.close();
+	}
 
 	// ======================== 8. viewers and routes
 	const vw = await E(page, async () => {

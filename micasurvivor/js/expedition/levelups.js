@@ -516,7 +516,7 @@ body.touch #xbag { bottom: 10px; } body.touch #xbag .xb-row { max-width: 146px; 
   function tick(dt) { uiT -= dt; if (uiT <= 0) { uiT = 0.25; syncUI(); } }
 
   return {
-    K, weights, odds, rollRarity, power, zone, need, xpNeed, begin, reset, offer, candidates, moveCands, trainCards, skip, skipsLeft,
+    K, weights, odds, rollRarity, power, zone, need, xpNeed, begin, reset, offer, candidates, moveCands, trainCards, skip, skipsLeft, swapCard,   // (Dive V4: swapCard, its learn cards)
     itemRoll, itemTake, heldRoll, onKill, row, applyRow, watch, record, syncUI, syncTools, renderPause, tick, mix,
     get run() { return S; }, get bagEl() { return bagEl; }
   };

@@ -290,3 +290,27 @@ Gate per the owner's batching rule: stack V0–V3 on `feat/micasurvivor-dive`, g
 6. **Routes.** **(Rec)** 8 routes at launch, with the Origin route (Arceus) unlocked by all 8 Seals.
 7. **Starting access.** **(Rec)** Same unlocks as base character select. Owning any family member in base unlocks it in Dive.
 8. **Coin rate.** **(Rec)** Tune so a floor-25 clear pays about the same as a 15-minute base run. Otherwise one mode becomes the only farm.
+
+---
+
+## Progress log
+- **V0+V1** (27cfa725): `exp-dive` registered; `js/expedition/dive-gen.js` CA floors; `micasurvivor_dive_floorgen_test`.
+- **V2+V3** (549640b7): `js/expedition/dive.js` floors / stairs / alpha / guardian / rescue / rope / loot / BST spawns; `micasurvivor_dive_test`.
+- **V4** — PokéDive's kit and controls on every input, the red ground, and viewer sync.
+  - **Kit:** the basic move auto-fires; specials fire on press (`m.xman` in `combat.js`).
+    - Inputs: 1/2/J/K, left/right click, pad X/Y, touch buttons.
+    - A press within 0.15 s of the cooldown ending is buffered.
+    - Specials do ×1.25 damage.
+    - New specials are offered at Lv 4/10/16/22 as swap cards, plus a keep card.
+  - **Dodge:** 0.2 s, invulnerable, 1.2 s cooldown. Bound to Space/Shift, pad A/B and a touch button. Dive has no hop.
+  - **Ultimate:** 3/Z/R on the keyboard; LB/LT/RT/L3 on the pad.
+  - **Red ground:** brawlers slam; alphas and guardians slam wider and charge.
+  - **Viewers:** Dive's block rides in the x block's `c` slot. Live spectators, replays (field 11) and co-op guests all see:
+    - the floor and its HUD line
+    - the loot
+    - the seal
+    - the rope
+    - the lost Pokémon
+    - the red ground
+  - **Known gap:** a cold spectator page skips the very first snapshot while the Expedition code loads. The next snapshot, about 0.5 s later, applies.
+  - **Not done yet:** co-op guests do not follow the host down the stairs on their own; that is V8.

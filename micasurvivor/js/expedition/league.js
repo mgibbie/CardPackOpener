@@ -606,7 +606,7 @@ G.ExpLeague = (() => {
     K, D, BY, FAM, PHYS, STATUS, stagesOf, finalsOf, nextOf, evoLevel, statsOf, classOf, factorOf,
     free, own, met, wild, playable, roster, progress, checkChallenges, counter, chText, readPick, setPick, pickFor,
     begin, reset, process, evolve, offerHook, cardsHook, row, applyRow, record, lines, renderPicker, select, genOf, GENS, records, ultOf,
-    statsFrom, megaCards, megaEvolve,
+    statsFrom, megaCards, megaEvolve, learnKit,   // (Dive V4: learnKit, the kit's 2nd and 3rd moves at the start)
     get run() { return S; }, get on() { return !!S && G.Modes.isExp(); }
   };
 })();
