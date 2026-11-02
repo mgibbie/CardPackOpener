@@ -522,6 +522,102 @@
 	},
 	"entries": [
 		{
+			"sha": "bddcc9e",
+			"date": "2026-11-02",
+			"kind": "micatro",
+			"title": "Pokermon r63: Gen 6 batch 3, the 5 Gen 6 Legendaries (#717-721)",
+			"body": "",
+			"cards": [],
+			"micatroMods": [
+				{
+					"id": "pokermon",
+					"name": "Pokermon",
+					"added": [
+						{
+							"key": "j_poke_yveltal",
+							"name": "Yveltal",
+							"set": "Joker",
+							"rarity": "legendary",
+							"cost": 20,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 22,
+								"y": 47
+							},
+							"soul": {
+								"x": 23,
+								"y": 47
+							}
+						},
+						{
+							"key": "j_poke_zygarde",
+							"name": "Zygarde",
+							"set": "Joker",
+							"rarity": "legendary",
+							"cost": 20,
+							"atlas": "@poke_AtlasJokersBasicGen06391",
+							"pos": {
+								"x": 2,
+								"y": 11
+							},
+							"soul": {
+								"x": 3,
+								"y": 11
+							}
+						},
+						{
+							"key": "j_poke_diancie",
+							"name": "Diancie",
+							"set": "Joker",
+							"rarity": "legendary",
+							"cost": 20,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 26,
+								"y": 47
+							},
+							"soul": {
+								"x": 27,
+								"y": 47
+							}
+						},
+						{
+							"key": "j_poke_hoopa",
+							"name": "Hoopa",
+							"set": "Joker",
+							"rarity": "legendary",
+							"cost": 20,
+							"atlas": "@poke_AtlasJokersBasicGen06391",
+							"pos": {
+								"x": 8,
+								"y": 11
+							},
+							"soul": {
+								"x": 9,
+								"y": 11
+							}
+						},
+						{
+							"key": "j_poke_volcanion",
+							"name": "Volcanion",
+							"set": "Joker",
+							"rarity": "legendary",
+							"cost": 20,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 0,
+								"y": 48
+							},
+							"soul": {
+								"x": 1,
+								"y": 48
+							}
+						}
+					]
+				}
+			]
+		},
+		{
 			"sha": "8c24cb7",
 			"date": "2026-11-02",
 			"kind": "micatro",
