@@ -29,9 +29,12 @@
  *   Frames        v1's fields (below) + three:
  *                   12 R   the other players' rows [x, y, dir, anim, hp, maxHp, flags, dex, level] (positions / Q) per
  *                          slot 1..: the differences from its previous row (0 = none); a row with no previous one is
- *                          absolute; null = the player left (0 for the whole field = nobody changed)
+ *                          absolute; null = the player left (0 for the whole field = nobody changed). MP polish: + 2
+ *                          fields, the Ultimate's charge % and the kit flags (KF: has an Ultimate / casting it, a Z-move
+ *                          ready / in use, Dynamax ready / on): a local partner's Ultimate, Z and Dynamax, an online
+ *                          partner's Ultimate. A U4 row has 9 fields (no kit shown); the header's rw stays 9 (the base)
  *                   13 PS  the other players' slow state [[moves [[id, lvl, evolved]], [item, item2]]] per slot 1..,
- *                          whole, when it changed
+ *                          whole, when it changed (MP polish: an online partner's items from its co-op frames' field 17)
  *                   14 A   the moves cast since the previous frame, by every player: [slot, move id, level, aim x 100,
  *                          evolved, time offset (tenths of a second, <= 0, from this frame's time)]: the viewer draws
  *                          every player's attacks as ghosts where they really aimed
@@ -105,7 +108,12 @@ G.Replay = (() => {
   };
   const STORE_KEY = 'micasurvivor_replays_v1';
   const EW = 6, KW = 3;  // enemy row fields after the id: dex, x, y, hp%, maxHp, flags · pickup: kind, x, y
-  const RW = 9;          // a player row (field 12): x, y, dir, anim, hp, maxHp, flags, dex, level
+  const RW = 9;          // a player row (field 12): x, y, dir, anim, hp, maxHp, flags, dex, level (the header's rw: the base fields)
+  // (MP polish: a row carries 2 more, RWX: the Ultimate's charge % and the kit flags KF below. A reader goes by each row's own
+  //  length, so a U4 tape (9 fields) still reads, and a U4 reader ignores the 2 new ones.)
+  const RWX = 2;
+  /** The kit flags (a player row's field 10, and the live snapshot's rows): what that player's HUD would show. */
+  const KF = { ULT: 1, ULT_CAST: 2, Z: 4, Z_READY: 8, Z_ON: 16, DYN: 32, DYN_READY: 64, DYN_ON: 128 };
   const stats = { frames: 0, recMs: 0, recMax: 0, obsMs: 0, obsFrames: 0, events: 0, segs: 0, casts: 0, uploads: 0, upErr: 0 };
   const H = () => window.__msurvNet || {};
 
@@ -181,7 +189,7 @@ G.Replay = (() => {
     if (LC && LC.on && LC.rows) {
       LC.rows.forEach((M, i) => {
         const o = M.pl, dn = LC.down && i === 0;
-        out.push({ key: 'l' + (M.n || i + 2), pl: o, hp: dn ? LC.mateHp : null, max: dn ? LC.mateMax : null,
+        out.push({ key: 'l' + (M.n || i + 2), pl: o, M, hp: dn ? LC.mateHp : null, max: dn ? LC.mateMax : null,
           d: { id: 'J' + (M.n || i + 2), name: o.mon.name + ' · J' + (M.n || i + 2), k: 'l', c: (M.n || i + 2) - 1 } });
       });
     }
@@ -209,11 +217,14 @@ G.Replay = (() => {
     return list;
   }
   const qa = v => Math.round((+v || 0) * 100);
+  const lq = [];   // (MP polish: the casts since the last live snapshot: [player, id, lvl, aim x 100, evolved, time])
   /**
    * U4: a move cast by any player of the run (G.Combat's tickMove for every real cast; G.Coop for an online partner's,
    * which arrives as a ghost). Only noted: drawn as a ghost when the tape plays.
    */
   function cast(pl, id, lvl, aim, evolved) {
+    // (MP polish: while a friend watches live, every player's casts also go in the next live snapshot: livePlayers)
+    if (pl && id && G.Spectate && G.Spectate.watchers > 0 && lq.length < K.CASTS_MAX * 2) lq.push([pl, String(id), lvl | 0, qa(aim), evolved ? 1 : 0, Math.round(G.Game.st.time * 10)]);
     const r = rec;
     if (!r || r.stopped || !pl || !id) return;
     let k = r.plSlot.get(pl);
@@ -331,14 +342,124 @@ G.Replay = (() => {
     return o;
   }
   /** U4: a player's row (field 12) and slow state (field 13). */
-  function rowOf(x) {
-    const o = x.pl;
-    return [q(o.x), q(o.y), (o.anim && o.anim.dir) | 0, G.Spectate.ANIMS.indexOf(o.anim && o.anim.cur) < 0 ? 0 : G.Spectate.ANIMS.indexOf(o.anim.cur),
-      Math.ceil(Math.max(0, x.hp != null ? x.hp : o.hp || 0)), Math.round(x.max != null ? x.max : o.maxHp || 1) || 1, flagsOf(o), o.dex | 0, o.level | 0];
+  function rowOf(x, live) {
+    const o = x.pl, qq = live ? Math.round : q;
+    return [qq(o.x), qq(o.y), (o.anim && o.anim.dir) | 0, G.Spectate.ANIMS.indexOf(o.anim && o.anim.cur) < 0 ? 0 : G.Spectate.ANIMS.indexOf(o.anim.cur),
+      Math.ceil(Math.max(0, x.hp != null ? x.hp : o.hp || 0)), Math.round(x.max != null ? x.max : o.maxHp || 1) || 1, flagsOf(o), o.dex | 0, o.level | 0, ...kitOf(x)];
+  }
+  /**
+   * MP polish: a partner's Ultimate charge % and kit flags (KF): a local partner's from G.LocalCoop (its Ultimate, Z-move and
+   * Dynamax), an online one's Ultimate from the row its co-op frames carry (pl.xw, js/expedition/core.js guestAir).
+   */
+  function kitOf(x) {
+    const o = x.pl, LC = G.LocalCoop;
+    const w = x.M && LC && LC.ultRow ? LC.ultRow(x.M) : Array.isArray(o.xw) ? o.xw : null;
+    let u = 0, kf = 0;
+    if (w) { u = w[0] | 0; kf |= KF.ULT | ((w[4] & 1) ? KF.ULT_CAST : 0); }
+    if (x.M && LC && LC.kitFlags) kf |= LC.kitFlags(x.M);
+    return [u, kf];
   }
   function slowRow(o) {
     const mv = (o.af && o.slots ? o.slots.flat() : o.moves || []).map(m => [m.id, m.lvl | 0, m.evolved ? 1 : 0]);
-    return [mv, [o.item || '', o.item2 || '']];
+    // (MP polish: an online partner's held items come in its co-op frames (net.it: js/net/coop.js field 17); its puppet holds none)
+    const it = o.remote && o.net && Array.isArray(o.net.it) ? o.net.it : [o.item || '', o.item2 || ''];
+    return [mv, [it[0] || '', it[1] || '']];
+  }
+
+  /**
+   * MP polish: the live snapshot's players (js/mica/spectate.js send, while a friend watches; null for a solo run): the same
+   * players, rows and casts a v2 tape records, so the live view follows anyone and draws everyone's casts (js/ui/watch-ui.js).
+   *   pp  [{id, name, dex, shiny, k, c}] by slot (0 = the publisher)   pr  rows by slot 1.. (world units; RW + RWX fields)
+   *   pz  slow state by slot 1.. [[moves], [item, item2]]              cs  casts [slot, id, lvl, aim x 100, evolved, time (tenths)]
+   */
+  function livePlayers() {
+    const list = present();
+    if (list.length < 2) { lq.length = 0; return null; }
+    const slot = new Map(list.map((x, i) => [x.pl, i]));
+    const out = {
+      pp: list.map(x => ({ id: x.d.id, name: x.d.name, dex: x.pl.dex | 0, shiny: x.pl.shiny ? 1 : 0, k: x.d.k, c: x.d.c | 0 })),
+      pr: list.slice(1).map(x => rowOf(x, true)),
+      pz: list.slice(1).map(x => slowRow(x.pl))
+    };
+    const cs = [];
+    for (const c of lq) { const k = slot.get(c[0]); if (k != null) cs.push([k, c[1], c[2], c[3], c[4], c[5]]); }
+    lq.length = 0;
+    if (cs.length) out.cs = cs.slice(-K.CASTS_MAX);
+    return out;
+  }
+  /** MP polish: a live snapshot (with livePlayers' fields) seen from player `follow` (a copy: the snapshot stays as it came). */
+  function liveView(s, follow) {
+    if (!s || !Array.isArray(s.pr) || !Array.isArray(s.pp)) return s;
+    const v = Object.assign({}, s);
+    pov(v, { players: s.pp, rows: s.pr, slow: s.pz || [], casts: (s.cs || []).map(c => [c[0], c[1], c[2], c[3] / 100, c[4], c[5]]), follow: follow | 0, by: s.pp[0] && s.pp[0].name });
+    return v;
+  }
+  /** The slot-0 player's kit flags, from its snapshot (s.z, s.dy, the Ultimate row x.w.p). */
+  function kf0(s) {
+    let k = 0;
+    const w = s.x && s.x.w && s.x.w.p;
+    if (w) k |= KF.ULT | ((w[4] & 1) ? KF.ULT_CAST : 0);
+    if (s.z) k |= KF.Z | (!s.z[1] && !s.z[2] ? KF.Z_READY : 0) | (s.z[1] ? KF.Z_ON : 0);
+    if (s.dy) k |= KF.DYN | (!s.dy[0] && !s.dy[2] ? KF.DYN_READY : 0) | (s.dy[0] ? KF.DYN_ON : 0);
+    return k;
+  }
+  const XQ = ['a', 'l', 'u', 'w', 'k', 'v'];   // the x block's per-player rows {p, q: {name: row}} (air, League, bag, Ultimate, meta, Survival)
+  /**
+   * U4 (shared by the replay reader and, MP polish, the live view): every player of the frame; the one followed becomes the
+   * snapshot's own (p, me, its moves and items), everyone else a partner row
+   *   [name, dex, shiny, x, y, hp, maxHp, flags, dir, 'v', colour, slot, moves | null, {lv, it, u, kf}]
+   * (u: the Ultimate's charge % or null; kf: KF). s.cs = the frame's casts [slot, id, lvl, aim (rad), evolved, time].
+   * o: {players, rows (by slot 1.., world units), slow (by slot 1..), casts, follow, by, mv0}. Mutates s (a fresh object).
+   */
+  function pov(s, o) {
+    const players = o.players || [], rows = o.rows || [], slow = o.slow || [], follow = o.follow | 0;
+    const all = [], mv0 = o.mv0 || s.mv || [], it0 = s.it || ['', ''];
+    const d0 = players[0] || {};
+    const w0 = s.x && s.x.w && s.x.w.p;
+    all.push({ slot: 0, name: d0.name || o.by || '', dex: s.me[0], shiny: s.me[1], x: s.p[0], y: s.p[1], dir: s.p[2], anim: s.p[3], hp: s.p[4], max: s.p[5], fl: s.p[6], lv: s.lv[0], c: 0, k: 'me',
+      u: w0 ? w0[0] | 0 : null, kf: kf0(s) });
+    for (let j = 0; j < rows.length; j++) {
+      const r = rows[j];
+      if (!r) continue;
+      const d = players[j + 1] || {};
+      const kf = r.length > RW + 1 ? r[RW + 1] | 0 : 0;
+      all.push({ slot: j + 1, name: d.name || '?', dex: r[7] || d.dex || 25, shiny: d.shiny ? 1 : 0, x: r[0], y: r[1], dir: r[2], anim: r[3], hp: r[4], max: r[5], fl: r[6], lv: r[8], c: d.c | 0, k: d.k || 'o',
+        u: kf & KF.ULT ? r[RW] | 0 : null, kf });
+    }
+    const me = all.find(x => x.slot === follow) || all[0];
+    s.pi = me.slot;
+    s.np = players.length || 1;
+    if (me.slot !== 0) {
+      s.p = [me.x, me.y, me.dir, me.anim, me.hp, me.max, me.fl];
+      s.me = [me.dex, me.shiny];
+      const ps = slow[me.slot - 1];
+      s.mv = ps ? ps[0] : [];
+      s.it = ps ? ps[1] : ['', ''];
+      s.ac = 0; s.af = 1; delete s.sg;
+      if (me.lv) s.lv = [me.lv, s.lv[1], s.lv[2]];
+      // (the recorder's own Z-move / Dynamax / Team / level-up screen are not this player's)
+      delete s.z; delete s.dy; delete s.tm; delete s.ds; delete s.dn; s.lu = 0;
+      // (MP polish: nor are the x block's per-player rows: the followed player's become p, the recorder's go in q by its name)
+      if (s.x) {
+        const x = Object.assign({}, s.x);
+        for (const k of XQ) {
+          const b = x[k];
+          if (!b || typeof b !== 'object' || !('p' in b || 'q' in b)) continue;
+          const qq = Object.assign({}, b.q || {}), nb = Object.assign({}, b);
+          nb.p = qq[me.name] || null; delete qq[me.name];
+          if (b.p) qq[all[0].name] = b.p;
+          nb.q = qq; x[k] = nb;
+        }
+        s.x = x;
+      }
+    }
+    const mt = all.filter(x => x !== me).map(x => {
+      const ps = x.slot > 0 ? slow[x.slot - 1] : null;
+      return [x.name, x.dex, x.shiny, x.x, x.y, x.hp, x.max, x.fl, x.dir, 'v', x.c, x.slot, x.slot === 0 ? mv0 : ps ? ps[0] : null,
+        { lv: x.lv | 0, it: x.slot === 0 ? it0 : ps ? ps[1] : ['', ''], u: x.u, kf: x.kf }];
+    });
+    if (mt.length) s.mt = mt; else delete s.mt;
+    s.cs = o.casts || [];
   }
   function encode(s, kd, pls) {
     const r = rec;
@@ -598,45 +719,11 @@ G.Replay = (() => {
       if (v2) povOf(s, st, follow);
       return s;
     }
-    /**
-     * U4: every player of the frame; the one followed becomes the snapshot's own (p, me, its moves and items), everyone
-     * else a partner row [name, dex, shiny, x, y, hp, maxHp, flags, dir, 'v', colour, slot]. s.cs = the frame's casts.
-     */
+    /** U4: frame i seen from player `follow` (the shared pov(): the decoder's rows in world units; slot 0's moves from its slow state). */
     function povOf(s, st, follow) {
-      const all = [];
-      const d0 = players[0] || {};
-      all.push({ slot: 0, name: d0.name || h.by || h.mon || '', dex: s.me[0], shiny: s.me[1], x: s.p[0], y: s.p[1], dir: s.p[2], anim: s.p[3], hp: s.p[4], max: s.p[5], fl: s.p[6], lv: s.lv[0], c: 0, k: 'me' });
-      for (let j = 0; j < st.R.length; j++) {
-        const r = st.R[j];
-        if (!r) continue;
-        const d = players[j + 1] || {};
-        all.push({ slot: j + 1, name: d.name || '?', dex: r[7] || d.dex || 25, shiny: d.shiny ? 1 : 0, x: r[0] * Q, y: r[1] * Q, dir: r[2], anim: r[3], hp: r[4], max: r[5], fl: r[6], lv: r[8], c: d.c | 0, k: d.k || 'o' });
-      }
-      const me = all.find(x => x.slot === follow) || all[0];
-      s.pi = me.slot;
-      s.np = players.length || 1;
-      if (me.slot !== 0) {
-        s.p = [me.x, me.y, me.dir, me.anim, me.hp, me.max, me.fl];
-        s.me = [me.dex, me.shiny];
-        const ps = st.PS && st.PS[me.slot - 1];
-        s.mv = ps ? ps[0] : [];
-        s.it = ps ? ps[1] : ['', ''];
-        s.ac = 0; s.af = 1; delete s.sg;
-        if (me.lv) s.lv = [me.lv, s.lv[1], s.lv[2]];
-        // (the recorder's own Z-move / Dynamax / Team / level-up screen are not this player's)
-        delete s.z; delete s.dy; delete s.tm; delete s.ds; delete s.dn; s.lu = 0;
-      }
-      const mt = all.filter(x => x !== me).map(x => {
-        const row = [x.name, x.dex, x.shiny, x.x, x.y, x.hp, x.max, x.fl, x.dir, 'v', x.c, x.slot];
-        const ps = x.slot > 0 && st.PS ? st.PS[x.slot - 1] : null;
-        if (x.slot === 0) row.push(S0mv(s, st)); else if (ps) row.push(ps[0]);
-        return row;
-      });
-      if (mt.length) s.mt = mt; else delete s.mt;
-      s.cs = st.CS;
+      pov(s, { players, rows: st.R.map(r => (r ? [r[0] * Q, r[1] * Q, ...r.slice(2)] : null)), slow: st.PS || [], casts: st.CS, follow,
+        by: h.by || h.mon || '', mv0: (st.S && st.S.mv) || [] });
     }
-    // the recorder's own moves (for the orbit ghosts of slot 0 when someone else is followed)
-    const S0mv = (s, st) => (st.S && st.S.mv) || [];
     return { h, v: data.v, ev: data.ev || [], times, length: frames.length, at, players, get duration() { return times.length ? times[times.length - 1] : 0; },
       get t0() { return times.length ? times[0] : 0; } };
   }
@@ -910,7 +997,7 @@ G.Replay = (() => {
   }
 
   return {
-    K, stats, thinDt, halve, begin, observe, finish, share, fetchShared, open, openEntry, reader, session, sessionOfCodes, sessionOfReaders, pack, unpack, linkOf, cast,
+    K, KF, RW, RWX, stats, thinDt, halve, begin, observe, finish, livePlayers, liveView, pov, share, fetchShared, open, openEntry, reader, session, sessionOfCodes, sessionOfReaders, pack, unpack, linkOf, cast,
     /** For tests: the entity-table codec (encode a frame / apply it). */
     _codec: { table, applyTable, applyRows },
     local: readStore,

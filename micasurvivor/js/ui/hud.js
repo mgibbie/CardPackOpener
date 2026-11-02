@@ -683,19 +683,22 @@ G.HUD = (() => {
   }
   function drawMateChip(ctx, w, h, pl, px, top, M, idx) {
     const LC = G.LocalCoop, o = M.pl;
+    ctx0 = ctx;
     if (!o) return;
     const col = M.full ? M.color : LC.COLOR, p2 = M.ctrl === 'pad';
     ctx.save();
     ctx.textAlign = 'left';
     ctx.font = F(800, 10);
     const label = o.mon.name + ' · ' + (p2 ? 'J' + M.n : 'IA');
-    const tw = ctx.measureText(G.I18n.t(label)).width, cw = tw + 28 + (p2 ? 18 : 0);
+    const kit = M.full ? mateKit(M) : null;
+    const tw = ctx.measureText(G.I18n.t(label)).width, cw = tw + 28 + (p2 ? 18 : 0) + (kit ? kit.w : 0);
     roundRect(ctx, px, top, cw, 17, 7);
     ctx.fillStyle = 'rgba(0,0,0,.55)'; ctx.fill();
     G.Icons.draw(ctx, 'm_coop', px + 4, top + 2, 13);
     ctx.fillStyle = col;
     ctx.fillText(label, px + 21, top + 12);
     if (p2 && G.Pad) G.Pad.drawGlyph(ctx, 'lstick', px + 23 + tw, top + 1, 15);
+    if (kit) kit.draw(px + 24 + tw + (p2 ? 18 : 0), top);
     mark(idx ? 'coop' + (idx + 1) : 'coop', px, top, cw, 17);
 
     // flecha hacia el compañero si no se ve
@@ -729,6 +732,40 @@ G.HUD = (() => {
     }
     ctx.restore();
   }
+  /**
+   * MP polish: a full-kit partner's own kit on its chip: its Ultimate's meter (Expedition / Dive: a bar that fills in 95 s, gold
+   * when ready, "casting" while it plays) or, in a base run, its Z-move and Dynamax badges (lit when ready, the cooldown's
+   * seconds while recharging, pulsing in use). -> {w, draw(x, y)} or null when it has none of them.
+   */
+  function mateKit(M) {
+    const LC = G.LocalCoop, KF = G.Replay && G.Replay.KF;
+    const u = LC.ultRow ? LC.ultRow(M) : null, kf = KF && LC.kitFlags ? LC.kitFlags(M) : 0;
+    const parts = [];
+    if (u) parts.push({ w: 46, draw: (ctx, x, y) => {
+      const frac = G.U.clamp(u[0] / 100, 0, 1), cast = !!(u[4] & 1);
+      bar(ctx, x, y + 5, 40, 7, cast ? 1 : frac, cast ? '#c89bff' : frac >= 1 ? '#ffd23f' : '#9ad0ff', 'rgba(255,255,255,.12)');
+    } });
+    if (kf & KF.Z) parts.push(badge('Z', !!(kf & KF.Z_ON), !!(kf & KF.Z_READY), M.z ? M.z.cd : 0, '#ffd98a'));
+    if (kf & KF.DYN) parts.push(badge('MAX', !!(kf & KF.DYN_ON), !!(kf & KF.DYN_READY), M.dy && !M.dy.active ? M.dy.cd : 0, '#ff8aa8'));
+    if (!parts.length) return null;
+    const w = parts.reduce((a, p) => a + p.w + 3, 0);
+    return { w, draw: (x, y) => { let xx = x; for (const p of parts) { p.draw(ctx0, xx, y); xx += p.w + 3; } kitDraws.push([M.n, u ? u[0] : null, kf]); if (kitDraws.length > 12) kitDraws.shift(); } };
+  }
+  let ctx0 = null;   // (the chip's canvas, for mateKit's painters)
+  const kitDraws = [];   // (for tests: the last chips' kits drawn [player, Ultimate %, kit flags])
+  function badge(txt, on, ready, cd, col) {
+    const w = txt.length * 7 + 10;
+    return { w, draw: (ctx, x, y) => {
+      const beat = 0.5 + 0.5 * Math.sin(performance.now() * 0.01);
+      roundRect(ctx, x, y + 2, w, 13, 5);
+      ctx.fillStyle = on ? 'rgba(255,90,140,' + (0.45 + 0.4 * beat).toFixed(2) + ')' : ready ? 'rgba(60,46,10,.9)' : 'rgba(20,24,36,.85)'; ctx.fill();
+      ctx.save();
+      ctx.font = '800 9px Arial,Helvetica,sans-serif'; ctx.textAlign = 'center';
+      ctx.fillStyle = on || ready ? col : 'rgba(170,180,200,.75)';
+      ctx.fillText(new String(!on && !ready && cd > 0 ? Math.ceil(cd) + '' : txt), x + w / 2, y + 12);   // eslint-disable-line no-new-wrappers
+      ctx.restore();
+    } };
+  }
   function drawSpectating(ctx, w, h) {
     const LC = G.LocalCoop;
     // caído: espectas a tu compañero
@@ -753,6 +790,7 @@ G.HUD = (() => {
   return {
     draw, roundRect, bar, toHud, avoid,
     /** MicaSurvivor (M5 lote 10): la escala del último fotograma y los rectángulos de sus elementos (unidades del HUD). */
-    get k() { return hudK; }, rects: () => rects.map(r => Object.assign({}, r)), get minimap() { return mm; }
+    get k() { return hudK; }, rects: () => rects.map(r => Object.assign({}, r)), get minimap() { return mm; },
+    get kitDraws() { return kitDraws.slice(); }   // (MP polish, for tests)
   };
 })();

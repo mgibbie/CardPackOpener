@@ -172,7 +172,8 @@ G.ZMoves = (() => {
   function can(pl) {
     return !!pl && !pl.dead && !pl.coopDown && !pl.remote && !!G.Game && G.Game.state === 'playing' && !(G.Judgment && G.Judgment.cinematic)   // (M5 lote 12a: no mientras espectas, main.gd 1243 / 1267)
       && state === '' && !used && pl.level >= MIN_LEVEL && !!activeType(pl) && !blocked()
-      && !G.World.zone;   // (MicaSurvivor DLC D6: an Expedition zone has its own Ultimate instead, js/expedition/ultimates.js)
+      && !G.World.zone   // (MicaSurvivor DLC D6: an Expedition zone has its own Ultimate instead, js/expedition/ultimates.js)
+      && !(G.LocalCoop && G.LocalCoop.zCine);   // (MP polish: not while a local partner's Z cinematic plays)
   }
   function tryStart(pl) {
     if (!can(pl)) return false;
@@ -1057,6 +1058,10 @@ G.ZMoves = (() => {
   /** El cartel de la cinemática: rayos, banda, líneas de velocidad, el cristal y el nombre que cae letra a letra. */
   function drawCine(ctx, w, h) {
     if (state !== 'cine') return;
+    cineArt(ctx, w, h, t, ztype);
+  }
+  /** The cinematic's card at time t of type ztype (MP polish: a local partner's Z plays the same one, js/systems/localcoop.js). */
+  function cineArt(ctx, w, h, t, ztype) {
     const k = G.U.clamp(Math.min(w / 1280, h / 720), 0.5, 1.4);
     const tc = rgb(G.U.TYPE_COLOR[ztype] || '#ffffff');
     const lite = tc.map(v => Math.min(255, v + 77));
@@ -1213,7 +1218,7 @@ G.ZMoves = (() => {
   return {
     ORDER, NEED, COOLDOWN, MIN_LEVEL, CINE_T, BOSS_CAP, CRYSTAL_P, ZMIS_COINS, BLOCKED_MODES, DEF, ZMIS,
     unlocked, unlockedList, typesFor, typeFor, choose, grantCrystal, rollCrystal, stat, zdone, zcheck,
-    reset, can, tryStart, cineTick, update, updateWorld, drawWorld, drawDim, drawCine, drawButton, buttonRect, blocked, activeType, area, effect,
+    reset, can, tryStart, cineTick, update, updateWorld, drawWorld, drawDim, drawCine, cineArt, drawButton, buttonRect, blocked, activeType, area, effect,
     get busy() { return busy(); }, get cine() { return state === 'cine'; }, get state() { return state; }, get t() { return t; },
     get used() { return used; }, get cd() { return cd; }, get type() { return ztype; }, get fx() { return fx; }, get wisps() { return wisps.length; }
   };

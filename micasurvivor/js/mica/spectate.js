@@ -20,6 +20,12 @@
  *             latest snapshot, or {waiting} (live, but no snapshot yet: the publisher notices you within ~10 s),
  *             or {live:false} / {over}. Each poll heartbeats msurvspec:<them>:<you> (at most every 4 s).
  *
+ *   players   MP polish (the v2 model, js/mica/replay.js livePlayers): a published snapshot of a run with partners (local
+ *             2-4 or online) also carries pp (every player: id, name, dex, shiny, kind, colour), pr (the others' rows, as a v2
+ *             tape's field 12 in world units: + level, the Ultimate's charge, the kit flags), pz (their moves and held items)
+ *             and cs (every player's casts since the last one). The viewer follows any of them (G.Replay.liveView). A solo
+ *             snapshot is unchanged; a snapshot without pp (an older publisher) shows as before.
+ *
  * Test hooks (window.__msurvNet, set before the page loads): {specCheckMs, specPubMs, specPollMs}.
  *   G.Spectate.snap() · runStarted() · tick() · runEnded(summary) · watch(user, handlers) · unwatch() · stats
  */
@@ -29,7 +35,8 @@ G.Spectate = (() => {
     PUB_MS: 1000, CHECK_MS: 10000, SLOW_MS: 5000, POLL_MS: 1000,
     NEAR: 720,           // enemies this close (world units) go in a snapshot...
     BOSS_NEAR: 1600,     // ...bosses this close
-    MAX_E: 80, MAX_PK: 24, MAX_XP: 40, PK_NEAR: 520
+    MAX_E: 80, MAX_PK: 24, MAX_XP: 40, PK_NEAR: 520,
+    SNAP_MAX: 23000      // (MP polish: under server/mp.mjs MSURV_SNAPSHOT_MAX = 24 000, with room for the over summary)
   };
   const pubMs = () => +H().specPubMs || K.PUB_MS, checkMs = () => +H().specCheckMs || K.CHECK_MS, pollMs = () => +H().specPollMs || K.POLL_MS;
   const ANIMS = ['Idle', 'Walk', 'Attack', 'Shoot', 'Charge', 'Hurt', 'Faint'];
@@ -132,6 +139,22 @@ G.Spectate = (() => {
     return s;
   }
 
+  /**
+   * The snapshot as published: snap() + (MP polish) with partners, every player as a v2 tape records them (rows, slow state,
+   * casts: js/mica/replay.js livePlayers), so the viewer follows anyone. The v1 partner rows (mt) stay, for an older viewer.
+   */
+  function pubSnap(extra) {
+    const s = snap(extra);
+    const lp = s && G.Replay && G.Replay.livePlayers ? G.Replay.livePlayers() : null;
+    if (lp) {
+      Object.assign(s, lp);
+      // (never past the server's cap, MSURV_SNAPSHOT_MAX: the casts go first, then the partners' moves)
+      if (JSON.stringify(s).length > K.SNAP_MAX) delete s.cs;
+      if (JSON.stringify(s).length > K.SNAP_MAX) delete s.pz;
+    }
+    return s;
+  }
+
   /** A snapshot's pickup kind -> [kind, value] for G.Pickups.addRemote. */
   function pickupKind(k) {
     if (k >= 100) { const id = itemIds()[k - 100]; return id ? ['item', id] : ['coin', 0]; }
@@ -195,7 +218,7 @@ G.Spectate = (() => {
     const watched = p.watchers > 0 || (over && p.watchers > 0);
     const body = { run: p.run, label: labelNow(), mode: G.Game.mode || 'normal', dex: G.Game.player ? G.Game.player.dex : 0, group: groupNow(), over: !!over };
     if (watched) {
-      const s = snap({ ev: p.evq.splice(0), kd: kdq.splice(0), w: Math.round(performance.now()) });
+      const s = pubSnap({ ev: p.evq.splice(0), kd: kdq.splice(0), w: Math.round(performance.now()) });
       if (s) {
         if (over && summary) s.over = summary;
         body.snapshot = s; body.seq = ++p.seq;
@@ -279,7 +302,7 @@ G.Spectate = (() => {
   }
 
   return {
-    K, ANIMS, PK, snap, pickupKind, runStarted, tick, runEnded, events, died, watch, unwatch, stats,
+    K, ANIMS, PK, snap, pubSnap, pickupKind, runStarted, tick, runEnded, events, died, watch, unwatch, stats,
     onWatchers: null,
     /** For tests and the HUD line: who watches you right now, and whether the publisher runs. */
     get watchers() { return pub ? pub.watchers : 0; }, get watcherNames() { return pub ? (pub.names || []) : []; },

@@ -79,7 +79,7 @@ G.Dynamax = (() => {
   }
   function can(pl) {
     return !!pl && !pl.dead && !pl.coopDown && !pl.remote && !!G.Game && G.Game.state === 'playing' && !(G.Judgment && G.Judgment.cinematic)   // (M5 lote 12a: no mientras espectas, main.gd 1243 / 1267)
-      && !(G.ZMoves && G.ZMoves.cine) && unlocked() && !used && !active && pl.level >= MIN_LEVEL && !blocked();
+      && !(G.ZMoves && G.ZMoves.cine) && !(G.LocalCoop && G.LocalCoop.zCine) && unlocked() && !used && !active && pl.level >= MIN_LEVEL && !blocked();   // (MP polish: nor in a partner's Z cinematic)
   }
   function tryStart(pl) {
     if (!can(pl)) return false;
@@ -191,12 +191,12 @@ G.Dynamax = (() => {
   }
 
   /** Onda Max: golpea a los enemigos cercanos con el tipo del Pokémon; cada tercera es más grande. */
-  function maxPulse(pl, big) {
-    const z = G.ZMoves.area(pl, type, pl.x, pl.y, (30 + 8 * pl.level) * pl.atk * (big ? BIG_K : 1));
+  function maxPulse(pl, big, ty = type) {   // (MP polish: ty, a local partner's own type: js/systems/localcoop.js)
+    const z = G.ZMoves.area(pl, ty, pl.x, pl.y, (30 + 8 * pl.level) * pl.atk * (big ? BIG_K : 1));
     z.dsrc = 'dyna';   // MicaSurvivor (M5 lote 11): en el desglose de daño, a "Dynamax" (no al Movimiento Z)
     const r = big ? BIG_R : PULSE_R;
     z.boom(z.cx, z.cy, r, big ? 6 : 3);
-    const st = STATUS[type] || ['', 0, 0];
+    const st = STATUS[ty] || ['', 0, 0];
     z.hit(z.cx, z.cy, r, 1, big ? 260 : 140, st[0], st[1], st[2]);
     if (big) z.ringBurst('star', 14, 40, 520, 0.5, 1.6);
     return z;

@@ -415,6 +415,8 @@ G.ExpUlt = (() => {
     }
     return true;
   }
+  /** MP polish: a local partner's cast (js/systems/localcoop.js castUlt) shows the cut-in too: its sprite, its Ultimate's name. */
+  function cutIn(p, head, tier) { if (p) vcut = { p, head, tier: tier | 0, t: 0 }; }
   /** The ghosts' and the viewer cut-in's clock (each render: the watch screen and a co-op guest run no Expedition tick). */
   function viewTick(dt) {
     if (vcut) { vcut.t += dt; if (vcut.t > K.CUT_T) vcut = null; }
@@ -613,7 +615,7 @@ G.ExpUlt = (() => {
 
   return {
     K, SIGS, SIG_CODES, codeFor, tierOfRow, nameOf, dmgOf, typeOfCode, typeCode, isType, makeFx, copiesOf,
-    begin, reset, onKill, hurt, guard, hold, tick, press, tryCast, canCast, row, applyRow, viewTick,
+    begin, reset, onKill, hurt, guard, hold, tick, press, tryCast, canCast, row, applyRow, viewTick, cutIn,
     drawDim, drawCut, drawButton, auto, setAuto, record, syncPause,
     get run() { return S; }, get ghosts() { return ghosts.length; }, get vcut() { return vcut; },
     get cutDrawn() { return cutDrawn; }, get cutLast() { return cutLast; }, get autoRect() { return autoRect; },

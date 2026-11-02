@@ -52,6 +52,9 @@
  *     RB / RT / LB. Expedition: hop on A, slide on B.
  *   - the rest is today's partner: it never takes hits while you stand; if you fall you spectate the first partner, which
  *     takes your hits for 20 s; leash 520; the camera frames you and every pad partner.
+ * MP polish: a full-kit partner's Ultimate shows its cut-in (G.ExpUlt.cutIn) and its meter on its HUD chip; in a base run each
+ * has its own Z-move and Dynamax (below, "a partner's Z-move and Dynamax"), on its chip too. ultRow / kitFlags feed the replay's
+ * rows and the live snapshot (js/mica/replay.js kitOf).
  * The legacy partner (the old screen's "Co-op Mode" card, mode 'coop', and the Expedition's micasurvivorexp_mate setting)
  * plays exactly as before (above): one partner, one auto move at ×0.8 of your attack. Neither ever goes online (an online
  * run is one player per device) and no local run reaches a solo board (game.js endRun; js/expedition/core.js boardOk).
@@ -161,7 +164,7 @@ G.LocalCoop = (() => {
   // aiSpT, ult {c, fx, ready}, member, kit, kitN, color}. The legacy getters below read the first one.
   let on = false, full = false, mates = [], joinPads = [];
   let down = false, downT = 0, mateHp = 1, mateMax = 1, mateInv = 0, tpN = 0;
-  const reset = () => { on = false; full = false; mates = []; joinPads = []; down = false; downT = 0; mateHp = mateMax = 1; mateInv = 0; tpN = 0; };
+  const reset = () => { on = false; full = false; mates = []; joinPads = []; down = false; downT = 0; mateHp = mateMax = 1; mateInv = 0; tpN = 0; zCiner = null; };
   const first = () => mates[0] || null;
 
   /** El movimiento del compañero (main.gd _partner_move_for). */
@@ -235,7 +238,7 @@ G.LocalCoop = (() => {
     if (!on || !full || !isExp()) return;
     for (const M of mates) expKit(M, pl);
   }
-  function end() { for (const M of mates) G.Projectiles.clearOrbs(M.pl); if (G.Game && G.Game.player) G.Game.player.coopDown = false; reset(); }
+  function end() { for (const M of mates) { G.Projectiles.clearOrbs(M.pl); if (M.dy && M.dy.active) dynStop(M); } if (G.Game && G.Game.player) G.Game.player.coopDown = false; reset(); }
 
   // ---------------- U2: the full kits ----------------
   /** Base: its start move (+ a second one with the Repertoire upgrade), every slot firing at the run's move-damage factor. */
@@ -494,6 +497,7 @@ G.LocalCoop = (() => {
     }
     G.Combat.tick(dt, mate, G.Game.st ? G.Game.st.time : 0);
     if (isExp()) ultTick(M, dt, bt, tg);
+    else { kitPress(M, bt); zTick(M, dt); dynTick(M, dt); }   // (MP polish: its own Z-move and Dynamax, base modes)
   }
 
   // ---------------- U2: a partner's Ultimate (its pad's Y / RB / RT in Expedition; RB / RT / LB in a Dive) ----------------
@@ -527,10 +531,183 @@ G.LocalCoop = (() => {
     if (!c.fx) return false;
     p.xult = true;
     M.ults = (M.ults || 0) + 1;
+    // (MP polish: its row (ultRow) says what it casts, for the replay / a spectator; and the cut-in plays, as for player 1's)
+    c.code = code | 0; c.tier = tier | 0; c.n = (c.n | 0) + 1;
+    if (U.cutIn) U.cutIn(p, code, tier);
     G.Audio.sfx('legend');
     G.FX.ring(p.x, p.y, 10, 240, p.tagColor || '#ffffff', 0.7, 5);
     G.Spawner.say(G.I18n.f('¡Definitivo de {x}!', p.mon.name), 2);
     return true;
+  }
+
+  /**
+   * MP polish: a partner's Ultimate row, as G.ExpUlt.row is player 1's: [charge %, pieces cast, code, tier, flags (1 casting), the
+   * cast's code] (an Expedition / Dive run with full kits; else null). The replay and the live snapshot carry it (js/mica/replay.js
+   * kitOf, and the x block's w.q by the partner's name: js/expedition/core.js ultSnap), so a viewer shows its meter and cut-in.
+   */
+  function ultRow(M) {
+    if (!on || !full || !M || !isExp() || !G.ExpUlt) return null;
+    const c = M.ult, U = G.ExpUlt, p = M.pl;
+    let code = c.code | 0;
+    if (!code) try { code = M.member ? U.codeFor(M.member, p.dex) : U.typeCode((p.mon.types && p.mon.types[0]) || 'normal'); } catch (e) { code = 0; }
+    return [c.fx ? 0 : Math.round(c.c * 100), c.n | 0, code, c.tier | 0, c.fx ? 1 : 0, code];
+  }
+  /** Its name in the replay / the live snapshot (js/mica/replay.js present: "Bulbasaur · J2"). */
+  const tagName = M => M.pl.mon.name + ' · J' + M.n;
+
+  // ---------------- MP polish: a partner's Z-move and Dynamax (base modes; G.ZMoves / G.Dynamax are player 1's) ----------------
+  // Each full-kit partner of a base run has its own: its active Pokémon's Z (the save's crystals: the shared account), from level
+  // 15, 240 s after it ends, never in the Tower, a rift's arena or Arceus's Judgment; and its own Dynamax (the save's unlock), from
+  // level 20, 60 s, 240 s after it ends, never in the Tower or a Dive (G.Dynamax.blocked). One Z cinematic at a time (the world
+  // holds for it, as for player 1's: game.js calls zCineTick), one Dynamax at a time per player. Its pad fires them with the
+  // buttons player 1's pad uses (G.Pad.table: zmove / ztrigger / reroll, dynamax / dtrigger / dynx / ban). The AI doesn't.
+  let zCiner = null;
+  const zOf = M => M.z || (M.z = { used: false, cd: 0, state: '', t: 0, fx: null, type: '', n: 0 });
+  const dyOf = M => M.dy || (M.dy = { used: false, cd: 0, active: false, left: 0, since: 0, bonus: 0, pulse: 0, n: 0, type: 'normal', shrinkT: -1, from: [1, 1], fxDone: 0, uses: 0 });
+  const baseKitOn = () => on && full && !isExp();
+  const zTypeOf = M => (G.ZMoves && M && M.pl ? G.ZMoves.typeFor(M.pl.dex) : '');
+  const busyCine = () => !!zCiner || !!(G.ZMoves && G.ZMoves.cine) || !!(G.Judgment && G.Judgment.cinematic);
+  const playingNow = () => !!G.Game && G.Game.state === 'playing' && visible(G.Game.player);
+  function zCan(M) {
+    const Z = G.ZMoves, p = M && M.pl;
+    if (!baseKitOn() || !Z || !p || p.dead || !playingNow() || busyCine() || Z.busy) return false;
+    const z = zOf(M);
+    return !z.used && z.state === '' && p.level >= Z.MIN_LEVEL && !!zTypeOf(M) && !Z.blocked() && !G.World.zone;
+  }
+  function zTry(M) {
+    if (!zCan(M)) return false;
+    const z = zOf(M), p = M.pl;
+    z.type = zTypeOf(M); z.used = true; z.state = 'cine'; z.t = 0; z.n++;
+    zCiner = M;
+    p.invuln = 5; p.attackFace = 1.5;
+    G.Audio.sfx('legend');
+    G.FX.ring(p.x, p.y, 10, 220, G.U.TYPE_COLOR[z.type] || '#ffffff', 0.8, 4);
+    return true;
+  }
+  /** game.js, while a partner's Z cinematic plays (the world holds, as for player 1's): then its move starts. */
+  function zCineTick(dt) {
+    const M = zCiner;
+    if (!M) return;
+    const z = zOf(M), p = M.pl;
+    z.t += dt;
+    p.invuln = 5;
+    p.anim.update(dt);
+    if (z.t >= G.ZMoves.CINE_T) { z.state = 'fx'; z.t = 0; z.fx = G.ZMoves.effect(p, z.type); zCiner = null; G.Audio.sfx('bossDown'); }
+  }
+  function zTick(M, dt) {
+    const z = M.z, p = M.pl;
+    if (!z) return;
+    if (z.used && z.state === '' && z.cd > 0) {
+      z.cd -= dt;
+      if (z.cd <= 0) { z.cd = 0; z.used = false; G.FX.dmgText(p.x, p.y - p.bodyH - 20, '¡Movimiento Z listo!', p.tagColor || '#ffd23f', true); }
+    }
+    if (z.state !== 'fx') return;
+    z.t += dt;
+    if (!z.fx || z.fx.done) { z.state = ''; z.fx = null; z.cd = G.ZMoves.COOLDOWN; p.zHidden = false; return; }
+    z.fx.tick(dt);
+  }
+  function dynCan(M) {
+    const D = G.Dynamax, p = M && M.pl;
+    if (!baseKitOn() || !D || !p || p.dead || !playingNow() || busyCine()) return false;
+    const d = dyOf(M);
+    return D.unlocked() && !d.used && !d.active && p.level >= D.MIN_LEVEL && !D.blocked();
+  }
+  function dynTry(M) {
+    if (!dynCan(M)) return false;
+    const D = G.Dynamax, d = dyOf(M), p = M.pl;
+    d.used = true; d.active = true; d.uses++;
+    d.left = D.DUR; d.since = 0; d.n = 0; d.pulse = D.FIRST_PULSE; d.fxDone = 0; d.shrinkT = -1;
+    d.type = (G.DEX_BY[p.dex] && G.DEX_BY[p.dex].types[0]) || 'normal';
+    d.bonus = Math.round(p.maxHp * D.HP_BONUS);
+    p.maxHp += d.bonus; p.hp += d.bonus;
+    p.dyn = true; p.dynScale = [1, 1];
+    p.invuln = Math.max(p.invuln, 1.2);
+    const col = G.U.TYPE_COLOR[d.type] || D.RED;
+    G.FX.ring(p.x, p.y, 10, 360, col, 0.7, 6);
+    G.FX.burst(p.x, p.y, col, 28, 260);
+    G.Audio.sfx('legend');
+    return true;
+  }
+  function dynStop(M) {
+    const D = G.Dynamax, d = dyOf(M), p = M.pl;
+    if (!d.active) return;
+    d.active = false; d.cd = D.COOLDOWN;
+    const mx = p.maxHp, nm = Math.max(1, mx - d.bonus);
+    if (p.hp > 0) p.hp = Math.max(1, Math.round(p.hp * nm / Math.max(mx, 1)));
+    p.maxHp = nm; d.bonus = 0;
+    p.dyn = false;
+    d.from = p.dynScale ? p.dynScale.slice() : [1, 1]; d.shrinkT = 0;
+    G.FX.ring(p.x, p.y, 10, 200, G.U.TYPE_COLOR[d.type] || D.RED, 0.5, 4);
+  }
+  /** Its Dynamax each step (G.Dynamax.update's clocks on its own state): grow, Max pulses of its type, end, cooldown. */
+  function dynTick(M, dt) {
+    const D = G.Dynamax, d = M.dy, p = M.pl;
+    if (!d) return;
+    if (!d.active && d.used && d.cd > 0) {
+      d.cd -= dt;
+      if (d.cd <= 0) { d.cd = 0; d.used = false; G.FX.dmgText(p.x, p.y - p.bodyH - 20, '¡Dynamax listo!', p.tagColor || '#ff5a8a', true); }
+    }
+    if (d.shrinkT >= 0) {
+      d.shrinkT += dt;
+      const k = Math.min(1, d.shrinkT / 0.35), e = k * k;
+      p.dynScale = [d.from[0] + (1 - d.from[0]) * e, d.from[1] + (1 - d.from[1]) * e];
+      if (k >= 1) { p.dynScale = null; d.shrinkT = -1; }
+    }
+    if (!d.active) return;
+    if (p.dead) { dynStop(M); return; }
+    d.left -= dt; d.since += dt;
+    p.dynScale = D.scaleAt(d.since);
+    if (d.fxDone < 3 && d.since >= [0.14, 0.40, 0.72][d.fxDone]) { d.fxDone++; p.flash = 1; G.FX.ring(p.x, p.y, 8, 120 + 40 * d.fxDone, '#ff99ab', 0.45, 4); }
+    d.pulse -= dt;
+    if (d.pulse <= 0) { d.pulse = D.PULSE; d.n++; D.maxPulse(p, d.n % 3 === 0, d.type); }
+    if (d.left <= 0) dynStop(M);
+  }
+  /** Its pad's presses, read as player 1's pad is (G.Pad.table: the same buttons, remaps included). */
+  function kitPress(M, bt) {
+    if (M.ctrl !== 'pad' || !bt || !bt.tap.size || !G.Pad || !G.Pad.table) return;
+    const T = G.Pad.table();
+    for (const i of bt.tap) {
+      const a = T[i];
+      if (a === 'zmove' || a === 'ztrigger' || a === 'reroll') { if (!zTry(M)) G.Audio.sfx('error'); }
+      else if (a === 'dynamax' || a === 'dtrigger' || a === 'dynx' || a === 'ban') { if (!dynTry(M)) G.Audio.sfx('error'); }
+    }
+  }
+  /** Its kit flags for the replay / the live snapshot (G.Replay.KF): Z-move and Dynamax (whether it has them, ready, in use). */
+  function kitFlags(M) {
+    const KF = G.Replay && G.Replay.KF;
+    if (!KF || !baseKitOn() || !M || !M.pl) return 0;
+    let k = 0;
+    const Z = G.ZMoves, D = G.Dynamax;
+    if (Z && zTypeOf(M) && !Z.blocked()) { const z = zOf(M); k |= KF.Z | (z.state ? KF.Z_ON : 0) | (!z.used && M.pl.level >= Z.MIN_LEVEL ? KF.Z_READY : 0); }
+    if (D && D.unlocked() && !D.blocked()) { const d = dyOf(M); k |= KF.DYN | (d.active ? KF.DYN_ON : 0) | (!d.used && !d.active && M.pl.level >= D.MIN_LEVEL ? KF.DYN_READY : 0); }
+    return k;
+  }
+  /** The dim under the HUD while a partner's Z cinematic / move plays (as G.ZMoves.drawDim for player 1's). */
+  function drawZDim(ctx, w, h) {
+    let d = 0;
+    for (const M of mates) {
+      const z = M.z;
+      if (!z || !z.state) continue;
+      if (z.state === 'cine') d = Math.max(d, G.U.clamp(z.t / 0.3, 0, 1) * 0.62);
+      else d = Math.max(d, G.U.clamp(1 - z.t / 0.9, 0, 1) * 0.62, z.fx ? z.fx.dim || 0 : 0);
+    }
+    if (d <= 0) return;
+    ctx.save(); ctx.fillStyle = 'rgba(0,0,10,' + d.toFixed(3) + ')'; ctx.fillRect(0, 0, w, h); ctx.restore();
+  }
+  /** A partner's Z cinematic (player 1's card, G.ZMoves.cineArt), with whose it is under it. */
+  function drawZCine(ctx, w, h) {
+    const M = zCiner;
+    if (!M || !G.ZMoves.cineArt) return;
+    const z = zOf(M);
+    G.ZMoves.cineArt(ctx, w, h, z.t, z.type);
+    const al = G.U.clamp(z.t / 0.3, 0, 1) * G.U.clamp((G.ZMoves.CINE_T - z.t) / 0.3, 0, 1);
+    ctx.save();
+    ctx.globalAlpha = al;
+    ctx.font = '800 18px Pixelify,"Segoe UI",system-ui,sans-serif'; ctx.textAlign = 'center';
+    ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(0,0,0,.75)';
+    const label = tagName(M);
+    ctx.strokeText(label, w / 2, h * 0.42 + 92); ctx.fillStyle = M.color || '#fff'; ctx.fillText(label, w / 2, h * 0.42 + 92);
+    ctx.restore();
   }
 
   // MicaSurvivor (DLC D11): the partner's verbs in an Expedition zone: player 2's buttons (A hop / hold to glide, B slide), else its AI
@@ -670,6 +847,8 @@ G.LocalCoop = (() => {
     K, COLOR, COLORS, dex, pick, owned, merge, sanitize, moveFor, levelFor,
     begin, afterStart, end, update, onFaint, downTick, hurtMate, finish, drawables, visible, nearestEnemy,
     setPlayers, levelUp, takeItem, collectors, camTarget, castUlt,
+    ultRow, tagName, kitFlags, zTry, dynTry, zCan, dynCan, zCineTick, drawZDim, drawZCine,   // (MP polish)
+    get zCine() { return !!zCiner; },
     get on() { return on; }, get full() { return full; }, get ran() { return ran; }, get want() { return want; },
     get mates() { return mates.map(M => M.pl); }, get rows() { return mates.slice(); },
     get padIdxs() { return mates.map(M => M.padIdx).filter(i => i != null); },
