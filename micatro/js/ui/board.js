@@ -350,7 +350,7 @@ export class Board {
     };
     const hl = (id) => { const d = this.data.get(id); return d && d.hl; };
     const handIds = this.areas.hand;
-    const handRect = R.hand;
+    const handRect = (this.packHand && this.packHand.hand) || R.hand; // (a pack showing the hand may lower its row: renderPack)
     if (this.view && this.view.bunc_virtual && handIds.length) {
       // A Virtual Pack (Bunco) holds the whole deck in hand: one overlapping row per suit, like the mod's
       // "Virtual pack deck alignment" (Spades on top ... exotic suits below).
@@ -743,14 +743,18 @@ export class Board {
   renderOverlay() {
     const v = this.view;
     const ov = this.overlay;
-    this.shopRects = null; this.packRect = null;
+    this.shopRects = null; this.packRect = null; this.packHand = null;
     ov.innerHTML = '';
     ov.className = 'overlay';
-    if (!v) return;
-    if (v.state === 'BLIND_SELECT') this.renderBlindSelect(ov, v);
-    else if (v.state === 'ROUND_EVAL' && v.round_eval) this.renderCashOut(ov, v);
-    else if (v.state === 'SHOP') this.renderShop(ov, v);
-    else if (PACK_STATES.includes(v.state)) this.renderPack(ov, v);
+    if (v) {
+      if (v.state === 'BLIND_SELECT') this.renderBlindSelect(ov, v);
+      else if (v.state === 'ROUND_EVAL' && v.round_eval) this.renderCashOut(ov, v);
+      else if (v.state === 'SHOP') this.renderShop(ov, v);
+      else if (PACK_STATES.includes(v.state)) this.renderPack(ov, v);
+    }
+    // the hand counter follows the hand row (a pack that shows the hand may lower it: renderPack)
+    const lbl = this.packHand ? this.packHand.lbl : this.R && this.R.handLbl;
+    if (lbl) { this.lblHand.style.left = lbl.x + 'px'; this.lblHand.style.top = lbl.y + 'px'; }
   }
 
   renderBlindSelect(ov, v) {
@@ -900,8 +904,24 @@ export class Board {
     const showHand = v.state === 'MOD_PACK_HAND' || ((v.state === 'TAROT_PACK' || v.state === 'SPECTRAL_PACK') && (kind === 'Arcana' || kind === 'Spectral'));
     ov.classList.toggle('ov-mod-pack', /^MOD_PACK/.test(v.state));
     const R = this.R;
-    if (showHand) this.packRect = { x: R.play.x, y: R.play.y - (this.mode === 'portrait' ? 6 : 10), w: R.play.w, h: this.ch };
-    else this.packRect = { x: R.play.x, y: (R.play.y + R.hand.y) / 2, w: R.play.w, h: this.ch };
+    if (showHand) {
+      // Vanilla's arrangement: the pack's cards, its bar (name / Choose N / Skip) under them, then the hand. The bar must
+      // clear the hand row, a picked (raised) hand card included, or the hand covers Skip: when the play area's spot is too
+      // low, the hand first drops into the controls row (empty during a pack), then the pack cards and bar rise toward
+      // the jokers. (46: room under a picked pack card for its Use button.)
+      const barH = (hd.offsetHeight || 74) + 6, clear = Math.round(this.ch * 0.3) + 10;
+      let top = R.play.y - (this.mode === 'portrait' ? 6 : 10);
+      const need = top + this.ch + 46 + barH + clear - R.hand.y;
+      const shift = Math.min(Math.max(0, need), R.controls.h - 4);
+      if (need > shift) top = Math.max(R.jokers.y + R.jokers.h + 12, top - (need - shift));
+      this.packRect = { x: R.play.x, y: top, w: R.play.w, h: this.ch };
+      if (shift > 0) {
+        const hand = { ...R.hand, y: R.hand.y + shift };
+        // (portrait: the lowered row stops short of the deck in the corner)
+        if (this.mode === 'portrait' && hand.y + this.ch + FAN.portrait.droop > R.deck.y - this.ch / 2) hand.w = Math.min(hand.w, R.deck.x - this.cw / 2 - 8 - hand.x);
+        this.packHand = { hand, lbl: { x: hand.x + hand.w / 2, y: R.handLbl.y + shift } };
+      }
+    } else this.packRect = { x: R.play.x, y: (R.play.y + R.hand.y) / 2, w: R.play.w, h: this.ch };
     hd.style.top = (this.packRect.y - R.overlay.y + this.ch + 46) + 'px';
   }
 

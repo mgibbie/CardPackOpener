@@ -13,6 +13,9 @@
 //   2. the same for a Pokermon run (its Energy mod packs, from the shop and from a tag)
 //   3. autoplay holds on an open pack (as a player choosing would) before the pick
 //   4. live play and a spectator (same board, same event stream) switch to the pack screen as it opens
+//   5. a pack that shows the hand (Arcana, Spectral, Pokermon's Energy) keeps its bar (name / Choose N / Skip) clear of
+//      the hand: desktop + phone portrait / landscape, replay, live (a 12-card hand, picked cards, Skip tapped), spectator
+//      (the hand row covered the bar; ui/board.js renderPack places pack cards / bar / hand like vanilla)
 // Covers micatro/js/ui/board.js (enterPackView, applyEvent open_booster / move), micatro/js/ui/replayview.js
 // (STEP_PAUSE.pack), micatro/js/ui/player.js, micatro/tests/pack_bot.mjs.
 //   node overworld/tests/micatro_replay_pack_test.mjs        (MICATRO_SHOTS=<dir> saves screenshots)
@@ -272,6 +275,127 @@ try {
 		await shot(page, `spectate_${o.kind}_pack.png`);
 		A(errors.length === 0, 'spectator: no page errors', errors.slice(0, 3).join(' | '));
 		await page.browserContext().close();
+	}
+	// ======================================================= 5. the pack's bar (name / Choose N / Skip) clears the hand
+	// (the owner: on Arcana and Spectral packs the hand row covered the "… Pack / Choose N / Skip" bar). At desktop and
+	// phone sizes, in a replay, in live play (a 12-card hand, picked cards raised; Skip tapped) and for a spectator:
+	// the bar and Skip overlap no hand card (nor a pack card), sit on screen, and Skip is what a tap at its centre hits.
+	{
+		const VIEWPORTS = [
+			{ name: 'desktop', width: 1600, height: 900, hasTouch: true },
+			{ name: 'phone-portrait', width: 390, height: 844, hasTouch: true },
+			{ name: 'phone-landscape', width: 844, height: 390, hasTouch: true },
+			{ name: 'small-portrait', width: 375, height: 667, hasTouch: true },
+		];
+		const GEOM = () => {
+			const B = window.__micatro.board;
+			const box = (e) => { const b = e.getBoundingClientRect(); return { l: b.left, t: b.top, r: b.right, b: b.bottom }; };
+			const cards = (k) => (B.areas[k] || []).map((id) => B.sprites.get(id)).filter(Boolean).map((s) => box(s.el));
+			const head = document.querySelector('.overlay .pack-head'), skip = document.querySelector('.overlay .b-skip-pack');
+			let skipHit = false;
+			if (skip) { const r = box(skip); const el = document.elementFromPoint((r.l + r.r) / 2, (r.t + r.b) / 2); skipHit = !!el && (el === skip || skip.contains(el)); }
+			return { state: B.view && B.view.state, head: head && box(head), skip: skip && box(skip), skipHit, hand: cards('hand'), pack: cards('pack_cards'), vw: innerWidth, vh: innerHeight };
+		};
+		// (a replay's transport panel, which tucks away while it plays, is set aside while measuring the table)
+		const geom = (page) => page.evaluate((src) => { const rb = document.querySelector('.replay-bar'); if (rb) rb.style.visibility = 'hidden'; try { return eval('(' + src + ')')(); } finally { if (rb) rb.style.visibility = ''; } }, GEOM.toString());
+		// (every page here starts with touch on: changing a viewport's touch / mobile flags makes puppeteer reload the page)
+		const touchPage = async () => { const p = await newPage(4); await p.page.setViewport({ width: 1600, height: 900, deviceScaleFactor: 1, hasTouch: true }); return p; };
+		const hit = (a, b) => a.l < b.r - 1 && b.l < a.r - 1 && a.t < b.b - 1 && b.t < a.b - 1;
+		const onScreen = (a, g) => a.l >= -1 && a.t >= -1 && a.r <= g.vw + 1 && a.b <= g.vh + 1;
+		const settle = async (page) => { await idle(page); await sleep(700); };
+		const resize = async (page, vp) => { const { name, ...o } = vp; await page.setViewport({ deviceScaleFactor: 1, ...o }); await sleep(250); await settle(page); };
+		function checkBar(tag, g, { hand = 0 } = {}) {
+			if (!g.head || !g.skip) { A(false, `${tag}: the pack bar is up`, JSON.stringify(g)); return; }
+			if (hand) A(g.hand.length >= hand, `${tag}: the pack's hand is shown (${g.hand.length} cards)`, JSON.stringify(g.hand.length));
+			const overH = g.hand.filter((c) => hit(c, g.head) || hit(c, g.skip));
+			A(overH.length === 0, `${tag}: no hand card overlaps the pack bar or Skip`, overH.length ? `bar ${JSON.stringify(g.head)} card ${JSON.stringify(overH[0])}` : '');
+			const overP = g.pack.filter((c) => hit(c, g.head));
+			A(g.pack.length > 0 && overP.length === 0 && g.pack.every((c) => onScreen(c, g)), `${tag}: the pack's cards are on screen, clear of the bar`, JSON.stringify({ bar: g.head, pack: g.pack }));
+			A(onScreen(g.head, g) && g.skipHit, `${tag}: the bar is on screen and a tap on Skip hits Skip`, JSON.stringify({ bar: g.head, skip: g.skip, hit: g.skipHit, vw: g.vw, vh: g.vh }));
+		}
+		// --- a replay: Arcana, Spectral and (no hand) Celestial, vanilla; Pokermon's Energy pack (it shows the hand)
+		const cases = [
+			['vanilla', 'aaaa0001', VAN.opened.find((x) => x.kind === 'Arcana' && x.via === 'buy')],
+			['vanilla', 'aaaa0001', VAN.opened.find((x) => x.kind === 'Spectral')],
+			['vanilla', 'aaaa0001', VAN.opened.find((x) => x.kind === 'Celestial' && x.via === 'buy')],
+			['pokermon', 'aaaa0002', POK.opened.find((x) => x.state === 'MOD_PACK_HAND')],
+		];
+		for (const id of ['aaaa0001', 'aaaa0002']) {
+			const { page, errors, go } = await touchPage();
+			await go(`/micatro/?replay=${id}&autoplay=0`);
+			A(await replayReady(page), `bar: replay ${id} loads`);
+			for (const vp of VIEWPORTS) {
+				await resize(page, vp);
+				for (const [label, cid, o] of cases) {
+					if (cid !== id) continue;
+					if (!o) { A(false, `bar: the ${label} fixture opens the pack`); continue; }
+					await seek(page, o.index); await settle(page);
+					const g = await geom(page);
+					checkBar(`bar, replay ${vp.name}: ${label} ${o.kind} pack`, g, { hand: HAND_PACK(o) ? 5 : 0 });
+					await shot(page, `bar_replay_${vp.name}_${label}_${o.kind}.png`);
+				}
+			}
+			A(errors.length === 0, `bar: replay ${id} no page errors`, errors.slice(0, 3).join(' | '));
+			await page.browserContext().close();
+		}
+		// --- live play: an Arcana pack dealt into a 12-card hand (Pokermon's hand-size jokers reach that); picked cards raised;
+		// then a real tap on Skip leaves the pack
+		{
+			const o = VAN.opened.find((x) => x.kind === 'Arcana' && x.via === 'buy');
+			const { page, errors, go } = await touchPage();
+			await go('/micatro/');
+			await page.evaluate((deck) => window.__micatro.newRun({ seed: 'PACKS2', back: 'b_red', stake: 1, customDeck: deck }), RICH_DECK);
+			await idle(page);
+			let okRun = true;
+			for (let i = 0; i < o.index - 1; i++) {
+				const r = await page.evaluate((a) => window.__micatro.act(a), VAN.recipe.actions[i]);
+				if (!r.ok) { okRun = false; console.log('bar live: rejected', i, r.error); break; }
+				await idle(page);
+			}
+			A(okRun && (await look(page)).state === 'SHOP', 'bar live: the run reaches the shop before the Arcana pack');
+			await page.evaluate(async () => { const { G } = await import('/micatro/js/engine/core.js'); G.hand.config.card_limit = 12; G.hand.config.real_card_limit = 12; });
+			await page.evaluate((a) => window.__micatro.act(a), VAN.recipe.actions[o.index - 1]);
+			await settle(page);
+			for (const vp of VIEWPORTS) {
+				await resize(page, vp);
+				checkBar(`bar, live ${vp.name}: Arcana pack, 12-card hand`, await geom(page), { hand: 12 });
+				await shot(page, `bar_live_${vp.name}_Arcana_12.png`);
+			}
+			// picked hand cards rise toward the bar: still clear of it
+			const ids = await page.evaluate(() => window.__micatro.board.areas.hand.slice(4, 7));
+			const r = await page.evaluate((ids) => window.__micatro.act({ type: 'highlight', ids }), ids);
+			A(r && r.ok, 'bar live: three hand cards picked', JSON.stringify(r));
+			for (const vp of VIEWPORTS) {
+				await resize(page, vp);
+				checkBar(`bar, live ${vp.name}: Arcana pack, 3 cards picked`, await geom(page), { hand: 12 });
+				await shot(page, `bar_live_${vp.name}_Arcana_picked.png`);
+			}
+			// a tap on Skip (small portrait phone) closes the pack
+			const g = await geom(page);
+			if (g.skip) await page.touchscreen.tap((g.skip.l + g.skip.r) / 2, (g.skip.t + g.skip.b) / 2);
+			A(await waitFor(() => page.evaluate(() => window.__micatro.board.view.state === 'SHOP'), 10000), 'bar live: tapping Skip leaves the pack for the shop', JSON.stringify(await look(page)));
+			A(errors.length === 0, 'bar live: no page errors', errors.slice(0, 3).join(' | '));
+			await page.browserContext().close();
+		}
+		// --- a spectator: an Arcana pack from a skip tag, on a phone held sideways and upright
+		{
+			const o = VAN.opened.find((x) => x.kind === 'Arcana' && x.via === 'skip_blind') || VAN.opened.find((x) => x.kind === 'Arcana');
+			SPEC = { seq: 11, snapshot: { view: vanWalk.views[o.index - 1], events: [] } };
+			const { page, errors, go } = await touchPage();
+			await page.setViewport({ width: 844, height: 390, deviceScaleFactor: 1, hasTouch: true });
+			await go('/micatro/?spectate=bob');
+			A(await waitFor(() => page.evaluate((st) => window.__micatro.board.view && window.__micatro.board.view.state === st, o.from), 15000), `bar spectator: showing the runner's ${o.from}`);
+			await idle(page);
+			SPEC = { seq: 12, snapshot: { view: vanWalk.views[o.index], events: vanWalk.steps[o.index] } };
+			A(await waitFor(() => page.evaluate((st) => window.__micatro.board.view.state === st && window.__micatro.idle(), o.state), 15000), 'bar spectator: the Arcana pack arrives');
+			for (const vp of [VIEWPORTS[2], VIEWPORTS[1]]) {
+				await resize(page, vp);
+				checkBar(`bar, spectator ${vp.name}: Arcana pack`, await geom(page), { hand: 5 });
+				await shot(page, `bar_spectate_${vp.name}_Arcana.png`);
+			}
+			A(errors.length === 0, 'bar spectator: no page errors', errors.slice(0, 3).join(' | '));
+			await page.browserContext().close();
+		}
 	}
 } catch (e) {
 	fail++; console.log('FAIL: threw ' + (e && e.stack || e));
