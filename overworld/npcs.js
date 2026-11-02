@@ -3,7 +3,7 @@
 // 0 down, 1 up, 2 left stills; 3-8 walk pairs; right = mirrored left).
 // Sight-range trainers are excluded here — trainers.js owns them.
 import { getJSON, getImage, META, drawOwMon, elevCompatible } from './engine.js';
-import { isTrainerEvent, peopleFile, spritePath } from './trainers.js';
+import { isTrainerEvent, peopleFile, spritePath, entrySprite, adoptLateSprite } from './trainers.js';
 import { itemsOwns } from './items.js';
 import { objectHiddenByFlag } from './events.js';
 
@@ -228,18 +228,21 @@ export class NPCs {
 		// ALSO drawn as a man — render the actual overworld mon sprite instead
 		const species = this.speciesOf(ev.graphics_id);
 		if (species) {
-			const mimg = await getImage(`data/pokemon_ow/${species}.png`).catch(() => null);
-			if (mimg) return new NPC(ev, mimg, true);
+			const { img: mimg, late } = await entrySprite([`data/pokemon_ow/${species}.png`], { mon: true });
+			if (mimg) { const n = new NPC(ev, mimg, true); adoptLateSprite(n, late, o => this.drop(o), true); return n; }
 		}
 		// Crystal names its graphics SPRITE_X — the fallback only stripped the
 		// GBA prefix, so sprite files like fisher.png were probed as
 		// sprite_fisher.png, silently emptying whole Johto towns
 		// (peopleFile: gfx_map, then the Crystal/Emerald -> FireRed aliases, then the
 		// raw name; null for ids with their own people_extra art, e.g. STEVEN)
+		// (a stalled sheet gets a stand-in so map entry goes on: trainers.js entrySprite)
 		const file = peopleFile(this.gfx, ev.graphics_id);
-		let img = file ? await getImage(`data/people/${file}`).catch(() => null) : null;
-		if (!img) img = await getImage(spritePath(ev.graphics_id, false)).catch(() => null);
-		return img ? new NPC(ev, img) : null;
+		const { img, late } = await entrySprite([file ? `data/people/${file}` : null, spritePath(ev.graphics_id, false)]);
+		if (!img) return null;
+		const n = new NPC(ev, img);
+		adoptLateSprite(n, late, o => this.drop(o));
+		return n;
 	}
 
 	// FireRed/Emerald `addobject`: TrySpawnObjectEvent spawns the template whatever
@@ -251,6 +254,9 @@ export class NPCs {
 		if (n && !this.list.some(o => o.ev === ev)) this.list.push(n);
 		return n;
 	}
+
+	// an object whose late sheet turned out not to exist leaves, as a 404 always meant
+	drop(n) { this.list = this.list.filter(o => o !== n); }
 
 	// tile occupied by an NPC (current tile or the one it's stepping into)?
 	occupied(tx, ty, self = null) {

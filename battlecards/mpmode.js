@@ -10,6 +10,35 @@ const STATE_KEY = 'magepunk_mp_state_v1';
 const API = '/api/mp';
 
 export const hasToken = () => !!localStorage.getItem(TOKEN_KEY);
+
+// ---- the account a page was loaded for (bug:1793284798179) ----
+// The login token is ONE device-wide key, but a page's local game data is chosen
+// once, at load, for the account signed in then (site/account_silo.js). Signing in
+// as someone else in another tab swapped the token under a page that was still
+// running (or still booting) on the first account's local game, and its next
+// request went out as the NEW account: an overworld that loaded on
+// instinctloretest0918's local save hydrated against instinctgauntlet's server
+// copy, read its own (much higher) revision as "local ahead", merged the dex and
+// pushed the whole wrong game up as instinctgauntlet's (rev 2739 -> 48836).
+// So a page sends account requests only as the account it was loaded for. The
+// principal is the username inside the token (what the server authenticates —
+// `<user>.<exp>.<sig>`), or the raw token for anything not shaped like one.
+export function principalOf(token) {
+	if (!token) return null;
+	const m = /^(.+)\.(\d+)\.([0-9a-f]{64})$/.exec(String(token));
+	return m ? 'u:' + m[1].toLowerCase() : 't:' + token;
+}
+const livePrincipal = () => { try { return principalOf(localStorage.getItem(TOKEN_KEY)); } catch (e) { return null; } };
+let pagePrincipal = livePrincipal();
+let _reloading = false;
+// true when the token now belongs to a DIFFERENT account than this page was loaded
+// for. (Signed out at load and signed in since is not a switch: such a page holds
+// no account's synced game — the overworld and the game pages require a login.)
+export function accountSwitched() {
+	const live = livePrincipal();
+	return pagePrincipal != null && live !== pagePrincipal;
+}
+const AUTH_ACTIONS = { login: 1, register: 1 };
 // account mode is on iff you're logged in (the old URL ?mp=1 opt-in is retired)
 export const wantsMp = () => hasToken();
 
@@ -30,22 +59,34 @@ export async function call(action, payload = {}, opts = {}) {
 	// opts.keepalive: let a final save survive page unload (pagehide). keepalive
 	// supports our auth header (unlike sendBeacon) but caps the body at ~64KB, so
 	// callers must tolerate rejection for large payloads.
+	if (!AUTH_ACTIONS[action] && accountSwitched()) {
+		// never send this page's data as another account: reload, so the page comes
+		// back with the right account's local data (or the login door)
+		if (!_reloading && typeof location !== 'undefined' && location.reload) { _reloading = true; try { location.reload(); } catch (e) {} }
+		return { error: 'signed in as another account elsewhere — reloading', accountChanged: true };
+	}
+	const sentToken = localStorage.getItem(TOKEN_KEY) || '';
 	const res = await fetch(API, {
 		method: 'POST',
 		headers: {
 			'content-type': 'application/json',
-			authorization: 'Bearer ' + (localStorage.getItem(TOKEN_KEY) || ''),
+			authorization: 'Bearer ' + sentToken,
 		},
 		body: JSON.stringify({ action, ...payload }),
 		keepalive: !!opts.keepalive,
 		signal: AbortSignal.timeout ? AbortSignal.timeout(20000) : undefined,
 	});
 	const data = await res.json().catch(() => ({ error: 'bad response' }));
-	if (res.status === 401 && action !== 'login' && action !== 'register') {
-		logout(); // stale/forged token: back to the door
+	// the token changed while this request was in flight: its answer is about the
+	// account that was signed in, not the one that is now — it must not sign anyone
+	// out, nor write that account's name over the new login's (the silo reads the
+	// cached state to decide whose local data a page uses)
+	const stillSame = (localStorage.getItem(TOKEN_KEY) || '') === sentToken;
+	if (res.status === 401 && !AUTH_ACTIONS[action]) {
+		if (stillSame) logout(); // stale/forged token: back to the door
 		return data;
 	}
-	if (data.state) safeSave(STATE_KEY, data.state);
+	if (data.state && stillSame) safeSave(STATE_KEY, data.state);
 	return data;
 }
 
@@ -57,6 +98,7 @@ export async function auth(action, username, password) {
 		try { globalThis.MagepunkSilo?.onAuth?.(action, data.state?.username || username); } catch (e) {}
 		safeSaveStr(TOKEN_KEY, data.token);
 		safeSave(STATE_KEY, data.state);
+		pagePrincipal = principalOf(data.token);   // this page signed in: it is now that account's
 	}
 	return data;
 }

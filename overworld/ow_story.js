@@ -1464,6 +1464,14 @@ export function runSpecial(name, store, op) {
 			const here = NEXT_TO.some(([x, y]) => player.tx === x && player.ty === y);
 			return set(S.radioStation === 'POKE_FLUTE' && here ? 1 : 0);
 		}
+		// Rustboro's MATCH CALL tutorial (bug:1793307311120): the scientist opens the
+		// START menu and loops "Please select the POKeNAV" until VAR_RESULT is its row
+		// (MENU_ACTION_POKENAV = 3; 0-2 / 4-7 / B all loop back). Unported, the special
+		// left VAR_RESULT at whatever the last script wrote, so the scene looped forever
+		// and held the player. This port has no START-menu POKeNAV row to point at:
+		// answer that row, and the tutorial's own PokeNav screen is a no-op.
+		case 'ScriptMenu_CreateStartMenuForPokenavTutorial': return set(3);
+		case 'OpenPokenavForTutorial': return;
 		case 'EnableNationalPokedex': Story.setFlag(NATIONAL_DEX_FLAG); return;
 		case 'IsNationalPokedexEnabled': return set(nationalDexEnabled() ? 1 : 0);
 		// prof_pc.c / birch_pc.c: seen -> VAR_0x8005, caught -> VAR_0x8006 (the

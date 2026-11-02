@@ -166,7 +166,10 @@ try {
 	// ---- standalone Battle Factory mini-game (?factory=1 from the home page) ----
 	// a FRESH visitor with no save should drop straight into a Factory run, and it
 	// must NOT write over any overworld save (party/position).
-	const page2 = await browser.newPage();
+	// its own browser profile: page 1 (signed in as another account) is still open, and a
+	// page whose account is switched under it reloads as the new one (bug:1793284798179)
+	const ctx2 = await browser.createBrowserContext();
+	const page2 = await ctx2.newPage();
 	const err2 = [];
 	page2.on('pageerror', e => err2.push('pageerr: ' + e.message));
 	page2.on('console', m => { if (m.type() === 'error') err2.push('console: ' + m.text().slice(0, 160)); });
@@ -194,6 +197,7 @@ try {
 	A(solo.inBattle, 'the mini-game auto-starts a Factory battle for a fresh visitor', JSON.stringify({ inBattle: solo.inBattle }));
 	A(solo.savedParty === null, 'the mini-game never writes an overworld party save');
 	await page2.close();
+	await ctx2.close();
 
 	const fatal = errors.filter(e => !/Failed to load resource/i.test(e)).concat(err2.filter(e => !/Failed to load resource/i.test(e)));
 	A(fatal.length === 0, 'no uncaught client errors during the run', fatal.slice(0, 4).join(' | '));
