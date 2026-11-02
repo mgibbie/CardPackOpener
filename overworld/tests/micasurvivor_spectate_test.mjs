@@ -10,6 +10,9 @@
 //   - alice shares the replay from her run summary (the link is copied); carl, with NO account, opens the link and it
 //     plays; seeking and the 1× / 2× / 4× speeds work; its size is under the cap
 //   - a local co-op run (the partner, its HP, P2 / AI) and an online co-op group (watched through a guest) are watched
+//   - MP polish: a 4-player local session watched live on the v2 model: every player drawn with its level, the "Following"
+//     switch (button, F, 1-4) moves the view onto any player, every player's casts are ghosted, the snapshot's size with 4
+//     players and 60 foes (under the 24 KB cap), and an older publisher's snapshot (no players block) still shows
 //   - the recorder's per-frame cost is measured (< 0.5 ms a frame)
 //   - no Spanish anywhere in English mode (DOM and canvas)
 // Screenshots (MICASURVIVOR_SHOTS=<dir>): the live list, the spectator view (desktop and 844x390), the replay player,
@@ -439,14 +442,77 @@ try {
 	await sleep(2500);
 	const bm = await bob.E(() => { const m = G.WatchUI.drawables()[1]; return { x: Math.round(m.x), y: Math.round(m.y), dex: m.dex, tag: m.tag, hp: m.hp, max: m.maxHp }; });
 	const lm2 = await alice.E(() => ({ x: Math.round(G.LocalCoop.mate.x), y: Math.round(G.LocalCoop.mate.y), hp: G.LocalCoop.mate.hp }));
-	A(bm.dex === lm.dex && Math.abs(bm.x - lm2.x) < 60 && Math.abs(bm.y - lm2.y) < 60 && / · AI$/.test(bm.tag), 'the partner: the same Pokémon, where it is, tagged "· AI"', JSON.stringify([lm2, bm]));
+	// (MP polish: the live snapshot has every player as a v2 tape does: the partner is named as in the replay, "Name · P2")
+	A(bm.dex === lm.dex && Math.abs(bm.x - lm2.x) < 60 && Math.abs(bm.y - lm2.y) < 60 && / · [JP]2$/.test(bm.tag), 'the partner: the same Pokémon, where it is, named as in the replay ("· P2")', JSON.stringify([lm2, bm]));
 	A(Math.abs(bm.hp / bm.max - 0.5) < 0.05, '...with its HP (half)', JSON.stringify(bm));
-	A(await waitFor(() => bob.E(() => [...window.__drawn].some(s => / · AI · \d+%$/.test(s))), 3000), 'the partner\'s HP is on his canvas line ("Name · AI · 50%")');
+	A(await waitFor(() => bob.E(() => [...window.__drawn].some(s => / · [JP]2 · \d+% · Lv\. \d+$/.test(s))), 3000), 'the partner\'s HP and level are on his canvas line ("Name · P2 · 50% · Lv. 1")', JSON.stringify(await bob.E(() => [...window.__drawn].filter(s => / · [JP]2/.test(s)).slice(-4))));
 	await sleep(400);
 	await bob.shot('m5b12c_watch_localcoop.png');
 	await alice.E(() => G.Game.endRun(false));
 	await waitFor(() => bob.visible('scr-watch-end'), 8000);
 	await bob.click('#watch-back');
+	await alice.click('#btn-again');
+
+	// ===================== MP polish: a 4-player local session, watched live on the v2 model =====================
+	await waitFor(() => alice.visible('scr-menu'), 6000);
+	await alice.E(() => { G.LocalCoop.setPlayers(4, []); return G.Flow.play('normal'); });
+	A(await waitFor(() => alice.E(() => G.Game.state === 'playing' && G.LocalCoop.full && G.LocalCoop.rows.length === 3), 8000), 'alice starts a Normal run with 3 local partners (4 players, the AI on each)');
+	await calm(alice);
+	await alice.E(() => { for (const M of G.LocalCoop.rows) { M.pl.invuln = 1e9; M.pl.hurt = () => {}; } });
+	// foes round the group, so every partner's kit fires (their casts) and the snapshot is a busy one
+	await placeEnemies(alice, Array.from({ length: 60 }, (_, i) => [[19, 16, 25, 41, 92][i % 5], Math.cos(i * 0.7) * (90 + (i % 7) * 40), Math.sin(i * 0.7) * (90 + (i % 7) * 40), 0.4 + (i % 5) / 10]));
+	// (its own beacon first: watching before it, bob would get the last run's final snapshot)
+	const run4 = await alice.E(() => G.Spectate.runId);
+	await waitFor(() => (row('msurvlive:alice') || {}).run === run4 && !row('msurvlive:alice').over, 6000);
+	await bob.E(() => G.WatchUI.watchLive('alice', () => G.MenuUI.open()));
+	A(await waitFor(() => bob.E(() => !!G.WatchUI.frame && G.WatchUI.frame.np === 4 && G.WatchUI.drawables().length === 4), 12000), 'bob watches it: all 4 players are drawn (the snapshot carries every player)', JSON.stringify(await bob.E(() => [G.WatchUI.status, G.WatchUI.frame && G.WatchUI.frame.np, G.WatchUI.drawables().map(p => p.tag)])));
+	const v4 = await bob.E(() => {
+		const fr = G.WatchUI.frame, b = document.getElementById('wb-follow');
+		return { pi: fr.pi, tags: G.WatchUI.drawables().slice(1).map(p => p.tag), info: (fr.mt || []).map(m => m[13] && m[13].lv), btn: b && !b.classList.contains('hidden') ? b.textContent : null };
+	});
+	const a4 = await alice.E(() => ({ dex: [G.Game.player.dex, ...G.LocalCoop.rows.map(M => M.pl.dex)], lv: G.Game.player.level }));
+	A(v4.pi === 0 && v4.tags.length === 3 && v4.tags.every(t => / · J[234]$/.test(t || '')) && v4.info.every(l => l === a4.lv) && /^Following: alice$/.test(v4.btn || ''), 'her 3 partners are named (P2-P4) with their level; "Following: alice" is offered', JSON.stringify([v4, a4]));
+	// the switch: the button, then F / 1-4 (the view moves onto that player: its Pokémon, its HUD, the camera)
+	await bob.click('#wb-follow');
+	const f1 = await bob.E(() => ({ follow: G.WatchUI.follow, dex: G.WatchUI.player.dex, pi: G.WatchUI.frame.pi, btn: document.getElementById('wb-follow').textContent, mates: G.WatchUI.drawables().length - 1, me0: (G.WatchUI.frame.mt || []).some(m => m[11] === 0 && m[0] === 'alice') }));
+	A(f1.follow === 1 && f1.pi === 1 && f1.dex === a4.dex[1] && f1.mates === 3 && f1.me0 && /Following: .+ · P2|Following: .+ · J2/.test(f1.btn), 'the button follows player 2: its Pokémon is the one watched; alice becomes a partner row', JSON.stringify(f1));
+	await bob.page.keyboard.press('KeyF'); await sleep(250);
+	const f2 = await bob.E(() => ({ follow: G.WatchUI.follow, dex: G.WatchUI.player.dex }));
+	await bob.page.keyboard.press('Digit4'); await sleep(250);
+	const f3 = await bob.E(() => ({ follow: G.WatchUI.follow, dex: G.WatchUI.player.dex }));
+	await sleep(1800);
+	const pos3 = await bob.E(() => ({ x: Math.round(G.WatchUI.player.x), y: Math.round(G.WatchUI.player.y), cam: [Math.round(G.Camera.x), Math.round(G.Camera.y)] }));
+	const real3 = await alice.E(() => { const p = G.LocalCoop.rows[2].pl; return { x: Math.round(p.x), y: Math.round(p.y) }; });
+	A(f2.follow === 2 && f2.dex === a4.dex[2] && f3.follow === 3 && f3.dex === a4.dex[3], 'F moves on to player 3, 4 to player 4', JSON.stringify([f2, f3]));
+	A(Math.abs(pos3.x - real3.x) < 90 && Math.abs(pos3.y - real3.y) < 90 && Math.abs(pos3.cam[0] - pos3.x) < 160, '...and the view (puppet and camera) is where player 4 really is', JSON.stringify([pos3, real3]));
+	// every player's casts, ghosted where they aimed (the partners' too)
+	const c0 = await bob.E(() => G.WatchUI.stats.casts);
+	await sleep(3500);
+	const c1 = await bob.E(() => ({ casts: G.WatchUI.stats.casts, last: G.WatchUI.frame.cs && G.WatchUI.frame.cs.length, slots: [...new Set((G.WatchUI.frame.cs || []).map(c => c[0]))] }));
+	A(c1.casts - c0 >= 4 && c1.slots.some(k => k > 0), 'every player\'s casts are drawn as ghosts (partners\' casts come in the live snapshot)', JSON.stringify([c0, c1]));
+	await bob.page.keyboard.press('Digit1'); await sleep(250);
+	A(await bob.E(() => G.WatchUI.follow === 0 && G.WatchUI.player.dex === G.WatchUI.frame.me[0]), '1 goes back to alice');
+	await sleep(300);
+	await bob.shot('mppolish_watch_live_4p.png');
+	// the size: 4 players, 60 foes, the casts of a second (the server's cap is 24 000 chars)
+	const sz = await alice.E(() => {
+		const sizes = [];
+		for (let i = 0; i < 5; i++) { const s = G.Spectate.pubSnap({ ev: [], kd: [], w: 0 }); sizes.push(JSON.stringify(s).length); }
+		const s = G.Spectate.pubSnap({ ev: [], kd: [], w: 0 });
+		const v1 = JSON.stringify(G.Spectate.snap({ ev: [], kd: [], w: 0 })).length;
+		return { sizes, v1, e: s.e.length, pr: s.pr.length, rw: s.pr[0].length, pz: !!s.pz, err: G.Spectate.stats.pubErr, snaps: G.Spectate.stats.pubSnaps };
+	});
+	const pubBytes = actions.filter(a => a.action === 'publish-micasurvivor').slice(-6).map(a => a.bytes);
+	console.log(`     live snapshot, 4 players + ${sz.e} foes: ${Math.max(...sz.sizes)} chars (the players block adds ${Math.max(...sz.sizes) - sz.v1}); last publishes ${JSON.stringify(pubBytes)} bytes`);
+	A(sz.pr === 3 && sz.rw === 11 && sz.pz && Math.max(...sz.sizes) < 24000 && Math.max(...pubBytes) < 24000 && sz.err === 0, 'the live snapshot with 4 players is under the 24 KB cap (and the server took every one)', JSON.stringify([sz, pubBytes]));
+	// an older publisher (no players block): the view still shows her and her partners (the v1 rows), no switch
+	await alice.E(() => { window.__lp = G.Replay.livePlayers; G.Replay.livePlayers = () => null; });
+	A(await waitFor(() => bob.E(() => G.WatchUI.frame && G.WatchUI.frame.pi == null && G.WatchUI.drawables().length === 4 && document.getElementById('wb-follow').classList.contains('hidden')), 6000),
+		'a snapshot from an older client (v1 partner rows only) still shows all 4, without the switch', JSON.stringify(await bob.E(() => [G.WatchUI.frame && G.WatchUI.frame.pi, G.WatchUI.drawables().length])));
+	await alice.E(() => { G.Replay.livePlayers = window.__lp; });
+	await bob.E(() => G.WatchUI.leave());
+	await alice.E(() => G.Game.quit());
+	await waitFor(() => alice.visible('scr-over'), 6000);
 	await alice.click('#btn-again');
 
 	// ===================== an online co-op group, watched through a guest =====================

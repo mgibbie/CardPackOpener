@@ -347,9 +347,21 @@ try {
 		G.Projectiles.clearOrbs(p);
 		return { len: row.length, f15: row[15], f7: row[7], old, now, orbs, orbits };
 	});
-	A(b6.len === 17 && /* (U2 appended field 16, the player's dex) */ JSON.stringify(b6.f15) === JSON.stringify(b6.orbits.map(id => [id, 2])) && b6.f7 === b6.orbits[0], 'a co-op frame\'s field 15 lists EVERY orbit move; fields 7-8 keep one for an old reader', JSON.stringify(b6));
+	A(b6.len === 18 && /* (U2 appended field 16, the player's dex; MP polish field 17, the held items) */ JSON.stringify(b6.f15) === JSON.stringify(b6.orbits.map(id => [id, 2])) && b6.f7 === b6.orbits[0], 'a co-op frame\'s field 15 lists EVERY orbit move; fields 7-8 keep one for an old reader', JSON.stringify(b6));
 	A(JSON.stringify(b6.old) === JSON.stringify([b6.orbits[0] + ':2']) && JSON.stringify(b6.now) === JSON.stringify(b6.orbits.map(id => id + ':2')) && b6.orbs.length === 2,
 		'an OLD frame (15 fields, one move) still reads; a new one gives the puppet both orbit moves, and both show their orbs', JSON.stringify(b6));
+	// (MP polish) field 17: your held items (0 when you hold none), for the host's tape and live view; a U2 frame (17 fields) reads as unknown
+	const b6i = await E(page, () => {
+		const pl = G.Game.player, had = [pl.item, pl.item2], ids = G.Items.LIST.filter(x => !x.instant).map(x => x.id);
+		pl.item = null; pl.item2 = null;
+		const none = G.Coop.stateOf(pl)[17];
+		pl.item = ids[0]; pl.item2 = ids[1];
+		const row = G.Coop.stateOf(pl);
+		pl.item = had[0]; pl.item2 = had[1];
+		return { none, f17: row[17], ids: ids.slice(0, 2), read: G.Coop.readState(row).it, old: G.Coop.readState(row.slice(0, 17)).it, bad: G.Coop.readState([...row.slice(0, 17), ['nope', 5]]).it };
+	});
+	A(b6i.none === 0 && JSON.stringify(b6i.f17) === JSON.stringify(b6i.ids) && JSON.stringify(b6i.read) === JSON.stringify(b6i.ids) && b6i.old === null && JSON.stringify(b6i.bad) === '["",""]',
+		'a co-op frame\'s field 17 carries your held items (0 = none); an older frame (17 fields) reads as unknown; junk reads as none', JSON.stringify(b6i));
 	// B7: tapes: a new one, and an old one (no af) made from it
 	const b7 = await E(page, async () => {
 		const H = window.__t, pl = G.Game.player;

@@ -8,7 +8,8 @@
 //   2. a deep Dive (60 floors): a segment per 10 floors; every floor 1-60 is in the tape and plays back
 //   3. a 4-player session (you + 3 local partners): every player's row and casts are recorded; the viewer follows any of
 //      them (setFollow / F key / LB-RB), draws every player's casts as ghosts and names the partners
-//   4. online co-op (alice hosts, bob joins over WebRTC): the HOST's tape has bob's row and his casts; bob's own tape stays
+//   4. online co-op (alice hosts, bob joins over WebRTC): the HOST's tape has bob's row and his casts (MP polish: and his held
+//      items and Ultimate charge, from his co-op frames); bob's own tape stays
 //      local (a guest never uploads in the background)
 //   5. the session cap: past it the tape ends with an explicit marker and the viewer says "The replay ends here"
 //   6. v1 tapes still play (the golden fixture's, and a v1 entry kept in the browser)
@@ -366,12 +367,16 @@ try {
 			// (a player whose moves all circle it (orbits) or buff it casts nothing: those are drawn from its move list)
 			const sl = rd.at(rd.length - 1, 0), kinds = [sl.mv, ...[1, 2, 3].map(k => rd.at(rd.length - 1, k).mv)].map(mv => (mv || []).map(m => (G.Moves.BY_ID[m[0]] || {}).kind));
 			const castless = kinds.map(l => l.length > 0 && l.every(k => k === 'orbit' || k === 'buff'));
-			return { ran, live, players: d.h.players, castsBy, rowsBy, frames, size: e.segs[0].length, np: e.meta.np, kinds, castless, real };
+			const rw = ((d.f.find(f => f[12] && f[12][0]) || [])[12] || [])[0];
+			const info = (rd.at(rd.length - 1, 0).mt || []).map(m => m[13] || null);
+			return { ran, live, players: d.h.players, castsBy, rowsBy, frames, size: e.segs[0].length, np: e.meta.np, kinds, castless, real, rw: rw ? rw.length : 0, info, lv: rd.at(rd.length - 1, 0).lv[0] };
 		});
 		console.log(`     4 players: ${four.error || ""} ${four.frames} frames, casts by player ${JSON.stringify(four.castsBy)}, packed ${four.size} chars`);
 		A(four.ran === 4 && four.players && four.players.length === 4 && four.np === 4, 'a 4-player local session: the header lists every player (you + 3 partners)', JSON.stringify(four.players));
 		A(four.players && four.players[0].k === 'me' && four.players.slice(1).every((p, i) => p.k === 'l' && /J[234]$/.test(p.name) && p.dex > 0), '...with their names, species and kinds', JSON.stringify(four.players));
 		A(four.rowsBy && [1, 2, 3].every(k => four.rowsBy[k] >= four.frames - 1), 'every frame has every partner\'s row (field 12)', JSON.stringify([four.rowsBy, four.frames]));
+		// (MP polish: a row has 2 more fields, the Ultimate's charge and the kit flags; the viewer's partner rows carry level / items / kit)
+		A(four.rw === 11 && four.info.length === 3 && four.info.every(x => x && x.lv === four.lv && Array.isArray(x.it) && x.u === null && typeof x.kf === 'number'), 'each row carries the kit fields (11); the viewer reads every partner\'s level, items and kit', JSON.stringify([four.rw, four.info, four.lv]));
 		A(four.castsBy && JSON.stringify(four.castsBy) === JSON.stringify(four.real) && four.castsBy.filter(n => n > 20).length >= 3,
 			'every player\'s casts are recorded, each one (field 14: the move, its level, the aim)', JSON.stringify([four.castsBy, four.real, four.kinds]));
 		// the viewer: follow anyone
@@ -488,6 +493,13 @@ try {
 			// (a real-time run: both clients play for ~14 s, segments every 4 s so the background upload shows)
 			await guest.E(() => { const pl = G.Game.player; pl.hurt = () => {}; pl.invuln = 1e9; G.Replay.K.SEG_SECS = 4; });
 			await host.E(() => { const pl = G.Game.player; pl.hurt = () => {}; pl.invuln = 1e9; G.Replay.K.SEG_SECS = 4; });
+			// (MP polish: bob holds two items and his Ultimate is half charged: his co-op frames carry them to the host's tape)
+			const bobKit = await guest.E(() => {
+				const pl = G.Game.player, ids = G.Items.LIST.filter(x => !x.instant).map(x => x.id);
+				pl.item = ids[0]; pl.item2 = ids[1];
+				G.ExpUlt.debugCharge(0.5);
+				return { it: [pl.item, pl.item2] };
+			});
 			await sleep(14000);
 			const gs = await guest.E(() => { const sz = G.Replay.size; return sz && { host: sz.host, upOn: sz.upOn, segs: sz.segs, players: sz.players }; });
 			const hs = await host.E(async () => {
@@ -495,15 +507,21 @@ try {
 				G.Game.quit(); await new Promise(r => setTimeout(r, 400));
 				const e = G.Replay.last; await e.ready; if (e.upload) await e.upload;
 				G.Replay.K.SEG_SECS = 300;
-				const casts = [0, 0]; let rows = 0, frames = 0, players = null;
+				const casts = [0, 0]; let rows = 0, frames = 0, players = null, kit = null, pov = null;
 				for (const c of e.segs) {
 					const d = JSON.parse(await G.Replay.unpack(c));
 					players = d.h.players;
 					for (const f of d.f) { for (const x of f[14] || []) casts[x[0]] = (casts[x[0]] || 0) + 1; }
 					const rd = await G.Replay.open(c);
-					for (let i = 0; i < rd.length; i++) { frames++; if ((rd.at(i).mt || []).some(m => m[11] === 1)) rows++; }
+					for (let i = 0; i < rd.length; i++) {
+						frames++;
+						const s0 = rd.at(i), m1 = (s0.mt || []).find(m => m[11] === 1);
+						if (m1) rows++;
+						if (m1 && m1[13]) kit = { it: m1[13].it, u: m1[13].u, kf: m1[13].kf };
+						if (m1 && !pov) { const s1 = rd.at(i, 1); if (s1.it && s1.it[0]) pov = { it: s1.it, pi: s1.pi }; }
+					}
 				}
-				return { players, casts, rows, frames, segs: e.segs.length, id: e.id, live: live && { host: live.host, upOn: live.upOn } };
+				return { players, casts, rows, frames, segs: e.segs.length, id: e.id, live: live && { host: live.host, upOn: live.upOn }, kit, pov };
 			});
 			await guest.E(async () => { G.Replay.K.SEG_SECS = 300; for (let i = 0; i < 30 && G.Game.state !== 'over'; i++) await new Promise(r => setTimeout(r, 100)); const e = G.Replay.last; if (e) await e.ready; });
 			await sleep(500);
@@ -511,6 +529,8 @@ try {
 			A(hs.players && hs.players.length === 2 && hs.players[1].k === 'o' && hs.players[1].name === 'bob', "the host's tape lists both players: alice (her own) and bob (online)", JSON.stringify(hs.players));
 			A(hs.rows >= hs.frames * 0.6 && hs.casts[1] > 0 && hs.casts[0] > 0, "it records bob's row (from his co-op frames) and his casts (his ghosts), as well as alice's", JSON.stringify(hs));
 			A(hs.live && hs.live.host && hs.live.upOn && hs.segs >= 2 && sessBy('alice').some(x => x.idx.length === hs.segs && x.players.length === 2), 'the host uploads the session in the background (both players in its index row)', JSON.stringify([hs.live, hs.segs, sessBy('alice').map(x => [x.idx.length, x.players.length])]));
+			A(hs.kit && JSON.stringify(hs.kit.it) === JSON.stringify(bobKit.it) && hs.kit.u >= 50 && hs.kit.u <= 75 && (hs.kit.kf & 1), "the host's tape has bob's held items and his Ultimate's charge (from his co-op frames)", JSON.stringify([hs.kit, bobKit]));
+			A(hs.pov && hs.pov.pi === 1 && JSON.stringify(hs.pov.it) === JSON.stringify(bobKit.it), "...and following bob in the replay shows his items as his own", JSON.stringify(hs.pov));
 			A(gs && gs.host === false && gs.upOn === false && gs.segs >= 1 && gs.players >= 2 && !sessBy('bob').length, 'bob (a guest) records his own tape here, with both players, but never uploads it', JSON.stringify([gs, sessBy('bob').length]));
 		}
 		await host.ctx.close(); await guest.ctx.close();
