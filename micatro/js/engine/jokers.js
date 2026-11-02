@@ -15,7 +15,7 @@ import {
   pseudorandom, pseudoseed, pseudorandom_element, next,
   ease_dollars, ease_discard, ease_hands_played, draw_card, level_up_hand, update_hand_text, delay,
   create_card, create_playing_card, copy_card, probability_roll, quantum_enhancements, has_quantum_enhancement, mod_context_effect,
-  set_actor, with_actor,
+  set_actor, with_actor, can_be_destroyed_by_joker,
 } from './core.js';
 import * as B from './bignum.js';
 import { get_poker_hand_info, calculate_context } from './run.js';
@@ -383,7 +383,7 @@ Card.prototype.calculate_joker = function (context) {
         const destructable_jokers = [];
         for (let i = 0; i < G.jokers.cards.length; i++) {
           const j = G.jokers.cards[i];
-          if (j !== this && !j.ability.eternal && !j.getting_sliced) destructable_jokers.push(j);
+          if (j !== this && can_be_destroyed_by_joker(j) && !j.getting_sliced) destructable_jokers.push(j);
         }
         const joker_to_destroy = destructable_jokers.length > 0 ? pseudorandom_element(destructable_jokers, pseudoseed('madness'))[0] : null;
 
@@ -436,7 +436,7 @@ Card.prototype.calculate_joker = function (context) {
         for (let i = 0; i < G.jokers.cards.length; i++) {
           if (G.jokers.cards[i] === this) { my_pos = i; break; }
         }
-        if (my_pos !== null && G.jokers.cards[my_pos + 1] && !this.getting_sliced && !G.jokers.cards[my_pos + 1].ability.eternal && !G.jokers.cards[my_pos + 1].getting_sliced) {
+        if (my_pos !== null && G.jokers.cards[my_pos + 1] && !this.getting_sliced && can_be_destroyed_by_joker(G.jokers.cards[my_pos + 1]) && !G.jokers.cards[my_pos + 1].getting_sliced) {
           const sliced_card = G.jokers.cards[my_pos + 1];
           sliced_card.getting_sliced = true;
           G.GAME.joker_buffer = G.GAME.joker_buffer - 1;

@@ -183,6 +183,7 @@ import {
   add_card, detailed, energy_values, poke_remove_card, ease_dollars, ease_discard, juice_card_until, find_card, get_total_energy, POST_EVOLVE, can_evolve,
   poke_change_growth_level,
   poke_get_adjacent_jokers, emit, find_joker, poke_drain, level_up_hand, poke_evolve, increment_energy, can_increase_energy, smods_debuff_card, blueprint_compat_line,
+  can_be_destroyed_by_joker,
 } from '../api.js';
 import { blueprint_effect } from './pokejokers_08.js';
 import * as BN from '../../../js/engine/bignum.js'; // the Blind's requirement (Poison Gas) may be a big number in modded runs
@@ -2439,6 +2440,10 @@ function sigil_pair(card, context) {
 const YAMASK_LINE = ['j_poke_yamask', 'j_poke_cofagrigus'];
 const GRUDGE_CAP = { j_poke_yamask: 1, j_poke_cofagrigus: 2 };
 const nerf58 = () => rulesRev('pokermon') >= 58;
+/** Pokermon r68 (the Komala fix): Joker effects skip Komala when choosing what to destroy, as an Eternal (index.js hooks.joker_destroy_immune ->
+ *  the engine's can_be_destroyed_by_joker). On r65-r67 they targeted it, it refused (no_destroy) and the destroyer still took its gain
+ *  (Ceremonial Dagger's +2x sell value every Blind): a recorded run replays as recorded. */
+export const komala_destroy_immune = (card) => (card && card.ability && card.ability.name === 'komala' && rulesRev('pokermon') >= 68 ? true : undefined);
 const grudge_cap = (card) => GRUDGE_CAP[card.config.center.key] || 1;
 const grudge_used = (card) => { const ex = card.ability.extra; return G.GAME && ex.grudge_round === G.GAME.round ? (ex.grudge_count || 0) : 0; };
 const grudge_left = (card) => Math.max(0, grudge_cap(card) - grudge_used(card));
@@ -7856,7 +7861,7 @@ function salandit_state(card) {
 function strong_hug(card, context) {
   if (!round_end(context) || context.blueprint || context.retrigger_joker || context.game_over || card.getting_sliced) return undefined;
   const i = G.jokers.cards.indexOf(card), right = i >= 0 ? G.jokers.cards[i + 1] : undefined;
-  if (!right || right.ability.eternal || right.getting_sliced) return undefined;
+  if (!right || !can_be_destroyed_by_joker(right) || right.getting_sliced) return undefined;
   const ex = card.ability.extra;
   if (!pseudorandom_probability(card, 'bewear', ex.num, ex.dem, 'bewear')) return undefined;
   right.getting_sliced = true;
@@ -8003,7 +8008,7 @@ defineJokers({
       type_tooltip(self, info_queue, card);
       const ex = card.ability.extra, [n, d] = get_probability_vars(card, ex.num, ex.dem, 'bewear');
       const i = G.jokers ? G.jokers.cards.indexOf(card) : -1, right = i >= 0 ? G.jokers.cards[i + 1] : undefined;
-      return { vars: [r3(ex.Xmult), n, d, right ? (right.ability.eternal ? 'Eternal: safe' : 'In its arms: ' + localize({ type: 'name_text', set: 'Joker', key: right.config.center.key })) : 'Nothing to its right'] };
+      return { vars: [r3(ex.Xmult), n, d, right ? (right.ability.eternal ? 'Eternal: safe' : !can_be_destroyed_by_joker(right) ? 'Comatose: safe' : 'In its arms: ' + localize({ type: 'name_text', set: 'Joker', key: right.config.center.key })) : 'Nothing to its right'] };
     },
     calculate(self, card, context) {
       if (context.joker_main) return { message: a_xmult(r3(card.ability.extra.Xmult)), colour: 'XMULT', Xmult_mod: card.ability.extra.Xmult };
@@ -8070,8 +8075,11 @@ defineJokers({
     },
   },
   // Komala 775 (Colorless, Rare $7), Comatose: X1.5 Mult (`Xmult` +20%: 1.8 / 2.1 / 2.4). Can't be debuffed (systems/rules.js set_debuff) and
-  // can't be destroyed by a Joker (it answers joker_type_destroyed for itself with no_destroy: Madness, Ceremonial Dagger, Bewear, Carvanha /
-  // Sharpedo, Scizor... every getting_sliced path); Hex and Ankh (Spectral cards you choose) and selling still remove it.
+  // can't be destroyed by a Joker: from r68 Jokers skip it when choosing what to destroy, as an Eternal (komala_destroy_immune, index.js
+  // hooks.joker_destroy_immune -> the engine's can_be_destroyed_by_joker: Ceremonial Dagger, Madness, Bewear, Carvanha / Sharpedo, Scyther /
+  // Scizor / Kleavor, Rotom Fan, Mega Mewtwo X, Nacli...), so the destroyer gains nothing. r65-r67 (and any path that still marks it
+  // getting_sliced: a Boss Blind, another mod's joker) it refuses the destroy (joker_type_destroyed -> no_destroy). Hex and Ankh (Spectral
+  // cards you choose) and selling still remove it.
   komala: {
     name: 'komala', poke_sprite391: sprite('Natdex', 18, 51),
     config: { extra: { Xmult: 1.5 } },
@@ -9314,7 +9322,7 @@ export const DESIGN_LOC = {
       ['Gains {C:chips}+#1#{} Chips at', 'end of round', '{C:inactive}(Currently {C:chips}+#2#{C:inactive} Chips)'],
       ['{C:attention}Innards Out:{} when sold or', 'destroyed, earn {C:money}$#3#{} for', 'each round held', '{C:inactive}(Currently {C:money}$#4#{C:inactive})'],
     ] },
-    j_poke_komala: { name: 'Komala', text: ['{X:mult,C:white} X#1# {} Mult', '{C:attention}Comatose:{} can\'t be {C:attention}debuffed{},', 'and Jokers can\'t destroy it', '{C:inactive}(Selling, Hex and Ankh', '{C:inactive}still remove it)'] },
+    j_poke_komala: { name: 'Komala', text: ['{X:mult,C:white} X#1# {} Mult', '{C:attention}Comatose:{} can\'t be {C:attention}debuffed{},', 'and Jokers can\'t destroy it', '{C:inactive}(Jokers skip it when choosing', '{C:inactive}what to destroy; selling,', '{C:inactive}Hex and Ankh still remove it)'] },
     j_poke_bruxish: { name: 'Bruxish', text: ['{C:attention}Strong Jaw:{} retrigger', 'each scored card', 'with a {C:attention}seal{}'] },
     j_poke_jangmoo: { name: 'Jangmo-o', text: ['Gains {C:mult}+#1#{} Mult each time', 'you play a {C:attention}Full House{}', '{C:inactive}(Currently {C:mult}+#2#{C:inactive} Mult)', '{C:inactive,s:0.8}(Evolves at {C:mult,s:0.8}+#2#{C:inactive,s:0.8} / +#3# Mult)'] },
     j_poke_hakamoo: { name: 'Hakamo-o', text: ['Gains {C:mult}+#1#{} Mult each time', 'you play a {C:attention}Full House{}', '{C:inactive}(Currently {C:mult}+#2#{C:inactive} Mult)', '{C:inactive,s:0.8}(Evolves at {C:mult,s:0.8}+#2#{C:inactive,s:0.8} / +#3# Mult)'] },

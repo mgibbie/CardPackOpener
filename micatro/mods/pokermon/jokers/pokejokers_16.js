@@ -12,6 +12,7 @@ import {
   defineJokers, type_tooltip, detailed, level_evo, faint_baby_poke, find_pokemon_type, is_type, has_enhancement,
   ease_poke_dollars, get_probability_vars, pseudorandom_probability, poke_add_shop_card, poke_convert_cards_to,
   poke_vary_rank, juice_flip_table, add_card, POKE_POOL_RULES, get_total_energy, create_consumeable, energy_max,
+  can_be_destroyed_by_joker,
 } from '../api.js';
 import { Tag, add_tag } from '../../../js/engine/tag.js';
 import { P_TAGS } from '../../../js/engine/core.js';
@@ -563,7 +564,7 @@ defineJokers({
         let my_pos = null;
         for (let i = 0; i < G.jokers.cards.length; i++) if (G.jokers.cards[i] === card) { my_pos = i; break; }
         const right = my_pos !== null ? G.jokers.cards[my_pos + 1] : undefined;
-        if (right && !card.getting_sliced && !right.ability.eternal && !right.getting_sliced) {
+        if (right && !card.getting_sliced && can_be_destroyed_by_joker(right) && !right.getting_sliced) {
           const sliced_card = right;
           sliced_card.getting_sliced = true;
           G.GAME.joker_buffer = G.GAME.joker_buffer - 1;

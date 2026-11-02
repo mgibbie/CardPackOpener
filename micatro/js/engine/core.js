@@ -1871,6 +1871,15 @@ export function mod_chips(c) {
   return G.GAME.modifiers.chips_dollar_cap ? B.min(c, Math.max(G.GAME.dollars, 0)) : c;
 }
 export function mod_mult(m) { return ACTIVE_MODS.length ? reduceHook('mod_mult', m) : m; }
+/**
+ * Can a JOKER's effect pick this joker to destroy? (Ceremonial Dagger, Madness, the mods' slicers and eaters.) Not an Eternal
+ * one, and not one a mod makes act Eternal for destroy (`joker_destroy_immune`: Pokermon r68's Komala, Comatose): such a joker
+ * is never targeted, so its destroyer gains nothing and doesn't slice. Selling, Hex and Ankh are not Joker effects.
+ */
+export function can_be_destroyed_by_joker(card) {
+  if (!card || !card.ability || card.ability.eternal) return false;
+  return !(ACTIVE_MODS.length && callHook('joker_destroy_immune', card).includes(true));
+}
 
 export function check_for_unlock() { /* achievements are out of scope */ }
 export function inc_career_stat() {}

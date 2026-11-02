@@ -3552,8 +3552,9 @@ now runs Drifblim's Aftermath and Pyukumuku's Innards Out.
 - **Komala** (R $7), Comatose: **X1.5**; **can't be debuffed** (set_debuff `prevent_debuff`: Boss Blinds such as Crimson Heart, Perishable...);
   **Jokers can't destroy it**: it answers `joker_type_destroyed` for itself with `no_destroy`, so Madness, Ceremonial Dagger, Carvanha /
   Sharpedo, Scizor, Bewear and every other getting_sliced path leave it. The choice: **Hex and Ankh** (Spectral cards the player chooses) **and
-  selling still remove it**. Note (Steamodded's no_destroy rule, as Passimian): the attacker still takes its own gain — Madness its X0.5,
-  Ceremonial Dagger its +2 x sell value Mult — while Komala stays. Energy `Xmult` 1.5 -> 1.8 / 2.1 / 2.4.
+  selling still remove it**. Note (r65-r67; Steamodded's no_destroy rule, as Passimian): the attacker still took its own gain — Madness its X0.5,
+  Ceremonial Dagger its +2 x sell value Mult — while Komala stayed. **Fixed in r68** ("The Komala fix" below): Jokers skip it when choosing
+  what to destroy, as an Eternal. Energy `Xmult` 1.5 -> 1.8 / 2.1 / 2.4.
 - **Bruxish** (R $7), Strong Jaw: **every scored card with a seal retriggers once** (get_seal: a debuffed card has none; a Red Seal card scores 3
   times; a Gold Seal pays twice). Blueprint copies it. Energy-inert.
 - **Jangmo-o** (U $6) / **Hakamo-o** (S $8) / **Kommo-o** (S $10), Clangorous Scales / Soul: **+2 / +4 Mult banked each time you play a Full
@@ -3649,6 +3650,21 @@ Ultra Necrozma {0,5} (Dragon), Marshadow's Zenith {4,5} (Fighting, unlisted upst
 - **Wiki**: regenerated (the 14 drop off; their wiki sprites are gone from `designwiki/sprites/pokermon_jokers/`).
 - **Tests**: `micatro/tests/mods/pokermon_gen7_legendaries_test.mjs` (fails on main: no such jokers).
 
+### The Komala fix: Jokers skip Komala when choosing what to destroy (2026-11-02, branch `fix/komala-destroy-skip`)
+Pinned **`3.9.1+r68`** (`contentRev: 68`; `LEGACY_MOD_VERSIONS` untouched). The owner's fix: on r65-r67 a Joker that destroys Jokers TARGETED
+Komala, Komala refused (`no_destroy`) and the destroyer still took its gain — Ceremonial Dagger with Komala to its right got +2x Komala's sell
+value Mult every Blind while Komala stayed (a free infinite engine). Now every Joker effect that picks a Joker to destroy asks the engine's
+**`can_be_destroyed_by_joker(card)`** (`js/engine/core.js`: not Eternal, and no active mod's `joker_destroy_immune` hook answers true), and
+Pokermon answers true for Komala (`komala_destroy_immune`, gated on `rulesRev('pokermon') >= 68`). So Komala is skipped **exactly like an
+Eternal**: not targeted, no gain, no slice. Routed through it: vanilla **Ceremonial Dagger** (Komala to its right: nothing that Blind) and
+**Madness** (picks among the other destroyable Jokers; still gains its X0.5), **Scyther / Scizor**, **Mega Scizor**, **Carvanha / Sharpedo**
+(`shark_slice`), **Rotom Fan**, **Kleavor**, **Mega Mewtwo X** (an Eternal / Komala leftmost is copied, not consumed), **A Billion Lions**,
+**Bewear** (tooltip: "Comatose: safe"), Pokermon+'s **Nacli line** (Salt Cure), and the Monotype predicted row (`systems/runbadges.js`).
+Nacho has no Joker destroyer. Unchanged: the `no_destroy` refusal stays as the backstop (a Boss Blind, another mod's destroyer); Hex, Ankh
+and selling still remove Komala. Never retroactive: a run recorded on r65-r67 replays every move on its own rules (`js/mods/pins.js` RULES).
+- **Tests**: `micatro/tests/mods/pokermon_komala_destroy_test.mjs` (plays Dagger / Madness / Bewear / Carvanha / Sharpedo / Scyther / Nacli with
+  Komala; the Eternal and plain-joker controls; r67 rules and an r67 recipe replayed as recorded; 12 checks fail with the hook removed);
+  `pokermon_gen7_batch2_test` (Dagger now +0); the pins (`modpin`, `pokermon_391_data`, `pokermon_new_jokers`, `micatro_mod_version_pin`).
 ### Pending from the 3.9.1 joker rework (after batch 10b)
 Every existing joker is on 3.9.1: `rework_hold` (still on 3.2.1) is empty. What waits, by the batch it waits on (`rework_deferred` =
 on 3.9.1 but one part):

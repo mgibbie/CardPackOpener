@@ -231,6 +231,7 @@ export const HOOKS = [
   'can_sell',           // (card) -> false: this card can't be sold now
   'shop_joker_stickers',// (card, area) create_card: a shop / pack joker, before the vanilla eternal / perishable poll
   'block_eternal',      // (card) -> true: create_card's set_eternal(true) is skipped for this card
+  'joker_destroy_immune', // (card) -> true: Joker effects skip this card when choosing what to destroy, as an Eternal (can_be_destroyed_by_joker)
   'consumable_edition_scores', // (card) -> false: a consumable's edition doesn't score in the joker loop
   'rescore_cards',      // (scoring_hand, ctx, score_card) once the played cards scored: score_card(card) scores a played card again (Bunco's Copper)
   'chips_scored',       // (total, ctx) -> the amount the hand adds to G.GAME.chips (the stats keep the real total)

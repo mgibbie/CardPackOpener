@@ -11,6 +11,7 @@ import {
   find_card, find_pokemon_type, is_type, energize, ease_poke_dollars, poke_is_odd, find_playing_card, get_depleted, get_enhancements,
   get_target_card_enhancements, get_poke_target_card_ranks, add_target_cards_to_vars,
   copy_card, poke_add_card, calculate_context, type_colour, blueprint_compat_line,
+  can_be_destroyed_by_joker,
 } from '../api.js';
 import { blueprint_effect } from './pokejokers_08.js';
 
@@ -205,7 +206,7 @@ function shark_slice(card, context) {
     card.ability.extra.selected = true;
     const my_pos = G.jokers.cards.indexOf(card);
     const sliced_card = my_pos >= 0 ? G.jokers.cards[my_pos + 1] : undefined;
-    if (sliced_card && !card.getting_sliced && !sliced_card.ability.eternal && !sliced_card.getting_sliced) {
+    if (sliced_card && !card.getting_sliced && can_be_destroyed_by_joker(sliced_card) && !sliced_card.getting_sliced) {
       sliced_card.getting_sliced = true;
       G.GAME.joker_buffer = G.GAME.joker_buffer - 1;
       G.E_MANAGER.add_event(() => {

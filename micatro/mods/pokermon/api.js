@@ -10,6 +10,7 @@ export {
   pseudorandom, pseudoseed, pseudorandom_element, pseudoshuffle, math_random, next, copy_table,
   ease_dollars, ease_discard, ease_hands_played, ease_ante, ease_chips, draw_card, level_up_hand,
   create_card, create_playing_card, copy_card, poll_edition, find_joker, eval_card, all_cards, P_CARDS_LIST,
+  can_be_destroyed_by_joker,
 } from '../../js/engine/core.js';
 export { juice_card_until, playing_card_joker_effects } from '../../js/engine/jokers.js';
 export {

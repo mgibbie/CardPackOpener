@@ -9,7 +9,8 @@
 //                                          Pokémon Joker still under its Energy cap. Energy-inert itself.
 //   Sandygast 769 -> Palossand (Psychic)   +10 Chips banked per scored Stone card / X0.05 banked from X1 (Palossand keeps giving the Chips).
 //   Pyukumuku 771 (Water, R $7)            +10 Chips banked each end of round; Innards Out: sold or destroyed, $1 per round held.
-//   Komala 775 (Colorless, R $7)           X1.5; Comatose: can't be debuffed, and a Joker can't destroy it (no_destroy).
+//   Komala 775 (Colorless, R $7)           X1.5; Comatose: can't be debuffed, and a Joker can't destroy it (r68: Jokers skip it when
+//                                          choosing what to destroy, as an Eternal: pokermon_komala_destroy_test.mjs).
 //   Bruxish 779 (Water, R $7)              Strong Jaw: every scored card with a seal retriggers once.
 //   Jangmo-o 782 -> Hakamo-o -> Kommo-o    +2 / +4 Mult banked per Full House played (evolving at +16 / +40); Kommo-o keeps the bank and
 //   (Dragon)                               gives X1 + X0.15 per Full House played this run (G.GAME.hands['Full House'].played).
@@ -404,18 +405,18 @@ await sec('komala', () => {
   for (let i = 0; i < 4; i++) { t = play(['S_A']); if (j2.debuff) hit++; ok(!k.debuff, 'Crimson Heart: Komala never debuffed (hand ' + (i + 1) + ')', k.debuff); }
   ok(hit >= 1, 'Crimson Heart debuffed the other joker instead', hit);
   j2.remove(); flush();
-  // Madness: it picks Komala (the only other joker) and Komala stays
+  // Madness: Komala (the only other joker) is never picked; Madness still gains its X0.5
   start('KOMMAD');
   const mad = add('j_madness');
   const k2 = add('j_poke_komala');
   rounds(1);
   ok(owned(k2) && near(mad.ability.x_mult, 1.5), 'Madness at the Big Blind (it fired: X1.5): Komala stays', [G.jokers.cards.map(key), mad.ability.x_mult]);
-  // Ceremonial Dagger: stays (the Dagger still gains, Steamodded's no_destroy rule)
+  // Ceremonial Dagger: skips Komala as an Eternal neighbour (r68: no gain, no slice)
   start('KOMDAG');
   const dag = add('j_ceremonial');
   const k3 = add('j_poke_komala');
   rounds(1);
-  ok(owned(k3) && G.jokers.cards.length === 2 && dag.ability.mult > 0, 'Ceremonial Dagger (it fired: +' + dag.ability.mult + ' Mult, the no_destroy rule): Komala stays', [G.jokers.cards.map(key), dag.ability.mult]);
+  ok(owned(k3) && G.jokers.cards.length === 2 && dag.ability.mult === 0, 'Ceremonial Dagger skips Komala (+0 Mult, r68): Komala stays', [G.jokers.cards.map(key), dag.ability.mult]);
   // Bewear's hug: stays
   start('KOMBEW');
   add('j_poke_bewear');
@@ -431,7 +432,7 @@ await sec('komala', () => {
   const k5 = add('j_poke_komala');
   k5.start_dissolve(); flush();
   ok(!owned(k5), 'a non-Joker destroy (Hex, Ankh) still removes it');
-  ok(/can't be debuffed/.test(plain(k5)) && /Jokers can't destroy it/.test(plain(k5)), 'its text', plain(k5));
+  ok(/can't be debuffed/.test(plain(k5)) && /Jokers can't destroy it/.test(plain(k5)) && /Jokers skip it when choosing/.test(plain(k5)), 'its text', plain(k5));
 });
 
 // ------------------------------------------------------------------- Bruxish

@@ -9,6 +9,7 @@ import {
   defineJokers, type_tooltip, detailed, scaling_evo, level_evo, item_evo, ease_poke_dollars, has_enhancement, has_no_suit,
   get_probability_vars, pseudorandom_probability, poke_remove_card, scale_card, hazard_layer, hazard_level_tip,
   matching_energy, poke_evolve, faint_baby_poke, smods_create_card, add_card, find_pokemon_type, change_discard_limit,
+  can_be_destroyed_by_joker,
 } from '../api.js';
 import { Tag, add_tag } from '../../../js/engine/tag.js';
 
@@ -179,7 +180,7 @@ defineJokers({
         let my_pos = null;
         for (let i = 0; i < G.jokers.cards.length; i++) if (G.jokers.cards[i] === card) { my_pos = i; break; }
         const right = my_pos !== null ? G.jokers.cards[my_pos + 1] : undefined;
-        if (right && !card.getting_sliced && !right.ability.eternal && !right.getting_sliced) {
+        if (right && !card.getting_sliced && can_be_destroyed_by_joker(right) && !right.getting_sliced) {
           const sliced_card = right;
           sliced_card.getting_sliced = true;
           if (sliced_card.config.center.rarity !== 1 && sliced_card.config.center.rarity !== 2) {
@@ -228,7 +229,7 @@ defineJokers({
       if (context.end_of_round && !context.individual && !context.repetition) {
         card.juice_up();
         for (const v of G.jokers.cards.slice()) {
-          if (v.config.center.rarity === 1 && !v.ability.eternal) {
+          if (v.config.center.rarity === 1 && can_be_destroyed_by_joker(v)) {
             v.start_dissolve();
             play_sound('slice1', 0.96);
           }

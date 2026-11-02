@@ -5,6 +5,7 @@ import {
   G, P_CENTERS, localize, card_eval_status_text, play_sound, delay, pseudoseed, pseudorandom_element,
   create_playing_card, poll_edition, find_joker, juice_card_until, P_CARDS_LIST,
   defineJokers, type_tooltip, detailed, scaling_evo, smods_create_card, juice_flip_hand, has_no_suit, POKE_POOL_RULES,
+  can_be_destroyed_by_joker,
 } from '../api.js';
 
 const FILE = 'pokemon/pokejokers_30.lua';
@@ -205,7 +206,7 @@ defineJokers({
         let my_pos = null;
         for (let i = 0; i < G.jokers.cards.length; i++) if (G.jokers.cards[i] === card) { my_pos = i; break; }
         const next = my_pos !== null ? G.jokers.cards[my_pos + 1] : undefined;
-        if (next && !card.getting_sliced && !next.ability.eternal && !next.getting_sliced) {
+        if (next && !card.getting_sliced && can_be_destroyed_by_joker(next) && !next.getting_sliced) {
           const sliced_card = next;
           sliced_card.getting_sliced = true;
           if (sliced_card.config.center.rarity !== 1) {
