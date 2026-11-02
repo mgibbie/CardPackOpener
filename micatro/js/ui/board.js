@@ -365,8 +365,11 @@ export class Board {
       });
     } else {
       // between rounds the hand is empty in vanilla; a card a mod keeps there (Pokermon's Beartic, Freeze) waits below the screen,
-      // out from under the shop / cash-out / blind choice panels, and slides back up with the next deal
-      const away = state === 'SHOP' || state === 'ROUND_EVAL' || state === 'BLIND_SELECT';
+      // out from under the shop / cash-out / blind choice panels, and slides back up with the next deal. Only a KEPT card (one the
+      // view itself holds in hand) waits there: the deal after Select (or a pack's hand) moves cards in while the view still says
+      // BLIND_SELECT / SHOP, and those fly straight to the hand row (a kept one rises with them), never below the screen.
+      const kept = new Set(((this.view && this.view.areas && this.view.areas.hand) || []).map((c) => c.id));
+      const away = (state === 'SHOP' || state === 'ROUND_EVAL' || state === 'BLIND_SELECT') && handIds.every((id) => kept.has(id));
       this.rowTargets(handIds, handRect, { fan: FAN[this.mode], z: 100, gap: 1.02 }).forEach((t, i) => {
         if (away) t.y = this.SH + this.ch;
         if (hl(handIds[i])) t.y -= this.ch * 0.3;
