@@ -14,7 +14,10 @@
 //   (the bar's buttons are pad stops too, ui/pad.js)
 import { setStickerSource } from './stickers.js';
 
-const STEP_PAUSE = { instant: 0.22, move: 0.38 };   // seconds (at 1×) after an action before the next
+const STEP_PAUSE = { instant: 0.22, move: 0.38, pack: 1.3 };   // seconds (at 1×) after an action before the next
+// An open booster pack (shop, skip tag, a tag / joker / mod's pack): live play sits on the pack screen while the
+// player chooses, so the replay holds it too (STEP_PAUSE.pack) — the pick never follows the opening at once.
+const PACK_STATE = /^(TAROT|PLANET|SPECTRAL|STANDARD|BUFFOON)_PACK$|^MOD_PACK/;
 
 const h = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -192,9 +195,12 @@ export async function startReplay(ctx) {
       if (!playing || my !== token) break;
       const r = st.step();
       if (!r || !r.ok) { atEnd(); break; }
-      player.push(nowView(), r.events);
+      const v = nowView();
+      player.push(v, r.events);
       update();
-      await sleep(((INSTANT.has(r.action.type) ? STEP_PAUSE.instant : STEP_PAUSE.move) * 1000) / speed);
+      const inPack = !INSTANT.has(r.action.type) && PACK_STATE.test((v && v.state) || '');
+      if (inPack) await idle();   // (the hold starts once the cards are in the pack, not while they deal)
+      await sleep(((INSTANT.has(r.action.type) ? STEP_PAUSE.instant : inPack ? STEP_PAUSE.pack : STEP_PAUSE.move) * 1000) / speed);
     }
     if (my === token) { if (st.done) atEnd(); update(); }
   }

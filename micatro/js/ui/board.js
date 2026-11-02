@@ -1370,6 +1370,27 @@ export class Board {
     for (const k of this.vis()) for (const c of (finalView.areas && finalView.areas[k]) || []) this.pending.set(c.id, c);
     this.sel = null; this.refreshSelection(); this.hideTip();
   }
+  /**
+   * A booster opens mid-sequence (open_booster, or its first card dealt into the pack): the table switches to the
+   * pack screen NOW — the shop / blind choice slides away and the cards deal into the pack area (an Arcana / Spectral
+   * pack's hand into the hand row) — rather than at the end of the action, so the opening is never drawn over the
+   * shop. The sequence's final view says which pack (state, kind, choices, ...); the rest of the table stays as
+   * shown until the sequence's setView. Shop packs, skip-tag packs, packs from tags / jokers / mods; live play,
+   * replays and spectating alike (they all play the same event stream through ui/player.js).
+   */
+  enterPackView() {
+    const f = this._finalView, v = this.view;
+    if (!f || !v || !PACK_STATES.includes(f.state) || PACK_STATES.includes(v.state)) return;
+    this.view = { ...v, state: f.state, pack_kind: f.pack_kind, pack_choices: f.pack_choices,
+      pack_no_skip: f.pack_no_skip, pack_colours: f.pack_colours, mod_buttons: f.mod_buttons, bunc_virtual: f.bunc_virtual, hand_limit: f.hand_limit };
+    sound.setTrack(f.music || null);
+    for (const s of this.sprites.values()) if (s.priceTag) { s.priceTag.remove(); s.priceTag = null; } // (the shop's price tags go with it)
+    this.renderHud();
+    this.renderOverlay();
+    this.refreshSelection();
+    this.layout();
+    this.setBackground(this.view);
+  }
   areaOf(id) { for (const k of this.vis()) if (this.areas[k].includes(id)) return k; return null; }
   removeFromAreas(id) { for (const k of this.vis()) { const i = this.areas[k].indexOf(id); if (i >= 0) this.areas[k].splice(i, 1); } }
 
@@ -1380,6 +1401,7 @@ export class Board {
     switch (ev.type) {
       case 'move': {
         const id = ev.card, to = ev.to;
+        if (to === 'pack_cards') this.enterPackView(); // (a pack a mod opens without open_booster: Bunco's voucher)
         const from = this.areaOf(id);
         this.removeFromAreas(id);
         if (this.vis().includes(to)) {
@@ -1518,7 +1540,7 @@ export class Board {
         return 0.45;
       }
       case 'bought': { const s = this.sprites.get(ev.card); if (s) { s.juiceUp(0.2); if (s.priceTag) { s.priceTag.remove(); s.priceTag = null; } } return 0.1; }
-      case 'open_booster': { sound.play('cardFan2', 1, 0.7); const s = this.sprites.get(ev.card); if (s) s.juiceUp(0.4); return 0.35; }
+      case 'open_booster': { sound.play('cardFan2', 1, 0.7); const s = this.sprites.get(ev.card); if (s) s.juiceUp(0.4); this.enterPackView(); return 0.35; }
       case 'redeem': { sound.play('coin1'); const s = this.sprites.get(ev.card); if (s) { s.juiceUp(0.5); s.tgt.s = 1.25; } this.attn('Voucher redeemed!', '#fd682b'); return 0.6; }
       case 'skip_blind': sound.play('whoosh1', 1, 0.6); return 0.35;
       case 'blind': {
