@@ -195,15 +195,17 @@ try {
 		const r = await E(() => {
 			const A = G.Abilities;
 			const ids = Object.keys(A.FX);
-			const noAb = G.DEX.filter(m => !A.BY_DEX[m.dex] || !A.FX[A.BY_DEX[m.dex]]).map(m => m.dex);
+			// (U3: a regional forme uses its species' ability, G.Abilities.of -> G.Forms.speciesOf)
+			const abOf = d => A.BY_DEX[d] || (G.Forms && A.BY_DEX[G.Forms.speciesOf(d)]);
+			const noAb = G.DEX.filter(m => !abOf(m.dex) || !A.FX[abOf(m.dex)]).map(m => m.dex);
 			const keys = new Set(); for (const id of ids) for (const k in A.FX[id].fx) keys.add(k);
 			const unhandled = [...keys].filter(k => !A.HANDLED.includes(k));
 			const used = new Set(Object.values(A.BY_DEX));
 			const sample = { 1: A.of(1), 4: A.of(4), 7: A.of(7), 25: A.of(25), 143: A.of(143), 292: A.of(292), 792: A.of(792), 800: A.of(800), 1024: A.of(1024) };
-			return { n: ids.length, dex: G.DEX.length, noAb, unhandled, unused: ids.filter(i => !used.has(i)), sample };
+			return { n: ids.length, dex: G.DEX.length, species: G.DEX.filter(m => m.dex <= 1025).length, noAb, unhandled, unused: ids.filter(i => !used.has(i)), sample };
 		});
 		A(r.n === 54, `54 abilities (${r.n})`);
-		A(r.dex === 1025 && r.noAb.length === 0, `every one of the ${r.dex} Pokémon has a defined ability`, JSON.stringify(r.noAb.slice(0, 20)));
+		A(r.species === 1025 && r.dex >= 1025 && r.noAb.length === 0, `every one of the ${r.dex} Pokémon (1025 species + the regional formes, which use their species') has a defined ability`, JSON.stringify(r.noAb.slice(0, 20)));
 		A(r.unhandled.length === 0, 'every fx key of the port is handled', JSON.stringify(r.unhandled));
 		A(JSON.stringify(r.sample) === JSON.stringify({ 1: 'overgrow', 4: 'blaze', 7: 'torrent', 25: 'static', 143: 'limber', 292: 'wonderguard', 792: 'multiscale', 800: 'solidrock', 1024: 'protean' }),
 			'the port\'s per-dex table (Bulbasaur Overgrow, Pikachu Static, Snorlax Limber, Shedinja Wonder Guard, Lunala Multiscale, Necrozma Solid Rock...)', JSON.stringify(r.sample));
