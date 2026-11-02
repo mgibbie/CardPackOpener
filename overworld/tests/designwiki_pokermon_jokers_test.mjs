@@ -8,7 +8,7 @@
 //   TYPE  owner rule: the type the CARD shows wins. The art typer (tools/micatro/pokermon_art_type.mjs, type-icon template matching)
 //         is first validated leave-one-out on the registered Pokermon jokers (100%); then every wiki card with upstream art has
 //         ptype = its art's type (type_source 'art'), the mapping only where no card / icon exists ('mapping'); mapped_ptype is
-//         the mapping's guess; spot checks of cards whose art differs from the mapping (Guzzlord Dragon, Toedscool Grass...)
+//         the mapping's guess; spot checks of cards whose art differs from the mapping (Koraidon Dragon, Toedscool Grass...)
 //   ART   UPSTREAM FIRST: every species Pokermon 3.9.1's sprite table draws (tools/micatro/specs/pokermon_391_sprite_table.json
 //         — checked against the game's own lookups, data391.js sprites and the owner's jokers' poke_sprite391 — with a non-empty
 //         cell on the shipped sheet) uses that card, pixel-identical to the sheet's cell (+ its soul layer); only the rest are
@@ -95,12 +95,12 @@ try {
 	A(!tBad.length, `every wiki card's type is the type its card art shows (${D.species.filter(s => s.type_source === 'art').length} from the art)`, tBad.slice(0, 8).join(', '));
 	A(!srcWrong.length && D.species.every(s => ['art', 'mapping'].includes(s.type_source)), 'type_source records where each type came from (art, else mapping)', srcWrong.slice(0, 8).join(', '));
 	A(D.counts.typeSource.art + D.counts.typeSource.mapping === D.species.length && D.counts.typeFromArtDiffers === D.species.filter(s => s.ptype !== s.mapped_ptype).length, 'counts.typeSource / typeFromArtDiffers match the list');
-	A(!sp0('Latias') && sp0('Guzzlord')?.ptype === 'Dragon' && sp0('Toedscool')?.ptype === 'Grass' && sp0('Impidimp')?.ptype === 'Fairy' && sp0('Chien-Pao')?.ptype === 'Water' && sp0('Iron Thorns')?.ptype === 'Lightning'
-		&& !sp0('Bewear') && !sp0('Comfey') && sp0('Buzzwole')?.ptype === 'Fighting' && sp0('Buzzwole')?.type_source === 'art' && sp0('Buzzwole')?.mapped_ptype === 'Grass', 'spot check (the card wins; Latias, Dwebble, Venipede, Sandile, Kyurem, Keldeo, Stunfisk, Tyrunt, Phantump, Cutiefly, Comfey and Bewear are in the game now): Guzzlord Dragon, Toedscool Grass, Impidimp Fairy, Chien-Pao Water, Iron Thorns Lightning; Buzzwole Fighting from its art (the mapping said Grass)');
+	A(!sp0('Latias') && !sp0('Guzzlord') && sp0('Koraidon')?.ptype === 'Dragon' && sp0('Toedscool')?.ptype === 'Grass' && sp0('Impidimp')?.ptype === 'Fairy' && sp0('Chien-Pao')?.ptype === 'Water' && sp0('Iron Thorns')?.ptype === 'Lightning'
+		&& !sp0('Bewear') && !sp0('Comfey') && !sp0('Buzzwole') && sp0('Runerigus')?.ptype === 'Psychic' && sp0('Runerigus')?.type_source === 'art' && sp0('Runerigus')?.mapped_ptype === 'Earth', 'spot check (the card wins; Latias, Dwebble, Venipede, Sandile, Kyurem, Keldeo, Stunfisk, Tyrunt, Phantump, Cutiefly, Comfey, Bewear and the Ultra Beasts are in the game now): Koraidon Dragon, Toedscool Grass, Impidimp Fairy, Chien-Pao Water, Iron Thorns Lightning; Runerigus Psychic from its art (the mapping said Earth)');
 	A(D.species.every(s => ['Basic', 'One', 'Two', 'Baby', 'Legendary'].includes(s.stage) && s.line.some(l => l.dex === s.dex)), 'every species has an upstream stage and sits in its own line');
 	const sp = sp0;
-	A(sp('Orbeetle')?.stage === 'Two' && sp('Dottler')?.stage === 'One' && sp('Toxel')?.stage === 'Baby' && sp('Tapu Koko')?.stage === 'Legendary' && sp('Corviknight')?.ptype === 'Metal' && !sp('Jangmo-o') && sp('Naganadel')?.ptype === 'Dragon',
-		'spot check: Orbeetle Stage 2, Dottler Stage 1 (the Pikipek and Jangmo-o lines are in the game now), Toxel Baby, Tapu Koko Legendary (Yveltal is in the game now), Corviknight Metal, Naganadel Dragon');
+	A(sp('Orbeetle')?.stage === 'Two' && sp('Dottler')?.stage === 'One' && sp('Toxel')?.stage === 'Baby' && sp('Tapu Koko')?.stage === 'Legendary' && sp('Corviknight')?.ptype === 'Metal' && !sp('Jangmo-o') && !sp('Naganadel') && sp('Cyclizar')?.ptype === 'Dragon',
+		'spot check: Orbeetle Stage 2, Dottler Stage 1 (the Pikipek and Jangmo-o lines are in the game now), Toxel Baby, Tapu Koko Legendary (Yveltal is in the game now), Corviknight Metal, Cyclizar Dragon (the Ultra Beasts are in the game now)');
 
 	// ================================================================== ART
 	// UPSTREAM FIRST: a species Pokermon 3.9.1's sprite table draws (tools/micatro/specs/pokermon_391_sprite_table.json, a

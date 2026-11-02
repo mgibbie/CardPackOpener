@@ -130,7 +130,7 @@ await sec('static', () => {
   const RUNS = [
     [keys[keys.indexOf('j_poke_salandit') - 1].slice(7), ['salandit', 'salazzle', 'stufful', 'bewear', 'comfey', 'sandygast', 'palossand', 'pyukumuku', 'komala'], 'mimikyu'],
     ['mimikyu', ['bruxish'], 'drampa'],
-    ['mega_drampa', ['jangmoo', 'hakamoo', 'kommoo'], 'grookey'],
+    ['mega_drampa', ['jangmoo', 'hakamoo', 'kommoo'], 'nihilego'], // (then the Ultra Beasts, 793-806, Gen 7 batch 3)
   ];
   const before = keys[keys.indexOf('j_poke_salandit') - 1];
   ok(P_CENTERS[before] && P_CENTERS[before].gen === 7 && keys.indexOf(before) > keys.indexOf('j_poke_mudsdale') - 1, 'Salandit follows the last Gen 7 joker before #757 (Mudsdale, or Gen 7 batch 1\'s last)', before);

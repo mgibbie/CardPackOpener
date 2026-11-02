@@ -3567,6 +3567,44 @@ now runs Drifblim's Aftermath and Pyukumuku's Innards Out.
   63+), `pokermon_art_types_test`, `micatro_mod_version_pin`, `micatro_deckeditor_pages`; `designwiki_pokermon_jokers_test` spot-checks Buzzwole /
   Naganadel (Bewear and Jangmo-o have jokers now).
 
+### Gen 7, batch 3: the Ultra Beasts (2026-11-02, branch `feat/pokermon-gen7-batch3`)
+Pinned **`3.9.1+r66`** (`contentRev: 66`; 64 / 65 are Gen 7 batches 1 / 2; `LEGACY_MOD_VERSIONS` untouched). The owner's "Yes build it and merge
+when the gate passes": the 11 Ultra Beasts, #793-799 and #803-806, in `jokers/pokejokers_designs.js`. Rare $7 single-stage Basics, but Poipole
+(Common $5) -> Naganadel (Safari $8, after 5 rounds). Every one has the `ultra_beast` attribute (nothing reads it yet but the wiki). Pokédex
+order: after Kommo-o (784, Gen 7 batch 2), before Grookey (810). Neither Nacho nor Pokermon+ has any. Types = the
+cards' (`pokermon_art_type.mjs`); art: upstream 3.9.1 Natdex cells with their souls ({24,52} Nihilego ... {20,53} Blacephalon); nothing to deploy.
+- **Beast Boost** (all but Nihilego; house pattern in DESIGN_GUIDE 2.1): each Boss Blind beaten (end_of_round with `beat_boss`, not on a game
+  over, not Blueprint) adds 1 to `beast_boosts` (no energy field; carried through evolution). The center names its main number
+  (`poke_beast_boost`); its value is the field as Energy left it **+ boosts x 10% of the field's unenergized base**. Energy and boosts never scale
+  each other, in either order. Text: a Beast Boost box with the step and "(Beast Boost: +n)".
+- **Nihilego** (Dark), Parasite: **copies the ability of the Joker to its left** (blueprint_effect; the compatible / incompatible line). No number:
+  Energy-inert (`poke_no_energy_field`), no Beast Boost ("(Beast Boost: no number to raise)").
+- **Buzzwole** (Fighting), Muscle: **X3 Mult**, **-1 hand size** (fixed). Energy `Xmult` 3.6 / 4.2 / 4.8; Beast Boost +X0.3.
+- **Pheromosa** (Grass), Glass Cannon: **X3 Mult on the first 2 hands of each round**; after the 2nd hand scores, **debuffed until the round ends**
+  (SMODS debuff source `pheromosa` on the card: saved / resumed / replayed with it; dropped by the `end_round_start` hook, before any joker's
+  end_of_round, so the round's end and its Beast Boost see it fresh). Energy `Xmult` 3.6 / 4.2 / 4.8; Beast Boost +X0.3.
+- **Xurkitree** (Lightning), Live Wire: **each card held in hand gives +4 Mult** (held pass, `h_mult`; debuffed held cards nothing). Energy `mult`
+  5.6 / 7.2 / 8.8; Beast Boost +0.4.
+- **Celesteela** (Metal), Launch: **+$1 sell value at each end of round** (Egg's `extra_value`; `val_gain` fixed; not Blueprint) and **X1 + X0.05 per
+  $1 of its current sell value**. Energy `Xmult_mod` 0.06 / 0.07 / 0.08; Beast Boost +X0.005 per $1.
+- **Kartana** (Grass), Sacred Sword: **exactly 1 scoring card: it retriggers 3 times** (fixed) **and gives X2 each time** (X16 alone). Blueprint copies
+  both. Energy `Xmult_multi` 2.1 / 2.2 / 2.3; Beast Boost +X0.2.
+- **Guzzlord** (Dragon), Gluttony: **when a Blind is selected, destroys your leftmost consumable** (Shuckle's choice: the player orders the
+  consumables to protect one) **and gains X0.2** (`gluttony_Xmult` from X1, no energy field). Nothing held, nothing. Not Blueprint (Blueprint copies
+  the X). Energy `Xmult_mod` 0.24 / 0.28 / 0.32 (future meals); Beast Boost +X0.1 (10% of the bank's X1 base, beside the bank).
+- **Stakataka** (Earth), Stone Wall: **each Stone card held in hand gives X1.25** (the joker's own held pass; a Stone card has no held effect).
+  Energy `Xmult_multi` 1.3125 / 1.375 / 1.4375; Beast Boost +X0.125.
+- **Blacephalon** (Psychic), Mind Blown: **X3 Mult**; **each hand played costs $2, never past the debt limit** (Staraptor's `recoil`). Blueprint copies
+  the X only. Energy `Xmult` 3.6 / 4.2 / 4.8; Beast Boost +X0.3.
+- **Poipole** (Dark, C $5): **+2 Mult per Dragon Joker** (undebuffed, is_type; Poipole isn't one). Energy `mult` 2.8 / 3.6 / 4.4; Beast Boost +0.2.
+  After 5 rounds **Naganadel** (Dragon, S $8), Dragon Pulse: **X1.5 + X0.25 per Dragon Joker, itself included**. Energy `Xmult` 1.8 / 2.1 / 2.4,
+  `Xmult_mod` 0.3 / 0.35 / 0.4; Beast Boost +X0.15 (on the X1.5; Poipole's boosts carry over at Naganadel's step).
+- **Wiki**: regenerated (the 11 drop off; their wiki sprites are gone from `designwiki/sprites/pokermon_jokers/`); `designwiki_pokermon_jokers_test`'s
+  spot checks moved from Guzzlord / Buzzwole / Naganadel to Koraidon / Runerigus / Cyclizar.
+- **Tests**: `micatro/tests/mods/pokermon_gen7_ultrabeasts_test.mjs` (fails on main: no such jokers); the pins (`modpin`, `pokermon_391_data`,
+  `pokermon_new_jokers` (+11 defs, the Ultra Beasts' Pokédex chain), `micatro_mod_version_pin`), `micatro_deckeditor_pages` (1126 jokers),
+  `pokermon_gen7_batch2_test` (Kommo-o is now followed by Nihilego), `pokermon_type_sleeves_test` (a hazard Metal guarantee: looked for over up to 200 runs).
+
 ### Pending from the 3.9.1 joker rework (after batch 10b)
 Every existing joker is on 3.9.1: `rework_hold` (still on 3.2.1) is empty. What waits, by the batch it waits on (`rework_deferred` =
 on 3.9.1 but one part):
