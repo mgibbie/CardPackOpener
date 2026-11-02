@@ -522,6 +522,14 @@
 	},
 	"entries": [
 		{
+			"sha": "e4fce08",
+			"date": "2026-11-01",
+			"kind": "patch",
+			"title": "Pokermon r59: the owner's legendary solo rule",
+			"body": "",
+			"cards": []
+		},
+		{
 			"sha": "ac7a785",
 			"date": "2026-11-01",
 			"kind": "patch",
