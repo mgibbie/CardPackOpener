@@ -143,7 +143,10 @@ G.ExpLeague = (() => {
   const met = d => Sv().has('league.met', d);
   /** D8: met from D8 on and not caught yet (its wild encounter comes in your next run). */
   const wild = d => met(d) && Sv().has('league.wild', d) && !own(d);
-  const playable = d => !!BY[d] && (own(d) || (K.PLAY_MET && met(d) && !Sv().has('league.wild', d)));
+  // (owner 2026-11-02: "I don't want unlocking something to unlock the entire family. Evolving into something should unlock it":
+  //  a family is playable when one of ITS STAGES is open (formOpen below), and a run starts only as an open stage)
+  const rootOpen = d => free(d) || Sv().has('league.own', d) || (K.PLAY_MET && met(d) && !Sv().has('league.wild', d));
+  const playable = d => !!BY[d] && stagesOf(BY[d]).some(f => formOpen(f));
   const roster = () => ids().filter(playable);
   /** The counters a challenge reads. */
   function counter(k, t) {
@@ -203,10 +206,18 @@ G.ExpLeague = (() => {
   // A run may START as a later stage of its family: any stage you own in the base collection or reached in an Expedition run
   // (the set league.form). The base form is always open. Later evolutions still come at their levels.
   const FORM_KEY = 'micasurvivorexp_pickform';
-  const formOpen = d => !!(G.DEX_BY[d] && FAM[d] != null && BY[FAM[d]]) && (d === FAM[d] || !!(G.DB && G.DB.save && G.DB.owns && G.DB.owns(d)) || Sv().has('league.form', d));
+  // a stage is open when you own THAT species in the base collection, a run evolved into it (league.form), or it is the
+  // family's first stage and the League opened the family (a free starter, a challenge caught: league.own)
+  function formOpen(d) {
+    if (!(G.DEX_BY[d] && FAM[d] != null && BY[FAM[d]])) return false;
+    if (G.DB && G.DB.save && G.DB.owns && G.DB.owns(d)) return true;
+    if (Sv().has('league.form', d)) return true;
+    return d === FAM[d] && rootOpen(d);
+  }
   function readForm() { try { return +localStorage.getItem(FORM_KEY) || 0; } catch (e) { return 0; } }
   /** The form a run of `member` starts as: the pick if it is that family's and open, else the member itself. */
-  const formFor = member => { const f = readForm(); return f && f !== member && FAM[f] === member && formOpen(f) ? f : member; };
+  /** The form a run of `member` starts as: the pick if it is that family's and open, else its first open stage. */
+  const formFor = member => { const f = readForm(); if (f && FAM[f] === member && formOpen(f)) return f; return BY[member] ? stagesOf(BY[member]).find(formOpen) || member : member; };
   function setForm(d) { if (!formOpen(d)) return false; try { localStorage.setItem(FORM_KEY, String(d)); } catch (e) { /* a convenience */ } return true; }
   function setPick(d) { if (!playable(d)) return false; try { localStorage.setItem(K.PICK_KEY, String(d)); } catch (e) { /* the pick is a convenience */ } return true; }
   /** The member a new run of `mode` starts with (G.Modes.plan): your pick if you can play it, else Bulbasaur. */
