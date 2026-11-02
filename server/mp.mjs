@@ -4533,6 +4533,19 @@ export default async function handler(req, env) {
 		return json({ won, state: publicState(user, username) });
 	}
 
+	if (action === 'run-walkaway') {
+		// a Lorequest-family run CONCEDED or ABANDONED ends that character's win streak
+		// (streak = consecutive WON runs). Records nothing else: no run count (a conceded
+		// run doesn't advance the core unlocks), no pack, no cooldown stamp. Before this a
+		// concede left the streak live, so the hero stayed pinned into every offer.
+		const mode = String(body.mode || '').replace(/[^a-z]/g, '').slice(0, 12);
+		if (!['lorequest', 'middleearth', 'swordcoast', 'finalfantasy', 'multiverse'].includes(mode)) return json({ error: 'bad mode' }, 400);
+		const ch = [...String(body.character || '')].filter(c => c.charCodeAt(0) >= 32).join('').slice(0, 40).trim();
+		const cs = ch && user.stats?.chars?.[mode + '|' + ch];
+		if (cs && cs.streak) { cs.streak = 0; await store.setJSON(username, user); }
+		return json({ ok: true, state: publicState(user, username) });
+	}
+
 	if (action === 'save-deck') {
 		const classId = String(body.classId || '');
 		const cards = body.deck || body.cards;

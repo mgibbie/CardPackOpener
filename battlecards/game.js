@@ -5463,6 +5463,7 @@ $('concede').addEventListener('click', () => {
 		const run = multiverseRunMode ? loadMultiverse() : finalfantasyRunMode ? loadFinalfantasy() : swordcoastRunMode ? loadSwordcoast() : middleearthRunMode ? loadMiddleearth() : lorequestRunMode ? loadLorequest() : arenaRunMode ? loadArena() : duelsRunMode ? loadDuels() : tombsRunMode ? loadTombs() : heistRunMode ? loadHeist() : loadRun();
 		const el = dungeonOverlay('CONCEDE?', 'Walking away ends the run. A conceded run never pays a pack.');
 		el.appendChild(overlayButton('Concede the run', () => {
+			mpRunWalkaway(runModeName(), run);
 			if (multiverseRunMode) clearMultiverse(); else if (finalfantasyRunMode) clearFinalfantasy(); else if (swordcoastRunMode) clearSwordcoast(); else if (middleearthRunMode) clearMiddleearth(); else if (lorequestRunMode) clearLorequest(); else if (arenaRunMode) clearArena(); else if (duelsRunMode) clearDuels(); else if (tombsRunMode) clearTombs(); else if (heistRunMode) clearHeist(); else clearRun();
 			state.over = true; // freezes play without firing the defeat payout path
 			const done = dungeonOverlay('RUN CONCEDED', `You walked away at level ${run?.level ?? 1}. No pack this time.`);
@@ -7018,7 +7019,7 @@ async function start() {
 	} else if (lorequestRunMode) {
 		lorequestCardsById = cardsById; // pre-state overlays need the card defs
 		let run = loadLorequest();
-		if (run && run.active && !fightGoFor(run) && !(await resumeLorequestOverlay(run))) { clearLorequest(); run = null; }
+		if (run && run.active && !fightGoFor(run) && !(await resumeLorequestOverlay(run))) { mpRunWalkaway('lorequest', run); clearLorequest(); run = null; }
 		if (!run || !run.active) {
 			const characterId = await pickLorequestDeckOverlay(cardsById);
 			const deck = Lorequest.deckOf(cardsById, characterId);
@@ -7030,7 +7031,7 @@ async function start() {
 	} else if (middleearthRunMode) {
 		middleearthCardsById = cardsById; // pre-state overlays need the card defs
 		let run = loadMiddleearth();
-		if (run && run.active && !fightGoFor(run) && !(await resumeMiddleEarthOverlay(run))) { clearMiddleearth(); run = null; }
+		if (run && run.active && !fightGoFor(run) && !(await resumeMiddleEarthOverlay(run))) { mpRunWalkaway('middleearth', run); clearMiddleearth(); run = null; }
 		if (!run || !run.active) {
 			const characterId = await pickMiddleEarthHeroOverlay(cardsById);
 			const deck = Middleearth.deckOf(cardsById, characterId);
@@ -7042,7 +7043,7 @@ async function start() {
 		} else if (swordcoastRunMode) {
 			swordcoastCardsById = cardsById; // pre-state overlays need the card defs
 			let run = loadSwordcoast();
-			if (run && run.active && !fightGoFor(run) && !(await resumeSwordCoastOverlay(run))) { clearSwordcoast(); run = null; }
+			if (run && run.active && !fightGoFor(run) && !(await resumeSwordCoastOverlay(run))) { mpRunWalkaway('swordcoast', run); clearSwordcoast(); run = null; }
 			if (!run || !run.active) {
 				const characterId = await pickSwordCoastHeroOverlay(cardsById);
 				const deck = Swordcoast.deckOf(cardsById, characterId);
@@ -7054,7 +7055,7 @@ async function start() {
 		} else if (finalfantasyRunMode) {
 			finalfantasyCardsById = cardsById; // pre-state overlays need the card defs
 			let run = loadFinalfantasy();
-			if (run && run.active && !fightGoFor(run) && !(await resumeFinalFantasyOverlay(run))) { clearFinalfantasy(); run = null; }
+			if (run && run.active && !fightGoFor(run) && !(await resumeFinalFantasyOverlay(run))) { mpRunWalkaway('finalfantasy', run); clearFinalfantasy(); run = null; }
 			if (!run || !run.active) {
 				const characterId = await pickFinalFantasyHeroOverlay(cardsById);
 				const deck = Finalfantasy.deckOf(cardsById, characterId);
@@ -7066,7 +7067,7 @@ async function start() {
 		} else if (multiverseRunMode) {
 			multiverseCardsById = cardsById; // pre-state overlays need the card defs
 			let run = loadMultiverse();
-			if (run && run.active && !fightGoFor(run) && !(await resumeMultiverseOverlay(run))) { clearMultiverse(); run = null; }
+			if (run && run.active && !fightGoFor(run) && !(await resumeMultiverseOverlay(run))) { mpRunWalkaway('multiverse', run); clearMultiverse(); run = null; }
 			if (!run || !run.active) {
 				const characterId = await pickMultiverseHeroOverlay(cardsById);
 				const deck = Multiverse.deckOf(cardsById, characterId);
@@ -7542,6 +7543,14 @@ function applyRunAnomaly(id) {
 	const a = id && Heist.ANOMALIES[id];
 	if (!a || !Heist.applyAnomaly(state, id)) return;
 	log(`🌀 Anomaly: ${a.name} — ${a.text}`);
+}
+
+// a Lorequest-family run conceded or abandoned ends that hero's win streak on the
+// account (otherwise the hero stays streak-pinned into every later offer)
+function mpRunWalkaway(mode, run) {
+	if (!MP_ON || !run?.characterId) return;
+	if (!['lorequest', 'middleearth', 'swordcoast', 'finalfantasy', 'multiverse'].includes(mode)) return;
+	try { MPX.call('run-walkaway', { mode, character: String(run.characterId) }).catch(() => {}); } catch (e) {}
 }
 
 async function mpRunReward(el, result, score) {
@@ -8639,7 +8648,7 @@ async function pickLorequestDeckOverlay(cardsById) {
 	const unlocked = Lorequest.unlockedCharacters(stats);
 	const total = Lorequest.PLANESWALKERS.length + Lorequest.BOSSES.length;
 	return new Promise(resolve => {
-		const choices = Lorequest.offerFrom(unlocked, Math.random, 3, Lorequest.streakPins(unlocked, stats, 'lorequest'));
+		const choices = Lorequest.offerFrom(unlocked, Math.random, 3, Lorequest.streakPins(unlocked, stats, 'lorequest', Math.random));
 		const sub = stats
 			? `Pick a 30-card starter deck. ${unlocked.length}/${total} characters unlocked — each finished run unlocks another; bosses unlock through character feats.`
 			: 'Pick a 30-card starter deck (2 copies of each of its 15 cards).';
@@ -8844,7 +8853,7 @@ async function pickMiddleEarthHeroOverlay(cardsById) {
 	const pool = Middleearth.unlockedCharacters(stats);
 	if (middleearthTomUnlocked()) for (const sh of Middleearth.SECRET_HEROES) if (!pool.includes(sh)) pool.push(sh);
 	return new Promise(resolve => {
-		const heroes = stats ? Lorequest.offerFrom(pool, Math.random, 3, Lorequest.streakPins(pool, stats, 'middleearth')) : pool;
+		const heroes = stats ? Lorequest.offerFrom(pool, Math.random, 3, Lorequest.streakPins(pool, stats, 'middleearth', Math.random)) : pool;
 		const el = dungeonOverlay('CHOOSE YOUR HERO', 'Pick a hero of the Free Peoples - a 10-card starter deck you grow as you climb.');
 		const row = document.createElement('div');
 		row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:12px;max-width:920px;';
@@ -9032,7 +9041,7 @@ async function pickSwordCoastHeroOverlay(cardsById) {
 	const pool = Swordcoast.unlockedCharacters(stats);
 	if (swordcoastGaleUnlocked()) for (const sh of Swordcoast.SECRET_HEROES) if (!pool.includes(sh)) pool.push(sh);
 	return new Promise(resolve => {
-		const heroes = stats ? Lorequest.offerFrom(pool, Math.random, 3, Lorequest.streakPins(pool, stats, 'swordcoast')) : pool;
+		const heroes = stats ? Lorequest.offerFrom(pool, Math.random, 3, Lorequest.streakPins(pool, stats, 'swordcoast', Math.random)) : pool;
 		const el = dungeonOverlay('CHOOSE YOUR HERO', 'Pick a Companion of the Realms - a 10-card starter deck you grow as you Advance.');
 		const row = document.createElement('div');
 		row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:12px;max-width:920px;';
@@ -9220,7 +9229,7 @@ async function pickFinalFantasyHeroOverlay(cardsById) {
 	const pool = Finalfantasy.unlockedCharacters(stats);
 	if (finalfantasyGilgameshUnlocked()) for (const sh of Finalfantasy.SECRET_HEROES) if (!pool.includes(sh)) pool.push(sh);
 	return new Promise(resolve => {
-		const heroes = stats ? Lorequest.offerFrom(pool, Math.random, 3, Lorequest.streakPins(pool, stats, 'finalfantasy')) : pool;
+		const heroes = stats ? Lorequest.offerFrom(pool, Math.random, 3, Lorequest.streakPins(pool, stats, 'finalfantasy', Math.random)) : pool;
 		const el = dungeonOverlay('CHOOSE YOUR HERO', 'Pick a Final Fantasy hero - a 10-card starter deck you grow as you climb.');
 		const row = document.createElement('div');
 		row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:12px;max-width:920px;';
@@ -9405,7 +9414,7 @@ async function pickMultiverseHeroOverlay(cardsById) {
 	const pool = Multiverse.unlockedCharacters(stats);
 	if (multiverseSurferUnlocked()) for (const sh of Multiverse.SECRET_HEROES) if (!pool.includes(sh)) pool.push(sh);
 	return new Promise(resolve => {
-		const heroes = stats ? Lorequest.offerFrom(pool, Math.random, 3, Lorequest.streakPins(pool, stats, 'multiverse')) : pool;
+		const heroes = stats ? Lorequest.offerFrom(pool, Math.random, 3, Lorequest.streakPins(pool, stats, 'multiverse', Math.random)) : pool;
 		const el = dungeonOverlay('CHOOSE YOUR HERO', 'Pick a Marvel hero - a 10-card starter deck you grow as you climb. Enemies always match your loot.');
 		const row = document.createElement('div');
 		row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:12px;max-width:920px;';
