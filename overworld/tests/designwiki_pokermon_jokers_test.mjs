@@ -99,8 +99,8 @@ try {
 		&& !sp0('Bewear') && !sp0('Comfey') && !sp0('Buzzwole') && sp0('Runerigus')?.ptype === 'Psychic' && sp0('Runerigus')?.type_source === 'art' && sp0('Runerigus')?.mapped_ptype === 'Earth', 'spot check (the card wins; Latias, Dwebble, Venipede, Sandile, Kyurem, Keldeo, Stunfisk, Tyrunt, Phantump, Cutiefly, Comfey, Bewear and the Ultra Beasts are in the game now): Koraidon Dragon, Toedscool Grass, Impidimp Fairy, Chien-Pao Water, Iron Thorns Lightning; Runerigus Psychic from its art (the mapping said Earth)');
 	A(D.species.every(s => ['Basic', 'One', 'Two', 'Baby', 'Legendary'].includes(s.stage) && s.line.some(l => l.dex === s.dex)), 'every species has an upstream stage and sits in its own line');
 	const sp = sp0;
-	A(sp('Orbeetle')?.stage === 'Two' && sp('Dottler')?.stage === 'One' && sp('Toxel')?.stage === 'Baby' && sp('Tapu Koko')?.stage === 'Legendary' && sp('Corviknight')?.ptype === 'Metal' && !sp('Jangmo-o') && !sp('Naganadel') && sp('Cyclizar')?.ptype === 'Dragon',
-		'spot check: Orbeetle Stage 2, Dottler Stage 1 (the Pikipek and Jangmo-o lines are in the game now), Toxel Baby, Tapu Koko Legendary (Yveltal is in the game now), Corviknight Metal, Cyclizar Dragon (the Ultra Beasts are in the game now)');
+	A(sp('Orbeetle')?.stage === 'Two' && sp('Dottler')?.stage === 'One' && sp('Toxel')?.stage === 'Baby' && sp('Zacian')?.stage === 'Legendary' && sp('Corviknight')?.ptype === 'Metal' && !sp('Jangmo-o') && !sp('Naganadel') && sp('Cyclizar')?.ptype === 'Dragon',
+		'spot check: Orbeetle Stage 2, Dottler Stage 1 (the Pikipek and Jangmo-o lines are in the game now), Toxel Baby, Zacian Legendary (Yveltal and Tapu Koko are in the game now), Corviknight Metal, Cyclizar Dragon (the Ultra Beasts are in the game now)');
 
 	// ================================================================== ART
 	// UPSTREAM FIRST: a species Pokermon 3.9.1's sprite table draws (tools/micatro/specs/pokermon_391_sprite_table.json, a
@@ -191,8 +191,8 @@ try {
 	A(!blank.length, 'no card is blank (142 x 190, 90%+ opaque — the corners are rounded —, 24+ colours, 8+ in the art window)', blank.slice(0, 5).join(' | '));
 	A(!thin.length, 'every composed card: the battle sprite painted 100+ pixels onto it', thin.slice(0, 8).join(', '));
 	// the composer stays working for species upstream doesn't draw (none today): a Basic, a Stage 1, a Baby and a Legendary
-	const fallback = ['Orbeetle', 'Dottler', 'Toxel', 'Tapu Koko'].map(n => ctx.M.missing.find(s => s.name === n)).filter(Boolean).map(s => [s.name, MJ.composeSpecies(ctx, s)]);
-	A(fallback.length === 4 && fallback.every(([, r]) => r.normalPainted >= 100 && r.shinyPainted >= 100 && r.recipe.frame), 'the composer (the fallback) still composes a real card (Orbeetle, Dottler, Toxel, Tapu Koko; the Jangmo-o line is in the game now)', fallback.map(([n, r]) => n + ' ' + r.normalPainted).join(', '));
+	const fallback = ['Orbeetle', 'Dottler', 'Toxel', 'Zacian'].map(n => ctx.M.missing.find(s => s.name === n)).filter(Boolean).map(s => [s.name, MJ.composeSpecies(ctx, s)]);
+	A(fallback.length === 4 && fallback.every(([, r]) => r.normalPainted >= 100 && r.shinyPainted >= 100 && r.recipe.frame), 'the composer (the fallback) still composes a real card (Orbeetle, Dottler, Toxel, Zacian; the Jangmo-o line and Tapu Koko are in the game now)', fallback.map(([n, r]) => n + ' ' + r.normalPainted).join(', '));
 	const extra = fs.readdirSync(path.join(ROOT, 'designwiki/sprites/pokermon_jokers')).filter(f => !D.species.some(s => s.art.normal.endsWith('/' + f) || s.art.shiny.endsWith('/' + f)));
 	A(!extra.length, 'no stale card art for species that now have jokers', extra.join(', '));
 	// re-running the generator (into a scratch folder) gives the committed JSON and art, byte for byte
@@ -281,9 +281,9 @@ try {
 	A(/0823_shiny\.png(\?|$)/.test(await anon.page.$eval('.pj-art-big', i => i.getAttribute('src'))), 'the Shiny toggle swaps in the Shiny card');
 	await shot(anon.page, 'desktop_card_signed_out');
 	// a Legendary (soul layer) card, and its label
-	await go(anon.page, '#/pokermon-jokers/785');
-	const want717 = D.species.find(s => s.dex === 785).art.source;
-	A(JSON.stringify(await label()) === JSON.stringify({ text: LABEL[want717], src: want717 }) && await anon.page.$eval('.pj-art-big', i => i.naturalWidth) === 142, `Tapu Koko (Legendary): its card and label (${LABEL[want717]})`);
+	await go(anon.page, '#/pokermon-jokers/888');
+	const want717 = D.species.find(s => s.dex === 888).art.source;
+	A(JSON.stringify(await label()) === JSON.stringify({ text: LABEL[want717], src: want717 }) && await anon.page.$eval('.pj-art-big', i => i.naturalWidth) === 142, `Zacian (Legendary): its card and label (${LABEL[want717]})`);
 	await shot(anon.page, 'desktop_card_legendary');
 	A(!anon.designCalls.length, 'signed out: the page never calls the joker-design API', anon.designCalls.join(','));
 	A(!anon.errors.length, 'no console errors (signed out)', anon.errors.slice(0, 3).join(' | '));

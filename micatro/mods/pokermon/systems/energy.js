@@ -47,6 +47,8 @@ export function energy_matches(card, etype, include_colorless) {
     if (has_type(card) && (etype === 'Trans' || etype === 'Bird')) return true;
     if (wildcard_type(card)) return true; // add-on wildcard Tera type (Nacho's Stellar) matches every Energy
     if (multitype(card) && POKETYPES.includes(etype)) return true; // the owner's Arceus (Multitype): every type's Energy, full strength
+    // the Gen 7 Silvally (RKS System): every type's Energy, full strength (it then takes that type), unless a Tera sticker is on
+    if (card.config && card.config.center && card.config.center.poke_any_energy && POKETYPES.includes(etype) && !type_sticker_applied(card)) return true;
     if ((a.extra.ptype && etype && a.extra.ptype === etype && !type_sticker_applied(card)) || a[String(etype).toLowerCase() + '_sticker']) return true;
     if (etype === 'Colorless' && (a.extra.ptype || type_sticker_applied(card)) && include_colorless) return true;
     // (an add-on's is_type rule: Pokermon+'s Grafaiai — 3.9.1's energy_matches asks pokermon.is_type)

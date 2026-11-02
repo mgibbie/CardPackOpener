@@ -1013,7 +1013,9 @@ export const POKERMON = registerMod({
   // 66 = Gen 7 batch 3, the Ultra Beasts (jokers/pokejokers_designs.js, #793-799, #803-806; 64 / 65 are Gen 7 batches 1 / 2): Nihilego
   // (Parasite: copies the Joker to its left), Buzzwole, Pheromosa (debuffed after 2 hands until the round ends: end_round_start below),
   // Xurkitree, Celesteela, Kartana, Guzzlord, Stakataka, Blacephalon, Poipole -> Naganadel; all but Nihilego share Beast Boost.
-  contentRev: 66,
+  // 67 = Gen 7 batch 4, the Gen 7 Legendaries (jokers/pokejokers_designs.js, #772-807), each complete alone: Type: Null -> Silvally (RKS
+  // System), the four Tapus, Cosmog -> Cosmoem -> Solgaleo / Lunala, Necrozma (Prism; Ultra Necrozma), Magearna, Marshadow and Zeraora.
+  contentRev: 67,
   // Pokermon 3.9.1 pokermon.lua: SMODS.current_mod.optional_features = {quantum_enhancements = true, object_weights = true}.
   // object_weights sends create_card's key, the shop roll, tags, packs, bosses and vouchers through SMODS.poll_object
   // (js/engine/smods.js; batch 17). quantum_enhancements is the engine's check_enhancement, always on.

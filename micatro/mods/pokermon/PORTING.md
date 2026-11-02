@@ -3604,6 +3604,50 @@ cards' (`pokermon_art_type.mjs`); art: upstream 3.9.1 Natdex cells with their so
 - **Tests**: `micatro/tests/mods/pokermon_gen7_ultrabeasts_test.mjs` (fails on main: no such jokers); the pins (`modpin`, `pokermon_391_data`,
   `pokermon_new_jokers` (+11 defs, the Ultra Beasts' Pokédex chain), `micatro_mod_version_pin`), `micatro_deckeditor_pages` (1126 jokers),
   `pokermon_gen7_batch2_test` (Kommo-o is now followed by Nihilego), `pokermon_type_sleeves_test` (a hazard Metal guarantee: looked for over up to 200 runs).
+### Gen 7, batch 4: the Gen 7 Legendaries (2026-11-02, branch `feat/pokermon-gen7-batch4`)
+Pinned **`3.9.1+r67`** (`contentRev: 67`; 64-66 are Gen 7 batches 1-3; `LEGACY_MOD_VERSIONS` untouched). The owner's "Yes build it": the 14 Gen 7
+Legendaries, #772-807, in `jokers/pokejokers_designs.js` (`round_bank` / `rks_system` / `rks_x` / `cosmo_count` / `cosmo_branch` / `cosmo_main` /
+`cosmo_suit_x` / `prism` / `necrozma_ultra`), Legendary rarity (The Soul / the Legendary pool), each **complete alone** (the r59 solo rule; line
+members only evolve into each other). $20; the pre-evolutions $10 (Kubfu's precedent): Type: Null, Cosmog, Cosmoem. The evolved stages (Silvally,
+Cosmoem, Solgaleo, Lunala) come only through their line (`custom_pool_func`, never in a pool: Urshifu's way). Defined at the end of `defineJokers`
+so every `poke_after` is registered first; Pokédex order: Type: Null / Silvally after Pyukumuku (771, before Komala 775), the Tapus and the Cosmog
+line after Kommo-o (784, before Nihilego 793), Necrozma / Magearna / Marshadow after Guzzlord (799, before Poipole 803), Zeraora after Blacephalon
+(806, before Grookey 810). Neither Nacho nor Pokermon+ has any. Types = the cards' (`pokermon_art_type.mjs`, every form cell checked).
+Art: upstream 3.9.1 cells with their souls (Type: Null Natdex {12,51}; the Tapus / the Cosmog line {8..23,52}; Magearna {10,53}; Zeraora {22,53};
+Silvally Gen 7 {6,1}; Necrozma {6,4}; Marshadow {2,5}); the forms (`systems/anim.js` GEN7_LEGEND_FORMS: Silvally's 11 typed Memories {8,1}-{4,3},
+Ultra Necrozma {0,5} (Dragon), Marshadow's Zenith {4,5} (Fighting, unlisted upstream)) drawn by `ui.js` ownFace from `poke_view_form`; nothing to deploy.
+- **Type: Null** (Colorless, $10): **permanently gains X0.1 Mult at the end of each round** (`null_Xmult` from X1, no energy field). **Evolves after 5
+  rounds** into Silvally, the bank kept. Energy `Xmult_mod` 0.1 -> 0.12 / 0.14 / 0.16 (future gains only).
+- **Silvally** (Colorless; only through Type: Null), RKS System: **X2 Mult plus X0.25 for each other Joker of its type** (undebuffed; Greninja's
+  count), **times Type: Null's bank** (kept, no longer growing). **Using any Energy card (on any Joker) sets its type** to that Energy's (Colorless
+  Energy: Colorless; Bird Energy / Double Rainbow / Berry Juice: nothing); **every type's Energy works on it at full strength** (`poke_any_energy`,
+  `systems/energy.js` energy_matches; off under a Tera sticker), so a lone Silvally picks its own type. Its Memory card shows. **Monotype-exempt**
+  (`poke_mono_exempt`). Energy `Xmult` 2 -> 2.4 / 2.8 / 3.2, `Xmult_mod` 0.25 -> 0.3 / 0.35 / 0.4.
+- **Tapu Koko** (Lightning), Electric Surge: **every scored card gives X1.1** (retriggers repeat it). Energy `Xmult_multi` 1.1 -> 1.155 / 1.21 / 1.265.
+- **Tapu Lele** (Psychic), Psychic Surge: **each Tarot used creates a random Planet** (seeded `tapu_lele`; must have room NOW). Blueprint copies it
+  (Cartomancer-like: a second Planet). No number: Energy-inert (`poke_no_energy_field`).
+- **Tapu Bulu** (Grass), Grassy Surge: **+2 hand size** (fixed) **and X1.5**. Energy `Xmult` 1.5 -> 1.8 / 2.1 / 2.4.
+- **Tapu Fini** (Water), Misty Surge: **+1 hand each round** (fixed) and **$2 per unused hand at end of round** (`calc_dollar_bonus`, `mist_money`
+  fixed; won on the last hand: nothing). Energy-inert; not Blueprint (cash-out money, as Golden Joker).
+- **Cosmog** (Psychic, $10): **permanently gains +1 Mult at the end of each round** (`cosmo_mult`). **Evolves after 3 rounds.** Energy `mult_mod` 1 ->
+  1.2 / 1.4 / 1.6.
+- **Cosmoem** (Psychic, $10; only through Cosmog): **permanently gains X0.25 at the end of each round** (`cosmo_Xmult` from X1) and still gives
+  Cosmog's Mult. **Counts the scored red (Hearts / Diamonds) and black (Spades / Clubs) cards** while held (once per hand in `after`; a Wild card counts
+  as both, a Stone card neither, a debuffed card none; tooltip "(Red k / Black k)"). **After 3 rounds: more red -> Solgaleo, more black -> Lunala, a
+  tie -> Solgaleo.** Energy `Xmult_mod` 0.25 -> 0.3 / 0.35 / 0.4.
+- **Solgaleo** (Metal) / **Lunala** (Psychic), only through Cosmoem: Sunsteel Strike / Moongeist Beam, **each scored Heart or Diamond / Spade or Club
+  gives X1.25**, plus both banks (+Mult and X, kept). Energy `Xmult_multi` 1.25 -> 1.3125 / 1.375 / 1.4375.
+- **Necrozma** (Psychic), Prism: **gains X0.1 for each Planet card used** (`prism_Xmult` from X1, any user; not Blueprint). **At X3: Ultra Necrozma for
+  good** (read from the bank): its Ultra card, **its type Dragon** (the Ultra card's; Monotype still accepts the Psychic it was gained as) and **+1 hand
+  size** (`ultra_size`, fixed; Zygarde's pair: taken back sold / destroyed / debuffed). It keeps banking. Energy `Xmult_mod` 0.1 -> 0.12 / 0.14 / 0.16
+  (reaches X3 sooner).
+- **Magearna** (Metal), Soul-Heart: **scored Steel cards give X1.5** (the joker's own per-card pass: retriggers repeat it, Blueprint copies it; a held
+  Steel card keeps its own X1.5). Energy `Xmult_multi` 1.5 -> 1.575 / 1.65 / 1.725.
+- **Marshadow** (Fighting), Spectral Thief: **X2 Mult; X4 during a Boss Blind** (a disabled Boss still counts); its Zenith card shows then. Energy `Xmult`
+  2 -> 2.4 / 2.8 / 3.2, `Xmult1` 4 -> 4.8 / 5.6 / 6.4.
+- **Zeraora** (Lightning), Plasma Fists: **each scored face card earns $1** (fixed) **and gives X1.25**. Energy `Xmult_multi` 1.25 -> 1.3125 / 1.375 / 1.4375.
+- **Wiki**: regenerated (the 14 drop off; their wiki sprites are gone from `designwiki/sprites/pokermon_jokers/`).
+- **Tests**: `micatro/tests/mods/pokermon_gen7_legendaries_test.mjs` (fails on main: no such jokers).
 
 ### Pending from the 3.9.1 joker rework (after batch 10b)
 Every existing joker is on 3.9.1: `rework_hold` (still on 3.2.1) is empty. What waits, by the batch it waits on (`rework_deferred` =

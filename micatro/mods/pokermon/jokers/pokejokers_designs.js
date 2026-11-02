@@ -105,6 +105,13 @@
 // retriggers 3 times, X2 each), Guzzlord (Dragon; eats the leftmost consumable each Blind, +X0.2 banked), Poipole -> Naganadel (Dark ->
 // Dragon; +2 Mult / X1.5 + X0.25 per Dragon Joker), Stakataka (Earth; held Stone cards X1.25), Blacephalon (Psychic; X3, $2 a hand) —
 // upstream 3.9.1 draws them all with their souls (Natdex {24,52}-{21,53}).
+// Gen 7, batch 4: the Gen 7 Legendaries (contentRev 67; the owner's "Yes build it", 2026-11-02), each complete alone: Type: Null ($10;
+// banks X0.1 a round) -> Silvally (RKS System: X2 + X0.25 per other Joker of its type; any Energy used sets its type; Memory art per type),
+// the Tapus (Koko every scored card X1.1; Lele a Planet per Tarot used; Bulu +2 hand size and X1.5; Fini +1 hand and $2 per unused hand),
+// Cosmog ($10; +1 Mult a round) -> Cosmoem ($10; X0.25 a round, counts red vs black) -> Solgaleo (scored Hearts / Diamonds X1.25) or
+// Lunala (Spades / Clubs X1.25), Necrozma (X0.1 per Planet used; Ultra Necrozma at X3: Dragon, +1 hand size), Magearna (scored Steel X1.5),
+// Marshadow (X2, X4 during a Boss Blind) and Zeraora (scored face cards $1 and X1.25) — upstream 3.9.1 draws them all with their souls and
+// form cells (Natdex {12,51}, {8..23,52}, {10,53}, {22,53}; Gen 7 sheet {6,1}-{4,3}, {6,4}, {0,5}, {2,5}, {4,5}).
 // The Gen 8 starters (contentRev 49; the starters spec): Scorbunny -> Raboot -> Cinderace (Fire, +1 discard; +3 / +5 Mult per discard left,
 // then Libero X(1 + 0.5 per discard left)) and Sobble -> Drizzile -> Inteleon (Water, +1 hand; +20 / +35 Chips per played card that doesn't
 // score, then Snipe Shot X2 on the highest-ranked scored card) — upstream 3.9.1 draws them (Natdex 4-14, 54).
@@ -1884,6 +1891,96 @@ function gluttony(card, context) {
 const dragon_count = () => ((G.jokers && G.jokers.cards) || []).filter((j) => !j.debuff && is_type(j, 'Dragon')).length;
 const poipole_mult = (card) => r3(beast_value(card) * dragon_count());
 const naganadel_x = (card) => r9(beast_value(card) + card.ability.extra.Xmult_mod * dragon_count());
+
+// ---------------------------------------------------------------- Gen 7, batch 4: the Gen 7 Legendaries (contentRev 67; 772-807)
+/** A banked X gain at the main end of round (not Blueprint, not a joker retrigger, not on a game over): `ref` += `mod` (bank outside
+ *  energy_values, gain an energy field: never retroactive). Type: Null, Cosmog (Mult), Cosmoem. */
+function round_bank(card, context, ref, mod, colour) {
+  if (!round_end(context) || context.blueprint || context.retrigger_joker || context.game_over) return;
+  bank(card, ref, mod, 1, colour);
+}
+/** Silvally, RKS System: the Energy card's type (c_poke_<type>_energy; Darkness = Dark), or null (Bird Energy, a non-Energy). */
+const ENERGY_TYPE = Object.fromEntries(POKETYPES.map((t) => ['c_poke_' + (t === 'Dark' ? 'darkness' : t.toLowerCase()) + '_energy', t]));
+export const rks_type_of = (consumeable) => (consumeable && consumeable.ability && consumeable.ability.set === 'Energy' && ENERGY_TYPE[consumeable.config.center.key]) || null;
+/** Using any Energy card (on any joker, while Silvally is held; not Blueprint) sets Silvally's own type (Greninja's protean_set: its ptype,
+ *  a Tera sticker still overrides; set_debuff + Kecleon re-sync). The Energy's use() runs first, so an Energy put on Silvally itself
+ *  energizes it before the type moves. */
+function rks_system(card, context) {
+  if (!context.using_consumeable || context.blueprint) return false;
+  const t = rks_type_of(context.consumeable);
+  if (!t) return false;
+  if (protean_set(card, t)) card_eval_status_text(card, 'extra', null, null, null, { message: 'RKS: ' + t + '!', colour: 'BLUE' });
+  return true;
+}
+/** Silvally's X: (Xmult + Xmult_mod per OTHER undebuffed joker of its current type: Greninja's count) x Type: Null's bank. */
+const rks_x = (card) => r9((card.ability.extra.Xmult + card.ability.extra.Xmult_mod * ninja_others(card)) * (card.ability.extra.null_Xmult || 1));
+/** Cosmoem: the scored cards' colours while it is held (once per hand in the `after` pass, Zygarde's count: a retrigger, a Blueprint or a
+ *  debuffed card adds none). A Heart or Diamond is red, a Spade or Club black (is_suit: a Wild card is both, a Stone card neither). */
+function cosmo_count(card, context) {
+  if (!context.after || context.blueprint || context.retrigger_joker) return false;
+  const ex = card.ability.extra;
+  for (const c of (context.scoring_hand || [])) {
+    if (c.debuff) continue;
+    if (c.is_suit('Hearts') || c.is_suit('Diamonds')) ex.red = (ex.red || 0) + 1;
+    if (c.is_suit('Spades') || c.is_suit('Clubs')) ex.black = (ex.black || 0) + 1;
+  }
+  return true;
+}
+/** Cosmoem's branch: more red than black scored -> Solgaleo, more black -> Lunala, a tie -> Solgaleo. */
+export const cosmo_branch = (card) => ((card.ability.extra.black || 0) > (card.ability.extra.red || 0) ? 'j_poke_lunala' : 'j_poke_solgaleo');
+/** The Cosmog line's banks, every hand: Cosmog's +Mult (`cosmo_mult`) and Cosmoem's X (`cosmo_Xmult`). Blueprint copies them. */
+function cosmo_main(card, context) {
+  if (!context.joker_main) return undefined;
+  const ex = card.ability.extra, r = {};
+  if (ex.cosmo_mult > 0) r.mult_mod = ex.cosmo_mult;
+  if (ex.cosmo_Xmult > 1) r.Xmult_mod = ex.cosmo_Xmult;
+  if (!Object.keys(r).length) return undefined;
+  r.message = r.Xmult_mod ? a_xmult(r3(r.Xmult_mod)) : a_mult(r3(r.mult_mod));
+  r.colour = r.Xmult_mod ? 'XMULT' : 'MULT';
+  return r;
+}
+/** Solgaleo / Lunala: each scored card of their colour gives X Xmult_multi (Blueprint copies it). */
+function cosmo_suit_x(card, context, suits) {
+  if (context.individual && context.cardarea === G.play && !context.end_of_round && suits.some((s) => context.other_card.is_suit(s))) {
+    return { x_mult: card.ability.extra.Xmult_multi, card };
+  }
+  return undefined;
+}
+/** Necrozma, Prism: Ultra Necrozma for good once the bank reaches NECROZMA_ULTRA (it never drops). */
+export const NECROZMA_ULTRA = 3;
+export const necrozma_ultra = (card) => (card.ability.extra.prism_Xmult || 1) >= NECROZMA_ULTRA - 1e-9;
+/** Ultra Necrozma's +hand size (`ultra_size`, fixed): Zygarde's Complete Forme pair (given on becoming Ultra and in add_to_deck when
+ *  already Ultra; taken in remove_from_deck: sold, destroyed, debuffed; `ultra_given` so never twice). */
+function ultra_give(card) {
+  const ex = card.ability.extra;
+  if (ex.ultra_given || !necrozma_ultra(card)) return;
+  ex.ultra_given = true;
+  G.hand.change_size(ex.ultra_size);
+}
+const ultra_size = {
+  add_to_deck(self, card) { card.ability.extra.ultra_given = false; ultra_give(card); },
+  remove_from_deck(self, card) {
+    const ex = card.ability.extra;
+    if (!ex.ultra_given) return;
+    ex.ultra_given = false;
+    G.hand.change_size(-ex.ultra_size);
+  },
+};
+/** Each Planet card used while it is held (by anyone; not Blueprint) banks +Xmult_mod in `prism_Xmult`. Reaching X3: Ultra Necrozma,
+ *  its type the Ultra card's (Dragon: protean_set, so is_type / Energy follow; Monotype still accepts the Psychic it was gained as),
+ *  +1 hand size. It keeps banking. */
+function prism(card, context) {
+  const c = context.consumeable;
+  if (!context.using_consumeable || context.blueprint || !c || c.ability.set !== 'Planet') return false;
+  const was = necrozma_ultra(card);
+  bank(card, 'prism_Xmult', 'Xmult_mod', 1, 'XMULT');
+  if (!was && necrozma_ultra(card)) {
+    protean_set(card, 'Dragon');
+    ultra_give(card);
+    card_eval_status_text(card, 'extra', null, null, null, { message: 'Ultra Necrozma!', colour: 'GOLD' });
+  }
+  return true;
+}
 
 // ---------------------------------------------------------------- the Gen 7 starters (Rowlet / Litten / Popplio lines)
 /** Rowlet line: the RIGHTMOST scored card (by position, as the Shellos line's East Sea: a debuffed card there gets nothing, the end
@@ -8036,6 +8133,253 @@ defineJokers({
     loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.Xmult_mod), full_houses_played(), kommo_x(card), r3(ex.clang_mult)] }; },
     calculate(self, card, context) { return clangorous(card, context); },
   },
+
+  // ---------------------------------------------------------------- Gen 7, batch 4: the Gen 7 Legendaries, 772-807 (contentRev 67)
+  // The owner's design ("Yes build it", 2026-11-02). Legendary (The Soul / the Legendary pool); each complete ALONE (the solo rule, r59:
+  // no partner clause; line members only evolve into each other). $20, the pre-evolutions $10 (Kubfu's precedent): Type: Null, Cosmog,
+  // Cosmoem. The evolved stages (Silvally, Cosmoem, Solgaleo, Lunala) come only through their line (never in a pool: Urshifu's way).
+  // Types from the card art (pokermon_art_type.mjs; every form cell checked): Type: Null / Silvally Colorless (Silvally's 11 Memory cells
+  // each their own type), Tapu Koko Lightning, Lele Psychic, Bulu Grass, Fini Water, Cosmog / Cosmoem Psychic, Solgaleo Metal, Lunala
+  // Psychic, Necrozma Psychic (its Ultra cell Dragon), Magearna Metal, Marshadow Fighting (its Zenith cell too), Zeraora Lightning. Neither
+  // Nacho nor Pokermon+ has any. Art: upstream 3.9.1's own cells with their souls; the forms (systems/anim.js GEN7_LEGEND_FORMS) drawn
+  // live by ui.js ownFace from each center's poke_view_form. Defined here, at the end, so every poke_after is registered first. Pokédex
+  // order: Type: Null / Silvally after Pyukumuku (771); the Tapus and the Cosmog line after Kommo-o (784); Necrozma / Magearna / Marshadow
+  // after Guzzlord (799); Zeraora after Blacephalon (806).
+  //
+  // Type: Null 772 (Colorless, $10): permanently gains X0.1 Mult at the end of each round (`null_Xmult` from X1, no energy field; the gain
+  // `Xmult_mod` +20%: 0.12 / 0.14 / 0.16, never retroactive). Evolves after 5 rounds into Silvally, the bank kept. Blueprint copies the X.
+  typenull: {
+    name: 'typenull', poke_sprite391: sprite('Natdex', 12, 51, [13, 51]),
+    config: { extra: { null_Xmult: 1, Xmult_mod: 0.1, rounds: 5 } },
+    rarity: 4, cost: 10, stage: 'Legendary', ptype: 'Colorless', gen: 7, blueprint_compat: true,
+    attributes: ['xmult', 'scaling', 'round_evo'], poke_after: 'pyukumuku',
+    poke_custom_values_to_keep: ['null_Xmult'],
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.Xmult_mod), r3(ex.null_Xmult), ex.rounds] }; },
+    calculate(self, card, context) {
+      round_bank(card, context, 'null_Xmult', 'Xmult_mod', 'XMULT');
+      const ex = card.ability.extra;
+      if (context.joker_main && ex.null_Xmult > 1) return { message: a_xmult(r3(ex.null_Xmult)), colour: 'XMULT', Xmult_mod: ex.null_Xmult };
+      return level_evo(self, card, context, 'j_poke_silvally');
+    },
+  },
+  // Silvally 773 (Colorless; only through Type: Null), RKS System: X2 Mult plus X0.25 for each OTHER undebuffed Joker of its current type
+  // (Greninja's count; `Xmult` / `Xmult_mod` +20%: 2.4 / 2.8 / 3.2 and 0.3 / 0.35 / 0.4), times Type: Null's bank (kept, no longer
+  // growing). Using any Energy card (on any Joker, while held; not Blueprint) sets its type to that Energy's (Colorless Energy: Colorless;
+  // Bird Energy, Double Rainbow and Berry Juice don't): its ptype, Castform's way (is_type / Energy / Kecleon follow; a Tera sticker still
+  // overrides). Every type's Energy can go on it, full strength (poke_any_energy, so a lone Silvally can pick its type). Its Memory card
+  // shows (the 12 cells on the Gen 7 sheet). Its type never breaks Monotype (poke_mono_exempt).
+  silvally: {
+    name: 'silvally', poke_sprite391: sprite('Gen07', 6, 1, [7, 1]),
+    config: { extra: { Xmult: 2, Xmult_mod: 0.25, null_Xmult: 1 } },
+    rarity: 4, cost: 20, stage: 'Legendary', ptype: 'Colorless', gen: 7, blueprint_compat: true, custom_pool_func: true,
+    attributes: ['xmult', 'types', 'energy'], poke_after: 'typenull',
+    poke_mono_exempt: true, poke_any_energy: true,
+    poke_view_form(self, card) { return card.ability.extra.ptype || 'Colorless'; },
+    loc_vars(self, info_queue, card) {
+      type_tooltip(self, info_queue, card);
+      const ex = card.ability.extra;
+      return { vars: [r3(ex.Xmult), r3(ex.Xmult_mod), r3(ex.null_Xmult || 1), get_type(card) || ex.ptype, ninja_others(card), r3(rks_x(card))] };
+    },
+    calculate(self, card, context) {
+      if (rks_system(card, context)) return undefined;
+      if (context.joker_main) { const x = rks_x(card); return { message: a_xmult(r3(x)), colour: 'XMULT', Xmult_mod: x }; }
+      return undefined;
+    },
+    in_pool() { return false; },
+  },
+  // Tapu Koko 785 (Lightning), Electric Surge: every scored card gives X1.1 Mult (`Xmult_multi` +5%: 1.155 / 1.21 / 1.265). Blueprint
+  // copies it.
+  tapu_koko: {
+    name: 'tapu_koko', poke_sprite391: sprite('Natdex', 8, 52, [9, 52]),
+    config: { extra: { Xmult_multi: 1.1 } },
+    rarity: 4, cost: 20, stage: 'Legendary', ptype: 'Lightning', gen: 7, blueprint_compat: true,
+    attributes: ['xmult'], poke_after: 'kommoo',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); return { vars: [r3(card.ability.extra.Xmult_multi)] }; },
+    calculate(self, card, context) {
+      if (context.individual && context.cardarea === G.play && !context.end_of_round) return { x_mult: card.ability.extra.Xmult_multi, card };
+      return undefined;
+    },
+  },
+  // Tapu Lele 786 (Psychic), Psychic Surge: each Tarot card used (by anyone, while held) creates a random Planet card (must have room NOW:
+  // no room, nothing). Blueprint copies it (Cartomancer-like: a second Planet, room permitting). No number: Energy-inert.
+  tapu_lele: {
+    name: 'tapu_lele', poke_sprite391: sprite('Natdex', 10, 52, [11, 52]),
+    config: { extra: {} },
+    rarity: 4, cost: 20, stage: 'Legendary', ptype: 'Psychic', gen: 7, blueprint_compat: true,
+    attributes: ['generation', 'tarot', 'planet'], poke_after: 'tapu_koko',
+    poke_no_energy_field: true,
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); return { vars: [] }; },
+    calculate(self, card, context) {
+      const c = context.consumeable;
+      if (!context.using_consumeable || !c || c.ability.set !== 'Tarot') return undefined;
+      if (G.consumeables.cards.length + (G.GAME.consumeable_buffer || 0) >= G.consumeables.config.card_limit) return undefined;
+      G.GAME.consumeable_buffer = (G.GAME.consumeable_buffer || 0) + 1;
+      G.E_MANAGER.add_event(() => {
+        const p = create_card('Planet', G.consumeables, null, null, null, null, null, 'tapu_lele');
+        p.add_to_deck();
+        G.consumeables.emplace(p);
+        G.GAME.consumeable_buffer = 0;
+      });
+      card_eval_status_text(context.blueprint_card || card, 'extra', null, null, null, { message: localize('k_plus_planet'), colour: 'Planet' });
+      return undefined;
+    },
+  },
+  // Tapu Bulu 787 (Grass), Grassy Surge: +2 hand size (`h_size`, fixed) and X1.5 Mult (`Xmult` +20%: 1.8 / 2.1 / 2.4). Blueprint copies
+  // the X.
+  tapu_bulu: {
+    name: 'tapu_bulu', poke_sprite391: sprite('Natdex', 12, 52, [13, 52]),
+    config: { extra: { h_size: 2, Xmult: 1.5 } },
+    rarity: 4, cost: 20, stage: 'Legendary', ptype: 'Grass', gen: 7, blueprint_compat: true,
+    attributes: ['xmult', 'hand_size'], poke_after: 'tapu_lele',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [ex.h_size, r3(ex.Xmult)] }; },
+    calculate(self, card, context) {
+      if (context.joker_main) return { message: a_xmult(r3(card.ability.extra.Xmult)), colour: 'XMULT', Xmult_mod: card.ability.extra.Xmult };
+      return undefined;
+    },
+    ...hand_size,
+  },
+  // Tapu Fini 788 (Water), Misty Surge: +1 hand each round (`hands`, fixed: the Squirtle pair); at the end of round (the cash-out,
+  // calc_dollar_bonus) earns $2 for each unused hand (`mist_money`, fixed). No number Energy raises: Energy-inert. Nothing to copy.
+  tapu_fini: {
+    name: 'tapu_fini', poke_sprite391: sprite('Natdex', 14, 52, [15, 52]),
+    config: { extra: { hands: 1, mist_money: 2 } },
+    rarity: 4, cost: 20, stage: 'Legendary', ptype: 'Water', gen: 7, blueprint_compat: false,
+    attributes: ['hands', 'money', 'economy'], poke_after: 'tapu_bulu',
+    poke_no_energy_field: true,
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [ex.hands, ex.mist_money] }; },
+    calc_dollar_bonus(self, card) {
+      const n = Math.max(0, (G.GAME.current_round && G.GAME.current_round.hands_left) || 0);
+      return n > 0 ? n * card.ability.extra.mist_money : undefined;
+    },
+    ...hands,
+  },
+  // Cosmog 789 (Psychic, $10): permanently gains +1 Mult at the end of each round (`cosmo_mult` from 0, no energy field; the gain
+  // `mult_mod` +20%: 1.2 / 1.4 / 1.6). Evolves after 3 rounds into Cosmoem, the bank kept (and still given). Blueprint copies the Mult.
+  cosmog: {
+    name: 'cosmog', poke_sprite391: sprite('Natdex', 16, 52, [17, 52]),
+    config: { extra: { cosmo_mult: 0, mult_mod: 1, rounds: 3 } },
+    rarity: 4, cost: 10, stage: 'Legendary', ptype: 'Psychic', gen: 7, blueprint_compat: true,
+    attributes: ['mult', 'scaling', 'round_evo'], poke_after: 'tapu_fini',
+    poke_custom_values_to_keep: ['cosmo_mult'],
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.mult_mod), r3(ex.cosmo_mult), ex.rounds] }; },
+    calculate(self, card, context) {
+      round_bank(card, context, 'cosmo_mult', 'mult_mod', 'MULT');
+      return cosmo_main(card, context) || level_evo(self, card, context, 'j_poke_cosmoem');
+    },
+  },
+  // Cosmoem 790 (Psychic, $10; only through Cosmog): permanently gains X0.25 Mult at the end of each round (`cosmo_Xmult` from X1, no
+  // energy field; the gain `Xmult_mod` +20%: 0.3 / 0.35 / 0.4) and gives Cosmog's Mult too (kept, no longer growing). While held it counts
+  // the scored cards' colours (cosmo_count: red Hearts / Diamonds, black Spades / Clubs; a Wild card both, a Stone card neither; once per
+  // hand). After 3 rounds it evolves: more red -> Solgaleo, more black -> Lunala, a tie -> Solgaleo; both banks kept.
+  cosmoem: {
+    name: 'cosmoem', poke_sprite391: sprite('Natdex', 18, 52, [19, 52]),
+    config: { extra: { cosmo_mult: 0, cosmo_Xmult: 1, Xmult_mod: 0.25, red: 0, black: 0, rounds: 3 } },
+    rarity: 4, cost: 10, stage: 'Legendary', ptype: 'Psychic', gen: 7, blueprint_compat: true, custom_pool_func: true,
+    attributes: ['mult', 'xmult', 'scaling', 'suits', 'round_evo'], poke_after: 'cosmog',
+    poke_custom_values_to_keep: ['cosmo_mult', 'cosmo_Xmult'],
+    loc_vars(self, info_queue, card) {
+      type_tooltip(self, info_queue, card);
+      const ex = card.ability.extra;
+      return { vars: [r3(ex.Xmult_mod), r3(ex.cosmo_mult), r3(ex.cosmo_Xmult), ex.red || 0, ex.black || 0, ex.rounds] };
+    },
+    calculate(self, card, context) {
+      if (cosmo_count(card, context)) return undefined;
+      round_bank(card, context, 'cosmo_Xmult', 'Xmult_mod', 'XMULT');
+      return cosmo_main(card, context) || level_evo(self, card, context, cosmo_branch(card));
+    },
+    in_pool() { return false; },
+  },
+  // Solgaleo 791 (Metal; only through Cosmoem), Sunsteel Strike: each scored Heart or Diamond (is_suit: Wild counts) gives X1.25 Mult
+  // (`Xmult_multi` +5%: 1.3125 / 1.375 / 1.4375); plus the Cosmog line's banks (+Mult and X, kept, no longer growing). Blueprint copies all.
+  solgaleo: {
+    name: 'solgaleo', poke_sprite391: sprite('Natdex', 20, 52, [21, 52]),
+    config: { extra: { Xmult_multi: 1.25, cosmo_mult: 0, cosmo_Xmult: 1 } },
+    rarity: 4, cost: 20, stage: 'Legendary', ptype: 'Metal', gen: 7, blueprint_compat: true, custom_pool_func: true,
+    attributes: ['xmult', 'mult', 'suit', 'hearts', 'diamonds'], poke_after: 'cosmoem',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.Xmult_multi), r3(ex.cosmo_mult), r3(ex.cosmo_Xmult)] }; },
+    calculate(self, card, context) { return cosmo_suit_x(card, context, ['Hearts', 'Diamonds']) || cosmo_main(card, context); },
+    in_pool() { return false; },
+  },
+  // Lunala 792 (Psychic; only through Cosmoem), Moongeist Beam: each scored Spade or Club gives X1.25 Mult (`Xmult_multi` +5%); plus the
+  // Cosmog line's banks. Blueprint copies all.
+  lunala: {
+    name: 'lunala', poke_sprite391: sprite('Natdex', 22, 52, [23, 52]),
+    config: { extra: { Xmult_multi: 1.25, cosmo_mult: 0, cosmo_Xmult: 1 } },
+    rarity: 4, cost: 20, stage: 'Legendary', ptype: 'Psychic', gen: 7, blueprint_compat: true, custom_pool_func: true,
+    attributes: ['xmult', 'mult', 'suit', 'spades', 'clubs'], poke_after: 'solgaleo',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.Xmult_multi), r3(ex.cosmo_mult), r3(ex.cosmo_Xmult)] }; },
+    calculate(self, card, context) { return cosmo_suit_x(card, context, ['Spades', 'Clubs']) || cosmo_main(card, context); },
+    in_pool() { return false; },
+  },
+  // Necrozma 800 (Psychic), Prism: each Planet card used while held (by anyone; not Blueprint) banks +X0.1 Mult (`prism_Xmult` from X1,
+  // no energy field; the gain `Xmult_mod` +20%: 0.12 / 0.14 / 0.16, never retroactive). At X3 it becomes Ultra Necrozma for good: its
+  // Ultra card (Gen 7 {0,5}), its type the card's (Dragon; Monotype still accepts the Psychic it was gained as), +1 hand size
+  // (`ultra_size`, fixed; Zygarde's pair). It keeps banking. Blueprint copies the X.
+  necrozma: {
+    name: 'necrozma', poke_sprite391: sprite('Gen07', 6, 4, [7, 4]),
+    config: { extra: { prism_Xmult: 1, Xmult_mod: 0.1, ultra_size: 1 } },
+    rarity: 4, cost: 20, stage: 'Legendary', ptype: 'Psychic', gen: 7, blueprint_compat: true,
+    attributes: ['xmult', 'scaling', 'planet', 'hand_size', 'types'], poke_after: 'guzzlord',
+    poke_view_form(self, card) { return necrozma_ultra(card) ? 'ultra' : 'base'; },
+    loc_vars(self, info_queue, card) {
+      type_tooltip(self, info_queue, card);
+      const ex = card.ability.extra;
+      return { vars: [r3(ex.Xmult_mod), r3(ex.prism_Xmult), NECROZMA_ULTRA, ex.ultra_size, necrozma_ultra(card) ? 'Ultra Necrozma' : 'Necrozma'] };
+    },
+    calculate(self, card, context) {
+      if (prism(card, context)) return undefined;
+      const ex = card.ability.extra;
+      if (context.joker_main && ex.prism_Xmult > 1) return { message: a_xmult(r3(ex.prism_Xmult)), colour: 'XMULT', Xmult_mod: ex.prism_Xmult };
+      return undefined;
+    },
+    ...ultra_size,
+  },
+  // Magearna 801 (Metal), Soul-Heart: each scored Steel card gives X1.5 Mult (the joker's own per-card pass, so a retrigger repeats it and
+  // Blueprint copies it; `Xmult_multi` +5%: 1.575 / 1.65 / 1.725). A Steel card held in hand keeps its own X1.5 as usual.
+  magearna: {
+    name: 'magearna', poke_sprite391: sprite('Natdex', 10, 53, [11, 53]),
+    config: { extra: { Xmult_multi: 1.5 } },
+    rarity: 4, cost: 20, stage: 'Legendary', ptype: 'Metal', gen: 7, blueprint_compat: true,
+    attributes: ['xmult', 'enhancements'], poke_after: 'necrozma',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); info_queue.push(P_CENTERS.m_steel); return { vars: [r3(card.ability.extra.Xmult_multi)] }; },
+    calculate(self, card, context) {
+      if (context.individual && context.cardarea === G.play && !context.end_of_round && has_enhancement(context.other_card, 'm_steel')) return { x_mult: card.ability.extra.Xmult_multi, card };
+      return undefined;
+    },
+  },
+  // Marshadow 802 (Fighting), Spectral Thief: X2 Mult (`Xmult` +20%: 2.4 / 2.8 / 3.2); X4 during a Boss Blind (`Xmult1` +20%: 4.8 / 5.6 /
+  // 6.4; boss_now: a disabled Boss is still a Boss). During one its Zenith card shows (Gen 7 {4,5}, Fighting too). Blueprint copies it.
+  marshadow: {
+    name: 'marshadow', poke_sprite391: sprite('Gen07', 2, 5, [3, 5]),
+    config: { extra: { Xmult: 2, Xmult1: 4 } },
+    rarity: 4, cost: 20, stage: 'Legendary', ptype: 'Fighting', gen: 7, blueprint_compat: true,
+    attributes: ['xmult', 'boss_blind'], poke_after: 'magearna',
+    poke_view_form(self, card) { return boss_now() ? 'zenith' : 'base'; },
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.Xmult), r3(ex.Xmult1), r3(boss_now() ? ex.Xmult1 : ex.Xmult)] }; },
+    calculate(self, card, context) {
+      if (!context.joker_main) return undefined;
+      const x = boss_now() ? card.ability.extra.Xmult1 : card.ability.extra.Xmult;
+      return { message: a_xmult(r3(x)), colour: 'XMULT', Xmult_mod: x };
+    },
+  },
+  // Zeraora 807 (Lightning), Plasma Fists: each scored face card (is_face: Pareidolia counts) earns $1 (`plasma_money`, fixed) and gives
+  // X1.25 Mult (`Xmult_multi` +5%: 1.3125 / 1.375 / 1.4375). Blueprint copies both.
+  zeraora: {
+    name: 'zeraora', poke_sprite391: sprite('Natdex', 22, 53, [23, 53]),
+    config: { extra: { Xmult_multi: 1.25, plasma_money: 1 } },
+    rarity: 4, cost: 20, stage: 'Legendary', ptype: 'Lightning', gen: 7, blueprint_compat: true,
+    attributes: ['xmult', 'money', 'face'], poke_after: 'blacephalon',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [ex.plasma_money, r3(ex.Xmult_multi)] }; },
+    calculate(self, card, context) {
+      if (context.individual && context.cardarea === G.play && !context.end_of_round && context.other_card.is_face()) {
+        const ex = card.ability.extra;
+        G.GAME.dollar_buffer = (G.GAME.dollar_buffer || 0) + ex.plasma_money;
+        G.E_MANAGER.add_event(() => { G.GAME.dollar_buffer = 0; });
+        return { dollars: ex.plasma_money, x_mult: ex.Xmult_multi, card };
+      }
+      return undefined;
+    },
+  },
 }, FILE);
 
 /** The families (functions/pokefamily.lua style): index.js adds them with set_family. */
@@ -8144,6 +8488,9 @@ export const DESIGN_FAMILIES = [
   ['jangmoo', 'hakamoo', 'kommoo'],
   // Gen 7, batch 3
   ['poipole', 'naganadel'],
+  // Gen 7, batch 4
+  ['typenull', 'silvally'],
+  ['cosmog', 'cosmoem', 'solgaleo', 'lunala'],
 ];
 
 /** Their text (Pokermon loc style: #n# filled by loc_vars), from the design guide; index.js merges it into descriptions.Joker. */
@@ -8896,6 +9243,37 @@ export const DESIGN_LOC = {
     j_poke_avalugg: { name: 'Avalugg', text: ['{C:chips}+#1#{} Chips', '{X:mult,C:white} X#2# {} Mult on the', 'final hand of the round', '{C:inactive}(#3#)'] },
     j_poke_noibat: { name: 'Noibat', text: [GLASS_ODDS('{C:attention}+#1#{} hand size'), [...GLASS_BREAKS('Gains {C:mult}+#4#{} Mult'), '{C:inactive}(Currently {C:mult}+#5#{C:inactive} Mult)', EVOLVES_ROUNDS(6)]] },
     j_poke_noivern: { name: 'Noivern', text: [GLASS_ODDS('{C:attention}+#1#{} hand size'), ['{C:attention}Boomburst:{} gains {X:mult,C:white} X#4# {} Mult', 'each time a {C:attention}Glass{} card', 'breaks, and a random card in', 'your deck becomes {C:attention}Glass{}', '{C:inactive}(Currently {X:mult,C:white} X#5# {C:inactive} Mult', '{C:inactive}and {C:mult}+#6#{C:inactive} Mult)']] },
+    // Gen 7, batch 4: the Gen 7 Legendaries (contentRev 67)
+    j_poke_typenull: { name: 'Type: Null', text: ['Permanently gains {X:mult,C:white} X#1# {} Mult', 'at the end of each round', '{C:inactive}(Currently {X:mult,C:white} X#2# {C:inactive} Mult)', EVOLVES_ROUNDS(3)] },
+    j_poke_silvally: { name: 'Silvally', text: [
+      ['{C:attention}RKS System:{} {X:mult,C:white} X#1# {} Mult, plus', '{X:mult,C:white} X#2# {} for each other', 'Joker of its type', '{C:inactive}(Currently {C:attention}#4#{C:inactive}, #5# others)'],
+      ['{X:mult,C:white} X#3# {} Mult {C:inactive}(kept from Type: Null)', '{C:inactive}(In all {X:mult,C:white} X#6# {C:inactive} Mult)'],
+      ['Using any {C:attention}Energy{} card sets', 'its type to that {C:attention}Energy{}\'s', 'Every type\'s {C:attention}Energy{} works on it', '{C:inactive,s:0.8}(Its type never breaks Monotype)'],
+    ] },
+    j_poke_tapu_koko: { name: 'Tapu Koko', text: ['{C:attention}Electric Surge:{} every', 'scored card gives', '{X:mult,C:white} X#1# {} Mult'] },
+    j_poke_tapu_lele: { name: 'Tapu Lele', text: ['{C:attention}Psychic Surge:{} each', '{C:tarot}Tarot{} card used creates', 'a random {C:planet}Planet{} card', '{C:inactive}(Must have room)'] },
+    j_poke_tapu_bulu: { name: 'Tapu Bulu', text: [['{C:attention}+#1#{} hand size'], ['{C:attention}Grassy Surge:{} {X:mult,C:white} X#2# {} Mult']] },
+    j_poke_tapu_fini: { name: 'Tapu Fini', text: [['{C:chips}+#1#{} hand each round'], ['{C:attention}Misty Surge:{} earn {C:money}$#2#{}', 'for each unused hand', 'at end of round']] },
+    j_poke_cosmog: { name: 'Cosmog', text: ['Permanently gains {C:mult}+#1#{} Mult', 'at the end of each round', '{C:inactive}(Currently {C:mult}+#2#{C:inactive} Mult)', EVOLVES_ROUNDS(3)] },
+    j_poke_cosmoem: { name: 'Cosmoem', text: [
+      ['Permanently gains {X:mult,C:white} X#1# {} Mult', 'at the end of each round', '{C:inactive}(Currently {C:mult}+#2#{C:inactive} and {X:mult,C:white} X#3# {C:inactive} Mult)'],
+      ['Counts the scored {C:hearts}red{} and', '{C:spades}black{} cards {C:inactive}(Red #4# / Black #5#)', '{C:inactive,s:0.8}(Evolves after {C:attention,s:0.8}#6#{C:inactive,s:0.8} rounds: more red,', '{C:inactive,s:0.8}Solgaleo; more black, Lunala;', '{C:inactive,s:0.8}a tie, Solgaleo)'],
+    ] },
+    j_poke_solgaleo: { name: 'Solgaleo', text: [
+      ['{C:attention}Sunsteel Strike:{} each scored', '{C:hearts}Heart{} or {C:diamonds}Diamond{} gives', '{X:mult,C:white} X#1# {} Mult'],
+      ['{C:mult}+#2#{} and {X:mult,C:white} X#3# {} Mult', '{C:inactive}(kept from Cosmog and Cosmoem)'],
+    ] },
+    j_poke_lunala: { name: 'Lunala', text: [
+      ['{C:attention}Moongeist Beam:{} each scored', '{C:spades}Spade{} or {C:clubs}Club{} gives', '{X:mult,C:white} X#1# {} Mult'],
+      ['{C:mult}+#2#{} and {X:mult,C:white} X#3# {} Mult', '{C:inactive}(kept from Cosmog and Cosmoem)'],
+    ] },
+    j_poke_necrozma: { name: 'Necrozma', text: [
+      ['{C:attention}Prism:{} gains {X:mult,C:white} X#1# {} Mult', 'for each {C:planet}Planet{} card used', '{C:inactive}(Currently {X:mult,C:white} X#2# {C:inactive} Mult)'],
+      ['At {X:mult,C:white} X#3# {}, becomes {C:attention}Ultra Necrozma{}', 'for good: {C:attention}+#4#{} hand size and', 'its type becomes {X:poke_dragon,C:white}Dragon{}', '{C:inactive}(#5#)'],
+    ] },
+    j_poke_magearna: { name: 'Magearna', text: ['{C:attention}Soul-Heart:{} scored', '{C:attention}Steel{} cards give', '{X:mult,C:white} X#1# {} Mult'] },
+    j_poke_marshadow: { name: 'Marshadow', text: ['{C:attention}Spectral Thief:{} {X:mult,C:white} X#1# {} Mult;', '{X:mult,C:white} X#2# {} Mult during', 'a {C:attention}Boss Blind', '{C:inactive}(Currently {X:mult,C:white} X#3# {C:inactive} Mult)'] },
+    j_poke_zeraora: { name: 'Zeraora', text: ['{C:attention}Plasma Fists:{} each scored', '{C:attention}face{} card earns {C:money}$#1#{}', 'and gives {X:mult,C:white} X#2# {} Mult'] },
     // Gen 7, batch 1 (the owner's "Yes build it", 2026-11-02)
     j_poke_pikipek: { name: 'Pikipek', text: [...MULTI_HIT_TEXT, EVOLVES_ROUNDS(3)] },
     j_poke_trumbeak: { name: 'Trumbeak', text: [...MULTI_HIT_TEXT, EVOLVES_ROUNDS(3)] },

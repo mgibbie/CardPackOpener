@@ -122,8 +122,8 @@ Notable gaps:
     lines are the owner's (Sprigatito, Fuecoco, Quaxly); Gen 6 (Chespin, Fennekin, Froakie) too (contentRev 52;
     "a STARTER LINE, Gen 6 additions", 2.1).
   - Legendaries and mythicals: most of Gens 4-9 (the Regis, the Lati twins, the weather trio, the
-    creation trio, Regigigas, Arceus, the Lake trio, Cresselia, Manaphy and Phione, all 12 Gen 5 Legendaries and Yveltal / Zygarde / Diancie / Hoopa / Volcanion are now the owner's designs): the Tapus, the
-    Cosmog line, the Ruinous four, Koraidon and Miraidon.
+    creation trio, Regigigas, Arceus, the Lake trio, Cresselia, Manaphy and Phione, all 12 Gen 5 Legendaries, Yveltal / Zygarde / Diancie / Hoopa / Volcanion and the 14 Gen 7 Legendaries (Type: Null, the
+    Tapus, the Cosmog line, Necrozma, Magearna, Marshadow, Zeraora) are now the owner's designs): the Ruinous four, Koraidon and Miraidon.
   - Fossils: the four Galar fossils are still missing; the Tirtouga and Archen lines (Gen 5) and the Tyrunt and
     Amaura lines (Gen 6) are now house fossils on the "Ancient" mechanic (2.5).
   - Ultra Beasts: all 11 are now the owner's designs (Gen 7 batch 3, contentRev 66), on a shared UB mechanic,
@@ -648,6 +648,20 @@ while scoring), then in the `after` pass of the Nth hand smods_debuff_card(card,
 it is saved, resumed and replayed with the card. A debuffed joker is never calculated, so it can't undebuff itself: a mod hook
 (index.js end_round_start, run.js end_round's first step, before any joker's end_of_round) drops the source, so the round's end (and its
 Beast Boost) sees it fresh. Blueprint copies the X only while it is fresh.
+House pattern: a TYPE SET BY ENERGY (the Gen 7 Silvally, RKS System; rks_system / poke_any_energy): any Energy card used (context.using_consumeable,
+set 'Energy', on ANY joker; not Blueprint) sets the joker's ptype to that Energy's type (Greninja's protean_set: is_type / energy_matches / Kecleon
+follow, a Tera sticker still overrides). The center flag poke_any_energy makes every type's Energy match it at full strength (energy_matches; off
+while a Tera sticker is on), so a LONE copy can still pick its type (the solo rule) — Arceus's energy rule without the multitype. Bird Energy, Double
+Rainbow and Berry Juice set nothing. Its form is its type (one Memory cell per type, 12 on the Gen 7 sheet); Monotype-exempt (poke_mono_exempt).
+House pattern: a COLOUR BRANCH (the Gen 7 Cosmoem -> Solgaleo / Lunala; cosmo_count / cosmo_branch): while held, count the scored cards' colours
+once per hand in the `after` pass (Zygarde's count: red = is_suit Hearts or Diamonds, black = Spades or Clubs, so a Wild card adds to both and a
+Stone card to neither; debuffed / retriggers / Blueprint add nothing); level_evo with the branch read when it evolves (a tie picks the first branch,
+Solgaleo). Rockruff's even / odd split with suits. A line of BANKS (Cosmog +Mult, Cosmoem X) keeps paying every bank after evolving (each stage's
+bank listed in poke_custom_values_to_keep on the stage that evolves away; the later stage stops growing it).
+House pattern: a BANK THAT UNLOCKS A FORM (the Gen 7 Necrozma, Prism; prism / necrozma_ultra): a consumable bank (X0.1 per Planet used, `prism_Xmult`
+from X1, gain `Xmult_mod`) whose threshold (X3) turns it into its other forme for good, read from the bank (never stored: resume / replay rebuild it):
+the form's card, the TYPE the form's card shows (protean_set: Ultra Necrozma is Dragon; Monotype still accepts the type it was gained as, so no
+exemption), and a one-time perk (+1 hand size, Zygarde's flagged pair). Energy reaches the threshold sooner, never moves it.
 
 House pattern: SCORING A DEBUFFED CARD, and debuffs as a resource (the owner's Snivy line, Contrary; jokers/pokejokers_designs.js
 contrary_held / contrary_lifts):
@@ -1225,6 +1239,8 @@ the Gen 7 batch 2 fixed fields: num / dem (Bewear's and Comfey's odds), d_size (
 Xmult_mod / mult_mod are energized).
 the Ultra Beasts' fixed fields: beast_boosts (the Beast Boost count), h_size (Buzzwole's -1), val_gain (Celesteela's $1), retriggers (Kartana),
 gluttony_Xmult (Guzzlord's bank; its gain Xmult_mod is energized), recoil (Blacephalon's $2), rounds (Poipole).
+the Gen 7 Legendaries' fixed fields: null_Xmult (Type: Null's bank), cosmo_mult / cosmo_Xmult / red / black (the Cosmog line), prism_Xmult / ultra_size
+(Necrozma), mist_money (Tapu Fini's $2), plasma_money (Zeraora's $1).
 
 Designer consequences:
   1. The field name is a balance choice. A joker-wide X stored as Xmult grows 20% of its base

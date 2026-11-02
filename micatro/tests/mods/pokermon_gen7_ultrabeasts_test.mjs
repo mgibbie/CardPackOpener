@@ -78,7 +78,7 @@ const UB = { nihilego: ['Dark', 3, 7, 'Basic'], buzzwole: ['Fighting', 3, 7, 'Ba
 
 // ------------------------------------------------------------------- the pin and the eleven centers
 await sec('pin', () => {
-  ok(MODS.pokermon.contentRev === 66 && PINS.modPin('pokermon') === '3.9.1+r66', 'Pokermon contentRev 66 (pin 3.9.1+r66; Gen 7 batch 3)', PINS.modPin('pokermon'));
+  ok(MODS.pokermon.contentRev >= 66 && PINS.modPin('pokermon') === '3.9.1+r' + MODS.pokermon.contentRev, 'Pokermon contentRev 66+ (Gen 7 batch 3; r67 Gen 7 batch 4)', PINS.modPin('pokermon'));
   ok(PINS.LEGACY_MOD_VERSIONS.pokermon === '3.2.1+r1', 'LEGACY_MOD_VERSIONS untouched');
   for (const [n, [t, r, c, st]] of Object.entries(UB)) {
     const x = P_CENTERS['j_poke_' + n];
@@ -87,10 +87,10 @@ await sec('pin', () => {
   ok(['beast_boosts', 'h_size', 'val_gain', 'retriggers', 'gluttony_Xmult', 'recoil', 'rounds'].every((f) => !(f in energy_values)), 'the Beast Boost count, the hand size, the $1, the retriggers, the bank and the $2 are no energy fields');
   ok(P_CENTERS.j_poke_nihilego.poke_no_energy_field === true && !P_CENTERS.j_poke_nihilego.poke_beast_boost, 'Nihilego: no number (Energy-inert, no Beast Boost)');
   const keys = MODS.pokermon.content.centers.filter((c) => c.set === 'Joker').map((c) => c.key);
-  const chain = ['nihilego', 'buzzwole', 'pheromosa', 'xurkitree', 'celesteela', 'kartana', 'guzzlord', 'poipole', 'naganadel', 'stakataka', 'blacephalon', 'grookey'];
+  const chain = ['nihilego', 'buzzwole', 'pheromosa', 'xurkitree', 'celesteela', 'kartana', 'guzzlord', 'necrozma', 'magearna', 'marshadow', 'poipole', 'naganadel', 'stakataka', 'blacephalon', 'zeraora', 'grookey']; // (with Gen 7 batch 4's Necrozma, Magearna, Marshadow 800-802 and Zeraora 807)
   const i = keys.indexOf('j_poke_nihilego');
-  ok(i > 0 && chain.every((n, k) => keys[i + k] === 'j_poke_' + n), 'Pokédex order: Nihilego (793) ... Blacephalon (806), then Grookey (810)', keys.slice(i - 1, i + 13));
-  ok(keys[i - 1] === 'j_poke_kommoo', '... right after Kommo-o (784)', keys[i - 1]);
+  ok(i > 0 && chain.every((n, k) => keys[i + k] === 'j_poke_' + n), 'Pokédex order: Nihilego (793) ... Guzzlord (799), Necrozma ... Marshadow, Poipole (803) ... Blacephalon (806), Zeraora, then Grookey (810)', keys.slice(i - 1, i + 17));
+  ok(keys[i - 1] === 'j_poke_lunala', '... right after Lunala (792; Gen 7 batch 4)', keys[i - 1]);
 });
 
 // ------------------------------------------------------------------- Nihilego: Parasite (the Joker to its LEFT)

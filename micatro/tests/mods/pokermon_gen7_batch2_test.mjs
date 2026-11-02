@@ -128,9 +128,10 @@ await sec('static', () => {
   const keys = MODS.pokermon.content.centers.filter((c) => c.set === 'Joker').map((c) => c.key);
   const run = (from, list, to) => { const i = keys.indexOf('j_poke_' + list[0]); return i > 0 && [from, ...list, to].every((k, n) => keys[i - 1 + n] === 'j_poke_' + k) ? true : keys.slice(i - 1, i + list.length + 1); };
   const RUNS = [
-    [keys[keys.indexOf('j_poke_salandit') - 1].slice(7), ['salandit', 'salazzle', 'stufful', 'bewear', 'comfey', 'sandygast', 'palossand', 'pyukumuku', 'komala'], 'mimikyu'],
+    [keys[keys.indexOf('j_poke_salandit') - 1].slice(7), ['salandit', 'salazzle', 'stufful', 'bewear', 'comfey', 'sandygast', 'palossand', 'pyukumuku'], 'typenull'],
+    ['silvally', ['komala'], 'mimikyu'], // (Type: Null / Silvally, 772-773, Gen 7 batch 4)
     ['mimikyu', ['bruxish'], 'drampa'],
-    ['mega_drampa', ['jangmoo', 'hakamoo', 'kommoo'], 'nihilego'], // (then the Ultra Beasts, 793-806, Gen 7 batch 3)
+    ['mega_drampa', ['jangmoo', 'hakamoo', 'kommoo'], 'tapu_koko'], // (then the Tapus and the Cosmog line, 785-792, Gen 7 batch 4)
   ];
   const before = keys[keys.indexOf('j_poke_salandit') - 1];
   ok(P_CENTERS[before] && P_CENTERS[before].gen === 7 && keys.indexOf(before) > keys.indexOf('j_poke_mudsdale') - 1, 'Salandit follows the last Gen 7 joker before #757 (Mudsdale, or Gen 7 batch 1\'s last)', before);
