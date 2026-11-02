@@ -1000,6 +1000,11 @@ export const POKERMON = registerMod({
   // Press), Klefki (Key Ring), Phantump / Trevenant (destroyed-card bank, Seeds), Bergmite / Avalugg and Noibat / Noivern (Glass 1 in 2).
   // 63 = Gen 6 batch 3, the Gen 6 Legendaries (jokers/pokejokers_designs.js, #717-721), each complete alone: Yveltal (Oblivion Wing),
   // Zygarde (Cells: 10% / 50% / Complete Forme), Diancie (Diamond Storm), Hoopa (Hyperspace Hole; Unbound) and Volcanion (Steam Eruption).
+  // 64 = Gen 7 batch 1 (jokers/pokejokers_designs.js, #731-756): Pikipek / Trumbeak / Toucannon (Multi-hit 2-5 / Skill Link), Yungoos /
+  // Gumshoos (Stakeout), Crabrawler / Crabominable (Power-Up Punch perma_mult), Oricorio (dance styles), Cutiefly / Ribombee (Fairy team),
+  // Wishiwashi (Schooling), Mareanie / Toxapex (Merciless: Boss Blinds beaten), Dewpider / Araquanid (Water Bubble, rain), Fomantis / Lurantis
+  // (Solar Blade, sun) and Morelull / Shiinotic (Lucky). Two run records join G.GAME (systems/rules.js): poke_last_hand, poke_bosses_beaten.
+  contentRev: 64,
   // 65 = Gen 7 batch 2 (jokers/pokejokers_designs.js "Gen 7, batch 2", #757-784; r64 is Gen 7 batch 1): Salandit / Salazzle (Queens;
   // only a ♀ evolves), Stufful / Bewear (Strong Hug destroys the Joker to its right, 1 in 4), Comfey (Floral Gift: +1 Energy), Sandygast /
   // Palossand (Stone banks), Pyukumuku (Innards Out: hooks.start_dissolve above), Komala (Comatose: systems/rules.js set_debuff + no_destroy),

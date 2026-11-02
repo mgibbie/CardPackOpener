@@ -914,6 +914,47 @@ House pattern: a deck HAZARD seeder with a payoff (the Gen 6 Skrelp line; skrelp
     each Hazard held X1.2 (Galvantula's held X, `Xmult_multi` +5%). Held Hazards still roll their 1 in 3 destroy at end of round (deck
     thinning, and fuel for Phantump).
 
+House pattern: MULTI-HIT, a rolled hit count a hand (the Gen 7 Pikipek line; multi_hit / multi_hit_roll / skill_link_x):
+  - Rolled ONCE a hand in `before` (not Blueprint, not a joker retrigger) on the run's seeded stream ('poke_multi_hit') at the main
+    series' Gen 5+ odds: 2 / 3 hits 35% each, 4 / 5 hits 15% each (3.1 on average). Kept on the joker (`hits`): joker_main pays +mult per
+    hit, and a Blueprint copy gives the SAME hits (one roll a hand). A debuffed hand has no `before`: no roll, nothing. The count is fixed;
+    Energy raises the per-hit number (`mult` +40%).
+  - The Stage 2's Skill Link is the max, always 5 hits: a per-hit X in `Xmult_multi` (+5%, as a per-card X: it fires 5 times) shown and scored
+    as ONE X of X^5 (X1.1 -> X1.611; energized 1.265^5 = X3.236). All three are Colorless: Starly's flock counts them.
+House pattern: a RUN RECORD of the LAST hand played (the Gen 7 Yungoos line, Stakeout; stakeout_on, systems/rules.js poke_last_hand):
+  - Pokermon's mod-level calculate sets G.GAME.poke_last_hand = scoring_name in its `after` pass (every hand, a debuffed one too), with or
+    without a reader, so a late buy sees it; during scoring it still names the PREVIOUS hand (vanilla's last_hand_played is already the
+    current one there: don't use it). The run's first hand (no record) counts as different. +15 Mult / X2 (`mult`, `Xmult`).
+House pattern: a PERMA-MULT PUNCH by position (the Gen 7 Crabrawler line, Power-Up Punch; power_up_punch):
+  - Hiker's shape with Steamodded's perma_mult: the FIRST scored card (scoring_hand[0] by position: a debuffed one there gets nothing and the
+    first never shifts inward) gains +2 for good (Crabrawler), every scored card +1 and the first +3 (Crabominable). The gain lands after the
+    card's own score (it pays from the next time it scores); a retriggered card gains again, as Hiker. Not Blueprint (blueprint_compat false:
+    the gain is the joker). Energy raises the gains (`mult_mod` / `mult_mod2` +20%).
+House pattern: DANCE STYLES, a four-suit form that STAYS (the Gen 7 Oricorio; ORICORIO_STYLES / dance_pick / revelation_dance):
+  - Castform's first-deal read (2.1) with the four suits APART (no red pair): Hearts Baile / Fire, Diamonds Pom-Pom / Lightning, Spades Pa'u /
+    Psychic, Clubs Sensu / Psychic; a Wild card counts for all four (so Wilds alone tie), a Stone / debuffed card for none. A tie for the most
+    KEEPS the current style, and the style STAYS between rounds (unlike Castform's weather, which ends with the round); the shop card is Baile.
+  - Its type follows the style (ex.ptype, Castform's / Greninja's: set_debuff + Kecleon re-sync, a Tera sticker still owns it): Monotype-exempt
+    (poke_mono_exempt). Payoff: scored cards of its style's suit X1.25 (`Xmult_multi` +5%). Art: the four style cards sit UNLISTED on the 3.9.1
+    Gen 7 sheet beside its Baile card ({0,0} / {2,0} / {4,0} / {6,0}; systems/anim.js GEN7_FORM_SPRITES), each with its style's type icon.
+House pattern: the FAIRY team count (the Gen 7 Cutiefly line; fairy_count; the first Fairy type synergy): Barboach / Starly's one-type count
+  (is_type, undebuffed, itself +1): +4 Mult / X1 + X0.25 per Fairy Joker (`mult` +40%, `Xmult_mod` +20%).
+House pattern: SCHOOLING, a form by hands left (the Gen 7 Wishiwashi; school_on): School Form X2.5 while the hands left BEFORE this hand are at
+  least half the round's hands, rounded up (the round's hands = hands_played + hands left before this one: 4 hands -> the 1st-3rd; 5 -> the
+  1st-3rd); Solo Form +5 Mult otherwise. While a hand scores the hand is already taken (Chesnaught's `scoring` flag adds it back). Two energy
+  fields, one per form (`Xmult`, `mult`). Its School card is unlisted beside the Solo one on the Gen 7 sheet ({4,1}), drawn live
+  (poke_view_form). Compare Chesnaught's fixed "2+ hands" (2.1) and Azelf's final hand.
+House pattern: BOSS BLINDS BEATEN, a run record (the Gen 7 Mareanie line, Merciless; systems/rules.js poke_bosses_beaten): +1 in the mod's
+  main end-of-round pass of a WON Boss Blind (beat_boss, not game_over), with or without a reader, so a late buy counts all. Each scored card
+  +1 Mult per Boss (`mult` +40%), then X1 + X0.25 per Boss (`Xmult_mod` +20%): slow, run-long growth for a Common line.
+House pattern: a DOUBLED X (the Gen 7 Dewpider line, Water Bubble, in Swift Swim's rain, 2.1): "doubled" for an X doubles its BONUS:
+  X(1 + 2 x (X - 1)), X1.25 -> X1.5 (energized X1.4375 -> X1.875); Chips double plainly (+15 -> +30). Scored Clubs only.
+House pattern: a FINAL-HAND X with a SUN upgrade (the Gen 7 Fomantis line, Solar Blade): +10 Mult / X2.5 on the round's final hand
+  (final_hand), X3.5 instead while sunny (Cherrim's / Larvesta's shared sun: sun_read, cherrim_sunny). The sunny X is its own energy field
+  (`Xmult2` +20%, 4.2 / 4.9 / 5.6) beside `Xmult` (3 / 3.5 / 4).
+House pattern: LUCKY GLOW, deck count + trigger bank (the Gen 7 Morelull line; lucky_in_deck / glow_mult): +3 Mult per Lucky card in the full
+  deck (Morelull, kept by Shiinotic), and Shiinotic banks +2 each time a scored Lucky card triggers (Tranquill's lucky_scored: its Mult or
+  its money roll, both at once count once) in `glow_mult` (never energized; gain `mult_mod` +20%). Not Blueprint for the gain.
 House pattern: a GENDER-GATED evolution (the Gen 7 Salandit, Queen; salandit_gender):
   - The gender is rolled when the joker is OBTAINED (add_to_deck, only if none yet: Furfrou's / Glameow's moment, never on creation), the
     run's seeded pseudorandom 'salandit_gender', 50/50, kept on ability.extra.gender (save / resume re-play it; an add_to_deck from a debuff
@@ -1158,6 +1199,9 @@ Skiddo / Gogoat's base Chips (`chips`) and per-other-Grass Chips (`chips1`), bot
 the Gen 6 batch 2 fixed fields: aroma_money (Spritzee's $), card_limit (Slurpuff's slot), the banks sweet_mult / curse_mult / bat_mult /
 bat_Xmult (their gains mult_mod / Xmult_mod are energized), ancient_money (Amaura's $3);
 the Gen 6 Legendaries' fixed fields: oblivion_Xmult (Yveltal's bank), cells / complete_size (Zygarde), diamond_money (Diancie's $1), used (Hoopa);
+the Gen 7 batch 1 fixed fields: hits (the Pikipek line's roll; the count is never energized), form (Oricorio's style), the bank glow_mult
+(Shiinotic; its gain mult_mod is energized). Two energy fields on one number pair: Crabominable's every-card / first-card gains
+(`mult_mod`, `mult_mod2`), Wishiwashi's School / Solo (`Xmult`, `mult`), Lurantis's final-hand / sunny X (`Xmult`, `Xmult2`).
 the Gen 7 batch 2 fixed fields: num / dem (Bewear's and Comfey's odds), d_size (Salandit's discard), gender, innards_money / held_rounds
 (Pyukumuku's $1 a round), retriggers (Bruxish), the banks castle_chips / castle_Xmult / innards_chips / clang_mult (their gains chip_mod /
 Xmult_mod / mult_mod are energized).
@@ -2034,7 +2078,7 @@ Typical numbers:
   Stage 2   card +M 15 (Tinkaton)
 Under-explored:
   - Almost everything: money (0), retriggers (0), consumables, the shop.
-  - Fairy-type synergy (0).
+  - Fairy-type synergy: the Gen 7 Cutiefly line is the first (+4 Mult / X0.25 per Fairy Joker, 2.1).
   - The fairy/healing lore (restoring destroyed cards, removing debuffs, Wish-like gifts) is
     untouched.
   - 15 missing species: the Flabebe line, the Spritzee, Swirlix and Milcery lines, Comfey,

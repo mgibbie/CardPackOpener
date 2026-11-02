@@ -3462,11 +3462,65 @@ center's `poke_view_form`, read from the card's own counter; nothing to deploy.
 - **Wiki**: regenerated (the five drop off; their wiki sprites are gone from `designwiki/sprites/pokermon_jokers/`).
 - **Tests**: `micatro/tests/mods/pokermon_gen6_legendaries_test.mjs` (fails on main: no such jokers).
 
+### Gen 7, batch 1 (2026-11-02, branch `feat/pokermon-gen7-batch1`)
+Pinned **`3.9.1+r64`** (`contentRev: 64`; r63 is the Gen 6 Legendaries; `LEGACY_MOD_VERSIONS` untouched). The owner's "Yes build it": 19 jokers,
+#731-756, in `jokers/pokejokers_designs.js` (`multi_hit` / `multi_hit_roll` / `skill_link_x` / `stakeout_on` / `power_up_punch` / `ORICORIO_STYLES` /
+`dance_pick` / `revelation_dance` / `fairy_count` / `school_on` / `bosses_beaten` / `water_bubble` / `lucky_in_deck`). Pokédex order among the Gen 7
+jokers Pokermon has: Pikipek ... Gumshoos (731-735) after Primarina, before Grubbin; Crabrawler ... Ribombee (739-743) after Vikavolt, before Rockruff;
+Wishiwashi, Mareanie, Toxapex (746-748) after Lycanroc (Dusk), before Mudbray; Dewpider ... Shiinotic (751-756) after Mudsdale, before Mimikyu. Neither
+Nacho nor Pokermon+ has any. Prices by the guide's slots (3-stage U $6 / S $8 / S $10, 2-stage C $5 / S $8, single-stage R $7). Evolution by
+rounds: **4** for the early evolvers (Pikipek Lv 14, Yungoos Lv 20), **5** for the rest (Trumbeak, Crabrawler, Cutiefly, Mareanie, Dewpider,
+Fomantis, Morelull). Types = the cards' (`pokermon_art_types_test`: Crabominable Water, Cutiefly / Morelull lines Fairy, Mareanie line Dark). Art:
+upstream 3.9.1 cells (Natdex {20,48}-{10,50}; Oricorio Gen 7 {0,0}, Wishiwashi Gen 7 {2,1}); the forms are UNLISTED neighbours on the Gen 7 sheet
+(`systems/anim.js` GEN7_FORM_SPRITES, `ui.js` ownFace): Oricorio Pom-Pom {2,0} / Pa'u {4,0} / Sensu {6,0}, Wishiwashi School {4,1}, each with its
+form's type icon; nothing to deploy. Two run records join G.GAME, kept by Pokermon's mod-level calculate (`systems/rules.js`) with or without the
+jokers that read them: **`poke_last_hand`** (set in the `after` pass of every hand, a debuffed one too) and **`poke_bosses_beaten`** (+1 at the
+main end of round of a won Boss Blind). A run recorded before r64 re-simulates with them (they don't touch the RNG).
+- **Pikipek** (U $6, 4) / **Trumbeak** (S $8, 5), Multi-hit: **each hand hits 2-5 times, +3 / +5 Mult per hit**. The choice: the **Gen 5+ odds
+  (2 / 3 hits 35% each, 4 / 5 hits 15% each)**, rolled once a hand in `before` on the seeded stream (`poke_multi_hit`; not Blueprint: a Blueprint
+  copy gives the same hits). **Toucannon** (S $10), Skill Link: **always 5 hits, each X1.1** — the choice: shown and scored as **one X1.611** (not
+  five pop-ups). All Colorless: Starly's flock counts them. Energy `mult` 3 -> 4.2 / 5.4 / 6.6, 5 -> 7 / 9 / 11; `Xmult_multi` 1.1 -> 1.155 /
+  1.21 / 1.265 a hit (X2.061 / X2.594 / X3.236 in all); the hit count fixed.
+- **Yungoos** (C $5, 4) / **Gumshoos** (S $8), Stakeout: **+15 Mult / X2 if the poker hand differs from the last poker hand played this run**
+  (`poke_last_hand`; **the run's first hand counts as different** — the choice; a late buy sees the record). Energy `mult` 15 -> 21 / 27 / 33,
+  `Xmult` 2 -> 2.4 / 2.8 / 3.2.
+- **Crabrawler** (Fighting, C $5, 5) / **Crabominable** (Water, S $8), Power-Up Punch: **the first scored card of each hand permanently gains +2
+  Mult** (Steamodded's perma_mult, Hiker's way: it pays from its next score; a retriggered card gains again); Crabominable **every scored card +1,
+  the first +3 instead**. The choice: **not Blueprint** (blueprint_compat false). By position: a debuffed first card gains nothing and the second
+  card is not promoted. Energy `mult_mod` 2 -> 2.4 / 2.8 / 3.2; Crabominable `mult_mod` 1 -> 1.2 / 1.4 / 1.6, `mult_mod2` 3 -> 3.6 / 4.2 / 4.8.
+- **Oricorio** (R $7), dance styles: **on each round's first deal (Castform's moment) the suit held most picks its style**: Hearts **Baile (Fire)**,
+  Diamonds **Pom-Pom (Lightning)**, Spades **Pa'u (Psychic)**, Clubs **Sensu (Psychic)**; the four suits apart (no red pair), a Wild card counts for
+  all four, Stone / debuffed none; **a tie keeps the current style; the style stays between rounds**; it starts (and sits in the shop) Baile.
+  **Scored cards of its style's suit X1.25.** Its type follows the style (ex.ptype; a Tera sticker still owns it; Kecleon re-synced), the
+  current type's Energy matches, and it is **Monotype-exempt** (`poke_mono_exempt`). Energy `Xmult_multi` 1.25 -> 1.3125 / 1.375 / 1.4375.
+- **Cutiefly** (C $5, 5) / **Ribombee** (S $8), the first Fairy synergy: **+4 Mult / X1 + X0.25 for each Fairy Joker, itself included** (is_type,
+  undebuffed; a Fairy Tera counts). Energy `mult` 4 -> 5.6 / 7.2 / 8.8, `Xmult_mod` 0.25 -> 0.3 / 0.35 / 0.4.
+- **Wishiwashi** (R $7), Schooling: **School Form X2.5 while the hands left before this hand are at least half the round's hands, rounded up**
+  (the choice; the round's hands = hands played + hands left before this one; 4 hands: the 1st-3rd, 5: the 1st-3rd, 3: the 1st-2nd); **Solo Form
+  +5 Mult** otherwise; out of a round (the shop) School. The card art follows the form (live). Energy `Xmult` 2.5 -> 3 / 3.5 / 4, `mult` 5 -> 7 / 9 / 11.
+- **Mareanie** (C $5, 5) / **Toxapex** (S $8), Merciless: **each scored card +1 Mult / X1 + X0.25, per Boss Blind beaten this run**
+  (`poke_bosses_beaten`, so a late buy counts every Boss). Energy `mult` 1 -> 1.4 / 1.8 / 2.2, `Xmult_mod` 0.25 -> 0.3 / 0.35 / 0.4.
+- **Dewpider** (C $5, 5) / **Araquanid** (S $8), Water Bubble: **scored Clubs +15 Chips / +15 Chips and X1.25, doubled while it's raining**
+  (Swift Swim's `rain_read` / `swift_swim_raining`: Clubs held most on the round's first deal, or a working Kyogre). The choice: **a doubled X
+  doubles its bonus, X1.25 -> X1.5** (X(1 + 2 x (X - 1))). With Kyogre the Club also retriggers (Kyogre's own rule): +30 / X1.5 twice. Energy
+  `chips` 15 -> 19.5 / 24 / 28.5, `Xmult_multi` 1.25 -> 1.3125 / 1.375 / 1.4375 (X1.875 in rain at three).
+- **Fomantis** (C $5, 5) / **Lurantis** (S $8), Solar Blade: **+10 Mult / X2.5 on the round's final hand**, Lurantis **X3.5 instead while it's sunny**
+  (the shared sun: a red first deal, a working Groudon, Volcarona). Energy `mult` 10 -> 14 / 18 / 22, `Xmult` 2.5 -> 3 / 3.5 / 4, `Xmult2` 3.5 ->
+  4.2 / 4.9 / 5.6 (its own field: the choice).
+- **Morelull** (C $5, 5): **+3 Mult per Lucky card in the full deck**. **Shiinotic** (S $8): **keeps Morelull's +3 per Lucky card** (the choice)
+  **and permanently gains +2 Mult each time a scored Lucky card triggers** — the choice: its Mult or its money roll, both at once counting once
+  (Tranquill's `lucky_scored`); `glow_mult` banked, never energized; not Blueprint for the gain. Energy `mult` 3 -> 4.2 / 5.4 / 6.6, `mult_mod` 2
+  -> 2.4 / 2.8 / 3.2.
+- **Wiki**: regenerated (162 missing); the wiki sprites of the 19 are gone from `designwiki/sprites/pokermon_jokers/` (no new art).
+- **Tests**: `micatro/tests/mods/pokermon_gen7_batch1_test.mjs`. Re-recorded: `modpin_test`, `pokermon_391_data_test`, `pokermon_new_jokers_test`
+  (the pin, the defs, the order chains), `pokermon_gen6_legendaries_test` (contentRev 63+), `pokermon_art_types_test`, `micatro_mod_version_pin`,
+  `micatro_deckeditor_pages` (1102 jokers); `designwiki_pokermon_jokers_test` spot-checks Comfey / Kommo-o / Hakamo-o and opens Corviknight's card
+  (the Pikipek line and Cutiefly have jokers now).
 ### Gen 7, batch 2 (2026-11-02, branch `feat/pokermon-gen7-batch2`)
 Pinned **`3.9.1+r65`** (`contentRev: 65`; r64 is Gen 7 batch 1, #731-756; `LEGACY_MOD_VERSIONS` untouched). The owner's "Yes build it and merge
 when the gate passes": 13 jokers, #757-784, in `jokers/pokejokers_designs.js` (a second `defineJokers` block, "Gen 7, batch 2": `salandit_gender` /
 `strong_hug` / `floral_gift` / `comfey_targets` / `sand_castle` / `innards_out` / `pyukumuku_destroyed` / `clangorous` / `full_houses_played`).
-Pokédex order: Salandit ... Komala (757-775) after the last Gen 7 joker before them (Gen 7 batch 1's last), before Mimikyu (778); Bruxish
+Pokédex order: Salandit ... Komala (757-775) after Shiinotic (756, Gen 7 batch 1), before Mimikyu (778); Bruxish
 (779) after Mimikyu, before Drampa; Jangmo-o / Hakamo-o / Kommo-o (782-784) after Mega Drampa, before Grookey. Neither Nacho nor Pokermon+ has
 any. Prices by the guide's slots (3-stage U $6 / S $8 / S $10, 2-stage C $5 / S $8, single-stage R $7). Evolution: **5 rounds** for Salandit (♀
 only), Stufful and Sandygast (none is an early evolver); Jangmo-o / Hakamo-o by scaling (+16 / +40 Mult). Types = the cards'

@@ -91,8 +91,8 @@ await sec('static', () => {
     && !['retriggers', 'h_size', 'd_size', 'hands', 'rounds'].some((f) => f in energy_values), 'Energy fields: Xmult_multi +5%, mult +40%, Xmult_mod +20%; the perks, retriggers and rounds fixed');
   const keys = MODS.pokermon.content.centers.filter((c) => c.set === 'Joker').map((c) => c.key);
   const i = keys.indexOf('j_poke_rowlet');
-  ok(i > 0 && keys[i - 1] === 'j_poke_volcanion' && ALL.every((n, k) => keys[i + k] === 'j_poke_' + n) && keys[i + 9] === 'j_poke_grubbin',
-    'Pokédex order: Volcanion (721), Rowlet ... Primarina (722-730), then Grubbin (736)', keys.slice(i - 1, i + 10));
+  ok(i > 0 && keys[i - 1] === 'j_poke_volcanion' && ALL.every((n, k) => keys[i + k] === 'j_poke_' + n) && keys[i + 9] === 'j_poke_pikipek',
+    'Pokédex order: Volcanion (721), Rowlet ... Primarina (722-730), then Pikipek (731, Gen 7 batch 1)', keys.slice(i - 1, i + 10));
   // the families: owning any stage keeps the other two out of the pools (poke_family_present)
   G.GAME.used_jokers.j_poke_dartrix = true;
   ok(!starter_lists().grass.includes('j_poke_rowlet'), 'family: with a Dartrix owned, Rowlet is out of the Starter Pack (one family)');
