@@ -78,6 +78,7 @@ try {
 	await page.click('#res-ok');
 	A(await waitFor(() => visible('scr-menu'), 10000), 'main menu');
 	await page.click('#scr-menu [data-go=play]');
+	await page.evaluate(() => { for (const s of ['#mx-next', '[data-cat=survival]', '[data-var=normal]', '[data-players=solo]', '#mx-start']) document.querySelector('#scr-play ' + s).click(); });   // (U1: Play opens the flow: Pokémon -> Survival -> Normal -> Solo -> Start)
 	A(await waitFor(() => E(() => G.Game.state === 'playing'), 15000), 'run starts');
 	await sleep(500);
 
