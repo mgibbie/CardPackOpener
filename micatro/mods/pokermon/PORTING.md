@@ -3270,7 +3270,7 @@ Water). Art: upstream 3.9.1 cells (Natdex {12,45}-{28,45}, {0,46}-{20,46}, {2,47
   X1; Noibat's Mult kept and still given) and **a random deck card becomes Glass per break** (unenhanced first, then any non-Glass; never a
   breaking card), so the deck's Glass count holds. **Every extra break feeds the Whismur line** (its own shatter count). Odds and hand size
   fixed; Energy `mult_mod` 2 -> 2.4 / 2.8 / 3.2, `Xmult_mod` 0.1 -> 0.12 / 0.14 / 0.16.
-- **Wiki**: regenerated (202 missing); the wiki sprites of the 22 are gone from `designwiki/sprites/pokermon_jokers/` (no new art).
+- **Wiki**: regenerated (186 missing, after Gen 6 batch 1); the wiki sprites of the 22 are gone from `designwiki/sprites/pokermon_jokers/` (no new art).
 - **Tests**: `micatro/tests/mods/pokermon_gen6_batch2_test.mjs`. Re-recorded: `modpin_test`, `pokermon_391_data_test`, `pokermon_new_jokers_test`
   (the pin, the defs, the order chains), `pokermon_legendary_solo_test` (contentRev 60+), `pokermon_art_types_test`, `micatro_mod_version_pin`,
   `micatro_deckeditor_pages` (1062 jokers); `designwiki_pokermon_jokers_test` spot-checks Guzzlord / Toedscool / Jangmo-o (Tyrunt, Phantump
@@ -3384,6 +3384,53 @@ sword X1.25; one extra Spade gives Cobalion X1.5; Spades and Hearts tied for the
 - Fixture `micatro/tests/fixtures/pokermon_swordtie_r59_recipe.json` (recorded on main at r59: the four Swords on a plain deck, one Two Pair:
   62 x 10.125 = 627; on r60 the same moves give X4.8828125, 302).
 - Tests: the `swords` and `r59 recipe` sections of `micatro/tests/mods/pokermon_legendary_solo_test.mjs`.
+
+### Gen 6, batch 1 (2026-11-02, branch `feat/pokermon-gen6-batch1`)
+Pinned **`3.9.1+r61`** (`contentRev: 61`; `LEGACY_MOD_VERSIONS` untouched; new jokers only, so nothing a recorded run held changes). The owner's
+"go ahead": **16 jokers** (the spec's heading says 15; its list is 16 species), #661-678, in `jokers/pokejokers_designs.js` (`gale_retrigger` /
+`wild_scored` / `queen_scored` / `grass_others` / `pancham_evo` / `furfrou_trim` / `prankster_tarot`; Sewaddle's `tailor` takes a seed now; 238 defs).
+Pokédex order: Fletchling ... Vivillon (661-666) after Diggersby, before Litleo; Flabébé ... Meowstic (669-678) after Pyroar, before Honedge.
+Neither Nacho nor Pokermon+ has any of them. Prices by the guide's slots; evolution by rounds, 4 for an early evolver (Fletchling, Scatterbug,
+Spewpa, Flabébé), else 5. Types = the cards' (`pokermon_art_types_test`: Fletchling Colorless, Fletchinder / Talonflame Fire, Pangoro Fighting).
+Art: upstream 3.9.1 cells (Natdex {0..8,44}, {22..28,44}, {2,45}; Gen 6 sheet: Vivillon {2,0}..{4,3}, the flowers {10,3}..{4,6}, Furfrou {6,6},
+Meowstic {2,8}) plus their FORM cells (`systems/anim.js GEN6_FORM_SPRITES`, ui.js ownFace, Shiny twins); nothing to deploy.
+- **Fletchling** (U $6, 4; Colorless: Starly's flock counts it) / **Fletchinder** (S $8, 5; Fire) / **Talonflame** (S $10; Fire), Gale Wings: the
+  round's FIRST hand (Pachirisu's `spark_on`: hands_played 0 while it scores; a discard first doesn't use it) **+8 Mult / X1.5 / X2.5**, and on that
+  hand Talonflame's **first scored card retriggers once** (scoring_hand[0]). Tooltip "Active!" / "Used this round". Energy `mult` 8 -> 11.2 / 14.4
+  / 17.6, `Xmult` 1.5 -> 1.8 / 2.1 / 2.4, 2.5 -> 3 / 3.5 / 4.
+- **Scatterbug** (U $6, 4): **each scored Wild card +4 Mult**. **Spewpa** (S $8, 4): **when a Blind is selected, 1 random unenhanced card of the full
+  deck becomes Wild** (Sewaddle's tailor, seed `poke_spewpa_wild`; none unenhanced: nothing; Blueprint copies it). **Vivillon** (S $10): the same
+  conversion and **each scored Wild X1.3**; a **pattern of 20, rolled when it becomes a Vivillon** (set_ability initial: evolved or created, seed
+  `vivillon_pattern`; `form` 1-20), each its own 3.9.1 cell (upstream lists all 20, unnamed: the tooltip says "Pattern 7 of 20"). Energy `mult`
+  4 -> 5.6 / 7.2 / 8.8; Spewpa carries Vivillon's `Xmult_multi` 1.3 -> 1.365 / 1.43 / 1.495.
+- **Flabébé** (U $6, 4) / **Floette** (S $8, 5) / **Florges** (S $10), Garden Queen: scored **Queens +4 Mult / retrigger once / retrigger twice and
+  X1.25 each time they score** (X1.25^3 a Queen). A **flower colour** (Red, White, Yellow, Orange, Blue; seed `flabebe_flower`) rolled once and kept
+  through both evolutions, each stage drawing its colour's cell (the Pokédex modal shows the family in that colour). Energy `mult` 4 -> 5.6 / 7.2 /
+  8.8; Floette carries Florges' `Xmult_multi` 1.25 -> 1.3125 / 1.375 / 1.4375 (retriggers fixed).
+- **Skiddo** (C $5, 5) / **Gogoat** (S $8): **+30 / +60 Chips, plus +10 / +20 for each OTHER Grass Joker** (is_type, undebuffed: Barboach's count of
+  the others); Gogoat **+1 hand size** (fixed, Bulbasaur's add / remove). Energy `chips` 30 -> 39 / 48 / 57, 60 -> 78 / 96 / 114; `chips1` 10 -> 13 /
+  16 / 19, 20 -> 26 / 32 / 38.
+- **Pancham** (C $5) / **Pangoro** (S $8), Iron Fist: scored **face cards +3 Mult / X1.3** (is_face: Pareidolia counts). **Pancham evolves after 5
+  rounds, but only at an end of round while you hold an undebuffed Dark Joker** (another Joker, is_type: a Dark Tera sticker counts); otherwise it
+  waits at 0 ("Needs a Dark Joker!", tooltip "now: needs / has a Dark Joker"). Everstone: never. Energy `mult` 3 -> 4.2 / 5.4 / 6.6, `Xmult_multi` 1.3
+  -> 1.365 / 1.43 / 1.495.
+- **Furfrou** (R $7), Trim: **a new trim each Ante** — picked when obtained (add_to_deck) and at each Ante change (the `ante_change` context,
+  queued after the Ante moves, seeded `furfrou_trim` + the new Ante; never on creation; never the same twice running). **Heart Hearts, Diamond
+  Diamonds, Star Spades, Debutante Clubs** (the spec's); its suit's **scored cards +20 Chips and +4 Mult** (is_suit: Wild counts). Each trim draws its
+  own card: the Gen 6 sheet has Furfrou's trims UNLISTED beside the Natural card (Heart {8,6}, Star {0,7}, Diamond {2,7}, Debutante {6,7}; named by
+  their look: the hearts, the star tail, the diamond tail, the purple bob — pinned by a pixel test); a shop card (no trim yet) is Natural. Energy
+  `chips` 20 -> 26 / 32 / 38, `mult` 4 -> 5.6 / 7.2 / 8.8.
+- **Espurr** (C $5, 5): **+1 Foresight** (fixed); it carries Meowstic's `Xmult_mod` (0.25 -> 0.3 / 0.35 / 0.4; not its `Xmult`: evolution would copy
+  that over AND re-energize it). **Meowstic** (S $8): its **gender is rolled when it evolves** (or is created; seed `meowstic_gender`), on
+  `form`. **Male, Prankster: at end of round a random Tarot** (must have room; not Blueprint, Pickup's way); a Male has no number, so its Energy
+  fields are dropped and Energy can't be used on it. **Female: X1.5, plus X0.25 for each Tarot held** (Energy `Xmult` 1.5 -> 1.8 / 2.1 / 2.4,
+  `Xmult_mod` 0.25 -> 0.3 / 0.35 / 0.4). The Female card is upstream's unlisted Gen 6 {4,8}, beside the Male {2,8}.
+- **Save / resume**: the forms are seeded rolls / picks inside the recipe, so a resume rebuilds the same flower, pattern, gender, trim (also after
+  an Ante change) and the same Wild cards.
+- **Wiki**: regenerated (208 missing); the wiki sprites of the 16 are gone from `designwiki/sprites/pokermon_jokers/`.
+- **Tests**: `micatro/tests/mods/pokermon_gen6_batch1_test.mjs`. Re-recorded: `modpin_test`, `pokermon_391_data_test`, `pokermon_new_jokers_test`
+  (the pin, 238 defs; Honedge now follows Meowstic), `pokermon_legendary_solo_test` (pin >= 60), `pokermon_art_types_test`,
+  `micatro_mod_version_pin`, `micatro_deckeditor_pages` (1056 jokers).
 
 ### Pending from the 3.9.1 joker rework (after batch 10b)
 Every existing joker is on 3.9.1: `rework_hold` (still on 3.2.1) is empty. What waits, by the batch it waits on (`rework_deferred` =

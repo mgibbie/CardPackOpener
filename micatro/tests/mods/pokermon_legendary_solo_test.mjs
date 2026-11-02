@@ -95,7 +95,7 @@ const COUNTS = {};
 
 // ------------------------------------------------------------------- the pin
 await sec('pin', () => {
-  ok(MODS.pokermon.contentRev >= 60 && PINS.modPin('pokermon') === '3.9.1+r' + MODS.pokermon.contentRev, 'Pokermon contentRev 60+ (pin 3.9.1+r60 when it landed; r59 the legendary solo rule)', PINS.modPin('pokermon'));
+  ok(MODS.pokermon.contentRev >= 60 && PINS.modPin('pokermon') === '3.9.1+r' + MODS.pokermon.contentRev, 'Pokermon contentRev 60+ (r60 the tie rule; r59 the legendary solo rule; r61 Gen 6 batch 1)', PINS.modPin('pokermon'));
   ok(PINS.LEGACY_MOD_VERSIONS.pokermon === '3.2.1+r1', 'LEGACY_MOD_VERSIONS untouched');
   ok(['fusion_x', 'fusion_mod', 'destroyed', 'hearts', 'therian_rounds', 'giga_rounds', 'delta_on', 'kyurem_form', 'hands', 'd_size', 'lake_mod'].every((f) => !(f in energy_values)),
     'the banks, the counters and the +1 hand / discard are no energy fields');

@@ -990,7 +990,9 @@ export const POKERMON = registerMod({
   // 60 = the owner's Swords of Justice follow-up (jokers/pokejokers_designs.js suit_leads / strict60): X1.5 only while the sword's suit is
   // STRICTLY the most common in the full deck, a tie doesn't count (a standard deck: every sword X1.25). Moves recorded on r59 re-play
   // with ties counting (PORTING.md "The Swords of Justice tie rule").
-  // 62 = Gen 6 batch 2 (jokers/pokejokers_designs.js, #682-715; r61 is Gen 6 batch 1): Spritzee / Aromatisse (Lucky $, Aroma Veil),
+  // 61 = the owner's Gen 6, batch 1 (jokers/pokejokers_designs.js "Gen 6, batch 1"): 15 jokers #661-678, the Fletchling, Scatterbug,
+  // Flabébé, Skiddo, Pancham and Espurr lines and Furfrou (PORTING.md "Gen 6, batch 1"). New jokers only: nothing a recorded run held changes.
+  // 62 = Gen 6 batch 2 (jokers/pokejokers_designs.js, #682-715): Spritzee / Aromatisse (Lucky $, Aroma Veil),
   // Swirlix / Slurpuff (Tarot bank, +1 consumable slot), Inkay / Malamar (Topsy-Turvy: the chip_bonus hook flips rank Chips), Binacle /
   // Barbaracle (7s), Skrelp / Dragalge (Hazard conversion), the Tyrunt and Amaura fossils (Ancient Kings / Queens), Hawlucha (Flying
   // Press), Klefki (Key Ring), Phantump / Trevenant (destroyed-card bank, Seeds), Bergmite / Avalugg and Noibat / Noivern (Glass 1 in 2).
