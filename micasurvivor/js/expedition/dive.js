@@ -43,9 +43,13 @@ G.I18n.add({
   '¡Alfa! Derrótalo para abrir las escaleras': 'An alpha! Beat it to open the stairs',
   '¡Alfa derrotado! Botín asegurado': 'Alpha defeated! Loot secured',
   '¡Alfa derrotado! Las escaleras están libres': 'Alpha defeated! The stairs are clear',
-  '¡{x}, el guardián de la ruta!': '{x}, the route\'s guardian!',
+  '{x}, el guardián de la ruta': '{x}, the route\'s guardian',
   '¡Guardián derrotado! Etapa guardada': 'Guardian defeated! Stage saved',
-  '¡{x} rescatado!': '{x} rescued!', '¡Racha x{x}!': 'Combo x{x}!', 'x{x} RACHA': 'x{x} COMBO', 'Mejor racha: {x}': 'Best combo: {x}',
+  '{x} rescatado': '{x} rescued', '¡{x} te sigue! Llévalo a las escaleras': '{x} follows you! Take it to the stairs',
+  'Santuario': 'Shrine', 'Obelisco': 'Obelisk', 'Altar': 'Altar', 'Pecio': 'Shipwreck', 'Aguja de hielo': 'Frost spire', 'Tótem': 'Totem', 'Monolito': 'Monolith', 'Corro de hadas': 'Fairy ring',
+  'el grupo se cura del todo': 'the party is fully healed', '+30 % de daño durante 60 s': '+30% damage for 60 s', 'pagas vida por botín': 'you pay life for loot',
+  'botín del naufragio': 'loot from the wreck', 'congela a los enemigos cercanos': 'freezes the foes nearby', 'experiencia para el grupo': 'experience for the party',
+  'mucha experiencia': 'a lot of experience', 'revive y cura': 'revives and heals', 'Racha x{x}': 'Combo x{x}', 'x{x} RACHA': 'x{x} COMBO', 'Mejor racha: {x}': 'Best combo: {x}',
   'Cuerda Huida: quédate quieto…': 'Escape Rope: hold still…',
   '¡Escapas con todo!': 'You escape with everything!',
   'Escaleras selladas': 'The stairs are sealed',
@@ -55,7 +59,7 @@ G.I18n.add({
   'Escapaste: te llevas todo el botín': 'You escaped: you keep all the loot',
   'Caíste: conservas lo asegurado y una cuarta parte del resto': 'You fell: you keep what was secured and a quarter of the rest',
   'Rescatados: {x}': 'Rescued: {x}', 'Alfas: {x} · Guardianes: {x}': 'Alphas: {x} · Guardians: {x}',
-  '¡Nuevo récord en {x}: piso {x}!': 'New record on {x}: floor {x}!',
+  'Nuevo récord en {x}: piso {x}': 'New record on {x}: floor {x}',
   'Arrastra el dedo para moverte  ·  toca 1 / 2 para los especiales  ·  Esquivar': 'Drag to move  ·  tap 1 / 2 for the specials  ·  Dodge',
   'WASD moverse  ·  1 / 2 o clic especiales  ·  Espacio esquivar  ·  3 definitivo  ·  Esc pausa': 'WASD move  ·  1 / 2 or click: specials  ·  Space dodge  ·  3 Ultimate  ·  Esc pause',
   'especiales': 'specials', 'esquivar': 'dodge',
@@ -101,6 +105,8 @@ G.ExpDive = (() => {
   const cur = () => (on() ? S : view);
   const routeOf = map => (typeof map === 'string' && map.startsWith('dive:') && DG().ROUTES[map.slice(5)] ? map.slice(5) : 'forest');
   const say = (t, s = 3) => G.Spawner.say(t, s);
+  /** "¡...!" in Spanish, "...!" in English (a key starting with ¡ would be caught by items.js's '¡{x}!' pattern). */
+  const bang = s => (G.I18n.lang === 'es' ? '¡' + s + '!' : s + '!');
   const rng = (route, floor, k) => G.DLC.rng(DG().seedOf(S ? S.seed : 0, route, floor, k));
   const wpos = p => [(p[0] + G.World.zone.x0) * TS() + TS() / 2, (p[1] + G.World.zone.y0) * TS() + TS() / 2];   // (a layout tile -> the world: tile = local + x0)
 
@@ -143,7 +149,7 @@ G.ExpDive = (() => {
   /** The floor's foes, the lost Pokémon, the alpha / guardian (the zone is already set: core.js enterZone). */
   function startFloor(f, t) {
     const L = G.World.zone && G.World.zone.dive;
-    Object.assign(S, { floor: f, ft: t, L, groups: [], boss: null, stairsT: 0, ropeT: 0, lost: null, sealed: false, tg: [] });
+    Object.assign(S, { floor: f, ft: t, L, groups: [], boss: null, stairsT: 0, ropeT: 0, lost: null, sealed: false, tg: [], lmUsed: false, lmT: 0 });
     S.deepest = Math.max(S.deepest, f);
     if (!L) return;
     const r = rng(S.route, f, 0xD1), P = pool(S.route, f);
@@ -170,7 +176,7 @@ G.ExpDive = (() => {
     if (L.cadence.guardian) {
       const dex = guardianOf(S.route, f), [x, y] = wpos([40, L.h / 2]);
       const e = spawn(dex, x, y, t, { boss: true });
-      if (e) { S.boss = e; S.sealed = true; pre.push(dex); say(T().f('¡{x}, el guardián de la ruta!', e.name), 3.6); G.Audio.sfx('surge'); }
+      if (e) { S.boss = e; S.sealed = true; pre.push(dex); say(bang(T().f('{x}, el guardián de la ruta', e.name)), 3.6); G.Audio.sfx('surge'); }
     } else if (L.cadence.arena) {
       const ar = rng(S.route, f, 0xA1), [x, y] = wpos(L.path[Math.max(0, L.path.length - 5)]);
       const dex = draw(pool(S.route, f + 4), ar);
@@ -222,7 +228,10 @@ G.ExpDive = (() => {
     for (const g of S.groups) if (!g.awake && alive.some(p => G.U.dist2(p.x, p.y, g.at[0], g.at[1]) < wr)) wake(g);
     teleTick(dt, alive);   // (V4: the red ground)
     // the lost Pokémon
-    if (S.lost && !S.lost.done && alive.some(p => G.U.dist2(p.x, p.y, S.lost.x, S.lost.y) < (K.RESCUE_R * R) ** 2)) rescue();
+    if (S.lost && !S.lost.done && !S.lost.follow && alive.some(p => G.U.dist2(p.x, p.y, S.lost.x, S.lost.y) < (K.RESCUE_R * R) ** 2)) rescue();
+    escortTick(dt, alive);   // (V6)
+    landmarkTick(dt, alive);
+    if (S.obeliskT > 0) S.obeliskT -= dt;
     // the alpha / guardian down
     if (S.boss && S.boss.dead) bossDown();
     const L = S.L;
@@ -248,10 +257,15 @@ G.ExpDive = (() => {
   function loot(n) { if (n > 0 && S) S.stake += Math.round(n); }
   function secure() { S.bank += S.stake; S.stake = 0; S.rescuedBank = S.rescued.length; }
   function rescue() {
+    S.lost.follow = true;
+    say(T().f('¡{x} te sigue! Llévalo a las escaleras', G.DEX_BY[S.lost.dex].name), 2.6);
+    G.Audio.sfx('select');
+  }
+  function rescueDone() {
     S.lost.done = true;
     S.rescued.push(S.lost.dex);
     loot(K.LOOT.rescue + K.LOOT.rescuePer * S.floor);
-    say(T().f('¡{x} rescatado!', G.DEX_BY[S.lost.dex].name), 2.4);
+    say(bang(T().f('{x} rescatado', G.DEX_BY[S.lost.dex].name)), 2.4);
     G.Audio.sfx('levelup');
     for (let i = 0; i < 14; i++) G.FX.twinkle(S.lost.x + G.U.rand(-14, 14), S.lost.y - G.U.rand(0, 26));
   }
@@ -275,6 +289,7 @@ G.ExpDive = (() => {
     G.Camera.kick(0.5);
   }
   function nextFloor(t, players) {
+    escortOut(players.filter(p => !p.dead));   // (V6: an escorted Pokémon leaves with you)
     loot(K.LOOT.floor + K.LOOT.floorPer * S.floor);
     const f = S.floor + 1;
     G.EnemyMgr.clear(); G.Pickups.clear(); G.Projectiles.clear(); G.Hazards.clear(); G.Combat.clearFields();
@@ -289,6 +304,7 @@ G.ExpDive = (() => {
     startFloor(f, t);
   }
   function escape() {
+    escortOut([G.Game.player].filter(Boolean));
     S.escaped = true; S.ended = true;
     say(T().t('¡Escapas con todo!'), 3);
     G.Audio.sfx('victory');
@@ -372,6 +388,7 @@ G.ExpDive = (() => {
   }
   /** combat.out: a special's hit is worth SPECIAL_K. */
   function out(k, pl, e, src) {
+    if (on()) k *= obeliskK();   // (V6: the obelisk)
     if (!live() || !pl || !src || !pl.slots) return k;
     const id = typeof src.mid === 'string' ? src.mid : src.def && typeof src.id === 'string' ? src.id : null;
     if (!id) return k;
@@ -460,7 +477,7 @@ G.ExpDive = (() => {
     const k = 'dive.' + S.route;
     X.bump('dive.runs');
     if (S.escaped) X.bump('dive.escapes');
-    if (S.deepest > (X.get(k + '.best') || 0)) out.push(T().f('¡Nuevo récord en {x}: piso {x}!', T().t(NAME[S.route]), S.deepest));
+    if (S.deepest > (X.get(k + '.best') || 0)) out.push(bang(T().f('Nuevo récord en {x}: piso {x}', T().t(NAME[S.route]), S.deepest)));
     X.best(k + '.best', S.deepest);
     if (S.stage) X.best(k + '.stage', S.stage);
     X.bump('dive.rescued', S.escaped ? S.rescued.length : S.rescuedBank);
@@ -469,6 +486,81 @@ G.ExpDive = (() => {
   }
 
 
+
+
+  // ---------------- V6: the escort, the landmarks, the floor's interactables ----------------
+  // The lost Pokémon, once reached, FOLLOWS the nearest player (S.lost.follow) and is rescued when it leaves the floor with you
+  // (the stairs or the rope: within ESCORT_R of a player). Leave it behind and it stays lost.
+  // Landmarks (the generator's, 40 % of the plain floors): stand on one LANDMARK_T s to use it, once:
+  //   shrine full heal · obelisk +30 % damage for 60 s · altar pay 30 % HP for loot · shipwreck loot · spire freezes the foes
+  //   near it · totem a burst of XP for the party · monolith XP · fairy ring revives the downed and heals.
+  const ESCORT = { R: 4, SPEED: 1.15 };
+  const LM = { T: 1, R: 1.4, OBELISK: 0.3, OBELISK_T: 60, ALTAR_HP: 0.3, SPIRE_R: 6, SPIRE_T: 4 };
+  function escortTick(dt, alive) {
+    const lo = S.lost;
+    if (!lo || !lo.follow || lo.done) return;
+    let p = null, d2 = Infinity;
+    for (const q of alive) { const d = G.U.dist2(q.x, q.y, lo.x, lo.y); if (d < d2) { d2 = d; p = q; } }
+    if (!p) return;
+    const want = 1.6 * TS(), d = Math.sqrt(d2);
+    if (d > want) { const v = Math.min(d - want, (p.spd || 80) * ESCORT.SPEED * dt); lo.x += (p.x - lo.x) / d * v; lo.y += (p.y - lo.y) / d * v; }
+    if (d > 14 * TS()) { lo.x = p.x - 20; lo.y = p.y; }   // (never left behind by a dodge across a lake)
+  }
+  /** On the way out (the stairs, the rope): an escorted Pokémon near a player is rescued. */
+  function escortOut(alive) {
+    const lo = S.lost;
+    if (!lo || !lo.follow || lo.done) return;
+    if (alive.some(p => G.U.dist2(p.x, p.y, lo.x, lo.y) < (ESCORT.R * TS()) ** 2)) rescueDone();
+  }
+  function landmarkTick(dt, alive) {
+    const L = S.L, lm = L && L.landmark;
+    if (!lm || S.lmUsed) return;
+    const [x, y] = wpos(lm.at), R = TS();
+    const on1 = alive.find(p => G.U.dist2(p.x, p.y, x, y) < (LM.R * R) ** 2);
+    S.lmT = on1 ? (S.lmT || 0) + dt : 0;
+    if (S.lmT < LM.T) return;
+    S.lmUsed = true;
+    const k = lm.kind, f = S.floor;
+    if (k === 'shrine') for (const p of alive) p.hp = p.maxHp;
+    else if (k === 'obelisk') S.obeliskT = LM.OBELISK_T;
+    else if (k === 'altar') { for (const p of alive) p.hp = Math.max(1, p.hp - p.maxHp * LM.ALTAR_HP); loot(20 + 3 * f); }
+    else if (k === 'shipwreck') loot(15 + 2 * f);
+    else if (k === 'spire') { for (const e of G.EnemyMgr.all()) if (!e.dead && !e.boss && G.U.dist2(e.x, e.y, x, y) < (LM.SPIRE_R * R) ** 2) { e.frozenT = Math.max(e.frozenT || 0, LM.SPIRE_T); } }
+    else if (k === 'totem' || k === 'monolith') { for (const p of alive) if (p.gainXp && !p.remote) p.gainXp(Math.round((p.xpNext || 20) * (k === 'monolith' ? 0.6 : 0.35) / (p.xpMul || 1))); }
+    else if (k === 'fairy') for (const p of alive) { p.hp = p.maxHp; if (p.coopDown && G.Coop && G.Coop.revive) G.Coop.revive(p); }
+    G.FX.ring(x, y, 8, 90, LMCOL[k] || '#ffe9a0', 0.6, 4); G.Audio.sfx('heal');
+    say(T().t(LMNAME[k]) + ' · ' + T().t(LMTXT[k]), 3);
+  }
+  const LMNAME = { shrine: 'Santuario', obelisk: 'Obelisco', altar: 'Altar', shipwreck: 'Pecio', spire: 'Aguja de hielo', totem: 'Tótem', monolith: 'Monolito', fairy: 'Corro de hadas' };
+  const LMTXT = { shrine: 'el grupo se cura del todo', obelisk: '+30 % de daño durante 60 s', altar: 'pagas vida por botín', shipwreck: 'botín del naufragio',
+                  spire: 'congela a los enemigos cercanos', totem: 'experiencia para el grupo', monolith: 'mucha experiencia', fairy: 'revive y cura' };
+  const LMCOL = { shrine: '#9fffc8', obelisk: '#ffb347', altar: '#ff6b7a', shipwreck: '#ffd23f', spire: '#9fe8ff', totem: '#c9a6ff', monolith: '#e0e0ff', fairy: '#ff9ed8' };
+  /** combat.out: the obelisk's +30 %. */
+  const obeliskK = () => (S && S.obeliskT > 0 ? 1 + LM.OBELISK : 1);
+
+  /** A Dive floor's interactables for js/expedition/economy.js (pure from the floor): the chests as free Poké Balls, the
+   *  Kecleon shop (a Meowth stall open all floor, ~1 in 4 plain floors), 2 berry bushes, 3 gold rocks. */
+  function ecoLayout(z, ts) {
+    const L = z.dive, objs = [], r = G.DLC.rng(DG().seedOf(z.seed | 0, L.route, L.floor, 0xEC0));
+    const put = (kind, p, v = 0) => objs.push({ i: objs.length, kind, tx: p[0] + z.x0, ty: p[1] + z.y0, x: (p[0] + z.x0 + 0.5) * ts, y: (p[1] + z.y0 + 0.5) * ts, v });
+    for (const c of L.chests) put('freeball', c);
+    const free = [];
+    const near = (p, q, k) => Math.abs(p[0] - q[0]) + Math.abs(p[1] - q[1]) < k;
+    for (let y = 2; y < L.h - 2; y++) for (let x = 2; x < L.w - 2; x++) {
+      const i = y * L.w + x, p = [x, y];
+      if (L.kind[i] !== 0 || near(p, L.spawn, 6) || near(p, L.stairs, 4) || objs.some(o => near(p, [o.tx - z.x0, o.ty - z.y0], 5))) continue;
+      if (L.landmark && near(p, L.landmark.at, 4)) continue;
+      free.push(p);
+    }
+    const take = () => { if (!free.length) return null; const j = Math.floor(r() * free.length), p = free[j]; free.splice(j, 1); for (let k = free.length - 1; k >= 0; k--) if (near(free[k], p, 5)) free.splice(k, 1); return p; };
+    const shop = !L.cadence.arena && !L.cadence.guardian && r() < 0.25;
+    let sp = null;
+    if (shop) { const mid = L.path[Math.floor(L.path.length * (0.3 + r() * 0.3))]; sp = mid && !objs.some(o => near(mid, [o.tx - z.x0, o.ty - z.y0], 5)) ? mid : take(); if (sp) put('meowth', sp); }
+    for (let k = 0; k < 2; k++) { const p = take(); if (p) put('berry', p); }
+    for (let k = 0; k < 3; k++) { const p = take(); if (p) put('rock', p, 6 + Math.floor(r() * 9)); }
+    const visits = sp ? [{ v: 0, at: 0, until: 1e9, spot: objs.find(o => o.kind === 'meowth').i }] : [];
+    return { objs, visits, cometAt: 1e9, key: [z.seed | 0, z.map, z.zone | 0, z.hash].join(':') };
+  }
 
   // ---------------- V5: the combo ("Racha", PokéDive's gs table) and the hit-stops ----------------
   // A KO within WINDOW s of the last one adds a step; WINDOW s without one breaks it. Each step +2 % XP (to +30 %), and every
@@ -483,7 +575,7 @@ G.ExpDive = (() => {
     if (c.n % COMBO.MILESTONE === 0) {
       loot(COMBO.COINS_PER * c.n / COMBO.MILESTONE);
       const pl = G.Game.player;
-      if (pl) G.FX.dmgText(pl.x, pl.y - (pl.bodyH || 30) - 18, T().f('¡Racha x{x}!', c.n), c.n >= COMBO.FIRE ? '#ff9a3d' : '#ffd23f', true);
+      if (pl) G.FX.dmgText(pl.x, pl.y - (pl.bodyH || 30) - 18, T().f('Racha x{x}', c.n) + '!', c.n >= COMBO.FIRE ? '#ff9a3d' : '#ffd23f', true);
       G.Audio.sfx('coin');
     }
     // the floor's last foe (none left awake or asleep, the boss included): the clear
@@ -617,7 +709,7 @@ G.ExpDive = (() => {
   function dBlock() {
     if (!on()) return null;
     const c = { dv: 1, f: S.floor, r: DG().ROUTE_IDS.indexOf(S.route), b: S.bank, s: S.stake, n: S.rescued.length,
-                q: (S.sealed ? 1 : 0) | (S.lost && S.lost.done ? 2 : 0) | (S.escaped ? 4 : 0), o: Math.round(S.ropeT * 4) };
+                q: (S.sealed ? 1 : 0) | (S.lost && S.lost.done ? 2 : 0) | (S.escaped ? 4 : 0) | (S.lost && S.lost.follow ? 8 : 0) | (S.lmUsed ? 16 : 0) | (S.obeliskT > 0 ? 32 : 0), o: Math.round(S.ropeT * 4) };
     if (S.lost) c.l = [S.lost.dex, Math.round(S.lost.x), Math.round(S.lost.y)];
     if (S.boss && !S.boss.dead) c.e = S.boss.id;
     if (S.combo && S.combo.n >= 2) c.k = [S.combo.n, Math.round(S.combo.t * 10 / COMBO.WINDOW)];   // (V5: the combo, its window in tenths)
@@ -629,9 +721,9 @@ G.ExpDive = (() => {
   function applyD(c) {
     if (!c) { view = null; return; }
     const route = DG().ROUTE_IDS[c.r | 0] || 'forest', old = view;
-    const lost = c.l ? { dex: c.l[0], x: c.l[1], y: c.l[2], done: !!(c.q & 2), anim: old && old.lost && old.lost.dex === c.l[0] ? old.lost.anim : null } : null;
+    const lost = c.l ? { dex: c.l[0], x: c.l[1], y: c.l[2], done: !!(c.q & 2), follow: !!(c.q & 8), anim: old && old.lost && old.lost.dex === c.l[0] ? old.lost.anim : null } : null;
     const K3 = [null, 'slam', 'charge', 'dash'];
-    view = { floor: c.f | 0, route, bank: c.b | 0, stake: c.s | 0, sealed: !!(c.q & 1), escaped: !!(c.q & 4), ropeT: (c.o || 0) / 4, lost,
+    view = { lmUsed: !!(c.q & 16), obeliskT: c.q & 32 ? 1 : 0, floor: c.f | 0, route, bank: c.b | 0, stake: c.s | 0, sealed: !!(c.q & 1), escaped: !!(c.q & 4), ropeT: (c.o || 0) / 4, lost,
              rescued: [], combo: c.k ? { n: c.k[0], t: c.k[1] / 10 * COMBO.WINDOW } : null, tg: (c.tg || []).map(a => ({ k: K3[a[0]], x: a[1], y: a[2], r: a[3], len: a[3], a: a[4] / 100, w: a[5], t: a[6] / 10, T: 1, e: G.EnemyMgr.get ? G.EnemyMgr.get(a[7]) : null })) };
   }
 
@@ -667,12 +759,29 @@ G.ExpDive = (() => {
     const lo = S.lost;
     if (lo && !lo.done && cam.sees(lo.x, lo.y, 60)) {
       if (!lo.anim || lo.anim.dex !== lo.dex) lo.anim = new G.Sprites.Animator(lo.dex, 1);
-      lo.anim.update(1 / 60); lo.anim.loop('Idle');
-      ctx.save(); ctx.globalAlpha = 0.3; ctx.fillStyle = '#7fe0ff';
+      lo.anim.update(1 / 60); lo.anim.loop(lo.follow ? 'Walk' : 'Idle');
+      ctx.save(); ctx.globalAlpha = 0.3; ctx.fillStyle = lo.follow ? '#9fffc8' : '#7fe0ff';
       ctx.beginPath(); ctx.ellipse(lo.x, lo.y, R * 0.9, R * 0.45, 0, 0, 6.2832); ctx.fill(); ctx.restore();
       lo.anim.draw(ctx, lo.x, lo.y);
-      ctx.save(); ctx.font = '800 10px sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = '#ffd23f';
-      ctx.fillText('!', lo.x, lo.y - 30 - Math.abs(Math.sin(now * 4)) * 4); ctx.restore();
+      ctx.save(); ctx.font = '800 10px sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = lo.follow ? '#ff9ed8' : '#ffd23f';
+      ctx.fillText(lo.follow ? '♥' : '!', lo.x, lo.y - 30 - Math.abs(Math.sin(now * 4)) * 4); ctx.restore();   // (V6: a heart while it follows you)
+    }
+    // (V6) the landmark: a glowing stone with its name, dim once used
+    const lm = L.landmark;
+    if (lm) {
+      const [mx, my] = wpos(lm.at), col = LMCOL[lm.kind] || '#ffe9a0';
+      if (cam.sees(mx, my, 80)) {
+        ctx.save();
+        ctx.globalAlpha = S.lmUsed ? 0.35 : 0.45 + Math.sin(now * 3) * 0.15;
+        ctx.fillStyle = col; ctx.beginPath(); ctx.ellipse(mx, my, LM.R * R, LM.R * R * 0.55, 0, 0, 6.2832); ctx.fill();
+        ctx.globalAlpha = S.lmUsed ? 0.5 : 1;
+        ctx.fillStyle = '#3a3f52'; ctx.fillRect(mx - 6, my - 26, 12, 26);
+        ctx.fillStyle = col; ctx.fillRect(mx - 4, my - 22, 8, 6);
+        ctx.font = '700 9px Arial,Helvetica,sans-serif'; ctx.textAlign = 'center'; ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0,0,0,.75)';
+        const nm = T().t(LMNAME[lm.kind] || '');
+        ctx.strokeText(nm, mx, my - 32); ctx.fillStyle = '#f4f8ff'; ctx.fillText(nm, mx, my - 32);
+        ctx.restore();
+      }
     }
   }
   function hudLine() {
@@ -711,6 +820,6 @@ G.ExpDive = (() => {
 
   return { K, NAME, GUARDIANS, target, pool, guardianOf, routeOf, begin, reset, update, hurt, onKill, pay, scoreParts, result, record,
            setup, roles, press, pad, tick, out, drawButtons, offerLearn, LEARN_AT, get rects() { return rects; },
-           live, shown, dBlock, applyD, TELE, COMBO, HITSTOP, hold, get view() { return view; },
+           live, shown, dBlock, applyD, TELE, COMBO, HITSTOP, hold, ecoLayout, LM, ESCORT, get view() { return view; },
            drawGround, drawHud, drawMini, hudLine, hudColor, on, get run() { return S; } };
 })();

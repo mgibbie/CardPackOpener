@@ -193,6 +193,9 @@ G.ExpEco = (() => {
    * of a known map. The same for every viewer (the zone's grids and the seed only). Cached on the zone.
    */
   function layoutOf(z) {
+    // (Dive V6: a Dive floor's interactables come from its own layout: chests = free Poké Balls, the Kecleon shop = a Meowth
+    //  stall open all floor, berry bushes, gold rocks: js/expedition/dive.js ecoLayout, pure from the floor)
+    if (z && z.dive && G.ExpDive) { if (z.xeco && z.xeco.h === z.hash) return z.xeco.v; const v = G.ExpDive.ecoLayout(z, TS()); z.xeco = { h: z.hash, v }; return v; }
     const Cl = C();
     if (!z || !z.map || !(z.zone >= 1 && z.zone <= 3) || !Cl || !Cl.MAPS[z.map]) return null;
     if (z.xeco && z.xeco.h === z.hash) return z.xeco.v;
@@ -244,7 +247,8 @@ G.ExpEco = (() => {
   function heatMul(h) { let m = 1; for (let i = 1; i <= h; i++) m *= Math.min(K.HEAT_MAX, K.HEAT0 + K.HEAT_STEP * (i - 1)); return m; }
   const price = (rar, zone, heat) => Math.round(K.PRICE[rar] * (1 + K.PRICE_ZONE * (Math.max(1, zone) - 1)) * heatMul(heat));
   const cageCost = zone => K.CAGE[0] + K.CAGE[1] * Math.max(1, zone);
-  const zoneNow = () => { const r = C() && C().run; return r ? Math.min(3, r.zone || 1) : (G.World.zone && G.World.zone.zone) || 1; };
+  const zoneNow = () => { if (G.World.zone && G.World.zone.dive) return Math.min(3, 1 + Math.floor((G.World.zone.zone - 1) / 10));   // (Dive V6: a zone every 10 floors)
+    const r = C() && C().run; return r ? Math.min(3, r.zone || 1) : (G.World.zone && G.World.zone.zone) || 1; };
 
   /** n different items for player pl from rng, none below rarity `min` (it steps down a rarity, then up, when one is empty). */
   function rollOffers(pl, rng, n, min = 0) {

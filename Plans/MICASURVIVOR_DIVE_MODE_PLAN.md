@@ -314,3 +314,10 @@ Gate per the owner's batching rule: stack V0–V3 on `feat/micasurvivor-dive`, g
     - the red ground
   - **Known gap:** a cold spectator page skips the very first snapshot while the Expedition code loads. The next snapshot, about 0.5 s later, applies.
   - **Not done yet:** co-op guests do not follow the host down the stairs on their own; that is V8.
+- **V5** (0e140e65): the combo ("Racha": 3 s window, +2 % XP a step to +30 %, milestone loot every 10, meter: hot at 10, fire at 20); hit-stops (alpha/guardian 0.16 s, the floor's last foe 0.12 s). The combo is in the viewers' block.
+- **V6**:
+  - **Escort:** the lost Pokémon follows you and is rescued only when it leaves the floor with you.
+  - **Landmarks:** all 8 have working one-time effects.
+  - **Expedition interactables on Dive floors** (`economy.js` layoutOf → `G.ExpDive.ecoLayout`): chests are free Poké Balls; a Meowth stall open all floor stands in for Kecleon's shop on about 1 in 4 plain floors; plus berries and gold rocks. Their viewer sync comes from Expedition's `o` block.
+  - **i18n fix:** Dive keys no longer start with "¡", because `items.js`'s `'¡{x}!'` pattern caught them.
+  - **Still to do:** the secret pockets behind boulders and thickets.

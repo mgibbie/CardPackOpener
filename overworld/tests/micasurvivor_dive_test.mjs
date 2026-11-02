@@ -2,7 +2,7 @@
 // Plans/MICASURVIVOR_DIVE_MODE_PLAN.md 2.1 / 2.5 / 2.7). A static server, headless Chrome, a fixed guest profile.
 //   1. the menu: Expedition · Dive is playable; a click starts a run on its route (dive:forest), floor 1 of G.DiveGen
 //   2. floor 1: the player stands on the spawn; the foe groups sleep where they were put and wake when you come near
-//   3. the lost Pokémon: reaching it rescues it (on your stake)
+//   3. the lost Pokémon: reaching it makes it follow you; it is rescued when it leaves the floor with you (V6)
 //   4. the stairs: standing on them takes you to floor 2 (a new zone, the old foes gone)
 //   5. floor 5: the alpha seals the stairs; its fall secures the loot (the stake banked) and opens them
 //   6. floor 10: the Escape Rope circle; standing still in it 3 s ends the run, ESCAPED: the pay is bank + stake, through
@@ -187,18 +187,33 @@ try {
 	const rs = await E(page, () => {
 		const H = window.__t, S = G.ExpDive.run, s0 = S.stake;
 		H.thin(); H.put(S.lost.x, S.lost.y); H.step(2);
-		return { done: S.lost.done, rescued: S.rescued.slice(), stake: S.stake - s0 };
+		const out = { follow: S.lost.follow, doneAtTouch: S.lost.done };
+		// walk off 6 tiles: it comes after you
+		const lx = S.lost.x, ly = S.lost.y, TS = H.TS();
+		const spots = [[6, 0], [-6, 0], [0, 6], [0, -6]].map(([dx, dy]) => [lx + dx * TS, ly + dy * TS]).filter(([x, y]) => G.World.maskAt(Math.floor(x / TS), Math.floor(y / TS)) > 0 && G.World.zone.terr(Math.floor(x / TS), Math.floor(y / TS)) === 0);
+		if (spots[0]) { H.step(30, 1 / 30, () => { H.put(spots[0][0], spots[0][1]); }); out.followed = Math.hypot(S.lost.x - lx, S.lost.y - ly) > 2 * TS; }
+		// to the stairs with it: rescued as you leave
+		H.thin(); H.toStairs(); S.lost.x = G.Game.player.x + 20; S.lost.y = G.Game.player.y;
+		H.step(24, 1 / 30, () => { if (G.ExpDive.run.floor !== 1) return false; H.toStairs(); });
+		out.rescued = S.rescued.slice(); out.stake = S.stake - s0; out.floor = S.floor;
+		// floor 2: leave its lost Pokémon behind (never touched): not rescued
+		H.thin(); H.toStairs(); H.step(24, 1 / 30, () => { if (G.ExpDive.run.floor !== 2) return false; H.toStairs(); });
+		out.left = S.rescued.length;
+		return out;
 	});
-	A(rs.done && rs.rescued.length === 1 && rs.stake >= 12, 'reaching the lost Pokémon rescues it and puts loot at stake', JSON.stringify(rs));
+	A(rs.follow && !rs.doneAtTouch && rs.followed !== false, 'reaching the lost Pokémon: it follows you (not rescued yet)', JSON.stringify(rs));
+	A(rs.rescued.length === 1 && rs.stake >= 12 && rs.floor === 2, 'taking the stairs with it rescues it and puts its loot at stake', JSON.stringify(rs));
+	A(rs.left === 1, 'a lost Pokémon left behind stays lost', JSON.stringify(rs));
 
 	// ======================== 4. the stairs
 	const s2 = await E(page, () => {
 		const H = window.__t, h1 = G.World.zone.hash;
-		H.thin(); H.toStairs(); H.step(24, 1 / 30, () => { if (G.ExpDive.run.floor !== 1) return false; H.toStairs(); });
+		const f0 = G.ExpDive.run.floor;
+		H.thin(); H.toStairs(); H.step(24, 1 / 30, () => { if (G.ExpDive.run.floor !== f0) return false; H.toStairs(); });
 		const S = G.ExpDive.run, pl = G.Game.player;
-		return { floor: S.floor, zone: G.World.zone.zone, newZone: G.World.zone.hash !== h1, px: pl.x, py: pl.y, foes: G.EnemyMgr.all().filter(e => !e.dead && e.xdive != null).length, oldFoes: G.EnemyMgr.all().filter(e => !e.dead && e.xdive == null && !e.xk).length };
+		return { f0, floor: S.floor, zone: G.World.zone.zone, newZone: G.World.zone.hash !== h1, px: pl.x, py: pl.y, foes: G.EnemyMgr.all().filter(e => !e.dead && e.xdive != null).length, oldFoes: G.EnemyMgr.all().filter(e => !e.dead && e.xdive == null && !e.xk).length };
 	});
-	A(s2.floor === 2 && s2.zone === 2 && s2.newZone && s2.px === 0 && s2.py === 0 && s2.foes > 0, 'the stairs take you down to floor 2 (a new zone, at its spawn, its own foes)', JSON.stringify(s2));
+	A(s2.floor === s2.f0 + 1 && s2.zone === s2.floor && s2.newZone && s2.px === 0 && s2.py === 0 && s2.foes > 0, 'the stairs take you down a floor (a new zone, at its spawn, its own foes)', JSON.stringify(s2));
 
 	// ======================== 4b. V4: PokéDive's kit (basic + 2 pressed specials), the dodge, every input
 	const kit = await E(page, () => {
@@ -317,6 +332,7 @@ try {
 		for (let i = 0; i < 10; i++) { const e = mk(); e.hurt(1e6); H.step(1); }
 		out.n = S.combo.n; out.xpK = +(pl.xpMul / xm0).toFixed(3); out.milestone = S.stake - stake0;
 		out.block = JSON.parse(JSON.stringify(G.ExpDive.dBlock().k || null));
+		out.popup = G.I18n.f('Racha x{x}', 10) + '!'; out.meter = G.I18n.f('x{x} RACHA', 10);
 		H.step(Math.ceil(3.2 * 30));
 		out.broken = S.combo.n; out.xpBack = +(pl.xpMul / xm0).toFixed(3); out.best = S.combo.best;
 		// the floor's last foe: a hit-stop (the world holds: the run's clock doesn't move)
@@ -329,9 +345,46 @@ try {
 	});
 	A(combo.n === 10 && Math.abs(combo.xpK - 1.2) < 0.011, 'ten quick KOs: a x10 combo and +20 % XP', JSON.stringify(combo));
 	A(combo.milestone >= 3 + 10, 'the 10th pays its milestone loot (3) on top of the KOs\'', JSON.stringify(combo));
+	const tr = await E(page, () => {
+		const keys = { '{x} rescatado': 'A rescued', '{x}, el guardián de la ruta': "A, the route's guardian", 'Nuevo récord en {x}: piso {x}': 'New record on A: floor B', 'Racha x{x}': 'Combo xA',
+			'¡{x} te sigue! Llévalo a las escaleras': 'A follows you! Take it to the stairs', '— Piso {x} · {x} —': '— Floor A · B —', 'Inmersión · {x}: piso {x}': 'Dive · A: floor B',
+			'Botín asegurado: {x} · en juego: {x}': 'Loot secured: A · at stake: B', 'Mejor racha: {x}': 'Best combo: A', 'Rescatados: {x}': 'Rescued: A' };
+		return Object.entries(keys).filter(([k, v]) => G.I18n.f(k, 'A', 'B') !== v).map(([k]) => k + ' -> ' + G.I18n.f(k, 'A', 'B'));
+	});
+	A(Array.isArray(tr) && tr.length === 0, "every Dive phrase with a hole translates whole (none caught by a shorter pattern)", JSON.stringify(tr));
+	A(combo.popup === 'Combo x10!' && combo.meter === 'x10 COMBO', 'the combo pop-up and meter are in English', JSON.stringify(combo));
 	A(combo.block && combo.block[0] === 10, 'the combo is in the viewers\' block', JSON.stringify(combo));
 	A(combo.broken === 0 && Math.abs(combo.xpBack - 1) < 1e-9 && combo.best >= 10, '3 s without a KO breaks it: the XP back to x1, the best kept', JSON.stringify(combo));
 	A(combo.held && combo.after, 'the floor\'s last foe: a short hit-stop (the clock holds, then runs)', JSON.stringify(combo));
+
+	// ======================== 4d. V6: landmarks and the floor's interactables (chests, the Kecleon shop, berries, gold)
+	const v6 = await E(page, () => {
+		const H = window.__t, pl = G.Game.player, S = G.ExpDive.run, out = {};
+		// a landmark: an obelisk under the spawn (the run's state, as the generator would put one)
+		S.L.landmark = { kind: 'obelisk', at: S.L.spawn.slice() }; S.lmUsed = false; S.lmT = 0;
+		H.thin(); H.put(0, 0); H.step(40);
+		out.used = S.lmUsed; out.k = +G.ExpDive.out(1, pl, null, null).toFixed(3); out.block = (G.ExpDive.dBlock().q & 48) === 48;
+		S.obeliskT = 0;
+		S.L.landmark = { kind: 'shrine', at: S.L.spawn.slice() }; S.lmUsed = false; pl.hp = 1; H.step(40);
+		out.healed = pl.hp === pl.maxHp;
+		S.L.landmark = null;
+		// the interactables of Dive floors (pure from the floor): chests = free balls, a shop on ~1 in 4 plain floors
+		const kinds = { freeball: 0, meowth: 0, berry: 0, rock: 0 }, arenaShop = [];
+		let chests = 0;
+		for (let f = 1; f <= 40; f++) {
+			const z = G.ExpClassic.build(4242, 'dive:forest', f), lay = G.ExpEco.layoutOf(z);
+			chests += z.dive.chests.length;
+			for (const o of lay.objs) kinds[o.kind] = (kinds[o.kind] || 0) + 1;
+			if ((f % 5 === 0) && lay.objs.some(o => o.kind === 'meowth')) arenaShop.push(f);
+			for (const o of lay.objs) if (z.terr(o.tx, o.ty) !== 0) out.offFloor = (out.offFloor || 0) + 1;
+		}
+		out.kinds = kinds; out.chests = chests; out.arenaShop = arenaShop;
+		return out;
+	});
+	A(v6.used && Math.abs(v6.k - 1.3) < 1e-9 && v6.block, 'an obelisk: stand on it 1 s, +30 % damage (in the viewers\' block too)', JSON.stringify(v6));
+	A(v6.healed, 'a shrine heals you fully', JSON.stringify(v6));
+	A(v6.kinds.freeball === v6.chests && v6.kinds.meowth >= 3 && v6.kinds.meowth <= 20 && v6.kinds.berry > 40 && v6.kinds.rock > 60 && !v6.arenaShop.length && !v6.offFloor,
+		'40 floors\' interactables: every chest a free Poké Ball, the Kecleon shop on ~1 in 4 plain floors (never an arena), berries and gold, all on floor tiles', JSON.stringify(v6));
 
 	// ======================== 5. the alpha (floor 5)
 	const al = await E(page, () => {
@@ -343,7 +396,7 @@ try {
 		out.stillOn5 = S.floor === 5;
 		const stake = S.stake, bank = S.bank;
 		b.hurt(b.maxHp * 2); H.step(3);
-		out.stakeAfter = S.stake; out.secured = S.bank >= bank + stake + 25 && S.stake < 10;   // (the stake + the alpha's own loot banked; a KO or two may land after)
+		out.stakeAfter = S.stake; out.secured = S.bank >= bank + stake + 25 && S.stake < 40;   // (the stake + the alpha's own loot banked; a KO or two may land after)
 		out.bank = S.bank; out.unsealed = !S.sealed;
 		H.toStairs(); H.step(24, 1 / 30, () => { if (S.floor !== 5) return false; H.toStairs(); });
 		out.after = S.floor;
