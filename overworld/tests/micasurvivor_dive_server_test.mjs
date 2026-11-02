@@ -108,6 +108,14 @@ try {
 	A(r4.status === 400, 'a read of an unknown route: 400');
 	const cl = await ana('run-leaderboard', { mode: BOARD, map: 'viridian', diff: 'normal' });
 	A(cl.status === 200 && Array.isArray(cl.body.top) && cl.body.top.length === 0, 'the Classic boards are untouched (viridian / normal still reads, empty)', JSON.stringify(cl.body).slice(0, 200));
+	// ===== 5. one unlock list (owner 2026-11-02): the overworld's caught species, read back for MicaSurvivor
+	const setRow = (k, v) => sqlite.prepare('INSERT INTO mp_store (key, value, updated_at) VALUES (?, ?, unixepoch()) ON CONFLICT(key) DO UPDATE SET value = excluded.value').run(k, JSON.stringify(v));
+	setRow('ow:ana', { magepunk_dex_v1: JSON.stringify({ seen: ['gengar', 'mew'], caught: ['gengar', 'raichu_alola'] }), magepunk_ow_rev: '3' });
+	A((await raw('micasurvivor-ow-caught', {})).status === 401, 'micasurvivor-ow-caught needs a login');
+	const oc = await ana('micasurvivor-ow-caught', {});
+	A(oc.status === 200 && JSON.stringify(oc.body.caught) === '["gengar","raichu_alola"]', 'it returns the caught list of YOUR overworld Pokédex (not the seen-only ones)', JSON.stringify(oc.body));
+	const oc2 = await ben('micasurvivor-ow-caught', { username: 'ana' });
+	A(oc2.status === 200 && Array.isArray(oc2.body.caught) && oc2.body.caught.length === 0, 'another player reads only their own (ben: none, whatever the body says)', JSON.stringify(oc2.body));
 } catch (e) {
 	fail++; console.log('FAIL: crashed: ' + (e && e.stack || e));
 }

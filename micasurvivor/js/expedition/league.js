@@ -474,6 +474,8 @@ G.ExpLeague = (() => {
     // (the forms this run reached: they can start a run from now on)
     Svv.add('league.form', S.form);
     for (const e of S.log) if (e[1] === 'evo') Svv.add('league.form', e[2]);
+    // (owner 2026-11-02: evolving into a form unlocks it in EVERY mode: the shared collection, js/systems/unlocks.js)
+    if (G.Unlocks) G.Unlocks.add([S.form].concat(S.log.filter(e => e[1] === 'evo').map(e => e[2])), 'expedition');
     if (S.mega) { Svv.bump('lg.mega'); Svv.add('mega.seen', S.mega); }   // (D14)
     return checkChallenges();
   }

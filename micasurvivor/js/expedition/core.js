@@ -304,7 +304,8 @@ G.Exp = (() => {
       cur = null;
       return out;
     });
-    G.ExpSave.open();
+    // (owner 2026-11-02: once the Expedition save is in, what it unlocked joins the shared collection)
+    Promise.resolve(G.ExpSave.open()).then(() => { if (G.Unlocks) G.Unlocks.expedition(); }, () => {});
   }
 
   // ---------------- D1: the zone ----------------

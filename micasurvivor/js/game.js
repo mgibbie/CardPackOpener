@@ -1199,6 +1199,9 @@ G.Flow = {
     const rf = G.DB.refundRetired ? G.DB.refundRetired() : 0;
     if (rf > 0) G.UI.toast(G.I18n.f('Mejoras retiradas: te devolvemos {x} Pokémonedas', rf.toLocaleString('en')), 4200);
     G.MenuUI.open();
+    // MicaSurvivor (owner 2026-11-02): one unlock list for every mode: the free starters, the overworld's caught Pokémon,
+    // the Expedition's unlocks into the collection (js/systems/unlocks.js; once per account a while)
+    if (G.Unlocks) G.Unlocks.sync().catch(e => console.warn(e));
     G.LoginUI.offerRecovery();
   },
   /** Al cerrar el resumen: a la sala si sigues en una, si no al menú. */

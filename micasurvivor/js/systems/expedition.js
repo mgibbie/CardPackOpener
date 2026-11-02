@@ -35,7 +35,8 @@
  *                                device's ledger entry (js/core/db.js), so a merge of two devices never repeats a payment.
  *                                js/expedition/meta.js calls it (and reconciles a thing paid for on two devices).
  * Expedition progress (League catches, unlocks, Lab...) has its OWN save (js/expedition/save.js, the server row
- * micasurvivorexp:<user>); Expedition code never writes the base save micasurvivor:<user> except through `wallet`.
+ * micasurvivorexp:<user>); Expedition code never writes the base save micasurvivor:<user> except through `wallet` and
+ * (owner 2026-11-02, one unlock list for every mode) G.Unlocks.add, which only ADDS species to the collection.
  */
 G.I18n.add({
   'Expedición': 'Expedition',
