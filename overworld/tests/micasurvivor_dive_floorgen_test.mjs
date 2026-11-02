@@ -23,7 +23,7 @@ const ctx = { G: {}, console };
 vm.createContext(ctx);
 vm.runInContext(fs.readFileSync(SRC, 'utf8'), ctx, { filename: SRC });
 const D = ctx.G.DiveGen;
-A(D && typeof D.layout === 'function' && D.ROUTE_IDS.length === 8, 'G.DiveGen loads on its own with 8 routes', D && D.ROUTE_IDS.join(','));
+A(D && typeof D.layout === 'function' && D.ROUTE_IDS.length === 9 && D.ROUTE_IDS[8] === 'origin', 'G.DiveGen loads on its own with 8 routes + the Route of Origin', D && D.ROUTE_IDS.join(','));
 
 // BFS over floor tiles only (what you can walk)
 function walk(L, from) {

@@ -64,8 +64,10 @@ G.I18n.add({
   'WASD moverse  ·  1 / 2 o clic especiales  ·  Espacio esquivar  ·  3 definitivo  ·  Esc pausa': 'WASD move  ·  1 / 2 or click: specials  ·  Space dodge  ·  3 Ultimate  ·  Esc pause',
   'especiales': 'specials', 'esquivar': 'dodge',
   'Esquivar': 'Dodge', 'Especial 1': 'Special 1', 'Especial 2': 'Special 2',
-  'Bosque Musgoso': 'Mossy Woods', 'Cañón Dorado': 'Golden Canyon', 'Cráter Ascua': 'Ember Crater', 'Arrecife Hundido': 'Sunken Reef',
-  'Gruta Helada': 'Frost Grotto', 'Pantano Lúgubre': 'Gloom Marsh', 'Ruinas Olvidadas': 'Forgotten Ruins', 'Bosque Fúngico': 'Fungal Grove'
+  'Récord: piso {x}': 'Best: floor {x}', 'Etapa: piso {x}': 'Stage: floor {x}', 'Sin etapa aún': 'No stage yet', 'Despierta los 8 Sellos ({x}/8)': 'Awaken the 8 Seals ({x}/8)',
+  'Sello despierto': 'Seal awakened', '¡Sello despertado!': 'Seal awakened!', 'Inmersión · ruta y piso inicial': 'Dive · route and start floor', 'Empezar en:': 'Start on:', 'Piso {x}': 'Floor {x}',
+  'Vence al guardián de cada 25 pisos para guardar una etapa. El primero de cada ruta despierta su Sello: +10 % de daño y −10 % de daño recibido en esa ruta.': 'Beat the guardian every 25 floors to save a stage. The first on each route awakens its Seal: +10% damage and −10% damage taken on that route.',
+  '¡A bucear!': 'Dive!'
 });
 
 G.ExpDive = (() => {
@@ -84,12 +86,12 @@ G.ExpDive = (() => {
     FAINT_KEEP: 0.25,
     SLOTS: 3, SPECIAL_K: 1.25, BUFFER: 0.15, HOLD: 0.6   // V4: the kit; a press is kept HOLD s while it waits for a foe in reach
   };
-  const NAME = { forest: 'Bosque Musgoso', canyon: 'Cañón Dorado', crater: 'Cráter Ascua', reef: 'Arrecife Hundido',
-                 grotto: 'Gruta Helada', marsh: 'Pantano Lúgubre', ruins: 'Ruinas Olvidadas', fungal: 'Bosque Fúngico' };
+  const NAME = G.Expedition.DIVE_NAME;   // (V7: one table, js/systems/expedition.js)
   // each route's 4 guardians (floor 25, 50, 75, 100, then again), PokéDive's choice where it had one
   const GUARDIANS = {
     forest: [251, 492, 787, 151], canyon: [383, 645, 377, 718], crater: [244, 146, 485, 250], reef: [382, 249, 245, 490],
-    grotto: [144, 378, 646, 896], marsh: [491, 717, 1015, 890], ruins: [480, 482, 481, 487], fungal: [786, 788, 801, 893]
+    grotto: [144, 378, 646, 896], marsh: [491, 717, 1015, 890], ruins: [480, 482, 481, 487], fungal: [786, 788, 801, 893],
+    origin: [493, 493, 493, 493]   // (V7: Arceus)
   };
   const DG = () => G.DiveGen;
   const T = () => G.I18n;
@@ -138,10 +140,15 @@ G.ExpDive = (() => {
 
   // ---------------- the run ----------------
   function begin(cfg) {
-    const route = routeOf(cfg.map);
+    let route = routeOf(cfg.map);
+    if (!routeOpen(route)) route = 'forest';   // (V7: the Route of Origin needs the 8 Seals)
     S = { route, floor: 0, seed: G.World.seed | 0, bank: 0, stake: 0, rescued: [], rescuedBank: 0, kills: 0, alphas: 0, guardians: 0,
           ended: false, escaped: false, groups: [], boss: null, stairsT: 0, ropeT: 0, ropeHurt: false, lost: null, deepest: 0, t0: 0 };
-    startFloor(1, 0);
+    // (V7: a saved stage: the dive starts on that floor)
+    const st = startOf(route, cfg.start);
+    S.start = st;
+    if (st > 1) G.Exp.enterZone(st);
+    startFloor(st, 0);
     return S;
   }
   function reset() { S = null; view = null; pools.clear(); }
@@ -277,6 +284,7 @@ G.ExpDive = (() => {
       loot(K.LOOT.guard + K.LOOT.guardPer * S.floor);
       secure();
       S.stage = S.floor + 1;
+      if (X() && X().add('dive.seal', S.route)) { S.newSeal = true; say(T().t('¡Sello despertado!') + ' ' + T().t(NAME[S.route]), 3.6); }   // (V7)
       say(T().t('¡Guardián derrotado! Etapa guardada'), 3.4);
       G.Audio.sfx('victory'); G.Game.flash('#ffe9a0', 0.6);
     } else {
@@ -389,6 +397,7 @@ G.ExpDive = (() => {
   /** combat.out: a special's hit is worth SPECIAL_K. */
   function out(k, pl, e, src) {
     if (on()) k *= obeliskK();   // (V6: the obelisk)
+    if (sealK()) k *= 1 + SEAL.DMG;   // (V7: the route's Seal)
     if (!live() || !pl || !src || !pl.slots) return k;
     const id = typeof src.mid === 'string' ? src.mid : src.def && typeof src.id === 'string' ? src.id : null;
     if (!id) return k;
@@ -487,6 +496,108 @@ G.ExpDive = (() => {
 
 
 
+
+
+  // ---------------- V7: routes, stages, Seals, the Route of Origin, the picker ----------------
+  // A route's STAGE (the Expedition save: dive.<route>.stage) is the floor after its deepest guardian beaten: 26, 51, ...;
+  // a dive may start on floor 1 or on any stage reached (the picker's pick, checked again at the start). The first guardian
+  // beaten on a route awakens its SEAL (the set dive.seal): on that route, +10 % damage and -10 % damage taken. All 8 Seals
+  // open the Route of Origin (Arceus).
+  const SEAL = { DMG: 0.1, TAKEN: 0.1 };
+  const MAIN = ['forest', 'canyon', 'crater', 'reef', 'grotto', 'marsh', 'ruins', 'fungal'];
+  const X = () => G.ExpSave;
+  const stageOf = r => (X() ? X().get('dive.' + r + '.stage') || 0 : 0);
+  const bestOf = r => (X() ? X().get('dive.' + r + '.best') || 0 : 0);
+  const sealOf = r => !!(X() && X().has('dive.seal', r));
+  const seals = () => MAIN.filter(sealOf).length;
+  const routeOpen = r => r !== 'origin' || seals() >= MAIN.length;
+  /** The start floors open on a route: 1, then every stage reached (26, 51, ...). */
+  function starts(r) { const out = [1], st = stageOf(r); for (let f = 26; f <= st; f += 25) out.push(f); return out; }
+  /** The start a run really gets: the pick if the save has that stage, else 1. */
+  const startOf = (r, want) => (starts(r).includes(want | 0) ? want | 0 : 1);
+  /** The seal on the run's route (host or guest: each player's own save). */
+  const sealK = () => { const r = routeOf(G.Modes.run && G.Modes.run.map); return live() && sealOf(r); };
+  /** player.hurt (core.js): the Seal's -10 %. */
+  const hurtK = d => (sealK() ? d * (1 - SEAL.TAKEN) : d);
+
+  let pel = null, ponClose = null, pscroll = 0;
+  const pui = { route: 'forest' };
+  const PCSS = `
+#modes-xdive .xd-head h3 { margin: 0; font-size: 18px; }
+#modes-xdive .xd-routes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 8px 0; }
+#modes-xdive .xd-route { text-align: left; border: 2px solid rgba(244,248,255,.2); border-radius: 10px; background: rgba(0,0,0,.22); padding: 7px 9px; font-size: 12px; color: #dfe7f3; cursor: pointer; display: flex; flex-direction: column; gap: 2px; }
+#modes-xdive .xd-route b { font-size: 15px; color: #f4f8ff; }
+#modes-xdive .xd-route.on { border-color: #ffd23f; box-shadow: 0 0 0 2px rgba(255,210,63,.25) inset; }
+#modes-xdive .xd-route.locked { opacity: .55; }
+#modes-xdive .xd-route .xd-seal { color: #ffd23f; font-weight: 800; }
+#modes-xdive .xd-route .xd-row { color: #aab6c8; }
+#modes-xdive .xd-starts { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 6px 0; }
+#modes-xdive .xd-note { color: #aab6c8; font-size: 12px; margin: 4px 0 0; }
+@media (max-width: 600px) { #modes-xdive .xd-routes { grid-template-columns: 1fr 1fr; } }
+@media (max-height: 520px) { #modes-xdive .xd-route { padding: 3px 7px; } #modes-xdive .xd-route .xd-row { display: none; } #modes-xdive .xd-routes { grid-template-columns: repeat(5, 1fr); gap: 5px; } }
+`;
+  function pmount() {
+    if (pel || typeof document === 'undefined') return pel;
+    const box = document.querySelector('#scr-modes .modes-box');
+    if (!box) return null;
+    const st = document.createElement('style'); st.id = 'exp-dive-style'; st.textContent = PCSS; document.head.appendChild(st);
+    pel = document.createElement('div'); pel.id = 'modes-xdive'; pel.className = 'hidden';
+    box.appendChild(pel);
+    return pel;
+  }
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  /** Opens "Route and start floor" on the mode select (the Expedition code and save are loaded). */
+  function openPicker(onBack) {
+    if (!pmount()) return false;
+    ponClose = onBack || null;
+    pui.route = G.Expedition.diveRoute();
+    if (!routeOpen(pui.route)) pui.route = 'forest';
+    document.getElementById('modes-main').classList.add('hidden');
+    pel.classList.remove('hidden');
+    const b0 = document.querySelector('#scr-modes [data-back]'); if (b0) b0.classList.add('hidden');
+    const box = document.querySelector('#scr-modes .modes-box'); if (box) { pscroll = box.scrollTop; box.scrollTop = 0; }
+    prender();
+    return true;
+  }
+  function closePicker(quiet) {
+    if (!pel || pel.classList.contains('hidden')) return false;
+    pel.classList.add('hidden');
+    document.getElementById('modes-main').classList.remove('hidden');
+    const b0 = document.querySelector('#scr-modes [data-back]'); if (b0) b0.classList.remove('hidden');
+    const box = document.querySelector('#scr-modes .modes-box'); if (box && quiet !== true) box.scrollTop = pscroll;
+    if (quiet !== true && ponClose) ponClose();
+    return true;
+  }
+  const back = () => (pel && !pel.classList.contains('hidden') ? closePicker() : false);
+  function prender() {
+    if (!pel) return;
+    const t = T(), cur0 = G.Expedition.diveStart(), sts = starts(pui.route), st = sts.includes(cur0) ? cur0 : 1;
+    const card = r => {
+      const open1 = routeOpen(r), on = r === pui.route, sealed = sealOf(r), best = bestOf(r), stage = stageOf(r);
+      const types = DG().ROUTES[r].types.map(x => t.t(G.U.TYPE_NAME[x] || x)).join(' · ');
+      const rows = open1 ? [t.f('Récord: piso {x}', best), stage ? t.f('Etapa: piso {x}', stage) : t.t('Sin etapa aún')]
+        : [t.f('Despierta los 8 Sellos ({x}/8)', seals())];
+      return `<button type="button" class="xd-route${on ? ' on' : ''}${open1 ? '' : ' locked'}" data-route="${r}"${open1 ? ' data-sfx="select"' : ' aria-disabled="true"'}>
+        <b>${open1 ? '' : G.Icons.html('ban', 14)}${esc(t.t(NAME[r]))}</b><span class="xd-row">${esc(types)}</span>
+        ${rows.map(x => `<span class="xd-row">${esc(x)}</span>`).join('')}${sealed ? `<span class="xd-seal">${G.Icons.html('star', 12)} ${esc(t.t('Sello despierto'))}</span>` : ''}</button>`;
+    };
+    pel.innerHTML = `
+      <div class="row between xd-head"><h3>${esc(t.t('Inmersión · ruta y piso inicial'))}</h3><button id="xd-back" class="btn small" type="button">${esc(t.t('Atrás'))}</button></div>
+      <div class="xd-routes">${G.Expedition.DIVE_ROUTES.map(card).join('')}</div>
+      <div class="xd-starts"><b>${esc(t.t('Empezar en:'))}</b>${sts.map(f => `<button type="button" class="chip${f === st ? ' on' : ''}" data-start="${f}">${esc(t.f('Piso {x}', f))}</button>`).join('')}</div>
+      <p class="xd-note">${esc(t.t('Vence al guardián de cada 25 pisos para guardar una etapa. El primero de cada ruta despierta su Sello: +10 % de daño y −10 % de daño recibido en esa ruta.'))}</p>
+      <button type="button" class="btn primary" id="xd-go">${esc(t.t('¡A bucear!'))}</button>`;
+    document.getElementById('xd-back').onclick = () => closePicker();
+    pel.querySelectorAll('[data-route]').forEach(b => { b.onclick = () => {
+      const r = b.dataset.route;
+      if (!routeOpen(r)) { G.UI.toast(t.f('Despierta los 8 Sellos ({x}/8)', seals())); G.Audio.sfx('error'); return; }
+      pui.route = r; G.Expedition.diveRoute(r);
+      if (!starts(r).includes(G.Expedition.diveStart())) G.Expedition.diveStart(1);
+      prender();
+    }; });
+    pel.querySelectorAll('[data-start]').forEach(b => { b.onclick = () => { G.Expedition.diveStart(+b.dataset.start); prender(); }; });
+    document.getElementById('xd-go').onclick = () => { closePicker(true); G.Flow.play('exp-dive'); };
+  }
 
   // ---------------- V6: the escort, the landmarks, the floor's interactables ----------------
   // The lost Pokémon, once reached, FOLLOWS the nearest player (S.lost.follow) and is rescued when it leaves the floor with you
@@ -820,6 +931,7 @@ G.ExpDive = (() => {
 
   return { K, NAME, GUARDIANS, target, pool, guardianOf, routeOf, begin, reset, update, hurt, onKill, pay, scoreParts, result, record,
            setup, roles, press, pad, tick, out, drawButtons, offerLearn, LEARN_AT, get rects() { return rects; },
+           openPicker, closePicker, back, starts, startOf, stageOf, bestOf, sealOf, seals, routeOpen, hurtK, SEAL, MAIN,
            live, shown, dBlock, applyD, TELE, COMBO, HITSTOP, hold, ecoLayout, LM, ESCORT, get view() { return view; },
            drawGround, drawHud, drawMini, hudLine, hudColor, on, get run() { return S; } };
 })();

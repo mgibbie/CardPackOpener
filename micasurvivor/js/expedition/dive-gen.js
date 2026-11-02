@@ -55,7 +55,9 @@ G.DiveGen = (() => {
     grotto: { types: ['ice', 'water', 'steel', 'psychic'], lakes: 2, grass: 0, landmark: 'spire', biome: 'cerulean' },
     marsh:  { types: ['poison', 'water', 'grass', 'dark'], lakes: 6, grass: 5, lush: true, landmark: 'totem', biome: 'viridian' },
     ruins:  { types: ['psychic', 'ghost', 'rock', 'steel'], lakes: 1, grass: 0, landmark: 'monolith', biome: 'mtmoon' },
-    fungal: { types: ['grass', 'fairy', 'poison', 'bug'], lakes: 3, grass: 5, lush: true, landmark: 'fairy', biome: 'viridian' }
+    fungal: { types: ['grass', 'fairy', 'poison', 'bug'], lakes: 3, grass: 5, lush: true, landmark: 'fairy', biome: 'viridian' },
+    // (V7: the Route of Origin, opened by the 8 Seals; Arceus guards it)
+    origin: { types: ['normal', 'dragon', 'psychic', 'fairy'], lakes: 2, grass: 2, landmark: 'monolith', biome: 'mtmoon' }
   };
   const ROUTE_IDS = Object.keys(ROUTES);
 

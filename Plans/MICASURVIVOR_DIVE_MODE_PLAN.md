@@ -321,3 +321,8 @@ Gate per the owner's batching rule: stack V0–V3 on `feat/micasurvivor-dive`, g
   - **Expedition interactables on Dive floors** (`economy.js` layoutOf → `G.ExpDive.ecoLayout`): chests are free Poké Balls; a Meowth stall open all floor stands in for Kecleon's shop on about 1 in 4 plain floors; plus berries and gold rocks. Their viewer sync comes from Expedition's `o` block.
   - **i18n fix:** Dive keys no longer start with "¡", because `items.js`'s `'¡{x}!'` pattern caught them.
   - **Still to do:** the secret pockets behind boulders and thickets.
+- **V7:**
+  - **Picker:** "Route & start floor" on the Dive card (`#modes-xdive`, mouse, touch and pad, Esc to go back). It shows the 9 routes with their types, best floor, stage and Seal, the start chips (1 / 26 / 51…), and a Dive! button.
+  - **Starting a run:** a dive starts on a saved stage, checked against the Expedition save.
+  - **Seals:** `dive.seal` is awakened by a route's first guardian: +10% damage and −10% damage taken on that route.
+  - **Route of Origin:** all 8 Seals unlock it, with Arceus as its guardian.

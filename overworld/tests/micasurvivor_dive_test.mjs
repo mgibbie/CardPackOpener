@@ -167,9 +167,13 @@ try {
 	await shoot(page, 'dive_floor1.png');
 	// ======================== 2. sleeping groups
 	const sl = await E(page, () => {
-		const H = window.__t, S = G.ExpDive.run, g = S.groups.slice().sort((a, b) => Math.hypot(b.at[0], b.at[1]) - Math.hypot(a.at[0], a.at[1]))[0], e0 = g.list[0], x0 = e0.x, y0 = e0.y;   // (the farthest group)
+		const H = window.__t, S = G.ExpDive.run, g = S.groups.slice().sort((a, b) => Math.hypot(b.at[0] - G.Game.player.x, b.at[1] - G.Game.player.y) - Math.hypot(a.at[0] - G.Game.player.x, a.at[1] - G.Game.player.y))[0], e0 = g.list[0], x0 = e0.x, y0 = e0.y;   // (the group farthest from you, beyond the wake radius)
+		const pl0 = G.Game.player; for (const gg of pl0.slots) for (const m of gg) m.t = 1e9;   // (your moves quiet: a long-reach basic would wake it)
+		H.dbg = { far: Math.round(Math.hypot(g.at[0] - G.Game.player.x, g.at[1] - G.Game.player.y) / H.TS()), awake0: g.awake };
 		H.step(60);
+		H.dbg.hp1 = g.list.map(e => e.hp < e.maxHp); H.dbg.awake1 = g.awake;
 		const still = Math.hypot(e0.x - x0, e0.y - y0) < 1 && !g.awake;
+		for (const gg of pl0.slots) for (const m of gg) m.t = 0;
 		// a floor tile 4-6 tiles from the group
 		const TS = H.TS(), gx = Math.floor(g.at[0] / TS), gy = Math.floor(g.at[1] / TS);
 		let spot = null;
@@ -178,7 +182,7 @@ try {
 		const woke = g.awake, d0 = Math.min(...g.list.map(e => Math.hypot(e.x - G.Game.player.x, e.y - G.Game.player.y)));
 		H.step(30, 1 / 30, () => { H.put(spot[0], spot[1]); });
 		const d1 = Math.min(...g.list.filter(e => !e.dead).map(e => Math.hypot(e.x - G.Game.player.x, e.y - G.Game.player.y)));
-		return { still, woke, d0: Math.round(d0), d1: Math.round(d1), xm: g.list.map(e => !!e.xmove) };
+		return { still, woke, d0: Math.round(d0), d1: Math.round(d1), xm: g.list.map(e => !!e.xmove), dbg: H.dbg };
 	});
 	A(sl.still, 'a far group sleeps where it was put (no move in 2 s)', JSON.stringify(sl));
 	A(sl.woke && sl.xm.every(x => !x), 'coming close wakes the whole group (its foes act: no sleeper hold)', JSON.stringify(sl));
@@ -623,8 +627,95 @@ try {
 		return { seen: seen.size, nonLeg: nonLeg.length, missing: missing.slice(0, 10), legOk, guardians: legs.length, anyLeg, t1: D.target(1), t25: D.target(25), t100: Math.round(D.target(100)) };
 	});
 	A(sp.missing.length === 0 && !sp.anyLeg, `every non-legendary species can come as a foe (${sp.seen} / ${sp.nonLeg}); no legendary ever does`, JSON.stringify(sp));
-	A(sp.legOk && sp.guardians === 32, 'the 32 route guardians are legendaries', JSON.stringify(sp));
+	A(sp.legOk && sp.guardians === 36, 'the 32 route guardians + Arceus (the Route of Origin) are legendaries', JSON.stringify(sp));
 	A(sp.t1 === 272 && sp.t25 === 560 && sp.t100 > 580 && sp.t100 < 620, 'PokéDive\'s depth curve: 272 on floor 1, 560 on 25, toward 620 below', JSON.stringify(sp));
+
+	// ======================== 10. V7: the route and start-floor picker, stages, Seals, the Route of Origin
+	{
+		const d = await bootPage();
+		const pg = d.page;
+		await pg.click('#scr-menu [data-go=modes]');
+		await waitFor(() => d.visible('scr-modes'), 3000);
+		await sleep(250);
+		const lbl0 = await E(pg, () => { const b = document.getElementById('modes-dive-pick'); return b && b.innerText.trim(); });
+		A(/^Route: Mossy Woods · floor 1$/.test(lbl0 || ''), 'the Dive card has a "Route: Mossy Woods · floor 1" button', lbl0);
+		await pg.click('#modes-dive-pick');
+		await waitFor(() => d.visible('modes-xdive'), 8000);
+		const p0 = await E(pg, () => ({
+			cards: [...document.querySelectorAll('#modes-xdive [data-route]')].map(b => ({ r: b.dataset.route, on: b.classList.contains('on'), locked: b.classList.contains('locked') })),
+			starts: [...document.querySelectorAll('#modes-xdive [data-start]')].map(b => +b.dataset.start),
+			txt: document.getElementById('modes-xdive').innerText.replace(/\s+/g, ' '), main: document.getElementById('modes-main').classList.contains('hidden') }));
+		A(p0.cards && p0.cards.length === 9 && p0.cards[0].on && p0.cards[8].r === 'origin' && p0.cards[8].locked && p0.cards.slice(0, 8).every(c => !c.locked) && p0.main,
+			'the picker: 8 routes open, the Route of Origin locked, Mossy Woods picked', JSON.stringify(p0.cards));
+		A(JSON.stringify(p0.starts) === '[1]' && /Awaken the 8 Seals \(0\/8\)/.test(p0.txt) && !/Ruta|Piso|Sello/.test(p0.txt), 'no stage yet: start on floor 1 only; in English', p0.txt);
+		await pg.click('#modes-xdive [data-route=reef]');
+		await pg.click('#modes-xdive [data-route=origin]');
+		const p1 = await E(pg, () => ({ route: G.Expedition.diveRoute(), on: document.querySelector('#modes-xdive .xd-route.on').dataset.route }));
+		A(p1.route === 'reef' && p1.on === 'reef', 'clicking a route picks it; the locked Route of Origin refuses', JSON.stringify(p1));
+		// a saved stage (a guardian beaten on floor 25 and on 50)
+		await E(pg, () => { G.ExpSave.best('dive.reef.stage', 51); G.ExpSave.best('dive.reef.best', 57); });
+		await pg.click('#modes-xdive [data-route=reef]');
+		const p2 = await E(pg, () => ({ starts: [...document.querySelectorAll('#modes-xdive [data-start]')].map(b => +b.dataset.start), txt: document.querySelector('#modes-xdive [data-route=reef]').innerText.replace(/\s+/g, ' ') }));
+		A(JSON.stringify(p2.starts) === '[1,26,51]' && /Best: floor 57/.test(p2.txt) && /Stage: floor 51/.test(p2.txt), 'stages 26 and 51 saved: start on 1, 26 or 51; the card shows the best and the stage', JSON.stringify(p2));
+		await pg.click('#modes-xdive [data-start="26"]');
+		await shoot(pg, 'dive_picker.png', 200);
+		await E(pg, () => window.__t.thaw());   // (shoot leaves the frames frozen: the menu's keys need them)
+		// Esc closes it; the card's button now says the pick
+		await pg.keyboard.press('Escape');
+		await sleep(200);
+		const lbl1 = await E(pg, () => ({ closed: document.getElementById('modes-xdive').classList.contains('hidden'), lbl: document.getElementById('modes-dive-pick').innerText.trim() }));
+		A(lbl1.closed && lbl1.lbl === 'Route: Sunken Reef · floor 26', 'Esc closes the picker; the button says "Route: Sunken Reef · floor 26"', JSON.stringify(lbl1));
+		// the run starts on floor 26
+		await pg.click('#modes-dive-pick');
+		await waitFor(() => d.visible('modes-xdive'), 3000);
+		await pg.click('#xd-go');
+		await waitFor(() => E(pg, () => G.Game.state === 'playing' && G.ExpDive && !!G.ExpDive.run), 15000);
+		const r26 = await E(pg, () => { window.__t.freeze(); const S = G.ExpDive.run; return { floor: S.floor, start: S.start, zone: G.World.zone.zone, map: G.World.zone.map, line: G.ExpClassic.hudLine(G.Game.player) }; });
+		A(r26.floor === 26 && r26.start === 26 && r26.zone === 26 && r26.map === 'dive:reef' && /^FLOOR 26 · SUNKEN REEF/.test(r26.line), 'the dive starts on floor 26 of the Sunken Reef', JSON.stringify(r26));
+		// a stage the save doesn't have is refused (floor 1)
+		const bad = await E(pg, () => G.ExpDive.startOf('canyon', 26));
+		A(bad === 1, 'a start floor the save hasn\'t reached falls back to floor 1', bad);
+		// a guardian beaten awakens the route's Seal: +10 % damage, -10 % damage taken
+		const sl = await E(pg, () => {
+			const H = window.__t, S = G.ExpDive.run, pl = H.sturdy(), out = { before: G.ExpDive.sealOf('reef') };
+			out.k0 = G.ExpDive.out(1, pl, null, null);
+			H.downTo(50);
+			out.floor = S.floor; out.guardian = S.boss && S.boss.xk; out.dex = S.boss && S.boss.dex;
+			S.boss.hurt(S.boss.maxHp * 2); H.step(3);
+			out.after = G.ExpDive.sealOf('reef'); out.k1 = +G.ExpDive.out(1, pl, null, null).toFixed(3); out.taken = +G.ExpDive.hurtK(10).toFixed(3); out.stage = S.stage;
+			return out;
+		});
+		A(!sl.before && sl.floor === 50 && sl.guardian === 'guardian' && sl.dex === 249 && sl.after && sl.k1 === 1.1 && sl.taken === 9 && sl.stage === 51,
+			'floor 50: Lugia, the reef\'s 2nd guardian; beaten, it awakens the Seal (x1.1 damage, x0.9 taken) and saves stage 51', JSON.stringify(sl));
+		// the 8 Seals open the Route of Origin (Arceus)
+		const og = await E(pg, () => { for (const r of G.ExpDive.MAIN) G.ExpSave.add('dive.seal', r); return { open: G.ExpDive.routeOpen('origin'), seals: G.ExpDive.seals(), g: G.ExpDive.guardianOf('origin', 25) }; });
+		A(og.open && og.seals === 8 && og.g === 493, 'all 8 Seals open the Route of Origin, guarded by Arceus', JSON.stringify(og));
+		await d.ctx.close();
+	}
+	// the picker on a phone (844 x 390): it fits, no sideways scroll, the start button reachable
+	{
+		const ctx2 = await browser.createBrowserContext();
+		const pg = await ctx2.newPage();
+		await pg.setViewport({ width: 844, height: 390, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+		await pg.evaluateOnNewDocument(BEFORE, SAVE);
+		await pg.goto(`http://localhost:${PORT}/micasurvivor/`, { waitUntil: 'domcontentloaded' });
+		await waitFor(() => pg.evaluate(() => typeof G === 'object' && G.Game && document.getElementById('boot').classList.contains('hidden')), 30000);
+		await pg.evaluate(() => { const t = document.getElementById('tap-start'); if (t && !t.classList.contains('hidden')) t.click(); });
+		await sleep(300);
+		const ph = await E(pg, async () => {
+			G.UI.show && G.ModesUI && G.ModesUI.open && G.ModesUI.open();
+			await new Promise(r => setTimeout(r, 300));
+			const b = document.getElementById('modes-dive-pick'); if (b) b.click();
+			for (let i = 0; i < 80 && !(document.getElementById('modes-xdive') && !document.getElementById('modes-xdive').classList.contains('hidden')); i++) await new Promise(r => setTimeout(r, 50));
+			const box = document.querySelector('#scr-modes .modes-box'), el = document.getElementById('modes-xdive'), go = document.getElementById('xd-go');
+			if (!el) return { none: true };
+			go.scrollIntoView({ block: 'nearest' });
+			const rg = go.getBoundingClientRect();
+			return { side: box.scrollWidth - box.clientWidth, w: innerWidth, goIn: rg.top >= 0 && rg.bottom <= innerHeight && rg.left >= 0 && rg.right <= innerWidth, routes: el.querySelectorAll('[data-route]').length };
+		});
+		A(ph.routes === 9 && ph.side <= 2 && ph.goIn, 'the phone: the picker fits (no sideways scroll), the start button reachable', JSON.stringify(ph));
+		await ctx2.close();
+	}
 
 	const pageErrs = errors.filter(e => !/AudioContext|play\(\) failed|NotAllowedError/.test(e));
 	A(pageErrs.length === 0, 'no page errors', pageErrs.slice(0, 5).join(' | '));

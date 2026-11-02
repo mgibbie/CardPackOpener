@@ -42,6 +42,9 @@ G.I18n.add({
   'Expedición · Clásico': 'Expedition · Classic', 'Expedición · Supervivencia': 'Expedition · Survival', 'Expedición · Liga': 'Expedition · League',
   'Próximamente': 'Coming soon',
   'Expedición · Inmersión': 'Expedition · Dive',   // (Dive V0)
+  'Bosque Musgoso': 'Mossy Woods', 'Cañón Dorado': 'Golden Canyon', 'Cráter Ascua': 'Ember Crater', 'Arrecife Hundido': 'Sunken Reef',
+  'Gruta Helada': 'Frost Grotto', 'Pantano Lúgubre': 'Gloom Marsh', 'Ruinas Olvidadas': 'Forgotten Ruins', 'Bosque Fúngico': 'Fungal Grove', 'Ruta del Origen': 'Route of Origin',
+  'Ruta: {x} · piso {x}': 'Route: {x} · floor {x}',   // (Dive V7: the Dive card's button)
   'Baja piso a piso por 8 rutas: rescata a un Pokémon perdido en cada piso, vence al alfa cada 5 para asegurar el botín y al guardián legendario cada 25. Sal con la Cuerda Huida o arriésgalo todo.': 'Dive floor by floor down 8 routes: rescue a lost Pokémon on every floor, beat the alpha every 5 to secure your loot and the legendary guardian every 25. Leave with the Escape Rope or risk it all.',
   'Expedición · modos nuevos (próximamente)': 'Expedition · new modes (coming soon)',
   'Mapas con alturas, guardianes y un portal final. Marcas por mapa y dificultad.': 'Maps with heights, guardians and a final portal. Records per map and difficulty.',
@@ -97,14 +100,24 @@ G.Expedition = (() => {
   /** The map / difficulty a new Expedition run gets. DLC D9: the device's pick (G.ExpTier.pick: clamped to a playable map
    *  and an unlocked tier, once the Expedition code is loaded; before that, the saved pick as it is, for the button's label). */
   function pick(mode) {
-    if (mode === 'exp-dive') return { map: 'dive:' + diveRoute(), diff: 'normal' };   // (Dive V2: the route is the map; no tiers)
+    if (mode === 'exp-dive') return { map: 'dive:' + diveRoute(), diff: 'normal', start: diveStart() };   // (Dive V2: the route is the map; no tiers. V7: the start floor)
     if (G.ExpTier) return G.ExpTier.pick();
     let p = null;
     try { p = JSON.parse(localStorage.getItem('micasurvivorexp_tier') || 'null'); } catch (e) { /* the pick is a convenience */ }
     return { map: p && MAPS.includes(p.map) ? p.map : MAPS[0], diff: p && DIFFS.includes(p.diff) ? p.diff : DIFFS[0] };
   }
   /** Dive V2: the route this device dives (micasurvivorexp_dive; the 8 routes of js/expedition/dive-gen.js). */
-  const DIVE_ROUTES = ['forest', 'canyon', 'crater', 'reef', 'grotto', 'marsh', 'ruins', 'fungal'];
+  const DIVE_ROUTES = ['forest', 'canyon', 'crater', 'reef', 'grotto', 'marsh', 'ruins', 'fungal', 'origin'];   // (V7: + the Route of Origin)
+  const DIVE_NAME = { forest: 'Bosque Musgoso', canyon: 'Cañón Dorado', crater: 'Cráter Ascua', reef: 'Arrecife Hundido', grotto: 'Gruta Helada',
+    marsh: 'Pantano Lúgubre', ruins: 'Ruinas Olvidadas', fungal: 'Bosque Fúngico', origin: 'Ruta del Origen' };
+  /** Dive V7: the floor this device starts a dive on (1, or a saved stage 26, 51...: checked against the save at the start). */
+  function diveStart(set) {
+    try {
+      if (set != null && (set === 1 || (set > 25 && (set - 1) % 25 === 0))) localStorage.setItem('micasurvivorexp_divestart', String(set));
+      const v = +localStorage.getItem('micasurvivorexp_divestart') || 1;
+      return v === 1 || (v > 25 && (v - 1) % 25 === 0) ? v : 1;
+    } catch (e) { return 1; }
+  }
   function diveRoute(set) {
     try {
       if (set && DIVE_ROUTES.includes(set)) localStorage.setItem('micasurvivorexp_dive', set);
@@ -242,7 +255,7 @@ G.Expedition = (() => {
 
   return {
     DV, MODES, NAME, DESC, ICON, MAPS, DIFFS, BOARD, ENABLED, SCRIPTS, HUB,
-    isExp, enabled, hub, pick, leaguePick, diveRoute, DIVE_ROUTES, freezeBase, load, lobbyOk, replayOk, viewNotice, dvOk, wallet, viewZone, coopPlan,
+    isExp, enabled, hub, pick, leaguePick, diveRoute, diveStart, DIVE_ROUTES, DIVE_NAME, freezeBase, load, lobbyOk, replayOk, viewNotice, dvOk, wallet, viewZone, coopPlan,
     get loaded() { return loaded; }, get frozen() { return frozen; },
     /** For tests: turn an Expedition mode on in this page (D0b ships none playable). */
     debugEnable(m) { if (isExp(m)) ENABLED.add(m); return enabled(m); }

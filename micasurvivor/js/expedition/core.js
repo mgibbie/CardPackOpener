@@ -215,7 +215,7 @@ G.Exp = (() => {
     // (D6: an Ultimate's i-frames come first, so a cast never spends the shield; then the items; then the hurt charge)
     G.Hooks.on('player.hurt', (d, pl, type) => {
       if (UL() && UL().guard(pl)) return 0;
-      if (DV_() && d > 0) DV_().hurt(pl);   // (Dive V2: a hit cancels the Escape Rope)
+      if (DV_() && d > 0) { DV_().hurt(pl); d = DV_().hurtK(d); }   // (Dive V2: a hit cancels the Escape Rope; V7: the Seal's -10 %)
       if (IT()) d = IT().hurt(d, pl, type);
       if (UL()) UL().hurt(d, pl);
       return d;
