@@ -109,6 +109,7 @@ try {
 		await page.evaluateOnNewDocument((tok, st) => {
 			if (sessionStorage.getItem('seeded')) return;
 			sessionStorage.setItem('seeded', '1');
+			localStorage.setItem('micasurvivor_unlocks_off', '1');   // (the shared unlock list off: this suite pins the carried save's exact Pokémon and coins; micasurvivor_unlocks_test tests it)
 			if (tok) { localStorage.setItem('magepunk_mp_token_v1', tok); localStorage.setItem('magepunk_mp_state_v1', JSON.stringify(st)); }
 		}, who ? tokens[who] : null, who ? states[who] : null);
 		const visible = (id) => page.evaluate(id => { const el = document.getElementById(id); return !!el && !el.classList.contains('hidden') && el.getClientRects().length > 0; }, id);
