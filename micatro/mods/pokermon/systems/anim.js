@@ -118,6 +118,17 @@ export const GEN5_LEGEND_FORMS = {
 };
 
 /**
+ * The Gen 6 Legendaries' forms (the owner's Gen 6 batch 3, jokers/pokejokers_designs.js): upstream 3.9.1 draws each on the Gen 6 sheet beside
+ * its base card, with its own floating soul (sprite table zygarde (the 50% Forme), zygarde_complete, hoopa_unbound) — by the view's form (each
+ * center's poke_view_form, from the card's own count: Zygarde's Cells, Hoopa's consumables used). Zygarde's own card is its 10% Forme
+ * (zygarde_10), Hoopa's its Confined one. Drawn by ui.js ownFace (+ the Shiny sheet's twins).
+ */
+export const GEN6_LEGEND_FORMS = {
+  j_poke_zygarde: { half: { pos: { x: 4, y: 11 }, soul_pos: { x: 5, y: 11 } }, complete: { pos: { x: 6, y: 11 }, soul_pos: { x: 7, y: 11 } } },
+  j_poke_hoopa: { unbound: { pos: { x: 10, y: 11 }, soul_pos: { x: 11, y: 11 } } },
+};
+
+/**
  * Deerling's and Sawsbuck's seasons (the owner's Gen 5 batch 3, jokers/pokejokers_designs.js SEASONS): upstream 3.9.1 draws all four forms
  * of both on the Gen 5 sheet, one after another (Deerling Spring {2,1}, Summer {4,1}, Autumn {6,1}, Winter {8,1}; Sawsbuck Spring {10,1},
  * Summer {0,2}, Autumn {2,2}, Winter {4,2}; pokespriteload.lua lists only the Spring ones) — by the view's form (the center's

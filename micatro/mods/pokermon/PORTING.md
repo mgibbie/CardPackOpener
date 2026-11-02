@@ -3432,6 +3432,36 @@ Meowstic {2,8}) plus their FORM cells (`systems/anim.js GEN6_FORM_SPRITES`, ui.j
   (the pin, 238 defs; Honedge now follows Meowstic), `pokermon_legendary_solo_test` (pin >= 60), `pokermon_art_types_test`,
   `micatro_mod_version_pin`, `micatro_deckeditor_pages` (1056 jokers).
 
+### Gen 6, batch 3: the Gen 6 Legendaries (2026-11-02, branch `feat/pokermon-gen6-batch3`)
+Pinned **`3.9.1+r63`** (`contentRev: 63`; 61 / 62 are Gen 6 batches 1 / 2; `LEGACY_MOD_VERSIONS` untouched). The owner's "Yes": the 5 Gen 6
+Legendaries, #717-721, in `jokers/pokejokers_designs.js` (`oblivion_wing` / `zygarde_cells` / `diamond_storm` / `hoopa_count` / `hyperspace_hole` /
+`steam_x`), Legendary $20 each (The Soul / the Legendary pool), each **complete alone** (the r59 solo rule: no partner clause). Pokédex order:
+after Xerneas (716), before Rowlet (722; its `poke_after` is now `volcanion`). Neither Nacho nor Pokermon+ has any. Types = the cards'
+(`pokermon_art_type.mjs`, every form cell checked: Zygarde's three Formes Dragon, Hoopa Unbound Psychic). Art: upstream 3.9.1 cells with their souls
+(Yveltal Natdex {22,47}, Diancie {26,47}, Volcanion {0,48}; Zygarde 10% Gen 6 {2,11}, Hoopa {8,11}); the forms (`systems/anim.js`
+GEN6_LEGEND_FORMS: Zygarde 50% {4,11} and Complete {6,11}, Hoopa Unbound {10,11}, each with its soul) drawn by `ui.js` ownFace from each
+center's `poke_view_form`, read from the card's own counter; nothing to deploy.
+- **Yveltal** (Dark), Oblivion Wing: **at the end of each round, destroys 1 random card held in hand** (seeded `yveltal`; through
+  `poke_remove_card`, so Giratina / Spiritomb / every remove_playing_cards joker sees it) **and gains X0.25 Mult** (`oblivion_Xmult` from X1, no
+  energy field). Nothing held: nothing destroyed, no gain. Blueprint copies the X, never the destroy / gain. Energy `Xmult_mod` 0.25 -> 0.3 /
+  0.35 / 0.4 (future gains only).
+- **Zygarde** (Dragon), Cells: **+1 Cell for each card that scores** (counted once per hand in the `after` pass: a retrigger adds none, a debuffed
+  card none, Blueprint none; `cells` on the card, max 100; tooltip "(Cells: k/100)"). **10% Forme X1.5**; **50% Forme** (50 Cells) **X2.5**;
+  **Complete Forme** (100 Cells) **X4 and +1 hand size** (`complete_size`, fixed; given once on reaching it, taken back when sold / destroyed /
+  debuffed and given back un-debuffed, `complete_given`). The hand that collects the 50th / 100th Cell still pays the old Forme. Energy `Xmult`
+  1.5 -> 1.8 / 2.1 / 2.4, `Xmult1` 2.5 -> 3 / 3.5 / 4, `Xmult2` 4 -> 4.8 / 5.6 / 6.4.
+- **Diancie** (Fairy), Diamond Storm: **each scored Diamond** (is_suit: Wild counts) **earns $1** (`diamond_money`, fixed) **and gives X1.2**; **when a
+  Blind is selected, 1 random non-Diamond card of the full deck becomes a Diamond** (seeded `diancie`; never a Stone card; rank, enhancement,
+  seal and edition kept). Blueprint copies both (a second card converted). Energy `Xmult_multi` 1.2 -> 1.26 / 1.32 / 1.38.
+- **Hoopa** (Psychic), Hyperspace Hole: **at the end of each shop** (`ending_shop`) **creates a random Tarot or Planet** (the set seeded `hoopa`;
+  must have room, no room no roll); **after 15 consumables used while held** (`used`, any kind; not Blueprint; tooltip "(Used: k/15)") **Hoopa
+  Unbound for good**: its Unbound card, and a **Spectral** card instead. Blueprint copies the creation. No number: Energy-inert
+  (`poke_no_energy_field`; an Energy can't be used on it).
+- **Volcanion** (Fire), Steam Eruption: **+1 discard each round** (`d_size`, fixed; the Charmander pair) and **X2 Mult, plus X0.25 for each discard
+  used this round** (read when it scores). Energy `Xmult` 2 -> 2.4 / 2.8 / 3.2, `Xmult_mod` 0.25 -> 0.3 / 0.35 / 0.4.
+- **Wiki**: regenerated (the five drop off; their wiki sprites are gone from `designwiki/sprites/pokermon_jokers/`).
+- **Tests**: `micatro/tests/mods/pokermon_gen6_legendaries_test.mjs` (fails on main: no such jokers).
+
 ### Pending from the 3.9.1 joker rework (after batch 10b)
 Every existing joker is on 3.9.1: `rework_hold` (still on 3.2.1) is empty. What waits, by the batch it waits on (`rework_deferred` =
 on 3.9.1 but one part):

@@ -996,7 +996,9 @@ export const POKERMON = registerMod({
   // Swirlix / Slurpuff (Tarot bank, +1 consumable slot), Inkay / Malamar (Topsy-Turvy: the chip_bonus hook flips rank Chips), Binacle /
   // Barbaracle (7s), Skrelp / Dragalge (Hazard conversion), the Tyrunt and Amaura fossils (Ancient Kings / Queens), Hawlucha (Flying
   // Press), Klefki (Key Ring), Phantump / Trevenant (destroyed-card bank, Seeds), Bergmite / Avalugg and Noibat / Noivern (Glass 1 in 2).
-  contentRev: 62,
+  // 63 = Gen 6 batch 3, the Gen 6 Legendaries (jokers/pokejokers_designs.js, #717-721), each complete alone: Yveltal (Oblivion Wing),
+  // Zygarde (Cells: 10% / 50% / Complete Forme), Diancie (Diamond Storm), Hoopa (Hyperspace Hole; Unbound) and Volcanion (Steam Eruption).
+  contentRev: 63,
   // Pokermon 3.9.1 pokermon.lua: SMODS.current_mod.optional_features = {quantum_enhancements = true, object_weights = true}.
   // object_weights sends create_card's key, the shop roll, tags, packs, bosses and vouchers through SMODS.poll_object
   // (js/engine/smods.js; batch 17). quantum_enhancements is the engine's check_enhancement, always on.

@@ -92,6 +92,12 @@
 // Pirouette, Fighting, the first scored card retriggers 3 times; switching after every hand, Aria each round) and Genesect (Grass; X(1.5
 // + 0.5 per Water, Lightning or Fire Joker)) — upstream 3.9.1 draws them all with their souls and form cells (Natdex {14..18,42}, Gen 5
 // sheet {6,3}-{9,6}).
+// Gen 6, batch 3: the Gen 6 Legendaries (contentRev 63; the owner's "Yes", 2026-11-02), Legendary $20 each, each complete alone: Yveltal
+// (Dark; Oblivion Wing: each end of round destroys a random held card, +X0.25 banked), Zygarde (Dragon; Cells per scored card: 10% Forme
+// X1.5, 50% at 50 Cells X2.5, Complete at 100 X4 and +1 hand size), Diancie (Fairy; Diamond Storm: scored Diamonds $1 and X1.2, a deck card
+// becomes a Diamond each Blind), Hoopa (Psychic; Hyperspace Hole: a Tarot or Planet at the end of each shop, Unbound after 15 consumables
+// used: a Spectral instead) and Volcanion (Fire; +1 discard; X2 + X0.25 per discard used this round) — upstream 3.9.1 draws them all with
+// their souls and form cells (Natdex {22,47} / {26,47} / {0,48}; Gen 6 sheet {2,11}-{11,11}).
 // The Gen 8 starters (contentRev 49; the starters spec): Scorbunny -> Raboot -> Cinderace (Fire, +1 discard; +3 / +5 Mult per discard left,
 // then Libero X(1 + 0.5 per discard left)) and Sobble -> Drizzile -> Inteleon (Water, +1 hand; +20 / +35 Chips per played card that doesn't
 // score, then Snipe Shot X2 on the highest-ranked scored card) — upstream 3.9.1 draws them (Natdex 4-14, 54).
@@ -1704,6 +1710,105 @@ const techno_joker = (j) => !j.debuff && (is_type(j, 'Water') || is_type(j, 'Lig
 export const techno_count = (card) => ((G.jokers && G.jokers.cards) || []).filter((j) => j !== card && techno_joker(j)).length + (techno_joker(card) ? 1 : 0);
 const techno_x = (card) => r9(card.ability.extra.Xmult + card.ability.extra.Xmult_mod * techno_count(card));
 
+// ---------------------------------------------------------------- Gen 6, batch 3: the Gen 6 Legendaries (contentRev 63; 717-721)
+/** Yveltal, Oblivion Wing: at the end of each round (the main end_of_round pass; not Blueprint, not a joker retrigger, not on a game
+ *  over) 1 random card HELD in hand (the run's seeded stream, seed 'yveltal'; a card already being destroyed this pass — Gulpin's
+ *  swallow — is skipped) is destroyed through Pokermon's poke_remove_card (dissolved / shattered, and every joker's remove_playing_cards
+ *  runs: Giratina, Spiritomb, Phantump... see it), then the bank `oblivion_Xmult` (from X1, no energy field: never retroactive) gains
+ *  `Xmult_mod`. Nothing held, nothing destroyed and nothing gained. */
+function oblivion_wing(card, context) {
+  if (!round_end(context) || context.blueprint || context.retrigger_joker || context.game_over) return false;
+  const held = ((G.hand && G.hand.cards) || []).filter((c) => unbroken(c) && !c.poke_swallowed);
+  if (!held.length) return true;
+  const [target] = pseudorandom_element(held, pseudoseed('yveltal'));
+  target.poke_swallowed = true;
+  poke_remove_card(target, card);
+  const ex = card.ability.extra;
+  ex.oblivion_Xmult = r9(ex.oblivion_Xmult + ex.Xmult_mod);
+  card_eval_status_text(card, 'extra', null, null, null, { message: a_xmult(r3(ex.oblivion_Xmult)), colour: 'XMULT' });
+  return true;
+}
+/** Zygarde, Cells: the Formes by the Cells collected on the card (`cells`, at most ZYGARDE_COMPLETE). */
+export const ZYGARDE_HALF = 50, ZYGARDE_COMPLETE = 100;
+export const zygarde_form = (card) => { const n = card.ability.extra.cells || 0; return n >= ZYGARDE_COMPLETE ? 'complete' : n >= ZYGARDE_HALF ? 'half' : 'ten'; };
+export const ZYGARDE_FORMES = { ten: { name: '10% Forme', field: 'Xmult' }, half: { name: '50% Forme', field: 'Xmult1' }, complete: { name: 'Complete Forme', field: 'Xmult2' } };
+const zygarde_x = (card) => card.ability.extra[ZYGARDE_FORMES[zygarde_form(card)].field];
+/** Complete Forme's +hand size (`complete_size`, fixed): given while a Complete Zygarde is held (undebuffed) — on reaching 100 Cells, or
+ *  when a Complete one is gained / un-debuffed — and taken back when it leaves or is debuffed (Juggler's way; `complete_given` remembers
+ *  that it was given, so it is never given or taken twice). */
+function zygarde_give(card) {
+  const ex = card.ability.extra;
+  if (ex.complete_given || zygarde_form(card) !== 'complete') return;
+  ex.complete_given = true;
+  G.hand.change_size(ex.complete_size);
+}
+const zygarde_size = {
+  add_to_deck(self, card) { card.ability.extra.complete_given = false; zygarde_give(card); },
+  remove_from_deck(self, card) {
+    const ex = card.ability.extra;
+    if (!ex.complete_given) return;
+    ex.complete_given = false;
+    G.hand.change_size(-ex.complete_size);
+  },
+};
+/** Cells: after each hand (the `after` pass, once: not Blueprint, not a joker retrigger, so a retriggered card adds 1 like any other),
+ *  +1 Cell per card that scored (the scoring hand, a debuffed card left out: it didn't score), up to 100. Reaching 50 / 100 changes the
+ *  Forme (from the next hand: the hand that collects them still scores at the old one) and the art; 100 also gives the +1 hand size. */
+function zygarde_cells(card, context) {
+  if (!context.after || context.blueprint || context.retrigger_joker) return false;
+  const ex = card.ability.extra, was = zygarde_form(card);
+  const n = ((context.scoring_hand) || []).filter((c) => !c.debuff).length;
+  ex.cells = Math.min(ZYGARDE_COMPLETE, (ex.cells || 0) + n);
+  const now = zygarde_form(card);
+  if (now !== was) {
+    zygarde_give(card);
+    card_eval_status_text(card, 'extra', null, null, null, { message: ZYGARDE_FORMES[now].name + '!', colour: 'GREEN' });
+  }
+  return true;
+}
+/** Diancie, Diamond Storm: when a Blind is selected, 1 random card of the full deck that is not a Diamond (is_suit with the debuff
+ *  bypassed: a Wild card already is one) and not a Stone card (no suit to change) becomes a Diamond (the run's seeded stream, seed
+ *  'diancie'); its rank, enhancement, seal and edition stay. None left, nothing. Blueprint copies it (a second card). */
+function diamond_storm(card, context) {
+  if (!context.setting_blind || card.getting_sliced || (context.blueprint_card && context.blueprint_card.getting_sliced)) return false;
+  const pool = (G.playing_cards || []).filter((c) => unbroken(c) && !has_enhancement(c, 'm_stone') && !c.is_suit('Diamonds', true));
+  if (!pool.length) return true;
+  const [pick] = pseudorandom_element(pool, pseudoseed('diancie'));
+  pick.change_suit('Diamonds');
+  card_eval_status_text(context.blueprint_card || card, 'extra', null, null, null, { message: '+1 Diamond', colour: 'MONEY' });
+  return true;
+}
+/** Hoopa, Hyperspace Hole: Unbound for good once HOOPA_AT (15) consumables have been used while it was held (`used`, on the card; any
+ *  consumable, Energy included; not Blueprint). */
+export const HOOPA_AT = 15;
+export const hoopa_unbound = (card) => (card.ability.extra.used || 0) >= HOOPA_AT;
+function hoopa_count(card, context) {
+  if (!context.using_consumeable || context.blueprint || hoopa_unbound(card)) return false;
+  const ex = card.ability.extra;
+  ex.used = (ex.used || 0) + 1;
+  if (hoopa_unbound(card)) card_eval_status_text(card, 'extra', null, null, null, { message: 'Unbound!', colour: 'PURPLE' });
+  return true;
+}
+/** At the end of each shop (ending_shop), with a consumable slot free NOW (cards + pending creations < limit; none, nothing — no roll),
+ *  creates a random Tarot or Planet (Confined: the set is seeded 'hoopa', the card from that set's own pool), or once Unbound a random
+ *  Spectral card. Blueprint copies it (a second card, room permitting). */
+function hyperspace_hole(card, context) {
+  if (!context.ending_shop) return false;
+  if (G.consumeables.cards.length + (G.GAME.consumeable_buffer || 0) >= G.consumeables.config.card_limit) return true;
+  const set = hoopa_unbound(card) ? 'Spectral' : pseudorandom_element(['Tarot', 'Planet'], pseudoseed('hoopa'))[0];
+  G.GAME.consumeable_buffer = (G.GAME.consumeable_buffer || 0) + 1;
+  G.E_MANAGER.add_event(() => {
+    const c = create_card(set, G.consumeables, null, null, null, null, null, 'hoopa');
+    c.add_to_deck();
+    G.consumeables.emplace(c);
+    G.GAME.consumeable_buffer = 0;
+  });
+  card_eval_status_text(context.blueprint_card || card, 'extra', null, null, null, { message: localize(set === 'Spectral' ? 'k_plus_spectral' : set === 'Tarot' ? 'k_plus_tarot' : 'k_plus_planet'), colour: set === 'Tarot' ? 'PURPLE' : set });
+  return true;
+}
+/** Volcanion, Steam Eruption: X(`Xmult` + `Xmult_mod` per discard used this round), read when it scores (a discard before the hand counts). */
+const steam_x = (card) => r9(card.ability.extra.Xmult + card.ability.extra.Xmult_mod * discards_used());
+
 // ---------------------------------------------------------------- the Gen 7 starters (Rowlet / Litten / Popplio lines)
 /** Rowlet line: the RIGHTMOST scored card (by position, as the Shellos line's East Sea: a debuffed card there gets nothing, the end
  *  never shifts inward; a 1-card hand's card is it). */
@@ -3261,6 +3366,111 @@ defineJokers({
     },
   },
 
+  // ---------------------------------------------------------------- Gen 6, batch 3: the Gen 6 Legendaries, 717-721 (contentRev 63)
+  // The owner's design ("Yes", 2026-11-02). Legendary $20 each (The Soul / the Legendary pool); each complete ALONE (the owner's solo
+  // rule, contentRev 59: no partner clause). Types from the card art (pokermon_art_type.mjs; every form cell checked): Yveltal Dark,
+  // Zygarde Dragon (10% / 50% / Complete cells all Dragon), Diancie Fairy, Hoopa Psychic (its Unbound cell Psychic too), Volcanion Fire.
+  // Neither Nacho nor Pokermon+ has any. Art: upstream 3.9.1's own cells with their floating souls (Yveltal / Diancie / Volcanion the
+  // Natdex sheet {22,47} / {26,47} / {0,48}; Zygarde 10% {2,11}, Hoopa {8,11} the Gen 6 sheet), the forms (Zygarde 50% {4,11} and
+  // Complete {6,11}, Hoopa Unbound {10,11}) drawn live by ui.js ownFace (systems/anim.js GEN6_LEGEND_FORMS) from each center's
+  // poke_view_form. After Xerneas (716) in Pokédex order.
+  //
+  // Yveltal 717 (Dark), Oblivion Wing: at the end of each round, destroys 1 random card held in hand (seeded; every joker's
+  // remove_playing_cards sees it) and gains X0.25 Mult (`oblivion_Xmult` from X1, no energy field; the gain `Xmult_mod` +20%: 0.3 / 0.35
+  // / 0.4, never retroactive). Nothing held, nothing. Blueprint copies the X, never the destroy or the gain.
+  yveltal: {
+    name: 'yveltal', poke_sprite391: sprite('Natdex', 22, 47, [23, 47]),
+    config: { extra: { oblivion_Xmult: 1, Xmult_mod: 0.25 } },
+    rarity: 4, cost: 20, stage: 'Legendary', ptype: 'Dark', gen: 6, blueprint_compat: true,
+    attributes: ['xmult', 'scaling', 'destroy_card'], poke_after: 'xerneas',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.oblivion_Xmult), r3(ex.Xmult_mod)] }; },
+    calculate(self, card, context) {
+      if (oblivion_wing(card, context)) return undefined;
+      const ex = card.ability.extra;
+      if (context.joker_main && ex.oblivion_Xmult > 1) return { message: a_xmult(r3(ex.oblivion_Xmult)), colour: 'XMULT', Xmult_mod: ex.oblivion_Xmult };
+      return undefined;
+    },
+  },
+  // Zygarde 718 (Dragon), Cells: +1 Cell for each card that scores while it is held (counted once per hand, after it scores: a retrigger
+  // doesn't add one, nor Blueprint; `cells` on the card, at most 100). 10% Forme X1.5 (`Xmult` +20%: 1.8 / 2.1 / 2.4); 50% Forme from 50
+  // Cells X2.5 (`Xmult1`: 3 / 3.5 / 4); Complete Forme from 100 Cells X4 (`Xmult2`: 4.8 / 5.6 / 6.4) and +1 hand size (`complete_size`,
+  // fixed: given on reaching it, taken back when sold, destroyed or debuffed). The Forme is for good (the Cells never drop) and its art
+  // shows (poke_view_form). Blueprint copies the X.
+  zygarde: {
+    name: 'zygarde', poke_sprite391: sprite('Gen06', 2, 11, [3, 11]),
+    config: { extra: { Xmult: 1.5, Xmult1: 2.5, Xmult2: 4, complete_size: 1, cells: 0 } },
+    rarity: 4, cost: 20, stage: 'Legendary', ptype: 'Dragon', gen: 6, blueprint_compat: true,
+    attributes: ['xmult', 'scaling', 'hand_size'], poke_after: 'yveltal',
+    poke_view_form(self, card) { return zygarde_form(card); },
+    loc_vars(self, info_queue, card) {
+      type_tooltip(self, info_queue, card);
+      const ex = card.ability.extra;
+      return { vars: [Math.min(ZYGARDE_COMPLETE, ex.cells || 0), r3(ex.Xmult), r3(ex.Xmult1), r3(ex.Xmult2), ex.complete_size, ZYGARDE_FORMES[zygarde_form(card)].name] };
+    },
+    calculate(self, card, context) {
+      if (zygarde_cells(card, context)) return undefined;
+      if (context.joker_main) { const x = zygarde_x(card); return { message: a_xmult(r3(x)), colour: 'XMULT', Xmult_mod: x }; }
+      return undefined;
+    },
+    ...zygarde_size,
+  },
+  // Diancie 719 (Fairy), Diamond Storm: each scored Diamond (is_suit: Wild cards count) earns $1 (`diamond_money`, fixed) and gives X1.2
+  // Mult (`Xmult_multi` +5%: 1.26 / 1.32 / 1.38). When a Blind is selected, 1 random non-Diamond card of the full deck (seeded; never a
+  // Stone card) becomes a Diamond, keeping its rank, enhancement, seal and edition. Blueprint copies both.
+  diancie: {
+    name: 'diancie', poke_sprite391: sprite('Natdex', 26, 47, [27, 47]),
+    config: { extra: { Xmult_multi: 1.2, diamond_money: 1 } },
+    rarity: 4, cost: 20, stage: 'Legendary', ptype: 'Fairy', gen: 6, blueprint_compat: true,
+    attributes: ['xmult', 'money', 'suit', 'diamonds', 'playing_card'], poke_after: 'zygarde',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [ex.diamond_money, r3(ex.Xmult_multi)] }; },
+    calculate(self, card, context) {
+      if (diamond_storm(card, context)) return undefined;
+      if (context.individual && context.cardarea === G.play && !context.end_of_round && context.other_card.is_suit('Diamonds')) {
+        const ex = card.ability.extra;
+        G.GAME.dollar_buffer = (G.GAME.dollar_buffer || 0) + ex.diamond_money;
+        G.E_MANAGER.add_event(() => { G.GAME.dollar_buffer = 0; });
+        return { dollars: ex.diamond_money, x_mult: ex.Xmult_multi, card };
+      }
+      return undefined;
+    },
+  },
+  // Hoopa 720 (Psychic), Hyperspace Hole: at the end of each shop, creates a random Tarot or Planet card (must have room). After 15
+  // consumables used while it is held (`used`, on the card; any consumable; not Blueprint), Hoopa Unbound for good: its Unbound card shows
+  // (Psychic too) and it creates a random Spectral card instead. No number: Energy-inert (poke_no_energy_field). Blueprint copies the creation.
+  hoopa: {
+    name: 'hoopa', poke_sprite391: sprite('Gen06', 8, 11, [9, 11]),
+    config: { extra: { used: 0 } },
+    rarity: 4, cost: 20, stage: 'Legendary', ptype: 'Psychic', gen: 6, blueprint_compat: true,
+    attributes: ['generation', 'tarot', 'planet', 'spectral'], poke_after: 'diancie',
+    poke_no_energy_field: true,
+    poke_view_form(self, card) { return hoopa_unbound(card) ? 'unbound' : 'confined'; },
+    loc_vars(self, info_queue, card) {
+      type_tooltip(self, info_queue, card);
+      return { vars: [hoopa_unbound(card) ? 'Hoopa Unbound' : 'Used: ' + Math.min(HOOPA_AT, card.ability.extra.used || 0) + '/' + HOOPA_AT] };
+    },
+    calculate(self, card, context) {
+      hoopa_count(card, context);
+      hyperspace_hole(card, context);
+      return undefined;
+    },
+  },
+  // Volcanion 721 (Fire), Steam Eruption: +1 discard each round (`d_size`, fixed; the Charmander line's pair). X2 Mult, plus X0.25 for each
+  // discard used this round (current_round.discards_used, read when it scores; it resets each round). `Xmult` +20% (2.4 / 2.8 / 3.2),
+  // `Xmult_mod` +20% (0.3 / 0.35 / 0.4). Blueprint copies the X.
+  volcanion: {
+    name: 'volcanion', poke_sprite391: sprite('Natdex', 0, 48, [1, 48]),
+    config: { extra: { d_size: 1, Xmult: 2, Xmult_mod: 0.25 } },
+    rarity: 4, cost: 20, stage: 'Legendary', ptype: 'Fire', gen: 6, blueprint_compat: true,
+    attributes: ['xmult', 'discards'], poke_after: 'hoopa',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [ex.d_size, r3(ex.Xmult), r3(ex.Xmult_mod), r3(steam_x(card))] }; },
+    calculate(self, card, context) {
+      if (!context.joker_main) return undefined;
+      const x = steam_x(card);
+      return { message: a_xmult(r3(x)), colour: 'XMULT', Xmult_mod: x };
+    },
+    ...discards,
+  },
+
   // ---------------------------------------------------------------- the Gen 7 starters (contentRev 48)
   // The owner's "build" (2026-10-28, the Gen 5-9 starters spec). Pokermon's starter rules: the type perk at every stage (Grass +1 hand
   // size like Bulbasaur, Fire +1 discard like Charmander, Water +1 hand like Squirtle; fixed, never Energy), Basic Uncommon $5 with the
@@ -3272,7 +3482,7 @@ defineJokers({
     name: 'rowlet', poke_sprite391: sprite('Natdex', 2, 48),
     config: { extra: { h_size: 1, retriggers: 1, Xmult_multi: 1.3, rounds: 5 } },
     rarity: 2, cost: 5, stage: 'Basic', ptype: 'Grass', gen: 7, blueprint_compat: true, starter: true,
-    attributes: ['starter', 'hand_size', 'retrigger', 'position', 'round_evo'], poke_after: 'xerneas',
+    attributes: ['starter', 'hand_size', 'retrigger', 'position', 'round_evo'], poke_after: 'volcanion',
     loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [ex.h_size, ex.retriggers, ex.rounds, r3(ex.Xmult_multi)] }; },
     calculate(self, card, context) { return shackle_calc(card, context) || level_evo(self, card, context, 'j_poke_dartrix'); },
     ...hand_size,
@@ -7134,6 +7344,26 @@ export const DESIGN_LOC = {
     j_poke_xerneas: { name: 'Xerneas', text: [
       ['{C:attention}Geomancy:{} after the first hand', 'of each round, played cards give', '{X:mult,C:white} X#1# {} Mult when scored', '{C:inactive}(#2#)'],
       ['The first playing card destroyed', 'each round returns to your hand', 'as a copy'],
+    ] },
+    j_poke_yveltal: { name: 'Yveltal', text: [
+      '{C:attention}Oblivion Wing:{} at the end of', 'each round, destroys a random', 'card held in hand and gains', '{X:mult,C:white} X#2# {} Mult',
+      '{C:inactive}(Currently {X:mult,C:white} X#1# {C:inactive} Mult)'] },
+    j_poke_zygarde: { name: 'Zygarde', text: [
+      ['{C:attention}Cells:{} collects {C:attention}1{} Cell for', 'each scored card', '{C:inactive}(Cells: #1#/100)'],
+      ['{C:attention}10% Forme:{} {X:mult,C:white} X#2# {} Mult', '{C:attention}50% Forme{} {C:inactive}(50 Cells){}: {X:mult,C:white} X#3# {} Mult', '{C:attention}Complete Forme{} {C:inactive}(100 Cells){}:',
+        '{X:mult,C:white} X#4# {} Mult and {C:attention}+#5#{} hand size', '{C:inactive}(Currently #6#)'],
+    ] },
+    j_poke_diancie: { name: 'Diancie', text: [
+      ['{C:attention}Diamond Storm:{} each scored', '{C:diamonds}Diamond{} earns {C:money}$#1#{} and', 'gives {X:mult,C:white} X#2# {} Mult'],
+      ['When a {C:attention}Blind{} is selected,', 'a random non-{C:diamonds}Diamond{} card', 'in your deck becomes', 'a {C:diamonds}Diamond{}'],
+    ] },
+    j_poke_hoopa: { name: 'Hoopa', text: [
+      ['{C:attention}Hyperspace Hole:{} at the end', 'of each shop, creates a random', '{C:tarot}Tarot{} or {C:planet}Planet{} card', '{C:inactive}(Must have room)'],
+      ['After {C:attention}15{} consumables are used', 'while you have it, becomes', '{C:attention}Hoopa Unbound{} for good and', 'creates a {C:spectral}Spectral{} card instead', '{C:inactive}(#1#)'],
+    ] },
+    j_poke_volcanion: { name: 'Volcanion', text: [
+      ['{C:red}+#1#{} discard each round'],
+      ['{C:attention}Steam Eruption:{} {X:mult,C:white} X#2# {} Mult,', 'plus {X:mult,C:white} X#3# {} for each', 'discard used this round', '{C:inactive}(Currently {X:mult,C:white} X#4# {C:inactive} Mult)'],
     ] },
     j_poke_rowlet: { name: 'Rowlet', text: ['{C:attention}+#1#{} hand size', 'Retrigger the {C:attention}rightmost{}', 'scored card', '{C:inactive,s:0.8}(Energy carries to Decidueye)', EVOLVES_ROUNDS(3)] },
     j_poke_dartrix: { name: 'Dartrix', text: ['{C:attention}+#1#{} hand size', 'Retrigger the {C:attention}rightmost{}', 'scored card {C:attention}#2#{} times', '{C:inactive,s:0.8}(Energy carries to Decidueye)', EVOLVES_ROUNDS(3)] },
