@@ -69,10 +69,10 @@ try {
 	await waitFor(() => page.evaluate(() => !!(G.DB.save.owned[94])), 8000);
 	const r1 = await page.evaluate(() => {
 		const o = G.DB.save.owned, from = d => o[d] && o[d].from;
-		return { starters: G.STARTERS.map(s => s.dex).concat([172]).filter(d => !o[d]), extras: [54, 79, 172].filter(d => !o[d] || o[d].from !== 'starter' && o[d].from !== 'gacha'), nStarters: G.STARTERS.length, s1: from(1), gengar: from(94), raichu: from(26), squirtle: from(7), mew: !!o[151], gastly: !!o[92], haunter: !!o[93], pichu: !!o[172], toast: document.body.innerText.includes('from the overworld unlocked') };
+		return { starters: G.STARTERS.map(s => s.dex).concat([172]).filter(d => !o[d]), extras: [54, 79, 172].filter(d => !o[d] || o[d].from !== 'starter' && o[d].from !== 'gacha'), nStarters: G.STARTERS.length, s1: from(1), gengar: from(94), raichu: from(10100), raichu26: !!o[26], squirtle: from(7), mew: !!o[151], gastly: !!o[92], haunter: !!o[93], pichu: !!o[172], toast: document.body.innerText.includes('from the overworld unlocked') };
 	});
 	A(r1.nStarters === 29 && r1.starters.length === 0 && r1.extras.length === 0 && r1.s1 === 'starter', 'the main menu: every starter pick is free for all (the 27 trios, Psyduck, Slowpoke) and Pichu', JSON.stringify(r1));
-	A(r1.gengar === 'overworld' && r1.raichu === 'overworld', 'the overworld\'s caught Pokémon join the collection (Gengar; Alolan Raichu as Raichu)', JSON.stringify(r1));
+	A(r1.gengar === 'overworld' && r1.raichu === 'overworld' && !r1.raichu26, 'the overworld\'s caught Pokémon join the collection (Gengar; U3: Alolan Raichu as its own entry 10100, not Raichu)', JSON.stringify(r1));
 	A(r1.squirtle === 'starter' && !r1.mew, 'already unlocked stays as it was (Squirtle, a starter); a species only SEEN there is not unlocked (Mew)', JSON.stringify(r1));
 	A(!r1.gastly && !r1.haunter, 'only that species: Gengar caught leaves Gastly and Haunter locked', JSON.stringify(r1));
 	// Expedition: the League plays the Gastly family only as Gengar; an evolution and a catch unlock their species
@@ -89,7 +89,7 @@ try {
 		const n = G.Unlocks.expedition();
 		out.merge = [n >= 1, !!G.DB.save.owned[2], !!G.DB.save.owned[3]];
 		// Survival's picker reads the same collection
-		out.owns = [94, 26, 2, 5].every(d => G.DB.owns(d));
+		out.owns = [94, 10100, 2, 5].every(d => G.DB.owns(d));
 		return out;
 	});
 	A(r2.family === 92 && r2.playable && JSON.stringify(r2.open) === '[false,false,true]' && r2.start === 94, 'Expedition / Dive: the Gastly family plays only AS Gengar (the one unlocked)', JSON.stringify(r2));

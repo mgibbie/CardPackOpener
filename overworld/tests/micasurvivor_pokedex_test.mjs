@@ -101,7 +101,7 @@ for (const f of ['js/data/pokedex.js', 'js/data/sprites-meta.js']) vm.runInConte
 	for (let d = 1; d <= 1025; d++) { if (!have.has(d) && !pend.has(d)) missing.push(d); if (have.has(d) && pend.has(d)) both.push(d); }
 	A(missing.length === 0 && both.length === 0 && G.DEX.length === 1025 && PENDING_ART.length === 0 && have.size === 1025,
 		`every dex 1..1025 is in the game (${G.DEX.length}), none pending (${PENDING_ART.length})`, JSON.stringify({ missing: missing.slice(0, 10), both }));
-	const noMeta = G.DEX.filter(p => !G.SPRITE_META[p.dex]).map(p => p.dex), orphan = Object.keys(G.SPRITE_META).map(Number).filter(d => !have.has(d));
+	const noMeta = G.DEX.filter(p => !G.SPRITE_META[p.dex]).map(p => p.dex), orphan = Object.keys(G.SPRITE_META).map(Number).filter(d => !have.has(d) && d <= 10000);   // (U3: the rows > 10000 are the formes and Megas: micasurvivor_coverage_test)
 	A(noMeta.length === 0 && orphan.length === 0, 'the Pokédex and sprites-meta.js list exactly the same Pokémon (fetch_pokedex.py follows fetch_sprites.py)', JSON.stringify({ noMeta, orphan }));
 	A(NEW_DEX.every(d => have.has(d)) && BATTLE_DEX.every(d => have.has(d) && G.SPRITE_META[d]), 'the 17 new Pokémon of B1 and the 18 of B1c are in, with sprite meta');
 	const rar = p => (p.leg || p.bst >= 580 ? 5 : p.bst >= 495 ? 4 : p.bst >= 410 ? 3 : p.bst >= 320 ? 2 : 1);
@@ -119,15 +119,15 @@ for (const f of ['js/data/pokedex.js', 'js/data/sprites-meta.js']) vm.runInConte
 	const uncredited = NEW_DEX.filter(d => !rows.some(r => r.includes(d)));
 	A(uncredited.length === 0, 'every new sheet has its SpriteCollab artist(s) in CREDITS.md (CC BY-NC 4.0 attribution; the in-game Credits screen reads it)', JSON.stringify(uncredited));
 	// one-frame Walk sheets (the partial ones the FALLBACK table filled from a one-frame Idle) are only new Pokémon
-	const oneWalk = Object.entries(G.SPRITE_META).filter(([, m]) => m.a.Walk && m.a.Walk.n === 1).map(([d]) => +d);
+	const oneWalk = Object.entries(G.SPRITE_META).filter(([d, m]) => +d <= 1025 && m.a.Walk && m.a.Walk.n === 1).map(([d]) => +d);
 	A(oneWalk.length === 8 + 18 && oneWalk.every(d => NEW_DEX.includes(d) || BATTLE_DEX.includes(d)) && BATTLE_DEX.every(d => oneWalk.includes(d)),
 		'the one-frame Walk sheets (which get the walking hop) are all new ones (B1\'s 8 + B1c\'s 18), so the 966 draw as before', oneWalk.join(', '));
 
 	// ---- B1b: the 24 follower-based rows
-	const fol = Object.entries(G.SPRITE_META).filter(([, m]) => m.src === 'follow').map(([d]) => +d);
-	const anySrc = Object.entries(G.SPRITE_META).filter(([, m]) => m.src).map(([d]) => +d);
+	const fol = Object.entries(G.SPRITE_META).filter(([d, m]) => +d <= 1025 && m.src === 'follow').map(([d]) => +d);
+	const anySrc = Object.entries(G.SPRITE_META).filter(([d, m]) => +d <= 1025 && m.src).map(([d]) => +d);
 	A(JSON.stringify(fol) === JSON.stringify(FOLLOW_DEX) && FOLLOW_DEX.every(d => G.DEX_BY[d]) && anySrc.length === 24 + 18,
-		`exactly the 24 B1b Pokémon have a follower fallback row (src "follow") and a Pokédex row, the 18 of B1c a battle one; the other ${Object.keys(G.SPRITE_META).length - 42} are SpriteCollab's`, JSON.stringify(fol));
+		`exactly the 24 B1b Pokémon have a follower fallback row (src "follow") and a Pokédex row, the 18 of B1c a battle one; the other ${Object.keys(G.SPRITE_META).filter(d => +d <= 1025).length - 42} are SpriteCollab's`, JSON.stringify(fol));
 	const badRow = FOLLOW_DEX.filter(d => {
 		const m = G.SPRITE_META[d], I = m.a.Idle, W = m.a.Walk;
 		return !(m.k >= 1 && m.k <= 1.6) || JSON.stringify(m.dm) !== '[0,1,1,1,2,3,3,3]' || JSON.stringify(Object.keys(m.a)) !== '["Idle","Walk"]'
@@ -145,7 +145,7 @@ for (const f of ['js/data/pokedex.js', 'js/data/sprites-meta.js']) vm.runInConte
 	A(rows.length > 100 && credits.includes('| CHUNSOFT | https://www.spike-chunsoft.com/ | 1, 2, 3,'), 'the SpriteCollab artist table is still there as it was');
 
 	// ---- B1c: the 18 battle-sprite rows
-	const bat = Object.entries(G.SPRITE_META).filter(([, m]) => m.src === 'battle').map(([d]) => +d);
+	const bat = Object.entries(G.SPRITE_META).filter(([d, m]) => +d <= 1025 && m.src === 'battle').map(([d]) => +d);
 	A(JSON.stringify(bat) === JSON.stringify(BATTLE_DEX) && BATTLE_DEX.every(d => G.DEX_BY[d]),
 		'exactly the 18 B1c Pokémon have a battle-sprite fallback row (src "battle") and a Pokédex row', JSON.stringify(bat));
 	const badB = BATTLE_DEX.filter(d => {
@@ -178,7 +178,7 @@ else {
 	let files = 0; const bad = [];
 	for (const [d, m] of Object.entries(G.SPRITE_META)) {
 		const check = (anim, g, shiny) => {
-			const f = path.join(MSA, 'assets/pokemon', d, m.src || '', shiny ? 's' : '', anim + '.png');
+			const f = path.join(MSA, 'assets/pokemon', String(m.al || d), m.src || '', shiny ? 's' : '', anim + '.png');   // (U3: an alias row draws its species' sheets)
 			if (!fs.existsSync(f)) { bad.push(`${d}/${shiny ? 's/' : ''}${anim} missing`); return; }
 			files++;
 			const s = pngSize(f);
@@ -680,7 +680,7 @@ try {
 		const ach = await E(legs => legs.map(d => !!G.AchDefs.LIST.find(a => a.dex === d)), [...NEW_LEG, ...FOLLOW_LEG, ...BATTLE_LEG]);
 		A(ach.every(Boolean), 'each new legendary (Zarude, Wo-Chien, Chien-Pao, Okidogi too) gets its "defeat" achievement like the others (achievements.js)', JSON.stringify(ach));
 		const pools = await E(legs => ({ judg: legs.every(d => G.DEX.filter(p => p.leg && p.dex !== 493 && G.SPRITE_META[p.dex]).some(p => p.dex === d)), total: G.AchDefs.LIST.length }), BATTLE_LEG);
-		A(pools.judg && pools.total === 230, `they are in the legend pools the Judgment and the Tower draw from (leg + sprite meta), and the achievements are 230 (227 + 3)`, JSON.stringify(pools));
+		A(pools.judg && pools.total === 233, `they are in the legend pools the Judgment and the Tower draw from (leg + sprite meta), and the achievements are 233 (227 + 3, + U3's 3 Galarian birds)`, JSON.stringify(pools));
 	}
 
 	// ---- the Lexicon: each new Pokémon's entry opens, in English
@@ -711,7 +711,7 @@ try {
 		const bad = res.filter(x => !x.card || !x.shown || x.key !== 'p:' + x.d || x.h !== ALL[x.d] || !/Ability/.test(x.text) || /[¡¿ñ]|Habilidad|Rareza/.test(x.text));
 		A(bad.length === 0 && res.length === 59, 'the Lexicon entry of each of the 17 + 24 + 18 opens, titled with its English name, in English', JSON.stringify(bad.slice(0, 4).map(x => [x.d, x.card, x.shown, x.key, x.h])));
 		const cnt = await E(() => { const L = G.LexiconUI, g0 = L.gen; let n = 0; for (let g = 1; g <= 9; g++) { L.gen = g; n += L.entries('p').length; } L.gen = g0; return n; });
-		A(cnt === 1025, `the Lexicon lists all ${cnt} Pokémon`);
+		A(cnt === 1025 + 58, `the Lexicon lists all ${cnt} Pokémon (U3: the 1,025 species + the 58 regional formes)`);
 	}
 
 	const missing = notFound.filter(u => !(u.startsWith('/micasurvivor/assets/') && !ASSETS));

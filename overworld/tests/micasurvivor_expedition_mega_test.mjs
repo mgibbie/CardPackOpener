@@ -48,7 +48,7 @@ const T0 = Date.now();
 	const ctx = { G: {}, console };
 	vm.createContext(ctx);
 	let ok = true;
-	try { for (const f of ['js/data/pokedex.js', 'js/expedition/league-data.js', 'js/expedition/mega-data.js']) vm.runInContext(fs.readFileSync(path.join(MROOT, 'micasurvivor', f), 'utf8'), ctx, { filename: f }); } catch (e) { ok = false; }
+	try { for (const f of ['js/data/pokedex.js', 'js/expedition/league-data.js', 'js/data/mega-data.js']) vm.runInContext(fs.readFileSync(path.join(MROOT, 'micasurvivor', f), 'utf8'), ctx, { filename: f }); } catch (e) { ok = false; }
 	const MD = ctx.G.EXP_MEGA_DATA, L = ctx.G.EXP_LEAGUE_DATA;
 	A(ok && Array.isArray(MD), 'mega-data.js loads (the generated Megas)');
 	if (MD) {

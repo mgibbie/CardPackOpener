@@ -2871,7 +2871,7 @@ achievements), `core.js` (dv 12).
 
 **Owner decision #10, "include Mega Evolution in 1.0"**, as the study's late-run power spike (5.5), on the owner's roster rule (every
 species that can Mega Evolve is in the League: "Mega at the capable stage"). The code is `js/expedition/mega.js` (`G.ExpMega`:
-the data, the look) and `league.js` (`megaCards` / `megaEvolve`); the data is `js/expedition/mega-data.js`, **generated** by
+the data, the look) and `league.js` (`megaCards` / `megaEvolve`); the data is `js/data/mega-data.js`, **generated** by
 `node tools/micasurvivor/gen_megas.mjs` from PokéAPI's `-mega` varieties (cached in `tools/micasurvivor/megas_pokeapi.json`;
 `--fetch` refreshes it). Base modes are unchanged: the D0a fixtures pass as recorded, also with the Expedition code force-loaded.
 
@@ -3333,6 +3333,29 @@ The last category / variant / players are remembered (`micasurvivor_playflow`). 
 `css/mx.css`: Micatro's tokens, font, lipped buttons and panels, red tabs and arrow carousel, ported and scoped under
 `#scr-play` (mx- classes; never `.card`). "Game modes" stays on the menu for now. Test:
 `overworld/tests/micasurvivor_playflow_test.mjs`.
+
+## U3: the coverage sweep (regional formes, Megas, every mode)
+
+`Plans/MICASURVIVOR_UNIFIED_PLAN.md` U3 (owner decisions 2 and 3). Every id stays an integer, PokéAPI's:
+- **Regional formes** (58: Alolan 18, Galarian 20 with Zen Galarian Darmanitan, Hisuian 16, Paldean 4) are entries of their
+  own: `js/data/forms.js` (GENERATED, `node tools/micasurvivor/gen_forms.mjs [--fetch]`) appends them to `G.DEX` after the
+  1,025 (ids 10091-10253), with their own types / stats, their region's gen (the gacha banner), `G.FAMILY` = their species'
+  family, and `from` / `lv` (they evolve in their own line; Pikachu branches to Alolan Raichu; Galarian Meowth -> Perrserker,
+  `G.FORM_INTO`). The overworld's `raichu_alola` etc. unlock the forme itself (`js/data/ow-species.js`). The League learns
+  them as stages of the base family (`G.Forms.patchLeague`: `alt` stages and `evo` entries), so the picker, Expedition and
+  Dive start AS a forme you own.
+- **Megas** (93, ids 10033-10325, `js/data/mega-data.js`, now a base script) are in `G.DEX_BY` only (never `G.DEX`: not
+  collection entries). `G.Sprites.Animator` draws the Mega aura and keystone sign for any Mega id. Base runs Mega Evolve at
+  Lv 40 like a League run (`G.Megas.baseCards` in `js/systems/levelup.js`: the Megas + "Not yet"); the dex stays the
+  species, the look / types / stats are the Mega's, the net frame's field 16 is the Mega's id.
+- **Art**: `python tools/micasurvivor/fetch_form_sprites.py` (then `hover_flags.py`): ANIMATED SpriteCollab form folders
+  (56 formes, 42 Megas), the overworld battle front where there is none (2 formes, 19 Megas, `src: battle`), and an alias
+  row (`al`: the species' sheet) for the other 32 Megas. Deployed with `npm run deploy-micasurvivor` (+ the manifest).
+- **Enemies**: the formes join every pool by their own BST / types (they are in `G.DEX`). Megas are rare elites and bosses:
+  Survival from 15:00 (`G.Enemies.MEGAS`, every 70-110 s; half the runs' 15:00 boss), Expedition zone 3 (one elite a plan),
+  Expedition Survival (one elite a segment from 15:00; some milestone bosses), Dive below floor 30 (20 % a floor, 35 % of
+  the arena alphas). Dive also has the 64 legendaries no route guards as rare encounters from floor 26 (35 % a floor, sure
+  after 3 without). All from their own seeded streams. Test: `overworld/tests/micasurvivor_coverage_test.mjs`.
 
 ## Tests
 
