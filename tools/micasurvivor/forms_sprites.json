@@ -1,0 +1,1422 @@
+{
+ "generated": "tools/micasurvivor/gen_forms.mjs",
+ "list": [
+  {
+   "id": 10091,
+   "sp": 19,
+   "kind": "form",
+   "ow": "rattata_alola",
+   "collab": "0019/0001",
+   "shiny": true,
+   "front": "s609.png",
+   "height": 3
+  },
+  {
+   "id": 10092,
+   "sp": 20,
+   "kind": "form",
+   "ow": "raticate_alola",
+   "collab": "0020/0001",
+   "shiny": true,
+   "front": "s641.png",
+   "height": 7
+  },
+  {
+   "id": 10100,
+   "sp": 26,
+   "kind": "form",
+   "ow": "raichu_alola",
+   "collab": "0026/0001",
+   "shiny": true,
+   "front": "s833.png",
+   "height": 7
+  },
+  {
+   "id": 10101,
+   "sp": 27,
+   "kind": "form",
+   "ow": "sandshrew_alola",
+   "collab": "0027/0001",
+   "shiny": true,
+   "front": "s865.png",
+   "height": 7
+  },
+  {
+   "id": 10102,
+   "sp": 28,
+   "kind": "form",
+   "ow": "sandslash_alola",
+   "collab": "0028/0001",
+   "shiny": true,
+   "front": "s897.png",
+   "height": 12
+  },
+  {
+   "id": 10103,
+   "sp": 37,
+   "kind": "form",
+   "ow": "vulpix_alola",
+   "collab": "0037/0001",
+   "shiny": true,
+   "front": "s1185.png",
+   "height": 6
+  },
+  {
+   "id": 10104,
+   "sp": 38,
+   "kind": "form",
+   "ow": "ninetales_alola",
+   "collab": "0038/0001",
+   "shiny": true,
+   "front": "s1217.png",
+   "height": 11
+  },
+  {
+   "id": 10105,
+   "sp": 50,
+   "kind": "form",
+   "ow": "diglett_alola",
+   "collab": "0050/0001",
+   "shiny": true,
+   "front": "s1601.png",
+   "height": 2
+  },
+  {
+   "id": 10106,
+   "sp": 51,
+   "kind": "form",
+   "ow": "dugtrio_alola",
+   "collab": "0051/0001",
+   "shiny": true,
+   "front": "s1633.png",
+   "height": 7
+  },
+  {
+   "id": 10107,
+   "sp": 52,
+   "kind": "form",
+   "ow": "meowth_alola",
+   "collab": "0052/0001",
+   "shiny": true,
+   "front": "s1665.png",
+   "height": 4
+  },
+  {
+   "id": 10108,
+   "sp": 53,
+   "kind": "form",
+   "ow": "persian_alola",
+   "collab": "0053/0001",
+   "shiny": true,
+   "front": "s1697.png",
+   "height": 11
+  },
+  {
+   "id": 10109,
+   "sp": 74,
+   "kind": "form",
+   "ow": "geodude_alola",
+   "collab": "0074/0001",
+   "shiny": true,
+   "front": "s2369.png",
+   "height": 4
+  },
+  {
+   "id": 10110,
+   "sp": 75,
+   "kind": "form",
+   "ow": "graveler_alola",
+   "collab": "0075/0001",
+   "shiny": true,
+   "front": "s2401.png",
+   "height": 10
+  },
+  {
+   "id": 10111,
+   "sp": 76,
+   "kind": "form",
+   "ow": "golem_alola",
+   "collab": "0076/0001",
+   "shiny": true,
+   "front": "s2433.png",
+   "height": 17
+  },
+  {
+   "id": 10112,
+   "sp": 88,
+   "kind": "form",
+   "ow": "grimer_alola",
+   "collab": "0088/0001",
+   "shiny": true,
+   "front": "s2817.png",
+   "height": 7
+  },
+  {
+   "id": 10113,
+   "sp": 89,
+   "kind": "form",
+   "ow": "muk_alola",
+   "collab": "0089/0001",
+   "shiny": true,
+   "front": "s2849.png",
+   "height": 10
+  },
+  {
+   "id": 10114,
+   "sp": 103,
+   "kind": "form",
+   "ow": "exeggutor_alola",
+   "collab": "0103/0001",
+   "shiny": true,
+   "front": "s3297.png",
+   "height": 109
+  },
+  {
+   "id": 10115,
+   "sp": 105,
+   "kind": "form",
+   "ow": "marowak_alola",
+   "collab": "0105/0001",
+   "shiny": true,
+   "front": "s3361.png",
+   "height": 10
+  },
+  {
+   "id": 10161,
+   "sp": 52,
+   "kind": "form",
+   "ow": "meowth_galar",
+   "collab": "0052/0002",
+   "shiny": false,
+   "front": "s1666.png",
+   "height": 4
+  },
+  {
+   "id": 10162,
+   "sp": 77,
+   "kind": "form",
+   "ow": "ponyta_galar",
+   "collab": "0077/0001",
+   "shiny": true,
+   "front": "s2465.png",
+   "height": 8
+  },
+  {
+   "id": 10163,
+   "sp": 78,
+   "kind": "form",
+   "ow": "rapidash_galar",
+   "collab": "0078/0001",
+   "shiny": true,
+   "front": "s2497.png",
+   "height": 17
+  },
+  {
+   "id": 10164,
+   "sp": 79,
+   "kind": "form",
+   "ow": "slowpoke_galar",
+   "collab": "0079/0001",
+   "shiny": true,
+   "front": "s2529.png",
+   "height": 12
+  },
+  {
+   "id": 10165,
+   "sp": 80,
+   "kind": "form",
+   "ow": "slowbro_galar",
+   "collab": "0080/0001",
+   "shiny": true,
+   "front": "s2562.png",
+   "height": 16
+  },
+  {
+   "id": 10166,
+   "sp": 83,
+   "kind": "form",
+   "ow": "farfetchd_galar",
+   "collab": "0083/0001",
+   "shiny": true,
+   "front": "s2657.png",
+   "height": 8
+  },
+  {
+   "id": 10167,
+   "sp": 110,
+   "kind": "form",
+   "ow": "weezing_galar",
+   "collab": "0110/0001",
+   "shiny": true,
+   "front": "s3521.png",
+   "height": 30
+  },
+  {
+   "id": 10168,
+   "sp": 122,
+   "kind": "form",
+   "ow": "mrmime_galar",
+   "collab": "0122/0001",
+   "shiny": true,
+   "front": "s3905.png",
+   "height": 14
+  },
+  {
+   "id": 10169,
+   "sp": 144,
+   "kind": "form",
+   "ow": "articuno_galar",
+   "collab": "0144/0001",
+   "shiny": true,
+   "front": "s4609.png",
+   "height": 17
+  },
+  {
+   "id": 10170,
+   "sp": 145,
+   "kind": "form",
+   "ow": "zapdos_galar",
+   "collab": "0145/0001",
+   "shiny": true,
+   "front": "s4641.png",
+   "height": 16
+  },
+  {
+   "id": 10171,
+   "sp": 146,
+   "kind": "form",
+   "ow": "moltres_galar",
+   "collab": "0146/0001",
+   "shiny": true,
+   "front": "s4673.png",
+   "height": 20
+  },
+  {
+   "id": 10172,
+   "sp": 199,
+   "kind": "form",
+   "ow": "slowking_galar",
+   "collab": "0199/0001",
+   "shiny": true,
+   "front": "s6369.png",
+   "height": 18
+  },
+  {
+   "id": 10173,
+   "sp": 222,
+   "kind": "form",
+   "ow": "corsola_galar",
+   "collab": "0222/0001",
+   "shiny": true,
+   "front": "s7105.png",
+   "height": 6
+  },
+  {
+   "id": 10174,
+   "sp": 263,
+   "kind": "form",
+   "ow": "zigzagoon_galar",
+   "collab": "0263/0001",
+   "shiny": true,
+   "front": "s8417.png",
+   "height": 4
+  },
+  {
+   "id": 10175,
+   "sp": 264,
+   "kind": "form",
+   "ow": "linoone_galar",
+   "collab": "0264/0001",
+   "shiny": true,
+   "front": "s8449.png",
+   "height": 5
+  },
+  {
+   "id": 10176,
+   "sp": 554,
+   "kind": "form",
+   "ow": "darumaka_galar",
+   "collab": "0554/0001",
+   "shiny": false,
+   "front": "s17729.png",
+   "height": 7
+  },
+  {
+   "id": 10177,
+   "sp": 555,
+   "kind": "form",
+   "ow": "darmanitan_galar",
+   "collab": "0555/0002",
+   "shiny": true,
+   "front": "s17762.png",
+   "height": 17
+  },
+  {
+   "id": 10178,
+   "sp": 555,
+   "kind": "form",
+   "ow": "darmanitan_galar_zen",
+   "collab": null,
+   "shiny": false,
+   "front": "s17763.png",
+   "height": 17
+  },
+  {
+   "id": 10179,
+   "sp": 562,
+   "kind": "form",
+   "ow": "yamask_galar",
+   "collab": "0562/0001",
+   "shiny": true,
+   "front": "s17985.png",
+   "height": 5
+  },
+  {
+   "id": 10180,
+   "sp": 618,
+   "kind": "form",
+   "ow": "stunfisk_galar",
+   "collab": null,
+   "shiny": false,
+   "front": "s19777.png",
+   "height": 7
+  },
+  {
+   "id": 10229,
+   "sp": 58,
+   "kind": "form",
+   "ow": "growlithe_hisui",
+   "collab": "0058/0001",
+   "shiny": true,
+   "front": "s1857.png",
+   "height": 8
+  },
+  {
+   "id": 10230,
+   "sp": 59,
+   "kind": "form",
+   "ow": "arcanine_hisui",
+   "collab": "0059/0001",
+   "shiny": true,
+   "front": "s1889.png",
+   "height": 20
+  },
+  {
+   "id": 10231,
+   "sp": 100,
+   "kind": "form",
+   "ow": "voltorb_hisui",
+   "collab": "0100/0001",
+   "shiny": true,
+   "front": "s3201.png",
+   "height": 5
+  },
+  {
+   "id": 10232,
+   "sp": 101,
+   "kind": "form",
+   "ow": "electrode_hisui",
+   "collab": "0101/0001",
+   "shiny": true,
+   "front": "s3233.png",
+   "height": 12
+  },
+  {
+   "id": 10233,
+   "sp": 157,
+   "kind": "form",
+   "ow": "typhlosion_hisui",
+   "collab": "0157/0001",
+   "shiny": true,
+   "front": "s5025.png",
+   "height": 16
+  },
+  {
+   "id": 10234,
+   "sp": 211,
+   "kind": "form",
+   "ow": "qwilfish_hisui",
+   "collab": "0211/0001",
+   "shiny": true,
+   "front": "s6753.png",
+   "height": 5
+  },
+  {
+   "id": 10235,
+   "sp": 215,
+   "kind": "form",
+   "ow": "sneasel_hisui",
+   "collab": "0215/0001",
+   "shiny": true,
+   "front": "s6881.png",
+   "height": 9
+  },
+  {
+   "id": 10236,
+   "sp": 503,
+   "kind": "form",
+   "ow": "samurott_hisui",
+   "collab": "0503/0001",
+   "shiny": true,
+   "front": "s16097.png",
+   "height": 15
+  },
+  {
+   "id": 10237,
+   "sp": 549,
+   "kind": "form",
+   "ow": "lilligant_hisui",
+   "collab": "0549/0001",
+   "shiny": true,
+   "front": "s17569.png",
+   "height": 12
+  },
+  {
+   "id": 10238,
+   "sp": 570,
+   "kind": "form",
+   "ow": "zorua_hisui",
+   "collab": "0570/0001",
+   "shiny": true,
+   "front": "s18241.png",
+   "height": 7
+  },
+  {
+   "id": 10239,
+   "sp": 571,
+   "kind": "form",
+   "ow": "zoroark_hisui",
+   "collab": "0571/0001",
+   "shiny": true,
+   "front": "s18273.png",
+   "height": 16
+  },
+  {
+   "id": 10240,
+   "sp": 628,
+   "kind": "form",
+   "ow": "braviary_hisui",
+   "collab": "0628/0001",
+   "shiny": true,
+   "front": "s20097.png",
+   "height": 17
+  },
+  {
+   "id": 10241,
+   "sp": 705,
+   "kind": "form",
+   "ow": "sliggoo_hisui",
+   "collab": "0705/0001",
+   "shiny": true,
+   "front": "s22561.png",
+   "height": 7
+  },
+  {
+   "id": 10242,
+   "sp": 706,
+   "kind": "form",
+   "ow": "goodra_hisui",
+   "collab": "0706/0001",
+   "shiny": true,
+   "front": "s22593.png",
+   "height": 17
+  },
+  {
+   "id": 10243,
+   "sp": 713,
+   "kind": "form",
+   "ow": "avalugg_hisui",
+   "collab": "0713/0001",
+   "shiny": true,
+   "front": "s22817.png",
+   "height": 14
+  },
+  {
+   "id": 10244,
+   "sp": 724,
+   "kind": "form",
+   "ow": "decidueye_hisui",
+   "collab": "0724/0001",
+   "shiny": true,
+   "front": "s23169.png",
+   "height": 16
+  },
+  {
+   "id": 10250,
+   "sp": 128,
+   "kind": "form",
+   "ow": "tauros_paldea_combat",
+   "collab": "0128/0001",
+   "shiny": true,
+   "front": "s4097.png",
+   "height": 14
+  },
+  {
+   "id": 10251,
+   "sp": 128,
+   "kind": "form",
+   "ow": "tauros_paldea_blaze",
+   "collab": "0128/0002",
+   "shiny": true,
+   "front": "s4098.png",
+   "height": 14
+  },
+  {
+   "id": 10252,
+   "sp": 128,
+   "kind": "form",
+   "ow": "tauros_paldea_aqua",
+   "collab": "0128/0003",
+   "shiny": true,
+   "front": "s4099.png",
+   "height": 14
+  },
+  {
+   "id": 10253,
+   "sp": 194,
+   "kind": "form",
+   "ow": "wooper_paldea",
+   "collab": "0194/0002",
+   "shiny": true,
+   "front": "s6209.png",
+   "height": 4
+  },
+  {
+   "id": 10033,
+   "sp": 3,
+   "kind": "mega",
+   "collab": null,
+   "shiny": false,
+   "front": "s97.png",
+   "height": null
+  },
+  {
+   "id": 10034,
+   "sp": 6,
+   "kind": "mega",
+   "collab": "0006/0001",
+   "shiny": true,
+   "front": "s193.png",
+   "height": null
+  },
+  {
+   "id": 10035,
+   "sp": 6,
+   "kind": "mega",
+   "collab": null,
+   "shiny": false,
+   "front": "s194.png",
+   "height": null
+  },
+  {
+   "id": 10036,
+   "sp": 9,
+   "kind": "mega",
+   "collab": null,
+   "shiny": false,
+   "front": "s289.png",
+   "height": null
+  },
+  {
+   "id": 10090,
+   "sp": 15,
+   "kind": "mega",
+   "collab": null,
+   "shiny": false,
+   "front": "s481.png",
+   "height": null
+  },
+  {
+   "id": 10073,
+   "sp": 18,
+   "kind": "mega",
+   "collab": null,
+   "shiny": false,
+   "front": "s577.png",
+   "height": null
+  },
+  {
+   "id": 10304,
+   "sp": 26,
+   "kind": "mega",
+   "collab": null,
+   "shiny": false,
+   "front": null,
+   "height": null
+  },
+  {
+   "id": 10305,
+   "sp": 26,
+   "kind": "mega",
+   "collab": null,
+   "shiny": false,
+   "front": null,
+   "height": null
+  },
+  {
+   "id": 10278,
+   "sp": 36,
+   "kind": "mega",
+   "collab": null,
+   "shiny": false,
+   "front": null,
+   "height": null
+  },
+  {
+   "id": 10037,
+   "sp": 65,
+   "kind": "mega",
+   "collab": "0065/0001",
+   "shiny": true,
+   "front": "s2081.png",
+   "height": null
+  },
+  {
+   "id": 10279,
+   "sp": 71,
+   "kind": "mega",
+   "collab": null,
+   "shiny": false,
+   "front": null,
+   "height": null
+  },
+  {
+   "id": 10071,
+   "sp": 80,
+   "kind": "mega",
+   "collab": "0080/0002",
+   "shiny": true,
+   "front": "s2561.png",
+   "height": null
+  },
+  {
+   "id": 10038,
+   "sp": 94,
+   "kind": "mega",
+   "collab": "0094/0001",
+   "shiny": true,
+   "front": "s3009.png",
+   "height": null
+  },
+  {
+   "id": 10039,
+   "sp": 115,
+   "kind": "mega",
+   "collab": "0115/0001",
+   "shiny": true,
+   "front": "s3681.png",
+   "height": null
+  },
+  {
+   "id": 10280,
+   "sp": 121,
+   "kind": "mega",
+   "collab": null,
+   "shiny": false,
+   "front": null,
+   "height": null
+  },
+  {
+   "id": 10040,
+   "sp": 127,
+   "kind": "mega",
+   "collab": null,
+   "shiny": false,
+   "front": "s4065.png",
+   "height": null
+  },
+  {
+   "id": 10041,
+   "sp": 130,
+   "kind": "mega",
+   "collab": null,
+   "shiny": false,
+   "front": "s4161.png",
+   "height": null
+  },
+  {
+   "id": 10042,
+   "sp": 142,
+   "kind": "mega",
+   "collab": "0142/0001",
+   "shiny": true,
+   "front": "s4545.png",
+   "height": null
+  },
+  {
+   "id": 10281,
+   "sp": 149,
+   "kind": "mega",
+   "collab": null,
+   "shiny": false,
+   "front": null,
+   "height": null
+  },
+  {
+   "id": 10043,
+   "sp": 150,
+   "kind": "mega",
+   "collab": null,
+   "shiny": false,
+   "front": "s4801.png",
+   "height": null
+  },
+  {
+   "id": 10044,
+   "sp": 150,
+   "kind": "mega",
+   "collab": "0150/0002",
+   "shiny": true,
+   "front": "s4802.png",
+   "height": null
+  },
+  {
+   "id": 10282,
+   "sp": 154,
+   "kind": "mega",
+   "collab": null,
+   "shiny": false,
+   "front": null,
+   "height": null
+  },
+  {
+   "id": 10283,
+   "sp": 160,
+   "kind": "mega",
+   "collab": null,
+   "shiny": false,
+   "front": null,
+   "height": null
+  },
+  {
+   "id": 10045,
+   "sp": 181,
+   "kind": "mega",
+   "collab": null,
+   "shiny": false,
+   "front": "s5793.png",
+   "height": null
+  },
+  {
+   "id": 10072,
+   "sp": 208,
+   "kind": "mega",
+   "collab": "0208/0001",
+   "shiny": true,
+   "front": "s6657.png",
+   "height": null
+  },
+  {
+   "id": 10046,
+   "sp": 212,
+   "kind": "mega",
+   "collab": null,
+   "shiny": false,
+   "front": "s6785.png",
+   "height": null
+  },
+  {
+   "id": 10047,
+   "sp": 214,
+   "kind": "mega",
+   "collab": null,
+   "shiny": false,
+   "front": "s6849.png",
+   "height": null
+  },
+  {
+   "id": 10284,
+   "sp": 227,
+   "kind": "mega",
+   "collab": "0227/0001",
+   "shiny": false,
+   "front": null,
+   "height": null
+  },
+  {
+   "id": 10048,
+   "sp": 229,
+   "kind": "mega",
+   "collab": "0229/0001",
+   "shiny": true,
+   "front": "s7329.png",
+   "height": null
+  },
+  {
+   "id": 10049,
+   "sp": 248,
+   "kind": "mega",
+   "collab": "0248/0001",
+   "shiny": false,
+   "front": "s7937.png",
+   "height": null
+  },
+  {
+   "id": 10065,
+   "sp": 254,
+   "kind": "mega",
+   "collab": "0254/0001",
+   "shiny": true,
+   "front": "s8129.png",
+   "height": null
+  },
+  {
+   "id": 10050,
+   "sp": 257,
+   "kind": "mega",
+   "collab": null,
+   "shiny": false,
+   "front": "s8225.png",
+   "height": null
+  },
+  {
+   "id": 10064,
+   "sp": 260,
+   "kind": "mega",
+   "collab": null,
+   "shiny": false,
+   "front": "s8321.png",
+   "height": null
+  },
+  {
+   "id": 10051,
+   "sp": 282,
+   "kind": "mega",
+   "collab": "0282/0001",
+   "shiny": true,
+   "front": "s9025.png",
+   "height": null
+  },
+  {
+   "id": 10066,
+   "sp": 302,
+   "kind": "mega",
+   "collab": "0302/0001",
+   "shiny": true,
+   "front": "s9665.png",
+   "height": null
+  },
+  {
+   "id": 10052,
+   "sp": 303,
+   "kind": "mega",
+   "collab": "0303/0001",
+   "shiny": true,
+   "front": "s9697.png",
+   "height": null
+  },
+  {
+   "id": 10053,
+   "sp": 306,
+   "kind": "mega",
+   "collab": null,
+   "shiny": false,
+   "front": "s9793.png",
+   "height": null
+  },
+  {
+   "id": 10054,
+   "sp": 308,
+   "kind": "mega",
+   "collab": "0308/0001",
+   "shiny": false,
+   "front": "s9857.png",
+   "height": null
+  },
+  {
+   "id": 10055,
+   "sp": 310,
+   "kind": "mega",
+   "collab": "0310/0001",
+   "shiny": true,
+   "front": "s9921.png",
+   "height": null
+  },
+  {
+   "id": 10070,
+   "sp": 319,
+   "kind": "mega",
+   "collab": "0319/0001",
+   "shiny": true,
+   "front": "s10209.png",
+   "height": null
+  },
+  {
+   "id": 10087,
+   "sp": 323,
+   "kind": "mega",
+   "collab": "0323/0001",
+   "shiny": true,
+   "front": "s10337.png",
+   "height": null
+  },
+  {
+   "id": 10067,
+   "sp": 334,
+   "kind": "mega",
+   "collab": "0334/0001",
+   "shiny": true,
+   "front": "s10689.png",
+   "height": null
+  },
+  {
+   "id": 10056,
+   "sp": 354,
+   "kind": "mega",
+   "collab": "0354/0001",
+   "shiny": true,
+   "front": "s11329.png",
+   "height": null
+  },
+  {
+   "id": 10306,
+   "sp": 358,
+   "kind": "mega",
+   "collab": "0358/0001",
+   "shiny": true,
+   "front": null,
+   "height": null
+  },
+  {
+   "id": 10057,
+   "sp": 359,
+   "kind": "mega",
+   "collab": "0359/0001",
+   "shiny": true,
+   "front": "s11489.png",
+   "height": null
+  },
+  {
+   "id": 10307,
+   "sp": 359,
+   "kind": "mega",
+   "collab": null,
+   "shiny": false,
+   "front": null,
+   "height": null
+  },
+  {
+   "id": 10074,
+   "sp": 362,
+   "kind": "mega",
+   "collab": "0362/0001",
+   "shiny": true,
+   "front": "s11585.png",
+   "height": null
+  },
+  {
+   "id": 10089,
+   "sp": 373,
+   "kind": "mega",
+   "collab": null,
+   "shiny": false,
+   "front": "s11937.png",
+   "height": null
+  },
+  {
+   "id": 10076,
+   "sp": 376,
+   "kind": "mega",
+   "collab": null,
+   "shiny": false,
+   "front": "s12033.png",
+   "height": null
+  },
+  {
+   "id": 10062,
+   "sp": 380,
+   "kind": "mega",
+   "collab": "0380/0001",
+   "shiny": true,
+   "front": "s12161.png",
+   "height": null
+  },
+  {
+   "id": 10063,
+   "sp": 381,
+   "kind": "mega",
+   "collab": "0381/0001",
+   "shiny": true,
+   "front": "s12193.png",
+   "height": null
+  },
+  {
+   "id": 10079,
+   "sp": 384,
+   "kind": "mega",
+   "collab": "0384/0001",
+   "shiny": true,
+   "front": "s12289.png",
+   "height": null
+  },
+  {
+   "id": 10308,
+   "sp": 398,
+   "kind": "mega",
+   "collab": null,
+   "shiny": false,
+   "front": null,
+   "height": null
+  },
+  {
+   "id": 10088,
+   "sp": 428,
+   "kind": "mega",
+   "collab": "0428/0001",
+   "shiny": true,
+   "front": "s13697.png",
+   "height": null
+  },
+  {
+   "id": 10058,
+   "sp": 445,
+   "kind": "mega",
+   "collab": null,
+   "shiny": false,
+   "front": "s14241.png",
+   "height": null
+  },
+  {
+   "id": 10309,
+   "sp": 445,
+   "kind": "mega",
+   "collab": null,
+   "shiny": false,
+   "front": null,
+   "height": null
+  },
+  {
+   "id": 10059,
+   "sp": 448,
+   "kind": "mega",
+   "collab": "0448/0001",
+   "shiny": true,
+   "front": "s14337.png",
+   "height": null
+  },
+  {
+   "id": 10310,
+   "sp": 448,
+   "kind": "mega",
+   "collab": null,
+   "shiny": false,
+   "front": null,
+   "height": null
+  },
+  {
+   "id": 10060,
+   "sp": 460,
+   "kind": "mega",
+   "collab": null,
+   "shiny": false,
+   "front": "s14721.png",
+   "height": null
+  },
+  {
+   "id": 10068,
+   "sp": 475,
+   "kind": "mega",
+   "collab": "0475/0001",
+   "shiny": true,
+   "front": "s15201.png",
+   "height": null
+  },
+  {
+   "id": 10285,
+   "sp": 478,
+   "kind": "mega",
+   "collab": null,
+   "shiny": false,
+   "front": null,
+   "height": null
+  },
+  {
+   "id": 10311,
+   "sp": 485,
+   "kind": "mega",
+   "collab": null,
+   "shiny": false,
+   "front": null,
+   "height": null
+  },
+  {
+   "id": 10312,
+   "sp": 491,
+   "kind": "mega",
+   "collab": "0491/0002",
+   "shiny": false,
+   "front": null,
+   "height": null
+  },
+  {
+   "id": 10286,
+   "sp": 500,
+   "kind": "mega",
+   "collab": null,
+   "shiny": false,
+   "front": null,
+   "height": null
+  },
+  {
+   "id": 10287,
+   "sp": 530,
+   "kind": "mega",
+   "collab": "0530/0001",
+   "shiny": true,
+   "front": null,
+   "height": null
+  },
+  {
+   "id": 10069,
+   "sp": 531,
+   "kind": "mega",
+   "collab": null,
+   "shiny": false,
+   "front": "s16993.png",
+   "height": null
+  },
+  {
+   "id": 10288,
+   "sp": 545,
+   "kind": "mega",
+   "collab": null,
+   "shiny": false,
+   "front": null,
+   "height": null
+  },
+  {
+   "id": 10289,
+   "sp": 560,
+   "kind": "mega",
+   "collab": "0560/0001",
+   "shiny": true,
+   "front": null,
+   "height": null
+  },
+  {
+   "id": 10290,
+   "sp": 604,
+   "kind": "mega",
+   "collab": "0604/0001",
+   "shiny": true,
+   "front": null,
+   "height": null
+  },
+  {
+   "id": 10291,
+   "sp": 609,
+   "kind": "mega",
+   "collab": null,
+   "shiny": false,
+   "front": null,
+   "height": null
+  },
+  {
+   "id": 10313,
+   "sp": 623,
+   "kind": "mega",
+   "collab": null,
+   "shiny": false,
+   "front": null,
+   "height": null
+  },
+  {
+   "id": 10292,
+   "sp": 652,
+   "kind": "mega",
+   "collab": null,
+   "shiny": false,
+   "front": null,
+   "height": null
+  },
+  {
+   "id": 10293,
+   "sp": 655,
+   "kind": "mega",
+   "collab": null,
+   "shiny": false,
+   "front": null,
+   "height": null
+  },
+  {
+   "id": 10294,
+   "sp": 658,
+   "kind": "mega",
+   "collab": null,
+   "shiny": false,
+   "front": null,
+   "height": null
+  },
+  {
+   "id": 10295,
+   "sp": 668,
+   "kind": "mega",
+   "collab": null,
+   "shiny": false,
+   "front": null,
+   "height": null
+  },
+  {
+   "id": 10296,
+   "sp": 670,
+   "kind": "mega",
+   "collab": "0670/0006",
+   "shiny": true,
+   "front": null,
+   "height": null
+  },
+  {
+   "id": 10314,
+   "sp": 678,
+   "kind": "mega",
+   "collab": null,
+   "shiny": false,
+   "front": null,
+   "height": null
+  },
+  {
+   "id": 10297,
+   "sp": 687,
+   "kind": "mega",
+   "collab": null,
+   "shiny": false,
+   "front": null,
+   "height": null
+  },
+  {
+   "id": 10298,
+   "sp": 689,
+   "kind": "mega",
+   "collab": null,
+   "shiny": false,
+   "front": null,
+   "height": null
+  },
+  {
+   "id": 10299,
+   "sp": 691,
+   "kind": "mega",
+   "collab": "0691/0001",
+   "shiny": true,
+   "front": null,
+   "height": null
+  },
+  {
+   "id": 10300,
+   "sp": 701,
+   "kind": "mega",
+   "collab": "0701/0001",
+   "shiny": true,
+   "front": null,
+   "height": null
+  },
+  {
+   "id": 10301,
+   "sp": 718,
+   "kind": "mega",
+   "collab": "0718/0005",
+   "shiny": true,
+   "front": null,
+   "height": null
+  },
+  {
+   "id": 10075,
+   "sp": 719,
+   "kind": "mega",
+   "collab": "0719/0001",
+   "shiny": true,
+   "front": "s23009.png",
+   "height": null
+  },
+  {
+   "id": 10315,
+   "sp": 740,
+   "kind": "mega",
+   "collab": null,
+   "shiny": false,
+   "front": null,
+   "height": null
+  },
+  {
+   "id": 10316,
+   "sp": 768,
+   "kind": "mega",
+   "collab": null,
+   "shiny": false,
+   "front": null,
+   "height": null
+  },
+  {
+   "id": 10302,
+   "sp": 780,
+   "kind": "mega",
+   "collab": "0780/0001",
+   "shiny": true,
+   "front": null,
+   "height": null
+  },
+  {
+   "id": 10317,
+   "sp": 801,
+   "kind": "mega",
+   "collab": null,
+   "shiny": false,
+   "front": null,
+   "height": null
+  },
+  {
+   "id": 10319,
+   "sp": 807,
+   "kind": "mega",
+   "collab": "0807/0001",
+   "shiny": true,
+   "front": null,
+   "height": null
+  },
+  {
+   "id": 10303,
+   "sp": 870,
+   "kind": "mega",
+   "collab": null,
+   "shiny": false,
+   "front": null,
+   "height": null
+  },
+  {
+   "id": 10320,
+   "sp": 952,
+   "kind": "mega",
+   "collab": null,
+   "shiny": false,
+   "front": null,
+   "height": null
+  },
+  {
+   "id": 10321,
+   "sp": 970,
+   "kind": "mega",
+   "collab": null,
+   "shiny": false,
+   "front": null,
+   "height": null
+  },
+  {
+   "id": 10322,
+   "sp": 978,
+   "kind": "mega",
+   "collab": "0978/0003",
+   "shiny": true,
+   "front": null,
+   "height": null
+  },
+  {
+   "id": 10325,
+   "sp": 998,
+   "kind": "mega",
+   "collab": null,
+   "shiny": false,
+   "front": null,
+   "height": null
+  }
+ ]
+}

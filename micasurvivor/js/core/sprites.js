@@ -115,7 +115,7 @@ G.Sprites = (() => {
     }
     if (sheets.size >= MAX_SHEETS) evict(now);
     s = { ready: false, failed: false, img: new Image(), tries: 0, retryAt: 0, at: now,
-          src: `assets/pokemon/${dex}/${m && m.src ? m.src + '/' : ''}${shiny ? 's/' : ''}${name}.png` };
+          src: `assets/pokemon/${(m && m.al) || dex}/${m && m.src ? m.src + '/' : ''}${shiny ? 's/' : ''}${name}.png` };   // (U3: an alias row, a Mega with no sheet of its own: its species')
     s.img.crossOrigin = 'anonymous';   // MicaSurvivor: sheets 301 to magepunk-micasurvivor.pages.dev (CORS)
     s.img.onload = () => { s.ready = true; };
     s.img.onerror = () => { s.failed = true; s.retryAt = performance.now() + 1000 * Math.min(8, 2 ** s.tries++); };
@@ -267,6 +267,10 @@ G.Sprites = (() => {
       const row = rowOf(this.dex, this.dir, m);
       const alpha = opts.alpha == null ? 1 : opts.alpha;
       if (alpha <= 0) return;
+      // (MicaSurvivor U3: a Mega's id (an enemy, a base run's Mega Evolution, a puppet): the Mega aura at its feet and the
+      //  keystone's sign over its head, js/systems/forms.js; an Expedition League Mega draws its own, js/expedition/mega.js)
+      const mega = G.Megas && G.Megas.BY[this.dex];
+      if (mega && alpha >= 0.5) G.Megas.aura(ctx, x, y, G.U.clamp(m.w * 0.22, 5, 26) * k, this.clock);
       const sx = Math.min(frame, m.n - 1) * m.w, sy = row * m.h;
       // (Lote B1) Algunos Pokémon sólo tienen en SpriteCollab un Idle de un fotograma, que también hace de Walk
       // (FALLBACK de tools/micasurvivor/fetch_sprites.py): andando, dan saltitos de 2 px para no deslizarse
@@ -287,6 +291,7 @@ G.Sprites = (() => {
       }
       ctx.globalAlpha = prev;
       if (flip) ctx.restore();
+      if (mega && alpha >= 0.5) G.Megas.emblem(ctx, x, Math.round(y - m.ay * k) - bob - 9, this.clock);
     }
   }
 

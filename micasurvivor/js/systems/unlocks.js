@@ -30,7 +30,8 @@ G.Unlocks = (() => {
     const now = Date.now();
     for (const d0 of list || []) {
       const d = d0 | 0;
-      if (!(d >= 1 && d <= 1025) || !G.DEX_BY[d] || s.owned[d]) continue;
+      // (U3: a regional forme, 10091-10253, is a collection entry of its own; a Mega never is)
+      if (!((d >= 1 && d <= 1025) || (G.Forms && G.Forms.is(d))) || !G.DEX_BY[d] || s.owned[d]) continue;
       s.owned[d] = { at: now, from: from || 'unlock' };
       n++;
     }

@@ -91,8 +91,8 @@ G.Expedition = (() => {
   // research, tasks and boards"): its card opens the League (G.ExpMeta's League view); G.Modes.plan never plans it as a run.
   const HUB = new Set(['exp-league']);
   const SCRIPTS = ['js/expedition/save.js', 'js/expedition/terrain.js', 'js/expedition/verbs.js', 'js/expedition/classic.js',
-    'js/expedition/league-data.js', 'js/expedition/league.js', 'js/expedition/mega-data.js', 'js/expedition/mega.js', 'js/expedition/moves.js', 'js/expedition/items.js', 'js/expedition/levelups.js',
-    'js/expedition/ultimates.js', 'js/expedition/economy.js', 'js/expedition/reactions.js', 'js/expedition/capture.js', 'js/expedition/tiers.js', 'js/expedition/meta.js', 'js/expedition/survival.js', 'js/expedition/dive-gen.js', 'js/expedition/dive.js', 'js/expedition/core.js'];   // (D1: terrain.js; D2: verbs.js; D3: classic.js; D4: league-data.js, league.js; D5: moves.js, items.js, levelups.js; D6: ultimates.js; D7: economy.js; D8: reactions.js, capture.js; D9: tiers.js; D10: meta.js; D11: survival.js; D14: mega-data.js, mega.js; Dive V1: dive-gen.js; V2: dive.js)
+    'js/expedition/league-data.js', 'js/expedition/league.js', 'js/expedition/mega.js', 'js/expedition/moves.js', 'js/expedition/items.js', 'js/expedition/levelups.js',
+    'js/expedition/ultimates.js', 'js/expedition/economy.js', 'js/expedition/reactions.js', 'js/expedition/capture.js', 'js/expedition/tiers.js', 'js/expedition/meta.js', 'js/expedition/survival.js', 'js/expedition/dive-gen.js', 'js/expedition/dive.js', 'js/expedition/core.js'];   // (D1: terrain.js; D2: verbs.js; D3: classic.js; D4: league-data.js, league.js; D5: moves.js, items.js, levelups.js; D6: ultimates.js; D7: economy.js; D8: reactions.js, capture.js; D9: tiers.js; D10: meta.js; D11: survival.js; D14: mega.js (U3: mega-data.js moved to js/data/, loaded at boot: Megas are base enemies too); Dive V1: dive-gen.js; V2: dive.js)
 
   const isExp = m => typeof m === 'string' && MODES.includes(m);
   const enabled = m => isExp(m) && ENABLED.has(m);

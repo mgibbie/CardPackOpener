@@ -54,7 +54,7 @@ def main():
             continue
         dex = int(m.group(2))
         data = json.loads(m.group(3))
-        if data.get('src'):
+        if data.get('src') or data.get('al'):   # (U3: an alias row, fetch_form_sprites.py: the species' own sheet and flag)
             # (B1b) a fallback row (follow_sprites.py): its sheets are not PMD ones and its flag comes from its family
             out.append(ln)
             if data.get('hv'):

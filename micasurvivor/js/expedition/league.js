@@ -72,7 +72,8 @@ G.I18n.add({
 });
 
 G.ExpLeague = (() => {
-  const D = G.EXP_LEAGUE_DATA;
+  // (MicaSurvivor U3: the 58 regional formes join their base species' lines, js/systems/forms.js patchLeague)
+  const D = G.Forms ? G.Forms.patchLeague(G.EXP_LEAGUE_DATA) : G.EXP_LEAGUE_DATA;
   // ---------------- balance (tune here; README "DLC D4") ----------------
   const K = {
     KIT_AT: [1, 2, 4, 7],          // the kit's moves unlock at these levels (study 2.1)
@@ -103,7 +104,8 @@ G.ExpLeague = (() => {
   const BY = {}, FAM = {};
   for (const m of D.members) BY[m.dex] = m;
   /** Every stage of member m, the first one first. */
-  function stagesOf(m) { const out = [m.dex], q = [m.dex]; while (q.length) { const d = q.shift(); for (const [to] of m.evo[d] || []) if (!out.includes(to)) { out.push(to); q.push(to); } } return out; }
+  // (U3: + the member's `alt` stages, the regional formes that start a line of their own: Alolan Vulpix in Vulpix's family)
+  function stagesOf(m) { const out = [m.dex].concat(m.alt || []), q = out.slice(); while (q.length) { const d = q.shift(); for (const [to] of m.evo[d] || []) if (!out.includes(to)) { out.push(to); q.push(to); } } return out; }
   for (const m of D.members) for (const d of stagesOf(m)) FAM[d] = m.dex;
   const finalsOf = m => stagesOf(m).filter(d => !m.evo[d]);
   const nextOf = (m, d) => (m && m.evo[d]) || [];
