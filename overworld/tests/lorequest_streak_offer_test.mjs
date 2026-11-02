@@ -6,18 +6,18 @@
 //      always rotates through the heroes WITHOUT a live streak; equal streaks rotate (rng).
 //   2. conceding or abandoning a run ends that hero's streak (server action run-walkaway),
 //      without counting a run (no core-unlock farming), paying a pack or stamping the cooldown.
-//   node battlecards/tests/regression/lorequest_streak_offer_test.mjs
+//   node overworld/tests/lorequest_streak_offer_test.mjs (needs esbuild, so it lives in the overworld gate)
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
 import { DatabaseSync } from 'node:sqlite';
 import { buildSync } from 'esbuild';
-import * as Lorequest from '../../lorequest.js';
+import * as Lorequest from '../../battlecards/lorequest.js';
 
 process.env.MP_GC_RATE = '0';
 const HERE = path.dirname(fileURLToPath(import.meta.url));
-const ROOT = path.resolve(HERE, '../../../');
+const ROOT = path.resolve(HERE, '../../');
 let pass = 0, fail = 0;
 const ok = (m, c, extra) => { if (c) pass++; else { fail++; console.log('FAIL: ' + m + (extra != null ? '  ' + extra : '')); } };
 
