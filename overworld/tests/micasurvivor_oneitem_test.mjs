@@ -59,6 +59,7 @@ const BEFORE = (o) => {
 		localStorage.setItem('micasurvivor_dev', JSON.stringify(o.dev));   // (the base device id is read as JSON)
 		localStorage.setItem('micasurvivorexp_dev.guest', o.xdev);
 		localStorage.setItem('micasurvivor_accounts', JSON.stringify({ guest: { name: 'Trainer', guest: true, created: 1 } }));
+		localStorage.setItem('micasurvivor_unlocks_off', '1');   // (the shared unlock list off: this suite pins the save's collection / coins from before it; micasurvivor_unlocks_test tests it)
 		localStorage.setItem('micasurvivor_session', JSON.stringify('guest'));
 		if (!localStorage.getItem('micasurvivor_save.guest')) localStorage.setItem('micasurvivor_save.guest', JSON.stringify(o.save));
 	} catch (e) { /* the test reports a boot failure */ }

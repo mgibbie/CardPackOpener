@@ -432,6 +432,7 @@ G.ExpCap = (() => {
       say(F('¡Ya está! {x} se une a tu equipo', name(c.dex)) + ' · ' + perkText(typeOf(c.dex)), 3.4);
     } else if (c.kind === 'league') {
       if (Sv) { Sv.add('league.own', c.member || c.dex); Sv.bump('cap.league'); Sv.commit(); }
+      if (G.Unlocks) G.Unlocks.add([c.dex], 'expedition');   // (owner 2026-11-02: caught here -> unlocked in every mode, that species only)
       S.log.league.push(c.member || c.dex);
       say(F('¡Ya está! {x} se une a la Liga', name(c.member || c.dex)), 4);
     } else {

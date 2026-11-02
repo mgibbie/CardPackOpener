@@ -175,6 +175,7 @@ const BEFORE = (save, keep) => {
 		if (!keep || !localStorage.getItem('micasurvivor_save.guest')) {
 			localStorage.setItem('micasurvivor_dev', 'dleague4');
 			localStorage.setItem('micasurvivor_accounts', JSON.stringify({ guest: { name: 'Trainer', guest: true, created: 1 } }));
+			localStorage.setItem('micasurvivor_unlocks_off', '1');   // (the shared unlock list off: this suite pins the save's collection / coins from before it; micasurvivor_unlocks_test tests it)
 			localStorage.setItem('micasurvivor_session', JSON.stringify('guest'));
 			localStorage.setItem('micasurvivor_save.guest', JSON.stringify(save));
 		}

@@ -94,6 +94,7 @@ const BEFORE = () => {
 	});
 	window.__btn = (b, on, p = 0) => { const pad = window.__pads[p]; if (pad) pad.buttons[b] = { pressed: on, touched: on, value: on ? 1 : 0 }; };
 	Object.defineProperty(Navigator.prototype, 'getGamepads', { configurable: true, value() { return [0, 1, 2, 3].map(i => window.__pads[i] || null); } });
+	localStorage.setItem('micasurvivor_unlocks_off', '1');   // (the shared unlock list off: this suite pins the Z-crystal missions from before it; micasurvivor_unlocks_test tests it)
 	localStorage.setItem('magepunk_mp_token_v1', 'zmoves-test-token');
 	localStorage.setItem('magepunk_mp_state_v1', JSON.stringify({ username: 'ztester' }));
 };

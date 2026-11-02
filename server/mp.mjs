@@ -4769,6 +4769,15 @@ export default async function handler(req, env) {
 		}
 		return json({ ok: true, rev: incomingRev });
 	}
+	// MicaSurvivor (owner 2026-11-02, one unlock list): the species YOUR overworld game has caught (its Pokédex's caught list,
+	// magepunk_dex_v1 inside the ow blob) — read only, only your own row; MicaSurvivor maps the ids to dex numbers itself
+	if (action === 'micasurvivor-ow-caught') {
+		const ow = await store.get('ow:' + username);
+		let d = ow && ow['magepunk_dex_v1'];
+		if (typeof d === 'string') { try { d = JSON.parse(d); } catch { d = null; } }
+		const caught = d && Array.isArray(d.caught) ? d.caught.filter(x => typeof x === 'string' && x.length <= 40).slice(0, 4000) : [];
+		return json({ caught });
+	}
 	if (action === 'ow-load') {
 		return json({ ow: (await store.get('ow:' + username)) || null });
 	}

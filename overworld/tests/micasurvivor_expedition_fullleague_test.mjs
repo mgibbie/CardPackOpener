@@ -206,6 +206,7 @@ const BEFORE = (o) => {
 	H.thaw = () => { if (!H.frozen) return; H.frozen = false; const cb = H.pending; H.pending = null; if (cb) realRaf(cb); };
 	try {
 		localStorage.setItem('micasurvivor_dev', 'dfull19');
+		localStorage.setItem('micasurvivor_unlocks_off', '1');   // (the shared unlock list off: this suite pins the League roster / base save from before it; micasurvivor_unlocks_test tests it)
 		if (!sessionStorage.getItem('seeded')) {
 			sessionStorage.setItem('seeded', '1');
 			localStorage.setItem('magepunk_mp_token_v1', o.token);
