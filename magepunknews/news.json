@@ -522,6 +522,178 @@
 	},
 	"entries": [
 		{
+			"sha": "6acbbca",
+			"date": "2026-11-02",
+			"kind": "micatro",
+			"title": "Pokermon r65: Gen 7 batch 2 (13 jokers, #757-784)",
+			"body": "",
+			"cards": [],
+			"micatroMods": [
+				{
+					"id": "pokermon",
+					"name": "Pokermon",
+					"added": [
+						{
+							"key": "j_poke_salandit",
+							"name": "Salandit",
+							"set": "Joker",
+							"rarity": "common",
+							"cost": 5,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 12,
+								"y": 50
+							}
+						},
+						{
+							"key": "j_poke_salazzle",
+							"name": "Salazzle",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 8,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 14,
+								"y": 50
+							}
+						},
+						{
+							"key": "j_poke_stufful",
+							"name": "Stufful",
+							"set": "Joker",
+							"rarity": "common",
+							"cost": 5,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 16,
+								"y": 50
+							}
+						},
+						{
+							"key": "j_poke_bewear",
+							"name": "Bewear",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 8,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 18,
+								"y": 50
+							}
+						},
+						{
+							"key": "j_poke_comfey",
+							"name": "Comfey",
+							"set": "Joker",
+							"rarity": "rare",
+							"cost": 7,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 26,
+								"y": 50
+							}
+						},
+						{
+							"key": "j_poke_sandygast",
+							"name": "Sandygast",
+							"set": "Joker",
+							"rarity": "common",
+							"cost": 5,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 6,
+								"y": 51
+							}
+						},
+						{
+							"key": "j_poke_palossand",
+							"name": "Palossand",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 8,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 8,
+								"y": 51
+							}
+						},
+						{
+							"key": "j_poke_pyukumuku",
+							"name": "Pyukumuku",
+							"set": "Joker",
+							"rarity": "rare",
+							"cost": 7,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 10,
+								"y": 51
+							}
+						},
+						{
+							"key": "j_poke_komala",
+							"name": "Komala",
+							"set": "Joker",
+							"rarity": "rare",
+							"cost": 7,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 18,
+								"y": 51
+							}
+						},
+						{
+							"key": "j_poke_bruxish",
+							"name": "Bruxish",
+							"set": "Joker",
+							"rarity": "rare",
+							"cost": 7,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 26,
+								"y": 51
+							}
+						},
+						{
+							"key": "j_poke_jangmoo",
+							"name": "Jangmo-o",
+							"set": "Joker",
+							"rarity": "uncommon",
+							"cost": 6,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 2,
+								"y": 52
+							}
+						},
+						{
+							"key": "j_poke_hakamoo",
+							"name": "Hakamo-o",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 8,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 4,
+								"y": 52
+							}
+						},
+						{
+							"key": "j_poke_kommoo",
+							"name": "Kommo-o",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 10,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 6,
+								"y": 52
+							}
+						}
+					]
+				}
+			]
+		},
+		{
 			"sha": "f41e6a0",
 			"date": "2026-11-02",
 			"kind": "micatro",
