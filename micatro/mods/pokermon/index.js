@@ -975,7 +975,12 @@ export const POKERMON = registerMod({
   // 58 = the owner's Yamask nerf (jokers/pokejokers_designs.js grudge / mummy_sell): Yamask's X grows from the first 1 Joker sold each
   // round, Cofagrigus's from the first 2; Mummy once an Ante (was once a round). Moves recorded before r58 re-play on the old rules
   // (js/mods/pins.js RULES): a bank already earned stays (PORTING.md "The Yamask nerf").
-  contentRev: 58,
+  // 59 = the owner's legendary solo rule, "legendaries must be complete alone" (jokers/pokejokers_designs.js solo59): Rayquaza +1 hand and
+  // +1 discard; Latias / Latios half from the other consumable; the Lake trio counts other Psychic Jokers; the Regis +1 on a Boss Blind;
+  // Regigigas wakes sooner with Stone / Glass / Steel cards and converts one a Blind; Giratina's Origin after 10 destroyed; the Swords X1.5
+  // while their suit leads the deck; Keldeo's Resolute after 25 Hearts; Therian after 4 rounds; Fusion Flare / Bolt; Kyurem's forms by
+  // Fire vs Lightning Jokers. Moves recorded before r59 re-play on the partner rules (PORTING.md "The legendary solo rule").
+  contentRev: 59,
   // Pokermon 3.9.1 pokermon.lua: SMODS.current_mod.optional_features = {quantum_enhancements = true, object_weights = true}.
   // object_weights sends create_card's key, the shop roll, tags, packs, bosses and vouchers through SMODS.poll_object
   // (js/engine/smods.js; batch 17). quantum_enhancements is the engine's check_enhancement, always on.

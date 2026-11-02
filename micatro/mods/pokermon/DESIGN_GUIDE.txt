@@ -262,10 +262,19 @@ House pattern: a FIRST-HAND team X (the owner's Pachirisu, jokers/pokejokers_des
   - Tooltip: the current X and its state ("Active!" / "Used this round"; in the shop it is the next round's first hand) and the
     current payout. Juice the card on the first deal while it is on (Whiscash's Earthquake).
 
-House pattern: a TRIO (the owner's Regirock / Regice / Registeel, jokers/pokejokers_designs.js regi_others):
-  - Separate species (no family), each with its own rule, sharing one scaling rider: "1 + (OTHER Regis you have)". The count is of
-    DISTINCT other species, undebuffed: a twin of the same Regi (Showman) is never an "other Regi", and two Regirocks count once
-    for a Regice. All three held = 3 each; one alone = 1. Write the base in the tooltip's number, "+1 for each other Regi" below.
+OWNER RULE (2026-11-02, contentRev 59): LEGENDARIES MUST BE COMPLETE ALONE. Most runs see one Legendary, so a Legendary's effect
+never needs another Legendary (or any named partner) held: a partner clause is written as a SOLO trigger of the same flavour (a deck
+condition, a count on the card, a resource the run produces). Group flavour stays (the Regis still convert, the Swords still share a
+rider), but each member's rider reads only things one card can reach. A form that used to need a partner is reached solo, by a count on
+the card or a live board / deck read (Giratina's Origin after 10 destroyed, Keldeo's Resolute after 25 Hearts, the Therian formes after
+4 rounds held, Kyurem's White / Black by your Fire vs Lightning Jokers). The one kept pair rule is Kyogre / Groudon's Primal Clash: it is
+a downside that only exists while both are held (each is complete alone). Changing a shipped Legendary this way: gate on rulesRev
+(contentRev 59, solo59) so a run recorded before re-plays exactly; keep any progress counter under both rules.
+
+House pattern: a TRIO (the owner's Regirock / Regice / Registeel, jokers/pokejokers_designs.js regi_converts):
+  - Separate species (no family), each with its own rule, sharing one rider, the Regi Trio: 1 card a Blind, 1 MORE ON A BOSS BLIND
+    (contentRev 59, the solo rule; it was "1 + (OTHER Regis you have)", distinct species, which read only with a second Legendary).
+    G.GAME.blind.boss at setting_blind. Write the base in the tooltip's number, "1 more on a Boss Blind" below.
   - The rider is a DECK CONVERSION when a Blind is selected (Marble Joker's moment; Blueprint copies it): N random cards of the
     FULL deck (G.playing_cards, the run's seeded pseudorandom_element) become the joker's enhancement. Unenhanced cards first;
     once none is left, any card that isn't already that enhancement (so it overwrites, keeping seal and edition); never one that
@@ -286,22 +295,26 @@ House pattern: a WEATHER TRIO, clash and calm (the owner's Kyogre / Groudon / Ra
     Stone / Hazard neither). A tie goes to the one with more Energy, still tied to Kyogre (the listed first) — say the tie rule on
     the card. The loser does nothing that round, its +hand / +discard included: taken back at the read (never below 1 hand /
     0 discards), remembered on the joker so selling it that round doesn't take it twice; a loser gained mid-round gives nothing
-    until the next round. The decision holds for the round whatever is bought or sold after it.
+    until the next round. The decision holds for the round whatever is bought or sold after it. (The clash is the one pair rule the
+    solo rule keeps: a downside that exists only while both are held.)
   - CALM (Rayquaza held, undebuffed): no clash, both work every round, and Castform reads its normal forecast (the weather is calmed
-    rather than doubly locked). The calmer has its own scaling payoff (Dragon Ascent: X0.2 per hand containing a Straight or a
-    Flush, once for a Straight Flush).
+    rather than doubly locked). The calmer must be complete ALONE (the solo rule, contentRev 59): Rayquaza's Delta Stream is the two
+    rivals' gifts combined, +1 hand AND +1 discard each round (Accelgor's hands_discards; `delta_on` marks that THIS card gave them, so
+    a card obtained on older rules never takes back what it never gave), the calm is a small note line, and it has its own scaling
+    payoff (Dragon Ascent: X0.2 per hand containing a Straight or a Flush, once for a Straight Flush).
   - Energy: only the numbers that are numbers (Groudon's per-card X as Xmult_multi +5%; the calmer's gain as Xmult_mod +20%, its
     bank in a non-energy field). A rival with no number (Kyogre: +1 hand and a retrigger) is Energy-inert, marked
     poke_no_energy_field: true (the audit in pokermon_new_jokers_test needs one or the other).
   - Tooltip: the clash state ("Kyogre's round (4 Clubs, 1 red)", "calmed by Rayquaza", "no Groudon", "read on the next first deal").
 
-House pattern: an EON DUO, a pair with full cross-growth (the owner's Latias / Latios, jokers/pokejokers_designs.js eon):
-  - Each alone grows on HALF of a resource: Latias X0.15 per Tarot used, Latios X0.15 per Planet (context.using_consumeable,
-    consumeable.ability.set). Holding BOTH (Soul Dew: find_card(partner), so a debuffed partner breaks it and a Blueprint is not
-    the partner) every Tarot OR Planet grows both, each copy on its own. Unlike Lunatone / Solrock (half-strength cover) the duo
-    unlocks the full gain: the partner is a second Legendary slot, priced like one.
-  - Banked in eon_Xmult (no energy field), the gain Xmult_mod +20% per Energy (0.15 -> 0.18 / 0.21 / 0.24): Energy never raises
-    what is banked. Blueprint copies the X, never the growth.
+House pattern: an EON DUO, a pair on two halves of a resource (the owner's Latias / Latios, jokers/pokejokers_designs.js eon):
+  - Each grows on HALF of a resource at full rate: Latias X0.15 per Tarot used, Latios X0.15 per Planet (context.using_consumeable,
+    consumeable.ability.set). Soul Dew (contentRev 59, the solo rule): the OTHER kind grows it at half rate, alone (Latias X0.075 per
+    Planet, Latios X0.075 per Tarot), derived as Xmult_mod / 2 so one energy field scales both (Grumpig's overflow, the other way).
+    Before r59 the partner held made every Tarot OR Planet grow both at full rate: a second Legendary slot as the price, which most
+    runs never paid.
+  - Banked in eon_Xmult (no energy field), the gain Xmult_mod +20% per Energy (0.15 -> 0.18 / 0.21 / 0.24; the half 0.09 / 0.105 /
+    0.12): Energy never raises what is banked. Blueprint copies the X, never the growth.
 
 House pattern: a PER-ROUND FAVOURITE SUIT (the owner's Glameow line, jokers/pokejokers_designs.js fickle_pick):
   - Each joker keeps its OWN suit (two Glameows can like different suits), unlike the run-wide vanilla picks (Ancient Joker, The Idol,
@@ -474,11 +487,12 @@ lake_others / lake_x):
     Foresight; the scry cards are scored like held cards, cardarea G.scry_view), Mesprit on a poker hand new this round (X1.5, else X2.5:
     G.GAME.hands[scoring_name].played_this_round <= 1 in joker_main, because run.js counts the play before the jokers score), Azelf on the
     final hand (X2.5; hands_left === 0, Drifloon's check). Together they cover every hand without stacking on the same trigger.
-  - The rider is the Regi Trio's count (distinct OTHER species, undebuffed; a twin never counts) but ADDED to the joker's own X instead of
-    a conversion: X + lake_mod (0.25) per other guardian, in every X the joker has (Mesprit's both). All three: Uxie X1.8 a card, Mesprit
-    X2 / X3, Azelf X3. Keep lake_mod out of energy_values: Energy raises the base X (Xmult_multi +5% on the per-card one, Xmult / Xmult2
-    +20%), the trio bonus stays a flat +0.25 x others, so neither multiplies the other.
-  - Tooltip: the base numbers, "(Currently k/2 others)" and the current X, so a shop card shows what it would give with the row's guardians.
+  - The rider counts the joker's TYPE, not its trio (contentRev 59, the solo rule): + lake_mod (0.25) for each OTHER Psychic Joker
+    (is_type, undebuffed: Arceus and a Psychic Tera count, a twin guardian is one), AT MOST 2 (LAKE_CAP; the old 2-others cap), in every X
+    the joker has (Mesprit's both). With two: Uxie X1.8 a card, Mesprit X2 / X3, Azelf X3. A type count is the solo shape of "the other
+    members of my group": any team of the type feeds it. Keep lake_mod out of energy_values: Energy raises the base X (Xmult_multi +5%
+    on the per-card one, Xmult / Xmult2 +20%), the bonus stays a flat +0.25 x others, so neither multiplies the other.
+  - Tooltip: the base numbers, "(Currently k/2)" and the current X, so a shop card shows what it would give with the row.
 House pattern: NO DEBUFF, a rule-bender Legendary (the owner's Cresselia, Lunar Blessing; systems/rules.js set_debuff, lunar_refresh):
   - "Playing cards can't be debuffed" is ONE line in the Pokermon set_debuff hook: a playing card (ability.set Default / Enhanced) answers
     'prevent_debuff' while find_joker finds the joker (find_joker skips a debuffed one). Card:set_debuff lets 'prevent_debuff' win outright,
@@ -504,7 +518,7 @@ House pattern: a LEGENDARY THAT HATCHES ANOTHER JOKER (the owner's Manaphy, Egg 
   - Per-joker "each Water Joker gives" uses the other_joker context (Baseball Card's, Blaziken's: each joker shows its own bonus), with
     is_type and !debuff, itself included. A per-joker X is Xmult_multi (+5%), a per-joker Mult is mult (+40%).
 
-House pattern: a CREATION TRIO, two rule-benders and a partner form (the owner's Dialga / Palkia / Giratina, jokers/pokejokers_designs.js
+House pattern: a CREATION TRIO, two rule-benders and an earned form (the owner's Dialga / Palkia / Giratina, jokers/pokejokers_designs.js
 roar_on / spacial_rend / origin_forme):
   - Each is a Legendary rule-bender with NO number of its own, so it is Energy-inert (poke_no_energy_field, Kyogre's way): Dialga's
     retrigger and Palkia's slot and hand size never grow.
@@ -522,24 +536,24 @@ roar_on / spacial_rend / origin_forme):
   - Giratina, Shadow Force: a BANK grown by every destroyed playing card, any cause: the remove_playing_cards context (context.removed),
     which every destroying path sends (Glass shattering, Hanged Man, Pokermon's poke_remove_card eaters, a discard that destroys). X0.25 a
     card, banked in a non-energy field (shadow_Xmult); the gain Xmult_mod +20%.
-  - A PARTNER FORM (Origin Forme): while a partner is held (find_card: undebuffed, a Blueprint is not one) the joker shows another 3.9.1
-    cell AND its number changes (the gain doubles, derived as 2 x Xmult_mod so one energy field scales both). The cell is a live view form
-    (center.poke_view_form, Cherrim's way: buying, selling or debuffing the partner redraws it); a Legendary's form swaps BOTH the
-    background cell and its floating soul (ui.js ownFace: GIRATINA_ORIGIN pos {10,3} + soul_pos {11,3}). The type stays (both cards show
-    Psychic: check the alternate cell's icon with pokermon_art_type.mjs before giving a form its own type).
-House pattern: SLOW START, a payoff that wakes up (the owner's Regigigas, jokers/pokejokers_designs.js regis_distinct / giga_trio_bonus):
-  - A big flat X (X4 Mult, `Xmult` +20%: X4.8 / X5.6 / X6.4) paid for with a WAIT: it gives nothing until a countdown on the card
-    (`slow_start`, 5 when obtained, a non-energy field: Energy never shortens it) reaches 0, then works for the rest of the run.
-  - The countdown runs in the main end_of_round pass (not Blueprint; a debuffed joker isn't calculated, so it waits too), and an outside
-    condition speeds it: it drops by 1 + the DISTINCT related jokers held then (the Regis, regi_others' rule: two Regices count once).
-    Define every case on the card and in the tests: none 5 rounds (5 4 3 2 1 0), one 3 (5 3 1 0), two 2 (5 2 0). The FULL set is a
-    clean jump, not one more step: with all three it goes straight to 0 (giga_drop), so it wakes after 1 round (5 0), and a trio
-    assembled partway through the wait wakes it at the next end of round (the owner, contentRev 47: "full trio can make it 1 round").
-  - Don't name the field `rounds`: that is level_evo's countdown, and the card view draws it as an evolution timer.
-  - It can feed its family's shared rider: awake, with the whole trio held, each Regi converts 1 more card per Blind (a term added to
-    regi_converts, once however many copies; the Regis' own tooltip shows the new count).
-  - Tooltip: the state, "Asleep: k left, -n a round" / with the full trio "Asleep: k left, wakes at end of round" / "Awake!", and the
-    trio rule spelled out ("(With all three Regis: wakes after 1 round)"). Blueprint copies the X only while it is awake.
+  - A FORM EARNED BY A COUNT ON THE CARD (Origin Forme; contentRev 59, the solo rule — it needed a Dialga / Palkia held before): once 10
+    playing cards have been destroyed while it is held (`destroyed`, on the card, so it survives save / resume and evolution-free
+    reshuffles; tooltip "(Destroyed: k/10)") it is Origin for good: another 3.9.1 cell AND its number changes (the gain doubles, derived as
+    2 x Xmult_mod so one energy field scales both). Count one card at a time and say which side the threshold card falls on (the 10th
+    still gains Altered, the 11th Origin). The cell is a view form (center.poke_view_form, read from the card's own count); a Legendary's
+    form swaps BOTH the background cell and its floating soul (ui.js ownFace: GIRATINA_ORIGIN pos {10,3} + soul_pos {11,3}). The type
+    stays (both cards show Psychic: check the alternate cell's icon with pokermon_art_type.mjs before giving a form its own type).
+House pattern: SLOW START, a payoff that wakes up (the owner's Regigigas, jokers/pokejokers_designs.js giga_wait / giga_create):
+  - A big flat X (X4 Mult, `Xmult` +20%: X4.8 / X5.6 / X6.4) paid for with a WAIT: it gives nothing until it wakes, then works for the
+    rest of the run (`slow_start` 0; a non-energy field: Energy never shortens it).
+  - The wait reads the player's OWN deck (contentRev 59, the solo rule; before, each Regi held cut a round): 5 rounds, 1 sooner for every
+    5 Stone, Glass or Steel cards in the full deck (each card's own enhancement), at least 1 (giga_wait, read live: a deck that grows
+    mid-wait shortens it at once). The rounds held are counted on the card (`giga_rounds`, the main end_of_round pass; not Blueprint; a
+    debuffed Regigigas isn't calculated, so it waits); it wakes at the end of the round that makes them reach the wait.
+  - Don't name a countdown field `rounds`: that is level_evo's countdown, and the card view draws it as an evolution timer.
+  - Its second box feeds the deck the wait reads (Creator): awake, when a Blind is selected, 1 random card (unenhanced first; seeded) becomes
+    Stone, Glass or Steel (a seeded pick of the three). Blueprint copies the conversion (the Regis' moment) and the X, only while awake.
+  - Tooltip: "(Currently n: wakes after w)" and the state, "Asleep: k left" / "Asleep: wakes at end of round" / "Awake!".
 House pattern: COUNTS AS EVERY TYPE (the owner's Arceus, center.poke_multitype; systems/types.js multitype):
   - One flag on the center, read where Pokermon decides types: is_type and find_pokemon_type answer true for every one of the 12
     POKETYPES, and energy_matches lets every type's Energy energize it at full strength. So every type synergy counts it with no special
@@ -554,32 +568,36 @@ House pattern: COUNTS AS EVERY TYPE (the owner's Arceus, center.poke_multitype; 
     a joker that is every type (another Arceus, a Stellar Tera) adds ONE type of its own, never twelve; itself counts as one; at most 12.
     X(1 + 0.25 per type), `Xmult_mod` +20% (0.3 / 0.35 / 0.4): X2 with four types, X4 at all twelve.
 House pattern: a SUITED QUARTET with a full-set form (the Gen 5 Swords of Justice, Cobalion / Terrakion / Virizion / Keldeo;
-jokers/pokejokers_designs.js SWORDS / sword_others / sword_x):
+jokers/pokejokers_designs.js SWORDS / suit_leads / sword_x):
   - One suit each (Spades / Diamonds / Clubs / Hearts: is_suit, so Wild cards count), the same per-card X (X1.25, `Xmult_multi` +5%), so the
-    four cover every suit without stacking on the same card. The shared rider is the Regi count (distinct OTHER species, undebuffed; a twin
-    is never "another sword") ADDED to the per-card X (`sword_mod` +X0.1 each, fixed, outside energy_values): X1.25 / 1.35 / 1.45 / 1.55.
-  - A FULL-SET FORM on the fourth member: Keldeo's Resolute Form needs the other three ALL held (find_card each: undebuffed), and then its
-    base X is a second field (`Xmult_multi2` X2, +5% too: 2.1 / 2.2 / 2.3) with the rider still on top (X2.3). Store the form's base in its
-    own energy field, never as a multiplier on the first, so each Energy raises both forms by its own base's share. Art: the form's 3.9.1 cell
-    as a live view form (poke_view_form), Giratina's way.
-House pattern: PARTNER FORMES, a formes trio where each one's partner sets its form (the Gen 5 Forces of Nature; therian):
-  - The form rule is ASYMMETRIC: Tornadus and Thundurus are Therian while an undebuffed Landorus is held; Landorus only while BOTH are. Read
-    live (find_card), never stored, so selling, buying or debuffing a partner changes the form and the art (poke_view_form) at once.
+    four cover every suit without stacking on the same card. The shared rider reads the DECK, not the quartet (contentRev 59, the solo rule;
+    it was +X0.1 per other sword held): Swords of Justice, X1.5 instead while the sword's suit is the most common suit in the FULL deck
+    (ties count; is_suit with the debuff bypassed: a Wild card counts for every suit, Stone for none). X1.5 is derived as Xmult_multi x 1.2
+    (one energy field scales both: 1.575 / 1.65 / 1.725). Note the standard deck ties all four suits, so each starts at X1.5; a suit-changing
+    deck (Tarots, Smeared Joker, Wilds) keeps it.
+  - A FORM EARNED BY A COUNT (Keldeo's Resolute Form; it needed the other three held before): for good once 25 Hearts have scored while it
+    is held (`hearts` on the card; a retrigger counts, Blueprint never; the 25th still pays Ordinary), then its per-Heart X is a second
+    field (`Xmult_multi2` X2, +5% too: 2.1 / 2.2 / 2.3) replacing both the base and the Justice X. Store the form's base in its own energy
+    field, never as a multiplier on the first. Art: the form's 3.9.1 cell (poke_view_form from the count), Giratina's way.
+House pattern: TIMED FORMES, a formes trio that changes after rounds held (the Gen 5 Forces of Nature; therian / therian_tick):
+  - Each is Therian for good after it has been held for 4 rounds (contentRev 59, the solo rule; before, a partner set it: Tornadus /
+    Thundurus with Landorus, Landorus with both): a Reveal Glass on the card, `therian_rounds` counted in the main end_of_round pass (not
+    Blueprint; a debuffed round doesn't count), tooltip "(Therian in k rounds)". Each copy keeps its own clock.
   - The Therian form REPLACES or ADDS, and the card must say which: Tornadus keeps its +1 hand and ADDS +3 Mult per hand left; Thundurus's
     odds go from 1 in 4 to 1 in 2 (a second fixed field, `dem2`, read through get_probability_vars so Oops! / Absol apply) and a paying card
     adds X1.1; Landorus's held-Stone +40 Chips is REPLACED by a scored-Stone X1.5. Keep both forms' numbers in energy fields on the one card
     (chips and Xmult_multi), so Energy taken in either form is kept in the other. The type never changes (every form cell shows the base type).
   - "Per hand left, counted when it scores" is current_round.hands_left during joker_main: the hand being scored is already taken (run.js
     ease_hands_played(-1) before scoring), so the round's final hand counts 0 (Chesnaught's threshold, 2.1).
-House pattern: a TYPE BOOST PAIR and a BORROWER (the Gen 5 Tao trio, Reshiram / Zekrom / Kyurem; tao_x / kyurem_partner / kyurem_borrow):
+House pattern: a TYPE BOOST PAIR and a TYPE-BALANCE FORM (the Gen 5 Tao trio, Reshiram / Zekrom / Kyurem; tao_x / fusion_bank / kyurem_form):
   - "Each Fire Joker, itself included, gives X1.25" is Manaphy's other_joker pass (is_type and !debuff: Arceus counts, a Tera counts and
-    replaces the type). The two rivals each boost their own type; holding both (find_card) adds a FIXED +0.25 to each one's per-joker X
-    (`tao_mod`, outside energy_values, Dojo Rivals' fixed bonus).
-  - The BORROWER (Kyurem) copies a partner's LIVE number rather than owning one: in its own other_joker pass each joker of the partner's type
-    gives Kyurem the partner's current per-joker X (its Energy and its +0.25 included), a SEPARATE multiplier on top of the partner's (X1.25
-    then X1.25 again: X1.5625 a Fire Joker). Nothing is consumed (no fusion, no slot). The borrower's own Energy raises only its own X1.5.
-  - Two possible partners: the LEFTMOST undebuffed one in the row picks it (the row order is the player's decision), shown in the art
-    (White / Black Kyurem, live) and the tooltip ("White Kyurem: X1.25 per Fire Joker").
+    replaces the type). The growth reads a RESOURCE, not the rival (contentRev 59, the solo rule; it was Truth vs Ideals, +0.25 with both
+    held): Fusion Flare / Fusion Bolt, each Fire / Lightning Energy card used (on any joker) banks +X0.05 on the per-joker X (`fusion_x`,
+    `fusion_mod`: neither an energy field; Blueprint never banks; Storm Drain's moment, context.using_consumeable).
+  - Kyurem keeps its own X1.5 and takes a FORM from the row's type balance: White while you have more Fire Jokers than Lightning Jokers,
+    Black while more Lightning (itself left out), then each Joker of that type gives X1.25 (`Xmult_multi` +5%). A tie keeps the current form;
+    it starts plain until one side first leads. A form that "keeps" needs state: store it (`kyurem_form`) from the joker's OWN calculate on
+    every context, never from a view, so live play, resume and replay agree. Art and tooltip follow ("White Kyurem: 2 Fire, 1 Lightning").
   - Score with exact sums: a per-card / per-joker X built as base + bonus is computed unrounded (r9 in the code: float noise only) and rounded
     to 3 decimals only for the text. Rounding the scored value (r3) turns an energized X1.4375 into X1.438.
 House pattern: an ALTERNATING FORME that switches itself (the Gen 5 Meloetta, Relic Song; relic_song / meloetta_set):
@@ -1008,11 +1026,12 @@ Share of the BASE value added per Energy:
 
 Fields Energy never touches: rounds, retriggers, h_size, hands, d_size, card_limit, num/dem
 (probabilities), Xmult_minus, hazard_level, scry; house: slot_cost (Purugly's -1 Joker slot), slots (Palkia's +1 Joker
-slot), slow_start (Regigigas's wait), lake_mod (the Lake trio's +X0.25 per other guardian),
+slot), slow_start / giga_rounds (Regigigas's wait), lake_mod (the Lake trio's +X0.25 per other Psychic Joker),
 steal / drain (Purrloin's $ and sell-value theft), lucky_odds (Pidove's +1), stamp_money (Woobat's $1), rival_x / rival_mult (Dojo Rivals),
 chip_loss (the Venipede line's -Chips poison), flower_money (Petilil's $), ancient_money (Archen's $3), link_cap (Cinccino's max 5), levels
 (Sigilyph's extra Pair level), prank_draw / tidy_draws (the temporary hand size), the banks moxie_mult / moxie_Xmult / grudge_Xmult (and its per-round count grudge_round / grudge_count); sword_mod
-(the Swords of Justice's +X0.1), tao_mod (Truth vs Ideals' +0.25), storm_money / dem2 (Thundurus's $1 and Therian odds);
+(the Swords of Justice's old +X0.1), tao_mod (Truth vs Ideals' old +0.25), fusion_x / fusion_mod (Fusion Flare / Bolt's bank and gain),
+the solo-rule counters destroyed (Giratina), hearts (Keldeo), therian_rounds, delta_on / kyurem_form (state), storm_money / dem2 (Thundurus's $1 and Therian odds);
 the Gen 5 batch 3 fixed fields: static_money / money_cap (Emolga's and Stunfisk's $), together (the trade count), steel_x (Escavalier's
 Steel X1.75), targets (Mienfoo's top-N), Xmult_cap (Bouffalant's X4), the banks charge_Xmult / ant_Xmult.
 
@@ -1598,10 +1617,10 @@ Examples:
     each round; X0.1 banked per Pink Seal trigger (evolves after 8); Grumpig makes Pink Seals
     trigger every hand, X0.15 per hand one triggers in, X0.3 instead on an overflow (Black Pearl).
   Owner's Lake trio (L $20 each): Uxie +2 Foresight and X1.3 per Foreseen card, Mesprit X1.5 (X2.5 on a poker hand new this
-    round), Azelf X2.5 on the final hand; +X0.25 each per other guardian held (the Lake trio, 2.1). Cresselia (L $20): playing
+    round), Azelf X2.5 on the final hand; +X0.25 each per other Psychic Joker, max 2 (the Lake trio, 2.1; r59 solo). Cresselia (L $20): playing
     cards can't be debuffed, X1.5 (no debuff, 2.1).
   Owner's Latias / Latios (L $20 each; the card art is Psychic, not Dragon): X0.15 per Tarot (Mist Ball) / per Planet
-    (Luster Purge) used; Soul Dew: holding both, either kind grows both (the Eon duo, 2.1). Energy +20% on the gain.
+    (Luster Purge) used; Soul Dew: half that from the other kind, alone (the Eon duo, 2.1; r59 solo). Energy +20% on the gain.
   Owner's Drifloon -> Drifblim (C $5 -> S $8; Ghost/Flying, the art is Psychic): Stockpile +1 per discard action (max 3 / 5, +1
     per Energy), Spit Up on the final hand X(1 + 0.5 per Stockpile) and reset (Drifloon evolves after 4 Spit Ups); Drifblim's
     Aftermath: sold or destroyed, a Negative Spectral card.
@@ -1932,7 +1951,7 @@ Under-explored:
     (Jangmo-o line, Reshiram, Zekrom, Kyurem, Zygarde, Regidrago; the Gible line is now the owner's, below). The owner's
     Rayquaza (L $20) is the type's hand-condition growth on a Legendary: Dragon Ascent X0.2 per played
     hand containing a Straight or a Flush (once for a Straight Flush; Energy +20% on the gain), plus
-    Delta Stream, which calms Kyogre / Groudon's Primal Clash (2.1). The Lati twins draw as Psychic.
+    Delta Stream, +1 hand and +1 discard, which also calms Kyogre / Groudon's Primal Clash (2.1). The Lati twins draw as Psychic.
 Pitfalls:
   - "Base Chips and Mult doubled" (Axew) multiplies hand levels. With Planet stacking this is
     exponential, so keep it to Nature hands or once per round.

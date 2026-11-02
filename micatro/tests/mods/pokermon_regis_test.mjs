@@ -4,8 +4,9 @@
 //   Regice 378 (Legendary $20, Water)     Ice Body: Glass cards never shatter (the 1 in 4 roll is fixed to 0).
 //   Registeel 379 (Legendary $20, Metal)  Iron Body: Steel cards held in hand give X2 Mult instead of X1.5 (the Steel card's own held
 //                                         effect: a Red Seal / Mime repeat it).
-//   Regi Trio: when a Blind is selected each converts 1 + (OTHER Regi species you have, undebuffed) random cards of the full deck into
-//   its enhancement (unenhanced cards first; never a card that already is it). Energy: Regirock chips1 +30% / chip_mod +20%, Registeel
+//   Regi Trio (contentRev 59, solo): when a Blind is selected each converts 1 random card of the full deck into its enhancement, 2 on a
+//   Boss Blind (unenhanced cards first; never a card that already is it). Before r59: 1 + (OTHER Regi species you have, undebuffed) —
+//   checked below on the r58 rules, which a run recorded before r59 still re-plays on (the Boss Blind: pokermon_legendary_solo_test). Energy: Regirock chips1 +30% / chip_mod +20%, Registeel
 //   Xmult_multi +5%, Regice glass_convert +1 card per Energy.
 // Every ability is FIRED through real rounds with exact numbers.
 //   node micatro/tests/mods/pokermon_regis_test.mjs
@@ -31,6 +32,9 @@ function debuff(j) { j.ability.debuff_sources = { test: true }; j.set_debuff(); 
 /** Back into the hand (a played card sits in the discard). */
 function back(c) { if (c.area) c.area.remove_card(c); G.hand.emplace(c); return c; }
 const enh = (k) => (G.playing_cards || []).filter((c) => c.config.center.key === k).length;
+const oldRules = (fn) => { PINS.RULES.pins = { pokermon: '3.9.1+r58' }; try { return fn(); } finally { PINS.RULES.pins = null; } };
+/** (the result without its jokers, for the FAIL lines) */
+const show = (r) => ({ ...r, js: undefined });
 /** A new run at the blind select, these jokers added, then the Blind selected: -> the enhancement counts it made. */
 function blind(seed, keys, prep) {
   start(seed, {}, { noBlind: true });
@@ -177,18 +181,28 @@ sec('trio count', () => {
   r = blind('REGI4c', ['j_poke_registeel']);
   ok(r.steel === 1, 'Registeel alone: 1 Steel card', r);
   r = blind('REGI4d', ['j_poke_regirock', 'j_poke_regice']);
-  ok(r.stone === 2 && r.glass === 2 && r.steel === 0, 'two Regis: 2 each', r);
+  ok(r.stone === 1 && r.glass === 1 && r.steel === 0, 'two Regis: still 1 each (solo: no partner count)', show(r));
   r = blind('REGI4e', ['j_poke_regirock', 'j_poke_regice', 'j_poke_registeel']);
-  ok(r.stone === 3 && r.glass === 3 && r.steel === 3 && r.plain === 9, 'all three: 3 each (9 cards, all from the unenhanced ones)', r);
-  ok(/random card\(s\) in.*\{C:attention\}3\{\}|\{C:attention\}3\{\} random/.test(lines(r.js[0])) || /selected, \{C:attention\}3\{\}/.test(lines(r.js[0])), 'the tooltip shows 3', lines(r.js[0]));
-  // duplicates (as through Showman): another copy of the SAME Regi isn't an "other Regi"; two Regirocks are ONE other species for Regice
+  ok(r.stone === 1 && r.glass === 1 && r.steel === 1 && r.plain === 3, 'all three: 1 each (3 cards, all from the unenhanced ones)', show(r));
+  ok(/selected, \{C:attention\}1\{\} random/.test(lines(r.js[0])) && /1\{\} more on a \{C:attention\}Boss Blind/.test(lines(r.js[0])), 'the tooltip shows 1, 1 more on a Boss Blind', lines(r.js[0]));
   r = blind('REGI4f', ['j_poke_regirock', 'j_poke_regirock']);
-  ok(r.stone === 2, 'two Regirocks, nothing else: 1 each (a twin isn\'t another Regi)', r);
-  r = blind('REGI4g', ['j_poke_regirock', 'j_poke_regirock', 'j_poke_regice']);
-  ok(r.stone === 4 && r.glass === 2, 'two Regirocks + Regice: each Regirock 2, Regice 2 (Regirock counted once)', r);
-  // debuffed Regis neither convert nor count
+  ok(r.stone === 2, 'two Regirocks (Showman): 1 each', show(r));
+  // a debuffed Regi doesn't convert
   r = blind('REGI4h', ['j_poke_regirock', 'j_poke_regice', 'j_poke_registeel'], (js) => debuff(js[1]));
-  ok(r.js[1].debuff && r.stone === 2 && r.glass === 0 && r.steel === 2, 'a debuffed Regice: no Glass, and the others make 2 each', r);
+  ok(r.js[1].debuff && r.stone === 1 && r.glass === 0 && r.steel === 1, 'a debuffed Regice: no Glass, the others 1 each', show(r));
+  // the r58 rules: 1 + the OTHER Regi species (a twin never counts; debuffed ones don't)
+  oldRules(() => {
+    r = blind('REGI4d', ['j_poke_regirock', 'j_poke_regice']);
+    ok(r.stone === 2 && r.glass === 2 && r.steel === 0, 'r58 rules: two Regis: 2 each', show(r));
+    r = blind('REGI4e', ['j_poke_regirock', 'j_poke_regice', 'j_poke_registeel']);
+    ok(r.stone === 3 && r.glass === 3 && r.steel === 3 && r.plain === 9, 'r58 rules: all three: 3 each (9 cards, all from the unenhanced ones)', show(r));
+    r = blind('REGI4f', ['j_poke_regirock', 'j_poke_regirock']);
+    ok(r.stone === 2, 'r58 rules: two Regirocks, nothing else: 1 each (a twin isn\'t another Regi)', show(r));
+    r = blind('REGI4g', ['j_poke_regirock', 'j_poke_regirock', 'j_poke_regice']);
+    ok(r.stone === 4 && r.glass === 2, 'r58 rules: two Regirocks + Regice: each Regirock 2, Regice 2 (Regirock counted once)', show(r));
+    r = blind('REGI4h', ['j_poke_regirock', 'j_poke_regice', 'j_poke_registeel'], (js) => debuff(js[1]));
+    ok(r.js[1].debuff && r.stone === 2 && r.glass === 0 && r.steel === 2, 'r58 rules: a debuffed Regice: no Glass, and the others make 2 each', show(r));
+  });
   // the next Blind converts again
   start('REGI4i', {}, { noBlind: true });
   add('j_poke_regirock');
@@ -224,7 +238,7 @@ sec('conversion prefers unenhanced', () => {
   });
   ok(r.stone === 1 && other.config.center.key === 'm_stone' && enh('m_gold') === 0, 'all Stone but one Gold: the Gold one becomes Stone (it overwrites once no plain card is left)', r);
   r = blind('REGI5y', ['j_poke_regirock', 'j_poke_regice'], () => { for (const c of G.playing_cards) c.set_ability(P_CENTERS.m_stone, null, true); });
-  ok(r.stone === -2 && r.glass === 2, 'all Stone with Regirock + Regice: Regirock converts nothing (no non-Stone card), Regice turns 2 Stones to Glass', r);
+  ok(r.stone === -1 && r.glass === 1, 'all Stone with Regirock + Regice: Regirock converts nothing (no non-Stone card), Regice turns 1 Stone to Glass', show(r));
   // seal and edition survive a conversion
   let sealed;
   blind('REGI5z', ['j_poke_registeel'], () => {
@@ -258,7 +272,7 @@ sec('energy', () => {
   r = blind('REGI6b', ['j_poke_regice'], (js) => { for (let k = 0; k < 3; k++) increment_energy(js[0], 'Water'); });
   ok(r.glass === 4 && /\{C:attention\}4\{\}/.test(lines(r.js[0])), 'Regice, 3 Energy: 4 Glass cards (tooltip 4)', [r, lines(r.js[0])]);
   r = blind('REGI6c', ['j_poke_regice', 'j_poke_regirock', 'j_poke_registeel'], (js) => { for (let k = 0; k < 3; k++) increment_energy(js[0], 'Water'); });
-  ok(r.glass === 6 && r.stone === 3 && r.steel === 3, 'a 3-Energy Regice with both others: 4 + 2 = 6 Glass (the others 3 each)', r);
+  ok(r.glass === 4 && r.stone === 1 && r.steel === 1, 'a 3-Energy Regice with both others: 4 Glass (the others 1 each: no partner count)', show(r));
   r = blind('REGI6d', ['j_poke_regice'], (js) => { increment_energy(js[0], 'Colorless'); });
   ok(r.glass === 1 && near(ex(r.js[0]).glass_convert, 1.5), 'Regice, 1 Colorless (half): 1.5, floored to 1 Glass', [r, ex(r.js[0]).glass_convert]);
   r = blind('REGI6e', ['j_poke_regice'], (js) => { increment_energy(js[0], 'Colorless'); increment_energy(js[0], 'Colorless'); });

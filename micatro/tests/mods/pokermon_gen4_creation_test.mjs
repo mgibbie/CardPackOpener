@@ -4,11 +4,13 @@
 //                           hand effects run once). Energy-inert.
 //   Palkia 484 (Water)      Spacial Rend: +1 Joker slot and +1 hand size while held; taken back when sold, destroyed or debuffed (a
 //                           debuff on a full row leaves it one over: nobody is pushed out). Energy-inert.
-//   Regigigas 486 (Colorless) Slow Start: gives nothing until its countdown (5) reaches 0, then X4 Mult for good. Each end of round
-//                           it drops by 1 + the distinct Regis held (all three: awake after 1 round). Awake with all three Regis: each
-//                           Regi converts 1 extra card per Blind. Energy: Xmult +20% (X4.8 / X5.6 / X6.4).
-//   Giratina 487 (Psychic)  Shadow Force: +X0.25 Mult for each playing card destroyed (any cause); Origin Forme (Dialga or Palkia held):
-//                           X0.5 instead, and its Origin card (Gen 4 {10,3} + soul {11,3}). Energy: Xmult_mod +20% (0.3 / 0.35 / 0.4).
+//   Regigigas 486 (Colorless) Slow Start: gives nothing until its countdown (5) reaches 0, then X4 Mult for good. Energy: Xmult +20%
+//                           (X4.8 / X5.6 / X6.4). Before contentRev 59 (checked here on the r58 rules): each end of round it dropped by
+//                           1 + the distinct Regis held (all three: awake after 1 round); awake with all three Regis each Regi converted 1
+//                           extra card per Blind. The r59 solo rules: pokermon_legendary_solo_test.
+//   Giratina 487 (Psychic)  Shadow Force: +X0.25 Mult for each playing card destroyed (any cause); Origin Forme: X0.5 instead, and its
+//                           Origin card (Gen 4 {10,3} + soul {11,3}); r59: after 10 destroyed, before it: Dialga or Palkia held (r58 rules
+//                           here). Energy: Xmult_mod +20% (0.3 / 0.35 / 0.4).
 //   Arceus 493 (Colorless)  Multitype: counts as every type (is_type / find_pokemon_type / energy_matches); never breaks Monotype.
 //                           Judgment: X(1 + 0.25 per different type among your Jokers, itself one; max 12). Energy: Xmult_mod +20%.
 // Every ability is FIRED through real hands / rounds with exact numbers.
@@ -56,6 +58,9 @@ function playKeys(keys, opts = {}) {
 /** Win the round in progress, cash out and select the next Blind (The Wall). */
 function round() { clearHand(); nextRound(); flush(); }
 const enh = (k) => (G.playing_cards || []).filter((c) => c.config.center.key === k).length;
+/** contentRev 59 made these Legendaries solo (pokermon_legendary_solo_test); the partner rules below are the ones a run recorded before
+ *  r59 still re-plays on (js/mods/pins.js RULES, as a resume / replay sets it). */
+const oldRules = (fn) => { PINS.RULES.pins = { pokermon: '3.9.1+r58' }; try { return fn(); } finally { PINS.RULES.pins = null; } };
 
 // ------------------------------------------------------------------- pin, static data, order, pool, art, precedence
 await sec('pin', () => {
@@ -188,11 +193,12 @@ await sec('giratina', () => {
   t = playKeys(['S_6'], { center: 'm_glass' });
   G.GAME.probabilities.normal = p0;
   ok(near(ex(g).shadow_Xmult, 1.75), 'a Glass card shatters: +0.25 (X1.75)', ex(g).shadow_Xmult);
-  ok(/Altered Forme/.test(plain(g)), 'tooltip: Altered Forme', plain(g));
+  ok(/Destroyed: 3\/10/.test(plain(g)), 'tooltip: (Destroyed: 3/10) — the Altered Forme', plain(g));
   let v = {}; view_card(g, v);
   ok(v.poke.form === 'altered' && POKE_UI.face({ center: 'j_poke_giratina', facing: 'front', poke: v.poke, atlas: P_CENTERS.j_poke_giratina.atlas, pos: P_CENTERS.j_poke_giratina.pos, soul_pos: P_CENTERS.j_poke_giratina.soul_pos }, { area: 'jokers' }) === null,
     'Altered: its own card', v.poke);
-  // Origin Forme with Dialga: X0.5 per card, the Origin card
+  // Origin Forme with Dialga (the r58 rules): X0.5 per card, the Origin card
+  oldRules(() => {
   const d = add('j_poke_dialga');
   v = {}; view_card(g, v);
   const face = POKE_UI.face({ center: 'j_poke_giratina', facing: 'front', poke: v.poke, atlas: P_CENTERS.j_poke_giratina.atlas, pos: P_CENTERS.j_poke_giratina.pos, soul_pos: P_CENTERS.j_poke_giratina.soul_pos }, { area: 'jokers' });
@@ -220,6 +226,7 @@ await sec('giratina', () => {
   t = playKeys(['S_2']);
   ok(near(t.mult, 3.5), 'a High Card: X3.5 Mult', t);
   sell(pk);
+  });
   // a debuffed Giratina gains nothing; Blueprint copies the X, not the growth
   const [gd] = fresh('GIR1', ['giratina']);
   debuff(gd);
@@ -240,7 +247,7 @@ await sec('regigigas', () => {
   const trace = [ex(r).slow_start];
   let t = playKeys(['S_2']);
   ok(near(t.mult, 1), 'asleep: gives nothing (1 Mult)', t);
-  ok(/Asleep: 5 left, -1 a round/.test(plain(r)), 'tooltip: Asleep: 5 left, -1 a round', plain(r));
+  ok(/Asleep: 5 left/.test(plain(r)), 'tooltip: Asleep: 5 left', plain(r));
   for (let i = 0; i < 4; i++) { round(); trace.push(ex(r).slow_start); }
   t = playKeys(['S_2']);
   ok(trace.join() === '5,4,3,2,1' && near(t.mult, 1), 'no Regi: 5 4 3 2 1 after 4 rounds, still asleep', [trace, t]);
@@ -251,14 +258,14 @@ await sec('regigigas', () => {
   round();
   t = playKeys(['S_2']);
   ok(ex(r).slow_start === 0 && near(t.mult, 4), 'and for good', t);
-  // each distinct Regi cuts a round
+  // (the r58 rules) each distinct Regi cuts a round
+  oldRules(() => {
   const cut = (seed, regis) => { const [g] = fresh(seed, ['regigigas', ...regis]); const out = [ex(g).slow_start]; while (ex(g).slow_start > 0 && out.length < 8) { round(); out.push(ex(g).slow_start); } return out.join(); };
   ok(cut('GIG1', ['j_poke_regirock']) === '5,3,1,0', 'one Regi: 5 3 1 0 (3 rounds)', cut('GIG1', ['j_poke_regirock']));
   ok(cut('GIG2', ['j_poke_regirock', 'j_poke_regice']) === '5,2,0', 'two Regis: 5 2 0 (2 rounds)');
   ok(cut('GIG0B', []) === '5,4,3,2,1,0', 'no Regi: 5 4 3 2 1 0 (5 rounds)', cut('GIG0B', []));
   ok(cut('GIG3', REGIS) === '5,0', 'all three: 5 0 — awake after 1 round', cut('GIG3', REGIS));
-  { const [g] = fresh('GIG3T', ['regigigas', ...REGIS]);
-    ok(/Asleep: 5 left, wakes at end of round/.test(plain(g)) && /With all three Regis: \| wakes after 1 round/.test(plain(g)), 'tooltip with the trio: wakes at end of round / after 1 round', plain(g)); }
+  // (the r58 trio tooltip lines went with the r58 text: the card says the r59 rule now)
   // the trio assembled partway through the wait: awake at the next end of round
   { const [g] = fresh('GIG3M', ['regigigas']); const out = [ex(g).slow_start];
     round(); out.push(ex(g).slow_start); add('j_poke_regirock');
@@ -274,6 +281,7 @@ await sec('regigigas', () => {
   debuff(rk);
   round();
   ok(ex(g5).slow_start === 4, 'a debuffed Regi doesn\'t cut (5 -> 4)', ex(g5).slow_start);
+  });
   const [g6] = fresh('GIG6', ['regigigas']);
   debuff(g6);
   round();
@@ -284,7 +292,8 @@ await sec('regigigas', () => {
   ex(g7).slow_start = 0;
   t = playKeys(['S_2']);
   ok(near(t.mult, 16), 'awake: Blueprint copies the X4 (X16)', t);
-  // the Regi Trio bonus: all three + an awake Regigigas -> each converts 1 more card per Blind
+  // (the r58 rules) the Regi Trio bonus: all three + an awake Regigigas -> each converts 1 more card per Blind
+  oldRules(() => {
   const blind = (seed, keys, awake) => {
     start(seed, {}, { noBlind: true });
     const js = keys.map((k) => add(k));
@@ -298,11 +307,7 @@ await sec('regigigas', () => {
   ok(blind('GIGT2', [...REGIS, 'j_poke_regigigas'], false) === '3,3,3', 'an asleep Regigigas: still 3 each');
   ok(blind('GIGT3', ['j_poke_regirock', 'j_poke_regice', 'j_poke_regigigas'], true) === '2,2,0', 'two Regis + an awake Regigigas: no bonus (2 each)', blind('GIGT3', ['j_poke_regirock', 'j_poke_regice', 'j_poke_regigigas'], true));
   ok(blind('GIGT4', [...REGIS, 'j_poke_regigigas', 'j_poke_regigigas'], true) === '4,4,4', 'two awake Regigigas: still +1 (once)');
-  start('GIGT5', {}, { noBlind: true });
-  const tr = REGIS.map((k) => add(k)); const gg = add('j_poke_regigigas'); ex(gg).slow_start = 0;
-  ok(/4 random card/.test(plain(tr[0])), 'the Regi\'s tooltip shows the bonus (4 cards)', plain(tr[0]));
-  debuff(gg);
-  ok(/3 random card/.test(plain(tr[0])), 'a debuffed Regigigas: 3', plain(tr[0]));
+  });
 });
 
 // ------------------------------------------------------------------- Arceus, Multitype / Judgment
@@ -396,6 +401,7 @@ await sec('energy', () => {
   let t = playKeys(['S_2']);
   ok(near(t.mult, 6.4), 'a 3-Energy awake Regigigas: X6.4', t);
   const [g, d] = fresh('GIRE', ['giratina', 'dialga']);
+  oldRules(() => {
   const gs = [];
   for (let n = 0; n < 3; n++) { increment_energy(g, 'Psychic'); gs.push(ex(g).Xmult_mod); }
   ok(gs.every((v, i) => near(v, [0.3, 0.35, 0.4][i])), 'Giratina, Psychic Energy: X0.25 -> 0.3 / 0.35 / 0.4 a card', gs);
@@ -403,6 +409,7 @@ await sec('energy', () => {
   act({ type: 'use', id: hm.sort_id, targets: c.map((x) => x.sort_id) }); flush();
   ok(near(ex(g).shadow_Xmult, 1.8), 'Origin Forme (Dialga), 3 Energy: X0.8 a card (X1.8)', ex(g).shadow_Xmult);
   ok(/X0\.8\s+instead/.test(plain(g)), 'its tooltip: X0.8 instead', plain(g));
+  });
   void d;
   const [p] = fresh('PALE', ['palkia']);
   const lim = limit();
@@ -418,8 +425,8 @@ await sec('text', () => {
   G.jokers.config.card_limit = 10;
   ok(/Roar of Time: the first hand \| of each round is scored twice: \| every scored card \| retriggers once/.test(plain(d)), 'Dialga', plain(d));
   ok(/Spacial Rend: \+1 Joker slot \| and \+1 hand size/.test(plain(p)), 'Palkia', plain(p));
-  ok(/Slow Start: gives nothing for \| its first 5 rounds, then \|\s+X4\s+Mult for the rest of the run/.test(plain(r)) && /Regi Trio: while awake/.test(plain(r)), 'Regigigas', plain(r));
-  ok(/Shadow Force: gains\s+X0\.25\s+Mult \| each time a playing card \| is destroyed/.test(plain(g)) && /Origin Forme: with Dialga or/.test(plain(g)) && /\(Origin Forme\)/.test(plain(g)), 'Giratina (Origin with Dialga / Palkia held)', plain(g));
+  ok(/Slow Start: gives nothing for \| its first 5 rounds, then \|\s+X4\s+Mult for the rest of the run/.test(plain(r)) && /Creator: while awake/.test(plain(r)), 'Regigigas', plain(r));
+  ok(/Shadow Force: gains\s+X0\.25\s+Mult \| each time a playing card \| is destroyed/.test(plain(g)) && /Origin Forme: for good once \| 10 playing cards have been/.test(plain(g)) && /\(Destroyed: 0\/10\)/.test(plain(g)), 'Giratina (Origin after 10 destroyed; Dialga held changes nothing)', plain(g));
   ok(/Multitype: counts as \| every type/.test(plain(a)) && /Monotype/.test(plain(a)) && /Judgment:/.test(plain(a)), 'Arceus', plain(a));
 });
 

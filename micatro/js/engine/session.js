@@ -68,7 +68,9 @@ export class Session {
    */
   static fromRecipe(recipe, { repin: doRepin = false } = {}) {
     const s = new Session();
-    newRun({ seed: recipe.seed, seeded: recipeSeeded(recipe), back: recipe.back, stake: recipe.stake, mods: recipe.mods || [], modOptions: recipe.modOptions || {}, customDeck: recipe.customDeck || null, challenge: recipe.challenge || null, sleeve: recipe.sleeve || null });
+    // (the run's start too: a starting Joker's add_to_deck runs on the rules of the run's first move — Pokermon r59's Rayquaza)
+    RULES.pins = pinsAt(recipe, 0);
+    try { newRun({ seed: recipe.seed, seeded: recipeSeeded(recipe), back: recipe.back, stake: recipe.stake, mods: recipe.mods || [], modOptions: recipe.modOptions || {}, customDeck: recipe.customDeck || null, challenge: recipe.challenge || null, sleeve: recipe.sleeve || null }); } finally { RULES.pins = null; }
     s.recipe = { ...recipe, actions: [] };
     recordLegacyAssumption(s.recipe);
     const all = recipe.actions || [];
@@ -173,7 +175,8 @@ export class ReplayStepper {
   /** Back to the run's first view. Returns the run-start UI events. */
   reset() {
     const r = this.recipe;
-    newRun({ seed: r.seed, seeded: recipeSeeded(r), back: r.back || 'b_red', stake: r.stake == null ? 1 : r.stake, mods: r.mods || [], modOptions: r.modOptions || {}, customDeck: r.customDeck || null, challenge: r.challenge || null, sleeve: r.sleeve || null });
+    RULES.pins = pinsAt(r, 0); // (the start on the first move's rules, as fromRecipe)
+    try { newRun({ seed: r.seed, seeded: recipeSeeded(r), back: r.back || 'b_red', stake: r.stake == null ? 1 : r.stake, mods: r.mods || [], modOptions: r.modOptions || {}, customDeck: r.customDeck || null, challenge: r.challenge || null, sleeve: r.sleeve || null }); } finally { RULES.pins = null; }
     this.index = 0;
     this.error = null;
     this.startEvents = G.ui_events.splice(0);

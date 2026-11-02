@@ -3266,6 +3266,54 @@ free Negative Joker every round. The owner's approved nerf; the X values and Ene
   fresh allowance. Fixture `micatro/tests/fixtures/pokermon_yamask_r57_recipe.json` (recorded on r57: 4 sales in one round, X1.4 / X1.8).
 - Test: `micatro/tests/mods/pokermon_yamask_nerf_test.mjs`; `pokermon_gen5_batch2_test.mjs`'s Mummy section follows the new rules.
 
+### The legendary solo rule (2026-11-02, branch `feat/pokermon-legendary-solo`)
+
+contentRev **59**. Testers: the owner's Legendaries leaned on holding OTHER Legendaries, and most runs see one. The owner's rule:
+**legendaries must be complete alone**. Every partner clause became a solo trigger of the same flavour; the main numbers are unchanged
+(`solo59()` in `jokers/pokejokers_designs.js`). Already solo, untouched: Dialga, Palkia, Arceus, Cresselia, Manaphy / Phione, Meloetta,
+Genesect, Xerneas, Kubfu / Urshifu; Kyogre / Groudon's Primal Clash stays (it only matters with both held).
+- **Rayquaza**, Delta Stream: **+1 hand AND +1 discard each round** (Kyogre's and Groudon's gifts; Accelgor's `hands_discards`), still calms
+  the Clash. `delta_on` remembers that this card gave them, so a Rayquaza obtained on the old rules never takes back what it never gave;
+  live, it starts giving them when the next Blind is selected. Fixed (`hands` / `d_size`).
+- **Latias / Latios**, Soul Dew: the OTHER consumable grows it by half (Latias X0.075 a Planet, Latios X0.075 a Tarot): `Xmult_mod / 2`, so
+  Energy raises both (0.18 / 0.09, 0.21 / 0.105, 0.24 / 0.12); the bank `eon_Xmult` never.
+- **Uxie / Mesprit / Azelf**, Lake Guardians: +X0.25 for each **other Psychic Joker** (`is_type`: Arceus and a Psychic Tera count, a
+  debuffed one doesn't, a twin guardian is one), **at most 2** (the old 2-others cap; `LAKE_CAP`).
+- **Regirock / Regice / Registeel**, Regi Trio: 1 card a Blind, **1 more on a Boss Blind** (`G.GAME.blind.boss` at `setting_blind`); Regice's
+  +1 card per Energy stays.
+- **Regigigas**, Slow Start: wakes at the end of the round that makes `giga_rounds` (rounds held) reach `giga_wait` = 5, **1 sooner for every
+  5 Stone, Glass or Steel cards in the full deck** (each card's own enhancement), at least 1; read live (a deck grown mid-wait shortens it);
+  awake for good. **Creator** (the new second box): while awake, when a Blind is selected, 1 random card of the deck (seeded `regigigas`;
+  **unenhanced first**, else any card not already Stone / Glass / Steel) becomes Stone, Glass or Steel (seeded `regigigas_enh`). Blueprint
+  copies it (as the Regis' conversion).
+- **Giratina**, Origin Forme: **for good once 10 playing cards have been destroyed while held** (`destroyed`; tooltip `(Destroyed: k/10)`).
+  The cards are counted one at a time: **the 10th still gains Altered (X0.25), the 11th Origin (X0.5)**.
+- **Cobalion / Terrakion / Virizion / Keldeo**, Swords of Justice: **X1.5 instead of X1.25** while the sword's suit is the most common in the
+  FULL deck (**ties count**; `is_suit(s, true)`: **a Wild card counts for every suit**, Stone for none, Smeared Joker merges as usual).
+  X1.5 is `Xmult_multi x 1.2` (one energy field: 1.575 / 1.65 / 1.725). Note: a standard 52-card deck ties all four suits, so every sword
+  starts at X1.5 and loses it when another suit pulls ahead.
+- **Keldeo**, Resolute Form: **for good once 25 Hearts have scored while held** (`hearts`; each scoring counts, a retrigger too, never a
+  Blueprint; the 25th still pays Ordinary). Resolute X2 replaces both the base and the Justice X.
+- **Tornadus / Thundurus / Landorus**, Therian Forme: **for good after holding it 4 rounds** (`therian_rounds`, the main end-of-round pass;
+  a debuffed round doesn't count); tooltip `(Therian in k rounds)`. Each Therian effect unchanged.
+- **Reshiram / Zekrom**, Fusion Flare / Fusion Bolt (replaces Truth vs Ideals): **each Fire / Lightning Energy card used, on any joker,
+  banks +X0.05** on the per-Joker X (`fusion_x`, `fusion_mod` 0.05: neither an energy field; Blueprint never banks).
+- **Kyurem**: X1.5 stays. **White** while you have more Fire Jokers than Lightning Jokers, **Black** while more Lightning (Kyurem itself left
+  out; `typed_joker`: Arceus counts for both, so never tips it); then **each Joker of that type gives X1.25** (`Xmult_multi`, a new energy
+  field: 1.3125 / 1.375 / 1.4375). **A tie keeps the form**; it starts plain until one side first leads. The form is stored
+  (`kyurem_form`) by its own `calculate` on every context, never by a view, so live play, resume and replay agree.
+- **Never retroactive / exact replays** (#898's gate): every new rule reads `solo59()` = `rulesRev('pokermon') >= 59`; a move recorded
+  before r59 re-plays on the partner rules. New here: **the run's start** (a custom deck's starting Jokers' `add_to_deck`) also runs on the
+  rules of the first move (`session.js` `fromRecipe` / `ReplayStepper.reset`), or an r58 run with a starting Rayquaza would re-play with
+  an extra hand. The progress counters (`destroyed`, `hearts`, `therian_rounds`, `giga_rounds`) are kept under both rules, so an old run
+  carries them over; the Fusion bank only grows on r59. The old fields (`sword_mod`, `tao_mod`, `lake_mod`, `slow_start`) stay for the old rules.
+  Fixture `micatro/tests/fixtures/pokermon_legsolo_r58_recipe.json` (recorded on main at r58: 19 Legendaries, Hanged Man, Pluto, a Fire
+  Energy, one hand: 21784).
+- Art: unchanged cells (Origin, Therian, Resolute, White / Black Kyurem keep their base type, `pokermon_art_type.mjs`), now reached solo.
+- Tests: `micatro/tests/mods/pokermon_legendary_solo_test.mjs` (each joker alone, through real hands / rounds; save / resume; Energy; the
+  r58 fixture). The partner sections of `pokermon_gen3_legendaries`, `pokermon_gen4_creation`, `pokermon_gen4_lake_trio`,
+  `pokermon_gen5_legendaries` and `pokermon_regis` now run on the r58 rules (`RULES.pins`), the rules old runs still re-play on.
+
 ### Pending from the 3.9.1 joker rework (after batch 10b)
 Every existing joker is on 3.9.1: `rework_hold` (still on 3.2.1) is empty. What waits, by the batch it waits on (`rework_deferred` =
 on 3.9.1 but one part):

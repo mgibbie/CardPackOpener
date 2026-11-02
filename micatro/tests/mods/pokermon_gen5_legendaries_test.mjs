@@ -12,6 +12,8 @@
 //   Meloetta 648        Relic Song: Aria (Psychic) X2 / Pirouette (Fighting) the first scored card retriggers 3 times, switching after
 //                       every hand; Aria at each round's start; type and art follow; Monotype-exempt; survives save / resume.
 //   Genesect 649        Techno Blast: X(1.5 + 0.5 per Water, Lightning or Fire Joker).
+//   (contentRev 59 made the Swords, the Forces of Nature and the Tao trio solo: pokermon_legendary_solo_test. Their partner rules above
+//   are checked here on the r58 rules, which a run recorded before r59 still re-plays on: the `osec` sections.)
 // Every ability is FIRED through real hands and rounds with exact numbers.
 //   node micatro/tests/mods/pokermon_gen5_legendaries_test.mjs
 import fs from 'fs';
@@ -35,6 +37,9 @@ const key = (c) => c.config.center.key;
 const near = (a, b) => Math.abs(a - b) < 1e-9;
 const flush = () => G.E_MANAGER.flush();
 const sec = async (name, fn) => { try { await fn(); } catch (e) { ok(false, name + ' threw: ' + String(e && e.stack).slice(0, 700)); } };
+/** contentRev 59 made the Swords, the Forces of Nature and the Tao trio solo (pokermon_legendary_solo_test). The partner rules these
+ *  sections check are the ones a run recorded before r59 still re-plays on (js/mods/pins.js RULES, set as a resume / replay sets it). */
+const osec = (name, fn) => sec(name + ' (r58 rules)', async () => { PINS.RULES.pins = { pokermon: '3.9.1+r58' }; try { await fn(); } finally { PINS.RULES.pins = null; } });
 const ex = (j) => j.ability.extra;
 const C = (n) => P_CENTERS['j_poke_' + n];
 const plain = (j) => describe(j).lines.join(' | ').replace(/\{[^}]*\}/g, '').replace(/\s+/g, ' ');
@@ -119,7 +124,7 @@ await sec('static', () => {
 });
 
 // ------------------------------------------------------------------- the Swords of Justice + Keldeo's Resolute Form
-await sec('swords', () => {
+await osec('swords', () => {
   start('SWORD1');
   const co = add('j_poke_cobalion');
   let t = play(['S_5']);
@@ -146,7 +151,7 @@ await sec('swords', () => {
   ok(near(t.mult, 1.55), '4 swords (Keldeo counts): a Spade X1.55', t.total);
   t = play(['D_5']); ok(near(t.mult, 1.55), '4 swords: a Diamond X1.55', t.total);
   t = play(['C_5']); ok(near(t.mult, 1.55), '4 swords: a Club X1.55', t.total);
-  ok(/3\/3 others: X1\.55/.test(plain(co)), 'Cobalion\'s tooltip: 3/3 others, X1.55', plain(co));
+  ok(/X1\.55 \)/.test(plain(co)), 'Cobalion\'s tooltip: the X it gives now, X1.55', plain(co));
   // Keldeo Resolute: X2 base + 0.3
   t = play(['H_5']);
   ok(near(t.mult, 2.3), 'Keldeo, Resolute (Cobalion, Terrakion and Virizion held): a Heart X2 + 0.3 = X2.3', t.total);
@@ -182,7 +187,7 @@ await sec('swords', () => {
 });
 
 // ------------------------------------------------------------------- the Forces of Nature: formes and effects
-await sec('forces formes', () => {
+await osec('forces formes', () => {
   start('FORCE1');
   const to = add('j_poke_tornadus');
   ok(ex(to).hands === 1 && G.GAME.round_resets.hands === 5, 'Tornadus: +1 hand each round (4 -> 5)', G.GAME.round_resets.hands);
@@ -204,7 +209,7 @@ await sec('forces formes', () => {
   act({ type: 'sell', id: to.sort_id }); flush();
   ok(G.GAME.round_resets.hands === 4, 'Tornadus sold: the hand goes back (5 -> 4)', G.GAME.round_resets.hands);
 });
-await sec('tornadus', () => {
+await osec('tornadus', () => {
   start('TORN');
   add('j_poke_tornadus');
   let t = play(['S_5'], { left: 4 });
@@ -217,7 +222,7 @@ await sec('tornadus', () => {
   t = play(['S_5'], { left: 1 });
   ok(near(t.mult, 1), 'the final hand (0 left): +0', t.total);
 });
-await sec('thundurus', () => {
+await osec('thundurus', () => {
   start('THUN');
   const th = add('j_poke_thundurus');
   ex(th).dem = 1; // forced odds (1 in 1)
@@ -248,7 +253,7 @@ await sec('thundurus', () => {
   ok(t.money === 2, 'Blueprint copies it: a card earns $1 twice', t.money);
   void la;
 });
-await sec('landorus', () => {
+await osec('landorus', () => {
   start('LAND');
   const la = add('j_poke_landorus');
   let t = play(['S_5'], { held: [['H_7', 'm_stone'], ['D_7', 'm_stone'], 'C_7'] });
@@ -272,7 +277,7 @@ await sec('landorus', () => {
 });
 
 // ------------------------------------------------------------------- the Tao trio: Turboblaze, Teravolt, Truth vs Ideals
-await sec('tao', () => {
+await osec('tao', () => {
   start('TAO1');
   const re = add('j_poke_reshiram');
   let t = play(['S_5']);
@@ -299,7 +304,7 @@ await sec('tao', () => {
   typed('Lightning');
   t = play(['S_5']);
   ok(near(t.mult, Math.pow(1.5, 4)), '+ a Lightning Joker: X1.5 from Zekrom too', t.total);
-  ok(/active: X1\.5 each/.test(plain(re)) && /currently 2/.test(plain(re)), 'Reshiram\'s tooltip: 2 Fire Jokers, Truth vs Ideals active', plain(re));
+  ok(/Fire Joker gives X1\.5 Mult/.test(plain(re)) && /currently 2/.test(plain(re)), 'Reshiram\'s tooltip: 2 Fire Jokers, X1.5 each (Truth vs Ideals)', plain(re));
   debuff(ze);
   t = play(['S_5']);
   ok(near(t.mult, 1.25 * 1.25), 'Zekrom debuffed: no Truth vs Ideals, no Teravolt (Reshiram X1.25 twice)', t.total);
@@ -312,13 +317,13 @@ await sec('tao', () => {
 });
 
 // ------------------------------------------------------------------- Kyurem: White / Black, the borrowed boost
-await sec('kyurem', () => {
+await osec('kyurem', () => {
   start('KYU1');
   const ky = add('j_poke_kyurem');
   let t = play(['S_5']);
   ok(near(t.mult, 1.5) && cell(ky) === '{2,5}/{3,5}', 'Kyurem alone: X1.5, its own card', [t.total, cell(ky)]);
   const re = add('j_poke_reshiram');
-  ok(cell(ky) === '{8,5}/{9,5}' && /White Kyurem: X1\.25 per Fire Joker/.test(plain(ky)), 'with Reshiram: White Kyurem (Gen 5 {8,5})', [cell(ky), plain(ky)]);
+  ok(cell(ky) === '{8,5}/{9,5}' && /\(White Kyurem: /.test(plain(ky)), 'with Reshiram: White Kyurem (Gen 5 {8,5})', [cell(ky), plain(ky)]);
   t = play(['S_5']);
   ok(near(t.mult, 1.5 * 1.25 * 1.25), 'White: Reshiram X1.25 for itself, and Kyurem X1.25 again for it (x X1.5)', t.total);
   typed('Fire');
@@ -344,7 +349,7 @@ await sec('kyurem', () => {
   // both: the leftmost picks it
   start('KYU3');
   const zz = add('j_poke_zekrom'); const k3 = add('j_poke_kyurem'); const rr = add('j_poke_reshiram');
-  ok(cell(k3) === '{4,5}/{5,5}' && /Black Kyurem: X1\.5 per Lightning/.test(plain(k3)), 'Zekrom left of Reshiram: Black Kyurem, borrowing Zekrom\'s X1.5 (Truth vs Ideals)', [cell(k3), plain(k3)]);
+  ok(cell(k3) === '{4,5}/{5,5}' && /\(Black Kyurem: /.test(plain(k3)), 'Zekrom left of Reshiram: Black Kyurem, borrowing Zekrom\'s X1.5 (Truth vs Ideals)', [cell(k3), plain(k3)]);
   t = play(['S_5']);
   ok(near(t.mult, 1.5 * 1.5 * 1.5 * 1.5), 'Black: Reshiram X1.5, Zekrom X1.5, Kyurem X1.5 and X1.5 again for Zekrom', t.total);
   G.jokers.cards.splice(G.jokers.cards.indexOf(rr), 1); G.jokers.cards.unshift(rr);
@@ -442,7 +447,7 @@ await sec('genesect', () => {
 });
 
 // ------------------------------------------------------------------- Energy: the standard shares, and energized numbers in play
-await sec('energy', () => {
+await osec('energy', () => {
   const r3 = (x) => Math.round(x * 1e9) / 1e9;
   const steps = (n, fields, type) => {
     start('EN' + n);

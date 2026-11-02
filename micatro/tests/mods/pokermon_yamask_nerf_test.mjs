@@ -35,7 +35,7 @@ function sell(j) { const r = act({ type: 'sell', id: j.sort_id }); flush(); retu
 const sellN = (n) => { const out = []; for (let i = 0; i < n; i++) { const j = add('j_joker'); sell(j); out.push(j); } return out; };
 
 await sec('pin', () => {
-  ok(MODS.pokermon.contentRev === 58 && PINS.modPin('pokermon') === '3.9.1+r58', 'Pokermon contentRev 58 (pin 3.9.1+r58)', PINS.modPin('pokermon'));
+  ok(MODS.pokermon.contentRev >= 58 && PINS.modPin('pokermon') === '3.9.1+r' + MODS.pokermon.contentRev, 'Pokermon contentRev 58 or later (r59 the legendary solo rule)', PINS.modPin('pokermon'));
   ok(PINS.LEGACY_MOD_VERSIONS.pokermon === '3.2.1+r1', 'LEGACY_MOD_VERSIONS untouched');
   ok(!('grudge_round' in energy_values) && !('grudge_count' in energy_values) && !('grudge_Xmult' in energy_values), 'grudge_round / grudge_count / grudge_Xmult are no energy fields');
 });
@@ -170,13 +170,13 @@ await sec('r57 recipe', () => {
   const FIX = JSON.parse(readFileSync(new URL('../fixtures/pokermon_yamask_r57_recipe.json', import.meta.url), 'utf8'));
   ok(FIX.modVersions.pokermon === '3.9.1+r57' && FIX.actions.filter((a) => a.type === 'sell').length === 4, 'the fixture: recorded on 3.9.1+r57, 4 Jokers sold in one round', FIX.modVersions);
   const diff = Session.pinDiff(FIX);
-  ok(diff.length === 1 && diff[0].id === 'pokermon' && diff[0].recorded === '3.9.1+r57' && diff[0].current === '3.9.1+r58', 'the resume prompt names r57 -> r58', diff);
+  ok(diff.length === 1 && diff[0].id === 'pokermon' && diff[0].recorded === '3.9.1+r57' && diff[0].current === PINS.modPin('pokermon'), 'the resume prompt names r57 -> the current pin', diff);
   const s = Session.fromRecipe(JSON.parse(JSON.stringify(FIX)), { repin: true }); flush();
   const yk = () => G.jokers.cards.find((c) => key(c) === 'j_poke_yamask'), ck = () => G.jokers.cards.find((c) => key(c) === 'j_poke_cofagrigus');
   COUNTS.r57 = [X(yk()), X(ck())];
   ok(!s.stoppedAt, '"Continue anyway": every r57 move replays', s.stoppedAt);
   ok(near(X(yk()), 1.4) && near(X(ck()), 1.8), 'the banked X is kept: Yamask X1.4, Cofagrigus X1.8 (as recorded on r57; the new rules would give X1.1 / X1.4)', COUNTS.r57);
-  ok(s.recipe.modVersions.pokermon === '3.9.1+r58' && s.recipe.repinned && s.recipe.repinned[0].from.pokermon === '3.9.1+r57' && s.recipe.repinned[0].at === FIX.actions.length, 're-pinned to r58 at the r57 moves\' end', s.recipe.repinned);
+  ok(s.recipe.modVersions.pokermon === PINS.modPin('pokermon') && s.recipe.repinned && s.recipe.repinned[0].from.pokermon === '3.9.1+r57' && s.recipe.repinned[0].at === FIX.actions.length, 're-pinned to r58 at the r57 moves\' end', s.recipe.repinned);
   ok(G.GAME.poke_mummy_round === G.GAME.round && G.GAME.poke_mummy_ante === undefined, 'the r57 Mummy wrote the old key (poke_mummy_round)', [G.GAME.poke_mummy_round, G.GAME.poke_mummy_ante]);
   ok(/Mummy: used this Ante/.test(plain(ck())) && left(yk()) === '0/1' && left(ck()) === '0/2', 'migrated: the old key reads as used this Ante; this round\'s grudges are used up (no fresh allowance mid-round)', [plain(ck())]);
   // live, on r58, in the same round: sell the Yamask itself (a recorded move)
@@ -190,7 +190,7 @@ await sec('r57 recipe', () => {
   const st = Session.stepper(JSON.parse(JSON.stringify(s.recipe)));
   st.seek(st.total);
   ok(!st.error && st.index === s.recipe.actions.length && !yk() && near(X(ck()), 1.8), 'the replay stepper: X1.8 too', [st.error, X(ck())]);
-  ok(PINS.RULES.pins === null && PINS.rulesRev('pokermon') === 58, 'live play is back on the current rules (RULES cleared)', PINS.RULES.pins);
+  ok(PINS.RULES.pins === null && PINS.rulesRev('pokermon') === MODS.pokermon.contentRev, 'live play is back on the current rules (RULES cleared)', PINS.RULES.pins);
   // the fixture re-played on r58 rules from the start (no re-pin history; as if recorded on r58) shows what the gate prevents
   const asNew = { ...JSON.parse(JSON.stringify(FIX)), modVersions: { ...FIX.modVersions, pokermon: '3.9.1+r58' } };
   Session.fromRecipe(asNew); flush();

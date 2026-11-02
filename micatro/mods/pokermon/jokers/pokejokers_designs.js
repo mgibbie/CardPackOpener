@@ -153,6 +153,12 @@ import { number_format } from '../../../js/engine/core.js';
 import { rulesRev } from '../../../js/mods/pins.js';
 
 const FILE = 'micatro/pokejokers_designs';
+/** contentRev 59, the owner's rule "legendaries must be complete alone": every partner clause of the Gen 3-5 Legendaries became a solo
+ *  trigger (Rayquaza, the Lati twins, the Lake trio, the Regis, Regigigas, Giratina, the Swords of Justice, the Forces of Nature, the
+ *  Tao trio). A move re-simulated from a run recorded before r59 (resume / replay; js/mods/pins.js RULES) keeps the old partner rules,
+ *  so an old run re-plays exactly and nothing it banked shrinks; live play is always on the new ones. The progress counters (Giratina's
+ *  destroyed cards, Keldeo's Hearts, the Therian rounds, Regigigas's rounds) are kept under both, so an old run carries them over. */
+const solo59 = () => rulesRev('pokermon') >= 59;
 const a_mult = (n) => localize({ type: 'variable', key: 'a_mult', vars: [n] });
 const a_chips = (n) => localize({ type: 'variable', key: 'a_chips', vars: [n] });
 const a_xmult = (n) => localize({ type: 'variable', key: 'a_xmult', vars: [n] });
@@ -785,9 +791,13 @@ export function regi_others(card) {
   }
   return seen.size;
 }
-/** Cards this Regi converts when a Blind is selected: its base (1; Regice's `glass_convert`, +1 per Energy, floored) + the others. */
-/** (+1 with all three Regis and an awake Regigigas: giga_trio_bonus, the owner's Regigigas.) */
-const regi_converts = (card) => Math.floor((card.ability.extra.glass_convert || 1) + 1e-9) + regi_others(card) + giga_trio_bonus(card);
+/** A Regi's own base conversion (1; Regice's `glass_convert`, +1 per Energy, floored). */
+const regi_base = (card) => Math.floor((card.ability.extra.glass_convert || 1) + 1e-9);
+/** The Blind being selected / played is a Boss Blind. */
+const boss_blind = () => !!(G.GAME && G.GAME.blind && G.GAME.blind.boss);
+/** Cards this Regi converts when a Blind is selected: its base, +1 when that Blind is a BOSS Blind (Regi Trio, contentRev 59: solo).
+ *  Before r59: + the other Regi species held (regi_others) + 1 with all three and an awake Regigigas (giga_trio_bonus). */
+const regi_converts = (card, boss = boss_blind()) => regi_base(card) + (solo59() ? (boss ? 1 : 0) : regi_others(card) + giga_trio_bonus(card));
 const unbroken = (c) => !c.destroyed && !c.shattered && !c.removed;
 /** When a Blind is selected: `n` random cards of the FULL deck (G.playing_cards, the run's seeded pseudorandom_element) become `enh`.
  *  Unenhanced cards first; once none is left, any card that isn't already `enh` (overwriting its enhancement; seal and edition kept).
@@ -977,17 +987,40 @@ function clash_state(partner) {
   if (!GM.facing_blind || !P || P.round !== GM.round || !P.winner) return 'read on the next first deal';
   return (P.winner === 'kyogre' ? 'Kyogre' : 'Groudon') + "'s round" + (P.tie ? ', a tie' : '') + ' (' + P.clubs + ' Clubs, ' + P.red + ' red)';
 }
+/** Rayquaza, Delta Stream (contentRev 59): +hands hand and +d_size discard each round (Kyogre's and Groudon's gifts together;
+ *  Accelgor's hands_discards pair). `delta_on` remembers that this card gave them, so one obtained on the old rules (a resumed pre-r59
+ *  run: it gave nothing) never takes back what it never gave; such a Rayquaza starts giving them when the next Blind is selected
+ *  (delta_wake, live rules). Fixed numbers (energy-inert names). */
+const delta_stream = {
+  add_to_deck(self, card, from_debuff) {
+    if (!solo59()) return;
+    card.ability.extra.delta_on = true;
+    hands_discards.add_to_deck(self, card, from_debuff);
+  },
+  remove_from_deck(self, card, from_debuff) {
+    if (!card.ability.extra.delta_on) return;
+    card.ability.extra.delta_on = false;
+    hands_discards.remove_from_deck(self, card, from_debuff);
+  },
+};
+function delta_wake(card, context) {
+  if (context.setting_blind && !context.blueprint && solo59() && !card.ability.extra.delta_on) delta_stream.add_to_deck(null, card, false);
+}
 /** Rayquaza, Dragon Ascent: the played hand contains a Straight or a Flush (a Straight Flush is one hand: it grows once). */
 const ascends = (context) => !!context.poker_hands && ((context.poker_hands.Straight || []).length > 0 || (context.poker_hands.Flush || []).length > 0);
 /** Latias / Latios: the banked X (`eon_Xmult`, in no energy field: what is banked keeps its worth), each gain `Xmult_mod` (Energy +20%).
- *  Soul Dew: with the partner held (undebuffed; find_card), every Tarot OR Planet grows both. Not Blueprint (it copies the X only). */
+ *  Soul Dew (contentRev 59, solo): the OTHER kind (Latias: a Planet; Latios: a Tarot) grows it by half (0.5 x Xmult_mod, so one energy
+ *  field scales both). Before r59: with the partner held (undebuffed; find_card) every Tarot OR Planet grew both by the full gain.
+ *  Not Blueprint (it copies the X only). */
 const soul_dew = (partner) => !!(G.jokers && find_card('j_poke_' + partner).length > 0);
+const eon_half = (card) => r9(card.ability.extra.Xmult_mod / 2);
 function eon(card, context, own, partner) {
   const ex = card.ability.extra;
   if (context.using_consumeable && !context.blueprint && context.consumeable) {
-    const set = context.consumeable.ability.set;
-    if (set === own || ((set === 'Tarot' || set === 'Planet') && soul_dew(partner))) {
-      ex.eon_Xmult = r3(ex.eon_Xmult + ex.Xmult_mod);
+    const set = context.consumeable.ability.set, other = own === 'Tarot' ? 'Planet' : 'Tarot';
+    const gain = set === own ? ex.Xmult_mod : set !== other ? 0 : solo59() ? eon_half(card) : soul_dew(partner) ? ex.Xmult_mod : 0;
+    if (gain > 0) {
+      ex.eon_Xmult = r3(ex.eon_Xmult + gain);
       card_eval_status_text(card, 'extra', null, null, null, { message: localize('k_upgrade_ex'), colour: 'XMULT' });
     }
     return undefined;
@@ -1320,10 +1353,21 @@ const luminous = (card) => !is_day() || cosmic(card, 'j_poke_lunatone');
 // ---------------------------------------------------------------- the creation trio, Regigigas and Arceus (the owner's Gen 4 Legendaries)
 /** Dialga, Roar of Time: the round's first hand (hands_played === 0 while it scores; a discard before it doesn't use it up). */
 const roar_on = () => !!(G.GAME && G.GAME.current_round && G.GAME.current_round.hands_played === 0);
-/** Giratina's Origin Forme: an undebuffed Dialga or Palkia is held (find_card skips debuffed cards; a Blueprint is neither). */
-const origin_forme = () => !!(G.jokers && (find_card('j_poke_dialga').length > 0 || find_card('j_poke_palkia').length > 0));
+/** Giratina's Origin Forme (contentRev 59, solo): for good once ORIGIN_AT (10) playing cards have been destroyed while it was held
+ *  (`destroyed`, counted on the card under every rules rev). Before r59: while an undebuffed Dialga or Palkia was held (find_card). */
+export const ORIGIN_AT = 10;
+const origin_old = () => !!(G.jokers && (find_card('j_poke_dialga').length > 0 || find_card('j_poke_palkia').length > 0));
+const origin_forme = (card) => (solo59() ? (card.ability.extra.destroyed || 0) >= ORIGIN_AT : origin_old());
 /** Shadow Force's gain per destroyed playing card: Xmult_mod, doubled in the Origin Forme (one energy field scales both). */
-const shadow_gain = (card) => r3(card.ability.extra.Xmult_mod * (origin_forme() ? 2 : 1));
+const shadow_gain = (card) => r3(card.ability.extra.Xmult_mod * (origin_forme(card) ? 2 : 1));
+/** The destroyed cards, one at a time: each gains at the forme it finds, then counts (so the 10th gains Altered, the 11th Origin). */
+function shadow_force(card, n) {
+  const ex = card.ability.extra;
+  for (let i = 0; i < n; i++) {
+    ex.shadow_Xmult = r3(ex.shadow_Xmult + shadow_gain(card));
+    ex.destroyed = (ex.destroyed || 0) + 1;
+  }
+}
 /** Palkia, Spacial Rend: +slots Joker slots and +h_size hand size while held AND undebuffed. Both are given in add_to_deck and taken
  *  in remove_from_deck, from_debuff included (Juggler's hand size; unlike a Negative's slot, which vanilla keeps through a debuff):
  *  a debuff takes both away and lifting it gives both back. Nobody is ever pushed out: a debuff on a full row leaves the row one
@@ -1334,8 +1378,28 @@ const spacial_rend = {
   add_to_deck(self, card) { const ex = card.ability.extra; G.jokers.config.card_limit += ex.slots; G.hand.change_size(ex.h_size); },
   remove_from_deck(self, card) { const ex = card.ability.extra; G.jokers.config.card_limit -= ex.slots; G.hand.change_size(-ex.h_size); },
 };
-/** Regigigas, Slow Start: the distinct Regi species held (undebuffed; two Regices count once) — each cuts a round off the wait,
- *  and all three wake it at the next end of round (giga_drop). */
+/** Regigigas, Slow Start (contentRev 59, solo): it wakes at the end of round `giga_wait` (5 rounds, 1 sooner for every 5 Stone, Glass or
+ *  Steel cards in the full deck by each card's own enhancement, at least 1) of the rounds it has been held (`giga_rounds`, counted on the
+ *  card under every rules rev). Read live: a deck that grows mid-wait shortens it at once. Awake is for good (`slow_start` 0). */
+const GIGA_ENH = ['m_stone', 'm_glass', 'm_steel'];
+export const giga_deck = () => (G.playing_cards || []).filter((c) => unbroken(c) && GIGA_ENH.includes(c.config.center.key)).length;
+export const giga_wait = () => Math.max(1, 5 - Math.floor(giga_deck() / 5));
+/** Creator (contentRev 59): while awake, when a Blind is selected, 1 random card of the full deck (the run's seeded stream: unenhanced
+ *  cards first, else any card that isn't Stone, Glass or Steel already; none, nothing) becomes Stone, Glass or Steel (seeded too).
+ *  Blueprint copies it (as the Regis' conversion). */
+function giga_create(card, context) {
+  if (!context.setting_blind || !solo59() || !giga_awake(card) || card.getting_sliced || (context.blueprint_card && context.blueprint_card.getting_sliced)) return;
+  const live = (G.playing_cards || []).filter(unbroken);
+  const plain = live.filter((c) => c.config.center.key === 'c_base');
+  const pool = plain.length ? plain : live.filter((c) => !GIGA_ENH.includes(c.config.center.key));
+  if (!pool.length) return;
+  const [pick] = pseudorandom_element(pool, pseudoseed('regigigas'));
+  const [enh] = pseudorandom_element(GIGA_ENH, pseudoseed('regigigas_enh'));
+  pick.set_ability(P_CENTERS[enh], null, true);
+  card_eval_status_text(context.blueprint_card || card, 'extra', null, null, null, { message: '+1 ' + { m_stone: 'Stone', m_glass: 'Glass', m_steel: 'Steel' }[enh], colour: 'CHIPS' });
+}
+/** Regigigas before r59: the distinct Regi species held (undebuffed; two Regices count once) — each cut a round off the wait,
+ *  and all three woke it at the next end of round (giga_drop). */
 const regis_distinct = () => new Set(((G.jokers && G.jokers.cards) || []).filter((j) => !j.debuff && REGIS.includes(j.config.center.key)).map((j) => j.config.center.key)).size;
 const giga_awake = (card) => !((card.ability.extra.slow_start || 0) > 0);
 /** One end of round's cut to the Slow Start countdown `left` with `n` distinct Regis held: 1 + n, or all of it with the full trio. */
@@ -1366,7 +1430,11 @@ const multitype_x = (card) => r3(1 + card.ability.extra.Xmult_mod * multitype_co
 const LAKE = ['j_poke_uxie', 'j_poke_mesprit', 'j_poke_azelf'];
 /** Lake Guardians: how many OTHER Lake guardian species you have (undebuffed) — the Regi Trio's count (regi_others): distinct species, so
  *  a twin of the same guardian (Showman) is never an "other guardian", and two Mesprits count once for an Uxie. 0, 1 or 2. */
+export const LAKE_CAP = 2;
 export function lake_others(card) {
+  // contentRev 59 (solo): each OTHER Psychic Joker (is_type: Arceus and a Psychic Tera count, a debuffed one doesn't; a twin guardian
+  // is a Psychic Joker too), at most LAKE_CAP (2), the same +X per other.
+  if (solo59()) return Math.min(LAKE_CAP, ((G.jokers && G.jokers.cards) || []).filter((j) => j !== card && typed_joker(j, 'Psychic')).length);
   const own = card.config.center.key, seen = new Set();
   for (const j of (G.jokers && G.jokers.cards) || []) {
     const k = j.config.center.key;
@@ -1423,27 +1491,71 @@ export function sword_others(card) {
   }
   return seen.size;
 }
-/** Keldeo's Resolute Form: Cobalion, Terrakion AND Virizion all held, undebuffed. */
-export const keldeo_resolute = () => legend_held('cobalion') && legend_held('terrakion') && legend_held('virizion');
-/** A sword's per-card X: its base (`Xmult_multi`; Keldeo's Resolute `Xmult_multi2`, X2) + `sword_mod` (0.1, fixed) per other sword. */
+/** Keldeo's Resolute Form (contentRev 59, solo): for good once RESOLUTE_AT (25) Hearts have scored while it was held (`hearts`, counted
+ *  on the card under every rules rev). Before r59: Cobalion, Terrakion AND Virizion all held, undebuffed. */
+export const RESOLUTE_AT = 25;
+export const keldeo_resolute = (card) => (solo59() ? !!card && (card.ability.extra.hearts || 0) >= RESOLUTE_AT : legend_held('cobalion') && legend_held('terrakion') && legend_held('virizion'));
+/** The full deck's count of each suit (is_suit with the debuff bypassed: a Wild card counts for EVERY suit, a Stone card for none). */
+export function deck_suits() {
+  const n = { Spades: 0, Hearts: 0, Clubs: 0, Diamonds: 0 };
+  for (const c of G.playing_cards || []) if (unbroken(c)) for (const s of Object.keys(n)) if (c.is_suit(s, true)) n[s]++;
+  return n;
+}
+/** Swords of Justice (contentRev 59, solo): the sword's suit is the most common in the full deck (a tie counts; an empty count never). */
+export function suit_leads(suit) {
+  const n = deck_suits(), top = Math.max(...Object.values(n));
+  return top > 0 && n[suit] === top;
+}
+/** The Swords of Justice X: X1.5, i.e. the base `Xmult_multi` x 1.2 (one energy field scales both: 1.575 / 1.65 / 1.725). */
+const justice_x = (card) => r9(card.ability.extra.Xmult_multi * 1.2);
+/** A sword's per-card X. contentRev 59: Keldeo's Resolute `Xmult_multi2` (X2), else X1.5 while its suit leads the deck, else its base.
+ *  Before r59: the base (Keldeo's Resolute X2) + `sword_mod` (0.1, fixed) per other sword. */
 export function sword_x(card) {
-  const ex = card.ability.extra, base = card.config.center.key === 'j_poke_keldeo' && keldeo_resolute() ? ex.Xmult_multi2 : ex.Xmult_multi;
+  const ex = card.ability.extra, keldeo = card.config.center.key === 'j_poke_keldeo';
+  if (solo59()) return keldeo && keldeo_resolute(card) ? ex.Xmult_multi2 : suit_leads(SWORDS[card.config.center.key]) ? justice_x(card) : ex.Xmult_multi;
+  const base = keldeo && keldeo_resolute(card) ? ex.Xmult_multi2 : ex.Xmult_multi;
   return r9(base + ex.sword_mod * sword_others(card));
 }
-/** Each scored card of the sword's suit (is_suit: a Wild card counts; a debuffed card doesn't score) gives the sword's X. */
+/** Each scored card of the sword's suit (is_suit: a Wild card counts; a debuffed card doesn't score) gives the sword's X. Keldeo counts
+ *  each Heart that scores (a retrigger scores again, so counts again; not Blueprint) AFTER it pays: the 25th pays Ordinary, the 26th X2. */
 function sacred_sword(card, context) {
   const suit = SWORDS[card.config.center.key];
-  if (context.individual && context.cardarea === G.play && !context.end_of_round && context.other_card.is_suit(suit)) return { x_mult: sword_x(card), card };
+  if (context.individual && context.cardarea === G.play && !context.end_of_round && context.other_card.is_suit(suit)) {
+    const x = sword_x(card);
+    if (card.config.center.key === 'j_poke_keldeo' && !context.blueprint) card.ability.extra.hearts = (card.ability.extra.hearts || 0) + 1;
+    return { x_mult: x, card };
+  }
   return undefined;
+}
+/** A sword's tooltip: [base X, Justice X, "<its suit's count>, top <the most common suit's count>", the X it gives now]. */
+function sword_vars(self, info_queue, card) {
+  type_tooltip(self, info_queue, card);
+  const ex = card.ability.extra, suit = SWORDS[card.config.center.key], n = deck_suits();
+  return { vars: [r3(ex.Xmult_multi), r3(justice_x(card)), n[suit] + ', top ' + Math.max(...Object.values(n)), r3(sword_x(card))] };
 }
 /** The Forces of Nature's formes: Tornadus and Thundurus are Therian while an undebuffed Landorus is held; Landorus while both Tornadus
  *  AND Thundurus are. Live (bought, sold or debuffed, it changes at once): the card's art follows it (poke_view_form). */
+export const THERIAN_AT = 4;
 export function therian(card) {
+  // contentRev 59 (solo): for good after it has been held for THERIAN_AT (4) rounds (`therian_rounds`, counted on the card under every
+  // rules rev: the main end_of_round pass, not Blueprint; a debuffed one isn't calculated, so that round doesn't count), a Reveal Glass.
+  if (solo59()) return (card.ability.extra.therian_rounds || 0) >= THERIAN_AT;
   const k = card.config.center.key;
   if (k === 'j_poke_landorus') return legend_held('tornadus') && legend_held('thundurus');
   return legend_held('landorus');
 }
+/** The Therian clock: +1 round held at each end of round. */
+function therian_tick(card, context) {
+  if (!round_end(context) || context.blueprint) return false;
+  const ex = card.ability.extra, was = therian(card);
+  ex.therian_rounds = (ex.therian_rounds || 0) + 1;
+  if (!was && therian(card)) card_eval_status_text(card, 'extra', null, null, null, { message: 'Therian Forme!', colour: 'FILTER' });
+  return true;
+}
+const therian_left = (card) => Math.max(0, THERIAN_AT - (card.ability.extra.therian_rounds || 0));
 const forme_name = (card) => (therian(card) ? 'Therian Forme' : 'Incarnate Forme');
+/** The tooltip's forme line: "Therian Forme" / "Therian in k rounds". */
+const forme_state = (card) => (therian(card) ? 'Therian Forme' : 'Therian in ' + therian_left(card) + (therian_left(card) === 1 ? ' round' : ' rounds'));
 /** Tornadus's Therian Forme: +mult Mult per hand left, read when it scores (hands_left: the hand being scored is already taken, so the
  *  round's final hand counts 0). */
 const tornadus_left = () => Math.max(0, (G.GAME && G.GAME.current_round && G.GAME.current_round.hands_left) || 0);
@@ -1453,6 +1565,7 @@ const tornadus_mult = (card) => r9(card.ability.extra.mult * tornadus_left());
  *  rolls again; Blueprint rolls its own. */
 function thunder_odds(card) { const ex = card.ability.extra; return get_probability_vars(card, ex.num, therian(card) ? ex.dem2 : ex.dem, 'thundurus'); }
 function wild_charge(card, context) {
+  if (therian_tick(card, context)) return undefined;
   if (!(context.individual && context.cardarea === G.play && !context.end_of_round)) return undefined;
   const ex = card.ability.extra, t = therian(card);
   if (!pseudorandom_probability(card, 'thundurus', ex.num, t ? ex.dem2 : ex.dem, 'thundurus')) return undefined;
@@ -1463,6 +1576,7 @@ function wild_charge(card, context) {
 /** Landorus: Incarnate, each Stone card HELD in hand (undebuffed) gives +chips Chips; Therian, each SCORED Stone card gives X`Xmult_multi`
  *  instead (has_enhancement: quantum Stone too). */
 function sand_force(card, context) {
+  if (therian_tick(card, context)) return undefined;
   if (!context.individual || context.end_of_round || !has_enhancement(context.other_card, 'm_stone')) return undefined;
   const ex = card.ability.extra, t = therian(card);
   if (!t && context.cardarea === G.hand && !context.other_card.debuff) return { h_chips: ex.chips, card };
@@ -1473,15 +1587,28 @@ function sand_force(card, context) {
 export const TAO = { j_poke_reshiram: { type: 'Fire', partner: 'zekrom' }, j_poke_zekrom: { type: 'Lightning', partner: 'reshiram' } };
 /** A typed joker for "each Fire / Lightning Joker gives": is_type (Arceus counts, a Tera sticker counts and replaces), undebuffed. */
 const typed_joker = (j, type) => !!(j && j.ability && j.ability.set === 'Joker' && !j.debuff && is_type(j, type));
-/** Truth vs Ideals: Reshiram and Zekrom both held (undebuffed): each one's per-joker X is +tao_mod (0.25, fixed). */
+/** Truth vs Ideals (before r59): Reshiram and Zekrom both held (undebuffed): each one's per-joker X was +tao_mod (0.25, fixed). */
 const truth_ideals = (card) => legend_held(TAO[card.config.center.key].partner);
-/** A Tao dragon's per-joker X: `Xmult_multi` (+5% per Energy) + tao_mod with its partner. */
-export const tao_x = (card) => r9(card.ability.extra.Xmult_multi + (truth_ideals(card) ? card.ability.extra.tao_mod : 0));
+/** A Tao dragon's per-joker X: `Xmult_multi` (+5% per Energy) + its Fusion bank (`fusion_x`, contentRev 59). Before r59: + tao_mod with
+ *  its partner. */
+export const tao_x = (card) => r9(card.ability.extra.Xmult_multi + (solo59() ? card.ability.extra.fusion_x || 0 : truth_ideals(card) ? card.ability.extra.tao_mod : 0));
+/** Fusion Flare / Fusion Bolt (contentRev 59): each Fire (Reshiram) / Lightning (Zekrom) Energy card used, on any joker or none, banks
+ *  +fusion_mod (0.05, fixed) into `fusion_x` (no energy field: Energy never raises what is banked). Not Blueprint. */
+const FUSION_ENERGY = { j_poke_reshiram: 'c_poke_fire_energy', j_poke_zekrom: 'c_poke_lightning_energy' };
+function fusion_bank(card, context) {
+  if (!context.using_consumeable || context.blueprint || !context.consumeable || !solo59()) return false;
+  if (context.consumeable.config.center.key !== FUSION_ENERGY[card.config.center.key]) return false;
+  const ex = card.ability.extra;
+  ex.fusion_x = r9((ex.fusion_x || 0) + ex.fusion_mod);
+  card_eval_status_text(card, 'extra', null, null, null, { message: card.config.center.key === 'j_poke_reshiram' ? 'Fusion Flare!' : 'Fusion Bolt!', colour: 'XMULT' });
+  return true;
+}
 /** Jokers of this type (is_type, undebuffed), the card itself included when it is one: the tooltip's count (a shop card shows what it
  *  would give once bought). */
 const typed_count = (card, type) => ((G.jokers && G.jokers.cards) || []).filter((j) => j !== card && typed_joker(j, type)).length + (is_type(card, type) ? 1 : 0);
 /** Turboblaze / Teravolt: each Fire / Lightning Joker (itself included) gives the dragon's X, in the other_joker pass (Manaphy's shape). */
 function tao_boost(card, context) {
+  if (fusion_bank(card, context)) return undefined;
   const tao = TAO[card.config.center.key];
   if (!(context.other_joker && typed_joker(context.other_joker, tao.type))) return undefined;
   const x = tao_x(card);
@@ -1493,11 +1620,30 @@ function tao_boost(card, context) {
 export function kyurem_partner() {
   return ((G.jokers && G.jokers.cards) || []).find((j) => !j.debuff && TAO[j.config.center.key]);
 }
-export const kyurem_form = () => { const p = kyurem_partner(); return !p ? 'base' : p.config.center.key === 'j_poke_reshiram' ? 'white' : 'black'; };
+/** Kyurem's form. contentRev 59 (solo): White while you have more Fire Jokers than Lightning Jokers, Black while more Lightning than Fire
+ *  (typed_joker: undebuffed; Arceus counts for both, so it never tips it; a Tera counts; Kyurem itself is left out); a tie keeps the form
+ *  it had (`kyurem_form`, written by its own calculate on every context, so it is the same in live play, resume and replay), plain Kyurem
+ *  until one side first leads. Before r59: the leftmost undebuffed Reshiram (White) / Zekrom (Black). */
+const kyurem_count = (card, type) => ((G.jokers && G.jokers.cards) || []).filter((j) => j !== card && typed_joker(j, type)).length;
+export const kyurem_form = (card) => {
+  if (solo59()) {
+    const f = kyurem_count(card, 'Fire'), l = kyurem_count(card, 'Lightning');
+    return f > l ? 'white' : l > f ? 'black' : (card && card.ability.extra.kyurem_form) || 'base';
+  }
+  const p = kyurem_partner(); return !p ? 'base' : p.config.center.key === 'j_poke_reshiram' ? 'white' : 'black';
+};
+const KYUREM_TYPE = { white: 'Fire', black: 'Lightning' };
 /** Kyurem's borrowed boost: each joker of the partner's type gives Kyurem the partner's OWN current per-joker X (its Energy and Truth vs
  *  Ideals included) a second time, on top of the partner's: a separate multiplier, so a Fire Joker with Reshiram and White Kyurem gives
  *  X1.25 x X1.25. Nothing is consumed; the partner works as usual. */
 function kyurem_borrow(card, context) {
+  if (solo59()) {
+    const t = context.other_joker && KYUREM_TYPE[kyurem_form(card)];
+    if (!t || context.other_joker === card || !typed_joker(context.other_joker, t)) return undefined;
+    const x = r9(card.ability.extra.Xmult_multi);
+    G.E_MANAGER.add_event(() => { context.other_joker.juice_up(0.5, 0.5); });
+    return { message: a_xmult(x), colour: 'XMULT', Xmult_mod: x };
+  }
   const p = context.other_joker && kyurem_partner();
   if (!p || !typed_joker(context.other_joker, TAO[p.config.center.key].type)) return undefined;
   const x = tao_x(p);
@@ -3661,9 +3807,9 @@ defineJokers({
 
   // ---------------------------------------------------------------- The Regi trio: Regirock 377 / Regice 378 / Registeel 379 (Gen 3)
   // The owner's design (2026-10-28). Three Legendaries ($20; The Soul / the Legendary pool, like Pokermon's other Legendaries), each
-  // with a "Body" rule for one enhancement and the same Regi Trio conversion: when a Blind is selected, 1 + (OTHER Regi species you
-  // have, undebuffed; regi_others) random cards of your full deck become that enhancement (regi_convert: unenhanced cards first, then
-  // any card not already it). Types from the card art: Regirock Earth, Regice Water (Ice), Registeel Metal. Neither Nacho nor
+  // with a "Body" rule for one enhancement and the same Regi Trio conversion: when a Blind is selected, 1 random card of your full deck
+  // becomes that enhancement, 2 on a BOSS Blind (contentRev 59, the owner's solo rule; it was 1 + the OTHER Regi species held)
+  // (regi_convert: unenhanced cards first, then any card not already it). Types from the card art: Regirock Earth, Regice Water (Ice), Registeel Metal. Neither Nacho nor
   // Pokermon+ has them. Art: upstream 3.9.1's own cells with their floating souls (Natdex 2-7, 25).
   // Regirock 377 (Earth), Stone Body: Stone cards give +100 Chips instead of +50 (hook chip_bonus: regi_chip_bonus; `chips1`, Energy
   // +30%: 130 / 160 / 190) and permanently gain +10 Chips each time they score (perma_bonus, as Rhyhorn / Hiker; `chip_mod`, Energy
@@ -3673,7 +3819,7 @@ defineJokers({
     config: { extra: { chips1: 100, chip_mod: 10 } },
     rarity: 4, cost: 20, stage: 'Legendary', ptype: 'Earth', gen: 3, blueprint_compat: true,
     attributes: ['chips', 'scaling', 'enhancements', 'modify_card', 'full_deck'], poke_after: 'metagross',
-    loc_vars(self, info_queue, card) { regi_tips(self, info_queue, card, 'm_stone'); const ex = card.ability.extra; return { vars: [r3(ex.chips1), r3(ex.chip_mod), regi_converts(card)] }; },
+    loc_vars(self, info_queue, card) { regi_tips(self, info_queue, card, 'm_stone'); const ex = card.ability.extra; return { vars: [r3(ex.chips1), r3(ex.chip_mod), regi_base(card)] }; },
     calculate(self, card, context) {
       regi_convert(card, context, 'm_stone', 'regirock', 'Stone');
       if (context.individual && context.cardarea === G.play && !context.end_of_round && !context.other_card.debuff && has_enhancement(context.other_card, 'm_stone')) {
@@ -3693,7 +3839,7 @@ defineJokers({
     config: { extra: { glass_convert: 1 } },
     rarity: 4, cost: 20, stage: 'Legendary', ptype: 'Water', gen: 3, blueprint_compat: true,
     attributes: ['xmult', 'enhancements', 'modify_card', 'full_deck', 'chance'], poke_after: 'regirock',
-    loc_vars(self, info_queue, card) { regi_tips(self, info_queue, card, 'm_glass'); return { vars: [regi_converts(card), Math.floor(card.ability.extra.glass_convert + 1e-9)] }; },
+    loc_vars(self, info_queue, card) { regi_tips(self, info_queue, card, 'm_glass'); return { vars: [regi_base(card), Math.floor(card.ability.extra.glass_convert + 1e-9)] }; },
     calculate(self, card, context) {
       if (context.fix_probability && !context.blueprint && context.identifier === 'glass') return { numerator: 0 };
       regi_convert(card, context, 'm_glass', 'regice', 'Glass');
@@ -3707,15 +3853,16 @@ defineJokers({
     config: { extra: { Xmult_multi: 2 } },
     rarity: 4, cost: 20, stage: 'Legendary', ptype: 'Metal', gen: 3, blueprint_compat: true,
     attributes: ['xmult', 'enhancements', 'modify_card', 'full_deck'], poke_after: 'regice',
-    loc_vars(self, info_queue, card) { regi_tips(self, info_queue, card, 'm_steel'); return { vars: [r3(card.ability.extra.Xmult_multi), regi_converts(card)] }; },
+    loc_vars(self, info_queue, card) { regi_tips(self, info_queue, card, 'm_steel'); return { vars: [r3(card.ability.extra.Xmult_multi), regi_base(card)] }; },
     calculate(self, card, context) { regi_convert(card, context, 'm_steel', 'registeel', 'Steel'); return undefined; },
   },
 
   // ---------------------------------------------------------------- The Eon duo: Latias 380 / Latios 381 (Psychic, Gen 3)
   // The owner's design (2026-10-28). Legendary $20 each (The Soul / the Legendary pool). Types from the card art: both Psychic (their
   // real Dragon type is the mapping's; the 3.9.1 card draws the Psychic icon). Latias, Mist Ball: permanently gains X0.15 Mult each time
-  // you use a Tarot card. Latios, Luster Purge: the same for a Planet card. Soul Dew: holding BOTH (the partner undebuffed; find_card),
-  // every Tarot OR Planet grows both — each copy on its own. A Blueprint copies the X, never the growth. Banked in `eon_Xmult` (no
+  // you use a Tarot card. Latios, Luster Purge: the same for a Planet card. Soul Dew (contentRev 59, the owner's solo rule; it was "holding
+  // BOTH, every Tarot or Planet grows both"): each also grows by HALF from the other kind (Latias X0.075 per Planet, Latios X0.075 per
+  // Tarot), alone. A Blueprint copies the X, never the growth. Banked in `eon_Xmult` (no
   // energy field), the gain `Xmult_mod` (Energy +20% of base: 0.15 -> 0.18 / 0.21 / 0.24). Neither Nacho nor Pokermon+ has them. Art:
   // upstream 3.9.1's own cells with their floating souls (Natdex 8 / 10, 25).
   latias: {
@@ -3723,7 +3870,7 @@ defineJokers({
     config: { extra: { eon_Xmult: 1, Xmult_mod: 0.15 } },
     rarity: 4, cost: 20, stage: 'Legendary', ptype: 'Psychic', gen: 3, blueprint_compat: true,
     attributes: ['xmult', 'scaling', 'tarot', 'planet'], poke_after: 'registeel',
-    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.eon_Xmult), r3(ex.Xmult_mod), soul_dew('latios') ? 'active' : 'needs Latios'] }; },
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.eon_Xmult), r3(ex.Xmult_mod), r3(eon_half(card))] }; },
     calculate(self, card, context) { return eon(card, context, 'Tarot', 'latios'); },
   },
   latios: {
@@ -3731,7 +3878,7 @@ defineJokers({
     config: { extra: { eon_Xmult: 1, Xmult_mod: 0.15 } },
     rarity: 4, cost: 20, stage: 'Legendary', ptype: 'Psychic', gen: 3, blueprint_compat: true,
     attributes: ['xmult', 'scaling', 'tarot', 'planet'], poke_after: 'latias',
-    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.eon_Xmult), r3(ex.Xmult_mod), soul_dew('latias') ? 'active' : 'needs Latias'] }; },
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.eon_Xmult), r3(ex.Xmult_mod), r3(eon_half(card))] }; },
     calculate(self, card, context) { return eon(card, context, 'Planet', 'latias'); },
   },
 
@@ -3741,8 +3888,9 @@ defineJokers({
   // +1 discard each round; scored Hearts and Diamonds each give X1.25 Mult; Castform is locked Sunny. Primal Clash (both held, no
   // Rayquaza): on the round's first deal (Castform's weather read) the cards held decide — more Clubs: Kyogre's round, more Hearts +
   // Diamonds: Groudon's (Wild both, debuffed / Stone / Hazard neither); a tie: the one with more Energy, else Kyogre. The other one does
-  // nothing that round, its +1 hand / discard included (primal_read). Rayquaza, Delta Stream: while held both work every round (no
-  // clash; Castform reads its normal forecast, the weather calmed); Dragon Ascent: permanently gains X0.2 Mult each time a played hand
+  // nothing that round, its +1 hand / discard included (primal_read). Rayquaza, Delta Stream: +1 hand AND +1 discard each round (Kyogre's
+  // and Groudon's gifts together; contentRev 59, the owner's solo rule: it only calmed the other two before), and while held Kyogre and
+  // Groudon both work every round (no clash; Castform reads its normal forecast, the weather calmed); Dragon Ascent: permanently gains X0.2 Mult each time a played hand
   // contains a Straight or a Flush (once for a Straight Flush). Energy: Groudon's per-card `Xmult_multi` +5% of base (X1.25 -> X1.3125
   // / X1.375 / X1.4375); Rayquaza's gain `Xmult_mod` +20% (0.2 -> 0.24 / 0.28 / 0.32; banked in `ascent_Xmult`, no energy field).
   // Kyogre has no number (+1 hand and the retrigger are fixed): Energy-inert by design (poke_no_energy_field). Neither Nacho nor
@@ -3779,12 +3927,13 @@ defineJokers({
   },
   rayquaza: {
     name: 'rayquaza', poke_sprite391: sprite('Natdex', 16, 25, [17, 25]),
-    config: { extra: { ascent_Xmult: 1, Xmult_mod: 0.2 } },
+    config: { extra: { ascent_Xmult: 1, Xmult_mod: 0.2, hands: 1, d_size: 1 } },
     rarity: 4, cost: 20, stage: 'Legendary', ptype: 'Dragon', gen: 3, blueprint_compat: true,
-    attributes: ['xmult', 'scaling', 'hand_type', 'types'], poke_after: 'groudon',
-    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.ascent_Xmult), r3(ex.Xmult_mod)] }; },
+    attributes: ['xmult', 'scaling', 'hand_type', 'types', 'hands', 'discard'], poke_after: 'groudon',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.ascent_Xmult), r3(ex.Xmult_mod), ex.hands, ex.d_size] }; },
     calculate(self, card, context) {
       const ex = card.ability.extra;
+      delta_wake(card, context);
       if (context.before && context.cardarea === G.jokers && !context.blueprint && ascends(context)) {
         ex.ascent_Xmult = r3(ex.ascent_Xmult + ex.Xmult_mod);
         card_eval_status_text(card, 'extra', null, null, null, { message: 'Dragon Ascent!', colour: 'XMULT' });
@@ -3793,6 +3942,7 @@ defineJokers({
       if (context.joker_main && ex.ascent_Xmult > 1) return { message: a_xmult(r3(ex.ascent_Xmult)), colour: 'XMULT', Xmult_mod: ex.ascent_Xmult };
       return undefined;
     },
+    ...delta_stream,
   },
 
   // ---------------------------------------------------------------- LINE J: Cherubi -> Cherrim (Grass, Gen 4)
@@ -4311,8 +4461,9 @@ defineJokers({
   // Uxie, Knowledge: +2 Foresight (the Shinx line's scry); each Foreseen card gives X1.3 Mult (the Foreseen cards are scored like held
   // cards, context.individual with cardarea G.scry_view, as Hoothoot's; a debuffed one gives nothing). Mesprit, Emotion: X1.5 Mult, or
   // X2.5 on a hand whose poker hand hasn't been played yet this round (first_this_round). Azelf, Willpower: X2.5 Mult on the final hand
-  // of each round (final_hand, Drifloon's check). Lake Guardians: each one's X values get +X0.25 for each OTHER guardian species held,
-  // undebuffed (lake_others, the Regi Trio's distinct count) — all three: Uxie X1.8 per Foreseen card, Mesprit X2 / X3, Azelf X3.
+  // of each round (final_hand, Drifloon's check). Lake Guardians: each one's X values get +X0.25 for each OTHER Psychic Joker held,
+  // undebuffed, at most 2 (lake_others; contentRev 59, the owner's solo rule: it counted the other guardian species before) — with two:
+  // Uxie X1.8 per Foreseen card, Mesprit X2 / X3, Azelf X3.
   // Energy: Uxie's per-card `Xmult_multi` +5% (1.3 -> 1.365 / 1.43 / 1.495), Mesprit's `Xmult` / `Xmult2` +20% (1.5 -> 1.8 / 2.1 / 2.4,
   // 2.5 -> 3 / 3.5 / 4), Azelf's `Xmult` +20% (2.5 -> 3 / 3.5 / 4); the +0.25 per guardian (`lake_mod`) and the Foresight are fixed.
   // Neither Nacho nor Pokermon+ has them. Art: upstream 3.9.1's own cells with their floating souls (Natdex {28,31}, {0,32}, {2,32}).
@@ -4403,29 +4554,31 @@ defineJokers({
     loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [ex.slots, ex.h_size] }; },
     ...spacial_rend,
   },
-  // Regigigas 486, Slow Start (Colorless): asleep (it gives nothing) until its countdown `slow_start` (5 when obtained) reaches 0;
-  // then X4 Mult for the rest of the run. The countdown: at each end of round (the main end_of_round pass; not Blueprint; a debuffed
-  // Regigigas isn't calculated, so it waits) it drops by 1 + the DISTINCT Regis held then (Regirock / Regice / Registeel, undebuffed;
-  // regis_distinct): no Regi 5 rounds (5 4 3 2 1 0), one 3 (5 3 1 0), two 2 (5 2 0); with ALL THREE the countdown goes straight to 0
-  // (giga_drop; the owner, contentRev 47: "full trio can make it 1 round"), so the trio wakes it after 1 round (5 0), and a trio
-  // assembled partway through the wait wakes it at the next end of round. Awake, with all three Regis
-  // held, each Regi converts 1 extra card per Blind (giga_trio_bonus in regi_converts; once, however many Regigigas). Energy: `Xmult`
-  // +20% of base (X4 -> X4.8 / X5.6 / X6.4); the wait is fixed (`slow_start`, no energy field). Blueprint copies the X only when awake.
+  // Regigigas 486, Slow Start (Colorless): asleep (it gives nothing) until it wakes, then X4 Mult for the rest of the run. contentRev 59
+  // (the owner's solo rule; the Regis cut the wait before): it wakes at the end of the round that makes `giga_rounds` (rounds held: the
+  // main end_of_round pass; not Blueprint; a debuffed Regigigas isn't calculated, so it waits) reach giga_wait: 5, 1 round sooner for every
+  // 5 Stone, Glass or Steel cards in the full deck, at least 1 (read live). Creator: while awake, when a Blind is selected, 1 random card
+  // in the deck (unenhanced first) becomes Stone, Glass or Steel (giga_create, seeded). Energy: `Xmult` +20% of base (X4 -> X4.8 / X5.6 /
+  // X6.4); the wait is fixed (`slow_start`, no energy field). Blueprint copies the X (and Creator) only when awake.
   // After Palkia (Pokermon has no Heatran 485).
   regigigas: {
     name: 'regigigas', poke_sprite391: sprite('Natdex', 10, 32, [11, 32]),
-    config: { extra: { Xmult: 4, slow_start: 5 } },
+    config: { extra: { Xmult: 4, slow_start: 5, giga_rounds: 0 } },
     rarity: 4, cost: 20, stage: 'Legendary', ptype: 'Colorless', gen: 4, blueprint_compat: true,
-    attributes: ['xmult', 'enhancements', 'full_deck'], poke_after: 'palkia',
+    attributes: ['xmult', 'enhancements', 'full_deck', 'modify_card'], poke_after: 'palkia',
     loc_vars(self, info_queue, card) {
       type_tooltip(self, info_queue, card);
-      const ex = card.ability.extra, n = regis_distinct(), left = Math.max(0, ex.slow_start || 0);
-      return { vars: [r3(ex.Xmult), left, n, giga_awake(card) ? 'Awake!' : n >= 3 ? 'Asleep: ' + left + ' left, wakes at end of round' : 'Asleep: ' + left + ' left, -' + (1 + n) + ' a round'] };
+      info_queue.push(P_CENTERS.m_stone); info_queue.push(P_CENTERS.m_glass); info_queue.push(P_CENTERS.m_steel);
+      const ex = card.ability.extra, wait = giga_wait(), left = Math.max(0, wait - (ex.giga_rounds || 0));
+      return { vars: [r3(ex.Xmult), giga_deck(), wait, giga_awake(card) ? 'Awake!' : left > 0 ? 'Asleep: ' + left + ' left' : 'Asleep: wakes at end of round'] };
     },
     calculate(self, card, context) {
       const ex = card.ability.extra;
+      giga_create(card, context);
+      if (round_end(context) && !context.blueprint) ex.giga_rounds = (ex.giga_rounds || 0) + 1;
       if (round_end(context) && !context.blueprint && !giga_awake(card)) {
-        ex.slow_start = Math.max(0, ex.slow_start - giga_drop(ex.slow_start, regis_distinct()));
+        if (solo59()) ex.slow_start = ex.giga_rounds >= giga_wait() ? 0 : giga_wait() - ex.giga_rounds;
+        else ex.slow_start = Math.max(0, ex.slow_start - giga_drop(ex.slow_start, regis_distinct()));
         card_eval_status_text(card, 'extra', null, null, null, giga_awake(card) ? { message: 'Awake!', colour: 'XMULT' } : { message: 'Slow Start: ' + ex.slow_start, colour: 'FILTER' });
         return undefined;
       }
@@ -4435,25 +4588,27 @@ defineJokers({
   },
   // Giratina 487, Shadow Force (Psychic): permanently gains X0.25 Mult for each playing card destroyed, by any cause (the
   // remove_playing_cards context every destroying path sends: Glass shattering, Hanged Man, Gulpin's swallow, a discard eaten...),
-  // banked in `shadow_Xmult` (no energy field; never retroactive). Origin Forme: while an undebuffed Dialga or Palkia is held, its
-  // gain is doubled (X0.5) and it shows the Origin card (poke_view_form, live). Energy: the gain `Xmult_mod` +20% (0.25 -> 0.3 / 0.35 /
+  // banked in `shadow_Xmult` (no energy field; never retroactive). Origin Forme (contentRev 59, the owner's solo rule; it needed a
+  // Dialga or Palkia before): for good once 10 playing cards have been destroyed while it is held (`destroyed`, on the card; the 10th
+  // still gains Altered), its gain is doubled (X0.5) and it shows the Origin card (poke_view_form). Energy: the gain `Xmult_mod` +20% (0.25 -> 0.3 / 0.35 /
   // 0.4; Origin 0.6 / 0.7 / 0.8). Blueprint copies the X, never the growth. After Regigigas.
   giratina: {
     name: 'giratina', poke_sprite391: sprite('Gen04', 8, 3, [9, 3]),
-    config: { extra: { shadow_Xmult: 1, Xmult_mod: 0.25 } },
+    config: { extra: { shadow_Xmult: 1, Xmult_mod: 0.25, destroyed: 0 } },
     rarity: 4, cost: 20, stage: 'Legendary', ptype: 'Psychic', gen: 4, blueprint_compat: true,
     attributes: ['xmult', 'scaling', 'destroy_card'], poke_after: 'regigigas',
-    /** The view's form (systems/anim.js view_card): live, so a Dialga / Palkia bought, sold or debuffed redraws it at once. */
-    poke_view_form(self, card) { return origin_forme() ? 'origin' : 'altered'; },
+    /** The view's form (systems/anim.js view_card): from the card's own count (before r59: live from a Dialga / Palkia). */
+    poke_view_form(self, card) { return origin_forme(card) ? 'origin' : 'altered'; },
     loc_vars(self, info_queue, card) {
       type_tooltip(self, info_queue, card);
       const ex = card.ability.extra;
-      return { vars: [r3(ex.shadow_Xmult), r3(ex.Xmult_mod), r3(2 * ex.Xmult_mod), origin_forme() ? 'Origin Forme' : 'Altered Forme'] };
+      return { vars: [r3(ex.shadow_Xmult), r3(ex.Xmult_mod), r3(2 * ex.Xmult_mod), origin_forme(card) ? 'Origin Forme' : 'Destroyed: ' + Math.min(ORIGIN_AT, ex.destroyed || 0) + '/' + ORIGIN_AT] };
     },
     calculate(self, card, context) {
       const ex = card.ability.extra;
       if (context.remove_playing_cards && !context.blueprint && (context.removed || []).length) {
-        ex.shadow_Xmult = r3(ex.shadow_Xmult + shadow_gain(card) * context.removed.length);
+        if (solo59()) shadow_force(card, context.removed.length);
+        else { ex.shadow_Xmult = r3(ex.shadow_Xmult + shadow_gain(card) * context.removed.length); ex.destroyed = (ex.destroyed || 0) + context.removed.length; }
         card_eval_status_text(card, 'extra', null, null, null, { message: a_xmult(ex.shadow_Xmult), colour: 'XMULT' });
         return undefined;
       }
@@ -4561,14 +4716,16 @@ defineJokers({
   // After Hydreigon (635) in Pokédex order (Pokermon has no Larvesta / Volcarona).
   //
   // The Swords of Justice, Cobalion 638 / Terrakion 639 / Virizion 640 (and Keldeo 647): each scored card of the sword's suit (Spades /
-  // Diamonds / Clubs / Hearts; is_suit, so Wild cards count) gives X1.25 Mult (`Xmult_multi`, Energy +5%: 1.3125 / 1.375 / 1.4375),
-  // +X0.1 for each OTHER sword species held, undebuffed (sword_others, the Regi count; `sword_mod`, fixed). Blueprint copies it.
+  // Diamonds / Clubs / Hearts; is_suit, so Wild cards count) gives X1.25 Mult (`Xmult_multi`, Energy +5%: 1.3125 / 1.375 / 1.4375).
+  // Swords of Justice (contentRev 59, the owner's solo rule; it was +X0.1 per other sword): while its suit is the most common suit in
+  // your full deck (suit_leads: a tie counts; Wild cards count for every suit, Stone for none), X1.5 instead (Xmult_multi x 1.2: 1.575 /
+  // 1.65 / 1.725). Blueprint copies it. (`sword_mod` stays for runs recorded before r59.)
   cobalion: {
     name: 'cobalion', poke_sprite391: sprite('Natdex', 14, 42, [15, 42]),
     config: { extra: { Xmult_multi: 1.25, sword_mod: 0.1 } },
     rarity: 4, cost: 20, stage: 'Legendary', ptype: 'Metal', gen: 5, blueprint_compat: true,
     attributes: ['xmult', 'suit', 'spades'], poke_after: 'hydreigon',
-    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.Xmult_multi), r3(ex.sword_mod), sword_others(card), r3(sword_x(card))] }; },
+    loc_vars(self, info_queue, card) { return sword_vars(self, info_queue, card); },
     calculate(self, card, context) { return sacred_sword(card, context); },
   },
   terrakion: {
@@ -4576,7 +4733,7 @@ defineJokers({
     config: { extra: { Xmult_multi: 1.25, sword_mod: 0.1 } },
     rarity: 4, cost: 20, stage: 'Legendary', ptype: 'Earth', gen: 5, blueprint_compat: true,
     attributes: ['xmult', 'suit', 'diamonds'], poke_after: 'cobalion',
-    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.Xmult_multi), r3(ex.sword_mod), sword_others(card), r3(sword_x(card))] }; },
+    loc_vars(self, info_queue, card) { return sword_vars(self, info_queue, card); },
     calculate(self, card, context) { return sacred_sword(card, context); },
   },
   virizion: {
@@ -4584,11 +4741,11 @@ defineJokers({
     config: { extra: { Xmult_multi: 1.25, sword_mod: 0.1 } },
     rarity: 4, cost: 20, stage: 'Legendary', ptype: 'Grass', gen: 5, blueprint_compat: true,
     attributes: ['xmult', 'suit', 'clubs'], poke_after: 'terrakion',
-    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.Xmult_multi), r3(ex.sword_mod), sword_others(card), r3(sword_x(card))] }; },
+    loc_vars(self, info_queue, card) { return sword_vars(self, info_queue, card); },
     calculate(self, card, context) { return sacred_sword(card, context); },
   },
-  // The Forces of Nature, Tornadus 641 / Thundurus 642 / Landorus 645. Formes (therian): Tornadus and Thundurus are in their Therian
-  // Forme while an undebuffed Landorus is held; Landorus while both Tornadus AND Thundurus are; live, the art with it. The forme only
+  // The Forces of Nature, Tornadus 641 / Thundurus 642 / Landorus 645. Formes (therian; contentRev 59, the owner's solo rule; a partner
+  // set it before): each one's Therian Forme comes for good after it has been held for 4 rounds (a Reveal Glass), the art with it. The forme only
   // changes the effect (the type stays). Tornadus (Colorless): +1 hand each round (the Squirtle line's pair, fixed); Therian, also +3
   // Mult per hand left when it scores (`mult`, Energy +40%: 4.2 / 5.4 / 6.6). Thundurus (Lightning): each scored card 1 in 4 to earn
   // $1; Therian 1 in 2 (`dem2`), and a card that pays also gives X1.1 (`Xmult_multi` +5%: 1.155 / 1.21 / 1.265); the odds and the $1
@@ -4596,16 +4753,17 @@ defineJokers({
   // scored Stone card X1.5 instead (`Xmult_multi` +5%: 1.575 / 1.65 / 1.725).
   tornadus: {
     name: 'tornadus', poke_sprite391: sprite('Gen05', 6, 3, [7, 3]),
-    config: { extra: { hands: 1, mult: 3 } },
+    config: { extra: { hands: 1, mult: 3, therian_rounds: 0 } },
     rarity: 4, cost: 20, stage: 'Legendary', ptype: 'Colorless', gen: 5, blueprint_compat: true,
     attributes: ['hands', 'mult'], poke_after: 'virizion',
     poke_view_form(self, card) { return therian(card) ? 'therian' : 'incarnate'; },
     loc_vars(self, info_queue, card) {
       type_tooltip(self, info_queue, card);
       const ex = card.ability.extra;
-      return { vars: [ex.hands, r3(ex.mult), therian(card) ? 'Therian Forme: +' + r3(tornadus_mult(card)) + ' Mult' : 'Incarnate Forme'] };
+      return { vars: [ex.hands, r3(ex.mult), therian(card) ? 'Therian Forme: +' + r3(tornadus_mult(card)) + ' Mult' : forme_state(card)] };
     },
     calculate(self, card, context) {
+      if (therian_tick(card, context)) return undefined;
       if (context.joker_main && therian(card)) { const m = tornadus_mult(card); if (m > 0) return { message: a_mult(m), colour: 'MULT', mult_mod: m }; }
       return undefined;
     },
@@ -4613,7 +4771,7 @@ defineJokers({
   },
   thundurus: {
     name: 'thundurus', poke_sprite391: sprite('Gen05', 10, 3, [11, 3]),
-    config: { extra: { num: 1, dem: 4, dem2: 2, storm_money: 1, Xmult_multi: 1.1 } },
+    config: { extra: { num: 1, dem: 4, dem2: 2, storm_money: 1, Xmult_multi: 1.1, therian_rounds: 0 } },
     rarity: 4, cost: 20, stage: 'Legendary', ptype: 'Lightning', gen: 5, blueprint_compat: true,
     attributes: ['money', 'chance', 'xmult'], poke_after: 'tornadus',
     poke_view_form(self, card) { return therian(card) ? 'therian' : 'incarnate'; },
@@ -4621,85 +4779,88 @@ defineJokers({
       type_tooltip(self, info_queue, card);
       const ex = card.ability.extra;
       const [n1, d1] = get_probability_vars(card, ex.num, ex.dem, 'thundurus'), [n2, d2] = get_probability_vars(card, ex.num, ex.dem2, 'thundurus');
-      return { vars: [n1, d1, ex.storm_money, n2, d2, r3(ex.Xmult_multi), forme_name(card)] };
+      return { vars: [n1, d1, ex.storm_money, n2, d2, r3(ex.Xmult_multi), forme_state(card)] };
     },
     calculate(self, card, context) { return wild_charge(card, context); },
   },
   // The Tao trio, Reshiram 643 (Fire) / Zekrom 644 (Lightning) / Kyurem 646 (Water). Turboblaze / Teravolt: each Fire / Lightning Joker,
   // itself included, gives X1.25 Mult (the other_joker pass, Manaphy's shape: is_type, so Arceus and a Tera count; a debuffed joker
-  // doesn't; `Xmult_multi` +5%: 1.3125 / 1.375 / 1.4375). Truth vs Ideals: with both held (undebuffed), each one's X is +0.25 (`tao_mod`,
-  // fixed): X1.5 a joker. Blueprint copies it (a second X per joker, as Baseball Card).
+  // doesn't; `Xmult_multi` +5%: 1.3125 / 1.375 / 1.4375). Fusion Flare / Fusion Bolt (contentRev 59, the owner's solo rule; it was Truth
+  // vs Ideals, +0.25 each with both held): each Fire / Lightning Energy card used (on any joker) permanently adds +X0.05 to its per-joker
+  // X (`fusion_x`, a bank in no energy field; `fusion_mod` fixed). Blueprint copies the X (a second X per joker, as Baseball Card),
+  // never the bank. (`tao_mod` stays for runs recorded before r59.)
   reshiram: {
     name: 'reshiram', poke_sprite391: sprite('Gen05', 2, 4, [3, 4]),
-    config: { extra: { Xmult_multi: 1.25, tao_mod: 0.25 } },
+    config: { extra: { Xmult_multi: 1.25, tao_mod: 0.25, fusion_x: 0, fusion_mod: 0.05 } },
     rarity: 4, cost: 20, stage: 'Legendary', ptype: 'Fire', gen: 5, blueprint_compat: true,
-    attributes: ['xmult', 'types', 'joker'], poke_after: 'thundurus',
+    attributes: ['xmult', 'types', 'joker', 'energy', 'scaling'], poke_after: 'thundurus',
     loc_vars(self, info_queue, card) {
       type_tooltip(self, info_queue, card);
       const ex = card.ability.extra;
-      return { vars: [r3(ex.Xmult_multi), typed_count(card, 'Fire'), r3(ex.tao_mod), truth_ideals(card) ? 'active: X' + r3(tao_x(card)) + ' each' : 'needs Zekrom'] };
+      return { vars: [r3(tao_x(card)), typed_count(card, 'Fire'), r3(ex.fusion_mod), r3(ex.fusion_x || 0)] };
     },
     calculate(self, card, context) { return tao_boost(card, context); },
   },
   zekrom: {
     name: 'zekrom', poke_sprite391: sprite('Gen05', 6, 4, [7, 4]),
-    config: { extra: { Xmult_multi: 1.25, tao_mod: 0.25 } },
+    config: { extra: { Xmult_multi: 1.25, tao_mod: 0.25, fusion_x: 0, fusion_mod: 0.05 } },
     rarity: 4, cost: 20, stage: 'Legendary', ptype: 'Lightning', gen: 5, blueprint_compat: true,
-    attributes: ['xmult', 'types', 'joker'], poke_after: 'reshiram',
+    attributes: ['xmult', 'types', 'joker', 'energy', 'scaling'], poke_after: 'reshiram',
     loc_vars(self, info_queue, card) {
       type_tooltip(self, info_queue, card);
       const ex = card.ability.extra;
-      return { vars: [r3(ex.Xmult_multi), typed_count(card, 'Lightning'), r3(ex.tao_mod), truth_ideals(card) ? 'active: X' + r3(tao_x(card)) + ' each' : 'needs Reshiram'] };
+      return { vars: [r3(tao_x(card)), typed_count(card, 'Lightning'), r3(ex.fusion_mod), r3(ex.fusion_x || 0)] };
     },
     calculate(self, card, context) { return tao_boost(card, context); },
   },
   landorus: {
     name: 'landorus', poke_sprite391: sprite('Gen05', 10, 4, [11, 4]),
-    config: { extra: { chips: 40, Xmult_multi: 1.5 } },
+    config: { extra: { chips: 40, Xmult_multi: 1.5, therian_rounds: 0 } },
     rarity: 4, cost: 20, stage: 'Legendary', ptype: 'Earth', gen: 5, blueprint_compat: true,
     attributes: ['chips', 'xmult', 'enhancements'], poke_after: 'zekrom',
     poke_view_form(self, card) { return therian(card) ? 'therian' : 'incarnate'; },
     loc_vars(self, info_queue, card) {
       type_tooltip(self, info_queue, card); info_queue.push(P_CENTERS.m_stone);
       const ex = card.ability.extra;
-      return { vars: [r3(ex.chips), r3(ex.Xmult_multi), forme_name(card)] };
+      return { vars: [r3(ex.chips), r3(ex.Xmult_multi), forme_state(card)] };
     },
     calculate(self, card, context) { return sand_force(card, context); },
   },
-  // Kyurem 646 (Water): X1.5 Mult (`Xmult` +20%: 1.8 / 2.1 / 2.4). With Reshiram (undebuffed) it is White Kyurem (art), and each Fire Joker
-  // ALSO gives it Reshiram's own current X per joker (its Energy and Truth vs Ideals included) as a second, separate multiplier (X1.25 from
-  // Reshiram, then X1.25 from Kyurem: X1.5625 a Fire Joker); with Zekrom, Black Kyurem, the same with Lightning Jokers. With both, the
-  // LEFTMOST of the two in the row picks it (kyurem_partner). Nothing is consumed. Blueprint copies the X and the borrowed boost.
+  // Kyurem 646 (Water): X1.5 Mult (`Xmult` +20%: 1.8 / 2.1 / 2.4). contentRev 59 (the owner's solo rule; it borrowed a held Reshiram's /
+  // Zekrom's X before): White Kyurem while you have more Fire Jokers than Lightning Jokers, Black Kyurem while more Lightning than Fire
+  // (itself left out; kyurem_form: a tie keeps its form, plain Kyurem until one side first leads), the art with it; then each Joker of
+  // that type gives X1.25 Mult (`Xmult_multi` +5%: 1.3125 / 1.375 / 1.4375). Blueprint copies the X and the per-type X.
   kyurem: {
     name: 'kyurem', poke_sprite391: sprite('Gen05', 2, 5, [3, 5]),
-    config: { extra: { Xmult: 1.5 } },
+    config: { extra: { Xmult: 1.5, Xmult_multi: 1.25 } },
     rarity: 4, cost: 20, stage: 'Legendary', ptype: 'Water', gen: 5, blueprint_compat: true,
     attributes: ['xmult', 'types', 'joker'], poke_after: 'landorus',
-    poke_view_form() { return kyurem_form(); },
+    poke_view_form(self, card) { return kyurem_form(card); },
     loc_vars(self, info_queue, card) {
       type_tooltip(self, info_queue, card);
-      const p = kyurem_partner(), f = kyurem_form();
-      const state = !p ? 'needs Reshiram or Zekrom' : (f === 'white' ? 'White Kyurem: X' + r3(tao_x(p)) + ' per Fire Joker' : 'Black Kyurem: X' + r3(tao_x(p)) + ' per Lightning Joker');
-      return { vars: [r3(card.ability.extra.Xmult), state] };
+      const ex = card.ability.extra, f = kyurem_form(card), fire = kyurem_count(card, 'Fire'), bolt = kyurem_count(card, 'Lightning');
+      const state = (f === 'white' ? 'White Kyurem' : f === 'black' ? 'Black Kyurem' : 'Kyurem') + ': ' + fire + ' Fire, ' + bolt + ' Lightning';
+      return { vars: [r3(ex.Xmult), r3(ex.Xmult_multi), state] };
     },
     calculate(self, card, context) {
+      if (!context.blueprint && solo59()) card.ability.extra.kyurem_form = kyurem_form(card);
       if (context.joker_main) return { message: a_xmult(r3(card.ability.extra.Xmult)), colour: 'XMULT', Xmult_mod: card.ability.extra.Xmult };
       return kyurem_borrow(card, context);
     },
   },
-  // Keldeo 647 (Fighting), the fourth sword: each scored Heart X1.25 (`Xmult_multi` +5%), +X0.1 per other sword. Resolute Form: with
-  // Cobalion, Terrakion AND Virizion all held (undebuffed), its Resolute card shows and its per-Heart X is X2 (`Xmult_multi2` +5%: 2.1 / 2.2
-  // / 2.3) instead, the trio bonus on top: X2.3 a Heart with all three.
+  // Keldeo 647 (Fighting), the fourth sword: each scored Heart X1.25 (`Xmult_multi` +5%), X1.5 while Hearts lead the full deck (Swords of
+  // Justice). Resolute Form (contentRev 59, the owner's solo rule; it needed the other three swords before): for good once 25 Hearts have
+  // scored while it is held (`hearts`, on the card; retriggers count, the 25th still pays Ordinary), its Resolute card shows and its
+  // per-Heart X is X2 (`Xmult_multi2` +5%: 2.1 / 2.2 / 2.3) instead of either.
   keldeo: {
     name: 'keldeo', poke_sprite391: sprite('Gen05', 0, 6, [1, 6]),
-    config: { extra: { Xmult_multi: 1.25, Xmult_multi2: 2, sword_mod: 0.1 } },
+    config: { extra: { Xmult_multi: 1.25, Xmult_multi2: 2, sword_mod: 0.1, hearts: 0 } },
     rarity: 4, cost: 20, stage: 'Legendary', ptype: 'Fighting', gen: 5, blueprint_compat: true,
     attributes: ['xmult', 'suit', 'hearts'], poke_after: 'kyurem',
-    poke_view_form() { return keldeo_resolute() ? 'resolute' : 'ordinary'; },
+    poke_view_form(self, card) { return keldeo_resolute(card) ? 'resolute' : 'ordinary'; },
     loc_vars(self, info_queue, card) {
-      type_tooltip(self, info_queue, card);
-      const ex = card.ability.extra;
-      return { vars: [r3(ex.Xmult_multi), r3(ex.sword_mod), sword_others(card), r3(sword_x(card)), r3(ex.Xmult_multi2), keldeo_resolute() ? 'Resolute Form' : 'Ordinary Form'] };
+      const v = sword_vars(self, info_queue, card).vars, ex = card.ability.extra;
+      return { vars: [...v, r3(ex.Xmult_multi2), keldeo_resolute(card) ? 'Resolute Form' : 'Hearts: ' + Math.min(RESOLUTE_AT, ex.hearts || 0) + '/' + RESOLUTE_AT] };
     },
     calculate(self, card, context) { return sacred_sword(card, context); },
   },
@@ -6014,11 +6175,13 @@ const AFTERMATH = ['{C:attention}Aftermath:{} when this Joker is', 'sold or dest
 const HONEY = ['{C:attention}Honey Gather:{} at end of', 'round, the Jokers directly left', 'and right of this one each', 'gain {C:money}$#1#{} of sell value'];
 const COMMANDER = ['{C:attention}Commander:{} the leftmost', '{X:poke_water,C:white}Water{} Joker gives'];
 const CLASH = (n) => ['{C:attention}Primal Clash:{} with {C:attention}Kyogre{} and', '{C:attention}Groudon{} and no {C:attention}Rayquaza{}, the', "round's first deal picks one:", 'more {C:clubs}Clubs{} held, Kyogre; more', '{C:hearts}Hearts{} + {C:diamonds}Diamonds{}, Groudon', '{C:inactive}(a tie: more Energy, else Kyogre)', 'The other does nothing that round', '{C:inactive}(#' + n + '#)'];
-const EON = (p) => ['{C:attention}Soul Dew:{} with {C:attention}' + p + '{}, every', '{C:tarot}Tarot{} or {C:planet}Planet{} used', 'grows both of them', '{C:inactive}(Soul Dew: #3#)'];
+// contentRev 59 (solo): the other kind grows it by half (#3#).
+const EON = (other) => ['{C:attention}Soul Dew:{} also gains', '{X:mult,C:white} X#3# {} Mult each time', 'you use a ' + other + ' card'];
 const CLOAKED = (name, c, type) => ['{C:attention}Cloaked:{} ' + name + ' Cloak, {X:poke_' + c + ',C:white}' + type + '{}', '{C:inactive}(kept from Burmy, for good)'];
 const TWO_SEAS = (n) => ['{C:attention}Two Seas:{} with a {C:attention}West{} and an', '{C:attention}East{} Shellos or Gastrodon, each', 'works on both end cards', '{C:inactive}(Two Seas: #' + n + '#)'];
+// contentRev 59 (solo): +1 card on a Boss Blind (it was +1 per other Regi).
 const REGI_TRIO = (enh, n) => ['{C:attention}Regi Trio:{} when a {C:attention}Blind{} is', 'selected, {C:attention}#' + n + '#{} random card(s) in', 'your deck become {C:attention}' + enh + '{} cards',
-  '{C:inactive}(+1 for each other Regi)'];
+  '{C:attention}1{} more on a {C:attention}Boss Blind{}'];
 const SWEET_SEEDS = ['{C:attention}Sweet Seeds:{} when a {C:attention}Blind{}', 'is selected, a random unenhanced', 'card in your deck becomes a', '{C:attention}Seed{} card',
   '{C:attention}+#1#{} growth level {C:inactive}(Seeds bloom', '{C:inactive}in 3 scores instead of 5)'];
 const FLOWER_GIFT = ['{C:attention}Flower Gift:{} {C:attention}Flower{} cards', 'need only {C:attention}#2#+{} suits'];
@@ -6033,12 +6196,15 @@ const SNIPER = ['{C:attention}Sniper:{} each scored card', 'has a {C:green}#1# i
 const CONTRARY_HELD = ['{C:attention}Contrary:{} each {C:attention}debuffed{}', 'card held in hand', 'gives {C:mult}+#2#{} Mult', '{C:inactive}(Currently {C:attention}#4#{C:inactive}: {C:mult}+#5#{C:inactive} Mult)'];
 const FLAME_CHARGE = (gain) => ['{C:attention}Flame Charge:{} ' + gain + ' for', 'each hand in a row of the same', '{C:attention}poker hand{} this round', '{C:inactive}(This hand included; resets when', '{C:inactive}the poker hand changes)'];
 const RAZOR_SHELL = (n) => ['{C:attention}Razor Shell:{} retrigger the', n];
-const LAKE_GUARDIANS = (x, n) => ['{C:attention}Lake Guardians:{} plus {X:mult,C:white} X#' + x + '# {}', 'to its X Mult for each other', '{C:attention}Uxie{}, {C:attention}Mesprit{} or {C:attention}Azelf{} held', '{C:inactive}(Currently #' + n + '#/2 others)'];
+// contentRev 59 (solo): each other Psychic Joker, at most 2 (it was each other Lake guardian).
+const LAKE_GUARDIANS = (x, n) => ['{C:attention}Lake Guardians:{} plus {X:mult,C:white} X#' + x + '# {}', 'to its X Mult for each other', '{X:poke_psychic,C:white}Psychic{} Joker {C:inactive}(max 2)', '{C:inactive}(Currently #' + n + '#/2)'];
 const SACRED_SWORD = (suit, move = 'Sacred Sword') => ['{C:attention}' + move + ':{} each scored', suit + ' gives {X:mult,C:white} X#1# {} Mult'];
-const SWORDS_OF_JUSTICE = ['{C:attention}Swords of Justice:{} plus', '{X:mult,C:white} X#2# {} for each other {C:attention}Cobalion{},', '{C:attention}Terrakion{}, {C:attention}Virizion{} or {C:attention}Keldeo{}',
-  '{C:inactive}(Currently #3#/3 others: {X:mult,C:white} X#4# {C:inactive})'];
+// contentRev 59 (solo): X1.5 while its suit is the most common in the full deck (it was +X0.1 per other sword).
+const SWORDS_OF_JUSTICE = (suit) => ['{C:attention}Swords of Justice:{} {X:mult,C:white} X#2# {}', 'instead while ' + suit + ' are the', 'most common suit in your', 'full deck {C:inactive}(ties count)',
+  '{C:inactive,s:0.8}(Wild cards count for every suit)', '{C:inactive}(' + suit + ' #3#; now {X:mult,C:white} X#4# {C:inactive})'];
 const TAO_BOOST = (move, type) => ['{C:attention}' + move + ':{} each', type + ' Joker gives {X:mult,C:white} X#1# {} Mult', '{C:inactive}(Itself included; currently {C:attention}#2#{C:inactive})'];
-const TRUTH_IDEALS = (p) => ['{C:attention}Truth vs Ideals:{} with', '{C:attention}' + p + '{}, {X:mult,C:white} X#3# {} more each', '{C:inactive}(#4#)'];
+// contentRev 59 (solo): Fusion Flare / Fusion Bolt (it was Truth vs Ideals: +X0.25 each with the other dragon held).
+const FUSION = (move, energy) => ['{C:attention}' + move + ':{} each ' + energy, 'card used permanently adds', '{X:mult,C:white} X#3# {} to that X Mult', '{C:inactive}(Banked: +#4#)'];
 const LIBERO_MULT = ['{C:red}+#1#{} discard', '{C:mult}+#2#{} Mult for each', 'remaining {C:attention}discard{}', '{C:inactive}(Currently {C:mult}+#3#{C:inactive} Mult)'];
 const UNSCORED_CHIPS = ['{C:chips}+#1#{} hand', 'Each played card that', 'doesn\'t score gives', '{C:chips}+#2#{} Chips'];
 const TORCH_SONG = (gain) => ['{C:attention}Torch Song:{} permanently', 'gains ' + gain, 'for each hand played'];
@@ -6286,11 +6452,11 @@ export const DESIGN_LOC = {
     ] },
     j_poke_latias: { name: 'Latias', text: [
       ['{C:attention}Mist Ball:{} gains {X:mult,C:white} X#2# {} Mult', 'each time you use a {C:tarot}Tarot{} card', '{C:inactive}(Currently {X:mult,C:white} X#1# {C:inactive} Mult)'],
-      EON('Latios'),
+      EON('{C:planet}Planet{}'),
     ] },
     j_poke_latios: { name: 'Latios', text: [
       ['{C:attention}Luster Purge:{} gains {X:mult,C:white} X#2# {} Mult', 'each time you use a {C:planet}Planet{} card', '{C:inactive}(Currently {X:mult,C:white} X#1# {C:inactive} Mult)'],
-      EON('Latias'),
+      EON('{C:tarot}Tarot{}'),
     ] },
     j_poke_kyogre: { name: 'Kyogre', text: [
       ['{C:attention}Primordial Sea:{} {C:chips}+#1#{} hand', 'each round', 'Every scored {C:clubs}Club{}', 'retriggers once', '{C:attention}Castform{} is always {C:poke_rain}Rainy{}'],
@@ -6301,7 +6467,7 @@ export const DESIGN_LOC = {
       CLASH(3),
     ] },
     j_poke_rayquaza: { name: 'Rayquaza', text: [
-      ['{C:attention}Delta Stream:{} {C:attention}Kyogre{} and', '{C:attention}Groudon{} both work every round', '{C:inactive}(no Primal Clash; Castform reads', '{C:inactive}the weather as usual)'],
+      ['{C:attention}Delta Stream:{} {C:chips}+#3#{} hand and', '{C:red}+#4#{} discard each round', '{C:inactive,s:0.8}(Also calms Kyogre and Groudon:', '{C:inactive,s:0.8}no Primal Clash)'],
       ['{C:attention}Dragon Ascent:{} gains {X:mult,C:white} X#2# {} Mult', 'when a played hand contains', 'a {C:attention}Straight{} or a {C:attention}Flush{}', '{C:inactive}(Currently {X:mult,C:white} X#1# {C:inactive} Mult)'],
     ] },
     j_poke_cherubi: { name: 'Cherubi', text: [
@@ -6372,13 +6538,13 @@ export const DESIGN_LOC = {
     j_poke_dialga: { name: 'Dialga', text: ['{C:attention}Roar of Time:{} the first hand', 'of each round is scored twice:', 'every scored card', 'retriggers once', '{C:inactive}(#1#)'] },
     j_poke_palkia: { name: 'Palkia', text: ['{C:attention}Spacial Rend:{} {C:dark_edition}+#1#{} Joker slot', 'and {C:attention}+#2#{} hand size'] },
     j_poke_regigigas: { name: 'Regigigas', text: [
-      ['{C:attention}Slow Start:{} gives nothing for', 'its first {C:attention}5{} rounds, then', '{X:mult,C:white} X#1# {} Mult for the rest of the run', 'Each {C:attention}Regi{} you have cuts',
-        '{C:attention}1{} more round off the wait', 'at each end of round', '{C:inactive}(With all three Regis:', '{C:inactive}wakes after 1 round)', '{C:inactive}(#4#)'],
-      ['{C:attention}Regi Trio:{} while awake, with', '{C:attention}Regirock{}, {C:attention}Regice{} and {C:attention}Registeel{},', 'each of them converts', '{C:attention}1{} more card per Blind'],
+      ['{C:attention}Slow Start:{} gives nothing for', 'its first {C:attention}5{} rounds, then', '{X:mult,C:white} X#1# {} Mult for the rest of the run', '{C:attention}1{} round sooner for every',
+        '{C:attention}5{} {C:attention}Stone{}, {C:attention}Glass{} or {C:attention}Steel{} cards', 'in your full deck {C:inactive}(min 1)', '{C:inactive}(Currently #2#: wakes after #3#)', '{C:inactive}(#4#)'],
+      ['{C:attention}Creator:{} while awake, when a', '{C:attention}Blind{} is selected, a random', 'card in your deck becomes', 'a {C:attention}Stone{}, {C:attention}Glass{} or {C:attention}Steel{} card', '{C:inactive,s:0.8}(Unenhanced cards first)'],
     ] },
     j_poke_giratina: { name: 'Giratina', text: [
       ['{C:attention}Shadow Force:{} gains {X:mult,C:white} X#2# {} Mult', 'each time a playing card', 'is destroyed', '{C:inactive}(Currently {X:mult,C:white} X#1# {C:inactive} Mult)'],
-      ['{C:attention}Origin Forme:{} with {C:attention}Dialga{} or', '{C:attention}Palkia{}, gains {X:mult,C:white} X#3# {} instead', '{C:inactive}(#4#)'],
+      ['{C:attention}Origin Forme:{} for good once', '{C:attention}10{} playing cards have been', 'destroyed while you have it,', 'gains {X:mult,C:white} X#3# {} instead', '{C:inactive}(#4#)'],
     ] },
     j_poke_arceus: { name: 'Arceus', text: [
       ['{C:attention}Multitype:{} counts as', 'every {C:attention}type{}', '{C:inactive,s:0.8}(Its type never breaks Monotype)'],
@@ -6406,32 +6572,32 @@ export const DESIGN_LOC = {
       ['{C:attention}Sea Guardian:{} each', '{X:poke_water,C:white}Water{} Joker gives {X:mult,C:white} X#1# {} Mult', '{C:inactive}(Itself included)', '{C:inactive}(Currently {C:attention}#4#{C:inactive}: {X:mult,C:white} X#5# {C:inactive} Mult)'],
       ['{C:attention}Egg:{} at the end of the shop,', 'if you have a free Joker slot,', '{C:green}#2# in #3#{} chance to', 'create a {C:attention}Phione{}'],
     ] },
-    j_poke_cobalion: { name: 'Cobalion', text: [SACRED_SWORD('{C:spades}Spade{}'), SWORDS_OF_JUSTICE] },
-    j_poke_terrakion: { name: 'Terrakion', text: [SACRED_SWORD('{C:diamonds}Diamond{}'), SWORDS_OF_JUSTICE] },
-    j_poke_virizion: { name: 'Virizion', text: [SACRED_SWORD('{C:clubs}Club{}'), SWORDS_OF_JUSTICE] },
+    j_poke_cobalion: { name: 'Cobalion', text: [SACRED_SWORD('{C:spades}Spade{}'), SWORDS_OF_JUSTICE('{C:spades}Spades{}')] },
+    j_poke_terrakion: { name: 'Terrakion', text: [SACRED_SWORD('{C:diamonds}Diamond{}'), SWORDS_OF_JUSTICE('{C:diamonds}Diamonds{}')] },
+    j_poke_virizion: { name: 'Virizion', text: [SACRED_SWORD('{C:clubs}Club{}'), SWORDS_OF_JUSTICE('{C:clubs}Clubs{}')] },
     j_poke_tornadus: { name: 'Tornadus', text: [
       ['{C:chips}+#1#{} hand each round'],
-      ['{C:attention}Therian Forme:{} with {C:attention}Landorus{},', 'also {C:mult}+#2#{} Mult for each', 'hand left when it scores', '{C:inactive}(#3#)'],
+      ['{C:attention}Therian Forme:{} after you', 'have had it for {C:attention}4{} rounds,', 'also {C:mult}+#2#{} Mult for each', 'hand left when it scores', '{C:inactive}(#3#)'],
     ] },
     j_poke_thundurus: { name: 'Thundurus', text: [
       ['{C:attention}Incarnate Forme:{} each scored', 'card has a {C:green}#1# in #2#{} chance', 'to earn {C:money}$#3#{}'],
-      ['{C:attention}Therian Forme:{} with {C:attention}Landorus{},', '{C:green}#4# in #5#{} instead, and each', 'card that pays also gives', '{X:mult,C:white} X#6# {} Mult', '{C:inactive}(Currently #7#)'],
+      ['{C:attention}Therian Forme:{} after you', 'have had it for {C:attention}4{} rounds,', '{C:green}#4# in #5#{} instead, and each', 'card that pays also gives', '{X:mult,C:white} X#6# {} Mult', '{C:inactive}(#7#)'],
     ] },
-    j_poke_reshiram: { name: 'Reshiram', text: [TAO_BOOST('Turboblaze', '{X:poke_fire,C:white}Fire{}'), TRUTH_IDEALS('Zekrom')] },
-    j_poke_zekrom: { name: 'Zekrom', text: [TAO_BOOST('Teravolt', '{X:poke_lightning,C:black}Lightning{}'), TRUTH_IDEALS('Reshiram')] },
+    j_poke_reshiram: { name: 'Reshiram', text: [TAO_BOOST('Turboblaze', '{X:poke_fire,C:white}Fire{}'), FUSION('Fusion Flare', '{X:poke_fire,C:white}Fire{} Energy')] },
+    j_poke_zekrom: { name: 'Zekrom', text: [TAO_BOOST('Teravolt', '{X:poke_lightning,C:black}Lightning{}'), FUSION('Fusion Bolt', '{X:poke_lightning,C:black}Lightning{} Energy')] },
     j_poke_landorus: { name: 'Landorus', text: [
       ['{C:attention}Incarnate Forme:{} each', '{C:attention}Stone{} card held in hand', 'gives {C:chips}+#1#{} Chips'],
-      ['{C:attention}Therian Forme:{} with {C:attention}Tornadus{}', 'and {C:attention}Thundurus{}, each scored', '{C:attention}Stone{} card gives {X:mult,C:white} X#2# {} Mult', 'instead', '{C:inactive}(Currently #3#)'],
+      ['{C:attention}Therian Forme:{} after you', 'have had it for {C:attention}4{} rounds, each', 'scored {C:attention}Stone{} card gives', '{X:mult,C:white} X#2# {} Mult instead', '{C:inactive}(#3#)'],
     ] },
     j_poke_kyurem: { name: 'Kyurem', text: [
       ['{X:mult,C:white} X#1# {} Mult'],
-      ['{C:attention}White Kyurem:{} with {C:attention}Reshiram{},', 'each {X:poke_fire,C:white}Fire{} Joker also gives', 'Reshiram\'s X Mult again', '{C:attention}Black Kyurem:{} with {C:attention}Zekrom{},',
-        'the same for {X:poke_lightning,C:black}Lightning{} Jokers', '{C:inactive}(Both held: the leftmost one)', '{C:inactive}(#2#)'],
+      ['{C:attention}White Kyurem:{} with more', '{X:poke_fire,C:white}Fire{} than {X:poke_lightning,C:black}Lightning{} Jokers, each', '{X:poke_fire,C:white}Fire{} Joker gives {X:mult,C:white} X#2# {} Mult', '{C:attention}Black Kyurem:{} with more',
+        '{X:poke_lightning,C:black}Lightning{} than {X:poke_fire,C:white}Fire{}, the same', 'for {X:poke_lightning,C:black}Lightning{} Jokers', '{C:inactive,s:0.8}(Itself not counted; a tie', '{C:inactive,s:0.8}keeps its form)', '{C:inactive}(#3#)'],
     ] },
     j_poke_keldeo: { name: 'Keldeo', text: [
       SACRED_SWORD('{C:hearts}Heart{}', 'Secret Sword'),
-      SWORDS_OF_JUSTICE,
-      ['{C:attention}Resolute Form:{} with {C:attention}Cobalion{},', '{C:attention}Terrakion{} and {C:attention}Virizion{}, each', 'scored {C:hearts}Heart{} gives {X:mult,C:white} X#5# {}', 'instead, plus the bonus', '{C:inactive}(#6#)'],
+      SWORDS_OF_JUSTICE('{C:hearts}Hearts{}'),
+      ['{C:attention}Resolute Form:{} for good once', '{C:attention}25{} {C:hearts}Hearts{} have scored while', 'you have it, each scored', '{C:hearts}Heart{} gives {X:mult,C:white} X#5# {} instead', '{C:inactive}(#6#)'],
     ] },
     j_poke_meloetta: { name: 'Meloetta', text: [
       ['{C:attention}Relic Song:{} switches Forme', 'after every hand played', '{C:inactive}(Aria at the start of each round)'],
