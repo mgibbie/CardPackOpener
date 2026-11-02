@@ -189,6 +189,7 @@ import { blueprint_effect } from './pokejokers_08.js';
 import * as BN from '../../../js/engine/bignum.js'; // the Blind's requirement (Poison Gas) may be a big number in modded runs
 import { number_format } from '../../../js/engine/core.js';
 import { rulesRev } from '../../../js/mods/pins.js';
+import { odds_text } from '../../../js/engine/odds.js';
 
 const FILE = 'micatro/pokejokers_designs';
 /** contentRev 59, the owner's rule "legendaries must be complete alone": every partner clause of the Gen 3-5 Legendaries became a solo
@@ -3157,22 +3158,28 @@ function forest_curse(card, context, seeds) {
   if (context.joker_main && ex.curse_mult > 0) return { message: a_mult(r3(ex.curse_mult)), colour: 'MULT', mult_mod: ex.curse_mult };
   return undefined;
 }
-/** Noibat / Noivern, Supersonic: Glass cards break twice as often — the Glass roll (identifier 'glass': a Glass card's 1 in 4, a quantum
- *  Glass's too) has its DENOMINATOR halved in the mod_probability pass (Super Luck's pass), so Oops! All 6s still doubles the numerator
- *  afterwards (2 in 2: always) and Regice's Ice Body (fix_probability, 0) still wins: with Regice no Glass breaks at all. Copies never
- *  stack (1 in 2 at best, from the card's own base). Not Blueprint. */
+/** Noibat / Noivern, Supersonic: Glass cards break twice as often. r69 (the owner's "2 Noiverns still 1/2 to break glass", 2026-11-02):
+ *  EACH undebuffed Noibat / Noivern doubles the Glass roll's NUMERATOR in the mod_probability pass (identifier 'glass': a Glass card's
+ *  1 in 4, a quantum Glass's too), stacking the way Oops! All 6s does: one copy 2 in 4 (1 in 2), two 4 in 4 (always), and Oops! doubles
+ *  it again afterwards; Regice's Ice Body (fix_probability, 0) still wins: with Regice no Glass breaks at all. A debuffed copy is not
+ *  asked (calculate_joker skips it); a Tera'd one still is (a sticker changes its type, not its ability). r62-r68 halved the
+ *  DENOMINATOR and copies never stacked (1 in 2 at best): a run recorded on those revs replays so (rulesRev). Not Blueprint. */
 const glass_den = (t) => (t && t.ability && t.ability.name === 'Glass Card' && typeof t.ability.extra === 'number' ? t.ability.extra : (P_CENTERS.m_glass.config.extra || 4));
+const glass_stack69 = () => rulesRev('pokermon') >= 69;
 function supersonic(card, context) {
   if (context.mod_probability && !context.blueprint && context.identifier === 'glass') {
+    if (glass_stack69()) return { numerator: context.numerator * 2 };
     return { denominator: Math.min(context.denominator, Math.max(1, glass_den(context.trigger_obj) / 2)) };
   }
   return undefined;
 }
-/** The odds a Glass card breaks now ([num, dem], Noibat's own halving counted from the shop too). */
+/** The odds a Glass card breaks now, as text ('1 in 2', 'always', 'never'): every Noibat / Noivern held counted; from the shop, this
+ *  card's own doubling added on top (what it would be once bought). */
 function glass_odds_vars(card) {
   const held = G.jokers && G.jokers.cards.includes(card);
-  const [n, d] = get_probability_vars(card, 1, held ? 4 : 2, 'glass');
-  return [r3(n), r3(held ? d : Math.min(d, 2))];
+  let [n, d] = get_probability_vars(card, 1, 4, 'glass');
+  if (!held) n *= 2;
+  return [odds_text(n, d)];
 }
 /** Noibat: each Glass card that shatters (remove_playing_cards, the `shattered` ones: Whismur's count) banks +mult_mod Mult in `bat_mult`;
  *  Noivern banks +Xmult_mod X Mult in `bat_Xmult` instead (Noibat's Mult carried and still given) and turns one random card of the
@@ -7576,8 +7583,8 @@ defineJokers({
       return r;
     },
   },
-  // Noibat 714 (Dragon, Common $5), Supersonic: +1 hand size (fixed); Glass cards break 1 in 2 instead of 1 in 4 (the denominator halved,
-  // fixed); each Glass card that breaks permanently gives it +2 Mult (`bat_mult` banked; gain `mult_mod` +20%: 2.4 / 2.8 / 3.2). 5 rounds.
+  // Noibat 714 (Dragon, Common $5), Supersonic: +1 hand size (fixed); Glass cards break twice as often (r69: each copy doubles the
+  // numerator, stacking as Oops! does: 1 in 2, two copies always; fixed); each Glass card that breaks permanently gives it +2 Mult (`bat_mult` banked; gain `mult_mod` +20%: 2.4 / 2.8 / 3.2). 5 rounds.
   noibat: {
     name: 'noibat', poke_sprite391: sprite('Natdex', 16, 47),
     config: { extra: { h_size: 1, bat_mult: 0, mult_mod: 2, rounds: 5 } },
@@ -7588,7 +7595,7 @@ defineJokers({
     calculate(self, card, context) { return supersonic(card, context) || boomburst(card, context, false) || level_evo(self, card, context, 'j_poke_noivern'); },
     ...hand_size,
   },
-  // Noivern 715 (Safari $8), Boomburst: +2 hand size, Glass still 1 in 2; each Glass card that breaks permanently gives it X0.1 (`bat_Xmult`
+  // Noivern 715 (Safari $8), Boomburst: +2 hand size, Glass still doubled (stacking with every other Noibat / Noivern); each Glass card that breaks permanently gives it X0.1 (`bat_Xmult`
   // banked from X1; gain `Xmult_mod` +20%: 0.12 / 0.14 / 0.16; Noibat's Mult kept and still given), and turns a random deck card Glass.
   noivern: {
     name: 'noivern', poke_sprite391: sprite('Natdex', 18, 47),
@@ -8609,7 +8616,7 @@ const HAZARD_POISON = ['{C:attention}Poison Point:{} when a {C:attention}Blind{}
 const ANCIENT_KINGS = ['{C:attention}Ancient #1#s{}', '{X:attention,C:white}1+{} : {C:mult}+#2#{} Mult', '{X:attention,C:white}2+{} : {X:mult,C:white} X#3# {} Mult', '{X:attention,C:white}3+{} : {}Retrigger all scored {C:attention}#1#s{}'];
 const ANCIENT_QUEENS = ['{C:attention}Ancient #1#s{}', '{X:attention,C:white}1+{} : {C:chips}+#2#{} Chips', '{X:attention,C:white}2+{} : {}The leftmost scored {C:attention}#1#{}', 'that isn\'t {C:attention}Glass{} becomes {C:attention}Glass{}', '{X:attention,C:white}3+{} : Earn {C:money}$#3#{}'];
 const FOREST_CURSE = ['{C:attention}Forest\'s Curse:{} permanently', 'gains {C:mult}+#1#{} Mult each time', 'a playing card is {C:attention}destroyed{}', '{C:inactive}(Currently {C:mult}+#2#{C:inactive} Mult)'];
-const GLASS_ODDS = (first) => [first, '{C:attention}Glass{} cards break', 'twice as often', '{C:inactive}(Now {C:green}#2# in #3#{C:inactive})'];
+const GLASS_ODDS = (first) => [first, 'Doubles the chance {C:attention}Glass{}', 'cards break {C:inactive}(each copy stacks)', '{C:inactive}(Now {C:green}#2#{C:inactive})'];
 export const DESIGN_LOC = {
   Joker: {
     j_poke_shinx: { name: 'Shinx', text: ['{C:purple}+#1# Foresight', 'Played cards that share a rank', 'with a {C:attention}Foreseen{} card', 'earn {C:money}$#2#{} when scored', EVOLVES_ROUNDS(3)] },
@@ -9249,8 +9256,8 @@ export const DESIGN_LOC = {
     j_poke_trevenant: { name: 'Trevenant', text: [FOREST_CURSE, ['Each destroyed card plants a', '{C:attention}Seed{}: a random unenhanced', 'card in your deck becomes', 'a {C:attention}Seed{} card']] },
     j_poke_bergmite: { name: 'Bergmite', text: ['{C:chips}+#1#{} Chips', EVOLVES_ROUNDS(2)] },
     j_poke_avalugg: { name: 'Avalugg', text: ['{C:chips}+#1#{} Chips', '{X:mult,C:white} X#2# {} Mult on the', 'final hand of the round', '{C:inactive}(#3#)'] },
-    j_poke_noibat: { name: 'Noibat', text: [GLASS_ODDS('{C:attention}+#1#{} hand size'), [...GLASS_BREAKS('Gains {C:mult}+#4#{} Mult'), '{C:inactive}(Currently {C:mult}+#5#{C:inactive} Mult)', EVOLVES_ROUNDS(6)]] },
-    j_poke_noivern: { name: 'Noivern', text: [GLASS_ODDS('{C:attention}+#1#{} hand size'), ['{C:attention}Boomburst:{} gains {X:mult,C:white} X#4# {} Mult', 'each time a {C:attention}Glass{} card', 'breaks, and a random card in', 'your deck becomes {C:attention}Glass{}', '{C:inactive}(Currently {X:mult,C:white} X#5# {C:inactive} Mult', '{C:inactive}and {C:mult}+#6#{C:inactive} Mult)']] },
+    j_poke_noibat: { name: 'Noibat', text: [GLASS_ODDS('{C:attention}+#1#{} hand size'), [...GLASS_BREAKS('Gains {C:mult}+#3#{} Mult'), '{C:inactive}(Currently {C:mult}+#4#{C:inactive} Mult)', EVOLVES_ROUNDS(5)]] },
+    j_poke_noivern: { name: 'Noivern', text: [GLASS_ODDS('{C:attention}+#1#{} hand size'), ['{C:attention}Boomburst:{} gains {X:mult,C:white} X#3# {} Mult', 'each time a {C:attention}Glass{} card', 'breaks, and a random card in', 'your deck becomes {C:attention}Glass{}', '{C:inactive}(Currently {X:mult,C:white} X#4# {C:inactive} Mult', '{C:inactive}and {C:mult}+#5#{C:inactive} Mult)']] },
     // Gen 7, batch 4: the Gen 7 Legendaries (contentRev 67)
     j_poke_typenull: { name: 'Type: Null', text: ['Permanently gains {X:mult,C:white} X#1# {} Mult', 'at the end of each round', '{C:inactive}(Currently {X:mult,C:white} X#2# {C:inactive} Mult)', EVOLVES_ROUNDS(3)] },
     j_poke_silvally: { name: 'Silvally', text: [

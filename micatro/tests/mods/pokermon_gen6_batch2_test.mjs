@@ -31,6 +31,7 @@ import { describe } from '../../js/engine/describe.js';
 import { STATUS } from '../../mods/pokermon/index.js';
 import { poke_get_family_list } from '../../mods/pokermon/systems/evolution.js';
 import { increment_energy, energy_values } from '../../mods/pokermon/systems/energy.js';
+import { apply_type_sticker, get_type } from '../../mods/pokermon/systems/types.js';
 import * as DES from '../../mods/pokermon/jokers/pokejokers_designs.js';
 import { ART } from './poke_art_helpers.mjs';
 
@@ -482,17 +483,34 @@ await sec('supersonic', () => {
   ok(G.hand.config.card_limit === base + 1, 'Noibat: +1 hand size', G.hand.config.card_limit);
   act({ type: 'select_blind' }); flush(); clearHand();
   const g = cards([['S_9', 'm_glass']])[0];
-  ok(JSON.stringify(probability_vars(g, 1, 4, 'glass')) === '[1,2]', 'Glass cards break 1 in 2 (was 1 in 4)', probability_vars(g, 1, 4, 'glass'));
-  ok(/Now 1 in 2/.test(plain(n)), 'its tooltip shows the odds', plain(n));
-  add('j_poke_noibat');
-  ok(JSON.stringify(probability_vars(g, 1, 4, 'glass')) === '[1,2]', 'two Noibats: still 1 in 2 (copies never stack)');
-  G.jokers.cards[G.jokers.cards.length - 1].remove(); flush();
+  const pv = () => JSON.stringify(probability_vars(g, 1, 4, 'glass'));
+  // r69 (the owner's "2 Noiverns still 1/2 to break glass"): each undebuffed Noibat / Noivern doubles the numerator, as Oops! does
+  ok(pv() === '[2,4]', 'one Noibat: Glass cards break 2 in 4 = 1 in 2 (was 1 in 4)', pv());
+  ok(/Now 1 in 2/.test(plain(n)), 'its tooltip shows the odds: "Now 1 in 2"', plain(n));
+  const n2 = add('j_poke_noibat');
+  ok(pv() === '[4,4]', 'two Noibats: 4 in 4, every Glass card breaks (copies stack)', pv());
+  ok(/Now always/.test(plain(n)) && /Now always/.test(plain(n2)), 'both tooltips: "Now always"', [plain(n), plain(n2)]);
+  debuff(n2);
+  ok(pv() === '[2,4]' && /Now 1 in 2/.test(plain(n)), 'a debuffed second Noibat does not count: 1 in 2 again', pv());
+  n2.remove(); flush();
+  ok(/Now 1 in 2/.test(plain(n)), 'back to one: 1 in 2', plain(n));
   const oo = add('j_oops');
-  ok(JSON.stringify(probability_vars(g, 1, 4, 'glass')) === '[2,2]', 'with Oops! All 6s: 2 in 2 (it doubles the numerator after)', probability_vars(g, 1, 4, 'glass'));
-  oo.remove(); flush();
+  ok(pv() === '[4,4]' && /Now always/.test(plain(n)), 'one Noibat + Oops! All 6s: 4 in 4 (Oops doubles it again)', pv());
+  const n3 = add('j_poke_noibat');
+  ok(pv() === '[8,4]' && /Now always/.test(plain(n)), 'two Noibats + Oops!: 8 in 4 (still always)', pv());
+  n3.remove(); oo.remove(); flush();
   const rg = add('j_poke_regice');
-  ok(probability_vars(g, 1, 4, 'glass')[0] === 0, 'with Regice (Ice Body): 0 in 2, no Glass ever breaks (the anti-synergy)', probability_vars(g, 1, 4, 'glass'));
-  rg.remove(); flush();
+  ok(probability_vars(g, 1, 4, 'glass')[0] === 0 && /Now never/.test(plain(n)), 'with Regice (Ice Body): 0, no Glass ever breaks (the anti-synergy), "Now never"', [pv(), plain(n)]);
+  const n4 = add('j_poke_noibat');
+  ok(probability_vars(g, 1, 4, 'glass')[0] === 0, 'Regice still blocks two Noibats', pv());
+  n4.remove(); rg.remove(); flush();
+  // a run recorded on r62-r68 (js/mods/pins.js RULES): copies never stacked, the denominator halved once
+  PINS.RULES.pins = { pokermon: '3.9.1+r68' };
+  try {
+    const n5 = add('j_poke_noibat');
+    ok(pv() === '[1,2]', 'r68 rules: two Noibats were still 1 in 2 (replays as recorded)', pv());
+    n5.remove(); flush();
+  } finally { PINS.RULES.pins = null; }
   // played: shatters over 120 Glass hands, with and without Noibat; each one banks +2 and feeds a Whismur
   const breaks = (withN) => {
     start('GLASSRUN');
@@ -526,9 +544,44 @@ await sec('supersonic', () => {
   ok(deckEnh('m_glass').length === glass0 + 1 && !G.playing_cards.includes(pl.cards[0]), 'the refill: the broken card is gone and a random deck card is Glass now (one more Glass in the deck than before the hand)', [glass0, deckEnh('m_glass').length]);
   t = play(['S_A']);
   ok(near(t.mult, (1 + 6) * 1.1), 'Noivern gives both banks: +6, X1.1', t.total);
-  ok(JSON.stringify(probability_vars(cards([['S_3', 'm_glass']])[0], 1, 4, 'glass')) === '[1,2]', 'Noivern: Glass still 1 in 2');
+  ok(JSON.stringify(probability_vars(cards([['S_3', 'm_glass']])[0], 1, 4, 'glass')) === '[2,4]', 'Noivern: Glass still 1 in 2 (2 in 4)');
   nb.remove(); flush();
   ok(G.hand.config.card_limit === 8, 'sold: hand size back to 8', G.hand.config.card_limit);
+});
+
+// ------------------------------------------------------------------- r69: Noibat / Noivern copies stack, played
+await sec('supersonic stacks', () => {
+  // two Noibats: every Glass card breaks; EACH Noibat banks +2 per break
+  start('NOIB2');
+  const a = add('j_poke_noibat'), b = add('j_poke_noibat');
+  let k = 0;
+  for (let i = 0; i < 20; i++) { const r = play([['S_9', 'm_glass']]); if (r.cards[0].shattered) k++; }
+  ok(k === 20, 'two Noibats: 20 of 20 Glass cards break (always)', k);
+  ok(near(ex(a).bat_mult, 40) && near(ex(b).bat_mult, 40), 'each Noibat banks +2 per break (+40 each)', [ex(a).bat_mult, ex(b).bat_mult]);
+  // one Noibat: about half (1 in 2)
+  start('NOIB1');
+  add('j_poke_noibat');
+  k = 0;
+  for (let i = 0; i < 120; i++) { const r = play([['S_9', 'm_glass']]); if (r.cards[0].shattered) k++; }
+  ok(k >= 45 && k <= 75 && k < 120, 'one Noibat: about 60 of 120 break (1 in 2)', k);
+  // two Noiverns, the second with a Colorless Tera sticker (the tester's): it still counts, and each Noivern refills its own Glass card
+  start('NOIV2');
+  const v1 = add('j_poke_noivern'), v2 = add('j_poke_noivern');
+  apply_type_sticker(v2, 'Colorless');
+  ok(get_type(v2) === 'Colorless' && key(v2) === 'j_poke_noivern', 'the second Noivern is Tera Colorless', get_type(v2));
+  const g = cards([['S_4', 'm_glass']])[0];
+  ok(JSON.stringify(probability_vars(g, 1, 4, 'glass')) === '[4,4]' && /Now always/.test(plain(v2)), 'a Tera Noivern still doubles: two Noiverns 4 in 4, "Now always"', probability_vars(g, 1, 4, 'glass'));
+  clearHand();
+  const glass0 = deckEnh('m_glass').length;
+  const r = play([['S_9', 'm_glass']]);
+  ok(r.cards[0].shattered, 'two Noiverns: the Glass card breaks', r.cards[0].shattered);
+  ok(deckEnh('m_glass').length === glass0 + 2 && near(ex(v1).bat_Xmult, 1.1) && near(ex(v2).bat_Xmult, 1.1), 'each Noivern banks X0.1 and turns its own deck card Glass: +2 Glass in the deck for one break', [glass0, deckEnh('m_glass').length, ex(v1).bat_Xmult, ex(v2).bat_Xmult]);
+  // Regice still blocks both
+  start('NOIVREG');
+  add('j_poke_noivern'); add('j_poke_noivern'); add('j_poke_regice');
+  k = 0;
+  for (let i = 0; i < 20; i++) { const r2 = play([['S_9', 'm_glass']]); if (r2.cards[0].shattered) k++; }
+  ok(k === 0, 'two Noiverns + Regice: nothing breaks', k);
 });
 
 // ------------------------------------------------------------------- Energy: each line's main number at the standard rate

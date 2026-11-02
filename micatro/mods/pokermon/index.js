@@ -1021,7 +1021,9 @@ export const POKERMON = registerMod({
   // Scizor / Kleavor, Rotom Fan, Mega Scizor, Mega Mewtwo X, A Billion Lions, Pokermon+'s Nacli line) skip Komala as an Eternal: no target,
   // no gain, no slice (hooks.joker_destroy_immune). r65-r67 targeted it and kept the gain (Dagger +2x sell value every Blind, Komala
   // staying): gated by rulesRev, so runs recorded on those revs replay as recorded.
-  contentRev: 68,
+  // 69 = Noibat / Noivern stack (the owner's "2 Noiverns still 1/2 to break glass"): each undebuffed copy doubles the Glass roll's
+  // numerator (as Oops! All 6s), so one copy 1 in 2, two always; r62-r68 halved the denominator once however many were held.
+  contentRev: 69,
   // Pokermon 3.9.1 pokermon.lua: SMODS.current_mod.optional_features = {quantum_enhancements = true, object_weights = true}.
   // object_weights sends create_card's key, the shop roll, tags, packs, bosses and vouchers through SMODS.poll_object
   // (js/engine/smods.js; batch 17). quantum_enhancements is the engine's check_enhancement, always on.

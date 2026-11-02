@@ -104,8 +104,10 @@ export const BUNCO = registerMod({
   // timing changes on top of Firch's 5.1 (PORTING.md "5.4.8b fork catch-up"). contentRev 1 = what is OURS on top:
   // the port's own fixes the fork lacks (Sledgehammer, Dread, Knight, Juggalo), the fork bugs not copied (The Mask's
   // in_pool, The Deal's early return, the Fiendish / Bounty Hunter summing), and Steamodded's perishable_compat default.
+  // contentRev 2 (2026-11-02): Carnival and a Scattering joker skip a joker another mod makes act Eternal for destroy (Pokermon's
+  // Komala) exactly like an Eternal (util.js joker_destroyable).
   version: '5.4.8b-JumboFork',
-  contentRev: 1,
+  contentRev: 2,
   // (Vandalism listens to Steamodded's stay_flipped context, as in 5.4.8b; no other seam context)
   smods_seams: ['stay_flipped'],
   by: 'Firch, RENREN, Peas, minichibis, J.D., Guwahavel, Ciirulean & ejwu (rebuilt for Micatro)',

@@ -432,6 +432,7 @@ export const BETMMA = registerMod({
   name: 'Betmma Vouchers',
   prefix: 'betmma',
   version: '3.0.2.3',
+  contentRev: 1, // (our counter, js/mods/pins.js: 1 = the Tentacle edition skips Komala & co. like an Eternal)
   by: 'Betmma (rebuilt for Micatro)',
   badge_colour: '#ED40BF',
   description: '58 new vouchers and 24 fusion vouchers (with voucher rarities), voucher packs, 11 jokers, 2 editions and 5 challenges.',

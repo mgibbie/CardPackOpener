@@ -26,9 +26,10 @@
 import { registerMod } from '../../js/mods/registry.js';
 import {
   G, P_CENTERS, P_CENTER_POOLS, localize, pseudorandom, pseudoseed, pseudorandom_element, create_card,
-  card_eval_status_text, ease_dollars, ease_discard, level_up_hand, emit, play_sound,
+  card_eval_status_text, ease_dollars, ease_discard, level_up_hand, emit, play_sound, can_be_destroyed_by_joker,
 } from '../../js/engine/core.js';
 import { Tag, add_tag } from '../../js/engine/tag.js';
+import { rulesRev } from '../../js/mods/pins.js';
 
 const P = 'mlnc';
 const ATLAS = 'mlnc_MilatroMod';
@@ -505,7 +506,10 @@ joker('betrayal', {
   loc_vars: (s, iq, card) => ({ vars: [card.ability.extra.dollars] }),
   calculate(s, card, context) {
     if (context.setting_blind && !context.blueprint) {
-      const destructable = G.jokers.cards.filter((j) => j !== card && !j.ability.eternal && !j.getting_sliced);
+      // contentRev 1 (2026-11-02, the owner's Komala fix in every mod): the engine's can_be_destroyed_by_joker, so a joker another
+      // mod makes act Eternal for destroy (Pokermon's Komala) is skipped exactly like an Eternal. A run recorded before replays as recorded.
+      const destroyable = (j) => (rulesRev('milatro') >= 1 ? can_be_destroyed_by_joker(j) : !j.ability.eternal);
+      const destructable = G.jokers.cards.filter((j) => j !== card && destroyable(j) && !j.getting_sliced);
       const joker_to_destroy = destructable.length > 0 ? pseudorandom_element(destructable, pseudoseed('betrayal'))[0] : null;
       if (joker_to_destroy && !(context.blueprint_card || card).getting_sliced) {
         joker_to_destroy.getting_sliced = true;
@@ -664,6 +668,7 @@ export const MILATRO = registerMod({
   name: 'Milatro',
   prefix: P,
   version: '1.1.0',
+  contentRev: 1, // (our counter, js/mods/pins.js: 1 = Betrayal skips Komala & co. like an Eternal)
   by: 'Milan, Emilia & Emma (rebuilt for Micatro)',
   badge_colour: '#008000',
   description: "Milan's cool mod that adds a bunch of jokers. Enjoy!",

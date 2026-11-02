@@ -3665,6 +3665,22 @@ and selling still remove Komala. Never retroactive: a run recorded on r65-r67 re
 - **Tests**: `micatro/tests/mods/pokermon_komala_destroy_test.mjs` (plays Dagger / Madness / Bewear / Carvanha / Sharpedo / Scyther / Nacli with
   Komala; the Eternal and plain-joker controls; r67 rules and an r67 recipe replayed as recorded; 12 checks fail with the hook removed);
   `pokermon_gen7_batch2_test` (Dagger now +0); the pins (`modpin`, `pokermon_391_data`, `pokermon_new_jokers`, `micatro_mod_version_pin`).
+- **The other mods** (follow-up, branch `fix/micatro-komala-mods-noivern`): every other mod's Joker destroyer asks it too, each on a contentRev
+  bump of its own (old runs replay as recorded): Risk of Jesters r1 (Egocentrism, Benthic Bloom), Bunco r2 (Carnival, a Scattering joker's
+  neighbour), Milatro r1 (Betrayal), BETMMA r1 (the Tentacle edition), More Fluff r3 (Less Fluff). Egocentrism, Benthic Bloom and Less Fluff
+  never skipped an Eternal and still don't (only the mod-immune joker is passed over). AutumnCircus' Tribute / Mischief / Quest Bed are
+  consumables (as Hex): unchanged. Tests: `micatro/tests/mods/mod_komala_destroyers_test.mjs`.
+
+### Noibat / Noivern stack (r69, 2026-11-02, branch `fix/micatro-komala-mods-noivern`)
+Pinned **`3.9.1+r69`**. The owner's report: "2 Noiverns still 1/2 to break glass". Supersonic now doubles the Glass roll's **numerator** per
+undebuffed Noibat / Noivern (as Oops! All 6s does) instead of halving the denominator once: one copy 2 in 4 (1 in 2), two 4 in 4 (always), Oops!
+doubles it again, Regice's `fix_probability` 0 still wins. A Tera'd copy counts (the sticker changes its type, not its ability). Each break still
+banks on every copy and each Noivern refills its own Glass card (two Noiverns: two deck cards turn Glass per break). The tooltip shows the
+live odds ("Now 1 in 2" / "Now always" / "Now never"), and so does the **Glass card's own tooltip** (`describe.js` `enh_live_vars` -> the
+card's own `probability_vars(card, 1, 4, 'glass')`, the run's RNG restored after; `view.js` `enh_vars`, `ui/markup.js` describePlaying;
+`js/engine/odds.js`): it said "1 in 4" with Noivern held. r62-r68 runs replay as recorded (`rulesRev('pokermon') >= 69`).
+- **Tests**: `pokermon_gen6_batch2_test` (odds, played: two copies 20/20 breaks, banks per copy, two Noiverns +2 Glass a break, Tera,
+  Regice, r68 rules), `pokermon_glass_odds_tooltip_test` (both tooltip paths, the RNG, an r68 recipe replayed as recorded).
 ### Pending from the 3.9.1 joker rework (after batch 10b)
 Every existing joker is on 3.9.1: `rework_hold` (still on 3.2.1) is empty. What waits, by the batch it waits on (`rework_deferred` =
 on 3.9.1 but one part):

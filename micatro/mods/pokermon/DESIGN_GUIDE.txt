@@ -930,9 +930,10 @@ House pattern: a DESTROYED-CARD BANK that replants (the Gen 6 Phantump line, For
     card (`curse_mult`, carried; gain `mult_mod` +20%). The Stage 1 gives back: each destroyed card plants a Seed in a random UNENHANCED
     deck card (Cherubi's rule: none unenhanced, no Seed; never a card being destroyed). Giratina's X counts the same cards.
 House pattern: GLASS ODDS, a shatter engine (the Gen 6 Noibat line, Supersonic / Boomburst; supersonic / boomburst):
-  - The Glass roll (identifier 'glass') has its DENOMINATOR halved in the mod_probability pass (1 in 4 -> 1 in 2): Oops! All 6s still doubles
-    the numerator afterwards (2 in 2), Regice's fix_probability 0 still wins (the anti-synergy: with Regice nothing breaks). Copies never
-    stack (half of the card's own base at best). Odds and hand size (+1 / +2) are fixed.
+  - The Glass roll (identifier 'glass') has its NUMERATOR doubled by EACH undebuffed Noibat / Noivern in the mod_probability pass (r69, the
+    owner's "2 Noiverns still 1/2"): copies stack as Oops! All 6s does (one 1 in 2, two always; Oops! doubles again), Regice's
+    fix_probability 0 still wins (the anti-synergy: with Regice nothing breaks). r62-r68 halved the denominator once (copies never stacked).
+    Odds and hand size (+1 / +2) are fixed. The Glass card's own tooltip shows the live odds too (describe.js enh_live_vars).
   - Each `shattered` card in remove_playing_cards banks +2 Mult (Noibat) / X0.1 (Noivern, from X1, Noibat's Mult kept): the Whismur line's
     count, so every EXTRA break also grows Whismur / Loudred / Exploud. Noivern REFILLS: one random deck card becomes Glass per break
     (unenhanced first, then any non-Glass), so the Glass count holds while the bank grows.
@@ -1020,7 +1021,9 @@ House pattern: CAN'T BE DESTROYED (the Gen 7 Komala, Comatose):
   - "Can't be debuffed" is the set_debuff line (systems/rules.js, as Kubfu). "Jokers can't destroy it" = it ACTS ETERNAL FOR DESTROY (r68):
     index.js hooks.joker_destroy_immune answers true for it, so the engine's can_be_destroyed_by_joker(card) says no, and every Joker
     effect that picks a Joker to destroy skips it exactly like an Eternal: not targeted, no gain, no slice (Ceremonial Dagger, Madness,
-    Carvanha / Sharpedo, Scyther / Scizor, Kleavor, Rotom Fan, Bewear, Mega Mewtwo X, A Billion Lions, Pokermon+'s Nacli). The
+    Carvanha / Sharpedo, Scyther / Scizor, Kleavor, Rotom Fan, Bewear, Mega Mewtwo X, A Billion Lions, Pokermon+'s Nacli; and every other
+    mod's: Risk of Jesters' Egocentrism / Benthic Bloom, Bunco's Carnival / Scattering, Milatro's Betrayal, BETMMA's Tentacle, More
+    Fluff's Less Fluff, each on its own contentRev). The
     Steamodded no_destroy answer (joker_type_destroyed for ITSELF) stays as the backstop for anything else that marks it getting_sliced.
     Hex and Ankh (Spectral cards the player chooses) call start_dissolve with no joker involved and still remove it; selling works.
   - RULE for any new Joker destroyer: choose the target with can_be_destroyed_by_joker(card) (never `!card.ability.eternal` alone).

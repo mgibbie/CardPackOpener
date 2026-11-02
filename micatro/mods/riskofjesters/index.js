@@ -47,11 +47,17 @@ import * as BN from '../../js/engine/bignum.js'; // big-number scoring (modded r
 import { registerMod, isActive } from '../../js/mods/registry.js';
 import {
   G, localize, emit, card_eval_status_text, play_sound, pseudorandom, pseudoseed, pseudorandom_element,
-  pseudoshuffle, create_card, copy_card, find_joker, get_blind_amount, number_format,
+  pseudoshuffle, create_card, copy_card, find_joker, get_blind_amount, number_format, can_be_destroyed_by_joker,
 } from '../../js/engine/core.js';
 import { Tag, add_tag } from '../../js/engine/tag.js';
+import { rulesRev } from '../../js/mods/pins.js';
 
 const MOD_ID = 'riskofjesters';
+/** contentRev 1 (2026-11-02, the owner's Komala fix in every mod): a joker another mod makes act Eternal for destroy
+ *  (hooks.joker_destroy_immune: Pokermon's Komala, Comatose) is never picked by Egocentrism or Benthic Bloom, so nothing is
+ *  converted / upgraded off it (before: it was picked, refused the dissolve and the new joker still arrived). Neither ever
+ *  skipped an Eternal and still doesn't. Gated on the recorded pin (js/mods/pins.js RULES): older runs replay as recorded. */
+const destroy_immune = (j) => rulesRev(MOD_ID) >= 1 && !j.ability.eternal && !can_be_destroyed_by_joker(j);
 const ART = '/micatro/mods/riskofjesters/assets/2x/';
 const FILTER = 'FILTER';
 
@@ -86,7 +92,7 @@ J.egocentrism = {
   calculate(self, card, context) {
     if (context.setting_blind && !card.getting_sliced && !context.blueprint) {
       const convertables = [], egocentrisms = [];
-      for (const v of G.jokers.cards) if (!v.getting_sliced) (v.ability.name === 'Egocentrism' ? egocentrisms : convertables).push(v);
+      for (const v of G.jokers.cards) if (!v.getting_sliced && !destroy_immune(v)) (v.ability.name === 'Egocentrism' ? egocentrisms : convertables).push(v);
       if (convertables.length > 0 && !(context.blueprint_card || card).getting_sliced) {
         const [joker] = pseudorandom_element(convertables, pseudoseed('egocentrism'));
         joker.getting_sliced = true;
@@ -252,7 +258,7 @@ J.benthic = {
       const upgradables = [];
       for (const v of G.jokers.cards) {
         const r = v.config.center.rarity;
-        if (v !== (context.blueprint_card || card) && !v.getting_sliced && typeof r === 'number' && r <= 3) upgradables.push(v); // (port note: string rarities)
+        if (v !== (context.blueprint_card || card) && !v.getting_sliced && !destroy_immune(v) && typeof r === 'number' && r <= 3) upgradables.push(v); // (port note: string rarities)
       }
       if (upgradables.length > 0) {
         const [joker] = pseudorandom_element(upgradables, pseudoseed('benthic'));
@@ -512,6 +518,7 @@ export const RISKOFJESTERS = registerMod({
   name: 'Risk of Jesters',
   prefix: 'roj',
   version: '1.0.0',
+  contentRev: 1, // (our counter, js/mods/pins.js: 1 = Komala & co. skipped by Egocentrism / Benthic Bloom)
   by: 'DVRP (rebuilt for Micatro)',
   badge_colour: '#6d60ab',
   description: 'Risk of Rain-themed jokers, vouchers (3D/Mili-Tech Printers) and blinds, in a vanilla style.',

@@ -14,8 +14,9 @@
 //   describeBack(key)     -> {name, key, lines}
 
 import {
-  G, P_CENTERS, P_BLINDS, P_TAGS, P_SEALS, LOC, localize, get_blind_amount, number_format,
+  G, P_CENTERS, P_BLINDS, P_TAGS, P_SEALS, LOC, localize, get_blind_amount, number_format, probability_vars,
 } from './core.js';
+import { glass_text } from './odds.js';
 import * as B from './bignum.js';
 import { MOD_LOC, MODS, RARITIES, callHook, reduceHook } from '../mods/registry.js';
 
@@ -310,12 +311,17 @@ function generate_card_ui(_c, specific_vars, card_type, badges, main_start, main
     }
     const e = _c.effect, cfg = _c.config;
     if (e === 'Mult Card') loc_vars = [cfg.mult];
-    else if (e === 'Glass Card') loc_vars = [cfg.Xmult, G.GAME.probabilities.normal, cfg.extra];
+    else if (e === 'Glass Card' && specific_vars && specific_vars.enh_vars) {
+      // (live odds: every mod_probability rule — Pokermon's Noibat / Noivern — Oops! All 6s and fix_probability — Regice — counted)
+      const d = desc('Enhanced', _c.key);
+      lines.push(...glass_text(d ? d.text : [], specific_vars.enh_vars, (l, v) => fill([l], v)[0]));
+      loc_vars = null;
+    } else if (e === 'Glass Card') loc_vars = [cfg.Xmult, G.GAME.probabilities.normal, cfg.extra];
     else if (e === 'Steel Card') loc_vars = (specific_vars && specific_vars.enh_vars) || [cfg.h_x_mult];
     else if (e === 'Stone Card') loc_vars = (specific_vars && specific_vars.enh_vars) || [(specific_vars && specific_vars.bonus_chips) || cfg.bonus];
     else if (e === 'Gold Card') loc_vars = [cfg.h_dollars];
     else if (e === 'Lucky Card') loc_vars = [G.GAME.probabilities.normal, cfg.mult, 5, cfg.p_dollars, 15];
-    lines.push(...desc_lines('Enhanced', _c.key, loc_vars));
+    if (loc_vars !== null) lines.push(...desc_lines('Enhanced', _c.key, loc_vars));
     if (_c.name !== 'Stone Card' && ((specific_vars && specific_vars.bonus_chips) || cfg.bonus)) {
       lines.push(...desc_lines('Other', 'card_extra_chips', [(specific_vars && specific_vars.bonus_chips) || cfg.bonus]));
     }
@@ -421,6 +427,20 @@ function generate_card_ui(_c, specific_vars, card_type, badges, main_start, main
 }
 
 // ------------------------------------------- generate_UIBox_ability_table
+/** A Glass card's live break odds [Xmult, numerator, denominator]: its own roll (identifier 'glass') through core.js probability_vars,
+ *  so every mod's mod_probability rule (Pokermon's Noibat / Noivern: each copy doubles it), Oops! All 6s and fix_probability (Regice:
+ *  never) show on the card, not only on the joker. Display only: the pass asks each joker's calculate, and a joker may roll on any
+ *  calculation (BETMMA's Phantom edition), so the run's RNG state is put back exactly as it was. */
+function glass_live_vars(card) {
+  const a = card.ability;
+  const pr = G.GAME && G.GAME.pseudorandom;
+  const saved = pr ? { ...pr } : null;
+  let nd;
+  try { nd = probability_vars(card, 1, typeof a.extra === 'number' ? a.extra : 4, 'glass'); } finally {
+    if (pr) { for (const k of Object.keys(pr)) if (!(k in saved)) delete pr[k]; Object.assign(pr, saved); }
+  }
+  return [a.x_mult, nd[0], nd[1]];
+}
 /** A Stone / Steel card's own tooltip numbers, live: Stone's Chips (its bonus + perma_bonus, as Balatro's bonus_chips) and Steel's held
  *  X Mult. A mod that changes what the card scores reports it through the PURE hook enh_loc_vars (Pokermon's Regirock: Stone +100;
  *  Registeel: held Steel X2), from the same function its scoring hook uses. Never the scoring getters themselves (get_chip_bonus may
@@ -431,6 +451,7 @@ export function enh_live_vars(card) {
   let vars;
   if (a.effect === 'Stone Card') vars = [a.bonus + (a.perma_bonus || 0)];
   else if (a.effect === 'Steel Card') vars = [a.h_x_mult];
+  else if (a.effect === 'Glass Card') vars = glass_live_vars(card);
   else return undefined;
   vars = reduceHook('enh_loc_vars', vars, card);
   return vars.map((n) => (typeof n === 'number' ? Math.round(n * 1000) / 1000 : n));

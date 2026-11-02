@@ -166,7 +166,8 @@ export const MOREFLUFF = registerMod({
   // Our behaviour counter on top of 1.9.9999 (js/mods/pins.js): 1 = the first, partial batch (69 updated jokers,
   // 11 retired, systems, stakes); 2 = batch B (object_weights on, the Steamodded scale_card / attribute seams,
   // Tall Joker's and Triangle's reworks, the new jokers with real art). Every later batch that adds jokers bumps it.
-  contentRev: 2,
+  // 3 = Less Fluff passes over a joker another mod makes act Eternal for destroy (Pokermon's Komala; 2026-11-02).
+  contentRev: 3,
   by: 'notmario and contributors (rebuilt for Micatro)',
   badge_colour: '#814BA8',
   description: 'More Fluff 1.9.9999: 89 jokers (Planeswalkers with loyalty abilities, Rotated Legendaries with prepared Spectral cards), Colour cards that charge up over rounds, Rotarot cards, new enhancements, decks and six harder stakes, and DX Superboss blinds you pick yourself at the winning ante.',

@@ -51,7 +51,7 @@ import LOC from './loc.js';
 import * as BN from '../../js/engine/bignum.js'; // big-number scoring (modded runs past 1e308)
 import {
   joker, find, say, forced_message, event, big_juice, SEED, HUGE, FLEURONS, HALBERDS, has_no_rank, has_no_suit, has_any_suit,
-  exotic_in_pool,
+  exotic_in_pool, joker_destroyable,
 } from './util.js';
 
 export const centers = [];
@@ -399,7 +399,7 @@ J('carnival', {
   calculate(s, card, ctx) {
     if (eor(ctx) && G.GAME.blind.boss && !ctx.blueprint) {
       if (G.GAME.round_resets.ante > E(card).ante) {
-        const destructable_jokers = G.jokers.cards.filter((j) => j !== card && !j.ability.eternal && !j.getting_sliced);
+        const destructable_jokers = G.jokers.cards.filter((j) => j !== card && joker_destroyable(j) && !j.getting_sliced);
         const joker_to_destroy = destructable_jokers.length > 0 ? pseudorandom_element(destructable_jokers, pseudoseed('carnival'))[0] : null;
         if (joker_to_destroy && !card.getting_sliced) {
           joker_to_destroy.getting_sliced = true;
