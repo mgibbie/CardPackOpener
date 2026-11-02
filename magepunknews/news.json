@@ -71,6 +71,13 @@
 			"w": 4260,
 			"h": 13110
 		},
+		"@poke_AtlasJokersBasicGen06391": {
+			"src": "/micatro/mods/pokermon/assets/2x/Basic%20Series/AtlasJokersBasicGen06-391.png",
+			"cw": 142,
+			"ch": 190,
+			"w": 1704,
+			"h": 2850
+		},
 		"@poke_AtlasJokersBasicGen05391": {
 			"src": "/micatro/mods/pokermon/assets/2x/Basic%20Series/AtlasJokersBasicGen05-391.png",
 			"cw": 142,
@@ -91,13 +98,6 @@
 			"ch": 190,
 			"w": 1704,
 			"h": 190
-		},
-		"@poke_AtlasJokersBasicGen06391": {
-			"src": "/micatro/mods/pokermon/assets/2x/Basic%20Series/AtlasJokersBasicGen06-391.png",
-			"cw": 142,
-			"ch": 190,
-			"w": 1704,
-			"h": 2850
 		},
 		"@poke_AtlasJokersBasicGen08391": {
 			"src": "/micatro/mods/pokermon/assets/2x/Basic%20Series/AtlasJokersBasicGen08-391.png",
@@ -522,11 +522,219 @@
 	},
 	"entries": [
 		{
-			"sha": "043fc93",
+			"sha": "bfa8805",
+			"date": "2026-11-01",
+			"kind": "micatro",
+			"title": "Pokermon r61: Gen 6 batch 1 (16 jokers #661-678)",
+			"body": "",
+			"cards": [],
+			"micatroMods": [
+				{
+					"id": "pokermon",
+					"name": "Pokermon",
+					"added": [
+						{
+							"key": "j_poke_fletchling",
+							"name": "Fletchling",
+							"set": "Joker",
+							"rarity": "uncommon",
+							"cost": 6,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 0,
+								"y": 44
+							}
+						},
+						{
+							"key": "j_poke_fletchinder",
+							"name": "Fletchinder",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 8,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 2,
+								"y": 44
+							}
+						},
+						{
+							"key": "j_poke_talonflame",
+							"name": "Talonflame",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 10,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 4,
+								"y": 44
+							}
+						},
+						{
+							"key": "j_poke_scatterbug",
+							"name": "Scatterbug",
+							"set": "Joker",
+							"rarity": "uncommon",
+							"cost": 6,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 6,
+								"y": 44
+							}
+						},
+						{
+							"key": "j_poke_spewpa",
+							"name": "Spewpa",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 8,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 8,
+								"y": 44
+							}
+						},
+						{
+							"key": "j_poke_vivillon",
+							"name": "Vivillon",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 10,
+							"atlas": "@poke_AtlasJokersBasicGen06391",
+							"pos": {
+								"x": 2,
+								"y": 0
+							}
+						},
+						{
+							"key": "j_poke_flabebe",
+							"name": "Flabébé",
+							"set": "Joker",
+							"rarity": "uncommon",
+							"cost": 6,
+							"atlas": "@poke_AtlasJokersBasicGen06391",
+							"pos": {
+								"x": 10,
+								"y": 3
+							}
+						},
+						{
+							"key": "j_poke_floette",
+							"name": "Floette",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 8,
+							"atlas": "@poke_AtlasJokersBasicGen06391",
+							"pos": {
+								"x": 8,
+								"y": 4
+							}
+						},
+						{
+							"key": "j_poke_florges",
+							"name": "Florges",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 10,
+							"atlas": "@poke_AtlasJokersBasicGen06391",
+							"pos": {
+								"x": 8,
+								"y": 5
+							}
+						},
+						{
+							"key": "j_poke_skiddo",
+							"name": "Skiddo",
+							"set": "Joker",
+							"rarity": "common",
+							"cost": 5,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 22,
+								"y": 44
+							}
+						},
+						{
+							"key": "j_poke_gogoat",
+							"name": "Gogoat",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 8,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 24,
+								"y": 44
+							}
+						},
+						{
+							"key": "j_poke_pancham",
+							"name": "Pancham",
+							"set": "Joker",
+							"rarity": "common",
+							"cost": 5,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 26,
+								"y": 44
+							}
+						},
+						{
+							"key": "j_poke_pangoro",
+							"name": "Pangoro",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 8,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 28,
+								"y": 44
+							}
+						},
+						{
+							"key": "j_poke_furfrou",
+							"name": "Furfrou",
+							"set": "Joker",
+							"rarity": "rare",
+							"cost": 7,
+							"atlas": "@poke_AtlasJokersBasicGen06391",
+							"pos": {
+								"x": 6,
+								"y": 6
+							}
+						},
+						{
+							"key": "j_poke_espurr",
+							"name": "Espurr",
+							"set": "Joker",
+							"rarity": "common",
+							"cost": 5,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 2,
+								"y": 45
+							}
+						},
+						{
+							"key": "j_poke_meowstic",
+							"name": "Meowstic",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 8,
+							"atlas": "@poke_AtlasJokersBasicGen06391",
+							"pos": {
+								"x": 2,
+								"y": 8
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"sha": "c4ec50d",
 			"date": "2026-11-01",
 			"kind": "patch",
 			"title": "Pokermon r60: Swords of Justice need a strict lead (a tie doesn't count)",
-			"body": "The owner's follow-up to r59: Cobalion / Terrakion / Virizion / Keldeo's\nSwords of Justice X1.5 applies only while the sword's suit is STRICTLY\nthe most common suit in the full deck. A tie no longer counts, so a\nplain 52-card deck gives every sword X1.25; one extra Spade gives\nCobalion X1.5. Wild cards still count for every suit, Stone for none.\nText: \"(a tie doesn't count)\" (was \"(ties count)\"); the tooltip reads\n\"(Spades 13, tied for top; now X1.25)\" while it shares the top.\n\nNever retroactive: suit_leads reads rulesRev('pokermon') >= 60 (#898's\ngate), so a move recorded on r59 re-plays with ties counting and r58\nruns keep the partner rules. Fixture pokermon_swordtie_r59_recipe.json\nrecorded on main (r59): four Swords, one Two Pair, 627.\n\nTests: pokermon_legendary_solo_test swords + r59 recipe sections (125\nchecks; 11 fail with the change reverted, 2 with the rules gate forced\non). Pin tests to r60, DESIGN_GUIDE, PORTING.md, design wiki data.",
+			"body": "",
 			"cards": []
 		},
 		{

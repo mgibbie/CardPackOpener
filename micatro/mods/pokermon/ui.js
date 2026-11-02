@@ -33,8 +33,7 @@ import { family_display_key } from './systems/precedence.js';
 import { TYPE_COLOURS } from './systems/types.js';
 import { KECLEON_ATLAS, KECLEON_SPRITES, CASTFORM_SPRITES, CHERRIM_SPRITES, GIRATINA_ORIGIN, CLOAK_ATLAS, BURMY_SPRITES, DEOXYS_SOULS, IMPOSTER_REVEALED, SERIES_A_ANIM } from './systems/anim.js';
 import D391 from './data391.js';
-import { SEA_ATLAS, SEA_SPRITES, BASCULIN_SPRITES, GEN5_LEGEND_FORMS, SEASON_SPRITES } from './systems/anim.js';
-import { GEN6_LEGEND_FORMS } from './systems/anim.js';
+import { SEA_ATLAS, SEA_SPRITES, BASCULIN_SPRITES, GEN5_LEGEND_FORMS, SEASON_SPRITES, GEN6_FORM_SPRITES, GEN6_LEGEND_FORMS } from './systems/anim.js';
 
 const MOD = 'pokermon';
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -262,7 +261,9 @@ function cardOf(key, live) {
   if (live && live.center === key) return { ...live, hl: false };
   // (the Shellos line: the family shown in the sea of the card it was opened from)
   const sea = SEA_SPRITES[key] && live && live.poke && SEA_SPRITES[key][live.poke.form];
-  return { center: key, mod: c.mod, set: c.set, name: c.name, atlas: sea ? SEA_ATLAS : c.atlas, pos: sea || c.pos, soul_pos: c.soul_pos };
+  // (the Flabébé line: the family shown in the opened card's flower colour)
+  const g6 = !sea && GEN6_FORM_SPRITES[key] && live && live.poke && /^j_poke_(flabebe|floette|florges)$/.test(key) && GEN6_FORM_SPRITES[key][live.poke.form];
+  return { center: key, mod: c.mod, set: c.set, name: c.name, atlas: sea ? SEA_ATLAS : c.atlas, pos: sea || g6 || c.pos, soul_pos: c.soul_pos };
 }
 /** The Pokédex modal: the family as cards; pick one to read it. api = {modal, cardCanvas, markup, esc, fmt}. */
 export function openPokedex(d, api) {
@@ -348,6 +349,9 @@ function ownFace(d0) {
   // Deerling / Sawsbuck (the owner's Gen 5 batch 3): the season's card (the Gen 5 sheet); Spring = its own card
   const ss = p && SEASON_SPRITES[d.center] && SEASON_SPRITES[d.center][p.form];
   if (ss) return { ...d, atlas: P_CENTERS[d.center].atlas, pos: ss };
+  // Gen 6 batch 1 (the owner's): Vivillon's pattern, the Flabébé line's flower, Furfrou's trim, Female Meowstic (the Gen 6 sheet)
+  const g6 = p && GEN6_FORM_SPRITES[d.center] && GEN6_FORM_SPRITES[d.center][p.form];
+  if (g6) return { ...d, atlas: P_CENTERS[d.center].atlas, pos: g6 };
   // Unown: its form's letter floats over the card
   const u = withUnownForm(d);
   return u === d0 ? null : u;

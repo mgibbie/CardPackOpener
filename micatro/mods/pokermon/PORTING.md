@@ -3219,6 +3219,63 @@ either: the fuzz is unchanged): **`keep_in_hand`** (run.js: a mod keeps held car
   (the pin, 222 defs), `pokermon_art_types_test`, `micatro_mod_version_pin`, `micatro_deckeditor_pages` (1040 jokers); `designwiki_pokermon_jokers_test`
   spot checks: Stunfisk was in none after batch 4's.
 
+### Gen 6, batch 2 (2026-11-02, branch `feat/pokermon-gen6-batch2`)
+Pinned **`3.9.1+r62`** (`contentRev: 62`; r61 is Gen 6 batch 1, #661-678; `LEGACY_MOD_VERSIONS` untouched). The owner's "Yes": 22 jokers (the
+spec's heading said 23; it lists 22), #682-715, in `jokers/pokejokers_designs.js` (`healing_aroma` / `sweet_veil` / `sweet_slot` / `inkay_low` /
+`malamar_chip_bonus` / `seven_rocks` / `deck_convert` / `skrelp_poison` / `hazard_held_x` / `ancient_kings` / `ancient_queens` / `flying_press` /
+`vouchers_redeemed` / `forest_curse` / `supersonic` / `boomburst`). Pokédex order: Spritzee ... Aurorus (682-699) after Aegislash (681), before
+Sylveon (700); Hawlucha, Klefki, Phantump, Trevenant (701-709) after Sylveon, before Pumpkaboo; Bergmite ... Noivern (712-715) after Gourgeist,
+before Xerneas. Neither Nacho nor Pokermon+ has any of them. Prices by the guide's slots (2-stage C $5 / S $8, single-stage R $7). Evolution:
+**5 rounds** for every 2-stage line (none is an early evolver); the fossils by the Ancient convention (their 3+ tier fired 5 times). Types =
+the cards' (`pokermon_art_types_test`: Skrelp line Dark, Binacle / Amaura lines Earth, Tyrunt line Dragon, Phantump line Grass, Bergmite line
+Water). Art: upstream 3.9.1 cells (Natdex {12,45}-{28,45}, {0,46}-{20,46}, {2,47}-{18,47}); nothing to deploy. One hook composed: index.js
+`chip_bonus` runs Regirock's rule, then Malamar's.
+- **Spritzee** (C $5, 5) / **Aromatisse** (S $8), Healing Aroma: **each scored Lucky card earns $1 / $2** (whether or not its own rolls hit; a
+  debuffed or unscored one nothing). Aromatisse's **Aroma Veil: Lucky cards' odds +1** (Pidove's `super_luck`: the numerator of both rolls, before
+  Oops! doubles it — 2 in 5, with Oops 4 in 5; it stacks +1 with Pidove's line and with another Aromatisse). Money and odds fixed: Energy-inert.
+- **Swirlix** (C $5, 5) / **Slurpuff** (S $8), Sweet Veil: **+1 / +2 Mult banked per Tarot used** (`sweet_mult`, carried; given every hand; a
+  Planet / Spectral nothing; Blueprint copies the Mult, never the gain). Slurpuff **+1 consumable slot** (fixed; taken back when sold / debuffed).
+  Energy `mult_mod` 1 -> 1.2 / 1.4 / 1.6, 2 -> 2.4 / 2.8 / 3.2 (never retroactive).
+- **Inkay** (C $5, 5): **each scored 2, 3, 4 or 5 +4 Mult**. **Malamar** (S $8), Topsy-Turvy: **every scored card gives the Chips of its flipped
+  rank instead of its own** — 2 <-> Ace (11 / 2), 3 <-> King (10 / 3), 4 <-> Queen (10 / 4), 5 <-> Jack (10 / 5), 6 <-> 10, 7 <-> 9, 8 = 8. The
+  card-level `chip_bonus` hook: the enhancement's bonus and **perma_bonus stay** (a Hiker card keeps its +5s on top of the flipped Chips);
+  **Stone cards are unchanged**; two Malamars flip once; a debuffed Malamar flips nothing. With **Hiker**: Hiker still adds +5 to each card for
+  good, and that +5 is kept. Energy `mult` 4 -> 5.6 / 7.2 / 8.8 (Inkay); Malamar Energy-inert.
+- **Binacle** (C $5, 5) / **Barbaracle** (S $8): **each scored 7 +20 Chips / +20 Chips and X1.3**. Energy `chips` 20 -> 26 / 32 / 38,
+  `Xmult_multi` 1.3 -> 1.365 / 1.43 / 1.495.
+- **Skrelp** (C $5, 5) / **Dragalge** (S $8), Poison Point: **when a Blind is selected, 1 random card of the full deck becomes a Hazard card**
+  (seeded; unenhanced first, then any non-Hazard card — the Regis' overwrite; Blueprint copies it). Skrelp **+3 Mult per Hazard card in the full
+  deck**; Dragalge: **the same conversion, and each Hazard card held in hand X1.2** — the choice: the spec's "the same conversion, and ..." means
+  Dragalge drops Skrelp's deck count for the held X. Energy `mult` 3 -> 4.2 / 5.4 / 6.6, `Xmult_multi` 1.2 -> 1.26 / 1.32 / 1.38.
+- **Tyrunt** (C $5) / **Tyrantrum** (S $8), Ancient Kings: **1+ +5 Mult; 2+ X1.25; 3+ every scored King retriggers once**; Tyrantrum **4+ X2** too.
+  The 3+ tier counts toward evolving **once a hand** (in joker_main), never per retriggered King nor from a Blueprint. Energy `mult` 5 -> 7 / 9 /
+  11, `Xmult` 1.25 -> 1.5 / 1.75 / 2, `Xmult2` 2 -> 2.4 / 2.8 / 3.2.
+- **Amaura** (C $5) / **Aurorus** (S $8), Ancient Queens: **1+ +40 Chips; 2+ the leftmost scored Queen that isn't Glass (nor debuffed) becomes
+  Glass** — in `before`, Midas Mask's moment, so it scores as Glass that hand and may shatter after; one a hand, never from a Blueprint; **3+ earn
+  $3** (once a hand); Aurorus **4+ X2**. Energy `chips` 40 -> 52 / 64 / 76, `Xmult2` 2 -> 2.4 / 2.8 / 3.2; `ancient_money` fixed.
+- **Hawlucha** (R $7), Flying Press: **the first and the last scored card each retrigger once**; **a lone scored card retriggers once in all**
+  (the choice). By position: a debuffed end gets nothing. Blueprint copies it. Energy-inert.
+- **Klefki** (R $7), Key Ring: **X1 plus X0.25 per Voucher redeemed this run** (`G.GAME.used_vouchers`, read live: a late buy sees every earlier
+  Voucher; a deck's / challenge's starting Voucher is on that record and counts). Energy `Xmult_mod` 0.25 -> 0.3 / 0.35 / 0.4 (it is read, not
+  banked, so Energy raises every Voucher's share).
+- **Phantump** (C $5, 5) / **Trevenant** (S $8), Forest's Curse: **+3 / +5 Mult banked per playing card destroyed** (`remove_playing_cards`:
+  Glass, Hanged Man, Hazards, swallows...; `curse_mult`, carried, given every hand). Trevenant: **each destroyed card plants a Seed** — a random
+  unenhanced deck card (not one being destroyed) becomes a Seed card; none unenhanced, none planted. Not Blueprint for the bank / Seeds. Energy
+  `mult_mod` 3 -> 3.6 / 4.2 / 4.8, 5 -> 6 / 7 / 8.
+- **Bergmite** (C $5, 5) / **Avalugg** (S $8), Iceberg: **+50 / +150 Chips**; Avalugg **X1.5 on the round's final hand**. Energy `chips` 50 -> 65 /
+  80 / 95, 150 -> 195 / 240 / 285, `Xmult` 1.5 -> 1.8 / 2.1 / 2.4.
+- **Noibat** (C $5, 5) / **Noivern** (S $8), Supersonic / Boomburst: **+1 / +2 hand size**; **Glass cards break 1 in 2** (the 'glass' roll's
+  denominator halved in the mod_probability pass: Oops! doubles after it, 2 in 2; copies don't stack; **Regice's Ice Body still stops every
+  break — the anti-synergy**). Noibat **+2 Mult banked per Glass card broken** (`bat_mult`); Noivern **X0.1 banked per break** (`bat_Xmult` from
+  X1; Noibat's Mult kept and still given) and **a random deck card becomes Glass per break** (unenhanced first, then any non-Glass; never a
+  breaking card), so the deck's Glass count holds. **Every extra break feeds the Whismur line** (its own shatter count). Odds and hand size
+  fixed; Energy `mult_mod` 2 -> 2.4 / 2.8 / 3.2, `Xmult_mod` 0.1 -> 0.12 / 0.14 / 0.16.
+- **Wiki**: regenerated (186 missing, after Gen 6 batch 1); the wiki sprites of the 22 are gone from `designwiki/sprites/pokermon_jokers/` (no new art).
+- **Tests**: `micatro/tests/mods/pokermon_gen6_batch2_test.mjs`. Re-recorded: `modpin_test`, `pokermon_391_data_test`, `pokermon_new_jokers_test`
+  (the pin, the defs, the order chains), `pokermon_legendary_solo_test` (contentRev 60+), `pokermon_art_types_test`, `micatro_mod_version_pin`,
+  `micatro_deckeditor_pages` (1062 jokers); `designwiki_pokermon_jokers_test` spot-checks Guzzlord / Toedscool / Jangmo-o (Tyrunt, Phantump
+  and Noibat have jokers now).
+
 ### The Espeon rework (2026-11-01, branch `feat/pokermon-espeon-future-sight`)
 Pinned **`3.9.1+r57`** (`contentRev: 57`; `LEGACY_MOD_VERSIONS` untouched). The owner's Future Sight, "like The Idol but better", for Pokermon's
 own Espeon (196; Psychic, Stage 1, Safari $7 and the Sun Stone evolution from Eevee unchanged). `jokers/pokejokers_07.js` `espeon` carries its
@@ -3327,6 +3384,53 @@ sword X1.25; one extra Spade gives Cobalion X1.5; Spades and Hearts tied for the
 - Fixture `micatro/tests/fixtures/pokermon_swordtie_r59_recipe.json` (recorded on main at r59: the four Swords on a plain deck, one Two Pair:
   62 x 10.125 = 627; on r60 the same moves give X4.8828125, 302).
 - Tests: the `swords` and `r59 recipe` sections of `micatro/tests/mods/pokermon_legendary_solo_test.mjs`.
+
+### Gen 6, batch 1 (2026-11-02, branch `feat/pokermon-gen6-batch1`)
+Pinned **`3.9.1+r61`** (`contentRev: 61`; `LEGACY_MOD_VERSIONS` untouched; new jokers only, so nothing a recorded run held changes). The owner's
+"go ahead": **16 jokers** (the spec's heading says 15; its list is 16 species), #661-678, in `jokers/pokejokers_designs.js` (`gale_retrigger` /
+`wild_scored` / `queen_scored` / `grass_others` / `pancham_evo` / `furfrou_trim` / `prankster_tarot`; Sewaddle's `tailor` takes a seed now; 238 defs).
+Pokédex order: Fletchling ... Vivillon (661-666) after Diggersby, before Litleo; Flabébé ... Meowstic (669-678) after Pyroar, before Honedge.
+Neither Nacho nor Pokermon+ has any of them. Prices by the guide's slots; evolution by rounds, 4 for an early evolver (Fletchling, Scatterbug,
+Spewpa, Flabébé), else 5. Types = the cards' (`pokermon_art_types_test`: Fletchling Colorless, Fletchinder / Talonflame Fire, Pangoro Fighting).
+Art: upstream 3.9.1 cells (Natdex {0..8,44}, {22..28,44}, {2,45}; Gen 6 sheet: Vivillon {2,0}..{4,3}, the flowers {10,3}..{4,6}, Furfrou {6,6},
+Meowstic {2,8}) plus their FORM cells (`systems/anim.js GEN6_FORM_SPRITES`, ui.js ownFace, Shiny twins); nothing to deploy.
+- **Fletchling** (U $6, 4; Colorless: Starly's flock counts it) / **Fletchinder** (S $8, 5; Fire) / **Talonflame** (S $10; Fire), Gale Wings: the
+  round's FIRST hand (Pachirisu's `spark_on`: hands_played 0 while it scores; a discard first doesn't use it) **+8 Mult / X1.5 / X2.5**, and on that
+  hand Talonflame's **first scored card retriggers once** (scoring_hand[0]). Tooltip "Active!" / "Used this round". Energy `mult` 8 -> 11.2 / 14.4
+  / 17.6, `Xmult` 1.5 -> 1.8 / 2.1 / 2.4, 2.5 -> 3 / 3.5 / 4.
+- **Scatterbug** (U $6, 4): **each scored Wild card +4 Mult**. **Spewpa** (S $8, 4): **when a Blind is selected, 1 random unenhanced card of the full
+  deck becomes Wild** (Sewaddle's tailor, seed `poke_spewpa_wild`; none unenhanced: nothing; Blueprint copies it). **Vivillon** (S $10): the same
+  conversion and **each scored Wild X1.3**; a **pattern of 20, rolled when it becomes a Vivillon** (set_ability initial: evolved or created, seed
+  `vivillon_pattern`; `form` 1-20), each its own 3.9.1 cell (upstream lists all 20, unnamed: the tooltip says "Pattern 7 of 20"). Energy `mult`
+  4 -> 5.6 / 7.2 / 8.8; Spewpa carries Vivillon's `Xmult_multi` 1.3 -> 1.365 / 1.43 / 1.495.
+- **Flabébé** (U $6, 4) / **Floette** (S $8, 5) / **Florges** (S $10), Garden Queen: scored **Queens +4 Mult / retrigger once / retrigger twice and
+  X1.25 each time they score** (X1.25^3 a Queen). A **flower colour** (Red, White, Yellow, Orange, Blue; seed `flabebe_flower`) rolled once and kept
+  through both evolutions, each stage drawing its colour's cell (the Pokédex modal shows the family in that colour). Energy `mult` 4 -> 5.6 / 7.2 /
+  8.8; Floette carries Florges' `Xmult_multi` 1.25 -> 1.3125 / 1.375 / 1.4375 (retriggers fixed).
+- **Skiddo** (C $5, 5) / **Gogoat** (S $8): **+30 / +60 Chips, plus +10 / +20 for each OTHER Grass Joker** (is_type, undebuffed: Barboach's count of
+  the others); Gogoat **+1 hand size** (fixed, Bulbasaur's add / remove). Energy `chips` 30 -> 39 / 48 / 57, 60 -> 78 / 96 / 114; `chips1` 10 -> 13 /
+  16 / 19, 20 -> 26 / 32 / 38.
+- **Pancham** (C $5) / **Pangoro** (S $8), Iron Fist: scored **face cards +3 Mult / X1.3** (is_face: Pareidolia counts). **Pancham evolves after 5
+  rounds, but only at an end of round while you hold an undebuffed Dark Joker** (another Joker, is_type: a Dark Tera sticker counts); otherwise it
+  waits at 0 ("Needs a Dark Joker!", tooltip "now: needs / has a Dark Joker"). Everstone: never. Energy `mult` 3 -> 4.2 / 5.4 / 6.6, `Xmult_multi` 1.3
+  -> 1.365 / 1.43 / 1.495.
+- **Furfrou** (R $7), Trim: **a new trim each Ante** — picked when obtained (add_to_deck) and at each Ante change (the `ante_change` context,
+  queued after the Ante moves, seeded `furfrou_trim` + the new Ante; never on creation; never the same twice running). **Heart Hearts, Diamond
+  Diamonds, Star Spades, Debutante Clubs** (the spec's); its suit's **scored cards +20 Chips and +4 Mult** (is_suit: Wild counts). Each trim draws its
+  own card: the Gen 6 sheet has Furfrou's trims UNLISTED beside the Natural card (Heart {8,6}, Star {0,7}, Diamond {2,7}, Debutante {6,7}; named by
+  their look: the hearts, the star tail, the diamond tail, the purple bob — pinned by a pixel test); a shop card (no trim yet) is Natural. Energy
+  `chips` 20 -> 26 / 32 / 38, `mult` 4 -> 5.6 / 7.2 / 8.8.
+- **Espurr** (C $5, 5): **+1 Foresight** (fixed); it carries Meowstic's `Xmult_mod` (0.25 -> 0.3 / 0.35 / 0.4; not its `Xmult`: evolution would copy
+  that over AND re-energize it). **Meowstic** (S $8): its **gender is rolled when it evolves** (or is created; seed `meowstic_gender`), on
+  `form`. **Male, Prankster: at end of round a random Tarot** (must have room; not Blueprint, Pickup's way); a Male has no number, so its Energy
+  fields are dropped and Energy can't be used on it. **Female: X1.5, plus X0.25 for each Tarot held** (Energy `Xmult` 1.5 -> 1.8 / 2.1 / 2.4,
+  `Xmult_mod` 0.25 -> 0.3 / 0.35 / 0.4). The Female card is upstream's unlisted Gen 6 {4,8}, beside the Male {2,8}.
+- **Save / resume**: the forms are seeded rolls / picks inside the recipe, so a resume rebuilds the same flower, pattern, gender, trim (also after
+  an Ante change) and the same Wild cards.
+- **Wiki**: regenerated (208 missing); the wiki sprites of the 16 are gone from `designwiki/sprites/pokermon_jokers/`.
+- **Tests**: `micatro/tests/mods/pokermon_gen6_batch1_test.mjs`. Re-recorded: `modpin_test`, `pokermon_391_data_test`, `pokermon_new_jokers_test`
+  (the pin, 238 defs; Honedge now follows Meowstic), `pokermon_legendary_solo_test` (pin >= 60), `pokermon_art_types_test`,
+  `micatro_mod_version_pin`, `micatro_deckeditor_pages` (1056 jokers).
 
 ### Gen 6, batch 3: the Gen 6 Legendaries (2026-11-02, branch `feat/pokermon-gen6-batch3`)
 Pinned **`3.9.1+r63`** (`contentRev: 63`; 61 / 62 are Gen 6 batches 1 / 2; `LEGACY_MOD_VERSIONS` untouched). The owner's "Yes": the 5 Gen 6
