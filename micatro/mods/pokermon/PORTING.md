@@ -3289,9 +3289,9 @@ Genesect, Xerneas, Kubfu / Urshifu; Kyogre / Groudon's Primal Clash stays (it on
 - **Giratina**, Origin Forme: **for good once 10 playing cards have been destroyed while held** (`destroyed`; tooltip `(Destroyed: k/10)`).
   The cards are counted one at a time: **the 10th still gains Altered (X0.25), the 11th Origin (X0.5)**.
 - **Cobalion / Terrakion / Virizion / Keldeo**, Swords of Justice: **X1.5 instead of X1.25** while the sword's suit is the most common in the
-  FULL deck (**ties count**; `is_suit(s, true)`: **a Wild card counts for every suit**, Stone for none, Smeared Joker merges as usual).
-  X1.5 is `Xmult_multi x 1.2` (one energy field: 1.575 / 1.65 / 1.725). Note: a standard 52-card deck ties all four suits, so every sword
-  starts at X1.5 and loses it when another suit pulls ahead.
+  FULL deck (**ties count** on r59; r60 made it a strict lead, "The Swords of Justice tie rule" below; `is_suit(s, true)`: **a Wild card counts for every suit**, Stone for none, Smeared Joker merges as usual).
+  X1.5 is `Xmult_multi x 1.2` (one energy field: 1.575 / 1.65 / 1.725). Note (r59): a standard 52-card deck ties all four suits, so every
+  sword started at X1.5 and lost it when another suit pulled ahead; r60 reversed that (it starts at X1.25).
 - **Keldeo**, Resolute Form: **for good once 25 Hearts have scored while held** (`hearts`; each scoring counts, a retrigger too, never a
   Blueprint; the 25th still pays Ordinary). Resolute X2 replaces both the base and the Justice X.
 - **Tornadus / Thundurus / Landorus**, Therian Forme: **for good after holding it 4 rounds** (`therian_rounds`, the main end-of-round pass;
@@ -3313,6 +3313,20 @@ Genesect, Xerneas, Kubfu / Urshifu; Kyogre / Groudon's Primal Clash stays (it on
 - Tests: `micatro/tests/mods/pokermon_legendary_solo_test.mjs` (each joker alone, through real hands / rounds; save / resume; Energy; the
   r58 fixture). The partner sections of `pokermon_gen3_legendaries`, `pokermon_gen4_creation`, `pokermon_gen4_lake_trio`,
   `pokermon_gen5_legendaries` and `pokermon_regis` now run on the r58 rules (`RULES.pins`), the rules old runs still re-play on.
+
+### The Swords of Justice tie rule (2026-11-02, branch `feat/pokermon-sword-tie`)
+
+contentRev **60**, the owner's follow-up to r59: **Cobalion / Terrakion / Virizion / Keldeo**'s Swords of Justice X1.5 applies only while
+the sword's suit is **STRICTLY** the most common suit in the full deck. **A tie doesn't count**: a plain 52-card deck (13 of each) gives every
+sword X1.25; one extra Spade gives Cobalion X1.5; Spades and Hearts tied for the most give neither. Wild cards still count for every suit
+(so Wilds alone tie everything), Stone for none. Card text "(a tie doesn't count)" (was "(ties count)"); the tooltip says
+"(Spades 13, tied for top; now X1.25)" while it shares the top.
+- `suit_leads` in `jokers/pokejokers_designs.js` reads `strict60()` = `rulesRev('pokermon') >= 60` (#898's gate): a move recorded on r59
+  re-plays with ties counting, one recorded before r59 on the partner rules (unchanged). Nothing is banked by the X, so this is only for
+  exact replays.
+- Fixture `micatro/tests/fixtures/pokermon_swordtie_r59_recipe.json` (recorded on main at r59: the four Swords on a plain deck, one Two Pair:
+  62 x 10.125 = 627; on r60 the same moves give X4.8828125, 302).
+- Tests: the `swords` and `r59 recipe` sections of `micatro/tests/mods/pokermon_legendary_solo_test.mjs`.
 
 ### Pending from the 3.9.1 joker rework (after batch 10b)
 Every existing joker is on 3.9.1: `rework_hold` (still on 3.2.1) is empty. What waits, by the batch it waits on (`rework_deferred` =

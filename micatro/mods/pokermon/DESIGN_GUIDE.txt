@@ -571,10 +571,12 @@ House pattern: a SUITED QUARTET with a full-set form (the Gen 5 Swords of Justic
 jokers/pokejokers_designs.js SWORDS / suit_leads / sword_x):
   - One suit each (Spades / Diamonds / Clubs / Hearts: is_suit, so Wild cards count), the same per-card X (X1.25, `Xmult_multi` +5%), so the
     four cover every suit without stacking on the same card. The shared rider reads the DECK, not the quartet (contentRev 59, the solo rule;
-    it was +X0.1 per other sword held): Swords of Justice, X1.5 instead while the sword's suit is the most common suit in the FULL deck
-    (ties count; is_suit with the debuff bypassed: a Wild card counts for every suit, Stone for none). X1.5 is derived as Xmult_multi x 1.2
-    (one energy field scales both: 1.575 / 1.65 / 1.725). Note the standard deck ties all four suits, so each starts at X1.5; a suit-changing
-    deck (Tarots, Smeared Joker, Wilds) keeps it.
+    it was +X0.1 per other sword held): Swords of Justice, X1.5 instead while the sword's suit is STRICTLY the most common suit in the FULL
+    deck (contentRev 60, the owner's follow-up: a tie doesn't count; r59 counted ties. is_suit with the debuff bypassed: a Wild card counts
+    for every suit, Stone for none). X1.5 is derived as Xmult_multi x 1.2 (one energy field scales both: 1.575 / 1.65 / 1.725). The standard
+    deck ties all four suits, so every sword STARTS at X1.25 and has to be earned: one more card of its suit (a Tarot, a Standard pack; a Wild adds to
+    every suit, so it never breaks a tie) tips it to X1.5. Owner preference: a "most common" rider counts a strict lead,
+    not a tie, so the default deck never pays the bonus for free.
   - A FORM EARNED BY A COUNT (Keldeo's Resolute Form; it needed the other three held before): for good once 25 Hearts have scored while it
     is held (`hearts` on the card; a retrigger counts, Blueprint never; the 25th still pays Ordinary), then its per-Heart X is a second
     field (`Xmult_multi2` X2, +5% too: 2.1 / 2.2 / 2.3) replacing both the base and the Justice X. Store the form's base in its own energy
