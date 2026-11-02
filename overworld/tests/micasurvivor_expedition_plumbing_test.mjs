@@ -450,7 +450,14 @@ try {
 		}
 		await sleep(2500);
 		const runActs = apiLog.slice(nRun).map(e => e.action + (e.mode ? ':' + e.mode : ''));
-		A(!runActs.includes('run-score:micasurvivor') && !runActs.includes('micasurvivor-save-put') && JSON.stringify(row('micasurvivor:alice')) === xr0, 'nor the base board or the base row: no base run-score, no base save put', runActs.join(','));
+		// (the pay is a base-save change, so a debounced save upload ~3 s after it is fine — it used to race this sleep under load;
+		//  what must hold: no base run-score, and any upload / the account row differ from before ONLY in the Pokémonedas)
+		const stripS = o => { o = JSON.parse(JSON.stringify(o || {})); delete o.coins; delete o.updated; delete o.led; if (o.stats) delete o.stats.coinsEarned; return JSON.stringify(o); };
+		const rowSave = r => (r && r.save) || r;
+		const base0 = stripS(JSON.parse(s0)), runPuts = apiLog.slice(nRun).filter(e => e.action === 'micasurvivor-save-put');
+		const putsOk = runPuts.every(e => stripS(e.body && e.body.save) === base0);
+		const rowOk = JSON.stringify(row('micasurvivor:alice')) === xr0 || stripS(rowSave(row('micasurvivor:alice'))) === stripS(rowSave(JSON.parse(xr0)));
+		A(!runActs.includes('run-score:micasurvivor') && putsOk && rowOk, 'nor the base board or the base row: no base run-score, no base save put', runActs.join(','));
 		// sharing it: the server's meta keeps mode + dv
 		const shared = await d.E(rid => G.Replay.share(rid), run.rid);
 		const sm = shared.id && row('msurvreplay:' + shared.id).meta;

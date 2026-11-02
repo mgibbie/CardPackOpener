@@ -532,11 +532,12 @@ G.Exp = (() => {
     const r = UL() && UL().row();
     if (!r) return null;
     const w = { p: r };
-    if (G.Coop && G.Coop.active) {
-      const q = {};
-      for (const m of G.Coop.mates) if (m.connected && m.pl && m.pl.xw) q[m.name] = m.pl.xw;
-      if (Object.keys(q).length) w.q = q;
-    }
+    const q = {};
+    if (G.Coop && G.Coop.active) for (const m of G.Coop.mates) if (m.connected && m.pl && m.pl.xw) q[m.name] = m.pl.xw;
+    // (MP polish: the local partners' too, by their names in the replay / live rows ("Bulbasaur · J2"): their meter and cut-in)
+    const LC = G.LocalCoop;
+    if (LC && LC.on && LC.full && LC.ultRow) for (const M of LC.rows) { const u = LC.ultRow(M); if (u) q[LC.tagName(M)] = u; }
+    if (Object.keys(q).length) w.q = q;
     return w;
   }
   /** A host frame's `w` for guest m: every other player's row by uid. */

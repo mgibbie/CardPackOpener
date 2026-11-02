@@ -147,7 +147,8 @@ G.Coop = (() => {
     const m = orbs[0] || local.activeGroup()[0];
     return [r1(local.x), r1(local.y), r2(local.moveAngle), local.walking ? 1 : 0, r1(local.hp), r1(local.maxHp),
             local.dead ? 1 : 0, m ? m.id : '', m ? m.lvl : 1, r1(local.magnet), r2(local.aim), r2(local.xpMul),
-            r2(local.reviveT || 0), api.choosing && api.choosing() ? 1 : 0, doneSeq, orbs.map(x => [x.id, x.lvl]), G.Megas ? G.Megas.lookOf(local) : local.dex];   // (U2: field 16, the species you play now: Team mode switches it; U3: its Mega's id once it Mega Evolved)
+            r2(local.reviveT || 0), api.choosing && api.choosing() ? 1 : 0, doneSeq, orbs.map(x => [x.id, x.lvl]), G.Megas ? G.Megas.lookOf(local) : local.dex,   // (U2: field 16, the species you play now: Team mode switches it; U3: its Mega's id once it Mega Evolved)
+            local.item || local.item2 ? [local.item || '', local.item2 || ''] : 0];   // (MP polish: field 17, your held items, 0 = none: the host's tape and live view show them. An older reader ignores it)
   }
 
   /**
@@ -168,7 +169,8 @@ G.Coop = (() => {
 
   function readState(a) {
     return { x: a[0], y: a[1], ang: a[2], walk: a[3], hp: a[4], maxHp: a[5], dead: a[6], mv: a[7], ml: a[8],
-             mag: a[9], aim: a[10], xpMul: a[11], rev: a[12], ch: a[13], ld: a[14], ms: Array.isArray(a[15]) ? a[15] : null, dex: a[16] | 0 };   // (DLC D16: ms; U2: dex)
+             mag: a[9], aim: a[10], xpMul: a[11], rev: a[12], ch: a[13], ld: a[14], ms: Array.isArray(a[15]) ? a[15] : null, dex: a[16] | 0,   // (DLC D16: ms; U2: dex)
+             it: Array.isArray(a[17]) ? a[17].slice(0, 2).map(v => (typeof v === 'string' && G.Items.BY[v] ? v : '')) : a.length > 17 ? ['', ''] : null };   // (MP polish: held items; an older client's frame (17 fields): null, unknown)
   }
 
   // ---------------- envío ----------------

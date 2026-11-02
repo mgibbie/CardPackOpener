@@ -17,6 +17,12 @@
  *   can follow any of them ("Following: <name>": the button, F / Tab / 1-4, or LB / RB on a pad): that player's
  *   Pokémon, HUD and camera; everyone else drawn as partners with their names and HP. Every player's recorded casts
  *   are drawn as ghosts, where they aimed (a v1 tape has none: its watched Pokémon's ghosts aim at the nearest foe).
+ *   MP polish: the LIVE view is on the same model: a snapshot of several players (pp / pr / pz / cs, js/mica/spectate.js
+ *   pubSnap) is seen from the player followed through G.Replay.liveView (the replay reader's own pov()), so live too every
+ *   player is drawn, every player's casts are ghosts and "Following: <name>" (the bar's button, F / Tab / 1-4, LB / RB)
+ *   moves the view onto anyone. A snapshot without pp (an older publisher) shows as before (v1 partner rows, no switch).
+ *   Every partner's line says its level, its Ultimate's charge and its Z-move / Dynamax (when its row has them), with its
+ *   held items as icons.
  */
 G.WatchUI = (() => {
   const $ = id => document.getElementById(id);
@@ -43,6 +49,10 @@ G.WatchUI = (() => {
   let rd = null, T = 0, idx = 0, playing = true, speed = 1, evAt = 0, done = false, shared = null;
   // U4: the session, the segment playing, whose view, the segment being fetched, the casts of the interval shown
   let ss = null, segK = -1, follow = 0, loading = null, castQ = [];
+  // MP polish: live, the last two snapshots as they came (seen again from another player when the view switches), their players
+  let liveA = null, liveB = null, livePP = null;
+  /** The players whose view can be followed: the session's (a replay) or the live snapshot's (MP polish). */
+  const playersNow = () => (ss ? ss.players : livePP) || [];
   const stats = { snaps: 0, frames: 0, casts: 0, segLoads: 0 };
 
   // ---------------- building the puppets from a snapshot ----------------
@@ -130,6 +140,7 @@ G.WatchUI = (() => {
       }
       o.raw = m[0];   // (DLC D2: its name in the x block's air rows)
       o.slot = v2 ? m[11] : null;
+      o.info = v2 && m[13] && typeof m[13] === 'object' ? m[13] : null;   // (MP polish: level, held items, the Ultimate's charge, the kit flags)
       if (v2 && Array.isArray(m[12])) mateMoves(o, m[12]);
       const nb = (B.mt || []).find(x => (v2 ? x[9] === 'v' && x[11] === m[11] : x[0] === m[0] && x[9] === m[9])) || m;
       o.from = ex ? [m[3], m[4]] : [o.p.x, o.p.y]; o.to = [nb[3], nb[4]];
@@ -141,7 +152,7 @@ G.WatchUI = (() => {
     for (const k of [...mates.keys()]) if (!seen.has(k)) mates.delete(k);
     // in an online group, the watched player's name over its head too (U4: a session's followed player, its own name)
     const group = (a.mt || []).some(m => m[9] === 'o');
-    const fol = a.pi != null && ss && ss.players[a.pi];
+    const fol = a.pi != null && playersNow()[a.pi];
     pl.tag = fol && (a.mt || []).length ? fol.name || null : group ? who || null : null; pl.tagColor = fol && a.pi ? MATE_COL[fol.c | 0] || '#ffffff' : '#ffffff';
     pl.slot = a.pi != null ? a.pi : 0;
     // enemies
@@ -216,6 +227,7 @@ G.WatchUI = (() => {
     if (!mode) return;
     if (mode === 'live') {
       if (A) blend((performance.now() - arriveAt) / interval);
+      fireCasts();   // (MP polish: a live snapshot of several players carries everyone's casts)
     } else if (ss && !done) {
       if (playing && loading == null) T = Math.min(ss.duration, T + dt * speed);
       seekTo(T, false);
@@ -267,8 +279,8 @@ G.WatchUI = (() => {
   }
   /** U4: the recorded casts of the interval shown, each fired as a ghost when the playback clock reaches it. */
   function fireCasts() {
-    if (!castQ.length || !playing) return;
-    const now = T * 10;
+    if (!castQ.length || (mode === 'replay' && !playing)) return;
+    const now = (mode === 'live' ? timeNow : T) * 10;
     const keep = [];
     for (const c of castQ) {
       if (c[5] > now) { keep.push(c); continue; }
@@ -283,7 +295,7 @@ G.WatchUI = (() => {
   function ghosts(dt) {
     if (!pl || pl.dead || pl.zHidden || pl.coopDown || (mode === 'replay' && !playing)) return;
     // (U4: a v2 replay has every player's real casts (fireCasts): only the orbits are drawn here, everyone's)
-    if (mode === 'replay' && rd && rd.v === 2) {
+    if ((mode === 'replay' && rd && rd.v === 2) || (mode === 'live' && A && A.pi != null)) {   // (MP polish: and a live view of several players)
       try {
         G.Combat.ghostOrbit(pl, dt, timeNow);
         for (const o of mates.values()) if (o.slot != null && !o.p.dead && o.p.moves && o.p.moves.length) G.Combat.ghostOrbit(o.p, dt, timeNow);
@@ -325,6 +337,19 @@ G.WatchUI = (() => {
     ctx.fillText(txt, x - tw + 7, y + 13);
     return tw;
   }
+  /**
+   * MP polish: what a partner's line adds from its row (a v2 frame / a live snapshot of several players): its level, its
+   * Ultimate's charge (or "casting"), and its Z-move / Dynamax when it has them (ready, in use or recharging).
+   */
+  function mateKit(info) {
+    if (!info) return '';
+    const KF = G.Replay.KF, kf = info.kf | 0;
+    let t = info.lv ? ' · ' + G.T('Nv.') + ' ' + info.lv : '';
+    if (kf & KF.ULT) t += ' · ' + G.T('Definitivo') + ' ' + (kf & KF.ULT_CAST ? G.T('¡En uso!') : (info.u | 0) >= 100 ? G.T('¡Listo!') : (info.u | 0) + '%');
+    if (kf & KF.Z) t += ' · Z ' + (kf & KF.Z_ON ? '!' : kf & KF.Z_READY ? '✓' : '…');
+    if (kf & KF.DYN) t += ' · MAX ' + (kf & KF.DYN_ON ? '!' : kf & KF.DYN_READY ? '✓' : '…');
+    return t;
+  }
   function drawOverlay(ctx, w, h) {
     if (!mode) return;
     ctx.save();
@@ -342,7 +367,11 @@ G.WatchUI = (() => {
       if (s.tm) { chip(ctx, x, y, G.T('Equipo') + ': ' + s.tm[1].map(m => ((G.DEX_BY[m[0]] || {}).name || '?') + ' ' + m[1] + '%').join(' · '), '#cfe3ff'); y += 22; }
       for (const o of mates.values()) {
         const pct = Math.round(100 * G.U.clamp(o.p.hp / (o.p.maxHp || 1), 0, 1));
-        chip(ctx, x, y, o.p.tag + ' · ' + (o.p.dead ? G.T('caído') : pct + '%'), o.p.dead ? '#ff8a96' : o.p.tagColor || '#fff'); y += 22;
+        const tw = chip(ctx, x, y, o.p.tag + ' · ' + (o.p.dead ? G.T('caído') : pct + '%') + mateKit(o.info), o.p.dead ? '#ff8a96' : o.p.tagColor || '#fff');
+        // (MP polish: its held items, as icons, left of its line)
+        const it = o.info && o.info.it ? o.info.it.filter(id => id && G.Items.BY[id]) : [];
+        it.forEach((id, i) => G.Icons.draw(ctx, id, x - tw - 20 - i * 19, y + 1, 16));
+        y += 22;
       }
       // the level-up screen (or another choice) is open on their side
       const lu = s.lu;
@@ -401,6 +430,7 @@ G.WatchUI = (() => {
     worldSeed = null; worldBiome = -1; arenaKey = ''; zoneKey = '';
     rd = null; T = 0; idx = 0; playing = true; speed = 1; done = false; ended = null; status = 'wait'; info = {}; notice = '';
     ss = null; segK = -1; follow = 0; loading = null; castQ = [];
+    liveA = liveB = livePP = null;
     G.FX.clear(); G.Projectiles.clear(); G.Combat.clearFields(); G.EnemyMgr.clear(); G.Pickups.clear(); G.Minimap.reset();
     G.World.setArena(null);
   }
@@ -408,9 +438,11 @@ G.WatchUI = (() => {
   function bar(text, liveDot) {
     const el = $('watch-bar');
     el.innerHTML = `<span class="wb-eye">${G.Icons.html('eye', 18)}</span><span class="wb-t">${text}</span>${liveDot ? '<span class="wb-live">' + esc(G.T('EN DIRECTO')) + '</span>' : ''}<span class="wb-n" id="watch-n"></span>`
+      + (liveDot ? `<button class="btn small ghost hidden" id="wb-follow" type="button" translate="no"></button>` : '')   // (MP polish: live, whose view)
       + `<button class="btn small ghost" id="watch-leave" type="button">${esc(G.T('Dejar de ver'))}</button>`;
     el.classList.remove('hidden');
     $('watch-leave').onclick = leave;
+    if ($('wb-follow')) $('wb-follow').onclick = () => cycleFollow(1);
   }
 
   function enter(kind, name, back) {
@@ -436,8 +468,17 @@ G.WatchUI = (() => {
         // the publisher's clock (ms) between this snapshot and the last one, kept between 0.4 and 3 s
         if (s.w && lastW) interval = G.U.clamp(s.w - lastW, 400, 3000);
         lastW = s.w || 0;
+        // (MP polish: a snapshot of several players (pp / pr) is seen from the player followed, as a v2 replay frame is;
+        //  an older publisher's (no pp) shows as before)
+        liveA = liveB; liveB = s;
+        const np = Array.isArray(s.pp) ? s.pp.length : 0;
+        livePP = np > 1 ? s.pp : null;
+        if (follow >= Math.max(1, np)) follow = 0;
+        const v = livePP ? G.Replay.liveView(s, follow) : s;
         const prev = B && B !== A ? B : A;
-        setFrame(prev || s, s, !prev);
+        setFrame(prev || v, v, !prev);
+        if (livePP) castQ = castQ.concat(v.cs || []).slice(-200); else castQ = [];
+        followBtn();
         arriveAt = now;
         status = 'live';
         say(s.ev || []);
@@ -519,21 +560,31 @@ G.WatchUI = (() => {
 
   /** U4: whose view to follow (a slot of the session's players). */
   function setFollow(k) {
-    const n = ss ? Math.max(1, ss.players.length) : 1;
+    const P = playersNow(), n = Math.max(1, P.length);
     k = ((k | 0) % n + n) % n;
-    if (!ss || k === follow) return follow;
+    if (n < 2 || k === follow || !(ss || (mode === 'live' && liveB))) return follow;
     follow = k;
-    seekTo(T, true);
+    if (mode === 'replay') seekTo(T, true);
+    else refollowLive();
     followBtn();
-    const d = ss.players[k];
+    const d = P[k];
     if (d && d.name) G.UI.toast(G.T('Siguiendo a {x}').replace('{x}', d.name), 1400);
     return follow;
   }
+  /** MP polish: live, the last two snapshots seen again from the player now followed (its puppet, HUD and camera). */
+  function refollowLive() {
+    mates.clear(); ents.clear(); G.EnemyMgr.clear(); G.Pickups.clear(); G.Projectiles.clear(); G.FX.clear(); pl = null; dexNow = 0; castQ = [];
+    const b = G.Replay.liveView(liveB, follow), a = liveA ? G.Replay.liveView(liveA, follow) : b;
+    setFrame(a, b, true);
+  }
   function cycleFollow(d) { return setFollow(follow + (d || 1)); }
   function followBtn() {
-    const b = $('wc-follow');
-    if (!b || !ss) return;
-    const d = ss.players[follow] || {};
+    const P = playersNow();
+    const b = $('wc-follow') || $('wb-follow');
+    if (!b) return;
+    if (b.id === 'wb-follow') b.classList.toggle('hidden', P.length < 2);
+    if (P.length < 2) return;
+    const d = P[follow] || {};
     b.textContent = G.T('Siguiendo: {x}').replace('{x}', d.name || '?');
   }
 
@@ -676,9 +727,11 @@ G.WatchUI = (() => {
     if (G.Input.tap('escape')) { if (!$('scr-watch-end').classList.contains('hidden') && mode === 'replay') hideEnd(); else leave(); return; }
     if (mode === 'replay' && (G.Input.tap('space') || G.Input.tap('keyk'))) togglePlay();
     // U4: whose view (F / Tab: the next player; 1-4: that player)
-    if (mode === 'replay' && ss && ss.players.length > 1) {
+    // (MP polish: live too, when the snapshot has several players)
+    const P = playersNow();
+    if ((mode === 'replay' || mode === 'live') && P.length > 1) {
       if (G.Input.tap('keyf') || G.Input.tap('tab')) cycleFollow(1);
-      for (let i = 0; i < 4; i++) if (G.Input.tap('digit' + (i + 1)) && i < ss.players.length) setFollow(i);
+      for (let i = 0; i < 4; i++) if (G.Input.tap('digit' + (i + 1)) && i < P.length) setFollow(i);
     }
   }
 

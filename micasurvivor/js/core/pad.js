@@ -599,8 +599,8 @@ G.Pad = (() => {
       if (!repeat && ['confirm', 'cancel', 'pause', 'back'].includes(a)) G.Judgment.skip();
       return;
     }
-    // MicaSurvivor U4: watching a replay of several players, LB / RB switch whose view is followed
-    if (game && game.state === 'watch' && G.WatchUI && G.WatchUI.mode === 'replay' && (a === 'prev' || a === 'next')) { if (!repeat) G.WatchUI.cycleFollow(a === 'prev' ? -1 : 1); return; }
+    // MicaSurvivor U4: watching a replay of several players, LB / RB switch whose view is followed (MP polish: live too)
+    if (game && game.state === 'watch' && G.WatchUI && (G.WatchUI.mode === 'replay' || G.WatchUI.mode === 'live') && (a === 'prev' || a === 'next')) { if (!repeat) G.WatchUI.cycleFollow(a === 'prev' ? -1 : 1); return; }
     const { scope } = ensure();
     if (!scope) { if (!repeat) gameplay(a); return; }
     if (!wasPad) return;                       // coming from keyboard / mouse: this press only shows the ring
@@ -731,7 +731,7 @@ G.Pad = (() => {
 
   return {
     held, poll, axis, p2, p2Axis, others, rumble, glyphHTML, drawGlyph, refreshGlyphs, settingsHTML, wireSettings,
-    layout, map, defaults, setBtn, reset, buttonName, ACTIONS, LAYOUTS,
+    layout, map, defaults, setBtn, reset, buttonName, ACTIONS, LAYOUTS, table,   // (MP polish: table: a local partner's pad reads its buttons as player 1's do)
     get mode() { return mode; }, get listening() { return listening ? listening.action : null; },
     get active() { return !!cur; }, get ready() { return !!core; },
     get focus() { return focus; }, topScope, focusOn

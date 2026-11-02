@@ -18,6 +18,8 @@
 //     Z-move / Dynamax), revived after 20 s at half HP, the run ends when the partner falls
 //   - the run end: -20 % coins measured on the real result, coopRuns / groupRuns (60 s) and "In good company", the
 //     "Partner / team" row of the breakdown, "Co-op Mode" on the result; no Spanish anywhere in English mode
+//   - MP polish: each full-kit partner's own Z-move and Dynamax in a base run (its pad's RT / LT, the save's unlocks, the world
+//     holding for its Z cinematic, its own cooldowns, one Dynamax at a time), its Ultimate meter on its chip and its cut-in (Dive)
 // Screenshots (MICASURVIVOR_SHOTS=<dir>): the mode card, the partner pick, an AI run (desktop and 844x390), a P2 run,
 // spectating, the run-over breakdown.
 // Covers micasurvivor/js/systems/localcoop.js, js/systems/modes.js, js/ui/modes-ui.js, js/game.js, js/entities/player.js,
@@ -115,6 +117,7 @@ try {
 	const visible = (id) => page.evaluate(id => { const el = document.getElementById(id); return !!el && !el.classList.contains('hidden') && el.getClientRects().length > 0; }, id);
 	const shot = async (name, clip) => { if (SHOTS) { fs.mkdirSync(SHOTS, { recursive: true }); await page.screenshot({ path: path.join(SHOTS, name), ...(clip ? { clip } : {}) }); } };
 	const E = (fn, ...a) => page.evaluate(fn, ...a);
+	const G_KF = { ULT: 1, ULT_CAST: 2, Z: 4, Z_READY: 8, Z_ON: 16, DYN: 32, DYN_READY: 64, DYN_ON: 128 };   // (js/mica/replay.js KF)
 	const press = async (b, p = 0) => { await E((b, p) => __btn(b, true, p), b, p); await sleep(90); await E((b, p) => __btn(b, false, p), b, p); await sleep(110); };
 	const navTo = async (sel) => {
 		for (let i = 0; i < 80; i++) {
@@ -744,6 +747,56 @@ try {
 		await waitFor(() => E(() => G.Game.state === 'playing'), 4000);
 		const lv1 = await E(() => G.LocalCoop.rows.map(M => Object.values(M.pl.statsTaken).reduce((a, b) => a + b, 0) + M.pl.moves.reduce((a, m) => a + m.lvl, 0)));
 		A(lv1.every((v, i) => v === lv0[i] + 1), 'a level-up: you pick your card and each partner takes one of its own (a move, a level or a stat)', JSON.stringify([lv0, lv1]));
+		// MP polish: each partner's own Z-move and Dynamax, from its own pad (player 1's buttons: RT the Z-move, LT Dynamax)
+		const zk = await E(async () => {
+			const wait = ms => new Promise(r => setTimeout(r, ms));
+			const s = G.DB.save, L = G.LocalCoop, M2 = L.rows[0], me = G.Game.player, KF = G.Replay.KF;
+			s.stats = s.stats || {};
+			const out = { pre: { can: L.zCan(M2), ty: G.ZMoves.typeFor(M2.pl.dex) } };
+			for (const t of G.ZMoves.ORDER) s.stats['zcr_' + t] = 1;   // the save's crystals (one account for every player here)
+			s.stats.dens = 1;                                          // ...and its Dynamax
+			me.level = 25;
+			await wait(150);
+			out.kf = L.kitFlags(M2);
+			out.hud = G.HUD.kitDraws.filter(k => k[0] === 2).slice(-1)[0] || null;
+			out.ty = G.ZMoves.typeFor(M2.pl.dex);
+			window.__btn(7, true, 1); await wait(120); window.__btn(7, false, 1); await wait(120);
+			out.cine = { on: L.zCine, st: M2.z && M2.z.state, type: M2.z && M2.z.type, p1: G.ZMoves.state, t0: G.Game.st.time };
+			await wait(700);
+			out.cine.t1 = G.Game.st.time;
+			out.cine.p1try = G.ZMoves.tryStart(me);   // (not while a partner's cinematic plays)
+			out.cine.kf = L.kitFlags(M2);
+			await wait(2000);
+			out.fx = { st: M2.z.state, fx: !!M2.z.fx, on: L.zCine, dealt: Math.round(M2.pl.dmgDealt) };
+			for (let i = 0; i < 80 && M2.z.state; i++) await wait(100);
+			out.after = { st: M2.z.state, used: M2.z.used, cd: Math.round(M2.z.cd), n: M2.z.n, p1used: G.ZMoves.used };
+			window.__btn(7, true, 1); await wait(120); window.__btn(7, false, 1); await wait(150);
+			out.again = { n: M2.z.n, st: M2.z.state, kf: L.kitFlags(M2) & (KF.Z | KF.Z_READY) };
+			return out;
+		});
+		A(!zk.pre.can && zk.ty && (zk.kf & G_KF.Z) && (zk.kf & G_KF.Z_READY) && zk.hud && (zk.hud[2] & G_KF.Z), 'player 2 has its own Z-move from the save\'s crystals (its types\'), on its chip; none before them', JSON.stringify(zk));
+		A(zk.cine.on && zk.cine.st === 'cine' && zk.cine.type === zk.ty && zk.cine.p1 === '' && zk.cine.t1 === zk.cine.t0 && zk.cine.p1try === false, 'RT on pad 2: player 2\'s Z cinematic plays (the world holds, as for yours; yours waits)', JSON.stringify(zk.cine));
+		A(zk.fx.st === 'fx' && zk.fx.fx && !zk.fx.on && zk.fx.dealt >= 0, '...then its Z-move plays out (its own choreography)', JSON.stringify(zk.fx));
+		A(zk.after.st === '' && zk.after.used && zk.after.cd === 240 && zk.after.n === 1 && zk.after.p1used === false && zk.again.n === 1 && zk.again.kf === G_KF.Z, 'it ends into ITS 240 s cooldown (yours is untouched); pressing again does nothing', JSON.stringify([zk.after, zk.again]));
+		const dk3 = await E(async () => {
+			const wait = ms => new Promise(r => setTimeout(r, ms));
+			const L = G.LocalCoop, M3 = L.rows[1], p = M3.pl, KF = G.Replay.KF;
+			const mx0 = p.maxHp, out = { kf: L.kitFlags(M3) };
+			window.__btn(6, true, 2); await wait(120); window.__btn(6, false, 2); await wait(700);
+			out.on = { active: !!(M3.dy && M3.dy.active), dyn: p.dyn, scale: p.dynScale && p.dynScale[0], hp: [mx0, p.maxHp], p1: G.Dynamax.active, kf: L.kitFlags(M3) & KF.DYN_ON };
+			await wait(1600);
+			out.on.pulses = M3.dy.n;
+			window.__btn(6, true, 2); await wait(120); window.__btn(6, false, 2); await wait(150);
+			out.on.uses = M3.dy.uses;
+			out.hud = G.HUD.kitDraws.filter(k => k[0] === 3).slice(-1)[0] || null;
+			M3.dy.left = 0.05; await wait(800);
+			out.off = { active: M3.dy.active, dyn: p.dyn, cd: Math.round(M3.dy.cd), hp: p.maxHp, mx0, scale: p.dynScale };
+			return out;
+		});
+		A((dk3.kf & G_KF.DYN) && (dk3.kf & G_KF.DYN_READY) && dk3.on.active && dk3.on.dyn && dk3.on.scale > 1 && dk3.on.hp[1] === dk3.on.hp[0] + Math.round(dk3.on.hp[0] * 0.3) && !dk3.on.p1 && dk3.on.kf,
+			'LT on pad 3: player 3 Dynamaxes (its own: giant, +30 % max HP; yours stays off)', JSON.stringify(dk3));
+		A(dk3.on.pulses >= 1 && dk3.on.uses === 1 && dk3.hud && (dk3.hud[2] & G_KF.DYN_ON), '...its Max pulses fire; one Dynamax at a time (a second press does nothing); its chip shows MAX on', JSON.stringify(dk3));
+		A(!dk3.off.active && !dk3.off.dyn && dk3.off.cd >= 238 && dk3.off.cd <= 240 && dk3.off.hp === dk3.off.mx0 && !dk3.off.scale, 'it ends: back to size and HP, into its 240 s cooldown', JSON.stringify(dk3.off));
 		// replays / spectate: a row per local partner
 		const sn = await E(() => { const s = G.Spectate.snap(); return (s.mt || []).map(m => [m[0], m[9], m[10]]); });
 		A(sn.length === 2 && sn.every(m => m[1] === 'l' && m[2] === 1) && sn[0][0] !== sn[1][0], 'the live / replay snapshot has a row per local partner (named apart)', JSON.stringify(sn));
@@ -788,13 +841,26 @@ try {
 			return { fired: (p.slots[1][0].castAt || 0) > c0, cd: p.slots[1][0].t };
 		});
 		A(sp.fired, 'X on pad 4 fires player 4\'s first special', JSON.stringify(sp));
+		// MP polish: each partner's Ultimate meter on its chip (Dive / Expedition), its cut-in when it casts
+		const um = await E(async () => {
+			const M = G.LocalCoop.rows[0]; M.ult.c = 0.5;
+			await new Promise(r => setTimeout(r, 200));
+			const row = G.LocalCoop.ultRow(M), kd = G.HUD.kitDraws.filter(k => k[0] === 2).slice(-1)[0] || null;
+			const others = G.LocalCoop.rows.slice(1).map(x => (G.HUD.kitDraws.filter(k => k[0] === x.n).slice(-1)[0] || [])[1]);
+			return { row, kd, others, z: G.LocalCoop.kitFlags(M), can: [G.LocalCoop.zCan(M), G.LocalCoop.dynCan(M)] };
+		});
+		A(um.row && um.row[0] >= 50 && um.row[0] <= 52 && !(um.row[4] & 1) && um.kd && um.kd[1] === um.row[0] && (um.kd[2] & G_KF.ULT) === 0 && um.others.every(v => typeof v === 'number') && um.z === 0 && !um.can[0] && !um.can[1],
+			'each partner\'s chip has its Ultimate meter (player 2 at half); no Z-move or Dynamax in a Dive', JSON.stringify(um));
 		const ul = await E(async () => {
 			const M = G.LocalCoop.rows[0]; M.ult.c = 1;
+			const cut0 = G.ExpUlt.cutDrawn;
 			window.__btn(5, true, 1); await new Promise(r => setTimeout(r, 120)); window.__btn(5, false, 1);
 			await new Promise(r => setTimeout(r, 300));
-			return { casting: !!M.ult.fx, n: M.ults || 0, c: M.ult.c };
+			const v = G.ExpUlt.vcut;
+			return { casting: !!M.ult.fx, n: M.ults || 0, c: M.ult.c, cut: !!v && v.p === M.pl, drawn: G.ExpUlt.cutDrawn - cut0, row: G.LocalCoop.ultRow(M), w: (G.Spectate.snap().x.w.q || {})[G.LocalCoop.tagName(M)] || null };
 		});
 		A(ul.n === 1 && ul.c < 0.05, 'RB on pad 2 casts player 2\'s Ultimate (its meter full)', JSON.stringify(ul));
+		A(ul.cut && ul.drawn > 0 && ul.row && (ul.row[4] & 1) && ul.row[1] === 1 && ul.w && ul.w[1] === 1, '...with the cut-in (its sprite, its Ultimate\'s name), and its row says so (casting, 1 piece) for a replay / spectator', JSON.stringify(ul));
 		await E(() => G.Game.quit());
 		await waitFor(() => visible('scr-over'), 10000);
 		await E(() => document.getElementById('btn-again') && document.getElementById('btn-again').click());
@@ -849,6 +915,9 @@ try {
 		A(await waitFor(() => E(() => G.Game.state === 'playing' && G.LocalCoop.on), 15000), 'a Tower run with an AI partner');
 		const ai = await E(() => ({ mode: G.Game.mode, rows: G.LocalCoop.rows.map(M => [M.ctrl, M.pl.tag, M.full]), tower: G.Tower.on }));
 		A(ai.mode === 'tower' && ai.tower && JSON.stringify(ai.rows) === '[["ai","IA",true]]', 'Tower + Local 2: one AI partner with a full kit', JSON.stringify(ai));
+		// (MP polish: the Tower blocks a partner's Z-move and Dynamax, as it does yours, unlocked and levelled up or not)
+		const tb = await E(() => { const L = G.LocalCoop, M = L.rows[0]; G.Game.player.level = 25; M.pl.level = 25; return { z: L.zCan(M), d: L.dynCan(M), zt: L.zTry(M), dt: L.dynTry(M), kf: L.kitFlags(M) }; });
+		A(!tb.z && !tb.d && !tb.zt && !tb.dt && tb.kf === 0, 'in the Tower a partner has no Z-move and no Dynamax (as you)', JSON.stringify(tb));
 		await E(() => G.Game.quit());
 		await toMenu();
 		await calm();

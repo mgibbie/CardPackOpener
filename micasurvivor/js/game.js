@@ -779,8 +779,9 @@ G.Game = (() => {
       return;
     }
     // MicaSurvivor (M5 lote 4, main.gd 960): la cinemática del Movimiento Z para el mundo (y el reloj).
-    if (G.ZMoves.cine) {
-      G.ZMoves.cineTick(dt, pl);
+    // (MP polish: a local partner's Z cinematic holds it too: js/systems/localcoop.js)
+    if (G.ZMoves.cine || G.LocalCoop.zCine) {
+      if (G.ZMoves.cine) G.ZMoves.cineTick(dt, pl); else G.LocalCoop.zCineTick(dt);
       pl.anim.update(dt);
       G.Camera.follow(pl.x, pl.y, dt);
       G.World.update(dt, G.Camera);
@@ -954,6 +955,7 @@ G.Game = (() => {
       ctx.fillRect(0, 0, w, h);
     }
     G.ZMoves.drawDim(ctx, w, h);    // MicaSurvivor (M5 lote 4): la pantalla se oscurece durante el Z
+    if (G.LocalCoop.full) G.LocalCoop.drawZDim(ctx, w, h);   // (MP polish: and during a local partner's)
     if (G.World.zone && G.ExpUlt) G.ExpUlt.drawDim(ctx, w, h);   // MicaSurvivor (DLC D6): an Expedition Ultimate's dim (and the viewers' casts)
     if (!G.Judgment.cinematic) G.Dynamax.drawOverlay(ctx, w, h);   // MicaSurvivor (M5 lote 5): borde rojo, tiempo y cartel
     if (state === 'watch') {
@@ -965,6 +967,7 @@ G.Game = (() => {
     } else {
     if (!G.Judgment.cinematic) G.HUD.draw(ctx, w, h, pl, st);
     G.ZMoves.drawCine(ctx, w, h);
+    if (G.LocalCoop.zCine) G.LocalCoop.drawZCine(ctx, w, h);   // (MP polish: a local partner's Z cinematic)
     if (G.World.zone && G.ExpUlt) G.ExpUlt.drawCut(ctx, w, h);   // MicaSurvivor (DLC D6): an Expedition Ultimate's cut-in
     G.Judgment.drawOverlay(ctx, w, h);
     G.Touch.draw(ctx);
