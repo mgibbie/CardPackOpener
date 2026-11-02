@@ -983,7 +983,10 @@ export const POKERMON = registerMod({
   // 60 = the owner's Swords of Justice follow-up (jokers/pokejokers_designs.js suit_leads / strict60): X1.5 only while the sword's suit is
   // STRICTLY the most common in the full deck, a tie doesn't count (a standard deck: every sword X1.25). Moves recorded on r59 re-play
   // with ties counting (PORTING.md "The Swords of Justice tie rule").
-  contentRev: 60,
+  // 63 = Gen 6 batch 3, the Gen 6 Legendaries (jokers/pokejokers_designs.js, #717-721), each complete alone: Yveltal (Oblivion Wing),
+  // Zygarde (Cells: 10% / 50% / Complete Forme), Diancie (Diamond Storm), Hoopa (Hyperspace Hole; Unbound) and Volcanion (Steam Eruption).
+  // (61 and 62 are Gen 6 batches 1 and 2.)
+  contentRev: 63,
   // Pokermon 3.9.1 pokermon.lua: SMODS.current_mod.optional_features = {quantum_enhancements = true, object_weights = true}.
   // object_weights sends create_card's key, the shop roll, tags, packs, bosses and vouchers through SMODS.poll_object
   // (js/engine/smods.js; batch 17). quantum_enhancements is the engine's check_enhancement, always on.

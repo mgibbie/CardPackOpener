@@ -122,7 +122,7 @@ Notable gaps:
     lines are the owner's (Sprigatito, Fuecoco, Quaxly); Gen 6 (Chespin, Fennekin, Froakie) too (contentRev 52;
     "a STARTER LINE, Gen 6 additions", 2.1).
   - Legendaries and mythicals: most of Gens 4-9 (the Regis, the Lati twins, the weather trio, the
-    creation trio, Regigigas, Arceus, the Lake trio, Cresselia, Manaphy and Phione, and all 12 Gen 5 Legendaries are now the owner's designs): Xerneas/Yveltal, the Tapus, the
+    creation trio, Regigigas, Arceus, the Lake trio, Cresselia, Manaphy and Phione, all 12 Gen 5 Legendaries and Yveltal / Zygarde / Diancie / Hoopa / Volcanion are now the owner's designs): the Tapus, the
     Cosmog line, the Ruinous four, Koraidon and Miraidon.
   - Fossils: the Tirtouga, Archen, Tyrunt and Amaura lines, and the four Galar fossils, are all
     missing. They are natural fits for the existing "Ancient" mechanic (2.5).
@@ -615,6 +615,21 @@ House pattern: an ALTERNATING FORME that switches itself (the Gen 5 Meloetta, Re
 House pattern: a THREE-TYPE TEAM count (the Gen 5 Genesect, Techno Blast; techno_count): Barboach's two-type count with three types, one
 is_type test per joker (Water || Lightning || Fire), so a two-type joker, a Tera or Arceus counts ONCE; X(1.5 + 0.5 per joker), both numbers
 energy fields (`Xmult`, `Xmult_mod` +20%).
+House pattern: a COUNTER FORME LADDER, a solo legendary that grows into its forms (the Gen 6 Zygarde, Cells; zygarde_cells / zygarde_form):
+  - The counter lives on the card (`cells`, capped at the top rung, outside energy_values) and is counted ONCE per hand in the `after` pass
+    (scoring_hand minus debuffed cards: a retrigger, a Blueprint or a joker retrigger adds nothing). The hand that reaches a rung still pays the
+    old one (Keldeo's "counts after it pays"); the Forme is read from the counter (poke_view_form), never stored, so resume / replay rebuild it.
+  - Each rung's X is its OWN energy field (`Xmult` / `Xmult1` / `Xmult2`), so each Energy raises every rung by its own base's share.
+  - A one-time perk on the top rung (+1 hand size, `complete_size`, fixed) is Juggler's pair guarded by a flag (`complete_given`): given on
+    reaching it and in add_to_deck when already there, taken in remove_from_deck (sold, destroyed, debuffed), never twice.
+  - The same ladder with one rung that changes WHAT the joker makes (the Gen 6 Hoopa: Unbound after 15 consumables used, `used`, a Spectral
+    instead of a Tarot / Planet at the end of each shop) has no number: Energy-inert (poke_no_energy_field).
+House pattern: a HELD-CARD DESTROYER bank (the Gen 6 Yveltal, Oblivion Wing; oblivion_wing): the main end_of_round pass (not Blueprint / joker
+retrigger / game over) destroys 1 random HELD card (seeded; poke_remove_card, so every remove_playing_cards joker sees it) and banks +X0.25
+(bank outside energy_values, gain `Xmult_mod`). Nothing held, nothing gained: the player controls it by emptying the hand on the last play.
+House pattern: a SUIT CONVERTER per Blind (the Gen 6 Diancie, Diamond Storm; diamond_storm): the Regis' setting_blind conversion with a suit
+(change_suit keeps rank, enhancement, seal and edition; is_suit with the debuff bypassed picks a non-Diamond; never Stone), feeding its own
+per-card payoff (scored Diamonds $1 fixed + X1.2 `Xmult_multi`). Blueprint copies the conversion (a second card).
 
 House pattern: SCORING A DEBUFFED CARD, and debuffs as a resource (the owner's Snivy line, Contrary; jokers/pokejokers_designs.js
 contrary_held / contrary_lifts):
@@ -1035,7 +1050,8 @@ chip_loss (the Venipede line's -Chips poison), flower_money (Petilil's $), ancie
 (the Swords of Justice's old +X0.1), tao_mod (Truth vs Ideals' old +0.25), fusion_x / fusion_mod (Fusion Flare / Bolt's bank and gain),
 the solo-rule counters destroyed (Giratina), hearts (Keldeo), therian_rounds, delta_on / kyurem_form (state), storm_money / dem2 (Thundurus's $1 and Therian odds);
 the Gen 5 batch 3 fixed fields: static_money / money_cap (Emolga's and Stunfisk's $), together (the trade count), steel_x (Escavalier's
-Steel X1.75), targets (Mienfoo's top-N), Xmult_cap (Bouffalant's X4), the banks charge_Xmult / ant_Xmult.
+Steel X1.75), targets (Mienfoo's top-N), Xmult_cap (Bouffalant's X4), the banks charge_Xmult / ant_Xmult;
+the Gen 6 Legendaries' fixed fields: oblivion_Xmult (Yveltal's bank), cells / complete_size (Zygarde), diamond_money (Diancie's $1), used (Hoopa).
 
 Designer consequences:
   1. The field name is a balance choice. A joker-wide X stored as Xmult grows 20% of its base
