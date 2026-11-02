@@ -522,6 +522,14 @@
 	},
 	"entries": [
 		{
+			"sha": "043fc93",
+			"date": "2026-11-01",
+			"kind": "patch",
+			"title": "Pokermon r60: Swords of Justice need a strict lead (a tie doesn't count)",
+			"body": "The owner's follow-up to r59: Cobalion / Terrakion / Virizion / Keldeo's\nSwords of Justice X1.5 applies only while the sword's suit is STRICTLY\nthe most common suit in the full deck. A tie no longer counts, so a\nplain 52-card deck gives every sword X1.25; one extra Spade gives\nCobalion X1.5. Wild cards still count for every suit, Stone for none.\nText: \"(a tie doesn't count)\" (was \"(ties count)\"); the tooltip reads\n\"(Spades 13, tied for top; now X1.25)\" while it shares the top.\n\nNever retroactive: suit_leads reads rulesRev('pokermon') >= 60 (#898's\ngate), so a move recorded on r59 re-plays with ties counting and r58\nruns keep the partner rules. Fixture pokermon_swordtie_r59_recipe.json\nrecorded on main (r59): four Swords, one Two Pair, 627.\n\nTests: pokermon_legendary_solo_test swords + r59 recipe sections (125\nchecks; 11 fail with the change reverted, 2 with the rules gate forced\non). Pin tests to r60, DESIGN_GUIDE, PORTING.md, design wiki data.",
+			"cards": []
+		},
+		{
 			"sha": "e4fce08",
 			"date": "2026-11-01",
 			"kind": "patch",
