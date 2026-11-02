@@ -152,6 +152,7 @@ const BEFORE = (o) => {
 	H.thaw = () => { if (!H.frozen) return; H.frozen = false; const cb = H.pending; H.pending = null; if (cb) realRaf(cb); };
 	try {
 		localStorage.setItem('micasurvivor_dev', o.dev);
+		localStorage.setItem('micasurvivor_unlocks_off', '1');   // (the shared unlock list off: this suite pins the refund's exact pay; the free starters would add the League-30 achievement)
 		localStorage.setItem('micasurvivorexp_dev.guest', o.xdev);
 		localStorage.setItem('micasurvivor_accounts', JSON.stringify({ guest: { name: 'Trainer', guest: true, created: 1 } }));
 		localStorage.setItem('micasurvivor_session', JSON.stringify('guest'));

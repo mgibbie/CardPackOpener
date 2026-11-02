@@ -685,8 +685,8 @@ G.Game = (() => {
       // (M5 lote 11: Esc cierra antes la tarjeta de entrenador o la ficha abierta del Léxico)
       if (G.Input.tap('escape') && G.TrainerCard.isOpen()) { G.TrainerCard.close(); return; }
       if (G.Input.tap('escape') && G.LexiconUI.back()) return;
-      if (G.Input.tap('escape') && !G.UI.isOpen('scr-profile') && ['scr-dex', 'scr-upgrades', 'scr-gacha', 'scr-friends', 'scr-rank', 'scr-goals', 'scr-modes', 'scr-lexicon'].some(G.UI.isOpen)
-          && document.getElementById('pull-fx').classList.contains('hidden')) { if (!(G.ModesUI && G.ModesUI.back())) G.MenuUI.open(); }
+      if (G.Input.tap('escape') && !G.UI.isOpen('scr-profile') && ['scr-dex', 'scr-upgrades', 'scr-gacha', 'scr-friends', 'scr-rank', 'scr-goals', 'scr-modes', 'scr-lexicon', 'scr-play'].some(G.UI.isOpen)
+          && document.getElementById('pull-fx').classList.contains('hidden')) { if (!(G.ModesUI && G.ModesUI.back()) && !(G.PlayUI && G.PlayUI.back())) G.MenuUI.open(); }   // (MicaSurvivor U1: the Play flow goes back one step)
       return;
     }
     if (G.Input.tap('escape') || G.Input.tap('keyp')) { togglePause(); return; }
@@ -1143,7 +1143,7 @@ G.Flow = {
   boot() {
     G.UI.initChrome();
     G.LoginUI.init(); G.TestUI.init(); G.MenuUI.init(); G.GachaUI.init();
-    G.SocialUI.init(); G.RankingUI.init(); G.ModUI.init(); G.ModesUI.init(); G.GoalsUI.init(); G.ProfileUI.init(); G.TrainerCard.init(); G.LexiconUI.init(); G.SettingsUI.init(); G.NewsUI.init();   // MicaSurvivor: no SupportUI (donations) / Updater (forced reloads)
+    G.SocialUI.init(); G.RankingUI.init(); G.ModUI.init(); G.ModesUI.init(); G.PlayUI.init(); G.GoalsUI.init(); G.ProfileUI.init(); G.TrainerCard.init(); G.LexiconUI.init(); G.SettingsUI.init(); G.NewsUI.init();   // MicaSurvivor: no SupportUI (donations) / Updater (forced reloads)
     // Tu nombre arriba a la derecha abre tu perfil.
     document.getElementById('user-pill').onclick = () => G.GoalsUI.open('profile');
     G.Audio.music('village');     // suena tras el primer clic (lo exige el navegador)

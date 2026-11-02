@@ -282,7 +282,9 @@ try {
 	// ---- a run, with the pad only
 	A(await navTo('#scr-menu [data-go=play]'), 'D-pad reaches Play');
 	await press(B.confirm);
-	A(await waitFor(() => ev(() => G.Game.state === 'playing'), 15000), 'confirm on Play starts a run');
+	// (U1: Play opens the flow; each step focuses its current choice: your Pokémon, Survival, Normal, Solo, START)
+	for (let i = 0; i < 5 && await ev(() => G.Game.state === 'ui'); i++) { await sleep(150); await press(B.confirm); }
+	A(await waitFor(() => ev(() => G.Game.state === 'playing'), 15000), 'confirm on Play, then through the flow (Pokémon, Survival, Normal, Solo, START), starts a run');
 	await sleep(500);
 	// stick: deadzone + radial scaling
 	const ax = await ev(() => { const r = []; for (const [x, y] of [[0.12, 0.05], [0.6, 0], [1, 0], [0.7071, 0.7071]]) { __axes(x, y); r.push(G.Pad.axis()); } __axes(0, 0); return r; });

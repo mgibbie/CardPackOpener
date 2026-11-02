@@ -11,6 +11,7 @@ G.UI = (() => {
                    'scr-dex', 'scr-upgrades', 'scr-gacha', 'scr-levelup', 'scr-pause', 'scr-over',
                    'scr-nick', 'scr-friends', 'scr-lobby', 'scr-rank', 'scr-item', 'scr-goals', 'scr-bond', 'scr-mod',
                    'scr-modes',    // MicaSurvivor (M5 lote 6)
+                   'scr-play',     // MicaSurvivor (U1): el flujo de "Jugar" (js/ui/play-ui.js)
                    'scr-tower',    // MicaSurvivor (M5 lote 8): descanso y pactos de la Torre
                    'scr-lexicon',  // MicaSurvivor (M5 lote 11): el Léxico
                    'scr-watch-end']; // MicaSurvivor (M5 lote 12c): el final de una partida que mirabas / de una repetición

@@ -109,6 +109,7 @@ try {
 		await page.evaluateOnNewDocument((tok, st) => {
 			if (sessionStorage.getItem('seeded')) return;
 			sessionStorage.setItem('seeded', '1');
+			localStorage.setItem('micasurvivor_unlocks_off', '1');   // (the shared unlock list off: this suite pins the carried save's exact Pokémon and coins; micasurvivor_unlocks_test tests it)
 			if (tok) { localStorage.setItem('magepunk_mp_token_v1', tok); localStorage.setItem('magepunk_mp_state_v1', JSON.stringify(st)); }
 		}, who ? tokens[who] : null, who ? states[who] : null);
 		const visible = (id) => page.evaluate(id => { const el = document.getElementById(id); return !!el && !el.classList.contains('hidden') && el.getClientRects().length > 0; }, id);
@@ -268,6 +269,7 @@ try {
 	await call('run-score', { mode: 'micasurvivor', time: 3600, kills: 9000, level: 60, dex: 9 }, tokens.dave);
 	await a1.page.evaluate(() => { G.MicaAccount.MIN_T = 0; });   // (a real run must last 120 s to count)
 	await a1.page.click('#scr-menu [data-go=play]');
+	await a1.page.evaluate(() => { for (const s of ['#mx-next', '[data-cat=survival]', '[data-var=normal]', '[data-players=solo]', '#mx-start']) document.querySelector('#scr-play ' + s).click(); });   // (U1: Play opens the flow: Pokémon -> Survival -> Normal -> Solo -> Start)
 	A(await waitFor(() => a1.page.evaluate(() => G.Game.state === 'playing'), 15000), 'alice starts a run');
 	await sleep(6000);
 	await a1.page.evaluate(() => { for (const id of ['scr-levelup', 'scr-item', 'scr-bond']) { const c = document.querySelector('#' + id + ':not(.hidden) .cards > *'); if (c) c.click(); } });

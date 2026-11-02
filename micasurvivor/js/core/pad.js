@@ -710,11 +710,19 @@ G.Pad = (() => {
   /** MicaSurvivor (DLC D2): is the button of `action` held on the active pad now? (hold confirm to glide) */
   function held(action) { return !!cur && isDown((cur.buttons || [])[btn(action)]); }
 
+  /** MicaSurvivor (U1): a screen that re-renders in place (js/ui/play-ui.js steps) puts the focus on its current choice. */
+  function focusOn(el) {
+    const scope = topScope();
+    if (!el || !scope || !scope.contains(el)) return false;
+    setFocus(el, scope);
+    return true;
+  }
+
   return {
     held, poll, axis, p2, p2Axis, rumble, glyphHTML, drawGlyph, refreshGlyphs, settingsHTML, wireSettings,
     layout, map, defaults, setBtn, reset, buttonName, ACTIONS, LAYOUTS,
     get mode() { return mode; }, get listening() { return listening ? listening.action : null; },
     get active() { return !!cur; }, get ready() { return !!core; },
-    get focus() { return focus; }, topScope
+    get focus() { return focus; }, topScope, focusOn
   };
 })();

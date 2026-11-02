@@ -21,6 +21,7 @@
 <link rel="preload" href="fonts/PixelifyPS-400.ttf" as="font" type="font/ttf" crossorigin>
 <link rel="preload" href="fonts/PixelifyPS-700.ttf" as="font" type="font/ttf" crossorigin>
 <link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/mx.css"> <!-- MicaSurvivor (U1): Micatro's look for the Play flow -->
 </head>
 <body>
 
@@ -445,6 +446,18 @@
   </div>
 </section>
 
+<!-- ====== Jugar (MicaSurvivor U1): Pokémon -> modo -> variante -> jugadores -> preparación, con el estilo de Micatro (js/ui/play-ui.js, css/mx.css) ====== -->
+<section id="scr-play" class="scr mx hidden">
+  <div class="mx-wrap">
+    <div class="mx-head">
+      <button type="button" class="mx-btn red" id="mx-back" data-back>Atrás</button>
+      <ol class="mx-crumbs" id="mx-crumbs"></ol>
+      <h2 class="mx-title" id="mx-title"></h2>
+    </div>
+    <div class="mx-body" id="mx-body"></div>
+  </div>
+</section>
+
 <!-- ====== Modos de juego (MicaSurvivor M5 lote 6, port menu.gd "Elige un modo") ====== -->
 <section id="scr-modes" class="scr dim hidden">
   <div class="box wide modes-box">
@@ -702,6 +715,7 @@
 <script defer src="js/ui/test.js"></script>
 <script defer src="js/ui/menu.js"></script>
 <script defer src="js/ui/modes-ui.js"></script> <!-- MicaSurvivor (M5 batch 6): the mode-select screen -->
+<script defer src="js/ui/play-ui.js"></script> <!-- MicaSurvivor (U1): the Play flow (one character picker for every mode) -->
 <script defer src="js/ui/slots.js"></script>
 <script defer src="js/ui/gacha-ui.js"></script>
 <script defer src="js/ui/run-ui.js"></script>

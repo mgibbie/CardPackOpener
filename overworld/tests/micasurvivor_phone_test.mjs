@@ -87,6 +87,8 @@ try {
 	await shot('phone_menu.png');
 
 	await tapEl('#scr-menu [data-go=play]');
+	// (U1: Play opens the flow: Pokémon -> Survival -> Normal -> Solo -> START, each a tap)
+	for (const s of ['#mx-next', '[data-cat=survival]', '[data-var=normal]', '[data-players=solo]', '#mx-start']) { await sleep(700); await tapEl('#scr-play ' + s); }
 	A(await waitFor(() => page.evaluate(() => G.Game.state === 'playing'), 15000), 'run starts from a tap');
 	await sleep(1500);
 	// floating joystick: put a finger down and drag right

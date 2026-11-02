@@ -16,7 +16,8 @@ Required Notice: Copyright 2026 JPTER78 (https://github.com/JPTER78/pokesurvivor
   **MicaSurvivor must never get ads, paid items or anything sold.**
 - **Sprites**: PMDCollab SpriteCollab, CC BY-NC 4.0. Every artist is listed in `CREDITS.md`, and
   the in-game Credits screen (title screen → "Credits & licences", or Settings → About) shows them.
-- **Font**: Pixelify Sans, SIL OFL (`fonts/OFL.txt`).
+- **Font**: Pixelify Sans, SIL OFL (`fonts/OFL.txt`). The Play flow (U1) uses m6x11plus by Daniel Linssen (free to use with
+  credit), Micatro's copy with its added gender signs (`css/fonts/m6x11plus.ttf`).
 - **Controller design** (M2): taken from the Android port by JayElDragon (MIT),
   https://github.com/JayElDragon/poke-survivor.
 - **Mechanics** (M5): ported from the same Android port by JayElDragon (MIT); see "Mechanics from
@@ -3306,6 +3307,32 @@ The branch needs the full gate before it merges.
   server, medals, the Score / Time attack / Season boards with cosmetic ribbons. dv 8 (no `x` change). **The only server change of
   the stack** is D9's (`server/mp.mjs`: `run-score` / `run-leaderboard` for `micasurvivor_expedition`, `msurvseason:` in the GC
   table), so the branch needs the full gate before it merges.
+
+## U1: the Play flow (one character picker for every mode, Micatro's look)
+
+`Plans/MICASURVIVOR_UNIFIED_PLAN.md` U1. The menu's **Play** opens `#scr-play` (`js/ui/play-ui.js`, `G.PlayUI`), five steps
+on one screen with breadcrumbs:
+
+1. **Pokémon**: your collection (`save.owned`, the one unlock list) by generation; species you don't own aren't shown.
+   Picking one writes `save.partner` and, once the Expedition code is loaded (choosing Expedition or Dive loads it), the
+   League pick (`G.ExpLeague.setPick(FAM[dex])`) and starting form (`setForm(dex)`), so every mode starts as it.
+2. **Category**: Survival / Expedition / Dive.
+3. **Variant**: Survival = normal, daily, rush, party, tower, rifts, type, team; Expedition = Classic, Survival (+ the League
+   HQ, which opens the old "Game modes" screen); Dive = route dive, weekly.
+4. **Players**: Solo; Local 2 players (Survival normal = the `coop` mode; Expedition / route Dive = the local partner,
+   `micasurvivorexp_mate`); Local 3-4 (coming soon); Online with friends (signed in: Survival normal = a base lobby,
+   Expedition / route Dive = an Expedition lobby via `G.ModesUI.openExpCoop`). Everything else is aria-disabled with
+   "Coming soon" (U2 builds it); pressing it says why.
+5. **Setup**: only the variant's options (modifiers, Tower start floor, type, party Pokémon, team, co-op partner; the
+   Expedition's map + difficulty carousels, locked ones shown locked; Dive's route + start floor; the Weekly's route and
+   rule), then START.
+
+It only writes the existing prefs and starts through `G.Flow.play(mode)`, so `G.Modes.plan` and the runs are unchanged.
+The last category / variant / players are remembered (`micasurvivor_playflow`). Pad: each step focuses its current choice
+(`G.Pad.focusOn`), so confirm x6 from the menu replays the last setup; cancel / Esc go back a step. The look is
+`css/mx.css`: Micatro's tokens, font, lipped buttons and panels, red tabs and arrow carousel, ported and scoped under
+`#scr-play` (mx- classes; never `.card`). "Game modes" stays on the menu for now. Test:
+`overworld/tests/micasurvivor_playflow_test.mjs`.
 
 ## Tests
 
