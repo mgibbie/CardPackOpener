@@ -109,6 +109,27 @@ export function pinDiff(recipe) {
   }
   return out;
 }
+/**
+ * RECORDED RULES during a re-simulation. A resume / replay re-plays every action on the code loaded now; a rule change
+ * that must never be retroactive (Pokermon r58's Yamask cap: a bank already earned stays earned) reads the pin the
+ * action was RECORDED on instead: session.js sets RULES.pins = pinsAt(recipe, i) around each re-played action and
+ * clears it after, so live play (RULES.pins null) is always on the current rules. Gate on it only where a rule
+ * change would take back what a player already earned; everything else re-plays on the new rules (the resume prompt).
+ */
+export const RULES = { pins: null };
+/** The pins in force when action `index` of this recipe was recorded: the `from` of the first re-pin after it, else its own. */
+export function pinsAt(recipe, index) {
+  const hist = Array.isArray(recipe && recipe.repinned) ? recipe.repinned : [];
+  for (const h of hist) if (h && index < (h.at | 0) && h.from && typeof h.from === 'object') return h.from;
+  return recordedPins(recipe).modVersions;
+}
+/** The pin a mod's rules follow right now: the recorded one while re-playing an action, else the loaded one. */
+export function rulesPin(id) {
+  const p = RULES.pins;
+  return p && Object.prototype.hasOwnProperty.call(p, id) ? p[id] : modPin(id);
+}
+/** rulesPin's contentRev (0 for a pin without one). */
+export const rulesRev = (id) => parsePin(rulesPin(id)).rev;
 /** 'Pokermon 3.2.1 → 3.9.1' for each changed mod, joined. */
 export function diffText(diff, sep = '; ') {
   return (diff || []).map((d) => d.engine ? `${d.name} engine ${d.recorded} → ${d.current}` : `${d.name} ${pinLabel(d.recorded)} → ${d.current == null ? 'not available' : pinLabel(d.current)}`).join(sep);

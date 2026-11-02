@@ -736,7 +736,7 @@ const hooks = {
   // The owner's Serperior, Contrary (jokers/pokejokers_designs.js): a debuffed playing card that scores is scored as if it weren't, while
   // an undebuffed Serperior is owned (run.js score_played_card lifts the debuff for that card's scoring only). No Serperior, no change.
   score_debuffed: contrary_lifts,
-  // The owner's Cofagrigus, Mummy (jokers/pokejokers_designs.js mummy_sell; Gen 5 batch 2): the round's first Joker the player sells, while an
+  // The owner's Cofagrigus, Mummy (jokers/pokejokers_designs.js mummy_sell; Gen 5 batch 2): the Ante's first Joker the player sells, while an
   // undebuffed Cofagrigus other than it is held, is not sold but made Negative (no money; a Negative one sells as usual). run.js asks before
   // the sale. No Cofagrigus, no change.
   sell_instead: mummy_sell,
@@ -972,7 +972,10 @@ export const POKERMON = registerMod({
   // Volcarona (always sunny).
   // 57 = the owner's Espeon rework, Future Sight (jokers/pokejokers_07.js espeon): The Idol, better: +2 Foresight; each scored card that
   // is the round's card (rank and suit) gives X2.5 Mult and retriggers once; a Foreseen one gives X1.5 (PORTING.md "The Espeon rework").
-  contentRev: 57,
+  // 58 = the owner's Yamask nerf (jokers/pokejokers_designs.js grudge / mummy_sell): Yamask's X grows from the first 1 Joker sold each
+  // round, Cofagrigus's from the first 2; Mummy once an Ante (was once a round). Moves recorded before r58 re-play on the old rules
+  // (js/mods/pins.js RULES): a bank already earned stays (PORTING.md "The Yamask nerf").
+  contentRev: 58,
   // Pokermon 3.9.1 pokermon.lua: SMODS.current_mod.optional_features = {quantum_enhancements = true, object_weights = true}.
   // object_weights sends create_card's key, the shop roll, tags, packs, bosses and vouchers through SMODS.poll_object
   // (js/engine/smods.js; batch 17). quantum_enhancements is the engine's check_enhancement, always on.

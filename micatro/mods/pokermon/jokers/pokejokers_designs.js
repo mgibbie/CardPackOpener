@@ -123,8 +123,8 @@
 // size), Petilil -> Lilligant (Grass; scored Flower cards $1 / $2; Flowers need 3+ suits), Basculin (Water; a Red or Blue stripe rolled
 // once: +20 Chips per scored red / black suit card), Sandile -> Krokorok -> Krookodile (Dark; Moxie: +2 / +4 Mult, then X0.15, banked per
 // Blind beaten), Maractus (Grass; +8 Mult per Hazard held), Dwebble -> Crustle (Earth; +5 / +10 Chips per Stone card in the deck), Sigilyph
-// (Psychic; +2 Foresight, Pair Planets level twice), Yamask -> Cofagrigus (Psychic; X0.1 / X0.2 per Joker sold; Mummy: the round's first
-// Joker sold stays, Negative), Tirtouga -> Carracosta (Water; Ancient 9s), Archen -> Archeops (Earth; Ancient 10s, Defeatist) and Minccino ->
+// (Psychic; +2 Foresight, Pair Planets level twice), Yamask -> Cofagrigus (Psychic; X0.1 / X0.2 per Joker sold, the first 1 / 2 a round
+// since contentRev 58; Mummy: the Ante's first Joker sold stays, Negative), Tirtouga -> Carracosta (Water; Ancient 9s), Archen -> Archeops (Earth; Ancient 10s, Defeatist) and Minccino ->
 // Cinccino (Colorless; each discard draws 1 extra; Skill Link) — upstream 3.9.1 draws them all (Natdex {28,35}-{4,38}, Basculin Gen 5 {4,0}
 // / {6,0}).
 // Gen 5, batch 3 (contentRev 55; the owner's "Build batch 3", 2026-10-29), 30 jokers #580-637: Ducklett -> Swanna (Water; +40 Chips / X2 with
@@ -150,6 +150,7 @@ import {
 } from '../api.js';
 import * as BN from '../../../js/engine/bignum.js'; // the Blind's requirement (Poison Gas) may be a big number in modded runs
 import { number_format } from '../../../js/engine/core.js';
+import { rulesRev } from '../../../js/mods/pins.js';
 
 const FILE = 'micatro/pokejokers_designs';
 const a_mult = (n) => localize({ type: 'variable', key: 'a_mult', vars: [n] });
@@ -1986,10 +1987,30 @@ function sigil_pair(card, context) {
   }
 }
 
-/** Yamask / Cofagrigus: every OTHER Joker you sell banks +Xmult_mod X Mult (`grudge_Xmult` from X1, no energy field: never retroactive;
- *  carried through the evolution). Not Blueprint. A Joker Cofagrigus mummifies counts as sold for this (mummy_sell below). */
+/** Yamask / Cofagrigus: the first GRUDGE_CAP OTHER Jokers you sell each round (Yamask 1, Cofagrigus 2; the round is G.GAME.round, from
+ *  selecting a Blind to selecting the next, its shop included) each bank +Xmult_mod X Mult (`grudge_Xmult` from X1, no energy field:
+ *  never retroactive; carried through the evolution). Not Blueprint. A Joker Cofagrigus mummifies counts as sold for this (mummy_sell
+ *  below) and uses up one of the round's grudges like any sale. The count is kept per card: `grudge_round` (the round counted) and
+ *  `grudge_count` (grudges banked in it), both carried through the evolution (poke_custom_values_to_keep), so a Yamask that banked its 1
+ *  this round evolves into a Cofagrigus with 1 left (2 in all that round, never a fresh 2). Neither is an energy field.
+ *  contentRev 58 (the owner's nerf: it was every sale, uncapped). A re-simulated move recorded before r58 (a resumed or replayed old run,
+ *  js/mods/pins.js RULES) banks every sale as it did, so a bank already earned stays; it still counts, so a run that switches to r58
+ *  mid-round has that round's grudges used up. */
 const YAMASK_LINE = ['j_poke_yamask', 'j_poke_cofagrigus'];
-function grudge(card) { bank(card, 'grudge_Xmult', 'Xmult_mod', 1, 'XMULT'); }
+const GRUDGE_CAP = { j_poke_yamask: 1, j_poke_cofagrigus: 2 };
+const nerf58 = () => rulesRev('pokermon') >= 58;
+const grudge_cap = (card) => GRUDGE_CAP[card.config.center.key] || 1;
+const grudge_used = (card) => { const ex = card.ability.extra; return G.GAME && ex.grudge_round === G.GAME.round ? (ex.grudge_count || 0) : 0; };
+const grudge_left = (card) => Math.max(0, grudge_cap(card) - grudge_used(card));
+function grudge(card) {
+  if (!G.GAME) return;
+  const used = grudge_used(card);
+  if (nerf58() && used >= grudge_cap(card)) return;
+  const ex = card.ability.extra;
+  ex.grudge_round = G.GAME.round;
+  ex.grudge_count = used + 1;
+  bank(card, 'grudge_Xmult', 'Xmult_mod', 1, 'XMULT');
+}
 function grudge_sell(card, context) {
   if (context.selling_card && !context.blueprint && !context.retrigger_joker && context.card !== card && context.card.ability.set === 'Joker') grudge(card);
 }
@@ -1998,19 +2019,27 @@ function grudge_main(card, context) {
   if (context.joker_main && x > 1) return { message: a_xmult(r3(x)), colour: 'XMULT', Xmult_mod: x };
   return undefined;
 }
-/** Cofagrigus, Mummy (the sell_instead hook, index.js; run.js asks it before a player's sale): the FIRST Joker you sell each round
- *  (keyed by G.GAME.round: from selecting a Blind to selecting the next, its shop included; one for the whole row, however many
- *  Cofagrigus) is NOT sold while an undebuffed Cofagrigus other than that Joker is held (find_card: a Blueprint is not one, so it can't
- *  copy Mummy). The Joker stays and becomes Negative instead (its old edition replaced; the Negative's +1 Joker slot makes room for
- *  it), no money is paid, and the vanilla sell contexts (selling_self / selling_card) don't run: nothing was sold. It still counts as a
- *  sale for the Yamask line's X (every undebuffed Yamask / Cofagrigus but the mummified one gains). An already Negative Joker is sold
- *  as usual, and uses up the round's Mummy (it was that round's first sale). A consumable is never mummified. -> true to keep it. */
-export const mummy_used = () => !!(G.GAME && G.GAME.poke_mummy_round === G.GAME.round);
+/** Cofagrigus, Mummy (the sell_instead hook, index.js; run.js asks it before a player's sale): the FIRST Joker you sell each ANTE
+ *  (contentRev 58, was each round; keyed by G.GAME.round_resets.ante in G.GAME.poke_mummy_ante: it re-arms when the Ante goes up, i.e.
+ *  when the Boss Blind is beaten, so the shop after a Boss is already the next Ante's; one for the whole row, however many Cofagrigus)
+ *  is NOT sold while an undebuffed Cofagrigus other than that Joker is held (find_card: a Blueprint is not one, so it can't copy
+ *  Mummy). The Joker stays and becomes Negative instead (its old edition replaced; the Negative's +1 Joker slot makes room for it), no
+ *  money is paid, and the vanilla sell contexts (selling_self / selling_card) don't run: nothing was sold. It still counts as a sale for
+ *  the Yamask line's X (every undebuffed Yamask / Cofagrigus but the mummified one, within its round's grudges). An already Negative
+ *  Joker is sold as usual, and uses up the Ante's Mummy (it was that Ante's first sale). A consumable is never mummified. A move
+ *  recorded before r58 (pins.js RULES) keeps the old once-a-round key, G.GAME.poke_mummy_round; a Mummy used under it this round reads
+ *  as used for the rest of this Ante too (a run that switched rules mid-round). -> true to keep it. */
+export const mummy_used = () => {
+  if (!G.GAME) return false;
+  if (G.GAME.poke_mummy_round !== undefined && G.GAME.poke_mummy_round === G.GAME.round) return true;
+  return nerf58() && G.GAME.poke_mummy_ante !== undefined && G.GAME.poke_mummy_ante === G.GAME.round_resets.ante;
+};
 export function mummy_sell(sold) {
   if (!sold || !sold.ability || sold.ability.set !== 'Joker' || sold.area !== G.jokers || !G.GAME) return false;
   const coffins = find_card('j_poke_cofagrigus').filter((j) => j !== sold);
   if (!coffins.length || mummy_used()) return false;
-  G.GAME.poke_mummy_round = G.GAME.round;
+  if (nerf58()) G.GAME.poke_mummy_ante = G.GAME.round_resets.ante;
+  else G.GAME.poke_mummy_round = G.GAME.round;
   if (sold.edition && sold.edition.negative) return false;
   sold.set_edition({ negative: true });
   for (const j of G.jokers.cards) if (j !== sold && !j.debuff && YAMASK_LINE.includes(j.config.center.key)) grudge(j);
@@ -2018,7 +2047,7 @@ export function mummy_sell(sold) {
   emit('card_changed', { card: sold.sort_id });
   return true;
 }
-const mummy_state = () => (mummy_used() ? 'used this round' : 'ready');
+const mummy_state = () => (mummy_used() ? 'used this Ante' : 'ready');
 
 /** The fossils' Ancient (Kabuto's / Omanyte's cumulative tiers, pokejokers_05): how many cards of rank `id` are in the SCORING hand, read
  *  live from context.scoring_hand (no state kept between contexts). A Stone card has no rank. */
@@ -5405,30 +5434,33 @@ defineJokers({
     calculate(self, card, context) { sigil_pair(card, context); return undefined; },
     ...scry,
   },
-  // Yamask 562 (Psychic, Common $5): X0.1 banked per other Joker sold (`grudge_Xmult`; gain `Xmult_mod`, Energy +20%: 0.12 / 0.14 / 0.16).
-  // 5 rounds.
+  // Yamask 562 (Psychic, Common $5): X0.1 banked per other Joker sold, the first 1 a round (`grudge_Xmult`; gain `Xmult_mod`, Energy
+  // +20%: 0.12 / 0.14 / 0.16; the cap is fixed). 5 rounds.
   yamask: {
     name: 'yamask', poke_sprite391: sprite('Natdex', 12, 37),
     config: { extra: { grudge_Xmult: 1, Xmult_mod: 0.1, rounds: 5 } },
     rarity: 1, cost: 5, stage: 'Basic', ptype: 'Psychic', gen: 5, blueprint_compat: true,
     attributes: ['xmult', 'scaling', 'on_sell', 'round_evo'], poke_after: 'sigilyph',
-    poke_custom_values_to_keep: ['grudge_Xmult'],
-    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.Xmult_mod), r3(ex.grudge_Xmult), ex.rounds] }; },
+    poke_custom_values_to_keep: ['grudge_Xmult', 'grudge_round', 'grudge_count'],
+    loc_vars(self, info_queue, card) {
+      type_tooltip(self, info_queue, card); const ex = card.ability.extra;
+      return { vars: [r3(ex.Xmult_mod), r3(ex.grudge_Xmult), ex.rounds, grudge_cap(card), grudge_left(card)] };
+    },
     calculate(self, card, context) { grudge_sell(card, context); return grudge_main(card, context) || level_evo(self, card, context, 'j_poke_cofagrigus'); },
   },
-  // Cofagrigus 563 (Safari $8): X0.2 per Joker sold (0.24 / 0.28 / 0.32), and Mummy (mummy_sell: the round's first Joker sold stays, Negative,
-  // no money; it still counts for the X).
+  // Cofagrigus 563 (Safari $8): X0.2 per Joker sold, the first 2 a round (0.24 / 0.28 / 0.32), and Mummy (mummy_sell: the Ante's first
+  // Joker sold stays, Negative, no money; it still counts for the X, one of the round's 2).
   cofagrigus: {
     name: 'cofagrigus', poke_sprite391: sprite('Natdex', 14, 37),
     config: { extra: { grudge_Xmult: 1, Xmult_mod: 0.2 } },
     rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Psychic', gen: 5, blueprint_compat: true,
     attributes: ['xmult', 'scaling', 'on_sell', 'joker_slot'], poke_after: 'yamask',
-    poke_custom_values_to_keep: ['grudge_Xmult'],
+    poke_custom_values_to_keep: ['grudge_Xmult', 'grudge_round', 'grudge_count'],
     loc_vars(self, info_queue, card) {
       type_tooltip(self, info_queue, card);
       info_queue.push({ key: 'e_negative', set: 'Edition', config: { extra: 1 } });
       const ex = card.ability.extra;
-      return { vars: [r3(ex.Xmult_mod), r3(ex.grudge_Xmult), mummy_state()] };
+      return { vars: [r3(ex.Xmult_mod), r3(ex.grudge_Xmult), mummy_state(), grudge_cap(card), grudge_left(card)] };
     },
     calculate(self, card, context) { grudge_sell(card, context); return grudge_main(card, context); },
   },
@@ -6023,7 +6055,11 @@ const TAILOR = (cloth) => ['{C:attention}Tailor:{} when a {C:attention}Blind{} i
 const POISON_POINT = ['{C:attention}Poison Point:{} each card you', 'discard permanently gains', '{C:mult}+#2#{} Mult and {C:chips}-#1#{} Chips', '{C:inactive}(its Chips never go below 0)'];
 const MOXIE_BLIND = (gain) => ['{C:attention}Moxie:{} when you beat a', '{C:attention}Blind{}, permanently gains', gain];
 const STONE_SHELL = ['{C:chips}+#1#{} Chips for each', '{C:attention}Stone{} card in your', 'full deck', '{C:inactive}(Currently {C:chips}+#2#{C:inactive} Chips)'];
-const GRUDGE = ['Gains {X:mult,C:white} X#1# {} Mult each', 'time you sell another Joker', '{C:inactive}(Currently {X:mult,C:white} X#2# {C:inactive} Mult)'];
+// contentRev 58: the first 1 (Yamask) / 2 (Cofagrigus) Jokers sold each round; #4# the cap, #5# what is left of it this round.
+const GRUDGE = (n) => [
+  ...(n === 1 ? ['Gains {X:mult,C:white} X#1# {} Mult for the', '{C:attention}first{} Joker you sell each round']
+    : ['Gains {X:mult,C:white} X#1# {} Mult for each of', 'the first {C:attention}#4#{} Jokers you sell', 'each round']),
+  '{C:inactive}(Currently {X:mult,C:white} X#2# {C:inactive} Mult)', '{C:inactive}(Grudges left this round: #5#/#4#)'];
 const ANCIENT_NINES = ['{C:attention}Ancient #1#s{}', '{X:attention,C:white}1+{} : {C:chips}+#2#{} Chips', '{X:attention,C:white}2+{} : {}Scoring {C:attention}#1#s{} permanently gain {C:chips}+#3#{} Chips', '{X:attention,C:white}3+{} : {C:chips}+#4#{} Chips'];
 const ANCIENT_TENS = ['{C:attention}Ancient #1#s{}', '{X:attention,C:white}1+{} : {C:mult}+#2#{} Mult', '{X:attention,C:white}2+{} : {X:mult,C:white} X#3# {} Mult', '{X:attention,C:white}3+{} : Earn {C:money}$#4#{}'];
 const ANCIENT_EVO = (n) => '{C:inactive,s:0.8}(Trigger {X:attention,C:white,s:0.8}3+{C:inactive,s:0.8} ability {C:attention,s:0.8}#' + n + '#{C:inactive,s:0.8} times to evolve)';
@@ -6458,10 +6494,10 @@ export const DESIGN_LOC = {
       ['{C:purple}+#1# Foresight'],
       ['Using a {C:planet}Planet{} card for', '{C:attention}Pair{} levels it up', '{C:attention}#2#{} more time'],
     ] },
-    j_poke_yamask: { name: 'Yamask', text: [...GRUDGE, EVOLVES_ROUNDS(3)] },
+    j_poke_yamask: { name: 'Yamask', text: [...GRUDGE(1), EVOLVES_ROUNDS(3)] },
     j_poke_cofagrigus: { name: 'Cofagrigus', text: [
-      GRUDGE,
-      ['{C:attention}Mummy:{} the first Joker you', 'sell each round is not sold:', 'it becomes {C:dark_edition}Negative{} and', 'stays {C:inactive}(no money; it still', '{C:inactive}counts as sold for the X)',
+      GRUDGE(2),
+      ['{C:attention}Mummy:{} the first Joker you', 'sell each {C:attention}Ante{} is not sold:', 'it becomes {C:dark_edition}Negative{} and', 'stays {C:inactive}(no money; it still', '{C:inactive}counts as sold for the X)',
         '{C:inactive}(A Negative one sells as usual)', '{C:inactive}(Mummy: #3#)'],
     ] },
     j_poke_tirtouga: { name: 'Tirtouga', text: [...ANCIENT_NINES, ANCIENT_EVO(5)] },
