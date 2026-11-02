@@ -1,5 +1,5 @@
 {
-	"generated": "2026-11-01",
+	"generated": "2026-11-02",
 	"micatroAtlas": {
 		"Joker": {
 			"src": "/micatro/assets/textures/Jokers.png",
@@ -521,6 +521,286 @@
 		}
 	},
 	"entries": [
+		{
+			"sha": "8c24cb7",
+			"date": "2026-11-02",
+			"kind": "micatro",
+			"title": "Pokermon r62: Gen 6 batch 2 (22 jokers, #682-715)",
+			"body": "",
+			"cards": [],
+			"micatroMods": [
+				{
+					"id": "pokermon",
+					"name": "Pokermon",
+					"added": [
+						{
+							"key": "j_poke_spritzee",
+							"name": "Spritzee",
+							"set": "Joker",
+							"rarity": "common",
+							"cost": 5,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 12,
+								"y": 45
+							}
+						},
+						{
+							"key": "j_poke_aromatisse",
+							"name": "Aromatisse",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 8,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 14,
+								"y": 45
+							}
+						},
+						{
+							"key": "j_poke_swirlix",
+							"name": "Swirlix",
+							"set": "Joker",
+							"rarity": "common",
+							"cost": 5,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 16,
+								"y": 45
+							}
+						},
+						{
+							"key": "j_poke_slurpuff",
+							"name": "Slurpuff",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 8,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 18,
+								"y": 45
+							}
+						},
+						{
+							"key": "j_poke_inkay",
+							"name": "Inkay",
+							"set": "Joker",
+							"rarity": "common",
+							"cost": 5,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 20,
+								"y": 45
+							}
+						},
+						{
+							"key": "j_poke_malamar",
+							"name": "Malamar",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 8,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 22,
+								"y": 45
+							}
+						},
+						{
+							"key": "j_poke_binacle",
+							"name": "Binacle",
+							"set": "Joker",
+							"rarity": "common",
+							"cost": 5,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 24,
+								"y": 45
+							}
+						},
+						{
+							"key": "j_poke_barbaracle",
+							"name": "Barbaracle",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 8,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 26,
+								"y": 45
+							}
+						},
+						{
+							"key": "j_poke_skrelp",
+							"name": "Skrelp",
+							"set": "Joker",
+							"rarity": "common",
+							"cost": 5,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 28,
+								"y": 45
+							}
+						},
+						{
+							"key": "j_poke_dragalge",
+							"name": "Dragalge",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 8,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 0,
+								"y": 46
+							}
+						},
+						{
+							"key": "j_poke_tyrunt",
+							"name": "Tyrunt",
+							"set": "Joker",
+							"rarity": "common",
+							"cost": 5,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 10,
+								"y": 46
+							}
+						},
+						{
+							"key": "j_poke_tyrantrum",
+							"name": "Tyrantrum",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 8,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 12,
+								"y": 46
+							}
+						},
+						{
+							"key": "j_poke_amaura",
+							"name": "Amaura",
+							"set": "Joker",
+							"rarity": "common",
+							"cost": 5,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 14,
+								"y": 46
+							}
+						},
+						{
+							"key": "j_poke_aurorus",
+							"name": "Aurorus",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 8,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 16,
+								"y": 46
+							}
+						},
+						{
+							"key": "j_poke_hawlucha",
+							"name": "Hawlucha",
+							"set": "Joker",
+							"rarity": "rare",
+							"cost": 7,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 20,
+								"y": 46
+							}
+						},
+						{
+							"key": "j_poke_klefki",
+							"name": "Klefki",
+							"set": "Joker",
+							"rarity": "rare",
+							"cost": 7,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 2,
+								"y": 47
+							}
+						},
+						{
+							"key": "j_poke_phantump",
+							"name": "Phantump",
+							"set": "Joker",
+							"rarity": "common",
+							"cost": 5,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 4,
+								"y": 47
+							}
+						},
+						{
+							"key": "j_poke_trevenant",
+							"name": "Trevenant",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 8,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 6,
+								"y": 47
+							}
+						},
+						{
+							"key": "j_poke_bergmite",
+							"name": "Bergmite",
+							"set": "Joker",
+							"rarity": "common",
+							"cost": 5,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 12,
+								"y": 47
+							}
+						},
+						{
+							"key": "j_poke_avalugg",
+							"name": "Avalugg",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 8,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 14,
+								"y": 47
+							}
+						},
+						{
+							"key": "j_poke_noibat",
+							"name": "Noibat",
+							"set": "Joker",
+							"rarity": "common",
+							"cost": 5,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 16,
+								"y": 47
+							}
+						},
+						{
+							"key": "j_poke_noivern",
+							"name": "Noivern",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 8,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 18,
+								"y": 47
+							}
+						}
+					]
+				}
+			]
+		},
 		{
 			"sha": "bfa8805",
 			"date": "2026-11-01",
