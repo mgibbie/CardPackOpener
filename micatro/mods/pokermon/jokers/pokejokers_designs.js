@@ -1501,10 +1501,14 @@ export function deck_suits() {
   for (const c of G.playing_cards || []) if (unbroken(c)) for (const s of Object.keys(n)) if (c.is_suit(s, true)) n[s]++;
   return n;
 }
-/** Swords of Justice (contentRev 59, solo): the sword's suit is the most common in the full deck (a tie counts; an empty count never). */
+/** Swords of Justice (contentRev 59, solo): the sword's suit is the most common in the full deck (an empty count never). contentRev 60
+ *  (the owner's follow-up): STRICTLY the most common, a tie doesn't count (a standard 52-card deck: every sword X1.25); a move recorded on
+ *  r59 re-plays with ties counting (js/mods/pins.js RULES). */
+const strict60 = () => rulesRev('pokermon') >= 60;
 export function suit_leads(suit) {
   const n = deck_suits(), top = Math.max(...Object.values(n));
-  return top > 0 && n[suit] === top;
+  if (!(top > 0 && n[suit] === top)) return false;
+  return !strict60() || Object.keys(n).every((s) => s === suit || n[s] < top);
 }
 /** The Swords of Justice X: X1.5, i.e. the base `Xmult_multi` x 1.2 (one energy field scales both: 1.575 / 1.65 / 1.725). */
 const justice_x = (card) => r9(card.ability.extra.Xmult_multi * 1.2);
@@ -1527,11 +1531,13 @@ function sacred_sword(card, context) {
   }
   return undefined;
 }
-/** A sword's tooltip: [base X, Justice X, "<its suit's count>, top <the most common suit's count>", the X it gives now]. */
+/** A sword's tooltip: [base X, Justice X, "<its suit's count>, top <the most common suit's count>" (contentRev 60: "<count>, tied for
+ *  top" while it shares the top, which no longer counts), the X it gives now]. */
 function sword_vars(self, info_queue, card) {
   type_tooltip(self, info_queue, card);
-  const ex = card.ability.extra, suit = SWORDS[card.config.center.key], n = deck_suits();
-  return { vars: [r3(ex.Xmult_multi), r3(justice_x(card)), n[suit] + ', top ' + Math.max(...Object.values(n)), r3(sword_x(card))] };
+  const ex = card.ability.extra, suit = SWORDS[card.config.center.key], n = deck_suits(), top = Math.max(...Object.values(n));
+  const tied = strict60() && top > 0 && n[suit] === top && Object.keys(n).some((s) => s !== suit && n[s] === top);
+  return { vars: [r3(ex.Xmult_multi), r3(justice_x(card)), n[suit] + (tied ? ', tied for top' : ', top ' + top), r3(sword_x(card))] };
 }
 /** The Forces of Nature's formes: Tornadus and Thundurus are Therian while an undebuffed Landorus is held; Landorus while both Tornadus
  *  AND Thundurus are. Live (bought, sold or debuffed, it changes at once): the card's art follows it (poke_view_form). */
@@ -4718,8 +4724,9 @@ defineJokers({
   // The Swords of Justice, Cobalion 638 / Terrakion 639 / Virizion 640 (and Keldeo 647): each scored card of the sword's suit (Spades /
   // Diamonds / Clubs / Hearts; is_suit, so Wild cards count) gives X1.25 Mult (`Xmult_multi`, Energy +5%: 1.3125 / 1.375 / 1.4375).
   // Swords of Justice (contentRev 59, the owner's solo rule; it was +X0.1 per other sword): while its suit is the most common suit in
-  // your full deck (suit_leads: a tie counts; Wild cards count for every suit, Stone for none), X1.5 instead (Xmult_multi x 1.2: 1.575 /
-  // 1.65 / 1.725). Blueprint copies it. (`sword_mod` stays for runs recorded before r59.)
+  // your full deck (suit_leads: contentRev 60, STRICTLY the most common, a tie doesn't count (r59 runs re-play with ties counting); Wild
+  // cards count for every suit, Stone for none), X1.5 instead (Xmult_multi x 1.2: 1.575 / 1.65 / 1.725). Blueprint copies it.
+  // (`sword_mod` stays for runs recorded before r59.)
   cobalion: {
     name: 'cobalion', poke_sprite391: sprite('Natdex', 14, 42, [15, 42]),
     config: { extra: { Xmult_multi: 1.25, sword_mod: 0.1 } },
@@ -6199,8 +6206,9 @@ const RAZOR_SHELL = (n) => ['{C:attention}Razor Shell:{} retrigger the', n];
 // contentRev 59 (solo): each other Psychic Joker, at most 2 (it was each other Lake guardian).
 const LAKE_GUARDIANS = (x, n) => ['{C:attention}Lake Guardians:{} plus {X:mult,C:white} X#' + x + '# {}', 'to its X Mult for each other', '{X:poke_psychic,C:white}Psychic{} Joker {C:inactive}(max 2)', '{C:inactive}(Currently #' + n + '#/2)'];
 const SACRED_SWORD = (suit, move = 'Sacred Sword') => ['{C:attention}' + move + ':{} each scored', suit + ' gives {X:mult,C:white} X#1# {} Mult'];
-// contentRev 59 (solo): X1.5 while its suit is the most common in the full deck (it was +X0.1 per other sword).
-const SWORDS_OF_JUSTICE = (suit) => ['{C:attention}Swords of Justice:{} {X:mult,C:white} X#2# {}', 'instead while ' + suit + ' are the', 'most common suit in your', 'full deck {C:inactive}(ties count)',
+// contentRev 59 (solo): X1.5 while its suit is the most common in the full deck (it was +X0.1 per other sword); contentRev 60: a tie
+// doesn't count.
+const SWORDS_OF_JUSTICE = (suit) => ['{C:attention}Swords of Justice:{} {X:mult,C:white} X#2# {}', 'instead while ' + suit + ' are the', 'most common suit in your', "full deck {C:inactive}(a tie doesn't count)",
   '{C:inactive,s:0.8}(Wild cards count for every suit)', '{C:inactive}(' + suit + ' #3#; now {X:mult,C:white} X#4# {C:inactive})'];
 const TAO_BOOST = (move, type) => ['{C:attention}' + move + ':{} each', type + ' Joker gives {X:mult,C:white} X#1# {} Mult', '{C:inactive}(Itself included; currently {C:attention}#2#{C:inactive})'];
 // contentRev 59 (solo): Fusion Flare / Fusion Bolt (it was Truth vs Ideals: +X0.25 each with the other dragon held).

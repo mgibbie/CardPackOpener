@@ -7,8 +7,8 @@
 //   Regigigas      Slow Start: 5 rounds, 1 sooner per 5 Stone / Glass / Steel cards in the full deck (min 1); Creator: awake, 1 random card
 //                  (unenhanced first) becomes Stone, Glass or Steel when a Blind is selected.
 //   Giratina       Origin Forme for good once 10 playing cards were destroyed while held ("(Destroyed: k/10)"; the 10th gains Altered).
-//   Swords         Swords of Justice: X1.5 instead of X1.25 while the sword's suit is the most common in the full deck (ties count, Wild
-//                  every suit, Stone none).
+//   Swords         Swords of Justice: X1.5 instead of X1.25 while the sword's suit is STRICTLY the most common in the full deck (contentRev
+//                  60: a tie doesn't count, so a plain 52-card deck gives every sword X1.25; r59 counted ties; Wild every suit, Stone none).
 //   Keldeo         Resolute Form for good once 25 Hearts scored while held ("(Hearts: k/25)"); X2 a Heart.
 //   Forces         Therian Forme for good after holding it 4 rounds ("(Therian in k rounds)").
 //   Reshiram/Zekrom Fusion Flare / Bolt: each Fire / Lightning Energy used (any target) banks +X0.05 on its per-Joker X (no energy field;
@@ -16,7 +16,8 @@
 //   Kyurem         X1.5; White with more Fire than Lightning Jokers, Black with more Lightning (itself out; a tie keeps the form; plain
 //                  until one side leads): X1.25 per Joker of that type; the art follows.
 // Every changed joker is played ALONE (no partner) through real hands / rounds; then save / resume, Energy, and a run RECORDED on r58
-// (micatro/tests/fixtures/pokermon_legsolo_r58_recipe.json, on main before this change) that must re-play on the old partner rules.
+// (micatro/tests/fixtures/pokermon_legsolo_r58_recipe.json, on main before this change) that must re-play on the old partner rules, and a
+// run RECORDED on r59 (micatro/tests/fixtures/pokermon_swordtie_r59_recipe.json, on main before r60) that must re-play with ties counting.
 //   node micatro/tests/mods/pokermon_legendary_solo_test.mjs
 import { readFileSync } from 'fs';
 import { T, start, hand, add, clearHand, G, P_CENTERS, act, STATES } from './poke_helpers.mjs';
@@ -37,6 +38,8 @@ const sec = async (name, fn) => { try { await fn(); } catch (e) { ok(false, name
 const ex = (j) => j.ability.extra;
 const plain = (j) => describe(j).lines.join(' | ').replace(/\{[^}]*\}/g, '').replace(/\s+/g, ' ');
 const oldRules = (fn) => { PINS.RULES.pins = { pokermon: '3.9.1+r58' }; try { return fn(); } finally { PINS.RULES.pins = null; } };
+/** Run fn on the rules of a move recorded on r59 (the Swords counted a tie for the most). */
+const r59Rules = (fn) => { PINS.RULES.pins = { pokermon: '3.9.1+r59' }; try { return fn(); } finally { PINS.RULES.pins = null; } };
 const cr = () => G.GAME.current_round;
 function debuff(c) { c.ability.debuff_sources = { test: true }; c.set_debuff(); flush(); return c; }
 function cards(list) { return list.map((k) => (Array.isArray(k) ? hand([k[0]], { center: k[1] })[0] : hand([k])[0])); }
@@ -92,7 +95,7 @@ const COUNTS = {};
 
 // ------------------------------------------------------------------- the pin
 await sec('pin', () => {
-  ok(MODS.pokermon.contentRev === 59 && PINS.modPin('pokermon') === '3.9.1+r59', 'Pokermon contentRev 59 (pin 3.9.1+r59)', PINS.modPin('pokermon'));
+  ok(MODS.pokermon.contentRev === 60 && PINS.modPin('pokermon') === '3.9.1+r60', 'Pokermon contentRev 60 (pin 3.9.1+r60; r59 the legendary solo rule)', PINS.modPin('pokermon'));
   ok(PINS.LEGACY_MOD_VERSIONS.pokermon === '3.2.1+r1', 'LEGACY_MOD_VERSIONS untouched');
   ok(['fusion_x', 'fusion_mod', 'destroyed', 'hearts', 'therian_rounds', 'giga_rounds', 'delta_on', 'kyurem_form', 'hands', 'd_size', 'lake_mod'].every((f) => !(f in energy_values)),
     'the banks, the counters and the +1 hand / discard are no energy fields');
@@ -286,34 +289,95 @@ await sec('giratina', () => {
 });
 
 // ------------------------------------------------------------------- the Swords alone: Swords of Justice
+/** Play n cards taken from the DECK (no card created: the full deck stays as it is) matching pred -> {mult, ...}. */
+function playDeck(pred, n = 1) {
+  clearHand();
+  const cs = G.deck.cards.filter(pred).slice(0, n);
+  if (cs.length < n) throw new Error('playDeck: only ' + cs.length + ' matching cards in the deck');
+  for (const c of cs) { G.deck.remove_card(c); G.hand.emplace(c); }
+  G.GAME.chips = 0;
+  if (+G.GAME.blind.chips < 1e15) G.GAME.blind.chips = 1e15;
+  if (cr().hands_left < 2) cr().hands_left = 2;
+  act({ type: 'highlight', ids: cs.map((c) => c.sort_id) });
+  const r = act({ type: 'play' });
+  flush();
+  const total = ((r && r.events) || []).find((e) => e.type === 'hand_total') || {};
+  return { total, mult: Number(total.mult) };
+}
+const plainSuit = (s) => (c) => key(c) === 'c_base' && c.base.suit === s;
+/** The full deck's suits (Wild every suit, Stone none), as the Swords read it. */
+const suitCount = () => { const n = { Spades: 0, Hearts: 0, Clubs: 0, Diamonds: 0 }; for (const c of G.playing_cards) for (const s in n) if (c.is_suit(s, true)) n[s]++; return n; };
+/** Every played / discarded card back to the deck (the hand emptied), so the next playDeck can take any card. */
+const regather = () => { clearHand(); for (const c of G.discard.cards.slice()) { G.discard.remove_card(c); G.deck.emplace(c); } };
 await sec('swords', () => {
+  // contentRev 60: a plain 52-card deck ties all four suits, and a tie doesn't count: every sword X1.25
   start('LSSWD');
-  const co = add('j_poke_cobalion');
-  let t = play(['S_5']);
-  ok(near(t.mult, 1.5), 'Cobalion alone, a standard deck (all four suits tie, ties count): a Spade X1.5', t.total);
-  allSuit('Hearts');
-  t = play(['S_5']);
-  ok(near(t.mult, 1.25) && /Spades 1, top \d+; now X1\.25/.test(plain(co)), 'a Heart deck: Spades trail, X1.25', [t.total, plain(co)]);
-  allSuit('Spades');
-  t = play(['S_5', 'S_5']);
-  ok(near(t.mult, 2 * 1.5 * 1.5), 'a Spade deck: each Spade X1.5 (a Pair: X1.5 twice)', t.total);
+  const co = add('j_poke_cobalion'), te0 = add('j_poke_terrakion'), vi = add('j_poke_virizion'), ke = add('j_poke_keldeo');
+  ok(G.playing_cards.length === 52 && JSON.stringify(suitCount()) === '{"Spades":13,"Hearts":13,"Clubs":13,"Diamonds":13}', 'a plain 52-card deck: 13 of each suit', suitCount());
+  let t = playDeck(plainSuit('Spades'));
+  COUNTS.swordPlain = t.mult;
+  ok(G.playing_cards.length === 52 && near(t.mult, 1.25), "a plain 52-card deck (all four suits tie; a tie doesn't count): a Spade X1.25 for Cobalion", t.total);
+  ok([co, te0, vi, ke].every((j) => /; now X1\.25 ?\)/.test(plain(j)) && /13, tied for top/.test(plain(j))), 'every sword: "<suit> 13, tied for top; now X1.25"', [co, te0, vi, ke].map(plain));
+  // on the rules of a move recorded on r59, the same tie counted: X1.5
+  regather();
+  t = r59Rules(() => playDeck(plainSuit('Spades')));
+  ok(near(t.mult, 1.5), 'r59 rules (a move recorded before r60): the tie counted, X1.5', t.total);
+  regather();
+  t = playDeck(plainSuit('Spades'));
+  ok(near(t.mult, 1.25) && PINS.RULES.pins === null, 'live again: X1.25', t.total);
+  // one extra Spade: Spades 14 lead strictly; Cobalion X1.5, the others still X1.25
+  regather();
+  const extra = hand(['S_5'])[0]; G.hand.remove_card(extra); G.deck.emplace(extra);
+  ok(G.playing_cards.length === 53 && suitCount().Spades === 14, 'one extra Spade: 53 cards, Spades 14', suitCount());
+  t = playDeck(plainSuit('Spades'));
+  ok(near(t.mult, 1.5) && /Spades 14, top 14; now X1\.5 ?\)/.test(plain(co)), 'one extra Spade: Spades lead strictly, Cobalion X1.5', [t.total, plain(co)]);
+  regather();
+  t = playDeck(plainSuit('Diamonds'));
+  ok(near(t.mult, 1.25) && /13, top 14; now X1\.25 ?\)/.test(plain(te0)), '... a Diamond still X1.25 (Terrakion trails)', [t.total, plain(te0)]);
+  // a tie of two suits for the most: neither leads
+  start('LSSWD3');
+  const co3 = add('j_poke_cobalion'); add('j_poke_keldeo');
+  const pc3 = G.playing_cards.slice().sort((x, y) => x.sort_id - y.sort_id);
+  pc3.forEach((c, i) => c.change_suit(i < 20 ? 'Spades' : i < 40 ? 'Hearts' : i < 46 ? 'Clubs' : 'Diamonds'));
+  ok(JSON.stringify(suitCount()) === '{"Spades":20,"Hearts":20,"Clubs":6,"Diamonds":6}', 'Spades 20 / Hearts 20 / Clubs 6 / Diamonds 6', suitCount());
+  t = playDeck(plainSuit('Spades'));
+  ok(near(t.mult, 1.25) && /Spades 20, tied for top; now X1\.25 ?\)/.test(plain(co3)), 'Spades and Hearts tie for the most: Cobalion X1.25', [t.total, plain(co3)]);
+  regather();
+  t = playDeck(plainSuit('Hearts'));
+  ok(near(t.mult, 1.25), '... and Keldeo X1.25', t.total);
+  regather();
+  G.deck.cards.find(plainSuit('Hearts')).change_suit('Clubs');               // Hearts 19: Spades lead alone
+  t = playDeck(plainSuit('Spades'));
+  ok(near(t.mult, 1.5) && /Spades 20, top 20; now X1\.5 ?\)/.test(plain(co3)), 'one Heart fewer (Spades 20, Hearts 19): Cobalion X1.5', [t.total, plain(co3)]);
+  regather();
+  t = playDeck(plainSuit('Hearts'));
+  ok(near(t.mult, 1.25), '... Keldeo X1.25', t.total);
   // Wild cards count for every suit; Stone for none
   start('LSSWD2');
   const te = add('j_poke_terrakion');
   allSuit('Spades');
-  const pcs = G.playing_cards.slice().sort((a, b) => a.sort_id - b.sort_id);
+  const pcs = G.playing_cards.slice().sort((x, y) => x.sort_id - y.sort_id);
   for (const c of pcs.slice(0, 30)) c.set_ability(P_CENTERS.m_wild, null, true);   // 30 Wild = 30 of every suit; 22 plain Spades
   for (const c of pcs.slice(30)) c.set_ability(P_CENTERS.m_stone, null, true);     // the rest Stone: no suit
+  ok(JSON.stringify(suitCount()) === '{"Spades":30,"Hearts":30,"Clubs":30,"Diamonds":30}', '30 Wild + 22 Stone: 30 of every suit', suitCount());
+  t = playDeck((c) => key(c) === 'm_wild');
+  ok(near(t.mult, 1.25), 'Wild cards count for every suit, Stone for none: all four tie at 30, a played Wild (a Diamond) X1.25', t.total);
+  regather();
+  pcs[30].set_ability(P_CENTERS.c_base, null, true); pcs[30].change_suit('Diamonds');   // one Stone back as a Diamond: Diamonds 31
+  t = playDeck((c) => key(c) === 'm_wild');
+  ok(near(t.mult, 1.5), 'one Stone becomes a Diamond (Diamonds 31, the rest 30): the Wild X1.5 for Terrakion', t.total);
+  regather();
   t = play(['D_5']);
-  ok(near(t.mult, 1.5), 'Wild cards count for every suit, Stone for none: Diamonds tie for the most (30), X1.5', t.total);
-  for (const c of pcs.slice(30)) c.set_ability(P_CENTERS.c_base, null, true);     // 22 plain Spades back: Spades 52
+  ok(near(t.mult, 1.5), 'a new Diamond played (Diamonds 32): X1.5', t.total);
+  for (const c of pcs.slice(31)) c.set_ability(P_CENTERS.c_base, null, true);     // 21 plain Spades back: Spades 51
   t = play(['D_5']);
-  ok(near(t.mult, 1.25), 'Spades 52 vs Diamonds 30: X1.25', t.total);
+  ok(near(t.mult, 1.25), 'Spades 51 vs Diamonds 33: X1.25', t.total);
   for (let i = 0; i < 3; i++) increment_energy(te, 'Earth');
   allSuit('Diamonds');
   t = play(['D_5']);
   ok(near(ex(te).Xmult_multi, 1.4375) && near(t.mult, 1.725), 'Energy x3: X1.4375 base, Justice X1.725 (1.5 +5% a step)', [ex(te).Xmult_multi, t.total]);
-  ok(/Swords of Justice: X1\.725 \| instead while Diamonds are the \| most common suit in your \| full deck \(ties count\)/.test(plain(te)), 'text', plain(te));
+  ok(/Swords of Justice: X1\.725 \| instead while Diamonds are the \| most common suit in your \| full deck \(a tie doesn't count\)/.test(plain(te)), "text: \"(a tie doesn't count)\"", plain(te));
+  ok(!/ties count/.test(plain(te)), 'the old "(ties count)" is gone', plain(te));
 });
 
 // ------------------------------------------------------------------- Keldeo alone: Resolute after 25 Hearts
@@ -338,7 +402,7 @@ await sec('keldeo', () => {
   start('LSKEL2');
   add('j_blueprint'); const k2 = add('j_poke_keldeo');   // (Blueprint copies the joker to its right)
   const tb = play(['H_4', 'H_4']);
-  ok(near(tb.mult, 2 * Math.pow(1.5, 4)), 'Blueprint copies the X (a Pair of Hearts, Hearts tie the deck: X1.5 four times)', tb.total);
+  ok(near(tb.mult, 2 * Math.pow(1.5, 4)), 'Blueprint copies the X (a Pair of Hearts, the 2 new Hearts lead the deck: X1.5 four times)', tb.total);
   ok(ex(k2).hearts === 2, 'Blueprint copies the X but never counts Hearts (2, not 4)', ex(k2).hearts);
 });
 
@@ -470,9 +534,9 @@ await sec('r58 recipe', () => {
   ok(!st.error && st.index === FIX.actions.length, 'every r58 move re-plays', st.error);
   ok(Object.keys(WANT).every((k) => near(Number(got[k]), WANT[k])), 'the r58 run re-plays EXACTLY as recorded (the partner rules: Soul Dew, Origin with Dialga, the Regi count, no Delta Stream)', [got, WANT]);
   const s = Session.fromRecipe(JSON.parse(JSON.stringify(FIX)), { repin: true }); flush();
-  ok(!s.stoppedAt && near(ex(J('latias')).eon_Xmult, 1.3) && near(ex(J('giratina')).shadow_Xmult, 2) && s.recipe.modVersions.pokermon === '3.9.1+r59', 'resumed with "Continue anyway": the banked X kept (Latias X1.3, Giratina X2), re-pinned to r59', [ex(J('latias')).eon_Xmult, s.recipe.modVersions]);
+  ok(!s.stoppedAt && near(ex(J('latias')).eon_Xmult, 1.3) && near(ex(J('giratina')).shadow_Xmult, 2) && s.recipe.modVersions.pokermon === PINS.modPin('pokermon'), 'resumed with "Continue anyway": the banked X kept (Latias X1.3, Giratina X2), re-pinned to the current pin', [ex(J('latias')).eon_Xmult, s.recipe.modVersions]);
   ok(ex(J('giratina')).destroyed === 2 && ex(J('rayquaza')).delta_on !== true, '... Giratina\'s count came along (2), Rayquaza gives nothing yet', [ex(J('giratina')).destroyed, ex(J('rayquaza')).delta_on]);
-  ok(PINS.RULES.pins === null && PINS.rulesRev('pokermon') === 59, 'live play is back on the r59 rules', PINS.RULES.pins);
+  ok(PINS.RULES.pins === null && PINS.rulesRev('pokermon') === MODS.pokermon.contentRev, 'live play is back on the current rules', PINS.RULES.pins);
   // the same moves recorded on r59 play the solo rules: what the gate prevents
   const asNew = { ...JSON.parse(JSON.stringify(FIX)), modVersions: { ...FIX.modVersions, pokermon: '3.9.1+r59' } };
   const st2 = Session.stepper(asNew);
@@ -482,6 +546,32 @@ await sec('r58 recipe', () => {
   COUNTS.asR59 = neu;
   ok(!st2.error && neu.hands === 5 && neu.discards === 4 && near(neu.latias, 1.225) && near(neu.latios, 1.225) && near(neu.giratina, 1.5) && neu.stone === 1 && neu.glass === 1 && neu.total !== WANT.total,
     'the same moves on r59: Delta Stream (5 hands / 4 discards), Soul Dew halves (X1.225), Altered Giratina (X1.5), 1 Stone + 1 Glass, another score', neu);
+});
+
+// ------------------------------------------------------------------- an r59 run re-plays with the Swords' ties counting
+await sec('r59 recipe', () => {
+  const FIX = JSON.parse(readFileSync(new URL('../fixtures/pokermon_swordtie_r59_recipe.json', import.meta.url), 'utf8'));
+  ok(FIX.modVersions.pokermon === '3.9.1+r59' && FIX.customDeck.jokers.length === 4, 'the fixture: recorded on 3.9.1+r59 (main before r60), the four Swords on a plain deck', FIX.modVersions);
+  // what r59 recorded (on main: Two Pair, 62 x 10.125 = 627; every scored card X1.5, the four suits tied at 13 and the tie counted)
+  const WANT = { chips: 62, mult: 10.125, total: 627 };
+  const run = (recipe) => {
+    const st = Session.stepper(recipe);
+    let tot = null;
+    while (!st.done) { const r = st.step(); const h = r && (r.events || []).find((e) => e.type === 'hand_total'); if (h) tot = h; }
+    return { err: st.error, index: st.index, chips: tot && Number(tot.chips), mult: tot && Number(tot.mult), total: tot && Number(tot.total), suits: suitCount() };
+  };
+  const got = run(JSON.parse(JSON.stringify(FIX)));
+  COUNTS.r59 = got;
+  ok(!got.err && got.index === FIX.actions.length && JSON.stringify(got.suits) === '{"Spades":13,"Hearts":13,"Clubs":13,"Diamonds":13}', 'every r59 move re-plays (a plain deck, 13 of each)', got);
+  ok(near(got.mult, WANT.mult) && got.chips === WANT.chips && got.total === WANT.total, 'the r59 run re-plays EXACTLY as recorded: ties counted, X1.5 a card (Mult 10.125, 627)', [got, WANT]);
+  const s = Session.fromRecipe(JSON.parse(JSON.stringify(FIX)), { repin: true }); flush();
+  ok(!s.stoppedAt && s.recipe.modVersions.pokermon === PINS.modPin('pokermon') && s.recipe.repinned && s.recipe.repinned[0].from.pokermon === '3.9.1+r59',
+    'resumed with "Continue anyway": every move kept, re-pinned to r60', [s.stoppedAt, s.recipe.modVersions, s.recipe.repinned]);
+  ok(PINS.RULES.pins === null && /tied for top; now X1\.25 ?\)/.test(plain(G.jokers.cards[0])), 'live play after the resume is on r60: the tie no longer counts (X1.25)', plain(G.jokers.cards[0]));
+  // the same moves recorded on r60: what the gate prevents
+  const neu = run({ ...JSON.parse(JSON.stringify(FIX)), modVersions: { ...FIX.modVersions, pokermon: '3.9.1+r60' } });
+  COUNTS.asR60 = neu;
+  ok(!neu.err && near(neu.mult, 2 * Math.pow(1.25, 4)) && neu.total !== WANT.total, 'the same moves on r60: X1.25 a card (Mult 4.8828125), another score', neu);
 });
 
 console.log('counts:', JSON.stringify(COUNTS));

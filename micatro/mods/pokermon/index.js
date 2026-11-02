@@ -980,7 +980,10 @@ export const POKERMON = registerMod({
   // Regigigas wakes sooner with Stone / Glass / Steel cards and converts one a Blind; Giratina's Origin after 10 destroyed; the Swords X1.5
   // while their suit leads the deck; Keldeo's Resolute after 25 Hearts; Therian after 4 rounds; Fusion Flare / Bolt; Kyurem's forms by
   // Fire vs Lightning Jokers. Moves recorded before r59 re-play on the partner rules (PORTING.md "The legendary solo rule").
-  contentRev: 59,
+  // 60 = the owner's Swords of Justice follow-up (jokers/pokejokers_designs.js suit_leads / strict60): X1.5 only while the sword's suit is
+  // STRICTLY the most common in the full deck, a tie doesn't count (a standard deck: every sword X1.25). Moves recorded on r59 re-play
+  // with ties counting (PORTING.md "The Swords of Justice tie rule").
+  contentRev: 60,
   // Pokermon 3.9.1 pokermon.lua: SMODS.current_mod.optional_features = {quantum_enhancements = true, object_weights = true}.
   // object_weights sends create_card's key, the shop roll, tags, packs, bosses and vouchers through SMODS.poll_object
   // (js/engine/smods.js; batch 17). quantum_enhancements is the engine's check_enhancement, always on.
