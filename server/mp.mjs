@@ -760,6 +760,7 @@ const RATE_LIMITS = {
 	'micatro-stickers-get': [30, 60_000], 'micatro-stickers-put': [30, 60_000],
 	// the Nuzlocke / Monotype record + achievements: read at boot / sign-in, written after a win (merged, never backwards)
 	'micatro-progress-get': [30, 60_000], 'micatro-progress-put': [20, 60_000],
+	'micatro-refused': [10, 60_000], // the refused-actions log: the client sends at most every 30 s (+ on page hide)
 	'micatro-replay-put': [20, 60_000], // a finished run's replay — one (or two: win, then Endless) per run
 	// completed challenges: a load per boot + a push per completed challenge (merged, never backwards)
 	'micatro-challenges-get': [30, 60_000], 'micatro-challenges-put': [20, 60_000],
@@ -805,6 +806,27 @@ const JOKER_DESIGN_MAX = { ability: 2000, notes: 2000, name: 60, rarity: 40, ent
 const BUG_TEXT_MAX = 60_000;        // a bug report: up to ~60KB of markdown (testers write long ones)
 const BUG_OPEN_MAX = 60;            // per reporter, open (un-reviewed) reports
 const REPAIR_MAX_BYTES = 600_000;   // one queued save repair (a full save export)
+// Micatro's refused-actions log (micatro-refused): entries per send, per day row (the last ones kept), and the row's size
+const MICATRO_REFUSED = { batch: 50, entries: 200, bytes: 80_000 };
+// One refused-action entry, rebuilt from its known fields (anything else is dropped), each clipped: null = unusable.
+function refusedEntry(e, now) {
+	if (!e || typeof e !== 'object' || Array.isArray(e)) return null;
+	const word = (v, n) => (v == null ? undefined : (String(v).replace(/[^A-Za-z0-9_:.+@,\- ]/g, '').slice(0, n) || undefined));
+	const int = (v, lo, hi) => { const x = Number(v); return v == null || v === '' || !Number.isFinite(x) ? undefined : Math.max(lo, Math.min(hi, Math.round(x))); };
+	const action = word(e.action, 40);
+	const reason = e.reason == null ? '' : String(e.reason).replace(/[\u0000-\u001f\u007f]/g, ' ').slice(0, 120);
+	if (!action || !reason) return null;
+	const out = {
+		ts: int(e.ts, now - 86_400_000, now + 60_000) ?? now, at: now, action, reason,
+		runId: word(e.runId, 64), state: word(e.state, 32), stateId: int(e.stateId, -1, 999),
+		ante: int(e.ante, -1000, 1e9), round: int(e.round, -1000, 1e9), dollars: int(e.dollars, -1e12, 1e12),
+		id: int(e.id, -1, 1e9), card: word(e.card, 64), area: word(e.area, 32),
+		hl: int(e.hl, 0, 999), targets: int(e.targets, 0, 999), max: int(e.max, -1, 999), min: int(e.min, -1, 999), modNum: int(e.modNum, -1, 999),
+		use: e.use === true ? true : undefined, n: int(e.n, 1, 10_000), ver: word(e.ver, 200),
+	};
+	for (const k of Object.keys(out)) if (out[k] === undefined) delete out[k];
+	return out;
+}
 
 // ---------- lazy GC of ephemeral keys ----------
 // D1 has no TTL, so these per-match / per-session rows would grow forever. A lazy
@@ -824,6 +846,7 @@ const GC_TABLE = [
 	['cardmatch:', 12 * HR], ['chat:', 12 * HR], ['presence:', 24 * HR],
 	['replay:', 30 * 24 * HR], // shared replay tapes expire a month after upload (the owner keeps a local copy)
 	['rplaylist:', 30 * 24 * HR], // a run's "super replay" playlist — same life as the tapes it points at
+	['refused:', 30 * 24 * HR], // Micatro's refused-actions log (refused:<user>:<YYYYMMDD>) — a testing aid, a month
 	['mreplay:', 30 * 24 * HR], // a Micatro run replay (a whole run's recipe) — a month, like the tapes
 	['amatch:', 30 * 24 * HR], // an async match untouched for a month is abandoned
 	['amlist:', 60 * 24 * HR], // per-user async index; self-heals against missing matches on read
@@ -2979,6 +3002,33 @@ export default async function handler(req, env) {
 			if (JSON.stringify(merged) === JSON.stringify(prev) && row) return json({ ok: true, progress: merged, wrote: false });
 			const rev = ((row && row.rev) || 0);
 			if (await store.setIfRev(key, { rev: rev + 1, progress: merged, updated_at: Date.now() }, rev)) return json({ ok: true, progress: merged, wrote: true });
+		}
+		return json({ error: 'busy, retry' }, 409);
+	}
+
+	// MICATRO refused actions (a testing aid; client: micatro/js/refusedlog.js, sent by net.js sendRefused): the actions the
+	// engine REFUSED (the recipe only keeps the ones that worked), so a tester's "it wouldn't let me" can be checked. Appended
+	// to the player's own row refused:<username>:<YYYYMMDD> (UTC; the username from the verified token, never the body) as
+	// {v, entries: [...]}, the last MICATRO_REFUSED.entries kept and the row under MICATRO_REFUSED.bytes. Each entry is
+	// rebuilt from a whitelist of fields, clipped (no free-form blobs; nothing secret is ever sent). Every write is guarded
+	// on the row's length (setIfLength), so two tabs appending never clobber each other. Swept after 30 days (GC_TABLE).
+	// Read-only monitoring: SELECT key, value FROM mp_store WHERE key LIKE 'refused:<user>:%' (CLAUDE.md).
+	if (action === 'micatro-refused') {
+		const inc = body.entries;
+		if (!Array.isArray(inc) || !inc.length) return json({ error: 'entries must be a non-empty list' }, 400);
+		if (inc.length > MICATRO_REFUSED.batch) return json({ error: `at most ${MICATRO_REFUSED.batch} entries`, max: MICATRO_REFUSED.batch }, 413);
+		const now = Date.now();
+		const entries = inc.map((e) => refusedEntry(e, now)).filter(Boolean);
+		if (!entries.length) return json({ error: 'no valid entries' }, 400);
+		const d = new Date(now).toISOString().slice(0, 10).replace(/-/g, '');
+		const key = 'refused:' + username + ':' + d;
+		for (let attempt = 0; attempt < 8; attempt++) {
+			if (attempt) await new Promise(r => setTimeout(r, Math.random() * 10 * attempt));
+			const cur = await store.getWithLength(key);
+			const had = cur.value && Array.isArray(cur.value.entries) ? cur.value.entries : [];
+			let list = [...had, ...entries].slice(-MICATRO_REFUSED.entries);
+			while (list.length > 1 && JSON.stringify(list).length > MICATRO_REFUSED.bytes) list = list.slice(Math.ceil(list.length / 10));
+			if (await store.setIfLength(key, { v: 1, entries: list }, cur.n)) return json({ ok: true, count: list.length });
 		}
 		return json({ error: 'busy, retry' }, 409);
 	}

@@ -14,6 +14,7 @@ import * as UI from './screens.js';
 import { initPad } from './pad.js';
 import { first as modFirst } from './modui.js';
 import { installZoomGuard } from './zoomguard.js';
+import { describeRefusal, createRefusedLog, rulesOf } from '../refusedlog.js';
 
 const params = new URLSearchParams(location.search);
 const SPECTATE = (params.get('spectate') || '').trim();
@@ -138,10 +139,10 @@ function getPreview(view) {
 // ------------------------------------------------------------------ actions
 function onAction(a) {
   if (MODE !== 'normal' || !session) return { ok: false, error: 'read only' };
-  if (!player.idle() && a.type !== 'highlight') return { ok: false, error: 'busy' };
+  if (!player.idle() && a.type !== 'highlight') return noteRefused(a, { ok: false, error: 'busy' });
   let r;
-  try { r = session.act(a); } catch (e) { console.error('micatro: engine error on', a, e); board.toast('Engine error — see console'); return { ok: false, error: 'engine error' }; }
-  if (!r.ok) return r;
+  try { r = session.act(a); } catch (e) { console.error('micatro: engine error on', a, e); board.toast('Engine error — see console'); noteRefused(a, { ok: false, error: 'engine error: ' + ((e && e.message) || e) }); return { ok: false, error: 'engine error' }; }
+  if (!r.ok) return noteRefused(a, r);
   const view = viewOf();
   record(r.events);
   currentView = view;
@@ -151,6 +152,22 @@ function onAction(a) {
   afterAct(view, r.events);
   return r;
 }
+// Refused actions (micatro/js/refusedlog.js): quietly logged on the account for testing (refused:<user>:<YYYYMMDD>).
+// Reads the engine only — no RNG, no state, no recipe entry; nothing shown; every failure swallowed. Signed out: off.
+let refusedLog = null;
+function noteRefused(a, r) {
+  try {
+    if (!refusedLog && net && net.sendRefused) {
+      let storage = null; try { storage = window.localStorage; } catch (e) {}
+      refusedLog = createRefusedLog({ send: (entries, o) => net.sendRefused(entries, o), enabled: loggedIn, storage });
+    }
+    if (refusedLog && loggedIn()) refusedLog.record(describeRefusal(a, r, Engine && Engine.G, { runId: runIdOf(), view: currentView, ver: rulesOf(session && session.recipe) }));
+  } catch (e) { /* never into the game */ }
+  return r;
+}
+function flushRefused() { try { if (refusedLog) refusedLog.flush({ keepalive: true }).catch(() => {}); } catch (e) {} }
+addEventListener('pagehide', flushRefused);
+addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flushRefused(); });
 function record(events) {
   for (const e of events || []) { allEvents.push(e); pendingPublish.push(e); }
   if (allEvents.length > EVENT_LOG_CAP) allEvents.splice(0, allEvents.length - EVENT_LOG_CAP);
