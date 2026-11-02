@@ -41,6 +41,8 @@ G.I18n.add({
   'Expedición': 'Expedition',
   'Expedición · Clásico': 'Expedition · Classic', 'Expedición · Supervivencia': 'Expedition · Survival', 'Expedición · Liga': 'Expedition · League',
   'Próximamente': 'Coming soon',
+  'Expedición · Inmersión': 'Expedition · Dive',   // (Dive V0)
+  'Baja piso a piso por 8 rutas: rescata a un Pokémon perdido en cada piso, vence al alfa cada 5 para asegurar el botín y al guardián legendario cada 25. Sal con la Cuerda Huida o arriésgalo todo.': 'Dive floor by floor down 8 routes: rescue a lost Pokémon on every floor, beat the alpha every 5 to secure your loot and the legendary guardian every 25. Leave with the Escape Rope or risk it all.',
   'Expedición · modos nuevos (próximamente)': 'Expedition · new modes (coming soon)',
   'Mapas con alturas, guardianes y un portal final. Marcas por mapa y dificultad.': 'Maps with heights, guardians and a final portal. Records per map and difficulty.',
   'Bosque Verde: 3 zonas con alturas, un guardián en cada altar, el portal y el santuario de Mew. Gana el mapa.': "Viridian Forest: 3 zones with heights, a guardian at each altar, the portal and Mew's shrine. Win the map.",
@@ -66,14 +68,16 @@ G.I18n.add({
 
 G.Expedition = (() => {
   const DV = 20;   // (DLC D3: Classic is playable; D4: the League, kits, evolution, Maturity, stats from base stats: 3; D5: level-ups and items: 4; D6: Ultimates: 5; D7: economy and interactables: 6; D8: alphas, capture and shinies: 7; D9: tiers, score and boards: 8; D10: the League meta (Lab, unlocks, boosts, shiny perks change a run): 9; D11: Survival, Expedition co-op (a guest's run is an Expedition one): 10; D12: maps 2-3, Mt. Moon and Cerulean Cape: 11; D13: the whole League (245 members: 167 new kits, evolutions and challenges): 12; D14: Mega Evolution: 13; D15: the slot machine, Survival's respawns: 14; D16: every move fires (4 slots, the swap cards, the Lab's move slot retired), the new boards: 15; D17: one held item (a boss drops a base held item): 16; D18: shared per-family upgrades (the TM / Repertoire in the kit, the Lab's 9 stat rows retired): 17; D19: the full League (553 families, every species; 27 free starter trios, base-owned families, 5 wild members a run): 18; D20: every Pokémon an enemy (wanderers, rarity-5 elites, roaming legendaries): 19; the Survival curve (Survival levels on its own, slower XP curve): 20. Older dv replays / snapshots still play, replayOk)
-  const MODES = ['exp-classic', 'exp-survival', 'exp-league'];
-  const NAME = { 'exp-classic': 'Expedición · Clásico', 'exp-survival': 'Expedición · Supervivencia', 'exp-league': 'Expedición · Liga' };
+  // (Dive V0, 2026-11-02: 'exp-dive', PokéDive's floor-by-floor dungeon, Plans/MICASURVIVOR_DIVE_MODE_PLAN.md; "Coming soon" until V2)
+  const MODES = ['exp-classic', 'exp-survival', 'exp-league', 'exp-dive'];
+  const NAME = { 'exp-classic': 'Expedición · Clásico', 'exp-survival': 'Expedición · Supervivencia', 'exp-league': 'Expedición · Liga', 'exp-dive': 'Expedición · Inmersión' };
   const DESC = {
     'exp-classic': 'Bosque Verde, Monte Moon y Cabo Celeste: 3 zonas con alturas, un guardián en cada altar, el portal y el santuario. Gana un mapa y se abre el siguiente.',   // (DLC D12: the 3 maps)
     'exp-survival': 'Hitos cada 5 min, fases, pactos, asedio, noche sin fin a los 45 min y Mewtwo. Hasta donde aguantes.',
-    'exp-league': 'Tu Liga: 553 miembros con su kit, evoluciones, definitivo y reto; el laboratorio, las tareas, los logros y la clasificación de la Liga.'   // (DLC D13)
+    'exp-league': 'Tu Liga: 553 miembros con su kit, evoluciones, definitivo y reto; el laboratorio, las tareas, los logros y la clasificación de la Liga.',   // (DLC D13)
+    'exp-dive': 'Baja piso a piso por 8 rutas: rescata a un Pokémon perdido en cada piso, vence al alfa cada 5 para asegurar el botín y al guardián legendario cada 25. Sal con la Cuerda Huida o arriésgalo todo.'   // (Dive V0)
   };
-  const ICON = { 'exp-classic': 'flag', 'exp-survival': 'clock', 'exp-league': 'ball' };
+  const ICON = { 'exp-classic': 'flag', 'exp-survival': 'clock', 'exp-league': 'ball', 'exp-dive': 'm_tower' };
   // the launch maps and difficulties (owner decisions #6 / #8); the boards are per map + difficulty (server/mp.mjs EXP_*)
   const MAPS = ['viridian', 'mtmoon', 'cerulean'];
   const DIFFS = ['normal', 'hard', 'nightmare'];
@@ -84,7 +88,7 @@ G.Expedition = (() => {
   const HUB = new Set(['exp-league']);
   const SCRIPTS = ['js/expedition/save.js', 'js/expedition/terrain.js', 'js/expedition/verbs.js', 'js/expedition/classic.js',
     'js/expedition/league-data.js', 'js/expedition/league.js', 'js/expedition/mega-data.js', 'js/expedition/mega.js', 'js/expedition/moves.js', 'js/expedition/items.js', 'js/expedition/levelups.js',
-    'js/expedition/ultimates.js', 'js/expedition/economy.js', 'js/expedition/reactions.js', 'js/expedition/capture.js', 'js/expedition/tiers.js', 'js/expedition/meta.js', 'js/expedition/survival.js', 'js/expedition/core.js'];   // (D1: terrain.js; D2: verbs.js; D3: classic.js; D4: league-data.js, league.js; D5: moves.js, items.js, levelups.js; D6: ultimates.js; D7: economy.js; D8: reactions.js, capture.js; D9: tiers.js; D10: meta.js; D11: survival.js; D14: mega-data.js, mega.js)
+    'js/expedition/ultimates.js', 'js/expedition/economy.js', 'js/expedition/reactions.js', 'js/expedition/capture.js', 'js/expedition/tiers.js', 'js/expedition/meta.js', 'js/expedition/survival.js', 'js/expedition/dive-gen.js', 'js/expedition/core.js'];   // (D1: terrain.js; D2: verbs.js; D3: classic.js; D4: league-data.js, league.js; D5: moves.js, items.js, levelups.js; D6: ultimates.js; D7: economy.js; D8: reactions.js, capture.js; D9: tiers.js; D10: meta.js; D11: survival.js; D14: mega-data.js, mega.js; Dive V1: dive-gen.js)
 
   const isExp = m => typeof m === 'string' && MODES.includes(m);
   const enabled = m => isExp(m) && ENABLED.has(m);

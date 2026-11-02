@@ -150,7 +150,7 @@ G.Spectate = (() => {
 
   // (the label is shown on the site's friends lists, which are in English)
   const MODE_EN = { daily: 'Daily Challenge', rush: 'Boss Rush', party: 'Party Mode', coop: 'Co-op Mode', tower: 'Floor Tower', rifts: 'Rift Time Attack', type: 'Survival by Type', team: 'Team Mode',
-    'exp-classic': 'Expedition · Classic', 'exp-survival': 'Expedition · Survival', 'exp-league': 'Expedition · League' };   // (DLC D0b)
+    'exp-classic': 'Expedition · Classic', 'exp-survival': 'Expedition · Survival', 'exp-league': 'Expedition · League', 'exp-dive': 'Expedition · Dive' };   // (DLC D0b)
   function labelNow() {
     const pl = G.Game.player;
     const mon = pl ? pl.mon.name : '';
