@@ -267,7 +267,7 @@ Sprigatito line ("The owner's Sprigatito line" below), `3.9.1+r21` for the owner
 for the owner's Type Sleeves, `3.9.1+r23` for the owner's Sprigatito rework ("The Sprigatito rework" below), `3.9.1+r24` for the owner's
 Gulpin line ("The owner's Gulpin line" below), `3.9.1+r25` for the owner's Trapinch line ("The owner's Trapinch line" below), `3.9.1+r26` for the owner's Spoink line ("The owner's Spoink
 line" below), `3.9.1+r27` for the owner's Castform ("The owner's Castform" below), `3.9.1+r28` for the owner's Barboach line ("The owner's
-Barboach line" below), `3.9.1+r29` for the owner's Lunatone + Solrock ("The owner's Lunatone + Solrock" below), `3.9.1+r30` for the owner's types following their card art ("Types from the card art" below), `3.9.1+r31` for the owner's Regi trio ("The owner's Regi trio" below), `3.9.1+r32` for the owner's Starly line ("The owner's Starly line" below), `3.9.1+r33` for the owner's Gen 3 Legendaries ("The owner's Gen 3 Legendaries" below), `3.9.1+r34` for the owner's Chatot + Pachirisu ("The owner's Chatot + Pachirisu" below), `3.9.1+r35` for the owner's Glameow line ("The owner's Glameow line" below), `3.9.1+r36` for the owner's Drifloon line ("The owner's Drifloon line" below), `3.9.1+r37` for the owner's Burmy line ("The owner's Burmy line" below), `3.9.1+r38` for the owner's Combee line ("The owner's Combee line" below), `3.9.1+r39` for the owner's Cherubi line ("The owner's Cherubi line" below), `3.9.1+r40` for the owner's Shellos line ("The owner's Shellos line" below), `3.9.1+r41` for the owner's Burmy three-pile cloak ruling ("The owner's Burmy line" below), `3.9.1+r42` for the owner's Stunky line ("The owner's Stunky line" below), `3.9.1+r43` for the owner's Gible line ("The owner's Gible line" below), `3.9.1+r44` for the owner's last Gen 4 regulars ("The owner's last Gen 4 regulars" below), `3.9.1+r45` for the owner's creation trio, Regigigas and Arceus ("The owner's creation trio, Regigigas and Arceus" below), `3.9.1+r46` for the owner's Lake trio, Cresselia, Manaphy and Phione ("The owner's Lake trio, Cresselia, Manaphy and Phione" below), `3.9.1+r47` for the owner's Regigigas trio wake ("The owner's creation trio, Regigigas and Arceus" below: the full trio wakes it after 1 round), `3.9.1+r48` for the Gen 7 starters ("The Gen 7 starters" below), `3.9.1+r49` for the Gen 8 starters, the Scorbunny and Sobble lines ("The Gen 8 starters" below), `3.9.1+r50` for the Gen 5 starters ("The Gen 5 starters" below), `3.9.1+r51` for the owner's Gen 9 starters ("The owner's Gen 9 starters" below), **`3.9.1+r52` for the Gen 6 starters ("The Gen 6 starters" below), `3.9.1+r53` for Gen 5 batch 1 ("Gen 5, batch 1" below), `3.9.1+r54` for Gen 5 batch 2 ("Gen 5, batch 2" below), `3.9.1+r55` for Gen 5 batch 4, the Gen 5 Legendaries ("Gen 5, batch 4" below), **`3.9.1+r56`** since Gen 5 batch 3 ("Gen 5, batch 3" below)
+Barboach line" below), `3.9.1+r29` for the owner's Lunatone + Solrock ("The owner's Lunatone + Solrock" below), `3.9.1+r30` for the owner's types following their card art ("Types from the card art" below), `3.9.1+r31` for the owner's Regi trio ("The owner's Regi trio" below), `3.9.1+r32` for the owner's Starly line ("The owner's Starly line" below), `3.9.1+r33` for the owner's Gen 3 Legendaries ("The owner's Gen 3 Legendaries" below), `3.9.1+r34` for the owner's Chatot + Pachirisu ("The owner's Chatot + Pachirisu" below), `3.9.1+r35` for the owner's Glameow line ("The owner's Glameow line" below), `3.9.1+r36` for the owner's Drifloon line ("The owner's Drifloon line" below), `3.9.1+r37` for the owner's Burmy line ("The owner's Burmy line" below), `3.9.1+r38` for the owner's Combee line ("The owner's Combee line" below), `3.9.1+r39` for the owner's Cherubi line ("The owner's Cherubi line" below), `3.9.1+r40` for the owner's Shellos line ("The owner's Shellos line" below), `3.9.1+r41` for the owner's Burmy three-pile cloak ruling ("The owner's Burmy line" below), `3.9.1+r42` for the owner's Stunky line ("The owner's Stunky line" below), `3.9.1+r43` for the owner's Gible line ("The owner's Gible line" below), `3.9.1+r44` for the owner's last Gen 4 regulars ("The owner's last Gen 4 regulars" below), `3.9.1+r45` for the owner's creation trio, Regigigas and Arceus ("The owner's creation trio, Regigigas and Arceus" below), `3.9.1+r46` for the owner's Lake trio, Cresselia, Manaphy and Phione ("The owner's Lake trio, Cresselia, Manaphy and Phione" below), `3.9.1+r47` for the owner's Regigigas trio wake ("The owner's creation trio, Regigigas and Arceus" below: the full trio wakes it after 1 round), `3.9.1+r48` for the Gen 7 starters ("The Gen 7 starters" below), `3.9.1+r49` for the Gen 8 starters, the Scorbunny and Sobble lines ("The Gen 8 starters" below), `3.9.1+r50` for the Gen 5 starters ("The Gen 5 starters" below), `3.9.1+r51` for the owner's Gen 9 starters ("The owner's Gen 9 starters" below), **`3.9.1+r52` for the Gen 6 starters ("The Gen 6 starters" below), `3.9.1+r53` for Gen 5 batch 1 ("Gen 5, batch 1" below), `3.9.1+r54` for Gen 5 batch 2 ("Gen 5, batch 2" below), `3.9.1+r55` for Gen 5 batch 4, the Gen 5 Legendaries ("Gen 5, batch 4" below), `3.9.1+r56` for Gen 5 batch 3 ("Gen 5, batch 3" below), **`3.9.1+r57`** since the owner's Espeon rework ("The Espeon rework" below)
 (Plans/MICATRO_MODS_PLAN.md §9).
 
 | batch | what | status |
@@ -457,7 +457,7 @@ except the holds, and takes **all** its 3.9.1 static data.
     - Mew and the baby Tarots: `add_card`.
   - **07**
     - Politoed: retriggers the first scoring card of the suit, `retriggers` + 1 per Water joker.
-    - Espeon: +2 Foresight; X2.5 if the deck's top card is the round's suit.
+    - Espeon: +2 Foresight; X2.5 if the deck's top card is the round's suit (reworked by the owner in r57: "The Espeon rework").
     - Umbreon: a lone first discard is destroyed and levels the last played hand.
     - Slowking: resets to `Xmult_multi1`.
     - Steelix: a destroyed non-Stone card adds a Stone card; Stone cards are also Steel (quantum).
@@ -3217,6 +3217,30 @@ either: the fuzz is unchanged): **`keep_in_hand`** (run.js: a mod keeps held car
 - **Tests**: `micatro/tests/mods/pokermon_gen5_batch3_test.mjs`. Re-recorded: `modpin_test`, `pokermon_391_data_test`, `pokermon_new_jokers_test`
   (the pin, 222 defs), `pokermon_art_types_test`, `micatro_mod_version_pin`, `micatro_deckeditor_pages` (1040 jokers); `designwiki_pokermon_jokers_test`
   spot checks: Stunfisk was in none after batch 4's.
+
+### The Espeon rework (2026-11-01, branch `feat/pokermon-espeon-future-sight`)
+Pinned **`3.9.1+r57`** (`contentRev: 57`; `LEGACY_MOD_VERSIONS` untouched). The owner's Future Sight, "like The Idol but better", for Pokermon's
+own Espeon (196; Psychic, Stage 1, Safari $7 and the Sun Stone evolution from Eevee unchanged). `jokers/pokejokers_07.js` `espeon` carries its
+own `config` (the def's static fields replace data391's `config_all`) and `attributes` (+ rank, retrigger, foresight); the text is in
+`DESIGN_LOC` (pokejokers_designs.js), which replaces 3.9.1's.
+- **+2 Foresight** (kept).
+- **The round's card**: `reset_espeon_card` (systems/rules.js, unchanged: a random ranked + suited card of the deck each round, seeded
+  `espeon` .. ante; the Ace of Spades before one is picked). Matched as The Idol does: `get_id()` for the rank, `is_suit` for the suit (a
+  Wild card counts), a debuffed card never.
+- **Each scored card that is the round's card gives X2.5 Mult and retriggers once** (`repetition` and `individual` on `G.play`), so
+  X2.5 twice. Blueprint / Brainstorm copy both as usual (a copy adds one more retrigger and X2.5 on every scoring).
+- **Each Foreseen card that is the round's card gives X1.5** (the scry area, `context.individual` with `cardarea === G.scry_view`, Uxie's
+  moment). The retrigger is played cards only, so Espeon never repeats a Foreseen card's X; Mime retriggers `G.hand` only; a card the
+  round's card held in hand gets nothing.
+- **Energy**: the per-card X fields, +5% of base each: `Xmult_multi` 2.5 -> 2.625 / 2.75 / 2.875, `Xmult_multi2` 1.5 -> 1.575 / 1.65 / 1.725.
+  `retriggers` and `scry` are fixed. Nothing is banked, so nothing can be retroactive.
+- **Tooltip**: "King of Hearts" (rank + plural suit, The Idol's wording) in the suit's colour (`SUITS.<suit>`, as Bronzor).
+- **Old saves**: a run is its recipe, re-simulated on resume, so after the r56 -> r57 prompt the Espeon re-plays on the new rules. A pre-r57
+  `ability.extra` met directly (`{scry, Xmult}`) is normalised (`espeon_legacy`): both X fields from their base with the Energy it already
+  has (Colorless half), `retriggers` 1, `Xmult` dropped. Fixture: `micatro/tests/fixtures/pokermon_espeon_r56_recipe.json` (recorded on
+  origin/main 96545c1c).
+- **Tests**: `micatro/tests/mods/pokermon_espeon_idol_test.mjs` plays real hands; `pokejokers_07_test` re-pinned to the new ability;
+  re-recorded pins: `modpin_test`, `pokermon_391_data_test`, `pokermon_new_jokers_test`, `micatro_mod_version_pin`.
 
 ### Pending from the 3.9.1 joker rework (after batch 10b)
 Every existing joker is on 3.9.1: `rework_hold` (still on 3.2.1) is empty. What waits, by the batch it waits on (`rework_deferred` =
