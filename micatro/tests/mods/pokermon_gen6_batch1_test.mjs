@@ -472,7 +472,7 @@ await sec('meowstic', () => {
   ex(m).form = 'male'; delete ex(m).Xmult; delete ex(m).Xmult_mod;
   let t = play(['S_A']);
   ok(near(t.mult, 1), 'Male: no X', t.total);
-  ok(/Prankster/.test(plain(m)) && /Male/.test(plain(m)), 'Male\'s text: Prankster', plain(m));
+  ok(/Prankster/.test(plain(m)) && /♂/.test(plain(m)), 'Male\'s text: Prankster', plain(m));
   endRound();
   ok(tarots() === 1, 'Male, Prankster: a Tarot at end of round', tarots());
   advance(); endRound(); advance();
@@ -492,7 +492,7 @@ await sec('meowstic', () => {
   add('c_fool'); add('c_magician'); add('c_pluto');
   t = play(['S_A']);
   ok(near(t.mult, 2), 'two Tarots held (a Planet doesn\'t count): X2', t.total);
-  ok(/Currently 2: X2 Mult/.test(plain(fm)) && /Female/.test(plain(fm)), 'the tooltip counts them', plain(fm));
+  ok(/Currently 2: X2 Mult/.test(plain(fm)) && /♀/.test(plain(fm)), 'the tooltip counts them', plain(fm));
   endRound();
   ok(tarots() === 2, 'Female makes no Tarot', tarots());
   // Energy: carried from Espurr to a Female; a Male can't take it

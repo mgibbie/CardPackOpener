@@ -7146,11 +7146,11 @@ export const DESIGN_LOC = {
     ] },
     j_poke_espurr: { name: 'Espurr', text: ['{C:purple}+#1# Foresight', '{C:inactive,s:0.8}(Energy carries to Meowstic)', EVOLVES_ROUNDS(2)] },
     j_poke_meowstic: { name: 'Meowstic', text: [
-      '{C:attention}Prankster:{} at end of round,', 'create a random {C:tarot}Tarot{} card', '{C:inactive}(Must have room)', '{C:inactive}(Male ♂: its gender is rolled', '{C:inactive}when it evolves)',
+      '{C:attention}Prankster:{} at end of round,', 'create a random {C:tarot}Tarot{} card', '{C:inactive}(Must have room)', '{C:inactive}(♂: its gender is rolled', '{C:inactive}when it evolves)',
     ] },
     j_poke_meowstic_female: { name: 'Meowstic', text: [
       '{X:mult,C:white} X#1# {} Mult, plus {X:mult,C:white} X#2# {}', 'for each {C:tarot}Tarot{} card', 'you hold', '{C:inactive}(Currently {C:attention}#3#{C:inactive}: {X:mult,C:white} X#4# {C:inactive} Mult)',
-      '{C:inactive}(Female ♀: its gender is', '{C:inactive}rolled when it evolves)',
+      '{C:inactive}(♀: its gender is rolled', '{C:inactive}when it evolves)',
     ] },
     // The owner's rework of an upstream joker (Espeon 196, Future Sight, contentRev 57; jokers/pokejokers_07.js): its text replaces 3.9.1's.
     j_poke_espeon: { name: 'Espeon', text: [
