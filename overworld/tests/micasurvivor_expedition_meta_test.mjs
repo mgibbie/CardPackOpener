@@ -276,6 +276,7 @@ const BEFORE = (o) => {
 	H.thaw = () => { if (!H.frozen) return; H.frozen = false; const cb = H.pending; H.pending = null; if (cb) realRaf(cb); };
 	try {
 		localStorage.setItem('micasurvivor_dev', 'dmeta10');
+		localStorage.setItem('micasurvivor_unlocks_off', '1');   // (the shared unlock list off: this suite pins the League roster / base save from before it; micasurvivor_unlocks_test tests it)
 		if (!sessionStorage.getItem('seeded')) {
 			sessionStorage.setItem('seeded', '1');
 			if (o.user) {
@@ -285,6 +286,7 @@ const BEFORE = (o) => {
 				localStorage.setItem('micasurvivor_migrated.guest', JSON.stringify({ to: o.user, at: 1, choice: 'skip' }));
 			} else {
 				localStorage.setItem('micasurvivor_accounts', JSON.stringify({ guest: { name: 'Trainer', guest: true, created: 1 } }));
+				localStorage.setItem('micasurvivor_unlocks_off', '1');   // (the shared unlock list off: this suite pins the save's collection / coins from before it; micasurvivor_unlocks_test tests it)
 				localStorage.setItem('micasurvivor_session', JSON.stringify('guest'));
 				localStorage.setItem('micasurvivor_save.guest', JSON.stringify(o.save));
 			}

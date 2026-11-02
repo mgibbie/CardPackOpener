@@ -18,8 +18,12 @@
 G.Unlocks = (() => {
   const SYNC_EVERY = 10 * 60 * 1000;
   let last = { who: null, at: 0 }, busy = null;
+  // (tests only: localStorage micasurvivor_unlocks_off = '1' turns the whole thing off, for the suites that pin a save's
+  //  exact collection / coins from before the shared list; overworld/tests/micasurvivor_unlocks_test.mjs tests it on)
+  const off = () => { try { return localStorage.getItem('micasurvivor_unlocks_off') === '1'; } catch (e) { return false; } };
   /** Unlock these dex numbers (from: 'starter' | 'overworld' | 'expedition' | ...). -> how many were new */
   function add(list, from) {
+    if (off()) return 0;
     const s = G.DB && G.DB.save;
     if (!s || !s.owned) return 0;
     let n = 0;
@@ -63,6 +67,7 @@ G.Unlocks = (() => {
   }
   /** Everything at once (the main menu): the starters, the overworld, the Expedition save if loaded. -> Promise of {starter, overworld, expedition} */
   function sync(force) {
+    if (off()) return Promise.resolve(null);
     const who = (G.DB && G.DB.save && G.DB.save.name) || null;
     if (!force && busy) return busy;
     if (!force && last.who === who && Date.now() - last.at < SYNC_EVERY) return Promise.resolve(null);

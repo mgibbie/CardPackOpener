@@ -77,6 +77,7 @@ const BEFORE = (o) => {
 		localStorage.setItem('micasurvivorexp_dev.guest', 'shu01');
 		localStorage.setItem('micasurvivorexp_pick', '4');   // (the Expedition runs play the Charmander member)
 		localStorage.setItem('micasurvivor_accounts', JSON.stringify({ guest: { name: 'Trainer', guest: true, created: 1 } }));
+		localStorage.setItem('micasurvivor_unlocks_off', '1');   // (the shared unlock list off: this suite pins the save's collection / coins from before it; micasurvivor_unlocks_test tests it)
 		localStorage.setItem('micasurvivor_session', JSON.stringify('guest'));
 		if (!localStorage.getItem('micasurvivor_save.guest')) localStorage.setItem('micasurvivor_save.guest', JSON.stringify(o.save));
 		if (o.xsave && !localStorage.getItem('micasurvivorexp_save.guest')) localStorage.setItem('micasurvivorexp_save.guest', JSON.stringify(o.xsave));
