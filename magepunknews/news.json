@@ -522,6 +522,54 @@
 	},
 	"entries": [
 		{
+			"sha": "f5ecf40",
+			"date": "2026-11-01",
+			"kind": "patch",
+			"title": "Pokermon r57: the owner's Espeon rework, Future Sight",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "96545c1",
+			"date": "2026-11-01",
+			"kind": "patch",
+			"title": "Micatro Pokermon: Skitty / Delcatty show the round's type and whether they copy",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "91550b8",
+			"date": "2026-11-01",
+			"kind": "patch",
+			"title": "Fix Lorequest hero-offer streak pins, concede streak, Knight-Captain, split damage, Staff of Renewal",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "4f63752",
+			"date": "2026-11-01",
+			"kind": "patch",
+			"title": "Accounts: never send one account's game as another's after a sign-in elsewhere",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "c7a1269",
+			"date": "2026-11-01",
+			"kind": "patch",
+			"title": "Overworld: Match Call tutorial loop, stalled-sprite map entry, beaten-leader talk, Cerulean Slowbro hint",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "464aab3",
+			"date": "2026-11-01",
+			"kind": "patch",
+			"title": "Battle: doubles Encore/plan integrity, switch-out EXP, trainer item theft returned",
+			"body": "",
+			"cards": []
+		},
+		{
 			"sha": "1af0637",
 			"date": "2026-11-01",
 			"kind": "micatro",
