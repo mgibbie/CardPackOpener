@@ -12,7 +12,7 @@ import {
   get_probability_vars, pseudorandom_probability, find_pokemon_type, has_enhancement, poke_is_odd,
   is_type, apply_type_sticker, find_other_poke_or_energy_type, find_card, any,
   poke_convert_cards_to, remove, volatile_active, get_poke_target_card_ranks, add_target_cards_to_vars,
-  change_play_limit, change_discard_limit, has_no_rank, add_card, playing_card_joker_effects, destroy_joker, POKE_POOL_RULES,
+  change_play_limit, change_discard_limit, has_no_rank, add_card, playing_card_joker_effects, destroy_joker, POKE_POOL_RULES, energy_values,
 } from '../api.js';
 
 const FILE = 'pokemon/pokejokers_07.lua';
@@ -27,6 +27,28 @@ const hand_size = {
 };
 const ALL_HANDS = ['High Card', 'Pair', 'Two Pair', 'Three of a Kind', 'Straight', 'Flush', 'Full House', 'Four of a Kind', 'Straight Flush', 'Five of a Kind', 'Flush House', 'Flush Five'];
 const visible_hands = () => ALL_HANDS.filter((h) => G.GAME.hands[h] && G.GAME.hands[h].visible);
+
+/** Espeon (the owner's rework, Future Sight): the round's card (systems/rules.js reset_espeon_card; the Ace of Spades before one is
+ *  picked). A card matches as The Idol's does: its rank (get_id) and its suit (is_suit: a Wild card counts); a debuffed card never. */
+const espeon_round = () => (G.GAME && G.GAME.current_round) || {};
+const espeon_suit = () => espeon_round().espeon_suit || 'Spades';
+const espeon_id = () => espeon_round().espeon_id || 14;
+const espeon_card_name = () => localize(espeon_round().espeon_rank || 'Ace', 'ranks') + ' of ' + localize(espeon_suit(), 'suits_plural');
+const espeon_match = (c) => !!c && !c.debuff && c.get_id() === espeon_id() && c.is_suit(espeon_suit());
+const r3 = (x) => Math.round(x * 1000) / 1000;
+/** An Espeon saved before the rework (contentRev 56: { scry, Xmult }) takes the new fields: the two per-card X from their base with the
+ *  Energy it already has (a mismatched Colorless counts half, as energize), the retrigger; the old Xmult is dropped. */
+function espeon_legacy(self, card) {
+  const ex = card.ability.extra, base = self.config.extra;
+  if (!ex || typeof ex !== 'object' || typeof ex.Xmult_multi === 'number') return;
+  const n = (ex.energy_count || 0) + (ex.c_energy_count || 0) / 2;
+  const grow = (f) => base[f] * (1 + energy_values[f] * n * (ex.escale || 1));
+  ex.Xmult_multi = grow('Xmult_multi');
+  ex.Xmult_multi2 = grow('Xmult_multi2');
+  if (typeof ex.retriggers !== 'number') ex.retriggers = base.retriggers;
+  if (typeof ex.scry !== 'number') ex.scry = base.scry;
+  delete ex.Xmult;
+}
 
 /** Hoppip line (3.9.1): on discard, the first `n` discarded cards (all when n is undefined) become Seed cards; it hops away. */
 function hop_calc(self, card, context, n, msg) {
@@ -366,21 +388,37 @@ defineJokers({
     },
     calculate(self, card, context) { return quag_calc(card, context) || level_evo(self, card, context, 'j_poke_quagsire'); },
   },
-  // Espeon 196 (Pokermon 3.9.1: +2 Foresight, X2.5 Mult if the top card of the deck is the round's suit)
+  // Espeon 196: the owner's rework, Future Sight (contentRev 57; PORTING.md "The Espeon rework"). The Idol, better: +2 Foresight; each
+  // scored card that is the round's card (systems/rules.js reset_espeon_card: a random ranked + suited card of the deck, Bronzor's
+  // idea; matched as The Idol does: get_id for the rank, is_suit so a Wild card counts, a debuffed card never scores) gives X2.5 Mult
+  // and retriggers once (so X2.5 twice); while the round's card is among the Foreseen cards (the top of the deck, G.scry_view, scored
+  // like held cards: Uxie's moment) it gives X1.5 from there. Energy: the per-card X fields, +5% of base each (Xmult_multi 2.5 ->
+  // 2.625 / 2.75 / 2.875, Xmult_multi2 1.5 -> 1.575 / 1.65 / 1.725); the retrigger and the Foresight are fixed. The retrigger is
+  // played cards only (cardarea G.play), so a Foreseen card's X1.5 is never repeated by Espeon itself (Mime retriggers G.hand only).
+  // (3.9.1's was +2 Foresight and X2.5 Mult if the deck's top card was the round's suit.)
   espeon: {
+    config: { extra: { scry: 2, Xmult_multi: 2.5, Xmult_multi2: 1.5, retriggers: 1 } },
+    attributes: ['xmult', 'suit', 'rank', 'retrigger', 'foresight'],
     loc_vars(self, info_queue, center) {
+      espeon_legacy(self, center);
       type_tooltip(self, info_queue, center);
       info_queue.push({ set: 'Other', key: 'scry_cards' });
-      const cr = (G.GAME && G.GAME.current_round) || {};
-      return {
-        vars: [center.ability.extra.scry, center.ability.extra.Xmult, localize(cr.espeon_suit || 'Spades', 'suits_singular')],
-        colours: [cr.espeon_suit || 'Spades'],
-      };
+      const ex = center.ability.extra;
+      return { vars: [ex.scry, espeon_card_name(), r3(ex.Xmult_multi), r3(ex.Xmult_multi2)], colours: ['SUITS.' + espeon_suit()] };
     },
     calculate(self, card, context) {
-      // (the top of the deck is its last card: systems/scry.js)
-      if (context.joker_main && G.deck.cards.length > 0 && G.deck.cards[G.deck.cards.length - 1].is_suit(G.GAME.current_round.espeon_suit)) {
-        return { message: a_xmult(card.ability.extra.Xmult), colour: 'XMULT', Xmult_mod: card.ability.extra.Xmult };
+      if (context.end_of_round || !context.other_card) return undefined;
+      if (context.repetition && context.cardarea === G.play && espeon_match(context.other_card)) {
+        espeon_legacy(self, card);
+        return { message: localize('k_again_ex'), repetitions: card.ability.extra.retriggers, card };
+      }
+      if (context.individual && context.cardarea === G.play && espeon_match(context.other_card)) {
+        espeon_legacy(self, card);
+        return { x_mult: card.ability.extra.Xmult_multi, card };
+      }
+      if (context.individual && G.scry_view && context.cardarea === G.scry_view && espeon_match(context.other_card)) {
+        espeon_legacy(self, card);
+        return { x_mult: card.ability.extra.Xmult_multi2, card };
       }
       return undefined;
     },

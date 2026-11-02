@@ -274,22 +274,23 @@ ok(STATUS.PORTED_FILES['pokemon/pokejokers_07.lua'].length === 33, 'defs: 33 fro
 }
 
 // ---------------------------------------------------------------- Espeon
+// (the owner's rework, Future Sight, contentRev 57: the full suite is pokermon_espeon_idol_test.mjs)
 {
   start('ESPEON');
   const scry0 = G.GAME.scry_amount || 0;
   const j = add('j_poke_espeon');
-  ok(G.GAME.scry_amount === scry0 + 2, 'espeon: +2 Foresight (Pokermon 3.9.1)', G.GAME.scry_amount);
-  const suit = G.GAME.current_round.espeon_suit;
-  // The top of the deck is its last card: put a card of the round's suit there, then one of another suit.
+  ok(G.GAME.scry_amount === scry0 + 2, 'espeon: +2 Foresight', G.GAME.scry_amount);
+  const cr = G.GAME.current_round;
+  cr.espeon_rank = 'King'; cr.espeon_id = 13; cr.espeon_suit = 'Hearts';
+  // the top of the deck (its last cards, the Foreseen ones) holds no King of Hearts
   const toTop = (pred) => { const i = G.deck.cards.findIndex(pred); G.deck.cards.push(G.deck.cards.splice(i, 1)[0]); };
-  toTop((c) => c.base.suit === suit);
-  let r = play(hand([suit === 'Spades' ? 'H_2' : 'S_2']));
-  ok(near(r.total.mult, 2.5), 'espeon: X2.5 when the top card of the deck is the suit of the round (Pokermon 3.9.1)', [suit, r.total]);
-  toTop((c) => c.base.suit !== suit);
-  r = play(hand([SUIT[suit] + '_2']));
-  ok(r.total.mult === 1, 'espeon: nothing when the top card is another suit, even playing the suit (Pokermon 3.9.1)', r.total);
+  toTop((c) => c.get_id() !== 13); toTop((c) => c.get_id() !== 13);
+  let r = play(hand(['H_K']));
+  ok(near(r.total.mult, 6.25) && r.total.chips === 25, 'espeon: the King of Hearts retriggers and gives X2.5 twice', r.total);
+  r = play(hand(['S_K']));
+  ok(r.total.mult === 1, 'espeon: nothing for another card', r.total);
   drop(j);
-  ok(G.GAME.scry_amount === scry0, 'espeon: Foresight removed with it (Pokermon 3.9.1)', G.GAME.scry_amount);
+  ok(G.GAME.scry_amount === scry0, 'espeon: Foresight removed with it', G.GAME.scry_amount);
 }
 
 // ---------------------------------------------------------------- Umbreon

@@ -970,7 +970,9 @@ export const POKERMON = registerMod({
   // Blind.suspend), Alomomola, Joltik / Galvantula, the Tynamo line, Cubchoo / Beartic (Freeze: run.js keep_in_hand), Stunfisk, Mienfoo /
   // Mienshao, Druddigon, Bouffalant, Rufflet / Braviary, Heatmor + Durant (rivals; Durant's and Escavalier's held Steel X1.75) and Larvesta /
   // Volcarona (always sunny).
-  contentRev: 56,
+  // 57 = the owner's Espeon rework, Future Sight (jokers/pokejokers_07.js espeon): The Idol, better: +2 Foresight; each scored card that
+  // is the round's card (rank and suit) gives X2.5 Mult and retriggers once; a Foreseen one gives X1.5 (PORTING.md "The Espeon rework").
+  contentRev: 57,
   // Pokermon 3.9.1 pokermon.lua: SMODS.current_mod.optional_features = {quantum_enhancements = true, object_weights = true}.
   // object_weights sends create_card's key, the shop roll, tags, packs, bosses and vouchers through SMODS.poll_object
   // (js/engine/smods.js; batch 17). quantum_enhancements is the engine's check_enhancement, always on.

@@ -6573,6 +6573,11 @@ export const DESIGN_LOC = {
       ['{C:poke_sun}Sunny Day:{} while you have', 'this Joker it\'s always {C:poke_sun}sunny{}', '{C:inactive}(Castform Sunny unless Kyogre;', '{C:inactive}rain still falls)'],
       ['{C:attention}Quiver Dance:{} each {X:poke_fire,C:white}Fire{}', 'Joker gives {X:mult,C:white} X#1# {} Mult', '{C:inactive}(Itself included)', '{C:inactive}(Currently {C:attention}#2#{C:inactive}: {X:mult,C:white} X#3# {C:inactive} Mult)'],
     ] },
+    // The owner's rework of an upstream joker (Espeon 196, Future Sight, contentRev 57; jokers/pokejokers_07.js): its text replaces 3.9.1's.
+    j_poke_espeon: { name: 'Espeon', text: [
+      ['{C:purple}+#1# Foresight', 'Each played {V:1}#2#{}', 'retriggers and gives', '{X:mult,C:white} X#3# {} Mult when scored'],
+      ['{C:attention}Future Sight:{} each', '{C:attention}Foreseen{} {V:1}#2#{}', 'gives {X:mult,C:white} X#4# {} Mult', '{C:inactive,s:0.7}Card changes every round{}'],
+    ] },
   },
   Other: {
     poke_design_frozen: { name: 'Frozen', text: ['Stays in your hand at the', 'end of the round (the next', 'deal fills around it)', 'Thaws when played or discarded'] },

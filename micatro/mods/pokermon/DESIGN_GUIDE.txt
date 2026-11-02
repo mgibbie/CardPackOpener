@@ -698,6 +698,12 @@ House pattern: FORESEEN CARDS AS +MULT (the Gen 5 Patrat line, Lookout; lookout)
   - Uxie's moment with a + payoff: each Foreseen card (G.scry_view, scored like a held card) gives +6 / +10 Mult (`mult` +40%); a debuffed one
     nothing. It stacks with every other Foresight source (Uxie's +2 makes four cards: each +10 then X1.3). Hoothoot's chips, Uxie's X,
     Patrat's Mult: the three payoffs of one area.
+House pattern: THE ROUND'S CARD, PLAYED AND FORESEEN (the owner's Espeon rework, Future Sight; jokers/pokejokers_07.js espeon):
+  - The Idol, better: the round's card (reset_espeon_card: a random ranked + suited deck card, Bronzor's idea), matched as The Idol (get_id,
+    is_suit so Wild counts, debuffed never). Scored: X2.5 (`Xmult_multi`) AND a retrigger (repetition on G.play only), so X2.5 twice.
+    Foreseen (G.scry_view, Uxie's moment): X1.5 (`Xmult_multi2`). Energy +5% on both per-card X; retrigger and Foresight fixed.
+  - Keep the retrigger on G.play: the scry pass asks repetition with cardarea G.scry_view too, so a bare `context.repetition` would
+    repeat the Foreseen X as well. Tooltip names the card ("King of Hearts") in the suit's colour (`SUITS.<suit>`).
 House pattern: the TAILOR, a deck conversion that widens by stage (the Gen 5 Sewaddle line; tailor / TAILOR_CLOTHS):
   - Cherubi's sweet_seeds moment (a Blind selected; Blueprint copies it, as Marble Joker): ONE random UNENHANCED card of the full deck
     (seeded pseudorandom_element, 'poke_sewaddle_tailor') becomes one of the stage's "cloths". None unenhanced: nothing; it never
@@ -1107,7 +1113,8 @@ Each keyword below has an info_queue tooltip. Reuse the keyword rather than inve
     by:
       Hoothoot +2 / Noctowl +4   Foreseen cards give their total Chips
       Stantler                   adds the highest Foreseen rank to Mult
-      Espeon                     X2.5 if the top card is Hearts
+      Espeon                     Future Sight (the owner's rework, r57): the round's card (rank and suit, The
+                                 Idol's) scored gives X2.5 and retriggers; Foreseen, X1.5
       Lopunny                    X2 if an unscored card shares a rank with a Foreseen card
       Masquerain, Munna/Musharna, Wyrdeer, Mega Lopunny, Nacho's Munkidori
       Patrat +1 / Watchog +2      Foreseen cards give +6 / +10 Mult (Lookout, 2.1)
