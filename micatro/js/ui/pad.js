@@ -115,8 +115,12 @@ export function initPad({ board, stage, UI, readOnly, onMenu, mainMenu, replay =
   function ensure() {
     const list = stops();
     const v = view(), modal = topModal();
-    const changed = (v && v.state) !== lastState || modal !== lastModal;
-    lastState = v && v.state; lastModal = modal;
+    // (mid-animation the board may already show the next screen — a booster's pack screen as it opens, board.js
+    //  enterPackView — before its cards are dealt: the state change counts once the sequence ends, so focus homes
+    //  onto the pack's cards, not whatever was there first)
+    const st = board.locked ? lastState : v && v.state;
+    const changed = st !== lastState || modal !== lastModal;
+    lastState = st; lastModal = modal;
     if (!changed && focus && list.some((s) => same(s, focus))) return { list, ok: true };
     // a control that was rebuilt in place (Mods panel toggles) keeps the focus via its data-k
     const k = !changed && focus && focus.el && !focus.el.isConnected && focus.el.dataset ? focus.el.dataset.k : null;
@@ -352,7 +356,7 @@ export function initPad({ board, stage, UI, readOnly, onMenu, mainMenu, replay =
       if (ringOn) {
         // the table changed under the reticle (new state, card gone): re-home without acting
         const v = view();
-        if ((v && v.state) !== lastState || topModal() !== lastModal || (focus && !rectOf(focus))) ensure();
+        if (((v && v.state) !== lastState && !board.locked) || topModal() !== lastModal || (focus && !rectOf(focus))) ensure();
         place();
       }
       renderHints();
