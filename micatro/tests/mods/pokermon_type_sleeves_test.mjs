@@ -165,7 +165,8 @@ sec('pool rules', () => {
   ok(metal === 50 && hz === 0, 'Hazards off: 50 guaranteed Metal Jokers, none with hazards', [metal, hz]);
   // ... and with Hazards on they do come up (the filter is the option's, not the sleeve's)
   let hzOn = 0;
-  for (let k = 0; k < 25; k++) {
+  // (seeded; more Metal Jokers in the pool — the Gen 7 Ultra Beasts — make a hazard one rarer, so look until one comes up, up to 200 runs)
+  for (let k = 0; k < 200 && !hzOn; k++) {
     const s = start(SKEY('Metal'), 'TSLHZ' + k);
     for (let n = 1; n <= 2; n++) { forceShop(s); const c = lastSlot().config.center; if (c.hazard_poke || (c.attributes || []).includes('hazards')) hzOn++; }
   }
