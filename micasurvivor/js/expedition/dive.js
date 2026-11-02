@@ -718,8 +718,7 @@ G.ExpDive = (() => {
     const z = G.World.zone, L = z && z.dive, pg = L && L.plugs && L.plugs[i];
     if (!pg || pg.open) return false;
     pg.open = true;
-    const idx = pg.at[1] * z.w + pg.at[0];
-    z.kind[idx] = DG().FLOOR; L.kind[idx] = DG().FLOOR;
+    for (const p of [pg.at, pg.at2].filter(Boolean)) { const idx = p[1] * z.w + p[0]; z.kind[idx] = DG().FLOOR; L.kind[idx] = DG().FLOOR; }   // (a carved pocket's mouth is 2 tiles)
     G.World.setZone(z);   // (the world forgets its chunks and repaints; walkers re-learn their tile)
     if (G.Path) G.Path.clear();
     const [x, y] = wpos(pg.at);
@@ -732,19 +731,21 @@ G.ExpDive = (() => {
     const R = TS();
     L.plugs.forEach((pg, i) => {
       if (pg.open) return;
-      const [x, y] = wpos(pg.at), by = alive.filter(p => G.U.dist2(p.x, p.y, x, y) < (PLUG.R * R) ** 2);
+      const [x, y] = plugXY(pg), by = alive.filter(p => G.U.dist2(p.x, p.y, x, y) < ((PLUG.R + (pg.at2 ? 0.5 : 0)) * R) ** 2);
       const ok = by.some(p => canOpen(p, pg.kind));
       pg.t = ok ? (pg.t || 0) + dt : 0;
       if (by.length && !ok && !S.plugTip) { S.plugTip = true; say(T().t(pg.kind === 'boulder' ? 'Una roca: la rompe un Pokémon de tipo Roca, Tierra, Lucha o Acero' : 'Maleza: la quema un Pokémon de tipo Fuego'), 3.2); }
       if (pg.t >= PLUG.T && openPlug(i)) { S.plugsOpen = (S.plugsOpen | 0) | (1 << i); say(T().t(pg.kind === 'boulder' ? '¡La roca se rompe! Hay algo detrás' : '¡La maleza arde! Hay algo detrás'), 2.6); G.Audio.sfx(pg.kind === 'boulder' ? 'break' : 'grass'); }
     });
   }
+  /** The middle of a plug (one tile, or a carved pocket's 2-tile mouth). */
+  function plugXY(pg) { const a = wpos(pg.at); if (!pg.at2) return a; const b = wpos(pg.at2); return [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2]; }
   function drawPlugs(ctx, L, cam) {
     if (!L.plugs) return;
     const R = TS();
-    for (const pg of L.plugs) {
+    for (const pg of L.plugs) for (const at of [pg.at, pg.at2].filter(Boolean)) {
       if (pg.open) continue;
-      const [x, y] = wpos(pg.at);
+      const [x, y] = wpos(at);
       if (!cam.sees(x, y, 40)) continue;
       ctx.save();
       if (pg.kind === 'boulder') {
