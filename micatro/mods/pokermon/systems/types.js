@@ -25,6 +25,13 @@ export const TYPE_COLOURS = {
   bird: '#F7B58C', pink: '#FF7ABF', item: '#9AA4B7', safari: '#F2C74E', pocket: '#E8C069',
 };
 
+/**
+ * A type's colour for a description's {B:n} / {V:n} (3.9.1 passes pokermon.colours[string.lower(type)] in loc_vars `colours`):
+ * its hex ('Grass' -> '#289830'), which the tooltip can draw. (A bare 'grass' resolves to nothing: the registered text colour is
+ * poke_grass, so Skitty's type pill came out as white text with no pill.) Unknown types draw as Colorless.
+ */
+export const type_colour = (ptype) => TYPE_COLOURS[String(ptype || '').toLowerCase()] || TYPE_COLOURS.colorless;
+
 const STICKER_ORDER = ['grass', 'fire', 'water', 'lightning', 'psychic', 'fighting', 'colorless', 'dark', 'metal', 'fairy', 'dragon', 'earth'];
 
 /**

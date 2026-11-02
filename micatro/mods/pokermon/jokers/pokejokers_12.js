@@ -9,7 +9,7 @@ import {
   scaling_evo, has_enhancement, scale_card, calculate_effect, ease_poke_dollars, hazard_layer, hazard_level_tip, pseudorandom,
   pseudorandom_element, pseudoseed, pseudoshuffle, draw_card, get_probability_vars, pseudorandom_probability, find_pokemon_type,
   get_type, is_type, apply_type_sticker, get_poke_target_card_ranks, add_target_cards_to_vars, poke_remove_card, add_playing_card,
-  ease_hands_played, juice_card_until, play_sound, copy_card, playing_card_joker_effects, all_cards,
+  ease_hands_played, juice_card_until, play_sound, copy_card, playing_card_joker_effects, all_cards, type_colour,
 } from '../api.js';
 
 const FILE = 'pokemon/pokejokers_12.lua';
@@ -616,7 +616,7 @@ defineJokers({
       type_tooltip(self, info_queue, card);
       const ptype = get_type(card) || 'Colorless';
       const text_colour = ptype !== 'Lightning' ? 'WHITE' : 'BLACK';
-      return { vars: [card.ability.extra.Xmult, ptype], colours: [ptype.toLowerCase(), text_colour] };
+      return { vars: [card.ability.extra.Xmult, ptype], colours: [type_colour(ptype), text_colour] };
     },
     calculate(self, card, context) {
       if (context.joker_main && find_pokemon_type(get_type(card)).length >= 3) return { Xmult: card.ability.extra.Xmult };
