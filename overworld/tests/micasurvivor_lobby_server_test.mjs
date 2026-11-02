@@ -58,8 +58,11 @@ buildSync({
 });
 const { default: handler } = await import(pathToFileURL(bundle).href);
 // the msurv actions' injectable clock (server/mp.mjs reads globalThis.__msurvClock): a virtual time the test moves by
-// hand, so the 1000 ms relay floor, the per-minute relay budget and the UTC day can be crossed without waiting
-let VT = Date.now();
+// hand, so the 1000 ms relay floor, the per-minute relay budget and the UTC day can be crossed without waiting.
+// It starts at NOON UTC of today, not at the real time: the test moves it ~40 virtual minutes and the relay budget is a
+// per-UTC-day row, so a start in the last half hour before midnight spilled into the next day's row and failed section 6
+// (the day crossing it does test is an explicit jump, below)
+let VT = Math.floor(Date.now() / 86_400_000) * 86_400_000 + 12 * 3_600_000;
 globalThis.__msurvClock = () => VT;
 const NOW = () => VT;
 const tick = ms => { VT += ms; };
