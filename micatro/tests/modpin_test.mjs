@@ -57,10 +57,10 @@ ok(meta.modVersions && meta.modVersions.pokermon === PK && meta.engineRev === EN
 // ---------------------------------------------------------------- mismatch
 const bumped = JSON.parse(JSON.stringify(saved));
 const was = MODS.pokermon.contentRev;
-MODS.pokermon.contentRev = 68;
+MODS.pokermon.contentRev = 69;
 let d = Session.pinDiff(bumped);
-ok(d.length === 1 && d[0].id === 'pokermon' && d[0].recorded === PK && d[0].current === '3.9.1+r68' && d[0].name === 'Pokermon', 'a bumped contentRev is a difference', d);
-ok(PINS.replayWarning(d) === 'Recorded with Pokermon 3.9.1 (rev 67); current 3.9.1 (rev 68). Playback may differ.', 'the replay warning names both', PINS.replayWarning(d));
+ok(d.length === 1 && d[0].id === 'pokermon' && d[0].recorded === PK && d[0].current === '3.9.1+r69' && d[0].name === 'Pokermon', 'a bumped contentRev is a difference', d);
+ok(PINS.replayWarning(d) === 'Recorded with Pokermon 3.9.1 (rev 68); current 3.9.1 (rev 69). Playback may differ.', 'the replay warning names both', PINS.replayWarning(d));
 MODS.pokermon.contentRev = was;
 const oldVer = { ...bumped, modVersions: { ...bumped.modVersions, pokermon: '3.2.1' } };
 const vwas = MODS.pokermon.version; MODS.pokermon.contentRev = 0;
@@ -87,7 +87,7 @@ ok(lp.assumed && lp.modVersions.pokermon === PINS.LEGACY_MOD_VERSIONS.pokermon &
 // (the legacy table is the 2026-10-19 versions: Pokermon 3.2.1+r1 — since the 3.9.1 data batch a pre-pin Pokermon run differs)
 d = Session.pinDiff(legacy);
 ok(d.length === 1 && d[0].id === 'pokermon' && d[0].recorded === '3.2.1+r1' && d[0].current === PK, 'a legacy Pokermon recipe now differs (3.2.1+r1 -> 3.9.1+r68): the resume prompt / replay banner', d);
-ok(PINS.replayWarning(d) === 'Recorded with Pokermon 3.2.1 (rev 1); current 3.9.1 (rev 67). Playback may differ.', '... naming both', PINS.replayWarning(d));
+ok(PINS.replayWarning(d) === 'Recorded with Pokermon 3.2.1 (rev 1); current 3.9.1 (rev 68). Playback may differ.', '... naming both', PINS.replayWarning(d));
 ok(Object.isFrozen(PINS.LEGACY_MOD_VERSIONS) && PINS.PIN_DATE === '2026-10-19', 'the legacy table is frozen and dated');
 const lr = Session.fromRecipe(legacy);
 ok(lr.recipe.pinAssumed === 'legacy:2026-10-19' && lr.recipe.modVersions.pokermon === PINS.LEGACY_MOD_VERSIONS.pokermon && lr.recipe.actions.length === legacy.actions.length && !lr.stoppedAt, 'resuming a legacy recipe records the assumption and rebuilds every move', lr.recipe.pinAssumed);
