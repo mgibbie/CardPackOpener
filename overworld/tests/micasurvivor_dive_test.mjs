@@ -304,6 +304,35 @@ try {
 	A(learn.after[0] === learn.before[0] && learn.after.slice(1).some((id, i) => id !== learn.before[i + 1]) && JSON.stringify(learn.roles) === JSON.stringify(learn.before.map((x, i) => i > 0)) && learn.learnAt10, 'taking it replaces that special (the basic stays), the new move is a pressed special; again at 10 / 16 / 22', JSON.stringify(learn));
 
 
+	// ======================== 4c. V5: the combo (PokéDive's "Racha") and the hit-stops
+	const combo = await E(page, () => {
+		const H = window.__t, pl = G.Game.player, S = G.ExpDive.run, out = {};
+		H.thin(); for (const e of G.EnemyMgr.all()) { e.dead = true; e.fade = 0; }
+		S.combo = null; H.step(1);
+		const xm0 = pl.xpMul / (pl.xcomboK || 1);
+		const mk = () => { const e = new G.Enemy(G.ExpClassic.defOf(19, 0), pl.x + 200, pl.y, { hp: 10, dmg: 0, spd: 0.0001 }); e.xmove = () => true; G.EnemyMgr.add(e); return e; };
+		const keep = mk(); keep.maxHp = keep.hp = 1e8;   // (one left standing, out of the basic's reach to kill: no floor-clear hit-stop yet)
+		H.step(3); S.combo = null;
+		const stake0 = S.stake;
+		for (let i = 0; i < 10; i++) { const e = mk(); e.hurt(1e6); H.step(1); }
+		out.n = S.combo.n; out.xpK = +(pl.xpMul / xm0).toFixed(3); out.milestone = S.stake - stake0;
+		out.block = JSON.parse(JSON.stringify(G.ExpDive.dBlock().k || null));
+		H.step(Math.ceil(3.2 * 30));
+		out.broken = S.combo.n; out.xpBack = +(pl.xpMul / xm0).toFixed(3); out.best = S.combo.best;
+		// the floor's last foe: a hit-stop (the world holds: the run's clock doesn't move)
+		keep.hurt(1e9);
+		const t0 = G.Game.st.time; H.step(1); H.step(1);
+		out.held = G.Game.st.time - t0 < 0.04 && S.holdT !== undefined;
+		H.step(10);
+		out.after = G.Game.st.time - t0 > 0.1;
+		return out;
+	});
+	A(combo.n === 10 && Math.abs(combo.xpK - 1.2) < 0.011, 'ten quick KOs: a x10 combo and +20 % XP', JSON.stringify(combo));
+	A(combo.milestone >= 3 + 10, 'the 10th pays its milestone loot (3) on top of the KOs\'', JSON.stringify(combo));
+	A(combo.block && combo.block[0] === 10, 'the combo is in the viewers\' block', JSON.stringify(combo));
+	A(combo.broken === 0 && Math.abs(combo.xpBack - 1) < 1e-9 && combo.best >= 10, '3 s without a KO breaks it: the XP back to x1, the best kept', JSON.stringify(combo));
+	A(combo.held && combo.after, 'the floor\'s last foe: a short hit-stop (the clock holds, then runs)', JSON.stringify(combo));
+
 	// ======================== 5. the alpha (floor 5)
 	const al = await E(page, () => {
 		const H = window.__t;

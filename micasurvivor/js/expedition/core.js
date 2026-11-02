@@ -230,7 +230,8 @@ G.Exp = (() => {
     G.Hooks.on('enemy.ko', (e, pl) => { if (!expRun()) return; if (UL()) UL().onKill(e, pl); if (EC()) EC().onKill(e, pl); if (MT()) MT().onKill(e, pl); if (LV()) LV().onKill(e, pl); if (DV_()) DV_().onKill(e, pl); });   // (Dive V2: the loot)   // (D17: a boss's held item)   // (D10: research)   // (D7: ₽ for the kill; D8: a capture target's faint is seen in run.tick)
     // (D7: the zone's interactables on the minimap, under the fog of war; the seam only runs in a zone)
     G.Hooks.on('minimap.draw', (ctx, pl, api) => { if (DV_()) DV_().drawMini(ctx, pl, api); if (EC()) EC().drawMini(ctx, pl, api); if (CP()) CP().drawMini(ctx, pl, api); });   // (D8: the encounters)
-    G.Hooks.on('run.hold', (dt, pl) => { if (!expRun()) return undefined; const u = UL() ? UL().hold(dt, pl) : undefined; return u || (CP() ? CP().hold(dt, pl) : undefined); });   // (D8: the capture cinematic)
+    G.Hooks.on('run.hold', (dt, pl) => { if (!expRun()) return undefined; const u = UL() ? UL().hold(dt, pl) : undefined; if (u) return u; const dh = DV_() ? DV_().hold(dt) : undefined; if (dh) return dh;   // (Dive V5: hit-stops)
+      return u || (CP() ? CP().hold(dt, pl) : undefined); });   // (D8: the capture cinematic)
     G.Hooks.on('replay.header', h => {
       if (!expRun()) return h;
       const R = G.Modes.run;

@@ -28,6 +28,8 @@
  *              3 move slots (pl.maxMoves), + the held item. The Ultimate: 3 / Z / R, the pad's LB / LT / RT / L3.
  *   dodge      (V4) Expedition's slide, PokéDive's way (js/expedition/verbs.js DODGE_*): 0.2 s, invulnerable, 1.2 s cool-down;
  *              Space / Shift, the pad's A (and B), the DODGE button. No hop in a Dive run.
+ *   combo      (V5) PokéDive's "Racha": KOs within 3 s chain; +2 % XP a step (to +30 %), loot every 10; hit-stops on an
+ *              alpha / guardian and on the floor's last foe (run.hold).
  *   red ground (V4) PokéDive's telegraphs (TELE): brawlers slam, alphas / guardians slam wider and charge; dodge or step out.
  *   viewers    (V4) dBlock() rides in the x block's c slot (classic.js xblockC / applyC): a spectator, a replay and a co-op
  *              guest see the floor, the loot, the seal, the rope, the lost Pokémon and the red ground (applyD -> view).
@@ -43,7 +45,7 @@ G.I18n.add({
   '¡Alfa derrotado! Las escaleras están libres': 'Alpha defeated! The stairs are clear',
   '¡{x}, el guardián de la ruta!': '{x}, the route\'s guardian!',
   '¡Guardián derrotado! Etapa guardada': 'Guardian defeated! Stage saved',
-  '¡{x} rescatado!': '{x} rescued!',
+  '¡{x} rescatado!': '{x} rescued!', '¡Racha x{x}!': 'Combo x{x}!', 'x{x} RACHA': 'x{x} COMBO', 'Mejor racha: {x}': 'Best combo: {x}',
   'Cuerda Huida: quédate quieto…': 'Escape Rope: hold still…',
   '¡Escapas con todo!': 'You escape with everything!',
   'Escaleras selladas': 'The stairs are sealed',
@@ -299,6 +301,7 @@ G.ExpDive = (() => {
     if (!on() || !e) return;
     S.kills++;
     loot(K.LOOT.ko + K.LOOT.koPer * S.floor);
+    comboKo(e);   // (V5)
   }
 
   // ---------------- V4: PokéDive's kit (basic + 2 specials), the dodge, the inputs ----------------
@@ -359,6 +362,7 @@ G.ExpDive = (() => {
   /** run.tick: the roles, the keys. */
   function tick(dt, pl) {
     if (!live() || !pl || pl.remote) return;
+    if (on()) comboTick(dt, pl);   // (V5: the host's combo)
     if (pl.slots.length > K.SLOTS) { pl.xspare = pl.xspare || []; while (pl.slots.length > K.SLOTS) pl.xspare.push(pl.slots.pop()); }
     roles(pl);
     const I = G.Input;
@@ -445,7 +449,8 @@ G.ExpDive = (() => {
     const lines = [T().f('Inmersión · {x}: piso {x}', T().t(NAME[S.route]), S.floor),
       T().f('Botín asegurado: {x} · en juego: {x}', S.bank, S.stake),
       T().t(S.escaped ? 'Escapaste: te llevas todo el botín' : 'Caíste: conservas lo asegurado y una cuarta parte del resto'),
-      T().f('Rescatados: {x}', S.escaped ? S.rescued.length : S.rescuedBank), T().f('Alfas: {x} · Guardianes: {x}', S.alphas, S.guardians)];
+      T().f('Rescatados: {x}', S.escaped ? S.rescued.length : S.rescuedBank), T().f('Alfas: {x} · Guardianes: {x}', S.alphas, S.guardians),
+      T().f('Mejor racha: {x}', S.combo ? S.combo.best : 0)];
     return { lines, title: S.escaped ? T().t('¡Escapas con todo!') : null, won: S.escaped };
   }
   /** Into the Expedition save: the deepest floor and the stage per route, the counters. -> lines */
@@ -463,6 +468,65 @@ G.ExpDive = (() => {
     return out;
   }
 
+
+
+  // ---------------- V5: the combo ("Racha", PokéDive's gs table) and the hit-stops ----------------
+  // A KO within WINDOW s of the last one adds a step; WINDOW s without one breaks it. Each step +2 % XP (to +30 %), and every
+  // 10th pays 3 x (n / 10) loot at stake with a pop-up ("Combo x20!", orange from 20). The XP rides pl.xpMul (the previous
+  // combo factor divided out, so the items / League factors on it stay). Hit-stops (the run.hold seam, as the Ultimate's):
+  // an alpha / guardian down 0.16 s, the floor's last foe 0.12 s with a ring and a chime.
+  const COMBO = { WINDOW: 3, XP_PER: 0.02, XP_CAP: 0.3, MILESTONE: 10, COINS_PER: 3, HOT: 10, FIRE: 20 };
+  const HITSTOP = { boss: 0.16, clear: 0.12 };
+  function comboKo(e) {
+    const c = S.combo = S.combo || { n: 0, t: 0, best: 0 };
+    c.n++; c.t = COMBO.WINDOW; c.best = Math.max(c.best, c.n);
+    if (c.n % COMBO.MILESTONE === 0) {
+      loot(COMBO.COINS_PER * c.n / COMBO.MILESTONE);
+      const pl = G.Game.player;
+      if (pl) G.FX.dmgText(pl.x, pl.y - (pl.bodyH || 30) - 18, T().f('¡Racha x{x}!', c.n), c.n >= COMBO.FIRE ? '#ff9a3d' : '#ffd23f', true);
+      G.Audio.sfx('coin');
+    }
+    // the floor's last foe (none left awake or asleep, the boss included): the clear
+    const left = G.EnemyMgr.all().some(o => !o.dead && o !== e && !o.remote);
+    if (!left && !(e && (e.xk === 'alpha' || e.xk === 'guardian'))) {
+      S.holdT = Math.max(S.holdT || 0, HITSTOP.clear);
+      G.FX.ring(e.x, e.y, 8, 120, '#ffe9a0', 0.45, 4);
+      G.Audio.sfx('chest');
+    }
+    if (e && (e.xk === 'alpha' || e.xk === 'guardian')) { S.holdT = Math.max(S.holdT || 0, HITSTOP.boss); G.Camera.kick(0.7); G.FX.burst(e.x, e.y, '#ffd23f', 26, 200); }
+  }
+  /** run.tick (host): the combo's window, its XP on pl.xpMul. */
+  function comboTick(dt, pl) {
+    const c = S.combo;
+    if (c && c.n > 0) { c.t -= dt; if (c.t <= 0) { c.n = 0; c.t = 0; } }
+    const k = 1 + Math.min(COMBO.XP_CAP, COMBO.XP_PER * (c ? c.n : 0));
+    if (pl && !pl.remote) { pl.xpMul = (pl.xpMul || 1) / (pl.xcomboK || 1) * k; pl.xcomboK = k; }
+  }
+  /** run.hold: a hit-stop holds the world. */
+  function hold(dt) {
+    if (!on() || !(S.holdT > 0)) return undefined;
+    S.holdT -= dt;
+    return true;
+  }
+  /** The combo meter (under the HUD line): "x12 COMBO", its drain bar; hot at 10, fire at 20. */
+  function drawCombo(ctx, w, S, F) {
+    const c = S.combo;
+    if (!c || c.n < 2) return;
+    const x = w / 2, y = 92, col = c.n >= COMBO.FIRE ? '#ff7a3d' : c.n >= COMBO.HOT ? '#ffb347' : '#ffe9a0';
+    const bump = 1 + Math.max(0, (c.t - (COMBO.WINDOW - 0.15)) / 0.15) * 0.25;
+    ctx.save();
+    ctx.translate(x, y); ctx.scale(bump, bump);
+    ctx.font = F(900, 14); ctx.textAlign = 'center';
+    ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(0,0,0,.8)';
+    const s = new String(T().f('x{x} RACHA', c.n));   // eslint-disable-line no-new-wrappers
+    ctx.strokeText(s, 0, 0); ctx.fillStyle = col; ctx.fillText(s, 0, 0);
+    ctx.restore();
+    const bw = 70, u = G.U.clamp(c.t / COMBO.WINDOW, 0, 1);
+    ctx.save();
+    ctx.fillStyle = 'rgba(0,0,0,.55)'; ctx.fillRect(x - bw / 2, y + 5, bw, 4);
+    ctx.fillStyle = col; ctx.fillRect(x - bw / 2, y + 5, bw * u, 4);
+    ctx.restore();
+  }
 
   // ---------------- V4: the red ground (PokéDive's telegraphs: slam / charge), the host's ----------------
   // A brawler (a foe with no shot) that reaches you winds up a SLAM: a red circle round it fills for TELE.slam s, then
@@ -556,6 +620,7 @@ G.ExpDive = (() => {
                 q: (S.sealed ? 1 : 0) | (S.lost && S.lost.done ? 2 : 0) | (S.escaped ? 4 : 0), o: Math.round(S.ropeT * 4) };
     if (S.lost) c.l = [S.lost.dex, Math.round(S.lost.x), Math.round(S.lost.y)];
     if (S.boss && !S.boss.dead) c.e = S.boss.id;
+    if (S.combo && S.combo.n >= 2) c.k = [S.combo.n, Math.round(S.combo.t * 10 / COMBO.WINDOW)];   // (V5: the combo, its window in tenths)
     if (S.tg && S.tg.length) c.tg = S.tg.map(t => [t.k === 'slam' ? 1 : t.k === 'charge' ? 2 : 3, Math.round(t.x), Math.round(t.y), Math.round(t.k === 'slam' ? t.r : t.len),
       Math.round((t.a || 0) * 100), Math.round(t.w || 0), t.k === 'dash' ? 10 : Math.min(10, Math.floor(t.t / t.T * 10)), t.e ? t.e.id : 0]);
     return c;
@@ -567,7 +632,7 @@ G.ExpDive = (() => {
     const lost = c.l ? { dex: c.l[0], x: c.l[1], y: c.l[2], done: !!(c.q & 2), anim: old && old.lost && old.lost.dex === c.l[0] ? old.lost.anim : null } : null;
     const K3 = [null, 'slam', 'charge', 'dash'];
     view = { floor: c.f | 0, route, bank: c.b | 0, stake: c.s | 0, sealed: !!(c.q & 1), escaped: !!(c.q & 4), ropeT: (c.o || 0) / 4, lost,
-             rescued: [], tg: (c.tg || []).map(a => ({ k: K3[a[0]], x: a[1], y: a[2], r: a[3], len: a[3], a: a[4] / 100, w: a[5], t: a[6] / 10, T: 1, e: G.EnemyMgr.get ? G.EnemyMgr.get(a[7]) : null })) };
+             rescued: [], combo: c.k ? { n: c.k[0], t: c.k[1] / 10 * COMBO.WINDOW } : null, tg: (c.tg || []).map(a => ({ k: K3[a[0]], x: a[1], y: a[2], r: a[3], len: a[3], a: a[4] / 100, w: a[5], t: a[6] / 10, T: 1, e: G.EnemyMgr.get ? G.EnemyMgr.get(a[7]) : null })) };
   }
 
   // ---------------- drawing ----------------
@@ -619,6 +684,7 @@ G.ExpDive = (() => {
   function drawHud(ctx, w, h, pl, st, F) {
     const S = cur();
     if (!S) return;
+    drawCombo(ctx, w, S, F);   // (V5)
     // the route's 25 pips (every 5th: alpha, the 25th: the guardian)
     const pos = ((S.floor - 1) % 25) + 1, x0 = w / 2 - 25 * 5, y = 74;
     ctx.save();
@@ -645,6 +711,6 @@ G.ExpDive = (() => {
 
   return { K, NAME, GUARDIANS, target, pool, guardianOf, routeOf, begin, reset, update, hurt, onKill, pay, scoreParts, result, record,
            setup, roles, press, pad, tick, out, drawButtons, offerLearn, LEARN_AT, get rects() { return rects; },
-           live, shown, dBlock, applyD, TELE, get view() { return view; },
+           live, shown, dBlock, applyD, TELE, COMBO, HITSTOP, hold, get view() { return view; },
            drawGround, drawHud, drawMini, hudLine, hudColor, on, get run() { return S; } };
 })();
