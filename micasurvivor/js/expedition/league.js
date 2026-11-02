@@ -503,6 +503,8 @@ G.ExpLeague = (() => {
     st.id = 'exp-d13-league';
     st.textContent = `
 .lg-gens { display: flex; flex-wrap: wrap; gap: 4px; margin: 4px 0 0; }
+.lg-forms { display: flex; flex-wrap: wrap; gap: 3px 4px; align-items: center; margin: 3px 0 0; font-size: 11px; }
+.lg-forms .chip { padding: 1px 7px; font-size: 11px; min-height: 0; line-height: 1.5; }
 .lg-gens .chip small, .lg-pages .chip small { opacity: .75; font-weight: 600; margin-left: 2px; }
 .lg-pages { display: flex; flex-wrap: wrap; gap: 4px; margin: 0 auto 0 10px; }   /* (D19: next to the count, so a phone keeps the grid's height) */
 .lg-plays { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 8px; }
@@ -559,8 +561,7 @@ G.ExpLeague = (() => {
           ${G.UI.abilityLine(finalsOf(m)[0], true, G.Abilities.of(finalsOf(m)[0]))}
           <div class="lg-sec">${T.t('Kit')}</div><ul class="lg-kit">${kit}</ul>
           <div class="lg-sec">${T.t('Evolución')}</div><div class="lg-evo">${esc(evoTxt || T.t('No evoluciona: madura a Nv. 24 y 44'))}</div>
-          <div class="lg-mat">${T.t('Madura a Nv. 24 y 44 cuando ya no evoluciona (+12 % de daño y vida)')}</div>
-          ${ok && stagesOf(m).length > 1 ? `<div class="lg-sec">${T.t('Empezar como')}</div><div class="filters lg-forms">${stagesOf(m).map(f => { const open1 = formOpen(f), on = formFor(m.dex) === f; return `<button type="button" class="chip${on ? ' on' : ''}" data-form="${f}"${open1 ? '' : ' aria-disabled="true"'} title="${esc(open1 ? '' : T.t('Tenlo en tu colección o alcánzalo en una partida'))}">${open1 ? '' : G.Icons.html('ban', 12) + ' '}${esc(name(f))}</button>`; }).join('')}</div>` : ''}
+          ${ok && stagesOf(m).length > 1 ? `<div class="lg-forms"><b>${T.t('Empezar como')}:</b>${stagesOf(m).map(f => { const open1 = formOpen(f), on = formFor(m.dex) === f; return `<button type="button" class="chip${on ? ' on' : ''}" data-form="${f}"${open1 ? '' : ' aria-disabled="true"'} title="${esc(open1 ? '' : T.t('Tenlo en tu colección o alcánzalo en una partida'))}">${open1 ? '' : G.Icons.html('ban', 12) + ' '}${esc(name(f))}</button>`; }).join('')}</div>` : `<div class="lg-mat">${T.t('Madura a Nv. 24 y 44 cuando ya no evoluciona (+12 % de daño y vida)')}</div>`}
           ${megaTxt ? `<div class="lg-sec">${T.t('Megaevolución')}</div><div class="lg-evo lg-mega">${esc(megaTxt)}</div>` : ''}
           <div class="lg-stats">${esc(T.f('Vida {x} · Ataque {x} · Defensa {x} · At. Esp. {x} · Def. Esp. {x} · Velocidad {x}', ...b))}</div>
           ${extra}
