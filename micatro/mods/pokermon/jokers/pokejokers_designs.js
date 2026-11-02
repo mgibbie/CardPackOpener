@@ -161,6 +161,13 @@
 // (Grass; +3 / +5 Mult banked per destroyed card; Seeds), Bergmite -> Avalugg (Water; +50 / +150 Chips, X1.5 on the final hand), Noibat ->
 // Noivern (Dragon; Glass breaks 1 in 2; +2 Mult / X0.1 banked per break; a deck card turns Glass per break) — upstream 3.9.1 draws them all
 // (Natdex {12,45}-{18,47}).
+// Gen 7, batch 2 (contentRev 65; the owner's "Yes build it", 2026-11-02), 13 jokers #757-784: Salandit -> Salazzle (Fire; +1 discard; scored
+// Queens +5 Mult / X1.5; the gender rolled when obtained, only a ♀ evolves), Stufful -> Bewear (Fighting; +40 Chips +4 Mult / X2.5 and Strong
+// Hug: 1 in 4 at end of round to destroy the Joker to its right), Comfey (Fairy; Floral Gift: 1 in 3 at end of round, +1 Energy to another
+// Pokémon Joker under its cap), Sandygast -> Palossand (Psychic; +10 Chips / X0.05 banked per scored Stone card), Pyukumuku (Water; +10 Chips
+// banked a round; Innards Out: $1 per round held when sold or destroyed), Komala (Colorless; X1.5; Comatose: can't be debuffed, Jokers can't
+// destroy it), Bruxish (Water; Strong Jaw: sealed scored cards retrigger) and Jangmo-o -> Hakamo-o -> Kommo-o (Dragon; +2 / +4 Mult banked per
+// Full House, evolving at +16 / +40; Kommo-o X1 + X0.15 per Full House played this run) — upstream 3.9.1 draws them all (Natdex {12,50}-{6,52}).
 import {
   G, P_CENTERS, P_CENTER_POOLS, localize, card_eval_status_text, pseudorandom, pseudoseed, pseudorandom_element, ease_hands_played,
   create_card, copy_card, playing_card_joker_effects, defineJokers, type_tooltip, level_evo, scaling_evo, item_evo,
@@ -168,7 +175,7 @@ import {
   find_pokemon_type, is_type, apply_type_sticker, remove_type_stickers, type_sticker_applied, get_type, multitype, wildcard_type, POKETYPES,
   add_card, detailed, energy_values, poke_remove_card, ease_dollars, ease_discard, juice_card_until, find_card, get_total_energy, POST_EVOLVE, can_evolve,
   poke_change_growth_level,
-  poke_get_adjacent_jokers, emit, find_joker, poke_drain, level_up_hand, poke_evolve, smods_debuff_card, blueprint_compat_line,
+  poke_get_adjacent_jokers, emit, find_joker, poke_drain, level_up_hand, poke_evolve, increment_energy, can_increase_energy, smods_debuff_card, blueprint_compat_line,
 } from '../api.js';
 import { blueprint_effect } from './pokejokers_08.js';
 import * as BN from '../../../js/engine/bignum.js'; // the Blind's requirement (Poison Gas) may be a big number in modded runs
@@ -3096,6 +3103,127 @@ function boomburst(card, context, x) {
   return r;
 }
 
+// ------------------------------------------------------------ Gen 7, batch 1 (#731-756)
+/** Pikipek / Trumbeak, Multi-hit: each hand hits 2-5 times, rolled ONCE a hand in `before` (not Blueprint, not a joker retrigger) on
+ *  the run's seeded stream (seed 'poke_multi_hit'), at the main series' Gen 5+ odds: 2 or 3 hits 35% each, 4 or 5 hits 15% each
+ *  (3.1 on average). The roll is kept on the joker (`hits`, for the tooltip and a Blueprint copy, which gives the same hits); joker_main
+ *  gives +mult per hit. A debuffed hand (The Eye, The Psychic...) has no `before` pass: no roll, no Mult. Toucannon's Skill Link is always
+ *  5 hits (MULTI_HIT_MAX). The hit count is fixed (never energized); Energy raises the per-hit number. */
+export const MULTI_HIT = [[2, 0.35], [3, 0.35], [4, 0.15], [5, 0.15]];
+export const MULTI_HIT_MAX = 5;
+export function multi_hit_roll() {
+  const r = pseudorandom(pseudoseed('poke_multi_hit'));
+  let acc = 0;
+  for (const [n, p] of MULTI_HIT) { acc += p; if (r < acc) return n; }
+  return MULTI_HIT_MAX;
+}
+function multi_hit(card, context) {
+  const ex = card.ability.extra;
+  if (context.before && context.cardarea === G.jokers && !context.blueprint && !context.retrigger_joker) {
+    ex.hits = multi_hit_roll();
+    card_eval_status_text(card, 'extra', null, null, null, { message: ex.hits + ' hits!', colour: 'MULT' });
+    return undefined;
+  }
+  if (context.joker_main && ex.hits > 0) { const m = r3(ex.mult * ex.hits); return { message: a_mult(m), colour: 'MULT', mult_mod: m }; }
+  return undefined;
+}
+/** Toucannon, Skill Link: always 5 hits, each X(Xmult_multi): one X of Xmult_multi^5 (X1.1 -> X1.61051) in joker_main. */
+const skill_link_x = (card) => Math.pow(card.ability.extra.Xmult_multi, MULTI_HIT_MAX);
+/** Yungoos / Gumshoos, Stakeout: the poker hand played differs from the LAST poker hand played this run. The run's record is Pokermon's
+ *  own G.GAME.poke_last_hand (systems/rules.js calculate: set in the mod's `after` pass of every hand, a debuffed one too), so it is
+ *  kept with or without a Yungoos and a late buy sees it; during scoring it still names the PREVIOUS hand. The run's first hand (no
+ *  record yet) counts as different. */
+export const stakeout_on = (context) => !!(context.scoring_name && context.scoring_name !== (G.GAME && G.GAME.poke_last_hand));
+const last_hand_vars = () => { const h = G.GAME && G.GAME.poke_last_hand; return h ? localize(h, 'poker_hands') : 'none yet'; };
+/** Crabrawler / Crabominable, Power-Up Punch: the FIRST scored card (scoring_hand[0], by position: a debuffed card there scores nothing,
+ *  the first never shifts inward) permanently gains +mult_mod Mult (Crabominable: +mult_mod2), every other scored card +mult_mod
+ *  (Crabominable only) — Steamodded's perma_mult (Hiker's way: the card keeps it and gives it each time it scores AFTER this; a
+ *  retrigger of the card gains again, as Hiker). Never from a Blueprint (blueprint_compat false: the gain is the whole joker). */
+function power_up_punch(card, context, all) {
+  if (!(context.individual && context.cardarea === G.play && !context.end_of_round && context.scoring_hand) || context.blueprint) return undefined;
+  const ex = card.ability.extra, first = context.other_card === context.scoring_hand[0];
+  const gain = first ? (all ? ex.mult_mod2 : ex.mult_mod) : all ? ex.mult_mod : 0;
+  if (!gain) return undefined;
+  const a = context.other_card.ability;
+  a.perma_mult = r3((a.perma_mult || 0) + gain);
+  return { extra: { message: localize('k_upgrade_ex'), colour: 'MULT' }, colour: 'MULT', card };
+}
+/** Oricorio's dance styles: the suit held most on the round's first deal picks one (Castform's moment and counting: is_suit, so a Wild
+ *  card counts for all four suits and a debuffed / suitless card for none; but the four suits apart, no red pair). A tie for the most, or
+ *  no suited card, keeps the current style. The style STAYS between rounds (ability.extra.form; no evolution). Its type follows the style
+ *  (ability.extra.ptype, Castform's / Greninja's way: a Tera sticker still owns the type); the shop card is Baile (Fire). */
+export const ORICORIO_STYLES = {
+  baile: { name: 'Baile Style', suit: 'Hearts', ptype: 'Fire' },
+  pompom: { name: 'Pom-Pom Style', suit: 'Diamonds', ptype: 'Lightning' },
+  pau: { name: 'Pa\'u Style', suit: 'Spades', ptype: 'Psychic' },
+  sensu: { name: 'Sensu Style', suit: 'Clubs', ptype: 'Psychic' },
+};
+const STYLE_OF_SUIT = { Hearts: 'baile', Diamonds: 'pompom', Spades: 'pau', Clubs: 'sensu' };
+export function dance_pick(cards, current) {
+  const n = { Hearts: 0, Diamonds: 0, Spades: 0, Clubs: 0 };
+  for (const c of cards || []) for (const s of Object.keys(n)) if (c.is_suit(s)) n[s] += 1;
+  const top = Math.max(...Object.values(n));
+  const best = Object.keys(n).filter((s) => n[s] === top);
+  return top > 0 && best.length === 1 ? STYLE_OF_SUIT[best[0]] : current;
+}
+export const style_of = (card) => (ORICORIO_STYLES[card.ability.extra.form] ? card.ability.extra.form : 'baile');
+function oricorio_set(card, style) {
+  const ex = card.ability.extra, t = ORICORIO_STYLES[style].ptype;
+  const changed = ex.form !== style || ex.ptype !== t;
+  ex.form = style;
+  ex.ptype = t;
+  if (!changed) return;
+  card.set_debuff();
+  sync_kecleons();
+  emit('card_changed', { card: card.sort_id });
+}
+function revelation_dance(card, context) {
+  if (first_deal(card, context, 'dance_round')) {
+    card.ability.extra.dance_round = G.GAME.round;
+    const s = dance_pick(G.hand.cards, style_of(card));
+    oricorio_set(card, s);
+    card_eval_status_text(card, 'extra', null, null, null, { message: ORICORIO_STYLES[s].name + '!', colour: 'FILTER' });
+    return undefined;
+  }
+  if (context.individual && context.cardarea === G.play && !context.end_of_round && context.other_card.is_suit(ORICORIO_STYLES[style_of(card)].suit)) {
+    return { x_mult: card.ability.extra.Xmult_multi, card };
+  }
+  return undefined;
+}
+/** Cutiefly / Ribombee, the first Fairy team count (Barboach / Starly's: is_type, so a Tera sticker counts and replaces; not debuffed;
+ *  itself always included, +1, so the shop card shows what it gives once bought). */
+const fairy_count = (card) => ((G.jokers && G.jokers.cards) || []).filter((j) => j !== card && !j.debuff && is_type(j, 'Fairy')).length + 1;
+/** Wishiwashi, Schooling: School Form while the hands left BEFORE this hand are at least half the round's hands, rounded up (4 hands: the
+ *  1st-3rd hands; 5: the 1st-3rd; 3: the 1st-2nd). The round's hands = hands already played + hands left before this one, so a hand
+ *  given at the round's start (Kyogre, Burglar) counts in both. While a hand scores run.js has already taken it (hands_left is one less):
+ *  `scoring` adds it back. Out of a round (the shop) it is the next round's first hand: School. */
+export function school_on(scoring) {
+  const GM = G.GAME, cr = GM && GM.current_round;
+  if (!cr || !GM.facing_blind) return true;
+  const before = (cr.hands_left || 0) + (scoring ? 1 : 0);
+  const total = (cr.hands_played || 0) + before;
+  return before >= Math.ceil(total / 2);
+}
+/** Mareanie / Toxapex, Merciless: the Boss Blinds beaten this run, Pokermon's own run record G.GAME.poke_bosses_beaten (systems/rules.js
+ *  calculate: +1 in the end-of-round pass of a won Boss Blind, with or without a Mareanie), so a late buy counts every one. */
+export const bosses_beaten = () => (G.GAME && G.GAME.poke_bosses_beaten) || 0;
+/** Dewpider / Araquanid, Water Bubble: scored Clubs (is_suit) +chips Chips, Araquanid also X(Xmult_multi); both DOUBLED while it's raining
+ *  (Swift Swim's check, swift_swim_raining / rain_read: Clubs held most on the round's first deal, or a working Kyogre). Doubled X means
+ *  its bonus doubles: X(1 + 2 x (X - 1)), X1.25 -> X1.5. */
+function water_bubble(card, context, x) {
+  if (rain_read(card, context)) return undefined;
+  if (!(context.individual && context.cardarea === G.play && !context.end_of_round && context.other_card.is_suit('Clubs'))) return undefined;
+  const ex = card.ability.extra, k = swift_swim_raining(card) ? 2 : 1;
+  const r = { chips: r3(ex.chips * k), card };
+  if (x) r.x_mult = r3(1 + k * (ex.Xmult_multi - 1));
+  return r;
+}
+/** Fomantis / Lurantis, Solar Blade: the round's FINAL hand (final_hand: hands_left 0 while it scores, i.e. 1 before it is played). */
+const final_vars = () => (G.GAME && G.GAME.facing_blind && G.GAME.current_round.hands_left <= 1 ? 'Active!' : 'Inactive');
+/** Morelull / Shiinotic: Lucky cards in the full deck (has_enhancement: a quantum Lucky counts). */
+const lucky_in_deck = () => (G.playing_cards || []).filter((c) => unbroken(c) && has_enhancement(c, 'm_lucky')).length;
+const glow_mult = (card) => r3(card.ability.extra.mult * lucky_in_deck() + (card.ability.extra.glow_mult || 0));
+
 defineJokers({
   // ---------------------------------------------------------------- LINE A: Shinx -> Luxio -> Luxray (Lightning, Gen 4)
   // Shinx 403: +1 Foresight; a played card sharing a rank with a Foreseen card earns $1 when scored. Evolves in 4 rounds.
@@ -3545,7 +3673,7 @@ defineJokers({
   // -> Naganadel (Safari $8, after 5 rounds). Types from the card art (pokermon_art_type.mjs): Nihilego Dark, Buzzwole Fighting, Pheromosa
   // Grass, Xurkitree Lightning, Celesteela Metal, Kartana Grass, Guzzlord Dragon, Poipole Dark, Naganadel Dragon, Stakataka Earth,
   // Blacephalon Psychic. Every one carries the `ultra_beast` attribute (nothing reads it yet but the wiki). Neither Nacho nor Pokermon+
-  // has any. Art: upstream 3.9.1's own Natdex cells with their floating souls ({24,52} ... {20,53}). After Drampa (780) in Pokédex order.
+  // has any. Art: upstream 3.9.1's own Natdex cells with their floating souls ({24,52} ... {20,53}). After Kommo-o (784) in Pokédex order.
   // BEAST BOOST (shared, solo): each Boss Blind beaten permanently raises the joker's main number (`poke_beast_boost`) by 10% of its
   // UNENERGIZED base (`beast_boosts`, a count: beast_value above). Energy raises the main number at its standard rate, the rest is fixed.
   //
@@ -7370,6 +7498,544 @@ defineJokers({
     calculate(self, card, context) { return supersonic(card, context) || boomburst(card, context, true); },
     ...hand_size,
   },
+  // ---------------------------------------------------------------- Gen 7, batch 1 (contentRev 64; the owner's "Yes build it", 2026-11-02), #731-756
+  // Pikipek 731 (Colorless, Uncommon $6; 3-stage), Multi-hit: each hand hits 2-5 times (seeded, Gen 5+ odds 35/35/15/15%), +3 Mult per
+  // hit (`mult` +40%: 4.2 / 5.4 / 6.6 a hit; the hit count fixed). 4 rounds (an early evolver).
+  pikipek: {
+    name: 'pikipek', poke_sprite391: sprite('Natdex', 20, 48),
+    config: { extra: { mult: 3, hits: 0, rounds: 4 } },
+    rarity: 2, cost: 6, stage: 'Basic', ptype: 'Colorless', gen: 7, blueprint_compat: true,
+    attributes: ['mult', 'chance', 'round_evo'], poke_after: 'primarina',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.mult), ex.hits || '-', ex.rounds] }; },
+    calculate(self, card, context) { return multi_hit(card, context) || level_evo(self, card, context, 'j_poke_trumbeak'); },
+  },
+  // Trumbeak 732 (Safari $8): 2-5 hits, +5 Mult per hit (`mult` +40%: 7 / 9 / 11). 5 rounds.
+  trumbeak: {
+    name: 'trumbeak', poke_sprite391: sprite('Natdex', 22, 48),
+    config: { extra: { mult: 5, hits: 0, rounds: 5 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Colorless', gen: 7, blueprint_compat: true,
+    attributes: ['mult', 'chance', 'round_evo'], poke_after: 'pikipek',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.mult), ex.hits || '-', ex.rounds] }; },
+    calculate(self, card, context) { return multi_hit(card, context) || level_evo(self, card, context, 'j_poke_toucannon'); },
+  },
+  // Toucannon 733 (Safari $10), Skill Link: always 5 hits, each X1.1 (`Xmult_multi` +5%, a per-hit X: 1.155 / 1.21 / 1.265 a hit), scored
+  // as ONE X of the five: X1.611 (X2.061 / X2.594 / X3.236 energized).
+  toucannon: {
+    name: 'toucannon', poke_sprite391: sprite('Natdex', 24, 48),
+    config: { extra: { Xmult_multi: 1.1 } },
+    rarity: 'poke_safari', cost: 10, stage: 'Two', ptype: 'Colorless', gen: 7, blueprint_compat: true,
+    attributes: ['xmult'], poke_after: 'trumbeak',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); return { vars: [r3(card.ability.extra.Xmult_multi), MULTI_HIT_MAX, r3(skill_link_x(card))] }; },
+    calculate(self, card, context) {
+      if (!context.joker_main) return undefined;
+      const x = skill_link_x(card);
+      return { message: a_xmult(r3(x)), colour: 'XMULT', Xmult_mod: x };
+    },
+  },
+  // Yungoos 734 (Colorless, Common $5), Stakeout: +15 Mult if the poker hand differs from the last poker hand played this run (the run's
+  // first hand counts as different; `mult` +40%: 21 / 27 / 33). 4 rounds.
+  yungoos: {
+    name: 'yungoos', poke_sprite391: sprite('Natdex', 26, 48),
+    config: { extra: { mult: 15, rounds: 4 } },
+    rarity: 1, cost: 5, stage: 'Basic', ptype: 'Colorless', gen: 7, blueprint_compat: true,
+    attributes: ['mult', 'hand_type', 'round_evo'], poke_after: 'toucannon',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.mult), last_hand_vars(), ex.rounds] }; },
+    calculate(self, card, context) {
+      if (context.joker_main && stakeout_on(context)) return { message: a_mult(r3(card.ability.extra.mult)), colour: 'MULT', mult_mod: card.ability.extra.mult };
+      return level_evo(self, card, context, 'j_poke_gumshoos');
+    },
+  },
+  // Gumshoos 735 (Safari $8): X2 under the same condition (`Xmult` +20%: 2.4 / 2.8 / 3.2).
+  gumshoos: {
+    name: 'gumshoos', poke_sprite391: sprite('Natdex', 28, 48),
+    config: { extra: { Xmult: 2 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Colorless', gen: 7, blueprint_compat: true,
+    attributes: ['xmult', 'hand_type'], poke_after: 'yungoos',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); return { vars: [r3(card.ability.extra.Xmult), last_hand_vars()] }; },
+    calculate(self, card, context) {
+      if (context.joker_main && stakeout_on(context)) return { message: a_xmult(r3(card.ability.extra.Xmult)), colour: 'XMULT', Xmult_mod: card.ability.extra.Xmult };
+      return undefined;
+    },
+  },
+  // Crabrawler 739 (Fighting, Common $5), Power-Up Punch: the first scored card of each hand permanently gains +2 Mult (perma_mult; gain
+  // `mult_mod` +20%: 2.4 / 2.8 / 3.2). Not Blueprint. 5 rounds.
+  crabrawler: {
+    name: 'crabrawler', poke_sprite391: sprite('Natdex', 6, 49),
+    config: { extra: { mult_mod: 2, rounds: 5 } },
+    rarity: 1, cost: 5, stage: 'Basic', ptype: 'Fighting', gen: 7, blueprint_compat: false,
+    attributes: ['mult', 'scaling', 'modify_card', 'round_evo'], poke_after: 'vikavolt',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.mult_mod), ex.rounds] }; },
+    calculate(self, card, context) { return power_up_punch(card, context, false) || level_evo(self, card, context, 'j_poke_crabominable'); },
+  },
+  // Crabominable 740 (Water: its card; Safari $8): every scored card permanently gains +1 Mult (`mult_mod` +20%: 1.2 / 1.4 / 1.6), the first
+  // +3 instead (`mult_mod2` +20%: 3.6 / 4.2 / 4.8). Not Blueprint.
+  crabominable: {
+    name: 'crabominable', poke_sprite391: sprite('Natdex', 8, 49),
+    config: { extra: { mult_mod: 1, mult_mod2: 3 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Water', gen: 7, blueprint_compat: false,
+    attributes: ['mult', 'scaling', 'modify_card'], poke_after: 'crabrawler',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.mult_mod), r3(ex.mult_mod2)] }; },
+    calculate(self, card, context) { return power_up_punch(card, context, true); },
+  },
+  // Oricorio 741 (Fire: Baile, its own card; Rare $7, single-stage), Dance styles: on each round's first deal the suit held most picks its
+  // style (Hearts Baile / Fire, Diamonds Pom-Pom / Lightning, Spades Pa'u / Psychic, Clubs Sensu / Psychic; a tie keeps the style; kept
+  // between rounds); scored cards of its style's suit give X1.25 (`Xmult_multi` +5%: 1.3125 / 1.375 / 1.4375). Its type follows the style
+  // (Monotype-exempt, Castform's rule); art: the style's 3.9.1 card (the Gen 7 sheet, systems/anim.js GEN7_FORM_SPRITES).
+  oricorio: {
+    name: 'oricorio', poke_sprite391: sprite('Gen07', 0, 0),
+    config: { extra: { Xmult_multi: 1.25, form: 'baile' } },
+    rarity: 3, cost: 7, stage: 'Basic', ptype: 'Fire', gen: 7, blueprint_compat: true,
+    attributes: ['xmult', 'suits', 'types', 'hand_drawn'], poke_after: 'crabominable',
+    poke_mono_exempt: true,
+    loc_vars(self, info_queue, card) {
+      type_tooltip(self, info_queue, card);
+      const st = ORICORIO_STYLES[style_of(card)];
+      return { vars: [r3(card.ability.extra.Xmult_multi), st.name, localize(st.suit, 'suits_plural')], colours: [st.suit] };
+    },
+    calculate(self, card, context) { return revelation_dance(card, context); },
+  },
+  // Cutiefly 742 (Fairy, Common $5): +4 Mult for each Fairy Joker, itself included (`mult` +40%: 5.6 / 7.2 / 8.8). 5 rounds.
+  cutiefly: {
+    name: 'cutiefly', poke_sprite391: sprite('Natdex', 12, 49),
+    config: { extra: { mult: 4, rounds: 5 } },
+    rarity: 1, cost: 5, stage: 'Basic', ptype: 'Fairy', gen: 7, blueprint_compat: true,
+    attributes: ['mult', 'types', 'round_evo'], poke_after: 'oricorio',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra, n = fairy_count(card); return { vars: [r3(ex.mult), n, r3(ex.mult * n), ex.rounds] }; },
+    calculate(self, card, context) {
+      if (context.joker_main) { const m = r3(card.ability.extra.mult * fairy_count(card)); return { message: a_mult(m), colour: 'MULT', mult_mod: m }; }
+      return level_evo(self, card, context, 'j_poke_ribombee');
+    },
+  },
+  // Ribombee 743 (Safari $8): X1, plus X0.25 for each Fairy Joker, itself included (`Xmult_mod` +20%: 0.3 / 0.35 / 0.4).
+  ribombee: {
+    name: 'ribombee', poke_sprite391: sprite('Natdex', 14, 49),
+    config: { extra: { Xmult_mod: 0.25 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Fairy', gen: 7, blueprint_compat: true,
+    attributes: ['xmult', 'types'], poke_after: 'cutiefly',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra, n = fairy_count(card); return { vars: [r3(ex.Xmult_mod), n, r3(1 + ex.Xmult_mod * n)] }; },
+    calculate(self, card, context) {
+      if (context.joker_main) { const x = r3(1 + card.ability.extra.Xmult_mod * fairy_count(card)); return { message: a_xmult(x), colour: 'XMULT', Xmult_mod: x }; }
+      return undefined;
+    },
+  },
+  // Wishiwashi 746 (Water, Rare $7, single-stage), Schooling: School Form X2.5 (`Xmult` +20%: 3 / 3.5 / 4) while the hands left before this
+  // hand are at least half the round's hands (rounded up); Solo Form +5 Mult (`mult` +40%: 7 / 9 / 11) otherwise. The art follows the form
+  // (its School card beside the Solo one on the Gen 7 sheet; poke_view_form, live).
+  wishiwashi: {
+    name: 'wishiwashi', poke_sprite391: sprite('Gen07', 2, 1),
+    config: { extra: { Xmult: 2.5, mult: 5 } },
+    rarity: 3, cost: 7, stage: 'Basic', ptype: 'Water', gen: 7, blueprint_compat: true,
+    attributes: ['xmult', 'mult', 'hands'], poke_after: 'lycanroc_dusk',
+    poke_view_form(self, card) { return school_on(false) ? 'school' : 'solo'; },
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.Xmult), r3(ex.mult), school_on(false) ? 'School Form' : 'Solo Form'] }; },
+    calculate(self, card, context) {
+      if (!context.joker_main) return undefined;
+      const ex = card.ability.extra;
+      if (school_on(true)) return { message: a_xmult(r3(ex.Xmult)), colour: 'XMULT', Xmult_mod: ex.Xmult };
+      return { message: a_mult(r3(ex.mult)), colour: 'MULT', mult_mod: ex.mult };
+    },
+  },
+  // Mareanie 747 (Dark, Common $5), Merciless: each scored card gives +1 Mult for each Boss Blind beaten this run (`mult` +40%: 1.4 / 1.8 /
+  // 2.2; the run's record, so a late buy counts all). 5 rounds.
+  mareanie: {
+    name: 'mareanie', poke_sprite391: sprite('Natdex', 22, 49),
+    config: { extra: { mult: 1, rounds: 5 } },
+    rarity: 1, cost: 5, stage: 'Basic', ptype: 'Dark', gen: 7, blueprint_compat: true,
+    attributes: ['mult', 'boss', 'round_evo'], poke_after: 'wishiwashi',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra, n = bosses_beaten(); return { vars: [r3(ex.mult), n, r3(ex.mult * n), ex.rounds] }; },
+    calculate(self, card, context) {
+      if (context.individual && context.cardarea === G.play && !context.end_of_round && bosses_beaten() > 0) return { mult: r3(card.ability.extra.mult * bosses_beaten()), card };
+      return level_evo(self, card, context, 'j_poke_toxapex');
+    },
+  },
+  // Toxapex 748 (Safari $8): X1, plus X0.25 for each Boss Blind beaten this run (`Xmult_mod` +20%: 0.3 / 0.35 / 0.4).
+  toxapex: {
+    name: 'toxapex', poke_sprite391: sprite('Natdex', 24, 49),
+    config: { extra: { Xmult_mod: 0.25 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Dark', gen: 7, blueprint_compat: true,
+    attributes: ['xmult', 'boss'], poke_after: 'mareanie',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra, n = bosses_beaten(); return { vars: [r3(ex.Xmult_mod), n, r3(1 + ex.Xmult_mod * n)] }; },
+    calculate(self, card, context) {
+      if (context.joker_main && bosses_beaten() > 0) { const x = r3(1 + card.ability.extra.Xmult_mod * bosses_beaten()); return { message: a_xmult(x), colour: 'XMULT', Xmult_mod: x }; }
+      return undefined;
+    },
+  },
+  // Dewpider 751 (Water, Common $5), Water Bubble: scored Clubs give +15 Chips (`chips` +30%: 19.5 / 24 / 28.5), doubled while it's raining
+  // (Swift Swim's rain). 5 rounds.
+  dewpider: {
+    name: 'dewpider', poke_sprite391: sprite('Natdex', 0, 50),
+    config: { extra: { chips: 15, rounds: 5 } },
+    rarity: 1, cost: 5, stage: 'Basic', ptype: 'Water', gen: 7, blueprint_compat: true,
+    attributes: ['chips', 'suit', 'clubs', 'hand_drawn', 'round_evo'], poke_after: 'mudsdale',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.chips), rain_state(card), ex.rounds] }; },
+    calculate(self, card, context) { return water_bubble(card, context, false) || level_evo(self, card, context, 'j_poke_araquanid'); },
+  },
+  // Araquanid 752 (Safari $8): scored Clubs give +15 Chips and X1.25 (`chips` +30%; `Xmult_multi` +5%: 1.3125 / 1.375 / 1.4375), both doubled in
+  // rain (+30 Chips and X1.5: the X's bonus doubles).
+  araquanid: {
+    name: 'araquanid', poke_sprite391: sprite('Natdex', 2, 50),
+    config: { extra: { chips: 15, Xmult_multi: 1.25 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Water', gen: 7, blueprint_compat: true,
+    attributes: ['chips', 'xmult', 'suit', 'clubs', 'hand_drawn'], poke_after: 'dewpider',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.chips), r3(ex.Xmult_multi), rain_state(card), r3(ex.chips * 2), r3(1 + 2 * (ex.Xmult_multi - 1))] }; },
+    calculate(self, card, context) { return water_bubble(card, context, true); },
+  },
+  // Fomantis 753 (Grass, Common $5), Solar Blade: +10 Mult on the round's final hand (`mult` +40%: 14 / 18 / 22). 5 rounds.
+  fomantis: {
+    name: 'fomantis', poke_sprite391: sprite('Natdex', 4, 50),
+    config: { extra: { mult: 10, rounds: 5 } },
+    rarity: 1, cost: 5, stage: 'Basic', ptype: 'Grass', gen: 7, blueprint_compat: true,
+    attributes: ['mult', 'hands', 'round_evo'], poke_after: 'araquanid',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.mult), final_vars(), ex.rounds] }; },
+    calculate(self, card, context) {
+      if (context.joker_main && G.GAME.facing_blind && final_hand()) return { message: a_mult(r3(card.ability.extra.mult)), colour: 'MULT', mult_mod: card.ability.extra.mult };
+      return level_evo(self, card, context, 'j_poke_lurantis');
+    },
+  },
+  // Lurantis 754 (Safari $8): X2.5 on the final hand (`Xmult` +20%: 3 / 3.5 / 4), X3.5 instead while it's sunny (`Xmult2` +20%: 4.2 / 4.9 /
+  // 5.6; the shared sun check: a red first deal, a working Groudon, Volcarona).
+  lurantis: {
+    name: 'lurantis', poke_sprite391: sprite('Natdex', 6, 50),
+    config: { extra: { Xmult: 2.5, Xmult2: 3.5 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Grass', gen: 7, blueprint_compat: true,
+    attributes: ['xmult', 'hands', 'hand_drawn'], poke_after: 'fomantis',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.Xmult), r3(ex.Xmult2), final_vars(), sun_state(card)] }; },
+    calculate(self, card, context) {
+      if (sun_read(card, context)) return undefined;
+      if (!(context.joker_main && G.GAME.facing_blind && final_hand())) return undefined;
+      const x = cherrim_sunny(card) ? card.ability.extra.Xmult2 : card.ability.extra.Xmult;
+      return { message: a_xmult(r3(x)), colour: 'XMULT', Xmult_mod: x };
+    },
+  },
+  // Morelull 755 (Fairy, Common $5): +3 Mult for each Lucky card in your full deck (`mult` +40%: 4.2 / 5.4 / 6.6). 5 rounds.
+  morelull: {
+    name: 'morelull', poke_sprite391: sprite('Natdex', 8, 50),
+    config: { extra: { mult: 3, rounds: 5 } },
+    rarity: 1, cost: 5, stage: 'Basic', ptype: 'Fairy', gen: 7, blueprint_compat: true,
+    attributes: ['mult', 'enhancements', 'full_deck', 'round_evo'], poke_after: 'lurantis',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); info_queue.push(P_CENTERS.m_lucky); const ex = card.ability.extra; return { vars: [r3(ex.mult), r3(glow_mult(card)), ex.rounds] }; },
+    calculate(self, card, context) {
+      if (context.joker_main) { const m = glow_mult(card); return m > 0 ? { message: a_mult(m), colour: 'MULT', mult_mod: m } : undefined; }
+      return level_evo(self, card, context, 'j_poke_shiinotic');
+    },
+  },
+  // Shiinotic 756 (Safari $8): Morelull's +3 per Lucky card kept, and permanently +2 Mult each time a scored Lucky card triggers (its Mult or
+  // its money roll; both at once count once: Tranquill's lucky_scored) — `glow_mult` banked (never energized), gain `mult_mod` +20%: 2.4 /
+  // 2.8 / 3.2. Not Blueprint for the gain.
+  shiinotic: {
+    name: 'shiinotic', poke_sprite391: sprite('Natdex', 10, 50),
+    config: { extra: { mult: 3, glow_mult: 0, mult_mod: 2 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Fairy', gen: 7, blueprint_compat: true,
+    attributes: ['mult', 'scaling', 'enhancements', 'full_deck', 'chance'], poke_after: 'morelull',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); info_queue.push(P_CENTERS.m_lucky); const ex = card.ability.extra; return { vars: [r3(ex.mult), r3(ex.mult_mod), r3(ex.glow_mult), r3(glow_mult(card))] }; },
+    calculate(self, card, context) {
+      const ex = card.ability.extra;
+      if (lucky_scored(context)) {
+        if (context.blueprint) return undefined;
+        ex.glow_mult = r3(ex.glow_mult + ex.mult_mod);
+        return { extra: { message: localize('k_upgrade_ex'), colour: 'MULT' }, colour: 'MULT', card };
+      }
+      if (context.joker_main) { const m = glow_mult(card); return m > 0 ? { message: a_mult(m), colour: 'MULT', mult_mod: m } : undefined; }
+      return undefined;
+    },
+  },
+}, FILE);
+
+// ---------------------------------------------------------------- Gen 7, batch 2 (contentRev 65; the owner's "Yes build it", 2026-11-02), #757-784
+/** Salandit: its gender, rolled when it is OBTAINED (add_to_deck, if none yet: Glameow's / Furfrou's moment, never on creation, so a shop
+ *  card has none), the run's seeded pseudorandom 'salandit_gender', 50/50; kept on ability.extra.gender (save / resume re-play it). Only a ♀
+ *  evolves (5 rounds, level_evo); a ♂ never counts down (Everstone or not). */
+const salandit_gender = (card) => (card.ability.extra.gender === 'male' || card.ability.extra.gender === 'female' ? card.ability.extra.gender : null);
+const queen_scores = (context) => !!(context.individual && context.cardarea === G.play && !context.end_of_round && !has_no_rank(context.other_card) && context.other_card.get_id() === 12);
+function salandit_state(card) {
+  const g = salandit_gender(card);
+  if (!g) return 'Gender rolled when obtained';
+  return g === 'female' ? gender_name(g) : gender_name(g) + ': never evolves';
+}
+/** Bewear, Strong hug: at end of round (the main pass, not Blueprint), 1 in `dem` (pseudorandom_probability 'bewear': Oops! All 6s doubles the
+ *  odds, as every Pokermon roll) to destroy the Joker directly to its RIGHT — Ceremonial Dagger's slice (getting_sliced + start_dissolve), so an
+ *  Eternal one or one already being destroyed is skipped, a joker that refuses (Komala's Comatose, Nacho's Passimian) stays, and Drifblim /
+ *  Pyukumuku still pay on leaving. Nothing to its right: no roll at all. */
+function strong_hug(card, context) {
+  if (!round_end(context) || context.blueprint || context.retrigger_joker || context.game_over || card.getting_sliced) return undefined;
+  const i = G.jokers.cards.indexOf(card), right = i >= 0 ? G.jokers.cards[i + 1] : undefined;
+  if (!right || right.ability.eternal || right.getting_sliced) return undefined;
+  const ex = card.ability.extra;
+  if (!pseudorandom_probability(card, 'bewear', ex.num, ex.dem, 'bewear')) return undefined;
+  right.getting_sliced = true;
+  G.E_MANAGER.add_event(() => {
+    card.juice_up(0.8, 0.8);
+    right.start_dissolve();
+  });
+  card_eval_status_text(card, 'extra', null, null, null, { message: 'Strong Hug!', colour: 'MULT' });
+  return undefined;
+}
+/** Comfey, Floral Gift: a joker that can take Energy now — a Pokémon Joker (a table `extra` with a ptype) with an Energy field
+ *  (energy_values) that is under its cap (can_increase_energy: 3 + energy_plus + its own bonus, or unlimited). Never Comfey itself. */
+const can_take_energy = (j) => !!(j && !j.removed && !j.getting_sliced && j.ability && j.ability.extra && typeof j.ability.extra === 'object' && j.ability.extra.ptype
+  && Object.keys(energy_values).some((f) => typeof j.ability.extra[f] === 'number') && can_increase_energy(j));
+export const comfey_targets = (card) => ((G.jokers && G.jokers.cards) || []).filter((j) => j !== card && can_take_energy(j));
+/** At end of round (the main pass, not Blueprint): 1 in `dem` (pseudorandom_probability 'comfey', Oops! doubles it) to give +1 Energy to a
+ *  random eligible OTHER Pokémon Joker (the run's seeded pseudorandom_element 'comfey'); none eligible, no roll. The gift goes through
+ *  increment_energy as a 'Trans' Energy (the Mystery Egg's): full strength on any type (as a matching Energy card), one energy_count, so the
+ *  cap holds and it carries through evolution. It is not an Energy CARD: Porygon-Z / Gastrodon / Fusion Flare don't count it. */
+function floral_gift(card, context) {
+  if (!round_end(context) || context.blueprint || context.retrigger_joker || context.game_over) return undefined;
+  const pool = comfey_targets(card);
+  if (!pool.length) return undefined;
+  const ex = card.ability.extra;
+  if (!pseudorandom_probability(card, 'comfey', ex.num, ex.dem, 'comfey')) return undefined;
+  const [t] = pseudorandom_element(pool, pseudoseed('comfey'));
+  increment_energy(t, 'Trans');
+  card_eval_status_text(card, 'extra', null, null, null, { message: 'Floral Gift!', colour: 'GREEN' });
+  return undefined;
+}
+/** Sandygast / Palossand, Sand castle: each time a Stone card scores (has_enhancement: a quantum Stone too; each retrigger is another
+ *  score), Sandygast banks +chip_mod Chips (`castle_chips`), Palossand +Xmult_mod X Mult (`castle_Xmult`, from X1) instead, still giving
+ *  the Chips it carried. Banks in no energy field (never retroactive); not Blueprint for the gain (Blueprint copies the score). */
+const stone_scored = (context) => !!(context.individual && context.cardarea === G.play && !context.end_of_round && has_enhancement(context.other_card, 'm_stone'));
+function sand_castle(card, context) {
+  const ex = card.ability.extra;
+  if (stone_scored(context) && !context.blueprint && !context.retrigger_joker) {
+    if (ex.Xmult_mod !== undefined) {
+      ex.castle_Xmult = r3((ex.castle_Xmult || 1) + ex.Xmult_mod);
+      card_eval_status_text(card, 'extra', null, null, null, { message: a_xmult(ex.castle_Xmult), colour: 'XMULT' });
+    } else {
+      ex.castle_chips = r3(ex.castle_chips + ex.chip_mod);
+      card_eval_status_text(card, 'extra', null, null, null, { message: a_chips(ex.castle_chips), colour: 'CHIPS' });
+    }
+    return undefined;
+  }
+  if (!context.joker_main) return undefined;
+  const r = {};
+  if (ex.castle_chips > 0) r.chip_mod = ex.castle_chips;
+  if (ex.castle_Xmult > 1) r.Xmult_mod = ex.castle_Xmult;
+  if (!Object.keys(r).length) return undefined;
+  r.message = r.Xmult_mod ? a_xmult(r3(r.Xmult_mod)) : a_chips(r3(r.chip_mod));
+  r.colour = r.Xmult_mod ? 'XMULT' : 'CHIPS';
+  return r;
+}
+/** Pyukumuku, Innards Out: the payout when it leaves — `innards_money` ($1, fixed) per round held (`held_rounds`). */
+const innards_payout = (card) => (card.ability.extra.innards_money || 0) * (card.ability.extra.held_rounds || 0);
+function innards_out(card) {
+  const n = innards_payout(card);
+  if (n <= 0) return;
+  ease_dollars(n);
+  card_eval_status_text(card, 'extra', null, null, null, { message: '$' + n, colour: 'MONEY' });
+}
+/** index.js hooks.start_dissolve (Drifblim's): an owned, undebuffed Pyukumuku being destroyed (Ceremonial Dagger, Madness, Bewear, Hex, Ankh,
+ *  a Pokermon eater...) pays out; a saved one (no_destroy) never gets here; selling pays through selling_self. */
+export function pyukumuku_destroyed(card) {
+  if (!card || card.debuff || card.removed || !G.jokers || card.area !== G.jokers) return;
+  if (!card.config || !card.config.center || card.config.center.key !== 'j_poke_pyukumuku') return;
+  innards_out(card);
+}
+/** Jangmo-o / Hakamo-o, Clangorous Scales: each hand played whose poker hand IS a Full House (scoring_name: a Flush House is its own hand
+ *  and doesn't count, Larvitar's rule) banks +mult_mod Mult (`clang_mult`, no energy field), in `before`, not Blueprint; given every hand. */
+function clangorous(card, context) {
+  const ex = card.ability.extra;
+  if (context.before && context.scoring_name === 'Full House' && !context.blueprint && !context.retrigger_joker && ex.mult_mod !== undefined) {
+    ex.clang_mult = r3(ex.clang_mult + ex.mult_mod);
+    card_eval_status_text(card, 'extra', null, null, null, { message: a_mult(ex.clang_mult), colour: 'MULT' });
+    return undefined;
+  }
+  if (!context.joker_main) return undefined;
+  const r = {};
+  if (ex.clang_mult > 0) r.mult_mod = ex.clang_mult;
+  if (ex.Xmult_mod !== undefined) { const x = kommo_x(card); if (x > 1) r.Xmult_mod = x; }
+  if (!Object.keys(r).length) return undefined;
+  r.message = r.Xmult_mod ? a_xmult(r.Xmult_mod) : a_mult(r3(r.mult_mod));
+  r.colour = r.Xmult_mod ? 'XMULT' : 'MULT';
+  return r;
+}
+/** Kommo-o: the run's Full Houses (G.GAME.hands['Full House'].played: run.js counts the hand before the jokers score, never resets it in a run,
+ *  so a Kommo-o bought late counts every one and the hand being played already counts). */
+export const full_houses_played = () => (G.GAME && G.GAME.hands && G.GAME.hands['Full House'] && G.GAME.hands['Full House'].played) || 0;
+const kommo_x = (card) => r3(1 + card.ability.extra.Xmult_mod * full_houses_played());
+
+defineJokers({
+  // Salandit 757 (Fire, Common $5), Queen: +1 discard each round (fixed); each scored Queen +5 Mult (`mult` +40%: 7 / 9 / 11). Its gender is
+  // rolled when obtained: only a ♀ evolves (after 5 rounds), a ♂ never does.
+  salandit: {
+    name: 'salandit', poke_sprite391: sprite('Natdex', 12, 50),
+    config: { extra: { d_size: 1, mult: 5, rounds: 5 } },
+    rarity: 1, cost: 5, stage: 'Basic', ptype: 'Fire', gen: 7, blueprint_compat: true,
+    attributes: ['discard', 'mult', 'rank', 'face', 'round_evo', 'condition_evo'], poke_after: 'shiinotic',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [ex.d_size, r3(ex.mult), salandit_state(card), ex.rounds] }; },
+    add_to_deck(self, card) {
+      discards.add_to_deck(self, card);
+      if (!salandit_gender(card)) card.ability.extra.gender = pseudorandom(pseudoseed('salandit_gender')) < 0.5 ? 'female' : 'male';
+    },
+    remove_from_deck: discards.remove_from_deck,
+    calculate(self, card, context) {
+      if (queen_scores(context)) return { mult: card.ability.extra.mult, card };
+      if (salandit_gender(card) === 'female') return level_evo(self, card, context, 'j_poke_salazzle');
+      return undefined;
+    },
+  },
+  // Salazzle 758 (Safari $8): +1 discard each round; each scored Queen X1.5 Mult (`Xmult_multi` +5%: 1.575 / 1.65 / 1.725).
+  salazzle: {
+    name: 'salazzle', poke_sprite391: sprite('Natdex', 14, 50),
+    config: { extra: { d_size: 1, Xmult_multi: 1.5 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Fire', gen: 7, blueprint_compat: true,
+    attributes: ['discard', 'xmult', 'rank', 'face'], poke_after: 'salandit',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [ex.d_size, r3(ex.Xmult_multi)] }; },
+    calculate(self, card, context) { return queen_scores(context) ? { x_mult: card.ability.extra.Xmult_multi, card } : undefined; },
+    ...discards,
+  },
+  // Stufful 759 (Fighting: its card; Common $5): +40 Chips (`chips` +30%: 52 / 64 / 76) and +4 Mult (`mult` +40%: 5.6 / 7.2 / 8.8). 5 rounds.
+  stufful: {
+    name: 'stufful', poke_sprite391: sprite('Natdex', 16, 50),
+    config: { extra: { chips: 40, mult: 4, rounds: 5 } },
+    rarity: 1, cost: 5, stage: 'Basic', ptype: 'Fighting', gen: 7, blueprint_compat: true,
+    attributes: ['chips', 'mult', 'round_evo'], poke_after: 'salazzle',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.chips), r3(ex.mult), ex.rounds] }; },
+    calculate(self, card, context) {
+      if (context.joker_main) { const ex = card.ability.extra; return { message: a_mult(r3(ex.mult)), colour: 'MULT', chip_mod: ex.chips, mult_mod: ex.mult }; }
+      return level_evo(self, card, context, 'j_poke_bewear');
+    },
+  },
+  // Bewear 760 (Safari $8), Strong hug: X2.5 Mult (`Xmult` +20%: 3 / 3.5 / 4). At end of round, 1 in 4 (fixed odds) to destroy the Joker
+  // directly to its right (strong_hug; not Eternal; nothing if none). Not Blueprint (it copies the X only).
+  bewear: {
+    name: 'bewear', poke_sprite391: sprite('Natdex', 18, 50),
+    config: { extra: { Xmult: 2.5, num: 1, dem: 4 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Fighting', gen: 7, blueprint_compat: true,
+    attributes: ['xmult', 'chance', 'joker', 'position'], poke_after: 'stufful',
+    loc_vars(self, info_queue, card) {
+      type_tooltip(self, info_queue, card);
+      const ex = card.ability.extra, [n, d] = get_probability_vars(card, ex.num, ex.dem, 'bewear');
+      const i = G.jokers ? G.jokers.cards.indexOf(card) : -1, right = i >= 0 ? G.jokers.cards[i + 1] : undefined;
+      return { vars: [r3(ex.Xmult), n, d, right ? (right.ability.eternal ? 'Eternal: safe' : 'In its arms: ' + localize({ type: 'name_text', set: 'Joker', key: right.config.center.key })) : 'Nothing to its right'] };
+    },
+    calculate(self, card, context) {
+      if (context.joker_main) return { message: a_xmult(r3(card.ability.extra.Xmult)), colour: 'XMULT', Xmult_mod: card.ability.extra.Xmult };
+      return strong_hug(card, context);
+    },
+  },
+  // Comfey 764 (Fairy, Rare $7), Floral Gift: at end of round, 1 in 3 (fixed odds) to give +1 Energy to a random OTHER Pokémon Joker that can
+  // still take one (floral_gift). Energy-inert itself (it has no number).
+  comfey: {
+    name: 'comfey', poke_sprite391: sprite('Natdex', 26, 50),
+    config: { extra: { num: 1, dem: 3 } },
+    rarity: 3, cost: 7, stage: 'Basic', ptype: 'Fairy', gen: 7, blueprint_compat: false, poke_no_energy_field: true,
+    attributes: ['energy', 'chance', 'joker'],
+    poke_after: 'bewear',
+    loc_vars(self, info_queue, card) {
+      type_tooltip(self, info_queue, card);
+      const ex = card.ability.extra, [n, d] = get_probability_vars(card, ex.num, ex.dem, 'comfey');
+      const k = G.jokers && G.jokers.cards.includes(card) ? comfey_targets(card).length : null;
+      return { vars: [n, d, k === null ? 'Picks among your Jokers' : k === 1 ? '1 Joker can take it' : k + ' Jokers can take it'] };
+    },
+    calculate(self, card, context) { return floral_gift(card, context); },
+  },
+  // Sandygast 769 (Psychic: its card; Common $5), Sand castle: permanently +10 Chips each time a Stone card scores (`castle_chips` banked; gain
+  // `chip_mod` +20%: 12 / 14 / 16). 5 rounds; the bank carries into Palossand.
+  sandygast: {
+    name: 'sandygast', poke_sprite391: sprite('Natdex', 6, 51),
+    config: { extra: { castle_chips: 0, chip_mod: 10, rounds: 5 } },
+    rarity: 1, cost: 5, stage: 'Basic', ptype: 'Psychic', gen: 7, blueprint_compat: true,
+    attributes: ['chips', 'scaling', 'enhancements', 'round_evo'], poke_after: 'comfey',
+    poke_custom_values_to_keep: ['castle_chips'],
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); info_queue.push(P_CENTERS.m_stone); const ex = card.ability.extra; return { vars: [r3(ex.chip_mod), r3(ex.castle_chips), ex.rounds] }; },
+    calculate(self, card, context) { return sand_castle(card, context) || level_evo(self, card, context, 'j_poke_palossand'); },
+  },
+  // Palossand 770 (Safari $8): gains X0.05 per scored Stone card (`castle_Xmult` banked from X1; gain `Xmult_mod` +20%: 0.06 / 0.07 / 0.08),
+  // and gives Sandygast's Chips (kept, no longer growing).
+  palossand: {
+    name: 'palossand', poke_sprite391: sprite('Natdex', 8, 51),
+    config: { extra: { castle_chips: 0, castle_Xmult: 1, Xmult_mod: 0.05 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Psychic', gen: 7, blueprint_compat: true,
+    attributes: ['chips', 'xmult', 'scaling', 'enhancements'], poke_after: 'sandygast',
+    poke_custom_values_to_keep: ['castle_chips', 'castle_Xmult'],
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); info_queue.push(P_CENTERS.m_stone); const ex = card.ability.extra; return { vars: [r3(ex.Xmult_mod), r3(ex.castle_Xmult), r3(ex.castle_chips)] }; },
+    calculate(self, card, context) { return sand_castle(card, context); },
+  },
+  // Pyukumuku 771 (Water, Rare $7), Innards Out: permanently +10 Chips at the end of each round held (`innards_chips` banked; gain `chip_mod`
+  // +20%: 12 / 14 / 16); when sold or destroyed, earn $1 per round held (`innards_money` / `held_rounds`, fixed).
+  pyukumuku: {
+    name: 'pyukumuku', poke_sprite391: sprite('Natdex', 10, 51),
+    config: { extra: { innards_chips: 0, chip_mod: 10, innards_money: 1, held_rounds: 0 } },
+    rarity: 3, cost: 7, stage: 'Basic', ptype: 'Water', gen: 7, blueprint_compat: true,
+    attributes: ['chips', 'scaling', 'money', 'on_sell', 'sell_value'], poke_after: 'palossand',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.chip_mod), r3(ex.innards_chips), ex.innards_money, innards_payout(card)] }; },
+    calculate(self, card, context) {
+      const ex = card.ability.extra;
+      if (context.selling_self && !context.blueprint) { innards_out(card); return undefined; }
+      if (round_end(context) && !context.blueprint && !context.retrigger_joker && !context.game_over) {
+        ex.innards_chips = r3(ex.innards_chips + ex.chip_mod);
+        ex.held_rounds = (ex.held_rounds || 0) + 1;
+        card_eval_status_text(card, 'extra', null, null, null, { message: a_chips(ex.innards_chips), colour: 'CHIPS' });
+        return undefined;
+      }
+      if (context.joker_main && ex.innards_chips > 0) return { message: a_chips(r3(ex.innards_chips)), colour: 'CHIPS', chip_mod: ex.innards_chips };
+      return undefined;
+    },
+  },
+  // Komala 775 (Colorless, Rare $7), Comatose: X1.5 Mult (`Xmult` +20%: 1.8 / 2.1 / 2.4). Can't be debuffed (systems/rules.js set_debuff) and
+  // can't be destroyed by a Joker (it answers joker_type_destroyed for itself with no_destroy: Madness, Ceremonial Dagger, Bewear, Carvanha /
+  // Sharpedo, Scizor... every getting_sliced path); Hex and Ankh (Spectral cards you choose) and selling still remove it.
+  komala: {
+    name: 'komala', poke_sprite391: sprite('Natdex', 18, 51),
+    config: { extra: { Xmult: 1.5 } },
+    rarity: 3, cost: 7, stage: 'Basic', ptype: 'Colorless', gen: 7, blueprint_compat: true,
+    attributes: ['xmult', 'debuff'], poke_after: 'pyukumuku',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); return { vars: [r3(card.ability.extra.Xmult)] }; },
+    calculate(self, card, context) {
+      if (context.joker_type_destroyed && context.card === card && !context.blueprint) {
+        card_eval_status_text(card, 'extra', null, null, null, { message: 'Comatose!', colour: 'FILTER' });
+        return { no_destroy: true };
+      }
+      if (context.joker_main) return { message: a_xmult(r3(card.ability.extra.Xmult)), colour: 'XMULT', Xmult_mod: card.ability.extra.Xmult };
+      return undefined;
+    },
+  },
+  // Bruxish 779 (Water, Rare $7), Strong Jaw: every scored card with a seal retriggers once (fixed: Energy-inert). Blueprint copies it.
+  bruxish: {
+    name: 'bruxish', poke_sprite391: sprite('Natdex', 26, 51),
+    config: { extra: { retriggers: 1 } },
+    rarity: 3, cost: 7, stage: 'Basic', ptype: 'Water', gen: 7, blueprint_compat: true, poke_no_energy_field: true,
+    attributes: ['retrigger', 'seals'], poke_after: 'mimikyu',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); return { vars: [card.ability.extra.retriggers] }; },
+    calculate(self, card, context) {
+      if (context.repetition && context.cardarea === G.play && context.scoring_hand && context.other_card && context.other_card.get_seal()) {
+        return { message: localize('k_again_ex'), repetitions: card.ability.extra.retriggers, card };
+      }
+      return undefined;
+    },
+  },
+  // Jangmo-o 782 (Dragon, Uncommon $6), Clangorous Scales: permanently +2 Mult each time you play a Full House (`clang_mult` banked; gain
+  // `mult_mod` +20%: 2.4 / 2.8 / 3.2). Evolves at +16 Mult (scaling_evo).
+  jangmoo: {
+    name: 'jangmoo', poke_sprite391: sprite('Natdex', 2, 52),
+    config: { evo_rqmt: 16, extra: { clang_mult: 0, mult_mod: 2 } },
+    rarity: 2, cost: 6, stage: 'Basic', ptype: 'Dragon', gen: 7, blueprint_compat: true,
+    attributes: ['mult', 'scaling', 'hand_type', 'scaling_evo'], poke_after: 'mega_drampa',
+    poke_custom_values_to_keep: ['clang_mult'],
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.mult_mod), r3(ex.clang_mult), self.config.evo_rqmt] }; },
+    calculate(self, card, context) { return clangorous(card, context) || scaling_evo(self, card, context, 'j_poke_hakamoo', card.ability.extra.clang_mult, self.config.evo_rqmt); },
+  },
+  // Hakamo-o 783 (Safari $8): +4 Mult per Full House (`mult_mod` +20%: 4.8 / 5.6 / 6.4) on Jangmo-o's bank. Evolves at +40 Mult in all.
+  hakamoo: {
+    name: 'hakamoo', poke_sprite391: sprite('Natdex', 4, 52),
+    config: { evo_rqmt: 40, extra: { clang_mult: 0, mult_mod: 4 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Dragon', gen: 7, blueprint_compat: true,
+    attributes: ['mult', 'scaling', 'hand_type', 'scaling_evo'], poke_after: 'jangmoo',
+    poke_custom_values_to_keep: ['clang_mult'],
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.mult_mod), r3(ex.clang_mult), self.config.evo_rqmt] }; },
+    calculate(self, card, context) { return clangorous(card, context) || scaling_evo(self, card, context, 'j_poke_kommoo', card.ability.extra.clang_mult, self.config.evo_rqmt); },
+  },
+  // Kommo-o 784 (Safari $10): gives the banked Mult (no longer growing) and X1 + X0.15 per Full House played this run (`Xmult_mod` +20%:
+  // 0.18 / 0.21 / 0.24; G.GAME.hands['Full House'].played, so a late Kommo-o counts every one).
+  kommoo: {
+    name: 'kommoo', poke_sprite391: sprite('Natdex', 6, 52),
+    config: { extra: { clang_mult: 0, Xmult_mod: 0.15 } },
+    rarity: 'poke_safari', cost: 10, stage: 'Two', ptype: 'Dragon', gen: 7, blueprint_compat: true,
+    attributes: ['mult', 'xmult', 'hand_type'], poke_after: 'hakamoo',
+    poke_custom_values_to_keep: ['clang_mult'],
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.Xmult_mod), full_houses_played(), kommo_x(card), r3(ex.clang_mult)] }; },
+    calculate(self, card, context) { return clangorous(card, context); },
+  },
 }, FILE);
 
 /** The families (functions/pokefamily.lua style): index.js adds them with set_family. */
@@ -7462,6 +8128,21 @@ export const DESIGN_FAMILIES = [
   ['phantump', 'trevenant'],
   ['bergmite', 'avalugg'],
   ['noibat', 'noivern'],
+  // Gen 7, batch 1
+  ['pikipek', 'trumbeak', 'toucannon'],
+  ['yungoos', 'gumshoos'],
+  ['crabrawler', 'crabominable'],
+  ['cutiefly', 'ribombee'],
+  ['mareanie', 'toxapex'],
+  ['dewpider', 'araquanid'],
+  ['fomantis', 'lurantis'],
+  ['morelull', 'shiinotic'],
+  // Gen 7, batch 2
+  ['salandit', 'salazzle'],
+  ['stufful', 'bewear'],
+  ['sandygast', 'palossand'],
+  ['jangmoo', 'hakamoo', 'kommoo'],
+  // Gen 7, batch 3
   ['poipole', 'naganadel'],
 ];
 
@@ -7560,6 +8241,8 @@ const TRADE_TEXT = (p) => ['{C:attention}Trade:{} evolves only together', 'with 
 const STEEL_TEXT = (n) => ['{C:attention}Steel{} cards held in hand', 'give {X:mult,C:white} X#' + n + '# {} Mult', 'instead of {X:mult,C:white} X1.5 {}', '{C:inactive,s:0.8}(Never stacks with Registeel,', '{C:inactive,s:0.8}Escavalier or Durant: the best wins)'];
 const TOP_NOTE = ['{C:inactive}(Aces high; a tie: the leftmost;', '{C:inactive}never a Stone or debuffed card)'];
 const SUN_NOTE = ['{C:inactive,s:0.8}(Sunny: Hearts + Diamonds held', '{C:inactive,s:0.8}most on the round\'s first deal,', '{C:inactive,s:0.8}a working Groudon, or Volcarona)'];
+const MULTI_HIT_TEXT = ['{C:attention}Multi-hit:{} each hand hits', '{C:attention}2-5{} times {C:inactive}(rolled each hand)', '{C:mult}+#1#{} Mult per hit', '{C:inactive}(Last hand: {C:attention}#2#{C:inactive} hits)'];
+const STAKEOUT = (gain) => ['{C:attention}Stakeout:{} ' + gain + ' if the', 'poker hand differs from the', 'last poker hand played this run', '{C:inactive}(Last: {C:attention}#2#{C:inactive})'];
 const GALE_WINGS = (gain) => ['{C:attention}Gale Wings:{} the first hand', 'of each round gives ' + gain, '{C:inactive}(#2#)'];
 const WILD_POWDER = ['When a {C:attention}Blind{} is selected,', 'a random unenhanced card', 'in your deck becomes', 'a {C:attention}Wild{} card'];
 const GARDEN_QUEEN = (gain) => ['{C:attention}Garden Queen:{} each', 'scored {C:attention}Queen{} ' + gain];
@@ -8213,6 +8896,54 @@ export const DESIGN_LOC = {
     j_poke_avalugg: { name: 'Avalugg', text: ['{C:chips}+#1#{} Chips', '{X:mult,C:white} X#2# {} Mult on the', 'final hand of the round', '{C:inactive}(#3#)'] },
     j_poke_noibat: { name: 'Noibat', text: [GLASS_ODDS('{C:attention}+#1#{} hand size'), [...GLASS_BREAKS('Gains {C:mult}+#4#{} Mult'), '{C:inactive}(Currently {C:mult}+#5#{C:inactive} Mult)', EVOLVES_ROUNDS(6)]] },
     j_poke_noivern: { name: 'Noivern', text: [GLASS_ODDS('{C:attention}+#1#{} hand size'), ['{C:attention}Boomburst:{} gains {X:mult,C:white} X#4# {} Mult', 'each time a {C:attention}Glass{} card', 'breaks, and a random card in', 'your deck becomes {C:attention}Glass{}', '{C:inactive}(Currently {X:mult,C:white} X#5# {C:inactive} Mult', '{C:inactive}and {C:mult}+#6#{C:inactive} Mult)']] },
+    // Gen 7, batch 1 (the owner's "Yes build it", 2026-11-02)
+    j_poke_pikipek: { name: 'Pikipek', text: [...MULTI_HIT_TEXT, EVOLVES_ROUNDS(3)] },
+    j_poke_trumbeak: { name: 'Trumbeak', text: [...MULTI_HIT_TEXT, EVOLVES_ROUNDS(3)] },
+    j_poke_toucannon: { name: 'Toucannon', text: ['{C:attention}Skill Link:{} always hits', '{C:attention}#2#{} times, each hit', '{X:mult,C:white} X#1# {} Mult', '{C:inactive}(Total {X:mult,C:white} X#3# {C:inactive} Mult)'] },
+    j_poke_yungoos: { name: 'Yungoos', text: [...STAKEOUT('{C:mult}+#1#{} Mult'), EVOLVES_ROUNDS(3)] },
+    j_poke_gumshoos: { name: 'Gumshoos', text: STAKEOUT('{X:mult,C:white} X#1# {} Mult') },
+    j_poke_crabrawler: { name: 'Crabrawler', text: ['{C:attention}Power-Up Punch:{} the first', 'scored card of each hand', 'permanently gains {C:mult}+#1#{} Mult', EVOLVES_ROUNDS(2)] },
+    j_poke_crabominable: { name: 'Crabominable', text: ['{C:attention}Power-Up Punch:{} every', 'scored card permanently', 'gains {C:mult}+#1#{} Mult, the first', 'scored card {C:mult}+#2#{} instead'] },
+    j_poke_oricorio: { name: 'Oricorio', text: [
+      ['{C:attention}Dance:{} on the first deal of', 'each round, the suit held most', 'picks its style and type', '{C:inactive}({C:hearts}Hearts{C:inactive} Baile {X:poke_fire,C:white}Fire{C:inactive},', '{C:diamonds}Diamonds{C:inactive} Pom-Pom {X:poke_lightning,C:black}Lightning{C:inactive},',
+        '{C:spades}Spades{C:inactive} Pa\'u {X:poke_psychic,C:white}Psychic{C:inactive},', '{C:clubs}Clubs{C:inactive} Sensu {X:poke_psychic,C:white}Psychic{C:inactive})', '{C:inactive,s:0.8}(A tie keeps its style;', '{C:inactive,s:0.8}its type never breaks Monotype)'],
+      ['Scored cards of its style\'s', 'suit give {X:mult,C:white} X#1# {} Mult', '{C:inactive}(Currently #2#: {V:1}#3#{C:inactive})'],
+    ] },
+    j_poke_cutiefly: { name: 'Cutiefly', text: ['{C:mult}+#1#{} Mult for each', '{X:poke_fairy,C:white}Fairy{} Joker {C:inactive}(Itself included)', '{C:inactive}(Currently {C:attention}#2#{C:inactive}: {C:mult}+#3#{C:inactive} Mult)', EVOLVES_ROUNDS(4)] },
+    j_poke_ribombee: { name: 'Ribombee', text: ['{X:mult,C:white} X1 {} Mult, plus {X:mult,C:white} X#1# {}', 'for each {X:poke_fairy,C:white}Fairy{} Joker', '{C:inactive}(Itself included)', '{C:inactive}(Currently {C:attention}#2#{C:inactive}: {X:mult,C:white} X#3# {C:inactive} Mult)'] },
+    j_poke_wishiwashi: { name: 'Wishiwashi', text: ['{C:attention}Schooling:{}', '{C:attention}School Form:{} {X:mult,C:white} X#1# {} Mult while', 'you have at least half of', 'the round\'s hands left', '{C:attention}Solo Form:{} {C:mult}+#2#{} Mult', 'otherwise', '{C:inactive}(Next hand: #3#)'] },
+    j_poke_mareanie: { name: 'Mareanie', text: ['{C:attention}Merciless:{} each scored', 'card gives {C:mult}+#1#{} Mult for each', '{C:attention}Boss Blind{} beaten this run', '{C:inactive}(Currently {C:attention}#2#{C:inactive}: {C:mult}+#3#{C:inactive} Mult a card)', EVOLVES_ROUNDS(4)] },
+    j_poke_toxapex: { name: 'Toxapex', text: ['{C:attention}Merciless:{} {X:mult,C:white} X1 {} Mult, plus', '{X:mult,C:white} X#1# {} for each {C:attention}Boss Blind{}', 'beaten this run', '{C:inactive}(Currently {C:attention}#2#{C:inactive}: {X:mult,C:white} X#3# {C:inactive} Mult)'] },
+    j_poke_dewpider: { name: 'Dewpider', text: ['{C:attention}Water Bubble:{} scored {C:clubs}Clubs{}', 'give {C:chips}+#1#{} Chips, doubled', 'while it\'s {C:poke_rain}raining{}', '{C:inactive}(#2#)', ...RAIN_NOTE, EVOLVES_ROUNDS(3)] },
+    j_poke_araquanid: { name: 'Araquanid', text: ['{C:attention}Water Bubble:{} scored {C:clubs}Clubs{}', 'give {C:chips}+#1#{} Chips and {X:mult,C:white} X#2# {} Mult', 'While it\'s {C:poke_rain}raining{}: {C:chips}+#4#{}', 'Chips and {X:mult,C:white} X#5# {} Mult', '{C:inactive}(#3#)', ...RAIN_NOTE] },
+    j_poke_fomantis: { name: 'Fomantis', text: ['{C:mult}+#1#{} Mult on the', 'final hand of the round', '{C:inactive}(#2#)', EVOLVES_ROUNDS(3)] },
+    j_poke_lurantis: { name: 'Lurantis', text: ['{C:attention}Solar Blade:{} {X:mult,C:white} X#1# {} Mult on', 'the final hand of the round,', '{X:mult,C:white} X#2# {} while it\'s {C:poke_sun}sunny{}', '{C:inactive}(#3#; #4#)', ...SUN_NOTE] },
+    j_poke_morelull: { name: 'Morelull', text: ['{C:mult}+#1#{} Mult for each {C:attention}Lucky{}', 'card in your full deck', '{C:inactive}(Currently {C:mult}+#2#{C:inactive} Mult)', EVOLVES_ROUNDS(3)] },
+    j_poke_shiinotic: { name: 'Shiinotic', text: [
+      ['{C:mult}+#1#{} Mult for each {C:attention}Lucky{}', 'card in your full deck'],
+      ['Gains {C:mult}+#2#{} Mult each time', 'a scored {C:attention}Lucky{} card triggers', '{C:inactive}(Banked: {C:mult}+#3#{C:inactive}; currently {C:mult}+#4#{C:inactive} Mult)'],
+    ] },
+    // Gen 7, batch 2 (contentRev 65)
+    j_poke_salandit: { name: 'Salandit', text: ['{C:red}+#1#{} discard each round', 'Each scored {C:attention}Queen{}', 'gives {C:mult}+#2#{} Mult', '{C:inactive}(#3#)',
+      '{C:inactive,s:0.8}(Only ♀ evolves, after {C:attention,s:0.8}#4#{C:inactive,s:0.8} rounds)'] },
+    j_poke_salazzle: { name: 'Salazzle', text: ['{C:red}+#1#{} discard each round', 'Each scored {C:attention}Queen{}', 'gives {X:mult,C:white} X#2# {} Mult'] },
+    j_poke_stufful: { name: 'Stufful', text: ['{C:chips}+#1#{} Chips and {C:mult}+#2#{} Mult', EVOLVES_ROUNDS(3)] },
+    j_poke_bewear: { name: 'Bewear', text: [['{X:mult,C:white} X#1# {} Mult'], ['{C:attention}Strong Hug:{} at end of round,', '{C:green}#2# in #3#{} chance to destroy', 'the Joker directly to its {C:attention}right{}', '{C:inactive}(#4#)']] },
+    j_poke_comfey: { name: 'Comfey', text: ['{C:attention}Floral Gift:{} at end of round,', '{C:green}#1# in #2#{} chance to give {C:attention}+1{}', '{C:poke_pink}Energy{} to a random other', 'Pokémon Joker that can take it', '{C:inactive}(#3#)'] },
+    j_poke_sandygast: { name: 'Sandygast', text: ['Gains {C:chips}+#1#{} Chips each time', 'a {C:attention}Stone{} card scores', '{C:inactive}(Currently {C:chips}+#2#{C:inactive} Chips)', EVOLVES_ROUNDS(3)] },
+    j_poke_palossand: { name: 'Palossand', text: ['Gains {X:mult,C:white} X#1# {} Mult each time', 'a {C:attention}Stone{} card scores', '{C:inactive}(Currently {X:mult,C:white} X#2# {C:inactive} Mult', '{C:inactive}and {C:chips}+#3#{C:inactive} Chips)'] },
+    j_poke_pyukumuku: { name: 'Pyukumuku', text: [
+      ['Gains {C:chips}+#1#{} Chips at', 'end of round', '{C:inactive}(Currently {C:chips}+#2#{C:inactive} Chips)'],
+      ['{C:attention}Innards Out:{} when sold or', 'destroyed, earn {C:money}$#3#{} for', 'each round held', '{C:inactive}(Currently {C:money}$#4#{C:inactive})'],
+    ] },
+    j_poke_komala: { name: 'Komala', text: ['{X:mult,C:white} X#1# {} Mult', '{C:attention}Comatose:{} can\'t be {C:attention}debuffed{},', 'and Jokers can\'t destroy it', '{C:inactive}(Selling, Hex and Ankh', '{C:inactive}still remove it)'] },
+    j_poke_bruxish: { name: 'Bruxish', text: ['{C:attention}Strong Jaw:{} retrigger', 'each scored card', 'with a {C:attention}seal{}'] },
+    j_poke_jangmoo: { name: 'Jangmo-o', text: ['Gains {C:mult}+#1#{} Mult each time', 'you play a {C:attention}Full House{}', '{C:inactive}(Currently {C:mult}+#2#{C:inactive} Mult)', '{C:inactive,s:0.8}(Evolves at {C:mult,s:0.8}+#2#{C:inactive,s:0.8} / +#3# Mult)'] },
+    j_poke_hakamoo: { name: 'Hakamo-o', text: ['Gains {C:mult}+#1#{} Mult each time', 'you play a {C:attention}Full House{}', '{C:inactive}(Currently {C:mult}+#2#{C:inactive} Mult)', '{C:inactive,s:0.8}(Evolves at {C:mult,s:0.8}+#2#{C:inactive,s:0.8} / +#3# Mult)'] },
+    j_poke_kommoo: { name: 'Kommo-o', text: [
+      ['{C:mult}+#4#{} Mult {C:inactive}(kept from Hakamo-o)'],
+      ['{C:attention}Clangorous Soul:{} {X:mult,C:white} X1 {} Mult,', 'plus {X:mult,C:white} X#1# {} for each', '{C:attention}Full House{} played this run', '{C:inactive}(Currently #2#: {X:mult,C:white} X#3# {C:inactive} Mult)'],
+    ] },
     // The owner's rework of an upstream joker (Espeon 196, Future Sight, contentRev 57; jokers/pokejokers_07.js): its text replaces 3.9.1's.
     j_poke_espeon: { name: 'Espeon', text: [
       ['{C:purple}+#1# Foresight', 'Each played {V:1}#2#{}', 'retriggers and gives', '{X:mult,C:white} X#3# {} Mult when scored'],

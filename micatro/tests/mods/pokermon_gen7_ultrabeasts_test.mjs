@@ -90,7 +90,7 @@ await sec('pin', () => {
   const chain = ['nihilego', 'buzzwole', 'pheromosa', 'xurkitree', 'celesteela', 'kartana', 'guzzlord', 'poipole', 'naganadel', 'stakataka', 'blacephalon', 'grookey'];
   const i = keys.indexOf('j_poke_nihilego');
   ok(i > 0 && chain.every((n, k) => keys[i + k] === 'j_poke_' + n), 'Pokédex order: Nihilego (793) ... Blacephalon (806), then Grookey (810)', keys.slice(i - 1, i + 13));
-  ok(['drampa', 'mega_drampa', 'jangmoo', 'hakamoo', 'kommoo'].some((n) => keys[i - 1] === 'j_poke_' + n), '... right after Drampa (780) or the Jangmo-o line (782-784)', keys[i - 1]);
+  ok(keys[i - 1] === 'j_poke_kommoo', '... right after Kommo-o (784)', keys[i - 1]);
 });
 
 // ------------------------------------------------------------------- Nihilego: Parasite (the Joker to its LEFT)
