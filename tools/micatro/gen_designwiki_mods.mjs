@@ -21,7 +21,7 @@ const imp = (p) => import(pathToFileURL(path.join(ROOT, p)).href);
 
 const DATA = (await imp('micatro/data/balatro_data.js')).default;
 const core = await imp('micatro/js/engine/core.js');
-const { init_game_object } = await imp('micatro/js/engine/run.js');
+const { init_game_object, STATES, HANDLIST } = await imp('micatro/js/engine/run.js');
 const { describeCenter, describeBlind, describeTag } = await imp('micatro/js/engine/describe.js');
 const IDX = await imp('micatro/js/mods/index.js');
 const REG = await imp('micatro/js/mods/registry.js');
@@ -39,6 +39,11 @@ REG.activateMods(ALL);
 let ASPECTS = {};
 try { ASPECTS = (await imp('micatro/mods/autumnmood/api.js')).ASPECTS || {}; } catch (e) { /* no AMM */ }
 for (const k of Object.keys(G)) delete G[k];
+// (the constants newRun puts back on a wiped G: without them a loc_vars that reads the game state — Morgrem / Grimmsnarl's
+// prank_state() reads G.STATES — throws, and the card printed its raw `#n#` template)
+G.STATES = STATES;
+G.E_MANAGER = core.E_MANAGER;
+G.handlist = HANDLIST;
 G.GAME = init_game_object();
 G.GAME.current_round.most_played_poker_hand = DATA.loc.misc.dictionary.ph_most_played || '(most played hand)';
 

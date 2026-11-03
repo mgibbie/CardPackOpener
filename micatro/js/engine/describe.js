@@ -703,5 +703,7 @@ function describe_mod(card, center) {
   if (center.set_badges) { try { center.set_badges(center, card, badges); } catch (e) { /* cosmetic */ } }
   const mod = MODS[center.mod];
   if (mod) badges.push({ key: 'mod', label: mod.name, colour: mod.badge_colour, mod: mod.id });
-  return { name: d.name, set: center.set, key: center.key, lines, badges, info, colours: r.colours, sort_id: card.sort_id, mod: center.mod };
+  // (the name too, as Balatro's localize{type='name'} fills it: More Fluff's Superboss Tokens are named "#1#", the blind)
+  const name = typeof d.name === 'string' && /#\d+#/.test(d.name) && r.vars ? fill([d.name], r.vars)[0] : d.name;
+  return { name, set: center.set, key: center.key, lines, badges, info, colours: r.colours, sort_id: card.sort_id, mod: center.mod };
 }

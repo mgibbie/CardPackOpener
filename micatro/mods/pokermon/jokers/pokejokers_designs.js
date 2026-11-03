@@ -8897,8 +8897,8 @@ function magic_powder(card, context) {
   card_eval_status_text(right, 'extra', null, null, null, { message: localize('poke_tera_ex'), colour: 'Spectral' });
 }
 /** The Impidimp line, Prankster (the reroll_cost / reroll_shop / shop_start hooks, index.js):
- *  - Impidimp (and Morgrem, r73): a PAID reroll costs $reroll_discount less per undebuffed one (they stack), never below $1; a free one
- *    stays free.
+ *  - Impidimp (and Morgrem, r73; and Grimmsnarl, r75): a PAID reroll costs $reroll_discount less per undebuffed one (they stack), never
+ *    below $1; a free one stays free.
  *  - Morgrem / Grimmsnarl: the FIRST reroll in each shop is free while an undebuffed one is held — one free reroll however many are held,
  *    and none on top of another free reroll (Chaos the Clown's, Bidoof's, a D6 Tag's $0): it is the shop's FIRST reroll, so whatever made
  *    that one free uses it up. Like Chaos's, it never raises the next reroll's price (it is spent as one of the engine's free rerolls).
@@ -8906,9 +8906,18 @@ function magic_powder(card, context) {
 const prank_held = (key) => ((G.jokers && G.jokers.cards) || []).filter((j) => !j.debuff && j.config.center.key === key);
 const prank_free_held = () => prank_held('j_poke_morgrem').length + prank_held('j_poke_grimmsnarl').length > 0;
 /** r73 (the owner's): Morgrem keeps Impidimp's discount (its own `reroll_discount`, stacking with Impidimps' as theirs do). Moves recorded
- *  before r73 (js/mods/pins.js RULES) price rerolls without it. Grimmsnarl does not keep it (the owner named Morgrem only). */
+ *  before r73 (js/mods/pins.js RULES) price rerolls without it. Grimmsnarl got it at r75 (below). */
 const prank_discount73 = () => rulesRev('pokermon') >= 73;
-const prank_discounters = () => (prank_discount73() ? [...prank_held('j_poke_impidimp'), ...prank_held('j_poke_morgrem')] : prank_held('j_poke_impidimp'));
+/** r75 (the owner's): Grimmsnarl keeps the discount too (its own `reroll_discount`, stacking with Impidimps' / Morgrems'). Moves recorded
+ *  before r75 price rerolls without it. A Grimmsnarl made on older rules has no `reroll_discount` field, so it gives the base $1. */
+const prank_discount75 = () => rulesRev('pokermon') >= 75;
+const prank_discounters = () => [
+  ...prank_held('j_poke_impidimp'),
+  ...(prank_discount73() ? prank_held('j_poke_morgrem') : []),
+  ...(prank_discount75() ? prank_held('j_poke_grimmsnarl') : []),
+];
+const prank_discount_of = (j) => (typeof j.ability.extra.reroll_discount === 'number' ? j.ability.extra.reroll_discount
+  : j.config.center.key === 'j_poke_grimmsnarl' ? P_CENTERS.j_poke_grimmsnarl.config.extra.reroll_discount : 0);
 const shop_rerolls = () => (G.GAME && G.GAME.current_round && G.GAME.current_round.poke_shop_rerolls) || 0;
 export function prank_reroll_cost(cost) {
   if (!G.GAME || !G.GAME.current_round || !G.jokers) return undefined;
@@ -8916,7 +8925,7 @@ export function prank_reroll_cost(cost) {
   cr.poke_prank_free = false;
   let c = cost;
   if (c > 0) {
-    const off = prank_discounters().reduce((s, j) => s + (j.ability.extra.reroll_discount || 0), 0);
+    const off = prank_discounters().reduce((s, j) => s + prank_discount_of(j), 0);
     if (off) c = Math.max(1, c - off);
   }
   if (c > 0 && (cr.free_rerolls || 0) <= 0 && shop_rerolls() === 0 && prank_free_held()) { c = 0; cr.poke_prank_free = true; }
@@ -9140,13 +9149,14 @@ defineJokers({
     ...prank_recost,
   },
   // Grimmsnarl 861 (Safari $10): Prankster (the first reroll in each shop free) and it permanently gains X0.1 for every shop reroll, free ones
-  // included (`prank_Xmult` from X1, banked; gain `Xmult_mod` +20%: 0.12 / 0.14 / 0.16). Blueprint copies the X, never the gain.
+  // included (`prank_Xmult` from X1, banked; gain `Xmult_mod` +20%: 0.12 / 0.14 / 0.16). Blueprint copies the X, never the gain. r75 (the
+  // owner's): it keeps Impidimp's discount too, shop rerolls $1 less (`reroll_discount`, fixed; stacks; never below $1; prank_discount75).
   grimmsnarl: {
     name: 'grimmsnarl', poke_sprite391: sprite('Natdex', 10, 57),
-    config: { extra: { prank_Xmult: 1, Xmult_mod: 0.1 } },
+    config: { extra: { prank_Xmult: 1, Xmult_mod: 0.1, reroll_discount: 1 } },
     rarity: 'poke_safari', cost: 10, stage: 'Two', ptype: 'Fairy', gen: 8, blueprint_compat: true,
     attributes: ['xmult', 'scaling', 'economy', 'reroll'], poke_after: 'morgrem',
-    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [prank_state(), r3(ex.Xmult_mod), r3(ex.prank_Xmult)] }; },
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [prank_state(), r3(ex.Xmult_mod), r3(ex.prank_Xmult), typeof ex.reroll_discount === 'number' ? ex.reroll_discount : self.config.extra.reroll_discount] }; },
     calculate(self, card, context) {
       const ex = card.ability.extra;
       if (context.reroll_shop && !context.blueprint && !context.retrigger_joker) {
@@ -9909,7 +9919,297 @@ defineJokers({
   },
 }, FILE);
 
-// ---------------------------------------------------------------- Gen 9, batch 2 (contentRev 75; the owner's "Yes", 2026-11-03), #951-1013
+// ---------------------------------------------------------------- Gen 9, batch 1 (contentRev 76; the owner's "Yes", 2026-11-03), #919-950
+/** Nymble / Lokix, Lunge: the PLAYED hand (full_hand: kickers count, scoring doesn't matter) has 3 or fewer cards. */
+const lunge = (context) => (context.full_hand || G.play.cards).length <= 3;
+/** Pawmi: a Lightning Joker for "each Lightning Joker" (Barboach / Starly's team count: is_type, so a Tera sticker counts and replaces the type;
+ *  undebuffed), itself included (+1 while it is Lightning: a Tera of another type takes it out), so a shop card shows what it gives once bought. */
+const volt_count = (card) => ((G.jokers && G.jokers.cards) || []).filter((j) => j !== card && !j.debuff && is_type(j, 'Lightning')).length + (is_type(card, 'Lightning') ? 1 : 0);
+/** Pawmot, Revival Blessing: ONCE PER ANTE (`blessing_ante`, the Ante it was used in; fixed, no energy field), when ANOTHER of your Jokers is
+ *  DESTROYED (index.js hooks.start_dissolve: Ceremonial Dagger, Madness, Hex, Ankh, Bewear, Cursola's crumble, Mr. Bones... every destroying
+ *  path ends in Card:start_dissolve; SELLING never does, and neither does an evolution or a Pokermon / food self-removal — Gros Michel,
+ *  Ice Cream, Jelly Donut, the eggs: those are "eaten", not destroyed), an undebuffed Pawmot (the first ready one, row order) brings it back
+ *  AT ONCE: a copy_card copy (Ankh's / Invisible Joker's: the same center, edition — Negative too, its own slot —, Eternal / Perishable (with
+ *  its tally) / Rental stickers, Tera sticker, Energy and every banked value: card.ability exactly as it was when destroyed), placed in the
+ *  destroyed Joker's own position (it takes the freed slot, so the row never grows). It comes back UNDEBUFFED (a fresh card: Crimson Heart's
+ *  pick doesn't carry; a lasting source — a Perishable's end, an SMODS debuff source — is re-read at once). Only with room: if the row is
+ *  already full without it (other cards + pending creations, G.GAME.joker_buffer, at the limit), nothing comes back and the blessing stays
+ *  ready. Not Blueprint (a hook, not a context). */
+export function pawmot_revive(card) {
+  if (!card || card.removed || !G.jokers || card.area !== G.jokers || !card.ability || card.ability.set !== 'Joker' || !G.GAME) return;
+  const ante = G.GAME.round_resets.ante;
+  const p = G.jokers.cards.find((j) => j !== card && !j.debuff && !j.removed && j.config.center.key === 'j_poke_pawmot' && j.ability.extra.blessing_ante !== ante);
+  if (!p) return;
+  const others = G.jokers.cards.filter((j) => j !== card).length;
+  if (others + (G.GAME.joker_buffer || 0) >= G.jokers.config.card_limit) return;
+  p.ability.extra.blessing_ante = ante;
+  const at = G.jokers.cards.indexOf(card);
+  const back = copy_card(card);
+  back.debuff = false;
+  back.ability.queue_negative_removal = undefined;
+  back.add_to_deck();
+  G.jokers.emplace(back, at + 1); // (1-based: in front of the leaving card, which then goes: the copy holds its place)
+  emit('materialize', { card: back.sort_id });
+  back.set_debuff();
+  card_eval_status_text(p, 'extra', null, null, null, { message: 'Revival Blessing!', colour: 'GREEN' });
+  G.E_MANAGER.add_event(() => { back.juice_up(); });
+}
+const blessing_state = (card) => (G.GAME && card.ability.extra.blessing_ante === G.GAME.round_resets.ante ? 'used this Ante' : 'ready');
+/** Squawkabilly's plumage, rolled when it is OBTAINED (add_to_deck, if none yet: Toxtricity's moment; the run's seeded 'squawkabilly_plumage',
+ *  1 in 4 each), kept on card.ability (poke_plumage): art only (systems/anim.js GEN9_FORM_SPRITES; Green is its own card). */
+export const PLUMAGES = ['green', 'blue', 'yellow', 'white'];
+const PLUMAGE_NAMES = { green: 'Green Plumage', blue: 'Blue Plumage', yellow: 'Yellow Plumage', white: 'White Plumage' };
+const plumage = (card) => (PLUMAGES.includes(card.ability.poke_plumage) ? card.ability.poke_plumage : null);
+function plumage_roll(card) {
+  if (!plumage(card)) card.ability.poke_plumage = PLUMAGES[Math.min(3, Math.floor(pseudorandom(pseudoseed('squawkabilly_plumage')) * 4))];
+}
+/** Squawkabilly, Parrot: each Planet card used (context.using_consumeable, set Planet with a hand_type: Planet X / Ceres / Eris too; Black
+ *  Hole is a Spectral) rolls 1 in 2 (Pokermon's pseudorandom_probability 'squawkabilly': Oops! All 6s raises it) to level that hand up ONCE
+ *  MORE (level_up_hand, Sigilyph's). Each Squawkabilly rolls on its own. Not Blueprint (as Sigilyph). */
+function parrot(card, context) {
+  const c = context.consumeable;
+  if (!context.using_consumeable || context.blueprint || !c || c.ability.set !== 'Planet') return;
+  const hand = c.ability.consumeable && c.ability.consumeable.hand_type;
+  if (!hand || !G.GAME.hands[hand]) return;
+  const ex = card.ability.extra;
+  if (!pseudorandom_probability(card, 'squawkabilly', ex.num, ex.dem, 'squawkabilly')) return;
+  level_up_hand(card, hand, null, ex.levels);
+  card_eval_status_text(card, 'extra', null, null, null, { message: localize('k_level_up_ex'), colour: 'Planet' });
+}
+/** Bellibolt, Electromorphosis: each discard you use (a player's: pre_discard without `hook`; once per discard, not per card) adds
+ *  +Xmult_mod to a CHARGE (`charge_Xmult` from X1; banked: Energy raises only later gains). The next hand that SCORES fires it: joker_main
+ *  gives the X (a Blueprint / Brainstorm copy too) and marks it; `after` resets it to X1 (Drifblim's Blueprint-safe release). A debuffed hand
+ *  (no joker_main) doesn't fire it. The charge is lost at the end of the round (the main end_of_round pass). Not Blueprint for the charge. */
+function electromorphosis(card, context) {
+  const ex = card.ability.extra;
+  if (context.pre_discard && !context.hook && !context.blueprint && !context.retrigger_joker) {
+    ex.charge_Xmult = r3(ex.charge_Xmult + ex.Xmult_mod);
+    card_eval_status_text(card, 'extra', null, null, null, { message: 'Charge X' + ex.charge_Xmult, colour: 'XMULT' });
+    return undefined;
+  }
+  if (context.joker_main && ex.charge_Xmult > 1) {
+    if (!context.blueprint) ex.charge_fired = true;
+    return { message: a_xmult(r3(ex.charge_Xmult)), colour: 'XMULT', Xmult_mod: ex.charge_Xmult };
+  }
+  if (context.after && !context.blueprint && !context.retrigger_joker && ex.charge_fired) { ex.charge_fired = false; ex.charge_Xmult = 1; return undefined; }
+  if (round_end(context) && !context.blueprint && !context.retrigger_joker) { ex.charge_fired = false; ex.charge_Xmult = 1; }
+  return undefined;
+}
+/** Wattrel / Kilowattrel, Wind Power: $wind_money (fixed) per discard LEFT when the round is cashed out (calc_dollar_bonus: a row of the
+ *  cash-out list, Delayed Gratification's read; a debuffed joker pays nothing, Blueprint never copies it). */
+const wind_money = (card) => Math.max(0, (G.GAME && G.GAME.current_round && G.GAME.current_round.discards_left) || 0) * card.ability.extra.wind_money;
+/** Mabosstiff, Guard Dog: while it is held (undebuffed — and it can't be), your Jokers can't be debuffed (systems/rules.js set_debuff answers
+ *  'prevent_debuff'). Gaining it lifts the row's current debuffs at once (Crimson Heart's pick, an SMODS debuff source); losing it re-reads
+ *  the lasting sources (debuff_sources); Crimson Heart picks again on the next hand. */
+function guard_dog_refresh(gained) {
+  G.E_MANAGER.add_event(() => {
+    for (const j of ((G.jokers && G.jokers.cards) || []).slice()) {
+      if (gained ? j.debuff : Object.values(j.ability.debuff_sources || {}).some(Boolean)) j.set_debuff();
+    }
+  });
+}
+/** Toedscool / Toedscruel, Mycelium: the cards of your FULL deck (G.playing_cards, broken / destroyed ones not) above a threshold (never
+ *  below 0). */
+const deck_size = () => (G.playing_cards || []).filter(unbroken).length;
+const mycelium = (over) => Math.max(0, deck_size() - over);
+/** Klawf, Anger Shell: X1 + Xmult_mod for each hand already played this round (current_round.hands_played: still the pre-hand count while a
+ *  hand scores, so the round's first hand is X1). A round only goes on while the Blind is unbeaten, so every earlier hand of the round is
+ *  one that didn't beat it. */
+const anger_x = (card) => r9(1 + card.ability.extra.Xmult_mod * ((G.GAME && G.GAME.current_round && G.GAME.current_round.hands_played) || 0));
+
+defineJokers({
+  // The owner's Gen 9 batch 1 ("Yes", 2026-11-03): 15 jokers, #919-950, on the guide's price slots (3-stage U $6 / S $8 / S $10, 2-stage
+  // C $5 / S $8, single-stage R $7); evolution by rounds (4 for the early evolvers Nymble, Pawmi, Wattrel; 5 for the rest). Types = the
+  // cards' (pokermon_art_type.mjs). Energy raises each main number at the standard share; money, odds, counts, slots and the debuff guard are
+  // fixed; banks never retroactive. Art: upstream 3.9.1's own cells (Natdex {6,61}-{8,63}; Squawkabilly Gen 9 {8,0} Green and, beside it,
+  // {0,1} Blue / {2,1} Yellow / {4,1} White: systems/anim.js GEN9_FORM_SPRITES); nothing to deploy. Neither Nacho nor Pokermon+ has any.
+  // Pokédex order: Nymble ... Pawmot after Spidops (918), Squawkabilly after Arboliva (930), Tadbulb ... Mabosstiff after Ceruledge (937),
+  // Toedscool ... Klawf after Brambleghast (947).
+  //
+  // Nymble 919 (Grass, Common $5), Lunge: +15 Mult if the played hand has 3 or fewer cards (`mult` +40%: 21 / 27 / 33). 4 rounds.
+  nymble: {
+    name: 'nymble', poke_sprite391: sprite('Natdex', 6, 61),
+    config: { extra: { mult: 15, rounds: 4 } },
+    rarity: 1, cost: 5, stage: 'Basic', ptype: 'Grass', gen: 9, blueprint_compat: true,
+    attributes: ['mult', 'round_evo'], poke_after: 'spidops',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.mult), ex.rounds] }; },
+    calculate(self, card, context) {
+      if (context.joker_main) return lunge(context) ? { message: a_mult(r3(card.ability.extra.mult)), colour: 'MULT', mult_mod: card.ability.extra.mult } : undefined;
+      return level_evo(self, card, context, 'j_poke_lokix');
+    },
+  },
+  // Lokix 920 (Safari $8): X2.5 Mult under the same condition (`Xmult` +20%: 3 / 3.5 / 4).
+  lokix: {
+    name: 'lokix', poke_sprite391: sprite('Natdex', 8, 61),
+    config: { extra: { Xmult: 2.5 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Grass', gen: 9, blueprint_compat: true,
+    attributes: ['xmult'], poke_after: 'nymble',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); return { vars: [r3(card.ability.extra.Xmult)] }; },
+    calculate(self, card, context) {
+      if (context.joker_main && lunge(context)) return { message: a_xmult(r3(card.ability.extra.Xmult)), colour: 'XMULT', Xmult_mod: card.ability.extra.Xmult };
+      return undefined;
+    },
+  },
+  // Pawmi 921 (Lightning, Uncommon $6): +2 Mult for each Lightning Joker, itself included (`mult` +40%: 2.8 / 3.6 / 4.4). 4 rounds.
+  pawmi: {
+    name: 'pawmi', poke_sprite391: sprite('Natdex', 10, 61),
+    config: { extra: { mult: 2, rounds: 4 } },
+    rarity: 2, cost: 6, stage: 'Basic', ptype: 'Lightning', gen: 9, blueprint_compat: true,
+    attributes: ['mult', 'types', 'round_evo'], poke_after: 'lokix',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra, n = volt_count(card); return { vars: [r3(ex.mult), n, r3(ex.mult * n), ex.rounds] }; },
+    calculate(self, card, context) {
+      if (context.joker_main) { const m = r3(card.ability.extra.mult * volt_count(card)); return m > 0 ? { message: a_mult(m), colour: 'MULT', mult_mod: m } : undefined; }
+      return level_evo(self, card, context, 'j_poke_pawmo');
+    },
+  },
+  // Pawmo 922 (Safari $8): each scored face card earns $1 (`face_money`, fixed; Emolga's Static: a retrigger pays again). Carries Pawmot's
+  // `Xmult` (1.5: "Energy carries to Pawmot"; no Xmult_mod beside it, so evolution never copies it over). 5 rounds.
+  pawmo: {
+    name: 'pawmo', poke_sprite391: sprite('Natdex', 12, 61),
+    config: { extra: { face_money: 1, Xmult: 1.5, rounds: 5 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Lightning', gen: 9, blueprint_compat: true,
+    attributes: ['economy', 'face', 'round_evo'], poke_after: 'pawmi',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [ex.face_money, ex.rounds] }; },
+    calculate(self, card, context) {
+      if (face_scored(context)) {
+        const d = card.ability.extra.face_money;
+        G.GAME.dollar_buffer = (G.GAME.dollar_buffer || 0) + d;
+        G.E_MANAGER.add_event(() => { G.GAME.dollar_buffer = 0; });
+        return { dollars: d, card };
+      }
+      return level_evo(self, card, context, 'j_poke_pawmot');
+    },
+  },
+  // Pawmot 923 (Safari $10): X1.5 Mult (`Xmult` +20%: 1.8 / 2.1 / 2.4); Revival Blessing (pawmot_revive above; once per Ante, fixed).
+  pawmot: {
+    name: 'pawmot', poke_sprite391: sprite('Natdex', 14, 61),
+    config: { extra: { Xmult: 1.5 } },
+    rarity: 'poke_safari', cost: 10, stage: 'Two', ptype: 'Lightning', gen: 9, blueprint_compat: true,
+    attributes: ['xmult', 'joker', 'destroy_card'], poke_after: 'pawmo',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); return { vars: [r3(card.ability.extra.Xmult), blessing_state(card)] }; },
+    calculate(self, card, context) {
+      if (context.joker_main) return { message: a_xmult(r3(card.ability.extra.Xmult)), colour: 'XMULT', Xmult_mod: card.ability.extra.Xmult };
+      return undefined;
+    },
+  },
+  // Squawkabilly 931 (Colorless, Rare $7), Parrot: each Planet used has a 1 in 2 chance to level that hand up once more (parrot above; the odds
+  // and the level are fixed: Energy-inert). Its plumage is rolled when obtained (art only). A Colorless Joker, so it joins Starly's flock.
+  squawkabilly: {
+    name: 'squawkabilly', poke_sprite391: sprite('Gen09', 8, 0),
+    config: { extra: { num: 1, dem: 2, levels: 1 } },
+    rarity: 3, cost: 7, stage: 'Basic', ptype: 'Colorless', gen: 9, blueprint_compat: false, poke_no_energy_field: true,
+    attributes: ['planet', 'hand_level', 'chance', 'nature'], poke_after: 'arboliva',
+    poke_view_form(self, card) { return plumage(card) || 'green'; },
+    loc_vars(self, info_queue, card) {
+      type_tooltip(self, info_queue, card);
+      const ex = card.ability.extra, [num, dem] = get_probability_vars(card, ex.num, ex.dem, 'squawkabilly'), p = plumage(card);
+      return { vars: [num, dem, p ? PLUMAGE_NAMES[p] : 'Plumage: rolled when obtained'] };
+    },
+    add_to_deck(self, card) { plumage_roll(card); },
+    calculate(self, card, context) { parrot(card, context); return undefined; },
+  },
+  // Tadbulb 938 (Lightning, Common $5): +3 Mult for each discard used this round (`mult` +40%: 4.2 / 5.4 / 6.6). 5 rounds.
+  tadbulb: {
+    name: 'tadbulb', poke_sprite391: sprite('Natdex', 14, 62),
+    config: { extra: { mult: 3, rounds: 5 } },
+    rarity: 1, cost: 5, stage: 'Basic', ptype: 'Lightning', gen: 9, blueprint_compat: true,
+    attributes: ['mult', 'discard', 'round_evo'], poke_after: 'ceruledge',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.mult), r3(ex.mult * discards_used()), ex.rounds] }; },
+    calculate(self, card, context) {
+      if (context.joker_main) { const m = r3(card.ability.extra.mult * discards_used()); return m > 0 ? { message: a_mult(m), colour: 'MULT', mult_mod: m } : undefined; }
+      return level_evo(self, card, context, 'j_poke_bellibolt');
+    },
+  },
+  // Bellibolt 939 (Safari $8), Electromorphosis (above): +X0.25 charge per discard used (`Xmult_mod` +20%: 0.3 / 0.35 / 0.4), fired by the
+  // next scoring hand, lost at round end.
+  bellibolt: {
+    name: 'bellibolt', poke_sprite391: sprite('Natdex', 16, 62),
+    config: { extra: { charge_Xmult: 1, Xmult_mod: 0.25 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Lightning', gen: 9, blueprint_compat: true,
+    attributes: ['xmult', 'discard', 'scaling'], poke_after: 'tadbulb',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.Xmult_mod), r3(ex.charge_Xmult)] }; },
+    calculate(self, card, context) { return electromorphosis(card, context); },
+  },
+  // Wattrel 940 (Lightning, Common $5), Wind Power: at end of round, earn $1 per discard left (`wind_money`, fixed: Energy-inert). 4 rounds.
+  wattrel: {
+    name: 'wattrel', poke_sprite391: sprite('Natdex', 18, 62),
+    config: { extra: { wind_money: 1, rounds: 4 } },
+    rarity: 1, cost: 5, stage: 'Basic', ptype: 'Lightning', gen: 9, blueprint_compat: false, poke_no_energy_field: true,
+    attributes: ['economy', 'discard', 'round_evo'], poke_after: 'bellibolt',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [ex.wind_money, wind_money(card), ex.rounds] }; },
+    calculate(self, card, context) { return level_evo(self, card, context, 'j_poke_kilowattrel'); },
+    calc_dollar_bonus(self, card) { const d = wind_money(card); return d > 0 ? d : undefined; },
+  },
+  // Kilowattrel 941 (Safari $8): $2 per discard left (fixed).
+  kilowattrel: {
+    name: 'kilowattrel', poke_sprite391: sprite('Natdex', 20, 62),
+    config: { extra: { wind_money: 2 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Lightning', gen: 9, blueprint_compat: false, poke_no_energy_field: true,
+    attributes: ['economy', 'discard'], poke_after: 'wattrel',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [ex.wind_money, wind_money(card)] }; },
+    calc_dollar_bonus(self, card) { const d = wind_money(card); return d > 0 ? d : undefined; },
+  },
+  // Maschiff 942 (Dark, Common $5): +12 Mult during Boss Blinds (`mult` +40%: 16.8 / 21.6 / 26.4). 5 rounds.
+  maschiff: {
+    name: 'maschiff', poke_sprite391: sprite('Natdex', 22, 62),
+    config: { extra: { mult: 12, rounds: 5 } },
+    rarity: 1, cost: 5, stage: 'Basic', ptype: 'Dark', gen: 9, blueprint_compat: true,
+    attributes: ['mult', 'boss_blind', 'round_evo'], poke_after: 'kilowattrel',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.mult), ex.rounds] }; },
+    calculate(self, card, context) {
+      if (context.joker_main) return boss_now() ? { message: a_mult(r3(card.ability.extra.mult)), colour: 'MULT', mult_mod: card.ability.extra.mult } : undefined;
+      return level_evo(self, card, context, 'j_poke_mabosstiff');
+    },
+  },
+  // Mabosstiff 943 (Safari $8): X1.5 Mult during Boss Blinds (`Xmult` +20%: 1.8 / 2.1 / 2.4); Guard Dog: your Jokers can't be debuffed, itself
+  // included (systems/rules.js set_debuff; a Perishable's end of life and a Baby's faint still happen: a sticker's and a joker's own costs).
+  mabosstiff: {
+    name: 'mabosstiff', poke_sprite391: sprite('Natdex', 24, 62),
+    config: { extra: { Xmult: 1.5 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Dark', gen: 9, blueprint_compat: true,
+    attributes: ['xmult', 'boss_blind', 'debuff', 'joker'], poke_after: 'maschiff',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); return { vars: [r3(card.ability.extra.Xmult)] }; },
+    calculate(self, card, context) {
+      if (context.joker_main && boss_now()) return { message: a_xmult(r3(card.ability.extra.Xmult)), colour: 'XMULT', Xmult_mod: card.ability.extra.Xmult };
+      return undefined;
+    },
+    add_to_deck() { guard_dog_refresh(true); },
+    remove_from_deck() { guard_dog_refresh(false); },
+  },
+  // Toedscool 948 (Grass, Common $5), Mycelium: +4 Chips for each card in your full deck above 52 (`chips` +30%: 5.2 / 6.4 / 7.6). 5 rounds.
+  toedscool: {
+    name: 'toedscool', poke_sprite391: sprite('Natdex', 4, 63),
+    config: { extra: { chips: 4, rounds: 5 } },
+    rarity: 1, cost: 5, stage: 'Basic', ptype: 'Grass', gen: 9, blueprint_compat: true,
+    attributes: ['chips', 'full_deck', 'round_evo'], poke_after: 'brambleghast',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra, n = mycelium(52); return { vars: [r3(ex.chips), n, r3(ex.chips * n), ex.rounds] }; },
+    calculate(self, card, context) {
+      if (context.joker_main) { const c = r3(card.ability.extra.chips * mycelium(52)); return c > 0 ? { message: a_chips(c), colour: 'CHIPS', chip_mod: c } : undefined; }
+      return level_evo(self, card, context, 'j_poke_toedscruel');
+    },
+  },
+  // Toedscruel 949 (Safari $8): X1 plus X0.02 for each card in your full deck above 40 (`Xmult_mod` +20%: 0.024 / 0.028 / 0.032): X1.24 on 52.
+  toedscruel: {
+    name: 'toedscruel', poke_sprite391: sprite('Natdex', 6, 63),
+    config: { extra: { Xmult_mod: 0.02 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Grass', gen: 9, blueprint_compat: true,
+    attributes: ['xmult', 'full_deck'], poke_after: 'toedscool',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra, n = mycelium(40); return { vars: [r3(ex.Xmult_mod), n, r3(1 + ex.Xmult_mod * n)] }; },
+    calculate(self, card, context) { return context.joker_main ? x_main(r9(1 + card.ability.extra.Xmult_mod * mycelium(40))) : undefined; },
+  },
+  // Klawf 950 (Earth, Rare $7), Anger Shell: X1 plus X1 for each hand already played this round (anger_x; `Xmult_mod` +20%: 1.2 / 1.4 / 1.6).
+  // On the Red Deck's 4 hands: X1 / X2 / X3 / X4 (X1 / 2.6 / 4.2 / 5.8 with 3 Energy).
+  klawf: {
+    name: 'klawf', poke_sprite391: sprite('Natdex', 8, 63),
+    config: { extra: { Xmult_mod: 1 } },
+    rarity: 3, cost: 7, stage: 'Basic', ptype: 'Earth', gen: 9, blueprint_compat: true,
+    attributes: ['xmult', 'hands'], poke_after: 'toedscruel',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); return { vars: [r3(card.ability.extra.Xmult_mod), r3(anger_x(card))] }; },
+    calculate(self, card, context) { return context.joker_main ? x_main(anger_x(card)) : undefined; },
+  },
+}, FILE);
+
+// ---------------------------------------------------------------- Gen 9, batch 2 (contentRev 77; the owner's "Yes", 2026-11-03), #951-1013
 /** Flittle / Espathra, Opportunist: whenever ANOTHER Joker in your row permanently GROWS, every undebuffed Flittle banks +mult_mod Mult
  *  (`opp_mult`) and every Espathra banks +X(Xmult_mod) (`opp_Xmult`). "Grows" = one gain event of the shared scaling helper, the engine's
  *  SMODS.scale_card (js/engine/smods.js; its value went UP: a '-' or a lowering function is no growth), heard through the mod hook
@@ -10026,8 +10326,8 @@ defineJokers({
   // Clodsire a Stage 1 S $8); every 2-stage Basic evolves after 5 rounds. Types = the cards' (pokermon_art_type.mjs). Energy raises the main
   // number at the standard share; money, odds, slots, tags, conversions and caps are fixed; banks never retroactive and carried. One is a
   // NEW EVOLUTION of an existing joker (the Gen 8 Galarian exception, owner-approved): Wooper -> Clodsire by a Dark Energy used on it
-  // (gated by rules rev 75, so older runs replay as recorded; Wooper -> Quagsire unchanged). Art: upstream 3.9.1's own cells (Natdex
-  // {10,63}-{14,67}); nothing to deploy. Pokédex order: each after the Gen 9 joker before it (Capsakid after Brambleghast, Flittle after
+  // (gated by rules rev 77, so older runs replay as recorded; Wooper -> Quagsire unchanged). Art: upstream 3.9.1's own cells (Natdex
+  // {10,63}-{14,67}); nothing to deploy. Pokédex order: each after the Gen 9 joker before it (Capsakid after Klawf, Flittle after
   // Rabsca, Bombirdier ... Glimmora after Wugtrio, Flamigo / Veluza / Dondozo after Houndstone, Clodsire after Annihilape, Poltchageist /
   // Sinistcha after Gholdengo).
   //
@@ -10036,7 +10336,7 @@ defineJokers({
     name: 'capsakid', poke_sprite391: sprite('Natdex', 10, 63),
     config: { extra: { chips: 20, rounds: 5 } },
     rarity: 1, cost: 5, stage: 'Basic', ptype: 'Grass', gen: 9, blueprint_compat: true,
-    attributes: ['chips', 'suit', 'round_evo'], poke_after: 'brambleghast',
+    attributes: ['chips', 'suit', 'round_evo'], poke_after: 'klawf',
     loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.chips), ex.rounds] }; },
     calculate(self, card, context) { return spicy(card, context, false) || level_evo(self, card, context, 'j_poke_scovillain'); },
   },
@@ -10192,7 +10492,7 @@ defineJokers({
       return undefined;
     },
   },
-  // Clodsire 980 (Dark, Stage 1 Safari $8; from Wooper by a Dark Energy, r75), Poison Point: each card you discard (unenhanced) 1 in 4 to
+  // Clodsire 980 (Dark, Stage 1 Safari $8; from Wooper by a Dark Energy, r77), Poison Point: each card you discard (unenhanced) 1 in 4 to
   // become a Hazard card (odds fixed); X1 + X0.05 per Hazard card in your full deck (`Xmult_mod` +20%: 0.06 / 0.07 / 0.08).
   clodsire: {
     name: 'clodsire', poke_sprite391: sprite('Natdex', 8, 65),
@@ -10370,7 +10670,14 @@ export const DESIGN_FAMILIES = [
   ['milcery', 'alcremie'],
   ['snom', 'frosmoth'],
   ['cufant', 'copperajah'],
-  // Gen 9, batch 2: Clodsire joins Wooper's line (FAMILY_MEMBER_REV: seen from r75 on), and five new lines
+  // Gen 9, batch 1
+  ['nymble', 'lokix'],
+  ['pawmi', 'pawmo', 'pawmot'],
+  ['tadbulb', 'bellibolt'],
+  ['wattrel', 'kilowattrel'],
+  ['maschiff', 'mabosstiff'],
+  ['toedscool', 'toedscruel'],
+  // Gen 9, batch 2: Clodsire joins Wooper's line (FAMILY_MEMBER_REV: seen from r77 on), and five new lines
   ['wooper', 'quagsire', 'clodsire'],
   ['capsakid', 'scovillain'],
   ['flittle', 'espathra'],
@@ -10378,7 +10685,7 @@ export const DESIGN_FAMILIES = [
   ['glimmet', 'glimmora'],
   ['poltchageist', 'sinistcha'],
 ];
-/** Gen 8 batch 3 (r72): the new members of existing lines, for systems/evolution.js FAMILY_MEMBER_REV (index.js); Gen 9 batch 2 (r75):
+/** Gen 8 batch 3 (r72): the new members of existing lines, for systems/evolution.js FAMILY_MEMBER_REV (index.js); Gen 9 batch 2 (r77):
  *  Clodsire (Wooper's line). */
 export const GALAR_FAMILY_REV = { obstagoon: 72, cursola: 72, sirfetchd: 72, mrrime: 72, runerigus: 72, basculegion: 72, clodsire: GEN9B2_REV };
 
@@ -11286,6 +11593,7 @@ export const DESIGN_LOC = {
     ] },
     j_poke_grimmsnarl: { name: 'Grimmsnarl', text: [
       PRANKSTER_FREE,
+      ['Shop rerolls cost {C:money}$#4#{} less', '{C:inactive}(never below $1)'],
       ['Permanently gains {X:mult,C:white} X#2# {}', 'Mult for every shop reroll', '{C:inactive}(Currently {X:mult,C:white} X#3# {C:inactive} Mult)'],
     ] },
     // Gen 8, batch 3 (contentRev 72)
@@ -11356,6 +11664,28 @@ export const DESIGN_LOC = {
       ['{C:attention}Springtide Storm:{} each', 'scored {C:hearts}Heart{} gives', '{X:mult,C:white} X#1# {} Mult'],
       ['{C:attention}Therian Forme:{} after you', 'have had it for {C:attention}4{} rounds,', 'each scored {C:hearts}Heart{} also', 'earns {C:money}$#2#{}', '{C:inactive}(#3#)'],
     ] },
+    // Gen 9, batch 1 (the owner's "Yes", 2026-11-03; contentRev 76)
+    j_poke_nymble: { name: 'Nymble', text: ['{C:attention}Lunge:{} {C:mult}+#1#{} Mult if the', 'played hand has {C:attention}3{}', 'or fewer cards', EVOLVES_ROUNDS(2)] },
+    j_poke_lokix: { name: 'Lokix', text: ['{C:attention}Lunge:{} {X:mult,C:white} X#1# {} Mult if the', 'played hand has {C:attention}3{}', 'or fewer cards'] },
+    j_poke_pawmi: { name: 'Pawmi', text: ['{C:mult}+#1#{} Mult for each', '{X:poke_lightning,C:white}Lightning{} Joker {C:inactive}(Itself included)', '{C:inactive}(Currently {C:attention}#2#{C:inactive}: {C:mult}+#3#{C:inactive} Mult)', EVOLVES_ROUNDS(4)] },
+    j_poke_pawmo: { name: 'Pawmo', text: ['Each scored {C:attention}face{} card', 'earns {C:money}$#1#{}', ENERGY_TO('Pawmot'), EVOLVES_ROUNDS(2)] },
+    j_poke_pawmot: { name: 'Pawmot', text: [
+      ['{X:mult,C:white} X#1# {} Mult'],
+      ['{C:attention}Revival Blessing:{} once per', 'Ante, when another of your', 'Jokers is {C:attention}destroyed{}, it comes', 'back in the same place', '{C:inactive}(Not when sold; it keeps its', '{C:inactive}edition, stickers and values)', '{C:inactive}(Revival Blessing: #2#)'],
+    ] },
+    j_poke_squawkabilly: { name: 'Squawkabilly', text: ['{C:attention}Parrot:{} each {C:planet}Planet{} card', 'used has a {C:green}#1# in #2#{} chance', 'to level up that hand', '{C:attention}once more{}', '{C:inactive}(#3#)'] },
+    j_poke_tadbulb: { name: 'Tadbulb', text: ['{C:mult}+#1#{} Mult for each', 'discard used this round', '{C:inactive}(Currently {C:mult}+#2#{C:inactive} Mult)', EVOLVES_ROUNDS(3)] },
+    j_poke_bellibolt: { name: 'Bellibolt', text: ['{C:attention}Electromorphosis:{} each', 'discard used adds {X:mult,C:white} X#1# {}', 'to a charge; your next', 'scoring hand fires it', '{C:inactive}(Lost at end of round)', '{C:inactive}(Charge: {X:mult,C:white} X#2# {C:inactive})'] },
+    j_poke_wattrel: { name: 'Wattrel', text: ['{C:attention}Wind Power:{} earn {C:money}$#1#{}', 'at end of round for', 'each discard left', '{C:inactive}(Currently {C:money}$#2#{C:inactive})', EVOLVES_ROUNDS(3)] },
+    j_poke_kilowattrel: { name: 'Kilowattrel', text: ['{C:attention}Wind Power:{} earn {C:money}$#1#{}', 'at end of round for', 'each discard left', '{C:inactive}(Currently {C:money}$#2#{C:inactive})'] },
+    j_poke_maschiff: { name: 'Maschiff', text: ['{C:mult}+#1#{} Mult during', '{C:attention}Boss Blinds{}', EVOLVES_ROUNDS(2)] },
+    j_poke_mabosstiff: { name: 'Mabosstiff', text: [
+      ['{X:mult,C:white} X#1# {} Mult during', '{C:attention}Boss Blinds{}'],
+      ['{C:attention}Guard Dog:{} your Jokers', 'can\'t be {C:attention}debuffed{}', '{C:inactive}(Itself included; a Perishable', '{C:inactive}still expires, a Baby still faints)'],
+    ] },
+    j_poke_toedscool: { name: 'Toedscool', text: ['{C:attention}Mycelium:{} {C:chips}+#1#{} Chips for', 'each card in your full', 'deck above {C:attention}52{}', '{C:inactive}(Currently #2#: {C:chips}+#3#{C:inactive} Chips)', EVOLVES_ROUNDS(4)] },
+    j_poke_toedscruel: { name: 'Toedscruel', text: ['{C:attention}Mycelium:{} {X:mult,C:white} X1 {} Mult, plus', '{X:mult,C:white} X#1# {} for each card in', 'your full deck above {C:attention}40{}', '{C:inactive}(Currently #2#: {X:mult,C:white} X#3# {C:inactive} Mult)'] },
+    j_poke_klawf: { name: 'Klawf', text: ['{C:attention}Anger Shell:{} {X:mult,C:white} X1 {} Mult,', 'plus {X:mult,C:white} X#1# {} for each hand', 'already played this round', '{C:inactive}(each one didn\'t beat the Blind)', '{C:inactive}(Currently {X:mult,C:white} X#2# {C:inactive} Mult)'] },
     // Gen 9, batch 2 (the owner's "Yes", 2026-11-03)
     j_poke_capsakid: { name: 'Capsakid', text: ['{C:attention}Spicy:{} each scored', '{C:clubs}Club{} gives {C:chips}+#1#{} Chips', EVOLVES_ROUNDS(2)] },
     j_poke_scovillain: { name: 'Scovillain', text: [
@@ -11411,7 +11741,7 @@ export const GALAR_UPSTREAM_TEXT = {
   j_poke_linoone: [BR, '{C:attention}Galarian form:{} a', '{X:poke_dark,C:white}Dark{} Energy used on it', 'evolves it into {C:attention}Obstagoon{}'],
   j_poke_corsola: [BR, '{C:attention}Galarian form:{} a', '{X:poke_psychic,C:white}Psychic{} Energy used on it', 'evolves it into {C:attention}Cursola{}'],
   j_poke_mrmime: [BR, '{C:attention}Galarian form:{} a', '{X:poke_water,C:white}Water{} Energy used on it', 'evolves it into {C:attention}Mr. Rime{}'],
-  // Gen 9 batch 2 (r75): Wooper's Paldean form (its level_evo into Quagsire unchanged)
+  // Gen 9 batch 2 (r77): Wooper's Paldean form (its level_evo into Quagsire unchanged)
   j_poke_wooper: [BR, '{C:attention}Paldean form:{} a', '{X:poke_dark,C:white}Dark{} Energy used on it', 'evolves it into {C:attention}Clodsire{}'],
   j_poke_farfetchd: [BR, '{C:attention}Galarian form:{} evolves into', '{C:attention}Sirfetch\'d{} at end of round', 'after {C:attention}#5#{} {C:attention}Lucky{} card triggers', 'in that round', '{C:inactive}(This round: #4#/#5#)'],
 };

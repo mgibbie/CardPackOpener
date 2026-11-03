@@ -373,7 +373,7 @@ defineJokers({
       return scaling_evo(self, card, context, 'j_poke_yanmega', card.ability.extra.scored, self.config.evo_rqmt);
     },
   },
-  // Wooper 194 (+ the owner's Gen 9 batch 2, r75: a Dark Energy used on it evolves it into Clodsire — systems/energy.js energy_evo_target;
+  // Wooper 194 (+ the owner's Gen 9 batch 2, r77: a Dark Energy used on it evolves it into Clodsire — systems/energy.js energy_evo_target;
   // its level_evo into Quagsire is unchanged)
   wooper: {
     poke_energy_evo: { etype: 'Dark', into: 'j_poke_clodsire', rev: GEN9B2_REV },

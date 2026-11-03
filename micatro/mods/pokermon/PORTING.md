@@ -3839,6 +3839,7 @@ Pinned **`3.9.1+r73`**. Three owner-approved changes, each gated by `rulesRev('p
   gives the base X1.25. An energized Inkay carries its Energy into the X.
 - **Morgrem** keeps **Impidimp's $1 reroll discount** (`reroll_discount` 1, fixed; stacks with Impidimps' and other Morgrems', never below $1, a
   free reroll stays free): the first reroll free, then $4, $5 ... **Grimmsnarl unchanged** (free first reroll only): the owner named Morgrem.
+  (r75: Grimmsnarl keeps it too, see "The owner's Grimmsnarl tweak".)
 - **Sandaconda** keeps **Silicobra's Sand Spit** (`num` / `dem` 1 in 4, fixed; the same `silicobra_spit` roll, a player's discard of an
   unenhanced card only) beside its Sandstorm and Stone payoff.
 - **Tests**: `pokermon_gen6_batch2_test` (Malamar r73 played: straights, Stone, Bonus, Hack, two copies, debuffed, Energy target and steps,
@@ -3889,19 +3890,72 @@ Enamorus {8,11}); nothing to deploy. Gen 8 is now complete on the wiki (59 missi
   `pokermon_new_jokers_test`, `pokermon_gen8_batch3_test` / `pokermon_sprigatito_test` (the Pokédex order), `micatro_mod_version_pin`,
   `micatro_deckeditor_pages` (1205 jokers), `designwiki_pokermon_jokers_test` (Ting-Lu is now its Legendary).
 
+### The owner's Grimmsnarl tweak (r75, 2026-11-03, branch `feat/pokermon-r75-grimmsnarl`)
+Pinned **`3.9.1+r77`** (`contentRev: 77`; r76 is Gen 9 batch 1, r75 the Grimmsnarl tweak; `LEGACY_MOD_VERSIONS` untouched). Gated by `rulesRev('pokermon') >= 75` (`prank_discount75`), so runs
+recorded on r71-r74 replay as recorded (never retroactive):
+- **Grimmsnarl** keeps **Impidimp's $1 reroll discount** too (`reroll_discount` 1, fixed, not an Energy field; stacks with Impidimps', Morgrems' and
+  other Grimmsnarls', never below $1, a free reroll stays free) on top of its free first reroll and its X0.1 per reroll: the first reroll free, then
+  $4, $5 ... A Grimmsnarl made before r75 has no `reroll_discount` field and gives the base $1 (`prank_discount_of`). New text box: "Shop rerolls
+  cost $1 less (never below $1)".
+- **Design wiki fix (same branch)**: Morgrem's / Grimmsnarl's wiki cards printed raw `#1#` / `$#4#`: `tools/micatro/gen_designwiki_mods.mjs` wipes G
+  and only put `G.GAME` back, so `prank_state()` (reads `G.STATES`) threw and the loc_vars were dropped. It now restores what `newRun` puts on a
+  wiped G (`STATES`, `E_MANAGER`, `handlist`). Same sweep: More Fluff's 15 Superboss Tokens were named "#1#" (their loc names the blind):
+  `describe_mod` now fills a name's `#n#` from the loc_vars, as Balatro's `localize{type='name'}` does (in game too).
+- **Tests**: `pokermon_gen8_batch2_test` (r75: Grimmsnarl alone $4 after the free one, + Impidimp / + Morgrem stacking, never below $1, debuffed,
+  the text; r74 rules: no discount; an r74 recipe resumed / stepped as recorded), `designwiki_micatro_mods_test` (no `#n#` anywhere in the generated
+  mod data). Re-pinned: `modpin_test`, `pokermon_391_data_test`, `pokermon_new_jokers_test`, `micatro_mod_version_pin`.
+### Gen 9, batch 1 (2026-11-03, branch `feat/pokermon-gen9-batch1`)
+Pinned **`3.9.1+r76`** (`contentRev: 76`; r75 is the owner's Grimmsnarl tweak; `LEGACY_MOD_VERSIONS` untouched). The owner's "Yes": 15 jokers, #919-950, on the
+guide's price slots (3-stage U $6 / S $8 / S $10, 2-stage C $5 / S $8, single-stage R $7), in `jokers/pokejokers_designs.js` (`lunge` / `volt_count` /
+`pawmot_revive` / `parrot` / `electromorphosis` / `wind_money` / `guard_dog_refresh` / `mycelium` / `anger_x`). Evolution by rounds: 4 for the early
+evolvers (Nymble, Pawmi, Wattrel), 5 for the rest. Types = the cards'. Pokédex order: Nymble ... Pawmot after Spidops, Squawkabilly after Arboliva, Tadbulb
+... Mabosstiff after Ceruledge, Toedscool ... Klawf after Brambleghast. Art: upstream 3.9.1 cells (Natdex {6,61}-{8,63}; Squawkabilly Gen 9 {8,0} Green, and
+UNLISTED beside it {0,1} Blue / {2,1} Yellow / {4,1} White: `systems/anim.js` GEN9_FORM_SPRITES, ui.js ownFace, Shiny twins too); nothing to deploy.
+Neither Nacho nor Pokermon+ has any.
+- **Nymble** (Grass) / **Lokix**, Lunge: **+15 Mult** / **X2.5** if the PLAYED hand has 3 or fewer cards (full_hand: kickers count).
+- **Pawmi** (Lightning): **+2 Mult per Lightning Joker**, itself included (is_type, undebuffed; a Tera counts and replaces the type). **Pawmo**: **each scored
+  face card earns $1** (Emolga's Static: retriggers pay again); carries Pawmot's `Xmult` ("Energy carries to Pawmot"). **Pawmot**: **X1.5** and **Revival
+  Blessing** (`pawmot_revive`, index.js hooks.start_dissolve, run last): once per Ante, when ANOTHER of your Jokers is destroyed (any start_dissolve: Dagger,
+  Madness, Hex, Ankh, Bewear, Cursola, Mr. Bones), it comes back at once. **The choices**: a copy_card copy (Ankh's: center, edition — Negative keeps its own
+  slot —, Eternal / Perishable with its tally / Rental, Tera, Energy, every banked value: card.ability exactly), emplaced at the leaving card's slot before it
+  goes (same position, the freed slot, the row never grows); it comes back undebuffed (a lasting source is re-read); only with room (others + joker_buffer
+  below the limit; else nothing and the blessing waits); selling, evolving and "eaten" self-removals (Gros Michel, Ice Cream, the eggs) are not destroying; a
+  lone Pawmot never revives itself, two revive each other; a debuffed Pawmot does nothing. Tooltip "(Revival Blessing: ready / used this Ante)".
+- **Squawkabilly** (Colorless, R $7), Parrot: **each Planet used, 1 in 2 to level that hand once more** (pseudorandom_probability 'squawkabilly': Oops! raises
+  it; Sigilyph's level_up_hand; not Blueprint). Plumage rolled when OBTAINED (add_to_deck, seeded 'squawkabilly_plumage', 1 in 4 each; `card.ability.poke_plumage`;
+  art only). A Colorless Joker: Starly's flock counts it. Energy-inert.
+- **Tadbulb** (Lightning): **+3 Mult per discard used this round** (current_round.discards_used; The Hook's don't count). **Bellibolt**, Electromorphosis: **each
+  discard used adds +X0.25 to a charge** (from X1, `charge_Xmult`); the next hand that scores fires it (joker_main; Blueprint copies the X) and `after` resets
+  it to X1; a debuffed hand doesn't fire it. **The choice**: the charge is lost at the end of the round (the main end_of_round pass).
+- **Wattrel** (Lightning) / **Kilowattrel**, Wind Power: **$1 / $2 per discard left** at end of round (calc_dollar_bonus, a cash-out row; Blueprint never; fixed:
+  Energy-inert).
+- **Maschiff** (Dark) / **Mabosstiff**: **+12 Mult** / **X1.5 during Boss Blinds**. Mabosstiff's **Guard Dog**: your Jokers can't be debuffed, itself included
+  (`systems/rules.js` set_debuff 'prevent_debuff': Crimson Heart, SMODS debuff sources, a mod's answer). **The choice**: a Perishable's end of life still debuffs
+  (a sticker's cost) and a Baby still faints (its rule answers first); gaining it lifts current debuffs at once, losing it re-reads the lasting sources.
+- **Toedscool** (Grass) / **Toedscruel**, Mycelium: **+4 Chips per card in the full deck above 52** / **X1 + X0.02 per card above 40** (X1.24 on 52; never below).
+- **Klawf** (Earth, R $7), Anger Shell: **X1 + X1 per hand already played this round**. **The interpretation**: a round goes on only while the Blind is unbeaten, so
+  every earlier hand of the round is one that didn't beat it = current_round.hands_played; X1 / 2 / 3 / 4 on the Red Deck's hands.
+- **Energy** (1 / 2 / 3): Nymble +21 / 27 / 33; Lokix X3 / 3.5 / 4; Pawmi +2.8 / 3.6 / 4.4 a Joker; Pawmo (carried) and Pawmot X1.8 / 2.1 / 2.4; Tadbulb +4.2 / 5.4 /
+  6.6 a discard; Bellibolt +X0.3 / 0.35 / 0.4 a discard; Maschiff +16.8 / 21.6 / 26.4; Mabosstiff X1.8 / 2.1 / 2.4; Toedscool +5.2 / 6.4 / 7.6 a card; Toedscruel
+  +X0.024 / 0.028 / 0.032 a card; Klawf +X1.2 / 1.4 / 1.6 a hand. Fixed: the $ (Pawmo, Wattrel, Kilowattrel), Squawkabilly's odds and level, the blessing, the
+  guard, the thresholds; Squawkabilly / Wattrel / Kilowattrel Energy-inert; banks never retroactive.
+- **Wiki**: regenerated (44 missing, all Gen 9); the wiki sprites of the 15 are gone (no new art).
+- **Tests**: `micatro/tests/mods/pokermon_gen9_batch1_test.mjs` (fails on main: no such jokers). Re-recorded: `modpin_test`, `pokermon_391_data_test`,
+  `pokermon_new_jokers_test` (the Pokédex order, +15 defs), `micatro_mod_version_pin`, `micatro_deckeditor_pages` (1220 jokers), `designwiki_pokermon_jokers_test`
+  (Pawmot was the last Stage 2 on the wiki: its card pages now use Varoom / Revavroom; Brute Bonnet replaces Toedscool as the art-vs-mapping spot check).
 ### Gen 9, batch 2 (2026-11-03, branch `feat/pokermon-gen9-batch2`)
-Pinned **`3.9.1+r75`** (`contentRev: 75`; `LEGACY_MOD_VERSIONS` untouched). The owner's "Yes": 17 jokers, #951-1013, in `jokers/pokejokers_designs.js`
+Pinned **`3.9.1+r77`** (`contentRev: 77`; r76 is Gen 9 batch 1, r75 the Grimmsnarl tweak; `LEGACY_MOD_VERSIONS` untouched). The owner's "Yes": 17 jokers, #951-1013, in `jokers/pokejokers_designs.js`
 (`opportunist_scaled` / `spicy` / `stork_delivery` / `rev_streak` / `toxic_debris` / `fillet_away` / `dondozo_commanded` / `clodsire_poison` / `row_value`),
 one a NEW EVOLUTION of an existing joker (the Gen 8 Galarian exception, owner-approved: Wooper -> Clodsire; Wooper -> Quagsire unchanged). Pokédex order:
-Capsakid / Scovillain after Brambleghast, Flittle / Espathra after Rabsca, Bombirdier ... Glimmora after Wugtrio, Flamigo / Veluza / Dondozo after
+Capsakid / Scovillain after Klawf, Flittle / Espathra after Rabsca, Bombirdier ... Glimmora after Wugtrio, Flamigo / Veluza / Dondozo after
 Houndstone, Clodsire after Annihilape, Poltchageist / Sinistcha after Gholdengo. Neither Nacho nor Pokermon+ has any. Prices: 2-stage C $5 / S $8,
 single-stage R $7, Clodsire Stage 1 S $8; every 2-stage Basic evolves after **5 rounds**. Types = the cards'. Art: upstream 3.9.1 Natdex cells ({10,63}-{14,67});
 nothing to deploy.
 - **Engine seam** (`card_scaled`): js/engine/smods.js scale_card tells the mods' hook when a card's value went UP (read off the value before and
   after); js/engine/jokers.js vscale tells it for a vanilla '+' scaling when nothing listens to scaling_card (else scale_card does). No-op without a
   hook, so vanilla and old runs are unchanged.
-- **Never retroactive (rules rev 75)**: the Dark Energy evolution checks `rulesRev('pokermon') >= GEN9B2_REV` (`poke_energy_evo.rev`); Clodsire is
-  hidden from Wooper's family on older revs (FAMILY_MEMBER_REV), so Transformation on a Wooper recorded before r75 still gives Quagsire
+- **Never retroactive (rules rev 77)**: the Dark Energy evolution checks `rulesRev('pokermon') >= GEN9B2_REV` (`poke_energy_evo.rev`); Clodsire is
+  hidden from Wooper's family on older revs (FAMILY_MEMBER_REV), so Transformation on a Wooper recorded before r77 still gives Quagsire
   (pokermon_gen9_batch2_test 'old-rev replay'). The streak counter (`G.GAME.poke_rev_streak`) is kept on every rev (harmless).
 - **Capsakid** (Grass, C $5) -> **Scovillain** (Fire, S $8), Spicy: **scored Clubs +20 Chips**; Scovillain also **scored Hearts X1.2** and **+1 discard each round**.
 - **Flittle** (Psychic, C $5) -> **Espathra** (S $8), Opportunist: **+1 Mult banked whenever another Joker permanently grows**; Espathra gives Flittle's
@@ -3935,10 +3989,11 @@ nothing to deploy.
   13.2; Glimmora X1.2075 / 1.265 / 1.3225 a held Hazard; Flamigo X1.8 / 2.1 / 2.4 (Pair X2.4 / 2.8 / 3.2); Veluza +X0.3 / 0.35 / 0.4 a round; Dondozo
   X2.4 / 2.8 / 3.2 (Commander X4.8 / 5.6 / 6.4); Clodsire +X0.06 / 0.07 / 0.08 a Hazard; Poltchageist (carried) / Sinistcha +X0.06 / 0.07 / 0.08 per $1.
   Fixed: money, odds, the discard / hand / hand size, Tags, the conversions and their cap; banks never retroactive (opp_mult / opp_Xmult / fillet_Xmult).
-- **Wiki**: regenerated; the wiki sprites of the 17 are gone (no new art).
+- **Wiki**: regenerated (27 missing: the Paradox Pokémon and the Gen 9 Legendaries); the wiki sprites of the 17 are gone (no new art).
 - **Tests**: `micatro/tests/mods/pokermon_gen9_batch2_test.mjs` (fails on main: no such jokers). Re-recorded: `modpin_test`, `pokermon_391_data_test`,
-  `pokermon_new_jokers_test` (defs + the Pokédex order), `pokermon_art_types_test`, `micatro_mod_version_pin`, `micatro_deckeditor_pages` (1222 jokers),
-  `designwiki_pokermon_jokers_test` (Iron Treads / Iron Crown / Miraidon are its spot checks now).
+  `pokermon_new_jokers_test` (defs + the Pokédex order), `pokermon_gen9_batch1_test` (Klawf, then Capsakid), `pokermon_art_types_test`,
+  `micatro_mod_version_pin`, `micatro_deckeditor_pages` (1237 jokers), `designwiki_pokermon_jokers_test` (no Stage 1 is left: Iron Crown / Iron Treads /
+  Great Tusk / Miraidon are its spot checks now).
 
 ### Pending from the 3.9.1 joker rework (after batch 10b)
 Every existing joker is on 3.9.1: `rework_hold` (still on 3.2.1) is empty. What waits, by the batch it waits on (`rework_deferred` =
