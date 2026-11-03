@@ -4,7 +4,7 @@
 // no natures; moveset = last 4 level-up moves at the mon's level).
 import { getJSON, getImage, VIEW_W, VIEW_H } from './engine.js';
 import * as Bag from './bag.js';
-import { KEY_STONE, MEGA_ABILITY_NAMES, MEGA_FORMS, armTrainerMega, megaFormFor, primalFormFor } from './mega.js';
+import { KEY_STONE, MEGA_ABILITY_NAMES, MEGA_FORMS, armTrainerMega, itemLocked, megaFormFor, primalFormFor } from './mega.js';
 import { rumble } from '../site/gamepad.js';
 import * as UI from './battleui.js';
 import { cry, sfx } from './sound.js';
@@ -2968,7 +2968,7 @@ export class Battle {
 				}
 				// MAGICIAN lifts the TARGET's item when it lands a hit (inert: 7)
 				if (this.abilityOf(user) === 'magician' && target.heldItem && !user.heldItem
-					&& this.abilityOf(target) !== 'stickyhold') {
+					&& this.abilityOf(target) !== 'stickyhold' && !itemLocked(target)) {
 					this.noteItemTaken(target);
 					user.heldItem = target.heldItem; target.heldItem = null;
 					this.pushMsg(`${this.label(user)} magicked away the ${this.itemName(user)}!`);
@@ -2980,7 +2980,7 @@ export class Battle {
 				}
 				// PICKPOCKET lifts the attacker's item on contact (was inert: 16)
 				if (dAb === 'pickpocket' && user.heldItem && !target.heldItem
-					&& this.abilityOf(user) !== 'stickyhold') {
+					&& this.abilityOf(user) !== 'stickyhold' && !itemLocked(user)) {
 					this.noteItemTaken(user);
 					target.heldItem = user.heldItem; user.heldItem = null;
 					this.pushMsg(`${this.label(target)} pickpocketed the ${this.itemName(target)}!`);
@@ -3035,6 +3035,7 @@ export class Battle {
 					this.pushMsg(`${this.label(target)}'s Sticky Hold kept its item!`);
 					return;
 				}
+				if (itemLocked(target)) return;   // a Mega Stone / Orb never leaves its own POKeMON
 				if (fx.knockOff) {
 					this.pushMsg(`${this.label(user)} knocked off ${target.name}'s ${this.itemName(target)}!`, () => {
 						this.noteItemTaken(target);
@@ -4408,6 +4409,7 @@ export class Battle {
 		if (fx.corrode) {
 			if (!target.heldItem) { this.pushMsg('But it failed!'); return true; }
 			if (this.abilityOf(target) === 'stickyhold') { this.pushMsg(`${this.label(target)}'s Sticky Hold kept its item!`); return true; }
+			if (itemLocked(target)) { this.pushMsg('But it failed!'); return true; }
 			this.pushMsg(`Corrosive gas melted ${target.name}'s ${this.itemName(target)}!`, () => {
 				this.noteItemTaken(target);
 				target.heldItem = null;
@@ -4555,7 +4557,7 @@ export class Battle {
 		}
 		if (fx.noop) { this.pushMsg('But it failed!'); return true; }
 		if (fx.itemSwap) {
-			if (this.abilityOf(target) === 'stickyhold' || (!user.heldItem && !target.heldItem)) {
+			if (this.abilityOf(target) === 'stickyhold' || (!user.heldItem && !target.heldItem) || itemLocked(user) || itemLocked(target)) {
 				this.pushMsg('But it failed!');
 				return true;
 			}

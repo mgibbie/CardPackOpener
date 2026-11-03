@@ -166,6 +166,14 @@ try {
 		end();
 		o.baseTypes = base.types.join('/'); o.baseAbility = base.ability;
 
+		// ===== 1c. a Mega Stone cannot be knocked off its own POKeMON =====
+		setParty([mon('charizard', 60, 'charizarditex', ['tackle'])]);
+		await startWild('snorlax', 60);
+		B.useMove(a().foe, a().foeBoosts, ow.party[0], a().meBoosts, { id: 'knockoff', name: 'Knock Off', pp: 20, maxPp: 20 }, true);
+		drain();
+		o.knockedOff = ow.party[0].heldItem;
+		end();
+
 		// ===== 2. no KEY STONE, no Mega =====
 		bagSet('keystone', 0);
 		setParty([mon('charizard', 60, 'charizarditex', ['tackle'])]);
@@ -284,6 +292,7 @@ try {
 	A(o.endSaved, 'and the saved party is exactly the base form');
 	A(o.resumedForm === 'charizard_mega_x' && o.resumedTypes === 'Fire/Dragon' && o.resumedUsed, 'a resumed battle puts the Mega back on the saved (base) mon, still spent', JSON.stringify([o.resumedForm, o.resumedTypes, o.resumedUsed]));
 	A(o.resumeReverted, 'and it reverts when that battle ends');
+	A(o.knockedOff === 'charizarditex', 'Knock Off cannot take a Mega Stone from its own POKeMON', o.knockedOff);
 	A(o.noKeyStone === null, 'without the KEY STONE there is no Mega', o.noKeyStone);
 	A(o.wave2 === null && !o.wave2Item && o.wave1Lucario === 'lucario_mega', 'wave 2 is disabled (Lucario + Lucarionite Z: no), wave 1 works (Lucarionite: yes)', JSON.stringify([o.wave2, o.wave2Item, o.wave1Lucario]));
 	A(o.primalForm === 'kyogre_primal' && o.primalAbility === 'primordialsea', 'Kyogre holding the BLUE ORB reverts to Primal Kyogre on entering battle', JSON.stringify([o.primalForm, o.primalAbility]));

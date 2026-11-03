@@ -53,6 +53,13 @@ export function primalFormFor(mon) {
 	return o && o.species === mon.speciesId && megaEnabled(o.form) ? o.form : null;
 }
 
+// a Mega Stone held by a POKeMON it belongs to, or its own ORB, cannot be knocked
+// off, stolen, swapped or melted (as in the games)
+export function itemLocked(mon) {
+	if (!mon?.heldItem) return false;
+	return !!MEGA_STONES[mon.heldItem]?.forms[mon.speciesId] || PRIMAL_ORBS[mon.heldItem]?.species === mon.speciesId;
+}
+
 // names for the abilities only Megas and Primals have (species_abilities.json has
 // no entry for them)
 export const MEGA_ABILITY_NAMES = Object.fromEntries(Object.values(MEGA_FORMS).map(f => [f.ability, f.abilityName]));
