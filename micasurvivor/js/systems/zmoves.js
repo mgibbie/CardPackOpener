@@ -173,7 +173,8 @@ G.ZMoves = (() => {
     return !!pl && !pl.dead && !pl.coopDown && !pl.remote && !!G.Game && G.Game.state === 'playing' && !(G.Judgment && G.Judgment.cinematic)   // (M5 lote 12a: no mientras espectas, main.gd 1243 / 1267)
       && state === '' && !used && pl.level >= MIN_LEVEL && !!activeType(pl) && !blocked()
       && !G.World.zone   // (MicaSurvivor DLC D6: an Expedition zone has its own Ultimate instead, js/expedition/ultimates.js)
-      && !(G.LocalCoop && G.LocalCoop.zCine);   // (MP polish: not while a local partner's Z cinematic plays)
+      && !(G.LocalCoop && G.LocalCoop.zCine)   // (MP polish: not while a local partner's Z cinematic plays)
+      && !(G.Coop && G.Coop.zCine);   // (gap fix 2026-11-02: nor an online partner's)
   }
   function tryStart(pl) {
     if (!can(pl)) return false;

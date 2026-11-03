@@ -566,7 +566,7 @@ G.LocalCoop = (() => {
   const dyOf = M => M.dy || (M.dy = { used: false, cd: 0, active: false, left: 0, since: 0, bonus: 0, pulse: 0, n: 0, type: 'normal', shrinkT: -1, from: [1, 1], fxDone: 0, uses: 0 });
   const baseKitOn = () => on && full && !isExp();
   const zTypeOf = M => (G.ZMoves && M && M.pl ? G.ZMoves.typeFor(M.pl.dex) : '');
-  const busyCine = () => !!zCiner || !!(G.ZMoves && G.ZMoves.cine) || !!(G.Judgment && G.Judgment.cinematic);
+  const busyCine = () => !!zCiner || !!(G.ZMoves && G.ZMoves.cine) || !!(G.Judgment && G.Judgment.cinematic) || !!(G.Coop && G.Coop.zCine);
   const playingNow = () => !!G.Game && G.Game.state === 'playing' && visible(G.Game.player);
   function zCan(M) {
     const Z = G.ZMoves, p = M && M.pl;

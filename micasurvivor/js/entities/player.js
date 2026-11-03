@@ -579,7 +579,9 @@ G.Player = class Player {
       const col = (G.U.TYPE_COLOR && G.U.TYPE_COLOR[kit.zt || (this.mon && this.mon.types && this.mon.types[0])]) || '#ffd23f';
       if ((kit.kf & KF.Z_ON) && !(was & KF.Z_ON)) {
         G.FX.ring(this.x, this.y - this.bodyH / 2, 10, 220, col, 0.6, 6); G.FX.burst(this.x, this.y - this.bodyH / 2, col, 24, 220);
-        if (G.Spawner && this.tag) G.Spawner.say(G.I18n.f('¡Movimiento Z de {x}!', this.tag), 2.2);
+        // (gap fix 2026-11-02: its full Z cinematic on this screen, holding the world, as player 1's: js/net/coop.js remoteZ)
+        if (G.Coop && G.Coop.remoteZ) G.Coop.remoteZ(this, kit.zt);
+        else if (G.Spawner && this.tag) G.Spawner.say(G.I18n.f('¡Movimiento Z de {x}!', this.tag), 2.2);
       }
       if (this.dyn && !(was & KF.DYN_ON)) { G.FX.ring(this.x, this.y, 10, 300, '#ff2a6d', 0.6, 6); G.FX.burst(this.x, this.y, '#ff2a6d', 22, 240); }
     }

@@ -10,6 +10,10 @@
 //   2. Expedition Classic: a rock, a free ball, a paid ball, a berry, Meowth: fresh before its use, used after, in the
 //      replay viewer of the same page (whose own run ended on that zone) and on a fresh page; seeking back shows it fresh
 //   3. Dive: the landmark, the lost Pokémon, a plug (a secret pocket) and its chest: the same, seeking back and forth
+//   4. base world props (altars, springs, locked chests, traps, chests, rocks, grass): tape, halved, viewer, live
+//   5. far away (gap fix): a live viewer joining late / following the partner sees every prop broken / altar used anywhere;
+//      a spring / locked chest left part-used far from the recorder keeps its state in the replay and live; the live list's
+//      size after thousands of breaks (and its budget past that)
 //   node overworld/tests/micasurvivor_replay_interactables_test.mjs        (ONLY=1,3 runs those sections)
 import http from 'http';
 import fs from 'fs';
@@ -248,8 +252,8 @@ try {
 			for (const p of pickT('trap', 2)) use('trap', p, () => { H.go(p.x, p.y - 8); H.step(3); });
 			for (const t of ['chest', 'rock', 'grass']) for (const p of pickT(t, 3)) use(t, p, () => { H.go(p.x + 30, p.y); H.step(2); W.damageProp(p, 9999); H.step(2); });
 			// a live snapshot (what a friend watching sees): the props broken near you
-			const last = out.uses[out.uses.length - 1], lp = G.Spectate.pubSnap({ ev: [], kd: [], w: 0 }).wp;
-			out.live = { last: last.k, x: last.x, y: last.y, has: !!lp && lp.b.some((v, i) => i % 2 === 0 && v + ',' + lp.b[i + 1] === last.k), w: lp && lp.w };
+			const last = out.uses[out.uses.length - 1], lp = G.Spectate.pubSnap({ ev: [], kd: [], w: 0 }).wa;
+			out.live = { last: last.k, x: last.x, y: last.y, has: !!lp && G.World.unpackProps(lp.B).has(last.k) };
 			out.snapL = JSON.parse(JSON.stringify(G.Spectate.pubSnap({ ev: [], kd: [], w: 0 })));
 			H.step(40);
 			G.Game.quit(); await wait(300);
@@ -258,7 +262,7 @@ try {
 		const kinds = new Set((rec.uses || []).map(u => u.type));
 		A(rec.uses && ['altar', 'bigchest', 'trap', 'chest', 'rock', 'grass'].every(k => kinds.has(k)) && rec.uses.every(u => u.type === 'altar' ? u.used : u.gone),
 			`a Normal run uses ${rec.uses && rec.uses.filter(u => u.type === 'altar').length} altars (the 25-second powers), opens a locked chest, sets off traps and breaks chests, rocks and grass`, JSON.stringify(rec).slice(0, 900));
-		A(rec.live && rec.live.has, 'a live snapshot carries the props broken near you (wp), so a friend watching sees them gone', JSON.stringify(rec.live));
+		A(rec.live && rec.live.has, 'a live snapshot carries the props broken (wa), so a friend watching sees them gone', JSON.stringify(rec.live));
 		// a live viewer (this page, fed that snapshot): the prop is gone on its screen too
 		const lv = await d.E(async (snap, L) => {
 			const wait = ms => new Promise(r => setTimeout(r, ms));
@@ -310,6 +314,136 @@ try {
 		A(chk.halved && chk.halved.nBad === 0, '...the same with every frame merged two by two (halve)', JSON.stringify(chk.halved));
 		const vb = (chk.view || []).filter(r => r.before || !r.after || r.back);
 		A(chk.view && chk.view.length === rec.uses.length && !vb.length, 'the replay viewer: an altar lights until it is used and stays used; a broken prop is there before and gone after; seeking back brings it back', JSON.stringify(vb.length ? vb : chk.view).slice(0, 900));
+		await d.ctx.close();
+	}
+
+	// ======================== 5. far from the camera (gap fix): every prop broken / altar used anywhere reaches a live viewer
+	// who joins late or follows another player; a spring drained / a locked chest started far from the recorder keeps its
+	// state in the replay and the live view; the size of the live list after a long run with thousands of breaks
+	if (on(5)) {
+		const d = await bootPage();
+		const rec = await d.E(async () => {
+			const H = window.__t, wait = ms => new Promise(r => setTimeout(r, ms));
+			G.Replay.K.SEG_SECS = 600;
+			G.LocalCoop.setPlayers(2, []);
+			H.thaw(); await G.Flow.play('normal'); H.freeze(); H.sturdy();
+			const M = G.LocalCoop.rows[0];
+			M.pl.hurt = () => {}; M.pl.invuln = 1e9;
+			const pl = G.Game.player, W = G.World, key = p => p.tx + ',' + p.ty, out = { far: [], spots: [] };
+			const brk = p => { W.damageProp(p, 9999); };
+			H.step(20);
+			// far-away breaks: 4 spots 3000-6000 units out, 3 props each (and an altar used out there)
+			for (const [sx, sy] of [[3000, 0], [0, -4200], [-5200, 1800], [2600, 5400]]) {
+				H.go(sx, sy); H.step(2);
+				const ps = W.propsAround(sx, sy, 600).filter(p => p.destructible && ['chest', 'rock', 'grass'].includes(p.type)).slice(0, 3);
+				for (const p of ps) { brk(p); out.far.push({ k: key(p), x: p.x, y: p.y, type: p.type }); }
+				out.spots.push([sx, sy]);
+				G.EnemyMgr.clear(); G.Pickups.clear(); H.step(4);
+			}
+			const alt = W.propsAround(-3000, -3000, 2500).filter(p => p.type === 'altar' && !p.used).sort((a, b) => Math.hypot(a.x + 3000, a.y + 3000) - Math.hypot(b.x + 3000, b.y + 3000))[0];
+			if (alt) { H.step(40, 1 / 30, () => { H.go(alt.x, alt.y + 4); if (alt.used) return false; }); out.altar = { k: key(alt), x: alt.x, y: alt.y, used: alt.used }; }
+			// a spring drained to about half, far out, then left (it refills only while you are near it)
+			const sp = W.propsAround(4000, -4000, 3000).filter(p => p.type === 'spring').sort((a, b) => Math.hypot(a.x - 4000, a.y + 4000) - Math.hypot(b.x - 4000, b.y + 4000))[0];
+			if (sp) { H.step(400, 1 / 30, () => { H.go(sp.x, sp.y - 6); pl.hp = 1; if (sp.charge < 0.55) return false; }); out.spring = { k: key(sp), x: sp.x, y: sp.y, c: Math.round(sp.charge * 100) }; }
+			// a locked chest stood next to for a second, then left (its progress stays where it was)
+			const bc = W.propsAround(-4000, 4000, 3000).filter(p => p.type === 'bigchest').sort((a, b) => Math.hypot(a.x + 4000, a.y - 4000) - Math.hypot(b.x + 4000, b.y - 4000))[0];
+			// (the prop as the world holds it now: a chunk forgotten while searching is built again, with a new object)
+			const live = p => p && W.propsAround(p.x, p.y, 40).find(q => key(q) === key(p));
+			if (bc) { H.go(bc.x, bc.y + 20); const b2 = live(bc); H.step(36, 1 / 30, () => { H.go(bc.x, bc.y + 20); }); out.chest = { k: key(bc), x: bc.x, y: bc.y, o: Math.round(b2.open / G.Interact.CHEST_TIME * 100), b2 }; }
+			// home, far from all of it; then the partner far out on its own, breaking props there
+			H.go(0, 0); H.step(30);
+			out.homeT = H.t();
+			if (out.spring) out.spring.now = Math.round(sp.charge * 100);
+			if (out.chest) { out.chest.now = Math.round(out.chest.b2.open / G.Interact.CHEST_TIME * 100); delete out.chest.b2; }
+			const mx = -7000, my = -6000;
+			M.pl.x = mx; M.pl.y = my;
+			const mps = W.propsAround(mx, my, 500).filter(p => p.destructible && ['chest', 'rock', 'grass'].includes(p.type)).slice(0, 3);
+			for (const p of mps) brk(p);
+			out.mate = { x: mx, y: my, ks: mps.map(key), xy: mps.map(p => [p.x, p.y]) };
+			G.Pickups.clear();
+			out.snap = JSON.parse(JSON.stringify(G.Spectate.pubSnap({ ev: [], kd: [], w: 1000 })));
+			out.snapLen = JSON.stringify(out.snap).length;
+			out.waLen = out.snap.wa ? JSON.stringify(out.snap.wa).length : 0;
+			out.endT = H.t();
+			H.step(20);
+			G.Game.quit(); await wait(300);
+			return out;
+		});
+		A(rec.far && rec.far.length >= 9 && rec.altar && rec.altar.used && rec.spring && rec.chest && rec.mate && rec.mate.ks.length >= 2,
+			`a 2-player run breaks ${rec.far && rec.far.length} props at 4 spots 3000-6000 units out, uses an altar out there, drains a spring to ${rec.spring && rec.spring.c}% and starts a locked chest (${rec.chest && rec.chest.o}%), then goes home; the partner breaks ${rec.mate && rec.mate.ks.length} more far off`, JSON.stringify(rec).slice(0, 900));
+		A(rec.spring && rec.spring.now === rec.spring.c && rec.chest && rec.chest.now === rec.chest.o && rec.chest.o > 10, 'far away, the spring stays drained and the chest stays part-open (the run\'s own state)', JSON.stringify([rec.spring, rec.chest]));
+		// a live viewer who joins now (fed only this snapshot) and looks where the run has been; then follows the partner
+		const lv = await d.E(async r => {
+			const wait = ms => new Promise(res => setTimeout(res, ms));
+			const name = G.MicaAccount.name, watch = G.Spectate.watch, snap = r.snap;
+			G.MicaAccount.name = () => 'viewer';
+			G.Spectate.watch = (u, h) => { h.snapshot(snap, {}); h.snapshot(Object.assign({}, snap, { t: snap.t + 5, w: snap.w + 1000 }), {}); };
+			G.WatchUI.watchLive('host');
+			for (let i = 0; i < 40 && !G.WatchUI.player; i++) await wait(30);
+			const at = (x, y, k) => G.World.propsAround(x, y, 60).find(q => q.tx + ',' + q.ty === k);
+			const out = {};
+			out.farBack = r.far.filter(f => at(f.x, f.y, f.k)).map(f => f.k);
+			const ap = r.altar && at(r.altar.x, r.altar.y, r.altar.k);
+			out.altar = ap ? !!ap.used : 'gone';
+			const s = r.spring && at(r.spring.x, r.spring.y, r.spring.k), c = r.chest && at(r.chest.x, r.chest.y, r.chest.k);
+			out.spring = s ? Math.round(s.charge * 100) : null;
+			out.chest = c ? Math.round(c.open / G.Interact.CHEST_TIME * 100) : null;
+			// following the partner: its view, where it broke props on its own
+			out.follow = G.WatchUI.setFollow(1);
+			out.cam = [Math.round(G.WatchUI.player.x), Math.round(G.WatchUI.player.y)];
+			out.mateBack = r.mate.ks.filter((k, i) => at(r.mate.xy[i][0], r.mate.xy[i][1], k));
+			G.WatchUI.leave(); G.MicaAccount.name = name; G.Spectate.watch = watch;
+			return out;
+		}, rec);
+		A(lv.farBack && lv.farBack.length === 0 && lv.altar === true, `a live viewer who joins late sees every prop broken far away gone (${rec.far.length}) and the far altar used`, JSON.stringify(lv));
+		A(lv.spring != null && Math.abs(lv.spring - rec.spring.c) <= 1 && lv.chest != null && Math.abs(lv.chest - rec.chest.o) <= 1, '...and the far spring drained / the far locked chest part-open as the run left them', JSON.stringify([lv.spring, lv.chest, rec.spring, rec.chest]));
+		A(lv.follow === 1 && Math.hypot(lv.cam[0] - rec.mate.x, lv.cam[1] - rec.mate.y) < 200 && lv.mateBack && lv.mateBack.length === 0, '...following the partner (far from player 1), the props it broke there are gone too', JSON.stringify(lv));
+		// the replay: the far spring / chest keep their state at the end (the recorder is ~5000 units away)
+		const rp = await d.E(async r => {
+			const H = window.__t;
+			await H.watchAt(r.endT / 10 + 0.4);
+			const at = (x, y, k) => G.World.propsAround(x, y, 60).find(q => q.tx + ',' + q.ty === k);
+			const s = at(r.spring.x, r.spring.y, r.spring.k), c = at(r.chest.x, r.chest.y, r.chest.k);
+			const out = { spring: s ? Math.round(s.charge * 100) : null, chest: c ? Math.round(c.open / G.Interact.CHEST_TIME * 100) : null };
+			// (the tape's cost: field 15 only on change; the far ones frozen, never re-sent)
+			const e = G.Replay.last; let bytes = 0, withS = 0, n = 0;
+			for (const c of e.segs) {
+				const fr = JSON.parse(await G.Replay.unpack(c)).f, rd = await G.Replay.open(c);
+				fr.forEach((f, i) => { n++; if (f[15]) { bytes += JSON.stringify(f[15]).length; if ((f[15].s || f[15].d) && rd.at(i).t > r.homeT) withS++; } });
+			}
+			out.tape = { frames: n, w15: bytes, specFrames: withS };
+			await H.watchAt(1);   // (back to the start: both at rest)
+			const s0 = at(r.spring.x, r.spring.y, r.spring.k), c0 = at(r.chest.x, r.chest.y, r.chest.k);
+			out.start = [s0 ? Math.round(s0.charge * 100) : null, c0 ? Math.round(c0.open * 100) : null];
+			G.WatchUI.leave();
+			return out;
+		}, rec);
+		A(rp.spring != null && Math.abs(rp.spring - rec.spring.c) <= 1 && rp.chest != null && Math.abs(rp.chest - rec.chest.o) <= 1 && rp.start[0] === 100 && rp.start[1] === 0,
+			'the replay, the recorder far away: the spring is drained and the locked chest part-open as the run left them (at rest at the start)', JSON.stringify([rp, rec.spring, rec.chest]));
+		A(rp.tape && rp.tape.w15 < 4000 && rp.tape.specFrames === 0, `...for ${rp.tape && rp.tape.w15} bytes of field 15 over ${rp.tape && rp.tape.frames} frames (the far spring / chest, frozen, never sent again once you are home)`, JSON.stringify(rp.tape));
+		// the size of the live list after a long run: thousands of props broken over a wide area (and the budget past it)
+		const sz = await d.E(async () => {
+			const H = window.__t, wait = ms => new Promise(r => setTimeout(r, ms));
+			H.thaw(); await G.Flow.play('normal'); H.freeze(); H.sturdy();
+			const W = G.World, CW = W.CW, out = { rows: [] };
+			const run = (n0, n1) => {
+				for (let cy = n0; cy < n1; cy++) for (let cx = n0; cx < n1; cx++) {
+					for (const p of W.propsAround(cx * CW + CW / 2, cy * CW + CW / 2, CW / 2 - 1)) if (p.destructible) W.breakAt(p.tx, p.ty);
+					G.Pickups.clear(); G.FX.clear();
+				}
+				const s = G.Spectate.pubSnap({ ev: [], kd: [], w: 1 });
+				return { chunks: (n1 - n0) ** 2, broken: W.propLog().b.length, wa: s.wa ? JSON.stringify(s.wa).length : 0, part: !!(s.wa && s.wa.p), snap: JSON.stringify(s).length };
+			};
+			out.rows.push(run(-6, 6));    // 144 chunks (a 6 x 6 km square)
+			out.rows.push(run(-14, 14));  // 784 chunks: past the budget
+			const s = G.Spectate.pubSnap({ ev: [], kd: [], w: 1 }), here = G.World.unpackProps(s.wa.B), pl = G.Game.player;
+			out.nearOk = [...here].filter(k => { const [tx, ty] = k.split(',').map(Number); return Math.abs(tx * W.TS - pl.x) < 400 && Math.abs(ty * W.TS - pl.y) < 400; }).length > 0;   // (the chunks round you are in, though broken first)
+			G.Game.quit(); await wait(300);
+			return out;
+		});
+		console.log('      live list size: ' + sz.rows.map(r => `${r.broken} props broken over ${r.chunks} chunks -> wa ${r.wa} chars${r.part ? ' (partial: round the players + the most recent)' : ''}, snapshot ${r.snap}`).join('; '));
+		A(sz.rows[0].broken > 1500 && !sz.rows[0].part && sz.rows[0].wa < 9200 && sz.rows[0].snap < 23000, `${sz.rows[0].broken} props broken over ${sz.rows[0].chunks} chunks: all of them in ${sz.rows[0].wa} characters, the snapshot ${sz.rows[0].snap} (cap 23 000)`, JSON.stringify(sz));
+		A(sz.rows[1].part && sz.rows[1].wa < 9200 && sz.rows[1].snap < 23000 && sz.nearOk, `${sz.rows[1].broken} over ${sz.rows[1].chunks} chunks: past the budget, the most recent + the chunks round the players in ${sz.rows[1].wa} (partial), never over the cap`, JSON.stringify(sz));
 		await d.ctx.close();
 	}
 

@@ -79,7 +79,7 @@ G.Dynamax = (() => {
   }
   function can(pl) {
     return !!pl && !pl.dead && !pl.coopDown && !pl.remote && !!G.Game && G.Game.state === 'playing' && !(G.Judgment && G.Judgment.cinematic)   // (M5 lote 12a: no mientras espectas, main.gd 1243 / 1267)
-      && !(G.ZMoves && G.ZMoves.cine) && !(G.LocalCoop && G.LocalCoop.zCine) && unlocked() && !used && !active && pl.level >= MIN_LEVEL && !blocked();   // (MP polish: nor in a partner's Z cinematic)
+      && !(G.ZMoves && G.ZMoves.cine) && !(G.LocalCoop && G.LocalCoop.zCine) && !(G.Coop && G.Coop.zCine) && unlocked() && !used && !active && pl.level >= MIN_LEVEL && !blocked();   // (MP polish: nor in a partner's Z cinematic)
   }
   function tryStart(pl) {
     if (!can(pl)) return false;
