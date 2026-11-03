@@ -185,9 +185,11 @@ export function stageOf(dex, sp) {
  * Coverage of the dex by the mods, and the missing species with their proposed joker:
  * { jokers, coverage: {mod: Set(dex)}, covered: Set, missing: [{dex, key, name, gen, types, ptype, stage, rarity, cost, line}],
  *   rarityTable, typeVotes }
+ * opts.pretend: dex numbers to list as missing although a mod covers them (a test fixture once the real list is empty: never cached).
  */
 export async function computeMissing(opts = {}) {
-  if (cache && !opts.fresh) return cache;
+  if (cache && !opts.fresh && !opts.pretend) return cache;
+  const pretend = new Set(opts.pretend || []);
   const sp = loadSpecies(opts.dataDir);
   const jokers = opts.jokers || await loadModJokers();
   const coverage = Object.fromEntries(MODS.map((m) => [m, new Set()]));
@@ -221,7 +223,7 @@ export async function computeMissing(opts = {}) {
   }
   const missing = [];
   for (let dex = 1; dex <= 1025; dex++) {
-    if (covered.has(dex)) continue;
+    if (covered.has(dex) && !pretend.has(dex)) continue;
     const s = sp.byDex.get(dex);
     if (!s) throw new Error('no species for dex ' + dex + ' in overworld/data/species_index.json');
     const stage = stageOf(dex, sp);
@@ -235,8 +237,9 @@ export async function computeMissing(opts = {}) {
       sprite: s.sprite,
     });
   }
-  cache = { species: sp, jokers, jokerOfDex, coverage, covered, missing, rarityTable, typeVotes };
-  return cache;
+  const res = { species: sp, jokers, jokerOfDex, coverage, covered, missing, rarityTable, typeVotes };
+  if (!opts.pretend) cache = res;
+  return res;
 }
 function bucketOf(stage, dex, sp) {
   if (stage === 'Legendary' || stage === 'Baby') return stage;

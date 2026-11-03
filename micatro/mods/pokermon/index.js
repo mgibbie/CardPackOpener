@@ -1108,13 +1108,16 @@ export const POKERMON = registerMod({
   // Alph / the Member Card / the Mystery Box leave with their Pokémon's generation, and the random picks (Balls, ...) skip the joke
   // content while it is off (Spiclops came out of Master Balls). Gated by rulesRev: runs recorded before r79 replay
   // on the old filter.
-  // 80 = the owner's regional batch A, the 18 Alolan forms (jokers/pokejokers_regional.js): own lines beside the Kanto originals (Rattata,
+  // 80 = Gen 9 batch 4, the Gen 9 Legendaries (jokers/pokejokers_designs.js, #1001-1017), each complete alone: Wo-Chien (every Blind 15%
+  // lower), Chien-Pao (scored cards X1.1), Ting-Lu (+2 hands in Boss Blinds), Chi-Yu (Boss Blinds disabled), Koraidon (always sunny) and
+  // Miraidon (always Electric Terrain; X2 + X0.5 per Paradox of their era), Ogerpon (a mask an Ante). New content only.
+  // 81 = the owner's regional batch A, the 18 Alolan forms (jokers/pokejokers_regional.js): own lines beside the Kanto originals (Rattata,
   // Sandshrew, Vulpix, Diglett, Meowth, Geodude, Grimer), three BRANCH evolutions of Kanto Basics by an Energy used on them (Pikachu ->
   // Alolan Raichu: Psychic; Exeggcute -> Alolan Exeggutor: Dragon; Cubone -> Alolan Marowak: Fire), the house snow (is_snowy; Alolan
   // Ninetales's Snow Warning, which re-forms Eiscue's ice too) and the regional pill (systems/types.js region_badge; display only). The
-  // branches, their family members and Eiscue's snow are gated by rulesRev (systems/energy.js ALOLA_REV), so runs recorded before r80 replay
+  // branches, their family members and Eiscue's snow are gated by rulesRev (systems/energy.js ALOLA_REV), so runs recorded before r81 replay
   // as recorded.
-  contentRev: 80,
+  contentRev: 81,
   // Pokermon 3.9.1 pokermon.lua: SMODS.current_mod.optional_features = {quantum_enhancements = true, object_weights = true}.
   // object_weights sends create_card's key, the shop roll, tags, packs, bosses and vouchers through SMODS.poll_object
   // (js/engine/smods.js; batch 17). quantum_enhancements is the engine's check_enhancement, always on.

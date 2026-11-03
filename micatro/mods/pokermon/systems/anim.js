@@ -159,6 +159,17 @@ export const GEN8_LEGEND_FORMS = {
 };
 
 /**
+ * Ogerpon's masks (Gen 9 batch 4, jokers/pokejokers_designs.js OGERPON_MASKS / mask_now): upstream 3.9.1 draws each mask with its own floating
+ * soul on the Gen 9 sheet (sprite table ogerpon {4,4} = Teal, its own card; ogerpon_wellspring {2,5}, ogerpon_hearthflame {8,4},
+ * ogerpon_cornerstone {6,5}) — by the view's form (the center's poke_view_form: the mask of the current Ante). The unlisted cells beside
+ * them ({6,4}, {0,5}, {4,5}, {8,5}: the Terastallized masks, no soul) are not used. Each cell's type icon is the mask's type
+ * (pokermon_art_type.mjs; pokermon_gen9_legendaries_test 'cell types').
+ */
+export const GEN9_LEGEND_FORMS = {
+  j_poke_ogerpon: { wellspring: memory(2, 5), hearthflame: memory(8, 4), cornerstone: memory(6, 5) },
+};
+
+/**
  * Deerling's and Sawsbuck's seasons (the owner's Gen 5 batch 3, jokers/pokejokers_designs.js SEASONS): upstream 3.9.1 draws all four forms
  * of both on the Gen 5 sheet, one after another (Deerling Spring {2,1}, Summer {4,1}, Autumn {6,1}, Winter {8,1}; Sawsbuck Spring {10,1},
  * Summer {0,2}, Autumn {2,2}, Winter {4,2}; pokespriteload.lua lists only the Spring ones) — by the view's form (the center's
