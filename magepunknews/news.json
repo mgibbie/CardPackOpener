@@ -375,6 +375,182 @@
 	},
 	"entries": [
 		{
+			"sha": "6fa2af1",
+			"date": "2026-11-03",
+			"kind": "micatro",
+			"title": "Pokermon r74: Gen 8 batch 4, the 10 Gen 8 Legendaries (#888-905)",
+			"body": "",
+			"cards": [],
+			"micatroMods": [
+				{
+					"id": "pokermon",
+					"name": "Pokermon",
+					"added": [
+						{
+							"key": "j_poke_zacian",
+							"name": "Zacian",
+							"set": "Joker",
+							"rarity": "legendary",
+							"cost": 20,
+							"atlas": "@poke_AtlasJokersBasicGen08391",
+							"pos": {
+								"x": 6,
+								"y": 9
+							},
+							"soul": {
+								"x": 7,
+								"y": 9
+							}
+						},
+						{
+							"key": "j_poke_zamazenta",
+							"name": "Zamazenta",
+							"set": "Joker",
+							"rarity": "legendary",
+							"cost": 20,
+							"atlas": "@poke_AtlasJokersBasicGen08391",
+							"pos": {
+								"x": 10,
+								"y": 9
+							},
+							"soul": {
+								"x": 11,
+								"y": 9
+							}
+						},
+						{
+							"key": "j_poke_eternatus",
+							"name": "Eternatus",
+							"set": "Joker",
+							"rarity": "legendary",
+							"cost": 20,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 8,
+								"y": 59
+							},
+							"soul": {
+								"x": 9,
+								"y": 59
+							}
+						},
+						{
+							"key": "j_poke_zarude",
+							"name": "Zarude",
+							"set": "Joker",
+							"rarity": "legendary",
+							"cost": 20,
+							"atlas": "@poke_AtlasJokersBasicGen08391",
+							"pos": {
+								"x": 6,
+								"y": 10
+							},
+							"soul": {
+								"x": 7,
+								"y": 10
+							}
+						},
+						{
+							"key": "j_poke_regieleki",
+							"name": "Regieleki",
+							"set": "Joker",
+							"rarity": "legendary",
+							"cost": 20,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 16,
+								"y": 59
+							},
+							"soul": {
+								"x": 17,
+								"y": 59
+							}
+						},
+						{
+							"key": "j_poke_regidrago",
+							"name": "Regidrago",
+							"set": "Joker",
+							"rarity": "legendary",
+							"cost": 20,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 18,
+								"y": 59
+							},
+							"soul": {
+								"x": 19,
+								"y": 59
+							}
+						},
+						{
+							"key": "j_poke_glastrier",
+							"name": "Glastrier",
+							"set": "Joker",
+							"rarity": "legendary",
+							"cost": 20,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 20,
+								"y": 59
+							},
+							"soul": {
+								"x": 21,
+								"y": 59
+							}
+						},
+						{
+							"key": "j_poke_spectrier",
+							"name": "Spectrier",
+							"set": "Joker",
+							"rarity": "legendary",
+							"cost": 20,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 22,
+								"y": 59
+							},
+							"soul": {
+								"x": 23,
+								"y": 59
+							}
+						},
+						{
+							"key": "j_poke_calyrex",
+							"name": "Calyrex",
+							"set": "Joker",
+							"rarity": "legendary",
+							"cost": 20,
+							"atlas": "@poke_AtlasJokersBasicGen08391",
+							"pos": {
+								"x": 10,
+								"y": 10
+							},
+							"soul": {
+								"x": 11,
+								"y": 10
+							}
+						},
+						{
+							"key": "j_poke_enamorus",
+							"name": "Enamorus",
+							"set": "Joker",
+							"rarity": "legendary",
+							"cost": 20,
+							"atlas": "@poke_AtlasJokersBasicGen08391",
+							"pos": {
+								"x": 6,
+								"y": 11
+							},
+							"soul": {
+								"x": 7,
+								"y": 11
+							}
+						}
+					]
+				}
+			]
+		},
+		{
 			"sha": "84029c6",
 			"date": "2026-11-03",
 			"kind": "patch",
