@@ -501,7 +501,8 @@ House pattern: NO DEBUFF, a rule-bender Legendary (the owner's Cresselia, Lunar 
   - The debuff state is only recomputed when something asks (the Blind's set_blind / disable pass, a card's set_ability). So the joker
     re-runs the Blind's pass over G.playing_cards from add_to_deck AND remove_from_deck (which also run on a debuff / un-debuff), QUEUED
     (an event): by then the card has landed, left, or been marked debuffed. Only while facing a Blind (nothing is debuffed outside one).
-  - It protects playing cards only: jokers can still be debuffed (Crimson Heart), the joker itself included. Jokers that debuff on purpose
+  - It protects playing cards only: jokers can still be debuffed (Crimson Heart), the joker itself included (the Gen 9 Mabosstiff is the
+    Jokers' version: YOUR JOKERS CAN'T BE DEBUFFED, below). Jokers that debuff on purpose
     for their own payoff (Baby faints, "debuff self this round") are jokers, so they still work.
   - The rule is Energy-inert; give the joker a number (Cresselia's X1.5, `Xmult`) so Energy still has something to raise. With Pokermon+'s
     Darkrai: no interaction to write (it never debuffs cards); its held-Energy energizing raises the X like any joker's.
@@ -681,6 +682,42 @@ House pattern: a GLASS-X RULE on the card (the Gen 8 Glastrier; glass_x_mult): t
 House pattern: a SELL-VALUE DRAIN BANK (the Gen 8 Zarude; jungle_drain): when a Blind is selected each OTHER Joker loses $1 (Lampent's poke_drain,
   one way, never below $1) and the joker banks X per $1 actually drained (measured as the sell_cost drop). Not Blueprint (a copy would drain twice).
   It eats its own row's sell value: a cost the player sees, and runs dry once every Joker is at $1.
+House pattern: a REVIVAL, a destroyed Joker comes back (the Gen 9 Pawmot, Revival Blessing; pawmot_revive):
+  - Pokermon's hooks.start_dissolve (every DESTROYING path ends in Card:start_dissolve: Ceremonial Dagger, Madness, Hex, Ankh, Bewear,
+    Cursola's crumble, Mr. Bones); SELLING never reaches it (Card:sell_card removes the card itself), nor an evolution (set_ability), nor the
+    "eaten" self-removals (Gros Michel, Ice Cream, Popcorn, Jelly Donut, the eggs: remove(), not a dissolve). Run it LAST in the hook, after
+    the leaving card has been counted (Drifblim's Aftermath, Basculegion's Last Respects still see it go).
+  - Synchronous, in the hook: copy_card (Ankh's copy: center, edition — a Negative keeps its own slot —, Eternal / Perishable with its tally /
+    Rental, Tera sticker, Energy, every banked value: card.ability exactly), add_to_deck, then emplace at the leaving card's 1-based slot
+    (G.jokers.emplace(copy, index + 1)), so the copy holds its place when the original goes: the row never grows and never reorders. Clear the
+    copied queue_negative_removal and debuff; re-read set_debuff after (a lasting source comes back, a Crimson Heart pick doesn't).
+  - Room: only if the row WITHOUT the leaving card plus G.GAME.joker_buffer is below the limit (a pending creation already owns the freed
+    slot: nothing comes back, the blessing stays ready). Once per Ante, on the reviver (`blessing_ante`, fixed); another of your Jokers only
+    (a lone Pawmot destroyed stays gone; two Pawmots revive each other); a debuffed reviver does nothing. No RNG, so resume / replay match.
+  - It turns every "destroy a Joker" payoff into a free gain once an Ante (Ceremonial Dagger's Mult, Madness's X0.5): fine on a Stage 2,
+    keep it once per Ante.
+House pattern: YOUR JOKERS CAN'T BE DEBUFFED (the Gen 9 Mabosstiff, Guard Dog; systems/rules.js set_debuff, guard_dog_refresh):
+  - Cresselia's NO DEBUFF line, for Jokers: a Joker in G.jokers answers 'prevent_debuff' while find_joker finds the guard (itself included).
+    It blocks Crimson Heart (its pick is made, then refused), SMODS debuff sources and any mod's set_debuff answer.
+  - Not a Perishable's end of life (perish_tally 0: the sticker's cost, so the guard gives no answer there and the engine's perishable check
+    debuffs it — the guard itself too, which then stops guarding), and not a fainted Baby (rules.js answers true for it FIRST: a joker's own
+    cost). Say both on the card.
+  - Gaining it lifts the row's current debuffs at once (re-run set_debuff on each debuffed Joker, queued); losing it re-reads only the
+    lasting sources (debuff_sources). Crimson Heart's last pick is gone with the guard; it picks again on the next hand.
+House pattern: a CHARGE fired by the NEXT scoring hand (the Gen 9 Bellibolt, Electromorphosis; Cramorant's missile, with a growing X):
+  each player discard (pre_discard without `hook`, once per discard) banks +X0.25 on `charge_Xmult` (from X1; gain `Xmult_mod` +20%);
+  joker_main gives it and MARKS it fired (not a Blueprint's), `after` resets it to X1 (Drifblim's Blueprint-safe release: a Blueprint either
+  side copies the full X, one reset); a debuffed hand has no joker_main, so it doesn't fire; lost at the main end_of_round.
+House pattern: $ PER DISCARD LEFT (the Gen 9 Wattrel / Kilowattrel, Wind Power): calc_dollar_bonus reads current_round.discards_left at the
+  cash-out (Delayed Gratification's read without its "no discard used" condition): $1 / $2 each, fixed (Energy-inert), a row of the cash-out
+  list; Blueprint never copies it, a debuffed one pays nothing. The Red Deck's 4 discards make it $4 / $8 unspent.
+House pattern: FULL-DECK SIZE (the Gen 9 Toedscool / Toedscruel, Mycelium): G.playing_cards minus broken / destroyed (unbroken), counted
+  ABOVE a threshold, never below 0: +4 Chips per card above 52, X1 + X0.02 per card above 40 (X1.24 on a fresh deck). Rewards Pokermon's
+  deck growth (Seeds, Hazards, Certificate, DNA, Marble); a deck thinned below the line gives nothing.
+House pattern: HANDS ALREADY PLAYED THIS ROUND as an X (the Gen 9 Klawf, Anger Shell): X1 + X1 per current_round.hands_played (the
+  pre-hand count while scoring: the first hand X1). A round goes on only while the Blind is unbeaten, so "each earlier hand that didn't beat
+  it" IS hands_played. X1 / 2 / 3 / 4 on the Red Deck's hands (X1 / 2.6 / 4.2 / 5.8 with 3 Energy): big only on hands that already failed,
+  so it rescues rounds rather than racing them (Regidrago's X falls with the same count).
 
 House pattern: SCORING A DEBUFFED CARD, and debuffs as a resource (the owner's Snivy line, Contrary; jokers/pokejokers_designs.js
 contrary_held / contrary_lifts):
@@ -1420,6 +1457,10 @@ ancient_money / retriggers / hands / hand_round (the Galar fossils), form (Eiscu
 the counters lucky_round / lucky_count (Farfetch'd / Sirfetch'd), stones_scored (Yamask), stripe_scored (Basculin), snow_round (Eiscue).
 Two energy fields on one number pair: Obstagoon `Xmult` / `Xmult2` (X2 / X3), Eiscue `Xmult` / `Xmult2` (Ice / Noice), Morpeko `mult` / `Xmult`.
 Energy-inert by design: Mr. Rime (no number), Copperajah (its $ is fixed), a ♀ Indeedee (its `Xmult` is dropped when it rolls ♀).
+the Gen 9 batch 1 fixed fields: face_money (Pawmo's $1), blessing_ante (Pawmot's once per Ante), num / dem / levels (Squawkabilly's 1 in 2, one
+extra level), wind_money (Wattrel / Kilowattrel), the bank charge_Xmult (Bellibolt; its gain Xmult_mod is energized) and its state charge_fired,
+the plumage poke_plumage (on card.ability). Carried for the next stage: Pawmo `Xmult` (Pawmot's X1.5; no Xmult_mod beside it, so evolution never
+copies it over). Energy-inert by design: Squawkabilly (odds and a level), Wattrel / Kilowattrel (their $ is fixed).
 the Gen 9 Paradox Pokemon's fixed fields: d_size (Gouging Fire's discard), the reads sunread_round / sun_round / terrainread_round /
 terrain_round; Energy-inert: Iron Bundle (no number). Per-card X stays Xmult_multi (+5%: Iron Boulder's first-card X2 -> 2.1 / 2.2 / 2.3).
 
