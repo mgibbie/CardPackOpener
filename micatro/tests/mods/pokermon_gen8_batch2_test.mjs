@@ -142,9 +142,9 @@ await sec('static', () => {
     ok(c.atlas === atlas && c.pos.x === x && c.pos.y === y && !c.soul_pos, `${n}: upstream 3.9.1 cell ${atlas} {${x},${y}} (nothing to deploy)`, [c.atlas, c.pos]);
   }
   const keys = MODS.pokermon.content.centers.filter((c) => c.set === 'Joker').map((c) => c.key);
-  const order = ['barraskewda', ...NAMES, 'dreepy'].map((n) => 'j_poke_' + n);
+  const order = ['barraskewda', ...NAMES, 'obstagoon'].map((n) => 'j_poke_' + n);
   const i = keys.indexOf('j_poke_barraskewda');
-  ok(i > 0 && order.every((k, n) => keys[i + n] === k), 'Pokédex order: Barraskewda (847), Toxel ... Grimmsnarl (848-861), Dreepy (885)', keys.slice(i, i + 16));
+  ok(i > 0 && order.every((k, n) => keys[i + n] === k), 'Pokédex order: Barraskewda (847), Toxel ... Grimmsnarl (848-861), Obstagoon (862, Gen 8 batch 3)', keys.slice(i, i + 16));
   const fam = (n) => poke_get_family_list(n).map((x) => (typeof x === 'string' ? x : x.key || x.name)).join();
   for (const line of Object.values(LINES)) ok(fam(line[0]) === line.join(), 'one family: ' + line.join(' -> '), fam(line[0]));
   ok(NAMES.every((n) => !C(n).poke_no_energy_field), 'every one of the 14 takes Energy (a main number, or its evolution\'s carried)');
