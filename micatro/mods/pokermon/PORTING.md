@@ -3904,6 +3904,45 @@ recorded on r71-r74 replay as recorded (never retroactive):
 - **Tests**: `pokermon_gen8_batch2_test` (r75: Grimmsnarl alone $4 after the free one, + Impidimp / + Morgrem stacking, never below $1, debuffed,
   the text; r74 rules: no discount; an r74 recipe resumed / stepped as recorded), `designwiki_micatro_mods_test` (no `#n#` anywhere in the generated
   mod data). Re-pinned: `modpin_test`, `pokermon_391_data_test`, `pokermon_new_jokers_test`, `micatro_mod_version_pin`.
+### Gen 9, batch 1 (2026-11-03, branch `feat/pokermon-gen9-batch1`)
+Pinned **`3.9.1+r76`** (`contentRev: 76`; r75 is the owner's Grimmsnarl tweak; `LEGACY_MOD_VERSIONS` untouched). The owner's "Yes": 15 jokers, #919-950, on the
+guide's price slots (3-stage U $6 / S $8 / S $10, 2-stage C $5 / S $8, single-stage R $7), in `jokers/pokejokers_designs.js` (`lunge` / `volt_count` /
+`pawmot_revive` / `parrot` / `electromorphosis` / `wind_money` / `guard_dog_refresh` / `mycelium` / `anger_x`). Evolution by rounds: 4 for the early
+evolvers (Nymble, Pawmi, Wattrel), 5 for the rest. Types = the cards'. Pokédex order: Nymble ... Pawmot after Spidops, Squawkabilly after Arboliva, Tadbulb
+... Mabosstiff after Ceruledge, Toedscool ... Klawf after Brambleghast. Art: upstream 3.9.1 cells (Natdex {6,61}-{8,63}; Squawkabilly Gen 9 {8,0} Green, and
+UNLISTED beside it {0,1} Blue / {2,1} Yellow / {4,1} White: `systems/anim.js` GEN9_FORM_SPRITES, ui.js ownFace, Shiny twins too); nothing to deploy.
+Neither Nacho nor Pokermon+ has any.
+- **Nymble** (Grass) / **Lokix**, Lunge: **+15 Mult** / **X2.5** if the PLAYED hand has 3 or fewer cards (full_hand: kickers count).
+- **Pawmi** (Lightning): **+2 Mult per Lightning Joker**, itself included (is_type, undebuffed; a Tera counts and replaces the type). **Pawmo**: **each scored
+  face card earns $1** (Emolga's Static: retriggers pay again); carries Pawmot's `Xmult` ("Energy carries to Pawmot"). **Pawmot**: **X1.5** and **Revival
+  Blessing** (`pawmot_revive`, index.js hooks.start_dissolve, run last): once per Ante, when ANOTHER of your Jokers is destroyed (any start_dissolve: Dagger,
+  Madness, Hex, Ankh, Bewear, Cursola, Mr. Bones), it comes back at once. **The choices**: a copy_card copy (Ankh's: center, edition — Negative keeps its own
+  slot —, Eternal / Perishable with its tally / Rental, Tera, Energy, every banked value: card.ability exactly), emplaced at the leaving card's slot before it
+  goes (same position, the freed slot, the row never grows); it comes back undebuffed (a lasting source is re-read); only with room (others + joker_buffer
+  below the limit; else nothing and the blessing waits); selling, evolving and "eaten" self-removals (Gros Michel, Ice Cream, the eggs) are not destroying; a
+  lone Pawmot never revives itself, two revive each other; a debuffed Pawmot does nothing. Tooltip "(Revival Blessing: ready / used this Ante)".
+- **Squawkabilly** (Colorless, R $7), Parrot: **each Planet used, 1 in 2 to level that hand once more** (pseudorandom_probability 'squawkabilly': Oops! raises
+  it; Sigilyph's level_up_hand; not Blueprint). Plumage rolled when OBTAINED (add_to_deck, seeded 'squawkabilly_plumage', 1 in 4 each; `card.ability.poke_plumage`;
+  art only). A Colorless Joker: Starly's flock counts it. Energy-inert.
+- **Tadbulb** (Lightning): **+3 Mult per discard used this round** (current_round.discards_used; The Hook's don't count). **Bellibolt**, Electromorphosis: **each
+  discard used adds +X0.25 to a charge** (from X1, `charge_Xmult`); the next hand that scores fires it (joker_main; Blueprint copies the X) and `after` resets
+  it to X1; a debuffed hand doesn't fire it. **The choice**: the charge is lost at the end of the round (the main end_of_round pass).
+- **Wattrel** (Lightning) / **Kilowattrel**, Wind Power: **$1 / $2 per discard left** at end of round (calc_dollar_bonus, a cash-out row; Blueprint never; fixed:
+  Energy-inert).
+- **Maschiff** (Dark) / **Mabosstiff**: **+12 Mult** / **X1.5 during Boss Blinds**. Mabosstiff's **Guard Dog**: your Jokers can't be debuffed, itself included
+  (`systems/rules.js` set_debuff 'prevent_debuff': Crimson Heart, SMODS debuff sources, a mod's answer). **The choice**: a Perishable's end of life still debuffs
+  (a sticker's cost) and a Baby still faints (its rule answers first); gaining it lifts current debuffs at once, losing it re-reads the lasting sources.
+- **Toedscool** (Grass) / **Toedscruel**, Mycelium: **+4 Chips per card in the full deck above 52** / **X1 + X0.02 per card above 40** (X1.24 on 52; never below).
+- **Klawf** (Earth, R $7), Anger Shell: **X1 + X1 per hand already played this round**. **The interpretation**: a round goes on only while the Blind is unbeaten, so
+  every earlier hand of the round is one that didn't beat it = current_round.hands_played; X1 / 2 / 3 / 4 on the Red Deck's hands.
+- **Energy** (1 / 2 / 3): Nymble +21 / 27 / 33; Lokix X3 / 3.5 / 4; Pawmi +2.8 / 3.6 / 4.4 a Joker; Pawmo (carried) and Pawmot X1.8 / 2.1 / 2.4; Tadbulb +4.2 / 5.4 /
+  6.6 a discard; Bellibolt +X0.3 / 0.35 / 0.4 a discard; Maschiff +16.8 / 21.6 / 26.4; Mabosstiff X1.8 / 2.1 / 2.4; Toedscool +5.2 / 6.4 / 7.6 a card; Toedscruel
+  +X0.024 / 0.028 / 0.032 a card; Klawf +X1.2 / 1.4 / 1.6 a hand. Fixed: the $ (Pawmo, Wattrel, Kilowattrel), Squawkabilly's odds and level, the blessing, the
+  guard, the thresholds; Squawkabilly / Wattrel / Kilowattrel Energy-inert; banks never retroactive.
+- **Wiki**: regenerated (44 missing, all Gen 9); the wiki sprites of the 15 are gone (no new art).
+- **Tests**: `micatro/tests/mods/pokermon_gen9_batch1_test.mjs` (fails on main: no such jokers). Re-recorded: `modpin_test`, `pokermon_391_data_test`,
+  `pokermon_new_jokers_test` (the Pokédex order, +15 defs), `micatro_mod_version_pin`, `micatro_deckeditor_pages` (1220 jokers), `designwiki_pokermon_jokers_test`
+  (Pawmot was the last Stage 2 on the wiki: its card pages now use Varoom / Revavroom; Brute Bonnet replaces Toedscool as the art-vs-mapping spot check).
 
 ### Pending from the 3.9.1 joker rework (after batch 10b)
 Every existing joker is on 3.9.1: `rework_hold` (still on 3.2.1) is empty. What waits, by the batch it waits on (`rework_deferred` =

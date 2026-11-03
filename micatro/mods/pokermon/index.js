@@ -81,7 +81,7 @@ import './jokers/zzzapril_fools.js';
 import { DESIGN_FAMILIES, DESIGN_LOC, regi_chip_bonus, regi_h_x_mult, regi_enh_vars, slot_cost_removed, drifblim_destroyed, contrary_lifts, mummy_sell,
   freeze_keep, freeze_thaw, frozen_by, spore_first_deal, spore_hand_scored, malamar_chip_bonus, prank_reroll_cost, prank_reroll_shop, prank_shop_start,
   pyukumuku_destroyed, pheromosa_rest, komala_destroy_immune, GALAR_UPSTREAM_TEXT, GALAR_FAMILY_REV, rime_final_deal,
-  jokers_gone_count, glass_x_mult } from './jokers/pokejokers_designs.js';
+  jokers_gone_count, glass_x_mult, pawmot_revive } from './jokers/pokejokers_designs.js';
 
 import { poke_set_type_badge, type_badge, type_tooltip, TYPE_COLOURS } from './systems/types.js';
 import { pokemon_in_pool, pool_filter, init_game_object, evo_item_in_pool } from './systems/pools.js';
@@ -731,7 +731,9 @@ const hooks = {
   // (the owner's Drifblim, Aftermath: an owned Drifblim being destroyed makes a Negative Spectral — jokers/pokejokers_designs.js;
   // and the owner's Pyukumuku, Innards Out: a destroyed one pays $1 per round held)
   // (+ the owner's Basculegion, Gen 8 batch 3: an owned Joker destroyed counts for Last Respects — jokers_gone_count)
-  start_dissolve(card) { drifblim_destroyed(card); pyukumuku_destroyed(card); jokers_gone_count(card); },
+  // (+ the owner's Pawmot, Gen 9 batch 1, Revival Blessing: once per Ante an owned Joker destroyed comes back in its place — last, after the
+  // others have seen it leave)
+  start_dissolve(card) { drifblim_destroyed(card); pyukumuku_destroyed(card); jokers_gone_count(card); pawmot_revive(card); },
   // (the owner's Komala, Comatose, r68: Jokers skip it when choosing what to destroy, as an Eternal — the engine's can_be_destroyed_by_joker)
   joker_destroy_immune: komala_destroy_immune,
   edition_weight(w, type) {
@@ -1064,7 +1066,12 @@ export const POKERMON = registerMod({
   // 75 = the owner's Grimmsnarl tweak (2026-11-03): Grimmsnarl keeps Impidimp's $1 reroll discount too (stacking with Impidimp / Morgrem
   // copies), on top of its free first reroll and X0.1 per reroll. Gated by rulesRev (prank_discount75), so runs recorded before r75 replay
   // as recorded.
-  contentRev: 75,
+  // 76 = Gen 9 batch 1 (jokers/pokejokers_designs.js, #919-950; r75 is the owner's Grimmsnarl tweak): Nymble / Lokix (Lunge: 3 or fewer
+  // cards), Pawmi / Pawmo / Pawmot (Lightning team; face $; Revival Blessing: hooks.start_dissolve above), Squawkabilly (Parrot: Planets 1 in 2
+  // to level twice; plumage rolled when obtained), Tadbulb / Bellibolt (discards; Electromorphosis charge), Wattrel / Kilowattrel (Wind Power:
+  // $ per discard left), Maschiff / Mabosstiff (Boss Blinds; Guard Dog: your Jokers can't be debuffed, systems/rules.js set_debuff),
+  // Toedscool / Toedscruel (Mycelium: full deck size) and Klawf (Anger Shell). New jokers only: nothing a recorded run held changes.
+  contentRev: 76,
   // Pokermon 3.9.1 pokermon.lua: SMODS.current_mod.optional_features = {quantum_enhancements = true, object_weights = true}.
   // object_weights sends create_card's key, the shop roll, tags, packs, bosses and vouchers through SMODS.poll_object
   // (js/engine/smods.js; batch 17). quantum_enhancements is the engine's check_enhancement, always on.
