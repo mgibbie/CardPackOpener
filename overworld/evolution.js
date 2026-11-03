@@ -4,6 +4,7 @@ import { getImage, VIEW_W, VIEW_H } from './engine.js';
 import { statsFor } from './battle.js';
 import * as Clock from './clock.js';
 import { sfx } from './sound.js';
+import { pickEvolution } from './evo_pick.js';
 
 export class Evolution {
 	constructor() {
@@ -22,9 +23,12 @@ export class Evolution {
 		for (const mon of party) {
 			if (mon.heldItem === 'everstone') continue; // EVERSTONE halts natural level/friendship evolution
 			const evos = data.extra?.[mon.speciesId]?.evos || [];
-			const evo = evos.find(e => data.species[e.target] && timeOk(e)
+			// every entry whose condition holds; a tie is broken canonically
+			// (evo_pick.js), not by list order (Pikachu -> Alolan Raichu bug)
+			const evo = pickEvolution(mon, evos.filter(e => data.species[e.target] && timeOk(e)
 				&& ((e.type === 'level' && mon.level >= e.param)
-					|| (e.type === 'friendship' && (mon.friend ?? 70) >= (e.param || 220))));
+					|| (e.type === 'friendship' && (mon.friend ?? 70) >= (e.param || 220)))),
+				{ isNight: Clock.isNight() });
 			if (evo) this.queue.push({ mon, target: evo.target });
 		}
 		if (this.queue.length && !this.cur) this.next(data);

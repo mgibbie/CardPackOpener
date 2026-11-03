@@ -126,7 +126,7 @@ for (const r of rows) {
   spr.push({ id: r.dex, sp: r.sp, kind: 'form', ow: r.ow, collab: c ? String(r.sp).padStart(4, '0') + '/' + c.f : null, shiny: !!(c && c.shiny), front, height: f.height });
 }
 for (const m of MEGA) {
-  const c = collabOf(m.sp, m.suf ? 'Mega_' + m.suf : 'Mega');
+  const c = collabOf(m.sp, m.kind === 'primal' ? 'Primal' : m.suf ? 'Mega_' + m.suf : 'Mega');
   spr.push({ id: m.id, sp: m.sp, kind: 'mega', collab: c ? String(m.sp).padStart(4, '0') + '/' + c.f : null, shiny: !!(c && c.shiny), front: m.spr, height: null });
 }
 fs.writeFileSync(OUT_SPR, JSON.stringify({ generated: 'tools/micasurvivor/gen_forms.mjs', list: spr }, null, 1) + '\n');

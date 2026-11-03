@@ -72,9 +72,9 @@ A(fAnim.length === 56 && JSON.stringify(fStatic) === '[10178,10180]' && FIDS.eve
 	`the formes' art: ${fAnim.length} ANIMATED SpriteCollab sheets (Walk + Attack...), the overworld's static battle front only for Zen Galarian Darmanitan and Galarian Stunfisk`, JSON.stringify({ fAnim: fAnim.length, fStatic }));
 A(FIDS.filter(d => M(d).sh).length >= 50, 'and most have their SpriteCollab shiny (' + FIDS.filter(d => M(d).sh).length + ')');
 const mAnim = MEGAS.filter(d => M(d) && !M(d).src && !M(d).al), mBat = MEGAS.filter(d => M(d) && M(d).src === 'front'), mAl = MEGAS.filter(d => M(d) && M(d).al);
-A(MEGAS.length === 93 && MEGAS.every(d => P(d) && P(d).mega && !G.DEX.includes(P(d)) && M(d)) && mAnim.length === 42 && mBat.length === 19 && mAl.length === 32
-	&& mAl.every(d => M(d).al === P(d).sp) && G.Megas.foes().length === 93,
-	`the 93 Megas: in G.DEX_BY (not G.DEX: not collection entries), each drawable: ${mAnim.length} animated SpriteCollab, ${mBat.length} battle fronts, ${mAl.length} their species' sheet ("al") with the Mega aura`,
+A(MEGAS.length === 95 && MEGAS.every(d => P(d) && P(d).mega && !G.DEX.includes(P(d)) && M(d)) && mAnim.length === 44 && mBat.length === 19 && mAl.length === 32
+	&& mAl.every(d => M(d).al === P(d).sp) && G.Megas.foes().length === 95,
+	`the 95 Megas and Primals: in G.DEX_BY (not G.DEX: not collection entries), each drawable: ${mAnim.length} animated SpriteCollab, ${mBat.length} battle fronts, ${mAl.length} their species' sheet ("al") with the Mega aura`,
 	JSON.stringify({ n: MEGAS.length, mAnim: mAnim.length, mBat: mBat.length, mAl: mAl.length }));
 A(P(10034).name === 'Mega-Charizard X' && P(10034).types.join() === 'fire,dragon' && P(10034).bst === 634 && P(10034).rarity === 5 && P(10034).sp === 6,
 	'a Mega\'s row: its name, its own types and base-stat total (Mega Charizard X: Fire / Dragon, 634), species 6', JSON.stringify(P(10034)));
@@ -123,7 +123,7 @@ if (G.Enemies) {
 		if (last.mega) { megaBoss++; seen.add(last.dex); if (!G.Megas.BY[last.dex] || last.at !== 900) early++; }
 	}
 	ctx.Math.random = r0;
-	A(seen.size === 93 && !early, `Survival: the Mega elites come from 15:00 (${(perRun / runs).toFixed(1)} a run); over ${runs} runs all 93 Megas come`, JSON.stringify({ seen: seen.size, early }));
+	A(seen.size === 95 && !early, `Survival: the Mega elites come from 15:00 (${(perRun / runs).toFixed(1)} a run); over ${runs} runs all 95 Megas and Primals come`, JSON.stringify({ seen: seen.size, early }));
 	A(megaBoss > runs * 0.35 && megaBoss < runs * 0.65, `Survival: about half the runs' 15:00 boss is a Mega (${megaBoss} / ${runs})`);
 	ctx.G.Modes.onlyType = () => 'ice';
 	ctx.Math.random = mulberry(5);
@@ -161,7 +161,7 @@ if (C && SV) {
 	const miss = FIDS.filter(d => !seen.has(d) && !P(d).leg);
 	A(!miss.length, 'Expedition: the plans\' union (cards, wanderers, events, Survival\'s segments) covers every non-legendary regional forme', JSON.stringify(miss));
 	A(FIDS.filter(d => P(d).leg).every(d => C.roamers('viridian').includes(d)), 'the legendary formes (the Galarian birds) roam like the other legendaries');
-	A(!bad.length && z3mega === z3 && megaSeen.size === 93, `Expedition: every zone-3 plan has one Mega elite (${z3mega} / ${z3}); with Survival's, the union is all 93 Megas`, JSON.stringify({ bad: bad.slice(0, 5), megas: megaSeen.size }));
+	A(!bad.length && z3mega === z3 && megaSeen.size === 95, `Expedition: every zone-3 plan has one Mega elite (${z3mega} / ${z3}); with Survival's, the union is all 95 Megas and Primals`, JSON.stringify({ bad: bad.slice(0, 5), megas: megaSeen.size }));
 	A(!segBefore && segAfter === 200 * 3 * 7, `Expedition Survival: each segment from 15:00 has a Mega elite (${segAfter}), none before`);
 	A(mileMega > 0 && !mileEarly, `Expedition Survival: some milestone bosses from 15:00 are Megas (${mileMega}), never before`);
 	const p = C.plan(12345, 'viridian', 2, 'normal');
@@ -421,7 +421,7 @@ try {
 	A(!dv.miss.length, 'Dive: every non-legendary regional forme is in the floors\' pools', JSON.stringify(dv.miss));
 	A(dv.poolOk && dv.pool === dv.uniqLegs && dv.pool >= 64 && dv.birds && dv.lseen === dv.pool && dv.rate > 0.3 && dv.rate < 0.4,
 		`Dive: the legendary encounters' pool is every legendary no route guards (${dv.pool}: the 61 + the Galarian birds); all come over seeds; ${Math.round(dv.rate * 100)} % of floors (PokéDive's 35 %)`, JSON.stringify(dv));
-	A(dv.mseen === 93 && dv.eliteRate > 0.15 && dv.eliteRate < 0.25, `Dive: below floor 30, a floor's Mega elite ${Math.round(dv.eliteRate * 100)} % of the time (or the arena alpha); all 93 Megas over seeds`, JSON.stringify(dv));
+	A(dv.mseen === 95 && dv.eliteRate > 0.15 && dv.eliteRate < 0.25, `Dive: below floor 30, a floor's Mega elite ${Math.round(dv.eliteRate * 100)} % of the time (or the arena alpha); all 95 Megas and Primals over seeds`, JSON.stringify(dv));
 	const d31 = await E(async () => {
 		const H = window.__t;
 		G.ExpLeague.setPick(1); G.ExpLeague.setForm(1);

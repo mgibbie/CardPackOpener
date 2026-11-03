@@ -60,9 +60,10 @@ G.Megas = (() => {
     if (!sp) continue;
     const [hp, atk, , spa, , spe] = e.base;
     // (fetch_pokedex.py's game stats from the Mega's base stats)
-    const row = { dex: e.id, name: 'Mega-' + sp.name + (e.suf ? ' ' + e.suf : ''), types: e.types.slice(), hp: Math.round(70 + hp * 0.45),
+    const primal = e.kind === 'primal';   // (Primal Kyogre / Groudon: a Mega in every way but the name)
+    const row = { dex: e.id, name: primal ? sp.name + ' Primigenio' : 'Mega-' + sp.name + (e.suf ? ' ' + e.suf : ''), types: e.types.slice(), hp: Math.round(70 + hp * 0.45),
       spd: Math.round(78 + spe * 0.42), atk: r2(0.70 + Math.max(atk, spa) / 100 * 0.55), rarity: 5, bst: e.base.reduce((a, b) => a + b, 0),
-      starter: false, gen: sp.gen, sp: e.sp, mega: true };
+      starter: false, gen: sp.gen, sp: e.sp, mega: true, ...(primal ? { primal: true } : {}) };
     if (sp.leg) row.leg = true;
     BY[e.id] = row;
     (OF[e.sp] = OF[e.sp] || []).push(row);
@@ -72,7 +73,8 @@ G.Megas = (() => {
   if (G.I18n && G.I18n.add) G.I18n.add({ 'Mega-{x}': 'Mega {x}', 'MEGAEVOLUCIÓN': 'MEGA EVOLUTION', 'Todavía no': 'Not yet',
     '¡{x} megaevoluciona a {x}!': '{x} Mega Evolved into {x}!', 'Sigue como {x}; se ofrece otra vez dentro de {x} niveles': 'Stay as {x}; offered again in {x} levels',
     '{x} · Vida {x} → {x}': '{x} · HP {x} → {x}', '¡Un {x} salvaje anda cerca!': 'A wild {x} is near!',
-    '¡{x} salvaje aparece!': 'A wild {x} appears!' });
+    '¡{x} salvaje aparece!': 'A wild {x} appears!', 'REGRESIÓN PRIMIGENIA': 'PRIMAL REVERSION', '¡{x} regresa a su estado primigenio: {x}!': '{x} underwent Primal Reversion into {x}!',
+    ...Object.fromEntries(LIST.filter(p => p.primal).map(p => [p.name, 'Primal ' + G.DEX_BY[p.sp].name])) });
   /** Every Mega that can be drawn (its sprites-meta row: animated, a battle front, or its species' sheet). */
   const foes = () => LIST.filter(p => G.SPRITE_META && G.SPRITE_META[p.dex]).map(p => p.dex);
   /** A seeded stream (mulberry32), so the Mega draws never take from Math.random (the base runs' sequences stay theirs). */
@@ -121,7 +123,7 @@ G.Megas = (() => {
     if (!opts || !opts.length || pl.mega || pl.level < (pl.megaAt || K.LV)) return null;
     const cur = pl.mon || G.DEX_BY[pl.dex];
     const cards = opts.filter(e => G.SPRITE_META && G.SPRITE_META[e.dex]).map(e => ({
-      w: 0, type: 'xevo', key: 'mega:' + e.dex, icon: 'star', color: '#e050e8', tag: T().t('MEGAEVOLUCIÓN'), sprite: e.dex, mega: e.dex,
+      w: 0, type: 'xevo', key: 'mega:' + e.dex, icon: 'star', color: '#e050e8', tag: T().t(e.primal ? 'REGRESIÓN PRIMIGENIA' : 'MEGAEVOLUCIÓN'), sprite: e.dex, mega: e.dex,
       title: name(pl.dex) + ' → ' + name(e.dex),
       desc: T().f('{x} · Vida {x} → {x}', e.types.map(t => T().t(G.U.TYPE_NAME[t])).join(' / '), Math.round(pl.maxHp), Math.round(pl.maxHp + e.hp - cur.hp)),
       apply: q => { evolve(q, e.dex); }
@@ -153,7 +155,7 @@ G.Megas = (() => {
       G.Sprites.preload([id], 8000, !!pl.shiny);
     }
     pl.invuln = Math.max(pl.invuln || 0, K.IFRAMES);
-    const txt = T().f('¡{x} megaevoluciona a {x}!', name(pl.dex), name(id));
+    const txt = T().f(e.primal ? '¡{x} regresa a su estado primigenio: {x}!' : '¡{x} megaevoluciona a {x}!', name(pl.dex), name(id));
     if (G.Spawner && G.Spawner.say) G.Spawner.say(txt, 3.2, true);
     if (G.Game && G.Game.flash) G.Game.flash('#ffe6ff', 0.7);
     if (G.FX && G.FX.ring) for (const [r, c] of [[150, '#ff9a2e'], [190, '#e050e8'], [230, '#3fa2ff']]) G.FX.ring(pl.x, pl.y, 8, r, c, 0.9, 6);
