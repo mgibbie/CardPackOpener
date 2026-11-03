@@ -271,6 +271,24 @@ await sec('koraidon', () => {
   sell(k);
   round();
   ok(!(cherrim_sunny(lv) && ex(lv).sun_round !== G.GAME.round), 'sold: the sun is only the deal\'s again');
+  // the Ancient Paradoxes: Koraidon's sun boosts them (Protosynthesis) and each one adds X0.5 to it
+  start('G9KOP');
+  const fm = add('j_poke_flutter_mane');
+  r = play(['S_5']);
+  ok(near(r.mult, 2) && !DESIGNS.paradox_boosted(fm), 'control: Flutter Mane alone (no sun) X2', r.total);
+  const k3 = add('j_poke_koraidon');
+  ok(DESIGNS.paradox_boosted(fm), 'with Koraidon: Protosynthesis (it is sunny)');
+  r = play(['S_5']);
+  ok(near(r.mult, 2.5 * 2.5), 'Flutter Mane X2.5 (sunny) x Koraidon X2.5 (X2 + X0.5 for one Ancient Paradox)', r.total);
+  const stl = add('j_poke_scream_tail');
+  ok(/(Currently 2: X3 Mult)/.test(plain(k3)), 'two Ancient Paradoxes: X3 (the tooltip)', plain(k3));
+  r = play(['S_5']);
+  ok(near(r.mult, (1 + 9) * 2.5 * 3), 'Scream Tail +9 on the Spade (sunny), Flutter Mane X2.5, Koraidon X3', r.total);
+  const im = add('j_poke_iron_moth');
+  ok(/(Currently 2: X3 Mult)/.test(plain(k3)) && !DESIGNS.paradox_boosted(im), 'a Future Paradox (Iron Moth) counts nothing for Koraidon and is not boosted by the sun');
+  debuff(stl);
+  ok(/(Currently 1: X2.5 Mult)/.test(plain(k3)), 'a debuffed Ancient Paradox counts nothing', plain(k3));
+  undebuff(stl);
   // Blueprint copies the X
   start('G9KO'); const k2 = add('j_poke_koraidon'); const bp = add('j_blueprint'); moveLeftOf(bp, k2);
   r = play(['S_5']);
@@ -291,6 +309,18 @@ await sec('miraidon', () => {
   ok(!terrain(), 'debuffed: no terrain');
   undebuff(m); sell(m);
   ok(!terrain(), 'sold: no terrain');
+  // the Future Paradoxes: Miraidon's terrain boosts them (Quark Drive) and each one adds X0.5 to it
+  start('G9MIP');
+  const im = add('j_poke_iron_moth');
+  let r2 = play(['D_5']);
+  ok(near(r2.mult, 1.2) && !DESIGNS.paradox_boosted(im), 'control: Iron Moth alone (no terrain) X1.2 on a Diamond', r2.total);
+  const m2 = add('j_poke_miraidon');
+  ok(DESIGNS.paradox_boosted(im) && terrain(im), 'with Miraidon: Quark Drive (Electric Terrain)');
+  r2 = play(['D_5']);
+  ok(near(r2.mult, 1.3 * 2.5), 'Iron Moth X1.3 (terrain) x Miraidon X2.5 (one Future Paradox)', r2.total);
+  add('j_poke_iron_valiant');
+  add('j_poke_flutter_mane');
+  ok(/(Currently 2: X3 Mult)/.test(plain(m2)), 'two Future Paradoxes: X3; an Ancient one (Flutter Mane) counts nothing', plain(m2));
 });
 
 // ------------------------------------------------------------------- Ogerpon alone: a mask an Ante

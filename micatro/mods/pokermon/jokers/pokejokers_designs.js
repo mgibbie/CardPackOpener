@@ -10569,7 +10569,7 @@ export function is_electric_terrain(card) {
  *  it changes at once; in the shop too), as Volcarona's sun. It adds terrain; the deal's own read stays. */
 const hadron_terrain = () => legends('miraidon').length > 0;
 export const paradox_era = (card) => (card && card.config && card.config.center && card.config.center.poke_paradox) || null;
-/** Is this Paradox boosted now? Ancient: Protosynthesis while it's sunny (cherrim_sunny: the red first deal, a working Groudon, a Volcarona);
+/** Is this Paradox boosted now? Ancient: Protosynthesis while it's sunny (cherrim_sunny: the red first deal, a working Groudon, a Volcarona, a Koraidon);
  *  Future: Quark Drive on Electric Terrain. */
 export const paradox_boosted = (card) => (paradox_era(card) === 'ancient' ? cherrim_sunny(card) : paradox_era(card) === 'future' ? is_electric_terrain(card) : false);
 /** The round's first deal: an Ancient reads the sun (Larvesta's sun_read fields), a Future reads the terrain. Not Blueprint (first_deal). */

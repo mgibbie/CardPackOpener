@@ -24,12 +24,13 @@ export const ART_DIR = 'sprites/pokermon_jokers/';
 export const DEPLOY = 'npx wrangler pages deploy designwiki/sprites --project-name=magepunk-sprites --branch=cloudflare-migration --commit-dirty=true';
 
 /** The wiki data (and, with `art`, the card art written into `out`: default designwiki/sprites/pokermon_jokers/). */
-export async function buildData({ art = true, out } = {}) {
-  const M = await computeMissing();
+export async function buildData({ art = true, out, pretend } = {}) {
+  // (pretend: dex numbers listed as missing anyway: designwiki_pokermon_jokers_test's fixture now that every species has a joker)
+  const M = await computeMissing(pretend ? { pretend, fresh: true } : {});
   let made = new Map(); // dex -> {source, recipe}
   if (art) {
     const { composeAll } = await import('./compose_missing_pokermon_jokers.mjs');
-    const { res } = await composeAll(out ? { out } : {});
+    const { res } = await composeAll({ ...(out ? { out } : {}), ...(pretend ? { pretend, fresh: true } : {}) });
     made = new Map(res.map((r) => [r.dex, { source: r.source, recipe: r.recipe }]));
   } else if (fs.existsSync(OUT_JSON)) {
     for (const s of JSON.parse(fs.readFileSync(OUT_JSON, 'utf8')).species || []) if (s.art) made.set(s.dex, { source: s.art.source || null, recipe: s.art.recipe });
