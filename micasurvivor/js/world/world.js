@@ -585,6 +585,7 @@ G.World = (() => {
   }
 
   function drawGround(ctx, cam) {
+    if (zone && zone.dive && G.DiveArt && G.DiveArt.draw(ctx, cam, zone)) return;   // MicaSurvivor Dive: its own floor art (js/expedition/dive-art.js)
     ctx.imageSmoothingEnabled = false;
     const k = fadeK();
     for (const [cx, cy] of visibleChunks(cam)) {
