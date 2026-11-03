@@ -492,6 +492,31 @@ try {
 	A(c1.casts - c0 >= 4 && c1.slots.some(k => k > 0), 'every player\'s casts are drawn as ghosts (partners\' casts come in the live snapshot)', JSON.stringify([c0, c1]));
 	await bob.page.keyboard.press('Digit1'); await sleep(250);
 	A(await bob.E(() => G.WatchUI.follow === 0 && G.WatchUI.player.dex === G.WatchUI.frame.me[0]), '1 goes back to alice');
+	// LB / RB on a controller (a synthetic Gamepad API, as micasurvivor_zmoves_test's): whose view, live
+	await bob.E(() => {
+		window.__pad = { index: 0, id: 'Xbox test pad (STANDARD GAMEPAD)', connected: true, mapping: 'standard', timestamp: 0,
+			buttons: Array.from({ length: 17 }, () => ({ pressed: false, touched: false, value: 0 })), axes: [0, 0, 0, 0],
+			vibrationActuator: { playEffect() { return Promise.resolve('complete'); } } };
+		Object.defineProperty(Navigator.prototype, 'getGamepads', { configurable: true, value() { return [window.__pad, null, null, null]; } });
+	});
+	const padBtn = (b, on) => bob.E((b, on) => { window.__pad.buttons[b] = { pressed: on, touched: on, value: on ? 1 : 0 }; window.__pad.timestamp++; }, b, on);
+	const padPress = async b => { await padBtn(b, true); await sleep(120); await padBtn(b, false); await sleep(220); };
+	// (a nudge of the stick wakes the pad up: "Controller connected")
+	await bob.E(() => { window.__pad.axes[0] = 0.7; }); await sleep(150); await bob.E(() => { window.__pad.axes[0] = 0; }); await sleep(200);
+	const padState = () => bob.E(() => ({ follow: G.WatchUI.follow, dex: G.WatchUI.player.dex, pi: G.WatchUI.frame.pi, btn: document.getElementById('wb-follow').textContent, pad: G.Pad && G.Pad.active }));
+	await padPress(5);   // RB: the next player
+	const g1 = await padState();
+	await padPress(5);
+	const g2 = await padState();
+	await padPress(4);   // LB: back one
+	const g3 = await padState();
+	await padPress(4);
+	await padPress(4);   // (past alice: round to player 4)
+	const g4 = await padState();
+	A(g1.follow === 1 && g1.pi === 1 && g1.dex === a4.dex[1] && /^Following: .+ · [JP]2$/.test(g1.btn) && g2.follow === 2 && g2.dex === a4.dex[2] && /^Following: .+ · [JP]3$/.test(g2.btn),
+		'a controller\'s RB follows the next player (P2, then P3): its Pokémon is the one watched, "Following: <name>"', JSON.stringify([g1, g2]));
+	A(g3.follow === 1 && g3.dex === a4.dex[1] && g4.follow === 3 && g4.dex === a4.dex[3] && /^Following: .+ · [JP]4$/.test(g4.btn), '...LB goes back one, and past alice round to player 4', JSON.stringify([g3, g4]));
+	await bob.page.keyboard.press('Digit1'); await sleep(250);
 	await sleep(300);
 	await bob.shot('mppolish_watch_live_4p.png');
 	// the size: 4 players, 60 foes, the casts of a second (the server's cap is 24 000 chars)
