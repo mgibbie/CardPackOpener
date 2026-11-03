@@ -160,6 +160,8 @@ G.Spectate = (() => {
     const pts = pl ? [[pl.x, pl.y], ...(G.Coop && G.Coop.active ? G.Coop.puppets() : G.LocalCoop ? G.LocalCoop.drawables(pl) : []).map(o => [o.x, o.y])] : [];
     const wa = budget => { const o = G.World.propsAll(pts, budget), sp = G.World.specialsLive(); if (sp.length) o.s = sp; return o.B || o.U || o.s ? o : null; };
     if (s && pl && G.World.propsAll) { const o = wa(K.WA_MAX); if (o) s.wa = o; }
+    // (the format this snapshot is in: a watcher on an older build offers to refresh. Gap fix 2026-11-02, js/mica/replay.js FV)
+    if (s && G.Replay) s.fv = G.Replay.FV;
     const lp = s && G.Replay && G.Replay.livePlayers ? G.Replay.livePlayers() : null;
     if (lp) {
       Object.assign(s, lp);

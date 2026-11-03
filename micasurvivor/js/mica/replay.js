@@ -123,6 +123,16 @@ G.Replay = (() => {
   const RWX = 3;
   /** The kit flags (a player row's field 10, and the live snapshot's rows): what that player's HUD would show. */
   const KF = { ULT: 1, ULT_CAST: 2, Z: 4, Z_READY: 8, Z_ON: 16, DYN: 32, DYN_READY: 64, DYN_ON: 128 };
+  /**
+   * The FORMAT version this build reads and writes (gap fix 2026-11-02): a live snapshot carries it (`fv`, js/mica/spectate.js
+   * pubSnap) and so does a tape's header once it passes 1 (h.fv; a tape / snapshot without one is format 1, so every tape
+   * recorded so far stays bit for bit as it was). Bump it whenever a snapshot or a tape gains something an older viewer would
+   * silently get wrong (as `wa` and field 15's d were): a viewer whose FV is lower then still shows what it can and offers
+   * "A newer version is available — refresh" (js/ui/watch-ui.js updatePrompt). Never bump the outer data.v for that: a
+   * reader refuses a tape whose v it doesn't know.
+   */
+  const FV = 1;
+  const newer = x => !!x && (x.fv | 0) > FV;
   const stats = { frames: 0, recMs: 0, recMax: 0, obsMs: 0, obsFrames: 0, events: 0, segs: 0, casts: 0, uploads: 0, upErr: 0 };
   const H = () => window.__msurvNet || {};
 
@@ -141,7 +151,7 @@ G.Replay = (() => {
       rid, started: Date.now(),
       h: { v: 2, sid: rid, Q: K.Q, QE: K.QE, dt: K.REC_DT, sd: G.World.seed, m: g.mode || 'normal', dex: pl.dex, shiny: pl.shiny ? 1 : 0, mon: pl.mon.name,
            by: (G.MicaAccount && G.MicaAccount.name()) || '', coop: G.Coop && G.Coop.active ? (G.Coop.members || []).map(m => m.uid) : [],
-           items: Object.keys(G.Items.BY), ew: EW, kw: KW, rw: RW, ...(pl.af ? { af: 1 } : {}) },   // (DLC D16: af = every move fires; an old tape has none)
+           items: Object.keys(G.Items.BY), ew: EW, kw: KW, rw: RW, ...(pl.af ? { af: 1 } : {}), ...(FV > 1 ? { fv: FV } : {}) },   // (DLC D16: af = every move fires; an old tape has none)
       // the session: its players (slot -> descriptor), the closed segments, the background upload
       players: [], slots: new Map(), plSlot: new Map(),
       seg: 0, segT0: 0, segFloor: null, closed: [], total: 0, stopped: false, lim: false,
@@ -1074,11 +1084,13 @@ G.Replay = (() => {
   }
 
   return {
-    K, KF, RW, RWX, stats, thinDt, halve, begin, observe, finish, livePlayers, liveView, pov, share, fetchShared, open, openEntry, reader, session, sessionOfCodes, sessionOfReaders, pack, unpack, linkOf, cast,
+    K, KF, RW, RWX, FV, newer, stats, thinDt, halve, begin, observe, finish, livePlayers, liveView, pov, share, fetchShared, open, openEntry, reader, session, sessionOfCodes, sessionOfReaders, pack, unpack, linkOf, cast,
     /** For tests: the entity-table codec (encode a frame / apply it). */
     _codec: { table, applyTable, applyRows },
     local: readStore,
     get recording() { return !!rec; }, get last() { return last; },
+    /** For tests: the frames of the segment being recorded (JSON strings, as encoded). */
+    get recFrames() { return rec ? rec.frames.slice() : null; },
     /** For tests: the recording's size so far (frames, JSON chars of the segment being recorded, segments closed). */
     get size() { return rec ? { frames: rec.total, bytes: rec.bytes, events: rec.ev.length, segs: rec.closed.length, seg: rec.seg, players: rec.players.length, up: rec.up.done.size, upOn: rec.up.on, id: rec.up.id, host: rec.host } : null; },
     STORE_KEY

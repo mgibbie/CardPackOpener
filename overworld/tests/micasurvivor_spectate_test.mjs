@@ -13,6 +13,8 @@
 //   - MP polish: a 4-player local session watched live on the v2 model: every player drawn with its level, the "Following"
 //     switch (button, F, 1-4) moves the view onto any player, every player's casts are ghosted, the snapshot's size with 4
 //     players and 60 foes (under the 24 KB cap), and an older publisher's snapshot (no players block) still shows
+//   - gap fix 2026-11-02: a snapshot from a newer build (fv past G.Replay.FV) keeps playing with a "refresh" prompt the
+//     controller reaches (confirm refreshes, cancel is "Later")
 //   - the recorder's per-frame cost is measured (< 0.5 ms a frame)
 //   - no Spanish anywhere in English mode (DOM and canvas)
 // Screenshots (MICASURVIVOR_SHOTS=<dir>): the live list, the spectator view (desktop and 844x390), the replay player,
@@ -516,6 +518,34 @@ try {
 	A(g1.follow === 1 && g1.pi === 1 && g1.dex === a4.dex[1] && /^Following: .+ · [JP]2$/.test(g1.btn) && g2.follow === 2 && g2.dex === a4.dex[2] && /^Following: .+ · [JP]3$/.test(g2.btn),
 		'a controller\'s RB follows the next player (P2, then P3): its Pokémon is the one watched, "Following: <name>"', JSON.stringify([g1, g2]));
 	A(g3.follow === 1 && g3.dex === a4.dex[1] && g4.follow === 3 && g4.dex === a4.dex[3] && /^Following: .+ · [JP]4$/.test(g4.btn), '...LB goes back one, and past alice round to player 4', JSON.stringify([g3, g4]));
+	// (gap fix 2026-11-02) a snapshot from a NEWER build (its fv past this one's G.Replay.FV: alice "deployed" ahead of bob's
+	// open tab): bob's view keeps playing and offers "A newer version is available — refresh", reachable by the controller
+	const up0 = await bob.E(() => ({ shown: G.WatchUI.updateShown, fv: G.WatchUI.frame && G.Replay.FV }));
+	await bob.E(() => { window.__reloads = 0; window.__msurvReload = () => { window.__reloads++; }; });
+	await alice.E(() => { G.Replay.FV = 99; });
+	const upOn = await waitFor(() => bob.E(() => G.WatchUI.updateShown), 6000);
+	const snaps0 = await bob.E(() => G.WatchUI.stats.snaps);
+	await sleep(2200);
+	const up1 = await bob.E(() => {
+		const el = document.getElementById('watch-update'), r = el && el.querySelector('.wu-box').getBoundingClientRect();
+		return { text: el ? el.querySelector('.wu-t').textContent : '', btn: (document.getElementById('watch-update-go') || {}).textContent, later: (document.getElementById('watch-update-close') || {}).textContent,
+			snaps: G.WatchUI.stats.snaps, mode: G.WatchUI.mode, w: r && Math.round(r.width), h: r && Math.round(r.height), vw: innerWidth };
+	});
+	A(up0.shown === false && upOn && /^A newer version is available — refresh/.test(up1.text) && up1.btn === 'Refresh' && up1.later === 'Later',
+		'a snapshot from a newer build (fv past G.Replay.FV): bob is offered "A newer version is available — refresh" (Refresh / Later), in English', JSON.stringify([up0, upOn, up1]));
+	A(up1.mode === 'live' && up1.snaps > snaps0 && up1.w < up1.vw * 0.8 && up1.h < 120, '...a small prompt that never blocks the view: the snapshots keep coming and playing', JSON.stringify([snaps0, up1]));
+	await padPress(13);   // (a press of the D-pad: the controller's focus ring lands in the prompt)
+	const upF = await bob.E(() => { const f = document.querySelector('.pad-focus'); return f ? f.id : null; });
+	const pm = await bob.E(() => G.Pad.map());   // (the layout's confirm / cancel buttons: Nintendo's are swapped)
+	await padPress(pm.confirm);    // confirm: Refresh
+	const upR = await bob.E(() => window.__reloads);
+	await padPress(pm.cancel);     // cancel: Later
+	const upB = await bob.E(() => ({ shown: G.WatchUI.updateShown, mode: G.WatchUI.mode }));
+	A(upF === 'watch-update-go' && upR === 1 && upB.shown === false && upB.mode === 'live', 'the controller focuses "Refresh" (confirm reloads the page), cancel is "Later" (hidden; the view goes on)', JSON.stringify([upF, upR, upB]));
+	await sleep(1500);
+	A(await bob.E(() => !G.WatchUI.updateShown), '..."Later" holds for the rest of this view (newer snapshots keep coming)');
+	await alice.E(() => { G.Replay.FV = 1; });
+	await bob.E(() => { delete window.__msurvReload; });
 	await bob.page.keyboard.press('Digit1'); await sleep(250);
 	await sleep(300);
 	await bob.shot('mppolish_watch_live_4p.png');

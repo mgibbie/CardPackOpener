@@ -853,6 +853,37 @@ G.World = (() => {
     }
     viewS = ns;
   }
+  // ---- gap fix 2 (2026-11-02): springs / altars / locked chests SHARED in online co-op (js/net/coop.js 'sp' / 'au') ----
+  /** A spring's / a locked chest's state as the network and the tape say it: its % (0-100), -1 = at rest. */
+  const specialPct = p => restOf(p);
+  /**
+   * Another player's spring / locked chest at v % (-1 = at rest), wherever it is: its chunk is built if this screen never
+   * had it (so the host's world, its tape and its live view keep a guest's far spring). While YOUR Pokémon is using that
+   * same one (p.useT, js/systems/interact.js) both count: a spring keeps the lower charge, a chest the further progress.
+   * Returns the prop (null: no spring / locked chest there any more).
+   */
+  function netSpecial(tx, ty, v) {
+    if (!Number.isFinite(tx) || !Number.isFinite(ty)) return null;
+    const c = chunkData(Math.floor(tx / N), Math.floor(ty / N));
+    const p = c.props.find(o => o.tx === tx && o.ty === ty && (o.type === 'spring' || o.type === 'bigchest'));
+    if (!p) return null;
+    v = v < 0 ? -1 : Math.min(100, v);
+    const act = p.useT && performance.now() - p.useT < 300;
+    if (p.type === 'spring') { const ch = v < 0 ? 1 : v / 100; p.charge = act ? Math.min(p.charge, ch) : ch; }
+    else { const o = v < 0 ? 0 : v / 100 * G.Interact.CHEST_TIME; p.open = act ? Math.max(p.open, o) : o; }
+    p.netT = performance.now();   // (its refill / decay is the other screen's for a while: js/systems/interact.js netLed)
+    noteSpecial(p);
+    return p;
+  }
+  /** Another player used the altar at (tx, ty): used here too (no power for you), kept by tile for the tape. */
+  function netUse(tx, ty) {
+    if (!Number.isFinite(tx) || !Number.isFinite(ty)) return false;
+    const c = chunkData(Math.floor(tx / N), Math.floor(ty / N));
+    const p = c.props.find(o => o.tx === tx && o.ty === ty && o.type === 'altar');
+    if (!p) return false;
+    useSpecial(p);
+    return true;
+  }
   /** A viewer: a spring's charge / a locked chest's progress at v % (null = at rest). */
   function viewSpecial(p, v) {
     v = v == null ? null : v / 100;
@@ -899,6 +930,7 @@ G.World = (() => {
     TS, CW, reset, setBiome, biomeName, liquidKind, liquidEffect, walkable,
     kindAt, isWall, isLiquid, isFree, collide, projectileBlock, propsInCircle, nearestBreakable,
     damageProp, breakAt, specialsNear, update, useSpecial, propLog, propsNear, specialsLive, viewProps, noteSpecial, propsAll, unpackProps, liveProps,
+    specialPct, netSpecial, netUse,   // (gap fix 2: shared in online co-op)
     // MicaSurvivor (M5 lote 10): el minimapa lee el terreno por casilla (0 suelo, 1 pared, 2 líquido) y los objetos
     terrain: terrainAt, propsAround,
     get seed() { return seed; },   // MicaSurvivor (M5 lote 6): el Desafío diario siembra el mundo (pruebas)
