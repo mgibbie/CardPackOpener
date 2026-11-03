@@ -1,6 +1,7 @@
 # MicaSurvivor Dive — visuals pass ("look like PokéDive")
 
 Status: PLAN (2026-11-03). Visual-only. No gameplay, layout, collision or hash changes.
+Update (2026-11-03, owner): D1 changed: the code-drawn painter is the PRIMARY renderer (no tilesets; they are optional, small decorations only). DV1 + DV2 shipped that way on feat/micasurvivor-dive-visuals: `js/expedition/dive-art.js`, test `micasurvivor_dive_visuals_test.mjs`.
 Rule: no PokéDive files in the repo or the deploy. We use our own shipped decomp tilesets (`overworld/data/tilesets`) and redraw PokéDive's *style* in our own code.
 
 ## 1. What PokéDive does (read from its client + 8 route screenshots, 2026-11-03)
