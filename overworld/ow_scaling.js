@@ -1,5 +1,6 @@
 // ow_scaling.js — postgame level scaling (JohKanto wilds/trainers relative to your lead) and alternate forms (form changes, form sprites).
 // Split out of main.js (Plans/MAIN_JS_SPLIT_PLAN.md, phase 3); cut and paste only.
+import { isMegaId } from './mega.js';
 import * as Badges from './badges.js';
 import * as Bag from './bag.js';
 import { statsFor } from './battle.js';
@@ -132,6 +133,8 @@ export function formsOf(speciesId) {
 		const byNum = new Map();
 		for (const [id, sp] of Object.entries(battle.data.species || {})) {
 			if (id.startsWith('_') || !(sp?.num > 0)) continue;
+			// a MEGA / PRIMAL is a one-battle form, never one the PRISM may leave a mon in
+			if (isMegaId(id) || sp.mega || /_(mega|primal)(_|$)/.test(id)) continue;
 			(byNum.get(sp.num) || byNum.set(sp.num, []).get(sp.num)).push(id);
 		}
 		for (const ids of byNum.values()) {

@@ -1,4 +1,5 @@
 // main.js — game loop, input, camera, warps, connection crossing.
+import { catchUpKeyStone } from './ow_mega.js';
 import { choiceMenu, loadChoiceData } from './choice.js';
 import { loadFallthroughData } from './fallthrough.js';
 import { loadMapLayoutData } from './maplayout.js';
@@ -699,6 +700,7 @@ initTouchHud();   // the touch HUD's observer, installed here where it always ra
 	await trainers.init();
 	applyGymLevelFloors(); // even out same-tier gym difficulty across regions (interleave)
 	refreshLevelCap();     // clamp growth to the tier cleared in EVERY region
+	catchUpKeyStone();     // a save already past its 8th badge gets the KEY STONE (Mega Evolution)
 	await services.init();
 	await arcade.init();
 	await blockers.init();
