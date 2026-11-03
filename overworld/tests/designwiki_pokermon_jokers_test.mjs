@@ -259,8 +259,8 @@ try {
 	await anon.page.type('#pjQ', 'pawm');
 	A(await waitFor(async () => (await anon.page.$$eval('.pj-tile', ts => ts.map(t => t.textContent))).join('|').match(/Pawmi/) && await tiles(anon.page) === D.species.filter(s => /pawm/i.test(s.name)).length, 4000), 'search by name');
 	await anon.page.evaluate(() => { const q = document.getElementById('pjQ'); q.value = ''; q.dispatchEvent(new Event('input')); });
-	await anon.page.type('#pjQ', '#0870');
-	A(await waitFor(async () => await tiles(anon.page) === 1 && /Falinks/.test(await anon.page.$eval('.pj-tile', t => t.textContent)), 4000), 'search by dex number (#0870 = Falinks)');
+	await anon.page.type('#pjQ', '#0919');
+	A(await waitFor(async () => await tiles(anon.page) === 1 && /Nymble/.test(await anon.page.$eval('.pj-tile', t => t.textContent)), 4000), 'search by dex number (#0919 = Nymble; Falinks is in the game now)');
 	await go(anon.page, '#/pokermon-jokers');
 	await shot(anon.page, 'desktop_index_signed_out');
 	await go(anon.page, '#/pokermon-jokers/923');
