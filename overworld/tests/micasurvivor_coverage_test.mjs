@@ -249,7 +249,7 @@ try {
 		while (hs.some(h => !h.ready && !h.failed) && performance.now() - t0 < 30000) await new Promise(r => setTimeout(r, 100));
 		return { n: hs.length, bad: ids.filter((d, i) => !hs[i].ready), alias: G.Sprites.sheet(10278, 'Idle').src };
 	}, FIDS.concat(MEGAS));
-	A(ld.n === 151 && !ld.bad.length && /assets\/pokemon\/36\/Idle\.png/.test(ld.alias), `the page loads all ${ld.n} forme / Mega Idle sheets (an "al" row loads its species' sheet: Mega Clefable -> 36/)`, JSON.stringify(ld));
+	A(ld.n === 153 && !ld.bad.length && /assets\/pokemon\/36\/Idle\.png/.test(ld.alias), `the page loads all ${ld.n} forme / Mega Idle sheets (an "al" row loads its species' sheet: Mega Clefable -> 36/)`, JSON.stringify(ld));
 
 	// ---- (review fix) every forme / Mega is drawn at its species' size: as an Enemy (body radius, the drawn picture's height)
 	//      and in a sprite canvas (the picker, the Lexicon, the level-up card). The static fronts were a speck before
@@ -284,7 +284,7 @@ try {
 		return { small: out.filter(o => o.r < 0.6 || o.h < 0.7 || o.n < 80).map(o => [o.d, +o.r.toFixed(2), +o.h.toFixed(2), o.n]), n: out.length,
 			min: Math.min(...out.map(o => o.h)).toFixed(2), canvSmall: canv.filter(([, n]) => n < 60) };
 	}, FIDS.concat(MEGAS));
-	A(sz.n === 151 && !sz.small.length, `every forme / Mega as an Enemy is its species' size or more (drawn height >= 70 % of the species', body radius >= 60 %: some real sheets are narrower, Galarian Articuno 64 %; lowest height ${sz.min}): no speck`, JSON.stringify(sz.small.slice(0, 20)));
+	A(sz.n === 153 && !sz.small.length, `every forme / Mega as an Enemy is its species' size or more (drawn height >= 70 % of the species', body radius >= 60 %: some real sheets are narrower, Galarian Articuno 64 %; lowest height ${sz.min}): no speck`, JSON.stringify(sz.small.slice(0, 20)));
 	A(sz.canvSmall && !sz.canvSmall.length, 'and each sprite canvas (picker, Lexicon, cards) draws a real picture (>= 60 opaque px at scale 1)', JSON.stringify(sz.canvSmall));
 
 	// ---- a base run AS Alolan Vulpix; the gacha; the Play flow's picker
