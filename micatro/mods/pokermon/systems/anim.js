@@ -238,6 +238,10 @@ export const GEN8_FORM_SPRITES = {
  */
 export const GEN9_FORM_SPRITES = {
   j_poke_squawkabilly: { blue: { x: 0, y: 1 }, yellow: { x: 2, y: 1 }, white: { x: 4, y: 1 } },
+  // (regional batch C: Paldean Tauros's breed, rolled when it is obtained — card.ability.poke_tauros_breed, its center's poke_view_form; upstream
+  // 3.9.1 draws the three breeds on the Gen 1 sheet, Combat {6,6} = its own card, Blaze {8,6}, Aqua {10,6}; jokers/pokejokers_hisui.js. Each
+  // cell's type icon is its breed's: Fighting / Fire / Water, pokermon_hisuian_paldean_test 'art'.)
+  j_poke_paldean_tauros: { blaze: { x: 8, y: 6 }, aqua: { x: 10, y: 6 } },
 };
 export function view_card(card, v) {
   const c = card.config.center;

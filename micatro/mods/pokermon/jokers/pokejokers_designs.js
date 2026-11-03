@@ -198,7 +198,7 @@ import {
   add_card, detailed, energy_values, poke_remove_card, ease_dollars, ease_discard, juice_card_until, find_card, get_total_energy, POST_EVOLVE, can_evolve,
   poke_change_growth_level,
   poke_get_adjacent_jokers, emit, find_joker, poke_drain, level_up_hand, poke_evolve, increment_energy, can_increase_energy, smods_debuff_card, blueprint_compat_line,
-  can_be_destroyed_by_joker, change_shop_size, faint_baby_poke, GEN9B2_REV,
+  can_be_destroyed_by_joker, change_shop_size, faint_baby_poke, GEN9B2_REV, HISUI_REV,
 } from '../api.js';
 import { Tag, add_tag } from '../../../js/engine/tag.js';
 import { blueprint_effect } from './pokejokers_08.js';
@@ -2103,7 +2103,7 @@ export function protean_pick(card) {
 }
 /** Greninja's own type: its ptype (which is_type / find_pokemon_type / get_type / energy_matches read), as Castform's form; a Tera
  *  sticker still overrides it. Re-run its debuff and re-sync Kecleons when it changes. */
-function protean_set(card, type) {
+export function protean_set(card, type) {
   const ex = card.ability.extra;
   if (ex.ptype === type) return false;
   ex.ptype = type;
@@ -2163,7 +2163,7 @@ function flame_main(card, context) {
 }
 /** Oshawott line, Razor Shell: the first `strikes` cards of the scoring hand (by position, Urshifu Rapid Strike's rule) retrigger
  *  `retriggers` time(s). A debuffed one there scores nothing and the count never moves past it (the next card isn't promoted). */
-function razor_shell(card, context) {
+export function razor_shell(card, context) {
   if (context.repetition && context.cardarea === G.play && context.scoring_hand) {
     const i = context.scoring_hand.indexOf(context.other_card), ex = card.ability.extra;
     if (i >= 0 && i < ex.strikes) return { message: localize('k_again_ex'), repetitions: ex.retriggers, card };
@@ -3118,7 +3118,7 @@ function skrelp_poison(card, context) {
   if (deck_convert('m_poke_hazard', 'poke_skrelp_hazard')) card_eval_status_text(context.blueprint_card || card, 'extra', null, null, null, { message: '+1 Hazard', colour: 'PURPLE' });
 }
 /** Skrelp: +mult Mult per Hazard card in the full deck (any card counting as one). */
-const hazards_in_deck = () => (G.playing_cards || []).filter((c) => unbroken(c) && has_enhancement(c, 'm_poke_hazard')).length;
+export const hazards_in_deck = () => (G.playing_cards || []).filter((c) => unbroken(c) && has_enhancement(c, 'm_poke_hazard')).length;
 /** Dragalge: each Hazard card HELD in hand (not debuffed) gives X(Xmult_multi) (Galvantula's held shape: Mime repeats it). */
 function hazard_held_x(card, context) {
   if (context.individual && context.cardarea === G.hand && !context.end_of_round && !context.other_card.debuff && has_enhancement(context.other_card, 'm_poke_hazard')) {
@@ -4049,6 +4049,8 @@ defineJokers({
   },
   // Dartrix 723: +1 hand size; the rightmost scored card retriggers twice.
   dartrix: {
+    // (+ regional batch C: a Fighting Energy used on it evolves it into Hisuian Decidueye — systems/energy.js energy_evo_target, from HISUI_REV)
+    poke_energy_evo: { etype: 'Fighting', into: 'j_poke_hisuian_decidueye', rev: HISUI_REV },
     name: 'dartrix', poke_sprite391: sprite('Natdex', 4, 48),
     config: { extra: { h_size: 1, retriggers: 2, Xmult_multi: 1.3, rounds: 5 } },
     rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Grass', gen: 7, blueprint_compat: true,
@@ -6084,6 +6086,8 @@ defineJokers({
   },
   // Dewott: the first 2 scored cards retrigger.
   dewott: {
+    // (+ regional batch C: a Dark Energy used on it evolves it into Hisuian Samurott — systems/energy.js energy_evo_target, from HISUI_REV)
+    poke_energy_evo: { etype: 'Dark', into: 'j_poke_hisuian_samurott', rev: HISUI_REV },
     name: 'dewott', poke_sprite391: sprite('Natdex', 12, 33),
     config: { extra: { hands: 1, strikes: 2, retriggers: 1, Xmult_multi: 1.5, rounds: 5 } },
     rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Water', gen: 5, blueprint_compat: true,
@@ -6581,6 +6585,8 @@ defineJokers({
   },
   // Petilil 548 (Grass, Common $5): each scored Flower card earns $1 (fixed: money takes no Energy, so the line is Energy-inert). 5 rounds.
   petilil: {
+    // (+ regional batch C: a Fighting Energy used on it evolves it into Hisuian Lilligant — systems/energy.js energy_evo_target, from HISUI_REV)
+    poke_energy_evo: { etype: 'Fighting', into: 'j_poke_hisuian_lilligant', rev: HISUI_REV },
     name: 'petilil', poke_sprite391: sprite('Natdex', 14, 36),
     config: { extra: { flower_money: 1, rounds: 5 } },
     rarity: 1, cost: 5, stage: 'Basic', ptype: 'Grass', gen: 5, blueprint_compat: true, poke_no_energy_field: true,
@@ -7087,6 +7093,8 @@ defineJokers({
   },
   // Rufflet 627 (Colorless, Common $5): +10 Mult during Boss Blinds (`mult` +40%: 14 / 18 / 22). 5 rounds.
   rufflet: {
+    // (+ regional batch C: a Psychic Energy used on it evolves it into Hisuian Braviary — systems/energy.js energy_evo_target, from HISUI_REV)
+    poke_energy_evo: { etype: 'Psychic', into: 'j_poke_hisuian_braviary', rev: HISUI_REV },
     name: 'rufflet', poke_sprite391: sprite('Natdex', 22, 41),
     config: { extra: { mult: 10, rounds: 5 } },
     rarity: 1, cost: 5, stage: 'Basic', ptype: 'Colorless', gen: 5, blueprint_compat: true,
@@ -7619,6 +7627,8 @@ defineJokers({
   },
   // Bergmite 712 (Water: its card; Common $5): +50 Chips (`chips` +30%: 65 / 80 / 95). 5 rounds.
   bergmite: {
+    // (+ regional batch C: a Earth Energy used on it evolves it into Hisuian Avalugg — systems/energy.js energy_evo_target, from HISUI_REV)
+    poke_energy_evo: { etype: 'Earth', into: 'j_poke_hisuian_avalugg', rev: HISUI_REV },
     name: 'bergmite', poke_sprite391: sprite('Natdex', 12, 47),
     config: { extra: { chips: 50, rounds: 5 } },
     rarity: 1, cost: 5, stage: 'Basic', ptype: 'Water', gen: 6, blueprint_compat: true,
@@ -10306,13 +10316,13 @@ const dondozo_commanded = (card) => {
 };
 /** Clodsire, Poison Point: Silicobra's Sand Spit (each card the PLAYER discards that is unenhanced, num in dem on 'clodsire_poison', Oops!
  *  raises it), making a Hazard card instead of Stone. Blueprint copies it (its own roll). Shares Sand Spit's record of the discard. */
-function clodsire_poison(card, context) {
+export function clodsire_poison(card, context, seed = 'clodsire_poison') {
   if (context.pre_discard) { spit_hand = context.hook ? null : context.full_hand; return undefined; }
   if (!(context.discard && context.other_card && spit_hand && spit_hand.includes(context.other_card))) return undefined;
   const c = context.other_card;
   if (c.config.center.key !== 'c_base' || !unbroken(c)) return undefined;
   const ex = card.ability.extra;
-  if (!pseudorandom_probability(card, 'clodsire_poison', ex.num, ex.dem, 'clodsire_poison')) return undefined;
+  if (!pseudorandom_probability(card, seed, ex.num, ex.dem, seed)) return undefined;
   c.set_ability(P_CENTERS.m_poke_hazard, null, true);
   card_eval_status_text(context.blueprint_card || card, 'extra', null, null, null, { message: 'Poison Point!', colour: 'PURPLE' });
   return undefined;

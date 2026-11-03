@@ -51,7 +51,7 @@ const buyPack = (k) => { const p = new Card(P_CARDS.empty, P_CENTERS[k]); G.shop
 sec('inventory', () => {
   const all = Object.values(P_CENTERS).filter((c) => c.mod === 'nacho' && c.set === 'Joker');
   ok(all.length === 82, '82 jokers registered (66 1.7.9 + 6 Toxic-Stall + 10 legacy)', all.length);
-  ok(STATUS.ported.length === 76 && STATUS.unavailable.length === 6 && STATUS.legacy.length === 10, '76 ported (10 of them legacy) + 6 unavailable', [STATUS.ported.length, STATUS.unavailable.length, STATUS.legacy.length]);
+  ok(STATUS.ported.length === 78 && STATUS.unavailable.length === 4 && STATUS.legacy.length === 10, '78 ported (10 of them legacy; Hisuian Sneasel / Sneasler obtainable from rev 3, regional batch C) + 4 unavailable', [STATUS.ported.length, STATUS.unavailable.length, STATUS.legacy.length]);
   ok(CHALLENGES.length === 4 && CHALLENGES.map((c) => c.key).join() === 'c_nacho_sinnoh_adv,c_nacho_hibernation,c_nacho_gems,c_nacho_goomygoomy', '4 challenges', CHALLENGES.map((c) => c.key));
   ok(Array.isArray(CHALLENGES[1].restrictions.banned_tags), 'a Lua {} list survives as []');
 
@@ -70,12 +70,12 @@ sec('inventory', () => {
   // ON with the shipped defaults: every line (Clauncher too), Toxic-Stall never.
   start('NACHO_ON');
   const act_ = Object.values(P_CENTERS).filter((c) => c.mod === 'nacho' && c.set === 'Joker' && centerActive(c));
-  ok(act_.length === 76, 'on: 76 jokers active by default (+ legacy, - Toxic-Stall)', act_.length);
-  for (const k of ['j_nacho_hisuian_sneasel', 'j_nacho_sneasler', 'j_nacho_okidogi', 'j_nacho_pecharunt']) ok(!P_CENTER_POOLS.Joker.includes(P_CENTERS[k]), 'never in the pool: ' + k);
+  ok(act_.length === 78, 'on: 78 jokers active by default (+ legacy, - Toxic-Stall; Hisuian Sneasel / Sneasler included)', act_.length);
+  for (const k of ['j_nacho_okidogi', 'j_nacho_pecharunt']) ok(!P_CENTER_POOLS.Joker.includes(P_CENTERS[k]), 'never in the pool: ' + k);
   ok(LINES.length === 34 && LINES.filter((l) => l.option).length === 31, '34 loaded files, 31 with an option', [LINES.length, LINES.filter((l) => l.option).length]);
   const saw = new Set();
   for (let i = 0; i < 400; i++) saw.add(N.get_random_poke_key('on' + i));
-  ok([...saw].some((k) => k.startsWith('j_nacho_')) && !saw.has('j_nacho_hisuian_sneasel') && !saw.has('j_nacho_ralts'), 'on: random Pokémon can be Nacho\'s, never a Toxic-Stall or legacy one');
+  ok([...saw].some((k) => k.startsWith('j_nacho_')) && !saw.has('j_nacho_okidogi') && !saw.has('j_nacho_ralts'), 'on: random Pokémon can be Nacho\'s, never a Toxic-Stall or legacy one');
   // Toggles: Clauncher off, Goomy off.
   start('NACHO_OPT', { options: { Clauncher: false, Goomy: false } });
   ok(!P_CENTER_POOLS.Joker.includes(P_CENTERS.j_nacho_clauncher) && !centerActive(P_CENTERS.j_nacho_clawitzer), 'Clauncher option off -> its line is out');

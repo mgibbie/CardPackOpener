@@ -80,6 +80,8 @@ import './boosters/packs1.js';
 import './jokers/zzzapril_fools.js';
 // The owner's Paradox content (Gen 9 batch 3): the Paradox Ball, the Ancient / Future Packs (the 20 jokers are in jokers/pokejokers_designs.js)
 import { PARADOX_LOC, PARADOX_DICTIONARY, PARADOX_LOC_COLOURS, PACK_COLOURS, paradox_pack_open } from './paradox.js';
+// The owner's regional forms, batch C (the Hisuian and Paldean forms; jokers/pokejokers_hisui.js)
+import { install_hisui_families, HISUI_FAMILY_REV, HISUI_LOC, HISUI_UPSTREAM_TEXT } from './jokers/pokejokers_hisui.js';
 import { DESIGN_FAMILIES, DESIGN_LOC, regi_chip_bonus, regi_h_x_mult, regi_enh_vars, slot_cost_removed, drifblim_destroyed, contrary_lifts, mummy_sell,
   freeze_keep, freeze_thaw, frozen_by, spore_first_deal, spore_hand_scored, malamar_chip_bonus, prank_reroll_cost, prank_reroll_shop, prank_shop_start,
   pyukumuku_destroyed, pheromosa_rest, komala_destroy_immune, GALAR_UPSTREAM_TEXT, GALAR_FAMILY_REV, rime_final_deal,
@@ -497,6 +499,9 @@ for (const [name, def] of Object.entries(DEFS.jokers)) {
 for (const f of DESIGN_FAMILIES) set_family(f);
 // (Gen 8 batch 3, r72: the Galarian evolutions joined existing lines — older recorded moves look those lines up without them)
 for (const [name, rev] of Object.entries(GALAR_FAMILY_REV)) FAMILY_MEMBER_REV.set(name, rev);
+// (regional batch C: the Hisuian / Paldean lines; the six Hisuian branch finals join their lines from HISUI_REV on)
+install_hisui_families(set_family);
+for (const [name, rev] of Object.entries(HISUI_FAMILY_REV)) FAMILY_MEMBER_REV.set(name, rev);
 for (const f of DATA.groups.consumables) for (const item of listOf(f)) centers.push(consumableCenter(item, f.file));
 // Content 3.9.1 adds that data.js (3.2.1) doesn't have (batch 10: Miracle Seed, Heavy-Duty Boots, the Seed card, the Debris
 // deck): its definition carries the whole static data (key, pos, atlas, config, ...) and is built like data.js's, after it.
@@ -550,6 +555,13 @@ for (const [set, d] of Object.entries(DESIGN_LOC)) Object.assign(DATA.loc.descri
 for (const [set, d] of Object.entries(PARADOX_LOC)) Object.assign(DATA.loc.descriptions[set] = DATA.loc.descriptions[set] || {}, d);
 DATA.loc.misc.dictionary = Object.assign(DATA.loc.misc.dictionary || {}, PARADOX_DICTIONARY);
 // (Gen 8 batch 3: the Galarian evolutions of Linoone / Corsola / Mr. Mime / Farfetch'd — a box after their own 3.9.1 text)
+// ... and the regional batch C forms' (jokers/pokejokers_hisui.js)
+for (const [set, d] of Object.entries(HISUI_LOC)) Object.assign(DATA.loc.descriptions[set] = DATA.loc.descriptions[set] || {}, d);
+// (+ regional batch C: the six Hisuian branch evolutions' box after the earlier stage's own text)
+for (const [k, lines] of Object.entries(HISUI_UPSTREAM_TEXT)) {
+  const e = DATA.loc.descriptions.Joker[k];
+  if (e && e.text && !e.text.includes(lines[1])) DATA.loc.descriptions.Joker[k] = { ...e, text: [...e.text, ...lines] };
+}
 for (const [k, lines] of Object.entries(GALAR_UPSTREAM_TEXT)) {
   const e = DATA.loc.descriptions.Joker[k];
   if (e && e.text && !e.text.includes(lines[1])) DATA.loc.descriptions.Joker[k] = { ...e, text: [...e.text, ...lines] };
@@ -1103,7 +1115,13 @@ export const POKERMON = registerMod({
   // 80 = Gen 9 batch 4, the Gen 9 Legendaries (jokers/pokejokers_designs.js, #1001-1017), each complete alone: Wo-Chien (every Blind 15%
   // lower), Chien-Pao (scored cards X1.1), Ting-Lu (+2 hands in Boss Blinds), Chi-Yu (Boss Blinds disabled), Koraidon (always sunny) and
   // Miraidon (always Electric Terrain; X2 + X0.5 per Paradox of their era), Ogerpon (a mask an Ante). New content only.
-  contentRev: 80,
+  // 83 = the owner's regional batch C, the Hisuian and Paldean forms (jokers/pokejokers_hisui.js): own lines (Hisuian Growlithe -> Arcanine,
+  // Hisuian Voltorb -> Electrode, Paldean Wooper -> Clodsire, Paldean Tauros with its breed rolled when obtained), six BRANCH evolutions by an
+  // Energy used on the earlier stage (Quilava -> Hisuian Typhlosion: Psychic; Dewott -> Hisuian Samurott: Dark; Dartrix -> Hisuian
+  // Decidueye: Fighting; Petilil -> Hisuian Lilligant: Fighting; Rufflet -> Hisuian Braviary: Psychic; Bergmite -> Hisuian Avalugg: Earth),
+  // and Nacho's Hisuian Sneasel / Sneasler made obtainable (Nacho rev 3). The branches and their family members are gated by rulesRev
+  // (systems/energy.js HISUI_REV), so runs recorded before r83 replay as recorded.
+  contentRev: 83,
   // Pokermon 3.9.1 pokermon.lua: SMODS.current_mod.optional_features = {quantum_enhancements = true, object_weights = true}.
   // object_weights sends create_card's key, the shop roll, tags, packs, bosses and vouchers through SMODS.poll_object
   // (js/engine/smods.js; batch 17). quantum_enhancements is the engine's check_enhancement, always on.

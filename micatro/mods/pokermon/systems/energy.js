@@ -234,6 +234,10 @@ export function energy_evo_target(v, etype) {
 }
 /** The Gen 9 batch 2 rules rev (the owner's, 2026-11-03): Wooper -> Clodsire (a Dark Energy), and the line's new member. */
 export const GEN9B2_REV = 77;
+/** Regional batch C, the Hisuian and Paldean forms (the owner's, 2026-11-03; jokers/pokejokers_hisui.js): Quilava -> Hisuian Typhlosion
+ *  (Psychic), Dewott -> Hisuian Samurott (Dark), Petilil -> Hisuian Lilligant (Fighting), Rufflet -> Hisuian Braviary (Psychic), Bergmite ->
+ *  Hisuian Avalugg (Earth), Dartrix -> Hisuian Decidueye (Fighting), each an Energy used on it, and those lines' new members. */
+export const HISUI_REV = 83;
 function energy_evolve(v) { poke_evolve(v, v.config.center.poke_energy_evo.into); }
 
 /** The first joker (left to right) this Energy can go on, or false. */
