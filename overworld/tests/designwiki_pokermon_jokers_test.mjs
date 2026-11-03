@@ -274,7 +274,7 @@ try {
 	const label = () => anon.page.evaluate(() => { const e = document.querySelector('.pj-page-art .pj-artsrc'); return e && { text: e.textContent, src: e.dataset.source }; });
 	const want923 = D.species.find(s => s.dex === 1023).art.source;
 	A(JSON.stringify(await label()) === JSON.stringify({ text: LABEL[want923], src: want923 }), `the card is labelled with its art source (${LABEL[want923]})`, JSON.stringify(await label()));
-	A(/Metal/.test(card.facts) && /Basic/.test(card.facts) && JSON.stringify(card.line) === '["Iron Crown"]', 'type, stage and evolution line', JSON.stringify(card));
+	A(/Metal/.test(card.facts) && /Basic/.test(card.facts) && /Does not evolve/.test(card.facts) && JSON.stringify(card.line) === '[]', 'type, stage and evolution line (a single-stage species: "Does not evolve")', JSON.stringify(card));
 	A(!card.box, 'signed out: no Submit design box');
 	A(!card.nullText, 'no stray null / undefined text where the box would be');
 	await anon.page.click('.pj-flip');
