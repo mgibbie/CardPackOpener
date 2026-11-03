@@ -67,7 +67,7 @@ try {
 	A([...coveredDex].every(d => !listed.includes(d)), 'every species a mod joker covers (incl. Megas / forms) is off the list');
 	A(coveredDex.size + listed.length === 1025 && D.counts.covered === coveredDex.size && D.counts.missing === listed.length, `listed (${listed.length}) + covered (${coveredDex.size}) = 1025`);
 	for (const m of PM.MODS) A(D.counts.byMod[m].species === M.coverage[m].size, `${m}: ${D.counts.byMod[m].species} species covered`);
-	A(['Bulbasaur', 'Pikachu', 'Mewtwo'].every(n => !D.species.some(s => s.name === n)) && D.species.some(s => s.name === 'Hatenna') && !D.species.some(s => s.name === 'Rookidee'), 'spot check: Bulbasaur / Pikachu / Mewtwo (and now Rookidee) have jokers, Hatenna does not');
+	A(['Bulbasaur', 'Pikachu', 'Mewtwo'].every(n => !D.species.some(s => s.name === n)) && D.species.some(s => s.name === 'Pawmi') && !D.species.some(s => s.name === 'Rookidee') && !D.species.some(s => s.name === 'Hatenna'), 'spot check: Bulbasaur / Pikachu / Mewtwo (and now Rookidee and Hatenna) have jokers, Pawmi does not');
 	// the type table is the mods' own majority (every primary type that has a clear one; Flying has none upstream)
 	const badTypes = Object.entries(M.typeVotes).filter(([t, v]) => {
 		if (t === 'Flying') return false;
@@ -95,12 +95,12 @@ try {
 	A(!tBad.length, `every wiki card's type is the type its card art shows (${D.species.filter(s => s.type_source === 'art').length} from the art)`, tBad.slice(0, 8).join(', '));
 	A(!srcWrong.length && D.species.every(s => ['art', 'mapping'].includes(s.type_source)), 'type_source records where each type came from (art, else mapping)', srcWrong.slice(0, 8).join(', '));
 	A(D.counts.typeSource.art + D.counts.typeSource.mapping === D.species.length && D.counts.typeFromArtDiffers === D.species.filter(s => s.ptype !== s.mapped_ptype).length, 'counts.typeSource / typeFromArtDiffers match the list');
-	A(!sp0('Latias') && !sp0('Guzzlord') && sp0('Koraidon')?.ptype === 'Dragon' && sp0('Toedscool')?.ptype === 'Grass' && sp0('Impidimp')?.ptype === 'Fairy' && sp0('Chien-Pao')?.ptype === 'Water' && sp0('Iron Thorns')?.ptype === 'Lightning'
-		&& !sp0('Bewear') && !sp0('Comfey') && !sp0('Buzzwole') && sp0('Runerigus')?.ptype === 'Psychic' && sp0('Runerigus')?.type_source === 'art' && sp0('Runerigus')?.mapped_ptype === 'Earth', 'spot check (the card wins; Latias, Dwebble, Venipede, Sandile, Kyurem, Keldeo, Stunfisk, Tyrunt, Phantump, Cutiefly, Comfey, Bewear and the Ultra Beasts are in the game now): Koraidon Dragon, Toedscool Grass, Impidimp Fairy, Chien-Pao Water, Iron Thorns Lightning; Runerigus Psychic from its art (the mapping said Earth)');
+	A(!sp0('Latias') && !sp0('Guzzlord') && sp0('Koraidon')?.ptype === 'Dragon' && sp0('Toedscool')?.ptype === 'Grass' && !sp0('Impidimp') && sp0('Scream Tail')?.ptype === 'Fairy' && sp0('Chien-Pao')?.ptype === 'Water' && sp0('Iron Thorns')?.ptype === 'Lightning'
+		&& !sp0('Bewear') && !sp0('Comfey') && !sp0('Buzzwole') && sp0('Runerigus')?.ptype === 'Psychic' && sp0('Runerigus')?.type_source === 'art' && sp0('Runerigus')?.mapped_ptype === 'Earth', 'spot check (the card wins; Latias, Dwebble, Venipede, Sandile, Kyurem, Keldeo, Stunfisk, Tyrunt, Phantump, Cutiefly, Comfey, Bewear, the Ultra Beasts and Impidimp are in the game now): Koraidon Dragon, Toedscool Grass, Scream Tail Fairy, Chien-Pao Water, Iron Thorns Lightning; Runerigus Psychic from its art (the mapping said Earth)');
 	A(D.species.every(s => ['Basic', 'One', 'Two', 'Baby', 'Legendary'].includes(s.stage) && s.line.some(l => l.dex === s.dex)), 'every species has an upstream stage and sits in its own line');
 	const sp = sp0;
-	A(sp('Hatterene')?.stage === 'Two' && sp('Hattrem')?.stage === 'One' && !sp('Orbeetle') && sp('Toxel')?.stage === 'Baby' && sp('Zacian')?.stage === 'Legendary' && sp('Copperajah')?.ptype === 'Metal' && !sp('Corviknight') && !sp('Jangmo-o') && !sp('Naganadel') && sp('Cyclizar')?.ptype === 'Dragon',
-		'spot check: Hatterene Stage 2, Hattrem Stage 1 (the Pikipek, Jangmo-o and Blipbug lines are in the game now), Toxel Baby, Zacian Legendary (Yveltal and Tapu Koko are in the game now), Copperajah Metal (Corviknight is in the game now), Cyclizar Dragon (the Ultra Beasts are in the game now)');
+	A(sp('Pawmot')?.stage === 'Two' && sp('Pawmo')?.stage === 'One' && sp('Pawmi')?.stage === 'Basic' && !sp('Orbeetle') && !sp('Hatterene') && !sp('Toxel') && !D.species.some(s => s.stage === 'Baby') && sp('Zacian')?.stage === 'Legendary' && sp('Copperajah')?.ptype === 'Metal' && !sp('Corviknight') && !sp('Jangmo-o') && !sp('Naganadel') && sp('Cyclizar')?.ptype === 'Dragon',
+		'spot check: Pawmot Stage 2, Pawmo Stage 1, Pawmi Basic (the Pikipek, Jangmo-o, Blipbug and Hatenna lines are in the game now; Toxel was the last Baby), Zacian Legendary (Yveltal and Tapu Koko are in the game now), Copperajah Metal (Corviknight is in the game now), Cyclizar Dragon (the Ultra Beasts are in the game now)');
 
 	// ================================================================== ART
 	// UPSTREAM FIRST: a species Pokermon 3.9.1's sprite table draws (tools/micatro/specs/pokermon_391_sprite_table.json, a
@@ -190,9 +190,9 @@ try {
 	A(!differs.length && same === listed.length * 2, `the art script re-makes all ${listed.length * 2} cards byte-identical (${Math.round((Date.now() - t0) / 1000)} s)`, differs.slice(0, 8).join(', '));
 	A(!blank.length, 'no card is blank (142 x 190, 90%+ opaque — the corners are rounded —, 24+ colours, 8+ in the art window)', blank.slice(0, 5).join(' | '));
 	A(!thin.length, 'every composed card: the battle sprite painted 100+ pixels onto it', thin.slice(0, 8).join(', '));
-	// the composer stays working for species upstream doesn't draw (none today): a Basic, a Stage 1, a Baby and a Legendary
-	const fallback = ['Hatterene', 'Hattrem', 'Toxel', 'Zacian'].map(n => ctx.M.missing.find(s => s.name === n)).filter(Boolean).map(s => [s.name, MJ.composeSpecies(ctx, s)]);
-	A(fallback.length === 4 && fallback.every(([, r]) => r.normalPainted >= 100 && r.shinyPainted >= 100 && r.recipe.frame), 'the composer (the fallback) still composes a real card (Hatterene, Hattrem, Toxel, Zacian; the Jangmo-o and Blipbug lines and Tapu Koko are in the game now)', fallback.map(([n, r]) => n + ' ' + r.normalPainted).join(', '));
+	// the composer stays working for species upstream doesn't draw (none today): a Stage 2, a Stage 1, a Basic and a Legendary (no Baby is left: Toxel is in the game now)
+	const fallback = ['Pawmot', 'Pawmo', 'Pawmi', 'Zacian'].map(n => ctx.M.missing.find(s => s.name === n)).filter(Boolean).map(s => [s.name, MJ.composeSpecies(ctx, s)]);
+	A(fallback.length === 4 && fallback.every(([, r]) => r.normalPainted >= 100 && r.shinyPainted >= 100 && r.recipe.frame), 'the composer (the fallback) still composes a real card (Pawmot, Pawmo, Pawmi, Zacian; the Jangmo-o, Blipbug, Hatenna and Toxel lines and Tapu Koko are in the game now)', fallback.map(([n, r]) => n + ' ' + r.normalPainted).join(', '));
 	const extra = fs.readdirSync(path.join(ROOT, 'designwiki/sprites/pokermon_jokers')).filter(f => !D.species.some(s => s.art.normal.endsWith('/' + f) || s.art.shiny.endsWith('/' + f)));
 	A(!extra.length, 'no stale card art for species that now have jokers', extra.join(', '));
 	// re-running the generator (into a scratch folder) gives the committed JSON and art, byte for byte
@@ -256,29 +256,29 @@ try {
 	const w5 = await anon.page.$$eval('.pj-tile', ts => ts.map(t => t.dataset.ptype));
 	A(w5.length === byType[ft] && w5.length > 0 && w5.every(t => t === ft), `the type filter narrows to ${ft} (in Gen ${fg})`, w5.length);
 	await anon.page.select('#pjGen', ''); await anon.page.select('#pjType', '');
-	await anon.page.type('#pjQ', 'haten');
-	A(await waitFor(async () => (await anon.page.$$eval('.pj-tile', ts => ts.map(t => t.textContent))).join('|').match(/Hatenna/) && await tiles(anon.page) === D.species.filter(s => /haten/i.test(s.name)).length, 4000), 'search by name');
+	await anon.page.type('#pjQ', 'pawm');
+	A(await waitFor(async () => (await anon.page.$$eval('.pj-tile', ts => ts.map(t => t.textContent))).join('|').match(/Pawmi/) && await tiles(anon.page) === D.species.filter(s => /pawm/i.test(s.name)).length, 4000), 'search by name');
 	await anon.page.evaluate(() => { const q = document.getElementById('pjQ'); q.value = ''; q.dispatchEvent(new Event('input')); });
-	await anon.page.type('#pjQ', '#0848');
-	A(await waitFor(async () => await tiles(anon.page) === 1 && /Toxel/.test(await anon.page.$eval('.pj-tile', t => t.textContent)), 4000), 'search by dex number (#0848 = Toxel)');
+	await anon.page.type('#pjQ', '#0870');
+	A(await waitFor(async () => await tiles(anon.page) === 1 && /Falinks/.test(await anon.page.$eval('.pj-tile', t => t.textContent)), 4000), 'search by dex number (#0870 = Falinks)');
 	await go(anon.page, '#/pokermon-jokers');
 	await shot(anon.page, 'desktop_index_signed_out');
-	await go(anon.page, '#/pokermon-jokers/858');
+	await go(anon.page, '#/pokermon-jokers/923');
 	const card = await anon.page.evaluate(() => ({
 		h1: document.querySelector('.pj-page h1')?.textContent, img: document.querySelector('.pj-art-big')?.naturalWidth, src: document.querySelector('.pj-art-big')?.getAttribute('src'),
 		facts: document.querySelector('.pj-facts')?.textContent, line: [...document.querySelectorAll('.pj-line li')].map(l => l.textContent), box: !!document.querySelector('.pj-owner, #pjSubmit'),
 		nullText: [...document.getElementById('content').childNodes].some(n => n.nodeType === 3 && /^\s*(null|undefined)\s*$/.test(n.textContent)),
 	}));
-	A(card.h1 === 'Hatterene #0858' && card.img === 142 && /0858\.png(\?|$)/.test(card.src), 'a card page shows the name, dex and its art', JSON.stringify(card));
+	A(card.h1 === 'Pawmot #0923' && card.img === 142 && /0923\.png(\?|$)/.test(card.src), 'a card page shows the name, dex and its art', JSON.stringify(card));
 	const LABEL = { upstream: 'Art: Pokermon upstream', composed: 'Art: composed (no upstream card yet)' };
 	const label = () => anon.page.evaluate(() => { const e = document.querySelector('.pj-page-art .pj-artsrc'); return e && { text: e.textContent, src: e.dataset.source }; });
-	const want858 = D.species.find(s => s.dex === 858).art.source;
-	A(JSON.stringify(await label()) === JSON.stringify({ text: LABEL[want858], src: want858 }), `the card is labelled with its art source (${LABEL[want858]})`, JSON.stringify(await label()));
-	A(/Psychic/.test(card.facts) && /Stage 2/.test(card.facts) && JSON.stringify(card.line) === '["Hatenna","Hattrem","Hatterene"]', 'type, stage and evolution line', JSON.stringify(card));
+	const want923 = D.species.find(s => s.dex === 923).art.source;
+	A(JSON.stringify(await label()) === JSON.stringify({ text: LABEL[want923], src: want923 }), `the card is labelled with its art source (${LABEL[want923]})`, JSON.stringify(await label()));
+	A(/Lightning/.test(card.facts) && /Stage 2/.test(card.facts) && JSON.stringify(card.line) === '["Pawmi","Pawmo","Pawmot"]', 'type, stage and evolution line', JSON.stringify(card));
 	A(!card.box, 'signed out: no Submit design box');
 	A(!card.nullText, 'no stray null / undefined text where the box would be');
 	await anon.page.click('.pj-flip');
-	A(/0858_shiny\.png(\?|$)/.test(await anon.page.$eval('.pj-art-big', i => i.getAttribute('src'))), 'the Shiny toggle swaps in the Shiny card');
+	A(/0923_shiny\.png(\?|$)/.test(await anon.page.$eval('.pj-art-big', i => i.getAttribute('src'))), 'the Shiny toggle swaps in the Shiny card');
 	await shot(anon.page, 'desktop_card_signed_out');
 	// a Legendary (soul layer) card, and its label
 	await go(anon.page, '#/pokermon-jokers/888');
@@ -295,18 +295,18 @@ try {
 	cp.page.on('request', r => {
 		if (!/\/designwiki\/data\/pokermon_jokers\.json/.test(r.url())) return r.continue();
 		const j = JSON.parse(JSON.stringify(D));
-		const t = j.species.find(s => s.dex === 848);
-		t.art.source = 'composed'; t.art.recipe = { frame: 'Lightning Baby frame (test)', background: 'a scene (test)', sprite: 'toxel.png x2' };
+		const t = j.species.find(s => s.dex === 921);
+		t.art.source = 'composed'; t.art.recipe = { frame: 'Lightning Basic frame (test)', background: 'a scene (test)', sprite: 'pawmi.png x2' };
 		r.respond({ status: 200, contentType: 'application/json', body: JSON.stringify(j) });
 	});
-	await go(cp.page, '#/pokermon-jokers/848');
+	await go(cp.page, '#/pokermon-jokers/921');
 	const cl = await cp.page.evaluate(() => ({ text: document.querySelector('.pj-artsrc')?.textContent, src: document.querySelector('.pj-artsrc')?.dataset.source, recipe: document.querySelector('.pj-recipe')?.textContent }));
-	A(cl.text === LABEL.composed && cl.src === 'composed' && /Lightning Baby frame \(test\)/.test(cl.recipe || ''), 'a composed card is labelled "Art: composed (no upstream card yet)" with its recipe', JSON.stringify(cl));
+	A(cl.text === LABEL.composed && cl.src === 'composed' && /Lightning Basic frame \(test\)/.test(cl.recipe || ''), 'a composed card is labelled "Art: composed (no upstream card yet)" with its recipe', JSON.stringify(cl));
 	await cp.ctx.close();
 
 	// ---------- a non-owner: no box ----------
 	const pe = await open(peon, 'pjpeon');
-	await go(pe.page, '#/pokermon-jokers/858');
+	await go(pe.page, '#/pokermon-jokers/923');
 	A(!(await pe.page.$('.pj-owner')) && !(await pe.page.$('#pjSubmit')), 'a non-owner: no Submit design box');
 	await go(pe.page, '#/pokermon-jokers');
 	A(!pe.designCalls.length, 'a non-owner: the page never calls the joker-design API', pe.designCalls.join(','));
@@ -314,10 +314,10 @@ try {
 
 	// ---------- the owner: box, submission round-trip ----------
 	const ow = await open(owner, 'mgibbie');
-	await go(ow.page, '#/pokermon-jokers/858');
+	await go(ow.page, '#/pokermon-jokers/923');
 	A(await ow.page.$('.pj-owner #pjSubmit') !== null, 'the owner sees the Submit design box');
-	A(await ow.page.$eval('#pjRarity', s => s.value) === D.species.find(s => s.dex === 858).rarityLabel, 'the rarity defaults to the guess');
-	const typed = { ability: 'Retrigger every scored 3\nGains X0.5 Mult per Hattrem sold', rarity: 'Rare', cost: '9', notes: 'Shiny: X2 instead' };
+	A(await ow.page.$eval('#pjRarity', s => s.value) === D.species.find(s => s.dex === 923).rarityLabel, 'the rarity defaults to the guess');
+	const typed = { ability: 'Retrigger every scored 3\nGains X0.5 Mult per Pawmo sold', rarity: 'Rare', cost: '9', notes: 'Shiny: X2 instead' };
 	await ow.page.type('#pjAbility', typed.ability);
 	await ow.page.select('#pjRarity', typed.rarity);
 	await ow.page.type('#pjCost', typed.cost);
@@ -326,17 +326,17 @@ try {
 	A(await waitFor(() => ow.page.$eval('.pj-msg', m => /filed ✓ \(1 design in the joker design list\)/.test(m.textContent)), 8000), 'submitting shows the confirmation', await ow.page.$eval('.pj-msg', m => m.textContent));
 	const srv = await api('joker-design-list', {}, owner);
 	const got = srv.designs && srv.designs[0];
-	A(srv.designs?.length === 1 && got.dex === 858 && got.name === 'Hatterene' && got.ability === typed.ability && got.rarity === 'Rare' && got.cost === 9 && got.notes === typed.notes,
+	A(srv.designs?.length === 1 && got.dex === 923 && got.name === 'Pawmot' && got.ability === typed.ability && got.rarity === 'Rare' && got.cost === 9 && got.notes === typed.notes,
 		'the server holds exactly what was typed (owner_todo:jokers)', JSON.stringify(srv));
 	A(await waitFor(() => ow.page.$$eval('.pj-design', ds => ds.length === 1 && ds[0].textContent.includes('Retrigger every scored 3')), 5000), 'the filed design shows on the card');
 	A(await ow.page.$eval('#pjAbility', t => t.value) === '', 'the box clears after filing');
-	await go(ow.page, '#/pokermon-jokers/858');
+	await go(ow.page, '#/pokermon-jokers/923');
 	A(await waitFor(() => ow.page.$$eval('.pj-design', ds => ds.length === 1 && /Rare/.test(ds[0].textContent) && /\$9/.test(ds[0].textContent) && /Shiny: X2/.test(ds[0].textContent)), 5000), 'after a reload the design is still listed, read-only (rarity, cost, notes)');
 	A(await ow.page.$$eval('.pj-design textarea, .pj-design input', x => x.length) === 0, 'the filed designs are read-only');
 	await ow.page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
 	await shot(ow.page, 'desktop_card_owner');
 	await go(ow.page, '#/pokermon-jokers');
-	A(await waitFor(() => ow.page.$eval('.pj-tile[data-dex="858"] .pj-designed', e => e.textContent === '✎ 1'), 5000), 'the index marks the tile the owner designed');
+	A(await waitFor(() => ow.page.$eval('.pj-tile[data-dex="923"] .pj-designed', e => e.textContent === '✎ 1'), 5000), 'the index marks the tile the owner designed');
 	A(!ow.errors.length, 'no console errors (owner)', ow.errors.slice(0, 3).join(' | '));
 	await ow.ctx.close();
 
@@ -346,12 +346,12 @@ try {
 	A(await noHScroll(phA.page), '390 px index: no horizontal scroll');
 	A(await phA.page.evaluate(() => { const t = document.querySelectorAll('.pj-tile'); return t.length > 3 && t[0].getBoundingClientRect().top === t[2].getBoundingClientRect().top; }), '390 px index: three cards to a row');
 	await shot(phA.page, 'phone_index_signed_out');
-	await go(phA.page, '#/pokermon-jokers/848');
+	await go(phA.page, '#/pokermon-jokers/921');
 	A(await noHScroll(phA.page) && !(await phA.page.$('.pj-owner')), '390 px card, signed out: no horizontal scroll, no box');
 	await shot(phA.page, 'phone_card_signed_out');
 	await phA.ctx.close();
 	const phO = await open(owner, 'mgibbie', 390, 844);
-	await go(phO.page, '#/pokermon-jokers/858');
+	await go(phO.page, '#/pokermon-jokers/923');
 	A(await waitFor(() => phO.page.$$eval('.pj-design', d => d.length === 1), 5000) && await noHScroll(phO.page), '390 px card, owner: the box and the filed design fit with no horizontal scroll');
 	A(await phO.page.evaluate(() => { const b = document.querySelector('.pj-owner').getBoundingClientRect(); return b.left >= 0 && b.right <= window.innerWidth; }), '390 px: the owner box sits inside the screen');
 	await phO.page.evaluate(() => document.querySelector('.pj-owner').scrollIntoView());

@@ -3728,6 +3728,53 @@ Corviknight Metal, Blipbug Grass -> Dottler / Orbeetle Psychic, Rolycoly Earth -
   `micatro_mod_version_pin`, `micatro_deckeditor_pages` (1160 jokers); `designwiki_pokermon_jokers_test` spot-checks Hatenna / Hattrem / Hatterene /
   Copperajah and opens Hatterene's card (the Rookidee and Blipbug lines have jokers now).
 
+### Gen 8, batch 2 (2026-11-02, branch `feat/pokermon-gen8-batch2`)
+Pinned **`3.9.1+r71`** (`contentRev: 71`; r70 is Gen 8 batch 1; `LEGACY_MOD_VERSIONS` untouched). The owner's "go ahead with batch 2": 14 jokers, #848-861,
+in `jokers/pokejokers_designs.js` (`tox_roll` / `punk_rock` / `fire_spin` / `scored_ranks` / `tea_roll` / `psychic_count` / `magic_powder` / `prank_*`),
+in Pokédex order after Barraskewda, before Dreepy. Pokermon+ has none; **Nacho 1.7.9 ships an Impidimp line as data only (`can_load = false` upstream,
+never registered)**, so nothing to dedupe. Prices by the guide's slots (3-stage U $6 / S $8 / S $10, 2-stage C $5 / S $8). Types = the cards'
+(`pokermon_art_type.mjs`: Toxel line Lightning, Sizzlipede line Fire, Clobbopus line Fighting, Sinistea / Hatenna lines Psychic, Impidimp line Fairy).
+Art: upstream 3.9.1 cells (Natdex {14,56}-{10,57}; Toxtricity Gen 8 {6,0} Amped and its **Low Key Form** the unlisted neighbour {8,0}, Lightning too,
+`systems/anim.js` GEN8_FORM_SPRITES); **no Antique cell exists upstream** (Sinistea / Polteageist draw their one card); nothing to deploy.
+- **Toxel** (Lightning, **Baby, U $4** — the choice: Elekid's slot, the non-money Lightning Baby), **+4 Mult**, **3 rounds** (the owner's; Babies are
+  usually 2). **The choice: it keeps the Baby faint rule** (a non-Baby Joker to its right debuffs it when a hand is played; that round doesn't count
+  toward evolving) **but has no X0.75 penalty** — its +4 is the design. Energy `mult` 4 -> 5.6 / 7.2 / 8.8.
+- **Toxtricity** (**R $7, a shop Basic** — the choice: the baby->basic convention, as Lucario / Electabuzz / Pikachu stay shop-able). Its form is
+  **rolled when obtained** (Glameow's rule: add_to_deck; a Toxel evolving into it rolls then, since set_ability runs the new add_to_deck), 50 / 50 on
+  `toxtricity_form`, kept on `card.ability.poke_tox_form`. **Amped, Punk Rock: X2 on a hand of exactly 5 PLAYED cards** (the choice: played, i.e.
+  `full_hand`, kickers included); **Low Key: +40 Chips for each card fewer than 5 played** (1 card +160). Energy raises both forms: `Xmult` 2 -> 2.4 /
+  2.8 / 3.2, `chips` 40 -> 52 / 64 / 76. Per-form text (`j_poke_toxtricity_amped` / `_lowkey`; the unobtained card lists both).
+- **Sizzlipede** (C $5, 5) / **Centiskorch** (S $8), Fire Spin: **the first card you discard each round (a player's discard; its leftmost card) is
+  destroyed** (Carnivine's Flytrap: `{ remove: true }`, so Canio / Giratina / every remove_playing_cards payoff fires) and it **banks +2 Mult**
+  (`burn_mult`, gain `mult_mod` 2 -> 2.4 / 2.8 / 3.2) / Centiskorch **X0.1** (`burn_Xmult` from X1, gain `Xmult_mod` 0.1 -> 0.12 / 0.14 / 0.16), keeping
+  and scoring Sizzlipede's Mult. Its own mark list, so **with Carnivine (or two copies) the same card burns once and each joker banks**. Not Blueprint
+  for the burn / gain (it copies the score).
+- **Clobbopus** (C $5, 5) / **Grapploct** (S $8), Octolock: **each card held in hand that shares a rank with a scored card** (scoring hand, undebuffed,
+  ranked: a kicker's rank doesn't count; a debuffed or Stone held card doesn't) gives **+2 Mult** (joker_main) / **X1.25** (the held pass: Mime
+  repeats it). Energy `mult` 2 -> 2.8 / 3.6 / 4.4, `Xmult_multi` 1.25 -> 1.3125 / 1.375 / 1.4375.
+- **Sinistea** (C $5, 5) / **Polteageist** (S $8): **X1.5 / X2; Antique X3 / X4**. Phony or Antique is **rolled when obtained** (Glameow's rule),
+  **Antique 1 in 10 — the choice: FIXED odds** (a plain seeded roll, `sinistea_antique`; Oops! All 6s / Absol don't touch it), kept on
+  `card.ability.poke_tea`, so it carries through evolution. The Antique X is derived (2 x `Xmult`): Energy 1.5 -> 1.8 / 2.1 / 2.4 (Antique 3.6 / 4.2 /
+  4.8), 2 -> 2.4 / 2.8 / 3.2.
+- **Hatenna** (U $6, 4) / **Hattrem** (S $8, 5) / **Hatterene** (S $10): **+4 / +6 Mult per Psychic Joker; X1 + X0.25 per Psychic Joker** (itself
+  included; is_type, undebuffed: a Psychic Tera counts). Hatterene's **Magic Powder: when a Blind is selected the Joker to its RIGHT gets a Psychic
+  Tera sticker unless it is Psychic already** (apply_type_sticker; any joker, non-Pokémon too; Arceus counts as Psychic so it is skipped; nothing at
+  the row's end; not Blueprint; a debuffed Hatterene converts nothing). Energy `mult` 4 -> 5.6 / 7.2 / 8.8, 6 -> 8.4 / 10.8 / 13.2, `Xmult_mod` 0.25 ->
+  0.3 / 0.35 / 0.4.
+- **Impidimp** (U $6, 4) / **Morgrem** (S $8, 5) / **Grimmsnarl** (S $10), Prankster (hooks `reroll_cost` / `reroll_shop` / `shop_start`): Impidimp
+  **a paid reroll costs $1 less, never below $1 — the choice: each copy stacks (down to $1) and a free reroll stays free** (D6 Tag's $0, Chaos);
+  Morgrem / Grimmsnarl **the first reroll in each shop is free** — **the choice: one however many are held, and NOT on top of another free reroll**
+  (Chaos the Clown's, Bidoof's, a D6 Tag's $0: whatever made the shop's first reroll free uses it up; Morgrem + Chaos = one free reroll, Morgrem + D6 =
+  $0, $1, $2). Like Chaos's it never steps the price up (spent as one of the engine's free rerolls: $0, $5, $6). "Each shop" counts from the shop
+  opening: bought after a reroll, nothing this shop. Morgrem does not keep Impidimp's discount (the spec). Grimmsnarl **permanently gains X0.1 for
+  every shop reroll, free ones included** (`prank_Xmult` from X1; Blueprint copies the X, not the gain). Impidimp / Morgrem carry Grimmsnarl's
+  `Xmult_mod` ("Energy carries to Grimmsnarl"): 0.1 -> 0.12 / 0.14 / 0.16.
+- **Wiki**: regenerated (90 missing); the wiki sprites of the 14 are gone from `designwiki/sprites/pokermon_jokers/` (no new art).
+- **Tests**: `micatro/tests/mods/pokermon_gen8_batch2_test.mjs` (fails on main: no such jokers). Re-recorded: `modpin_test`, `pokermon_391_data_test`,
+  `pokermon_new_jokers_test` (the pin, the defs, the order chain), `pokermon_gen8_batch1_test` (Toxel after Barraskewda), `pokermon_art_types_test`,
+  `micatro_mod_version_pin`, `micatro_deckeditor_pages` (1174 jokers); `designwiki_pokermon_jokers_test` spot-checks Pawmi / Pawmo / Pawmot and opens
+  Pawmot's card (the Hatenna line has jokers now; no Baby is left on the list).
+
 ### Pending from the 3.9.1 joker rework (after batch 10b)
 Every existing joker is on 3.9.1: `rework_hold` (still on 3.2.1) is empty. What waits, by the batch it waits on (`rework_deferred` =
 on 3.9.1 but one part):

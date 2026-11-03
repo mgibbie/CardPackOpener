@@ -101,6 +101,11 @@ await sec('static', () => {
     && D.arrokuda === 'Water' && D.barraskewda === 'Water',
   'Gen 8 batch 1: Rookidee line Colorless -> Corviknight Metal (Flying/Steel: its card Metal), Blipbug Grass (Bug) -> Dottler / Orbeetle Psychic (Bug/Psychic: their cards Psychic), Gossifleur line Grass, Wooloo line Colorless, Chewtle line Water, Rolycoly Earth (Rock) -> Carkol / Coalossal Fire (Rock/Fire: their cards Fire), Silicobra line Earth, Cramorant Water, Arrokuda line Water',
   ['rookidee', 'corviknight', 'blipbug', 'dottler', 'rolycoly', 'carkol', 'silicobra', 'cramorant'].map((n) => D[n]));
+  ok(D.toxel === 'Lightning' && D.toxtricity === 'Lightning' && D.sizzlipede === 'Fire' && D.centiskorch === 'Fire' && D.clobbopus === 'Fighting' && D.grapploct === 'Fighting'
+    && D.sinistea === 'Psychic' && D.polteageist === 'Psychic' && D.hatenna === 'Psychic' && D.hattrem === 'Psychic' && D.hatterene === 'Psychic'
+    && D.impidimp === 'Fairy' && D.morgrem === 'Fairy' && D.grimmsnarl === 'Fairy',
+  'Gen 8 batch 2: Toxel line Lightning (Electric/Poison), Sizzlipede line Fire (Fire/Bug), Clobbopus line Fighting, Sinistea line Psychic (Ghost), Hatenna line Psychic (Psychic/Fairy: its card Psychic), Impidimp line Fairy (Dark/Fairy: its card Fairy)',
+  ['toxel', 'sizzlipede', 'clobbopus', 'sinistea', 'hatterene', 'impidimp', 'grimmsnarl'].map((n) => D[n]));
   ok(CASTFORM_FORMS.normal.ptype === 'Colorless' && CASTFORM_FORMS.sunny.ptype === 'Fire' && CASTFORM_FORMS.rainy.ptype === 'Water' && CASTFORM_FORMS.snowy.ptype === 'Water',
     'Castform: Normal Colorless, Sunny Fire, Rainy / Snowy Water');
 });

@@ -192,6 +192,9 @@ export const GEN7_FORM_SPRITES = {
  */
 export const GEN8_FORM_SPRITES = {
   j_poke_cramorant: { gulping: { x: 2, y: 0 } },
+  // Gen 8 batch 2: Toxtricity's Low Key Form, beside its Amped card ({6,0}, the one pokespriteload.lua lists) on the Gen 8 sheet; by the form
+  // rolled when it was obtained (card.ability.poke_tox_form, its center's poke_view_form). Its type icon is Lightning too.
+  j_poke_toxtricity: { lowkey: { x: 8, y: 0 } },
 };
 export function view_card(card, v) {
   const c = card.config.center;

@@ -174,7 +174,7 @@ await sec('static', () => {
   const RUNS = [
     ['inteleon', ['rookidee', 'corvisquire', 'corviknight', 'blipbug', 'dottler', 'orbeetle'], 'nickit'],
     ['thievul', ['gossifleur', 'eldegoss', 'wooloo', 'dubwool', 'chewtle', 'drednaw'], 'yamper'],
-    ['boltund', ['rolycoly', 'carkol', 'coalossal', 'silicobra', 'sandaconda', 'cramorant', 'arrokuda', 'barraskewda'], 'dreepy'],
+    ['boltund', ['rolycoly', 'carkol', 'coalossal', 'silicobra', 'sandaconda', 'cramorant', 'arrokuda', 'barraskewda'], 'toxel'],
   ];
   for (const [from, list, to] of RUNS) ok(run(from, list, to) === true, `Pokédex order: ${from}, ${list.join(', ')}, ${to}`, run(from, list, to));
   const fam = (n) => poke_get_family_list(n).map((x) => (typeof x === 'string' ? x : x.key || x.name)).join();
