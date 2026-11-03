@@ -404,6 +404,9 @@ export function scale_card(card, args) {
   });
   if (args.scaling_message && Object.keys(args.scaling_message).length && !args.no_message) calculate_effect(args.scaling_message, card);
   for (const ret of flags.post_effects || []) calculate_effect(ret, ret.source);
+  // (a mod hook: a card's value went UP through SMODS.scale_card — Pokermon's Flittle / Espathra, Opportunist. Read off the value itself,
+  // so a '-' or a function that lowers it is no growth. No-op unless a mod has the hook.)
+  if (ACTIVE_MODS.length) callHook('card_scaled', card, Number(args.ref_table[args.ref_value]) > Number(value));
   return [args.ref_table[args.ref_value], change];
 }
 
