@@ -26,6 +26,7 @@ import { type_sticker_applied, wildcard_type } from './types.js';
 import { energize, energy_increase } from './energy.js';
 import { get_random_poke_key } from './pools.js';
 import { precedence_key } from './precedence.js';
+import { rulesRev } from '../../../js/mods/pins.js';
 
 /** pokermon.family — each entry a list of names or {key, form} tables. Add-ons may push. */
 export const family = DATA.globals['pokermon.family'].map((f) => f.slice());
@@ -296,8 +297,17 @@ export function poke_backend_evolve(card, to_key, energize_amount) {
 }
 
 // ---------------------------------------------------------- family lookups
+/**
+ * Family members that joined an EXISTING line on a later Pokermon rules rev (name -> rev): the owner's Gen 8 batch 3 (r72) gave
+ * Linoone, Corsola, Farfetch'd, Mr. Mime, Yamask and Basculin their Galarian / Hisuian evolutions (Obstagoon, Cursola, Sirfetch'd,
+ * Mr. Rime, Runerigus, Basculegion). A move recorded on an older rev (a resumed / replayed run, js/mods/pins.js RULES) looks the
+ * family up without them, so Transformation, Eevee's count and the other "can it still evolve" reads replay as recorded.
+ */
+export const FAMILY_MEMBER_REV = new Map();
+const member_on = (y) => { const r = FAMILY_MEMBER_REV.get(fname(y)); return r === undefined || rulesRev('pokermon') >= r; };
+const family_view = (v) => (v.every(member_on) ? v : v.filter(member_on));
 export function poke_get_family_list(name) {
-  for (const v of family) for (const y of v) if (fname(y) === name) return v;
+  for (const v of family) for (const y of v) if (fname(y) === name) return member_on(y) ? family_view(v) : v;
   return [];
 }
 
@@ -342,6 +352,7 @@ function highest_evo_options(card) {
   let found_family = null;
   for (const v of family) for (const y of v) if (fname(y) === name) found_family = v;
   if (!found_family) return false;
+  if (member_on(name)) found_family = family_view(found_family);
   let max = found_family.length;
   let max_evo_name = fname(found_family[max - 1]);
   while (max > 0 && (max_evo_name.slice(0, 5) === 'mega_' || (P_CENTERS[prefix + max_evo_name] && P_CENTERS[prefix + max_evo_name].aux_poke))) {

@@ -96,11 +96,11 @@ try {
 	A(!srcWrong.length && D.species.every(s => ['art', 'mapping'].includes(s.type_source)), 'type_source records where each type came from (art, else mapping)', srcWrong.slice(0, 8).join(', '));
 	A(D.counts.typeSource.art + D.counts.typeSource.mapping === D.species.length && D.counts.typeFromArtDiffers === D.species.filter(s => s.ptype !== s.mapped_ptype).length, 'counts.typeSource / typeFromArtDiffers match the list');
 	A(!sp0('Latias') && !sp0('Guzzlord') && sp0('Koraidon')?.ptype === 'Dragon' && sp0('Toedscool')?.ptype === 'Grass' && !sp0('Impidimp') && sp0('Scream Tail')?.ptype === 'Fairy' && sp0('Chien-Pao')?.ptype === 'Water' && sp0('Iron Thorns')?.ptype === 'Lightning'
-		&& !sp0('Bewear') && !sp0('Comfey') && !sp0('Buzzwole') && sp0('Runerigus')?.ptype === 'Psychic' && sp0('Runerigus')?.type_source === 'art' && sp0('Runerigus')?.mapped_ptype === 'Earth', 'spot check (the card wins; Latias, Dwebble, Venipede, Sandile, Kyurem, Keldeo, Stunfisk, Tyrunt, Phantump, Cutiefly, Comfey, Bewear, the Ultra Beasts and Impidimp are in the game now): Koraidon Dragon, Toedscool Grass, Scream Tail Fairy, Chien-Pao Water, Iron Thorns Lightning; Runerigus Psychic from its art (the mapping said Earth)');
+		&& !sp0('Bewear') && !sp0('Comfey') && !sp0('Buzzwole') && !sp0('Runerigus') && sp0('Scovillain')?.ptype === 'Fire' && sp0('Scovillain')?.type_source === 'art' && sp0('Scovillain')?.mapped_ptype === 'Grass', 'spot check (the card wins; Latias, Dwebble, Venipede, Sandile, Kyurem, Keldeo, Stunfisk, Tyrunt, Phantump, Cutiefly, Comfey, Bewear, the Ultra Beasts and Impidimp are in the game now): Koraidon Dragon, Toedscool Grass, Scream Tail Fairy, Chien-Pao Water, Iron Thorns Lightning; Scovillain Fire from its art (the mapping said Grass; Runerigus is in the game now)');
 	A(D.species.every(s => ['Basic', 'One', 'Two', 'Baby', 'Legendary'].includes(s.stage) && s.line.some(l => l.dex === s.dex)), 'every species has an upstream stage and sits in its own line');
 	const sp = sp0;
-	A(sp('Pawmot')?.stage === 'Two' && sp('Pawmo')?.stage === 'One' && sp('Pawmi')?.stage === 'Basic' && !sp('Orbeetle') && !sp('Hatterene') && !sp('Toxel') && !D.species.some(s => s.stage === 'Baby') && sp('Zacian')?.stage === 'Legendary' && sp('Copperajah')?.ptype === 'Metal' && !sp('Corviknight') && !sp('Jangmo-o') && !sp('Naganadel') && sp('Cyclizar')?.ptype === 'Dragon',
-		'spot check: Pawmot Stage 2, Pawmo Stage 1, Pawmi Basic (the Pikipek, Jangmo-o, Blipbug and Hatenna lines are in the game now; Toxel was the last Baby), Zacian Legendary (Yveltal and Tapu Koko are in the game now), Copperajah Metal (Corviknight is in the game now), Cyclizar Dragon (the Ultra Beasts are in the game now)');
+	A(sp('Pawmot')?.stage === 'Two' && sp('Pawmo')?.stage === 'One' && sp('Pawmi')?.stage === 'Basic' && !sp('Orbeetle') && !sp('Hatterene') && !sp('Toxel') && !D.species.some(s => s.stage === 'Baby') && sp('Zacian')?.stage === 'Legendary' && sp('Revavroom')?.ptype === 'Metal' && !sp('Copperajah') && !sp('Corviknight') && !sp('Jangmo-o') && !sp('Naganadel') && sp('Cyclizar')?.ptype === 'Dragon',
+		'spot check: Pawmot Stage 2, Pawmo Stage 1, Pawmi Basic (the Pikipek, Jangmo-o, Blipbug and Hatenna lines are in the game now; Toxel was the last Baby), Zacian Legendary (Yveltal and Tapu Koko are in the game now), Revavroom Metal (Corviknight and Copperajah are in the game now), Cyclizar Dragon (the Ultra Beasts are in the game now)');
 
 	// ================================================================== ART
 	// UPSTREAM FIRST: a species Pokermon 3.9.1's sprite table draws (tools/micatro/specs/pokermon_391_sprite_table.json, a
@@ -259,8 +259,8 @@ try {
 	await anon.page.type('#pjQ', 'pawm');
 	A(await waitFor(async () => (await anon.page.$$eval('.pj-tile', ts => ts.map(t => t.textContent))).join('|').match(/Pawmi/) && await tiles(anon.page) === D.species.filter(s => /pawm/i.test(s.name)).length, 4000), 'search by name');
 	await anon.page.evaluate(() => { const q = document.getElementById('pjQ'); q.value = ''; q.dispatchEvent(new Event('input')); });
-	await anon.page.type('#pjQ', '#0870');
-	A(await waitFor(async () => await tiles(anon.page) === 1 && /Falinks/.test(await anon.page.$eval('.pj-tile', t => t.textContent)), 4000), 'search by dex number (#0870 = Falinks)');
+	await anon.page.type('#pjQ', '#0919');
+	A(await waitFor(async () => await tiles(anon.page) === 1 && /Nymble/.test(await anon.page.$eval('.pj-tile', t => t.textContent)), 4000), 'search by dex number (#0919 = Nymble; Falinks is in the game now)');
 	await go(anon.page, '#/pokermon-jokers');
 	await shot(anon.page, 'desktop_index_signed_out');
 	await go(anon.page, '#/pokermon-jokers/923');

@@ -429,7 +429,9 @@ defineJokers({
     },
   },
   // Corsola 222 (Pokermon 3.9.1: when the Blind is selected, +mult_mod Mult per Water joker, then a Basic Water joker)
+  // (+ the owner's Gen 8 batch 3, r72: a Psychic Energy used on it evolves it into Cursola — systems/energy.js energy_evo_target)
   corsola: {
+    poke_energy_evo: { etype: 'Psychic', into: 'j_poke_cursola' },
     loc_vars(self, info_queue, center) {
       type_tooltip(self, info_queue, center);
       if (detailed()) info_queue.push({ set: 'Other', key: 'basic' });

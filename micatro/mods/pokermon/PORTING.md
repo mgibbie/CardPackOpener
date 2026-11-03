@@ -3774,6 +3774,58 @@ Art: upstream 3.9.1 cells (Natdex {14,56}-{10,57}; Toxtricity Gen 8 {6,0} Amped 
   `pokermon_new_jokers_test` (the pin, the defs, the order chain), `pokermon_gen8_batch1_test` (Toxel after Barraskewda), `pokermon_art_types_test`,
   `micatro_mod_version_pin`, `micatro_deckeditor_pages` (1174 jokers); `designwiki_pokermon_jokers_test` spot-checks Pawmi / Pawmo / Pawmot and opens
   Pawmot's card (the Hatenna line has jokers now; no Baby is left on the list).
+### Gen 8, batch 3 (2026-11-02, branch `feat/pokermon-gen8-batch3`)
+Pinned **`3.9.1+r72`** (`contentRev: 72`; r71 is Gen 8 batch 2; `LEGACY_MOD_VERSIONS` untouched). The owner's "yes build it": 21 jokers, #862-902, in
+`jokers/pokejokers_designs.js` (`decorate` / `whipped_cream` / `in_formation` / `lightning_used` / `ice_face` / `round_forecast` / `boss_debuffing` /
+`perish_body` / `meteor_assault` / `rime_final_deal` / `jokers_gone_count`), six of them NEW EVOLUTIONS of existing jokers (an owner-approved exception
+to "base Pokermon wins": the old jokers otherwise unchanged). Pokédex order: Obstagoon ... Arctovish (862-883) after Grimmsnarl (Gen 8 batch 2), before
+Dreepy; Basculegion (902) after Ursaluna. Neither Nacho nor Pokermon+ has any. Prices: 2-stage C $5 / S $8, single-stage R $7, Obstagoon (Stage 2)
+S $10; the five other Galarian / Hisuian forms are Stage 1 S $8 (the wiki's stage). Types = the cards'. Art: upstream 3.9.1 cells (Natdex {12,57}-{24,58};
+Gen 8 Alcremie {10,0} and its 62 other Sweet x Cream cards, Eiscue {8,8} / Noice {10,8}, Indeedee ♂ {12,8} / ♀ {14,8}, Morpeko {0,9} / Hangry {2,9},
+Basculegion {2,11}; the unlisted ones in `systems/anim.js` GEN8_FORM_SPRITES); nothing to deploy.
+- **Never retroactive (rules rev 72)**: the six evolutions check `rulesRev('pokermon') >= 72`; the lines' new members are hidden from the family lookups
+  on older revs (`systems/evolution.js` FAMILY_MEMBER_REV: Transformation, Eevee, Pokermon+'s Weakened compatibility — its cache is now keyed by the
+  family it saw). A run recorded on r71 resumes / replays exactly (pokermon_gen8_batch3_test 'r71 replay').
+- **Linoone -> Obstagoon** (Dark, S $10), **Corsola -> Cursola** (Psychic, S $8), **Mr. Mime -> Mr. Rime** (Water, S $8): an Energy of that type (Dark /
+  Psychic / Water) used on it evolves it at once (`systems/energy.js` energy_evo_target; center `poke_energy_evo`). **The choices**: the Energy energizes
+  first when it would (a matching Tera sticker), then the evolution; nothing highlighted, the Energy still goes to the leftmost joker it can energize and
+  only with none to the leftmost joker it evolves; refused while debuffed or with an Everstone. Obstagoon, Blocking: **X2, X3 while the Boss Blind is
+  debuffing any of your cards** (**the choice**: a Boss Blind whose ability is on, with any playing card in your deck or any Joker debuffed). Cursola,
+  Perish Body: **X3; crumbles at the end of its 4th round held** (counted from its evolution, that round included; **the choice**: an Eternal one never
+  crumbles; a debuffed one doesn't count down). Mr. Rime, Screen Cleaner: **the Boss Blind's ability is off on your final hand** (Blind.suspend from
+  the draw that leaves 1 hand until it has scored; no number: Energy-inert).
+- **Farfetch'd -> Sirfetch'd** (Fighting, S $8): evolves at the end of a round in which **3+ Lucky triggers** happened while held (**the choice**: each hit
+  counts, a card hitting both rolls 2, as the Sprigatito line). Meteor Assault: **X1 + X0.5 per Lucky trigger this round**.
+- **Yamask -> Runerigus** (Psychic, S $8): instead of Cofagrigus when **10 Stone cards** have scored while it was held (read when its level_evo fires).
+  Wandering Spirit: **each scored Stone X1.25**; **the choice: it keeps giving Yamask's banked grudge X** (banks no more).
+- **Basculin -> Basculegion** (Psychic, S $8): after **25 cards of its stripe's suits** have scored while held (counted once a hand; Basculin keeps R $7).
+  Last Respects: **X1 + X0.1 per Joker sold or destroyed this run** (`G.GAME.poke_jokers_gone`, from the run's start; an evolution never counts).
+- **Milcery** (Fairy, C $5, 5) / **Alcremie** (S $8), Decorate: **each scored card with an edition +5 Mult**; Alcremie's Whipped Cream: **when a Blind is
+  selected a random card in your deck with no edition becomes Foil or Holographic** (seeded; **the choice: Blueprint copies it**, a second card). Its
+  Sweet x Cream form (63) is rolled when it becomes an Alcremie (art only; named on the card).
+- **Falinks** (Fighting, R $7), Formation: **if every scored card shares a suit, each gives +6 Mult** (**the choice**: a Wild card fits any suit, a Stone
+  card breaks it; a lone card counts).
+- **Pincurchin** (Lightning, R $7), Lightning Rod: **X1 + X0.25 per Lightning Energy card used this run** (the engine's consumeable_usage).
+- **Snom** (Water, C $5, 5) / **Frosmoth** (S $8): **scored Glass +6 Mult**; Ice Scales: **each Glass card held in hand X1.2**.
+- **Eiscue** (Water, R $7), Ice Face: **X2.5; the round's first hand not beating the Blind breaks it: Noice Face X1.25**; **the choice**: it re-forms on the
+  first deal of a round whose Castform forecast is Snowy (Spades held most, after the Kyogre / Groudon / Volcarona locks).
+- **Indeedee** (Psychic, R $7): gender rolled when obtained (♂ / ♀, no words). ♂: **X1.5 and +1 consumable slot**; ♀: **each Tarot used earns $2**.
+- **Morpeko** (Lightning, R $7), Hunger Switch: **Full Belly +20 Mult / Hangry X2, switching after every hand played**; **the choice: it carries across
+  rounds** (and save / resume); its type stays Lightning (the Hangry card's Dark icon is art only).
+- **Cufant** (Metal, C $5, 5): **+10 Chips per Steel card in your full deck**; **Copperajah** (S $8): **each Steel card held in hand at end of round earns $1**
+  (Energy-inert: its $ is fixed).
+- **Dracozolt / Arctozolt / Dracovish / Arctovish** (R $7), Ancient Jacks: Dracozolt 1+ +5 Mult, 2+ X1.5, 3+ $3; Arctozolt 1+ +40 Chips, 2+ scored Jacks
+  retrigger once, 3+ X2; Dracovish 1+ +5 Mult, 2+ the first scored Jack retriggers twice, 3+ X2; Arctovish 1+ +40 Chips, 2+ X1.5, 3+ +1 hand (once a round).
+- **Energy** (1 / 2 / 3): Obstagoon X2.4 / 2.8 / 3.2 (X3: 3.6 / 4.2 / 4.8); Cursola X3.6 / 4.2 / 4.8; Sirfetch'd +X0.6 / 0.7 / 0.8 a trigger; Runerigus
+  X1.3125 / 1.375 / 1.4375 a Stone; Milcery / Alcremie +7 / 9 / 11; Falinks +8.4 / 10.8 / 13.2; Pincurchin +X0.3 / 0.35 / 0.4; Snom +8.4 / 10.8 / 13.2;
+  Frosmoth X1.26 / 1.32 / 1.38; Eiscue X3 / 3.5 / 4 (Noice 1.5 / 1.75 / 2); Indeedee ♂ X1.8 / 2.1 / 2.4; Morpeko +28 / 36 / 44 and X2.4 / 2.8 / 3.2; Cufant
+  +13 / 16 / 19; Dracozolt +7 / 9 / 11, X1.8 / 2.1 / 2.4; Arctozolt +52 / 64 / 76, X2.4 / 2.8 / 3.2; Dracovish +7 / 9 / 11, X2.4 / 2.8 / 3.2; Arctovish
+  +52 / 64 / 76, X1.8 / 2.1 / 2.4; Basculegion +X0.12 / 0.14 / 0.16. Fixed: money, slots, odds, retriggers, counts, thresholds; Mr. Rime, Copperajah and
+  a ♀ Indeedee are Energy-inert.
+- **Wiki**: regenerated (69 missing, after Gen 8 batch 2); the wiki sprites of the 21 are gone (no new art).
+- **Tests**: `micatro/tests/mods/pokermon_gen8_batch3_test.mjs` (fails on main: no such jokers). Re-recorded: `modpin_test`, `pokermon_391_data_test`,
+  `pokermon_new_jokers_test`, `pokermon_gen8_batch1_test` / `pokermon_gen8_batch2_test` / `pokermon_sprigatito_test` (the Pokédex order), `pokermon_gen5_batch2_test` (Yamask's
+  family), `pokermon_art_types_test`, `micatro_mod_version_pin`, `micatro_deckeditor_pages` (1195 jokers), `designwiki_pokermon_jokers_test`.
 
 ### Pending from the 3.9.1 joker rework (after batch 10b)
 Every existing joker is on 3.9.1: `rework_hold` (still on 3.2.1) is empty. What waits, by the batch it waits on (`rework_deferred` =

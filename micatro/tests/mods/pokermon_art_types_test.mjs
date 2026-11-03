@@ -106,6 +106,11 @@ await sec('static', () => {
     && D.impidimp === 'Fairy' && D.morgrem === 'Fairy' && D.grimmsnarl === 'Fairy',
   'Gen 8 batch 2: Toxel line Lightning (Electric/Poison), Sizzlipede line Fire (Fire/Bug), Clobbopus line Fighting, Sinistea line Psychic (Ghost), Hatenna line Psychic (Psychic/Fairy: its card Psychic), Impidimp line Fairy (Dark/Fairy: its card Fairy)',
   ['toxel', 'sizzlipede', 'clobbopus', 'sinistea', 'hatterene', 'impidimp', 'grimmsnarl'].map((n) => D[n]));
+  ok(D.obstagoon === 'Dark' && D.cursola === 'Psychic' && D.sirfetchd === 'Fighting' && D.mrrime === 'Water' && D.runerigus === 'Psychic' && D.milcery === 'Fairy' && D.alcremie === 'Fairy'
+    && D.falinks === 'Fighting' && D.pincurchin === 'Lightning' && D.snom === 'Water' && D.frosmoth === 'Water' && D.eiscue === 'Water' && D.indeedee === 'Psychic' && D.morpeko === 'Lightning'
+    && D.cufant === 'Metal' && D.copperajah === 'Metal' && D.dracozolt === 'Lightning' && D.arctozolt === 'Lightning' && D.dracovish === 'Water' && D.arctovish === 'Water' && D.basculegion === 'Psychic',
+  'Gen 8 batch 3: Obstagoon Dark, Cursola / Runerigus / Basculegion Psychic (Ghost: their cards), Sirfetch’d / Falinks Fighting, Mr. Rime / Snom line / Eiscue Water (Ice), Milcery line Fairy, Pincurchin / Morpeko Lightning, Cufant line Metal, the Galar fossils by their cards (Dracozolt / Arctozolt Lightning, Dracovish / Arctovish Water)',
+  ['obstagoon', 'cursola', 'sirfetchd', 'mrrime', 'runerigus', 'basculegion', 'morpeko', 'arctozolt'].map((n) => D[n]));
   ok(CASTFORM_FORMS.normal.ptype === 'Colorless' && CASTFORM_FORMS.sunny.ptype === 'Fire' && CASTFORM_FORMS.rainy.ptype === 'Water' && CASTFORM_FORMS.snowy.ptype === 'Water',
     'Castform: Normal Colorless, Sunny Fire, Rainy / Snowy Water');
 });

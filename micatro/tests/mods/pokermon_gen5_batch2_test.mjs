@@ -52,7 +52,7 @@ const plain = (j) => describe(j).lines.join(' | ').replace(/\{[^}]*\}/g, '').rep
 const LINES = {
   sewaddle: ['sewaddle', 'swadloon', 'leavanny'], venipede: ['venipede', 'whirlipede', 'scolipede'], cottonee: ['cottonee', 'whimsicott'],
   petilil: ['petilil', 'lilligant'], basculin: ['basculin'], sandile: ['sandile', 'krokorok', 'krookodile'], maractus: ['maractus'],
-  dwebble: ['dwebble', 'crustle'], sigilyph: ['sigilyph'], yamask: ['yamask', 'cofagrigus'], tirtouga: ['tirtouga', 'carracosta'],
+  dwebble: ['dwebble', 'crustle'], sigilyph: ['sigilyph'], yamask: ['yamask', 'cofagrigus', 'runerigus'], tirtouga: ['tirtouga', 'carracosta'],
   archen: ['archen', 'archeops'], minccino: ['minccino', 'cinccino'],
 };
 const NAMES = Object.values(LINES).flat();

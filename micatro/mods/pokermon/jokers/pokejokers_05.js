@@ -145,8 +145,9 @@ defineJokers({
       return undefined;
     },
   },
-  // Mr Mime 122
+  // Mr Mime 122 (+ the owner's Gen 8 batch 3, r72: a Water Energy used on it evolves it into Mr. Rime — systems/energy.js energy_evo_target)
   mrmime: {
+    poke_energy_evo: { etype: 'Water', into: 'j_poke_mrrime' },
     loc_vars(self, info_queue, center) { type_tooltip(self, info_queue, center); return { vars: [center.ability.extra.retriggers] }; },
     calculate(self, card, context) {
       if (context.repetition && context.cardarea === G.hand && context.card_effects) {

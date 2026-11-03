@@ -16,8 +16,10 @@
  * order only matters when precise_energy is OFF (set_frac can feed `mult`/`chips`), so
  * Micatro uses the table's key order from the extracted data (alphabetical).
  */
-import { G, card_eval_status_text, localize, play_sound, pseudorandom, pseudoseed, ease_dollars } from '../../../js/engine/core.js';
+import { G, P_CENTERS, card_eval_status_text, localize, play_sound, pseudorandom, pseudoseed, ease_dollars, find_joker } from '../../../js/engine/core.js';
 import DATA from '../data.js';
+import { rulesRev } from '../../../js/mods/pins.js';
+import { poke_evolve } from './evolution.js';
 import { cfg, set_spoon_item } from './utils.js';
 import { has_type, type_sticker_applied, set_energy_max, energy_limit_bonus, wildcard_type, IS_TYPE_RULES, multitype, POKETYPES } from './types.js';
 
@@ -213,6 +215,24 @@ function energy_override(kind, self, card, area, copier) {
   return undefined;
 }
 
+/**
+ * AN ENERGY-TRIGGERED EVOLUTION (Pokermon r72, the owner's Gen 8 batch 3: the Galarian evolutions). A center's
+ * `poke_energy_evo: {etype, into}` (Linoone: Dark -> Obstagoon; Corsola: Psychic -> Cursola; Mr. Mime: Water -> Mr. Rime) makes an
+ * Energy of THAT type usable on it even though the type doesn't match (or it is at its Energy limit, or has nothing to energize):
+ * used on it, the Energy first energizes it as usual if it would (a matching Tera sticker under the limit), then it evolves at once
+ * (poke_evolve; the evolved card re-applies its Energy to the new base). Never while debuffed, nor with an Everstone owned (it
+ * blocks every evolution). Targeting (energy_card): a highlighted joker as ever; with none highlighted the Energy still goes to the
+ * leftmost joker it can ENERGIZE, and only when there is none to the leftmost joker it can evolve. Moves recorded before r72 (a
+ * resumed / replayed old run, js/mods/pins.js RULES) never see it: such an Energy was refused there.
+ */
+export function energy_evo_target(v, etype) {
+  const ee = v && v.config && v.config.center && v.config.center.poke_energy_evo;
+  if (!ee || !etype || ee.etype !== etype || !P_CENTERS[ee.into] || v.debuff || v.removed) return false;
+  if (rulesRev('pokermon') < 72 || find_joker('everstone').length > 0) return false;
+  return true;
+}
+function energy_evolve(v) { poke_evolve(v, v.config.center.poke_energy_evo.into); }
+
 /** The first joker (left to right) this Energy can go on, or false. */
 export function energy_can_use(self, card) {
   const ov = ENERGY_OVERRIDES.length ? energy_override('energy_can_use', self, card) : undefined;
@@ -223,6 +243,8 @@ export function energy_can_use(self, card) {
     else if (typeof v.ability.extra === 'number') { if (can_increase_energy(v, self.etype)) return v; }
     else if (plainScoring(v.ability)) { if (can_increase_energy(v, self.etype)) return v; }
   }
+  // (r72: none to energize — the leftmost joker this Energy evolves)
+  for (const v of G.jokers.cards) if (energy_evo_target(v, self.etype)) return v;
   return false;
 }
 
@@ -236,6 +258,7 @@ export function highlighted_energy_can_use(self, card) {
     else if (typeof choice.ability.extra === 'number') { if (can_increase_energy(choice, self.etype)) return choice; }
     else if (plainScoring(choice.ability)) { if (can_increase_energy(choice, self.etype)) return choice; }
   }
+  if (energy_evo_target(choice, self.etype)) return choice; // (r72: an Energy-triggered evolution)
   return false;
 }
 
@@ -256,6 +279,8 @@ export function energy_use(self, card, area, copier) {
     else if (typeof v.ability.extra === 'number' || plainScoring(v.ability)) { if (can_increase_energy(v, self.etype)) viable = true; }
     if (viable) { increment_energy(v, self.etype); applied = true; }
   }
+  // (r72: nothing energized — the leftmost joker this Energy evolves)
+  if (!applied) { const v = G.jokers.cards.find((j) => energy_evo_target(j, self.etype)); if (v) energy_evolve(v); }
 }
 
 /** Use on the one highlighted joker. */
@@ -267,11 +292,13 @@ export function highlighted_energy_use(self, card, area, copier) {
   count_energy_used();
   play_sound('poke_energy_use', 1, 0.5);
   set_spoon_item(card);
-  if (!energy_matches(choice, self.etype, true)) return;
+  const evo = energy_evo_target(choice, self.etype); // (r72: read before energizing — the energize first, then the evolution)
+  if (!energy_matches(choice, self.etype, true)) { if (evo) energy_evolve(choice); return; }
   let viable = false;
   if (isTable(choice.ability.extra)) { if (can_increase_energy(choice, self.etype) && hasEnergyField(choice.ability.extra)) viable = true; }
   else if (typeof choice.ability.extra === 'number' || plainScoring(choice.ability)) { if (can_increase_energy(choice, self.etype)) viable = true; }
   if (viable) increment_energy(choice, self.etype);
+  if (evo) energy_evolve(choice);
 }
 
 /** The Energy card key matching a joker's type (Tera sticker wins). */

@@ -1110,6 +1110,39 @@ House pattern: REROLL PRICES (the Gen 8 Impidimp line, Prankster; prank_reroll_c
   Prankster-free reroll as one of the engine's free rerolls (cr.free_rerolls + 1 before the reroll's event), so like Chaos it never steps the price
   up ($0, $5, $6). add_to_deck / remove_from_deck queue a recalculation (bought or sold mid-shop, the price changes at once). Grimmsnarl banks X0.1
   per reroll (context.reroll_shop, free ones too); the Basic and Stage 1 carry its `Xmult_mod` ("Energy carries to Grimmsnarl").
+House pattern: a NEW EVOLUTION FOR AN EXISTING JOKER (the owner's Gen 8 batch 3: the Galarian / Hisuian forms of Linoone, Corsola,
+  Farfetch'd, Mr. Mime, Yamask and Basculin — an owner-approved exception to "base Pokermon wins"):
+  - The old joker keeps every number, rarity, cost and rule it had; the new path is ADDED (its text as a new box after the 3.9.1 text,
+    index.js GALAR_UPSTREAM_TEXT; or a progress line on the owner's own designs).
+  - Never retroactive: the evolution checks rulesRev('pokermon') >= the batch's rev, so a move recorded on an older rev (a resumed /
+    replayed run) plays as recorded. The line's new member is hidden from the family lookups on older revs too
+    (systems/evolution.js FAMILY_MEMBER_REV: Transformation's highest form, Eevee's "can still evolve" count and Pokermon+'s Weakened
+    compatibility read the old line). Progress counters are kept on every rev (harmless), so a resumed old run carries them.
+  - A branch (Yamask: Runerigus INSTEAD of Cofagrigus) is chosen when the level_evo fires, by a counter kept on the Basic.
+House pattern: an ENERGY-TRIGGERED EVOLUTION (systems/energy.js energy_evo_target; center.poke_energy_evo = {etype, into}): an Energy of a
+  set type used on the joker evolves it at once, even when the type doesn't match (Linoone: Dark -> Obstagoon; Corsola: Psychic -> Cursola;
+  Mr. Mime: Water -> Mr. Rime). Order: the Energy energizes first when it would (a matching Tera sticker under the limit), then poke_evolve
+  (the evolved card re-applies all its Energy to the new base). Targeting: a highlighted joker as ever; nothing highlighted, the leftmost
+  joker it can ENERGIZE wins, and only with none does it evolve the leftmost such joker. Refused while debuffed or with an Everstone.
+House pattern: TRIGGERS IN ONE ROUND (the Gen 8 Farfetch'd -> Sirfetch'd): a count kept on the card with its round (`lucky_round` /
+  `lucky_count`, read as 0 in any other round), counting each Lucky hit while held (Sprigatito's lucky_procs: both rolls = 2; not a
+  Blueprint's); Farfetch'd evolves at the end of a round with 3+ (scaling_evo), Sirfetch'd pays X1 + X0.5 per hit this round.
+House pattern: a RUN COUNTER the mod keeps from the run's start (a late buy counts all): Lightning Energy used (the engine's own
+  G.GAME.consumeable_usage['c_poke_lightning_energy'].count: Pincurchin); Jokers sold or destroyed (G.GAME.poke_jokers_gone, index.js
+  sell_card + start_dissolve hooks: a Joker sold from your row, or one of yours destroyed; an evolution never: Basculegion).
+House pattern: a FACE THAT BREAKS AND RE-FORMS (the Gen 8 Eiscue, Ice Face; ice_face): X2.5 while intact; in `after` of the round's FIRST
+  hand, if the round's chips plus that hand's total are still below the Blind, it breaks (form 'noice', X1.25; its own card); it re-forms on
+  the first deal of a round whose forecast is Snowy (round_forecast: Castform's read — Kyogre / Groudon locks, Volcarona's sun, else the
+  suit held most). The first weather READER outside Castform; Snowy has no other source yet.
+House pattern: an ALTERNATING FORM (the Gen 8 Morpeko, Hunger Switch): two numbers, the form flipping in `after` of every hand played (a
+  debuffed hand too), carried across rounds; each form its own card (ability.extra.form). Both numbers are energy fields.
+House pattern: a SELF-DESTRUCT COUNTDOWN (the Gen 8 Cursola, Perish Body): `perish_rounds` (fixed) down by 1 at each main end_of_round
+  pass (so not while debuffed), destroyed (start_dissolve) at 0; an Eternal one never crumbles.
+House pattern: the Boss Blind OFF ON THE FINAL HAND (the Gen 8 Mr. Rime, Screen Cleaner): Amoonguss's Blind.suspend, from the draw that
+  leaves exactly 1 hand (index.js draw_from_deck_to_hand -> rime_final_deal) until that hand has scored (spore_hand_scored).
+House pattern: Ancient JACKS (the Galar fossils Dracozolt / Arctozolt / Dracovish / Arctovish): Kabuto's cumulative tiers with no
+  evolution; a 2+ tier may be a retrigger (every scored Jack, or only the FIRST scored Jack twice), a 3+ tier $3 (once a hand) or +1 hand
+  (once a round, not Blueprint).
 
 2.2 Rarity and cost conventions
 -------------------------------
@@ -1213,6 +1246,9 @@ from a Blueprint copy. An owned Everstone blocks all evolution, but rounds still
                 the gender rolled when the card is created, 2.1).
                 House: a GATED level_evo (the Gen 6 Pancham: 5 rounds, then only with a Dark Joker held; 2.1).
                 House: a GENDER-GATED level_evo (the Gen 7 Salandit: rolled when obtained, only ♀ evolves after 5 rounds; 2.1).
+                House: an ENERGY of a set type used on it (the Gen 8 Galarian Linoone / Corsola / Mr. Mime; energy_evo_target, 2.1).
+                House: "3+ Lucky triggers in one round" (Farfetch'd), "after 25 cards of its suits scored" (Basculin), and a
+                level_evo BRANCH by a count (Yamask: 10 Stones scored -> Runerigus instead of Cofagrigus); all r72+ (2.1).
 
 Typical round timers (level_evo):
   Baby     always 2 rounds (all 18)
@@ -1330,7 +1366,12 @@ the Gen 8 batch 1 fixed fields: taxi_money (the Rookidee line's $), card_slots (
 the Gen 8 batch 2 fixed fields: reroll_discount (Impidimp's $1), num / dem (the Antique 1 in 10), the forms poke_tox_form / poke_tea (on
 card.ability), the banks burn_mult / burn_Xmult / prank_Xmult (their gains mult_mod / Xmult_mod are energized), the state burn_round. Carried
 for the next stage: Impidimp / Morgrem `Xmult_mod` (Grimmsnarl's). Two energy fields on one number pair: Toxtricity's Amped `Xmult` and Low Key
-`chips`.
+`chips`;
+the Gen 8 batch 3 fixed fields: perish_rounds (Cursola), card_limit / tarot_money / gender (Indeedee), steel_money (Copperajah),
+ancient_money / retriggers / hands / hand_round (the Galar fossils), form (Eiscue's face, Morpeko's mode, Alcremie's 63 Sweet x Cream),
+the counters lucky_round / lucky_count (Farfetch'd / Sirfetch'd), stones_scored (Yamask), stripe_scored (Basculin), snow_round (Eiscue).
+Two energy fields on one number pair: Obstagoon `Xmult` / `Xmult2` (X2 / X3), Eiscue `Xmult` / `Xmult2` (Ice / Noice), Morpeko `mult` / `Xmult`.
+Energy-inert by design: Mr. Rime (no number), Copperajah (its $ is fixed), a ♀ Indeedee (its `Xmult` is dropped when it rolls ♀).
 
 Designer consequences:
   1. The field name is a balance choice. A joker-wide X stored as Xmult grows 20% of its base
@@ -1640,6 +1681,7 @@ Type and keyword colours (pokesprites.lua pokermon.colours; Micatro TYPE_COLOURS
     ("{C:poke_sand}Sandstorm:") and Hippopotas / Hippowdon ("{C:poke_sand}Sand Stream:"), poke_sun / poke_rain / poke_snow by the owner's Castform
     ("{C:poke_sun}Sunny Form:", "{C:poke_rain}Rainy Form:", "{C:poke_snow}Snowy Form:").
     Gen 8 batch 1: poke_sand for the house sandstorm (Sandaconda, "{C:poke_sand}Sandstorm:"; is_sandstorm, 2.1).
+    Gen 8 batch 3: poke_snow for Eiscue's Snowy round ("is {C:poke_snow}Snowy{}"; round_forecast, 2.1).
 Most used tags overall:
   attention 1166, inactive 540, mult 230, X:mult 218, chips 184, money 122, br:2 106,
   green 77, dark_edition 49.
