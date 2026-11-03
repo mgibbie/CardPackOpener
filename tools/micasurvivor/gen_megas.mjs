@@ -9,7 +9,10 @@
 //   the art       EXISTING ART ONLY (owner): the overworld battle system's own Mega sprites, overworld/data/pokemon/s<num x 32 +
 //                 form>.png (unused by the overworld so far; checked by eye, 2026-10-26: the 48 Megas of Gen 6-7). A Mega with no
 //                 sprite there (the Legends Z-A ones, the Z forms) is COMPOSED at runtime from the member's own sheet plus the
-//                 Mega aura and keystone drawn in code (js/expedition/mega.js): never a placeholder
+//                 Mega aura and keystone drawn in code (js/expedition/mega.js): never a placeholder.
+//                 2026-11-03: the 45 Legends Z-A / Mega Dimension Megas (Z forms included) have their own overworld battle
+//                 sprites too (tools/gen_mega_sprites.py -> tools/data/mega_sprites.json: PokeAPI/sprites' pixel art, Mega
+//                 Zygarde composed from the Legends Z-A renders), so all 93 now draw their own picture and none is composed
 import fs from 'fs';
 import path from 'path';
 import vm from 'vm';
@@ -46,6 +49,9 @@ const FOLD = new Set(['magearna-original-mega', 'tatsugiri-droopy-mega', 'tatsug
 const SPRITE_FORM = { 'charizard-mega-x': 1, 'charizard-mega-y': 2, 'mewtwo-mega-x': 1, 'mewtwo-mega-y': 2 };
 const ONE = [3, 9, 15, 18, 65, 80, 94, 115, 127, 130, 142, 181, 208, 212, 214, 229, 248, 254, 257, 260, 282, 302, 303, 306, 308, 310, 319, 323, 334, 354,
   359, 362, 373, 376, 380, 381, 384, 428, 445, 448, 460, 475, 531, 719];   // (form 1: the Gen 6-7 Mega; the Z forms of Absol / Garchomp / Lucario have none)
+// the newer Megas' sprites (wave 2): PokéAPI id -> sprite, from tools/gen_mega_sprites.py's list
+const WAVE2 = new Map(JSON.parse(fs.readFileSync(path.join(ROOT, 'tools/data/mega_sprites.json'), 'utf8')).megas
+  .filter(m => m.wave === 2).map(m => [m.pokeapi, m.sprite]));
 const suffix = n => { const m = /-mega-([xyz])$/.exec(n); return m ? m[1].toUpperCase() : ''; };
 
 const megas = [];
@@ -55,9 +61,8 @@ for (const f of cache.forms) {
   if (!FAM[f.species]) throw new Error(f.name + ': its species is in no League family');
   const suf = suffix(f.name);
   let form = SPRITE_FORM[f.name] || (ONE.includes(f.species) && suf !== 'Z' ? 1 : 0);
-  let spr = null;
-  if (form) {
-    spr = 's' + (f.species * 32 + form) + '.png';
+  let spr = form ? 's' + (f.species * 32 + form) + '.png' : WAVE2.get(f.id) || null;
+  if (spr) {
     if (!fs.existsSync(path.join(AROOT, 'overworld/data/pokemon', spr))) throw new Error(f.name + ': no sprite ' + spr + ' (MAGEPUNK_ASSET_ROOT?)');
   }
   if (f.stats.length !== 6 || !f.types.length) throw new Error(f.name + ': bad data');

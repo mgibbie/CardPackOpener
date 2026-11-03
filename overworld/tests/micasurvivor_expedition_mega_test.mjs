@@ -4,12 +4,13 @@
 // Owner decision #10, the study's 5.5 and the D14 update. A static server, headless Chrome, a fixed guest profile. One browser
 // at a time (and it always exits).
 //   0. the data (Node): 93 Megas of the owner's 87 species, every one in a League family, PokéAPI's stats and types (the cache);
-//      the 48 with a battle sprite point at an existing overworld picture (EXISTING ART ONLY), the rest are composed
+//      every one points at its overworld battle picture (the 48 Gen 6-7 ones from the Essentials packs; since 2026-11-03 the 45
+//      Legends Z-A / Mega Dimension ones too, tools/gen_mega_sprites.py), so none is composed any more
 //   1. a Charizard run: no Mega before Lv 40; at 40 the level-up's cards ARE the choice (Mega Charizard X / Y with their battle
 //      sprites, "Not yet"); X: its real base stats, Fire / Dragon (no more glide), the Ultimate a tier up, the Mega's look (its
 //      battle sprite drawn, mirrored for the right-facing rows, the aura and the keystone's sign); offered only once
 //   2. "Not yet": offered again 5 levels later
-//   3. a composed Mega (Raichu X: no battle sprite): the member's own sheet with the aura and the sign drawn round it
+//   3. a Legends Z-A Mega (Raichu X): its own battle sprite (s834), no longer Raichu's sheet with an aura round it
 //   4. viewers: the League row's 6th field on snapshots; a fresh viewer page's puppet takes the look from it (and drops it for
 //      a row without); a 5-field row (a dv-12 snapshot) still reads; dv 13
 //   5. the run's end: "League: Charmander → Charizard → Mega Charizard X", the counters, the achievement "Mega Evolution"; the
@@ -63,8 +64,10 @@ const T0 = Date.now();
 			'their stats and types are PokéAPI\'s (Mega Charizard X: Fire / Dragon, 78 / 130 / 111 / 130 / 85 / 100)', JSON.stringify(bad.map(e => e.id)));
 		const withSpr = MD.filter(e => e.spr), missing = withSpr.filter(e => !fs.existsSync(path.join(AROOT, 'overworld/data/pokemon', e.spr)));
 		const gen67 = [3, 6, 9, 15, 18, 65, 80, 94, 115, 127, 130, 142, 150, 181, 208, 212, 214, 229, 248, 254, 257, 260, 282, 302, 303, 306, 308, 310, 319, 323, 334, 354, 359, 362, 373, 376, 380, 381, 384, 428, 445, 448, 460, 475, 531, 719];
-		A(withSpr.length === 48 && !missing.length && withSpr.every(e => gen67.includes(e.sp) && e.suf !== 'Z') && X.spr === 's193.png' && Y.spr === 's194.png' && MD.filter(e => !e.spr).every(e => !gen67.includes(e.sp) || e.suf === 'Z'),
-			'EXISTING ART ONLY: the 48 Gen 6-7 Megas use the overworld battle system\'s own pictures (overworld/data/pokemon, Mega Charizard X s193, Y s194); the other 45 (Legends Z-A, the Z forms) are composed', JSON.stringify({ n: withSpr.length, missing: missing.map(e => e.spr) }));
+		const RX = MD.find(e => e.id === 10304), AZ = MD.find(e => e.id === 10307);
+		A(withSpr.length === 93 && !missing.length && X.spr === 's193.png' && Y.spr === 's194.png' && RX.spr === 's834.png' && AZ.spr === 's11490.png'
+			&& withSpr.filter(e => gen67.includes(e.sp) && e.suf !== 'Z').length === 48,
+			'every Mega has its own overworld battle picture (overworld/data/pokemon): the 48 Gen 6-7 ones (Mega Charizard X s193, Y s194) and the 45 Legends Z-A / Mega Dimension ones (Mega Raichu X s834, Mega Absol Z s11490); none is composed', JSON.stringify({ n: withSpr.length, missing: missing.map(e => e.spr) }));
 	}
 }
 
@@ -254,7 +257,7 @@ try {
 	});
 	A(JSON.stringify(ny.seen) === '[40,45]' && !ny.mega, '"Not yet" keeps Charizard, and the choice comes back 5 levels later (Lv 40, then 45)', JSON.stringify(ny));
 
-	// ======================== 3. a composed Mega: Raichu (no battle sprite for Mega Raichu X / Y)
+	// ======================== 3. a Legends Z-A Mega: Raichu X (its own battle sprite since 2026-11-03; it was Raichu's sheet + an aura)
 	await startAs(page, 172);
 	const rc = await E(page, async () => {
 		const H = window.__t; H.levelTo(39);
@@ -264,14 +267,15 @@ try {
 		const p = G.Game.player, X = G.ExpMega, e = X.BY[10304];
 		const cv = document.createElement('canvas'); cv.width = 200; cv.height = 200; const ctx = cv.getContext('2d');
 		await G.Sprites.preload([p.dex], 4000);
+		for (let i = 0; i < 60 && !X.img(e); i++) await new Promise(r => setTimeout(r, 50));
 		p.anim.dir = 0; p.anim.draw(ctx, 100, 170);
 		const base = document.createElement('canvas'); base.width = 200; base.height = 200; const b2 = base.getContext('2d');
 		const a0 = new G.Sprites.Animator(p.dex, 1, false); a0.draw(b2, 100, 170);
 		const opaque = c => c.getContext('2d').getImageData(0, 0, 200, 200).data.reduce((a, v, k) => a + (k % 4 === 3 && v > 0 ? 1 : 0), 0);
-		return { s: s.offers.map(o => [o.key, !!o.img, o.sprite]), form: G.ExpLeague.run.form, mega: G.ExpLeague.run.mega, spr: e.spr, anim: p.anim instanceof X.Anim, img: X.img(e), types: p.mon.types, px: [opaque(cv), opaque(base)] };
+		return { s: s.offers.map(o => [o.key, !!o.img, o.sprite]), form: G.ExpLeague.run.form, mega: G.ExpLeague.run.mega, spr: e.spr, anim: p.anim instanceof X.Anim, img: X.img(e) ? [X.img(e).naturalWidth, X.img(e).naturalHeight] : null, types: p.mon.types, px: [opaque(cv), opaque(base)] };
 	});
-	A(rc.form === 26 && rc.mega === 10304 && rc.spr === null && rc.anim && rc.img === null && rc.s[0][1] === false && rc.s[0][2] === 26 && rc.px[0] > rc.px[1] * 1.15,
-		'a composed Mega (Mega Raichu X: no battle sprite anywhere in the repo): its card shows Raichu, its look is Raichu\'s own sheet with the aura and the sign drawn round it (more pixels than the bare sheet)', JSON.stringify(rc));
+	A(rc.form === 26 && rc.mega === 10304 && rc.spr === 's834.png' && rc.anim && rc.img && rc.img[0] > 48 && rc.s[0][1] === true && !rc.s[0][2],
+		'Mega Raichu X (Legends Z-A): its card shows its own battle sprite (s834), and so does its look on the field, not Raichu\'s sheet with an aura', JSON.stringify(rc));
 
 	// ======================== 4. viewers on a fresh page: the puppet takes the look from the row (and drops it)
 	const d1 = await bootPage();
