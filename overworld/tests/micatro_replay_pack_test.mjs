@@ -60,7 +60,8 @@ if (!['Arcana', 'Celestial', 'Spectral', 'Standard', 'Buffoon'].every(k => vanKi
 const vanWalk = walk(VAN.recipe);
 const { loadMods } = await import(pathToFileURL(path.join(ROOT, 'micatro/js/mods/index.js')).href);
 await loadMods(['pokermon']);
-const POK = packRun({ seed: 'PKP5', back: 'b_red', stake: 1, mods: ['pokermon'], modOptions: {}, customDeck: RICH_DECK }, { antes: 4 });
+// (seed PKP6 since Pokermon r78: the Ancient / Future Packs joined the shop's booster roll, so PKP5's shops changed)
+const POK = packRun({ seed: 'PKP6', back: 'b_red', stake: 1, mods: ['pokermon'], modOptions: {}, customDeck: RICH_DECK }, { antes: 4 });
 if (!POK.opened.some(o => /^MOD_PACK/.test(o.state) && o.via === 'buy') || !POK.opened.some(o => /^MOD_PACK/.test(o.state) && o.via === 'skip_blind'))
 	throw new Error('the Pokermon pack fixture must open a mod pack from the shop and from a tag: ' + JSON.stringify(POK.opened));
 const pokWalk = walk(POK.recipe);

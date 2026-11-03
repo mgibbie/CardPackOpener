@@ -3995,9 +3995,49 @@ nothing to deploy.
   `micatro_mod_version_pin`, `micatro_deckeditor_pages` (1237 jokers), `designwiki_pokermon_jokers_test` (no Stage 1 is left: Iron Crown / Iron Treads /
   Great Tusk / Miraidon are its spot checks now).
 
+### Gen 9, batch 3: the Paradox Pokémon (2026-11-03, branch `feat/pokermon-gen9-paradox`)
+Pinned **`3.9.1+r78`** (`contentRev: 78`; r76 / r77 are Gen 9 batches 1 / 2; `LEGACY_MOD_VERSIONS` untouched). The owner's "yes": "paradox, ancient
+and future need to be tags like safari. i want a pokeball card that gives you a paradox pokemon and an ancient pack type and a future pack type for
+paradox pokemon as well." New content only (no older rule changes).
+- **The Paradox rarity** (`index.js` rarities: `poke_paradox`, "Paradox", weight 0, badge #7B3FBF): Safari's way — never a shop roll. Each Paradox
+  center carries `poke_paradox: 'ancient' | 'future'`; its `set_badges` (`paradox_badges`) adds the second pill, **Ancient** (#9A5B1E) or **Future**
+  (#1F7A99), before the type pill (white text contrast 6.35 / 5.4 / 4.88, all above 4.5). `systems/pools.js` get_random_poke_key skips the rarity unless asked for
+  it, so no Poké Ball, Transformation or illusion rolls one (they were never in those pools before, so older runs replay as recorded).
+- **The 20 jokers** (`jokers/pokejokers_designs.js`, Paradox $7, single-stage Basics, Blueprint-compatible; types = the cards'): Ancient — Great Tusk
+  (Earth: Stone X1.3), Scream Tail (Fairy: Spade +6 Mult), Brute Bonnet (Dark: +25 Mult), Flutter Mane (Psychic: X2), Slither Wing (Grass: Heart
+  X1.2), Sandy Shocks (Lightning: +20 Chips per Steel in the full deck), Roaring Moon (Dark: +4 Mult per Straight played this run, a Straight Flush
+  counts), Walking Wake (Water: Club X1.2), Gouging Fire (Fire: +1 discard, X1.5), Raging Bolt (Lightning: X1 + X0.25 per hand left, this one
+  included); Future — Iron Treads (Metal: +100 Chips), Iron Bundle (Water: end of round a random Tarot or Planet, room needed), Iron Hands (Fighting:
+  face X1.25), Iron Jugulis (Dark: X2), Iron Moth (Fire: Diamond X1.2), Iron Thorns (Lightning: Stone +30 Chips), Iron Valiant (Fairy: Queen / King
+  X1.2), Iron Leaves (Grass: Club X1.2), Iron Boulder (Earth: the first scored card X2), Iron Crown (Metal: Spade X1.2).
+- **Protosynthesis / Quark Drive**: 50% stronger (a +number x1.5; an X's bonus x1.5) while it's sunny (Ancient: `cherrim_sunny`, read from its own
+  first deal) / on **Electric Terrain** (Future: the house terrain, `is_electric_terrain` — the round's first deal holds strictly more Diamonds than
+  any other suit; Wild counts for all). Iron Bundle's creation is never boosted (its card has no boost box).
+- **Energy** (1 / 2 / 3, the standard shares; the boost on top of the energized number): Great Tusk X1.365 / 1.43 / 1.495; Scream Tail +8.4 / 10.8 /
+  13.2; Brute Bonnet +35 / 45 / 55; Flutter Mane X2.4 / 2.8 / 3.2; Slither Wing, Iron Moth, Iron Valiant, Walking Wake, Iron Leaves, Iron Crown X1.26 /
+  1.32 / 1.38; Sandy Shocks +26 / 32 / 38 a Steel; Iron Treads +130 / 160 / 190; Iron Hands X1.3125 / 1.375 / 1.4375; Iron Jugulis X2.4 / 2.8 / 3.2;
+  Iron Thorns +39 / 48 / 57; Roaring Moon +5.6 / 7.2 / 8.8 a Straight; Gouging Fire X1.8 / 2.1 / 2.4; Raging Bolt +X0.3 / 0.35 / 0.4 a hand; Iron Boulder
+  X2.1 / 2.2 / 2.3. Fixed: Gouging Fire's discard. Energy-inert: Iron Bundle.
+- **The Paradox Ball** (`paradox.js`, an Item, $4 like the Ultra Ball, pool weight 3 like the Great Ball, the pokeballs option and Gen 9 gate it):
+  "Create a random Paradox Joker card (Ancient or Future) (Must have room)" — seeded `'paradoxball'`, the Poké Balls' pool rules (none you hold).
+- **The Ancient / Future Packs** (`paradox.js`): Normal $4 choose 1 of 2 (two art variants), Jumbo $6 1 of 4, Mega $8 2 of 4 (Buffoon's sizes);
+  shop weights 0.3 each Normal / 0.3 Jumbo / 0.075 Mega (half the Buffoon Packs'; both eras together weigh one Buffoon). Kind "Ancient" / "Future"
+  (the pack screen says "Ancient Pack"); only that era's Paradox jokers, all different within a pack (`paradox_offered`), the held ones left out
+  until the pool runs dry; the view hook gives the pack screen amber / steel-blue colours.
+- **Art**: the 20 jokers draw upstream 3.9.1's own Natdex cells (65-68) with their souls — Walking Wake's soul is {7,67} and Iron Leaves' {9,67} (the
+  sprite table's {5,67} / {7,67} are Miraidon's and Walking Wake's). The Paradox Ball card and the 8 pack cells are composed by
+  `tools/micatro/compose_pokermon_paradox_art.py` (owner rule: no placeholders): the Ultra Ball card restyled (Paradox purple, the stripes split
+  amber / cyan, re-lettered "PARADOX BALL" in the sheet's own font) and the Pocket Packs gradient-mapped to amber / cyan with a sun disc or quark
+  ring, a Paradox Pokémon's own card sprite, and an "ANCIENT / FUTURE PACK" plaque. `assets/2x/paradox_ball.png`, `paradox_packs.png` (deployed to
+  magepunk-micatromods; `tools/cloud/micatromods_manifest.txt`).
+- **Wiki**: regenerated (the 20 dropped off the missing list; their wiki sprites removed); the mods wiki lists the ball and the packs.
+- **Tests**: `micatro/tests/mods/pokermon_gen9_paradox_test.mjs` (every joker through real hands, both boosts off / on from real first deals, the
+  pools, the ball, every pack size, Energy, save / resume + stepper, art types) and `overworld/tests/micatro_pokermon_paradox_ui_test.mjs` (the
+  tooltip pills, the ball and four packs on the pack screen in a real browser). Re-recorded: `modpin_test`, `pokermon_391_data_test`,
+  `pokermon_new_jokers_test`, `micatro_mod_version_pin`, `micatro_deckeditor_pages`, `designwiki_pokermon_jokers_test`.
 ### Regional batch A: the 18 Alolan forms + the regional pill (2026-11-03, branch `feat/pokermon-alolan-forms`)
-Pinned **`3.9.1+r78`** (`contentRev: 78`; `LEGACY_MOD_VERSIONS` untouched). The owner's "Yes": the 18 Alolan forms, in their own file
-`jokers/pokejokers_regional.js` (`REGIONAL_FAMILIES` / `REGIONAL_LOC` / `REGIONAL_UPSTREAM_TEXT` / `REGIONAL_FAMILY_78`, wired in index.js). Types = the
+Pinned **`3.9.1+r79`** (`contentRev: 79`; `LEGACY_MOD_VERSIONS` untouched). The owner's "Yes": the 18 Alolan forms, in their own file
+`jokers/pokejokers_regional.js` (`REGIONAL_FAMILIES` / `REGIONAL_LOC` / `REGIONAL_UPSTREAM_TEXT` / `REGIONAL_FAMILY_REV`, wired in index.js). Types = the
 cards' (tools/micatro/pokermon_art_type.mjs, margins 0.46+). Art: upstream 3.9.1's Gen 1 sheet cells (AtlasJokersBasicGen01 {2,2}-{6,4}); nothing to
 deploy. Gen 7 (their debut: the gen_seven option gates them). Each after its Kanto line in Pokédex order. Neither Nacho nor Pokermon+ has any.
 - **Two shapes.** OWN LINES, their own pool entries beside the Kanto originals, on **the Kanto line's rarity / cost slot stage by stage** (Rattata C $5 /
@@ -4008,8 +4048,8 @@ deploy. Gen 7 (their debut: the gen_seven option gates them). Each after its Kan
   while debuffed / with an Everstone): **Pikachu + Psychic -> Alolan Raichu**, **Exeggcute + Dragon -> Alolan Exeggutor**, **Cubone + Fire -> Alolan
   Marowak** (each Safari, the Kanto evolution's slot: $8 / $10 / $8). The Kanto paths (Thunder Stone, Leaf Stone, Cubone's 20 consumables) are unchanged.
   Each Basic's 3.9.1 text gets an "Alolan form" box.
-- **Never retroactive (rules rev 78)**: the three branches check `rulesRev('pokermon') >= ALOLA_78` (`poke_energy_evo.rev`, systems/energy.js); the
-  three join their Kanto families (Alolan Raichu before Raichu's Megas) only from that rev (FAMILY_MEMBER_78), so Transformation on a Pikachu
+- **Never retroactive (rules rev 79)**: the three branches check `rulesRev('pokermon') >= ALOLA_REV` (`poke_energy_evo.rev`, systems/energy.js); the
+  three join their Kanto families (Alolan Raichu before Raichu's Megas) only from that rev (FAMILY_MEMBER_REV), so Transformation on a Pikachu
   recorded earlier still gives Raichu; Eiscue's Ninetales snow is gated the same way (pokermon_alolan_test 'old-rev replay').
 - **The regional pill** (systems/types.js `REGIONS` / `region_of` / `region_badge`, in `poke_set_type_badge`): after the rarity pill, before the type
   pill, the region's name on its colour, white text (WCAG AA): **Alolan #C2410C** (5.2:1), Galarian #3557A6 (6.9:1), Hisuian #556B2F (6.0:1), Paldean
@@ -4021,7 +4061,7 @@ deploy. Gen 7 (their debut: the gen_seven option gates them). Each after its Kan
   is_sandstorm): snowy = the round's first deal's forecast is Snowy (round_forecast, Castform's own read: Spades held most, unless Kyogre / Groudon
   lock it or Volcarona brings the sun; read once a round on the card) **or** an undebuffed **Alolan Ninetales** is held (Snow Warning: live, in the
   shop too). **The choices**: snow ADDS, never removes (rain, sun and sand hold beside it; a Kyogre's locked rain still lets Ninetales snow);
-  **Castform's form never changes for it**; **Eiscue's ice re-forms on the first deal of any round with Ninetales held** (r78+).
+  **Castform's form never changes for it**; **Eiscue's ice re-forms on the first deal of any round with Ninetales held** (r79+).
 - **Alolan Rattata** (Dark) -> **Alolan Raticate**, Hoarder: **scored 2s, 3s and 4s +5 Mult**; Raticate **X1 + X0.2 per consumable held**, and **keeps
   the +5** (the owner's r73 rule: a Stage 1 keeps its Basic's effect).
 - **Alolan Raichu** (Psychic), Surge Surfer: **X1.5; each Planet used permanently adds X0.1** (banked in `surf_Xmult`; a Black Hole is a Spectral and
