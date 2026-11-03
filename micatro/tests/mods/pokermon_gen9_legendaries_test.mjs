@@ -1,4 +1,4 @@
-// Gen 9, batch 4: the Gen 9 Legendaries (contentRev 79+; jokers/pokejokers_designs.js; PORTING.md "Gen 9, batch 4"). The owner's "yes"
+// Gen 9, batch 4: the Gen 9 Legendaries (contentRev 80+; jokers/pokejokers_designs.js; PORTING.md "Gen 9, batch 4"). The owner's "yes"
 // (2026-11-03); each complete ALONE (the solo rule, r59), so every joker here is played on its own through real hands and rounds.
 //   Wo-Chien  (Grass)   Tablets of Ruin: every Blind's chip requirement is 15% lower (cut when the Blind is set; the HUD shows it; copies
 //                       don't stack; save / resume and the replay stepper rebuild it exactly).
@@ -99,7 +99,7 @@ function bareRequirement(seed, rounds) {
 
 // ------------------------------------------------------------------- the pin and the seven centers
 await sec('pin', () => {
-  ok(MODS.pokermon.contentRev >= 79 && PINS.modPin('pokermon') === '3.9.1+r' + MODS.pokermon.contentRev, 'Pokermon contentRev 79+ (Gen 9 batch 4)', PINS.modPin('pokermon'));
+  ok(MODS.pokermon.contentRev >= 80 && PINS.modPin('pokermon') === '3.9.1+r' + MODS.pokermon.contentRev, 'Pokermon contentRev 80+ (Gen 9 batch 4)', PINS.modPin('pokermon'));
   ok(PINS.LEGACY_MOD_VERSIONS.pokermon === '3.2.1+r1', 'LEGACY_MOD_VERSIONS untouched');
   const want = { wochien: ['Grass', false], chienpao: ['Water', true], tinglu: ['Earth', false], chiyu: ['Fire', false], koraidon: ['Dragon', true], miraidon: ['Dragon', true], ogerpon: ['Grass', true] };
   for (const [n, [t, bp]] of Object.entries(want)) {

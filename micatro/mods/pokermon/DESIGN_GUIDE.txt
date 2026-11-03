@@ -125,7 +125,7 @@ Notable gaps:
     creation trio, Regigigas, Arceus, the Lake trio, Cresselia, Manaphy and Phione, all 12 Gen 5 Legendaries, Yveltal / Zygarde / Diancie / Hoopa / Volcanion and the 14 Gen 7 Legendaries (Type: Null, the
     Tapus, the Cosmog line, Necrozma, Magearna, Marshadow, Zeraora) and the 10 Gen 8 Legendaries (Zacian, Zamazenta, Eternatus, Zarude, Regieleki,
     Regidrago, Glastrier, Spectrier, Calyrex, Enamorus; contentRev 74) and the 7 Gen 9 Legendaries (the Ruinous four, Koraidon, Miraidon,
-    Ogerpon; contentRev 79) are now the owner's designs).
+    Ogerpon; contentRev 80) are now the owner's designs).
   - Fossils: the four Galar fossils are still missing; the Tirtouga and Archen lines (Gen 5) and the Tyrunt and
     Amaura lines (Gen 6) are now house fossils on the "Ancient" mechanic (2.5).
   - Ultra Beasts: all 11 are now the owner's designs (Gen 7 batch 3, contentRev 66), on a shared UB mechanic,

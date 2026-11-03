@@ -86,7 +86,7 @@ import { DESIGN_FAMILIES, DESIGN_LOC, regi_chip_bonus, regi_h_x_mult, regi_enh_v
   jokers_gone_count, glass_x_mult, pawmot_revive, opportunist_scaled } from './jokers/pokejokers_designs.js';
 
 import { poke_set_type_badge, type_badge, type_tooltip, TYPE_COLOURS } from './systems/types.js';
-import { pokemon_in_pool, pool_filter, init_game_object, evo_item_in_pool } from './systems/pools.js';
+import { pokemon_in_pool, pool_filter, init_game_object, evo_item_in_pool, install_gen_filter } from './systems/pools.js';
 import { shiny_edition, shiny_hooks } from './systems/shiny.js';
 import * as rules from './systems/rules.js';
 import { install_scry, scoring_areas, scry_view, scry_visible } from './systems/scry.js';
@@ -1094,10 +1094,16 @@ export const POKERMON = registerMod({
   // (weight 0, Safari's way: never a shop roll, never a Poké Ball's), each Ancient (Protosynthesis: 50% stronger while it's sunny) or Future
   // (Quark Drive: 50% stronger on Electric Terrain, the house terrain: is_electric_terrain); the Paradox Ball and the Ancient / Future Packs
   // (paradox.js) are their only sources. New content only: no older rule changes.
-  // 79 = Gen 9 batch 4, the Gen 9 Legendaries (jokers/pokejokers_designs.js, #1001-1017), each complete alone: Wo-Chien (every Blind 15%
+  // 79 = the generation filter holds (the owner's bug, 2026-11-03: Gen 4 starters with Gen 4 off; systems/pools.js GEN_FILTER_REV): every
+  // Pokémon carries its species' generation (GEN_FIXES: Nacho's 22, Pokermon+'s 6 + Archaludon 9, Hisuian Qwilfish, Mega Skarmory 2,
+  // Mega Gallade 4), the Starter Packs ask the toggles, the attribute pools (Mystery Egg, Tall Grass, Ancient Pack) too, Ruins of
+  // Alph / the Member Card / the Mystery Box leave with their Pokémon's generation, and the random picks (Balls, ...) skip the joke
+  // content while it is off (Spiclops came out of Master Balls). Gated by rulesRev: runs recorded before r79 replay
+  // on the old filter.
+  // 80 = Gen 9 batch 4, the Gen 9 Legendaries (jokers/pokejokers_designs.js, #1001-1017), each complete alone: Wo-Chien (every Blind 15%
   // lower), Chien-Pao (scored cards X1.1), Ting-Lu (+2 hands in Boss Blinds), Chi-Yu (Boss Blinds disabled), Koraidon (always sunny) and
   // Miraidon (always Electric Terrain; X2 + X0.5 per Paradox of their era), Ogerpon (a mask an Ante). New content only.
-  contentRev: 79,
+  contentRev: 80,
   // Pokermon 3.9.1 pokermon.lua: SMODS.current_mod.optional_features = {quantum_enhancements = true, object_weights = true}.
   // object_weights sends create_card's key, the shop roll, tags, packs, bosses and vouchers through SMODS.poll_object
   // (js/engine/smods.js; batch 17). quantum_enhancements is the engine's check_enhancement, always on.
@@ -1166,6 +1172,8 @@ export const POKERMON = registerMod({
     loc: DATA.loc,
   },
   hooks,
+  // every run, after every add-on registered: the generation fixes + every Pokémon's in_pool asks the gen filter (systems/pools.js)
+  reset_run: install_gen_filter,
   challenges: CHALLENGES, // (challenges.js: engine/challenge.js plays them)
   sleeves: SLEEVES, // (sleeves.js: deck variants, engine/sleeve.js)
   ui: POKE_UI, // (ui.js: type pills, energy pips, the Pokédex, shaders, animations — micatro/js/ui/modui.js)
