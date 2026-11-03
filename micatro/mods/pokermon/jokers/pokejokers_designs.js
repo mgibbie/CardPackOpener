@@ -2926,7 +2926,7 @@ function heatmor_calc(card, context) {
  *  or Primal Clash win keeps Castform Rainy (Volcarona doesn't override Kyogre), and the Primal Clash itself is read as before (a held
  *  Volcarona is not a side). So with Kyogre and Volcarona it is both raining and sunny. Live: bought or sold mid-round, it changes the
  *  sun checks at once (not Castform's form, which holds for the round). */
-const volcarona_sun = () => legends('volcarona').length > 0;
+const volcarona_sun = () => legends('volcarona').length > 0 || legends('koraidon').length > 0; // (+ Koraidon, Orichalcum Pulse: Gen 9 batch 4)
 /** Larvesta: the round's FIRST deal reads the sun (Castform's forecast: Hearts + Diamonds held most), remembered for the round
  *  (`sun_round`, Cherrim's field), so cherrim_sunny answers for it as for Cherrim. */
 function sun_read(card, context) {
@@ -9918,6 +9918,213 @@ defineJokers({
   },
 }, FILE);
 
+// ---------------------------------------------------------------- Gen 9, batch 4: the Gen 9 Legendaries (the owner's "yes", 2026-11-03)
+/** Wo-Chien, Tablets of Ruin: when a Blind is selected its chip requirement drops by RUIN_PCT% (fixed: Energy-inert). Queued after the
+ *  setting_blind pass (and the blind's own setting_blind effects), so The Wall's x4 / Violet Vessel's x6 are in the number it cuts; Chicot's
+ *  disable (also queued) halves it after, and the order of two multiplications doesn't matter. One cut per Blind whatever the copies (the
+ *  shared per-Blind record G.GAME.poke_ruin_tablets, keyed by G.GAME.round: the best of equals wins, nothing stacks; a Blueprint copies
+ *  nothing). Never below 1 chip. The HUD's "Score at least" updates (the 'blind' chips event, Poison Gas's). It lives in G.GAME and the run
+ *  is rebuilt from its recipe, so a resume / replay comes back with the same requirement. A Wo-Chien gained mid-Blind cuts from the next
+ *  Blind; one sold mid-Blind leaves this Blind's cut in place (it was applied when the Blind was set). */
+export const RUIN_PCT = 15;
+function tablets_of_ruin(card, context) {
+  if (!context.setting_blind || context.blueprint || context.retrigger_joker || card.getting_sliced) return false;
+  G.E_MANAGER.add_event(() => {
+    const GM = G.GAME, b = GM.blind;
+    if (!GM.facing_blind || !b || GM.poke_ruin_tablets === GM.round) return;
+    GM.poke_ruin_tablets = GM.round;
+    const cut = BN.min(BN.floor(BN.div(BN.mul(b.chips, RUIN_PCT), 100)), BN.sub(b.chips, 1));
+    if (!BN.gt(cut, 0)) return;
+    b.chips = BN.sub(b.chips, cut);
+    b.chip_text = number_format(b.chips);
+    emit('blind', { action: 'chips', key: b.config && b.config.blind && b.config.blind.key, chips: BN.toJSONValue(b.chips), chip_text: b.chip_text });
+    card_eval_status_text(card, 'extra', null, null, null, { message: '-' + RUIN_PCT + '%', colour: 'GREEN' });
+  });
+  return true;
+}
+const ruin_state = () => (G.GAME && G.GAME.facing_blind && G.GAME.poke_ruin_tablets === G.GAME.round ? 'This Blind: -' + RUIN_PCT + '%' : 'From the next Blind');
+/** Chi-Yu, Beads of Ruin: the Boss Blind's ability is disabled (Chicot's behaviour: when a Boss Blind is selected, and when it is gained
+ *  or un-debuffed during one). With an undebuffed Chicot held, Chicot does it and Chi-Yu does nothing, and it never disables an already
+ *  disabled Blind (Blind:disable is not idempotent: a second one would halve The Wall again). Not Blueprint. */
+const chicot_on = () => ((G.jokers && G.jokers.cards) || []).some((j) => j.ability.name === 'Chicot' && !j.debuff && !j.getting_sliced);
+function beads_disable(card) {
+  const b = G.GAME.blind;
+  if (!b || !b.boss || b.disabled || chicot_on()) return false;
+  b.disable();
+  play_sound('timpani');
+  card_eval_status_text(card, 'extra', null, null, null, { message: localize('ph_boss_disabled') });
+  return true;
+}
+function beads_of_ruin(card, context) {
+  if (!context.setting_blind || context.blueprint || context.retrigger_joker || card.getting_sliced || !(context.blind && context.blind.boss)) return false;
+  G.E_MANAGER.add_event(() => { if (!card.getting_sliced && !card.debuff) beads_disable(card); });
+  return true;
+}
+const beads_state = () => (G.GAME && G.GAME.blind && G.GAME.blind.boss && G.GAME.facing_blind ? (G.GAME.blind.disabled ? 'Boss disabled' : chicot_on() ? 'Chicot disables it' : 'Boss active') : 'Boss Blinds only');
+/** The Paradox side a joker is on ('ancient' / 'future'; PLACEHOLDER until the Paradox batch's badge lands). */
+const paradox_side = (j) => j.config.center.poke_paradox;
+/** Koraidon / Miraidon: the undebuffed Ancient / Future Paradox Jokers held (itself never: neither is a Paradox). */
+const paradox_count = (card, side) => ((G.jokers && G.jokers.cards) || []).filter((j) => j !== card && !j.debuff && paradox_side(j) === side).length;
+const pulse_x = (card, side) => r9(card.ability.extra.Xmult + card.ability.extra.Xmult_mod * paradox_count(card, side));
+/** Miraidon, Hadron Engine: while an undebuffed one is held every round is ELECTRIC TERRAIN (live: bought or sold, it changes at once). */
+export const is_electric_terrain = () => legends('miraidon').length > 0; // (PLACEHOLDER: folds into the Paradox batch's is_electric_terrain at merge)
+/** Ogerpon's masks: one per Ante, cycling Teal -> Wellspring -> Hearthflame -> Cornerstone (Ante 1 Teal, 2 Wellspring, 3 Hearthflame,
+ *  4 Cornerstone, 5 Teal...; an Ante below 1 keeps cycling backwards): DETERMINISTIC from G.GAME.round_resets.ante (Deerling's seasons),
+ *  so nothing is rolled or saved and a resume / replay agrees. The ante goes up when the Boss is beaten, so the shop after a Boss already
+ *  wears the next mask. Its TYPE follows the mask (Grass / Water / Fire / Earth: protean_set, so is_type / Energy / Kecleon follow; a Tera
+ *  sticker still overrides; Monotype-exempt, poke_mono_exempt) and so does its card (systems/anim.js GEN9_LEGEND_FORMS). */
+export const OGERPON_MASKS = {
+  teal: { name: 'Teal Mask', ptype: 'Grass', colour: '#4bc292' },
+  wellspring: { name: 'Wellspring Mask', ptype: 'Water', colour: '#0093ff' },
+  hearthflame: { name: 'Hearthflame Mask', ptype: 'Fire', colour: '#fe5f55' },
+  cornerstone: { name: 'Cornerstone Mask', ptype: 'Earth', colour: '#b5763c' },
+};
+export const MASK_ORDER = ['teal', 'wellspring', 'hearthflame', 'cornerstone'];
+export const mask_of_ante = (ante) => MASK_ORDER[((((ante === undefined || ante === null ? 1 : ante) - 1) % 4) + 4) % 4];
+export const mask_now = () => mask_of_ante(G.GAME && G.GAME.round_resets && G.GAME.round_resets.ante);
+/** Ogerpon's type = its mask's (run before every calculate: the center's update hook; on add_to_deck and in its tooltip too). */
+function ogerpon_sync(card) {
+  if (!card || !card.ability || !card.ability.extra) return;
+  protean_set(card, OGERPON_MASKS[mask_now()].ptype);
+}
+/** Wellspring Mask's +1 hand: given when a Blind is selected in a Wellspring Ante (once a round, `well_round`; not Blueprint), Dubwool's
+ *  Cotton Guard: an unused one is taken back at the round's end before the cash-out counts hands, and sold mid-round it is taken back too
+ *  (never the last hand). */
+function wellspring_hand(card, context) {
+  const ex = card.ability.extra;
+  if (context.setting_blind && !context.blueprint && !context.retrigger_joker && mask_now() === 'wellspring' && ex.well_round !== G.GAME.round) {
+    ex.well_round = G.GAME.round;
+    ease_hands_played(ex.hands);
+    card_eval_status_text(card, 'extra', null, null, null, { message: '+' + ex.hands + ' Hand', colour: 'CHIPS' });
+    return true;
+  }
+  if (round_end(context) && !context.blueprint && ex.well_round === G.GAME.round) {
+    ex.well_round = -1;
+    const back = Math.min(ex.hands, G.GAME.current_round.hands_left);
+    if (back > 0) ease_hands_played(-back);
+  }
+  return false;
+}
+const well_on = (card) => !!(G.GAME && G.GAME.facing_blind && card.ability.extra.well_round === G.GAME.round);
+/** Ogerpon's score by mask: Teal +Mult, Wellspring X, Hearthflame X, Cornerstone +Chips. */
+function ogerpon_main(card) {
+  const ex = card.ability.extra, m = mask_now();
+  if (m === 'teal') return { message: a_mult(r3(ex.mult)), colour: 'MULT', mult_mod: ex.mult };
+  if (m === 'wellspring') return x_main(ex.Xmult);
+  if (m === 'hearthflame') return x_main(ex.Xmult2);
+  return { message: a_chips(r3(ex.chips)), colour: 'CHIPS', chip_mod: ex.chips };
+}
+
+defineJokers({
+  // The owner's Gen 9 batch 4 ("yes", 2026-11-03): the 7 Gen 9 Legendaries, each complete ALONE (the solo rule, r59), all Legendary $20
+  // (The Soul / the Legendary pool). Types = the cards' (pokermon_art_type.mjs; Ogerpon's four mask cells show Grass / Water / Fire / Earth).
+  // Energy raises the X / Mult / Chips at the standard share; hands, the 15%, the Boss disable and the weather are fixed; banks never
+  // retroactive. Art: upstream 3.9.1's own cells (the Ruinous four and the box legendaries on Natdex {20..27,66} / {1..4,67}; Ogerpon and its
+  // masks on the Gen 9 sheet: card and soul, systems/anim.js GEN9_LEGEND_FORMS); nothing to deploy.
+  //
+  // Wo-Chien 1001 (Grass), Tablets of Ruin: every Blind's chip requirement is 15% lower (tablets_of_ruin: cut when the Blind is set, the HUD
+  // updates; copies don't stack). No number: Energy-inert (poke_no_energy_field). Nothing for a Blueprint to copy.
+  wochien: {
+    name: 'wochien', poke_sprite391: sprite('Natdex', 20, 66, [21, 66]),
+    config: { extra: {} },
+    rarity: 4, cost: 20, stage: 'Legendary', ptype: 'Grass', gen: 9, blueprint_compat: false, poke_no_energy_field: true,
+    attributes: ['blind'], poke_after: 'gholdengo',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); return { vars: [RUIN_PCT, ruin_state()] }; },
+    calculate(self, card, context) { tablets_of_ruin(card, context); return undefined; },
+  },
+  // Chien-Pao 1002 (Water), Sword of Ruin: every scored card gives X1.1 Mult (`Xmult_multi` +5%: 1.155 / 1.21 / 1.265). Blueprint copies it.
+  chienpao: {
+    name: 'chienpao', poke_sprite391: sprite('Natdex', 22, 66, [23, 66]),
+    config: { extra: { Xmult_multi: 1.1 } },
+    rarity: 4, cost: 20, stage: 'Legendary', ptype: 'Water', gen: 9, blueprint_compat: true,
+    attributes: ['xmult'], poke_after: 'wochien',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); return { vars: [r3(card.ability.extra.Xmult_multi)] }; },
+    calculate(self, card, context) {
+      if (context.individual && context.cardarea === G.play && !context.end_of_round) return { x_mult: card.ability.extra.Xmult_multi, card };
+      return undefined;
+    },
+  },
+  // Ting-Lu 1003 (Earth), Vessel of Ruin: +2 hands during Boss Blinds (Dubwool's Cotton Guard with `hands` 2, fixed: given when the Boss Blind
+  // is selected, an unused one taken back at the round's end, so they never pay the $1 a hand). No number: Energy-inert. Not Blueprint.
+  tinglu: {
+    name: 'tinglu', poke_sprite391: sprite('Natdex', 24, 66, [25, 66]),
+    config: { extra: { hands: 2 } },
+    rarity: 4, cost: 20, stage: 'Legendary', ptype: 'Earth', gen: 9, blueprint_compat: false, poke_no_energy_field: true,
+    attributes: ['hands', 'boss_blind'], poke_after: 'chienpao',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [ex.hands, guard_on(card) ? 'Active!' : 'Boss Blinds only'] }; },
+    calculate(self, card, context) { cotton_guard(card, context); return undefined; },
+    remove_from_deck(self, card, from_debuff) {
+      if (from_debuff || !guard_on(card)) return;
+      card.ability.extra.guard_round = -1;
+      const back = Math.min(card.ability.extra.hands, G.GAME.current_round.hands_left - 1);
+      if (back > 0) ease_hands_played(-back);
+    },
+  },
+  // Chi-Yu 1004 (Fire), Beads of Ruin: disables every Boss Blind (Chicot's behaviour; with Chicot held, Chicot does it: no double effects).
+  // No number: Energy-inert. Not Blueprint (as Chicot).
+  chiyu: {
+    name: 'chiyu', poke_sprite391: sprite('Natdex', 26, 66, [27, 66]),
+    config: { extra: {} },
+    rarity: 4, cost: 20, stage: 'Legendary', ptype: 'Fire', gen: 9, blueprint_compat: false, poke_no_energy_field: true,
+    attributes: ['boss_blind'], poke_after: 'tinglu',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); return { vars: [beads_state()] }; },
+    calculate(self, card, context) { beads_of_ruin(card, context); return undefined; },
+    add_to_deck(self, card) { if (G.GAME && G.GAME.facing_blind) beads_disable(card); },
+  },
+  // Koraidon 1007 (Dragon), Orichalcum Pulse: while held it's always SUNNY (the shared sun check, volcarona_sun: Cherrim / Larvesta /
+  // Lurantis / Castform Sunny on its first deal unless Kyogre's rain wins; rain still falls). X2 Mult (`Xmult` +20%: 2.4 / 2.8 / 3.2), plus
+  // X0.5 for each Ancient Paradox Joker held (undebuffed; `Xmult_mod` +20%: 0.6 / 0.7 / 0.8). Blueprint copies the X, never the sun.
+  koraidon: {
+    name: 'koraidon', poke_sprite391: sprite('Natdex', 2, 67, [1, 67]),
+    config: { extra: { Xmult: 2, Xmult_mod: 0.5 } },
+    rarity: 4, cost: 20, stage: 'Legendary', ptype: 'Dragon', gen: 9, blueprint_compat: true,
+    attributes: ['xmult', 'weather', 'paradox'], poke_after: 'chiyu',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.Xmult), r3(ex.Xmult_mod), paradox_count(card, 'ancient'), r3(pulse_x(card, 'ancient'))] }; },
+    calculate(self, card, context) { return context.joker_main ? x_main(pulse_x(card, 'ancient')) : undefined; },
+  },
+  // Miraidon 1008 (Dragon), Hadron Engine: while held every round is ELECTRIC TERRAIN (is_electric_terrain). X2 Mult (`Xmult` +20%), plus X0.5
+  // for each Future Paradox Joker held (undebuffed; `Xmult_mod` +20%). Blueprint copies the X, never the terrain.
+  miraidon: {
+    name: 'miraidon', poke_sprite391: sprite('Natdex', 4, 67, [3, 67]),
+    config: { extra: { Xmult: 2, Xmult_mod: 0.5 } },
+    rarity: 4, cost: 20, stage: 'Legendary', ptype: 'Dragon', gen: 9, blueprint_compat: true,
+    attributes: ['xmult', 'weather', 'paradox'], poke_after: 'koraidon',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.Xmult), r3(ex.Xmult_mod), paradox_count(card, 'future'), r3(pulse_x(card, 'future'))] }; },
+    calculate(self, card, context) { return context.joker_main ? x_main(pulse_x(card, 'future')) : undefined; },
+  },
+  // Ogerpon 1017 (Grass, its Teal card), Masks: a mask a Ante (mask_now: Teal -> Wellspring -> Hearthflame -> Cornerstone, from the Ante,
+  // Teal at Ante 1); its type and card follow the mask (Monotype-exempt). Teal (Grass) +30 Mult (`mult` +40%: 42 / 54 / 66); Wellspring
+  // (Water) +1 hand each round (`hands`, fixed; Cotton Guard's grant) and X1.5 (`Xmult` +20%: 1.8 / 2.1 / 2.4); Hearthflame (Fire) X2.5
+  // (`Xmult2` +20%: 3 / 3.5 / 4); Cornerstone (Earth) +150 Chips (`chips` +30%: 195 / 240 / 285). Each mask's number is its own energy field,
+  // so every Energy raises all four (Castform's way); the Energy of its CURRENT type matches. Blueprint copies the score, never the hand.
+  ogerpon: {
+    name: 'ogerpon', poke_sprite391: sprite('Gen09', 4, 4, [5, 4]),
+    config: { extra: { mult: 30, hands: 1, Xmult: 1.5, Xmult2: 2.5, chips: 150 } },
+    rarity: 4, cost: 20, stage: 'Legendary', ptype: 'Grass', gen: 9, blueprint_compat: true, poke_mono_exempt: true,
+    attributes: ['mult', 'xmult', 'chips', 'hands', 'types', 'ante'], poke_after: 'miraidon',
+    poke_view_form() { return mask_now(); },
+    update(self, card) { ogerpon_sync(card); },
+    loc_vars(self, info_queue, card) {
+      ogerpon_sync(card);
+      type_tooltip(self, info_queue, card);
+      const ex = card.ability.extra, m = OGERPON_MASKS[mask_now()];
+      return { vars: [r3(ex.mult), ex.hands, r3(ex.Xmult), r3(ex.Xmult2), r3(ex.chips), m.name, well_on(card) ? ', its hand given' : ''], colours: [m.colour] };
+    },
+    calculate(self, card, context) {
+      if (wellspring_hand(card, context)) return undefined;
+      if (context.joker_main) return ogerpon_main(card);
+      return undefined;
+    },
+    add_to_deck(self, card) { ogerpon_sync(card); },
+    remove_from_deck(self, card, from_debuff) {
+      if (from_debuff || !well_on(card)) return;
+      card.ability.extra.well_round = -1;
+      const back = Math.min(card.ability.extra.hands, G.GAME.current_round.hands_left - 1);
+      if (back > 0) ease_hands_played(-back);
+    },
+  },
+}, FILE);
+
 /** The families (functions/pokefamily.lua style): index.js adds them with set_family. */
 export const DESIGN_FAMILIES = [
   ['shinx', 'luxio', 'luxray'],
@@ -10150,7 +10357,7 @@ const SEASON_NOTE = ['{C:inactive,s:0.8}(A new season each Ante:', '{C:inactive,
 const TRADE_TEXT = (p) => ['{C:attention}Trade:{} evolves only together', 'with a {C:attention}' + p + '{}, once both', 'have been held together', 'for {C:attention}#3#{} rounds', '{C:inactive}(Together: #2#/#3#; #4#)'];
 const STEEL_TEXT = (n) => ['{C:attention}Steel{} cards held in hand', 'give {X:mult,C:white} X#' + n + '# {} Mult', 'instead of {X:mult,C:white} X1.5 {}', '{C:inactive,s:0.8}(Never stacks with Registeel,', '{C:inactive,s:0.8}Escavalier or Durant: the best wins)'];
 const TOP_NOTE = ['{C:inactive}(Aces high; a tie: the leftmost;', '{C:inactive}never a Stone or debuffed card)'];
-const SUN_NOTE = ['{C:inactive,s:0.8}(Sunny: Hearts + Diamonds held', '{C:inactive,s:0.8}most on the round\'s first deal,', '{C:inactive,s:0.8}a working Groudon, or Volcarona)'];
+const SUN_NOTE = ['{C:inactive,s:0.8}(Sunny: Hearts + Diamonds held', '{C:inactive,s:0.8}most on the round\'s first deal,', '{C:inactive,s:0.8}a working Groudon, Volcarona', '{C:inactive,s:0.8}or Koraidon)'];
 const MULTI_HIT_TEXT = ['{C:attention}Multi-hit:{} each hand hits', '{C:attention}2-5{} times {C:inactive}(rolled each hand)', '{C:mult}+#1#{} Mult per hit', '{C:inactive}(Last hand: {C:attention}#2#{C:inactive} hits)'];
 const STAKEOUT = (gain) => ['{C:attention}Stakeout:{} ' + gain + ' if the', 'poker hand differs from the', 'last poker hand played this run', '{C:inactive}(Last: {C:attention}#2#{C:inactive})'];
 const GALE_WINGS = (gain) => ['{C:attention}Gale Wings:{} the first hand', 'of each round gives ' + gain, '{C:inactive}(#2#)'];
@@ -11030,6 +11237,24 @@ export const DESIGN_LOC = {
     j_poke_enamorus: { name: 'Enamorus', text: [
       ['{C:attention}Springtide Storm:{} each', 'scored {C:hearts}Heart{} gives', '{X:mult,C:white} X#1# {} Mult'],
       ['{C:attention}Therian Forme:{} after you', 'have had it for {C:attention}4{} rounds,', 'each scored {C:hearts}Heart{} also', 'earns {C:money}$#2#{}', '{C:inactive}(#3#)'],
+    ] },
+    // Gen 9, batch 4: the Gen 9 Legendaries (the owner's "yes", 2026-11-03)
+    j_poke_wochien: { name: 'Wo-Chien', text: ['{C:attention}Tablets of Ruin:{} every', '{C:attention}Blind{}\'s score requirement', 'is {C:attention}#1#%{} lower', '{C:inactive}(Copies don\'t stack)', '{C:inactive}(#2#)'] },
+    j_poke_chienpao: { name: 'Chien-Pao', text: ['{C:attention}Sword of Ruin:{} every', 'scored card gives', '{X:mult,C:white} X#1# {} Mult'] },
+    j_poke_tinglu: { name: 'Ting-Lu', text: ['{C:attention}Vessel of Ruin:{} {C:chips}+#1#{} hands', 'during {C:attention}Boss Blinds{}', '{C:inactive}(#2#)'] },
+    j_poke_chiyu: { name: 'Chi-Yu', text: ['{C:attention}Beads of Ruin:{} disables', 'the effect of every', '{C:attention}Boss Blind{}', '{C:inactive}(#1#)'] },
+    j_poke_koraidon: { name: 'Koraidon', text: [
+      ['{C:poke_sun}Orichalcum Pulse:{} while you', 'have this Joker it\'s always', '{C:poke_sun}sunny{}', '{C:inactive}(Castform Sunny unless Kyogre;', '{C:inactive}rain still falls)'],
+      ['{X:mult,C:white} X#1# {} Mult, plus {X:mult,C:white} X#2# {}', 'for each {C:attention}Ancient{} Paradox', 'Joker', '{C:inactive}(Currently #3#: {X:mult,C:white} X#4# {C:inactive} Mult)'],
+    ] },
+    j_poke_miraidon: { name: 'Miraidon', text: [
+      ['{C:attention}Hadron Engine:{} while you', 'have this Joker it\'s always', '{X:poke_lightning,C:white}Electric Terrain{}'],
+      ['{X:mult,C:white} X#1# {} Mult, plus {X:mult,C:white} X#2# {}', 'for each {C:attention}Future{} Paradox', 'Joker', '{C:inactive}(Currently #3#: {X:mult,C:white} X#4# {C:inactive} Mult)'],
+    ] },
+    j_poke_ogerpon: { name: 'Ogerpon', text: [
+      ['{C:attention}Masks:{} wears a new mask', 'each {C:attention}Ante{}; its type', 'follows the mask', '{C:inactive}(Now: {V:1}#6#{C:inactive}#7#)', '{C:inactive}(Its type never breaks Monotype)'],
+      ['{X:poke_grass,C:white}Teal{}: {C:mult}+#1#{} Mult', '{X:poke_water,C:white}Wellspring{}: {C:chips}+#2#{} hand', 'each round and {X:mult,C:white} X#3# {} Mult', '{X:poke_fire,C:white}Hearthflame{}: {X:mult,C:white} X#4# {} Mult',
+        '{X:poke_earth,C:white}Cornerstone{}: {C:chips}+#5#{} Chips', '{C:inactive}(Teal, Wellspring, Hearthflame,', '{C:inactive}Cornerstone, then again)'],
     ] },
     // The owner's rework of an upstream joker (Espeon 196, Future Sight, contentRev 57; jokers/pokejokers_07.js): its text replaces 3.9.1's.
     j_poke_espeon: { name: 'Espeon', text: [

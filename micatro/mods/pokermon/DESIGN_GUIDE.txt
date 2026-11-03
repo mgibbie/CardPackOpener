@@ -124,7 +124,8 @@ Notable gaps:
   - Legendaries and mythicals: most of Gens 4-9 (the Regis, the Lati twins, the weather trio, the
     creation trio, Regigigas, Arceus, the Lake trio, Cresselia, Manaphy and Phione, all 12 Gen 5 Legendaries, Yveltal / Zygarde / Diancie / Hoopa / Volcanion and the 14 Gen 7 Legendaries (Type: Null, the
     Tapus, the Cosmog line, Necrozma, Magearna, Marshadow, Zeraora) and the 10 Gen 8 Legendaries (Zacian, Zamazenta, Eternatus, Zarude, Regieleki,
-    Regidrago, Glastrier, Spectrier, Calyrex, Enamorus; contentRev 74) are now the owner's designs): the Ruinous four, Koraidon and Miraidon.
+    Regidrago, Glastrier, Spectrier, Calyrex, Enamorus; contentRev 74) and the 7 Gen 9 Legendaries (the Ruinous four, Koraidon, Miraidon,
+    Ogerpon; contentRev 79) are now the owner's designs).
   - Fossils: the four Galar fossils are still missing; the Tirtouga and Archen lines (Gen 5) and the Tyrunt and
     Amaura lines (Gen 6) are now house fossils on the "Ancient" mechanic (2.5).
   - Ultra Beasts: all 11 are now the owner's designs (Gen 7 batch 3, contentRev 66), on a shared UB mechanic,
@@ -682,6 +683,24 @@ House pattern: a SELL-VALUE DRAIN BANK (the Gen 8 Zarude; jungle_drain): when a 
   one way, never below $1) and the joker banks X per $1 actually drained (measured as the sell_cost drop). Not Blueprint (a copy would drain twice).
   It eats its own row's sell value: a cost the player sees, and runs dry once every Joker is at $1.
 
+House pattern: a REQUIREMENT CUT when the Blind is set (the Gen 9 Wo-Chien, Tablets of Ruin; tablets_of_ruin): Poison Gas's requirement plumbing
+  (BN math, blind.chip_text, emit('blind', {action: 'chips'}) so the HUD's "Score at least" shows it) at setting_blind, QUEUED so the Blind's own
+  set-up (The Wall's x4, Violet Vessel's x6, a mod blind's setting_blind) is already in the number; Chicot's halving composes (two multiplications).
+  One cut per Blind whatever the copies: a shared G.GAME record keyed by the round (nothing stacks; a Blueprint copies nothing). Gained mid-Blind:
+  from the next Blind; sold mid-Blind: this Blind keeps it. A % that is the whole ability is fixed (Energy-inert), so a second copy is worthless.
+House pattern: a BOSS DISABLER beside Chicot (the Gen 9 Chi-Yu, Beads of Ruin; beads_disable): Chicot's two moments (setting_blind for a Boss,
+  queued; add_to_deck during a Boss, un-debuffing included). Blind:disable is NOT idempotent (The Wall halves again, The Needle / The Water give
+  again), so a second disabler checks `blind.disabled` at the moment it acts AND stands down while an undebuffed Chicot is held (Chicot's own
+  setting_blind never checks: vanilla two-Chicot behaviour is left alone). Energy-inert, not Blueprint.
+House pattern: a WEATHER SOURCE (the Gen 9 Koraidon / Miraidon): a Legendary that makes the weather adds itself to the ONE shared check every reader
+  uses (volcarona_sun for the sun: Cherrim / Larvesta / Lurantis / Castform / Protosynthesis; is_electric_terrain for the terrain), never a copy of it,
+  so every present and future reader agrees. It ADDS weather, never removes another's: Kyogre's lock still keeps Castform Rainy and Swift Swim's rain
+  still falls. Live (bought / sold / debuffed changes it at once). Pair it with a number (X2 + X0.5 per Paradox of its era) so Energy has a target.
+House pattern: a FORM PER ANTE with its own type (the Gen 9 Ogerpon's masks; OGERPON_MASKS / mask_now / ogerpon_sync): Deerling's derived cycle
+  (mask_of_ante: nothing rolled or stored) + Greninja's protean_set for the type, run from the center's `update` hook (it runs before every calculate,
+  so other jokers' type counts see the new mask at once), on add_to_deck and in the tooltip; Monotype-exempt (it changes on its own). One energy field
+  per mask's number (mult / Xmult / Xmult2 / chips: every Energy raises all four, Castform's way); the CURRENT type's Energy matches. A per-round
+  "+1 hand" while in one mask is Dubwool's Cotton Guard grant (`well_round`), taken back unused at the round's end, never round_resets.
 House pattern: SCORING A DEBUFFED CARD, and debuffs as a resource (the owner's Snivy line, Contrary; jokers/pokejokers_designs.js
 contrary_held / contrary_lifts):
   - A held-in-hand payoff for DEBUFFED cards (Snivy +4 / Servine +8 Mult each): the individual context on G.hand with
@@ -1403,6 +1422,8 @@ ancient_money / retriggers / hands / hand_round (the Galar fossils), form (Eiscu
 the counters lucky_round / lucky_count (Farfetch'd / Sirfetch'd), stones_scored (Yamask), stripe_scored (Basculin), snow_round (Eiscue).
 Two energy fields on one number pair: Obstagoon `Xmult` / `Xmult2` (X2 / X3), Eiscue `Xmult` / `Xmult2` (Ice / Noice), Morpeko `mult` / `Xmult`.
 Energy-inert by design: Mr. Rime (no number), Copperajah (its $ is fixed), a ♀ Indeedee (its `Xmult` is dropped when it rolls ♀).
+the Gen 9 Legendaries' fixed fields: hands / guard_round (Ting-Lu's Boss hands), hands / well_round (Ogerpon's Wellspring hand); one energy field per
+Ogerpon mask (mult / Xmult / Xmult2 / chips). Energy-inert by design: Wo-Chien (the 15% cut), Ting-Lu (+2 Boss hands), Chi-Yu (the Boss disable).
 
 Designer consequences:
   1. The field name is a balance choice. A joker-wide X stored as Xmult grows 20% of its base

@@ -33,7 +33,7 @@ import { family_display_key } from './systems/precedence.js';
 import { TYPE_COLOURS } from './systems/types.js';
 import { KECLEON_ATLAS, KECLEON_SPRITES, CASTFORM_SPRITES, CHERRIM_SPRITES, GIRATINA_ORIGIN, CLOAK_ATLAS, BURMY_SPRITES, DEOXYS_SOULS, IMPOSTER_REVEALED, SERIES_A_ANIM } from './systems/anim.js';
 import D391 from './data391.js';
-import { SEA_ATLAS, SEA_SPRITES, BASCULIN_SPRITES, GEN5_LEGEND_FORMS, SEASON_SPRITES, GEN6_FORM_SPRITES, GEN6_LEGEND_FORMS, GEN7_FORM_SPRITES, GEN7_LEGEND_FORMS, GEN8_FORM_SPRITES, GEN8_LEGEND_FORMS } from './systems/anim.js';
+import { SEA_ATLAS, SEA_SPRITES, BASCULIN_SPRITES, GEN5_LEGEND_FORMS, SEASON_SPRITES, GEN6_FORM_SPRITES, GEN6_LEGEND_FORMS, GEN7_FORM_SPRITES, GEN7_LEGEND_FORMS, GEN8_FORM_SPRITES, GEN8_LEGEND_FORMS, GEN9_LEGEND_FORMS } from './systems/anim.js';
 
 const MOD = 'pokermon';
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -342,6 +342,9 @@ function ownFace(d0) {
     const at = P_CENTERS[d0.center].atlas;
     return { ...d0, atlas: lf8.sheet ? at.replace('BasicNatdex', 'Basic' + lf8.sheet) : at, pos: lf8.pos, soul_pos: lf8.soul_pos };
   }
+  // The Gen 9 Legendaries (Gen 9 batch 4): Ogerpon's Wellspring / Hearthflame / Cornerstone masks (Teal is its own card) — card and soul
+  const lf9 = p && GEN9_LEGEND_FORMS[d0.center] && GEN9_LEGEND_FORMS[d0.center][p.form];
+  if (lf9) return { ...d0, atlas: P_CENTERS[d0.center].atlas, pos: lf9.pos, soul_pos: lf9.soul_pos };
   // Burmy / Wormadam (the owner's design): the cloak's card (the Gen 4 sheet); Plant = its own card
   const bm = p && BURMY_SPRITES[d.center] && BURMY_SPRITES[d.center][p.form];
   if (bm) return { ...d, atlas: CLOAK_ATLAS, pos: bm };
