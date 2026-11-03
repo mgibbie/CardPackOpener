@@ -375,6 +375,134 @@
 	},
 	"entries": [
 		{
+			"sha": "0dbdce7",
+			"date": "2026-11-03",
+			"kind": "micatro",
+			"title": "Pokermon r80: Gen 9 batch 4, the 7 Gen 9 Legendaries (#1001-1017)",
+			"body": "",
+			"cards": [],
+			"micatroMods": [
+				{
+					"id": "pokermon",
+					"name": "Pokermon",
+					"added": [
+						{
+							"key": "j_poke_wochien",
+							"name": "Wo-Chien",
+							"set": "Joker",
+							"rarity": "legendary",
+							"cost": 20,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 20,
+								"y": 66
+							},
+							"soul": {
+								"x": 21,
+								"y": 66
+							}
+						},
+						{
+							"key": "j_poke_chienpao",
+							"name": "Chien-Pao",
+							"set": "Joker",
+							"rarity": "legendary",
+							"cost": 20,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 22,
+								"y": 66
+							},
+							"soul": {
+								"x": 23,
+								"y": 66
+							}
+						},
+						{
+							"key": "j_poke_tinglu",
+							"name": "Ting-Lu",
+							"set": "Joker",
+							"rarity": "legendary",
+							"cost": 20,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 24,
+								"y": 66
+							},
+							"soul": {
+								"x": 25,
+								"y": 66
+							}
+						},
+						{
+							"key": "j_poke_chiyu",
+							"name": "Chi-Yu",
+							"set": "Joker",
+							"rarity": "legendary",
+							"cost": 20,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 26,
+								"y": 66
+							},
+							"soul": {
+								"x": 27,
+								"y": 66
+							}
+						},
+						{
+							"key": "j_poke_koraidon",
+							"name": "Koraidon",
+							"set": "Joker",
+							"rarity": "legendary",
+							"cost": 20,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 2,
+								"y": 67
+							},
+							"soul": {
+								"x": 1,
+								"y": 67
+							}
+						},
+						{
+							"key": "j_poke_miraidon",
+							"name": "Miraidon",
+							"set": "Joker",
+							"rarity": "legendary",
+							"cost": 20,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 4,
+								"y": 67
+							},
+							"soul": {
+								"x": 3,
+								"y": 67
+							}
+						},
+						{
+							"key": "j_poke_ogerpon",
+							"name": "Ogerpon",
+							"set": "Joker",
+							"rarity": "legendary",
+							"cost": 20,
+							"atlas": "@poke_AtlasJokersBasicGen09391",
+							"pos": {
+								"x": 4,
+								"y": 4
+							},
+							"soul": {
+								"x": 5,
+								"y": 4
+							}
+						}
+					]
+				}
+			]
+		},
+		{
 			"sha": "c477ef4",
 			"date": "2026-11-03",
 			"kind": "micatro",

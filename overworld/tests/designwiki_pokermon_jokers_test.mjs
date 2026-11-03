@@ -44,6 +44,10 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 const imp = (p) => import(pathToFileURL(path.join(ROOT, p)).href);
 const D = JSON.parse(fs.readFileSync(path.join(ROOT, 'designwiki/data/pokermon_jokers.json'), 'utf8'));
 const sp0 = (n) => D.species.find(s => s.name === n);
+// Since Gen 9 batch 4 (r79) every canonical species has a joker: the committed list is EMPTY. The type / art / wiki checks run on a
+// FIXTURE instead — the 7 Gen 9 Legendaries (the last species listed) put back on the list (computeMissing's `pretend`), built by the
+// same generator into a scratch folder and served to the browser in place of the real data (the real, empty page is checked too).
+const G9L = [1001, 1002, 1003, 1004, 1007, 1008, 1017];
 
 let server, browser;
 try {
@@ -67,7 +71,7 @@ try {
 	A([...coveredDex].every(d => !listed.includes(d)), 'every species a mod joker covers (incl. Megas / forms) is off the list');
 	A(coveredDex.size + listed.length === 1025 && D.counts.covered === coveredDex.size && D.counts.missing === listed.length, `listed (${listed.length}) + covered (${coveredDex.size}) = 1025`);
 	for (const m of PM.MODS) A(D.counts.byMod[m].species === M.coverage[m].size, `${m}: ${D.counts.byMod[m].species} species covered`);
-	A(['Bulbasaur', 'Pikachu', 'Mewtwo'].every(n => !D.species.some(s => s.name === n)) && D.species.some(s => s.name === 'Ogerpon') && !D.species.some(s => s.name === 'Varoom') && !D.species.some(s => s.name === 'Rookidee') && !D.species.some(s => s.name === 'Hatenna') && !D.species.some(s => s.name === 'Pawmi'), 'spot check: Bulbasaur / Pikachu / Mewtwo (and now Rookidee, Hatenna, Pawmi and Varoom) have jokers, Ogerpon does not');
+	A(listed.length === 0 && D.counts.missing === 0 && D.counts.covered === 1025 && G9L.every(d => coveredDex.has(d)), 'every canonical species has a joker now (the 7 Gen 9 Legendaries were the last): the list is empty, 1025 covered');
 	// the type table is the mods' own majority (every primary type that has a clear one; Flying has none upstream)
 	const badTypes = Object.entries(M.typeVotes).filter(([t, v]) => {
 		if (t === 'Flying') return false;
@@ -84,23 +88,29 @@ try {
 		val.wrong.slice(0, 8).map(w => `${w.name} ${w.ptype}->${w.got}`).join(', '));
 	A(AT.POKETYPES.every(t => typer.training.filter(r => r.ptype === t).length >= 10), 'its training covers all 12 Pokermon types (10+ cards each)');
 	const MJT = await imp('tools/micatro/compose_missing_pokermon_jokers.mjs');
+	// ---- the FIXTURE (see G9L): the generator's own output for the 7, into a scratch folder
+	const GEN = await imp('tools/micatro/gen_designwiki_pokermon_jokers.mjs');
+	const fixArt = fs.mkdtempSync(path.join(os.tmpdir(), 'pj-fix-'));
+	const F = await GEN.buildData({ art: true, out: fixArt, pretend: G9L });
+	const spF = (n) => F.species.find(s => s.name === n);
+	A(JSON.stringify(F.species.map(s => s.dex)) === JSON.stringify(G9L) && F.counts.missing === G9L.length && fs.readdirSync(fixArt).length === G9L.length * 2,
+		`the fixture: the ${G9L.length} Gen 9 Legendaries listed again, with ${G9L.length * 2} cards`, F.species.map(s => s.dex).join(','));
 	const tBad = [], srcWrong = [];
-	for (const s of D.species) {
+	for (const s of [...D.species, ...F.species]) {
 		const e = s.art.source === 'upstream' ? MJT.upstreamEntry(typer.table, s) : null;
 		const r = e ? typer.typeOfEntry(e) : null;
 		const want = r && r.ptype ? { ptype: r.ptype, src: 'art' } : { ptype: s.mapped_ptype, src: 'mapping' };
 		if (s.ptype !== want.ptype) tBad.push(`${s.name} ${s.ptype} (card: ${want.ptype})`);
 		if (s.type_source !== want.src) srcWrong.push(`${s.name} ${s.type_source}`);
 	}
-	A(!tBad.length, `every wiki card's type is the type its card art shows (${D.species.filter(s => s.type_source === 'art').length} from the art)`, tBad.slice(0, 8).join(', '));
-	A(!srcWrong.length && D.species.every(s => ['art', 'mapping'].includes(s.type_source)), 'type_source records where each type came from (art, else mapping)', srcWrong.slice(0, 8).join(', '));
-	A(D.counts.typeSource.art + D.counts.typeSource.mapping === D.species.length && D.counts.typeFromArtDiffers === D.species.filter(s => s.ptype !== s.mapped_ptype).length, 'counts.typeSource / typeFromArtDiffers match the list');
-	A(!sp0('Latias') && !sp0('Guzzlord') && sp0('Koraidon')?.ptype === 'Dragon' && !sp0('Brute Bonnet') && !sp0('Toedscool') && !sp0('Impidimp') && !sp0('Scream Tail') && sp0('Chien-Pao')?.ptype === 'Water' && !sp0('Iron Thorns')
-		&& !sp0('Bewear') && !sp0('Comfey') && !sp0('Buzzwole') && !sp0('Runerigus') && !sp0('Scovillain') && sp0('Wo-Chien')?.ptype === 'Grass' && sp0('Wo-Chien')?.type_source === 'art' && sp0('Wo-Chien')?.mapped_ptype === 'Dark', 'spot check (the card wins; Latias, Dwebble, Venipede, Sandile, Kyurem, Keldeo, Stunfisk, Tyrunt, Phantump, Cutiefly, Comfey, Bewear, the Ultra Beasts, Impidimp, Toedscool and the Paradox Pokémon are in the game now): Koraidon Dragon, Chien-Pao Water; Wo-Chien Grass from its art (the mapping said Dark; Runerigus, Scovillain and Iron Treads are in the game now)');
-	A(D.species.every(s => ['Basic', 'One', 'Two', 'Baby', 'Legendary'].includes(s.stage) && s.line.some(l => l.dex === s.dex)), 'every species has an upstream stage and sits in its own line');
-	const sp = sp0;
-	A(!sp('Pawmot') && !sp('Pawmo') && !sp('Pawmi') && !D.species.some(s => s.stage === 'Two') && !D.species.some(s => s.stage === 'One') && !D.species.some(s => s.stage === 'Basic') && !sp('Revavroom') && !sp('Varoom') && !sp('Orbeetle') && !sp('Hatterene') && !sp('Toxel') && !D.species.some(s => s.stage === 'Baby') && sp('Ting-Lu')?.stage === 'Legendary' && !sp('Zacian') && sp('Ogerpon')?.ptype === 'Grass' && !sp('Copperajah') && !sp('Corviknight') && !sp('Jangmo-o') && !sp('Naganadel') && !sp('Cyclizar') && sp('Miraidon')?.ptype === 'Dragon',
-		'spot check: no Basic, Stage 1 or Stage 2 left (the Paradox Pokémon took the last Basics; the Pikipek, Jangmo-o, Blipbug, Hatenna, Pawmi and Varoom lines are in the game now: Pawmot was the last Stage 2, Gen 9 batch 2 took the last Stage 1s; Toxel was the last Baby), Ting-Lu Legendary (Yveltal, Tapu Koko and Zacian are in the game now), Ogerpon Grass (Corviknight, Copperajah and Revavroom are in the game now), Miraidon Dragon (the Ultra Beasts and Cyclizar are in the game now)');
+	A(!tBad.length, `every wiki card's type is the type its card art shows (the fixture: ${F.species.filter(s => s.type_source === 'art').length} from the art)`, tBad.slice(0, 8).join(', '));
+	A(!srcWrong.length && F.species.every(s => ['art', 'mapping'].includes(s.type_source)), 'type_source records where each type came from (art, else mapping)', srcWrong.slice(0, 8).join(', '));
+	A([D, F].every(X => X.counts.typeSource.art + X.counts.typeSource.mapping === X.species.length && X.counts.typeFromArtDiffers === X.species.filter(s => s.ptype !== s.mapped_ptype).length), 'counts.typeSource / typeFromArtDiffers match the list (real and fixture)');
+	A(spF('Koraidon')?.ptype === 'Dragon' && spF('Chien-Pao')?.ptype === 'Water' && spF('Wo-Chien')?.ptype === 'Grass' && spF('Wo-Chien')?.type_source === 'art' && spF('Wo-Chien')?.mapped_ptype === 'Dark',
+		'spot check (the card wins, on the fixture): Koraidon Dragon, Chien-Pao Water; Wo-Chien Grass from its art (the mapping said Dark)');
+	A(F.species.every(s => ['Basic', 'One', 'Two', 'Baby', 'Legendary'].includes(s.stage) && s.line.some(l => l.dex === s.dex)), 'every species has an upstream stage and sits in its own line');
+	A(F.species.every(s => s.stage === 'Legendary') && spF('Ogerpon')?.ptype === 'Grass' && spF('Miraidon')?.ptype === 'Dragon' && spF('Ting-Lu')?.ptype === 'Earth' && spF('Chi-Yu')?.ptype === 'Fire',
+		'spot check (fixture): the 7 are Legendaries; Ogerpon Grass (its Teal card), Miraidon Dragon, Ting-Lu Earth, Chi-Yu Fire');
 
 	// ================================================================== ART
 	// UPSTREAM FIRST: a species Pokermon 3.9.1's sprite table draws (tools/micatro/specs/pokermon_391_sprite_table.json, a
@@ -108,7 +118,7 @@ try {
 	// are composed (and those must not be blank).
 	const C = await imp('tools/micatro/compose_pokermon_joker_art.mjs');
 	const MJ = await imp('tools/micatro/compose_missing_pokermon_jokers.mjs');
-	const ctx = await MJ.loadContext();
+	const ctx = await MJ.loadContext({ fresh: true, pretend: G9L }); // (the fixture: the real list is empty)
 	const TABLE = JSON.parse(fs.readFileSync(path.join(ROOT, 'tools/micatro/specs/pokermon_391_sprite_table.json'), 'utf8')).sprites;
 	const SHEETS = ctx.assets; // micatro/mods/pokermon/assets/2x/Basic Series (the shipped 3.9.1 sheets; a worktree's link to the main checkout)
 	// the table is the game's own lookup: data391.js sprites (every 3.9.1 joker the port has) and the owner's jokers' poke_sprite391
@@ -141,14 +151,14 @@ try {
 	const blank = [], differs = [], thin = [], srcBad = [], notUp = [], pixBad = [], composed = [];
 	const t0 = Date.now();
 	for (const s of ctx.M.missing) {
-		const d = D.species.find(x => x.dex === s.dex);
+		const d = F.species.find(x => x.dex === s.dex);
 		const up = upstreamOf(s);
 		const r = MJ.artFor(ctx, s);
 		if (up && r.source !== 'upstream') notUp.push(s.name);
 		if (d.art.source !== r.source || (!up && r.source !== 'composed')) srcBad.push(`${s.name} data ${d.art.source} / script ${r.source} / upstream ${!!up}`);
 		if (r.source === 'composed') composed.push(s);
 		for (const v of ['normal', 'shiny']) {
-			const file = path.join(ROOT, 'designwiki', d.art[v]);
+			const file = path.join(fixArt, path.basename(d.art[v]));
 			const bytes = C.encode(C.CELL_W, C.CELL_H, r[v]);
 			if (fs.existsSync(file) && fs.readFileSync(file).equals(bytes)) same++; else differs.push(s.dex + ' ' + v);
 			if (r.source === 'composed' && r[v + 'Painted'] < 100) thin.push(`${s.dex} ${v} (${r[v + 'Painted']})`);
@@ -178,25 +188,25 @@ try {
 			if (img.w !== 142 || img.h !== 190 || opq < img.w * img.h * 0.9 || colours.size < 24 || art.size < 8) blank.push(`${s.dex} ${v}: ${img.w}x${img.h} opaque ${opq} colours ${colours.size} art ${art.size}`);
 		}
 	}
-	const nUp = D.species.filter(s => s.art.source === 'upstream').length, nCo = D.species.filter(s => s.art.source === 'composed').length;
+	const nUp = F.species.filter(s => s.art.source === 'upstream').length, nCo = F.species.filter(s => s.art.source === 'composed').length;
 	console.log(`     art: ${nUp} upstream, ${nCo} composed (${composed.map(s => s.name).join(', ') || 'none'})`);
-	A(D.species.every(s => s.art && fs.existsSync(path.join(ROOT, 'designwiki', s.art.normal)) && fs.existsSync(path.join(ROOT, 'designwiki', s.art.shiny))), 'every listed species has a normal + Shiny card in designwiki/sprites/pokermon_jokers/');
-	A(nUp + nCo === listed.length && D.counts.art.upstream === nUp && D.counts.art.composed === nCo
-		&& Object.entries(D.counts.artByGen).every(([g, v]) => v.upstream + v.composed === D.counts.byGen[g]), `every card records its source (art.source: upstream ${nUp} + composed ${nCo}), and the counts match`);
+	A(F.species.every(s => s.art && fs.existsSync(path.join(fixArt, path.basename(s.art.normal))) && fs.existsSync(path.join(fixArt, path.basename(s.art.shiny)))), 'every listed species (fixture) has a normal + Shiny card');
+	A(nUp + nCo === F.species.length && F.counts.art.upstream === nUp && F.counts.art.composed === nCo
+		&& [D, F].every(X => Object.entries(X.counts.artByGen).every(([g, v]) => v.upstream + v.composed === X.counts.byGen[g])), `every card records its source (art.source: upstream ${nUp} + composed ${nCo}), and the counts match`);
 	A(!notUp.length, 'every species with an upstream 3.9.1 card uses it', notUp.join(', '));
 	A(!srcBad.length, 'the recorded source is what the script makes (composed ONLY where upstream has no card)', srcBad.slice(0, 5).join(' | '));
 	A(!pixBad.length && nUp > 0, `every upstream card is pixel-identical to its cell on the shipped 3.9.1 sheet (+ soul layer) (${nUp} x 2)`, pixBad.slice(0, 5).join(' | '));
-	A(D.species.every(s => s.art.source === 'upstream' ? /^Pokermon 3\.9\.1 AtlasJokersBasic\w+-391\.png cell \d+,\d+/.test(s.art.recipe?.upstream || '') : !!s.art.recipe?.frame), 'each recipe names its source (the sheet + cell, or the composed frame)');
-	A(!differs.length && same === listed.length * 2, `the art script re-makes all ${listed.length * 2} cards byte-identical (${Math.round((Date.now() - t0) / 1000)} s)`, differs.slice(0, 8).join(', '));
+	A(F.species.every(s => s.art.source === 'upstream' ? /^Pokermon 3\.9\.1 AtlasJokersBasic\w+-391\.png cell \d+,\d+/.test(s.art.recipe?.upstream || '') : !!s.art.recipe?.frame), 'each recipe names its source (the sheet + cell, or the composed frame)');
+	A(!differs.length && same === F.species.length * 2, `the art script re-makes all ${F.species.length * 2} cards byte-identical (${Math.round((Date.now() - t0) / 1000)} s)`, differs.slice(0, 8).join(', '));
 	A(!blank.length, 'no card is blank (142 x 190, 90%+ opaque — the corners are rounded —, 24+ colours, 8+ in the art window)', blank.slice(0, 5).join(' | '));
 	A(!thin.length, 'every composed card: the battle sprite painted 100+ pixels onto it', thin.slice(0, 8).join(', '));
 	// the composer stays working for species upstream doesn't draw (none today): two Legendaries (no Baby, Basic, Stage 1 or Stage 2 is left: Toxel, Pawmot, Revavroom and the Paradox Pokémon are in the game now)
 	const fallback = ['Koraidon', 'Ting-Lu'].map(n => ctx.M.missing.find(s => s.name === n)).filter(Boolean).map(s => [s.name, MJ.composeSpecies(ctx, s)]);
 	A(fallback.length === 2 && fallback.every(([, r]) => r.normalPainted >= 100 && r.shinyPainted >= 100 && r.recipe.frame), 'the composer (the fallback) still composes a real card (Koraidon, Ting-Lu; the Jangmo-o, Blipbug, Hatenna, Toxel, Pawmi and Varoom lines, Tapu Koko and Zacian are in the game now)', fallback.map(([n, r]) => n + ' ' + r.normalPainted).join(', '));
-	const extra = fs.readdirSync(path.join(ROOT, 'designwiki/sprites/pokermon_jokers')).filter(f => !D.species.some(s => s.art.normal.endsWith('/' + f) || s.art.shiny.endsWith('/' + f)));
-	A(!extra.length, 'no stale card art for species that now have jokers', extra.join(', '));
+	const realArt = path.join(ROOT, 'designwiki/sprites/pokermon_jokers');
+	const extra = (fs.existsSync(realArt) ? fs.readdirSync(realArt) : []).filter(f => !D.species.some(s => s.art.normal.endsWith('/' + f) || s.art.shiny.endsWith('/' + f)));
+	A(!extra.length, 'no stale card art for species that now have jokers (none is left: every species has a joker)', extra.join(', '));
 	// re-running the generator (into a scratch folder) gives the committed JSON and art, byte for byte
-	const GEN = await imp('tools/micatro/gen_designwiki_pokermon_jokers.mjs');
 	const tmpArt = fs.mkdtempSync(path.join(os.tmpdir(), 'pj-art-'));
 	const regen = JSON.stringify(await GEN.buildData({ art: true, out: tmpArt })) + '\n';
 	const genFiles = fs.readdirSync(tmpArt).sort(), artDir = path.join(ROOT, 'designwiki/sprites/pokermon_jokers');
@@ -206,6 +216,10 @@ try {
 	fs.rmSync(tmpArt, { recursive: true, force: true });
 
 	// ================================================================== WIKI
+	// (the browser sees the FIXTURE: its data and its cards are served in place of the real, empty list; then the real page once)
+	const REAL_D = D;
+	{
+	const D = F, listed = F.species.map(s => s.dex);
 	const dbFile = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'pj-wiki-')), 'users.sqlite');
 	server = spawn(process.execPath, [path.join(ROOT, 'mp-dev-server.mjs'), String(PORT)], { cwd: ROOT, stdio: 'ignore', env: { ...process.env, MP_DEV_DB: dbFile } });
 	const waitFor = async (fn, ms) => { const t = Date.now(); while (Date.now() - t < ms) { try { if (await fn()) return true; } catch { } await new Promise(r => setTimeout(r, 150)); } return false; };
@@ -216,9 +230,18 @@ try {
 	A(owner && peon, 'owner + non-owner accounts');
 
 	browser = await puppeteer.launch({ executablePath: CHROME, headless: 'new', args: ['--no-sandbox'] });
-	const open = async (token, username, w = 1280, hgt = 900) => {
+	const open = async (token, username, w = 1280, hgt = 900, { data = F, real = false } = {}) => {
 		const ctxB = await browser.createBrowserContext();
 		const page = await ctxB.newPage();
+		if (!real) {
+			await page.setRequestInterception(true);
+			page.on('request', r => {
+				if (/\/designwiki\/data\/pokermon_jokers\.json/.test(r.url())) return r.respond({ status: 200, contentType: 'application/json', body: JSON.stringify(data) });
+				const m = /\/designwiki\/sprites\/pokermon_jokers\/(\d{4}(?:_shiny)?\.png)/.exec(r.url());
+				if (m && fs.existsSync(path.join(fixArt, m[1]))) return r.respond({ status: 200, contentType: 'image/png', body: fs.readFileSync(path.join(fixArt, m[1])) });
+				return r.continue();
+			});
+		}
 		await page.setViewport({ width: w, height: hgt, deviceScaleFactor: 1 });
 		await page.evaluateOnNewDocument((t, u) => { try { if (t) localStorage.setItem('magepunk_mp_token_v1', t); if (u) localStorage.setItem('magepunk_mp_state_v1', JSON.stringify({ username: u })); } catch { } }, token, username);
 		const errors = [], designCalls = [];
@@ -290,15 +313,9 @@ try {
 	await anon.ctx.close();
 
 	// ---------- the composed label (no species is composed today, so the data is flipped for one card in the browser) ----------
-	const cp = await open(null, null);
-	await cp.page.setRequestInterception(true);
-	cp.page.on('request', r => {
-		if (!/\/designwiki\/data\/pokermon_jokers\.json/.test(r.url())) return r.continue();
-		const j = JSON.parse(JSON.stringify(D));
-		const t = j.species.find(s => s.dex === 1004);
-		t.art.source = 'composed'; t.art.recipe = { frame: 'Fire Legendary frame (test)', background: 'a scene (test)', sprite: 'chiyu.png x2' };
-		r.respond({ status: 200, contentType: 'application/json', body: JSON.stringify(j) });
-	});
+	const flipped = JSON.parse(JSON.stringify(D));
+	{ const t = flipped.species.find(s => s.dex === 1004); t.art.source = 'composed'; t.art.recipe = { frame: 'Fire Legendary frame (test)', background: 'a scene (test)', sprite: 'chiyu.png x2' }; }
+	const cp = await open(null, null, 1280, 900, { data: flipped });
 	await go(cp.page, '#/pokermon-jokers/1004');
 	const cl = await cp.page.evaluate(() => ({ text: document.querySelector('.pj-artsrc')?.textContent, src: document.querySelector('.pj-artsrc')?.dataset.source, recipe: document.querySelector('.pj-recipe')?.textContent }));
 	A(cl.text === LABEL.composed && cl.src === 'composed' && /Fire Legendary frame \(test\)/.test(cl.recipe || ''), 'a composed card is labelled "Art: composed (no upstream card yet)" with its recipe', JSON.stringify(cl));
@@ -357,6 +374,16 @@ try {
 	await phO.page.evaluate(() => document.querySelector('.pj-owner').scrollIntoView());
 	await shot(phO.page, 'phone_card_owner');
 	await phO.ctx.close();
+	// ---------- the REAL page: every species has a joker, so it says so (no grid, no filters) ----------
+	const rp = await open(null, null, 1280, 900, { real: true });
+	await go(rp.page, '#/pokermon-jokers');
+	const rt = await rp.page.evaluate(() => document.getElementById('content').textContent);
+	A(await tiles(rp.page) === 0 && !(await rp.page.$('#pjGen')) && /All 1025 canonical Pokémon have a joker/.test(rt) && /Nothing is left to design here/.test(rt) && /(0)/.test(rt),
+		'the real page: "All 1025 canonical Pokémon have a joker ... Nothing is left to design here." (0; no grid, no filters)', rt.slice(0, 300));
+	A(REAL_D.species.length === 0 && !rp.errors.length, 'the real page: no console errors', rp.errors.slice(0, 3).join(' | '));
+	await shot(rp.page, 'desktop_index_all_done');
+	await rp.ctx.close();
+	}
 } catch (e) {
 	fail++;
 	console.log('FAIL: threw ' + (e && e.stack || e));

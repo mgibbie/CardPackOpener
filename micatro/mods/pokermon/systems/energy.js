@@ -236,10 +236,10 @@ export function energy_evo_target(v, etype) {
 export const GEN9B2_REV = 77;
 /** Regional batch A, the Alolan forms (the owner's, 2026-11-03): Pikachu -> Alolan Raichu (Psychic), Exeggcute -> Alolan Exeggutor (Dragon),
  *  Cubone -> Alolan Marowak (Fire), each an Energy used on it, and those lines' new members; Alolan Ninetales's snow for Eiscue. */
-export const ALOLA_REV = 80;
+export const ALOLA_REV = 81;
 /** Regional batch B, the Galarian forms (the owner's, 2026-11-03): Koffing -> Galarian Weezing (a Fairy Energy), Galarian Corsola -> Cursola
  *  (a Psychic Energy), Galarian Weezing's place in Koffing's line, and Galarian Corsola's destroyed-card bank. */
-export const GALAR_FORMS_REV = 81;
+export const GALAR_FORMS_REV = 82;
 function energy_evolve(v) { poke_evolve(v, v.config.center.poke_energy_evo.into); }
 
 /** The first joker (left to right) this Energy can go on, or false. */
