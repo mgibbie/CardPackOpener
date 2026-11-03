@@ -28,7 +28,7 @@ for (const f of ['micasurvivor/js/data/sprites-meta.js', 'micasurvivor/js/data/m
 	vm.runInContext(fs.readFileSync(path.join(ROOT, f), 'utf8'), ctx, { filename: f });
 const { SPRITE_META: M, EXP_MEGA_DATA: MD } = ctx.G;
 const ids = MD.map(e => e.id);
-A(MD.length === 93, 'the 93 Megas of mega-data.js', MD.length);
+A(MD.length === 95, 'the 95 Megas and Primals of mega-data.js', MD.length);
 
 // base Survival modes / Dive / co-op: the sprites-meta.js row
 const alias = ids.filter(d => M[d] && M[d].al);
@@ -49,7 +49,7 @@ A(ZA.every(d => M[d] && M[d].src === 'front' && M[d].dm && M[d].a.Idle.r === 2),
 
 // the Expedition (js/expedition/mega.js): a battle sprite for every Mega, none composed
 const noSpr = MD.filter(e => !e.spr), noFile = MD.filter(e => e.spr && !fs.existsSync(path.join(AROOT, 'overworld/data/pokemon', e.spr)));
-A(!noSpr.length && !noFile.length, 'the Expedition: every Mega has its overworld battle sprite (spr), none composed from the member\'s sheet',
+A(!noSpr.length && !noFile.length, 'the Expedition: every Mega / Primal has its overworld battle sprite (spr), none composed from the member\'s sheet',
 	JSON.stringify({ noSpr: noSpr.map(e => e.id).slice(0, 10), noFile: noFile.map(e => e.spr) }));
 A(MD.find(e => e.id === 10304).spr === 's834.png' && MD.find(e => e.id === 10307).spr === 's11490.png' && MD.find(e => e.id === 10301).spr === 's22981.png',
 	'Mega Raichu X s834, Mega Absol Z s11490, Mega Zygarde s22981');

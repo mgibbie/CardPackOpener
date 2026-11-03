@@ -38,6 +38,8 @@ import { flyTo, moveToMap } from './ow_transitions.js';
 import { fading } from './ow_fade.js';
 import { unownPuzzle, unownPuzzleKey } from './unown_puzzle.js';
 import { cardFlip, cardFlipKey } from './minigames/cardflip/cardflip.js';
+import * as Clock from './clock.js';
+import { pickEvolution } from './evo_pick.js';
 import {
 	STARTERS, refreshObjective, starterMenu,
 } from './main.js';
@@ -558,8 +560,10 @@ function bagKey(k) {
 					&& (battle.data.extra?.[mon.speciesId]?.evos || [])
 						.some(e => e.type === 'item' && e.param === evoParam(id) && battle.data.species[e.target])) {
 					// an evolution item the selected species responds to
-					const evo = battle.data.extra[mon.speciesId].evos
-						.find(e => e.type === 'item' && e.param === evoParam(id) && battle.data.species[e.target]);
+					// more than one target behind the same item: canonical pick, not list order
+					const evo = pickEvolution(mon, battle.data.extra[mon.speciesId].evos
+						.filter(e => e.type === 'item' && e.param === evoParam(id) && battle.data.species[e.target]),
+						{ isNight: Clock.isNight() });
 					Bag.consume(id);
 					bagMenu.picking = false;
 					bagMenu.open = false;

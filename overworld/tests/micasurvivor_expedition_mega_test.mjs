@@ -56,18 +56,18 @@ const T0 = Date.now();
 		const fam = {};
 		for (const m of L.members) { const st = [m.dex]; for (let i = 0; i < st.length; i++) for (const [to] of m.evo[st[i]] || []) if (!st.includes(to)) st.push(to); for (const d of st) fam[d] = m.dex; }
 		const sp = [...new Set(MD.map(e => e.sp))];
-		A(MD.length === 93 && sp.length === 87 && sp.every(d => fam[d]), '93 Megas of the owner\'s 87 species (PokéAPI\'s -mega varieties, colour / shape variants folded), each in a League family', JSON.stringify({ n: MD.length, sp: sp.length, out: sp.filter(d => !fam[d]) }));
+		A(MD.length === 95 && sp.length === 89 && MD.filter(e => e.kind === 'primal').map(e => e.id).join() === '10077,10078' && sp.every(d => fam[d]), '93 Megas of the owner\'s 87 species (PokéAPI\'s -mega varieties, colour / shape variants folded), each in a League family', JSON.stringify({ n: MD.length, sp: sp.length, out: sp.filter(d => !fam[d]) }));
 		const cache = JSON.parse(fs.readFileSync(path.join(ROOT, 'tools/micasurvivor/megas_pokeapi.json'), 'utf8'));
 		const bad = MD.filter(e => { const c = cache.forms.find(f => f.id === e.id); return !c || JSON.stringify(c.stats) !== JSON.stringify(e.base) || JSON.stringify(c.types) !== JSON.stringify(e.types) || c.species !== e.sp; });
 		const X = MD.find(e => e.id === 10034), Y = MD.find(e => e.id === 10035);
 		A(!bad.length && X && JSON.stringify(X.types) === '["fire","dragon"]' && JSON.stringify(X.base) === '[78,130,111,130,85,100]' && X.suf === 'X' && Y.suf === 'Y',
 			'their stats and types are PokéAPI\'s (Mega Charizard X: Fire / Dragon, 78 / 130 / 111 / 130 / 85 / 100)', JSON.stringify(bad.map(e => e.id)));
 		const withSpr = MD.filter(e => e.spr), missing = withSpr.filter(e => !fs.existsSync(path.join(AROOT, 'overworld/data/pokemon', e.spr)));
-		const gen67 = [3, 6, 9, 15, 18, 65, 80, 94, 115, 127, 130, 142, 150, 181, 208, 212, 214, 229, 248, 254, 257, 260, 282, 302, 303, 306, 308, 310, 319, 323, 334, 354, 359, 362, 373, 376, 380, 381, 384, 428, 445, 448, 460, 475, 531, 719];
+		const gen67 = [3, 6, 9, 15, 18, 65, 80, 94, 115, 127, 130, 142, 150, 181, 208, 212, 214, 229, 248, 254, 257, 260, 282, 302, 303, 306, 308, 310, 319, 323, 334, 354, 359, 362, 373, 376, 380, 381, 382, 383, 384, 428, 445, 448, 460, 475, 531, 719];
 		const RX = MD.find(e => e.id === 10304), AZ = MD.find(e => e.id === 10307);
-		A(withSpr.length === 93 && !missing.length && X.spr === 's193.png' && Y.spr === 's194.png' && RX.spr === 's834.png' && AZ.spr === 's11490.png'
-			&& withSpr.filter(e => gen67.includes(e.sp) && e.suf !== 'Z').length === 48,
-			'every Mega has its own overworld battle picture (overworld/data/pokemon): the 48 Gen 6-7 ones (Mega Charizard X s193, Y s194) and the 45 Legends Z-A / Mega Dimension ones (Mega Raichu X s834, Mega Absol Z s11490); none is composed', JSON.stringify({ n: withSpr.length, missing: missing.map(e => e.spr) }));
+		A(withSpr.length === 95 && !missing.length && X.spr === 's193.png' && Y.spr === 's194.png' && RX.spr === 's834.png' && AZ.spr === 's11490.png'
+			&& withSpr.filter(e => gen67.includes(e.sp) && e.suf !== 'Z').length === 50,
+			'every Mega / Primal has its own overworld battle picture (overworld/data/pokemon): the 48 Gen 6-7 Megas and 2 Primals (Mega Charizard X s193, Y s194) and the 45 Legends Z-A / Mega Dimension ones (Mega Raichu X s834, Mega Absol Z s11490); none is composed', JSON.stringify({ n: withSpr.length, missing: missing.map(e => e.spr) }));
 	}
 }
 
@@ -194,7 +194,7 @@ try {
 	const { page } = d0;
 	A(d0.menu, 'boots to the menu as a guest');
 	const pr = await prep(page);
-	A(pr.ok && pr.dv === 20 && pr.cdv === 20 && pr.xv === 10 && pr.mega && pr.n === 93, 'the Expedition code loads with mega.js: content version 13 (D14), the x block still v10', JSON.stringify(pr));
+	A(pr.ok && pr.dv === 20 && pr.cdv === 20 && pr.xv === 10 && pr.mega && pr.n === 95, 'the Expedition code loads with mega.js: content version 13 (D14), the x block still v10', JSON.stringify(pr));
 
 	// ======================== 1. a Charizard run: the choice at Lv 40
 	const s0 = await startAs(page, 4);
