@@ -110,6 +110,21 @@ for (const m of IDX.AVAILABLE) {
 	counts.push(m.id + ' ' + listed.size);
 }
 console.log('     items per mod: ' + counts.join(', ') + ` (total ${totalItems})`);
+// no unfilled `#n#` placeholder anywhere in the generated data (Morgrem's "$#4#": its loc_vars threw on the generator's
+// wiped G.STATES and the wiki printed the raw template; More Fluff's Superboss Tokens' names "#1#")
+{
+	const holes = [];
+	const walk = (o, where) => {
+		if (typeof o === 'string') { if (/#\d+#/.test(o)) holes.push(where + ': ' + o); }
+		else if (Array.isArray(o)) o.forEach(v => walk(v, where));
+		// (`fixes`: the mods' own source comments, quoted as written — Less Fluff's note about its "X#1#" popup)
+		else if (o && typeof o === 'object') for (const [k, v] of Object.entries(o)) if (k !== 'fixes') walk(v, typeof o.key === 'string' ? o.key : where);
+	};
+	for (const m of IDX.AVAILABLE) if (files[m.id]) walk(files[m.id], m.id);
+	walk(W, 'micatro_mods.json');
+	walk(JSON.parse(fs.readFileSync(path.join(ROOT, 'designwiki/data/micatro_mods_search.json'), 'utf8')), 'micatro_mods_search.json');
+	A(!holes.length, 'no unfilled #n# placeholder in any generated mod wiki text', `${holes.length}: ${holes.slice(0, 8).join(' | ')} — ${REGEN}`);
+}
 // add-on dedupe (Pokermon PORTING.md "Add-on dedupe"): Nacho's / Pokermon+'s duplicates of Pokermon jokers are not listed
 {
 	const dupes = Object.values(core.P_CENTERS).filter(c => c.poke_replaced_by).map(c => c.key);

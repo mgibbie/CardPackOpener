@@ -10,6 +10,8 @@
 //   Impidimp 859 -> Morgrem -> Grimmsnarl (Fairy) Prankster: rerolls $1 less (min $1); the shop's first reroll free; X0.1 per reroll.
 //                                                r73 (the owner's): Morgrem keeps Impidimp's $1 discount (Grimmsnarl doesn't); the r71-r72
 //                                                Morgrem checks run on r72 rules, and a run recorded on r72 replays as recorded.
+//                                                r75 (the owner's): Grimmsnarl keeps it too; the r71-r74 Grimmsnarl checks run on
+//                                                r74 rules, and a run recorded on r74 replays as recorded.
 // Every ability is FIRED through real hands / rounds / shops with exact numbers.
 //   node micatro/tests/mods/pokermon_gen8_batch2_test.mjs
 import fs from 'fs';
@@ -487,7 +489,9 @@ await sec('prankster', () => {
   G.GAME.dollars = 100;
   ok(reroll() === 0 && cost() === 4 && reroll() === 4, 'Morgrem + Impidimp: free, then $4', cost());
   } finally { PINS.RULES.pins = null; }
-  // evolution: Impidimp (4 rounds) -> Morgrem (5) -> Grimmsnarl
+  // evolution: Impidimp (4 rounds) -> Morgrem (5) -> Grimmsnarl (on r74 rules: the r75 Grimmsnarl's discount is section 'prankster r75')
+  PINS.RULES.pins = { pokermon: '3.9.1+r74' };
+  try {
   start('PRANKEVO');
   const g = add('j_poke_impidimp');
   rounds(4);
@@ -510,6 +514,7 @@ await sec('prankster', () => {
   G.GAME.dollars = 100;
   reroll();
   ok(near(ex(g).prank_Xmult, 1.4), 'with Blueprint: X0.1 a reroll (not 0.2)', ex(g).prank_Xmult);
+  } finally { PINS.RULES.pins = null; }
 });
 
 // ------------------------------------------------------------------- Morgrem r73: it keeps Impidimp's $1 discount (the owner's)
@@ -566,13 +571,15 @@ await sec('prankster r73', () => {
   ok(cost() === 5, 'bought after a reroll: no free one this shop, $5 (6 - 1)', cost());
   m6.remove(); flush();
   ok(cost() === 6, 'sold: $6', cost());
-  // Grimmsnarl keeps the free reroll only (unchanged)
-  start('PRK73G');
-  const g = add('j_poke_grimmsnarl');
-  toShop();
-  G.GAME.dollars = 100;
-  ok(reroll() === 0 && reroll() === 5 && reroll() === 6, 'Grimmsnarl (unchanged): free, $5, $6 (no discount)', cost());
-  ok(!/less/.test(plain(g)), 'Grimmsnarl\'s text: no discount', plain(g));
+  // Grimmsnarl on r73-r74 rules keeps the free reroll only (r75 gave it the discount: section 'prankster r75')
+  PINS.RULES.pins = { pokermon: '3.9.1+r74' };
+  try {
+    start('PRK73G');
+    add('j_poke_grimmsnarl');
+    toShop();
+    G.GAME.dollars = 100;
+    ok(reroll() === 0 && reroll() === 5 && reroll() === 6, 'Grimmsnarl on r74 rules: free, $5, $6 (no discount)', cost());
+  } finally { PINS.RULES.pins = null; }
   // a run recorded on r72 replays as recorded (no discount), the same moves on r73 pay $1 less
   const deck = { name: 'Morgrem', mods: ['pokermon'], params: { blind_scaling: 0.05, dollars: 50 }, cards: [['S_K', 0, 0, 0, 20], ['H_Q', 0, 0, 0, 20]], jokers: [{ key: 'j_poke_morgrem' }] };
   const record = (pins) => {
@@ -602,6 +609,91 @@ await sec('prankster r73', () => {
   ok(!st.error && st.index === rec.actions.length && JSON.stringify(snap()) === JSON.stringify(want), 'the replay stepper: the same', [st.error, snap()]);
   const now = record(null);
   ok(JSON.stringify(now.paid) === '[0,4,5]', 'the same moves on r73: $0, $4, $5', now.paid);
+});
+
+// ------------------------------------------------------------------- Grimmsnarl r75: it keeps Impidimp's $1 discount too (the owner's)
+await sec('prankster r75', () => {
+  ok(C('grimmsnarl').config.extra.reroll_discount === 1 && !('reroll_discount' in energy_values), 'Grimmsnarl: reroll_discount 1 (fixed: no energy field)');
+  // alone: the first reroll free, then $4 (5 - 1), $5 (6 - 1); X0.1 for each, free ones too
+  start('PRK75A');
+  const g = add('j_poke_grimmsnarl');
+  toShop();
+  G.GAME.dollars = 100;
+  ok(cost() === 0 && reroll() === 0 && cost() === 4, 'r75 Grimmsnarl: the shop\'s first reroll free, then $4 (not $5)', cost());
+  ok(reroll() === 4 && cost() === 5 && reroll() === 5 && near(ex(g).prank_Xmult, 1.3), 'then $5 (6 - 1); X0.1 a reroll as before (X1.3)', [cost(), ex(g).prank_Xmult]);
+  const txt = plain(g);
+  ok(/Prankster: your first reroll in each shop is free/.test(txt) && /Shop rerolls cost \$1 less \(never below \$1\)/.test(txt) && /Permanently gains X0.1 Mult for every shop reroll/.test(txt) && /Currently X1.3 Mult/.test(txt),
+    'its text: Prankster, the $1 discount and the X0.1 gain', txt);
+  debuff(g);
+  ok(cost() === 7, 'debuffed: no discount (7)', cost());
+  undebuff(g);
+  ok(cost() === 6, 'back: $6 (7 - 1)', cost());
+  // stacks with Impidimp and Morgrem copies (as theirs do), one free reroll
+  start('PRK75B');
+  add('j_poke_grimmsnarl'); add('j_poke_impidimp');
+  toShop();
+  G.GAME.dollars = 100;
+  ok(reroll() === 0 && cost() === 3 && reroll() === 3, 'Grimmsnarl + Impidimp: free, then $3 (5 - 1 - 1)', cost());
+  start('PRK75C');
+  add('j_poke_grimmsnarl'); add('j_poke_morgrem'); add('j_poke_impidimp');
+  toShop();
+  G.GAME.dollars = 100;
+  ok(reroll() === 0 && cost() === 2 && reroll() === 2, 'Grimmsnarl + Morgrem + Impidimp: one free reroll, then $2 (5 - 3)', cost());
+  start('PRK75D');
+  add('j_poke_grimmsnarl'); add('j_poke_grimmsnarl');
+  toShop();
+  G.GAME.dollars = 100;
+  ok(reroll() === 0 && cost() === 3 && reroll() === 3, 'two Grimmsnarls: one free reroll, then $3 (5 - 2)', cost());
+  // never below $1 (a D6 Tag: $0, then 2 - 1 = $1, 3 - 1 = $2)
+  start('PRK75E');
+  add('j_poke_grimmsnarl');
+  add_tag(new Tag('tag_d_six')); flush();
+  toShop();
+  G.GAME.dollars = 100;
+  ok(reroll() === 0 && reroll() === 1 && reroll() === 1 && reroll() === 2, 'Grimmsnarl + D6 Tag: $0, $1, $1 (2 - 1), $2 (3 - 1)', cost());
+  // evolved from Morgrem: the Grimmsnarl it becomes discounts too
+  start('PRK75EVO');
+  const e = add('j_poke_morgrem');
+  rounds(5);
+  toShop();
+  G.GAME.dollars = 100;
+  ok(key(e) === 'j_poke_grimmsnarl' && reroll() === 0 && cost() === 4, 'Morgrem -> Grimmsnarl: free, then $4', [key(e), cost()]);
+  // one made on older rules (no reroll_discount field) and kept past the re-pin: the base $1
+  start('PRK75OLD');
+  const o = add('j_poke_grimmsnarl');
+  delete o.ability.extra.reroll_discount;
+  toShop();
+  G.GAME.dollars = 100;
+  ok(reroll() === 0 && cost() === 4 && /Shop rerolls cost \$1 less/.test(plain(o)), 'a Grimmsnarl with no reroll_discount field: the base $1 (free, then $4)', [cost(), plain(o)]);
+  // a run recorded on r74 replays as recorded (no Grimmsnarl discount), the same moves on r75 pay $1 less
+  const deck = { name: 'Grimmsnarl', mods: ['pokermon'], params: { blind_scaling: 0.05, dollars: 50 }, cards: [['S_K', 0, 0, 0, 20], ['H_Q', 0, 0, 0, 20]], jokers: [{ key: 'j_poke_grimmsnarl' }] };
+  const record = (pins) => {
+    const s = new Session();
+    PINS.RULES.pins = pins;
+    try {
+      s.start({ seed: 'PRK75REC', customDeck: deck });
+      s.act({ type: 'select_blind' }); flush();
+      for (let i = 0; i < 4 && G.STATE === STATES.SELECTING_HAND; i++) { s.act({ type: 'highlight', ids: G.hand.cards.slice(0, 5).map((c) => c.sort_id) }); s.act({ type: 'play' }); flush(); }
+      if (G.STATE === STATES.ROUND_EVAL) { s.act({ type: 'cash_out' }); flush(); }
+      const paid = [];
+      for (let i = 0; i < 3 && G.STATE === STATES.SHOP; i++) { const d0 = G.GAME.dollars; s.act({ type: 'reroll_shop' }); flush(); paid.push(d0 - G.GAME.dollars); }
+      return { s, paid };
+    } finally { PINS.RULES.pins = null; }
+  };
+  const snap = () => ({ state: G.STATE, dollars: G.GAME.dollars, cost: G.GAME.current_round.reroll_cost, shop: G.shop_jokers.cards.map(key).join(), x: G.jokers.cards.map((j) => ex(j).prank_Xmult).join() });
+  const old = record({ pokermon: '3.9.1+r74' });
+  const want = snap();
+  ok(want.state === STATES.SHOP && JSON.stringify(old.paid) === '[0,5,6]', 'the run on r74: rerolls $0, $5, $6', old.paid);
+  const rec = JSON.parse(JSON.stringify(old.s.recipe));
+  rec.modVersions.pokermon = '3.9.1+r74';
+  ok(Session.pinDiff(rec).some((d) => d.id === 'pokermon'), 'an r74 recipe differs from the current pin (the resume prompt)');
+  const r = Session.fromRecipe(JSON.parse(JSON.stringify(rec)), { repin: true }); flush();
+  ok(!r.stoppedAt && JSON.stringify(snap()) === JSON.stringify(want), 'resumed: every r74 move replays on r74 (the same money, price, shop and X)', { want, got: snap() });
+  const st = Session.stepper(JSON.parse(JSON.stringify(rec)));
+  st.seek(st.total); flush();
+  ok(!st.error && st.index === rec.actions.length && JSON.stringify(snap()) === JSON.stringify(want), 'the replay stepper: the same', [st.error, snap()]);
+  const now = record(null);
+  ok(JSON.stringify(now.paid) === '[0,4,5]', 'the same moves on r75: $0, $4, $5', now.paid);
 });
 
 // ------------------------------------------------------------------- Energy: the main number at the standard rate

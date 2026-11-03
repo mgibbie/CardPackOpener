@@ -3839,6 +3839,7 @@ Pinned **`3.9.1+r73`**. Three owner-approved changes, each gated by `rulesRev('p
   gives the base X1.25. An energized Inkay carries its Energy into the X.
 - **Morgrem** keeps **Impidimp's $1 reroll discount** (`reroll_discount` 1, fixed; stacks with Impidimps' and other Morgrems', never below $1, a
   free reroll stays free): the first reroll free, then $4, $5 ... **Grimmsnarl unchanged** (free first reroll only): the owner named Morgrem.
+  (r75: Grimmsnarl keeps it too, see "The owner's Grimmsnarl tweak".)
 - **Sandaconda** keeps **Silicobra's Sand Spit** (`num` / `dem` 1 in 4, fixed; the same `silicobra_spit` roll, a player's discard of an
   unenhanced card only) beside its Sandstorm and Stone payoff.
 - **Tests**: `pokermon_gen6_batch2_test` (Malamar r73 played: straights, Stone, Bonus, Hack, two copies, debuffed, Energy target and steps,
@@ -3888,6 +3889,21 @@ Enamorus {8,11}); nothing to deploy. Gen 8 is now complete on the wiki (59 missi
 - **Tests**: `micatro/tests/mods/pokermon_gen8_legendaries_test.mjs` (fails on main: no such jokers). Re-recorded: `modpin_test`, `pokermon_391_data_test`,
   `pokermon_new_jokers_test`, `pokermon_gen8_batch3_test` / `pokermon_sprigatito_test` (the Pokédex order), `micatro_mod_version_pin`,
   `micatro_deckeditor_pages` (1205 jokers), `designwiki_pokermon_jokers_test` (Ting-Lu is now its Legendary).
+
+### The owner's Grimmsnarl tweak (r75, 2026-11-03, branch `feat/pokermon-r75-grimmsnarl`)
+Pinned **`3.9.1+r75`** (`contentRev: 75`; `LEGACY_MOD_VERSIONS` untouched). Gated by `rulesRev('pokermon') >= 75` (`prank_discount75`), so runs
+recorded on r71-r74 replay as recorded (never retroactive):
+- **Grimmsnarl** keeps **Impidimp's $1 reroll discount** too (`reroll_discount` 1, fixed, not an Energy field; stacks with Impidimps', Morgrems' and
+  other Grimmsnarls', never below $1, a free reroll stays free) on top of its free first reroll and its X0.1 per reroll: the first reroll free, then
+  $4, $5 ... A Grimmsnarl made before r75 has no `reroll_discount` field and gives the base $1 (`prank_discount_of`). New text box: "Shop rerolls
+  cost $1 less (never below $1)".
+- **Design wiki fix (same branch)**: Morgrem's / Grimmsnarl's wiki cards printed raw `#1#` / `$#4#`: `tools/micatro/gen_designwiki_mods.mjs` wipes G
+  and only put `G.GAME` back, so `prank_state()` (reads `G.STATES`) threw and the loc_vars were dropped. It now restores what `newRun` puts on a
+  wiped G (`STATES`, `E_MANAGER`, `handlist`). Same sweep: More Fluff's 15 Superboss Tokens were named "#1#" (their loc names the blind):
+  `describe_mod` now fills a name's `#n#` from the loc_vars, as Balatro's `localize{type='name'}` does (in game too).
+- **Tests**: `pokermon_gen8_batch2_test` (r75: Grimmsnarl alone $4 after the free one, + Impidimp / + Morgrem stacking, never below $1, debuffed,
+  the text; r74 rules: no discount; an r74 recipe resumed / stepped as recorded), `designwiki_micatro_mods_test` (no `#n#` anywhere in the generated
+  mod data). Re-pinned: `modpin_test`, `pokermon_391_data_test`, `pokermon_new_jokers_test`, `micatro_mod_version_pin`.
 
 ### Pending from the 3.9.1 joker rework (after batch 10b)
 Every existing joker is on 3.9.1: `rework_hold` (still on 3.2.1) is empty. What waits, by the batch it waits on (`rework_deferred` =

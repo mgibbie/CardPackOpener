@@ -8896,8 +8896,8 @@ function magic_powder(card, context) {
   card_eval_status_text(right, 'extra', null, null, null, { message: localize('poke_tera_ex'), colour: 'Spectral' });
 }
 /** The Impidimp line, Prankster (the reroll_cost / reroll_shop / shop_start hooks, index.js):
- *  - Impidimp (and Morgrem, r73): a PAID reroll costs $reroll_discount less per undebuffed one (they stack), never below $1; a free one
- *    stays free.
+ *  - Impidimp (and Morgrem, r73; and Grimmsnarl, r75): a PAID reroll costs $reroll_discount less per undebuffed one (they stack), never
+ *    below $1; a free one stays free.
  *  - Morgrem / Grimmsnarl: the FIRST reroll in each shop is free while an undebuffed one is held — one free reroll however many are held,
  *    and none on top of another free reroll (Chaos the Clown's, Bidoof's, a D6 Tag's $0): it is the shop's FIRST reroll, so whatever made
  *    that one free uses it up. Like Chaos's, it never raises the next reroll's price (it is spent as one of the engine's free rerolls).
@@ -8905,9 +8905,18 @@ function magic_powder(card, context) {
 const prank_held = (key) => ((G.jokers && G.jokers.cards) || []).filter((j) => !j.debuff && j.config.center.key === key);
 const prank_free_held = () => prank_held('j_poke_morgrem').length + prank_held('j_poke_grimmsnarl').length > 0;
 /** r73 (the owner's): Morgrem keeps Impidimp's discount (its own `reroll_discount`, stacking with Impidimps' as theirs do). Moves recorded
- *  before r73 (js/mods/pins.js RULES) price rerolls without it. Grimmsnarl does not keep it (the owner named Morgrem only). */
+ *  before r73 (js/mods/pins.js RULES) price rerolls without it. Grimmsnarl got it at r75 (below). */
 const prank_discount73 = () => rulesRev('pokermon') >= 73;
-const prank_discounters = () => (prank_discount73() ? [...prank_held('j_poke_impidimp'), ...prank_held('j_poke_morgrem')] : prank_held('j_poke_impidimp'));
+/** r75 (the owner's): Grimmsnarl keeps the discount too (its own `reroll_discount`, stacking with Impidimps' / Morgrems'). Moves recorded
+ *  before r75 price rerolls without it. A Grimmsnarl made on older rules has no `reroll_discount` field, so it gives the base $1. */
+const prank_discount75 = () => rulesRev('pokermon') >= 75;
+const prank_discounters = () => [
+  ...prank_held('j_poke_impidimp'),
+  ...(prank_discount73() ? prank_held('j_poke_morgrem') : []),
+  ...(prank_discount75() ? prank_held('j_poke_grimmsnarl') : []),
+];
+const prank_discount_of = (j) => (typeof j.ability.extra.reroll_discount === 'number' ? j.ability.extra.reroll_discount
+  : j.config.center.key === 'j_poke_grimmsnarl' ? P_CENTERS.j_poke_grimmsnarl.config.extra.reroll_discount : 0);
 const shop_rerolls = () => (G.GAME && G.GAME.current_round && G.GAME.current_round.poke_shop_rerolls) || 0;
 export function prank_reroll_cost(cost) {
   if (!G.GAME || !G.GAME.current_round || !G.jokers) return undefined;
@@ -8915,7 +8924,7 @@ export function prank_reroll_cost(cost) {
   cr.poke_prank_free = false;
   let c = cost;
   if (c > 0) {
-    const off = prank_discounters().reduce((s, j) => s + (j.ability.extra.reroll_discount || 0), 0);
+    const off = prank_discounters().reduce((s, j) => s + prank_discount_of(j), 0);
     if (off) c = Math.max(1, c - off);
   }
   if (c > 0 && (cr.free_rerolls || 0) <= 0 && shop_rerolls() === 0 && prank_free_held()) { c = 0; cr.poke_prank_free = true; }
@@ -9139,13 +9148,14 @@ defineJokers({
     ...prank_recost,
   },
   // Grimmsnarl 861 (Safari $10): Prankster (the first reroll in each shop free) and it permanently gains X0.1 for every shop reroll, free ones
-  // included (`prank_Xmult` from X1, banked; gain `Xmult_mod` +20%: 0.12 / 0.14 / 0.16). Blueprint copies the X, never the gain.
+  // included (`prank_Xmult` from X1, banked; gain `Xmult_mod` +20%: 0.12 / 0.14 / 0.16). Blueprint copies the X, never the gain. r75 (the
+  // owner's): it keeps Impidimp's discount too, shop rerolls $1 less (`reroll_discount`, fixed; stacks; never below $1; prank_discount75).
   grimmsnarl: {
     name: 'grimmsnarl', poke_sprite391: sprite('Natdex', 10, 57),
-    config: { extra: { prank_Xmult: 1, Xmult_mod: 0.1 } },
+    config: { extra: { prank_Xmult: 1, Xmult_mod: 0.1, reroll_discount: 1 } },
     rarity: 'poke_safari', cost: 10, stage: 'Two', ptype: 'Fairy', gen: 8, blueprint_compat: true,
     attributes: ['xmult', 'scaling', 'economy', 'reroll'], poke_after: 'morgrem',
-    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [prank_state(), r3(ex.Xmult_mod), r3(ex.prank_Xmult)] }; },
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [prank_state(), r3(ex.Xmult_mod), r3(ex.prank_Xmult), typeof ex.reroll_discount === 'number' ? ex.reroll_discount : self.config.extra.reroll_discount] }; },
     calculate(self, card, context) {
       const ex = card.ability.extra;
       if (context.reroll_shop && !context.blueprint && !context.retrigger_joker) {
@@ -10950,6 +10960,7 @@ export const DESIGN_LOC = {
     ] },
     j_poke_grimmsnarl: { name: 'Grimmsnarl', text: [
       PRANKSTER_FREE,
+      ['Shop rerolls cost {C:money}$#4#{} less', '{C:inactive}(never below $1)'],
       ['Permanently gains {X:mult,C:white} X#2# {}', 'Mult for every shop reroll', '{C:inactive}(Currently {X:mult,C:white} X#3# {C:inactive} Mult)'],
     ] },
     // Gen 8, batch 3 (contentRev 72)
