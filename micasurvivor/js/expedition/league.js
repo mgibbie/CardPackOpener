@@ -391,7 +391,7 @@ G.ExpLeague = (() => {
     const cards = opts.map(e => {
       const st = statsFrom(e.base);
       return Object.assign({
-        w: 0, type: 'xevo', key: 'xmega:' + e.id, icon: 'star', color: '#e050e8', tag: T.t('MEGAEVOLUCIÓN'), mega: e.id,
+        w: 0, type: 'xevo', key: 'xmega:' + e.id, icon: 'star', color: '#e050e8', tag: X.tagOf ? X.tagOf(e) : T.t('MEGAEVOLUCIÓN'), mega: e.id,
         title: name(S.form) + ' → ' + X.nameOf(e),
         desc: T.f('{x} · Vida {x} → {x} · definitivo +1', e.types.map(t => T.t(G.U.TYPE_NAME[t])).join(' / '), Math.round(pl.maxHp), Math.round(pl.maxHp + st.hp - prev.hp)),
         apply: q => { megaEvolve(q, e.id, q.level); process(q); }
@@ -414,7 +414,7 @@ G.ExpLeague = (() => {
     S.mega = id;
     S.log.push([lv || pl.level, 'mega', id]);
     pl.invuln = Math.max(pl.invuln || 0, X.K.IFRAMES);
-    const txt = T.f('¡{x} megaevoluciona a {x}!', name(S.form), X.nameOf(e));
+    const txt = X.sayOf ? X.sayOf(e, name(S.form)) : T.f('¡{x} megaevoluciona a {x}!', name(S.form), X.nameOf(e));
     S.note.push(txt);
     G.Spawner.say(txt, 3.2, true);
     G.Game.flash('#ffe6ff', 0.7);
