@@ -80,6 +80,8 @@ import './boosters/packs1.js';
 import './jokers/zzzapril_fools.js';
 // The owner's Paradox content (Gen 9 batch 3): the Paradox Ball, the Ancient / Future Packs (the 20 jokers are in jokers/pokejokers_designs.js)
 import { PARADOX_LOC, PARADOX_DICTIONARY, PARADOX_LOC_COLOURS, PACK_COLOURS, paradox_pack_open } from './paradox.js';
+// The owner's regional forms, batch A (the 18 Alolan forms; jokers/pokejokers_regional.js)
+import { REGIONAL_FAMILIES, REGIONAL_FAMILY_REV, REGIONAL_LOC, REGIONAL_UPSTREAM_TEXT, poke_card_destroyed } from './jokers/pokejokers_regional.js';
 import { DESIGN_FAMILIES, DESIGN_LOC, regi_chip_bonus, regi_h_x_mult, regi_enh_vars, slot_cost_removed, drifblim_destroyed, contrary_lifts, mummy_sell,
   freeze_keep, freeze_thaw, frozen_by, spore_first_deal, spore_hand_scored, malamar_chip_bonus, prank_reroll_cost, prank_reroll_shop, prank_shop_start,
   pyukumuku_destroyed, pheromosa_rest, komala_destroy_immune, GALAR_UPSTREAM_TEXT, GALAR_FAMILY_REV, rime_final_deal,
@@ -497,6 +499,9 @@ for (const [name, def] of Object.entries(DEFS.jokers)) {
 for (const f of DESIGN_FAMILIES) set_family(f);
 // (Gen 8 batch 3, r72: the Galarian evolutions joined existing lines — older recorded moves look those lines up without them)
 for (const [name, rev] of Object.entries(GALAR_FAMILY_REV)) FAMILY_MEMBER_REV.set(name, rev);
+// (regional batch A: the Alolan lines; Alolan Raichu / Exeggutor / Marowak join the Kanto lines from ALOLA_REV on)
+for (const f of REGIONAL_FAMILIES) set_family(f);
+for (const [name, rev] of Object.entries(REGIONAL_FAMILY_REV)) FAMILY_MEMBER_REV.set(name, rev);
 for (const f of DATA.groups.consumables) for (const item of listOf(f)) centers.push(consumableCenter(item, f.file));
 // Content 3.9.1 adds that data.js (3.2.1) doesn't have (batch 10: Miracle Seed, Heavy-Duty Boots, the Seed card, the Debris
 // deck): its definition carries the whole static data (key, pos, atlas, config, ...) and is built like data.js's, after it.
@@ -549,8 +554,10 @@ for (const [set, d] of Object.entries(DESIGN_LOC)) Object.assign(DATA.loc.descri
 // ... and the Paradox Ball's and the Ancient / Future Packs' (paradox.js; a pack's group name is a dictionary entry)
 for (const [set, d] of Object.entries(PARADOX_LOC)) Object.assign(DATA.loc.descriptions[set] = DATA.loc.descriptions[set] || {}, d);
 DATA.loc.misc.dictionary = Object.assign(DATA.loc.misc.dictionary || {}, PARADOX_DICTIONARY);
+// ... and the regional forms' (jokers/pokejokers_regional.js)
+for (const [set, d] of Object.entries(REGIONAL_LOC)) Object.assign(DATA.loc.descriptions[set] = DATA.loc.descriptions[set] || {}, d);
 // (Gen 8 batch 3: the Galarian evolutions of Linoone / Corsola / Mr. Mime / Farfetch'd — a box after their own 3.9.1 text)
-for (const [k, lines] of Object.entries(GALAR_UPSTREAM_TEXT)) {
+for (const [k, lines] of Object.entries({ ...GALAR_UPSTREAM_TEXT, ...REGIONAL_UPSTREAM_TEXT })) {
   const e = DATA.loc.descriptions.Joker[k];
   if (e && e.text && !e.text.includes(lines[1])) DATA.loc.descriptions.Joker[k] = { ...e, text: [...e.text, ...lines] };
 }
@@ -730,7 +737,8 @@ const hooks = {
   calculate: rules.calculate,
   add_to_deck: shiny_hooks.add_to_deck,
   // (+ the owner's Purugly: a debuffed one leaving gives its Joker slot back — jokers/pokejokers_designs.js slot_cost_removed)
-  card_removed(card) { slot_cost_removed(card); const r = shiny_hooks.card_removed(card); if (card.area === G.jokers) G.E_MANAGER.add_event(sync_kecleon); return r; },
+  // (+ regional batch A, Alolan Marowak's Shadow Bone: a card of your deck destroyed marks the round — poke_card_destroyed)
+  card_removed(card) { poke_card_destroyed(card); slot_cost_removed(card); const r = shiny_hooks.card_removed(card); if (card.area === G.jokers) G.E_MANAGER.add_event(sync_kecleon); return r; },
   set_edition: shiny_hooks.set_edition,
   // (the Debris Sleeve's alt on the Debris Deck: a Hazard card holds card_limit +1 — backs/backs1.js)
   set_ability: debris_hazard_card_limit,
@@ -1103,7 +1111,13 @@ export const POKERMON = registerMod({
   // 80 = Gen 9 batch 4, the Gen 9 Legendaries (jokers/pokejokers_designs.js, #1001-1017), each complete alone: Wo-Chien (every Blind 15%
   // lower), Chien-Pao (scored cards X1.1), Ting-Lu (+2 hands in Boss Blinds), Chi-Yu (Boss Blinds disabled), Koraidon (always sunny) and
   // Miraidon (always Electric Terrain; X2 + X0.5 per Paradox of their era), Ogerpon (a mask an Ante). New content only.
-  contentRev: 80,
+  // 81 = the owner's regional batch A, the 18 Alolan forms (jokers/pokejokers_regional.js): own lines beside the Kanto originals (Rattata,
+  // Sandshrew, Vulpix, Diglett, Meowth, Geodude, Grimer), three BRANCH evolutions of Kanto Basics by an Energy used on them (Pikachu ->
+  // Alolan Raichu: Psychic; Exeggcute -> Alolan Exeggutor: Dragon; Cubone -> Alolan Marowak: Fire), the house snow (is_snowy; Alolan
+  // Ninetales's Snow Warning, which re-forms Eiscue's ice too) and the regional pill (systems/types.js region_badge; display only). The
+  // branches, their family members and Eiscue's snow are gated by rulesRev (systems/energy.js ALOLA_REV), so runs recorded before r81 replay
+  // as recorded.
+  contentRev: 81,
   // Pokermon 3.9.1 pokermon.lua: SMODS.current_mod.optional_features = {quantum_enhancements = true, object_weights = true}.
   // object_weights sends create_card's key, the shop roll, tags, packs, bosses and vouchers through SMODS.poll_object
   // (js/engine/smods.js; batch 17). quantum_enhancements is the engine's check_enhancement, always on.

@@ -194,10 +194,13 @@ sec('pool rules', () => {
 
 // ------------------------------------------------------------------- the fallback: no Joker of the type left
 sec('fallback', () => {
-  // Gen 1 only: Pokermon has no Gen 1 Metal joker in its pools
+  // Gen 1 only: Pokermon has no Gen 1 Metal joker in its pools — but for the Alolan Diglett line (regional batch A: Metal, its base species'
+  // Gen 1), banned here so the type has none left
   const GEN1 = { gen_oneb: true, gen_two: false, gen_three: false, gen_four: false, gen_five: false, gen_six: false, gen_seven: false, gen_eight: false, gen_nine: false };
+  const noAlolanMetal = () => { G.GAME.banned_keys.j_poke_alolan_diglett = true; G.GAME.banned_keys.j_poke_alolan_dugtrio = true; };
   // (one run at a time: the engine state is global)
   const a = start(SKEY('Metal'), 'TSLFB', { modOptions: GEN1 });
+  noAlolanMetal();
   ok(forceShop(a), 'fallback: shop 1 opened');
   const fb = shopKeys();
   ok(G.GAME.poke_type_sleeve_last === null && fb.length === 2 && G.shop_jokers.cards.every((c) => ptype(c) !== 'Metal'), 'fallback: no Metal Joker can come up -> 2 normal jokers', [fb, G.GAME.poke_type_sleeve_last]);
@@ -206,6 +209,7 @@ sec('fallback', () => {
   ok(G.GAME.poke_type_sleeve_last === null && G.GAME.poke_type_sleeve_shops === 2 && G.shop_jokers.cards.length === 2, 'fallback: shop 2 falls back too', [G.GAME.poke_type_sleeve_last, shopKeys()]);
   // ... and shop 1 is exactly the stock of the same run with the guarantee used up (the fallback draws nothing from the RNG first)
   const b = start(SKEY('Metal'), 'TSLFB', { modOptions: GEN1 });
+  noAlolanMetal();
   G.GAME.poke_type_sleeve_shops = 2;
   forceShop(b);
   ok(JSON.stringify(shopKeys()) === JSON.stringify(fb), 'fallback: the same stock as a run without the guarantee', [fb, shopKeys()]);
