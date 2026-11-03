@@ -375,6 +375,14 @@
 	},
 	"entries": [
 		{
+			"sha": "644c2f3",
+			"date": "2026-11-03",
+			"kind": "patch",
+			"title": "Pokermon r75: Grimmsnarl keeps Impidimp's reroll discount; wiki placeholder fix",
+			"body": "The owner's Grimmsnarl tweak, gated by rulesRev('pokermon') >= 75\n(prank_discount75) so runs recorded on r71-r74 replay as recorded\n(LEGACY_MOD_VERSIONS untouched):\n- Grimmsnarl: shop rerolls cost $1 less (never below $1), on top of its\n  free first reroll and X0.1 per reroll. Its own reroll_discount (fixed,\n  not an Energy field) stacks with Impidimp / Morgrem copies. One made\n  before r75 has no field and gives the base $1.\n\nDesign wiki: Morgrem / Grimmsnarl printed raw \"#1#\" / \"$#4#\". The\ngenerator wiped G and only restored G.GAME, so prank_state() (reads\nG.STATES) threw and the loc_vars were dropped. gen_designwiki_mods now\nrestores what newRun puts on a wiped G (STATES, E_MANAGER, handlist).\nSame sweep: More Fluff's 15 Superboss Tokens were named \"#1#\";\ndescribe_mod now fills a name's #n# from loc_vars, as Balatro's\nlocalize{type='name'} does.\n\nTests: pokermon_gen8_batch2 (r75 section: alone, + Impidimp, + Morgrem,\ntwo, D6 floor, evolved, debuffed, old field-less card, text; the older\nGrimmsnarl checks on r74 rules; an r74 recipe resumed / stepped as\nrecorded; 13 fail without the change), designwiki_micatro_mods (no\n#n# anywhere in the generated mod data; fails on the old data with 38).\nRe-pinned modpin, pokermon_391_data, pokermon_new_jokers,\nmicatro_mod_version_pin. Wiki regenerated; DESIGN_GUIDE and PORTING\nupdated.",
+			"cards": []
+		},
+		{
 			"sha": "6fa2af1",
 			"date": "2026-11-03",
 			"kind": "micatro",
