@@ -152,8 +152,33 @@ export function type_badge(card) {
   for (const t of EXTRA_TYPES) if (t.type === ptype && t.gradient) b.gradient = t.gradient.slice();
   return b;
 }
-/** center.set_badges for Pokémon jokers. */
+/**
+ * The REGIONAL pill (the owner's regional batch A, 2026-11-03): a regional form's joker shows its region ("Alolan", "Galarian", "Hisuian",
+ * "Paldean") as a pill after its rarity and before its type, the way a Paradox joker shows its era. Display only (no rule reads it). The
+ * region is the center's `poke_region`, else read from its key (`j_<prefix>_<region>_<name>`: Pokermon's Hisuian Qwilfish, Nacho's
+ * Galarian Meowth and Hisuian Sneasel / Zorua / Zoroark / Sliggoo / Goodra need no change). White text on each colour passes WCAG AA
+ * (4.5:1): Alolan 5.2, Galarian 6.9, Hisuian 6.0, Paldean 6.3.
+ */
+export const REGIONS = {
+  alolan: { name: 'Alolan', colour: '#C2410C' },
+  galarian: { name: 'Galarian', colour: '#3557A6' },
+  hisuian: { name: 'Hisuian', colour: '#556B2F' },
+  paldean: { name: 'Paldean', colour: '#A8326E' },
+};
+export function region_of(center) {
+  if (!center) return null;
+  if (center.poke_region && REGIONS[center.poke_region]) return center.poke_region;
+  const m = /^j_[a-z0-9]+_(alolan|galarian|hisuian|paldean)_/.exec(center.key || '');
+  return m ? m[1] : null;
+}
+export function region_badge(center) {
+  const r = region_of(center);
+  return r ? { key: 'poke_region_' + r, label: REGIONS[r].name, colour: REGIONS[r].colour } : null;
+}
+/** center.set_badges for Pokémon jokers: a regional form's region pill, then the type pill. */
 export function poke_set_type_badge(self, card, badges) {
+  const rb = region_badge(self);
+  if (rb) badges.push(rb);
   const b = type_badge(card);
   if (b) badges.push(b);
 }

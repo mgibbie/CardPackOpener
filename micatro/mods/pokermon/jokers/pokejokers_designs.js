@@ -198,7 +198,7 @@ import {
   add_card, detailed, energy_values, poke_remove_card, ease_dollars, ease_discard, juice_card_until, find_card, get_total_energy, POST_EVOLVE, can_evolve,
   poke_change_growth_level,
   poke_get_adjacent_jokers, emit, find_joker, poke_drain, level_up_hand, poke_evolve, increment_energy, can_increase_energy, smods_debuff_card, blueprint_compat_line,
-  can_be_destroyed_by_joker, change_shop_size, faint_baby_poke, GEN9B2_REV,
+  can_be_destroyed_by_joker, change_shop_size, faint_baby_poke, GEN9B2_REV, ALOLA_REV,
 } from '../api.js';
 import { Tag, add_tag } from '../../../js/engine/tag.js';
 import { blueprint_effect } from './pokejokers_08.js';
@@ -888,12 +888,18 @@ export function regi_chip_bonus(v, card) {
 /** (Gen 5 batch 3: Escavalier's and Durant's "X1.75 instead of X1.5" are the same card-level rule: steel_rule_x takes the best undebuffed
  *  Registeel / Durant / Escavalier, so they never stack — Registeel's X2 wins over both, and two of them give X1.75 once.) */
 export function regi_h_x_mult(v, card) {
+  // (regional batch A, Alolan Golem's Galvanize: a Stone card held in hand counts as a Steel card for its held X — the Steel card's own
+  // X1.5, or the best Registeel / Durant / Escavalier rule's: the same card-level rule, never stacking)
+  if (galvanized(card)) return steel_rule_x() || (P_CENTERS.m_steel.config && P_CENTERS.m_steel.config.h_x_mult) || 1.5;
   if (!v || card.debuff || !has_enhancement(card, 'm_steel') || !G.jokers) return undefined;
   const best = steel_rule_x();
   if (!best) return undefined;
   const base = card.ability.h_x_mult || 1.5;
   return v * best / base;
 }
+/** Alolan Golem, Galvanize: a Stone card (not debuffed, not also a Steel card) held in hand while an undebuffed Alolan Golem is held. */
+export const galvanized = (card) => !!(G.jokers && G.hand && card && !card.debuff && card.area === G.hand && has_enhancement(card, 'm_stone')
+  && !has_enhancement(card, 'm_steel') && legends('alolan_golem').length > 0);
 /** The Stone / Steel card's own tooltip (engine hook enh_loc_vars, describe.js enh_live_vars): the number the two hooks above will
  *  score, from those same functions — Stone +100 (+ its banked perma_bonus) with Regirock, held Steel X2 (energized X2.1 / X2.2 / X2.3)
  *  with Registeel. No undebuffed Regi: undefined (the card's own +50 / X1.5). */
@@ -9212,6 +9218,28 @@ const glass_held = (context) => !!(context.individual && context.cardarea === G.
 /** The round's weather as Castform reads it on the round's first deal (Kyogre / Groudon lock it, Volcarona brings the sun, else the suit held
  *  most: forecast). Read by Eiscue on that same first deal. */
 const round_forecast = () => { const lock = castform_lock(); return lock === 'rainy' ? lock : volcarona_sun() ? 'sunny' : lock || forecast(G.hand.cards); };
+/** SNOW, the house snow (the owner's regional batch A, Alolan Sandshrew / Sandslash / Ninetales; beside cherrim_sunny, swift_swim_raining
+ *  and is_sandstorm): is it SNOWY for this card? (a) the round's FIRST deal's forecast is Snowy (round_forecast, Castform's own read: Spades
+ *  held most, unless Kyogre / Groudon lock the weather or Volcarona brings the sun), remembered on the card for the round (`snowy_round`,
+ *  read once a round on `snowread_round`); or (b) Snow Warning: an undebuffed Alolan Ninetales is held — every round is snowy, live (bought,
+ *  sold or debuffed, it changes at once; the shop too). Snow ADDS to the other weathers, never removes one: a Kyogre's rain, a Groudon's
+ *  or Volcarona's sun and a sandstorm all hold beside it, and Castform's form never changes for it (its Forecast stands). Out of a round only
+ *  (b) counts. */
+export const snow_warning = () => legends('alolan_ninetales').length > 0;
+export function is_snowy(card) {
+  const ex = card && card.ability && card.ability.extra, GM = G.GAME;
+  return !!((GM && GM.facing_blind && ex && ex.snowy_round === GM.round) || snow_warning());
+}
+/** The snow readers' first-deal read (Swift Swim's rain_read shape): true on the round's first deal (consumed). */
+export function snow_read(card, context, message) {
+  if (!first_deal(card, context, 'snowread_round')) return false;
+  const ex = card.ability.extra;
+  ex.snowread_round = G.GAME.round;
+  if (round_forecast() === 'snowy') ex.snowy_round = G.GAME.round;
+  if (message && is_snowy(card)) card_eval_status_text(card, 'extra', null, null, null, { message, colour: CASTFORM_FORMS.snowy.colour });
+  return true;
+}
+export const snow_state = (card) => (is_snowy(card) ? 'Snowy!' : G.GAME && G.GAME.facing_blind && card.ability.extra.snowread_round === G.GAME.round ? 'Not snowy' : 'Not snowy yet');
 /** Eiscue, Ice Face: X(Xmult) while its ice holds (form 'ice'); X(Xmult2) once broken (form 'noice', Noice Face's card). The ice breaks
  *  when the round's FIRST hand doesn't beat the Blind (in `after`, the hand's total added to the round's chips is still below the Blind's
  *  requirement: the round goes on); once a round at most, not a Blueprint's. It re-forms on the first deal of the next round whose
@@ -9221,7 +9249,9 @@ function ice_face(card, context) {
   const ex = card.ability.extra;
   if (first_deal(card, context, 'snow_round')) {
     ex.snow_round = G.GAME.round;
-    if (eiscue_broken(card) && round_forecast() === 'snowy') {
+    // (regional batch A: an Alolan Ninetales's Snow Warning makes every round snowy, so the ice re-forms then too — a move recorded on an
+    // older rev reads the forecast alone, as it did)
+    if (eiscue_broken(card) && (round_forecast() === 'snowy' || (rulesRev('pokermon') >= ALOLA_REV && snow_warning()))) {
       ex.form = 'ice';
       card_eval_status_text(card, 'extra', null, null, null, { message: 'Ice Face!', colour: '#8fd8ff' });
     }
@@ -12122,11 +12152,11 @@ export const DESIGN_LOC = {
     j_poke_frosmoth: { name: 'Frosmoth', text: ['{C:attention}Ice Scales:{} each {C:attention}Glass{}', 'card {C:attention}held in hand{}', 'gives {X:mult,C:white} X#1# {} Mult'] },
     j_poke_eiscue: { name: 'Eiscue', text: [
       '{C:attention}Ice Face:{} {X:mult,C:white} X#1# {} Mult', 'If the round\'s first hand', 'doesn\'t beat the {C:attention}Blind{}, the', 'ice breaks: {X:mult,C:white} X#2# {} Mult',
-      '{C:inactive,s:0.8}(It re-forms when a round\'s first', '{C:inactive,s:0.8}deal is {C:poke_snow,s:0.8}Snowy{C:inactive,s:0.8}: Spades held most)',
+      '{C:inactive,s:0.8}(It re-forms when a round\'s first', '{C:inactive,s:0.8}deal is {C:poke_snow,s:0.8}Snowy{C:inactive,s:0.8}: Spades held most,', '{C:inactive,s:0.8}or an Alolan Ninetales held)',
     ] },
     j_poke_eiscue_noice: { name: 'Eiscue', text: [
       '{C:attention}Noice Face:{} {X:mult,C:white} X#2# {} Mult', 'The ice re-forms ({X:mult,C:white} X#1# {})', 'when a round\'s first deal', 'is {C:poke_snow}Snowy{}',
-      '{C:inactive,s:0.8}(Spades held most:', '{C:inactive,s:0.8}Castform\'s Forecast)',
+      '{C:inactive,s:0.8}(Spades held most:', '{C:inactive,s:0.8}Castform\'s Forecast;', '{C:inactive,s:0.8}or an Alolan Ninetales held)',
     ] },
     j_poke_indeedee: { name: 'Indeedee', text: [
       '{C:inactive}(Its gender is rolled', '{C:inactive}when it is obtained)', '♂: {X:mult,C:white} X#1# {} Mult and', '{C:attention}+#2#{} consumable slot', '♀: each {C:tarot}Tarot{} card', 'used earns {C:money}$#3#{}',

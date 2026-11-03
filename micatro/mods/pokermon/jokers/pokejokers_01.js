@@ -6,7 +6,7 @@ import {
   G, P_CENTERS, localize, card_eval_status_text, pseudorandom, ease_discard, ease_hands_played,
   create_card, juice_card_until, defineJokers, type_tooltip, detailed, scaling_evo, level_evo, item_evo,
   ease_poke_dollars, has_enhancement, getMega_by_position, find_card, any, RANKS, RANK_ID,
-  get_probability_vars, pseudorandom_probability, poke_convert_cards_to,
+  get_probability_vars, pseudorandom_probability, poke_convert_cards_to, ALOLA_REV,
 } from '../api.js';
 
 const FILE = 'pokemon/pokejokers_01.lua';
@@ -448,7 +448,10 @@ defineJokers({
     },
   },
   // Pikachu 025 (3.9.1: +Mult at $25+, $2 when a Blind is selected below it; no cash-out $)
+  // (+ regional batch A: a Psychic Energy used on it evolves it into Alolan Raichu — systems/energy.js energy_evo_target; its Thunder
+  // Stone evolution into Raichu is unchanged)
   pikachu: {
+    poke_energy_evo: { etype: 'Psychic', into: 'j_poke_alolan_raichu', rev: ALOLA_REV },
     loc_vars(self, info_queue, center) {
       type_tooltip(self, info_queue, center);
       if (detailed()) info_queue.push(P_CENTERS.c_poke_thunderstone);
