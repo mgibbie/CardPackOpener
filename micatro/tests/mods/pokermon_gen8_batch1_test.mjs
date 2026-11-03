@@ -10,6 +10,8 @@
 //   Chewtle 833 -> Drednaw (Water)                                  +3 Mult / X1 + X0.3 for each Water Joker, itself included.
 //   Rolycoly 837 (Earth) -> Carkol -> Coalossal (Fire)              a deck card becomes Stone each Blind; Stone +6 Mult / X1.3; +1 discard.
 //   Silicobra 843 -> Sandaconda (Earth)                             Sand Spit: discarded cards 1 in 4 Stone; the house SANDSTORM; Stone +20
+//                                                                   (r73, the owner's: Sandaconda keeps Sand Spit; a run recorded on r72
+//                                                                   replays without it)
 //                                                                    Chips and X1.2.
 //   Cramorant 845 (Water, R $7)                                     Gulp Missile: the first discard loads X2.5 for the next scored hand.
 //   Arrokuda 846 -> Barraskewda (Water)                             Propeller Tail: the first scored card +10 Mult / X2.
@@ -475,6 +477,71 @@ await sec('sand', () => {
   stackDeck(['C_2', 'C_3', 'C_4', 'C_5', 'C_6', 'H_7', 'H_8', 'S_9']);
   act({ type: 'select_blind' }); flush();
   ok(DES.is_sandstorm() && ex(cf).form === 'rainy', 'Castform in a sandstorm: still its forecast (Clubs: Rainy)', ex(cf).form);
+});
+
+// ------------------------------------------------------------------- Sandaconda r73: it keeps Silicobra's Sand Spit (the owner's)
+await sec('sandaconda sand spit r73', () => {
+  ok(C('sandaconda').config.extra.num === 1 && C('sandaconda').config.extra.dem === 4 && !('num' in energy_values) && !('dem' in energy_values), 'Sandaconda: num / dem 1 in 4 (fixed: no energy field)');
+  start('SAND73');
+  const s = add('j_poke_sandaconda');
+  G.GAME.probabilities.normal = 1000;
+  let d = discard(['S_K', 'H_9', ['D_5', 'm_glass']]);
+  ok(key(d.cards[0]) === 'm_stone' && key(d.cards[1]) === 'm_stone' && key(d.cards[2]) === 'm_glass', 'r73 Sandaconda, Sand Spit (odds forced): each discarded unenhanced card becomes Stone; a Glass card stays Glass', d.cards.map(key));
+  G.GAME.probabilities.normal = 0;
+  d = discard(['S_Q']);
+  ok(key(d.cards[0]) === 'c_base', 'no luck: it stays', key(d.cards[0]));
+  G.GAME.probabilities.normal = 1;
+  let stoned = 0;
+  for (let i = 0; i < 100; i++) { d = discard(['S_7', 'H_7']); stoned += d.cards.filter((c) => key(c) === 'm_stone').length; }
+  ok(stoned > 30 && stoned < 75, 'about 1 in 4 (200 cards)', stoned);
+  ok(/Sand Spit: each card you discard has a 1 in 4 chance to become a Stone card/.test(plain(s)) && /Sandstorm: while you have this Joker/.test(plain(s)) && /Scored Stone cards give \+20 Chips and X1.2 Mult/.test(plain(s)),
+    'its text: Sandstorm, the Stone payoff and Sand Spit', plain(s));
+  // The Hook's discards don't count
+  G.GAME.probabilities.normal = 1000;
+  clearHand();
+  const hk = cards(['S_3', 'H_4']);
+  for (const c of hk) G.hand.add_to_highlighted(c, true);
+  RUN.discard_cards_from_highlighted(true); flush();
+  ok(hk.every((c) => key(c) === 'c_base'), 'The Hook\'s discard: nothing turns', hk.map(key));
+  debuff(s);
+  d = discard(['S_6']);
+  ok(key(d.cards[0]) === 'c_base', 'debuffed: no Sand Spit', key(d.cards[0]));
+  undebuff(s);
+  // r72 rules (a run recorded before r73, js/mods/pins.js RULES): no Sand Spit
+  PINS.RULES.pins = { pokermon: '3.9.1+r72' };
+  try { d = discard(['S_8', 'H_8']); } finally { PINS.RULES.pins = null; }
+  ok(d.cards.every((c) => key(c) === 'c_base'), 'r72 rules (odds forced): Sandaconda turns nothing (replays as recorded)', d.cards.map(key));
+  G.GAME.probabilities.normal = 1;
+  // the Stone payoff still works beside it
+  const t = play([['S_K', 'm_stone']]);
+  ok(t.chips === 5 + 50 + 20 && near(t.mult, 1.2), 'scored Stone: +20 Chips and X1.2 (unchanged)', t.total);
+  // a run recorded on r72 replays as recorded (no Stones from discards); the same moves on r73 turn some
+  const deck = { name: 'Sand', mods: ['pokermon'], params: { blind_scaling: 0.05 }, cards: [['S_K', 0, 0, 0, 13], ['H_9', 0, 0, 0, 13], ['D_5', 0, 0, 0, 13], ['C_7', 0, 0, 0, 13]], jokers: [{ key: 'j_poke_sandaconda' }] };
+  const record = (pins) => {
+    const ss = new Session();
+    PINS.RULES.pins = pins;
+    try {
+      ss.start({ seed: 'SAND73REC', customDeck: deck });
+      ss.act({ type: 'select_blind' }); flush();
+      for (let i = 0; i < 3 && G.GAME.current_round.discards_left > 0; i++) { ss.act({ type: 'highlight', ids: G.hand.cards.slice(0, 5).map((c) => c.sort_id) }); ss.act({ type: 'discard' }); flush(); }
+      ss.act({ type: 'highlight', ids: G.hand.cards.slice(0, 5).map((c) => c.sort_id) }); ss.act({ type: 'play' }); flush();
+    } finally { PINS.RULES.pins = null; }
+    return ss;
+  };
+  const stones = () => G.playing_cards.filter((c) => key(c) === 'm_stone').length;
+  const snap = () => ({ stones: stones(), deck: G.playing_cards.map((c) => c.base.suit + c.base.id + ':' + key(c)).sort().join(), chips: String(G.GAME.chips), hand: G.hand.cards.map((c) => c.sort_id).join() });
+  const old = record({ pokermon: '3.9.1+r72' });
+  const want = snap();
+  ok(want.stones === 0, 'the run on r72: 15 cards discarded, none turned', want.stones);
+  const rec = JSON.parse(JSON.stringify(old.recipe));
+  rec.modVersions.pokermon = '3.9.1+r72';
+  const r = Session.fromRecipe(JSON.parse(JSON.stringify(rec)), { repin: true }); flush();
+  ok(!r.stoppedAt && JSON.stringify(snap()) === JSON.stringify(want), 'resumed: every r72 move replays on r72 (the same deck, hand and score)', { want, got: snap() });
+  const st = Session.stepper(JSON.parse(JSON.stringify(rec)));
+  st.seek(st.total); flush();
+  ok(!st.error && st.index === rec.actions.length && JSON.stringify(snap()) === JSON.stringify(want), 'the replay stepper: the same', [st.error, snap().stones]);
+  record(null);
+  ok(stones() > 0, 'the same moves on r73: Sand Spit turns some (' + stones() + ' of 15)', stones());
 });
 
 // ------------------------------------------------------------------- Cramorant: Gulp Missile

@@ -3240,7 +3240,8 @@ Water). Art: upstream 3.9.1 cells (Natdex {12,45}-{28,45}, {0,46}-{20,46}, {2,47
   rank instead of its own** — 2 <-> Ace (11 / 2), 3 <-> King (10 / 3), 4 <-> Queen (10 / 4), 5 <-> Jack (10 / 5), 6 <-> 10, 7 <-> 9, 8 = 8. The
   card-level `chip_bonus` hook: the enhancement's bonus and **perma_bonus stay** (a Hiker card keeps its +5s on top of the flipped Chips);
   **Stone cards are unchanged**; two Malamars flip once; a debuffed Malamar flips nothing. With **Hiker**: Hiker still adds +5 to each card for
-  good, and that +5 is kept. Energy `mult` 4 -> 5.6 / 7.2 / 8.8 (Inkay); Malamar Energy-inert.
+  good, and that +5 is kept. Energy `mult` 4 -> 5.6 / 7.2 / 8.8 (Inkay); Malamar Energy-inert (until r73: it gained X1.25 on scored 2-5,
+  `Xmult_multi` 1.25 -> 1.3125 / 1.375 / 1.4375; see "The owner's Malamar / Morgrem / Sandaconda tweaks").
 - **Binacle** (C $5, 5) / **Barbaracle** (S $8): **each scored 7 +20 Chips / +20 Chips and X1.3**. Energy `chips` 20 -> 26 / 32 / 38,
   `Xmult_multi` 1.3 -> 1.365 / 1.43 / 1.495.
 - **Skrelp** (C $5, 5) / **Dragalge** (S $8), Poison Point: **when a Blind is selected, 1 random card of the full deck becomes a Hazard card**
@@ -3715,7 +3716,8 @@ Corviknight Metal, Blipbug Grass -> Dottler / Orbeetle Psychic, Rolycoly Earth -
   discard only, unenhanced cards only**; Blueprint rolls again). Carries Sandaconda's `chips`. **Sandaconda** (S $8), Sandstorm: **while held
   (undebuffed) every round is a sandstorm** — the house weather check **`is_sandstorm()`** (exported beside `cherrim_sunny` / `swift_swim_raining`; live,
   in the shop too; DESIGN_GUIDE 2.1 "SANDSTORM"); **scored Stone cards +20 Chips and X1.2**. **The choice: Castform ignores the sandstorm** (no sand
-  form); Flygon's / Hippowdon's "Sandstorm" / "Sand Stream" stay move names. Sandaconda does not keep Sand Spit (the spec's "same" was not given).
+  form); Flygon's / Hippowdon's "Sandstorm" / "Sand Stream" stay move names. Sandaconda does not keep Sand Spit (the spec's "same" was not given;
+  r73: it does, the owner's "yes").
   Energy `chips` 20 -> 26 / 32 / 38, `Xmult_multi` 1.2 -> 1.26 / 1.32 / 1.38.
 - **Cramorant** (Water, R $7), Gulp Missile: **your first discard each round loads a missile; the next scored hand fires it for X2.5** (a debuffed hand
   doesn't fire it; Blueprint copies the X of the one missile); **the choice: unfired at the round's end, it is lost**. Loaded, it draws its Gulping Form.
@@ -3766,7 +3768,7 @@ Art: upstream 3.9.1 cells (Natdex {14,56}-{10,57}; Toxtricity Gen 8 {6,0} Amped 
   Morgrem / Grimmsnarl **the first reroll in each shop is free** — **the choice: one however many are held, and NOT on top of another free reroll**
   (Chaos the Clown's, Bidoof's, a D6 Tag's $0: whatever made the shop's first reroll free uses it up; Morgrem + Chaos = one free reroll, Morgrem + D6 =
   $0, $1, $2). Like Chaos's it never steps the price up (spent as one of the engine's free rerolls: $0, $5, $6). "Each shop" counts from the shop
-  opening: bought after a reroll, nothing this shop. Morgrem does not keep Impidimp's discount (the spec). Grimmsnarl **permanently gains X0.1 for
+  opening: bought after a reroll, nothing this shop. Morgrem does not keep Impidimp's discount (the spec; r73: it does). Grimmsnarl **permanently gains X0.1 for
   every shop reroll, free ones included** (`prank_Xmult` from X1; Blueprint copies the X, not the gain). Impidimp / Morgrem carry Grimmsnarl's
   `Xmult_mod` ("Energy carries to Grimmsnarl"): 0.1 -> 0.12 / 0.14 / 0.16.
 - **Wiki**: regenerated (90 missing); the wiki sprites of the 14 are gone from `designwiki/sprites/pokermon_jokers/` (no new art).
@@ -3826,6 +3828,24 @@ Basculegion {2,11}; the unlisted ones in `systems/anim.js` GEN8_FORM_SPRITES); n
 - **Tests**: `micatro/tests/mods/pokermon_gen8_batch3_test.mjs` (fails on main: no such jokers). Re-recorded: `modpin_test`, `pokermon_391_data_test`,
   `pokermon_new_jokers_test`, `pokermon_gen8_batch1_test` / `pokermon_gen8_batch2_test` / `pokermon_sprigatito_test` (the Pokédex order), `pokermon_gen5_batch2_test` (Yamask's
   family), `pokermon_art_types_test`, `micatro_mod_version_pin`, `micatro_deckeditor_pages` (1195 jokers), `designwiki_pokermon_jokers_test`.
+
+### The owner's Malamar / Morgrem / Sandaconda tweaks (r73, 2026-11-03, branch `feat/pokermon-tweaks-r73`)
+Pinned **`3.9.1+r73`**. Three owner-approved changes, each gated by `rulesRev('pokermon') >= 73` so runs recorded on r62-r72 replay as recorded
+(never retroactive; `LEGACY_MOD_VERSIONS` untouched):
+- **Malamar** ("malamar is so weak please fix"): keeps Topsy-Turvy and now **each scored 2, 3, 4 or 5 also gives X1.25** (`Xmult_multi`, Energy
+  +5%: 1.3125 / 1.375 / 1.4375; its real rank, a Stone never; a retrigger repeats it; two Malamars flip once but each gives its X; Blueprint still
+  incompatible). It had no number (`poke_no_energy_field`), so the new field would change where an un-targeted Energy goes in an old run: on
+  r72 rules its `set_ability` deletes the field (Male Meowstic's way), so the Energy skips it as before; one made then and kept past a re-pin
+  gives the base X1.25. An energized Inkay carries its Energy into the X.
+- **Morgrem** keeps **Impidimp's $1 reroll discount** (`reroll_discount` 1, fixed; stacks with Impidimps' and other Morgrems', never below $1, a
+  free reroll stays free): the first reroll free, then $4, $5 ... **Grimmsnarl unchanged** (free first reroll only): the owner named Morgrem.
+- **Sandaconda** keeps **Silicobra's Sand Spit** (`num` / `dem` 1 in 4, fixed; the same `silicobra_spit` roll, a player's discard of an
+  unenhanced card only) beside its Sandstorm and Stone payoff.
+- **Tests**: `pokermon_gen6_batch2_test` (Malamar r73 played: straights, Stone, Bonus, Hack, two copies, debuffed, Energy target and steps,
+  Inkay's carried Energy; r72 rules; an r72 recipe resumed / stepped as recorded), `pokermon_gen8_batch2_test` (the r71-r72 Morgrem checks run on
+  r72 rules; r73: alone, two, + Impidimp, + Chaos, + D6, bought mid-shop, debuffed, Grimmsnarl unchanged; an r72 recipe as recorded),
+  `pokermon_gen8_batch1_test` (Sandaconda Sand Spit, The Hook, debuffed, r72 rules, an r72 recipe as recorded). Re-pinned: `modpin_test`,
+  `pokermon_391_data_test`, `pokermon_new_jokers_test`, `micatro_mod_version_pin`.
 
 ### Pending from the 3.9.1 joker rework (after batch 10b)
 Every existing joker is on 3.9.1: `rework_hold` (still on 3.2.1) is empty. What waits, by the batch it waits on (`rework_deferred` =

@@ -375,6 +375,14 @@
 	},
 	"entries": [
 		{
+			"sha": "84029c6",
+			"date": "2026-11-03",
+			"kind": "patch",
+			"title": "Pokermon r73: Malamar buff, Morgrem keeps Impidimp's discount, Sandaconda keeps Sand Spit",
+			"body": "The owner's three tweaks, each gated by rulesRev('pokermon') >= 73 so runs\nrecorded on r62-r72 replay as recorded (LEGACY_MOD_VERSIONS untouched):\n- Malamar: keeps Topsy-Turvy and each scored 2, 3, 4 or 5 also gives X1.25\n  (Xmult_multi, Energy +5%: 1.3125 / 1.375 / 1.4375). On older rules its\n  set_ability deletes the new field, so an old run's Energy still skips it.\n- Morgrem: keeps Impidimp's $1 reroll discount (stacks, never below $1) on top\n  of the free first reroll. Grimmsnarl unchanged.\n- Sandaconda: keeps Silicobra's Sand Spit (discarded unenhanced cards 1 in 4\n  Stone) beside Sandstorm and its Stone payoff.\n\nTests: pokermon_gen6_batch2 / gen8_batch1 / gen8_batch2 (played r73 checks,\nr72 rules, an r72 recipe resumed and stepped as recorded; the r71-r72 Morgrem\nchecks now run on r72 rules). Re-pinned modpin, pokermon_391_data,\npokermon_new_jokers, micatro_mod_version_pin. Wiki regenerated; DESIGN_GUIDE\nand PORTING updated.",
+			"cards": []
+		},
+		{
 			"sha": "c7a9b40",
 			"date": "2026-11-02",
 			"kind": "micatro",
