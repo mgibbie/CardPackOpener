@@ -295,13 +295,13 @@ try {
 	cp.page.on('request', r => {
 		if (!/\/designwiki\/data\/pokermon_jokers\.json/.test(r.url())) return r.continue();
 		const j = JSON.parse(JSON.stringify(D));
-		const t = j.species.find(s => s.dex === 990);
-		t.art.source = 'composed'; t.art.recipe = { frame: 'Metal Basic frame (test)', background: 'a scene (test)', sprite: 'irontreads.png x2' };
+		const t = j.species.find(s => s.dex === 1004);
+		t.art.source = 'composed'; t.art.recipe = { frame: 'Fire Legendary frame (test)', background: 'a scene (test)', sprite: 'chiyu.png x2' };
 		r.respond({ status: 200, contentType: 'application/json', body: JSON.stringify(j) });
 	});
-	await go(cp.page, '#/pokermon-jokers/990');
+	await go(cp.page, '#/pokermon-jokers/1004');
 	const cl = await cp.page.evaluate(() => ({ text: document.querySelector('.pj-artsrc')?.textContent, src: document.querySelector('.pj-artsrc')?.dataset.source, recipe: document.querySelector('.pj-recipe')?.textContent }));
-	A(cl.text === LABEL.composed && cl.src === 'composed' && /Metal Basic frame \(test\)/.test(cl.recipe || ''), 'a composed card is labelled "Art: composed (no upstream card yet)" with its recipe', JSON.stringify(cl));
+	A(cl.text === LABEL.composed && cl.src === 'composed' && /Fire Legendary frame \(test\)/.test(cl.recipe || ''), 'a composed card is labelled "Art: composed (no upstream card yet)" with its recipe', JSON.stringify(cl));
 	await cp.ctx.close();
 
 	// ---------- a non-owner: no box ----------
@@ -346,7 +346,7 @@ try {
 	A(await noHScroll(phA.page), '390 px index: no horizontal scroll');
 	A(await phA.page.evaluate(() => { const t = document.querySelectorAll('.pj-tile'); return t.length > 3 && t[0].getBoundingClientRect().top === t[2].getBoundingClientRect().top; }), '390 px index: three cards to a row');
 	await shot(phA.page, 'phone_index_signed_out');
-	await go(phA.page, '#/pokermon-jokers/990');
+	await go(phA.page, '#/pokermon-jokers/1004');
 	A(await noHScroll(phA.page) && !(await phA.page.$('.pj-owner')), '390 px card, signed out: no horizontal scroll, no box');
 	await shot(phA.page, 'phone_card_signed_out');
 	await phA.ctx.close();
