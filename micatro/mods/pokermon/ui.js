@@ -33,7 +33,7 @@ import { family_display_key } from './systems/precedence.js';
 import { TYPE_COLOURS } from './systems/types.js';
 import { KECLEON_ATLAS, KECLEON_SPRITES, CASTFORM_SPRITES, CHERRIM_SPRITES, GIRATINA_ORIGIN, CLOAK_ATLAS, BURMY_SPRITES, DEOXYS_SOULS, IMPOSTER_REVEALED, SERIES_A_ANIM } from './systems/anim.js';
 import D391 from './data391.js';
-import { SEA_ATLAS, SEA_SPRITES, BASCULIN_SPRITES, GEN5_LEGEND_FORMS, SEASON_SPRITES, GEN6_FORM_SPRITES, GEN6_LEGEND_FORMS, GEN7_FORM_SPRITES, GEN7_LEGEND_FORMS } from './systems/anim.js';
+import { SEA_ATLAS, SEA_SPRITES, BASCULIN_SPRITES, GEN5_LEGEND_FORMS, SEASON_SPRITES, GEN6_FORM_SPRITES, GEN6_LEGEND_FORMS, GEN7_FORM_SPRITES, GEN7_LEGEND_FORMS, GEN8_FORM_SPRITES } from './systems/anim.js';
 
 const MOD = 'pokermon';
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -358,6 +358,9 @@ function ownFace(d0) {
   // Gen 7 batch 1 (the owner's): Oricorio's dance style, Wishiwashi's School Form (the Gen 7 sheet)
   const g7 = p && GEN7_FORM_SPRITES[d.center] && GEN7_FORM_SPRITES[d.center][p.form];
   if (g7) return { ...d, atlas: P_CENTERS[d.center].atlas, pos: g7 };
+  // Gen 8 batch 1 (the owner's): Cramorant's Gulping Form while a missile is loaded (the Gen 8 sheet)
+  const g8 = p && GEN8_FORM_SPRITES[d.center] && GEN8_FORM_SPRITES[d.center][p.form];
+  if (g8) return { ...d, atlas: P_CENTERS[d.center].atlas, pos: g8 };
   // Unown: its form's letter floats over the card
   const u = withUnownForm(d);
   return u === d0 ? null : u;

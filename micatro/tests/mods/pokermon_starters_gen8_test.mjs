@@ -100,9 +100,9 @@ sec('static', () => {
     && !('d_size' in energy_values) && !('hands' in energy_values) && !('rounds' in energy_values),
     'Energy fields: mult +40%, Xmult_mod +20%, chips +30%, Xmult_multi +5%; d_size, hands, rounds fixed');
   const keys = MODS.pokermon.content.centers.filter((x) => x.set === 'Joker').map((x) => x.key);
-  const order = ['rillaboom', ...ALL, 'nickit'].map((n) => 'j_poke_' + n);
+  const order = ['rillaboom', ...ALL, 'rookidee'].map((n) => 'j_poke_' + n);
   const i = keys.indexOf('j_poke_rillaboom');
-  ok(i > 0 && order.every((k, n) => keys[i + n] === k), 'Pokédex order: Rillaboom (812), Scorbunny ... Inteleon (813-818), Nickit (827)', keys.slice(i, i + 8));
+  ok(i > 0 && order.every((k, n) => keys[i + n] === k), 'Pokédex order: Rillaboom (812), Scorbunny ... Inteleon (813-818), Rookidee (821, Gen 8 batch 1)', keys.slice(i, i + 8));
   ok(JSON.stringify(poke_get_family_list('raboot')) === '["scorbunny","raboot","cinderace"]' && JSON.stringify(poke_get_family_list('inteleon')) === '["sobble","drizzile","inteleon"]',
     'families: Scorbunny / Raboot / Cinderace and Sobble / Drizzile / Inteleon');
 });

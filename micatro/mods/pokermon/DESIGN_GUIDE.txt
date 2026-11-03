@@ -1038,6 +1038,47 @@ House pattern: a HAND-TYPE BANK and a RUN COUNT (the Gen 7 Jangmo-o line, Clango
     (`clang_mult`; gain `mult_mod` +20%), Gible's scaling_evo at +16 then +40 in all. Kommo-o stops banking (it keeps giving it) and adds
     X1 + X0.15 per Full House played this RUN, read live from G.GAME.hands['Full House'].played (Chatot's record: a late Kommo-o counts
     every one; the hand being played already counts).
+House pattern: SANDSTORM, the house sandstorm (the Gen 8 Sandaconda; jokers/pokejokers_designs.js is_sandstorm, exported):
+  - The THIRD shared weather, beside the sun (cherrim_sunny: a red first deal, a working Groudon, Volcarona) and the rain
+    (swift_swim_raining: a Clubs first deal, a working Kyogre). is_sandstorm() is true while an UNDEBUFFED Sandaconda is held: every round
+    is a sandstorm, live (bought, sold or debuffed, it changes at once) and in the shop too (Volcarona's way). No forecast reads it yet: a
+    future sand source (a Sand Stream ability, a sand-raising Legendary) adds itself THERE, and every sand reader follows.
+  - A sand READER reads is_sandstorm() at the moment it pays (no per-round memory needed, since it has no first-deal part).
+  - Flygon's "{C:poke_sand}Sandstorm:" and the Hippopotas line's "{C:poke_sand}Sand Stream:" are move NAMES (their own Stone / discard
+    rules); they neither make nor read the weather. Castform has no sand form: a sandstorm never changes its forecast (its Clubs /
+    red / Spades read stands). Sun, rain and sand are independent (all three can hold at once).
+  - Sandaconda's own payoff is weather-free (scored Stone +20 Chips and X1.2: Stone "extra" rules on the joker, Sand Stream's shape).
+House pattern: a SAND SPIT, discards to Stone by chance (the Gen 8 Silicobra; sand_spit): each card the PLAYER discards (Trapinch's
+  pre_discard rule: a hook discard — The Hook, seals, other mods' blinds — doesn't count) that is UNENHANCED rolls num in dem (1 in 4,
+  pseudorandom_probability 'silicobra_spit': Oops! / Venonat raise it, Absol fixes it) to become Stone as it goes to the discard pile.
+  Enhanced cards never roll (the house "never overwrites" rule). Blueprint copies it (its own roll). Odds fixed; the Basic carries
+  Sandaconda's `chips` ("Energy carries to Sandaconda").
+House pattern: a DECK CONVERSION EACH BLIND for a Stone line (the Gen 8 Rolycoly line, Coal; blind_convert): Cherubi's sweet_seeds with
+  m_stone and its own stream ('poke_rolycoly_coal'): 1 random UNENHANCED full-deck card per Blind (none: nothing), Blueprint copies it
+  (Marble Joker's moment). Carkol adds scored Stone +6 Mult (`mult` +40%), Coalossal X1.3 (`Xmult_multi` +5%, a per-card X) and +1 discard
+  (`d_size`, the Charmander pair). The same helper plants Eldegoss's Seeds ('poke_eldegoss_seeds').
+House pattern: a SHOP CARD SLOT on a Stage 2 (the Gen 8 Corviknight; shop_slot): Overstock's change_shop_size(+1) in add_to_deck,
+  -1 in remove_from_deck (Dudunsparce's pair: a debuffed one lends none, copies stack), never taking the shop below 1 slot. Money at end
+  of round (Flying Taxi, $1 / $2 / $2) is calc_dollar_bonus (a cash-out row; Blueprint never copies it). The Basic and Stage 1 carry
+  Corviknight's `Xmult` (no `Xmult_mod` beside it, so copy_scaled_values never copies it: safe to carry, 2.4 #8).
+House pattern: a BOSS-BLIND HAND (the Gen 8 Dubwool, Cotton Guard; cotton_guard): when a Boss Blind is selected (setting_blind with
+  G.GAME.blind.boss; once a round, `guard_round`; not Blueprint), ease_hands_played(+1) for that round only. In the main end_of_round pass
+  an UNUSED extra hand is taken back before the cash-out counts hands (so it never pays the $1 a hand); sold mid-Boss it is taken back too
+  (never the last hand). Compare Rayquaza's / Kyogre's every-round +hands (round_resets).
+House pattern: a FIRST-DISCARD CHARGE, NEXT-HAND RELEASE (the Gen 8 Cramorant, Gulp Missile; gulp_missile): the round's FIRST player
+  discard (pre_discard, no hook, discards_used 0; once a round, `load_round`) loads `missile`; joker_main of the next hand that SCORES pays
+  X2.5 (`Xmult` +20%) — a Blueprint copy too, one missile — and `after` spends it (a debuffed hand has no joker_main, so it keeps it). The
+  round's end clears an unfired missile (lost). The loaded state is a form: its Gulping Form card (Gen 8 sheet {2,0}, unlisted;
+  GEN8_FORM_SPRITES) via poke_view_form. Compare Carnivine's first-discard devour and Drifloon's discard charges.
+House pattern: a FIRST SCORED CARD bonus (the Gen 8 Arrokuda line, Propeller Tail; propeller_tail): Crabrawler's position rule
+  (scoring_hand[0]; a debuffed one gives nothing, the next isn't promoted; a retrigger repeats it): +10 Mult (`mult`), then X2 as a
+  per-card X (`Xmult_multi` +5%: 2.1 / 2.2 / 2.3, Kartana's field for a one-card X).
+House pattern: the WATER team count (the Gen 8 Chewtle line; water_count): Cutiefly's one-type count with Water (is_type, undebuffed,
+  itself +1): +3 Mult / X1 + X0.3 per Water Joker (`mult` +40%, `Xmult_mod` +20%). Phione / Manaphy's other_joker shape is the Legendary
+  version (each Water Joker shows its own bonus).
+House pattern: FORESEEN cards as a stage ladder (the Gen 8 Blipbug line): +1 / +2 / +3 Foresight (the Shinx `scry` pair, fixed); Dottler
+  each Foreseen card +4 Mult (Patrat's Lookout shape, `mult` +40%), Orbeetle X1.15 each (Uxie's shape, `Xmult_multi` +5%). Blipbug has no
+  number and carries Dottler's `mult` ("Energy carries to Dottler").
 
 2.2 Rarity and cost conventions
 -------------------------------
@@ -1248,7 +1289,12 @@ Xmult_mod / mult_mod are energized).
 the Ultra Beasts' fixed fields: beast_boosts (the Beast Boost count), h_size (Buzzwole's -1), val_gain (Celesteela's $1), retriggers (Kartana),
 gluttony_Xmult (Guzzlord's bank; its gain Xmult_mod is energized), recoil (Blacephalon's $2), rounds (Poipole).
 the Gen 7 Legendaries' fixed fields: null_Xmult (Type: Null's bank), cosmo_mult / cosmo_Xmult / red / black (the Cosmog line), prism_Xmult / ultra_size
-(Necrozma), mist_money (Tapu Fini's $2), plasma_money (Zeraora's $1).
+(Necrozma), mist_money (Tapu Fini's $2), plasma_money (Zeraora's $1);
+the Gen 8 batch 1 fixed fields: taxi_money (the Rookidee line's $), card_slots (Corviknight's shop slot), scry (the Blipbug line), growth
+(Eldegoss), hands (Dubwool's Boss hand), d_size (Coalossal), num / dem (Silicobra's 1 in 4); the states missile / load_round / firing
+(Cramorant) and guard_round (Dubwool). Carried for the next stage: Rookidee / Corvisquire `Xmult` (Corviknight's), Blipbug `mult`
+(Dottler's), Rolycoly `mult` (Carkol's), Silicobra `chips` (Sandaconda's). Two energy fields on one number pair: Sandaconda's Stone
+`chips` and `Xmult_multi`.
 
 Designer consequences:
   1. The field name is a balance choice. A joker-wide X stored as Xmult grows 20% of its base
@@ -1407,7 +1453,9 @@ Seeds and Flowers (3.9.1)
     card and earns $15. Seed is in the Enhanced pool (weight 5). Miracle Seed (Item) makes one.
   - Flower card: X2 Mult if the poker hand contains 4+ suits. With Roserade (or the owner's Cherrim, or Lilligant) it
     needs only 3+ suits; with Shaymin or Shaymin Sky it gives X3. Cherrim in the sun: X2.5 instead of X2.
-  - Growth level (+1 extra growth per score): Shiftry, Brambleghast, the owner's Cherubi and Cherrim.
+  - Growth level (+1 extra growth per score): Shiftry, Brambleghast, the owner's Cherubi and Cherrim, the Gen 8 Eldegoss (each +1,
+    stacking: one a bloom in 3 scores, two in 2). Eldegoss also plants a Seed each Blind (blind_convert) and, with Gossifleur, pays
+    +4 Mult per scored Seed (Cotton Down; a Seed that blooms on that very score still counts: the hand's Seeds are marked in `before`).
   - Seeds planted by a destroyed card: the Gen 6 Trevenant (Forest's Curse, 2.1).
   House pattern: a SEED GROWER (the owner's Cherubi / Cherrim, jokers/pokejokers_designs.js sweet_seeds):
     - A deck conversion when a Blind is selected (the Regi trio's moment, 2.1): 1 random UNENHANCED card of the full deck
@@ -1555,6 +1603,7 @@ Type and keyword colours (pokesprites.lua pokermon.colours; Micatro TYPE_COLOURS
     Kyogre/Groudon, Hippowdon). All four are now used (Kyogre / Groudon too: "always {C:poke_rain}Rainy{}"): poke_sand by the owner's Flygon
     ("{C:poke_sand}Sandstorm:") and Hippopotas / Hippowdon ("{C:poke_sand}Sand Stream:"), poke_sun / poke_rain / poke_snow by the owner's Castform
     ("{C:poke_sun}Sunny Form:", "{C:poke_rain}Rainy Form:", "{C:poke_snow}Snowy Form:").
+    Gen 8 batch 1: poke_sand for the house sandstorm (Sandaconda, "{C:poke_sand}Sandstorm:"; is_sandstorm, 2.1).
 Most used tags overall:
   attention 1166, inactive 540, mult 230, X:mult 218, chips 184, money 122, br:2 106,
   green 77, dark_edition 49.
