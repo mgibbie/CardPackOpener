@@ -148,7 +148,24 @@ G.Coop = (() => {
     return [r1(local.x), r1(local.y), r2(local.moveAngle), local.walking ? 1 : 0, r1(local.hp), r1(local.maxHp),
             local.dead ? 1 : 0, m ? m.id : '', m ? m.lvl : 1, r1(local.magnet), r2(local.aim), r2(local.xpMul),
             r2(local.reviveT || 0), api.choosing && api.choosing() ? 1 : 0, doneSeq, orbs.map(x => [x.id, x.lvl]), G.Megas ? G.Megas.lookOf(local) : local.dex,   // (U2: field 16, the species you play now: Team mode switches it; U3: its Mega's id once it Mega Evolved)
-            local.item || local.item2 ? [local.item || '', local.item2 || ''] : 0];   // (MP polish: field 17, your held items, 0 = none: the host's tape and live view show them. An older reader ignores it)
+            local.item || local.item2 ? [local.item || '', local.item2 || ''] : 0,   // (MP polish: field 17, your held items, 0 = none: the host's tape and live view show them. An older reader ignores it)
+            kitState()];   // (field 18: your Z-move / Dynamax, 0 = none. An older reader ignores it)
+  }
+  /**
+   * Field 18 of a player's state: its Z-move and Dynamax as the others draw them, [kit flags (G.Replay.KF: Z / ready / in use,
+   * Dynamax / ready / on), the Dynamax body scale [x, y] or 0, 1 while hidden in its Z attack, the Z type]; 0 = neither.
+   * The host's puppet of you (and every other guest's) grows and glows with it, the host's tape rows and live view carry it.
+   */
+  function kitState() {
+    const KF = G.Replay && G.Replay.KF, Z = G.ZMoves, D = G.Dynamax;
+    if (!KF || !local) return 0;
+    let kf = 0;
+    const zt = Z && Z.activeType ? Z.activeType(local) : '';
+    if (zt && !G.World.zone && !(Z.blocked && Z.blocked())) kf |= KF.Z | (Z.state ? KF.Z_ON : 0) | (!Z.state && !Z.used ? KF.Z_READY : 0);
+    if (D && D.unlocked && D.unlocked() && !(D.blocked && D.blocked())) kf |= KF.DYN | (D.active ? KF.DYN_ON : 0) | (!D.used && !D.active ? KF.DYN_READY : 0);
+    const ds = local.dynScale;
+    if (!kf && !ds && !local.zHidden) return 0;
+    return [kf, ds ? [r2(ds[0]), r2(ds[1])] : 0, local.zHidden ? 1 : 0, kf & KF.Z ? zt : ''];
   }
 
   /**
@@ -170,7 +187,16 @@ G.Coop = (() => {
   function readState(a) {
     return { x: a[0], y: a[1], ang: a[2], walk: a[3], hp: a[4], maxHp: a[5], dead: a[6], mv: a[7], ml: a[8],
              mag: a[9], aim: a[10], xpMul: a[11], rev: a[12], ch: a[13], ld: a[14], ms: Array.isArray(a[15]) ? a[15] : null, dex: a[16] | 0,   // (DLC D16: ms; U2: dex)
-             it: Array.isArray(a[17]) ? a[17].slice(0, 2).map(v => (typeof v === 'string' && G.Items.BY[v] ? v : '')) : a.length > 17 ? ['', ''] : null };   // (MP polish: held items; an older client's frame (17 fields): null, unknown)
+             it: Array.isArray(a[17]) ? a[17].slice(0, 2).map(v => (typeof v === 'string' && G.Items.BY[v] ? v : '')) : a.length > 17 ? ['', ''] : null,   // (MP polish: held items; an older client's frame (17 fields): null, unknown)
+             kit: kitOf(a) };   // (field 18: the Z-move / Dynamax; an older client's frame: null, its puppet as before)
+  }
+  /** Field 18 read: {kf, ds: [x, y] | null, zh, zt}; 0 -> no kit; a frame without the field (an older client) -> null. */
+  function kitOf(a) {
+    if (a.length <= 18) return null;
+    const k = a[18];
+    if (!Array.isArray(k)) return { kf: 0, ds: null, zh: 0, zt: '' };
+    const ds = Array.isArray(k[1]) && k[1].length === 2 ? [G.U.clamp(+k[1][0] || 1, 0.5, 3), G.U.clamp(+k[1][1] || 1, 0.5, 3)] : null;
+    return { kf: k[0] | 0, ds, zh: k[2] ? 1 : 0, zt: typeof k[3] === 'string' ? k[3].slice(0, 12) : '' };
   }
 
   // ---------------- envío ----------------

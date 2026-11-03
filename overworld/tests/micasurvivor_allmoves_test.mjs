@@ -347,7 +347,7 @@ try {
 		G.Projectiles.clearOrbs(p);
 		return { len: row.length, f15: row[15], f7: row[7], old, now, orbs, orbits };
 	});
-	A(b6.len === 18 && /* (U2 appended field 16, the player's dex; MP polish field 17, the held items) */ JSON.stringify(b6.f15) === JSON.stringify(b6.orbits.map(id => [id, 2])) && b6.f7 === b6.orbits[0], 'a co-op frame\'s field 15 lists EVERY orbit move; fields 7-8 keep one for an old reader', JSON.stringify(b6));
+	A(b6.len === 19 && /* (U2 appended field 16, the player's dex; MP polish field 17, the held items; field 18, the Z-move / Dynamax) */ JSON.stringify(b6.f15) === JSON.stringify(b6.orbits.map(id => [id, 2])) && b6.f7 === b6.orbits[0], 'a co-op frame\'s field 15 lists EVERY orbit move; fields 7-8 keep one for an old reader', JSON.stringify(b6));
 	A(JSON.stringify(b6.old) === JSON.stringify([b6.orbits[0] + ':2']) && JSON.stringify(b6.now) === JSON.stringify(b6.orbits.map(id => id + ':2')) && b6.orbs.length === 2,
 		'an OLD frame (15 fields, one move) still reads; a new one gives the puppet both orbit moves, and both show their orbs', JSON.stringify(b6));
 	// (MP polish) field 17: your held items (0 when you hold none), for the host's tape and live view; a U2 frame (17 fields) reads as unknown

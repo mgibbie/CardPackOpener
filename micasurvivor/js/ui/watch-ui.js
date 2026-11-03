@@ -148,6 +148,8 @@ G.WatchUI = (() => {
       o.from = ex ? [m[3], m[4]] : [o.p.x, o.p.y]; o.to = [nb[3], nb[4]];
       o.p.hp = m[5]; o.p.maxHp = m[6] || 1; o.kind = m[9]; o.ctrl = m[10];
       o.p.walking = !!(m[7] & 2); o.p.anim.dir = m[8] | 0;
+      // (MP polish: a partner Dynamaxed (flag 4) is drawn giant with its aura; hidden in its Z attack (16): local or online)
+      if (v2) { o.p.dyn = !!(m[7] & 4); o.p.dynScale = o.p.dyn ? [G.Dynamax.GROW, G.Dynamax.GROW] : null; o.p.zHidden = !!(m[7] & 16); }
       if ((m[7] & 1) && !o.p.dead) { o.p.dead = true; o.p.anim.play('Faint', { hold: true }); }
       else if (!(m[7] & 1) && o.p.dead) { o.p.dead = false; o.p.anim.loop('Idle'); }
     }

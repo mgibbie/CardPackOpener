@@ -353,7 +353,8 @@ G.Replay = (() => {
   }
   /**
    * MP polish: a partner's Ultimate charge % and kit flags (KF): a local partner's from G.LocalCoop (its Ultimate, Z-move and
-   * Dynamax), an online one's Ultimate from the row its co-op frames carry (pl.xw, js/expedition/core.js guestAir).
+   * Dynamax), an online one's Ultimate from the row its co-op frames carry (pl.xw, js/expedition/core.js guestAir) and its
+   * Z-move / Dynamax from their field 18 (js/net/coop.js kitState).
    */
   function kitOf(x) {
     const o = x.pl, LC = G.LocalCoop;
@@ -361,6 +362,8 @@ G.Replay = (() => {
     let u = 0, kf = 0;
     if (w) { u = w[0] | 0; kf |= KF.ULT | ((w[4] & 1) ? KF.ULT_CAST : 0); }
     if (x.M && LC && LC.kitFlags) kf |= LC.kitFlags(x.M);
+    // (an online partner's Z-move / Dynamax: its co-op frames' field 18, js/net/coop.js kitState)
+    else if (o.remote && o.net && o.net.kit) kf |= o.net.kit.kf & (KF.Z | KF.Z_READY | KF.Z_ON | KF.DYN | KF.DYN_READY | KF.DYN_ON);
     return [u, kf];
   }
   function slowRow(o) {
