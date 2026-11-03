@@ -3296,13 +3296,19 @@ pokemon/s11424-b.png
 pokemon/s11424.png
 pokemon/s11456-b.png
 pokemon/s11456.png
+pokemon/s11457-b.png
+pokemon/s11457.png
 pokemon/s11488-b.png
 pokemon/s11488.png
 pokemon/s11489.png
+pokemon/s11490-b.png
+pokemon/s11490.png
 pokemon/s1152-b.png
 pokemon/s1152.png
 pokemon/s11520-b.png
 pokemon/s11520.png
+pokemon/s1153-b.png
+pokemon/s1153.png
 pokemon/s11552-b.png
 pokemon/s11552.png
 pokemon/s11584-b.png
@@ -3403,6 +3409,8 @@ pokemon/s12704-b.png
 pokemon/s12704.png
 pokemon/s12736-b.png
 pokemon/s12736.png
+pokemon/s12737-b.png
+pokemon/s12737.png
 pokemon/s12768-b.png
 pokemon/s12768.png
 pokemon/s128-b.png
@@ -3525,6 +3533,8 @@ pokemon/s14208.png
 pokemon/s14240-b.png
 pokemon/s14240.png
 pokemon/s14241.png
+pokemon/s14242-b.png
+pokemon/s14242.png
 pokemon/s14272-b.png
 pokemon/s14272.png
 pokemon/s14304-b.png
@@ -3532,6 +3542,8 @@ pokemon/s14304.png
 pokemon/s14336-b.png
 pokemon/s14336.png
 pokemon/s14337.png
+pokemon/s14338-b.png
+pokemon/s14338.png
 pokemon/s14368-b.png
 pokemon/s14368.png
 pokemon/s1440-b.png
@@ -3600,6 +3612,8 @@ pokemon/s15264-b.png
 pokemon/s15264.png
 pokemon/s15296-b.png
 pokemon/s15296.png
+pokemon/s15297-b.png
+pokemon/s15297.png
 pokemon/s15328-b.png
 pokemon/s15328.png
 pokemon/s15329-b.png
@@ -3628,6 +3642,8 @@ pokemon/s15488.png
 pokemon/s15489.png
 pokemon/s15520-b.png
 pokemon/s15520.png
+pokemon/s15521-b.png
+pokemon/s15521.png
 pokemon/s15552-b.png
 pokemon/s15552.png
 pokemon/s15584-b.png
@@ -3644,6 +3660,8 @@ pokemon/s15680-b.png
 pokemon/s15680.png
 pokemon/s15712-b.png
 pokemon/s15712.png
+pokemon/s15713-b.png
+pokemon/s15713.png
 pokemon/s15744-b.png
 pokemon/s15744.png
 pokemon/s15745-b.png
@@ -3701,6 +3719,8 @@ pokemon/s1600-b.png
 pokemon/s1600.png
 pokemon/s16000-b.png
 pokemon/s16000.png
+pokemon/s16001-b.png
+pokemon/s16001.png
 pokemon/s1601-b.png
 pokemon/s1601.png
 pokemon/s16032-b.png
@@ -3777,6 +3797,8 @@ pokemon/s1696-b.png
 pokemon/s1696.png
 pokemon/s16960-b.png
 pokemon/s16960.png
+pokemon/s16961-b.png
+pokemon/s16961.png
 pokemon/s1697-b.png
 pokemon/s1697.png
 pokemon/s16992-b.png
@@ -3812,6 +3834,8 @@ pokemon/s17408-b.png
 pokemon/s17408.png
 pokemon/s17440-b.png
 pokemon/s17440.png
+pokemon/s17441-b.png
+pokemon/s17441.png
 pokemon/s17472-b.png
 pokemon/s17472.png
 pokemon/s17504-b.png
@@ -3859,6 +3883,8 @@ pokemon/s1792-b.png
 pokemon/s1792.png
 pokemon/s17920-b.png
 pokemon/s17920.png
+pokemon/s17921-b.png
+pokemon/s17921.png
 pokemon/s17952-b.png
 pokemon/s17952.png
 pokemon/s17984-b.png
@@ -3980,6 +4006,8 @@ pokemon/s19296.png
 pokemon/s193.png
 pokemon/s19328-b.png
 pokemon/s19328.png
+pokemon/s19329-b.png
+pokemon/s19329.png
 pokemon/s19360-b.png
 pokemon/s19360.png
 pokemon/s19392-b.png
@@ -3991,6 +4019,8 @@ pokemon/s19456-b.png
 pokemon/s19456.png
 pokemon/s19488-b.png
 pokemon/s19488.png
+pokemon/s19489-b.png
+pokemon/s19489.png
 pokemon/s1952-b.png
 pokemon/s1952.png
 pokemon/s19520-b.png
@@ -4025,6 +4055,8 @@ pokemon/s19904-b.png
 pokemon/s19904.png
 pokemon/s19936-b.png
 pokemon/s19936.png
+pokemon/s19937-b.png
+pokemon/s19937.png
 pokemon/s19968-b.png
 pokemon/s19968.png
 pokemon/s20000-b.png
@@ -4114,12 +4146,16 @@ pokemon/s20832-b.png
 pokemon/s20832.png
 pokemon/s20864-b.png
 pokemon/s20864.png
+pokemon/s20865-b.png
+pokemon/s20865.png
 pokemon/s20896-b.png
 pokemon/s20896.png
 pokemon/s20928-b.png
 pokemon/s20928.png
 pokemon/s20960-b.png
 pokemon/s20960.png
+pokemon/s20961-b.png
+pokemon/s20961.png
 pokemon/s20992-b.png
 pokemon/s20992.png
 pokemon/s21024-b.png
@@ -4127,6 +4163,8 @@ pokemon/s21024.png
 pokemon/s21056-b.png
 pokemon/s21056.png
 pokemon/s21058.png
+pokemon/s21059-b.png
+pokemon/s21059.png
 pokemon/s21088-b.png
 pokemon/s21088.png
 pokemon/s2112-b.png
@@ -4168,6 +4206,8 @@ pokemon/s21344-b.png
 pokemon/s21344.png
 pokemon/s21376-b.png
 pokemon/s21376.png
+pokemon/s21377-b.png
+pokemon/s21377.png
 pokemon/s21408-b.png
 pokemon/s21408.png
 pokemon/s21409.png
@@ -4183,6 +4223,8 @@ pokemon/s21442.png
 pokemon/s21443.png
 pokemon/s21444.png
 pokemon/s21445.png
+pokemon/s21446-b.png
+pokemon/s21446.png
 pokemon/s21472-b.png
 pokemon/s21472.png
 pokemon/s21473.png
@@ -4213,6 +4255,10 @@ pokemon/s21664.png
 pokemon/s21696-b.png
 pokemon/s21696.png
 pokemon/s21697.png
+pokemon/s21698-b.png
+pokemon/s21698.png
+pokemon/s21699-b.png
+pokemon/s21699.png
 pokemon/s21728-b.png
 pokemon/s21728.png
 pokemon/s2176-b.png
@@ -4235,16 +4281,22 @@ pokemon/s21952-b.png
 pokemon/s21952.png
 pokemon/s21984-b.png
 pokemon/s21984.png
+pokemon/s21985-b.png
+pokemon/s21985.png
 pokemon/s22016-b.png
 pokemon/s22016.png
 pokemon/s22048-b.png
 pokemon/s22048.png
+pokemon/s22049-b.png
+pokemon/s22049.png
 pokemon/s2208-b.png
 pokemon/s2208.png
 pokemon/s22080-b.png
 pokemon/s22080.png
 pokemon/s22112-b.png
 pokemon/s22112.png
+pokemon/s22113-b.png
+pokemon/s22113.png
 pokemon/s22144-b.png
 pokemon/s22144.png
 pokemon/s22176-b.png
@@ -4269,6 +4321,8 @@ pokemon/s22400-b.png
 pokemon/s22400.png
 pokemon/s22432-b.png
 pokemon/s22432.png
+pokemon/s22433-b.png
+pokemon/s22433.png
 pokemon/s22464-b.png
 pokemon/s22464.png
 pokemon/s22496-b.png
@@ -4296,6 +4350,8 @@ pokemon/s22720.png
 pokemon/s22721.png
 pokemon/s22722.png
 pokemon/s22723.png
+pokemon/s2273-b.png
+pokemon/s2273.png
 pokemon/s22752-b.png
 pokemon/s22752.png
 pokemon/s22753.png
@@ -4322,6 +4378,8 @@ pokemon/s22977-b.png
 pokemon/s22977.png
 pokemon/s22980-b.png
 pokemon/s22980.png
+pokemon/s22981-b.png
+pokemon/s22981.png
 pokemon/s23008-b.png
 pokemon/s23008.png
 pokemon/s23009.png
@@ -4376,6 +4434,8 @@ pokemon/s2368-b.png
 pokemon/s2368.png
 pokemon/s23680-b.png
 pokemon/s23680.png
+pokemon/s23681-b.png
+pokemon/s23681.png
 pokemon/s2369-b.png
 pokemon/s2369.png
 pokemon/s23712-b.png
@@ -4454,6 +4514,8 @@ pokemon/s24544-b.png
 pokemon/s24544.png
 pokemon/s24576-b.png
 pokemon/s24576.png
+pokemon/s24577-b.png
+pokemon/s24577.png
 pokemon/s24608-b.png
 pokemon/s24608.png
 pokemon/s2464-b.png
@@ -4492,6 +4554,8 @@ pokemon/s2496-b.png
 pokemon/s2496.png
 pokemon/s24960-b.png
 pokemon/s24960.png
+pokemon/s24961-b.png
+pokemon/s24961.png
 pokemon/s2497-b.png
 pokemon/s2497.png
 pokemon/s24992-b.png
@@ -4554,6 +4618,10 @@ pokemon/s2562.png
 pokemon/s25632-b.png
 pokemon/s25632.png
 pokemon/s25633.png
+pokemon/s25634-b.png
+pokemon/s25634.png
+pokemon/s25635-b.png
+pokemon/s25635.png
 pokemon/s25664-b.png
 pokemon/s25664.png
 pokemon/s25696-b.png
@@ -4566,6 +4634,8 @@ pokemon/s25792-b.png
 pokemon/s25792.png
 pokemon/s25824-b.png
 pokemon/s25824.png
+pokemon/s25825-b.png
+pokemon/s25825.png
 pokemon/s25856-b.png
 pokemon/s25856.png
 pokemon/s25888-b.png
@@ -4721,6 +4791,8 @@ pokemon/s2784-b.png
 pokemon/s2784.png
 pokemon/s27840-b.png
 pokemon/s27840.png
+pokemon/s27841-b.png
+pokemon/s27841.png
 pokemon/s27872-b.png
 pokemon/s27872.png
 pokemon/s27904-b.png
@@ -4935,6 +5007,8 @@ pokemon/s30432-b.png
 pokemon/s30432.png
 pokemon/s30464-b.png
 pokemon/s30464.png
+pokemon/s30465-b.png
+pokemon/s30465.png
 pokemon/s30496-b.png
 pokemon/s30496.png
 pokemon/s30528-b.png
@@ -4977,6 +5051,8 @@ pokemon/s3104-b.png
 pokemon/s3104.png
 pokemon/s31040-b.png
 pokemon/s31040.png
+pokemon/s31041-b.png
+pokemon/s31041.png
 pokemon/s31072-b.png
 pokemon/s31072.png
 pokemon/s31104-b.png
@@ -4995,6 +5071,12 @@ pokemon/s31296-b.png
 pokemon/s31296.png
 pokemon/s31297.png
 pokemon/s31298.png
+pokemon/s31299-b.png
+pokemon/s31299.png
+pokemon/s31300-b.png
+pokemon/s31300.png
+pokemon/s31301-b.png
+pokemon/s31301.png
 pokemon/s31328-b.png
 pokemon/s31328.png
 pokemon/s3136-b.png
@@ -5040,6 +5122,8 @@ pokemon/s31904-b.png
 pokemon/s31904.png
 pokemon/s31936-b.png
 pokemon/s31936.png
+pokemon/s31937-b.png
+pokemon/s31937.png
 pokemon/s31968-b.png
 pokemon/s31968.png
 pokemon/s31969.png
@@ -5169,6 +5253,8 @@ pokemon/s3840-b.png
 pokemon/s3840.png
 pokemon/s3872-b.png
 pokemon/s3872.png
+pokemon/s3873-b.png
+pokemon/s3873.png
 pokemon/s3904-b.png
 pokemon/s3904.png
 pokemon/s3905-b.png
@@ -5247,6 +5333,8 @@ pokemon/s4736-b.png
 pokemon/s4736.png
 pokemon/s4768-b.png
 pokemon/s4768.png
+pokemon/s4769-b.png
+pokemon/s4769.png
 pokemon/s480-b.png
 pokemon/s480.png
 pokemon/s4800-b.png
@@ -5262,6 +5350,8 @@ pokemon/s4896-b.png
 pokemon/s4896.png
 pokemon/s4928-b.png
 pokemon/s4928.png
+pokemon/s4929-b.png
+pokemon/s4929.png
 pokemon/s4960-b.png
 pokemon/s4960.png
 pokemon/s4992-b.png
@@ -5278,6 +5368,8 @@ pokemon/s512-b.png
 pokemon/s512.png
 pokemon/s5120-b.png
 pokemon/s5120.png
+pokemon/s5121-b.png
+pokemon/s5121.png
 pokemon/s5152-b.png
 pokemon/s5152.png
 pokemon/s5184-b.png
@@ -6751,6 +6843,8 @@ pokemon/s7232-b.png
 pokemon/s7232.png
 pokemon/s7264-b.png
 pokemon/s7264.png
+pokemon/s7265-b.png
+pokemon/s7265.png
 pokemon/s7296-b.png
 pokemon/s7296.png
 pokemon/s7328-b.png
@@ -6847,6 +6941,10 @@ pokemon/s8320.png
 pokemon/s8321.png
 pokemon/s833-b.png
 pokemon/s833.png
+pokemon/s834-b.png
+pokemon/s834.png
+pokemon/s835-b.png
+pokemon/s835.png
 pokemon/s8352-b.png
 pokemon/s8352.png
 pokemon/s8384-b.png

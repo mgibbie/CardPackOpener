@@ -12,9 +12,9 @@
  *             change too: no more glide), and the Ultimate one tier up (js/expedition/ultimates.js tierOfRow). The passive,
  *             the kit and Maturity stay the member's
  *   the look  EXISTING ART ONLY (owner): the overworld battle system's own Mega sprite (overworld/data/pokemon/<spr>: the 48 of
- *             Gen 6-7), drawn at the member's size, mirrored for the right-facing rows (it faces left, like B1c's battle
- *             fronts), with the walking hop and the hurt flash. A Mega without one there (the Legends Z-A ones, the Z forms) is
- *             COMPOSED from the member's own animated sheet. Every Mega carries the same two code-drawn marks: a Mega aura at
+ *             Gen 6-7, and since 2026-11-03 the 45 Legends Z-A / Mega Dimension ones: tools/gen_mega_sprites.py), drawn at
+ *             the member's size, mirrored for the right-facing rows (it faces left, like B1c's battle fronts), with the walking hop
+ *             and the hurt flash. A Mega without one (none now; kept for safety) is COMPOSED from the member's own animated sheet. Every Mega carries the same two code-drawn marks: a Mega aura at
  *             its feet and the keystone's three-colour sign over its head. Nothing is a placeholder.
  *   sync      the League row's 6th field is the Mega's id (PokéAPI's form id, 0 none): a viewer / co-op puppet takes the
  *             look from it (G.ExpLeague.applyRow). Older readers ignore the field, so the `x` block stays v10.

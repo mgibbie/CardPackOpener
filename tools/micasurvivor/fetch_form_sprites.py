@@ -16,7 +16,8 @@ species (same FALLBACK table, same anchors, same palette PNGs). Where SpriteColl
   - a forme (Galarian Stunfisk, Zen Galarian Darmanitan): the overworld's static battle front, laid out as
     battle_sprites.py lays one out but SIZED TO ITS SPECIES' SHEET ({id}/front/, "src":"front"; build_matched)
   - a Mega with an overworld battle sprite (js/data/mega-data.js `spr`): the same, x1.12 ({id}/front/)
-  - any other Mega (32: the Legends Z-A ones, the Z forms): an ALIAS row, "al": <species>, its species' own row: the game
+  - (until 2026-11-03, when tools/gen_mega_sprites.py gave all of them a battle sprite: none is left) any other Mega
+    (32: the Legends Z-A ones, the Z forms): an ALIAS row, "al": <species>, its species' own row: the game
     draws the species' sheet with the Mega aura and keystone sign (js/systems/forms.js, js/expedition/mega.js). Existing
     art only, never a placeholder.
 """
@@ -93,7 +94,9 @@ def main():
     if '--static' in args:     # rebuild only the battle-front rows (their sizes), nothing fetched
         items = [it for it in items if it['id'] in rows and ('"src":"battle"' in rows[it['id']] or '"src":"front"' in rows[it['id']])]
     elif '--refresh' not in args:
-        items = [it for it in items if it['id'] not in rows]
+        # (2026-11-03: also an ALIAS row whose Mega now has a battle front of its own: tools/gen_mega_sprites.py gave the 32
+        #  Legends Z-A / Mega Dimension Megas overworld sprites, so they stop drawing their species' sheet)
+        items = [it for it in items if it['id'] not in rows or ('"al":' in rows[it['id']] and it['front'] and not it['collab'])]
     print(f'{len(items)} formes / Megas to do')
 
     # 1. SpriteCollab (animated): fetch_sprites.do_dex with the form folder in place of the species folder
