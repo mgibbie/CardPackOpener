@@ -375,6 +375,190 @@
 	},
 	"entries": [
 		{
+			"sha": "5b14135",
+			"date": "2026-11-02",
+			"kind": "micatro",
+			"title": "Pokermon r71: Gen 8 batch 2 (14 jokers, #848-861)",
+			"body": "",
+			"cards": [],
+			"micatroMods": [
+				{
+					"id": "pokermon",
+					"name": "Pokermon",
+					"added": [
+						{
+							"key": "j_poke_toxel",
+							"name": "Toxel",
+							"set": "Joker",
+							"rarity": "uncommon",
+							"cost": 4,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 14,
+								"y": 56
+							}
+						},
+						{
+							"key": "j_poke_toxtricity",
+							"name": "Toxtricity",
+							"set": "Joker",
+							"rarity": "rare",
+							"cost": 7,
+							"atlas": "@poke_AtlasJokersBasicGen08391",
+							"pos": {
+								"x": 6,
+								"y": 0
+							}
+						},
+						{
+							"key": "j_poke_sizzlipede",
+							"name": "Sizzlipede",
+							"set": "Joker",
+							"rarity": "common",
+							"cost": 5,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 18,
+								"y": 56
+							}
+						},
+						{
+							"key": "j_poke_centiskorch",
+							"name": "Centiskorch",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 8,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 20,
+								"y": 56
+							}
+						},
+						{
+							"key": "j_poke_clobbopus",
+							"name": "Clobbopus",
+							"set": "Joker",
+							"rarity": "common",
+							"cost": 5,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 22,
+								"y": 56
+							}
+						},
+						{
+							"key": "j_poke_grapploct",
+							"name": "Grapploct",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 8,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 24,
+								"y": 56
+							}
+						},
+						{
+							"key": "j_poke_sinistea",
+							"name": "Sinistea",
+							"set": "Joker",
+							"rarity": "common",
+							"cost": 5,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 26,
+								"y": 56
+							}
+						},
+						{
+							"key": "j_poke_polteageist",
+							"name": "Polteageist",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 8,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 28,
+								"y": 56
+							}
+						},
+						{
+							"key": "j_poke_hatenna",
+							"name": "Hatenna",
+							"set": "Joker",
+							"rarity": "uncommon",
+							"cost": 6,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 0,
+								"y": 57
+							}
+						},
+						{
+							"key": "j_poke_hattrem",
+							"name": "Hattrem",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 8,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 2,
+								"y": 57
+							}
+						},
+						{
+							"key": "j_poke_hatterene",
+							"name": "Hatterene",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 10,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 4,
+								"y": 57
+							}
+						},
+						{
+							"key": "j_poke_impidimp",
+							"name": "Impidimp",
+							"set": "Joker",
+							"rarity": "uncommon",
+							"cost": 6,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 6,
+								"y": 57
+							}
+						},
+						{
+							"key": "j_poke_morgrem",
+							"name": "Morgrem",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 8,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 8,
+								"y": 57
+							}
+						},
+						{
+							"key": "j_poke_grimmsnarl",
+							"name": "Grimmsnarl",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 10,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 10,
+								"y": 57
+							}
+						}
+					]
+				}
+			]
+		},
+		{
 			"sha": "5f88e6e",
 			"date": "2026-11-02",
 			"kind": "micatro",
