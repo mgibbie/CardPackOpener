@@ -1175,8 +1175,9 @@ House pattern: REROLL PRICES (the Gen 8 Impidimp line, Prankster; prank_reroll_c
   up ($0, $5, $6). add_to_deck / remove_from_deck queue a recalculation (bought or sold mid-shop, the price changes at once). Grimmsnarl banks X0.1
   per reroll (context.reroll_shop, free ones too); the Basic and Stage 1 carry its `Xmult_mod` ("Energy carries to Grimmsnarl").
   r73 (the owner's): Morgrem keeps Impidimp's $1 discount (its own `reroll_discount`, stacking with Impidimps'; prank_discount73), so a Stage 1
-  never loses its Basic's effect. Grimmsnarl does not (the owner named Morgrem only; with X0.1 a reroll, cheaper rerolls would also be a
-  scaling buff there).
+  never loses its Basic's effect. r75 (the owner's): Grimmsnarl keeps it too (its own `reroll_discount`, stacking with Impidimps' / Morgrems';
+  prank_discount75; a Grimmsnarl made before r75 has no field and gives the base $1), so no stage of the line drops an effect; with X0.1 a
+  reroll, the cheaper rerolls are also a scaling buff there (the owner's call).
 House pattern: a NEW EVOLUTION FOR AN EXISTING JOKER (the owner's Gen 8 batch 3: the Galarian / Hisuian forms of Linoone, Corsola,
   Farfetch'd, Mr. Mime, Yamask and Basculin — an owner-approved exception to "base Pokermon wins"):
   - The old joker keeps every number, rarity, cost and rule it had; the new path is ADDED (its text as a new box after the 3.9.1 text,
@@ -1430,7 +1431,7 @@ the Gen 8 batch 1 fixed fields: taxi_money (the Rookidee line's $), card_slots (
 (Cramorant) and guard_round (Dubwool). Carried for the next stage: Rookidee / Corvisquire `Xmult` (Corviknight's), Blipbug `mult`
 (Dottler's), Rolycoly `mult` (Carkol's), Silicobra `chips` (Sandaconda's). Two energy fields on one number pair: Sandaconda's Stone
 `chips` and `Xmult_multi`;
-the Gen 8 batch 2 fixed fields: reroll_discount (Impidimp's $1; Morgrem's since r73), num / dem (the Antique 1 in 10), the forms poke_tox_form / poke_tea (on
+the Gen 8 batch 2 fixed fields: reroll_discount (Impidimp's $1; Morgrem's since r73; Grimmsnarl's since r75), num / dem (the Antique 1 in 10), the forms poke_tox_form / poke_tea (on
 card.ability), the banks burn_mult / burn_Xmult / prank_Xmult (their gains mult_mod / Xmult_mod are energized), the state burn_round. Carried
 for the next stage: Impidimp / Morgrem `Xmult_mod` (Grimmsnarl's). Two energy fields on one number pair: Toxtricity's Amped `Xmult` and Low Key
 `chips`;

@@ -1063,6 +1063,9 @@ export const POKERMON = registerMod({
   // 74 = Gen 8 batch 4, the Gen 8 Legendaries (jokers/pokejokers_designs.js, #888-905), each complete alone: Zacian / Zamazenta (Crowned after
   // 3 Boss Blinds), Eternatus (Dynamax; Eternamax at 5 Bosses), Zarude (Jungle Drain), Regieleki (Transistor), Regidrago (Dragon Energy),
   // Glastrier (Glass X2.5: hook chip_x_mult), Spectrier (Grim Neigh), Calyrex (Seeds and Flowers) and Enamorus (Therian after 4 rounds).
+  // 75 = the owner's Grimmsnarl tweak (2026-11-03): Grimmsnarl keeps Impidimp's $1 reroll discount too (stacking with Impidimp / Morgrem
+  // copies), on top of its free first reroll and X0.1 per reroll. Gated by rulesRev (prank_discount75), so runs recorded before r75 replay
+  // as recorded.
   // 76 = Gen 9 batch 1 (jokers/pokejokers_designs.js, #919-950; r75 is the owner's Grimmsnarl tweak): Nymble / Lokix (Lunge: 3 or fewer
   // cards), Pawmi / Pawmo / Pawmot (Lightning team; face $; Revival Blessing: hooks.start_dissolve above), Squawkabilly (Parrot: Planets 1 in 2
   // to level twice; plumage rolled when obtained), Tadbulb / Bellibolt (discards; Electromorphosis charge), Wattrel / Kilowattrel (Wind Power:
