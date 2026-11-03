@@ -375,6 +375,441 @@
 	},
 	"entries": [
 		{
+			"sha": "c477ef4",
+			"date": "2026-11-03",
+			"kind": "micatro",
+			"title": "Pokermon r78: Gen 9 batch 3, the 20 Paradox Pokémon + Paradox rarity, Paradox Ball, Ancient / Future Packs",
+			"body": "",
+			"cards": [],
+			"micatroMods": [
+				{
+					"id": "pokermon",
+					"name": "Pokermon",
+					"added": [
+						{
+							"key": "j_poke_great_tusk",
+							"name": "Great Tusk",
+							"set": "Joker",
+							"rarity": "paradox",
+							"cost": 7,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 16,
+								"y": 65
+							},
+							"soul": {
+								"x": 17,
+								"y": 65
+							}
+						},
+						{
+							"key": "j_poke_scream_tail",
+							"name": "Scream Tail",
+							"set": "Joker",
+							"rarity": "paradox",
+							"cost": 7,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 18,
+								"y": 65
+							},
+							"soul": {
+								"x": 19,
+								"y": 65
+							}
+						},
+						{
+							"key": "j_poke_brute_bonnet",
+							"name": "Brute Bonnet",
+							"set": "Joker",
+							"rarity": "paradox",
+							"cost": 7,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 20,
+								"y": 65
+							},
+							"soul": {
+								"x": 21,
+								"y": 65
+							}
+						},
+						{
+							"key": "j_poke_flutter_mane",
+							"name": "Flutter Mane",
+							"set": "Joker",
+							"rarity": "paradox",
+							"cost": 7,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 22,
+								"y": 65
+							},
+							"soul": {
+								"x": 23,
+								"y": 65
+							}
+						},
+						{
+							"key": "j_poke_slither_wing",
+							"name": "Slither Wing",
+							"set": "Joker",
+							"rarity": "paradox",
+							"cost": 7,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 24,
+								"y": 65
+							},
+							"soul": {
+								"x": 25,
+								"y": 65
+							}
+						},
+						{
+							"key": "j_poke_sandy_shocks",
+							"name": "Sandy Shocks",
+							"set": "Joker",
+							"rarity": "paradox",
+							"cost": 7,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 26,
+								"y": 65
+							},
+							"soul": {
+								"x": 27,
+								"y": 65
+							}
+						},
+						{
+							"key": "j_poke_iron_treads",
+							"name": "Iron Treads",
+							"set": "Joker",
+							"rarity": "paradox",
+							"cost": 7,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 28,
+								"y": 65
+							},
+							"soul": {
+								"x": 29,
+								"y": 65
+							}
+						},
+						{
+							"key": "j_poke_iron_bundle",
+							"name": "Iron Bundle",
+							"set": "Joker",
+							"rarity": "paradox",
+							"cost": 7,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 0,
+								"y": 66
+							},
+							"soul": {
+								"x": 1,
+								"y": 66
+							}
+						},
+						{
+							"key": "j_poke_iron_hands",
+							"name": "Iron Hands",
+							"set": "Joker",
+							"rarity": "paradox",
+							"cost": 7,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 2,
+								"y": 66
+							},
+							"soul": {
+								"x": 3,
+								"y": 66
+							}
+						},
+						{
+							"key": "j_poke_iron_jugulis",
+							"name": "Iron Jugulis",
+							"set": "Joker",
+							"rarity": "paradox",
+							"cost": 7,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 4,
+								"y": 66
+							},
+							"soul": {
+								"x": 5,
+								"y": 66
+							}
+						},
+						{
+							"key": "j_poke_iron_moth",
+							"name": "Iron Moth",
+							"set": "Joker",
+							"rarity": "paradox",
+							"cost": 7,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 6,
+								"y": 66
+							},
+							"soul": {
+								"x": 7,
+								"y": 66
+							}
+						},
+						{
+							"key": "j_poke_iron_thorns",
+							"name": "Iron Thorns",
+							"set": "Joker",
+							"rarity": "paradox",
+							"cost": 7,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 8,
+								"y": 66
+							},
+							"soul": {
+								"x": 9,
+								"y": 66
+							}
+						},
+						{
+							"key": "j_poke_roaring_moon",
+							"name": "Roaring Moon",
+							"set": "Joker",
+							"rarity": "paradox",
+							"cost": 7,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 28,
+								"y": 66
+							},
+							"soul": {
+								"x": 29,
+								"y": 66
+							}
+						},
+						{
+							"key": "j_poke_iron_valiant",
+							"name": "Iron Valiant",
+							"set": "Joker",
+							"rarity": "paradox",
+							"cost": 7,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 0,
+								"y": 67
+							},
+							"soul": {
+								"x": 1,
+								"y": 67
+							}
+						},
+						{
+							"key": "j_poke_walking_wake",
+							"name": "Walking Wake",
+							"set": "Joker",
+							"rarity": "paradox",
+							"cost": 7,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 6,
+								"y": 67
+							},
+							"soul": {
+								"x": 7,
+								"y": 67
+							}
+						},
+						{
+							"key": "j_poke_iron_leaves",
+							"name": "Iron Leaves",
+							"set": "Joker",
+							"rarity": "paradox",
+							"cost": 7,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 8,
+								"y": 67
+							},
+							"soul": {
+								"x": 9,
+								"y": 67
+							}
+						},
+						{
+							"key": "j_poke_gouging_fire",
+							"name": "Gouging Fire",
+							"set": "Joker",
+							"rarity": "paradox",
+							"cost": 7,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 28,
+								"y": 67
+							},
+							"soul": {
+								"x": 29,
+								"y": 67
+							}
+						},
+						{
+							"key": "j_poke_raging_bolt",
+							"name": "Raging Bolt",
+							"set": "Joker",
+							"rarity": "paradox",
+							"cost": 7,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 0,
+								"y": 68
+							},
+							"soul": {
+								"x": 1,
+								"y": 68
+							}
+						},
+						{
+							"key": "j_poke_iron_boulder",
+							"name": "Iron Boulder",
+							"set": "Joker",
+							"rarity": "paradox",
+							"cost": 7,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 2,
+								"y": 68
+							},
+							"soul": {
+								"x": 3,
+								"y": 68
+							}
+						},
+						{
+							"key": "j_poke_iron_crown",
+							"name": "Iron Crown",
+							"set": "Joker",
+							"rarity": "paradox",
+							"cost": 7,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 4,
+								"y": 68
+							},
+							"soul": {
+								"x": 5,
+								"y": 68
+							}
+						},
+						{
+							"key": "c_poke_paradoxball",
+							"name": "Paradox Ball",
+							"set": "Item",
+							"cost": 4,
+							"atlas": "@poke_paradox_ball",
+							"pos": {
+								"x": 0,
+								"y": 0
+							}
+						},
+						{
+							"key": "p_poke_pokepack_ancient_normal",
+							"name": "Ancient Pack",
+							"set": "Booster",
+							"cost": 4,
+							"atlas": "@poke_paradox_packs",
+							"pos": {
+								"x": 0,
+								"y": 0
+							}
+						},
+						{
+							"key": "p_poke_pokepack_ancient_normal_2",
+							"name": "Ancient Pack",
+							"set": "Booster",
+							"cost": 4,
+							"atlas": "@poke_paradox_packs",
+							"pos": {
+								"x": 1,
+								"y": 0
+							}
+						},
+						{
+							"key": "p_poke_pokepack_ancient_jumbo",
+							"name": "Jumbo Ancient Pack",
+							"set": "Booster",
+							"cost": 6,
+							"atlas": "@poke_paradox_packs",
+							"pos": {
+								"x": 2,
+								"y": 0
+							}
+						},
+						{
+							"key": "p_poke_pokepack_ancient_mega",
+							"name": "Mega Ancient Pack",
+							"set": "Booster",
+							"cost": 8,
+							"atlas": "@poke_paradox_packs",
+							"pos": {
+								"x": 3,
+								"y": 0
+							}
+						},
+						{
+							"key": "p_poke_pokepack_future_normal",
+							"name": "Future Pack",
+							"set": "Booster",
+							"cost": 4,
+							"atlas": "@poke_paradox_packs",
+							"pos": {
+								"x": 0,
+								"y": 1
+							}
+						},
+						{
+							"key": "p_poke_pokepack_future_normal_2",
+							"name": "Future Pack",
+							"set": "Booster",
+							"cost": 4,
+							"atlas": "@poke_paradox_packs",
+							"pos": {
+								"x": 1,
+								"y": 1
+							}
+						},
+						{
+							"key": "p_poke_pokepack_future_jumbo",
+							"name": "Jumbo Future Pack",
+							"set": "Booster",
+							"cost": 6,
+							"atlas": "@poke_paradox_packs",
+							"pos": {
+								"x": 2,
+								"y": 1
+							}
+						},
+						{
+							"key": "p_poke_pokepack_future_mega",
+							"name": "Mega Future Pack",
+							"set": "Booster",
+							"cost": 8,
+							"atlas": "@poke_paradox_packs",
+							"pos": {
+								"x": 3,
+								"y": 1
+							}
+						}
+					]
+				}
+			]
+		},
+		{
 			"sha": "d4c02fd",
 			"date": "2026-11-03",
 			"kind": "micatro",
