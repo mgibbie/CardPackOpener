@@ -4035,6 +4035,42 @@ paradox pokemon as well." New content only (no older rule changes).
   pools, the ball, every pack size, Energy, save / resume + stepper, art types) and `overworld/tests/micatro_pokermon_paradox_ui_test.mjs` (the
   tooltip pills, the ball and four packs on the pack screen in a real browser). Re-recorded: `modpin_test`, `pokermon_391_data_test`,
   `pokermon_new_jokers_test`, `micatro_mod_version_pin`, `micatro_deckeditor_pages`, `designwiki_pokermon_jokers_test`.
+### Gen 9, batch 4: the Gen 9 Legendaries (2026-11-03, branch `feat/pokermon-gen9-legendaries`)
+Pinned **`3.9.1+r80`** (`contentRev: 80`; r76-r78 are Gen 9 batches 1-3, the Paradox batch r78, r79 the generation filter fix; `LEGACY_MOD_VERSIONS` untouched). The owner's "yes": the
+7 Gen 9 Legendaries, each complete ALONE (the solo rule, r59), all **Legendary $20** (The Soul / the Legendary pool), in `jokers/pokejokers_designs.js`
+(`tablets_of_ruin` / `beads_of_ruin` / `beads_disable` / `paradox_count` / `pulse_x` / `OGERPON_MASKS` / `mask_now` / `ogerpon_sync` / `wellspring_hand`;
+Ting-Lu reuses Dubwool's `cotton_guard`). Pokédex order: Wo-Chien, Chien-Pao, Ting-Lu, Chi-Yu after Gholdengo (1000); Koraidon and Miraidon after the
+Paradoxes 1005-1006; Ogerpon after Sinistcha (1013). Types = the cards' (Ogerpon: its mask's). Art: upstream 3.9.1 cells (Natdex {20..27,66} for the
+Ruinous four, {2,67} / {4,67} for Koraidon / Miraidon — their souls sit LEFT of the card, {1,67} / {3,67}, as the sprite table lists them —; Ogerpon on the
+Gen 9 sheet: Teal {4,4} its own card, Wellspring {2,5}, Hearthflame {8,4}, Cornerstone {6,5}, card + soul, `systems/anim.js` GEN9_LEGEND_FORMS; the
+unlisted Terastal mask cells {6,4} / {0,5} / {4,5} / {8,5} have no soul and are not used); nothing to deploy.
+- **Wo-Chien** (Grass), Tablets of Ruin: **every Blind's chip requirement is 15% lower**. **The choices**: cut when the Blind is set (queued after the
+  setting_blind pass, so The Wall's x4 / Violet Vessel's x6 are in it; Chicot's halving composes), floor of 15% off, never below 1 chip; the HUD's
+  "Score at least" updates (the 'blind' chips event); **one cut per Blind** whatever the copies (the shared record `G.GAME.poke_ruin_tablets`, keyed by
+  the round: the best of equals wins, nothing stacks; a Blueprint copies nothing); a Wo-Chien gained mid-Blind cuts from the next Blind, one sold
+  mid-Blind leaves this Blind's cut; a debuffed one at the selection cuts nothing. In G.GAME, so a resume and a replay rebuild the shown requirement
+  exactly. Energy-inert (the 15% is fixed).
+- **Chien-Pao** (Water), Sword of Ruin: **every scored card X1.1** (`Xmult_multi`). Blueprint copies it.
+- **Ting-Lu** (Earth), Vessel of Ruin: **+2 hands during Boss Blinds** (Dubwool's Cotton Guard, `hands` 2: given when the Boss is selected, an unused one
+  taken back at the round's end before the cash-out, so they never pay $1; sold mid-Boss it takes them back, never the last hand). Energy-inert; not Blueprint.
+- **Chi-Yu** (Fire), Beads of Ruin: **the Boss Blind's ability is disabled** (Chicot's: at the Boss's selection, and when gained or un-debuffed during
+  one). **The choices**: with an undebuffed Chicot held, Chicot does it and Chi-Yu does nothing, and it never disables an already disabled Blind
+  (Blind:disable isn't idempotent: The Wall would be halved twice); Energy-inert (no number); not Blueprint (as Chicot).
+- **Koraidon** (Dragon), Orichalcum Pulse: **always sunny while held** — it feeds the shared sun check (`volcarona_sun`, so Cherrim, Larvesta, Lurantis,
+  Castform Sunny on its first deal and the Ancient Paradoxes' Protosynthesis all see it); **Kyogre's rain coexists** (Castform stays Rainy under Kyogre's
+  lock, Swift Swim still rains). **X2 + X0.5 per Ancient Paradox Joker held** (undebuffed, by the Paradox batch's Ancient badge). Blueprint copies the X.
+- **Miraidon** (Dragon), Hadron Engine: **always Electric Terrain while held** (feeds `is_electric_terrain()`, the Future Paradoxes' Quark Drive). **X2 +
+  X0.5 per Future Paradox Joker held**. Blueprint copies the X.
+- **Ogerpon** (Grass), Masks: **a mask each Ante**, Deerling's seasons (from `round_resets.ante`: Teal at Ante 1, Wellspring, Hearthflame, Cornerstone,
+  then again; nothing rolled or stored). Its type follows the mask (`protean_set` from the center's `update`, so is_type / Energy / Kecleon see it at
+  once; a Tera sticker still overrides; **Monotype-exempt**) and so does its card. **Teal** +30 Mult; **Wellspring** +1 hand each round (Cotton Guard's
+  grant: an unused one taken back, never pays $1) and X1.5; **Hearthflame** X2.5; **Cornerstone** +150 Chips. Blueprint copies the score, never the hand.
+- **Energy** (1 / 2 / 3): Chien-Pao X1.155 / 1.21 / 1.265 a card; Koraidon / Miraidon X2.4 / 2.8 / 3.2 and +X0.6 / 0.7 / 0.8 a Paradox; Ogerpon +42 / 54 / 66
+  Mult, X1.8 / 2.1 / 2.4, X3 / 3.5 / 4, +195 / 240 / 285 Chips (each mask's own field, all raised at once; its CURRENT type's Energy matches). Fixed: the 15%,
+  the hands, the Boss disable, the weather. Energy-inert: Wo-Chien, Ting-Lu, Chi-Yu.
+- **Wiki**: regenerated (the 7 drop off the missing list; no new art).
+- **Tests**: `micatro/tests/mods/pokermon_gen9_legendaries_test.mjs` (fails on main: no such jokers). Re-recorded: `modpin_test`, `pokermon_391_data_test`,
+  `pokermon_new_jokers_test`, `micatro_mod_version_pin`, `micatro_deckeditor_pages`, `designwiki_pokermon_jokers_test` (its Legendary spot checks).
 
 ### The generation filter holds (r79, 2026-11-03, branch `fix/pokermon-gen-filter`)
 The owner: "the generation filters in the settings don't work — the gen 4 starters come up even when gen 4 is off". `get_gen_allowed` lets a
