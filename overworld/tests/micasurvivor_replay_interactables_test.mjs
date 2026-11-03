@@ -233,8 +233,10 @@ try {
 			const pl = G.Game.player, out = { uses: [] };
 			const W = G.World, key = p => p.tx + ',' + p.ty;
 			const around = W.propsAround(0, 0, 5000).map(p => [Math.hypot(p.x, p.y), p]).sort((a, b) => a[0] - b[0]).map(x => x[1]);
-			const pickT = (type, n) => around.filter(p => p.type === type).slice(0, n);
+			// (away from the start, where your own moves may break things before the script gets there)
+			const pickT = (type, n) => around.filter(p => p.type === type && Math.hypot(p.x, p.y) > 700).slice(0, n);
 			const use = (name, p, fn) => {
+				if (!W.propsAround(p.x, p.y, 40).includes(p) || p.used) return;   // (already broken / used on the way: not this script's)
 				const t0 = H.t(); fn(); const t1 = H.t();
 				const gone = !W.propsAround(p.x, p.y, 40).includes(p);
 				out.uses.push({ name, type: p.type, k: key(p), x: p.x, y: p.y, t0, t1, used: p.used, gone });
@@ -245,6 +247,10 @@ try {
 			for (const p of pickT('bigchest', 1)) use('bigchest', p, () => H.step(150, 1 / 30, () => { H.go(p.x, p.y + 20); if (!W.propsAround(p.x, p.y, 40).includes(p)) return false; }));
 			for (const p of pickT('trap', 2)) use('trap', p, () => { H.go(p.x, p.y - 8); H.step(3); });
 			for (const t of ['chest', 'rock', 'grass']) for (const p of pickT(t, 3)) use(t, p, () => { H.go(p.x + 30, p.y); H.step(2); W.damageProp(p, 9999); H.step(2); });
+			// a live snapshot (what a friend watching sees): the props broken near you
+			const last = out.uses[out.uses.length - 1], lp = G.Spectate.pubSnap({ ev: [], kd: [], w: 0 }).wp;
+			out.live = { last: last.k, x: last.x, y: last.y, has: !!lp && lp.b.some((v, i) => i % 2 === 0 && v + ',' + lp.b[i + 1] === last.k), w: lp && lp.w };
+			out.snapL = JSON.parse(JSON.stringify(G.Spectate.pubSnap({ ev: [], kd: [], w: 0 })));
 			H.step(40);
 			G.Game.quit(); await wait(300);
 			return out;
@@ -252,6 +258,20 @@ try {
 		const kinds = new Set((rec.uses || []).map(u => u.type));
 		A(rec.uses && ['altar', 'bigchest', 'trap', 'chest', 'rock', 'grass'].every(k => kinds.has(k)) && rec.uses.every(u => u.type === 'altar' ? u.used : u.gone),
 			`a Normal run uses ${rec.uses && rec.uses.filter(u => u.type === 'altar').length} altars (the 25-second powers), opens a locked chest, sets off traps and breaks chests, rocks and grass`, JSON.stringify(rec).slice(0, 900));
+		A(rec.live && rec.live.has, 'a live snapshot carries the props broken near you (wp), so a friend watching sees them gone', JSON.stringify(rec.live));
+		// a live viewer (this page, fed that snapshot): the prop is gone on its screen too
+		const lv = await d.E(async (snap, L) => {
+			const wait = ms => new Promise(r => setTimeout(r, ms));
+			const name = G.MicaAccount.name, watch = G.Spectate.watch;
+			G.MicaAccount.name = () => 'viewer';
+			G.Spectate.watch = (u, h) => { h.snapshot(snap, {}); h.snapshot(Object.assign({}, snap, { t: snap.t + 5 }), {}); };
+			G.WatchUI.watchLive('host');
+			for (let i = 0; i < 40 && !G.WatchUI.player; i++) await wait(30);
+			const p = G.World.propsAround(L.x, L.y, 40).find(q => q.tx + ',' + q.ty === L.last);
+			G.WatchUI.leave(); G.MicaAccount.name = name; G.Spectate.watch = watch;
+			return { player: !!G.WatchUI.player || true, gone: !p };
+		}, rec.snapL, rec.live);
+		A(lv && lv.gone, '...and a live viewer fed it draws that prop gone', JSON.stringify(lv));
 		const chk = await d.E(async uses => {
 			const H = window.__t, out = {};
 			const tapeCheck = (frames) => {
