@@ -3824,7 +3824,7 @@ Basculegion {2,11}; the unlisted ones in `systems/anim.js` GEN8_FORM_SPRITES); n
   a ♀ Indeedee are Energy-inert.
 - **Wiki**: regenerated (69 missing, after Gen 8 batch 2); the wiki sprites of the 21 are gone (no new art).
 - **Tests**: `micatro/tests/mods/pokermon_gen8_batch3_test.mjs` (fails on main: no such jokers). Re-recorded: `modpin_test`, `pokermon_391_data_test`,
-  `pokermon_new_jokers_test`, `pokermon_gen8_batch1_test` / `pokermon_sprigatito_test` (the Pokédex order), `pokermon_gen5_batch2_test` (Yamask's
+  `pokermon_new_jokers_test`, `pokermon_gen8_batch1_test` / `pokermon_gen8_batch2_test` / `pokermon_sprigatito_test` (the Pokédex order), `pokermon_gen5_batch2_test` (Yamask's
   family), `pokermon_art_types_test`, `micatro_mod_version_pin`, `micatro_deckeditor_pages` (1195 jokers), `designwiki_pokermon_jokers_test`.
 
 ### Pending from the 3.9.1 joker rework (after batch 10b)
