@@ -192,6 +192,15 @@ export const GEN7_FORM_SPRITES = {
  */
 export const GEN8_FORM_SPRITES = {
   j_poke_cramorant: { gulping: { x: 2, y: 0 } },
+  // Gen 8 batch 3 (the owner's, jokers/pokejokers_designs.js), all UNLISTED beside each one's own card: Alcremie's 63 Sweet x Cream forms
+  // (ability.extra.form 0-62, sweet-major, nine creams each: {10,0} {12,0} {14,0}, rows 1-7 x 0-14, row 8 x 0-6; form 0 is its own card
+  // {10,0}), Eiscue's Noice Face {10,8} beside its Ice Face {8,8}, Indeedee's ♀ {14,8} beside its ♂ {12,8} (poke_view_form: its gender) and
+  // Morpeko's Hangry Mode {2,9} beside its Full Belly {0,9}. Each cell's type icon matches the joker's (pokermon_gen8_batch3_test 'art'),
+  // but Hangry Morpeko's, which shows Dark: art only, its type stays Lightning.
+  j_poke_alcremie: Object.fromEntries(Array.from({ length: 62 }, (_, k) => { const i = k + 1; return [i, i < 3 ? { x: 10 + 2 * i, y: 0 } : { x: ((i - 3) % 8) * 2, y: 1 + Math.floor((i - 3) / 8) }]; })),
+  j_poke_eiscue: { noice: { x: 10, y: 8 } },
+  j_poke_indeedee: { female: { x: 14, y: 8 } },
+  j_poke_morpeko: { hangry: { x: 2, y: 9 } },
 };
 export function view_card(card, v) {
   const c = card.config.center;

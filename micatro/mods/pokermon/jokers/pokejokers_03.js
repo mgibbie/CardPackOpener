@@ -11,6 +11,26 @@ import {
   object_weights, poll_seal_weighted,
 } from '../api.js';
 import { get_current_pool, P_SEALS } from '../../../js/engine/core.js';
+import { rulesRev } from '../../../js/mods/pins.js';
+
+/** The owner's Gen 8 batch 3 (Pokermon r72): Farfetch'd -> Sirfetch'd. Each scored Lucky card whose effect triggers while Farfetch'd is
+ *  held counts its hits this round (the Sprigatito line's count: a card hitting both rolls counts 2; a retrigger rolls and counts again;
+ *  not a Blueprint's copy), kept on the card (`lucky_round` / `lucky_count`, read as 0 in any other round). At the end of a round with
+ *  SIRFETCH_LUCKY or more it evolves (scaling_evo: the main end_of_round pass; an Everstone blocks it). The count is kept on every rules
+ *  rev; the evolution only on r72+ (a move recorded before r72 replays as recorded). */
+export const SIRFETCH_LUCKY = 3;
+export const farfetchd_lucky_count = (card) => { const ex = card.ability.extra; return G.GAME && ex.lucky_round === G.GAME.round ? (ex.lucky_count || 0) : 0; };
+function farfetchd_lucky(self, card, context) {
+  const ex = card.ability.extra;
+  if (context.individual && context.cardarea === G.play && !context.end_of_round && !context.blueprint && context.other_card && context.other_card.lucky_trigger) {
+    const n = farfetchd_lucky_count(card);
+    ex.lucky_round = G.GAME.round;
+    ex.lucky_count = n + Math.max(1, context.other_card.lucky_procs || 0);
+    return undefined;
+  }
+  if (rulesRev('pokermon') >= 72 && context.end_of_round) return scaling_evo(self, card, context, 'j_poke_sirfetchd', farfetchd_lucky_count(card), SIRFETCH_LUCKY);
+  return undefined;
+}
 
 const FILE = 'pokemon/pokejokers_03.lua';
 
@@ -529,7 +549,8 @@ defineJokers({
       return item_evo(self, card, context, 'j_poke_magnezone');
     },
   },
-  // Farfetch'd 083
+  // Farfetch'd 083 (+ the owner's Gen 8 batch 3, r72: it evolves into Sirfetch'd at the end of a round in which Lucky cards triggered
+  // SIRFETCH_LUCKY (3) times while it was held — farfetchd_lucky)
   farfetchd: {
     loc_vars(self, info_queue, center) {
       type_tooltip(self, info_queue, center);
@@ -538,10 +559,12 @@ defineJokers({
         info_queue.push({ set: 'Other', key: 'holding', vars: ['Leek'] });
       }
       const [num, dem] = get_probability_vars(center, center.ability.extra.num ?? 1, center.ability.extra.dem, 'farfetchd');
-      return { vars: [center.ability.extra.money, num, dem] };
+      return { vars: [center.ability.extra.money, num, dem, farfetchd_lucky_count(center), SIRFETCH_LUCKY] };
     },
     add_to_deck(self, card, from_debuff) { if (!from_debuff) create_consumeable('c_poke_leek'); },
     calculate(self, card, context) {
+      const evo = farfetchd_lucky(self, card, context);
+      if (evo) return evo;
       if (context.using_consumeable) {
         // (Lua order: the roll happens first, so a Leek still consumes the 'farfetchd' seed.)
         if (pseudorandom_probability(card, 'farfetchd', card.ability.extra.num, card.ability.extra.dem, 'farfetchd') || context.consumeable.ability.name === 'leek') {

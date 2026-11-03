@@ -576,8 +576,9 @@ defineJokers({
       return level_evo(self, card, context, 'j_poke_linoone');
     },
   },
-  // Linoone 264
+  // Linoone 264 (+ the owner's Gen 8 batch 3, r72: a Dark Energy used on it evolves it into Obstagoon — systems/energy.js energy_evo_target)
   linoone: {
+    poke_energy_evo: { etype: 'Dark', into: 'j_poke_obstagoon' },
     loc_vars(self, info_queue, center) {
       type_tooltip(self, info_queue, center);
       info_queue.push({ set: 'Other', key: 'pickup' });

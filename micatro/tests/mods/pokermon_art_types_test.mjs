@@ -101,6 +101,11 @@ await sec('static', () => {
     && D.arrokuda === 'Water' && D.barraskewda === 'Water',
   'Gen 8 batch 1: Rookidee line Colorless -> Corviknight Metal (Flying/Steel: its card Metal), Blipbug Grass (Bug) -> Dottler / Orbeetle Psychic (Bug/Psychic: their cards Psychic), Gossifleur line Grass, Wooloo line Colorless, Chewtle line Water, Rolycoly Earth (Rock) -> Carkol / Coalossal Fire (Rock/Fire: their cards Fire), Silicobra line Earth, Cramorant Water, Arrokuda line Water',
   ['rookidee', 'corviknight', 'blipbug', 'dottler', 'rolycoly', 'carkol', 'silicobra', 'cramorant'].map((n) => D[n]));
+  ok(D.obstagoon === 'Dark' && D.cursola === 'Psychic' && D.sirfetchd === 'Fighting' && D.mrrime === 'Water' && D.runerigus === 'Psychic' && D.milcery === 'Fairy' && D.alcremie === 'Fairy'
+    && D.falinks === 'Fighting' && D.pincurchin === 'Lightning' && D.snom === 'Water' && D.frosmoth === 'Water' && D.eiscue === 'Water' && D.indeedee === 'Psychic' && D.morpeko === 'Lightning'
+    && D.cufant === 'Metal' && D.copperajah === 'Metal' && D.dracozolt === 'Lightning' && D.arctozolt === 'Lightning' && D.dracovish === 'Water' && D.arctovish === 'Water' && D.basculegion === 'Psychic',
+  'Gen 8 batch 3: Obstagoon Dark, Cursola / Runerigus / Basculegion Psychic (Ghost: their cards), Sirfetch’d / Falinks Fighting, Mr. Rime / Snom line / Eiscue Water (Ice), Milcery line Fairy, Pincurchin / Morpeko Lightning, Cufant line Metal, the Galar fossils by their cards (Dracozolt / Arctozolt Lightning, Dracovish / Arctovish Water)',
+  ['obstagoon', 'cursola', 'sirfetchd', 'mrrime', 'runerigus', 'basculegion', 'morpeko', 'arctozolt'].map((n) => D[n]));
   ok(CASTFORM_FORMS.normal.ptype === 'Colorless' && CASTFORM_FORMS.sunny.ptype === 'Fire' && CASTFORM_FORMS.rainy.ptype === 'Water' && CASTFORM_FORMS.snowy.ptype === 'Water',
     'Castform: Normal Colorless, Sunny Fire, Rainy / Snowy Water');
 });

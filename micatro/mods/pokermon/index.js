@@ -80,7 +80,8 @@ import './boosters/packs1.js';
 import './jokers/zzzapril_fools.js';
 import { DESIGN_FAMILIES, DESIGN_LOC, regi_chip_bonus, regi_h_x_mult, regi_enh_vars, slot_cost_removed, drifblim_destroyed, contrary_lifts, mummy_sell,
   freeze_keep, freeze_thaw, frozen_by, spore_first_deal, spore_hand_scored, malamar_chip_bonus,
-  pyukumuku_destroyed, pheromosa_rest, komala_destroy_immune } from './jokers/pokejokers_designs.js';
+  pyukumuku_destroyed, pheromosa_rest, komala_destroy_immune, GALAR_UPSTREAM_TEXT, GALAR_FAMILY_REV, rime_final_deal,
+  jokers_gone_count } from './jokers/pokejokers_designs.js';
 
 import { poke_set_type_badge, type_badge, type_tooltip, TYPE_COLOURS } from './systems/types.js';
 import { pokemon_in_pool, pool_filter, init_game_object, evo_item_in_pool } from './systems/pools.js';
@@ -93,7 +94,7 @@ import { SLEEVES } from './sleeves.js';
 import { TYPE_SLEEVE_LOC } from './typesleeves.js';
 import { POKE_UI } from './ui.js';
 import { cfg, hazard_deal_tip } from './systems/utils.js';
-import { family_win_keys, set_family } from './systems/evolution.js';
+import { family_win_keys, set_family, FAMILY_MEMBER_REV } from './systems/evolution.js';
 import { runbadge_hooks as RB, runbadge_view } from './systems/runbadges.js';
 import { ELITE_STAKE, elite_boss_eligible } from './stakes.js';
 import { capture_disc_action, APRIL_FOOLS } from './jokers/zzzapril_fools.js';
@@ -488,6 +489,8 @@ for (const [name, def] of Object.entries(DEFS.jokers)) {
   } else centers.push(c);
 }
 for (const f of DESIGN_FAMILIES) set_family(f);
+// (Gen 8 batch 3, r72: the Galarian evolutions joined existing lines — older recorded moves look those lines up without them)
+for (const [name, rev] of Object.entries(GALAR_FAMILY_REV)) FAMILY_MEMBER_REV.set(name, rev);
 for (const f of DATA.groups.consumables) for (const item of listOf(f)) centers.push(consumableCenter(item, f.file));
 // Content 3.9.1 adds that data.js (3.2.1) doesn't have (batch 10: Miracle Seed, Heavy-Duty Boots, the Seed card, the Debris
 // deck): its definition carries the whole static data (key, pos, atlas, config, ...) and is built like data.js's, after it.
@@ -537,6 +540,11 @@ for (const [k, d] of Object.entries(D391.loc)) {
 }
 // The owner's designs' text (jokers/pokejokers_designs.js DESIGN_LOC)
 for (const [set, d] of Object.entries(DESIGN_LOC)) Object.assign(DATA.loc.descriptions[set] = DATA.loc.descriptions[set] || {}, d);
+// (Gen 8 batch 3: the Galarian evolutions of Linoone / Corsola / Mr. Mime / Farfetch'd — a box after their own 3.9.1 text)
+for (const [k, lines] of Object.entries(GALAR_UPSTREAM_TEXT)) {
+  const e = DATA.loc.descriptions.Joker[k];
+  if (e && e.text && !e.text.includes(lines[1])) DATA.loc.descriptions.Joker[k] = { ...e, text: [...e.text, ...lines] };
+}
 // Nidoran's real names: Pokermon writes "Nidoran F" / "Nidoran M" (Balatro's m6x11 has no gender signs); ours draws ♀ / ♂
 // (micatro/assets/fonts/m6x11plus.ttf, tools/micatro/add_gender_glyphs.py). Display text only: the keys stay j_poke_nidoranf / m.
 export const GENDER_SIGN_NAMES = { j_poke_nidoranf: 'Nidoran♀', j_poke_nidoranm: 'Nidoran♂' };
@@ -670,7 +678,8 @@ const hooks = {
   new_round: RB.new_round,
   // (the round's first deal: the Monotype check, after every blind-select effect; and the owner's Amoonguss, Spore: the Boss Blind is
   // suspended from here, before the dealt cards land, until the first hand has scored — jokers/pokejokers_designs.js spore_first_deal)
-  draw_from_deck_to_hand(e) { RB.round_begin(e); spore_first_deal(); },
+  // (+ the owner's Mr. Rime, Screen Cleaner, Gen 8 batch 3: from the draw that leaves 1 hand — jokers/pokejokers_designs.js rime_final_deal)
+  draw_from_deck_to_hand(e) { RB.round_begin(e); spore_first_deal(); rime_final_deal(); },
   // Spore's end: the round's first hand has scored (run.js evaluate_play's last step), so the Boss Blind is back for the draw after it.
   hand_scored: spore_hand_scored,
   // The owner's Beartic, Freeze (Gen 5 batch 3): a frozen card stays in the hand when the round's end (or a pack closing) empties it
@@ -683,6 +692,7 @@ const hooks = {
   emplace(area, card, ...rest) { const r = RB.emplace(area, card, ...rest); if (area === G.jokers) sync_kecleon(); return r; },
   reordered(area) { if (area === G.jokers) { sync_kecleon(); RB.reordered(); } },
   sell_card(card, ...rest) {
+    jokers_gone_count(card); // (the owner's Basculegion, Gen 8 batch 3: Jokers sold or destroyed this run)
     const r = RB.sell_card(card, ...rest);
     // (the Obituary Sleeve's alt, batch 17: a sold joker makes a Negative Energy of its type; systems/rules.js)
     if (G.GAME && G.GAME.modifiers && G.GAME.modifiers.poke_obituary_alt) rules.obituary_energy(card);
@@ -716,7 +726,8 @@ const hooks = {
   end_round_start: pheromosa_rest,
   // (the owner's Drifblim, Aftermath: an owned Drifblim being destroyed makes a Negative Spectral — jokers/pokejokers_designs.js;
   // and the owner's Pyukumuku, Innards Out: a destroyed one pays $1 per round held)
-  start_dissolve(card) { drifblim_destroyed(card); pyukumuku_destroyed(card); },
+  // (+ the owner's Basculegion, Gen 8 batch 3: an owned Joker destroyed counts for Last Respects — jokers_gone_count)
+  start_dissolve(card) { drifblim_destroyed(card); pyukumuku_destroyed(card); jokers_gone_count(card); },
   // (the owner's Komala, Comatose, r68: Jokers skip it when choosing what to destroy, as an Eternal — the engine's can_be_destroyed_by_joker)
   joker_destroy_immune: komala_destroy_immune,
   edition_weight(w, type) {
@@ -1027,7 +1038,13 @@ export const POKERMON = registerMod({
   // Dottler / Orbeetle (Foresight), Gossifleur / Eldegoss (Cotton Down: Seeds), Wooloo / Dubwool (Cotton Guard: +1 hand on Boss Blinds), Chewtle
   // / Drednaw (Water team), Rolycoly / Carkol / Coalossal (Stone each Blind), Silicobra / Sandaconda (Sand Spit; the house sandstorm,
   // is_sandstorm), Cramorant (Gulp Missile) and Arrokuda / Barraskewda (Propeller Tail).
-  contentRev: 70,
+  // 72 = Gen 8 batch 3 (jokers/pokejokers_designs.js, #862-902): Milcery / Alcremie (Decorate; Whipped Cream), Falinks (Formation), Pincurchin
+  // (Lightning Rod), Snom / Frosmoth (Glass), Eiscue (Ice Face), Indeedee (♂ / ♀), Morpeko (Hunger Switch), Cufant / Copperajah (Steel), the
+  // Galar fossils (Ancient Jacks) and six NEW EVOLUTIONS of existing jokers: Linoone -> Obstagoon, Corsola -> Cursola, Mr. Mime -> Mr. Rime
+  // (an Energy of a set type used on it: systems/energy.js energy_evo_target), Farfetch'd -> Sirfetch'd (3 Lucky triggers in a round),
+  // Yamask -> Runerigus (10 Stones scored), Basculin -> Basculegion (25 cards of its stripe). Those evolutions (and the lines' new members,
+  // systems/evolution.js FAMILY_MEMBER_REV) are gated by rulesRev, so runs recorded before r72 replay as recorded.
+  contentRev: 72,
   // Pokermon 3.9.1 pokermon.lua: SMODS.current_mod.optional_features = {quantum_enhancements = true, object_weights = true}.
   // object_weights sends create_card's key, the shop roll, tags, packs, bosses and vouchers through SMODS.poll_object
   // (js/engine/smods.js; batch 17). quantum_enhancements is the engine's check_enhancement, always on.

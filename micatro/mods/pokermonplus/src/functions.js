@@ -148,15 +148,17 @@ const COMPAT = new Map();
 export function weakened_compat(center) {
   if (!center || center.set !== 'Joker') return false;
   if (center.sonfive_weakened_compat !== undefined) return !!center.sonfive_weakened_compat;
-  if (COMPAT.has(center.key)) return COMPAT.get(center.key);
+  // (cached per family view: Pokermon r72 added Galarian evolutions to some lines, which a move recorded on an older rev doesn't see)
   const fam = poke_get_family_list(center.name);
+  const ck = center.key + '|' + fam.length;
+  if (COMPAT.has(ck)) return COMPAT.get(ck);
   let keys = [center.key];
   if (fam.length > 1) {
     const prefix = center.poke_custom_prefix || 'poke';
     keys = fam.map((v) => 'j_' + prefix + '_' + (isTable(v) ? v.key : v)).filter((k) => P_CENTERS[k]);
   }
   const r = keys.some((k) => center_energizable(P_CENTERS[k]));
-  COMPAT.set(center.key, r);
+  COMPAT.set(ck, r);
   return r;
 }
 
