@@ -53,7 +53,11 @@ G.WatchUI = (() => {
   let liveA = null, liveB = null, livePP = null;
   /** The players whose view can be followed: the session's (a replay) or the live snapshot's (MP polish). */
   const playersNow = () => (ss ? ss.players : livePP) || [];
-  const stats = { snaps: 0, frames: 0, casts: 0, segLoads: 0 };
+  const stats = { snaps: 0, frames: 0, casts: 0, segLoads: 0, zCines: 0 };
+  // gap fix 2026-11-02: the Z-move cinematics of the run watched, ANY player's (player 1's, a local or an online partner's),
+  // as the run's own screens play them: a player's Z starting (in use in this frame, not in the latest one before it) queues
+  // its card; one at a time, on the viewer's clock (a replay's speed; paused with it). A seek drops them.
+  let zq = [], zOnAt = new Map(), zLastT = -1;
 
   // ---------------- building the puppets from a snapshot ----------------
 
@@ -99,7 +103,10 @@ G.WatchUI = (() => {
     const ex = !!exact || B === a;   // glide from frame a itself (a replay) or from where things are drawn now (live)
     world(a);
     // (the props the run broke and the altars it used: the tape's field 15 / a live snapshot's wp. Owner bug 2026-11-02)
+    // (gap fix: a live snapshot carries ALL of them, packed: wa, js/world/world.js propsAll; an older publisher's wp is near it only)
     if (a.wp) G.World.viewProps(a.wp);
+    else if (a.wa) G.World.viewProps(G.World.liveProps(a.wa));
+    zWatch(a);
     // your Pokémon
     if (!pl || dexNow !== a.me[0]) {
       pl = puppet(a.me[0], a.me[1]); dexNow = a.me[0]; movesKey = ''; castT = new Map();
@@ -212,6 +219,47 @@ G.WatchUI = (() => {
     timeNow = a.t / 10;
   }
 
+  /**
+   * The players in their Z-move in frame a: [slot, name, type] (a frame of several players: s.zon, js/mica/replay.js pov; a
+   * solo one: its own s.z), and a cinematic queued for each one that starts here. Only going forwards, frame by frame
+   * (at most 6 s on): a seek or a jump just takes the frame's state as it is.
+   */
+  function zWatch(a) {
+    const list = Array.isArray(a.zon) ? a.zon : a.z && a.z[1] ? [[a.pi | 0, who || '', a.z[0]]] : [];
+    const t = a.t | 0;
+    if (t < zLastT - 10) { zq = []; zOnAt = new Map(); zLastT = -1; }   // (back in time: a seek)
+    const fwd = zLastT >= 0 && t > zLastT && t - zLastT <= 60;
+    for (const z of list) {
+      const k = z[0] | 0, was = zOnAt.has(k) && zOnAt.get(k) >= zLastT;
+      if (fwd && !was && G.ZMoves && zq.length < 4) {
+        zq.push({ slot: k, name: z[1] || '', type: z[2] || 'normal', color: k === 0 && !(a.mt || []).length ? '#ffffff' : MATE_COL[(((playersNow()[k] || {}).c) | 0)] || '#ffffff', t: 0 });
+        stats.zCines++;
+      }
+      zOnAt.set(k, t);
+    }
+    if (t > zLastT) zLastT = t;
+  }
+  function zTick(dt) {
+    const z = zq[0];
+    if (!z || (mode === 'replay' && (!playing || loading != null))) return;
+    z.t += dt * (mode === 'replay' ? speed : 1);
+    if (z.t >= G.ZMoves.CINE_T) zq.shift();
+  }
+  /** The cinematic on top (as game.js draws a run's: the dim, the card, whose it is). */
+  function drawZ(ctx, w, h) {
+    const z = zq[0];
+    if (!z || !G.ZMoves || !G.ZMoves.cineArt) return;
+    ctx.save(); ctx.fillStyle = 'rgba(0,0,10,' + (G.U.clamp(z.t / 0.3, 0, 1) * 0.62).toFixed(3) + ')'; ctx.fillRect(0, 0, w, h); ctx.restore();
+    G.ZMoves.cineArt(ctx, w, h, z.t, z.type);
+    if (!z.name) return;
+    ctx.save();
+    ctx.globalAlpha = G.U.clamp(z.t / 0.3, 0, 1) * G.U.clamp((G.ZMoves.CINE_T - z.t) / 0.3, 0, 1);
+    ctx.font = '800 18px Pixelify,"Segoe UI",system-ui,sans-serif'; ctx.textAlign = 'center';
+    ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(0,0,0,.75)';
+    ctx.strokeText(z.name, w / 2, h * 0.42 + 92); ctx.fillStyle = z.color; ctx.fillText(z.name, w / 2, h * 0.42 + 92);
+    ctx.restore();
+  }
+
   /** Between A and B: 0..1. */
   function blend(al) {
     al = G.U.clamp(al, 0, 1);
@@ -239,6 +287,7 @@ G.WatchUI = (() => {
       if (T >= ss.duration && playing && loading == null) finishReplay();
       ctrlTick();
     }
+    zTick(dt);
     animate(dt);
   }
 
@@ -356,6 +405,7 @@ G.WatchUI = (() => {
   }
   function drawOverlay(ctx, w, h) {
     if (!mode) return;
+    drawZ(ctx, w, h);
     ctx.save();
     const k = G.Display ? G.Display.ui(w, h) : 1;
     ctx.scale(k, k);
@@ -435,6 +485,7 @@ G.WatchUI = (() => {
     rd = null; T = 0; idx = 0; playing = true; speed = 1; done = false; ended = null; status = 'wait'; info = {}; notice = '';
     ss = null; segK = -1; follow = 0; loading = null; castQ = [];
     liveA = liveB = livePP = null;
+    zq = []; zOnAt = new Map(); zLastT = -1;
     G.FX.clear(); G.Projectiles.clear(); G.Combat.clearFields(); G.EnemyMgr.clear(); G.Pickups.clear(); G.Minimap.reset();
     G.World.setArena(null);
   }
@@ -549,7 +600,7 @@ G.WatchUI = (() => {
     if (i !== idx || hard) {
       const nx = ss.get(k + 1);
       const a = rd.at(i, follow), b = i + 1 < rd.length ? rd.at(i + 1, follow) : nx && nx.length ? nx.at(Math.min(1, nx.length - 1), follow) : a;
-      if (hard) { mates.clear(); ents.clear(); G.EnemyMgr.clear(); G.Pickups.clear(); G.Projectiles.clear(); G.FX.clear(); pl = null; dexNow = 0; }
+      if (hard) { mates.clear(); ents.clear(); G.EnemyMgr.clear(); G.Pickups.clear(); G.Projectiles.clear(); G.FX.clear(); pl = null; dexNow = 0; zq = []; zOnAt = new Map(); zLastT = -1; }
       // events crossed while playing forward (not on a seek)
       if (!hard && !switched && i > idx) say(rd.ev.filter(e => { const et = e[0] / 10; return et > (times[idx] || 0) && et <= times[i]; }));
       setFrame(a, b, true);
@@ -745,6 +796,8 @@ G.WatchUI = (() => {
     setFollow, cycleFollow, get follow() { return follow; }, get session() { return ss; }, get segment() { return segK; }, get loading() { return loading; },
     get mode() { return mode; }, get time() { return timeNow; }, get who() { return who; }, get status() { return status; },
     get notice() { return notice; }, get playing() { return playing; }, get speed() { return speed; }, get T() { return T; }, get reader() { return rd; },
-    get player() { return pl; }, get frame() { return A; }, get done() { return done; }
+    get player() { return pl; }, get frame() { return A; }, get done() { return done; },
+    /** The Z cinematic showing now: {slot, name, type, t} or null (gap fix 2026-11-02). */
+    get zCine() { return zq[0] || null; }
   };
 })();

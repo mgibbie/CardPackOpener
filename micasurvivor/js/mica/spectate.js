@@ -25,6 +25,11 @@
  *             tape's field 12 in world units: + level, the Ultimate's charge, the kit flags), pz (their moves and held items)
  *             and cs (every player's casts since the last one). The viewer follows any of them (G.Replay.liveView). A solo
  *             snapshot is unchanged; a snapshot without pp (an older publisher) shows as before.
+ *   props     wa (2026-11-02): every prop the run broke and altar it used, ANYWHERE, packed per chunk (js/world/world.js
+ *             propsAll: ~1.5 characters a prop; 4 000 props over 144 chunks ~6 KB), and the springs / locked chests not at
+ *             rest: a watcher who joins late, follows another player or looks where the run has been sees them. Within
+ *             K.WA_MAX characters; past it (a very long run: ~20 000 props) the chunks round every player, then the most
+ *             recently touched (p: 1, the watcher only adds); squeezed to K.WA_MIN, then dropped, if the snapshot is full.
  *
  * Test hooks (window.__msurvNet, set before the page loads): {specCheckMs, specPubMs, specPollMs}.
  *   G.Spectate.snap() · runStarted() · tick() · runEnded(summary) · watch(user, handlers) · unwatch() · stats
@@ -36,7 +41,8 @@ G.Spectate = (() => {
     NEAR: 720,           // enemies this close (world units) go in a snapshot...
     BOSS_NEAR: 1600,     // ...bosses this close
     MAX_E: 80, MAX_PK: 24, MAX_XP: 40, PK_NEAR: 520,
-    SNAP_MAX: 23000      // (MP polish: under server/mp.mjs MSURV_SNAPSHOT_MAX = 24 000, with room for the over summary)
+    SNAP_MAX: 23000,     // (MP polish: under server/mp.mjs MSURV_SNAPSHOT_MAX = 24 000, with room for the over summary)
+    WA_MAX: 9000, WA_MIN: 2500   // (the run's broken / used props, `wa`: their budget, and the squeezed one when the snapshot is full)
   };
   const pubMs = () => +H().specPubMs || K.PUB_MS, checkMs = () => +H().specCheckMs || K.CHECK_MS, pollMs = () => +H().specPollMs || K.POLL_MS;
   const ANIMS = ['Idle', 'Walk', 'Attack', 'Shoot', 'Charge', 'Hurt', 'Faint'];
@@ -145,13 +151,15 @@ G.Spectate = (() => {
    */
   function pubSnap(extra) {
     const s = snap(extra);
-    // (the props broken and the altars used near you, and the springs / locked chests not at rest: the watcher's world is
-    //  built from the seed, js/world/world.js viewProps. Owner bug 2026-11-02. Dropped first past the cap.)
+    // (the props the run broke and the altars it used, and the springs / locked chests not at rest: the watcher's world is
+    //  built from the seed, js/world/world.js viewProps. Owner bug 2026-11-02; gap fix the same day: ALL of them, wherever
+    //  they are (`wa`, packed per chunk: js/world/world.js propsAll), not only the 5 x 5 chunks round you (the old `wp`), so a
+    //  watcher who joins late, follows another player or looks back where the run has been sees them too. Within WA_MAX
+    //  characters; a longer list keeps the chunks round every player, then the most recent (p: 1). Squeezed / dropped last.)
     const pl = G.Game.player;
-    if (s && pl && G.World.propsNear) {
-      const wp = G.World.propsNear(pl.x, pl.y), sp = G.World.specialsLive(pl.x, pl.y, 900);
-      if (wp.b.length || wp.u.length || sp.length) { if (sp.length) wp.s = sp; s.wp = wp; }
-    }
+    const pts = pl ? [[pl.x, pl.y], ...(G.Coop && G.Coop.active ? G.Coop.puppets() : G.LocalCoop ? G.LocalCoop.drawables(pl) : []).map(o => [o.x, o.y])] : [];
+    const wa = budget => { const o = G.World.propsAll(pts, budget), sp = G.World.specialsLive(); if (sp.length) o.s = sp; return o.B || o.U || o.s ? o : null; };
+    if (s && pl && G.World.propsAll) { const o = wa(K.WA_MAX); if (o) s.wa = o; }
     const lp = s && G.Replay && G.Replay.livePlayers ? G.Replay.livePlayers() : null;
     if (lp) {
       Object.assign(s, lp);
@@ -159,7 +167,8 @@ G.Spectate = (() => {
       if (JSON.stringify(s).length > K.SNAP_MAX) delete s.cs;
       if (JSON.stringify(s).length > K.SNAP_MAX) delete s.pz;
     }
-    if (s && s.wp && JSON.stringify(s).length > K.SNAP_MAX) delete s.wp;
+    if (s && s.wa && JSON.stringify(s).length > K.SNAP_MAX) { const o = wa(K.WA_MIN); if (o) s.wa = o; else delete s.wa; }
+    if (s && s.wa && JSON.stringify(s).length > K.SNAP_MAX) delete s.wa;
     return s;
   }
 

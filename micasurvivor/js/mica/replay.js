@@ -32,14 +32,17 @@
  *                          absolute; null = the player left (0 for the whole field = nobody changed). MP polish: + 2
  *                          fields, the Ultimate's charge % and the kit flags (KF: has an Ultimate / casting it, a Z-move
  *                          ready / in use, Dynamax ready / on): a local partner's Ultimate, Z and Dynamax, an online
- *                          partner's Ultimate. A U4 row has 9 fields (no kit shown); the header's rw stays 9 (the base)
+ *                          partner's Ultimate. A U4 row has 9 fields (no kit shown); the header's rw stays 9 (the base).
+ *                          + 1 more (gap fix 2026-11-02): the Z-move's type (1 + G.ZMoves.ORDER index): the viewer plays any
+ *                          player's Z cinematic with its card (js/ui/watch-ui.js zWatch)
  *                   13 PS  the other players' slow state [[moves [[id, lvl, evolved]], [item, item2]]] per slot 1..,
  *                          whole, when it changed (MP polish: an online partner's items from its co-op frames' field 17)
  *                   14 A   the moves cast since the previous frame, by every player: [slot, move id, level, aim x 100,
  *                          evolved, time offset (tenths of a second, <= 0, from this frame's time)]: the viewer draws
  *                          every player's attacks as ghosts where they really aimed
  *                   15 W   the world's props (2026-11-02): {c: from nothing, b: tiles broken since the previous frame, u: altars
- *                          used since, s: the springs / locked chests near you not at rest}: the viewer's world is rebuilt from
+ *                          used since, s: the springs / locked chests not at rest, anywhere (whole: a segment's first frame),
+ *                          d: those that changed since (-1 = at rest)}: the viewer's world is rebuilt from
  *                          the seed, so without it a used altar or a broken chest / rock / patch of grass came back in the
  *                          replay. Every segment's first frame has it (c); a tape from before has none (its world as built)
  *                 A v2 tape has no field 6 (the partners' rows are field 12). Flags (P and R): 1 fainted, 2 walking,
@@ -115,7 +118,9 @@ G.Replay = (() => {
   const RW = 9;          // a player row (field 12): x, y, dir, anim, hp, maxHp, flags, dex, level (the header's rw: the base fields)
   // (MP polish: a row carries 2 more, RWX: the Ultimate's charge % and the kit flags KF below. A reader goes by each row's own
   //  length, so a U4 tape (9 fields) still reads, and a U4 reader ignores the 2 new ones.)
-  const RWX = 2;
+  // (gap fix 2026-11-02: + 1, its Z-move's type (1 + its index in G.ZMoves.ORDER, 0 = none): the viewer plays that player's Z
+  //  cinematic with its own card. A row of 11 fields has none: its Z shows as before.)
+  const RWX = 3;
   /** The kit flags (a player row's field 10, and the live snapshot's rows): what that player's HUD would show. */
   const KF = { ULT: 1, ULT_CAST: 2, Z: 4, Z_READY: 8, Z_ON: 16, DYN: 32, DYN_READY: 64, DYN_ON: 128 };
   const stats = { frames: 0, recMs: 0, recMax: 0, obsMs: 0, obsFrames: 0, events: 0, segs: 0, casts: 0, uploads: 0, upErr: 0 };
@@ -160,7 +165,7 @@ G.Replay = (() => {
   /** The encoder's memory of the previous frame (a new segment starts from nothing: its first frame is a keyframe). */
   function resetEnc(r) {
     Object.assign(r, { P: null, C: null, S: '', E: { m: new Map(), v: new Map() }, Kp: { m: new Map(), v: new Map() }, M: '', t: 0,
-      XA: '', XW: '', XO: '', XF: '', XC: '', R: [], PS: '', WG: null, WB: 0, WU: 0, WS: '' });
+      XA: '', XW: '', XO: '', XF: '', XC: '', R: [], PS: '', WG: null, WB: 0, WU: 0, WS: null });
   }
 
   /** Each frame of a run (game.js frame): ~a microsecond, a snapshot every REC_DT of run time. */
@@ -359,13 +364,16 @@ G.Replay = (() => {
   function kitOf(x) {
     const o = x.pl, LC = G.LocalCoop;
     const w = x.M && LC && LC.ultRow ? LC.ultRow(x.M) : Array.isArray(o.xw) ? o.xw : null;
-    let u = 0, kf = 0;
+    let u = 0, kf = 0, zt = '';
     if (w) { u = w[0] | 0; kf |= KF.ULT | ((w[4] & 1) ? KF.ULT_CAST : 0); }
-    if (x.M && LC && LC.kitFlags) kf |= LC.kitFlags(x.M);
+    if (x.M && LC && LC.kitFlags) { kf |= LC.kitFlags(x.M); if ((kf & KF.Z) && G.ZMoves) zt = G.ZMoves.typeFor(o.dex); }
     // (an online partner's Z-move / Dynamax: its co-op frames' field 18, js/net/coop.js kitState)
-    else if (o.remote && o.net && o.net.kit) kf |= o.net.kit.kf & (KF.Z | KF.Z_READY | KF.Z_ON | KF.DYN | KF.DYN_READY | KF.DYN_ON);
-    return [u, kf];
+    else if (o.remote && o.net && o.net.kit) { kf |= o.net.kit.kf & (KF.Z | KF.Z_READY | KF.Z_ON | KF.DYN | KF.DYN_READY | KF.DYN_ON); zt = o.net.kit.zt || ''; }
+    return [u, kf, zIdx(zt)];
   }
+  /** A Z type <-> a row's number (1 + its index in G.ZMoves.ORDER; 0 none). */
+  const zIdx = t => (t && G.ZMoves ? G.ZMoves.ORDER.indexOf(t) + 1 : 0);
+  const zOfIdx = i => (i > 0 && G.ZMoves ? G.ZMoves.ORDER[i - 1] || '' : '');
   function slowRow(o) {
     const mv = (o.af && o.slots ? o.slots.flat() : o.moves || []).map(m => [m.id, m.lvl | 0, m.evolved ? 1 : 0]);
     // (MP polish: an online partner's held items come in its co-op frames (net.it: js/net/coop.js field 17); its puppet holds none)
@@ -424,15 +432,19 @@ G.Replay = (() => {
     const d0 = players[0] || {};
     const w0 = s.x && s.x.w && s.x.w.p;
     all.push({ slot: 0, name: d0.name || o.by || '', dex: s.me[0], shiny: s.me[1], x: s.p[0], y: s.p[1], dir: s.p[2], anim: s.p[3], hp: s.p[4], max: s.p[5], fl: s.p[6], lv: s.lv[0], c: 0, k: 'me',
-      u: w0 ? w0[0] | 0 : null, kf: kf0(s) });
+      u: w0 ? w0[0] | 0 : null, kf: kf0(s), zt: s.z ? s.z[0] : '' });
     for (let j = 0; j < rows.length; j++) {
       const r = rows[j];
       if (!r) continue;
       const d = players[j + 1] || {};
       const kf = r.length > RW + 1 ? r[RW + 1] | 0 : 0;
       all.push({ slot: j + 1, name: d.name || '?', dex: r[7] || d.dex || 25, shiny: d.shiny ? 1 : 0, x: r[0], y: r[1], dir: r[2], anim: r[3], hp: r[4], max: r[5], fl: r[6], lv: r[8], c: d.c | 0, k: d.k || 'o',
-        u: kf & KF.ULT ? r[RW] | 0 : null, kf });
+        u: kf & KF.ULT ? r[RW] | 0 : null, kf, zt: r.length > RW + 2 ? zOfIdx(r[RW + 2] | 0) : '' });
     }
+    // (gap fix 2026-11-02: every player in its Z-move now [slot, name, type]: the viewer plays the Z cinematic as one starts,
+    //  whoever's it is and whoever is followed; js/ui/watch-ui.js zWatch)
+    const zon = all.filter(x => x.kf & KF.Z_ON).map(x => [x.slot, x.name, x.zt || '']);
+    if (zon.length) s.zon = zon; else delete s.zon;   // (none: the frame as before)
     const me = all.find(x => x.slot === follow) || all[0];
     s.pi = me.slot;
     s.np = players.length || 1;
@@ -520,21 +532,30 @@ G.Replay = (() => {
    * Field 15, the world's props (owner bug 2026-11-02: an altar used / a chest or rock broken came back in the replay, whose
    * world is rebuilt from the seed): {c: 1 = from nothing (a segment's first frame, or the world was cleared: a new zone),
    * b: the tiles broken since the previous frame [tx, ty, ...], u: the altars used since [tx, ty, ...], s: the specials
-   * near you that aren't at rest [tx, ty, %] (springs, locked chests), whole when it changed}; 0 = nothing new.
+   * that aren't at rest [tx, ty, %] (springs, locked chests), whole (a segment's first frame / a new world), d: those that
+   * changed since [tx, ty, %] (-1 = at rest again)}; 0 = nothing new.
+   * (Gap fix 2026-11-02: EVERY spring / locked chest the run left not at rest, wherever it is (js/world/world.js
+   *  specialsLive), not only those within 900 units of you; sent only as they change: d, a few bytes a frame.)
    */
   function worldOf(r, first) {
     const W = G.World, log = W.propLog ? W.propLog() : null;
     if (!log) return 0;
-    const pl = G.Game.player;
     const flat = l => { const o = []; for (const k of l) { const i = k.indexOf(','); o.push(+k.slice(0, i), +k.slice(i + 1)); } return o; };
-    const sp = pl && W.specialsLive ? W.specialsLive(pl.x, pl.y, 900) : [];
-    const SS = sp.length ? sp.join(',') : '';
+    const sp = W.specialsLive ? W.specialsLive() : [];
+    const now = new Map();
+    for (let i = 0; i + 2 < sp.length; i += 3) now.set(sp[i] + ',' + sp[i + 1], sp[i + 2]);
     const out = {};
-    if (first || r.WG !== log.gen) { out.c = 1; r.WB = 0; r.WU = 0; r.WG = log.gen; }
+    if (first || r.WG !== log.gen) { out.c = 1; r.WB = 0; r.WU = 0; r.WG = log.gen; r.WS = null; }
     if (log.b.length > r.WB) out.b = flat(log.b.slice(r.WB));
     if (log.u.length > r.WU) out.u = flat(log.u.slice(r.WU));
-    if (SS !== r.WS || out.c) { if (sp.length || !out.c) out.s = sp; }
-    r.WB = log.b.length; r.WU = log.u.length; r.WS = SS;
+    if (!r.WS) { if (sp.length) out.s = sp; }
+    else {
+      const d = [], key = k => { const i = k.indexOf(','); return [+k.slice(0, i), +k.slice(i + 1)]; };
+      for (const [k, v] of now) if (r.WS.get(k) !== v) d.push(...key(k), v);
+      for (const k of r.WS.keys()) if (!now.has(k)) d.push(...key(k), -1);
+      if (d.length) out.d = d;
+    }
+    r.WB = log.b.length; r.WU = log.u.length; r.WS = now;
     return Object.keys(out).length ? out : 0;
   }
 
@@ -672,7 +693,8 @@ G.Replay = (() => {
         if (w.c || !W) W = w.c ? { c: 1 } : {};
         if (w.b) W.b = (W.b || []).concat(w.b);
         if (w.u) W.u = (W.u || []).concat(w.u);
-        if (w.s) W.s = w.s;
+        if (w.s) { W.s = w.s; delete W.d; }
+        if (w.d) W.d = (W.d || []).concat(w.d);   // (the changes of both frames, in order: the reader applies s, then d)
       }
       if (i % 2 === 0 && i !== frames.length - 1) continue;
       const E = table(eE, sorted(dE), ew, died), Kt = table(eK, sorted(dK), kw, null);
@@ -703,6 +725,13 @@ G.Replay = (() => {
     const fresh = () => ({ i: -1, t: 0, P: [0, 0, 0, 0, 0, 0, 0], C: [0, 0, 0, 0, 0, 0], S: {}, E: tbl(), K: tbl(), M: [], A: null, W: null, O: null, F: null, X: null, kd: [], R: [], PS: null, CS: [], WB: null, WU: null, WS: null });
     const clone = st => ({ i: st.i, t: st.t, P: st.P.slice(), C: st.C.slice(), S: st.S, E: ctbl(st.E), K: ctbl(st.K), M: st.M, A: st.A, W: st.W, O: st.O, F: st.F, X: st.X, kd: [], R: st.R.slice(), PS: st.PS, CS: st.CS, WB: st.WB, WU: st.WU, WS: st.WS });
     // (field 15: the broken / used tiles as Sets of "tx,ty", copied on write: a checkpoint keeps its own)
+    // (and the specials not at rest, [tx, ty, %...], with field 15's changes d applied (-1 = at rest): a new array, copied on write)
+    const specDelta = (cur, d) => {
+      const m = new Map();
+      for (let i = 0; i + 2 < (cur || []).length; i += 3) m.set(cur[i] + ',' + cur[i + 1], [cur[i], cur[i + 1], cur[i + 2]]);
+      for (let i = 0; i + 2 < d.length; i += 3) { const k = d[i] + ',' + d[i + 1]; if (d[i + 2] < 0) m.delete(k); else m.set(k, [d[i], d[i + 1], d[i + 2]]); }
+      return [].concat(...m.values());
+    };
     const addTiles = (set, l) => { const o = new Set(set); for (let i = 0; i + 1 < l.length; i += 2) o.add(l[i] + ',' + l[i + 1]); return o; };
     function step(st) {
       const f = frames[st.i + 1];
@@ -728,6 +757,7 @@ G.Replay = (() => {
         if (w.b && w.b.length) st.WB = addTiles(st.WB, w.b);
         if (w.u && w.u.length) st.WU = addTiles(st.WU, w.u);
         if (w.s) st.WS = w.s;
+        if (w.d && w.d.length) st.WS = specDelta(st.WS, w.d);
       }
     }
     // one pass: the frame times and a checkpoint every CHECK_EVERY frames

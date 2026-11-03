@@ -14,7 +14,8 @@
 //   5. the session cap: past it the tape ends with an explicit marker and the viewer says "The replay ends here"
 //   6. v1 tapes still play (the golden fixture's, and a v1 entry kept in the browser)
 //   7. online co-op (MP polish): a guest's Z-move and Dynamax ride its co-op frames (field 18): the host's puppet of it grows
-//      and is MAX, flashes its Z; the host's live view rows and its tape carry them; the replay draws it giant
+//      and is MAX, flashes its Z; the host's live view rows and its tape carry them; the replay draws it giant. Gap fix
+//      2026-11-02: his Z plays the full Z cinematic on the host (holding her world), hers on his screen, and in her replay
 //   node overworld/tests/micasurvivor_replay_v2_test.mjs      (ONLY=1,3 runs those sections)
 import http from 'http';
 import fs from 'fs';
@@ -378,7 +379,7 @@ try {
 		A(four.players && four.players[0].k === 'me' && four.players.slice(1).every((p, i) => p.k === 'l' && /J[234]$/.test(p.name) && p.dex > 0), '...with their names, species and kinds', JSON.stringify(four.players));
 		A(four.rowsBy && [1, 2, 3].every(k => four.rowsBy[k] >= four.frames - 1), 'every frame has every partner\'s row (field 12)', JSON.stringify([four.rowsBy, four.frames]));
 		// (MP polish: a row has 2 more fields, the Ultimate's charge and the kit flags; the viewer's partner rows carry level / items / kit)
-		A(four.rw === 11 && four.info.length === 3 && four.info.every(x => x && x.lv === four.lv && Array.isArray(x.it) && x.u === null && typeof x.kf === 'number'), 'each row carries the kit fields (11); the viewer reads every partner\'s level, items and kit', JSON.stringify([four.rw, four.info, four.lv]));
+		A(four.rw === 12 && four.info.length === 3 && four.info.every(x => x && x.lv === four.lv && Array.isArray(x.it) && x.u === null && typeof x.kf === 'number'), 'each row carries the kit fields (12: + the Z type); the viewer reads every partner\'s level, items and kit', JSON.stringify([four.rw, four.info, four.lv]));
 		A(four.castsBy && JSON.stringify(four.castsBy) === JSON.stringify(four.real) && four.castsBy.filter(n => n > 20).length >= 3,
 			'every player\'s casts are recorded, each one (field 14: the move, its level, the aim)', JSON.stringify([four.castsBy, four.real, four.kinds]));
 		// the viewer: follow anyone
@@ -570,11 +571,24 @@ try {
 			const zt = await guest.E(() => { const pl = G.Game.player; pl.level = 30; return G.ZMoves.tryStart(pl) && G.ZMoves.state; });
 			let zon = null;
 			await waitFor(async () => { zon = await puppet(); return zon && zon.zOn; }, 4000);
+			// (gap fix 2026-11-02) alice's screen plays bob's full Z cinematic (his card, his name), and her world holds for it
+			const cine = await host.E(async () => {
+				const z0 = G.Coop.zNow, z = z0 && { name: z0.name, type: z0.type, t: +z0.t.toFixed(2) }, t0 = G.Game.st.time;
+				await new Promise(r => setTimeout(r, 700));
+				const z2 = G.Coop.zNow;
+				return { z, held: G.Game.st.time === t0, t2: z2 && +z2.t.toFixed(2), canZ: G.ZMoves.can(G.Game.player) };
+			});
 			await sleep(3500);
+			const after = await host.E(() => ({ z: !!G.Coop.zNow, cine: G.Coop.zCine }));
+			// and the other way: alice's (the host's) Z-move plays its cinematic on bob's screen
+			const az = await host.E(() => { const pl = G.Game.player; pl.level = 30; return G.ZMoves.tryStart(pl); });
+			let onBob = null;
+			await waitFor(async () => { onBob = await guest.E(() => { const z = G.Coop.zNow; return z && { name: z.name, type: z.type }; }); return !!onBob; }, 5000);
+			await sleep(2600);
 			const tape = await host.E(async () => {
 				G.Game.quit(); await new Promise(r => setTimeout(r, 400));
 				const e = G.Replay.last; await e.ready;
-				const KF = G.Replay.KF, out = { dyn: 0, z: 0, frames: 0, scale: null };
+				const KF = G.Replay.KF, out = { dyn: 0, z: 0, frames: 0, scale: null, zT: null, cine: null };
 				for (const c of e.segs) {
 					const rd = await G.Replay.open(c);
 					for (let i = 0; i < rd.length; i++) {
@@ -582,7 +596,7 @@ try {
 						const m1 = (rd.at(i).mt || []).find(m => m[11] === 1);
 						if (!m1) continue;
 						if ((m1[7] & 4) && (m1[13].kf & KF.DYN_ON)) out.dyn++;
-						if (m1[13].kf & KF.Z_ON) out.z++;
+						if (m1[13].kf & KF.Z_ON) { out.z++; if (out.zT == null) out.zT = rd.at(i).t / 10; }
 					}
 				}
 				// the viewer draws him giant while Dynamaxed
@@ -595,14 +609,30 @@ try {
 					const ms = (G.WatchUI.frame.mt || []).find(m => m[11] === 1);
 					if (ms && (ms[7] & 4)) { const mp = G.WatchUI.drawables().find(d => d && d !== G.WatchUI.player && d.dyn); out.scale = mp ? mp.dynScale : 'none'; }
 				}
+				// (gap fix 2026-11-02) played forwards over bob's Z, the replay plays his Z cinematic (his card, his name)
+				if (out.zT != null) {
+					G.WatchUI.seek(Math.max(0, out.zT - 2.5));
+					if (!G.WatchUI.playing) G.WatchUI.togglePlay();
+					for (let i = 0; i < 30 * 6 && !out.cine; i++) { G.Game.debugStep(1, 1 / 30); const z = G.WatchUI.zCine; if (z) out.cine = { name: z.name, type: z.type, slot: z.slot }; }
+					// following bob instead: the same
+					if (G.WatchUI.playing) G.WatchUI.togglePlay();
+					G.WatchUI.setFollow(1); G.WatchUI.seek(Math.max(0, out.zT - 2.5));
+					G.WatchUI.togglePlay();
+					for (let i = 0; i < 30 * 6 && !out.cine1; i++) { G.Game.debugStep(1, 1 / 30); const z = G.WatchUI.zCine; if (z) out.cine1 = { name: z.name, type: z.type, slot: z.slot }; }
+				}
 				G.WatchUI.leave();
 				return out;
 			});
 			A(before && !before.dyn && !before.zOn && (before.kf & G_KF.DYN) && (before.kf & G_KF.Z), "bob's co-op frames carry his kit (field 18): alice's puppet of him knows he has a Z-move and Dynamax, neither in use", JSON.stringify(before));
 			A(dx === true && grown && grown.dyn && grown.dOn && grown.ds[0] > 1.3 && (grown.live.fl & 4) && (grown.live.kf & G_KF.DYN_ON), "bob Dynamaxes: on alice's screen his puppet grows (Dynamax scale) and is MAX; alice's live view row says so", JSON.stringify(grown));
 			A(zt === 'cine' && zon && zon.zOn && (zon.live.kf & G_KF.Z_ON), "bob's Z-move: alice's puppet of him is in its Z (the cinematic flash), in her live view too", JSON.stringify(zon));
+			A(cine.z && cine.z.name === 'bob' && cine.z.type === 'fire' && cine.held && cine.t2 > cine.z.t && cine.canZ === false && after && !after.cine,
+				"...and alice's screen plays bob's full Z cinematic (the Fire card, his name), holding her world (and her own Z) for it, then lets go", JSON.stringify([cine, after]));
+			A(az === true && onBob && onBob.name === 'alice' && onBob.type === 'fire', "alice's own Z-move plays its cinematic on bob's screen the same way", JSON.stringify([az, onBob]));
 			A(tape.dyn > 2 && tape.z > 0, `alice's tape records bob's Dynamax (${tape.dyn} frames: flag + MAX) and his Z-move (${tape.z} frames)`, JSON.stringify(tape));
 			A(Array.isArray(tape.scale) && tape.scale[0] > 1.3, '...and her replay draws him giant while Dynamaxed', JSON.stringify(tape.scale));
+			A(tape.cine && tape.cine.name === 'bob' && tape.cine.type === 'fire' && tape.cine.slot === 1 && tape.cine1 && tape.cine1.type === 'fire' && tape.cine1.slot === 1,
+				"...and plays bob's Z cinematic (the Fire card, his name) as his Z starts, following alice or him", JSON.stringify([tape.zT, tape.cine, tape.cine1]));
 		}
 		await host.ctx.close(); await guest.ctx.close();
 	}

@@ -79,7 +79,7 @@ G.Coop = (() => {
     api = cb;
     members = cfg.members;
     mates.clear();
-    outEv = []; flushT = 0; waiting = new Set(); holds = new Set(); budgetTold = false;
+    outEv = []; flushT = 0; waiting = new Set(); holds = new Set(); budgetTold = false; zq = [];
     hostAway = false; stalled = false; lastHostAt = performance.now();
     levelSeq = 0; levelNow = 1; seenSeq = 0; doneSeq = 0; lastHo = '';
     cfg.members.forEach((m, i) => {
@@ -97,7 +97,49 @@ G.Coop = (() => {
 
   function end() {
     active = false; host = false; local = null;
-    mates.clear(); outEv = []; waiting = new Set(); holds = new Set();
+    mates.clear(); outEv = []; waiting = new Set(); holds = new Set(); zq = [];
+  }
+
+  // ---------------- another player's Z-move cinematic (gap fix 2026-11-02) ----------------
+  // A partner's Z-move (its co-op frames' field 18 rising to "in use": js/entities/player.js netUpdate) plays the full Z
+  // cinematic on this screen, as player 1's does and as a local partner's does (js/systems/localcoop.js): its card
+  // (G.ZMoves.cineArt) with its name, and the world holds for it (game.js), on the host and on every other guest alike.
+  // One Z cinematic at a time: one that comes while another plays (yours, a local partner's, another online one's) waits its
+  // turn, and none of yours can start meanwhile (G.ZMoves.can). One that waited over ZQ_STALE seconds unseen is dropped.
+  let zq = [];                          // [{p, type, name, color, t, at}]
+  const ZQ_STALE = 6;
+  function remoteZ(p, type) {
+    if (!active || !p || !G.ZMoves) return;
+    zq.push({ p, type: type || G.ZMoves.typeFor(p.dex) || 'normal', name: p.tag || '', color: p.tagColor || '#fff', t: 0, at: performance.now() });
+    if (zq.length > 4) zq.shift();
+  }
+  const zPrune = () => { if (zq.length) zq = zq.filter(z => z.t > 0 || performance.now() - z.at < ZQ_STALE * 1000); };
+  /** game.js, while it plays (the world holds, as for player 1's). */
+  function zCineTick(dt) {
+    const z = zq[0];
+    if (!z) return;
+    if (z.t === 0) G.Audio.sfx('legend');
+    z.t += dt;
+    if (z.t >= G.ZMoves.CINE_T) { zq.shift(); G.Audio.sfx('bossDown'); }
+  }
+  /** Whose card shows now (null: none), for the HUD and the tests. */
+  const zNow = () => { zPrune(); const z = zq[0]; return z && !(G.ZMoves && G.ZMoves.cine) && !(G.LocalCoop && G.LocalCoop.zCine) ? z : null; };
+  function drawZDim(ctx, w, h) {
+    const z = zNow();
+    if (!z) return;
+    ctx.save(); ctx.fillStyle = 'rgba(0,0,10,' + (G.U.clamp(z.t / 0.3, 0, 1) * 0.62).toFixed(3) + ')'; ctx.fillRect(0, 0, w, h); ctx.restore();
+  }
+  function drawZCine(ctx, w, h) {
+    const z = zNow();
+    if (!z || !G.ZMoves.cineArt) return;
+    G.ZMoves.cineArt(ctx, w, h, z.t, z.type);
+    const al = G.U.clamp(z.t / 0.3, 0, 1) * G.U.clamp((G.ZMoves.CINE_T - z.t) / 0.3, 0, 1);
+    ctx.save();
+    ctx.globalAlpha = al;
+    ctx.font = '800 18px Pixelify,"Segoe UI",system-ui,sans-serif'; ctx.textAlign = 'center';
+    ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(0,0,0,.75)';
+    ctx.strokeText(z.name, w / 2, h * 0.42 + 92); ctx.fillStyle = z.color; ctx.fillText(z.name, w / 2, h * 0.42 + 92);
+    ctx.restore();
   }
 
   /** Te vas de la partida (los demás siguen). */
@@ -585,6 +627,8 @@ G.Coop = (() => {
     stateOf: p => { const was = local; local = p; try { return myState(); } finally { local = was; } }, readState,
     cast, hit, status, hurtShown, enemyAdded, enemyGone, enemyShot, pickupAdded, pickupGone, say,
     propBroken, collected, shinyCaught, levelStart, localPicked, over, holdStart, holdEnd,
+    remoteZ, zCineTick, drawZDim, drawZCine,   // (gap fix 2026-11-02: another player's Z cinematic)
+    get zCine() { zPrune(); return active && zq.length > 0; }, get zNow() { return zNow(); },
     /** Anfitrión: evento para todos. Invitado: evento para el anfitrión. */
     broadcast(ev) { emit(ev); },
     toHost(ev) { if (active && !host) { outEv.push(ev); flushClient(true); } },
