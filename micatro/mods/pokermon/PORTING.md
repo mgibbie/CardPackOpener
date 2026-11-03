@@ -3847,6 +3847,48 @@ Pinned **`3.9.1+r73`**. Three owner-approved changes, each gated by `rulesRev('p
   `pokermon_gen8_batch1_test` (Sandaconda Sand Spit, The Hook, debuffed, r72 rules, an r72 recipe as recorded). Re-pinned: `modpin_test`,
   `pokermon_391_data_test`, `pokermon_new_jokers_test`, `micatro_mod_version_pin`.
 
+### Gen 8, batch 4: the Gen 8 Legendaries (2026-11-03, branch `feat/pokermon-gen8-legendaries`)
+Pinned **`3.9.1+r74`** (`contentRev: 74`; r73 is the owner's Malamar / Morgrem / Sandaconda tweaks; `LEGACY_MOD_VERSIONS` untouched). The owner's "Yes": the 10 Gen 8 Legendaries still
+missing, each complete ALONE (the solo rule, r59), all **Legendary $20** (The Soul / the Legendary pool), in `jokers/pokejokers_designs.js`
+(`crown_tick` / `shield_crown` / `eterna_x` / `jungle_drain` / `drago_x` / `glass_x_mult` / `bountiful_harvest` / `enamorus_tick`). Pokédex order: Zacian,
+Zamazenta, Eternatus after Dreepy (Dart), before Kubfu; Zarude ... Calyrex after Urshifu, before Wyrdeer; Enamorus after Basculegion. Types = the cards'
+(every form cell shows its base's type). Art: upstream 3.9.1 cells, forms included (`systems/anim.js` GEN8_LEGEND_FORMS, card + soul: Crowned Zacian
+{8,9}, Crowned Zamazenta {12,9}, Eternamax {0,10} on the Gen 8 sheet while Eternatus's own card is on the Natdex one — ui.js swaps the atlas —, Therian
+Enamorus {8,11}); nothing to deploy. Gen 8 is now complete on the wiki (59 missing, all Gen 9).
+- **Boss Blinds beaten while held** (Zacian, Zamazenta, Eternatus): the main end_of_round pass with beat_boss, Beast Boost's moment (not on a game over,
+  not a Blueprint's, not a joker retrigger; a debuffed one isn't calculated, so that Boss doesn't count). The count is on the card (`crown_bosses`, capped
+  at 3; `bosses`), so save / resume / replay rebuild the forms from it.
+- **Zacian** (Fairy), Intrepid Sword: **X2**; **Crowned Sword** for good at the 3rd Boss: **X3 instead** (its own field `Xmult2`, so Energy taken before is kept).
+- **Zamazenta** (Fighting), Dauntless Shield: **+1 hand each round**; **Crowned Shield** at the 3rd Boss: **+2 hands in all** (the difference added to
+  round_resets at once, so the next round has them; the +hands pair takes both back when it leaves or is debuffed) **and X1.5**. **The choice**: the X1.5
+  field exists from the start, so Energy can go on before it is crowned (kept).
+- **Eternatus** (Dark), Dynamax: **+X0.5 banked per Boss Blind** (from X1). **Eternamax** for good at the 5th Boss: **the X is the bank x2** from then on.
+  **The choices**: the 5th Boss banks first, then doubles (X3.5 x2 = X7); the bank keeps growing after, each later Boss adding twice the gain (X8, X9 ...);
+  the x2 and the 5 are fixed.
+- **Zarude** (Grass), Jungle Drain: **when a Blind is selected, drains $1 of sell value from each other Joker** (Lampent's Drain: poke_drain one way, never
+  below $1, debuffed Jokers too) **and banks +X0.05 per $1 drained**. **The choices**: a Blueprint never drains (a copy would drain twice), it copies the X;
+  Zarude's own sell value doesn't grow (one way).
+- **Regieleki** (Lightning), Transistor: **+1 hand each round**; **each unused hand at end of round banks +X0.1** (Quaquaval's count: the hands left after
+  the winning hand).
+- **Regidrago** (Dragon), Dragon Energy: **X3 on the round's first hand, X0.5 less per hand already played this round, never below X1** (a discard isn't a
+  hand; the step is fixed).
+- **Glastrier** (Water), Chilling Neigh: **+80 Chips; Glass cards give X2.5 instead of X2** — a card-level rule through the engine's `chip_x_mult` hook
+  (Registeel's way: retriggers repeat it, a perma X on the card scales with it; the best undebuffed Glastrier wins, GLASS_RULES; the Glass card's own
+  tooltip reads it through `enh_loc_vars`). Blueprint copies the Chips, never the rule.
+- **Spectrier** (Psychic), Grim Neigh: **+X0.25 banked per Spectral card used** (by anyone; not Blueprint).
+- **Calyrex** (Psychic), King of Bountiful Harvest: **when a Blind is selected a random unenhanced card becomes a Seed** (Sweet Seeds' rule, its own seed;
+  never overwrites; Blueprint copies it); **X1 + X0.1 per Flower card in the full deck** (read live).
+- **Enamorus** (Fairy), Springtide Storm: **each scored Heart X1.25** (Wild counts); **Therian Forme** for good after **4 rounds held** (the Forces of
+  Nature's clock, its own reader): **each scored Heart also earns $1**. Blueprint copies both.
+- **Energy** (1 / 2 / 3): Zacian X2.4 / 2.8 / 3.2 (Crowned X3.6 / 4.2 / 4.8); Zamazenta X1.8 / 2.1 / 2.4; Eternatus +X0.6 / 0.7 / 0.8 a Boss; Zarude +X0.06 /
+  0.07 / 0.08 per $1; Regieleki +X0.12 / 0.14 / 0.16 a hand; Regidrago X3.6 / 4.2 / 4.8; Glastrier +104 / 128 / 152 Chips and Glass X2.625 / 2.75 / 2.875;
+  Spectrier +X0.3 / 0.35 / 0.4; Calyrex +X0.12 / 0.14 / 0.16 a Flower; Enamorus X1.3125 / 1.375 / 1.4375. Fixed: the hands, the $1s, the drain, the step,
+  the thresholds (3 / 5 Bosses, 4 rounds), the x2, the Seed a Blind; banks never retroactive.
+- **Wiki**: regenerated (59 missing, all Gen 9); the wiki sprites of the 10 are gone (no new art).
+- **Tests**: `micatro/tests/mods/pokermon_gen8_legendaries_test.mjs` (fails on main: no such jokers). Re-recorded: `modpin_test`, `pokermon_391_data_test`,
+  `pokermon_new_jokers_test`, `pokermon_gen8_batch3_test` / `pokermon_sprigatito_test` (the Pokédex order), `micatro_mod_version_pin`,
+  `micatro_deckeditor_pages` (1205 jokers), `designwiki_pokermon_jokers_test` (Ting-Lu is now its Legendary).
+
 ### Pending from the 3.9.1 joker rework (after batch 10b)
 Every existing joker is on 3.9.1: `rework_hold` (still on 3.2.1) is empty. What waits, by the batch it waits on (`rework_deferred` =
 on 3.9.1 but one part):

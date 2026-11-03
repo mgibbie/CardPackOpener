@@ -33,7 +33,7 @@ import { family_display_key } from './systems/precedence.js';
 import { TYPE_COLOURS } from './systems/types.js';
 import { KECLEON_ATLAS, KECLEON_SPRITES, CASTFORM_SPRITES, CHERRIM_SPRITES, GIRATINA_ORIGIN, CLOAK_ATLAS, BURMY_SPRITES, DEOXYS_SOULS, IMPOSTER_REVEALED, SERIES_A_ANIM } from './systems/anim.js';
 import D391 from './data391.js';
-import { SEA_ATLAS, SEA_SPRITES, BASCULIN_SPRITES, GEN5_LEGEND_FORMS, SEASON_SPRITES, GEN6_FORM_SPRITES, GEN6_LEGEND_FORMS, GEN7_FORM_SPRITES, GEN7_LEGEND_FORMS, GEN8_FORM_SPRITES } from './systems/anim.js';
+import { SEA_ATLAS, SEA_SPRITES, BASCULIN_SPRITES, GEN5_LEGEND_FORMS, SEASON_SPRITES, GEN6_FORM_SPRITES, GEN6_LEGEND_FORMS, GEN7_FORM_SPRITES, GEN7_LEGEND_FORMS, GEN8_FORM_SPRITES, GEN8_LEGEND_FORMS } from './systems/anim.js';
 
 const MOD = 'pokermon';
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -335,6 +335,13 @@ function ownFace(d0) {
   // The Gen 7 Legendaries (Gen 7 batch 4): Silvally's Memory of its type, Ultra Necrozma, Marshadow's Zenith — card and soul
   const lf7 = p && GEN7_LEGEND_FORMS[d0.center] && GEN7_LEGEND_FORMS[d0.center][p.form];
   if (lf7) return { ...d0, atlas: P_CENTERS[d0.center].atlas, pos: lf7.pos, soul_pos: lf7.soul_pos };
+  // The Gen 8 Legendaries (Gen 8 batch 4): Crowned Zacian / Zamazenta, Eternamax Eternatus (on the Gen 8 sheet, its own card on the Natdex one),
+  // Therian Enamorus — card and soul
+  const lf8 = p && GEN8_LEGEND_FORMS[d0.center] && GEN8_LEGEND_FORMS[d0.center][p.form];
+  if (lf8) {
+    const at = P_CENTERS[d0.center].atlas;
+    return { ...d0, atlas: lf8.sheet ? at.replace('BasicNatdex', 'Basic' + lf8.sheet) : at, pos: lf8.pos, soul_pos: lf8.soul_pos };
+  }
   // Burmy / Wormadam (the owner's design): the cloak's card (the Gen 4 sheet); Plant = its own card
   const bm = p && BURMY_SPRITES[d.center] && BURMY_SPRITES[d.center][p.form];
   if (bm) return { ...d, atlas: CLOAK_ATLAS, pos: bm };

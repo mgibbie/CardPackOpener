@@ -81,7 +81,7 @@ import './jokers/zzzapril_fools.js';
 import { DESIGN_FAMILIES, DESIGN_LOC, regi_chip_bonus, regi_h_x_mult, regi_enh_vars, slot_cost_removed, drifblim_destroyed, contrary_lifts, mummy_sell,
   freeze_keep, freeze_thaw, frozen_by, spore_first_deal, spore_hand_scored, malamar_chip_bonus, prank_reroll_cost, prank_reroll_shop, prank_shop_start,
   pyukumuku_destroyed, pheromosa_rest, komala_destroy_immune, GALAR_UPSTREAM_TEXT, GALAR_FAMILY_REV, rime_final_deal,
-  jokers_gone_count } from './jokers/pokejokers_designs.js';
+  jokers_gone_count, glass_x_mult } from './jokers/pokejokers_designs.js';
 
 import { poke_set_type_badge, type_badge, type_tooltip, TYPE_COLOURS } from './systems/types.js';
 import { pokemon_in_pool, pool_filter, init_game_object, evo_item_in_pool } from './systems/pools.js';
@@ -759,7 +759,10 @@ const hooks = {
     return b === undefined ? a : b;
   },
   chip_h_x_mult: regi_h_x_mult,
-  // ... and the Stone / Steel card's own tooltip shows it (+100 Chips / X2, energized too): the same two functions (describe.js enh_live_vars).
+  // The Gen 8 Glastrier, Chilling Neigh (glass_x_mult): a Glass card's own X Mult becomes X2.5 instead of X2 (Card:get_chip_x_mult, so
+  // retriggers repeat it), while an undebuffed Glastrier is owned; the best Glass-X rule wins. No Glastrier, no change.
+  chip_x_mult: glass_x_mult,
+  // ... and the Stone / Steel / Glass card's own tooltip shows it (+100 Chips / X2 / X2.5, energized too): the same two functions (describe.js enh_live_vars).
   enh_loc_vars: regi_enh_vars,
   // The owner's Serperior, Contrary (jokers/pokejokers_designs.js): a debuffed playing card that scores is scored as if it weren't, while
   // an undebuffed Serperior is owned (run.js score_played_card lifts the debuff for that card's scoring only). No Serperior, no change.
@@ -1055,7 +1058,10 @@ export const POKERMON = registerMod({
   // 73 = the owner's tweaks (2026-11-03): Malamar's scored 2, 3, 4 and 5 also give X1.25 (`Xmult_multi`, it now takes Energy), Morgrem keeps
   // Impidimp's $1 reroll discount, Sandaconda keeps Silicobra's Sand Spit. Each gated by rulesRev (malamar_x73 / prank_discount73 /
   // sand_spit73), so runs recorded before r73 replay as recorded.
-  contentRev: 73,
+  // 74 = Gen 8 batch 4, the Gen 8 Legendaries (jokers/pokejokers_designs.js, #888-905), each complete alone: Zacian / Zamazenta (Crowned after
+  // 3 Boss Blinds), Eternatus (Dynamax; Eternamax at 5 Bosses), Zarude (Jungle Drain), Regieleki (Transistor), Regidrago (Dragon Energy),
+  // Glastrier (Glass X2.5: hook chip_x_mult), Spectrier (Grim Neigh), Calyrex (Seeds and Flowers) and Enamorus (Therian after 4 rounds).
+  contentRev: 74,
   // Pokermon 3.9.1 pokermon.lua: SMODS.current_mod.optional_features = {quantum_enhancements = true, object_weights = true}.
   // object_weights sends create_card's key, the shop roll, tags, packs, bosses and vouchers through SMODS.poll_object
   // (js/engine/smods.js; batch 17). quantum_enhancements is the engine's check_enhancement, always on.

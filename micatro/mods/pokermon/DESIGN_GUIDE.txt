@@ -123,7 +123,8 @@ Notable gaps:
     "a STARTER LINE, Gen 6 additions", 2.1).
   - Legendaries and mythicals: most of Gens 4-9 (the Regis, the Lati twins, the weather trio, the
     creation trio, Regigigas, Arceus, the Lake trio, Cresselia, Manaphy and Phione, all 12 Gen 5 Legendaries, Yveltal / Zygarde / Diancie / Hoopa / Volcanion and the 14 Gen 7 Legendaries (Type: Null, the
-    Tapus, the Cosmog line, Necrozma, Magearna, Marshadow, Zeraora) are now the owner's designs): the Ruinous four, Koraidon and Miraidon.
+    Tapus, the Cosmog line, Necrozma, Magearna, Marshadow, Zeraora) and the 10 Gen 8 Legendaries (Zacian, Zamazenta, Eternatus, Zarude, Regieleki,
+    Regidrago, Glastrier, Spectrier, Calyrex, Enamorus; contentRev 74) are now the owner's designs): the Ruinous four, Koraidon and Miraidon.
   - Fossils: the four Galar fossils are still missing; the Tirtouga and Archen lines (Gen 5) and the Tyrunt and
     Amaura lines (Gen 6) are now house fossils on the "Ancient" mechanic (2.5).
   - Ultra Beasts: all 11 are now the owner's designs (Gen 7 batch 3, contentRev 66), on a shared UB mechanic,
@@ -662,6 +663,24 @@ House pattern: a BANK THAT UNLOCKS A FORM (the Gen 7 Necrozma, Prism; prism / ne
 from X1, gain `Xmult_mod`) whose threshold (X3) turns it into its other forme for good, read from the bank (never stored: resume / replay rebuild it):
 the form's card, the TYPE the form's card shows (protean_set: Ultra Necrozma is Dragon; Monotype still accepts the type it was gained as, so no
 exemption), and a one-time perk (+1 hand size, Zygarde's flagged pair). Energy reaches the threshold sooner, never moves it.
+
+House pattern: a FORM CROWNED BY BOSS BLINDS (the Gen 8 Legendaries Zacian / Zamazenta / Eternatus; crown_tick / shield_crown / eterna_x):
+  - The count is Beast Boost's moment (round end with beat_boss; not a game over, not Blueprint, not a joker retrigger), kept on the card
+    (`crown_bosses` capped at the rung, `bosses`) and read for the form (poke_view_form), so save / resume / replay rebuild it. Say which side of
+    the threshold the Boss falls on: the crowning Boss counts, the NEXT hand pays the crown; Eternatus banks the 5th Boss's X0.5 first, then doubles.
+  - A crown that REPLACES a number keeps it in its own energy field (Zacian `Xmult` X2 / `Xmult2` X3); a crown that ADDS a number (Zamazenta's
+    X1.5) carries the field from the start, so Energy taken before is kept. "+2 hands in all" (not +1 +2): add the difference to round_resets
+    when crowned and raise `hands`, so the +hands pair takes the full amount back when it leaves or is debuffed.
+  - A "doubled" form (Eternamax) multiplies the BANK by a fixed x2 at read time; the bank keeps growing, so every later gain counts twice.
+  - A form cell on ANOTHER sheet than the base card (Eternamax on the Gen 8 sheet, Eternatus on Natdex): the form entry names its `sheet` and
+    ui.js swaps the atlas (the Shiny twin follows the atlas name).
+House pattern: a GLASS-X RULE on the card (the Gen 8 Glastrier; glass_x_mult): the engine's chip_x_mult hook (Card:get_chip_x_mult), Registeel's
+  Steel rule for scored Glass: X2.5 instead of X2 as v x best / base (a perma X on the card scales with it), only real Glass cards (ability.effect),
+  never debuffed ones, the best undebuffed one wins (GLASS_RULES, so a later Glass-X joker joins the same table). The Glass card's tooltip shows it
+  through enh_loc_vars (regi_enh_vars answers Glass too). Blueprint copies the joker's other number, never the rule.
+House pattern: a SELL-VALUE DRAIN BANK (the Gen 8 Zarude; jungle_drain): when a Blind is selected each OTHER Joker loses $1 (Lampent's poke_drain,
+  one way, never below $1) and the joker banks X per $1 actually drained (measured as the sell_cost drop). Not Blueprint (a copy would drain twice).
+  It eats its own row's sell value: a cost the player sees, and runs dry once every Joker is at $1.
 
 House pattern: SCORING A DEBUFFED CARD, and debuffs as a resource (the owner's Snivy line, Contrary; jokers/pokejokers_designs.js
 contrary_held / contrary_lifts):
