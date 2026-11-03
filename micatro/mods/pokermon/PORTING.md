@@ -4039,7 +4039,8 @@ paradox pokemon as well." New content only (no older rule changes).
 Pinned **`3.9.1+r79`** (`contentRev: 79`; `LEGACY_MOD_VERSIONS` untouched). The owner's "Yes": the 18 Alolan forms, in their own file
 `jokers/pokejokers_regional.js` (`REGIONAL_FAMILIES` / `REGIONAL_LOC` / `REGIONAL_UPSTREAM_TEXT` / `REGIONAL_FAMILY_REV`, wired in index.js). Types = the
 cards' (tools/micatro/pokermon_art_type.mjs, margins 0.46+). Art: upstream 3.9.1's Gen 1 sheet cells (AtlasJokersBasicGen01 {2,2}-{6,4}); nothing to
-deploy. Gen 7 (their debut: the gen_seven option gates them). Each after its Kanto line in Pokédex order. Neither Nacho nor Pokermon+ has any.
+deploy. Gen 1 (a regional form takes its base species' generation: the generation-filter rule). Each after its Kanto line in Pokédex order
+(Alolan Raichu after Raichu's Megas). Neither Nacho nor Pokermon+ has any.
 - **Two shapes.** OWN LINES, their own pool entries beside the Kanto originals, on **the Kanto line's rarity / cost slot stage by stage** (Rattata C $5 /
   S $7, Sandshrew C $4 / S $6, Vulpix C $4 / S $8, Diglett C $5 / **Dugtrio U $6, shop-able as Dugtrio**, Meowth C $5 / S $9, Geodude C $6 / S $8 / S $10,
   Grimer C $4 / S $6), evolving by rounds (Sandshrew / Diglett / Geodude **4**, the rest **5**; Graveler 5); separate families, so a Kanto one held never

@@ -127,8 +127,8 @@ await sec('static', () => {
   ok(Object.keys(WANT).length === 18, '18 jokers');
   for (const [n, [rarity, cost, stage, type, rnds, x, y]] of Object.entries(WANT)) {
     const c = C(n);
-    ok(c.rarity === rarity && c.cost === cost && c.stage === stage && c.ptype === type && c.config.extra.ptype === type && c.gen === 7 && c.poke_region === 'alolan',
-      `${n}: ${rarity} $${cost}, ${stage}, ${type}, Gen 7, Alolan`, [c.rarity, c.cost, c.stage, c.ptype, c.gen, c.poke_region]);
+    ok(c.rarity === rarity && c.cost === cost && c.stage === stage && c.ptype === type && c.config.extra.ptype === type && c.gen === 1 && c.poke_region === 'alolan',
+      `${n}: ${rarity} $${cost}, ${stage}, ${type}, Gen 1 (its base species'), Alolan`, [c.rarity, c.cost, c.stage, c.ptype, c.gen, c.poke_region]);
     ok(c.config.extra.rounds === rnds, `${n}: ${rnds ? 'evolves after ' + rnds + ' rounds' : 'no round timer'}`, c.config.extra.rounds);
     ok(c.atlas === G1 && c.pos.x === x && c.pos.y === y && !c.soul_pos, `${n}: upstream 3.9.1 cell Gen01 {${x},${y}} (nothing to deploy)`, [c.atlas, c.pos]);
     ok(/^Alolan /.test(describe(add('j_poke_' + n)).name), n + ': named "Alolan ..."');

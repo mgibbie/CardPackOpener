@@ -12,8 +12,8 @@
 //     evolve; refused while debuffed or with an Everstone; gated by rulesRev (ALOLA_REV, `rev` on each poke_energy_evo; the three join their
 //     families on that rev: FAMILY_MEMBER_REV), so runs recorded before it replay as recorded. The Kanto paths are unchanged.
 // Every regional joker shows a region pill ("Alolan") before its type pill (systems/types.js region_badge).
-// After its Kanto line in Pokédex order (Alolan Rattata / Raticate after Raticate, Alolan Raichu after Raichu, ...). Gen 7 (the forms'
-// debut: the gen_seven option gates them).
+// After its Kanto line in Pokédex order (Alolan Rattata / Raticate after Raticate, Alolan Raichu after Raichu's Megas, ...). Gen 1:
+// a regional form takes its base species' generation (the generation-filter rule, pokermon_gen_filter_test).
 import {
   G, P_CENTERS, card_eval_status_text, localize, pseudoseed, pseudorandom_element, defineJokers, type_tooltip, level_evo,
   has_enhancement, has_no_rank, poke_remove_card, ALOLA_REV,
@@ -94,7 +94,7 @@ defineJokers({
   alolan_rattata: {
     name: 'alolan_rattata', poke_sprite391: sprite(2, 2),
     config: { extra: { mult: 5, rounds: 5 } },
-    rarity: 1, cost: 5, stage: 'Basic', ptype: 'Dark', gen: 7, blueprint_compat: true, poke_region: 'alolan',
+    rarity: 1, cost: 5, stage: 'Basic', ptype: 'Dark', gen: 1, blueprint_compat: true, poke_region: 'alolan',
     attributes: ['mult', 'rank', 'two', 'three', 'four', 'round_evo'], poke_after: 'raticate',
     loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.mult), ex.rounds] }; },
     calculate(self, card, context) {
@@ -107,7 +107,7 @@ defineJokers({
   alolan_raticate: {
     name: 'alolan_raticate', poke_sprite391: sprite(4, 2),
     config: { extra: { mult: 5, Xmult_mod: 0.2 } },
-    rarity: 'poke_safari', cost: 7, stage: 'One', ptype: 'Dark', gen: 7, blueprint_compat: true, poke_region: 'alolan',
+    rarity: 'poke_safari', cost: 7, stage: 'One', ptype: 'Dark', gen: 1, blueprint_compat: true, poke_region: 'alolan',
     attributes: ['mult', 'xmult', 'rank', 'two', 'three', 'four', 'consumable'], poke_after: 'alolan_rattata',
     loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.Xmult_mod), consumables_held(), r3(hoard_x(card)), r3(ex.mult)] }; },
     calculate(self, card, context) {
@@ -121,7 +121,7 @@ defineJokers({
   alolan_raichu: {
     name: 'alolan_raichu', poke_sprite391: sprite(6, 2),
     config: { extra: { Xmult: 1.5, surf_Xmult: 0, Xmult_mod: 0.1 } },
-    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Psychic', gen: 7, blueprint_compat: true, poke_region: 'alolan',
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Psychic', gen: 1, blueprint_compat: true, poke_region: 'alolan',
     attributes: ['xmult', 'scaling', 'planet'], poke_after: 'mega_raichu_y',
     poke_custom_values_to_keep: ['surf_Xmult'],
     loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.Xmult), r3(ex.Xmult_mod), r3(surf_x(card))] }; },
@@ -136,7 +136,7 @@ defineJokers({
   alolan_sandshrew: {
     name: 'alolan_sandshrew', poke_sprite391: sprite(8, 2),
     config: { extra: { chips: 30, rounds: 4 } },
-    rarity: 1, cost: 4, stage: 'Basic', ptype: 'Water', gen: 7, blueprint_compat: true, poke_region: 'alolan',
+    rarity: 1, cost: 4, stage: 'Basic', ptype: 'Water', gen: 1, blueprint_compat: true, poke_region: 'alolan',
     attributes: ['chips', 'hand_drawn', 'suits', 'round_evo'], poke_after: 'sandslash',
     loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.chips), snow_state(card), ex.rounds] }; },
     calculate(self, card, context) {
@@ -150,7 +150,7 @@ defineJokers({
   alolan_sandslash: {
     name: 'alolan_sandslash', poke_sprite391: sprite(10, 2),
     config: { extra: { chips: 30, Xmult: 2 } },
-    rarity: 'poke_safari', cost: 6, stage: 'One', ptype: 'Water', gen: 7, blueprint_compat: true, poke_region: 'alolan',
+    rarity: 'poke_safari', cost: 6, stage: 'One', ptype: 'Water', gen: 1, blueprint_compat: true, poke_region: 'alolan',
     attributes: ['chips', 'xmult', 'hand_drawn', 'suits'], poke_after: 'alolan_sandshrew',
     loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.Xmult), r3(ex.chips), snow_state(card)] }; },
     calculate(self, card, context) {
@@ -164,7 +164,7 @@ defineJokers({
   alolan_vulpix: {
     name: 'alolan_vulpix', poke_sprite391: sprite(12, 2),
     config: { extra: { mult: 4, rounds: 5 } },
-    rarity: 1, cost: 4, stage: 'Basic', ptype: 'Water', gen: 7, blueprint_compat: true, poke_region: 'alolan',
+    rarity: 1, cost: 4, stage: 'Basic', ptype: 'Water', gen: 1, blueprint_compat: true, poke_region: 'alolan',
     attributes: ['mult', 'suit', 'spades', 'round_evo'], poke_after: 'ninetales',
     loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.mult), ex.rounds] }; },
     calculate(self, card, context) {
@@ -177,7 +177,7 @@ defineJokers({
   alolan_ninetales: {
     name: 'alolan_ninetales', poke_sprite391: sprite(14, 2),
     config: { extra: { Xmult_multi: 1.2 } },
-    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Fairy', gen: 7, blueprint_compat: true, poke_region: 'alolan',
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Fairy', gen: 1, blueprint_compat: true, poke_region: 'alolan',
     attributes: ['xmult', 'suit', 'spades', 'weather'], poke_after: 'alolan_vulpix',
     loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); return { vars: [r3(card.ability.extra.Xmult_multi)] }; },
     calculate(self, card, context) {
@@ -190,7 +190,7 @@ defineJokers({
   alolan_diglett: {
     name: 'alolan_diglett', poke_sprite391: sprite(0, 3),
     config: { extra: { gold_money: 1, Xmult_multi: 1.2, rounds: 4 } },
-    rarity: 1, cost: 5, stage: 'Basic', ptype: 'Metal', gen: 7, blueprint_compat: true, poke_region: 'alolan',
+    rarity: 1, cost: 5, stage: 'Basic', ptype: 'Metal', gen: 1, blueprint_compat: true, poke_region: 'alolan',
     attributes: ['economy', 'enhancements', 'round_evo'], poke_after: 'dugtrio',
     loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); info_queue.push(P_CENTERS.m_gold); const ex = card.ability.extra; return { vars: [ex.gold_money, ex.rounds] }; },
     calculate(self, card, context) { return gold_eor(card, context) || level_evo(self, card, context, 'j_poke_alolan_dugtrio'); },
@@ -200,7 +200,7 @@ defineJokers({
   alolan_dugtrio: {
     name: 'alolan_dugtrio', poke_sprite391: sprite(2, 3),
     config: { extra: { gold_money: 1, Xmult_multi: 1.2 } },
-    rarity: 2, cost: 6, stage: 'One', ptype: 'Metal', gen: 7, blueprint_compat: true, poke_region: 'alolan',
+    rarity: 2, cost: 6, stage: 'One', ptype: 'Metal', gen: 1, blueprint_compat: true, poke_region: 'alolan',
     attributes: ['xmult', 'economy', 'enhancements'], poke_after: 'alolan_diglett',
     loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); info_queue.push(P_CENTERS.m_gold); const ex = card.ability.extra; return { vars: [r3(ex.Xmult_multi), ex.gold_money] }; },
     calculate(self, card, context) {
@@ -213,7 +213,7 @@ defineJokers({
   alolan_meowth: {
     name: 'alolan_meowth', poke_sprite391: sprite(4, 3),
     config: { extra: { pay_money: 2, Xmult_mod: 0.1, rounds: 5 } },
-    rarity: 1, cost: 5, stage: 'Basic', ptype: 'Dark', gen: 7, blueprint_compat: false, poke_region: 'alolan',
+    rarity: 1, cost: 5, stage: 'Basic', ptype: 'Dark', gen: 1, blueprint_compat: false, poke_region: 'alolan',
     attributes: ['economy', 'round_evo'], poke_after: 'persian',
     loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [ex.pay_money, ex.rounds] }; },
     calculate(self, card, context) { return level_evo(self, card, context, 'j_poke_alolan_persian'); },
@@ -224,7 +224,7 @@ defineJokers({
   alolan_persian: {
     name: 'alolan_persian', poke_sprite391: sprite(6, 3),
     config: { extra: { pay_money: 2, Xmult_mod: 0.1 } },
-    rarity: 'poke_safari', cost: 9, stage: 'One', ptype: 'Dark', gen: 7, blueprint_compat: true, poke_region: 'alolan',
+    rarity: 'poke_safari', cost: 9, stage: 'One', ptype: 'Dark', gen: 1, blueprint_compat: true, poke_region: 'alolan',
     attributes: ['xmult', 'economy'], poke_after: 'alolan_meowth',
     loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.Xmult_mod), r3(payday_x(card)), ex.pay_money] }; },
     calculate(self, card, context) {
@@ -238,7 +238,7 @@ defineJokers({
   alolan_geodude: {
     name: 'alolan_geodude', poke_sprite391: sprite(8, 3),
     config: { extra: { stone_money: 1, mult: 6, rounds: 4 } },
-    rarity: 1, cost: 6, stage: 'Basic', ptype: 'Lightning', gen: 7, blueprint_compat: true, poke_region: 'alolan',
+    rarity: 1, cost: 6, stage: 'Basic', ptype: 'Lightning', gen: 1, blueprint_compat: true, poke_region: 'alolan',
     attributes: ['economy', 'enhancements', 'stone', 'round_evo'], poke_after: 'golem',
     loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); info_queue.push(P_CENTERS.m_stone); const ex = card.ability.extra; return { vars: [ex.stone_money, ex.rounds] }; },
     calculate(self, card, context) {
@@ -251,7 +251,7 @@ defineJokers({
   alolan_graveler: {
     name: 'alolan_graveler', poke_sprite391: sprite(10, 3),
     config: { extra: { stone_money: 1, mult: 6, rounds: 5 } },
-    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Lightning', gen: 7, blueprint_compat: true, poke_region: 'alolan',
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Lightning', gen: 1, blueprint_compat: true, poke_region: 'alolan',
     attributes: ['mult', 'economy', 'enhancements', 'stone', 'round_evo'], poke_after: 'alolan_geodude',
     loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); info_queue.push(P_CENTERS.m_stone); const ex = card.ability.extra; return { vars: [ex.stone_money, r3(ex.mult), ex.rounds] }; },
     calculate(self, card, context) {
@@ -265,7 +265,7 @@ defineJokers({
   alolan_golem: {
     name: 'alolan_golem', poke_sprite391: sprite(12, 3),
     config: { extra: { stone_money: 1, Xmult_multi: 1.25 } },
-    rarity: 'poke_safari', cost: 10, stage: 'Two', ptype: 'Lightning', gen: 7, blueprint_compat: true, poke_region: 'alolan',
+    rarity: 'poke_safari', cost: 10, stage: 'Two', ptype: 'Lightning', gen: 1, blueprint_compat: true, poke_region: 'alolan',
     attributes: ['xmult', 'economy', 'enhancements', 'stone', 'steel'], poke_after: 'alolan_graveler',
     loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); info_queue.push(P_CENTERS.m_stone); info_queue.push(P_CENTERS.m_steel); const ex = card.ability.extra; return { vars: [ex.stone_money, r3(ex.Xmult_multi)] }; },
     calculate(self, card, context) {
@@ -278,7 +278,7 @@ defineJokers({
   alolan_grimer: {
     name: 'alolan_grimer', poke_sprite391: sprite(14, 3),
     config: { extra: { eat_mult: 0, mult_mod: 3, rounds: 5 } },
-    rarity: 1, cost: 4, stage: 'Basic', ptype: 'Dark', gen: 7, blueprint_compat: true, poke_region: 'alolan',
+    rarity: 1, cost: 4, stage: 'Basic', ptype: 'Dark', gen: 1, blueprint_compat: true, poke_region: 'alolan',
     attributes: ['mult', 'scaling', 'full_deck', 'destroy_card', 'round_evo'], poke_after: 'muk',
     poke_custom_values_to_keep: ['eat_mult'],
     loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.mult_mod), r3(ex.eat_mult), ex.rounds] }; },
@@ -294,7 +294,7 @@ defineJokers({
   alolan_muk: {
     name: 'alolan_muk', poke_sprite391: sprite(0, 4),
     config: { extra: { eat_mult: 0, eat_Xmult: 1, Xmult_mod: 0.1 } },
-    rarity: 'poke_safari', cost: 6, stage: 'One', ptype: 'Dark', gen: 7, blueprint_compat: true, poke_region: 'alolan',
+    rarity: 'poke_safari', cost: 6, stage: 'One', ptype: 'Dark', gen: 1, blueprint_compat: true, poke_region: 'alolan',
     attributes: ['mult', 'xmult', 'scaling', 'full_deck', 'destroy_card'], poke_after: 'alolan_grimer',
     poke_custom_values_to_keep: ['eat_mult', 'eat_Xmult'],
     loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.Xmult_mod), r3(ex.eat_Xmult), r3(ex.eat_mult)] }; },
@@ -314,7 +314,7 @@ defineJokers({
   alolan_exeggutor: {
     name: 'alolan_exeggutor', poke_sprite391: sprite(2, 4),
     config: { extra: { h_size: 1, Xmult: 2 } },
-    rarity: 'poke_safari', cost: 10, stage: 'One', ptype: 'Dragon', gen: 7, blueprint_compat: true, poke_region: 'alolan',
+    rarity: 'poke_safari', cost: 10, stage: 'One', ptype: 'Dragon', gen: 1, blueprint_compat: true, poke_region: 'alolan',
     attributes: ['xmult', 'hand_size', 'hand_type'], poke_after: 'exeggutor',
     loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [ex.h_size, r3(ex.Xmult)] }; },
     calculate(self, card, context) {
@@ -328,7 +328,7 @@ defineJokers({
   alolan_marowak: {
     name: 'alolan_marowak', poke_sprite391: sprite(6, 4),
     config: { extra: { Xmult: 2, Xmult2: 2.5 } },
-    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Fire', gen: 7, blueprint_compat: true, poke_region: 'alolan',
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Fire', gen: 1, blueprint_compat: true, poke_region: 'alolan',
     attributes: ['xmult', 'destroy_card'], poke_after: 'marowak',
     loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.Xmult), r3(ex.Xmult2), bone_round() ? 'Yes' : 'No'] }; },
     calculate(self, card, context) {
