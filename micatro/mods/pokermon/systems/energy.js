@@ -234,6 +234,9 @@ export function energy_evo_target(v, etype) {
 }
 /** The Gen 9 batch 2 rules rev (the owner's, 2026-11-03): Wooper -> Clodsire (a Dark Energy), and the line's new member. */
 export const GEN9B2_REV = 77;
+/** Regional batch A, the Alolan forms (the owner's, 2026-11-03): Pikachu -> Alolan Raichu (Psychic), Exeggcute -> Alolan Exeggutor (Dragon),
+ *  Cubone -> Alolan Marowak (Fire), each an Energy used on it, and those lines' new members; Alolan Ninetales's snow for Eiscue. */
+export const ALOLA_REV = 78;
 function energy_evolve(v) { poke_evolve(v, v.config.center.poke_energy_evo.into); }
 
 /** The first joker (left to right) this Energy can go on, or false. */

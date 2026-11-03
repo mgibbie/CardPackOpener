@@ -3995,6 +3995,65 @@ nothing to deploy.
   `micatro_mod_version_pin`, `micatro_deckeditor_pages` (1237 jokers), `designwiki_pokermon_jokers_test` (no Stage 1 is left: Iron Crown / Iron Treads /
   Great Tusk / Miraidon are its spot checks now).
 
+### Regional batch A: the 18 Alolan forms + the regional pill (2026-11-03, branch `feat/pokermon-alolan-forms`)
+Pinned **`3.9.1+r78`** (`contentRev: 78`; `LEGACY_MOD_VERSIONS` untouched). The owner's "Yes": the 18 Alolan forms, in their own file
+`jokers/pokejokers_regional.js` (`REGIONAL_FAMILIES` / `REGIONAL_LOC` / `REGIONAL_UPSTREAM_TEXT` / `REGIONAL_FAMILY_78`, wired in index.js). Types = the
+cards' (tools/micatro/pokermon_art_type.mjs, margins 0.46+). Art: upstream 3.9.1's Gen 1 sheet cells (AtlasJokersBasicGen01 {2,2}-{6,4}); nothing to
+deploy. Gen 7 (their debut: the gen_seven option gates them). Each after its Kanto line in Pokédex order. Neither Nacho nor Pokermon+ has any.
+- **Two shapes.** OWN LINES, their own pool entries beside the Kanto originals, on **the Kanto line's rarity / cost slot stage by stage** (Rattata C $5 /
+  S $7, Sandshrew C $4 / S $6, Vulpix C $4 / S $8, Diglett C $5 / **Dugtrio U $6, shop-able as Dugtrio**, Meowth C $5 / S $9, Geodude C $6 / S $8 / S $10,
+  Grimer C $4 / S $6), evolving by rounds (Sandshrew / Diglett / Geodude **4**, the rest **5**; Graveler 5); separate families, so a Kanto one held never
+  keeps its Alolan form out of the shop (or the reverse). BRANCH EVOLUTIONS of a Kanto Basic by an Energy used on it (energy_evo_target, the Gen 8
+  Galarian pattern: energize first when it would, then evolve; picked, else the leftmost joker it can energize, else the leftmost it evolves; refused
+  while debuffed / with an Everstone): **Pikachu + Psychic -> Alolan Raichu**, **Exeggcute + Dragon -> Alolan Exeggutor**, **Cubone + Fire -> Alolan
+  Marowak** (each Safari, the Kanto evolution's slot: $8 / $10 / $8). The Kanto paths (Thunder Stone, Leaf Stone, Cubone's 20 consumables) are unchanged.
+  Each Basic's 3.9.1 text gets an "Alolan form" box.
+- **Never retroactive (rules rev 78)**: the three branches check `rulesRev('pokermon') >= ALOLA_78` (`poke_energy_evo.rev`, systems/energy.js); the
+  three join their Kanto families (Alolan Raichu before Raichu's Megas) only from that rev (FAMILY_MEMBER_78), so Transformation on a Pikachu
+  recorded earlier still gives Raichu; Eiscue's Ninetales snow is gated the same way (pokermon_alolan_test 'old-rev replay').
+- **The regional pill** (systems/types.js `REGIONS` / `region_of` / `region_badge`, in `poke_set_type_badge`): after the rarity pill, before the type
+  pill, the region's name on its colour, white text (WCAG AA): **Alolan #C2410C** (5.2:1), Galarian #3557A6 (6.9:1), Hisuian #556B2F (6.0:1), Paldean
+  #A8326E (6.3:1). The region is the center's `poke_region`, else its key (`j_<prefix>_<region>_<name>`), so the **7 existing regional forms are
+  retrofitted with no change** (Pokermon's Hisuian Qwilfish; Nacho's Galarian Meowth and Hisuian Sneasel / Zorua / Zoroark / Sliggoo / Goodra).
+  Display only: no rule reads it (Perrserker / Overqwil / Obstagoon, regional evolutions with their own dex numbers, have no pill). It is the same
+  set_badges mechanism the Paradox batch's era pills use (a pushed `{key, label, colour}` badge).
+- **The house snow** (pokejokers_designs.js `is_snowy` / `snow_read` / `snow_state` / `snow_warning`, beside cherrim_sunny / swift_swim_raining /
+  is_sandstorm): snowy = the round's first deal's forecast is Snowy (round_forecast, Castform's own read: Spades held most, unless Kyogre / Groudon
+  lock it or Volcarona brings the sun; read once a round on the card) **or** an undebuffed **Alolan Ninetales** is held (Snow Warning: live, in the
+  shop too). **The choices**: snow ADDS, never removes (rain, sun and sand hold beside it; a Kyogre's locked rain still lets Ninetales snow);
+  **Castform's form never changes for it**; **Eiscue's ice re-forms on the first deal of any round with Ninetales held** (r78+).
+- **Alolan Rattata** (Dark) -> **Alolan Raticate**, Hoarder: **scored 2s, 3s and 4s +5 Mult**; Raticate **X1 + X0.2 per consumable held**, and **keeps
+  the +5** (the owner's r73 rule: a Stage 1 keeps its Basic's effect).
+- **Alolan Raichu** (Psychic), Surge Surfer: **X1.5; each Planet used permanently adds X0.1** (banked in `surf_Xmult`; a Black Hole is a Spectral and
+  doesn't count; not Blueprint).
+- **Alolan Sandshrew** (Water) -> **Alolan Sandslash**, Slush Rush: **+30 Chips on a snowy round**; Sandslash **X2 on a snowy round, +30 Chips otherwise**.
+- **Alolan Vulpix** (Water) -> **Alolan Ninetales** (Fairy): **scored Spades +4 Mult**; Ninetales **Snow Warning** and **scored Spades X1.2**.
+- **Alolan Diglett** (Metal) -> **Alolan Dugtrio**, Golden hair: **each Gold card held at end of round earns $1 more** (the held pass where the Gold card
+  pays: Mime / a Red Seal repeat it; a debuffed one pays nothing); Dugtrio **each Gold card held X1.2** and keeps the $1. Diglett carries Dugtrio's
+  `Xmult_multi` ("Energy carries to Alolan Dugtrio").
+- **Alolan Meowth** (Dark) -> **Alolan Persian**, Pay Day: **$2 at end of round** (a cash-out row); Persian **X1 + X0.1 per $10 you have** (current
+  money, floored to tens, nothing at or below $0) and keeps the $2. Meowth carries Persian's `Xmult_mod`.
+- **Alolan Geodude** (Lightning) -> **Graveler** -> **Golem**, Galvanize: **each scored Stone card earns $1**; Graveler **+6 Mult** too; Golem **X1.25**
+  per scored Stone (the $1 kept) and **Stone cards held in hand count as Steel cards for their held X**: X1.5, or the best Registeel / Durant /
+  Escavalier rule's (the same card-level rule, regi_h_x_mult / `galvanized`; never stacking; Mime / a Red Seal repeat it; a debuffed one nothing).
+  **The choice**: only the held X — a Stone card doesn't count as Steel for deck counts or Steel-reading jokers. Geodude carries Graveler's `mult`.
+- **Alolan Grimer** (Dark) -> **Alolan Muk**, Gluttony: **when a Blind is selected, destroy the lowest-ranked card in your full deck** (Aces high; Stone
+  / rankless cards skipped; a tie is the seeded pick 'poke_alolan_gluttony'; poke_remove_card, so every "destroyed" payoff sees it; not Blueprint;
+  nothing ranked, nothing eaten) and bank **+3 Mult** (Grimer, `eat_mult`) / **X0.1** (Muk, `eat_Xmult`; Grimer's Mult kept and still given).
+  **The choice: when a Blind is selected** (the deck shrinks before the deal, and Alolan Marowak's "this round" sees it).
+- **Alolan Exeggutor** (Dragon), Long Neck: **+1 hand size; X2 when the played hand has 5 cards** (kickers count).
+- **Alolan Marowak** (Fire), Shadow Bone: **X2, X2.5 if any playing card was destroyed this round** (`G.GAME.poke_destroyed_round`, set by index.js's
+  card_removed hook for any card of your deck: run-wide, so a Cubone evolving mid-round sees an earlier one).
+- **Energy** (1 / 2 / 3): A-Rattata / A-Raticate +7 / 9 / 11 Mult a low card; A-Raticate +X0.24 / 0.28 / 0.32 a consumable; A-Raichu X1.8 / 2.1 / 2.4 and
+  +X0.12 / 0.14 / 0.16 a Planet; A-Sandshrew / A-Sandslash +39 / 48 / 57 Chips; A-Sandslash X2.4 / 2.8 / 3.2; A-Vulpix +5.6 / 7.2 / 8.8 a Spade;
+  A-Ninetales X1.26 / 1.32 / 1.38 a Spade; A-Diglett (carried) / A-Dugtrio X1.26 / 1.32 / 1.38 a held Gold; A-Meowth (carried) / A-Persian +X0.12 / 0.14 /
+  0.16 per $10; A-Geodude (carried) / A-Graveler +8.4 / 10.8 / 13.2 a Stone; A-Golem X1.3125 / 1.375 / 1.4375 a Stone; A-Grimer +3.6 / 4.2 / 4.8 an eat;
+  A-Muk +X0.12 / 0.14 / 0.16 an eat; A-Exeggutor X2.4 / 2.8 / 3.2; A-Marowak X2.4 / 2.8 / 3.2 (X3 / 3.5 / 4 after a destruction). Fixed: money, the hand
+  size, Golem's held-Stone X1.5; banks never retroactive (surf_Xmult / eat_mult / eat_Xmult).
+- **Tests**: `micatro/tests/mods/pokermon_alolan_test.mjs` (fails on main: no such jokers / pill) and `overworld/tests/micatro_pokermon_regional_ui_test.mjs`
+  (the pills drawn, the retrofits, no pill on a Kanto joker). Re-recorded: `modpin_test`, `pokermon_391_data_test`, `pokermon_new_jokers_test`,
+  `micatro_mod_version_pin`, `micatro_deckeditor_pages` (+18 jokers).
+
 ### Pending from the 3.9.1 joker rework (after batch 10b)
 Every existing joker is on 3.9.1: `rework_hold` (still on 3.2.1) is empty. What waits, by the batch it waits on (`rework_deferred` =
 on 3.9.1 but one part):

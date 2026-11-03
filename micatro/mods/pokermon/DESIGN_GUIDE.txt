@@ -1235,6 +1235,27 @@ House pattern: Ancient JACKS (the Galar fossils Dracozolt / Arctozolt / Dracovis
   evolution; a 2+ tier may be a retrigger (every scored Jack, or only the FIRST scored Jack twice), a 3+ tier $3 (once a hand) or +1 hand
   (once a round, not Blueprint).
 
+House pattern: REGIONAL FORMS (the owner's regional batch A, the 18 Alolan forms; jokers/pokejokers_regional.js):
+  - Own lines (the form has its own line: Alolan Rattata / Sandshrew / Vulpix / Diglett / Meowth / Geodude / Grimer) are their OWN pool entries
+    beside the originals, on the original line's rarity / cost slot stage by stage, with their own families (neither keeps the other out of the
+    shop); a level_evo of 4-5 rounds. Branch forms (the original's Basic evolves into the form: Raichu, Exeggutor, Marowak) use the
+    ENERGY-TRIGGERED EVOLUTION with a `rev` (Pikachu + Psychic, Exeggcute + Dragon, Cubone + Fire; FAMILY_MEMBER_REV for the line's new member;
+    a branch member goes BEFORE the line's Megas in set_family so get_highest_evo still finds both Stage 1s).
+  - The REGIONAL PILL (systems/types.js region_badge): every regional form shows "Alolan" / "Galarian" / "Hisuian" / "Paldean" between its
+    rarity and type pills, read from `poke_region` or the key (`j_<prefix>_<region>_<name>`), so a new form needs nothing more. Display only.
+House pattern: SNOW, the house snow (Alolan Sandshrew / Sandslash / Ninetales; pokejokers_designs.js is_snowy / snow_read, exported): the FOURTH
+  weather. Snowy = the round's first-deal forecast is Snowy (round_forecast: Castform's read with the Kyogre / Groudon locks and Volcarona's sun),
+  read once a round on the card, OR an undebuffed Alolan Ninetales held (Snow Warning: live, the shop too). Snow adds, never removes; Castform's
+  form never changes for Ninetales; Eiscue's ice re-forms on a snowy round (Ninetales included, from the batch's rev). A future snow source
+  (Snow Warning on another joker) adds itself to snow_warning.
+House pattern: HELD STONE AS STEEL (Alolan Golem, Galvanize; pokejokers_designs.js galvanized in regi_h_x_mult): a Stone card held counts as a
+  Steel card for its held X only (X1.5, or the best Registeel / Durant / Escavalier rule's: the card-level rule, never stacking); no other Steel
+  read sees it.
+House pattern: a FULL-DECK DEVOURER on Blind select (Alolan Grimer / Muk, Gluttony): when a Blind is selected the lowest-ranked card of the full
+  deck (Aces high, rankless skipped, ties seeded) is destroyed through poke_remove_card; the bank's gain is energized, the bank isn't.
+House pattern: DESTROYED THIS ROUND, run-wide (Alolan Marowak; G.GAME.poke_destroyed_round from index.js's card_removed hook): any card of your
+  deck destroyed marks the round, so a joker gained mid-round still sees an earlier destruction.
+
 2.2 Rarity and cost conventions
 -------------------------------
 Rarities:
