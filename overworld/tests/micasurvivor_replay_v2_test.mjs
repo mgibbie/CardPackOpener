@@ -16,6 +16,10 @@
 //   7. online co-op (MP polish): a guest's Z-move and Dynamax ride its co-op frames (field 18): the host's puppet of it grows
 //      and is MAX, flashes its Z; the host's live view rows and its tape carry them; the replay draws it giant. Gap fix
 //      2026-11-02: his Z plays the full Z cinematic on the host (holding her world), hers on his screen, and in her replay
+//   8. (gap fix 2, 2026-11-02) a Z-move in a replay holds the world for its cinematic as the run did (the run's clock stood
+//      still): the playback clock waits, nothing moves, then it goes on from exactly where it was; the replay ends on the
+//      same last frame and duration, played in that duration + the hold; 2x halves the hold; seeking past a Z (or during
+//      it) skips it. And a tape from a newer build (h.fv past G.Replay.FV) plays with the "refresh" prompt
 //   node overworld/tests/micasurvivor_replay_v2_test.mjs      (ONLY=1,3 runs those sections)
 import http from 'http';
 import fs from 'fs';
@@ -635,6 +639,92 @@ try {
 				"...and plays bob's Z cinematic (the Fire card, his name) as his Z starts, following alice or him", JSON.stringify([tape.zT, tape.cine, tape.cine1]));
 		}
 		await host.ctx.close(); await guest.ctx.close();
+	}
+
+	// ======================== 8. (gap fix 2) a Z cinematic holds the replay's world; a newer tape offers to refresh
+	if (on(8)) {
+		const zs = await bootPage({ save: Object.assign(SAVE('Trainer'), { stats: { zcr_fire: 1 } }) });   // (Charmander: the Fire Z)
+		const r = await zs.E(async () => {
+			const H = window.__t, wait = ms => new Promise(res => setTimeout(res, ms));
+			await G.Flow.play('normal'); H.freeze();
+			const pl = H.sturdy();
+			for (let i = 0; i < 20 * 14; i++) H.tick(1 / 20, true);
+			pl.level = Math.max(pl.level, 30);
+			const run = { started: G.ZMoves.tryStart(pl), state: G.ZMoves.state, t0: G.Game.st.time };
+			let held = 0;
+			for (let i = 0; i < 20 * 12; i++) { const was = G.Game.st.time; H.tick(1 / 20, true); if (G.ZMoves.cine && G.Game.st.time === was) held++; }
+			run.held = held / 20;
+			G.Game.quit(); await wait(300);
+			const e = G.Replay.last; await e.ready;
+			const rd = await G.Replay.open(e.segs[0]);
+			let zT = null, zN = 0;
+			for (let i = 0; i < rd.length; i++) { const f = rd.at(i); if (f.z && f.z[1] === 'cine') { zN++; if (zT == null) zT = f.t / 10; } }
+			Object.assign(run, { zT, zN, dur: rd.duration, frames: rd.length, segs: e.segs.length });
+			if (zT == null) return { run };
+			await G.WatchUI.playLocal(e, () => {});
+			for (let i = 0; i < 60 && !G.WatchUI.player; i++) await wait(30);
+			const W = G.WatchUI, DT = 1 / 30, CT = G.ZMoves.CINE_T;
+			const pause = () => { if (W.playing) W.togglePlay(); }, play = () => { if (!W.playing) W.togglePlay(); };
+			const pos = () => [Math.round(W.player.x * 10), Math.round(W.player.y * 10), ...G.EnemyMgr.all().filter(x => !x.dead).slice(0, 12).flatMap(x => [Math.round(x.x * 10), Math.round(x.y * 10)])].join(',');
+			// played forwards over the Z: the cinematic starts, the clock and every position hold for it, then go on
+			pause(); W.seek(Math.max(0, zT - 2)); play();
+			const hold = { start: null, steps: 0, moved: 0, tMoved: 0, cineT: null, after: null };
+			let p0 = null, T0 = null;
+			for (let i = 0; i < 30 * 12; i++) {
+				G.Game.debugStep(1, DT);
+				const z = W.zCine;
+				if (z && hold.start == null) { hold.start = +W.T.toFixed(3); hold.type = z.type; p0 = pos(); T0 = W.T; continue; }
+				if (z) { hold.steps++; if (pos() !== p0) hold.moved++; if (W.T !== T0) hold.tMoved++; hold.cineT = +z.t.toFixed(2); continue; }
+				if (hold.start != null) { for (let k = 0; k < 15; k++) G.Game.debugStep(1, DT); hold.after = +(W.T - T0).toFixed(3); break; }
+			}
+			hold.secs = +(hold.steps * DT).toFixed(2);
+			// the whole replay at 1x: it ends on the tape's last frame at its duration, played in duration + the hold
+			pause(); W.seek(0); play();
+			let steps = 0;
+			while (!W.done && steps < 30 * 600) { G.Game.debugStep(1, DT); steps++; }
+			const last = rd.at(rd.length - 1);
+			const whole = { wall: +(steps * DT).toFixed(2), T: W.T, done: W.done, lastT: W.frame && W.frame.t, wantT: last.t, me: W.frame && W.frame.p && W.frame.p.slice(0, 2).join(','), wantMe: last.p.slice(0, 2).join(',') };
+			// at 2x the hold is half as long (the cinematic runs on the viewer's clock)
+			pause(); W.seek(Math.max(0, zT - 1)); W.setSpeed(2); play();
+			let s2 = 0, seen2 = false;
+			for (let i = 0; i < 30 * 8; i++) { G.Game.debugStep(1, DT); if (W.zCine) { seen2 = true; s2++; } else if (seen2) break; }
+			W.setSpeed(1);
+			// seeking past a Z skips it (no cinematic, the clock goes on); seeking during one drops it
+			pause(); W.seek(Math.max(0, zT - 1)); play();
+			for (let i = 0; i < 5; i++) G.Game.debugStep(1, DT);
+			W.seek(zT + 1);
+			let past = 0; const tp = W.T;
+			for (let i = 0; i < 30 * 3; i++) { G.Game.debugStep(1, DT); if (W.zCine) past++; }
+			const pastRun = +(W.T - tp).toFixed(2);
+			pause(); W.seek(Math.max(0, zT - 0.5)); play();
+			let during = null;
+			for (let i = 0; i < 30 * 3; i++) { G.Game.debugStep(1, DT); if (W.zCine) { W.seek(W.T + 0.2); during = { cine: !!W.zCine }; const t1 = W.T; for (let k = 0; k < 10; k++) G.Game.debugStep(1, DT); during.ran = +(W.T - t1).toFixed(2); break; } }
+			W.leave();
+			// a tape from a newer build (its header's fv past this build's FV) still plays, with the refresh prompt
+			const rdNew = await G.Replay.open(e.segs[0]);
+			rdNew.h = Object.assign({}, rdNew.h, { fv: G.Replay.FV + 1 });
+			const up = { fvNow: G.Replay.FV };
+			G.WatchUI.playReplay(rd); await wait(50); up.plain = G.WatchUI.updateShown; G.WatchUI.leave(); await wait(50);
+			G.WatchUI.playReplay(rdNew); await wait(50);
+			up.newer = G.WatchUI.updateShown; up.plays = !!G.WatchUI.player && G.WatchUI.mode === 'replay';
+			up.text = (document.querySelector('#watch-update .wu-t') || {}).textContent || '';
+			G.WatchUI.leave(); await wait(50); up.afterLeave = G.WatchUI.updateShown;
+			return { run, hold, whole, s2: +(s2 * DT).toFixed(2), past, pastRun, during, up, CT };
+		});
+		A(r.run && r.run.started === true && r.run.held > 2 && r.run.zN > 0, `a solo Normal run with a Z-move: its world (and clock) held ${r.run && r.run.held} s for the cinematic; the tape has it at ${r.run && r.run.zT} s (${r.run && r.run.zN} frames in the cinematic, ${r.run && r.run.frames} frames, ${r.run && r.run.dur} s)`, JSON.stringify(r).slice(0, 600));
+		if (r.hold) {
+			A(r.hold.start != null && Math.abs(r.hold.start - r.run.zT) < 0.001 && r.hold.type === 'fire', 'played forwards, the Z cinematic starts at the very moment of the Z (the playback clock goes back to that frame)', JSON.stringify(r.hold));
+			A(r.hold.steps > 0 && r.hold.moved === 0 && r.hold.tMoved === 0 && Math.abs(r.hold.secs + 1 / 30 - r.CT) < 0.1, `...and for the whole cinematic (${r.hold.secs} s) the playback clock and every position (the player, the foes) hold still`, JSON.stringify(r.hold));
+			A(r.hold.after > 0.3 && r.hold.after < 0.6, '...then the replay goes on from exactly where it was', JSON.stringify(r.hold));
+			A(r.whole.done && r.whole.T === r.run.dur && r.whole.lastT === r.whole.wantT && r.whole.me === r.whole.wantMe && Math.abs(r.whole.wall - (r.run.dur + r.CT)) < 0.25,
+				`the whole replay at 1x ends on its last frame at its duration (${r.run.dur} s), played in ${r.whole.wall} s: the duration + the ${r.CT} s hold`, JSON.stringify(r.whole));
+			A(Math.abs(r.s2 - r.CT / 2) < 0.12, `at 2x the hold lasts half as long (${r.s2} s)`, JSON.stringify(r.s2));
+			A(r.past === 0 && r.pastRun > 2.5, 'seeking past a Z skips its cinematic (the clock just goes on)', JSON.stringify([r.past, r.pastRun]));
+			A(r.during && !r.during.cine && r.during.ran > 0.2, 'seeking during one drops it, and the clock runs again', JSON.stringify(r.during));
+			A(r.up && r.up.plain === false && r.up.newer === true && r.up.plays && /newer version is available/i.test(r.up.text) && r.up.afterLeave === false,
+				'a tape from a newer build (h.fv past G.Replay.FV) still plays, with "A newer version is available — refresh" (none for this build\'s own; gone on leaving)', JSON.stringify(r.up));
+		}
+		await zs.ctx.close();
 	}
 
 	const pageErrs = errors.filter(e => !/AudioContext|play\(\) failed|NotAllowedError|WebRTC|RTCPeer|ICE/i.test(e));

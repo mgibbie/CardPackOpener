@@ -1115,5 +1115,8 @@ G.I18n.add({
   'Copia el enlace de arriba.': 'Copy the link above.',
   'En directo ahora': 'Live now', 'Tus últimas partidas': 'Your recent runs', 'Ver': 'Watch', 'Compartir': 'Share',
   'No se pudo subir. Inténtalo otra vez.': "Couldn't upload it. Try again.",
-  '{x} te está mirando': '{x} is watching you', '{x} personas te están mirando': '{x} people are watching you'
+  '{x} te está mirando': '{x} is watching you', '{x} personas te están mirando': '{x} people are watching you',
+  // (gap fix 2026-11-02: a live run / replay from a newer build, js/ui/watch-ui.js updatePrompt)
+  'Hay una versión más nueva del juego: actualiza para verlo bien.': 'A newer version is available — refresh to watch this properly.',
+  'Actualizar': 'Refresh', 'Más tarde': 'Later'
 });

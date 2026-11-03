@@ -20,6 +20,8 @@
  *                            e:[[id,x,y,vida,anim,dir,estados]], ev:[eventos],
  *                            ja:[x,y,anim,dir] (Arceus, sólo en la Sentencia) }
  *   anfitrión -> todos     { k:'start', seed, host, members:[{uid,name,dex,shiny}] }
+ *   (gap fix 2, 2026-11-02, both ways in ev: ['sp', tx, ty, 0 spring / 1 locked chest, % or -1 at rest] and
+ *    ['au', tx, ty] an altar used: the springs, altars and locked chests are shared; an older peer ignores both)
  *
  * MicaSurvivor (M5 batch 12b): switched on, with Magepunk accounts and friends (js/mica/social.js) and the
  * signalling + relay over the site's backend (js/mica/online.js). The relay runs at RATE_SLOW (3 a second).
@@ -79,7 +81,7 @@ G.Coop = (() => {
     api = cb;
     members = cfg.members;
     mates.clear();
-    outEv = []; flushT = 0; waiting = new Set(); holds = new Set(); budgetTold = false; zq = [];
+    outEv = []; flushT = 0; waiting = new Set(); holds = new Set(); budgetTold = false; zq = []; spSent.clear(); spOut.clear();
     hostAway = false; stalled = false; lastHostAt = performance.now();
     levelSeq = 0; levelNow = 1; seenSeq = 0; doneSeq = 0; lastHo = '';
     cfg.members.forEach((m, i) => {
@@ -97,7 +99,53 @@ G.Coop = (() => {
 
   function end() {
     active = false; host = false; local = null;
-    mates.clear(); outEv = []; waiting = new Set(); holds = new Set(); zq = [];
+    mates.clear(); outEv = []; waiting = new Set(); holds = new Set(); zq = []; spSent.clear(); spOut.clear();
+  }
+
+  // ---------------- shared springs / altars / locked chests (gap fix 2, 2026-11-02) ----------------
+  // They were each screen's own: a guest's spring, altar or locked chest never reached the host, so the host's tape and live
+  // view (and every other guest) only had the host's. Now each player's screen sends what its Pokémon does to one (a spring's
+  // charge, a locked chest's progress: their % as it changes, coalesced per prop to one per frame sent; an altar used) to the
+  // host, which applies it to its world (G.World.netSpecial / netUse: its chunk is built if the host was never there, so the
+  // tape's field 15 and the live snapshot have it) and passes it on to the other guests; the host's own go to every guest.
+  // What a screen RECEIVES is noted as told (spSent), so it is never echoed back. An older host / guest ignores both events
+  // (js/expedition/core.js's net.event listener only knows its own), and plays on as before.
+  const spSent = new Map();             // "tx,ty" -> the last % told / heard (-1 = at rest)
+  const spOut = new Map();              // guest: the 'sp' events waiting for the next frame to the host, one per prop
+  /** js/systems/interact.js, each frame, for each spring / locked chest near your Pokémon. */
+  function special(p) {
+    if (!active || !p) return;
+    const v = G.World.specialPct(p), k = p.tx + ',' + p.ty;
+    if (v === (spSent.has(k) ? spSent.get(k) : -1)) return;
+    if (v < 0) spSent.delete(k); else spSent.set(k, v);
+    const ev = ['sp', p.tx, p.ty, p.type === 'spring' ? 0 : 1, v];
+    if (host) emitSp(k, ev, null); else spOut.set(k, ev);
+  }
+  /** Host: an 'sp' for every guest but `except`, replacing any not sent yet for the same prop (a guest on the relay gets one). */
+  function emitSp(k, ev, except) {
+    for (const m of mates.values()) if (m.connected && m.uid !== except) (m.sp || (m.sp = new Map())).set(k, ev);
+  }
+  /** js/systems/interact.js: your Pokémon used an altar. */
+  function altarUsed(p) {
+    if (!active || !p) return;
+    if (host) emit(['au', p.tx, p.ty]); else outEv.push(['au', p.tx, p.ty]);
+  }
+  const spArgs = ev => [Math.round(+ev[1]), Math.round(+ev[2]), G.U.clamp(Math.round(+ev[4]) || 0, -1, 100)];
+  /** An 'sp' that came in (host: from guest `from`; guest: from the host). */
+  function specialIn(ev, from) {
+    const [tx, ty, v0] = spArgs(ev);
+    const p = G.World.netSpecial(tx, ty, v0);
+    if (!p) return;
+    const k = tx + ',' + ty, v = G.World.specialPct(p);
+    if (!host) { if (v0 < 0) spSent.delete(k); else spSent.set(k, v0); return; }   // (yours differs, you using it too: told next frame)
+    if (v < 0) spSent.delete(k); else spSent.set(k, v);
+    // (the host's own Pokémon using it too: the merged state goes back to that guest as well)
+    emitSp(k, ['sp', tx, ty, p.type === 'spring' ? 0 : 1, v], v === v0 ? from : null);
+  }
+  function altarIn(ev, from) {
+    const tx = Math.round(+ev[1]), ty = Math.round(+ev[2]);
+    if (!G.World.netUse(tx, ty)) return;
+    if (host) emit(['au', tx, ty], from);
   }
 
   // ---------------- another player's Z-move cinematic (gap fix 2026-11-02) ----------------
@@ -278,6 +326,7 @@ G.Coop = (() => {
       if (o.connected && o.uid !== m.uid && o.state) p[o.uid] = o.state;
     }
     const ev = m.q; m.q = [];
+    if (m.sp && m.sp.size) { for (const e of m.sp.values()) ev.push(e); m.sp.clear(); }   // (gap fix 2: the shared springs / chests)
     const f = { k: 'f', t: r2(st.time), lv: st.level, xp: r2(st.xp), xn: st.xpNext, ki: st.kills, bo: st.bosses, co: st.coins, tk: [st.t1, st.t10],
                 p, e: enemyList(m.pl), ev };
     const ja = G.Judgment.netState();       // Arceus en la Sentencia
@@ -295,7 +344,11 @@ G.Coop = (() => {
 
   /** A guest's frame to the host. (MicaSurvivor DLC D2: through the net.frame seam with no mate, so an Expedition guest adds
    *  its airborne state; with no listener, or a base run, it is exactly the base frame.) */
-  function clientFrame() { return G.Hooks.reduce('net.frame', { k: 'f', p: myState(), ev: outEv }, null); }
+  function clientFrame() {
+    let ev = outEv;
+    if (spOut.size) { ev = outEv.concat([...spOut.values()]); spOut.clear(); }   // (gap fix 2: your springs / chests' changes)
+    return G.Hooks.reduce('net.frame', { k: 'f', p: myState(), ev }, null);
+  }
 
   function flushClient(force) {
     if (!force && !outEv.length && flushT > 0) return;
@@ -393,6 +446,8 @@ G.Coop = (() => {
           G.World.breakAt(ev[1], ev[2]);
           emit(['pb', ev[1], ev[2]], from);
           break;
+        case 'sp': specialIn(ev, from); break;   // (gap fix 2: a guest's spring / locked chest)
+        case 'au': altarIn(ev, from); break;     // (gap fix 2: a guest's altar)
         case 'lp': picked(from); break;
         case 'hs': holdOn(from); break;
         case 'he': holdOff(from); break;
@@ -490,6 +545,8 @@ G.Coop = (() => {
         G.Audio.sfx('break');
         break;
       case 'pb': G.World.breakAt(ev[1], ev[2]); break;
+      case 'sp': specialIn(ev, null); break;   // (gap fix 2: someone's spring / locked chest)
+      case 'au': altarIn(ev, null); break;     // (gap fix 2: someone's altar)
       case 'say': G.Spawner.say(ev[1], ev[2]); break;
       case 'heal': if (!local.dead) { local.heal(local.maxHp * ev[1]); G.FX.ring(local.x, local.y, 6, 60, '#5fe08a', 0.4, 3); } break;
       case 'lu': if (!ev[2] || ev[2] > seenSeq) { seenSeq = ev[2] || seenSeq; api.levelStart(ev[1]); } break;
@@ -628,6 +685,7 @@ G.Coop = (() => {
     cast, hit, status, hurtShown, enemyAdded, enemyGone, enemyShot, pickupAdded, pickupGone, say,
     propBroken, collected, shinyCaught, levelStart, localPicked, over, holdStart, holdEnd,
     remoteZ, zCineTick, drawZDim, drawZCine,   // (gap fix 2026-11-02: another player's Z cinematic)
+    special, altarUsed,   // (gap fix 2: shared springs / altars / locked chests)
     get zCine() { zPrune(); return active && zq.length > 0; }, get zNow() { return zNow(); },
     /** Anfitrión: evento para todos. Invitado: evento para el anfitrión. */
     broadcast(ev) { emit(ev); },

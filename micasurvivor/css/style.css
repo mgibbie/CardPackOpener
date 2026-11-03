@@ -1149,6 +1149,20 @@ html.ui-scaled body.touch .scr button, html.ui-scaled body.touch .scr .chip, htm
 #watch-bar .wb-n { color: var(--muted); font-size: 12px; white-space: nowrap; }
 #watch-bar .wb-n:empty { display: none; }
 #watch-bar .btn.small { padding: 3px 10px; font-size: 13px; flex: 0 0 auto; }
+/* (gap fix 2026-11-02: a live run / replay from a newer build: a small prompt to refresh, never blocking the view.
+   A .scr layer so a controller focuses it (js/core/pad.js), but only its box takes clicks.) */
+#watch-update.scr {
+  inset: auto; left: 50%; top: calc(56px + env(safe-area-inset-top, 0px)); transform: translateX(-50%); z-index: 61;
+  padding: 0; width: max-content; max-width: calc(100vw - 32px); pointer-events: none;
+}
+#watch-update.scr.hidden { display: none; }
+#watch-update .wu-box {
+  pointer-events: auto; display: flex; align-items: center; flex-wrap: wrap; justify-content: center; gap: 8px;
+  padding: 8px 10px 8px 14px; border-radius: 10px; background: rgba(10,20,50,.95); border: 2px solid var(--gold);
+  font-size: 14px; text-shadow: 1px 1px 0 var(--shadow); animation: pop .2s ease-out;
+}
+#watch-update .wu-t { min-width: 0; }
+#watch-update .btn.small { padding: 3px 12px; font-size: 13px; flex: 0 0 auto; }
 #watch-ctrl {
   position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(6px + env(safe-area-inset-bottom, 0px)); z-index: 25;
   display: flex; align-items: center; gap: 6px; width: min(760px, calc(100vw - 20px));

@@ -281,10 +281,16 @@ G.WatchUI = (() => {
       if (A) blend((performance.now() - arriveAt) / interval);
       fireCasts();   // (MP polish: a live snapshot of several players carries everyone's casts)
     } else if (ss && !done) {
-      if (playing && loading == null) T = Math.min(ss.duration, T + dt * speed);
+      // (gap fix 2026-11-02: a Z cinematic holds the replay's world as it held the run's: the run's clock stood still for it,
+      //  so the tape has no time for it, and the playback clock waits until it ends (on the viewer's clock: its speed, paused
+      //  with it), then goes on from exactly where it was. A seek drops it (zq), so seeking past a Z skips its cinematic.)
+      const zHeld = zq.length > 0;
+      if (playing && loading == null && !zHeld) T = Math.min(ss.duration, T + dt * speed);
       seekTo(T, false);
+      // (one starting in this step: back to the very moment it started, the frame where its player went into the Z)
+      if (!zHeld && zq.length && A && A.t / 10 < T) { T = Math.max(0, A.t / 10); seekTo(T, false); }
       fireCasts();
-      if (T >= ss.duration && playing && loading == null) finishReplay();
+      if (T >= ss.duration && playing && loading == null && !zq.length) finishReplay();
       ctrlTick();
     }
     zTick(dt);
@@ -476,6 +482,36 @@ G.WatchUI = (() => {
     if (t.length) G.Spawner.say(t.slice(-3).join('  ·  '), 2.6, true);
   }
 
+  // ---------------- a newer format than this build reads (gap fix 2026-11-02) ----------------
+  // A tab opened before a deploy plays on with the old code: a live snapshot / replay from a newer build may carry what it
+  // doesn't know (as `wa` was), so it showed a world that was wrong without a word. Now a snapshot / tape header whose format
+  // (fv, js/mica/replay.js FV) is newer than this build's still plays as well as it can, and a small prompt offers to
+  // refresh: it never blocks the view, a controller reaches it (a `.scr` layer: G.Pad focuses "Refresh"; B = "Later"),
+  // and "Later" hides it for the rest of this view.
+  let upTold = false;
+  /** window.__msurvReload (tests) or a real reload: the deploy's scripts revalidate (/_headers: max-age=0), so a reload has them. */
+  const reloadNow = () => { try { (window.__msurvReload || (() => location.reload()))(); } catch (e) { location.reload(); } };
+  function updatePrompt() {
+    if (upTold) return;
+    upTold = true;
+    stats.updatePrompts = (stats.updatePrompts | 0) + 1;
+    let el = $('watch-update');
+    if (!el) {
+      el = document.createElement('section');
+      el.id = 'watch-update';
+      el.className = 'scr hidden';
+      el.setAttribute('role', 'status');
+      el.innerHTML = `<div class="wu-box"><span class="wu-t">${esc(G.T('Hay una versión más nueva del juego: actualiza para verlo bien.'))}</span>`
+        + `<button id="watch-update-go" class="btn small gold" type="button">${esc(G.T('Actualizar'))}</button>`
+        + `<button id="watch-update-close" class="btn small ghost" type="button" data-back>${esc(G.T('Más tarde'))}</button></div>`;
+      document.body.appendChild(el);
+      $('watch-update-go').onclick = reloadNow;
+      $('watch-update-close').onclick = hideUpdate;
+    }
+    el.classList.remove('hidden');
+  }
+  function hideUpdate() { const el = $('watch-update'); if (el) el.classList.add('hidden'); }
+
   // ---------------- entering / leaving ----------------
 
   function reset() {
@@ -486,6 +522,7 @@ G.WatchUI = (() => {
     ss = null; segK = -1; follow = 0; loading = null; castQ = [];
     liveA = liveB = livePP = null;
     zq = []; zOnAt = new Map(); zLastT = -1;
+    upTold = false; hideUpdate();
     G.FX.clear(); G.Projectiles.clear(); G.Combat.clearFields(); G.EnemyMgr.clear(); G.Pickups.clear(); G.Minimap.reset();
     G.World.setArena(null);
   }
@@ -518,6 +555,7 @@ G.WatchUI = (() => {
         stats.snaps++;
         // DLC D0b: a run of an unknown / newer Expedition version (dv): still shown, with a notice (once)
         if (!notice && G.Expedition && G.Expedition.viewNotice(s.m, s.dv)) { notice = 'Esta partida es de una versión más nueva de la Expedición: recarga la página para verla bien.'; G.UI.toast(notice, 6000); }
+        if (G.Replay.newer(s)) updatePrompt();   // (gap fix 2026-11-02: a snapshot from a newer build)
         info = b;
         const now = performance.now();
         // the publisher's clock (ms) between this snapshot and the last one, kept between 0.4 and 3 s
@@ -568,6 +606,7 @@ G.WatchUI = (() => {
     buildCtrl();
     // DLC D0b: a replay of an unknown / newer Expedition version (dv) still plays, with a notice
     if (G.Expedition && G.Expedition.viewNotice(h.m, h.dv)) { notice = 'Esta repetición es de una versión más nueva de la Expedición: recarga la página para verla bien.'; G.UI.toast(notice, 6000); }
+    if (G.Replay.newer(h)) updatePrompt();   // (gap fix 2026-11-02: a tape from a newer build)
     seekTo(0, true);
   }
 
@@ -792,6 +831,7 @@ G.WatchUI = (() => {
 
   return {
     pending, boot, watchLive, playReplay, playLocal, leave, tick, keys, drawables, drawOverlay, hudH, mateList, stats,
+    updatePrompt, hideUpdate, get updateShown() { const el = $('watch-update'); return !!el && !el.classList.contains('hidden'); },
     togglePlay, setSpeed, seek(t) { if (ss) { T = G.U.clamp(t, 0, ss.duration); done = false; hideEnd(); seekTo(T, true); ctrlTick(); } },
     setFollow, cycleFollow, get follow() { return follow; }, get session() { return ss; }, get segment() { return segK; }, get loading() { return loading; },
     get mode() { return mode; }, get time() { return timeNow; }, get who() { return who; }, get status() { return status; },

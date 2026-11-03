@@ -12,6 +12,9 @@
  * Cooperativo: altares y manantiales son de cada uno (en cada ordenador); el
  * cofre y las trampas se rompen como cualquier objeto y el anfitrión reparte
  * el botín y el daño a los enemigos (ver world.destroyProp y coop.propBroken).
+ * (MicaSurvivor gap fix 2, 2026-11-02: online, altars, springs and locked chests are SHARED: what each player does to
+ *  one goes to the host, which applies it to its world (so its tape and live view have it) and passes it on to everyone
+ *  else: js/net/coop.js special / altarUsed. A partner's altar is used for you too, but the power is only its.)
  */
 G.Interact = (() => {
   const CHEST_TIME = 3.5;
@@ -24,6 +27,10 @@ G.Interact = (() => {
   ];
   const TRAP_R = 74;
   const authority = () => !G.Coop.active || G.Coop.isHost;
+  // (gap fix 2: a spring / locked chest another player's screen told us about in the last NET_LEAD ms refills / decays on
+  //  THAT screen, which sends each change: here it would fight it (a relay frame comes once a second). Off line: never.)
+  const NET_LEAD = 2500;
+  const netLed = p => !!p.netT && G.Coop.active && performance.now() - p.netT < NET_LEAD;
   let healShown = 0, healAcc = 0;
 
   function update(dt, pl) {
@@ -40,9 +47,9 @@ G.Interact = (() => {
         case 'bigchest':
           if (!pl.dead && d2 < Math.max(46, p.r + pl.r + 24) ** 2) {
             if (p.open === 0) G.Audio.sfx('select');
-            p.open += dt;
+            p.open += dt; p.useT = performance.now();   // (gap fix 2: you are at it: a partner's progress adds, never undoes yours)
             if (p.open >= CHEST_TIME) { p.open = 0; G.World.breakProp(p); }
-          } else if (p.open > 0) p.open = Math.max(0, p.open - dt * 1.5);
+          } else if (p.open > 0 && !netLed(p)) p.open = Math.max(0, p.open - dt * 1.5);
           break;
         case 'trap':
           if (!pl.dead && d2 < 13 * 13) G.World.breakProp(p);
@@ -52,16 +59,18 @@ G.Interact = (() => {
       // (a spring drained / a locked chest started: the world keeps it for the replay and a live viewer wherever it is, even
       //  once you walk away and it stops refilling. Gap fix 2026-11-02, js/world/world.js specialsLive)
       if ((p.type === 'spring' && p.charge < 1) || (p.type === 'bigchest' && p.open > 0)) G.World.noteSpecial(p);
+      // (gap fix 2: online, its state goes to the others as it changes)
+      if (G.Coop.active && (p.type === 'spring' || p.type === 'bigchest')) G.Coop.special(p);
     }
   }
 
   function spring(dt, pl, p, d2) {
-    if (p.charge < 1) p.charge = Math.min(1, p.charge + dt / 45);
+    if (p.charge < 1 && !netLed(p)) p.charge = Math.min(1, p.charge + dt / 45);
     if (pl.dead || d2 > 26 * 26 || p.charge <= 0.02 || pl.hp >= pl.maxHp) return;
     const before = pl.hp;
     pl.hp = Math.min(pl.maxHp, pl.hp + pl.maxHp * 0.14 * dt);
     healAcc += pl.hp - before;
-    p.charge = Math.max(0, p.charge - dt * 0.09);
+    p.charge = Math.max(0, p.charge - dt * 0.09); p.useT = performance.now();   // (gap fix 2: you are drinking from it)
     if (Math.random() < dt * 14) G.FX.px(pl.x + G.U.rand(-pl.r, pl.r), pl.y - G.U.rand(0, pl.bodyH), '#7dffb0', { vy: -50, life: 0.5 });
     healShown -= dt;
     if (healShown <= 0 && healAcc >= 1) {
@@ -75,6 +84,7 @@ G.Interact = (() => {
 
   function usePower(pl, p) {
     G.World.useSpecial(p);   // (p.used, kept by the world for the replay: owner bug 2026-11-02)
+    if (G.Coop.active) G.Coop.altarUsed(p);   // (gap fix 2: used for everyone, on the host's tape)
     const pw = POWERS[p.kind];
     pl.addPower(pw, POWER_TIME);
     G.FX.ring(p.x, p.y - 20, 8, 90, pw.color, 0.6, 5);

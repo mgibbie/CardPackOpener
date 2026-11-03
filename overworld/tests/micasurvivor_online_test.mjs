@@ -13,6 +13,8 @@
 //     ends ("Lost connection to the host.") with its rewards saved (coins, runs, groupRuns, the account row)
 //   - the relay fallback: WebRTC off (window.__msurvNet.noRtc), two friends play through /api/mp (msurv-relay-*),
 //     positions + a kill sync, the host quits and the guest's run ends gracefully ("The host has ended the game")
+//   - gap fix 2026-11-02: springs, altars and locked chests are shared: a guest's far spring / altar / locked chest reaches
+//     the host's world, tape (field 15) and live snapshot, and the other guest's world
 //   - no Spanish anywhere in English mode (DOM, toasts, the canvas)
 // Screenshots (MICASURVIVOR_SHOTS=<dir>): the friends screen, the lobby (host + guest), the invite popup, a 3-player
 // run from each side (desktop and 844x390), the level-up wait, the disconnect messages, the relay run.
@@ -346,6 +348,70 @@ try {
 	await waitFor(() => bob.visible('scr-levelup'), 5000);
 	for (const p of [alice, bob, carl]) await p.click('#cards .card');
 	A(await waitFor(async () => (await Promise.all([alice, bob, carl].map(p => p.E(() => G.Game.state === 'playing')))).every(Boolean), 5000), 'a second level-up releases too');
+	// ===================== (gap fix 2, 2026-11-02) springs / altars / locked chests are SHARED =====================
+	// bob, a guest, far from the host (thousands of units): his spring, altar and locked chest reach alice's world, her tape
+	// (field 15) and live snapshot, and carl's world (through the host). Before: each screen's own.
+	const far = (p, cx, cy, type) => p.E((cx, cy, type) => {
+		const W = G.World;
+		for (const r of [2500, 4500]) {
+			const l = W.propsAround(cx, cy, r).filter(q => q.type === type && !q.used && !(q.charge < 1) && !(q.open > 0)).sort((a, b) => Math.hypot(a.x - cx, a.y - cy) - Math.hypot(b.x - cx, b.y - cy));
+			if (l.length) return { tx: l[0].tx, ty: l[0].ty, x: l[0].x, y: l[0].y };
+		}
+		return null;
+	}, cx, cy, type);
+	const propOn = (p, q) => p.E(q => { const o = G.World.propsAround(q.x, q.y, 60).find(z => z.tx === q.tx && z.ty === q.ty); return o ? { c: Math.round(o.charge * 100), o: Math.round(o.open / G.Interact.CHEST_TIME * 100), used: !!o.used } : null; }, q);
+	const bobAt = (x, y) => bob.E((x, y) => { const pl = G.Game.player; pl.x = x; pl.y = y; G.Camera.x = x; G.Camera.y = y; }, x, y);
+	// alice's tape so far: the last state of each spring / chest in field 15 (s whole, then d changes), and the altars used
+	const tape15 = () => alice.E(() => {
+		const sp = {}, u = [];
+		for (const txt of G.Replay.recFrames || []) {
+			const w = JSON.parse(txt)[15];
+			if (!w) continue;
+			if (w.s) { for (const k in sp) delete sp[k]; for (let i = 0; i + 2 < w.s.length; i += 3) sp[w.s[i] + ',' + w.s[i + 1]] = w.s[i + 2]; }
+			if (w.d) for (let i = 0; i + 2 < w.d.length; i += 3) { const k = w.d[i] + ',' + w.d[i + 1]; if (w.d[i + 2] < 0) delete sp[k]; else sp[k] = w.d[i + 2]; }
+			if (w.u) for (let i = 0; i + 1 < w.u.length; i += 2) u.push(w.u[i] + ',' + w.u[i + 1]);
+		}
+		return { sp, u };
+	});
+	const aHome = await me(alice);
+	const spr = await far(bob, aHome.x + 4200, aHome.y - 3800, 'spring');
+	const alt = await far(bob, aHome.x - 4200, aHome.y + 3800, 'altar');
+	const bch = await far(bob, aHome.x + 4200, aHome.y + 4200, 'bigchest');
+	A(spr && alt && bch && Math.hypot(spr.x - aHome.x, spr.y - aHome.y) > 2000 && Math.hypot(alt.x - aHome.x, alt.y - aHome.y) > 2000 && Math.hypot(bch.x - aHome.x, bch.y - aHome.y) > 2000,
+		'bob finds a spring, an altar and a locked chest thousands of units from the host', JSON.stringify([aHome, spr, alt, bch]));
+	if (spr && alt && bch) {
+		// the spring: bob (hurt) drinks from it until it is under 60 %, then walks far off (where nothing refills it)
+		await bobAt(spr.x, spr.y - 8);
+		await bob.E(() => { window.__hurt = setInterval(() => { G.Game.player.hp = 1; }, 60); });
+		await waitFor(async () => { const s = await propOn(bob, spr); return s && s.c < 60; }, 12000);
+		await bob.E(() => clearInterval(window.__hurt));
+		await bobAt(spr.x + 1600, spr.y);
+		await sleep(400);
+		const sb = await propOn(bob, spr);
+		// the altar: bob walks onto it (the power is his)
+		await bobAt(alt.x, alt.y + 4);
+		await waitFor(async () => { const s = await propOn(bob, alt); return s && s.used; }, 6000);
+		await bobAt(alt.x + 1600, alt.y);
+		// the locked chest: bob stands by it for about a second, then walks off (it stays part-open where nobody is)
+		await bobAt(bch.x, bch.y + 20);
+		await waitFor(async () => { const s = await propOn(bob, bch); return s && s.o > 20; }, 6000);
+		await bobAt(bch.x + 1600, bch.y);
+		await sleep(400);
+		const cb = await propOn(bob, bch);
+		const close = (a, b) => a != null && b != null && Math.abs(a - b) <= 2;
+		let sa = null, sc = null, ca = null, cc = null, aa = null, ac = null, tp = null;
+		const okA = await waitFor(async () => { sa = await propOn(alice, spr); ca = await propOn(alice, bch); aa = await propOn(alice, alt); return sa && ca && aa && close(sa.c, sb.c) && close(ca.o, cb.o) && aa.used; }, 6000);
+		A(sb && sb.c < 60 && cb && cb.o > 15 && okA, `the HOST's world has bob's far spring (${sa && sa.c}% / his ${sb && sb.c}%), his altar used and his locked chest part-open (${ca && ca.o}% / his ${cb && cb.o}%)`, JSON.stringify([sb, cb, sa, ca, aa]));
+		const okT = await waitFor(async () => { tp = await tape15(); return close(tp.sp[spr.tx + ',' + spr.ty], sb.c) && close(tp.sp[bch.tx + ',' + bch.ty], cb.o) && tp.u.includes(alt.tx + ',' + alt.ty); }, 5000);
+		A(okT, '...and so does the host\'s replay (field 15: the spring, the chest, the altar)', JSON.stringify([tp, spr, bch, alt]));
+		const ls = await alice.E((spr, alt) => { const s = G.Spectate.pubSnap({ ev: [], kd: [], w: 0 }), wa = s.wa || {}, i = (wa.s || []).findIndex((v, j) => j % 3 === 0 && v === spr.tx && wa.s[j + 1] === spr.ty); return { sp: i >= 0 ? wa.s[i + 2] : null, alt: G.World.unpackProps(wa.U || '').has(alt.tx + ',' + alt.ty) }; }, spr, alt);
+		A(close(ls.sp, sb.c) && ls.alt, '...and the host\'s live snapshot (a spectator sees them)', JSON.stringify(ls));
+		const okC = await waitFor(async () => { sc = await propOn(carl, spr); cc = await propOn(carl, bch); ac = await propOn(carl, alt); return sc && cc && ac && close(sc.c, sb.c) && close(cc.o, cb.o) && ac.used; }, 6000);
+		A(okC, `...and CARL (the other guest, through the host) sees them too: spring ${sc && sc.c}%, chest ${cc && cc.o}%, altar used`, JSON.stringify([sc, cc, ac]));
+		A(await alice.E(() => !G.Game.player.power) && await bob.E(() => !!G.Game.player.power), "the altar's power is bob's alone (the host got none)");
+		await bobAt(aHome.x + 60, aHome.y);
+	}
+
 
 	// ===================== a guest leaves: the host goes on =====================
 	await carl.ctx.close();
