@@ -234,6 +234,9 @@ export function energy_evo_target(v, etype) {
 }
 /** The Gen 9 batch 2 rules rev (the owner's, 2026-11-03): Wooper -> Clodsire (a Dark Energy), and the line's new member. */
 export const GEN9B2_REV = 77;
+/** Regional batch A, the Alolan forms (the owner's, 2026-11-03): Pikachu -> Alolan Raichu (Psychic), Exeggcute -> Alolan Exeggutor (Dragon),
+ *  Cubone -> Alolan Marowak (Fire), each an Energy used on it, and those lines' new members; Alolan Ninetales's snow for Eiscue. */
+export const ALOLA_REV = 81;
 /** Regional batch C, the Hisuian and Paldean forms (the owner's, 2026-11-03; jokers/pokejokers_hisui.js): Quilava -> Hisuian Typhlosion
  *  (Psychic), Dewott -> Hisuian Samurott (Dark), Petilil -> Hisuian Lilligant (Fighting), Rufflet -> Hisuian Braviary (Psychic), Bergmite ->
  *  Hisuian Avalugg (Earth), Dartrix -> Hisuian Decidueye (Fighting), each an Energy used on it, and those lines' new members. */
