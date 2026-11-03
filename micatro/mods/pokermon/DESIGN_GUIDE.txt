@@ -1132,6 +1132,18 @@ House pattern: SANDSTORM, the house sandstorm (the Gen 8 Sandaconda; jokers/poke
   - Flygon's "{C:poke_sand}Sandstorm:" and the Hippopotas line's "{C:poke_sand}Sand Stream:" are move NAMES (their own Stone / discard
     rules); they neither make nor read the weather. Castform has no sand form: a sandstorm never changes its forecast (its Clubs /
     red / Spades read stands). Sun, rain and sand are independent (all three can hold at once).
+House pattern: ELECTRIC TERRAIN, the house terrain (the Gen 9 Future Paradox Pokemon; jokers/pokejokers_designs.js is_electric_terrain /
+  electric_terrain, exported):
+  - The FOURTH shared weather check: the round's FIRST deal holds strictly MORE Diamonds than any other suit (a tie for the top is not; a
+    Wild card counts for every suit, so it never breaks a tie; Stone / debuffed / suitless cards count for none). Read on the first deal
+    like the forecast (paradox_read: `terrainread_round` / `terrain_round` on the card), so a Future gained mid-round waits for the next
+    deal. Nothing makes it yet: a future terrain setter (Miraidon, Pincurchin's Electric Surge...) adds itself to is_electric_terrain.
+  - A Diamonds-heavy first deal is red, so it is sunny too: an Ancient and a Future are both boosted on an all-Diamonds deal.
+House pattern: PARADOX BOOSTS, Protosynthesis / Quark Drive (the Gen 9 Paradox Pokemon): "boosted" = 50% stronger. A +Mult / +Chips
+  number x1.5; an X number's BONUS part x1.5 (X2 -> X2.5, X1.2 -> X1.3; boost_add / boost_x). Ancient: while it's sunny
+  (cherrim_sunny: the red first deal, a working Groudon, Volcarona — read from its own first deal, Larvesta's fields); Future: on Electric
+  Terrain. Energy raises the base number at the usual share; the boost multiplies the energized value. Blueprint copies the boosted value
+  (it never reads the weather itself). A creation (Iron Bundle's Tarot / Planet) is never boosted.
   - Sandaconda's own payoff is weather-free (scored Stone +20 Chips and X1.2: Stone "extra" rules on the joker, Sand Stream's shape).
     r73 (the owner's): it keeps Silicobra's Sand Spit too (its own num / dem, the same 'silicobra_spit' roll), so the Stage 1 makes the
     Stones it pays for.
@@ -1242,6 +1254,11 @@ Rarities:
   Safari: weight 0. The tooltip says "Can only be obtained through Evolution or certain
     Pokeball Items" (also the Safari Tag). Nearly every evolved Pokemon is Safari.
   Mega: weight 0. Only reached with a Mega Stone or a Mega Berry Juice.
+  Paradox (the owner's, Gen 9 batch 3, 'poke_paradox'): weight 0, Safari's way. Only the Paradox Ball (an Item, $4, pool weight 3)
+    and the Ancient / Future Packs (Buffoon sizes: $4 1 of 2, $6 1 of 4, $8 2 of 4; shop weights 0.3 / 0.3 / 0.075, half a Buffoon's)
+    make one; get_random_poke_key skips the rarity unless asked for it (no Poke Ball, Transformation or illusion rolls one). The 20
+    Paradox Pokemon are single-stage Basics, $7, Rare-equivalent power, each with a second pill: Ancient (amber) or Future (steel
+    blue), the center's `poke_paradox` era. A new Paradox design: give it `paradox(...)` and its era's boost box (PROTO / QUARK).
 
 Observed rarity/cost, Pokemon jokers in all three mods (count in brackets):
   Baby       U $4 (10), C $3 (4); rarely R $3-$6 (Wynaut, Chingling, Riolu)
@@ -1472,6 +1489,8 @@ the Gen 9 batch 1 fixed fields: face_money (Pawmo's $1), blessing_ante (Pawmot's
 extra level), wind_money (Wattrel / Kilowattrel), the bank charge_Xmult (Bellibolt; its gain Xmult_mod is energized) and its state charge_fired,
 the plumage poke_plumage (on card.ability). Carried for the next stage: Pawmo `Xmult` (Pawmot's X1.5; no Xmult_mod beside it, so evolution never
 copies it over). Energy-inert by design: Squawkabilly (odds and a level), Wattrel / Kilowattrel (their $ is fixed).
+the Gen 9 Paradox Pokemon's fixed fields: d_size (Gouging Fire's discard), the reads sunread_round / sun_round / terrainread_round /
+terrain_round; Energy-inert: Iron Bundle (no number). Per-card X stays Xmult_multi (+5%: Iron Boulder's first-card X2 -> 2.1 / 2.2 / 2.3).
 
 Designer consequences:
   1. The field name is a balance choice. A joker-wide X stored as Xmult grows 20% of its base
@@ -1782,6 +1801,8 @@ Type and keyword colours (pokesprites.lua pokermon.colours; Micatro TYPE_COLOURS
     ("{C:poke_sun}Sunny Form:", "{C:poke_rain}Rainy Form:", "{C:poke_snow}Snowy Form:").
     Gen 8 batch 1: poke_sand for the house sandstorm (Sandaconda, "{C:poke_sand}Sandstorm:"; is_sandstorm, 2.1).
     Gen 8 batch 3: poke_snow for Eiscue's Snowy round ("is {C:poke_snow}Snowy{}"; round_forecast, 2.1).
+    Gen 9 batch 3: poke_paradox / poke_ancient / poke_future (the Paradox pills, {X:poke_paradox,C:white}), poke_sun for Protosynthesis
+    and {X:poke_lightning,C:black} for Electric Terrain (Quark Drive).
 Most used tags overall:
   attention 1166, inactive 540, mult 230, X:mult 218, chips 184, money 122, br:2 106,
   green 77, dark_edition 49.
