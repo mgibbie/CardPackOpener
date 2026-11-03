@@ -375,6 +375,202 @@
 	},
 	"entries": [
 		{
+			"sha": "72d3ee6",
+			"date": "2026-11-03",
+			"kind": "micatro",
+			"title": "Pokermon r76: Gen 9 batch 1 (15 jokers, #919-950)",
+			"body": "",
+			"cards": [],
+			"micatroMods": [
+				{
+					"id": "pokermon",
+					"name": "Pokermon",
+					"added": [
+						{
+							"key": "j_poke_nymble",
+							"name": "Nymble",
+							"set": "Joker",
+							"rarity": "common",
+							"cost": 5,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 6,
+								"y": 61
+							}
+						},
+						{
+							"key": "j_poke_lokix",
+							"name": "Lokix",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 8,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 8,
+								"y": 61
+							}
+						},
+						{
+							"key": "j_poke_pawmi",
+							"name": "Pawmi",
+							"set": "Joker",
+							"rarity": "uncommon",
+							"cost": 6,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 10,
+								"y": 61
+							}
+						},
+						{
+							"key": "j_poke_pawmo",
+							"name": "Pawmo",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 8,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 12,
+								"y": 61
+							}
+						},
+						{
+							"key": "j_poke_pawmot",
+							"name": "Pawmot",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 10,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 14,
+								"y": 61
+							}
+						},
+						{
+							"key": "j_poke_squawkabilly",
+							"name": "Squawkabilly",
+							"set": "Joker",
+							"rarity": "rare",
+							"cost": 7,
+							"atlas": "@poke_AtlasJokersBasicGen09391",
+							"pos": {
+								"x": 8,
+								"y": 0
+							}
+						},
+						{
+							"key": "j_poke_tadbulb",
+							"name": "Tadbulb",
+							"set": "Joker",
+							"rarity": "common",
+							"cost": 5,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 14,
+								"y": 62
+							}
+						},
+						{
+							"key": "j_poke_bellibolt",
+							"name": "Bellibolt",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 8,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 16,
+								"y": 62
+							}
+						},
+						{
+							"key": "j_poke_wattrel",
+							"name": "Wattrel",
+							"set": "Joker",
+							"rarity": "common",
+							"cost": 5,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 18,
+								"y": 62
+							}
+						},
+						{
+							"key": "j_poke_kilowattrel",
+							"name": "Kilowattrel",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 8,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 20,
+								"y": 62
+							}
+						},
+						{
+							"key": "j_poke_maschiff",
+							"name": "Maschiff",
+							"set": "Joker",
+							"rarity": "common",
+							"cost": 5,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 22,
+								"y": 62
+							}
+						},
+						{
+							"key": "j_poke_mabosstiff",
+							"name": "Mabosstiff",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 8,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 24,
+								"y": 62
+							}
+						},
+						{
+							"key": "j_poke_toedscool",
+							"name": "Toedscool",
+							"set": "Joker",
+							"rarity": "common",
+							"cost": 5,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 4,
+								"y": 63
+							}
+						},
+						{
+							"key": "j_poke_toedscruel",
+							"name": "Toedscruel",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 8,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 6,
+								"y": 63
+							}
+						},
+						{
+							"key": "j_poke_klawf",
+							"name": "Klawf",
+							"set": "Joker",
+							"rarity": "rare",
+							"cost": 7,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 8,
+								"y": 63
+							}
+						}
+					]
+				}
+			]
+		},
+		{
 			"sha": "644c2f3",
 			"date": "2026-11-03",
 			"kind": "patch",
