@@ -145,6 +145,20 @@ export const GEN7_LEGEND_FORMS = {
 };
 
 /**
+ * The Gen 8 Legendaries' forms (Gen 8 batch 4, jokers/pokejokers_designs.js): upstream 3.9.1 draws each with its own floating soul (sprite
+ * table zacian_crowned {8,9}, zamazenta_crowned {12,9}, eternamax_eternatus {0,10}, enamorus_therian {8,11}, all on the Gen 8 sheet) — by the
+ * view's form (each center's poke_view_form, from the card's own count: the Boss Blinds beaten while held, the rounds held). Eternatus's own
+ * card is on the Natdex sheet, its Eternamax one on the Gen 8 sheet (its 'sheet': ui.js ownFace swaps the atlas, its Shiny twin too). Every form
+ * cell's type icon is its base's (pokermon_art_type.mjs; pokermon_gen8_legendaries_test 'cell types').
+ */
+export const GEN8_LEGEND_FORMS = {
+  j_poke_zacian: { crowned: memory(8, 9) },
+  j_poke_zamazenta: { crowned: memory(12, 9) },
+  j_poke_eternatus: { eternamax: { ...memory(0, 10), sheet: 'Gen08' } },
+  j_poke_enamorus: { therian: memory(8, 11) },
+};
+
+/**
  * Deerling's and Sawsbuck's seasons (the owner's Gen 5 batch 3, jokers/pokejokers_designs.js SEASONS): upstream 3.9.1 draws all four forms
  * of both on the Gen 5 sheet, one after another (Deerling Spring {2,1}, Summer {4,1}, Autumn {6,1}, Winter {8,1}; Sawsbuck Spring {10,1},
  * Summer {0,2}, Autumn {2,2}, Winter {4,2}; pokespriteload.lua lists only the Spring ones) — by the view's form (the center's

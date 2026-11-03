@@ -78,7 +78,7 @@ sec('static', () => {
     && !starter_lists().grass.includes('j_poke_floragato') && !starter_lists().grass.includes('j_poke_meowscarada'), 'Sprigatito is a Grass starter (the Starter Pack); its evolutions are not');
   const keys = MODS.pokermon.content.centers.filter((c) => c.set === 'Joker').map((c) => c.key);
   const i = keys.indexOf('j_poke_basculegion');
-  ok(i > 0 && keys[i - 1] === 'j_poke_ursaluna' && keys.slice(i + 1, i + 4).join() === LINE.map((n) => 'j_poke_' + n).join(), 'Pokédex order: after Ursaluna (901), Basculegion (902, Gen 8 batch 3)', keys.slice(i - 1, i + 5));
+  ok(i > 0 && keys[i - 1] === 'j_poke_ursaluna' && keys[i + 1] === 'j_poke_enamorus' && keys.slice(i + 2, i + 5).join() === LINE.map((n) => 'j_poke_' + n).join(), 'Pokédex order: after Ursaluna (901), Basculegion (902, Gen 8 batch 3), Enamorus (905, Gen 8 batch 4)', keys.slice(i - 1, i + 5));
   ok(JSON.stringify(poke_get_family_list('sprigatito')) === JSON.stringify(LINE), 'one family', poke_get_family_list('sprigatito'));
   const SPR = { sprigatito: 10, floragato: 12, meowscarada: 14 };
   ok(LINE.every((n) => C(n).atlas === 'poke_AtlasJokersBasicNatdex391' && C(n).pos.x === SPR[n] && C(n).pos.y === 60 && !C(n).soul_pos),

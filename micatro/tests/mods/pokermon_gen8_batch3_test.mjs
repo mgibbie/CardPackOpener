@@ -154,7 +154,7 @@ await sec('static', () => {
     'cufant', 'copperajah', 'dracozolt', 'arctozolt', 'dracovish', 'arctovish'];
   ok(run(chain, 'dreepy') === true, 'Pokédex order: Obstagoon (862) ... Arctovish (883), then Dreepy (885)', run(chain, 'dreepy'));
   ok(keys[keys.indexOf('j_poke_obstagoon') - 1] === 'j_poke_grimmsnarl' || keys[keys.indexOf('j_poke_obstagoon') - 1] === 'j_poke_barraskewda', 'Obstagoon right after the last Gen 8 joker before it', keys[keys.indexOf('j_poke_obstagoon') - 1]);
-  ok(run(['ursaluna', 'basculegion'], 'sprigatito') === true, 'Pokédex order: Ursaluna (901), Basculegion (902), Sprigatito (906)', run(['ursaluna', 'basculegion'], 'sprigatito'));
+  ok(run(['ursaluna', 'basculegion'], 'enamorus') === true, 'Pokédex order: Ursaluna (901), Basculegion (902), Enamorus (905, Gen 8 batch 4)', run(['ursaluna', 'basculegion'], 'enamorus'));
   const FAM = {
     linoone: 'zigzagoon,linoone,obstagoon', corsola: 'corsola,cursola', farfetchd: 'farfetchd,sirfetchd', mrmime: 'mimejr,mrmime,mrrime',
     yamask: 'yamask,cofagrigus,runerigus', basculin: 'basculin,basculegion', milcery: 'milcery,alcremie', snom: 'snom,frosmoth', cufant: 'cufant,copperajah',

@@ -896,7 +896,7 @@ export function regi_h_x_mult(v, card) {
  *  score, from those same functions — Stone +100 (+ its banked perma_bonus) with Regirock, held Steel X2 (energized X2.1 / X2.2 / X2.3)
  *  with Registeel. No undebuffed Regi: undefined (the card's own +50 / X1.5). */
 export function regi_enh_vars(vars, card) {
-  const ab = card.ability, f = ab.effect === 'Stone Card' ? regi_chip_bonus : ab.effect === 'Steel Card' ? regi_h_x_mult : null;
+  const ab = card.ability, f = ab.effect === 'Stone Card' ? regi_chip_bonus : ab.effect === 'Steel Card' ? regi_h_x_mult : ab.effect === 'Glass Card' ? glass_x_mult : null;
   const v = f ? f(vars[0], card) : undefined;
   return v === undefined ? undefined : [v, ...vars.slice(1)];
 }
@@ -9594,6 +9594,291 @@ defineJokers({
   },
 }, FILE);
 
+// ---------------------------------------------------------------- Gen 8, batch 4: the Gen 8 Legendaries (contentRev REV; the owner's "Yes", 2026-11-03)
+/** Zacian / Zamazenta / Eternatus count the Boss Blinds beaten while held (the main end_of_round pass with beat_boss, Beast Boost's moment:
+ *  not on a game over, not a Blueprint's, not a joker retrigger; a debuffed one isn't calculated, so that Boss doesn't count). The count
+ *  lives on the card (`crown_bosses`, capped at CROWN_AT; Eternatus's `bosses`), so save / resume / replay rebuild the forms from it. */
+const boss_beaten = (context) => !!(round_end(context) && context.beat_boss && !context.game_over && !context.blueprint && !context.retrigger_joker);
+export const CROWN_AT = 3;
+export const crowned = (card) => (card.ability.extra.crown_bosses || 0) >= CROWN_AT;
+const crown_state = (card, form) => (crowned(card) ? form : 'Boss Blinds: ' + (card.ability.extra.crown_bosses || 0) + '/' + CROWN_AT);
+/** Zacian / Zamazenta: +1 to the count for each Boss Blind beaten, until crowned (the 3rd Boss crowns it: the next hand pays the crown).
+ *  `on_crown` runs once, at that moment. Returns true on the end-of-round pass it counted on. */
+function crown_tick(card, context, word, on_crown) {
+  if (!boss_beaten(context) || crowned(card)) return false;
+  const ex = card.ability.extra;
+  ex.crown_bosses = (ex.crown_bosses || 0) + 1;
+  if (crowned(card)) {
+    if (on_crown) on_crown(card);
+    card_eval_status_text(card, 'extra', null, null, null, { message: word + '!', colour: 'GOLD' });
+  } else card_eval_status_text(card, 'extra', null, null, null, { message: ex.crown_bosses + '/' + CROWN_AT, colour: 'FILTER' });
+  return true;
+}
+/** Zamazenta, Crowned Shield: its +hands become `crowned_hands` IN ALL (+2, not +1 +2): the difference is added to the round's hands now
+ *  (round_resets: the next round has them) and `hands` is raised, so the +hands pair (Squirtle's) takes the full 2 back when it leaves. */
+function shield_crown(card) {
+  const ex = card.ability.extra, d = ex.crowned_hands - ex.hands;
+  if (d <= 0) return;
+  G.GAME.round_resets.hands = G.GAME.round_resets.hands + d;
+  ex.hands = ex.crowned_hands;
+}
+/** Eternatus, Dynamax: each Boss Blind beaten banks +Xmult_mod on `eterna_Xmult` (from X1; never retroactive). Eternamax for good from the
+ *  ETERNAMAX_AT-th Boss (counted in `bosses`): its X is the bank x ETERNAMAX_X (both fixed), and the bank keeps growing, so each later Boss
+ *  adds twice the gain to what it scores. The Boss that makes it Eternamax banks first, then doubles. */
+export const ETERNAMAX_AT = 5;
+export const ETERNAMAX_X = 2;
+export const eternamax = (card) => (card.ability.extra.bosses || 0) >= ETERNAMAX_AT;
+export const eterna_x = (card) => r9((card.ability.extra.eterna_Xmult || 1) * (eternamax(card) ? ETERNAMAX_X : 1));
+/** Zarude, Jungle Drain: when a Blind is selected (not a Blueprint's: a copy would drain twice), each OTHER Joker loses `drain` of sell
+ *  value (Pokermon's Drain, Lampent's: poke_drain one way, never below $1; one already at $1 gives nothing); +Xmult_mod banked per $1
+ *  actually drained (`jungle_Xmult` from X1). Debuffed Jokers are drained too, as Lampent's. */
+function jungle_drain(card, context) {
+  if (!context.setting_blind || context.blueprint || context.retrigger_joker || card.getting_sliced) return false;
+  let n = 0;
+  for (const j of G.jokers.cards.slice()) {
+    if (j === card || j.getting_sliced || !(j.sell_cost > 1)) continue;
+    const before = j.sell_cost;
+    poke_drain(card, j, card.ability.extra.drain, true);
+    n += Math.max(0, before - j.sell_cost);
+  }
+  if (n > 0) bank(card, 'jungle_Xmult', 'Xmult_mod', n, 'XMULT');
+  return true;
+}
+/** Regidrago, Dragon Energy: X(Xmult) on the round's first hand, X`drago_step` less for each hand already played this round
+ *  (current_round.hands_played while scoring: the hands before this one), never below X1. */
+const drago_x = (card) => { const ex = card.ability.extra, hp = (G.GAME && G.GAME.current_round && G.GAME.current_round.hands_played) || 0; return Math.max(1, r9(ex.Xmult - ex.drago_step * hp)); };
+/** Glastrier, Chilling Neigh (hook chip_x_mult): a Glass card's X Mult becomes the best undebuffed Glastrier's `Xmult_multi` (X2.5) INSTEAD of
+ *  X2 — a card-level rule like Registeel's Steel (regi_h_x_mult): it IS the Glass card's own X (Card:get_chip_x_mult), so retriggers repeat
+ *  the new value, a perma X on the card scales with it, and two Glastriers give it once (the best wins; GLASS_RULES takes any later Glass-X
+ *  rule the same way). Only real Glass cards (ability.effect), never debuffed ones. */
+const GLASS_RULES = { j_poke_glastrier: 'Xmult_multi' };
+export function glass_rule_x() {
+  let best = 0;
+  for (const j of (G.jokers && G.jokers.cards) || []) {
+    const f = !j.debuff && GLASS_RULES[j.config.center.key];
+    if (f && j.ability.extra[f] > best) best = j.ability.extra[f];
+  }
+  return best || undefined;
+}
+export function glass_x_mult(v, card) {
+  if (!v || card.debuff || card.ability.effect !== 'Glass Card' || !G.jokers) return undefined;
+  const best = glass_rule_x();
+  if (!best) return undefined;
+  const base = card.ability.x_mult || 2;
+  return v * best / base;
+}
+/** Calyrex, Bountiful Harvest: the Flower cards in the full deck (each card's own enhancement: bloomed Seeds). */
+const flowers = () => (G.playing_cards || []).filter((c) => unbroken(c) && c.config.center.key === 'm_poke_flower').length;
+const harvest_x = (card) => r9(1 + card.ability.extra.Xmult_mod * flowers());
+/** ... and when a Blind is selected, ONE random unenhanced card of the full deck becomes a Seed (the Cherubi line's Sweet Seeds, its own
+ *  seed 'poke_calyrex_seeds'; none unenhanced, nothing: it never overwrites). Blueprint copies it (as Marble Joker). */
+function bountiful_harvest(card, context) {
+  if (!context.setting_blind || card.getting_sliced || (context.blueprint_card && context.blueprint_card.getting_sliced)) return false;
+  const plain = (G.playing_cards || []).filter((c) => unbroken(c) && c.config.center.key === 'c_base');
+  if (!plain.length) return true;
+  const [pick] = pseudorandom_element(plain, pseudoseed('poke_calyrex_seeds'));
+  pick.set_ability(P_CENTERS.m_poke_seed, null, true);
+  G.E_MANAGER.add_event(() => { pick.juice_up(); });
+  card_eval_status_text(context.blueprint_card || card, 'extra', null, null, null, { message: '+1 Seed', colour: 'GREEN' });
+  return true;
+}
+/** Enamorus's Therian clock (the Forces of Nature's: THERIAN_AT rounds held, counted on the card in the main end_of_round pass; not a
+ *  Blueprint's; a debuffed one isn't calculated, so that round doesn't count). Its own reader: a new joker never takes the pre-r59 partner rule. */
+const enamorus_therian = (card) => (card.ability.extra.therian_rounds || 0) >= THERIAN_AT;
+function enamorus_tick(card, context) {
+  if (!round_end(context) || context.blueprint || context.retrigger_joker) return false;
+  const ex = card.ability.extra, was = enamorus_therian(card);
+  ex.therian_rounds = (ex.therian_rounds || 0) + 1;
+  if (!was && enamorus_therian(card)) card_eval_status_text(card, 'extra', null, null, null, { message: 'Therian Forme!', colour: 'FILTER' });
+  return true;
+}
+const enamorus_state = (card) => { const k = Math.max(0, THERIAN_AT - (card.ability.extra.therian_rounds || 0)); return enamorus_therian(card) ? 'Therian Forme' : 'Therian in ' + k + (k === 1 ? ' round' : ' rounds'); };
+const x_main = (x) => (x > 1 ? { message: a_xmult(r3(x)), colour: 'XMULT', Xmult_mod: x } : undefined);
+
+defineJokers({
+  // The owner's Gen 8 batch 4 ("Yes", 2026-11-03): the 10 Gen 8 Legendaries still missing, each complete ALONE (the solo rule, r59), all
+  // Legendary $20 (The Soul / the Legendary pool). Types = the cards' (pokermon_art_type.mjs; every form cell shows its base's type). Energy
+  // raises the X / the gains at the standard share; hands, money, thresholds, counts and conversions are fixed; banks never retroactive.
+  // Art: upstream 3.9.1's own cells, forms included (Crowned Sword / Shield, Eternamax, Therian Enamorus: card and soul, systems/anim.js
+  // GEN8_LEGEND_FORMS); nothing to deploy. Pokédex order: Zacian, Zamazenta, Eternatus after Dreepy (Dart), before Kubfu; Zarude ... Calyrex
+  // after Urshifu, before Wyrdeer; Enamorus after Basculegion.
+  //
+  // Zacian 888 (Fairy), Intrepid Sword: X2 Mult (`Xmult` +20%: 2.4 / 2.8 / 3.2). Crowned Sword for good once 3 Boss Blinds are beaten while
+  // it is held (`crown_bosses` on the card): X3 instead (`Xmult2` +20%: 3.6 / 4.2 / 4.8; its own field, so Energy taken before is kept).
+  zacian: {
+    name: 'zacian', poke_sprite391: sprite('Gen08', 6, 9, [7, 9]),
+    config: { extra: { Xmult: 2, Xmult2: 3, crown_bosses: 0 } },
+    rarity: 4, cost: 20, stage: 'Legendary', ptype: 'Fairy', gen: 8, blueprint_compat: true,
+    attributes: ['xmult', 'boss_blind', 'scaling'], poke_after: 'dreepy_dart',
+    poke_view_form(self, card) { return crowned(card) ? 'crowned' : 'hero'; },
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.Xmult), r3(ex.Xmult2), crown_state(card, 'Crowned Sword')] }; },
+    calculate(self, card, context) {
+      if (crown_tick(card, context, 'Crowned Sword')) return undefined;
+      if (context.joker_main) return x_main(crowned(card) ? card.ability.extra.Xmult2 : card.ability.extra.Xmult);
+      return undefined;
+    },
+  },
+  // Zamazenta 889 (Fighting), Dauntless Shield: +1 hand each round (the Squirtle line's pair, fixed). Crowned Shield for good once 3 Boss
+  // Blinds are beaten while it is held: +2 hands in all (`crowned_hands`, fixed; not +3) and X1.5 Mult (`Xmult` +20%: 1.8 / 2.1 / 2.4; Energy
+  // can go on before it is crowned and is kept). Blueprint copies the X, never the hands.
+  zamazenta: {
+    name: 'zamazenta', poke_sprite391: sprite('Gen08', 10, 9, [11, 9]),
+    config: { extra: { hands: 1, crowned_hands: 2, Xmult: 1.5, crown_bosses: 0 } },
+    rarity: 4, cost: 20, stage: 'Legendary', ptype: 'Fighting', gen: 8, blueprint_compat: true,
+    attributes: ['hands', 'xmult', 'boss_blind', 'scaling'], poke_after: 'zacian',
+    poke_view_form(self, card) { return crowned(card) ? 'crowned' : 'hero'; },
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [self.config.extra.hands, ex.crowned_hands, r3(ex.Xmult), crown_state(card, 'Crowned Shield')] }; },
+    calculate(self, card, context) {
+      if (crown_tick(card, context, 'Crowned Shield', shield_crown)) return undefined;
+      if (context.joker_main && crowned(card)) return x_main(card.ability.extra.Xmult);
+      return undefined;
+    },
+    ...hands,
+  },
+  // Eternatus 890 (Dark), Dynamax: each Boss Blind beaten while held permanently adds X0.5 (`eterna_Xmult` from X1, a bank; the gain
+  // `Xmult_mod` +20%: 0.6 / 0.7 / 0.8). Eternamax for good at the 5th Boss (`bosses`): its X is the bank x2 from then on, and the bank keeps
+  // growing (5 Bosses: X3.5 x2 = X7; 6: X4 x2 = X8). The doubling and the 5 are fixed.
+  eternatus: {
+    name: 'eternatus', poke_sprite391: sprite('Natdex', 8, 59, [9, 59]),
+    config: { extra: { eterna_Xmult: 1, Xmult_mod: 0.5, bosses: 0 } },
+    rarity: 4, cost: 20, stage: 'Legendary', ptype: 'Dark', gen: 8, blueprint_compat: true,
+    attributes: ['xmult', 'boss_blind', 'scaling'], poke_after: 'zamazenta',
+    poke_view_form(self, card) { return eternamax(card) ? 'eternamax' : 'base'; },
+    loc_vars(self, info_queue, card) {
+      type_tooltip(self, info_queue, card);
+      const ex = card.ability.extra;
+      return { vars: [r3(ex.Xmult_mod), r3(eterna_x(card)), eternamax(card) ? 'Eternamax: X' + r3(ex.eterna_Xmult) + ' doubled' : 'Boss Blinds: ' + (ex.bosses || 0) + '/' + ETERNAMAX_AT] };
+    },
+    calculate(self, card, context) {
+      if (boss_beaten(context)) {
+        const ex = card.ability.extra, was = eternamax(card);
+        ex.bosses = (ex.bosses || 0) + 1;
+        bank(card, 'eterna_Xmult', 'Xmult_mod', 1, 'XMULT');
+        if (!was && eternamax(card)) card_eval_status_text(card, 'extra', null, null, null, { message: 'Eternamax!', colour: 'GOLD' });
+        return undefined;
+      }
+      if (context.joker_main) return x_main(eterna_x(card));
+      return undefined;
+    },
+  },
+  // Zarude 893 (Grass), Jungle Drain: when a Blind is selected, drains $1 of sell value from each other Joker (`drain`, fixed; never below
+  // $1) and banks +X0.05 per $1 drained (`jungle_Xmult` from X1; the gain `Xmult_mod` +20%: 0.06 / 0.07 / 0.08). Blueprint copies the X.
+  zarude: {
+    name: 'zarude', poke_sprite391: sprite('Gen08', 6, 10, [7, 10]),
+    config: { extra: { drain: 1, Xmult_mod: 0.05, jungle_Xmult: 1 } },
+    rarity: 4, cost: 20, stage: 'Legendary', ptype: 'Grass', gen: 8, blueprint_compat: true,
+    attributes: ['xmult', 'scaling', 'economy'], poke_after: 'urshifu_rapid',
+    loc_vars(self, info_queue, card) {
+      type_tooltip(self, info_queue, card);
+      if (detailed()) info_queue.push({ set: 'Other', key: 'poke_drain' });
+      const ex = card.ability.extra; return { vars: [ex.drain, r3(ex.Xmult_mod), r3(ex.jungle_Xmult)] };
+    },
+    calculate(self, card, context) {
+      if (jungle_drain(card, context)) return undefined;
+      if (context.joker_main) return x_main(card.ability.extra.jungle_Xmult);
+      return undefined;
+    },
+  },
+  // Regieleki 894 (Lightning), Transistor: +1 hand each round (fixed); at end of round each unused hand permanently adds X0.1 (`eleki_Xmult`
+  // from X1; the gain `Xmult_mod` +20%: 0.12 / 0.14 / 0.16; Quaquaval's Moxie count: the hands left after the winning hand).
+  regieleki: {
+    name: 'regieleki', poke_sprite391: sprite('Natdex', 16, 59, [17, 59]),
+    config: { extra: { hands: 1, Xmult_mod: 0.1, eleki_Xmult: 1 } },
+    rarity: 4, cost: 20, stage: 'Legendary', ptype: 'Lightning', gen: 8, blueprint_compat: true,
+    attributes: ['hands', 'xmult', 'scaling'], poke_after: 'zarude',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [ex.hands, r3(ex.Xmult_mod), r3(ex.eleki_Xmult)] }; },
+    calculate(self, card, context) {
+      if (round_end(context) && !context.blueprint && !context.retrigger_joker && !context.game_over) {
+        const n = unused_hands();
+        if (n > 0) bank(card, 'eleki_Xmult', 'Xmult_mod', n, 'XMULT');
+        return undefined;
+      }
+      if (context.joker_main) return x_main(card.ability.extra.eleki_Xmult);
+      return undefined;
+    },
+    ...hands,
+  },
+  // Regidrago 895 (Dragon), Dragon Energy: X3 Mult on the round's first hand (`Xmult` +20%: 3.6 / 4.2 / 4.8), X0.5 less for each hand already
+  // played this round (`drago_step`, fixed), never below X1 (X3 / 2.5 / 2 / 1.5 / 1).
+  regidrago: {
+    name: 'regidrago', poke_sprite391: sprite('Natdex', 18, 59, [19, 59]),
+    config: { extra: { Xmult: 3, drago_step: 0.5 } },
+    rarity: 4, cost: 20, stage: 'Legendary', ptype: 'Dragon', gen: 8, blueprint_compat: true,
+    attributes: ['xmult'], poke_after: 'regieleki',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.Xmult), r3(ex.drago_step), r3(drago_x(card))] }; },
+    calculate(self, card, context) { return context.joker_main ? x_main(drago_x(card)) : undefined; },
+  },
+  // Glastrier 896 (Water), Chilling Neigh: +80 Chips (`chips` +30%: 104 / 128 / 152); Glass cards give X2.5 instead of X2 (a card-level rule,
+  // glass_x_mult through the chip_x_mult hook, Registeel's way: `Xmult_multi` +5%: 2.625 / 2.75 / 2.875; the best Glass-X rule wins; the
+  // Glass card's own tooltip says it). Blueprint copies the Chips, never the rule.
+  glastrier: {
+    name: 'glastrier', poke_sprite391: sprite('Natdex', 20, 59, [21, 59]),
+    config: { extra: { chips: 80, Xmult_multi: 2.5 } },
+    rarity: 4, cost: 20, stage: 'Legendary', ptype: 'Water', gen: 8, blueprint_compat: true,
+    attributes: ['chips', 'xmult', 'enhancements'], poke_after: 'regidrago',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); info_queue.push(P_CENTERS.m_glass); const ex = card.ability.extra; return { vars: [r3(ex.chips), r3(ex.Xmult_multi)] }; },
+    calculate(self, card, context) {
+      if (context.joker_main) return { message: a_chips(r3(card.ability.extra.chips)), colour: 'CHIPS', chip_mod: card.ability.extra.chips };
+      return undefined;
+    },
+  },
+  // Spectrier 897 (Psychic), Grim Neigh: each Spectral card used while held (by anyone; not Blueprint) banks +X0.25 (`grim_Xmult` from X1;
+  // the gain `Xmult_mod` +20%: 0.3 / 0.35 / 0.4).
+  spectrier: {
+    name: 'spectrier', poke_sprite391: sprite('Natdex', 22, 59, [23, 59]),
+    config: { extra: { Xmult_mod: 0.25, grim_Xmult: 1 } },
+    rarity: 4, cost: 20, stage: 'Legendary', ptype: 'Psychic', gen: 8, blueprint_compat: true,
+    attributes: ['xmult', 'scaling', 'spectral'], poke_after: 'glastrier',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.Xmult_mod), r3(ex.grim_Xmult)] }; },
+    calculate(self, card, context) {
+      const c = context.consumeable;
+      if (context.using_consumeable && !context.blueprint && c && c.ability.set === 'Spectral') { bank(card, 'grim_Xmult', 'Xmult_mod', 1, 'XMULT'); return undefined; }
+      if (context.joker_main) return x_main(card.ability.extra.grim_Xmult);
+      return undefined;
+    },
+  },
+  // Calyrex 898 (Psychic), King of Bountiful Harvest: when a Blind is selected, a random unenhanced card becomes a Seed (Sweet Seeds' rule;
+  // Blueprint copies it); X1 + X0.1 for each Flower card in the full deck (bloomed Seeds; `Xmult_mod` +20%: 0.12 / 0.14 / 0.16; read live).
+  calyrex: {
+    name: 'calyrex', poke_sprite391: sprite('Gen08', 10, 10, [11, 10]),
+    config: { extra: { Xmult_mod: 0.1 } },
+    rarity: 4, cost: 20, stage: 'Legendary', ptype: 'Psychic', gen: 8, blueprint_compat: true,
+    attributes: ['xmult', 'enhancements'], poke_after: 'spectrier',
+    loc_vars(self, info_queue, card) {
+      seed_tips(self, info_queue, card);
+      info_queue.push(P_CENTERS.m_poke_flower);
+      const ex = card.ability.extra, n = flowers(); return { vars: [r3(ex.Xmult_mod), n, r3(harvest_x(card))] };
+    },
+    calculate(self, card, context) {
+      if (bountiful_harvest(card, context)) return undefined;
+      if (context.joker_main) return x_main(harvest_x(card));
+      return undefined;
+    },
+  },
+  // Enamorus 905 (Fairy), Springtide Storm: each scored Heart (is_suit: Wild counts) gives X1.25 Mult (`Xmult_multi` +5%: 1.3125 / 1.375 /
+  // 1.4375). Therian Forme for good after it has been held for 4 rounds (the Forces of Nature's clock, `therian_rounds`): each scored Heart
+  // also earns $1 (`heart_money`, fixed). Blueprint copies both.
+  enamorus: {
+    name: 'enamorus', poke_sprite391: sprite('Gen08', 6, 11, [7, 11]),
+    config: { extra: { Xmult_multi: 1.25, heart_money: 1, therian_rounds: 0 } },
+    rarity: 4, cost: 20, stage: 'Legendary', ptype: 'Fairy', gen: 8, blueprint_compat: true,
+    attributes: ['xmult', 'money', 'suit'], poke_after: 'basculegion',
+    poke_view_form(self, card) { return enamorus_therian(card) ? 'therian' : 'incarnate'; },
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.Xmult_multi), ex.heart_money, enamorus_state(card)] }; },
+    calculate(self, card, context) {
+      if (enamorus_tick(card, context)) return undefined;
+      if (context.individual && context.cardarea === G.play && !context.end_of_round && context.other_card.is_suit('Hearts')) {
+        const ex = card.ability.extra;
+        if (!enamorus_therian(card)) return { x_mult: ex.Xmult_multi, card };
+        G.GAME.dollar_buffer = (G.GAME.dollar_buffer || 0) + ex.heart_money;
+        G.E_MANAGER.add_event(() => { G.GAME.dollar_buffer = 0; });
+        return { dollars: ex.heart_money, x_mult: ex.Xmult_multi, card };
+      }
+      return undefined;
+    },
+  },
+}, FILE);
+
 /** The families (functions/pokefamily.lua style): index.js adds them with set_family. */
 export const DESIGN_FAMILIES = [
   ['shinx', 'luxio', 'luxray'],
@@ -10667,6 +10952,38 @@ export const DESIGN_LOC = {
     j_poke_dracovish: { name: 'Dracovish', text: ['{C:attention}Ancient #1#s{}', '{X:attention,C:white}1+{} : {C:mult}+#2#{} Mult', '{X:attention,C:white}2+{} : {}The first scored {C:attention}#1#{}', 'retriggers {C:attention}#3#{} times', '{X:attention,C:white}3+{} : {X:mult,C:white} X#4# {} Mult'] },
     j_poke_arctovish: { name: 'Arctovish', text: ['{C:attention}Ancient #1#s{}', '{X:attention,C:white}1+{} : {C:chips}+#2#{} Chips', '{X:attention,C:white}2+{} : {X:mult,C:white} X#3# {} Mult', '{X:attention,C:white}3+{} : {C:chips}+#4#{} hand this round', '{C:inactive}(Once per round: #5#)'] },
     j_poke_basculegion: { name: 'Basculegion', text: ['{C:attention}Last Respects:{} {X:mult,C:white} X1 {} Mult,', 'plus {X:mult,C:white} X#1# {} for each', 'Joker sold or destroyed', 'this run', '{C:inactive}(Currently #2#: {X:mult,C:white} X#3# {C:inactive} Mult)'] },
+    // Gen 8, batch 4: the Gen 8 Legendaries (the owner's "Yes", 2026-11-03)
+    j_poke_zacian: { name: 'Zacian', text: [
+      ['{C:attention}Intrepid Sword:{} {X:mult,C:white} X#1# {} Mult'],
+      ['{C:attention}Crowned Sword:{} for good once', 'you beat {C:attention}3{} Boss Blinds while', 'you have it: {X:mult,C:white} X#2# {} Mult instead', '{C:inactive}(#3#)'],
+    ] },
+    j_poke_zamazenta: { name: 'Zamazenta', text: [
+      ['{C:attention}Dauntless Shield:{} {C:chips}+#1#{} hand', 'each round'],
+      ['{C:attention}Crowned Shield:{} for good once', 'you beat {C:attention}3{} Boss Blinds while', 'you have it: {C:chips}+#2#{} hands in all', 'and {X:mult,C:white} X#3# {} Mult', '{C:inactive}(#4#)'],
+    ] },
+    j_poke_eternatus: { name: 'Eternatus', text: [
+      ['{C:attention}Dynamax:{} permanently gains', '{X:mult,C:white} X#1# {} Mult for each', '{C:attention}Boss Blind{} you beat', '{C:inactive}(Currently {X:mult,C:white} X#2# {C:inactive} Mult)'],
+      ['{C:attention}Eternamax:{} for good after', '{C:attention}5{} Boss Blinds, its {X:mult,C:white}X{} Mult', 'is doubled', '{C:inactive}(#3#)'],
+    ] },
+    j_poke_zarude: { name: 'Zarude', text: ['{C:attention}Jungle Drain:{} when a {C:attention}Blind{}', 'is selected, drains {C:money}$#1#{} of', 'sell value from each other', 'Joker and gains {X:mult,C:white} X#2# {} Mult', 'for each {C:money}$1{} drained', '{C:inactive}(Currently {X:mult,C:white} X#3# {C:inactive} Mult)'] },
+    j_poke_regieleki: { name: 'Regieleki', text: [
+      ['{C:chips}+#1#{} hand each round'],
+      ['{C:attention}Transistor:{} at end of round,', 'permanently gains {X:mult,C:white} X#2# {} Mult', 'for each unused hand', '{C:inactive}(Currently {X:mult,C:white} X#3# {C:inactive} Mult)'],
+    ] },
+    j_poke_regidrago: { name: 'Regidrago', text: ['{C:attention}Dragon Energy:{} {X:mult,C:white} X#1# {} Mult on', 'the first hand of the round,', '{X:mult,C:white} X#2# {} less for each hand', 'already played this round', '{C:inactive}(Never below X1)', '{C:inactive}(Currently {X:mult,C:white} X#3# {C:inactive} Mult)'] },
+    j_poke_glastrier: { name: 'Glastrier', text: [
+      ['{C:chips}+#1#{} Chips'],
+      ['{C:attention}Chilling Neigh:{} {C:attention}Glass{} cards', 'give {X:mult,C:white} X#2# {} Mult', 'instead of {X:mult,C:white} X2 {}'],
+    ] },
+    j_poke_spectrier: { name: 'Spectrier', text: ['{C:attention}Grim Neigh:{} permanently', 'gains {X:mult,C:white} X#1# {} Mult for each', '{C:spectral}Spectral{} card used', '{C:inactive}(Currently {X:mult,C:white} X#2# {C:inactive} Mult)'] },
+    j_poke_calyrex: { name: 'Calyrex', text: [
+      ['{C:attention}Bountiful Harvest:{} when a', '{C:attention}Blind{} is selected, a random', 'unenhanced card in your deck', 'becomes a {C:attention}Seed{} card'],
+      ['{X:mult,C:white} X1 {} Mult, plus {X:mult,C:white} X#1# {} for', 'each {C:attention}Flower{} card in your', 'full deck', '{C:inactive}(Currently #2#: {X:mult,C:white} X#3# {C:inactive} Mult)'],
+    ] },
+    j_poke_enamorus: { name: 'Enamorus', text: [
+      ['{C:attention}Springtide Storm:{} each', 'scored {C:hearts}Heart{} gives', '{X:mult,C:white} X#1# {} Mult'],
+      ['{C:attention}Therian Forme:{} after you', 'have had it for {C:attention}4{} rounds,', 'each scored {C:hearts}Heart{} also', 'earns {C:money}$#2#{}', '{C:inactive}(#3#)'],
+    ] },
     // The owner's rework of an upstream joker (Espeon 196, Future Sight, contentRev 57; jokers/pokejokers_07.js): its text replaces 3.9.1's.
     j_poke_espeon: { name: 'Espeon', text: [
       ['{C:purple}+#1# Foresight', 'Each played {V:1}#2#{}', 'retriggers and gives', '{X:mult,C:white} X#3# {} Mult when scored'],
