@@ -28,6 +28,7 @@ import { openPartyAction, saveFlute, toggleBike, useFieldMove } from './ow_field
 import { cardsKey, daycareKey, deckSelectKey, dexKey, friendsKey, friendsMenu, mailMenu, moveShopKey, nameRaterKey, npcTradeKey, playerMenuKey, questKey, runKey, startKey } from './ow_screens.js';
 import { REPEL_LAST_KEY, interact, setRepel, useGadget } from './ow_input.js';
 import { cycleForm, formsOf } from './ow_scaling.js';
+import { pickEvo, charmRegion } from './regional_forms.js';
 import { startWildBattle } from './ow_places.js';
 import { levelCapNow, playerRegion } from './ow_progression.js';
 import { gcKey, gcMenu, vfKey, vfMenu } from './ow_gamecorner.js';
@@ -406,6 +407,11 @@ function castRod(id, item) {
 // evolve the Sinistea / Poltchageist you can actually own.
 const STONE_ALIAS = { chippedpot: 'crackedpot', masterpieceteacup: 'unremarkableteacup' };
 const evoParam = id => STONE_ALIAS[id] || id;
+// the evolution `id` (a stone / evolution item) triggers on this mon, or null
+export function itemEvoFor(mon, id) {
+	return pickEvo(battle.data.extra?.[mon.speciesId]?.evos, battle.data,
+		e => e.type === 'item' && e.param === evoParam(id), charmRegion(mon, Bag.ITEMS));
+}
 
 function bagKey(k) {
 	const entries = bagEntries();
@@ -554,12 +560,10 @@ function bagKey(k) {
 					for (const mv of mon.moves) mv.pp = Math.min(mv.maxPp, mv.pp + item.amount);
 					saveParty(S.party);
 					bagMenu.picking = false;
-				} else if ((item?.kind === 'stone' || item?.kind === 'held') && mon.curHP > 0
-					&& (battle.data.extra?.[mon.speciesId]?.evos || [])
-						.some(e => e.type === 'item' && e.param === evoParam(id) && battle.data.species[e.target])) {
-					// an evolution item the selected species responds to
-					const evo = battle.data.extra[mon.speciesId].evos
-						.find(e => e.type === 'item' && e.param === evoParam(id) && battle.data.species[e.target]);
+				} else if ((item?.kind === 'stone' || item?.kind === 'held') && mon.curHP > 0 && itemEvoFor(mon, id)) {
+					// an evolution item the selected species responds to (a held
+					// regional CHARM picks the regional branch: regional_forms.js)
+					const evo = itemEvoFor(mon, id);
 					Bag.consume(id);
 					bagMenu.picking = false;
 					bagMenu.open = false;

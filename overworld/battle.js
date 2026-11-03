@@ -4,6 +4,7 @@
 // no natures; moveset = last 4 level-up moves at the mon's level).
 import { getJSON, getImage, VIEW_W, VIEW_H } from './engine.js';
 import * as Bag from './bag.js';
+import { applyRegionalForms } from './regional_forms.js';
 import { rumble } from '../site/gamepad.js';
 import * as UI from './battleui.js';
 import { cry, sfx } from './sound.js';
@@ -750,6 +751,8 @@ export class Battle {
 			getJSON('data/egg_moves.json').catch(() => ({})),
 		]);
 		this.data = { species, moves, extra, abilities, tmLearn, genders, evYields, eggMoves };
+		// regional forms' own movepools + the charm-gated regional evolutions (regional_forms.js)
+		applyRegionalForms(this.data);
 		// the Love2D build's pixel font, so battle text matches the desktop game — Micatro's copy, which also draws ♀ / ♂ (tools/micatro/add_gender_glyphs.py); the original in data/fonts has neither
 		try {
 			const f = new FontFace('m6x11plus', 'url(../micatro/assets/fonts/m6x11plus.ttf?v=2)');
@@ -869,7 +872,7 @@ export class Battle {
 		if (opts?.roamer?.status) foe.status = opts.roamer.status;
 		this._starting = false; // active now drives `blocking`
 		if (restore) { this.applyRestore(restore); return; }
-		for (const m of party) this.clearVolatiles(m);
+		for (const m of party) { this.clearVolatiles(m); delete m.battleCrits; }
 		// the map's weather is worth a line — it changes the fight
 		if (this.active.weather?.kind) {
 			const wmsg = { rain: 'Rain pours down.', sandstorm: 'A sandstorm rages.', hail: 'Hail pelts down.', sun: 'The sunlight is harsh.' };
@@ -977,7 +980,7 @@ export class Battle {
 			caughtMon: null,
 		};
 		this._starting = false; // active now drives `blocking`
-		if (!restore) for (const m of [...party, ...(this.active.partner?.party || [])]) this.clearVolatiles(m);
+		if (!restore) for (const m of [...party, ...(this.active.partner?.party || [])]) { this.clearVolatiles(m); delete m.battleCrits; }
 		if (this.active.double) {
 			this.active.meAllyImg = backSprites.get(this.active.meAlly);
 			this.active.foeAllyImg = foeSprites.get(this.active.foeAlly);
@@ -2511,7 +2514,11 @@ export class Battle {
 		} else {
 			for (let h = 0; h < nHits; h++) {
 				const crit = Math.random() < critChance;
-				if (crit) crits++;
+				if (crit) {
+					crits++;
+					// Galarian Farfetch'd evolves after 3 critical hits in one battle
+					if (!isFoe) user.battleCrits = (user.battleCrits || 0) + 1;
+				}
 				let dmg = Math.floor(Math.floor(Math.floor(2 * L / 5 + 2) * Pw * A / D) / 50) + 2;
 				dmg = Math.max(1, Math.floor(dmg * (crit ? critMult : 1) * stab * eff * screened * envMult * (0.85 + Math.random() * 0.15)));
 				total += dmg;

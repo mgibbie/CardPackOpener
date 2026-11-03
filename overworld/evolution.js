@@ -4,6 +4,22 @@ import { getImage, VIEW_W, VIEW_H } from './engine.js';
 import { statsFor } from './battle.js';
 import * as Clock from './clock.js';
 import { sfx } from './sound.js';
+import * as Bag from './bag.js';
+import { pickEvo, charmRegion } from './regional_forms.js';
+
+// Is a level-up-style evolution's condition met? (item evolutions go through the
+// bag, not here). `move`/`crits`/`damage` are the regional lines' methods
+// (regional_forms.js REGIONAL_EVOS).
+export function levelEvoReady(mon, e) {
+	switch (e.type) {
+		case 'level': return mon.level >= e.param;
+		case 'friendship': return (mon.friend ?? 70) >= (e.param || 220);
+		case 'move': return (mon.moves || []).some(m => m.id === e.param);
+		case 'crits': return (mon.battleCrits || 0) >= e.param;
+		case 'damage': return mon.curHP > 0 && (mon.maxHP - mon.curHP) >= e.param;
+		default: return false;
+	}
+}
 
 export class Evolution {
 	constructor() {
@@ -22,11 +38,12 @@ export class Evolution {
 		for (const mon of party) {
 			if (mon.heldItem === 'everstone') continue; // EVERSTONE halts natural level/friendship evolution
 			const evos = data.extra?.[mon.speciesId]?.evos || [];
-			const evo = evos.find(e => data.species[e.target] && timeOk(e)
-				&& ((e.type === 'level' && mon.level >= e.param)
-					|| (e.type === 'friendship' && (mon.friend ?? 70) >= (e.param || 220))));
+			// a held ALOLA / GALAR / HISUI CHARM selects the regional branch
+			const evo = pickEvo(evos, data, e => timeOk(e) && levelEvoReady(mon, e), charmRegion(mon, Bag.ITEMS));
 			if (evo) this.queue.push({ mon, target: evo.target });
 		}
+		// the crit count is one battle's; it must not carry into the next check
+		for (const mon of party) delete mon.battleCrits;
 		if (this.queue.length && !this.cur) this.next(data);
 	}
 
@@ -60,7 +77,16 @@ export class Evolution {
 		const { mon, target, sp } = this.cur;
 		this.cur.oldName = mon.name;
 		const damage = mon.maxHP - mon.curHP;
+		const oldId = mon.speciesId;
 		mon.speciesId = target;
+		// the ability follows the species: Pikachu's STATIC becomes Alolan Raichu's
+		// SURGE SURFER (same slot), unless the old one is also legal for the new species
+		const abs = this.cur.data?.abilities || {};
+		const newAbs = abs[target] || [];
+		if (mon.ability && newAbs.length && !newAbs.includes(mon.ability)) {
+			const slot = (abs[oldId] || []).indexOf(mon.ability);
+			mon.ability = newAbs[Math.min(Math.max(slot, 0), newAbs.length - 1)];
+		}
 		mon.name = sp.name.toUpperCase();
 		mon.types = sp.types;
 		mon.sprite = sp.sprite;
