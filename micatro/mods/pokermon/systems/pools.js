@@ -117,6 +117,9 @@ export function get_random_poke_key(pseed, stage, pokerarity, area, poketype, ex
     if (!centerActive(v)) continue;
     if (stage && v.stage !== stage) continue;
     if (pokerarity && v.rarity !== pokerarity) continue;
+    // (the owner's Paradox rarity, Gen 9 batch 3: only the Paradox Ball / the Ancient and Future Packs ask for it — a Poké Ball, a
+    // Transformation, an illusion never rolls a Paradox; they were never in these pools before r78, so older runs replay as recorded)
+    if (v.rarity === 'poke_paradox' && pokerarity !== 'poke_paradox') continue;
     if (!get_gen_allowed(v) || (poketype && poketype !== v.ptype) || !pokemon_in_pool(v) || v.aux_poke || v.rarity === 'poke_mega') continue;
     if (exclude_keys[v.key] || G.GAME.banned_keys[v.key] || ex_types[v.ptype]) continue;
     let no_dup = true;

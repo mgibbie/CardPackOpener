@@ -131,7 +131,7 @@ await sec('static', () => {
   const keys = MODS.pokermon.content.centers.filter((c) => c.set === 'Joker').map((c) => c.key);
   const run = (list) => { const i = keys.indexOf('j_poke_' + list[0]); return i > 0 && list.every((k, n) => keys[i + n] === 'j_poke_' + k) ? true : keys.slice(i - 1, i + list.length + 1); };
   for (const ch of [['capsakid', 'scovillain', 'rellor'], ['rabsca', 'flittle', 'espathra', 'tinkatink'], ['wugtrio', 'bombirdier', 'varoom', 'revavroom', 'cyclizar', 'orthworm', 'glimmet', 'glimmora', 'greavard'],
-    ['houndstone', 'flamigo', 'veluza', 'dondozo', 'tatsugiri', 'annihilape', 'clodsire', 'farigiraf'], ['gholdengo', 'poltchageist', 'sinistcha']]) {
+    ['houndstone', 'flamigo', 'veluza', 'dondozo', 'tatsugiri', 'annihilape', 'clodsire', 'farigiraf'], ['iron_leaves', 'poltchageist', 'sinistcha']]) {
     ok(run(ch) === true, 'Pokédex order: ' + ch.join(' > '), run(ch));
   }
   const FAM = { wooper: 'wooper,quagsire,clodsire', capsakid: 'capsakid,scovillain', flittle: 'flittle,espathra', varoom: 'varoom,revavroom', glimmet: 'glimmet,glimmora', poltchageist: 'poltchageist,sinistcha' };

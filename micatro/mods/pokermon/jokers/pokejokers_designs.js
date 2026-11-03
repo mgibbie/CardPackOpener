@@ -202,6 +202,7 @@ import {
 } from '../api.js';
 import { Tag, add_tag } from '../../../js/engine/tag.js';
 import { blueprint_effect } from './pokejokers_08.js';
+import { poke_set_type_badge } from '../systems/types.js';
 import * as BN from '../../../js/engine/bignum.js'; // the Blind's requirement (Poison Gas) may be a big number in modded runs
 import { number_format, calculate_reroll_cost, get_next_tag_key } from '../../../js/engine/core.js';
 import { rulesRev } from '../../../js/mods/pins.js';
@@ -10536,6 +10537,306 @@ defineJokers({
   },
 }, FILE);
 
+// ---------------------------------------------------------------- Gen 9, batch 3: the Paradox Pokémon (contentRev 78)
+/** The owner's Paradox rarity (index.js rarities: 'poke_paradox', weight 0, so never a shop roll, never a Poké Ball's (get_random_poke_key
+ *  skips it unless asked for it): only the Paradox Ball and the Ancient / Future Packs (paradox.js) make one). Each Paradox joker's center
+ *  names its era: `poke_paradox` 'ancient' | 'future' (its second pill, set_badges: "Ancient" / "Future"). */
+export const PARADOX_ERAS = {
+  ancient: { name: 'Ancient', colour: '#9A5B1E', ability: 'Protosynthesis' },
+  future: { name: 'Future', colour: '#1F7A99', ability: 'Quark Drive' },
+};
+export const PARADOX_COLOUR = '#7B3FBF';
+/** "Boosted" (Protosynthesis / Quark Drive): 50% stronger. A +Mult / +Chips number x1.5; an X number's bonus part x1.5 (X2 -> X2.5,
+ *  X1.2 -> X1.3). Energy raises the base number first; the boost applies on top of the energized value. */
+export const PARADOX_BOOST = 1.5;
+const boost_add = (v, on) => r9(on ? v * PARADOX_BOOST : v);
+const boost_x = (x, on) => r9(on ? 1 + (x - 1) * PARADOX_BOOST : x);
+/** THE HOUSE ELECTRIC TERRAIN (Gen 9 batch 3): the round's FIRST deal holds MORE Diamonds than any other suit (strictly: a tie for the top is
+ *  not; a Wild card counts for every suit, so it never breaks a tie; a debuffed / Stone / suitless card counts for none: the engine's is_suit).
+ *  Read on the first deal like Castform's forecast (the sun and the rain read the same deal), remembered on the card for the round
+ *  (`terrain_round`), so a Future Paradox gained mid-round waits for the next round's deal. The weather check future Electric jokers read,
+ *  beside the sun (cherrim_sunny), the rain (swift_swim_raining) and the sandstorm (is_sandstorm). Castform has no terrain form. */
+export function electric_terrain(cards) {
+  const n = { Spades: 0, Hearts: 0, Clubs: 0, Diamonds: 0 };
+  for (const c of cards || []) for (const s of Object.keys(n)) if (c.is_suit(s)) n[s] += 1;
+  return n.Diamonds > n.Spades && n.Diamonds > n.Hearts && n.Diamonds > n.Clubs;
+}
+export function is_electric_terrain(card) {
+  const ex = card && card.ability && card.ability.extra, GM = G.GAME;
+  return !!((ex && GM && GM.facing_blind && ex.terrain_round === GM.round) || hadron_terrain());
+}
+/** Miraidon, Hadron Engine (Gen 9 batch 4): while an undebuffed one is held every round is Electric Terrain — live (bought / sold / debuffed,
+ *  it changes at once; in the shop too), as Volcarona's sun. It adds terrain; the deal's own read stays. */
+const hadron_terrain = () => legends('miraidon').length > 0;
+export const paradox_era = (card) => (card && card.config && card.config.center && card.config.center.poke_paradox) || null;
+/** Is this Paradox boosted now? Ancient: Protosynthesis while it's sunny (cherrim_sunny: the red first deal, a working Groudon, a Volcarona);
+ *  Future: Quark Drive on Electric Terrain. */
+export const paradox_boosted = (card) => (paradox_era(card) === 'ancient' ? cherrim_sunny(card) : paradox_era(card) === 'future' ? is_electric_terrain(card) : false);
+/** The round's first deal: an Ancient reads the sun (Larvesta's sun_read fields), a Future reads the terrain. Not Blueprint (first_deal). */
+function paradox_read(card, context) {
+  const era = paradox_era(card);
+  if (era === 'ancient') {
+    if (!first_deal(card, context, 'sunread_round')) return false;
+    const ex = card.ability.extra;
+    ex.sunread_round = G.GAME.round;
+    if (forecast(G.hand.cards) === 'sunny') ex.sun_round = G.GAME.round;
+    if (cherrim_sunny(card)) card_eval_status_text(card, 'extra', null, null, null, { message: 'Protosynthesis!', colour: CASTFORM_FORMS.sunny.colour });
+    return true;
+  }
+  if (era === 'future') {
+    if (!first_deal(card, context, 'terrainread_round')) return false;
+    const ex = card.ability.extra;
+    ex.terrainread_round = G.GAME.round;
+    if (electric_terrain(G.hand.cards)) ex.terrain_round = G.GAME.round;
+    if (is_electric_terrain(card)) card_eval_status_text(card, 'extra', null, null, null, { message: 'Quark Drive!', colour: '#f8d030' });
+    return true;
+  }
+  return false;
+}
+/** The tooltip's state line. */
+const paradox_state = (card) => {
+  const anc = paradox_era(card) === 'ancient', on = paradox_boosted(card);
+  if (on) return anc ? 'Sunny: boosted!' : 'Electric Terrain: boosted!';
+  const read = G.GAME && G.GAME.facing_blind && card.ability.extra[anc ? 'sunread_round' : 'terrainread_round'] === G.GAME.round;
+  return anc ? (read ? 'Not sunny' : 'Not sunny yet') : (read ? 'No Electric Terrain' : 'No Electric Terrain yet');
+};
+/** Its pills: the rarity's "Paradox" (describe), then the era's ("Ancient" / "Future"), then the type's. */
+function paradox_badges(self, card, badges) {
+  const e = PARADOX_ERAS[self.poke_paradox];
+  if (e) badges.push({ key: 'poke_paradox_' + self.poke_paradox, label: e.name, colour: e.colour });
+  poke_set_type_badge(self, card, badges);
+}
+/** A Paradox center's static data: rarity Paradox, $7, a single-stage Basic of Gen 9, Blueprint-compatible; its 3.9.1 cell + soul. */
+const paradox = (name, era, ptype, cell, after, attributes, extra) => ({
+  name, poke_sprite391: sprite('Natdex', cell[0], cell[1], cell[2]), poke_paradox: era, config: { extra },
+  rarity: 'poke_paradox', cost: 7, stage: 'Basic', ptype, gen: 9, blueprint_compat: true,
+  attributes: [...attributes, 'paradox'], poke_after: after,
+  set_badges: paradox_badges,
+});
+const scored_card = (context) => !!(context.individual && context.cardarea === G.play && !context.end_of_round);
+/** "Each scored <filter> card gives X" (Xmult_multi, boosted). */
+const per_card_x = (filter) => (card, context) => {
+  if (!scored_card(context) || !filter(context.other_card, context)) return undefined;
+  return { x_mult: boost_x(card.ability.extra.Xmult_multi, paradox_boosted(card)), card };
+};
+const x_vars = (card) => { const ex = card.ability.extra; return [r3(ex.Xmult_multi), r3(boost_x(ex.Xmult_multi, true)), paradox_state(card)]; };
+const tips = (self, info_queue, card, ...more) => { type_tooltip(self, info_queue, card); for (const m of more) info_queue.push(m); };
+/** Roaring Moon: the Straights played this run (G.GAME.hands, the run's own records: a Straight Flush is a Straight too, so it counts; the
+ *  hand being played counts at once, run.js adds 1 before the jokers). */
+export const straights_played = () => { const H = (G.GAME && G.GAME.hands) || {}; return ((H.Straight && H.Straight.played) || 0) + ((H['Straight Flush'] && H['Straight Flush'].played) || 0); };
+/** Raging Bolt: the hands left before this hand (while it scores hands_left is already spent: +1); out of a round, a round's hands. */
+export const bolt_hands = (scoring) => {
+  const GM = G.GAME, cr = GM && GM.current_round;
+  if (!GM) return 0;
+  if (!GM.facing_blind) return (GM.round_resets && GM.round_resets.hands) || 0;
+  return ((cr && cr.hands_left) || 0) + (scoring ? 1 : 0);
+};
+const bolt_x = (card, scoring, on) => r9(1 + boost_add(card.ability.extra.Xmult_mod, on) * bolt_hands(scoring));
+/** Iron Bundle: at end of round (the main pass; Blueprint copies it) a random Tarot or Planet (a seeded coin, then the set's own seeded
+ *  pick, key_append 'iron_bundle'), with room (cards + consumeable_buffer < limit). Never boosted. */
+function iron_bundle_make(card, context) {
+  if (!round_end(context) || context.retrigger_joker) return false;
+  if (G.consumeables.cards.length + (G.GAME.consumeable_buffer || 0) >= G.consumeables.config.card_limit) return true;
+  const set = pseudorandom(pseudoseed('poke_iron_bundle_set')) < 0.5 ? 'Tarot' : 'Planet';
+  G.GAME.consumeable_buffer = (G.GAME.consumeable_buffer || 0) + 1;
+  G.E_MANAGER.add_event(() => {
+    const t = create_card(set, G.consumeables, null, null, null, null, undefined, 'iron_bundle');
+    t.add_to_deck();
+    G.consumeables.emplace(t);
+    G.GAME.consumeable_buffer = 0;
+  });
+  card_eval_status_text(context.blueprint_card || card, 'extra', null, null, null, { message: localize(set === 'Tarot' ? 'k_plus_tarot' : 'k_plus_planet'), colour: set === 'Tarot' ? 'Tarot' : 'Planet' });
+  return true;
+}
+
+defineJokers({
+  // The owner's Gen 9 batch 3 ("yes", 2026-11-03): the 20 Paradox Pokémon, each its own single-stage Basic, the owner's new Paradox rarity ($7,
+  // Rare-equivalent power; only from the Paradox Ball and the Ancient / Future Packs: never the shop, never a Poké Ball), with a second pill:
+  // Ancient (Protosynthesis: 50% stronger while it's sunny) or Future (Quark Drive: 50% stronger on Electric Terrain). Types = the cards'
+  // (pokermon_art_type.mjs). Energy raises the main number at the standard share; the boost applies on top. Art: upstream 3.9.1's own cells
+  // (Natdex 65-68, each with its soul; Walking Wake's soul is {7,67} and Iron Leaves' {9,67} — the sprite table's {5,67} / {7,67} are
+  // their neighbours' souls, Miraidon's and Walking Wake's); nothing to deploy. Pokédex order: Great Tusk ... Iron Thorns after Kingambit, before Gimmighoul;
+  // Roaring Moon, Iron Valiant, Walking Wake, Iron Leaves after Gholdengo, before Poltchageist; Gouging Fire ... Iron Crown after Sinistcha.
+  //
+  // Great Tusk 984 (Earth, Ancient): each scored Stone card X1.3 (`Xmult_multi` +5%: 1.365 / 1.43 / 1.495); sunny X1.45.
+  great_tusk: {
+    ...paradox('great_tusk', 'ancient', 'Earth', [16, 65, [17, 65]], 'kingambit', ['xmult', 'enhancements'], { Xmult_multi: 1.3 }),
+    loc_vars(self, info_queue, card) { tips(self, info_queue, card, P_CENTERS.m_stone); return { vars: x_vars(card) }; },
+    calculate(self, card, context) { if (paradox_read(card, context)) return undefined; return per_card_x((c) => has_enhancement(c, 'm_stone'))(card, context); },
+  },
+  // Scream Tail 985 (Fairy, Ancient): each scored Spade +6 Mult (`mult` +40%: 8.4 / 10.8 / 13.2); sunny +9.
+  scream_tail: {
+    ...paradox('scream_tail', 'ancient', 'Fairy', [18, 65, [19, 65]], 'great_tusk', ['mult', 'suit', 'spades'], { mult: 6 }),
+    loc_vars(self, info_queue, card) { tips(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.mult), r3(boost_add(ex.mult, true)), paradox_state(card)] }; },
+    calculate(self, card, context) {
+      if (paradox_read(card, context)) return undefined;
+      if (scored_card(context) && context.other_card.is_suit('Spades')) return { mult: boost_add(card.ability.extra.mult, paradox_boosted(card)), card };
+      return undefined;
+    },
+  },
+  // Brute Bonnet 986 (Dark, Ancient): +25 Mult (`mult` +40%: 35 / 45 / 55); sunny +37.5.
+  brute_bonnet: {
+    ...paradox('brute_bonnet', 'ancient', 'Dark', [20, 65, [21, 65]], 'scream_tail', ['mult'], { mult: 25 }),
+    loc_vars(self, info_queue, card) { tips(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.mult), r3(boost_add(ex.mult, true)), paradox_state(card)] }; },
+    calculate(self, card, context) {
+      if (paradox_read(card, context)) return undefined;
+      if (context.joker_main) { const m = boost_add(card.ability.extra.mult, paradox_boosted(card)); return { message: a_mult(r3(m)), colour: 'MULT', mult_mod: m }; }
+      return undefined;
+    },
+  },
+  // Flutter Mane 987 (Psychic, Ancient): X2 (`Xmult` +20%: 2.4 / 2.8 / 3.2); sunny X2.5.
+  flutter_mane: {
+    ...paradox('flutter_mane', 'ancient', 'Psychic', [22, 65, [23, 65]], 'brute_bonnet', ['xmult'], { Xmult: 2 }),
+    loc_vars(self, info_queue, card) { tips(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.Xmult), r3(boost_x(ex.Xmult, true)), paradox_state(card)] }; },
+    calculate(self, card, context) {
+      if (paradox_read(card, context)) return undefined;
+      if (context.joker_main) return x_main(boost_x(card.ability.extra.Xmult, paradox_boosted(card)));
+      return undefined;
+    },
+  },
+  // Slither Wing 988 (Grass, Ancient): each scored Heart X1.2 (`Xmult_multi` +5%: 1.26 / 1.32 / 1.38); sunny X1.3.
+  slither_wing: {
+    ...paradox('slither_wing', 'ancient', 'Grass', [24, 65, [25, 65]], 'flutter_mane', ['xmult', 'suit', 'hearts'], { Xmult_multi: 1.2 }),
+    loc_vars(self, info_queue, card) { tips(self, info_queue, card); return { vars: x_vars(card) }; },
+    calculate(self, card, context) { if (paradox_read(card, context)) return undefined; return per_card_x((c) => c.is_suit('Hearts'))(card, context); },
+  },
+  // Sandy Shocks 989 (Lightning, Ancient): +20 Chips for each Steel card in the full deck (`chips` +30%: 26 / 32 / 38 each); sunny +30 each.
+  sandy_shocks: {
+    ...paradox('sandy_shocks', 'ancient', 'Lightning', [26, 65, [27, 65]], 'slither_wing', ['chips', 'enhancements', 'full_deck'], { chips: 20 }),
+    loc_vars(self, info_queue, card) {
+      tips(self, info_queue, card, P_CENTERS.m_steel);
+      const ex = card.ability.extra, on = paradox_boosted(card);
+      return { vars: [r3(ex.chips), r3(boost_add(ex.chips, true)), paradox_state(card), r3(boost_add(ex.chips, on) * steel_in_deck())] };
+    },
+    calculate(self, card, context) {
+      if (paradox_read(card, context)) return undefined;
+      if (context.joker_main) { const c = r9(boost_add(card.ability.extra.chips, paradox_boosted(card)) * steel_in_deck()); if (c > 0) return { message: a_chips(r3(c)), colour: 'CHIPS', chip_mod: c }; }
+      return undefined;
+    },
+  },
+  // Iron Treads 990 (Metal, Future): +100 Chips (`chips` +30%: 130 / 160 / 190); Electric Terrain +150.
+  iron_treads: {
+    ...paradox('iron_treads', 'future', 'Metal', [28, 65, [29, 65]], 'sandy_shocks', ['chips'], { chips: 100 }),
+    loc_vars(self, info_queue, card) { tips(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.chips), r3(boost_add(ex.chips, true)), paradox_state(card)] }; },
+    calculate(self, card, context) {
+      if (paradox_read(card, context)) return undefined;
+      if (context.joker_main) { const c = boost_add(card.ability.extra.chips, paradox_boosted(card)); return { message: a_chips(r3(c)), colour: 'CHIPS', chip_mod: c }; }
+      return undefined;
+    },
+  },
+  // Iron Bundle 991 (Water, Future): at end of round a random Tarot or Planet card, with room. No number: never boosted, Energy-inert.
+  iron_bundle: {
+    ...paradox('iron_bundle', 'future', 'Water', [0, 66, [1, 66]], 'iron_treads', ['tarot', 'planet'], {}),
+    poke_no_energy_field: true,
+    loc_vars(self, info_queue, card) { tips(self, info_queue, card); return { vars: [] }; },
+    calculate(self, card, context) { iron_bundle_make(card, context); return undefined; },
+  },
+  // Iron Hands 992 (Fighting, Future): each scored face card X1.25 (`Xmult_multi` +5%: 1.3125 / 1.375 / 1.4375); Electric Terrain X1.375.
+  iron_hands: {
+    ...paradox('iron_hands', 'future', 'Fighting', [2, 66, [3, 66]], 'iron_bundle', ['xmult', 'face'], { Xmult_multi: 1.25 }),
+    loc_vars(self, info_queue, card) { tips(self, info_queue, card); return { vars: x_vars(card) }; },
+    calculate(self, card, context) { if (paradox_read(card, context)) return undefined; return per_card_x((c) => c.is_face())(card, context); },
+  },
+  // Iron Jugulis 993 (Dark, Future): X2 (`Xmult` +20%: 2.4 / 2.8 / 3.2); Electric Terrain X2.5.
+  iron_jugulis: {
+    ...paradox('iron_jugulis', 'future', 'Dark', [4, 66, [5, 66]], 'iron_hands', ['xmult'], { Xmult: 2 }),
+    loc_vars(self, info_queue, card) { tips(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.Xmult), r3(boost_x(ex.Xmult, true)), paradox_state(card)] }; },
+    calculate(self, card, context) {
+      if (paradox_read(card, context)) return undefined;
+      if (context.joker_main) return x_main(boost_x(card.ability.extra.Xmult, paradox_boosted(card)));
+      return undefined;
+    },
+  },
+  // Iron Moth 994 (Fire, Future): each scored Diamond X1.2 (`Xmult_multi` +5%: 1.26 / 1.32 / 1.38); Electric Terrain X1.3.
+  iron_moth: {
+    ...paradox('iron_moth', 'future', 'Fire', [6, 66, [7, 66]], 'iron_jugulis', ['xmult', 'suit', 'diamonds'], { Xmult_multi: 1.2 }),
+    loc_vars(self, info_queue, card) { tips(self, info_queue, card); return { vars: x_vars(card) }; },
+    calculate(self, card, context) { if (paradox_read(card, context)) return undefined; return per_card_x((c) => c.is_suit('Diamonds'))(card, context); },
+  },
+  // Iron Thorns 995 (Lightning, Future): each scored Stone card +30 Chips (`chips` +30%: 39 / 48 / 57); Electric Terrain +45.
+  iron_thorns: {
+    ...paradox('iron_thorns', 'future', 'Lightning', [8, 66, [9, 66]], 'iron_moth', ['chips', 'enhancements'], { chips: 30 }),
+    loc_vars(self, info_queue, card) { tips(self, info_queue, card, P_CENTERS.m_stone); const ex = card.ability.extra; return { vars: [r3(ex.chips), r3(boost_add(ex.chips, true)), paradox_state(card)] }; },
+    calculate(self, card, context) {
+      if (paradox_read(card, context)) return undefined;
+      if (scored_card(context) && has_enhancement(context.other_card, 'm_stone')) return { chips: boost_add(card.ability.extra.chips, paradox_boosted(card)), card };
+      return undefined;
+    },
+  },
+  // Roaring Moon 1005 (Dark, Ancient): +4 Mult for each Straight played this run (a Straight Flush counts; `mult` +40%: 5.6 / 7.2 / 8.8
+  // each); sunny +6 each.
+  roaring_moon: {
+    ...paradox('roaring_moon', 'ancient', 'Dark', [28, 66, [29, 66]], 'gholdengo', ['mult', 'hand_type'], { mult: 4 }),
+    loc_vars(self, info_queue, card) {
+      tips(self, info_queue, card);
+      const ex = card.ability.extra, n = straights_played();
+      return { vars: [r3(ex.mult), r3(boost_add(ex.mult, true)), paradox_state(card), n, r3(boost_add(ex.mult, paradox_boosted(card)) * n)] };
+    },
+    calculate(self, card, context) {
+      if (paradox_read(card, context)) return undefined;
+      if (context.joker_main) { const m = r9(boost_add(card.ability.extra.mult, paradox_boosted(card)) * straights_played()); if (m > 0) return { message: a_mult(r3(m)), colour: 'MULT', mult_mod: m }; }
+      return undefined;
+    },
+  },
+  // Iron Valiant 1006 (Fairy, Future): each scored Queen or King X1.2 (`Xmult_multi` +5%); Electric Terrain X1.3.
+  iron_valiant: {
+    ...paradox('iron_valiant', 'future', 'Fairy', [0, 67, [1, 67]], 'roaring_moon', ['xmult', 'rank', 'face'], { Xmult_multi: 1.2 }),
+    loc_vars(self, info_queue, card) { tips(self, info_queue, card); return { vars: x_vars(card) }; },
+    calculate(self, card, context) { if (paradox_read(card, context)) return undefined; return per_card_x((c) => c.get_id() === 12 || c.get_id() === 13)(card, context); },
+  },
+  // Walking Wake 1009 (Water, Ancient): each scored Club X1.2 (`Xmult_multi` +5%); sunny X1.3.
+  walking_wake: {
+    ...paradox('walking_wake', 'ancient', 'Water', [6, 67, [7, 67]], 'iron_valiant', ['xmult', 'suit', 'clubs'], { Xmult_multi: 1.2 }),
+    loc_vars(self, info_queue, card) { tips(self, info_queue, card); return { vars: x_vars(card) }; },
+    calculate(self, card, context) { if (paradox_read(card, context)) return undefined; return per_card_x((c) => c.is_suit('Clubs'))(card, context); },
+  },
+  // Iron Leaves 1010 (Grass, Future): each scored Club X1.2 (`Xmult_multi` +5%); Electric Terrain X1.3.
+  iron_leaves: {
+    ...paradox('iron_leaves', 'future', 'Grass', [8, 67, [9, 67]], 'walking_wake', ['xmult', 'suit', 'clubs'], { Xmult_multi: 1.2 }),
+    loc_vars(self, info_queue, card) { tips(self, info_queue, card); return { vars: x_vars(card) }; },
+    calculate(self, card, context) { if (paradox_read(card, context)) return undefined; return per_card_x((c) => c.is_suit('Clubs'))(card, context); },
+  },
+  // Gouging Fire 1020 (Fire, Ancient): +1 discard each round (the Charmander pair, fixed) and X1.5 (`Xmult` +20%: 1.8 / 2.1 / 2.4); sunny X1.75.
+  gouging_fire: {
+    ...paradox('gouging_fire', 'ancient', 'Fire', [28, 67, [29, 67]], 'sinistcha', ['xmult', 'discard'], { d_size: 1, Xmult: 1.5 }),
+    ...discards,
+    loc_vars(self, info_queue, card) { tips(self, info_queue, card); const ex = card.ability.extra; return { vars: [ex.d_size, r3(ex.Xmult), r3(boost_x(ex.Xmult, true)), paradox_state(card)] }; },
+    calculate(self, card, context) {
+      if (paradox_read(card, context)) return undefined;
+      if (context.joker_main) return x_main(boost_x(card.ability.extra.Xmult, paradox_boosted(card)));
+      return undefined;
+    },
+  },
+  // Raging Bolt 1021 (Lightning, Ancient): X1, plus X0.25 for each hand left, this one included (`Xmult_mod` +20%: 0.3 / 0.35 / 0.4);
+  // sunny X0.375 each (the bonus part x1.5).
+  raging_bolt: {
+    ...paradox('raging_bolt', 'ancient', 'Lightning', [0, 68, [1, 68]], 'gouging_fire', ['xmult', 'hands'], { Xmult_mod: 0.25 }),
+    loc_vars(self, info_queue, card) {
+      tips(self, info_queue, card);
+      const ex = card.ability.extra;
+      return { vars: [r3(ex.Xmult_mod), r3(boost_add(ex.Xmult_mod, true)), paradox_state(card), r3(bolt_x(card, false, paradox_boosted(card)))] };
+    },
+    calculate(self, card, context) {
+      if (paradox_read(card, context)) return undefined;
+      if (context.joker_main) return x_main(bolt_x(card, true, paradox_boosted(card)));
+      return undefined;
+    },
+  },
+  // Iron Boulder 1022 (Earth, Future): the first scored card (by position; a debuffed one there scores nothing) X2 (`Xmult_multi` +5%:
+  // 2.1 / 2.2 / 2.3); Electric Terrain X2.5.
+  iron_boulder: {
+    ...paradox('iron_boulder', 'future', 'Earth', [2, 68, [3, 68]], 'raging_bolt', ['xmult', 'position'], { Xmult_multi: 2 }),
+    loc_vars(self, info_queue, card) { tips(self, info_queue, card); return { vars: x_vars(card) }; },
+    calculate(self, card, context) { if (paradox_read(card, context)) return undefined; return per_card_x((c, cx) => (cx.scoring_hand || [])[0] === c)(card, context); },
+  },
+  // Iron Crown 1023 (Metal, Future): each scored Spade X1.2 (`Xmult_multi` +5%); Electric Terrain X1.3.
+  iron_crown: {
+    ...paradox('iron_crown', 'future', 'Metal', [4, 68, [5, 68]], 'iron_boulder', ['xmult', 'suit', 'spades'], { Xmult_multi: 1.2 }),
+    loc_vars(self, info_queue, card) { tips(self, info_queue, card); return { vars: x_vars(card) }; },
+    calculate(self, card, context) { if (paradox_read(card, context)) return undefined; return per_card_x((c) => c.is_suit('Spades'))(card, context); },
+  },
+}, FILE);
+
 // ---------------------------------------------------------------- Gen 9, batch 4: the Gen 9 Legendaries (the owner's "yes", 2026-11-03)
 /** Wo-Chien, Tablets of Ruin: when a Blind is selected its chip requirement drops by RUIN_PCT% (fixed: Energy-inert). Queued after the
  *  setting_blind pass (and the blind's own setting_blind effects), so The Wall's x4 / Violet Vessel's x6 are in the number it cuts; Chicot's
@@ -10579,13 +10880,10 @@ function beads_of_ruin(card, context) {
   return true;
 }
 const beads_state = () => (G.GAME && G.GAME.blind && G.GAME.blind.boss && G.GAME.facing_blind ? (G.GAME.blind.disabled ? 'Boss disabled' : chicot_on() ? 'Chicot disables it' : 'Boss active') : 'Boss Blinds only');
-/** The Paradox side a joker is on ('ancient' / 'future'; PLACEHOLDER until the Paradox batch's badge lands). */
-const paradox_side = (j) => j.config.center.poke_paradox;
-/** Koraidon / Miraidon: the undebuffed Ancient / Future Paradox Jokers held (itself never: neither is a Paradox). */
-const paradox_count = (card, side) => ((G.jokers && G.jokers.cards) || []).filter((j) => j !== card && !j.debuff && paradox_side(j) === side).length;
+/** Koraidon / Miraidon: the undebuffed Ancient / Future Paradox Jokers held (the Paradox batch's era: paradox_era, the "Ancient" / "Future"
+ *  pill; itself never: neither is a Paradox). */
+const paradox_count = (card, side) => ((G.jokers && G.jokers.cards) || []).filter((j) => j !== card && !j.debuff && paradox_era(j) === side).length;
 const pulse_x = (card, side) => r9(card.ability.extra.Xmult + card.ability.extra.Xmult_mod * paradox_count(card, side));
-/** Miraidon, Hadron Engine: while an undebuffed one is held every round is ELECTRIC TERRAIN (live: bought or sold, it changes at once). */
-export const is_electric_terrain = () => legends('miraidon').length > 0; // (PLACEHOLDER: folds into the Paradox batch's is_electric_terrain at merge)
 /** Ogerpon's masks: one per Ante, cycling Teal -> Wellspring -> Hearthflame -> Cornerstone (Ante 1 Teal, 2 Wellspring, 3 Hearthflame,
  *  4 Cornerstone, 5 Teal...; an Ante below 1 keeps cycling backwards): DETERMINISTIC from G.GAME.round_resets.ante (Deerling's seasons),
  *  so nothing is rolled or saved and a resume / replay agrees. The ante goes up when the Boss is beaten, so the shop after a Boss already
@@ -10696,7 +10994,7 @@ defineJokers({
     name: 'koraidon', poke_sprite391: sprite('Natdex', 2, 67, [1, 67]),
     config: { extra: { Xmult: 2, Xmult_mod: 0.5 } },
     rarity: 4, cost: 20, stage: 'Legendary', ptype: 'Dragon', gen: 9, blueprint_compat: true,
-    attributes: ['xmult', 'weather', 'paradox'], poke_after: 'chiyu',
+    attributes: ['xmult', 'weather', 'paradox'], poke_after: 'iron_valiant',
     loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.Xmult), r3(ex.Xmult_mod), paradox_count(card, 'ancient'), r3(pulse_x(card, 'ancient'))] }; },
     calculate(self, card, context) { return context.joker_main ? x_main(pulse_x(card, 'ancient')) : undefined; },
   },
@@ -10719,7 +11017,7 @@ defineJokers({
     name: 'ogerpon', poke_sprite391: sprite('Gen09', 4, 4, [5, 4]),
     config: { extra: { mult: 30, hands: 1, Xmult: 1.5, Xmult2: 2.5, chips: 150 } },
     rarity: 4, cost: 20, stage: 'Legendary', ptype: 'Grass', gen: 9, blueprint_compat: true, poke_mono_exempt: true,
-    attributes: ['mult', 'xmult', 'chips', 'hands', 'types', 'ante'], poke_after: 'miraidon',
+    attributes: ['mult', 'xmult', 'chips', 'hands', 'types', 'ante'], poke_after: 'sinistcha',
     poke_view_form() { return mask_now(); },
     update(self, card) { ogerpon_sync(card); },
     loc_vars(self, info_queue, card) {
@@ -10991,6 +11289,10 @@ const TRADE_TEXT = (p) => ['{C:attention}Trade:{} evolves only together', 'with 
 const STEEL_TEXT = (n) => ['{C:attention}Steel{} cards held in hand', 'give {X:mult,C:white} X#' + n + '# {} Mult', 'instead of {X:mult,C:white} X1.5 {}', '{C:inactive,s:0.8}(Never stacks with Registeel,', '{C:inactive,s:0.8}Escavalier or Durant: the best wins)'];
 const TOP_NOTE = ['{C:inactive}(Aces high; a tie: the leftmost;', '{C:inactive}never a Stone or debuffed card)'];
 const SUN_NOTE = ['{C:inactive,s:0.8}(Sunny: Hearts + Diamonds held', '{C:inactive,s:0.8}most on the round\'s first deal,', '{C:inactive,s:0.8}a working Groudon, Volcarona', '{C:inactive,s:0.8}or Koraidon)'];
+/** The Paradox Pokémon's boost boxes (Gen 9 batch 3): Protosynthesis (Ancient: while it's sunny) and Quark Drive (Future: on Electric Terrain). */
+const PROTO = (v, n) => ['{C:poke_sun}Protosynthesis:{} while it\'s', '{C:poke_sun}sunny{}, ' + v + ' instead', '{C:inactive}(#' + n + '#)', ...SUN_NOTE];
+const TERRAIN_NOTE = ['{C:inactive,s:0.8}(Electric Terrain: more Diamonds', '{C:inactive,s:0.8}held than any other suit on', '{C:inactive,s:0.8}the round\'s first deal,', '{C:inactive,s:0.8}or Miraidon held)'];
+const QUARK = (v, n) => ['{C:attention}Quark Drive:{} on', '{X:poke_lightning,C:black}Electric Terrain{}, ' + v, 'instead', '{C:inactive}(#' + n + '#)', ...TERRAIN_NOTE];
 const MULTI_HIT_TEXT = ['{C:attention}Multi-hit:{} each hand hits', '{C:attention}2-5{} times {C:inactive}(rolled each hand)', '{C:mult}+#1#{} Mult per hit', '{C:inactive}(Last hand: {C:attention}#2#{C:inactive} hits)'];
 const STAKEOUT = (gain) => ['{C:attention}Stakeout:{} ' + gain + ' if the', 'poker hand differs from the', 'last poker hand played this run', '{C:inactive}(Last: {C:attention}#2#{C:inactive})'];
 const GALE_WINGS = (gain) => ['{C:attention}Gale Wings:{} the first hand', 'of each round gives ' + gain, '{C:inactive}(#2#)'];
@@ -11926,6 +12228,27 @@ export const DESIGN_LOC = {
       ['{C:attention}Hospitality:{} at end of', 'round, the Jokers directly left', 'and right of this one each', 'gain {C:money}$#1#{} of sell value'],
       ['{X:mult,C:white} X1 {} Mult, plus {X:mult,C:white} X#2# {}', 'for each {C:money}$1{} of sell value', 'of all your Jokers', '{C:inactive}(Currently {C:money}$#3#{C:inactive}: {X:mult,C:white} X#4# {C:inactive} Mult)'],
     ] },
+    // Gen 9, batch 3: the Paradox Pokémon (the owner's "yes", 2026-11-03)
+    j_poke_great_tusk: { name: 'Great Tusk', text: [['Each scored {C:attention}Stone{} card', 'gives {X:mult,C:white} X#1# {} Mult'], PROTO('{X:mult,C:white} X#2# {}', 3)] },
+    j_poke_scream_tail: { name: 'Scream Tail', text: [['Each scored {C:spades}Spade{} gives', '{C:mult}+#1#{} Mult'], PROTO('{C:mult}+#2#{} Mult', 3)] },
+    j_poke_brute_bonnet: { name: 'Brute Bonnet', text: [['{C:mult}+#1#{} Mult'], PROTO('{C:mult}+#2#{} Mult', 3)] },
+    j_poke_flutter_mane: { name: 'Flutter Mane', text: [['{X:mult,C:white} X#1# {} Mult'], PROTO('{X:mult,C:white} X#2# {}', 3)] },
+    j_poke_slither_wing: { name: 'Slither Wing', text: [['Each scored {C:hearts}Heart{} gives', '{X:mult,C:white} X#1# {} Mult'], PROTO('{X:mult,C:white} X#2# {}', 3)] },
+    j_poke_sandy_shocks: { name: 'Sandy Shocks', text: [['{C:chips}+#1#{} Chips for each', '{C:attention}Steel{} card in your', 'full deck', '{C:inactive}(Currently {C:chips}+#4#{C:inactive} Chips)'], PROTO('{C:chips}+#2#{} each', 3)] },
+    j_poke_iron_treads: { name: 'Iron Treads', text: [['{C:chips}+#1#{} Chips'], QUARK('{C:chips}+#2#{} Chips', 3)] },
+    j_poke_iron_bundle: { name: 'Iron Bundle', text: ['At end of round, creates', 'a random {C:tarot}Tarot{} or', '{C:planet}Planet{} card', '{C:inactive}(Must have room)'] },
+    j_poke_iron_hands: { name: 'Iron Hands', text: [['Each scored {C:attention}face{} card', 'gives {X:mult,C:white} X#1# {} Mult'], QUARK('{X:mult,C:white} X#2# {}', 3)] },
+    j_poke_iron_jugulis: { name: 'Iron Jugulis', text: [['{X:mult,C:white} X#1# {} Mult'], QUARK('{X:mult,C:white} X#2# {}', 3)] },
+    j_poke_iron_moth: { name: 'Iron Moth', text: [['Each scored {C:diamonds}Diamond{} gives', '{X:mult,C:white} X#1# {} Mult'], QUARK('{X:mult,C:white} X#2# {}', 3)] },
+    j_poke_iron_thorns: { name: 'Iron Thorns', text: [['Each scored {C:attention}Stone{} card', 'gives {C:chips}+#1#{} Chips'], QUARK('{C:chips}+#2#{} Chips', 3)] },
+    j_poke_roaring_moon: { name: 'Roaring Moon', text: [['{C:mult}+#1#{} Mult for each', '{C:attention}Straight{} played this run', '{C:inactive}(Straight Flush counts)', '{C:inactive}(Currently #4#: {C:mult}+#5#{C:inactive} Mult)'], PROTO('{C:mult}+#2#{} each', 3)] },
+    j_poke_iron_valiant: { name: 'Iron Valiant', text: [['Each scored {C:attention}Queen{}', 'or {C:attention}King{} gives', '{X:mult,C:white} X#1# {} Mult'], QUARK('{X:mult,C:white} X#2# {}', 3)] },
+    j_poke_walking_wake: { name: 'Walking Wake', text: [['Each scored {C:clubs}Club{} gives', '{X:mult,C:white} X#1# {} Mult'], PROTO('{X:mult,C:white} X#2# {}', 3)] },
+    j_poke_iron_leaves: { name: 'Iron Leaves', text: [['Each scored {C:clubs}Club{} gives', '{X:mult,C:white} X#1# {} Mult'], QUARK('{X:mult,C:white} X#2# {}', 3)] },
+    j_poke_gouging_fire: { name: 'Gouging Fire', text: [['{C:red}+#1#{} discard each round', '{X:mult,C:white} X#2# {} Mult'], PROTO('{X:mult,C:white} X#3# {}', 4)] },
+    j_poke_raging_bolt: { name: 'Raging Bolt', text: [['{X:mult,C:white} X1 {} Mult, plus {X:mult,C:white} X#1# {}', 'for each hand left,', 'this one included', '{C:inactive}(Currently {X:mult,C:white} X#4# {C:inactive} Mult)'], PROTO('{X:mult,C:white} X#2# {} each', 3)] },
+    j_poke_iron_boulder: { name: 'Iron Boulder', text: [['The first scored card', 'gives {X:mult,C:white} X#1# {} Mult'], QUARK('{X:mult,C:white} X#2# {}', 3)] },
+    j_poke_iron_crown: { name: 'Iron Crown', text: [['Each scored {C:spades}Spade{} gives', '{X:mult,C:white} X#1# {} Mult'], QUARK('{X:mult,C:white} X#2# {}', 3)] },
     // Gen 9, batch 4: the Gen 9 Legendaries (the owner's "yes", 2026-11-03)
     j_poke_wochien: { name: 'Wo-Chien', text: ['{C:attention}Tablets of Ruin:{} every', '{C:attention}Blind{}\'s score requirement', 'is {C:attention}#1#%{} lower', '{C:inactive}(Copies don\'t stack)', '{C:inactive}(#2#)'] },
     j_poke_chienpao: { name: 'Chien-Pao', text: ['{C:attention}Sword of Ruin:{} every', 'scored card gives', '{X:mult,C:white} X#1# {} Mult'] },

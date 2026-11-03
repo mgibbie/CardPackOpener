@@ -78,6 +78,8 @@ import './consumables/mart1.js';
 import './consumables/mart2.js';
 import './boosters/packs1.js';
 import './jokers/zzzapril_fools.js';
+// The owner's Paradox content (Gen 9 batch 3): the Paradox Ball, the Ancient / Future Packs (the 20 jokers are in jokers/pokejokers_designs.js)
+import { PARADOX_LOC, PARADOX_DICTIONARY, PARADOX_LOC_COLOURS, PACK_COLOURS, paradox_pack_open } from './paradox.js';
 import { DESIGN_FAMILIES, DESIGN_LOC, regi_chip_bonus, regi_h_x_mult, regi_enh_vars, slot_cost_removed, drifblim_destroyed, contrary_lifts, mummy_sell,
   freeze_keep, freeze_thaw, frozen_by, spore_first_deal, spore_hand_scored, malamar_chip_bonus, prank_reroll_cost, prank_reroll_shop, prank_shop_start,
   pyukumuku_destroyed, pheromosa_rest, komala_destroy_immune, GALAR_UPSTREAM_TEXT, GALAR_FAMILY_REV, rime_final_deal,
@@ -147,6 +149,10 @@ const ATLAS_FILES = {
   // white JOKER card and the overworld item icons (PORTING.md "Batch 17").
   rage_candy_bar: ['rage_candy_bar.png'],
   repel: ['repel.png'],
+  // The owner's Paradox content (Gen 9 batch 3, paradox.js), composed by tools/micatro/compose_pokermon_paradox_art.py (owner rule: no
+  // placeholders): the Paradox Ball's Item card (the Ultra Ball card restyled) and the Ancient / Future Packs (2 rows: Normal x2, Jumbo, Mega).
+  paradox_ball: ['paradox_ball.png'],
+  paradox_packs: ['paradox_packs.png'],
 };
 for (const g of ['Gen01', 'Gen02', 'Gen03', 'Gen04', 'Gen05', 'Gen06', 'Gen07', 'Gen08', 'Gen09', 'Natdex', 'Others']) {
   ATLAS_FILES['AtlasJokersBasic' + g] = ['Basic Series/AtlasJokersBasic' + g + '.png'];
@@ -540,6 +546,9 @@ for (const [k, d] of Object.entries(D391.loc)) {
 }
 // The owner's designs' text (jokers/pokejokers_designs.js DESIGN_LOC)
 for (const [set, d] of Object.entries(DESIGN_LOC)) Object.assign(DATA.loc.descriptions[set] = DATA.loc.descriptions[set] || {}, d);
+// ... and the Paradox Ball's and the Ancient / Future Packs' (paradox.js; a pack's group name is a dictionary entry)
+for (const [set, d] of Object.entries(PARADOX_LOC)) Object.assign(DATA.loc.descriptions[set] = DATA.loc.descriptions[set] || {}, d);
+DATA.loc.misc.dictionary = Object.assign(DATA.loc.misc.dictionary || {}, PARADOX_DICTIONARY);
 // (Gen 8 batch 3: the Galarian evolutions of Linoone / Corsola / Mr. Mime / Farfetch'd — a box after their own 3.9.1 text)
 for (const [k, lines] of Object.entries(GALAR_UPSTREAM_TEXT)) {
   const e = DATA.loc.descriptions.Joker[k];
@@ -816,6 +825,9 @@ const hooks = {
     if (G.scry_view && scry_visible()) view.areas.scry = scry_view.cards.map((c) => { const v = cardView(c); delete v.facing; delete v.hl; return v; });
     view.poke = { scry_amount: G.GAME.scry_amount || 0, energies_used: G.GAME.energies_used || 0 };
     view.run_badges = runbadge_view();
+    // (an Ancient / Future Pack open: its own pack-screen colours, amber / steel blue; paradox.js)
+    const pp = /^MOD_PACK/.test(view.state || '') && paradox_pack_open();
+    if (pp) view.pack_colours = PACK_COLOURS[pp];
   },
 };
 
@@ -1078,7 +1090,14 @@ export const POKERMON = registerMod({
   // Orthworm (Earth Eater), Glimmet / Glimmora (Toxic Debris: Hazards), Flamigo, Veluza (Fillet Away), Dondozo (Commander, with Tatsugiri),
   // Poltchageist / Sinistcha (Hospitality) and a NEW EVOLUTION: Wooper -> Clodsire (a Dark Energy used on it; Poison Point), gated by
   // rulesRev (systems/energy.js GEN9B2_REV; FAMILY_MEMBER_REV), so runs recorded before r77 replay as recorded.
-  contentRev: 77,
+  // 78 = Gen 9 batch 3, the owner's Paradox Pokémon (jokers/pokejokers_designs.js, #984-1023): 20 single-stage jokers of a new rarity, Paradox
+  // (weight 0, Safari's way: never a shop roll, never a Poké Ball's), each Ancient (Protosynthesis: 50% stronger while it's sunny) or Future
+  // (Quark Drive: 50% stronger on Electric Terrain, the house terrain: is_electric_terrain); the Paradox Ball and the Ancient / Future Packs
+  // (paradox.js) are their only sources. New content only: no older rule changes.
+  // 79 = Gen 9 batch 4, the Gen 9 Legendaries (jokers/pokejokers_designs.js, #1001-1017), each complete alone: Wo-Chien (every Blind 15%
+  // lower), Chien-Pao (scored cards X1.1), Ting-Lu (+2 hands in Boss Blinds), Chi-Yu (Boss Blinds disabled), Koraidon (always sunny) and
+  // Miraidon (always Electric Terrain; X2 + X0.5 per Paradox of their era), Ogerpon (a mask an Ante). New content only.
+  contentRev: 79,
   // Pokermon 3.9.1 pokermon.lua: SMODS.current_mod.optional_features = {quantum_enhancements = true, object_weights = true}.
   // object_weights sends create_card's key, the shop roll, tags, packs, bosses and vouchers through SMODS.poll_object
   // (js/engine/smods.js; batch 17). quantum_enhancements is the engine's check_enhancement, always on.
@@ -1134,10 +1153,14 @@ export const POKERMON = registerMod({
       poke_fairy: '#ff3db6', poke_fighting: '#b85838', poke_colorless: '#c8c0f8', poke_psychic: '#c135ff', poke_metal: '#888080',
       poke_grass: '#289830', poke_dragon: '#c8a800', poke_bird: '#f7b58c', poke_pink: '#ff7abf', poke_pocket: '#e8c069',
       poke_hazard: '#ba7333', poke_sun: '#f48e62', poke_rain: '#6169ff', poke_sand: '#e1c019', poke_snow: '#82c8e8',
+      ...PARADOX_LOC_COLOURS, // (the owner's Paradox pills: {X:poke_paradox} / {X:poke_ancient} / {X:poke_future}, paradox.js)
     },
     rarities: [
       { key: 'poke_safari', name: 'Safari', weight: 0, badge_colour: '#F2C74E' },
       { key: 'poke_mega', name: 'Mega', weight: 0, badge_colour: '#E8578E' },
+      // The owner's Paradox rarity (Gen 9 batch 3): Safari's way, weight 0 (never a shop roll); only the Paradox Ball and the Ancient / Future
+      // Packs make one (paradox.js). Its jokers carry a second pill, Ancient or Future (jokers/pokejokers_designs.js paradox_badges).
+      { key: 'poke_paradox', name: 'Paradox', weight: 0, badge_colour: PARADOX_LOC_COLOURS.poke_paradox },
     ],
     atlases,
     loc: DATA.loc,
