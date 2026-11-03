@@ -230,6 +230,15 @@ export const GEN8_FORM_SPRITES = {
   j_poke_indeedee: { female: { x: 14, y: 8 } },
   j_poke_morpeko: { hangry: { x: 2, y: 9 } },
 };
+/**
+ * Gen 9 batch 1's form (the owner's, jokers/pokejokers_designs.js): Squawkabilly's plumage, rolled when it is obtained (card.ability.poke_plumage,
+ * its center's poke_view_form). Upstream 3.9.1 draws all four on the Gen 9 sheet, UNLISTED beside its own Green card ({8,0}, the one
+ * pokespriteload.lua lists): Blue {0,1}, Yellow {2,1}, White {4,1}. Drawn by ui.js ownFace (+ the Shiny sheet's twins). Each cell's type icon
+ * is Colorless (pokermon_gen9_batch1_test 'art').
+ */
+export const GEN9_FORM_SPRITES = {
+  j_poke_squawkabilly: { blue: { x: 0, y: 1 }, yellow: { x: 2, y: 1 }, white: { x: 4, y: 1 } },
+};
 export function view_card(card, v) {
   const c = card.config.center;
   const ex = card.ability.extra;

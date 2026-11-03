@@ -33,7 +33,7 @@ import { family_display_key } from './systems/precedence.js';
 import { TYPE_COLOURS } from './systems/types.js';
 import { KECLEON_ATLAS, KECLEON_SPRITES, CASTFORM_SPRITES, CHERRIM_SPRITES, GIRATINA_ORIGIN, CLOAK_ATLAS, BURMY_SPRITES, DEOXYS_SOULS, IMPOSTER_REVEALED, SERIES_A_ANIM } from './systems/anim.js';
 import D391 from './data391.js';
-import { SEA_ATLAS, SEA_SPRITES, BASCULIN_SPRITES, GEN5_LEGEND_FORMS, SEASON_SPRITES, GEN6_FORM_SPRITES, GEN6_LEGEND_FORMS, GEN7_FORM_SPRITES, GEN7_LEGEND_FORMS, GEN8_FORM_SPRITES, GEN8_LEGEND_FORMS, GEN9_LEGEND_FORMS } from './systems/anim.js';
+import { SEA_ATLAS, SEA_SPRITES, BASCULIN_SPRITES, GEN5_LEGEND_FORMS, SEASON_SPRITES, GEN6_FORM_SPRITES, GEN6_LEGEND_FORMS, GEN7_FORM_SPRITES, GEN7_LEGEND_FORMS, GEN8_FORM_SPRITES, GEN8_LEGEND_FORMS, GEN9_FORM_SPRITES, GEN9_LEGEND_FORMS } from './systems/anim.js';
 
 const MOD = 'pokermon';
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -371,6 +371,9 @@ function ownFace(d0) {
   // Gen 8 batch 1 (the owner's): Cramorant's Gulping Form while a missile is loaded (the Gen 8 sheet)
   const g8 = p && GEN8_FORM_SPRITES[d.center] && GEN8_FORM_SPRITES[d.center][p.form];
   if (g8) return { ...d, atlas: P_CENTERS[d.center].atlas, pos: g8 };
+  // Gen 9 batch 1 (the owner's): Squawkabilly's plumage (the Gen 9 sheet)
+  const g9 = p && GEN9_FORM_SPRITES[d.center] && GEN9_FORM_SPRITES[d.center][p.form];
+  if (g9) return { ...d, atlas: P_CENTERS[d.center].atlas, pos: g9 };
   // Unown: its form's letter floats over the card
   const u = withUnownForm(d);
   return u === d0 ? null : u;
