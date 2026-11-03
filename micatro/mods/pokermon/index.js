@@ -1052,7 +1052,10 @@ export const POKERMON = registerMod({
   // (an Energy of a set type used on it: systems/energy.js energy_evo_target), Farfetch'd -> Sirfetch'd (3 Lucky triggers in a round),
   // Yamask -> Runerigus (10 Stones scored), Basculin -> Basculegion (25 cards of its stripe). Those evolutions (and the lines' new members,
   // systems/evolution.js FAMILY_MEMBER_REV) are gated by rulesRev, so runs recorded before r72 replay as recorded.
-  contentRev: 72,
+  // 73 = the owner's tweaks (2026-11-03): Malamar's scored 2, 3, 4 and 5 also give X1.25 (`Xmult_multi`, it now takes Energy), Morgrem keeps
+  // Impidimp's $1 reroll discount, Sandaconda keeps Silicobra's Sand Spit. Each gated by rulesRev (malamar_x73 / prank_discount73 /
+  // sand_spit73), so runs recorded before r73 replay as recorded.
+  contentRev: 73,
   // Pokermon 3.9.1 pokermon.lua: SMODS.current_mod.optional_features = {quantum_enhancements = true, object_weights = true}.
   // object_weights sends create_card's key, the shop roll, tags, packs, bosses and vouchers through SMODS.poll_object
   // (js/engine/smods.js; batch 17). quantum_enhancements is the engine's check_enhancement, always on.
