@@ -113,7 +113,7 @@ species on 2026-10-28):
   Fighting 23, Fairy 22, Dragon 19, Metal 16
 
 Missing by stage:
-  Basic 201, Stage 1 131, Stage 2 42, Legendary 70, Baby 1 (Toxel)
+  Basic 201, Stage 1 131, Stage 2 42, Legendary 70, Baby 1 (Toxel; built in Gen 8 batch 2, none left)
 
 Notable gaps:
   - Starters: every Gen 5-9 starter line was missing (15 lines, 45 species). Gen 4 is covered
@@ -1079,6 +1079,37 @@ House pattern: the WATER team count (the Gen 8 Chewtle line; water_count): Cutie
 House pattern: FORESEEN cards as a stage ladder (the Gen 8 Blipbug line): +1 / +2 / +3 Foresight (the Shinx `scry` pair, fixed); Dottler
   each Foreseen card +4 Mult (Patrat's Lookout shape, `mult` +40%), Orbeetle X1.15 each (Uxie's shape, `Xmult_multi` +5%). Blipbug has no
   number and carries Dottler's `mult` ("Energy carries to Dottler").
+House pattern: a ROLLED FORM BY PLAYED-CARD COUNT (the Gen 8 Toxtricity, Amped / Low Key; tox_roll / punk_rock): the form is rolled when
+  OBTAINED (Glameow's add_to_deck rule, never on creation, 50 / 50 on 'toxtricity_form'), kept on card.ability.poke_tox_form (Steamodded's
+  set_ability keeps ability fields, so a Toxel evolving into it rolls right then: set_ability runs the new center's add_to_deck). The two
+  forms pay on opposite ends of the PLAYED count (full_hand: kickers count, scoring doesn't): Amped X2 on exactly 5, Low Key +40 Chips per card
+  fewer than 5. One energy field per form (`Xmult`, `chips`), both raised by every Energy. Art: the Low Key cell is the unlisted neighbour
+  ({8,0} beside {6,0}; GEN8_FORM_SPRITES via poke_view_form); per-form loc keys, the unobtained card lists both.
+House pattern: a BABY WITH A NUMBER (the Gen 8 Toxel): the Baby faint rule (faint_baby_poke in joker_main; the fainted round doesn't count toward
+  evolving) without the usual X0.75 penalty, because its effect IS the number (+4 Mult). Toxel evolves after 3 rounds (the owner's; other Babies
+  2) into a shop-able Basic (R $7), the baby->basic convention (Pichu -> Pikachu, Riolu -> Lucario).
+House pattern: a BURN BANK on the first discard (the Gen 8 Sizzlipede line, Fire Spin; fire_spin): Carnivine's Flytrap moment and destroy
+  (`{ remove: true }`, so every remove_playing_cards payoff fires) with its OWN mark list on the card (poke_burned_by), so two burners (a Carnivine
+  and a Sizzlipede, or two copies) on the same first card each bank while the card is destroyed once. The Basic banks +Mult (`burn_mult`, gain
+  `mult_mod`), the Stage 1 banks X (`burn_Xmult` from X1, gain `Xmult_mod`) and keeps scoring the carried Mult (poke_custom_values_to_keep).
+House pattern: HELD CARDS SHARING A SCORED RANK (the Gen 8 Clobbopus line, Octolock; scored_ranks / octo_held): the ranks of the scoring hand's
+  undebuffed ranked cards (a kicker's rank doesn't count), matched against cards held in hand (undebuffed, ranked: Stone never). The Basic counts
+  them at joker_main (+2 Mult each, `mult`), the Stage 1 pays in the held pass (X1.25 each, `Xmult_multi`: Baron's shape, Mime repeats it).
+House pattern: a RARE TRAIT with FIXED odds (the Gen 8 Sinistea line, Phony / Antique; tea_roll): rolled when obtained, 1 in 10, a plain seeded
+  roll ('sinistea_antique') — not pseudorandom_probability, so Oops! All 6s / Absol never touch it (a trait of the card, not a chance effect). On
+  card.ability (poke_tea), so evolution keeps it. Antique doubles the X, derived (2 x `Xmult`: one field scales both). Upstream draws no Antique
+  cell: the card stays the same, the tooltip says "Antique!".
+House pattern: a TERA CONVERTER to its right (the Gen 8 Hatterene, Magic Powder; magic_powder): when a Blind is selected (once a round; not
+  Blueprint) the Joker directly to its RIGHT gets the joker's type as a Tera sticker (apply_type_sticker, any joker: a non-Pokémon one takes it)
+  unless it is that type already (is_type: Arceus is skipped). It feeds its own team count (X1 + X0.25 per Psychic Joker, itself included): a
+  converted neighbour counts from that Blind on. The row order is the decision.
+House pattern: REROLL PRICES (the Gen 8 Impidimp line, Prankster; prank_reroll_cost / prank_reroll_shop / prank_shop_start, index.js hooks
+  reroll_cost / reroll_shop / shop_start): a reroll_cost hook adjusts calculate_reroll_cost's result — Impidimp -$1 per copy on a PAID reroll,
+  never below $1 (a free one stays free); Morgrem / Grimmsnarl make the shop's FIRST reroll $0 (counted from shop_start; one however many are held,
+  and never on top of another free reroll: Chaos the Clown's / Bidoof's / a D6 Tag's $0 already is the first). The reroll_shop hook spends a
+  Prankster-free reroll as one of the engine's free rerolls (cr.free_rerolls + 1 before the reroll's event), so like Chaos it never steps the price
+  up ($0, $5, $6). add_to_deck / remove_from_deck queue a recalculation (bought or sold mid-shop, the price changes at once). Grimmsnarl banks X0.1
+  per reroll (context.reroll_shop, free ones too); the Basic and Stage 1 carry its `Xmult_mod` ("Energy carries to Grimmsnarl").
 House pattern: a NEW EVOLUTION FOR AN EXISTING JOKER (the owner's Gen 8 batch 3: the Galarian / Hisuian forms of Linoone, Corsola,
   Farfetch'd, Mr. Mime, Yamask and Basculin — an owner-approved exception to "base Pokermon wins"):
   - The old joker keeps every number, rarity, cost and rule it had; the new path is ADDED (its text as a new box after the 3.9.1 text,
@@ -1278,6 +1309,7 @@ Baby Pokemon (rules.js faint_baby_poke):
     Azurill, Wynaut, Chingling and Mantyke create a Negative tarot. Budew creates a Negative
     Miracle Seed. Smoochum and Elekid create a Tag when they evolve. Magby gives +1 discard.
   - Baby rarity is U $4, or C $3 for the money/tarot ones.
+  - House: the Gen 8 Toxel (U $4) is a Baby WITH A NUMBER (+4 Mult, no X0.75 penalty; the faint rule kept), 3 rounds (2.1).
 
 2.4 Energy and energize (systems/energy.js)
 -------------------------------------------
@@ -1330,7 +1362,11 @@ the Gen 8 batch 1 fixed fields: taxi_money (the Rookidee line's $), card_slots (
 (Eldegoss), hands (Dubwool's Boss hand), d_size (Coalossal), num / dem (Silicobra's 1 in 4); the states missile / load_round / firing
 (Cramorant) and guard_round (Dubwool). Carried for the next stage: Rookidee / Corvisquire `Xmult` (Corviknight's), Blipbug `mult`
 (Dottler's), Rolycoly `mult` (Carkol's), Silicobra `chips` (Sandaconda's). Two energy fields on one number pair: Sandaconda's Stone
-`chips` and `Xmult_multi`.
+`chips` and `Xmult_multi`;
+the Gen 8 batch 2 fixed fields: reroll_discount (Impidimp's $1), num / dem (the Antique 1 in 10), the forms poke_tox_form / poke_tea (on
+card.ability), the banks burn_mult / burn_Xmult / prank_Xmult (their gains mult_mod / Xmult_mod are energized), the state burn_round. Carried
+for the next stage: Impidimp / Morgrem `Xmult_mod` (Grimmsnarl's). Two energy fields on one number pair: Toxtricity's Amped `Xmult` and Low Key
+`chips`;
 the Gen 8 batch 3 fixed fields: perish_rounds (Cursola), card_limit / tarot_money / gender (Indeedee), steel_money (Copperajah),
 ancient_money / retriggers / hands / hand_round (the Galar fossils), form (Eiscue's face, Morpeko's mode, Alcremie's 63 Sweet x Cream),
 the counters lucky_round / lucky_count (Farfetch'd / Sirfetch'd), stones_scored (Yamask), stripe_scored (Basculin), snow_round (Eiscue).

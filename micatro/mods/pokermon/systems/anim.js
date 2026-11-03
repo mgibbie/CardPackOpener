@@ -192,6 +192,9 @@ export const GEN7_FORM_SPRITES = {
  */
 export const GEN8_FORM_SPRITES = {
   j_poke_cramorant: { gulping: { x: 2, y: 0 } },
+  // Gen 8 batch 2: Toxtricity's Low Key Form, beside its Amped card ({6,0}, the one pokespriteload.lua lists) on the Gen 8 sheet; by the form
+  // rolled when it was obtained (card.ability.poke_tox_form, its center's poke_view_form). Its type icon is Lightning too.
+  j_poke_toxtricity: { lowkey: { x: 8, y: 0 } },
   // Gen 8 batch 3 (the owner's, jokers/pokejokers_designs.js), all UNLISTED beside each one's own card: Alcremie's 63 Sweet x Cream forms
   // (ability.extra.form 0-62, sweet-major, nine creams each: {10,0} {12,0} {14,0}, rows 1-7 x 0-14, row 8 x 0-6; form 0 is its own card
   // {10,0}), Eiscue's Noice Face {10,8} beside its Ice Face {8,8}, Indeedee's ♀ {14,8} beside its ♂ {12,8} (poke_view_form: its gender) and

@@ -79,7 +79,7 @@ import './consumables/mart2.js';
 import './boosters/packs1.js';
 import './jokers/zzzapril_fools.js';
 import { DESIGN_FAMILIES, DESIGN_LOC, regi_chip_bonus, regi_h_x_mult, regi_enh_vars, slot_cost_removed, drifblim_destroyed, contrary_lifts, mummy_sell,
-  freeze_keep, freeze_thaw, frozen_by, spore_first_deal, spore_hand_scored, malamar_chip_bonus,
+  freeze_keep, freeze_thaw, frozen_by, spore_first_deal, spore_hand_scored, malamar_chip_bonus, prank_reroll_cost, prank_reroll_shop, prank_shop_start,
   pyukumuku_destroyed, pheromosa_rest, komala_destroy_immune, GALAR_UPSTREAM_TEXT, GALAR_FAMILY_REV, rime_final_deal,
   jokers_gone_count } from './jokers/pokejokers_designs.js';
 
@@ -687,7 +687,11 @@ const hooks = {
   keep_in_hand: freeze_keep,
   play_pressed() { freeze_thaw(G.hand.highlighted); },
   discard_card(c) { freeze_thaw([c]); },
-  shop_start: RB.shop_start,
+  // (+ the owner's Impidimp line, Prankster (Gen 8 batch 2): each shop counts its rerolls from here; the reroll cost takes Impidimp's $1 off a
+  // paid reroll (never below $1) and Morgrem / Grimmsnarl make the shop's FIRST reroll free — jokers/pokejokers_designs.js prank_*)
+  shop_start() { const r = RB.shop_start(); prank_shop_start(); return r; },
+  reroll_cost: prank_reroll_cost,
+  reroll_shop: prank_reroll_shop,
   // (Kecleon takes the type of the joker to its right: its Lua update runs every frame; ours also when the joker row changes)
   emplace(area, card, ...rest) { const r = RB.emplace(area, card, ...rest); if (area === G.jokers) sync_kecleon(); return r; },
   reordered(area) { if (area === G.jokers) { sync_kecleon(); RB.reordered(); } },
@@ -1038,6 +1042,10 @@ export const POKERMON = registerMod({
   // Dottler / Orbeetle (Foresight), Gossifleur / Eldegoss (Cotton Down: Seeds), Wooloo / Dubwool (Cotton Guard: +1 hand on Boss Blinds), Chewtle
   // / Drednaw (Water team), Rolycoly / Carkol / Coalossal (Stone each Blind), Silicobra / Sandaconda (Sand Spit; the house sandstorm,
   // is_sandstorm), Cramorant (Gulp Missile) and Arrokuda / Barraskewda (Propeller Tail).
+  // 71 = Gen 8 batch 2 (jokers/pokejokers_designs.js, #848-861): Toxel / Toxtricity (Amped / Low Key, rolled when obtained), Sizzlipede /
+  // Centiskorch (Fire Spin: the first discarded card burns), Clobbopus / Grapploct (Octolock: held cards sharing a scored rank), Sinistea /
+  // Polteageist (Phony / Antique), Hatenna / Hattrem / Hatterene (Psychic team; Magic Powder: a Psychic Tera to its right each Blind) and
+  // Impidimp / Morgrem / Grimmsnarl (Prankster: cheaper / free rerolls; hooks reroll_cost / reroll_shop / shop_start).
   // 72 = Gen 8 batch 3 (jokers/pokejokers_designs.js, #862-902): Milcery / Alcremie (Decorate; Whipped Cream), Falinks (Formation), Pincurchin
   // (Lightning Rod), Snom / Frosmoth (Glass), Eiscue (Ice Face), Indeedee (♂ / ♀), Morpeko (Hunger Switch), Cufant / Copperajah (Steel), the
   // Galar fossils (Ancient Jacks) and six NEW EVOLUTIONS of existing jokers: Linoone -> Obstagoon, Corsola -> Cursola, Mr. Mime -> Mr. Rime

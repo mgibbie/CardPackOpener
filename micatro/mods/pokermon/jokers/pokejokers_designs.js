@@ -184,6 +184,12 @@
 // house SANDSTORM, is_sandstorm; Stone +20 Chips and X1.2), Cramorant (Water; Gulp Missile: the first discard loads X2.5 for the next hand)
 // and Arrokuda -> Barraskewda (Water; Propeller Tail: the first scored card +10 Mult / X2) — upstream 3.9.1 draws them all (Natdex
 // {20,54}-{12,56}; Cramorant Gen 8 {0,0}, Gulping {2,0}).
+// Gen 8, batch 3 (contentRev 72; the owner's "yes build it", 2026-11-02), 21 jokers #862-902: Milcery -> Alcremie (Fairy; Decorate: edition cards
+// +5 Mult; Whipped Cream: a deck card Foil / Holo each Blind), Falinks (Fighting; Formation), Pincurchin (Lightning; Lightning Rod), Snom ->
+// Frosmoth (Water; Glass), Eiscue (Water; Ice Face / Noice Face), Indeedee (Psychic; ♂ / ♀), Morpeko (Lightning; Hunger Switch), Cufant ->
+// Copperajah (Metal; Steel), the Galar fossils (Ancient Jacks) and six NEW EVOLUTIONS of existing jokers, gated by rules rev 72: Linoone ->
+// Obstagoon, Corsola -> Cursola, Mr. Mime -> Mr. Rime (an Energy of a set type), Farfetch'd -> Sirfetch'd (3 Lucky triggers in a round),
+// Yamask -> Runerigus (10 Stones), Basculin -> Basculegion (25 stripe cards) — upstream 3.9.1 draws them all (Natdex {12,57}-{24,58}; Gen 8).
 import {
   G, P_CENTERS, P_CENTER_POOLS, localize, card_eval_status_text, play_sound, pseudorandom, pseudoseed, pseudorandom_element, ease_hands_played,
   create_card, copy_card, playing_card_joker_effects, defineJokers, type_tooltip, level_evo, scaling_evo, item_evo,
@@ -192,11 +198,11 @@ import {
   add_card, detailed, energy_values, poke_remove_card, ease_dollars, ease_discard, juice_card_until, find_card, get_total_energy, POST_EVOLVE, can_evolve,
   poke_change_growth_level,
   poke_get_adjacent_jokers, emit, find_joker, poke_drain, level_up_hand, poke_evolve, increment_energy, can_increase_energy, smods_debuff_card, blueprint_compat_line,
-  can_be_destroyed_by_joker, change_shop_size,
+  can_be_destroyed_by_joker, change_shop_size, faint_baby_poke,
 } from '../api.js';
 import { blueprint_effect } from './pokejokers_08.js';
 import * as BN from '../../../js/engine/bignum.js'; // the Blind's requirement (Poison Gas) may be a big number in modded runs
-import { number_format } from '../../../js/engine/core.js';
+import { number_format, calculate_reroll_cost } from '../../../js/engine/core.js';
 import { rulesRev } from '../../../js/mods/pins.js';
 import { odds_text } from '../../../js/engine/odds.js';
 
@@ -8795,6 +8801,336 @@ defineJokers({
   },
 }, FILE);
 
+// ---------------------------------------------------------------- Gen 8, batch 2 (contentRev 71; the owner's "go ahead with batch 2", 2026-11-02), #848-861
+/** Toxtricity's form, Amped or Low Key: rolled when OBTAINED (Glameow's rule: in add_to_deck, never on creation, so a shop / collection card
+ *  never moves the seeded stream), 50 / 50 on the run's seeded 'toxtricity_form'. Held on card.ability (not ability.extra): Steamodded's
+ *  set_ability keeps ability fields the new center doesn't set, so it rides through copies, and a Toxel evolving into it rolls it right then
+ *  (set_ability runs the new center's add_to_deck). The unobtained card says "(Form: rolled when obtained)". */
+export const TOX_FORMS = ['amped', 'lowkey'];
+export const tox_form = (card) => (TOX_FORMS.includes(card.ability.poke_tox_form) ? card.ability.poke_tox_form : null);
+function tox_roll(card) {
+  if (!tox_form(card)) card.ability.poke_tox_form = pseudorandom(pseudoseed('toxtricity_form')) < 0.5 ? 'amped' : 'lowkey';
+}
+/** Toxtricity: Amped (Punk Rock) X Xmult on a hand of exactly 5 PLAYED cards (full_hand: the kickers count, scoring doesn't matter); Low Key
+ *  +chips for each card fewer than 5 played (1 card: 4 x). Both numbers are energy fields, so Energy raises the form it doesn't have too. */
+function punk_rock(card, context) {
+  if (!context.joker_main) return undefined;
+  const n = (context.full_hand || G.play.cards).length, ex = card.ability.extra, f = tox_form(card);
+  if (f === 'amped' && n === 5) return { message: a_xmult(r3(ex.Xmult)), colour: 'XMULT', Xmult_mod: ex.Xmult };
+  if (f === 'lowkey' && n < 5) { const c = r3(ex.chips * (5 - n)); return { message: a_chips(c), colour: 'CHIPS', chip_mod: c }; }
+  return undefined;
+}
+/** Sizzlipede / Centiskorch, Fire Spin: Carnivine's Flytrap (the round's FIRST player discard: pre_discard, no hook, discards_used 0, once a
+ *  round, `burn_round`; its LEFTMOST card) destroyed in its own discard pass ({ remove: true }: dissolved, a Glass card shatters, every
+ *  joker's remove_playing_cards runs). Its own mark list (poke_burned_by), so a Carnivine and a Sizzlipede (or two Sizzlipedes) on the same
+ *  card each take it — the card is destroyed once, each joker banks. Sizzlipede banks +mult_mod Mult (`burn_mult`), Centiskorch X Xmult_mod
+ *  (`burn_Xmult`, from X1) and keeps scoring the Mult it carried. Not Blueprint (the burn / gain); a Blueprint copies the score. */
+function fire_spin(card, context, x) {
+  const ex = card.ability.extra;
+  if (context.pre_discard && !context.hook && !context.blueprint && !context.retrigger_joker && context.full_hand && context.full_hand.length
+    && G.GAME.current_round.discards_used === 0 && ex.burn_round !== G.GAME.round) {
+    ex.burn_round = G.GAME.round;
+    const c = context.full_hand[0];
+    c.poke_burned_by = (c.poke_burned_by || []).concat([card]);
+    return undefined;
+  }
+  if (context.discard && !context.blueprint && context.other_card && context.other_card.poke_burned_by && context.other_card.poke_burned_by.includes(card)) {
+    const c = context.other_card;
+    c.poke_burned_by = c.poke_burned_by.filter((j) => j !== card);
+    if (!c.poke_burned_by.length) c.poke_burned_by = undefined;
+    if (x) ex.burn_Xmult = r3(ex.burn_Xmult + ex.Xmult_mod);
+    else ex.burn_mult = r3(ex.burn_mult + ex.mult_mod);
+    card_eval_status_text(card, 'extra', null, null, null, { message: 'Fire Spin!', colour: 'MULT' });
+    return { remove: true };
+  }
+  return undefined;
+}
+const burn_state = (card) => (G.GAME && G.GAME.facing_blind && (G.GAME.current_round.discards_used > 0 || card.ability.extra.burn_round === G.GAME.round) ? 'burned this round' : 'ready');
+/** Clobbopus / Grapploct, Octolock: the ranks of the hand's SCORED cards (the scoring hand's undebuffed ranked cards: a Stone card has none,
+ *  a debuffed one doesn't score) and the cards HELD in hand that share one (undebuffed, ranked). */
+const scored_ranks = (context) => new Set((context.scoring_hand || []).filter((c) => !c.debuff && !has_no_rank(c)).map((c) => c.get_id()));
+const octo_held = (c, ranks) => !c.debuff && !has_no_rank(c) && ranks.has(c.get_id());
+/** Sinistea / Polteageist, Phony or Antique: rolled when OBTAINED (Glameow's rule, as Toxtricity), Antique num in dem (1 in 10, FIXED: a trait,
+ *  not a chance effect, so Oops! All 6s / Absol never touch it), the run's seeded 'sinistea_antique'; on card.ability, so it rides through
+ *  evolution. Antique doubles the X (derived: one energy field, `Xmult`, scales both). */
+export const tea_form = (card) => (card.ability.poke_tea === 'antique' || card.ability.poke_tea === 'phony' ? card.ability.poke_tea : null);
+function tea_roll(card) {
+  if (!tea_form(card)) card.ability.poke_tea = pseudorandom(pseudoseed('sinistea_antique')) < card.ability.extra.num / card.ability.extra.dem ? 'antique' : 'phony';
+}
+const tea_x = (card) => r3(card.ability.extra.Xmult * (tea_form(card) === 'antique' ? 2 : 1));
+const tea_state = (card) => (tea_form(card) === 'antique' ? 'Antique!' : tea_form(card) === 'phony' ? 'Phony' : 'rolled when obtained');
+/** The Hatenna line: the Psychic Jokers, itself included (Chewtle's count: is_type, undebuffed; a Psychic Tera and Arceus count). */
+const psychic_count = (card) => ((G.jokers && G.jokers.cards) || []).filter((j) => j !== card && !j.debuff && is_type(j, 'Psychic')).length + 1;
+/** Hatterene, Magic Powder: when a Blind is selected (once a round), the Joker directly to its RIGHT gets a Psychic Tera sticker
+ *  (apply_type_sticker: a non-Pokémon joker takes one too) unless it is already Psychic (is_type: its type, a Psychic Tera, Arceus). Nothing
+ *  at the row's right end. Not Blueprint; a debuffed Hatterene isn't calculated, so it converts nothing. */
+function magic_powder(card, context) {
+  if (!context.setting_blind || context.blueprint || context.retrigger_joker || card.getting_sliced) return;
+  const row = G.jokers.cards, right = row[row.indexOf(card) + 1];
+  if (!right || right.getting_sliced || is_type(right, 'Psychic')) return;
+  apply_type_sticker(right, 'Psychic');
+  right.set_debuff && right.set_debuff();
+  card_eval_status_text(right, 'extra', null, null, null, { message: localize('poke_tera_ex'), colour: 'Spectral' });
+}
+/** The Impidimp line, Prankster (the reroll_cost / reroll_shop / shop_start hooks, index.js):
+ *  - Impidimp: a PAID reroll costs $reroll_discount less per undebuffed Impidimp (they stack), never below $1; a free one stays free.
+ *  - Morgrem / Grimmsnarl: the FIRST reroll in each shop is free while an undebuffed one is held — one free reroll however many are held,
+ *    and none on top of another free reroll (Chaos the Clown's, Bidoof's, a D6 Tag's $0): it is the shop's FIRST reroll, so whatever made
+ *    that one free uses it up. Like Chaos's, it never raises the next reroll's price (it is spent as one of the engine's free rerolls).
+ *  "Each shop" is counted from the shop opening (shop_start), so one bought mid-shop gives it only if nothing has been rerolled yet. */
+const prank_held = (key) => ((G.jokers && G.jokers.cards) || []).filter((j) => !j.debuff && j.config.center.key === key);
+const prank_free_held = () => prank_held('j_poke_morgrem').length + prank_held('j_poke_grimmsnarl').length > 0;
+const shop_rerolls = () => (G.GAME && G.GAME.current_round && G.GAME.current_round.poke_shop_rerolls) || 0;
+export function prank_reroll_cost(cost) {
+  if (!G.GAME || !G.GAME.current_round || !G.jokers) return undefined;
+  const cr = G.GAME.current_round;
+  cr.poke_prank_free = false;
+  let c = cost;
+  if (c > 0) {
+    const off = prank_held('j_poke_impidimp').reduce((s, j) => s + (j.ability.extra.reroll_discount || 0), 0);
+    if (off) c = Math.max(1, c - off);
+  }
+  if (c > 0 && (cr.free_rerolls || 0) <= 0 && shop_rerolls() === 0 && prank_free_held()) { c = 0; cr.poke_prank_free = true; }
+  return c === cost ? undefined : c;
+}
+/** reroll_shop hook (sync, before the reroll's queued event): a reroll Prankster made free is spent as one of the engine's free rerolls
+ *  (the event then neither raises the price nor counts it as paid), and the shop's reroll count goes up. */
+export function prank_reroll_shop() {
+  const cr = G.GAME.current_round;
+  if (cr.poke_prank_free) { cr.free_rerolls = (cr.free_rerolls || 0) + 1; cr.poke_prank_free = false; }
+  cr.poke_shop_rerolls = shop_rerolls() + 1;
+}
+export function prank_shop_start() {
+  G.GAME.current_round.poke_shop_rerolls = 0;
+  calculate_reroll_cost(true);
+}
+const prank_recost = {
+  add_to_deck() { G.E_MANAGER.add_event(() => { calculate_reroll_cost(true); }); },
+  remove_from_deck() { G.E_MANAGER.add_event(() => { calculate_reroll_cost(true); }); },
+};
+const prank_state = () => (G.STATE === G.STATES.SHOP ? (shop_rerolls() === 0 ? 'free reroll ready' : 'used this shop') : 'ready next shop');
+
+defineJokers({
+  // The owner's Gen 8 batch 2 ("go ahead with batch 2", 2026-11-02): 14 jokers, #848-861, on the guide's price slots (3-stage U $6 / S $8 /
+  // S $10, 2-stage C $5 / S $8; Toxel a Baby, U $4 as Elekid; Toxtricity after a Baby is a shop Basic, R $7 as Lucario / Electabuzz), types =
+  // the cards' (pokermon_art_type.mjs). Evolution by rounds: Toxel 3 (the owner's; Babies are usually 2), the 3-stage Basics 4, the rest 5.
+  // Energy raises each main number at the standard share; the reroll discount, the free reroll, the Antique odds and the Tera conversion are
+  // fixed; a stage with no number carries its evolution's ("Energy carries to Grimmsnarl"). Art: upstream 3.9.1's own cells (Natdex
+  // {14,56}-{10,57}; Toxtricity Gen 8 {6,0} Amped, {8,0} Low Key beside it, systems/anim.js GEN8_FORM_SPRITES; Sinistea / Polteageist have
+  // no Antique cell upstream, so both use their one card); nothing to deploy. Neither Nacho nor Pokermon+ has any. Pokédex order: Toxel ...
+  // Grimmsnarl (848-861) after Barraskewda, before Dreepy.
+  //
+  // Toxel 848 (Lightning, Baby, Uncommon $4): +4 Mult (`mult` +40%: 5.6 / 7.2 / 8.8). The Baby rule (faint_baby_poke: a non-Baby Joker to
+  // its right debuffs it when a hand is played); its +4 replaces the Babies' usual X0.75 penalty (the owner's design). 3 rounds.
+  toxel: {
+    name: 'toxel', poke_sprite391: sprite('Natdex', 14, 56),
+    config: { extra: { mult: 4, rounds: 3 } },
+    rarity: 2, cost: 4, stage: 'Baby', ptype: 'Lightning', gen: 8, blueprint_compat: true,
+    attributes: ['mult', 'baby', 'round_evo'], poke_after: 'barraskewda',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); info_queue.push({ set: 'Other', key: 'baby' }); const ex = card.ability.extra; return { vars: [r3(ex.mult), ex.rounds] }; },
+    calculate(self, card, context) {
+      if (context.joker_main) {
+        faint_baby_poke(self, card, context);
+        return { message: a_mult(r3(card.ability.extra.mult)), colour: 'MULT', mult_mod: card.ability.extra.mult };
+      }
+      return level_evo(self, card, context, 'j_poke_toxtricity');
+    },
+  },
+  // Toxtricity 849 (Lightning, Rare $7, a shop Basic): its form is rolled when obtained (or on evolving from Toxel), 50 / 50, and kept.
+  // Amped, Punk Rock: X2 Mult on a hand of exactly 5 played cards (`Xmult` +20%: 2.4 / 2.8 / 3.2). Low Key: +40 Chips for each card fewer
+  // than 5 played (`chips` +30%: 52 / 64 / 76; 1 card +160). Art: Amped {6,0}, Low Key {8,0} (Gen 8 sheet; poke_view_form).
+  toxtricity: {
+    name: 'toxtricity', poke_sprite391: sprite('Gen08', 6, 0),
+    config: { extra: { Xmult: 2, chips: 40 } },
+    rarity: 3, cost: 7, stage: 'Basic', ptype: 'Lightning', gen: 8, blueprint_compat: true,
+    attributes: ['xmult', 'chips', 'nature'], poke_after: 'toxel',
+    poke_view_form(self, card) { return tox_form(card) || 'amped'; },
+    loc_vars(self, info_queue, card) {
+      type_tooltip(self, info_queue, card);
+      const ex = card.ability.extra, f = tox_form(card);
+      return { vars: [r3(ex.Xmult), r3(ex.chips)], key: f ? 'j_poke_toxtricity_' + f : undefined };
+    },
+    add_to_deck(self, card) { tox_roll(card); },
+    calculate(self, card, context) { return punk_rock(card, context); },
+  },
+  // Sizzlipede 850 (Fire, Common $5), Fire Spin: the first card you discard each round is destroyed and it permanently gains +2 Mult
+  // (`burn_mult`, banked; gain `mult_mod` +20%: 2.4 / 2.8 / 3.2). 5 rounds.
+  sizzlipede: {
+    name: 'sizzlipede', poke_sprite391: sprite('Natdex', 18, 56),
+    config: { extra: { burn_mult: 0, mult_mod: 2, rounds: 5 } },
+    rarity: 1, cost: 5, stage: 'Basic', ptype: 'Fire', gen: 8, blueprint_compat: true,
+    attributes: ['mult', 'scaling', 'discard', 'destroy_card', 'round_evo'], poke_after: 'toxtricity',
+    poke_custom_values_to_keep: ['burn_mult'],
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.mult_mod), r3(ex.burn_mult), burn_state(card), ex.rounds] }; },
+    calculate(self, card, context) {
+      const r = fire_spin(card, context, false);
+      if (r) return r;
+      const m = card.ability.extra.burn_mult;
+      if (context.joker_main && m > 0) return { message: a_mult(r3(m)), colour: 'MULT', mult_mod: m };
+      return level_evo(self, card, context, 'j_poke_centiskorch');
+    },
+  },
+  // Centiskorch 851 (Safari $8): the same Fire Spin, gaining X0.1 (`burn_Xmult` from X1, banked; gain `Xmult_mod` +20%: 0.12 / 0.14 / 0.16);
+  // Sizzlipede's Mult bank carries and keeps scoring.
+  centiskorch: {
+    name: 'centiskorch', poke_sprite391: sprite('Natdex', 20, 56),
+    config: { extra: { burn_mult: 0, burn_Xmult: 1, Xmult_mod: 0.1 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Fire', gen: 8, blueprint_compat: true,
+    attributes: ['mult', 'xmult', 'scaling', 'discard', 'destroy_card'], poke_after: 'sizzlipede',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.Xmult_mod), r3(ex.burn_Xmult), r3(ex.burn_mult), burn_state(card)] }; },
+    calculate(self, card, context) {
+      const r = fire_spin(card, context, true);
+      if (r) return r;
+      const ex = card.ability.extra;
+      if (context.joker_main && (ex.burn_mult > 0 || ex.burn_Xmult > 1)) return { mult_mod: ex.burn_mult || undefined, Xmult_mod: ex.burn_Xmult > 1 ? ex.burn_Xmult : undefined };
+      return undefined;
+    },
+  },
+  // Clobbopus 852 (Fighting, Common $5), Octolock: +2 Mult for each card held in hand that shares a rank with a scored card (`mult` +40%:
+  // 2.8 / 3.6 / 4.4). 5 rounds.
+  clobbopus: {
+    name: 'clobbopus', poke_sprite391: sprite('Natdex', 22, 56),
+    config: { extra: { mult: 2, rounds: 5 } },
+    rarity: 1, cost: 5, stage: 'Basic', ptype: 'Fighting', gen: 8, blueprint_compat: true,
+    attributes: ['mult', 'hand', 'rank', 'round_evo'], poke_after: 'centiskorch',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.mult), ex.rounds] }; },
+    calculate(self, card, context) {
+      if (context.joker_main) {
+        const ranks = scored_ranks(context), n = G.hand.cards.filter((c) => octo_held(c, ranks)).length;
+        if (n > 0) { const m = r3(card.ability.extra.mult * n); return { message: a_mult(m), colour: 'MULT', mult_mod: m }; }
+        return undefined;
+      }
+      return level_evo(self, card, context, 'j_poke_grapploct');
+    },
+  },
+  // Grapploct 853 (Safari $8), Octolock: each card held in hand that shares a rank with a scored card gives X1.25 (the held pass, Baron's
+  // shape: Mime and held retriggers repeat it; `Xmult_multi` +5%: 1.3125 / 1.375 / 1.4375).
+  grapploct: {
+    name: 'grapploct', poke_sprite391: sprite('Natdex', 24, 56),
+    config: { extra: { Xmult_multi: 1.25 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Fighting', gen: 8, blueprint_compat: true,
+    attributes: ['xmult', 'hand', 'rank'], poke_after: 'clobbopus',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); return { vars: [r3(card.ability.extra.Xmult_multi)] }; },
+    calculate(self, card, context) {
+      if (context.individual && context.cardarea === G.hand && !context.end_of_round && octo_held(context.other_card, scored_ranks(context))) {
+        return { x_mult: card.ability.extra.Xmult_multi, card };
+      }
+      return undefined;
+    },
+  },
+  // Sinistea 854 (Psychic, Common $5): X1.5 Mult; Antique (1 in 10, rolled when obtained, fixed odds) X3 (`Xmult` +20%: 1.8 / 2.1 / 2.4, Antique
+  // twice that). 5 rounds; the roll carries to Polteageist.
+  sinistea: {
+    name: 'sinistea', poke_sprite391: sprite('Natdex', 26, 56),
+    config: { extra: { Xmult: 1.5, num: 1, dem: 10, rounds: 5 } },
+    rarity: 1, cost: 5, stage: 'Basic', ptype: 'Psychic', gen: 8, blueprint_compat: true,
+    attributes: ['xmult', 'nature', 'round_evo'], poke_after: 'grapploct',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.Xmult), r3(ex.Xmult * 2), ex.num, ex.dem, tea_state(card), ex.rounds] }; },
+    add_to_deck(self, card) { tea_roll(card); },
+    calculate(self, card, context) {
+      if (context.joker_main) { const x = tea_x(card); return { message: a_xmult(x), colour: 'XMULT', Xmult_mod: x }; }
+      return level_evo(self, card, context, 'j_poke_polteageist');
+    },
+  },
+  // Polteageist 855 (Safari $8): X2 Mult; Antique X4 (`Xmult` +20%: 2.4 / 2.8 / 3.2, Antique twice that).
+  polteageist: {
+    name: 'polteageist', poke_sprite391: sprite('Natdex', 28, 56),
+    config: { extra: { Xmult: 2, num: 1, dem: 10 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Psychic', gen: 8, blueprint_compat: true,
+    attributes: ['xmult', 'nature'], poke_after: 'sinistea',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.Xmult), r3(ex.Xmult * 2), ex.num, ex.dem, tea_state(card)] }; },
+    add_to_deck(self, card) { tea_roll(card); },
+    calculate(self, card, context) {
+      if (context.joker_main) { const x = tea_x(card); return { message: a_xmult(x), colour: 'XMULT', Xmult_mod: x }; }
+      return undefined;
+    },
+  },
+  // Hatenna 856 (Psychic, Uncommon $6): +4 Mult for each Psychic Joker, itself included (`mult` +40%: 5.6 / 7.2 / 8.8). 4 rounds.
+  hatenna: {
+    name: 'hatenna', poke_sprite391: sprite('Natdex', 0, 57),
+    config: { extra: { mult: 4, rounds: 4 } },
+    rarity: 2, cost: 6, stage: 'Basic', ptype: 'Psychic', gen: 8, blueprint_compat: true,
+    attributes: ['mult', 'types', 'round_evo'], poke_after: 'polteageist',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra, n = psychic_count(card); return { vars: [r3(ex.mult), n, r3(ex.mult * n), ex.rounds] }; },
+    calculate(self, card, context) {
+      if (context.joker_main) { const m = r3(card.ability.extra.mult * psychic_count(card)); return { message: a_mult(m), colour: 'MULT', mult_mod: m }; }
+      return level_evo(self, card, context, 'j_poke_hattrem');
+    },
+  },
+  // Hattrem 857 (Safari $8): +6 Mult for each Psychic Joker, itself included (`mult` +40%: 8.4 / 10.8 / 13.2). 5 rounds.
+  hattrem: {
+    name: 'hattrem', poke_sprite391: sprite('Natdex', 2, 57),
+    config: { extra: { mult: 6, rounds: 5 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Psychic', gen: 8, blueprint_compat: true,
+    attributes: ['mult', 'types', 'round_evo'], poke_after: 'hatenna',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra, n = psychic_count(card); return { vars: [r3(ex.mult), n, r3(ex.mult * n), ex.rounds] }; },
+    calculate(self, card, context) {
+      if (context.joker_main) { const m = r3(card.ability.extra.mult * psychic_count(card)); return { message: a_mult(m), colour: 'MULT', mult_mod: m }; }
+      return level_evo(self, card, context, 'j_poke_hatterene');
+    },
+  },
+  // Hatterene 858 (Safari $10): X1 plus X0.25 for each Psychic Joker, itself included (`Xmult_mod` +20%: 0.3 / 0.35 / 0.4); Magic Powder: when
+  // a Blind is selected, the Joker to its right gets a Psychic Tera sticker unless it is Psychic already (fixed; not Blueprint).
+  hatterene: {
+    name: 'hatterene', poke_sprite391: sprite('Natdex', 4, 57),
+    config: { extra: { Xmult_mod: 0.25 } },
+    rarity: 'poke_safari', cost: 10, stage: 'Two', ptype: 'Psychic', gen: 8, blueprint_compat: true,
+    attributes: ['xmult', 'types', 'tera'], poke_after: 'hattrem',
+    loc_vars(self, info_queue, card) {
+      type_tooltip(self, info_queue, card);
+      const ex = card.ability.extra, n = psychic_count(card);
+      return { vars: [r3(ex.Xmult_mod), n, r3(1 + ex.Xmult_mod * n)] };
+    },
+    calculate(self, card, context) {
+      magic_powder(card, context);
+      if (context.joker_main) { const x = r9(1 + card.ability.extra.Xmult_mod * psychic_count(card)); return { message: a_xmult(r3(x)), colour: 'XMULT', Xmult_mod: x }; }
+      return undefined;
+    },
+  },
+  // Impidimp 859 (Fairy, Uncommon $6), Prankster: shop rerolls cost $1 less (`reroll_discount`, fixed; each copy stacks; never below $1, a free
+  // reroll stays free). Carries Grimmsnarl's `Xmult_mod` (0.1: "Energy carries to Grimmsnarl"). 4 rounds.
+  impidimp: {
+    name: 'impidimp', poke_sprite391: sprite('Natdex', 6, 57),
+    config: { extra: { reroll_discount: 1, Xmult_mod: 0.1, rounds: 4 } },
+    rarity: 2, cost: 6, stage: 'Basic', ptype: 'Fairy', gen: 8, blueprint_compat: false,
+    attributes: ['economy', 'reroll', 'round_evo'], poke_after: 'hatterene',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [ex.reroll_discount, ex.rounds, r3(ex.Xmult_mod)] }; },
+    calculate(self, card, context) { return level_evo(self, card, context, 'j_poke_morgrem'); },
+    ...prank_recost,
+  },
+  // Morgrem 860 (Safari $8), Prankster: your first reroll in each shop is free (one however many are held; none on top of Chaos the Clown's /
+  // a D6 Tag's: whatever makes the shop's first reroll free uses it). Carries Grimmsnarl's `Xmult_mod`. 5 rounds.
+  morgrem: {
+    name: 'morgrem', poke_sprite391: sprite('Natdex', 8, 57),
+    config: { extra: { Xmult_mod: 0.1, rounds: 5 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Fairy', gen: 8, blueprint_compat: false,
+    attributes: ['economy', 'reroll', 'round_evo'], poke_after: 'impidimp',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [prank_state(), ex.rounds, r3(ex.Xmult_mod)] }; },
+    calculate(self, card, context) { return level_evo(self, card, context, 'j_poke_grimmsnarl'); },
+    ...prank_recost,
+  },
+  // Grimmsnarl 861 (Safari $10): Prankster (the first reroll in each shop free) and it permanently gains X0.1 for every shop reroll, free ones
+  // included (`prank_Xmult` from X1, banked; gain `Xmult_mod` +20%: 0.12 / 0.14 / 0.16). Blueprint copies the X, never the gain.
+  grimmsnarl: {
+    name: 'grimmsnarl', poke_sprite391: sprite('Natdex', 10, 57),
+    config: { extra: { prank_Xmult: 1, Xmult_mod: 0.1 } },
+    rarity: 'poke_safari', cost: 10, stage: 'Two', ptype: 'Fairy', gen: 8, blueprint_compat: true,
+    attributes: ['xmult', 'scaling', 'economy', 'reroll'], poke_after: 'morgrem',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [prank_state(), r3(ex.Xmult_mod), r3(ex.prank_Xmult)] }; },
+    calculate(self, card, context) {
+      const ex = card.ability.extra;
+      if (context.reroll_shop && !context.blueprint && !context.retrigger_joker) {
+        ex.prank_Xmult = r3(ex.prank_Xmult + ex.Xmult_mod);
+        card_eval_status_text(card, 'extra', null, null, null, { message: localize({ type: 'variable', key: 'a_xmult', vars: [ex.prank_Xmult] }), colour: 'XMULT' });
+        return undefined;
+      }
+      if (context.joker_main && ex.prank_Xmult > 1) return { message: a_xmult(r3(ex.prank_Xmult)), colour: 'XMULT', Xmult_mod: ex.prank_Xmult };
+      return undefined;
+    },
+    ...prank_recost,
+  },
+}, FILE);
+
 // ---------------------------------------------------------------- Gen 8, batch 3 (contentRev 72; the owner's "yes build it", 2026-11-02), #862-902
 /** Alcremie's 63 forms (Sweet x Cream): upstream 3.9.1 draws every one on the Gen 8 sheet, UNLISTED beside its own card {10,0} (Strawberry
  *  Sweet, Vanilla Cream): sweet-major, nine creams each, in reading order ({10,0} {12,0} {14,0}, then rows 1-7 x 0-14, then row 8 x 0-6). */
@@ -8945,7 +9281,7 @@ defineJokers({
     name: 'obstagoon', poke_sprite391: sprite('Natdex', 12, 57),
     config: { extra: { Xmult: 2, Xmult2: 3 } },
     rarity: 'poke_safari', cost: 10, stage: 'Two', ptype: 'Dark', gen: 8, blueprint_compat: true,
-    attributes: ['xmult', 'boss_blind', 'debuff'], poke_after: 'barraskewda',
+    attributes: ['xmult', 'boss_blind', 'debuff'], poke_after: 'grimmsnarl',
     loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.Xmult), r3(ex.Xmult2), boss_debuffing() ? 'Blocking!' : 'no debuffing Boss'] }; },
     calculate(self, card, context) {
       if (context.joker_main) { const ex = card.ability.extra, x = boss_debuffing() ? ex.Xmult2 : ex.Xmult; return { message: a_xmult(r3(x)), colour: 'XMULT', Xmult_mod: x }; }
@@ -9376,6 +9712,13 @@ export const DESIGN_FAMILIES = [
   ['rolycoly', 'carkol', 'coalossal'],
   ['silicobra', 'sandaconda'],
   ['arrokuda', 'barraskewda'],
+  // Gen 8, batch 2
+  ['toxel', 'toxtricity'],
+  ['sizzlipede', 'centiskorch'],
+  ['clobbopus', 'grapploct'],
+  ['sinistea', 'polteageist'],
+  ['hatenna', 'hattrem', 'hatterene'],
+  ['impidimp', 'morgrem', 'grimmsnarl'],
   // Gen 8, batch 3: the Galarian / Hisuian evolutions join their lines (FAMILY_MEMBER_REV: seen from r72 on), and two new lines
   ['zigzagoon', 'linoone', 'obstagoon'],
   ['corsola', 'cursola'],
@@ -9504,6 +9847,10 @@ const FORESEEN = (gain) => ['Each {C:attention}Foreseen{} card', 'gives ' + gain
 const COTTON_DOWN = ['{C:attention}Cotton Down:{} each scored', '{C:attention}Seed{} card gives {C:mult}+#1#{} Mult'];
 const COAL = ['When a {C:attention}Blind{} is selected,', 'a random unenhanced card', 'in your deck becomes', 'a {C:attention}Stone{} card'];
 const PROPELLER = (gain) => ['{C:attention}Propeller Tail:{} the first', 'scored card gives ' + gain];
+const FIRE_SPIN = (gain) => ['{C:attention}Fire Spin:{} the first card you', 'discard each round is', '{C:red}destroyed{} and this Joker', 'permanently gains ' + gain];
+const TEA_TEXT = ['{X:mult,C:white} X#1# {} Mult', '{C:attention}Antique:{} {X:mult,C:white} X#2# {} instead', '{C:inactive}({C:green}#3# in #4#{C:inactive}, rolled when obtained)', '{C:inactive}(Currently: {C:attention}#5#{C:inactive})'];
+const PSYCHIC_TEAM = ['{C:mult}+#1#{} Mult for each', '{X:poke_psychic,C:white}Psychic{} Joker {C:inactive}(Itself included)', '{C:inactive}(Currently {C:attention}#2#{C:inactive}: {C:mult}+#3#{C:inactive} Mult)'];
+const PRANKSTER_FREE = ['{C:attention}Prankster:{} your first', 'reroll in each shop is {C:green}free{}', '{C:inactive}(not on top of another free reroll)', '{C:inactive}(#1#)'];
 const DECORATE = ['{C:attention}Decorate:{} each scored', 'card with an {C:dark_edition}edition{}', 'gives {C:mult}+#1#{} Mult'];
 export const DESIGN_LOC = {
   Joker: {
@@ -10254,6 +10601,36 @@ export const DESIGN_LOC = {
     j_poke_cramorant: { name: 'Cramorant', text: ['{C:attention}Gulp Missile:{} your first', 'discard each round loads', 'a missile; your next scored', 'hand fires it for {X:mult,C:white} X#1# {} Mult', '{C:inactive}(Lost if the round ends unfired)', '{C:inactive}(Missile: #2#)'] },
     j_poke_arrokuda: { name: 'Arrokuda', text: [...PROPELLER('{C:mult}+#1#{} Mult'), EVOLVES_ROUNDS(2)] },
     j_poke_barraskewda: { name: 'Barraskewda', text: PROPELLER('{X:mult,C:white} X#1# {} Mult') },
+    // Gen 8, batch 2 (contentRev 71)
+    j_poke_toxel: { name: 'Toxel', text: ['{C:mult}+#1#{} Mult', EVOLVES_ROUNDS(2)] },
+    j_poke_toxtricity: { name: 'Toxtricity', text: [
+      ['{C:attention}Amped Form, Punk Rock:{}', '{X:mult,C:white} X#1# {} Mult if exactly', '{C:attention}5{} cards are played'],
+      ['{C:attention}Low Key Form:{} {C:chips}+#2#{} Chips', 'for each card fewer than', '{C:attention}5{} played'],
+      ['{C:inactive}(Form: rolled when obtained)'],
+    ] },
+    j_poke_toxtricity_amped: { name: 'Toxtricity', text: ['{C:attention}Punk Rock:{} {X:mult,C:white} X#1# {} Mult', 'if exactly {C:attention}5{} cards', 'are played', '{C:inactive}(Amped Form)'] },
+    j_poke_toxtricity_lowkey: { name: 'Toxtricity', text: ['{C:chips}+#2#{} Chips for each card', 'fewer than {C:attention}5{} played', '{C:inactive}(Low Key Form)'] },
+    j_poke_sizzlipede: { name: 'Sizzlipede', text: [...FIRE_SPIN('{C:mult}+#1#{} Mult'), '{C:inactive}(Currently {C:mult}+#2#{C:inactive} Mult; #3#)', EVOLVES_ROUNDS(4)] },
+    j_poke_centiskorch: { name: 'Centiskorch', text: [
+      [...FIRE_SPIN('{X:mult,C:white} X#1# {} Mult'), '{C:inactive}(Currently {X:mult,C:white} X#2# {C:inactive} Mult; #4#)'],
+      ['{C:mult}+#3#{} Mult {C:inactive}(kept from Sizzlipede)'],
+    ] },
+    j_poke_clobbopus: { name: 'Clobbopus', text: ['{C:attention}Octolock:{} {C:mult}+#1#{} Mult for', 'each card held in hand', 'that shares a rank with', 'a scored card', EVOLVES_ROUNDS(2)] },
+    j_poke_grapploct: { name: 'Grapploct', text: ['{C:attention}Octolock:{} each card held', 'in hand that shares a rank', 'with a scored card gives', '{X:mult,C:white} X#1# {} Mult'] },
+    j_poke_sinistea: { name: 'Sinistea', text: [...TEA_TEXT, EVOLVES_ROUNDS(6)] },
+    j_poke_polteageist: { name: 'Polteageist', text: TEA_TEXT },
+    j_poke_hatenna: { name: 'Hatenna', text: [...PSYCHIC_TEAM, EVOLVES_ROUNDS(4)] },
+    j_poke_hattrem: { name: 'Hattrem', text: [...PSYCHIC_TEAM, EVOLVES_ROUNDS(4)] },
+    j_poke_hatterene: { name: 'Hatterene', text: [
+      ['{X:mult,C:white} X1 {} Mult, plus {X:mult,C:white} X#1# {}', 'for each {X:poke_psychic,C:white}Psychic{} Joker', '{C:inactive}(Itself included)', '{C:inactive}(Currently {C:attention}#2#{C:inactive}: {X:mult,C:white} X#3# {C:inactive} Mult)'],
+      ['{C:attention}Magic Powder:{} when a {C:attention}Blind{}', 'is selected, the Joker to its', '{C:attention}right{} gets a {X:poke_psychic,C:white}Psychic{} Tera sticker', '{C:inactive}(unless it is Psychic already)'],
+    ] },
+    j_poke_impidimp: { name: 'Impidimp', text: ['{C:attention}Prankster:{} shop rerolls', 'cost {C:money}$#1#{} less', '{C:inactive}(never below $1)', ENERGY_TO('Grimmsnarl'), EVOLVES_ROUNDS(2)] },
+    j_poke_morgrem: { name: 'Morgrem', text: [...PRANKSTER_FREE, ENERGY_TO('Grimmsnarl'), EVOLVES_ROUNDS(2)] },
+    j_poke_grimmsnarl: { name: 'Grimmsnarl', text: [
+      PRANKSTER_FREE,
+      ['Permanently gains {X:mult,C:white} X#2# {}', 'Mult for every shop reroll', '{C:inactive}(Currently {X:mult,C:white} X#3# {C:inactive} Mult)'],
+    ] },
     // Gen 8, batch 3 (contentRev 72)
     j_poke_obstagoon: { name: 'Obstagoon', text: ['{X:mult,C:white} X#1# {} Mult', '{C:attention}Blocking:{} {X:mult,C:white} X#2# {} Mult instead', 'while the {C:attention}Boss Blind{} is', 'debuffing any of your cards', '{C:inactive}(Now: #3#)'] },
     j_poke_cursola: { name: 'Cursola', text: ['{X:mult,C:white} X#1# {} Mult', '{C:attention}Perish Body:{} crumbles', '(is destroyed) at the end', 'of its {C:attention}4th{} round held', '{C:inactive}(Rounds left: {C:attention}#2#{C:inactive})'] },
