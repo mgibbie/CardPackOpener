@@ -198,11 +198,12 @@ import {
   add_card, detailed, energy_values, poke_remove_card, ease_dollars, ease_discard, juice_card_until, find_card, get_total_energy, POST_EVOLVE, can_evolve,
   poke_change_growth_level,
   poke_get_adjacent_jokers, emit, find_joker, poke_drain, level_up_hand, poke_evolve, increment_energy, can_increase_energy, smods_debuff_card, blueprint_compat_line,
-  can_be_destroyed_by_joker, change_shop_size, faint_baby_poke,
+  can_be_destroyed_by_joker, change_shop_size, faint_baby_poke, GEN9B2_REV,
 } from '../api.js';
+import { Tag, add_tag } from '../../../js/engine/tag.js';
 import { blueprint_effect } from './pokejokers_08.js';
 import * as BN from '../../../js/engine/bignum.js'; // the Blind's requirement (Poison Gas) may be a big number in modded runs
-import { number_format, calculate_reroll_cost } from '../../../js/engine/core.js';
+import { number_format, calculate_reroll_cost, get_next_tag_key } from '../../../js/engine/core.js';
 import { rulesRev } from '../../../js/mods/pins.js';
 import { odds_text } from '../../../js/engine/odds.js';
 
@@ -10208,6 +10209,333 @@ defineJokers({
   },
 }, FILE);
 
+// ---------------------------------------------------------------- Gen 9, batch 2 (contentRev 77; the owner's "Yes", 2026-11-03), #951-1013
+/** Flittle / Espathra, Opportunist: whenever ANOTHER Joker in your row permanently GROWS, every undebuffed Flittle banks +mult_mod Mult
+ *  (`opp_mult`) and every Espathra banks +X(Xmult_mod) (`opp_Xmult`). "Grows" = one gain event of the shared scaling helper, the engine's
+ *  SMODS.scale_card (js/engine/smods.js; its value went UP: a '-' or a lowering function is no growth), heard through the mod hook
+ *  `card_scaled` (index.js): every house bank (bank / round_bank: the Gen 9 starters' Torch Song / Moxie, Yamask's grudge, Type: Null,
+ *  Cosmog, Necrozma, the Gen 8 Legendaries...), every upstream 3.9.1 joker that scales through SMODS.scale_card, and the vanilla jokers
+ *  Steamodded routes through it (js/engine/jokers.js vscale: Ride the Bus, Green Joker, Hologram, Campfire, ...; heard even when nothing
+ *  else listens). One event = one gain, however big (a Moxie bank of 3 unused hands is 1). A Flittle / Espathra's own gain is never
+ *  growth for another (no loop between two of them); a Blueprint never scales, so it never counts, and a Blueprint copying Flittle copies
+ *  only the Mult it gives. Values that grow outside scale_card (a plain `+=` in a joker's own code) aren't heard. */
+const OPPORTUNISTS = ['j_poke_flittle', 'j_poke_espathra'];
+export function opportunist_scaled(card, grew) {
+  if (!grew || !G.jokers || !card || !card.ability || card.ability.set !== 'Joker' || card.area !== G.jokers) return;
+  if (OPPORTUNISTS.includes(card.config.center.key)) return;
+  for (const j of G.jokers.cards.slice()) {
+    if (j === card || j.debuff || j.getting_sliced || !OPPORTUNISTS.includes(j.config.center.key)) continue;
+    if (j.config.center.key === 'j_poke_espathra') bank(j, 'opp_Xmult', 'Xmult_mod', 1, 'XMULT');
+    else bank(j, 'opp_mult', 'mult_mod', 1, 'MULT');
+  }
+}
+/** Flittle / Espathra: the banked Mult (and Espathra's banked X), every hand (Blueprint copies them). */
+function opportunist_main(card, context) {
+  if (!context.joker_main) return undefined;
+  const ex = card.ability.extra, r = {};
+  if (ex.opp_mult > 0) r.mult_mod = ex.opp_mult;
+  if (ex.opp_Xmult > 1) r.Xmult_mod = ex.opp_Xmult;
+  if (!r.mult_mod && !r.Xmult_mod) return undefined;
+  r.message = r.Xmult_mod ? a_xmult(r3(r.Xmult_mod)) : a_mult(r3(r.mult_mod));
+  r.colour = r.Xmult_mod ? 'XMULT' : 'MULT';
+  return r;
+}
+/** Capsakid / Scovillain, Spicy: scored Clubs +chips; Scovillain's scored Hearts X(Xmult_multi) too (is_suit: a Wild card is both). */
+function spicy(card, context, hearts) {
+  if (!(context.individual && context.cardarea === G.play && !context.end_of_round && !context.other_card.debuff)) return undefined;
+  const ex = card.ability.extra, c = context.other_card, r = {};
+  if (c.is_suit('Clubs')) r.chips = ex.chips;
+  if (hearts && c.is_suit('Hearts')) r.x_mult = ex.Xmult_multi;
+  if (r.chips === undefined && r.x_mult === undefined) return undefined;
+  r.card = card;
+  return r;
+}
+/** Bombirdier, Stork Delivery: at the end of each shop (ending_shop), num in dem (pseudorandom_probability on 'bombirdier': Oops! / Venonat
+ *  raise it) to create a random Tag from the engine's tag pool (get_next_tag_key: the run's seeded Tag pool, as a Blind's skip Tag; an
+ *  Orbital Tag names a random visible poker hand, seeded). Blueprint copies it (its own roll). */
+function stork_delivery(card, context) {
+  if (!context.ending_shop) return;
+  const ex = card.ability.extra;
+  if (!pseudorandom_probability(card, 'bombirdier', ex.num, ex.dem, 'bombirdier')) return;
+  const tag = new Tag(get_next_tag_key('bombirdier'));
+  if (tag.name === 'Orbital Tag') {
+    const hs = Object.keys(G.GAME.hands).filter((k) => G.GAME.hands[k].visible);
+    tag.ability.orbital_hand = pseudorandom_element(hs, pseudoseed('bombirdier_orbital'))[0];
+  }
+  card_eval_status_text(context.blueprint_card || card, 'extra', null, null, null, { message: 'Delivery!', colour: 'FILTER' });
+  G.E_MANAGER.add_event(() => { add_tag(tag); play_sound('generic1', 0.9, 0.8); play_sound('holo1', 1.2, 0.4); });
+}
+/** Varoom / Revavroom, Rev the Engine: hands played in a row without a discard (G.GAME.poke_rev_streak, run-wide: systems/rules.js
+ *  calculate, +1 after every hand played, 0 on any discard you make, kept across rounds). While a hand scores it counts itself. */
+const rev_streak = () => (G.GAME && G.GAME.poke_rev_streak) || 0;
+/** Cyclizar, Ride: +hands each round and +h_size hand size, one add/remove pair (two spreads would overwrite each other's add_to_deck). */
+const hands_hand_size = {
+  add_to_deck(self, card, from_debuff) { hands.add_to_deck(self, card, from_debuff); hand_size.add_to_deck(self, card, from_debuff); },
+  remove_from_deck(self, card, from_debuff) { hands.remove_from_deck(self, card, from_debuff); hand_size.remove_from_deck(self, card, from_debuff); },
+};
+/** Glimmora, Toxic Debris: each scored Stone card (undebuffed; a retrigger again) turns one random card of the full deck into a Hazard card
+ *  (deck_convert: unenhanced first, then any card that isn't one; NEVER a Stone card — its own fuel — nor a card of the played hand, which is
+ *  still scoring), at most `debris_cap` (3, fixed) a hand (G.GAME.hands_played names the hand). Not a Blueprint's (it modifies the deck). */
+function toxic_debris(card, context) {
+  if (!stone_scored(context) || context.other_card.debuff || context.blueprint || context.retrigger_joker) return;
+  const ex = card.ability.extra, hand_id = G.GAME.hands_played;
+  const n = ex.debris_hand === hand_id ? (ex.debris_count || 0) : 0;
+  if (n >= ex.debris_cap) return;
+  const skip = (G.playing_cards || []).filter((c) => has_enhancement(c, 'm_stone') || c.area === G.play);
+  if (!deck_convert('m_poke_hazard', 'poke_glimmora_debris', skip)) return;
+  ex.debris_hand = hand_id; ex.debris_count = n + 1;
+  card_eval_status_text(card, 'extra', null, null, null, { message: '+1 Hazard', colour: 'PURPLE' });
+}
+/** Veluza, Fillet Away: at the end of each round (the main pass, not a Blueprint's) it loses $val_loss of its own sell value (extra_value,
+ *  then set_cost: Celesteela's field, the other way) and banks +X(Xmult_mod) (`fillet_Xmult`). Pokermon's sell value never goes below $1
+ *  (systems/rules.js set_cost, the drain floor), so at $1 it can lose no more and STOPS gaining (refill it — Poltchageist / Sinistcha,
+ *  Combee, a Gift Card... — and it fillets again). */
+function fillet_away(card, context) {
+  if (!round_end(context) || context.blueprint || context.retrigger_joker || context.game_over) return;
+  const ex = card.ability.extra;
+  if ((card.sell_cost || 0) - ex.val_loss < 1) return;
+  card.ability.extra_value = (card.ability.extra_value || 0) - ex.val_loss;
+  card.set_cost();
+  bank(card, 'fillet_Xmult', 'Xmult_mod', 1, 'XMULT');
+}
+/** Dondozo, Commander: an undebuffed Tatsugiri directly to its LEFT. */
+const dondozo_commanded = (card) => {
+  const row = (G.jokers && G.jokers.cards) || [], i = row.indexOf(card), left = i > 0 ? row[i - 1] : null;
+  return !!left && !left.debuff && left.config.center.key === 'j_poke_tatsugiri';
+};
+/** Clodsire, Poison Point: Silicobra's Sand Spit (each card the PLAYER discards that is unenhanced, num in dem on 'clodsire_poison', Oops!
+ *  raises it), making a Hazard card instead of Stone. Blueprint copies it (its own roll). Shares Sand Spit's record of the discard. */
+function clodsire_poison(card, context) {
+  if (context.pre_discard) { spit_hand = context.hook ? null : context.full_hand; return undefined; }
+  if (!(context.discard && context.other_card && spit_hand && spit_hand.includes(context.other_card))) return undefined;
+  const c = context.other_card;
+  if (c.config.center.key !== 'c_base' || !unbroken(c)) return undefined;
+  const ex = card.ability.extra;
+  if (!pseudorandom_probability(card, 'clodsire_poison', ex.num, ex.dem, 'clodsire_poison')) return undefined;
+  c.set_ability(P_CENTERS.m_poke_hazard, null, true);
+  card_eval_status_text(context.blueprint_card || card, 'extra', null, null, null, { message: 'Poison Point!', colour: 'PURPLE' });
+  return undefined;
+}
+const clodsire_x = (card) => r9(1 + card.ability.extra.Xmult_mod * hazards_in_deck());
+/** Sinistcha: the sell value of ALL your Jokers (itself included; a debuffed one too: sell value isn't an ability). */
+const row_value = () => ((G.jokers && G.jokers.cards) || []).reduce((s, j) => s + Math.max(0, j.sell_cost || 0), 0);
+const sinistcha_x = (card) => r9(1 + card.ability.extra.Xmult_mod * row_value());
+
+defineJokers({
+  // The owner's Gen 9 batch 2 ("Yes", 2026-11-03): 17 jokers, #951-1013, on the guide's price slots (2-stage C $5 / S $8, single-stage R $7;
+  // Clodsire a Stage 1 S $8); every 2-stage Basic evolves after 5 rounds. Types = the cards' (pokermon_art_type.mjs). Energy raises the main
+  // number at the standard share; money, odds, slots, tags, conversions and caps are fixed; banks never retroactive and carried. One is a
+  // NEW EVOLUTION of an existing joker (the Gen 8 Galarian exception, owner-approved): Wooper -> Clodsire by a Dark Energy used on it
+  // (gated by rules rev 77, so older runs replay as recorded; Wooper -> Quagsire unchanged). Art: upstream 3.9.1's own cells (Natdex
+  // {10,63}-{14,67}); nothing to deploy. Pokédex order: each after the Gen 9 joker before it (Capsakid after Klawf, Flittle after
+  // Rabsca, Bombirdier ... Glimmora after Wugtrio, Flamigo / Veluza / Dondozo after Houndstone, Clodsire after Annihilape, Poltchageist /
+  // Sinistcha after Gholdengo).
+  //
+  // Capsakid 951 (Grass, Common $5), Spicy: scored Clubs +20 Chips (`chips` +30%: 26 / 32 / 38). 5 rounds.
+  capsakid: {
+    name: 'capsakid', poke_sprite391: sprite('Natdex', 10, 63),
+    config: { extra: { chips: 20, rounds: 5 } },
+    rarity: 1, cost: 5, stage: 'Basic', ptype: 'Grass', gen: 9, blueprint_compat: true,
+    attributes: ['chips', 'suit', 'round_evo'], poke_after: 'klawf',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.chips), ex.rounds] }; },
+    calculate(self, card, context) { return spicy(card, context, false) || level_evo(self, card, context, 'j_poke_scovillain'); },
+  },
+  // Scovillain 952 (Fire, Safari $8): Spicy kept (`chips` +30%) and scored Hearts X1.2 (`Xmult_multi` +5%: 1.26 / 1.32 / 1.38); +1 discard
+  // each round (`d_size`, fixed).
+  scovillain: {
+    name: 'scovillain', poke_sprite391: sprite('Natdex', 12, 63),
+    config: { extra: { chips: 20, Xmult_multi: 1.2, d_size: 1 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Fire', gen: 9, blueprint_compat: true,
+    attributes: ['chips', 'xmult', 'suit', 'discard'], poke_after: 'capsakid',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.chips), r3(ex.Xmult_multi), ex.d_size] }; },
+    calculate(self, card, context) { return spicy(card, context, true); },
+    ...discards,
+  },
+  // Flittle 955 (Psychic, Common $5), Opportunist: +1 Mult banked whenever another Joker permanently grows (`opp_mult`; gain `mult_mod`
+  // +20%: 1.2 / 1.4 / 1.6). 5 rounds.
+  flittle: {
+    name: 'flittle', poke_sprite391: sprite('Natdex', 18, 63),
+    config: { extra: { opp_mult: 0, mult_mod: 1, rounds: 5 } },
+    rarity: 1, cost: 5, stage: 'Basic', ptype: 'Psychic', gen: 9, blueprint_compat: true,
+    attributes: ['mult', 'scaling', 'joker', 'round_evo'], poke_after: 'rabsca',
+    poke_custom_values_to_keep: ['opp_mult'],
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.mult_mod), r3(ex.opp_mult), ex.rounds] }; },
+    calculate(self, card, context) { return opportunist_main(card, context) || level_evo(self, card, context, 'j_poke_espathra'); },
+  },
+  // Espathra 956 (Safari $8): gives Flittle's banked Mult (it banks no more Mult) and banks X0.05 per growth (`opp_Xmult` from X1; gain
+  // `Xmult_mod` +20%: 0.06 / 0.07 / 0.08).
+  espathra: {
+    name: 'espathra', poke_sprite391: sprite('Natdex', 20, 63),
+    config: { extra: { opp_mult: 0, opp_Xmult: 1, Xmult_mod: 0.05 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Psychic', gen: 9, blueprint_compat: true,
+    attributes: ['mult', 'xmult', 'scaling', 'joker'], poke_after: 'flittle',
+    poke_custom_values_to_keep: ['opp_mult', 'opp_Xmult'],
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.Xmult_mod), r3(ex.opp_Xmult), r3(ex.opp_mult)] }; },
+    calculate(self, card, context) { return opportunist_main(card, context); },
+  },
+  // Bombirdier 962 (Dark, Rare $7), Stork Delivery: at the end of each shop, 1 in 2 to create a random Tag (odds fixed: Energy-inert).
+  bombirdier: {
+    name: 'bombirdier', poke_sprite391: sprite('Natdex', 2, 64),
+    config: { extra: { num: 1, dem: 2 } },
+    rarity: 3, cost: 7, stage: 'Basic', ptype: 'Dark', gen: 9, blueprint_compat: true, poke_no_energy_field: true,
+    attributes: ['tag', 'chance', 'economy'], poke_after: 'wugtrio',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra, [num, dem] = get_probability_vars(card, ex.num, ex.dem, 'bombirdier'); return { vars: [num, dem] }; },
+    calculate(self, card, context) { stork_delivery(card, context); return undefined; },
+  },
+  // Varoom 965 (Metal, Common $5), Rev the Engine: +2 Mult per hand in the streak, this hand included (`mult_mod` +20%: 2.4 / 2.8 / 3.2).
+  // 5 rounds.
+  varoom: {
+    name: 'varoom', poke_sprite391: sprite('Natdex', 8, 64),
+    config: { extra: { mult_mod: 2, rounds: 5 } },
+    rarity: 1, cost: 5, stage: 'Basic', ptype: 'Metal', gen: 9, blueprint_compat: true,
+    attributes: ['mult', 'discard', 'round_evo'], poke_after: 'bombirdier',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.mult_mod), rev_streak(), ex.rounds] }; },
+    calculate(self, card, context) {
+      if (context.joker_main) { const m = r3(card.ability.extra.mult_mod * (rev_streak() + 1)); return { message: a_mult(m), colour: 'MULT', mult_mod: m }; }
+      return level_evo(self, card, context, 'j_poke_revavroom');
+    },
+  },
+  // Revavroom 966 (Safari $8): X1 + X0.1 per hand in the streak, this hand included (`Xmult_mod` +20%: 0.12 / 0.14 / 0.16).
+  revavroom: {
+    name: 'revavroom', poke_sprite391: sprite('Natdex', 10, 64),
+    config: { extra: { Xmult_mod: 0.1 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Metal', gen: 9, blueprint_compat: true,
+    attributes: ['xmult', 'discard'], poke_after: 'varoom',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); return { vars: [r3(card.ability.extra.Xmult_mod), rev_streak()] }; },
+    calculate(self, card, context) {
+      if (context.joker_main) { const x = r9(1 + card.ability.extra.Xmult_mod * (rev_streak() + 1)); return { message: a_xmult(r3(x)), colour: 'XMULT', Xmult_mod: x }; }
+      return undefined;
+    },
+  },
+  // Cyclizar 967 (Dragon, Rare $7), Ride: +1 hand each round and +1 hand size (both fixed: Energy-inert).
+  cyclizar: {
+    name: 'cyclizar', poke_sprite391: sprite('Natdex', 12, 64),
+    config: { extra: { hands: 1, h_size: 1 } },
+    rarity: 3, cost: 7, stage: 'Basic', ptype: 'Dragon', gen: 9, blueprint_compat: false, poke_no_energy_field: true,
+    attributes: ['hands', 'hand_size', 'passive'], poke_after: 'revavroom',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [ex.hands, ex.h_size] }; },
+    ...hands_hand_size,
+  },
+  // Orthworm 968 (Metal, Rare $7), Earth Eater: +15 Chips per Steel card in your full deck (`chips` +30%: 19.5 / 24 / 28.5).
+  orthworm: {
+    name: 'orthworm', poke_sprite391: sprite('Natdex', 14, 64),
+    config: { extra: { chips: 15 } },
+    rarity: 3, cost: 7, stage: 'Basic', ptype: 'Metal', gen: 9, blueprint_compat: true,
+    attributes: ['chips', 'enhancements', 'full_deck'], poke_after: 'cyclizar',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); info_queue.push(P_CENTERS.m_steel); const ex = card.ability.extra; return { vars: [r3(ex.chips), r3(ex.chips * steel_in_deck())] }; },
+    calculate(self, card, context) {
+      if (context.joker_main) { const c = r3(card.ability.extra.chips * steel_in_deck()); if (c > 0) return { message: a_chips(c), colour: 'CHIPS', chip_mod: c }; }
+      return undefined;
+    },
+  },
+  // Glimmet 969 (Earth, Common $5): scored Stone cards +6 Mult (`mult` +40%: 8.4 / 10.8 / 13.2). 5 rounds.
+  glimmet: {
+    name: 'glimmet', poke_sprite391: sprite('Natdex', 16, 64),
+    config: { extra: { mult: 6, rounds: 5 } },
+    rarity: 1, cost: 5, stage: 'Basic', ptype: 'Earth', gen: 9, blueprint_compat: true,
+    attributes: ['mult', 'enhancements', 'round_evo'], poke_after: 'orthworm',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); info_queue.push(P_CENTERS.m_stone); const ex = card.ability.extra; return { vars: [r3(ex.mult), ex.rounds] }; },
+    calculate(self, card, context) {
+      if (stone_scored(context) && !context.other_card.debuff) return { mult: card.ability.extra.mult, card };
+      return level_evo(self, card, context, 'j_poke_glimmora');
+    },
+  },
+  // Glimmora 970 (Safari $8), Toxic Debris: each scored Stone card turns a random deck card into a Hazard card (up to 3 a hand, fixed);
+  // each Hazard card held in hand X1.15 (`Xmult_multi` +5%: 1.2075 / 1.265 / 1.3225).
+  glimmora: {
+    name: 'glimmora', poke_sprite391: sprite('Natdex', 18, 64),
+    config: { extra: { Xmult_multi: 1.15, debris_cap: 3 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Earth', gen: 9, blueprint_compat: true,
+    attributes: ['xmult', 'enhancements', 'modify_card', 'full_deck', 'hand'], poke_after: 'glimmet',
+    loc_vars(self, info_queue, card) {
+      type_tooltip(self, info_queue, card); info_queue.push(P_CENTERS.m_stone); info_queue.push(P_CENTERS.m_poke_hazard);
+      const ex = card.ability.extra; return { vars: [r3(ex.Xmult_multi), ex.debris_cap] };
+    },
+    calculate(self, card, context) { toxic_debris(card, context); return hazard_held_x(card, context); },
+  },
+  // Flamigo 973 (Fighting, Rare $7): X1.5 Mult, X2 if the played hand is a Pair (`Xmult` / `Xmult2` +20%: 1.8 / 2.1 / 2.4 and 2.4 / 2.8 / 3.2).
+  flamigo: {
+    name: 'flamigo', poke_sprite391: sprite('Natdex', 24, 64),
+    config: { extra: { Xmult: 1.5, Xmult2: 2 } },
+    rarity: 3, cost: 7, stage: 'Basic', ptype: 'Fighting', gen: 9, blueprint_compat: true,
+    attributes: ['xmult', 'pair'], poke_after: 'houndstone',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.Xmult), r3(ex.Xmult2)] }; },
+    calculate(self, card, context) {
+      if (context.joker_main) { const ex = card.ability.extra, x = context.scoring_name === 'Pair' ? ex.Xmult2 : ex.Xmult; return { message: a_xmult(r3(x)), colour: 'XMULT', Xmult_mod: x }; }
+      return undefined;
+    },
+  },
+  // Veluza 976 (Water, Rare $7), Fillet Away: at end of round loses $1 of sell value and banks +X0.25 (`fillet_Xmult` from X1; gain
+  // `Xmult_mod` +20%: 0.3 / 0.35 / 0.4); at $1 (Pokermon's sell-value floor) it stops (`val_loss` fixed).
+  veluza: {
+    name: 'veluza', poke_sprite391: sprite('Natdex', 0, 65),
+    config: { extra: { fillet_Xmult: 1, Xmult_mod: 0.25, val_loss: 1 } },
+    rarity: 3, cost: 7, stage: 'Basic', ptype: 'Water', gen: 9, blueprint_compat: true,
+    attributes: ['xmult', 'scaling', 'sell_value'], poke_after: 'flamigo',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.Xmult_mod), ex.val_loss, r3(ex.fillet_Xmult)] }; },
+    calculate(self, card, context) {
+      fillet_away(card, context);
+      if (context.joker_main && card.ability.extra.fillet_Xmult > 1) { const x = card.ability.extra.fillet_Xmult; return { message: a_xmult(r3(x)), colour: 'XMULT', Xmult_mod: x }; }
+      return undefined;
+    },
+  },
+  // Dondozo 977 (Water, Rare $7), Commander: X2 Mult, X4 while an (undebuffed) Tatsugiri is directly to its left (`Xmult` / `Xmult2` +20%:
+  // 2.4 / 2.8 / 3.2 and 4.8 / 5.6 / 6.4).
+  dondozo: {
+    name: 'dondozo', poke_sprite391: sprite('Natdex', 2, 65),
+    config: { extra: { Xmult: 2, Xmult2: 4 } },
+    rarity: 3, cost: 7, stage: 'Basic', ptype: 'Water', gen: 9, blueprint_compat: true,
+    attributes: ['xmult', 'joker', 'position'], poke_after: 'veluza',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.Xmult), r3(ex.Xmult2), dondozo_commanded(card) ? 'Commanded!' : 'no Tatsugiri on its left'] }; },
+    calculate(self, card, context) {
+      if (context.joker_main) { const ex = card.ability.extra, x = dondozo_commanded(card) ? ex.Xmult2 : ex.Xmult; return { message: a_xmult(r3(x)), colour: 'XMULT', Xmult_mod: x }; }
+      return undefined;
+    },
+  },
+  // Clodsire 980 (Dark, Stage 1 Safari $8; from Wooper by a Dark Energy, r77), Poison Point: each card you discard (unenhanced) 1 in 4 to
+  // become a Hazard card (odds fixed); X1 + X0.05 per Hazard card in your full deck (`Xmult_mod` +20%: 0.06 / 0.07 / 0.08).
+  clodsire: {
+    name: 'clodsire', poke_sprite391: sprite('Natdex', 8, 65),
+    config: { extra: { num: 1, dem: 4, Xmult_mod: 0.05 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Dark', gen: 9, blueprint_compat: true,
+    attributes: ['xmult', 'discard', 'enhancements', 'modify_card', 'full_deck', 'chance'], poke_after: 'annihilape',
+    loc_vars(self, info_queue, card) {
+      type_tooltip(self, info_queue, card); info_queue.push(P_CENTERS.m_poke_hazard);
+      const ex = card.ability.extra, [num, dem] = get_probability_vars(card, ex.num, ex.dem, 'clodsire_poison');
+      return { vars: [num, dem, r3(ex.Xmult_mod), hazards_in_deck(), r3(clodsire_x(card))] };
+    },
+    calculate(self, card, context) {
+      clodsire_poison(card, context);
+      if (context.joker_main) { const x = clodsire_x(card); if (x > 1) return { message: a_xmult(r3(x)), colour: 'XMULT', Xmult_mod: x }; }
+      return undefined;
+    },
+  },
+  // Poltchageist 1012 (Grass, Common $5), Hospitality: at end of round the Jokers directly left and right gain $1 of sell value (Combee's
+  // honey, `honey` fixed). Carries Sinistcha's `Xmult_mod` ("Energy carries to Sinistcha"). 5 rounds.
+  poltchageist: {
+    name: 'poltchageist', poke_sprite391: sprite('Natdex', 12, 67),
+    config: { extra: { honey: 1, Xmult_mod: 0.05, rounds: 5 } },
+    rarity: 1, cost: 5, stage: 'Basic', ptype: 'Grass', gen: 9, blueprint_compat: false,
+    attributes: ['sell_value', 'joker', 'economy', 'round_evo'], poke_after: 'gholdengo',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [ex.honey, ex.rounds] }; },
+    calculate(self, card, context) { honey_gather(card, context); return level_evo(self, card, context, 'j_poke_sinistcha'); },
+  },
+  // Sinistcha 1013 (Safari $8): Hospitality kept ($1, fixed); X1 + X0.05 per $1 of sell value of ALL your Jokers, itself included
+  // (`Xmult_mod` +20%: 0.06 / 0.07 / 0.08; no cap).
+  sinistcha: {
+    name: 'sinistcha', poke_sprite391: sprite('Natdex', 14, 67),
+    config: { extra: { honey: 1, Xmult_mod: 0.05 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Grass', gen: 9, blueprint_compat: true,
+    attributes: ['xmult', 'sell_value', 'joker', 'economy'], poke_after: 'poltchageist',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [ex.honey, r3(ex.Xmult_mod), row_value(), r3(sinistcha_x(card))] }; },
+    calculate(self, card, context) {
+      honey_gather(card, context);
+      if (context.joker_main) { const x = sinistcha_x(card); if (x > 1) return { message: a_xmult(r3(x)), colour: 'XMULT', Xmult_mod: x }; }
+      return undefined;
+    },
+  },
+}, FILE);
+
 /** The families (functions/pokefamily.lua style): index.js adds them with set_family. */
 export const DESIGN_FAMILIES = [
   ['shinx', 'luxio', 'luxray'],
@@ -10349,9 +10677,17 @@ export const DESIGN_FAMILIES = [
   ['wattrel', 'kilowattrel'],
   ['maschiff', 'mabosstiff'],
   ['toedscool', 'toedscruel'],
+  // Gen 9, batch 2: Clodsire joins Wooper's line (FAMILY_MEMBER_REV: seen from r77 on), and five new lines
+  ['wooper', 'quagsire', 'clodsire'],
+  ['capsakid', 'scovillain'],
+  ['flittle', 'espathra'],
+  ['varoom', 'revavroom'],
+  ['glimmet', 'glimmora'],
+  ['poltchageist', 'sinistcha'],
 ];
-/** Gen 8 batch 3 (r72): the new members of existing lines, for systems/evolution.js FAMILY_MEMBER_REV (index.js). */
-export const GALAR_FAMILY_REV = { obstagoon: 72, cursola: 72, sirfetchd: 72, mrrime: 72, runerigus: 72, basculegion: 72 };
+/** Gen 8 batch 3 (r72): the new members of existing lines, for systems/evolution.js FAMILY_MEMBER_REV (index.js); Gen 9 batch 2 (r77):
+ *  Clodsire (Wooper's line). */
+export const GALAR_FAMILY_REV = { obstagoon: 72, cursola: 72, sirfetchd: 72, mrrime: 72, runerigus: 72, basculegion: 72, clodsire: GEN9B2_REV };
 
 /** Their text (Pokermon loc style: #n# filled by loc_vars), from the design guide; index.js merges it into descriptions.Joker. */
 const EVOLVES_ROUNDS = (n) => '{C:inactive,s:0.8}(Evolves after {C:attention,s:0.8}#' + n + '#{C:inactive,s:0.8} rounds)';
@@ -11350,6 +11686,39 @@ export const DESIGN_LOC = {
     j_poke_toedscool: { name: 'Toedscool', text: ['{C:attention}Mycelium:{} {C:chips}+#1#{} Chips for', 'each card in your full', 'deck above {C:attention}52{}', '{C:inactive}(Currently #2#: {C:chips}+#3#{C:inactive} Chips)', EVOLVES_ROUNDS(4)] },
     j_poke_toedscruel: { name: 'Toedscruel', text: ['{C:attention}Mycelium:{} {X:mult,C:white} X1 {} Mult, plus', '{X:mult,C:white} X#1# {} for each card in', 'your full deck above {C:attention}40{}', '{C:inactive}(Currently #2#: {X:mult,C:white} X#3# {C:inactive} Mult)'] },
     j_poke_klawf: { name: 'Klawf', text: ['{C:attention}Anger Shell:{} {X:mult,C:white} X1 {} Mult,', 'plus {X:mult,C:white} X#1# {} for each hand', 'already played this round', '{C:inactive}(each one didn\'t beat the Blind)', '{C:inactive}(Currently {X:mult,C:white} X#2# {C:inactive} Mult)'] },
+    // Gen 9, batch 2 (the owner's "Yes", 2026-11-03)
+    j_poke_capsakid: { name: 'Capsakid', text: ['{C:attention}Spicy:{} each scored', '{C:clubs}Club{} gives {C:chips}+#1#{} Chips', EVOLVES_ROUNDS(2)] },
+    j_poke_scovillain: { name: 'Scovillain', text: [
+      ['{C:attention}Spicy:{} each scored', '{C:clubs}Club{} gives {C:chips}+#1#{} Chips;', 'each scored {C:hearts}Heart{} gives', '{X:mult,C:white} X#2# {} Mult'],
+      ['{C:red}+#3#{} discard each round'],
+    ] },
+    j_poke_flittle: { name: 'Flittle', text: ['{C:attention}Opportunist:{} permanently', 'gains {C:mult}+#1#{} Mult whenever', 'another Joker permanently', 'grows', '{C:inactive}(Currently {C:mult}+#2#{C:inactive} Mult)', EVOLVES_ROUNDS(3)] },
+    j_poke_espathra: { name: 'Espathra', text: [
+      ['{C:attention}Opportunist:{} permanently', 'gains {X:mult,C:white} X#1# {} Mult whenever', 'another Joker permanently', 'grows', '{C:inactive}(Currently {X:mult,C:white} X#2# {C:inactive} Mult)'],
+      ['{C:mult}+#3#{} Mult {C:inactive}(kept from Flittle)'],
+    ] },
+    j_poke_bombirdier: { name: 'Bombirdier', text: ['{C:attention}Stork Delivery:{} at the', 'end of each shop, {C:green}#1# in #2#{}', 'chance to create a', 'random {C:attention}Tag{}'] },
+    j_poke_varoom: { name: 'Varoom', text: ['{C:attention}Rev the Engine:{} {C:mult}+#1#{} Mult', 'for each hand played in a', 'row without a discard', '{C:inactive}(this hand included)', '{C:inactive}(Streak so far: #2#)', EVOLVES_ROUNDS(3)] },
+    j_poke_revavroom: { name: 'Revavroom', text: ['{C:attention}Rev the Engine:{} {X:mult,C:white} X1 {} Mult,', 'plus {X:mult,C:white} X#1# {} for each hand', 'played in a row without', 'a discard {C:inactive}(this hand included)', '{C:inactive}(Streak so far: #2#)'] },
+    j_poke_cyclizar: { name: 'Cyclizar', text: ['{C:attention}Ride:{} {C:blue}+#1#{} hand each', 'round and {C:attention}+#2#{} hand size'] },
+    j_poke_orthworm: { name: 'Orthworm', text: ['{C:attention}Earth Eater:{} {C:chips}+#1#{} Chips', 'for each {C:attention}Steel{} card', 'in your full deck', '{C:inactive}(Currently {C:chips}+#2#{C:inactive} Chips)'] },
+    j_poke_glimmet: { name: 'Glimmet', text: ['Each scored {C:attention}Stone{}', 'card gives {C:mult}+#1#{} Mult', EVOLVES_ROUNDS(2)] },
+    j_poke_glimmora: { name: 'Glimmora', text: [
+      ['{C:attention}Toxic Debris:{} each scored', '{C:attention}Stone{} card turns a random', 'card in your deck into a', '{C:attention}Hazard{} card', '{C:inactive}(Unenhanced first; never a', '{C:inactive}Stone card; up to #2# a hand)'],
+      ['Each {C:attention}Hazard{} card', '{C:attention}held in hand{} gives', '{X:mult,C:white} X#1# {} Mult'],
+    ] },
+    j_poke_flamigo: { name: 'Flamigo', text: ['{X:mult,C:white} X#1# {} Mult', '{X:mult,C:white} X#2# {} Mult instead if', 'the played hand is', 'a {C:attention}Pair{}'] },
+    j_poke_veluza: { name: 'Veluza', text: ['{C:attention}Fillet Away:{} at end of', 'round, loses {C:money}$#2#{} of sell', 'value and permanently', 'gains {X:mult,C:white} X#1# {} Mult', '{C:inactive}(Stops at {C:money}$1{C:inactive} sell value)', '{C:inactive}(Currently {X:mult,C:white} X#3# {C:inactive} Mult)'] },
+    j_poke_dondozo: { name: 'Dondozo', text: ['{X:mult,C:white} X#1# {} Mult', '{C:attention}Commander:{} {X:mult,C:white} X#2# {} Mult', 'instead while {C:attention}Tatsugiri{}', 'is directly to its left', '{C:inactive}(Now: #3#)'] },
+    j_poke_clodsire: { name: 'Clodsire', text: [
+      ['{C:attention}Poison Point:{} each card', 'you discard has a {C:green}#1# in #2#{}', 'chance to become a', '{C:attention}Hazard{} card', '{C:inactive}(Unenhanced cards only)'],
+      ['{X:mult,C:white} X1 {} Mult, plus {X:mult,C:white} X#3# {}', 'for each {C:attention}Hazard{} card', 'in your full deck', '{C:inactive}(Currently #4#: {X:mult,C:white} X#5# {C:inactive} Mult)'],
+    ] },
+    j_poke_poltchageist: { name: 'Poltchageist', text: ['{C:attention}Hospitality:{} at end of', 'round, the Jokers directly left', 'and right of this one each', 'gain {C:money}$#1#{} of sell value', ENERGY_TO('Sinistcha'), EVOLVES_ROUNDS(2)] },
+    j_poke_sinistcha: { name: 'Sinistcha', text: [
+      ['{C:attention}Hospitality:{} at end of', 'round, the Jokers directly left', 'and right of this one each', 'gain {C:money}$#1#{} of sell value'],
+      ['{X:mult,C:white} X1 {} Mult, plus {X:mult,C:white} X#2# {}', 'for each {C:money}$1{} of sell value', 'of all your Jokers', '{C:inactive}(Currently {C:money}$#3#{C:inactive}: {X:mult,C:white} X#4# {C:inactive} Mult)'],
+    ] },
     // The owner's rework of an upstream joker (Espeon 196, Future Sight, contentRev 57; jokers/pokejokers_07.js): its text replaces 3.9.1's.
     j_poke_espeon: { name: 'Espeon', text: [
       ['{C:purple}+#1# Foresight', 'Each played {V:1}#2#{}', 'retriggers and gives', '{X:mult,C:white} X#3# {} Mult when scored'],
@@ -11372,5 +11741,7 @@ export const GALAR_UPSTREAM_TEXT = {
   j_poke_linoone: [BR, '{C:attention}Galarian form:{} a', '{X:poke_dark,C:white}Dark{} Energy used on it', 'evolves it into {C:attention}Obstagoon{}'],
   j_poke_corsola: [BR, '{C:attention}Galarian form:{} a', '{X:poke_psychic,C:white}Psychic{} Energy used on it', 'evolves it into {C:attention}Cursola{}'],
   j_poke_mrmime: [BR, '{C:attention}Galarian form:{} a', '{X:poke_water,C:white}Water{} Energy used on it', 'evolves it into {C:attention}Mr. Rime{}'],
+  // Gen 9 batch 2 (r77): Wooper's Paldean form (its level_evo into Quagsire unchanged)
+  j_poke_wooper: [BR, '{C:attention}Paldean form:{} a', '{X:poke_dark,C:white}Dark{} Energy used on it', 'evolves it into {C:attention}Clodsire{}'],
   j_poke_farfetchd: [BR, '{C:attention}Galarian form:{} evolves into', '{C:attention}Sirfetch\'d{} at end of round', 'after {C:attention}#5#{} {C:attention}Lucky{} card triggers', 'in that round', '{C:inactive}(This round: #4#/#5#)'],
 };

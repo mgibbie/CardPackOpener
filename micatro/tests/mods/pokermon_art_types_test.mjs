@@ -111,6 +111,11 @@ await sec('static', () => {
     && D.cufant === 'Metal' && D.copperajah === 'Metal' && D.dracozolt === 'Lightning' && D.arctozolt === 'Lightning' && D.dracovish === 'Water' && D.arctovish === 'Water' && D.basculegion === 'Psychic',
   'Gen 8 batch 3: Obstagoon Dark, Cursola / Runerigus / Basculegion Psychic (Ghost: their cards), Sirfetch’d / Falinks Fighting, Mr. Rime / Snom line / Eiscue Water (Ice), Milcery line Fairy, Pincurchin / Morpeko Lightning, Cufant line Metal, the Galar fossils by their cards (Dracozolt / Arctozolt Lightning, Dracovish / Arctovish Water)',
   ['obstagoon', 'cursola', 'sirfetchd', 'mrrime', 'runerigus', 'basculegion', 'morpeko', 'arctozolt'].map((n) => D[n]));
+  ok(D.capsakid === 'Grass' && D.scovillain === 'Fire' && D.flittle === 'Psychic' && D.espathra === 'Psychic' && D.bombirdier === 'Dark' && D.varoom === 'Metal' && D.revavroom === 'Metal'
+    && D.cyclizar === 'Dragon' && D.orthworm === 'Metal' && D.glimmet === 'Earth' && D.glimmora === 'Earth' && D.flamigo === 'Fighting' && D.veluza === 'Water' && D.dondozo === 'Water'
+    && D.clodsire === 'Dark' && D.poltchageist === 'Grass' && D.sinistcha === 'Grass',
+  'Gen 9 batch 2: Capsakid Grass -> Scovillain Fire (Grass/Fire: its card Fire), Flittle line Psychic, Bombirdier Dark, Varoom line / Orthworm Metal, Cyclizar Dragon, Glimmet line Earth (Rock/Poison), Flamigo Fighting, Veluza / Dondozo Water, Clodsire Dark (Poison/Ground), Poltchageist line Grass (Grass/Ghost)',
+  ['capsakid', 'scovillain', 'bombirdier', 'glimmora', 'clodsire', 'sinistcha'].map((n) => D[n]));
   ok(CASTFORM_FORMS.normal.ptype === 'Colorless' && CASTFORM_FORMS.sunny.ptype === 'Fire' && CASTFORM_FORMS.rainy.ptype === 'Water' && CASTFORM_FORMS.snowy.ptype === 'Water',
     'Castform: Normal Colorless, Sunny Fire, Rainy / Snowy Water');
 });

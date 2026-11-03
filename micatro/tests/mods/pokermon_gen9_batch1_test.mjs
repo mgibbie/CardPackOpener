@@ -143,7 +143,7 @@ await sec('static', () => {
   ok(run('spidops', ['nymble', 'lokix', 'pawmi', 'pawmo', 'pawmot'], 'tandemaus'), 'Pokédex order: Spidops (918), Nymble ... Pawmot (919-923), Tandemaus (924)');
   ok(run('arboliva', ['squawkabilly'], 'charcadet'), 'Pokédex order: Arboliva (930), Squawkabilly (931), Charcadet (935)');
   ok(run('ceruledge', ['tadbulb', 'bellibolt', 'wattrel', 'kilowattrel', 'maschiff', 'mabosstiff'], 'bramblin'), 'Pokédex order: Ceruledge (937), Tadbulb ... Mabosstiff (938-943), Bramblin (946)');
-  ok(run('brambleghast', ['toedscool', 'toedscruel', 'klawf'], 'rellor'), 'Pokédex order: Brambleghast (947), Toedscool ... Klawf (948-950), Rellor (953)');
+  ok(run('brambleghast', ['toedscool', 'toedscruel', 'klawf'], 'capsakid'), 'Pokédex order: Brambleghast (947), Toedscool ... Klawf (948-950), then Capsakid (951, Gen 9 batch 2)');
   const fam = (n) => poke_get_family_list(n).map((x) => (typeof x === 'string' ? x : x.key || x.name)).join();
   for (const line of Object.values(LINES)) if (line.length > 1) ok(fam(line[0]) === line.join(), 'one family: ' + line.join(' -> '), fam(line[0]));
   const inert = ['squawkabilly', 'wattrel', 'kilowattrel'];
