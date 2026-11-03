@@ -5,6 +5,8 @@
 //   Swirlix 684 -> Slurpuff (Fairy)          Sweet Veil: +1 / +2 Mult banked per Tarot used (the bank carries); Slurpuff +1 consumable slot.
 //   Inkay 686 -> Malamar (Dark)              scored 2-5 +4 Mult; Malamar's Topsy-Turvy: every scored card gives its FLIPPED rank's Chips
 //                                            (2<->A, 3<->K, 4<->Q, 5<->J, 6<->10, 7<->9; the chip_bonus hook; bonuses stay, Stone unchanged).
+//                                            r73 (the owner's buff): Malamar's scored 2-5 also X1.25 (`Xmult_multi`, it takes Energy now);
+//                                            r62-r72 rules / recipes replay without it (no field, an Energy skips it).
 //   Binacle 688 -> Barbaracle (Earth)        scored 7s +20 Chips / +20 Chips and X1.3.
 //   Skrelp 690 -> Dragalge (Dark)            Poison Point: each Blind, 1 random deck card becomes a Hazard (unenhanced first); Skrelp +3 Mult
 //                                            per Hazard in the full deck; Dragalge each held Hazard X1.2.
@@ -151,9 +153,10 @@ await sec('static', () => {
   for (const [from, list, to] of RUNS) ok(run(from, list, to) === true, `Pokédex order: ${from} (${from === 'aegislash' ? 681 : from === 'sylveon' ? 700 : 711}), ${list.join(', ')}, ${to}`, run(from, list, to));
   const fam = (n) => poke_get_family_list(n).map((x) => (typeof x === 'string' ? x : x.key || x.name)).join();
   for (const line of Object.values(LINES)) if (line.length > 1) ok(fam(line[0]) === line.join(), 'one family: ' + line.join(' -> '), fam(line[0]));
-  const inert = ['spritzee', 'aromatisse', 'malamar', 'hawlucha'];
+  const inert = ['spritzee', 'aromatisse', 'hawlucha'];
   ok(inert.every((n) => C(n).poke_no_energy_field === true) && NAMES.filter((n) => !inert.includes(n)).every((n) => !C(n).poke_no_energy_field),
-    'Energy-inert by design (poke_no_energy_field): Spritzee / Aromatisse (money, odds), Malamar (a rule), Hawlucha (retriggers)');
+    'Energy-inert by design (poke_no_energy_field): Spritzee / Aromatisse (money, odds), Hawlucha (retriggers); Malamar takes Energy since r73');
+  ok(C('malamar').config.extra.Xmult_multi === 1.25, 'Malamar r73: Xmult_multi 1.25', C('malamar').config.extra);
   ok(['aroma_money', 'lucky_odds', 'sweet_mult', 'card_limit', 'retriggers', 'ancient_money', 'third_times', 'curse_mult', 'bat_mult', 'bat_Xmult', 'h_size'].every((f) => !(f in energy_values)),
     'fixed: the money, the odds, the banks, the consumable slot, the retriggers, the 3+ count, hand size (no energy field)');
 });
@@ -285,6 +288,103 @@ await sec('topsy-turvy', () => {
   m.remove(); flush();
   ok(chipsOf('S_K') === 10, 'sold: Kings give 10 again');
   ok(DES.flipped_chips(cards(['S_4'])[0]) === 10 && DES.flipped_chips(cards([['S_4', 'm_stone']])[0]) === undefined, 'flipped_chips (the hook\'s helper): a 4 -> 10, a Stone card -> none');
+});
+
+// ------------------------------------------------------------------- Malamar r73: scored 2-5 also X1.25 (the owner's buff)
+const darkEnergy = () => {
+  const e = add('c_poke_darkness_energy');
+  const r = act({ type: 'use', id: e.sort_id, targets: [] }); flush();
+  return r;
+};
+await sec('malamar r73', () => {
+  start('MAL73');
+  const m = add('j_poke_malamar');
+  ok(near(ex(m).Xmult_multi, 1.25), 'a Malamar made on r73: Xmult_multi 1.25', ex(m));
+  let t = play(['S_2', 'H_3', 'D_4', 'C_5', 'S_6']);
+  ok(t.chips === 30 + 11 + 10 + 10 + 10 + 10 && near(t.mult, 4 * 1.25 ** 4), 'Malamar, 2-3-4-5-6 Straight: flipped Chips (11 + 10 x 4) and the 2, 3, 4, 5 X1.25 each (not the 6)', t.total);
+  t = play(['S_A']);
+  ok(t.chips === 5 + 2 && near(t.mult, 1), 'an Ace: 2 Chips, no X', t.total);
+  t = play(['S_K', 'H_K']);
+  ok(t.chips === 10 + 3 + 3 && near(t.mult, 2), 'a Pair of Kings: 3 + 3, no X', t.total);
+  t = play([['S_2', 'm_stone']]);
+  ok(t.chips === 5 + 50 && near(t.mult, 1), 'a Stone 2 (no rank): +50, no X', t.total);
+  t = play([['H_5', 'm_bonus']]);
+  ok(t.chips === 5 + 10 + 30 && near(t.mult, 1.25), 'a Bonus 5: 10 + 30, X1.25', t.total);
+  const hk = add('j_hack');
+  t = play(['C_3']);
+  ok(t.chips === 5 + 10 + 10 && near(t.mult, 1.25 * 1.25), 'Hack retriggers a 3: 10 Chips and X1.25 twice', t.total);
+  hk.remove(); flush();
+  const m2 = add('j_poke_malamar');
+  t = play(['D_4']);
+  ok(t.chips === 5 + 10 && near(t.mult, 1.25 * 1.25), 'two Malamars: the flip once, the X from each (X1.25 x X1.25)', t.total);
+  m2.remove(); flush();
+  debuff(m);
+  t = play(['D_4']);
+  ok(t.chips === 5 + 4 && near(t.mult, 1), 'a debuffed Malamar: no flip, no X', t.total);
+  m.ability.debuff_sources = {}; m.set_debuff(); flush();
+  const txt = plain(m).replace(/\s*\|\s*/g, ' ');
+  ok(/Topsy-Turvy: each scored card gives the Chips of its flipped rank instead of its own/.test(txt) && /Each scored 2, 3, 4 or 5 also gives X1.25 Mult/.test(txt),
+    'its text: Topsy-Turvy and the X1.25', txt);
+  // Blueprint copies nothing (the flip is a rule; blueprint_compat stays false)
+  ok(C('malamar').blueprint_compat === false, 'Blueprint: incompatible (as before)');
+  // an Energy now goes on it (leftmost Dark joker it can energize)
+  start('MAL73E');
+  const m3 = add('j_poke_malamar'); const ik = add('j_poke_inkay');
+  darkEnergy();
+  ok(ex(m3).energy_count === 1 && near(ex(m3).Xmult_multi, 1.3125) && !ex(ik).energy_count, 'r73: a Dark Energy (none highlighted) goes on Malamar (X1.3125)', [ex(m3), ex(ik)]);
+  // energized Inkay -> Malamar carries its Energy into the X
+  start('MAL73I');
+  const ik2 = add('j_poke_inkay');
+  increment_energy(ik2, 'Dark'); increment_energy(ik2, 'Dark');
+  rounds(5);
+  ok(key(ik2) === 'j_poke_malamar' && near(ex(ik2).Xmult_multi, 1.375), 'Inkay (2 Energy) -> Malamar: X1.375', [key(ik2), ex(ik2)]);
+});
+await sec('malamar r72 rules', () => {
+  // a run recorded on r62-r72 (js/mods/pins.js RULES): Malamar has no number, no X, and an Energy skips it
+  start('MAL72');
+  PINS.RULES.pins = { pokermon: '3.9.1+r72' };
+  let m, ik, t;
+  try {
+    m = add('j_poke_malamar'); ik = add('j_poke_inkay');
+    ok(!('Xmult_multi' in ex(m)), 'a Malamar made on r72 rules: no Xmult_multi (no energy field, as then)', ex(m));
+    t = play(['S_2', 'H_3', 'D_4', 'C_5', 'S_6']);
+    darkEnergy();
+  } finally { PINS.RULES.pins = null; }
+  ok(t.chips === 30 + 51 && near(t.mult, 4 + 4 * 4), 'r72 rules, 2-6 Straight: flipped Chips, Inkay +4 each low card, no Malamar X', t.total);
+  ok(!ex(m).energy_count && ex(ik).energy_count === 1, 'r72 rules: the Dark Energy skips Malamar and goes on Inkay (as recorded)', [ex(m), ex(ik)]);
+  // the same Malamar under r73 rules (a re-pinned run): the base X1.25
+  t = play(['S_2']);
+  ok(t.chips === 5 + 11 && near(t.mult, 1 * 1.25 + 5.6), 'the r72-made Malamar, then live on r73 (a re-pinned run): the base X1.25 (no field), then the energized Inkay +5.6', t.total);
+});
+await sec('malamar old-rev replay', () => {
+  const deck = { name: 'Malamar', mods: ['pokermon'], params: { blind_scaling: 0.05 },
+    cards: [['S_2', 0, 0, 0, 13], ['H_3', 0, 0, 0, 13], ['D_4', 0, 0, 0, 13], ['C_K', 0, 0, 0, 13]],
+    jokers: [{ key: 'j_poke_malamar' }, { key: 'j_poke_inkay' }], consumables: [{ key: 'c_poke_darkness_energy', n: 1 }] };
+  const record = (pins) => {
+    const s = new Session();
+    PINS.RULES.pins = pins;
+    try {
+      s.start({ seed: 'MAL73REC', customDeck: deck });
+      s.act({ type: 'select_blind' }); flush();
+      for (const c of G.consumeables.cards.slice()) { s.act({ type: 'use', id: c.sort_id, targets: [] }); flush(); }
+      s.act({ type: 'highlight', ids: G.hand.cards.slice(0, 5).map((c) => c.sort_id) }); s.act({ type: 'play' }); flush();
+    } finally { PINS.RULES.pins = null; }
+    return s;
+  };
+  const snap = () => ({ chips: String(G.GAME.chips), jokers: G.jokers.cards.map((j) => [key(j), ex(j).energy_count || 0, ex(j).Xmult_multi ?? null, ex(j).mult ?? null]), state: G.STATE });
+  const old = record({ pokermon: '3.9.1+r72' });
+  const want = snap();
+  ok(want.jokers[0][1] === 0 && want.jokers[1][1] === 1 && want.jokers[0][2] === null, 'the run on r72: the Energy went on Inkay, Malamar has no X', want);
+  const rec = JSON.parse(JSON.stringify(old.recipe));
+  rec.modVersions.pokermon = '3.9.1+r72';
+  const r = Session.fromRecipe(JSON.parse(JSON.stringify(rec)), { repin: true }); flush();
+  ok(!r.stoppedAt && JSON.stringify(snap()) === JSON.stringify(want), 'resumed: every r72 move replays on r72 (the same Energy target and score)', { want, got: snap() });
+  const st = Session.stepper(JSON.parse(JSON.stringify(rec)));
+  st.seek(st.total); flush();
+  ok(!st.error && st.index === rec.actions.length && JSON.stringify(snap()) === JSON.stringify(want), 'the replay stepper: the same', [st.error, snap()]);
+  record(null);
+  const now = snap();
+  ok(now.jokers[0][1] === 1 && near(now.jokers[0][2], 1.3125) && now.jokers[1][1] === 0 && now.chips !== want.chips, 'the same moves on r73: the Energy goes on Malamar (X1.3125), not Inkay, and the hand scores differently', { want: want.chips, now });
 });
 
 // ------------------------------------------------------------------- Binacle / Barbaracle
@@ -631,7 +731,10 @@ await sec('energy', () => {
   const nb = steps('noibat', 'mult_mod', 'Dragon', [2.4, 2.8, 3.2]);
   ok(ex(nb).h_size === 1 && G.hand.config.card_limit === 9, 'Noibat\'s hand size stays +1', [ex(nb).h_size, G.hand.config.card_limit]);
   steps('noivern', 'Xmult_mod', 'Dragon', [0.12, 0.14, 0.16]);
-  for (const n of ['spritzee', 'aromatisse', 'malamar', 'hawlucha']) {
+  steps('malamar', 'Xmult_multi', 'Dark', [1.3125, 1.375, 1.4375]);
+  t = play(['S_2']);
+  ok(t.chips === 5 + 11 && near(t.mult, 1.4375), 'energized Malamar (r73): a 2 scores 11 Chips, X1.4375', t.total);
+  for (const n of ['spritzee', 'aromatisse', 'hawlucha']) {
     start('ENIN' + n);
     const j = add('j_poke_' + n), before = JSON.stringify(ex(j));
     increment_energy(j, C(n).ptype);

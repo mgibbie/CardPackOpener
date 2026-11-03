@@ -124,7 +124,7 @@ Notable gaps:
   - Legendaries and mythicals: most of Gens 4-9 (the Regis, the Lati twins, the weather trio, the
     creation trio, Regigigas, Arceus, the Lake trio, Cresselia, Manaphy and Phione, all 12 Gen 5 Legendaries, Yveltal / Zygarde / Diancie / Hoopa / Volcanion and the 14 Gen 7 Legendaries (Type: Null, the
     Tapus, the Cosmog line, Necrozma, Magearna, Marshadow, Zeraora) and the 10 Gen 8 Legendaries (Zacian, Zamazenta, Eternatus, Zarude, Regieleki,
-    Regidrago, Glastrier, Spectrier, Calyrex, Enamorus; contentRev 73) are now the owner's designs): the Ruinous four, Koraidon and Miraidon.
+    Regidrago, Glastrier, Spectrier, Calyrex, Enamorus; contentRev 74) are now the owner's designs): the Ruinous four, Koraidon and Miraidon.
   - Fossils: the four Galar fossils are still missing; the Tirtouga and Archen lines (Gen 5) and the Tyrunt and
     Amaura lines (Gen 6) are now house fossils on the "Ancient" mechanic (2.5).
   - Ultra Beasts: all 11 are now the owner's designs (Gen 7 batch 3, contentRev 66), on a shared UB mechanic,
@@ -937,7 +937,13 @@ House pattern: a FLIPPED-RANK chip rule, card level (the Gen 6 Malamar, Topsy-Tu
     v - base.nominal + flipped. Only the rank part moves: the enhancement's bonus (a Bonus card's +30) and perma_bonus (Hiker's +5 a
     score) stay on top; Stone / rankless cards are never touched; two Malamars flip once (a rule, not a bonus). Card level means every
     retrigger (Hack, Hawlucha) and every reader of a card's Chips sees the flipped number. It turns low cards into high-Chip cards: pair it
-    with low-rank payoffs (its own Basic, Inkay: scored 2-5 +4 Mult). Energy-inert (no number).
+    with low-rank payoffs (its own Basic, Inkay: scored 2-5 +4 Mult).
+  - r73 (the owner's buff, "malamar is so weak"): a rule alone was too weak for a Stage 1 Safari $8 (at most ~+9 Chips a low card). It now
+    ALSO pays its line's identity: each scored 2, 3, 4 or 5 X1.25 (`Xmult_multi` +5%, a per-card X; its real rank, a Stone never). A little
+    under the one-rank / faces Stage 1s (Barbaracle X1.3 on 7s, Pangoro X1.3 on faces) because it covers 16 cards and the flip already
+    adds Chips. Lesson: a flip / conversion RULE on a Stage 1 needs a payoff of its own. GATING A NEW ENERGY FIELD: a joker that gains its
+    first number changes Energy targeting (energy_can_use takes the leftmost joker WITH a field), so on older rules its set_ability deletes
+    the field (as Male Meowstic does) and an old run's Energy still skips it.
 House pattern: the ENDS of the scoring hand retrigger (the Gen 6 Hawlucha, Flying Press; flying_press):
   - scoring_hand[0] and scoring_hand[last] by POSITION (Cinccino's / Shellos's rule: a debuffed card there gets nothing, the ends never shift
     inward); one scored card is both ends and retriggers ONCE, not twice (say it on the card). A single-stage Rare's whole ability.
@@ -1067,11 +1073,13 @@ House pattern: SANDSTORM, the house sandstorm (the Gen 8 Sandaconda; jokers/poke
     rules); they neither make nor read the weather. Castform has no sand form: a sandstorm never changes its forecast (its Clubs /
     red / Spades read stands). Sun, rain and sand are independent (all three can hold at once).
   - Sandaconda's own payoff is weather-free (scored Stone +20 Chips and X1.2: Stone "extra" rules on the joker, Sand Stream's shape).
+    r73 (the owner's): it keeps Silicobra's Sand Spit too (its own num / dem, the same 'silicobra_spit' roll), so the Stage 1 makes the
+    Stones it pays for.
 House pattern: a SAND SPIT, discards to Stone by chance (the Gen 8 Silicobra; sand_spit): each card the PLAYER discards (Trapinch's
   pre_discard rule: a hook discard — The Hook, seals, other mods' blinds — doesn't count) that is UNENHANCED rolls num in dem (1 in 4,
   pseudorandom_probability 'silicobra_spit': Oops! / Venonat raise it, Absol fixes it) to become Stone as it goes to the discard pile.
   Enhanced cards never roll (the house "never overwrites" rule). Blueprint copies it (its own roll). Odds fixed; the Basic carries
-  Sandaconda's `chips` ("Energy carries to Sandaconda").
+  Sandaconda's `chips` ("Energy carries to Sandaconda"). Sandaconda keeps it (r73; sand_spit73).
 House pattern: a DECK CONVERSION EACH BLIND for a Stone line (the Gen 8 Rolycoly line, Coal; blind_convert): Cherubi's sweet_seeds with
   m_stone and its own stream ('poke_rolycoly_coal'): 1 random UNENHANCED full-deck card per Blind (none: nothing), Blueprint copies it
   (Marble Joker's moment). Carkol adds scored Stone +6 Mult (`mult` +40%), Coalossal X1.3 (`Xmult_multi` +5%, a per-card X) and +1 discard
@@ -1129,6 +1137,9 @@ House pattern: REROLL PRICES (the Gen 8 Impidimp line, Prankster; prank_reroll_c
   Prankster-free reroll as one of the engine's free rerolls (cr.free_rerolls + 1 before the reroll's event), so like Chaos it never steps the price
   up ($0, $5, $6). add_to_deck / remove_from_deck queue a recalculation (bought or sold mid-shop, the price changes at once). Grimmsnarl banks X0.1
   per reroll (context.reroll_shop, free ones too); the Basic and Stage 1 carry its `Xmult_mod` ("Energy carries to Grimmsnarl").
+  r73 (the owner's): Morgrem keeps Impidimp's $1 discount (its own `reroll_discount`, stacking with Impidimps'; prank_discount73), so a Stage 1
+  never loses its Basic's effect. Grimmsnarl does not (the owner named Morgrem only; with X0.1 a reroll, cheaper rerolls would also be a
+  scaling buff there).
 House pattern: a NEW EVOLUTION FOR AN EXISTING JOKER (the owner's Gen 8 batch 3: the Galarian / Hisuian forms of Linoone, Corsola,
   Farfetch'd, Mr. Mime, Yamask and Basculin — an owner-approved exception to "base Pokermon wins"):
   - The old joker keeps every number, rarity, cost and rule it had; the new path is ADDED (its text as a new box after the 3.9.1 text,
@@ -1378,11 +1389,11 @@ gluttony_Xmult (Guzzlord's bank; its gain Xmult_mod is energized), recoil (Blace
 the Gen 7 Legendaries' fixed fields: null_Xmult (Type: Null's bank), cosmo_mult / cosmo_Xmult / red / black (the Cosmog line), prism_Xmult / ultra_size
 (Necrozma), mist_money (Tapu Fini's $2), plasma_money (Zeraora's $1);
 the Gen 8 batch 1 fixed fields: taxi_money (the Rookidee line's $), card_slots (Corviknight's shop slot), scry (the Blipbug line), growth
-(Eldegoss), hands (Dubwool's Boss hand), d_size (Coalossal), num / dem (Silicobra's 1 in 4); the states missile / load_round / firing
+(Eldegoss), hands (Dubwool's Boss hand), d_size (Coalossal), num / dem (Silicobra's 1 in 4; Sandaconda's since r73); the states missile / load_round / firing
 (Cramorant) and guard_round (Dubwool). Carried for the next stage: Rookidee / Corvisquire `Xmult` (Corviknight's), Blipbug `mult`
 (Dottler's), Rolycoly `mult` (Carkol's), Silicobra `chips` (Sandaconda's). Two energy fields on one number pair: Sandaconda's Stone
 `chips` and `Xmult_multi`;
-the Gen 8 batch 2 fixed fields: reroll_discount (Impidimp's $1), num / dem (the Antique 1 in 10), the forms poke_tox_form / poke_tea (on
+the Gen 8 batch 2 fixed fields: reroll_discount (Impidimp's $1; Morgrem's since r73), num / dem (the Antique 1 in 10), the forms poke_tox_form / poke_tea (on
 card.ability), the banks burn_mult / burn_Xmult / prank_Xmult (their gains mult_mod / Xmult_mod are energized), the state burn_round. Carried
 for the next stage: Impidimp / Morgrem `Xmult_mod` (Grimmsnarl's). Two energy fields on one number pair: Toxtricity's Amped `Xmult` and Low Key
 `chips`;

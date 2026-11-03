@@ -161,7 +161,7 @@
 // the sun; always sunny, each Fire Joker X1.25) — upstream 3.9.1 draws them all (Natdex {18,38}-{12,42}; Deerling / Sawsbuck Gen 5 {2,1}-{4,2}).
 // Gen 6, batch 2 (contentRev 62; the owner's "Yes", 2026-11-02), 22 jokers #682-715: Spritzee -> Aromatisse (Fairy; scored Lucky cards $1 / $2;
 // Aroma Veil: Lucky odds +1, Pidove's Super Luck), Swirlix -> Slurpuff (Fairy; +1 / +2 Mult banked per Tarot used; +1 consumable slot), Inkay ->
-// Malamar (Dark; scored 2-5 +4 Mult; Topsy-Turvy: every card scores its FLIPPED rank's Chips, the chip_bonus hook), Binacle -> Barbaracle
+// Malamar (Dark; scored 2-5 +4 Mult; Topsy-Turvy: every card scores its FLIPPED rank's Chips, the chip_bonus hook; r73 scored 2-5 X1.25), Binacle -> Barbaracle
 // (Earth; scored 7s +20 Chips / and X1.3), Skrelp -> Dragalge (Dark; a deck card becomes a Hazard each Blind; +3 Mult per Hazard in the deck /
 // held Hazards X1.2), Tyrunt -> Tyrantrum (Dragon; Ancient Kings) and Amaura -> Aurorus (Earth; Ancient Queens, the 2+ tier turns a Queen
 // Glass), Hawlucha (Fighting; the first and last scored cards retrigger), Klefki (Metal; X0.25 per Voucher redeemed), Phantump -> Trevenant
@@ -181,7 +181,7 @@
 // plants a Seed each Blind, +1 growth level), Wooloo -> Dubwool (Colorless; +50 / +100 Chips; Cotton Guard +1 hand during Boss Blinds),
 // Chewtle -> Drednaw (Water; +3 Mult / X1 + X0.3 per Water Joker), Rolycoly -> Carkol -> Coalossal (Earth -> Fire; a deck card turns Stone
 // each Blind; Stone +6 Mult / X1.3; Coalossal +1 discard), Silicobra -> Sandaconda (Earth; Sand Spit: discarded cards 1 in 4 Stone; the
-// house SANDSTORM, is_sandstorm; Stone +20 Chips and X1.2), Cramorant (Water; Gulp Missile: the first discard loads X2.5 for the next hand)
+// house SANDSTORM, is_sandstorm; Stone +20 Chips and X1.2; r73 Sand Spit too), Cramorant (Water; Gulp Missile: the first discard loads X2.5 for the next hand)
 // and Arrokuda -> Barraskewda (Water; Propeller Tail: the first scored card +10 Mult / X2) — upstream 3.9.1 draws them all (Natdex
 // {20,54}-{12,56}; Cramorant Gen 8 {0,0}, Gulping {2,0}).
 // Gen 8, batch 3 (contentRev 72; the owner's "yes build it", 2026-11-02), 21 jokers #862-902: Milcery -> Alcremie (Fairy; Decorate: edition cards
@@ -3080,6 +3080,16 @@ export function malamar_chip_bonus(v, card) {
   const f = flipped_chips(card);
   if (f === undefined || typeof card.base.nominal !== 'number') return undefined;
   return v - card.base.nominal + f;
+}
+/** Malamar r73 (the owner's buff, "malamar is so weak please fix"): each scored 2, 3, 4 or 5 (its real rank, not the flipped one; a Stone
+ *  card never) ALSO gives X(Xmult_multi), on top of Topsy-Turvy. Card level, so a retrigger gives it again. A move recorded before r73 (a
+ *  resumed / replayed run, js/mods/pins.js RULES) never sees it, and a Malamar made on those rules has no `Xmult_multi` at all (its
+ *  set_ability deletes it), so an Energy still skips it exactly as before. One made on them and kept past a re-pin gives the base X1.25. */
+const malamar_x73 = () => rulesRev('pokermon') >= 73;
+function malamar_low_x(card, context) {
+  if (!malamar_x73() || !(context.individual && context.cardarea === G.play && !context.end_of_round && !has_no_rank(context.other_card) && LOW_RANKS.includes(context.other_card.get_id()))) return undefined;
+  const x = card.ability.extra.Xmult_multi;
+  return { x_mult: typeof x === 'number' ? x : P_CENTERS.j_poke_malamar.config.extra.Xmult_multi, card };
 }
 /** Binacle / Barbaracle: each scored 7 gives +chips Chips (Barbaracle also X(Xmult_multi)). */
 function seven_rocks(card, context, x) {
@@ -7448,13 +7458,17 @@ defineJokers({
     calculate(self, card, context) { return inkay_low(card, context) || level_evo(self, card, context, 'j_poke_malamar'); },
   },
   // Malamar 687 (Safari $8), Topsy-Turvy: every scored card gives the Chips of its flipped rank instead of its own (the chip_bonus hook,
-  // malamar_chip_bonus). No number: Energy-inert.
+  // malamar_chip_bonus). r73 (the owner's buff): each scored 2, 3, 4 or 5 also gives X1.25 (`Xmult_multi` +5%: 1.313 / 1.375 / 1.438;
+  // malamar_low_x). r62-r72 it had no number (Energy-inert): on those rules set_ability deletes the field, so an Energy skips it as before.
+  // Blueprint: the flip is a rule (nothing to copy), and it still copies nothing.
   malamar: {
     name: 'malamar', poke_sprite391: sprite('Natdex', 22, 45),
-    config: { extra: {} },
-    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Dark', gen: 6, blueprint_compat: false, poke_no_energy_field: true,
-    attributes: ['chips', 'rank', 'modify_card'], poke_after: 'inkay',
-    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); return { vars: [] }; },
+    config: { extra: { Xmult_multi: 1.25 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Dark', gen: 6, blueprint_compat: false,
+    attributes: ['chips', 'xmult', 'rank', 'modify_card'], poke_after: 'inkay',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const x = card.ability.extra.Xmult_multi; return { vars: [r3(typeof x === 'number' ? x : self.config.extra.Xmult_multi)] }; },
+    set_ability(self, card) { if (!malamar_x73()) delete card.ability.extra.Xmult_multi; },
+    calculate(self, card, context) { return malamar_low_x(card, context); },
   },
   // Binacle 688 (Earth, Common $5): each scored 7 gives +20 Chips (`chips` +30%: 26 / 32 / 38). 5 rounds.
   binacle: {
@@ -8526,6 +8540,9 @@ function sand_spit(card, context) {
  *  (swift_swim_raining). Castform has no sand form: the sandstorm never changes its forecast. Flygon's "Sandstorm" and the Hippopotas
  *  line's "Sand Stream" are move names; they neither make nor read it. */
 export const is_sandstorm = () => legends('sandaconda').length > 0;
+/** Sandaconda r73 (the owner's: it keeps Silicobra's Sand Spit, its own num / dem, the same roll). Moves recorded before r73 (js/mods/pins.js
+ *  RULES) never roll it, so a run from then replays as recorded. */
+const sand_spit73 = () => rulesRev('pokermon') >= 73;
 /** Cramorant, Gulp Missile: the round's FIRST discard (a player's: pre_discard, not a hook, with no discard used yet; once a round,
  *  `load_round`) loads the missile; the next hand that scores fires it (joker_main: X Xmult, a Blueprint copy too; spent in `after`). A
  *  debuffed hand doesn't score, so it doesn't fire. Unfired at the end of the round: lost. Loaded, it shows its Gulping Form card. */
@@ -8758,15 +8775,21 @@ defineJokers({
     calculate(self, card, context) { return sand_spit(card, context) || level_evo(self, card, context, 'j_poke_sandaconda'); },
   },
   // Sandaconda 844 (Safari $8), Sandstorm: while held (undebuffed) every round is a sandstorm (is_sandstorm, the house sandstorm); scored
-  // Stone cards give +20 Chips (`chips` +30%: 26 / 32 / 38) and X1.2 (`Xmult_multi` +5%: 1.26 / 1.32 / 1.38).
+  // Stone cards give +20 Chips (`chips` +30%: 26 / 32 / 38) and X1.2 (`Xmult_multi` +5%: 1.26 / 1.32 / 1.38). r73 (the owner's): it keeps
+  // Silicobra's Sand Spit (each discarded unenhanced card 1 in 4 to become Stone; odds fixed; sand_spit73).
   sandaconda: {
     name: 'sandaconda', poke_sprite391: sprite('Natdex', 6, 56),
-    config: { extra: { chips: 20, Xmult_multi: 1.2 } },
+    config: { extra: { chips: 20, Xmult_multi: 1.2, num: 1, dem: 4 } },
     rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Earth', gen: 8, blueprint_compat: true,
-    attributes: ['chips', 'xmult', 'enhancements'], poke_after: 'silicobra',
-    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); info_queue.push(P_CENTERS.m_stone); const ex = card.ability.extra; return { vars: [r3(ex.chips), r3(ex.Xmult_multi), is_sandstorm() ? 'Sandstorm!' : 'No sandstorm'] }; },
+    attributes: ['chips', 'xmult', 'enhancements', 'discard', 'modify_card', 'chance'], poke_after: 'silicobra',
+    loc_vars(self, info_queue, card) {
+      type_tooltip(self, info_queue, card); info_queue.push(P_CENTERS.m_stone);
+      const ex = card.ability.extra, [num, dem] = get_probability_vars(card, ex.num, ex.dem, 'silicobra_spit');
+      return { vars: [r3(ex.chips), r3(ex.Xmult_multi), is_sandstorm() ? 'Sandstorm!' : 'No sandstorm', num, dem] };
+    },
     calculate(self, card, context) {
       if (stone_scored(context)) return { chips: card.ability.extra.chips, x_mult: card.ability.extra.Xmult_multi, card };
+      if (sand_spit73()) return sand_spit(card, context);
       return undefined;
     },
   },
@@ -8873,13 +8896,18 @@ function magic_powder(card, context) {
   card_eval_status_text(right, 'extra', null, null, null, { message: localize('poke_tera_ex'), colour: 'Spectral' });
 }
 /** The Impidimp line, Prankster (the reroll_cost / reroll_shop / shop_start hooks, index.js):
- *  - Impidimp: a PAID reroll costs $reroll_discount less per undebuffed Impidimp (they stack), never below $1; a free one stays free.
+ *  - Impidimp (and Morgrem, r73): a PAID reroll costs $reroll_discount less per undebuffed one (they stack), never below $1; a free one
+ *    stays free.
  *  - Morgrem / Grimmsnarl: the FIRST reroll in each shop is free while an undebuffed one is held — one free reroll however many are held,
  *    and none on top of another free reroll (Chaos the Clown's, Bidoof's, a D6 Tag's $0): it is the shop's FIRST reroll, so whatever made
  *    that one free uses it up. Like Chaos's, it never raises the next reroll's price (it is spent as one of the engine's free rerolls).
  *  "Each shop" is counted from the shop opening (shop_start), so one bought mid-shop gives it only if nothing has been rerolled yet. */
 const prank_held = (key) => ((G.jokers && G.jokers.cards) || []).filter((j) => !j.debuff && j.config.center.key === key);
 const prank_free_held = () => prank_held('j_poke_morgrem').length + prank_held('j_poke_grimmsnarl').length > 0;
+/** r73 (the owner's): Morgrem keeps Impidimp's discount (its own `reroll_discount`, stacking with Impidimps' as theirs do). Moves recorded
+ *  before r73 (js/mods/pins.js RULES) price rerolls without it. Grimmsnarl does not keep it (the owner named Morgrem only). */
+const prank_discount73 = () => rulesRev('pokermon') >= 73;
+const prank_discounters = () => (prank_discount73() ? [...prank_held('j_poke_impidimp'), ...prank_held('j_poke_morgrem')] : prank_held('j_poke_impidimp'));
 const shop_rerolls = () => (G.GAME && G.GAME.current_round && G.GAME.current_round.poke_shop_rerolls) || 0;
 export function prank_reroll_cost(cost) {
   if (!G.GAME || !G.GAME.current_round || !G.jokers) return undefined;
@@ -8887,7 +8915,7 @@ export function prank_reroll_cost(cost) {
   cr.poke_prank_free = false;
   let c = cost;
   if (c > 0) {
-    const off = prank_held('j_poke_impidimp').reduce((s, j) => s + (j.ability.extra.reroll_discount || 0), 0);
+    const off = prank_discounters().reduce((s, j) => s + (j.ability.extra.reroll_discount || 0), 0);
     if (off) c = Math.max(1, c - off);
   }
   if (c > 0 && (cr.free_rerolls || 0) <= 0 && shop_rerolls() === 0 && prank_free_held()) { c = 0; cr.poke_prank_free = true; }
@@ -9099,13 +9127,14 @@ defineJokers({
     ...prank_recost,
   },
   // Morgrem 860 (Safari $8), Prankster: your first reroll in each shop is free (one however many are held; none on top of Chaos the Clown's /
-  // a D6 Tag's: whatever makes the shop's first reroll free uses it). Carries Grimmsnarl's `Xmult_mod`. 5 rounds.
+  // a D6 Tag's: whatever makes the shop's first reroll free uses it). r73 (the owner's): it keeps Impidimp's discount, shop rerolls $1 less
+  // (`reroll_discount`, fixed; never below $1; prank_discount73). Carries Grimmsnarl's `Xmult_mod`. 5 rounds.
   morgrem: {
     name: 'morgrem', poke_sprite391: sprite('Natdex', 8, 57),
-    config: { extra: { Xmult_mod: 0.1, rounds: 5 } },
+    config: { extra: { reroll_discount: 1, Xmult_mod: 0.1, rounds: 5 } },
     rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Fairy', gen: 8, blueprint_compat: false,
     attributes: ['economy', 'reroll', 'round_evo'], poke_after: 'impidimp',
-    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [prank_state(), ex.rounds, r3(ex.Xmult_mod)] }; },
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [prank_state(), ex.rounds, r3(ex.Xmult_mod), ex.reroll_discount] }; },
     calculate(self, card, context) { return level_evo(self, card, context, 'j_poke_grimmsnarl'); },
     ...prank_recost,
   },
@@ -9594,7 +9623,7 @@ defineJokers({
   },
 }, FILE);
 
-// ---------------------------------------------------------------- Gen 8, batch 4: the Gen 8 Legendaries (contentRev REV; the owner's "Yes", 2026-11-03)
+// ---------------------------------------------------------------- Gen 8, batch 4: the Gen 8 Legendaries (contentRev 74; the owner's "Yes", 2026-11-03)
 /** Zacian / Zamazenta / Eternatus count the Boss Blinds beaten while held (the main end_of_round pass with beat_boss, Beast Boost's moment:
  *  not on a game over, not a Blueprint's, not a joker retrigger; a debuffed one isn't calculated, so that Boss doesn't count). The count
  *  lives on the card (`crown_bosses`, capped at CROWN_AT; Eternatus's `bosses`), so save / resume / replay rebuild the forms from it. */
@@ -10762,7 +10791,10 @@ export const DESIGN_LOC = {
     j_poke_swirlix: { name: 'Swirlix', text: [...SWEET_VEIL(1, 2), EVOLVES_ROUNDS(3)] },
     j_poke_slurpuff: { name: 'Slurpuff', text: [['{C:attention}+#1#{} consumable slot'], SWEET_VEIL(2, 3)] },
     j_poke_inkay: { name: 'Inkay', text: ['Each scored {C:attention}2{}, {C:attention}3{},', '{C:attention}4{} or {C:attention}5{} gives {C:mult}+#1#{} Mult', EVOLVES_ROUNDS(2)] },
-    j_poke_malamar: { name: 'Malamar', text: ['{C:attention}Topsy-Turvy:{} each scored', 'card gives the Chips of its', '{C:attention}flipped{} rank instead of its own', '{C:inactive}(2-A, 3-K, 4-Q, 5-J, 6-10 and', '{C:inactive}7-9 swap; 8 stays 8)', '{C:inactive}(Bonus Chips on the card stay;', '{C:inactive}Stone cards are unchanged)'] },
+    j_poke_malamar: { name: 'Malamar', text: [
+      ['{C:attention}Topsy-Turvy:{} each scored', 'card gives the Chips of its', '{C:attention}flipped{} rank instead of its own', '{C:inactive}(2-A, 3-K, 4-Q, 5-J, 6-10 and', '{C:inactive}7-9 swap; 8 stays 8)', '{C:inactive}(Bonus Chips on the card stay;', '{C:inactive}Stone cards are unchanged)'],
+      ['Each scored {C:attention}2{}, {C:attention}3{}, {C:attention}4{} or {C:attention}5{}', 'also gives {X:mult,C:white} X#1# {} Mult'],
+    ] },
     j_poke_binacle: { name: 'Binacle', text: ['Each scored {C:attention}7{}', 'gives {C:chips}+#1#{} Chips', EVOLVES_ROUNDS(2)] },
     j_poke_barbaracle: { name: 'Barbaracle', text: ['Each scored {C:attention}7{} gives', '{C:chips}+#1#{} Chips and {X:mult,C:white} X#2# {} Mult'] },
     j_poke_skrelp: { name: 'Skrelp', text: [HAZARD_POISON, ['{C:mult}+#1#{} Mult for each', '{C:attention}Hazard{} card in your full deck', '{C:inactive}(Currently {C:mult}+#2#{C:inactive} Mult)', EVOLVES_ROUNDS(3)]] },
@@ -10882,6 +10914,7 @@ export const DESIGN_LOC = {
     j_poke_sandaconda: { name: 'Sandaconda', text: [
       ['{C:poke_sand}Sandstorm:{} while you have', 'this Joker, every round', 'is a {C:poke_sand}sandstorm{}', '{C:inactive}(#3#)'],
       ['Scored {C:attention}Stone{} cards give', '{C:chips}+#1#{} Chips and {X:mult,C:white} X#2# {} Mult'],
+      ['{C:attention}Sand Spit:{} each card you', 'discard has a {C:green}#4# in #5#{}', 'chance to become a', '{C:attention}Stone{} card', '{C:inactive}(Unenhanced cards only)'],
     ] },
     j_poke_cramorant: { name: 'Cramorant', text: ['{C:attention}Gulp Missile:{} your first', 'discard each round loads', 'a missile; your next scored', 'hand fires it for {X:mult,C:white} X#1# {} Mult', '{C:inactive}(Lost if the round ends unfired)', '{C:inactive}(Missile: #2#)'] },
     j_poke_arrokuda: { name: 'Arrokuda', text: [...PROPELLER('{C:mult}+#1#{} Mult'), EVOLVES_ROUNDS(2)] },
@@ -10911,7 +10944,10 @@ export const DESIGN_LOC = {
       ['{C:attention}Magic Powder:{} when a {C:attention}Blind{}', 'is selected, the Joker to its', '{C:attention}right{} gets a {X:poke_psychic,C:white}Psychic{} Tera sticker', '{C:inactive}(unless it is Psychic already)'],
     ] },
     j_poke_impidimp: { name: 'Impidimp', text: ['{C:attention}Prankster:{} shop rerolls', 'cost {C:money}$#1#{} less', '{C:inactive}(never below $1)', ENERGY_TO('Grimmsnarl'), EVOLVES_ROUNDS(2)] },
-    j_poke_morgrem: { name: 'Morgrem', text: [...PRANKSTER_FREE, ENERGY_TO('Grimmsnarl'), EVOLVES_ROUNDS(2)] },
+    j_poke_morgrem: { name: 'Morgrem', text: [
+      PRANKSTER_FREE,
+      ['Shop rerolls cost {C:money}$#4#{} less', '{C:inactive}(never below $1)', ENERGY_TO('Grimmsnarl'), EVOLVES_ROUNDS(2)],
+    ] },
     j_poke_grimmsnarl: { name: 'Grimmsnarl', text: [
       PRANKSTER_FREE,
       ['Permanently gains {X:mult,C:white} X#2# {}', 'Mult for every shop reroll', '{C:inactive}(Currently {X:mult,C:white} X#3# {C:inactive} Mult)'],

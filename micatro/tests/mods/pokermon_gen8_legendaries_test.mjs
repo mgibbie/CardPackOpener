@@ -1,4 +1,4 @@
-// Gen 8, batch 4: the Gen 8 Legendaries (contentRev 73+; jokers/pokejokers_designs.js; PORTING.md "Gen 8, batch 4"). The owner's "Yes"
+// Gen 8, batch 4: the Gen 8 Legendaries (contentRev 74+; jokers/pokejokers_designs.js; PORTING.md "Gen 8, batch 4"). The owner's "Yes"
 // (2026-11-03); each complete ALONE (the solo rule, r59), so every joker here is played on its own through real hands and rounds.
 //   Zacian     (Fairy)      X2; Crowned Sword after 3 Boss Blinds beaten while held: X3 (its Crowned card).
 //   Zamazenta  (Fighting)   +1 hand; Crowned Shield after 3 Boss Blinds: +2 hands in all and X1.5 (its Crowned card).
@@ -86,7 +86,7 @@ const NAMES = ['zacian', 'zamazenta', 'eternatus', 'zarude', 'regieleki', 'regid
 
 // ------------------------------------------------------------------- the pin and the ten centers
 await sec('pin', () => {
-  ok(MODS.pokermon.contentRev >= 73 && PINS.modPin('pokermon') === '3.9.1+r' + MODS.pokermon.contentRev, 'Pokermon contentRev 73+ (Gen 8 batch 4)', PINS.modPin('pokermon'));
+  ok(MODS.pokermon.contentRev >= 74 && PINS.modPin('pokermon') === '3.9.1+r' + MODS.pokermon.contentRev, 'Pokermon contentRev 74+ (Gen 8 batch 4)', PINS.modPin('pokermon'));
   ok(PINS.LEGACY_MOD_VERSIONS.pokermon === '3.2.1+r1', 'LEGACY_MOD_VERSIONS untouched');
   const want = { zacian: 'Fairy', zamazenta: 'Fighting', eternatus: 'Dark', zarude: 'Grass', regieleki: 'Lightning', regidrago: 'Dragon', glastrier: 'Water', spectrier: 'Psychic', calyrex: 'Psychic', enamorus: 'Fairy' };
   for (const [n, t] of Object.entries(want)) {
