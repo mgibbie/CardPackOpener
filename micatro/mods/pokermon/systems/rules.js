@@ -96,6 +96,10 @@ export function set_debuff(card) {
   if (card.ability.name === 'komala') return 'prevent_debuff';
   // (the owner's Cresselia, Lunar Blessing: the same rule; find_joker skips a debuffed Cresselia)
   if ((card.ability.set === 'Default' || card.ability.set === 'Enhanced') && find_joker('cresselia').length) return 'prevent_debuff';
+  // (the owner's Mabosstiff, Gen 9 batch 1, Guard Dog: your Jokers can't be debuffed while it is held, itself included — a Boss Blind
+  // (Crimson Heart), an SMODS debuff source... — but a Perishable's end of life still debuffs (a sticker's cost), and a fainted Baby's
+  // rule above answers first (a joker's own cost); find_joker skips a debuffed Mabosstiff, which only a Perishable end can make)
+  if (card.ability.set === 'Joker' && card.area === G.jokers && !(card.ability.perishable && card.ability.perish_tally <= 0) && find_joker('mabosstiff').length) return 'prevent_debuff';
   if (card.ability.name === 'Wild Card' && find_joker('tangrowth').length) return 'prevent_debuff';
   if (card.get_id() === 10 && find_joker('tentacruel').length) return 'prevent_debuff';
   return undefined;
