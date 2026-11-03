@@ -529,7 +529,7 @@ try {
 	});
 	const pubBytes = actions.filter(a => a.action === 'publish-micasurvivor').slice(-6).map(a => a.bytes);
 	console.log(`     live snapshot, 4 players + ${sz.e} foes: ${Math.max(...sz.sizes)} chars (the players block adds ${Math.max(...sz.sizes) - sz.v1}); last publishes ${JSON.stringify(pubBytes)} bytes`);
-	A(sz.pr === 3 && sz.rw === 11 && sz.pz && Math.max(...sz.sizes) < 24000 && Math.max(...pubBytes) < 24000 && sz.err === 0, 'the live snapshot with 4 players is under the 24 KB cap (and the server took every one)', JSON.stringify([sz, pubBytes]));
+	A(sz.pr === 3 && sz.rw === 12 && sz.pz && Math.max(...sz.sizes) < 24000 && Math.max(...pubBytes) < 24000 && sz.err === 0, 'the live snapshot with 4 players is under the 24 KB cap (and the server took every one)', JSON.stringify([sz, pubBytes]));
 	// an older publisher (no players block): the view still shows her and her partners (the v1 rows), no switch
 	await alice.E(() => { window.__lp = G.Replay.livePlayers; G.Replay.livePlayers = () => null; });
 	A(await waitFor(() => bob.E(() => G.WatchUI.frame && G.WatchUI.frame.pi == null && G.WatchUI.drawables().length === 4 && document.getElementById('wb-follow').classList.contains('hidden')), 6000),

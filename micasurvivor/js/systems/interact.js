@@ -49,6 +49,9 @@ G.Interact = (() => {
           else if (authority() && G.EnemyMgr.queryCircle(p.x, p.y - 8, 3).some(e => !e.flying && !e.remote)) G.World.breakProp(p);
           break;
       }
+      // (a spring drained / a locked chest started: the world keeps it for the replay and a live viewer wherever it is, even
+      //  once you walk away and it stops refilling. Gap fix 2026-11-02, js/world/world.js specialsLive)
+      if ((p.type === 'spring' && p.charge < 1) || (p.type === 'bigchest' && p.open > 0)) G.World.noteSpecial(p);
     }
   }
 

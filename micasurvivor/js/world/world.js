@@ -55,7 +55,10 @@ G.World = (() => {
   const used = new Set();
   let blog = [], ulog = [], gen = 1;
   const breakKey = k => { if (!broken.has(k)) { broken.add(k); blog.push(k); } };
-  const clearProps = () => { broken.clear(); used.clear(); blog = []; ulog = []; gen++; };
+  // (and, gap fix 2026-11-02, every spring / locked chest not at rest wherever it is, not only those near you: liveSp)
+  const liveSp = new Map();                // "tx,ty" -> the prop (js/systems/interact.js -> noteSpecial)
+  let packMemo = null;                     // (propsAll's per-chunk strings, for one gen / log length)
+  const clearProps = () => { broken.clear(); used.clear(); blog = []; ulog = []; gen++; liveSp.clear(); packMemo = null; };
   let nextPropId = 1;
   // MicaSurvivor (DLC D1): an Expedition zone (js/expedition/terrain.js) or null. With null (every base mode) none of
   // the zone branches below run: the base world is exactly as before.
@@ -185,6 +188,7 @@ G.World = (() => {
 
       const p = makeProp(type, tx, ty, kind);
       if (type === 'altar' && used.has(tx + ',' + ty)) p.used = true;   // (a chunk built again keeps its used altar)
+      if (viewS.size && viewS.has(tx + ',' + ty)) viewSpecial(p, viewS.get(tx + ',' + ty));   // (a viewer: a spring / locked chest as its frame has it)
       c.props.push(p);
       if (p.solid) c.propAt.set(tx + ',' + ty, p);
     }
@@ -704,13 +708,27 @@ G.World = (() => {
     const c = data.get(Math.floor(tx / N) + ',' + Math.floor(ty / N));
     return { c, p: c ? c.props.find(o => o.tx === tx && o.ty === ty) : null, ck: Math.floor(tx / N) + ',' + Math.floor(ty / N) };
   };
-  /** The specials near (x, y) that aren't at rest: [tx, ty, %] (a spring's charge < 100 %, a locked chest being opened). */
+  const restOf = p => p.type === 'spring' ? (p.charge < 0.995 ? Math.round(p.charge * 100) : -1)
+    : p.type === 'bigchest' ? (p.open > 0 ? Math.round(Math.min(1, p.open / G.Interact.CHEST_TIME) * 100) : -1) : -1;
+  /** A spring drained / a locked chest being opened (js/systems/interact.js): kept until it is at rest again, wherever you go. */
+  function noteSpecial(p) { if (p && (p.type === 'spring' || p.type === 'bigchest')) liveSp.set(p.tx + ',' + p.ty, p); }
+  /**
+   * The specials that aren't at rest: [tx, ty, %, ...] (a spring's charge < 100 %, a locked chest being opened). With no
+   * arguments (gap fix 2026-11-02), EVERY one the run left so, however far (a spring you drained and walked away from stays
+   * drained: it only refills while you are near it); with (x, y, r), those near that point only.
+   */
   function specialsLive(x, y, r) {
     const out = [];
-    for (const p of specialsNear(x, y, r)) {
-      if (p.type === 'spring' && p.charge < 0.995) out.push(p.tx, p.ty, Math.round(p.charge * 100));
-      else if (p.type === 'bigchest' && p.open > 0) out.push(p.tx, p.ty, Math.round(Math.min(1, p.open / G.Interact.CHEST_TIME) * 100));
+    if (x == null) {
+      for (const [k, p] of liveSp) {
+        const c = data.get(Math.floor(p.tx / N) + ',' + Math.floor(p.ty / N));
+        const v = c && c.props.includes(p) ? restOf(p) : -1;   // (at rest again, its chunk forgotten, the chest opened: dropped)
+        if (v < 0) { liveSp.delete(k); continue; }
+        out.push(p.tx, p.ty, v);
+      }
+      return out;
     }
+    for (const p of specialsNear(x, y, r)) { const v = restOf(p); if (v >= 0) out.push(p.tx, p.ty, v); }
     return out;
   }
   /** A live snapshot's props near (x, y): {w: [cx0, cy0, cx1, cy1] the chunks it covers, b / u: the broken / used tiles in them (flat)}. */
@@ -719,6 +737,88 @@ G.World = (() => {
     const inW = k => { const i = k.indexOf(','), tx = +k.slice(0, i), ty = +k.slice(i + 1), a = Math.floor(tx / N), b = Math.floor(ty / N); return a >= w[0] && a <= w[2] && b >= w[1] && b <= w[3]; };
     const flat = set => { const o = []; for (const k of set) if (inW(k)) { const i = k.indexOf(','); o.push(+k.slice(0, i), +k.slice(i + 1)); } return o; };
     return { w, b: flat(broken), u: flat(used) };
+  }
+
+  // ---- gap fix 2026-11-02: EVERY prop the run broke / altar it used, compact, for a live snapshot (js/mica/spectate.js wa) ----
+  // A live viewer may join late, follow another player or look where the run was an hour ago: it needs all of them, not only
+  // the 5 x 5 chunks round the publisher. Per chunk "cx,cy:" + its tiles (0-255 inside the chunk): 2 hex digits each, or
+  // "*" + a 256-bit bitset in base64url (43 characters) once that is shorter (22+ tiles). Chunks joined with ";".
+  const B64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+  const chunkOfKey = k => {
+    const i = k.indexOf(','), tx = +k.slice(0, i), ty = +k.slice(i + 1), cx = Math.floor(tx / N), cy = Math.floor(ty / N);
+    return [cx, cy, (ty - cy * N) * N + (tx - cx * N)];
+  };
+  function packTiles(idx) {
+    if (idx.length <= 21) return idx.sort((a, b) => a - b).map(i => (i < 16 ? '0' : '') + i.toString(16)).join('');
+    const bits = new Uint8Array(33);   // (264 bits: 44 groups of 6, 43 used)
+    for (const i of idx) bits[i >> 3] |= 1 << (i & 7);
+    let o = '*';
+    for (let g = 0; g < 43; g++) { let v = 0; for (let b = 0; b < 6; b++) { const i = g * 6 + b; if (bits[i >> 3] & (1 << (i & 7))) v |= 1 << b; } o += B64[v]; }
+    return o;
+  }
+  function unpackTiles(str) {
+    const out = [];
+    if (str[0] === '*') {
+      for (let g = 0; g < 43 && g + 1 < str.length; g++) { const v = B64.indexOf(str[g + 1]); for (let b = 0; b < 6; b++) if (v & (1 << b)) { const i = g * 6 + b; if (i < 256) out.push(i); } }
+    } else for (let i = 0; i + 1 < str.length; i += 2) out.push(parseInt(str.slice(i, i + 2), 16));
+    return out;
+  }
+  /** keys ("tx,ty") -> Map "cx,cy" -> its packed tiles. */
+  function byChunk(keys) {
+    const m = new Map();
+    for (const k of keys) { const [cx, cy, i] = chunkOfKey(k); const ck = cx + ',' + cy; let l = m.get(ck); if (!l) m.set(ck, l = []); l.push(i); }
+    for (const [ck, l] of m) m.set(ck, packTiles(l));
+    return m;
+  }
+  /**
+   * {B, U}: every broken tile / used altar since the world was last cleared, packed (above), within `budget` characters. Past
+   * it (a very long run), the chunks near any of `pts` ([[x, y]...]: every player) go first, then the most recently touched,
+   * and the result says p: 1 (partial: a viewer adds what it gets and removes nothing). Cached until the logs grow.
+   */
+  function propsAll(pts, budget = 9000) {
+    if (!packMemo || packMemo.gen !== gen || packMemo.nb !== blog.length || packMemo.nu !== ulog.length) {
+      const b = byChunk(broken), u = byChunk(used);
+      const order = [], seen = new Set();   // (the chunks, most recently touched first)
+      for (const l of [blog, ulog]) for (let i = l.length - 1; i >= 0; i--) { const [cx, cy] = chunkOfKey(l[i]); const ck = cx + ',' + cy; if (!seen.has(ck)) { seen.add(ck); order.push(ck); } }
+      for (const ck of [...b.keys(), ...u.keys()]) if (!seen.has(ck)) { seen.add(ck); order.push(ck); }
+      const join = m => [...m].map(([ck, v]) => ck + ':' + v).join(';');
+      packMemo = { gen, nb: blog.length, nu: ulog.length, b, u, order, B: join(b), U: join(u) };
+    }
+    const M = packMemo;
+    if (M.B.length + M.U.length <= budget) { const o = {}; if (M.B) o.B = M.B; if (M.U) o.U = M.U; return o; }
+    const near = new Set();
+    for (const [x, y] of pts || []) { const cx = Math.floor(x / CW), cy = Math.floor(y / CW); for (let j = -2; j <= 2; j++) for (let i = -2; i <= 2; i++) near.add((cx + i) + ',' + (cy + j)); }
+    const B = [], U = [];
+    let n = 0;
+    for (const ck of [...M.order.filter(ck => near.has(ck)), ...M.order.filter(ck => !near.has(ck))]) {
+      const bs = M.b.has(ck) ? ck + ':' + M.b.get(ck) : '', us = M.u.has(ck) ? ck + ':' + M.u.get(ck) : '';
+      const add = bs.length + us.length + 2;
+      if (n + add > budget) { if (near.has(ck)) continue; break; }
+      if (bs) B.push(bs);
+      if (us) U.push(us);
+      n += add;
+    }
+    return { B: B.join(';'), U: U.join(';'), p: 1 };
+  }
+  /** propsAll's B / U back to a Set of "tx,ty". */
+  function unpackProps(str) {
+    const o = new Set();
+    if (typeof str !== 'string' || !str) return o;
+    for (const part of str.split(';')) {
+      const c = part.indexOf(':');
+      if (c < 0) continue;
+      const ck = part.slice(0, c).split(','), cx = +ck[0], cy = +ck[1];
+      if (!Number.isFinite(cx) || !Number.isFinite(cy)) continue;
+      for (const i of unpackTiles(part.slice(c + 1))) o.add((cx * N + (i % N)) + ',' + (cy * N + Math.floor(i / N)));
+    }
+    return o;
+  }
+  let liveMemo = null;
+  /** A live snapshot's `wa` ({B, U, s, p}) as viewProps takes it (memoised on the strings: snapshot after snapshot repeats them). */
+  function liveProps(wa) {
+    if (!wa || typeof wa !== 'object') return null;
+    if (!liveMemo || liveMemo.B !== wa.B || liveMemo.U !== wa.U) liveMemo = { B: wa.B, U: wa.U, b: unpackProps(wa.B), u: unpackProps(wa.U) };
+    return { b: liveMemo.b, u: liveMemo.u, s: Array.isArray(wa.s) ? wa.s : [], add: !!wa.p };
   }
   let viewS = new Map();   // (a viewer: the specials its last frame set, "tx,ty" -> %)
   /**
@@ -730,7 +830,8 @@ G.World = (() => {
     if (!wp) return;
     const toSet = v => { if (v instanceof Set) return v; const o = new Set(); if (Array.isArray(v)) for (let i = 0; i + 1 < v.length; i += 2) o.add(v[i] + ',' + v[i + 1]); return o; };
     const b = toSet(wp.b), u = toSet(wp.u), w = Array.isArray(wp.w) ? wp.w : null;
-    const inW = k => { if (!w) return true; const i = k.indexOf(','), a = Math.floor(+k.slice(0, i) / N), c = Math.floor(+k.slice(i + 1) / N); return a >= w[0] && a <= w[2] && c >= w[1] && c <= w[3]; };
+    // (add: a live snapshot past its budget, propsAll p: it only adds; nothing comes back in a live run anyway)
+    const inW = k => { if (wp.add) return false; if (!w) return true; const i = k.indexOf(','), a = Math.floor(+k.slice(0, i) / N), c = Math.floor(+k.slice(i + 1) / N); return a >= w[0] && a <= w[2] && c >= w[1] && c <= w[3]; };
     // what the frame doesn't have any more (seeking back): their chunks are built again from the seed
     const dirty = new Set();
     for (const k of broken) if (!b.has(k) && inW(k)) { broken.delete(k); dirty.add(propOf(k).ck); }
@@ -748,11 +849,15 @@ G.World = (() => {
     for (const k of new Set([...viewS.keys(), ...ns.keys()])) {
       const { p } = propOf(k);
       if (!p) continue;
-      const v = ns.has(k) ? ns.get(k) / 100 : null;
-      if (p.type === 'spring') p.charge = v == null ? 1 : v;
-      else if (p.type === 'bigchest') p.open = v == null ? 0 : v * G.Interact.CHEST_TIME;
+      viewSpecial(p, ns.has(k) ? ns.get(k) : null);
     }
     viewS = ns;
+  }
+  /** A viewer: a spring's charge / a locked chest's progress at v % (null = at rest). */
+  function viewSpecial(p, v) {
+    v = v == null ? null : v / 100;
+    if (p.type === 'spring') p.charge = v == null ? 1 : v;
+    else if (p.type === 'bigchest') p.open = v == null ? 0 : v * G.Interact.CHEST_TIME;
   }
 
   function reset(s) {
@@ -793,7 +898,7 @@ G.World = (() => {
   return {
     TS, CW, reset, setBiome, biomeName, liquidKind, liquidEffect, walkable,
     kindAt, isWall, isLiquid, isFree, collide, projectileBlock, propsInCircle, nearestBreakable,
-    damageProp, breakAt, specialsNear, update, useSpecial, propLog, propsNear, specialsLive, viewProps,
+    damageProp, breakAt, specialsNear, update, useSpecial, propLog, propsNear, specialsLive, viewProps, noteSpecial, propsAll, unpackProps, liveProps,
     // MicaSurvivor (M5 lote 10): el minimapa lee el terreno por casilla (0 suelo, 1 pared, 2 líquido) y los objetos
     terrain: terrainAt, propsAround,
     get seed() { return seed; },   // MicaSurvivor (M5 lote 6): el Desafío diario siembra el mundo (pruebas)
