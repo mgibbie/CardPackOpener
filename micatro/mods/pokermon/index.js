@@ -1061,7 +1061,10 @@ export const POKERMON = registerMod({
   // 74 = Gen 8 batch 4, the Gen 8 Legendaries (jokers/pokejokers_designs.js, #888-905), each complete alone: Zacian / Zamazenta (Crowned after
   // 3 Boss Blinds), Eternatus (Dynamax; Eternamax at 5 Bosses), Zarude (Jungle Drain), Regieleki (Transistor), Regidrago (Dragon Energy),
   // Glastrier (Glass X2.5: hook chip_x_mult), Spectrier (Grim Neigh), Calyrex (Seeds and Flowers) and Enamorus (Therian after 4 rounds).
-  contentRev: 74,
+  // 75 = the owner's Grimmsnarl tweak (2026-11-03): Grimmsnarl keeps Impidimp's $1 reroll discount too (stacking with Impidimp / Morgrem
+  // copies), on top of its free first reroll and X0.1 per reroll. Gated by rulesRev (prank_discount75), so runs recorded before r75 replay
+  // as recorded.
+  contentRev: 75,
   // Pokermon 3.9.1 pokermon.lua: SMODS.current_mod.optional_features = {quantum_enhancements = true, object_weights = true}.
   // object_weights sends create_card's key, the shop roll, tags, packs, bosses and vouchers through SMODS.poll_object
   // (js/engine/smods.js; batch 17). quantum_enhancements is the engine's check_enhancement, always on.
