@@ -39,6 +39,7 @@ import { flyTo, moveToMap } from './ow_transitions.js';
 import { fading } from './ow_fade.js';
 import { unownPuzzle, unownPuzzleKey } from './unown_puzzle.js';
 import { cardFlip, cardFlipKey } from './minigames/cardflip/cardflip.js';
+import * as Clock from './clock.js';
 import {
 	STARTERS, refreshObjective, starterMenu,
 } from './main.js';
@@ -409,8 +410,8 @@ const STONE_ALIAS = { chippedpot: 'crackedpot', masterpieceteacup: 'unremarkable
 const evoParam = id => STONE_ALIAS[id] || id;
 // the evolution `id` (a stone / evolution item) triggers on this mon, or null
 export function itemEvoFor(mon, id) {
-	return pickEvo(battle.data.extra?.[mon.speciesId]?.evos, battle.data,
-		e => e.type === 'item' && e.param === evoParam(id), charmRegion(mon, Bag.ITEMS));
+	return pickEvo(mon, battle.data.extra?.[mon.speciesId]?.evos, battle.data,
+		e => e.type === 'item' && e.param === evoParam(id), charmRegion(mon, Bag.ITEMS), { isNight: Clock.isNight() });
 }
 
 function bagKey(k) {
@@ -562,7 +563,8 @@ function bagKey(k) {
 					bagMenu.picking = false;
 				} else if ((item?.kind === 'stone' || item?.kind === 'held') && mon.curHP > 0 && itemEvoFor(mon, id)) {
 					// an evolution item the selected species responds to (a held
-					// regional CHARM picks the regional branch: regional_forms.js)
+					// regional CHARM picks the regional branch: regional_forms.js; any
+					// other tie is broken canonically by evo_pick.js, not list order)
 					const evo = itemEvoFor(mon, id);
 					Bag.consume(id);
 					bagMenu.picking = false;

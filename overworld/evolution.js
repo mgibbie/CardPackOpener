@@ -38,8 +38,10 @@ export class Evolution {
 		for (const mon of party) {
 			if (mon.heldItem === 'everstone') continue; // EVERSTONE halts natural level/friendship evolution
 			const evos = data.extra?.[mon.speciesId]?.evos || [];
-			// a held ALOLA / GALAR / HISUI CHARM selects the regional branch
-			const evo = pickEvo(evos, data, e => timeOk(e) && levelEvoReady(mon, e), charmRegion(mon, Bag.ITEMS));
+			// a held ALOLA / GALAR / HISUI CHARM selects the regional branch; a tie
+			// left after that is broken canonically (evo_pick.js), not by list order
+			const evo = pickEvo(mon, evos, data, e => timeOk(e) && levelEvoReady(mon, e), charmRegion(mon, Bag.ITEMS),
+				{ isNight: Clock.isNight() });
 			if (evo) this.queue.push({ mon, target: evo.target });
 		}
 		// the crit count is one battle's; it must not carry into the next check

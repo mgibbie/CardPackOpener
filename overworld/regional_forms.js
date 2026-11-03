@@ -14,6 +14,7 @@
 // The charm is held, never consumed. A regional form's own line (Alolan Vulpix ->
 // Alolan Ninetales) evolves inside its region with no charm, as in canon.
 import { SOURCE, MOVE_SUBS } from './regional_forms_data.js';
+import { pickEvolution } from './evo_pick.js';
 
 // Branch tags: `region` marks the branch a matching charm selects. Every list here
 // REPLACES the species' evos in species_extra.json (regional_forms_test pins each
@@ -151,9 +152,10 @@ export function charmRegion(mon, ITEMS) {
 // region-tagged branch is taken only by a holder of that region's charm, and a
 // charm holder whose species HAS a branch for that region takes only that branch
 // (in Hisui a Quilava becomes Hisuian Typhlosion or nothing). Species with no
-// branch for the charm's region evolve normally.
-export function pickEvo(evos, data, eligible, region) {
+// branch for the charm's region evolve normally. A tie left after that (Tyrogue,
+// Wurmple, ...) is broken canonically by evo_pick.js pickEvolution.
+export function pickEvo(mon, evos, data, eligible, region, ctx) {
 	const live = (evos || []).filter(e => data?.species?.[e.target]);
 	const regional = !!region && live.some(e => e.region === region);
-	return live.find(e => (regional ? e.region === region : !e.region) && eligible(e)) || null;
+	return pickEvolution(mon, live.filter(e => (regional ? e.region === region : !e.region) && eligible(e)), ctx);
 }
