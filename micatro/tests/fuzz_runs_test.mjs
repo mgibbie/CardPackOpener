@@ -10,6 +10,7 @@ import { G, P_CENTERS, P_STAKES } from '../js/engine/core.js';
 import { newRun, act, STATES, get_poker_hand_info } from '../js/engine/run.js';
 import { toView } from '../js/engine/view.js';
 import { Session } from '../js/engine/session.js';
+import { stampRecipe } from '../js/mods/pins.js';
 
 const RUNS = Number(process.argv[2] || 60);
 // Optional mod set: the runs (and their replays) play with these mods on.
@@ -211,7 +212,9 @@ for (let i = 0; i < RUNS; i++) {
     ok(JSON.stringify(v).length < 200000, `${seed}: view small enough (${JSON.stringify(v).length})`);
     // Determinism: replay the recipe and compare
     const before = JSON.stringify({ d: G.GAME.dollars, a: G.GAME.round_resets.ante, r: G.GAME.round, c: G.GAME.chips, j: G.jokers.cards.map((c) => c.config.center.key), h: G.hand.cards.map((c) => c.config.card.key), s: G.STATE });
-    Session.fromRecipe({ seed, back, stake, mods: MODS, actions: log });
+    // (stamped with the current pins, as a real save is: an unstamped recipe reads as the legacy 2026-10-19 versions, whose
+    //  rulesRev-gated rules differ — Pokermon r79's generation filter)
+    Session.fromRecipe(stampRecipe({ seed, back, stake, mods: G.GAME.mods.slice(), actions: log }));
     const after = JSON.stringify({ d: G.GAME.dollars, a: G.GAME.round_resets.ante, r: G.GAME.round, c: G.GAME.chips, j: G.jokers.cards.map((c) => c.config.center.key), h: G.hand.cards.map((c) => c.config.card.key), s: G.STATE });
     if (!assisted) ok(before === after, `${seed}: replay deterministic\n  ${before}\n  ${after}`);
   } catch (e) {
