@@ -223,14 +223,17 @@ function energy_override(kind, self, card, area, copier) {
  * (poke_evolve; the evolved card re-applies its Energy to the new base). Never while debuffed, nor with an Everstone owned (it
  * blocks every evolution). Targeting (energy_card): a highlighted joker as ever; with none highlighted the Energy still goes to the
  * leftmost joker it can ENERGIZE, and only when there is none to the leftmost joker it can evolve. Moves recorded before r72 (a
- * resumed / replayed old run, js/mods/pins.js RULES) never see it: such an Energy was refused there.
+ * resumed / replayed old run, js/mods/pins.js RULES) never see it: such an Energy was refused there. A later path names its own rev
+ * (`rev`: the Gen 9 batch 2 Wooper -> Clodsire, a Dark Energy), so runs recorded before it replay as recorded too.
  */
 export function energy_evo_target(v, etype) {
   const ee = v && v.config && v.config.center && v.config.center.poke_energy_evo;
   if (!ee || !etype || ee.etype !== etype || !P_CENTERS[ee.into] || v.debuff || v.removed) return false;
-  if (rulesRev('pokermon') < 72 || find_joker('everstone').length > 0) return false;
+  if (rulesRev('pokermon') < (ee.rev || 72) || find_joker('everstone').length > 0) return false;
   return true;
 }
+/** The Gen 9 batch 2 rules rev (the owner's, 2026-11-03): Wooper -> Clodsire (a Dark Energy), and the line's new member. */
+export const GEN9B2_REV = 75;
 function energy_evolve(v) { poke_evolve(v, v.config.center.poke_energy_evo.into); }
 
 /** The first joker (left to right) this Energy can go on, or false. */

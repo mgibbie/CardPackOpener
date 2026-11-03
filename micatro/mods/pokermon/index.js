@@ -81,7 +81,7 @@ import './jokers/zzzapril_fools.js';
 import { DESIGN_FAMILIES, DESIGN_LOC, regi_chip_bonus, regi_h_x_mult, regi_enh_vars, slot_cost_removed, drifblim_destroyed, contrary_lifts, mummy_sell,
   freeze_keep, freeze_thaw, frozen_by, spore_first_deal, spore_hand_scored, malamar_chip_bonus, prank_reroll_cost, prank_reroll_shop, prank_shop_start,
   pyukumuku_destroyed, pheromosa_rest, komala_destroy_immune, GALAR_UPSTREAM_TEXT, GALAR_FAMILY_REV, rime_final_deal,
-  jokers_gone_count, glass_x_mult } from './jokers/pokejokers_designs.js';
+  jokers_gone_count, glass_x_mult, opportunist_scaled } from './jokers/pokejokers_designs.js';
 
 import { poke_set_type_badge, type_badge, type_tooltip, TYPE_COLOURS } from './systems/types.js';
 import { pokemon_in_pool, pool_filter, init_game_object, evo_item_in_pool } from './systems/pools.js';
@@ -732,6 +732,8 @@ const hooks = {
   // and the owner's Pyukumuku, Innards Out: a destroyed one pays $1 per round held)
   // (+ the owner's Basculegion, Gen 8 batch 3: an owned Joker destroyed counts for Last Respects — jokers_gone_count)
   start_dissolve(card) { drifblim_destroyed(card); pyukumuku_destroyed(card); jokers_gone_count(card); },
+  // (the owner's Flittle / Espathra, Opportunist, Gen 9 batch 2: another Joker grew through SMODS.scale_card — js/engine/smods.js / jokers.js)
+  card_scaled: opportunist_scaled,
   // (the owner's Komala, Comatose, r68: Jokers skip it when choosing what to destroy, as an Eternal — the engine's can_be_destroyed_by_joker)
   joker_destroy_immune: komala_destroy_immune,
   edition_weight(w, type) {
@@ -1061,7 +1063,12 @@ export const POKERMON = registerMod({
   // 74 = Gen 8 batch 4, the Gen 8 Legendaries (jokers/pokejokers_designs.js, #888-905), each complete alone: Zacian / Zamazenta (Crowned after
   // 3 Boss Blinds), Eternatus (Dynamax; Eternamax at 5 Bosses), Zarude (Jungle Drain), Regieleki (Transistor), Regidrago (Dragon Energy),
   // Glastrier (Glass X2.5: hook chip_x_mult), Spectrier (Grim Neigh), Calyrex (Seeds and Flowers) and Enamorus (Therian after 4 rounds).
-  contentRev: 74,
+  // 75 = Gen 9 batch 2 (jokers/pokejokers_designs.js, #951-1013): Capsakid / Scovillain (Spicy), Flittle / Espathra (Opportunist: hook
+  // card_scaled), Bombirdier (Stork Delivery: Tags), Varoom / Revavroom (Rev the Engine: systems/rules.js poke_rev_streak), Cyclizar (Ride),
+  // Orthworm (Earth Eater), Glimmet / Glimmora (Toxic Debris: Hazards), Flamigo, Veluza (Fillet Away), Dondozo (Commander, with Tatsugiri),
+  // Poltchageist / Sinistcha (Hospitality) and a NEW EVOLUTION: Wooper -> Clodsire (a Dark Energy used on it; Poison Point), gated by
+  // rulesRev (systems/energy.js GEN9B2_REV; FAMILY_MEMBER_REV), so runs recorded before r75 replay as recorded.
+  contentRev: 75,
   // Pokermon 3.9.1 pokermon.lua: SMODS.current_mod.optional_features = {quantum_enhancements = true, object_weights = true}.
   // object_weights sends create_card's key, the shop roll, tags, packs, bosses and vouchers through SMODS.poll_object
   // (js/engine/smods.js; batch 17). quantum_enhancements is the engine's check_enhancement, always on.

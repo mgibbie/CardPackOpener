@@ -3889,6 +3889,57 @@ Enamorus {8,11}); nothing to deploy. Gen 8 is now complete on the wiki (59 missi
   `pokermon_new_jokers_test`, `pokermon_gen8_batch3_test` / `pokermon_sprigatito_test` (the Pokédex order), `micatro_mod_version_pin`,
   `micatro_deckeditor_pages` (1205 jokers), `designwiki_pokermon_jokers_test` (Ting-Lu is now its Legendary).
 
+### Gen 9, batch 2 (2026-11-03, branch `feat/pokermon-gen9-batch2`)
+Pinned **`3.9.1+r75`** (`contentRev: 75`; `LEGACY_MOD_VERSIONS` untouched). The owner's "Yes": 17 jokers, #951-1013, in `jokers/pokejokers_designs.js`
+(`opportunist_scaled` / `spicy` / `stork_delivery` / `rev_streak` / `toxic_debris` / `fillet_away` / `dondozo_commanded` / `clodsire_poison` / `row_value`),
+one a NEW EVOLUTION of an existing joker (the Gen 8 Galarian exception, owner-approved: Wooper -> Clodsire; Wooper -> Quagsire unchanged). Pokédex order:
+Capsakid / Scovillain after Brambleghast, Flittle / Espathra after Rabsca, Bombirdier ... Glimmora after Wugtrio, Flamigo / Veluza / Dondozo after
+Houndstone, Clodsire after Annihilape, Poltchageist / Sinistcha after Gholdengo. Neither Nacho nor Pokermon+ has any. Prices: 2-stage C $5 / S $8,
+single-stage R $7, Clodsire Stage 1 S $8; every 2-stage Basic evolves after **5 rounds**. Types = the cards'. Art: upstream 3.9.1 Natdex cells ({10,63}-{14,67});
+nothing to deploy.
+- **Engine seam** (`card_scaled`): js/engine/smods.js scale_card tells the mods' hook when a card's value went UP (read off the value before and
+  after); js/engine/jokers.js vscale tells it for a vanilla '+' scaling when nothing listens to scaling_card (else scale_card does). No-op without a
+  hook, so vanilla and old runs are unchanged.
+- **Never retroactive (rules rev 75)**: the Dark Energy evolution checks `rulesRev('pokermon') >= GEN9B2_REV` (`poke_energy_evo.rev`); Clodsire is
+  hidden from Wooper's family on older revs (FAMILY_MEMBER_REV), so Transformation on a Wooper recorded before r75 still gives Quagsire
+  (pokermon_gen9_batch2_test 'old-rev replay'). The streak counter (`G.GAME.poke_rev_streak`) is kept on every rev (harmless).
+- **Capsakid** (Grass, C $5) -> **Scovillain** (Fire, S $8), Spicy: **scored Clubs +20 Chips**; Scovillain also **scored Hearts X1.2** and **+1 discard each round**.
+- **Flittle** (Psychic, C $5) -> **Espathra** (S $8), Opportunist: **+1 Mult banked whenever another Joker permanently grows**; Espathra gives Flittle's
+  Mult and banks **+X0.05** per growth instead. **The choices**: "grows" = a scale_card gain event (every house bank — Torch Song, Moxie, grudge, Veluza,
+  the Legendaries' banks... —, the upstream jokers that scale through it, the vanilla Ride the Bus / Green Joker / Hologram / Campfire ...); one event per
+  call whatever the amount; a drop (Green Joker's discard, Ice Cream) isn't; a per-round gain that later resets (Green Joker) still counts when it
+  grows; a Flittle / Espathra's own gain never counts for another; Blueprint copies the payoff, never banks; a debuffed one banks nothing.
+- **Bombirdier** (Dark, R $7), Stork Delivery: **at the end of each shop, 1 in 2 for a random Tag** (the run's seeded Tag pool, get_next_tag_key; an
+  Orbital Tag names a random visible hand). **The choice: Blueprint copies it** (its own roll). Energy-inert.
+- **Varoom** (Metal, C $5) -> **Revavroom** (S $8), Rev the Engine: **+2 Mult / X1 + X0.1 per hand in a row without a discard, this hand included**.
+  **The choices**: one run-wide streak (systems/rules.js: +1 after every hand played, a debuffed hand too; 0 on a discard YOU make — an effect's discard
+  doesn't break it), **kept across rounds**, so a late buy sees the whole streak.
+- **Cyclizar** (Dragon, R $7), Ride: **+1 hand each round and +1 hand size** (one add / remove pair). Energy-inert.
+- **Orthworm** (Metal, R $7), Earth Eater: **+15 Chips per Steel card in your full deck**.
+- **Glimmet** (Earth, C $5) -> **Glimmora** (S $8): **scored Stone cards +6 Mult**; Toxic Debris: **each scored Stone turns a random deck card into a
+  Hazard** and **each Hazard held in hand X1.15**. **The choices**: unenhanced cards first, then any non-Hazard; **never a Stone card nor a card of the
+  played hand**; **at most 3 a hand**; not Blueprint (it changes the deck; the held X is copied).
+- **Flamigo** (Fighting, R $7): **X1.5, X2 if the played hand is a Pair** (scoring name 'Pair' only: Two Pair / Full House are X1.5).
+- **Veluza** (Water, R $7), Fillet Away: **at end of round, -$1 of its sell value and +X0.25 banked**. **The choice: it stops at $1** (Pokermon's
+  sell-value floor, systems/rules.js set_cost) and banks nothing there; refilled (Poltchageist, Combee) it fillets again. From $3: X1.25, X1.5.
+- **Dondozo** (Water, R $7), Commander: **X2; X4 while an undebuffed Tatsugiri is directly to its left** (Tatsugiri's own Commander still applies).
+- **Wooper -> Clodsire** (Dark, Stage 1 S $8): **a Dark Energy used on Wooper evolves it at once** (energy_evo_target, as Linoone: energizes first when it
+  would, then evolves; picked, else the leftmost joker it can energize, else the leftmost Wooper; refused while debuffed / with an Everstone).
+  Poison Point: **each card you discard (unenhanced) 1 in 4 to become a Hazard** (Silicobra's Sand Spit, its own seed; Blueprint copies it) and **X1 +
+  X0.05 per Hazard card in your full deck**. Wooper's 3.9.1 text gets a "Paldean form" box.
+- **Poltchageist** (Grass, C $5) -> **Sinistcha** (S $8), Hospitality: **at end of round the Jokers directly left and right gain $1 of sell value**
+  (Combee's honey; never itself; not Blueprint); Sinistcha also **X1 + X0.05 per $1 of sell value of ALL your Jokers, itself included** (**the
+  choices**: debuffed Jokers count — sell value isn't an ability —; no cap). Poltchageist carries Sinistcha's `Xmult_mod` ("Energy carries to Sinistcha").
+- **Energy** (1 / 2 / 3): Capsakid / Scovillain +26 / 32 / 38 Chips a Club; Scovillain X1.26 / 1.32 / 1.38 a Heart; Flittle +1.2 / 1.4 / 1.6 a growth;
+  Espathra +X0.06 / 0.07 / 0.08; Varoom +2.4 / 2.8 / 3.2 a hand; Revavroom +X0.12 / 0.14 / 0.16; Orthworm +19.5 / 24 / 28.5 a Steel; Glimmet +8.4 / 10.8 /
+  13.2; Glimmora X1.2075 / 1.265 / 1.3225 a held Hazard; Flamigo X1.8 / 2.1 / 2.4 (Pair X2.4 / 2.8 / 3.2); Veluza +X0.3 / 0.35 / 0.4 a round; Dondozo
+  X2.4 / 2.8 / 3.2 (Commander X4.8 / 5.6 / 6.4); Clodsire +X0.06 / 0.07 / 0.08 a Hazard; Poltchageist (carried) / Sinistcha +X0.06 / 0.07 / 0.08 per $1.
+  Fixed: money, odds, the discard / hand / hand size, Tags, the conversions and their cap; banks never retroactive (opp_mult / opp_Xmult / fillet_Xmult).
+- **Wiki**: regenerated; the wiki sprites of the 17 are gone (no new art).
+- **Tests**: `micatro/tests/mods/pokermon_gen9_batch2_test.mjs` (fails on main: no such jokers). Re-recorded: `modpin_test`, `pokermon_391_data_test`,
+  `pokermon_new_jokers_test` (defs + the Pokédex order), `pokermon_art_types_test`, `micatro_mod_version_pin`, `micatro_deckeditor_pages` (1222 jokers),
+  `designwiki_pokermon_jokers_test` (Iron Treads / Iron Crown / Miraidon are its spot checks now).
+
 ### Pending from the 3.9.1 joker rework (after batch 10b)
 Every existing joker is on 3.9.1: `rework_hold` (still on 3.2.1) is empty. What waits, by the batch it waits on (`rework_deferred` =
 on 3.9.1 but one part):

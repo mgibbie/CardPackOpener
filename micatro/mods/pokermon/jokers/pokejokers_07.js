@@ -13,6 +13,7 @@ import {
   is_type, apply_type_sticker, find_other_poke_or_energy_type, find_card, any,
   poke_convert_cards_to, remove, volatile_active, get_poke_target_card_ranks, add_target_cards_to_vars,
   change_play_limit, change_discard_limit, has_no_rank, add_card, playing_card_joker_effects, destroy_joker, POKE_POOL_RULES, energy_values,
+  GEN9B2_REV,
 } from '../api.js';
 
 const FILE = 'pokemon/pokejokers_07.lua';
@@ -372,8 +373,10 @@ defineJokers({
       return scaling_evo(self, card, context, 'j_poke_yanmega', card.ability.extra.scored, self.config.evo_rqmt);
     },
   },
-  // Wooper 194
+  // Wooper 194 (+ the owner's Gen 9 batch 2, r75: a Dark Energy used on it evolves it into Clodsire — systems/energy.js energy_evo_target;
+  // its level_evo into Quagsire is unchanged)
   wooper: {
+    poke_energy_evo: { etype: 'Dark', into: 'j_poke_clodsire', rev: GEN9B2_REV },
     loc_vars(self, info_queue, center) {
       type_tooltip(self, info_queue, center);
       return { vars: [center.ability.extra.mult, center.ability.extra.rounds, center.ability.extra.mult_mod, Math.max(0, quag_mult(center))] };

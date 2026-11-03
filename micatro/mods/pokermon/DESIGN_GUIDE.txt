@@ -681,6 +681,29 @@ House pattern: a GLASS-X RULE on the card (the Gen 8 Glastrier; glass_x_mult): t
 House pattern: a SELL-VALUE DRAIN BANK (the Gen 8 Zarude; jungle_drain): when a Blind is selected each OTHER Joker loses $1 (Lampent's poke_drain,
   one way, never below $1) and the joker banks X per $1 actually drained (measured as the sell_cost drop). Not Blueprint (a copy would drain twice).
   It eats its own row's sell value: a cost the player sees, and runs dry once every Joker is at $1.
+House pattern: GROWTH OF OTHER JOKERS (the Gen 9 Flittle / Espathra, Opportunist; opportunist_scaled): the engine tells the mods' `card_scaled` hook
+  whenever a card's value goes UP through SMODS.scale_card (js/engine/smods.js; the vanilla jokers Steamodded routes there, js/engine/jokers.js
+  vscale, are heard even when nothing listens to the scaling_card seam). That covers every house bank (bank / round_bank) and every upstream joker
+  that scales through scale_card; a value raised by a plain `+=` is not heard (route a new bank through bank()). One call = one event, whatever
+  the amount; a '-' or a lowering function is no growth (the hook reads the value before and after). The listener's OWN gain must never count for
+  another listener (two Flittles would feed each other forever): skip the listeners' keys. Blueprint never scales, so it never counts.
+  Prefer the hook over a scaling_card listener in a center's calculate: a listener there turns on the seam for every Pokermon run (`wanted`),
+  which re-routes the vanilla jokers' scaling (a risk for old replays).
+House pattern: a RUN-WIDE STREAK the mod keeps (the Gen 9 Varoom / Revavroom, Rev the Engine; G.GAME.poke_rev_streak in systems/rules.js
+  calculate): +1 in `after` of every hand played (a debuffed hand too), 0 on post_discard (only YOUR discards: an effect's never fires it), kept
+  across rounds, so a late buy sees the whole streak. While a hand scores the joker counts it (streak + 1: "this hand included").
+House pattern: a SELL-VALUE SHEDDER (the Gen 9 Veluza, Fillet Away; fillet_away): at end of round it loses $1 of its OWN sell value (extra_value
+  down, set_cost) and banks X. Pokermon's sell value never goes below $1 (systems/rules.js set_cost, the drain floor), so it stops at $1 and
+  stops banking there; a neighbour feeding it (Poltchageist / Combee honey) restarts it. Check the drop against the floor (sell_cost - loss >= 1),
+  never against $0, or it would bank forever while extra_value sinks.
+House pattern: a SCORED-CARD DECK CONVERSION with a cap (the Gen 9 Glimmora, Toxic Debris): each scored Stone turns a random deck card into a
+  Hazard (deck_convert: unenhanced first) but never a Stone (its own fuel) nor a card of the played hand (still scoring), at most 3 a hand
+  (`debris_cap`, keyed by G.GAME.hands_played). Not Blueprint (it changes the deck).
+House pattern: a PARTNER BY POSITION (the Gen 9 Dondozo, Commander): X2, X4 while an undebuffed Tatsugiri is DIRECTLY to its left. Tatsugiri's own
+  Commander (the leftmost Water Joker) still applies, so Tatsugiri + Dondozo at the left end pay both.
+  The Energy-triggered evolution (energy_evo_target) takes a per-path rules rev (`poke_energy_evo.rev`, default 72): Wooper -> Clodsire (a Dark
+  Energy) checks the Gen 9 batch 2 rev (systems/energy.js GEN9B2_REV); its family member rev is in FAMILY_MEMBER_REV (GALAR_FAMILY_REV). A second
+  Stage 1 on the same line (Quagsire / Clodsire) makes Transformation's highest form a seeded pick of the two (Yamask's).
 
 House pattern: SCORING A DEBUFFED CARD, and debuffs as a resource (the owner's Snivy line, Contrary; jokers/pokejokers_designs.js
 contrary_held / contrary_lifts):
@@ -1397,6 +1420,11 @@ the Gen 8 batch 2 fixed fields: reroll_discount (Impidimp's $1; Morgrem's since 
 card.ability), the banks burn_mult / burn_Xmult / prank_Xmult (their gains mult_mod / Xmult_mod are energized), the state burn_round. Carried
 for the next stage: Impidimp / Morgrem `Xmult_mod` (Grimmsnarl's). Two energy fields on one number pair: Toxtricity's Amped `Xmult` and Low Key
 `chips`;
+the Gen 9 batch 2 fixed fields: d_size (Scovillain), num / dem (Bombirdier's 1 in 2, Clodsire's 1 in 4), hands / h_size (Cyclizar), debris_cap
+(Glimmora's 3 a hand), val_loss (Veluza's $1), honey (Poltchageist / Sinistcha's $1); the banks opp_mult / opp_Xmult (Flittle / Espathra; gains
+mult_mod / Xmult_mod energized) and fillet_Xmult (Veluza; gain Xmult_mod). Carried for the next stage: Poltchageist `Xmult_mod` (Sinistcha's).
+Two energy fields on one number pair: Scovillain `chips` / `Xmult_multi`, Flamigo `Xmult` / `Xmult2`, Dondozo `Xmult` / `Xmult2`. Energy-inert:
+Bombirdier (odds), Cyclizar (hand, hand size);
 the Gen 8 batch 3 fixed fields: perish_rounds (Cursola), card_limit / tarot_money / gender (Indeedee), steel_money (Copperajah),
 ancient_money / retriggers / hands / hand_round (the Galar fossils), form (Eiscue's face, Morpeko's mode, Alcremie's 63 Sweet x Cream),
 the counters lucky_round / lucky_count (Farfetch'd / Sirfetch'd), stones_scored (Yamask), stripe_scored (Basculin), snow_round (Eiscue).
