@@ -103,9 +103,9 @@ await sec('static', () => {
   const chain = (list) => list.every((n, i) => i === 0 || keys.indexOf(n) === keys.indexOf(list[i - 1]) + 1);
   ok(chain(['kingambit', 'great_tusk', 'scream_tail', 'brute_bonnet', 'flutter_mane', 'slither_wing', 'sandy_shocks', 'iron_treads', 'iron_bundle', 'iron_hands', 'iron_jugulis', 'iron_moth', 'iron_thorns', 'gimmighoul']),
     'Pokédex order: Kingambit (983) > Great Tusk (984) ... Iron Thorns (995) > Gimmighoul (999)', keys.slice(keys.indexOf('kingambit'), keys.indexOf('kingambit') + 14));
-  ok(chain(['roaring_moon', 'iron_valiant', 'walking_wake', 'iron_leaves']) && chain(['gouging_fire', 'raging_bolt', 'iron_boulder', 'iron_crown']) && keys.indexOf('roaring_moon') > keys.indexOf('gholdengo')
-    && keys.indexOf('gouging_fire') > keys.indexOf('iron_leaves') && keys.indexOf('iron_crown') < keys.indexOf('missingno'),
-    'Pokédex order: Gholdengo (1000) < Roaring Moon (1005) > Iron Valiant > Walking Wake > Iron Leaves (1010) < Gouging Fire (1020) > Raging Bolt > Iron Boulder > Iron Crown (1023)');
+  ok(chain(['gholdengo', 'roaring_moon', 'iron_valiant', 'walking_wake', 'iron_leaves', 'poltchageist', 'sinistcha', 'gouging_fire', 'raging_bolt', 'iron_boulder', 'iron_crown']),
+    'Pokédex order: Gholdengo (1000) > Roaring Moon (1005) > Iron Valiant > Walking Wake > Iron Leaves (1010) > Poltchageist / Sinistcha (1012-1013) > Gouging Fire (1020) > Raging Bolt > Iron Boulder > Iron Crown (1023)',
+    keys.slice(keys.indexOf('gholdengo'), keys.indexOf('gholdengo') + 11));
   ok(['sun_round', 'sunread_round', 'terrain_round', 'terrainread_round', 'd_size', 'poke_paradox'].every((f) => !(f in energy_values)), 'the weather reads and the discard are no energy fields');
   // the pills: Paradox (the rarity), then the era, then the type
   start('PXBADGE');
