@@ -567,6 +567,22 @@ G.Player = class Player {
     }
     if (n.hp < this.hp - 0.5 && !n.dead) this.flash = 0.14;
     this.hp = n.hp; this.maxHp = n.maxHp;
+    // (MicaSurvivor MP polish: an online partner's Z-move and Dynamax, its frame's field 18: the puppet grows and glows while
+    //  Dynamaxed, hides in its Z attack; the Z cinematic and the Dynamax start flash here. An older client sends none.)
+    const kit = n.kit, KF = G.Replay && G.Replay.KF;
+    if (kit && KF) {
+      const was = this.kf | 0;
+      this.kf = kit.kf; this.zt = kit.zt;
+      this.dyn = !!(kit.kf & KF.DYN_ON);
+      this.dynScale = kit.ds || null;
+      this.zHidden = !!kit.zh;
+      const col = (G.U.TYPE_COLOR && G.U.TYPE_COLOR[kit.zt || (this.mon && this.mon.types && this.mon.types[0])]) || '#ffd23f';
+      if ((kit.kf & KF.Z_ON) && !(was & KF.Z_ON)) {
+        G.FX.ring(this.x, this.y - this.bodyH / 2, 10, 220, col, 0.6, 6); G.FX.burst(this.x, this.y - this.bodyH / 2, col, 24, 220);
+        if (G.Spawner && this.tag) G.Spawner.say(G.I18n.f('¡Movimiento Z de {x}!', this.tag), 2.2);
+      }
+      if (this.dyn && !(was & KF.DYN_ON)) { G.FX.ring(this.x, this.y, 10, 300, '#ff2a6d', 0.6, 6); G.FX.burst(this.x, this.y, '#ff2a6d', 22, 240); }
+    }
     this.magnet = n.mag || this.magnet;
     this.reviveT = n.rev || 0;
     if (n.dead && !this.dead) { this.dead = true; this.anim.play('Faint', { hold: true }); G.Projectiles.clearOrbs(this); }

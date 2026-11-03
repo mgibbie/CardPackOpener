@@ -1107,6 +1107,9 @@ G.Game = (() => {
     G.FX.clear(); G.Projectiles.clear(); G.Combat.clearFields(); G.EnemyMgr.clear(); G.Pickups.clear(); G.Minimap.reset();
     G.Spawner.say('', 0, true);
     state = 'watch';
+    // (a run that ended on this page keeps its Expedition state for the run-over screen: the viewer must show the tape's
+    //  interactables / floors, never that run's final ones. Owner bug 2026-11-02.)
+    G.Hooks.call('watch.enter');
   }
   function watchExit() {
     if (state !== 'watch') return;

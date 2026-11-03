@@ -767,11 +767,23 @@ G.ExpDive = (() => {
     const z = G.World.zone, L = z && z.dive, pg = L && L.plugs && L.plugs[i];
     if (!pg || pg.open) return false;
     pg.open = true;
-    for (const p of [pg.at, pg.at2].filter(Boolean)) { const idx = p[1] * z.w + p[0]; z.kind[idx] = DG().FLOOR; L.kind[idx] = DG().FLOOR; }   // (a carved pocket's mouth is 2 tiles)
+    pg.was = [];   // (what the plug's tiles were: a viewer seeking back shuts it again, closePlug)
+    for (const p of [pg.at, pg.at2].filter(Boolean)) { const idx = p[1] * z.w + p[0]; pg.was.push([idx, z.kind[idx], L.kind[idx]]); z.kind[idx] = DG().FLOOR; L.kind[idx] = DG().FLOOR; }   // (a carved pocket's mouth is 2 tiles)
     G.World.setZone(z);   // (the world forgets its chunks and repaints; walkers re-learn their tile)
     if (G.Path) G.Path.clear();
     const [x, y] = wpos(pg.at);
     G.FX.burst(x, y, pg.kind === 'boulder' ? '#b8a890' : '#ff9a3d', 20, 140);
+    return true;
+  }
+  /** A viewer only: plug i shut again (seeking back to before the host opened it). */
+  function closePlug(i) {
+    const z = G.World.zone, L = z && z.dive, pg = L && L.plugs && L.plugs[i];
+    if (!pg || !pg.open || !pg.was) return false;
+    pg.open = false;
+    for (const [idx, k1, k2] of pg.was) { z.kind[idx] = k1; L.kind[idx] = k2; }
+    pg.was = null;
+    G.World.setZone(z);
+    if (G.Path) G.Path.clear();
     return true;
   }
   function plugTick(dt, alive) {
@@ -1050,7 +1062,8 @@ G.ExpDive = (() => {
     const lost = c.l ? { dex: c.l[0], x: c.l[1], y: c.l[2], done: !!(c.q & 2), follow: !!(c.q & 8), anim: old && old.lost && old.lost.dex === c.l[0] ? old.lost.anim : null } : null;
     const K3 = [null, 'slam', 'charge', 'dash'];
     if (c.f) queueMicrotask(() => guestFollow(c.f | 0));   // (V8)
-    if (c.pg && G.World.zone && G.World.zone.dive && G.World.zone.zone === (c.f | 0)) for (let i = 0; i < 8; i++) if (c.pg & (1 << i)) openPlug(i);   // (a viewer opens what the host did)
+    // (a viewer opens what the host did; and, owner bug 2026-11-02, a replay seeking back shuts what the host hadn't opened yet)
+    if (G.World.zone && G.World.zone.dive && G.World.zone.zone === (c.f | 0)) for (let i = 0; i < 8; i++) { if ((c.pg | 0) & (1 << i)) openPlug(i); else closePlug(i); }
     view = { weekly: c.w ? { week: c.w[0], mod: G.Expedition.DIVE_MODS[c.w[1]] } : null, rescuedN: c.n | 0, start: c.st || 1, lmUsed: !!(c.q & 16), obeliskT: c.q & 32 ? 1 : 0, floor: c.f | 0, route, bank: c.b | 0, stake: c.s | 0, sealed: !!(c.q & 1), escaped: !!(c.q & 4), ropeT: (c.o || 0) / 4, lost,
              rescued: [], combo: c.k ? { n: c.k[0], t: c.k[1] / 10 * COMBO.WINDOW } : null, tg: (c.tg || []).map(a => ({ k: K3[a[0]], x: a[1], y: a[2], r: a[3], len: a[3], a: a[4] / 100, w: a[5], t: a[6] / 10, T: 1, e: G.EnemyMgr.get ? G.EnemyMgr.get(a[7]) : null })) };
   }
@@ -1151,6 +1164,6 @@ G.ExpDive = (() => {
            setup, roles, press, pad, tick, out, drawButtons, offerLearn, LEARN_AT, get rects() { return rects; },
            submit, board, guestFollow, WEEKLY, MOD_NAME, expectedPay, openPlug, canOpen, PLUG,
            openPicker, closePicker, back, starts, startOf, stageOf, bestOf, sealOf, seals, routeOpen, hurtK, SEAL, MAIN,
-           live, shown, dBlock, applyD, TELE, COMBO, HITSTOP, hold, ecoLayout, LM, ESCORT, get view() { return view; },
+           live, shown, dBlock, applyD, TELE, COMBO, HITSTOP, hold, ecoLayout, LM, ESCORT, get view() { return view; }, cur,   // (cur: what is drawn: the host run, or a viewer's copy)
            drawGround, drawHud, drawMini, hudLine, hudColor, on, get run() { return S; } };
 })();

@@ -181,11 +181,17 @@ G.Exp = (() => {
   const expRun = () => G.Modes.isExp();
   const guestRun = () => !!(G.Coop && G.Coop.active && !G.Coop.isHost);   // (D11: a co-op guest's Expedition run)
 
+  /** Every Expedition module back to no run (a base run starts, or a viewer takes the page over: watch.enter). */
+  function resetAll() { if (C()) C().reset(); if (LG()) LG().reset(); if (LV()) LV().reset(); if (UL()) UL().reset(); if (EC()) EC().reset(); if (CP()) CP().reset(); if (RX()) RX().reset(); if (MT()) MT().reset(); if (SV()) SV().reset(); if (DV_()) DV_().reset(); }
+
   function init() {
     if (inited) return;
     inited = true;
+    // (owner bug 2026-11-02: after an Expedition run, the replay viewer of the SAME page drew that run's final host state
+    //  (every interactable used, the last floor's landmark...) instead of the tape's: the modules still held the run)
+    G.Hooks.on('watch.enter', resetAll);
     G.Hooks.on('run.start', cfg => {
-      if (!expRun()) { if (C()) C().reset(); if (LG()) LG().reset(); if (LV()) LV().reset(); if (UL()) UL().reset(); if (EC()) EC().reset(); if (CP()) CP().reset(); if (RX()) RX().reset(); if (MT()) MT().reset(); if (SV()) SV().reset(); if (DV_()) DV_().reset(); return; }
+      if (!expRun()) { resetAll(); return; }
       cur = { mode: cfg.mode, dv: cfg.dv, map: cfg.map, diff: cfg.diff, zone: 0, th: '' };
       enterZone(1);
       // (D3: Classic's timeline; D11: Survival's too, on the same engine. A co-op guest runs neither: the host's `c` / `s` blocks)

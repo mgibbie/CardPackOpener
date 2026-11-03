@@ -13,6 +13,8 @@
 //      local (a guest never uploads in the background)
 //   5. the session cap: past it the tape ends with an explicit marker and the viewer says "The replay ends here"
 //   6. v1 tapes still play (the golden fixture's, and a v1 entry kept in the browser)
+//   7. online co-op (MP polish): a guest's Z-move and Dynamax ride its co-op frames (field 18): the host's puppet of it grows
+//      and is MAX, flashes its Z; the host's live view rows and its tape carry them; the replay draws it giant
 //   node overworld/tests/micasurvivor_replay_v2_test.mjs      (ONLY=1,3 runs those sections)
 import http from 'http';
 import fs from 'fs';
@@ -532,6 +534,75 @@ try {
 			A(hs.kit && JSON.stringify(hs.kit.it) === JSON.stringify(bobKit.it) && hs.kit.u >= 50 && hs.kit.u <= 75 && (hs.kit.kf & 1), "the host's tape has bob's held items and his Ultimate's charge (from his co-op frames)", JSON.stringify([hs.kit, bobKit]));
 			A(hs.pov && hs.pov.pi === 1 && JSON.stringify(hs.pov.it) === JSON.stringify(bobKit.it), "...and following bob in the replay shows his items as his own", JSON.stringify(hs.pov));
 			A(gs && gs.host === false && gs.upOn === false && gs.segs >= 1 && gs.players >= 2 && !sessBy('bob').length, 'bob (a guest) records his own tape here, with both players, but never uploads it', JSON.stringify([gs, sessBy('bob').length]));
+		}
+		await host.ctx.close(); await guest.ctx.close();
+	}
+
+	// ======================== 7. online co-op: a guest's Z-move and Dynamax reach the host (puppet, live view, tape)
+	if (on(7)) {
+		const G_KF = { ULT: 1, ULT_CAST: 2, Z: 4, Z_READY: 8, Z_ON: 16, DYN: 32, DYN_READY: 64, DYN_ON: 128 };   // (G.Replay.KF)
+		const kitSave = n => Object.assign(SAVE(n), { stats: { dynamax: 1, zcr_fire: 1 } });   // (Charmander: Dynamax and the Fire Z unlocked)
+		const host = await bootPage({ user: 'alice', token: tokens.alice, state: states.alice, save: kitSave('alice') });
+		const guest = await bootPage({ user: 'bob', token: tokens.bob, state: states.bob, save: kitSave('bob') });
+		const inRun = p => p.E(() => G.Game.state === 'playing' && G.Modes.run.mode === 'normal' && !!G.Game.player && G.Coop.active);
+		const mk = await host.E(async () => { const r = await G.Social.createRoom(G.Modes.lobbyCfg('normal')); G.LobbyUI.open(); return r && G.Social.room ? { id: G.Social.room.id } : null; });
+		let both = false;
+		if (mk) {
+			await guest.E(async (id) => { await G.Social.joinRoom(id); G.LobbyUI.open(); await new Promise(r => setTimeout(r, 400)); }, mk.id);
+			await waitFor(() => host.E(() => G.Social.room && G.Social.room.members.length === 2), 8000);
+			await waitFor(() => host.E(g => G.Net.mode(g) === 'direct', 'bob'), 30000);
+			await waitFor(async () => { await guest.E(async () => { const me = G.Social.room && G.Social.room.members.find(m => m.uid === G.Social.uid); if (me && !me.ready) await G.Social.setReady(true); }); return host.E(() => G.Social.room.members.every(m => m.ready) && !document.getElementById('lobby-start').disabled); }, 12000);
+			await host.E(() => document.getElementById('lobby-start').click());
+			both = await waitFor(async () => await inRun(host) && await inRun(guest), 30000);
+		}
+		A(both, 'alice hosts an online Normal run, bob joins (WebRTC on localhost)', JSON.stringify(mk));
+		if (both) {
+			for (const p of [host, guest]) await p.E(() => { const pl = G.Game.player; pl.hurt = () => {}; pl.invuln = 1e9; });
+			await sleep(1500);
+			const puppet = () => host.E(() => { const m = [...G.Coop.mates].find(x => x.uid === 'bob' || x.name === 'bob'), p = m && m.pl, KF = G.Replay.KF; const lp = G.Replay.livePlayers(); const r = lp && lp.pr[0];
+				return p && { dyn: !!p.dyn, ds: p.dynScale, zh: !!p.zHidden, kf: p.kf | 0, zOn: !!((p.kf | 0) & KF.Z_ON), dOn: !!((p.kf | 0) & KF.DYN_ON), live: r && { fl: r[6], kf: r[G.Replay.RW + 1] } }; });
+			const before = await puppet();
+			// bob Dynamaxes (level 20+): his puppet on alice's screen grows, glows, and says MAX
+			const dx = await guest.E(() => { const pl = G.Game.player; pl.level = 30; return G.Dynamax.tryStart(pl); });
+			let grown = null;
+			await waitFor(async () => { grown = await puppet(); return grown && grown.dyn && grown.ds && grown.ds[0] > 1.3; }, 6000);
+			// then his Z-move: the cinematic shows on alice's side too
+			const zt = await guest.E(() => { const pl = G.Game.player; pl.level = 30; return G.ZMoves.tryStart(pl) && G.ZMoves.state; });
+			let zon = null;
+			await waitFor(async () => { zon = await puppet(); return zon && zon.zOn; }, 4000);
+			await sleep(3500);
+			const tape = await host.E(async () => {
+				G.Game.quit(); await new Promise(r => setTimeout(r, 400));
+				const e = G.Replay.last; await e.ready;
+				const KF = G.Replay.KF, out = { dyn: 0, z: 0, frames: 0, scale: null };
+				for (const c of e.segs) {
+					const rd = await G.Replay.open(c);
+					for (let i = 0; i < rd.length; i++) {
+						out.frames++;
+						const m1 = (rd.at(i).mt || []).find(m => m[11] === 1);
+						if (!m1) continue;
+						if ((m1[7] & 4) && (m1[13].kf & KF.DYN_ON)) out.dyn++;
+						if (m1[13].kf & KF.Z_ON) out.z++;
+					}
+				}
+				// the viewer draws him giant while Dynamaxed
+				await G.WatchUI.playLocal(e, () => {});
+				for (let i = 0; i < 60 && !G.WatchUI.player; i++) await new Promise(r => setTimeout(r, 30));
+				if (G.WatchUI.playing) G.WatchUI.togglePlay();
+				const S = G.WatchUI.session;
+				for (let t = 0; t < S.duration && !out.scale; t += 0.5) {
+					G.WatchUI.seek(t);
+					const ms = (G.WatchUI.frame.mt || []).find(m => m[11] === 1);
+					if (ms && (ms[7] & 4)) { const mp = G.WatchUI.drawables().find(d => d && d !== G.WatchUI.player && d.dyn); out.scale = mp ? mp.dynScale : 'none'; }
+				}
+				G.WatchUI.leave();
+				return out;
+			});
+			A(before && !before.dyn && !before.zOn && (before.kf & G_KF.DYN) && (before.kf & G_KF.Z), "bob's co-op frames carry his kit (field 18): alice's puppet of him knows he has a Z-move and Dynamax, neither in use", JSON.stringify(before));
+			A(dx === true && grown && grown.dyn && grown.dOn && grown.ds[0] > 1.3 && (grown.live.fl & 4) && (grown.live.kf & G_KF.DYN_ON), "bob Dynamaxes: on alice's screen his puppet grows (Dynamax scale) and is MAX; alice's live view row says so", JSON.stringify(grown));
+			A(zt === 'cine' && zon && zon.zOn && (zon.live.kf & G_KF.Z_ON), "bob's Z-move: alice's puppet of him is in its Z (the cinematic flash), in her live view too", JSON.stringify(zon));
+			A(tape.dyn > 2 && tape.z > 0, `alice's tape records bob's Dynamax (${tape.dyn} frames: flag + MAX) and his Z-move (${tape.z} frames)`, JSON.stringify(tape));
+			A(Array.isArray(tape.scale) && tape.scale[0] > 1.3, '...and her replay draws him giant while Dynamaxed', JSON.stringify(tape.scale));
 		}
 		await host.ctx.close(); await guest.ctx.close();
 	}

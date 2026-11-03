@@ -145,6 +145,13 @@ G.Spectate = (() => {
    */
   function pubSnap(extra) {
     const s = snap(extra);
+    // (the props broken and the altars used near you, and the springs / locked chests not at rest: the watcher's world is
+    //  built from the seed, js/world/world.js viewProps. Owner bug 2026-11-02. Dropped first past the cap.)
+    const pl = G.Game.player;
+    if (s && pl && G.World.propsNear) {
+      const wp = G.World.propsNear(pl.x, pl.y), sp = G.World.specialsLive(pl.x, pl.y, 900);
+      if (wp.b.length || wp.u.length || sp.length) { if (sp.length) wp.s = sp; s.wp = wp; }
+    }
     const lp = s && G.Replay && G.Replay.livePlayers ? G.Replay.livePlayers() : null;
     if (lp) {
       Object.assign(s, lp);
@@ -152,6 +159,7 @@ G.Spectate = (() => {
       if (JSON.stringify(s).length > K.SNAP_MAX) delete s.cs;
       if (JSON.stringify(s).length > K.SNAP_MAX) delete s.pz;
     }
+    if (s && s.wp && JSON.stringify(s).length > K.SNAP_MAX) delete s.wp;
     return s;
   }
 

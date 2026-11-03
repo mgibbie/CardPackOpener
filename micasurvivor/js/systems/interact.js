@@ -71,7 +71,7 @@ G.Interact = (() => {
   }
 
   function usePower(pl, p) {
-    p.used = true;
+    G.World.useSpecial(p);   // (p.used, kept by the world for the replay: owner bug 2026-11-02)
     const pw = POWERS[p.kind];
     pl.addPower(pw, POWER_TIME);
     G.FX.ring(p.x, p.y - 20, 8, 90, pw.color, 0.6, 5);

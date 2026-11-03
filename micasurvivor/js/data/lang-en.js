@@ -822,7 +822,7 @@ G.I18n.add({
   // (el patrón concreto antes que 'Movimiento Z: {x}': gana el primero que encaja)
   'Movimiento Z: bloqueado (derrota {x} Pokémon de su tipo)': 'Z-Move: locked (defeat {x} Pokémon of its type)',
   'MOVIMIENTO Z': 'Z-MOVE', 'Movimiento Z': 'Z-Move', 'Movimientos Z': 'Z-Moves', 'Movimiento Z:': 'Z-Move:', 'Movimiento Z: {x}': 'Z-Move: {x}',
-  '¡Movimiento Z listo!': 'Z-Move ready!', 'Aquí no': 'Not here', 'Nv. {x}': 'Lv. {x}',
+  '¡Movimiento Z listo!': 'Z-Move ready!', '¡Movimiento Z de {x}!': '{x}\'s Z-Move!', 'Aquí no': 'Not here', 'Nv. {x}': 'Lv. {x}',
   'Movimiento Z desbloqueado': 'Z-Move unlocked', 'Movimiento Z desbloqueado · +{x} monedas': 'Z-Move unlocked · +{x} coins',
   'Cristal Z': 'Z-Crystal', 'Cristales Z': 'Z-Crystals', 'Cristales Z: {x} / {x}': 'Z-Crystals: {x} / {x}',
   '¡Cristal Z: {x}!': 'Z-Crystal: {x}!', '¡Cristal Z encontrado! Desbloqueas: {x}': 'Z-Crystal found! You unlock: {x}',
