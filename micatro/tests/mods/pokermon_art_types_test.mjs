@@ -95,6 +95,12 @@ await sec('static', () => {
     && D.palossand === 'Psychic' && D.pyukumuku === 'Water' && D.komala === 'Colorless' && D.bruxish === 'Water' && ['jangmoo', 'hakamoo', 'kommoo'].every((n) => D[n] === 'Dragon'),
   'Gen 7 batch 2: Salandit line Fire (Poison/Fire: its card Fire), Stufful line Fighting (Normal/Fighting: its card Fighting), Comfey Fairy, Sandygast line Psychic (Ghost/Ground), Pyukumuku Water, Komala Colorless, Bruxish Water (Water/Psychic), Jangmo-o line Dragon',
   ['salandit', 'stufful', 'comfey', 'sandygast', 'pyukumuku', 'komala', 'bruxish', 'jangmoo'].map((n) => D[n]));
+  ok(D.rookidee === 'Colorless' && D.corvisquire === 'Colorless' && D.corviknight === 'Metal' && D.blipbug === 'Grass' && D.dottler === 'Psychic' && D.orbeetle === 'Psychic'
+    && D.gossifleur === 'Grass' && D.eldegoss === 'Grass' && D.wooloo === 'Colorless' && D.dubwool === 'Colorless' && D.chewtle === 'Water' && D.drednaw === 'Water'
+    && D.rolycoly === 'Earth' && D.carkol === 'Fire' && D.coalossal === 'Fire' && D.silicobra === 'Earth' && D.sandaconda === 'Earth' && D.cramorant === 'Water'
+    && D.arrokuda === 'Water' && D.barraskewda === 'Water',
+  'Gen 8 batch 1: Rookidee line Colorless -> Corviknight Metal (Flying/Steel: its card Metal), Blipbug Grass (Bug) -> Dottler / Orbeetle Psychic (Bug/Psychic: their cards Psychic), Gossifleur line Grass, Wooloo line Colorless, Chewtle line Water, Rolycoly Earth (Rock) -> Carkol / Coalossal Fire (Rock/Fire: their cards Fire), Silicobra line Earth, Cramorant Water, Arrokuda line Water',
+  ['rookidee', 'corviknight', 'blipbug', 'dottler', 'rolycoly', 'carkol', 'silicobra', 'cramorant'].map((n) => D[n]));
   ok(CASTFORM_FORMS.normal.ptype === 'Colorless' && CASTFORM_FORMS.sunny.ptype === 'Fire' && CASTFORM_FORMS.rainy.ptype === 'Water' && CASTFORM_FORMS.snowy.ptype === 'Water',
     'Castform: Normal Colorless, Sunny Fire, Rainy / Snowy Water');
 });

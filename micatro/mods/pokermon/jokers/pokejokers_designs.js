@@ -175,6 +175,15 @@
 // banked a round; Innards Out: $1 per round held when sold or destroyed), Komala (Colorless; X1.5; Comatose: can't be debuffed, Jokers can't
 // destroy it), Bruxish (Water; Strong Jaw: sealed scored cards retrigger) and Jangmo-o -> Hakamo-o -> Kommo-o (Dragon; +2 / +4 Mult banked per
 // Full House, evolving at +16 / +40; Kommo-o X1 + X0.15 per Full House played this run) — upstream 3.9.1 draws them all (Natdex {12,50}-{6,52}).
+// Gen 8, batch 1 (contentRev 70; the owner's "yes", 2026-11-02), 20 jokers #821-847: Rookidee -> Corvisquire -> Corviknight (Colorless ->
+// Metal; Flying Taxi $1 / $2 / $2 at end of round; Corviknight X1.5 and +1 shop card slot), Blipbug -> Dottler -> Orbeetle (Grass -> Psychic;
+// +1 / +2 / +3 Foresight, each Foreseen card +4 Mult / X1.15), Gossifleur -> Eldegoss (Grass; Cotton Down: scored Seeds +4 Mult; Eldegoss
+// plants a Seed each Blind, +1 growth level), Wooloo -> Dubwool (Colorless; +50 / +100 Chips; Cotton Guard +1 hand during Boss Blinds),
+// Chewtle -> Drednaw (Water; +3 Mult / X1 + X0.3 per Water Joker), Rolycoly -> Carkol -> Coalossal (Earth -> Fire; a deck card turns Stone
+// each Blind; Stone +6 Mult / X1.3; Coalossal +1 discard), Silicobra -> Sandaconda (Earth; Sand Spit: discarded cards 1 in 4 Stone; the
+// house SANDSTORM, is_sandstorm; Stone +20 Chips and X1.2), Cramorant (Water; Gulp Missile: the first discard loads X2.5 for the next hand)
+// and Arrokuda -> Barraskewda (Water; Propeller Tail: the first scored card +10 Mult / X2) — upstream 3.9.1 draws them all (Natdex
+// {20,54}-{12,56}; Cramorant Gen 8 {0,0}, Gulping {2,0}).
 import {
   G, P_CENTERS, P_CENTER_POOLS, localize, card_eval_status_text, pseudorandom, pseudoseed, pseudorandom_element, ease_hands_played,
   create_card, copy_card, playing_card_joker_effects, defineJokers, type_tooltip, level_evo, scaling_evo, item_evo,
@@ -183,7 +192,7 @@ import {
   add_card, detailed, energy_values, poke_remove_card, ease_dollars, ease_discard, juice_card_until, find_card, get_total_energy, POST_EVOLVE, can_evolve,
   poke_change_growth_level,
   poke_get_adjacent_jokers, emit, find_joker, poke_drain, level_up_hand, poke_evolve, increment_energy, can_increase_energy, smods_debuff_card, blueprint_compat_line,
-  can_be_destroyed_by_joker,
+  can_be_destroyed_by_joker, change_shop_size,
 } from '../api.js';
 import { blueprint_effect } from './pokejokers_08.js';
 import * as BN from '../../../js/engine/bignum.js'; // the Blind's requirement (Poison Gas) may be a big number in modded runs
@@ -8397,6 +8406,365 @@ defineJokers({
   },
 }, FILE);
 
+// ---------------------------------------------------------------- Gen 8, batch 1 (contentRev 70; the owner's "yes", 2026-11-02), #821-847
+/** Rookidee line, Flying Taxi: $taxi_money at end of round (calc_dollar_bonus: a row of the cash-out list, as Purrloin; fixed, no Energy; a
+ *  Blueprint never copies it, as Golden Joker). */
+const taxi_money = (card) => card.ability.extra.taxi_money;
+/** Corviknight: +card_slots shop card slot while owned (Overstock's change_shop_size, Dudunsparce's add / remove pair: a debuffed one lends
+ *  none). Taken back when it leaves, but never below 1 shop slot (the engine's own floor: a shop is never empty). */
+const shop_slot = {
+  add_to_deck(self, card) { change_shop_size(card.ability.extra.card_slots); },
+  remove_from_deck(self, card) {
+    const n = Math.min(card.ability.extra.card_slots, Math.max(0, ((G.GAME.shop && G.GAME.shop.joker_max) || 1) - 1));
+    if (n > 0) change_shop_size(-n);
+  },
+};
+/** Dottler / Orbeetle: each Foreseen card (G.scry_view, the top of the deck, scored like a held card: Patrat's / Uxie's moment) gives +mult
+ *  (Dottler) or X Xmult_multi (Orbeetle); a debuffed one gives nothing. The Foresight itself is the Shinx line's `scry` pair. */
+function foreseen_score(card, context, x) {
+  if (!(context.individual && context.cardarea === G.scry_view && !context.end_of_round && !context.other_card.debuff)) return undefined;
+  return x ? { x_mult: card.ability.extra.Xmult_multi, card } : { mult: card.ability.extra.mult, card };
+}
+/** Gossifleur / Eldegoss, Cotton Down: each scored card that is a Seed when the hand is played gives +mult. A Seed that blooms while it
+ *  scores (Shiftry / Cherubi growth) still counts: the Seed card's growth runs before the jokers read it, so the hand's Seeds are marked in
+ *  `before` (poke_seed_hand = this hand's number) — a Blueprint copy reads the same marks. */
+const seed_scored = (c) => has_enhancement(c, 'm_poke_seed') || c.poke_seed_hand === G.GAME.hands_played;
+function cotton_down(card, context) {
+  if (context.before && context.scoring_hand) {
+    for (const c of context.scoring_hand) if (has_enhancement(c, 'm_poke_seed')) c.poke_seed_hand = G.GAME.hands_played;
+    return undefined;
+  }
+  if (context.individual && context.cardarea === G.play && !context.end_of_round && seed_scored(context.other_card)) return { mult: card.ability.extra.mult, card };
+  return undefined;
+}
+/** When a Blind is selected, ONE random unenhanced card of the full deck (the run's seeded pseudorandom_element on `seed`) takes `enh` —
+ *  Cherubi's sweet_seeds with its own stream, for Eldegoss (Seed) and the Rolycoly line (Stone, Marble Joker's shape on a deck card). None
+ *  unenhanced: nothing (it never overwrites another enhancement). Blueprint copies it (a second card). */
+function blind_convert(card, context, enh, seed, message) {
+  if (!context.setting_blind || card.getting_sliced || (context.blueprint_card && context.blueprint_card.getting_sliced)) return;
+  const plain = (G.playing_cards || []).filter((c) => unbroken(c) && c.config.center.key === 'c_base');
+  if (!plain.length) return;
+  const [pick] = pseudorandom_element(plain, pseudoseed(seed));
+  pick.set_ability(P_CENTERS[enh], null, true);
+  G.E_MANAGER.add_event(() => { pick.juice_up(); });
+  card_eval_status_text(context.blueprint_card || card, 'extra', null, null, null, { message, colour: enh === 'm_stone' ? 'CHIPS' : 'GREEN' });
+}
+/** How many scores a fresh Seed needs to bloom now (5 growth, 1 + growth level a score). */
+const bloom_scores = () => Math.ceil(5 / (1 + Math.max(0, (G.GAME && G.GAME.poke_growth_level) || 0)));
+/** Dubwool, Cotton Guard: when a Boss Blind is selected, +hands hand for that round (ease_hands_played; once a round, `guard_round`; not
+ *  Blueprint). At the main end of round an unused one is taken back before the cash-out counts hands (so it never pays $1 there); sold
+ *  mid-round, it takes it back too (never the last hand). */
+function cotton_guard(card, context) {
+  const ex = card.ability.extra;
+  if (context.setting_blind && !context.blueprint && !context.retrigger_joker && G.GAME.blind && G.GAME.blind.boss && ex.guard_round !== G.GAME.round) {
+    ex.guard_round = G.GAME.round;
+    ease_hands_played(ex.hands);
+    card_eval_status_text(card, 'extra', null, null, null, { message: '+' + ex.hands + ' Hand', colour: 'CHIPS' });
+  }
+  if (round_end(context) && !context.blueprint && ex.guard_round === G.GAME.round) {
+    ex.guard_round = -1;
+    const back = Math.min(ex.hands, G.GAME.current_round.hands_left);
+    if (back > 0) ease_hands_played(-back);
+  }
+}
+const guard_on = (card) => !!(G.GAME && G.GAME.facing_blind && card.ability.extra.guard_round === G.GAME.round);
+/** Chewtle / Drednaw: the Water Jokers, itself included (Barboach's / Cutiefly's count: is_type, undebuffed; a Water Tera counts). */
+const water_count = (card) => ((G.jokers && G.jokers.cards) || []).filter((j) => j !== card && !j.debuff && is_type(j, 'Water')).length + 1;
+/** Silicobra, Sand Spit: each card the PLAYER discards (the pre_discard of a real discard: Trapinch's rule, `hook` set by every effect that
+ *  discards for you) that is unenhanced has a num in dem chance (pseudorandom_probability on 'silicobra_spit': Oops! / Venonat raise it,
+ *  Absol fixes it) to become a Stone card as it goes. Enhanced cards never roll (it never overwrites). Blueprint copies it (its own roll). */
+let spit_hand = null;
+function sand_spit(card, context) {
+  if (context.pre_discard) { spit_hand = context.hook ? null : context.full_hand; return undefined; }
+  if (!(context.discard && context.other_card && spit_hand && spit_hand.includes(context.other_card))) return undefined;
+  const c = context.other_card;
+  if (c.config.center.key !== 'c_base' || !unbroken(c)) return undefined;
+  const ex = card.ability.extra;
+  if (!pseudorandom_probability(card, 'silicobra_spit', ex.num, ex.dem, 'silicobra_spit')) return undefined;
+  c.set_ability(P_CENTERS.m_stone, null, true);
+  card_eval_status_text(context.blueprint_card || card, 'extra', null, null, null, { message: 'Sand Spit!', colour: '#e1c019' });
+  return undefined;
+}
+/** THE HOUSE SANDSTORM (Gen 8 batch 1): is it a sandstorm? While an undebuffed Sandaconda is held, every round is (live: bought or sold, it
+ *  changes at once; in the shop too). The weather check future sand jokers read, beside the sun (cherrim_sunny) and the rain
+ *  (swift_swim_raining). Castform has no sand form: the sandstorm never changes its forecast. Flygon's "Sandstorm" and the Hippopotas
+ *  line's "Sand Stream" are move names; they neither make nor read it. */
+export const is_sandstorm = () => legends('sandaconda').length > 0;
+/** Cramorant, Gulp Missile: the round's FIRST discard (a player's: pre_discard, not a hook, with no discard used yet; once a round,
+ *  `load_round`) loads the missile; the next hand that scores fires it (joker_main: X Xmult, a Blueprint copy too; spent in `after`). A
+ *  debuffed hand doesn't score, so it doesn't fire. Unfired at the end of the round: lost. Loaded, it shows its Gulping Form card. */
+function gulp_missile(card, context) {
+  const ex = card.ability.extra;
+  if (context.pre_discard && !context.hook && !context.blueprint && !context.retrigger_joker && G.GAME.current_round.discards_used === 0 && ex.load_round !== G.GAME.round) {
+    ex.load_round = G.GAME.round;
+    ex.missile = true;
+    card_eval_status_text(card, 'extra', null, null, null, { message: 'Gulp!', colour: 'XMULT' });
+    return undefined;
+  }
+  if (context.joker_main && ex.missile) {
+    if (!context.blueprint) ex.firing = true;
+    return { message: a_xmult(r3(ex.Xmult)), colour: 'XMULT', Xmult_mod: ex.Xmult };
+  }
+  if (context.after && !context.blueprint && ex.firing) { ex.firing = false; ex.missile = false; return undefined; }
+  if (round_end(context) && !context.blueprint) { ex.missile = false; ex.firing = false; }
+  return undefined;
+}
+/** Arrokuda / Barraskewda, Propeller Tail: the FIRST scored card (scoring_hand[0] by position, Crabrawler's rule: a debuffed one there gives
+ *  nothing and the next isn't promoted; a retrigger of it gives again). */
+function propeller_tail(card, context, x) {
+  if (!(context.individual && context.cardarea === G.play && !context.end_of_round && context.scoring_hand && context.other_card === context.scoring_hand[0])) return undefined;
+  return x ? { x_mult: card.ability.extra.Xmult_multi, card } : { mult: card.ability.extra.mult, card };
+}
+
+defineJokers({
+  // The owner's Gen 8 batch 1 ("yes", 2026-11-02): 20 jokers, #821-847, on the guide's price slots (3-stage U $6 / S $8 / S $10, 2-stage C $5 /
+  // S $8, single-stage R $7); evolution by rounds (4 for the 3-stage Basics, else 5). Types = the cards' (pokermon_art_type.mjs). Energy raises
+  // the main number at the standard share; money, slots, hands / discards, Foresight, conversions and odds are fixed; a stage with no number
+  // of its own carries its evolution's ("Energy carries to ..."). Art: upstream 3.9.1's own cells (Natdex {20,54}-{12,56}; Cramorant Gen 8
+  // {0,0}, its Gulping Form {2,0} beside it, systems/anim.js GEN8_FORM_SPRITES); nothing to deploy. Neither Nacho nor Pokermon+ has any.
+  // Pokédex order: Rookidee ... Orbeetle (821-826) after Inteleon, before Nickit; Gossifleur ... Drednaw (829-834) after Thievul, before
+  // Yamper; Rolycoly ... Barraskewda (837-847) after Boltund, before Dreepy.
+  //
+  // Rookidee 821 (Colorless, Uncommon $6), Flying Taxi: earn $1 at end of round (`taxi_money`, fixed). Carries Corviknight's `Xmult` (1.5:
+  // "Energy carries to Corviknight"). 4 rounds.
+  rookidee: {
+    name: 'rookidee', poke_sprite391: sprite('Natdex', 20, 54),
+    config: { extra: { taxi_money: 1, Xmult: 1.5, rounds: 4 } },
+    rarity: 2, cost: 6, stage: 'Basic', ptype: 'Colorless', gen: 8, blueprint_compat: false,
+    attributes: ['money', 'economy', 'round_evo'], poke_after: 'inteleon',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [ex.taxi_money, ex.rounds, r3(ex.Xmult)] }; },
+    calculate(self, card, context) { return level_evo(self, card, context, 'j_poke_corvisquire'); },
+    calc_dollar_bonus(self, card) { return taxi_money(card); },
+  },
+  // Corvisquire 822 (Safari $8): $2 at end of round; carries Corviknight's `Xmult`. 5 rounds.
+  corvisquire: {
+    name: 'corvisquire', poke_sprite391: sprite('Natdex', 22, 54),
+    config: { extra: { taxi_money: 2, Xmult: 1.5, rounds: 5 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Colorless', gen: 8, blueprint_compat: false,
+    attributes: ['money', 'economy', 'round_evo'], poke_after: 'rookidee',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [ex.taxi_money, ex.rounds, r3(ex.Xmult)] }; },
+    calculate(self, card, context) { return level_evo(self, card, context, 'j_poke_corviknight'); },
+    calc_dollar_bonus(self, card) { return taxi_money(card); },
+  },
+  // Corviknight 823 (Metal: its card; Safari $10): $2 at end of round, X1.5 Mult (`Xmult` +20%: 1.8 / 2.1 / 2.4) and +1 shop card slot
+  // (`card_slots`, fixed; shop_slot). Blueprint copies the X only.
+  corviknight: {
+    name: 'corviknight', poke_sprite391: sprite('Natdex', 24, 54),
+    config: { extra: { taxi_money: 2, Xmult: 1.5, card_slots: 1 } },
+    rarity: 'poke_safari', cost: 10, stage: 'Two', ptype: 'Metal', gen: 8, blueprint_compat: true,
+    attributes: ['money', 'economy', 'xmult', 'shop'], poke_after: 'corvisquire',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [ex.taxi_money, r3(ex.Xmult), ex.card_slots] }; },
+    calculate(self, card, context) {
+      if (context.joker_main) return { message: a_xmult(r3(card.ability.extra.Xmult)), colour: 'XMULT', Xmult_mod: card.ability.extra.Xmult };
+      return undefined;
+    },
+    calc_dollar_bonus(self, card) { return taxi_money(card); },
+    ...shop_slot,
+  },
+  // Blipbug 824 (Grass: its card; Uncommon $6): +1 Foresight (`scry`, fixed). Carries Dottler's `mult` (4: "Energy carries to Dottler").
+  // 4 rounds.
+  blipbug: {
+    name: 'blipbug', poke_sprite391: sprite('Natdex', 26, 54),
+    config: { extra: { scry: 1, mult: 4, rounds: 4 } },
+    rarity: 2, cost: 6, stage: 'Basic', ptype: 'Grass', gen: 8, blueprint_compat: false,
+    attributes: ['foresight', 'round_evo'], poke_after: 'corviknight',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); scry_tip(info_queue); const ex = card.ability.extra; return { vars: [ex.scry, ex.rounds, r3(ex.mult)] }; },
+    calculate(self, card, context) { return level_evo(self, card, context, 'j_poke_dottler'); },
+    ...scry,
+  },
+  // Dottler 825 (Psychic: its card; Safari $8): +2 Foresight; each Foreseen card gives +4 Mult (`mult` +40%: 5.6 / 7.2 / 8.8). 5 rounds.
+  dottler: {
+    name: 'dottler', poke_sprite391: sprite('Natdex', 28, 54),
+    config: { extra: { scry: 2, mult: 4, rounds: 5 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Psychic', gen: 8, blueprint_compat: true,
+    attributes: ['foresight', 'mult', 'round_evo'], poke_after: 'blipbug',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); scry_tip(info_queue); const ex = card.ability.extra; return { vars: [ex.scry, r3(ex.mult), ex.rounds] }; },
+    calculate(self, card, context) { return foreseen_score(card, context, false) || level_evo(self, card, context, 'j_poke_orbeetle'); },
+    ...scry,
+  },
+  // Orbeetle 826 (Safari $10): +3 Foresight; each Foreseen card gives X1.15 (`Xmult_multi` +5%: 1.2075 / 1.265 / 1.3225).
+  orbeetle: {
+    name: 'orbeetle', poke_sprite391: sprite('Natdex', 0, 55),
+    config: { extra: { scry: 3, Xmult_multi: 1.15 } },
+    rarity: 'poke_safari', cost: 10, stage: 'Two', ptype: 'Psychic', gen: 8, blueprint_compat: true,
+    attributes: ['foresight', 'xmult'], poke_after: 'dottler',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); scry_tip(info_queue); const ex = card.ability.extra; return { vars: [ex.scry, r3(ex.Xmult_multi)] }; },
+    calculate(self, card, context) { return foreseen_score(card, context, true); },
+    ...scry,
+  },
+  // Gossifleur 829 (Grass, Common $5), Cotton Down: each scored Seed card gives +4 Mult (`mult` +40%: 5.6 / 7.2 / 8.8). 5 rounds.
+  gossifleur: {
+    name: 'gossifleur', poke_sprite391: sprite('Natdex', 6, 55),
+    config: { extra: { mult: 4, rounds: 5 } },
+    rarity: 1, cost: 5, stage: 'Basic', ptype: 'Grass', gen: 8, blueprint_compat: true,
+    attributes: ['mult', 'enhancements', 'round_evo'], poke_after: 'thievul',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); info_queue.push(P_CENTERS.m_poke_seed); const ex = card.ability.extra; return { vars: [r3(ex.mult), ex.rounds] }; },
+    calculate(self, card, context) { return cotton_down(card, context) || level_evo(self, card, context, 'j_poke_eldegoss'); },
+  },
+  // Eldegoss 830 (Safari $8): Cotton Down kept (`mult` +40%); Cotton Spore: when a Blind is selected a random unenhanced deck card becomes a
+  // Seed (blind_convert, 'poke_eldegoss_seeds'); and +1 growth level while owned (Cherubi's sweet_growth: `growth`, fixed; it STACKS with
+  // Cherubi / Cherrim / Shiftry / Brambleghast: +1 each, so a Seed blooms in 3 scores with one, 2 with two).
+  eldegoss: {
+    name: 'eldegoss', poke_sprite391: sprite('Natdex', 8, 55),
+    config: { extra: { mult: 4, growth: 1 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Grass', gen: 8, blueprint_compat: true,
+    attributes: ['mult', 'enhancements', 'modify_card', 'full_deck'], poke_after: 'gossifleur',
+    loc_vars(self, info_queue, card) { seed_tips(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.mult), ex.growth, bloom_scores()] }; },
+    calculate(self, card, context) { blind_convert(card, context, 'm_poke_seed', 'poke_eldegoss_seeds', '+1 Seed'); return cotton_down(card, context); },
+    ...sweet_growth,
+  },
+  // Wooloo 831 (Colorless, Common $5): +50 Chips (`chips` +30%: 65 / 80 / 95). 5 rounds.
+  wooloo: {
+    name: 'wooloo', poke_sprite391: sprite('Natdex', 10, 55),
+    config: { extra: { chips: 50, rounds: 5 } },
+    rarity: 1, cost: 5, stage: 'Basic', ptype: 'Colorless', gen: 8, blueprint_compat: true,
+    attributes: ['chips', 'round_evo'], poke_after: 'eldegoss',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.chips), ex.rounds] }; },
+    calculate(self, card, context) {
+      if (context.joker_main) return { message: a_chips(r3(card.ability.extra.chips)), colour: 'CHIPS', chip_mod: card.ability.extra.chips };
+      return level_evo(self, card, context, 'j_poke_dubwool');
+    },
+  },
+  // Dubwool 832 (Safari $8): +100 Chips (`chips` +30%: 130 / 160 / 190); Cotton Guard: +1 hand during Boss Blinds (`hands`, fixed;
+  // cotton_guard: given when the Boss Blind is selected, gone at the round's end). Blueprint copies the Chips only.
+  dubwool: {
+    name: 'dubwool', poke_sprite391: sprite('Natdex', 12, 55),
+    config: { extra: { chips: 100, hands: 1 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Colorless', gen: 8, blueprint_compat: true,
+    attributes: ['chips', 'hands', 'boss_blind'], poke_after: 'wooloo',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.chips), ex.hands, guard_on(card) ? 'Active!' : 'Boss Blinds only'] }; },
+    calculate(self, card, context) {
+      cotton_guard(card, context);
+      if (context.joker_main) return { message: a_chips(r3(card.ability.extra.chips)), colour: 'CHIPS', chip_mod: card.ability.extra.chips };
+      return undefined;
+    },
+    remove_from_deck(self, card, from_debuff) {
+      if (from_debuff || !guard_on(card)) return;
+      card.ability.extra.guard_round = -1;
+      const back = Math.min(card.ability.extra.hands, G.GAME.current_round.hands_left - 1);
+      if (back > 0) ease_hands_played(-back);
+    },
+  },
+  // Chewtle 833 (Water, Common $5): +3 Mult for each Water Joker, itself included (`mult` +40%: 4.2 / 5.4 / 6.6). 5 rounds.
+  chewtle: {
+    name: 'chewtle', poke_sprite391: sprite('Natdex', 14, 55),
+    config: { extra: { mult: 3, rounds: 5 } },
+    rarity: 1, cost: 5, stage: 'Basic', ptype: 'Water', gen: 8, blueprint_compat: true,
+    attributes: ['mult', 'types', 'round_evo'], poke_after: 'dubwool',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra, n = water_count(card); return { vars: [r3(ex.mult), n, r3(ex.mult * n), ex.rounds] }; },
+    calculate(self, card, context) {
+      if (context.joker_main) { const m = r3(card.ability.extra.mult * water_count(card)); return { message: a_mult(m), colour: 'MULT', mult_mod: m }; }
+      return level_evo(self, card, context, 'j_poke_drednaw');
+    },
+  },
+  // Drednaw 834 (Safari $8): X1, plus X0.3 for each Water Joker, itself included (`Xmult_mod` +20%: 0.36 / 0.42 / 0.48).
+  drednaw: {
+    name: 'drednaw', poke_sprite391: sprite('Natdex', 16, 55),
+    config: { extra: { Xmult_mod: 0.3 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Water', gen: 8, blueprint_compat: true,
+    attributes: ['xmult', 'types'], poke_after: 'chewtle',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra, n = water_count(card); return { vars: [r3(ex.Xmult_mod), n, r3(1 + ex.Xmult_mod * n)] }; },
+    calculate(self, card, context) {
+      if (context.joker_main) { const x = r9(1 + card.ability.extra.Xmult_mod * water_count(card)); return { message: a_xmult(r3(x)), colour: 'XMULT', Xmult_mod: x }; }
+      return undefined;
+    },
+  },
+  // Rolycoly 837 (Earth, Uncommon $6), Coal: when a Blind is selected, a random unenhanced card in your deck becomes Stone (blind_convert,
+  // 'poke_rolycoly_coal'; Blueprint copies it). Carries Carkol's `mult` (6: "Energy carries to Carkol"). 4 rounds.
+  rolycoly: {
+    name: 'rolycoly', poke_sprite391: sprite('Natdex', 22, 55),
+    config: { extra: { mult: 6, rounds: 4 } },
+    rarity: 2, cost: 6, stage: 'Basic', ptype: 'Earth', gen: 8, blueprint_compat: true,
+    attributes: ['enhancements', 'modify_card', 'full_deck', 'round_evo'], poke_after: 'boltund',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); info_queue.push(P_CENTERS.m_stone); const ex = card.ability.extra; return { vars: [ex.rounds, r3(ex.mult)] }; },
+    calculate(self, card, context) { blind_convert(card, context, 'm_stone', 'poke_rolycoly_coal', '+1 Stone'); return level_evo(self, card, context, 'j_poke_carkol'); },
+  },
+  // Carkol 838 (Fire: its card; Safari $8): the same conversion; scored Stone cards also give +6 Mult (`mult` +40%: 8.4 / 10.8 / 13.2). 5 rounds.
+  carkol: {
+    name: 'carkol', poke_sprite391: sprite('Natdex', 24, 55),
+    config: { extra: { mult: 6, rounds: 5 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Fire', gen: 8, blueprint_compat: true,
+    attributes: ['mult', 'enhancements', 'modify_card', 'full_deck', 'round_evo'], poke_after: 'rolycoly',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); info_queue.push(P_CENTERS.m_stone); const ex = card.ability.extra; return { vars: [r3(ex.mult), ex.rounds] }; },
+    calculate(self, card, context) {
+      blind_convert(card, context, 'm_stone', 'poke_rolycoly_coal', '+1 Stone');
+      if (stone_scored(context)) return { mult: card.ability.extra.mult, card };
+      return level_evo(self, card, context, 'j_poke_coalossal');
+    },
+  },
+  // Coalossal 839 (Safari $10), Steam Engine: the same conversion; scored Stone cards give X1.3 (`Xmult_multi` +5%: 1.365 / 1.43 / 1.495);
+  // +1 discard each round (`d_size`, fixed; the Charmander line's pair).
+  coalossal: {
+    name: 'coalossal', poke_sprite391: sprite('Natdex', 26, 55),
+    config: { extra: { Xmult_multi: 1.3, d_size: 1 } },
+    rarity: 'poke_safari', cost: 10, stage: 'Two', ptype: 'Fire', gen: 8, blueprint_compat: true,
+    attributes: ['xmult', 'discard', 'enhancements', 'modify_card', 'full_deck'], poke_after: 'carkol',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); info_queue.push(P_CENTERS.m_stone); const ex = card.ability.extra; return { vars: [r3(ex.Xmult_multi), ex.d_size] }; },
+    calculate(self, card, context) {
+      blind_convert(card, context, 'm_stone', 'poke_rolycoly_coal', '+1 Stone');
+      if (stone_scored(context)) return { x_mult: card.ability.extra.Xmult_multi, card };
+      return undefined;
+    },
+    ...discards,
+  },
+  // Silicobra 843 (Earth, Common $5), Sand Spit: each card you discard (unenhanced) has a 1 in 4 chance to become Stone (sand_spit; odds
+  // fixed). Carries Sandaconda's `chips` (20: "Energy carries to Sandaconda"). 5 rounds.
+  silicobra: {
+    name: 'silicobra', poke_sprite391: sprite('Natdex', 4, 56),
+    config: { extra: { num: 1, dem: 4, chips: 20, rounds: 5 } },
+    rarity: 1, cost: 5, stage: 'Basic', ptype: 'Earth', gen: 8, blueprint_compat: true,
+    attributes: ['discard', 'enhancements', 'modify_card', 'chance', 'round_evo'], poke_after: 'coalossal',
+    loc_vars(self, info_queue, card) {
+      type_tooltip(self, info_queue, card); info_queue.push(P_CENTERS.m_stone);
+      const ex = card.ability.extra, [num, dem] = get_probability_vars(card, ex.num, ex.dem, 'silicobra_spit');
+      return { vars: [num, dem, ex.rounds, r3(ex.chips)] };
+    },
+    calculate(self, card, context) { return sand_spit(card, context) || level_evo(self, card, context, 'j_poke_sandaconda'); },
+  },
+  // Sandaconda 844 (Safari $8), Sandstorm: while held (undebuffed) every round is a sandstorm (is_sandstorm, the house sandstorm); scored
+  // Stone cards give +20 Chips (`chips` +30%: 26 / 32 / 38) and X1.2 (`Xmult_multi` +5%: 1.26 / 1.32 / 1.38).
+  sandaconda: {
+    name: 'sandaconda', poke_sprite391: sprite('Natdex', 6, 56),
+    config: { extra: { chips: 20, Xmult_multi: 1.2 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Earth', gen: 8, blueprint_compat: true,
+    attributes: ['chips', 'xmult', 'enhancements'], poke_after: 'silicobra',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); info_queue.push(P_CENTERS.m_stone); const ex = card.ability.extra; return { vars: [r3(ex.chips), r3(ex.Xmult_multi), is_sandstorm() ? 'Sandstorm!' : 'No sandstorm'] }; },
+    calculate(self, card, context) {
+      if (stone_scored(context)) return { chips: card.ability.extra.chips, x_mult: card.ability.extra.Xmult_multi, card };
+      return undefined;
+    },
+  },
+  // Cramorant 845 (Water, Rare $7, single-stage), Gulp Missile: the round's first discard loads a missile; the next scored hand fires it,
+  // X2.5 (`Xmult` +20%: 3 / 3.5 / 4); unfired at the round's end, it's lost. Loaded, it shows its Gulping Form card (Gen 8 {2,0}; poke_view_form).
+  cramorant: {
+    name: 'cramorant', poke_sprite391: sprite('Gen08', 0, 0),
+    config: { extra: { Xmult: 2.5 } },
+    rarity: 3, cost: 7, stage: 'Basic', ptype: 'Water', gen: 8, blueprint_compat: true,
+    attributes: ['xmult', 'discard'], poke_after: 'sandaconda',
+    poke_view_form(self, card) { return card.ability.extra.missile ? 'gulping' : 'normal'; },
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.Xmult), ex.missile ? 'Loaded!' : 'Empty'] }; },
+    calculate(self, card, context) { return gulp_missile(card, context); },
+  },
+  // Arrokuda 846 (Water, Common $5), Propeller Tail: the first scored card gives +10 Mult (`mult` +40%: 14 / 18 / 22). 5 rounds.
+  arrokuda: {
+    name: 'arrokuda', poke_sprite391: sprite('Natdex', 10, 56),
+    config: { extra: { mult: 10, rounds: 5 } },
+    rarity: 1, cost: 5, stage: 'Basic', ptype: 'Water', gen: 8, blueprint_compat: true,
+    attributes: ['mult', 'position', 'round_evo'], poke_after: 'cramorant',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.mult), ex.rounds] }; },
+    calculate(self, card, context) { return propeller_tail(card, context, false) || level_evo(self, card, context, 'j_poke_barraskewda'); },
+  },
+  // Barraskewda 847 (Safari $8): the first scored card gives X2 (`Xmult_multi` +5%, a per-card X: 2.1 / 2.2 / 2.3).
+  barraskewda: {
+    name: 'barraskewda', poke_sprite391: sprite('Natdex', 12, 56),
+    config: { extra: { Xmult_multi: 2 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Water', gen: 8, blueprint_compat: true,
+    attributes: ['xmult', 'position'], poke_after: 'arrokuda',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); return { vars: [r3(card.ability.extra.Xmult_multi)] }; },
+    calculate(self, card, context) { return propeller_tail(card, context, true); },
+  },
+}, FILE);
+
 /** The families (functions/pokefamily.lua style): index.js adds them with set_family. */
 export const DESIGN_FAMILIES = [
   ['shinx', 'luxio', 'luxray'],
@@ -8506,6 +8874,15 @@ export const DESIGN_FAMILIES = [
   // Gen 7, batch 4
   ['typenull', 'silvally'],
   ['cosmog', 'cosmoem', 'solgaleo', 'lunala'],
+  // Gen 8, batch 1
+  ['rookidee', 'corvisquire', 'corviknight'],
+  ['blipbug', 'dottler', 'orbeetle'],
+  ['gossifleur', 'eldegoss'],
+  ['wooloo', 'dubwool'],
+  ['chewtle', 'drednaw'],
+  ['rolycoly', 'carkol', 'coalossal'],
+  ['silicobra', 'sandaconda'],
+  ['arrokuda', 'barraskewda'],
 ];
 
 /** Their text (Pokermon loc style: #n# filled by loc_vars), from the design guide; index.js merges it into descriptions.Joker. */
@@ -8617,6 +8994,12 @@ const ANCIENT_KINGS = ['{C:attention}Ancient #1#s{}', '{X:attention,C:white}1+{}
 const ANCIENT_QUEENS = ['{C:attention}Ancient #1#s{}', '{X:attention,C:white}1+{} : {C:chips}+#2#{} Chips', '{X:attention,C:white}2+{} : {}The leftmost scored {C:attention}#1#{}', 'that isn\'t {C:attention}Glass{} becomes {C:attention}Glass{}', '{X:attention,C:white}3+{} : Earn {C:money}$#3#{}'];
 const FOREST_CURSE = ['{C:attention}Forest\'s Curse:{} permanently', 'gains {C:mult}+#1#{} Mult each time', 'a playing card is {C:attention}destroyed{}', '{C:inactive}(Currently {C:mult}+#2#{C:inactive} Mult)'];
 const GLASS_ODDS = (first) => [first, 'Doubles the chance {C:attention}Glass{}', 'cards break {C:inactive}(each copy stacks)', '{C:inactive}(Now {C:green}#2#{C:inactive})'];
+const FLYING_TAXI = ['{C:attention}Flying Taxi:{} earn {C:money}$#1#{}', 'at end of round'];
+const ENERGY_TO = (name) => '{C:inactive,s:0.8}(Energy carries to ' + name + ')';
+const FORESEEN = (gain) => ['Each {C:attention}Foreseen{} card', 'gives ' + gain, '{C:inactive}(scored like a held card)'];
+const COTTON_DOWN = ['{C:attention}Cotton Down:{} each scored', '{C:attention}Seed{} card gives {C:mult}+#1#{} Mult'];
+const COAL = ['When a {C:attention}Blind{} is selected,', 'a random unenhanced card', 'in your deck becomes', 'a {C:attention}Stone{} card'];
+const PROPELLER = (gain) => ['{C:attention}Propeller Tail:{} the first', 'scored card gives ' + gain];
 export const DESIGN_LOC = {
   Joker: {
     j_poke_shinx: { name: 'Shinx', text: ['{C:purple}+#1# Foresight', 'Played cards that share a rank', 'with a {C:attention}Foreseen{} card', 'earn {C:money}$#2#{} when scored', EVOLVES_ROUNDS(3)] },
@@ -9337,6 +9720,34 @@ export const DESIGN_LOC = {
       ['{C:mult}+#4#{} Mult {C:inactive}(kept from Hakamo-o)'],
       ['{C:attention}Clangorous Soul:{} {X:mult,C:white} X1 {} Mult,', 'plus {X:mult,C:white} X#1# {} for each', '{C:attention}Full House{} played this run', '{C:inactive}(Currently #2#: {X:mult,C:white} X#3# {C:inactive} Mult)'],
     ] },
+    // Gen 8, batch 1 (contentRev 70)
+    j_poke_rookidee: { name: 'Rookidee', text: [...FLYING_TAXI, ENERGY_TO('Corviknight'), EVOLVES_ROUNDS(2)] },
+    j_poke_corvisquire: { name: 'Corvisquire', text: [...FLYING_TAXI, ENERGY_TO('Corviknight'), EVOLVES_ROUNDS(2)] },
+    j_poke_corviknight: { name: 'Corviknight', text: [FLYING_TAXI, ['{X:mult,C:white} X#2# {} Mult', '{C:attention}+#3#{} card slot', 'available in shop']] },
+    j_poke_blipbug: { name: 'Blipbug', text: ['{C:purple}+#1# Foresight', ENERGY_TO('Dottler'), EVOLVES_ROUNDS(2)] },
+    j_poke_dottler: { name: 'Dottler', text: ['{C:purple}+#1# Foresight', ...FORESEEN('{C:mult}+#2#{} Mult'), EVOLVES_ROUNDS(3)] },
+    j_poke_orbeetle: { name: 'Orbeetle', text: ['{C:purple}+#1# Foresight', ...FORESEEN('{X:mult,C:white} X#2# {} Mult')] },
+    j_poke_gossifleur: { name: 'Gossifleur', text: [...COTTON_DOWN, EVOLVES_ROUNDS(2)] },
+    j_poke_eldegoss: { name: 'Eldegoss', text: [
+      COTTON_DOWN,
+      ['{C:attention}Cotton Spore:{} when a {C:attention}Blind{}', 'is selected, a random unenhanced', 'card in your deck becomes a', '{C:attention}Seed{} card',
+        '{C:attention}+#2#{} growth level {C:inactive}(stacks)', '{C:inactive}(Seeds now bloom in {C:attention}#3#{C:inactive} scores)'],
+    ] },
+    j_poke_wooloo: { name: 'Wooloo', text: ['{C:chips}+#1#{} Chips', EVOLVES_ROUNDS(2)] },
+    j_poke_dubwool: { name: 'Dubwool', text: [['{C:chips}+#1#{} Chips'], ['{C:attention}Cotton Guard:{} {C:chips}+#2#{} hand', 'during {C:attention}Boss Blinds{}', '{C:inactive}(#3#)']] },
+    j_poke_chewtle: { name: 'Chewtle', text: ['{C:mult}+#1#{} Mult for each', '{X:poke_water,C:white}Water{} Joker {C:inactive}(Itself included)', '{C:inactive}(Currently {C:attention}#2#{C:inactive}: {C:mult}+#3#{C:inactive} Mult)', EVOLVES_ROUNDS(4)] },
+    j_poke_drednaw: { name: 'Drednaw', text: ['{X:mult,C:white} X1 {} Mult, plus {X:mult,C:white} X#1# {}', 'for each {X:poke_water,C:white}Water{} Joker', '{C:inactive}(Itself included)', '{C:inactive}(Currently {C:attention}#2#{C:inactive}: {X:mult,C:white} X#3# {C:inactive} Mult)'] },
+    j_poke_rolycoly: { name: 'Rolycoly', text: [...COAL, ENERGY_TO('Carkol'), EVOLVES_ROUNDS(1)] },
+    j_poke_carkol: { name: 'Carkol', text: [COAL, ['Scored {C:attention}Stone{} cards', 'give {C:mult}+#1#{} Mult', EVOLVES_ROUNDS(2)]] },
+    j_poke_coalossal: { name: 'Coalossal', text: [['{C:red}+#2#{} discard each round'], COAL, ['{C:attention}Steam Engine:{} scored', '{C:attention}Stone{} cards give', '{X:mult,C:white} X#1# {} Mult']] },
+    j_poke_silicobra: { name: 'Silicobra', text: ['{C:attention}Sand Spit:{} each card you', 'discard has a {C:green}#1# in #2#{}', 'chance to become a', '{C:attention}Stone{} card', '{C:inactive}(Unenhanced cards only)', ENERGY_TO('Sandaconda'), EVOLVES_ROUNDS(3)] },
+    j_poke_sandaconda: { name: 'Sandaconda', text: [
+      ['{C:poke_sand}Sandstorm:{} while you have', 'this Joker, every round', 'is a {C:poke_sand}sandstorm{}', '{C:inactive}(#3#)'],
+      ['Scored {C:attention}Stone{} cards give', '{C:chips}+#1#{} Chips and {X:mult,C:white} X#2# {} Mult'],
+    ] },
+    j_poke_cramorant: { name: 'Cramorant', text: ['{C:attention}Gulp Missile:{} your first', 'discard each round loads', 'a missile; your next scored', 'hand fires it for {X:mult,C:white} X#1# {} Mult', '{C:inactive}(Lost if the round ends unfired)', '{C:inactive}(Missile: #2#)'] },
+    j_poke_arrokuda: { name: 'Arrokuda', text: [...PROPELLER('{C:mult}+#1#{} Mult'), EVOLVES_ROUNDS(2)] },
+    j_poke_barraskewda: { name: 'Barraskewda', text: PROPELLER('{X:mult,C:white} X#1# {} Mult') },
     // The owner's rework of an upstream joker (Espeon 196, Future Sight, contentRev 57; jokers/pokejokers_07.js): its text replaces 3.9.1's.
     j_poke_espeon: { name: 'Espeon', text: [
       ['{C:purple}+#1# Foresight', 'Each played {V:1}#2#{}', 'retriggers and gives', '{X:mult,C:white} X#3# {} Mult when scored'],

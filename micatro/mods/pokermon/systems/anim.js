@@ -184,6 +184,15 @@ export const GEN7_FORM_SPRITES = {
   j_poke_oricorio: { pompom: { x: 2, y: 0 }, pau: { x: 4, y: 0 }, sensu: { x: 6, y: 0 } },
   j_poke_wishiwashi: { school: { x: 4, y: 1 } },
 };
+/**
+ * Gen 8, batch 1's form (the owner's Gen 8 batch 1, jokers/pokejokers_designs.js): Cramorant's Gulping Form, drawn UNLISTED by upstream 3.9.1
+ * on the Gen 8 sheet beside its own card ({0,0}; pokespriteload.lua lists only that one): Gulping {2,0} (an Arrokuda in its mouth; Gorging
+ * {4,0}, a Pikachu, is unused) — by the view's form (its center's poke_view_form: live, while a missile is loaded). Drawn by ui.js ownFace
+ * (+ the Shiny sheet's twin). Its type icon is Water (pokermon_gen8_batch1_test 'art').
+ */
+export const GEN8_FORM_SPRITES = {
+  j_poke_cramorant: { gulping: { x: 2, y: 0 } },
+};
 export function view_card(card, v) {
   const c = card.config.center;
   const ex = card.ability.extra;

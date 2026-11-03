@@ -3681,6 +3681,53 @@ card's own `probability_vars(card, 1, 4, 'glass')`, the run's RNG restored after
 `js/engine/odds.js`): it said "1 in 4" with Noivern held. r62-r68 runs replay as recorded (`rulesRev('pokermon') >= 69`).
 - **Tests**: `pokermon_gen6_batch2_test` (odds, played: two copies 20/20 breaks, banks per copy, two Noiverns +2 Glass a break, Tera,
   Regice, r68 rules), `pokermon_glass_odds_tooltip_test` (both tooltip paths, the RNG, an r68 recipe replayed as recorded).
+### Gen 8, batch 1 (2026-11-02, branch `feat/pokermon-gen8-batch1`)
+Pinned **`3.9.1+r70`** (`contentRev: 70`; r69 is the Noibat / Noivern stack; `LEGACY_MOD_VERSIONS` untouched). The owner's "yes": 20 jokers, #821-847,
+in `jokers/pokejokers_designs.js` (`shop_slot` / `foreseen_score` / `cotton_down` / `blind_convert` / `cotton_guard` / `water_count` / `sand_spit` /
+`is_sandstorm` / `gulp_missile` / `propeller_tail`). Pokédex order among the Gen 8 jokers Pokermon has: Rookidee ... Orbeetle (821-826) after Inteleon,
+before Nickit; Gossifleur ... Drednaw (829-834) after Thievul, before Yamper; Rolycoly ... Barraskewda (837-847) after Boltund, before Dreepy. Neither
+Nacho nor Pokermon+ has any. Prices by the guide's slots (3-stage U $6 / S $8 / S $10, 2-stage C $5 / S $8, single-stage R $7). Evolution by rounds:
+**4** for the 3-stage Basics (Rookidee, Blipbug, Rolycoly), **5** for every other stage that evolves. Types = the cards' (`pokermon_art_type.mjs`:
+Corviknight Metal, Blipbug Grass -> Dottler / Orbeetle Psychic, Rolycoly Earth -> Carkol / Coalossal Fire). Art: upstream 3.9.1 cells (Natdex
+{20,54}-{12,56}; Cramorant Gen 8 {0,0}); its **Gulping Form** is the UNLISTED neighbour {2,0} (an Arrokuda in its beak; Gorging {4,0} unused),
+`systems/anim.js` GEN8_FORM_SPRITES / `ui.js` ownFace, Water like its card; nothing to deploy.
+- **Rookidee** (U $6, 4) / **Corvisquire** (S $8, 5) / **Corviknight** (Metal, S $10), Flying Taxi: **$1 / $2 / $2 at end of round** (calc_dollar_bonus,
+  `taxi_money`, fixed; Blueprint never copies it); Corviknight **X1.5 Mult** and **+1 shop card slot** (change_shop_size like Overstock, taken back when
+  it leaves, a debuffed one lends none; **the choice: never below 1 slot**). Rookidee / Corvisquire carry Corviknight's `Xmult` ("Energy carries to
+  Corviknight"). Energy `Xmult` 1.5 -> 1.8 / 2.1 / 2.4.
+- **Blipbug** (Grass, U $6, 4) / **Dottler** (Psychic, S $8, 5) / **Orbeetle** (S $10), Foresight: **+1 / +2 / +3 Foresight**; Dottler **each Foreseen
+  card +4 Mult**, Orbeetle **X1.15** (scored like held cards in the G.scry_view pass: Patrat / Uxie). Blipbug carries Dottler's `mult`. Energy `mult`
+  4 -> 5.6 / 7.2 / 8.8, `Xmult_multi` 1.15 -> 1.2075 / 1.265 / 1.3225.
+- **Gossifleur** (C $5, 5) / **Eldegoss** (S $8), Cotton Down: **each scored Seed card +4 Mult** (a Seed that blooms on that score still counts: the
+  choice — the hand's Seeds are marked in `before`). Eldegoss, Cotton Spore: **a random unenhanced deck card becomes a Seed when a Blind is selected**
+  (Blueprint: a second one) and **+1 growth level** (Cherubi's add / remove pair) — **the choice: it stacks with Cherubi / Cherrim / Shiftry /
+  Brambleghast, +1 each** (alone a Seed blooms in 3 scores instead of 5, with Cherubi in 2; the card shows the live count). Energy `mult` 4 -> 5.6 /
+  7.2 / 8.8.
+- **Wooloo** (C $5, 5) / **Dubwool** (S $8): **+50 / +100 Chips**; Dubwool's Cotton Guard **+1 hand during Boss Blinds** — given when the Boss Blind is
+  selected; **the choice: an unused one is taken back at the round's end before the cash-out counts hands** (it never pays $1), and selling it
+  mid-Boss takes it back (never the last hand); Blueprint copies the Chips only. Energy `chips` 50 -> 65 / 80 / 95, 100 -> 130 / 160 / 190.
+- **Chewtle** (C $5, 5) / **Drednaw** (S $8): **+3 Mult / X1 + X0.3 for each Water Joker, itself included** (is_type, undebuffed). Energy `mult` 3 -> 4.2
+  / 5.4 / 6.6, `Xmult_mod` 0.3 -> 0.36 / 0.42 / 0.48.
+- **Rolycoly** (Earth, U $6, 4) / **Carkol** (Fire, S $8, 5) / **Coalossal** (S $10): **when a Blind is selected a random unenhanced deck card becomes
+  Stone** (all three; Blueprint copies it; never overwrites); Carkol **scored Stone +6 Mult**; Coalossal, Steam Engine, **scored Stone X1.3** and **+1
+  discard each round**. Rolycoly carries Carkol's `mult`. Energy `mult` 6 -> 8.4 / 10.8 / 13.2, `Xmult_multi` 1.3 -> 1.365 / 1.43 / 1.495.
+- **Silicobra** (C $5, 5), Sand Spit: **each card you discard has a 1 in 4 chance to become Stone** (pseudorandom_probability; **the choice: a player's
+  discard only, unenhanced cards only**; Blueprint rolls again). Carries Sandaconda's `chips`. **Sandaconda** (S $8), Sandstorm: **while held
+  (undebuffed) every round is a sandstorm** — the house weather check **`is_sandstorm()`** (exported beside `cherrim_sunny` / `swift_swim_raining`; live,
+  in the shop too; DESIGN_GUIDE 2.1 "SANDSTORM"); **scored Stone cards +20 Chips and X1.2**. **The choice: Castform ignores the sandstorm** (no sand
+  form); Flygon's / Hippowdon's "Sandstorm" / "Sand Stream" stay move names. Sandaconda does not keep Sand Spit (the spec's "same" was not given).
+  Energy `chips` 20 -> 26 / 32 / 38, `Xmult_multi` 1.2 -> 1.26 / 1.32 / 1.38.
+- **Cramorant** (Water, R $7), Gulp Missile: **your first discard each round loads a missile; the next scored hand fires it for X2.5** (a debuffed hand
+  doesn't fire it; Blueprint copies the X of the one missile); **the choice: unfired at the round's end, it is lost**. Loaded, it draws its Gulping Form.
+  Energy `Xmult` 2.5 -> 3 / 3.5 / 4.
+- **Arrokuda** (C $5, 5) / **Barraskewda** (S $8), Propeller Tail: **the first scored card +10 Mult / X2** (by position; a debuffed first card gives
+  nothing; a retrigger repeats it). Energy `mult` 10 -> 14 / 18 / 22, `Xmult_multi` (the per-card X) 2 -> 2.1 / 2.2 / 2.3.
+- **Wiki**: regenerated (104 missing); the wiki sprites of the 20 are gone from `designwiki/sprites/pokermon_jokers/` (no new art).
+- **Tests**: `micatro/tests/mods/pokermon_gen8_batch1_test.mjs` (fails on main: no such jokers). Re-recorded: `modpin_test`, `pokermon_391_data_test`,
+  `pokermon_new_jokers_test` (the pin, the defs, the order chain), `pokermon_starters_gen8_test` (Rookidee after Inteleon), `pokermon_art_types_test`,
+  `micatro_mod_version_pin`, `micatro_deckeditor_pages` (1160 jokers); `designwiki_pokermon_jokers_test` spot-checks Hatenna / Hattrem / Hatterene /
+  Copperajah and opens Hatterene's card (the Rookidee and Blipbug lines have jokers now).
+
 ### Pending from the 3.9.1 joker rework (after batch 10b)
 Every existing joker is on 3.9.1: `rework_hold` (still on 3.2.1) is empty. What waits, by the batch it waits on (`rework_deferred` =
 on 3.9.1 but one part):

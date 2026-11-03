@@ -1023,7 +1023,11 @@ export const POKERMON = registerMod({
   // staying): gated by rulesRev, so runs recorded on those revs replay as recorded.
   // 69 = Noibat / Noivern stack (the owner's "2 Noiverns still 1/2 to break glass"): each undebuffed copy doubles the Glass roll's
   // numerator (as Oops! All 6s), so one copy 1 in 2, two always; r62-r68 halved the denominator once however many were held.
-  contentRev: 69,
+  // 70 = Gen 8 batch 1 (jokers/pokejokers_designs.js, #821-847): Rookidee / Corvisquire / Corviknight (Flying Taxi $; +1 shop slot), Blipbug /
+  // Dottler / Orbeetle (Foresight), Gossifleur / Eldegoss (Cotton Down: Seeds), Wooloo / Dubwool (Cotton Guard: +1 hand on Boss Blinds), Chewtle
+  // / Drednaw (Water team), Rolycoly / Carkol / Coalossal (Stone each Blind), Silicobra / Sandaconda (Sand Spit; the house sandstorm,
+  // is_sandstorm), Cramorant (Gulp Missile) and Arrokuda / Barraskewda (Propeller Tail).
+  contentRev: 70,
   // Pokermon 3.9.1 pokermon.lua: SMODS.current_mod.optional_features = {quantum_enhancements = true, object_weights = true}.
   // object_weights sends create_card's key, the shop roll, tags, packs, bosses and vouchers through SMODS.poll_object
   // (js/engine/smods.js; batch 17). quantum_enhancements is the engine's check_enhancement, always on.
