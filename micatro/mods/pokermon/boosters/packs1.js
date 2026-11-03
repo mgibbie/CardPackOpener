@@ -5,6 +5,7 @@
 import {
   G, P_CENTERS, P_CENTER_POOLS, create_card, pseudorandom, pseudoseed, pseudorandom_element, defineBoosters,
   matching_energy, find_card, any, smods_create_card, poke_family_present, poll_evo_item,
+  get_gen_allowed, gen_filter_fixed, fallback_poke_key,
 } from '../api.js';
 
 const FILE = 'boosters/packs1.lua';
@@ -68,6 +69,7 @@ export function starter_lists() {
   for (const v of P_CENTER_POOLS.Joker) {
     // (unported Pokémon are skipped while the port is partial — they would be inert)
     if (!v.mod || v.unported || poke_family_present(v)) continue;
+    if (gen_filter_fixed() && !get_gen_allowed(v)) continue; // (r79: the Gen N toggles; before, every generation was offered)
     if (v.starter && v.ptype === 'Grass') L.grass.push(v.key);
     if (v.starter && v.ptype === 'Fire') L.fire.push(v.key);
     if (v.starter && v.ptype === 'Water') L.water.push(v.key);
@@ -85,6 +87,7 @@ export function starterq_lists() {
   const L = { grass: [], fire: [], water: [], pseudo: [], bidoof_yamper: [] };
   for (const v of P_CENTER_POOLS.Joker) {
     if (!v.mod || v.unported || poke_family_present(v)) continue;
+    if (gen_filter_fixed() && !get_gen_allowed(v)) continue; // (r79, as starter_lists)
     if (v.knockoff_starter && v.ptype === 'Grass') L.grass.push(v.key);
     if (v.knockoff_starter && v.ptype === 'Fire') L.fire.push(v.key);
     if (v.knockoff_starter && v.ptype === 'Water') L.water.push(v.key);
@@ -127,7 +130,7 @@ defineBoosters({
       else if (i === 3 && L.water.length > 0) pack_key = pseudorandom_element(L.water, pseudoseed('water'))[0];
       else if (i === 4 && L.pika_eevee.length > 0) pack_key = pseudorandom_element(L.pika_eevee, pseudoseed('pikaeevee'))[0];
       else if (i === 5 && L.pseudo.length > 0) pack_key = pseudorandom_element(L.pseudo, pseudoseed('pseudo'))[0];
-      else pack_key = P_CENTERS.j_poke_caterpie ? 'j_poke_caterpie' : undefined;
+      else pack_key = fallback_poke_key('starter' + i); // (Caterpie; r79: an allowed Basic while Gen 1 is off)
       return smods_create_card({ set: 'Joker', area: G.pack_cards, key: pack_key, no_edition: true, skip_materialize: true });
     },
     loc_vars(self, info_queue, card) { return { vars: [card.config.center.config.choose, card.ability.extra] }; },
@@ -159,7 +162,7 @@ defineBoosters({
       else if (i === 3 && L.water.length > 0) pack_key = pseudorandom_element(L.water, pseudoseed('water'))[0];
       else if (i === 4 && L.bidoof_yamper.length > 0) pack_key = pseudorandom_element(L.bidoof_yamper, pseudoseed('pikaeevee'))[0];
       else if (i === 5 && L.pseudo.length > 0) pack_key = pseudorandom_element(L.pseudo, pseudoseed('pseudo'))[0];
-      else pack_key = P_CENTERS.j_poke_caterpie ? 'j_poke_caterpie' : undefined;
+      else pack_key = fallback_poke_key('starter' + i); // (Caterpie; r79: an allowed Basic while Gen 1 is off)
       return smods_create_card({ set: 'Joker', area: G.pack_cards, key: pack_key, no_edition: true, skip_materialize: true });
     },
     loc_vars(self, info_queue, card) { return { vars: [card.config.center.config.choose, card.ability.extra] }; },

@@ -4036,6 +4036,32 @@ paradox pokemon as well." New content only (no older rule changes).
   tooltip pills, the ball and four packs on the pack screen in a real browser). Re-recorded: `modpin_test`, `pokermon_391_data_test`,
   `pokermon_new_jokers_test`, `micatro_mod_version_pin`, `micatro_deckeditor_pages`, `designwiki_pokermon_jokers_test`.
 
+### The generation filter holds (r79, 2026-11-03, branch `fix/pokermon-gen-filter`)
+The owner: "the generation filters in the settings don't work — the gen 4 starters come up even when gen 4 is off". `get_gen_allowed` lets a
+joker with no `gen` through, and the sources did not all ask it. Fixed in `systems/pools.js` (GEN_FILTER_REV = 79, gated by rulesRev so a run
+recorded before r79 replays on the old filter):
+- **Every Pokémon carries its generation** (GEN_FIXES, applied by `install_gen_filter`, the mod's `reset_run`, after every add-on registered; the
+  old value stays as `poke_gen_before` for the pre-r79 replays; the sprite atlases were chosen at registration and don't move): Nacho's 22 with
+  none (Turtwig / Chimchar / Piplup lines, Victini, Clauncher line, Dedenne, Oranguru, Passimian, Turtonator, Dhelmise, Perrserker, the Bagon line),
+  Pokermon+'s 6 with none (Nincada line, Croagunk line), Pokermon's Hisuian Qwilfish (none), and three wrong ones (Mega Skarmory 1 -> 2, Nacho's Mega
+  Gallade 3 -> 4, Pokermon+'s Archaludon 8 -> 9). **Rule**: a joker's `gen` is the National Dex generation of its species; a regional form or a
+  Mega is its base species' (as upstream numbers all of its own: Galarian Meowth 1, Mega Lucario 4, Hisuian Zorua 5).
+- **Every source asks**: the Starter Pack / Starter Pack...? lists (the Starter Tag, the Professors) never did — with Gen 4 off a Starter Pack
+  offered Nacho's Sinnoh starters, with only Gen 3 on it offered every generation's; an empty slot's Caterpie fallback becomes an allowed Basic
+  while Gen 1 is off (`fallback_poke_key`; get_random_poke_key too). The attribute pools (SMODS.poll_object with attributes: the Mystery Egg's
+  hatch, Tall Grass, Corsola, Nacho's Ancient Pack — `cull_pool` reads only `in_pool`, not the pool_filter hook) skipped the filter: every
+  Pokémon's `in_pool` now asks `gen_pool_rule` first (custom_pool_func jokers such as Ditto included). Ruins of Alph (Unown), Pokermon+'s Member
+  Card (Darkrai) and Mystery Box (Meltan) leave the pools with their Pokémon's generation (GEN_SOURCES). get_random_poke_key skipped the joke
+  content's in_pool: Spiclops (no generation) came out of Master Balls with April Fools off — now only with `pokemon_aprilfools`.
+- **Not filtered (by design)**: evolving / devolving / Mega-evolving a joker you hold (its own line, even across generations: a Gen 1 Eevee still
+  becomes Sylveon), the Daycare's egg of a held parent, a challenge's fixed jokers (Sinnoh Adventure's starters, Imposter Syndrome's Dittos).
+  The shop, Buffoon packs, Poké / Great / Ultra / Master / Timer / Paradox Balls, The Soul and the Paradox packs already asked (all 20 Paradox
+  jokers are Gen 9) — now with the fixed generations.
+- **Tests**: `micatro/tests/mods/pokermon_gen_filter_test.mjs` (every registered Pokémon joker's gen against a dex -> gen table over all 1025
+  species, `micatro/tests/fixtures/national_dex.json`, with the non-species listed; every source fired with Gen 4 off, with only Gen 3 / 4 / 9 on
+  and with Gen 1 off; save / resume; an r78 recipe, `fixtures/pokermon_genfilter_r78_recipe.json`, replays its Turtwig as recorded). Re-pinned:
+  `modpin_test`, `pokermon_391_data_test`, `pokermon_new_jokers_test`, `micatro_mod_version_pin`.
+
 ### Pending from the 3.9.1 joker rework (after batch 10b)
 Every existing joker is on 3.9.1: `rework_hold` (still on 3.2.1) is empty. What waits, by the batch it waits on (`rework_deferred` =
 on 3.9.1 but one part):
