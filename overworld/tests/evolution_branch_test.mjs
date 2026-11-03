@@ -192,7 +192,9 @@ try {
 	});
 	const sweep = { seen: ties.map(t => t.id), bad: [] };
 	for (const t of ties) {
-		const got = t.type === 'item' ? await stone(t.id, t.param) : await lv(t.id, t.level, { friend: 255 }, t.night ? 22 : 13);
+		// a 'move' evolution (Mime Jr.: level up knowing MIMIC, regional_forms.js) needs the move known
+		const known = t.type === 'move' ? { moves: [{ id: t.param, pp: 10, maxPp: 10 }] } : {};
+		const got = t.type === 'item' ? await stone(t.id, t.param) : await lv(t.id, t.level, { friend: 255, ...known }, t.night ? 22 : 13);
 		if (got !== t.want) sweep.bad.push(`${t.id}${t.type === 'item' ? '+' + t.param : ''}->${got}`);
 	}
 	A(sweep.seen.length >= 10, `C. ${sweep.seen.length} species have a regional/base tie in the data`, sweep.seen.join(','));
