@@ -1,6 +1,13 @@
 {
 	"generated": "2026-11-03",
 	"micatroAtlas": {
+		"@poke_primal_orbs": {
+			"src": "/micatro/mods/pokermon/assets/2x/primal_orbs.png",
+			"cw": 142,
+			"ch": 190,
+			"w": 284,
+			"h": 190
+		},
 		"Joker": {
 			"src": "/micatro/assets/textures/Jokers.png",
 			"cw": 142,
@@ -388,6 +395,76 @@
 		}
 	},
 	"entries": [
+		{
+			"sha": "56ba07d",
+			"date": "2026-11-04",
+			"kind": "micatro",
+			"title": "Pokermon r85: batch E, the Primal Reversions (Blue Orb / Red Orb, Primal Kyogre / Groudon)",
+			"body": "",
+			"cards": [],
+			"micatroMods": [
+				{
+					"id": "pokermon",
+					"name": "Pokermon",
+					"added": [
+						{
+							"key": "j_poke_primal_kyogre",
+							"name": "Primal Kyogre",
+							"set": "Joker",
+							"rarity": "legendary",
+							"cost": 20,
+							"atlas": "@poke_AtlasJokersBasicGen03391",
+							"pos": {
+								"x": 4,
+								"y": 7
+							},
+							"soul": {
+								"x": 5,
+								"y": 7
+							}
+						},
+						{
+							"key": "j_poke_primal_groudon",
+							"name": "Primal Groudon",
+							"set": "Joker",
+							"rarity": "legendary",
+							"cost": 20,
+							"atlas": "@poke_AtlasJokersBasicGen03391",
+							"pos": {
+								"x": 2,
+								"y": 7
+							},
+							"soul": {
+								"x": 3,
+								"y": 7
+							}
+						},
+						{
+							"key": "c_poke_blueorb",
+							"name": "Blue Orb",
+							"set": "Item",
+							"cost": 4,
+							"atlas": "@poke_primal_orbs",
+							"pos": {
+								"x": 0,
+								"y": 0
+							}
+						},
+						{
+							"key": "c_poke_redorb",
+							"name": "Red Orb",
+							"set": "Item",
+							"cost": 4,
+							"atlas": "@poke_primal_orbs",
+							"pos": {
+								"x": 1,
+								"y": 0
+							}
+						}
+					]
+				}
+			]
+		},
 		{
 			"sha": "3e1363e",
 			"date": "2026-11-04",
