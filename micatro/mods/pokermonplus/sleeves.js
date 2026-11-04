@@ -7,11 +7,12 @@
 //   * Prophetic (legacy): -1 hand size, Foresight set to 3; with the Prophetic deck: Foresight set to 6 (+3 over the deck).
 //   * Shiny: shiny Pokémon x100 (the mod's edition_weight hook reads G.GAME.shiny_edition_rate). 1.2.0's Shiny deck no longer
 //     touches the rate, so with the deck it multiplies once too (its `_alt` text).
-//   * Rogue: a Mega Stone and +4 win ante.
+//   * Rogue: a Mega Stone and +1 win ante (before rev 3: +4).
 //   * Void (1.2.0): Negative Energy +1 limit (modifiers.void) and the Void deck's calculate — each shop reroll has a 1 in 15
 //     chance to add a Nightmare to the shop (1.0.3: a Nightmare after each Boss Blind).
 import { G, localize, get_probability_vars } from '../pokermon/api.js';
 import { void_reroll } from './src/backs/backs.js';
+import { rulesRev } from '../../js/mods/pins.js';
 
 const MOD = 'pokermonplus', ATLAS = 'sonfive_sleeves';
 const sleeve = (key, x, def) => ({ key: 'sleeve_sonfive_' + key, pos: { x, y: 0 }, atlas: ATLAS, mod: MOD, config: {}, ...def });
@@ -47,7 +48,7 @@ export const SLEEVES = [
     name: 'Rogue Sleeve',
     config: { consumables: ['c_poke_megastone'] },
     loc_vars: () => ({ vars: [localize({ type: 'name_text', set: 'Item', key: 'c_poke_megastone' })] }),
-    apply() { G.GAME.win_ante = G.GAME.win_ante + 4; },
+    apply() { G.GAME.win_ante += rulesRev('pokermonplus') >= 3 ? 1 : 4; },
   }),
   sleeve('voidsleeve', 5, {
     name: 'Void Sleeve',

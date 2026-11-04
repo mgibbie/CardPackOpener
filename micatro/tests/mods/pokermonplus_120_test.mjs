@@ -46,7 +46,7 @@ const DROPPED7 = ['nincada', 'ninjask', 'shedinja', 'croagunk', 'toxicroak', 'vu
 sec('registry', () => {
   start('REG', { noBlind: true });
   const m = MODS.pokermonplus;
-  ok(m.version === '1.2.0-261018a' && m.contentRev === 2 && PINS.modPin('pokermonplus') === '1.2.0-261018a+r2', 'version 1.2.0-261018a, contentRev 2 (pin 1.2.0-261018a+r2)', PINS.modPin('pokermonplus'));
+  ok(m.version === '1.2.0-261018a' && m.contentRev >= 3 && PINS.modPin('pokermonplus') === '1.2.0-261018a+r' + m.contentRev, 'version 1.2.0-261018a, contentRev 3+', PINS.modPin('pokermonplus'));
   ok(PINS.LEGACY_MOD_VERSIONS.pokermonplus === '1.0.3-251101e', 'LEGACY_MOD_VERSIONS untouched (1.0.3-251101e)');
   for (const n of NEW12) ok(P_CENTERS['j_sonfive_' + n] && P_CENTERS['j_sonfive_' + n].mod === 'pokermonplus' && centerActive(P_CENTERS['j_sonfive_' + n]), 'new joker registered: ' + n);
   for (const n of DROPPED7) {

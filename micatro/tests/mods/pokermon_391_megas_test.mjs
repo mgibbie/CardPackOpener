@@ -286,6 +286,20 @@ sec(() => {
 
 // ------------------------------------------------------------------- the Mega Stone (3.9.1 rules)
 sec(() => {
+  start('MEWTWODRAMPA');
+  const mewtwo = add('j_poke_mewtwo'), drampa = add('j_poke_drampa'), stone = add('c_poke_megastone');
+  useOn(stone, mewtwo);
+  ok(key(mewtwo) === 'j_poke_mega_mewtwo_x', 'leftmost Mewtwo becomes Mega Mewtwo X');
+  winRound(); nextBlind();
+  ok(P.megastone_mega(stone) === mewtwo, 'stone still owns Mewtwo after a round');
+  useOn(stone, drampa);
+  ok(key(mewtwo) === 'j_poke_mewtwo' && key(drampa) === 'j_poke_drampa', 'used stone reverts Mewtwo rather than evolving Drampa');
+  winRound(); nextBlind();
+  act({ type: 'reorder', area: 'jokers', ids: [drampa.sort_id, mewtwo.sort_id] });
+  useOn(stone, mewtwo);
+  ok(key(mewtwo) === 'j_poke_mega_mewtwo_y' && key(drampa) === 'j_poke_drampa', 'rightmost Mewtwo becomes Mega Mewtwo Y');
+});
+sec(() => {
   start('MSTONE');
   const a = add('j_poke_clefable'), b = add('j_poke_clefable'), cz = add('j_poke_victreebel');
   const st = add('c_poke_megastone');
@@ -342,6 +356,44 @@ sec(() => {
   ok(key(a) === 'j_poke_dragonite', 'infinite: and it reverts any Mega', key(a));
   newRun({ seed: 'MSLV', back: 'b_red', sleeve: 'sleeve_poke_megasleeve', mods: ['pokermon'] }); flush();
   ok(!G.GAME.modifiers.poke_infinite_megastone && G.GAME.used_vouchers.v_crystal_ball && consumables().includes('c_poke_megastone'), 'the Mega Sleeve on another deck: its own effect (+ Crystal Ball), no modifier');
+});
+
+sec(() => {
+  const session = new Session();
+  session.start({ seed: 'MEWTWOINFINITE', back: 'b_poke_megadeck', sleeve: 'sleeve_poke_megasleeve', mods: ['pokermon'] });
+  flush(); act({ type: 'select_blind' }); clearHand();
+  const mewtwo = add('j_poke_mewtwo'), drampa = add('j_poke_drampa');
+  const stone = G.consumeables.cards.find((c) => key(c) === 'c_poke_megastone');
+  useOn(stone, mewtwo);
+  ok(key(mewtwo) === 'j_poke_mega_mewtwo_x', 'Mega Deck + Sleeve: leftmost Mewtwo becomes X');
+  winRound(); nextBlind();
+  act({ type: 'reorder', area: 'jokers', ids: [drampa.sort_id, mewtwo.sort_id] });
+  act({ type: 'highlight', area: 'jokers', ids: [] });
+  const ambiguous = useOn(stone);
+  ok(!ambiguous.ok && key(mewtwo) === 'j_poke_mega_mewtwo_x' && key(drampa) === 'j_poke_drampa' && stone.ability.extra.usable,
+    'unselected stone refuses ambiguous choice without consuming its use', [key(mewtwo), key(drampa)]);
+  ok(P_CENTERS.c_poke_megastone && P.megastone_target(stone) === undefined, 'ambiguous stone has no automatic target');
+  PINS.RULES.pins = { pokermon: '3.9.1+r87' };
+  try { ok(P.megastone_target(stone) === drampa, 'old replays keep leftmost targeting'); }
+  finally { PINS.RULES.pins = null; }
+  useOn(stone, mewtwo);
+  ok(key(mewtwo) === 'j_poke_mewtwo', 'selecting Mewtwo reverts it');
+  winRound(); nextBlind();
+  useOn(stone, mewtwo);
+  ok(key(mewtwo) === 'j_poke_mega_mewtwo_y', 'rightmost Mewtwo becomes Y after reverting');
+});
+
+sec(() => {
+  start('MEGACHOICE');
+  const a = add('j_poke_drampa'), b = add('j_poke_mewtwo'), stone = add('c_poke_megastone');
+  ok(!useOn(stone).ok && stone.ability.extra.usable, 'free normal stone also requires a selection when two qualify');
+  useOn(stone, b);
+  ok(key(b) === 'j_poke_mega_mewtwo_y', 'a selected target is used by a free normal stone');
+  winRound(); nextBlind();
+  ok(useOn(stone).ok && key(b) === 'j_poke_mewtwo' && key(a) === 'j_poke_drampa', 'used normal stone automatically reverts its own Mega');
+  act({ type: 'sell', id: a.sort_id }); flush();
+  winRound(); nextBlind();
+  ok(useOn(stone).ok && key(b) === 'j_poke_mega_mewtwo_x', 'a sole eligible target remains automatic');
 });
 
 // ------------------------------------------------------------------- the Mega Berry Juice

@@ -1035,6 +1035,8 @@ House pattern: a FLIPPED-RANK chip rule, card level (the Gen 6 Malamar, Topsy-Tu
 House pattern: the ENDS of the scoring hand retrigger (the Gen 6 Hawlucha, Flying Press; flying_press):
   - scoring_hand[0] and scoring_hand[last] by POSITION (Cinccino's / Shellos's rule: a debuffed card there gets nothing, the ends never shift
     inward); one scored card is both ends and retriggers ONCE, not twice (say it on the card). A single-stage Rare's whole ability.
+House pattern: a RANK FORMATION (Mega Barbaracle, batch F): scored 7s give Chips and X Mult; if at least two undebuffed 7s are
+  in the scoring hand, each also retriggers once. Count the scoring hand, not the full played hand, and never count retriggers as new cards.
 House pattern: a RUN RECORD read live (the Gen 6 Klefki, Key Ring; vouchers_redeemed):
   - X1 + X0.25 per Voucher on G.GAME.used_vouchers (the run's own record: a deck's / challenge's starting Voucher is on it too). READ, not
     banked: a Klefki bought late sees every Voucher before it, and Energy (`Xmult_mod` +20%) raises every Voucher's share at once.

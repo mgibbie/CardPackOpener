@@ -40,7 +40,7 @@ const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/ja
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 async function waitFor(fn, ms) { const t0 = Date.now(); while (Date.now() - t0 < ms) { try { if (await fn()) return true; } catch { } await sleep(100); } return false; }
 const MODS = ['pokermon', 'nacho', 'pokermonplus'];
-const TOTAL = 1335;         // jokers with the three on (150 base + 1094 Pokermon (+19: Mega batch D) + 68 Nacho + 23 Pokermon+)
+const TOTAL = 1353;         // the previous 1335 plus the 18 batch F Megas
 const OPEN_BUDGET = 4000;   // ms, tap -> the first page drawn, at CPU x4
 
 const server = http.createServer(async (req, res) => {

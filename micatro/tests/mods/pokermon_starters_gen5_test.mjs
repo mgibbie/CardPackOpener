@@ -97,7 +97,7 @@ await sec('static', () => {
   ok(L.grass.includes('j_poke_snivy') && L.fire.includes('j_poke_tepig') && L.water.includes('j_poke_oshawott')
     && !['servine', 'serperior', 'pignite', 'emboar', 'dewott', 'samurott'].some((n) => [...L.grass, ...L.fire, ...L.water].includes('j_poke_' + n)),
   'Starter Pack lists: Snivy Grass, Tepig Fire, Oshawott Water; their evolutions are not starters', [L.grass, L.fire, L.water]);
-  const keys = MODS.pokermon.content.centers.filter((c) => c.set === 'Joker').map((c) => c.key).filter((k) => !/^(j_poke_)?(alolan|galarian|hisuian|paldean)_/.test(k)); // (regional batch C: the Hisuian / Paldean forms sit after their lines and join their families — pokermon_hisuian_paldean_test checks them)
+  const keys = MODS.pokermon.content.centers.filter((c) => c.set === 'Joker').map((c) => c.key).filter((k) => !/^(j_poke_)?(alolan|galarian|hisuian|paldean|mega)_/.test(k));
   const i = keys.indexOf('j_poke_snivy');
   const want = ['j_poke_arceus', ...NAMES.map((n) => 'j_poke_' + n), 'j_poke_patrat'];
   ok(i > 0 && want.every((k, n) => keys[i - 1 + n] === k), 'Pokédex order: Arceus (493), Snivy ... Samurott (495-503), then Patrat (504, Gen 5 batch 1)', keys.slice(i - 1, i + 10));

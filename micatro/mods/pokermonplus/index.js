@@ -293,6 +293,7 @@ function mergeLoc(base, over) {
   return out;
 }
 export const LOC = mergeLoc(DATA.loc, DATA120.loc);
+LOC.descriptions.Sleeve.sleeve_sonfive_roguesleeve.text[1] = '{X:gray,C:attention}+1{} Ante win requirement';
 
 // --------------------------------------------------------------------- hooks
 /** What a Forged card keeps (Steamodded localize_perma_bonuses: the permanent values the card text doesn't show). */
@@ -370,7 +371,7 @@ export const POKERMONPLUS = registerMod({
   version: '1.2.0-261018a',
   // Our behaviour counter (mods/pins.js; the pin reads "1.2.0-261018a (rev 2)"). 1 = the add-on dedupe (Pokermon precedence,
   // Pokermon PORTING.md "Add-on dedupe"); 2 = the 1.2.0 upgrade's intended-design fixes and Micatro shapes (PORTING.md).
-  contentRev: 2,
+  contentRev: 3,
   by: 'Sonfive, with marcavis, Kek, MyDude & Emma (rebuilt for Micatro)',
   badge_colour: '#87DEFF',
   requires: ['pokermon'],

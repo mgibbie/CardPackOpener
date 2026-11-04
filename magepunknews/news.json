@@ -1,5 +1,5 @@
 {
-	"generated": "2026-11-03",
+	"generated": "2026-11-04",
 	"micatroAtlas": {
 		"@poke_primal_orbs": {
 			"src": "/micatro/mods/pokermon/assets/2x/primal_orbs.png",
@@ -395,6 +395,21 @@
 		}
 	},
 	"entries": [
+		{
+			"date": "2026-11-04",
+			"kind": "micatro",
+			"title": "Pokermon: Mega batch F and Mega Stone improvements",
+			"body": "Eighteen Legends: Z-A Mega Evolutions join Pokermon. Mega Stones now require a selection when multiple Pokémon qualify, and Pocket Packs can offer a Mega Stone from Ante 5. The Rogue Sleeve now adds one Ante to the win requirement.",
+			"cards": [],
+			"micatroFeatures": [
+				{
+					"id": "pokermon-mega-f",
+					"title": "18 new Mega Evolutions",
+					"blurb": "Mega Evolve Froslass, Emboar, Excadrill, Scolipede, Scrafty, Eelektross, Chandelure, Chesnaught, Delphox, Greninja, Pyroar, Floette, Malamar, Barbaracle, Dragalge, Hawlucha, Zygarde and Falinks.",
+					"wiki": "/designwiki/#/micatro-mods/mod/pokermon"
+				}
+			]
+		},
 		{
 			"sha": "56ba07d",
 			"date": "2026-11-04",

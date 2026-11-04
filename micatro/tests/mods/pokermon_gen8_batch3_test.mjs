@@ -109,7 +109,7 @@ const face = (j, shiny) => {
 const drawn = (j) => { const f = face(j); return f ? [f.atlas, JSON.stringify(f.pos)] : [j.config.center.atlas, JSON.stringify(j.config.center.pos)]; };
 const GEN8 = 'poke_AtlasJokersBasicGen08391';
 const N = 'poke_AtlasJokersBasicNatdex391';
-const fam = (n) => poke_get_family_list(n).map((x) => (typeof x === 'string' ? x : x.key || x.name)).join();
+const fam = (n) => poke_get_family_list(n).map((x) => (typeof x === 'string' ? x : x.key || x.name)).filter((k) => !k.startsWith('mega_')).join();
 
 // ------------------------------------------------------------------- pin, static data, order, families, Energy fields
 await sec('pin', () => {
@@ -148,7 +148,7 @@ await sec('static', () => {
     ok(c.config.extra.rounds === rnds, `${n}: ${rnds ? 'evolves after ' + rnds + ' rounds' : 'no round timer'}`, c.config.extra.rounds);
     ok(c.atlas === atlas && c.pos.x === x && c.pos.y === y && !c.soul_pos, `${n}: upstream 3.9.1 cell ${atlas} {${x},${y}} (nothing to deploy)`, [c.atlas, c.pos]);
   }
-  const keys = MODS.pokermon.content.centers.filter((c) => c.set === 'Joker').map((c) => c.key);
+  const keys = MODS.pokermon.content.centers.filter((c) => c.set === 'Joker' && !c.key.startsWith('j_poke_mega_')).map((c) => c.key);
   const run = (list, to) => { const i = keys.indexOf('j_poke_' + list[0]); return i > 0 && [...list, to].every((k, n) => keys[i + n] === 'j_poke_' + k) ? true : keys.slice(i - 1, i + list.length + 1); };
   const chain = ['obstagoon', 'cursola', 'sirfetchd', 'mrrime', 'runerigus', 'milcery', 'alcremie', 'falinks', 'pincurchin', 'snom', 'frosmoth', 'eiscue', 'indeedee', 'morpeko',
     'cufant', 'copperajah', 'dracozolt', 'arctozolt', 'dracovish', 'arctovish'];
