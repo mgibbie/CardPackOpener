@@ -93,7 +93,7 @@ sec('inventory', () => {
   const pokeNames = new Set(Object.values(P_CENTERS).filter((c) => c.mod === 'pokermon' && c.set === 'Joker').map((c) => c.name));
   const clash = nacho.filter((c) => !c.nacho_legacy && pokeNames.has(c.name)).map((c) => c.key);
   ok(clash.length === 0, 'precedence: no 1.7.9 joker shares a name with a Pokermon joker', clash);
-  ok(JSON.stringify(REPLACED.slice().sort()) === JSON.stringify(LEGACY.filter((n) => n !== 'mega_salamence').map((n) => 'j_nacho_' + n).sort()), 'mark_precedence: exactly the 9 legacy duplicates are replaced', REPLACED);
+  ok(JSON.stringify(REPLACED.slice().sort()) === JSON.stringify(LEGACY.map((n) => 'j_nacho_' + n).sort()), 'mark_precedence: exactly the 10 legacy duplicates are replaced (Mega Salamence too since Mega batch D: Pokermon has its own)', REPLACED);
   ok(LEGACY.filter((n) => n !== 'mega_salamence').every((n) => SUPERSEDED['j_nacho_' + n] === 'j_poke_' + n), 'the sticker merge (superseded.js) still maps the legacy keys to Pokermon\'s');
   ok(P_CENTERS.c_nacho_tartapple && P_CENTERS.c_nacho_sweetapple && P_CENTERS.c_nacho_syrupyapple && P_CENTERS.p_nacho_ancient_pack && P_TAGS.tag_nacho_fossil_tag, 'the apples, the Ancient Pack and the Fossil Tag');
   ok(!P_STAKES.stake_nacho_elite_stake && P_STAKES.stake_poke_elite, 'no Nacho stake any more (Pokermon owns the Elite stake)');

@@ -957,6 +957,9 @@ const gender_name = (g) => (g === 'male' ? '♂' : '♀');
 // ------------------------------------------------------------ the weather trio (Kyogre / Groudon / Rayquaza) and the Eon duo (Latias / Latios)
 /** Undebuffed owned jokers of this design (a debuffed one does nothing; a Blueprint copy has its own key, so it never counts). */
 const legends = (name) => ((G.jokers && G.jokers.cards) || []).filter((j) => !j.debuff && j.config.center.key === 'j_poke_' + name);
+/** Delta Stream is on: an undebuffed Rayquaza, or (Mega batch D, jokers/pokejokers_megas.js) a Mega Rayquaza — Delta Stream is Mega Rayquaza's own
+ *  ability. A Mega Rayquaza only exists from MEGA_D_REV on (Rayquaza's `megas` is gated by it), so an older run reads as it did. */
+const delta_calm = () => legends('rayquaza').length > 0 || legends('mega_rayquaza').length > 0;
 /** Primal Clash's count of the cards held: Castform's Forecast rules (forecast above) for its two sides — Hearts + Diamonds ("red")
  *  vs Clubs; a Wild card counts for both; a debuffed card, a Stone card or a Hazard (no suit: is_suit) for neither. Spades don't count. */
 export function clash_count(cards) {
@@ -975,7 +978,7 @@ export function clash_count(cards) {
 export function primal_read() {
   const GM = G.GAME;
   if (GM.poke_primal && GM.poke_primal.round === GM.round) return GM.poke_primal;
-  const ky = legends('kyogre'), gr = legends('groudon'), ray = legends('rayquaza').length > 0;
+  const ky = legends('kyogre'), gr = legends('groudon'), ray = delta_calm();
   const { red, clubs } = clash_count(G.hand.cards);
   let winner = null, tie = false;
   if (ky.length && gr.length && !ray) {
@@ -1043,7 +1046,7 @@ export function castform_lock() {
 }
 /** The tooltip's clash line for Kyogre / Groudon. */
 function clash_state(partner) {
-  if (legends('rayquaza').length) return 'calmed by Rayquaza';
+  if (delta_calm()) return 'calmed by Rayquaza';
   if (!legends(partner).length) return 'no ' + partner[0].toUpperCase() + partner.slice(1);
   const GM = G.GAME, P = GM.poke_primal;
   if (!GM.facing_blind || !P || P.round !== GM.round || !P.winner) return 'read on the next first deal';
@@ -1816,7 +1819,7 @@ function zygarde_cells(card, context) {
 /** Diancie, Diamond Storm: when a Blind is selected, 1 random card of the full deck that is not a Diamond (is_suit with the debuff
  *  bypassed: a Wild card already is one) and not a Stone card (no suit to change) becomes a Diamond (the run's seeded stream, seed
  *  'diancie'); its rank, enhancement, seal and edition stay. None left, nothing. Blueprint copies it (a second card). */
-function diamond_storm(card, context) {
+export function diamond_storm(card, context) {
   if (!context.setting_blind || card.getting_sliced || (context.blueprint_card && context.blueprint_card.getting_sliced)) return false;
   const pool = (G.playing_cards || []).filter((c) => unbroken(c) && !has_enhancement(c, 'm_stone') && !c.is_suit('Diamonds', true));
   if (!pool.length) return true;

@@ -71,7 +71,8 @@ sec('static', () => {
   ok(P_CENTERS.j_poke_regirock.config.extra.chips1 === 100 && P_CENTERS.j_poke_regirock.config.extra.chip_mod === 10 && P_CENTERS.j_poke_registeel.config.extra.Xmult_multi === 2
     && P_CENTERS.j_poke_regice.config.extra.glass_convert === 1, 'numbers: +100 / +10, X2, 1 Glass');
   ok(energy_values.chips1 === 0.3 && energy_values.chip_mod === 0.2 && energy_values.Xmult_multi === 0.05 && energy_values.glass_convert === 1, 'energy fields: chips1 +30%, chip_mod +20%, Xmult_multi +5%, glass_convert +1 (its whole base)', energy_values);
-  const keys = MODS.pokermon.content.centers.filter((x) => x.set === 'Joker').map((x) => x.key);
+  // (Mega batch D's Megas sit after their bases: pokermon_megas_classic_test.mjs checks them; skipped here)
+  const keys = MODS.pokermon.content.centers.filter((x) => x.set === 'Joker' && x.poke_file !== 'micatro/pokejokers_megas').map((x) => x.key);
   const i = keys.indexOf('j_poke_regirock');
   ok(keys.slice(i - 1, i + 5).join() === 'j_poke_metagross,j_poke_regirock,j_poke_regice,j_poke_registeel,j_poke_latias,j_poke_latios', 'Pokédex order: Metagross (376), Regirock, Regice, Registeel, then Latias (380)', keys.slice(i - 1, i + 5));
   // the Legendary pool (The Soul): all three are in it, none in the Common / Uncommon / Rare shop pools

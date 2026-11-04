@@ -4071,6 +4071,29 @@ unlisted Terastal mask cells {6,4} / {0,5} / {4,5} / {8,5} have no soul and are 
 - **Wiki**: regenerated (the 7 drop off the missing list; no new art).
 - **Tests**: `micatro/tests/mods/pokermon_gen9_legendaries_test.mjs` (fails on main: no such jokers). Re-recorded: `modpin_test`, `pokermon_391_data_test`,
   `pokermon_new_jokers_test`, `micatro_mod_version_pin`, `micatro_deckeditor_pages`, `designwiki_pokermon_jokers_test` (its Legendary spot checks).
+### Mega batch D: the 18 classic Megas + Mega Salamence hooked up (2026-11-03, branch `feat/pokermon-megas-classic`)
+Pinned **`3.9.1+r82`** (`contentRev: 82`, `MEGA_D_REV`; `LEGACY_MOD_VERSIONS` untouched). The owner's "yes": the 18 X/Y + ORAS Megas Pokermon never made
+a joker for (Sceptile, Blaziken, Swampert, Sableye, Mawile, Aggron, Medicham, Manectric, Sharpedo, Banette, Absol, Glalie, Metagross, Latias, Latios,
+Rayquaza, Garchomp, Diancie) and **Mega Salamence** on Pokermon's Salamence (Nacho 1.6.4's legacy one hung off its retired Salamence, out of every pool;
+it is now a duplicate of Pokermon's: precedence). Their own file `jokers/pokejokers_megas.js` (`MEGA_D_LOC`, `CARRY`, `attach_classic_megas`, wired in
+index.js). Each `poke_mega`, stage Mega, $12, the base's type and Gen; upstream 3.9.1's Gen 3 / Gen 4 / Gen 6 cells with their souls (nothing to
+deploy). Upstream's sprite table points Mega Latios's soul at {3,7} (Primal Groudon's): ours is {1,7}, its own.
+- **Never retroactive (rules rev 82)**: each base's `megas` is a getter (`attach_classic_megas`) that exists only from MEGA_D_REV on, and the Megas join
+  their families only from it (FAMILY_MEMBER_REV). A run recorded earlier re-plays its Mega Stone onto the joker it picked (Absol + Venusaur: Mega
+  Venusaur), and the Mega Stone's pool / target reads are as they were.
+- **Banks travel both ways** (`CARRY`, an EVOLVE_INTERCEPTS stash + POST_EVOLVE): a bank both forms use crosses as it is (Garchomp's `bite_mult`, the
+  Eon duo's `eon_Xmult`, Rayquaza's `ascent_Xmult`, Sableye's X -> Mega Sableye's `deplete_Xmult` + its counted enhancements); a bank only one form uses
+  rides along in `ability.extra.poke_kept` and is restored when it changes back (Aggron's eaten X / count, Banette's +Mult, Sceptile's $ tally, Mega
+  Banette's own X). Energy carries (`energy_count`) and is re-applied to each form's base; the Nature (Treecko line `targets`) carries.
+- **The choices ("state")**: Mega Sceptile / Blaziken keep the starter perk (+1 hand size / +1 discard); Mega Swampert +2 hands instead of +1; Mega
+  Banette +2 Joker slots INSTEAD of Banette's +1 slot / -1 hand, its X from ANY Joker sold (not only during the Blind), kept on the card when it reverts;
+  Mega Sharpedo never destroys a Joker; Mega Glalie does NOT reset money to $0 at end of round (the debt is real); Mega Aggron gives only its X1.5 (Aggron's
+  bank waits for the revert); Mega Rayquaza is Delta Stream's own Pokémon, so it calms Kyogre and Groudon too (pokejokers_designs.js `delta_calm`);
+  Mega Manectric is Energy-inert (its $4 is the fixed money); Mega Absol's guarantee is fix_probability's numerator = denominator (a held Absol beside
+  it: whichever acts last).
+- Tests: micatro/tests/mods/pokermon_megas_classic_test.mjs (every Mega in and out through a real Mega Stone, the banks both ways, each effect in real
+  hands, Energy at 1/2/3, resume + the replay stepper, an r81 recipe replayed, every cell's type).
+
 ### Regional batch A: the 18 Alolan forms + the regional pill (2026-11-03, branch `feat/pokermon-alolan-forms`)
 Pinned **`3.9.1+r81`** (`contentRev: 81`; `LEGACY_MOD_VERSIONS` untouched). The owner's "Yes": the 18 Alolan forms, in their own file
 `jokers/pokejokers_regional.js` (`REGIONAL_FAMILIES` / `REGIONAL_LOC` / `REGIONAL_UPSTREAM_TEXT` / `REGIONAL_FAMILY_REV`, wired in index.js). Types = the

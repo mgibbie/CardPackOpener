@@ -84,7 +84,7 @@ sec(() => {
   const keys = MODS.pokermon.content.centers.filter((c) => c.set === 'Joker').map((c) => c.key);
   // (b follows a, past any joker from upstream main between them: sub-batch 15b's sit in main's order among 3.9.1's)
   // (and past the owner's designs, PORTING.md "The owner's 25 new jokers": Spheal / Sealeo / Walrein sit between Glalie and Clamperl)
-  const fromMain = new Set([...Object.entries(D391.new_jokers || {}).filter(([, v]) => v.upstream === 'main').map(([n]) => 'j_poke_' + n), ...new Set((STATUS.PORTED_FILES['micatro/pokejokers_designs'] || []).map((n) => 'j_poke_' + n))]);
+  const fromMain = new Set([...Object.entries(D391.new_jokers || {}).filter(([, v]) => v.upstream === 'main').map(([n]) => 'j_poke_' + n), ...new Set((STATUS.PORTED_FILES['micatro/pokejokers_designs'] || []).map((n) => 'j_poke_' + n)), ...(STATUS.PORTED_FILES['micatro/pokejokers_megas'] || []).map((n) => 'j_poke_' + n)]);
   const after = (a, b) => { let i = keys.indexOf('j_poke_' + a) + 1; while (fromMain.has(keys[i])) i++; return i > 0 && keys[i] === 'j_poke_' + b; };
   ok(after('glalie', 'clamperl') && after('clamperl', 'huntail') && after('gorebyss', 'relicanth') && after('relicanth', 'luvdisc') && after('luvdisc', 'bagon')
     && after('salamence', 'beldum') && after('jirachi_fixer', 'deoxys') && after('kricketune', 'budew') && after('roserade', 'buizel')
@@ -105,8 +105,8 @@ sec(() => {
 sec(() => {
   // Families (3.9.1 functions/pokefamily.lua): the deferred lines are whole now
   const fam = (n) => JSON.stringify(poke_get_family_list(n));
-  ok(fam('clamperl') === '["clamperl","huntail","gorebyss"]' && fam('salamence') === '["bagon","shelgon","salamence"]'
-    && fam('bronzong') === '["bronzor","bronzong"]', 'families: Clamperl, Bagon, Bronzor lines');
+  ok(fam('clamperl') === '["clamperl","huntail","gorebyss"]' && fam('salamence') === '["bagon","shelgon","salamence","mega_salamence"]'
+    && fam('bronzong') === '["bronzor","bronzong"]', 'families: Clamperl, Bagon (+ Mega Salamence, Mega batch D), Bronzor lines');
   ok(fam('roselia') === '["budew","roselia","roserade"]' && fam('chimecho') === '["chingling","chimecho"]', 'families: Budew / Roselia / Roserade, Chingling / Chimecho');
   ok(fam('kirlia') === '["ralts","kirlia","gardevoir","gallade"]' && get_family_keys('kirlia').includes('j_poke_gallade'), 'family: the Ralts line with Gallade', poke_get_family_list('kirlia'));
   const dk = get_family_keys('deoxys');
@@ -121,7 +121,7 @@ function JL0() { return MODS.pokermon.content.loc.descriptions.Joker; }
 sec(() => {
   // Pools: in_pool + pool_filter; the shop's rarity pools
   start('POOL14');
-  const designs = new Set((STATUS.PORTED_FILES['micatro/pokejokers_designs'] || []).map((n) => 'j_poke_' + n)); // (the owner's designs sit among them: Spheal's line between Glalie and Clamperl)
+  const designs = new Set([...(STATUS.PORTED_FILES['micatro/pokejokers_designs'] || []), ...(STATUS.PORTED_FILES['micatro/pokejokers_megas'] || [])].map((n) => 'j_poke_' + n)); // (the owner's designs sit among them: Spheal's line between Glalie and Clamperl; Mega batch D's Megas after their bases)
   const pool = P_CENTER_POOLS.Joker.map((c) => c.key).filter((k) => !designs.has(k));
   ok(pool.indexOf('j_poke_clamperl') === pool.indexOf('j_poke_glalie') + 1 && pool.includes('j_poke_gallade'), 'the Joker pool holds them, in 3.9.1 order');
   const avail = (r, legendary) => get_current_pool('Joker', r, legendary)[0].filter((k) => k !== 'UNAVAILABLE');

@@ -82,6 +82,8 @@ import './jokers/zzzapril_fools.js';
 import { PARADOX_LOC, PARADOX_DICTIONARY, PARADOX_LOC_COLOURS, PACK_COLOURS, paradox_pack_open } from './paradox.js';
 // The owner's regional forms, batch A (the 18 Alolan forms; jokers/pokejokers_regional.js)
 import { REGIONAL_FAMILIES, REGIONAL_FAMILY_REV, REGIONAL_LOC, REGIONAL_UPSTREAM_TEXT, poke_card_destroyed } from './jokers/pokejokers_regional.js';
+// The owner's Mega batch D (the 18 classic Megas + Mega Salamence hooked up; jokers/pokejokers_megas.js)
+import { MEGA_D_LOC, attach_classic_megas } from './jokers/pokejokers_megas.js';
 import { DESIGN_FAMILIES, DESIGN_LOC, regi_chip_bonus, regi_h_x_mult, regi_enh_vars, slot_cost_removed, drifblim_destroyed, contrary_lifts, mummy_sell,
   freeze_keep, freeze_thaw, frozen_by, spore_first_deal, spore_hand_scored, malamar_chip_bonus, prank_reroll_cost, prank_reroll_shop, prank_shop_start,
   pyukumuku_destroyed, pheromosa_rest, komala_destroy_immune, GALAR_UPSTREAM_TEXT, GALAR_FAMILY_REV, rime_final_deal,
@@ -502,6 +504,8 @@ for (const [name, rev] of Object.entries(GALAR_FAMILY_REV)) FAMILY_MEMBER_REV.se
 // (regional batch A: the Alolan lines; Alolan Raichu / Exeggutor / Marowak join the Kanto lines from ALOLA_REV on)
 for (const f of REGIONAL_FAMILIES) set_family(f);
 for (const [name, rev] of Object.entries(REGIONAL_FAMILY_REV)) FAMILY_MEMBER_REV.set(name, rev);
+// (Mega batch D: the 19 bases' `megas` and the Megas' family places, both from MEGA_D_REV on)
+attach_classic_megas(centers);
 for (const f of DATA.groups.consumables) for (const item of listOf(f)) centers.push(consumableCenter(item, f.file));
 // Content 3.9.1 adds that data.js (3.2.1) doesn't have (batch 10: Miracle Seed, Heavy-Duty Boots, the Seed card, the Debris
 // deck): its definition carries the whole static data (key, pos, atlas, config, ...) and is built like data.js's, after it.
@@ -556,6 +560,8 @@ for (const [set, d] of Object.entries(PARADOX_LOC)) Object.assign(DATA.loc.descr
 DATA.loc.misc.dictionary = Object.assign(DATA.loc.misc.dictionary || {}, PARADOX_DICTIONARY);
 // ... and the regional forms' (jokers/pokejokers_regional.js)
 for (const [set, d] of Object.entries(REGIONAL_LOC)) Object.assign(DATA.loc.descriptions[set] = DATA.loc.descriptions[set] || {}, d);
+// ... and Mega batch D's (jokers/pokejokers_megas.js)
+for (const [set, d] of Object.entries(MEGA_D_LOC)) Object.assign(DATA.loc.descriptions[set] = DATA.loc.descriptions[set] || {}, d);
 // (Gen 8 batch 3: the Galarian evolutions of Linoone / Corsola / Mr. Mime / Farfetch'd — a box after their own 3.9.1 text)
 for (const [k, lines] of Object.entries({ ...GALAR_UPSTREAM_TEXT, ...REGIONAL_UPSTREAM_TEXT })) {
   const e = DATA.loc.descriptions.Joker[k];
@@ -1117,7 +1123,11 @@ export const POKERMON = registerMod({
   // Ninetales's Snow Warning, which re-forms Eiscue's ice too) and the regional pill (systems/types.js region_badge; display only). The
   // branches, their family members and Eiscue's snow are gated by rulesRev (systems/energy.js ALOLA_REV), so runs recorded before r81 replay
   // as recorded.
-  contentRev: 81,
+  // 82 = the owner's Mega batch D (jokers/pokejokers_megas.js): the 18 classic X/Y and ORAS Megas Pokermon had no joker for (Sceptile,
+  // Blaziken, Swampert, Sableye, Mawile, Aggron, Medicham, Manectric, Sharpedo, Banette, Absol, Glalie, Metagross, Latias, Latios, Rayquaza,
+  // Garchomp, Diancie) and Mega Salamence hooked to Pokermon's Salamence. The bases' `megas` (a Mega Stone / Mega Berry Juice target) and the
+  // Megas' family places are gated by rulesRev (MEGA_D_REV), so runs recorded before r82 replay as recorded.
+  contentRev: 82,
   // Pokermon 3.9.1 pokermon.lua: SMODS.current_mod.optional_features = {quantum_enhancements = true, object_weights = true}.
   // object_weights sends create_card's key, the shop roll, tags, packs, bosses and vouchers through SMODS.poll_object
   // (js/engine/smods.js; batch 17). quantum_enhancements is the engine's check_enhancement, always on.
