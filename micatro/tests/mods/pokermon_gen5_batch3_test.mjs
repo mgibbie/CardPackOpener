@@ -171,7 +171,7 @@ await sec('static', () => {
     ok(c.atlas === 'poke_AtlasJokersBasic' + sheet + '391' && c.pos.x === x && c.pos.y === y && !c.soul_pos, `${n}: upstream 3.9.1 cell ${sheet} {${x},${y}} (nothing to deploy)`, [c.atlas, c.pos]);
   }
   // (the regional forms sit after their original lines: skipped here)
-  const keys = MODS.pokermon.content.centers.filter((c) => c.set === 'Joker' && !/^j_poke_(alolan|galarian|hisuian|paldean)_/.test(c.key)).map((c) => c.key);
+  const keys = MODS.pokermon.content.centers.filter((c) => c.set === 'Joker' && !/^j_poke_(alolan|galarian|hisuian|paldean|mega)_/.test(c.key)).map((c) => c.key);
   const run = (from, list, to) => { const i = keys.indexOf('j_poke_' + list[0]); return i > 0 && [from, ...list, to].every((k, n) => keys[i - 1 + n] === 'j_poke_' + k) ? true : keys.slice(i - 1, i + list.length + 1); };
   const RUNS = [
     ['gothitelle', ['ducklett', 'swanna'], 'vanillite'], ['vanilluxe', ['deerling', 'sawsbuck', 'emolga', 'karrablast', 'escavalier', 'foongus', 'amoonguss'], 'frillish'],
@@ -183,7 +183,7 @@ await sec('static', () => {
     const r = to ? run(from, list, to) : run(from, list, keys[keys.indexOf('j_poke_' + list[list.length - 1]) + 1].slice(7));
     ok(r === true, `Pokédex order: ${from}, ${list.join(', ')}${to ? ', ' + to : ''}`, r);
   }
-  const fam = (n) => poke_get_family_list(n).map((x) => (typeof x === 'string' ? x : x.key || x.name)).filter((k) => !/^(j_poke_)?(alolan|galarian|hisuian|paldean)_/.test(k)).join(); // (regional batch C: the Hisuian / Paldean forms sit after their lines and join their families — pokermon_hisuian_paldean_test checks them)
+  const fam = (n) => poke_get_family_list(n).map((x) => (typeof x === 'string' ? x : x.key || x.name)).filter((k) => !/^(j_poke_)?(alolan|galarian|hisuian|paldean|mega)_/.test(k)).join();
   for (const line of Object.values(LINES)) if (line.length > 1) ok(fam(line[0]) === line.join(), 'one family: ' + line.join(' -> '), fam(line[0]));
   const inert = ['foongus', 'amoonguss', 'alomomola', 'stunfisk', 'mienfoo', 'mienshao'];
   ok(inert.every((n) => C(n).poke_no_energy_field === true) && NAMES.filter((n) => !inert.includes(n)).every((n) => !C(n).poke_no_energy_field),

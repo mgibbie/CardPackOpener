@@ -707,7 +707,7 @@ function pair_mult(card, context) {
 }
 
 /** Scraggy / Scrafty, Moxie: grows at end of round when the Blind fell to the round's first hand. */
-function moxie(card, context, step) {
+export function moxie(card, context, step) {
   if (round_end(context) && !context.blueprint && !context.game_over && G.GAME.current_round.hands_played === 1) {
     scale_card(card, { ref_value: 'mult', scalar_table: { moxie: step() }, scalar_value: 'moxie', message_colour: 'MULT' });
   }
@@ -1817,7 +1817,7 @@ const zygarde_x = (card) => card.ability.extra[ZYGARDE_FORMES[zygarde_form(card)
 /** Complete Forme's +hand size (`complete_size`, fixed): given while a Complete Zygarde is held (undebuffed) — on reaching 100 Cells, or
  *  when a Complete one is gained / un-debuffed — and taken back when it leaves or is debuffed (Juggler's way; `complete_given` remembers
  *  that it was given, so it is never given or taken twice). */
-function zygarde_give(card) {
+export function zygarde_give(card) {
   const ex = card.ability.extra;
   if (ex.complete_given || zygarde_form(card) !== 'complete') return;
   ex.complete_given = true;
@@ -2073,7 +2073,7 @@ function aria_calc(card, context) {
 // ------------------------------------------------------------ the Gen 6 starters (Chespin / Fennekin / Froakie lines)
 /** Fennekin / Braixen / Delphox: +1 discard (the Charmander line's pair) AND +1 Foresight (the Shinx line's), in one add/remove pair
  *  (two spreads would overwrite each other's add_to_deck). */
-const discards_scry = {
+export const discards_scry = {
   add_to_deck(self, card, from_debuff) { discards.add_to_deck(self, card, from_debuff); scry.add_to_deck(self, card, from_debuff); },
   remove_from_deck(self, card, from_debuff) { discards.remove_from_deck(self, card, from_debuff); scry.remove_from_deck(self, card, from_debuff); },
 };
@@ -2109,7 +2109,7 @@ function braixen_tarot(card, context) {
 const braixen_state = (card) => (G.GAME && G.GAME.facing_blind && braixen_used(card) ? 'Used this round' : 'Active!');
 /** Delphox, Mystical Fire: every Tarot used (by anyone, while it is held) banks +Xmult_mod in `fire_Xmult` (no energy field: what is
  *  banked keeps its worth; Energy raises only later gains). Not Blueprint for the gain; Blueprint copies the X. Latias's shape. */
-function mystical_fire(card, context) {
+export function mystical_fire(card, context) {
   const ex = card.ability.extra;
   if (context.using_consumeable && context.consumeable && context.consumeable.ability.set === 'Tarot') {
     if (context.blueprint) return undefined;
@@ -2152,7 +2152,7 @@ export function protean_set(card, type) {
   return true;
 }
 /** Greninja's X: Xmult + Xmult_mod for each OTHER undebuffed joker of its current type (get_type: a Tera sticker's type if it has one). */
-const ninja_others = (card) => { const t = get_type(card); return t ? ((G.jokers && G.jokers.cards) || []).filter((j) => j !== card && !j.debuff && is_type(j, t)).length : 0; };
+export const ninja_others = (card) => { const t = get_type(card); return t ? ((G.jokers && G.jokers.cards) || []).filter((j) => j !== card && !j.debuff && is_type(j, t)).length : 0; };
 const ninja_x = (card) => r3(card.ability.extra.Xmult + card.ability.extra.Xmult_mod * ninja_others(card));
 
 // ---------------------------------------------------------------- the Gen 5 starters: Snivy / Tepig / Oshawott lines (contentRev 50)
@@ -2174,7 +2174,7 @@ export const contrary_lifts = (c) => !!(c && c.ability && (c.ability.set === 'De
  *  2 on the second in a row...). Set when a hand is played (before), not by a Blueprint or a joker retrigger; a debuffed hand (The Eye,
  *  The Psychic: no `before` pass, so its debuffed_hand context) still continues or breaks it, and scores nothing. Kept for the round
  *  (streak_round: a new round starts at 0, even for a joker that missed the end-of-round pass while debuffed). Discards don't break it. */
-function flame_charge(card, context) {
+export function flame_charge(card, context) {
   const ex = card.ability.extra;
   if ((context.before || context.debuffed_hand) && context.cardarea === G.jokers && !context.blueprint && !context.retrigger_joker) {
     const same = ex.streak_round === G.GAME.round && ex.last_hand === context.scoring_name;
@@ -2186,13 +2186,13 @@ function flame_charge(card, context) {
   return undefined;
 }
 /** The current streak (0 outside its round: the shop shows 0). */
-const flame_streak = (ex) => (G.GAME && ex.streak_round === G.GAME.round ? ex.streak || 0 : 0);
+export const flame_streak = (ex) => (G.GAME && ex.streak_round === G.GAME.round ? ex.streak || 0 : 0);
 function flame_vars(ex) {
   const n = flame_streak(ex);
   return [n, n && ex.last_hand ? localize(ex.last_hand, 'poker_hands') : localize('poke_none')];
 }
 /** Tepig / Pignite: +mult per streak hand; Emboar: X(1 + Xmult_mod per streak hand). */
-function flame_main(card, context) {
+export function flame_main(card, context) {
   if (!context.joker_main) return undefined;
   const ex = card.ability.extra, n = flame_streak(ex);
   if (n <= 0) return undefined;
@@ -2378,7 +2378,7 @@ export function poison_card(c, loss, gain) {
   a.perma_bonus = Math.min(perma, Math.max(perma - loss, -own_chips(c)));
   a.perma_mult = r3((a.perma_mult || 0) + gain);
 }
-function poison_point(card, context) {
+export function poison_point(card, context) {
   if (!(context.pre_discard && !context.hook && !context.retrigger_joker && context.full_hand && context.full_hand.length)) return undefined;
   const ex = card.ability.extra;
   for (const c of context.full_hand) {
@@ -3110,7 +3110,7 @@ function inkay_low(card, context) {
  *  Chips again, and every reader of a card's Chips sees them. */
 const FLIP = { 2: 14, 3: 13, 4: 12, 5: 11, 6: 10, 7: 9, 8: 8, 9: 7, 10: 6, 11: 5, 12: 4, 13: 3, 14: 2 };
 const rank_chips = (id) => (id === 14 ? 11 : id >= 11 ? 10 : id);
-const malamar_on = () => ((G.jokers && G.jokers.cards) || []).some((j) => !j.debuff && j.config.center.key === 'j_poke_malamar');
+const malamar_on = () => ((G.jokers && G.jokers.cards) || []).some((j) => !j.debuff && (j.config.center.key === 'j_poke_malamar' || j.config.center.key === 'j_poke_mega_malamar'));
 /** The flipped rank's Chips for a card (undefined: no flip applies). Exported for the tests / tooltips. */
 export function flipped_chips(card) {
   if (!card || !card.base || card.ability.set === 'Joker' || card.ability.effect === 'Stone Card' || card.config.center.replace_base_card || card.config.center.no_rank) return undefined;
@@ -3153,14 +3153,14 @@ function deck_convert(enh, seed, skip) {
 }
 /** Skrelp / Dragalge, Poison Point: when a Blind is selected, 1 random card of the full deck becomes a Hazard card (unenhanced first:
  *  the Regis' rule, so a fully enhanced deck loses an enhancement). Blueprint copies it (as Marble Joker). */
-function skrelp_poison(card, context) {
+export function skrelp_poison(card, context) {
   if (!context.setting_blind || card.getting_sliced || (context.blueprint_card && context.blueprint_card.getting_sliced)) return;
   if (deck_convert('m_poke_hazard', 'poke_skrelp_hazard')) card_eval_status_text(context.blueprint_card || card, 'extra', null, null, null, { message: '+1 Hazard', colour: 'PURPLE' });
 }
 /** Skrelp: +mult Mult per Hazard card in the full deck (any card counting as one). */
 export const hazards_in_deck = () => (G.playing_cards || []).filter((c) => unbroken(c) && has_enhancement(c, 'm_poke_hazard')).length;
 /** Dragalge: each Hazard card HELD in hand (not debuffed) gives X(Xmult_multi) (Galvantula's held shape: Mime repeats it). */
-function hazard_held_x(card, context) {
+export function hazard_held_x(card, context) {
   if (context.individual && context.cardarea === G.hand && !context.end_of_round && !context.other_card.debuff && has_enhancement(context.other_card, 'm_poke_hazard')) {
     return { x_mult: card.ability.extra.Xmult_multi, card };
   }

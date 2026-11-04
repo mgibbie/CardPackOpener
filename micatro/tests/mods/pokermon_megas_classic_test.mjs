@@ -436,7 +436,9 @@ await sec('old rev', () => {
   flush();
   s.act({ type: 'select_blind' }); flush();
   const st = G.consumeables.cards.find((c) => key(c) === 'c_poke_megastone');
-  s.act({ type: 'use', id: st.sort_id, targets: [] }); flush();
+  PINS.RULES.pins = { pokermon: '3.9.1+r' + REV };
+  try { s.act({ type: 'use', id: st.sort_id, targets: [] }); flush(); }
+  finally { PINS.RULES.pins = null; }
   ok(G.jokers.cards.map(key).join() === 'j_poke_mega_absol,j_poke_venusaur', `on r${REV}: the leftmost Mega-capable joker is Absol -> Mega Absol`, G.jokers.cards.map(key));
   const old = JSON.parse(JSON.stringify(s.recipe));
   old.modVersions = { ...old.modVersions, pokermon: '3.9.1+r' + (REV - 1) };

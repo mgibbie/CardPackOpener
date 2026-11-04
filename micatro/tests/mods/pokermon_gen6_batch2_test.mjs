@@ -143,7 +143,7 @@ await sec('static', () => {
     ok(c.atlas === 'poke_AtlasJokersBasicNatdex391' && c.pos.x === x && c.pos.y === y && !c.soul_pos, `${n}: upstream 3.9.1 cell Natdex {${x},${y}} (nothing to deploy)`, [c.atlas, c.pos]);
   }
   ok(C('tyrunt').config.evo_rqmt === 5 && C('amaura').config.evo_rqmt === 5, 'the fossils evolve after their 3+ tier fires 5 times (evo_rqmt 5)');
-  const keys = MODS.pokermon.content.centers.filter((c) => c.set === 'Joker').map((c) => c.key).filter((k) => !/^(j_poke_)?(alolan|galarian|hisuian|paldean)_/.test(k)); // (regional batch C: the Hisuian / Paldean forms sit after their lines and join their families — pokermon_hisuian_paldean_test checks them)
+  const keys = MODS.pokermon.content.centers.filter((c) => c.set === 'Joker').map((c) => c.key).filter((k) => !/^(j_poke_)?(alolan|galarian|hisuian|paldean|mega)_/.test(k)); // Regional forms and Megas are checked in their own suites.
   const run = (from, list, to) => { const i = keys.indexOf('j_poke_' + list[0]); return i > 0 && [from, ...list, to].every((k, n) => keys[i - 1 + n] === 'j_poke_' + k) ? true : keys.slice(i - 1, i + list.length + 1); };
   const RUNS = [
     ['aegislash', ['spritzee', 'aromatisse', 'swirlix', 'slurpuff', 'inkay', 'malamar', 'binacle', 'barbaracle', 'skrelp', 'dragalge', 'tyrunt', 'tyrantrum', 'amaura', 'aurorus'], 'sylveon'],
@@ -151,7 +151,7 @@ await sec('static', () => {
     ['gourgeist', ['bergmite', 'avalugg', 'noibat', 'noivern'], 'xerneas'],
   ];
   for (const [from, list, to] of RUNS) ok(run(from, list, to) === true, `Pokédex order: ${from} (${from === 'aegislash' ? 681 : from === 'sylveon' ? 700 : 711}), ${list.join(', ')}, ${to}`, run(from, list, to));
-  const fam = (n) => poke_get_family_list(n).map((x) => (typeof x === 'string' ? x : x.key || x.name)).filter((k) => !/^(j_poke_)?(alolan|galarian|hisuian|paldean)_/.test(k)).join(); // (regional batch C: the Hisuian / Paldean forms sit after their lines and join their families — pokermon_hisuian_paldean_test checks them)
+  const fam = (n) => poke_get_family_list(n).map((x) => (typeof x === 'string' ? x : x.key || x.name)).filter((k) => !/^(j_poke_)?(alolan|galarian|hisuian|paldean|mega)_/.test(k)).join();
   for (const line of Object.values(LINES)) if (line.length > 1) ok(fam(line[0]) === line.join(), 'one family: ' + line.join(' -> '), fam(line[0]));
   const inert = ['spritzee', 'aromatisse', 'hawlucha'];
   ok(inert.every((n) => C(n).poke_no_energy_field === true) && NAMES.filter((n) => !inert.includes(n)).every((n) => !C(n).poke_no_energy_field),

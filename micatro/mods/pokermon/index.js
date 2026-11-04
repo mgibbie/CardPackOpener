@@ -584,6 +584,7 @@ for (const [set, d] of Object.entries(REGIONAL_LOC)) Object.assign(DATA.loc.desc
 for (const [set, d] of Object.entries(GALARIAN_LOC)) Object.assign(DATA.loc.descriptions[set] = DATA.loc.descriptions[set] || {}, d);
 // ... and Mega batch D's (jokers/pokejokers_megas.js)
 for (const [set, d] of Object.entries(MEGA_D_LOC)) Object.assign(DATA.loc.descriptions[set] = DATA.loc.descriptions[set] || {}, d);
+DATA.loc.descriptions.Spectral.c_poke_megastone.text.push('{C:inactive}(Select a Pokémon when more than one qualifies)');
 // (Gen 8 batch 3: the Galarian evolutions of Linoone / Corsola / Mr. Mime / Farfetch'd — a box after their own 3.9.1 text)
 // ... and the regional batch C forms' (jokers/pokejokers_hisui.js)
 for (const [set, d] of Object.entries(HISUI_LOC)) Object.assign(DATA.loc.descriptions[set] = DATA.loc.descriptions[set] || {}, d);
@@ -1173,7 +1174,7 @@ export const POKERMON = registerMod({
   // Groudon into Primal Kyogre (+2 hands, Clubs retrigger twice, always raining) / Primal Groudon (+2 discards, Hearts / Diamonds X1.5,
   // always sunny) for good; a Primal always wins the Primal Clash against the other's normal form. The Orbs reach the pools (Items, and the
   // Ancient / Future Packs' first card) only from PRIMAL_REV, so runs recorded before r85 replay as recorded.
-  contentRev: 85,
+  contentRev: 104,
   // Pokermon 3.9.1 pokermon.lua: SMODS.current_mod.optional_features = {quantum_enhancements = true, object_weights = true}.
   // object_weights sends create_card's key, the shop roll, tags, packs, bosses and vouchers through SMODS.poll_object
   // (js/engine/smods.js; batch 17). quantum_enhancements is the engine's check_enhancement, always on.

@@ -51,6 +51,43 @@ function peek(f) {
 const { pseudorandom, pseudoseed } = await import('../../js/engine/core.js');
 
 await sec(() => {
+  start('MEGAPOCKET', {}, { noBlind: true });
+  G.GAME.round_resets.ante = 5;
+  for (const k of POCKETS) {
+    const { center, pack } = pocketCard(k);
+    let hits = 0;
+    for (let n = 0; n < 80; n++) {
+      const c = slot(center, pack, 2);
+      if (key(c) === 'c_poke_megastone') hits++;
+      c.remove();
+    }
+    ok(hits > 0, `${k}: ordinary Pocket Packs can offer a Mega Stone at ante 5`, hits);
+  }
+  const { center, pack } = pocketCard();
+  const countStones = () => {
+    let hits = 0;
+    for (let n = 0; n < 100; n++) {
+      const c = slot(center, pack, 2);
+      if (key(c) === 'c_poke_megastone') hits++;
+      c.remove();
+    }
+    return hits;
+  };
+  G.GAME.round_resets.ante = 4;
+  ok(countStones() === 0, 'ordinary packs do not get the special stone before ante 5');
+  G.GAME.round_resets.ante = 5;
+  const stone = add('c_poke_megastone');
+  ok(countStones() === 0, 'ordinary packs do not offer another stone when one is held');
+  stone.remove();
+  PINS.RULES.pins = { pokermon: '3.9.1+r85' };
+  try {
+    ok(countStones() === 0, 'older replays retain the tag-only rule');
+    pack.from_tag = true;
+    ok(countStones() > 0, 'older replays still allow the Pocket Tag chance');
+  } finally { PINS.RULES.pins = null; }
+});
+
+await sec(() => {
   start('PKT1', {}, { noBlind: true });
   for (const k of POCKETS) {
     const c = P_CENTERS[k];

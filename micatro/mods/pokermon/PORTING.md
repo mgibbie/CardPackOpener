@@ -1639,6 +1639,7 @@ Deck / Sleeve changes. The plan's "12 Megas" counted Mega Steelix, which the por
   - **`used_on` is the Mega's card**: its `unique_val`, not its center key. So two Mega Clefables are told apart, and selling a stone reverts
     its own Mega, never the twin.
   - **A used stone targets only its own Mega** (3.9.1 `get_mega_target`), to revert it. Before, it could Mega Evolve a second joker.
+  - **r88 targeting safety:** when more than one Joker qualifies, select one explicitly; with only one eligible target the stone still selects it automatically. Older replays retain the leftmost fallback. A normal used stone still finds its own Mega automatically.
   - **At every end of round a stone whose Mega is gone forgets it** (sold, destroyed, reverted another way) and is free again.
   - Reverting says "Reverted" (3.9.1 `pokermon.devolve`). The tooltip names the Mega the stone made.
   - Kept: the house rule "the highlighted joker if it qualifies, else the leftmost that does" (3.9.1 stops at a highlighted joker that
@@ -1898,7 +1899,7 @@ the 3.9.1 Lua (upstream main af0b656 has the same packs1.lua / sleeve.lua / poke
     can be a hidden (soul) Item.
   - 3.2.1's per-pack `c_keys` list is gone (its configs too: 3.9.1's `{extra, choose}`), and the text counts Steamodded's
     `booster_choice_mod` / `booster_size_mod`.
-  - The Mega Stone slot (tag packs, ante 5+) and Safety First's Item-for-Energy slot are as before.
+  - The Mega Stone slot was originally tag packs only (ante 5+); from r86 all Pocket Packs have the same 25% chance in slot 2 when no Mega Stone is held. Older replays keep the tag-only rule. Safety First's Item-for-Energy slot is as before.
   - Not changed: `generate_pickup_item_key` (Pickup / Treasure jokers) keeps its own evo-item roll; 3.9.1 sends it through
     poll_evo_item too, which would also skip items in play — a separate behaviour change, left for a later batch.
 - **The Debris Sleeve's alt on the Debris Deck** (sleeves.js `alt`; 3.9.1 sleeve.lua diceysleeve + pokermon.lua Card:set_ability
