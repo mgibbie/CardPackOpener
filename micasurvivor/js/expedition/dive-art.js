@@ -1,5 +1,5 @@
 'use strict';
-/* ============ expedition/dive-art.js — Dive's floor art (MicaSurvivor Dive visuals DV1 + DV2, not upstream) ============
+/* ============ expedition/dive-art.js — Dive's floor art (MicaSurvivor Dive visuals DV1-DV3, not upstream) ============
  * Lazy-loaded with the rest of js/expedition/ (G.Expedition.load()); a base page never runs it, and only a Dive floor
  * (a zone with zone.dive, js/expedition/dive-gen.js) is drawn by it. Plans/MICASURVIVOR_DIVE_VISUALS_PLAN.md.
  * Owner 2026-11-03: the floors are PAINTED IN CODE (our own painter, in the style of PokéDive's floors); no image assets.
@@ -11,7 +11,10 @@
  *   build(L, opt)  bakes a floor: {canvas (the floor + a MG-tile margin, 16 art px a tile), top (the wall top as a seamless
  *                  PW x PH tile, which fills the view beyond the floor), ox, oy (the canvas's art-px origin in the world:
  *                  the spawn tile is the world origin), route, ms (the bake time), bytes, counts
- *                  (pixels: face / top / liquid / ground); opt.keepMask: also mask, the wall / liquid mask)}. Per art pixel:
+ *                  (pixels: face / top / liquid / ground); opt.keepMask: also mask, the wall / liquid mask)}. The lush
+ *                  routes (DV3) also bake bands + occ: the canopy's leafy lip hanging past the walls over the floor, as
+ *                  depth strips (each keeps the art y of the wall px it hangs from) and a Uint16 per art px holding that
+ *                  y (0 = no canopy over it) for drawSilhouettes; bandBytes counts both. Per art pixel:
  *                    masks   the wall and liquid grids blown up with a smoothstep blend + a little noise: rounded, organic
  *                            outlines on the 16 px grid instead of tile stairs; chamfer distance fields into the walls, the
  *                            water, from the walls and to the spawn -> stairs path; per column, the wall runs up / down
@@ -31,8 +34,11 @@
  *                  floor), then the visible crop of the baked canvas. Bakes on first use (the floor change's flash); keeps
  *                  the last 2 floors (a replay seeking back).
  *   hashOf(art)    FNV-1a of the canvas pixels (tests: two pages, golden pixels)
+ *   hashBands(art) FNV-1a of the canopy bands, 'none' without them (tests: two pages bake the same lip)
  *   mini(z, rgb, tx, ty)  the minimap colour of a Dive tile in the route's palette (dive-gen.js zone() sets it as zone.mini)
- * Memory: a floor is 928 x 672 px (2.5 MB) + the 252 x 168 pattern (0.17 MB); the masks are dropped after the bake.
+ * Memory: a floor is 928 x 672 px (2.5 MB) + the 252 x 168 pattern (0.17 MB); the masks are dropped after the bake. The
+ * lush routes add the bands + occ (bandBytes, the plan's budget: bands ~1.5 MB + occ ~1.1 MB); the strips are dropped
+ * with the floor (the cache keeps the last 2).
  */
 G.DiveArt = (() => {
   const TP = 16;                 // art px per tile (G.Tiles.T)
@@ -460,8 +466,76 @@ G.DiveArt = (() => {
     pbuf.set(pat);
     if (R.light) for (let i = 0; i < pbuf.length; i++) pbuf[i] = mul3(pbuf[i], R.light);
     pg.putImageData(pimg, 0, 0);
+    // 5) the canopy's overhang (the lush routes only): a leafy lip hanging past the walls over the floor, baked as
+    //    depth bands (drawn as pseudo-props in game.drawScene's y-sort, dive.js bands()) plus an occlusion map.
+    //    VISUAL ONLY: the lip lives only in the bands, so the base canvas, its golden pixels and the zone hash stay
+    //    exactly as they were. Every lip px keeps the y of the wall px it hangs from: the north lip's is south of it,
+    //    so it sorts AFTER an actor standing behind the wall (that is the occluder, dive.js drawSilhouettes); the
+    //    south / east / west lips' sort never passes an actor, so they only decorate. No Math.random: the depth is
+    //    the art stream's noise (seedOf's ART key), so a replay and a viewer bake the same lip.
+    let bands = null, occ = null, bandBytes = 0;
+    if (lush) {
+      const srcY = new Int32Array(N).fill(-1), lipK = new Uint8Array(N), lipD = new Uint8Array(N);
+      const reach = nf(7, s + 84, ox, oy, W, Hh);               // how far the lip hangs: 3..10 art px, wavy
+      const hang = (i, sy, k) => {
+        if (M[i] === WALL) return false;
+        const px = i % W, d = 3 + Math.floor(reach(px + ox, ((i / W) | 0) + oy) * 8);
+        if (k > d) return false;
+        if (sy > srcY[i]) { srcY[i] = sy; lipK[i] = k; lipD[i] = d; }
+        return true;
+      };
+      for (let x = 0; x < W; x++) for (let y = 0; y < Hh;) {      // the north / south lips off every column run
+        if (M[y * W + x] !== WALL) { y++; continue; }
+        const y0 = y; while (y < Hh && M[y * W + x] === WALL) y++;
+        const y1 = y - 1;
+        for (let k = 1, py = y0 - 1; py >= 0; k++, py--) if (!hang(py * W + x, y0, k)) break;
+        for (let k = 1, py = y1 + 1; py < Hh; k++, py--) if (!hang(py * W + x, y1, k)) break;
+      }
+      for (let y = 0; y < Hh; y++) for (let x = 0; x < W;) {      // the east / west lips off every row run
+        if (M[y * W + x] !== WALL) { x++; continue; }
+        const x0 = x; while (x < W && M[y * W + x] === WALL) x++;
+        const x1 = x - 1;
+        for (let k = 1, px = x0 - 1; px >= 0; k++, px--) if (!hang(y * W + px, y, k)) break;
+        for (let k = 1, px = x1 + 1; px < W; k++, px++) if (!hang(y * W + px, y, k)) break;
+      }
+      const groups = new Map();                                  // one strip a sort y (the wall px the lips hang from)
+      for (let i = 0; i < N; i++) if (srcY[i] >= 0) { const g = groups.get(srcY[i]); if (g) g.push(i); else groups.set(srcY[i], [i]); }
+      bands = [];
+      const strip = (sy, list) => {                              // one bbox canvas of the list's pixels
+        let x0 = W, y0 = Hh, x1 = -1, y1 = -1;
+        for (const i of list) { const px = i % W, py = (i / W) | 0; if (px < x0) x0 = px; if (px > x1) x1 = px; if (py < y0) y0 = py; if (py > y1) y1 = py; }
+        const bw = x1 - x0 + 1, bh = y1 - y0 + 1;
+        const bc = canvas(bw, bh), bg = bc.getContext('2d'), bimg = bg.createImageData(bw, bh), b32 = new Uint32Array(bimg.data.buffer);
+        for (const i of list) {
+          const px = i % W, py = (i / W) | 0, k = lipK[i], dd = lipD[i];
+          let c = top(px + ox, py + oy);                         // the crowns' leaves, as on the wall top
+          c = dim(c, 0.7 + 0.3 * (k / (dd + 1)));                // tucked into the crowns at the root, open at the edge
+          if (k >= dd) c = mix(c, R.gap, 0.55);                  // the canopy's dark outline
+          if (R.light) c = mul3(c, R.light);                     // the route's light, as the floor's
+          b32[(py - y0) * bw + (px - x0)] = c;
+        }
+        bg.putImageData(bimg, 0, 0);
+        bands.push({ x: x0, y: y0, w: bw, h: bh, sy, img: bc });
+        bandBytes += bw * bh * 4;
+      };
+      for (const [sy, list] of groups) {
+        // a row's lip is often a scatter of small clusters: chunk it on an x gap > 16 art px, or one bbox would carry
+        // the whole row's empty middle (the budget counts every strip pixel)
+        list.sort((a, b) => (a % W) - (b % W));
+        let run = [];
+        for (const i of list) {
+          if (run.length && i % W - run[run.length - 1] % W > 16) { strip(sy, run); run = []; }
+          run.push(i);
+        }
+        if (run.length) strip(sy, run);
+      }
+      occ = new Uint16Array(N);                                 // a lip px: its band's art y (0 = no canopy over it)
+      for (let i = 0; i < N; i++) if (srcY[i] > 0) occ[i] = srcY[i];
+      bandBytes += occ.byteLength;
+    }
     const ms = Math.round((performance.now() - t0) * 10) / 10;
-    const art = { canvas: cv, top: pc, pattern: null, ox, oy, w: W, h: Hh, route, ms, bytes: (W * Hh + PW * PH) * 4, counts };
+    const art = { canvas: cv, top: pc, pattern: null, ox, oy, w: W, h: Hh, route, ms, bytes: (W * Hh + PW * PH) * 4, counts,
+                  bands, occ, bandBytes };
     if (opt && opt.keepMask) art.mask = M;   // (tests: the wall / liquid mask)
     stats.last = { ms, route, bytes: art.bytes, parts: [t1 - t0, t2 - t1, t3 - t2, t4 - t3, performance.now() - t4].map(v => Math.round(v)) };
     stats.bakes++;
@@ -598,6 +672,18 @@ G.DiveArt = (() => {
     for (let i = 0; i < d.length; i++) { h ^= d[i]; h = Math.imul(h, 0x01000193); }
     return (h >>> 0).toString(16).padStart(8, '0');
   }
+  /** FNV-1a of an art's canopy bands (DV3's tests: two pages bake the same lip; 'none' when the route has none). */
+  function hashBands(art) {
+    if (!art || !art.bands || !art.bands.length) return 'none';
+    let h = 0x811c9dc5;
+    const mix8 = v => { h ^= v & 255; h = Math.imul(h, 0x01000193); };
+    for (const b of art.bands) {
+      for (const v of [b.x, b.y, b.w, b.h, b.sy]) { mix8(v); mix8(v >> 8); }
+      const d = b.img.getContext('2d').getImageData(0, 0, b.w, b.h).data;
+      for (let i = 0; i < d.length; i++) mix8(d[i]);
+    }
+    return (h >>> 0).toString(16).padStart(8, '0');
+  }
   function clear() { cache.clear(); }
   /** The minimap's colour of a Dive tile (zone.mini, set by dive-gen.js zone()): the route's own wall / water / ground. */
   function mini(z, c, tx, ty) {
@@ -607,5 +693,5 @@ G.DiveArt = (() => {
     const out = rgb(R.ground[hh(tx, ty, 31) < 0.5 ? 3 : 4]);
     return z.terr(tx, ty + 1) === WALL ? out.map(v => v * 0.75) : out;
   }
-  return { ROUTES, TP, MG, FACE, PW, PH, build, draw, forZone, hashOf, clear, mini, stats, get cached() { return cache.size; } };
+  return { ROUTES, TP, MG, FACE, PW, PH, build, draw, forZone, hashOf, hashBands, clear, mini, stats, get cached() { return cache.size; } };
 })();

@@ -920,11 +920,17 @@ G.Game = (() => {
     const arceus = pl && state !== 'ui' ? G.Judgment.drawable() : null;
     if (arceus) items.push({ y: arceus.y, ent: arceus });
     if (pl && state !== 'ui') for (const d of G.Events.drawables()) items.push({ y: d.y, ent: d });
+    // MicaSurvivor (DV3): the Dive canopy's overhang, as depth-sorted pseudo-props (expedition/dive.js bands)
+    if (G.World.zone && G.World.zone.dive && G.ExpDive && G.ExpDive.bands) for (const b of G.ExpDive.bands(cam)) items.push({ y: b.sy, band: b });
     items.sort((a, b) => a.y - b.y);
+    const ents = [];
     for (const it of items) {
-      if (it.prop) G.World.drawProp(ctx, it.prop, t);
-      else it.ent.draw(ctx);
+      if (it.band) G.ExpDive.drawBand(ctx, it.band);
+      else if (it.prop) G.World.drawProp(ctx, it.prop, t);
+      else { it.ent.draw(ctx); ents.push(it.ent); }
     }
+    // MicaSurvivor (DV3): what the canopy hid, over it as a tinted silhouette (you gold, the others pale blue)
+    if (G.World.zone && G.World.zone.dive && G.ExpDive && G.ExpDive.drawSilhouettes) G.ExpDive.drawSilhouettes(ctx, ents);
   }
 
   function render() {

@@ -1160,10 +1160,85 @@ G.ExpDive = (() => {
     }
   }
 
+  // ---------------- the canopy: bands in the y-sort, silhouettes behind them (DV3) ----------------
+  // Plans/MICASURVIVOR_DIVE_VISUALS_PLAN.md §4. The lush floors' baked lip (dive-art.js) is depth-sorted with the
+  // entities: each strip sorts at the y of the wall px it hangs from, so it covers an actor standing behind the wall
+  // and never one in front of it. What it covers is redrawn over it as a tinted silhouette: you gold, the rest pale
+  // blue, a 0.5 (the sprite sheet tinted once, cached, like G.Sprites.white).
+  const SIL = ['#FFE27A', '#BFE6FF'];
+  const tints = new WeakMap();                 // a sprite sheet -> its tinted copies (one a colour, made once)
+  function tinted(img, color) {
+    let e = tints.get(img);
+    if (!e) { e = Object.create(null); tints.set(img, e); }
+    if (!e[color]) {
+      const c = document.createElement('canvas'); c.width = img.width; c.height = img.height;
+      const x = c.getContext('2d');
+      x.drawImage(img, 0, 0);
+      x.globalCompositeOperation = 'source-in'; x.fillStyle = color;
+      x.fillRect(0, 0, c.width, c.height);
+      e[color] = c;
+    }
+    return e[color];
+  }
+  const diveArt = () => { const z = G.World.zone; return z && z.dive && G.DiveArt ? G.DiveArt.forZone(z) : null; };
+  const NOBANDS = [];
+  /** The canopy strips on screen (world px; sy = the depth they sort at). game.drawScene pushes them into the y-sort. */
+  function bands(cam) {
+    const art = diveArt();
+    if (!art || !art.bands || !art.bands.length) return NOBANDS;
+    const PX = G.Sprites.PX, ox = art.ox * PX, oy = art.oy * PX;
+    const l = cam.left(), t = cam.top(), r = l + cam.w, b = t + cam.h, out = [];
+    for (const s of art.bands) {
+      const x = ox + s.x * PX, y = oy + s.y * PX, w = s.w * PX, h = s.h * PX;
+      if (x > r || x + w < l || y > b || y + h < t) continue;
+      out.push({ x, y, w, h, sy: oy + s.sy * PX, img: s.img });
+    }
+    return out;
+  }
+  const drawBand = (ctx, b) => { ctx.drawImage(b.img, b.x, b.y, b.w, b.h); };
+  /** (DV3) every actor the canopy hides, over it as a tinted silhouette. Called after the entities (game.drawScene). */
+  function drawSilhouettes(ctx, ents) {
+    const art = diveArt();
+    if (!art || !art.occ || !ents || !ents.length) return;
+    const PX = G.Sprites.PX, ox = art.ox, oy = art.oy, W = art.w, occ = art.occ;
+    const me = G.Game && G.Game.player;
+    for (const e of ents) {
+      const an = e && e.anim;
+      if (!an || !an.dex) continue;
+      let m = G.Sprites.animMeta(an.dex, an.cur, an.shiny), sh = G.Sprites.sheet(an.dex, an.cur, an.shiny);
+      let fr = an.frame | 0;
+      if ((!m || !sh || !sh.ready) && an.cur !== 'Idle') {       // as Animator.draw: Idle while a sheet loads
+        m = G.Sprites.animMeta(an.dex, 'Idle', an.shiny); sh = G.Sprites.sheet(an.dex, 'Idle', an.shiny); fr = 0;
+      }
+      if (!m || !sh || !sh.ready) continue;
+      const fx = Math.round(e.x / PX - ox), fy = Math.round(e.y / PX - oy);
+      if (fx < 0 || fx >= W || fy < 1) continue;
+      // the sprite from its feet up: is any of it under a lip whose band sorts over the actor? (occ holds that band's y)
+      const span = Math.min(fy, Math.ceil(m.ay * (an.scale || 1) * G.Sprites.artScale(an.dex)) + 2);
+      let hid = false;
+      for (let d = 0; d <= span && !hid; d++) hid = occ[(fy - d) * W + fx] > fy;
+      if (!hid) continue;
+      const k = PX * (an.scale || 1) * G.Sprites.artScale(an.dex);
+      const c = tinted(sh.img, e === me ? SIL[0] : SIL[1]);
+      const row = G.Sprites.rowOf(an.dex, an.dir, m);
+      fr = Math.min(Math.max(0, fr), m.n - 1);
+      const bob = m.n === 1 && an.cur === 'Walk' && !an.once ? Math.round(Math.abs(Math.sin((an.clock || 0) * 9)) * 2 * k) : 0;
+      let dx = Math.round(e.x - m.ax * k), dy = Math.round(e.y - m.ay * k) - bob;
+      const prev = ctx.globalAlpha;
+      ctx.globalAlpha = prev * 0.5;
+      if (G.Sprites.flipOf(an.dex, an.dir)) {
+        const ox0 = Math.round(e.x); ctx.save(); ctx.translate(ox0, 0); ctx.scale(-1, 1); dx -= ox0;
+        ctx.drawImage(c, fr * m.w, row * m.h, m.w, m.h, dx, dy, m.w * k, m.h * k);
+        ctx.restore();
+      } else ctx.drawImage(c, fr * m.w, row * m.h, m.w, m.h, dx, dy, m.w * k, m.h * k);
+      ctx.globalAlpha = prev;
+    }
+  }
+
   return { K, NAME, GUARDIANS, target, pool, guardianOf, legendPool, legendRoll, megaRoll, routeOf, begin, reset, update, hurt, onKill, pay, scoreParts, result, record,
            setup, roles, press, pad, tick, out, drawButtons, offerLearn, LEARN_AT, get rects() { return rects; },
            submit, board, guestFollow, WEEKLY, MOD_NAME, expectedPay, openPlug, canOpen, PLUG,
            openPicker, closePicker, back, starts, startOf, stageOf, bestOf, sealOf, seals, routeOpen, hurtK, SEAL, MAIN,
            live, shown, dBlock, applyD, TELE, COMBO, HITSTOP, hold, ecoLayout, LM, ESCORT, get view() { return view; }, cur,   // (cur: what is drawn: the host run, or a viewer's copy)
-           drawGround, drawHud, drawMini, hudLine, hudColor, on, get run() { return S; } };
+           drawGround, drawHud, drawMini, hudLine, hudColor, on, bands, drawBand, drawSilhouettes, get run() { return S; } };
 })();

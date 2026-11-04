@@ -1,5 +1,6 @@
-// micasurvivor_dive_visuals_test.mjs — MicaSurvivor Dive visuals DV1 + DV2: the floor art painter (micasurvivor/js/expedition/
-// dive-art.js; Plans/MICASURVIVOR_DIVE_VISUALS_PLAN.md). A static server, headless Chrome, a fixed guest profile.
+// micasurvivor_dive_visuals_test.mjs — MicaSurvivor Dive visuals DV1 + DV2 + DV3: the floor art painter
+// (micasurvivor/js/expedition/dive-art.js; Plans/MICASURVIVOR_DIVE_VISUALS_PLAN.md). A static server, headless Chrome,
+// a fixed guest profile.
 //   1. deterministic: two pages bake byte-identical pixels for the same floor (seed, route, floor), with no Math.random
 //   2. visual only: the floors' zone hashes are today's for 50 floors (the fixture), and a bake changes nothing in the layout
 //   3. the 8 routes look distinct (their mean colours apart; the crater, canyon and ruins are not violet), every route bakes
@@ -8,7 +9,12 @@
 //      the minimap paints each route in its own colours too
 //   4. in a Dive run the world draws the baked floor (G.World.drawGround's Dive branch), nothing is fetched from
 //      /overworld/data/tilesets, and a page whose /overworld/data/ 404s still paints with no page errors
-//   SHOTS=<dir> also saves dv2_<route>_1.png (floor 1) and dv2_<route>_2.png (floor 26) of the 8 routes.
+//   5. the canopy (DV3): the lush routes bake bands + occ (the rock routes none at all), the lip never lands on a wall
+//      and both pages bake the same lip; an actor the canopy hides comes back over it as a tinted silhouette (gold for
+//      you, pale blue for anyone else), the same actor on open ground draws nothing; in a Dive run both gates in
+//      game.drawScene fire every frame, and a Normal run never reaches either
+//   SHOTS=<dir> also saves dv2_<route>_1.png (floor 1) and dv2_<route>_2.png (floor 26) of the 8 routes, and
+//   dv3_silhouette.png (you behind a wall, under the lip).
 //   node overworld/tests/micasurvivor_dive_visuals_test.mjs [--record]    (--record rewrites the fixture's golden pixels)
 // (In a git worktree add MAGEPUNK_ASSET_ROOT=<main checkout> for the gitignored sprites.)
 import http from 'http';
@@ -109,7 +115,7 @@ try {
 		const r0 = window.__t.rnd, out = {};
 		for (const [route, seed, floor] of list) {
 			const L = G.DiveGen.layout({ seed, route, floor }), art = G.DiveArt.build(L);
-			out[route + '/' + seed + '/' + floor] = { hash: G.DiveArt.hashOf(art), ms: art.ms, bytes: art.bytes, w: art.w, h: art.h };
+			out[route + '/' + seed + '/' + floor] = { hash: G.DiveArt.hashOf(art), ms: art.ms, bytes: art.bytes, bands: art.bandBytes || 0, w: art.w, h: art.h };
 		}
 		return { out, rnd: window.__t.rnd - r0 };
 	}, list);
@@ -186,7 +192,7 @@ try {
 	A(Object.keys(gold).length === FLOORS.length && !gdiff.length, `golden pixels: 3 floors a route match the fixture (${FLOORS.length})`, gdiff.slice(0, 6).join(' ') + (gdiff.length ? '  (a deliberate change of the look: --record)' : ''));
 	const msAll = Object.values(ba.out || {}).map(v => v.ms), mean = msAll.reduce((x, y) => x + y, 0) / Math.max(1, msAll.length), mx = Math.max(...msAll);
 	const mem = ba.out && Object.values(ba.out)[0];
-	console.log(`     bake: mean ${mean.toFixed(1)} ms, max ${mx.toFixed(1)} ms over ${msAll.length} floors; ${mem && mem.w} x ${mem && mem.h} px, ${(mem && mem.bytes / 1048576).toFixed(2)} MB a floor (canvas + pattern)`);
+	console.log(`     bake: mean ${mean.toFixed(1)} ms, max ${mx.toFixed(1)} ms over ${msAll.length} floors; ${mem && mem.w} x ${mem && mem.h} px, ${(mem && mem.bytes / 1048576).toFixed(2)} MB a floor (canvas + pattern)` + (mem && mem.bands ? `, ${(mem.bands / 1048576).toFixed(2)} MB canopy bands + occ` : ''));
 	A(mean < 1200 && mem && mem.bytes < 3.2 * 1048576, `the bake is a one-off per floor: mean ${mean.toFixed(0)} ms (budget 1200 ms headless), ${(mem && mem.bytes / 1048576).toFixed(2)} MB`);
 
 	// the minimap shows each route in its own colours (dive-gen.js zone() -> G.DiveArt.mini): the crater warm, not Mt. Moon's violet
@@ -214,19 +220,113 @@ try {
 		G.Expedition.diveRoute('forest'); G.Expedition.diveStart(1);
 		await G.Flow.play('exp-dive');
 		const b0 = G.DiveArt.stats.bakes;
+		H.hooks = { bands: 0, sil: 0 };   // (DV3) the two canopy gates game.drawScene opens, counted
+		H._db = G.ExpDive.bands; H._ds = G.ExpDive.drawSilhouettes;
+		G.ExpDive.bands = cam => { H.hooks.bands++; return H._db(cam); };
+		G.ExpDive.drawSilhouettes = (c, ents) => { H.hooks.sil++; return H._ds(c, ents); };
 		H.thaw();
 		await new Promise(r => setTimeout(r, 700));
 		H.freeze();
 		const z = G.World.zone, z2 = G.ExpClassic.build(G.World.seed, z.map, z.zone);
-		return { dive: !!(z && z.dive), baked: G.DiveArt.stats.bakes - b0, cached: G.DiveArt.cached, hash: z.hash === z2.hash, last: G.DiveArt.stats.last };
+		return { dive: !!(z && z.dive), baked: G.DiveArt.stats.bakes - b0, cached: G.DiveArt.cached, hash: z.hash === z2.hash, last: G.DiveArt.stats.last, hooks: { ...H.hooks } };
 	});
 	A(run.dive && run.baked >= 1 && run.cached >= 1 && run.hash, 'a Dive run: the world draws the baked floor (one bake on the floor\'s first frame), the zone hash as built', JSON.stringify(run));
 	A(!fetched.some(u => u.startsWith('/overworld/data/tilesets/')), 'the painter needs no tileset: nothing fetched from /overworld/data/tilesets', fetched.filter(u => /tilesets/.test(u)).slice(0, 3).join(' '));
 	console.log(`     in-game bake: ${run.last && run.last.ms} ms (parts ${run.last && JSON.stringify(run.last.parts)})`);
 
-	// the base modes never reach it: no zone, no Dive art
-	const base = await E(a.page, () => { G.Game.quit && G.Game.quit(); return { zone: G.World.zone && G.World.zone.dive ? 'dive' : null }; });
-	A(!base.error, 'quitting the run leaves the page well', JSON.stringify(base));
+	// ======================== 5. the canopy: the lip, the occlusion, the silhouette (DV3)
+	// (a) the bake data. The lush routes (forest, marsh, fungal) bake bands + occ; the rock routes bake none at all. The
+	//     lip never lands on a wall, and every px it covers sits north of the wall edge it hangs from (occ > the px's own
+	//     y): only that side's band sorts over an actor standing there. Both pages bake the same lip (hashBands).
+	const canopyOf = (page, routes) => E(page, routes => {
+		const out = {};
+		for (const route of routes) {
+			const L = G.DiveGen.layout({ seed: 4242, route, floor: 3 }), art = G.DiveArt.build(L, { keepMask: true });
+			const M = art.mask, W = art.w, occ = art.occ;
+			let occN = 0, onWall = 0, occl = 0;
+			if (occ) for (let i = 0; i < occ.length; i++) if (occ[i]) { occN++; if (M[i] === 1) onWall++; if (occ[i] > ((i / W) | 0)) occl++; }
+			out[route] = { strips: art.bands ? art.bands.length : 0, occN, onWall, occl, bytes: art.bandBytes || 0, hash: G.DiveArt.hashBands(art) };
+		}
+		return out;
+	}, routes);
+	const LUSH = ['forest', 'marsh', 'fungal'], ROCK = ['canyon', 'crater'], CR = LUSH.concat(ROCK);
+	const cA = await canopyOf(a.page, CR), cB = await canopyOf(b.page, CR);
+	A(cA && !cA.error && LUSH.every(r => cA[r].strips > 0 && cA[r].occN > 100 && cA[r].occl > 0 && cA[r].bytes > 0),
+		'the lush routes bake a canopy: bands + occ, every covered px north of its wall edge (occ > its y)', JSON.stringify(cA));
+	A(ROCK.every(r => cA[r] && cA[r].strips === 0 && cA[r].occN === 0 && cA[r].bytes === 0 && cA[r].hash === 'none'),
+		'the rock routes bake no canopy at all (no bands, no occ, hashBands "none")', JSON.stringify(cA && ROCK.map(r => [r, cA[r]])));
+	A(CR.every(r => cA[r] && cA[r].onWall === 0), 'the lip never lands on a wall (the mask invariant)', JSON.stringify(cA));
+	A(CR.every(r => cB && cB[r] && cB[r].hash === cA[r].hash), 'two pages bake the same canopy lip (hashBands)', JSON.stringify(cB));
+	A(LUSH.every(r => cA[r].bytes < 2.6 * 1048576),
+		`the canopy fits its budget: ${LUSH.map(r => (cA[r].bytes / 1048576).toFixed(2)).join(' / ')} MB a floor (budget 2.6)`);
+
+	// (b) the silhouette: an actor whose feet are on a north lip comes back over the canopy, tinted gold for you and pale
+	//     blue for anyone else; the same actor on open ground draws nothing. Offscreen 240 x 240, the world transform.
+	const sil = await E(a.page, () => {
+		const z = G.World.zone, L = z && z.dive, art = G.DiveArt.forZone(z);
+		if (!L || !art || !art.occ || !art.bands || !art.bands.length) return { err: 'no canopy art' };
+		const W = art.w, occ = art.occ, TP = G.DiveArt.TP, MG = G.DiveArt.MG;
+		const kind = (tx, ty) => (tx < 0 || ty < 0 || tx >= L.w || ty >= L.h ? 1 : L.kind[ty * L.w + tx]);
+		let behind = null, open = null;
+		for (let ay = 1; ay < art.h - 1 && !(behind && open); ay++) for (let ax = 1; ax < W - 1; ax++) {
+			const tx = ((ax / TP) | 0) - MG, ty = ((ay / TP) | 0) - MG;
+			if (kind(tx, ty) !== 0) continue;
+			const v = occ[ay * W + ax];
+			if (!behind && v > ay) behind = [ax, ay];
+			if (!open && !v) {   // open ground: two tiles from any wall, and nothing occluding the 48 art px over the feet
+				let clear = true;
+				for (let dy = -2; dy <= 1 && clear; dy++) for (let dx = -2; dx <= 2; dx++) if (kind(tx + dx, ty + dy) !== 0) { clear = false; break; }
+				if (clear) { let hid = false; for (let d = 0; d < 48 && ay - d >= 0 && !hid; d++) hid = occ[(ay - d) * W + ax] > ay; if (!hid) open = [ax, ay]; }
+			}
+		}
+		if (!behind || !open) return { err: 'no spots', behind, open };
+		const PX = G.Sprites.PX, pl = G.Game.player, ox = art.ox, oy = art.oy;
+		const sx0 = pl.x, sy0 = pl.y;
+		const cv = document.createElement('canvas'); cv.width = 240; cv.height = 240;
+		const ctx = cv.getContext('2d', { willReadFrequently: true });
+		const count = c => {
+			const d = ctx.getImageData(0, 0, 240, 240).data; let n = 0;
+			for (let i = 0; i < d.length; i += 4) if (d[i + 3] > 16 && Math.abs(d[i] - c[0]) < 24 && Math.abs(d[i + 1] - c[1]) < 24 && Math.abs(d[i + 2] - c[2]) < 24) n++;
+			return n;
+		};
+		const GOLD = [255, 226, 122], BLUE = [191, 230, 255];
+		const at = (ents, spot) => {
+			for (const e of ents) { e.x = (ox + spot[0]) * PX; e.y = (oy + spot[1]) * PX; }
+			ctx.clearRect(0, 0, 240, 240); ctx.save();
+			ctx.translate(120 - (ox + spot[0]) * PX, 120 - (oy + spot[1]) * PX);
+			G.ExpDive.drawSilhouettes(ctx, ents);
+			ctx.restore();
+			return { gold: count(GOLD), blue: count(BLUE) };
+		};
+		const other = { x: 0, y: 0, anim: pl.anim };
+		const r = { behind: at([pl], behind), behindOther: at([other], behind), open: at([pl], open), openOther: at([other], open), spots: { behind, open } };
+		pl.x = sx0; pl.y = sy0;
+		return r;
+	});
+	A(sil && !sil.err && sil.behind.gold > 50 && sil.behind.blue === 0 && sil.behindOther.blue > 50 && sil.behindOther.gold === 0,
+		'an actor the canopy hides comes back over it: gold for you, pale blue for anyone else', JSON.stringify(sil));
+	A(sil && !sil.err && sil.open.gold === 0 && sil.open.blue === 0 && sil.openOther.gold === 0 && sil.openOther.blue === 0,
+		'the same actor on open ground draws no silhouette at all', JSON.stringify(sil));
+	A(run.hooks && run.hooks.bands > 0 && run.hooks.sil > 0,
+		'in a Dive run both canopy gates fire every frame: bands pushed into the y-sort, silhouettes drawn', JSON.stringify(run.hooks));
+
+	// (d) the base modes never reach it: quitting the Dive run and playing a Normal one must open neither gate
+	const base = await E(a.page, async () => {
+		const H = window.__t, wait = ms => new Promise(r => setTimeout(r, ms));
+		H.thaw();
+		G.Game.quit && G.Game.quit();
+		await wait(250);
+		G.Game.toUI(); G.UI.hideAll(); G.Flow.goMenu();
+		await wait(250);
+		G.Flow.play('normal');
+		H.freeze();                       // the transition's frames are not the run's: snapshot after they settle
+		const before = { ...(H.hooks || {}) };
+		H.thaw(); await wait(450); H.freeze();
+		return { zone: G.World.zone && G.World.zone.dive ? 'dive' : null, mode: G.Game.mode, before, after: { ...(H.hooks || {}) } };
+	});
+	A(!base.error && base.mode === 'normal' && base.zone === null, 'quitting the run leaves the page well', JSON.stringify(base));
+	A(!base.error && base.after.bands === base.before.bands && base.after.sil === base.before.sil,
+		'a Normal run never reaches the canopy gates (no bands pushed, no silhouettes drawn)', JSON.stringify(base));
 
 	// a page whose /overworld/data/ 404s still paints (no assets needed), with no page errors
 	block404 = true;
@@ -263,6 +363,49 @@ try {
 			console.log(`     screenshot: ${file} (floor ${ok})`);
 			await d.ctx.close();
 		}
+		// DV3: the canopy lip with you standing behind a wall under it (the tinted silhouette over the overhang)
+		const d = await bootPage();
+		await E(d.page, async () => {
+			const H = window.__t;
+			G.Expedition.diveRoute('forest'); G.Expedition.diveStart(1);
+			await G.Flow.play('exp-dive');
+			const pl = G.Game.player; pl.gainXp = () => 0; pl.hurt = () => {};
+			H.thaw();
+		});
+		await sleep(1500);
+		const spot = await E(d.page, () => {
+			const z = G.World.zone, L = z && z.dive, art = G.DiveArt.forZone(z);
+			if (!L || !art || !art.occ) return null;
+			const W = art.w, occ = art.occ, TP = G.DiveArt.TP, MG = G.DiveArt.MG;
+			for (let ay = 1; ay < art.h - 1; ay++) for (let ax = 1; ax < W - 1; ax++) {
+				const tx = ((ax / TP) | 0) - MG, ty = ((ay / TP) | 0) - MG;
+				if (tx < 2 || ty < 2 || tx >= L.w - 2 || ty >= L.h - 2 || L.kind[ty * L.w + tx] !== 0) continue;
+				if (occ[ay * W + ax] > ay) {   // a north lip: the canopy hangs over this floor px
+					const pl = G.Game.player;
+					pl.x = (art.ox + ax) * G.Sprites.PX; pl.y = (art.oy + ay) * G.Sprites.PX;
+					pl.__hx = pl.x; pl.__hy = pl.y;
+					G.Camera.x = pl.x; G.Camera.y = pl.y;
+					// hold him there for the shot: the collision would push him off the lip
+					const wc = G.World.collide;
+					G.World.collide = function (e) { const r = wc.call(this, e); if (e === pl) { e.x = pl.__hx; e.y = pl.__hy; } return r; };
+					return [ax, ay];
+				}
+			}
+			return null;
+		});
+		await sleep(700);
+		const diag = await E(d.page, () => {
+			const pl = G.Game.player, art = G.DiveArt.forZone(G.World.zone);
+			const PX = G.Sprites.PX, fx = Math.round(pl.x / PX - art.ox), fy = Math.round(pl.y / PX - art.oy);
+			const occ = art.occ, W = art.w;
+			let hid = false;
+			for (let dd = 0; dd <= Math.min(fy, 64) && !hid; dd++) hid = occ[(fy - dd) * W + fx] > fy;
+			return { fx, fy, hid, at: occ[fy * W + fx], held: Math.abs(pl.x - pl.__hx) < 0.01 && Math.abs(pl.y - pl.__hy) < 0.01 };
+		});
+		const sfile = path.join(SHOTS, 'dv3_silhouette.png');
+		await d.page.screenshot({ path: sfile });
+		console.log(`     screenshot: ${sfile} (the lip at ${spot}; held ${JSON.stringify(diag)})`);
+		await d.ctx.close();
 	}
 	A(errors.length === 0, 'no page errors', errors.slice(0, 5).join(' | '));
 	await a.ctx.close(); await b.ctx.close();
