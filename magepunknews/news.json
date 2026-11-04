@@ -371,9 +371,213 @@
 			"ch": 190,
 			"w": 994,
 			"h": 380
+		},
+		"@poke_AtlasJokersBasicGen05391": {
+			"src": "/micatro/mods/pokermon/assets/2x/Basic%20Series/AtlasJokersBasicGen05-391.png",
+			"cw": 142,
+			"ch": 190,
+			"w": 1704,
+			"h": 2090
+		},
+		"@poke_AtlasJokersBasicGen06391": {
+			"src": "/micatro/mods/pokermon/assets/2x/Basic%20Series/AtlasJokersBasicGen06-391.png",
+			"cw": 142,
+			"ch": 190,
+			"w": 1704,
+			"h": 2850
 		}
 	},
 	"entries": [
+		{
+			"sha": "c157a28",
+			"date": "2026-11-03",
+			"kind": "micatro",
+			"title": "Pokermon r83: regional batch C, the Hisuian and Paldean forms (+ Hisuian Sneasel / Sneasler obtainable)",
+			"body": "",
+			"cards": [],
+			"micatroMods": [
+				{
+					"id": "pokermon",
+					"name": "Pokermon",
+					"added": [
+						{
+							"key": "j_poke_hisuian_growlithe",
+							"name": "Hisuian Growlithe",
+							"set": "Joker",
+							"rarity": "common",
+							"cost": 5,
+							"atlas": "@poke_AtlasJokersBasicGen01391",
+							"pos": {
+								"x": 14,
+								"y": 5
+							}
+						},
+						{
+							"key": "j_poke_hisuian_arcanine",
+							"name": "Hisuian Arcanine",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 8,
+							"atlas": "@poke_AtlasJokersBasicGen01391",
+							"pos": {
+								"x": 0,
+								"y": 6
+							}
+						},
+						{
+							"key": "j_poke_hisuian_voltorb",
+							"name": "Hisuian Voltorb",
+							"set": "Joker",
+							"rarity": "common",
+							"cost": 5,
+							"atlas": "@poke_AtlasJokersBasicGen01391",
+							"pos": {
+								"x": 2,
+								"y": 6
+							}
+						},
+						{
+							"key": "j_poke_hisuian_electrode",
+							"name": "Hisuian Electrode",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 8,
+							"atlas": "@poke_AtlasJokersBasicGen01391",
+							"pos": {
+								"x": 4,
+								"y": 6
+							}
+						},
+						{
+							"key": "j_poke_paldean_tauros",
+							"name": "Paldean Tauros",
+							"set": "Joker",
+							"rarity": "rare",
+							"cost": 7,
+							"atlas": "@poke_AtlasJokersBasicGen01391",
+							"pos": {
+								"x": 6,
+								"y": 6
+							}
+						},
+						{
+							"key": "j_poke_hisuian_typhlosion",
+							"name": "Hisuian Typhlosion",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 10,
+							"atlas": "@poke_AtlasJokersBasicGen02391",
+							"pos": {
+								"x": 0,
+								"y": 5
+							}
+						},
+						{
+							"key": "j_poke_paldean_wooper",
+							"name": "Paldean Wooper",
+							"set": "Joker",
+							"rarity": "common",
+							"cost": 5,
+							"atlas": "@poke_AtlasJokersBasicGen02391",
+							"pos": {
+								"x": 6,
+								"y": 5
+							}
+						},
+						{
+							"key": "j_poke_hisuian_samurott",
+							"name": "Hisuian Samurott",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 10,
+							"atlas": "@poke_AtlasJokersBasicGen05391",
+							"pos": {
+								"x": 8,
+								"y": 8
+							}
+						},
+						{
+							"key": "j_poke_hisuian_lilligant",
+							"name": "Hisuian Lilligant",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 8,
+							"atlas": "@poke_AtlasJokersBasicGen05391",
+							"pos": {
+								"x": 10,
+								"y": 8
+							}
+						},
+						{
+							"key": "j_poke_hisuian_braviary",
+							"name": "Hisuian Braviary",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 8,
+							"atlas": "@poke_AtlasJokersBasicGen05391",
+							"pos": {
+								"x": 4,
+								"y": 9
+							}
+						},
+						{
+							"key": "j_poke_hisuian_avalugg",
+							"name": "Hisuian Avalugg",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 8,
+							"atlas": "@poke_AtlasJokersBasicGen06391",
+							"pos": {
+								"x": 6,
+								"y": 12
+							}
+						},
+						{
+							"key": "j_poke_hisuian_decidueye",
+							"name": "Hisuian Decidueye",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 10,
+							"atlas": "@poke_AtlasJokersBasicGen07391",
+							"pos": {
+								"x": 6,
+								"y": 5
+							}
+						}
+					]
+				},
+				{
+					"id": "nacho",
+					"name": "Nacho's Pokermon Dip",
+					"added": [
+						{
+							"key": "j_nacho_hisuian_sneasel",
+							"name": "HisuianSneasel",
+							"set": "Joker",
+							"rarity": "uncommon",
+							"cost": 6,
+							"atlas": "@poke_AtlasJokersBasicGen02391",
+							"pos": {
+								"x": 4,
+								"y": 5
+							}
+						},
+						{
+							"key": "j_nacho_sneasler",
+							"name": "Sneasler",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 10,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 4,
+								"y": 60
+							}
+						}
+					]
+				}
+			]
+		},
 		{
 			"sha": "12bfe13",
 			"date": "2026-11-03",
