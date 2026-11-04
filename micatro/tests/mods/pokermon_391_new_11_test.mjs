@@ -68,7 +68,9 @@ sec(() => {
   const keys = MODS.pokermon.content.centers.filter((c) => c.set === 'Joker').map((c) => c.key);
   // (b follows a, past any joker from upstream main between them: sub-batch 15b's sit in main's order among 3.9.1's)
   const fromMain = new Set(Object.entries(D391.new_jokers || {}).filter(([, v]) => v.upstream === 'main').map(([n]) => 'j_poke_' + n));
-  const after = (a, b) => { let i = keys.indexOf('j_poke_' + a) + 1; while (fromMain.has(keys[i])) i++; return i > 0 && keys[i] === 'j_poke_' + b; };
+  // (and past the regional forms, Micatro's own: Galarian Zigzagoon / Linoone sit after Linoone)
+  const regional = (k) => /^j_poke_(alolan|galarian|hisuian|paldean)_/.test(k || '');
+  const after = (a, b) => { let i = keys.indexOf('j_poke_' + a) + 1; while (fromMain.has(keys[i]) || regional(keys[i])) i++; return i > 0 && keys[i] === 'j_poke_' + b; };
   ok(after('linoone', 'wurmple') && after('dustox', 'seedot') && after('masquerain', 'shroomish') && after('breloom', 'slakoth')
     && after('hariyama', 'azurill') && after('nosepass', 'skitty') && after('skitty', 'lotad') === false, 'inserted in 3.9.1 file order');
 });
@@ -107,7 +109,7 @@ sec(() => {
 sec(() => {
   // Pools: in_pool (pokemon_in_pool) + the pool_filter hook (one per family, the Gen 3 option); in P_CENTER_POOLS in 3.9.1 order
   start('POOL11');
-  const pool = P_CENTER_POOLS.Joker.map((c) => c.key);
+  const pool = P_CENTER_POOLS.Joker.map((c) => c.key).filter((k) => !/^j_poke_(alolan|galarian|hisuian|paldean)_/.test(k));
   ok(pool.indexOf('j_poke_wurmple') === pool.indexOf('j_poke_linoone') + 1 && pool.includes('j_poke_skitty'), 'the Joker pool holds them, in 3.9.1 order', pool.indexOf('j_poke_wurmple'));
   ok(C('wurmple').in_pool(C('wurmple')) && C('skitty').in_pool(C('skitty')) && pool_filter(C('wurmple'), 'Joker') === undefined, 'Wurmple / Skitty can be rolled');
   ok(C('seedot').in_pool(C('seedot')) === false, 'Seedot waits for a Seed card in the deck (enhancement_gate)');

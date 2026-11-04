@@ -12,9 +12,9 @@
  *             change too: no more glide), and the Ultimate one tier up (js/expedition/ultimates.js tierOfRow). The passive,
  *             the kit and Maturity stay the member's
  *   the look  EXISTING ART ONLY (owner): the overworld battle system's own Mega sprite (overworld/data/pokemon/<spr>: the 48 of
- *             Gen 6-7), drawn at the member's size, mirrored for the right-facing rows (it faces left, like B1c's battle
- *             fronts), with the walking hop and the hurt flash. A Mega without one there (the Legends Z-A ones, the Z forms) is
- *             COMPOSED from the member's own animated sheet. Every Mega carries the same two code-drawn marks: a Mega aura at
+ *             Gen 6-7, and since 2026-11-03 the 45 Legends Z-A / Mega Dimension ones: tools/gen_mega_sprites.py), drawn at
+ *             the member's size, mirrored for the right-facing rows (it faces left, like B1c's battle fronts), with the walking hop
+ *             and the hurt flash. A Mega without one (none now; kept for safety) is COMPOSED from the member's own animated sheet. Every Mega carries the same two code-drawn marks: a Mega aura at
  *             its feet and the keystone's three-colour sign over its head. Nothing is a placeholder.
  *   sync      the League row's 6th field is the Mega's id (PokéAPI's form id, 0 none): a viewer / co-op puppet takes the
  *             look from it (G.ExpLeague.applyRow). Older readers ignore the field, so the `x` block stays v10.
@@ -23,7 +23,8 @@ G.ExpEN = Object.assign(G.ExpEN || {}, {
   'Mega-{x}': 'Mega {x}', 'MEGAEVOLUCIÓN': 'MEGA EVOLUTION', '¡{x} megaevoluciona a {x}!': '{x} Mega Evolved into {x}!',
   'Todavía no': 'Not yet', 'Sigue como {x}; se ofrece otra vez dentro de {x} niveles': 'Stay as {x}; offered again in {x} levels',
   '¿Megaevoluciona {x}?': 'Mega Evolve {x}?', '{x} · Vida {x} → {x} · definitivo +1': '{x} · HP {x} → {x} · Ultimate +1',
-  'desde Nv. {x}': 'from Lv {x}', 'Liga: {x}': 'League: {x}'
+  'desde Nv. {x}': 'from Lv {x}', 'Liga: {x}': 'League: {x}',
+  '{x} Primigenio': 'Primal {x}', 'REGRESIÓN PRIMIGENIA': 'PRIMAL REVERSION', '¡{x} regresa a su estado primigenio: {x}!': '{x} underwent Primal Reversion into {x}!'
 });
 G.I18n.add(G.ExpEN);
 
@@ -43,8 +44,11 @@ G.ExpMega = (() => {
   const BY = {}, OF = {};
   for (const e of D) { BY[e.id] = e; (OF[e.sp] = OF[e.sp] || []).push(e); }
   const baseName = sp => (G.DEX_BY[sp] ? T.t(G.DEX_BY[sp].name) : '#' + sp);
-  /** "Mega Charizard X" (es "Mega-Charizard X"). */
-  const nameOf = e => F('Mega-{x}', baseName(e.sp) + (e.suf ? ' ' + e.suf : ''));
+  /** "Mega Charizard X" (es "Mega-Charizard X"); a Primal (kind 'primal', Kyogre / Groudon): "Primal Kyogre". */
+  const nameOf = e => (e.kind === 'primal' ? F('{x} Primigenio', baseName(e.sp)) : F('Mega-{x}', baseName(e.sp) + (e.suf ? ' ' + e.suf : '')));
+  /** The card's tag and the announcement: a Primal reverts, a Mega Mega Evolves (otherwise the two work the same). */
+  const tagOf = e => T.t(e && e.kind === 'primal' ? 'REGRESIÓN PRIMIGENIA' : 'MEGAEVOLUCIÓN');
+  const sayOf = (e, from) => F(e && e.kind === 'primal' ? '¡{x} regresa a su estado primigenio: {x}!' : '¡{x} megaevoluciona a {x}!', from, nameOf(e));
   /** The Megas species sp can become. */
   const of = sp => OF[sp] || [];
   /** The Megas of League member m's line (any stage). */
@@ -163,5 +167,5 @@ G.ExpMega = (() => {
   }
   style();
 
-  return { K, D, BY, OF, of, lineOf, nameOf, textOf, srcOf, img, preload, look, cardArt, Anim, aura, emblem };
+  return { K, D, BY, OF, of, lineOf, nameOf, tagOf, sayOf, textOf, srcOf, img, preload, look, cardArt, Anim, aura, emblem };
 })();

@@ -1,5 +1,6 @@
 // ow_progression.js — progression: the sealed champions, badges + the Elite Four gate + the champion crown, cross-region tier rewards, the Grand Champion finale, the level curve and the level cap.
 // Split out of main.js (Plans/MAIN_JS_SPLIT_PLAN.md, phase 3); cut and paste only.
+import { grantKeyStone } from './ow_mega.js';
 import { phoneAfterVictory } from './phone.js';
 import * as Badges from './badges.js';
 import * as Bag from './bag.js';
@@ -454,6 +455,9 @@ export function onTrainerDefeated(script, opts) {
 		const tierUp = (earned && Quest.globalTier() > beforeTier) ? Quest.globalTier() : 0;
 		refreshLevelCap(); // the cap is a function of the badges; keep the engine in step
 		syncStoryVars();   // ...and so is VAR_BADGES, which the Victory Road gate reads
+		// the 8th badge's leader also hands over the KEY STONE (Mega Evolution)
+		const keyStone = earned ? grantKeyStone(slice, info.id) : null;
+		if (keyStone && silent) hud.textContent = keyStone.slice(0, keyStone.indexOf('!') + 1);
 		if (earned && !silent) {
 			const n = Badges.count(slice);
 			dialog.open(slice === 'JOHKANTO'
@@ -461,7 +465,10 @@ export function onTrainerDefeated(script, opts) {
 					+ (n >= 8 ? '\n\nAll 16 badges! They say the strongest\ntrainer waits atop MT SILVER...' : '')
 				: `You earned the ${info.name}!\n\nBadges: ${n}/8`
 					+ (n >= 8 ? '\n\nWith all 8 badges, the POKeMON LEAGUE\nnow awaits beyond Victory Road!' : ''),
-				tierUp ? () => showTierRewardDialog(tierUp) : undefined); // chain the tier reward after the badge toast
+				() => {
+					const tier = tierUp ? () => showTierRewardDialog(tierUp) : undefined; // chain the tier reward after the badge toast
+					if (keyStone) dialog.open(keyStone, tier); else tier?.();
+				});
 		} else if (tierUp) {
 			// scripted (silent) win: grant quietly with a HUD line
 			const lbl = grantTierReward(tierUp);

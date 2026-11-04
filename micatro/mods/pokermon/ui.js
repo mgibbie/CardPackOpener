@@ -374,6 +374,10 @@ function ownFace(d0) {
   // Gen 9 batch 1 (the owner's): Squawkabilly's plumage (the Gen 9 sheet)
   const g9 = p && GEN9_FORM_SPRITES[d.center] && GEN9_FORM_SPRITES[d.center][p.form];
   if (g9) return { ...d, atlas: P_CENTERS[d.center].atlas, pos: g9 };
+  // A form named on the center itself (regional batch B: Galarian Darmanitan's Zen Mode, upstream's unlisted Gen 5 {2,8}): poke_form_art
+  // {form: {atlas, pos}} (its Shiny twin: basicShiny, the sheet's Shiny twin)
+  const fa = p && P_CENTERS[d0.center] && P_CENTERS[d0.center].poke_form_art && P_CENTERS[d0.center].poke_form_art[p.form];
+  if (fa) return { ...d0, atlas: fa.atlas, pos: fa.pos, soul_pos: undefined };
   // Unown: its form's letter floats over the card
   const u = withUnownForm(d);
   return u === d0 ? null : u;

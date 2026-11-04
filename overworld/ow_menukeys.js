@@ -28,6 +28,7 @@ import { openPartyAction, saveFlute, toggleBike, useFieldMove } from './ow_field
 import { cardsKey, daycareKey, deckSelectKey, dexKey, friendsKey, friendsMenu, mailMenu, moveShopKey, nameRaterKey, npcTradeKey, playerMenuKey, questKey, runKey, startKey } from './ow_screens.js';
 import { REPEL_LAST_KEY, interact, setRepel, useGadget } from './ow_input.js';
 import { cycleForm, formsOf } from './ow_scaling.js';
+import { pickEvo, charmRegion } from './regional_forms.js';
 import { startWildBattle } from './ow_places.js';
 import { levelCapNow, playerRegion } from './ow_progression.js';
 import { gcKey, gcMenu, vfKey, vfMenu } from './ow_gamecorner.js';
@@ -38,6 +39,7 @@ import { flyTo, moveToMap } from './ow_transitions.js';
 import { fading } from './ow_fade.js';
 import { unownPuzzle, unownPuzzleKey } from './unown_puzzle.js';
 import { cardFlip, cardFlipKey } from './minigames/cardflip/cardflip.js';
+import * as Clock from './clock.js';
 import {
 	STARTERS, refreshObjective, starterMenu,
 } from './main.js';
@@ -406,6 +408,11 @@ function castRod(id, item) {
 // evolve the Sinistea / Poltchageist you can actually own.
 const STONE_ALIAS = { chippedpot: 'crackedpot', masterpieceteacup: 'unremarkableteacup' };
 const evoParam = id => STONE_ALIAS[id] || id;
+// the evolution `id` (a stone / evolution item) triggers on this mon, or null
+export function itemEvoFor(mon, id) {
+	return pickEvo(mon, battle.data.extra?.[mon.speciesId]?.evos, battle.data,
+		e => e.type === 'item' && e.param === evoParam(id), charmRegion(mon, Bag.ITEMS), { isNight: Clock.isNight() });
+}
 
 function bagKey(k) {
 	const entries = bagEntries();
@@ -554,12 +561,11 @@ function bagKey(k) {
 					for (const mv of mon.moves) mv.pp = Math.min(mv.maxPp, mv.pp + item.amount);
 					saveParty(S.party);
 					bagMenu.picking = false;
-				} else if ((item?.kind === 'stone' || item?.kind === 'held') && mon.curHP > 0
-					&& (battle.data.extra?.[mon.speciesId]?.evos || [])
-						.some(e => e.type === 'item' && e.param === evoParam(id) && battle.data.species[e.target])) {
-					// an evolution item the selected species responds to
-					const evo = battle.data.extra[mon.speciesId].evos
-						.find(e => e.type === 'item' && e.param === evoParam(id) && battle.data.species[e.target]);
+				} else if ((item?.kind === 'stone' || item?.kind === 'held') && mon.curHP > 0 && itemEvoFor(mon, id)) {
+					// an evolution item the selected species responds to (a held
+					// regional CHARM picks the regional branch: regional_forms.js; any
+					// other tie is broken canonically by evo_pick.js, not list order)
+					const evo = itemEvoFor(mon, id);
 					Bag.consume(id);
 					bagMenu.picking = false;
 					bagMenu.open = false;

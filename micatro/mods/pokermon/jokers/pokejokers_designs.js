@@ -963,7 +963,7 @@ const legends = (name) => ((G.jokers && G.jokers.cards) || []).filter((j) => !j.
  *  a side with no Primal; Primal against Primal, the cards held decide as before; Rayquaza still calms everything. The Orbs reach the
  *  pools (and the Ancient / Future Packs) only on rules rev PRIMAL_REV, so a run recorded before it can't hold a Primal: with none held,
  *  every rule below reads exactly as it did. */
-export const PRIMAL_REV = 82;
+export const PRIMAL_REV = 83;
 export const PRIMAL_SIDES = { kyogre: ['j_poke_kyogre', 'j_poke_primal_kyogre'], groudon: ['j_poke_groudon', 'j_poke_primal_groudon'] };
 /** Undebuffed owned jokers of this side (Kyogre / Groudon and its Primal). */
 const side = (name) => ((G.jokers && G.jokers.cards) || []).filter((j) => !j.debuff && PRIMAL_SIDES[name].includes(j.config.center.key));
