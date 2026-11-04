@@ -61,6 +61,13 @@ export const ITEMS = {
 	leppaberry:  { name: 'LEPPA BERRY',  price: 200,  kind: 'held', held: { ppRestore: 10 } },
 	leftovers:   { name: 'LEFTOVERS',    price: 3000, kind: 'held', held: { endHealFrac: 1 / 16 } },
 	everstone:   { name: 'EVERSTONE',    price: 200,  kind: 'held', held: {} }, // breeding: the holder's nature passes to the egg
+	// regional CHARMS (owner-approved stand-in for "evolve while in that region"):
+	// a holder evolves into its species' regional branch (regional_forms.js
+	// pickEvo); held, never consumed. Not for sale: found on JohKanto's postgame
+	// routes (items.js CODE_ITEM_BALLS).
+	alolacharm:  { name: 'ALOLA CHARM',  price: 0, kind: 'held', held: { evoRegion: 'alola' } },
+	galarcharm:  { name: 'GALAR CHARM',  price: 0, kind: 'held', held: { evoRegion: 'galar' } },
+	hisuicharm:  { name: 'HISUI CHARM',  price: 0, kind: 'held', held: { evoRegion: 'hisui' } },
 	destinyknot: { name: 'DESTINY KNOT', price: 3000, kind: 'held', held: {} }, // breeding: 5 IVs inherit instead of 3
 	// nature mints (the five most-wanted) + the ability swapper
 	adamantmint: { name: 'ADAMANT MINT', price: 4000, kind: 'mint', nature: 'adamant' },
@@ -445,8 +452,8 @@ export const ITEMS = {
 // MEGA EVOLUTION (mega.js): the KEY STONE (the 8th gym leader hands it over,
 // ow_mega.js), a MEGA STONE per Mega (held; battle.js reads `megaStone` — sold at
 // the League counters to that region's champion) and the Primal ORBS (held;
-// `primalOrb` — the old couple atop MT. PYRE). Only the enabled wave is defined:
-// a wave-2 stone is not an item until mega.js MEGA_WAVE2_ENABLED turns it on.
+// `primalOrb` — the old couple atop MT. PYRE). Only an enabled wave is defined
+// (mega.js MEGA_WAVE2_ENABLED gates the Legends Z-A / Mega Dimension stones).
 ITEMS[KEY_STONE] = { name: 'KEY STONE', price: 0, kind: 'key' };
 for (const id of ENABLED_STONES) ITEMS[id] = { name: MEGA_STONES[id].name, price: MEGA_STONE_PRICE, kind: 'held', held: { megaStone: true } };
 for (const [id, o] of Object.entries(PRIMAL_ORBS)) ITEMS[id] = { name: o.name, price: 0, kind: 'held', held: { primalOrb: true } };

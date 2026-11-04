@@ -1,0 +1,748 @@
+{
+ "generated": "tools/gen_mega_sprites.py",
+ "about": "Every Mega / Primal forme (Showdown pokedex.ts) and its battle sprite numbers in overworld/data/pokemon (front s<n>.png, back s<n>-b.png). wave 1 = X/Y, ORAS, Primal (fronts from the Essentials packs); wave 2 = Legends Z-A + Mega Dimension (src pokeapi = PokeAPI/sprites by kyledovey, composed = built from the official Legends Z-A renders).",
+ "megas": [
+  {
+   "name": "Venusaur-Mega",
+   "num": 3,
+   "sprite": "s97.png",
+   "pokeapi": 10033,
+   "wave": 1
+  },
+  {
+   "name": "Charizard-Mega-X",
+   "num": 6,
+   "sprite": "s193.png",
+   "pokeapi": 10034,
+   "wave": 1
+  },
+  {
+   "name": "Charizard-Mega-Y",
+   "num": 6,
+   "sprite": "s194.png",
+   "pokeapi": 10035,
+   "wave": 1
+  },
+  {
+   "name": "Blastoise-Mega",
+   "num": 9,
+   "sprite": "s289.png",
+   "pokeapi": 10036,
+   "wave": 1
+  },
+  {
+   "name": "Beedrill-Mega",
+   "num": 15,
+   "sprite": "s481.png",
+   "pokeapi": 10090,
+   "wave": 1
+  },
+  {
+   "name": "Pidgeot-Mega",
+   "num": 18,
+   "sprite": "s577.png",
+   "pokeapi": 10073,
+   "wave": 1
+  },
+  {
+   "name": "Raichu-Mega-X",
+   "num": 26,
+   "sprite": "s834.png",
+   "pokeapi": 10304,
+   "wave": 2,
+   "src": "pokeapi"
+  },
+  {
+   "name": "Raichu-Mega-Y",
+   "num": 26,
+   "sprite": "s835.png",
+   "pokeapi": 10305,
+   "wave": 2,
+   "src": "pokeapi"
+  },
+  {
+   "name": "Clefable-Mega",
+   "num": 36,
+   "sprite": "s1153.png",
+   "pokeapi": 10278,
+   "wave": 2,
+   "src": "pokeapi"
+  },
+  {
+   "name": "Alakazam-Mega",
+   "num": 65,
+   "sprite": "s2081.png",
+   "pokeapi": 10037,
+   "wave": 1
+  },
+  {
+   "name": "Victreebel-Mega",
+   "num": 71,
+   "sprite": "s2273.png",
+   "pokeapi": 10279,
+   "wave": 2,
+   "src": "pokeapi"
+  },
+  {
+   "name": "Slowbro-Mega",
+   "num": 80,
+   "sprite": "s2561.png",
+   "pokeapi": 10071,
+   "wave": 1
+  },
+  {
+   "name": "Gengar-Mega",
+   "num": 94,
+   "sprite": "s3009.png",
+   "pokeapi": 10038,
+   "wave": 1
+  },
+  {
+   "name": "Kangaskhan-Mega",
+   "num": 115,
+   "sprite": "s3681.png",
+   "pokeapi": 10039,
+   "wave": 1
+  },
+  {
+   "name": "Starmie-Mega",
+   "num": 121,
+   "sprite": "s3873.png",
+   "pokeapi": 10280,
+   "wave": 2,
+   "src": "pokeapi"
+  },
+  {
+   "name": "Pinsir-Mega",
+   "num": 127,
+   "sprite": "s4065.png",
+   "pokeapi": 10040,
+   "wave": 1
+  },
+  {
+   "name": "Gyarados-Mega",
+   "num": 130,
+   "sprite": "s4161.png",
+   "pokeapi": 10041,
+   "wave": 1
+  },
+  {
+   "name": "Aerodactyl-Mega",
+   "num": 142,
+   "sprite": "s4545.png",
+   "pokeapi": 10042,
+   "wave": 1
+  },
+  {
+   "name": "Dragonite-Mega",
+   "num": 149,
+   "sprite": "s4769.png",
+   "pokeapi": 10281,
+   "wave": 2,
+   "src": "pokeapi"
+  },
+  {
+   "name": "Mewtwo-Mega-X",
+   "num": 150,
+   "sprite": "s4801.png",
+   "pokeapi": 10043,
+   "wave": 1
+  },
+  {
+   "name": "Mewtwo-Mega-Y",
+   "num": 150,
+   "sprite": "s4802.png",
+   "pokeapi": 10044,
+   "wave": 1
+  },
+  {
+   "name": "Meganium-Mega",
+   "num": 154,
+   "sprite": "s4929.png",
+   "pokeapi": 10282,
+   "wave": 2,
+   "src": "pokeapi"
+  },
+  {
+   "name": "Feraligatr-Mega",
+   "num": 160,
+   "sprite": "s5121.png",
+   "pokeapi": 10283,
+   "wave": 2,
+   "src": "pokeapi"
+  },
+  {
+   "name": "Ampharos-Mega",
+   "num": 181,
+   "sprite": "s5793.png",
+   "pokeapi": 10045,
+   "wave": 1
+  },
+  {
+   "name": "Steelix-Mega",
+   "num": 208,
+   "sprite": "s6657.png",
+   "pokeapi": 10072,
+   "wave": 1
+  },
+  {
+   "name": "Scizor-Mega",
+   "num": 212,
+   "sprite": "s6785.png",
+   "pokeapi": 10046,
+   "wave": 1
+  },
+  {
+   "name": "Heracross-Mega",
+   "num": 214,
+   "sprite": "s6849.png",
+   "pokeapi": 10047,
+   "wave": 1
+  },
+  {
+   "name": "Skarmory-Mega",
+   "num": 227,
+   "sprite": "s7265.png",
+   "pokeapi": 10284,
+   "wave": 2,
+   "src": "pokeapi"
+  },
+  {
+   "name": "Houndoom-Mega",
+   "num": 229,
+   "sprite": "s7329.png",
+   "pokeapi": 10048,
+   "wave": 1
+  },
+  {
+   "name": "Tyranitar-Mega",
+   "num": 248,
+   "sprite": "s7937.png",
+   "pokeapi": 10049,
+   "wave": 1
+  },
+  {
+   "name": "Sceptile-Mega",
+   "num": 254,
+   "sprite": "s8129.png",
+   "pokeapi": 10065,
+   "wave": 1
+  },
+  {
+   "name": "Blaziken-Mega",
+   "num": 257,
+   "sprite": "s8225.png",
+   "pokeapi": 10050,
+   "wave": 1
+  },
+  {
+   "name": "Swampert-Mega",
+   "num": 260,
+   "sprite": "s8321.png",
+   "pokeapi": 10064,
+   "wave": 1
+  },
+  {
+   "name": "Gardevoir-Mega",
+   "num": 282,
+   "sprite": "s9025.png",
+   "pokeapi": 10051,
+   "wave": 1
+  },
+  {
+   "name": "Sableye-Mega",
+   "num": 302,
+   "sprite": "s9665.png",
+   "pokeapi": 10066,
+   "wave": 1
+  },
+  {
+   "name": "Mawile-Mega",
+   "num": 303,
+   "sprite": "s9697.png",
+   "pokeapi": 10052,
+   "wave": 1
+  },
+  {
+   "name": "Aggron-Mega",
+   "num": 306,
+   "sprite": "s9793.png",
+   "pokeapi": 10053,
+   "wave": 1
+  },
+  {
+   "name": "Medicham-Mega",
+   "num": 308,
+   "sprite": "s9857.png",
+   "pokeapi": 10054,
+   "wave": 1
+  },
+  {
+   "name": "Manectric-Mega",
+   "num": 310,
+   "sprite": "s9921.png",
+   "pokeapi": 10055,
+   "wave": 1
+  },
+  {
+   "name": "Sharpedo-Mega",
+   "num": 319,
+   "sprite": "s10209.png",
+   "pokeapi": 10070,
+   "wave": 1
+  },
+  {
+   "name": "Camerupt-Mega",
+   "num": 323,
+   "sprite": "s10337.png",
+   "pokeapi": 10087,
+   "wave": 1
+  },
+  {
+   "name": "Altaria-Mega",
+   "num": 334,
+   "sprite": "s10689.png",
+   "pokeapi": 10067,
+   "wave": 1
+  },
+  {
+   "name": "Banette-Mega",
+   "num": 354,
+   "sprite": "s11329.png",
+   "pokeapi": 10056,
+   "wave": 1
+  },
+  {
+   "name": "Chimecho-Mega",
+   "num": 358,
+   "sprite": "s11457.png",
+   "pokeapi": 10306,
+   "wave": 2,
+   "src": "pokeapi"
+  },
+  {
+   "name": "Absol-Mega",
+   "num": 359,
+   "sprite": "s11489.png",
+   "pokeapi": 10057,
+   "wave": 1
+  },
+  {
+   "name": "Absol-Mega-Z",
+   "num": 359,
+   "sprite": "s11490.png",
+   "pokeapi": 10307,
+   "wave": 2,
+   "src": "pokeapi"
+  },
+  {
+   "name": "Glalie-Mega",
+   "num": 362,
+   "sprite": "s11585.png",
+   "pokeapi": 10074,
+   "wave": 1
+  },
+  {
+   "name": "Salamence-Mega",
+   "num": 373,
+   "sprite": "s11937.png",
+   "pokeapi": 10089,
+   "wave": 1
+  },
+  {
+   "name": "Metagross-Mega",
+   "num": 376,
+   "sprite": "s12033.png",
+   "pokeapi": 10076,
+   "wave": 1
+  },
+  {
+   "name": "Latias-Mega",
+   "num": 380,
+   "sprite": "s12161.png",
+   "pokeapi": 10062,
+   "wave": 1
+  },
+  {
+   "name": "Latios-Mega",
+   "num": 381,
+   "sprite": "s12193.png",
+   "pokeapi": 10063,
+   "wave": 1
+  },
+  {
+   "name": "Kyogre-Primal",
+   "num": 382,
+   "sprite": "s12225.png",
+   "pokeapi": null,
+   "wave": 1
+  },
+  {
+   "name": "Groudon-Primal",
+   "num": 383,
+   "sprite": "s12257.png",
+   "pokeapi": null,
+   "wave": 1
+  },
+  {
+   "name": "Rayquaza-Mega",
+   "num": 384,
+   "sprite": "s12289.png",
+   "pokeapi": 10079,
+   "wave": 1
+  },
+  {
+   "name": "Staraptor-Mega",
+   "num": 398,
+   "sprite": "s12737.png",
+   "pokeapi": 10308,
+   "wave": 2,
+   "src": "pokeapi"
+  },
+  {
+   "name": "Lopunny-Mega",
+   "num": 428,
+   "sprite": "s13697.png",
+   "pokeapi": 10088,
+   "wave": 1
+  },
+  {
+   "name": "Garchomp-Mega",
+   "num": 445,
+   "sprite": "s14241.png",
+   "pokeapi": 10058,
+   "wave": 1
+  },
+  {
+   "name": "Garchomp-Mega-Z",
+   "num": 445,
+   "sprite": "s14242.png",
+   "pokeapi": 10309,
+   "wave": 2,
+   "src": "pokeapi"
+  },
+  {
+   "name": "Lucario-Mega",
+   "num": 448,
+   "sprite": "s14337.png",
+   "pokeapi": 10059,
+   "wave": 1
+  },
+  {
+   "name": "Lucario-Mega-Z",
+   "num": 448,
+   "sprite": "s14338.png",
+   "pokeapi": 10310,
+   "wave": 2,
+   "src": "pokeapi"
+  },
+  {
+   "name": "Abomasnow-Mega",
+   "num": 460,
+   "sprite": "s14721.png",
+   "pokeapi": 10060,
+   "wave": 1
+  },
+  {
+   "name": "Gallade-Mega",
+   "num": 475,
+   "sprite": "s15201.png",
+   "pokeapi": 10068,
+   "wave": 1
+  },
+  {
+   "name": "Froslass-Mega",
+   "num": 478,
+   "sprite": "s15297.png",
+   "pokeapi": 10285,
+   "wave": 2,
+   "src": "pokeapi"
+  },
+  {
+   "name": "Heatran-Mega",
+   "num": 485,
+   "sprite": "s15521.png",
+   "pokeapi": 10311,
+   "wave": 2,
+   "src": "pokeapi"
+  },
+  {
+   "name": "Darkrai-Mega",
+   "num": 491,
+   "sprite": "s15713.png",
+   "pokeapi": 10312,
+   "wave": 2,
+   "src": "pokeapi"
+  },
+  {
+   "name": "Emboar-Mega",
+   "num": 500,
+   "sprite": "s16001.png",
+   "pokeapi": 10286,
+   "wave": 2,
+   "src": "pokeapi"
+  },
+  {
+   "name": "Excadrill-Mega",
+   "num": 530,
+   "sprite": "s16961.png",
+   "pokeapi": 10287,
+   "wave": 2,
+   "src": "pokeapi"
+  },
+  {
+   "name": "Audino-Mega",
+   "num": 531,
+   "sprite": "s16993.png",
+   "pokeapi": 10069,
+   "wave": 1
+  },
+  {
+   "name": "Scolipede-Mega",
+   "num": 545,
+   "sprite": "s17441.png",
+   "pokeapi": 10288,
+   "wave": 2,
+   "src": "pokeapi"
+  },
+  {
+   "name": "Scrafty-Mega",
+   "num": 560,
+   "sprite": "s17921.png",
+   "pokeapi": 10289,
+   "wave": 2,
+   "src": "pokeapi"
+  },
+  {
+   "name": "Eelektross-Mega",
+   "num": 604,
+   "sprite": "s19329.png",
+   "pokeapi": 10290,
+   "wave": 2,
+   "src": "pokeapi"
+  },
+  {
+   "name": "Chandelure-Mega",
+   "num": 609,
+   "sprite": "s19489.png",
+   "pokeapi": 10291,
+   "wave": 2,
+   "src": "pokeapi"
+  },
+  {
+   "name": "Golurk-Mega",
+   "num": 623,
+   "sprite": "s19937.png",
+   "pokeapi": 10313,
+   "wave": 2,
+   "src": "pokeapi"
+  },
+  {
+   "name": "Chesnaught-Mega",
+   "num": 652,
+   "sprite": "s20865.png",
+   "pokeapi": 10292,
+   "wave": 2,
+   "src": "pokeapi"
+  },
+  {
+   "name": "Delphox-Mega",
+   "num": 655,
+   "sprite": "s20961.png",
+   "pokeapi": 10293,
+   "wave": 2,
+   "src": "pokeapi"
+  },
+  {
+   "name": "Greninja-Mega",
+   "num": 658,
+   "sprite": "s21059.png",
+   "pokeapi": 10294,
+   "wave": 2,
+   "src": "pokeapi"
+  },
+  {
+   "name": "Pyroar-Mega",
+   "num": 668,
+   "sprite": "s21377.png",
+   "pokeapi": 10295,
+   "wave": 2,
+   "src": "pokeapi"
+  },
+  {
+   "name": "Floette-Mega",
+   "num": 670,
+   "sprite": "s21446.png",
+   "pokeapi": 10296,
+   "wave": 2,
+   "src": "pokeapi"
+  },
+  {
+   "name": "Meowstic-M-Mega",
+   "num": 678,
+   "sprite": "s21698.png",
+   "pokeapi": 10314,
+   "wave": 2,
+   "src": "pokeapi"
+  },
+  {
+   "name": "Meowstic-F-Mega",
+   "num": 678,
+   "sprite": "s21699.png",
+   "pokeapi": 10326,
+   "wave": 2,
+   "src": "pokeapi"
+  },
+  {
+   "name": "Malamar-Mega",
+   "num": 687,
+   "sprite": "s21985.png",
+   "pokeapi": 10297,
+   "wave": 2,
+   "src": "pokeapi"
+  },
+  {
+   "name": "Barbaracle-Mega",
+   "num": 689,
+   "sprite": "s22049.png",
+   "pokeapi": 10298,
+   "wave": 2,
+   "src": "pokeapi"
+  },
+  {
+   "name": "Dragalge-Mega",
+   "num": 691,
+   "sprite": "s22113.png",
+   "pokeapi": 10299,
+   "wave": 2,
+   "src": "pokeapi"
+  },
+  {
+   "name": "Hawlucha-Mega",
+   "num": 701,
+   "sprite": "s22433.png",
+   "pokeapi": 10300,
+   "wave": 2,
+   "src": "pokeapi"
+  },
+  {
+   "name": "Zygarde-Mega",
+   "num": 718,
+   "sprite": "s22981.png",
+   "pokeapi": 10301,
+   "wave": 2,
+   "src": "composed"
+  },
+  {
+   "name": "Diancie-Mega",
+   "num": 719,
+   "sprite": "s23009.png",
+   "pokeapi": 10075,
+   "wave": 1
+  },
+  {
+   "name": "Crabominable-Mega",
+   "num": 740,
+   "sprite": "s23681.png",
+   "pokeapi": 10315,
+   "wave": 2,
+   "src": "pokeapi"
+  },
+  {
+   "name": "Golisopod-Mega",
+   "num": 768,
+   "sprite": "s24577.png",
+   "pokeapi": 10316,
+   "wave": 2,
+   "src": "pokeapi"
+  },
+  {
+   "name": "Drampa-Mega",
+   "num": 780,
+   "sprite": "s24961.png",
+   "pokeapi": 10302,
+   "wave": 2,
+   "src": "pokeapi"
+  },
+  {
+   "name": "Magearna-Mega",
+   "num": 801,
+   "sprite": "s25634.png",
+   "pokeapi": 10317,
+   "wave": 2,
+   "src": "pokeapi"
+  },
+  {
+   "name": "Magearna-Original-Mega",
+   "num": 801,
+   "sprite": "s25635.png",
+   "pokeapi": 10318,
+   "wave": 2,
+   "src": "pokeapi"
+  },
+  {
+   "name": "Zeraora-Mega",
+   "num": 807,
+   "sprite": "s25825.png",
+   "pokeapi": 10319,
+   "wave": 2,
+   "src": "pokeapi"
+  },
+  {
+   "name": "Falinks-Mega",
+   "num": 870,
+   "sprite": "s27841.png",
+   "pokeapi": 10303,
+   "wave": 2,
+   "src": "pokeapi"
+  },
+  {
+   "name": "Scovillain-Mega",
+   "num": 952,
+   "sprite": "s30465.png",
+   "pokeapi": 10320,
+   "wave": 2,
+   "src": "pokeapi"
+  },
+  {
+   "name": "Glimmora-Mega",
+   "num": 970,
+   "sprite": "s31041.png",
+   "pokeapi": 10321,
+   "wave": 2,
+   "src": "pokeapi"
+  },
+  {
+   "name": "Tatsugiri-Curly-Mega",
+   "num": 978,
+   "sprite": "s31299.png",
+   "pokeapi": 10322,
+   "wave": 2,
+   "src": "pokeapi"
+  },
+  {
+   "name": "Tatsugiri-Droopy-Mega",
+   "num": 978,
+   "sprite": "s31300.png",
+   "pokeapi": 10323,
+   "wave": 2,
+   "src": "pokeapi"
+  },
+  {
+   "name": "Tatsugiri-Stretchy-Mega",
+   "num": 978,
+   "sprite": "s31301.png",
+   "pokeapi": 10324,
+   "wave": 2,
+   "src": "pokeapi"
+  },
+  {
+   "name": "Baxcalibur-Mega",
+   "num": 998,
+   "sprite": "s31937.png",
+   "pokeapi": 10325,
+   "wave": 2,
+   "src": "pokeapi"
+  }
+ ]
+}

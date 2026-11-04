@@ -5,6 +5,7 @@
 import { getJSON, getImage, VIEW_W, VIEW_H } from './engine.js';
 import * as Bag from './bag.js';
 import { KEY_STONE, MEGA_ABILITY_NAMES, MEGA_FORMS, armTrainerMega, itemLocked, megaFormFor, primalFormFor } from './mega.js';
+import { applyRegionalForms } from './regional_forms.js';
 import { rumble } from '../site/gamepad.js';
 import * as UI from './battleui.js';
 import { cry, sfx } from './sound.js';
@@ -751,6 +752,8 @@ export class Battle {
 			getJSON('data/egg_moves.json').catch(() => ({})),
 		]);
 		this.data = { species, moves, extra, abilities, tmLearn, genders, evYields, eggMoves };
+		// regional forms' own movepools + the charm-gated regional evolutions (regional_forms.js)
+		applyRegionalForms(this.data);
 		// the Love2D build's pixel font, so battle text matches the desktop game — Micatro's copy, which also draws ♀ / ♂ (tools/micatro/add_gender_glyphs.py); the original in data/fonts has neither
 		try {
 			const f = new FontFace('m6x11plus', 'url(../micatro/assets/fonts/m6x11plus.ttf?v=2)');
@@ -871,7 +874,7 @@ export class Battle {
 		this._starting = false; // active now drives `blocking`
 		if (restore) { this.applyRestore(restore); return; }
 		this.active.megaUsed = {};
-		for (const m of party) { this.revertMega(m); this.clearVolatiles(m); }
+		for (const m of party) { this.revertMega(m); this.clearVolatiles(m); delete m.battleCrits; }
 		// the map's weather is worth a line — it changes the fight
 		if (this.active.weather?.kind) {
 			const wmsg = { rain: 'Rain pours down.', sandstorm: 'A sandstorm rages.', hail: 'Hail pelts down.', sun: 'The sunlight is harsh.' };
@@ -979,7 +982,7 @@ export class Battle {
 			caughtMon: null,
 		};
 		this._starting = false; // active now drives `blocking`
-		if (!restore) for (const m of [...party, ...(this.active.partner?.party || [])]) { this.revertMega(m); this.clearVolatiles(m); }
+		if (!restore) for (const m of [...party, ...(this.active.partner?.party || [])]) { this.revertMega(m); this.clearVolatiles(m); delete m.battleCrits; }
 		// MEGA EVOLUTION opens for both sides with the player's KEY STONE: from then on
 		// the leaders, Elite Four and Champions in mega.js TRAINER_MEGAS hand their ace
 		// its stone (and an in-game partner too). Before it, no trainer Mega Evolves —
@@ -1254,7 +1257,7 @@ export class Battle {
 		const f = MEGA_FORMS[mon?.megaForm];
 		if (!f) return Promise.resolve(null);
 		const name = back ? f.sprite.replace(/\.png$/, '-b.png') : f.sprite;
-		return getImage(`mega_sprites/${name}`).catch(() => null);
+		return getImage(name).catch(() => null);   // wave 1: mega_sprites/, wave 2: data/pokemon/
 	}
 	swapMegaSprite(mon) {
 		const a = this.active;
@@ -2675,7 +2678,11 @@ export class Battle {
 		} else {
 			for (let h = 0; h < nHits; h++) {
 				const crit = Math.random() < critChance;
-				if (crit) crits++;
+				if (crit) {
+					crits++;
+					// Galarian Farfetch'd evolves after 3 critical hits in one battle
+					if (!isFoe) user.battleCrits = (user.battleCrits || 0) + 1;
+				}
 				let dmg = Math.floor(Math.floor(Math.floor(2 * L / 5 + 2) * Pw * A / D) / 50) + 2;
 				dmg = Math.max(1, Math.floor(dmg * (crit ? critMult : 1) * stab * eff * screened * envMult * (parental && h === 1 ? 0.25 : 1) * (0.85 + Math.random() * 0.15)));
 				total += dmg;

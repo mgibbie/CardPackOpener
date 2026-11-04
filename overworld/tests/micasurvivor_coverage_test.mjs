@@ -72,9 +72,9 @@ A(fAnim.length === 56 && JSON.stringify(fStatic) === '[10178,10180]' && FIDS.eve
 	`the formes' art: ${fAnim.length} ANIMATED SpriteCollab sheets (Walk + Attack...), the overworld's static battle front only for Zen Galarian Darmanitan and Galarian Stunfisk`, JSON.stringify({ fAnim: fAnim.length, fStatic }));
 A(FIDS.filter(d => M(d).sh).length >= 50, 'and most have their SpriteCollab shiny (' + FIDS.filter(d => M(d).sh).length + ')');
 const mAnim = MEGAS.filter(d => M(d) && !M(d).src && !M(d).al), mBat = MEGAS.filter(d => M(d) && M(d).src === 'front'), mAl = MEGAS.filter(d => M(d) && M(d).al);
-A(MEGAS.length === 95 && MEGAS.every(d => P(d) && P(d).mega && !G.DEX.includes(P(d)) && M(d)) && mAnim.length === 44 && mBat.length === 19 && mAl.length === 32
-	&& mAl.every(d => M(d).al === P(d).sp) && G.Megas.foes().length === 95,
-	`the 95 Megas and Primals: in G.DEX_BY (not G.DEX: not collection entries), each drawable: ${mAnim.length} animated SpriteCollab, ${mBat.length} battle fronts, ${mAl.length} their species' sheet ("al") with the Mega aura`,
+A(MEGAS.length === 95 && MEGAS.every(d => P(d) && P(d).mega && !G.DEX.includes(P(d)) && M(d)) && mAnim.length === 44 && mBat.length === 51 && mAl.length === 0
+	&& G.Megas.foes().length === 95,
+	`the 95 Megas and Primals: in G.DEX_BY (not G.DEX: not collection entries), each drawable: ${mAnim.length} animated SpriteCollab, ${mBat.length} battle fronts (19 Gen 6 + 32 Legends Z-A / Mega Dimension, 2026-11-03), ${mAl.length} their species' sheet ("al")`,
 	JSON.stringify({ n: MEGAS.length, mAnim: mAnim.length, mBat: mBat.length, mAl: mAl.length }));
 A(P(10034).name === 'Mega-Charizard X' && P(10034).types.join() === 'fire,dragon' && P(10034).bst === 634 && P(10034).rarity === 5 && P(10034).sp === 6,
 	'a Mega\'s row: its name, its own types and base-stat total (Mega Charizard X: Fire / Dragon, 634), species 6', JSON.stringify(P(10034)));
@@ -249,7 +249,7 @@ try {
 		while (hs.some(h => !h.ready && !h.failed) && performance.now() - t0 < 30000) await new Promise(r => setTimeout(r, 100));
 		return { n: hs.length, bad: ids.filter((d, i) => !hs[i].ready), alias: G.Sprites.sheet(10278, 'Idle').src };
 	}, FIDS.concat(MEGAS));
-	A(ld.n === 153 && !ld.bad.length && /assets\/pokemon\/36\/Idle\.png/.test(ld.alias), `the page loads all ${ld.n} forme / Mega Idle sheets (an "al" row loads its species' sheet: Mega Clefable -> 36/)`, JSON.stringify(ld));
+	A(ld.n === 153 && !ld.bad.length && /assets\/pokemon\/10278\/front\/Idle\.png/.test(ld.alias), `the page loads all ${ld.n} forme / Mega Idle sheets (Mega Clefable loads its OWN, 10278/front/, not Clefable's 36/)`, JSON.stringify(ld));
 
 	// ---- (review fix) every forme / Mega is drawn at its species' size: as an Enemy (body radius, the drawn picture's height)
 	//      and in a sprite canvas (the picker, the Lexicon, the level-up card). The static fronts were a speck before

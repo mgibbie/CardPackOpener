@@ -3,7 +3,8 @@
 // The feature, end to end, through the real engine (headless Chrome + local
 // overworld/data):
 //   * data: all 99 Megas/Primals as battle forms, wave 1 (48 X/Y+ORAS + 2 Primals)
-//     with art + stones + icons, wave 2 (Z-A / Mega Dimension) data-only and OFF;
+//     with art + stones + icons; wave 2 (Z-A / Mega Dimension, art from PR #960) on
+//     behind the one MEGA_WAVE2_ENABLED switch;
 //     none of them a species (Pokedex, coverage, RIFT PRISM)
 //   * the fight menu's MEGA toggle (key M / the MEGA button), once per battle, the
 //     KEY STONE required; stats/types/ability change at once and revert at the end
@@ -44,10 +45,14 @@ if (M) {
 		'Mega Charizard X: Fire/Dragon, Tough Claws, 130 Atk (Showdown data)');
 	A(F.kyogre_primal?.primal && F.kyogre_primal.orb === 'blueorb' && F.groudon_primal?.orb === 'redorb', 'the Primals are keyed to their ORBS');
 	A(F.rayquaza_mega?.move === 'dragonascent' && !F.rayquaza_mega.stone, 'Mega Rayquaza needs Dragon Ascent, not a stone');
-	const noArt = w1.filter(i => !fs.existsSync(path.join(ROOT, 'overworld/mega_sprites', F[i].sprite))
-		|| !fs.existsSync(path.join(ROOT, 'overworld/mega_sprites', F[i].sprite.replace('.png', '-b.png'))));
-	A(noArt.length === 0, 'every wave-1 form has its own front AND back sprite in overworld/mega_sprites', noArt.join(','));
-	A(M.MEGA_WAVE2_ENABLED === false && w2.every(i => !M.megaEnabled(i)) && w1.every(i => M.megaEnabled(i)), 'wave 2 is switched OFF by the one flag, wave 1 is on');
+	const noArt = w1.filter(i => !fs.existsSync(path.join(ROOT, 'overworld', F[i].sprite))
+		|| !fs.existsSync(path.join(ROOT, 'overworld', F[i].sprite.replace('.png', '-b.png'))));
+	A(w1.every(i => F[i].sprite.startsWith('mega_sprites/')) && noArt.length === 0, 'every wave-1 form has its own front AND back sprite in overworld/mega_sprites', noArt.join(','));
+	const noArt2 = w2.filter(i => !/^data\/pokemon\/s\d+\.png$/.test(F[i].sprite) || !fs.existsSync(path.join(ROOT, 'overworld', F[i].sprite))
+		|| !fs.existsSync(path.join(ROOT, 'overworld', F[i].sprite.replace('.png', '-b.png'))));
+	A(noArt2.length === 0, 'every wave-2 form has its front AND back in overworld/data/pokemon', noArt2.join(','));
+	A(w1.every(i => M.megaEnabled(i)) && w2.every(i => M.megaEnabled(i) === M.MEGA_WAVE2_ENABLED), 'wave 1 is on; wave 2 follows the one MEGA_WAVE2_ENABLED switch');
+	A(M.MEGA_WAVE2_ENABLED === true, 'wave 2 is switched ON (its art landed)');
 	const bat = JSON.parse(fs.readFileSync(path.join(ROOT, 'overworld/data/species_battle.json'), 'utf8'));
 	const idx = JSON.parse(fs.readFileSync(path.join(ROOT, 'overworld/data/species_index.json'), 'utf8'));
 	A(!ids.some(i => i in bat || i in idx) && !Object.keys(bat).some(k => /_(mega|primal)(_|$)/.test(k)),
@@ -56,11 +61,12 @@ if (M) {
 	const w1stones = Object.keys(M.MEGA_STONES).filter(k => M.MEGA_STONES[k].wave === 1);
 	A(w1stones.length === 47 && w1stones.every(k => Bag?.ITEMS[k]?.kind === 'held' && Bag.ITEMS[k].held?.megaStone),
 		'all 47 wave-1 MEGA STONES are held items in the bag', String(w1stones.filter(k => !Bag?.ITEMS[k]).slice(0, 5)));
-	A(Object.keys(M.MEGA_STONES).filter(k => M.MEGA_STONES[k].wave === 2).every(k => !Bag?.ITEMS[k]), 'no wave-2 stone exists as an item');
+	const w2stones = Object.keys(M.MEGA_STONES).filter(k => M.MEGA_STONES[k].wave === 2);
+	A(w2stones.length === 45 && w2stones.every(k => !!Bag?.ITEMS[k] === M.MEGA_WAVE2_ENABLED), 'the 45 wave-2 stones are items exactly when wave 2 is on', String(w2stones.length));
 	A(Bag?.ITEMS.keystone?.kind === 'key' && Bag?.ITEMS.redorb?.held?.primalOrb && Bag?.ITEMS.blueorb?.held?.primalOrb, 'the KEY STONE (key item) and the RED/BLUE ORBS (held)');
 	A(Bag?.ITEMS.charizarditex?.name === 'CHARIZARDITE X' && Bag?.ITEMS.venusaurite?.name === 'VENUSAURITE', 'stones carry their real names');
 	const icons = JSON.parse(fs.readFileSync(path.join(ROOT, 'overworld/item_icons_index.json'), 'utf8'));
-	const noIcon = [...w1stones, 'keystone', 'redorb', 'blueorb'].filter(k => !icons[k] || !fs.existsSync(path.join(ROOT, 'overworld/item_icons', icons[k])));
+	const noIcon = [...w1stones, ...w2stones, 'keystone', 'redorb', 'blueorb'].filter(k => !icons[k] || !fs.existsSync(path.join(ROOT, 'overworld/item_icons', icons[k])));
 	A(noIcon.length === 0, 'every obtainable Mega item has a real icon', noIcon.join(','));
 	// the trainers who Mega Evolve
 	const party = sp => sp.map(s => ({ speciesId: s }));
@@ -68,7 +74,7 @@ if (M) {
 	A(M.trainerMegaPick('Champion WALLACE', party(['wailord', 'gyarados', 'milotic']))?.stone === 'gyaradosite', 'Champion WALLACE arms Gyarados');
 	A(M.trainerMegaPick('Champion TERRY', party(['pidgeot', 'venusaur']))?.stone === 'venusaurite', "the FireRed Champion (a player-named rival) arms his starter");
 	A(M.trainerMegaPick('Champion RED', party(['pikachu', 'charizard']))?.stone === 'charizarditey', 'RED arms Charizard (Y)');
-	A(M.trainerMegaPick('Gym Leader MISTY', party(['starmie', 'lapras'])) === null, 'a wave-2-only ace (Misty\'s Starmie) is never armed');
+	A(M.trainerMegaPick('Gym Leader MISTY', party(['starmie', 'lapras']))?.stone === 'starminite', 'MISTY arms Starmie (a wave-2 Mega)');
 	A(M.trainerMegaPick('Youngster JOEY', party(['rattata'])) === null, 'an ordinary trainer never Mega Evolves');
 }
 
@@ -182,7 +188,7 @@ try {
 		end();
 		bagSet('keystone', 1);
 
-		// ===== 3. wave 2 is disabled =====
+		// ===== 3. wave 2 works: Legends Z-A's second Lucario Mega =====
 		setParty([mon('lucario', 60, 'lucarionitez', ['tackle'])]);
 		await startWild('snorlax', 60);
 		o.wave2 = B.canMega ? B.canMega(ow.party[0]) : 'nofn';
@@ -294,7 +300,7 @@ try {
 	A(o.resumeReverted, 'and it reverts when that battle ends');
 	A(o.knockedOff === 'charizarditex', 'Knock Off cannot take a Mega Stone from its own POKeMON', o.knockedOff);
 	A(o.noKeyStone === null, 'without the KEY STONE there is no Mega', o.noKeyStone);
-	A(o.wave2 === null && !o.wave2Item && o.wave1Lucario === 'lucario_mega', 'wave 2 is disabled (Lucario + Lucarionite Z: no), wave 1 works (Lucarionite: yes)', JSON.stringify([o.wave2, o.wave2Item, o.wave1Lucario]));
+	A(o.wave2 === 'lucario_mega_z' && o.wave2Item && o.wave1Lucario === 'lucario_mega', 'Lucario + LUCARIONITE Z -> Mega Lucario Z (wave 2); + LUCARIONITE -> Mega Lucario (wave 1)', JSON.stringify([o.wave2, o.wave2Item, o.wave1Lucario]));
 	A(o.primalForm === 'kyogre_primal' && o.primalAbility === 'primordialsea', 'Kyogre holding the BLUE ORB reverts to Primal Kyogre on entering battle', JSON.stringify([o.primalForm, o.primalAbility]));
 	A(/"primal":"primordialsea"/.test(o.primalWeather || '') && /"kind":"rain"/.test(o.primalWeather || ''), 'Primordial Sea brings the heavy rain', o.primalWeather);
 	A(!o.primalUsedMega, 'a Primal Reversion does not spend the Mega');
@@ -357,7 +363,7 @@ try {
 	A(q.hasOwMega, 'overworld/ow_mega.js loads');
 	A(q.keyAfter8 === 1, 'the 8th badge\'s leader (JUAN) hands over the KEY STONE', q.keyAfter8);
 	A(/KEY STONE/.test(q.dialogs || ''), 'and the badge dialog says so', (q.dialogs || '').slice(0, 200));
-	A(q.martBefore === 0 && q.martAfter === 47, 'the Ever Grande League counter sells the 47 wave-1 stones only to Hoenn\'s Champion', `${q.martBefore} -> ${q.martAfter}`);
+	A(q.martBefore === 0 && q.martAfter === 92, 'the Ever Grande League counter sells all 92 Mega Stones only to the Hoenn Champion', `${q.martBefore} -> ${q.martAfter}`);
 	A(q.martElsewhere === 0 && q.martKanto === 0, 'no other mart sells them, nor a League you have not won');
 	A(q.oldMan && q.oldLady && q.orbs?.[0] === 1 && q.orbs?.[1] === 1, 'MT. PYRE\'s old man gives the RED ORB, the old woman the BLUE ORB', JSON.stringify(q.orbs));
 	A(q.again === false && q.orbsAfter?.[1] === 1, 'only once each');

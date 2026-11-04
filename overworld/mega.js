@@ -13,10 +13,11 @@ import { MEGA_FORMS, MEGA_STONES, PRIMAL_ORBS } from './mega_data.js';
 
 export { MEGA_FORMS, MEGA_STONES, PRIMAL_ORBS };
 
-// WAVE 2 — the 49 Legends Z-A / Mega Dimension Megas — is data-present but OFF
-// until their battle art lands: no stone is obtainable (bag.js, the Mega marts),
-// no trainer uses one, and no battle path can reach the form. One switch.
-export const MEGA_WAVE2_ENABLED = false;
+// WAVE 1 = X/Y + ORAS + the Primals (art: overworld/mega_sprites); WAVE 2 = the 49
+// Legends Z-A / Mega Dimension Megas (art: overworld/data/pokemon, PR #960). The one
+// switch: false takes every wave-2 stone out of the bag and the marts, stops trainers
+// arming one, and no battle path can reach a wave-2 form.
+export const MEGA_WAVE2_ENABLED = true;
 export const megaEnabled = id => {
 	const f = MEGA_FORMS[id];
 	return !!f && (f.wave === 1 || MEGA_WAVE2_ENABLED);
@@ -85,10 +86,12 @@ export const TRAINER_MEGAS = [
 	{ name: 'SABRINA', species: ['alakazam'] },
 	{ name: 'LORELEI', species: ['slowbro', 'glalie'] },
 	{ name: 'AGATHA', species: ['gengar'] },
-	{ name: 'LANCE', species: ['charizard', 'aerodactyl', 'gyarados'] }, // Crystal's champion: Charizard; FireRed's E4: Aerodactyl
+	{ name: 'LANCE', species: ['charizard', 'dragonite', 'aerodactyl', 'gyarados'] }, // Crystal's champion: Charizard X; FireRed's E4: Dragonite (wave 2)
 	{ name: 'RED', species: ['charizard'] },
 	{ cls: /^CHAMPION\b/i, species: ['venusaur', 'charizard', 'blastoise'] }, // the FireRed rival: his starter
 	// Johto / JohKanto
+	{ name: 'MISTY', species: ['starmie'] },               // wave 2 (Legends Z-A)
+	{ name: 'ERIKA', species: ['victreebel'] },            // wave 2
 	{ name: 'MORTY', species: ['gengar'] },
 	{ name: 'JASMINE', species: ['steelix'] },
 	{ name: 'KAREN', species: ['houndoom'] },
