@@ -30,6 +30,8 @@ export function contextKey(action) {
 	if (battle.blocking) {
 		// X/left face: RETHROW the last ball from the battle menu, SWAP moves on the move list
 		if (action === 'context') return battle.active?.phase === 'moves' ? 's' : 'r';
+		// the second face button arms MEGA EVOLUTION on the move list
+		if (action === 'secondary' && battle.active?.phase === 'moves') return 'm';
 		return null;
 	}
 	if (pcMenu.open) return { context: 's', secondary: 'Tab', select: 'r', prev: 'ArrowLeft', next: 'ArrowRight' }[action] || null;
@@ -152,7 +154,7 @@ export function padHints() {
 	const L = a => `[${padLabel(a)}]`;
 	if (battle.blocking) {
 		const moves = battle.active?.phase === 'moves';
-		return `D-pad choose · ${L('confirm')} select · ${L('cancel')} back · ${L('context')} ${moves ? 'swap moves' : 'throw last ball'}`;
+		return `D-pad choose · ${L('confirm')} select · ${L('cancel')} back · ${L('context')} ${moves ? 'swap moves' : 'throw last ball'}${moves ? ` · ${L('secondary')} mega` : ''}`;
 	}
 	if (pcMenu.open) return `${L('confirm')} pick · ${L('cancel')} back · ${L('context')} sort · ${L('secondary')} switch side · ${L('select')} release · ${L('prev')}${L('next')} box`;
 	if (dexMenu.open) return `${L('confirm')} open · ${L('cancel')} back · ${L('context')} type · ${L('secondary')} caught · ${L('select')} grid · ${L('prev')}${L('next')} region`;

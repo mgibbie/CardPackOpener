@@ -1,5 +1,6 @@
 // ow_pvp.js — live PvP battles, async (mailbox) matches, card-trade offers, and multiplayer presence & world-visiting.
 // Split out of main.js (Plans/MAIN_JS_SPLIT_PLAN.md, phase 3); cut and paste only.
+import { megaStockAt } from './ow_mega.js';
 import * as MP from '../battlecards/mpmode.js';
 import * as Badges from './badges.js';
 import * as Bag from './bag.js';
@@ -78,8 +79,12 @@ const PREMIUM_STOCK = ['rarecandy', 'maxpotion', 'maxrevive', 'abilitycapsule',
 	'adamantmint', 'modestmint', 'jollymint', 'timidmint', 'carefulmint'];
 const PREMIUM_MAPS = new Set(['MAP_INDIGO_PLATEAU_POKECENTER_1F', 'MAP_SILVER_CAVE_POKECENTER_1F']);
 export function shopStockNow() {
-	return PREMIUM_MAPS.has(world.current?.map?.id) && Badges.isChampion('JOHTO')
+	const id = world.current?.map?.id;
+	const stock = PREMIUM_MAPS.has(id) && Badges.isChampion('JOHTO')
 		? [...Bag.SHOP_STOCK, ...PREMIUM_STOCK] : Bag.SHOP_STOCK;
+	// the League counters sell MEGA STONES to that region's champion (ow_mega.js)
+	const mega = megaStockAt(id);
+	return mega.length ? [...stock, ...mega] : stock;
 }
 
 // ---- mail battles (correspondence Pokémon) ----
