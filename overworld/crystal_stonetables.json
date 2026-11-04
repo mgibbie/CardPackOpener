@@ -1,0 +1,70 @@
+{
+	"BlackthornGym2F": [
+		{
+			"x": 8,
+			"y": 3,
+			"flag": "EVENT_BOULDER_IN_BLACKTHORN_GYM_1",
+			"clear": [],
+			"set": [],
+			"text": "The boulder fell\nthrough!"
+		},
+		{
+			"x": 2,
+			"y": 5,
+			"flag": "EVENT_BOULDER_IN_BLACKTHORN_GYM_2",
+			"clear": [],
+			"set": [],
+			"text": "The boulder fell\nthrough!"
+		},
+		{
+			"x": 8,
+			"y": 7,
+			"flag": "EVENT_BOULDER_IN_BLACKTHORN_GYM_3",
+			"clear": [],
+			"set": [],
+			"text": "The boulder fell\nthrough!"
+		}
+	],
+	"IcePathB1F": [
+		{
+			"x": 11,
+			"y": 2,
+			"flag": "EVENT_BOULDER_IN_ICE_PATH_1",
+			"clear": [
+				"EVENT_BOULDER_IN_ICE_PATH_1A"
+			],
+			"set": [],
+			"text": "The boulder fell\nthrough."
+		},
+		{
+			"x": 4,
+			"y": 7,
+			"flag": "EVENT_BOULDER_IN_ICE_PATH_2",
+			"clear": [
+				"EVENT_BOULDER_IN_ICE_PATH_2A"
+			],
+			"set": [],
+			"text": "The boulder fell\nthrough."
+		},
+		{
+			"x": 5,
+			"y": 12,
+			"flag": "EVENT_BOULDER_IN_ICE_PATH_3",
+			"clear": [
+				"EVENT_BOULDER_IN_ICE_PATH_3A"
+			],
+			"set": [],
+			"text": "The boulder fell\nthrough."
+		},
+		{
+			"x": 12,
+			"y": 13,
+			"flag": "EVENT_BOULDER_IN_ICE_PATH_4",
+			"clear": [
+				"EVENT_BOULDER_IN_ICE_PATH_4A"
+			],
+			"set": [],
+			"text": "The boulder fell\nthrough."
+		}
+	]
+}

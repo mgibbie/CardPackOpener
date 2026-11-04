@@ -1,5 +1,6 @@
 // encounters.js — wild encounter rolls. Trigger chain mirrors the Lua game:
-// finish a step on MB_TALL_GRASS -> rate roll (rate/100) -> weighted slot ->
+// finish a step on MB_TALL_GRASS -> rate roll (encounterChance: gen 3 rate/180,
+// Crystal rate/100) -> weighted slot ->
 // level in [min,max]. The battle scene takes it from there.
 //
 // DAY/NIGHT: the wild data (data/encounters.json) is served read-only from owdata, so
@@ -12,6 +13,20 @@ import * as Clock from './clock.js';
 import { DAYNIGHT } from './encounters_daynight.js';
 import { FREM_NIGHT } from './encounters_frem_night.js';
 import { POSTGAME } from './encounters_postgame.js';
+import { CRYSTAL_RATE_MAPS } from './encounter_games.js';
+
+// The chance a step (or a smashed rock) starts an encounter, from a map's stored
+// rate. The two source games use different scales:
+//   gen 3 (Emerald / FRLG): Random() % 2880 < rate * 16  ->  rate / 180
+//   Crystal:                Random() < rate (N percent)   ->  rate / 100
+// Everything used to roll rate/100, so Hoenn and Kanto ran at 1.8x vanilla
+// (Route 111: 10% a step, not 5.6%). Rates the port authors itself (the JohKanto
+// postgame tables) are plain percents.
+export function encounterChance(mapId, rate, authored = false) {
+	if (!(rate > 0)) return 0;
+	const crystalScale = authored || CRYSTAL_RATE_MAPS.has(mapId);
+	return Math.min(1, crystalScale ? rate / 100 : rate * 16 / 2880);
+}
 
 // JohKanto is the postgame region, and its roster is where every species the
 // rest of the game leaves uncatchable lives (tools/gen_postgame_encounters.mjs).
@@ -69,7 +84,12 @@ export class Encounters {
 		// Tunnel, Victory Road, Cerulean Cave...) and 25 species were uncatchable.
 		// On a map with NO grass at all, the floor is the encounter tile, which is
 		// what gen 3 does. Routes keep the grass-only rule, because they have grass.
+		// FRLG maps say per tile (the metatile's encounter type), so they follow the
+		// decomp exactly: Route 17's road (no grass behavior anywhere on the map)
+		// used to fall through to the no-grass rule and roll on every tile.
+		const enc = world.encounterTypeAt ? world.encounterTypeAt(tx, ty) : null;
 		const kind = surfing && world.isSurfable(tx, ty) ? 'water'
+			: enc != null ? (!surfing && enc === 'land' ? 'land' : null)
 			: world.isTallGrass(tx, ty) ? 'land'
 			: (!surfing && !world.hasTallGrass()) ? 'land'
 			: null;
@@ -77,7 +97,7 @@ export class Encounters {
 		const grp = this.data[mapId]?.[kind];
 		const pg = POSTGAME[mapId]?.[kind];
 		if (!grp && !pg) return null;
-		if (Math.random() * 100 > (grp?.rate ?? POSTGAME_RATE)) return null;
+		if (Math.random() >= encounterChance(mapId, grp?.rate ?? POSTGAME_RATE, !grp)) return null;
 		const pick = this.pick(mapId, kind);
 		// REPEL turns away anything weaker than your lead. Rolling first and then
 		// discarding is deliberate: it keeps the encounter RATE honest, so a repel

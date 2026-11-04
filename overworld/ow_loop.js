@@ -1,0 +1,571 @@
+// ow_loop.js — the frame loop (tick: update + draw every frame, with the input and cutscene watchdogs) and the touch HUD.
+// Split out of main.js (Plans/MAIN_JS_SPLIT_PLAN.md, phase 3); cut and paste only.
+import { choiceMenu } from './choice.js';
+import { phoneMenu } from './phone.js';
+import { VIEW_H, VIEW_W, drawsAboveTop, getImage, netActivityAt } from './engine.js';
+import * as Story from './events.js';
+import { drawGates } from './rotating_gates.js';
+import { arcade, battle, blockers, cutscene, dialog, evolution, factorySpec, hud, items, npcs, player, portals, pvp, screen, sctx, services, trainers, world } from './ow_core.js';
+import { decoMenu, drawBaseDeco, drawDecoMenu, drawRadio, drawSocial, radioMenu, socialMenu } from './ow_features.js';
+import { drawWatchingBadge, frontier, frontierWatchers } from './ow_frontier.js';
+import { drawAwakening, drawLegendary } from './ow_legendaries.js';
+import { bagMenu, bpShopMenu, canvasMenuOpen, drawBpShopMenu, ferryMenu, menuBlocking, pcMenu, portalMenu, shopMenu } from './ow_menukeys.js';
+import { drawBagMenu, drawCardsMenu, drawDaycare, drawDexMenu, drawFerryMenu, drawFriendsMenu, drawHalfParty, drawMoveShop, drawNameRater, drawOptions, drawPartyMenu, drawChoiceMenu, drawPcMenu, drawPhoneMenu, drawPortalMenu, drawQuest, drawRunMenu, drawShopMenu, drawStartMenu, drawStarterMenu, drawTownMap, drawTrainerCard } from './ow_menus.js';
+import { drawSlots, slotsMenu } from './ow_minigames.js';
+import { crystalSlots, drawCrystalSlots } from './ow_crystalslots.js';
+import { drawFriendGhosts, drawMailMenu } from './ow_pvp.js';
+import { cameraPos, drawCaveDark, drawDayNightTint, drawStepFx, drawWeather, editView } from './ow_render.js';
+import { drawDeckSelect, drawNpcTrade, drawPlayerMenu, drawTrade, friendsMenu, mailMenu } from './ow_screens.js';
+import { S } from './ow_state.js';
+import { checkIntroTrigger } from './ow_story.js';
+import { contestMenu, drawContest, drawUnownDex, unownDex } from './ow_venues.js';
+import { blender, drawBerryBlender } from './minigames/blender/blender.js';
+import { drawPokeblockCase, pbCase } from './pokeblock_case.js';
+import { safeSaveStr } from './safestore.js';
+import * as Settings from './settings.js';
+// main.js's own declarations (a safe cycle: only used inside functions)
+import { INPUT_TRACE, heldKeys, owlog, tickStats } from './ow_input.js';
+import { drawMuseum } from './ow_places.js';
+import { catchUpPostBattleScripts, refundPostBattleTry } from './ow_progression.js';
+import { drawGcMenu, drawVfMenu, gcMenu, vfMenu } from './ow_gamecorner.js';
+import { drawFollower, follower, updateFollower } from './ow_follower.js';
+import { bgmTick, daycareMenu, halfParty, moveShop, nameRater, tradeMenu } from './ow_music.js';
+import { cardsMenu, deckSelect, dexMenu, drawWaterAnim, optionsMenu, partyMenu, playerMenu, questMenu, runMenu, startMenu, townMap, trade, trainerCard } from './ow_menustate.js';
+import { persistBattle } from './ow_battleresume.js';
+import { findLanding } from './ow_transitions.js';
+import { FADE_SPEED, fade } from './ow_fade.js';
+import { drawUnownPuzzle, unownPuzzle } from './unown_puzzle.js';
+import { cardFlip, drawCardFlip } from './minigames/cardflip/cardflip.js';
+import { gateReport, openCanvasMenus } from './ow_diagnostics.js';
+import {
+	MOVE_STARVE_LIMIT, REJECT_STARVE_LIMIT, SCALE, ctx, fitCanvas, frame, lastRejectAt,
+	rejectedMoves, starterMenu, tickObjective,
+} from './main.js';
+
+// no map to fall back on (the very first load hung): an actionable Retry, not a black screen
+function showLoadRetry() {
+	if (typeof document === 'undefined' || document.getElementById('load-retry')) return;
+	const d = document.createElement('div');
+	d.id = 'load-retry';
+	d.setAttribute('role', 'alertdialog');
+	d.style.cssText = 'position:fixed;inset:0;z-index:99998;display:flex;align-items:center;justify-content:center;background:rgba(10,8,24,0.86);color:#fff;font:16px/1.5 system-ui,sans-serif;text-align:center;padding:16px';
+	const box = document.createElement('div');
+	box.style.cssText = 'max-width:420px;background:#1d1838;border:2px solid #6c5ce7;border-radius:12px;padding:20px 22px';
+	const p = document.createElement('p');
+	p.style.margin = '0 0 14px';
+	p.textContent = "The map couldn't be loaded (the connection may be slow). Your save is safe.";
+	const b = document.createElement('button');
+	b.type = 'button'; b.textContent = 'Retry';
+	b.style.cssText = 'font:inherit;padding:8px 16px;border-radius:8px;border:0;background:#6c5ce7;color:#fff;cursor:pointer';
+	b.addEventListener('click', () => location.reload());
+	box.append(p, b); d.append(box); document.body.append(d);
+}
+
+// ---------- loop ----------
+let last = performance.now();
+// the load watchdog's absolute bound: past the fetch layer's own worst case for a
+// request that keeps stalling (4 attempts x FETCH_HEADER_MS + backoff, ~54 s)
+const LOAD_WATCH_CAP = 75000;
+let playAccum = 0;
+export function tick(now) {
+	requestAnimationFrame(tick);
+	tickStats.frames++;
+	const dt = Math.min((now - last) / 1000, 0.05);
+	last = now;
+	// a tap pressed and released since the last tick (ow_input.js latchTap) is good
+	// for THIS tick only: if anything owns the screen now, it is dropped, never
+	// replayed later as a stale step out of a dialog, a battle or a warp
+	const tapNow = S.tapDir;
+	S.tapDir = null;
+	// advance the warp fade before any `loading` bail so it keeps animating in the
+	// loading=false windows on either side of a map swap (it sits at full black
+	// during the load itself, when the loop bails and the screen is frozen anyway)
+	if (fade.alpha !== fade.target) {
+		const d = FADE_SPEED * dt;
+		fade.alpha = fade.alpha < fade.target ? Math.min(fade.target, fade.alpha + d) : Math.max(fade.target, fade.alpha - d);
+	}
+	// battle/pvp on a portrait screen OR any touch screen: swap the canvas
+	// between the GBA frame and full-screen (see fitCanvas); the touch d-pad
+	// hides too — battles are entirely tap-driven. Landscape phones get the
+	// full-width canvas + the scaled bar from battleui.layout (aspect > 1.7).
+	const tallNow = (battle.blocking || pvp.blocking)
+		&& (innerHeight > innerWidth || document.body.classList.contains('touch'));
+	if (tallNow !== S.sceneTall) {
+		S.sceneTall = tallNow;
+		document.body.classList.toggle('scene-tall', S.sceneTall);
+		fitCanvas();
+	}
+	// WATCHDOG 1 — a stuck load freezes everything (the loop bails on `loading`).
+	// If a map load hangs (never resolves) or a handler after it wedged, recover.
+	// It must leave the game PLAYABLE: it used to clear `loading` but leave the
+	// warp's fade at full black, so the HUD said "Recovered" while every step was
+	// rejected as "fading" (2026-10-05). Now the fade comes back up on the map the
+	// player is still on (world.current only changes after a complete load), or —
+	// with no map at all — a Retry. Fetches time out well before this (engine.js),
+	// so this is the last resort.
+	// It times SILENCE: the limit runs from the later of the load's start and the
+	// fetch layer's last sign of life (engine.js netActivityAt). A load still
+	// fetching or retrying is alive — the fetch layer gives up on its own, after
+	// at most FETCH_HEADER_MS of quiet per attempt — and a wedge with nothing in
+	// flight still fires on time. LOAD_WATCH_CAP bounds a link that trickles forever.
+	if (S.loading) {
+		if (S.loadWatchStart == null) S.loadWatchStart = now;
+		else if (now - Math.max(S.loadWatchStart, netActivityAt()) > (S.loadWatchLimit || 20000)
+			|| now - S.loadWatchStart > LOAD_WATCH_CAP) {
+			S.loadWatchStart = null; S.loading = false;
+			if (cutscene.blocking) cutscene.stop();
+			fade.target = 0;
+			// "back where you were" is only true when the map never swapped. A load that
+			// stalled AFTER the swap (the new map's sprites/scripts) leaves the player on
+			// the NEW map — saying otherwise, over the old map's HUD, sent a tester
+			// looking for Lavaridge while standing on Route 112 (bug:1793302854206)
+			if (world.current && S.loadWatchFrom && world.current.name !== S.loadWatchFrom)
+				hud.textContent = `${world.current.map?.name || world.current.name} — loading was slow; some things may still be appearing.`;
+			else if (world.current) hud.textContent = "Loading got stuck — you're back where you were.";
+			else showLoadRetry();
+			// a map drawn without its tilesheets (a stalled download) must not stay
+			// black: keep trying to fetch them and repaint when they land
+			try { world.healTilesets && world.healTilesets(); } catch (e) {}
+			try { globalThis.reportErr && globalThis.reportErr('load watchdog fired' + (world.current ? ' (kept ' + world.current.name + ')' : ' (no map)'), 'ow_loop.tick'); } catch (e) {}
+		}
+	} else { S.loadWatchStart = null; S.loadWatchFrom = world.current?.name || null; }   // the map a load would start FROM
+	if (S.loading || !world.current) return;
+	if (S.postBattleCatchUpArmed && !S.loading && !cutscene.blocking && !dialog.blocking && !battle.blocking
+		&& openCanvasMenus().length === 0) {
+		S.postBattleCatchUpArmed = false;
+		try { catchUpPostBattleScripts(); } catch (e) { console.warn('[plot] post-battle catch-up failed', e); if (cutscene.blocking) cutscene.stop(); }
+	}
+
+	// WATCHDOG 2 — a plot cutscene that blocks with NO player-facing UI (no dialog,
+	// battle, evolution, or menu) for a long stretch is genuinely wedged, not just
+	// waiting on the player — force-stop it rather than freeze the map.
+	// A CANVAS MENU IS PLAYER-FACING UI TOO. This listed starterMenu and nothing
+	// else, so opening the TOWN MAP (or the bag, or the party) mid-scene looked
+	// like a wedged cutscene: 30 seconds later the watchdog stopped it. That is
+	// how the Slowpoke Well beat died halfway through Kurt's walk — reported from
+	// production, with the fly prompt still on screen. openCanvasMenus() is the
+	// same list gateReport uses, so this cannot drift from what actually blocks.
+	if (cutscene.blocking && !dialog.blocking && !battle.blocking && !pvp.blocking && !evolution.blocking
+		&& !starterMenu.open && openCanvasMenus().length === 0) {
+		// MEASURE STALLS, IN GAME TIME. This used to be 30s of WALL-CLOCK time since
+		// the scene went quiet — but the scene itself runs on game time, which the
+		// tick caps at 50ms a frame. On a slow device (a playtest browser measured
+		// 3.7 fps) game time runs at ~0.19x real time, so the silent part of the
+		// Slowpoke Well beat — ~6s of Kurt walking — took ~30 real seconds and was
+		// killed every single run, mid-walk, with "A scene timed out."
+		//
+		// Now the clock only runs while the scene makes NO progress (its cursor,
+		// its current step and its timers all unchanged), and it counts game time.
+		// A slow scene is never a wedged one; a genuinely wedged scene still dies.
+		const c = cutscene.cur, sub = c && c.sub;
+		const sig = c ? (c.frames || []).map(f => f.i).join(',') + '|' + (sub ? [sub.kind, sub.k, sub.from, Math.round((sub.t || 0) * 20), Math.round((sub.left || 0) * 20)].join(':') : '') : '';
+		if (sig !== S.cutsceneWatchSig) { S.cutsceneWatchSig = sig; S.cutsceneStall = 0; }
+		else S.cutsceneStall += dt;
+		if (S.cutsceneStall > 20) {
+			S.cutsceneStall = 0; S.cutsceneWatchSig = '';
+			refundPostBattleTry();   // a watchdog kill is not the beat's fault
+			cutscene.stop(); hud.textContent = 'A scene timed out.';
+		}
+	} else { S.cutsceneStall = 0; S.cutsceneWatchSig = ''; }
+
+	// WATCHDOG 4 — THE PLAYER IS STANDING SOMEWHERE THEY CANNOT STAND.
+	//
+	// Two softlocks reported the same afternoon, by different routes:
+	//   * the S.S. Anne departure walked the player 9 tiles south onto open ocean
+	//     and the scene ended there, surfing=false, every direction bumping;
+	//   * the Slateport Harbor exit landed them on the harbor roof at (32,22),
+	//     walled on three sides with water north.
+	// Neither reproduces from the map data — the harbor's exit warp resolves to
+	// the correct door in both region copies, and the departure runs to completion
+	// here. So rather than guess at two causes I cannot see, catch the CLASS: a
+	// scripted walk ignores collision by design, so any script, warp or ferry can
+	// leave the player on a tile the rules forbid, and today that is unrecoverable
+	// without Fly.
+	//
+	// Deliberately conservative. It only acts when the player is on an illegal
+	// tile AND genuinely cannot move AND nothing else owns the screen, for two
+	// full seconds — so it can never argue with surfing, a cutscene that is mid-
+	// walk, or a menu. findLanding is the same nearest-standable-tile search Fly
+	// uses, so the rescue lands somewhere the player could have walked to.
+	{
+		const stuckTile = !S.loading && !cutscene.blocking && !dialog.blocking && !battle.blocking
+			&& !pvp.blocking && !evolution.blocking && openCanvasMenus().length === 0
+			&& !player.moving && !player.surfing
+			&& (!world.isPassable(player.tx, player.ty) || world.isSurfable(player.tx, player.ty));
+		if (stuckTile) {
+			const boxed = [[1, 0], [-1, 0], [0, 1], [0, -1]]
+				.every(([dx, dy]) => !world.isPassable(player.tx + dx, player.ty + dy) || world.isSurfable(player.tx + dx, player.ty + dy));
+			if (boxed) {
+				if (S.strandedSince == null) S.strandedSince = now;
+				else if (now - S.strandedSince > 2000) {
+					S.strandedSince = null;
+					const [lx, ly] = findLanding(player.tx, player.ty);
+					if (lx !== player.tx || ly !== player.ty) {
+						console.warn('[stranded] player was boxed in at', player.tx, player.ty, '-> moved to', lx, ly);
+						player.setTile(lx, ly);
+						hud.textContent = 'You found your footing.';
+					}
+				}
+			} else S.strandedSince = null;
+		} else S.strandedSince = null;
+	}
+
+	// accumulate playtime (whole seconds, throttled writes) for the Trainer Card
+	playAccum += dt;
+	if (playAccum >= 5) {
+		const s = (parseInt(localStorage.getItem('magepunk_playtime'), 10) || 0) + Math.floor(playAccum);
+		safeSaveStr('magepunk_playtime', s);
+		playAccum -= Math.floor(playAccum);
+	}
+
+	battle.update(dt);
+	bgmTick();
+	persistBattle();
+	tickObjective(now);   // the NEXT: line follows the save as it changes (a legendary caught...)
+	pvp.update(dt);
+	factorySpec.update(dt);
+	evolution.update(dt);
+	dialog.update(dt);
+	cutscene.update(dt);
+	// the moment combat ends, drop any key still held from before it — otherwise
+	// the player takes one stray step straight out of the battle
+	const inBattleNow = battle.blocking || pvp.blocking;
+	if (S.wasInBattle && !inBattleNow) { heldKeys.length = 0; if (INPUT_TRACE) owlog('BATTLE END — held keys flushed', JSON.stringify(gateReport())); }
+	if (!S.wasInBattle && inBattleNow && INPUT_TRACE) owlog('BATTLE START', JSON.stringify(gateReport()));
+	S.wasInBattle = inBattleNow;
+	if (INPUT_TRACE) { const b = gateReport().blockedBy; if (b !== S.lastBlockedBy) { owlog('gate changed:', S.lastBlockedBy, '->', b); S.lastBlockedBy = b; } }
+	if (!battle.blocking && !pvp.blocking && !factorySpec.blocking && !dialog.blocking && !evolution.blocking && !starterMenu.open && !cutscene.blocking) {
+		// The starter hand-over is the one trigger that MUST NOT be missed — without
+		// it you have no POKeMON and no way to get one. Every other trigger fires on
+		// map entry only, which is fine for them, but it means walking into the lab
+		// while ANY cutscene is still playing skipped this one for good: the guard
+		// returned early and nothing ever re-asked. Retry it here instead. It is
+		// four boolean checks and becomes a permanent no-op the moment you have a
+		// party, so it costs nothing for the rest of the game.
+		if (!S.party) { try { checkIntroTrigger(); } catch (e) { console.warn('[intro] retry failed', e); } }
+		tickStats.reachedMoveBlock++;
+		trainers.update(dt);
+		player.run = S.runHeld || Settings.get('autoRun');
+		// any open menu freezes the player even if a key was held as it opened
+		// a tap released before this tick (ow_input.js latchTap) still counts once —
+		// delivered only to a standing player; a held key supersedes it
+		const heldDir = heldKeys[0] || (tapNow && !player.moving && !trainers.engaging ? tapNow : null);
+		const moveDir = (menuBlocking() || editView.on) ? null : heldDir;
+		if (!trainers.engaging) { tickStats.playerUpdates++; player.update(dt, moveDir); }
+		// WATCHDOG 3 — input starvation. Two ways the player can be stuck:
+		//
+		// (a) a held direction the tick refuses to DELIVER, with menuBlocking() saying
+		//     there is nothing on screen to explain it. Walking into a wall does not
+		//     count: that reaches player.update and reports `bump`.
+		// (b) the direction IS delivered and player.update still never starts a step.
+		//     tryMove reports every refusal (bump/blocked/cracked/hop/moved); the one
+		//     silent path is `busy` — moving stuck true, so no new step can begin.
+		//     Reported from the field: after a lab-exit warp, moveT wedged just above
+		//     1 and no step ever started. (a) alone could never see that.
+		// A step that never completes is the silent one: while `moving` is true,
+		// update() only interpolates and tryMove is not called AT ALL, so nothing
+		// reports a refusal. A real step lasts ~0.13s, so `moving` held true for
+		// seconds is definitive — and it freezes the player whether or not a key
+		// is down, so this arm does not depend on heldDir.
+		if (player.moving) S.moveStuckT += dt; else S.moveStuckT = 0;
+		const wedged = S.moveStuckT > MOVE_STARVE_LIMIT;
+		const delivered = moveDir === heldDir && !trainers.engaging;
+		// starvation and wedging each carry their OWN dwell — requiring both would
+		// mean waiting 2x MOVE_STARVE_LIMIT for a wedge that is already proven
+		if (heldDir && !delivered && !menuBlocking()) S.moveStarveT += dt; else S.moveStarveT = 0;
+		if (wedged || S.moveStarveT > MOVE_STARVE_LIMIT) {
+			{
+				S.moveStarveT = 0; S.moveStuckT = 0;
+				const why = wedged ? 'player.moving stuck true for ' + MOVE_STARVE_LIMIT + 's (moveT ' + (Math.round(player.moveT * 100) / 100) + ')'
+					: trainers.engaging ? 'trainers.engaging' : editView.on ? 'editView.on' : 'unknown';
+				console.warn('[input-watchdog] movement starved for ' + MOVE_STARVE_LIMIT + 's — blocker:', why, gateReport());
+				if (wedged) {
+					// land the half-finished step on its own destination tile and let go —
+					// never teleport, never drop the player somewhere they did not walk to
+					if (player.moveTo) { player.px = player.moveTo[0]; player.py = player.moveTo[1]; }
+					player.moving = false; player.jumping = false; player.moveT = 0;
+					player.moveOutcome = 'recovered';
+					hud.textContent = 'Recovered from a stuck step.';
+				} else if (trainers.engaging) {
+					trainers.engagement = null;
+					hud.textContent = 'Recovered from a stuck trainer approach.';
+				} else if (editView.on) {
+					// deliberate (owner tool) — don't fight it, just stop being a mystery
+					hud.textContent = 'MAP EDITOR is open — movement is frozen. Remove ?mapedit=1 from the URL to play.';
+				} else {
+					hud.textContent = 'Recovered from a stuck input lock.';
+				}
+			}
+		}
+		// ...and the case heldKeys can never express: the door itself is turning the
+		// input away. Armed by rejections rather than held keys, so it stays visible
+		// when menuBlocking() is the thing at fault. A dialog legitimately refuses
+		// arrows, hence the longer fuse and the report-only response for gates that
+		// own real UI — this names the blocker rather than fighting it.
+		if (rejectedMoves > 0 && performance.now() - lastRejectAt < 2000) {
+			S.rejectStarveT += dt;
+			if (S.rejectStarveT > REJECT_STARVE_LIMIT) {
+				S.rejectStarveT = 0;
+				const g = gateReport();
+				console.warn('[input-watchdog] movement input refused at the door for ' + REJECT_STARVE_LIMIT + 's — blocker:', g.blockedBy, g);
+				if (g.blockedBy === 'trainers.engaging') { trainers.engagement = null; hud.textContent = 'Recovered from a stuck trainer approach.'; }
+				else hud.textContent = 'Movement is blocked by: ' + (g.blockedBy || 'something invisible') + '. Reloading recovers it.';
+			}
+		} else S.rejectStarveT = 0;
+		npcs.update(dt);
+		updateFollower(dt);
+	}
+
+	// battle/pvp/factory screens repaint every pixel of the canvas themselves —
+	// rendering the whole overworld underneath them was pure discarded work
+	// (two map blits + every NPC/item/portal + a full-canvas upscale, per frame)
+	const overlayOwnsFrame = battle.blocking || pvp.blocking || factorySpec.blocking;
+	if (!overlayOwnsFrame) {
+		const [camX, camY] = cameraPos();
+		ctx.clearRect(0, 0, VIEW_W, VIEW_H);
+		world.drawLayer(ctx, 'bottom', camX, camY);
+		if (!editView.on) drawWaterAnim(ctx, camX, camY); // the sea moves (editor stays exact)
+		if (!editView.on) drawStepFx(ctx, camX, camY, 'print'); // footprints lie on the ground
+		services.draw(ctx, camX, camY);
+		arcade.draw(ctx, camX, camY);
+		items.draw(ctx, camX, camY);
+		drawBaseDeco(ctx, camX, camY);
+		drawMuseum(ctx, camX, camY);
+		drawLegendary(ctx, camX, camY);
+		drawAwakening(ctx, camX, camY);
+		portals.draw(ctx, camX, camY); // ground pads render under blockers/entities
+		blockers.draw(ctx, camX, camY);
+		drawGates(ctx, camX, camY, Story, world.current?.name, getImage);   // Fortree Gym / Trick House 6 (rotating_gates.js)
+		// sprites in y order so overlaps stack correctly. In the editor the player
+		// and follower are never drawn — you're looking at the map itself.
+		const sprites = editView.on
+			? (editView.entities ? [...npcs.list, ...trainers.list] : [])
+			: [...npcs.list, ...trainers.list, player];
+		if (!editView.on && follower && !player.surfing) sprites.push({ py: follower.py, draw: drawFollower, follow: true });
+		sprites.sort((a, b) => a.py - b.py);
+		// GBA draw priority from ELEVATION (engine.js drawsAboveTop): an object up
+		// on a bridge deck draws OVER the map's top layer, one under it below
+		const elevOf = s => (s === player || s.follow) ? player.elev : Number(s.ev?.elevation) || 0;
+		const over = sprites.filter(s => drawsAboveTop(elevOf(s)));
+		for (const s of sprites) if (!over.includes(s)) s.draw(ctx, camX, camY);
+		if (!editView.on) drawStepFx(ctx, camX, camY, 'rustle'); // grass springs up around the feet (owns fx cleanup)
+		if (!editView.on) drawFriendGhosts(ctx, camX, camY);
+		world.drawLayer(ctx, 'top', camX, camY);
+		for (const s of over) s.draw(ctx, camX, camY);
+		drawCaveDark(ctx, camX, camY);
+		drawDayNightTint(ctx);
+		drawWeather(ctx); // rain/sand/hail/ash over the world, under the day-night mood
+		evolution.draw(ctx);
+
+		sctx.drawImage(frame, 0, 0, VIEW_W * SCALE, VIEW_H * SCALE);
+	}
+	// battle, menus, and dialogs all render at full canvas resolution
+	const SW = screen.width, SH = screen.height;
+	// The full-res menus lay themselves out for the 3:2 frame (unit = H/480
+	// with columns spanning ~720 units). On the tall portrait canvas that unit
+	// would blow past the right edge, so menus get a 3:2 band across the top of
+	// the canvas instead — identical geometry to the pre-tall portrait canvas;
+	// the live world stays visible beneath. Dialogs keep the full height (they
+	// bottom-anchor near the thumbs and are width-capped — dialog.drawHi).
+	const MH = Math.min(SH, Math.round(SW / 1.5));
+	if (battle.blocking) {
+		battle.draw(sctx, SW, SH);
+	} else if (pvp.blocking) {
+		pvp.draw(sctx, SW, SH);
+	} else if (factorySpec.blocking) {
+		factorySpec.draw(sctx, SW, SH);
+	} else {
+		// extend the menus' dim backdrop over the world below the band, and hide
+		// the side MENU/PARTY/BAG buttons that would overlap the band's corner
+		document.body.classList.toggle('ow-menu', canvasMenuOpen());
+		if (canvasMenuOpen() && SH > MH) {
+			sctx.fillStyle = 'rgba(10,8,18,0.82)';
+			sctx.fillRect(0, MH, SW, SH - MH);
+		}
+		if (cardFlip.open) drawCardFlip(sctx, SW, SH); // full screen, the GB frame scaled up
+		else if (contestMenu.open) drawContest(sctx, SW, SH); // full screen, the GBA contest screen scaled up
+		else if (blender.open) drawBerryBlender(sctx, SW, SH); // the GBA screen scaled up
+		else if (crystalSlots.open) drawCrystalSlots(SW, MH);
+		else if (partyMenu.open) drawPartyMenu(SW, MH);
+		else if (shopMenu.open) drawShopMenu(SW, MH);
+		else if (bagMenu.open) drawBagMenu(SW, MH);
+		else if (pcMenu.open) drawPcMenu(SW, MH);
+		else if (vfMenu.open) drawVfMenu(SW, MH);
+		else if (gcMenu.open) drawGcMenu(SW, MH);
+		else if (pbCase.open) drawPokeblockCase(SW, MH);
+		else if (unownPuzzle.open) drawUnownPuzzle(SW, MH);
+		else if (decoMenu.open) drawDecoMenu(SW, MH);
+		else if (socialMenu.open) drawSocial(SW, MH);
+		else if (slotsMenu.open) drawSlots(SW, MH);
+		else if (dexMenu.open) drawDexMenu(SW, MH);
+		else if (townMap.open) drawTownMap(SW, MH);
+		else if (tradeMenu.open) drawNpcTrade(SW, MH);
+		else if (daycareMenu.open) drawDaycare(SW, MH);
+		else if (nameRater.open) drawNameRater(SW, MH);
+		else if (halfParty.open) drawHalfParty(SW, MH);
+		else if (moveShop.open) drawMoveShop(SW, MH);
+		else if (optionsMenu.open) drawOptions(SW, MH);
+		else if (questMenu.open) drawQuest(SW, MH);
+		else if (trainerCard.open) drawTrainerCard(SW, MH);
+		else if (starterMenu.open) drawStarterMenu(SW, MH);
+		else if (ferryMenu.open) drawFerryMenu(SW, MH);
+		else if (portalMenu.open) drawPortalMenu(SW, MH);
+		else if (phoneMenu.open) drawPhoneMenu(SW, MH);
+		else if (choiceMenu.open) drawChoiceMenu(SW, MH);
+		else if (bpShopMenu.open) drawBpShopMenu(SW, MH);
+		else if (trade.open) drawTrade(SW, MH);
+		else if (playerMenu.open) drawPlayerMenu(SW, MH);
+		else if (deckSelect.open) drawDeckSelect(SW, MH);
+		else if (radioMenu.open) drawRadio(SW, MH);
+		else if (unownDex.open) drawUnownDex(SW, MH);
+		else if (startMenu.open) drawStartMenu(SW, MH);
+		else if (cardsMenu.open) drawCardsMenu(SW, MH);
+		else if (runMenu.open) drawRunMenu(SW, MH);
+		else if (friendsMenu.open) drawFriendsMenu(SW, MH);
+		else if (mailMenu.open) drawMailMenu(SW, MH);
+		if (!evolution.blocking) dialog.drawHi(sctx, SW, SH);
+	}
+	// while your run is being spectated, show a live "N watching" badge on top
+	if (frontier.active && frontierWatchers > 0) drawWatchingBadge(SW, SH);
+	drawTouchHud(SW, SH);
+	// warp fade sits ON TOP of everything (world, menus, HUD) so the whole screen
+	// dips to black between maps
+	if (fade.alpha > 0.001) {
+		sctx.save();
+		sctx.globalAlpha = Math.min(1, fade.alpha);
+		sctx.fillStyle = '#000';
+		sctx.fillRect(0, 0, SW, SH);
+		sctx.restore();
+	}
+}
+
+// ---------- the touch HUD ----------
+// `body.touch #bar { display: none }` hides #hud AND #objective, and EVERY thing
+// the overworld tells a roaming player goes through hud.textContent: the map name
+// on arrival, "party healed", "X was sent to the BOX", the egg-ready notice, the
+// rift warning, stuck-load recovery. On a phone all of it was invisible — a
+// caught POKeMON silently vanished into storage. The quest objective was hidden
+// too, so the "where do I go next" system existed and could not be read.
+//
+// Rather than touch the ~15 call sites, a MutationObserver mirrors those two DOM
+// nodes onto the canvas. Anything that writes the bar keeps working unchanged.
+export const touchHud = { msg: '', until: 0, objective: '', expanded: false, truncated: false, rect: null };
+// Called by main.js at the point this setup used to run inline. As a top-level
+// statement here it ran when this module LOADED, before main.js had marked the
+// body 'touch', so the observer was never installed and the touch HUD stayed
+// blank (mobile_test caught it).
+export function initTouchHud() {
+if (document.body.classList.contains('touch')) {
+	const hudEl = document.getElementById('hud'), objEl = document.getElementById('objective');
+	const obs = new MutationObserver(() => {
+		const t = (hudEl.textContent || '').trim();
+		if (t && t !== touchHud.msg) { touchHud.msg = t; touchHud.until = performance.now() + 4200; }
+		touchHud.objective = (objEl.textContent || '').trim();
+	});
+	for (const el of [hudEl, objEl]) obs.observe(el, { childList: true, characterData: true, subtree: true });
+	touchHud.objective = (objEl.textContent || '').trim();
+}
+}
+// Word-wrap `text` to `maxW` canvas pixels (the current sctx font). Never asks
+// fillText to squeeze: that is what made a long objective one unreadable sliver.
+export function wrapHudText(measure, text, maxW) {
+	const lines = [];
+	let cur = '';
+	for (const word of String(text).split(/\s+/).filter(Boolean)) {
+		const next = cur ? cur + ' ' + word : word;
+		if (!cur || measure(next) <= maxW) { cur = next; continue; }
+		lines.push(cur); cur = word;
+	}
+	if (cur) lines.push(cur);
+	return lines;
+}
+// cut `lines` to `max`, ending the last kept line with the "more" marker
+function clampLines(measure, lines, max, maxW, more) {
+	if (lines.length <= max) return { lines, cut: false };
+	const out = lines.slice(0, max);
+	let last = out[max - 1];
+	while (last && measure(last + more) > maxW) last = last.replace(/\s*\S+$/, '');
+	out[max - 1] = (last || '') + more;
+	return { lines: out, cut: true };
+}
+// the canvas's CSS width and the left edge (in canvas px) of the MENU/PARTY/BAG
+// column, re-measured at most twice a second (layout reads, not per frame)
+const hudGeom = { at: -1e9, cssW: 0, btnLeft: null, btnBottom: 0 };
+function measureHudGeom(SW, SH) {
+	const now = performance.now();
+	if (now - hudGeom.at < 500) return hudGeom;
+	hudGeom.at = now;
+	const r = screen.getBoundingClientRect();
+	hudGeom.cssW = r.width || SW;
+	hudGeom.btnLeft = null; hudGeom.btnBottom = 0;
+	if (r.width && r.height) {
+		for (const id of ['t-start', 't-party', 't-bag']) {
+			const b = document.getElementById(id)?.getBoundingClientRect();
+			if (!b || !b.width || !b.height) continue;   // hidden
+			const left = (b.left - r.left) * (SW / r.width), bottom = (b.bottom - r.top) * (SH / r.height);
+			if (left >= SW || bottom <= 0) continue;     // entirely off the canvas
+			hudGeom.btnLeft = hudGeom.btnLeft == null ? left : Math.min(hudGeom.btnLeft, left);
+			hudGeom.btnBottom = Math.max(hudGeom.btnBottom, bottom);
+		}
+	}
+	return hudGeom;
+}
+// a tap on the strip shows the whole objective (or folds it back); main.js asks
+export function touchHudTap(x, y) {
+	const r = touchHud.rect;
+	if (!r || x < r.x || x > r.x + r.w || y < r.y || y > r.y + r.h) return false;
+	if (!touchHud.truncated && !touchHud.expanded) return false;
+	touchHud.expanded = !touchHud.expanded;
+	return true;
+}
+function drawTouchHud(SW, SH) {
+	touchHud.rect = null;
+	if (!document.body.classList.contains('touch')) return;
+	if (menuBlocking()) return;                       // never over a menu or a battle
+	const now = performance.now();
+	if (touchHud.objective !== touchHud._lastObjective) { touchHud._lastObjective = touchHud.objective; touchHud.expanded = false; }
+	const rows = [];
+	// collapsed, the objective gets 3 lines and a notice 2; a tap shows it all
+	if (touchHud.objective) rows.push(['#9d8fd4', touchHud.objective, touchHud.expanded ? 99 : 3, true]);
+	if (touchHud.msg && now < touchHud.until) rows.push(['#ffffff', touchHud.msg, 2, false]);
+	if (!rows.length) { touchHud.truncated = false; return; }
+	const g = measureHudGeom(SW, SH);
+	const pad = Math.round(SW * 0.02);
+	// at least ~12 CSS px on screen, whatever the canvas's backing resolution
+	const fs = Math.max(11, Math.round(SW / 34), Math.round(12 * SW / (g.cssW || SW)));
+	const lh = Math.round(fs * 1.25);
+	sctx.save();
+	sctx.font = `${fs}px system-ui, sans-serif`;
+	sctx.textBaseline = 'top';
+	const measure = t => sctx.measureText(t).width;
+	// Sit UNDER the world frame when the canvas is taller than it (landscape
+	// tablets), where the desktop bar would be. On a portrait phone the frame
+	// fills the canvas, so it overlays the top-left instead — left-anchored and
+	// width-capped so it never reaches the MENU/PARTY/BAG buttons on the right.
+	const below = VIEW_H * SCALE + pad;
+	const overlay = !(below + lh * 2 + pad * 2 <= SH);
+	let maxW = SW - pad * 2;
+	if (overlay && g.btnLeft != null && g.btnLeft > SW * 0.4) maxW = Math.min(maxW, g.btnLeft - pad * 2);
+	const textW = maxW - pad * 2;
+	let cut = false;
+	const laid = rows.map(([color, text, max, isObj]) => {
+		const c = clampLines(measure, wrapHudText(measure, text, textW), max, textW, isObj ? '… ▾' : '…');
+		if (isObj && c.cut) cut = true;
+		return [color, c.lines];
+	});
+	touchHud.truncated = cut;
+	const lines = laid.flatMap(([color, ls]) => ls.map(l => [color, l]));
+	const w = Math.min(maxW, Math.max(...lines.map(l => measure(l[1]))) + pad * 2);
+	const h = lines.length * lh + pad;
+	const y = overlay ? pad : below;
+	sctx.fillStyle = 'rgba(10,8,18,0.78)';
+	sctx.fillRect(pad, y, w, h);
+	sctx.strokeStyle = 'rgba(157,143,212,0.5)';
+	sctx.strokeRect(pad + 0.5, y + 0.5, w, h);
+	lines.forEach((l, i) => {
+		sctx.fillStyle = l[0];
+		sctx.fillText(l[1], pad * 2, y + i * lh + Math.round(pad / 2));   // no maxWidth: wrapped, never squeezed
+	});
+	touchHud.rect = { x: pad, y, w, h, lines: lines.length, fs, maxW };
+	sctx.restore();
+}

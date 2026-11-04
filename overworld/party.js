@@ -37,7 +37,7 @@ export function loadParty(data) {
 
 export function createStarter(speciesId, data) {
 	const party = [buildMon(speciesId, 5, data)];
-	saveParty(party);
+	saveParty(party);   // the caller checks partySaved() and warns if it did not stick
 	return party;
 }
 
@@ -56,8 +56,31 @@ export function addCaught(party, mon) {
 	return 'box';
 }
 
+// true when the party is really on disk. A full browser store used to fail this
+// write in SILENCE: the game played on from memory and the next load came back
+// partyless. Replay tapes (Battlecards, cosmetic and regenerable) are the one
+// thing freed to make room, the same rule the run snapshots follow; then retry.
+const EXPENDABLE = ['magepunk_replays_v1'];
+// A MEGA EVOLUTION (or Primal Reversion) lasts one battle and is NEVER saved: the
+// battle writes the party mid-fight (ow_battleresume), so a mon standing Mega is
+// written in its BASE form — the stats/types/ability battle.js parked on `_megaBase`
+// — and the battle snapshot's `megaMine` re-applies the form on a resume.
+export function baseFormOf(m) {
+	if (!m || (!m._megaBase && !m.megaForm)) return m;
+	const b = m._megaBase;
+	const out = { ...m, megaForm: undefined, _megaBase: undefined };
+	if (b) { out.stats = { ...b.stats }; out.types = [...b.types]; out.ability = b.ability; }
+	return out;
+}
 export function saveParty(party) {
-	safeSave(KEY, party);
+	const rows = Array.isArray(party) ? party.map(baseFormOf) : party;
+	if (safeSave(KEY, rows)) return true;
+	let freed = false;
+	for (const k of EXPENDABLE) { try { if (localStorage.getItem(k) != null) { localStorage.removeItem(k); freed = true; } } catch (e) {} }
+	return freed ? safeSave(KEY, rows) : false;
+}
+export function partySaved() {
+	try { const v = JSON.parse(localStorage.getItem(KEY) || 'null'); return Array.isArray(v) && v.length > 0; } catch (e) { return false; }
 }
 
 export function healParty(party) {

@@ -21,6 +21,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { overworldSource } from './owsource.mjs';   // main.js + the modules split out of it
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '../../');
@@ -72,9 +73,18 @@ const shared = JSON.parse(fs.readFileSync(path.join(D, 'shared_scripts.json'), '
 
 // ---------- map labels must still win ----------
 {
-	const src = fs.readFileSync(path.join(ROOT, 'overworld/main.js'), 'utf8');
-	A(/mapScripts = \{ \.\.\.sharedScripts, \.\.\.\(c\.scr \|\| \{\}\) \}/.test(src),
-		"the map's own labels are merged OVER the shared ones, so a map never loses its own version");
+	const src = overworldSource();
+	// What matters is the ORDER — the map's own labels spread last, so they win.
+	// The merge may be wrapped (applySailFix patches the Briney ferry legs as the
+	// table is built), which is why this no longer pins the exact spelling.
+	// Later layers may follow the map's own (its restored menus, the PHONE's
+	// scripts), but nothing SHARED may spread after it.
+	// (any number of wrappers: applyFallthrough(stem, applySailFix({...})) too)
+	const merge = (src.match(/mapScripts = (?:[A-Za-z_$][\w$]*\((?:[\w$]+,\s*)?)*\{([^}]*\.\.\.\(c\.scr \|\| \{\}\)[^}]*)\}/) || [])[1] || '';
+	const own = merge.indexOf('...(c.scr || {})');
+	A(merge && merge.indexOf('...sharedScripts') >= 0 && merge.indexOf('...sharedScripts') < own
+		&& !/shared/i.test(merge.slice(own)),
+		"the map's own labels are merged OVER the shared ones, so a map never loses its own version", merge);
 }
 
 // ---------- live ----------

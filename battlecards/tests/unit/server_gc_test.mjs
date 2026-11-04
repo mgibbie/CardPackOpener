@@ -87,7 +87,7 @@ const T = 1_700_000_000_000;
 
 // --- source guards: the wiring stays intact ---
 ok('the source interval is 30 minutes', /GC_INTERVAL_MS\s*=\s*30\s*\*\s*60_000/.test(src));
-ok('sweepOld keys off the updated_at column with a LIKE prefix', /DELETE FROM mp_store WHERE key LIKE \? AND updated_at < \?/.test(src));
+ok('sweepOld keys off the updated_at column with a key-range prefix (indexed; LIKE before #808)', /DELETE FROM mp_store WHERE key >= \? AND key < \? AND updated_at < \?/.test(src));
 ok('the GC table covers the high-growth per-match prefixes', ['cardmatch:', 'cardmatchstate:', 'cardintent:', 'alive:', 'rl:'].every(p => src.includes(`'${p}'`)));
 ok('the handler actually calls maybeGC', /maybeGC\(store,\s*Date\.now\(\)\)/.test(src));
 

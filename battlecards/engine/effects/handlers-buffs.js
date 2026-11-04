@@ -91,7 +91,12 @@ register('grant-ongoing', ({ state, pi, target, source, enemies, scaled, hm, pic
 				return;
 			}
 			const t = chosenCreature();
-			if (t) t.ongoing = JSON.parse(JSON.stringify(e.ongoing));
+			if (!t) return;
+			const clone = JSON.parse(JSON.stringify(e.ongoing));
+			// `stack`: a creature keeps its own trigger; the grant joins `ongoings`
+			// (Mirkwood Darkflame Arrow's Inspire on a creature that already has one)
+			if (e.stack && t.ongoing) (t.ongoings = t.ongoings || []).push(clone);
+			else t.ongoing = clone;
 });
 
 
@@ -315,7 +320,9 @@ register('grant-next-class-free', ({ state, pi, target, source, enemies, scaled,
 
 register('buff-hand-tribe', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
 			// Voidgill: give all minions of a tribe in your hand +X/+X
-			for (const c of state.players[pi].hand) if (c.type === 'creature' && (c.tribe || '').includes(e.tribe)) { c.attack = (c.attack || 0) + (e.attack || 0); c.maxHealth = (c.maxHealth || 0) + (e.health || 0); }
+			// Chum Bucket: "... Repeat for each Murloc you control." (repeatPerFriendlyTribe)
+			const times = 1 + (e.repeatPerFriendlyTribe ? state.players[pi].board.filter(c => !isDead(c) && c.type === 'creature' && (c.tribe || '').includes(e.repeatPerFriendlyTribe)).length : 0);
+			for (const c of state.players[pi].hand) if (c.type === 'creature' && (c.tribe || '').includes(e.tribe)) { c.attack = (c.attack || 0) + (e.attack || 0) * times; c.maxHealth = (c.maxHealth || 0) + (e.health || 0) * times; }
 });
 
 
@@ -1065,6 +1072,8 @@ register('adapt', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, 
 			if (e.name) targets = state.players[pi].board.filter(c => !isDead(c) && c.name === e.name); // Lightfused Stegodon: Silver Hand Recruits
 			else if (e.target === 'friendly-creatures') targets = state.players[pi].board.filter(c => !isDead(c));
 			else if (e.target === 'random-friendly') { const pool = state.players[pi].board.filter(c => !isDead(c) && c.type !== 'location'); targets = pool.length ? [pool[Math.floor(state.rng() * pool.length)]] : []; } // Alpha Tyrranax: Adapt a random creature you control
+			// Crackling Razormaw: "Adapt a friendly Beast" — the CHOSEN one only (no pick: nothing)
+			else if (e.target === 'friendly-creature') { const t = chosenCreature(); targets = t && t.controller === pi && t !== source && (!e.tribe || (t.tribe || '').includes(e.tribe)) ? [t] : []; }
 			else if (e.tribe) targets = state.players[pi].board.filter(c => !isDead(c) && (c.tribe || '').includes(e.tribe));
 			else { const t = chosenCreature() || (source && source.zone === 'board' && !isDead(source) ? source : null); targets = t ? [t] : []; }
 			targets = targets.filter(c => c.type !== 'location');
@@ -1194,6 +1203,11 @@ register('buff', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, e
 							&& ((c.tribe || '').includes(e.repeatPerFriendly)
 								|| c.name.includes(e.repeatPerFriendly))).length;
 					}
+					// Ring of Courage: "+1/+1. Repeat for each enemy creature." (bug 1793090559317)
+					if (e.repeatPerEnemy) for (const o of enemies) times += state.players[o].board.filter(c => !isDead(c) && c.type !== 'location').length;
+					// Blazing Power: "+1/+1. Repeat for each damaged friendly character." — valuePer
+					// counts the repeats (the chosen-creature branch used to ignore it: always +1/+1)
+					if (e.valuePer) times += scaled({ ...e, value: 1 }) || 0;
 					for (let i = 0; i < times; i++) buffCreature(t, e.attack, e.health);
 					if (e.grant && !t.keywords.includes(e.grant)) { t.keywords.push(e.grant); if (e.grant === KW.DIVINE_SHIELD) t.shield = true; } // Future Gnomeregan: +2/+1 and Divine Shield
 				}

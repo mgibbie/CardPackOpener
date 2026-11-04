@@ -1,0 +1,283 @@
+/**
+ * Animated cards, Unown forms and the per-card view data — the data side of Pokermon's
+ * functions/pokeanimations.lua (AnimatedPokemon) and pokedraw.lua. Rendering is the UI's
+ * job: this only exposes what to draw.
+ *
+ * cardView extras (view_card hook), under `v.poke`:
+ *   ptype, tera (sticker type), energy / c_energy / energy_max, stage, rounds (level-evo
+ *   countdown), evolve (an evolution item is applied — evolves at end of round), megas,
+ *   form (Unown / Gourgeist / Rival ... forms), illusion (Zorua's disguise key), broke_pos
+ *   (Mimikyu's busted disguise), fainted, shiny (edition), anim
+ *   {frames, frames_per_row, fps, soul, atlas} for animated cards.
+ */
+import { G } from '../../../js/engine/core.js';
+import { get_type, type_sticker_applied, energy_limit_bonus } from './types.js';
+import { energy_max } from './energy.js';
+
+/**
+ * AnimatedPokemon (pokeanimations.lua). `native` ones have their own atlas per key. The Unown Swarm (batch 10b): 3.9.1's
+ * strips (pokesprites.lua ANIMATION_ATLAS: 36 frames, 12 fps, one row), tiled by index.js; 3.2.1 laid them 12 per row.
+ */
+export const ANIMATED = {
+  j_poke_unown_swarm: { native: true, frames_per_row: 36, frames: 36, fps: 12, soul: true, size: { x: 290, y: 285 } },
+  j_poke_voltorb: { shiny_offset: 1, frames_per_row: 11, frames: 11, fps: 11 },
+  j_poke_electrode: { shiny_offset: 1, frames_per_row: 13, frames: 13, fps: 13 },
+  c_poke_bird_energy: { frames_per_row: 18, frames: 36, fps: 15 },
+  // Miror Budicolo (3.9.1 April Fools, batch 17): pokesprites.lua's 4-frame, 8 fps strip (and its Shiny twin), atlas
+  // poke_miror_budicolo / poke_miror_budicolo_shiny (index.js).
+  j_poke_miror_budicolo: { native: true, atlas: 'miror_budicolo', frames_per_row: 4, frames: 4, fps: 8 },
+};
+
+/**
+ * Pokermon 3.9.1's animated Series A alternates (pokesprites.lua ANIMATION_ATLAS: frames / fps; one-row strips, + Shiny twins),
+ * drawn by ui.js when the viewer picks the Series A sprite series (the cosmetic `series` option). Atlases: index.js.
+ */
+export const SERIES_A_ANIM = {
+  AtlasJokersSeriesABellsprout: { frames: 24, fps: 10 },
+  AtlasJokersSeriesAVoltorb: { frames: 11, fps: 11 },
+  AtlasJokersSeriesAElectrode: { frames: 13, fps: 13 },
+  AtlasJokersSeriesABaltoy: { frames: 32, fps: 50 },
+  AtlasJokersSeriesAClaydol: { frames: 32, fps: 50 },
+};
+
+/**
+ * Kecleon's card per type (3.9.1 pokejokers_12.lua set_sprites: its poke_lookup_atlas = the Gen 3 sheet, pokespriteload.lua
+ * lookup_gen_atlas 3). Colorless (or a type without a cell) is its own Natdex card. Drawn by ui.js face() (+ the Shiny shader).
+ */
+export const KECLEON_ATLAS = 'poke_AtlasJokersBasicGen03391';
+export const KECLEON_SPRITES = {
+  Dark: { x: 6, y: 0 }, Dragon: { x: 8, y: 0 }, Earth: { x: 10, y: 0 }, Fairy: { x: 0, y: 1 }, Fighting: { x: 2, y: 1 },
+  Fire: { x: 4, y: 1 }, Grass: { x: 6, y: 1 }, Lightning: { x: 8, y: 1 }, Metal: { x: 10, y: 1 }, Psychic: { x: 0, y: 2 }, Water: { x: 2, y: 2 },
+};
+
+/**
+ * Castform's weather forms (the owner's design, jokers/pokejokers_designs.js): upstream 3.9.1 draws them on the Gen 3 sheet (row 0,
+ * left of Kecleon's type cards; pokespriteload.lua lists only its Natdex card, no joker uses them upstream) — by ability.extra.form.
+ * Normal is its own Natdex card. Drawn by ui.js face() (+ the Shiny sheet's twin cells).
+ */
+export const CASTFORM_SPRITES = { sunny: { x: 0, y: 0 }, rainy: { x: 2, y: 0 }, snowy: { x: 4, y: 0 } };
+/** Cherrim's Sunshine Form (the owner's design): upstream 3.9.1's Gen 4 sheet draws it beside its Overcast card {0,1} (unlisted in
+ *  pokespriteload.lua). By the view's form (its center's poke_view_form: live). Overcast = its own card. */
+export const CHERRIM_SPRITES = { sunshine: { x: 2, y: 1 } };
+/** Giratina's Origin Forme (the owner's design): upstream 3.9.1's own card on the Gen 4 sheet, {10,3} with its floating soul {11,3}
+ *  (sprite table `giratina_origin`), beside its Altered card {8,3}. By the view's form (its center's poke_view_form: live, while an
+ *  undebuffed Dialga or Palkia is held). Altered = its own card. */
+export const GIRATINA_ORIGIN = { pos: { x: 10, y: 3 }, soul_pos: { x: 11, y: 3 } };
+
+/**
+ * Burmy's and Wormadam's cloaks (the owner's design, jokers/pokejokers_designs.js): upstream 3.9.1 draws all three on the Gen 4 sheet
+ * (row 0: Burmy Plant / Sandy / Trash at 0 / 2 / 4, Wormadam at 6 / 8 / 10; pokespriteload.lua lists only the Plant cells) — by
+ * ability.extra.form. Plant is each one's own card. Drawn by ui.js face() (+ the Shiny sheet's twin cells).
+ */
+export const CLOAK_ATLAS = 'poke_AtlasJokersBasicGen04391';
+export const BURMY_SPRITES = {
+  j_poke_burmy: { sandy: { x: 2, y: 0 }, trash: { x: 4, y: 0 } },
+  j_poke_wormadam: { sandy: { x: 8, y: 0 }, trash: { x: 10, y: 0 } },
+};
+
+/**
+ * Deoxys's forme (3.9.1 pokejokers_13.lua set_sprites, sub-batch 14): its floating sprite on the Gen 3 sheet by extra.form —
+ * 1 Attack {5,3}, 2 Defense {7,3}, 3 Speed {9,3}; Normal (4) is its own soul {3,3}. Drawn by ui.js face().
+ */
+/** The Imposter Professor's unmasked card (3.9.1 zotherjokers.lua set_sprites: form 1 -> Others {8,1}; batch 17). */
+export const IMPOSTER_REVEALED = { x: 8, y: 1 };
+
+export const DEOXYS_SOULS = { 1: { x: 5, y: 3 }, 2: { x: 7, y: 3 }, 3: { x: 9, y: 3 } };
+
+/**
+ * The Shellos line's seas (the owner's design, jokers/pokejokers_designs.js): upstream 3.9.1 draws both on the Gen 4 sheet, the two
+ * cells pokespriteload.lua lists (`shellos` base.pos {4,1} / {6,1}, `gastrodon` {8,1} / {10,1}): the FIRST is the East Sea (blue),
+ * each center's own card; the second the West Sea (pink), by ability.extra.form. Drawn by ui.js face() (+ the Shiny sheet's twins).
+ */
+export const SEA_ATLAS = 'poke_AtlasJokersBasicGen04391';
+export const SEA_SPRITES = {
+  j_poke_shellos: { east: { x: 4, y: 1 }, west: { x: 6, y: 1 } },
+  j_poke_gastrodon: { east: { x: 8, y: 1 }, west: { x: 10, y: 1 } },
+};
+
+/**
+ * Basculin's stripe (the owner's Gen 5 batch 2, jokers/pokejokers_designs.js STRIPES): upstream 3.9.1 draws three on the Gen 5 sheet, beside
+ * one another ({4,0} Red-Striped, {6,0} Blue-Striped, {8,0} White-Striped, unused; pokespriteload.lua lists only the first) — by
+ * ability.extra.form. Red is its own card. Drawn by ui.js face() (+ the Shiny sheet's twins at the same cells).
+ */
+export const BASCULIN_SPRITES = { blue: { x: 6, y: 0 } };
+
+/**
+ * The Gen 5 Legendaries' forms (the owner's Gen 5 batch 4, jokers/pokejokers_designs.js): upstream 3.9.1 draws each on the Gen 5 sheet beside
+ * its base card, with its own floating soul (sprite table tornadus_therian, thundurus_therian, landorus_therian, kyurem_black, kyurem_white,
+ * keldeo_resolute, meloetta_pirouette) — by the view's form (each center's poke_view_form: live, so a partner bought, sold or debuffed redraws
+ * it at once; Meloetta's after each hand). The base form is each one's own card. Drawn by ui.js ownFace (+ the Shiny sheet's twins).
+ */
+export const GEN5_LEGEND_FORMS = {
+  j_poke_tornadus: { therian: { pos: { x: 8, y: 3 }, soul_pos: { x: 9, y: 3 } } },
+  j_poke_thundurus: { therian: { pos: { x: 0, y: 4 }, soul_pos: { x: 1, y: 4 } } },
+  j_poke_landorus: { therian: { pos: { x: 0, y: 5 }, soul_pos: { x: 1, y: 5 } } },
+  j_poke_kyurem: { black: { pos: { x: 4, y: 5 }, soul_pos: { x: 5, y: 5 } }, white: { pos: { x: 8, y: 5 }, soul_pos: { x: 9, y: 5 } } },
+  j_poke_keldeo: { resolute: { pos: { x: 2, y: 6 }, soul_pos: { x: 3, y: 6 } } },
+  j_poke_meloetta: { pirouette: { pos: { x: 6, y: 6 }, soul_pos: { x: 7, y: 6 } } },
+};
+
+/**
+ * The Gen 6 Legendaries' forms (the owner's Gen 6 batch 3, jokers/pokejokers_designs.js): upstream 3.9.1 draws each on the Gen 6 sheet beside
+ * its base card, with its own floating soul (sprite table zygarde (the 50% Forme), zygarde_complete, hoopa_unbound) — by the view's form (each
+ * center's poke_view_form, from the card's own count: Zygarde's Cells, Hoopa's consumables used). Zygarde's own card is its 10% Forme
+ * (zygarde_10), Hoopa's its Confined one. Drawn by ui.js ownFace (+ the Shiny sheet's twins).
+ */
+export const GEN6_LEGEND_FORMS = {
+  j_poke_zygarde: { half: { pos: { x: 4, y: 11 }, soul_pos: { x: 5, y: 11 } }, complete: { pos: { x: 6, y: 11 }, soul_pos: { x: 7, y: 11 } } },
+  j_poke_hoopa: { unbound: { pos: { x: 10, y: 11 }, soul_pos: { x: 11, y: 11 } } },
+};
+
+/**
+ * The Gen 7 Legendaries' forms (Gen 7 batch 4, jokers/pokejokers_designs.js): upstream 3.9.1 draws them on the Gen 7 sheet, each with its own
+ * floating soul. Silvally's Memories, one card per type (its view form = its current type; Colorless is its own card {6,1}; each cell's type
+ * icon checked with pokermon_art_type.mjs); Ultra Necrozma {0,5} (Dragon; from the X3 bank); Marshadow's Zenith card {4,5} (Fighting; during a
+ * Boss Blind, unlisted in pokespriteload.lua). Drawn by ui.js ownFace (+ the Shiny sheet's twins).
+ */
+const memory = (x, y) => ({ pos: { x, y }, soul_pos: { x: x + 1, y } });
+export const GEN7_LEGEND_FORMS = {
+  j_poke_silvally: {
+    Fighting: memory(8, 1), Earth: memory(10, 1), Metal: memory(0, 2), Fire: memory(2, 2), Water: memory(4, 2), Grass: memory(6, 2),
+    Lightning: memory(8, 2), Psychic: memory(10, 2), Dragon: memory(0, 3), Dark: memory(2, 3), Fairy: memory(4, 3),
+  },
+  j_poke_necrozma: { ultra: memory(0, 5) },
+  j_poke_marshadow: { zenith: memory(4, 5) },
+};
+
+/**
+ * The Gen 8 Legendaries' forms (Gen 8 batch 4, jokers/pokejokers_designs.js): upstream 3.9.1 draws each with its own floating soul (sprite
+ * table zacian_crowned {8,9}, zamazenta_crowned {12,9}, eternamax_eternatus {0,10}, enamorus_therian {8,11}, all on the Gen 8 sheet) — by the
+ * view's form (each center's poke_view_form, from the card's own count: the Boss Blinds beaten while held, the rounds held). Eternatus's own
+ * card is on the Natdex sheet, its Eternamax one on the Gen 8 sheet (its 'sheet': ui.js ownFace swaps the atlas, its Shiny twin too). Every form
+ * cell's type icon is its base's (pokermon_art_type.mjs; pokermon_gen8_legendaries_test 'cell types').
+ */
+export const GEN8_LEGEND_FORMS = {
+  j_poke_zacian: { crowned: memory(8, 9) },
+  j_poke_zamazenta: { crowned: memory(12, 9) },
+  j_poke_eternatus: { eternamax: { ...memory(0, 10), sheet: 'Gen08' } },
+  j_poke_enamorus: { therian: memory(8, 11) },
+};
+
+/**
+ * Ogerpon's masks (Gen 9 batch 4, jokers/pokejokers_designs.js OGERPON_MASKS / mask_now): upstream 3.9.1 draws each mask with its own floating
+ * soul on the Gen 9 sheet (sprite table ogerpon {4,4} = Teal, its own card; ogerpon_wellspring {2,5}, ogerpon_hearthflame {8,4},
+ * ogerpon_cornerstone {6,5}) — by the view's form (the center's poke_view_form: the mask of the current Ante). The unlisted cells beside
+ * them ({6,4}, {0,5}, {4,5}, {8,5}: the Terastallized masks, no soul) are not used. Each cell's type icon is the mask's type
+ * (pokermon_art_type.mjs; pokermon_gen9_legendaries_test 'cell types').
+ */
+export const GEN9_LEGEND_FORMS = {
+  j_poke_ogerpon: { wellspring: memory(2, 5), hearthflame: memory(8, 4), cornerstone: memory(6, 5) },
+};
+
+/**
+ * Deerling's and Sawsbuck's seasons (the owner's Gen 5 batch 3, jokers/pokejokers_designs.js SEASONS): upstream 3.9.1 draws all four forms
+ * of both on the Gen 5 sheet, one after another (Deerling Spring {2,1}, Summer {4,1}, Autumn {6,1}, Winter {8,1}; Sawsbuck Spring {10,1},
+ * Summer {0,2}, Autumn {2,2}, Winter {4,2}; pokespriteload.lua lists only the Spring ones) — by the view's form (the center's
+ * poke_view_form: the season of the current Ante, live). Spring is each one's own card. Drawn by ui.js face() (+ the Shiny sheet's twins).
+ */
+export const SEASON_SPRITES = {
+  j_poke_deerling: { summer: { x: 4, y: 1 }, autumn: { x: 6, y: 1 }, winter: { x: 8, y: 1 } },
+  j_poke_sawsbuck: { summer: { x: 0, y: 2 }, autumn: { x: 2, y: 2 }, winter: { x: 4, y: 2 } },
+};
+
+/**
+ * Gen 6, batch 1's forms (the owner's Gen 6 batch 1, jokers/pokejokers_designs.js): upstream 3.9.1 draws them on the Gen 6 sheet — by
+ * ability.extra.form. Vivillon's 20 patterns (pokespriteload.lua `vivillon` base.pos, in its order; form 1 = its own card {2,0}); the Flabébé
+ * line's five flowers (base.pos Red, White, Yellow, Orange, Blue; Red = each one's own card); Furfrou's trims (UNLISTED in pokespriteload.lua,
+ * beside its Natural card {6,6}: Heart {8,6}, Star {0,7}, Diamond {2,7}, Debutante {6,7}; told apart by their look, pinned by the pixel test)
+ * — Natural (no trim yet: a shop card) is its own card; Meowstic's Female {4,8} beside its Male card {2,8} (unlisted). Drawn by ui.js
+ * ownFace (+ the Shiny sheet's twin cells).
+ */
+const VIV = [[2, 0], [4, 0], [6, 0], [8, 0], [10, 0], [0, 1], [2, 1], [4, 1], [6, 1], [8, 1], [10, 1], [0, 2], [2, 2], [4, 2], [6, 2], [8, 2], [10, 2], [0, 3], [2, 3], [4, 3]];
+export const GEN6_FORM_SPRITES = {
+  j_poke_vivillon: Object.fromEntries(VIV.slice(1).map(([x, y], i) => [i + 2, { x, y }])),
+  j_poke_flabebe: { white: { x: 0, y: 4 }, yellow: { x: 2, y: 4 }, orange: { x: 4, y: 4 }, blue: { x: 6, y: 4 } },
+  j_poke_floette: { white: { x: 10, y: 4 }, yellow: { x: 0, y: 5 }, orange: { x: 2, y: 5 }, blue: { x: 4, y: 5 } },
+  j_poke_florges: { white: { x: 10, y: 5 }, yellow: { x: 0, y: 6 }, orange: { x: 2, y: 6 }, blue: { x: 4, y: 6 } },
+  j_poke_furfrou: { heart: { x: 8, y: 6 }, star: { x: 0, y: 7 }, diamond: { x: 2, y: 7 }, debutante: { x: 6, y: 7 } },
+  j_poke_meowstic: { female: { x: 4, y: 8 } },
+};
+
+/**
+ * Gen 7, batch 1's forms (the owner's Gen 7 batch 1, jokers/pokejokers_designs.js): upstream 3.9.1 draws them on the Gen 7 sheet beside each
+ * one's own card, UNLISTED in pokespriteload.lua (it lists only Oricorio {0,0} and Wishiwashi {2,1}) — Oricorio's four dance styles (Baile
+ * {0,0} red / Fire, Pom-Pom {2,0} yellow / Lightning, Pa'u {4,0} pink / Psychic, Sensu {6,0} purple / Psychic: by ability.extra.form) and
+ * Wishiwashi's School Form {4,1} beside its Solo card (by the view's form, its center's poke_view_form: live). Baile and Solo are their own
+ * cards. Drawn by ui.js ownFace (+ the Shiny sheet's twins). Each cell's type icon matches the type (pokermon_gen7_batch1_test 'art').
+ */
+export const GEN7_FORM_SPRITES = {
+  j_poke_oricorio: { pompom: { x: 2, y: 0 }, pau: { x: 4, y: 0 }, sensu: { x: 6, y: 0 } },
+  j_poke_wishiwashi: { school: { x: 4, y: 1 } },
+};
+/**
+ * Gen 8, batch 1's form (the owner's Gen 8 batch 1, jokers/pokejokers_designs.js): Cramorant's Gulping Form, drawn UNLISTED by upstream 3.9.1
+ * on the Gen 8 sheet beside its own card ({0,0}; pokespriteload.lua lists only that one): Gulping {2,0} (an Arrokuda in its mouth; Gorging
+ * {4,0}, a Pikachu, is unused) — by the view's form (its center's poke_view_form: live, while a missile is loaded). Drawn by ui.js ownFace
+ * (+ the Shiny sheet's twin). Its type icon is Water (pokermon_gen8_batch1_test 'art').
+ */
+export const GEN8_FORM_SPRITES = {
+  j_poke_cramorant: { gulping: { x: 2, y: 0 } },
+  // Gen 8 batch 2: Toxtricity's Low Key Form, beside its Amped card ({6,0}, the one pokespriteload.lua lists) on the Gen 8 sheet; by the form
+  // rolled when it was obtained (card.ability.poke_tox_form, its center's poke_view_form). Its type icon is Lightning too.
+  j_poke_toxtricity: { lowkey: { x: 8, y: 0 } },
+  // Gen 8 batch 3 (the owner's, jokers/pokejokers_designs.js), all UNLISTED beside each one's own card: Alcremie's 63 Sweet x Cream forms
+  // (ability.extra.form 0-62, sweet-major, nine creams each: {10,0} {12,0} {14,0}, rows 1-7 x 0-14, row 8 x 0-6; form 0 is its own card
+  // {10,0}), Eiscue's Noice Face {10,8} beside its Ice Face {8,8}, Indeedee's ♀ {14,8} beside its ♂ {12,8} (poke_view_form: its gender) and
+  // Morpeko's Hangry Mode {2,9} beside its Full Belly {0,9}. Each cell's type icon matches the joker's (pokermon_gen8_batch3_test 'art'),
+  // but Hangry Morpeko's, which shows Dark: art only, its type stays Lightning.
+  j_poke_alcremie: Object.fromEntries(Array.from({ length: 62 }, (_, k) => { const i = k + 1; return [i, i < 3 ? { x: 10 + 2 * i, y: 0 } : { x: ((i - 3) % 8) * 2, y: 1 + Math.floor((i - 3) / 8) }]; })),
+  j_poke_eiscue: { noice: { x: 10, y: 8 } },
+  j_poke_indeedee: { female: { x: 14, y: 8 } },
+  j_poke_morpeko: { hangry: { x: 2, y: 9 } },
+};
+/**
+ * Gen 9 batch 1's form (the owner's, jokers/pokejokers_designs.js): Squawkabilly's plumage, rolled when it is obtained (card.ability.poke_plumage,
+ * its center's poke_view_form). Upstream 3.9.1 draws all four on the Gen 9 sheet, UNLISTED beside its own Green card ({8,0}, the one
+ * pokespriteload.lua lists): Blue {0,1}, Yellow {2,1}, White {4,1}. Drawn by ui.js ownFace (+ the Shiny sheet's twins). Each cell's type icon
+ * is Colorless (pokermon_gen9_batch1_test 'art').
+ */
+export const GEN9_FORM_SPRITES = {
+  j_poke_squawkabilly: { blue: { x: 0, y: 1 }, yellow: { x: 2, y: 1 }, white: { x: 4, y: 1 } },
+  // (regional batch C: Paldean Tauros's breed, rolled when it is obtained — card.ability.poke_tauros_breed, its center's poke_view_form; upstream
+  // 3.9.1 draws the three breeds on the Gen 1 sheet, Combat {6,6} = its own card, Blaze {8,6}, Aqua {10,6}; jokers/pokejokers_hisui.js. Each
+  // cell's type icon is its breed's: Fighting / Fire / Water, pokermon_hisuian_paldean_test 'art'.)
+  j_poke_paldean_tauros: { blaze: { x: 8, y: 6 }, aqua: { x: 10, y: 6 } },
+};
+export function view_card(card, v) {
+  const c = card.config.center;
+  const ex = card.ability.extra;
+  const tera = type_sticker_applied(card);
+  const ptype = get_type(card);
+  // (+ add-on Pokémon registered through Pokermon's machinery: pokermon.Pokemon sets poke_custom_prefix)
+  const isPoke = (c.mod === 'pokermon' || !!c.poke_custom_prefix) && c.set === 'Joker';
+  if (!isPoke && !tera && !(card.edition && card.edition.poke_shiny) && !ANIMATED[c.key]) return;
+  const p = {};
+  if (ptype) p.ptype = ptype;
+  if (tera) p.tera = tera;
+  const holder = ex && typeof ex === 'object' ? ex : card.ability;
+  const e = holder.energy_count || 0, ce = holder.c_energy_count || 0;
+  if (e || ce) { p.energy = e; p.c_energy = ce; p.energy_max = energy_max + ((G.GAME && G.GAME.energy_plus) || 0) + energy_limit_bonus(card); }
+  if (c.stage) p.stage = c.stage;
+  if (ex && typeof ex === 'object') {
+    if (typeof ex.rounds === 'number') p.rounds = ex.rounds;
+    if (ex.evolve) p.evolve = ex.evolve;
+    if (ex.form !== undefined) p.form = ex.form;
+    // (a form read live from the game, not stored: the owner's Cherrim, sunny or overcast)
+    if (typeof c.poke_view_form === 'function') p.form = c.poke_view_form(c, card);
+    // Zorua's copy switch (its disguise + shadow show only while active: pokedraw.lua zorua_shadow)
+    if (typeof ex.active === 'boolean' && (c.key === 'j_poke_zorua' || c.key === 'j_poke_zoroark')) p.active = ex.active;
+    // Zorua / Zoroark Illusion: drawn (and described) as this Pokémon outside the joker row.
+    if (ex.hidden_key && card.area !== G.jokers) p.illusion = ex.hidden_key;
+    // Mimikyu: the busted-disguise sprite (center.broke_pos): 3.9.1 `disguise_broken`, or a 3.2.1 card's `disguise === false`.
+    if ((ex.disguise_broken || ex.disguise === false) && c.broke_pos) p.broke_pos = c.broke_pos;
+  }
+  if (c.megas) p.megas = c.megas.slice();
+  if (card.ability.fainted !== undefined && G.GAME && card.ability.fainted === G.GAME.round) p.fainted = true;
+  if (card.edition && card.edition.poke_shiny) p.shiny = true;
+  const an = ANIMATED[c.key];
+  if (an) p.anim = { frames: an.frames, frames_per_row: an.frames_per_row, fps: an.fps, soul: !!an.soul, atlas: an.native ? (an.atlas || c.key) : undefined, size: an.size,
+    ...(an.soul_only ? { soul_only: true, shiny_atlas: an.shiny_atlas } : {}) };
+  // Capture Disc (3.9.1 April Fools): the board reports its drags (the 'poke_capture_disc_drag' action, jokers/zzzapril_fools.js)
+  if (c.key === 'j_poke_capture_disc') v.drag_tracked = 'poke_capture_disc_drag';
+  v.poke = p;
+}

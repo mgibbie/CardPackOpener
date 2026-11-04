@@ -17,6 +17,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { overworldSource } from './owsource.mjs';   // main.js + the modules split out of it
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '../../');
@@ -34,7 +35,7 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 	const battle = fs.readFileSync(path.join(ROOT, 'overworld/battle.js'), 'utf8');
 	A(!/return: \(\) => 102/.test(battle), 'Return no longer has a flat 102 power');
 	A(/u\.friend \?\? 70/.test(battle), '...it reads the user\'s friendship');
-	const main = fs.readFileSync(path.join(ROOT, 'overworld/main.js'), 'utf8');
+	const main = overworldSource();
 	A(/cleanseTag && Math\.random\(\) < 1 \/ 3/.test(main.replace(/held\?\./g, '')) || /cleanseTag/.test(main),
 		'the step handler consults CLEANSE TAG before rolling an encounter');
 }
@@ -81,6 +82,8 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 		page.on('pageerror', e => errors.push(e.message));
 		await page.evaluateOnNewDocument((st, party) => {
 			localStorage.setItem('magepunk_mp_token_v1', 'smoke-token');
+			// instant text + no battle animations: this suite checks outcomes, not pacing
+			localStorage.setItem('magepunk_settings', JSON.stringify({ textSpeed: 'instant', battleAnim: 'off' }));
 			localStorage.setItem('magepunk_mp_state_v1', JSON.stringify(st));
 			localStorage.setItem('magepunk_party_v1', JSON.stringify(party));
 			localStorage.setItem('magepunk_region', 'JOHTO');
@@ -107,7 +110,7 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 				const b = window.__ow.battle;
 				for (let i = 0; i < 300; i++) {
 					const a = b.active;
-					if (a && a.phase === 'choose') return true;
+					if (a && a.phase === 'menu') return true;   // the battle's idle phase ('choose' no longer exists; every wait ran out its 18s)
 					if (!a && allowGone) return false;
 					await new Promise(r => setTimeout(r, 60));
 				}

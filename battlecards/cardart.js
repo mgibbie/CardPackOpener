@@ -1145,7 +1145,9 @@ export function drawHeroPortrait(classId, size = 128) {
 	return c;
 }
 
-export function drawPowerOrb(cost, size = 96) {
+// `base` is the printed cost: a live cost below it (Sneaky Scout's Honorable
+// Kill, Fencing Coach) shows green, above it (a tax) red
+export function drawPowerOrb(cost, size = 96, base = cost) {
 	const c = document.createElement('canvas');
 	c.width = size; c.height = size;
 	const ctx = c.getContext('2d');
@@ -1168,7 +1170,7 @@ export function drawPowerOrb(cost, size = 96) {
 	ctx.lineWidth = 5;
 	ctx.strokeStyle = '#000';
 	ctx.strokeText(String(cost), size / 2, size / 2 + 1);
-	ctx.fillStyle = '#fff';
+	ctx.fillStyle = cost < base ? '#7dff9a' : cost > base ? '#ff8a7a' : '#fff';
 	ctx.fillText(String(cost), size / 2, size / 2 + 1);
 	return c;
 }

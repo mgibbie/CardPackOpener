@@ -13,6 +13,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import puppeteer from 'puppeteer-core';
+import { overworldSource } from './owsource.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '../../');
@@ -26,11 +27,12 @@ async function waitFor(fn, ms) { const t0 = Date.now(); while (Date.now() - t0 <
 
 // ---------- source: the keyboard-path rules live in the summary key handler ----------
 {
-	const mj = fs.readFileSync(path.join(ROOT, 'overworld/main.js'), 'utf8');
+	const mj = overworldSource();   // main.js + the modules split out of it
 	A(/kind === 'summary-move'/.test(mj), 'the summary move rows dispatch through menuTap');
-	const summaryBlock = mj.slice(mj.indexOf('if (partyMenu.summary) {'), mj.indexOf('if (partyMenu.summary) {') + 900);
+	const summaryBlock = mj.slice(mj.indexOf('if (partyMenu.summary) {'), mj.indexOf('if (partyMenu.summary) {') + 1800);   // wider since the move cursor (controller phase 1)
 	A((summaryBlock.match(/partyMenu\.moveSwap = null/g) || []).length >= 3, 'cycling members and X all drop an armed swap', summaryBlock.slice(0, 120));
-	A(/moveSwap != null\) partyMenu\.moveSwap = null;\s*\n\s*else partyMenu\.summary = false/.test(mj), 'X cancels the armed swap BEFORE closing the summary');
+	// X unwinds one layer at a time: the armed swap, then the move cursor (controller phase 1), then the summary
+	A(/moveSwap != null\) partyMenu\.moveSwap = null;\s*\n\s*(else if \(partyMenu\.moveCur != null\) partyMenu\.moveCur = null;\s*\n\s*)?else partyMenu\.summary = false/.test(mj), 'X cancels the armed swap BEFORE closing the summary');
 }
 
 (async () => {
@@ -79,7 +81,8 @@ async function waitFor(fn, ms) { const t0 = Date.now(); while (Date.now() - t0 <
 
 		// open the summary; the move rows register as tap zones
 		await page.evaluate(() => { const pm = window.__ow.partyMenu; pm.open = true; pm.idx = 0; pm.summary = true; pm.moveSwap = null; });
-		await new Promise(r => setTimeout(r, 300)); // let the render loop rebuild menuUi
+		// let the render loop rebuild menuUi (a fixed 300 ms was too short on a loaded CI runner)
+		await page.waitForFunction(() => window.__ow.menuUi.filter(z => z.id.startsWith('summary-move:')).length === 4, { timeout: 5000 }).catch(() => {});
 		const zones = await page.evaluate(() => window.__ow.menuUi.filter(z => z.id.startsWith('summary-move:')).length);
 		A(zones === 4, 'all four move rows are tappable zones', zones);
 

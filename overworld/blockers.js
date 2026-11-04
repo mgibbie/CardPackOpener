@@ -31,6 +31,13 @@ function condMet(cond) {
 	// (globalTier), matching Quest.blocked — otherwise the sprite would vanish while
 	// the quest gate still bounced you (the old invisible-wall bug).
 	if (cond.badge != null) return globalTier() >= cond.badge;
+	// a specific gym's badge, in its own region: a GIVER's promise ("come back once
+	// you've beaten WHITNEY") is about that gym, not the shared corridor tier. The
+	// florist used { badge: 3 } and so waited on globalTier, which a save with
+	// Johto 3 / Hoenn 3 / Kanto 2 badges reads as 2: no SQUIRTBOTTLE, and Sudowoodo
+	// blocked Route 36 after Whitney was beaten (playtest 2026-09-25). The region is
+	// named, not inferred: region() falls back to the STARTING region off JohKanto.
+	if (cond.gymBadge) return Badges.has(cond.gymBadge[0], cond.gymBadge[1]);
 	if (cond.item) return Bag.count(cond.item) > 0;
 	if (cond.flag) return Story.getFlag(cond.flag);
 	// HM field-move availability stays region-local (an ability, not a tier gate)
@@ -70,6 +77,15 @@ export const BLOCKERS = {
 	MAP_ROUTE22: [{ id: 'k_league', gates: 'Route23', cond: { badge: 8 }, sprite: { kind: 'person', img: 'policeman' },
 		tx: 8, ty: 6, solid: [[8, 6], [9, 6]],
 		msg: 'OFFICER: Only trainers with all 8 KANTO badges may pass to the POKeMON LEAGUE. Show me your badges!' }],
+	// Cerulean's east road (ROUTE 9): FireRed's own block. Until BILL hands over the
+	// S.S. TICKET, CeruleanCity_OnTransition parks the trainee's SLOWBRO and the lass
+	// on (26,31)/(27,31), the one corridor to the east edge. Authentic, but the
+	// Slowbro's lines ("SLOWBRO ignored orders…") never say what moves it, so a player
+	// arriving by portal had no idea (bug:1793176613457). No sprite: the decomp's
+	// own objects stand there; this only answers the talk with the way forward.
+	MAP_CERULEAN_CITY: [{ id: 'k_cerulean_slowbro', cond: { flag: 'FLAG_GOT_SS_TICKET' }, sprite: null,
+		tx: 26, ty: 31, solid: [[26, 31], [27, 31]],
+		msg: 'SLOWBRO ignored orders… and won’t budge from the path east to ROUTE 9.\n\nThe trainee is waiting on news from BILL. He lives north of CERULEAN, past NUGGET BRIDGE — once he gives you the S.S. TICKET, the way opens.' }],
 	// Vermilion approach from the north (Route 6) — the CASCADE-tier road
 	MAP_VERMILION_CITY: [{ id: 'k_vermilion', gates: 'VermilionCity', cond: { badge: 2 }, sprite: { kind: 'person', img: 'gym_guy' },
 		tx: 16, ty: 0, solid: [[12, 0], [13, 0], [14, 0], [15, 0], [16, 0], [17, 0], [18, 0], [19, 0], [20, 0], [22, 0], [23, 0], [24, 0]],
@@ -172,15 +188,16 @@ export const GIVERS = {
 		pre: 'MR. FUJI: The SNORLAX won’t stir for just anyone... First, deal with those TEAM ROCKET thugs.',
 		give: 'MR. FUJI: For your kindness, take this POKe FLUTE. Its song wakes even the sleepiest POKeMON.',
 		post: 'MR. FUJI: Play it well, traveler.' }],
-	// Johto: the GOLDENROD florist gives the SQUIRTBOTTLE after WHITNEY (3 badges)
+	// Johto: the GOLDENROD florist gives the SQUIRTBOTTLE after WHITNEY (her PLAIN BADGE)
 	MAP_GOLDENROD_FLOWER_SHOP: [{ id: 'g_squirt', tx: 2, ty: 4, img: 'lass',
-		item: 'squirtbottle', name: 'SQUIRTBOTTLE', prereq: { badge: 3 }, onceFlag: 'gave_squirtbottle',
+		item: 'squirtbottle', name: 'SQUIRTBOTTLE', prereq: { gymBadge: ['JOHTO', 'plain'] }, onceFlag: 'gave_squirtbottle',
 		pre: 'FLORIST: Come back once you’ve beaten WHITNEY — I’ll have something for those funny trees!',
 		give: 'FLORIST: Here, take this SQUIRTBOTTLE. Try watering that odd “tree” on ROUTE 36!',
 		post: 'FLORIST: Did that tree run off? Hee hee.' }],
-	// Hoenn: STEVEN gives the DEVON SCOPE on Route 120 (once you can Surf there, 5 badges)
+	// Hoenn: STEVEN gives the DEVON SCOPE on Route 120 (once you can Surf there: NORMAN's
+	// BALANCE BADGE, Hoenn's 5th). Same scope fix as the florist: it was the global tier.
 	MAP_ROUTE120: [{ id: 'g_scope', tx: 13, ty: 15, img: 'cooltrainer_m',
-		item: 'devonscope', name: 'DEVON SCOPE', prereq: { badge: 5 }, onceFlag: 'gave_devonscope',
+		item: 'devonscope', name: 'DEVON SCOPE', prereq: { gymBadge: ['HOENN', 'balance'] }, onceFlag: 'gave_devonscope',
 		pre: 'STEVEN: There’s something odd on this bridge... give me a moment to prepare a countermeasure.',
 		give: 'STEVEN: This DEVON SCOPE reveals hidden POKeMON. That invisible wall ahead? Now you’ll see it.',
 		post: 'STEVEN: Good luck out there.' }],
@@ -221,15 +238,36 @@ export class Blockers {
 		this.givers = (GIVERS[id] || []).slice();
 	}
 
+	// A guard on the EDGE of the next map over (Mahogany's GYM GUIDE stands on its
+	// west column, the tiles you arrive on from Route 42). Off the current map a
+	// tile belongs to a connection, so look the guard up there: otherwise you
+	// walked straight through the connection and were set down ON his solid tile,
+	// boxed in, with Fly the only way out (2026-10-02, Instinct). Only the quest
+	// backstop gated connections, and it reads the region you STARTED in — a
+	// Kanto starter walking in Johto never met it.
+	farBlocker(tx, ty) {
+		const lay = this.world.current?.layout;
+		if (!lay || (tx >= 0 && tx < lay.width && ty >= 0 && ty < lay.height)) return null;
+		const hit = this.world.connectionAt?.(tx, ty);
+		const id = hit?.conn?.map?.id;
+		if (!id || !BLOCKERS[id]) return null;
+		const here = curMapId;
+		setBlockerMap(id);   // its conditions read the region of the map it stands on
+		try {
+			return BLOCKERS[id].find(b => !condMet(b.cond) && tilesOf(b).some(([x, y]) => x === hit.lx && y === hit.ly)) || null;
+		} finally { setBlockerMap(here); }
+	}
+
 	// solid if an active blocker (or a giver) covers the tile
 	blocks(tx, ty) {
 		return this.list.some(b => tilesOf(b).some(([x, y]) => x === tx && y === ty))
-			|| this.givers.some(g => g.tx === tx && g.ty === ty);
+			|| this.givers.some(g => g.tx === tx && g.ty === ty)
+			|| !!this.farBlocker(tx, ty);
 	}
 
 	// the blocker occupying a tile (for the face+A / bump message)
 	kindAt(tx, ty) {
-		return this.list.find(b => tilesOf(b).some(([x, y]) => x === tx && y === ty)) || null;
+		return this.list.find(b => tilesOf(b).some(([x, y]) => x === tx && y === ty)) || this.farBlocker(tx, ty);
 	}
 
 	messageAt(tx, ty) { const b = this.kindAt(tx, ty); return b ? b.msg : null; }

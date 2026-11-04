@@ -1,11 +1,12 @@
 // trainers.js — trainer NPCs: sight lines, the "!" moment, walk-up, and
 // engagement. Rosters come from trainers.json (FireRed decomp + Johto
 // pokecrystal + hand-crafted gym leaders); fallback teams from class pools.
-import { getJSON, getImage, META } from './engine.js';
+import { getJSON, getImage, META, elevCompatible } from './engine.js';
 import { MAX_LEVEL } from './badges.js';
 import { buildMon } from './battle.js';
 import { safeLoad, safeSave } from './safestore.js';
 import { objectHiddenByFlag } from './events.js';
+import { TRAINER_GROUP } from './trainer_pairs.js';
 
 const FACE_OF = {
 	MOVEMENT_TYPE_FACE_DOWN: 'down', MOVEMENT_TYPE_FACE_UP: 'up',
@@ -42,10 +43,48 @@ const TYPE_ITEM = {
 // (tracked — served by the MAIN deploy, so no owdata push needed). Anything else that
 // is still missing a sprite falls back to a generic so an NPC/trainer can never fail
 // to render. Returns a full page-relative path.
-const LEADER_ART = new Set(['ROXANNE', 'BRAWLY', 'WATTSON', 'FLANNERY', 'NORMAN', 'WINONA', 'TATE', 'LIZA', 'JUAN', 'WALLACE'].map(n => 'OBJ_EVENT_GFX_' + n));
+// STEVEN (Granite Cave, Mossdeep, Meteor Falls...) is the same verbatim pokeemerald
+// art; without it he drew as the generic man after a 404 (bug:1792594036709).
+const LEADER_ART = new Set(['ROXANNE', 'BRAWLY', 'WATTSON', 'FLANNERY', 'NORMAN', 'WINONA', 'TATE', 'LIZA', 'JUAN', 'WALLACE', 'STEVEN'].map(n => 'OBJ_EVENT_GFX_' + n));
+export const hasExtraArt = graphicsId => LEADER_ART.has(graphicsId);
 export function spritePath(graphicsId, isTrainer) {
 	if (LEADER_ART.has(graphicsId)) return `people_extra/${graphicsId.replace('OBJ_EVENT_GFX_', '').toLowerCase()}.png`;
 	return `data/people/${isTrainer ? 'cooltrainer_m.png' : 'man.png'}`;
+}
+// Crystal / Emerald graphics ids whose person already exists in the FireRed set
+// under another name. data/gfx_map.json (owdata) only knows FireRed's own ids, so
+// these were requested by their raw name (people/officer.png, people/granny.png —
+// bug:1792701740150), 404'd, and drew as the generic man. Every target is a real
+// file in data/people; the test checks that.
+export const GFX_ALIAS = {
+	OBJ_EVENT_GFX_OFFICER: 'policeman.png',
+	OBJ_EVENT_GFX_GRANNY: 'old_woman.png',
+	OBJ_EVENT_GFX_OLD_MAN: 'old_man_1.png',
+	OBJ_EVENT_GFX_GRAMPS: 'old_man_2.png',
+	OBJ_EVENT_GFX_SCIENTIST_1: 'scientist.png',
+	OBJ_EVENT_GFX_SCIENTIST_2: 'scientist.png',
+	OBJ_EVENT_GFX_MART_EMPLOYEE: 'clerk.png',
+	OBJ_EVENT_GFX_ROCKET: 'rocket_m.png',
+	OBJ_EVENT_GFX_AZALEA_ROCKET: 'rocket_m.png',
+	OBJ_EVENT_GFX_ROCKET_GIRL: 'rocket_f.png',
+	OBJ_EVENT_GFX_GAMEBOY_KID: 'gba_kid.png',
+	OBJ_EVENT_GFX_SWIMMER_GIRL: 'swimmer_f_land.png',
+	OBJ_EVENT_GFX_SWIMMER_GUY: 'swimmer_m_land.png',
+	OBJ_EVENT_GFX_COOK: 'chef.png',
+	OBJ_EVENT_GFX_OAK: 'prof_oak.png',
+	OBJ_EVENT_GFX_REDS_MOM: 'mom.png',
+	OBJ_EVENT_GFX_SURGE: 'lt_surge.png',
+	OBJ_EVENT_GFX_LINK_RECEPTIONIST: 'cable_club_receptionist.png',
+	OBJ_EVENT_GFX_STANDING_YOUNGSTER: 'youngster.png',
+	OBJ_EVENT_GFX_GYM_GUIDE: 'gym_guy.png',
+	OBJ_EVENT_GFX_MAN_1: 'man.png',
+};
+// the data/people file to try first for a graphics id (null: go straight to
+// spritePath — the id has its own people_extra art, so there is nothing to 404)
+export function peopleFile(gfx, graphicsId) {
+	if (LEADER_ART.has(graphicsId)) return null;
+	return (gfx && gfx[graphicsId]) || GFX_ALIAS[graphicsId]
+		|| (graphicsId || '').replace('OBJ_EVENT_GFX_', '').replace(/^SPRITE_/, '').toLowerCase() + '.png';
 }
 
 // all battle-capable trainers, including talk-to ones (sight range 0 — gym
@@ -55,8 +94,54 @@ export function isTrainerEvent(ev) {
 	// `type` field entirely, so treat a missing type as 'object' (else no Hoenn
 	// trainer — gym leaders included — would ever spawn)
 	return (ev.type === 'object' || ev.type == null)
-		&& (ev.trainer_type === 'TRAINER_TYPE_NORMAL' || ev.trainer_type === 'TRAINER_TYPE_SEE_ALL_DIRECTIONS')
+		// BURIED: Lavaridge Gym's trainers in the ash. Not counted, they were plain
+		// NPCs: a win recorded nothing and the next talk battled again (2026-09-30)
+		&& (ev.trainer_type === 'TRAINER_TYPE_NORMAL' || ev.trainer_type === 'TRAINER_TYPE_SEE_ALL_DIRECTIONS' || ev.trainer_type === 'TRAINER_TYPE_BURIED')
 		&& ev.script && ev.script !== '0x0';
+}
+
+// MAP ENTRY NEVER WAITS ON ONE STALLED SPRITE (bug:1793302854206, 2026-10-29).
+// refreshMapContent awaited every object's sheet before it cleared `loading`, and
+// the fetch layer gives a stalled download up only after ~54 s of retries — each
+// retry a sign of life, so the load watchdog held off to its 75 s cap. Crossing
+// from Lavaridge onto Route 112 on a flaky link left the old town on screen, the
+// controls dead, for over a minute. Now a sheet gets ENTRY_SPRITE_WAIT_MS: if it is
+// not in by then the object is placed with an invisible stand-in sheet (it still
+// blocks, talks and battles) and its real sheet is swapped in when it lands. A
+// sheet that turns out not to exist removes the object, as a 404 always did.
+export const ENTRY_SPRITE_WAIT_MS = 4000;
+const LATE = Symbol('late');
+async function firstImage(urls) {
+	for (const u of urls) {
+		if (!u) continue;
+		const img = await getImage(u).catch(() => null);
+		if (img) return img;
+	}
+	return null;
+}
+function standInSheet(w, h) {
+	try { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; }
+	catch (e) { return { width: w, height: h }; }
+}
+// { img, late }: `late` is null when `img` is the real sheet (or null: none exists);
+// otherwise `img` is a stand-in and `late` resolves to the real sheet or null
+export async function entrySprite(urls, { mon = false } = {}) {
+	const p = firstImage(urls);
+	let timer;
+	const t = new Promise(r => { timer = setTimeout(() => r(LATE), ENTRY_SPRITE_WAIT_MS); });
+	const got = await Promise.race([p, t]);
+	clearTimeout(timer);
+	if (got !== LATE) return { img: got, late: null };
+	return { img: mon ? standInSheet(32, 32) : standInSheet(144, 32), late: p };
+}
+// swap a stand-in for the real sheet once it lands (`drop` when there is none)
+export function adoptLateSprite(obj, late, drop, mon = false) {
+	if (!late) return;
+	late.then(img => {
+		if (!img) { drop(obj); return; }
+		obj.img = img;
+		obj.frames = mon ? 1 : Math.floor(img.width / 16);
+	}, () => drop(obj));
 }
 
 class Trainer {
@@ -104,18 +189,35 @@ export class Trainers {
 		this.engagement = null; // { trainer, phase: 'exclaim'|'walk', t }
 		this.onEngage = null;   // set by main.js
 		this.spawnFlagged = null; // set by main.js: predicate to un-hide villain-grunt events during a beat
-		{ const d = safeLoad(DEFEATED_KEY, []); this.defeated = new Set(Array.isArray(d) ? d : []); }
-		{ const r = safeLoad(REMATCH_KEY, {}); this.rematch = (r && typeof r === 'object' && !Array.isArray(r)) ? r : {}; }
+		this.reloadDefeated();
+		// another tab (or a sync that rewrote storage without a reload) changed
+		// the record: follow it, so this tab never writes an older copy back
+		try { addEventListener('storage', e => { if (e.key === DEFEATED_KEY || e.key === REMATCH_KEY || e.key === null) this.reloadDefeated(); }); } catch (e) {}
+	}
+
+	// The defeated set lives in localStorage; the in-memory copy is only a
+	// cache. It used to be read ONCE at startup and written back WHOLE on every
+	// win — so when storage changed underneath it (a hydrate that adopted the
+	// server's newer save without reloading the page, a second tab), the next win
+	// overwrote the newer record with the stale one (2026-10-03: Instinct's 724
+	// victories fell to 629 on beating Norman — exactly the first 628 + Norman).
+	// Every change now re-reads storage first and applies only its own delta
+	// (rebase-on-write, as the story store does since #624).
+	reloadDefeated() {
+		const d = safeLoad(DEFEATED_KEY, []); this.defeated = new Set(Array.isArray(d) ? d : []);
+		const r = safeLoad(REMATCH_KEY, {}); this.rematch = (r && typeof r === 'object' && !Array.isArray(r)) ? r : {};
 	}
 
 	// VS Seeker: re-arm this map's defeated trainers for a rematch. The tier
 	// (badge count at re-arm, min 1) sticks to the trainer key and scales
 	// buildBattle's levels, so rematches keep pace with the player.
 	rearmMap(tier) {
+		this.reloadDefeated();   // rebase on the stored record
 		let n = 0;
-		for (const t of this.list) {
+		// a couple re-arms as ONE encounter: every partner's key clears and takes the tier
+		const beaten = this.list.filter(t => this.isDefeated(t));
+		for (const t of beaten) {
 			const key = this.keyOf(t);
-			if (!this.defeated.has(key)) continue;
 			this.defeated.delete(key);
 			this.rematch[key] = Math.max(this.rematch[key] || 0, Math.max(1, tier || 0));
 			n++;
@@ -156,10 +258,23 @@ export class Trainers {
 			: `${map}:${base}`;
 	}
 
-	isDefeated(t) { return this.defeated.has(this.keyOf(t)); }
+	// ONE TRAINER, SEVERAL NPCs. A double-battle couple (Route 12's GIA & JES) is two
+	// object events whose scripts battle the same decomp trainer id, and the GBA
+	// flags defeat by that id. Keys stay per event (saves are unchanged); a group
+	// is beaten when ANY member's key is, and a win marks every member — so a save
+	// that holds only the partner it was fought from reads the pair as beaten too.
+	partnersOf(t) {
+		const g = TRAINER_GROUP[t.ev?.script];
+		if (!g) return [t];
+		const all = this.list.filter(o => TRAINER_GROUP[o.ev?.script] === g);
+		return all.includes(t) ? all : [t, ...all];
+	}
+
+	isDefeated(t) { return this.partnersOf(t).some(p => this.defeated.has(this.keyOf(p))); }
 
 	markDefeated(t) {
-		this.defeated.add(this.keyOf(t));
+		this.reloadDefeated();   // rebase on the stored record, then add only this win
+		for (const p of this.partnersOf(t)) this.defeated.add(this.keyOf(p));
 		safeSave(DEFEATED_KEY, [...this.defeated]);
 	}
 
@@ -170,7 +285,15 @@ export class Trainers {
 		return (ev.type === 'object' || ev.type == null) && ev.script && this.data?.rosters?.[ev.script] != null;
 	}
 
+	// Overlapping loads (the story-overlay heal re-running a map's setup while a
+	// transition is still loading objects; bug:1792868498540) used to BOTH append
+	// into the same fresh list: Viridian Forest's five trainers came back as ten,
+	// every base id then looked like a collision, the coordinate-suffixed keys no
+	// longer matched the save's plain ones, and beaten trainers fought again. Each
+	// load now carries a generation; only the newest one may add trainers, and an
+	// event is never listed twice.
 	async loadForMap() {
+		const gen = this._loadGen = (this._loadGen || 0) + 1;
 		this.list = [];
 		this._dupBases = null;
 		this.engagement = null;
@@ -201,36 +324,45 @@ export class Trainers {
 			const storyFlagged = !!(ev.flag && ev.flag !== '0');
 			const claimedByBeat = storyFlagged && !!(this.spawnFlagged && this.spawnFlagged(ev));
 			// gfx map first, then guess from the id (OBJ_EVENT_GFX_BROCK -> brock.png)
-			const file = this.gfx[ev.graphics_id]
-				|| (ev.graphics_id || '').replace('OBJ_EVENT_GFX_', '').toLowerCase() + '.png';
-			let img = await getImage(`data/people/${file}`).catch(() => null);
+			const file = peopleFile(this.gfx, ev.graphics_id);
 			// missing sprite (e.g. Hoenn leaders) must NOT hide a battleable trainer —
 			// use their real people_extra art, else a generic
-			if (!img) img = await getImage(spritePath(ev.graphics_id, true)).catch(() => null);
-			if (img) { const t = new Trainer(ev, img); if (claimedByBeat) t.villain = true; this.list.push(t); }
+			const { img, late } = await entrySprite([file ? `data/people/${file}` : null, spritePath(ev.graphics_id, true)]);
+			if (gen !== this._loadGen) return;   // a newer load owns the list now
+			if (img && !this.list.some(o => o.ev === ev)) {
+				const t = new Trainer(ev, img); if (claimedByBeat) t.villain = true; this.list.push(t);
+				adoptLateSprite(t, late, o => { this.list = this.list.filter(x => x !== o); });
+			}
 		}));
+		if (gen !== this._loadGen) return;
 		this.recomputeDupBases();
 	}
 
 	// which base ids appear more than once on THIS map? Only those need the
 	// coordinate suffix, so unique trainers keep the save key they already have.
+	// A collision is two DIFFERENT objects (distinct source tiles) sharing a base —
+	// Violet Gym's Abe and Rod — never one event that happens to be listed twice.
 	recomputeDupBases() {
 		const seen = new Map();
-		for (const t of this.list) { const b = this.baseKeyOf(t); seen.set(b, (seen.get(b) || 0) + 1); }
-		this._dupBases = new Set([...seen].filter(([, n]) => n > 1).map(([b]) => b));
+		for (const t of this.list) {
+			const b = this.baseKeyOf(t);
+			if (!seen.has(b)) seen.set(b, new Set());
+			seen.get(b).add(`${t.ev.x},${t.ev.y}`);
+		}
+		this._dupBases = new Set([...seen].filter(([, at]) => at.size > 1).map(([b]) => b));
 		return this._dupBases;
 	}
 
-	occupied(tx, ty) {
+	occupied(tx, ty, elev = 0) {
 		// a defeated trainer no longer blocks its tile — so a beaten grunt can't wall
 		// a dungeon corridor (checkSight already skips defeated, so no re-battle)
-		return this.list.some(t => t.tx === tx && t.ty === ty && !this.isDefeated(t));
+		return this.list.some(t => t.tx === tx && t.ty === ty && !this.isDefeated(t) && elevCompatible(elev, Number(t.ev?.elevation) || 0));
 	}
 
 	get engaging() { return this.engagement != null; }
 
-	trainerAt(tx, ty) {
-		return this.list.find(t => t.tx === tx && t.ty === ty) || null;
+	trainerAt(tx, ty, elev = 0) {
+		return this.list.find(t => t.tx === tx && t.ty === ty && elevCompatible(elev, Number(t.ev?.elevation) || 0)) || null;
 	}
 
 	// talk-to engagement (Z in front of any trainer, incl. sight range 0)
@@ -241,10 +373,11 @@ export class Trainers {
 	}
 
 	// called when the player finishes a step; true if a trainer spotted them
-	checkSight(ptx, pty) {
+	checkSight(ptx, pty, elev = 0) {
 		if (this.engagement) return true;
 		for (const t of this.list) {
 			if (t.range <= 0) continue; // talk-to trainers don't spot you
+			if (!elevCompatible(elev, Number(t.ev?.elevation) || 0)) continue; // below/above the bridge you're on
 			if (this.isDefeated(t)) continue;
 			const dirs = t.seeAll ? ['down', 'up', 'left', 'right'] : [t.facing];
 			for (const dir of dirs) {

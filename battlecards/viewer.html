@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<!-- first, before any game code reads storage: per-account local data (site/account_silo.js) -->
+<script src="/site/account_silo.js"></script>
 	<title>Card Gallery — Magepunk Battlecards</title>
 	<meta charset="UTF-8">
 	<link rel="preconnect" href="https://magepunk-cardart.pages.dev" crossorigin>
@@ -166,6 +168,7 @@
 	<script type="importmap">
 	{ "imports": { "three": "/battlecards/vendor/three.module.min.js" } }
 	</script>
+	<script type="module" src="/site/zoomfix.js"></script> <!-- iPhone: no stuck zoom -->
 </head>
 <body>
 	<div id="topbar">

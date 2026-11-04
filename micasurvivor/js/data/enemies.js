@@ -1,0 +1,386 @@
+/* ============ enemies.js — Pokémon salvajes de todas las generaciones ============
+ *
+ * Los tramos ya no son listas fijas: cada tramo recoge a todos los Pokémon
+ * (de cualquier generación) cuyo total de stats base cae en su rango, y al
+ * empezar una run se elige al azar un ELENCO de cada tramo. Así cada partida
+ * trae Pokémon distintos sin tener que cargar cientos de sprites a la vez.
+ *
+ * Los stats de combate salen de la plantilla del tramo, ajustados con la
+ * vida y la velocidad propias de cada Pokémon.
+ *
+ * behavior:
+ *   chase    va directo a por ti
+ *   charger  se para, apunta y embiste
+ *   ranged   se mantiene a distancia y dispara
+ *   tank     lento, mucha vida
+ *   ---- con personalidad ----
+ *   healer   cura a los de alrededor (Chansey, Blissey, Audino...)
+ *   shielder pone escudos a sus compañeros (Shuckle, Bronzong, Mr. Mime...)
+ *   summoner llama a su manada (Nidoqueen trae Nidoran, Vespiquen Combee...)
+ *   bomber   se acerca y explota (Voltorb, Electrode, Koffing, Geodude...)
+ *   beamer   rayo que avisa en el suelo antes de disparar
+ *   zoner    zonas de daño bajo tus pies que estallan al poco
+ *   fan      dispara en abanico
+ *   jumper   salta y cae sobre ti (la caída se ve antes en el suelo)
+ *   runner   corredor: muy rápido y frágil, va a donde vas a estar (corta el
+ *            paso al que sólo huye). Uno por tramo: el más rápido del elenco.
+ * Los ataques con aviso están en systems/hazards.js.
+ *
+ * Jefes: Pokémon fuertes NO legendarios (pseudolegendarios, Slaking...), al
+ * azar por franjas de poder. Los legendarios sólo salen en las grietas
+ * (systems/rift.js).
+ */
+G.Enemies = (() => {
+  const TIERS = [
+    // (DLC D20, a base fix: the first tier starts at 0, not 180: Wishiwashi, BST 175 (Solo Form), the only Pokémon under 180, was in
+    //  no tier and only in the unused "beach" biome, so it never spawned. Owner 2026-10-26: all 1,025 as enemies in both modes)
+    { from: 0,   bst: [0, 330], hp: 17,  spd: 56, dmg: 6,  xp: 3.5, cast: 7 },
+    { from: 70,  bst: [300, 405], hp: 32,  spd: 62, dmg: 8.5, xp: 5,  cast: 7 },
+    { from: 160, bst: [385, 465], hp: 52,  spd: 60, dmg: 11, xp: 8,  cast: 7 },
+    { from: 260, bst: [445, 515], hp: 88,  spd: 70, dmg: 14, xp: 13, cast: 7 },
+    { from: 380, bst: [495, 560], hp: 150, spd: 66, dmg: 22, xp: 24, cast: 7 },
+    { from: 500, bst: [530, 620], hp: 250, spd: 72, dmg: 28, xp: 38, cast: 7 }
+  ];
+
+  // Franjas de jefe: minuto en que salen, PV base y franja de BST.
+  const BOSS_SLOTS = [
+    { at: 180, hp: 1400,  dmg: 34, xp: 220,  bst: [490, 545] },
+    { at: 360, hp: 3200,  dmg: 42, xp: 420,  bst: [520, 580] },
+    { at: 540, hp: 5600,  dmg: 48, xp: 680,  bst: [540, 600] },
+    { at: 720, hp: 9000,  dmg: 56, xp: 1000, bst: [580, 700] },
+    { at: 900, hp: 16000, dmg: 68, xp: 1800, bst: [600, 700] }
+  ];
+
+  // Stats base aproximados a partir de los de juego (inverso de fetch_pokedex).
+  const baseHp = p => (p.hp - 70) / 0.45;
+  const baseSpd = p => (p.spd - 78) / 0.42;
+
+  const H = (d, s) => G.U.hash(d, 7, s);
+
+  // Personalidades fijas de algunos Pokémon.
+  // (Lote B1: + Aromatisse, 683, de habilidad Alma Cura)
+  const HEAL = new Set([35, 36, 113, 173, 183, 184, 242, 301, 440, 531, 594, 683, 700, 764, 858]);
+  // (Lote B1b: + Mr. Rime, 866, como Mr. Mime y Mime Jr.)
+  const SHIELD = new Set([95, 122, 208, 213, 227, 306, 375, 410, 411, 436, 437, 439, 476, 703, 866]);
+  const BOMB = new Set([74, 75, 76, 100, 101, 102, 109, 110, 337, 338, 343, 344]);
+  // Invocador -> Pokémon de su manada.
+  const SUMMON = { 15: 13, 18: 16, 24: 23, 28: 27, 31: 29, 34: 32, 42: 41, 51: 50, 53: 52, 57: 56, 59: 58,
+                   62: 60, 68: 66, 73: 72, 78: 77, 82: 81, 85: 84, 91: 90, 117: 116, 130: 129, 168: 167, 169: 41,
+                   199: 79, 230: 116, 262: 261, 334: 333, 405: 403, 416: 415, 462: 81, 466: 239, 553: 551, 637: 636 };
+
+  // ---------------- biomas (MicaSurvivor M5 lote 9, main.gd 87-104 / 3028-3106 / 3614-3624) ----------------
+  // Tipos que "pertenecen" a cada bioma: salen más a menudo en él (además del elenco de la run). Las arenas de
+  // la grieta (biomas 3+) usan su propio tipo. ("beach" y "sky" son del port: ningún bioma suyo ni nuestro
+  // se llama así, así que no se usan; se quedan como en el port.)
+  const BIOME_TYPES = {
+    forest: ['bug', 'grass'],
+    cave: ['rock', 'ground'],
+    volcano: ['fire'],
+    beach: ['water', 'ground'],
+    sky: ['flying', 'dragon']
+  };
+  // Además de los tipos, Pokémon concretos que encajan con el bioma (murciélagos en la cueva, costa en la playa).
+  const BIOME_DEX = {
+    cave: [41, 42, 169, 527, 528, 714, 715],   // Zubat, Golbat, Crobat, Woobat, Swoobat, Noibat, Noivern
+    beach: [769, 770, 90, 91, 98, 99, 120, 121, 72, 73, 278, 279, 341, 342, 226, 223, 224, 422, 423, 557, 558, 688, 689, 739, 740, 746, 747, 748]
+  };
+  const BIOME_EXTRA = 2;      // Pokémon extra por tramo propios del bioma
+  const BIOME_W_MUL = 1.6;    // peso de los extras (y de los del elenco que ya son del bioma) respecto a los demás
+  const BASE_BIOMES = ['forest', 'cave', 'volcano'];
+
+  /**
+   * Los topes de los apoyos (MicaSurvivor M5 lote 9, main.gd 4026-4102; los usa entities/enemy.js). Curanderos:
+   * con más de 4 vivos curan ×0,9. Escudos: 30 % de la vida durante 7 s, como mucho 5 por lanzamiento (cada
+   * 8 s) en 160 px, y 14 s de espera antes de que el mismo reciba otro. Invocadores: 4 por invocación, ninguna
+   * más con 8 de los suyos vivos o 20 súbditos en el mapa (y nunca más de 20), ni con más de CAP + 15 enemigos.
+   * (Además: un solo apoyo por tramo en el elenco, y ninguno en los extras de bioma ni en las hordas.)
+   */
+  const SUPPORT_CAPS = { healers: 4, healerK: 0.9, shieldK: 0.3, shieldT: 7, shieldLock: 14, shieldMax: 5, shieldCd: 8, shieldR: 160,
+                         perCast: 4, perSummoner: 8, minions: 20, capPad: 15 };
+
+  function behaviorOf(p) {
+    const t = p.types, h = H(p.dex, 11);
+    const has = (...xs) => xs.some(x => t.includes(x));
+    if (HEAL.has(p.dex)) return 'healer';
+    if (SHIELD.has(p.dex)) return 'shielder';
+    if (BOMB.has(p.dex)) return 'bomber';
+    if (SUMMON[p.dex] && G.SPRITE_META[SUMMON[p.dex]]) return 'summoner';
+    // Enjambres: algunos Bicho llaman a más de los suyos (desde el principio).
+    if (has('bug') && h >= 0.6 && h < 0.78) return 'summoner';
+    if (has('electric', 'psychic', 'dragon', 'ice') && h < 0.18) return 'beamer';
+    if (has('fire', 'ground', 'poison') && h < 0.18) return 'zoner';
+    if (has('water', 'grass', 'bug', 'fairy') && h >= 0.18 && h < 0.32) return 'fan';
+    if (has('fighting', 'ground', 'normal', 'rock') && h >= 0.42 && h < 0.56) return 'jumper';
+    if (has('psychic', 'electric', 'ghost', 'fairy') && h < 0.4) return 'ranged';
+    if (has('fire', 'water', 'poison', 'ice') && h < 0.22) return 'ranged';
+    if (has('fighting', 'normal', 'ground', 'rock', 'dragon', 'steel', 'dark') && h < 0.4) return 'charger';
+    if (baseHp(p) > 95 && baseSpd(p) < 50) return 'tank';
+    return 'chase';
+  }
+
+  /** Construye la definición de enemigo de un Pokémon para un tramo. */
+  function defFor(p, tier, ti) {
+    const hpK = G.U.clamp(baseHp(p) / 65, 0.7, 1.6);
+    const spdK = G.U.clamp(0.75 + baseSpd(p) / 260, 0.75, 1.3);
+    const behavior = behaviorOf(p);
+    const d = {
+      dex: p.dex, name: p.name, behavior,
+      hp: Math.round(tier.hp * hpK * (behavior === 'tank' ? 1.5 : 1)),
+      spd: Math.round(tier.spd * spdK * (behavior === 'tank' ? 0.7 : 1)),
+      dmg: Math.round(tier.dmg * (behavior === 'tank' ? 1.2 : 1)),
+      xp: Math.max(3, Math.round(tier.xp * (behavior === 'tank' ? 1.3 : 1)))
+    };
+    // Los que pelean de lejos: daño del disparo, recarga y distancia.
+    const CD = { ranged: 2.2 - ti * 0.15, fan: 3.2 - ti * 0.15, beamer: 4.4 - ti * 0.2, zoner: 4.6 - ti * 0.2,
+                 healer: 3.5, summoner: 7 };
+    if (CD[behavior]) {
+      d.shotDmg = Math.round(tier.dmg * (behavior === 'fan' ? 0.7 : 0.8));
+      d.shotCd = +CD[behavior].toFixed(2);
+      d.range = (behavior === 'beamer' ? 260 : behavior === 'healer' || behavior === 'summoner' ? 230 : 190) + ti * 6;
+    }
+    if (behavior === 'summoner') d.minion = SUMMON[p.dex];
+    if (behavior === 'fan') d.fanN = ti < 2 ? 3 : 5;             // abanico más ancho más adelante
+    if (behavior === 'zoner') d.zones = ti < 2 ? 1 : ti < 4 ? 2 : 3;   // más zonas más adelante
+    if (behavior === 'bomber') { d.spd = Math.round(d.spd * 1.25); d.hp = Math.round(d.hp * 0.8); }
+    return d;
+  }
+
+  /**
+   * Todos los candidatos de un tramo (sin legendarios ni míticos).
+   * MicaSurvivor (M5 lote 6, main.gd 2859-2866): en la Supervivencia por tipo, sólo los de ese tipo
+   * (si el tramo tiene alguno).
+   */
+  function candidates(tier) {
+    const out = G.DEX.filter(p => p.rarity < 5 && p.bst >= tier.bst[0] && p.bst <= tier.bst[1] && G.SPRITE_META[p.dex]);
+    const only = G.Modes && G.Modes.onlyType();
+    if (!only) return out;
+    const of = out.filter(p => p.types.includes(only));
+    return of.length ? of : out;
+  }
+
+  // ---------------- elenco de la run ----------------
+
+  const PLAIN = ['chase', 'charger', 'ranged', 'tank'];
+  const SUPPORT = ['healer', 'shielder', 'summoner'];
+
+  /**
+   * Elenco de un tramo: siempre un "apoyo" (curandero, escudo o invocador)
+   * y, desde el segundo tramo, también uno de los que atacan con aviso.
+   * En el primero no hay más personalidades (para ir aprendiendo).
+   */
+  function castFor(tier) {
+    const all = candidates(tier);
+    const kind = p => behaviorOf(p);
+    // Primero el tipo de apoyo (a partes iguales) y luego el Pokémon.
+    const kinds = SUPPORT.filter(k => all.some(p => kind(p) === k));
+    const sk = kinds.length ? kinds[Math.floor(Math.random() * kinds.length)] : null;
+    const pick = sk ? G.U.pickN(all.filter(p => kind(p) === sk), 1) : [];
+    if (tier.from > 0) pick.push(...G.U.pickN(all.filter(p => !PLAIN.includes(kind(p)) && !SUPPORT.includes(kind(p))), 1));
+    if (tier.from === 0) return pick.concat(G.U.pickN(all.filter(p => !pick.includes(p) && PLAIN.includes(kind(p))), tier.cast - pick.length));
+    return pick.concat(G.U.pickN(all.filter(p => !pick.includes(p)), tier.cast - pick.length));
+  }
+
+  let cast = null;      // [{ from, list: [def] }]
+  let bosses = null;    // [def de jefe]
+  // (MicaSurvivor U3, owner decision #3: "Megas as enemies = rare elites and bosses, Survival after ~15 min"): from MEGA.from s a
+  // Mega elite comes every MEGA.every s (one of the 93, drawn uniformly: every Mega over the runs), x MEGA.hp / dmg / xp, bigger;
+  // and MEGA.bossP of the runs the last boss (15:00) is a Mega. Drawn from a stream of the run's bioSeed (G.Megas.stream), never
+  // Math.random, so the rest of the run's draws are what they were. The Type mode: Megas of that type only (none: no Megas).
+  const MEGA = { from: 900, every: [70, 110], hp: 3, dmg: 1.3, xp: 4, scale: 1.3, bossP: 0.5 };
+  let megas = [];       // [{at, dex}]
+  // (M5 lote 9) Extras de bioma de la run: bio[tramo][bioma] = [def], elegidos al necesitarlos. Se sortean con
+  // su propia semilla (la del día en el Desafío diario, sin gastar el azar sembrado del montaje), así el
+  // Diario sigue igual para todos.
+  let bio = [], bioSeed = 1;
+
+  /** Sortea el elenco de una run nueva. */
+  function rollRun() {
+    bio = TIERS.map(() => ({}));
+    bioSeed = G.Modes && G.Modes.is && G.Modes.is('daily') ? G.Modes.run.seed : 1 + Math.floor(Math.random() * 2147483646);
+    cast = TIERS.map((tier, ti) => ({
+      from: tier.from,
+      list: castFor(tier).map(p => defFor(p, tier, ti))
+    }));
+    for (const tier of cast) {
+      const plain = tier.list.filter(d => d.behavior === 'chase' || d.behavior === 'charger' || d.behavior === 'tank');
+      const r = plain.sort((a, b) => b.spd - a.spd)[0];
+      if (r) { r.behavior = 'runner'; r.spd = Math.round(r.spd * 1.6); r.hp = Math.round(r.hp * 0.7); }
+    }
+    const used = new Set();
+    // (MicaSurvivor M5 lote 6, main.gd 2986-2998: en la Supervivencia por tipo, jefes de ese tipo:
+    //  de su franja, si no de 580+, si no cualquiera de ese tipo; y si no hay, como siempre.)
+    const only = G.Modes && G.Modes.onlyType();
+    const ofType = p => !only || p.types.includes(only);
+    bosses = BOSS_SLOTS.map(slot => {
+      const ok = p => !p.leg && G.SPRITE_META[p.dex] && !used.has(p.dex);
+      let pool = G.DEX.filter(p => ok(p) && ofType(p) && p.bst >= slot.bst[0] && p.bst <= slot.bst[1]);
+      if (!pool.length) pool = G.DEX.filter(p => ok(p) && ofType(p) && p.bst >= 580);
+      if (!pool.length && only) pool = G.DEX.filter(p => ok(p) && ofType(p));
+      if (!pool.length) pool = G.DEX.filter(p => ok(p) && p.bst >= 580);
+      const p = G.U.pick(pool);
+      used.add(p.dex);
+      return {
+        at: slot.at, dex: p.dex, name: p.name,
+        // (Desde 2026-10-10 más duros: ×1,35 de vida y ×1,2 de daño.)
+        hp: Math.round(slot.hp * 1.35), spd: Math.round(G.U.clamp(40 + baseSpd(p) * 0.5, 40, 100)),
+        dmg: Math.round(slot.dmg * 1.2), xp: slot.xp,
+        behavior: behaviorOf(p) === 'ranged' ? 'ranged' : (baseSpd(p) > 90 ? 'charger' : 'chase'),
+        shotDmg: Math.round(slot.dmg * 0.55), shotCd: 1.1, range: 260
+      };
+    });
+    megaRoll(only);
+    return { cast, bosses };
+  }
+  /** (U3) The run's Megas: the elites' times and species, and whether the 15:00 boss is a Mega (from the run's bioSeed). */
+  function megaRoll(only) {
+    megas = [];
+    const M = G.Megas;
+    if (!M) return;
+    const pool = M.foes().filter(d => !only || G.DEX_BY[d].types.includes(only));
+    if (!pool.length) return;
+    const r = M.stream((bioSeed ^ 0x3E6A0) >>> 0), pk = () => pool[Math.min(pool.length - 1, Math.floor(r() * pool.length))];
+    for (let at = MEGA.from + Math.floor(r() * 40); at < 1800; at += MEGA.every[0] + Math.floor(r() * (MEGA.every[1] - MEGA.every[0]))) megas.push({ at, dex: pk() });
+    const last = bosses[bosses.length - 1];
+    if (last && last.at >= MEGA.from && r() < MEGA.bossP) {
+      const p = G.DEX_BY[pk()];
+      Object.assign(last, { dex: p.dex, name: p.name, spd: Math.round(G.U.clamp(40 + baseSpd(p) * 0.5, 40, 100)),
+        behavior: behaviorOf(p) === 'ranged' ? 'ranged' : (baseSpd(p) > 90 ? 'charger' : 'chase'), mega: 1 });
+    }
+  }
+  /** (U3) A Mega elite's definition at run time t (its own stats from its base stats, the tier's numbers x MEGA). */
+  function megaDef(dex, t) {
+    const ti = tierAt(t), d = defFor(G.DEX_BY[dex], TIERS[ti], ti);
+    d.hp = Math.round(d.hp * MEGA.hp); d.dmg = Math.round(d.dmg * MEGA.dmg); d.xp = Math.round(d.xp * MEGA.xp);
+    if (d.shotDmg) d.shotDmg = Math.round(d.shotDmg * MEGA.dmg);
+    d.mega = 1;
+    return d;
+  }
+
+  // (El "tiempo extra" del minuto 60 se quitó al llegar la Sentencia de Arceus,
+  //  que acaba todas las partidas en el minuto 30: ver systems/judgment.js.)
+  // (MicaSurvivor M5 lote 9, main.gd 3111 / 3228: con la dificultad adaptativa, vida ×k y daño ×k^0,7;
+  //  k = 1 fuera de la partida normal, ver systems/adaptive.js)
+  const AD = () => G.Adaptive || { hpK: () => 1, dmgK: () => 1 };
+  function scale(t) {
+    return { hp: (1 + t / 95) * AD().hpK(), dmg: (1 + t / 420) * AD().dmgK(), spd: 1 + Math.min(0.35, t / 1400) };
+  }
+
+  /**
+   * Los jefes ya traen su vida base creciente (1.400 ... 16.000), así que
+   * escalan mucho más suave: con la curva normal el último llegaba a 168.000 PV.
+   */
+  function bossScale(t) { return { hp: (1 + t / 600) * AD().hpK(), dmg: (1 + t / 600) * AD().dmgK(), spd: 1 }; }
+
+  /** Tramo que toca en el segundo `t`. */
+  function tierAt(t) { let ti = 0; TIERS.forEach((tr, i) => { if (t >= tr.from) ti = i; }); return ti; }
+
+  const NO_HORDE = new Set(['bomber', 'healer', 'shielder', 'summoner']);
+  /** Tipos con bastantes Pokémon en el tramo actual para una horda (events.js). */
+  function hordeTypes(t) {
+    const all = candidates(TIERS[tierAt(t)]).filter(p => !NO_HORDE.has(behaviorOf(p)));
+    return Object.keys(G.U.TYPE_COLOR).filter(ty => all.filter(p => p.types.includes(ty)).length >= 3);
+  }
+  /** Hasta 4 Pokémon de un tipo, con los stats del tramo actual. */
+  function hordeDefs(type, t) {
+    const ti = tierAt(t);
+    const pool = candidates(TIERS[ti]).filter(p => p.types.includes(type) && !NO_HORDE.has(behaviorOf(p)));
+    return G.U.pickN(pool, 4).map(p => defFor(p, TIERS[ti], ti));
+  }
+
+  // ---------------- biomas (M5 lote 9) ----------------
+  /** Clave del bioma `b` (main.gd _biome_key): bosque / cueva / volcán, y luego el tipo de cada arena. */
+  function biomeKey(b) {
+    const n = G.Tiles ? G.Tiles.BIOMES.length : BASE_BIOMES.length;
+    b = ((b % n) + n) % n;
+    return b < BASE_BIOMES.length ? BASE_BIOMES[b] : G.Tiles.ARENA_TYPES[b - BASE_BIOMES.length];
+  }
+  const biomeTypes = key => BIOME_TYPES[key] || [key];
+  /** ¿Encaja con el bioma? (de uno de sus tipos, o de su lista de Pokémon propios) */
+  function fitsBiome(p, key) {
+    if (!p || !key) return false;
+    const ts = biomeTypes(key);
+    return p.types.some(t => ts.includes(t)) || (BIOME_DEX[key] || []).includes(p.dex);
+  }
+  /**
+   * El bioma que cuenta ahora ('' = ninguno): el que se ve, salvo en la arena de una grieta y en la
+   * Supervivencia por tipo, donde manda el tipo (main.gd 3085).
+   */
+  function biomeNow() {
+    if ((G.Rift && G.Rift.inArena) || (G.Modes && G.Modes.onlyType())) return '';
+    return biomeKey(G.World ? G.World.biome : 0);
+  }
+  function hashKey(ti, key) { let x = 2166136261 ^ (ti + 1); for (const c of key) x = Math.imul(x ^ c.charCodeAt(0), 16777619); return x >>> 0; }
+  /**
+   * Los Pokémon extra de un tramo propios de un bioma (main.gd _bio_extra): 2, primero los de la lista del
+   * bioma (murciélagos, costa...) y luego los de sus tipos; nunca apoyos (curanderos, escudos, invocadores),
+   * ni repetidos del elenco, y en el primer tramo sólo los sencillos. Si el tramo no tiene candidatos del
+   * bioma, ninguno (la bolsa se queda con el elenco). Se eligen una vez por run.
+   */
+  function bioExtra(ti, key) {
+    if (!cast) rollRun();
+    if (!key || !TIERS[ti]) return [];
+    const box = bio[ti] || (bio[ti] = {});
+    if (box[key]) return box[key];
+    const tier = TIERS[ti], have = new Set(cast[ti].list.map(d => d.dex));
+    const pool = candidates(tier).filter(p => {
+      if (have.has(p.dex) || !fitsBiome(p, key)) return false;
+      const b = behaviorOf(p);
+      return !SUPPORT.includes(b) && !(tier.from === 0 && !PLAIN.includes(b));
+    });
+    const dl = BIOME_DEX[key] || [];
+    const special = pool.filter(p => dl.includes(p.dex)), byType = pool.filter(p => !dl.includes(p.dex));
+    const pickIt = () => { const c = G.U.pickN(special, BIOME_EXTRA); return c.concat(G.U.pickN(byType, BIOME_EXTRA - c.length)); };
+    const chosen = G.Modes && G.Modes.seeded ? G.Modes.seeded((bioSeed ^ hashKey(ti, key)) >>> 0, pickIt) : pickIt();
+    return (box[key] = chosen.map(p => defFor(p, tier, ti)));
+  }
+
+  /**
+   * Bolsa de enemigos disponibles en el segundo `t`.
+   * (M5 lote 9, main.gd _bag_at: en cada bioma, los del elenco que encajan pesan ×1,6 y se añaden 2 extras
+   *  del bioma por tramo, también ×1,6. En la grieta y en la Supervivencia por tipo, sin bioma.)
+   */
+  function bagAt(t, key = biomeNow()) {
+    // Durante una horda de un tipo sólo salen los de ese tipo (systems/events.js).
+    const horde = G.Events && G.Events.bag();
+    if (horde) return horde;
+    if (!cast) rollRun();
+    const bag = [];
+    cast.forEach((tier, ti) => {
+      if (t < tier.from) return;
+      const w = t - tier.from > 260 ? 3 : 10;       // los tramos viejos pierden peso
+      const wb = Math.round(w * BIOME_W_MUL);
+      for (const e of tier.list) {
+        const n = key && fitsBiome(G.DEX_BY[e.dex], key) ? wb : w;
+        for (let i = 0; i < n; i++) bag.push(e);
+      }
+      if (key) for (const e of bioExtra(ti, key)) for (let i = 0; i < wb; i++) bag.push(e);
+    });
+    return bag.length ? bag : cast[0].list;
+  }
+
+  /** dex del elenco que aparecerán pronto (para precargar sprites). */
+  function upcomingDex(t, ahead = 60) {
+    if (!cast) rollRun();
+    const out = [];
+    for (const tier of cast) if (tier.from <= t + ahead) for (const e of tier.list) out.push(e.dex);
+    // (M5 lote 9, main.gd 3619-3623: también los extras del bioma actual y del siguiente)
+    const key = biomeNow();
+    if (key) {
+      const nx = biomeKey((G.World ? G.World.biome : 0) + 1);
+      cast.forEach((tier, ti) => { if (tier.from <= t + ahead) for (const k of [key, nx]) for (const e of bioExtra(ti, k)) out.push(e.dex); });
+    }
+    for (const b of bosses) if (b.at <= t + ahead) out.push(b.dex);
+    for (const m of megas) if (m.at >= t && m.at <= t + ahead) out.push(m.dex);   // (U3)
+    return out;
+  }
+
+  return {
+    TIERS, BOSS_SLOTS, rollRun, scale, bossScale, bagAt, upcomingDex, candidates, hordeTypes, hordeDefs,
+    behaviorOf, baseSpd,   // (M5 lote 8: los jefes del Rush de Jefes y de la Torre)
+    // (M5 lote 9: biomas y apoyos)
+    BIOME_TYPES, BIOME_DEX, BIOME_EXTRA, BIOME_W_MUL, BASE_BIOMES, PLAIN, SUPPORT, SUPPORT_CAPS, biomeKey, biomeTypes, fitsBiome, biomeNow, bioExtra,
+    get BOSSES() { if (!bosses) rollRun(); return bosses; },
+    MEGA, megaDef, get MEGAS() { if (!bosses) rollRun(); return megas; },   // (U3: the run's Mega elites)
+    get cast() { if (!cast) rollRun(); return cast; }
+  };
+})();

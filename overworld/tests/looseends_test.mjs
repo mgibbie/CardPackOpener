@@ -12,6 +12,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { overworldSource } from './owsource.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '../../');
@@ -23,7 +24,7 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 {
 	const hb = fs.readFileSync(path.join(ROOT, 'overworld/headbutt_data.js'), 'utf8');
 	A(/heracross/.test(hb) && /aipom/.test(hb) && /IlexForest/.test(hb), 'the treemon harvest carries the classics');
-	const mn = fs.readFileSync(path.join(ROOT, 'overworld/main.js'), 'utf8');
+	const mn = overworldSource();   // main.js + the modules split out of it
 	A(/headbutt: \{ name: 'HEADBUTT'/.test(mn), 'HEADBUTT is a field move');
 	A(/function useGadget/.test(mn) && /escaperope/.test(mn) && /itemfinder/.test(mn), 'the gadget key-items route through useGadget');
 	A(/hear its cry/.test(mn), 'the dex detail page advertises the cry');

@@ -182,7 +182,17 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 			b.startQueue(() => b.useMove(a.foe, a.foeBoosts, a.foe, a.foeBoosts, { id: 'magicroom', name: 'Magic Room', pp: 10 }, true, {}));
 			await drained();
 			out.magicRoomOff = a.fieldFx.magicRoom;
-			// WONDER ROOM: a physical hit measured against a 1000-point Sp. Def
+			// WONDER ROOM: a physical hit measured against a 1000-point Sp. Def.
+			// Both Tackles must LAND and roll the same: a miss / full-paralysis /
+			// confusion / attraction skip left the no-room baseline at 0 and failed
+			// the comparison (gate flake, 2026-09-30: {"no":0,"wr":4}). Pin the
+			// dice at 0.5 (every chance check says no, accuracy passes, no crit)
+			// and clear whatever the earlier moves left on the attacker.
+			const realRandom = Math.random;
+			Math.random = () => 0.5;
+			a.me.status = null; a.me.confuseTurns = 0; a.me.attracted = false; a.me.sleepTurns = 0;
+			for (const k of Object.keys(a.foeBoosts)) a.foeBoosts[k] = 0;
+			for (const k of Object.keys(a.meBoosts)) a.meBoosts[k] = 0;
 			a.foe.stats.def = 1; a.foe.stats.spd = 1000;
 			a.foe.curHP = 5000; a.foeShownHP = 5000;
 			b.startQueue(() => b.useMove(a.me, a.meBoosts, a.foe, a.foeBoosts, { id: 'tackle', name: 'Tackle', pp: 35 }, false, {}));
@@ -195,6 +205,7 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 			await window.__until(() => a.foe.curHP < 5000);
 			await drained();
 			out.dmgWonder = 5000 - a.foe.curHP;
+			Math.random = realRandom;
 			a.fieldFx.wonderRoom = 0;
 			// HAPPY HOUR doubles a payout
 			b.startQueue(() => b.useMove(a.me, a.meBoosts, a.me, a.meBoosts, { id: 'happyhour', name: 'Happy Hour', pp: 30 }, false, {}));

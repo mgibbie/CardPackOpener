@@ -53,6 +53,15 @@ async function boot(browser, map) {
 // place the player next to a tile matching `pred`, facing it, then step in and
 // return the peak count of `kind` fx that spawned
 async function stepOntoAndPeak(page, predName, kind) {
+	// A step into grass can roll a wild encounter, and that battle then held the
+	// NEXT step: the sand check failed with blockedBy:"battle" about 1 run in 10.
+	// Close any battle before placing the player. (A battle the step itself rolls
+	// is fine: the fx spawn on arrival, before the encounter.)
+	for (let i = 0; i < 100 && await page.evaluate(() => window.__ow.battle.blocking); i++) {
+		await page.evaluate(() => { const b = window.__ow.battle; if (b.active && b.active.phase !== 'done') b.finish('fled'); else b.key('z'); });
+		await sleep(80);
+	}
+	await sleep(200);
 	const setup = await page.evaluate((predName) => {
 		const ow = window.__ow, w = ow.world, lay = w.current.layout;
 		const pred = predName === 'grass' ? (x, y) => w.isTallGrass(x, y)
@@ -75,7 +84,12 @@ async function stepOntoAndPeak(page, predName, kind) {
 	await page.evaluate(k => window.dispatchEvent(new KeyboardEvent('keyup', { key: k, bubbles: true })), KEY);
 	await sleep(250);
 	const peak = await page.evaluate(() => window.__pk);
-	return { setup, peak };
+	// when nothing spawned, say WHY: did the step happen, and what held the player?
+	const why = peak ? null : await page.evaluate(() => {
+		const ow = window.__ow, g = ow.gateReport?.() || {};
+		return { at: [ow.player.tx, ow.player.ty], blockedBy: g.blockedBy ?? null, moving: ow.player.moving, dialog: ow.dialog.blocking ? JSON.stringify(ow.dialog.pages) : null, cutscene: !!ow.cutscene.blocking };
+	});
+	return { setup, peak, why };
 }
 
 (async () => {
@@ -100,7 +114,7 @@ async function stepOntoAndPeak(page, predName, kind) {
 			if (ok) {
 				const r = await stepOntoAndPeak(page, 'sand', 'print');
 				A(r.setup, 'Route111: found deep sand / ash with a walkable neighbour');
-				A(r.peak >= 1, 'stepping in deep sand leaves a footprint', 'peak=' + r.peak);
+				A(r.peak >= 1, 'stepping in deep sand leaves a footprint', 'peak=' + r.peak + ' ' + JSON.stringify({ from: r.setup, why: r.why }));
 				await page.close();
 			}
 		}

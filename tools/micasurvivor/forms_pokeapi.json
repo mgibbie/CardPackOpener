@@ -1,0 +1,4957 @@
+{
+ "source": "https://pokeapi.co/api/v2/pokemon/<id> (the -alola / -galar / -hisui / -paldea varieties); SpriteCollab tracker.json (form folders)",
+ "fetched": "2026-11-02",
+ "forms": [
+  {
+   "name": "rattata-alola",
+   "id": 10091,
+   "species": 19,
+   "en": "Rattata",
+   "types": [
+    "dark",
+    "normal"
+   ],
+   "stats": [
+    30,
+    56,
+    35,
+    25,
+    35,
+    72
+   ],
+   "height": 3,
+   "leg": false
+  },
+  {
+   "name": "raticate-alola",
+   "id": 10092,
+   "species": 20,
+   "en": "Raticate",
+   "types": [
+    "dark",
+    "normal"
+   ],
+   "stats": [
+    75,
+    71,
+    70,
+    40,
+    80,
+    77
+   ],
+   "height": 7,
+   "leg": false
+  },
+  {
+   "name": "raichu-alola",
+   "id": 10100,
+   "species": 26,
+   "en": "Raichu",
+   "types": [
+    "electric",
+    "psychic"
+   ],
+   "stats": [
+    60,
+    85,
+    50,
+    95,
+    85,
+    110
+   ],
+   "height": 7,
+   "leg": false
+  },
+  {
+   "name": "sandshrew-alola",
+   "id": 10101,
+   "species": 27,
+   "en": "Sandshrew",
+   "types": [
+    "ice",
+    "steel"
+   ],
+   "stats": [
+    50,
+    75,
+    90,
+    10,
+    35,
+    40
+   ],
+   "height": 7,
+   "leg": false
+  },
+  {
+   "name": "sandslash-alola",
+   "id": 10102,
+   "species": 28,
+   "en": "Sandslash",
+   "types": [
+    "ice",
+    "steel"
+   ],
+   "stats": [
+    75,
+    100,
+    120,
+    25,
+    65,
+    65
+   ],
+   "height": 12,
+   "leg": false
+  },
+  {
+   "name": "vulpix-alola",
+   "id": 10103,
+   "species": 37,
+   "en": "Vulpix",
+   "types": [
+    "ice"
+   ],
+   "stats": [
+    38,
+    41,
+    40,
+    50,
+    65,
+    65
+   ],
+   "height": 6,
+   "leg": false
+  },
+  {
+   "name": "ninetales-alola",
+   "id": 10104,
+   "species": 38,
+   "en": "Ninetales",
+   "types": [
+    "ice",
+    "fairy"
+   ],
+   "stats": [
+    73,
+    67,
+    75,
+    81,
+    100,
+    109
+   ],
+   "height": 11,
+   "leg": false
+  },
+  {
+   "name": "diglett-alola",
+   "id": 10105,
+   "species": 50,
+   "en": "Diglett",
+   "types": [
+    "ground",
+    "steel"
+   ],
+   "stats": [
+    10,
+    55,
+    30,
+    35,
+    45,
+    90
+   ],
+   "height": 2,
+   "leg": false
+  },
+  {
+   "name": "dugtrio-alola",
+   "id": 10106,
+   "species": 51,
+   "en": "Dugtrio",
+   "types": [
+    "ground",
+    "steel"
+   ],
+   "stats": [
+    35,
+    100,
+    60,
+    50,
+    70,
+    110
+   ],
+   "height": 7,
+   "leg": false
+  },
+  {
+   "name": "meowth-alola",
+   "id": 10107,
+   "species": 52,
+   "en": "Meowth",
+   "types": [
+    "dark"
+   ],
+   "stats": [
+    40,
+    35,
+    35,
+    50,
+    40,
+    90
+   ],
+   "height": 4,
+   "leg": false
+  },
+  {
+   "name": "persian-alola",
+   "id": 10108,
+   "species": 53,
+   "en": "Persian",
+   "types": [
+    "dark"
+   ],
+   "stats": [
+    65,
+    60,
+    60,
+    75,
+    65,
+    115
+   ],
+   "height": 11,
+   "leg": false
+  },
+  {
+   "name": "geodude-alola",
+   "id": 10109,
+   "species": 74,
+   "en": "Geodude",
+   "types": [
+    "rock",
+    "electric"
+   ],
+   "stats": [
+    40,
+    80,
+    100,
+    30,
+    30,
+    20
+   ],
+   "height": 4,
+   "leg": false
+  },
+  {
+   "name": "graveler-alola",
+   "id": 10110,
+   "species": 75,
+   "en": "Graveler",
+   "types": [
+    "rock",
+    "electric"
+   ],
+   "stats": [
+    55,
+    95,
+    115,
+    45,
+    45,
+    35
+   ],
+   "height": 10,
+   "leg": false
+  },
+  {
+   "name": "golem-alola",
+   "id": 10111,
+   "species": 76,
+   "en": "Golem",
+   "types": [
+    "rock",
+    "electric"
+   ],
+   "stats": [
+    80,
+    120,
+    130,
+    55,
+    65,
+    45
+   ],
+   "height": 17,
+   "leg": false
+  },
+  {
+   "name": "grimer-alola",
+   "id": 10112,
+   "species": 88,
+   "en": "Grimer",
+   "types": [
+    "poison",
+    "dark"
+   ],
+   "stats": [
+    80,
+    80,
+    50,
+    40,
+    50,
+    25
+   ],
+   "height": 7,
+   "leg": false
+  },
+  {
+   "name": "muk-alola",
+   "id": 10113,
+   "species": 89,
+   "en": "Muk",
+   "types": [
+    "poison",
+    "dark"
+   ],
+   "stats": [
+    105,
+    105,
+    75,
+    65,
+    100,
+    50
+   ],
+   "height": 10,
+   "leg": false
+  },
+  {
+   "name": "exeggutor-alola",
+   "id": 10114,
+   "species": 103,
+   "en": "Exeggutor",
+   "types": [
+    "grass",
+    "dragon"
+   ],
+   "stats": [
+    95,
+    105,
+    85,
+    125,
+    75,
+    45
+   ],
+   "height": 109,
+   "leg": false
+  },
+  {
+   "name": "marowak-alola",
+   "id": 10115,
+   "species": 105,
+   "en": "Marowak",
+   "types": [
+    "fire",
+    "ghost"
+   ],
+   "stats": [
+    60,
+    80,
+    110,
+    50,
+    80,
+    45
+   ],
+   "height": 10,
+   "leg": false
+  },
+  {
+   "name": "meowth-galar",
+   "id": 10161,
+   "species": 52,
+   "en": "Meowth",
+   "types": [
+    "steel"
+   ],
+   "stats": [
+    50,
+    65,
+    55,
+    40,
+    40,
+    40
+   ],
+   "height": 4,
+   "leg": false
+  },
+  {
+   "name": "ponyta-galar",
+   "id": 10162,
+   "species": 77,
+   "en": "Ponyta",
+   "types": [
+    "psychic"
+   ],
+   "stats": [
+    50,
+    85,
+    55,
+    65,
+    65,
+    90
+   ],
+   "height": 8,
+   "leg": false
+  },
+  {
+   "name": "rapidash-galar",
+   "id": 10163,
+   "species": 78,
+   "en": "Rapidash",
+   "types": [
+    "psychic",
+    "fairy"
+   ],
+   "stats": [
+    65,
+    100,
+    70,
+    80,
+    80,
+    105
+   ],
+   "height": 17,
+   "leg": false
+  },
+  {
+   "name": "slowpoke-galar",
+   "id": 10164,
+   "species": 79,
+   "en": "Slowpoke",
+   "types": [
+    "psychic"
+   ],
+   "stats": [
+    90,
+    65,
+    65,
+    40,
+    40,
+    15
+   ],
+   "height": 12,
+   "leg": false
+  },
+  {
+   "name": "slowbro-galar",
+   "id": 10165,
+   "species": 80,
+   "en": "Slowbro",
+   "types": [
+    "poison",
+    "psychic"
+   ],
+   "stats": [
+    95,
+    100,
+    95,
+    100,
+    70,
+    30
+   ],
+   "height": 16,
+   "leg": false
+  },
+  {
+   "name": "farfetchd-galar",
+   "id": 10166,
+   "species": 83,
+   "en": "Farfetch’d",
+   "types": [
+    "fighting"
+   ],
+   "stats": [
+    52,
+    95,
+    55,
+    58,
+    62,
+    55
+   ],
+   "height": 8,
+   "leg": false
+  },
+  {
+   "name": "weezing-galar",
+   "id": 10167,
+   "species": 110,
+   "en": "Weezing",
+   "types": [
+    "poison",
+    "fairy"
+   ],
+   "stats": [
+    65,
+    90,
+    120,
+    85,
+    70,
+    60
+   ],
+   "height": 30,
+   "leg": false
+  },
+  {
+   "name": "mr-mime-galar",
+   "id": 10168,
+   "species": 122,
+   "en": "Mr. Mime",
+   "types": [
+    "ice",
+    "psychic"
+   ],
+   "stats": [
+    50,
+    65,
+    65,
+    90,
+    90,
+    100
+   ],
+   "height": 14,
+   "leg": false
+  },
+  {
+   "name": "articuno-galar",
+   "id": 10169,
+   "species": 144,
+   "en": "Articuno",
+   "types": [
+    "psychic",
+    "flying"
+   ],
+   "stats": [
+    90,
+    85,
+    85,
+    125,
+    100,
+    95
+   ],
+   "height": 17,
+   "leg": true
+  },
+  {
+   "name": "zapdos-galar",
+   "id": 10170,
+   "species": 145,
+   "en": "Zapdos",
+   "types": [
+    "fighting",
+    "flying"
+   ],
+   "stats": [
+    90,
+    125,
+    90,
+    85,
+    90,
+    100
+   ],
+   "height": 16,
+   "leg": true
+  },
+  {
+   "name": "moltres-galar",
+   "id": 10171,
+   "species": 146,
+   "en": "Moltres",
+   "types": [
+    "dark",
+    "flying"
+   ],
+   "stats": [
+    90,
+    85,
+    90,
+    100,
+    125,
+    90
+   ],
+   "height": 20,
+   "leg": true
+  },
+  {
+   "name": "slowking-galar",
+   "id": 10172,
+   "species": 199,
+   "en": "Slowking",
+   "types": [
+    "poison",
+    "psychic"
+   ],
+   "stats": [
+    95,
+    65,
+    80,
+    110,
+    110,
+    30
+   ],
+   "height": 18,
+   "leg": false
+  },
+  {
+   "name": "corsola-galar",
+   "id": 10173,
+   "species": 222,
+   "en": "Corsola",
+   "types": [
+    "ghost"
+   ],
+   "stats": [
+    60,
+    55,
+    100,
+    65,
+    100,
+    30
+   ],
+   "height": 6,
+   "leg": false
+  },
+  {
+   "name": "zigzagoon-galar",
+   "id": 10174,
+   "species": 263,
+   "en": "Zigzagoon",
+   "types": [
+    "dark",
+    "normal"
+   ],
+   "stats": [
+    38,
+    30,
+    41,
+    30,
+    41,
+    60
+   ],
+   "height": 4,
+   "leg": false
+  },
+  {
+   "name": "linoone-galar",
+   "id": 10175,
+   "species": 264,
+   "en": "Linoone",
+   "types": [
+    "dark",
+    "normal"
+   ],
+   "stats": [
+    78,
+    70,
+    61,
+    50,
+    61,
+    100
+   ],
+   "height": 5,
+   "leg": false
+  },
+  {
+   "name": "darumaka-galar",
+   "id": 10176,
+   "species": 554,
+   "en": "Darumaka",
+   "types": [
+    "ice"
+   ],
+   "stats": [
+    70,
+    90,
+    45,
+    15,
+    45,
+    50
+   ],
+   "height": 7,
+   "leg": false
+  },
+  {
+   "name": "darmanitan-galar-standard",
+   "id": 10177,
+   "species": 555,
+   "en": "Darmanitan",
+   "types": [
+    "ice"
+   ],
+   "stats": [
+    105,
+    140,
+    55,
+    30,
+    55,
+    95
+   ],
+   "height": 17,
+   "leg": false
+  },
+  {
+   "name": "darmanitan-galar-zen",
+   "id": 10178,
+   "species": 555,
+   "en": "Darmanitan",
+   "types": [
+    "ice",
+    "fire"
+   ],
+   "stats": [
+    105,
+    160,
+    55,
+    30,
+    55,
+    135
+   ],
+   "height": 17,
+   "leg": false
+  },
+  {
+   "name": "yamask-galar",
+   "id": 10179,
+   "species": 562,
+   "en": "Yamask",
+   "types": [
+    "ground",
+    "ghost"
+   ],
+   "stats": [
+    38,
+    55,
+    85,
+    30,
+    65,
+    30
+   ],
+   "height": 5,
+   "leg": false
+  },
+  {
+   "name": "stunfisk-galar",
+   "id": 10180,
+   "species": 618,
+   "en": "Stunfisk",
+   "types": [
+    "ground",
+    "steel"
+   ],
+   "stats": [
+    109,
+    81,
+    99,
+    66,
+    84,
+    32
+   ],
+   "height": 7,
+   "leg": false
+  },
+  {
+   "name": "growlithe-hisui",
+   "id": 10229,
+   "species": 58,
+   "en": "Growlithe",
+   "types": [
+    "fire",
+    "rock"
+   ],
+   "stats": [
+    60,
+    75,
+    45,
+    65,
+    50,
+    55
+   ],
+   "height": 8,
+   "leg": false
+  },
+  {
+   "name": "arcanine-hisui",
+   "id": 10230,
+   "species": 59,
+   "en": "Arcanine",
+   "types": [
+    "fire",
+    "rock"
+   ],
+   "stats": [
+    95,
+    115,
+    80,
+    95,
+    80,
+    90
+   ],
+   "height": 20,
+   "leg": false
+  },
+  {
+   "name": "voltorb-hisui",
+   "id": 10231,
+   "species": 100,
+   "en": "Voltorb",
+   "types": [
+    "electric",
+    "grass"
+   ],
+   "stats": [
+    40,
+    30,
+    50,
+    55,
+    55,
+    100
+   ],
+   "height": 5,
+   "leg": false
+  },
+  {
+   "name": "electrode-hisui",
+   "id": 10232,
+   "species": 101,
+   "en": "Electrode",
+   "types": [
+    "electric",
+    "grass"
+   ],
+   "stats": [
+    60,
+    50,
+    70,
+    80,
+    80,
+    150
+   ],
+   "height": 12,
+   "leg": false
+  },
+  {
+   "name": "typhlosion-hisui",
+   "id": 10233,
+   "species": 157,
+   "en": "Typhlosion",
+   "types": [
+    "fire",
+    "ghost"
+   ],
+   "stats": [
+    73,
+    84,
+    78,
+    119,
+    85,
+    95
+   ],
+   "height": 16,
+   "leg": false
+  },
+  {
+   "name": "qwilfish-hisui",
+   "id": 10234,
+   "species": 211,
+   "en": "Qwilfish",
+   "types": [
+    "dark",
+    "poison"
+   ],
+   "stats": [
+    65,
+    95,
+    85,
+    55,
+    55,
+    85
+   ],
+   "height": 5,
+   "leg": false
+  },
+  {
+   "name": "sneasel-hisui",
+   "id": 10235,
+   "species": 215,
+   "en": "Sneasel",
+   "types": [
+    "fighting",
+    "poison"
+   ],
+   "stats": [
+    55,
+    95,
+    55,
+    35,
+    75,
+    115
+   ],
+   "height": 9,
+   "leg": false
+  },
+  {
+   "name": "samurott-hisui",
+   "id": 10236,
+   "species": 503,
+   "en": "Samurott",
+   "types": [
+    "water",
+    "dark"
+   ],
+   "stats": [
+    90,
+    108,
+    80,
+    100,
+    65,
+    85
+   ],
+   "height": 15,
+   "leg": false
+  },
+  {
+   "name": "lilligant-hisui",
+   "id": 10237,
+   "species": 549,
+   "en": "Lilligant",
+   "types": [
+    "grass",
+    "fighting"
+   ],
+   "stats": [
+    70,
+    105,
+    75,
+    50,
+    75,
+    105
+   ],
+   "height": 12,
+   "leg": false
+  },
+  {
+   "name": "zorua-hisui",
+   "id": 10238,
+   "species": 570,
+   "en": "Zorua",
+   "types": [
+    "normal",
+    "ghost"
+   ],
+   "stats": [
+    35,
+    60,
+    40,
+    85,
+    40,
+    70
+   ],
+   "height": 7,
+   "leg": false
+  },
+  {
+   "name": "zoroark-hisui",
+   "id": 10239,
+   "species": 571,
+   "en": "Zoroark",
+   "types": [
+    "normal",
+    "ghost"
+   ],
+   "stats": [
+    55,
+    100,
+    60,
+    125,
+    60,
+    110
+   ],
+   "height": 16,
+   "leg": false
+  },
+  {
+   "name": "braviary-hisui",
+   "id": 10240,
+   "species": 628,
+   "en": "Braviary",
+   "types": [
+    "psychic",
+    "flying"
+   ],
+   "stats": [
+    110,
+    83,
+    70,
+    112,
+    70,
+    65
+   ],
+   "height": 17,
+   "leg": false
+  },
+  {
+   "name": "sliggoo-hisui",
+   "id": 10241,
+   "species": 705,
+   "en": "Sliggoo",
+   "types": [
+    "steel",
+    "dragon"
+   ],
+   "stats": [
+    58,
+    75,
+    83,
+    83,
+    113,
+    40
+   ],
+   "height": 7,
+   "leg": false
+  },
+  {
+   "name": "goodra-hisui",
+   "id": 10242,
+   "species": 706,
+   "en": "Goodra",
+   "types": [
+    "steel",
+    "dragon"
+   ],
+   "stats": [
+    80,
+    100,
+    100,
+    110,
+    150,
+    60
+   ],
+   "height": 17,
+   "leg": false
+  },
+  {
+   "name": "avalugg-hisui",
+   "id": 10243,
+   "species": 713,
+   "en": "Avalugg",
+   "types": [
+    "ice",
+    "rock"
+   ],
+   "stats": [
+    95,
+    127,
+    184,
+    34,
+    36,
+    38
+   ],
+   "height": 14,
+   "leg": false
+  },
+  {
+   "name": "decidueye-hisui",
+   "id": 10244,
+   "species": 724,
+   "en": "Decidueye",
+   "types": [
+    "grass",
+    "fighting"
+   ],
+   "stats": [
+    88,
+    112,
+    80,
+    95,
+    95,
+    60
+   ],
+   "height": 16,
+   "leg": false
+  },
+  {
+   "name": "tauros-paldea-combat-breed",
+   "id": 10250,
+   "species": 128,
+   "en": "Tauros",
+   "types": [
+    "fighting"
+   ],
+   "stats": [
+    75,
+    110,
+    105,
+    30,
+    70,
+    100
+   ],
+   "height": 14,
+   "leg": false
+  },
+  {
+   "name": "tauros-paldea-blaze-breed",
+   "id": 10251,
+   "species": 128,
+   "en": "Tauros",
+   "types": [
+    "fighting",
+    "fire"
+   ],
+   "stats": [
+    75,
+    110,
+    105,
+    30,
+    70,
+    100
+   ],
+   "height": 14,
+   "leg": false
+  },
+  {
+   "name": "tauros-paldea-aqua-breed",
+   "id": 10252,
+   "species": 128,
+   "en": "Tauros",
+   "types": [
+    "fighting",
+    "water"
+   ],
+   "stats": [
+    75,
+    110,
+    105,
+    30,
+    70,
+    100
+   ],
+   "height": 14,
+   "leg": false
+  },
+  {
+   "name": "wooper-paldea",
+   "id": 10253,
+   "species": 194,
+   "en": "Wooper",
+   "types": [
+    "poison",
+    "ground"
+   ],
+   "stats": [
+    55,
+    45,
+    45,
+    25,
+    25,
+    15
+   ],
+   "height": 4,
+   "leg": false
+  }
+ ],
+ "collab": {
+  "0": {
+   "Substitute": {
+    "f": "0001",
+    "shiny": false
+   },
+   "Egg": {
+    "f": "0004",
+    "shiny": false
+   },
+   "Substitute_Altcolor": {
+    "f": "0005",
+    "shiny": false
+   },
+   "Mikon": {
+    "f": "0007",
+    "shiny": true
+   },
+   "Hakogame": {
+    "f": "0009",
+    "shiny": false
+   },
+   "Turban": {
+    "f": "0012",
+    "shiny": false
+   },
+   "Pombon": {
+    "f": "0014",
+    "shiny": false
+   }
+  },
+  "1": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "2": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "3": {
+   "Alternate": {
+    "f": "0003",
+    "shiny": false
+   }
+  },
+  "4": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "5": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "6": {
+   "Mega_X": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Gigantamax": {
+    "f": "0003",
+    "shiny": true
+   },
+   "Altcolor": {
+    "f": "0004",
+    "shiny": false
+   },
+   "Alternate": {
+    "f": "0005",
+    "shiny": true
+   }
+  },
+  "8": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "9": {
+   "Altcolor": {
+    "f": "0004",
+    "shiny": false
+   }
+  },
+  "12": {
+   "Altcolor": {
+    "f": "0002",
+    "shiny": true
+   }
+  },
+  "13": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "19": {
+   "Alola": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Altcolor": {
+    "f": "0002",
+    "shiny": true
+   },
+   "Alternate": {
+    "f": "0003",
+    "shiny": true
+   }
+  },
+  "20": {
+   "Alola": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Altcolor": {
+    "f": "0002",
+    "shiny": false
+   }
+  },
+  "24": {
+   "Cutscene": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Alternate": {
+    "f": "0002",
+    "shiny": true
+   }
+  },
+  "25": {
+   "Libre": {
+    "f": "0006",
+    "shiny": true
+   },
+   "Cosplay": {
+    "f": "0007",
+    "shiny": true
+   }
+  },
+  "26": {
+   "Alola": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "27": {
+   "Alola": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "28": {
+   "Alola": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "30": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "31": {
+   "Alternate": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "32": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "33": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "34": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "36": {
+   "Altcolor": {
+    "f": "0002",
+    "shiny": false
+   }
+  },
+  "37": {
+   "Alola": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Altcolor": {
+    "f": "0002",
+    "shiny": false
+   },
+   "Alternate": {
+    "f": "0003",
+    "shiny": false
+   }
+  },
+  "38": {
+   "Alola": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Altcolor": {
+    "f": "0002",
+    "shiny": true
+   },
+   "Cutscene": {
+    "f": "0003",
+    "shiny": true
+   },
+   "Alternate": {
+    "f": "0004",
+    "shiny": true
+   }
+  },
+  "39": {
+   "Altcolor": {
+    "f": "0002",
+    "shiny": false
+   }
+  },
+  "40": {
+   "Cutscene": {
+    "f": "0002",
+    "shiny": true
+   },
+   "Altcolor": {
+    "f": "0004",
+    "shiny": true
+   }
+  },
+  "41": {
+   "Cutscene": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Altcolor": {
+    "f": "0002",
+    "shiny": false
+   }
+  },
+  "42": {
+   "Alternate": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Altcolor": {
+    "f": "0002",
+    "shiny": false
+   }
+  },
+  "44": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "45": {
+   "Alternate": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "46": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "47": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "48": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "49": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "50": {
+   "Alola": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Cutscene": {
+    "f": "0003",
+    "shiny": true
+   }
+  },
+  "51": {
+   "Alola": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Cutscene": {
+    "f": "0002",
+    "shiny": true
+   }
+  },
+  "52": {
+   "Alola": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Galar": {
+    "f": "0002",
+    "shiny": false
+   }
+  },
+  "53": {
+   "Alola": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "54": {
+   "Cutscene": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "55": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "56": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "57": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "58": {
+   "Hisui": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Altcolor": {
+    "f": "0002",
+    "shiny": false
+   }
+  },
+  "59": {
+   "Hisui": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Altcolor": {
+    "f": "0002",
+    "shiny": false
+   }
+  },
+  "65": {
+   "Mega": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Cutscene": {
+    "f": "0002",
+    "shiny": true
+   }
+  },
+  "66": {
+   "Cutscene": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "67": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "69": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "70": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "71": {
+   "Altcolor": {
+    "f": "0002",
+    "shiny": true
+   }
+  },
+  "72": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "73": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "74": {
+   "Alola": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Altcolor": {
+    "f": "0002",
+    "shiny": false
+   }
+  },
+  "75": {
+   "Alola": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Altcolor": {
+    "f": "0002",
+    "shiny": true
+   }
+  },
+  "76": {
+   "Alola": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Altcolor": {
+    "f": "0002",
+    "shiny": false
+   },
+   "Cutscene": {
+    "f": "0003",
+    "shiny": true
+   },
+   "Cutscene_Altcolor": {
+    "f": "0004",
+    "shiny": true
+   }
+  },
+  "77": {
+   "Galar": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Galar_Alternate": {
+    "f": "0002",
+    "shiny": true
+   },
+   "Altcolor": {
+    "f": "0003",
+    "shiny": false
+   }
+  },
+  "78": {
+   "Galar": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "79": {
+   "Galar": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Altcolor": {
+    "f": "0002",
+    "shiny": false
+   }
+  },
+  "80": {
+   "Galar": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Mega": {
+    "f": "0002",
+    "shiny": true
+   },
+   "Alternate": {
+    "f": "0003",
+    "shiny": false
+   },
+   "Mega_Altcolor": {
+    "f": "0004",
+    "shiny": false
+   }
+  },
+  "81": {
+   "Cutscene": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "82": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "83": {
+   "Galar": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Altcolor": {
+    "f": "0002",
+    "shiny": false
+   }
+  },
+  "84": {
+   "Alternate": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "85": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "88": {
+   "Alola": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Cutscene": {
+    "f": "0003",
+    "shiny": true
+   }
+  },
+  "89": {
+   "Alola": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Cutscene": {
+    "f": "0003",
+    "shiny": true
+   }
+  },
+  "90": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "91": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "93": {
+   "Cutscene": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "94": {
+   "Mega": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Cutscene": {
+    "f": "0003",
+    "shiny": true
+   }
+  },
+  "95": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "96": {
+   "Cutscene": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Altcolor": {
+    "f": "0002",
+    "shiny": false
+   },
+   "Cutscene_Altcolor": {
+    "f": "0003",
+    "shiny": true
+   }
+  },
+  "98": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "99": {
+   "Altcolor": {
+    "f": "0002",
+    "shiny": false
+   }
+  },
+  "100": {
+   "Hisui": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "101": {
+   "Hisui": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "103": {
+   "Alola": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Altcolor": {
+    "f": "0002",
+    "shiny": false
+   }
+  },
+  "104": {
+   "Cutscene": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "105": {
+   "Alola": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Altcolor": {
+    "f": "0002",
+    "shiny": false
+   }
+  },
+  "106": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "108": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "109": {
+   "Cutscene": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "110": {
+   "Galar": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Altcolor": {
+    "f": "0002",
+    "shiny": false
+   }
+  },
+  "112": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "114": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "115": {
+   "Mega": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Altcolor": {
+    "f": "0004",
+    "shiny": false
+   }
+  },
+  "116": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "118": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "119": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "122": {
+   "Galar": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Altcolor": {
+    "f": "0002",
+    "shiny": false
+   }
+  },
+  "123": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "124": {
+   "Alternate": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "127": {
+   "Altcolor": {
+    "f": "0002",
+    "shiny": false
+   }
+  },
+  "128": {
+   "Paldea": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Paldea_Blaze": {
+    "f": "0002",
+    "shiny": true
+   },
+   "Paldea_Aqua": {
+    "f": "0003",
+    "shiny": true
+   },
+   "Altcolor": {
+    "f": "0004",
+    "shiny": false
+   }
+  },
+  "130": {
+   "Altcolor": {
+    "f": "0002",
+    "shiny": false
+   },
+   "Cutscene": {
+    "f": "0004",
+    "shiny": true
+   }
+  },
+  "131": {
+   "Alternate": {
+    "f": "0002",
+    "shiny": false
+   }
+  },
+  "132": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "133": {
+   "Alternate": {
+    "f": "0002",
+    "shiny": false
+   }
+  },
+  "134": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "136": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "137": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "141": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "142": {
+   "Mega": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Altcolor": {
+    "f": "0002",
+    "shiny": false
+   }
+  },
+  "143": {
+   "Altcolor": {
+    "f": "0002",
+    "shiny": false
+   }
+  },
+  "144": {
+   "Galar": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Cutscene": {
+    "f": "0002",
+    "shiny": true
+   },
+   "Alternate": {
+    "f": "0003",
+    "shiny": false
+   }
+  },
+  "145": {
+   "Galar": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Cutscene": {
+    "f": "0002",
+    "shiny": true
+   },
+   "Altcolor": {
+    "f": "0003",
+    "shiny": false
+   }
+  },
+  "146": {
+   "Galar": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Cutscene": {
+    "f": "0002",
+    "shiny": true
+   },
+   "Alternate": {
+    "f": "0003",
+    "shiny": false
+   }
+  },
+  "147": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "148": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "149": {
+   "Altcolor": {
+    "f": "0002",
+    "shiny": true
+   }
+  },
+  "150": {
+   "Mega_Y": {
+    "f": "0002",
+    "shiny": true
+   },
+   "Shadow": {
+    "f": "0003",
+    "shiny": false
+   }
+  },
+  "151": {
+   "Alternate": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "153": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "154": {
+   "Alternate2": {
+    "f": "0003",
+    "shiny": false
+   }
+  },
+  "155": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "156": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "157": {
+   "Hisui": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Altcolor": {
+    "f": "0002",
+    "shiny": true
+   }
+  },
+  "161": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "162": {
+   "Alternate": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "165": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "166": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "168": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "169": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "170": {
+   "Alternate": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "171": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "172": {
+   "Spiky": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "174": {
+   "Cutscene": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Cutscene_Altcolor": {
+    "f": "0003",
+    "shiny": true
+   }
+  },
+  "175": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "178": {
+   "Cutscene": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "179": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "182": {
+   "Cutscene": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "185": {
+   "Alternate": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "187": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": false
+   },
+   "Beta": {
+    "f": "0002",
+    "shiny": false
+   }
+  },
+  "188": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "189": {
+   "Altcolor": {
+    "f": "0002",
+    "shiny": false
+   }
+  },
+  "191": {
+   "Beta": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "192": {
+   "Cutscene": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Altcolor": {
+    "f": "0002",
+    "shiny": false
+   }
+  },
+  "194": {
+   "Paldea": {
+    "f": "0002",
+    "shiny": true
+   },
+   "Altcolor": {
+    "f": "0003",
+    "shiny": false
+   }
+  },
+  "195": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "196": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "197": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "198": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "199": {
+   "Galar": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Altcolor": {
+    "f": "0002",
+    "shiny": false
+   }
+  },
+  "200": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "201": {
+   "B": {
+    "f": "0001",
+    "shiny": true
+   },
+   "C": {
+    "f": "0002",
+    "shiny": true
+   },
+   "D": {
+    "f": "0003",
+    "shiny": true
+   },
+   "E": {
+    "f": "0004",
+    "shiny": true
+   },
+   "F": {
+    "f": "0005",
+    "shiny": true
+   },
+   "G": {
+    "f": "0006",
+    "shiny": true
+   },
+   "H": {
+    "f": "0007",
+    "shiny": true
+   },
+   "I": {
+    "f": "0008",
+    "shiny": true
+   },
+   "J": {
+    "f": "0009",
+    "shiny": true
+   },
+   "K": {
+    "f": "0010",
+    "shiny": true
+   },
+   "L": {
+    "f": "0011",
+    "shiny": true
+   },
+   "M": {
+    "f": "0012",
+    "shiny": true
+   },
+   "N": {
+    "f": "0013",
+    "shiny": true
+   },
+   "O": {
+    "f": "0014",
+    "shiny": true
+   },
+   "P": {
+    "f": "0015",
+    "shiny": true
+   },
+   "Q": {
+    "f": "0016",
+    "shiny": true
+   },
+   "R": {
+    "f": "0017",
+    "shiny": true
+   },
+   "S": {
+    "f": "0018",
+    "shiny": true
+   },
+   "T": {
+    "f": "0019",
+    "shiny": true
+   },
+   "U": {
+    "f": "0020",
+    "shiny": true
+   },
+   "V": {
+    "f": "0021",
+    "shiny": true
+   },
+   "W": {
+    "f": "0022",
+    "shiny": true
+   },
+   "X": {
+    "f": "0023",
+    "shiny": true
+   },
+   "Y": {
+    "f": "0024",
+    "shiny": true
+   },
+   "Z": {
+    "f": "0025",
+    "shiny": true
+   },
+   "Exclamation": {
+    "f": "0026",
+    "shiny": true
+   },
+   "Question": {
+    "f": "0027",
+    "shiny": true
+   }
+  },
+  "203": {
+   "Alternate": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "205": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "206": {
+   "Altcolor": {
+    "f": "0002",
+    "shiny": true
+   }
+  },
+  "207": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": false
+   },
+   "Cutscene": {
+    "f": "0002",
+    "shiny": true
+   },
+   "Cutscene_Altcolor": {
+    "f": "0003",
+    "shiny": false
+   },
+   "Alternate": {
+    "f": "0004",
+    "shiny": false
+   }
+  },
+  "208": {
+   "Mega": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "209": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "210": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "211": {
+   "Hisui": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Alternate": {
+    "f": "0002",
+    "shiny": false
+   }
+  },
+  "212": {
+   "Cutscene": {
+    "f": "0003",
+    "shiny": true
+   },
+   "Cutscene_Altcolor": {
+    "f": "0005",
+    "shiny": false
+   }
+  },
+  "214": {
+   "Altcolor": {
+    "f": "0002",
+    "shiny": false
+   }
+  },
+  "215": {
+   "Hisui": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Cutscene": {
+    "f": "0002",
+    "shiny": true
+   },
+   "Alternate": {
+    "f": "0003",
+    "shiny": false
+   }
+  },
+  "216": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "217": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "218": {
+   "Altcolor": {
+    "f": "0002",
+    "shiny": false
+   }
+  },
+  "219": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "222": {
+   "Galar": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "223": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "224": {
+   "Cutscene": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Cutscene_Altcolor": {
+    "f": "0003",
+    "shiny": false
+   }
+  },
+  "226": {
+   "Alternate": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Altcolor": {
+    "f": "0002",
+    "shiny": true
+   },
+   "Alternate_Altcolor": {
+    "f": "0003",
+    "shiny": false
+   }
+  },
+  "227": {
+   "Mega": {
+    "f": "0001",
+    "shiny": false
+   },
+   "Cutscene": {
+    "f": "0002",
+    "shiny": true
+   }
+  },
+  "228": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "229": {
+   "Mega": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Altcolor": {
+    "f": "0002",
+    "shiny": false
+   }
+  },
+  "231": {
+   "Alternate": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "234": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Alternate": {
+    "f": "0002",
+    "shiny": true
+   }
+  },
+  "235": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "236": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "240": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "243": {
+   "Cutscene": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "244": {
+   "Cutscene": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Altcolor": {
+    "f": "0002",
+    "shiny": false
+   }
+  },
+  "245": {
+   "Cutscene": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Altcolor": {
+    "f": "0002",
+    "shiny": false
+   }
+  },
+  "246": {
+   "Alternate": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "248": {
+   "Mega": {
+    "f": "0001",
+    "shiny": false
+   },
+   "Cutscene": {
+    "f": "0002",
+    "shiny": true
+   },
+   "Alternate": {
+    "f": "0003",
+    "shiny": false
+   }
+  },
+  "249": {
+   "Shadow": {
+    "f": "0001",
+    "shiny": false
+   },
+   "Cutscene": {
+    "f": "0002",
+    "shiny": true
+   }
+  },
+  "250": {
+   "Alternate": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "251": {
+   "Cutscene": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "252": {
+   "Alternate": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "253": {
+   "Cutscene": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Altcolor": {
+    "f": "0002",
+    "shiny": false
+   }
+  },
+  "254": {
+   "Mega": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "257": {
+   "Alternate": {
+    "f": "0002",
+    "shiny": false
+   }
+  },
+  "258": {
+   "Alternate": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "259": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "260": {
+   "Altcolor": {
+    "f": "0002",
+    "shiny": false
+   }
+  },
+  "263": {
+   "Galar": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Alternate": {
+    "f": "0002",
+    "shiny": false
+   }
+  },
+  "264": {
+   "Galar": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "269": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "271": {
+   "Cutscene": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Altcolor": {
+    "f": "0002",
+    "shiny": false
+   },
+   "Cutscene_Altcolor": {
+    "f": "0003",
+    "shiny": false
+   }
+  },
+  "272": {
+   "Cutscene": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Altcolor": {
+    "f": "0002",
+    "shiny": false
+   },
+   "Cutscene_Altcolor": {
+    "f": "0003",
+    "shiny": true
+   }
+  },
+  "274": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "275": {
+   "Cutscene": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "279": {
+   "Cutscene": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "282": {
+   "Mega": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Cutscene": {
+    "f": "0002",
+    "shiny": true
+   }
+  },
+  "284": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "285": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "290": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "293": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "294": {
+   "Cutscene": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "295": {
+   "Alternate": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "296": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "298": {
+   "Cutscene": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "299": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "300": {
+   "Alternate": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "302": {
+   "Mega": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Cutscene": {
+    "f": "0002",
+    "shiny": true
+   }
+  },
+  "303": {
+   "Mega": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Altcolor": {
+    "f": "0003",
+    "shiny": true
+   }
+  },
+  "305": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "306": {
+   "Cutscene": {
+    "f": "0002",
+    "shiny": true
+   },
+   "Altcolor": {
+    "f": "0003",
+    "shiny": false
+   },
+   "Cutscene_Altcolor": {
+    "f": "0004",
+    "shiny": true
+   }
+  },
+  "308": {
+   "Mega": {
+    "f": "0001",
+    "shiny": false
+   },
+   "Cutscene": {
+    "f": "0002",
+    "shiny": true
+   }
+  },
+  "310": {
+   "Mega": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "313": {
+   "Cutscene": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Altcolor": {
+    "f": "0002",
+    "shiny": false
+   }
+  },
+  "314": {
+   "Cutscene": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Altcolor": {
+    "f": "0002",
+    "shiny": true
+   }
+  },
+  "315": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "317": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "319": {
+   "Mega": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Altcolor": {
+    "f": "0002",
+    "shiny": false
+   }
+  },
+  "320": {
+   "Alternate": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "322": {
+   "Alternate": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "323": {
+   "Mega": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Altcolor": {
+    "f": "0002",
+    "shiny": true
+   }
+  },
+  "324": {
+   "Altcolor": {
+    "f": "0002",
+    "shiny": false
+   }
+  },
+  "326": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "327": {
+   "Cutscene": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Altcolor": {
+    "f": "0002",
+    "shiny": true
+   },
+   "Cutscene_Altcolor": {
+    "f": "0003",
+    "shiny": true
+   }
+  },
+  "334": {
+   "Mega": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "336": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "340": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "341": {
+   "Cutscene": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Cutscene_Altcolor": {
+    "f": "0003",
+    "shiny": false
+   }
+  },
+  "344": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "346": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "348": {
+   "Cutscene": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Altcolor": {
+    "f": "0002",
+    "shiny": false
+   }
+  },
+  "350": {
+   "Alternate": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "351": {
+   "Sunny": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Rainy": {
+    "f": "0002",
+    "shiny": true
+   },
+   "Snowy": {
+    "f": "0003",
+    "shiny": true
+   }
+  },
+  "352": {
+   "Purple": {
+    "f": "0001",
+    "shiny": false
+   },
+   "Cutscene": {
+    "f": "0002",
+    "shiny": true
+   },
+   "Purple_Cutscene": {
+    "f": "0003",
+    "shiny": false
+   },
+   "Altcolor": {
+    "f": "0004",
+    "shiny": true
+   }
+  },
+  "353": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "354": {
+   "Mega": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Cutscene": {
+    "f": "0002",
+    "shiny": true
+   },
+   "Altcolor": {
+    "f": "0003",
+    "shiny": false
+   }
+  },
+  "355": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "357": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "358": {
+   "Mega": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Altcolor": {
+    "f": "0002",
+    "shiny": false
+   },
+   "Mega_Altcolor": {
+    "f": "0003",
+    "shiny": true
+   },
+   "Cutscene": {
+    "f": "0004",
+    "shiny": true
+   }
+  },
+  "359": {
+   "Mega": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Cutscene": {
+    "f": "0003",
+    "shiny": true
+   },
+   "Alternate": {
+    "f": "0004",
+    "shiny": false
+   }
+  },
+  "360": {
+   "Cutscene": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "361": {
+   "Cutscene": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "362": {
+   "Mega": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "363": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "364": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "365": {
+   "Cutscene": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Alternate": {
+    "f": "0002",
+    "shiny": false
+   }
+  },
+  "371": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "373": {
+   "Altcolor": {
+    "f": "0002",
+    "shiny": true
+   }
+  },
+  "374": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "375": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "376": {
+   "Altcolor": {
+    "f": "0002",
+    "shiny": false
+   }
+  },
+  "377": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "378": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "379": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "380": {
+   "Mega": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Cutscene": {
+    "f": "0002",
+    "shiny": true
+   }
+  },
+  "381": {
+   "Mega": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Cutscene": {
+    "f": "0002",
+    "shiny": true
+   }
+  },
+  "382": {
+   "Primal": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Altcolor": {
+    "f": "0002",
+    "shiny": false
+   }
+  },
+  "383": {
+   "Primal": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Cutscene": {
+    "f": "0002",
+    "shiny": true
+   }
+  },
+  "384": {
+   "Mega": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Altcolor": {
+    "f": "0002",
+    "shiny": false
+   }
+  },
+  "385": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": false
+   },
+   "Cutscene": {
+    "f": "0002",
+    "shiny": true
+   },
+   "Cutscene_Altcolor": {
+    "f": "0003",
+    "shiny": false
+   }
+  },
+  "386": {
+   "Attack": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Defense": {
+    "f": "0002",
+    "shiny": true
+   },
+   "Speed": {
+    "f": "0003",
+    "shiny": true
+   },
+   "Altcolor": {
+    "f": "0004",
+    "shiny": false
+   },
+   "Attack_Altcolor": {
+    "f": "0005",
+    "shiny": false
+   },
+   "Defense_Altcolor": {
+    "f": "0006",
+    "shiny": false
+   },
+   "Speed_Altcolor": {
+    "f": "0007",
+    "shiny": false
+   }
+  },
+  "387": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "389": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "393": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "395": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "399": {
+   "Cutscene": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "403": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "404": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "405": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "411": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "412": {
+   "Sand": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Trash": {
+    "f": "0002",
+    "shiny": true
+   }
+  },
+  "413": {
+   "Sand": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Trash": {
+    "f": "0002",
+    "shiny": true
+   }
+  },
+  "421": {
+   "Sunshine": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Altcolor": {
+    "f": "0002",
+    "shiny": false
+   }
+  },
+  "422": {
+   "East": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "423": {
+   "East": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "425": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "426": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "428": {
+   "Mega": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Cutscene": {
+    "f": "0002",
+    "shiny": true
+   }
+  },
+  "429": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "430": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "431": {
+   "Alternate": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "432": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "433": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "434": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "435": {
+   "Cutscene": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Altcolor": {
+    "f": "0002",
+    "shiny": true
+   }
+  },
+  "436": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "437": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "438": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "439": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "440": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "441": {
+   "Cutscene": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "442": {
+   "Cutscene": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Cutscene_Altcolor": {
+    "f": "0003",
+    "shiny": false
+   }
+  },
+  "445": {
+   "Altcolor": {
+    "f": "0003",
+    "shiny": false
+   }
+  },
+  "446": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "448": {
+   "Mega": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Alternate": {
+    "f": "0003",
+    "shiny": false
+   }
+  },
+  "451": {
+   "Cutscene": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "452": {
+   "Cutscene": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "453": {
+   "Cutscene": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Altcolor": {
+    "f": "0002",
+    "shiny": false
+   },
+   "Cutscene_Altcolor": {
+    "f": "0003",
+    "shiny": true
+   }
+  },
+  "458": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "459": {
+   "Cutscene": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "461": {
+   "Cutscene": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "462": {
+   "Cutscene": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "465": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "471": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "472": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "473": {
+   "Cutscene": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "474": {
+   "Altcolor": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "475": {
+   "Mega": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Altcolor": {
+    "f": "0002",
+    "shiny": false
+   }
+  },
+  "476": {
+   "Beta": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Altcolor": {
+    "f": "0002",
+    "shiny": false
+   }
+  },
+  "477": {
+   "Cutscene": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "479": {
+   "Heat": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Wash": {
+    "f": "0002",
+    "shiny": true
+   },
+   "Frost": {
+    "f": "0003",
+    "shiny": true
+   },
+   "Fan": {
+    "f": "0004",
+    "shiny": true
+   },
+   "Mow": {
+    "f": "0005",
+    "shiny": true
+   },
+   "Drone": {
+    "f": "0008",
+    "shiny": false
+   }
+  },
+  "481": {
+   "Cutscene": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "482": {
+   "Cutscene": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "483": {
+   "Origin": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Primal": {
+    "f": "0002",
+    "shiny": false
+   },
+   "Altcolor": {
+    "f": "0003",
+    "shiny": false
+   },
+   "Cutscene": {
+    "f": "0005",
+    "shiny": true
+   },
+   "Cutscene_Altcolor": {
+    "f": "0006",
+    "shiny": false
+   }
+  },
+  "484": {
+   "Origin": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Cutscene": {
+    "f": "0002",
+    "shiny": true
+   }
+  },
+  "485": {
+   "Altcolor": {
+    "f": "0002",
+    "shiny": false
+   }
+  },
+  "486": {
+   "Cutscene": {
+    "f": "0002",
+    "shiny": true
+   }
+  },
+  "487": {
+   "Origin": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Altcolor": {
+    "f": "0002",
+    "shiny": true
+   },
+   "Origin_Alternate": {
+    "f": "0003",
+    "shiny": true
+   }
+  },
+  "488": {
+   "Cutscene": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "490": {
+   "Cutscene": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "491": {
+   "Cutscene": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Mega": {
+    "f": "0002",
+    "shiny": false
+   },
+   "Altcolor": {
+    "f": "0003",
+    "shiny": false
+   },
+   "Cutscene_Altcolor": {
+    "f": "0004",
+    "shiny": false
+   }
+  },
+  "492": {
+   "Sky": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Cutscene": {
+    "f": "0002",
+    "shiny": true
+   },
+   "Altcolor": {
+    "f": "0003",
+    "shiny": false
+   }
+  },
+  "493": {
+   "Bug": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Dark": {
+    "f": "0002",
+    "shiny": true
+   },
+   "Dragon": {
+    "f": "0003",
+    "shiny": true
+   },
+   "Electric": {
+    "f": "0004",
+    "shiny": true
+   },
+   "Fighting": {
+    "f": "0005",
+    "shiny": true
+   },
+   "Fire": {
+    "f": "0006",
+    "shiny": true
+   },
+   "Flying": {
+    "f": "0007",
+    "shiny": true
+   },
+   "Ghost": {
+    "f": "0008",
+    "shiny": true
+   },
+   "Grass": {
+    "f": "0009",
+    "shiny": true
+   },
+   "Ground": {
+    "f": "0010",
+    "shiny": true
+   },
+   "Ice": {
+    "f": "0011",
+    "shiny": true
+   },
+   "Poison": {
+    "f": "0012",
+    "shiny": true
+   },
+   "Psychic": {
+    "f": "0013",
+    "shiny": true
+   },
+   "Rock": {
+    "f": "0014",
+    "shiny": true
+   },
+   "Steel": {
+    "f": "0015",
+    "shiny": true
+   },
+   "Water": {
+    "f": "0016",
+    "shiny": true
+   },
+   "Fairy": {
+    "f": "0017",
+    "shiny": true
+   },
+   "Question_Mark": {
+    "f": "0018",
+    "shiny": true
+   },
+   "Beta": {
+    "f": "0019",
+    "shiny": false
+   }
+  },
+  "498": {
+   "Beta": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "503": {
+   "Hisui": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "530": {
+   "Mega": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "549": {
+   "Hisui": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "550": {
+   "Blue": {
+    "f": "0001",
+    "shiny": true
+   },
+   "White": {
+    "f": "0002",
+    "shiny": true
+   }
+  },
+  "554": {
+   "Galar": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "555": {
+   "Zen": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Galar": {
+    "f": "0002",
+    "shiny": true
+   }
+  },
+  "560": {
+   "Mega": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "562": {
+   "Galar": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "567": {
+   "Alternate": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "570": {
+   "Hisui": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "571": {
+   "Hisui": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "585": {
+   "Summer": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Autumn": {
+    "f": "0002",
+    "shiny": true
+   },
+   "Winter": {
+    "f": "0003",
+    "shiny": true
+   }
+  },
+  "586": {
+   "Summer": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Autumn": {
+    "f": "0002",
+    "shiny": true
+   },
+   "Winter": {
+    "f": "0003",
+    "shiny": true
+   }
+  },
+  "599": {
+   "Alternate": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "600": {
+   "Alternate": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "601": {
+   "Alternate": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "604": {
+   "Mega": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "628": {
+   "Hisui": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "643": {
+   "Skytemple": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "645": {
+   "Therian": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "646": {
+   "Black": {
+    "f": "0001",
+    "shiny": true
+   },
+   "White": {
+    "f": "0002",
+    "shiny": true
+   },
+   "White_Skytemple": {
+    "f": "0006",
+    "shiny": true
+   },
+   "Black_Skytemple": {
+    "f": "0007",
+    "shiny": true
+   }
+  },
+  "648": {
+   "Pirouette": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "649": {
+   "Douse": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Shock": {
+    "f": "0002",
+    "shiny": true
+   },
+   "Burn": {
+    "f": "0003",
+    "shiny": true
+   },
+   "Chill": {
+    "f": "0004",
+    "shiny": true
+   }
+  },
+  "666": {
+   "Icy_Snow": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Polar": {
+    "f": "0002",
+    "shiny": true
+   },
+   "Tundra": {
+    "f": "0003",
+    "shiny": true
+   },
+   "Continental": {
+    "f": "0004",
+    "shiny": true
+   },
+   "Garden": {
+    "f": "0005",
+    "shiny": true
+   },
+   "Elegant": {
+    "f": "0006",
+    "shiny": true
+   },
+   "Modern": {
+    "f": "0007",
+    "shiny": true
+   },
+   "Marine": {
+    "f": "0008",
+    "shiny": true
+   },
+   "Archipelago": {
+    "f": "0009",
+    "shiny": true
+   },
+   "High_Plains": {
+    "f": "0010",
+    "shiny": true
+   },
+   "Sandstorm": {
+    "f": "0011",
+    "shiny": true
+   },
+   "River": {
+    "f": "0012",
+    "shiny": true
+   },
+   "Monsoon": {
+    "f": "0013",
+    "shiny": true
+   },
+   "Savannah": {
+    "f": "0014",
+    "shiny": true
+   },
+   "Sun": {
+    "f": "0015",
+    "shiny": true
+   },
+   "Ocean": {
+    "f": "0016",
+    "shiny": true
+   },
+   "Jungle": {
+    "f": "0017",
+    "shiny": true
+   },
+   "Fancy": {
+    "f": "0018",
+    "shiny": true
+   },
+   "Pokeball": {
+    "f": "0019",
+    "shiny": true
+   }
+  },
+  "669": {
+   "Yellow": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Orange": {
+    "f": "0002",
+    "shiny": true
+   },
+   "Blue": {
+    "f": "0003",
+    "shiny": true
+   },
+   "White": {
+    "f": "0004",
+    "shiny": true
+   }
+  },
+  "670": {
+   "Yellow": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Orange": {
+    "f": "0002",
+    "shiny": true
+   },
+   "Blue": {
+    "f": "0003",
+    "shiny": true
+   },
+   "White": {
+    "f": "0004",
+    "shiny": true
+   },
+   "Eternal": {
+    "f": "0005",
+    "shiny": true
+   },
+   "Mega": {
+    "f": "0006",
+    "shiny": true
+   }
+  },
+  "671": {
+   "Yellow": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Orange": {
+    "f": "0002",
+    "shiny": true
+   },
+   "Blue": {
+    "f": "0003",
+    "shiny": true
+   },
+   "White": {
+    "f": "0004",
+    "shiny": true
+   }
+  },
+  "676": {
+   "Kabuki": {
+    "f": "0008",
+    "shiny": true
+   }
+  },
+  "681": {
+   "Blade": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "691": {
+   "Mega": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "701": {
+   "Mega": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Beta": {
+    "f": "0002",
+    "shiny": false
+   }
+  },
+  "705": {
+   "Hisui": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "706": {
+   "Hisui": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "710": {
+   "Small": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Large": {
+    "f": "0002",
+    "shiny": true
+   },
+   "Super": {
+    "f": "0003",
+    "shiny": true
+   }
+  },
+  "711": {
+   "Super": {
+    "f": "0003",
+    "shiny": true
+   }
+  },
+  "713": {
+   "Hisui": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "716": {
+   "Neutral": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "718": {
+   "10": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Complete": {
+    "f": "0002",
+    "shiny": true
+   },
+   "Mega": {
+    "f": "0005",
+    "shiny": true
+   },
+   "Complete_Skytemple": {
+    "f": "0006",
+    "shiny": true
+   },
+   "Mega_Skytemple": {
+    "f": "0007",
+    "shiny": true
+   }
+  },
+  "719": {
+   "Mega": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "720": {
+   "Unbound": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "724": {
+   "Hisui": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "741": {
+   "Pom_Pom": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Pa_U": {
+    "f": "0002",
+    "shiny": true
+   },
+   "Sensu": {
+    "f": "0003",
+    "shiny": true
+   }
+  },
+  "745": {
+   "Midnight": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Dusk": {
+    "f": "0002",
+    "shiny": true
+   }
+  },
+  "746": {
+   "School": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "768": {
+   "Alternate": {
+    "f": "0002",
+    "shiny": true
+   }
+  },
+  "773": {
+   "Fighting": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Flying": {
+    "f": "0002",
+    "shiny": true
+   },
+   "Poison": {
+    "f": "0003",
+    "shiny": true
+   },
+   "Ground": {
+    "f": "0004",
+    "shiny": true
+   },
+   "Rock": {
+    "f": "0005",
+    "shiny": true
+   },
+   "Bug": {
+    "f": "0006",
+    "shiny": true
+   },
+   "Ghost": {
+    "f": "0007",
+    "shiny": true
+   },
+   "Steel": {
+    "f": "0008",
+    "shiny": true
+   },
+   "Fire": {
+    "f": "0009",
+    "shiny": true
+   },
+   "Water": {
+    "f": "0010",
+    "shiny": true
+   },
+   "Grass": {
+    "f": "0011",
+    "shiny": true
+   },
+   "Electric": {
+    "f": "0012",
+    "shiny": true
+   },
+   "Psychic": {
+    "f": "0013",
+    "shiny": true
+   },
+   "Ice": {
+    "f": "0014",
+    "shiny": true
+   },
+   "Dragon": {
+    "f": "0015",
+    "shiny": true
+   },
+   "Dark": {
+    "f": "0016",
+    "shiny": true
+   },
+   "Fairy": {
+    "f": "0017",
+    "shiny": true
+   }
+  },
+  "774": {
+   "Red": {
+    "f": "0001",
+    "shiny": false
+   },
+   "Orange": {
+    "f": "0002",
+    "shiny": false
+   },
+   "Yellow": {
+    "f": "0003",
+    "shiny": false
+   },
+   "Green": {
+    "f": "0004",
+    "shiny": false
+   },
+   "Blue": {
+    "f": "0005",
+    "shiny": false
+   },
+   "Indigo": {
+    "f": "0006",
+    "shiny": false
+   },
+   "Violet": {
+    "f": "0007",
+    "shiny": false
+   }
+  },
+  "778": {
+   "Busted": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "780": {
+   "Mega": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "800": {
+   "Ultra": {
+    "f": "0003",
+    "shiny": true
+   }
+  },
+  "801": {
+   "Original": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "802": {
+   "Alternate": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "807": {
+   "Mega": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "831": {
+   "Alternate": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "840": {
+   "No_Apple": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "849": {
+   "Lowkey": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "869": {
+   "Berry_Sweet": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Love_Sweet": {
+    "f": "0002",
+    "shiny": true
+   },
+   "Star_Sweet": {
+    "f": "0003",
+    "shiny": true
+   },
+   "Clover_Sweet": {
+    "f": "0004",
+    "shiny": true
+   },
+   "Flower_Sweet": {
+    "f": "0005",
+    "shiny": true
+   },
+   "Ribbon_Sweet": {
+    "f": "0006",
+    "shiny": true
+   },
+   "Ruby_Cream_Strawberry_Sweet": {
+    "f": "0007",
+    "shiny": false
+   },
+   "Ruby_Cream_Berry_Sweet": {
+    "f": "0008",
+    "shiny": false
+   },
+   "Ruby_Cream_Love_Sweet": {
+    "f": "0009",
+    "shiny": false
+   },
+   "Ruby_Cream_Star_Sweet": {
+    "f": "0010",
+    "shiny": false
+   },
+   "Ruby_Cream_Clover_Sweet": {
+    "f": "0011",
+    "shiny": false
+   },
+   "Ruby_Cream_Flower_Sweet": {
+    "f": "0012",
+    "shiny": false
+   },
+   "Ruby_Cream_Ribbon_Sweet": {
+    "f": "0013",
+    "shiny": false
+   },
+   "Matcha_Cream_Strawberry_Sweet": {
+    "f": "0014",
+    "shiny": false
+   },
+   "Matcha_Cream_Berry_Sweet": {
+    "f": "0015",
+    "shiny": false
+   },
+   "Matcha_Cream_Love_Sweet": {
+    "f": "0016",
+    "shiny": false
+   },
+   "Matcha_Cream_Star_Sweet": {
+    "f": "0017",
+    "shiny": false
+   },
+   "Matcha_Cream_Clover_Sweet": {
+    "f": "0018",
+    "shiny": false
+   },
+   "Matcha_Cream_Flower_Sweet": {
+    "f": "0019",
+    "shiny": false
+   },
+   "Matcha_Cream_Ribbon_Sweet": {
+    "f": "0020",
+    "shiny": false
+   },
+   "Mint_Cream_Strawberry_Sweet": {
+    "f": "0021",
+    "shiny": false
+   },
+   "Mint_Cream_Berry_Sweet": {
+    "f": "0022",
+    "shiny": false
+   },
+   "Mint_Cream_Love_Sweet": {
+    "f": "0023",
+    "shiny": false
+   },
+   "Mint_Cream_Star_Sweet": {
+    "f": "0024",
+    "shiny": false
+   },
+   "Mint_Cream_Clover_Sweet": {
+    "f": "0025",
+    "shiny": false
+   },
+   "Mint_Cream_Flower_Sweet": {
+    "f": "0026",
+    "shiny": false
+   },
+   "Mint_Cream_Ribbon_Sweet": {
+    "f": "0027",
+    "shiny": false
+   },
+   "Lemon_Cream_Strawberry_Sweet": {
+    "f": "0028",
+    "shiny": false
+   },
+   "Lemon_Cream_Berry_Sweet": {
+    "f": "0029",
+    "shiny": false
+   },
+   "Lemon_Cream_Love_Sweet": {
+    "f": "0030",
+    "shiny": false
+   },
+   "Lemon_Cream_Star_Sweet": {
+    "f": "0031",
+    "shiny": false
+   },
+   "Lemon_Cream_Clover_Sweet": {
+    "f": "0032",
+    "shiny": false
+   },
+   "Lemon_Cream_Flower_Sweet": {
+    "f": "0033",
+    "shiny": false
+   },
+   "Lemon_Cream_Ribbon_Sweet": {
+    "f": "0034",
+    "shiny": false
+   },
+   "Salted_Cream_Strawberry_Sweet": {
+    "f": "0035",
+    "shiny": false
+   },
+   "Salted_Cream_Berry_Sweet": {
+    "f": "0036",
+    "shiny": false
+   },
+   "Salted_Cream_Love_Sweet": {
+    "f": "0037",
+    "shiny": false
+   },
+   "Salted_Cream_Star_Sweet": {
+    "f": "0038",
+    "shiny": false
+   },
+   "Salted_Cream_Clover_Sweet": {
+    "f": "0039",
+    "shiny": false
+   },
+   "Salted_Cream_Flower_Sweet": {
+    "f": "0040",
+    "shiny": false
+   },
+   "Salted_Cream_Ribbon_Sweet": {
+    "f": "0041",
+    "shiny": false
+   },
+   "Ruby_Swirl_Strawberry_Sweet": {
+    "f": "0042",
+    "shiny": false
+   },
+   "Ruby_Swirl_Berry_Sweet": {
+    "f": "0043",
+    "shiny": false
+   },
+   "Ruby_Swirl_Love_Sweet": {
+    "f": "0044",
+    "shiny": false
+   },
+   "Ruby_Swirl_Star_Sweet": {
+    "f": "0045",
+    "shiny": false
+   },
+   "Ruby_Swirl_Clover_Sweet": {
+    "f": "0046",
+    "shiny": false
+   },
+   "Ruby_Swirl_Flower_Sweet": {
+    "f": "0047",
+    "shiny": false
+   },
+   "Ruby_Swirl_Ribbon_Sweet": {
+    "f": "0048",
+    "shiny": false
+   },
+   "Caramel_Swirl_Strawberry_Sweet": {
+    "f": "0049",
+    "shiny": false
+   },
+   "Caramel_Swirl_Berry_Sweet": {
+    "f": "0050",
+    "shiny": false
+   },
+   "Caramel_Swirl_Love_Sweet": {
+    "f": "0051",
+    "shiny": false
+   },
+   "Caramel_Swirl_Star_Sweet": {
+    "f": "0052",
+    "shiny": false
+   },
+   "Caramel_Swirl_Clover_Sweet": {
+    "f": "0053",
+    "shiny": false
+   },
+   "Caramel_Swirl_Flower_Sweet": {
+    "f": "0054",
+    "shiny": false
+   },
+   "Caramel_Swirl_Ribbon_Sweet": {
+    "f": "0055",
+    "shiny": false
+   },
+   "Rainbow_Swirl_Strawberry_Sweet": {
+    "f": "0056",
+    "shiny": false
+   },
+   "Rainbow_Swirl_Berry_Sweet": {
+    "f": "0057",
+    "shiny": false
+   },
+   "Rainbow_Swirl_Love_Sweet": {
+    "f": "0058",
+    "shiny": false
+   },
+   "Rainbow_Swirl_Star_Sweet": {
+    "f": "0059",
+    "shiny": false
+   },
+   "Rainbow_Swirl_Clover_Sweet": {
+    "f": "0060",
+    "shiny": false
+   },
+   "Rainbow_Swirl_Flower_Sweet": {
+    "f": "0061",
+    "shiny": false
+   },
+   "Rainbow_Swirl_Ribbon_Sweet": {
+    "f": "0062",
+    "shiny": false
+   },
+   "Gigantamax": {
+    "f": "0063",
+    "shiny": true
+   }
+  },
+  "870": {
+   "Brass": {
+    "f": "0002",
+    "shiny": true
+   },
+   "Trooper": {
+    "f": "0003",
+    "shiny": true
+   }
+  },
+  "875": {
+   "Noice": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "877": {
+   "Hangry": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "888": {
+   "Crowned_Sword": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "889": {
+   "Crowned_Shield": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "890": {
+   "Eternamax": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "892": {
+   "Rapid_Strike": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "901": {
+   "Bloodmoon": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "905": {
+   "Therian": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "924": {
+   "Shirt": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Pants": {
+    "f": "0002",
+    "shiny": true
+   }
+  },
+  "925": {
+   "Three": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Baby": {
+    "f": "0002",
+    "shiny": false
+   }
+  },
+  "964": {
+   "Hero": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "978": {
+   "Stretchy": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Droopy": {
+    "f": "0002",
+    "shiny": true
+   },
+   "Mega": {
+    "f": "0003",
+    "shiny": true
+   }
+  },
+  "999": {
+   "Roaming": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "1003": {
+   "Temp": {
+    "f": "0001",
+    "shiny": false
+   }
+  },
+  "1008": {
+   "Low_Power": {
+    "f": "0001",
+    "shiny": true
+   }
+  },
+  "1017": {
+   "Wellspring": {
+    "f": "0001",
+    "shiny": true
+   },
+   "Hearthflame": {
+    "f": "0002",
+    "shiny": true
+   },
+   "Cornerstone": {
+    "f": "0003",
+    "shiny": true
+   },
+   "Teal_Mask": {
+    "f": "0004",
+    "shiny": false
+   },
+   "Wellspring_Mask": {
+    "f": "0005",
+    "shiny": false
+   },
+   "Hearthflame_Mask": {
+    "f": "0006",
+    "shiny": false
+   },
+   "Cornerstone_Mask": {
+    "f": "0007",
+    "shiny": false
+   }
+  },
+  "1024": {
+   "Terastal": {
+    "f": "0001",
+    "shiny": false
+   }
+  }
+ }
+}

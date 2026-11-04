@@ -1,0 +1,1795 @@
+// ow_story.js — the story layer: map-script triggers and the ported decomp scripts (runScriptLabel / runSpecial), scripted battles, the Space Center multi battle, the Johto gift POKeMON, the Fork B campaign open, villain arcs and the recurring rival.
+// Split out of main.js (Plans/MAIN_JS_SPLIT_PLAN.md, phase 3); cut and paste only.
+import { crystalParty } from './crystal_parties.js';
+import { givePhone, runPhoneSpecial } from './phone.js';
+import * as Badges from './badges.js';
+import * as Bag from './bag.js';
+import { buildMon as battleBuildMon, statsFor } from './battle.js';
+import { INIT_EVENTS } from './crystal_init_events.js';
+import { NEW_GAME_FLAGS } from './new_game_flags.js';
+import * as Daycare from './daycare.js';
+import { getImage, scriptBool } from './engine.js';
+import * as Story from './events.js';
+import { choiceMenu, startChoice } from './choice.js';
+import { scrollOptions } from './scroll_multichoice.js';
+import * as GymPuzzles from './gym_puzzles.js';
+import { LOCKED_WARPS } from './locked_warps_data.js';
+import { reconcileAwakeningResolution } from './awakening_sync.js';
+import { Journal } from './journal.js';
+import { battle, cutscene, dialog, hud, npcs, player, trainers, world } from './ow_core.js';
+import { syncOverworldAchievements } from './ow_saves.js';
+import { S } from './ow_state.js';
+import { openUnownDex } from './ow_venues.js';
+import { addCaught, createStarter, healParty, leadMon, partySaved, saveParty } from './party.js';
+// a party with at least one POKeMON (null and [] both mean "none yet")
+const hasParty = () => Array.isArray(S.party) && S.party.length > 0;
+import * as Dex from './pokedex.js';
+import * as Quest from './quest.js';
+import { RIVAL_TIERS, rivalDue, rivalFlag } from './rivals.js';
+import { safeLoad, safeSave, safeSaveStr } from './safestore.js';
+import * as Trades from './trades.js';
+import { BOSS_CLASSES } from './trainers.js';
+// main.js's own declarations (a safe cycle: only used inside functions)
+import { openRadio, playerTID } from './ow_features.js';
+import { startNpcTrade } from './ow_screens.js';
+import { bossLevelFor, inJohKanto, johkantoLeagueKind, routeTrainerLevel, startCutscene, startMarowakBattle } from './ow_scaling.js';
+import { enterSafariMode, exitSafariMode, whiteOut } from './ow_places.js';
+import { PC_BOXES, PC_BOX_CAP, getBox, openSeagallopMenu, seagallopSpawn } from './ow_menukeys.js';
+import { enterHallOfFame, notePostBattleFinished, onTrainerDefeated, playerRegion } from './ow_progression.js';
+import { buildMonForGift } from './ow_gamecorner.js';
+import { dexMilestoneCheck, hideResolvedLegendaryObjects, refreshFollower } from './ow_follower.js';
+import { halfParty, openHalfParty, openTownMap } from './ow_music.js';
+import { townMap } from './ow_menustate.js';
+import { describeDecoration, playersHousePCSpecial, toggleDecorationsVisibility, toggleMaptileDecorations } from './decorations.js';
+import { chooseMonForMoveTutor, crystalMoveTutor } from './move_tutor.js';
+import { checkPokeMail } from './pokemail.js';
+import { moveToMap, warpTo } from './ow_transitions.js';
+import { mapRegionOf } from './region_sync.js';
+import { fadeTo, REDUCED_MOTION_OW } from './ow_fade.js';
+import { savePos } from './ow_input.js';
+import { cutsceneCtx } from './ow_cutscenes.js';
+import { unownPuzzleSpecial } from './unown_puzzle.js';
+import { checkRelicanthWailord, shouldDoBrailleRegicePuzzle } from './braille_puzzles.js';
+import { ensurePersonality, isMirageIslandPresent, lotteryTicket, lottoTicketString, mirageRndAsOf, pickLotteryTicket, updatePerDay, updateShoalTideFlag } from './time_events.js';
+import { setInvisibleMirageTowerMetatiles, setMirageTowerVisibility } from './mirage.js';
+import { setIcefallCaveCrackedIceMetatiles } from './icefall_ice.js';
+import * as RotatingGates from './rotating_gates.js';
+import { startScreenShake } from './ow_render.js';
+import { startCrystalSlots } from './ow_crystalslots.js';
+import { crystalCallbacksFor } from './crystal_callbacks.js';
+import { startCardFlip } from './minigames/cardflip/cardflip.js';
+import { recordText, startBerryBlender } from './minigames/blender/blender.js';
+import * as PB from './pokeblock.js';
+import { openPokeblockCase, pbCase } from './pokeblock_case.js';
+import {
+	STARTERS, refreshObjective, starterMenu, urlPinnedMap,
+} from './main.js';
+
+// ---------- ported map-script triggers ----------
+// resolve a script label (an NPC's `script`, a coord_event, a map trigger) and
+// run it through the interpreter with the current map's strings
+export function runScriptLabel(label, talker) {
+	if (cutscene.blocking || !label) return false;
+	S.lastScriptLabel = label;   // diagnostics + tests: which script the last interaction started
+	// VAR_LAST_TALKED resolves to whoever this script was started ON. Recorded
+	// here rather than in interact() so trainer talks and coord scripts set it too.
+	if (talker) S.lastTalkedNpc = talker;
+	syncScriptVars();   // VAR_FACING/VAR_WEEKDAY/VAR_PARTYCOUNT, fresh for this run
+	// In-game trades are intercepted here, before the script runs. The Kanto and
+	// Hoenn scripts exist but drive the trade through four `special` ops this
+	// port never implemented; the Johto ones were dropped entirely at transpile
+	// (Kyle is [faceplayer, end]), so there is no script to run at all. One flow
+	// serves both -- see trades.js.
+	const tr = Trades.forScript(world.current.name, label);
+	if (tr) { startNpcTrade(tr, talker); return true; }
+	// every std radio object (BillsHouseRadio, KurtsHouseRadio, ...) resolves to
+	// the flavour-only Radio2Script; hijack them into the real tune-in menu. The
+	// intro tutorial radios end in "RadioScript", so /Radio$/ leaves them alone.
+	if (/Radio$/.test(label)) { openRadio(); return true; }
+	// the Ruins of Alph research-center scientists open the Unown Dex report. The
+	// full Crystal flow (VAR_UNOWNCOUNT/UnownPrinter) was inert; the scientists are
+	// the reliably-reachable hook (Scientist1/2 are always visible).
+	if (/^RuinsOfAlphResearchCenterScientist\d?Script$/.test(label)) { openUnownDex(); return true; }
+	if (!S.mapScripts[label]) {
+		// Crystal factors its common NPCs through `jumpstd`, which the transpiler
+		// drops — so 237 bookshelves, signs and trash cans have no label at all.
+		// Run the shared body instead of falling through to silence.
+		const std = Story.crystalStd(label);
+		if (!std) return false;
+		cutscene.run({ [label]: std }, label, cutsceneCtx(talker, label), () => { saveParty(S.party); });
+		return true;
+	}
+	// notePostBattleFinished: onDone fires only when the scene REACHES ITS END.
+	// cutscene.stop() drops the scene without it, which is exactly the signal a
+	// post-battle beat needs — an interrupted beat stays un-done and is retried.
+	cutscene.run(S.mapScripts, label, cutsceneCtx(talker, label), () => { saveParty(S.party); notePostBattleFinished(); });
+	return true;
+}
+
+// a scripted trainerbattle: build the foe party (canonical roster keyed by the
+// running script label, else a class-pool team at the map's level), run it, and
+// resume the cutscene with the outcome in VAR_RESULT (1 = won). A loss stops the
+// script (the player blacked out) after healing.
+// the script key a scripted win reports to onTrainerDefeated: the talker's own
+// script when it names a gym / League battle, else the nearest running label that
+// does (a map-script battle has no talker)
+function progressKeyFor(talker) {
+	const own = talker?.ev?.script;
+	if (own && Badges.scriptInfo(own)) return own;
+	const labels = cutscene.runningLabels?.() || [];
+	for (let n = labels.length - 1; n >= 0; n--) if (Badges.scriptInfo(labels[n])) return labels[n];
+	return own || null;
+}
+
+// THE DECOMP'S TRAINER FLAG, by TRAINER_ id. A sight trainer's win is kept under its
+// map:script key (trainers.js), but FireRed/Emerald scripts ask about the TRAINER:
+// `goto_if_defeated TRAINER_TEAM_ROCKET_GRUNT_43`. Those questions were dropped by the
+// transpile and are now restored (tools/gen_multichoice.mjs), so a scripted win has to
+// answer them: Mt. Ember's grunts are plain NPCs, nothing recorded their loss, and they
+// re-battled on every talk and never cleared the Ruby Path (bug:1792263054606). A
+// story flag per trainer id; a sight trainer beaten before this existed still counts
+// through its map:script record (the object on this map whose script battles it).
+const TRAINER_FLAG = id => 'trainer_beaten_' + String(id || '').replace(/^TRAINER_/, '');
+const tidOfBattle = a => /^TRAINER_BATTLE_/.test(a?.[0] || '') ? (a.find(x => /^TRAINER_(?!BATTLE_)/.test(x)) || a[0]) : a?.[0];
+export function trainerBeaten(tid) {
+	if (!tid) return false;
+	if (Story.getFlag(TRAINER_FLAG(tid))) return true;
+	for (const t of trainers.list || []) {
+		const ops = S.mapScripts?.[t.ev?.script];
+		if (Array.isArray(ops) && ops.some(o => o?.op === 'trainerbattle' && tidOfBattle(o.args) === tid) && trainers.isDefeated(t)) return true;
+	}
+	return false;
+}
+export function setTrainerBeaten(tid, on) {
+	if (!tid) return;
+	if (on) Story.setFlag(TRAINER_FLAG(tid)); else Story.clearFlag(TRAINER_FLAG(tid));
+}
+
+export function startScriptedBattle(trainerId, scriptLabel, talker) {
+	if (!S.party || !leadMon(S.party)) { Story.setVar('VAR_RESULT', 1); return 'skip'; }
+	// canonical team by TRAINER_ id first (exact species/level/moves), then the
+	// script-label roster, then a class-pool fallback at the map's level
+	const tid = (trainerId || '').replace(/^TRAINER_/, '');
+	// ...and a Crystal id (EXECUTIVEM_EXECUTIVEM_1, SCHOOLBOY_JACK2) names its exact
+	// decomp party: a scene's battle has no label roster (2026-10-09, the Radio
+	// Tower's Rocket boss fought the generic pool's Lv12 Mankey)
+	const cparty = S.trainerTeams[tid] ? null : crystalParty(tid);
+	const team = S.trainerTeams[tid] || cparty;
+	const cpName = cparty?.name && cparty.name !== '?' ? cparty.name : null; // '?' = the rival's player-given name
+	const roster = scriptLabel && trainers.data?.rosters?.[scriptLabel];
+	let foeParty = [];
+	let className = team?.class || roster?.class || 'Trainer';
+	// Same rule as trainers.levelScale: in JohKanto a BOSS is levelled off you (ace
+	// two above your strongest, the rest one), everything else scales relatively.
+	const srcParty = team?.party?.length ? team.party : (roster?.party || []);
+	const aceLv = Math.max(0, ...srcParty.map(e => e.l || 0));
+	// a VS Seeker rematch climbs the same way whichever way the fight starts —
+	// walking into the trainer's sight (trainers.buildBattle) or talking to them
+	// (here): +2 levels per saved rematch tier, the level learnset instead of the
+	// fixed early moves, and "(rematch)" on the name (2026-10-08, Instinct: Route
+	// 127 Donny at tier 7 fought his first-battle Lv26 team when talked to)
+	const tier = talker && trainers.list.includes(talker) ? (trainers.rematch[trainers.keyOf(talker)] || 0) : 0;
+	const bump = 2 * tier;
+	const baseLevel = (e) => {
+		if (!inJohKanto() && !johkantoLeagueKind(scriptLabel) && !johkantoLeagueKind(trainerId)) return e.l;
+		const lk = johkantoLeagueKind(scriptLabel) || johkantoLeagueKind(trainerId);
+		if (lk) return bossLevelFor(lk, (e.l || 0) >= aceLv);
+		if (BOSS_CLASSES.has(className)) return bossLevelFor('gym', (e.l || 0) >= aceLv);
+		return routeTrainerLevel(e.l);
+	};
+	const foeLevel = (e) => baseLevel(e) + bump;
+	if (team?.party?.length) {
+		foeParty = team.party.map(e => {
+			const mon = battleBuildMon(e.s, foeLevel(e), battle.data);
+			if (mon && e.moves?.length && !bump) {
+				mon.moves = e.moves.map(id => {
+					const mv = battle.data.moves[id];
+					return mv ? { id, name: mv.name, pp: mv.pp, maxPp: mv.pp } : null;
+				}).filter(Boolean);
+				if (!mon.moves.length) mon.moves = [{ id: 'tackle', name: 'Tackle', pp: 35, maxPp: 35 }];
+			}
+			return mon;
+		}).filter(Boolean);
+	}
+	if (!foeParty.length && roster?.party?.length) {
+		foeParty = roster.party.map(e => battleBuildMon(e.s, foeLevel(e), battle.data)).filter(Boolean);
+	}
+	if (!foeParty.length) {
+		const pool = trainers.data?.defaultPool || ['rattata', 'pidgey'];
+		const base = trainers.data?.mapLevel?.[world.current.map.id] || 12;
+		const n = 1 + Math.floor(Math.random() * 2);
+		for (let i = 0; i < n; i++) {
+			const mon = battleBuildMon(pool[Math.floor(Math.random() * pool.length)],
+				Math.max(5, base + (Math.floor(Math.random() * 5) - 2)), battle.data);
+			if (mon) foeParty.push(mon);
+		}
+	}
+	if (!foeParty.length) { Story.setVar('VAR_RESULT', 1); return 'skip'; }
+	const high = Math.max(5, ...foeParty.map(m => m.level));
+	const info = {
+		displayName: (cpName || roster?.name ? `${className} ${cpName || roster.name}` : className) + (bump ? ' (rematch)' : ''),
+		defeatText: '', money: high * 8,
+		boss: BOSS_CLASSES.has(className), // gym leaders / E4 / champions via scripts
+	};
+	battle.endSpec = { kind: 'strainer', script: talker?.ev?.script || null };
+	battle.startTrainer(S.party, foeParty, info, result => {
+		if (result === 'victory') {
+			Story.setVar('VAR_RESULT', 1);
+			S.lastBattleOutcome = B_OUTCOME_WON;
+			if (talker && trainers.list.includes(talker)) trainers.markDefeated(talker);
+			if (/^TRAINER_/.test(trainerId || '')) setTrainerBeaten(trainerId, true);   // what goto_if_defeated reads
+			saveParty(S.party);
+			// badge/crown; the script's own speech announces it. A battle started by a
+			// MAP script has no talker — the FRLG Champion's walk-in (ChampionsRoom
+			// ON_FRAME → ..._EventScript_BattleBulbasaur) used to pass undefined and
+			// the win was never recorded (playtest 2026-10-12): fall back to the
+			// running script's own labels, innermost first. That script then carries
+			// on to the HALL OF FAME, whose `special EnterHallOfFame` closes the run.
+			const key = progressKeyFor(talker);
+			onTrainerDefeated(key, { silent: true, deferFinish: !talker?.ev?.script && !!key });
+			cutscene.resume(); // continue the script (defeat text, post-battle)
+		} else {
+			// blacked out / fled: heal and abandon the rest of the script
+			Story.setVar('VAR_RESULT', 0);
+			S.lastBattleOutcome = B_OUTCOME_LOST;
+			if (result === 'defeat') whiteOut();
+			cutscene.stop();
+		}
+	});
+	return 'wait';
+}
+
+// ---------- the Mossdeep Space Center multi battle ----------
+// pokeemerald battle_tower.c: Steven (partner) + you vs Maxie + Tabitha. The foe
+// teams are the decomp's; the two leaders' mons interleave so each side of the
+// double opens with one of each. Steven fights beside you with sStevenMons.
+// EVs are the decomp's {HP, Atk, Def, Spe, SpA, SpD}, re-keyed.
+const STEVEN_PARTNER = [
+	{ s: 'metang', l: 42, nature: 'brave', evs: { atk: 252, def: 252, spa: 6 }, moves: ['lightscreen', 'psychic', 'reflect', 'metalclaw'] },
+	{ s: 'skarmory', l: 43, nature: 'impish', evs: { hp: 252, spa: 6, spd: 252 }, moves: ['toxic', 'aerialace', 'protect', 'steelwing'] },
+	{ s: 'aggron', l: 44, nature: 'adamant', evs: { atk: 252, spa: 252, spd: 6 }, moves: ['thunder', 'protect', 'solarbeam', 'dragonclaw'] },
+];
+function buildPartnerMon(e) {
+	const mon = battleBuildMon(e.s, e.l, battle.data);
+	if (!mon) return null;
+	mon.ivs = { hp: 31, atk: 31, def: 31, spa: 31, spd: 31, spe: 31 };   // fixedIV = MAX_PER_STAT_IVS
+	mon.nature = e.nature;
+	mon.evs = { hp: 0, atk: 0, def: 0, spa: 0, spd: 0, spe: 0, ...e.evs };
+	mon.stats = statsFor(battle.data.species[e.s], mon.ivs, mon.level, mon);
+	mon.maxHP = mon.curHP = mon.stats.hp;
+	mon.moves = giftMoves(e.moves);
+	return mon;
+}
+// the picked mons (party indices, in pick order) while the multi battle is on
+S.multiPicks = null;
+const pickedView = picks => (picks || []).map(i => S.party[i]).filter(m => m && m.curHP > 0);
+function startSpaceCenterBattle() {
+	const build = tid => (S.trainerTeams[tid]?.party || []).map(e => battleBuildMon(e.s, e.l, battle.data)).filter(Boolean);
+	const maxie = build('MAXIE_MOSSDEEP'), tabitha = build('TABITHA_MOSSDEEP');
+	const foeParty = [];
+	for (let i = 0; i < Math.max(maxie.length, tabitha.length); i++) {
+		if (maxie[i]) foeParty.push(maxie[i]);
+		if (tabitha[i]) foeParty.push(tabitha[i]);
+	}
+	const mine = S.multiPicks?.length ? pickedView(S.multiPicks) : (S.party || []).filter(m => m.curHP > 0).slice(0, 3);
+	if (!foeParty.length || !mine.length) { Story.setVar('VAR_RESULT', 1); return; }
+	const steven = STEVEN_PARTNER.map(buildPartnerMon).filter(Boolean);
+	const info = { displayName: 'MAXIE & TABITHA', defeatText: '', money: 44 * 8 * 2, boss: true, double: true,
+		partner: steven.length ? { name: 'STEVEN', party: steven } : null };
+	battle.endSpec = { kind: 'spacecenter', picks: mine.map(m => S.party.indexOf(m)) };
+	battle.startTrainer(mine, foeParty, info, result => {
+		if (result === 'victory') {
+			Story.setVar('VAR_RESULT', 1);
+			S.lastBattleOutcome = B_OUTCOME_WON;
+			saveParty(S.party);
+			cutscene.resume();
+		} else {
+			// the script's own loss path is SetCB2WhiteOut; black out here instead
+			// (the stopped script never reaches its LoadPlayerParty)
+			S.multiPicks = null;
+			Story.setVar('VAR_RESULT', 2);
+			S.lastBattleOutcome = B_OUTCOME_LOST;
+			if (result === 'defeat') whiteOut();
+			cutscene.stop();
+		}
+	});
+	return 'wait';
+}
+
+// ---------- Johto gift POKeMON (pokecrystal engine/events) ----------
+const giftMoves = ids => ids.map(id => battle.data.moves[id] && { id, name: battle.data.moves[id].name, pp: battle.data.moves[id].pp, maxPp: battle.data.moves[id].pp }).filter(Boolean);
+function giveGift(mon) { Dex.markCaught(mon.speciesId); dexMilestoneCheck(); const to = addCaught(S.party, mon); saveParty(S.party); return to; }
+// DRAGON SHRINE. The transpile dropped the script's `givepoke DRATINI, 15`, so this
+// special gives the DRATINI as well as setting its moveset: EXTREMESPEED (a move it
+// can't otherwise learn) for a flawless quiz, the plain Lv15 set otherwise.
+function giveDratini() {
+	const mon = buildMonForGift('dratini', 15);
+	if (!mon) return;
+	const wrong = Story.getFlag('EVENT_ANSWERED_DRAGON_MASTER_QUIZ_WRONG');
+	mon.moves = giftMoves(wrong ? ['wrap', 'leer', 'thunderwave', 'twister'] : ['wrap', 'thunderwave', 'twister', 'extremespeed']);
+	giveGift(mon);
+}
+// DAY-CARE MAN: the ODD EGG. data/events/odd_eggs.asm — seven babies, each with a
+// fixed Dizzy Punch set and a separate (much likelier than wild) shiny entry.
+const ODD_EGGS = [
+	{ s: 'pichu', moves: ['thundershock', 'charm', 'dizzypunch'], p: [8, 1] },
+	{ s: 'cleffa', moves: ['pound', 'charm', 'dizzypunch'], p: [16, 3] },
+	{ s: 'igglybuff', moves: ['sing', 'charm', 'dizzypunch'], p: [16, 3] },
+	{ s: 'smoochum', moves: ['pound', 'lick', 'dizzypunch'], p: [14, 2] },
+	{ s: 'magby', moves: ['ember', 'dizzypunch'], p: [10, 2] },
+	{ s: 'elekid', moves: ['quickattack', 'leer', 'dizzypunch'], p: [12, 2] },
+	{ s: 'tyrogue', moves: ['tackle', 'dizzypunch'], p: [10, 1] },
+];
+function rollOddEgg(r = Math.random()) {
+	let acc = 0, roll = r * 100;
+	for (const e of ODD_EGGS) for (let shiny = 0; shiny < 2; shiny++) {
+		acc += e.p[shiny];
+		if (roll < acc) return { s: e.s, moves: e.moves, shiny: !!shiny };
+	}
+	return { s: 'pichu', moves: ODD_EGGS[0].moves, shiny: false };
+}
+function giveOddEgg() {
+	const egg = rollOddEgg();
+	if (Daycare.giftEgg(egg.s, { moves: egg.moves, shiny: egg.shiny })) {
+		hud.textContent = 'You received an ODD EGG! It is at the DAY CARE — walk to hatch it.';
+		return;
+	}
+	// the Day Care egg slot is busy with a bred egg: hand over the baby itself
+	const mon = buildMonForGift(egg.s, 5);
+	if (!mon) return;
+	Daycare.applyPreset(mon, egg, battle.data);
+	giveGift(mon);
+}
+// MANIA's SHUCKIE (engine/events/shuckle.asm). Lv15 SHUCKLE holding a BERRY, OT
+// MANIA / ID 00518. Crystal refuses when the party is full (VAR_RESULT 0 routes
+// the script to its "party full" line); the loan sets a once-a-day flag.
+const MANIA_OT = { name: 'MANIA', id: 518 };
+const localDay = () => Math.floor((Date.now() - new Date().getTimezoneOffset() * 60000) / 86400000);
+function giveShuckle() {
+	if ((S.party || []).length >= 6) return 0;
+	const mon = buildMonForGift('shuckle', 15);
+	if (!mon) return 0;
+	mon.nickname = 'SHUCKIE';
+	mon.heldItem = 'berry';
+	mon.otName = MANIA_OT.name;
+	mon.otId = MANIA_OT.id;
+	giveGift(mon);
+	Story.setFlag('ENGINE_GOT_SHUCKIE_TODAY');
+	Story.setVar('VAR_MP_SHUCKIE_DAY', localDay());
+	return 1;
+}
+// Crystal makes you pick a mon; here the SHUCKIE in the party is the one offered.
+// 0 WRONG_MON (none with MANIA's OT) · 2 RETURNED · 3 HAPPY (friendship >= 150,
+// Mania lets you keep it) · 4 FAINTED (it is fainted, or it is your last healthy mon)
+function returnShuckie() {
+	const i = (S.party || []).findIndex(m => m.speciesId === 'shuckle' && m.otName === MANIA_OT.name && (m.otId ?? MANIA_OT.id) === MANIA_OT.id);
+	if (i < 0) return 0;
+	const mon = S.party[i];
+	if (mon.curHP <= 0 || !S.party.some((m, j) => j !== i && m.curHP > 0)) return 4;
+	if ((mon.friend ?? 70) >= 150) return 3;
+	if (mon.heldItem) Bag.addItem(mon.heldItem);
+	S.party.splice(i, 1);
+	saveParty(S.party);
+	return 2;
+}
+// THE ONCE-A-DAY UPDATE, on a map you TRAVEL into only: the daily flags of both
+// clocked games (time_events.js updateDailyFlags: Emerald's ClearDailyFlags and
+// Crystal's CheckDailyResetTimer, so the berry gifts, the LOTTERY ticket, the
+// move tutor, the Sunday TM, the CLEFAIRY dance, the phone rematches come back),
+// ENGINE_GOT_SHUCKIE_TODAY on its own loan day as before,
+// ...and Emerald's once-a-day update (clock.c UpdatePerDay, time_events.js): the
+// Mirage Island value steps, the SHOAL items come due. The GBA runs it on every
+// map load (DoTimeBasedEvents) — here only on a map you TRAVEL into, never on the
+// boot load or a setup re-run. On the GBA those writes are free: nothing is saved
+// until you save. Here every story write is the save, so running it on boot would
+// change (and re-revision) the save merely by OPENING the game — on a pre-existing
+// save it seeds VAR_DAYS and a random Mirage value on every device that loads it,
+// and the hydration that just matched the server then reads the next sync as a
+// same-revision divergence. Deferring it loses nothing: the day steps compose
+// (updateMirageRnd steps every day passed at once), the Mirage check reads the
+// value as of today without storing it (mirageRndAsOf), and the SHOAL items are
+// only ever read by the hermit, who runs the update himself.
+function expireDailyFlags(travel) {
+	if (!travel) return;   // a LOAD writes nothing (the flags lapse on the first trip instead)
+	if (Story.getFlag('ENGINE_GOT_SHUCKIE_TODAY') && Story.getVar('VAR_MP_SHUCKIE_DAY') !== localDay()) Story.clearFlag('ENGINE_GOT_SHUCKIE_TODAY');
+	updatePerDay();   // + updateDailyFlags
+}
+// what the current setup pass is: 'travel' (a map entered by moving), 'load' (the
+// boot load / a setup re-run, which must leave the save untouched) or null (not in
+// a setup pass: a script the player started)
+let _setupMode = null;
+// a special that holds its script (its `waitstate`) for `ms`, then runs `then`.
+// Resumes only the script that asked: a setup script that hit it was stopped.
+function specialWait(ms, then) {
+	const cur = cutscene.cur;
+	setTimeout(() => {
+		try { then?.(); } catch (e) { console.warn('[special] wait step failed', e); }
+		if (cur && cutscene.cur === cur) cutscene.resume();
+	}, ms);
+	return 'wait';
+}
+// ON_TRANSITION runs silently on map entry (sets story vars, positions NPCs).
+// It is setup only, so run the instant ops and bail at any waiting op — it must
+// never block the game or pop dialogue.
+// the grid/vars/rng a ported gym special works against
+function puzzleWorld() {
+	return {
+		get: (x, y) => { const row = world.current?.layout?.map?.[y]; return row ? (row[x] ?? 0) & 0x3FF : 0; },
+		set: (x, y, id, impassable) => world.setMetatile(x, y, id, impassable ?? false),   // (no !!: the engine parses script booleans; "FALSE" is truthy)
+		getVar: v => Story.getVar(v) | 0,
+		setVar: (v, n) => Story.setVar(v, n),
+		rng: Math.random,
+	};
+}
+// ON_LOAD: the decomp's map-setup script, run before ON_TRANSITION. It lays out
+// puzzle tiles to match your progress. Only enabled for the maps whose puzzle
+// mechanics are actually ported (GymPuzzles.ONLOAD_MAPS) — game-wide it is 124
+// maps of never-executed setmetatile, some raising walls nothing here can lower —
+// and for every map with a script-lockable door (LOCKED_WARPS, #664): there the
+// ON_LOAD is what puts the door back the way the story left it. Since World.isPassable
+// honours those doors' live collision, a door the layout ships CLOSED and ON_LOAD
+// opens (Sky Pillar after Wallace, Mt. Ember's cave, Ruin Valley's dotted hole, the
+// Altering Cave) stayed shut forever without it (playtest 2026-10-08).
+function runMapOnLoad() {
+	if (!GymPuzzles.ONLOAD_MAPS.has(world.current.name) && !LOCKED_WARPS[world.current.name]) return;
+	const meta = S.mapScripts.__map__;
+	if (!meta || !meta.onLoad || !S.mapScripts[meta.onLoad] || cutscene.blocking) return;
+	cutscene.run(S.mapScripts, meta.onLoad, cutsceneCtx(), () => {});
+	if (cutscene.blocking) cutscene.stop(); // setup only
+}
+// THE DECOMP RUNS A MAP'S SETUP SCRIPTS BEFORE ITS OBJECTS SPAWN; THIS PORT RUNS
+// THEM AFTER. So a setup script that clears an object's hide flag — Bill's Sea
+// Cottage OnTransition brings Clefairy-Bill back that way — changed the flag but
+// not the already-built object list: re-enter mid-event and there was no Bill to
+// talk to, and the PC (keyed on a temp flag that had just cleared) refused. A
+// softlock that only appeared once hideobj correctly persisted FLAG_HIDE_*.
+//
+// Rather than reorder map entry, re-check afterwards: if setup changed whether
+// any object should be visible, reload the objects and run the setup scripts once
+// more (they are setup-only and idempotent — positions they set, like Bill's
+// setobjxy, need the rebuilt objects to land on).
+// RESTED SCENES, OUTCOMES KEPT. STORY_SEED keeps a few Hoenn set-pieces rested
+// (their var is seeded past the trigger) because replaying the whole script would
+// corrupt a free-roam save. But some of those scenes were also the ONLY thing that
+// moved the story on elsewhere. The Meteor Falls meteorite theft is the one that
+// hard-blocks: its side effect clears the two Team Magma grunts guarding the Route
+// 112 cable car, and with the scene rested they never left, cutting the road to
+// Mt. Chimney and Lavaridge (playtest 2026-09-25). So, on entering the scene's map
+// while it is rested, apply just its lasting OUTCOMES (the choreography stays
+// skipped). You can't get into Meteor Falls without walking through the trigger,
+// so arriving there is when the scene would have played. Idempotent.
+// Mt. Chimney's own Magma/Aqua objects ride their own FLAG_HIDE_MT_CHIMNEY_*
+// flags, which this scene never touches, so the next beat is unaffected.
+export const RESTED_SCENE_OUTCOMES = [
+	{
+		map: 'MeteorFalls_1F_1R', rested: ['VAR_METEOR_FALLS_STATE', 1], done: 'FLAG_MET_ARCHIE_METEOR_FALLS',
+		// MeteorFalls_1F_1R_EventScript_MagmaStealsMeteoriteScene's lasting effects:
+		// its hideobjs (the thieves leave, Archie's party leaves) + its three setflags
+		set: ['FLAG_HIDE_METEOR_FALLS_TEAM_MAGMA', 'FLAG_HIDE_METEOR_FALLS_TEAM_AQUA',
+			'FLAG_HIDE_ROUTE_112_TEAM_MAGMA', 'FLAG_MET_ARCHIE_METEOR_FALLS', 'FLAG_HIDE_FALLARBOR_TOWN_BATTLE_TENT_SCOTT'],
+	},
+];
+export function applyRestedSceneOutcomes(mapName) {
+	for (const r of RESTED_SCENE_OUTCOMES) {
+		if (r.map !== mapName || Story.getFlag(r.done)) continue;
+		if (Story.getVar(r.rested[0]) !== r.rested[1]) continue;   // not rested: the real scene runs
+		for (const f of r.set) Story.setFlag(f);
+		console.info('[rested-scene]', r.map, 'outcomes applied:', r.set.join(', '));
+	}
+}
+
+export async function runMapSetupScripts(isBoot, opts) {
+	const travel = !isBoot && !!(opts && opts.travel);
+	expireDailyFlags(travel);
+	syncRocketTakeover();             // the Radio Tower takeover's flags + 5F scene, before this map's coord events read them
+	world.restoreLockedCells();      // a reloaded map starts from its layout's doors, as the GBA's does
+	const evs = world.current?.map?.object_events || [];
+	const vis = () => evs.map(ev => Story.objectHiddenByFlag(ev) ? 1 : 0).join('');
+	const before = vis();
+	// after the snapshot: the objects it hides (Sky Pillar's sleeping RAYQUAZA) were
+	// loaded with the map, so the reload below must see the change
+	reconcileAwakeningResolution();   // the decomp vars the Hoenn awakening's resolution leaves (awakening_sync.js)
+	applyRestedSceneOutcomes(world.current?.name);   // after the snapshot, so the objects it hides reload
+	const run = () => {
+		_setupMode = travel ? 'travel' : 'load';
+		try { runSetupPass(); } finally { _setupMode = null; }
+	};
+	const runSetupPass = () => {
+		try { runCrystalCallbacks(); } catch (e) { console.warn('[plot] crystal callback failed', e); if (cutscene.blocking) cutscene.stop(); }
+		try { runChamberWallScene(); } catch (e) { console.warn('[plot] chamber wall scene failed', e); if (cutscene.blocking) cutscene.stop(); }
+		try { runMapOnLoad(); } catch (e) { console.warn('[plot] onLoad failed', e); if (cutscene.blocking) cutscene.stop(); }
+		try { runMapTransition(); } catch (e) { console.warn('[plot] onTransition failed', e); if (cutscene.blocking) cutscene.stop(); }
+	};
+	S.pendingLayout = null;
+	run();
+	// setmaplayoutindex (ON_TRANSITION) picked another layout: swap it in and run
+	// the setup again, so ON_LOAD's tile edits land on the layout the player sees
+	// (the GBA loads the map with the new layout before ON_LOAD runs)
+	if (S.pendingLayout) {
+		const id = S.pendingLayout;
+		S.pendingLayout = null;
+		if (await world.setLayout(id)) run();
+		S.pendingLayout = null;
+	}
+	// a legendary caught through the native encounter: hide the decomp's object
+	// (and set the fought flag ON_TRANSITION just checked) before the reload below
+	try { hideResolvedLegendaryObjects(); } catch (e) { console.warn('[legendary] hide failed', e); }
+	if (vis() === before) return;
+	await npcs.loadForMap();
+	await trainers.loadForMap();
+	npcs.list = npcs.list.filter(n => !trainers.list.some(t => t.ev === n.ev));
+	run();
+	try { hideResolvedLegendaryObjects(); } catch (e) { console.warn('[legendary] hide failed', e); }   // the reload brought them back
+}
+
+// Crystal map callbacks (`callback MAPCALLBACK_NEWMAP / TILES / OBJECTS`) — run as
+// the map loads, in that order, from crystal_callbacks.json
+// (tools/gen_crystal_callbacks.mjs): 82 of pokecrystal's 103 — the Day-of-Week
+// siblings, the Goldenrod move tutor, the Mahogany Mart staircase, the Rocket HQ
+// doors... The deny-list there (and its reasons) covers the ones that would
+// fight a native system. A TILES callback's changeblocks are restored only when
+// all of them can be (see tools/gen_crystal_scriptvar.mjs).
+function runCrystalCallbacks() {
+	const list = crystalCallbacksFor(world.current?.name);
+	if (!list.length) return;
+	syncScriptVars();   // VAR_WEEKDAY / VAR_HOUR are what the callbacks read
+	for (const [, label] of list) {
+		if (!S.mapScripts[label] || cutscene.blocking) continue;
+		cutscene.run(S.mapScripts, label, cutsceneCtx(), () => {});
+		if (cutscene.blocking) cutscene.stop();   // setup only
+	}
+}
+
+// The Ruins of Alph chambers' scene 0 (SCENE_RUINSOFALPH*CHAMBER_CHECK_WALL):
+// the wall at (4,0) opens onto the chamber's item room once its event is set —
+// Ho-Oh leading the party (special HoOhChamber), a WATER STONE in the bag or
+// held (special OmanyteChamber), FLASH used in the Aerodactyl chamber, an
+// ESCAPE ROPE used in the Kabuto one (engine/events/unown_walls.asm). The port
+// doesn't run scene scripts in general, so these four run here: on entering the
+// chamber, and right after FLASH. WallOpenScript sets the scene to NOOP
+// (crystal_scenes.js), so it opens once.
+const CHAMBER_WALL_SCENES = ['Kabuto', 'Omanyte', 'Aerodactyl', 'HoOh'].map(c => `RuinsOfAlph${c}Chamber`);
+export function runChamberWallScene() {
+	const name = world.current?.name;
+	if (!CHAMBER_WALL_SCENES.includes(name) || cutscene.blocking) return false;
+	if (Story.getVar('VAR_SCENE_' + name) !== 0) return false;
+	const label = name + 'CheckWallScene';
+	if (!S.mapScripts[label]) return false;
+	cutscene.run(S.mapScripts, label, cutsceneCtx(), () => {});
+	if (cutscene.blocking) cutscene.stop();
+	return true;
+}
+
+function runMapTransition() {
+	// SilphCo floors' OnLoad only erects the Card-Key door barriers (via setMetatile);
+	// that puzzle is broken/unfun in this port and would wall the Giovanni crawl, so
+	// skip it — the floors stay freely walkable.
+	if (/^SilphCo_\d/.test(world.current.name)) return;
+	const meta = S.mapScripts.__map__;
+	if (!meta || !meta.onTransition || !S.mapScripts[meta.onTransition]) return;
+	if (cutscene.blocking) return;
+	cutscene.run(S.mapScripts, meta.onTransition, cutsceneCtx(), () => {});
+	if (cutscene.blocking) cutscene.stop(); // hit a wait — setup only, don't block
+}
+// ON_FRAME table: if a scene var matches, auto-run that cutscene. Value-0
+// entries are the "scene not started" default and must not fire from a blank
+// save (story vars default to 0) — they only trigger once a script has set the
+// var, which we track via an explicit presence check.
+// ...except the Kanto ELITE FOUR's run state, whose 0 IS the real start: each room's
+// ON_FRAME walks you in from the entry warp on VAR_MAP_SCENE_POKEMON_LEAGUE == 0, and
+// nothing writes that var before the first room (the decomp's new game and Hall of
+// Fame just leave it at 0). The presence guard kept the walk-in from ever firing, so
+// the player stood on LORELEI's entry warp facing a solid doorway (playtest 2026-10-12).
+// Emerald's VAR_ELITE_4_STATE walk-ins have the same shape but call the unported shared
+// PokemonLeague_EliteFour_EventScript_WalkInCloseDoor; those rooms are open at the
+// bottom and stay on the port's own flow (tools/audit_missing_labels.mjs).
+export const ZERO_IS_START_VARS = new Set(['VAR_MAP_SCENE_POKEMON_LEAGUE']);
+// ...and the CHAMPION's rooms, whose walk-in rides VAR_TEMP_1 == 0 (temp vars are
+// wiped on every map load, as on the GBA). By label, not for every VAR_TEMP_ entry:
+// most of those are the Battle Frontier's, which the port reimplements natively.
+// The HALL OF FAME rooms ride VAR_TEMP_1 == 0 too: Oak's (FRLG) and the Emerald
+// hall's scene end in `special EnterHallOfFame` / `GameClear`, which closes the
+// League run (ow_progression enterHallOfFame).
+export const ZERO_IS_START_LABELS = new Set(['PokemonLeague_ChampionsRoom_EventScript_EnterRoom',
+	'PokemonLeague_HallOfFame_EventScript_EnterRoom', 'EverGrandeCity_HallOfFame_EventScript_EnterHallOfFame']);
+export function checkOnFrame() {
+	const meta = S.mapScripts.__map__;
+	if (!meta || !meta.onFrame || cutscene.blocking) return;
+	for (const e of meta.onFrame) {
+		if (e.value === 0 && !Story.hasVar(e.var) && !ZERO_IS_START_VARS.has(e.var) && !ZERO_IS_START_LABELS.has(e.label)) continue;
+		if (plotBlocked(e.label)) continue; // never runs here (see plotBlocked)
+		if (Story.getVar(e.var) === e.value && S.mapScripts[e.label]) {
+			runScriptLabel(e.label);
+			return;
+		}
+	}
+}
+// coord_event trigger: stepping on a tile whose gating var matches its value
+// fires the tile's ported script (Oak stopping you at the town edge, etc.)
+// Some enabled plot coord-scenes don't advance their own scene var in this data,
+// so they'd replay every time you re-step their trigger tile (a farmable rival
+// rematch, a repeated greeting). Map each such trigger label to a shared scene
+// key; once fired, the whole group is suppressed. (Scenes that DO self-advance —
+// all the Hoenn set-pieces, and the self-EVENT-guarded Rocket cameras — aren't
+// listed; they one-shot themselves.)
+// Coord scripts that must NEVER run here. Used where the scene gates on a var
+// OTHER regions also read (so seeding it would suppress unrelated content) —
+// suppressing by label keeps the fix surgical.
+export const PLOT_BLOCKED = new Set([
+	// e-Reader visiting trainer: warps the player out and needs StartSpecialBattle
+	'SevenIsland_House_Room2_EventScript_BattleVisitingTrainer',
+	// link cable-club exit: no link play in this port, and it never self-advances
+	'CableClub_EventScript_ExitMinigameRoom',
+	// Sootopolis gym's ice puzzle: gated on the STEP COUNT, so at 0 it drops you
+	// through the floor the moment you walk in
+	'SootopolisCity_Gym_1F_EventScript_FallThroughIce',
+]);
+// The BATTLE FRONTIER / battle tents are reimplemented natively (frontier.js +
+// factoryspec.js), but the decomp ships them as onFrame state machines gated on
+// VAR_TEMP_* — which persist here. Left live, resuming a save inside one of
+// those rooms would fire a challenge-flow script and warp the player. The whole
+// family is inert; the native implementation owns these buildings.
+export const plotBlocked = label => typeof label === 'string' && (PLOT_BLOCKED.has(label)
+	|| label.startsWith('BattleFrontier_') || label.startsWith('TrainerHill_')
+	|| /_BattleTent/.test(label));
+export const PLOT_ONESHOT = {
+	MeetMomLeftScript: 'jo_mom', MeetMomRightScript: 'jo_mom',
+	FirstStepIntoKantoLeftScene: 'jo_route27', FirstStepIntoKantoRightScene: 'jo_route27',
+	ReleaseTheBeasts: 'jo_burnedtower',
+	LanceHealsScript1: 'jo_lance_heal', LanceHealsScript2: 'jo_lance_heal',
+	UndergroundRivalScene1: 'jo_goldenrod_rival', UndergroundRivalScene2: 'jo_goldenrod_rival',
+	VictoryRoadRivalLeft: 'jo_victoryroad_rival', VictoryRoadRivalRight: 'jo_victoryroad_rival',
+};
+let firedPlot = null;
+export function loadFiredPlot() {
+	if (!firedPlot) { const f = safeLoad('magepunk_plot_fired', []); firedPlot = new Set(Array.isArray(f) ? f : []); }
+	return firedPlot;
+}
+export function markPlotFired(key) { const s = loadFiredPlot(); if (!s.has(key)) { s.add(key); safeSave('magepunk_plot_fired', [...s]); } }
+
+export function checkCoordTrigger() {
+	const evs = world.current.map.coord_events || [];
+	for (const e of evs) {
+		if (+e.x !== player.tx || +e.y !== player.ty) continue;
+		if (e.var && e.var !== '0' && Story.getVar(e.var) !== parseInt(e.var_value, 10)) continue;
+		if (e.script && S.mapScripts[e.script]) {
+			if (plotBlocked(e.script)) continue; // never runs here (see plotBlocked)
+			const once = PLOT_ONESHOT[e.script];
+			if (once) {
+				if (loadFiredPlot().has(once)) continue; // this plot beat already played
+				markPlotFired(once);                     // mark at fire-start (both trigger tiles share the key)
+			}
+			return runScriptLabel(e.script);
+		}
+	}
+	return false;
+}
+
+// Stage 4 — reconcile the sandbox start with the linear story. The web player
+// gets a starter via the region picker, so the decomp scene vars that gate the
+// "you have no Pokemon yet" intro must be advanced past their trigger state or
+// the early cutscenes (Oak stopping you at the town edge) block a player who's
+// already ready. Seeded once on a new game for the chosen region.
+export const STORY_SEED = {
+	KANTO: {
+		vars: {
+			// player already has a starter -> skip PalletTown's "can't go out"
+			// block (0) and the pokedex-rating auto-scene (2); 1 is neither.
+			// The lab's own scene var (VAR_MAP_SCENE_PALLET_TOWN_PROFESSOR_OAKS_LAB)
+			// is intentionally left at its default 0: that value skips both the
+			// ChooseStarter (1) and NationalDex (7) onFrame scenes, so a
+			// starter-holding region-picker walks into a normal, non-scripted lab.
+			VAR_MAP_SCENE_PALLET_TOWN_OAK: 1,
+			// FireRed drives its plot from NPC scripts + flags, and its set-pieces
+			// are `onFrame` scenes rather than the coord_events Hoenn/Johto use.
+			// checkOnFrame deliberately ignores a value-0 scene until its var has
+			// been SET (so a fresh save isn't ambushed by every scene at once) —
+			// which left Kanto's beats dormant forever. Seeding a var to 0 ARMS
+			// its scene. The safe, self-advancing set-pieces below are now on:
+			//   VIRIDIAN_CITY_MART — Oak's Parcel handed over by the clerk;
+			//   ONE_ISLAND_POKEMON_CENTER — meeting Celio (Tri-Pass + Town Map);
+			//   TWO_ISLAND_JOYFUL_GAME_CORNER — the Lostelle rescue opens;
+			//   FOUR_ISLAND / SIX_ISLAND_POKEMON_CENTER — the rival cameos.
+			// Each is dialogue/choreography that ends by advancing its own var, so
+			// it plays once and never repeats, and none warps or edits tiles.
+			VAR_MAP_SCENE_VIRIDIAN_CITY_MART: 0,
+			VAR_MAP_SCENE_ONE_ISLAND_POKEMON_CENTER_1F: 0,
+			VAR_MAP_SCENE_TWO_ISLAND_JOYFUL_GAME_CORNER: 0,
+			VAR_MAP_SCENE_FOUR_ISLAND: 0,
+			VAR_MAP_SCENE_SIX_ISLAND_POKEMON_CENTER_1F: 0,
+			// LEFT DORMANT (never armed): LOST_CAVE_ROOM10 fires on entry and WARPS
+			// you out to Resort Gorgeous, so the room could never be explored (the
+			// Selphy rescue still resolves through the Two Island scene above).
+			// SEVEN_ISLAND_HOUSE_ROOM2 (e-Reader trainer: warp + StartSpecialBattle,
+			// which this engine has no path for) and the CABLE_CLUB link-room exit
+			// (no link play, never self-advances) gate on SHARED vars other regions
+			// also read, so they're suppressed by label in PLOT_BLOCKED instead.
+			VAR_MAP_SCENE_FIVE_ISLAND_LOST_CAVE_ROOM10: 1,
+		},
+		flags: [
+			'FLAG_ADVENTURE_STARTED',
+			// (NOT FLAG_GOT_FIRST_POKEMON: no script or code reads it, and seeding it
+			// said "has a POKeMON" on every fresh save; the starter pick sets it)
+			// the intro-scene Oak on the Pallet path (script 0x0 — he only exists
+			// for FR's escort cutscene). The old entry had the flag's words in the
+			// wrong order, so he stood there mute forever.
+			'FLAG_HIDE_OAK_IN_PALLET_TOWN',
+			// FR's table starter balls parse as GRABBABLE item balls (their
+			// scripts resolve through parseBallScript) — the pick is menu-based
+			// here, so the physical balls must go
+			'FLAG_HIDE_BULBASAUR_BALL', 'FLAG_HIDE_SQUIRTLE_BALL', 'FLAG_HIDE_CHARMANDER_BALL',
+			// the two Pokedex props on the lab counter (our intro hands the dex
+			// over without physical props; unhidden they rendered as people)
+			'FLAG_HIDE_POKEDEX',
+		],
+	},
+	HOENN: {
+		vars: {
+			// past the moving-truck intro (1/2) and Birch's edge block + bag scene
+			// (coord triggers gate on 0/1/3), so a starter-holder can explore
+			VAR_LITTLEROOT_INTRO_STATE: 4,
+			VAR_LITTLEROOT_TOWN_STATE: 4,
+			// Emerald gates story cutscenes on per-map/route state vars (vanilla start
+			// 0). The DEEPER PLOT is now selectively ON: the seven SAFE set-pieces below
+			// are NO LONGER rested, so they cold-fire as authentic one-shots — each
+			// self-advances its own state var at the end, so it plays once and never
+			// repeats, touches only its own NPCs (showobj/hideobj), and never warps or
+			// edits tiles: the Route 110 & 119 rival ambushes, the Petalburg Woods Aqua
+			// grunt (VAR_PETALBURG_WOODS_STATE), Scott's cameo, Steven on Route 118, the
+			// Route 121 Aqua move-out, and Wally's Victory Road battle.
+			//   [ENABLED: VAR_SCOTT_PETALBURG_ENCOUNTER, VAR_PETALBURG_WOODS_STATE,
+			//    VAR_ROUTE110_STATE, VAR_ROUTE118_STATE, VAR_ROUTE119_STATE,
+			//    VAR_ROUTE121_STATE, VAR_VICTORY_ROAD_1F_STATE]
+			// These six stay rested — each would strand or corrupt a free-roam save:
+			// OLDALE re-fires a permanent west-exit block; PETALBURG re-fires a control-
+			// seizing gym escort; METEOR_FALLS & MT_PYRE flip cross-map hide-flags
+			// (deleting content elsewhere) + MT_PYRE gives a key item; SEAFLOOR_CAVERN
+			// WARPS the player to Route 128; SKY_PILLAR hides the Rayquaza object the
+			// player came to catch. The legendaries are still catchable via
+			// LEGENDARY_ENCOUNTERS (a real battle on their tile), decoupled from these
+			// awakening scenes.
+			// ARMED (the Kanto pass's discovery applied here): Emerald also ships a
+			// few set-pieces as `onFrame` scenes, which checkOnFrame ignores until
+			// their var is SET — so these sat dormant forever. Seeding to 0 arms
+			// them. All three are dialogue/choreography that self-advance, take no
+			// warp and edit no tiles:
+			//   DEVON_CORP_3F — meeting the Devon President (hands over the LETTER);
+			//   LILYCOVE_MUSEUM_2F — the exhibit-hall tour;
+			//   SS_TIDAL_SCOTT — Scott's cameo in the ferry corridor.
+			// NOT armed: VAR_SS_TIDAL_STATE (the ferry-ride state machine — this
+			// port has its own ferry), VAR_ELITE_4_STATE (shared across the E4
+			// sequence the native flow owns), VAR_ICE_STEP_COUNT (Sootopolis gym —
+			// blocked by label instead, since 0 means "drop through the floor now"),
+			// and the whole Battle Frontier / battle-tent family (see plotBlocked).
+			VAR_DEVON_CORP_3F_STATE: 0,
+			VAR_LILYCOVE_MUSEUM_2F_STATE: 0,
+			VAR_SS_TIDAL_SCOTT_STATE: 0,
+			VAR_OLDALE_TOWN_STATE: 1,
+			VAR_PETALBURG_CITY_STATE: 1,
+			VAR_METEOR_FALLS_STATE: 1,
+			VAR_MT_PYRE_STATE: 1,
+			VAR_SEAFLOOR_CAVERN_STATE: 1,
+			VAR_SKY_PILLAR_RAYQUAZA_CRY_DONE: 1,
+		},
+		flags: ['FLAG_ADVENTURE_STARTED',
+			// Emerald's opening-scene actors and props (managed by cutscenes this
+			// port replaces with its own intro): the lab's scene-rival (drawn as
+			// Birch's identical twin), the bag-scene starter balls (three stacked
+			// on one tile), the moving trucks, and the outdoor scene copies of
+			// Mom / Birch / the rival / the mover
+			'FLAG_HIDE_LITTLEROOT_TOWN_BIRCHS_LAB_RIVAL',
+			'FLAG_HIDE_LITTLEROOT_TOWN_BIRCHS_LAB_POKEBALL_CYNDAQUIL',
+			'FLAG_HIDE_LITTLEROOT_TOWN_BIRCHS_LAB_POKEBALL_TOTODILE',
+			'FLAG_HIDE_LITTLEROOT_TOWN_BIRCHS_LAB_POKEBALL_CHIKORITA',
+			'FLAG_HIDE_LITTLEROOT_TOWN_RIVAL',
+			'FLAG_HIDE_LITTLEROOT_TOWN_BIRCH',
+			'FLAG_HIDE_LITTLEROOT_TOWN_BRENDANS_HOUSE_TRUCK',
+			'FLAG_HIDE_LITTLEROOT_TOWN_MAYS_HOUSE_TRUCK',
+			'FLAG_HIDE_LITTLEROOT_TOWN_MOM_OUTSIDE',
+			'FLAG_HIDE_LITTLEROOT_TOWN_FAT_MAN',
+		],
+	},
+	JOHTO: {
+		// Crystal gates its story coord_events on a per-map scene var VAR_SCENE_<Map>
+		// (vanilla start 0). The DEEPER PLOT is now selectively ON: the maps NOT listed
+		// below are no longer rested, so their scene-0 coord_events cold-fire. Enabled
+		// (all safe — dialogue/battle/flavor, no player-warp, no tile edits):
+		//   Mom's greeting (PlayersHouse1F), the Route 27 fisher, the Burned Tower
+		//   legendary-beasts awakening, the Team Rocket HQ security cameras + floor
+		//   traps → grunt battles (B1F, each self-guarded by its own EVENT flag), the
+		//   B2F Lance heal (its boss/lock coord_events sit at value 1/2 and stay
+		//   dormant while the var rests at 0), the Goldenrod Underground + Victory Road
+		//   RIVAL ambushes, and the Indigo Plateau rival (self-guards / no-ops for a
+		//   fresh save). The scenes lacking a self-advance are made one-shot via
+		//   PLOT_ONESHOT below so they don't re-fire on tile re-entry.
+		// These stay rested — each strands or corrupts a free-roam save: NewBarkTown
+		// (no-starter block), Route32 & MahoganyTown & Olivine & SproutTower3F &
+		// WiseTriosRoom & MagnetTrain (force-move the player / linear gates),
+		// FastShip (warp the player onto the S.S. Aqua). The two PORTS rest at 0, their
+		// own ASK_ENTER_SHIP scene: 1 is LEAVE_SHIP, which played the arrival walk-off on
+		// a first visit and set the 'already rode' temp flag, so the sailor refused to
+		// board you (2026-10-12; boarding needs ELM's S.S. TICKET in any case),
+		// RadioTower5F (hands a key item), Ecruteak TinTower entrance (a sage NPC that
+		// slides over to block the stairs — would gate Ho-Oh in free-roam).
+		vars: {
+			VAR_SCENE_NewBarkTown: 1,
+			VAR_SCENE_Route32: 2,
+			VAR_SCENE_MahoganyTown: 1,
+			VAR_SCENE_OlivineCity: 1,
+			VAR_SCENE_OlivinePort: 0,
+			VAR_SCENE_VermilionPort: 0,
+			VAR_SCENE_FastShipB1F: 1,
+			VAR_SCENE_SproutTower3F: 1,
+			VAR_SCENE_EcruteakTinTowerEntrance: 1,
+			VAR_SCENE_WiseTriosRoom: 1,
+			VAR_SCENE_RadioTower5F: 2,
+			VAR_SCENE_GoldenrodMagnetTrainStation: 1,
+		},
+		flags: ['FLAG_ADVENTURE_STARTED'],
+	},
+};
+// Arm any seed var this save has NEVER set. Idempotent and non-destructive: a
+// var the playthrough already touched keeps its value, so this only fills in
+// scenes added to STORY_SEED after the save was created (a fresh game is a
+// no-op — seedStoryState just set them all). Without it, saves made before a
+// scene was armed would never see it, since `story_seeded` is already set.
+export function armStoryScenes(region) {
+	const seed = STORY_SEED[region];
+	if (!seed) return;
+	for (const [k, v] of Object.entries(seed.vars || {})) if (!Story.hasVar(k)) Story.setVar(k, v);
+	// flags too (idempotent): saves made before a hide-flag joined the seed
+	// keep their mute scene-actors otherwise (the Pallet-path Oak, for one)
+	for (const f of seed.flags || []) Story.setFlag(f);
+}
+
+// Crystal's scripts read VAR_BADGES straight out of the save — the Victory Road
+// gate officer turns you back below eight, and several NPCs change their line on
+// it. NOTHING in this port ever wrote that var, so it read 0 forever. Restoring
+// the gate's trigger without this would have SEALED VICTORY ROAD: the only road
+// to the Johto League, and half the Johto<->Gen-2-Kanto link.
+//
+// Johto's eight, deliberately: the gate is the Johto League's front door and the
+// decomp compares against NUM_JOHTO_BADGES. `badgeSliceFor` already awards JOHTO
+// badges for Johto's gyms whichever region you started in.
+//
+// Crystal's VAR_BADGES is Johto + Kanto (engine/events: CountBadges over both
+// wJohtoBadges and wKantoBadges) — and this port's Gen-2 Kanto is JOHKANTO. Oak
+// opens MT SILVER on `ifequal NUM_BADGES (16)`; counting Johto alone left him
+// saying "come back with the KANTO badges" forever (playtest 2026-10-14). The
+// Victory Road gate (>= 8) is unaffected: JohKanto opens only after the Johto
+// League (Grand Champion), so its badges always come on top of Johto's eight.
+export function syncStoryVars() {
+	Story.setVar('VAR_BADGES', Badges.count('JOHTO') + Badges.count('JOHKANTO'));
+	syncPetalburgGym();
+	syncRocketTakeover();
+}
+
+// Every Johto gym ends `readvar VAR_BADGES` + `scall <Gym>ActivateRockets`, which
+// branches `ifequal 6` -> GoldenrodRocketsScript and `ifequal 7` ->
+// RadioTowerRocketsScript (pokecrystal engine/events/std_scripts.asm). The
+// transpile dropped the readvar, both ifequals and both jumpstds, so all eight
+// <Gym>ActivateRockets bodies were a bare `end`: the Radio Tower takeover never
+// began, its stair guard never stepped aside, and Clair's gym (which waits on
+// EVENT_CLEARED_RADIO_TOWER) could never open. Run here — after each badge, and on
+// boot for saves that already passed the 6th/7th without it — rather than only in
+// the gym script, so those saves reconcile too. Idempotent; off once the tower is
+// cleared. (The weird-broadcast phone call isn't ported.)
+function syncRocketTakeover() {
+	if (Story.getFlag('EVENT_CLEARED_RADIO_TOWER')) return;
+	const n = Badges.count('JOHTO');
+	if (n >= 6) Story.clearFlag('EVENT_GOLDENROD_CITY_ROCKET_TAKEOVER');   // GoldenrodRocketsScript
+	if (n >= 7 && !Story.getFlag('ENGINE_ROCKETS_IN_RADIO_TOWER')) {        // RadioTowerRocketsScript
+		Story.setFlag('ENGINE_ROCKETS_IN_RADIO_TOWER');
+		Story.setFlag('EVENT_GOLDENROD_CITY_CIVILIANS');
+		Story.setFlag('EVENT_RADIO_TOWER_BLACKBELT_BLOCKS_STAIRS');
+		Story.clearFlag('EVENT_RADIO_TOWER_ROCKET_TAKEOVER');
+		Story.clearFlag('EVENT_USED_THE_CARD_KEY_IN_THE_RADIO_TOWER');
+		Story.setFlag('EVENT_MAHOGANY_TOWN_POKEFAN_M_BLOCKS_EAST');
+		Story.setVar('VAR_SCENE_MahoganyTown', 1);                          // SCENE_MAHOGANYTOWN_NOOP
+	}
+	// STORY_SEED rests RadioTower5F at SCENE_RADIOTOWER5F_NOOP (2) — its fake-
+	// Director coord event hands a key item, and without a takeover it would fire
+	// in free roam. But with the takeover running, scene 2 also silences the
+	// Rocket boss's coord event at (16,5) (scene 1), so the takeover could never
+	// end, EVENT_CLEARED_RADIO_TOWER never set, and Clair's gym stayed blocked
+	// (2026-10-09, Instinct). Re-arm it where pokecrystal has it at this point:
+	// FAKE_DIRECTOR (0) — or ROCKET_BOSS (1) once the fake Director is beaten or
+	// the player is already through the Basement door his key opens (his whole
+	// errand; a BASEMENT KEY from another region opens it too). Only from the
+	// seed's resting value, and never after the boss: no var moves backwards.
+	if (Story.getFlag('ENGINE_ROCKETS_IN_RADIO_TOWER') && Story.getVar('VAR_SCENE_RadioTower5F') === 2
+		&& !Story.getFlag('EVENT_BEAT_ROCKET_EXECUTIVEM_1')) {
+		const pastFakeDirector = Story.getFlag('EVENT_BEAT_ROCKET_EXECUTIVEM_3') || Story.getFlag('EVENT_USED_BASEMENT_KEY');
+		Story.setVar('VAR_SCENE_RadioTower5F', pastFakeDirector ? 1 : 0);
+	}
+}
+
+// FLAG_BADGE0N_GET as the scripts of THIS map's game mean it (see events.js):
+// FireRed Kanto maps ask about the Nth Kanto badge, Emerald/Hoenn2 maps the Nth
+// Hoenn badge — answered from the badges actually held. Crystal maps (Johto,
+// JohKanto) use ENGINE_ flags instead, and neutral maps keep the stored flag.
+const BADGE_FLAG_SLICE = { KANTO: 'KANTO', HOENN: 'HOENN', HOENN2: 'HOENN' };
+Story.setBadgeFlagResolver(n => {
+	const slice = BADGE_FLAG_SLICE[mapRegionOf(world.current?.name)];
+	const b = slice && Badges.BADGES[slice][n - 1];
+	return b ? Badges.has(slice, b.id) : null;
+});
+// FLAG_SYS_GAME_CLEAR: the champion crown of the FireRed / Emerald region you're in
+Story.setGameClearResolver(() => {
+	const slice = BADGE_FLAG_SLICE[mapRegionOf(world.current?.name)];
+	return slice && Badges.isChampion(slice) ? true : null; // else the stored value stands
+});
+// ENGINE_<NAME>BADGE (Crystal): the Johto badge of that name, or the Kanto one as
+// Crystal's Kanto gyms award it (JOHKANTO)
+Story.setEngineBadgeResolver(id => ['JOHTO', 'JOHKANTO'].some(r => Badges.BADGES[r].some(b => b.id === id) && Badges.has(r, id)));
+
+// Norman's gym (Emerald PetalburgCity_Gym): VAR_PETALBURG_GYM_STATE is 2 once you
+// have met him, and each of the Rustboro / Dewford / Mauville / Lavaridge gym
+// scripts adds 1 — at 6 he battles (7 = beaten, 8 = rematch; 0/1 = not met yet).
+// Badges won BEFORE meeting him never counted, and the four can come in any
+// order here (cross-region tiers, portals), so a save holding all four could sit
+// at 3 for good (2026-10-02, Instinct: state 3 with all four badges, Norman
+// stuck on "one badge"). Derive it from the badges held: only ever RAISED, only
+// once he's been met (2..5), and reaching 6 does what the game's own
+// Common_EventScript_ReadyPetalburgGymForBattle does.
+const NORMAN_PREREQS = ['stone', 'knuckle', 'dynamo', 'heat'];
+function syncPetalburgGym() {
+	const s = Story.getVar('VAR_PETALBURG_GYM_STATE');
+	if (s < 2 || s > 5) return;
+	const want = 2 + NORMAN_PREREQS.filter(id => Badges.has('HOENN', id)).length;
+	if (want <= s) return;
+	Story.setVar('VAR_PETALBURG_GYM_STATE', want);
+	if (want === 6) { Story.clearFlag('FLAG_HIDE_PETALBURG_GYM_GREETER'); Story.setFlag('FLAG_PETALBURG_MART_EXPANDED_ITEMS'); }
+}
+
+// Vars the scripts READ but nothing here ever WROTE, so every branch on them
+// compared against 0 and took the same arm forever. Refreshed immediately before
+// a script runs, because two of the three change as you walk around.
+//
+// VAR_FACING gates the choreography in 122 scripts — which way an NPC should walk
+// to reach you, which side Eusine steps to. The encoding matches
+// script_constants.js and is OURS: the decomps disagree (Crystal's UP is 1,
+// Emerald's DIR_SOUTH is also 1), and since those symbols are only ever compared
+// against this var, it only has to agree with itself.
+//
+// VAR_WEEKDAY drives 83 branches, all Crystal: the Day-of-Week siblings who each
+// appear on their own day, the Goldenrod move tutor (Wednesday and Saturday), the
+// Dragon's Den rival (Tuesday and Thursday), the Sunday-only dept store floor.
+// GSC read the cartridge's real-time clock for this, so the real date is the
+// faithful source — "come back on Saturday" means what it says.
+const FACING_VALUE = { down: 1, up: 2, left: 3, right: 4 };
+function syncScriptVars() {
+	Story.setVar('VAR_FACING', FACING_VALUE[player?.facing] || 1);
+	Story.setVar('VAR_WEEKDAY', new Date().getDay());          // SUNDAY = 0 .. SATURDAY = 6
+	Story.setVar('VAR_PARTYCOUNT', (S.party || []).length);
+	Story.setVar('VAR_UNOWNCOUNT', Dex.unownCount());          // lights up the Ruins research-center branches
+	syncPetalburgGym();                                         // Norman's gate tracks the badges held
+}
+
+// pokecrystal runs InitializeEventsScript before a new save's first step, and now
+// that object visibility reads the event flag for real (objectHiddenByFlag), this
+// is what stops the entire Crystal cast walking on at once: it keeps MISTY at the
+// Cerulean Cape instead of standing in her gym on day one, BLUE off the Viridian
+// Gym floor until you meet him at Cinnabar, and HO-OH off the Tin Tower roof.
+//
+// Applied to every save whatever region it started in — the past timeline is
+// reachable from anywhere, so a Kanto starter walking into Johto needs the same
+// starting state. Guarded so it runs exactly once.
+//
+// Safe for saves made before this shipped: the events it re-sets all gate objects
+// that were UNCONDITIONALLY invisible until now, so no playthrough can have made
+// meaningful progress against them.
+export function seedCrystalEvents() {
+	if (Story.getFlag('crystal_events_seeded')) return;
+	for (const e of INIT_EVENTS) Story.setFlag(e);
+	Story.setFlag('crystal_events_seeded');
+}
+
+// FireRed and Emerald run EventScript_ResetAllMapFlags on a new game: a list of
+// FLAG_HIDE_* that keeps set-piece objects (the credits cast, the waiting
+// rivals, the Seafloor Cavern villains) off the map until a scene `addobject`s
+// them. This port never ran it, so on 2026-10-10 the credits-only OAK and rival
+// stood on Indigo Plateau's only door and sealed the Elite Four. Only the flags
+// NO decomp script ever clears are applied (neverCleared): the rest are cleared
+// by opening/story scenes the free-roam port skips (Oak's lab, Birch's lab), so
+// setting them would hide those NPCs for good. Every save, fresh or existing;
+// runs once.
+export function seedNewGameFlags() {
+	if (Story.getFlag('newgame_flags_seeded')) return;
+	for (const r of Object.values(NEW_GAME_FLAGS)) for (const f of r.neverCleared) Story.setFlag(f);
+	Story.setFlag('newgame_flags_seeded');
+}
+
+export function seedStoryState(region) {
+	if (Story.getFlag('story_seeded')) return;
+	const seed = STORY_SEED[region];
+	if (seed) {
+		for (const [k, v] of Object.entries(seed.vars || {})) Story.setVar(k, v);
+		for (const f of seed.flags || []) Story.setFlag(f);
+	}
+	// the OTHER regions' seeds too: the portals put all three regions in play
+	// from gym one, and a traveller must not be ambushed by a foreign region's
+	// new-game scripts (vars the chosen region's seed just set are untouched)
+	for (const r of Object.keys(STORY_SEED)) if (r !== region) armStoryScenes(r);
+	// the 8 HMs come in the bag (reusable) — teach them to compatible POKeMON and
+	// use the field move from the party menu wherever it applies
+	for (let i = 1; i <= 8; i++) Bag.addItem('hm' + i);
+	Story.setFlag('story_seeded');
+}
+
+// special-command dispatch. Store-writing specials set `store` (a VAR_*) to a
+// computed value the following branch reads; action specials just do the thing.
+// Unknown store-specials default to 0 so branches take the "nothing happened"
+// path deterministically rather than reading a stale var.
+export const B_OUTCOME_WON = 1, B_OUTCOME_LOST = 2, B_OUTCOME_RAN = 4, B_OUTCOME_CAUGHT = 7;
+// pokecrystal constants/battle_tower_constants.asm
+const BATTLETOWERACTION_GSBALL = 11, GS_BALL_AVAILABLE = 0x0B;
+// What the last script-driven battle actually did. `GetBattleOutcome` used to
+// answer WON unconditionally, on the assumption that scripted battles were
+// skipped entirely; now that static wild battles really run, the scripts that
+// branch on the outcome deserve the truth.
+S.lastBattleOutcome = B_OUTCOME_WON;
+// ---------- the CABLE CAR ----------
+// CableCarWarp: VAR_0x8004 == 0 rides UP to Mt. Chimney, anything else DOWN to
+// Route 112; you step out onto (6,4) either way. The Hoenn2 copy of the stations
+// stays in Hoenn2.
+export function cableCarDestination() {
+	// engine.js scriptBool: TRUE/1 -> down; FALSE/0 (never JS truthiness — 'FALSE' is a truthy string) -> up
+	const down = scriptBool(Story.getVar('VAR_0x8004'), 'CableCarWarp VAR_0x8004') === true;
+	const h2 = /^MAP_HOENN2_/.test(world.current?.map?.id || '') || /^Hoenn2_/.test(world.current?.name || '');
+	return { map: (h2 ? 'MAP_HOENN2_' : 'MAP_') + (down ? 'ROUTE112_CABLE_CAR_STATION' : 'MT_CHIMNEY_CABLE_CAR_STATION'), x: 6, y: 4 };
+}
+// CableCar: the ride. The screen dips to black (input is frozen while it's
+// dark), a beat for the trip, then the warp to the other station. The script
+// waits on it (`waitstate`) and resumes once you've arrived; then the arrival
+// station's ON_FRAME scene (VAR_CABLE_CAR_STATION_STATE) walks you off the car
+// and resets the state — it was skipped during the load because the ride scene
+// was still open, so it's checked here once that scene has ended.
+const CABLE_RIDE_MS = 1100;
+function rideCableCar() {
+	const d = S.cableCarDest;
+	S.cableCarDest = null;
+	if (!d) return;                     // no CableCarWarp first: nothing to ride to
+	S.cableCarRiding = true;
+	(async () => {
+		await fadeTo(1);
+		hud.textContent = 'The CABLE CAR glides along the ropeway…';
+		if (!REDUCED_MOTION_OW) await new Promise(r => setTimeout(r, CABLE_RIDE_MS));
+		await warpTo(d.map, null, d.x, d.y);
+		S.cableCarRiding = false;
+		cutscene.resume();               // the ride script's release / end
+		const t0 = performance.now();
+		const arrive = () => {
+			if (cutscene.blocking && performance.now() - t0 < 4000) { requestAnimationFrame(arrive); return; }
+			try { checkOnFrame(); } catch (e) { console.warn('[cablecar] arrival scene failed', e); if (cutscene.blocking) cutscene.stop(); }
+			// the scene walks you off the car; save where it leaves you, or a
+			// reload (or another device) puts you back on the boarding tile
+			const t1 = performance.now();
+			const settled = () => {
+				if (cutscene.blocking && performance.now() - t1 < 15000) { requestAnimationFrame(settled); return; }
+				savePos();
+			};
+			requestAnimationFrame(settled);
+		};
+		requestAnimationFrame(arrive);
+	})().catch(e => {
+		console.warn('[cablecar] ride failed', e);
+		S.cableCarRiding = false;
+		if (cutscene.blocking) cutscene.stop();
+		fadeTo(0);
+	});
+	return 'wait';
+}
+
+// special CardFlip (engine/events/specials.asm): CheckCoinsAndCoinCase refuses
+// with no coins, then without a COIN CASE; otherwise the table takes the screen
+// and the machine's script (closetext / end) resumes when you leave it
+function openCardFlip() {
+	const refuse = Bag.getCoins() <= 0 ? 'You have no coins.'
+		: !Bag.count('coincase') ? "You don't have a\nCOIN CASE." : null;
+	if (refuse) { dialog.open(refuse, () => cutscene.resume()); return 'wait'; }
+	startCardFlip(() => cutscene.resume()).catch(e => { console.warn('[cardflip] failed to open', e); cutscene.resume(); });
+	return 'wait';
+}
+
+// the tile the player faces (GetXYCoordsOneStepInFrontOfPlayer)
+function facingTile() {
+	const d = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] }[player.facing] || [0, 1];
+	return [player.tx + d[0], player.ty + d[1]];
+}
+function openPokeblockCaseLastPlaced() { return pbCase.placed || null; }
+
+// the regional dexes by national number: FireRed's Kanto dex is #1-151. Hoenn's
+// is a reordering of a non-contiguous set, so it counts nationally (as before).
+function regionalDexFilter(region) {
+	if (region !== 'kanto') return null;
+	const sp = battle.data?.species;
+	if (!sp) return null;
+	return id => { const n = sp[id]?.num; return n >= 1 && n <= 151; };
+}
+
+// ---- FireRed elevators + ListMenu (field_specials.c) ----
+const LISTMENUS = {
+	// LISTMENU_BADGES
+	0: ['BOULDERBADGE', 'CASCADEBADGE', 'THUNDERBADGE', 'RAINBOWBADGE', 'SOULBADGE', 'MARSHBADGE', 'VOLCANOBADGE', 'EARTHBADGE', 'EXIT'],
+	// LISTMENU_SILPHCO_FLOORS
+	1: ['11F', '10F', '9F', '8F', '7F', '6F', '5F', '4F', '3F', '2F', '1F', 'EXIT'],
+	// LISTMENU_BERRY_POWDER
+	5: ['ENERGYPOWDER  50', 'ENERGY ROOT  80', 'HEAL POWDER  50', 'REVIVAL HERB  300', 'PROTEIN  1,000', 'IRON  1,000',
+		'CARBOS  1,000', 'CALCIUM  1,000', 'ZINC  1,000', 'HP UP  1,000', 'PP UP  3,000', 'EXIT'],
+};
+const LISTMENU_IDS = { LISTMENU_BADGES: 0, LISTMENU_SILPHCO_FLOORS: 1, LISTMENU_ROCKET_HIDEOUT_FLOORS: 2, LISTMENU_DEPT_STORE_FLOORS: 3,
+	LISTMENU_WIRELESS_LECTURE_HEADERS: 4, LISTMENU_BERRY_POWDER: 5, LISTMENU_TRAINER_TOWER_FLOORS: 6 };
+let listMenuStart = 0;   // InitElevatorFloorSelectMenuPos -> the Silph list's first cursor row
+function openScriptListMenu(start) {
+	const v = Story.getVar('VAR_0x8004');
+	const id = typeof v === 'string' ? LISTMENU_IDS[v] : v;
+	const options = LISTMENUS[id];
+	listMenuStart = 0;
+	if (!options) return;
+	return startChoice({ options, list: `LISTMENU_${id}`, ignoreB: false, default: id === 1 ? start : (start | 0) });
+}
+// the elevator's dynamic warp: the floor whose door you came in by
+function elevatorFrom() { return String((S.dynamicWarp && S.dynamicWarp.map) || ''); }
+function elevatorFloor() {
+	const m = elevatorFrom();
+	let r;
+	if ((r = /^MAP_SILPH_CO_(\d+)F$/.exec(m))) return 3 + (+r[1]);
+	if ((r = /^MAP_ROCKET_HIDEOUT_B(\d)F$/.exec(m))) return { 1: 3, 2: 2, 4: 0 }[r[1]] ?? 4;
+	if ((r = /^MAP_CELADON_CITY_DEPARTMENT_STORE_(\d)F$/.exec(m))) return 3 + (+r[1]);
+	if (m === 'MAP_TRAINER_TOWER_LOBBY') return 3;
+	if (/^MAP_TRAINER_TOWER_/.test(m)) return 15;
+	return 4;
+}
+function elevatorMenuPos() {
+	const m = elevatorFrom();
+	let r;
+	if ((r = /^MAP_SILPH_CO_(\d+)F$/.exec(m))) {
+		const row = 11 - (+r[1]);   // 11F is row 0, 1F row 10; the window shows 7
+		return row <= 4 ? { scroll: 0, cursor: row } : row === 10 ? { scroll: 5, cursor: 5 } : { scroll: row - 4, cursor: 4 };
+	}
+	if ((r = /^MAP_ROCKET_HIDEOUT_B(\d)F$/.exec(m))) return { scroll: 0, cursor: { 1: 0, 2: 1, 4: 2 }[r[1]] ?? 0 };
+	if ((r = /^MAP_CELADON_CITY_DEPARTMENT_STORE_(\d)F$/.exec(m))) return { scroll: 0, cursor: 5 - (+r[1]) };
+	if (m === 'MAP_TRAINER_TOWER_LOBBY') return { scroll: 0, cursor: 1 };
+	return { scroll: 0, cursor: 0 };
+}
+
+// the decomp's GetLeadMonIndex: the first party member that isn't an egg
+const leadNonEgg = () => (S.party || []).find(m => !(m.isEgg || m.egg)) || null;
+// set by `special EnableNationalPokedex` (after the HALL OF FAME)
+const NATIONAL_DEX_FLAG = 'national_dex_enabled';
+export function nationalDexEnabled() {
+	if (Story.getFlag(NATIONAL_DEX_FLAG)) return true;
+	let saved = null;
+	try { saved = localStorage.getItem('magepunk_region'); } catch (e) {}
+	return Badges.isChampion(Badges.regionOfMap(world.current?.map?.id, saved));
+}
+export function runSpecial(name, store, op) {
+	// the PHONE's specials (converted Crystal scripts, Emerald's restored register)
+	if (/^Phone/.test(name || '')) { const r = runPhoneSpecial(name, store, op || {}); if (r !== undefined) return r; }
+	// query specials write their result to the given store var, or VAR_RESULT by
+	// the decomp convention when a plain `special` (no store) is used
+	const set = v => Story.setVar(store || 'VAR_RESULT', v | 0);
+	const living = () => (S.party || []).filter(m => m.curHP > 0);
+	switch (name) {
+		// --- action specials ---
+		// Crystal names it HealParty; FireRed/Emerald name it HealPlayerParty. Only the
+		// latter was handled, so every Crystal "your party is healed" moment (10, incl.
+		// the end of the Slowpoke Well beat) silently healed nobody. Found by the audit.
+		case 'HealPlayerParty': case 'HealParty': healParty(S.party); return;
+		// a Sevii harbor's SEAGALLOP sailor (events.js stubs seagallop.inc's menus onto this)
+		case 'SeagallopMenu': openSeagallopMenu(); return;
+		// DoSeagallopFerryScene's destination: aim MAP_DYNAMIC at VAR_0x8006's harbor
+		// tile for EventScript_SetSail's warp (events.js); 0 = no such crossing
+		case 'SeagallopSetSail': {
+			const d = seagallopSpawn(Story.getVar('VAR_0x8006'));
+			if (d) S.dynamicWarp = { map: d.map, warp: null, x: d.x, y: d.y };
+			set(d ? 1 : 0); return;
+		}
+		// Slateport's EFFORT RIBBON woman (field_specials.c): the lead (GetLeadMonIndex:
+		// the first non-egg) gets it once its EVs total MAX_TOTAL_EVS (510). None of the
+		// three was handled, so the EV check read 0 and nobody ever got it (2026-10-08).
+		// field_specials.c: on Rusturf Tunnel, a smashed rock (its hide flag set)
+		// arms the reunion scene the map's ON_FRAME plays (state 4 or 5)
+		case 'TryUpdateRusturfTunnelState': {
+			if (Story.getFlag('FLAG_RUSTURF_TUNNEL_OPENED') || !/^(Hoenn2_)?RusturfTunnel$/.test(world.current?.name || '')) return set(0);
+			if (Story.getFlag('FLAG_HIDE_RUSTURF_TUNNEL_ROCK_1')) { Story.setVar('VAR_RUSTURF_TUNNEL_STATE', 4); return set(1); }
+			if (Story.getFlag('FLAG_HIDE_RUSTURF_TUNNEL_ROCK_2')) { Story.setVar('VAR_RUSTURF_TUNNEL_STATE', 5); return set(1); }
+			return set(0);
+		}
+		case 'LeadMonHasEffortRibbon': { const m = leadNonEgg(); return set(m?.ribbons?.includes('effort') ? 1 : 0); }
+		case 'Special_AreLeadMonEVsMaxedOut': {
+			const m = leadNonEgg(), ev = m?.evs || {};
+			return set(Object.values(ev).reduce((a, b) => a + (+b || 0), 0) >= 510 ? 1 : 0);
+		}
+		case 'GiveLeadMonEffortRibbon': {
+			const m = leadNonEgg();
+			if (!m) return;
+			m.ribbons = m.ribbons || [];
+			if (!m.ribbons.includes('effort')) m.ribbons.push('effort');
+			Story.setFlag('FLAG_SYS_RIBBON_GET');
+			saveParty(S.party);
+			return;
+		}
+		// Emerald's scroll list (the Glass Workshop's flutes/furniture, the Fan Club
+		// rater, the Frontier vendors...): VAR_0x8004 names the list, the pick lands
+		// in VAR_RESULT (B = MULTI_B_PRESSED). It was never implemented, so the menu
+		// never opened and the script branched on a stale result (2026-10-05).
+		case 'ShowScrollableMultichoice': {
+			const sc = scrollOptions(Story.getVar('VAR_0x8004'));
+			if (!sc) return;
+			return startChoice({ options: sc.options, list: sc.name, ignoreB: false, default: 0 });
+		}
+		// FireRed's elevators (field_specials.c). The floor you are on is the
+		// dynamic warp the elevator's door remembered when you walked in. None of
+		// these were implemented, so Silph Co's ListMenu never opened and the
+		// script read InitElevatorFloorSelectMenuPos's stray 0 as "11F" — every
+		// ride went to 11F (2026-10-06, Instinct). Rocket Hideout / Celadon read
+		// the same 0 as "you're on B1F / 5F", so their cursor started wrong.
+		case 'GetElevatorFloor': Story.setVar('VAR_ELEVATOR_FLOOR', elevatorFloor()); return;
+		case 'InitElevatorFloorSelectMenuPos': { const p = elevatorMenuPos(); listMenuStart = p.scroll + p.cursor; return set(p.cursor); }
+		case 'DrawElevatorCurrentFloorWindow': case 'CloseElevatorCurrentFloorWindow': case 'AnimateElevator': return;   // display only
+		// FireRed's script ListMenu: VAR_0x8004 names the list, the pick lands in
+		// VAR_RESULT (B = 127). The Cerulean badge describer keeps its list up
+		// between picks and comes back to it with ReturnToListMenu.
+		case 'ListMenu': return openScriptListMenu(listMenuStart);
+		case 'ReturnToListMenu': return openScriptListMenu(choiceMenu.idx);
+		// Pokémon Tower 6F's ghost MAROWAK (FireRed): a no-store action special that
+		// was missing, so the script read a stale VAR_RESULT and never fought
+		case 'StartMarowakBattle': return startMarowakBattle();
+		// Lilycove Department Store's elevator (its menu + dynamic warp are
+		// restored by tools/gen_multichoice.mjs). The floor you rode from is the
+		// map you came in by; the menu's cursor starts on it (5F is option 0).
+		case 'SetDeptStoreFloor': {
+			const m = /DepartmentStore_(\d)F$/.exec((world.lastWarpSource && world.lastWarpSource.name) || '');
+			if (m) Story.setVar('VAR_DEPT_STORE_FLOOR', 3 + (+m[1]));   // DEPT_STORE_FLOORNUM_1F = 4
+			return;
+		}
+		case 'GetDeptStoreDefaultFloorChoice': set(Math.max(0, Math.min(4, 8 - (Story.getVar('VAR_DEPT_STORE_FLOOR') | 0)))); return;
+		case 'ShowDeptStoreElevatorFloorSelect': case 'CloseDeptStoreElevatorWindow': case 'MoveElevator': return;   // display only
+		// gym puzzles, ported from field_specials.c (see gym_puzzles.js)
+		case 'SetVermilionTrashCans': GymPuzzles.setVermilionTrashCans(puzzleWorld()); return;
+		case 'MauvilleGymPressSwitch': GymPuzzles.mauvilleGymPressSwitch(puzzleWorld()); return;
+		case 'MauvilleGymSetDefaultBarriers': GymPuzzles.mauvilleGymSetDefaultBarriers(puzzleWorld()); return;
+		case 'MauvilleGymDeactivatePuzzle': GymPuzzles.mauvilleGymDeactivatePuzzle(puzzleWorld()); return;
+		// Petalburg Gym's sliding room doors (gym_puzzles.js): VAR_0x8004 is the room
+		case 'PetalburgGymSlideOpenRoomDoors': {
+			const cur = cutscene.cur;
+			GymPuzzles.petalburgGymSlideOpenRoomDoors(puzzleWorld(), () => { if (cur && cutscene.cur === cur) cutscene.resume(); });
+			return cur ? 'wait' : undefined;
+		}
+		case 'PetalburgGymUnlockRoomDoors': GymPuzzles.petalburgGymUnlockRoomDoors(puzzleWorld()); return;
+		// Fortree Gym / Trick House Puzzle 6 (rotating_gates.js): the ON_TRANSITION
+		// resets the gates; the graphics are drawn from that state every frame
+		case 'RotatingGate_InitPuzzle': RotatingGates.initPuzzle(Story, world.current?.name); return;
+		case 'RotatingGate_InitPuzzleAndGraphics': return;
+		// MIRAGE ISLAND (Route 130's ON_TRANSITION; time_events.js). A mon that never
+		// had a personality value gets one here, saved with the party — on a real
+		// entry. The boot load (or a setup re-run) answers read-only: the value as of
+		// today, and a mon with no personality yet simply can't match. Rolling one
+		// there would change the save just by opening the game on Route 130.
+		case 'IsMirageIslandPresent': {
+			if (_setupMode === 'load') return set(isMirageIslandPresent(S.party, mirageRndAsOf()) ? 1 : 0);
+			updatePerDay();
+			let rolled = false;
+			for (const m of S.party || []) rolled = ensurePersonality(m) || rolled;
+			if (rolled) saveParty(S.party);
+			return set(isMirageIslandPresent(S.party) ? 1 : 0);
+		}
+		// THE LILYCOVE LOTTERY (lottery_corner.c; time_events.js). The day's number
+		// was drawn by the once-a-day update on the trip in; nothing here writes it.
+		// Unported, RetrieveLotteryNumber left VAR_RESULT stale and PickLotteryCornerTicket
+		// left VAR_0x8004 at whatever it held, so a ticket never won.
+		case 'RetrieveLotteryNumber': return set(lotteryTicket());
+		case 'BufferLottoTicketNumber': Story.setStrVarText(1, lottoTicketString(Story.getVar('VAR_RESULT') | 0)); return;
+		case 'PickLotteryCornerTicket': {
+			const r = pickLotteryTicket(Story.getVar('VAR_RESULT') | 0, S.party, getBox(), playerTID());
+			Story.setVar('VAR_0x8004', r.tier);
+			if (r.tier) {
+				Story.setVar('VAR_0x8005', r.prize);   // the ITEM_ symbol: `giveitem` / bufferitemname read it back
+				Story.setVar('VAR_0x8006', r.inPC);
+				Story.setStrVarText(1, String(r.mon.nickname || r.mon.name || r.mon.speciesId || '').toUpperCase());
+			}
+			return;
+		}
+		// Crystal's BattleTowerAction: only BATTLETOWERACTION_GSBALL (setval 11) has an
+		// answer here. sGSBallFlag reads GS_BALL_AVAILABLE once the 3DS Virtual Console
+		// has set it, which it does on the Hall of Fame save (engine/menus/save.asm's
+		// vc_hook) — here, once EVENT_BEAT_ELITE_FOUR (ow_progression.js
+		// applyJohtoHallOfFame). The Goldenrod POKeMON CENTER's doorway scene then
+		// hands over the GS BALL (gen_crystal_scriptvar.mjs restores its setval/ifequal).
+		case 'BattleTowerAction': {
+			if ((Story.getVar('VAR_RESULT') | 0) === BATTLETOWERACTION_GSBALL) return set(Story.getFlag('EVENT_BEAT_ELITE_FOUR') ? GS_BALL_AVAILABLE : 0);
+			return set(0);
+		}
+		// Ilex Forest's shrine: did the battle just fought catch CELEBI? (iffalse
+		// .DidntCatchCelebi skips KURT's "you caught CELEBI" beat)
+		case 'CheckCaughtCelebi': return set(S.lastBattleOutcome === B_OUTCOME_CAUGHT && battle.lastCaught?.speciesId === 'celebi' ? 1 : 0);
+		// MIRAGE TOWER (mirage.js). The shakes and the collapse are a screen shake; the
+		// disintegration leaves the sand the tower stood on (SetInvisibleMirageTowerMetatiles).
+		case 'SetMirageTowerVisibility': setMirageTowerVisibility(); return;
+		case 'StartMirageTowerShake': startScreenShake(900, 2, 0); return specialWait(900);
+		case 'StartPlayerDescendMirageTower': return;
+		case 'StartMirageTowerDisintegration': startScreenShake(1200, 2, 1); { const here = world.current?.name; return specialWait(1200, () => { if (world.current?.name === here) setInvisibleMirageTowerMetatiles(world); }); }
+		case 'StartMirageTowerFossilFallAndSink': return specialWait(400);
+		case 'DoMirageTowerCeilingCrumble': startScreenShake(700, 1, 2); return specialWait(700);
+		// field_specials.c ShakeCamera: VAR_0x8004/5 = vertical/horizontal pan,
+		// 0x8006 shakes, 0x8007 frames apart. Visual only, and it does not hold the
+		// script (it never did here: 14 scripts call it)
+		case 'ShakeCamera': {
+			const n = Story.getVar('VAR_0x8006') | 0, d = Story.getVar('VAR_0x8007') | 0;
+			startScreenShake(Math.max(200, Math.min(3000, n * Math.max(1, d) * 17)), Story.getVar('VAR_0x8005') | 0, Story.getVar('VAR_0x8004') | 0, Math.max(1, d) * 17);
+			return;
+		}
+		// SHOAL CAVE: the tide, latched as you come in from outdoors (time_events.js)
+		case 'UpdateShoalTideFlag': if (updateShoalTideFlag(world.lastWarpSource?.mapType)) S.shoalTideLatched = true; return;
+		// FireRed's Icefall Cave 1F ON_LOAD: re-crack the ice you stepped on (icefall_ice.js)
+		case 'SetIcefallCaveCrackedIceMetatiles': setIcefallCaveCrackedIceMetatiles(world, Story.getFlag); return;
+		// --- the Mossdeep Space Center multi battle (Emerald main story) ---
+		// Unported, no battle ran and VAR_RESULT never read 1, so the script fell
+		// through to SetCB2WhiteOut every time — and before that, ChooseHalfParty
+		// answering 0 looped the player back to Steven's prompt forever. There is no
+		// AI partner yet (Plans/AI_PARTNER_PLAN.md), so the player fields their own
+		// two leads against Maxie + Tabitha as a double battle.
+		// The saved party is never cut down: the picks are a VIEW handed to the battle
+		// (same mon objects, so damage lands on the real ones) and Load just drops it.
+		case 'SavePlayerParty': return;
+		case 'ChooseHalfPartyForBattle': return openHalfParty();
+		case 'ReducePlayerPartyToSelectedMons': S.multiPicks = halfParty.picked.slice(); return;
+		case 'LoadPlayerParty': S.multiPicks = null; return;
+		case 'DoSpecialTrainerBattle':
+			if (String(Story.getVar('VAR_0x8004')) === 'SPECIAL_BATTLE_STEVEN') return startSpaceCenterBattle();
+			return;
+		// --- Johto gift POKeMON (pokecrystal engine/events) ---
+		case 'GiveDratini': giveDratini(); return;
+		case 'GiveOddEgg': giveOddEgg(); return;
+		case 'GiveShuckle': return set(giveShuckle());
+		case 'ReturnShuckie': return set(returnShuckie());
+		// Crystal's Game Corner card table (Goldenrod; Celadon in JohKanto) — the
+		// machines' signs (#658) ran a special nothing answered
+		case 'CardFlip': return openCardFlip();
+		// Crystal's slot machine (Goldenrod + Celadon Game Corners): CheckCoinsAndCoinCase,
+		// then the minigame (ow_crystalslots.js); the sign script resumes when you quit
+		case 'SlotMachine': return startCrystalSlots();
+		// --- POKeBLOCKS (pokeemerald; pokeblock.js, minigames/blender, pokeblock_case.js) ---
+		// the Lilycove Contest Lobby's BERRY BLENDERS: VAR_0x8004 = how many NPCs
+		// (the script copies NUM_OPPONENTS there); one NPC is the BLEND MASTER while
+		// he's in (FLAG_HIDE_LILYCOVE_CONTEST_HALL_BLEND_MASTER clear)
+		case 'DoBerryBlending': {
+			const opponents = Story.getVar('VAR_0x8004') | 0;
+			const blendMaster = opponents === 1 && !Story.getFlag('FLAG_HIDE_LILYCOVE_CONTEST_HALL_BLEND_MASTER');
+			startBerryBlender({ opponents, blendMaster, playerName: (localStorage.getItem('magepunk_name') || 'PLAYER').toUpperCase() }, () => cutscene.resume())
+				.catch(e => { console.warn('[blender] failed to open', e); cutscene.resume(); });
+			return 'wait';
+		}
+		case 'GetFirstFreePokeblockSlot': { const i = PB.firstFreeSlot(); return set(i < 0 ? 0xffff : i); }
+		// IsBagPocketNonEmpty(POCKET_BERRIES): a berry the blender can take
+		case 'PlayerHasBerries': return set(PB.berries().some(b => Bag.count(b.id) > 0) ? 1 : 0);
+		case 'ShowBerryBlenderRecordWindow': dialog.open(recordText(), () => cutscene.resume()); return 'wait';
+		case 'RemoveRecordsWindow': return;
+		// the SAFARI ZONE gates (FireRed's Fuchsia entrance, Emerald's Route 121): the
+		// entrance script checks money and takes the fee itself, then starts the game
+		// here; a full party needs a free PC slot for whatever it catches
+		case 'EnterSafariMode': enterSafariMode(); return;
+		case 'ExitSafariMode': exitSafariMode(); return;
+		case 'IsThereRoomInAnyBoxForMorePokemon': case 'ScriptCheckFreePokemonStorageSpace':
+			return set(getBox().length < PC_BOXES * PC_BOX_CAP ? 1 : 0);
+		// the Safari Zone's POKeBLOCK FEEDERS (safari_zone.c)
+		case 'GetPokeblockFeederInFront': {
+			const [fx, fy] = facingTile();
+			const i = PB.feederAt(world.current.map.id, fx, fy);
+			if (i >= 0) Story.setStrVarText(1, PB.pokeblockName(PB.feederBlock(i).color));
+			return set(i >= 0 ? i : 0xffff);
+		}
+		case 'OpenPokeblockCaseOnFeeder': {
+			const [fx, fy] = facingTile();
+			openPokeblockCase('feeder', slot => {
+				const placed = slot !== 0xffff ? openPokeblockCaseLastPlaced() : null;
+				if (placed) { PB.placeFeeder(world.current.map.id, fx, fy, placed); Story.setStrVarText(1, PB.pokeblockName(placed.color)); }
+				set(placed ? slot : 0xffff);
+				cutscene.resume();
+			});
+			return 'wait';
+		}
+		case 'UnownPrinter': openUnownDex(); return; // the research-center "print my letters" report
+		// the Ruins of Alph chamber panels (unown_puzzle.js): which puzzle is the
+		// setval in VAR_RESULT; solved answers TRUE there for `iftrue .PuzzleComplete`
+		case 'UnownPuzzle': return unownPuzzleSpecial(() => cutscene.resume());
+		// the chambers' hidden walls (engine/events/unown_walls.asm; runChamberWallScene)
+		case 'HoOhChamber': if (S.party[0]?.speciesId === 'hooh') Story.setFlag('EVENT_WALL_OPENED_IN_HO_OH_CHAMBER'); return;
+		case 'OmanyteChamber':
+			if (Bag.count('waterstone') || S.party.some(m => m?.heldItem === 'waterstone')) Story.setFlag('EVENT_WALL_OPENED_IN_OMANYTE_CHAMBER');
+			return;
+		// the player's-room decorations (decorations.js): PlayersHouse2F's two
+		// callbacks, its PC's DECORATION menu (TRUE when the room changed: the
+		// script's iftrue .Warp reloads it) and describedecoration for the poster
+		// (the TOWN MAP poster opens the map, to look at), dolls, console, big doll
+		case 'PlayersHousePC': return playersHousePCSpecial();
+		case 'ToggleDecorationsVisibility': toggleDecorationsVisibility(); return;
+		case 'ToggleMaptileDecorations': toggleMaptileDecorations(); return;
+		case 'DescribeDecoration': describeDecoration(op && op.which, () => { openTownMap(); townMap.viewOnly = true; }); return;
+		// the Mt. Chimney CABLE CAR (pokeemerald field_specials.c CableCarWarp +
+		// cable_car.c CableCar). Neither had a handler, so "Yes" walked you aboard
+		// and the ride never left (playtest, 2026-09-30 / 10-01).
+		case 'CableCarWarp': S.cableCarDest = cableCarDestination(); return;
+		case 'CableCar': return rideCableCar();
+		case 'MagnetTrain': { // the GOLDENROD <-> SAFFRON (JohKanto) crossing
+			const here = world.current.map.id;
+			const dest = here === 'MAP_GOLDENROD_MAGNET_TRAIN_STATION'
+				? 'MAP_JOHKANTO_SAFFRON_MAGNET_TRAIN_STATION' : 'MAP_GOLDENROD_MAGNET_TRAIN_STATION';
+			warpTo(dest, 0);
+			return;
+		}
+		// pokeemerald braille_puzzles.c (braille_puzzles.js). The Sealed Chamber's back
+		// wall asks for WAILORD first and RELICANTH last in the party, then opens the
+		// Regirock / Registeel tombs (FLAG_REGI_DOORS_OPENED); unhandled, it read 0 and
+		// the doors on Routes 111 and 120 never opened (bug:1792491766696). The shakes
+		// are camera-only. The Island Cave braille starts Regice's lap: the special
+		// marks the square you read it from (its result is unused by the script; the
+		// step hook in ow_fieldmoves.js opens the wall).
+		case 'CheckRelicanthWailord': return set(checkRelicanthWailord() ? 1 : 0);
+		case 'DoSealedChamberShakingEffect_Long': case 'DoSealedChamberShakingEffect_Short': return;
+		case 'ShouldDoBrailleRegicePuzzle': shouldDoBrailleRegicePuzzle(); return;
+		case 'SetSeenMon': case 'SetSeenMon2': return; // dex-see: numeric species, skipped
+		case 'DrawWholeMapView': case 'ShakeScreen': case 'SpawnCameraObject':
+		case 'RemoveCameraObject': case 'DisableMsgBoxWalkaway':
+		case 'QuestLog_CutRecording': return; // cosmetic / system
+
+		// --- store-writing queries (a following branch reads `store`) ---
+		case 'GetBattleOutcome': return set(S.lastBattleOutcome); // a real static battle records its own; otherwise WON
+		case 'CalculatePlayerPartyCount': return set((S.party || []).length);
+		case 'GetPlayerPartyCountForOverworld': return set((S.party || []).length);
+		// the NATIONAL DEX turns on after the HALL OF FAME (Oak in Pallet / Birch in
+		// Littleroot: `special EnableNationalPokedex`). Answering 1 from the start made
+		// every pre-champion game look like postgame — Indigo Plateau's ON_TRANSITION
+		// then parks the LEAGUE door guard on (4,2) ("LORELEI is absent") and the
+		// ELITE FOUR could never be reached (playtest 2026-10-12). A champion of this
+		// region counts too: the port crowns natively, without Oak's script.
+		// FRLG / Emerald HALL OF FAME (`special EnterHallOfFame`, then waitstate): the
+		// decomp records the team, rolls the credits and returns to the title; here the
+		// League run closes once the script has finished — crown (if a path missed it),
+		// Hall of Fame record, heal, home (ow_progression closeHallOfFame)
+		case 'EnterHallOfFame': case 'GameClear': {
+			const mapName = world.current?.name;
+			const close = () => { if (cutscene.blocking) { setTimeout(close, 50); return; } enterHallOfFame(mapName); };
+			setTimeout(close, 0);
+			return;
+		}
+		// engine/events/specials.asm SnorlaxAwake: TRUE when the POKé FLUTE channel is
+		// the map music (the radio, ow_features.js) and the player stands on one of the
+		// tiles beside Vermilion's 2x2 SNORLAX at (34,8). Unported, it answered 0 and he
+		// slept forever (playtest 2026-10-14).
+		case 'SnorlaxAwake': {
+			const NEXT_TO = [[33, 8], [34, 10], [35, 10], [36, 8], [36, 9]];
+			const here = NEXT_TO.some(([x, y]) => player.tx === x && player.ty === y);
+			return set(S.radioStation === 'POKE_FLUTE' && here ? 1 : 0);
+		}
+		// Rustboro's MATCH CALL tutorial (bug:1793307311120): the scientist opens the
+		// START menu and loops "Please select the POKeNAV" until VAR_RESULT is its row
+		// (MENU_ACTION_POKENAV = 3; 0-2 / 4-7 / B all loop back). Unported, the special
+		// left VAR_RESULT at whatever the last script wrote, so the scene looped forever
+		// and held the player. This port has no START-menu POKeNAV row to point at:
+		// answer that row, and the tutorial's own PokeNav screen is a no-op.
+		case 'ScriptMenu_CreateStartMenuForPokenavTutorial': return set(3);
+		case 'OpenPokenavForTutorial': return;
+		case 'EnableNationalPokedex': Story.setFlag(NATIONAL_DEX_FLAG); return;
+		case 'IsNationalPokedexEnabled': return set(nationalDexEnabled() ? 1 : 0);
+		// prof_pc.c / birch_pc.c: seen -> VAR_0x8005, caught -> VAR_0x8006 (the
+		// regional dex when VAR_0x8004 is 0, else the national one), and the RESULT
+		// is IsNationalPokedexEnabled. Only the result was written, so every Oak's
+		// Aide compared a stale VAR_0x8006 and handed over his gift regardless
+		// (2026-10-06: Route 10's EVERSTONE at 19 caught). Oak's rating reads the
+		// two counts the same way.
+		case 'GetPokedexCount': case 'GetHoennPokedexCount': {
+			const region = Story.getVar('VAR_0x8004') === 0 ? (name === 'GetHoennPokedexCount' ? 'hoenn' : 'kanto') : null;
+			const c = Dex.counts(region ? regionalDexFilter(region) : null);
+			Story.setVar('VAR_0x8005', c.seen); Story.setVar('VAR_0x8006', c.caught);
+			return set(1);
+		}
+		case 'GetKantoPokedexCount': return set(Dex.counts().caught);
+		case 'GetLeadMonFriendship': case 'GetLeadMonFriendshipScore':
+			return set(living()[0] ? (living()[0].friend ?? 70) : 0);
+		// Crystal: the FIRST non-egg party mon's happiness into the script var — the
+		// Route 27 Sandstorm house (> 149 gives TM37), the Happiness Rater, the
+		// Dept Store 5F TM ladies (crystal_scriptvar.js restores their tests)
+		// (eggs never ride in the party here — they wait at the Day Care — so the
+		// first non-egg mon is the lead, and the lead is never an egg)
+		case 'GetFirstPokemonHappiness': return set((S.party || [])[0] ? ((S.party[0].friend) ?? 70) : 0);
+		case 'CheckFirstMonIsEgg': return set(0);
+		case 'GetFirstFreePartySlot': return set(Math.min((S.party || []).length, 6));
+		case 'CountPartyAliveNonEggMonsExcept': case 'CalculatePlayerPartyCountMinusEgg':
+			return set(living().length);
+		// FireRed's move tutors (move_tutor.js): party pick -> forget a move -> VAR_RESULT
+		case 'ChooseMonForMoveTutor': return chooseMonForMoveTutor();
+		// Crystal's checkpokemail (Route 31: RANDY's KENYA and its MAIL), POKEMAIL_* in the script var
+		case 'CheckPokeMail': return checkPokeMail(op?.text || '');
+		case 'MoveTutor': return crystalMoveTutor();   // Crystal (Goldenrod City), move in the script var
+		case 'GetPartyMonSpecies': case 'ChoosePartyMon': case 'ScriptGetPartyMonSpecies':
+			return set(0); // party-slot pickers: default to the lead / no selection
+		case 'DoesPlayerPartyContainSpecies': case 'PlayerPartyContainsSpeciesWithPlayerID':
+			return set(0); // numeric species check: can't map reliably -> "no"
+		case 'IsSelectedMonEgg': return set(0);
+		case 'GetDaycareState': case 'GetNumLevelsGainedFromDaycare': return set(0);
+		default:
+			// any other store-special resolves to the deterministic default path
+			if (store) set(0);
+			return;
+	}
+}
+
+// ---------- Fork B: the authentic campaign open ----------
+// A brand-new game no longer hands you a starter up front. You choose a REGION,
+// begin with NO POKeMON, hear the professor's welcome, then walk to the lab and
+// pick your first partner ON-SCREEN, battle your rival, and receive the POKeDEX.
+// The ported plot cutscenes stay seeded off (STORY_SEED) — this hand-authored
+// intro is code-driven (a lab-entry trigger + a custom picker), so it never
+// depends on the fragile decomp NPC-walk choreography, and it grants the starter
+// itself (the transpiled scripts can't: Johto's givepoke was dropped and Hoenn's
+// is buried in a native ChooseStarter special).
+export const NEW_GAME_INTRO = {
+	KANTO: {
+		home: 'PalletTown', lab: 'PalletTown_ProfessorOaksLab', prof: 'PROF. OAK', rival: 'GARY',
+		intro: [
+			'PROF. OAK: Hello there!\nWelcome to the world of POKeMON!',
+			'PROF. OAK: My name is OAK.\nPeople call me the POKeMON PROF.',
+			'PROF. OAK: This world is inhabited by creatures called POKeMON.\nFor some people, POKeMON are pets. Others use them for battle.',
+			"PROF. OAK: I run a LAB right here in PALLET TOWN.\nCome and see me — I have a POKeMON for you!",
+		],
+		labGreeting: [
+			'PROF. OAK: Ah, there you are!\nA young trainer needs a POKeMON of their own.',
+			'PROF. OAK: Here — three POKeMON are waiting.\nGo on, choose the one you like best!',
+		],
+		sendoff: 'PROF. OAK: Now, go! Your very own POKeMON legend is about to unfold!\nA world of dreams and adventures awaits!',
+	},
+	JOHTO: {
+		home: 'NewBarkTown', lab: 'ElmsLab', prof: 'ELM', rival: 'SILVER',
+		intro: [
+			"MOM: Oh, you're up!\nPROF. ELM next door was looking for you.",
+			"MOM: He said something about a POKeMON for you.\nWhy don't you go see him at his LAB?",
+			'ELM is the POKeMON PROF. here in NEW BARK TOWN.\nHead to his LAB to get your first partner!',
+		],
+		labGreeting: [
+			"PROF. ELM: Oh good, you're here!\nI've been waiting for you.",
+			"PROF. ELM: I have three POKeMON here for my research.\nYou can have one — go ahead and choose!",
+		],
+		sendoff: 'PROF. ELM: Take good care of it!\nAnd come back soon — I have an errand to ask of you.',
+	},
+	HOENN: {
+		home: 'LittlerootTown', lab: 'LittlerootTown_ProfessorBirchsLab', prof: 'PROF. BIRCH', rival: 'BRENDAN',
+		intro: [
+			'PROF. BIRCH lives right next door, and studies POKeMON in the wild.',
+			"He left word that he's expecting you at his LAB.",
+			'Head to the POKeMON LAB in LITTLEROOT TOWN\nto receive your very first POKeMON!',
+		],
+		labGreeting: [
+			'PROF. BIRCH: Welcome, welcome!\nSo you want to be a POKeMON trainer?',
+			'PROF. BIRCH: Then take a look — three POKeMON, right here.\nChoose whichever one you like!',
+		],
+		sendoff: "PROF. BIRCH: Splendid!\nThe wild world of POKeMON is yours to explore now. Off you go!",
+	},
+};
+
+// Confirm the region, seed the plot-suppression state (+ the reusable HM kit), set
+// the rival's name, drop the partyless player into the home town, and roll the
+// professor's welcome. The starter is granted later, on-screen, inside the lab.
+export function beginNewGame(region) {
+	S.party = null;
+	seedStoryState(region);                       // full plot-suppression seed + HM kit (no starter yet)
+	safeSaveStr('magepunk_region', region);
+	refreshObjective();                            // "get your first POKeMON at the LAB"
+	const cfg = NEW_GAME_INTRO[region];
+	if (!cfg) { openStarterPick(region); return; } // safety net: region without an authored intro
+	if (!localStorage.getItem('magepunk_rival')) safeSaveStr('magepunk_rival', cfg.rival);
+	const go = !urlPinnedMap && world.current.name !== cfg.home ? moveToMap(cfg.home) : Promise.resolve();
+	go.then(() => startIntroNarration(region));
+}
+
+export function startIntroNarration(region) {
+	const cfg = NEW_GAME_INTRO[region];
+	if (!cfg) return;
+	startCutscene(cfg.intro.map(text => ({ op: 'say', text })).concat([{ op: 'setflag', flag: 'intro_started' }]));
+}
+
+// fired from refreshMapContent after every map load: a partyless player who has
+// walked into the region's lab gets the professor greeting + the starter picker.
+export function checkIntroTrigger() {
+	// a starter pick left open across a map change (anything that moves the
+	// player while it's up) must not float over the town — close it; it will
+	// reopen the moment they're back in the lab
+	if (starterMenu.open && starterMenu.phase === 'pick') {
+		const cfg0 = NEW_GAME_INTRO[playerRegion()];
+		if (cfg0 && world.current.name !== cfg0.lab) starterMenu.open = false;
+	}
+	// PARTYLESS, not "intro not done": a save can end up with intro_done set and
+	// no party (the party write failed on a full browser store while the small
+	// story write still landed, or a partyless copy came back from the server),
+	// and gating on intro_done then stranded it forever: no starter offered, no
+	// battles possible (Remy, 2026-09-29). Without a POKeMON the lab always
+	// offers one.
+	if (hasParty() || cutscene.blocking || dialog.blocking || starterMenu.open) return;
+	const cfg = NEW_GAME_INTRO[playerRegion()];
+	if (!cfg || world.current.name !== cfg.lab) return;
+	// The professor speaks ONCE. This runs from the frame loop (so a reload
+	// mid-intro can't strand a partyless player), which means any abnormal
+	// close of the picker used to re-fire the whole greeting — and a greeting
+	// cutscene's remaining lines would trail the player out the door and play
+	// over the town. With the flag, a replay just (re)opens the picker, and
+	// only ever here in the lab.
+	if (Story.getFlag('intro_greeted') || Story.getFlag('intro_done')) { openStarterPick(playerRegion()); return; }
+	Story.setFlag('intro_greeted');
+	startCutscene(cfg.labGreeting.map(text => ({ op: 'say', text })), () => openStarterPick(playerRegion()));
+}
+
+// ---------- villain arcs ----------
+// Entering a villain beat's location (beat active + undone) plays the boss speech
+// then the battle. A win sets the beat's doneFlag (which opens the gated gym /
+// League); a loss heals in place so you can leave and re-enter to retry. The
+// villain NPCs from the map data are all flag-skipped, so this code-triggered
+// encounter is the whole fight (see quest.js VILLAIN_BEATS).
+export function checkVillainTrigger() {
+	if (!S.party || !leadMon(S.party) || cutscene.blocking || battle.blocking || starterMenu.open) return;
+	if (!Story.getFlag('intro_done')) return;
+	const region = playerRegion();
+	const beat = Quest.beatAt(region, world.current.name);
+	if (!beat) return;
+	startCutscene(beat.intro.map(text => ({ op: 'say', text })), () => startVillainBattle(region, beat));
+}
+export function startVillainBattle(region, beat) {
+	const foe = beat.team.map(e => battleBuildMon(e.s, e.l, battle.data)).filter(Boolean);
+	if (!foe.length || !S.party || !leadMon(S.party)) { completeVillainBeat(region, beat); return; }
+	for (const m of foe) Dex.markSeen(m.speciesId);
+	const info = { displayName: beat.boss, defeatText: '', money: Math.max(...foe.map(m => m.level)) * 12, boss: true };
+	battle.endSpec = { kind: 'villain', region };
+	battle.startTrainer(S.party, foe, info, result => {
+		if (result === 'victory') { completeVillainBeat(region, beat); }
+		else if (result === 'defeat') whiteOut();
+		else { healParty(S.party); saveParty(S.party); }   // fled/forced out: not a blackout
+	});
+}
+
+// ---------- recurring cross-region rival ----------
+// Your home-region rival is climbing all three regions too (rivals.js); they intercept you
+// once per tier at that tier's gym town, in whichever region you reach first. On-arrive,
+// one-shot per tier (flag set win or lose so it never walls you). Threads the region-hopping.
+export function checkRivalTrigger() {
+	if (!S.party || !leadMon(S.party) || cutscene.blocking || battle.blocking || starterMenu.open) return;
+	const tier = rivalDue(world.current.map.id);
+	if (tier == null) return;
+	startRivalEncounter(tier);
+}
+export function startRivalEncounter(tier) {
+	const name = localStorage.getItem('magepunk_rival') || 'RIVAL';
+	const you = localStorage.getItem('magepunk_name') || 'PLAYER';
+	const foe = (RIVAL_TIERS[tier] || []).map(e => battleBuildMon(e.s, e.l, battle.data)).filter(Boolean);
+	if (!foe.length) { Story.setFlag(rivalFlag(tier)); return; }
+	for (const m of foe) Dex.markSeen(m.speciesId);
+	const intro = [
+		`${name} is here!`,
+		`${name}: ${you}! Small world — or should I say small WORLDS?`,
+		`${name}: We're both chasing every GYM in all three regions. Let's see who's really ahead — battle me!`,
+	];
+	startCutscene(intro.map(text => ({ op: 'say', text })), () => {
+		const info = { displayName: `RIVAL ${name}`, defeatText: '', money: (tier + 1) * 40, boss: true };
+		battle.endSpec = { kind: 'rivaltier', tier };
+		battle.startTrainer(S.party, foe, info, result => {
+			Story.setFlag(rivalFlag(tier)); // one-shot per tier, win or lose
+			saveParty(S.party);
+			if (result === 'victory') startCutscene([{ op: 'say', text: `${name}: Tch — you got me. But I'll take the next region first. See you out there!` }]);
+			else { healParty(S.party); startCutscene([{ op: 'say', text: `${name}: Ha! Told you I was ahead. Go train and catch up!` }]); }
+		});
+	});
+}
+export function completeVillainBeat(region, beat) {
+	Story.setFlag(beat.doneFlag);
+	// ...and the native script's story effects, so the world matches a native win
+	// (Saffron's Rocket guards leave, the Silph Scope appears, the Well clears)
+	Quest.applyNativeBeat(beat);
+	saveParty(S.party);
+	refreshObjective();
+	syncOverworldAchievements(); // a villain arc just closed — surface it on the profile
+	// the beat is done -> isDungeonFloor now false -> despawn the grunts on this map
+	trainers.loadForMap().then(() => { npcs.list = npcs.list.filter(n => !trainers.list.some(t => t.ev === n.ev)); }).catch(() => {});
+	startCutscene(beat.outro.map(text => ({ op: 'say', text })));
+}
+
+
+// open the on-screen starter picker locked to one region's trio
+export function openStarterPick(region) {
+	const idx = Math.max(0, STARTERS.findIndex(r => r.region === region));
+	starterMenu.phase = 'pick';
+	starterMenu.region = region;
+	starterMenu.row = idx;
+	starterMenu.col = 0;
+	starterMenu.open = true;
+	for (const id of STARTERS[idx].ids) {
+		if (starterMenu.sprites[id]) continue;
+		const sp = battle.data.species[id];
+		if (sp?.sprite) getImage(`data/pokemon/${sp.sprite}`).then(img => { starterMenu.sprites[id] = img; }).catch(() => {});
+	}
+}
+
+// the player chose starter `col` of `region`: create it, seed the Dex, then run
+// the rival challenge → rival battle → Pokedex handoff.
+export function finishStarterPick(region, col) {
+	const idx = Math.max(0, STARTERS.findIndex(r => r.region === region));
+	const id = STARTERS[idx].ids[col];
+	safeSaveStr('magepunk_starter', id); // Kanto's champion roster is chosen by it
+	S.party = createStarter(id, battle.data);
+	Journal.add(`Began the adventure in ${region} with ${(S.party[0]?.name || id).toUpperCase()}`);
+	Dex.markCaught(id);
+	Dex.seedFrom(S.party);
+	refreshFollower();
+	const cfg = NEW_GAME_INTRO[region];
+	const name = (S.party[0].nickname || S.party[0].name || id).toUpperCase();
+	// the party key must really be on disk: a full browser store used to fail
+	// this write in silence, and the save came back partyless on the next load
+	const saved = partySaved();
+	const warn = saved ? null : 'Your browser storage is FULL, so your POKeMON could not be saved!\nUse OPTIONS > EXPORT SAVE, then free some space for this site.';
+	if (!saved) hud.textContent = 'Storage full: your POKeMON is not saved.';
+	// RECOVERY: the intro already ran on this save (it lost its party), so hand
+	// the POKeMON over without replaying the rival battle and the send-off
+	if (Story.getFlag('intro_done')) {
+		Story.setFlag('FLAG_GOT_FIRST_POKEMON');
+		givePhone();
+		refreshObjective();
+		dialog.open(`${cfg ? cfg.prof : 'PROF. OAK'}: Here, ${name} is yours. Take good care of it this time!` + (warn ? '\n\n' + warn : ''));
+		return;
+	}
+	if (!cfg) { Story.setFlag('intro_done'); Story.setFlag('FLAG_GOT_FIRST_POKEMON'); givePhone(); dialog.open(`You chose ${name}!` + (warn ? '\n\n' + warn : '')); return; }
+	if (warn) { dialog.open(warn, () => dialog.open(`${cfg.prof}: So, you want ${name}?\nA fine choice — take good care of it!`, () => rivalScene(region, col))); return; }
+	dialog.open(`${cfg.prof}: So, you want ${name}?\nA fine choice — take good care of it!`, () => rivalScene(region, col));
+}
+
+function rivalScene(region, playerCol) {
+	const cfg = NEW_GAME_INTRO[region];
+	const idx = Math.max(0, STARTERS.findIndex(r => r.region === region));
+	const rivalCol = (playerCol + 1) % 3;         // the starter with the type edge on yours
+	const rivalId = STARTERS[idx].ids[rivalCol];
+	const rivalName = localStorage.getItem('magepunk_rival') || cfg.rival;
+	startCutscene([
+		{ op: 'say', text: `${rivalName}: Then I'll take this one!` },
+		{ op: 'say', text: `${rivalName}: My POKeMON beats yours. Let's settle it — right here, right now!` },
+	], () => startRivalBattle(region, rivalId, rivalName));
+}
+
+function startRivalBattle(region, rivalId, rivalName) {
+	const foe = [battleBuildMon(rivalId, 5, battle.data)].filter(Boolean);
+	if (!foe.length || !S.party || !leadMon(S.party)) { afterRival(region); return; }
+	Dex.markSeen(rivalId);
+	const info = { displayName: `RIVAL ${rivalName}`, defeatText: '', money: 40, boss: true };
+	battle.endSpec = { kind: 'rivalintro', region };
+	battle.startTrainer(S.party, foe, info, result => {
+		if (result !== 'victory') healParty(S.party);   // the plot continues win or lose
+		saveParty(S.party);
+		afterRival(region);
+	});
+}
+
+export function afterRival(region) {
+	const cfg = NEW_GAME_INTRO[region];
+	Story.setFlag('intro_done');
+	Story.setFlag('FLAG_GOT_FIRST_POKEMON');
+	Story.setFlag('FLAG_SYS_POKEDEX_GET');
+	givePhone();        // every region's professor hands over the PHONE with the POKeDEX
+	refreshObjective(); // intro over — the gym-1 objective is now live
+	const prof = cfg ? cfg.prof : 'PROF. OAK';
+	const sendoff = cfg ? cfg.sendoff : 'Your adventure begins now!';
+	startCutscene([
+		{ op: 'say', text: `${prof}: Wait — take this with you.\nIt's the POKeDEX! It records every POKeMON you meet.` },
+		{ op: 'hud', text: 'Received the POKeDEX!' },
+		{ op: 'say', text: `${prof}: And take this PHONE, too. TRAINERS you beat may give you their numbers, and they'll call when they want a rematch. You can call your MOM and me anytime from the START menu!` },
+		{ op: 'hud', text: 'Received the PHONE!' },
+		{ op: 'say', text: sendoff },
+		// the tri-region premise — why the journey spans all three regions, and the portal + rival
+		{ op: 'say', text: `${prof}: One thing you should know: the GYMS of KANTO, JOHTO, and HOENN are linked now.` },
+		{ op: 'say', text: `${prof}: You must earn each tier's BADGE SHARD in ALL THREE regions — in any order you like — before the next GYM will admit you anywhere.` },
+		{ op: 'say', text: `${prof}: A PORTAL by every GYM town's POKeMON CENTER carries you between the regions — and you won't be climbing alone. Off you go!` },
+	]);
+}
+
+// kept for the debug hook / older callers: nudge a partyless save into the intro
+export function maybeIntroCutscene() {
+	if (Story.getFlag('intro_done') || hasParty()) return;
+	startIntroNarration(playerRegion());
+}
+

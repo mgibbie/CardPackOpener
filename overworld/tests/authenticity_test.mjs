@@ -14,6 +14,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { overworldSource } from './owsource.mjs';   // main.js + the modules split out of it
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '../../');
@@ -23,7 +24,7 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 
 // ---------- source ----------
 {
-	const mn = fs.readFileSync(path.join(ROOT, 'overworld/main.js'), 'utf8');
+	const mn = overworldSource();
 	A(/BIKES\.some\(b => Bag\.count\(b\) > 0\)/.test(mn), 'riding requires owning a bike');
 	A(/SILPH_DOORS = \{/.test(mn) && /silphDoorsApply/.test(mn), 'the Silph shutters have their harvested table');
 	A(/0x24/.test(mn) && /sootsack/.test(mn), 'ashy grass feeds the soot sack');

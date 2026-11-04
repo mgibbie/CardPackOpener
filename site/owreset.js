@@ -46,6 +46,8 @@ export const OW_RESET_KEYS = [
 	'magepunk_bp', 'magepunk_frontier_best', 'magepunk_frontier_symbols',
 	// Contest rank progress (ribbons + condition live on the mons themselves)
 	'magepunk_contest_v1',
+	// the POKeBLOCK CASE's 40 slots and the BERRY BLENDER's max-RPM records
+	'magepunk_pokeblocks_v1', 'magepunk_blender_records_v1',
 	// the minigame venues: a running Bug-Catching Contest, Trick House stage,
 	// and which Ruins of Alph puzzles are solved
 	'magepunk_bugcontest_v1', 'magepunk_trickhouse_v1', 'magepunk_ruins_v1',
@@ -55,6 +57,8 @@ export const OW_RESET_KEYS = [
 	'magepunk_buena_v1', 'magepunk_lottery_v1', 'magepunk_tid',
 	// your secret base (the spot + decorations; the server holds a copy too)
 	'magepunk_base_v1',
+	// the Crystal player's-room decorations (bed / poster / ... slots)
+	'magepunk_crystal_deco_v1',
 	// Trainer Hill best time; the one-shot venue events (generator, fossils,
 	// ruins inscriptions, soot sack + ash); a playing glass flute
 	'magepunk_trainerhill_v1', 'magepunk_events_v1', 'magepunk_flute_v1',
@@ -62,6 +66,8 @@ export const OW_RESET_KEYS = [
 	// (the battle snapshot used to survive a reset — a fresh save would then try
 	// to resume a fight belonging to the deleted game)
 	'magepunk_journal_v1', 'magepunk_repellast', 'magepunk_battle_v1',
+	// ...and the id of the last battle that ended (a stale snapshot of it is refused)
+	'magepunk_battle_ended_v1',
 	// where you wake up after blacking out (the last POKeMON CENTER you healed at)
 	'magepunk_healpoint_v1',
 	// the save-sync revision: which copy of this game is newer. It rides along
@@ -69,6 +75,28 @@ export const OW_RESET_KEYS = [
 	// reset must clear it too — a fresh game starting at a high revision would
 	// outrank, and silently replace, the server copy it was meant to leave alone.
 	'magepunk_ow_rev',
+	// The two companions of the revision, added with it and missed at the time —
+	// the completeness check below is exactly what catches that.
+	//   magepunk_ow_conflict: the preserved losing copy of a same-revision
+	//     divergence. Keeping it across a deliberate wipe would leave a stale
+	//     "this game moved on elsewhere" record attached to a game that no longer
+	//     exists. (The no-discarding rule this stash serves is about ordinary
+	//     reconciliation, not about the owner explicitly asking for a wipe.)
+	//   magepunk_owsync_log: the ?synclog=1 diagnostic ring buffer. Pure
+	//     diagnostics about a save that is being erased.
+	'magepunk_ow_conflict',
+	//   magepunk_ow_conflict_archive: a pre-fix NESTED stash, kept whole (local
+	//     only) when it was flattened, so the migration dropped nothing.
+	'magepunk_ow_conflict_archive',
+	//   magepunk_ow_story_conflict: the local STORY a same-revision tie set aside
+	//     when it was a strict regression of the server's (local only).
+	'magepunk_ow_story_conflict',
+	'magepunk_owsync_log',
+	// which trainers' post-battle beats have already been attempted. Part of the
+	// save: without it a reset would replay every beat the catch-up can reach.
+	'magepunk_postbattle_v1',
+	// the PHONE: whether you have it, who is in it, their rematch/gift state
+	'magepunk_phone_v1',
 ];
 
 // Deliberately spared, and why. Kept as data so the test can assert it.
@@ -78,6 +106,9 @@ export const OW_KEEP_KEYS = {
 	magepunk_class_v1: 'BATTLECARDS: written by the deck builder, only read by the overworld',
 	magepunk_settings: 'preferences (text speed, auto-run) — not progress, and annoying to lose on every run',
 	magepunk_keys_v1: 'custom key bindings — a device preference, like the volume sliders',
+	magepunk_replays_v1: 'BATTLECARDS replay tapes: the overworld never resets them, it only drops them to make room when a party save hits a full store',
+	magepunk_ow_import_backup: 'the game a save import replaced: a safety copy that never syncs, so the import stays reversible',
+	magepunk_ow_import_result: 'the outcome of the last save import (sessionStorage, not localStorage): diagnostics only',
 };
 
 export function resetPlan() {

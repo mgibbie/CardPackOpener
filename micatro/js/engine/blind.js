@@ -1,0 +1,637 @@
+// Micatro — port of Balatro's blind.lua (logic only).
+//
+// Everything visual (sprites, colour easing, HUD alignment, particles, sounds)
+// becomes `emit` / `play_sound` / `attention_text` calls. The Lua `alert_debuff`
+// play-lock (`block_play`) only exists to hold the Play button while the
+// attention text animates, so it is cleared immediately here (see alert_debuff).
+
+import {
+  G, P_BLINDS, LOC, emit, card_eval_status_text, play_sound, attention_text, localize,
+  pseudoseed, pseudorandom, pseudorandom_element, ease_discard, ease_hands_played, ease_dollars,
+  level_up_hand, get_blind_amount, number_format, copy_table, probability_roll, mod_mult, mod_chips, find_joker,
+} from './core.js';
+import * as B from './bignum.js';
+import { draw_from_deck_to_hand, discard_cards_from_highlighted, get_poker_hand_info } from './run.js';
+import { firstHook, callHook, ACTIVE as ACTIVE_MODS } from '../mods/registry.js';
+import { wanted, calculate_seam, modify_scoring_hand, SEAM_STATE } from './smods.js';
+
+/** Lua's `vars = {}` survives the data export as `{}` — normalise to an array. */
+const as_list = (v) => (Array.isArray(v) ? v : []);
+
+export class Blind {
+  constructor() {
+    this.children = {};
+    this.config = {};
+    this.chips = 0;
+    this.loc_debuff_lines = ['', ''];
+    // Lua leaves name/debuff nil until set_blind runs.
+  }
+
+  get key() { return this.config.blind && this.config.blind.key; }
+
+  /**
+   * Off right now: disabled for good (Chicot, Luchador...), or SUSPENDED for a while by a mod (Pokermon's Amoonguss, Spore: the Boss
+   * Blind is off from the round's first deal until its first hand has scored). Every rule the Blind applies in play reads this; the
+   * "can it still be disabled?" checks read `disabled` alone, so a Chicot / Luchador during a suspension still disables it for good.
+   * Vanilla never suspends (off === disabled).
+   */
+  get off() { return !!(this.disabled || this.suspended); }
+
+  /**
+   * Suspend (on) or bring back (off) the Blind's rules (a mod's: Pokermon's Spore). Its set-up stays as it is (The Wall's size, The
+   * Water / Needle / Manacle's counts, Amber Acorn's shuffle); what it does to cards, hands and draws stops: its debuffs are lifted
+   * at once and come back with it (Blind:disable's own debuff pass). Coming back, The Fish / Crimson Heart are prepped for the next
+   * draw as a played hand would have left them (Blind:press_play), so their rule starts again right after the suspended hand.
+   */
+  suspend(on) {
+    if (!!this.suspended === !!on) return;
+    this.suspended = on ? true : undefined;
+    if (!on && !this.disabled) {
+      if (this.name === 'Crimson Heart' && G.jokers.cards[0]) this.prepped = true;
+      if (this.name === 'The Fish') this.prepped = true;
+    }
+    for (const v of G.playing_cards) this.debuff_card(v);
+    for (const v of G.jokers.cards) this.debuff_card(v);
+    this.set_text();
+    emit('blind', { action: on ? 'suspend' : 'resume', key: this.config.blind && this.config.blind.key, name: this.name, chips: this.chips, chip_text: this.chip_text });
+  }
+
+  // ---------------------------------------------------------------- text
+  set_text() {
+    if (this.config.blind) {
+      if (this.off) {
+        this.loc_name = this.name === '' ? this.name : localize({ type: 'name_text', key: this.config.blind.key, set: 'Blind' });
+        this.loc_debuff_text = '';
+        this.loc_debuff_lines[0] = '';
+        this.loc_debuff_lines[1] = '';
+      } else {
+        let loc_vars;
+        if (this.name === 'The Ox') loc_vars = [localize(G.GAME.current_round.most_played_poker_hand, 'poker_hands')];
+        const loc_target = raw_blind_description(this.config.blind.key, loc_vars || as_list(this.config.blind.vars).map((v) => localize(v)));
+        if (loc_target) {
+          this.loc_name = this.name === '' ? this.name : localize({ type: 'name_text', key: this.config.blind.key, set: 'Blind' });
+          this.loc_debuff_text = '';
+          loc_target.forEach((v, k) => { this.loc_debuff_text = this.loc_debuff_text + v + (k + 1 <= loc_target.length ? ' ' : ''); });
+          this.loc_debuff_lines[0] = loc_target[0] || '';
+          this.loc_debuff_lines[1] = loc_target[1] || '';
+        } else {
+          this.loc_name = ''; this.loc_debuff_text = '';
+          this.loc_debuff_lines[0] = '';
+          this.loc_debuff_lines[1] = '';
+        }
+      }
+    }
+  }
+
+  // ----------------------------------------------------------- set_blind
+  set_blind(blind, reset, silent) {
+    if (!reset) {
+      this.config.blind = blind || {};
+      this.name = (blind && blind.name) || '';
+      this.dollars = (blind && blind.dollars) || 0;
+      this.sound_pings = this.dollars + 2;
+      if (G.GAME.modifiers.no_blind_reward && G.GAME.modifiers.no_blind_reward[this.get_type()]) this.dollars = 0;
+      this.debuff = (blind && blind.debuff) ? copy_table(blind.debuff) : {};
+      this.pos = blind && blind.pos;
+      this.mult = (blind && blind.mult) || 0;
+      this.disabled = false;
+      this.suspended = undefined;
+      this.discards_sub = undefined;
+      this.hands_sub = undefined;
+      this.boss = !!(blind && blind.boss);
+      this.blind_set = false;
+      this.triggered = undefined;
+      this.prepped = true;
+      this.hands = undefined;
+      this.only_hand = undefined;
+      this.set_text();
+
+      G.GAME.last_blind = G.GAME.last_blind || {};
+      G.GAME.last_blind.boss = this.boss;
+      G.GAME.last_blind.name = this.name;
+
+      this.chips = B.mul(B.mul(get_blind_amount(G.GAME.round_resets.ante), this.mult), G.GAME.starting_params.ante_scaling);
+      this.chip_text = number_format(this.chips);
+
+      if (!blind) this.chips = 0;
+
+      G.GAME.current_round.dollars_to_be_earned = this.dollars > 0 ? '$'.repeat(this.dollars) : '';
+
+      emit('blind', {
+        action: blind ? 'set' : 'clear', key: blind ? blind.key : null, name: this.name,
+        chips: this.chips, chip_text: this.chip_text, dollars: this.dollars, boss: this.boss,
+        showdown: !!(blind && blind.boss && blind.boss.showdown), silent: !!silent,
+      });
+      if (blind && blind.name && blind.name !== '') {
+        this.alert_debuff(true);
+        this.blind_set = true;
+        if (!reset && !silent) { play_sound('chips1'); play_sound('gold_seal'); }
+      }
+    }
+
+    if (this.name === 'The Eye' && !reset) {
+      this.hands = {
+        'Flush Five': false, 'Flush House': false, 'Five of a Kind': false, 'Straight Flush': false,
+        'Four of a Kind': false, 'Full House': false, Flush: false, Straight: false,
+        'Three of a Kind': false, 'Two Pair': false, Pair: false, 'High Card': false,
+      };
+    }
+    if (this.name === 'The Mouth' && !reset) {
+      this.only_hand = false;
+    }
+    if (this.name === 'The Fish' && !reset) {
+      this.prepped = undefined;
+    }
+    if (this.name === 'The Water' && !reset) {
+      this.discards_sub = G.GAME.current_round.discards_left;
+      ease_discard(-this.discards_sub);
+    }
+    if (this.name === 'The Needle' && !reset) {
+      this.hands_sub = G.GAME.round_resets.hands - 1;
+      ease_hands_played(-this.hands_sub);
+    }
+    if (this.name === 'The Manacle' && !reset) {
+      G.hand.change_size(-1);
+    }
+    // Steamodded mod blind hooks get (blind prototype, this Blind instance); per-fight state
+    // belongs on the instance, not the shared prototype.
+    if (!reset && blind && blind.mod && blind.set_blind) blind.set_blind(blind, this);
+    if (this.name === 'Amber Acorn' && !reset && G.jokers.cards.length > 0) {
+      G.jokers.unhighlight_all();
+      for (const v of G.jokers.cards) v.flip();
+      if (G.jokers.cards.length > 1) {
+        G.E_MANAGER.add_event(() => {
+          G.E_MANAGER.add_event(() => { G.jokers.shuffle('aajk'); play_sound('cardSlide1', 0.85); });
+          G.E_MANAGER.add_event(() => { G.jokers.shuffle('aajk'); play_sound('cardSlide1', 1.15); });
+          G.E_MANAGER.add_event(() => { G.jokers.shuffle('aajk'); play_sound('cardSlide1', 1); });
+        });
+      }
+    }
+
+    // add new debuffs
+    for (const v of G.playing_cards || []) this.debuff_card(v);
+    for (const v of (G.jokers && G.jokers.cards) || []) {
+      if (!reset) this.debuff_card(v, true);
+    }
+  }
+
+  /**
+   * Lua sets block_play and clears it ~1s later once the attention text has
+   * shown (only while SELECTING_HAND). The lock is a pure animation hold, so
+   * the port shows the text and never leaves the Play button locked.
+   */
+  alert_debuff(first) {
+    if (this.loc_debuff_text && this.loc_debuff_text !== '') {
+      this.block_play = undefined;
+      const disp_text = this.get_loc_debuff_text();
+      emit('blind_alert', { key: this.config.blind && this.config.blind.key, text: disp_text, first: !!first });
+      attention_text(disp_text);
+    }
+  }
+
+  get_loc_debuff_text() {
+    let disp_text = (this.config.blind.name === 'The Wheel' ? G.GAME.probabilities.normal : '') + this.loc_debuff_text;
+    if (this.config.blind.name === 'The Mouth' && this.only_hand) disp_text = disp_text + ' [' + localize(this.only_hand, 'poker_hands') + ']';
+    return disp_text;
+  }
+
+  // -------------------------------------------------------------- defeat
+  defeat(silent) {
+    emit('blind', { action: 'defeat', key: this.config.blind && this.config.blind.key, name: this.name, silent: !!silent });
+    if (!silent) play_sound('whoosh2', 0.7, 0.42);
+    G.E_MANAGER.add_event(() => {
+      this.dissolve = undefined;
+      this.set_blind(null, null, true);
+    });
+    for (const v of G.jokers.cards) {
+      if (v.facing === 'back') v.flip();
+    }
+    if (this.name === 'The Manacle' && !this.disabled) {
+      G.hand.change_size(1);
+    }
+    const mb = this.config.blind;
+    if (mb && mb.mod && mb.defeat && !this.disabled) mb.defeat(mb, this);
+  }
+
+  get_type() {
+    if (this.name === 'Small Blind') return 'Small';
+    if (this.name === 'Big Blind') return 'Big';
+    // A mod blind may name its type (MoreFluff's Bigger Blind is a 'Small' blind).
+    if (this.name && this.config.blind && this.config.blind.blind_type) return this.config.blind.blind_type;
+    if (this.name && this.name !== '') return 'Boss';
+    return undefined;
+  }
+
+  // ------------------------------------------------------------- disable
+  disable() {
+    this.disabled = true;
+    this.suspended = undefined; // (for good now: a suspension ending later must not bring it back)
+    for (const v of G.jokers.cards) {
+      if (v.facing === 'back') v.flip();
+    }
+    if (this.name === 'The Water') {
+      ease_discard(this.discards_sub);
+    }
+    if (this.name === 'The Wheel' || this.name === 'The House' || this.name === 'The Mark' || this.name === 'The Fish') {
+      for (let i = 0; i < G.hand.cards.length; i++) {
+        if (G.hand.cards[i].facing === 'back') G.hand.cards[i].flip();
+      }
+      for (const v of G.playing_cards) v.ability.wheel_flipped = undefined;
+    }
+    if (this.name === 'The Needle') {
+      ease_hands_played(this.hands_sub);
+    }
+    if (this.name === 'The Wall') {
+      this.chips = B.div(this.chips, 2);
+      this.chip_text = number_format(this.chips);
+    }
+    if (this.name === 'Cerulean Bell') {
+      for (const v of G.playing_cards) v.ability.forced_selection = undefined;
+    }
+    if (this.name === 'The Manacle') {
+      G.hand.change_size(1);
+      draw_from_deck_to_hand(1);
+    }
+    if (this.name === 'The Serpent') {
+      // nothing (Lua has an empty branch)
+    }
+    if (this.name === 'Violet Vessel') {
+      this.chips = B.div(this.chips, 3);
+      this.chip_text = number_format(this.chips);
+    }
+    const mb = this.config.blind;
+    if (mb && mb.mod && mb.disable) mb.disable(mb, this);
+    G.E_MANAGER.add_event(() => {
+      if (this.boss && B.beats(G.GAME.chips, G.GAME.blind.chips)) {
+        G.STATE = G.STATES.NEW_ROUND;
+        G.STATE_COMPLETE = false;
+      }
+    });
+    for (const v of G.playing_cards) this.debuff_card(v);
+    for (const v of G.jokers.cards) this.debuff_card(v);
+    this.set_text();
+    emit('blind', { action: 'disable', key: this.config.blind && this.config.blind.key, name: this.name, chips: this.chips, chip_text: this.chip_text });
+    this.wiggle();
+  }
+
+  wiggle() {
+    emit('blind_juice', { key: this.config.blind && this.config.blind.key });
+    play_sound('tarot2', 1, 0.4);
+  }
+
+  juice_up() { emit('blind_juice', { key: this.config.blind && this.config.blind.key }); }
+
+  // ---------------------------------------------------------- press_play
+  press_play() {
+    if (ACTIVE_MODS.length) callHook('blind_press_play', this); // (Bunco's Hedge Trimmer: every blind, even disabled)
+    if (this.off) return undefined;
+    const mb = this.config.blind;
+    if (mb && mb.mod && mb.press_play) return mb.press_play(mb, this);
+    if (this.name === 'The Hook') {
+      G.E_MANAGER.add_event(() => {
+        let any_selected;
+        const _cards = [];
+        for (const v of G.hand.cards) _cards.push(v);
+        for (let i = 0; i < 2; i++) {
+          if (G.hand.cards[i]) {
+            const [selected_card, card_key] = pseudorandom_element(_cards, pseudoseed('hook'));
+            G.hand.add_to_highlighted(selected_card, true);
+            _cards.splice(card_key - 1, 1);
+            any_selected = true;
+            play_sound('card1', 1);
+          }
+        }
+        if (any_selected) {
+          emit('blind_hook', { cards: G.hand.highlighted.map((c) => c.sort_id) });
+          discard_cards_from_highlighted(true);
+        }
+      });
+      this.triggered = true;
+      this.juice_up();
+      return true;
+    }
+    if (this.name === 'Crimson Heart') {
+      if (G.jokers.cards[0]) {
+        this.triggered = true;
+        this.prepped = true;
+      }
+    }
+    if (this.name === 'The Fish') {
+      this.prepped = true;
+    }
+    if (this.name === 'The Tooth') {
+      G.E_MANAGER.add_event(() => {
+        for (let i = 0; i < G.play.cards.length; i++) {
+          const c = G.play.cards[i];
+          G.E_MANAGER.add_event(() => { if (c) c.juice_up(); });
+          ease_dollars(-1);
+          card_eval_status_text(c, 'dollars', -1);
+        }
+      });
+      this.triggered = true;
+      this.juice_up();
+      return true;
+    }
+    return undefined;
+  }
+
+  /** -> [mult, hand_chips, modded] (Lua returns three values). */
+  modify_hand(cards, poker_hands, text, mult, hand_chips) {
+    if (this.off) return [mult, hand_chips, false];
+    // A mod rule may replace any blind's modify_hand (a Lua Blind:modify_hand wrap: BETMMA's Overpowered Boss challenge).
+    if (ACTIVE_MODS.length) { const r = firstHook('blind_modify_hand', this, cards, poker_hands, text, mult, hand_chips); if (r) return r; }
+    // Steamodded: a mod blind's modify_hand(self, cards, poker_hands, text, mult, hand_chips) -> [mult, hand_chips, modded].
+    const mb = this.config.blind;
+    if (mb && mb.mod && mb.modify_hand) return mb.modify_hand(mb, this, cards, poker_hands, text, mult, hand_chips);
+    if (this.name === 'The Flint') {
+      this.triggered = true;
+      this.juice_up();
+      return [Math.max(Math.floor(mult * 0.5 + 0.5), 1), Math.max(Math.floor(hand_chips * 0.5 + 0.5), 0), true];
+    }
+    return [mult, hand_chips, false];
+  }
+
+  debuff_hand(cards, hand, handname, check) {
+    if (this.off) return undefined;
+    // Mods may rule on the hand first: false = never debuffed (no Arm / Ox penalty either), true =
+    // debuffed (Nacho's Mega Gallade returns before the blind's own debuff_hand runs).
+    if (ACTIVE_MODS.length) {
+      const o = firstHook('debuff_hand', cards, hand, handname, check);
+      if (o === false) return undefined;
+      if (o === true) { this.triggered = true; return true; }
+    }
+    // Steamodded: a mod blind's debuff_hand(self, cards, hand, handname, check) decides on its own.
+    { const mb = this.config.blind; if (mb && mb.mod && mb.debuff_hand) return mb.debuff_hand(mb, this, cards, hand, handname, check); }
+    if (this.debuff) {
+      this.triggered = false;
+      if (this.debuff.hand && hand[this.debuff.hand] && hand[this.debuff.hand].length > 0) {
+        this.triggered = true;
+        return true;
+      }
+      if (this.debuff.h_size_ge !== undefined && cards.length < this.debuff.h_size_ge) {
+        this.triggered = true;
+        return true;
+      }
+      if (this.debuff.h_size_le !== undefined && cards.length > this.debuff.h_size_le) {
+        this.triggered = true;
+        return true;
+      }
+      if (this.name === 'The Eye') {
+        if (this.hands[handname]) {
+          this.triggered = true;
+          return true;
+        }
+        if (!check) this.hands[handname] = true;
+      }
+      if (this.name === 'The Mouth') {
+        if (this.only_hand && this.only_hand !== handname) {
+          this.triggered = true;
+          return true;
+        }
+        if (!check) this.only_hand = handname;
+      }
+    }
+    if (this.name === 'The Arm') {
+      this.triggered = false;
+      if (G.GAME.hands[handname].level > 1) {
+        this.triggered = true;
+        if (!check) {
+          level_up_hand(null, handname, null, -1);
+          this.wiggle();
+        }
+      }
+    }
+    if (this.name === 'The Ox') {
+      this.triggered = false;
+      if (handname === G.GAME.current_round.most_played_poker_hand) {
+        this.triggered = true;
+        if (!check) {
+          ease_dollars(-G.GAME.dollars, true);
+          this.wiggle();
+        }
+      }
+    }
+    return undefined;
+  }
+
+  drawn_to_hand() {
+    if (!this.off) {
+      const mb = this.config.blind;
+      if (mb && mb.mod && mb.drawn_to_hand) mb.drawn_to_hand(mb, this);
+      if (this.name === 'Cerulean Bell') {
+        let any_forced;
+        for (const v of G.hand.cards) if (v.ability.forced_selection) any_forced = true;
+        if (!any_forced && G.hand.cards.length) {
+          G.hand.unhighlight_all();
+          const [forced_card] = pseudorandom_element(G.hand.cards, pseudoseed('cerulean_bell'));
+          forced_card.ability.forced_selection = true;
+          // Mods may tag the forced card too (Nacho's Turtonator: pokermon_forced_selection, which
+          // outlives the forced_selection reset when the hand is played).
+          if (ACTIVE_MODS.length) callHook('forced_selection', forced_card);
+          G.hand.add_to_highlighted(forced_card);
+          emit('highlight', { ids: G.hand.highlighted.map((c) => c.sort_id), forced: forced_card.sort_id });
+        }
+      }
+      if (this.name === 'Crimson Heart' && this.prepped && G.jokers.cards[0]) {
+        const jokers = [];
+        for (let i = 0; i < G.jokers.cards.length; i++) {
+          if (!G.jokers.cards[i].debuff || G.jokers.cards.length < 2) jokers.push(G.jokers.cards[i]);
+          G.jokers.cards[i].set_debuff(false);
+        }
+        const [_card] = pseudorandom_element(jokers, pseudoseed('crimson_heart'));
+        if (_card) {
+          _card.set_debuff(true);
+          _card.juice_up();
+          this.wiggle();
+        }
+      }
+    }
+    this.prepped = undefined;
+  }
+
+  stay_flipped(area, card) {
+    if (!this.off) {
+      // Mod blind (prototype, this Blind, area, card) -> true: the card is drawn face down.
+      const mb = this.config.blind;
+      if (mb && mb.mod && mb.stay_flipped && mb.stay_flipped(mb, this, area, card)) return true;
+      if (area === G.hand) {
+        // (Bunco's Vandalism: a hand card may be drawn face down)
+        if (ACTIVE_MODS.length && callHook('blind_stay_flipped', area, card, this).includes(true)) return true;
+        if (this.name === 'The Wheel' && probability_roll(this, pseudoseed('wheel'), 1, 7, 'wheel')) return true;
+        if (this.name === 'The House' && G.GAME.current_round.hands_played === 0 && G.GAME.current_round.discards_used === 0) return true;
+        if (this.name === 'The Mark' && card.is_face(true)) return true;
+        if (this.name === 'The Fish' && this.prepped) return true;
+      }
+    }
+    return undefined;
+  }
+
+  debuff_card(card, from_blind) {
+    if (this.debuff && !this.off && card.area !== G.jokers) {
+      // Mod blind (prototype, this Blind, card, from_blind) -> true: this playing card is debuffed.
+      const mb = this.config.blind;
+      if (mb && mb.mod && mb.debuff_card && mb.debuff_card(mb, this, card, from_blind)) {
+        card.set_debuff(true);
+        return;
+      }
+      if (this.debuff.suit && card.is_suit(this.debuff.suit, true)) {
+        card.set_debuff(true);
+        return;
+      }
+      if (this.debuff.is_face === 'face' && card.is_face(true)) {
+        card.set_debuff(true);
+        return;
+      }
+      if (this.name === 'The Pillar' && card.ability.played_this_ante) {
+        card.set_debuff(true);
+        return;
+      }
+      if (this.debuff.value && this.debuff.value === card.base.value) {
+        card.set_debuff(true);
+        return;
+      }
+      if (this.debuff.nominal && this.debuff.nominal === card.base.nominal) {
+        card.set_debuff(true);
+        return;
+      }
+    }
+    if (this.name === 'Crimson Heart' && !this.off && card.area === G.jokers) return;
+    if (this.name === 'Verdant Leaf' && !this.off && card.area !== G.jokers) { card.set_debuff(true); return; }
+    card.set_debuff(false);
+  }
+
+  // ------------------------------------------------------------ save/load
+  save() {
+    const blindTable = {
+      name: this.name,
+      dollars: this.dollars,
+      debuff: copy_table(this.debuff),
+      pos: this.pos,
+      mult: this.mult,
+      disabled: this.disabled,
+      suspended: this.suspended, // (a mod's suspension: Pokermon's Spore; undefined, so not written, otherwise)
+      discards_sub: this.discards_sub,
+      hands_sub: this.hands_sub,
+      boss: this.boss,
+      config_blind: '',
+      chips: this.chips,
+      chip_text: this.chip_text,
+      hands: copy_table(this.hands),
+      only_hand: this.only_hand,
+      triggered: this.triggered,
+      // Not in Lua's save, but needed for a frame-exact resume (Fish/Crimson Heart).
+      prepped: this.prepped,
+    };
+    for (const [k, v] of Object.entries(P_BLINDS)) {
+      if (v && v.name && v.name === blindTable.name) blindTable.config_blind = k;
+    }
+    return JSON.parse(JSON.stringify(blindTable));
+  }
+
+  static load(blindTable) {
+    const b = new Blind();
+    b.load(blindTable);
+    return b;
+  }
+
+  load(blindTable) {
+    this.config.blind = P_BLINDS[blindTable.config_blind] || {};
+    this.name = blindTable.name;
+    this.dollars = blindTable.dollars;
+    this.debuff = blindTable.debuff;
+    this.pos = blindTable.pos;
+    this.mult = blindTable.mult;
+    this.disabled = blindTable.disabled;
+    this.suspended = blindTable.suspended || undefined;
+    this.discards_sub = blindTable.discards_sub;
+    this.hands_sub = blindTable.hands_sub;
+    this.boss = blindTable.boss;
+    this.chips = blindTable.chips;
+    this.chip_text = blindTable.chip_text;
+    this.hands = blindTable.hands;
+    this.only_hand = blindTable.only_hand;
+    this.triggered = blindTable.triggered;
+    this.prepped = blindTable.prepped;
+    this.blind_set = !!P_BLINDS[blindTable.config_blind];
+    if (this.dollars > 0) G.GAME.current_round.dollars_to_be_earned = '$'.repeat(this.dollars);
+    this.set_text();
+    return this;
+  }
+}
+
+// ---------------------------------------------------------------- Steamodded Blind wraps
+// (src/overrides.lua: Blind:debuff_card / debuff_hand / stay_flipped / modify_hand fire their SMODS contexts.)
+// Each is a no-op unless an active mod listens to that context (smods.js wanted()).
+{
+  const base_debuff_card = Blind.prototype.debuff_card;
+  /** debuff_card context: a listener's {debuff = true} / {prevent_debuff = true} decides before the blind's own rule. */
+  Blind.prototype.debuff_card = function (card, from_blind) {
+    if (ACTIVE_MODS.length && wanted('debuff_card')) {
+      const flags = calculate_seam({ debuff_card: card, ignore_debuff: true }, 'debuff_card');
+      if (flags.prevent_debuff) { if (card.debuff) card.set_debuff(false); return; }
+      if (flags.debuff) { if (!card.debuff) card.set_debuff(true); return; }
+    }
+    return base_debuff_card.call(this, card, from_blind);
+  };
+
+  const base_debuff_hand = Blind.prototype.debuff_hand;
+  /**
+   * debuff_hand context (the SMODS one, after the blind's own rule): {full_hand, scoring_hand (after the
+   * modify_scoring_hand pass), poker_hands, scoring_name, check}; {prevent_debuff} -> false, {debuff, debuff_text} ->
+   * true (the text and its source in SEAM_STATE.debuff_text / hand_debuff_source, like SMODS.debuff_text).
+   */
+  Blind.prototype.debuff_hand = function (cards, hand, handname, check) {
+    const ret = base_debuff_hand.call(this, cards, hand, handname, check);
+    if (!ACTIVE_MODS.length || !wanted('debuff_hand')) return ret;
+    SEAM_STATE.hand_debuff_source = undefined;
+    let scoring = get_poker_hand_info(cards).scoring_hand.filter(Boolean);
+    const splash = find_joker('Splash').length > 0;
+    scoring = cards.filter((c) => splash || scoring.includes(c) || c.ability.effect === 'Stone Card' || c.config.center.always_scores);
+    const final_scoring_hand = wanted('modify_scoring_hand') ? modify_scoring_hand(cards, scoring) : scoring;
+    const flags = calculate_seam({ debuff_hand: true, full_hand: cards, scoring_hand: final_scoring_hand, poker_hands: hand, scoring_name: handname, check }, 'debuff_hand');
+    if (flags.prevent_debuff) return false;
+    if (flags.debuff) {
+      SEAM_STATE.debuff_text = flags.debuff_text;
+      SEAM_STATE.hand_debuff_source = flags.debuff_source;
+      return true;
+    }
+    SEAM_STATE.debuff_text = undefined;
+    return ret;
+  };
+
+  const base_stay_flipped = Blind.prototype.stay_flipped;
+  /**
+   * stay_flipped context {to_area, from_area, other_card} (also the card's own mod enhancement / seal): a listener's
+   * {stay_flipped} / {prevent_stay_flipped} overrides the blind; {modify = {to_area}} sends the card to that area
+   * instead (SMODS.to_area, read by draw_card / draw_card_from).
+   */
+  Blind.prototype.stay_flipped = function (area, card, from_area) {
+    const ret = base_stay_flipped.call(this, area, card, from_area);
+    if (!ACTIVE_MODS.length || !wanted('stay_flipped')) return ret;
+    const flags = calculate_seam({ to_area: area, from_area, other_card: card, stay_flipped: true }, 'stay_flipped', { self_card: card });
+    if (flags.modify && flags.modify.to_area) SEAM_STATE.to_area = flags.modify.to_area;
+    if (flags.prevent_stay_flipped) return false;
+    if (flags.stay_flipped) return true;
+    return ret;
+  };
+
+  const base_modify_hand = Blind.prototype.modify_hand;
+  /**
+   * modify_hand context, after the blind's own modify_hand: the Lua listeners change the globals `mult` /
+   * `hand_chips`; here they change context.mult / context.hand_chips. -> [mult, hand_chips, modded].
+   */
+  Blind.prototype.modify_hand = function (cards, poker_hands, text, mult, hand_chips, scoring_hand) {
+    const r = base_modify_hand.call(this, cards, poker_hands, text, mult, hand_chips, scoring_hand);
+    if (!ACTIVE_MODS.length || !wanted('modify_hand')) return r;
+    const ctx = { modify_hand: true, poker_hands, scoring_name: text, scoring_hand, full_hand: cards, mult: mod_mult(r[0]), hand_chips: mod_chips(r[1]) };
+    const flags = calculate_seam(ctx, 'modify_hand');
+    return [mod_mult(ctx.mult), mod_chips(ctx.hand_chips), r[2] || flags.effects.length > 0];
+  };
+}
+
+/** localize{type='raw_descriptions', set='Blind', key, vars} -> array of filled lines (or undefined). */
+function raw_blind_description(key, vars) {
+  const d = LOC.descriptions.Blind && LOC.descriptions.Blind[key];
+  if (!d || !d.text) return undefined;
+  return as_list(d.text).map((line) => line.replace(/#(\d+)#/g, (m, n) => (vars && vars[n - 1] !== undefined ? String(vars[n - 1]) : m)));
+}

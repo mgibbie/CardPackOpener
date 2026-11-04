@@ -61,6 +61,8 @@ function threshold(cond, region, seen = new Set()) {
 	if (cond.all) return Math.max(0, ...cond.all.map(c => threshold(c, region, seen)));
 	if (cond.any) return Math.min(...cond.any.map(c => threshold(c, region, seen)));
 	if (cond.badge != null) return cond.badge;
+	// a specific gym's badge (givers: "after WHITNEY"): its position in its region's order
+	if (cond.gymBadge) { const i = (Badges.BADGES[cond.gymBadge[0]] || []).findIndex(b => b.id === cond.gymBadge[1]); return i >= 0 ? i + 1 : 99; }
 	if (cond.hm) return Badges.hmReq(region, cond.hm);
 	if (cond.flag) { const b = (VILLAIN_BEATS[region] || []).find(v => v.doneFlag === cond.flag); return b ? Math.min(8, b.afterBadges) : 0; }
 	if (cond.item) { if (seen.has(cond.item)) return 99; seen.add(cond.item); const g = givers[cond.item]; return g ? threshold(g.prereq, region, seen) : 99; }

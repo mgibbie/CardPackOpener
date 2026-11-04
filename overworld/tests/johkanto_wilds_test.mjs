@@ -19,6 +19,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { overworldSource } from './owsource.mjs';   // main.js + the modules split out of it
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '../../');
@@ -38,7 +39,7 @@ for (const n of Object.values(POSTGAME)) {
 }
 const lo = Math.min(...lv), hi = Math.max(...lv);
 A(lo === 50 && hi === 78, 'the postgame roster still spans Lv50-78, which is what the scaler maps from', `${lo}-${hi}`);
-const mainSrc = fs.readFileSync(path.join(ROOT, 'overworld/main.js'), 'utf8');
+const mainSrc = overworldSource();
 const band = /WILD_BAND = \{ lo: (\d+), hi: (\d+) \}/.exec(mainSrc);
 A(band && +band[1] === lo && +band[2] === hi,
 	'and WILD_BAND matches it — a re-import that shifts the span cannot silently un-cover it', band ? band[0] : 'not found');

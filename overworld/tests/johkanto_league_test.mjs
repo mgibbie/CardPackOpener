@@ -16,6 +16,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { overworldSource } from './owsource.mjs';   // main.js + the modules split out of it
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '../../');
@@ -66,7 +67,7 @@ A(Badges.scriptInfo('WillScript_Battle')?.region === 'JOHTO', 'and Johto\'s own 
 A(ELITES.every(([k]) => !/Script_Battle$/.test(k)), 'the new ids do not reuse another region\'s script names');
 
 // ---------- Red no longer returns before the crown ----------
-const mainSrc = fs.readFileSync(path.join(ROOT, 'overworld/main.js'), 'utf8');
+const mainSrc = overworldSource();
 // (window widened when RED gained his capstone reward block — the silence flag
 // moved further from the branch head, but the assertions' intent is unchanged)
 const redBlock = mainSrc.slice(mainSrc.indexOf("if (script === 'Red')"), mainSrc.indexOf("if (script === 'Red')") + 1600);

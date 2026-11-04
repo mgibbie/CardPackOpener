@@ -30,13 +30,13 @@ const CHOSEN = {
 	'wyrm-bolt': { creature: 'creature', 'enemy-creature': 'enemy-creature' }, // Wyrm Bolt
 	'bubba-hounds': { creature: 'creature', 'enemy-creature': 'enemy-creature' }, // Bubba (Duels): the hounds' quarry
 	'no-guts-no-glory': { creature: 'creature' }, // No Guts, No Glory
-	damage: { any: 'any', creature: 'creature', 'enemy-creature': 'enemy-creature', 'undamaged-creature': 'creature', 'enemy-any': 'enemy-any' },
+	damage: { any: 'any', creature: 'creature', 'enemy-creature': 'enemy-creature', 'undamaged-creature': 'creature', 'enemy-any': 'enemy-any', 'friendly-creature': 'friendly-creature', 'friendly-any': 'friendly-any' }, // + Lightning Rod / Dark Possession
 	heal: { any: 'any', creature: 'creature' },
-	buff: { creature: 'creature', 'friendly-creature': 'friendly-creature' },
+	buff: { creature: 'creature', 'friendly-creature': 'friendly-creature', 'enemy-creature': 'enemy-creature' }, // + Shattering Finale (-0/-3)
 	grow: { creature: 'creature', 'friendly-creature': 'friendly-creature' },
 	'summon-hatch-egg': { 'friendly-creature': 'friendly-creature' }, // Clutch of Corruption: a friendly Dragon
 	'spend-all-mana-damage': { creature: 'creature' }, // Forbidden Flame: a minion
-	'grant-ongoing': { 'friendly-creature': 'friendly-creature' },
+	'grant-ongoing': { 'friendly-creature': 'friendly-creature', creature: 'creature', 'enemy-creature': 'enemy-creature' }, // + Power Word: Glory / Sinful Brand
 	'grant-static': { 'friendly-creature': 'friendly-creature' },
 	grant: { creature: 'creature', 'friendly-creature': 'friendly-creature' },
 	'grant-spell-damage': { 'friendly-creature': 'friendly-creature', creature: 'creature' },
@@ -57,6 +57,8 @@ const CHOSEN = {
 	'steal-health': { creature: 'creature', 'enemy-creature': 'enemy-creature' },
 	'bounce-to-deck-bottom': { 'enemy-creature': 'enemy-creature', creature: 'creature' },
 	'summon-copy-of-target-buffed': { 'friendly-creature': 'friendly-creature', creature: 'creature' },
+	'destroy-summon-tokens-by-health': { creature: 'creature' }, // Shadow Word: Void (was untargeted: paid 4 and fizzled)
+	'destroy-summon-copy': { creature: 'creature' }, // Holy Book (same blind spot)
 	'set-target-stats': { creature: 'creature', 'enemy-creature': 'enemy-creature' },
 	'destroy-fragment-then-damage': { any: 'any', 'enemy-any': 'enemy-any', creature: 'creature', 'enemy-creature': 'enemy-creature' },
 	'transform-into-token': { 'friendly-creature': 'friendly-creature', creature: 'creature' },
@@ -100,7 +102,7 @@ const CHOSEN = {
 	'destroy-target-and-adjacent': { creature: 'creature', 'enemy-creature': 'enemy-creature', 'friendly-creature': 'friendly-creature' }, // Meteorhorn
 	'mark-summon-copy': { 'enemy-creature': 'enemy-creature' },
 	'destroy-all-copies': { creature: 'creature', 'enemy-creature': 'enemy-creature' },
-	'copy-to-all-zones': { 'friendly-creature': 'friendly-creature' },
+	'copy-to-all-zones': { 'friendly-creature': 'friendly-creature', creature: 'creature' }, // + Shattered Reflections
 	destroy: { creature: 'creature', 'enemy-creature': 'enemy-creature', 'friendly-creature': 'friendly-creature', 'creature-or-walker': 'creature-or-walker' },
 	// Naturalize and friends: a CHOSEN artifact/enchantment. Rides the existing
 	// 'permanent' target kind (legalTargets already enumerates artifacts,
@@ -120,7 +122,7 @@ const CHOSEN = {
 	disguise: { creature: 'creature', 'friendly-creature': 'friendly-creature' },
 	freeze: { any: 'any', creature: 'creature', 'enemy-creature': 'enemy-creature' },
 	'trigger-one-deathrattle': { 'friendly-creature': 'friendly-creature' },
-	silence: { creature: 'creature', 'enemy-creature': 'enemy-creature' },
+	silence: { creature: 'creature', 'enemy-creature': 'enemy-creature', 'friendly-creature': 'friendly-creature' }, // + Purify / Whispers of the Deep
 	'temp-buff': { creature: 'creature', 'friendly-creature': 'friendly-creature', 'friendly-any': 'friendly-any' },
 	'heal-full': { creature: 'creature', 'friendly-creature': 'friendly-creature' },
 	'set-health': { creature: 'creature', 'enemy-creature': 'enemy-creature' },
@@ -131,6 +133,7 @@ const CHOSEN = {
 	bounce: { creature: 'creature', 'enemy-creature': 'enemy-creature', 'friendly-creature': 'friendly-creature', permanent: 'permanent' },
 	'mind-control': { 'enemy-creature': 'enemy-creature' },
 	transform: { creature: 'creature', 'enemy-creature': 'enemy-creature', 'friendly-creature': 'friendly-creature' },
+	'transform-into-chosen': { creature: 'creature', 'enemy-creature': 'enemy-creature', 'friendly-creature': 'friendly-creature' },
 	'transform-copy': { creature: 'creature', 'friendly-creature': 'friendly-creature', 'enemy-creature': 'enemy-creature' },
 	'swap-health-with': { creature: 'creature', 'friendly-creature': 'friendly-creature' },
 	'swap-stats-with': { creature: 'creature', 'friendly-creature': 'friendly-creature' },
@@ -141,9 +144,9 @@ const CHOSEN = {
 	'summon-copies-from-deck': { 'friendly-creature': 'friendly-creature', creature: 'creature' },
 	'blade-of-cthun': { creature: 'creature', 'enemy-creature': 'enemy-creature' },
 	conditional: { any: 'any', creature: 'creature' },
-	'damage-then': { any: 'any', creature: 'creature' },
+	'damage-then': { any: 'any', creature: 'creature', 'enemy-creature': 'enemy-creature' }, // + Synchronized Spark
 	'draw-damage': { any: 'any' },
-	'grant-deathrattle': { creature: 'creature' },
+	'grant-deathrattle': { creature: 'creature', 'friendly-creature': 'friendly-creature' }, // + Cursed Campaign
 	'copy-deathrattle': { 'friendly-creature': 'friendly-creature' },
 	attach: { creature: 'creature', 'friendly-creature': 'friendly-creature' },
 	'attach-curse': { creature: 'creature', 'enemy-creature': 'enemy-creature' },
@@ -158,7 +161,51 @@ const CHOSEN = {
 	corrupt: { 'enemy-creature': 'enemy-creature' },
 	'mind-control-temp': { 'enemy-creature': 'enemy-creature' },
 	'set-hero-health': { 'any-hero': 'any-hero' },
+	'force-attack': { 'enemy-creature': 'enemy-creature' }, // Hysteria: the enemy creature that goes berserk
+	'all-friendly-attack-target': { 'enemy-creature': 'enemy-creature' }, // Unholy Frenzy / Devouring Swarm
+	'force-attacked-neighbor': { creature: 'creature' }, // Ramming Speed
+	'summon-enemy-minion-copy': { 'enemy-creature': 'enemy-creature' }, // Sensory Deprivation
+	'summon-copy-attack-die': { creature: 'friendly-creature' }, // Wreck'em and Deck'em: a friendly Mech
+	// 2026-10-27 fizzle sweep: these handlers act on the chosen creature, but nothing
+	// asked for one, so the spell paid its mana and resolved on a null target
+	adapt: { creature: 'creature', 'friendly-creature': 'friendly-creature' }, // Adaptation / Crackling Razormaw
+	'damage-overkill-hero': { creature: 'creature' }, // Piercing Shot / Unstable Shadow Blast
+	'destroy-split-attack': { 'enemy-creature': 'enemy-creature' }, // Death Roll
+	'damage-excess-to-bottle': { 'enemy-creature': 'enemy-creature' }, // Invasive Shadeleaf
+	'summon-enemy-copy-attack-original': { 'enemy-creature': 'enemy-creature' }, // Funhouse Mirror
+	'mind-control-delayed': { 'enemy-creature': 'enemy-creature' }, // Embrace Darkness
+	'buff-target-gain-armor-by-attack': { 'friendly-creature': 'friendly-creature' }, // Earthen Scales
+	'shuffle-shadows-of-target': { creature: 'creature' }, // Shadow of Death
+	'smolder-buff': { 'friendly-creature': 'friendly-creature' }, // Smoldering Strength
+	'buff-shared-type': { 'friendly-creature': 'friendly-creature' }, // Ready the Fleet
+	'spend-all-mana-destroy': { creature: 'creature' }, // Forbidden Words
+	'throw-weapon': { creature: 'creature' }, // Doomerang
+	'destroy-summon-random-of-cost': { creature: 'creature' }, // Conjurer's Calling
+	'imp-losion': { creature: 'creature' }, // Imp-losion
 };
+
+// A Lackey (Togwaggle / EVIL Recruiter): the five lackey_* cards
+export const isLackey = c => !!c && typeof c.id === 'string' && c.id.startsWith('lackey_');
+
+// An effect's "only if <player state>" gate, read the SAME way its handler reads it at
+// resolution (none of these change between declaring the card and resolving it). When
+// one is unmet the effect does nothing, so targetSpec must not ask for its target —
+// Gyreworm asked for a target and then dealt 0 (2026-10-26).
+export function gateUnmet(state, pi, e, card) {
+	const p = state && state.players && state.players[pi];
+	if (!p) return false;
+	if (e.requireElementalLastTurn && !p.elementalLastTurn) return true; // Gyreworm / Lilypad Lurker
+	if (e.requireControlOtherTribe && !p.board.some(c => c !== card && !isDead(c) && (c.tribe || '').includes(e.requireControlOtherTribe))) return true; // South Coast Chieftain
+	if (e.requireDeckAtMost != null && p.deck.length > e.requireDeckAtMost) return true; // Blood Shard Bristleback
+	if (e.requireHeroDamagedThisTurn && !p.heroDamagedThisTurn) return true; // Shadowblade Slinger
+	if (e.requireHeroPowerUpgraded && !(p.heroPowerUpgraded || (p.imbueCount || 0) >= 2)) return true; // Resplendent Dreamweaver
+	if (e.requireHeroHealthChanged && !p.heroHealthChangedThisTurn) return true; // Liferender / Brittlebone Destroyer
+	if (e.requireWeaponEquipped && !p.weapon) return true; // Fogsail Freebooter
+	if (e.requireQuestPlayed && !(p.questsPlayedGame > 0)) return true; // Questing Assistant
+	if (e.requireControlSecret && !p.secrets.length) return true; // Blackjack Stunner
+	if (e.requireDeckNoNeutral && p.deck.some(id => (state.cardsById[id]?.cardClass || 'neutral') === 'neutral')) return true; // Class Action Lawyer
+	return false;
+}
 
 // Returns null (no target needed) or { targets, filter(card)?, required, why }
 // `choice` selects a Choose One branch before deriving the target.
@@ -187,7 +234,13 @@ export function targetSpec(state, pi, card, choice) {
 	//  Miracle effects join the scan when the card was drawn this turn)
 	const _specEffects = [...(liveEffectsOf(state, pi, card, choice) || []),
 		...((card.miracle && card.drawnThisTurn) ? (card.miracle.effects || []) : [])];
-	for (const e of _specEffects) {
+	// a wrapper with no target of its own ("If you control an artifact, ... instead")
+	// passes the CHOSEN target down to its branches (the conditional handler hands
+	// `target` to execEffects), so the branches decide what to ask for — Karn's Touch,
+	// Chandra's Fury, Sensory Deprivation (2026-10-12: the card resolved untargeted)
+	const _expand = list => list.flatMap(e => (!e.target && (e.then || e.else)) ? [e, ..._expand([...(e.then || []), ...(e.else || [])])] : [e]);
+	for (const e of _expand(_specEffects)) {
+		if (gateUnmet(state, pi, e, card)) continue; // Gyreworm with no Elemental last turn: no prompt for a 0-damage battlecry
 		let kind = CHOSEN[e.type]?.[e.target];
 		// "the enemy hero" is unambiguous in 1v1 but a choice with 3+ players;
 		// Joust likewise lets you pick which opponent to Joust against
@@ -208,17 +261,26 @@ export function targetSpec(state, pi, card, choice) {
 		if (e.target === 'artifact-location-or-enchantment') { filter = c => c.type === 'artifact' || c.type === 'enchantment' || c.type === 'location'; why = 'an artifact, location or enchantment'; }
 		if (e.target === 'artifact') { filter = c => c.type === 'artifact'; why = 'an artifact'; }
 		if (e.target === 'enchantment') { filter = c => c.type === 'enchantment'; why = 'an enchantment'; }
-		if (e.maxAttack != null) { filter = c => c.attack <= e.maxAttack; why = `a creature with ${e.maxAttack} or less Attack`; }
-		if (e.maxCost != null) { filter = c => (c.cost || 0) <= e.maxCost; why = `a creature that costs ${e.maxCost} or less`; }
-		if (e.minAttack != null) { filter = c => c.attack >= e.minAttack; why = `a creature with ${e.minAttack} or more Attack`; }
-		if (e.requireKeyword != null) { filter = c => c.keywords.includes(e.requireKeyword); why = `a creature with ${e.requireKeyword.replace(/_/g, ' ')}`; }
-		if (e.requireDamaged) { filter = c => c.damage > 0; why = 'a damaged creature'; }
+		// target restrictions COMPOSE (each used to overwrite the last, and several the
+		// handlers enforce were missing here — the prompt/AI offered targets the effect
+		// then refused, or the handler never checked and destroyed the wrong creature:
+		// Azog's Merciless Executioner took a 4-Health creature, EVIL Recruiter a non-Lackey)
+		const and = (pred, w) => { const prev = filter; filter = prev ? (c => prev(c) && pred(c)) : pred; why = w; };
+		if (e.maxAttack != null) and(c => c.attack <= e.maxAttack, `a creature with ${e.maxAttack} or less Attack`);
+		if (e.maxHealth != null) and(c => hp(c) <= e.maxHealth, `a creature with ${e.maxHealth} or less Health`);
+		if (e.maxCost != null) and(c => (c.cost || 0) <= e.maxCost, `a creature that costs ${e.maxCost} or less`);
+		if (e.minAttack != null) and(c => c.attack >= e.minAttack, `a creature with ${e.minAttack} or more Attack`);
+		if (e.requireKeyword != null) and(c => c.keywords.includes(e.requireKeyword), `a creature with ${e.requireKeyword.replace(/_/g, ' ')}`);
+		if (e.requireDamaged) and(c => c.damage > 0, 'a damaged creature');
+		if (e.requireUndamaged) and(c => !(c.damage > 0), 'an undamaged creature'); // Walk the Plank
+		if (e.requireRarity) and(c => c.rarity === e.requireRarity, `a ${e.requireRarity} creature`); // Grimtotem Bounty Hunter / Garona's Last Stand
+		if (e.requireTargetTribe) and(c => !!(c.tribe || '').length, 'a creature with a creature type'); // Bugsquasher
+		if (e.requireLackey) and(c => isLackey(c), 'a friendly Lackey'); // EVIL Recruiter
 		if (e.excludeSelf) { const prev = filter; filter = c => c !== card && (!prev || prev(c)); why = (why || 'a creature') + ' other than this'; }
-			if (e.excludeTitan) { const prev = filter; filter = c => !c.titan && (!prev || prev(c)); why = 'a non-Titan minion'; } // Aman'Thul: Shape the Stars
+		if (e.excludeTitan) { const prev = filter; filter = c => !c.titan && (!prev || prev(c)); why = 'a non-Titan minion'; } // Aman'Thul: Shape the Stars
 		if (e.tribe) {
 			const tribes = e.tribe.split('|');
-			filter = c => tribes.some(t => (c.tribe || '').includes(t));
-			why = `a friendly ${e.tribe.replace(/\|/g, '/')}`;
+			and(c => tribes.some(t => (c.tribe || '').includes(t)), `a friendly ${e.tribe.replace(/|/g, '/')}`);
 		}
 		// spells need their target; creature/weapon battlecries fizzle without one.
 		// picking which opponent (enemy-hero, e.g. Joust/multi-target burn) is required.

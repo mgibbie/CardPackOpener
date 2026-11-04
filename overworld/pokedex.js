@@ -16,6 +16,13 @@ function save(d) {
 }
 
 let dex = load();
+// seen/caught only grow: union whatever storage holds into the cache, so an
+// entry that landed underneath (a sync, another tab) is kept and nothing this
+// tab holds is dropped when storage can't be read
+function mergeStoredDex() { const d = load(); for (const x of d.seen) dex.seen.add(x); for (const x of d.caught) dex.caught.add(x); }
+// re-read after the save sync rewrote the stored dex (a merged conflict), so
+// the in-memory copy can't save its stale self back over the merge
+export function reloadDex() { dex = load(); unownSet = new Set(safeLoad(UNOWN_KEY, [])); }
 
 // ---------- the UNOWN DEX ----------
 // Each Unown letter is its own species (unown, unown_b … unown_z, unown_exclaim,
@@ -32,7 +39,9 @@ function unownLetterOf(id) {
 	return m ? m[1].toUpperCase() : null;
 }
 export function markUnown(letter) {
-	if (!letter || unownSet.has(letter)) return;
+	if (!letter) return;
+	for (const l of safeLoad(UNOWN_KEY, []) || []) unownSet.add(l);   // union the stored record in (never drop)
+	if (unownSet.has(letter)) return;
 	unownSet.add(letter);
 	safeSave(UNOWN_KEY, [...unownSet]);
 }
@@ -47,8 +56,11 @@ function foldUnown(id) {
 	return 'unown';
 }
 
+// seen/caught re-read storage before changing it (rebase-on-write), so a dex
+// that grew underneath this tab (a sync, another tab) is never written back smaller
 export function markSeen(id) {
 	id = foldUnown(id);
+	mergeStoredDex();
 	if (!id || dex.seen.has(id)) return;
 	dex.seen.add(id);
 	save(dex);
@@ -57,6 +69,7 @@ export function markSeen(id) {
 export function markCaught(id) {
 	if (!id) return;
 	id = foldUnown(id);
+	mergeStoredDex();
 	let changed = false;
 	if (!dex.seen.has(id)) { dex.seen.add(id); changed = true; }
 	if (!dex.caught.has(id)) { dex.caught.add(id); changed = true; }
@@ -99,6 +112,7 @@ export function caughtCount() { return dex.caught.size; }
 
 // seed from the current party/box on boot so existing saves aren't blank
 export function seedFrom(mons) {
+	mergeStoredDex();   // union the stored record in (never drop)
 	let changed = false;
 	for (const m of mons || []) {
 		if (!m || !m.speciesId) continue;
@@ -111,4 +125,11 @@ export function seedFrom(mons) {
 
 export function isSeen(id) { return dex.seen.has(id); }
 export function isCaught(id) { return dex.caught.has(id); }
-export function counts() { return { seen: dex.seen.size, caught: dex.caught.size }; }
+// keep(id) narrows to a regional dex (ow_story GetPokedexCount); none = national
+export function counts(keep) {
+	if (typeof keep !== 'function') return { seen: dex.seen.size, caught: dex.caught.size };
+	let seen = 0, caught = 0;
+	for (const id of dex.seen) if (keep(id)) seen++;
+	for (const id of dex.caught) if (keep(id)) caught++;
+	return { seen, caught };
+}

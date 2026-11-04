@@ -6,7 +6,38 @@
 # Short replay-share links: /r/<id> opens the replay viewer. 302 (not 301) —
 # shared replays GC after 30 days, so browsers must not cache these forever.
 /r/* /battlecards/index.html?rshare=:splat 302
+# Micatro run replays (a whole run): /mr/<id> opens the replay viewer. 302 for the same reason.
+/mr/* /micatro/?replay=:splat 302
+# MicaSurvivor run replays (M5 batch 12c): /msr/<id> opens the replay player. 302 for the same reason.
+/msr/* /micasurvivor/?replay=:splat 302
 /battlecards/art/* https://magepunk-cardart.pages.dev/:splat 301
 /overworld/data/* https://magepunk-owdata.pages.dev/:splat 301
 /designwiki/sprites/* https://magepunk-sprites.pages.dev/:splat 301
+# Micatro mod art (one line per mod; Cloudflare doesn't match a :placeholder combined with a * splat).
+/micatro/mods/pokermon/assets/* https://magepunk-micatromods.pages.dev/pokermon/assets/:splat 301
+/micatro/mods/nacho/assets/* https://magepunk-micatromods.pages.dev/nacho/assets/:splat 301
+/micatro/mods/pokermonplus/assets/* https://magepunk-micatromods.pages.dev/pokermonplus/assets/:splat 301
+/micatro/mods/riskofjesters/assets/* https://magepunk-micatromods.pages.dev/riskofjesters/assets/:splat 301
+/micatro/mods/sylviesilly/assets/* https://magepunk-micatromods.pages.dev/sylviesilly/assets/:splat 301
+/micatro/mods/milatro/assets/* https://magepunk-micatromods.pages.dev/milatro/assets/:splat 301
+/micatro/mods/mikas/assets/* https://magepunk-micatromods.pages.dev/mikas/assets/:splat 301
+/micatro/mods/olympus/assets/* https://magepunk-micatromods.pages.dev/olympus/assets/:splat 301
+/micatro/mods/inscrybed/assets/* https://magepunk-micatromods.pages.dev/inscrybed/assets/:splat 301
+/micatro/mods/tagteam/assets/* https://magepunk-micatromods.pages.dev/tagteam/assets/:splat 301
+/micatro/mods/smirkeo/assets/* https://magepunk-micatromods.pages.dev/smirkeo/assets/:splat 301
+/micatro/mods/altavista/assets/* https://magepunk-micatromods.pages.dev/altavista/assets/:splat 301
+/micatro/mods/omertadeck/assets/* https://magepunk-micatromods.pages.dev/omertadeck/assets/:splat 301
+/micatro/mods/morefluff/assets/* https://magepunk-micatromods.pages.dev/morefluff/assets/:splat 301
+/micatro/mods/betmma/assets/* https://magepunk-micatromods.pages.dev/betmma/assets/:splat 301
+/micatro/mods/bunco/assets/* https://magepunk-micatromods.pages.dev/bunco/assets/:splat 301
+/micatro/mods/reverie/assets/* https://magepunk-micatromods.pages.dev/reverie/assets/:splat 301
+/micatro/mods/autumnmood/assets/* https://magepunk-micatromods.pages.dev/autumnmood/assets/:splat 301
+/micatro/mods/autumncircus/assets/* https://magepunk-micatromods.pages.dev/autumncircus/assets/:splat 301
+# MicaSurvivor sprites (13.5k PMD sheets, gitignored): their own Pages project, see micasurvivor/README.md
+/micasurvivor/assets/* https://magepunk-micasurvivor.pages.dev/:splat 301
 # Design Wiki and Learn Magepunk are served directly from the main Cloudflare project.
+# /pokemon was never a route, but a stale bookmark there renders the homepage
+# (the SPA fallback), and the homepage's RELATIVE links ("overworld/") then
+# resolve under /pokemon/ and loop back to it — send it to the real game.
+/pokemon /overworld/ 301
+/pokemon/* /overworld/ 301

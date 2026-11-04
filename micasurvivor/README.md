@@ -1,0 +1,3808 @@
+# MicaSurvivor
+
+MicaSurvivor is **PokéSurvivor by JPTER78** (https://github.com/JPTER78/pokesurvivor), a browser
+bullet-heaven roguelike with Pokémon Mystery Dungeon sprites, ported into the Magepunk site
+(`Plans/MICASURVIVOR_PLAN.md`). Phase M1 is the game as-is, offline. Phase M2 adds controller
+support (see "Controller" below). Phase M3 brings it into Magepunk: the landing tile, the Pewter
+Museum arcade cabinet, Magepunk accounts and the leaderboard (see "Magepunk (M3)" below).
+
+Required Notice: Copyright 2026 JPTER78 (https://github.com/JPTER78/pokesurvivor)
+
+## Licences
+
+- **Code**: PolyForm Noncommercial License 1.0.0 (`LICENSE-NONCOMMERCIAL.md`). Code from before
+  commit b297089 (14-10-2026) is MIT (`LICENSE`). Vendored from upstream HEAD
+  `5bbc3b29288d6af4596f21188fb8b54e0e9b739f` (2026-10-15).
+  **MicaSurvivor must never get ads, paid items or anything sold.**
+- **Sprites**: PMDCollab SpriteCollab, CC BY-NC 4.0. Every artist is listed in `CREDITS.md`, and
+  the in-game Credits screen (title screen → "Credits & licences", or Settings → About) shows them.
+- **Font**: Pixelify Sans, SIL OFL (`fonts/OFL.txt`). The Play flow (U1) uses m6x11plus by Daniel Linssen (free to use with
+  credit), Micatro's copy with its added gender signs (`css/fonts/m6x11plus.ttf`).
+- **Controller design** (M2): taken from the Android port by JayElDragon (MIT),
+  https://github.com/JayElDragon/poke-survivor.
+- **Mechanics** (M5): ported from the same Android port by JayElDragon (MIT); see "Mechanics from
+  the Android port".
+- Pokémon © Nintendo / Creatures Inc. / GAME FREAK. This is a non-commercial fan project.
+
+## How it loads
+
+There is **no build step**. `index.html` is upstream's `dev.html` (the source page) and loads each
+classic script under `js/` in order with `<script defer>`. Every module hangs off the global `G`,
+so `window.G` can be reached from the console and from tests. Upstream's `tools/build.js`
+(terser + javascript-obfuscator into `app.min.js`) is deliberately not used: the obfuscated
+bundle is unreadable, and it is the only thing their updater needs. All paths are relative, so
+the page works from `/micasurvivor/`.
+
+## Assets (not in git)
+
+`assets/pokemon/<dex>/` (13,699 files, ~105 MB) is **gitignored**. On the live site
+`_redirects` sends `/micasurvivor/assets/*` with a 301 to `https://magepunk-micasurvivor.pages.dev/`,
+which is a separate Pages project. Sheets load with `crossOrigin = 'anonymous'`, and the staged
+`_headers` adds `Access-Control-Allow-Origin: *`.
+
+- Local copy: `cp -r <pokesurvivor checkout>/assets/pokemon micasurvivor/assets/`
+- Deploy (owner): `npm run deploy-micasurvivor`. This runs `tools/micasurvivor/stage_assets.mjs`,
+  which copies `micasurvivor/assets` into `.micasurvivor/` and writes `_headers`, then deploys
+  from inside `.micasurvivor` so the site's functions aren't bundled.
+- The small essentials are tracked in git: `fonts/` (Pixelify, ~100 KB), `icons/`, `favicon.ico`.
+
+## Batch B1: the complete Pokédex (2026-10-19)
+
+The owner's decision (`Plans/MICASURVIVOR_POKEBONK_DLC_STUDY.md`, "Update (owner, 2026-10-19)"): all 1025
+canon Pokémon can be enemies in every mode. The game shipped with 966: upstream's `fetch_pokedex.py` only took
+Pokémon whose SpriteCollab entry had all three of Idle, Walk and Attack. B1 vendors upstream's generators into
+`tools/micasurvivor/` (they were left out with upstream's `tools/`) and extends them:
+
+- `fetch_sprites.py` takes a Pokémon when its folder has ANY of Idle / Walk / Attack; upstream's own FALLBACK
+  table fills the rest (Walk <- Idle, Attack <- Strike / Swing / Shoot / Idle, Hurt <- Cringe / Idle...). Four
+  species use an alternate-form folder (`FORMS`): Falinks (the Brass), Gimmighoul (Roaming), Ting-Lu (the full
+  sheet SpriteCollab files as "Temp") and Miraidon (Low-Power Mode). It keeps every row already in
+  `sprites-meta.js` (`--refresh` re-fetches), so published sheets never change.
+- `hover_flags.py` is upstream's, re-run: it reproduces the 966 rows byte for byte.
+- `fetch_pokedex.py` lists exactly the Pokémon in `sprites-meta.js`; the stat formula and rarity are upstream's,
+  and re-running it reproduces the 966 rows byte for byte.
+- `fetch_credits.py --only <dexes>` merges the new sheets' artists into `CREDITS.md` (the existing rows stay as
+  they were when those sheets were downloaded).
+
+Result: **983 Pokémon** (+17): Jellicent, Stunfisk, Aromatisse, Toucannon, Sirfetch'd, Falinks, Copperajah,
+Dolliv, Grafaiai, Toedscool, Iron Treads, Gimmighoul, Ting-Lu, Miraidon, Gouging Fire, Raging Bolt, Pecharunt.
+They follow the existing rules: tiers by BST, Paradox like the other Paradox (Iron Treads rarity 4; Gouging Fire
+and Raging Bolt rarity 5, boss-only), Ting-Lu / Miraidon / Pecharunt legendary (rifts, Judgment, Tower). Each has
+an ability (`abilities.js`), English names where the Spanish one differs (`lang-en.js`), and Aromatisse is a
+healer (`enemies.js`). Eight of them only have a one-frame Idle on SpriteCollab, used for every animation; when
+they walk they hop 2 px (`js/core/sprites.js`; none of the 966 has a one-frame Walk).
+
+**Pending the owner's call (42, no SpriteCollab sheet at all; 24 got a fallback in B1b, below):** 514, 516, 520, 522, 523, 538, 558, 564, 565, 591,
+592, 616, 626, 668, 732, 735, 756, 765, 837, 838, 839, 866, 878, 893, 931, 942, 943, 944, 947, 949, 950, 954, 956,
+962, 973, 986, 993, 1001, 1002, 1014, 1022, 1023. They are not in `pokedex.js` (nothing can spawn them);
+`overworld/tests/micasurvivor_pokedex_test.mjs` lists them as `PENDING_ART`.
+
+Deploy order: the new sheets first (`npm run deploy-micasurvivor`), then merge the code, or the new Pokémon 404.
+
+## Batch B1b: fallback sheets from the overworld followers (2026-10-19)
+
+The owner's call on the 42: build fallbacks from images we already have (crop, scale, re-pack; nothing drawn).
+
+- **24 Gen 5–8 Pokémon, from the overworld follower sprites**: `tools/micasurvivor/follow_sprites.py` turns each
+  4-direction follower charset (`overworld/data/pokemon_follow/<id>.png`: 4x4 cells of 32 px, rows
+  down/left/right/up, the walk cycle stand/step/stand/step) into a MicaSurvivor sheet in
+  `assets/pokemon/{dex}/follow/`: **Walk** = the 4 frames, **Idle** = walk frame 0; Attack / Hurt / ... are
+  missing on purpose, so the game's own fallback (`animName`) plays Idle for them, with the usual hurt flash.
+  Those charsets were downscaled smoothly from the PokemonZero2024 Essentials pack, where they are the same
+  drawings at exactly 2x; when the pack is on the PC (`ESSENTIALS_ROOT`) the generator takes its pixels at 1x
+  instead (crisp), and its "Followers shiny" folder gives all 24 a shiny. Every frame is cropped to the union of
+  all 16 (no jitter), the feet 2 px below the ground anchor (the usual PMD walker).
+- The row in `sprites-meta.js` carries `"src":"follow"` (the sheet folder), `"k"` (art scale) and `"dm"` (the
+  sheet has 4 rows, Down / Right / Up / Left; `dm` maps the game's 8 directions to them, a diagonal taking the
+  side view). `js/core/sprites.js` applies them (`artScale`, `rowOf`: the drawing, the body radius and height,
+  the boss scale, the menu previews and the minimap). `k` = the median ratio of PMD Walk height to follower
+  height over the 872 Pokémon that have both, among those whose follower is about as tall (1.05–1.45 here);
+  `s` (shadow) is that group's median; Frillish floats like Jellicent (`HV_LIKE`).
+- **Real sheets win**: `fetch_sprites.py` does not count a `src` row as "already there", so once SpriteCollab
+  has a sheet, `fetch_sprites.py --only <dex>` fetches it and the real row replaces the fallback (the real files
+  are in `{dex}/`, so no published file changes); `follow_sprites.py` never writes a row for a Pokémon
+  SpriteCollab covers and tells you to fetch it. `hover_flags.py` leaves `src` rows alone.
+- Pokédex rows from `fetch_pokedex.py` as for the rest; abilities by B1's rule (the family's, else the closest);
+  Mr. Rime shields like Mr. Mime; Zarude is mythical (leg: rifts, Judgment, Tower, its achievement: 227).
+  Credits: the "Sprites de respaldo" section of `CREDITS.md`, written by the generator.
+
+Result: **1007 Pokémon** (+24): Simisear, Simipour, Tranquill, Blitzle, Zebstrika, Throh, Crustle, Tirtouga,
+Carracosta, Amoonguss, Frillish, Shelmet, Bouffalant, Pyroar, Trumbeak, Gumshoos, Shiinotic, Oranguru, Rolycoly,
+Carkol, Coalossal, Mr. Rime, Cufant, Zarude.
+
+**Still pending (18, Gen 9):** 931, 942, 943, 944, 947, 949, 950, 954, 956, 962, 973, 986, 993, 1001, 1002, 1014,
+1022, 1023. The plan was their SpriteCollab portraits, using only transparent ones; every one of their portraits
+(all emotions, 18 species) is a 40x40 bust on an opaque painted background, so none qualifies. They have no
+follower sprite either. They stay out of `pokedex.js`, listed as `PENDING_ART` in the Pokédex test.
+
+Deploy order again: `npm run deploy-micasurvivor` (the 96 new files in `{dex}/follow/`) before the merge.
+
+## Batch B1c: fallback sheets from the overworld battle sprites (2026-10-19)
+
+The owner's call on the last 18 (Gen 9: no SpriteCollab sheet, no follower sprite): use their transparent battle
+sprites, `overworld/data/pokemon/` (crop, scale, re-pack; nothing drawn; the motion is runtime transforms only).
+
+- `tools/micasurvivor/battle_sprites.py` writes `assets/pokemon/{dex}/battle/Idle.png` and `Walk.png` (the same
+  one-frame sheet) and a row with `"src":"battle"`. **2 rows**: the battle FRONT (a big smooth drawing, facing the
+  viewer's left) and the BACK (`-b`, 96 px pixel art: the PokemonZero2024 pack's for 931–1002, PokeAPI's for 1014 /
+  1022 / 1023). `"dm"` sends straight Up to the back and every other direction to the front; the new `"fx"` says
+  which directions draw it mirrored (everything with a rightward part), applied around the ground anchor by
+  `js/core/sprites.js` (`flipOf`; the minimap icon too). Walking, the one-frame Walk gets B1's 2 px hop; Attack /
+  Hurt / ... play Idle (`animName`) with the usual hurt flash.
+- Size: the front is scaled down (premultiplied Lanczos, edge alpha snapped at 128 so it reads as pixel art) to its
+  on-field height: its visible height times the median PMD-Walk / battle-front height ratio of the 15 Pokémon most
+  alike in front height and real height, among the 109 that have a SpriteCollab sheet and a big battle front of the
+  same kind; `s` is their median shadow. The back keeps the pack's own back / front height relation. No `k`: the
+  sheet is at PMD pixel scale already. Rabsca, Bombirdier and Iron Jugulis float (`hv`, airborne pictures).
+- **No shiny**: the battle set has no shiny pictures (the Essentials pack's "shiny" files for these are copies or a
+  different drawing), so the rows have no `sh` and a shiny roll shows the normal sheet.
+- **Better art wins**: `fetch_sprites.py` ignores any `src` row, so a SpriteCollab sheet replaces this one
+  (`--only <dex>`); `follow_sprites.py` also replaces a `battle` row when a follower sprite turns up;
+  `battle_sprites.py` skips a Pokémon either of them covers and says which to run. Each lives in its own folder.
+- The gitignored dirs are not in a git worktree: `MAGEPUNK_ASSET_ROOT=<checkout>` makes the generators (and the
+  Pokédex test's static server) read `micasurvivor/assets/` and `overworld/data/` from that checkout.
+- Pokédex rows from `fetch_pokedex.py` (+18, nothing else changed); abilities by B1's rule (`abilities.js`);
+  English names for the 4 Paradox whose Spanish name differs (`lang-en.js`); Brute Bonnet and Iron Jugulis like
+  Iron Thorns (rarity 4), Iron Boulder and Iron Crown like Walking Wake (rarity 5, boss-only); Wo-Chien, Chien-Pao
+  and Okidogi legendary (rifts, Judgment, Tower, their achievements: 230). Credits: "Sprites de respaldo (lote
+  B1c)" in `CREDITS.md`, written by the generator.
+
+Result: **1025 Pokémon, the whole Pokédex** (+18): Squawkabilly, Maschiff, Mabosstiff, Shroodle, Brambleghast,
+Toedscruel, Klawf, Rabsca, Espathra, Bombirdier, Flamigo, Brute Bonnet, Iron Jugulis, Wo-Chien, Chien-Pao,
+Okidogi, Iron Boulder, Iron Crown. Nothing is pending.
+
+Deploy order again: `npm run deploy-micasurvivor` (the 36 new files in `{dex}/battle/`) before the merge.
+
+## Saves
+
+Every localStorage key starts with `micasurvivor_` (upstream used `ps.`). A guest's save is
+`micasurvivor_save.guest` and stays in the browser (a guest makes no network request at all). A
+player logged into Magepunk saves to their account (see "Magepunk (M3)").
+
+## Magepunk (M3)
+
+- **Landing tile**: `index.html` (art: `icons/tile.png`, a sprite composite drawn by
+  `tools/micasurvivor/make_art.mjs` from the game's own SpriteCollab sheets), with the "Based on
+  PokéSurvivor by JPTER78" credit. Also in `sitemap.xml`.
+- **Arcade cabinet**: the Pewter Museum 1F lobby, `overworld/arcade.js` (15,8), against the foot of
+  the reception counter; played from (14,8). Sprite `overworld/fx/micasurvivorbox.png` (20x32, same
+  script). Interacting saves party + position and opens `/micasurvivor/?direct=1`; with `?direct=1`
+  the game's "Back to the overworld" links (login screen, menu) go to `/overworld/`, otherwise
+  "Back to Magepunk" goes to `/`.
+- **Accounts** (`js/mica/account.js` + the Magepunk mode in `js/core/db.js`): with the site's
+  login in localStorage (`magepunk_mp_token_v1` + `magepunk_mp_state_v1`) the game skips the login
+  screen and plays as that user (the user pill shows the username). The save is the server row
+  `micasurvivor:<user>` (`POST /api/mp` `micasurvivor-save-get` / `micasurvivor-save-put`: logged
+  in only, exact key from the token, 400 KB cap, 30 writes a minute), and this browser keeps a copy
+  under `micasurvivor_save.mp:<user>` (cache and offline play) with the row's revision under
+  `micasurvivor_rev.mp:<user>`. Writes are debounced (a purchase or pull ~3 s, a finished run ~2 s,
+  anything else ~30 s) and flushed when the tab is hidden or closed.
+- **Merge strategy**: every write is a compare-and-set on the row's `rev` (one atomic SQL
+  statement). A device that has not seen the latest revision gets **409** with the stored save; it
+  merges the two with upstream's own `merge()` and writes again on the new revision, so a second
+  device never silently overwrites the first. `merge()` never loses progress: owned Pokémon,
+  shinies, legendaries, arenas, items, evolved moves and achievements are unioned; upgrades, stats
+  and records keep the max; Pokémonedas and tickets come from the per-device ledger (`save.led`,
+  earned / spent per device, the max of each entry, the balance is the sum), so coins earned on two
+  devices both count and a spend is never undone; the partner and other choices come from the most
+  recently updated save. On boot the server copy and the local copy are merged the same way. Back in
+  a tab after 5+ minutes, the menu pulls and merges what another device saved.
+- **Guest -> account**: a guest save in this browser is offered to the account **once**
+  (`#scr-carry`). An empty account takes it over (its own starting ledger entries zeroed, so no
+  extra 500 coins appear later); an account with progress is merged with it (the guest ledger
+  re-keyed `g.<device>` so both balances add up; the account's own choices win). The account save
+  is backed up first to `micasurvivor_backup.mp:<user>.<time>`; the guest save is never deleted; the
+  answer is remembered in `micasurvivor_migrated.guest`.
+- **Log out / Delete account** stay hidden: a Magepunk player's account belongs to the site
+  (Settings -> Account shows "Magepunk account", the username, and a link to Magepunk instead).
+  Upstream's "What's new" stays hidden too (it is PokéSurvivor's own changelog).
+- **Leaderboard**: `run-score` mode `micasurvivor` on the site's run boards: a clean solo Normal run
+  with no modifiers of 2+ minutes (upstream's `MIN_T`, and its anti-tamper `clean()`) sends `{time, kills, level, dex,
+  shiny}`; the board ranks by survival time, then kills; a time past 4 hours is refused. The menu's
+  Ranking item opens the board (top 50 + your rank) in place of upstream's Firebase boards. Friends
+  and co-op came in M5 batch 12b ("Batch 12b: Online co-op").
+- **Design wiki**: `#/micasurvivor` (overview, Pokémon, Moves, Items & Upgrades), data generated by
+  `node tools/micasurvivor/gen_designwiki.mjs` into `designwiki/data/micasurvivor.json` — rerun it
+  after changing `js/data`.
+- **Magepunk News**: `tools/gen-magepunknews.mjs` announces the launch on the commit that first
+  adds `js/mica/account.js` (entry kind `micasurvivor`).
+
+## What changed from upstream
+
+Every edit is marked `MicaSurvivor` in a comment:
+
+- **Left out**: the SEO sub-sites (guia/, pokedex/, objetos/, legendarios/, novedades/, en/, apoyar/,
+  contacto/, logros/, movimientos/, tipos/, shinies/, docs/), `js/core/firebase-config.js`,
+  `js/core/updater.js` (forced-update reloads), `js/data/funding.js` and `js/ui/support-ui.js`
+  (donations), `sw.js` and `manifest.webmanifest`, CNAME, firebase.json, Firestore and database rules,
+  `version.json`, `dev.html`, `js/app.min.js`, `tools/`, GDD.md and `assets/og-image.jpg`.
+- `js/core/db.js`: the Firebase cloud is stubbed (`initCloud` returns false, so the game never
+  loads the SDK). The upstream body is kept, never called, to keep the diff small. "Play" is a
+  **persistent** local guest profile, where upstream's guest save lived only in memory. (M3) A
+  Magepunk mode: a logged-in player's save lives in their account (see "Magepunk (M3)").
+- `index.html`: SEO/og/ld+json and preconnects are gone. The login screen has one **Play**
+  button and a "Log in with Magepunk" button (upstream's password and Google login stay hidden:
+  Magepunk accounts replace them). The
+  Gmail-recovery and donation screens are gone. The legal screen is now **Credits & licences**,
+  filled by `js/mica/credits.js`. The title says MicaSurvivor, with the "based on PokéSurvivor by
+  JPTER78" credit on the boot screen, title screen, menu, footer and Settings → About.
+- `js/core/i18n.js`: English by default. Español is still selectable in Settings → Graphics.
+- `js/ui/social-ui.js`, `js/ui/menu.js`: Friends and co-op run on Magepunk accounts (M5 batch 12b; before it they
+  said "Coming soon"). `js/ui/ranking-ui.js`: the Ranking opens the Magepunk leaderboard (M3).
+- `js/net/net.js`: signalling and the relay over `/api/mp` (M5 batch 12b); public STUN only, and only once you are in a
+  co-op lobby (until 12b it had no STUN at all).
+- `js/net/social.js`: replaced by `js/mica/social.js` (M5 batch 12b); the upstream body is kept, never started.
+- `js/main.js`, `js/game.js`: no service worker, no SupportUI or Updater.
+- `js/core/sprites.js`: `crossOrigin = 'anonymous'` on sprite sheets.
+- Every storage key went from `ps.` to `micasurvivor_`. All text files were normalised to LF.
+
+## Controller (M2)
+
+`js/core/pad.js` (`G.Pad`) adds controller play. The design comes from the Godot Android port
+by **JayElDragon** (MIT, https://github.com/JayElDragon/poke-survivor: `scripts/pad.gd`,
+`padicons.gd`, and the menu / pause / card-choice handling). It is rebuilt in JS on the site's
+gamepad core, `/site/gamepad.js`, which handles edges, held-direction repeat and blur latching.
+`pad.js` loads that core with a relative dynamic `import()`.
+
+- **Move**: the left stick (radial deadzone 0.2, rescaled so speed is analog) or the D-pad,
+  alongside the keyboard and touch. `G.Input.axis()` asks `G.Pad.axis()` after touch.
+- **Actions** (remappable):
+
+  | Action | What it does | Xbox | PlayStation | Nintendo |
+  |---|---|---|---|---|
+  | prev / next | switch move (Q / E); cycle a screen's tabs; walk the level-up cards | LB / RB | L1 / R1 | L / R |
+  | pause | pause / resume (Esc) | Menu | Options | + |
+  | confirm | press the focused control; pick the focused card | A | ✕ | **A (right face)** |
+  | cancel | back on every screen; resume from pause | B | ○ | **B (bottom face)** |
+  | reroll | reroll the level-up cards (R) | Y | △ | X |
+  | ban | ban a level-up card (B), M5 batch 6 | X | □ | Y |
+  | swap | switch Pokémon in Team mode (Tab), M5 batch 7 | RS (R3) | R3 | RS |
+  | zmove | the Z-move (Z), M5 batch 4 | LS (L3) | L3 | LS |
+  | dynamax | Dynamax (C), M5 batch 5 | View | Share | − |
+
+  View / Back with nothing bound to it works as back in menus and as pause in a run (by default it
+  is now Dynamax, the port's `JOY_BUTTON_BACK`; pause stays on Start). In a run the port's extras
+  also fire the Z-move: the reroll button (Y / △ / X, which only rerolls on the card screen) and
+  the right trigger when nothing is bound to it; and Dynamax: the left trigger and the left face
+  button (X / □ / Y) when nothing is bound to them. Since batch 6 that button is **ban**, which
+  only bans on the card screen and fires Dynamax in a run (as reroll fires the Z-move). The port's
+  **swap** action came with Team mode (batch 7) on R3, a button nothing else used. A map saved before an
+  action existed keeps its buttons; the new action gets its default, or the first free button if
+  a remap already took it.
+- **Layouts**: Xbox, PlayStation and Nintendo. Nintendo swaps confirm and cancel. It is the
+  default (the site standard, also read from `magepunk_pad_v1`). Picking a layout resets the
+  mapping to that layout's defaults.
+- **Settings → Controls** has the layout picker, a **remap** row per action, a vibration switch
+  and **Reset mapping**. To remap, select a row, then press any button except the D-pad or Guide.
+  If another action already used that button, the two actions **swap**. Keyboard Esc or 8 s
+  without a press cancels. Everything is saved in `micasurvivor_settings` (`padLayout`,
+  `padMap`, `padRumble`).
+- **Glyphs**: button icons drawn as SVG, the same per-layout set as the port's `padicons.gd`.
+  They appear on the level-up / item / bond cards (the focused card shows confirm), the
+  "1 2 3" and "R" prompts, the pause hints, the HUD (LB / RB beside the move bar, plus the first
+  14 s hint line), the menu hint bar, and the remap rows. `body.pad-input` switches every prompt
+  to glyphs while a pad is in use. Any key, mouse click or touch switches back to keys.
+- **Focus navigation**: every screen and overlay (title, test, menu, Pokémon, Upgrades, Gacha
+  with the slot machine, Missions, Settings, Credits, pause, cards, summary...) has a gold focus
+  ring. Focus moves spatially with the D-pad or stick. Confirm presses the focused control. Left
+  and right change a `<select>` or slider. Cancel is back everywhere. The right stick scrolls long
+  panels. The first press after keyboard or mouse use only shows the ring. Cards that pop up in a
+  run ignore confirm for 0.4 s, so a held button can't pick one by accident.
+- **Hot-plug**: the first pad that presses something drives. Other pads are ignored until it is
+  unplugged. **Rumble on hit** (`player.hurt`) is optional and off by default.
+- **Guests too**: from 2026-09-28 controller play was for signed-in Magepunk players only (a
+  guest's pad showed "Log in to Magepunk to use a controller"). The owner dropped that rule on
+  2026-10-18: batch 12a removed `SIGNED_IN_ONLY`, the toast and the Settings note, so a pad works
+  for everyone.
+- **Player 2** (M5 batch 12a, Co-op Mode): a second pad moves the partner with its left stick; see
+  "Batch 12a" below.
+
+## Mechanics from the Android port
+
+M5 brings over every mechanic the Godot Android port by **JayElDragon** (MIT,
+https://github.com/JayElDragon/poke-survivor) added to the game, one batch at a time
+(`Plans/MICASURVIVOR_PLAN.md` → M5). The behaviour and the numbers are the port's; the code is
+the web game's own (no GDScript translated line by line). Every edit is marked `MicaSurvivor (M5)`.
+
+### Batch 1: Foundation
+
+- **Kills per type** (`js/systems/progress.js`, port `progress.gd` "tk_"): every enemy that falls
+  adds 1 to `save.stats.tk_<type>` for each of its types (a Charizard counts fire and flying), for
+  life. `G.Progress.typeKills(type)` reads it. The save merge (`js/core/db.js merge()`, used for
+  the Magepunk account's 409 conflicts and the guest carry-over) keeps the max of every stats
+  key, so two devices never lose counts.
+- **Enemy status effects** (`js/systems/status.js`, `G.Status`; port `main.gd` 213-216 and
+  2489-2641), next to the web's burn / poison / slow:
+
+  | Status | Lasts | Effect |
+  |---|---|---|
+  | Frozen | 1.8 s | doesn't move or attack (only knockback moves it); takes +25% damage |
+  | Paralysed | 3 s | 40% speed; attacks and shoots 2.5x slower; takes +35% electric damage |
+  | Asleep | 4 s | doesn't move or attack; the next hit does +30% and wakes it (hits from sleep moves don't) |
+  | Confused | 3 s | wanders toward the nearest other enemy (within 380) and hits it every 0.6 s for 1.8x its damage + 3% of the target's max HP (1.2% on a boss), waking it; doesn't attack you |
+
+  Bosses get 35% of freeze / sleep and 50% of paralysis / confusion, then are immune for 4 s.
+  Darkrai (491) never falls asleep ("Immune!"). A frozen or sleeping enemy can't be paralysed or
+  confused; freezing ends sleep and confusion, sleep ends confusion. Moves carry `cc` (the status)
+  and `ccp` (the chance per hit), the port's values: Grass Knot (sleep 6%), Thunder Shock (para
+  18%), Discharge (7%), Thunderbolt (15%), Confusion (conf 14%), Psybeam (12%), Psychic (10%), Ice
+  Beam (freeze 15%), Powder Snow (7%), Lick (para 20%), Night Shade (sleep 8%), Hail (freeze 12%),
+  Hypnosis and Dream Eater. Every hit goes through one function, `G.Combat.land()` (projectiles,
+  orbs and fields included). Hex counts these statuses too. The new-move card says the chance
+  ("Can freeze (15%)."). The indicators are drawn in code, no new art: an ice block, rising
+  "Z z z", yellow sparks, pink stars circling the head, a coloured patch on the ground, and a
+  floating "Frozen!" / "Paralyzed!" / "Asleep!" / "Confused!" when it starts.
+- **Hypnosis** (aura, radius 120, 5 damage, 30% sleep) and **Dream Eater** (aura, radius 150, 46
+  damage, only hits sleeping enemies, heals 1.2% of your max HP per enemy hit, doesn't wake them)
+  are new psychic moves (`js/data/moves.js`). Their icons are generated like the others
+  (`G.Icons`, the psychic emblem + the aura badge); their effects come from `js/entities/vfx.js`.
+- **Alternative evolutions** (`G.Moves.EVO_ALT`, port `moves_data.gd` 99-110 and `main.gd`
+  1484-1532): 9 moves have a second evolution. Gust → Colossal Cyclone needs **Calibre**; Fire
+  Spin, Petal Blizzard, Bulldoze, Discharge, Flamethrower, Toxic, Flame Wheel and Razor Leaf need
+  the **Big Orb** item. When both evolutions of a move are ready, both gold cards come up together
+  and the player picks one. A missing stat shows its card flagged "Evolves <move>". The Big Orb
+  ("Colossal Orb") is an item since batch 3. The hook is `Player.hasItem('bigorb')`, which also gives x1.3 size.
+  **EVO_EXTRA** (`moves_data.gd` 112-118) adds the port's extra tweaks to five normal
+  evolutions: Confusion x1.6, Rock Throw x1.6 and knock 30, Shadow Ball x1.3, Fairy Wind x1.5,
+  Gust x1.6.
+- **Knockback by move level** (`G.Moves.KNOCK_LV` / `knockOf()`, port `moves_data.gd` 94 and
+  `main.gd` 1405-1410): 20 moves push nothing at Lv1. From Lv2 they push the table's value (+50%
+  for each level after that) plus their own knockback, and x1.5 once evolved. For example, Hyper
+  Voice pushes 0 / 260 / 390 / 520 / 650, then 975 evolved. Beams and auras now pass their
+  knockback on too, so Hydro Pump, Bulldoze and Bug Buzz push.
+- **Calibre** (`js/systems/levelup.js`, port `main.gd` 143-156 and 1397-1420): a level-up stat card,
+  +12% size of projectiles, orbs and areas, up to 6 times. `Player.sizeK()` = permanent upgrade
+  (`perks.size`, the Caliber upgrade of batch 3, +8% a level) x 1.12^cards x Big Orb 1.3. Combat attacks
+  with a scaled view of the move (`G.Combat.eff()`): the radius of auras, melee, mines, meteors,
+  cones, chains, trails, beams, boomerangs and dashes; projectile / orb size; beam width. The orbit
+  ring itself grows half as much.
+- Every new string is in `js/data/lang-en.js`. The English is taken from the port's own
+  `lang_en.json`.
+
+**Kept as the web has them:** melee balance and the altars (owner). The port's base numbers for
+the moves (it rebalanced many) are **not** taken. Only the `cc` / `ccp` fields, the two new
+moves, the alternative evolutions, EVO_EXTRA and KNOCK_LV are.
+
+**Not yet (later batches or co-op):** the port's status traps (freeze / shock / sleep / confuse
+pads that also hit you) and the ability / Z-move sources of these statuses come with those
+batches. In online co-op (batch 12b), a partner's statuses on the host's enemies, and a
+partner's alternative evolution in the ghost replay, are not synced.
+
+### Batch 2: Abilities
+
+Every Pokémon has one **passive ability** (`js/systems/abilities.js`, `G.Abilities`; port
+`abilities.gd` and its hooks in `main.gd`). There are 54 abilities. The per-dex table is the
+port's own: all 966 Pokémon are listed, plus the 17 of batch B1, and the port's fallback (Protean) is never needed. The
+numbers are the port's:
+
+| Family | Abilities | Effect |
+|---|---|---|
+| Pinch | Blaze, Overgrow, Torrent, Swarm | below 40% HP, moves of that type deal +35% |
+| Flat damage | Huge Power ("Power") +25%, Guts +12% (and 4% less taken), Technician +10%, Protean +8% (and +4% speed), Mold Breaker +6% (and +10% vs bosses) | multiplies attack |
+| By move | Iron Fist (melee), Mega Launcher (projectile / beam / boomerang / cone / chain / meteor) +20%; Adaptability +20% with your own types; Drought (fire), Drizzle (water), Snow Warning (ice), Sand Stream (rock + ground) +15% | multiplies the hit |
+| Hits | Tinted Lens: not-very-effective hits +40% · Moxie: +2% damage per 40 kills this run, max +20% · Defiant ("Competitive"): +15% damage for 4 s after you are hit | |
+| Speed | Speed Boost ("Haste") +12%, Run Away +8% (and +5% XP); Swift Swim (rain), Chlorophyll (sun), Sand Rush (sand), Slush Rush (snow) +30% in that weather once it is past half strength | |
+| Economy | Early Bird +12% XP, Pickup +20% coins at the end, Lucky +8% crit and +10% coins, Compound Eyes +10% crit, Magnet Pull ("Magnet") +40% magnet, Prankster -10% cooldown, Regenerator ("Regen") 1% max HP per second | |
+| Defence | Intimidate 10%, Battle Armor 8%, Fur Coat 12%, Wonder Guard 35% less damage (added to defence, still capped at 80%); Thick Fat halves fire + ice; Water Absorb, Volt Absorb, Flash Fire, Sap Sipper halve their type; Solid Rock: super-effective hits -25%; Multiscale: the first hit every 25 s does half | |
+| Sturdy | a hit that would KO you leaves 1 HP and 1.2 s of invulnerability, once every 90 s (after Focus Sash, as in the port) | |
+| Contact | when an enemy touches you: Static 25% paralysis, Flame Body 25% burn (1 stack), Poison Point 25% poison (1 stack), Cute Charm 25% confusion, Effect Spore 20% sleep (through `G.Status`); Rough Skin hurts the attacker 12 + 3 x level | |
+| Immunities | Levitate: map traps don't affect you · Sand Veil, Sand Rush, Slush Rush, Sand Stream: no weather damage · Inner Focus (sleep, confusion) and Limber (paralysis, freeze): status immunity | |
+
+Where it plugs in: `Player` (`atk`, `spd`, `reduction`, `regen`, `hurt()` for the incoming
+side and Sturdy, `update()` for the clocks); `G.Combat.land()` (every hit of yours, with the move
+kind carried by projectiles and orbs as `mkind`); the contact loop in `G.Combat.resolve()`;
+`G.Weather` (the chip damage; `level()` is exported now); and `G.Interact.trapEffect`. Cooldown,
+magnet, XP, coins and crit are multiplied in once by `G.Abilities.set(pl, id)`, which also undoes
+the previous ability. That is the call team mode (batch 7) will make when it swaps the active
+Pokémon. The Sturdy and Multiscale clocks belong to the player, as in the port.
+
+**Shown:** a gold chip "✦ Blaze" at the start of the HUD's buff row. It lights up while the
+ability is acting (low HP for the pinch ones, Defiant, the weather boost, Sturdy or Multiscale
+ready), shows the recharge ("62s") or Moxie's bonus ("+6%"), and tapping or clicking it shows
+what it does. It also appears in the Pokédex detail (under the stats), the main-menu partner card
+(the description is the tooltip), the personality result, the starter choice and the pause screen.
+The English is the port's `lang_en.json`, so some names differ from the games: Power, Regen,
+Haste, Magnet, Lucky, Competitive, Snowfall. The design wiki lists the abilities and gives each
+Pokémon's ability (`tools/micasurvivor/gen_designwiki.mjs`).
+
+**Approximations and hooks:**
+- Inner Focus and Limber only matter against the port's status traps that hit the player
+  (sleep / confusion / paralysis / freeze pads). Those are not ported yet. `G.Abilities.statusImmune(pl,
+  kind)` is ready for them, and the test checks it.
+- The port's Safety Goggles and Heavy-Duty Boots items (same immunities as Sand Veil and Levitate)
+  came with batch 3: `trapImmune()` / `weatherImmune()` check them too.
+- The web slows non-ice Pokémon in snow. The port has no such slow for the player, so Slush Rush
+  and Sand Veil don't remove it, as in the port.
+- In online co-op (batch 12b) each player's ability applies on their own machine. A partner
+  copy has its ability set, but its stats come over the network.
+
+### Batch 3: Items and upgrades
+
+**15 new held items** (`js/data/items.js`, port `types_data.gd` ITEMS and their hooks in
+`main.gd`), 26 in all, in the port's order. They drop where the web's items always did (bosses
+always, locked chests 50%, plain chests 8%). As in the port, every item has the same chance,
+you never roll one you already hold, and the species-locked ones only drop for the Pokémon that
+can use them (`G.Items.roll()` / `okFor()`). The icons are the port's pixel art, copied as-is
+from `data/icons.json` "ui" (the Colossal Orb from `icons.gd` EXTRA) into `G.Icons.UI`.
+
+| Item | Effect | Where it plugs in |
+|---|---|---|
+| Never-Melt Ice | an enemy that hits you is 30% slower for 2 s | the contact loop in `G.Combat.resolve()` |
+| Scope Lens | +15% critical hit chance | `critChance`, on equip / unequip |
+| Expert Belt | super-effective hits x1.25 | `G.Items.outK()` in `G.Combat.land()` |
+| Wide Lens | x1.2 radius (and reach) of every move | `G.Combat.eff()` |
+| Colossal Orb (Big Orb) | x1.3 size; enables the 8 Big Orb alternative evolutions of batch 1 | `Player.sizeK()`, `hasItem('bigorb')` |
+| Type Gem | x1.2 with moves of your Pokémon's types | `outK()` |
+| Sitrus Berry | when a hit leaves you below 50%, heal 30% of max HP, once every 90 s | `Player.hurt()` |
+| Heavy-Duty Boots | map traps don't affect you | `G.Abilities.trapImmune()` |
+| Safety Goggles | no sandstorm / snow damage | `G.Abilities.weatherImmune()` |
+| Weakness Policy | a super-effective hit on you gives x1.5 attack for 8 s | `Player.hurt()`, `Player.atk` |
+| Rare Candy | +1 level at once (its level-up cards come up); takes no slot | `offerItem()` in `game.js` |
+| Pure Incense | 25% fewer enemies (x0.75 spawn rate), each with x1.3 HP and x1.5 XP; coins picked up x1.25 | `G.Spawner`, coin pickup |
+| Light Ball | Pichu, Pikachu, Raichu only: Electric x2 | `outK()`; drops only for them |
+| Thick Club | Cubone, Marowak only: Ground x1.5 | `outK()`; drops only for them |
+| Silver Powder | Bug moves x1.2 | `outK()` |
+
+**Carry two** (`Player.item2`, `itemSlots()`, `items()`, `equip(id, slot)`; port `main.gd`
+5754-5793): with the Backpack upgrade you hold two items. A new one goes into a free slot by
+itself. With both full, the item screen shows three cards: replace slot 1, replace slot 2, or keep
+both (keys 1-3, or the pad). Without the Backpack it is the web's two-card choice as before.
+`hasItem()` checks both slots. The HUD stacks the second slot above the first, each with its name.
+The Tower's "Double baggage" pact (batch 8) only has to set `Player.bagPact = true`.
+
+**4 new permanent upgrades** (`js/data/upgrades.js`, port `save_data.gd` UPGRADES / perks), each
+bought per Pokémon like the others:
+
+| Upgrade | Levels | Cost per level | Effect |
+|---|---|---|---|
+| Caliber | 6 | 80 · 110 · 160 · 220 · 310 · 430 | +8% size per level (`perks.size` -> `Player.sizePerk`, the permanent half of `sizeK()`) |
+| TM | 1 | 2000 | choose your starting move: "Choose" opens the editor under the row (port `menu.gd` `_tm_panel`). The pool is the Pokémon's types plus Normal, without support moves (Mew: every move). Changing it is free. The pick leaves the ban list (`G.tmPool`, `G.tmPick`, `G.tmSet` in `js/data/starters.js`; `G.startMoveOf()` returns the pick while the TM is owned) |
+| Second Chance | 2 | 2500 · 5000 | a heart per level: a lethal hit spends one and you revive with full HP, 2.5 s invulnerable, and every enemy within 260 is knocked away (500). It comes after Focus Sash and Sturdy. The hearts show next to the HP bar |
+| Backpack | 1 | 7500 | two item slots (above) |
+
+The web's **free card reroll** stays (the port has none). The TM editor is plain buttons in the
+upgrades screen, so the pad's focus navigation reaches it. While doing this, `G.Pad`'s D-pad
+navigation got a 2:1 cone: going right from a wide price button no longer jumps to the row above.
+
+**Saved and merged:** levels go in `save.pupg[dex]`, as before. `G.DB.merge()` keeps the max of
+every level, so new ids need nothing extra, and `sanitize()` clamps a hand-edited level to the
+max. The TM pick is `save.ptm[dex]` (a move id; sanitized). On merge the newer save's pick wins,
+and Pokémon it has no pick for take the other save's. The "Item collector" achievement now asks
+for all 26 items, as the port's does.
+
+**Approximations:**
+- **Rare Candy** is used the moment you pick it up. The port shows it as an item card (take or
+  keep yours). The item's own text says "Gain 1 level when you take it (doesn't use a slot)", and
+  turning a free level down makes no sense.
+- **Drop places and rates** stay the web's. The port also rebalanced its chests (16% item chance,
+  guaranteed when you hold none) and enemies (1.5% item drop). That is a separate balance change,
+  like the altars and melee balance the owner kept.
+- **Bug fix found by the tests:** Focus Sash's clock started at -999 ms against
+  `performance.now()`, so the Sash could not save you during the first minute after the page
+  loaded. It starts at -Infinity now (regression test in the items suite).
+- In online co-op (batch 12b) items stay per player, as before. Pure Incense reads the host's
+  items.
+
+### Batch 4: Z-moves
+
+One **Z-move** per type (18), each with its own choreography (`js/systems/zmoves.js`, `G.ZMoves`;
+port `zmove.gd`, `main.gd` 171-182 / 1226-1322 / 8504-8594, `save_data.gd` 250-266 / 479-551,
+`progress.gd` 233-289, `menu.gd`). The numbers are the port's.
+
+| Rule | Value |
+|---|---|
+| Usable from | level 15 |
+| Cooldown | 240 s, counted after the move **ends** (so not during the cinematic or the move) |
+| Cinematic | 2.2 s: the world and the run clock stop, the screen dims, a banner opens with rotating rays, speed lines, the type's Z-crystal and the name falling letter by letter (white flash on the first letter; a third of it with "Fewer flashes") |
+| Invulnerable | the whole time (the cinematic, then 0.3 s renewed every frame of the move; lava and "pure" damage too) |
+| Damage | (100 + 24 x level) x attack, times each hit's factor; every hit goes through `G.Combat.land()` (type chart, crit, ability, items) |
+| Bosses | one Z takes at most 28 % of a boss's max HP in total (counted after every multiplier: `enemy.hpFloor` during the hit). A boss with less than 28 % left can still fall |
+| Not allowed | the Tower (`G.Game.mode === 'tower'`, the flag batch 8 sets), a rift arena (`G.Rift.inArena`), the Judgment of Arceus (`G.Judgment.active`) |
+
+The 18 plans, as in `zmove.gd`: Starlight Dash (three dashes, then a blast), Pyrotechnic Holocaust
+(a crown of 24 will-o'-wisps drawn in code, each launched at an enemy), Abyssal Hydro Vortex
+(pulls everything in, a final wave), Gigavolt Storm (three chains of up to 14 bolts that
+paralyse), Cataclysmic Bloom (roots: slow, squeeze, bloom and heal 2 % per enemy, max 25 %),
+Absolute Zero (freeze all, then shatter), Total Crush (22 blows on the strongest enemy, then an
+uppercut), Acid Deluge (9 acid pools that poison), Tectonic Fury (three waves of 5 cracks), Supersonic
+Dive (vanish, dive on the densest group), Shattered Mind (6 waves of confusion), Devastating
+Plague (16 bugs hunting on their own, poison + slow), Continental Avalanche (two rock walls across
+the screen), Eternal Nightmare (8 drains: 22 % + 7 % of the enemy's HP, heal up to 18 %),
+Draconic Cataclysm (4 spinning dragon beams), Abyssal Eclipse (a shrinking dark ring, then an
+implosion), Metal Drill (a 900-unit drill dash, then an explosion) and Dreamy Flash (sleep all,
+heal over time, then eat their dreams). The effects use the shapes of `js/entities/vfx.js`, the
+sounds `legend` (start) and `bossDown` (the move).
+
+**Unlocking** a type's Z (any of):
+- **250 defeated** of that type (`stats.tk_<type>` from batch 1);
+- its **Z-crystal mission** (18, port `progress.gd` ZMIS, 500 coins each, checked with the
+  achievements): defeat 1,500 Pokémon (normal), survive 8 min (fire), play 15 runs (water), reach
+  level 25 (electric), open 25 chests (grass; `stats.chests` is new and counts every chest), 30
+  gacha pulls (ice), 10 bosses (fighting), evolve 10 moves (poison), own 30 Pokémon (ground),
+  find 10 items (psychic), win 5 rift fights (ghost), survive 12 min (dragon), 3 legendaries
+  (dark). Five read stats that later batches write: 5 Daily Challenges (flying, batch 6), 4 Boss
+  Rush bosses (bug, batch 8), Tower floor 8 (rock, batch 8), 8 min of Type Survival (steel,
+  batch 6), 8 min of Team Mode (fairy, batch 7). Until then those unlock by kills or the gacha;
+- a **Z-crystal from the gacha**: each x10 pull has a 3 % chance to give the crystal of a type
+  still locked (never on x1, nothing once all 18 are unlocked). The pull result shows it, and the
+  gacha's rates panel shows the 18 crystals (locked ones dimmed).
+
+The **Z type follows the active Pokémon**: it is read from `pl.dex` when you use it (the port fixed
+it at the start of the run). Team mode (batch 7) only has to change the active Pokémon. A Pokémon
+with two unlocked types uses the first, or the one chosen in its **Pokédex** entry (a button per
+type, focus-navigable). Missions has a new **Z-Crystals** tab with the 18 missions, their
+progress and the kills of each type.
+
+**Input:** the Z key, the round **HUD button** (bottom right; click or tap it; it pulses when
+ready, shows "Lv. 15", the cooldown "3:58" or "Not here", and the Z key or the pad's zmove glyph
+in its corner), and the controller's `zmove` action (above).
+
+**Saved and merged:** crystals are `stats.zcr_<type> = 1` (as in the port), so the merge's max of
+every stat makes them a union, like the kills. Completed missions are `save.zmis[id]` (union).
+The per-Pokémon choice is `save.pz[dex] = { type, at }`: on merge (`G.DB.merge()`, used by the
+account's 409 path and the guest carry-over) the choice with the latest `at` wins for each
+Pokémon, whichever save is newer. `sanitize()` drops bad types, unknown Pokémon and bad mission
+keys. The carry-over text now lists Z-moves among what is merged.
+
+**Deviations, and why:**
+- The **Z type is read at use time** (the port's bug: it was fixed once per run).
+- The Z button is shown **greyed in a rift arena / the Judgment** ("Not here"); the port showed it
+  ready but did nothing. In the Tower it is hidden, as in the port.
+- The Pokédex shows **one button per unlocked type** instead of the port's single "Switch Z-Move"
+  button that cycles.
+- The **boss cap** clamps the HP during the hit (`hpFloor`) instead of refunding the excess
+  afterwards: the port's refund came after the death check, so a capped hit could still kill.
+- The steel and flying final bursts start where you land, not at the starting point (a visual fix).
+- Screen shake uses the web's camera (port shake / 7, x0.25 with "Fewer shakes").
+- The HUD button has a fixed place (it is not in the touch layout editor yet).
+- In online co-op (batch 12b) a guest's Z hits the host's enemies through the usual hit
+  forwarding; the boss cap and the statuses are only enforced on the host's own enemies.
+- The HUD level label: "Nv. {x}" now has an English pattern, so the HUD level reads
+  "Lv. 20" in English (it used to stay "Nv.").
+
+### Batch 5: Dynamax and raid dens
+
+**Dynamax** (`js/systems/dynamax.js`, `G.Dynamax`; port `dynamax.gd` whole, `main.gd` 183-189 /
+383-385 / 1226-1281 / 4216 / 4263 / 5867-5870 / 5903-5936 / 5990-5996 / 6037-6051 / 6189-6221, HUD
+`draw_dyn` 8430-8503). The numbers are the port's.
+
+| Rule | Value |
+|---|---|
+| Unlock | clear one **raid den** (`stats.dens >= 1`, plus `stats.dynamax = 1`) |
+| Usable from | level 20 |
+| Lasts | 60 s; then a 240 s cooldown (counted only after it ends). Every den cleared recharges it at once (the port's "Dynamax Candy") |
+| Stats | +30 % to all: damage x1.3, speed x1.3, cooldowns /1.3, 23.08 % less damage taken (`pl.dyn`, read live in the `Player` getters, so the end reverts exactly; `cdMul` is now a getter over `_cdMul`) |
+| HP | max HP +30 % (rounded), current HP up by the same; at the end the bonus goes and HP keeps its proportion (never below 1) |
+| Size | the sprite (and shadow and aura) grows in Super Mario Bros DS steps 1.22x1.0, 1.04, 1.42x1.3, 1.16x1.2, 1.792, 1.6 (0.9 s, a flash + sound + ring on three of them); shrinks back in 0.35 s. Hit radius unchanged, as in the port |
+| Max waves | every 1.5 s (the first at 0.6 s): (30 + 8 x level) x attack, radius 280; every 3rd radius 420, x1.9 and a ring of stars. Through `G.Combat.land()` via the Z-move helpers (`G.ZMoves.area`), with the type's status from the port's STATUS table: electric paralyses, ice freezes, ghost sleeps, psychic / fairy confuse, poison / grass poison, water / bug / ground slow 40 / 35 / 30 % |
+| Not allowed | the Tower (`G.Game.mode === 'tower'`), the Judgment of Arceus, during a Z-move cinematic. **Allowed in rift and den arenas** (the port's `_dyn_can` does not block them, unlike the Z-move) |
+| Ends early | when you fall; `G.Dynamax.stop(pl)` is the hook team mode (batch 7) calls on a swap |
+
+On screen: a red aura drawn in code (light puddle, glow, spiralling red / violet mist, sparks), a
+pulsing red border, a time bar "DYNAMAX 42 s", and the "DYNAMAX" banner whose letters drop and
+bounce in (with a pink flash; a third of it with "Fewer flashes").
+
+**Raid dens** (`js/systems/rift.js` + `dynamax.js`): from 120 s into a run, every 30 s rift check
+has a 5 % chance to open a **den** instead of a rift (not in Rift Time Attack: `G.Game.mode ===
+'rifts'`, batch 6; it does not touch the rift miss streak). A den stays open 30 s and is drawn in
+code: a rocky crater with seven red crystals and a pulsing energy pit, and a red light pillar with
+rising rings and sparks (additive, above everything). The notice, the arrow and the label turn red
+("A DYNAMAX DEN HAS OPENED!", "DEN · 12 m · 30 s"). Inside waits a **normal Pokémon of the current
+tier** (any candidate of that tier's BST band, not just the run's cast), in the arena of one of its
+types: HP 2400 + 8 x t (scaled in co-op like the legendary), XP 380 + t, drawn 1.5x (sprite and
+height) with the red aura and a red tint, and 28 % of its attacks become its **Max Move** (two
+warned rings of explosions: 1 + 6 + 9 zones). Winning gives **12 big XP orbs (380 + t), 2 items,
+2 tickets, 120 coins (12 x 10) and a heal**, all pulled to you, recharges Dynamax and counts
+`stats.dens`; the first time it says "You unlocked Dynamax! MAX button, C key or left trigger
+(from level 20)". A den is not a legendary (no `legends` entry), a rift win or a bond.
+
+**Input:** the C key, the round **MAX button** above the Z button (click or tap; it pulses when
+ready, shows "Lv. 20", the cooldown or "Not here", and the C key or the pad's glyph in its
+corner; hidden until unlocked, in the Tower and while active), and the pad's `dynamax` action
+(View / Share / − by default; plus the left trigger and the left face button when unbound).
+Missions → **Z-Crystals** starts with a **Dynamax** card (unlocked or "Clear a Dynamax den: 0/1",
+the rules, dens cleared).
+
+**Saved and merged:** `stats.dens` and `stats.dynamax` ride on the merge's max of every stat, so
+an account never loses the unlock (a newer save from another device without it merges it back).
+No port mission or achievement reads the den count (`progress.gd` has none; the port only shows
+it in its encyclopedia, batch 11), so nothing else changed there.
+
+**Deviations, and why:**
+- The time bar sits above the move bar, not at the top (the web HUD has the clock, the event line
+  and the boss bar there).
+- The MAX button shows greyed "Lv. 20" below level 20 (the port hid it, although its draw code
+  has that state); the same for "Not here" in the Judgment.
+- The den boss's red tint is a translucent red wash over the sprite (canvas has no `modulate`).
+- The arena's normal boss scale (`bossScale`) applies before the x1.5, as the port's boss scaling does.
+- Online co-op (batch 12b): the host decides dens (`'rift'` carries a den flag, the arena cfg
+  `den: true`), each player's save counts the den, only the host drops the reward; a partner's
+  Dynamax is not mirrored on other screens yet.
+
+### Batch 6: Quick modes, modifiers and the card ban
+
+**Game modes** (`js/systems/modes.js`, `G.Modes`; the screen `js/ui/modes-ui.js`, `G.ModesUI`; port
+`menu.gd` 1496-1675, `save_data.gd` 16-22 / 556-572, `main.gd` 262 / 339-357 / 426-449 / 782-860 /
+966-983 / 1063 / 1861 / 2859-2998 / 3146-3152 / 3261 / 5862-5871 / 6266 / 8701-8705). The menu's
+**Game modes** entry (under Play; mouse, touch and pad) opens "Choose a mode": one card per mode,
+"Choose the party Pokémon", "Change type" and the six modifier switches, in the port's wording.
+Play still starts a Normal run in one tap. `G.Game.mode` is the run's mode. The numbers are the port's.
+
+| Mode | Rules |
+|---|---|
+| Normal run | as before, with the chosen modifiers |
+| Daily Challenge | the seed is the date (`YYYYMMDD`): the Pokémon (`pool[(sd x 7919 + 13) % n]`, non-legendary, owned or not), the rule (`MOD_IDS[(sd x 31 + 7) % 6]`, the only modifier) and, through a seeded `Math.random` while the run is set up, the map, the enemy cast, the bosses and the starting moves. Coins x1.25 (chosen modifiers not added). `save.daily = { date, best }`: the best time of the day, replayable |
+| Party Mode | any Pokémon (Pikachu by default; the picker lists every Pokémon), cannot die (a lethal hit leaves 1 HP), saves nothing: no coins, stats, records, kills per type, missions, achievements, Z-crystal missions, tickets, shinies, rescues, dens or ranking (`G.Progress.off`, the port's `PG.off`) |
+| Rift Time Attack | 8:00 counting down (red under 30 s, "Rifts won: N" below): the first rift check at 20 s, then every 8 s (6 s after a fight), each opens a rift (if no boss is alive), none in the last 40 s, no dens. Time's up only outside an arena. Coins +0.25; `stats.riftsBest` / `riftsRuns` |
+| Survival by Type | only the chosen type: the enemy cast (each tier's candidates, if it has any), the 5 bosses (their band, then 580+, then any of the type) and the raid dens. Coins +0.5. 10 minutes marks the type beaten (`save.typeDone`); `typeRuns`, `typeBestMin` |
+
+**Modifiers** (every mode but Daily and Party; +0.25 coins each): Fast (enemies x1.4 speed, bosses
+x1.15), Horde (spawn rate x1.8), Tough (x1.6 HP), Heavy hitters (x1.5 damage), Fragile (your max HP
+halved at the start), No healing (HP never goes up except by what a max-HP gain adds; the port's
+per-frame clamp). The enemy ones apply in `G.EnemyMgr.add` to every enemy (waves, bosses,
+legendaries, dens; once, even across an arena's stash and restore). Ending a run: coins = base x
+(1 + 0.25 per modifier, or 1.25 in the Daily) x your multiplier, + 0.5 (Type) or + 0.25 (Rifts);
+`stats.mn1..mn6` and `mb_<mod>` keep the best minutes.
+
+**Achievements:** a "Game modes" category with the port's 20 for these modes (`progress.gd`
+107-134: daily x5, modifiers x7, type x4, rifts x4), same goals, rewards and titles. The Z-crystal
+missions that read `dailyPlays` (Flying) and `typeBestMin` (Steel) now progress.
+
+**The level-up card ban** (`js/ui/run-ui.js`; port `main_e16.gd` 197 and the `Cards` class,
+`main.gd` 7484-7670): the **Ban (N)** button next to Reroll (the B key, a click / tap, or the pad's
+new `ban` action). N = the Ban upgrade's level (0-3) per run. Ban mode turns the button red, hides
+Reroll and says "Pick a new move to ban it"; only new-move cards can be banned (the others dim).
+The banned move joins `pl.banned` and never shows up again in the run; three fresh cards are dealt,
+free (no reroll used). Hidden with no bans left.
+
+**Controller:** the `ban` action (X / Square / Y on every layout, pad.gd `JOY_BUTTON_X`), remappable
+in Settings > Controls. In a run it fires Dynamax, the way reroll fires the Z-move (the port's X =
+Dynamax unless the cards are open). A map saved before batch 6 gains `ban` (X, or the first free
+button); missing actions are now filled in the order they arrived (zmove, dynamax, ban).
+
+**Saved and merged:** records are stats (the merge keeps the max of each); `save.daily` merges by
+date (the newer date wins; the same date keeps the better time); `save.typeDone` is a union;
+`save.modes` (modifiers, type, party Pokémon) follows the newer save. All three are sanitized.
+
+**Deviations, and why:**
+- Play still starts a Normal run; the modes are a separate **Game modes** menu entry (in the port
+  Play opens the list). One tap to play stays, and the existing flows and tests are unchanged.
+- Only this batch's modes are on the screen; Boss Rush and the Tower (batch 8), Team mode (batch 7)
+  and the local co-op partner (batch 12) come with their batches. Online co-op runs stay Normal
+  without modifiers.
+- The ban count: the port's last version made the in-run ban dead code (`bans = 0`) and kept only
+  the pre-run Veto list; earlier builds (`main_e16.gd`) gave Veto-level bans per run. The owner asked
+  for the in-run ban, so it uses that count, and the pre-run list in Upgrades keeps working too.
+- Daily determinism: the port seeds the whole run; here `Math.random` is seeded only while the run
+  is set up (map, cast, bosses, moves), as the frame timing makes the rest differ anyway.
+- Party saves nothing at all; the port still counted a won legendary or a den during it.
+- Leaderboards (ours and Magepunk's) only take Normal runs with no modifiers on: the other modes and
+  the modifiers change the rules, and Party never ends. (Until the base-board fix a Normal run with
+  modifiers still ranked; the personal `mn` / `mb_` records and "New time record!" are unaffected.)
+- The HUD shows the mode and the modifier icons at the top right (the port shows none).
+- The run summary's "recogidas" and "Nv.3" were left in Spanish in English; translated now.
+
+### Batch 7: Team mode
+
+**Team mode** (`js/systems/team.js`, `G.Team`; port `save_data.gd` 21 / 189-203, `menu.gd` 1640-1657 /
+2158-2174, `main.gd` 265-269 / 436-438 / 498 / 642 / 667-668 / 704-705 / 806-807 / 844-846 / 1055 /
+1425-1428 / 1733-1804 / 1885-1902 / 8359-8396 / 8815-8863, `pad.gd` 17 / 42, `progress.gd` 129-131 /
+253 / 316 / 330). A **Team Mode** card on "Choose a mode" (mouse, touch and pad), in the port's words,
+names the team; **Choose team (up to 3)** opens a picker of your own Pokémon (by generation). The
+numbers are the port's.
+
+| Rule | Port |
+|---|---|
+| Who | up to 3 of your Pokémon; locked below 2 ("You need at least 2 Pokémon to form a team.", the card only says "Get another Pokémon first") |
+| Picking | opening the picker clears the team; a tap adds (or removes) one, numbered; the third closes it ("Team ready!") |
+| Filling (`team_list`) | the picked ones you still own (no repeats, 3 at most); if none, your partner; then the first Pokémon you got (`owned[].at`) up to 3. Saved as `save.modes.team` |
+| The run | the first one starts; its upgrades, Veto list, slot binds and starting move are the run's. Each member's HP = its species' base + the Vitality upgrade (halved by Fragile) |
+| Swapping | Tab, the pad's `swap` (R3), the round swap button (left of the Z button) or a tap / click on a team card; to the next one standing (or that card). 3 s between swaps; not on the cards, while paused or during the Z-move |
+| On a swap | the old one keeps its HP on the bench; max-HP gains are the team's (max HP = base + that gain); the new one comes in with its own HP, 1 s invulnerable, a 0.5 flash, the gold ring (8 to 150 in 0.5 s), "Go, X!" |
+| Per member / shared | species, sprite, types, speed, attack and passive ability are the active one's; level, XP, moves, items, buffs, Second Chance hearts and the Z-move (one per run) are the team's. A swap ends Dynamax (`G.Dynamax.stop`, its 240 s cooldown starts) and restarts No healing from the new HP |
+| The bench | recovers 1.2 % of its base HP a second (up to the base), like the cooldown, whenever the game is not paused |
+| Fainting | Focus Sash, Sturdy and a Second Chance heart come first; then the next one comes in at once (no cooldown wait, 1.5 s invulnerable) and the fallen card shows KO. Nobody left: the run ends |
+
+**Other modes:** modifiers apply (+0.25 coins each, no extra for the mode, the `mn` / `mb_` records
+count); Daily, Party and Survival by Type are other modes; online co-op runs stay Normal; leaderboards
+only take Normal runs with no modifiers.
+
+**HUD:** the team cards under your HP (name, HP, bar; gold border on the active one, dimmed during the
+cooldown, KO when down) and the round swap button with the next one's name, a red cooldown arc, and
+the Tab key or the pad's glyph. The controls hint adds "Tab switch Pokémon" / "tap a card to switch
+Pokémon" / the swap glyph.
+
+**Controller:** the `swap` action, R3 / RS on every layout (`pad.gd` `JOY_BUTTON_RIGHT_STICK`),
+remappable; no other action used that button. A map saved before batch 7 gains `swap` (R3, or the first
+free button).
+
+**Achievements and missions** (`progress.gd`): Better together (1 team run: 150 coins, 2 tickets),
+Perfect relay (10 minutes: 1500 coins, a x10 ticket), Team leader (20 minutes: 3500 coins, 2 tickets, 2
+x10 tickets, the title); the daily mission "Survive 5 / 8 minutes in Team Mode" and the weekly one (10 /
+15 minutes), counting only team runs (`runEnd` now carries `mode` and `nmods`); the Fairy Z-crystal
+mission (8 minutes) now progresses. `stats.teamRuns` / `teamBestMin` merge by max on a 409; the picked
+team follows the newer save and is sanitized.
+
+**Deviations, and why:**
+- The port's `_swap_team` calls `_dyn_stop()` before checking the cooldown and the target, so pressing
+  swap during the cooldown ended Dynamax without swapping. Here Dynamax ends only when a swap happens.
+- The team cards sit under your HP on the left (the port: top right) and the swap button left of the
+  Z button (the port: a 120 px button bottom right): the web's right column already holds the weather,
+  the mode tag and the Z / MAX buttons. The cards also show the HP numbers and "KO".
+- Tab: the web used Tab for "next move" (as E). In a team run Tab swaps, like the port; otherwise it
+  still cycles moves (E always does).
+- Upgrades are per Pokémon on the web (the port's are global), so the leader's apply to the run,
+  including every member's Vitality HP.
+- The Z-move's type follows the active Pokémon (batch 4's choice; the port fixed it at the start).
+- Shiny: the web's single "play shiny" switch applies to each member whose shiny you own.
+- The picker is a grid of your Pokémon by generation (the port reused the Pokédex filtered to owned).
+
+### Batch 8: Boss Rush and the Floor Tower
+
+**Boss Rush** (`js/systems/bossrush.js`, `G.BossRush`; port `main.gd` 339-343 / 441-445 / 577 / 795-798 /
+847-849 / 1007 / 2931-2955 / 3249-3251 / 3598-3611 / 4705 / 5288-5320 / 5863, `menu.gd` 1571-1572,
+`progress.gd` 113-117 / 247 / 313 / 328) and the **Floor Tower** (`js/systems/tower.js`, `G.Tower`, with its
+rest / pact picker in `js/ui/tower-ui.js`; port `main.gd` 117-139 / 203-261 / 451-466 / 808-815 / 842-843 /
+1035-1067 / 1143-1158 / 1348-1381 / 1834-1848 / 3154-3164 / 3189-3192 / 3286-3611 / 4174-4183 / 4493-4498 /
+4706 / 5260 / 5371 / 8711-8720, `save_data.gd` 206-213, `menu.gd` 1601-1625, `progress.gd` 136-142 / 248 /
+317 / 331). Both are cards on "Choose a mode", in the port's menu order (Normal, Daily, Boss Rush, Party,
+Floor Tower, Rift Time Attack, Survival by Type, Team), by mouse, touch and pad. Neither has an unlock
+(as in the port). The numbers are the port's.
+
+| Boss Rush | Port |
+|---|---|
+| Flow | only bosses: the first at 5 s ("Boss Rush! Get ready…" in the last 4 s), each next one 8 s after the last falls ("Boss N: name"). No waves, surges, events, rifts, dens or Judgment |
+| Order | boss i (0-based): a legendary when i % 3 == 2 (any with sprites); else a non-legendary with base stat total in [lo, lo + 110], lo = min(640, 490 + 14 i) (fallback: any non-legendary of 480+) |
+| Scaling | HP 1400 x 1.27^i x 1.35, damage min(150, 34 + 5 i) x 1.2, shots 0.55 of that every 1.1 s (range 260), speed 40 + base speed / 2 (40-100); created as at second 60 i (HP and damage x (1 + 60 i / 600)); XP = your level's x 1.25 |
+| Between fights | each boss leaves its XP, coins and an item, plus a heal berry (30 % HP) and a magnet |
+| World | a random starting biome, then a new one every 150 s; never the Judgment ruins (`G.Tiles.CYCLE`) |
+| End | only by falling. Record = bosses beaten (`stats.rushBest`, "New record!"); `stats.rushRuns` |
+
+| Floor Tower | Port |
+|---|---|
+| Floors | 30. Each: waves for 50 s (the HUD: "Floor N / 30 · Boss in Xs", then "Boss!", "Pacts: N", "Thirst for victory +x%"), then its fixed boss ("Floor N: name"); beating it clears the floor and clears the floor's enemies. One biome per floor (`G.Tower.biomeOf`), never the Judgment ruins |
+| Bosses | fixed per floor (seeded 7919 f + 31): a legendary every 5 floors, Eternatus on 25, Arceus on 30. HP 900 x 1.2^(min(f,15)-1) x 1.07^(f-15) x (1.8 + 3.2 clamp((f-5)/25)) x 1.35; damage min(120, 26 + 4.5 f) x 1.2; created at t = 15 f. Arceus has floor 30's HP plus floor 25's, x 1.25, and a last breath at 25 % (x1.1 speed, a wave of up to 14). From floor 11 the boss brings 3 + (f-10)/2 escorts |
+| Scaling | difficulty time 20 + 42 (f-1) + 14 max(0, f-10) + floor time; enemies x1.15 HP, x1.12 damage, x1.12 spawns (x1.06 more per floor past 10), x1.02 speed per floor past 10 (half for bosses); bosses x1.2 HP; surges from floor 11 (every max(16, 46 - 1.5 (f-10)) s, 8 + (f-10) enemies; during the boss too from 21); the cap +2 per floor past 20 (up to +20); XP x0.65 |
+| Adaptive | every 2 s: run upgrades (stat cards + move levels) and the Pokémon's permanent upgrades raise new enemies' HP (+1 % / +0.4 % each, up to x2; bosses up to x1.5) and damage (+0.4 % / +0.2 %, up to +40 %) |
+| Rest | after each floor: Rest (heal 40 % of max HP; 25 % from floor 22), Training (an extra level-up card) or Shield (35 % of max HP absorbs the next floor's damage) |
+| Pacts | then three random risk cards and "No risks"; up to 6 pacts per run, each for the whole run. 1 % per screen: a golden legendary card (no cost, not counted) replaces one. The 15: Frenzy (cooldown x0.8, damage taken x1.2), Glass cannon (damage x1.2, max HP x0.85), Light feet (speed x1.2, enemies x1.1), Blood pact (+2 HP per kill, bosses hit x1.2), Forbidden knowledge (XP x1.5, enemies HP x1.2), Stone skin (damage taken x0.75, speed x0.85), Boss contract (floor coins x1.5, bosses HP x1.25), Fasting (damage x1.15, berries and rest heal x0.55), Call of the horde (damage x1.12, XP x1.2, spawns x1.3), Quick hands (cooldown x0.7, damage x0.9), Charged blows (damage x1.22, cooldown x1.2), Overclock (cooldown x0.75, max HP x0.9), Frantic rhythm (cooldown x0.8, spawns x1.15), Slow burn (cooldown x1.15, damage taken x0.75, +1 HP/s), Blind fury (cooldown x0.85, damage x1.1, damage taken x1.1). Legendary: Time mastery (cooldown x0.3), Double baggage (2 item slots + an item now), Thirst for victory (+0.30 % damage per kill), Legendary armor (+60 % defense) |
+| Rewards | first clear of floor f: 120 + 40 f coins, 1 + f/5 tickets, and f/5 x10 tickets every 5 floors; a repeat clear 40 + 10 f coins (both x the coins pacts). Floors 10 and 20: an attack bond |
+| Relics | one per floor multiple of 5 ever cleared (up to 6): +6 max HP and +2 % attack each, inside the Tower; shown on the card ("Relics: N / 6") and announced on the clear ("Tower relic!") |
+| Checkpoints | floors 6 / 11 / 16 / 21 / 26 open once the floor before was cleared; "Starting floor: N" under the card cycles them (`save.modes.towerStart`). Starting there gives a free level-up card per skipped floor (level = floor) |
+| End | falling ("You fell…", "Tower: floor N", the last 3 bosses' time and HP lost) or clearing floor 30 ("TOWER COMPLETE!", "Floors cleared: N"). `stats.towerRuns`; `stats.towerBest` and `stats.arceus` at each clear |
+| Blocked | Z-moves and Dynamax (`G.ZMoves` / `G.Dynamax` `BLOCKED_MODES`, keyed on `G.Game.mode === 'tower'`; their HUD buttons hide) |
+
+**Pickers:** the rest and pact cards are their own screen (`scr-tower`): a click, a tap, the 1-4 keys, or
+the pad (D-pad / LB / RB walk the cards, confirm picks, cancel on the pact cards = "No risks"; the screen
+is guarded against an accidental pick as it pops up). The game is paused while you choose.
+
+**Other modes:** modifiers apply to both (+0.25 coins each, no extra for the mode, the `mn` / `mb_` records
+count). Daily, Party, Survival by Type and Team are other modes (the port's single mode switch); online
+co-op runs stay Normal; leaderboards only take Normal runs with no modifiers.
+
+**Achievements and missions** (`progress.gd`): Boss warm-up / Boss barrage / Boss crusher / Rush King (3 /
+6 / 10 / 15 bosses), Record hunter (25 Rushes); First floors / Climbing / Almost at the top / Climber (clear
+floor 5 / 10 / 15 / 20), Master of the Tower (reach floor 30: `towerBest` 29), Arceus Conqueror, Tower
+apprentice (10 Tower runs), with the port's coins, tickets and titles. Missions: "Defeat N bosses in the
+Boss Rush" (2 / 4, daily), "... in a single Boss Rush run" (6 / 9, weekly), "Clear N floors of the Floor
+Tower" (2 / 3, daily) and "... in a single run" (6 / 9, weekly), counting only their mode (`runEnd` now
+carries `bosses` and `floor`). The Bug (4 Rush bosses) and Rock (clear floor 8) Z-crystal missions now
+progress.
+
+**Saves:** `stats.rushBest` / `rushRuns` / `towerBest` / `towerRuns` / `arceus` merge by max on a 409.
+`save.tower = { claimed: { floor: date }, best, log }`: the claimed floors are a union (the earliest date;
+relics and checkpoints derive from them), the best floor the max, the boss log (last 80) the newer save's.
+The chosen checkpoint keeps the higher floor of the two saves, then falls back to floor 1 if it is not a
+valid checkpoint; a hand-edited record is cleaned (`sanitize`).
+
+**Deviations, and why:**
+- "Relics" in the port are not picked: they are earned automatically (one per 5th floor cleared once) and
+  only add HP and attack. The pickable cards are the rest cards, the risk pacts and the 4 golden legendary
+  cards; all are ported as such. The task's "relic picker" is the legendary card on the pact screen.
+- The fixed boss of each floor uses the web's seeded RNG (mulberry32) instead of Godot's, so the species on
+  floors other than 25 and 30 differ from the Android build, but each floor is still always the same boss.
+- The Boss Rush biome offset and the Tower's floor biomes run through `G.Tiles.CYCLE`: all of `G.Tiles.BIOMES`
+  (3 normal + the rift themes) except the Judgment ruins, as the port's `ground.count()` does (`tileworld.gd`
+  58-78 leaves "judgment" out). Before the base-board fix the web cycled through the ruins too (Tower floor 22,
+  1 Rush start in 22); floors 22-30 now map one biome earlier in the cycle than they used to.
+- Boss drops: the web never dropped the port's 1-in-3 x10 ticket from bosses; Rush and Tower bosses add only
+  the port's heal berry and magnet, so the Rush (all bosses) does not become a ticket farm.
+- Spawning uses the web's spawn curve (its `DENSITY` and HP factors) with the Tower's multipliers on top.
+- The HUD line also shows the rest shield while it lasts ("Shield N"), and the floor clear waits for the
+  boss to be counted (kills, boss missions, Thirst for victory) before it clears the floor's enemies.
+- Port strings with two spaces ("Floor N cleared!  +X coins") use one: the web's translator joins spaces.
+
+### Batch 9: Adaptive difficulty, biome spawns and support caps
+
+**Adaptive difficulty** (`js/systems/adaptive.js`, `G.Adaptive`; port `main.gd` 173-177 / 992 / 1037 / 1162-1223 /
+3111 / 3228 / 3262 / 3663 / 8708-8710, `menu.gd` 4144, `save_data.gd` 87). The numbers are the port's.
+
+| Rule | Port |
+|---|---|
+| Where | Normal runs only, with the setting on, outside a rift arena. Not in the Daily (the same run for everyone), Party, Rift Time Attack, Survival by Type, Team, Boss Rush or the Tower (which keeps its own adaptive scaling from batch 8) |
+| Power | stat cards taken + move levels (+3 per evolved move) + level / 2 |
+| Base | the Pokémon's permanent upgrades (0-40) |
+| Target | 0.62 + 0.38 b + (0.2 + 0.3 b) p, with b = smoothstep(upgrades / 40) and p = smoothstep(power / 70); x0.9 rising to x1 over your first 8 runs (`stats.runs`); plus the suffering adjustment; clamped 0.55-1.5 |
+| Suffering | every 45 s of run time, unless a boss is alive: HP lost in the window > 50 % of max HP, or HP under 30 % -> -0.05; lost < 8 % -> +0.03; the adjustment stays in -0.2..+0.1 |
+| Glide | a run starts at 100 % and moves 0.03 a second towards the target; in a rift arena it is off and resets to 100 % |
+| Effect (k) | enemy and boss HP x k, their damage x k^0.7, the spawn rate x k, the horde / golden hour interval / k, the XP each level needs x k^0.8. Coins and records are unaffected. Modifiers stack on top |
+| HUD | "Challenge: N%" under the clock (and the biome line): green under 100, gold at 100, orange above. The boss bar moves down a line while it shows |
+| Setting | Settings > Graphics > "Adaptive difficulty" (Yes / No; mouse, touch, pad), on by default. Saved in the save as `save.modes.adaptive = false` (only "off" is stored), so it follows the account; a 409 merge keeps the newer save's choice like the other menu choices; `sanitize` drops anything but `false` |
+
+**Biome-themed spawns** (`js/data/enemies.js`; port `main.gd` 87-104 / 3028-3106 / 3614-3624). Biome keys:
+forest, cave, volcano, then each rift-arena biome's type (the Tower's later floors, Boss Rush's random start).
+
+| Biome | Types | Its own Pokémon |
+|---|---|---|
+| Shady Forest | Bug, Grass | - |
+| Crystal Cave | Rock, Ground | Zubat, Golbat, Crobat, Woobat, Swoobat, Noibat, Noivern |
+| Ash Volcano | Fire | - |
+| an arena biome | its own type | - |
+
+The run's enemy cast members that fit the biome on screen (a type, or the biome's list) weigh x1.6 in the bag
+(16 instead of 10, or 5 instead of 3 for old tiers), and each tier adds 2 extra Pokémon of the biome (its own
+Pokémon first, then its types; never a support, never one already in the cast, plain attackers only in tier 0),
+also x1.6, picked once per run. A tier with no candidates for the biome adds none and the bag is the cast's
+(the Judgment ruins have no type, so nothing changes there). Survival by Type wins over the biome (no biome
+weighting at all, only the chosen type). The Tower's waves use each floor's biome; Boss Rush has no waves. The
+current and the next biome's extras are preloaded. The biome weather now uses `BIOME_W[min(biome, 2)]` like the
+port (arena biomes take the volcano's weather; they used to wrap to the forest's / cave's).
+
+**Support caps** (`js/entities/enemy.js`, the numbers in `G.Enemies.SUPPORT_CAPS`; port `main.gd` 4026-4102 /
+3876-3881):
+- Healers: with more than 4 healers alive each heal is x0.9.
+- Shielders: every 8 s (was 6) shield up to 5 (was 6) of the nearest foes within 160 px, itself included, for 30 %
+  of their max HP (was 35 %) for 7 s (was 8); a foe that got a shield cannot get another for 14 s (new: no endless
+  shields), and one already shielded is skipped.
+- Summoners: 4 per summon (was 2); no summon with 8 of its own alive (was 4) or 20 summoned Pokémon on the map
+  (new; a summon never takes the map past 20), or with more than CAP + 15 enemies out.
+- One support per tier in the cast (as before), none in the biome extras or the hordes.
+
+**Deviations, and why:**
+- Online co-op runs (still "coming soon") get no adaptive difficulty: it measures one player, and co-op already
+  scales by the number of players.
+- The setting lives in the save (`save.modes`), not in the device's settings: the port keeps it in its save too,
+  and this way it follows the Magepunk account.
+- The Daily stays seeded: the biome extras use their own seed (the day's), so drawing them never shifts the
+  seeded set-up (map, cast, bosses, moves), and adaptive difficulty never applies to it.
+- "beach" and "sky" (and the beach list of 28 coast Pokémon) are in the port's tables but no biome of the port
+  or of the web has those keys, so they never apply; they are kept as in the port.
+- The web has 22 biomes (the Judgment ruins included, batch 8); the Tower and Boss Rush skip the ruins like the
+  port (`G.Tiles.CYCLE`), so neither lands on that biome (it has no themed spawns).
+- Port-only numbers in this area that were not changed: the port's base spawn density (0.17, surges x0.28)
+  against the web's (0.24, x0.4). Batch 8 kept the web's curve; changing it is a balance call for the owner.
+- "Challenge" sits one line lower than in the port: the web's biome / defeated / coins line is already there.
+
+### Batch 10: Minimap, field of view and UI scale
+
+`js/core/display.js` (`G.Display`) and `js/ui/minimap.js` (`G.Minimap`); port `main.gd` 335 / 532 / 546-554 /
+3176-3184 / 7798-8120, `pause_ui.gd` 178-216, `display.gd`, `menu.gd` 3965-4001, `save_data.gd` 87 / 126-129. The
+numbers are the port's. All three live in Settings > Graphics > Display (mouse, touch, pad; the sliders move by 5
+with the D-pad's left / right), and the field of view is also on the pause screen, as in the port.
+
+| Setting | Port | Here |
+|---|---|---|
+| Field of view ("View") | 100-200 %, step 5, default 165; it is the camera's zoom, applied live | The same. 165 % is the web's existing view (768 x 420 world px), so the visible world is 768 x 165 / FOV wide (1267 at 100 %, 634 at 200 %). Dynamax and the Tower / rift arena keep it, like the port (its zoom only changes from the slider) |
+| UI scale ("Screen size") | 60-140 %, step 5, default 100, a Reset button and "Screen (px) → game view" | The same range, Reset and info line. Scales the canvas HUD (drawn in w / k x h / k units) and every DOM layer (each laid out in a virtual 100vw / k x 100dvh / k viewport and scaled by k) |
+| Minimap | Always on | On by default, with a Yes / No switch |
+
+**The minimap** (port `class Minimap`): a 200 px circle (radius 96, white rim, an "N") showing 48 tiles across at
+4 px a tile, centred on you and scrolling with you. Real terrain colours (floor, flowers, wall faces and tops,
+water / lava with shore and foam; the web's biome palettes are the same as the port's) under a fog of
+exploration: within 14 tiles full colour and explored, explored ground dimmed (0.5), the rest near black (0.94).
+Chests (and the web's locked chests), altars and springs within 20 tiles or on explored tiles, with a pulsing ring
+when near; traps within 9 tiles; enemies (red dots) within 12 tiles; bosses always (their Pokémon in a red disc),
+pinned to the rim when far; the rift always, pinned to the rim, with a pointer on the rim; you in the centre with
+your Pokémon and a gold ring. Hidden in the rift arena, during the Judgment and while down, like the port.
+
+**Placement.** The port puts it at (8, 92), under the HP. Here it goes in that left column at the first free spot
+under what is already there: `hud.js` records every element's rect (HP, ability / buff chips, the centre clock
+block, weather, mode tag, boss bar, move bar, items, Z / MAX / swap, Team chips, co-op rows, the touch pause
+button, the fixed joystick, the controls hint) and `G.Minimap.place` scans down from y 92 for a spot that touches
+none of them; if the column is full (a phone in Team mode with the fixed joystick) it tries just right of the
+column, then shrinks it (down to 72). It is 200 px at 720 px tall and proportionally smaller on shorter screens
+(108 on an 844 x 390 phone; the port's view is 720 tall), times the UI scale. The edge arrows (rift, shinies,
+co-op mates, the lost Pokémon, thieves) step aside so they never sit under it.
+
+**Clamps** (so phones stay playable and nothing overflows):
+- Field of view: on a small screen (the short side under 500 px) it never goes below 130 % (the setting keeps the
+  chosen value; the slider says so).
+- UI scale: it goes only as large as keeps the virtual viewport (screen / scale) in the same height / width bracket
+  of `style.css` (781 / 661 / 521 / 401 px tall, 360 on a landscape phone; 761 / 640 wide), never below 100 %:
+  1280 x 720 reaches 109 %, 1366 x 768 116 %, 1920 x 1080 138 %, 844 x 390 108 %. With a touch screen it does not go
+  below 85 %; HUD buttons keep at least their 100 % touch area, and menu controls stay at least 24 px tall.
+
+**Saved** device-locally with the other display settings (`micasurvivor_settings` in localStorage: `fov`,
+`uiScale`, `minimap`), not in the account save: the port keeps them in its local settings file and each device has
+its own screen. Nothing new to merge on a 409.
+
+**Deviations, and why:**
+- The UI scale scales the interface only. The port's content_scale_factor scales the whole canvas, world
+  included; here the world's zoom is the field of view alone, so the two settings do not compound.
+- The maximum UI scale depends on the screen (above). At 140 % on a 1280 x 720 screen the menus' compact
+  layout rules would no longer match, so it stops at 109 %; the info line shows the applied size.
+- The setting is named "Interface size" (port: "Screen size"), since it no longer zooms the world.
+- The minimap can be switched off (the port has no switch; no pad action or key, as in the port), and it also
+  hides on the level-up / item / pause screens (the port covers it with those screens).
+- Dens are red and co-op mates show as dots in their colour (the port shows neither on its minimap). Chests,
+  altars, springs and traps use the port's fallback shapes, not its prop sprites.
+- The minimap redraws every frame (the web's HUD does); the port caches its drawing at 25 Hz.
+
+### Batch 11: Achievements, missions, titles, damage breakdown, Lexicon and trainer card
+
+`js/data/achievements.js`, `js/data/missions.js`, `js/systems/progress.js`, `js/systems/dmglog.js` (`G.DmgLog`),
+`js/ui/lexicon-ui.js` (`G.LexiconUI`), `js/ui/goals-ui.js` (`G.TrainerCard`, the Titles tab), `js/ui/run-ui.js`;
+port `progress.gd` 9-151 / 291-334 / 447-639, `main.gd` 351-355 / 758-858 / 2481 / 4484-4492 / 5168, `menu.gd`
+1465 / 1691 / 1801-1890 / 3047-3194 / 3503-3826, `save_data.gd` 84-86 / 588. The plan's "+93 / +13" was counted
+before batches 6-8; diffing the port's full lists against ours left exactly this:
+
+| | Port | We had | Added |
+|---|---|---|---|
+| Achievements | 82 + 54 per type + one per legendary (230 here since B1c) | 165 | 58: `boss10`, `boss250`, `boss500`, `boss1000` and the 54 "Por tipo" ones |
+| Daily missions | 17 | 13 | `mDaily`, `mMods`, `mType`, `mRifts` |
+| Weekly missions | 13 | 9 | `wDailyCh`, `wType`, `wRifts`, `wMods` |
+| Titles | 36 (one per achievement that gives one) | 34 | "Verdugo de jefes" (500 bosses), "Rey de los jefes" (1,000) |
+
+**Achievements.** The port's goals, tiers and rewards; the new "Por tipo" category sits after Combate, as in the
+port. Per type: defeat 250 / 1,000 / 5,000 Pokémon of a type ("Rastreador / Cazador / Maestro de tipo X";
+300 coins + 2 tickets, 1,000 + 3 + one x10, 3,000 + three x10), from `stats.tk_<type>`, which progress.js
+already counted (a dual-type Pokémon counts for both). Bosses: 10 (3 tickets), 250 (three x10), 500 (five x10 and
+a title), 1,000 (ten x10 and a title), from `stats.bossesTotal`. Every reward is coins or gacha tickets, earned in
+play. Nothing in the port depends on local co-op or on other languages, so nothing is pending.
+
+**Missions.** The lists are now in the port's order (the daily draw picks by position), with its goals, rewards
+and wording. The new ones count only their own runs, as the port's `req`: `mDaily` / `wDailyCh` the Daily
+Challenge, `mType` / `wType` Survival by Type, `mRifts` / `wRifts` the rifts won in a Rift Time Attack (game.js now
+sends `rifts` with `runEnd`), `mMods` any run with a modifier and `wMods` one with 3 or more (the Daily's rule is
+not a modifier: it reports 0). Rotation as the port: 3 daily + 2 weekly a period, seeded by FNV-1a of period +
+account and mulberry32, one reroll a day to a mission not already listed.
+
+**Titles.** Missions → Titles (the port's `_goals_titles`): "Title in use", "No title", then every title with its
+achievement and Use / In use / Locked. The Profile tab's select does the same. Equipping stores
+`profile.title` and `profile.titleAt`; on a 409 or any merge the title chosen later wins (whichever save is newer
+otherwise), and the titles you own come from the achievements (a union), so none is ever lost. Shown on the main
+menu under your Pokémon (`menu.gd` 1691), on the trainer card and on the public profile, as before.
+
+**Run damage breakdown** (`menu.gd` "Damage and defeats per move"). Every point of HP an enemy loses is recorded
+in `Enemy.hurt` (after shields, never more than the HP it had; the kill goes to the finishing source), with the
+source set by `G.Combat.land` (moves, their projectiles, orbs, mines, turrets, trails; the Z-move; Dynamax's Max
+waves) or where the hit happens (Rocky Helmet → Items, contact abilities → Abilities, burn / poison ticks and
+confused enemies → Status effects, a co-op mate's hits → Partner / team; traps, bombs and lava → Other). The
+run-over screen lists your moves (icon, level; most damage first), then Z-Move, Dynamax, Items, Abilities, Status
+effects, Partner / team and Other, each with damage (12.3k as the port), its percentage and defeats. The table
+scrolls past 5 rows.
+
+**Lexicon** (main menu → Lexicon; mouse, touch, pad). The port's five tabs: Items ("✔ Found" / "Not found yet" and
+"Items: n / 26 found"), Moves (by type, "Evolves into: …"), Status (the port's 7 texts), Abilities, Z-Moves &
+Dynamax (the rule, the Dynamax entry left pending in batch 5, each Z with "Defeat 250 X-type Pokémon: n/250" or
+"Unlocked"). Then, as the plan asks: raid dens, Pokémon (all 1025 since B1c, by generation; yours with their sprite, the
+others as silhouettes), Modes (the 8 modes with your records, the Tower and Boss Rush included, the 6 modifiers,
+adaptive difficulty) and the Floor Tower (relics, the rest cards, the 15 + 4 pacts and the boss log that was only
+on the fail screen). Every card opens an entry with its full text and data; Close, Esc, B or a tap outside closes
+it. Tracking reads what the save already has (items found, moves evolved, Z unlocks, dens, owned Pokémon, mode
+stats); nothing new is stored.
+
+**Trainer card** (Profile → "View my trainer card"; `menu.gd` `_show_card`): your display name, your title (or
+"(no title)"), your Pokémon and your 3 favourites, and the port's 9 cells: Runs, Best time, Best level, Defeated,
+Bosses, Chests, Pokémon (n / 1025), Achievements (n / 230), Time played (new stat `stats.totalTime`, seconds,
+max-merged like every stat). Below, "Records by mode". View only, like the port: no share or export, and nothing
+from the account but the name other players already see.
+
+**Deviations, and why:**
+- The breakdown splits the port's single "Other (status, traps, items)" row into Z-Move, Dynamax, Items,
+  Abilities, Status effects and Other (the plan asks for each), and shows a percentage on every row (the port
+  leaves it off "Other"), rounded by largest remainder so they add up to 100. No DPS column and nothing on the
+  pause screen: the port has neither.
+- The mission seeds keep this web game's period ids (`d20261018`, ISO weeks) and account key (`created` in ms)
+  rather than the port's (`2026-10-18`, the Monday's date, seconds). The algorithm and the list order are the
+  port's; changing the seed format would have re-rolled everyone's missions of the day.
+- The Lexicon adds the Pokémon, Modes, Floor Tower and dens pages, and opens each card into an entry (the port
+  shows the text on the card only).
+- Titles are not shown on co-op name tags: the port's co-op (batch 12) doesn't show them either.
+- The trainer card adds "Records by mode" (batch 8 asked for the Tower / Rush records there). The name is the
+  account's display name: the web has no separate "trainer name" field (the port's nick).
+- Not ported (languages dropped by the owner, 2026-10-18): nothing; the port has no language achievements or
+  missions, and its Lexicon text is ported in Spanish and English only.
+
+### Batch 12a: Co-op Mode (the local partner)
+
+`js/systems/localcoop.js` (`G.LocalCoop`), `js/systems/modes.js`, `js/ui/modes-ui.js`, `js/core/pad.js` (player 2),
+`js/ui/hud.js`, `js/ui/minimap.js`; port `menu.gd` 1584-1600 / 2109 / 2151-2156, `main.gd` 162-167 / 195-202 / 439 /
+523-524 / 815-817 / 838-841 / 985-989 / 1062 / 1243 / 1267 / 1623-1731 / 1807-1811 / 1917 / 1939-2007 / 8653-8661,
+`progress.gd` 105-106 / 155. The numbers are the port's. It is the port's local co-op, on one screen; the online
+4-player co-op (`js/net/coop.js`, batch 12b) is a separate thing: an online run is always Normal, so this mode never starts in one.
+
+| Rule | Port |
+|---|---|
+| Mode | "Co-op Mode" on Choose a mode, after Party (the port's order), its own mode: "A second Pokémon comes along and attacks on its own. Plug in a second controller and player 2 moves it with the left stick. It shares your upgrades. -20% coins. Partner: X". Modifiers apply (+0.25 coins each, then ×0.8). No leaderboard |
+| Partner | "Choose partner": your own Pokémon only, by generation (mouse, touch, pad; Esc / Back / B back). Saved as `save.coopDex` (+ `coopAt`). With no pick (or an unknown one): the first of your team (`G.Team.list`) that is not the Pokémon you play, else Eevee (Pikachu if you play Eevee). Shiny if you play shinies and own it |
+| Movement (AI) | speed 118. Past 150 from you it walks to you; within 120 of you, with an enemy within 240 of it, it closes in at half speed; else it stops. Steering eases (lerp ×5 a second). Past 520 from you it reappears 70 from you with a blue ring |
+| Player 2 | a second connected pad (the one player 1 is not using) moves it with the left stick: raw axes, 0.22 deadzone, speed 118 × the stick. No buttons: player 2 never drives a menu, pauses or picks a card, and while a co-op run is on, player 2's pad is never taken as player 1's. Unplugged: the AI takes over ("Player 2: controller disconnected, the AI takes over your partner"); plugged in: player 2 again ("Player 2: controller connected"). The HUD chip says "X · AI" or "X · P2" (with the left-stick glyph) and the partner wears a P2 tag |
+| Attack | the first projectile move of its main type (else a Normal one, else Ember), level 1 + your level / 6, at the nearest enemy within 520, every move-cooldown ×1.15 (your cooldown upgrades don't apply). Each shot does the move's damage × YOUR attack × 0.8 — "it shares your upgrades": attack upgrades, cards, items, ability, Dynamax — with your size (Calibre, Big Orb), crits and on-hit item effects. Its damage and defeats are "Partner / team" on the run-over breakdown |
+| Safety | enemies only go for you; it takes no damage while you stand. Not in a rift arena (hidden; it waits) |
+| Falling | after any Second Chance heart, a lethal hit doesn't end the run: you spectate ("You fell! Watch your partner"; the camera follows it; your Dynamax ends, no Z-move or Dynamax). It gets your max HP and takes the hits meant for you (×0.8, with its types and the weather; pure damage as is; 0.45 s apart); the AI flees enemies within 190. The HUD: "Spectating: you revive in N s" and "Your partner's HP". After 20 s it revives you next to it at half HP, 2.5 s invulnerable, knocking enemies within 220 back (450). If it falls first, the run is over |
+| End | coins ×0.8 ("×0.80 with the mode"), "Co-op Mode" on the result. `stats.coopRuns` +1; a run of 60 s or more also adds `stats.groupRuns`, which "In good company" / "Loyal partner" count (the port: "Co-op Mode already counts as a group run"). Both merge by max |
+
+The minimap shows the partner as a dot in the online co-op's second colour (`#5fc8ff`), and a HUD arrow points to it
+when it is off screen. The Lexicon's Modes tab lists Co-op Mode with your runs and partner.
+
+**Deviations, and why:**
+- The pick is saved as `save.coopDex` with a `coopAt` time (the port's `coop_dex` has none), so that a 409 merge keeps
+  the pick made last even when the other save is newer for another reason.
+- Its hits are always "Partner / team" (`dsrc: 'ally'`). The port files them under the move's id and moves you don't
+  carry go to that row, so a partner using the same move as you would have its damage counted as yours.
+- Its move level stops at the move's top level (5 for projectiles). The port asks for up to 6, past the end of its
+  4-step ladder.
+- Player 2 is "the pad player 1 is not using" rather than Godot's `get_connected_joypads()[1]`: the web keeps
+  player 1 on whichever pad pressed first.
+- Added for clarity (the port has none): the HUD chip, the off-screen arrow, the P2 tag, the minimap dot, and the
+  player-2 connect / disconnect toasts.
+- The partner is not tinted blue (the port modulates it slightly); the tag, chip and minimap colour mark it instead.
+
+### Batch 12b: Online co-op
+
+Upstream PokéSurvivor's own 4-player group runs (`js/net/coop.js`, `js/net/net.js`), switched on with Magepunk
+accounts and friends in place of Firebase: `js/mica/social.js` (`G.Social`: friends, lobbies, invites),
+`js/mica/online.js` (`G.MicaNet`: signalling + relay over `/api/mp`), `js/ui/social-ui.js` (Friends, the lobby, the
+invite popup), `js/ui/menu.js`, `js/game.js` (`G.Flow.startCoop`), and the `msurv-*` actions in `server/mp.mjs`. The
+game rules are upstream's, unchanged. Online co-op and the local partner (`js/systems/localcoop.js`, batch 12a) are
+separate: an online run is always a Normal run, so Co-op Mode never starts in one.
+
+**Getting together.** Main menu → Friends (for a guest: "Sign in to play with friends", a toast and nothing more:
+friends need an account; it is not a controller rule, pads work for everyone). The list is your Magepunk friends
+(`friends`, with "In MicaSurvivor" / "Online" / "Playing" from presence); "Add friend" takes a Magepunk username
+(`add-friend`). "Play with friends" creates a lobby; Invite (in the list or the lobby) sends an invite. A friend in
+MicaSurvivor's menus gets the popup ("alice invites you to play in their lobby" · Join / No, thanks; bottom left, so it
+never covers the menu); in a solo run a toast ("open the menu to join"); anywhere else on Magepunk a bell message in
+their inbox. The lobby shows each member's Pokémon ("Change Pokémon" opens the collection; Play brings you back),
+ready state and connection ("Host · Connected", "Ready · Connected (via server)"); guests press "I'm ready"; the host's
+Start needs everyone ready and connected. Everything works by mouse, touch and pad.
+
+**Rules (upstream's group runs, `coop.js` / `game.js`):**
+
+| Rule | How it works |
+|---|---|
+| Players | 2-4; colours gold, blue, green, pink (HUD bars, name tags, minimap) |
+| Authority | the host runs enemies, pickups, the team's XP / level, the clock and the end; each player runs their own Pokémon; a guest's hits go to the host, who applies them (`'h'` events) |
+| Mode | always Normal with no modifiers (`G.Modes.begin({mode:'normal'})`): no Daily / Rush / Tower / Team / Co-op Mode / other modes; adaptive difficulty off (batch 9); not on the leaderboard (solo runs only) |
+| Scaling | foes appear ×(1 + 0.75 per extra player), enemy HP ×(1 + 0.3 per extra), bosses ×1.4 more in a group |
+| XP | shared: the average of the players' XP bonuses, ÷ (1 + 0.6 per extra player) |
+| Level-up | cards for everyone at once; the run waits until all have picked ("Waiting for bob and carl…"); who is still choosing rides on EVERY frame (upstream's 2026-10 fix), so a lost message never freezes the screen. A bond (fusion) choice pauses everyone the same way |
+| Falling | a partner standing next to you for 3 s revives you at 50 % HP; the run ends 1.6 s after everyone is down |
+| Pause | does not stop the others; a host whose tab is hidden or silent for 2.5 s pauses everyone ("Paused: waiting for alice (host)…") |
+| Rewards | each player's own coins from the team's time / defeats / bosses / coins, `groupRuns` ("In good company", "Loyal partner") and `bestGroupTime` |
+| Leaving | a guest who quits or closes the tab says goodbye (`'bye'`, also on `pagehide`) and is removed ("carl left the game"); the host quitting ends the run for all ("The host has ended the game"), then everyone is back in the lobby, reopened (guests not ready). No reconnect mid-run (upstream has none) |
+
+**Architecture.**
+- *Lobby* (`msurvlobby:<id>`, a 12-hex id): `msurv-lobby-create` / `-join` / `-leave` / `-poll` / `-update` (Pokémon,
+  ready; host: open, start). Friends only: the host must be on YOUR friends list and you on theirs (the server reads
+  both). Up to 4. Every change is a compare-and-set on the row's `rev` (`setIfRev`), so two friends joining at once
+  both land. A waiting lobby closes when its host hasn't polled for 60 s; a waiting guest silent for 45 s is dropped; a
+  started lobby lives 10 min past the host's last keep-alive (the host polls every 2 min in a run). The start is stored
+  (seed, host, members) and also reaches guests by the poll (2 s on the lobby screen), besides upstream's `start` message.
+  The host leaving deletes the lobby, every member's signalling / relay row and its open invites (exact keys).
+- *Invites* (`msurvinv:<to>:<host>`, 3 min): `msurv-invite` (host, to a friend; plus a bell message in
+  `chat:dm:<to>`, at most once a minute per friend), `msurv-invites` (polled every 15 s in the menus, 30 s in a solo
+  run, only when you have friends; it also writes your "In MicaSurvivor" presence at most once a minute),
+  `msurv-invite-decline`.
+- *Signalling* (`msurvsig:<id>:<from>`): one row per sender holding its window of signals to each member (≤ 48, ≤ 24
+  KB), batched 200 ms; `msurv-signal-poll` returns what was sent to you, newer than `since`. Polled every second only
+  while a pair is still connecting; it stops once every data channel is open. ICE: public STUN only (Google,
+  Cloudflare), no TURN.
+- *Relay* (`msurvrelay:<id>:<from>`): the fallback when a pair has no data channel after 9 s (12 s for the guest), or
+  when the channel dies (`disconnected` for 4 s). Each sender's row holds its unacknowledged messages per peer (≤ 30, 16
+  KB each, 64 KB per row); receivers ack by seq in their own pushes; a push also returns what is waiting for you, so
+  one request a tick does both. **1 update a second** (owner, 2026-10-18: "slow relay + time cap"; upstream: 3), and
+  partners and enemies glide between updates (their velocity is led for up to 1.1 s and eased; a guest only shows
+  "waiting for the host" after 7 s on the relay instead of 2.5). Hard caps: one write per 1000 ms per sender (checked
+  against the sender's own row, so it holds across isolates; 429), 15 requests per 10 s per account, rows older than
+  30 s ignored (that peer is gone: dropped like a closed channel), swept after 1 h. In the lobby the relay only reads
+  (nothing to send; the lobby poll says who is there); keep-alives (every 5 s) and the 20 s silence rule apply in a
+  run. A pair that later gets its channel moves back to it.
+- *The relay's daily minutes* (`msurvrelaybudget:<host>:<YYYYMMDD>`, `MSURV_RELAY_DAILY_MIN = 30` in `server/mp.mjs`):
+  each host gets 30 relay minutes per UTC day, across all their lobbies. A minute counts once, when the first relay
+  write of that minute lands in one of the host's lobbies (a compare-and-set on the row, so two players can't count it
+  twice). The lobby poll and every relay answer carry the minutes left; while a pair is on the relay the lobby warns
+  "Relay: 12 min left today" (red under 6). Used up: relay pushes and pulls in that host's lobbies answer 403
+  `{budget: true}` and write nothing; a relayed guest's run ends with its rewards saved and the toast "Relay time is
+  used up for today; players who can't connect directly can't continue. Direct connections still work." (it stays in
+  the lobby); the host is told the same and plays on with anyone connected directly; in the lobby that pair shows "Could
+  not connect" with the same message, and Start stays off for it. Direct (WebRTC) pairs never touch it. A new UTC day
+  starts a new row. Swept after 2 days.
+- *Who reads what*: every msurv action is behind the login gate; signalling and relay check that the lobby is live and
+  that you are in it, and only return the part addressed to you, so nobody reads another lobby (or another member's
+  mail). Every row written is an exact key of the caller or its own lobby.
+- *Ephemeral prefixes* (GC table): `msurvsig:` and `msurvrelay:` and `msurvinv:` 1 h, `msurvlobby:` 12 h,
+  `msurvrelaybudget:` 48 h.
+
+**D1 write budget** (rows written; the site's D1 is on the free plan's 100,000 rows a day):
+
+| What | Writes |
+|---|---|
+| A run over WebRTC (direct) | 0 per message. Signalling: ~2-4 batched puts per side per pair, once. Then only the host's keep-alive (1 per 2 min) and presence (≤ 1 a minute per player) |
+| Lobby | create 1; join 1 + the used invite; ready 1; start 1; each member's `seen` ≤ 4 a minute while on the lobby screen; an invite 3 (invite row, bell message, lobby) |
+| Menus | presence ≤ 1 a minute per signed-in player with friends; invite polls are reads |
+| **A relay game** (1 a second) | at most 1 row a second per player on the relay, plus the host's minute row once a minute (measured: 1.7-1.8 a second for 2 players): **2 players ≤ 120 a minute (≤ ~7,260 an hour); 4 players all on the relay ≤ 240 a minute (≤ ~14,460 an hour)**. Requests: about the same count (one request does push + pull) |
+| **Worst case per host per day** | the 30-minute cap: **4 players ≤ 30 × 240 + 30 = 7,230 rows** (~7 % of the daily 100,000); 2 players ≤ 3,630 |
+
+At 3 a second (12b as first built) one hour of a 4-player all-relay game was ~43,000 rows. The owner chose "slow relay
++ time cap" (2026-10-18): a third of the rate and 30 minutes per host per day, so one host's relay can use at most ~7 %
+of the site's daily write quota; ~14 hosts maxing it out on the same day would use it all. A game over WebRTC costs
+almost nothing, and most pairs connect directly (STUN works for most home networks); the relay is only for the pairs
+that can't (symmetric NAT, some mobile data).
+
+**Deviations, and why:**
+- Firebase → `/api/mp` polling (no sockets on the site): the nickname screen is unused (your Magepunk username is your
+  name), friendships are the site's (mutual, by username; managed on Magepunk, so no Remove here), presence is the
+  site's (90 s), public profiles are not ported (your own preview still works).
+- A **ready** step: the server refuses the start until every guest is ready (upstream: the host starts any time).
+- The start is also stored on the server (guests read it from the lobby) besides upstream's `start` message.
+- A pair still connecting sends nothing over the relay (upstream relayed everything): no D1 write is spent on it.
+- The relay runs at 1 a second (upstream: 3) with smoothing for relayed partners and enemies, and has a daily cap of
+  30 minutes per host (owner's choice, 2026-10-18, for the D1 write budget).
+- `'disconnected'` for 4 s moves a pair to the relay, where a silent peer is dropped after 20 s (upstream waited for
+  `'failed'`, ~30 s); a guest who loses the host leaves the lobby too (it would wait for a host that is gone).
+- On `pagehide`, a co-op player says goodbye (upstream's `leave()`) and leaves the lobby.
+- The level-up wait joins names with "and" in English (upstream's "y" leaked).
+- The invite popup sits bottom-left (upstream: bottom-right, over the menu's last items).
+- English uses "lobby" for upstream's "sala" (was "room").
+
+**Not yet:** reconnecting mid-run (upstream has none); a guest's status effects on the host's enemies and a guest's
+alternative evolutions in the ghost replay are still not synced (as noted in batch 1).
+
+**For 12c (spectate + replays):** the host's frames already carry the full state every time (players, nearby enemies
+with HP / animation / status, team XP / level / clock, who is choosing): a spectator can be fed host frames, and a
+replay can record them (the relay sends them at 1 a second). `G.Net.snapshot()` and `G.MicaNet.snapshot()` give the connection
+state as plain data; the lobby row (`msurvlobby:<id>`, with `start`) and the presence status `micasurvivor:run` say who
+is in a group run (for "live now").
+
+### Batch 12c: Spectating and replays
+
+Watch a friend's run live, read-only, and share a whole run as a replay link anyone can open. Not upstream (upstream
+has neither). `js/mica/spectate.js` (`G.Spectate`: the snapshot, the live publisher and the watcher's poll),
+`js/mica/replay.js` (`G.Replay`: the recorder, its codec, the local store, sharing and the reader),
+`js/ui/watch-ui.js` (`G.WatchUI`: the read-only renderer for both, the banner, the replay controls and the end card),
+`js/game.js` (the `'watch'` state, the hooks at run start / each frame / run end, `?watch=` / `?replay=` at boot),
+`js/ui/run-ui.js` (Share replay), `js/ui/social-ui.js` (Live now, your recent runs), `js/ui/hud.js` / `js/ui/minimap.js`
+(a watched player's HUD without its controls; partners on the minimap), and in the site: `server/mp.mjs`,
+`site/livewatch.js`, `site/topbar.js`, `overworld/ow_screens.js`, `battlecards/start.html`, `_redirects`.
+
+**Watching a friend.** Friends only, both ways (the server reads both friend lists). A friend in a run is listed:
+
+- in MicaSurvivor's Friends screen under **Live now** (with what they play, "Pikachu · Boss Rush" or "Pikachu · co-op
+  with bob"), with **Watch**;
+- on the rest of Magepunk: `live-friends` (the Battlecards "Live now" hub) has a new kind `micasurvivor`, and the
+  `friends` action reports a friend in a run as online with status `micasurvivor:run` (so the top bar's Friends tab and
+  the overworld friends menu offer Watch). All of them route through `site/livewatch.js` to
+  `/micasurvivor/?watch=<username>`.
+
+The view is the game's own canvas: the run's world (its seed, biome and rift arena), their Pokémon and partners as
+puppets (`G.Player` / `G.EnemyMgr.addRemote` copies that never think), the foes and pickups, harmless ghost copies of
+their attacks (like a co-op partner's), their HUD (HP, level, XP, clock, "Challenge: N%", moves, held items, boss bar;
+no touch / pad controls or hints) and minimap, plus a line on the right for what the HUD leaves out for a watched
+player: Z-move ("Z-Move: Fire · ready / in use! / used"), Dynamax, Team Mode, each partner's HP ("Eevee · AI · 51%"),
+and in the middle "Choosing an upgrade…" (or "Choosing…", "Paused", "Fainted: revives in N s"). Events arrive as the
+game's banner ("Level 5! · Flamethrower Lv. 2", "A boss appears: Onix!", "Z-Move!"). A banner top right says
+"Watching alice · LIVE" (and "Watching: 3" with company) with **Leave** (or Esc). Nothing the viewer presses reaches the
+run: in the `'watch'` state the game reads only Esc (and Space in a replay). When their run ends the viewer gets the
+summary card ("alice's run has ended": Pokémon, time, level, defeated, bosses, moves). Online co-op groups can be
+watched through any member: each member publishes their own view (its partners included).
+
+**Snapshots.** `G.Spectate.snap()` (≈0.08 ms): your Pokémon `p` (position, facing, animation, HP, max HP, flags: fainted /
+walking / Dynamax / down in Co-op Mode / in the sky), `lv` level / XP, `k` `bo` `co` kills / bosses / coins, `mv` moves
+(+ evolved), `ac`, `it` items, `lu` the level-up (1) or another choice (2) or pause (3) open, `ds` the Dynamax scale, `z`
+Z-move, `dy` Dynamax, `tm` Team Mode, `ar` the rift arena, `wx` weather, `ad` the adaptive challenge, `mt` partners
+(online: name, colour; local: its controller AI / P2, the HP it has while you are down, and `dn` the seconds until you
+revive), `e` foes within 720 (bosses within 1600, the nearest 80: id, species, position, HP %, max HP, boss / shiny /
+burn / poison / shield / den flags, animation + facing), `pk` pickups within 520 (24 special, 40 XP orbs), the clock `t`,
+seed `sd`, biome `b`, mode `m`, and the events / defeated foes since the last one. A live snapshot is 2-6 KB.
+
+**Server (live).** All behind the login gate, rate-limited per account (30 / 10 s each):
+
+| Action | What it does |
+|---|---|
+| `publish-micasurvivor` {run, label, mode, dex, group, over, seq, snapshot?} | The player's client, every 10 s WITHOUT a snapshot (a watcher check: it only READS), every 1 s WITH one while somebody watches (the answer's `watchers`), once more at the end (`over`, the summary in the snapshot) and a keepalive "over" on `pagehide`. A player with no friends writes nothing at all. |
+| `micasurvivor-state` {username, seq} | A friend's poll (1 s): `{waiting}` (live, no snapshot yet), the snapshot, `{unchanged}` for the same seq, `{over}` (+ the summary when a watcher saw the end), `{live:false}`. Spectator cap 10 (403 `full`). |
+
+| Row | Written | Life |
+|---|---|---|
+| `msurvlive:<user>` {run, ts, since, label, mode, dex, group, over} — the "in a run" beacon | at the start, the end, a mode / group change, else every 5 min | live for 6 min after its last write (a dead tab lapses); GC 6 h |
+| `msurvstate:<user>` {run, seq, ts, snap, label, mode, group, over, watchers} | only while a friend's heartbeat is fresh; ≤ 1 per 900 ms (1 per 5 s past 60 watched minutes a day) | a viewer waits once it is 20 s old; GC 1 h |
+| `msurvspec:<user>:<viewer>` (ms) — a viewer's heartbeat | by the viewer's poll, at most every 4 s, only while the run is live | counts as watching for 12 s; GC 1 h |
+| `msurvspecbudget:<user>:<YYYYMMDD>` {rev, used, last} — watched minutes per UTC day | once per watched minute (compare-and-set) | GC 48 h |
+
+**Replays.** Every run is recorded from the start (`G.Replay.observe` in the game loop: a time check each frame, a
+snapshot every 0.5 s of RUN time, so pauses and level-up screens take no room), delta-encoded as it goes: frame =
+[dt, your Pokémon's differences, the counters' differences, the slow state when it changed, the foes' table, the
+pickups' table, the partners when they moved]. Positions are quantized (your Pokémon to 2 world units, the rest to 4);
+in the entity tables ids are delta-coded, every entity is predicted to repeat its last step, and only the fields that
+differ from that are written (id + a bit mask + the corrections), so a foe walking straight on costs nothing; foes'
+facing is not recorded (they face where they walk). Events ride beside the frames (`lv` level-up, `mv` a move learned or
+levelled = the card picked, `xe` a move evolved, `bs` / `bk` a boss appears / is beaten, `z` Z-move, `dx` Dynamax, `dd`
+fainted, `bi` biome, `ar` rift arena) and which foes that vanished died (they play their Faint). At the end the stream is
+gzipped ('G1.' + base64url, the Micatro replays' format; 'R1.' raw fallback) and kept in this browser
+(`micasurvivor_replays_v1`, the last 3 runs, the oldest dropped if storage is full).
+
+The run summary has **Share replay** (uploads it, shows the short link `/msr/<id>` and copies it: "Link copied!") and
+**Watch replay** (plays it right there). A failed upload says so ("Couldn't upload it. It's saved in this browser: try
+again.") and the button becomes Retry; a retry sends the same `rid`, so the server returns the first id instead of
+storing it twice. Friends → **Your recent runs** lists the local ones with Watch / Share (Copy link once shared). Guests
+can watch their own; sharing needs a login.
+
+| Action / row | |
+|---|---|
+| `micasurvivor-replay-put` {code, meta, rid} (login, 20 a minute) | validates the code (G1. / R1., ≤ 1.2 MB packed, unpacked under 8 MB — a gzip bomb stops there — `{v:1, h, f:[arrays] ≤ 30,000, ev?}`), allow-lists the meta (Pokémon, mode, time, level, kills, bosses, fainted, co-op names, frames counted by the server); writes `msurvreplay:<8 hex>` {code, meta, by, when} and the player's list `msurvreplays:<user>` {ids:[{id, when, rid}]} |
+| per-player cap | 10 shared replays: the 11th deletes the oldest (only if that row is the player's own: `by` is checked) |
+| `micasurvivor-replay-get` {id} | PUBLIC (no login, above the auth gate like `replay-playlist-get` / `micatro-replay-get`, the same per-IP limit) |
+| `micasurvivor-replay-list` | your stored replays with their meta |
+| life | `msurvreplay:` 30 days (GC, like `mreplay:`), `msurvreplays:` 60 days |
+| link | `/msr/<id>` → `/micasurvivor/?replay=<id>` (302 in `_redirects`) |
+
+The player is the same renderer: play / pause (Space), 1× · 2× · 4×, a seek bar (decoded from a checkpoint every 40
+frames: a seek costs ~0.3 ms) with marks for bosses, Z-moves and Dynamax, "Replay of alice", and at the end the run's
+summary card with Watch again / Back to menu. An unknown or expired id: "This replay doesn't exist or has expired
+(replays are kept for 30 days)."
+
+**Cost (D1 row writes; measured in `micasurvivor_spectate_test.mjs` / a 30-minute run):**
+
+| What | Writes |
+|---|---|
+| A run nobody watches | the beacon: 1 at the start + 1 every 5 min + 1 at the end (**~0.2 a minute**; 1 in the test's 6.7 s). The watcher checks are reads. Friendless or guest: 0 |
+| A watched run | **~76 a minute per run with one viewer**: 60 snapshots + 15 heartbeats + 1 watched-minute row (measured 80/min); +15 a minute per extra viewer. Past 60 watched minutes a day: 12 snapshots a minute |
+| Watching (the viewer) | ~15 heartbeats a minute (reads otherwise) |
+| Sharing a replay | **2 rows** (the replay + the list; +1 delete when the 11th evicts the oldest) |
+
+**Sizes and speed** (measured with a 30-minute Normal run, real spawns, an invulnerable bot, the clock sped up ×8, ~65 foes in range from minute 5 on): 3,668 frames, 2,084 KB of JSON, **679 KB packed** (≈ 22 KB a minute; the first encoding, without the prediction and with foes’ facing at 2 px, was 858 KB). The cap is therefore **1.2 MB** packed (about 50 minutes of a busy run; a longer one stays watchable in the browser but is "too big to share"). Packing takes ~140 ms at the end of the run; seeking ~0.7 ms. The recorder costs **0.045 ms per frame** on average (a snapshot every 0.5 s: 0.16 ms average, 0.7 ms at most; 0.008 ms per frame in the e2e test’s quiet run), well under the 0.5 ms budget, and it reads nothing random and changes nothing in the run.
+
+**Deviations, and why:**
+- Discovery uses its own beacon, not presence: an unwatched solo run writes no presence (12b made those polls
+  read-only), and a presence row lasts 90 s. The beacon is refreshed every 5 minutes, so a closed tab can stay "live"
+  for up to 6 minutes (the `pagehide` keepalive usually ends it at once); Watch then shows "alice isn't playing right
+  now."
+- The view runs about a second behind the player (it glides between the last two snapshots).
+- Keys are `msurvreplay:` / `msurvreplays:` rather than `msurv_replay:`: the store's prefix scans and the GC use LIKE,
+  where `_` is a wildcard.
+- Not shown to a viewer: projectiles exactly as fired (ghost copies of the active moves are drawn instead), floating
+  damage numbers, broken crates, weather particles, the Judgment cinematic. A replay doesn't record the foes' facing
+  or animations.
+
+### U4: unified replays (format v2: sessions and segments)
+
+Plans/MICASURVIVOR_UNIFIED_PLAN.md "U4". One replay format for every mode (base, Expedition, Dive), solo or with
+partners, and for runs of any length. `js/mica/replay.js` (its header comment is the design), `js/ui/watch-ui.js`,
+`server/mp.mjs` (`micasurvivor-replay-put` / `-get` / `-keep`), hooks in `js/systems/combat.js` (every cast),
+`js/net/coop.js` (an online partner's casts) and `js/systems/localcoop.js` (the legacy partner's shots).
+
+- **One tape per SESSION**, recorded by the host: slot 0 is your own Pokémon (as in v1), slots 1.. every other player
+  (local partners from `G.LocalCoop`, online guests from their co-op frames); the header lists them
+  (`players:[{id, name, dex, shiny, k: me | l | o, c}]`). A co-op guest records its own tape too (offline / solo) but
+  never uploads it in the background. Frames gain three fields: **12** the other players' rows
+  `[x, y, dir, anim, hp, maxHp, flags, dex, level]` delta-coded per player, **13** their moves and items when they change,
+  **14** every cast of the interval by any player `[slot, move, level, aim x 100, evolved, time offset]`. A v2 tape has
+  no field 6 (partners).
+- **Segments**: a segment closes every 5 minutes of run time, every 10 Dive floors, at 3.0 M raw chars (4.5 M for an
+  Expedition one, which thins its frames as before within the segment) or 3,000 frames; the snapshot that closes it is
+  recorded again as the next one's first frame, a KEYFRAME (absolute values), so every segment decodes on its own and
+  they meet without a gap. Each is packed on its own (`{v:2, h:{..., sid, seg, players, end?}, f, ev}`), under 1.2 MB
+  (halved like a v1 Expedition tape if it is not). The index: `[{seg, t0, t1, n, bytes, mk}]`.
+- **Upload as the run goes**: a signed-in host (or solo player) uploads each finished segment once the session has a
+  second one (`micasurvivor-replay-put {v:2, sid, seg, code, meta, last}`). A one-segment run is uploaded only when
+  shared, as one plain row (`msurvreplay:<id>`, 2 writes, as before).
+- **One size policy**: nothing is cut silently. The only hard limit is 120 segments a session (~10 h): the last
+  segment's header then says `end.lim` and the viewer's end card reads "The replay ends here (the session limit)."
+- **Playback**: a session is fetched index first, segments on demand (the next one ahead of time; the clock waits on
+  one that is still loading). Seeking finds the segment by binary search, then the frame from the segment's nearest
+  checkpoint (never a rescan from the start). **Following: <name>** (the button, F / Tab, 1-4, LB / RB on a pad)
+  switches whose view the camera and HUD follow; everyone else is drawn as a named partner with its HP; every player's
+  recorded casts are drawn as ghosts where they aimed. A v1 tape plays as a session of one segment (its ghosts aim at
+  the nearest foe, as before).
+
+| Action / row | |
+|---|---|
+| `micasurvivor-replay-put` {v:2, sid, seg, code, meta, last, keep?} | the segment's header must name this session and segment; ≤ 4,000 frames; in order (409 `segment gap` / `session closed`); seg < 120 (413 `session full`). Writes `msurvseg:<id>:<seg>` {code} + `msurvsess:<id>` {by, sid, when, upd, idx, players, meta, done, end} (+ the player's list on the first one: `{id, rid: sid, v: 2, bg}`) |
+| `micasurvivor-replay-keep` {id} | Share on a session already uploaded: drops its `bg` mark (1 write) |
+| `micasurvivor-replay-get` {id} / {id, seg} | PUBLIC: a tape `{code}`, or a session `{session: {v:2, idx, players, done, end}, meta, by}`; then each segment `{code}` |
+| per-player cap | 10 replays, a session counting as one; past it a background (not shared) session goes first, with its segments |
+| life | `msurvsess:` / `msurvseg:` 30 days (GC) |
+| writes | a long run: 3 rows for its first segment, then 2 per segment (~0.4 a minute); Share afterwards: 1 |
+
+Sizes (`micasurvivor_replay_v2_test.mjs`, fast-forwarded): a 45-minute Normal run with ~12,500 KOs is 9 segments of
+42-284 KB packed (1.8 MB in all; 5,396 frames); a 60-floor Dive is 6 segments (one per 10 floors); a 75-second 4-player
+local session, with every player's row and every cast, packs to ~8 KB.
+
+## DLC D0a: base-unchanged harness
+
+The Expedition DLC (`Plans/MICASURVIVOR_POKEBONK_DLC_STUDY.md`) adds new modes, and the existing modes must stay
+exactly as they are. Batch D0a is the proof: a deterministic harness and recorded golden runs of every base mode.
+Every later DLC batch re-runs them and must match.
+
+**Run it:** `node overworld/tests/micasurvivor_dlc_base_unchanged_test.mjs` (about 30 s). The quick gate
+(`run-all.mjs --changed`) selects it for any `micasurvivor/**` change, and for a `server/` or `functions/` change
+whose diff touches the `micasurvivor-*` / `msurv-*` actions (`BY_PATH` in `overworld/tests/select-changed.mjs`).
+
+**What it runs:** Normal, Daily, Boss Rush, Tower, Team and local Co-op, each in a fresh browser context.
+- **The profile:** a fixed guest save, set in localStorage before boot. It has 5 Pokémon, all fully upgraded so
+  the runs last. The device id and the 1280×720 viewport are fixed too (the viewport sets the camera, and the
+  camera sets where enemies spawn).
+- **Up to 120 s of sim per mode,** or until the player falls: Normal ~112 s, Daily ~74 s, Boss Rush ~49 s.
+- **Fixtures:** `overworld/tests/fixtures/micasurvivor_golden/<mode>.json`, ~110 KB in all. Each holds:
+  - a per-second hash of the player, the enemies, the pickups, the projectiles and the rest (clock, state,
+    biome, the co-op partner, the team), plus their counts;
+  - the `Math.random` draw count;
+  - the spawn log;
+  - the kill / XP / coin totals;
+  - the final save (timestamps normalised to `<ts>`).
+- **The replay:** `replay.json` is the Normal run's 12c replay. The test checks that the run records the same
+  replay again, and that the fixture replay plays through the replay player (`G.WatchUI`) to the same final
+  frame hash.
+
+**The game-side hook:** `G.Game.debugStep(n, dt)` (`js/game.js`). It does what `frame()` does to move the
+game, n times with a fixed dt: keys, `update`, the replay player, the level-up / choice tick and the replay
+recorder. It skips rendering, the real clock, the pad, the network and `requestAnimationFrame`. Like the other
+`debug*` hooks it marks the run as tampered, so it never reaches the ranking. Nothing calls it outside the test.
+
+**Determinism lives in the test, not the game:**
+- **Randomness:** before any page script runs, the test swaps in a seeded, counting `Math.random`, a seeded
+  `crypto.getRandomValues` (the replay id) and a virtual clock. `performance.now` and `Date` run on that
+  clock: a fixed day, and exactly dt per step once the sim starts. The game reads the clock in the sim itself:
+  the pathing line-of-sight throttle, Focus Sash, achievement checks and timestamps.
+- **No real frames:** `requestAnimationFrame` is frozen once the sim starts.
+- **No interleaving:** each mode's whole sim runs inside one synchronous `page.evaluate`, so no timer,
+  network reply or asset load can run in the middle. Sprite loading doesn't affect the sim: the test still
+  passes with 70 % of the images and fonts failing to load.
+- **Silenced sound:** `G.Audio.sfx` and `music` are no-ops, because sound effects draw `Math.random` only where
+  an audio device exists.
+- **Input:** it goes through the game's own layer, as `KeyboardEvent`s on `window` read by `G.Input`. The
+  player keeps away from nearby enemies, and otherwise walks for 1 s and stands for 1.5 s. Digit1 takes the
+  first card of any level-up, bond, item or Tower screen.
+
+**When it fails:** it prints the first second and the field that diverged, then the first difference in the
+spawn log, the totals and the save. For example:
+
+```
+FAIL: normal: per-second hashes ... match (112 s)
+      second 3: enemies (e) diverged: fixture 5e090c14 vs now 874764e6 · also differing that second: nothing else
+FAIL: normal: the spawn log matches (185 spawns)
+      first difference at spawns[7][1] [t*100, dex, boss, den, maxHp]: fixture 837 vs now 751
+```
+
+A DLC batch that fails it has changed a base mode. Find out what changed, and don't re-record. To dig in, run
+`ONLY=<mode> TRACE=1` to print the HP, position and enemy count each second.
+
+**Re-recording (`--record`):** only for a deliberate change to a base mode, such as a balance pass, the
+Pokédex growing or a new base mechanic. Run `node overworld/tests/micasurvivor_dlc_base_unchanged_test.mjs
+--record`, review the fixture diff, and say in the PR why the base changed. The fixtures record the 1025-entry
+Pokédex of batch B1c (re-recorded then: the 18 new enemies change every mode's enemy pool; first recorded on the
+1007 of B1/B1b). The fixture JSON is written with LF line endings. In a git worktree (no gitignored assets) add
+`MAGEPUNK_ASSET_ROOT=<main checkout>` so the static server finds `micasurvivor/assets/` and `overworld/data/`.
+
+**Not covered:** what `render()` does (the harness never draws, and draws by the renderer don't shift the
+stream), sound, online co-op and the network.
+
+## DLC D0b: Expedition plumbing
+
+Expedition is a set of new modes picked on "Choose a mode", like Tower or Boss Rush. There is no on/off switch
+(owner, 2026-10-19), and the existing modes play exactly as before. D0b is the plumbing only, with no gameplay yet:
+every Expedition mode says "Coming soon" (D3 made Classic playable: see "DLC D3" below).
+
+**The mode select:** an **Expedition** group sits between the base modes and the modifiers, with Classic, Survival
+and League (`js/systems/expedition.js` `MODES`).
+- Each card is `aria-disabled` but not `[disabled]`, so mouse, touch and pad all reach it. Pressing one says
+  "Expedition is coming soon." and starts nothing.
+- The gate is also in `G.Flow.play`, and `G.Modes.plan()` plans a disabled Expedition mode as a normal run.
+- A later batch turns a mode on with `G.Expedition.ENABLED.add('exp-classic')`. `plan()` then returns
+  `{mode, dv, map, diff}` with no modifiers, and `G.Flow.play` loads the Expedition code before `startRun`.
+
+**What a base page loads:** only `js/core/hooks.js` and `js/systems/expedition.js` (the registry, the loader and the
+version gates). The Expedition code itself, `js/expedition/save.js` then `core.js`, is injected by
+`G.Expedition.load()`.
+- Only starting an Expedition mode calls `load()`. A base boot or a base run never fetches it (the plumbing test
+  checks the network log).
+- `load()` runs once, and a failure can be retried. It checks that the loaded code is this build's `dv`, so a stale
+  cache is refused.
+
+**The seams** (`js/core/hooks.js`, `G.Hooks.on / call / reduce / first`): Expedition code reaches the base game only
+through these four. With no listener, a seam returns its input unchanged. A listener that throws is logged and skipped.
+Every Expedition listener leaves base runs alone.
+
+| Seam | Where | What the Expedition does with it |
+|---|---|---|
+| `run.start` | `game.js` `startRun`, after setup | notes the run's `{mode, dv, map, diff}` |
+| `run.end` | `game.js` `endRun`, Expedition runs only (reduce over the run-over lines) | records the run in the Expedition save; a clean solo run's mark goes to the Expedition board |
+| `replay.header` | `replay.js` `begin` | adds `dv`, `map` and `diff` to the header |
+| `spectate.snap` | `spectate.js` `snap()` | adds `dv` to each live or replay snapshot |
+
+**An Expedition run never writes the base save.** `endRun` gives it its own early branch, like the Party's: no coins,
+stats, missions or base board. `G.Modes.saves()` is false and `G.Progress` is off. Pokémonedas stay the base game's
+(owner decision #4). `G.Expedition.wallet.earn / spend / balance` go through the base save, but nothing calls them yet:
+D9 and D10 pay the runs.
+
+**The freeze:** `load()` first deep-freezes `G.Moves`, `G.Items` (and its item order `LIST` / `BY`), `G.Upgrades`,
+`G.Enemies`, `G.DEX` and `G.DEX_BY`.
+- Only plain objects and arrays are frozen: 2,455 objects, a one-time 2–20 ms.
+- From then on, any write throws in strict code (the Expedition files are `'use strict'`) and changes nothing.
+- It happens only in a page that loaded the Expedition code. A base page is never frozen.
+- Measured cost, the same seeded Normal run frozen and not: the sim's per-step time is within noise (×1.01–1.17
+  between runs). A tight read loop over the tables is about ×1.24 slower (7 ms per 2 million reads).
+
+**The Expedition save** (`js/expedition/save.js`, `G.ExpSave`) is separate from the base save.
+- **Signed in:** the server row is `micasurvivorexp:<user>`, through `micasurvivor-exp-save-get` / `-put`
+  (`server/mp.mjs`). The browser keeps a copy in `micasurvivorexp_save.mp:<user>` and its rev in
+  `micasurvivorexp_rev.mp:<user>`.
+- **A put** is compare-and-set on `rev`. A stale put gets 409 with the stored save, merges it and retries. On the
+  current rev the server also merges the put into what it holds, so a put can add progress but never take any away.
+- **The blob** is `{v, counters:{name: n}, sets:{name: [id]}}`, and the merge never loses progress: the max of each
+  counter, the union of each set. So a counter is a level or a record. Anything spendable is two counters (earned,
+  spent).
+- **Limits:** 2,000 counters, 200 sets of up to 5,000 ids, 200 KB. The server refuses an unknown top-level field,
+  `coins` included.
+- **Guests:** localStorage `micasurvivorexp_save.guest` only, with no request. The first time the Expedition opens
+  signed in in that browser, the guest progress is merged into the account once (`micasurvivorexp_migrated.guest`).
+  The guest copy is kept. Because the merge can't lose anything, there is no question to ask, unlike the base save's
+  carry-over.
+- The base row `micasurvivor:<user>` is never read or written by any of this.
+
+**Boards:** `run-score` / `run-leaderboard` with mode `micasurvivor_expedition` and `{expMode, dv, map, diff}`.
+- There is one board per map and difficulty, `runboard:micasurvivor_expedition:<map>:<diff>`, built server-side from
+  allow-listed maps (`viridian`, `mtmoon`, `cerulean`) and difficulties (`normal`, `hard`, `nightmare`).
+- It ranks by score, then time. D0b's score is the time survived; D9 brings the formula.
+- Your best per board is `runBest['micasurvivor_expedition:<map>:<diff>']`.
+- Enforcement follows `micatro_modded`: a `micasurvivor` score that carries any Expedition field is refused (400), and
+  an Expedition score without them is refused. The base board stays pure.
+- The client side is `G.Exp.submitScore` / `G.Exp.leaderboard(map, diff)`. A board screen comes in D9.
+
+**Version fields:** `G.Expedition.DV = 1` (an integer; bump it whenever Expedition content changes what a run or a
+snapshot means).
+- **Runs:** every Expedition run carries `G.Modes.run = {mode: 'exp-…', dv, map, diff}`.
+- **Replays and spectating:** the replay header and meta, and every live snapshot, carry `dv` (and `map` / `diff`).
+  The server's replay-meta allow-list and the live beacon accept `exp-…` modes and `dv`.
+- **Watching:** a replay or live run whose `dv` is missing, unknown or newer, or whose mode this build doesn't know,
+  plays with a notice: "This replay is from a newer version of Expedition: reload the page to watch it properly."
+- **Co-op lobbies** (12b): `G.Social.createRoom({mode})` makes an Expedition lobby whose row, view and start carry
+  `mode` and `dv`. A join sends the client's `dv`. An Expedition lobby refuses any other `dv`, or none (409, nothing
+  written), and the client says "Your game is out of date: reload." `G.Flow.startCoop` refuses a mismatched start
+  too.
+- **Base runs, replays and lobbies carry none of these fields**, so every existing replay and lobby stays valid.
+
+**Base unchanged:** the D0a test passes against its fixtures as recorded, with no re-record. So does
+`micasurvivor_expedition_forceload_test.mjs`, which runs the same unchanged D0a test with the Expedition code loaded
+and frozen in every page before its base sim. Loading the Expedition doesn't leak into the base modes.
+
+**Not yet (later batches):**
+- any playable Expedition mode, its map / difficulty pickers and the board screen (D3, D9);
+- starting an Expedition co-op run (the lobby carries the fields; `startRun` for a group is still base);
+- loading the Expedition renderer for an Expedition replay (D1: done, see below);
+- paying runs through `wallet` (D9 / D10);
+- the Expedition entries in the Lexicon and Goals.
+
+## DLC D1: terrain layers
+
+An Expedition run plays on a **bounded zone with heights**, the GBA look of Pokémon's ledges and stairs
+(`Plans/MICASURVIVOR_POKEBONK_DLC_STUDY.md` 5.2). It is Expedition-only: base modes never get a zone, and the D0a
+fixtures pass unchanged. The modes are still "Coming soon" (D3 turns Classic on); tests use
+`G.Expedition.debugEnable('exp-classic')`.
+
+**The zone** (`js/expedition/terrain.js`, `G.ExpTerrain`): 120 × 120 tiles centred on the world origin. Outside it is
+rock, drawn by the base wall painter.
+- Every tile has a height 0–3. Neighbouring tiles differ by at most 1, and no plateau is smaller than 14 tiles.
+- A cliff is the edge between two heights. A **ramp** (stairs) joins its tile's level with the one above.
+- Rock outcrops sit on flat ground, and ponds on low flat ground. Trees, rocks and tall grass come from the generator.
+- The spawn is a flat clearing (radius 7) at the origin.
+
+**The generator:** `G.ExpTerrain.generate({seed, map, zone})`.
+- It takes the run's world seed, the map (`viridian`, `mtmoon`, `cerulean`, each with its own profile) and the zone
+  number.
+- It draws only from its own stream, `G.DLC.rng` (mulberry32), never `Math.random`. The same three inputs always give
+  the same zone, byte for byte (`zone.hash`, FNV-1a over every grid).
+- Steps: three octaves of value noise cut into 4 levels, the clearing, smoothing (no 1-tile ridges or trenches, steps of
+  1, small plateaus merged), outcrops and ponds. Land or water cut off by them becomes rock.
+- Then **ramps until a flood-fill from the spawn reaches every walkable tile**, with stairs going up to the north
+  preferred. More ramps go along long cliffs, one per ~34 tiles of cliff, at least 12 tiles apart.
+- Solid props (trees, rocks) only go on a flat 3 × 3 with no other solid prop next to them, so no prop can ever cut a
+  path.
+- About 50–120 ms per zone, once per zone.
+- `G.ExpTerrain.custom(spec)` builds a zone from explicit grids (the tests; later, hand-made shrines).
+
+**Layers:** `zone.mask(tx, ty)` holds one bit per level a tile joins. A plain tile at height h is `1 << h`, a ramp is
+`(1 << h) | (1 << (h + 1))`, and a wall is 0. Two tiles connect when their masks share a bit.
+- **Collision** (`js/world/world.js`, `collideZone`):
+  - Each walking entity keeps the mask of its last good tile (`zMask`) and where that was (`zLx`, `zLy`).
+  - A tile of another layer blocks it like a wall: you can't walk up a cliff. (D2, after D3: a tile exactly one level
+    below doesn't block, so you walk DOWN a ledge; see "DLC D2".)
+  - A single step that carries the centre straight across an edge (a dash, a knock-back, a jumper's landing) puts the
+    entity back on its last good spot.
+  - `entity.layer` is the height it stands at (h, or h + 0.5 on a ramp). This is the per-entity z that D2's verbs will
+    use.
+- **Pathing** (`js/systems/pathing.js`): the BFS field stores each cell's mask and only joins cells that share a bit.
+  Ground enemies go round a cliff to its ramp. The straight-line shortcut also has to follow the layers.
+- **Flying, ghost and boss enemies** never collide, so they ignore the terrain as before.
+- **Projectiles** fly over cliffs. Only walls stop them, as before.
+- Without a zone, every one of these branches is skipped.
+
+**Drawing:** the code tile painter (`zone.paint`, run by `chunkImage` over the base chunk) adds, in the biome's own
+palette and with no image assets:
+- a height tint (low ground ×0.9, up to ×1.17 on top);
+- a 6-row rock face on the south edge of a higher tile, and ledge lips and side edges on the other sides;
+- drop shadows on the low side;
+- stairs on ramps.
+
+**Minimap:** `zone.mini` shades it by height (darker low, lighter high). Cliff faces are dark and ramps are sandy.
+`G.Minimap.colorAt(tx, ty)` is the test hook.
+
+**The `x` block v1** `{xv: 1, m: map, z: zone, th: terrain hash}`: terrain is never streamed.
+- An Expedition run's live and replay snapshots carry it (the `spectate.snap` seam; the replay keeps it in its slow
+  state). So do its co-op host frames, through a new `net.frame` seam in `coop.js` `hostFrame`.
+- A replay viewer, a live spectator (`watch-ui.js` `world()`) and a co-op guest (`coop.js` `onHostFrame`) rebuild the
+  zone with `G.Expedition.viewZone(seed, x)`. It loads the Expedition code if needed, generates the zone from
+  seed + x (`G.Exp.applyX`), checks the hash, and does this once per seed and zone.
+- An unknown `xv` is ignored. A base snapshot or frame has no `x`, so nothing runs.
+- `G.Expedition.DV` stays 1: no Expedition run could be played before D1 (every mode is "Coming soon").
+
+**What changed in base files:** each change is one `if` on the zone, or on the `x` block.
+- `world.js`: `setZone`, `zone`, `maskAt`, `layerAt`, the zone branches in `terrainRaw`, `placeProps` and `collide`, and
+  the painter call. `reset()` drops the zone.
+- `pathing.js`, `minimap.js`, `watch-ui.js` and `coop.js`.
+- `replay.js`: `slowOf` keeps `x`.
+- `hooks.js`: the `net.frame` seam.
+- `expedition.js`: `terrain.js` in `SCRIPTS`, and `viewZone`.
+
+**Not yet:**
+- the movement verbs (hop down a ledge, slide, the extra hop up one layer, glide, climb, surf, bounce pads): done in D2,
+  see below;
+- the zone timeline, guardian and portal to zone 2 (D3: `G.Exp.enterZone(n)` already builds any zone);
+- per-map biome palettes for Mt. Moon and Cerulean (D12; the run still cycles the base biomes every 4 minutes);
+- the per-enemy z / airborne column in the `x` block: done in D2 (`x` v2).
+
+## DLC D2: movement verbs
+
+An Expedition run gets PokéBonk's movement, rebuilt as the GBA's ledges, Surf and Fly (`Plans/MICASURVIVOR_POKEBONK_DLC_STUDY.md`
+5.2). It is Expedition-only: every hook is behind `G.World.zone`, which base modes never have, and the D0a fixtures pass
+unchanged. The modes are still "Coming soon"; tests use `G.Expedition.debugEnable('exp-classic')`.
+
+**The verbs** (`js/expedition/verbs.js`, `G.ExpVerbs`, numbers in `K`):
+
+| Verb | Who | Rule |
+|---|---|---|
+| Walk down | everyone | **Walking off a ledge onto a tile one level lower needs no hop** (owner playtest, after D3). It shows as a 0.25 s fall: the sprite starts a cliff face (6 art px) up and drops onto the lower ground, the shadow already there, and you are carried just clear of the edge. You are airborne for it (`player.air.kind === 'drop'`, verb 7) but it is free movement, so it gives **no** contact i-frames. Hop during the fall and it becomes a normal first hop from the lower level. Walking **up** a cliff is still blocked: a ledge is one-way. Ramps go both ways. |
+| Hop | everyone | A 0.45 s arc. The sprite rises up to 12 art px and its shadow stays on the ground, smaller. Airborne, ground enemies don't hurt you on contact (flyers and projectiles still do), and you pass over deep water. You can drop off a ledge onto any lower level: you land on the level of the tile under you. A hop reaches **one level up** (`K.HOP_UP`): hopping toward a higher tile lands you on it. It can't go up two. |
+| Extra hop | everyone (`K.EXTRA_HOPS = 1`) | Hop again in the air: a new arc (more airtime, so a wider gap) that reaches one level higher still (`K.EXTRA_UP`), **two** above the take-off. Never more than two (`K.MAX_UP`); a third press does nothing. |
+| Glide | Flying | Hold hop past the top of the arc: the airtime stretches to 1.2 s (a 3-tile gap). Let go and you drop in 0.18 s. |
+| Slide | everyone | 0.55 s at ×1.9 the way you move (or face), then 0.9 s of cool-down. Ground only, with a dust trail. |
+| Climb | Fighting, Bug, Ghost | Walk up (or down) a cliff face one level at a time, at half speed. A climber walking down climbs as before; it never drops. |
+| Surf | Water | Cross deep water (a liquid tile with liquid on all 4 sides) at ×1.35. Anyone else is blocked by deep water unless airborne; the shallow rim only slows, as before. |
+| Bounce pad | everyone | Stepping on a pad throws you 2 tiles its way, along a fixed 0.85 s arc, onto the plateau above, with a squash on landing. |
+
+The types follow the study's PokéBonk reference. A dual type gets both verbs: Gyarados surfs and glides, Scyther climbs and
+glides, and Charizard glides. `G.ExpVerbs.verbsOf(types)` is the table.
+
+**Bounce pads:** the generator places up to 8 per zone, 14 tiles apart.
+- Each sits on flat ground at the foot of a cliff, with its landing one level up and the tile behind it at its own level.
+- They come from their own seeded stream after D1's steps, so D1's grids are unchanged. They are part of `zone.hash`.
+- They are painted in code by the terrain painter, with an arrow chevron the way they throw you: a red mushroom, or a coiled
+  spring where the liquid is lava. There are no image assets.
+- `G.ExpTerrain.custom({pads: [[tx, ty, dir]]})` places them by hand.
+
+**Input** (Expedition runs only; a base run's controls are unchanged):
+
+| | Hop (hold: glide) | Slide |
+|---|---|---|
+| Keyboard | Space | Shift |
+| Pad | confirm: A (Xbox A, PlayStation Cross, Nintendo A) | cancel: B (Xbox B, PlayStation Circle, Nintendo B) |
+| Touch / mouse | the HOP button, to the left of the Z-move button | the SLIDE button, above HOP (to the left of MAX) |
+
+- In a base run, confirm and cancel do nothing in play, so giving them a meaning in an Expedition run changes no base
+  binding. They follow a remap, and there is no new remappable action, so the Controls screen and saved maps are
+  unchanged. `G.Pad.held(action)` is new (hold to glide).
+- The buttons show the key (Space / Shift) on desktop and the pad glyph in pad mode, like the Z and MAX buttons. A label
+  under each button names the verb ("Hop · Glide" for a Flying type), and a chip above SLIDE names what the types add
+  (Surf, Climb).
+- The buttons are pressed on `pointerdown` on the canvas, not through `G.Touch`'s button callback, which drops a second tap
+  on the same spot within 350 ms. The extra hop is exactly such a quick second tap. They are still registered with
+  `G.Touch`, so a finger on them never opens the joystick.
+- Layout: at 844 × 390 and 667 × 375 the buttons are on screen and overlap nothing else on the HUD (`G.HUD.rects()`:
+  `hop`, `slide`). Portrait is the game's "rotate your phone" prompt.
+
+**Where it hooks in** (each one an `if` on the zone, or on a field only Expedition code sets):
+- `player.js` `update`: `G.ExpVerbs.step` before the move and `after` once collided (the landing). Airborne, you are not
+  "in" liquid.
+- `player.js` `draw`: the lift, the smaller shadow, the wake / dust, and the squash.
+- `world.js` `collideZone`: the player's own tile rule, its airborne levels and a climber's reach. Walking down a ledge
+  (`G.World.ledgeDown`): a tile exactly one level below doesn't block; the player drops (`G.ExpVerbs.drop`), any other
+  walker (enemies, the local co-op partner) just steps down.
+- `pathing.js`: the BFS field and the straight-line check treat a ledge as a one-way edge, so a ground enemy walks down
+  a ledge but still paths round to a ramp to go up. Flyers, ghosts and bosses ignore terrain, as before. It is pure, so
+  the same zone gives the same field.
+- `combat.js`: no ground contact while airborne, except during a drop.
+- `pad.js` `gameplay`, and `held`.
+- `hud.js`: the buttons.
+- `coop.js`: a guest's frame goes through the `net.frame` seam too, with no mate, and the air rows are applied both ways.
+- `watch-ui.js`: the air rows on the puppets.
+- `replay.js`: field 7.
+- `expedition.js`: `verbs.js` in `SCRIPTS`.
+
+**The `x` block v2** `{xv: 2, m, z, th, a}`: the terrain part is v1's, and `a` is the airborne state.
+- `a.p` is the player's air row `[lift, verb, layer × 2, phase cs, airtime cs, hops, drops]`. Verbs: 1 hop, 2 glide,
+  3 bounce, 4 slide, 5 surf, 6 climb, 7 drop (walking off a ledge). `drops` is a running count of falls off a ledge,
+  added with walking down. It is optional: a row without it (an older replay or snapshot) reads as before, and an older
+  reader ignores it, so the block stays v3.
+- `a.q` holds the co-op players' rows: by uid in a host frame (the host and the other guests), by name in a snapshot (the
+  partners in the air or using a verb).
+- `a.e` lists the leaping enemies, `[id, lift, …]`. Their layer is the zone's under them.
+- A viewer plays the rest of an arc from its phase. A hop that came and went between two snapshots (the hop counter went
+  up) is still played, so a 1-a-second live view shows the hops too. So is a drop (the drop counter went up).
+- **Co-op:** the host's frames carry every row. A guest's frames to the host carry its own row (`net.frame` with no mate).
+  The host keeps it on the mate for its frames and snapshots.
+- **Replays** keep `a` out of the slow state, in frame field 7, written only when it changes. A hop costs a few bytes, not
+  a slow-state rewrite. A base replay has no `x`, so its frames are unchanged (the D0a replay fixture still matches).
+- **The v1 reader is kept:** a v1 block still rebuilds the terrain, and everyone is shown on the ground.
+- `G.Expedition.DV` stays 1 (no Expedition mode is playable yet).
+
+**Deviations from the study:**
+- Everyone has the extra hop for now. The study gives it to an item; D5 can set `K.EXTRA_HOPS` to 0 and raise
+  `player.extraHops` with the item. More extra hops add airtime, never a third level (`K.MAX_UP = 2`).
+- **Ledges (owner playtest, after D3):** you walk down a ledge and hop up one. D2 first shipped the GBA rule (no walking
+  off a ledge, hop down only, the extra hop as the only way up). Now a hop reaches one level up and the extra hop two.
+  `G.Expedition.DV` stays 2: replays are recorded snapshots, not inputs, so a Classic replay recorded on the old rules
+  plays back exactly as it was, and no Expedition co-op run can start yet (the lobby's dv gate is the only other
+  reader). The board's Classic scores stay comparable enough not to split it.
+- Slide is on B, not RB, so RB keeps "next move" as in every base run.
+- A pad re-arms 0.5 s after you land, not 25 s: in 2D it's a route up.
+
+**Not yet:**
+- Shed Shell-style slide i-frames, +25% airborne damage, and the landing shockwave. These are items and passives for
+  D5 / D6; `player.air` and `player.landed` are ready for them.
+- Deep water blocks only the player: ground enemies still wade it, and pathing is not deep-aware yet (D3).
+- The local co-op partner has no verbs: its AI and player 2's pad walk as in D1 (it steps down a ledge with no fall).
+- Hazards (mud, brambles, burning ground) are not passed over yet; they arrive with Survival.
+- Chasm and lava gaps for gliding arrive with the later maps.
+- Sound: the verbs reuse the select click.
+
+## DLC D3: Expedition · Classic
+
+**Expedition · Classic is playable**: pick it on "Choose a mode" (the Expedition group; Survival and League still say
+"Coming soon"). A run is one map, **Viridian Forest**, of 3 zones plus Mew's shrine, and it can be **won**
+(`Plans/MICASURVIVOR_POKEBONK_DLC_STUDY.md` 2.8-2.10, 5.3). The code is `js/expedition/classic.js` (`G.ExpClassic`); the
+numbers are its `K`. Base modes are unchanged: the D0a fixtures pass as recorded, also with the Expedition code
+force-loaded.
+
+**The run:**
+- **A zone** is D1/D2's seeded zone, a **10:00 zone clock** and a **timeline** of events over a steady trickle of the
+  map's Pokémon. The trickle starts with 4 species ("cards") and gains one a minute (the newest weighs ×1.4, older ones
+  ×0.85 per newer card). Enemies are the map's types (grass, bug, normal, flying) from all 1025 Pokémon: hand-picked
+  Viridian residents first, then any other of those types in the zone's base-stat band (base forms, middle stages,
+  final stages). Their stats follow the base spawner by run time, never below 0 / 4 / 8 minutes in zones 1 / 2 / 3, so
+  rushing a zone doesn't make the next one easy.
+- **The guardian altar** is a stone circle 26-48 tiles from the spawn, on flat ground, found from the zone's own grids
+  (every viewer finds the same one). Stand in it for 3 s (leaving drains it) and the zone's **guardian** wakes: one of
+  3 per zone (Beedrill / Butterfree / Raticate, Parasect / Venomoth / Fearow, Vileplume / Victreebel / Pidgeot).
+- **The portal** opens on the altar when the guardian falls, and pulls in every pickup. Stand in it for 0.8 s: the next
+  zone (enemies, pickups, shots and hazards are left behind; you start at its spawn).
+- **The final swarm** starts at 10:00 of zone time: spawns ×6 (and the cap ×1.4), and each new enemy has ×4 HP and ×2
+  damage per minute past it. It's a soft timer: wake the guardian before it buries you.
+- **The shrine** (zone 4) is hand-made: a round grove with a raised dais, stairs and two ponds. Mew floats faintly over
+  the pedestal; stand on it for 3 s and Mew appears. Beat it: "EXPEDITION COMPLETE!", then the run-over screen.
+- **Victory and splits:** the run-over screen shows the map and difficulty, "Map complete!" (or how far you got), and
+  the time you left each zone and the shrine against your best (+ / −). The Expedition save keeps them
+  (`split.<map>.<diff>.z<n>` and `clear.<map>.<diff>`, stored as 10⁹ − deciseconds so the save's max-merge keeps the
+  fastest), the wins (`wins.<map>.<diff>`) and the furthest zone (`zone.<map>.<diff>`). Pokémonedas: still none
+  (D9 / D10 pay the runs).
+- **Not in a Classic run:** the base biome cycle (the forest stays), the timed base bosses, the waves and surges, rifts,
+  dens, the base events and Arceus's Judgment. Level-ups, moves, items, Z-moves and Dynamax are the base game's.
+
+**The timeline** (zone 1; zone 2 is 20 s earlier, zone 3 40 s; D9's Hard / Nightmare pull it 15 / 30 s more):
+
+| Time | Event | What happens |
+|---|---|---|
+| 150, 330, 480 s | **Alpha** | A giant (×1.6) of the zone: ×9 HP, ×1.5 damage, ×8 XP, a red aura. It drops an item and a berry (D8 makes it recruitable: it faints, and a Friend Ball makes it a Support Alpha; left alone, the prize). |
+| 235 s | **Swarm or stampede** | One or the other, from the zone's stream. |
+| 390 s | **Swarm** | 24-40 (×1.2 per zone) close in from a ring just off screen. |
+| 520 s | **Stampede** | A herd of 16-26 (Rattata / Doduo, Raticate / Tauros, Dodrio / Tauros) charges straight through, in lanes (`Enemy.xmove`). |
+| 170-280 s | **Flock** | 10-16 fliers (the Pidgey and Spearow lines) cross the map in a straight line, then hunt you, over every cliff. |
+| 400-500 s | **Rock slide** | 14 telegraphed boulders round you (4 close), each a 44 px circle that lands 1.1-2.7 s later (`G.Hazards`). |
+| 540-585 s | (half the time) | One more flock or rock slide. |
+| 330, 450 s | **Elite wave** | 5 (+2 per zone) elites: ×3 HP, ×1.3 damage, ×3 XP, a gold aura. |
+| 290, 420 s | **Totem** | A ×1.5 Pokémon with a purple aura (×12 HP) that calls 3 allies every 7 s until it falls. |
+| 360 s | **Summoner** | A stationary ×1.4 miniboss (×14 HP; Beedrill, Pidgeot, Vespiquen) that calls its family, and leaves after 50 s. |
+
+Every random choice comes from `G.DLC.rng` streams seeded by the world seed + map + zone, never `Math.random`.
+`G.ExpClassic.plan(seed, map, zone, diff)` is pure: which events, when, how many, which Pokémon, each event's own seed,
+the guardian and the zone's cards. The trickle has its own stream, so the events don't drift with how many enemies you
+kill. A co-op guest, a replay viewer and a spectator rebuild the plan and the altar from the seed. (Loot drops, the
+enemies' own AI and the base combat still use `Math.random`, as in every base mode.)
+
+**Bosses** (guardians and Mew):
+
+| | Rule (`K`) |
+|---|---|
+| HP | max(curve, **your DPS × target × 0.5** × (1 + 0.15 × tier)). The curve is 2,400 / 6,000 / 12,000 (Mew 20,000) × the base boss scale by run time. The target is 40 / 50 / 60 s (Mew 60 s). The DPS is all your damage over the last 30 s (`G.DmgLog`, at least 5 s of it); the 0.5 is the share of it a single target takes. |
+| Exhaustion | Past its target time a boss takes ×(1 + 0.15 per second) damage, up to ×8 (`enemy.takenK`, read by `Enemy.hurt`). The HUD says "EXHAUSTED ×2.5". |
+| Damage, XP | 40 / 52 / 64 (Mew 75) × 1.2, shots 0.55 of it; XP 2 / 2.5 / 3 (Mew 4) levels' worth. Patterns: the base boss AI. |
+
+**The HUD:** under the clock, "ZONE 1/3 · FINAL SWARM IN 6:48 · ALTAR 42 m" (then GUARDIAN, PORTAL 3 m, the shrine's
+MEW 4 m, LEGENDARY, COMPLETE!), red while the final swarm runs; an arrow at the screen edge to the altar / portal /
+shrine when it's off screen, kept clear of the minimap, the touch buttons and the move bar (`xarrow` in
+`G.HUD.rects()`). On the ground: the altar's charge as a gold arc, the portal swirl, the shrine's pillars, and each
+special enemy's aura, all painted in code. Event banners use the base banner.
+
+**Input:** nothing new. The altar, the portal and the pedestal are stand-in circles, so mouse, touch and pad play the
+same (D2's hop and slide as before).
+
+**The `x` block v3** `{xv: 3, m, z, th, a, c}`: `c` is what only the host knows.
+- `c = {s, p, q, f, n, d, k?, b?}`: the zone's start (run deciseconds), the phase (0 altar, 1 guardian, 2 portal,
+  3 legendary, 4 won), the altar charge 0-8, flags (1 final swarm, 2 won), timeline events fired, the difficulty, the
+  special enemies `[id, kind, ...]` (1 alpha, 2 elite, 3 totem, 4 summoner; a viewer scales and rings them), and the
+  boss `[id, exhaustion × 10]`.
+- Live snapshots and co-op host frames carry it (`spectate.snap` / `net.frame`); the replay keeps it in its slow state
+  (it changes a few times a minute). `G.Exp.viewAir` / `hostAir` apply it (`G.ExpClassic.applyC`). A spectator also
+  gets the event banners, from the rebuilt plan.
+- Zone 4 is rebuilt by `G.ExpClassic.build` (the shrine), on the host and every viewer (`G.Exp.applyX`).
+- The v1 and v2 readers are kept: a block without `c` shows no timeline.
+
+**Versions:** `G.Expedition.DV` is now **2** (Classic is playable, so content changes now change what a run means). A
+dv-1 replay or snapshot still plays without a notice (`replayOk`); a co-op lobby needs the same dv, as before.
+
+**The board:** a clean solo run sends the study's Classic score: (2 × KOs + 3 × seconds + damage / 200 + 1,500 ×
+(zone − 1) + 800 × bosses + 6,000 if won) × (1 + 0.5 × tier) (`G.ExpClassic.score`). D9 brings the boards' screen,
+tiers and medals.
+
+**Assets:** none. The altar, portal, shrine and auras are painted in code; every Pokémon is an existing sprite.
+
+**What changed in base files** (each an `if` on `G.Modes.isExp()`, `G.World.zone`, or a field only Expedition code sets):
+- `spawner.js`: an Expedition run's spawning is `G.ExpClassic.update` (like the Tower's and the Rush's).
+- `game.js`: no biome cycle, rifts, Judgment or base events in an Expedition run; `drawScene` paints the altar /
+  portal / auras; the Expedition run-over screen gets `title` and `splits`.
+- `enemy.js`: `takenK` (exhaustion) in `hurt`, and `xmove` (the stampede / flock run) at the top of `update`.
+- `hud.js`: the zone line, and `G.ExpClassic.drawHud` (arrow, exhaustion).
+- `run-ui.js`: the splits table when `r.splits` is given.
+- `expedition.js`: Classic enabled, `classic.js` in `SCRIPTS`, `DV` 2.
+
+**Not yet (D4+):**
+- the League roster, in-run evolution, Maturity, kits (D4: done, see "DLC D4" below; a Classic run used your base partner);
+- rarity level-ups, vitamins, items with caps (D5), Ultimates (D6), the ₽ economy and interactables (D7);
+- recruiting alphas, League encounters, shinies (D8: built, see "DLC D8" below);
+- the map / difficulty pickers, tier tables, medals and the board screen (D9: `K.EARLY` and `bossHp({tier})` are ready);
+- boss phases at 66 / 33 % and escorts; Mt. Moon and Cerulean (D12: `MAPS` in `classic.js`);
+- starting Classic as a co-op run (the frames, snapshots and guest view are ready);
+- ground enemies routing round deep water (D2's note: they still wade it).
+
+## DLC D4: League roster and evolution
+
+**An Expedition run is played as a League member**: you pick it under Classic ("League member: Bulbasaur", then its
+screen), it starts at its first stage with one move of its own 4-move **kit**, learns the rest at Lv 2 / 4 / 7, **evolves
+mid-run** at its real levels (with a choice where the family branches), and a stage that can't evolve any more **matures**
+at Lv 24 and 44. Its stats come from its **real base stats** (`Plans/MICASURVIVOR_POKEBONK_DLC_STUDY.md` 2.1 and the D4
+row). The code is `js/expedition/league.js` (`G.ExpLeague`, numbers in its `K`); the data is `js/expedition/league-data.js`,
+**generated** by `node tools/micasurvivor/gen_league.mjs`. Base modes are unchanged: the D0a fixtures pass as recorded, also
+with the Expedition code force-loaded.
+
+**The roster** (owner, 2026-10-19: 249 League entries). D4 builds **78**:
+
+| Built in D4 | Why |
+|---|---|
+| The **62 three-stage families of Gen 1-4** (D4a in full) | The study's own first split. It holds every evolution shape: linear lines, babies (Pichu, Cleffa, Happiny...), stones, trades, two-way branches (Oddish, Poliwag, Ralts, Wurmple) and the pseudo-legendaries |
+| The **11 Gen 1-2 Mega families** (Slowpoke, Kangaskhan, Staryu, Pinsir, Magikarp, Aerodactyl, Onix, Scyther, Heracross, Skarmory, Houndour) | D4c's first part: the two-stage lines (Magikarp's Lv 40, Slowpoke's and Scyther's branches) and the first members that **never evolve**, so Maturity is there from the start. The Megas themselves come with D4c (they need Mega sheets) |
+| The **5 Kanto legendaries** (Articuno, Zapdos, Moltres, Mewtwo, Mew) | D4d's first part: the Expedition's own launch-map legendaries (Mew guards Viridian's shrine, Zapdos Cerulean Cape), and PokéBonk's 5 |
+
+The other **170** are stubs in the data (`stubs: [{dex, batch}]`), listed under the roster: **D4b** the 54 three-stage
+families of Gen 5-9, **D4c** 31 Mega families (the owner's 32 count Snorunt twice, as Glalie and as Froslass: one family
+with a branch), **D4d** 85 legendaries and mythicals (Cosmog's line is three-stage, so D4b).
+
+**Unlocking:**
+- **Free:** the starter trios (owner: "the starter trios free, as in PokéBonk"): the 12 of Gen 1-4. Bulbasaur is the
+  default.
+- **Every other member has a challenge**, read from the Expedition save's counters at the end of each run. By rank (the
+  final stage's base-stat total: under 470 common, 470-534 uncommon, 535+ rare), in turn:
+
+  | Rank | Challenges |
+  |---|---|
+  | Common | finish 1 / 3 Expedition runs, KO 150 Pokémon with a member of its type, reach zone 2, reach Lv 12 |
+  | Uncommon | KO 500 with a member of its type, beat 2 guardians, evolve 2 times, reach Lv 20, reach zone 3 |
+  | Rare | win a map, beat 6 guardians, evolve 5 times, reach Lv 30, KO 1,500 with a member of its type |
+  | The 600 lines (Dratini, Larvitar, Bagon, Beldum, Gible) | win 2 maps and reach Lv 35 |
+  | Legendary | Mew: win 3 times (beat it at its shrine). The birds: KO 1,000 with an Ice / Electric / Fire member and win a map. Mewtwo: 30 League members and 5 wins |
+
+- **A completed challenge** puts the member in the save's `league.met`. **In D4 a met member plays at once**
+  (`K.PLAY_MET`); D8 brings PokéBonk's catch (a completed challenge spawns the wild encounter you weaken and catch, which
+  adds it to `league.own`). The run-over screen names the new members ("New League member: Kangaskhan!"). **D8 built it**
+  (see "DLC D8"): a challenge completed from D8 on is met *and* wild, playable once caught; members met in D4 keep playing.
+- **The pick** is this device's (`localStorage micasurvivorexp_pick`): a preference, not progress. A pick you can't play
+  falls back to Bulbasaur. `G.Modes.plan` puts it in the run's `dex` (so the replay header names the member).
+
+**Stats from base stats** (study 2.1, rescaled to MicaSurvivor's units; `K`):
+
+| Stat | Rule |
+|---|---|
+| Max HP | 70 + 0.45 × HP (the base game's own formula, PokéBonk's 70 + 45 f) |
+| Armor | (6 × Def + 3 × Sp. Def) / 100 points; each point is 1 % less damage taken, up to 20 % |
+| Speed | 105 × (0.92 + 0.12 × Speed / 100) (105 is the base game's speed at 65 Speed) |
+| Attack | physical 1.1 × (0.82 + 0.2 × Atk / 100), special the same with Sp. Atk. The higher is the player's attack; a move of the other class is scaled down to its own (the real games' class of each of our 66 moves; status moves aren't scaled) |
+
+The base upgrades of that Pokémon (the shop's) still apply, as they did in D3.
+
+**The passive:** a role (from the final stage's best stats: Healer +0.6 HP/s, Assault +8 % damage, Defender -6 % damage
+taken, Speedster +6 % speed) and an ability of the base game's 54 (the final stage's), both kept through every evolution.
+
+**The kit:** 4 of our own 66 moves (owner #12: hand-picked from our move set). The generator scores them by what the line
+really learns (the overworld's level-up learnsets first) and its types, and a hand table (`HAND`) sets the 47 that read
+wrong or need a signature. The first is learned at the start; Lv 2, 4 and 7 add the others, said on the level-up screen
+("Kit move: Flame Wheel (2/4)"). **The kit owns the 4 slots:** a League run gets no new-move cards (`pl.xkit`), so its
+level-ups are move upgrades, move evolutions and stats. (D5 brings the other moves the line learns.)
+
+**Evolution** (the real data: the overworld's `species_extra.json` evolution tables and `species_battle.json` base stats;
+the generator adds the 7 newer evolutions those Gen 1-4 tables lack, each cited: Obstagoon, Annihilape, Ursaluna,
+Mamoswine, Mr. Mime from Mime Jr., Mr. Rime, Kleavor):
+- **When:** at the level-up, at the real level. A stone, trade, friendship or move evolution gets a level (study 2.1):
+  18 from a three-stage family's first stage (the babies), 30 from a two-stage one's, 36 from a middle stage, and never
+  sooner than 6 levels after the stage before. PokéBonk's overrides: Caterpie, Weedle and Wurmple at 8 / 36, Magikarp
+  at 40.
+- **One target:** it evolves as the level-up screen opens (a flash, "Charmander evolved into Charmeleon!"): the new
+  stage's sprite, types (so its verbs: Charizard glides, Gallade climbs), stats, and HP up to at least 50 % then +30 %
+  of max.
+- **A branch** (Oddish, Poliwag, Slowpoke, Scyther, Wurmple, Ralts): that level-up's cards **are** the choice, one gold
+  card per form with its sprite ("What does Kirlia evolve into?"). A reroll keeps them; the pick is that level's card. The
+  choice is offered at the earliest of its levels (Kirlia: 30).
+- **Maturity:** at Lv 24 and 44, a stage that can't evolve further gets +12 % damage and max HP (Kangaskhan at 24 and
+  44; Charizard only at 44, since Charmeleon was still evolving at 24). D6's Ultimate tier will read it.
+
+**Determinism and viewers:** nothing in D4 is random (the kit, the levels and the stats are data; a branch is the
+player's choice), so there is no stream to seed. Viewers are told:
+- **The `x` block v4** `{xv: 4, m, z, th, a, c, l}`: `l` holds the League rows `[member, form, kit moves unlocked,
+  Maturity, evolutions]`. `l.p` is the watched (or sending) player's, `l.q` the co-op players' (by uid in host frames, by
+  name in snapshots). A co-op guest sends its own row, and the host shows the guest's form on its puppet and in its own
+  snapshots.
+- A viewer's puppet takes the form's sprite (`G.ExpLeague.applyRow`). A live snapshot's `me` already names the form; a
+  replay's header names the member and `l` (in the slow state) the form, so seeking shows Ralts, Kirlia, then Gallade.
+- The v1-v3 readers are kept: a block without `l` shows everyone as the snapshot draws them.
+
+**Versions:** `G.Expedition.DV` is now **3** (a run means something new). dv-1 and dv-2 replays and snapshots still play
+without a notice; a co-op lobby needs the same dv, as before.
+
+**Saved and merged** (the Expedition save `micasurvivorexp:<user>`, never the base save): the sets `league.met` (challenges
+done), `league.own` (D8's catches; empty in D4) and `league.played`; the counters `kos`, `ko.t.<type>`, `guardians`,
+`lg.evo`, `lg.mat`, `lg.lv`, `lg.runs.<dex>` and `lg.best.<dex>`. The merge is the save's own (the union of each set, the
+max of each counter), on the client and on the server, so a member never goes away. **No server change:** the server
+already takes any counter or set name.
+
+**Assets:** none. Every stage is an existing sprite; the screen, the note and the evolution flash are drawn in code.
+
+**What changed in base files** (each a seam with no listener in a base page, or an `if` on a field only Expedition code
+sets):
+- `core/hooks.js`: two new seams, `levelup.offer` (first: an Expedition League run's branch cards) and `levelup.cards`
+  (reduce: the level's news).
+- `systems/levelup.js`: the two seams, and no new-move cards when `pl.xkit`.
+- `ui/run-ui.js`: the level-up's note (`list.note`), an evolution card's sprite (`c.sprite`), the `xevo` card style.
+- `ui/modes-ui.js` + `index.html`: "League member: X" under Classic and the League screen (`#modes-league`).
+- `systems/modes.js`: an Expedition run's `dex` is the League pick. `systems/expedition.js`: `DV` 3, the two scripts,
+  `leaguePick()`.
+- `expedition/core.js`, `expedition/terrain.js`: `x` v4 and the League's hooks.
+
+**Not yet:**
+- the catch (D8: built, see below; members met in D4 stay playable);
+- the other 170 entries (D4b / D4c / D4d), the Megas (D4c) and the legendaries' own encounters (D4d);
+- moves from the line's learnset and from other League members of your type at level-ups, vitamins and rarities (D5: built, see below);
+- signature Ultimates by evolution tier (D6: built, see below; the tier is the row's evolutions + Maturity);
+- PokéBonk's XP curve (8 + 5.5 L + L^1.8): Classic still uses the base one, so whether a run reaches a family's last
+  evolution (Dragonite and Tyranitar at 55) is for D5's tuning;
+- the League pick for a co-op guest (co-op Expedition runs can't start yet; the frames already carry the rows).
+
+## DLC D5: level-ups and items
+
+**An Expedition level-up deals its own cards**, each with a **rarity** (Common, Uncommon, Rare, Epic, Legendary),
+gated by your level, luck and zone. Moves now **level to 8** with stat rolls from their archetype, **8 new archetypes**
+arrive with 18 moves, **21 vitamins** fill 3 slots, **60 items** stack up to their caps, and every run has **Refresh /
+Skip / Banish**. The study's **XP curve** replaces the base one (`Plans/MICASURVIVOR_POKEBONK_DLC_STUDY.md` 2.1, 2.3, 2.5,
+2.6 and the D5 row). The code is `js/expedition/levelups.js` (`G.ExpLevel`: cards, rarity, tools, curve, sync, UI),
+`js/expedition/items.js` (`G.ExpItems`: vitamins, items, stats, procs) and `js/expedition/moves.js` (`G.ExpMoves`: the
+archetypes, move levels and rolls). Each file's numbers are in its `K`. Base modes are unchanged: the D0a fixtures
+pass as recorded, also with the Expedition code force-loaded. Nothing is bought: everything is earned in play.
+
+**The cards** (3 per level, `G.ExpLevel.K.CARDS`; the levelup.offer seam, after the League's branch choice):
+
+| Card | What it does | Weight |
+|---|---|---|
+| Move level | An owned move goes up one level (to 8): +8 % damage and 2 rolls (3 at Epic+), shown on the card | 14 each |
+| New move | A move "the line learns" (its types: our moves and the 18 new ones), or from the kit of another playable League member of your type ("League move: X"). It takes one of **2 slots past the kit's 4** (`K.EXTRA_SLOTS`), so the kit never loses a slot; a League member's move weighs x0.6 | 6 each |
+| New vitamin | One of the 21, into a free slot (3) | 6 each |
+| Vitamin level | One you have, to Lv 10 | 8 each |
+| Training | Only when nothing else is left: +4 % damage or +10 HP (x 1 / (1 + 0.15 n), never under a third), or a rest (40 % HP) | — |
+
+A move card is always dealt and always first (study 2.5). A League run still learns its kit at Lv 1 / 2 / 4 / 7 and
+evolves as in D4; the level's note stays above the cards.
+
+**Rarity** (study 2.5): x1 / 1.2 / 1.45 / 1.75 / 2.1 on the card's values; base weights 70 / 24 / 5 / 0.9 / 0.12. Luck
+a = luck / 100 lifts Uncommon x(1 + 0.5 a), Rare x(1 + a)², Epic x(1 + a)³, Legendary x(1 + a)⁴. Rare, Epic and Legendary are
+gated by **power = level + luck / 8 + 12 (zone − 1)**: they ramp in over power 3 → 10, 8 → 18 and 14 → 26. Each card rolls
+its own; its frame and chip show it (grey, green, blue, purple, gold). Luck comes from Lucky Punch (vitamin), Soothe Bell
+and Shiny Charm.
+
+**Move levels** (study 2.3, `G.ExpMoves.K`): every move of an Expedition run (the kit's too) levels 1 → 8. Rolls by
+rarity multiplier m: damage +22 % m, cooldown −min(25 %, 8 % m), +1 projectile (+2 at Epic+), area or speed +15 % m,
+duration +20 % m, crit +5 % m (the move's own, `m.xcrit`), status chance +25 % m (capped at 80 %). Each archetype has its
+own list (`ROLLS_OF`), minus what doesn't fit the move. A move's cooldown never drops under 35 % of its first-level one.
+The level is `m.xlv` (`m.lvl` stays 1, so a base reader never indexes a ladder past its end) and the move is rebuilt from
+its first-level numbers, the League's class factor, its level, its rolls and the run's stats (`refresh`).
+
+**The 8 new archetypes** (the study's table, damage x0.62 to our scale: `K.DMG_K`):
+
+| Archetype | Moves | How it plays |
+|---|---|---|
+| lob 20 / 1.9 s | Mud Bomb, Sludge Bomb | a bomb in a 0.55 s arc that bursts where it lands |
+| homing 9 x2 / 1.25 s | Swift, Magical Leaf | seeking shots |
+| barrage 5 x4 / 1.15 s | Bullet Seed, Pin Missile | 4 quick shots, 0.07 s apart |
+| smite 24 x2 / 1.7 s | Thunder, Sky Attack | a telegraphed strike from above on the 2 nearest foes |
+| vortex 34 / 3.6 s | Whirlpool, Twister | a 2.2 s whirl at the target that pulls foes in and ticks damage |
+| wave 15 / 2.4 s | Surf, Earthquake | a ring that spreads from you to 230 px and hits each foe once |
+| spin 9 / 0.8 s | Rapid Spin, Gyro Ball | hits everything around you at once |
+| weather 32 s / 14 s | Rain Dance, Sunny Day, Sandstorm, Snowscape | sets the run's weather (the base game's 5 kinds) |
+
+They live outside the frozen `G.Moves`; combat hands a kind it doesn't know to the combat.run seam, a co-op partner's
+cast to combat.ghost (shown, no damage). Their emblems are the type emblems.
+
+**Vitamins** (21, `G.ExpItems.VITAMINS`; max Lv 10, 3 slots): Protein / Calcium +10 % physical / special, Iron +5 armor,
+Zinc +12 regenerating shield (refills 4 s after the last hit), Carbos +7 % speed, HP Up +18 HP, PP Up +0.5 projectile,
+Ether +8 % attack speed, Dire Hit +5 % crit, X Speed +12 % projectile speed, X Defense +3.5 % evasion (cap 40 %), X Accuracy
++12 % status chance, Big Mushroom +8 % area, PP Max +10 % duration, Moomoo Milk +0.5 HP/s, Nugget +10 % Pokémonedas,
+Exp. Share +6 % XP, Lucky Punch +8 luck, Energy Root +1 % lifesteal (healed at most 5 % of max HP a second),
+Itemfinder +15 % pickup range, Cursed Incense +12 % difficulty (enemy HP and damage) for +6 % XP and Pokémonedas. Each
+level adds its value x the card's rarity multiplier.
+
+**Items** (60, `G.ExpItems.ITEMS`): 18 type boosters (+30 % to their type and +3 % to everything, common, cap 3) and 42
+others: 10 common (Muscle Band, Wise Glasses, Quick Claw, Leftovers, Lucky Egg, Amulet Coin, Scope Lens, Wide Lens, Light
+Clay, Life Orb), 12 uncommon (the Choice items, Expert Belt, Shell Bell, Rocky Helmet, Focus Band, Eviolite, Soothe Bell,
+Protector, Sitrus Berry, Macho Brace), 10 rare (Razor Fang, Weakness Policy, Assault Vest, Heavy-Duty Boots, Up-Grade,
+Shiny Charm, Exp. Share, Deep Sea Tooth, King's Rock, Revive), 6 epic (Electirizer, Sun Stone, Magmarizer, Meteorite,
+Relic Crown, Prism Scale) and 4 legendary (Master Ball, Max Revive, Revival Herb, Malicious Armor).
+- **No slots, caps instead:** an item stacks up to its `cap` (Life Orb 3, Revive 2, the legendaries 1...). A capped item is
+  never rolled; a pickup at its cap heals 20 % instead.
+- **Same-stat bonuses ADD** (study 2.6, "since 0.5.3"): every vitamin, item and Training bonus feeds a stat, and a stat
+  is the SUM of its bonuses, applied once (`total` / `apply`). Life Orb x3 + Master Ball = +115 % damage (x2.15, not
+  x2.75). Different stats still multiply. Expedition armor caps at 50 % (`K.ARMOR_CAP`).
+- **Where they come from:** where base items drop (alphas, guardians): the item.roll seam gives an
+  Expedition item (`x:<id>`) from the run's seeded stream, its rarity rolled like a card's; the item.take seam stacks it
+  at once (no choice screen). D7's Poké Balls, Meowth and altars will be the main source (built: "DLC D7").
+- **Procs** (seams player.hurt, player.ko, player.dealt, combat.out, run.tick): evasion and the shield, Focus Band (15 %
+  per stack, every 20 s), Revival Herb (40 %, once per zone, a fire burst), Revive (30 %) and Max Revive (60 %), thorns,
+  lifesteal, super-effective, boss damage, Weakness Policy, execute under 8 %, flinch, Relic Crown's time stop, and the
+  epics' timed strikes (Electirizer every 2.5 s, Sun Stone 6 s, Magmarizer 4 s, Meteorite's pulling rift 8 s), which scale
+  with the player's level (+6 % a level) and attack.
+
+**Refresh / Skip / Banish** (study 2.5, `G.ExpLevel.K`): Refresh 2 (the base reroll button, its count raised), Skip 2 (a
+new button, the X key, the pad's swap button: no card, +10 x zone Pokémonedas of the run, which D7's ₽ will replace; D7: it pays ₽),
+Banish 1 (the base ban button: on a new move or a new vitamin; that one never comes back this run; a level-up card can't
+be banned). The base game's bought rerolls and bans add on top (max 6 each).
+
+**The XP curve:** XP to the next level = **2 x (8 + 5.5 L + L^1.8)** (`K.XP_K`, the xp.need seam). The shape is the
+study's; the x2 is ours, measured: a Classic run on Viridian Forest by a player who kills everything that spawns (8:00
+a zone, the guardian, the portal) collects about **8,100 / 39,400 / 114,000 XP** by the end of zones 1 / 2 / 3
+(24 minutes). On this curve that is **Lv 23 / 44 / 66**; Lv 55 (Dragonite and Tyranitar, the League's latest
+evolutions) needs 69,200 XP, 61 % of it, so a run that kills well reaches it in zone 3. On the base curve the same run
+ends at Lv 46. Tune `K.XP_K` (and re-check with the test's `PROBE` numbers) if D7-D9 change how much XP a run gives.
+
+**The bag on screen:** a strip under the HUD (top left) with the 3 vitamin slots and their levels and every item with its
+stacks (rarity-coloured frames), and a panel beside the pause box listing the vitamins (level, total), the items
+(stacks / cap, what they do), each move's level, your luck and the tools left. Viewers see the watched player's strip.
+
+**Determinism and viewers:** which cards are dealt, their rarity and a move level's rolls come from a `G.DLC.rng` stream
+seeded by the world seed, the co-op player and the run's draw count; every item drop from its own stream. Nothing in a
+deal or a drop calls `Math.random` (tested); procs and combat stay `Math.random`, as in base.
+- **The `x` block v5** `{xv: 5, m, z, th, a, c, l, u}`: `u` holds the bag rows `{v: [[vitamin, lv]], i: {item: n}, m: {move:
+  lv}, e: [Expedition moves], t: [refresh, skip, banish]}`. `u.p` is the watched (or sending) player's, `u.q` the co-op
+  players' (by uid in host frames, by name in snapshots). A viewer's puppet shows its bag and its Expedition moves. The
+  replay keeps `u` in its slow state. The v1-v4 readers are kept: a block without `u` shows no bag.
+- **Versions:** `G.Expedition.DV` is now **4**. dv-1 to dv-3 replays and snapshots still play without a notice; a co-op
+  lobby needs the same dv.
+
+**Saved and merged** (the Expedition save, never the base save): counters only, merged by max: `lv.cards` (cards picked),
+`lv.rar.1`-`lv.rar.5` (picks per rarity), `lv.items`, `lv.skips`, `lv.vitmax` (best vitamin level), `lv.move8` (most moves
+at Lv 8), `lv.stacks` (most item stacks). Nothing in a run is kept between runs. **No server change:** the server already
+takes any counter.
+
+**Assets:** none new. Every vitamin and item uses an overworld item picture (`/overworld/item_icons/<name>.png`, in git
+and deployed with the site); the fairy booster uses the Pink Scarf picture. The card frames, the strip and the panel are
+CSS, the archetypes' effects are drawn in code.
+
+**What changed in base files** (each a seam with no listener in a base page, or an `if` on a field only Expedition code
+sets):
+- `core/hooks.js`: 10 new seams (xp.need, item.roll, item.take, player.hurt, player.ko, player.dealt, combat.out,
+  combat.run, combat.ghost, run.tick).
+- `entities/player.js`: xpNeed, hurt (only when a listener exists), the KO, onDealt. `systems/combat.js`: an unknown kind /
+  ghost id, `m.xtarget` / `m.xreach`, a move's own `xcrit`, the out factor. `data/items.js`: roll. `game.js`: offerItem,
+  run.tick (Expedition runs only).
+- `ui/run-ui.js`: a card's rarity (`c.rar`, `c.rarName`), its picture (`c.img`), bannable Expedition cards (`c.xban`),
+  `take(card)` (Skip) and `offers`. `ui/icons.js`: an Expedition move's emblem. `core/pad.js`: swap = Skip on an
+  Expedition level-up.
+- `systems/expedition.js`: `DV` 4, the three scripts. `expedition/core.js`: `x` v5 and the hooks; `classic.js`: the
+  effects' drawing, Cursed Incense; `league.js`: the new moves' class; `terrain.js`: `XV`.
+
+**Not yet:**
+- the Lab (D10): a 4th card, more vitamin slots, more Refresh / Skip / Banish, the Archive, item unlocks by counter goals;
+- D7's sources (Poké Balls, Meowth, altars, Ditto copying an item, Hypno forgetting a move or vitamin) and real ₽ for Skip (built in D7);
+- the study's remaining 42 items (102 in PokéBonk), Stick and Air Balloon (no pictures in the item set); `K.EXTRA_HOPS` is
+  still 1 for everyone (D2's note), so no item gives an extra hop yet;
+- learnset-exact "moves the line learns" (by type for now) and Mew's "every move of power 60+";
+- reactions and weather boosts by type (D8: built, see below).
+
+## DLC D6: Ultimates
+
+**Every Expedition run has an Ultimate**: a meter that fills as you play, a cast with a hit-stop, i-frames and a portrait
+cut-in, and a choreography. 16 League members have a **signature Ultimate** that grows with their evolutions and Maturity;
+every other member casts its type's **type Ultimate**, which is the base game's Z-move choreography for that type, rescaled
+(`Plans/MICASURVIVOR_POKEBONK_DLC_STUDY.md` 2.4 and the D6 row). The code is `js/expedition/ultimates.js` (`G.ExpUlt`;
+every number in its `K`). Base modes are unchanged: the D0a fixtures pass as recorded, also with the Expedition code
+force-loaded. In an Expedition zone the Ultimate **takes the Z-move's place**: its key, its pad buttons and its HUD spot
+(the base Z-move and its button step aside while `G.World.zone` is set, so a base run still has its Z-move).
+
+**The charge** (0 to 1, `K`; study 2.4):
+
+| Source | Charge |
+|---|---|
+| Passive | Full in **95 s** (`PASSIVE_T`) |
+| A kill | **+0.004**, drawn from a **bucket** that holds 0.024 and refills 0.008 a second (`KILL`, `BUCKET`, `BUCKET_RATE`), so a swarm can't fill it at once |
+| An elite or summoner | **+0.03** (`ELITE`), outside the bucket |
+| An alpha or totem | **+0.08** (`ALPHA`) |
+| A guardian, the legendary or any boss | **+0.2** (`BOSS`) |
+| Damage taken | **+0.35 x damage / max HP** (`HURT`), the damage actually taken (after the items' evasion and shield) |
+
+Nothing charges while a cast lasts. `pl.xultCharge` multiplies every source (1 for now: the study's Soul Dew x1.4 and Lunar
+Blessing x1.3 wait for an item batch). Kills count on the host / solo sim (the `enemy.ko` seam); a co-op guest has no
+Expedition sim of its own yet.
+
+**The cast:**
+- **Inputs**: Z or R; the pad's Z-move (L3), Y and RT buttons (the base game's Z-move buttons, in a zone only); the HUD
+  button (touch or mouse), which shows the meter as a ring in the type's colour, its %, "Ready!" and a key or pad glyph.
+- **Hit-stop**: 0.32 s (`HITSTOP`) in which the world holds (the `run.hold` seam: the clock, foes and spawns stop), then
+  the choreography starts.
+- **I-frames**: for the whole cast and 0.6 s after it (`AFTER`), through `pl.invuln` and the `player.hurt` seam, which
+  comes before the items' shield (a cast never spends the shield) and also covers lava, which zeroes `invuln`.
+- **The cut-in**: 1.1 s (`CUT_T`), drawn on the canvas over the HUD: a slanted band in the type's colour, the caster's own
+  sprite big with a light outline, "ULTIMATE" (or "TYPE ULTIMATE") and a star per tier, and the Ultimate's name.
+  Under 0.42 dim. No new art: the sprite is the member's PMD sheet; the button's icon is the type's Z-crystal.
+- **Damage** per unit of each hit's own weight in the choreography: **40 x (1 + 0.1 level) x (1 + 0.15 tier) x attack x
+  0.62** (`DMG`, `DMG_LV`, `DMG_TIER`, `DMG_K`; the 0.62 is D5's study-to-our-scale factor). Against a boss the Z-move's own
+  cap still holds: one piece takes at most 28 % of its max HP. The hits go through `G.Combat.land` like a Z-move's (types,
+  crits, abilities, the items' procs).
+- **Tier** = the League row's evolutions + its Maturity (0 to 4, `TIER_MAX`; study: "evolution stage + Maturity"). The
+  tier raises the damage, adds a signature's beats, and picks its name (tier 2 and up keep the third name).
+
+**Type Ultimates**: a member with no signature casts its current form's first type's (Caterpie and Butterfree: bug,
+"Plaga Devastadora" / "Devastating Plague"), the Z-move's own choreography (`G.ZMoves.effect(pl, type)`, a new export that builds
+one outside the Z-move's state machine: no cinematic, cooldown or unlock), under the Z-move's name, with the Ultimate's
+damage. All 18 types.
+
+**The 16 signatures** (`SIGS`; our own names, never PokéBonk's): each starts from its type's choreography and adds beats by
+tier (a ring, beams, strikes from the sky, a dive, meteors, a nova, a pull, a drain, a heal):
+
+| Member | Type | Tier 0 / 1 / 2+ |
+|---|---|---|
+| Bulbasaur | grass | Furious Seed / Petal Storm / Solar Garden |
+| Charmander | fire | Roaring Ember / Fire Vortex / Winged Inferno |
+| Squirtle | water | Bubble Wave / Spinning Tide / Hydro Cannon |
+| Pichu (Pikachu's line) | electric | Spark Burst / Chain Bolt / Volt Tackle |
+| Gastly (Gengar's line) | ghost | Shadow Lick / Shadow Rain / Evil Eye |
+| Magikarp (Gyarados) | water | Fierce Splash / Sea Rage / Abyssal Hyper Beam |
+| Dratini (Dragonite's line) | dragon | Dragon Fury / Dragon Dance / Draco Comet |
+| Mewtwo | psychic | Mind Wave / Psycho Charge / Total Psystrike |
+| Mew | psychic | Metronome / Double Metronome / Triple Metronome: 1 / 2 / 3 copies of the other 15, from the run's seeded stream |
+| Articuno | ice | Icy Wind / Blizzard / Glacial Zero |
+| Zapdos | electric | Thunder Shock / Electric Storm / Thunder Wing |
+| Moltres | fire | Flame Wing / Sacred Fire / Scorching Sun |
+| Abra (Alakazam's line) | psychic | Teleport Burst / Star Psybeam / Future Sight |
+| Machop (Machamp's line) | fighting | Karate Rush / Cross Chop / Dynamic Punch |
+| Larvitar (Tyranitar's line) | rock | Rock Toss / Rock Avalanche / Desert Edge |
+| Gible (Garchomp's line) | ground | Sand Tomb / Dragon Claw / Earth Comet |
+
+**Deviation:** the plan's list has Eevee, Snorlax, Lapras and Ditto. None of them is a League entry (not three-stage, no
+Mega, not legendary: the owner's 249), so they could never be played; Alakazam's, Machamp's, Tyranitar's and Garchomp's
+lines take their places. Ditto's "copy a random member's Ultimate" lives on in Mew's Metronome.
+
+**Auto-Ultimate** (a setting): off by default. On, it casts as soon as the meter is full with a foe within 480 px (`AUTO_R`).
+U toggles it, so does the AUTO chip under the button (touch or mouse) and the pause screen's "Auto-Ultimate: On / Off"
+button (the pad's way to it). It is kept in the **Expedition save** as two Lamport counters, `ult.auto.on` and
+`ult.auto.off` (a switch sets its own to max(both) + 1): the save's max merge then keeps the latest switch on every device.
+
+**Determinism and viewers:** the charge is pure (time, kills, damage taken); Mew's copies come from `G.DLC.rng` (the world
+seed + the cast count); the choreographies' flourishes use `Math.random`, as the base Z-move and combat do.
+- **The `x` block v6** `{xv: 6, m, z, th, a, c, l, u, w}`: `w` holds the Ultimate rows `[charge %, pieces cast, piece code,
+  tier, flags (1 casting, 2 auto), the cast's code]` (a signature's code is its member's dex, a type Ultimate's 2000 + its
+  index in `G.ZMoves.ORDER`). `w.p` is the watched (or sending) player's, `w.q` the co-op players' (by uid in host frames,
+  by name in snapshots).
+- A viewer's puppet (a co-op partner, a live spectator's or a replay's watched player) shows the meter on its HUD button;
+  when the casting flag rises it gets the cut-in, and each time the piece count goes up it plays that piece as a
+  **ghost** (the same choreography, no damage, no heal, no move). The count makes a missed frame harmless (and relay mode's
+  1 Hz frames still see a 3-4 s cast). A live view shows the snapshot before the newest, so a spectator sees it about
+  a second late, as everything else.
+- **The replay** keeps `w` in a frame field of its own (field 8, only when it changes: the charge moves every second) and
+  records an `xu` event when a cast starts (the plan's "xu Ultimate cast").
+- The v1-v5 readers are kept: a block without `w` shows no Ultimate.
+- **Versions:** `G.Expedition.DV` is now **5**. dv-1 to dv-4 replays and snapshots still play without a notice; a co-op
+  lobby needs the same dv.
+
+**Saved and merged** (the Expedition save, never the base save; max per counter): `ult.casts`, `ult.best` (most in a run),
+`ult.sig` (signature casts) and the auto setting's `ult.auto.on` / `ult.auto.off`. The run-over screen adds a line
+("Ultimates: 3 (Furious Seed, Petal Storm)"). **No server change:** the server already takes any counter.
+
+**Assets:** none new. The cut-in uses the member's own sprite sheet, the button the type's Z-crystal icon, and everything
+else is drawn in code.
+
+**What changed in base files** (each a seam with no listener in a base page, or an `if` on `G.World.zone` / a field only
+Expedition code sets):
+- `core/hooks.js`: 2 new seams, `enemy.ko` (an enemy of this page's sim has fallen) and `run.hold` (an Expedition run
+  only: true holds the world this frame).
+- `entities/enemy.js`: the `enemy.ko` call. `game.js`: `run.hold` and the overlay's two draw calls (the dim under the HUD,
+  the cut-in over it), all behind `isExp()` / `G.World.zone`.
+- `systems/zmoves.js`: `effect(pl, type)` (an export); no Z-move and no Z button in an Expedition zone.
+- `ui/hud.js`: the Ultimate button (and the Z button's rect) in a zone. `core/pad.js`: the Z-move buttons cast the
+  Ultimate in a zone. `entities/player.js`: no blinking during a cast (`xult`). `mica/spectate.js`: no Z-move chip in a
+  zone. `mica/replay.js`: field 8 and the `xu` event (a base snapshot has no `x.w`: its frames don't change).
+- `systems/expedition.js`: `DV` 5, `ultimates.js`. `expedition/core.js`: `x` v6 and the hooks; `classic.js`: the altar
+  arrow keeps clear of the right-hand column without touch too (the Ultimate's button is always there now);
+  `terrain.js`: `XV`.
+
+**Not yet:**
+- Soul Dew / Lunar Blessing and other charge or Ultimate-damage items (`pl.xultCharge`, `pl.xultDmg` are ready);
+- the run's damage breakdown files Ultimate damage under the base "Z-move" row (`DmgLog`'s `z` key);
+- a co-op guest's own Ultimate (a guest's run isn't an Expedition one yet: D11); the frames already carry its row both ways;
+- more signatures (D13+), and Mega Evolution's own (D4c / 1.0).
+
+## DLC D7: economy and interactables
+
+**An Expedition zone now has an economy and 42 things to find**: ₽ from play, Poké Balls (paid, free, cursed), Meowth's shop
+with market heat, Unown altars in 4 tiers and a comet, challenge / cursed / greed altars, Ditto, Hypno, gold rocks, berry
+bushes and cages, a zone map with a legend under a fog of war, and first-run tips (`Plans/MICASURVIVOR_POKEBONK_DLC_STUDY.md`
+2.7, 2.15 and the D7 row). The code is `js/expedition/economy.js` (`G.ExpEco`; every number in its `K`). Base modes are
+unchanged: the D0a fixtures pass as recorded, also with the Expedition code force-loaded.
+
+**₽ is in-run play money, never real money.** It is the run's own coins (`pl.coins`; the zone line under the clock shows
+"₽ N"), which an Expedition run never pays into the base save. Nothing here costs anything but ₽ earned in that run.
+
+| Source | ₽ (`K`) |
+|---|---|
+| A KO | **0.2** x the gold stat (Nugget vitamin, Amulet Coin) x greed (`KO`; study 2.7), kept as a fraction |
+| An elite / summoner, alpha / totem, guardian / legendary / boss | **1**, **5**, **20 x zone** (`KO_ELITE`, `KO_ALPHA`, `KO_BOSS`: ours) |
+| A gold rock | **6-14 x zone** x gold (`ROCK`; study 2.7), the 6-14 seeded per rock |
+| A level-up Skip | **10 x zone** (D5's Skip, now through `G.ExpEco.earn`) |
+
+**The interactables** (per zone 1-3; the shrine has none). Each is a stand-in circle like D3's altar: walk onto it. There is
+still no interact key, so it works the same with mouse, touch and pad.
+
+| Kind | Per zone | Rule (`K`) |
+|---|---|---|
+| Poké Ball | 6 | **18 x 1.22^(0.65 x bought) ₽** (18, 20, 23, 27, 34 ... 66 after 10); luck takes luck / 400 off (at most 25 %). Stand 0.45 s: **pick 1 of 3** items (`OFFERS`) |
+| Free Poké Ball | 2 | One item at once |
+| Cursed Poké Ball | 2 | Free; **+5 % difficulty** for the run (new foes' HP and damage), a **ghost ambush of 4 + 2 x zone** (Gastly, Haunter, Misdreavus, Duskull, Drifloon, Yamask), 1 item and a 2nd at **40 % x (1 + luck / 100)** |
+| Meowth's shop | 3 stalls | Visits at 0:50-1:10 of the zone for **70 s**, then every **2:30** (the next stall, a fresh stock of **3** items). List price **30 / 55 / 95 / 160 / 260 ₽** by rarity, **+30 % a zone**. **Market heat**: 2 + ⌊balls opened / 3⌋ buys are at list price; each buy past that multiplies prices by **x1.15, x1.32, x1.49 ... up to x2** a step (opening balls cools it) |
+| Unown altar (Common / Rare / Epic / Golden) | 2 / 1 / 1 / 1 | Stand in the circle to charge it in **8 / 14 / 22 / 35 s** (radius **3 / 2.75 / 2.5 / 2.25 tiles**: the study's 6-4.5 m, halved); leaving drains it at **half speed**. Full: **1 of 3 (Common+), 1 of 3 (Uncommon+), 1 of 4 (Rare+), 2 of 4 (Epic+)**. Epic and Golden call a **horde every 7 s** while you charge (6 + 2 x zone, +4 Golden); Golden is **sealed for 90 s** |
+| Comet shard | 1 | Lands at **2:30-5:00**; a **10 s** charge (2.5 tiles); it **burns out 45 s** after landing if it isn't finished. Pick 1 of 3 (Uncommon+) and **+25 % Ultimate charge** |
+| Challenge altar | 1 | Stand 2 s: a wave of **10 + 4 x zone** at **x1.5 HP**; beat it and a **Great Ball** waits there (pick 1 of 3, Uncommon+) |
+| Cursed altar | 1 | Stand 1.6 s: a **Rare+ item** at once, **+8 % difficulty** and **+15 % spawns** for the run |
+| Gengar's greed altar | 1 | Stand 1.6 s: **+10 % difficulty, +15 % XP, +25 % ₽**, and every ball's pick shows **one more card** |
+| Ditto | 1 | Copies a random item of yours that isn't at its cap (seeded); with nothing to copy it waits |
+| Hypno | 1 | "Forget X" cards for your vitamins (or "Keep them"): the vitamin goes, its stats are re-applied (D5's sums) and its slot is free |
+| Gold rock | 8 | Breaks at a touch for its ₽ |
+| Berry bush | 8 | Heals **50 %** of max HP, only when you're hurt |
+| Cage | 2 | **20 + 10 x zone ₽** frees its Pokémon (one of the map's): **+50 % of a level's XP** |
+
+**Choices** (a ball, a blessing, the comet, the Great Ball, the shop, Hypno) open a screen of their own (`#scr-xeco`, the base
+card style with D5's rarity frames) and **hold the run** like the base item choice (`G.Game.choiceStart` / `choiceEnd`; in co-op
+`G.Coop.holdStart`).
+- A card is picked by click or tap, by the digits, or with the pad. The screen is a `.scr`, so the pad's focus walks it, and
+  Leave / Keep them is its back button.
+- A pick in the first 0.38 s after the screen opens is ignored (the A press that walked you in).
+- Every item is taken through D5's `G.ExpLevel.itemTake` (`x:<id>`): stacking, caps, the banner.
+
+**The zone map, the legend and the fog of war:**
+- **The fog:** tiles within **14** of you are explored (`SIGHT`, per zone). The minimap shows an interactable only once its tile
+  is explored (or within 9 tiles), with a small icon per kind (a new `minimap.draw` seam). Meowth shows only while he's in, the
+  comet only once it has landed.
+- **The zone map:** **M**, a click or tap on the minimap, or the pause screen's "Zone map" button (the pad's way) opens it. It
+  shows the whole zone with unexplored tiles fogged, every interactable found, the guardian's altar or the portal, and you.
+- **The legend:** each kind on the map with its icon, how many are left and used, and the share explored.
+- The map holds the run while open (solo). M or Close shuts it.
+
+**First-run tips:** the first time you meet each kind (within 7 tiles), and your first ₽ and the map, a one-line tip shows for
+6.5 s, one at a time. It sits at the top centre; on a phone it goes under the minimap, clear of the banners. Each shows
+**once**: `tip.<kind>` in the Expedition save, merged by max, so a tip seen on one device stays seen on all. Viewers never get
+tips.
+
+**Determinism and viewers:**
+- **Pure:** where everything is (`layoutOf`: the zone's grids and the world seed; 8 tiles apart, 4 for rocks and berries, 9
+  from the start, 7 from the guardian's altar), Meowth's visits and the comet's landing. A co-op guest, a replay viewer and a
+  spectator place the same 42.
+- **Seeded:** every roll (a ball's or an altar's items, Meowth's stock, a rock's ₽, Ditto's pick, a wave's or an ambush's
+  Pokémon) comes from a `G.DLC.rng` stream (the seed, the zone, the interactable, a draw count), never `Math.random` (tested).
+- **The `x` block v7** `{xv: 7, m, z, th, a, c, l, u, w, o}`. `o` is the host's state:
+  - `s`: `[index, state, charge %, ...]` for every interactable that isn't fresh (states: 1 used, 2 charging or wave running,
+    3 burnt out, 4 landed or Great Ball ready);
+  - `h`: `[balls bought, shop buys, balls opened]`; `g`: `[difficulty, spawns, XP, ₽ %, loot]`;
+  - `n`: interactables used, `u`: the last one;
+  - `m`: `[visit, stall, 3 items, sold bits]` while Meowth is in.
+
+  Host frames carry it too; a guest's own frame has none, because the host owns them. The replay keeps `o` in a frame field of
+  its own (**field 9**, only when it changes) and records an **`xi`** event when one is used (the plan's "xi interactable
+  used"). The v1-v6 readers are kept: a block without `o` shows every interactable fresh.
+- **Versions:** `G.Expedition.DV` is now **6**. dv-1 to dv-5 replays and snapshots still play without a notice; a co-op lobby
+  needs the same dv.
+
+**Saved and merged** (the Expedition save, never the base save; max per counter): `tip.<kind>` (the tips seen), `eco.earned`,
+`eco.best` (most ₽ in a run), `eco.spent`, `eco.balls`, `eco.shop`, `eco.altars`, `eco.freed`, `eco.rocks`, `eco.berries`,
+`eco.ditto`, `eco.hypno`. The run-over screen adds "₽ N · Poké Balls N · Altars N". **No server change:** the server already
+takes any counter.
+
+**Assets:** none new.
+- The balls, the comet, the berries and Meowth's counter use the overworld's item pictures in `/overworld/item_icons/`
+  (`poke_ball`, `premier_ball`, `great_ball`, `star_piece`, `oran_berry`, `nugget`, `amulet_coin`).
+- Meowth, Ditto, Hypno, Gengar, Unown, the cages' Pokémon and the ghosts use their PMD sheets.
+- The altars, rocks, bushes, cages, the minimap and legend icons and the zone map are drawn in code.
+
+**What changed in base files** (each a seam with no listener in a base page, or an `if` on `G.World.zone`):
+- `core/hooks.js`: 1 new seam, `minimap.draw`. `ui/minimap.js`: its call, only in an Expedition zone.
+- `mica/replay.js`: field 9 and the `xi` event (a base snapshot has no `x.o`: its frames don't change).
+- `systems/expedition.js`: `DV` 6, `economy.js`.
+- Expedition files: `expedition/core.js` (`x` v7; the existing `enemy.ko` and `run.tick` listeners also call the economy, plus
+  the `minimap.draw` one); `classic.js` (foes' difficulty / XP / spawn modifiers, the drawing calls, "₽ N" on the zone line, the
+  altar arrow kept clear of a tip, `spawnFoe` / `spotNear` for the waves); `levelups.js` (Skip pays ₽); `items.js` (the gold stat
+  reads "+N % ₽"); `terrain.js` (`XV`).
+
+**Deviations:**
+- **No interact key:** everything is a stand-in circle (D3's rule). Balls open after 0.45 s; Ditto, Hypno and cages after
+  0.8 s. A paid ball or a cage you can't afford says how much you're short, and waits until you step off and back.
+- **The study's radii are halved** (our tiles are smaller than PokéBonk's metres). Its Big Nugget ball discount waits for an
+  item: only luck discounts for now.
+- **Ours, not the study's:** ₽ for special kills, Meowth's prices, the horde sizes and the greed / curse numbers (the study
+  gives none).
+- **Not in this batch** (the plan's D7 row doesn't list them): Snorlax, Magnemite, the slot machine (the owner allowed it, play
+  money only, decision #7) and Survival's respawn of used interactables (D11).
+- **A freed cage's research** (study: +25 research) waits for D10's research; `eco.freed` counts it meanwhile.
+- **No guardian / portal tips:** D3's banners already say what to do.
+
+**Not yet:**
+- D8's Alphas, Friend Ball and capture (D8: built, see below; it reuses this choice screen for its "swap whom?", the cages stay XP);
+- Soul Dew / Lunar Blessing (`pl.xultCharge`) and a Big Nugget, as items;
+- a co-op guest's own interactables (a guest's run isn't an Expedition one yet: D11); its frames already carry the host's `o`;
+- Survival's respawning interactables (D11), and more kinds (Snorlax, Magnemite, the slot machine).
+
+## DLC D8: Alphas, capture and shinies
+
+**An Expedition run now catches Pokémon**: the timeline's alphas faint instead of falling, and a Friend Ball makes them
+**Support Alphas** that fight for you with a type perk; a League challenge completed from D8 on brings that member's
+**"wild X appeared!"** encounter, which you weaken and catch to unlock it; **shinies** roam the zones; every catch plays a
+**capture cinematic**. Hits also set off **elemental reactions** and **weather boosts** (`Plans/MICASURVIVOR_POKEBONK_DLC_STUDY.md`
+2.1, 2.3, 2.8 and the D8 row). The code is `js/expedition/capture.js` (`G.ExpCap`) and `js/expedition/reactions.js` (`G.ExpRx`);
+every number is in their `K`. Base modes are unchanged: the D0a fixtures pass as recorded, also with the Expedition code
+force-loaded.
+
+**Alphas and the faint window** (study 2.8):
+
+| Rule | Number (`G.ExpCap.K`) |
+|---|---|
+| D3's alphas (150 / 330 / 480 s, x1.6, x9 HP) can't be KO'd outright: at 1 HP they **faint** (`hpFloor`) | the KO counts (kills, ₽, the Ultimate's alpha bonus); its XP drops |
+| The **faint window**: it lies there in a dashed circle with a timer arc | **8 s** (`FAINT_T`) |
+| **Stand in the circle** (no interact key: D3's rule) and you throw a **Friend Ball** | within **1.6 tiles** for **0.35 s** (`THROW_R`, `THROW_T`) |
+| Left alone, the window closes and it **drops its prize** | D3's item + berry |
+
+**Support Alphas** (study 2.8): a caught alpha fights for you for the rest of the run.
+
+| Rule | Number |
+|---|---|
+| Slots | **2** (`SLOTS`), **3** with the Lab's "Support team" (D10 sets the save counter `lab.support`; `LAB_SLOTS`) |
+| A full team | the Friend Ball asks **"Your team is full · Who do you swap for X?"**: a card per Support Alpha, or **Keep my team** (the prize drops). D7's choice screen (`G.ExpEco.openPick` with cards of its own) |
+| It follows you | fanned out behind you, 70 px (`SA_FOLLOW`); past 520 px it catches up at once (`SA_LEASH`) |
+| It shoots | the nearest foe within 320 px every **1.25 s**: a bolt of its first type, **9 x (1 + 0.06 x (your level - 1)) x your attack** (`SA_DMG`, `SA_LV`, `SA_CD`), Fire burns, Poison poisons, Ice slows; to the run's "Partner / team" damage row |
+| It never takes damage | — |
+
+**Type perks** (`PERK`; the study's three examples, the rest ours), each a stat of D5's sums (`items.js` `total()`), so two of
+the same type add:
+
+| Type | Perk | Type | Perk | Type | Perk |
+|---|---|---|---|---|---|
+| Normal | +8 % XP | Fire | +15 % status chance | Water | +8 % area |
+| Grass | +0.8 HP/s | Electric | +8 % attack speed | Ice | +12 % duration |
+| Fighting | +8 % physical | Poison | +3 % lifesteal | Ground | +10 % to bosses |
+| Flying | +6 % speed | Psychic | +8 % special | Bug | +15 % pickup range |
+| Rock | +15 max HP | Ghost | +5 % evasion | Dragon | +6 % damage |
+| Dark | +5 % crit | Steel | +3 armor | Fairy | +8 luck |
+
+The perk shows under each chip (top left, under the HP bar and its status chips; the minimap and the altar arrow step round
+them), and on the "Gotcha!" line ("Gotcha! Geodude joins your team · +15 max HP").
+
+**League encounters** (study 2.1: challenge -> appear -> weaken -> catch):
+- **The D4 decision:** the owner's decision #3 is "League roster only, earned via challenges + capture", so from D8 on a
+  completed challenge puts the member in `league.met` **and** `league.wild`, and it plays only once caught (`league.own`). A
+  member met in D4 (in `league.met`, never in `league.wild`) **stays playable** (`K.PLAY_MET`): nothing is ever taken from a
+  save. The run-over line is now "Challenge complete: Kangaskhan! Catch it in your next run"; the League screen says
+  "Done: catch it in your next run" and the cell "To catch!".
+- **When:** your next run takes up to **3** wild members (`PER_RUN`) in a seeded order, one a zone, each **50-120 s** into
+  its zone (`LG_AT`): "A wild Kangaskhan appeared!" (its first stage), x1.3, a pale blue aura and a "WILD · FLEES IN 2:30"
+  label, an arrow at the screen's edge and a star on the minimap.
+- **Its HP:** an alpha's x9 x its rank: **x0.8** common (and starters), **x1.2** uncommon, **x1.6** rare, **x5** legendary
+  (`LG_HP`, `LG_RANK`; study's 0.8 / 1.6 / 5 relative to an alpha). Damage x1.3, XP x6.
+- **Weaken it:** at 1 HP it faints for **12 s** (`LG_WINDOW`); stand by it and a **Poké Ball** goes. Caught, it joins the
+  League at once (`league.own`, saved to the browser and the account straight away, not at the run's end): "Gotcha!
+  Kangaskhan joined the League!".
+- **It flees** after **150 s** (legendaries **240 s**; `LG_FLEE`, `LG_FLEE_LEG`), or when its window closes: "Kangaskhan got
+  away! It will be back in your next run" (it stays wild).
+
+**Shinies** (study 2.8):
+- **The odds:** **8 % a zone + luck / 1,000**, **x1.5** with the Shiny Charm item (`SHINY`, `SHINY_LUCK`, `SHINY_CHARM`),
+  rolled on entering each zone 1-3 with your luck then; it comes **60-420 s** in (`SH_AT`).
+- **The encounter:** one of the zone's Pokémon (its cards, with a shiny sheet), on its **shiny sprite**, x4 HP (`SH_HP`): "A
+  shiny Oddish is nearby!". It **roams** round you (220-480 px, its own seeded stream), **never attacks** (no contact, no
+  shots) and **flees after 120 s** (150 s with the charm).
+- **Caught:** `shiny.caught` gets its dex and `cap.shiny` counts it; if it is a League family's, `league.shiny` gets the member,
+  who then **plays shiny** (cosmetic, PokéBonk's "shiny skins are cosmetic"; owner decision #5 shares shinies both ways, which
+  D10 can take to the trainer card). The base save is never written: a shiny caught here is not a base-game shiny.
+
+**The capture cinematic** (study 2.1: "3 shake pips, a capture cinematic"): **3.2 s** (`CINE`) that **hold the world** (the
+`run.hold` seam: the clock, the foes and the spawns stop), then **1 s of i-frames** (`AFTER`):
+
+| Phase | s | What you see |
+|---|---|---|
+| Throw | 0.5 | the ball (Friend Ball for an alpha, Poké Ball otherwise) arcs from you to it |
+| Absorb | 0.35 | the Pokémon, white, shrinks into the ball (red light) |
+| Drop | 0.25 | the ball falls |
+| Shakes | 3 x 0.5 | it wobbles; a pip fills on the banner each time |
+| Click | 0.6 | sparks: "Gotcha! ..." |
+
+Over the HUD, a banner (ball, "Friend Ball · Vulpix", 3 pips, then "Gotcha!") sits above the move bar and steps clear of a
+first-run tip. Every catch succeeds (the study has no break-out); the Master Ball item's "guaranteed capture" has nothing
+to guarantee yet.
+
+**Elemental reactions** (study 2.3; `G.ExpRx.K`), through the `combat.out` seam, so every hit (yours, a Support Alpha's, an
+Ultimate's) can set one off; one per hit, **0.25 s** cool-down per foe and reaction:
+
+| Reaction | When | Effect |
+|---|---|---|
+| **Electrocuted** | Electric on a **wet** foe | **x1.5**; chains to up to **12** other wet foes within **9 m** (half the hit each, paralysis **60 %**), drying them |
+| **Steam** | Water on a **burning** foe | **x1.4**; confuses and roots (x0.85 speed, 1.4 s) the foes within **6 m**; the burn goes out |
+| **Inferno** | Grass or Flying on a burning foe | the burn (+2) spreads to the foes within **7 m** |
+| **Wreckage** | Fighting, Rock or Steel on a **frozen** foe | **x2.6** (on top of the base frozen x1.25); the ice shatters |
+| **Poison Gas** | Fire on a **poisoned** foe | **x1.3** and a cloud: poison +2 within **6 m** (ours: the study gives no number) |
+| **Psychic Meltdown** | Psychic on a confused or sleeping foe | **x1.6** (ours) |
+| **Dragon Rage** | Dragon on a foe with **2+** statuses (wet and chill count) | **x1.8** (ours) |
+
+- **Marks:** a Water hit leaves a foe **wet** for **4 s** (a blue puddle under it); an Ice hit adds a **chill** stack (pips
+  over it): **3** stacks, or **1** on a wet foe, **freeze** it for **1.6 s**.
+- The study's metres are halved into our tiles, as D7's altars (1 m = 16 px: 9 m = 144 px).
+- A pop-up names each reaction ("Electrocuted!") with a ring in its colour. The run counts them: `rx.<name>` and `rx.total`.
+
+**Weather boosts** (study 2.3): the base weather (`systems/weather.js`, the same for you and the foes) already boosts Fire /
+Water in sun and rain, Rock / Ground / Steel in sand, Ice in snow, Ghost / Fairy / Psychic in fog. In an Expedition zone:
+- the study's two it lacks: **Sun boosts Grass x1.3**, **Fog (the study's Mist) boosts Dark x1.3** (`WX_EXTRA`);
+- **the weather boost:** while the weather favours one of your Pokémon's types, **all its hits do +10 %** (`WX_SELF`; a Support
+  Alpha's shots go by its own types), with a line when it starts: "Harsh sunlight boosts your Bulbasaur: +10% damage".
+- Both follow the weather's 3 s fade in and out. The base weather's own numbers and schedule are unchanged (it still comes
+  by `Math.random`, as in base; the PokéBonk "Ash" weather is not added).
+
+**Input:** nothing new. The throw is a stand-in circle (D3's rule), so mouse, touch and pad play the same; the "swap whom?"
+screen is D7's (click / tap a card, digits, the pad; Keep my team is its back button).
+
+**Determinism and viewers:**
+- **Pure:** `zonePlan(seed, map, zone, {member, luck, charm})` (when the League encounter comes, the shiny roll, its time and
+  pick) and `pendingOf(seed)` (which wild members, in which order) use `G.DLC.rng` only (tested: no `Math.random`). Where an
+  encounter appears and a shiny's wandering come from streams of the seed and the zone. Combat (and so a chain's paralysis)
+  stays `Math.random`, as in base.
+- **The `x` block v8** `{xv: 8, m, z, th, a, c, l, u, w, o, p}`. `p` is the host's capture state: `s` the Support Alphas'
+  dex, `t` `[enemy id, kind, ...]` the League (7) / shiny (8) encounters, `f` `[kind, dex, x, y, flags, ...]` the fainted
+  Pokémon, `k` `[kind, dex, x, y, flags, seq]` the capture under way, `n` the captures and `u` the last one's dex; a host frame
+  adds `h`, the host's uid. A viewer draws the Support Alphas in formation round the watched player (a co-op guest: round the
+  host's puppet), the fainted Pokémon, the encounters' sheets (shiny) and auras, and plays the cinematic when `k`'s seq
+  changes (its own clock, so a missed frame is harmless).
+- **The replay** keeps `p` in its slow state (it changes a few times a zone) and records an **`xc`** event when `n` rises (the
+  plan's "xc capture result", with the dex). v1-v7 still read: a block without `p` shows no capture.
+- **Versions:** `G.Expedition.DV` is now **7**. dv-1 to dv-6 replays and snapshots still play without a notice; a co-op lobby
+  needs the same dv.
+
+**Saved and merged** (the Expedition save, never the base save; sets unioned, counters max-merged):
+- sets `league.wild` (met from D8 on, waiting to be caught), `league.own` (caught), `shiny.caught` (dex), `league.shiny`
+  (members that play shiny), `sa.types` (types ever recruited);
+- counters `cap.alpha` (recruits), `cap.league`, `cap.shiny`, `cap.fled`, `shiny.seen`, `sa.best` (most Support Alphas at
+  once), `rx.<reaction>`, `rx.total`.
+- The run-over screen adds "Support Alphas: Pidgey, Vulpix", "Caught: Kangaskhan", "Shinies: Oddish", "Reactions: 34".
+- **No server change:** the server already takes any set or counter (the test merges two devices through the real handler).
+
+**First-run tips** (D7's, once each): the alpha, the League encounter and the shiny.
+
+**Assets:** none new. The balls are the overworld's item pictures (`friend_ball`, `poke_ball`, `/overworld/item_icons/`); the
+Pokémon, their shiny sheets and the Support Alphas are their PMD sheets (MicaSurvivor has the shiny sheets); the circles,
+auras, chips, banner and the reactions' marks are drawn in code.
+
+**What changed in base files** (each an `if` on `G.World.zone` or a field only Expedition code sets):
+- `game.js` `drawScene`: the Support Alphas, fainted Pokémon and the capture's ball join the y-sorted scene (`G.ExpCap.drawables`).
+- `mica/replay.js`: the `xc` event (a base snapshot has no `x.p`: its frames don't change).
+- `systems/expedition.js`: `DV` 7, `reactions.js` and `capture.js` in `SCRIPTS`.
+- Expedition files: `expedition/core.js` (`x` v8, the hooks: `run.tick`, `run.hold`, `combat.out`, `minimap.draw`, `run.end`);
+  `classic.js` (alphas marked; a downed alpha is D8's, its prize only if left; the draw calls; the altar arrow clear of the
+  chips); `items.js` (`total()` adds the perks); `economy.js` (the choice screen takes cards of its own, `tipOnce` exported, 3
+  tips); `league.js` (`league.wild`, `wild()`, the shiny skin, the lines); `ultimates.js` (`drawCut` also draws the capture
+  banner); `terrain.js` (`XV` 8).
+
+**Deviations:**
+- **No interact key:** the throw is a stand-in circle (D3's rule).
+- **Every catch succeeds** once it has fainted (the study has no break-out roll), so the Master Ball item still only adds
+  damage. Mewtwo's "invasion" (study 2.1) is D4d's.
+- **Ours, not the study's:** the perks other than Fire / Rock / Fairy, the Support Alphas' damage, the League windows (12 s)
+  and HP base, the shiny's HP and window, Poison Gas / Meltdown / Rage's numbers, the +10 % weather boost.
+- **The cages** (D7) still free their Pokémon for XP: the capture starts from a fainted Pokémon.
+
+**Not yet:**
+- the Lab's third slot (D10: `lab.support`), shiny perks and the Shiny Charm as meta (D10: `cap.shiny`, `shiny.caught`), Honey /
+  Dawn Stone / Master Ball boosts (`zonePlan`'s options are where they'd go);
+- a co-op guest's own Support Alphas and captures (a guest's run isn't an Expedition one yet: D11); viewers see the Support
+  Alphas and the cinematic but not the allies' shots or the reactions' pop-ups (the damage numbers only);
+- the run's damage breakdown files the Support Alphas under "Partner / team" (there's no "Alphas" row: a base change).
+
+## DLC D9: tiers, score and boards
+
+**Expedition · Classic now has difficulty tiers, a score, time-attack medals and its own leaderboards**: Normal, Hard and
+Nightmare change the run and unlock in sequence on each map; a won run earns a medal by its time; the boards are per map and
+tier (Score, Time attack and a weekly Season with **cosmetic ribbons only**) (`Plans/MICASURVIVOR_POKEBONK_DLC_STUDY.md`
+2.11-2.13 and the D9 row). The code is `js/expedition/tiers.js` (`G.ExpTier`); every number is in its `K`. Base modes and the
+base board are unchanged: the D0a fixtures pass as recorded, also with the Expedition code force-loaded.
+
+**The tiers** (`K.TIERS`, study 2.11 as written), read by Classic (`js/expedition/classic.js`, `tierOf`):
+
+| | Normal | Hard | Nightmare | Where |
+|---|---|---|---|---|
+| Enemy HP / damage / speed | x1 | x1.4 / x1.42 / x1.08 | x1.9 / x1.96 / x1.16 | `spawn` (every foe of the zone: the trickle, events, alphas, League / shiny encounters, the interactables' waves) |
+| Enemy amount / concurrent cap | x1 | x1.3 / x1.15 | x1.6 / x1.3 | the trickle's rate, `capNow` |
+| Elite share of the trickle | 0 | 4 % | 8 % | `trickle` (D3's elite numbers) |
+| Event size / events earlier | x1 / — | x1.2 / 15 s | x1.4 / 30 s | `plan` (swarms, stampedes, flocks, elite waves, rock slides; D3's `K.EARLY` moved here) |
+| Telegraph time | x1 | x0.92 | x0.85 | the rock slide's warning circles |
+| Boss escorts | 0 | 1 | 2 | elites round a guardian / the legendary when it wakes (`escorts`, their own seeded stream) |
+| Boss damage | x1 | x1.42 | x1.96 | `wake` (HP stays D3's `bossHp`: x(1 + 0.15 tier) of your DPS) |
+| XP | x1 | x1.15 | x1.3 | `spawn` |
+| Score | x1 | x1.5 | x2 | the score (below) |
+| Pay | x1 | x1.75 | x2.5 | (the study's Stardust column: D10 pays each run's ★ with it) |
+
+Normal is all x1 / 0 and draws nothing more from any stream, so a Normal run plays exactly as before D9.
+
+**Unlocks, per map, in sequence:** Normal always; **winning the map on a tier opens the next** ("Hard unlocked on Viridian
+Forest!" on the run-over screen). Saved as the counter `tier.<map>` (max-merged), read together with D3's `wins.<map>.<diff>`, so a
+win from before D9 counts. Only Viridian Forest is playable (Mt. Moon and Cerulean Cape say "Coming soon" until D12).
+
+**The score** (study 2.12, Classic, + a catch term of ours): **(2 KOs + 3 s + damage / 200 + 1,500 (zone - 1) + 800 bosses +
+6,000 if won + 400 a catch) x (1 + 0.5 tier)** (`K.SCORE`; a catch is a Support Alpha, a League encounter or a shiny,
+`G.ExpCap.run.n`). The run-over screen says "Score: 13,900 (x1.5 Hard)". The server recomputes it (below).
+
+**Time-attack medals** (study 2.13): a won run's time (the run's clock at the end, the victory banner included):
+
+| Medal | Normal | Hard | Nightmare |
+|---|---|---|---|
+| Bronze | finish | finish | finish |
+| Silver | < 30:00 | < 32:10 | < 34:20 |
+| Gold | < 23:00 | < 24:36 | < 26:12 |
+| Champion | < 17:30 | < 18:40 | < 19:50 |
+
+Normal's limits (27:00 / 20:00 / 14:30) x(1 + 0.08 tier), + 3 min for the shrine (all three launch maps have one): `K.MEDALS`,
+`MEDAL_TIER`, `SHRINE_S`. The run-over screen shows the medal (the achievement medal pictures; a trophy for Champion), "New medal:
+Gold" and the next one to aim for ("Next: Champion under 18:40"). Saved as `medal.<map>.<diff>` (max) and `medals.<id>` (count).
+
+**"Difficulty: Normal · leaderboards"** (a second button on the Classic card of "Choose a mode"; mouse, touch and pad):
+- the map tabs; **the tier cards** (each tier's table, your best clear and medal, Chosen / Choose / "Win the map on Normal to
+  unlock it"; a locked one refuses); the medal limits of the chosen tier; your season ribbons;
+- **the boards** (signed in; a guest is asked to log in): **Score** (D0b's board), **Time attack** (fastest clear, its medal and a
+  Watch link to its replay) and **Season**: "Season 2 · ends in 3 d 12 h", the prize ladder ("Season prizes (cosmetic ribbons
+  only, earned by playing)": Master #1, Elite #2-3, Top 10, Top 25, Top 50), this week's board and "Last season: #2 · Elite
+  ribbon". Each read is one exact key.
+- the pick is per device (localStorage `micasurvivorexp_tier`, clamped to what is unlocked); `G.Expedition.pick()` asks here.
+
+**The weekly season** (study 2.13's 7-day seasons, from Monday 2026-10-12 UTC; `K.SEASON0`, `K.WEEK`): every Expedition score
+also goes to its week's board. **Prizes are cosmetic only** (owner rule: never ads or paid items; no Pokémonedas, no Stardust):
+looking at the Season tab, a top-50 place last week is claimed once as a ribbon into the Expedition save (set `season.prize`,
+ids `s<season>.<map>.<tier>.<ribbon>`; counter `season.best`, 5 Master ... 1 Top 50). The owner's decision #8 had "no weekly
+seasons for now": this is the view and the ribbons only, no other rewards; it can be hidden by dropping the tab.
+
+**Server** (`server/mp.mjs`, mode `micasurvivor_expedition` of `run-score` / `run-leaderboard`; needs the full gate):
+- **The parts:** a score now carries `kills, time, dmg, zone, bosses, won, catches`; the server recomputes the score
+  (`msurvExpScore`, the same expression as `G.ExpTier.score`) and refuses a mismatch (400 "score does not match its parts").
+  Plausibility: zone 1-4, a win ends at the shrine (zone 4) and takes at least 3:00, KOs <= 15 a second + 200, damage <= 100,000 a
+  second, bosses <= 2 x zone + 4, catches <= 60, whole numbers. From dv 8 a score without its parts is refused; an older client's
+  (dv 1-7) is still taken under a generous ceiling.
+- **The replay reference:** a won run uploads its replay (`G.Replay.share`) and sends its id; the server takes it only if it is
+  one of **your** uploads (`msurvreplay:<id>`) with this run's mode, map, tier, time (± 2 s) and KOs, and keeps it on the row.
+- **Boards** (exact keys only; `store.get`, no prefix scan): `runboard:micasurvivor_expedition:<map>:<diff>` (D0b's, by score),
+  `…:<diff>:time` (won runs, by time, with the medal; your best in `runBest[...':time']`) and `msurvseason:<n>:<map>:<diff>`
+  (the week's, by score; written only when your entry improves; swept 6 weeks after its last write: `GC_TABLE`).
+  `run-leaderboard` takes `board: 'score' | 'time' | 'season'` and, for a season, `season: n` (this week or up to 4 back).
+- The run-score brake (20 a minute) and the base board's isolation are unchanged; the base `micasurvivor` path is untouched.
+
+**Sync:** the tier already travels as the `x` block's `c.d` (v3 on), and every viewer reads the same tables, so **the `x` block
+stays v8**: a spectator's or a co-op guest's HUD shows HARD / NIGHTMARE and plans the tier's timeline. The replay header already
+had `diff`. **`G.Expedition.DV` is 8** (a Hard run means something new); dv-1 to dv-7 replays and snapshots still play with no
+notice (they were all Normal).
+
+**Assets:** none new (the achievement medal and trophy pictures of `js/ui/icons.js`; the rest is HTML and CSS).
+
+**What changed in base files** (each only on an Expedition path):
+- `systems/expedition.js`: `DV` 8, `tiers.js` in `SCRIPTS`, `pick()` (the saved pick, or `G.ExpTier.pick()`), 3 i18n keys.
+- `ui/modes-ui.js`: the Classic card's second button, `openTier`, and Back / open closing the panel.
+- `game.js`: the Expedition run-over passes `medal`; `ui/run-ui.js`: the medal block (only when `r.medal` is set).
+- Expedition files: `tiers.js` (new); `classic.js` (the tier in `plan` / `spawn` / `trickle` / `capNow` / the rock slide / `wake`
+  and its escorts, `scoreParts`, the score through `G.ExpTier`, the HUD's tier tag; `K.EARLY` moved to the tier table); `core.js`
+  (dv 8, `run.end`: the parts, the medal / unlock, the mark with its parts and replay, the toasts).
+
+**Deviations:**
+- **Ours, not the study's:** the catch term (400), the escorts being elites of the zone, the medal's time including the 3 s
+  victory banner, the server's plausibility limits, the ribbons (the study pays Stardust: here cosmetic only).
+- **Not built:** the study's KO boards, Survival boards (D11), per-species boards and clans (owner: skip), "Win the Forest on
+  Hard"-style challenge unlocks beyond the sequence, a season reward other than the ribbon.
+
+## DLC D10: the League meta
+
+**Expedition now has its own meta-progression**: runs pay **Stardust (★)**, spent in **the Lab** (19 permanent upgrades) and on
+**item unlocks**; **the Archive** keeps chosen items out of the drop pool; **research** turns League families into **avatars**
+(and frames); **daily and weekly tasks** pay ★ and pre-run **boosts**; **33 achievements**; **shiny perks**
+(`Plans/MICASURVIVOR_POKEBONK_DLC_STUDY.md` 2.5, 2.6, 2.14 and the D10 row). The code is `js/expedition/meta.js` (`G.ExpMeta`);
+every number is in its `K` and its tables (`LAB`, `UNLOCKS`, `ACH`, `TASKS`, `BOOSTS`, `FRAMES`). Base modes are unchanged: the
+D0a fixtures pass as recorded, also with the Expedition code force-loaded.
+
+> **D11 change (owner decision #4, confirmed):** there is no Stardust any more. Every price and reward below is now paid in the
+> base game's **Pokémonedas**, x3 (`K.SCALE`), through `G.Expedition.wallet` and the base save's per-device ledger; a Normal
+> clear pays ~1,270-1,365. See "DLC D11: Survival and MP hardening". The rest of this section is D10 as built.
+
+**Owner rule: no ads, nothing sold, no real money.** ★ is earned in play only (runs, tasks, achievements) and spent only here.
+It is the Expedition's own currency: **the base save's Pokémonedas, stats and achievements are never read or written** (tested:
+the base save is byte-equal after Expedition runs). Owner decision #4 had "shared Pokémonedas"; this batch's brief asked for a
+DLC currency with the base currency untouched, so `G.Expedition.wallet` stays unused. Switching the payout to Pokémonedas would
+be one line in `record` (owner's call).
+
+**★ a run** (`K.PAY`): **(10 + KOs / 40 + 25 (zone - 1) + 30 a boss + 120 if won + 15 a catch) x the tier's pay** (study 2.11's
+column, `G.ExpTier.of(diff).pay`: x1 / 1.75 / 2.5). A run under a minute pays nothing. A typical Normal clear (2,000 KOs, 4
+bosses, 2 catches) pays 405 ★, Hard 709, Nightmare 1,013. The run-over screen says "Stardust: +709 ★ (×1.75 Hard)".
+
+**The Lab** (study 2.14's list; price = round(base x growth^level / 5) x 5, or the study's fixed prices):
+
+| Upgrade | Effect a level | Max | Prices |
+|---|---|---|---|
+| Training | +4 % damage | 8 | 300 x 1.35^lv (300 ... 2,445) |
+| Stamina | +8 max HP | 8 | 250 x 1.35^lv |
+| Agility | +2.5 % speed | 6 | 300 x 1.4^lv |
+| Study | +5 % XP | 5 | 400 x 1.45^lv |
+| Trading | +8 % ₽ | 5 | 300 x 1.45^lv |
+| Fortune | +5 luck | 5 | 400 x 1.5^lv |
+| Magnetism | +10 % pickup range | 4 | 250 x 1.5^lv |
+| Leftovers | +0.3 HP/s | 4 | 400 x 1.5^lv |
+| Shell | +2 armor | 5 | 350 x 1.45^lv |
+| Refresh / Skip / Banish | +1 use a run (to 6 each, study 2.5) | 4 / 4 / 5 | 400 x 1.6^lv / 300 x 1.6^lv / 500 x 1.5^lv |
+| Vitamin slots | +1 slot (3 -> 5) | 2 | 1,200 / 3,000 |
+| Move slot | +1 move slot (6 -> 7) | 1 | 1,500 |
+| Fourth option | 4 cards at each level-up | 1 | 3,000 |
+| Revive | start with a Max Revive | 1 | 5,000 |
+| Research | +25 % research | 4 | 500 x 1.6^lv |
+| Support team | a 3rd Support Alpha slot (D8's `lab.support`) | 1 | 3,500 |
+| Archive | +3 Archive slots | 3 | 800 / 1,600 / 3,200 |
+
+The whole Lab costs 84,355 ★ and the 25 items 29,050 (about 280 Normal clears, or 112 on Nightmare, before tasks: ~4,500 ★ a week if every task is done, and the achievements: 13,850 in all). The stat upgrades add
+to D5's stat sums (`G.ExpItems.total`: same-stat bonuses add); the tools / slots / cards are read by `levelups.js` and `items.js`;
+the Max Revive is D5's item, taken at the start.
+
+**Item unlocks** (study 2.6: "revealed by a counter goal, then bought with Stardust"): **25 of D5's 60 items start out of the
+drop pool**, each with a goal from the save's counters and a price (250-3,500 ★): e.g. Scope Lens "Defeat 2,000 Pokémon" 300,
+Choice Band "Win a map" 600, Assault Vest "Win a map on Hard" 1,500, Shiny Charm "Catch a shiny" 1,500, Max Revive "Win a map
+on Nightmare" 3,500. A locked item never drops, never shows in a Poké Ball / Meowth / altar offer (`G.ExpItems.inPool`); its goal
+reveals it and ★ buys it (`items.bought`). The 18 type boosters and Life Orb stay unlocked, and at least 5 Epic+ items are always in
+the pool.
+
+**The Archive** (study 2.5: "+3 slots per Lab level keeps chosen items out of the pool"): on the Archive tab, choose up to 3 x
+the Lab level of the items in the pool; they never drop in your runs. Each toggle is a Lamport counter (`arc.<item>` = stamp x 2
++ on), so the latest choice wins on every device.
+
+**Research** (study 2.14's Research Notebook): every KO of a **League family** (any stage) adds research: a KO 1, an elite 2, a
+summoner 4, an alpha or totem 5, a guardian / legendary / boss 10, a freed cage 25 (D7's cage, `onFreed`), x(1 + 0.25 Lab
+Research). Saved at the run's end (`rs.<family>`). A family is finished at 400 (starter / common), 600 (uncommon), 900 (rare)
+or 60 (legendary): its first stage becomes an **avatar** (`avatar`). The Research tab lists the 78 built families.
+
+**The card** (Card tab): avatar (your League member, or an avatar), **frame** and **title**. 10 frames drawn in CSS: Basic, Leaf
+/ Stone / Crystal / Prism (1 / 5 / 15 / 40 avatars), Champion / Nightmare / Shiny (achievements), Ribbon / Master (D9's season
+ribbons: owner #5, ribbons become frames and titles). Titles come from 6 achievements and 2 ribbons. The choices are Lamport
+counters too (`card.av / fr / ti`).
+
+**Tasks** (study 2.14): **3 daily (60 / 100 / 160 ★) and 3 weekly (300 / 450 / 700 ★)**, from 14 templates (KOs, minutes, zone,
+guardians, Poké Balls, altars, Ultimates, reactions, alphas, catches, evolutions, runs, cages, wins), seeded by the day / ISO week
+(UTC; weeks from Monday) and the account. All 3 dailies pay **50 ★ x the streak** (consecutive days, up to 5) and a boost; all 3
+weeklies 500 ★ and 3 boosts. One reroll a day and one a week. Paid when done (at a run's end). **The date is passed in**
+(`record(sum, now)`, `tasksOf(kind, now)`): no wall clock inside run logic. Progress lives in bounded counters: `tk.<d|w>.<slot>` =
+(period + 1) x 1e7 + reroll x 1e6 + progress, so a newer period always wins the max merge and nothing grows per day.
+
+**Pre-run boosts** (study 2.6): Rare Candy (+2 levels at the start), Lucky Egg (+25 % XP), Amulet Coin (+50 % ₽), Honey (+1 alpha
+a zone, at a seeded time), Dawn Stone (a shiny in zone 1: `zonePlan`'s `force`), Master Ball (the run's first League / shiny
+encounter faints at once). From the task bonuses only, max 9 each; armed on the Tasks tab (this device), spent at the run's start.
+
+**Achievements** (33, 50-1,500 ★, from the Expedition save's counters: runs, zones, wins per tier, medals, KOs, guardians,
+alphas, League catches and size, shinies, reactions, Ultimates, Poké Balls, cages, avatars, Lab levels, tasks). Claimed once into
+the set `ach`; their ★ counts in the balance from that set.
+
+**Shiny perks** (study 2.14, by shinies caught, `cap.shiny` / `shiny.caught`): 2 +3 luck, 4 +4 % XP, 6 **the Shiny Charm every run**
+(x1.5 shiny chance and its longer flee time, D8's `charm`), 10 +3 % damage, 15 +20 % damage as a shiny League member.
+
+**Saves (merge-safe, never destructive):** everything is in the Expedition save (max per counter, union per set; no server
+change). ★ earned is a **G-counter**: one counter per browser and identity (`st.<device>`), so two devices' runs add. **Spending
+is derived, never a counter:** balance = Σ `st.*` + Σ the claimed achievements' ★ − Σ the Lab's prices up to its levels − Σ the
+bought items' prices. Two devices can't pay twice for the same Lab level or item; two devices spending at once can overdraw (the
+balance shows 0 and buying waits). Boosts are G-counters too (`bg.<id>.<dev>` got, `bu.<id>.<dev>` used). Counter growth is
+bounded (a few per device, one per family, a fixed set for tasks).
+
+**Sync:** the Lab, the shiny perks and the boosts change a run, so **the run's row is fixed at its start**
+(`[Lab levels in base 36, shiny-perk tier, boost mask, shiny member]`) and every effect is `G.ExpMeta.effects(row)` (pure). **The
+`x` block is v9** with `k` (`k.p` the watched / sending player's row, `k.q` the co-op players' by uid / name); the replay header
+carries `h.k`. A viewer, spectator or co-op guest reads the same numbers; a v1-v8 block (no `k`) still loads. **`G.Expedition.DV`
+is 9** (dv-1 to dv-8 replays and snapshots still play with no notice).
+
+**"League HQ"** (a third button on the Classic card of "Choose a mode": "League HQ · ★ 1,234"; mouse, touch and pad): the ★
+balance and 7 tabs: **Lab** (each upgrade, its level, now / next and its price), **Items** (the 25 unlocks: goal, progress, Buy /
+In the drop pool), **Archive**, **Research** (the families, progress bars, silhouettes until met), **Tasks** (daily / weekly, the
+bonuses, "Reset in …", Reroll, the boosts to arm), **Achievements**, **Card** (avatar, frames, titles, shiny perks).
+
+**Assets:** none new. The overworld's item pictures (`/overworld/item_icons/`: stardust, the Lab's items, the boosts, the
+Shiny Charm), the PMD sprites for avatars, the achievement icons of `js/ui/icons.js`; frames are CSS.
+
+**What changed in base files** (each only on an Expedition path):
+- `systems/expedition.js`: `DV` 9, `meta.js` in `SCRIPTS`, 2 i18n keys, the `wallet` note.
+- `ui/modes-ui.js`: the Classic card's third button, `openMeta`, and Back / open closing the panel.
+- Expedition files: `meta.js` (new); `core.js` (dv 9, `x` v9 with `k`, `h.k`, the begin / after / tick / KO / run.end calls);
+  `items.js` (the meta stats in `total`, `slots` + the Lab, `inPool`); `levelups.js` (the Lab's tools, move slot, fourth card);
+  `economy.js` (offers through `inPool`, a cage's research); `capture.js` (Support team from the run's row, the Shiny Charm perk,
+  Dawn Stone, Master Ball).
+
+**Deviations:**
+- **Ours, not the study's:** the run's ★ formula (the study gives none), the research needed per family, the item goals and
+  prices, the achievements' list, the frames, the boosts' exact effects (Master Ball: "faints at once", as every catch already
+  succeeds), the Archive's slot cap (3 levels), the task templates.
+- **Not built:** season tasks (the season UI is hidden, owner decision #8), clan points, buying boosts (only tasks give them),
+  showing the Expedition card on the base trainer card (owner #5's crossover: the card lives in League HQ for now).
+- **For D11:** a co-op guest's own meta row (its run isn't an Expedition one yet; the host's row already travels in `k.q`), task
+  progress from Survival (the metrics are per run: add Survival's), achievements for Survival milestones.
+
+## DLC D11: Survival and MP hardening
+
+**Expedition · Survival is playable** (the Survival card of "Choose a mode"; League still says "Coming soon"), **the
+Expedition pays and spends the base game's Pokémonedas** (owner decision #4), and **online co-op, spectating and replays carry
+every DLC system**. `Plans/MICASURVIVOR_POKEBONK_DLC_STUDY.md` 1 ("Run: Survival"), 2.8, 2.12, 5.0.5-5.0.7, 5.3 and the D11 row.
+The code is `js/expedition/survival.js` (`G.ExpSurv`, every number in its `K`) on Classic's engine (`classic.js` with `S.surv`).
+Base modes are unchanged: the D0a fixtures pass as recorded (58/0), also with the Expedition code force-loaded.
+
+**Survival** (endless, one map; the run ends only when you fall):
+- **Milestones:** a boss every 5:00 (a guardian of the phase, its HP from your DPS like D3's, +6 % a milestone); **every 3rd a
+  legendary** (15:00 Mew, 30:00 one of the birds) and **Mewtwo at 45:00** (a 90 s fight that doesn't end the run). Each
+  milestone boss down drops 2 items (3 for a legendary) and a heal, and every player chooses a **pact**.
+- **Phases** at 12:00 and 24:00: the enemies move to the middle, then the final stages (the trickle's cards and stats follow).
+- **Timeline:** every 5:00 segment brings an alpha, a swarm or stampede, a flock, an elite wave, a rock slide, a totem (every
+  2nd) and a summoner (every 3rd), +15 % a segment up to x3 (seeded and pure: `segPlan`).
+- **Deep wounds** from 30:00: every heal is worth 4 % less a minute, down to x0.2. **Endless Night** from 45:00: each new enemy
+  has +12 % HP and +6 % damage a minute, and the screen darkens round the players.
+- **Pacts** (9, 3 offered after each milestone boss, seeded per player; one or none): Glass Cannon, Iron Hide, Frenzy, Greed,
+  Horde, Vampire, Hunter, Titan, Scholar. Boons and banes on your stats (`items.js` total); team banes (enemy HP / damage /
+  spawns / elites, milestone boss HP) count every co-op player's pacts on the host.
+- **Siege** (study 2.8, the radius halved like D7's): from 5:00, 20 s within 6 m of one spot starts it: your damage falls toward
+  x0.3 and a flock of 5 fliers hunts you every 8 s. Moving lifts it.
+- **Migration:** at 11:00 (and every 11:00) a portal opens at the land's portal site for 90 s (it waits while a milestone boss is
+  up); step in and the run moves to new lands (zones 1 -> 2 -> 3 -> 1, fresh terrain and interactables).
+- **Hostile terrain:** 16 patches a land (pure from its grids): mud (x0.6 speed), brambles (cut you while you move, from 12:00),
+  quicksand (slows and pulls, from 12:00), burning ground (burns, from 24:00). A hop clears them; they never knock you out.
+- **The score** (study 2.12 + D9's catch term): (2 KOs + 4 s + damage / 200 + 800 a milestone boss + 2,000 a legendary + 400 a
+  catch) x (1 + 0.5 tier). **Its board**, `runboard:micasurvivor_expedition:<map>:<diff>:survival` (best score per player, top
+  100), on the "Difficulty · leaderboards" panel's Survival tab (Survival's own button opens on it). Only a clean solo run goes
+  there (`G.Exp.boardOk`: never an online co-op run, nor one with the local partner).
+- **Saved** (the Expedition save): `surv.best.<map>.<diff>`, `surv.best`, `surv.runs`, `surv.miles`, `surv.legends`,
+  `surv.mewtwo`, `surv.pacts`, `surv.lands`. D10's **tasks** gain "Last N minutes in Survival" and "Beat N milestone bosses";
+  **5 achievements**: Survivor (10 min), Endurance (30 min), Milestone hunter (10 bosses), Midnight (Mewtwo; title "Survival
+  Legend"), Pact maker (10 pacts).
+
+**One currency: Pokémonedas** (owner decision #4, confirmed 2026-10-22). D10's Stardust (★) and its UI are gone. Runs, tasks and
+achievements pay, and the Lab and the item unlocks spend, **the base save's coins**, only through `G.Expedition.wallet`
+(`save.coins` +/-, then `G.DB.commit`, whose `fold()` books the change on **this device's ledger entry**, `save.led[device]`,
+merged by max per entry: `js/core/db.js`). So a payment is booked once, by the device that made it. What the ledger can't know is
+two devices paying for the **same thing** while apart (the same Lab level, item, achievement or task): each purchase / claim is
+also written in the Expedition save with the device's id (`cur.spend` / `cur.earn` = "<what>:<device>"; the tasks' in bounded
+counters `tkp.*` / `tkbp.*`), and `reconcile()` (on opening League HQ and before a run pays) makes every device but the first
+(by id) undo its own copy exactly once (`cur.fix`): a refund for a spend, a claw-back for an earning. **Loading never writes the
+base save** (tested byte-equal); a base run pays exactly as before (the D0a fixtures).
+- **The scale** (`K.SCALE` = 3; every D10 table stays in its units and `coinsOf(n)` = round(n x 3 / 5) x 5). Measured with the
+  same fixed-step sim (a fresh save, an invulnerable bot): a **base Normal run pays 854 at 15:00 and 1,190 at 19:00** (time / 5 +
+  KOs / 4 + 80 a boss + the coins picked up; ~1,300-1,500 at 23:00); the base game's own upgrades cost **58,310 in all** (one level
+  50-7,500). An Expedition Classic run gets ~1,465 KOs in zone 1's 10 minutes, so a **Normal clear** (~23:00, ~4,000 KOs, 420-455
+  units) pays **~1,270-1,365**: about a base run of the same length (x8, the first draft, paid ~3,400, a better farm for base
+  upgrades than the base game). Hard x1.75, Nightmare x2.5.
+- **Survival** pays the same units + **4 a minute survived** (x3 = 12 a minute, the base run's time / 5: an endless run has no
+  zones or win to pay) + 60 a legendary: a 21:30 run with 3 milestone bosses pays 925.
+- **Prices** x3: Lab Training Lv 1 900, the whole Lab ~253,000, the 25 unlocks 87,150 (the same number of runs D10 intended);
+  tasks 180 / 300 / 480 daily, 900 / 1,350 / 2,100 weekly, +150 x streak, +1,500 for all 3 weeklies; achievements 150-4,500.
+- League HQ shows the base balance with the coin icon; the Classic card's button no longer shows a balance.
+
+**Co-op on the Expedition** (owner decision #13; Classic and Survival):
+- **A lobby** ("With friends: Expedition · Classic / Survival" on each card): `msurv-lobby-create` stores the map and tier
+  (allow-listed) next to D0b's mode / dv; the start carries them; the lobby says "Expedition · Survival · Viridian Forest · Hard";
+  each member's card shows its League member. `G.Expedition.coopPlan(start)` turns a start into the run every member plays.
+- **A guest's run is an Expedition run** (dv 10): the same terrain from the seed, the host's timeline (`c`), interactables
+  (`o`), Survival state (`s`); its own League member, kit, meta row (its Lab is its effect on the host), bag, Ultimate, verbs,
+  pacts and siege. A new seam, **`net.event`** (`js/net/coop.js`: a co-op event kind the base game doesn't know), carries the
+  economy's personal rewards (`xo` a pick from the guest's own roll, `xg` items, `xgi` a Meowth buy, `xd` Ditto, `xh` Hypno, `xs`
+  the shop; the guest's `xb` buy) and the catches (`xcg`: the host hands a guest standing by a fainted Pokémon its own catch;
+  `xcp` its alpha's prize when its team is full). A guest's **Support Alphas** fight on its side and travel in its frames (`p.s`),
+  drawn round its puppet everywhere (`p.g`), shooting as cosmetic ghosts where they aren't simulated (no double damage).
+- **The local partner** (`js/systems/localcoop.js`): an Expedition run brings it when player 2's pad is connected or the
+  "local partner" setting is on (`micasurvivorexp_mate`); it has the verbs (player 2's A hops, held glides; B slides; its AI hops
+  up to you and slides to catch up), and its verb row goes in the snapshot (`x.a.q`, by its Pokémon's name).
+- **Spectators and replays** see everything: the terrain, the night, the hazards, Survival's HUD and banners, both players'
+  Support Alphas shooting, the reactions' pop-ups (`r`: every viewer shows each once).
+
+**The `x` block is v10**, `G.Expedition.DV` is 10 (v1-v9 still read; dv 1-9 replays and snapshots still play):
+- `s` Survival's host state [milestones, bosses down, legendaries down, land, portal s left, Mewtwo down, pacts seq]; `v` the
+  Survival rows [pacts, siege %] (`v.p` the watched / sending player's, `v.q` the others'); `r` the reactions' recent pop-ups
+  (flat [t, kind, x, y, ...]); `p.g` the other players' Support Alphas. Phases, wounds, night and hazards follow the clock and the
+  land's grids, so they cost nothing.
+- **The relay budget**, measured with D10's `k` included: the busiest host frame (a full cap, 126 foes round the guest, every
+  DLC block) is **9,400-10,200 chars** (its `x` block ~570), the guest's frame ~350-400: under the server's 16,000 a message, and
+  three fit a 64,000 relay row; it goes through the real `msurv-relay-push`. No trimming was needed. A live snapshot is ~3,500
+  chars (cap 24 KB).
+- **Replay size** (cap 1.2 MB packed): an Expedition tape thins, a base tape never does (`js/mica/replay.js`, all on `rec.thin`,
+  set only when the header has dv). Survival's frames are **1 s** apart (Classic keeps 0.5 s); the timeline's state `x.c` has a
+  frame field of its own (11; it changes most frames and dragged the whole slow state with it); a tape spaces its frames out
+  as it grows (x1.5 at 3.0 M raw chars, x2 at 3.3 M, x3 at 3.55 M; no new frames past 4.5 M); and **if it still packs over the
+  cap, `finish()` merges every two frames** (`halve`: decoded and re-encoded with the same codec, exact at every merged frame)
+  and packs again, up to 3 times. The reader needs nothing new (each frame carries its own interval; playback blends). Measured
+  (a fast-forward bot): **a 45-min Survival run to Mewtwo** (5 lands, ~200 foes) **0.91-1.02 MB** (8,000-8,500 KOs; a run of
+  18,000 KOs packed 1.20 MB before `halve` existed; `halve` takes a tape like that to ~0.6 MB); **a full Classic clear 0.62-0.74 MB**.
+
+**Server** (`server/mp.mjs`; exact keys only, no `LIKE`): `run-score` for `micasurvivor_expedition` with `expMode:
+'exp-survival'` takes its own parts (kills, dmg, bosses, legends, catches; required) and recomputes the score
+(`msurvExpSurvScore` = `G.ExpSurv.scoreOf`, +/-1), refuses an implausible part (KOs / damage per second as D9, more bosses than
+one per 5:00, more legendaries than every 3rd of them, catches) and a dv under 10; best per player in `user.runBest`, the board
+`runboard:micasurvivor_expedition:<map>:<diff>:survival` (top 100). `run-leaderboard` takes `board: 'survival'`. The lobby rows
+gain `map` / `diff` (allow-listed, optional: a D0b client sends neither). No new tables, no change to the base actions.
+
+**What changed in base files** (each only on an Expedition path; a base run, lobby, frame or tape is byte-identical):
+- `js/game.js`: a co-op start of an Expedition lobby plays `G.Expedition.coopPlan` (and `G.Flow` loads the Expedition first).
+- `js/core/hooks.js`: the `net.event` seam. `js/net/coop.js`: an unknown event kind goes to it (base sends none).
+- `js/systems/localcoop.js`: the partner in an Expedition run, its verbs. `js/systems/expedition.js`: `DV` 10, Survival enabled,
+  `coopPlan`, the `wallet` used, i18n.
+- `js/mica/social.js` (`memberInfo` / `createRoom` with the map and tier), `js/ui/social-ui.js` and `index.html` (the lobby's
+  "Expedition · ..." line), `js/ui/modes-ui.js` (Survival's group, "With friends"), `js/mica/replay.js` (fields 10 / 11, the
+  thinning, `halve`).
+- Expedition files: `survival.js` (new); `classic.js` (`S.surv`, `makeBoss`, `setPhase`, `fireEvent`, migration); `core.js` (dv
+  10, `x` v10, the guest's blocks, `net.event`, Survival's run.end, `boardOk`, `localMate`); `meta.js` (Pokémonedas, reconcile,
+  Survival tasks / achievements); `economy.js` / `capture.js` (the guest's share); `reactions.js` (`r`); `verbs.js` (input for
+  the partner); `items.js` (pacts); `tiers.js` (the Survival tab); `ultimates.js` (the night).
+
+**Assets:** none new (the overworld's item pictures for the pacts; hazards, night and siege drawn in code).
+
+**Deviations / not built:**
+- Ours, not the study's: the pacts' list and numbers, the hazards' numbers, the timeline per segment, Survival's pay.
+- Survival respawns of used interactables (study 2.7, 120-240 s) aren't built: a migration gives fresh lands instead.
+- A replay past ~65 min of Survival is coarser (the thinning steps, then `halve`); the live run is unaffected.
+- **For D12:** Survival runs on any map in `G.ExpClassic.MAPS`; its legendaries per map are `K.LEGENDS[map]` (Viridian's only
+  now: Mew, then the birds) and its boards are per map already; the hazards' colours are one palette (per biome later).
+
+## DLC D12: maps 2-3, Mt. Moon and Cerulean Cape
+
+**The two other launch maps** (owner decision #6) are playable in Classic and Survival. `Plans/MICASURVIVOR_POKEBONK_DLC_STUDY.md`
+5.3 and the D12 row. Each map is one entry in `G.ExpClassic.MAPS` (`js/expedition/classic.js`) and one in `G.ExpTerrain.PROFILES` /
+`LOOK` (`js/expedition/terrain.js`); Survival reads both. Base modes are unchanged: the D0a fixtures pass as recorded (58/0), also
+with the Expedition code force-loaded.
+
+| | Viridian Forest (D3) | **Mt. Moon** | **Cerulean Cape** |
+|---|---|---|---|
+| Types | grass / bug / normal / flying | rock / ground / fairy | water / electric / flying |
+| Terrain | gentle terraces, ponds | cave ledges: ~44 % high ground (Viridian 32 %), all 4 levels in every zone, twice the rock, hardly any water, fewer ramps, 10 pads | the sea: ~18 % water (Viridian 4 %), mostly low ground, few rocks: surf and glide gaps |
+| Palette | the forest (biome 0) | the crystal cave (biome 1; its "trees" are crystals) | the rift's sea grotto (`arenaBiome('water')`) |
+| Height tint | 0.9 / 1 / 1.09 / 1.17 | 0.78 / 0.92 / 1.05 / 1.18 (deep floors, bright ledges) | 0.94 / 1 / 1.07 / 1.13 |
+| Bounce pad | a red mushroom | a moon-stone crystal | a red and white life buoy |
+| Residents (zone 1 / 2 / 3) | Caterpie, Weedle, Pidgey... | Zubat, Geodude, Larvitar, Clefairy, Sandshrew, Diglett, Cleffa, Cubone, Jigglypuff / Golbat, Graveler, Parasect, Sandslash, Dugtrio, Onix, Omanyte, Kabuto, Rhyhorn / Clefable, Golem, Rhydon, Marowak, Omastar, Kabutops, Aerodactyl, Crobat, Steelix | Poliwag, Tentacool, Psyduck, Goldeen, Horsea, Magnemite, Voltorb, Wingull, Krabby, Staryu / Poliwhirl, Golduck, Seaking, Seadra, Magneton, Electrode, Fearow, Kingler, Seel / Poliwrath, Tentacruel, Starmie, Gyarados, Dewgong, Electabuzz, Jolteon, Raichu, Lapras |
+| Guardians (one of 3 a zone) | Beedrill, Butterfree, Raticate / ... | Onix, Sandslash, Parasect / Marowak, Omastar, Kabutops / Golem, Rhydon, Aerodactyl | Kingler, Seadra, Magneton / Starmie, Electabuzz, Fearow / Gyarados, Lapras, Raichu |
+| Totems | Metapod, Kakuna / ... | Clefairy, Geodude / Graveler, Parasect / Clefable, Golem | Staryu, Voltorb / Seaking, Electrode / Starmie, Electabuzz |
+| Summoners (-> minion) | Beedrill -> Weedle / ... | Clefairy -> Cleffa / Omastar -> Omanyte / Clefable -> Clefairy | Psyduck -> Poliwag / Magneton -> Magnemite / Gyarados -> Magikarp |
+| Stampede / flock | Rattata, Doduo... / Pidgey, Spearow... | Geodude, Sandshrew, Graveler, Rhyhorn... / Zubat, Golbat, Crobat | Krabby, Poliwag, Seel... / Wingull, Magnemite, Fearow, Magneton, Pelipper |
+| Shrine boss | Mew | **Clefable** (study 5.3: "Clefable as a guardian": the moon's own) | **Zapdos** |
+| Shrine | a grove, two ponds | a crater: rock pillars for the ponds, a ring of crystals, rocks | an island: a ring of sea round the grove |
+| Survival legendaries | Mew, then a bird | Clefable, then a bird | Zapdos, then Articuno / Moltres / Mew |
+| Hazard colours | D11's | grey gravel, violet crystal shards, scree, moon-fire | tidal mud, coral, wet sand, live sparks |
+
+- **Residents** are hand-picked families by stage (their BST rises zone by zone), then every other Pokémon of the map's types in
+  the zone's band (all 1025, as D3). No zone-1 resident is shared with Viridian's.
+- **The unlock rule** (study 1: each map "unlocks by beating the previous map"): Viridian Forest is always open; **Mt. Moon opens
+  when Viridian Forest is won on any tier**, Cerulean Cape when Mt. Moon is (`G.ExpTier.mapOpen`, reading D3's max-merged
+  `wins.<map>.<diff>`: no new save field). A new map starts on Normal; its own tiers unlock in sequence (D9). The run-over
+  screen says "New map open: Cerulean Cape". The pick (`G.ExpTier.pick`, used by Classic, Survival and a co-op lobby) is
+  clamped to an open map.
+- **No more "Coming soon" for maps:** the "Difficulty and leaderboards" panel's map tabs show a locked map as "Clear Viridian
+  Forest first" (a click toasts "Clear Viridian Forest to open this map"). The Classic card names the three maps.
+- **Determinism:** the zones come from the same seeded generator (`zoneSeed(seed, map, zone)`), each map with its profile; the
+  plans, sites, hazards, milestones and segments are pure as before. The palette is set from the map on every zone (`core.js`
+  `enterZone` and `applyX`), so a guest, a spectator and a replay viewer paint the same (a snapshot's `b` says it too).
+- **Sync:** nothing new is streamed (the `x` block's `m` already names the map), so the `x` block stays v10. **`G.Expedition.DV`
+  is 11** (the maps' content); dv 1-10 replays and snapshots still play.
+- **Server:** nothing new. Its map allow-list has had the three maps since D0b, so the Classic score / time and Survival boards
+  are per map already (`runboard:micasurvivor_expedition:<map>:<diff>[:time|:survival]`).
+
+**What changed in base files:** one fix, `js/mica/social.js` `update()`: a lobby update answered after you left (D11's
+`refreshMember` right after a join, then a refused start of another dv) no longer brings the old lobby back (found by the
+plumbing suite's stale-pin sweep; the lobby rows, base runs and fixtures are unchanged). Expedition files:
+- `classic.js`: the two maps, their shrines, the flock's banner per map.
+- `terrain.js`: the profiles' pads, `LOOK` (palette, tint, minimap shading, pad) and the pad painter.
+- `survival.js`: `K.LEGENDS` per map, the hazard colours.
+- `tiers.js`: the unlock rule, the map tabs.
+- `core.js`: dv 11, the palette on every zone.
+- `systems/expedition.js`: `DV` 11, the Classic card's text.
+
+**Assets:** none new. The palettes are the base biome tiles (the crystal cave, the sea grotto); the pads, hazards and shrines are
+drawn in code; every Pokémon is from the existing sprite set.
+
+**Deviations / not built:**
+- Mt. Moon's shrine boss is Clefable (the study's line), not a legendary; it fights as one (a 60 s DPS target, legendary scale).
+- Cerulean Cape's land is always connected (the generator turns land cut off by water into rock), so its "islands" are coasts
+  and lagoons you walk round, surf (Water types) or glide over; the shrine is the true island.
+- The music is the run's usual one (the game's biome music isn't reachable from the Expedition).
+
+## DLC D13: League mode
+
+**The whole League, and League mode itself.** `Plans/MICASURVIVOR_POKEBONK_DLC_STUDY.md` 2.1, 5.3 ("Expedition · League: a roster
+screen with challenges, kits and Ultimates, the Lab, research, tasks and boards"), the owner's roster updates and the D13 update.
+Base modes are unchanged: the D0a fixtures pass as recorded, also with the Expedition code force-loaded.
+
+**The roster: 245 members** (`js/expedition/league-data.js`, generated by `node tools/micasurvivor/gen_league.mjs`):
+
+| | Members | How |
+|---|---|---|
+| D4 (built before) | 78 | unchanged, byte for byte: the generator builds them first, in the same order, so their challenge rotation is D4's |
+| **D4b** three-stage families of Gen 5-9 | 54 | Snivy ... Frigibax (the 5 that lacked sprites in the owner's list have them since B1-B1c) |
+| **D4c** Mega families (the rest of the owner's 43) | 31 | Sableye, Mawile, Meditite, Electrike, Carvanha, Numel, Swablu, Shuppet, Absol, Snorunt (Glalie / Froslass: one family, a branch), Chingling, Buneary, Riolu, Snover, Drilbur, Audino, Scraggy, Golett, Litleo, Espurr, Inkay, Binacle, Skrelp, Hawlucha, Crabrawler, Wimpod, Drampa, Falinks, Capsakid, Glimmet, Tatsugiri |
+| **D4d** legendaries and mythicals | 82 | every other one: the beasts, the Lati, the box legendaries, the Swords, the Tapus, the Treasures of Ruin, the Paradox, Arceus ... |
+
+- **245, not 248:** the owner's 249 entries count Snorunt twice and Silvally, Urshifu and Melmetal on their own. A League member is
+  a FAMILY starting at its first stage, so they are Type: Null's, Kubfu's and Meltan's evolutions (Lv 30: a friendship / scroll /
+  candy evolution mapped to a level, the study's rule).
+- **Evolutions:** the overworld's tables, plus 6 more the generator adds with their source (Flabébé Lv 19, Tsareena, Pawmot,
+  Hydrapple, Urshifu, Melmetal), as D4 did for its 7.
+- **Kits:** scored on the line's real learnsets as in D4; 23 more hand picks (`HAND`) where the score chose a filler (the Gen 5-9
+  starters, the box legendaries, Arceus, the Swords...).
+- **Free:** still only the 12 Gen 1-4 starters (owner). Every other member has a challenge: the D4 rotation by rank, the 600 lines
+  (Deino, Goomy, Jangmo-o, Dreepy, Frigibax) a win and Lv 35, and the legendaries a two-part challenge by base-stat total:
+
+  | Legendaries | Challenge |
+  |---|---|
+  | 670+ (the box legendaries: Lugia, Ho-Oh, Kyogre, Groudon, Rayquaza, Dialga, Palkia, Giratina, Reshiram, Zekrom, Xerneas, Yveltal, Cosmog's line, Eternatus, Koraidon, Miraidon...) | have 60 League members and win a map on Hard or Nightmare |
+  | 600-669 (Latias, Latios, Jirachi, Deoxys, Heatran, Darkrai, Shaymin, Victini, Meloetta, Diancie, Magearna, Zeraora, the Swords...) | KO 1,500 with a member of its type and win 3 maps |
+  | under 600 (the beasts, the Regis, the lake trio, the Tapus, the Treasures of Ruin, Kubfu, Type: Null...) | KO 1,000 with a member of its type and win a map (the Kanto birds' own) |
+  | Arceus | have 150 League members and win a map on Nightmare |
+
+  Two new challenge parts read the save's wins (`league.js` `counter`): `hard` (maps won on Hard or Nightmare) and `night`.
+- A completed challenge is D8's: the member is met and wild, and its encounter comes in your next runs (up to 3 a run).
+
+**League mode** ("Expedition · League" on "Choose a mode", no longer "Coming soon") is a **screen, not a run**
+(`G.Expedition.hub`): a click opens the League view of the D10 panel (`G.ExpMeta.open(onBack, tab, {league: true})`):
+
+| Tab | What |
+|---|---|
+| **League** | the roster, one generation a page (its 9 chips say how many you can play), each member's card: rank, role, ability, kit, evolution line, Maturity, base stats, its **Ultimate by tier** (a signature's three names, else its type Ultimate), its **records** (runs, best level) and research, its challenge, and **Play Classic / Play Survival** with it |
+| Lab, Items, Archive, Research, Tasks, Achievements, Card | D10's League HQ, unchanged (the Classic card's "League HQ" button still opens the HQ on its own) |
+| **Leaderboard** | the League board (below) and the way to the boards per map + difficulty (Classic score / time attack, Survival); Back returns here |
+
+`G.Flow.play('exp-league')` opens the screen too; `G.Modes.plan('exp-league')` never plans a run (a normal one). The Classic
+card's "League member: X" picker shows the same roster by generation.
+
+**The League board** (server, the stack's only server change): `runboard:micasurvivor_expedition:league`, top 100 by the League
+members you can play, then legendary members, then who got there first. **The server counts it** from the Expedition save it
+holds, on every `micasurvivor-exp-save-put` (the 12 free starters + `league.own` + `league.met` never in `league.wild`, each one of
+the 245 first stages: `MSURV_EXP_LEAGUE`, a copy of the generated list that the test compares), so no client number is trusted;
+`run-score` can't post to it. It is written only when your count grows. `run-leaderboard {mode: 'micasurvivor_expedition', board:
+'league'}` reads it (no map or difficulty). Exact keys only.
+
+**Tasks and achievements** (`meta.js`):
+- A League task, **"Reach a final stage N times"** (the run ended at its line's last stage; daily 1 / 2 / 3, weekly 4 / 8 / 12). It
+  joins the pool only from **2026-11-02** (`since`): a bigger pool shuffles into other tasks, and a slot's progress is the slot's,
+  so the tasks already dealt this week stay as they are.
+- 5 achievements: League of fifty (50 members), League of a hundred (100, title Grand Trainer), Full League (245, title League
+  Champion), Living legend (a legendary member), Pantheon (10 legendaries, title Keeper of legends). Their titles go AFTER the
+  season ribbons' in the title list: the card saves the title as an index, so a saved pick keeps its meaning.
+
+**Versions:** `G.Expedition.DV` is **12** (new members play: their kits, evolutions, challenges). dv 1-11 replays and snapshots
+still play. The `x` block is unchanged (v10: `l` already names the member and its form).
+
+**What changed in base files:** `systems/expedition.js` (League enabled, `HUB` / `hub()`, DV 12, the card's text), `systems/modes.js`
+(a hub mode is never planned as a run), `game.js` (`G.Flow.play` of a hub opens it), `ui/modes-ui.js` (`openLeagueMode`; the card
+opens it). Each is a branch only an Expedition mode reaches. Expedition files: `league-data.js` (regenerated), `league.js`
+(generations, the hub card, the `hard` / `night` challenge parts), `meta.js` (the League view, its board tab, the task, the
+achievements), `core.js` (dv 12).
+
+**Assets:** none new: every member's every stage is an existing sprite (1025 since B1c).
+
+**Deviations / not built:**
+- League mode is a screen, as the study's 5.3 has it, with "Play" buttons into Classic and Survival: there is no third run type.
+- The board is League size (owner #8 rules out per-species boards); per-member records are on each card, not on a board.
+- The legendaries' encounters are D8's League encounters (no special Mewtwo-style invasion).
+
+## DLC D14: Mega Evolution
+
+**Owner decision #10, "include Mega Evolution in 1.0"**, as the study's late-run power spike (5.5), on the owner's roster rule (every
+species that can Mega Evolve is in the League: "Mega at the capable stage"). The code is `js/expedition/mega.js` (`G.ExpMega`:
+the data, the look) and `league.js` (`megaCards` / `megaEvolve`); the data is `js/data/mega-data.js`, **generated** by
+`node tools/micasurvivor/gen_megas.mjs` from PokéAPI's `-mega` varieties (cached in `tools/micasurvivor/megas_pokeapi.json`;
+`--fetch` refreshes it). Base modes are unchanged: the D0a fixtures pass as recorded, also with the Expedition code force-loaded.
+
+| | |
+|---|---|
+| The Megas | **93 of 87 species** (PokéAPI's 97 varieties; Magearna's Original Color, Tatsugiri's Droopy / Stretchy and Meowstic's female fold into the base form's). Charizard, Mewtwo and Raichu have X / Y; Absol, Garchomp and Lucario their Mega and their Z |
+| When | a League run whose form can Mega Evolve, **from Lv 40** (`K.LV`): that level-up's cards ARE the choice (as a branch evolution), a gold card per Mega and **"Not yet"**, which brings the choice back **5 levels** later (`K.AGAIN`). Once a run; it lasts to the run's end |
+| What | the Mega's **real base stats** (HP the same, the rest +100) and **types** (so the verbs follow: Mega Charizard X is Fire / Dragon and no longer glides; Mega Charizard Y still does), the **Ultimate one tier up** (`ultimates.js` `tierOfRow`, capped at the tier max as before), 1.2 s of i-frames and a flash. The passive (role, ability), the kit and Maturity stay the member's |
+| The look | **existing art only** (owner): the 48 Gen 6-7 Megas use the overworld battle system's own Mega pictures (`overworld/data/pokemon/s<num x 32 + form>.png`, already deployed with magepunk-owdata; unused by the overworld so far), drawn at the member's height in whole pixels, mirrored for the right-facing rows (the battle front faces left, B1c's rule), with the walking hop and the hurt flash. The other 45 (the Legends Z-A Megas, the Z forms) are **composed** from the member's own animated sheet. Every Mega carries the same two marks drawn in code: a Mega aura at its feet and the keystone's three-colour sign over its head |
+| The level-up card | the battle sprite (or the member's sprite for a composed one), "Charizard → Mega Charizard X", its types, HP and "Ultimate +1" |
+| The League card | "Mega Evolution: Charizard → Mega Charizard X / Mega Charizard Y (from Lv 40)" |
+
+**Sync:** the League row `l` gains a 6th field, the Mega's PokéAPI id, only once the member has Mega Evolved (a row is the same
+5 fields otherwise, so tapes don't grow). A viewer's, spectator's or co-op puppet takes the look from it (`G.ExpLeague.applyRow`:
+a row without it puts the member's own sheet back). Older readers ignore the field, so **the `x` block stays v10**;
+**`G.Expedition.DV` is 13** (dv 1-12 still play).
+
+**Saved:** the counter `lg.mega` and the set `mega.seen` (form ids). **Tasks / achievements** (`meta.js`): the weekly task "Mega Evolve
+N times" (1 / 3 / 5, from 2026-11-02 like D13's); 3 achievements: Mega Evolution (once), Mega power (10 times), Mega collection (10
+different Megas, title Mega Trainer), after the season ribbons in the title list (D13's rule).
+
+**Assets:** none new: the 48 battle sprites are the overworld's, the rest is the member's own sheet plus code-drawn marks.
+
+**What changed in base files:** none. Expedition files: `mega.js`, `mega-data.js` (new), `league.js`, `ultimates.js`, `meta.js`,
+`core.js` (dv 13), `systems/expedition.js` (DV 13, the two scripts).
+
+**Deviations / not built:**
+- When a Mega comes is ours (Lv 40, a level-up's choice): PokéBonk has none yet; its Season 2 roadmap only names them.
+- No Mega Stone item and no reversion: the study's "late-run power spike" is the whole rest of the run.
+- The Megas keep the member's ability (one of our 54), not the Mega's own (Tough Claws, Drought...).
+- No shiny Mega pictures (the battle set has none): a shiny member's Mega shows the normal picture (B1c's rule).
+
+## DLC D15: the slot machine and Survival's respawns
+
+Both in `js/expedition/economy.js` (numbers in its `K`). `Plans/MICASURVIVOR_POKEBONK_DLC_STUDY.md` 2.7 (the interactables table's slot
+machine; "Survival respawns used interactables after 120-240 s, depending on kind") and the D15 update. Base modes are unchanged:
+the D0a fixtures pass as recorded, also with the Expedition code force-loaded.
+
+**The slot machine** (owner decision #7: **yes, PLAY MONEY ONLY**: the run's in-run ₽, never real money; nothing is sold, no ads):
+
+| | |
+|---|---|
+| Where | one a zone (zones 1-3, every map, Classic and Survival), placed **after** every D7 interactable, so their places and indices are D7's |
+| A spin | stand at it (0.8 s, the stand-in rule: no interact key) and a spin costs **10 + 5 x zone ₽** of the run; step away and back for another |
+| The reels | three seeded reels (its own `G.DLC.rng` stream, never `Math.random`): berry 30, Poké Ball 22, Great Ball 14, Ultra Ball 8, Master Ball 3, Nugget 12, Voltorb 11 |
+| Three of a kind | berries: heal 50 % and an item; Poké Ball: pick 1 of 3; Great: 1 of 3 Uncommon+; Ultra: 1 of 3 Rare+; Master: 2 of 4 Epic+; Nuggets: the jackpot, 15 spins of ₽ |
+| Two of a kind | 2 spins of ₽ back |
+| **A bad roll** (two Voltorb) | a Voltorb ambush of 3 + zone round the machine (Electrode in zone 3), study 2.7's "a bad roll spawns Voltorb or Electrode" |
+| Three Voltorb | Electrodes (4 + 2 x zone) and the machine breaks |
+| Odds | ~5 % a bad roll, ~3 % a prize, ~45 % a pair; the ₽ that come back are ~0.9 of the stakes, so it is a sink for play money, not a source |
+
+It is drawn in code (a cabinet whose reels show the last spin, rolling for a moment after it; the lever; a flash on a win or an
+ambush), labelled "Spin · N ₽", on the minimap and the zone map's legend, with a one-time tip. A co-op guest spins with the team's ₽
+and gets its prize through D11's messages. Viewers: the `o` block gains an optional `y` (`[index, spins, reel 1-3, win]` per machine
+that has spun), so a spectator or replay sees the reels; an older reader ignores it.
+
+**Survival's respawns** (study 2.7): in a Survival run a used interactable comes back after `K.RESPAWN` seconds of the land's clock,
+by kind: gold rocks and berries 2:00, Poké Balls (paid, free, cursed) and the slot machine 3:00, Unown / challenge / cursed / greed
+altars, Ditto, Hypno and cages 4:00. Meowth and the comet keep their own schedules; a migration's lands are fresh anyway. A respawn
+is pure in the clock (`usedAt` + the delay), and the `o` block simply stops listing it, so every viewer sees it come back. Classic
+never respawns.
+
+**Saved:** the counters `eco.spins`, `eco.slotWins`, `eco.ambush`, `eco.respawns`.
+
+**Versions:** `G.Expedition.DV` is **14** (a new interactable, respawns); the `x` block stays v10 (`o.y` is optional). dv 1-13 still play.
+
+**Sizes (measured with `micasurvivor_expedition_mp_test`, D11's way):** the busiest host frame to a guest 9,966 chars (126 foes,
+`x` 571 chars; budget 16,000 a relay message); a 45-minute Survival tape to Mewtwo 890,835 chars and a full Classic clear 644,273
+(cap 1.2 MB). A spun machine adds 6 numbers to `o`.
+
+**Assets:** none new (the overworld's item icons for the reels, Voltorb / Electrode's own sheets, the cabinet in code).
+
+**What changed in base files:** none.
+
+**Deviations:** the slot machine is a stand-in circle (no interact key, D3's rule) and pays items, ₽ or an ambush (PokéBonk's "₽ per
+spin, for items"; the table above is ours). Respawn delays are the study's 120-240 s range spread by kind (ours).
+
+## DLC D16: every move fires (base and Expedition)
+
+Owner, 2026-10-26: "in both modes i do not want to have to switch between moves. all of my moves should be firing at the same time
+on their own cooldowns". `Plans/MICASURVIVOR_POKEBONK_DLC_STUDY.md` "2026-10-26 owner request" (the plan, the 15 approved defaults and
+the owner's two same-day changes) and "D16 built". **This batch changes the base game on purpose** (the D0a fixtures were re-recorded
+once, below).
+
+**What changed for the player**
+- **Every slot fires**, each move on its own cooldown (`G.Combat.tick` loops every slot and every move in it; `pl.af`, all-fire). There
+  is no switching: 1-4 / numpad / Q / E (and Tab outside Team mode) and the pad's LB / RB do nothing in a run (owner decision #14: left
+  unbound; Team mode keeps Tab and R3); a tap on a move icon does nothing. `setActive` / `cycle` are no-ops; `active` stays 0.
+- **The HUD** shows the 4 slots with their cooldown sweeps and no raised "active" one, no key numbers, no LB / RB glyphs; a bond's fused
+  slot keeps its 2x2 grid (each move its own sweep) with "x2..x4". The hints say "your moves attack on their own".
+- **Bonds** (owner, changed decision #7): a legendary's bond still FUSES moves into one slot (up to 4), as before; every move of a fused
+  slot fires on its own cooldown, and the slot it frees takes another move from the level-ups. The cap is 4 SLOTS, so a fused build fires
+  more than 4 moves.
+- **The Choice Band** (decision #8): +40 % on the slot-1 move's hits, -20 % on the others (in `G.Combat.land`: `G.Combat.afK`); no stat
+  bonus any more. The Shortcuts panel (Upgrades) still pins a move to a slot, so you choose which move the band boosts.
+- **Melee** (decision #9): -25 % damage taken for 1.5 s after a melee move fires (`pl.meleeT`), instead of "while a melee move is active".
+- **The damage factor** (decision #10): every move's hit x `G.Combat.AF.DMG` = **0.8** in base runs and `DMG_EXP` = **1.1** in the
+  Expedition, set on the player at the run's start (`pl.afDmg`; the local co-op partner, with one move, keeps x1). Measured with
+  `tools/micasurvivor/dps_sim.mjs` (D11's fixed-step bot sim: a fixed profile, an invulnerable bot, seeded `Math.random`, runs to 5:00
+  and 10:00 on 5 seeds; each run's build then on a ring of 12 still dummies for 20 s):
+
+  | | today: best single slot | all-fire x1 | shipped | shipped / today |
+  |---|---|---|---|---|
+  | base Normal | 864 DPS | x1.97 | 1,148 | **x1.58** |
+  | base Normal, a fused build (2 moves bonded, the freed slot filled) | | x2.17 | 1,241 | **x1.73** |
+  | Expedition Normal (Classic, zone 1) | 1,592 DPS | x1.47 | 2,563 | **x1.63** |
+
+  (The Expedition gains less from the other slots: its levelled first kit move carries a run. D21 fine-tunes both factors.)
+- **Expedition:** 4 move slots (`K.MAX_MOVES`; D5's `EXTRA_SLOTS` 2 is now 0), the kit fills them by Lv 7. With the 4 full, a rare
+  **swap card** (decision #6; `K.W.swap` = 3, the whole weight shared by the candidates) offers a move of the line or the League in place
+  of your lowest-level move, which takes its slot. **The Lab's "Move slot" is retired** (`retired: 'D16'`): no effect in a run whatever
+  its level, it can't be bought, League HQ doesn't list it, and its price is refunded (below).
+- **New leaderboards** (decision #11; the server change, D21's board split shipped now): a run of the new rules ranks on new boards, the
+  old ones stay readable as **Legacy** ("Reglas anteriores": the base Leaderboard screen's tabs `#rk-rules`, the Expedition panel's chip).
+  Base: `rules: 2` -> `runboard:micasurvivor:r2`; Expedition dv >= 15 -> `runboard:micasurvivor_expedition:r2:<map>:<diff>[:time|:survival]`
+  and `msurvseason:<n>:r2:<map>:<diff>`; an old client's scores go on taking the legacy keys. Exact keys only. The League board is one
+  board for both.
+
+**Refunds (owner decision #3: in full, once per account, after a backup).** The retired Lab rows are refunded by
+`G.ExpMeta.refundRetired()` when League HQ opens and when a run ends (before it pays; loading never writes the base save, D10's rule):
+every level bought of a retired row is one record `rf.lab.<id>.<level>:<device>` in the Expedition save's `cur.earn` (as its purchase
+was `lab.<id>.<level>:<device>` in `cur.spend`), paid at that level's price x `K.SCALE`. Two devices that refund while apart both
+record theirs; after a merge, `reconcile()` makes every device but the first (by id) claw its copy back once (`cur.fix`): the refund is
+paid once per account (tested with two browsers). Before the first refund write: `G.DB.backup('exp-refund')`
+(`micasurvivor_backup.<key>.exp-refund.<ms>`, the base save) and `micasurvivorexp_backup.<who>.refund.<ms>` (the Expedition save); no
+backup, no refund. `G.ExpMeta.rollbackRefunds()` takes this device's refunds back (as far as the balance goes) and they are never paid
+again. The coins go through `G.Expedition.wallet.refund` (coins in, not counted as `coinsEarned`). Who it affects (read-only D1,
+2026-10-26): no Expedition save on the server has bought a Lab level, so nobody gets a Lab refund today.
+
+**Old tapes, live views and co-op**
+- A new tape's header carries `h.af: 1`, every frame's slow fields `af` (and `sg`, the slots' sizes, when a bond fused some); a live
+  snapshot carries `af` / `sg` and lists its moves in slot order. A viewer of a new tape / snapshot ghosts every move and groups the
+  fused slot; an **old tape or snapshot (no `af`) plays with its one active move**, as recorded (`js/ui/watch-ui.js` setMoves).
+- A co-op frame's field 15 lists every orbit move `[[id, lvl]...]` (fields 7-8 keep one move for an old reader); the reader takes either
+  (`Player.netUpdate`), and a puppet shows the orbs of all its orbit moves (`G.Combat.ghostOrbit`). Each cast is still a `'c'` event.
+- **Base co-op between an old and a new client is refused:** a base lobby carries `rules` (`msurv-lobby-create {rules: 2}`; an old
+  client's has none = 1), a join with other rules is refused (409, "your game is out of date" / "the host is ... out of date"), its start
+  carries the rules and `G.Flow.startCoop` refuses a start of other rules. Expedition lobbies go by their dv, as before.
+
+**Sizes and phones (measured):** the busiest relay frame to a guest 10,048 chars (126 foes) + a second of the host's 4 moves' casts
+(3.2 `'c'` events, 99 chars) = 10,147 of 16,000 (`micasurvivor_expedition_mp_test`). A 45-min Survival tape 793,626 chars (cap 1.2 MB;
+twice the KOs, so it thins to 2 s frames sooner), a Classic clear 762,311. On an 844x390 touch screen with all 4 moves firing at 7:20:
+at most 15 projectiles in base Normal, 14 in Expedition (90 foes), frame time p50 16.7 / p95 18 ms (headless desktop Chrome), the HUD
+fits (no element off screen); no projectile budget needed. In portrait (390x844) the game asks to rotate, as before.
+
+**Versions:** `G.Expedition.DV` **15**; the `x` block stays v10. dv 1-14 still play. Base replays stay `h.v: 1` (+ `h.af`), snapshots
+`v: 1` (+ `af`).
+
+**The D0a fixtures, re-recorded (`--record`, once, on purpose)** because the base game changed: every mode's per-second hashes, draw
+counts, spawns, totals, final snapshot and save differ from second 1 (more moves fire, so more `Math.random` draws and different
+fights). Normal now survives the whole 120 s (it fell at 111.7 s), as do Daily (103.3 s) and Tower (91.3 s); Team and Co-op ran 120 s
+before and after; Boss Rush now falls at 90.7 s instead of 117.3 s (a different third boss, Mew instead of Registeel, from the shifted
+random stream). The harness itself is unchanged; it passes twice in a row, and the force-loaded run passes too.
+
+**Tests:** `overworld/tests/micasurvivor_allmoves_test.mjs` (47 checks: the server's lobby rules and board split, every move firing on
+a dummy ring, no switching, the HUD, the Choice Band, a bond's freed slot, melee, co-op frames old and new, snapshots, a new tape and an
+old one, the Expedition's slots and swap cards, the Lab refund once across two devices, the rollback). Updated where the behaviour
+changed on purpose: `_pad` (LB / RB no longer switch; the pause hint's glyphs), `_mechanics` (Dream Eater's damage x the factor),
+`_account` (the new board key, the Legacy tab), `_expedition_meta` (the move slot retired: 18 Lab rows, 4 move slots, the refund in the
+coin tally), `_expedition_plumbing` / `_tiers` / `_survival` (the r2 boards; a dv-15 score carries its parts), `_expedition_mp` (the
+relay with 4 moves; a Survival tape that thins sooner), every Expedition suite's dv 14 -> 15; the design wiki's data regenerated (the
+Choice Band's text).
+
+## DLC D17: one held item (base and Expedition)
+
+Owner, 2026-10-26: "1 item slot and 4 move slots for both expedition and regular", then the same day: "maybe we can keep the
+backpack/more items in expedition and just have 1 slot for an equipped held item in both modes". `Plans/MICASURVIVOR_POKEBONK_DLC_STUDY.md`
+"D17 built". A deliberate base change (the D0a fixtures re-recorded once more, below).
+
+**What changed for the player**
+- **Base: one held item.** `Player.itemSlots()` is 1 in every mode: the first item is worn, a second opens the replace screen (keep /
+  switch). **Backpack is retired** (`G.Upgrades.BY.bag.retired = 'D17'`: kept so `sanitize` keeps its level and the refund knows it;
+  `perks().bag` is false; the shop lists `G.Upgrades.live()` only). **The Tower's "Double baggage" is retired** (`retired: 'D17'`, never
+  offered, even forced; the other 3 legendary pacts still come; it was free, so there is nothing to refund).
+- **Expedition: the stacking inventory stays exactly as it was** (the 60 items to their caps, 3 vitamin slots, Poké Balls, Meowth,
+  altars, Ditto). On top, **ONE equipped base held item**, base's slot and replace screen. Its source (ours, kept small): every boss (a
+  zone's guardian, the shrine's, Survival's milestones) also drops one, seeded (`G.ExpLevel.heldRoll`, its own stream), from the base
+  held items no stacking item duplicates (`K.HELD_POOL`: Focus Sash, Never-Melt Ice, Colossal Orb, Type Gem, Safety Goggles, Light Ball,
+  Thick Club; species-locked ones only to their species). Where both exist (Leftovers, the Choice items, Silver Powder...), the stacking
+  one stays the Expedition's. `G.Expedition.DV` **16**; the `x` block stays v10 (the held item is the snapshot's `it`, as in base).
+
+**The Backpack refund (owner decision #3: in full, once per account, after a backup)** — `js/core/db.js` `refundRetired()`, when the
+menu opens (`G.Flow.goMenu`): every level of a retired upgrade (`G.Upgrades.LIST`, `retired`) is one record
+`save.rf["up.<dex>.<id>.<level>:<device>"]` = the Pokémonedas paid back (its price, 7,500 a Backpack), booked on this device's coin
+ledger entry like any earning. `rf` / `rfx` merge as a union (`merge`) and are sanitized. Two devices that refund while apart both
+record theirs; merged, every device but the first (by id) takes its copy back once (`reconcileRefunds`, `save.rfx`), the Expedition's
+`cur.spend` / `cur.earn` / `reconcile()` pattern (tested with two browsers, both ways and again). Before the first refund write the
+save is copied to `micasurvivor_backup.<key>.refund.<ms>` (the newest 2 kept); no backup, no refund. `G.DB.rollbackRefunds()` takes
+this device's refunds back and marks them so they are never paid again. **Who it affects** (read-only D1, 2026-10-26): of the 4
+MicaSurvivor accounts on the server, 1 owns Backpack (on 1 Pokémon): 7,500 Pokémonedas back.
+
+**The D0a fixtures, re-recorded once more:** the golden profile owns Backpack on its 5 Pokémon, so every mode's final save now holds
+the refund (+37,500 coins, 5 `rf` records; the backup is in localStorage, not the save). Boss Rush also diverges from second 76: its
+second item would have gone into the Backpack's 2nd slot and now opens the replace screen (3 card picks instead of 2; it ends at
+90.95 s instead of 90.68 s). The other five sims are unchanged second by second. Passes twice; the force-loaded run passes.
+
+**Tests:** `overworld/tests/micasurvivor_oneitem_test.mjs` (19 checks: Backpack retired, kept and refunded once with its backup; one
+held slot and the replace screen; the Tower; two devices refunding then merging, paid once; the rollback; the Expedition's stacking
+inventory unchanged and a boss's held item in the one slot, then the replace screen; dv 16). Updated on purpose: `_items` (Backpack no
+longer sold; one slot; "carry two" became "one held item"), `_tower` (Double baggage never offered; also: no moves while the Blood pact
+heal is measured over real frames, where a draining move now fires), every Expedition suite's dv 15 -> 16.
+
+## DLC D18: shared Pokémon upgrades (base and Expedition)
+
+Owner, 2026-10-26: "i want both modes to respond to the same upgrades i can buy for the pokemon to improve their stats".
+`Plans/MICASURVIVOR_POKEBONK_DLC_STUDY.md` "D18 built".
+
+**What changed for the player**
+- **Upgrades are per FAMILY** (decision #4): `G.DB.levelsOf(dex)` is the best level of each upgrade among the family's stages'
+  `save.pupg`, computed at read time (no save is rewritten). A base run (`startRun`) and an Expedition run of any stage read the same
+  levels, so the same `G.Upgrades.perks` object (tested). The TM pick and the vetoes follow the family too (`G.DB.familyPick`: this
+  stage's, else another stage's).
+- **The families:** `js/data/families.js` (`G.FAMILY`, `G.Families.rootOf / membersOf`), generated by
+  `tools/micasurvivor/gen_families.mjs` from the overworld's evolution tables (+ the League generator's supplement and the later
+  cross-generation evolutions those tables don't carry: Sylveon, the Galarian / Hisuian / Paldean ones): 553 families for the 1,025
+  species; every League family agrees (tested).
+- **The shop** (Upgrades) shows a stage its family's levels; a purchase writes that Pokémon's own entry one level above, which every
+  stage then reads. It lists your Pokémon **and the League members you can play** (marked "(Liga)"; the Expedition code is loaded for
+  its roster only when this browser has an Expedition save).
+- **The Expedition kit:** the **TM** swaps the kit's first move for your TM pick; **Repertoire** unlocks the kit's second move at
+  Lv 1 (`G.ExpLeague.begin`; `S.tm`, the log's `tm` entry). Backpack is D17's (retired).
+- **The Lab's 9 stat rows** (Training, Stamina, Agility, Study, Trading, Fortune, Magnetism, Leftovers, Shell), which overlapped the
+  shop, are **retired** (`retired: 'D18'`: no effect in a run, not sold, not listed) and refunded once per account through D16's path
+  (`rf.lab.<id>.<level>:<device>`, reconciled across devices, both saves backed up first). The Lab keeps its 9 other rows. "Profesor"
+  (`lab50`, the id kept) now asks for 25 Lab levels, what today's Lab holds. Read-only D1 (2026-10-26): no server Expedition save
+  owns a Lab level, so no live refund.
+- `G.Expedition.DV` **17**; the `x` block stays v10.
+
+**Not changed:** the D0a golden runs (their profile's 5 Pokémon are 5 families, each with its own levels, so nothing moves; the
+fixtures pass as recorded after D17).
+
+**Tests:** `overworld/tests/micasurvivor_sharedupgrades_test.mjs` (17 checks: the families, per-family max at read time, the same
+perks object in both modes, the shop's levels / purchase / League members, the TM and Repertoire in the kit, the 9 Lab rows retired
+and refunded once with backups, Profesor at 25, dv 17). Updated on purpose: `_expedition_meta` (the 9 stat rows add nothing, a Lab
+purchase shown with Refresh, 9 rows listed, the boosts without Study / Trading, refunds in the coin tally), dv 16 -> 17 in the
+Expedition suites.
+
+## DLC D19: the full League (every species playable in Expedition)
+
+Owner, 2026-10-26: "i want to increase coverage to the full 1025 for both enemies and playable characters in bother regular and
+expedition mode". `Plans/MICASURVIVOR_POKEBONK_DLC_STUDY.md` "D19 built".
+
+**First, the save cap.** The Expedition save held at most 2,000 counters (client `expedition/save.js` `MAX.counters`, server
+`cleanMsurvExpSave`); the per-family counters `lg.runs.<family>`, `lg.best.<family>` and `rs.<family>` alone are 3 x 553 = 1,659
+with the full League, and a client's `clean()` silently DROPPED every counter past 2,000. Now 8,000 on both sides
+(`MSURV_EXP_COUNTERS_MAX`); the 200,000-char row cap is unchanged and still bounds the row (a save with every family's three counters
+and 750 others is ~38,500 chars). Nothing is migrated or rewritten. An old cached client keeps the first 2,000 it reads and pushes
+those: the server MERGES every put into what it holds, so the rest are never lost and a new client reads them all back. A put whose
+merge with the stored save would pass 8,000 is refused (413) and the stored save is kept, so the stored row always reads back clean.
+
+**What changed for the player**
+- **Every family is a League member** (decision #1): 553, the families of `js/data/families.js` (`G.Families`, the shop's, so the
+  League and the shop agree on what a family is). Every species 1-1025 is a stage of exactly one member (tested). D13's 245 are
+  byte-identical (kits, ranks, roles, challenges, evolution levels; tested against `overworld/tests/fixtures/micasurvivor_league245.json`)
+  but for **Pawniard, which gains Kingambit** (Lv 55: the cross-generation evolutions `families.js` already counts are now in the
+  generator's supplement too; Bisharp's is the only one inside a D4-D13 member; its rank, role and challenge are computed without
+  it, so the challenge rotation every later member drew from is the same). The 308 new members (`b: 'D19'`, after the 245, continuing
+  the rotation): kits scored on their learnsets, ranks / roles / challenges by the same rules, Eevee's 8 evolutions one level-up's
+  cards (Lv 30), Volcarona and Kingambit at 55 (the League's latest evolution stays Lv 55).
+- **Owning any stage of a family in the base game unlocks the family** (`G.ExpLeague.own`: read from `G.DB.owns`, never written);
+  the server counts it too for the League board (it reads the base save's exact key `micasurvivor:<user>`).
+- **A run starts at the first stage** (decision #2): a base Vaporeon gives you Eevee, which evolves in the run.
+- **All 27 starter trios are free** (decision #15): the data's `free` list (`MSURV_EXP_LEAGUE_FREE` on the server); the Gen 5-9
+  starters keep their D13 rank and challenge in `members`.
+- **Up to 5 wild members a run** (decision #15, was 3): zones 1-3 one each as before, zones 1-2 a second one at 150-230 s
+  (`G.ExpCap.K.PER_RUN`, `LG_AT2`; the plan's draws before it are unchanged).
+- **The League screen:** a generation in pages of 42 (`K.PAGE`; Gen 5 has 82), page chips next to the count; the count and the
+  achievements follow the 553: "League of 245" (`league245`, its id and title kept), + "League of four hundred" (`league400`) and
+  "Full League" (`league553`, title "League Master"), appended late so a saved title index keeps its meaning.
+- `G.Expedition.DV` **18**; the `x` block stays v10 (the League row already names the member and form).
+
+**Not changed:** the base game (the D0a fixtures pass as recorded); old saves read as they are.
+
+**Tests:** `overworld/tests/micasurvivor_expedition_fullleague_test.mjs` (30 checks: every dex 1-1025 reachable through a family,
+every kit move exists, the 245 byte-identical, the server's lists = the generated ones, the 2,400-counter save through the client's
+clean / merge and the server, an old client losing nothing, the cap refused, the base collection's families counted by the server
+and playable in the game, the 27 trios free, the pages, an Eevee run FIRED (every kit move fires, its 8 evolution cards, on a phone
+too, Sylveon), a Pawniard run to Kingambit, 5 wild members). Fails 23 of 30 before D19. Updated on purpose: `_expedition_league` and
+`_leaguemode` (553 members, the 27 free starters and base ownership in the counts, the pages; a locked / caught D4b member is
+Roggenrola, Snivy being free; the board counts), `_expedition_meta` (553 research families, 48 achievements), `_expedition_capture`
+(up to 5 wild members), `_expedition_classic` and `_sharedupgrades` (553), dv 17 -> 18 in the Expedition suites.
+
+## DLC D20: Expedition enemies, all 1,025 (and Wishiwashi in base)
+
+Owner, 2026-10-26: "i want to increase coverage to the full 1025 for both enemies and playable characters in bother regular and
+expedition mode". `Plans/MICASURVIVOR_POKEBONK_DLC_STUDY.md` "D20 built".
+
+**What changed for the player**
+- **Wanderers** (Expedition): every zone 1-3 has 6 seeded "wanderers" (`plan().wander`, `K.WANDER_N`): Pokémon of NONE of the
+  map's types, from the zone's BST band (zone 1 also takes anything below its band, so Wishiwashi, BST 175, wanders there). They
+  are **12 % of the trickle** (`K.WANDER`), so a map keeps its identity: Viridian is still grass / bug / normal / flying, with the odd
+  Gastly or Ponyta passing through. Survival's trickle is Classic's, so it has them too.
+- **Rarity-5 elites:** zone 3 has one more elite wave of the 20 rarity-5 non-legendaries (Dragonite, Tyranitar, Slaking,
+  Salamence, Metagross, Garchomp, Hydreigon, Goodra, Kommo-o, Dragapult, Baxcalibur, Archaludon, the Paradox: 3 foes, at 300-470 s);
+  Survival's phase 3 (zone 3's) segments add one each 5:00.
+- **Roaming legendaries:** in zones 2-3 (35 % a zone) and from Survival's phase 2 (35 % a segment), a legendary or mythical (any but
+  the map's shrine legendary) roams in: "A legendary Raikou roams the zone!", x16 HP, x1.4 damage, x10 XP, a bigger sprite; beaten it
+  drops an item and a heal; left alone it moves on after 90 s ("Raikou has left!"). A new special kind, `roam` (the `c` block's code
+  7: an older viewer ignores it).
+- All of it comes from its own stream (`zoneStream(..., 0xD20)`, Survival's `0xD20` per segment), drawn after the plan's own draws:
+  a plan's cards, guardian and D3 timeline are what they were. Pure, as before.
+- **Base fix: Wishiwashi** (#746, BST 175, Solo Form) never spawned: the lowest base tier started at BST 180 and its only list was
+  the unused "beach" biome. The first tier now starts at 0 (`js/data/enemies.js`); as a "fan" enemy it joins the first tier's Water
+  hordes (the first tier's cast takes plain enemies only, as for every low-BST fan). The D0a golden runs are unchanged (no Water horde
+  in their first tier's 120 s), and so is the force-loaded run.
+- `G.Expedition.DV` **19**; the `x` block stays v10.
+
+**Coverage:** the union of `G.ExpClassic.plan`'s outputs over 1,500 seeds x 3 maps x 4 zones (cards, wanderers, events, guardians,
+shrines) + Survival's segments and milestones: **all 1,025** (before D20: ~665 species; tested). Base: every species is a tier
+candidate, a boss slot or a rift / judgment / tower legendary (tested; Wishiwashi was the one missing).
+
+**Tests:** `overworld/tests/micasurvivor_expedition_allenemies_test.mjs` (14 checks: the Expedition union covers 1,025, the
+wanderers off-type and a minority, every rarity-5 a zone-3 elite and every legendary roams, plans pure and the D3 timeline in
+order; base coverage, Wishiwashi a first-tier candidate in Water hordes; FIRED: a zone's trickle spawns its wanderers at ~11 %, a
+roaming Raikou spawns, is a special and leaves, the rarity-5 elites spawn, a base Water horde spawns Wishiwashi). 11 of 14 fail
+before D20 (the base checks fail with only the enemies.js line reverted). Updated on purpose: `_expedition_classic` (a zone's kinds:
++ `roam` sometimes), dv 18 -> 19 in the Expedition suites.
+
+## DLC D21: balance and performance after "every move fires"
+
+The owner's request's last batch (`Plans/MICASURVIVOR_POKEBONK_DLC_STUDY.md` "D21 built"). Measured with
+`tools/micasurvivor/dps_sim.mjs` (D16's DPS sim) and its new **`--pace`** mode: the same invulnerable bot plays a 45-min Survival
+run and a Classic clear, once as the one-active-move game (`pl.af = false`, x1) and once as shipped, and prints KOs, level, bosses
+and the Normal pay (`--why`: where the foes come from). No forced KOs (the mp test's bot has 3 a second).
+
+**What changed for the player**
+- **Base damage factor** `G.Combat.AF.DMG` 0.8 -> **0.85** (decision #10: ~1.6x the one-active-move game). Re-measured after D17-D20
+  (one held item and the family upgrades changed the bot's builds): all-fire / the best single slot was x1.32 at 0.8 (6 builds), x1.71
+  at 0.9 (10 builds), x1.79 at 0.96 (6 builds), single builds from x1.15 to x2.2; 0.85 is ~x1.6. Expedition's `DMG_EXP` 1.1 measures
+  **x1.61** (6 builds): kept.
+- **Expedition KO pay** `G.ExpMeta.K.PAY.KO` 1/40 -> **1/150**. All-fire took a Normal clear from D11's ~4,000 KOs to ~8,400
+  (bot), so a clear paid ~1,740 instead of ~1,270-1,365: now **~1,340** (bot: 1,337 avg of 3, 8,378 KOs, 20:21). One currency, x3
+  scale, as before; base runs pay exactly as they did.
+- **Survival's pacing** (`G.ExpSurv.K.PACE`): half the trickle's rate and half each timeline pack, each foe x1.8 HP and XP (bosses
+  keep their DPS targets): a 45-min bot run KOs **~10,000-12,800** (shipped before D21: ~12,500-15,200; one active slot:
+  ~1,700-2,800); the mp test's assisted bot 15,100-16,200 (was 17,600-18,800). Its pay: **~2,250-2,575** (before D21 ~2,480-2,755; a
+  one-slot run ~2,010-2,175): no longer ~1.6x. The KOs move less than the knobs because a Lv 300+ bot one-shots the field: they
+  follow how many foes it reaches, not their HP or number (a smaller cap even raised them; measured, not shipped).
+
+**Measured (no change needed):** phone 844x390 (touch, an Eevee-line Expedition run at 7:26 with its 4 moves, 85 foes with
+wanderers and a roaming Suicune): frame time p50 16.6 / p95 17.9 ms (headless desktop Chrome), up to 68 projectiles, no sideways
+scroll; the busiest relay frame + 1 s of casts **9,968-10,217** / 16,000 chars; a 45-min Survival tape **779,597-1,161,066** chars and
+a full Classic clear **743,943-750,550** (cap 1.2 MB; two runs of `micasurvivor_expedition_mp_test`: a Survival tape with fewer
+foes a frame thins later and carries more frames; `halve` stays the last resort).
+
+**Golden fixtures (D0a) re-recorded** for the base factor (0.8 -> 0.85): every mode diverges between seconds 6 and 14 (hits land
+x1.0625 harder, so foes fall on other frames and the random stream moves). Normal 145 KOs (was 111), Daily 67 (68), Team 137
+(178), Co-op 121 (143), all still alive at 120 s; Boss Rush lasts to 118.0 s (was 91.0) and beats 3 bosses (2); the Tower falls at
+81.1 s (it lasted the 120 s). Passes twice in a row; the force-loaded run passes.
+
+**Tests:** `overworld/tests/micasurvivor_expedition_balance_test.mjs` (9 checks: the tuned numbers; the bot's clear and a 45-min
+Survival run's pay; FIRED: a Survival spawn's x1.8 HP and XP, Classic's unpaced, Survival's trickle at half (ABBA windows), the
+runs' damage factors). Fails 7 of 9 before D21. Updated on purpose: `_expedition_meta` and `_expedition_survival` (KOs / 150; the
+pacts' foeK on top of the pacing), `_allmoves` (the Choice Band's ratios within 1 %: whole-number hits at x0.85).
+
+## The Survival curve (Survival levels on its own, slower curve)
+
+Owner 2026-10-27: "survival does need its own slower levelling curve" (`Plans/MICASURVIVOR_POKEBONK_DLC_STUDY.md` "Survival curve").
+
+**What changed for the player:** a Survival run (content version 20) levels on its own curve: the XP to the next level is the
+Expedition's (`G.ExpLevel.need`: 2 x (8 + 5.5 L + L^1.8), still Classic's and League's) **x (1 + ((L - 40) / 20)^1.5)** above
+Lv 40 (`G.ExpSurv.K.CURVE` {DV 20, FROM 40, SCALE 20, POW 1.5}; `G.ExpSurv.need` / `curveK` / `curveOn`). Lv 1-40 are exactly as
+before (Lv 40 at ~5:00), then the slowdown grows: x1.35 at Lv 50, x2 at Lv 60, x6.2 at Lv 100, x13.9 at Lv 150. Base, Classic and League are
+unchanged (the D0a fixtures pass as recorded, 58/0, and so does the force-loaded run).
+
+**Measured** (`tools/micasurvivor/dps_sim.mjs --pace --pmodes=survival --afonly`, the D21 bot; new flags: `--dv=19` plays the old
+curve, `--curve=FROM,SCALE,POW`, `--rate=`, `--capk=` try other knobs, `--soft` hurts the bot for real and counts its falls, every
+row prints the level at 5 / 12 / 24 / 30 / 45 min). Level at 5 / 12 / 24 / 30 / 45 min, bot averages:
+
+| curve | runs | 5:00 | 12:00 | 24:00 | 30:00 | 45:00 |
+|---|---|---|---|---|---|---|
+| shared (dv 19) | 8 | 40 | 96 | 219 | 267 | 356 |
+| Survival (dv 20) | 14 | 40 | 75 | 116 | 129 | 146 |
+
+**The KOs did not fall.** D21's guess (a Lv 300+ bot one-shots the field, so the level curve is the lever) does not hold: the
+45-min KOs stay ~12,000 whatever the level. Shipped curve: 11,996 (8 runs) and 13,771 (6 `--soft` runs to 47:00) vs the shared
+curve's 13,740 on the same 6 seeds; even a curve that stops the bot at Lv 70 at 45:00 (`--curve=20,5,2`) KOs 12,247, Lv 97
+(`30,10,2`) 12,145. Two other knobs, tried on top of the curve and not shipped: half again fewer trickle spawns (`--rate=0.35`)
+10,239 (4 runs) and a x0.6 enemy cap 11,806 (8 runs). Single runs spread 5,200-17,800, so only many-run averages mean anything.
+The bot saturates its build (4 moves at Lv 8, the vitamins) by Lv ~70 and kills what reaches it; the KOs follow the foes' inflow,
+not its level. So the ~8,000 target needs a different lever; the curve is shipped for itself (the owner's ask: a slower climb).
+
+**Pay:** unchanged and in D21's range: 2,501 Pokémonedas (8 runs to 45:29) vs D21's ~2,250-2,575; no pay knob moved.
+
+**Beatable:** the `--soft` bot (hurt for real, boss fights NOT assisted) downs all 9 milestones and Mewtwo in 6 of 6 runs on both
+curves, and falls no more often on the new one (2,014 vs 2,319 refills a run: the wandering bot stands in the swarm). The plain
+`--vuln` wandering bot dies at ~4:00-5:00 on both curves alike (Lv 32-40: the curves are the same there), so it cannot measure
+45:00; no bot here plays well enough to.
+
+**Sync:** `G.Expedition.DV` 20 (`G.Exp.dv` 20). The curve is read from the RUN's dv (`G.Modes.dv`), so a run, a snapshot or a
+tape of dv <= 19 keeps the shared curve; a tape carries each frame's `xpNext` (its counters), so an old tape replays its own
+numbers. A co-op lobby needs one dv (`lobbyOk`) and a guest's level / `xpNext` is the host's (`syncTeam`), so host and guest
+agree. No new streamed state (`x` v10).
+
+**Tests:** `overworld/tests/micasurvivor_expedition_survivalcurve_test.mjs` (12 checks, FIRED: real runs fed real XP through the
+game's own level-up loop: Survival dv 20 on the curve; Classic, League and base unchanged; a dv-19 Survival run on the shared
+curve; dv-19 and dv-20 tapes recorded and read back). Fails 10 of 12 before. The dv pins in 21 other suites moved 19 -> 20.
+
+## DLC D13-D15: the stacked branch
+
+`feat/micasurvivor-expedition-d13-d15` carries three batches on top of D12 (merged), one commit each, `G.Expedition.DV` 11 -> 14,
+the `x` block unchanged (v10):
+- **D13 League mode** (`league.js`, `meta.js`): the whole League (245 members), League mode as the League's own screen, the League
+  board, a task and 5 achievements. dv 12. **The stack's only server change** (`server/mp.mjs`: the League board, written by
+  `micasurvivor-exp-save-put`, read by `run-leaderboard`).
+- **D14 Mega Evolution** (`mega.js`, `mega-data.js`): 93 Megas, from Lv 40, existing art only. dv 13 (`l`'s optional 6th field).
+- **D15 the slot machine and Survival's respawns** (`economy.js`). dv 14 (`o`'s optional `y`).
+The branch needs the full gate before it merges.
+
+## DLC D10-D12: the stacked branch
+
+`feat/micasurvivor-expedition-d10-d12` carries three batches on top of D6-D9, `G.Expedition.DV` 8 -> 11 and the `x` block v8 -> v10:
+- **D10 the League meta** (`meta.js`): the Lab, item unlocks, the Archive, research, avatars / frames / titles, tasks,
+  achievements, shiny perks, boosts, League HQ. dv 9, `x.k`.
+- **D11 Survival and MP hardening** (`survival.js`): endless Survival (milestones, phases, pacts, siege, night, migration,
+  hazards) and its board; one currency (the base Pokémonedas through `G.Expedition.wallet`); co-op guests on Expedition runs,
+  the local partner's verbs, spectator / replay rendering, the relay and replay size budgets. dv 10, `x.s` / `x.v` / `x.r`.
+- **D12 maps 2-3** (`classic.js`, `terrain.js`): Mt. Moon and Cerulean Cape, each with its residents, bosses, terrain, look,
+  Survival legendaries and hazard colours; a map opens when the one before it is won. dv 11 (no `x` change).
+- Server changes: D11's (`run-score` / `run-leaderboard` for Survival, the lobby's map / tier). D12 has none. The branch needs
+  the full gate before it merges.
+
+## DLC D6-D9: the stacked branch
+
+`feat/micasurvivor-expedition-d6-d9` carries four batches on top of D0-D5 (merged in #806), one commit each, `G.Expedition.DV`
+5 -> 8 and the `x` block v6 -> v8:
+- **D6 Ultimates** (`ultimates.js`): the charge meter, type Ultimates from the Z-moves, 16 signature Ultimates, auto-cast. dv 5, `x.w`.
+- **D7 economy and interactables** (`economy.js`): ₽, Poké Balls, Meowth, Unown / challenge / cursed / greed altars, Ditto,
+  Hypno, rocks, berries, cages, the zone map and its fog, first-run tips. dv 6, `x.o`.
+- **D8 alphas, capture and shinies** (`capture.js`, `reactions.js`): the Friend Ball, Support Alphas, League encounters, shinies,
+  the cinematic, elemental reactions and weather boosts. dv 7, `x.p`.
+- **D9 tiers, score and boards** (`tiers.js`): Normal / Hard / Nightmare, unlocks, the score with its parts checked by the
+  server, medals, the Score / Time attack / Season boards with cosmetic ribbons. dv 8 (no `x` change). **The only server change of
+  the stack** is D9's (`server/mp.mjs`: `run-score` / `run-leaderboard` for `micasurvivor_expedition`, `msurvseason:` in the GC
+  table), so the branch needs the full gate before it merges.
+
+## U1: the Play flow (one character picker for every mode, Micatro's look)
+
+`Plans/MICASURVIVOR_UNIFIED_PLAN.md` U1. The menu's **Play** opens `#scr-play` (`js/ui/play-ui.js`, `G.PlayUI`), five steps
+on one screen with breadcrumbs:
+
+1. **Pokémon**: your collection (`save.owned`, the one unlock list) by generation; species you don't own aren't shown.
+   Picking one writes `save.partner` and, once the Expedition code is loaded (choosing Expedition or Dive loads it), the
+   League pick (`G.ExpLeague.setPick(FAM[dex])`) and starting form (`setForm(dex)`), so every mode starts as it.
+2. **Category**: Survival / Expedition / Dive.
+3. **Variant**: Survival = normal, daily, rush, party, tower, rifts, type, team; Expedition = Classic, Survival (+ the League
+   HQ, which opens the old "Game modes" screen); Dive = route dive, weekly.
+4. **Players**: Solo; Local 2 players (Survival normal = the `coop` mode; Expedition / route Dive = the local partner,
+   `micasurvivorexp_mate`); Local 3-4 (coming soon); Online with friends (signed in: Survival normal = a base lobby,
+   Expedition / route Dive = an Expedition lobby via `G.ModesUI.openExpCoop`). Everything else is aria-disabled with
+   "Coming soon" (U2 builds it); pressing it says why.
+5. **Setup**: only the variant's options (modifiers, Tower start floor, type, party Pokémon, team, co-op partner; the
+   Expedition's map + difficulty carousels, locked ones shown locked; Dive's route + start floor; the Weekly's route and
+   rule), then START.
+
+It only writes the existing prefs and starts through `G.Flow.play(mode)`, so `G.Modes.plan` and the runs are unchanged.
+The last category / variant / players are remembered (`micasurvivor_playflow`). Pad: each step focuses its current choice
+(`G.Pad.focusOn`), so confirm x6 from the menu replays the last setup; cancel / Esc go back a step. The look is
+`css/mx.css`: Micatro's tokens, font, lipped buttons and panels, red tabs and arrow carousel, ported and scoped under
+`#scr-play` (mx- classes; never `.card`). "Game modes" stays on the menu for now. Test:
+`overworld/tests/micasurvivor_playflow_test.mjs`.
+
+## U3: the coverage sweep (regional formes, Megas, every mode)
+
+`Plans/MICASURVIVOR_UNIFIED_PLAN.md` U3 (owner decisions 2 and 3). Every id stays an integer, PokéAPI's:
+- **Regional formes** (58: Alolan 18, Galarian 20 with Zen Galarian Darmanitan, Hisuian 16, Paldean 4) are entries of their
+  own: `js/data/forms.js` (GENERATED, `node tools/micasurvivor/gen_forms.mjs [--fetch]`) appends them to `G.DEX` after the
+  1,025 (ids 10091-10253), with their own types / stats, their region's gen (the gacha banner), `G.FAMILY` = their species'
+  family, and `from` / `lv` (they evolve in their own line; Pikachu branches to Alolan Raichu; Galarian Meowth -> Perrserker,
+  `G.FORM_INTO`). The overworld's `raichu_alola` etc. unlock the forme itself (`js/data/ow-species.js`). The League learns
+  them as stages of the base family (`G.Forms.patchLeague`: `alt` stages and `evo` entries), so the picker, Expedition and
+  Dive start AS a forme you own.
+- **Megas** (93, ids 10033-10325, `js/data/mega-data.js`, now a base script) are in `G.DEX_BY` only (never `G.DEX`: not
+  collection entries). `G.Sprites.Animator` draws the Mega aura and keystone sign for any Mega id. Base runs Mega Evolve at
+  Lv 40 like a League run (`G.Megas.baseCards` in `js/systems/levelup.js`: the Megas + "Not yet"); the dex stays the
+  species, the look / types / stats are the Mega's, the net frame's field 16 is the Mega's id.
+- **Art**: `python tools/micasurvivor/fetch_form_sprites.py` (then `hover_flags.py`): ANIMATED SpriteCollab form folders
+  (56 formes, 42 Megas), the overworld battle front where there is none (2 formes, 19 Megas, `src: front`, sized to the species' sheet; x1.12 a Mega), and an alias
+  row (`al`: the species' sheet) for the other 32 Megas. Deployed with `npm run deploy-micasurvivor` (+ the manifest).
+- **Enemies**: the formes join every pool by their own BST / types (they are in `G.DEX`). Megas are rare elites and bosses:
+  Survival from 15:00 (`G.Enemies.MEGAS`, every 70-110 s; half the runs' 15:00 boss), Expedition zone 3 (one elite a plan),
+  Expedition Survival (one elite a segment from 15:00; some milestone bosses), Dive below floor 30 (20 % a floor, 35 % of
+  the arena alphas). Dive also has the 64 legendaries no route guards as rare encounters from floor 26 (35 % a floor, sure
+  after 3 without). All from their own seeded streams. Test: `overworld/tests/micasurvivor_coverage_test.mjs`.
+
+## Tests
+
+- `node overworld/tests/micasurvivor_dlc_base_unchanged_test.mjs` (DLC D0a): the golden runs of every base
+  mode (see "DLC D0a: base-unchanged harness" above); `--record` only for a deliberate base change.
+- `node overworld/tests/micasurvivor_expedition_forceload_test.mjs` (DLC D0b): the same unchanged D0a test with the
+  Expedition code force-loaded (and the base tables frozen) in every page before its base sim; it must still match the
+  D0a fixtures.
+- `node overworld/tests/micasurvivor_allmoves_test.mjs` (DLC D16): every move fires on its own cooldown in both modes, no
+  switching, the HUD, the Choice Band, bonds and the freed slot, melee, co-op frames and tapes old and new, the boards split by
+  ruleset and the base lobby's rules (the real handler), the Expedition's 4 slots and swap cards, the Lab's move slot refunded
+  once across two devices.
+- `node overworld/tests/micasurvivor_oneitem_test.mjs` (DLC D17): one held item in both modes, Backpack and Double baggage
+  retired, the Backpack refund once across two devices, the Expedition's stacking items unchanged and a boss's held item.
+- `node overworld/tests/micasurvivor_sharedupgrades_test.mjs` (DLC D18): the families, per-family levels at read time, the same
+  perks in both modes, the shop, the TM / Repertoire in the kit, the Lab's 9 stat rows retired and refunded.
+- `node overworld/tests/micasurvivor_expedition_fullleague_test.mjs` (DLC D19): every species 1-1025 a stage of one League member
+  (553 families), every kit move a game move, D13's 245 byte-identical, the server's lists, the save's counter cap (client and
+  server, an old client), the base collection's families, the 27 free trios, the pages, an Eevee run fired, Kingambit, 5 wild members.
+- `node overworld/tests/micasurvivor_expedition_allenemies_test.mjs` (DLC D20): all 1,025 as Expedition enemies (the union of the
+  plans over many seeds), wanderers a minority, rarity-5 elites, roaming legendaries; base coverage and Wishiwashi.
+- `node overworld/tests/micasurvivor_expedition_balance_test.mjs` (DLC D21): the tuned damage factors, the Expedition KO pay and
+  Survival's pacing, pinned and fired.
+- `node overworld/tests/micasurvivor_expedition_survivalcurve_test.mjs` (the Survival curve): Survival's own XP curve from dv 20,
+  fired; Classic, League and base unchanged; an old-dv run and tape keep the shared curve.
+- `node tools/micasurvivor/dps_sim.mjs` (DLC D16, not a test): the DPS measurement behind `G.Combat.AF`.
+- `node overworld/tests/micasurvivor_expedition_plumbing_test.mjs` (DLC D0b), the real handler behind a static server:
+  lazy loading (the network log: no js/expedition/ fetch on a base boot or run, guest or signed in; then exactly
+  save.js + core.js once); the Expedition group by mouse, touch (844x390) and pad, "Coming soon", starting nothing; the
+  freeze throwing on 14 kinds of write and changing nothing, its cost, and the sim's cost frozen vs not; the Expedition
+  save's round trip, a 409 merge with another device, a lower counter not going back, a guest's local progress carried
+  into the account once; the Expedition board vs the base board; an Expedition run's mode / dv on the run, snapshot,
+  replay header, meta and shared row, with the base save byte-equal; the newer-dv notices for replays and live runs;
+  the lobby's dv gate (join and start) and a base lobby unchanged; no Spanish in English.
+- `node overworld/tests/micasurvivor_expedition_terrain_test.mjs` (DLC D1): the generator's determinism (same
+  seed + map + zone, no `Math.random`), heights and steps, every walkable tile reachable (the game's own
+  `walkable` + `maskAt`, on the run's zone and 45 others, with props as walls too), the player blocked by a cliff and
+  up / down a ramp, walking down a ledge, a ground enemy going round to the ramp (and never up without one) but
+  straight down a ledge (round a rock bar by `G.Path`'s field, not by the ramp), a flyer straight over, the
+  minimap shading, the `x` block on snapshots, host frames and the replay, a fresh page rebuilding the same zone as
+  replay viewer, live spectator and co-op guest, a later Normal run without a zone, and the painted zone at desktop
+  and phone size (`SHOTS=<dir>` saves screenshots). (D2: it checks `xv: 2`, and an unknown schema is now `xv: 99`.)
+- `node overworld/tests/micasurvivor_expedition_movement_test.mjs` (DLC D2), on hand-made zones at a normalised speed:
+  - walking down a ledge (a 0.25 s drop onto the level below, carried clear of the edge, with no contact i-frames),
+    walking up into a cliff still blocked, and hopping off a ledge with no ground contact damage in the air (a flyer
+    still hits);
+  - a single hop reaching one level up (not two), the extra hop two, a third press nothing, never three levels; the
+    extra hop's airtime carrying you over a 2-tile gap one hop splashes into;
+  - Pidgey gliding across a 3-tile deep pond, Squirtle surfing it at ×1.35, Machop climbing a cliff at half speed and
+    back down, and Charmander (and the wrong types) doing none of those;
+  - the type table;
+  - a bounce pad onto the plateau, and the generator's pads;
+  - slide and its cool-down;
+  - the HUD buttons by mouse, the gamepad's confirm / cancel / hold-to-glide, and a Normal run untouched;
+  - the `x` block v2 on snapshots, host and guest frames, the replay's field 7, and a v1 rewrite of the replay still
+    loading;
+  - a fresh page as co-op guest (a host frame through `G.Net`'s handler), live spectator and replay viewer, seeing the
+    player in the air, and the falls off a ledge (mid-fall rows, and ones that came and went between two frames);
+    an older Classic replay (6-field rows) still loading;
+  - the phone layouts (844 × 390 and 667 × 375) with taps, the double tap and the slide.
+
+  `SHOTS=<dir>` saves mid-hop / mid-glide / mid-surf / mid-bounce / mid-drop screenshots at desktop and phone size.
+- `node overworld/tests/micasurvivor_expedition_classic_test.mjs` (DLC D3), fast-forwarded with `G.Game.debugStep`:
+  - the menu: Classic playable and starting a Viridian Forest run, Survival and League "Coming soon", `DV` 2;
+  - the plan: pure (no `Math.random`, the same twice, another seed another plan), all 8 event kinds per zone in time
+    order, later zones earlier, the guardians and Mew, the altar flat, reachable and the same from a rebuild, the shrine;
+  - the live timeline over 10:40 of zone time: every event once, in order, at its time, spawning what it says; the
+    stampede's one direction, the flock, the rock slide's telegraphs, the marked alphas / elites / totems / summoners,
+    the trickle's new cards, the final swarm's spawn rate and ×4 HP;
+  - the altar's charge and drain, the guardian's HP from a measured DPS, `bossHp` and `exhaustion` with numbers and a
+    real hit, the portal (pickups pulled) and zone 2;
+  - a full run won (zones 1-3, the shrine, Mew), the victory screen in English with its 4 splits, the Expedition save,
+    a second win's deltas, the base save byte-equal;
+  - the `x` block v3 on snapshots, host frames and the replay; a fresh page as co-op guest (through `G.Net`), live
+    spectator and replay viewer (seeking to the fight and the portal); a v2 block without `c`;
+  - the zone line and the HUD at desktop and phone (844 × 390) size.
+
+  `SHOTS=<dir>` saves each event, the altar, the guardian, the portal, the shrine and the victory at desktop and phone size.
+- `node overworld/tests/micasurvivor_expedition_league_test.mjs` (DLC D4), fast-forwarded with `G.Game.debugStep` and the
+  real level-up screen:
+  - the data (in Node): 78 members + 170 stubs = the owner's 249 entries (248 families), the 12 starters free, every kit 4
+    of our moves, every stage's base stats and evolutions the overworld's own (or one of the 7 cited newer ones), the real
+    levels and PokéBonk's overrides; the real server handler merging two devices' League sets and counters;
+  - the League pick: "League member: Bulbasaur" before any Expedition code loads, the screen (78, 12 available, a member's
+    kit with its levels, evolution line, ability and challenge, the later batches), a locked member not pickable, picking
+    Charmander, Esc, the run started as Charmander; no Spanish;
+  - stats from base stats (HP, armor, speed, physical / special per move) for Charmander, Bulbasaur and Squirtle;
+  - the kit at Lv 2 / 4 / 7 with the screen's note, and no new-move cards;
+  - Charmander -> Charmeleon (16) -> Charizard (36): sprite, types, glide, stats, HP back up, Flame Wheel rescaled; no
+    Maturity at 24, Maturity 1 at 44; the run-over lines;
+  - the challenges after that run (Kangaskhan and Caterpie met, Dratini not), the save in the browser, a reload,
+    `ExpSave.merge` both ways, the base save byte-equal;
+  - Kangaskhan's Maturity at 24 and 44; Ralts -> Kirlia, the branch cards at 30 (a reroll keeps them), Gallade (climbs),
+    its Maturity at 44;
+  - the `x` block v4's `l` on snapshots, host and guest frames; a fresh page as co-op guest (through `G.Net`), as the host
+    of a guest, live spectator and replay viewer (Ralts, Kirlia, Gallade while seeking); a v3 block without `l`;
+  - the League screen and the level-up screen with its note at desktop and phone (844 x 390, taps) size.
+
+  `SHOTS=<dir>` saves the League pick, a kit unlock and an evolution choice at desktop and phone size.
+- `node overworld/tests/micasurvivor_expedition_levelups_test.mjs` (DLC D5), fast-forwarded with `G.Game.debugStep` and the
+  real level-up screen: the server merging the D5 counters; rarity (the study's weights, luck, power gating, 40,000 seeded
+  rolls against the odds, live deals at Lv 1 vs 40); a move levelling to 8 with its rolls; each of the 8 archetypes and
+  the combat.run / combat.ghost seams; vitamins and slots; Refresh / Skip / Banish; item caps, additive stacking,
+  boosters, pickups and procs; the XP curve and its pacing (a Dratini run reaching Dragonite at 55 on real XP);
+  determinism (no `Math.random` in deals or drops), the `x` block v5 for a co-op guest, live spectator and replay viewer
+  (and a v4 block); a base Normal run in the same page; the desktop and phone layouts. `SHOTS=<dir>` saves a level-up
+  choice, a rarity spread and the bag (strip and pause panel) at both sizes.
+- `node overworld/tests/micasurvivor_expedition_ultimates_test.mjs` (DLC D6), fast-forwarded with `G.Game.debugStep`: the
+  server merging the auto setting's counters (the later switch wins); each charge source's rate (95 s passive, the kill
+  bucket, elite / alpha / boss, damage taken), also through the real `enemy.ko` and `player.hurt` seams, and none while casting;
+  the cast by Z, R and the pad's Z-move / Y / RT buttons (a synthetic gamepad), the 0.32 s hit-stop, i-frames for the cast +
+  0.6 s (also after `invuln` is zeroed), the damage; the cut-in drawn with its name; all 18 type Ultimates hurting foes and a
+  Caterpie run casting bug's; the 16 signatures, Charmander's tiers (names, beats, damage) and Mew's seeded copies; the auto
+  setting (U, the pause button, the save, a merge; casting with a foe near, not without); the `x` block v6 for a co-op guest,
+  live spectator and replay viewer (cut-in and ghost choreography; the `xu` event; a v5 block); a base Normal run in the same
+  page; the desktop and phone layouts (on screen, no overlap; a click / tap on the button and the AUTO chip). `SHOTS=<dir>`
+  saves a cut-in, a signature and a type Ultimate going off and the meter at both sizes.
+- `node overworld/tests/micasurvivor_expedition_economy_test.mjs` (DLC D7), fast-forwarded with `G.Game.debugStep`: the server
+  merging the D7 counters; the layout (42 per zone, pure, on open floor, spaced; none in the shrine); ₽ from kills (also the
+  real `enemy.ko` seam), the gold stat and a Skip; each Poké Ball kind (a paid one's price curve and luck discount, the pick of
+  3, the accidental-pick guard; free; cursed: difficulty, the ambush, 1-2 items); Meowth's schedule, prices and market heat;
+  each Unown tier (charge time, drain, offers / picks / lowest rarity, hordes, the Golden seal), the comet (landing, burning
+  out, its pick and the Ultimate charge), the challenge / cursed / greed altars; Ditto, Hypno, rocks, berries, cages; the fog,
+  the minimap's icons, the zone map and its legend (M, the pause button); the tips (once, saved); the `x` block v7 on
+  snapshots and host frames, a fresh spectator page, the replay's field 9 and `xi` events, a v6 block; a base Normal run in
+  the same page; the desktop and phone layouts (the tip box, a ball's pick, the shop, the map on screen; clicks / taps).
+  `SHOTS=<dir>` saves an altar, a ball's choice, Meowth's shop, the minimap's fog and the zone map at both sizes.
+- `node overworld/tests/micasurvivor_expedition_capture_test.mjs` (DLC D8), fast-forwarded with `G.Game.debugStep`: the server
+  merging the D8 sets and counters; an alpha on the timeline marked, stopping at 1 HP, fainting (8 s), counted as a KO, its prize
+  when left alone; the Friend Ball and the cinematic (its 7 phases, the world held, the i-frames, the banner in English); a Support
+  Alpha with its perk (D5's sums), shooting its type to the "Partner / team" row and following; slot 2, a full team's "swap whom?"
+  and Keep my team; a League encounter end to end (met + wild, a D4-met member still playable, the next run's encounter on time
+  with its HP by rank, faint, catch, `league.own` saved at once, fleeing and staying wild); shiny odds (20,000 seeded zones), a
+  shiny on its sheet that roams, never hurts, flees, and its catch; each elemental reaction, wet / chill / freeze and the
+  cool-down through the real `G.Combat.land`; the weather boosts; pure zone plans; the `x` block v8 `p` for a live spectator,
+  host frames and the replay (`xc`), a v7 block; a base Normal run in the same page; the desktop and phone layouts (the chips,
+  the swap choice, the banner). `SHOTS=<dir>` saves an alpha, a fainted alpha, the Support Alphas, the swap choice, the
+  cinematic, a shiny and a reaction at both sizes.
+- `node overworld/tests/micasurvivor_expedition_tiers_test.mjs` (DLC D9), the real handler behind a static server: the tier
+  tables, the score formula with its catch term, the medals at their limits, the season weeks and ribbons (`tiers.js` in a vm);
+  the server recomputing 16 scores from their parts, refusing junk (a wrong score, a bad zone, a win off the shrine, a 2-minute
+  clear, too many KOs / damage / catches / bosses, a dv-8 score without parts, a junk / foreign / mismatched replay), taking an
+  old dv-7 score under a ceiling, time attack (fastest first, the medal, your best kept), the season boards week to week and
+  their reads, the rate limit, exact-key reads only, the base board untouched; in the game: Normal only at first, the panel by
+  its button (locked cards, the medal limits), a Normal win (the score's parts, Champion, Hard unlocked, the run-over screen),
+  its mark on the boards with its replay; Hard and Nightmare foes, plans, escorts and trickle elites against Normal's; the save
+  on the server; the Score / Time attack / Season boards in the panel and last season's Elite ribbon, once; a fresh viewer page
+  showing the tier from `c.d`; the phone and desktop layouts. `SHOTS=<dir>` saves the tier picker, the boards, the season and
+  the run-over medal at both sizes.
+- `node overworld/tests/micasurvivor_expedition_meta_test.mjs` (DLC D10), the real handler behind a static server: the Lab's
+  prices, a run's ★ x the tier's pay, every Lab upgrade's effect from a row, the shiny perks, the derived balance, tasks (seeded per
+  day / week, rollover by the date passed in, progress, payment once, streak, reroll), achievements claimed once, the two-device
+  merge (`meta.js` + `save.js` + `tiers.js` in a vm); two devices' saves merged through `micasurvivor-exp-save-put` (both ★
+  counters, the higher Lab level, the unions; a stale put takes nothing; exact keys); in the game: a Normal and a Hard run's ★
+  (x1 / x1.75, the run-over line), the base save's coins / stats / achievements untouched, each Lab upgrade in a run (stats, tools,
+  slots, 4 cards, the Max Revive, 3 Support slots, research x2), locked items never dropping or offered, a goal then ★ buying one,
+  the Archive's slots and its items never dropping, research finishing a family into an avatar, the card's avatar / frame / title,
+  the 6 boosts and the 6-shiny perks in a run (Rare Candy, Dawn Stone, Master Ball, Honey), the `x` block v9 `k` on snapshots,
+  guest and host frames and the replay header, a fresh viewer page reading the same effects, a v8 block; "League HQ" by its
+  button (a Lab purchase, every tab, a reroll); the save on the server; every tab at desktop and phone size. `SHOTS=<dir>` saves
+  the run-over line, the Lab, the Archive, the tasks, the achievements and the card (desktop), and the Lab, the Archive, the tasks
+  and the achievements (phone).
+- `node overworld/tests/micasurvivor_expedition_survival_test.mjs` (DLC D11), the real handler behind a static server,
+  fast-forwarded: Survival playable on the menu (League still "Coming soon"); the clock's rules (phases, wounds, night) and the
+  milestones (every 5:00, every 3rd a legendary, Mewtwo at 45:00 not ending the run), the segment timeline (pure), each pact's
+  boons / banes and team banes, siege (from 5:00, damage x0.3, flocks), migration (the portal, the next land, closing), the
+  hazards (pure, each kind, a hop clearing them), the local partner's verbs (pad and AI, its row in the snapshot); the score's
+  parts, the run-over lines, the Expedition save, the pay in Pokémonedas through this device's ledger entry, Survival's tasks
+  and achievements; the Survival board through the handler (a wrong score, too many bosses / legendaries, no parts, an old dv
+  refused; exact keys); boardOk (no co-op / partner runs); the HUD, the siege banner and the pact choice at desktop and phone
+  size. `SHOTS=<dir>` saves the pact, night, Mewtwo, siege, migration, hazards, board, HUD and phone screens.
+- `node overworld/tests/micasurvivor_expedition_mp_test.mjs` (DLC D11), two signed-in friends in real co-op (the real handler,
+  WebRTC on localhost), one browser: an Expedition lobby (mode, map, tier on the row and the lobby line; League members on the
+  cards); Classic with a phone guest (the same terrain, the tier, its League member and meta row, verbs, Ultimate, interactables
+  and a Poké Ball from its own roll, a capture into its own team with its Support Alpha shooting on the host, a reaction's
+  pop-up); the relay budget (the busiest host frame vs 16,000 a message and 64,000 a row, through `msurv-relay-push`); Survival
+  with the roles swapped (the host's milestones, the guest's own pact and its team bane on the host, night, hazards, migration,
+  its siege row); a live snapshot under 24 KB; a spectator (night, hazards, Survival's HUD, both teams' Support Alphas shooting,
+  pop-ups); replay size (a 45-min Survival run to Mewtwo and a full Classic clear under 1.2 MB, 1 s / 0.5 s frames, the
+  thinning steps, `halve` exact on the real tape, `finish()` halving over the cap, a base tape never thinned).
+- `node overworld/tests/micasurvivor_expedition_maps_test.mjs` (DLC D12): each new map's zones seeded and flood-fill connected
+  (props never cut a path), its profile (Mt. Moon high and rocky, Cerulean Cape wet), its shrine, its look (palette, tint,
+  minimap, the pad painted per map); its residents, guardians, totems, summoners (and minions), stampedes, flocks and shrine
+  boss, the plan pure; a totem and a summoner live on Mt. Moon; Survival's legendaries, segments, hazards and colours per map,
+  Zapdos at 15:00 on Cerulean Cape; the boards per map through the real handler; the unlock rule and the map tabs (no "Coming
+  soon"); a Classic run won on each map; a co-op guest, a spectator and a replay viewer on Cerulean Cape; the phone (HUD, map
+  tabs). `SHOTS=<dir>` saves each map's zone, shrine and a Survival milestone, desktop and phone.
+- `node overworld/tests/micasurvivor_expedition_leaguemode_test.mjs` (DLC D13), the real handler behind a static server: the
+  generated League (245 families, no stage twice, D4's 78 kept, every legendary / mythical and every Mega-capable species in it,
+  sprites and base stats for every stage, kits, the 12 free starters, the legendaries' two-part challenges, the server's copy of
+  the list); the League board counted by the server from the saved League (never a wild member or an unknown id, only growing,
+  not postable, exact keys); League mode from its card (no run; its tabs; the roster by generation; a member's Ultimate,
+  records and challenge; Esc); a caught Gen 5 member played from it (Snivy -> Servine at 17); Raikou's challenge completed by a
+  run, wild, its encounter in a later run; the `hard` part; the Leaderboard tab and its way to the map boards and back; the
+  achievements paid once and the title order; the League task's start date and its metric from a run that ends at Vivillon;
+  the phone (844 x 390).
+- `node overworld/tests/micasurvivor_expedition_mega_test.mjs` (DLC D14): the generated Megas (93 of 87 species, PokéAPI's stats
+  and types, each in a League family; the 48 with an existing overworld battle sprite, the rest composed); a Charizard run: no
+  Mega before 40, the choice at 40 (X / Y with their sprites, "Not yet"), Mega Charizard X's stats, types, verbs, Ultimate tier,
+  i-frames and look (drawn at the member's height, mirrored facing right, the keystone's sign), once a run, the snapshot's row,
+  the run-over line, counters and achievement; "Not yet" back 5 levels later; a composed Mega (Raichu X); a fresh viewer
+  page's puppet from the row (and back); the League card's line; the weekly task; the phone.
+- `node overworld/tests/micasurvivor_expedition_slots_test.mjs` (DLC D15): the slot machine's table, odds and placement (one a
+  zone, after D7's); spins through the stand-in (a bad roll's Voltorb ambush, a pair, the jackpot, a Poké Ball pick, nothing, too
+  poor, three Voltorb breaking it), the base save's Pokémonedas never moving, the legend and tip, a fresh viewer's reels;
+  Survival's respawns by kind (2:00 / 3:00 / 4:00, not a second sooner), Classic's none; the saved counters.
+- `node overworld/tests/micasurvivor_boot_test.mjs` covers boot (no console errors, no external
+  requests), guest start, a 30 s bot run with level-up picks, and the save round-trip through a
+  reload.
+- `node overworld/tests/micasurvivor_phone_test.mjs` is the 390px phone smoke test (touch
+  controls).
+- `node overworld/tests/micasurvivor_pad_test.mjs` covers the controller with a synthetic Gamepad
+  API: a guest's pad working (no sign-in gate), title to run with the pad only, every menu screen, the gacha, layouts, remap
+  with swap-on-conflict surviving a reload, stick and D-pad movement, pause, level-up reroll and
+  pick, glyphs switching between keys and pad, rumble, and hot-plug.
+- `node overworld/tests/micasurvivor_server_test.mjs` (M3): the save actions (login, exact key,
+  shape, size cap, 409 on a stale revision, one winner in a race, rate limit), the `micasurvivor`
+  board, and the wiring (cabinet tiles, sprite, landing tile, sitemap).
+- `node overworld/tests/micasurvivor_account_test.mjs` (M3): the real server in the loop — playing
+  as the Magepunk user, two devices merging, the guest carry-over (take over / merge / decline),
+  the leaderboard screen.
+- `node overworld/tests/micasurvivor_arcade_test.mjs` (M3): the Pewter Museum cabinet, walked to
+  and opened with the overworld controller, and the way back.
+- `designwiki_micasurvivor_test.mjs` and `magepunknews_micasurvivor_test.mjs` (M3): the wiki
+  section and the news entry.
+- `node overworld/tests/micasurvivor_mechanics_test.mjs` (M5 batch 1) steps a paused run by
+  hand and checks every rule above with numbers: kills per type (a real kill, saved, back after a
+  reload, merged by max), each status's duration, boss resistance and immunity, frozen +25%, sleep
+  +30% and wake, paralysis speed / attack rate / +35% electric, confusion infighting, Darkrai, the
+  cc moves and their roll through the real projectile code, Hypnosis, Dream Eater, choosing
+  Colossal Cyclone in the real level-up screen, the Big Orb hook, EVO_EXTRA, knockback per level
+  (a real Hydro Pump hit), Calibre scaling (a real aura and Ember shot) and its cap, and the
+  English of every new string.
+- `node overworld/tests/micasurvivor_abilities_test.mjs` (M5 batch 2): the 54 abilities and the
+  966-entry table; every fx key handled and every ability measurably doing something (no silent
+  no-ops); each family with the port's numbers (pinch, flat stats, weather speed and immunity,
+  contact chances through the real contact loop and over 4000 rolls, type halving, Solid Rock,
+  Multiscale's 25 s, Sturdy's 90 s, Defiant's 4 s, the Moxie steps and cap, Tinted Lens, Mold
+  Breaker, Iron Fist / Mega Launcher through real casts, Levitate against real traps); swapping an
+  ability back exactly; and the HUD chip, the Pokédex, the partner card, the result, the starters
+  and the pause screen, in English.
+- `node overworld/tests/micasurvivor_items_test.mjs` (M5 batch 3), logged in with a stubbed account
+  row: the 26 items and 17 upgrades (order, icons, costs, English); buying Caliber / TM / Second
+  Chance / Backpack in the real screen; the TM editor driven by a synthetic gamepad; the upgrades
+  and the TM pick reaching the account, surviving a reload and a 409 merge (max levels, a clamped
+  hand edit); a run with them; every new item's effect with numbers (a real Ember for Type Gem, the
+  real contact loop for Never-Melt Ice, real traps and sandstorm for the Boots and Goggles, the
+  spawner for Pure Incense, 3000 rolls for the species locks); Rare Candy; carrying two (auto-fill,
+  the 3-card choice, keys, HUD); Second Chance revive and knockback; the Focus Sash regression.
+- `node overworld/tests/micasurvivor_zmoves_test.mjs` (M5 batch 4), logged in with a stubbed account
+  row: the 18 Z-moves (names, numbers, icons, English); each unlock route (the 250th kill, the
+  mission paying once, 3 % of x10 pulls over 30000 rolls only for locked types, the real pull and
+  gacha screen); the Z-Crystals tab; the Pokédex choice picked with a synthetic gamepad; the account
+  push and a 409 merge (union, newest choice per Pokémon), `merge()` both ways, `sanitize()`; in a
+  run the level-15 gate, locked types, the type following the active Pokémon, the Tower / rift /
+  Judgment blocks, the real-time cinematic freeze, invulnerability, the cooldown after the end, the
+  damage formula through a real hit, the 28 % boss cap; all 18 plans (duration, damage, their own
+  effects); the Z key, the HUD button clicked on the canvas, the pad's zmove (L3), the right trigger,
+  Y, remap with swap-on-conflict, an old saved map gaining zmove, the HUD glyph.
+- `node overworld/tests/micasurvivor_dynamax_test.mjs` (M5 batch 5), logged in with a stubbed
+  account row: the port's numbers and STATUS table, English strings; locked on a new save; the
+  unlock by a real den clear (arena won), reaching the account, a 409 merge and `merge()` both
+  ways; the level-20 gate; every stat x1.3 and max HP +30 % reverting exactly (a cooldown card taken
+  meanwhile kept), HP in proportion, 60 s; the size steps; pulse cadence (40 in 60 s), radii,
+  damage through a real hit and x1.9, the status of every type; the 240 s cooldown and the den
+  recharge; falling and the swap hook; the Tower / Judgment blocks and arenas allowed; den odds over
+  200000 rolls and thousands of real `G.Rift.update` checks (never before 120 s or in Rift Time
+  Attack), 30 s open; the den boss (tier, HP, XP, x1.5, aura, Max Move with its 16 zones); the
+  rewards; the C key, the MAX button clicked, the pad (View, left trigger, X), remap, an old map
+  gaining dynamax, the glyph; the Dynamax card on the missions screen.
+- `node overworld/tests/micasurvivor_modes_test.mjs` (M5 batch 6), logged in with a stubbed account
+  row: the port's numbers and daily formulas, every new string in English; the modes screen by mouse,
+  touch (phone tap) and pad (focus, confirm, cancel out of the picker), modifier switches, the type
+  button, the party picker; the Daily (today's Pokémon and rule, the same world / cast / bosses /
+  moves twice, another date differs, its best keyed by date, x1.25 coins, stats); Party (an unowned
+  Pokémon, no death, nothing saved); Rift Time Attack (20 / 8 / 6 s checks, always a rift, a boss
+  blocks, never a den in 2000 checks, none in the last 40 s, the countdown HUD, 8:00 waits for the
+  arena, the record, coins); Survival by Type (cast, bosses, dens, 10 minutes, coins, the HUD tag);
+  the 6 modifiers (factors through `EnemyMgr.add`, once across a stash, the spawner's horde factor,
+  Fragile, No healing against heals, regen and a max-HP card; mn / mb stats; achievements); the ban
+  (B key, click, pad action, only new moves, never offered again in 600 offers, free, 0 = hidden;
+  Dynamax from the ban button in a run; remap and migration); the account push, a 409 merge and
+  `merge()` both ways; English on every new screen. `ONLY=3,7` runs just those sections.
+- `node overworld/tests/micasurvivor_team_test.mjs` (M5 batch 7), logged in with a stubbed account
+  row: the port's numbers, the `swap` pad action, the team achievements, missions and the Fairy
+  Z-mission, English; `team_list` (partner, order got, cleaning, a team of 2, locked at 1); the Team
+  card and picker by mouse, touch (phone) and pad; a run: Tab, a HUD card click, the swap button
+  (click and tap) and R3; the cooldown, the level-up block, HP per member, the shared max-HP gain,
+  level / XP / moves / item, species / types / stats / ability, bench recovery, Dynamax ending, No
+  healing; fainting after a Second Chance heart, the auto-swap ignoring the cooldown, the end, coins
+  with modifiers, stats, achievements and missions (only team runs); no Spanish on the canvas or the
+  screens; the account push, a 409 merge and `merge()` both ways.
+- `node overworld/tests/micasurvivor_tower_test.mjs` (M5 batch 8), logged in with a stubbed account row:
+  the port's numbers, the 15 risk and 4 legendary cards with their exact effects, icons, achievements,
+  missions and the Rock Z-mission, English; every floor's boss (pool, HP, damage, Eternatus, Arceus) and
+  reward; the Tower card and the "Starting floor" checkpoints by mouse, touch and pad; a run: the Z-move /
+  Dynamax block, relics, XP x0.65, the HUD line, the boss at 50 s and its scaling, the floor clear (reward,
+  the boss counted, enemies cleared), the rest and pact pickers by keys, mouse and pad (RB, confirm, cancel
+  = No risks), every pact fired (player stats, a real hit, new enemies and bosses, the spawn rate, coins,
+  heals, kills), the 6-pact cap, the shield, Boss contract and Double baggage through real clears, bonds,
+  escorts, Arceus's last breath and the clear screen; resuming from a checkpoint, the fail screen, missions
+  (only Tower runs), the Rock Z-crystal; no Spanish on the screens or the canvas; the account push, a 409
+  merge, `merge()` both ways and `sanitize()`.
+- `node overworld/tests/micasurvivor_bossrush_test.mjs` (M5 batch 8), logged in with a stubbed account row:
+  the port's numbers, achievements, missions and the Bug Z-mission, English; the boss order and scaling
+  (24 bosses x 40 draws); the card by mouse, pad and touch; a run: nothing but bosses, the warning, the
+  first boss at 5 s, the heal / magnet drops, 8 s between bosses, scaling x1.1 for the second, the third a
+  legendary, a Tough modifier, Z / Dynamax allowed, no rifts / Judgment / events past minute 30, biomes
+  every 150 s; the end (record, rushRuns, coins, achievements, missions, a worse run keeping the record);
+  the account push and a 409 merge.
+- `node overworld/tests/micasurvivor_adaptive_test.mjs` (M5 batch 9), logged in with a stubbed account row:
+  the port's numbers and English; the adaptive formula at four player states (new, 4 runs, mid, maxed)
+  measured on real spawned enemies and bosses (HP, damage), the XP per level, the real spawner's rate, the
+  horde interval, the 45 s suffering window and its caps, the glide, off in the rift arena and every other
+  mode, with modifiers, the Tower's shared counts; the "Challenge: N%" HUD and its colours (hidden when off,
+  in the Daily and in the Tower); the setting by mouse, touch and pad, the account push, a reload, a 409
+  merge, `merge()` both ways, `sanitize()`; the Daily (no adaptive, two identical seeded starts including
+  the biome extras); biome spawns (the bag's weights, 4000 real spawns per biome, the extras' rules for
+  every tier and biome, the fallback, preloading, the biome weather); Survival by Type winning, the Tower's
+  floor biomes; the support caps through 10 simulated minutes of the real spawner and enemy AI (minions,
+  per-summoner stop, shields per cast and the 14 s lock), healers x0.9 above 4.
+- `node overworld/tests/micasurvivor_display_test.mjs` (M5 batch 10), logged in with a stubbed account row: the
+  port's numbers and English; the minimap's contents read from what it drew (you, an enemy at a known offset, one
+  beyond 12 tiles, a near and a far boss pinned to the rim, the rift and a den, props by the radar rules, the fog's
+  explored disc) and when it hides; the switch; the field of view moving the real camera live (100 / 165 / 200 %,
+  clamps, 130 % on a phone, unchanged by Dynamax and the Tower); the UI scale measured on real DOM and HUD sizes,
+  its caps, touch areas, Reset, and nothing overflowing at the min / max on 1280 x 720 and 844 x 390; no overlap
+  between the minimap and any HUD element in a busy run at three scales on desktop and phone (and with the fixed
+  joystick); the pad on both sliders and the pause screen's; device-local persistence after a reload.
+- `node overworld/tests/micasurvivor_progress_test.mjs` (M5 batch 11), logged in with a stubbed account row: the port's
+  full achievement list (the 58 added with their goals, tiers, rewards and titles, the category's place) and both
+  mission lists in the port's order, English; every new achievement unlocked by a real kill (not one short) and
+  paying exactly its reward, dual types, the Judgment exception; the mission rotation against a reimplementation of
+  progress.gd over 10 days / accounts and 400 days, the reroll; each new mission counting only its own mode, then
+  real runs of each mode ended by the game, claiming; titles: the list, Use / Locked, equip by mouse, touch and pad,
+  the profile select, the menu, the public profile, the account row, a reload, a 409 merge (the later title, the max
+  of each stat) and `merge()` both ways; damage attribution in a controlled run (2 moves, Rocky Helmet through the
+  real contact, a Z-move, Dynamax, a burn tick) against the HP each really took, the kill, the row order, the
+  largest-remainder percentages, Partner / team, and the run-over table (12.0k, %, headers); the trainer card
+  against the save by mouse, touch, pad and Esc; no Spanish on any of these screens.
+- `node overworld/tests/micasurvivor_encyclopedia_test.mjs` (M5 batch 11): the Lexicon's tabs, the port's status
+  texts and every entry list; reaching it by mouse, touch and pad, Back / B / Esc; every one of its 1,178 entries
+  opening (all 966 Pokémon included); on each tab an entry opened by pad and by touch; unlock tracking against the
+  save (items found, moves evolved, Z unlocks, Dynamax before / after dens, owned Pokémon, mode records, relics,
+  the Tower boss log); no Spanish on any tab or entry.
+- `node overworld/tests/micasurvivor_localcoop_test.mjs` (M5 batch 12a), logged in with a stubbed account row and
+  two synthetic gamepads: the port's numbers and the move per type; who the partner is (pick, fallback, sanitize,
+  merge by the newest pick, the account push and a 409); the Co-op card and "Choose partner" by mouse, touch
+  (844x390), pad and Esc; an AI run (following, standing still, engaging, the leash teleport, hidden in a rift
+  arena, its shots from YOUR attack and size at ×0.8 and ×1.15 cooldown, the move level, real hits counted as
+  Partner / team, the minimap dot, the HUD chip fitting at phone width); player 2 (the second pad's stick, the
+  deadzone, no buttons, player 1 keeping the pause menu, disconnect -> AI and connect -> P2 with toasts, player 2's
+  presses never taking player 1's seat); fainting (Second Chance first, spectating, the partner taking your hits
+  ×0.8 with its type, no Z / Dynamax, the revive after 20 s, the run ending when it falls); the run end (-20 % coins
+  measured on the result, coopRuns / groupRuns and "In good company", the Partner / team row, a short run, a normal
+  run without a partner); no Spanish on the screens or the canvas; the Lexicon entry.
+- `node overworld/tests/micasurvivor_lobby_server_test.mjs` (M5 batch 12b): the msurv-* actions against the real
+  handler over sqlite, counting row writes: login, friends-only joins (a non-friend and a one-way friendship refused,
+  nothing written), up to 4, two joins racing both landing, ready / start (refused until all are ready; seed, host and
+  members stored), reopen, a guest leaving and the host leaving (exact keys only, the other lobby untouched); the
+  lifetimes (a waiting lobby's 60 s TTL, a silent guest dropped after 45 s, a started lobby's 10 min, invites' 3 min,
+  presence once a minute, an unchanged poll writing nothing); invites (friends only, host only, the bell message
+  once, a forged invite row ignored, `_` in usernames not matching other users' rows); signalling (one row per sender,
+  only your part, `since`, the 24 KB / 48 caps, members only, no access across lobbies); the relay (one row per push,
+  the 1000 ms floor, the 16 KB / 30 / 64 KB caps, acks, members only, stale rows ignored, the per-account rate limit);
+  the relay's daily minutes on an injectable clock (`globalThis.__msurvClock`): a minute counted once whoever writes,
+  30 minutes then 403 {budget} for pushes and pulls with nothing written, the lobby's minutes left, signalling and the
+  lobby (direct play) unaffected, per host across its lobbies (another host still relays), a new UTC day a new row;
+  the GC prefixes and the login gate.
+- `node overworld/tests/micasurvivor_online_test.mjs` (M5 batch 12b): the real handler behind a static server and
+  three signed-in friends in separate browser contexts (+ two more for the relay, + a guest): Friends (presence, "You
+  play as"), "Play with friends", invites (popup in MicaSurvivor, the bell row), joining, the lobby (members, Pokémon,
+  ready, connection, Start gated on ready, 844x390 fit), WebRTC data channels opening on localhost (host candidates, no
+  STUN) and the signalling stopping; one seed for all; positions both ways (keyboard), a guest's kill dying on the
+  host, the team's kills, the shared level-up and its wait ("Waiting for bob and carl…") releasing for all; a guest
+  closing the tab (the host goes on: "carl left the game"); the host's renderer crashing (the guest's run ends: "Lost
+  connection to the host.", rewards saved locally and in the account, back to the menu); the relay with WebRTC off
+  (falls back, "Connected (via server)", "Relay: 30 min left today" for host and guest, positions and a kill over the
+  relay at 1 update a second (≤ ~1 write a second per player, the minute row once a minute, relayed partners marked
+  for smoothing), joining by touch and getting ready by pad, the host quitting: "The host has ended the game", back in
+  the reopened lobby; then a second run whose relay minutes run out: the guest's run ends with the used-up message and
+  its rewards, the host plays on and is told why, the lobby says it and keeps Start off); a guest told to sign in (and making no co-op request); no Spanish in the DOM, toasts or canvas.
+- `node overworld/tests/micasurvivor_spectate_server_test.mjs` (M5 batch 12c): the real handler over sqlite:
+  publishing (login, a friendless player writes nothing, the beacon at the start / every 5 min / on a group change /
+  at the end, NO snapshot row without a fresh watcher, the 900 ms floor, the 60 watched minutes a day, caps and
+  validation), watching (friends both ways, a non-friend and a one-way friend refused with no write, waiting / snapshot
+  / unchanged / over / stale / not live, the 4 s heartbeat, the 10-viewer cap, `_` in names), `live-friends` /
+  `friends`, the TTLs and GC prefixes, replays (put / public get with no token above the auth gate, packed / unpacked /
+  frame caps, validation, the meta allow-list, a retried upload, the 10-per-player cap that never deletes another
+  player's row, the list) and no cross-user writes.
+- `node overworld/tests/micasurvivor_spectate_test.mjs` (M5 batch 12c): the real handler behind a static server and
+  separate browser contexts: the replay codec round-trip; alice's unwatched run (1 write: the beacon); bob sees her
+  under "Live now", watches, and his view follows her position, enemies (species / position / HP), HP, level, the
+  level-up screen and its banner, at 844x390 too; the write cost while watched; bob's keys and clicks do nothing to her
+  run; the recorder's per-frame cost; her run ends (his summary card); she shares the replay (the link copied, 2
+  writes, a retry stores nothing), carl with no account opens it, seeks, plays at 1× / 4×, pauses, reaches the summary;
+  an unknown id; her recent runs; a non-friend refused; a local co-op run and an online co-op group (watched through
+  the guest) watched; Esc back to the menu; no Spanish (DOM and canvas).
+  In CI the WebRTC part runs with `--disable-features=WebRtcHideLocalIpsWithMdns` (real localhost host candidates)
+  and `window.__msurvNet = {ice: []}`; the relay part with `{noRtc: true}`.
+- `node overworld/tests/micasurvivor_pokedex_test.mjs` (batch B1): every dex 1..1025 is in the game or pending art,
+  every sheet of every Pokémon on disk with its meta's geometry, the 17 new ones loading in the browser, spawning
+  in a normal run (forced into the cast), as bosses, the legendaries as rift bosses, their Lexicon entries and
+  English names. Batch B1b: the 24 follower-based ones the same way (sheets decode, they spawn, Zarude as a rift
+  boss), drawn at their neighbours' size (sampled pixels) and facing the way they walk.
+- Set `MICASURVIVOR_SHOTS=<dir>` to save screenshots.

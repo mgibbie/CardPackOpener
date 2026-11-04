@@ -27,7 +27,7 @@ const put = (st, pi, inst) => { inst.zone = 'board'; inst.sick = false; st.playe
 // ---------- Invigorate: +4/+4 to a creature AND each player gains 4 Life ----------
 {
 	const c = cardsById.invigorate;
-	ok('reads the +4/+4 and Life clause', c.description.endsWith('Target creature gets +4/+4 until end of turn. Each player gains 4 Life.'), JSON.stringify(c.description));
+	ok('reads the +4/+4 and Life clause', c.description.endsWith('Target creature gains +4/+4 until end of turn. Each player gains 4 Life.'), JSON.stringify(c.description));
 	ok('effects: temp-buff +4/+4 to a creature + heal 4 to all heroes', c.effects.some(e => e.type === 'temp-buff' && e.attack === 4 && e.health === 4) && c.effects.some(e => e.type === 'heal' && e.value === 4 && e.target === 'all-heroes'), JSON.stringify(c.effects));
 
 	const st = game();

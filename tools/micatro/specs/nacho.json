@@ -1,0 +1,11 @@
+{
+  "run_first": ["src/functions.lua"],
+  "files": {
+    "jokers": ["src/pokemon/"],
+    "stakes": ["src/stakes/"],
+    "stickers": ["src/stickers/"],
+    "challenges": ["src/challenges/"]
+  },
+  "globals": ["PkmnDip"],
+  "loc": "localization/en-us.lua"
+}

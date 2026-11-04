@@ -48,8 +48,10 @@ export function buildGraph() {
 	// code-restored dive/emerge links (divelinks.js) that the map data is missing
 	for (const [stem, kinds] of Object.entries(EXTRA_DIVE)) {
 		for (const k of Object.keys(kinds)) {
-			const dest = fileFor(kinds[k].map);
-			if (dest) { add(stem, dest); add(dest, stem); }
+			for (const link of [kinds[k], ...(kinds[k].cases || [])]) {
+				const dest = fileFor(link.map);
+				if (dest) { add(stem, dest); add(dest, stem); }
+			}
 		}
 	}
 	return adj;

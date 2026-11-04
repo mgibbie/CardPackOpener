@@ -56,6 +56,10 @@ export function execEffects(state, pi, effects, target, source) {
 		}
 	};
 	const buffCreature = (c, atk, hpv) => {
+		// a LOCATION shares the board row but is not a creature: "give your
+		// creatures +2/+2" turned the trolls' Hammerheims into 2/2s that then
+		// attacked (2026-10-02 replay). Stats never land on a location.
+		if (c && c.type === 'location') return;
 		atk = atk || 0; hpv = hpv || 0; // robustness: undefined stat -> 0
 		if (c.doubleBuffs) { atk *= 2; hpv *= 2; } // Saidan the Scarlet
 		if (c.statGainBonus && (atk > 0 || hpv > 0)) { atk += 1; hpv += 1; } // Dalaran Champion
@@ -81,6 +85,7 @@ export function execEffects(state, pi, effects, target, source) {
 		if (e.valuePer === 'beasts-you-control') return (e.value || 0) + p.board.filter(c => !isDead(c) && (c.tribe || '').includes('Beast')).length; // Overwhelm: base + 1 per Beast you control
 		if (e.valuePer === 'twotwo-you-control') return (e.value || 0) + p.board.filter(c => !isDead(c) && c.type !== 'location' && (c.attack || 0) === 2 && (c.maxHealth || 0) === 2).length; // Duskana: base + 1 per full 2/2 creature you control
 		if (e.valuePer === 'lands-you-control') return (e.value || 0) + (p.lands ? p.lands.length : 0); // Beanstalk Giant's Fertile Footsteps: X = lands you control
+		if (e.valuePer === 'unique-tribes') { const ts = new Set(); for (const c of p.board) if (!isDead(c) && c.type === 'creature') for (const t of (c.tribe || '').split(/[/\s]+/).filter(Boolean)) ts.add(t); return (e.value || 1) + ts.size; } // Roaring Applause: 1 + one per creature type you control
 		if (e.valuePer === 'corpses') return (e.value || 1) * (p.corpses || 0); // Fistful of Corpses: damage = your Corpses (not spent)
 		if (e.valuePer === 'damaged-friendly') {
 			let n = p.board.filter(c => !isDead(c) && c.damage > 0).length;

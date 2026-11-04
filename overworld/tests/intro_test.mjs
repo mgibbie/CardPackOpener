@@ -36,14 +36,17 @@ const REGIONS = [
 	{ key: 'HOENN', row: 2, home: 'LittlerootTown', lab: 'LittlerootTown_ProfessorBirchsLab', col: 2, species: 'mudkip', rival: 'BRENDAN', welcome: /BIRCH|LAB/i },
 ];
 
-const BOOTED = () => page.evaluate(() => !!(window.__ow && window.__ow.NEW_GAME_INTRO && window.__ow.menuTap));
+// takes the page: a module-level `page` does not exist (it is declared inside the
+// try below), so the old zero-arg form threw on every probe and each boot sat out
+// the whole 30s timeout, ~90s of the suite
+const BOOTED = page => page.evaluate(() => !!(window.__ow && window.__ow.NEW_GAME_INTRO && window.__ow.menuTap));
 async function freshBoot(page) {
 	// a prior region may be left mid-battle; its unload-save can write the party
 	// back AFTER the injected fresh-save wipe on the next document. So boot, then
 	// if any state bled through, hard-clear from this now-quiescent page + reload.
 	await page.goto('about:blank', { waitUntil: 'load' }).catch(() => {});
 	await page.goto(`http://localhost:${PORT}/overworld/index.html`, { waitUntil: 'domcontentloaded' });
-	await waitFor(BOOTED, 30000);
+	await waitFor(() => BOOTED(page), 30000);
 	const dirty = await page.evaluate(() => !!window.__ow.party || !!localStorage.getItem('magepunk_region'));
 	if (dirty) {
 		await page.evaluate(() => {
@@ -53,7 +56,7 @@ async function freshBoot(page) {
 			}
 		});
 		await page.reload({ waitUntil: 'domcontentloaded' });
-		await waitFor(BOOTED, 30000);
+		await waitFor(() => BOOTED(page), 30000);
 	}
 	return page.evaluate(() => !!window.__ow);
 }

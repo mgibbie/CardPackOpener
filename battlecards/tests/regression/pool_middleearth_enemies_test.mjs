@@ -113,10 +113,32 @@ for (const c of pool) {
 // Grishnákh: Charge signature has charge keyword
 { const st = game(); const { c } = play(st, 0, 'me_gr_sig', null);
   ok('Grishnákh has Charge + Overkill', has(c, 'charge') && has(c, 'overkill')); }
-// Chief Warg: Battlecry summons two Wargs
+// Grishnákh/Chief Warg nerf (2026-10-12: 0-50 and 4-57 vs the field as Rung A mooks)
+{ const st = game(); play(st, 0, 'me_gr_foray', null);
+  ok('Foray of Orcs summons two Orcs', named(st, 0, 'Orc Raider') === 2, named(st, 0, 'Orc Raider')); }
+{ const st = game(); play(st, 0, 'me_gr_ench', null);
+  const a = put(st, 0, '_v'), b = put(st, 0, '_v');
+  E.attack(st, 0, a.uid, { type: 'hero', player: 1 });
+  ok('Shared Animosity buffs only the attacker', a.attack === 3 && b.attack === 2, [a.attack, b.attack]); }
+ok('Moria Marauder has Rush, not Charge', has(byId.me_gr_marauder, 'rush') && !has(byId.me_gr_marauder, 'charge'));
+ok('Desolation Prowler is 4/3', byId.me_cw_desolation.attack === 4 && byId.me_cw_desolation.health === 3);
+// Lotho/Bill Ferny nerf (2026-10-12: 4-31 and 0-7 as first-fight-only openers)
+{ const st = game(); play(st, 0, 'me_lo_sig', null);
+  ok('Lotho summons one Ruffian', named(st, 0, 'Shire Ruffian') === 1, named(st, 0, 'Shire Ruffian')); }
+{ const st = game(); const a = put(st, 0, '_v'); play(st, 0, 'me_lo_bywater', null);
+  ok('Battle of Bywater gives +1/+1', a.attack === 3 && E.hp(a) === 3, [a.attack, E.hp?.(a)]); }
+ok('Feed the Swarm costs 4', byId.me_lo_feed.cost === 4);
+{ const st = game(); st.players[1].hand = [E.instantiate(byId._v, 1), E.instantiate(byId._v, 1)];
+  play(st, 0, 'me_bf_captain', null);
+  ok('Captain of Umbar is a 3/3 with no discard', st.players[1].hand.length === 2 && byId.me_bf_captain.attack === 3, st.players[1].hand.length); }
+{ const st = game(); const c0 = st.players[0].hand.filter(c => c.id === 'coin').length;
+  play(st, 0, 'me_bf_nabber', null);
+  ok('Treasure Nabber gains one Coin', st.players[0].hand.filter(c => c.id === 'coin').length === c0 + 1, st.players[0].hand.map(c => c.id)); }
+ok('Confusticate and Bebother costs 4', byId.me_bf_confusticate.cost === 4);
+// Chief Warg: Battlecry summons one Warg
 { const st = game(); const w0 = named(st, 0, 'Warg');
   play(st, 0, 'me_cw_sig', null);
-  ok('Chief Warg summons two Wargs', named(st, 0, 'Warg') === w0 + 2, named(st, 0, 'Warg')); }
+  ok('Chief Warg summons one Warg', named(st, 0, 'Warg') === w0 + 1, named(st, 0, 'Warg')); }
 // Shelob: Battlecry freezes an enemy creature
 { const st = game(); const foe = put(st, 1, '_v');
   play(st, 0, 'me_sl_sig', { type: 'creature', uid: foe.uid, player: 1 });

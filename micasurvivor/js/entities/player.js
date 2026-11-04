@@ -1,0 +1,693 @@
+/* ============ player.js — el Pokémon que controlas ============
+ * (x, y) son los PIES. MicaSurvivor (2026-10-26, DLC D16): every slot fires on its own cooldown (`af`, all-fire); there is
+ * no switching (1-4 / Q / E / LB / RB / a tap do nothing in a run). `active` stays 0 for an all-fire player; only the
+ * puppet of an old tape or snapshot (af false) keeps the one-active-move look. Cada disparo reproduce la animación de
+ * ataque de Mundo Misterioso que le toca (Attack, Shoot o Charge).
+ */
+G.Player = class Player {
+  /**
+   * @param mon   entrada de G.DEX
+   * @param perks mejoras permanentes ya resueltas (ver data/upgrades.js)
+   */
+  constructor(mon, perks = {}, shiny = false) {
+    this.mon = mon;
+    this.dex = mon.dex;
+    this.shiny = shiny && G.Sprites.hasShiny(mon.dex);
+    this.anim = new G.Sprites.Animator(mon.dex, 1, this.shiny);
+    this.x = 0; this.y = 0;
+    this.r = G.Sprites.bodyRadius(mon.dex);
+    this.bodyH = G.Sprites.bodyHeight(mon.dex);
+
+    this.atkMul = perks.atkMul || 1;
+    this.spdMul = perks.spdMul || 1;
+    this.cdMul = perks.cdMul || 1;
+    this.dmgReduce = perks.dmgReduce || 0;
+    this.regenFlat = perks.regen || 0;
+    this.magnet = 78 * (perks.magnetMul || 1);
+    this.xpMul = perks.xpMul || 1;
+    this.coinMul = perks.coinMul || 1;
+
+    this.maxHp = mon.hp + (perks.hp || 0);
+    this.hp = this.maxHp;
+    this.baseSpd = mon.spd;
+    this.baseAtk = mon.atk;
+
+    this.moves = [];           // todos los movimientos aprendidos
+    this.slots = [];           // huecos: cada uno, una lista de movimientos que se lanzan a la vez
+    this.active = 0;           // hueco activo
+    this.maxMoves = 4;         // huecos
+    this.bonds = 0;            // vínculos por usar (premio de los legendarios)
+    // MicaSurvivor (DLC D16): every slot fires (false only on an old tape's / snapshot's puppet: js/ui/watch-ui.js); the
+    // run's move-damage factor (G.Combat.AF, set at the run's start); the melee guard's clock (owner decision #9)
+    this.af = true;
+    this.afDmg = 1;
+    this.meleeT = 0;
+
+    this.buffs = {
+      atk: { n: 0, t: 0, amount: 0 },
+      spd: { n: 0, t: 0, amount: 0 },
+      def: { n: 0, t: 0, amount: 0 },
+      regen: { n: 0, t: 0, amount: 0 }
+    };
+
+    this.level = 1;
+    this.xp = 0;
+    this.xpNext = Player.xpNeed(1);
+    this.kills = 0;
+    this.bosses = 0;
+    this.rerolls = 0;          // veces que ha cambiado las cartas de nivel en esta run
+    this.rerollBonus = perks.rerolls || 0;   // cambios comprados en Mejoras (más el gratis)
+    this.critChance = perks.crit || 0;       // probabilidad de golpe crítico (Mejoras)
+    this.banned = new Set();                 // movimientos vetados (Mejoras → Veto): no salen en las cartas
+    this.bind = {};                          // movimiento -> hueco fijo (0-3), elegido en Mejoras
+    this.coins = 0;            // monedas recogidas en esta run
+    this.t1 = 0; this.t10 = 0; // tickets del gacha recogidos en esta run
+    this.dmgDealt = 0;
+
+    this.invuln = 0;
+    this.flash = 0;
+    this.aim = Math.PI / 2;
+    this.moveAngle = Math.PI / 2;
+    this.walking = false;
+    this.inLiquid = false;
+    this.lavaTick = 0;
+    this.attackFace = 0;       // tiempo que sigue mirando al objetivo tras atacar
+    this.dead = false;
+    this.power = null;         // poder de altar activo: { def, t, dur }
+    this.slowT = 0;            // pegado por una trampa
+    this.item = null;          // objeto equipado (data/items.js), uno por run
+    this.item2 = null;         // MicaSurvivor (M5 lote 3): segundo objeto (mejora Mochila)
+    // Última vez que salvó la Banda Focus (performance.now(), ms). -Infinity: con -999 no salvaba
+    // en el primer minuto desde que se abrió la página (M5 lote 3; el port usa el tiempo de run).
+    this.sashT = -Infinity;
+    this.bellHeal = 0;         // curación pendiente del Cascabel Concha
+    this.statsTaken = {};      // mejoras de stat cogidas (condición de evolución)
+    // MicaSurvivor (M5): tamaño permanente (la mejora Calibre de la tienda, +8 % por nivel).
+    this.sizePerk = perks.size || 1;
+    // MicaSurvivor (M5 lote 3, main.gd 466-470 / 1863-1897): Mochila (2 objetos), corazones de
+    // Segunda oportunidad, y los relojes de la Baya Zidra y el Seguro Debilidad (tiempo de run).
+    this.bag = !!perks.bag;
+    this.bagPact = false;      // la Torre (lote 8): la carta legendaria "Doble equipaje" también da el 2.º hueco
+    this.revives = perks.revives || 0;
+    this.itemClock = 0;
+    this.sitrusT = -999;
+    this.wpT = 0;
+    // MicaSurvivor (M5): la habilidad pasiva de su Pokémon (systems/abilities.js). El Modo Equipo
+    // (lote 7, systems/team.js) la cambia con G.Abilities.set(pl) al cambiar de Pokémon activo.
+    this.ability = null;
+    G.Abilities.set(this);
+  }
+
+  /**
+   * MicaSurvivor (M5, main.gd _size_k): multiplicador de tamaño de proyectiles, orbes y áreas =
+   * mejora permanente × carta Calibre (+12 % por nivel, hasta 6) × Esfera Colosal (×1,3).
+   */
+  sizeK() {
+    return (this.sizePerk || 1) * Math.pow(1.12, this.statsTaken.size || 0) * (this.hasItem('bigorb') ? 1.3 : 1);
+  }
+
+  /** MicaSurvivor (DLC D16-D18): this build's ruleset (2: every move fires, one held item, shared upgrades). A base lobby, a
+   *  base score and a new tape carry it: an old client's co-op is refused and its scores rank on the legacy board. */
+  static get RULES() { return 2; }
+
+  /** Segundos que hay que estar junto a un compañero caído para levantarlo. */
+  static get REVIVE_TIME() { return 3; }
+
+  // (×2 y luego ×4 el 2026-10-10: se subía de nivel demasiado rápido.)
+  static xpFor(level) {
+    return Math.floor((8 + level * 6 + Math.pow(level, 1.75) * 1.6) * 4);
+  }
+  /** MicaSurvivor (M5 lote 9, main.gd _xp_need): la de cada nivel, ×k^0,8 con la dificultad adaptativa. */
+  static xpNeed(level) {
+    // (MicaSurvivor DLC D5: the xp.need seam, js/core/hooks.js: an Expedition run's own curve; a base page has no listener)
+    const v = Player.xpFor(level) * (G.Adaptive ? G.Adaptive.xpK() : 1);
+    return G.Hooks ? G.Hooks.reduce('xp.need', v, level) : v;
+  }
+
+  cy() { return this.y; }
+
+  // ---------------- stats efectivos ----------------
+  // MicaSurvivor (M5): la habilidad multiplica ataque (daño, Autoestima, Competitivo) y velocidad,
+  // y suma defensa y regeneración (main.gd _atk / _spd / _reduction / _regen).
+  // (M5 lote 3: Seguro Debilidad ×1,5 mientras dura.)
+  // (M5 lote 5, main.gd _atk / _spd / _cd / _reduction: Dynamax ×1,3 de daño y velocidad, recargas ÷1,3
+  // y +23,08 % de defensa. Se lee de pl.dyn al momento: al acabar vuelve todo exactamente a lo de antes.)
+  get atk() { return this.baseAtk * this.atkMul * (1 + this.buffs.atk.n * this.buffs.atk.amount) * G.Abilities.atkK(this) * (this.wpT > 0 ? G.Items.WPOLICY.atk : 1) * (this.dyn ? G.Dynamax.DMG_K : 1); }
+  get spd() {
+    const s = this.baseSpd * this.spdMul * (1 + this.buffs.spd.n * this.buffs.spd.amount) * (this.slowT > 0 ? 0.5 : 1);
+    const w = G.Weather.speedFor(this.mon.types);
+    const slow = this.inLiquid ? G.World.liquidEffect(this.mon.types).slow || 1 : 1;
+    return s * slow * w * G.Abilities.spdK(this) * (this.dyn ? G.Dynamax.STAT_K : 1);
+  }
+  get reduction() { return Math.min(0.8, this.dmgReduce + this.buffs.def.n * this.buffs.def.amount + G.Abilities.taken(this) + (this.dyn ? G.Dynamax.TAKEN : 0)); }
+  /** Multiplicador de recarga: el guardado (mejoras, cartas, objetos, poderes) ÷ 1,3 con el Dynamax. */
+  get cdMul() { return this.dyn ? this._cdMul / G.Dynamax.STAT_K : this._cdMul; }
+  set cdMul(v) { this._cdMul = this.dyn ? v * G.Dynamax.STAT_K : v; }
+  get regen() { return this.regenFlat + this.buffs.regen.n * this.buffs.regen.amount + G.Abilities.regen(this); }
+
+  // ---------------- movimientos ----------------
+  addMove(id) {
+    if (this.slots.length >= this.maxMoves || this.hasMove(id)) return false;
+    const m = G.Moves.instance(id, 1);
+    this.moves.push(m);
+    const group = [m];
+    this.slots.push(group);
+    this.arrange();
+    // Se cambia al nuevo, salvo si estás usando un vínculo (no te quita el grupo). (DLC D16: all-fire, nothing to switch)
+    if (!this.af && !(this.slots[this.active] && this.slots[this.active].length > 1)) this.setActive(this.slots.indexOf(group));
+    return true;
+  }
+
+  /**
+   * Huecos fijos (Mejoras → Atajos): cada movimiento con hueco elegido se pone
+   * en ese número para la memoria muscular (Confusión siempre en el 1...).
+   * Mientras no tengas tantos movimientos, va al más cercano; los demás
+   * rellenan los huecos libres en el orden en que los aprendiste.
+   */
+  arrange() {
+    const n = this.slots.length;
+    if (n < 2 || !this.bind) return;
+    const want = g => { let k = Infinity; for (const m of g) if (this.bind[m.id] != null) k = Math.min(k, this.bind[m.id]); return k; };
+    const cur = this.slots[this.active];
+    const out = new Array(n).fill(null);
+    const bound = this.slots.filter(g => want(g) < Infinity).sort((a, b) => want(a) - want(b));
+    for (const g of bound) {
+      let p = Math.min(want(g), n - 1);
+      while (p >= 0 && out[p]) p--;                          // ocupado: el de antes
+      if (p < 0) { p = 0; while (out[p]) p++; }              // o el primero libre
+      out[p] = g;
+    }
+    for (const g of this.slots) if (!out.includes(g)) out[out.indexOf(null)] = g;
+    this.slots = out;
+    if (cur) this.active = this.af ? 0 : out.indexOf(cur);
+  }
+
+  hasMove(id) { return this.moves.some(m => m.id === id); }
+
+  setActive(i) {
+    if (this.af) return;   // (DLC D16: every slot fires; there is nothing to switch to)
+    if (i < 0 || i >= this.slots.length || i === this.active) return;
+    // Cinta Elección: no se puede cambiar de movimiento.
+    if (this.hasItem('choiceband') && this.slots[this.active]) {
+      G.FX.dmgText(this.x, this.y - this.bodyH - 8, 'Cinta Elección', '#ff8ad8');
+      return;
+    }
+    this.active = i;
+    G.Projectiles.clearOrbs(this);
+    G.Audio.sfx('select');
+    for (const m of this.slots[i]) m.t = Math.min(m.t, m.cd * 0.35);
+    const m = this.slots[i][0];
+    G.FX.ring(this.x, this.y - G.LIFT * 0.5, 6, this.r * 3.4, G.U.TYPE_COLOR[m.type], 0.3, 3);
+  }
+
+  cycle(dir) {
+    if (!this.slots.length) return;
+    this.setActive((this.active + dir + this.slots.length) % this.slots.length);
+  }
+
+  // ---------------- vínculos (fusiones) ----------------
+  // Cada legendario vencido da un vínculo. Con él se juntan movimientos en un
+  // solo hueco y se lanzan a la vez. Sólo crece un grupo (hasta BOND_MAX); si
+  // no hay ninguno a medias, el vínculo une dos movimientos sueltos.
+  static get BOND_MAX() { return 4; }
+
+  /** Lo que se puede hacer ahora con un vínculo: añadir a un grupo o unir dos sueltos. */
+  bondOptions() {
+    const loose = this.slots.filter(s => s.length === 1).map(s => s[0]);
+    const grow = this.slots.find(s => s.length > 1 && s.length < Player.BOND_MAX);
+    if (grow) return loose.length ? { mode: 'add', group: grow, loose } : null;
+    return loose.length >= 2 ? { mode: 'pair', group: null, loose } : null;
+  }
+
+  /** Junta `moves` (sueltos) en el grupo `group` (o en uno nuevo) y gasta un vínculo. */
+  fuse(moves, group = null) {
+    const target = group || this.slots.find(s => s[0] === moves[0]);
+    const cur = this.slots[this.active];
+    for (const m of moves) {
+      if (target.includes(m)) continue;
+      const i = this.slots.findIndex(s => s.length === 1 && s[0] === m);
+      if (i < 0) continue;
+      this.slots.splice(i, 1);
+      target.push(m);
+    }
+    this.arrange();
+    // Se pasa al grupo, salvo con la Cinta Elección (sigues en el hueco que tenías, si queda).
+    const a = this.slots.indexOf(cur);
+    this.active = this.af ? 0 : this.hasItem('choiceband') && a >= 0 ? a : this.slots.indexOf(target);
+    this.bonds = Math.max(0, this.bonds - 1);
+    G.Projectiles.clearOrbs(this);
+    return target;
+  }
+
+  /** Movimientos que se lanzan ahora (el grupo del hueco activo). (DLC D16: an all-fire player's slot 1, its "main" move:
+   *  the aim's priority, the ground halo's colour and the Choice Band's +40 % follow it; G.Combat.tick fires every slot.) */
+  activeGroup() { return this.slots[this.active] || []; }
+  /** DLC D16: the slot (0-3) that holds move `id`, or -1. */
+  slotOf(id) { return this.slots.findIndex(g => g.some(m => m.id === id)); }
+
+  activeMove() { return this.activeGroup()[0]; }
+
+  /**
+   * Lo llama combat.js al lanzar un movimiento. Elige la animación de PMD y la
+   * acelera si la recarga es más corta que la animación, para que encadene.
+   */
+  cast(m) {
+    // MicaSurvivor (DLC D16, owner decision #9): a melee move that fires guards you for G.Combat.AF.MELEE_GUARD s
+    if (m.kind === 'melee' && !this.remote && G.Combat && G.Combat.AF) this.meleeT = G.Combat.AF.MELEE_GUARD;
+    // Vidasfera: cada ataque cuesta un poco de vida (nunca te deja KO).
+    if (this.hasItem('lifeorb') && m.kind !== 'orbit' && m.kind !== 'trail' && !this.remote) {
+      this.hp = Math.max(1, this.hp - Math.max(1, this.maxHp * 0.01));
+    }
+    const anim = { melee: 'Attack', beam: 'Shoot', projectile: 'Shoot', nova: 'Attack',
+                   aura: 'Charge', buff: 'Charge', orbit: 'Charge', boomerang: 'Shoot', chain: 'Shoot',
+                   mine: 'Charge', meteor: 'Charge', turret: 'Charge', dash: 'Attack', trail: 'Walk', cone: 'Shoot' }[m.kind] || 'Attack';
+    // Las familias nuevas suenan como la parecida de las de siempre.
+    const SND = { boomerang: 'projectile', chain: 'beam', mine: 'nova', meteor: 'nova', turret: 'buff', dash: 'melee', trail: 'aura', cone: 'projectile' };
+    // El rastro no suena a cada charco (sería un zumbido constante).
+    if (m.kind !== 'trail') G.Audio.sfx('shot', { kind: SND[m.kind] || m.kind, type: m.type });
+    if (m.kind === 'trail') return;
+    // No reinicies una animación que va por la mitad: se vería a tirones.
+    if (this.anim.busy() && this.anim.progress() < 0.65) return;
+    const meta = G.Sprites.animMeta(this.dex, anim);
+    const len = meta ? meta.d.reduce((a, b) => a + b, 0) / 60 : 0.4;
+    const cd = Math.max(0.12, m.cd * this.cdMul);
+    this.anim.play(anim, { speed: Math.max(1, len / (cd * 0.9)) });
+    this.attackFace = 0.35;
+  }
+
+  // ---------------- daño y curación ----------------
+  /**
+   * @param type  tipo del ataque (tabla de tipos y clima); sin tipo, daño tal cual
+   * @param pure  daño que no baja con la defensa ni el cuerpo a cuerpo (Arceus)
+   */
+  hurt(amount, type = null, pure = false) {
+    // MicaSurvivor (M5 lote 12a, main.gd 1810-1812): en el Modo Cooperativo, mientras espectas los golpes los recibe tu compañero.
+    if (this.coopDown && !this.remote && G.LocalCoop) { G.LocalCoop.hurtMate(amount, type, pure); return; }
+    if (this.invuln > 0 || this.dead) return;
+    // MicaSurvivor (M5 lote 4): invulnerable durante todo el Movimiento Z (también la lava, que pone invuln a 0).
+    if (!this.remote && G.ZMoves && G.ZMoves.busy) return;
+    let eff = null;
+    if (type) {
+      const k = G.Types.mult(type, this.mon.types);
+      eff = G.Types.label(k);
+      amount *= k * G.Weather.mult(type);
+    }
+    // MicaSurvivor (M5): habilidad — tipos resistidos, súper eficaces, Multiescala, Competitivo.
+    amount *= G.Abilities.inK(this, type, eff);
+    // Con un ataque cuerpo a cuerpo activo se recibe un 25 % menos: hay que
+    // estar encima de los enemigos para pegar (iban muy por detrás).
+    // (DLC D16: all-fire, for G.Combat.AF.MELEE_GUARD s after a melee move fires)
+    const close = this.af ? (this.meleeT > 0 ? G.Combat.AF.MELEE_TAKEN : 1) : this.activeGroup().some(m => m.kind === 'melee') ? 0.75 : 1;
+    let d = pure ? Math.max(1, amount) : Math.max(1, amount * (1 - this.reduction) * close * (this.remote ? 1 : G.Tower.takenK()));
+    // MicaSurvivor (M5 lote 8, main.gd 1834-1848): en la Torre, los pactos (Frenesí, Piel de piedra...) cambian
+    // el daño recibido y el escudo del descanso lo absorbe antes que tu vida.
+    if (!this.remote && G.Tower.on) {
+      d = G.Tower.absorb(d);
+      if (d <= 0) {
+        this.invuln = 0.45;
+        G.Audio.sfx('hit');
+        G.FX.dmgText(this.x, this.y - this.bodyH - 4, 'Escudo', '#7fe0ff');
+        return;
+      }
+    }
+    // MicaSurvivor (DLC D5): the player.hurt seam (an Expedition run's evasion and shield); no listener: d as it was
+    if (!this.remote && G.Hooks && G.Hooks.count('player.hurt')) { d = G.Hooks.reduce('player.hurt', d, this, type); if (!(d > 0)) { this.invuln = 0.45; return; } }
+    this.hp -= d;
+    if (!this.remote && G.Modes && G.Modes.noDeath()) this.hp = Math.max(this.hp, 1);   // MicaSurvivor (M5 lote 6): la Fiesta no muere (main.gd 1861)
+    this.invuln = 0.45;
+    this.flash = 0.14;
+    G.Audio.sfx('hurt');
+    if (G.Pad) G.Pad.rumble(0.6, 120);   // MicaSurvivor (M2): rumble on hit (setting)
+    G.Camera.kick(0.28);
+    G.FX.dmgText(this.x, this.y - this.bodyH - 4, '-' + Math.round(d), eff === 'super' ? '#ff3048' : eff === 'weak' ? '#c9a0a8' : '#ff6b7a', eff === 'super');
+    G.FX.burst(this.x, this.y - this.bodyH * 0.5, '#ff5f6d', 6, 90);
+    // MicaSurvivor (M5 lote 3, main.gd 1863-1870): Seguro Debilidad y Baya Zidra.
+    if (eff === 'super' && this.hasItem('weaknesspolicy') && this.hp > 0) {
+      this.wpT = G.Items.WPOLICY.dur;
+      G.FX.dmgText(this.x, this.y - this.bodyH - 18, '¡Seguro Debilidad!', '#ff8a5b', true);
+    }
+    const SB = G.Items.SITRUS;
+    if (this.hp > 0 && this.hp < this.maxHp * SB.below && this.hasItem('sitrusberry') && this.itemClock - this.sitrusT > SB.every) {
+      this.sitrusT = this.itemClock;
+      this.hp = Math.min(this.maxHp, this.hp + this.maxHp * SB.heal);
+      G.FX.dmgText(this.x, this.y - this.bodyH - 18, '¡Baya Zidra!', '#ffd83d', true);
+      G.FX.ring(this.x, this.y, 6, 80, '#ffd83d', 0.5, 4);
+    }
+    // Banda Focus: aguanta el golpe con 1 de vida (una vez cada 60 s).
+    if (this.hp <= 0 && this.hasItem('focussash') && performance.now() - this.sashT > 60000) {
+      this.sashT = performance.now();
+      this.hp = 1; this.invuln = 1.2;
+      G.FX.dmgText(this.x, this.y - this.bodyH - 16, '¡Banda Focus!', '#ff9a3d', true);
+      G.FX.ring(this.x, this.y, 6, 70, '#ff9a3d', 0.5, 4);
+    }
+    G.Abilities.sturdy(this);   // MicaSurvivor (M5): Robustez (después de la Banda Focus, como en el port)
+    if (this.hp <= 0 && !this.remote && G.Hooks) G.Hooks.call('player.ko', this);   // MicaSurvivor (DLC D5): an Expedition run's Focus Band / revives
+    if (this.hp <= 0 && this.secondChance()) return;
+    // MicaSurvivor (M5 lote 7, main.gd 1898-1902): Modo Equipo, si cae el que juega entra el siguiente.
+    if (this.hp <= 0 && G.Team && G.Team.onFaint(this)) return;
+    // MicaSurvivor (M5 lote 12a, main.gd 1917): en el Modo Cooperativo, caer no acaba la partida: espectas a tu compañero.
+    if (this.hp <= 0 && G.LocalCoop && G.LocalCoop.onFaint(this)) return;
+    if (this.hp <= 0) {
+      this.hp = 0; this.dead = true;
+      this.anim.play('Faint', { hold: true });
+      G.Projectiles.clearOrbs(this);
+      this.reviveT = 0;
+    }
+  }
+
+  /**
+   * MicaSurvivor (M5 lote 3, main.gd 1885-1897): Segunda oportunidad. Si te quedan corazones,
+   * se gasta uno y revives con la vida completa (2,5 s invulnerable) y los enemigos a menos de
+   * 260 salen despedidos (empuje 500). Devuelve true si te ha salvado.
+   */
+  secondChance() {
+    if (this.hp > 0 || this.revives <= 0 || this.remote) return false;
+    this.revives--;
+    this.hp = this.maxHp;
+    this.invuln = 2.5;
+    G.Audio.sfx('legend');
+    G.FX.dmgText(this.x, this.y - this.bodyH - 18, '¡Segunda oportunidad!', '#ff8ad8', true);
+    G.FX.ring(this.x, this.y, 8, Player.REVIVE_R, '#ff8ad8', 0.8, 6);
+    G.Camera.kick(0.6);
+    for (const e of G.EnemyMgr.all()) {
+      if (e.dead || G.U.dist2(e.x, e.y, this.x, this.y) >= Player.REVIVE_R * Player.REVIVE_R) continue;
+      const [nx, ny] = G.U.norm(e.x - this.x, e.y - this.y);
+      e.kx = nx * Player.REVIVE_KNOCK; e.ky = ny * Player.REVIVE_KNOCK;
+    }
+    return true;
+  }
+  static get REVIVE_R() { return 260; }
+  static get REVIVE_KNOCK() { return 500; }
+
+  heal(amount) {
+    const before = this.hp;
+    this.hp = Math.min(this.maxHp, this.hp + amount);
+    const got = Math.round(this.hp - before);
+    if (got >= 1) G.FX.dmgText(this.x, this.y - this.bodyH - 6, '+' + got, '#5fe08a');
+  }
+
+  addMaxHp(amount) { this.maxHp += amount; this.hp += amount; }
+
+  /** Devuelve cuántos niveles ha subido (pueden ser varios de golpe). */
+  gainXp(amount) {
+    this.xp += amount * this.xpMul;
+    let leveled = 0;
+    while (this.xp >= this.xpNext) {
+      this.xp -= this.xpNext;
+      this.level++;
+      this.xpNext = Player.xpNeed(this.level);
+      leveled++;
+    }
+    return leveled;
+  }
+
+  // ---------------- objeto equipado ----------------
+  // MicaSurvivor (M5 lote 3): dos huecos con la Mochila (main.gd _has_item: item o item2).
+  hasItem(id) { return !!id && (this.item === id || this.item2 === id); }
+
+  /** Huecos de objeto: 1. (DLC D17, owner 2026-10-26: one equipped held item in both modes; Backpack and the Tower's Double
+   *  baggage are retired. `item2` stays readable: an old tape / snapshot can name a second item.) */
+  itemSlots() { return 1; }
+
+  /** Objetos que llevas, en orden de hueco. */
+  items() { return [this.item, this.item2].filter(Boolean); }
+
+  /** Se pone un objeto en el hueco `slot` (1 o 2) y se quita el que hubiera ahí. */
+  equip(id, slot = 1) {
+    const key = slot === 2 ? 'item2' : 'item';
+    if (this[key]) G.Items.BY[this[key]].off(this);
+    this[key] = id || null;
+    if (id) G.Items.BY[id].on(this);
+  }
+
+  /** Cascabel Concha: un poco de vida por el daño que haces (tope 4/s). */
+  onDealt(dmg) {
+    if (this.hasItem('shellbell')) this.bellHeal = Math.min(4, this.bellHeal + dmg * 0.04);
+    if (G.Hooks) G.Hooks.call('player.dealt', this, dmg);   // MicaSurvivor (DLC D5): an Expedition run's lifesteal (no listener: nothing)
+  }
+
+  /** Poder de un altar (ver systems/interact.js): se aplica y se quita solo. */
+  addPower(def, dur) {
+    if (this.power) this.power.def.off(this);
+    def.on(this);
+    this.power = { def, t: dur, dur };
+  }
+
+  addBuff(stat, amount, dur, maxStacks) {
+    const b = this.buffs[stat];
+    if (!b) return;
+    b.amount = amount;
+    b.n = Math.min(maxStacks, b.n + 1);
+    b.t = dur;
+  }
+
+  // ---------------- ciclo ----------------
+  update(dt) {
+    this.anim.update(dt);
+    G.Abilities.tick(this, dt);   // MicaSurvivor (M5): reloj de Robustez / Multiescala, Competitivo
+    if (this.dead) return;
+    if (this.invuln > 0) this.invuln -= dt;
+    if (this.flash > 0) this.flash -= dt;
+    if (this.attackFace > 0) this.attackFace -= dt;
+    if (this.meleeT > 0) this.meleeT -= dt;   // (DLC D16: the melee guard)
+
+    for (const k in this.buffs) {
+      const b = this.buffs[k];
+      if (b.n > 0) { b.t -= dt; if (b.t <= 0) b.n = 0; }
+    }
+    if (this.slowT > 0) this.slowT -= dt;
+    this.itemClock += dt;                       // M5 lote 3: reloj de la Baya Zidra
+    if (this.wpT > 0) this.wpT = Math.max(0, this.wpT - dt);
+    if (this.bellHeal > 0) { const h = Math.min(this.bellHeal, 4 * dt); this.hp = Math.min(this.maxHp, this.hp + h); this.bellHeal -= h; }
+    if (this.power && (this.power.t -= dt) <= 0) { this.power.def.off(this); this.power = null; }
+    if (this.regen > 0) this.hp = Math.min(this.maxHp, this.hp + this.regen * dt);
+
+    // --- movimiento con colisiones ---
+    // (En cooperativo la pausa no para el juego: sólo te quedas quieto.)
+    const [ax, ay] = this.frozen ? [0, 0] : G.Input.axis();
+    this.walking = ax !== 0 || ay !== 0;
+    const s = this.spd;
+    // Hielo: resbalas (la velocidad cambia despacio).
+    const slide = this.inLiquid && G.World.liquidEffect(this.mon.types).slide;
+    this.svx = slide ? G.U.damp(this.svx || 0, ax * s * 1.15, 1.6, dt) : ax * s;
+    this.svy = slide ? G.U.damp(this.svy || 0, ay * s * 1.15, 1.6, dt) : ay * s;
+    // MicaSurvivor (DLC D2): in an Expedition zone the movement verbs (hop, glide, slide, climb, surf, bounce pads:
+    // js/expedition/verbs.js) shape this step, then land you. Base modes have no zone: none of this runs.
+    const verbs = G.World.zone && G.ExpVerbs ? G.ExpVerbs : null;
+    if (verbs) verbs.step(this, dt, ax, ay);
+    this.x += this.svx * dt;
+    this.y += this.svy * dt;
+    G.World.collide(this);
+    if (verbs) verbs.after(this, dt);
+    if (this.walking) this.moveAngle = Math.atan2(ay, ax);
+
+    // --- terreno líquido ---
+    // (DLC D2: airborne you are over the liquid, not in it; `air` only exists in an Expedition zone)
+    this.inLiquid = G.World.isLiquid(this.x, this.y) && !this.air;
+    if (this.inLiquid) {
+      const le = G.World.liquidEffect(this.mon.types);
+      if (le.dmg) {
+        this.lavaTick -= dt;
+        if (this.lavaTick <= 0) {
+          this.lavaTick = le.every; this.invuln = 0;
+          this.hurt(Math.max(le.flat, this.maxHp * le.dmg * 0.5));
+          G.FX.burst(this.x, this.y - 4, le.color, 5, 70);
+        }
+      } else if (this.walking && Math.random() < dt * 8) {
+        G.FX.burst(this.x, this.y, le.slide ? '#ffffff' : '#b3defa', 2, 40);
+      }
+    }
+
+    // --- apuntado: enemigo más cercano; si no hay, hacia donde caminas ---
+    // Prioridad de blanco según el ataque activo:
+    //   a distancia (proyectil, rayo): el jefe si está a tiro > lo que te toca > el más cercano
+    //   cuerpo a cuerpo y el resto:   lo que te toca > el jefe > el más cercano
+    // Con una horda encima casi siempre te toca algo; si eso ganara siempre,
+    // los ataques a distancia no le darían nunca al jefe.
+    // Sin enemigos, apunta a la roca o cofre más cercano.
+    const all = G.EnemyMgr.all();
+    const m = this.activeMove();
+    const ranged = !!m && (m.kind === 'projectile' || m.kind === 'beam');
+    const threat = G.Projectiles.nearest(all, this.x, this.y, this.r + 24);
+    const boss = all.find(e => e.boss && !e.dead && G.U.dist(this.x, this.y, e.x, e.y) < 330);
+    const tg = (ranged ? boss || threat : threat || boss)
+            || G.Projectiles.nearest(all, this.x, this.y, 520)
+            || G.World.nearestBreakable(this.x, this.y, 200);
+    this.target = tg;
+    if (tg) this.aim = Math.atan2(tg.y - this.y, tg.x - this.x);
+    else if (this.walking) this.aim = this.moveAngle;
+
+    // --- animación: mira al objetivo al atacar, si no a donde camina ---
+    const face = this.attackFace > 0 || !this.walking ? this.aim : this.moveAngle;
+    this.anim.dir = G.Sprites.dirFromAngle(face);
+    this.anim.loop(this.walking ? 'Walk' : 'Idle', this.walking ? s / 110 : 1);
+  }
+
+  /** Vuelve a levantarse (lo revive un compañero en cooperativo). */
+  revive(frac = 0.5) {
+    this.dead = false;
+    this.hp = Math.max(1, this.maxHp * frac);
+    this.invuln = 2;
+    this.reviveT = 0;
+    this.anim._start('Idle', false);
+    G.FX.ring(this.x, this.y, 6, 70, '#5fe08a', 0.5, 4);
+    G.FX.burst(this.x, this.y - this.bodyH * 0.5, '#9dffb8', 18, 150);
+    G.Audio.sfx('heal');
+  }
+
+  // ---------------- compañero (cooperativo) ----------------
+
+  /**
+   * Un compañero en otro ordenador: su dueño manda su estado (posición, vida,
+   * movimiento activo...) y aquí se sigue con suavidad.
+   * n = { x, y, ang, walk, hp, maxHp, dead, mv, ml, mag, aim, rev }
+   */
+  netUpdate(dt) {
+    this.anim.update(dt);
+    const n = this.net;
+    if (!n) return;
+    if (this.flash > 0) this.flash -= dt;
+    if (this.attackFace > 0) this.attackFace -= dt;
+    if (n.slow) {
+      // MicaSurvivor (M5 batch 12b): over the 1-a-second relay, lead along its last velocity (up to 1.1 s) and ease
+      // towards it, so the partner glides between updates instead of jumping.
+      const lead = Math.min(1.1, (performance.now() - (n.t || 0)) / 1000);
+      const tx = n.x + (n.vx || 0) * lead, ty = n.y + (n.vy || 0) * lead;
+      if (G.U.dist2(this.x, this.y, tx, ty) > 600 * 600) { this.x = tx; this.y = ty; }
+      else { this.x = G.U.damp(this.x, tx, 6, dt); this.y = G.U.damp(this.y, ty, 6, dt); }
+    } else if (G.U.dist2(this.x, this.y, n.x, n.y) > 300 * 300) { this.x = n.x; this.y = n.y; }
+    else { this.x = G.U.damp(this.x, n.x, 14, dt); this.y = G.U.damp(this.y, n.y, 14, dt); }
+    // (MicaSurvivor U2: a partner in Team mode switched Pokémon: its puppet shows the new one)
+    if (n.dex && n.dex !== this.dex && G.DEX_BY[n.dex] && !(G.Modes && G.Modes.isExp())) {
+      const dir = this.anim.dir;
+      this.mon = G.DEX_BY[n.dex]; this.dex = n.dex;
+      this.anim = new G.Sprites.Animator(n.dex, 1, false); this.anim.dir = dir;
+      this.r = G.Sprites.bodyRadius(n.dex); this.bodyH = G.Sprites.bodyHeight(n.dex);
+      G.Sprites.preload([n.dex], 8000, false);
+    }
+    if (n.hp < this.hp - 0.5 && !n.dead) this.flash = 0.14;
+    this.hp = n.hp; this.maxHp = n.maxHp;
+    // (MicaSurvivor MP polish: an online partner's Z-move and Dynamax, its frame's field 18: the puppet grows and glows while
+    //  Dynamaxed, hides in its Z attack; the Z cinematic and the Dynamax start flash here. An older client sends none.)
+    const kit = n.kit, KF = G.Replay && G.Replay.KF;
+    if (kit && KF) {
+      const was = this.kf | 0;
+      this.kf = kit.kf; this.zt = kit.zt;
+      this.dyn = !!(kit.kf & KF.DYN_ON);
+      this.dynScale = kit.ds || null;
+      this.zHidden = !!kit.zh;
+      const col = (G.U.TYPE_COLOR && G.U.TYPE_COLOR[kit.zt || (this.mon && this.mon.types && this.mon.types[0])]) || '#ffd23f';
+      if ((kit.kf & KF.Z_ON) && !(was & KF.Z_ON)) {
+        G.FX.ring(this.x, this.y - this.bodyH / 2, 10, 220, col, 0.6, 6); G.FX.burst(this.x, this.y - this.bodyH / 2, col, 24, 220);
+        // (gap fix 2026-11-02: its full Z cinematic on this screen, holding the world, as player 1's: js/net/coop.js remoteZ)
+        if (G.Coop && G.Coop.remoteZ) G.Coop.remoteZ(this, kit.zt);
+        else if (G.Spawner && this.tag) G.Spawner.say(G.I18n.f('¡Movimiento Z de {x}!', this.tag), 2.2);
+      }
+      if (this.dyn && !(was & KF.DYN_ON)) { G.FX.ring(this.x, this.y, 10, 300, '#ff2a6d', 0.6, 6); G.FX.burst(this.x, this.y, '#ff2a6d', 22, 240); }
+    }
+    this.magnet = n.mag || this.magnet;
+    this.reviveT = n.rev || 0;
+    if (n.dead && !this.dead) { this.dead = true; this.anim.play('Faint', { hold: true }); G.Projectiles.clearOrbs(this); }
+    else if (!n.dead && this.dead) this.revive(n.hp / (n.maxHp || 1));
+    // Movimiento activo (para el halo, el HUD y los orbes).
+    // (DLC D16: a new client's frame lists its orbit moves, n.ms [[id, lvl]...]: every one keeps its orbs; an old frame names
+    //  one move, n.mv, as before)
+    const want = Array.isArray(n.ms) ? n.ms.filter(x => Array.isArray(x) && G.Moves.BY_ID[x[0]]) : n.mv && G.Moves.BY_ID[n.mv] ? [[n.mv, n.ml || 1]] : null;
+    if (want && want.length && want.map(x => x[0] + ':' + (x[1] || 1)).join('/') !== this.moves.map(m => m.id + ':' + m.lvl).join('/')) {
+      this.moves = want.map(x => G.Moves.instance(x[0], x[1] || 1));
+      this.slots = this.af ? this.moves.map(m => [m]) : [this.moves.slice()];
+      this.active = 0;
+      G.Projectiles.clearOrbs(this);
+    }
+    if (this.dead) return;
+    this.walking = !!n.walk;
+    this.moveAngle = n.ang;
+    this.aim = n.aim;
+    const face = this.attackFace > 0 || !this.walking ? this.aim : this.moveAngle;
+    this.anim.dir = G.Sprites.dirFromAngle(face);
+    this.anim.loop(this.walking ? 'Walk' : 'Idle', this.walking ? this.baseSpd / 110 : 1);
+  }
+
+  draw(ctx) {
+    if (this.zHidden) return;      // MicaSurvivor (M5 lote 4): Picado Supersónico, en el cielo
+    if (this.coopDown) return;     // MicaSurvivor (M5 lote 12a): caído en el Modo Cooperativo (espectas a tu compañero)
+    // Halo del tipo del movimiento activo, en el suelo.
+    const m = this.activeMove();
+    if (m && !this.dead) {
+      ctx.save();
+      ctx.globalAlpha = 0.22;
+      ctx.strokeStyle = G.U.TYPE_COLOR[m.type];
+      ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.ellipse(this.x, this.y, this.r * 1.5, this.r * 0.6, 0, 0, 6.2832); ctx.stroke();
+      ctx.restore();
+    }
+    // MicaSurvivor (DLC D2): airborne (a hop, a glide, a bounce pad; or a puppet's row from a snapshot) the sprite is
+    // lifted and the shadow stays on the ground, smaller; a surfer's wake / a slide's dust under it. Only Expedition
+    // code sets `air` / `airRow` / `verb`: in base modes `lift` is 0 and nothing else is drawn.
+    const XV = (this.air || this.airRow || this.verb) && G.ExpVerbs ? G.ExpVerbs : null;
+    const lift = XV ? XV.lift(this) : 0;
+    if (XV) XV.drawUnder(ctx, this);
+    G.Sprites.drawShadow(ctx, this.dex, this.x, this.y, (this.dynScale ? this.dynScale[0] : 1) * (XV ? XV.shadowK(this) : 1));   // (M5 lote 5: gigante con el Dynamax)
+    // Poder de altar: aro de su color latiendo bajo los pies.
+    if (this.power && !this.dead) {
+      ctx.save();
+      ctx.globalAlpha = 0.35 + Math.sin(performance.now() / 120) * 0.15;
+      ctx.strokeStyle = this.power.def.color; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.ellipse(this.x, this.y, this.r * 2.1, this.r * 0.85, 0, 0, 6.2832); ctx.stroke();
+      ctx.restore();
+    }
+
+    // (Durante el Movimiento Z no parpadea: la invulnerabilidad es del Z.)
+    const alpha = this.invuln > 0 && !this.dead && !(G.ZMoves && G.ZMoves.busy && !this.remote) && !this.xult ? (Math.floor(this.invuln * 18) % 2 ? 0.45 : 1) : 1;
+    // MicaSurvivor (M5 lote 5): Dynamax — el aura detrás y el sprite gigante (escala desde los pies).
+    const ds = this.dynScale || (XV && this.squash > 0 ? [1.2, 0.8] : null);   // (DLC D2: a bounce pad's squash)
+    if (ds) { ctx.save(); ctx.translate(this.x, this.y); ctx.scale(ds[0], ds[1]); ctx.translate(-this.x, -this.y); }
+    if (this.dyn && !this.dead) G.Dynamax.drawAura(ctx, this.x, this.y, this.bodyH, this.r * 1.8, performance.now() / 1000);
+    this.anim.draw(ctx, this.x, this.y - lift, { flash: this.flash > 0, softFlash: true, alpha, color: '#ffcb3d' });
+    if (ds) ctx.restore();
+
+    // Arcos de buff alrededor de los pies.
+    const COL = { atk: '#ff6b4d', spd: '#7fe0ff', def: '#b0b8c8', regen: '#5fe08a' };
+    let i = 0;
+    for (const k in this.buffs) {
+      const b = this.buffs[k];
+      if (b.n <= 0) continue;
+      ctx.save();
+      ctx.globalAlpha = 0.6;
+      ctx.strokeStyle = COL[k];
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.ellipse(this.x, this.y, this.r * 1.8 + i * 5, (this.r * 1.8 + i * 5) * 0.42, 0, 0, 6.2832 * (b.n / 5));
+      ctx.stroke();
+      ctx.restore();
+      i++;
+    }
+
+    // Cooperativo: anillo de "reviviendo" y nombre encima.
+    if (this.dead && this.reviveT > 0) {
+      ctx.save();
+      ctx.strokeStyle = '#5fe08a';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.ellipse(this.x, this.y, this.r * 2.4, this.r * 1.0, 0, -Math.PI / 2, -Math.PI / 2 + 6.2832 * Math.min(1, this.reviveT / G.Player.REVIVE_TIME));
+      ctx.stroke();
+      ctx.restore();
+    }
+    if (this.tag) {
+      ctx.save();
+      ctx.font = '700 7px Pixelify,"Segoe UI",sans-serif';
+      ctx.textAlign = 'center';
+      const y = this.y - this.bodyH - 8 - lift;
+      ctx.lineWidth = 2.5; ctx.strokeStyle = 'rgba(0,0,0,.75)';
+      ctx.strokeText(this.tag, this.x, y);
+      ctx.fillStyle = this.dead ? '#ff8a96' : this.tagColor || '#fff';
+      ctx.fillText(this.tag, this.x, y);
+      if (this.dead) {
+        ctx.font = '700 6px Pixelify,"Segoe UI",sans-serif';
+        ctx.strokeText(this.revLabel || '', this.x, y - 8);
+        ctx.fillText(this.revLabel || '', this.x, y - 8);
+      }
+      ctx.restore();
+    }
+  }
+};

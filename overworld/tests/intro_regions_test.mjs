@@ -21,6 +21,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { overworldSource } from './owsource.mjs';   // main.js + the modules split out of it
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '../../');
@@ -36,7 +37,7 @@ const REGIONS = {
 
 // ---------- the wirings, in source ----------
 {
-	const main = fs.readFileSync(path.join(ROOT, 'overworld/main.js'), 'utf8');
+	const main = overworldSource();
 	A(/FLAG_HIDE_OAK_IN_PALLET_TOWN/.test(main) && !/FLAG_HIDE_PALLET_TOWN_OAK/.test(main),
 		"the Pallet-path Oak's hide-flag uses the map's real spelling");
 	A(/FLAG_HIDE_LITTLEROOT_TOWN_BIRCHS_LAB_RIVAL/.test(main), "Emerald's intro-scene props are seeded hidden");

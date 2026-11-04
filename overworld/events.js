@@ -6,26 +6,115 @@
 import { safeLoad, safeSave } from './safestore.js';
 import { STD_OF, STD_TEXT } from './crystal_stds.js';
 import { SCENE_SET } from './crystal_scenes.js';
-import { SCRIPT_CONSTANTS } from './script_constants.js';
+import { CRYSTAL_CONSTANTS, ITEM_NUMBERS, MAP_CONSTANTS, SCRIPT_CONSTANTS } from './script_constants.js';
 const KEY = 'magepunk_story';
 const META = 16;
 const STEP_TIME = { walk: 0.22, slow: 0.32, fast: 0.13, slide: 0.10, jump: 0.24, face: 0, noop: 0 };
 const DIRS = { down: [0, 1], up: [0, -1], left: [-1, 0], right: [1, 0] };
 
+// THE STORY STORE. It used to be read ONCE at import, and every setFlag/setVar/
+// clearFlag wrote that whole cached object back. A cache older than storage —
+// another tab, storage restored after this module loaded, the hydrate's "adopt
+// the newer server copy, then reload" window — therefore replaced the newer story
+// on its next write, silently and without a revision bump. The next boot saw a
+// same-revision divergence, kept the damaged local copy and published it
+// (instinctloretest0918, 2026-10-01: 21 earned flags gone, Fortree badge through
+// Maxie). Now:
+//   * every write re-reads storage first and applies ITS ONE CHANGE on top of
+//     what is there (a rebase, not a merge: sets and clears both keep meaning);
+//   * a write that changes nothing writes nothing;
+//   * another tab's write refreshes this tab's cache (the `storage` event).
+// See overworld/tests/story_rollback_test.mjs.
+const fresh = () => ({ flags: {}, vars: {} });
+function parse(raw) {
+	if (raw == null) return null;
+	try { const d = JSON.parse(raw); return (d && typeof d === 'object' && d.flags && d.vars) ? d : null; } catch (e) { return null; }
+}
+function readRaw() { try { return localStorage.getItem(KEY); } catch (e) { return null; } }
 function load() {
 	const d = safeLoad(KEY, null);
-	return (d && typeof d === 'object') ? d : { flags: {}, vars: {} };
+	if (!d || typeof d !== 'object') return fresh();
+	if (!d.flags || typeof d.flags !== 'object') d.flags = {};
+	if (!d.vars || typeof d.vars !== 'object') d.vars = {};
+	return d;
 }
 let store = load();
-function save() { safeSave(KEY, store); }
+let storeRaw = readRaw();          // the stored text this cache was read from
+export let storyRebases = 0;       // writes that found storage newer than the cache (diagnostics)
+// re-read when storage no longer holds what this cache was built from
+function sync() {
+	const raw = readRaw();
+	if (raw === storeRaw) return;
+	const d = parse(raw);
+	if (raw != null && !d) return;   // unreadable: keep ours rather than adopt garbage
+	store = d || fresh();
+	storeRaw = raw;
+	storyRebases++;
+	try { console.warn('[story] storage was newer than this page\'s cache — rebased'); } catch (e) {}
+}
+// one change, applied to the CURRENT stored story
+function mutate(fn) {
+	sync();
+	const before = JSON.stringify(store);
+	fn(store);
+	const after = JSON.stringify(store);
+	if (after === before) return;    // nothing changed: no write, no revision churn
+	if (safeSave(KEY, store)) storeRaw = readRaw();
+}
+// reload the cache from storage (after a hydrate/import rewrote it in this tab)
+export function reloadStory() { storeRaw = undefined; sync(); }
+if (typeof addEventListener === 'function') {
+	addEventListener('storage', e => { if (e.key === KEY || e.key === null) sync(); });
+}
 
-export function getFlag(f) { return !!store.flags[f]; }
-export function setFlag(f) { store.flags[f] = true; save(); }
-export function clearFlag(f) { delete store.flags[f]; save(); }
+// FLAG_BADGE01_GET..FLAG_BADGE08_GET are ONE set of names shared by two games:
+// FireRed's Kanto gyms set them for Boulder..Earth, Emerald's (and Hoenn2's) for
+// Stone..Rain. In one story store they collide — 2026-10-02, Instinct's Kanto Soul
+// badge (FLAG_BADGE05_GET) told Hoenn's scripts they held Balance, Norman's. So a
+// read of a badge flag is answered from the badges actually held, for the region
+// of the map being played (ow_story.js installs the resolver); null = no answer
+// there (Crystal maps use ENGINE_ flags; neutral maps) -> the stored flag, as before.
+// Writes still land in the store, so nothing a script set is ever lost.
+let badgeFlagResolver = null;
+export function setBadgeFlagResolver(fn) { badgeFlagResolver = typeof fn === 'function' ? fn : null; }
+const BADGE_FLAG_RE = /^FLAG_BADGE0([1-8])_GET$/;
+// Crystal's ENGINE_<NAME>BADGE (ENGINE_FOGBADGE...) is set by the gym's own
+// script — a badge earned any other way (a native gym victory, a cross-region
+// tier, a repair) never set it, and the Tin Tower sage told a player holding the
+// FOG BADGE it was missing (2026-10-07). A held badge answers true; otherwise the
+// stored flag stands, so nothing a script set is lost.
+let engineBadgeResolver = null;
+export function setEngineBadgeResolver(fn) { engineBadgeResolver = typeof fn === 'function' ? fn : null; }
+const ENGINE_BADGE_RE = /^ENGINE_([A-Z]+)BADGE$/;
+// FLAG_SYS_GAME_CLEAR is shared by FireRed and Emerald, but here each region has
+// its own League: answer it from the champion crown of the region you stand in
+// (a stored true still counts), so clearing KANTO never reads as HOENN cleared
+let gameClearResolver = null;
+export function setGameClearResolver(fn) { gameClearResolver = typeof fn === 'function' ? fn : null; }
+export function getFlag(f) {
+	if (f === 'FLAG_SYS_GAME_CLEAR' && gameClearResolver) {
+		try { const r = gameClearResolver(); if (r != null) return !!r; } catch (e) { /* fall back to the store */ }
+	}
+	if (badgeFlagResolver) {
+		const m = BADGE_FLAG_RE.exec(f);
+		if (m) { try { const r = badgeFlagResolver(+m[1]); if (r != null) return !!r; } catch (e) { /* fall back to the store */ } }
+	}
+	if (engineBadgeResolver) {
+		const m = ENGINE_BADGE_RE.exec(f);
+		if (m) { try { if (engineBadgeResolver(m[1].toLowerCase())) return true; } catch (e) { /* fall back to the store */ } }
+	}
+	return !!store.flags[f];
+}
+// the flag exactly as stored, with no badge-flag answer (save/sync code and tests
+// that check what the story store itself holds)
+export function getStoredFlag(f) { return !!store.flags[f]; }
+// (each checks the CURRENT stored value first, so a no-op costs no serialising)
+export function setFlag(f) { sync(); if (store.flags[f] === true) return; mutate(s => { s.flags[f] = true; }); }
+export function clearFlag(f) { sync(); if (!(f in store.flags)) return; mutate(s => { delete s.flags[f]; }); }
 export function getVar(v) { return store.vars[v] || 0; }
 export function hasVar(v) { return Object.prototype.hasOwnProperty.call(store.vars, v); }
-export function setVar(v, val) { store.vars[v] = val; save(); }
-export function resetStory() { store = { flags: {}, vars: {} }; save(); }
+export function setVar(v, val) { sync(); if (Object.prototype.hasOwnProperty.call(store.vars, v) && store.vars[v] === val) return; mutate(s => { s.vars[v] = val; }); }
+export function resetStory() { store = fresh(); if (safeSave(KEY, store)) storeRaw = readRaw(); }
 
 // ---------- object visibility ----------
 // Crystal hides an object_event while its event flag is SET, and shows it while
@@ -40,10 +129,12 @@ export function resetStory() { store = { flags: {}, vars: {} }; save(); }
 // sealed behind a gate wanting eight badges that could only ever reach six.
 //
 // FireRed and Emerald work the same way, and their starting state is simpler than
-// Crystal's: `InitEventData` memsets every flag to zero, so a fresh save has them
-// all CLEAR and every object visible. There is no init list to port — the villain
-// grunts at Mt Chimney, the Rockets in Silph Co and the Magma hideout really are
-// present when you first walk in, and hiding them was this port's invention.
+// Crystal's: `InitEventData` memsets every flag to zero, so most objects start
+// VISIBLE — the villain grunts at Mt Chimney, the Rockets in Silph Co and the Magma
+// hideout really are present when you first walk in. The exception is the short
+// list EventScript_ResetAllMapFlags then SETS (the credits cast, the waiting
+// rivals, scene-only villains): new_game_flags.js; seedNewGameFlags applies the
+// part no script ever clears (the rest is cleared by scenes this port skips).
 // (Crystal is the odd one out: its InitializeEventsScript explicitly SETS ~124
 // events, which is why that one needed crystal_init_events.js.)
 //
@@ -78,8 +169,29 @@ export function objectHiddenByFlag(ev, _crystal) {
 // mostly HM obstacles, which items.js owns, but the scripts branch on them too.
 export function clearTempFlags() {
 	let n = 0;
-	for (const k of Object.keys(store.flags)) if (/^FLAG_TEMP_/.test(k)) { delete store.flags[k]; n++; }
-	if (n) save();
+	mutate(store => {   // the same rebase-then-write as every other story change
+	// Crystal's own temporary range too: HandleNewMap -> ResetMapBufferEventFlags zeroes
+	// the first byte of wEventFlags, i.e. EVENT_TEMPORARY_UNTIL_MAP_RELOAD_1..8, on every
+	// new map. Kept forever here, the S.S. AQUA sailor's "already rode" check
+	// (EVENT_TEMPORARY_UNTIL_MAP_RELOAD_1) refused every voyage after one walk-off scene
+	// (playtest 2026-10-13), and DRAGON SHRINE's elders stayed hidden.
+	for (const k of Object.keys(store.flags)) if (/^FLAG_TEMP_/.test(k) || /^EVENT_TEMPORARY_UNTIL_MAP_RELOAD_[1-8]$/.test(k)) { delete store.flags[k]; n++; }
+	// ...and the TEMP VARS. The decomp's ClearTempFieldEventData wipes
+	// VAR_TEMP_0..F on every map load too; this port kept them forever, so a value
+	// one map wrote gated coord triggers on every map after it. Reported: the
+	// Mauville gym switches are coord_events gated on VAR_TEMP_0 == 0, and
+	// VAR_TEMP_0 held junk the Vermilion gym had written — so no switch worked.
+	//
+	// Also sweep var keys that are not VAR_ names at all. The port only ever writes
+	// VAR_* vars; anything else is an unresolved `.equ` alias the transpile stored
+	// literally (SWITCH1_ID, TRASH_CAN_ID ...), fixed at the source by
+	// tools/fix_script_equ.mjs, whose leftovers would otherwise sit in saves.
+	// Crystal's saved WRAM bytes are vars too (wFarfetchdPosition, wMooMooBerries,
+	// the rematch counts — tools/gen_crystal_scriptvar.mjs restores their
+	// loadmem/writemem): they must outlive a map change, or the Ilex Forest
+	// FARFETCH'D forgot where it ran to and MOOMOO every BERRY it ate (2026-10-07).
+	for (const k of Object.keys(store.vars)) if (/^VAR_TEMP_/.test(k) || !/^(VAR_|w[A-Z])/.test(k)) { delete store.vars[k]; n++; }
+	});
 	return n;
 }
 
@@ -95,6 +207,14 @@ const B_OUTCOME = {
 	B_OUTCOME_PLAYER_TELEPORTED: 5, B_OUTCOME_MON_FLED: 6, B_OUTCOME_CAUGHT: 7,
 	B_OUTCOME_NO_SAFARI_BALLS: 8, B_OUTCOME_FORFEITED: 9, B_OUTCOME_MON_TELEPORTED: 10,
 };
+// The loaded map's `.equ` table (script_constants.js MAP_CONSTANTS). A decomp
+// map file can name its own constants — `.equ REQUIRED_OWNED_MONS, 20` — and the
+// same name means something else in another file, so they can't go global.
+let mapConstants = null;
+// ...and, on a Crystal map, Crystal's own value for a name the decomps define
+// differently: NUM_BADGES is 16 there (Johto + Kanto), 8 in FRLG/Emerald
+let crystalMap = false;
+export function setScriptMap(stem, crystal = false) { mapConstants = (stem && MAP_CONSTANTS[stem]) || null; crystalMap = !!crystal; }
 function resolveValue(v) {
 	if (typeof v === 'number') return v;
 	if (v === 'TRUE') return 1;
@@ -110,11 +230,27 @@ function resolveValue(v) {
 	// STRING, so `cmp(2, 'eq', 'DIR_EAST')` compared a number to text and was false
 	// forever: 1,464 comparisons that could never be true, every one of those
 	// branches taking the same path whatever the game state.
+	// the running map's file-scoped `.equ`s first (Route 10's REQUIRED_OWNED_MONS)
+	if (typeof v === 'string' && mapConstants && mapConstants[v] !== undefined) return mapConstants[v];
+	if (typeof v === 'string' && crystalMap && CRYSTAL_CONSTANTS[v] !== undefined) return CRYSTAL_CONSTANTS[v];
 	if (typeof v === 'string' && SCRIPT_CONSTANTS[v] !== undefined) return SCRIPT_CONSTANTS[v];
 	if (typeof v === 'string' && B_OUTCOME[v] !== undefined) return B_OUTCOME[v];
 	if (typeof v === 'string' && /^VAR_/.test(v)) return getVar(v);
 	const n = Number(v);
 	return isNaN(n) ? v : n;
+}
+// A value op (random / addvar) needs a NUMBER. An operand symbol nothing defines
+// used to fall through as a string — `random` silently gave 0 and `addvar`
+// glued text onto the var — so Route 114's berry man handed over no berry and
+// said "The BAG is full" (2026-10-05). Now it's loud (once per symbol) and the
+// var is left alone rather than corrupted. Add the symbol to
+// tools/gen_script_constants.mjs (it's in tools/audit_unresolved_constants.mjs).
+const _warnedOperands = new Set();
+function numericOperand(v, op) {
+	const n = resolveValue(v);
+	if (typeof n === 'number' && Number.isFinite(n)) return n;
+	if (!_warnedOperands.has(v)) { _warnedOperands.add(v); try { console.warn(`[script] ${op}: unresolved operand ${JSON.stringify(v)} — not a number; skipped`); } catch (e) {} }
+	return null;
 }
 function cmp(a, op, b) {
 	switch (op) {
@@ -148,10 +284,49 @@ const COMMON_STUBS = {
 	CableClub_EventScript_TradeCenter: [{ op: 'return' }],
 	CableClub_EventScript_RecordCorner: [{ op: 'return' }],
 	CableClub_EventScript_Colosseum: [{ op: 'return' }],
+	// the Sevii harbors' SEAGALLOP (pokefirered data/scripts/seagallop.inc): its
+	// destination menu and the crossing are specials no map file carries, so the
+	// sailor asked "Where do you want to sail?" and the script ended there. The
+	// port's own menu (ow_menukeys.js openSeagallopMenu) asks and sails.
+	EventScript_ChooseDestFromOneIsland: [{ op: 'special', name: 'SeagallopMenu' }, { op: 'release' }, { op: 'end' }],
+	EventScript_ChooseDestFromTwoIsland: [{ op: 'special', name: 'SeagallopMenu' }, { op: 'release' }, { op: 'end' }],
+	EventScript_ChooseDestFromIsland: [{ op: 'special', name: 'SeagallopMenu' }, { op: 'release' }, { op: 'end' }],
+	// ...and the rest of seagallop.inc, which VERMILION's sailor (and Bill, on
+	// CINNABAR / ONE ISLAND) `goto`s into. Missing, a TRI-PASS holder picked ONE
+	// ISLAND from the restored multichoice and the script just ended: the menu
+	// closed and nobody sailed (bug:1792554627432, 2026-10-20). The shape is the
+	// decomp's: SailTo*2 picks VAR_0x8006, SailToDest says the departure line,
+	// SetSail crosses — DoSeagallopFerryScene becomes a coordinate warp to
+	// sSeagallopSpawnTable's tile (special SeagallopSetSail arms it, ow_menukeys.js).
+	// The page-1 menu (RAINBOW PASS) is the port's own SEAGALLOP menu, as above.
+	EventScript_SailToVermilion2: [{ op: 'setvar', var: 'VAR_0x8006', value: 0 }, { op: 'goto', label: 'EventScript_SailToDest' }],
+	EventScript_SailToOneIsland2: [{ op: 'setvar', var: 'VAR_0x8006', value: 1 }, { op: 'goto', label: 'EventScript_SailToDest' }],
+	EventScript_SailToTwoIsland2: [{ op: 'setvar', var: 'VAR_0x8006', value: 2 }, { op: 'goto', label: 'EventScript_SailToDest' }],
+	EventScript_SailToThreeIsland2: [{ op: 'setvar', var: 'VAR_0x8006', value: 3 }, { op: 'goto', label: 'EventScript_SailToDest' }],
+	// (`setvar VAR_0x8004, SEAGALLOP_VERMILION_CITY` stores the symbol: no table has it)
+	EventScript_SailToDest: [
+		{ op: 'branch', kind: 'goto', cond: { var: 'VAR_0x8004', cmp: 'eq', value: 'SEAGALLOP_VERMILION_CITY' }, label: 'EventScript_DepartingVermilion' },
+		{ op: 'branch', kind: 'goto', cond: { var: 'VAR_0x8004', cmp: 'eq', value: 0 }, label: 'EventScript_DepartingVermilion' },
+		{ op: 'goto', label: 'EventScript_SetSail' }],
+	EventScript_DepartingVermilion: [{ op: 'msg', text: 'VermilionCity_Text_Seagallop7Departing' }, { op: 'goto', label: 'EventScript_SetSail' }],
+	EventScript_SetSail: [
+		{ op: 'closemsg' },
+		{ op: 'special', name: 'SeagallopSetSail' },
+		{ op: 'branch', kind: 'goto', cond: { var: 'VAR_RESULT', cmp: 'eq', value: 0 }, label: 'EventScript_CancelSail' },
+		{ op: 'warp', map: 'MAP_DYNAMIC', coord: true }],
+	EventScript_CancelSail: [{ op: 'release' }, { op: 'end' }],
+	EventScript_SeviiDestinationsPage1: [{ op: 'special', name: 'SeagallopMenu' }, { op: 'release' }, { op: 'end' }],
+	// the ticket checks' answers (VermilionCity_EventScript_CheckHas*Ticket)
+	EventScript_SetResultTrue: [{ op: 'setvar', var: 'VAR_RESULT', value: 1 }, { op: 'return' }],
+	EventScript_SetResultFalse: [{ op: 'setvar', var: 'VAR_RESULT', value: 0 }, { op: 'return' }],
 	// a static legendary you failed to catch, and the clean-up that removes it
 	// from the map afterwards
 	Common_EventScript_LegendaryFlewAway: [{ op: 'msg', text: 'The POKeMON flew away!' }, { op: 'return' }],
-	Common_EventScript_RemoveStaticPokemon: [{ op: 'return' }],
+	// pokeemerald event_scripts.s: fade, `removeobject VAR_LAST_TALKED`, release,
+	// end. As a bare return the beaten static never left: the Frontier SUDOWOODO
+	// set FLAG_DEFEATED_SUDOWOODO and went on standing in the Artisan Cave
+	// channel (its hide flag is what removeobject sets — ow_cutscenes hideObj).
+	Common_EventScript_RemoveStaticPokemon: [{ op: 'hideobj', who: 'VAR_LAST_TALKED' }, { op: 'release' }, { op: 'end' }],
 	// engine plumbing with no counterpart here: fanfares, the nickname prompt,
 	// rival sprite selection, the trendy-phrase and Briney/weather bookkeeping
 	Common_EventScript_PlayGymBadgeFanfare: [{ op: 'return' }],
@@ -241,8 +416,62 @@ export class Cutscene {
 		this._enter();
 	}
 
-	stop() { this.cur = null; }
-	_finish() { const cb = this.cur?.onDone; this.cur = null; cb?.(); }
+	// Where the running script stands, by LABEL (frames hold op arrays, which a
+	// save can't carry): [{ label, i }], innermost last. `skip` steps the
+	// innermost frame past the op being executed — a static battle bookmarks the
+	// op AFTER its wildbattle, so a reload can finish the encounter's script.
+	bookmark(skip = 0) {
+		const c = this.cur;
+		if (!c || !c.frames.length) return null;
+		const labelOf = ops => Object.keys(c.program).find(k => c.program[k] === ops) || Object.keys(COMMON_STUBS).find(k => COMMON_STUBS[k] === ops);
+		const frames = c.frames.map((f, n) => ({ label: labelOf(f.ops), i: f.i + (n === c.frames.length - 1 ? skip : 0) }));
+		return frames.every(f => f.label) ? frames : null;
+	}
+	// the labels of the running script's frames, innermost last — the ones that
+	// can be named (a trainerbattle's expanded sub-sequence can't, and bookmark()
+	// returns nothing at all then)
+	runningLabels() {
+		const c = this.cur;
+		if (!c || !c.frames.length) return [];
+		return c.frames.map(f => Object.keys(c.program).find(k => c.program[k] === f.ops)).filter(Boolean);
+	}
+	// re-enter a bookmarked script (ow_battleresume: a static battle resumed after
+	// a reload runs its post-battle branch — the fought flag, the object removed)
+	runFrom(program, frames, ctx, onDone) {
+		const fr = (frames || []).map(f => ({ ops: program[f.label] || COMMON_STUBS[f.label], i: f.i | 0 }));
+		if (!fr.length || fr.some(f => !f.ops)) return false;
+		this.cur = { program, ctx, onDone, frames: fr, sub: null };
+		this._enter();
+		return true;
+	}
+
+	// A scene that ends mid-step must hand its actors back in a sane state.
+	//
+	// The `move` driver animates px/py from the SCENE's own from/to and merely
+	// BORROWS actor.moving as a flag — it never sets actor.moveFrom/moveTo. A step
+	// that runs to completion clears the flag itself (p >= 1 makes `p < 1` false),
+	// but an INTERRUPTED scene left moving=true with both arrays still null, and the
+	// actor's own update() dereferences them on the very next frame. That threw
+	// every frame from then on, which killed the draw loop: the screen froze on its
+	// last painted frame while the rest of the world kept ticking. Reported twice.
+	//
+	// stop() has a dozen callers — every trigger's catch block, both battle-loss
+	// paths, and the ON_TRANSITION bail, which fires on EVERY entry to a map whose
+	// transition script contains an applymovement.
+	_releaseActors() {
+		const set = this.cur && this.cur.movedActors;
+		if (!set) return;
+		for (const a of set) {
+			if (!a || typeof a.moving !== 'boolean') continue;
+			a.moving = false;
+			if (typeof a.jumping === 'boolean') a.jumping = false;
+			if (typeof a.tx === 'number' && typeof a.ty === 'number') { a.px = a.tx * META; a.py = a.ty * META; }
+			a.moveFrom = null; a.moveTo = null; a.moveT = 0;
+		}
+		set.clear();
+	}
+	stop() { this._releaseActors(); this.cur = null; }
+	_finish() { this._releaseActors(); const cb = this.cur?.onDone; this.cur = null; cb?.(); }
 
 	_frame() { const f = this.cur.frames; return f[f.length - 1]; }
 
@@ -266,7 +495,11 @@ export class Cutscene {
 
 	_actor(who) {
 		const ctx = this.cur.ctx;
-		if (who === 'LOCALID_PLAYER' || who === 'player' || who == null) return ctx.player;
+		// The Crystal scripts say plain `PLAYER` where FireRed/Emerald say
+		// LOCALID_PLAYER — 281 ops, every one of them a move or a face on the player
+		// during a cutscene, and all of them silently no-ops until now. The Slowpoke
+		// Well beat's `face PLAYER right` is one of them.
+		if (who === 'LOCALID_PLAYER' || who === 'PLAYER' || who === 'player' || who == null) return ctx.player;
 		return ctx.npcById?.(who) || null;
 	}
 
@@ -285,21 +518,29 @@ export class Cutscene {
 				case 'lock': case 'release': case 'waitmove': case 'waitmsg':
 				case 'closemsg': case 'waitstate': case 'fade': break;
 				case 'faceplayer': if (ctx.talker && ctx.player) ctx.talker.facing = opposite(ctx.player.facing); break;
-				case 'face': { const a = this._actor(op.who); if (a && op.dir) a.facing = op.dir; break; }
+				case 'face': { const a = this._actor(op.who); if (a && DIRS[op.dir]) a.facing = op.dir; break; }
 				case 'setflag': setFlag(op.flag); break;
 				case 'clearflag': clearFlag(op.flag); break;
 				case 'setvar': setVar(op.var, resolveValue(op.value)); break;
-				case 'addvar': setVar(op.var, getVar(op.var) + resolveValue(op.value)); break;
+				case 'addvar': { const n = numericOperand(op.value, 'addvar'); if (n !== null) setVar(op.var, getVar(op.var) + n); break; }
+				// a decomp `subvar` whose operand is a symbol (subvar_fix.js restores these;
+				// the transpile had turned them into addvars — the Glass Workshop GAVE ash)
+				case 'subvar': { const n = numericOperand(op.value, 'subvar'); if (n !== null) setVar(op.var, getVar(op.var) - n); break; }
 				case 'copyvar': setVar(op.dst, resolveValue(op.src)); break;
 				case 'setrespawn': break;
-				case 'give': { const g = giveArgs(op); if (g.id) ctx.giveItem?.(g.id, g.n); break; }
+				// giveitem / additem answer in VAR_RESULT (TRUE = it went in the bag), and the
+				// scripts branch on it straight away: the Rocket Hideout SILPH SCOPE / LIFT
+				// KEY read FALSE and said "Too bad! The BAG is full…" while handing it over
+				case 'give': { const g = giveArgs(op); if (g.id) ctx.giveItem?.(g.id, g.n); setVar('VAR_RESULT', g.id ? 1 : 0); break; }
 				case 'takeitem': { const g = giveArgs(op); if (g.id) ctx.takeItem?.(g.id, g.n); break; }
 				// `givemon` answers into VAR_RESULT — the script after it says something
 				// different when the mon went to a BOX because your party was full, and
 				// 28 branches read that. Nothing wrote it, so they all took the party arm.
 				case 'givemon': {
 					const full = (ctx.partyCount?.() ?? 0) >= 6;
-					ctx.giveMon?.(speciesId(op.species), resolveValue(op.level) || 5);
+					// a named gift (Crystal givepoke's nickname/OT args, givepokemail's MAIL)
+					const extra = op.nickname || op.otName || op.item ? { nickname: op.nickname, otName: op.otName, otId: op.otId, item: op.item ? itemId(op.item) : null, mail: op.mail } : null;
+					ctx.giveMon?.(speciesId(op.species), resolveValue(op.level) || 5, extra);
 					setVar('VAR_RESULT', full ? 1 : 0);   // MON_GIVEN_TO_PC : MON_GIVEN_TO_PARTY
 					break;
 				}
@@ -319,7 +560,7 @@ export class Cutscene {
 					}
 					break;
 				case 'hideobj': { const a = this._actor(op.who); if (a) a.hidden = true; ctx.hideObj?.(op.who); break; }
-				case 'showobj': { const a = this._actor(op.who); if (a) a.hidden = false; ctx.showObj?.(op.who); break; }
+				case 'showobj': { const a = this._actor(op.who); if (a) a.hidden = false; if (ctx.showObj?.(op.who) === 'wait') { this._advance(); c.sub = { kind: 'special' }; return; } break; }
 				case 'setobjxy': ctx.setObjXy?.(op.who, op.x, op.y); break;
 			// script-run marts (department-store floors, the Battle Frontier mart,
 			// most Johto/Kanto clerks): the transpile dropped the decomp's item-list
@@ -329,12 +570,52 @@ export class Cutscene {
 				if (ctx.openMart?.() === 'wait') { this._advance(); c.sub = { kind: 'special' }; return; }
 				break;
 				case 'setmetatile': ctx.setMetatile?.(op.x, op.y, op.tile, op.impassable); break;
+				// Crystal changeblock, restored by tools/gen_crystal_scriptvar.mjs as the
+				// block's four converted grid cells at its 16px origin
+				case 'changeblock': ctx.changeBlock?.(op); break;
 				// Crystal's yes/no box. It writes its answer where the following
 				// iftrue/iffalse reads it, so it lowers onto VAR_RESULT and the ordinary
 				// var branch. Default YES before asking, so a context with no prompt
 				// (a headless harness) takes the agreed path deterministically rather
 				// than silently refusing — refusing is what the old mistranspile did,
 				// and it is why the BICYCLE and the SUPER ROD could never be obtained.
+				// restored by tools/gen_multichoice.mjs (the transpile dropped them):
+				// money gates that never checked or charged, and elevator exits
+				// (a Crystal one — `crystal: true`, from tools/gen_crystal_scriptvar.mjs — answers
+				// HAVE_MORE 0 / HAVE_AMOUNT 1 / HAVE_LESS 2, like checkcoins below)
+				case 'checkmoney': {
+					const have = ctx.money?.() ?? 0, need = +op.amount || 0;
+					setVar('VAR_RESULT', op.crystal ? (have > need ? 0 : have === need ? 1 : 2) : have >= need ? 1 : 0);
+					break;
+				}
+				case 'removemoney': ctx.spendMoney?.(+op.amount || 0); break;
+				// `settrainerflag` / `cleartrainerflag` (restored by tools/gen_multichoice.mjs):
+				// a gym leader's win marks the gym's trainers beaten (set_gym_trainers.inc)
+				case 'settrainerflag': ctx.setTrainerFlag?.(op.trainer, true); break;
+				case 'cleartrainerflag': ctx.setTrainerFlag?.(op.trainer, false); break;
+				// FRLG/Emerald `getpartysize` (restored by tools/gen_multichoice.mjs): the
+				// gift scripts compare it against PARTY_SIZE to refuse a full party
+				case 'getpartysize': setVar('VAR_RESULT', ctx.partyCount?.() ?? 0); break;
+				// Crystal's Game Corner coins (restored by tools/gen_crystal_scriptvar.mjs):
+				// checkcoins answers HAVE_MORE 0 / HAVE_AMOUNT 1 / HAVE_LESS 2, like checkmoney
+				case 'checkcoins': { const have = ctx.coins?.() ?? 0, need = +op.amount || 0; setVar('VAR_RESULT', have > need ? 0 : have === need ? 1 : 2); break; }
+				case 'takecoins': ctx.spendCoins?.(+op.amount || 0); break;
+				case 'givecoins': ctx.giveCoins?.(+op.amount || 0); break;
+				case 'setdynamicwarp': ctx.setDynamicWarp?.(op); break;
+				// `setmaplayoutindex`, restored by tools/gen_maplayout.mjs (maplayout.js):
+				// the map's setup applies it once the script returns
+				case 'setmaplayout': ctx.setMapLayout?.(op.layout); break;
+				// bufferspeciesname / bufferitemname / buffernumberstring / buffermovename
+				// (restored by tools/gen_multichoice.mjs): fill the {STR_VAR_n} a later
+				// message prints — "PLAYER received the {STR_VAR_1} from the KARATE MASTER."
+				// bufferleadmonspeciesname: the lead's SPECIES ("Oh? Your VENOMOTH…", Slateport)
+				case 'buffer': setStrVar(op.dst, op.kind === 'leadspecies' ? (ctx.leadMonSpeciesName?.() ?? null) : bufferText(op)); break;
+				// FireRed/Emerald multichoice (restored by tools/gen_multichoice.mjs): the
+				// menu WAITS for the player; the pick lands in VAR_RESULT before the
+				// switch that follows reads it. No UI -> no answer is invented.
+				case 'multichoice':
+					if (ctx.multichoice?.(op) === 'wait') { this._advance(); c.sub = { kind: 'special' }; return; }
+					break;
 				case 'prompt':
 					setVar('VAR_RESULT', 1);
 					if (ctx.prompt?.() === 'wait') { this._advance(); c.sub = { kind: 'special' }; return; }
@@ -348,12 +629,12 @@ export class Cutscene {
 				// the Trick House prizes. Dropped before, so the branch after it read a
 				// stale var and always took one arm.
 				case 'random': {
-					const n = resolveValue(op.max);
+					const n = numericOperand(op.max, 'random');
 					setVar('VAR_RESULT', Number.isFinite(n) && n > 0 ? Math.floor(Math.random() * n) : 0);
 					break;
 				}
 				case 'special':
-					if (ctx.special?.(op.name, op.store) === 'wait') { this._advance(); c.sub = { kind: 'special' }; return; }
+					if (ctx.special?.(op.name, op.store, op) === 'wait') { this._advance(); c.sub = { kind: 'special' }; return; }
 					break;
 				// A jump to a label this map doesn't define used to `continue`
 				// without advancing — the same op re-ran until the loop guard
@@ -365,7 +646,8 @@ export class Cutscene {
 				case 'goto': if (!this._goto(op.label, false)) this._advance(); continue;
 				case 'call': this._advance(); this._goto(op.label, true); continue;
 				case 'return': if (c.frames.length) c.frames.pop(); continue;
-				case 'end': return this._finish();
+				// Crystal: `end` in a called label returns to the caller (fallthrough.js)
+				case 'end': if (c.program.__crystalEnd && c.frames.length > 1) { c.frames.pop(); continue; } return this._finish();
 				case 'branch': {
 					let hit;
 					// `checkitem X` -> an ITEM condition. It used to transpile to a
@@ -374,7 +656,12 @@ export class Cutscene {
 					// and every "do you have item X" gate in the game was dead.
 					if (op.cond.item != null) hit = !!ctx.hasItem?.(itemId(op.cond.item)) === !!op.cond.state;
 					else if (op.cond.flag != null) hit = getFlag(op.cond.flag) === !!op.cond.state;
+					// `goto_if_defeated TRAINER_X` / `goto_if_not_defeated` (FireRed/Emerald),
+					// restored by tools/gen_multichoice.mjs: the transpile dropped all 79, so
+					// Mt. Ember's two Rocket grunts never knew they had lost (bug:1792263054606)
+					else if (op.cond.trainer != null) hit = !!ctx.trainerDefeated?.(op.cond.trainer) === !!op.cond.state;
 					else hit = cmp(getVar(op.cond.var), op.cond.cmp, resolveValue(op.cond.value));
+					if (op.cond.var === 'VAR_RESULT') ctx.noteCompare?.(op.cond, hit);   // multichoice instrumentation
 					if (hit) {
 						if (op.kind === 'call') { this._advance(); this._goto(op.label, true); }
 						else if (!this._goto(op.label, false)) this._advance(); // dangling: don't spin
@@ -387,13 +674,31 @@ export class Cutscene {
 				// and warp-id SWAPPED, leaving a direction constant in `map` and the
 				// real destination in `warp` (`warp UP, HALL_OF_FAME`); that stranded
 				// the Fast Ship gangways, Lance's room and the Bug Contest gates.
+				// Land on a COORDINATE rather than a warp index. Dewford's five warps
+				// are all building doors, so a ferry arrival has nowhere to point; this
+				// bridges to flyTo, which already nudges to the nearest standable tile.
+				// Crystal `warpcheck`: take the warp under the player, if any (the Ruins of
+				// Alph puzzle's floor opening drops you into the inner chamber)
+				case 'warpcheck': if (ctx.warpCheck?.()) return this._finish(); break;
+				case 'warpxy': {
+					ctx.warpXy?.(op.map, op.x, op.y);
+					return this._finish();
+				}
 				case 'warp': {
 					let map = op.map, id = resolveValue(op.warp) || 0;
+					// Crystal's `warp NONE, 0, 0` reloads the current map in place
+					// (Script_warp .not_ok -> MAPSETUP_BADWARP keeps map and position)
+					if (map === 'NONE' && op.coord) { ctx.reloadMap?.(); return this._finish(); }
 					if (WARP_NOT_A_MAP.test(String(map))) {
 						if (typeof op.warp !== 'string' || WARP_NOT_A_MAP.test(op.warp)) return this._finish();
 						map = op.warp; id = 0;
 					}
-					ctx.warp?.(map, id);
+					// x/y were restored from the decomp by tools/fix_script_warps.mjs: the
+					// transpile kept only the first warp arg, so `warp MAP, 13, 51` (a
+					// COORDINATE) had shipped as door 13. `coord` marks a pure coordinate
+					// warp; a door+coord warp carries x/y as the fallback only.
+					const wx = op.x != null ? resolveValue(op.x) : null, wy = op.y != null ? resolveValue(op.y) : null;
+					ctx.warp?.(map, op.coord ? -1 : id, wx, wy);
 					return this._finish();
 				}
 				case 'trainerbattle': {
@@ -405,9 +710,17 @@ export class Cutscene {
 					const post = a.find(x => /_EventScript_/.test(x));
 					const seq = [];
 					if (texts[0]) seq.push({ op: 'msg', text: texts[0] });
-					seq.push({ op: '__battle', trainer: a[0] });
+					// the TRAINER, not the battle form: most layouts lead with the
+					// trainer, but `trainerbattle TRAINER_BATTLE_CONTINUE_SCRIPT,
+					// TRAINER_JEFF, LOCALID_JEFF, ...` (Lavaridge Gym, 20 uses) leads with
+					// the mode, and passing that built a fallback team (2026-09-30)
+					const tid = /^TRAINER_BATTLE_/.test(a[0] || '') ? (a.find(x => /^TRAINER_(?!BATTLE_)/.test(x)) || a[0]) : a[0];
+					seq.push({ op: '__battle', trainer: tid });
 					if (texts[1]) seq.push({ op: '__wontext', text: texts[1] });
-					if (post) seq.push({ op: 'goto', label: post });
+					// a CONTINUE_SCRIPT battle goes ON to its post script and never comes
+					// back; if that label is not loaded here, the script ends rather than
+					// fall back into the after-battle line meant for a LATER talk
+					if (post) seq.push({ op: 'goto', label: post }, { op: 'end' });
 					seq.push({ op: 'return' });
 					this._advance();
 					c.program.__tb__ = seq; // held by reference once pushed (safe to overwrite)
@@ -443,7 +756,8 @@ export class Cutscene {
 	_planMove(op) {
 		const actor = this._actor(op.who);
 		if (!actor) return null;
-		let steps = op.steps;
+		let steps = op.steps && op.steps.flatMap(rawStep);
+		if (!steps && COMMON_MOVEMENTS[op.movement]) steps = COMMON_MOVEMENTS[op.movement];
 		if (!steps && op.path) steps = op.path.map(d => ({ dir: d, mode: 'walk' }));
 		if (!steps && op.dir && op.count) steps = Array(op.count).fill({ dir: op.dir, mode: 'walk' });
 		if (!steps || !steps.length) return null;
@@ -462,12 +776,16 @@ export class Cutscene {
 			if (s.from == null) {
 				if (s.k >= s.steps.length) return this._resume();
 				const st = s.steps[s.k];
-				if (st.mode === 'face') { actor.facing = st.dir; s.k++; return; }
+				if (st.mode === 'face') { if (DIRS[st.dir]) actor.facing = st.dir; s.k++; return; }
 				if (st.mode === 'noop') { s.k++; return; }
 				if (st.mode === 'delay') { s.from = 'delay'; s.t = 0; s.dur = (st.frames || 8) / 60; return; }
 				if (st.mode === 'invisible') { actor.hidden = st.v; s.k++; return; }
 				const [dx, dy] = DIRS[st.dir] || [0, 0];
-				actor.facing = st.dir;
+				// only ever a real direction: a step with none used to set facing to
+				// undefined, and the next Z press (ow_input interact) or an NPC's walk
+				// frame (npcs.js draw) crashed on it — live error reports, 2026-09-30/10-01
+				if (DIRS[st.dir]) actor.facing = st.dir;
+				else { s.k++; return; }
 				// A scripted walk has NO collision — the decomp scripts assume the player
 				// is standing exactly where the scene expects. Ours can be anywhere when
 				// a post-battle script fires, so an approach/exit walk could step an NPC
@@ -491,7 +809,12 @@ export class Cutscene {
 			const p = Math.min(1, s.t);
 			actor.px = s.from[0] * META + (s.to[0] - s.from[0]) * META * p;
 			actor.py = s.from[1] * META + (s.to[1] - s.from[1]) * META * p;
-			if (typeof actor.moving === 'boolean') actor.moving = p < 1;
+			// borrowing the actor's own flag: remember whom we borrowed it from, so an
+			// interrupted scene can hand it back instead of stranding them (_releaseActors)
+			if (typeof actor.moving === 'boolean') {
+				actor.moving = p < 1;
+				if (p < 1) (c.movedActors || (c.movedActors = new Set())).add(actor);
+			}
 			if (p >= 1) {
 				actor.tx = s.to[0]; actor.ty = s.to[1];
 				actor.px = actor.tx * META; actor.py = actor.ty * META;
@@ -503,6 +826,38 @@ export class Cutscene {
 
 	// a special/trainerbattle that returned 'wait' resumes here when ready
 	resume() { if (this.cur && this.cur.sub && (this.cur.sub.kind === 'special' || this.cur.sub.kind === 'battle')) this._resume(); }
+}
+
+// The movement transpile kept 233 macros it could not express as { mode:'raw',
+// macro } — no `dir`. Those reached the walk code and set the actor's facing to
+// undefined (see update()). Translate the ones that mean a direction; the rest
+// (affine / anim / ground-effect toggles, scripted walk_to_* routes) do nothing.
+
+// The decomps' shared Common_Movement_* (data/scripts/movement.inc) arrive by NAME
+// only — the transpile inlines a map's own movements, not these — so a script that
+// used one moved nothing. The walks, turns and delays (the emotes and face_player
+// stay as they were). FireRed's Elite Four walk-in is Common_Movement_WalkUp5
+// through the room's closed entry (door audit, 2026-10-07).
+const walkN = (dir, n) => Array.from({ length: n }, () => ({ dir, mode: 'walk' }));
+const COMMON_MOVEMENTS = {
+	Common_Movement_WalkUp: walkN('up', 1), Common_Movement_WalkUp2: walkN('up', 2),
+	Common_Movement_WalkUp4: walkN('up', 4), Common_Movement_WalkUp5: walkN('up', 5),
+	Common_Movement_Delay32: [{ mode: 'delay', frames: 32 }], Common_Movement_Delay48: [{ mode: 'delay', frames: 48 }],
+	Common_Movement_FaceRight: [{ mode: 'face', dir: 'right' }], Common_Movement_FaceDown: [{ mode: 'face', dir: 'down' }],
+	Common_Movement_WalkInPlaceFasterLeft: [{ mode: 'face', dir: 'left' }], Common_Movement_WalkInPlaceFasterUp: [{ mode: 'face', dir: 'up' }],
+	Common_Movement_WalkInPlaceFasterRight: [{ mode: 'face', dir: 'right' }], Common_Movement_WalkInPlaceFasterDown: [{ mode: 'face', dir: 'down' }],
+};
+
+function rawStep(st) {
+	if (!st || st.mode !== 'raw') return [st];
+	const m = String(st.macro || '');
+	let r;
+	if ((r = /^jump_in_place_(up|down|left|right)$/.exec(m))) return [{ mode: 'face', dir: r[1] }];
+	if ((r = /^(?:walk_(up|down|left|right)(?:_start)?_affine|jump_(up|down|left|right)|ride_water_current_(up|down|left|right))$/.exec(m))) return [{ mode: 'walk', dir: r[1] || r[2] || r[3] }];
+	if ((r = /^walk_slow_diag_(north|south)(east|west)$/.exec(m))) {
+		return [{ mode: 'slow', dir: r[1] === 'north' ? 'up' : 'down' }, { mode: 'slow', dir: r[2] === 'east' ? 'right' : 'left' }];
+	}
+	return [{ mode: 'noop' }];
 }
 
 function opposite(dir) { return { up: 'down', down: 'up', left: 'right', right: 'left' }[dir] || 'down'; }
@@ -517,6 +872,8 @@ export function normalizeText(s, ctx = {}) {
 	if (typeof s !== 'string') return '...';
 	s = s.replace(/\{PLAYER\}/g, ctx.playerName || 'PLAYER')
 		.replace(/\{RIVAL\}/g, ctx.rivalName || 'RIVAL')
+		.replace(/\{STR_VAR_([123])\}/g, (m, n) => strVars[n] || '')   // what a `buffer` op put there
+		.replace(/\{POKEBLOCK\}/g, 'POKéBLOCK')   // Emerald's charmap macro (the blender, the case, the feeders)
 		.replace(/\{[^{}]*\}/g, '')          // drop any remaining control token, incl. arg'd ones like {PAUSE 0x56}
 		// pokecrystal's charmap prints "#" as POKé, so the ported Johto strings
 		// are full of "#MON" / "#DEX" / "# BALL". Expand before the é fold below.
@@ -576,6 +933,14 @@ function giveArgs(op) {
 //     the item out, so recover it from "…Received<Thing>From…");
 //   • a VAR_ symbol (a runtime-computed item, 24 of them) — unresolvable
 //     statically, so hand back null and let the caller skip the give entirely.
+let itemByNum = null;
+// number -> ITEM_ name: every item the decomps number (ITEM_NUMBERS), so a COMPUTED
+// item — FIRST_BERRY_INDEX + a random offset — can be named; first name wins
+const ITEM_BY_NUM = () => itemByNum || (itemByNum = (() => {
+	const m = {};
+	for (const [k, v] of [...Object.entries(SCRIPT_CONSTANTS).filter(([k]) => /^ITEM_/.test(k)), ...Object.entries(ITEM_NUMBERS)]) if (!(v in m)) m[v] = k;
+	return m;
+})());
 export function itemId(sym) {
 	if (typeof sym !== 'string') return sym;
 	// A runtime item. The script sets the var to the real ITEM_ symbol immediately
@@ -583,7 +948,11 @@ export function itemId(sym) {
 	// this way — so read the var back instead of dropping the give on the floor.
 	if (/^VAR_/.test(sym)) {
 		const v = getVar(sym);
-		return (typeof v === 'string' && /^ITEM_/.test(v)) ? itemId(v) : null;
+		if (typeof v === 'string' && /^ITEM_/.test(v)) return itemId(v);
+		// a symbol script_constants knows was stored as its number (Lilycove's
+		// vending machine: setvar VAR_TEMP_0, ITEM_FRESH_WATER -> 26): name it back
+		if (typeof v === 'number' && v > 0) { const k = ITEM_BY_NUM()[v]; return k ? itemId(k) : null; }
+		return null;
 	}
 	// Placeholders the real engine fills from a table at run time — there is no
 	// item behind the name, so hand back nothing rather than inventing one.
@@ -594,6 +963,56 @@ export function itemId(sym) {
 		return m ? m[1].toLowerCase().replace(/[^a-z0-9]/g, '') : null;
 	}
 	return sym.replace(/^ITEM_/, '').toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+// ---------- the STR_VAR buffers ----------
+// The GBA engine's gStringVar1-3: `buffer*` commands write a name or number into
+// one, and a later message prints it as {STR_VAR_n}. The transpile dropped every
+// buffer command, so each of those 924 placeholders printed as nothing —
+// "PLAYER received the  from the KARATE MASTER." (2026-10-02, Instinct). Like
+// the real buffers they hold whatever was last written, for the session.
+const strVars = {};
+function setStrVar(dst, text) {
+	const m = /STR_VAR_([123])/.exec(dst || '');
+	if (m && text != null) strVars[m[1]] = text;
+}
+export function getStrVar(n) { return strVars[n] || ''; }
+// a special that buffers a name itself (GetPokeblockFeederInFront -> STR_VAR_1)
+export function setStrVarText(n, text) { if (n >= 1 && n <= 3 && text != null) strVars[n] = String(text); }
+// SPECIES_HITMONLEE -> "HITMONLEE", ITEM_POKE_BALL -> "POKE BALL" (the game's
+// upper-case names), with the few that need punctuation spelled out
+const SYMBOL_NAMES = { MR_MIME: 'MR. MIME', MIME_JR: 'MIME JR.', NIDORAN_F: 'NIDORAN♀', NIDORAN_M: 'NIDORAN♂', FARFETCHD: "FARFETCH'D", HO_OH: 'HO-OH', PORYGON_Z: 'PORYGON-Z' };
+function symbolName(sym, prefix) {
+	const k = String(sym).replace(prefix, '');
+	return SYMBOL_NAMES[k] || k.replace(/_/g, ' ');
+}
+const STD_STRINGS = {
+	STDSTRING_BOULDER_BADGE: 'BOULDERBADGE', STDSTRING_CASCADE_BADGE: 'CASCADEBADGE', STDSTRING_THUNDER_BADGE: 'THUNDERBADGE',
+	STDSTRING_RAINBOW_BADGE: 'RAINBOWBADGE', STDSTRING_SOUL_BADGE: 'SOULBADGE', STDSTRING_MARSH_BADGE: 'MARSHBADGE',
+	STDSTRING_VOLCANO_BADGE: 'VOLCANOBADGE', STDSTRING_EARTH_BADGE: 'EARTHBADGE',
+	STDSTRING_ITEMS: 'ITEMS', STDSTRING_KEY_ITEMS: 'KEY ITEMS', STDSTRING_POKEBALLS: 'POKé BALLS', STDSTRING_TMHMS: 'TMs & HMs',
+	STDSTRING_BERRIES: 'BERRIES', STDSTRING_COINS: 'COINS', STDSTRING_ITEMS_POCKET: 'ITEMS POCKET',
+	STDSTRING_KEY_ITEMS_POCKET: 'KEY ITEMS POCKET', STDSTRING_POKEBALLS_POCKET: 'POKé BALLS POCKET',
+	STDSTRING_TM_CASE: 'TM CASE', STDSTRING_BERRY_POUCH: 'BERRY POUCH',
+};
+function bufferText(op) {
+	let v = op.src;
+	if (typeof v === 'string' && /^VAR_/.test(v)) v = getVar(v);
+	switch (op.kind) {
+		case 'species':
+			if (typeof v === 'string' && /^SPECIES_/.test(v)) return symbolName(v, /^SPECIES_/);
+			return null;   // a number with no table here: leave the buffer as it was
+		case 'item': case 'itemplural': {
+			if (typeof v === 'number') v = ITEM_BY_NUM()[v];
+			if (typeof v !== 'string' || !/^ITEM_/.test(v)) return null;
+			const n = symbolName(v, /^ITEM_/);
+			return op.kind === 'itemplural' && !/S$/.test(n) ? n + 'S' : n;
+		}
+		case 'move': return typeof v === 'string' && /^MOVE_/.test(v) ? symbolName(v, /^MOVE_/) : null;
+		case 'number': { const n = resolveValue(v); return Number.isFinite(+n) ? String(+n) : null; }
+		// bufferstdstring: FireRed's fixed strings (script_menu.c gStdStringPtrs)
+		case 'std': return typeof v === 'string' && /^STDSTRING_/.test(v) ? (STD_STRINGS[v] || symbolName(v, /^STDSTRING_/)) : null;
+	}
+	return null;
 }
 function speciesId(sym) {
 	if (typeof sym !== 'string') return sym;

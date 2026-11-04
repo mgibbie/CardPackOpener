@@ -114,8 +114,10 @@ async function waitFor(fn, ms) {
 				return before - (byFoe ? me.curHP : foe.curHP);
 			};
 			// abilities off: random ones (Lightning Rod, Static) would absorb hits
-			// or paralyze mid-sequence and break determinism
-			const heal = () => { foe.curHP = foe.maxHP = 100000; me.curHP = me.maxHP = 50000; me.status = null; foe.status = null; me.ability = null; foe.ability = null; delete me.lastTaken; delete foe.lastTaken; delete me.bideDmg; };
+			// or paralyze mid-sequence and break determinism. Held items off too: a
+			// wild PIKACHU sometimes spawns with an ORAN BERRY, which fired at half HP
+			// and put 10 back (Nature's Madness read 210, not 200) — the flake.
+			const heal = () => { foe.curHP = foe.maxHP = 100000; me.curHP = me.maxHP = 50000; me.status = null; foe.status = null; me.ability = null; foe.ability = null; me.heldItem = null; foe.heldItem = null; delete me.lastTaken; delete foe.lastTaken; delete me.bideDmg; };
 			const out = {};
 			drain();
 			const origRandom = Math.random;

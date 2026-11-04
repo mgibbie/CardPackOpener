@@ -20,6 +20,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { overworldSource } from './owsource.mjs';   // main.js + the modules split out of it
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '../../');
@@ -29,7 +30,7 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 
 // ---------- source ----------
 {
-	const mn = fs.readFileSync(path.join(ROOT, 'overworld/main.js'), 'utf8');
+	const mn = overworldSource();
 	A(/const OW_REV_KEY = 'magepunk_ow_rev'/.test(mn), 'the client carries an explicit revision key');
 	A(/refusing to rewrite local backward/.test(mn), 'hydration refuses to rewrite local backward');
 	A(/_lastAckedBody = body/.test(mn) && !/_lastOwJson/.test(mn),
@@ -313,6 +314,26 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 			const k2 = await page.evaluate(() => JSON.parse(localStorage.getItem('magepunk_ow_conflict') || 'null'));
 			A(k2 && k2.ow && JSON.parse(k2.ow['magepunk_pos_v1']).map === 'Route4',
 				'and the remote copy is still preserved', k2 ? k2.reason : 'nothing stashed');
+		}
+
+		// ===== a save from before the daily update / personality values =====
+		// No VAR_DAYS, no Mirage value, no personality on the party (the harness seeds
+		// exactly that story + party). Loading it must change nothing: the daily update
+		// and the personality roll run on a real map entry, never on the boot load, so
+		// the save stays byte-identical and nothing is pushed.
+		{
+			await newSession();
+			const before = await localFp();
+			const r = await page.evaluate(() => {
+				const st = JSON.parse(localStorage.getItem('magepunk_story') || '{}');
+				const party = JSON.parse(localStorage.getItem('magepunk_party_v1') || '[]');
+				return { dirty: window.__ow.owDirtyForTest(), days: (st.vars || {}).VAR_DAYS ?? null, mh: (st.vars || {}).VAR_MIRAGE_RND_H ?? null, pers: party.some(m => m && m.personality != null) };
+			});
+			A(r.days === null && r.mh === null && !r.pers, 'old-shape save: loading it adds no VAR_DAYS, Mirage value or personality', JSON.stringify(r));
+			A(r.dirty === false, 'old-shape save: and loading it leaves nothing unsaved', JSON.stringify(r));
+			await flush(); await sleep(400);
+			const after = await localFp();
+			A(after.rev === before.rev && srvFp().rev === before.rev, 'old-shape save: so no push and no revision bump', `${before.rev} -> ${after.rev} (server ${srvFp().rev})`);
 		}
 
 		// ===== THE FRESH-DEVICE CASE (regression from the first revision fix) =====

@@ -20,6 +20,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { overworldSource } from './owsource.mjs';   // main.js + the modules split out of it
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '../../');
@@ -29,7 +30,8 @@ let pass = 0, fail = 0;
 const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else { fail++; console.log('FAIL: ' + m + (extra ? '  ' + extra : '')); } };
 
 const regions = JSON.parse(fs.readFileSync(path.join(ROOT, 'overworld/map_regions.json'), 'utf8'));
-const itemsSrc = fs.readFileSync(path.join(ROOT, 'overworld/items.js'), 'utf8');
+// the ball parsers moved to ball_parse.js (shared with tools/gen_ball_flags.mjs)
+const itemsSrc = fs.readFileSync(path.join(ROOT, 'overworld/items.js'), 'utf8') + '\n' + fs.readFileSync(path.join(ROOT, 'overworld/ball_parse.js'), 'utf8');
 
 // ---------- the data ----------
 let balls = 0, hidden = 0, crystalMaps = 0;
@@ -52,7 +54,7 @@ A(/parseCrystalBall/.test(itemsSrc), 'and can read its <Map><Item> script form')
 A(/STARTER_BALLS/.test(itemsSrc), 'the three starter balls are excluded by name');
 
 // named HMs resolve now — Crystal ships hmwaterfall in an Ice Path ball
-const mainSrc = fs.readFileSync(path.join(ROOT, 'overworld/main.js'), 'utf8');
+const mainSrc = overworldSource();
 A(mainSrc.includes("/^hm([a-z]+)$/"), 'tmMoveId resolves a NAMED hm, not just hm<number>');
 
 // The injector matches by PROVENANCE, not name — Crystal's Route12/CeruleanCity

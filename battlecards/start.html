@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<!-- first, before any game code reads storage: per-account local data (site/account_silo.js) -->
+<script src="/site/account_silo.js"></script>
 	<title>Battlecards — Magepunk</title>
 	<meta charset="UTF-8">
 	<link rel="preconnect" href="https://magepunk-cardart.pages.dev" crossorigin>
@@ -562,8 +564,9 @@
 	<script type="module">
 	import * as MP from './mpmode.js';
 	import { openProfile } from './profile.js';
-	const CARD_MODE = { dungeon: 'a Dungeon run', heist: 'a Heist run', tombs: 'a Tombs run', duels: 'a Duels run', arena: 'an Arena run', lorequest: 'a Lorequest run', middleearth: 'a Middle-earth run', swordcoast: 'a Sword Coast run', finalfantasy: 'a Final Fantasy run', multiverse: 'a Multiverse run', pvp: 'a card duel', battle: 'a card battle', pokemon: 'a Pokémon battle' };
-	const MODE_ICON = { dungeon: '🏰', heist: '💰', tombs: '⚰️', duels: '🎲', arena: '🛡️', lorequest: '📖', middleearth: '💍', swordcoast: '🐉', finalfantasy: '⭐', multiverse: '🕸️', pvp: '⚔️', battle: '🃏', pokemon: '🔴' };
+	import { watchHref, micatroActivityLabel, micasurvivorActivityLabel } from '/site/livewatch.js';
+	const CARD_MODE = { dungeon: 'a Dungeon run', heist: 'a Heist run', tombs: 'a Tombs run', duels: 'a Duels run', arena: 'an Arena run', lorequest: 'a Lorequest run', middleearth: 'a Middle-earth run', swordcoast: 'a Sword Coast run', finalfantasy: 'a Final Fantasy run', multiverse: 'a Multiverse run', pvp: 'a card duel', battle: 'a card battle', pokemon: 'a Pokémon battle', factory: 'the Battle Frontier' };
+	const MODE_ICON = { dungeon: '🏰', heist: '💰', tombs: '⚰️', duels: '🎲', arena: '🛡️', lorequest: '📖', middleearth: '💍', swordcoast: '🐉', finalfantasy: '⭐', multiverse: '🕸️', pvp: '⚔️', battle: '🃏', pokemon: '🔴', factory: '🏭', micatro: '🂡', micasurvivor: '🐾' };
 	const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 	async function refreshLive() {
 		if (!MP.hasToken()) return;
@@ -575,9 +578,10 @@
 		list.innerHTML = '';
 		for (const f of live) {
 			const modeLabel = CARD_MODE[f.mode] || 'a game';
-			const bits = ['in ' + modeLabel];
-			if (f.label && f.label !== 'Pokémon battle') bits.push(esc(f.label)); // run progress e.g. "Fight 3/8"
-			if (f.kind === 'card') bits.push(`👁 ${f.watchers || 0}${f.full ? '/10 full' : ''} watching`);
+			const own = f.kind === 'micatro' || f.kind === 'micasurvivor';   // their label is the whole activity line
+			const bits = f.kind === 'micatro' ? [esc(micatroActivityLabel(f.label))] : f.kind === 'micasurvivor' ? [esc(micasurvivorActivityLabel(f.label))] : ['in ' + modeLabel];
+			if (!own && f.label && f.label !== 'Pokémon battle') bits.push(esc(f.label)); // run progress e.g. "Fight 3/8"
+			if (f.kind === 'card' || f.kind === 'factory' || own) bits.push(`👁 ${f.watchers || 0}${f.full ? '/10 full' : ''} watching`);
 			const tile = document.createElement('div');
 			tile.className = 'tile live-tile';
 			tile.innerHTML = `<div class="glyph">${MODE_ICON[f.mode] || '🔴'}</div>`
@@ -587,10 +591,11 @@
 			watch.className = 'live-watch';
 			watch.textContent = f.full ? 'Full' : '👁 Watch';
 			if (f.full) watch.disabled = true;
-			watch.addEventListener('click', () => {
-				if (f.kind === 'pokemon') { if (f.matchId) location.href = '/overworld/?mp=1&watch=' + encodeURIComponent(f.matchId); }
-				else location.href = 'index.html?spectate=' + encodeURIComponent(f.username) + '&mp=1';
-			});
+			// one router for every live kind (site/livewatch.js): card runs → Battlecards,
+			// Pokémon battles + Battle Frontier runs → the Overworld, Micatro → /micatro/
+			const href = watchHref(f);
+			if (href) watch.dataset.href = href; else watch.disabled = true;
+			watch.addEventListener('click', () => { if (href) location.href = href; });
 			const nameEl = tile.querySelector('.live-name');
 				nameEl.addEventListener('click', () => openProfile(f.username));
 				nameEl.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openProfile(f.username); } });
@@ -605,6 +610,7 @@
 
 	<!-- the shared top bar (⚙️ Magepunk wordmark + account + inbox) -->
 	<script type="module" src="/site/topbar.js"></script>
+	<script type="module" src="/battlecards/padnav.js"></script>
 	<script type="module">
 	// Run tiles: show "Resume" and the run's record for the CANONICAL copy — the same
 	// one the game page will resume. localStorage paints first (instant, and the only
@@ -613,7 +619,7 @@
 	// behind Resume. READ-ONLY on purpose: the game page stays the single writer, so a
 	// tile can never clobber an in-flight local snapshot.
 	import * as MPT from './mpmode.js';
-	import { pickCanonicalRun } from './runsync.js';
+	import { pickCanonicalRun, serverEndedRun } from './runsync.js';
 	import { runSummary } from './runlabel.js';
 
 	const runTiles = [...document.querySelectorAll('.tile[data-run]')];
@@ -644,6 +650,8 @@
 			const key = el.getAttribute('data-run');
 			const entry = runs[key];
 			const local = localRun(key);
+			// the server ended this very run: the local copy is a stale zombie, not a run to resume
+			if (serverEndedRun(local, entry)) { paint(el, null); continue; }
 			if (!entry || !entry.run) { paint(el, local); continue; }
 			const verdict = pickCanonicalRun(local, entry.run, entry.updated_at);
 			paint(el, verdict.pick === 'local' ? local : entry.run);

@@ -75,9 +75,9 @@ const P = (name, cost, text, effects) => ({ name, cost, text, effects });
 export const HERO_POWERS = {
 	// heroes
 	Aragorn: P('Elessar', 2, 'Give a friendly creature +1/+1.', [{ type: 'buff', attack: 1, health: 1, target: 'friendly-creature' }]),
-	Gandalf: P('You Shall Not Pass!', 2, 'Freeze an enemy creature.', [{ type: 'freeze', target: 'enemy-creature' }]),
-	Legolas: P('Elf-shot', 2, 'Deal 1 damage to any target.', [{ type: 'damage', value: 1, target: 'any' }]),
-	Gimli: P('And My Axe!', 2, 'Give a friendly creature +2/+0.', [{ type: 'buff', attack: 2, health: 0, target: 'friendly-creature' }]),
+	Gandalf: P('You Shall Not Pass!', 2, 'Deal 1 damage to an enemy creature & freeze it.', [{ type: 'damage', value: 1, target: 'enemy-creature' }, { type: 'freeze', target: 'enemy-creature' }]),
+	Legolas: P('Elf-shot', 1, 'Deal 1 damage to any target.', [{ type: 'damage', value: 1, target: 'any' }]),
+	Gimli: P('And My Axe!', 2, 'Give a friendly creature +2/+1.', [{ type: 'buff', attack: 2, health: 1, target: 'friendly-creature' }]),
 	Frodo: P('Slip Away', 2, 'Give a friendly creature Elusive.', [{ type: 'grant', keyword: 'elusive', target: 'friendly-creature' }]),
 	Samwise: P("Don't You Leave Him", 2, 'Gain 3 life.', [{ type: 'heal', value: 3, target: 'self' }]),
 	'Éowyn': P('I Am No Man', 2, 'Deal 2 damage to an enemy creature.', [{ type: 'damage', value: 2, target: 'enemy-creature' }]),
@@ -86,36 +86,36 @@ export const HERO_POWERS = {
 	Elrond: P("Rivendell's Grace", 2, 'Gain 2 life and Scry 1.', [{ type: 'heal', value: 2, target: 'self' }, { type: 'scry', value: 1 }]),
 	'Tom Bombadil': P('Ho! Merry Dol!', 2, 'Draw a card, then discard a card.', [{ type: 'draw', value: 1 }, { type: 'discard-random', count: 1 }]),
 	// enemies (Rung A)
-	'Bill Ferny': P('Con the Traveller', 2, 'Each opponent discards a random card.', [{ type: 'enemy-discard', count: 1 }]),
-	Lotho: P('Rally the Ruffians', 2, 'Summon a 1/1 Ruffian with Taunt.', [{ type: 'summon', count: 1, attack: 1, health: 1, name: 'Shire Ruffian', tribe: 'Halfling', keywords: ['taunt'] }]),
-	'Gríma Wormtongue': P('Poison Words', 2, 'Freeze an enemy creature.', [{ type: 'freeze', target: 'enemy-creature' }]),
-	'Grishnákh': P('Brash Charge', 2, 'Summon a 2/1 Orc with Rush.', [{ type: 'summon', count: 1, attack: 2, health: 1, name: 'Orc Raider', tribe: 'Orc', keywords: ['rush'] }]),
-	Gorbag: P('Cruel Bargain', 2, 'Deal 1 damage to your hero and draw a card.', [{ type: 'damage', value: 1, target: 'own-hero' }, { type: 'draw', value: 1 }]),
-	Shagrat: P('Loot the Fallen', 2, 'Gain a Coin.', [{ type: 'gain-coin', value: 1 }]),
-	'Old Man Willow': P('Snapping Bough', 2, 'Deal 1 damage to an enemy creature.', [{ type: 'damage', value: 1, target: 'enemy-creature' }]),
-	'Tom, Bert & William': P('Hurl a Boulder', 2, 'Deal 2 damage to a random enemy.', [{ type: 'random-damage', value: 2, pool: 'enemies', count: 1 }]),
-	'The Chief Warg': P('Warg-call', 2, 'Summon a 2/2 Wolf.', [{ type: 'summon', count: 1, attack: 2, health: 2, name: 'Warg', tribe: 'Wolf' }]),
+	'Bill Ferny': P('Con the Traveller', 2, 'Gain a Coin.', [{ type: 'gain-coin', value: 1 }]),
+	Lotho: P('Rally the Ruffians', 2, 'Summon a 1/1 Ruffian.', [{ type: 'summon', count: 1, attack: 1, health: 1, name: 'Shire Ruffian', tribe: 'Halfling' }]),
+	'Gríma Wormtongue': P('Poison Words', 2, 'Freeze an enemy creature and deal 1 damage to it.', [{ type: 'freeze', target: 'enemy-creature' }, { type: 'damage', value: 1, target: 'enemy-creature' }]),
+	'Grishnákh': P('Brash Charge', 3, 'Summon a 1/1 Orc with Rush.', [{ type: 'summon', count: 1, attack: 1, health: 1, name: 'Orc Raider', tribe: 'Orc', keywords: ['rush'] }]),
+	Gorbag: P('Cruel Bargain', 3, 'Deal 1 damage to your hero and draw a card.', [{ type: 'damage', value: 1, target: 'own-hero' }, { type: 'draw', value: 1 }]),
+	Shagrat: P('Loot the Fallen', 2, 'Gain a Coin and deal 1 damage to an enemy creature.', [{ type: 'gain-coin', value: 1 }, { type: 'damage', value: 1, target: 'enemy-creature' }]),
+	'Old Man Willow': P('Snapping Bough', 3, 'Deal 1 damage to an enemy creature.', [{ type: 'damage', value: 1, target: 'enemy-creature' }]),
+	'Tom, Bert & William': P('Hurl a Boulder', 2, 'Deal 3 damage to a random enemy.', [{ type: 'random-damage', value: 3, pool: 'enemies', count: 1 }]),
+	'The Chief Warg': P('Warg-call', 3, 'Summon a 2/1 Warg.', [{ type: 'summon', count: 1, attack: 2, health: 1, name: 'Warg', tribe: 'Wolf' }]),
 	// enemies (Rung B)
-	'Uglúk': P('Whip Them On', 2, 'Give your creatures +1/+0.', [{ type: 'buff', attack: 1, health: 0, target: 'friendly-creatures' }]),
-	'Mauhúr': P('Reinforce', 2, 'Summon a 2/2 Uruk-hai with Rush.', [{ type: 'summon', count: 1, attack: 2, health: 2, name: 'Uruk-hai', tribe: 'Orc', keywords: ['rush'] }]),
+	'Uglúk': P('Whip Them On', 3, 'Give your creatures +1/+0.', [{ type: 'buff', attack: 1, health: 0, target: 'friendly-creatures' }]),
+	'Mauhúr': P('Reinforce', 4, 'Summon a 2/2 Uruk-hai with Rush.', [{ type: 'summon', count: 1, attack: 2, health: 2, name: 'Uruk-hai', tribe: 'Orc', keywords: ['rush'] }]),
 	Gothmog: P('Morgul Reserves', 2, 'Summon a 2/2 Morgul Orc.', [{ type: 'summon', count: 1, attack: 2, health: 2, name: 'Morgul Orc', tribe: 'Orc' }]),
-	'The Watcher in the Water': P('Drag Under', 2, 'Return an enemy creature to its owner’s hand.', [{ type: 'bounce', target: 'enemy-creature' }]),
-	'The Mouth of Sauron': P('Parley', 2, 'Each opponent discards a card; draw a card.', [{ type: 'enemy-discard', count: 1 }, { type: 'draw', value: 1 }]),
-	'King of the Oathbreakers': P('Summon the Dead', 2, 'Summon a 2/2 Shade with Deathtouch.', [{ type: 'summon', count: 1, attack: 2, health: 2, name: 'Oathbreaker Shade', tribe: 'Spirit', keywords: ['deathtouch'] }]),
-	Shelob: P('Ensnare', 2, 'Freeze an enemy creature and deal 1 damage to it.', [{ type: 'freeze', target: 'enemy-creature' }, { type: 'damage', value: 1, target: 'enemy-creature' }]),
-	'The Great Goblin': P('Goblin-town', 2, 'Summon two 1/1 Goblins.', [{ type: 'summon', count: 2, attack: 1, health: 1, name: 'Goblin-town Goblin', tribe: 'Goblin' }]),
-	Bolg: P('Gundabad Horde', 2, 'Summon a 2/2 Goblin.', [{ type: 'summon', count: 1, attack: 2, health: 2, name: 'Gundabad Goblin', tribe: 'Goblin' }]),
+	'The Watcher in the Water': P('Drag Under', 3, 'Return an enemy creature to its owner’s hand.', [{ type: 'bounce', target: 'enemy-creature' }]),
+	'The Mouth of Sauron': P('Parley', 2, 'Each opponent discards a card; draw a card and deal 1 damage to an enemy creature.', [{ type: 'enemy-discard', count: 1 }, { type: 'draw', value: 1 }, { type: 'damage', value: 1, target: 'enemy-creature' }]),
+	'King of the Oathbreakers': P('Summon the Dead', 4, 'Summon a 2/2 Shade with Deathtouch.', [{ type: 'summon', count: 1, attack: 2, health: 2, name: 'Oathbreaker Shade', tribe: 'Spirit', keywords: ['deathtouch'] }]),
+	Shelob: P('Ensnare', 2, 'Freeze an enemy creature and deal 2 damage to it.', [{ type: 'freeze', target: 'enemy-creature' }, { type: 'damage', value: 2, target: 'enemy-creature' }]),
+	'The Great Goblin': P('Goblin-town', 3, 'Summon two 1/1 Goblins.', [{ type: 'summon', count: 2, attack: 1, health: 1, name: 'Goblin-town Goblin', tribe: 'Goblin' }]),
+	Bolg: P('Gundabad Horde', 4, 'Summon a 2/2 Goblin.', [{ type: 'summon', count: 1, attack: 2, health: 2, name: 'Gundabad Goblin', tribe: 'Goblin' }]),
 	// enemies (Rung C)
-	Saruman: P('Voice of Isengard', 2, 'Summon a 2/2 Uruk-hai.', [{ type: 'summon', count: 1, attack: 2, health: 2, name: 'Uruk-hai', tribe: 'Orc' }]),
+	Saruman: P('Voice of Isengard', 3, 'Summon a 2/2 Uruk-hai.', [{ type: 'summon', count: 1, attack: 2, health: 2, name: 'Uruk-hai', tribe: 'Orc' }]),
 	'The Balrog': P('Flame of Udûn', 2, 'Deal 2 damage to all enemy creatures.', [{ type: 'damage', value: 2, target: 'enemy-creatures' }]),
-	'Witch-king of Angmar': P('Morgul-blade', 2, 'Give a friendly creature +1/+0 and Deathtouch.', [{ type: 'buff', attack: 1, health: 0, target: 'friendly-creature' }, { type: 'grant', keyword: 'deathtouch', target: 'friendly-creature' }]),
-	'Sauron the Necromancer': P('Raise Dead', 2, 'Summon a 3/3 Wraith with Deathtouch.', [{ type: 'summon', count: 1, attack: 3, health: 3, name: 'Dol Guldur Wraith', tribe: 'Wraith', keywords: ['deathtouch'] }]),
-	Gollum: P('Sneak and Filch', 2, 'Give a friendly creature Stealth.', [{ type: 'grant', keyword: 'stealth', target: 'friendly-creature' }]),
-	Smaug: P('Dragonfire', 2, 'Deal 3 damage to an enemy creature and gain a Coin.', [{ type: 'damage', value: 3, target: 'enemy-creature' }, { type: 'gain-coin', value: 1 }]),
-	Azog: P('The Defiler', 2, 'Deal 2 damage to an enemy creature.', [{ type: 'damage', value: 2, target: 'enemy-creature' }]),
+	'Witch-king of Angmar': P('Morgul-blade', 4, 'Give a friendly creature +1/+0 and Deathtouch.', [{ type: 'buff', attack: 1, health: 0, target: 'friendly-creature' }, { type: 'grant', keyword: 'deathtouch', target: 'friendly-creature' }]),
+	'Sauron the Necromancer': P('Raise Dead', 5, 'Summon a 3/3 Wraith with Deathtouch.', [{ type: 'summon', count: 1, attack: 3, health: 3, name: 'Dol Guldur Wraith', tribe: 'Wraith', keywords: ['deathtouch'] }]),
+	Gollum: P('Sneak and Filch', 2, 'Give a friendly creature +1/+1 and Stealth.', [{ type: 'grant', keyword: 'stealth', target: 'friendly-creature' }, { type: 'buff', attack: 1, health: 1, target: 'friendly-creature' }]),
+	Smaug: P('Dragonfire', 4, 'Deal 3 damage to an enemy creature and gain a Coin.', [{ type: 'damage', value: 3, target: 'enemy-creature' }, { type: 'gain-coin', value: 1 }]),
+	Azog: P('The Defiler', 3, 'Deal 2 damage to an enemy creature.', [{ type: 'damage', value: 2, target: 'enemy-creature' }]),
 	// enemies (Rung D — final bosses)
-	'Sauron the Dark Lord': P('The Eye Searches', 2, 'Draw a card, then each opponent discards one.', [{ type: 'draw', value: 1 }, { type: 'enemy-discard', count: 1 }]),
-	'Sauron the Lidless Eye': P('Lidless Gaze', 2, 'Deal 3 damage to an enemy creature.', [{ type: 'damage', value: 3, target: 'enemy-creature' }]),
+	'Sauron the Dark Lord': P('The Eye Searches', 4, 'Draw a card, then each opponent discards one.', [{ type: 'draw', value: 1 }, { type: 'enemy-discard', count: 1 }]),
+	'Sauron the Lidless Eye': P('Lidless Gaze', 3, 'Deal 3 damage to an enemy creature.', [{ type: 'damage', value: 3, target: 'enemy-creature' }]),
 	// Hobbit-set additions
 	'The Master of Lake-town': P('Hoard the Gold', 2, 'Gain a Coin.', [{ type: 'gain-coin', value: 1 }]),
 	'Chief of the Wilds': P('Hunt as One', 2, 'Summon a 2/2 Spider with Deathtouch.', [{ type: 'summon', count: 1, attack: 2, health: 2, name: 'Hunting Spider', tribe: 'Spider', keywords: ['deathtouch'] }]),
@@ -154,8 +154,12 @@ export const rungFor = wins => (wins <= 2 ? 'A' : wins <= 6 ? 'B' : wins <= 10 ?
 export const rungLabel = wins => ({ A: 'Mook', B: 'Lieutenant', C: 'Commander', D: 'The Dark Lord' }[rungFor(wins)]);
 
 // pick the next enemy from the rung for `wins`, avoiding an immediate repeat.
-export function randomEnemy(wins, rng, avoidId) {
-	let roster = enemyRosterFor(wins).filter(c => c !== avoidId);
+// `faced` = every enemy already met this run: one is never offered again while the rung
+// still has someone new (The Balrog at F10 and again at F12 — instinctgauntlet, 2026-10-25).
+export function randomEnemy(wins, rng, avoidId, faced) {
+	const seen = new Set(Array.isArray(faced) ? faced : []);
+	let roster = enemyRosterFor(wins).filter(c => c !== avoidId && !seen.has(c));
+	if (!roster.length) roster = enemyRosterFor(wins).filter(c => c !== avoidId);
 	if (!roster.length) roster = enemyRosterFor(wins);
 	return roster[Math.floor(rng() * roster.length)];
 }

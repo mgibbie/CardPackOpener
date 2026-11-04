@@ -116,6 +116,38 @@ export function pickCanonicalRun(local, server, serverUpdatedAt) {
 	return decide('local', 'tie-keep-local'); // identical standing: don't clobber
 }
 
+// The server's answer that a run is OVER. Ending a run leaves `{ ended: runId }` in
+// its slot on the server (run-clear), and from then on every save of that run is
+// refused. A local copy of the SAME run is therefore a zombie: the browser lost the
+// writes that removed it (a killed/crashed browser drops recent localStorage writes),
+// so it still holds the run as it was mid-fight. Booting it replays a fight whose
+// result is already on the server, and since every save of it is refused, the replay
+// can never "commit" — Remy's Final Fantasy run: one loss, 27 identical replays,
+// "Continue the run" offered after every one (2026-10-14..16). Only the runId
+// decides: a different (newer) local run is never touched.
+export function serverEndedRun(local, entry) {
+	if (!entry || typeof entry !== 'object' || entry.run || !entry.ended) return false;
+	if (!local || typeof local !== 'object' || !local.runId) return false;
+	return String(entry.ended) === String(local.runId);
+}
+
+// The server's slot says a run ended — a DIFFERENT run than the local copy — and it
+// ended AFTER the local copy was last written. The local copy is then an older run's
+// zombie: this browser lost every write since (its replays and ended-runs list stop at
+// the same moment), while the run(s) that followed were played and finished. The
+// ended marker names only the LAST finished run, so serverEndedRun cannot see this
+// one: instinctgauntlet ended run 12, reloaded, and was offered run 11 at 0W/2L
+// (2026-10-22). A local run written after the marker (started since, e.g. offline)
+// is never touched; neither is a copy with no stamp to compare.
+export function serverSupersededRun(local, entry) {
+	if (!entry || typeof entry !== 'object' || entry.run || !entry.ended) return false;
+	if (!local || typeof local !== 'object' || !local.active) return false;
+	if (local.runId && String(entry.ended) === String(local.runId)) return false; // that one is serverEndedRun's
+	const endedAt = Number(entry.updated_at) || 0;
+	const localAt = runStamp(local, 0);
+	return endedAt > 0 && localAt > 0 && localAt < endedAt;
+}
+
 // Back-compat boolean wrapper: true = keep the local copy, false = take the server's.
 export function keepLocalRun(local, serverRun, serverUpdatedAt) {
 	return pickCanonicalRun(local, serverRun, serverUpdatedAt).pick === 'local';

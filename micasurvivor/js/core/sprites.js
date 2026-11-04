@@ -1,0 +1,300 @@
+/* ============ sprites.js — sprites estilo Mundo Misterioso (locales) ============
+ * Hojas de SpriteCollab en assets/pokemon/{dex}/{Anim}.png, geometría en
+ * G.SPRITE_META (js/data/sprites-meta.js, generado por tools/fetch_sprites.py).
+ *
+ *   columnas = fotogramas · filas = 8 direcciones
+ *   0 Down · 1 DownRight · 2 Right · 3 UpRight · 4 Up · 5 UpLeft · 6 Left · 7 DownLeft
+ *
+ * Cada animación tiene su propio tamaño de fotograma, así que se alinean por el
+ * ancla al suelo (ax, ay): ese píxel cae siempre en los pies de la entidad y
+ * el sprite no "salta" al pasar de Walk a Attack.
+ */
+G.Sprites = (() => {
+  /** Unidades de mundo por píxel de arte. Tiles y sprites comparten escala. */
+  const PX = 2;
+  const sheets = new Map();          // "dex/Anim[/s]" -> {img, ready, failed}
+
+  function meta(dex) { return G.SPRITE_META[dex] || null; }
+
+  /**
+   * (Lote B1b) Escala del arte. Las hojas de respaldo (src "follow", tools/micasurvivor/follow_sprites.py: los
+   * sprites de seguidor del overworld) son más pequeñas que las de Mundo Misterioso: "k" las lleva al tamaño de
+   * sus vecinos. Las de SpriteCollab no tienen k (1).
+   */
+  function artScale(dex) { const m = meta(dex); return (m && m.k) || 1; }
+
+  /** Fila de la hoja para la dirección 0..7: las de respaldo tienen 4 filas y "dm" dice cuál toca a cada una. */
+  function rowOf(dex, dir, m) {
+    const pm = meta(dex);
+    return pm && pm.dm ? (pm.dm[dir] || 0) : Math.min(dir || 0, m.r - 1);
+  }
+
+  /**
+   * (Lote B1c) ¿Se dibuja en espejo en la dirección 0..7? Las hojas de respaldo de combate (src "battle",
+   * tools/micasurvivor/battle_sprites.py) sólo tienen el frente (mirando a la izquierda) y la espalda: "fx" dice en
+   * qué direcciones se voltea en horizontal, alrededor del ancla. Las demás no tienen fx (nunca).
+   */
+  function flipOf(dex, dir) { const pm = meta(dex); return !!(pm && pm.fx && pm.fx[dir || 0]); }
+
+  /** ¿Flota en su sprite? (tools/hover_flags.py) Pasa por encima de rocas y agua. */
+  function hovers(dex) { const m = meta(dex); return !!(m && m.hv); }
+
+  /**
+   * Versión blanca de una imagen (para el destello al recibir un golpe).
+   * Se hace una vez por hoja con composición "source-in": mucho más barato
+   * que ctx.filter en cada dibujo, que era lo que más ralentizaba con muchos
+   * enemigos a la vez.
+   */
+  const whites = new WeakMap();
+  function white(img) {
+    let c = whites.get(img);
+    if (c) return c;
+    c = document.createElement('canvas');
+    c.width = img.width; c.height = img.height;
+    const x = c.getContext('2d');
+    x.drawImage(img, 0, 0);
+    x.globalCompositeOperation = 'source-in';
+    x.fillStyle = '#ffffff';
+    x.fillRect(0, 0, c.width, c.height);
+    whites.set(img, c);
+    return c;
+  }
+
+  /** ¿Tiene versión shiny? (assets/pokemon/{dex}/s/) */
+  function hasShiny(dex) { const m = meta(dex); return !!(m && m.sh); }
+
+  /** Animaciones disponibles para esa variante. */
+  function has(m, anim, shiny) {
+    return !!m.a[anim] && !(shiny && m.sm && m.sm.includes(anim));
+  }
+
+  function animName(dex, anim, shiny = false) {
+    const m = meta(dex);
+    if (!m) return null;
+    shiny = shiny && !!m.sh;
+    if (has(m, anim, shiny)) return anim;
+    return has(m, 'Idle', shiny) ? 'Idle' : 'Walk';
+  }
+
+  /** Geometría de una animación (la shiny sólo difiere en casos raros). */
+  function animMeta(dex, anim, shiny = false) {
+    const m = meta(dex);
+    if (!m) return null;
+    const name = animName(dex, anim, shiny);
+    if (shiny && m.sh && m.sa && m.sa[name]) return m.sa[name];
+    return m.a[name] || null;
+  }
+
+  // Hojas en memoria como mucho. Antes no se soltaba ninguna: en partidas de
+  // más de una hora pasaban cientos de especies, se llenaba la memoria gráfica
+  // y la pantalla se quedaba en negro hasta que el navegador recargaba la página.
+  const MAX_SHEETS = 200, IDLE_MS = 20000;   // ~0,66 MB cada una ya dibujada: ~130 MB
+  function evict(now) {
+    const old = [...sheets].filter(([, s]) => now - s.at > IDLE_MS).sort((a, b) => a[1].at - b[1].at);
+    const drop = old.slice(0, Math.max(sheets.size - Math.floor(MAX_SHEETS * 0.75), 0));
+    for (const [k, s] of drop) {
+      sheets.delete(k);
+      s.img.onload = s.img.onerror = null;
+      s.img.src = '';                 // suelta la imagen decodificada
+    }
+  }
+
+  function sheet(dex, anim, shiny = false) {
+    const m = meta(dex);
+    shiny = shiny && !!(m && m.sh);
+    const name = animName(dex, anim, shiny);
+    if (!name) return null;
+    const k = dex + '/' + name + (shiny ? '/s' : '');
+    let s = sheets.get(k);
+    const now = Date.now();
+    if (s) {
+      s.at = now;
+      // Si la descarga se cortó (red mala, servidor saturado), reintenta más tarde.
+      if (s.failed && performance.now() > s.retryAt) { s.failed = false; s.img.src = s.src + '?r=' + s.tries; }
+      return s;
+    }
+    if (sheets.size >= MAX_SHEETS) evict(now);
+    s = { ready: false, failed: false, img: new Image(), tries: 0, retryAt: 0, at: now,
+          src: `assets/pokemon/${(m && m.al) || dex}/${m && m.src ? m.src + '/' : ''}${shiny ? 's/' : ''}${name}.png` };   // (U3: an alias row, a Mega with no sheet of its own: its species')
+    s.img.crossOrigin = 'anonymous';   // MicaSurvivor: sheets 301 to magepunk-micasurvivor.pages.dev (CORS)
+    s.img.onload = () => { s.ready = true; };
+    s.img.onerror = () => { s.failed = true; s.retryAt = performance.now() + 1000 * Math.min(8, 2 ** s.tries++); };
+    s.img.src = s.src;
+    sheets.set(k, s);
+    return s;
+  }
+
+  const ANIMS = ['Idle', 'Walk', 'Attack', 'Shoot', 'Charge', 'Hurt', 'Faint'];
+
+  /** Precarga todas las animaciones de esos Pokémon. */
+  function preload(dexes, timeout = 8000, shiny = false) {
+    const hs = [];
+    for (const d of dexes) for (const a of ANIMS) { const s = sheet(d, a, shiny); if (s) hs.push(s); }
+    return new Promise(res => {
+      const t0 = performance.now();
+      (function check() {
+        if (hs.every(h => h.ready || h.failed) || performance.now() - t0 > timeout) return res();
+        setTimeout(check, 50);
+      })();
+    });
+  }
+
+  /** Ángulo de pantalla (atan2(dy,dx)) -> fila de dirección 0..7. */
+  function dirFromAngle(a) {
+    return ((Math.round((Math.PI / 2 - a) / (Math.PI / 4)) % 8) + 8) % 8;
+  }
+
+  /** Radio de colisión aproximado a partir del tamaño del sprite. */
+  function bodyRadius(dex, scale = 1) {
+    const m = animMeta(dex, 'Idle');
+    const w = m ? m.w * artScale(dex) : 32;
+    return G.U.clamp(w * 0.22, 5, 26) * PX * scale;
+  }
+
+  /** Alto visual aproximado (para barras de vida y números de daño). */
+  function bodyHeight(dex, scale = 1) {
+    const m = animMeta(dex, 'Idle');
+    return (m ? m.ay * artScale(dex) : 24) * PX * scale;
+  }
+
+  /** Sombra elíptica bajo los pies, tamaño según el ShadowSize de PMD. */
+  function drawShadow(ctx, dex, x, y, scale = 1) {
+    const m = meta(dex);
+    const s = m ? m.s : 1;
+    const rx = [5, 8, 12][G.U.clamp(s, 0, 2)] * PX * scale;
+    ctx.fillStyle = 'rgba(0,0,0,.34)';
+    ctx.beginPath();
+    ctx.ellipse(x, y, rx, rx * 0.42, 0, 0, 6.2832);
+    ctx.fill();
+  }
+
+  // ---------------- Animator ----------------
+
+  /**
+   * Reproduce las animaciones de un Pokémon.
+   *   loop(anim)        animación de fondo (Idle / Walk); no reinicia si ya suena
+   *   play(anim, opts)  animación de una vez (Attack, Shoot, Hurt...) que tapa
+   *                     a la de fondo hasta que termina
+   */
+  class Animator {
+    constructor(dex, scale = 1, shiny = false) {
+      this.dex = dex;
+      this.shiny = shiny && hasShiny(dex);
+      this.scale = scale;
+      this.base = 'Idle';
+      this.cur = 'Idle';
+      this.frame = 0;
+      this.t = 0;              // tiempo dentro del fotograma, en 1/60 s
+      this.speed = 1;
+      this.once = false;
+      this.hold = false;       // se queda en el último fotograma (Faint)
+      this.done = false;
+      this.dir = 0;
+      this.clock = 0;          // segundos desde que se creó (el saltito de los Walk de un fotograma)
+      // Las hojas se cargan al dibujarse por primera vez; la run las precarga
+      // todas con preload() para que no parpadeen al primer ataque.
+    }
+
+    loop(anim, speed = 1) {
+      this.base = anim;
+      if (!this.once && this.cur !== anim) this._start(anim, false);
+      if (!this.once) this.speed = speed;
+    }
+
+    /** opts: { speed, hold } */
+    play(anim, opts = {}) {
+      this._start(anim, true);
+      this.speed = opts.speed || 1;
+      this.hold = !!opts.hold;
+    }
+
+    /** ¿Está sonando una animación de una vez sin terminar? */
+    busy() { return this.once && !this.done; }
+
+    /** Progreso 0..1 de la animación actual. */
+    progress() {
+      const m = animMeta(this.dex, this.cur, this.shiny);
+      if (!m) return 1;
+      let total = 0, before = 0;
+      for (let i = 0; i < m.n; i++) { if (i < this.frame) before += m.d[i]; total += m.d[i]; }
+      return total ? (before + this.t) / total : 1;
+    }
+
+    _start(anim, once) {
+      this.cur = animName(this.dex, anim, this.shiny) || 'Idle';
+      this.frame = 0; this.t = 0;
+      this.once = once; this.done = false;
+    }
+
+    update(dt) {
+      this.clock += dt * this.speed;
+      const m = animMeta(this.dex, this.cur, this.shiny);
+      if (!m || this.done) return;
+      this.t += dt * 60 * this.speed;
+      while (this.t >= m.d[this.frame]) {
+        this.t -= m.d[this.frame];
+        this.frame++;
+        if (this.frame >= m.n) {
+          if (this.once) {
+            if (this.hold) { this.frame = m.n - 1; this.done = true; return; }
+            // Vuelve a la animación de fondo.
+            this._start(this.base, false);
+            this.speed = 1;
+            return;
+          }
+          this.frame = 0;
+        }
+      }
+    }
+
+    /** Dibuja con los pies en (x, y). opts: { flash, alpha } */
+    draw(ctx, x, y, opts = {}) {
+      let m = animMeta(this.dex, this.cur, this.shiny);
+      let s = sheet(this.dex, this.cur, this.shiny);
+      const k = PX * this.scale * artScale(this.dex);
+      if (s && !s.ready) {
+        // Mientras carga esta animación, enseña Idle si ya está.
+        const idle = sheet(this.dex, 'Idle', this.shiny);
+        if (idle && idle.ready) { s = idle; m = animMeta(this.dex, 'Idle', this.shiny); }
+      }
+      const frame = s === sheet(this.dex, this.cur, this.shiny) ? this.frame : 0;
+      if (!m || !s || !s.ready) {
+        // Respaldo: bolita, por si falta el fichero.
+        ctx.fillStyle = opts.color || '#6b7a94';
+        ctx.beginPath(); ctx.arc(x, y - 12 * k, 8 * k, 0, 6.2832); ctx.fill();
+        return;
+      }
+      const row = rowOf(this.dex, this.dir, m);
+      const alpha = opts.alpha == null ? 1 : opts.alpha;
+      if (alpha <= 0) return;
+      // (MicaSurvivor U3: a Mega's id (an enemy, a base run's Mega Evolution, a puppet): the Mega aura at its feet and the
+      //  keystone's sign over its head, js/systems/forms.js; an Expedition League Mega draws its own, js/expedition/mega.js)
+      const mega = G.Megas && G.Megas.BY[this.dex];
+      if (mega && alpha >= 0.5) G.Megas.aura(ctx, x, y, G.U.clamp(m.w * 0.22, 5, 26) * k, this.clock);
+      const sx = Math.min(frame, m.n - 1) * m.w, sy = row * m.h;
+      // (Lote B1) Algunos Pokémon sólo tienen en SpriteCollab un Idle de un fotograma, que también hace de Walk
+      // (FALLBACK de tools/micasurvivor/fetch_sprites.py): andando, dan saltitos de 2 px para no deslizarse
+      // quietos. Ninguno de los 966 originales tiene un Walk de un fotograma, así que a ellos no les cambia nada.
+      const bob = m.n === 1 && this.cur === 'Walk' && !this.once ? Math.round(Math.abs(Math.sin(this.clock * 9)) * 2 * k) : 0;
+      let dx = Math.round(x - m.ax * k);
+      const dy = Math.round(y - m.ay * k) - bob;
+      const prev = ctx.globalAlpha;
+      // (Lote B1c) espejo horizontal alrededor del ancla (las hojas de combate: el frente mira a la izquierda)
+      const flip = flipOf(this.dex, this.dir);
+      if (flip) { const ox = Math.round(x); ctx.save(); ctx.translate(ox, 0); ctx.scale(-1, 1); dx -= ox; }
+      if (alpha < 1) ctx.globalAlpha = prev * alpha;
+      // Destello: blanco entero (enemigos) o medio blanco encima (tu Pokémon).
+      if (!opts.flash || opts.softFlash) ctx.drawImage(s.img, sx, sy, m.w, m.h, dx, dy, m.w * k, m.h * k);
+      if (opts.flash) {
+        if (opts.softFlash) ctx.globalAlpha = prev * alpha * 0.55;
+        ctx.drawImage(white(s.img), sx, sy, m.w, m.h, dx, dy, m.w * k, m.h * k);
+      }
+      ctx.globalAlpha = prev;
+      if (flip) ctx.restore();
+      if (mega && alpha >= 0.5) G.Megas.emblem(ctx, x, Math.round(y - m.ay * k) - bob - 9, this.clock);
+    }
+  }
+
+  return { PX, meta, hasShiny, hovers, white, animMeta, artScale, rowOf, flipOf, sheet, preload, dirFromAngle, bodyRadius, bodyHeight,
+           drawShadow, Animator, ANIMS, get sheetCount() { return sheets.size; } };
+})();

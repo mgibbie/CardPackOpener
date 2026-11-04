@@ -26,7 +26,11 @@ async function waitFor(fn, ms) { const t0 = Date.now(); while (Date.now() - t0 <
 			let b = ''; req.on('data', d => b += d); req.on('end', () => {
 				let body = {}; try { body = JSON.parse(b); } catch {}
 				let out = { ok: true };
-				if (body.action === 'live-friends') out = { live: [{ username: 'coolfriend', kind: 'card', mode: 'dungeon', label: 'Fight 3/8', watchers: 2, full: false }] };
+				if (body.action === 'live-friends') out = { live: [
+					{ username: 'coolfriend', kind: 'card', mode: 'dungeon', label: 'Fight 3/8', watchers: 2, full: false },
+					{ username: 'frontierpal', kind: 'factory', mode: 'factory', label: 'BATTLE FACTORY', watchers: 0, full: false },
+					{ username: 'pokerpal', kind: 'micatro', mode: 'micatro', label: 'Ante 3 · Big Blind', watchers: 1, full: false },
+				] };
 				else if (body.action === 'state') out = { state: { username: 'me', decks: [], collection: {} } };
 				else if (body.action === 'friends') out = { friends: [] };
 				else if (body.action === 'pubprofile') out = { profile: { username: body.username, online: true, status: 'card:dungeon', wins: 5, runs: 3, packsOpened: 9, uniqueCards: 40, deckCount: 2, isFriend: true, isYou: false } };
@@ -54,6 +58,14 @@ async function waitFor(fn, ms) { const t0 = Date.now(); while (Date.now() - t0 <
 		const tile = await page.evaluate(() => { const t = document.querySelector('#live-list .live-tile'); return t ? { text: t.textContent, hasWatch: !!t.querySelector('.live-watch'), hasName: !!t.querySelector('.live-name[data-user]') } : null; });
 		A(tile && /coolfriend/.test(tile.text) && /Dungeon run/i.test(tile.text) && /2.*watching/.test(tile.text), 'the tile shows the friend, game type, and live watcher count', JSON.stringify(tile));
 		A(tile && tile.hasWatch && tile.hasName, 'the tile has a Watch button + a clickable name');
+
+		// every live kind routes to ITS spectator (site/livewatch.js) — a Frontier run used
+		// to fall through to the Battlecards spectator, which can't show it
+		const routes = await page.evaluate(() => [...document.querySelectorAll('#live-list .live-tile')].map(t => ({ text: t.textContent, href: t.querySelector('.live-watch')?.dataset.href || '' })));
+		const byName = n => routes.find(r => r.text.includes(n)) || {};
+		A(routes.length === 3, 'all three live friends render', JSON.stringify(routes));
+		A(byName('frontierpal').href === '/overworld/?watchfactory=frontierpal&mp=1', 'a Battle Frontier run routes to the Overworld spectator', JSON.stringify(byName('frontierpal')));
+		A(byName('pokerpal').href === '/micatro/?spectate=pokerpal' && /Playing Micatro — Ante 3/.test(byName('pokerpal').text) && /1.*watching/.test(byName('pokerpal').text), 'a Micatro run shows "Playing Micatro — Ante 3" and routes to /micatro/?spectate=', JSON.stringify(byName('pokerpal')));
 
 		// the Card of the Week renders as a real card FACE (drawCardFace canvas), not split art/stats
 		const faceShown = await waitFor(() => page.evaluate(() => !!document.querySelector('#cw-face canvas')), 15000);

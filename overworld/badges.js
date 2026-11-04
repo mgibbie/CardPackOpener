@@ -173,6 +173,24 @@ function state() {
 	return _state;
 }
 function persist() { safeSave(KEY, state()); }
+// The cached table is only a cache of localStorage. A mutator drops it and
+// re-reads storage first, so a badge that landed underneath it (a sync that
+// adopted the server's save, another tab) is never written back away
+// (2026-10-03: earning Balance wrote back a table from before Jasmine and the
+// Mineral badge vanished). Rebase-on-write, as trainers.js since #647.
+// Badges only ever grow, so the rebase is a UNION of the cache and storage:
+// a badge that landed underneath is picked up, and one this tab holds is never
+// dropped — even when storage can't be read or written (full/blocked storage,
+// a test without localStorage), where a plain re-read would lose it.
+function fresh() {
+	const st = state();
+	const raw = safeLoad(KEY, null);
+	if (raw && typeof raw === 'object') {
+		for (const [r, set] of Object.entries(raw.badges || {})) for (const [id, v] of Object.entries(set || {})) if (v) (st.badges[r] = st.badges[r] || {})[id] = true;
+		for (const [r, v] of Object.entries(raw.champion || {})) if (v) st.champion[r] = true;
+	}
+	return st;
+}
 
 // reset the in-memory cache (tests / a fresh account after a wipe)
 export function _reset() { _state = null; }
@@ -184,7 +202,7 @@ export function has(region, id) {
 // award a badge; returns true only if it was newly earned (for the toast/dialog)
 export function earn(region, id) {
 	const rk = regionKey(region);
-	const b = state().badges;
+	const b = fresh().badges;
 	if (!b[rk]) b[rk] = {};
 	if (b[rk][id]) return false;
 	b[rk][id] = true;
@@ -240,8 +258,9 @@ export function hmReq(region, hmId) {
 export function isChampion(region) { return !!state().champion[regionKey(region)]; }
 export function crown(region) {
 	const rk = regionKey(region);
-	if (state().champion[rk]) return false;
-	state().champion[rk] = true;
+	const st = fresh();
+	if (st.champion[rk]) return false;
+	st.champion[rk] = true;
 	persist();
 	return true;
 }

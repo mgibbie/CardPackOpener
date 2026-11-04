@@ -79,8 +79,16 @@ async function waitFor(fn, ms) {
 			const ow = window.__ow, bt = ow.battle;
 			const out = {};
 			const mv = ids => ids.map(id => ({ id, name: id, pp: 10, maxPp: 10 }));
+			// buildMon rolls IVs/nature/held item; the scoring asserts compare close
+			// scores (a route trainer's 51 vs 60), so a bad roll flipped them now and
+			// then — build every test mon from one fixed seed
+			let seed = 12345;
 			const mk = (sp, lv, moves) => {
-				const m = B.buildMon(sp, lv, bt.data);
+				const R = Math.random;
+				Math.random = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+				let m;
+				try { m = B.buildMon(sp, lv, bt.data); } finally { Math.random = R; }
+				m.heldItem = null;
 				if (moves) m.moves = mv(moves);
 				m.ability = null; // no ability surprises in scoring paths
 				return m;

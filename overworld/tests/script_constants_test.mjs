@@ -24,6 +24,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { overworldSource } from './owsource.mjs';   // main.js + the modules split out of it
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '../../');
@@ -48,7 +49,7 @@ const { SCRIPT_CONSTANTS: C } = await import('../script_constants.js');
 	// harvested number could serve both. It only has to agree with main.js.
 	A(C.UP === C.DIR_NORTH && C.DOWN === C.DIR_SOUTH && C.LEFT === C.DIR_WEST && C.RIGHT === C.DIR_EAST,
 		"the two decomps' facing spellings map to one encoding");
-	const main = fs.readFileSync(path.join(ROOT, 'overworld/main.js'), 'utf8');
+	const main = overworldSource();
 	const m = /const FACING_VALUE = \{ down: (\d), up: (\d), left: (\d), right: (\d) \}/.exec(main);
 	A(m && +m[1] === C.DIR_SOUTH && +m[2] === C.DIR_NORTH && +m[3] === C.DIR_WEST && +m[4] === C.DIR_EAST,
 		'...and main.js writes VAR_FACING in exactly that encoding', m ? m[0] : 'FACING_VALUE not found');

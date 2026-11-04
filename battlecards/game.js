@@ -19,8 +19,9 @@ import * as SFX from './sfx.js';
 import { checkToasts as achCheck } from '../site/achievements.js';
 import { safeLoad, safeSave, safeSaveRetry } from './safestore.js';
 import { PARTIAL_DISCARD_KEY, makePartial, matchPartial } from './partialchoice.js';
-import { pickCanonicalRun, useLocalAsyncTurn } from './runsync.js';
+import { pickCanonicalRun, useLocalAsyncTurn, serverEndedRun, serverSupersededRun } from './runsync.js';
 import { winLossLabel, plural } from './runlabel.js';
+import { runSummary } from './runlabel.js';
 import { keywordsFor, keywordLabel, richHtml, runePipsHtml } from './keywords.js';
 import { correspondenceOffenders, filterCorrespondence } from './format.js';
 
@@ -66,6 +67,8 @@ import { CARD_W, CARD_H, CARD_D, makeFaceTexture, makeBackTexture, classNameOf, 
 import * as Rec from './replayrec.js';
 import * as RunRep from './runreplay.js';
 import { openProfile } from './profile.js';
+import { initPadboard } from './padboard.js';
+import { rumble } from '../site/gamepad.js';
 
 // the player index this client controls. Solo/host = 0; a live-duel guest = 1.
 // The board reorients so HUMAN always sits at the bottom facing the camera.
@@ -73,7 +76,7 @@ let HUMAN = 0;
 const TAU = Math.PI * 2;
 const UP = new THREE.Vector3(0, 1, 0);
 
-// player count comes from ?players=N (2-8); the in-game selector rewrites it
+// player count comes from ?players=N (2-8): a URL setting only (tests, deep links)
 let playerCount = Math.max(2, Math.min(E.MAX_PLAYERS,
 	parseInt(new URLSearchParams(location.search).get('players'), 10) || 2));
 
@@ -159,7 +162,17 @@ function stampRun(run) {
 	run.updatedAt = Date.now();
 	return run;
 }
-const saverFor = key => run => safeSave(key, stampRun(run));
+// A run write must land too (a loot pick, the next enemy, a banked win): on a full store it
+// evicts expendable replay data and retries, like the mid-fight snapshot. If it still fails,
+// the player is told — a run whose saves silently stop resumes hours behind on the next load.
+const saverFor = key => run => { const ok = safeSaveRetry(key, stampRun(run), freeSpaceForSnapshot); if (!ok) runSaveFailed(key); return ok; };
+let _runSaveWarned = false;
+function runSaveFailed(key) {
+	if (_runSaveWarned) return;
+	_runSaveWarned = true;
+	try { banner('⚠ This browser could not save your run (storage is full or blocked) — your progress may not survive a reload.', 8000); } catch (e) { /* no DOM yet */ }
+	try { window.reportErr?.('run save failed after eviction (' + key + ')', 'game.js runSaveFailed'); } catch (e) { /* ignore */ }
+}
 // A run that loses reconciliation but still holds progress is never dropped — it is
 // stashed under a sibling key so it stays recoverable.
 function preserveRunConflict(key, run, reason) {
@@ -168,37 +181,37 @@ function preserveRunConflict(key, run, reason) {
 }
 const loadRun = () => safeLoad(RUN_KEY, null);
 const saveRun = saverFor(RUN_KEY);
-const clearRun = () => { localStorage.removeItem(RUN_KEY); serverClearRun(RUN_KEY); };
+const clearRun = () => endRunKey(RUN_KEY);
 const loadHeist = () => safeLoad(HEIST_KEY, null);
 const saveHeist = saverFor(HEIST_KEY);
-const clearHeist = () => { localStorage.removeItem(HEIST_KEY); serverClearRun(HEIST_KEY); };
+const clearHeist = () => endRunKey(HEIST_KEY);
 const loadTombs = () => safeLoad(TOMBS_KEY, null);
 const saveTombs = saverFor(TOMBS_KEY);
-const clearTombs = () => { localStorage.removeItem(TOMBS_KEY); serverClearRun(TOMBS_KEY); };
+const clearTombs = () => endRunKey(TOMBS_KEY);
 const loadDuels = () => safeLoad(DUELS_KEY, null);
 const saveDuels = saverFor(DUELS_KEY);
-const clearDuels = () => { localStorage.removeItem(DUELS_KEY); serverClearRun(DUELS_KEY); };
+const clearDuels = () => endRunKey(DUELS_KEY);
 const loadArena = () => safeLoad(ARENA_KEY, null);
 const saveArena = saverFor(ARENA_KEY);
-const clearArena = () => { localStorage.removeItem(ARENA_KEY); serverClearRun(ARENA_KEY); };
+const clearArena = () => endRunKey(ARENA_KEY);
 const loadLorequest = () => safeLoad(LOREQUEST_KEY, null);
 const saveLorequest = saverFor(LOREQUEST_KEY);
-const clearLorequest = () => { localStorage.removeItem(LOREQUEST_KEY); serverClearRun(LOREQUEST_KEY); };
+const clearLorequest = () => endRunKey(LOREQUEST_KEY);
 const loadMiddleearth = () => safeLoad(MIDDLEEARTH_KEY, null);
 const saveMiddleearth = saverFor(MIDDLEEARTH_KEY);
-const clearMiddleearth = () => { localStorage.removeItem(MIDDLEEARTH_KEY); serverClearRun(MIDDLEEARTH_KEY); };
+const clearMiddleearth = () => endRunKey(MIDDLEEARTH_KEY);
 const middleearthTomUnlocked = () => { try { return localStorage.getItem(MIDDLEEARTH_UNLOCK_KEY) === '1'; } catch (e) { return false; } };
 const loadSwordcoast = () => safeLoad(SWORDCOAST_KEY, null);
 const saveSwordcoast = saverFor(SWORDCOAST_KEY);
-const clearSwordcoast = () => { localStorage.removeItem(SWORDCOAST_KEY); serverClearRun(SWORDCOAST_KEY); };
+const clearSwordcoast = () => endRunKey(SWORDCOAST_KEY);
 const swordcoastGaleUnlocked = () => { try { return localStorage.getItem(SWORDCOAST_UNLOCK_KEY) === '1'; } catch (e) { return false; } };
 const loadFinalfantasy = () => safeLoad(FINALFANTASY_KEY, null);
 const saveFinalfantasy = saverFor(FINALFANTASY_KEY);
-const clearFinalfantasy = () => { localStorage.removeItem(FINALFANTASY_KEY); serverClearRun(FINALFANTASY_KEY); };
+const clearFinalfantasy = () => endRunKey(FINALFANTASY_KEY);
 const finalfantasyGilgameshUnlocked = () => { try { return localStorage.getItem(FINALFANTASY_UNLOCK_KEY) === '1'; } catch (e) { return false; } };
 const loadMultiverse = () => safeLoad(MULTIVERSE_KEY, null);
 const saveMultiverse = saverFor(MULTIVERSE_KEY);
-const clearMultiverse = () => { localStorage.removeItem(MULTIVERSE_KEY); serverClearRun(MULTIVERSE_KEY); };
+const clearMultiverse = () => endRunKey(MULTIVERSE_KEY);
 const multiverseSurferUnlocked = () => { try { return localStorage.getItem(MULTIVERSE_UNLOCK_KEY) === '1'; } catch (e) { return false; } };
 
 // ---------- deterministic mid-fight resume (Phase 1) ----------
@@ -241,7 +254,8 @@ function freeSpaceForSnapshot() {
 }
 function saveRunSnapshot() {
 	const io = activeRunIO();
-	if (!io || !state || state.over || (typeof isGuest === 'function' && isGuest())) return;
+	if (!io || !state || (typeof isGuest === 'function' && isGuest())) return;
+	if (state.over) { recordRunResult(); return; }
 	const run = io.load();
 	if (!run || !run.active) return;
 	try {
@@ -255,7 +269,7 @@ function saveRunSnapshot() {
 		run.snapshot = JSON.parse(json); // deep copy — toSnapshot shares `players` by reference
 		run.snapshotAt = Date.now(); // freshness stamp so boot never discards this for a stale server copy
 		stampRun(run); // identity + monotonic rev, so reconciliation can order this write
-		safeSaveRetry(io.key, run, freeSpaceForSnapshot); // local only; never silently skipped
+		if (!safeSaveRetry(io.key, run, freeSpaceForSnapshot)) runSaveFailed(io.key); // local only; never silently skipped
 	} catch (e) { /* never let a save break play */ }
 }
 // drop the in-fight snapshot when a fight ends (so the next fight boots fresh, not resumes the finished one)
@@ -308,27 +322,227 @@ function resumeRunSnapshot(run, byId) {
 // seconds (snapshot stripped, deduped) and the FULL run (with the mid-fight snapshot) only when you
 // leave (tab hidden / pagehide) — the moment a cross-device handoff matters.
 let _lastPushedRunJson = '';
-function pushActiveRun(withSnapshot, keepalive) {
+// A run write that MUST reach the server (a finished fight's result, the end of a
+// run): retried with backoff on anything transient — a network error, the 20 s
+// timeout, a 429 "slow down", a 5xx/garbled reply. It stops at the first answer
+// that settles it: written ({ok}), refused as stale (the server holds a newer
+// copy or the run has ended — see onRunWriteReply), or a definitive error (bad
+// key / too large). Resolves with that answer, or null when every try failed.
+const RUN_WRITE_BACKOFF = [1000, 2000, 4000, 8000, 16000];
+// transient = no answer at all (network error / timeout), a 429 "slow down", a 503
+// "busy, retry", or a garbled reply (a 5xx HTML error page -> mpmode's 'bad response')
+const isTransientRunReply = d => !d || (!d.ok && !d.stale && d.error && /slow down|bad response|busy|retry|try again/i.test(String(d.error)));
+async function runWrite(action, payload, opts = {}) {
+	const waits = opts.backoff || RUN_WRITE_BACKOFF;
+	for (let i = 0; ; i++) {
+		let d = null;
+		try { d = await MPX.call(action, payload, { keepalive: !!opts.keepalive }); } catch (e) { d = null; }
+		if (!isTransientRunReply(d)) return d;
+		if (i >= waits.length) return null;
+		await new Promise(r => setTimeout(r, waits[i]));
+	}
+}
+// What a run-save's answer means for the run in this tab. Every failure used to
+// be swallowed (`.catch(() => {})` on a reply that never throws), so a refused or
+// lost save left the server behind with nobody the wiser.
+//
+// A TRANSIENT failure (no answer, 429, 503, a garbled 5xx page) is not a refusal: the
+// heartbeat resends it 5 s later, so one blip says nothing (bug:1793106175884 — a single
+// garbled heartbeat reply showed "The server would not save your run: bad response"
+// although the next heartbeat saved it). It is still never silent: a RESULT whose
+// retries are all spent, or RUN_SYNC_WARN_AFTER heartbeats in a row, warn — as a
+// connection problem, not a refusal — and the first save that lands after any warning
+// says so, so the warning never outlives the problem.
+const RUN_SYNC_WARN_AFTER = 3;
+let _runSyncFails = 0;
+function onRunWriteReply(key, sent, json, d, mustLand) {
+	const ok = !!(d && d.ok);
+	if (!ok && _lastPushedRunJson === json) _lastPushedRunJson = ''; // not on the server: the next heartbeat resends it
+	if (ok) {
+		_runSyncFails = 0;
+		if (_runSyncWarned === 'lost' || _runSyncWarned === 'offline' || _runSyncWarned === 'error') banner('✓ Your run is saved on the server again.', 4000);
+		_runSyncWarned = '';
+		return;
+	}
+	if (isTransientRunReply(d)) {
+		_runSyncFails++;
+		if (mustLand) {
+			// runWrite already spent every retry on this RESULT: say it out loud
+			if (_runSyncWarned !== 'lost') { _runSyncWarned = 'lost'; banner('⚠ Could not reach the server to save this result — still trying. Keep this tab open.', 5000); try { window.reportErr?.('run result could not reach the server (' + key + ')', 'game.js onRunWriteReply'); } catch (e) { /* ignore */ } }
+		} else if (_runSyncFails >= RUN_SYNC_WARN_AFTER && !_runSyncWarned) {
+			_runSyncWarned = 'offline';
+			banner('⚠ Having trouble reaching the server — your run is kept on this device and saving is still being retried.', 6000);
+			try { window.reportErr?.('run save: server unreachable for ' + _runSyncFails + ' heartbeats (' + (d && d.error ? String(d.error).slice(0, 40) : 'no answer') + ', ' + key + ')', 'game.js onRunWriteReply'); } catch (e) { /* ignore */ }
+		}
+		return;
+	}
+	_runSyncFails = 0;   // the server answered: whatever it said, it is reachable
+	const local = safeLoad(key, null);
+	const sameRun = !!(local && sent && local.runId && String(local.runId) === String(sent.runId));
+	if (d.stale && d.ended) { if (sameRun) runEndedOnServer(key, local); return; }
+	if (d.stale) {
+		// the server holds a NEWER revision of this run (another tab or device moved it on)
+		if (sameRun && d.rev != null && (local.rev || 0) < d.rev && _runSyncWarned !== 'stale') {
+			_runSyncWarned = 'stale';
+			banner('⚠ This run was continued somewhere else — reload the page to pick up the latest copy.', 6000);
+			try { window.reportErr?.('run save refused: server has a newer revision (' + key + ')', 'game.js onRunWriteReply'); } catch (e) { /* ignore */ }
+		}
+		return;
+	}
+	if (d.error && _runSyncWarned !== 'error') {
+		_runSyncWarned = 'error';
+		banner('⚠ The server would not save your run: ' + String(d.error).slice(0, 60), 6000);
+		try { window.reportErr?.('run save failed: ' + String(d.error).slice(0, 80) + ' (' + key + ')', 'game.js onRunWriteReply'); } catch (e) { /* ignore */ }
+	}
+}
+let _runSyncWarned = '';
+function pushActiveRun(withSnapshot, keepalive, mustLand) {
 	if (!MP_ON || (typeof isGuest === 'function' && isGuest())) return;
 	const io = activeRunIO(); if (!io) return;
 	const run = io.load(); if (!run || !run.active) return;
 	const toPush = withSnapshot ? run : { ...run, snapshot: undefined, snapshotAt: undefined };
 	const json = JSON.stringify(toPush);
-	if (!withSnapshot && json === _lastPushedRunJson) return; // metadata unchanged
+	if (!withSnapshot && json === _lastPushedRunJson) return; // metadata unchanged (and already on the server)
 	_lastPushedRunJson = json;
 	// keepalive lets the final push survive a hard tab-close (small snapshots only —
 	// keepalive caps the body at ~64KB, so large boards fall back to the local snapshot)
-	MPX.call('run-save', { key: io.key, run: toPush }, { keepalive: !!keepalive }).catch(() => {});
+	const payload = { key: io.key, run: toPush };
+	const sent = mustLand ? runWrite('run-save', payload, { keepalive: !!keepalive })
+		: MPX.call('run-save', payload, { keepalive: !!keepalive }).catch(() => null);
+	sent.then(d => onRunWriteReply(io.key, run, json, d, mustLand)).catch(() => {});
 }
-function serverClearRun(key) { if (MP_ON) MPX.call('run-clear', { key }).catch(() => {}); }
+// The server ended this run (its slot holds `{ended: runId}`), but this browser
+// still has it — the writes that removed it were lost (a killed or crashed browser
+// drops recent localStorage writes). Playing on can never commit: every save of an
+// ended run is refused. Put the local copy away (stashed, never deleted) and say so.
+function endLocalRunCopy(key, local, reason) {
+	preserveRunConflict(key, local, reason);
+	const runId = String(local.runId);
+	safeSave(ENDED_RUNS_KEY, [...endedRunIds().filter(id => id !== runId), runId].slice(-50));
+	try { localStorage.removeItem(key); } catch (e) { /* ignore */ }
+}
+let _endedOnServerShown = false;
+function runEndedOnServer(key, local) {
+	endLocalRunCopy(key, local, 'server-ended');
+	const io = activeRunIO();
+	if (!io || io.key !== key || _endedOnServerShown) return;
+	_endedOnServerShown = true;
+	if (state && !state.over) state.over = true; // freeze the zombie fight: its result is already on the server
+	const el = dungeonOverlay('RUN ALREADY ENDED', `This run (${runSummary(local)}) had already ended — its result is saved on the server. This fight was a stale copy and can't change it.`);
+	el.appendChild(overlayButton('New Run', () => location.reload()));
+	updateHud();
+}
+// A finished fight's RESULT is recorded the moment the engine ends it — not when
+// the event playback reaches gameOver and its 1200 ms beat fires the mode's
+// victory/defeat. Leaving inside that window (a reload, the lobby, a closed tab)
+// used to keep the PRE-DEATH snapshot: "Continue the run" reloaded the same lost
+// fight, which the seeded RNG replays identically, forever (Remy's Final Fantasy
+// run frozen at 2W/2L). The pending result rides the run (snapshot dropped) and
+// the boot settles it through the same victory/defeat path. Modes that resume a
+// post-game checkpoint clear the marker in beginPostGame; Dungeon, Heist and Tombs
+// (no checkpoint) roll their reward offers from its seed, record the stage a pick
+// leads to (rewardStage) and clear it when the run advances; Arena clears it when
+// the result is banked. A finished run clears the whole run.
+const RESULT_RUN_KEYS = new Set([RUN_KEY, HEIST_KEY, TOMBS_KEY, ARENA_KEY, DUELS_KEY, LOREQUEST_KEY, MIDDLEEARTH_KEY, SWORDCOAST_KEY, FINALFANTASY_KEY, MULTIVERSE_KEY]);
+function recordRunResult() {
+	if (!state || !state.over || replayMode || spectateMode || (typeof isGuest === 'function' && isGuest())) return;
+	// ONE fight, ONE result. The finished state lingers after its mode has applied
+	// the result and moved on ("NEXT: ... Fight!" clears postGame and the pending
+	// marker), until the next fight boots. Fight! reloads the page, and this
+	// pagehide save then stamped the OLD result onto the NEXT fight: a phantom loss
+	// (or win), settled at boot, with "NEXT ... Fight!" shown again instead of the
+	// fight (Muse's Final Fantasy runs, 2026-10-07). A state records at most once.
+	if (state.resultRecorded) return;
+	const io = activeRunIO();
+	if (!io || !RESULT_RUN_KEYS.has(io.key)) return;
+	const run = io.load();
+	if (!run || !run.active) return;
+	state.resultRecorded = true;   // whether recorded now or already accounted for (a pending result / reward)
+	if (run.postGame || run.pendingResult) return;
+	run.pendingResult = { won: state.winner === HUMAN, at: Date.now(), seed: (Math.random() * 2 ** 31) >>> 0 };
+	delete run.snapshot; delete run.snapshotAt;   // the fight is over: never resume it
+	io.save(run);
+	pushActiveRun(true, false, true);   // the result MUST reach the server: retried with backoff, never silently dropped
+}
+function settlePendingResult(run, victory, defeat, stages) {
+	const won = !!run.pendingResult.won;
+	delete run.snapshot; delete run.snapshotAt;
+	// a reward left part-way resumes at the stage its last pick led to
+	const resume = won && stages && stages[run.pendingResult.stage];
+	(resume || (won ? victory : defeat))(run);
+}
+// the card defs for a result settled at boot, before any game state exists
+let runBootCardsById = null;
+const runDefs = () => (state && state.cardsById) || runBootCardsById || {};
+// a reward screen's offers roll from the pending result's seed: a reload shows the same choices
+function rewardRng(run, salt) {
+	const seed = run && run.pendingResult && run.pendingResult.seed;
+	return seed != null ? E.seededRng((seed + salt * 7919) >>> 0) : Math.random;
+}
+// a pick made mid-reward is saved with the stage it leads to, so a reload resumes there
+// instead of offering (and granting) the earlier pick again
+function rewardStage(run, stage, save) { if (run.pendingResult) { run.pendingResult.stage = stage; save(run); } }
+function serverClearRun(key, runId) {
+	if (!MP_ON) return;
+	// the end of a run must land too: retried with backoff (a clear that never arrives
+	// still can't resurrect the run — its pending result, already sent, settles it)
+	runWrite('run-clear', runId ? { key, runId } : { key }).then(d => {
+		if (!d || !d.ok) banner('⚠ Could not tell the server this run ended — it will settle the next time you open the mode.', 5000);
+	}).catch(() => {});
+}
+// End a run for good. The server is told WHICH run ended (its marker refuses any
+// save of that run still in flight), and this device remembers it too, so a boot
+// never takes the finished run back from the server even if the clear itself never
+// arrived (a closed tab). Without both, a run "over" at 3 losses came back and
+// replayed its last fight (Muse's Final Fantasy runs, 2026-10).
+const ENDED_RUNS_KEY = 'magepunk_ended_runs_v1';
+const endedRunIds = () => { const l = safeLoad(ENDED_RUNS_KEY, []); return Array.isArray(l) ? l : []; };
+function endRunKey(key) {
+	const run = safeLoad(key, null);
+	const runId = run && run.runId ? String(run.runId) : null;
+	if (runId) safeSave(ENDED_RUNS_KEY, [...endedRunIds().filter(id => id !== runId), runId].slice(-50));
+	localStorage.removeItem(key);
+	serverClearRun(key, runId);
+}
+// Fight! on a run's NEXT screen reloads the page to boot the fight fresh. The boot used to
+// treat that reload like any return to the mode and showed "<RUN> IN PROGRESS / Continue the
+// run" first — one extra click every fight, with Abandon right under it (instinctgauntlet,
+// 2026-10-22). Fight! now leaves a one-shot, tab-scoped marker naming the run it advanced;
+// a boot that finds the SAME run skips the resume prompt. Any other load (a manual reload, a
+// new tab, another run) still asks.
+const FIGHT_GO_KEY = 'magepunk_fight_go_v1';
+let _fightGo = null;
+function fightNow() {
+	try {
+		const io = activeRunIO(); const run = io && io.load();
+		if (io && run && run.runId) sessionStorage.setItem(FIGHT_GO_KEY, JSON.stringify({ key: io.key, runId: String(run.runId), at: Date.now() }));
+	} catch (e) { /* no sessionStorage: the resume prompt simply shows */ }
+	location.reload();
+}
+function takeFightGo() {
+	let v = null;
+	try { v = JSON.parse(sessionStorage.getItem(FIGHT_GO_KEY) || 'null'); sessionStorage.removeItem(FIGHT_GO_KEY); } catch (e) { v = null; }
+	return v && typeof v === 'object' && Date.now() - (v.at || 0) < 120000 ? v : null;
+}
+function fightGoFor(run) {
+	const io = activeRunIO();
+	return !!(_fightGo && io && run && run.runId && _fightGo.key === io.key && _fightGo.runId === String(run.runId));
+}
 // server is authoritative on boot: overwrite the localStorage run caches with the server's copies
+const _runsEndedAtBoot = new Set();   // run keys whose stale local copy the boot put away
 async function hydrateRunsFromServer() {
 	if (!MP_ON) return;
 	try {
 		const r = await MPX.call('run-load');
 		const runs = r && r.runs;
 		if (runs && typeof runs === 'object') for (const [key, entry] of Object.entries(runs)) {
+			// the server says this very run is OVER: a local copy of it is a zombie (its
+			// removal was lost) — every save of it would be refused, so put it away now
+			if (serverEndedRun(safeLoad(key, null), entry)) { endLocalRunCopy(key, safeLoad(key, null), 'server-ended'); _runsEndedAtBoot.add(key); continue; }
+			// ...or a LATER run ended there since this copy was written: an older run's zombie (stashed, never deleted)
+			if (serverSupersededRun(safeLoad(key, null), entry)) { endLocalRunCopy(key, safeLoad(key, null), 'server-ended-later-run'); _runsEndedAtBoot.add(key); continue; }
 			if (!entry || !entry.run || typeof entry.run !== 'object') continue;
+			if (entry.run.runId && endedRunIds().includes(String(entry.run.runId))) continue; // a run this device ended
 			// Pick ONE canonical copy. entry.updated_at is the server's own write stamp —
 			// authoritative recency, immune to client clocks — and was previously thrown
 			// away here, leaving the decision to "does the server copy have a snapshot?".
@@ -354,6 +568,14 @@ const nameOf = pi => pi === HUMAN ? 'You'
 	: duel.on ? (pi === 0 ? (duel.config?.host || 'Host') : (duel.config?.guest || 'Guest'))
 	: (dungeonBossId && pi === 1 ? Dungeon.BOSSES[dungeonBossId].name
 	: heistBossName && pi === 1 ? heistBossName : `AI ${pi}`);
+// why a Coin arrived (coinGiven.cause), as a log suffix
+function coinCauseText(cause) {
+	if (!cause || cause.kind !== 'land' || cause.by == null) return '';
+	return cause.from ? ` (${nameOf(cause.by)} upgraded ${cause.from} into ${cause.land})` : ` (${nameOf(cause.by)} developed ${cause.land})`;
+}
+// who just played The Coin (its 'play' event), so the 'coin' event that follows logs once;
+// anything else (Escaped Manasaber's attack) is plain temp mana: "gained 1 Mana"
+let coinPlayBy = null;
 // nameOf returns the SECOND person for the local player ("You"), so anything that
 // glues a third-person verb or a possessive onto it reads wrong: "You rolls the
 // planar die", "returned to You's hand". These pick the right form by person.
@@ -1212,7 +1434,57 @@ function openTapMenu(card, ev) {
 	menu.style.top = `${Math.min(ev.clientY, innerHeight - 200)}px`;
 }
 
+// an artifact {T} ability: targeted ones pick a target, others fire at once
+function armArtifactTap(card, idx) {
+	const spec = E.tapArtifactSpec(state, HUMAN, card.uid, idx);
+	if (spec && spec.required) {
+		const targets = E.legalTargets(state, HUMAN, spec);
+		if (targets.length) { pending = { card, spec, targets, mode: 'tapart', tapIndex: idx }; updateHud(); }
+	} else actTapArtifact(card.uid, null, idx); // relays in a duel (guest)
+}
+// an artifact with several {T} abilities (Mirkwood Darkflame Arrow): pick one
+function openArtifactTapMenu(card, ev) {
+	const menu = $('walker-menu');
+	menu.innerHTML = `<div class="wm-title">${card.name} — tap for:</div>`;
+	E.artifactTaps(card).forEach((t, i) => {
+		const btn = document.createElement('button');
+		btn.innerHTML = `<span class="wm-cost">⟳</span>${t.text}`;
+		btn.disabled = !E.canTapArtifact(state, HUMAN, card.uid, i);
+		btn.addEventListener('pointerdown', e => {
+			e.stopPropagation();
+			hideWalkerMenu();
+			armArtifactTap(card, i);
+		});
+		menu.appendChild(btn);
+	});
+	menu.style.display = 'block';
+	menu.style.left = `${Math.min(ev.clientX, innerWidth - 300)}px`;
+	menu.style.top = `${Math.min(ev.clientY, innerHeight - 200)}px`;
+}
+
 let sprocketRing = null; // gold ring marking the human's active Contraption slot
+// How far the TUCKED hand moves up the table to stay on screen. Its fixed spot sat below
+// a 720px-tall window's edge: a press on the field tucks the hand, and at 1280x720 the
+// cards' centers landed at y≈740-757, a thin sliver showing (instinctgauntlet, 2026-10-25).
+// Solved once per viewport/camera: the tucked row's centers stay TUCK_MARGIN px above the
+// bottom edge; a tall window, where it already fits, keeps the old spot (lift 0).
+const TUCK_MARGIN = 34;
+const _tuckV = new THREE.Vector3();
+const _tuck = { w: -1, h: -1, off: NaN, cy: NaN, cz: NaN, dz: 0 };   // per-frame: compare numbers, allocate nothing
+function tuckLiftZ(off) {
+	const t = _tuck, cy = camera.position.y, cz = camera.position.z;
+	if (t.w === innerWidth && t.h === innerHeight && t.off === off && t.cy === cy && t.cz === cz) return t.dz;
+	camera.updateMatrixWorld();
+	const limit = innerHeight - TUCK_MARGIN;
+	let dz = 0;
+	for (let k = 0; k < 40; k++) {
+		toWorld(0, 1.32, off + 7.5 - dz, HUMAN, _tuckV).project(camera);
+		if ((1 - _tuckV.y) / 2 * innerHeight <= limit) break;
+		dz += 0.05;
+	}
+	t.w = innerWidth; t.h = innerHeight; t.off = off; t.cy = cy; t.cz = cz; t.dz = dz;
+	return dz;
+}
 function layoutTargets() {
 	if (!state) return;
 	const off = sliceOff();
@@ -1251,7 +1523,7 @@ function layoutTargets() {
 				const hovered = hoverUid === card.uid || (pending?.card.uid === card.uid);
 				if (handMini && !hovered) {
 					// tucked down below the hero panel so the panel reads clearly
-					ent.target.pos.set(x, 1.32 + i * 0.012, off + 7.5 - Math.abs(x) * 0.03);
+					ent.target.pos.set(x, 1.32 + i * 0.012, off + 7.5 - Math.abs(x) * 0.03 - tuckLiftZ(off));
 					sliceQuat(_layoutEuler.set(-0.5, 0, -(i - (n - 1) / 2) * 0.03), HUMAN, ent.target.quat);
 					ent.target.scale = 0.5;
 				} else {
@@ -1261,6 +1533,7 @@ function layoutTargets() {
 					ent.target.pos.set(x, 1.7 + (hovered ? 0.9 : 0) + i * 0.012, off + 6.9 - Math.abs(x) * 0.04 + (hovered ? 0.45 : 0));
 					sliceQuat(_layoutEuler.set(-0.5, 0, -(i - (n - 1) / 2) * 0.03), HUMAN, ent.target.quat);
 					ent.target.scale = hovered ? 1.0 : 0.68;
+					if (hovered) fitCardOnScreen(ent.target);   // its stats sit at the bottom corners
 				}
 			} else {
 				const spread = Math.min(1.0, 6.5 / Math.max(n, 1));
@@ -1324,13 +1597,15 @@ function layoutTargets() {
 			sliceQuat(FLAT, pi, ent.target.quat);
 			ent.target.scale = 0.42;
 		});
-		// planeswalkers: center row between the land slots and the hero
-		const wn = p.planeswalkers.length;
+		// planeswalkers FLANK the hero panel (right, left, then further out). They
+		// used to sit dead-centre at the panel's own depth, i.e. right BEHIND your
+		// hero panel — only the name strip showed, and the hand covered the rest
+		// (Bryan: "not able to click on this planeswalker")
 		p.planeswalkers.forEach((card, i) => {
 			const ent = entityFor(card);
 			seen.add(card.uid);
-			const x = (i - (wn - 1) / 2) * 1.45;
-			toWorld(x, 0.07, off + 5.55, pi, ent.target.pos);
+			const side = i % 2 === 0 ? 1 : -1, k = Math.floor(i / 2);
+			toWorld(side * (2.5 + k * 1.35), 0.07, off + 5.0, pi, ent.target.pos);
 			sliceQuat(FLAT, pi, ent.target.quat);
 			ent.target.scale = 0.5;
 		});
@@ -1466,32 +1741,152 @@ const logEl = $('log');
 // full match history (for the scrollable log drawer); the inline #log HUD keeps
 // only the last few lines. Bounded so a very long game can't grow without limit.
 const logHistory = [];
-function log(msg) {
+// CARD NAMES in the log are links (Plans/CONTROLLER_V2_PLAN.md D): parallel to
+// logHistory, each line's [{ s, e, id, uid }] — character span, card id, and the
+// uid of a PUBLIC copy when there was one. Clicking one opens the card focus view.
+const logLinks = [];
+// every card name this match can print, mapped to its id and (when one is face-up
+// on the table, in a graveyard/exile, or in YOUR hand) a public uid. A name is
+// only linked where the log already printed it, and a hidden copy's uid is never
+// stored — so a link reveals nothing the line didn't.
+// A summoned token has no card definition, so once it dies (tokens are exiled)
+// its log link had nothing to show (2026-10-02). Links to such cards keep a copy
+// of the card as it was when the line was logged.
+function logSnap(c) {
+	if (!c || typeof c !== 'object') return null;
+	return { ...c, keywords: [...(c.keywords || [])], ongoing: c.ongoing, effects: c.effects };
+}
+function logNameIndex() {
+	const out = new Map();
+	if (!state) return out;
+	const add = (c, pub) => {
+		if (!c || !c.name || typeof c !== 'object') return;
+		const e = out.get(c.name) || { id: c.id, uid: null };
+		if (pub && e.uid == null && !(c.disguised && c.controller !== HUMAN)) e.uid = c.uid;
+		if (!e.id) e.id = c.id;
+		if (pub && !e.snap && !state.cardsById[c.id]) e.snap = logSnap(c);   // a token: no definition to fall back on once it's gone
+		out.set(c.name, e);
+	};
+	state.players.forEach((p, pi) => {
+		for (const z of ['board', 'lands', 'artifacts', 'enchantments', 'planeswalkers', 'emblems', 'graveyard', 'exile', 'quests', 'heroPowers', 'command'])
+			for (const c of p[z] || []) add(c, true);
+		add(p.weapon, true); add(p.companion, true);
+		for (const c of p.hand || []) add(c, pi === HUMAN);
+		for (const z of ['deck', 'secrets', 'traps']) for (const c of p[z] || []) add(c, false);
+		const hp = classPowerOf(pi); if (hp) add(hp, true);
+	});
+	return out;
+}
+function findLogLinks(msg, refs) {
+	const links = [];
+	if (!msg || !state) return links;
+	const taken = (s0, e0) => links.some(l => s0 < l.e && e0 > l.s);
+	const wordAt = (s0, e0) => !/[\w']/.test(msg[s0 - 1] || ' ') && !/[\w]/.test(msg[e0] || ' ');
+	// explicit refs first (two copies of one name resolve to the right one)
+	for (const r of refs || []) {
+		const name = r && (r.name || cardOf(r.uid)?.name);
+		if (!name) continue;
+		const i = msg.indexOf(name);
+		if (i < 0 || taken(i, i + name.length)) continue;
+		const live = r.uid != null ? cardOf(r.uid) : null;
+		const hidden = live && live.controller !== HUMAN && (live.zone === 'hand' || live.zone === 'deck' || live.disguised);
+		// a dead card's event carries only its name: find its id by name
+		const id = r.id || live?.id || logNameIndex().get(name)?.id || Object.values(state.cardsById).find(d => d && d.name === name)?.id || null;
+		const snap = !hidden && live && !state.cardsById[live.id] ? logSnap(live) : (logNameIndex().get(name)?.snap || null);
+		links.push({ s: i, e: i + name.length, id, uid: hidden ? null : (r.uid ?? null), ...(snap ? { snap } : {}) });
+	}
+	// then every other card name the line printed, longest first
+	const idx = logNameIndex();
+	const names = [...idx.keys()].filter(n => n.length >= 3 && msg.includes(n)).sort((a, b) => b.length - a.length);
+	for (const n of names) {
+		let from = 0, i;
+		while ((i = msg.indexOf(n, from)) >= 0) {
+			from = i + n.length;
+			if (!wordAt(i, i + n.length) || taken(i, i + n.length)) continue;
+			const e = idx.get(n);
+			links.push({ s: i, e: i + n.length, id: e.id, uid: e.uid, ...(e.snap ? { snap: e.snap } : {}) });
+		}
+	}
+	return links.sort((a, b) => a.s - b.s);
+}
+// a log line as DOM: text with its card names as buttons
+function logLineEl(msg, links) {
+	const d = document.createElement('div');
+	if (/^— Turn \d+/.test(msg)) d.className = 'lf-turn';
+	let at = 0;
+	for (const l of links || []) {
+		if (l.s > at) d.appendChild(document.createTextNode(msg.slice(at, l.s)));
+		const b = document.createElement('button');
+		b.type = 'button';
+		b.className = 'log-card';
+		b.textContent = msg.slice(l.s, l.e);
+		b.title = 'See this card';
+		b.addEventListener('pointerdown', e => { e.stopPropagation(); e.preventDefault(); openLogCard(l); });
+		d.appendChild(b);
+		at = l.e;
+	}
+	if (at < msg.length) d.appendChild(document.createTextNode(msg.slice(at)));
+	return d;
+}
+// a log link -> the card focus view: the live card while it's still public, else its definition
+function openLogCard(l) {
+	let c = l.uid != null ? cardOf(l.uid) : null;
+	if (c && !canFocusCard(c)) c = null;
+	if (!c && state) {
+		const def = state.cardsById[l.id] || (l.id && Object.values(state.cardsById).find(d => d && d.id === l.id));
+		if (def) c = { ...def, uid: 'preview_' + def.id, zone: 'preview', controller: null, maxHealth: def.health, keywords: def.keywords || [], damage: 0 };
+		else if (l.snap) c = { ...l.snap, uid: 'preview_' + (l.snap.uid ?? l.snap.name), zone: 'preview', controller: null };   // a token that's gone
+	}
+	if (c) showCardFocus(c);
+}
+function log(msg, refs) {
+	const links = findLogLinks(msg, refs);
 	logHistory.push(msg);
-	if (logHistory.length > 500) logHistory.shift();
-	const div = document.createElement('div');
-	div.textContent = msg;
+	logLinks.push(links);
+	if (logHistory.length > 500) { logHistory.shift(); logLinks.shift(); }
+	const div = logLineEl(msg, links);
 	logEl.appendChild(div);
 	// the inline feed shows only the freshest few events and each fades out on
-	// its own — the full history stays behind the 📜 Log drawer
-	setTimeout(() => {
+	// its own — the full history stays behind the 📜 Log drawer. A line whose card
+	// name is under the pointer waits, so you can click it.
+	const fade = () => {
+		if (div.querySelector('.log-card:hover')) { setTimeout(fade, 600); return; }
 		div.classList.add('fade');
 		setTimeout(() => div.remove(), 800);
-	}, 4200);
+	};
+	setTimeout(fade, 4200);
 	while (logEl.children.length > 3) logEl.removeChild(logEl.firstChild);
-	if (logFull && logFull.classList.contains('open')) appendLogFullLine(msg);
+	if (logFull && logFull.classList.contains('open')) appendLogFullLine(msg, links);
 }
 const logFull = $('log-full');
 const logFullBody = logFull && logFull.querySelector('.lf-body');
-function appendLogFullLine(msg) {
-	const d = document.createElement('div'); d.textContent = msg; logFullBody.appendChild(d);
-	logFullBody.scrollTop = logFullBody.scrollHeight;
+function appendLogFullLine(msg, links) {
+	// stay pinned to the newest line unless you've scrolled up to read
+	const atEnd = logFullBody.scrollHeight - logFullBody.scrollTop - logFullBody.clientHeight < 24;
+	logFullBody.appendChild(logLineEl(msg, links));
+	if (atEnd) logFullBody.scrollTop = logFullBody.scrollHeight;
 }
 function renderLogFull() {
 	logFullBody.innerHTML = '';
-	for (const line of logHistory) { const d = document.createElement('div'); d.textContent = line; logFullBody.appendChild(d); }
+	logHistory.forEach((line, i) => logFullBody.appendChild(logLineEl(line, logLinks[i])));
 	logFullBody.scrollTop = logFullBody.scrollHeight;
 }
+// the drawer is a dialog: padnav drives it on a controller (up/down between card
+// names, confirm opens one, cancel closes) and Esc closes it for a keyboard
+function openLogFull() {
+	if (!logFull) return;
+	logFull.classList.add('open');
+	logFull.setAttribute('aria-modal', 'true');
+	renderLogFull();
+}
+function closeLogFull() {
+	if (!logFull) return;
+	logFull.classList.remove('open');
+	logFull.removeAttribute('aria-modal');
+}
+addEventListener('keydown', ev => {
+	if (ev.key === 'Escape' && logFull && logFull.classList.contains('open') && !cardFocusOpen()) { ev.stopPropagation(); closeLogFull(); }
+}, true);
 if (logFull) {
 	{ // sfx mute toggle (persisted in sfx.js)
 		const b = $('sfx-btn');
@@ -1499,11 +1894,8 @@ if (logFull) {
 		paint();
 		b.addEventListener('click', () => { SFX.setMuted(!SFX.isMuted()); paint(); if (!SFX.isMuted()) SFX.play('click'); });
 	}
-	$('log-btn').addEventListener('click', () => {
-		logFull.classList.toggle('open');
-		if (logFull.classList.contains('open')) renderLogFull();
-	});
-	logFull.querySelector('.lf-close').addEventListener('click', () => logFull.classList.remove('open'));
+	$('log-btn').addEventListener('click', () => { if (logFull.classList.contains('open')) closeLogFull(); else openLogFull(); });
+	logFull.querySelector('.lf-close').addEventListener('click', () => closeLogFull());
 	$('nav-toggle')?.addEventListener('click', () => document.body.classList.toggle('nav-open'));
 }
 
@@ -1530,6 +1922,25 @@ function activateHeroPower(card, ev) {
 	actPower(card.uid, null);
 }
 
+// what the power costs RIGHT NOW. The orbs drew the printed cost, so a discount
+// (Sneaky Scout's Honorable Kill: "your next Hero Power costs (0)") took effect
+// but the orb still read (2), and it looked like the kill did nothing.
+function powerCostNow(pi, power) {
+	try { return E.heroPowerCost(state, pi, power); } catch { return power.power.cost; }
+}
+// the side-panel orb is built once; redraw it when the live cost moves
+function repaintPowerOrb(orb, pi) {
+	const power = classPowerOf(pi);
+	if (!orb || !power) return;
+	const cost = powerCostNow(pi, power);
+	if (orb.dataset.cost === String(cost)) return;
+	orb.dataset.cost = String(cost);
+	if (orb._tip) orb._tip.cost = cost;
+	const ctx = orb.getContext('2d');
+	ctx.clearRect(0, 0, orb.width, orb.height);
+	ctx.drawImage(drawPowerOrb(cost, orb.width, power.power.cost), 0, 0);
+}
+
 // hero portrait + class power orb, sized per panel
 function portraitBlock(pi, big) {
 	const wrap = document.createElement('div');
@@ -1542,12 +1953,15 @@ function portraitBlock(pi, big) {
 	wrap.appendChild(portrait);
 	const power = classPowerOf(pi);
 	if (power) {
-		const orb = drawPowerOrb(power.power.cost, big ? 96 : 64);
+		const live = powerCostNow(pi, power);
+		const orb = drawPowerOrb(live, big ? 96 : 64, power.power.cost);
 		orb.className = 'power-orb';
 		orb.dataset.uid = power.uid;
+		orb.dataset.cost = String(live);
 		orb.style.width = orb.style.height = big ? '48px' : '32px';
 		// hover (PC) / long-press (mobile) reveals what the power does
-		attachTip(orb, { name: power.name, type: 'heropower', cost: power.power.cost, description: power.description });
+		orb._tip = { name: power.name, type: 'heropower', cost: live, description: power.description };
+		attachTip(orb, orb._tip);
 		if (pi === HUMAN) {
 			if (TOUCH) {
 				// a quick tap activates; a hold shows the tooltip instead
@@ -1615,7 +2029,42 @@ heroPanelMesh.userData.uid = 'heropanel';
 heroPanelMesh.renderOrder = 1;
 heroPanelMesh.visible = false;
 scene.add(heroPanelMesh);
+let weaponBadgeUV = null; // the weapon badge rect in 0..1 UV (y from the bottom), when one is drawn
+let heroOrbCost = null; // the number the hero-panel power orb last showed (test hook)
 let heroOrbUV = null; // { x0, x1, y0, y1 } orb rect in 0..1 UV (y from the bottom)
+// THE PLANAR DIE sits on the panel like a second power orb (owner: "treat it like
+// another hero power that attaches to the hero", but NOT one of the three power
+// slots). It used to be a floating "Planeswalk" DOM button that appeared when a
+// planeswalker hit the board — read as a planeswalker action — and vanished once
+// the next roll cost more mana than you had. The orb stays put (dimmed when you
+// can't roll), shows the next roll's cost, and explains itself on hover.
+let dieOrbUV = null;
+const planarDieOn = pl => !!pl && !state.over && (pl.sparked || pl.planeswalkers.length > 0);
+function drawPlanarDie(ctx, x, y, S, cost, usable) {
+	ctx.save();
+	if (usable) { ctx.shadowColor = 'rgba(80,210,230,0.95)'; ctx.shadowBlur = 16; }
+	ctx.globalAlpha *= usable ? 1 : 0.5;
+	const g = ctx.createRadialGradient(x + S * 0.4, y + S * 0.35, S * 0.1, x + S / 2, y + S / 2, S / 2);
+	g.addColorStop(0, '#7fe3f2'); g.addColorStop(0.6, '#2f8fa3'); g.addColorStop(1, '#154a57');
+	ctx.beginPath(); ctx.arc(x + S / 2, y + S / 2, S / 2, 0, TAU); ctx.fillStyle = g; ctx.fill();
+	ctx.lineWidth = 3; ctx.strokeStyle = '#0c2e36'; ctx.stroke();
+	ctx.shadowBlur = 0;
+	// a white d6 showing six pips
+	const d = S * 0.5, dx = x + (S - d) / 2, dy = y + (S - d) / 2;
+	hpRoundRect(ctx, dx, dy, d, d, d * 0.2); ctx.fillStyle = '#f4f7fb'; ctx.fill();
+	ctx.fillStyle = '#1c2a44';
+	for (const [px, py] of [[0.28, 0.25], [0.28, 0.5], [0.28, 0.75], [0.72, 0.25], [0.72, 0.5], [0.72, 0.75]]) {
+		ctx.beginPath(); ctx.arc(dx + d * px, dy + d * py, d * 0.085, 0, TAU); ctx.fill();
+	}
+	ctx.restore();
+	if (cost > 0) {   // the next roll's price, like a power orb's cost
+		const bx = x + S - 10, by = y + S - 10;
+		ctx.beginPath(); ctx.arc(bx, by, 11, 0, TAU); ctx.fillStyle = '#2a63d6'; ctx.fill();
+		ctx.lineWidth = 2; ctx.strokeStyle = '#0d1e45'; ctx.stroke();
+		ctx.fillStyle = '#fff'; ctx.font = 'bold 14px system-ui, sans-serif'; ctx.textAlign = 'center';
+		ctx.fillText(String(cost), bx, by + 5); ctx.textAlign = 'left';
+	}
+}
 
 function hpRoundRect(ctx, x, y, w, h, r) {
 	ctx.beginPath();
@@ -1663,9 +2112,21 @@ function drawHeroPanel() {
 	ctx.drawImage(port, HP_W - pS - 14, 12, pS, pS);
 	const power = classPowerOf(HUMAN);
 	heroOrbUV = null;
+	dieOrbUV = null;
+	const oS = 58, ox = HP_W - pS - 14 - oS - 8, oy = 16;
+	// the planar die: its own orb, left of the power orb (or in its place without one)
+	const dS = 46, ddx = (power ? ox : HP_W - pS - 14) - dS - 8, ddy = 22;
+	const dieOn = planarDieOn(me);
+	if (dieOn) {
+		const usable = E.canPlaneswalk(state, HUMAN);
+		ctx.save(); ctx.globalAlpha = me.eliminated ? 0.4 : 1;
+		drawPlanarDie(ctx, ddx, ddy, dS, E.planarRollCost(state, HUMAN), usable);
+		ctx.restore();
+		dieOrbUV = { x0: ddx / HP_W, x1: (ddx + dS) / HP_W, y0: 1 - (ddy + dS) / HP_H, y1: 1 - ddy / HP_H };
+	}
 	if (power) {
-		const orb = drawPowerOrb(power.power.cost, 96);
-		const oS = 58, ox = HP_W - pS - 14 - oS - 8, oy = 16;
+		heroOrbCost = powerCostNow(HUMAN, power);
+		const orb = drawPowerOrb(heroOrbCost, 96, power.power.cost);
 		const usable = state.current === HUMAN && !state.over && E.canUseHeroPower(state, HUMAN, power);
 		ctx.save();
 		if (usable) { ctx.shadowColor = 'rgba(87,227,137,0.95)'; ctx.shadowBlur = 18; }
@@ -1703,18 +2164,41 @@ function drawHeroPanel() {
 	ctx.fillStyle = '#e8e2f4';
 	ctx.font = 'bold 18px system-ui, sans-serif';
 	const myCls = classNameOf(me.heroClass);
-	ctx.fillText(myCls ? `You — ${myCls}` : 'You', 100, 62, 124);
+	// your weapon gets a badge in the TOP band, under your name: it used to be a
+	// small "⚔ 3/2" on the gear line at the bottom of the panel, which the hand
+	// covers (Bryan: "not able to see my weapon while it's active")
+	const colW = dieOn ? Math.max(60, ddx - 106) : 124;
+	const swingAtk = me.weapon ? me.weapon.attack + (me.heroTempAttack || 0) : me.heroTempAttack || 0;
+	weaponBadgeUV = null;
+	ctx.fillText(myCls ? `You — ${myCls}` : 'You', 100, swingAtk || me.weapon ? 44 : 62, colW);
+	if (me.weapon || me.heroTempAttack) {
+		const label = me.weapon ? `${swingAtk}/${me.weapon.durability}` : `+${swingAtk}`;
+		ctx.font = 'bold 22px system-ui, sans-serif';
+		const bw = Math.min(colW, ctx.measureText(label).width + 44), bx = 100, by = 54, bh = 32;
+		ctx.save();
+		if (armed) { ctx.shadowColor = 'rgba(87,227,137,0.95)'; ctx.shadowBlur = 14; }
+		hpRoundRect(ctx, bx, by, bw, bh, 10);
+		const wg = ctx.createLinearGradient(0, by, 0, by + bh);
+		wg.addColorStop(0, '#6b5320'); wg.addColorStop(1, '#3b2c10');
+		ctx.fillStyle = wg; ctx.fill();
+		ctx.lineWidth = 2.5; ctx.strokeStyle = armed ? '#57e389' : '#d9b24a'; ctx.stroke();
+		ctx.restore();
+		ctx.fillStyle = '#ffd25f';
+		ctx.fillText('⚔', bx + 8, by + 24);
+		ctx.fillStyle = '#fff';
+		ctx.fillText(label, bx + 36, by + 24, bw - 40);
+		weaponBadgeUV = { x0: bx / HP_W, x1: (bx + bw) / HP_W, y0: 1 - (by + bh) / HP_H, y1: 1 - by / HP_H };
+		ctx.font = 'bold 18px system-ui, sans-serif';
+	}
 	ctx.fillStyle = '#cbb8e8';
 	ctx.font = '17px system-ui, sans-serif';
 	ctx.fillText(`Mana ${E.availableMana(me)}/${me.mana.max}  ·  Deck ${me.deck.length}`, 22, 116);
 	// gear line(s)
 	const gear = [];
-	if (me.weapon) gear.push(`⚔ ${me.weapon.attack}/${me.weapon.durability}`);
 	if (me.secrets.length) gear.push(`❓ ${me.secrets.length}`);
 	if (me.exile.length) gear.push(`⊘ ${me.exile.length}`);
 	if (me.fatigue) gear.push(`☠ ${me.fatigue}`);
 	if (me.corpses && me.heroClass === 'death_knight') gear.push(`⚰ ${me.corpses}`);
-	if (me.heroTempAttack) gear.push(`⚔ +${me.heroTempAttack}`);
 	ctx.fillStyle = '#ffd25f';
 	ctx.font = '14px system-ui, sans-serif';
 	if (gear.length) ctx.fillText(gear.slice(0, 4).join('   '), 22, 142);
@@ -1734,6 +2218,11 @@ function pickHeroPanelUV(ev) {
 	const hit = raycaster.intersectObject(heroPanelMesh)[0];
 	return hit ? hit.uv : null;
 }
+function heroPanelDieHit(uv) {
+	if (!uv || !dieOrbUV) return false;
+	const m = TOUCH ? 0.045 : 0;
+	return uv.x >= dieOrbUV.x0 - m && uv.x <= dieOrbUV.x1 + m && uv.y >= dieOrbUV.y0 - m && uv.y <= dieOrbUV.y1 + m;
+}
 function heroPanelOrbHit(uv) {
 	if (!uv || !heroOrbUV) return false;
 	// the orb renders ~30px wide on a 390px phone — under the ~44px touch
@@ -1744,9 +2233,17 @@ function heroPanelOrbHit(uv) {
 
 // read-only HUD for a watcher: fill both sides' stats, mark whose turn it is,
 // and never light up controls or "your turn" affordances
+// a seat's name for a watcher. A REPLAY has no spectateName, so the seat being watched
+// read as null ("null wins!" on every replay's last frame). Replays name each seat from
+// the tape ("You" there means the recorder, so the hero's own name is used instead).
+function watchSeatName(pi) {
+	if (spectateMode && pi === HUMAN) return spectateName;
+	const taped = replayMode ? replayTape?.meta?.heroes?.[pi]?.name : null;
+	return (taped && taped !== 'You' ? taped : null) || state?.classPicks?.[pi]?.name || (replayMode ? `Player ${pi + 1}` : `Opponent ${pi}`);
+}
+const watchResultLine = () => (state.winner == null ? 'The game ended in a draw.' : `${watchSeatName(state.winner)} wins!`);
 function updateHudSpectate() {
-	const label = pi => pi === HUMAN ? spectateName
-		: (state.classPicks?.[pi]?.name || `Opponent ${pi}`);
+	const label = watchSeatName;
 	const gearOf = p => {
 		const g = [];
 		if (p.weapon) g.push(`⚔ ${p.weapon.name || ''} ${p.weapon.attack}/${p.weapon.durability}`);
@@ -1779,7 +2276,7 @@ function updateHudSpectate() {
 	$('concede').style.display = 'none';
 	$('coin-btn').style.display = 'none';
 	$('hint').textContent = state.over
-		? `${label(state.winner)} wins!`
+		? watchResultLine()
 		: `${label(state.current)} is playing…`;
 }
 
@@ -1867,9 +2364,11 @@ function updateHud() {
 		const usable = power && state.current === HUMAN && !state.over && E.canUseHeroPower(state, HUMAN, power);
 		myOrb.classList.toggle('usable', !!usable);
 		myOrb.classList.toggle('spent', !usable);
+		repaintPowerOrb(myOrb, HUMAN);
 	}
 	for (const [pi, el] of foePanelEls) {
 		const p = state.players[pi];
+		repaintPowerOrb(el.querySelector('.power-orb'), pi);
 		el.querySelector('.life').textContent = p.life + (p.armor ? `+${p.armor}` : '');
 		el.querySelector('.mana').textContent = `${E.availableMana(p)}/${p.mana.max}`;
 		el.querySelector('.hand').textContent = p.hand.length;
@@ -1887,9 +2386,7 @@ function updateHud() {
 		el.classList.toggle('turn', state.current === pi && !state.over);
 	}
 	$('coin-btn').style.display = (me.coins > 0 && state.current === HUMAN) ? '' : 'none';
-	const pwOk = E.canPlaneswalk(state, HUMAN);
-	$('planeswalk-btn').style.display = pwOk ? '' : 'none';
-	if (pwOk) { const rc = E.planarRollCost(state, HUMAN); $('planeswalk-btn').textContent = rc > 0 ? `Planeswalk (${rc})` : 'Planeswalk'; }
+	$('planeswalk-btn').style.display = 'none';   // retired: the planar die is an orb on your hero panel now
 	// concede is available in any active game you're playing (runs, Quick Match, AI,
 	// duels) — but not while merely spectating someone else's match
 	$('concede').style.display = state && !state.over && !spectateMode ? '' : 'none';
@@ -2292,6 +2789,7 @@ function pump() {
 	// driver re-arms). A no-op in 1v1/solo, where a self-elimination ends the game.
 	E.settleTurn(state);
 	const fresh = E.takeEvents(state);
+	if (state.over) recordRunResult();
 	// which creatures had a REASON to leave this batch?
 	const accounted = new Set();
 	for (const ev of fresh) {
@@ -2390,50 +2888,8 @@ function resolveAISacs() {
 function resolveAIResponds() {
 	while (state.priority != null && isAiSeat(state.priority) && !state.players[state.priority].eliminated) {
 		const pi = state.priority;
-		E.resolveResponse(state, pi, aiChooseResponse(state, pi));
+		E.resolveResponse(state, pi, AI.chooseResponse(state, pi));
 	}
-}
-
-// value-driven instant-speed decision: counter worthwhile spells, blow out an attack
-// by killing the attacker, remove a real threat — always with the cheapest source.
-function aiChooseResponse(state, pi) {
-	const p = state.players[pi];
-	const top = E.pendingSpellFor(state, pi);
-	const crHp = c => c.maxHealth - (c.damage || 0);
-	const dmgOf = fx => (fx || []).filter(e => e.type === 'damage' && (e.target === 'creature' || e.target === 'any')).reduce((a, e) => a + (e.value || 0), 0);
-
-	// 1) counter a spell that is expensive, or aimed at us
-	const counters = E.counterOptions(state, pi);
-	if (counters.length && top && top.kind === 'spell') {
-		const cost = top.card.cost || 0, t = top.target;
-		if (cost >= 3 || (t && t.player === pi && cost >= 1)) return { kind: 'spell', uid: counters[0].uid };
-	}
-
-	// gather my instant-speed damage sources (instants + creature abilities), cheapest first
-	const sources = [];
-	for (const c of E.responseOptions(state, pi)) { const d = c.counterSpell ? 0 : dmgOf(c.effects); if (d > 0) sources.push({ act: { kind: 'spell', uid: c.uid }, dmg: d, cost: E.effectiveCost(state, pi, c) }); }
-	for (const c of [...p.board, ...p.enchantments]) if (c.activated) c.activated.forEach((a, i) => { if (E.canActivate(state, pi, c, i)) { const d = dmgOf(a.effects); if (d > 0) sources.push({ act: { kind: 'ability', uid: c.uid, index: i }, dmg: d, cost: a.cost || 0 }); } });
-	sources.sort((a, b) => a.cost - b.cost || a.dmg - b.dmg);
-	const killer = need => sources.find(s => s.dmg >= need);
-
-	// 2) defending an attack: kill the attacker to blow out the swing
-	if (top && top.kind === 'attack') {
-		let atkr = null;
-		for (const o of state.players) if (o !== p) { const c = o.board.find(x => x.uid === top.attackerUid); if (c) atkr = c; }
-		if (atkr) { const s = killer(crHp(atkr)); if (s) return { ...s.act, target: { type: 'creature', uid: atkr.uid } }; }
-	}
-
-	// 3) kill the biggest worthwhile enemy creature we can
-	let best = null;
-	for (const o of state.players) if (o !== p) for (const cr of o.board) {
-		if (cr.type !== 'creature') continue;
-		const worth = cr.attack + cr.maxHealth;
-		if (worth < 5) continue;
-		const s = killer(crHp(cr));
-		if (s && (!best || worth > best.worth)) best = { act: s.act, uid: cr.uid, worth };
-	}
-	if (best) return { ...best.act, target: { type: 'creature', uid: best.uid } };
-	return null; // hold priority
 }
 
 let autoPass = true;
@@ -2778,6 +3234,33 @@ function openPickModal() {
 		modal.style.display = 'block';
 		return;
 	}
+	if (pend.mode === 'transform-into') {
+		// Tribute Dance: pick the DIFFERENT creature the chosen one turns into (any board)
+		const find = id => state.players.map(p => p.board.find(x => x.uid === id)).find(Boolean);
+		const src = find(pend.targetUid);
+		modal.innerHTML = `<div class="wm-title">Transform ${(src && src.name) || 'it'} into — choose a creature</div><div class="scry-row"></div>`;
+		const row = modal.querySelector('.scry-row');
+		pend.ids.forEach(id => {
+			const cr = find(id);
+			const cell = document.createElement('div');
+			cell.className = 'scry-cell';
+			cell.innerHTML = `<div class="adapt-opt"><b>${(cr && cr.name) || '?'}</b>${cr ? `<br><span style="font-size:.85em">${cr.attack}/${E.hp(cr)}</span>` : ''}</div>`;
+			const btn = document.createElement('button');
+			btn.textContent = 'Choose';
+			btn.addEventListener('pointerdown', e => {
+				e.stopPropagation();
+				modal.style.display = 'none';
+				if (isGuest()) { guestApply(() => E.resolvePick(state, id), { k: 'pick', id }); return; }
+				E.resolvePick(state, id);
+				pump();
+				if (duel.on) publishDuel();
+			});
+			cell.appendChild(btn);
+			row.appendChild(cell);
+		});
+		modal.style.display = 'block';
+		return;
+	}
 	if (pend.mode === 'grant-target') {
 		// a Contraption (Turbo-Thwacking) grants a keyword to a creature YOU choose
 		const board = state.players[HUMAN].board;
@@ -2977,6 +3460,7 @@ function openMulliganModal() {
 			tag.className = 'mull-tag';
 			tag.textContent = swap ? 'Replace' : 'Keep';
 			cell.appendChild(tag);
+			cell.tabIndex = 0;   // a stop for the keyboard's Tab and the controller (padnav.js)
 			cell.addEventListener('pointerdown', e => { e.stopPropagation(); if (swap) mulliganPicks.delete(c.uid); else mulliganPicks.add(c.uid); render(); });
 			row.appendChild(cell);
 		});
@@ -3122,6 +3606,10 @@ function nextEvent() {
 	if (!ev) { queueBusy = false; updateHud(); if (!isGuest()) maybeRecordFrame(); if (state && state.priority === HUMAN) openRespondModal(); surfacePendingChoice(); maybeOfferMulligan(); maybeRunAI(); return; } // a duel guest records authoritative snapshots on ingest, not its optimistic pumps
 	queueBusy = true;
 	let delay = 120;
+	// A renderer fault on one event must not strand the queue: queueBusy would stay true, the HUD
+	// would freeze behind the engine and maybeRunAI would never run again (bug 1793087158441 — a
+	// 'mill' event with no card). Log it, rethrow out-of-band for the error beacon, keep draining.
+	try {
 	switch (ev.type) {
 		case 'turnStart':
 			if (ev.turnNumber === 1 || !matchStats) resetMatchStats(); // new match → fresh tally
@@ -3145,7 +3633,9 @@ function nextEvent() {
 		case 'play':
 			if (matchStats) statInc(matchStats.cards, ev.player);
 			SFX.play('cardPlay');
-			log(`${nameOf(ev.player)} played ${ev.card.name}`);
+			// The Coin's own 'coin' event prints its line ("played The Coin (+1 mana)") — one line, not two
+			coinPlayBy = ev.card.id === 'coin' ? ev.player : null;
+			if (coinPlayBy == null) log(`${nameOf(ev.player)} played ${ev.card.name}`, [ev.card]);
 			delay = 420;
 			if (ev.target) {
 				pendingFx.push({ c: ev.card.uid, p: ev.player, t: ev.target, fr: ev.target.player === ev.player ? 1 : 0 });
@@ -3155,7 +3645,7 @@ function nextEvent() {
 		case 'summon':
 			if (matchStats) statInc(matchStats.summons, ev.player);
 			SFX.play('summon');
-			log(`${nameOf(ev.player)} summoned ${ev.card.name}`);
+			log(`${nameOf(ev.player)} summoned ${ev.card.name}`, [ev.card]);
 			delay = 260;
 			break;
 		case 'attack': {
@@ -3235,7 +3725,7 @@ function nextEvent() {
 			const ent = entities.get(ev.uid);
 			SFX.play('death');
 			if (ent) { ent.dying = performance.now(); }
-			if (ev.name) log(`${ev.name} died`);
+			if (ev.name) log(`${ev.name} died`, [{ uid: ev.uid, name: ev.name, id: ev.id }]);
 			delay = 330;
 			break;
 		}
@@ -3261,7 +3751,7 @@ function nextEvent() {
 			delay = 200;
 			break;
 		case 'weaponEquip':
-			log(`${nameOf(ev.player)} equipped ${ev.card.name} (${ev.card.attack}/${ev.card.durability})`);
+			log(`${nameOf(ev.player)} equipped ${ev.card.name} (${ev.card.attack}/${ev.card.durability})`, [ev.card]);
 			delay = 320;
 			break;
 		case 'weaponDurability': delay = 60; break;
@@ -3298,6 +3788,11 @@ function nextEvent() {
 			log(`${nameOf(ev.player)} developed ${ev.card.name}`);
 			delay = 320;
 			break;
+		case 'landUpgraded':
+			SFX.play('land');
+			log(`${nameOf(ev.player)} upgraded ${ev.from ? ev.from + ' into ' : 'a land into '}${ev.card.name}`);
+			delay = 320;
+			break;
 		case 'landTapped':
 			log(`${nameOf(ev.player)} tapped ${ev.card.name}: ${ev.text}`);
 			delay = 300;
@@ -3319,7 +3814,9 @@ function nextEvent() {
 			delay = 350;
 			break;
 		case 'manaGained': delay = 120; break;
-		case 'coinGiven': SFX.play('coin'); log(`${nameOf(ev.player)} got The Coin`); delay = 120; break;
+		// a land develop/upgrade hands each opponent The Coin (the land rule) — name the cause, or
+		// the Coin reads as a stray grant on the other player's turn (instinctgauntlet, 2026-10-23..25)
+		case 'coinGiven': SFX.play('coin'); log(`${nameOf(ev.player)} got The Coin${coinCauseText(ev.cause)}`); delay = 120; break;
 		case 'conjure':
 			log(ev.player === HUMAN ? `You conjured ${ev.card.name}` : `${nameOf(ev.player)} conjured a card`);
 			delay = 350;
@@ -3339,6 +3836,10 @@ function nextEvent() {
 			break;
 		}
 		case 'defenderMiss': delay = 150; break;
+		case 'reviveScheduled': // Inexorable Ghoul: it left play; a fresh copy returns later
+			log(`${ev.name} will revive in ${ev.turns} turn${ev.turns === 1 ? '' : 's'}`);
+			delay = 300;
+			break;
 		case 'reborn': {
 			const ent = entities.get(ev.uid);
 			if (ent) { refreshFace(ent); floatText('☥', '#ffd25f', ent.mesh.position); }
@@ -3353,7 +3854,7 @@ function nextEvent() {
 			delay = 280;
 			break;
 		case 'mill':
-			log(`${nameOf(ev.player)} milled ${ev.card.name}`);
+			log(`${nameOf(ev.player)} milled ${ev.card?.name || (ev.count > 1 ? ev.count + ' cards' : 'a card')}`);
 			delay = 220;
 			break;
 		case 'plunder':
@@ -3400,6 +3901,8 @@ function nextEvent() {
 		case 'planarRoll': {
 			const face = ev.roll === 6 ? 'Planeswalker — new plane!' : ev.roll === 5 ? 'Chaos!' : 'nothing';
 			log(`${nameOf(ev.player)} ${vbOf(ev.player, 'rolls', 'roll')} the planar die: ${ev.roll} (${face})`);
+			if (ev.player === HUMAN) banner(`🎲 Planar die: ${ev.roll} — ${ev.roll === 6 ? 'a new plane!' : ev.roll === 5 ? 'Chaos!' : 'nothing happens (5 = Chaos, 6 = new plane)'}`
+				+ `  ·  next roll ${E.planarRollCost(state, HUMAN)} mana`, 2200);
 			delay = 550;
 			break;
 		}
@@ -3591,7 +4094,7 @@ function nextEvent() {
 		case 'overloaded': log(`${nameOf(ev.player)} ${ev.player === HUMAN ? 'have' : 'has'} ${ev.amount} mana locked (overload)`); delay = 300; break;
 		case 'armor': floatText(`+${ev.amount}`, '#c9c2da', heroPos(ev.player)); delay = 260; break;
 		case 'bounce': log(`${ev.name} was returned to hand`); delay = 300; break;
-		case 'coin': log(`${nameOf(ev.player)} played The Coin (+1 mana)`); delay = 250; break;
+		case 'coin': log(coinPlayBy === ev.player ? `${nameOf(ev.player)} played The Coin (+1 mana)` : `${nameOf(ev.player)} gained 1 Mana`); coinPlayBy = null; delay = 250; break;
 		case 'reshuffle': log(`${possOf(ev.player)} graveyard was shuffled back in`); break;
 		case 'discard': log(`${nameOf(ev.player)} discarded ${ev.card.name}`); break;
 		case 'concede': log(`${ev.player === HUMAN ? 'You' : nameOf(ev.player)} conceded`); delay = 300; break;
@@ -3685,6 +4188,10 @@ function nextEvent() {
 			delay = 200;
 			break;
 		}
+	}
+	} catch (err) {
+		console.error('[battlecards] event render failed:', ev && ev.type, err);
+		setTimeout(() => { throw err; }, 0);
 	}
 	updateHud();
 	setTimeout(nextEvent, delay);
@@ -3789,7 +4296,27 @@ function pick(ev, excludeUid = null) {
 	for (const e of entities.values()) if (e.mesh.userData.uid !== excludeUid) meshes.push(e.mesh);
 	if (heroPanelMesh.visible && excludeUid !== 'heropanel') meshes.push(heroPanelMesh);
 	const hits = raycaster.intersectObjects(meshes);
-	return hits.length ? hits[0].object.userData.uid : null;
+	if (!hits.length) return null;
+	// a TUCKED hand card yields to any card behind it. The tuck lift (tuckLiftZ) raises the
+	// tucked row's top edge over the planeswalkers flanking the hero panel, so pointing at a
+	// planeswalker hit the hand card in front of it first: that card lifted, the hand popped
+	// up and covered the planeswalker again (Bryan's bug, back whenever a hand card's column
+	// lined up with the planeswalker). Only where nothing but the hand (or the hero panel,
+	// which the hand has always sat over) is under the pointer does the tucked hand answer.
+	if (handMini) {
+		for (const h of hits) {
+			const uid = h.object.userData.uid;
+			if (isTuckedHandCard(uid)) continue;
+			if (h.object !== heroPanelMesh) return uid;
+			break;
+		}
+	}
+	return hits[0].object.userData.uid;
+}
+function isTuckedHandCard(uid) {
+	if (!handMini || uid == null || uid === hoverUid || pending?.card.uid === uid) return false;
+	const c = cardOf(uid);
+	return !!c && c.zone === 'hand' && c.controller === HUMAN;
 }
 
 // screen-space distance from a point to a mesh's projected rect (0 = inside).
@@ -3877,6 +4404,16 @@ function updateTooltip(ev) {
 	const tip = $('tooltip');
 	// the class-power orb on your own 3D panel has no card uid of its own —
 	// resolve it to the power card so hovering the orb reads the power
+	if (hoverUid === 'heropanel' && state && heroPanelDieHit(pickHeroPanelUV(ev))) {
+		const cost = E.planarRollCost(state, HUMAN);
+		tip.innerHTML = `<div class="tt-name">🎲 Planar Die</div><div class="tt-type">ROLL · ${cost ? `COSTS (${cost})` : 'FREE'} · PLANECHASE</div>`
+			+ `<div class="tt-desc">Roll a six-sided die. <b>6</b>: planeswalk to a new plane. <b>5</b>: the current plane's Chaos happens. Anything else: nothing.</div>`
+			+ `<div class="tt-sub">The first roll each turn is free; each more costs 1 more mana. It's yours while you control a planeswalker (or are Sparked). It doesn't use a hero power slot.</div>`;
+		tip.style.display = 'block';
+		tip.style.left = `${Math.min(ev.clientX + 18, innerWidth - 290)}px`;
+		tip.style.top = `${Math.min(ev.clientY + 14, innerHeight - tip.offsetHeight - 12)}px`;
+		return;
+	}
 	const card = cardOf(hoverUid)
 		|| (hoverUid === 'heropanel' && state && heroPanelOrbHit(pickHeroPanelUV(ev)) ? classPowerOf(HUMAN) : null);
 	// never reveal hidden information: enemy hands and face-down traps stay secret
@@ -3895,11 +4432,18 @@ function updateTooltip(ev) {
 		return;
 	}
 	const typeLine = card.type === 'heropower'
-		? `HERO POWER · COSTS (${card.power?.cost ?? 0}) · ` + classNameOf(card.cardClass).toUpperCase()
+		? `HERO POWER · COSTS (${card.power && card.controller != null ? powerCostNow(card.controller, card) : card.power?.cost ?? 0}) · ` + classNameOf(card.cardClass).toUpperCase()
 		: `${card.cost ?? 0} MANA · ` + classNameOf(card.cardClass).toUpperCase() + ' · ' + (card.tribe ? card.tribe + ' ' : '') + card.type.toUpperCase()
 			+ ' · ' + (card.rarity || 'common').toUpperCase();
 	let extra = '';
-	if (card.type === 'planeswalker') extra = `<div class="tt-sub">Loyalty ${card.loyalty}</div>`;
+	// attack / health on every creature tooltip: in a short window the hand card's
+	// stat corners sit below the screen edge (Bryan: "can't see my creatures' health")
+	if (card.type === 'creature') {
+		const hp = card.health ?? card.maxHealth, max = card.maxHealth ?? hp;
+		extra += `<div class="tt-sub tt-stats">⚔ ${card.attack ?? 0} Attack  ·  ❤ ${hp}${max != null && hp < max ? ` / ${max}` : ''} Health</div>`;
+	}
+	if (card.type === 'weapon') extra += `<div class="tt-sub tt-stats">⚔ ${card.attack ?? 0} Attack  ·  ${card.durability ?? '?'} Durability</div>`;
+	if (card.type === 'planeswalker') extra += `<div class="tt-sub">Loyalty ${card.loyalty}</div>`;
 	if (card.type === 'quest' && card.quest) extra = `<div class="tt-sub">Progress ${card.progress || 0} / ${card.quest.goal.count}</div>`;
 	if (card.quickdrawn) extra += `<div class="tt-sub">Quickdrawn — returns to your deck at end of turn</div>`;
 	if (card.paralyzed) extra += `<div class="tt-sub">⚡ Paralyzed — its attacks fail 50% of the time</div>`;
@@ -3953,9 +4497,27 @@ addEventListener('pointermove', ev => {
 	// (ProMotion) would otherwise raycast the whole scene per input event
 	if (ev.timeStamp - lastHoverPickT < 25) return;
 	lastHoverPickT = ev.timeStamp;
+	const prevHover = hoverUid;
 	hoverUid = pick(ev, placing && placing.dragging ? placing.card.uid : null);
-	// reaching down toward your hand pops it back up
-	if (handMini && mouseY > innerHeight * 0.82) handMini = false;
+	// a hovered hand card lifts clear of the cursor (fitCardOnScreen); keep it
+	// hovered while the pointer stays in its column below it, or it would drop back
+	// under the cursor and flicker
+	if (hoverUid == null && prevHover != null && !(placing && placing.dragging)) {
+		const pc = cardOf(prevHover);
+		if (pc && pc.zone === 'hand' && pc.controller === HUMAN && entities.has(prevHover)) {
+			const m = entities.get(prevHover).mesh;
+			const c = m.position.clone().project(camera);
+			const cx = (c.x + 1) / 2 * innerWidth, cy = (1 - c.y) / 2 * innerHeight;
+			const halfW = Math.abs(m.position.clone().add(new THREE.Vector3(CARD_W * m.scale.x / 2, 0, 0)).project(camera).x - c.x) / 2 * innerWidth;
+			if (Math.abs(ev.clientX - cx) < halfW && ev.clientY > cy) hoverUid = prevHover;
+		}
+	}
+	// reaching down toward your hand pops it back up — but NOT when the pointer is
+	// already on something else down there (a planeswalker, your hero panel): the
+	// risen hand covered it the moment you reached for it (Bryan's planeswalker)
+	const under = hoverUid != null ? cardOf(hoverUid) : null;
+	const reachingForHand = hoverUid == null || (under && under.zone === 'hand' && under.controller === HUMAN);
+	if (handMini && mouseY > innerHeight * 0.82 && reachingForHand) handMini = false;
 	if (placing && placing.dragging) $('tooltip').style.display = 'none';
 	else if (!TOUCH) updateTooltip(ev); // phones use long-press instead of hover
 	const cursor = (placing && placing.dragging) ? 'grabbing'
@@ -3989,6 +4551,13 @@ function wireModalArt(entries) {
 			if (id !== '*' && id !== en.def.id) continue;
 			const fresh = drawCardFace(en.def);
 			if (en.width) fresh.style.width = en.width;
+			// The repaint throws away the element attachTip bound its listeners to, so
+			// without this the card silently stops explaining itself the instant its art
+			// (or the mana font, which repaints EVERY face) arrives — which is always.
+			// Reported as "when you scry there is no zoom text, same with discovering":
+			// scry and Discover are the only two modals that repaint, and were the only
+			// two that went blind.
+			attachTip(fresh, en.def);
 			if (en.cell.firstChild) en.cell.replaceChild(fresh, en.cell.firstChild); else en.cell.appendChild(fresh);
 		}
 	};
@@ -4021,6 +4590,21 @@ function showInspect(card) {
 	const box = $('inspect');
 	box.innerHTML = '';
 	box.appendChild(drawCardFace({ ...card, health: card.maxHealth }, inspectFaceOpts(card))); // art + rules + stats
+	fillCardDetail(box, card, { close: hideInspect, open: showInspect });
+	box.style.display = 'block';
+	// the chat yields this corner while a card is being read (see #mp-chat.mc-yield)
+	try { document.getElementById('mp-chat')?.classList.add('mc-yield'); } catch (e) {}
+	// the face is drawn with a procedural fallback until its art image and the mana
+	// font load; repaint in place when they arrive (same as the 3D cards' refreshFace)
+	if (inspectArtFn) artListeners.delete(inspectArtFn);
+	inspectArtFn = id => { if (inspectUid === card.uid && (id === '*' || id === card.id)) renderInspectFace(card); };
+	artListeners.add(inspectArtFn);
+}
+// everything under a card's face in a reader: keyword/modifier lines, the cards it
+// creates (each opens in the same reader via `open`), its action buttons (each
+// closes the reader via `close` first) and the can't-play-yet hint. Shared by the
+// small inspect panel and the centered card focus view.
+function fillCardDetail(box, card, { close, open }) {
 	const kw = modifierLinesHtml(card) + keywordLinesHtml(card);
 	if (kw) { const d = document.createElement('div'); d.className = 'ins-kw'; d.innerHTML = kw; box.appendChild(d); }
 	// every specific card this one generates (tokens, corrupted forms, equips,
@@ -4039,7 +4623,7 @@ function showInspect(card) {
 			line.style.cursor = 'pointer';
 			line.addEventListener('pointerdown', e => {
 				e.stopPropagation();
-				showInspect({ ...def, uid: 'preview_' + gid, zone: 'preview', controller: card.controller, maxHealth: def.health, keywords: def.keywords || [], damage: 0 });
+				open({ ...def, uid: 'preview_' + gid, zone: 'preview', controller: card.controller, maxHealth: def.health, keywords: def.keywords || [], damage: 0 });
 			});
 			d.appendChild(line);
 		}
@@ -4056,7 +4640,7 @@ function showInspect(card) {
 		const btn = document.createElement('button');
 		btn.textContent = label;
 		if (cls) btn.className = cls;
-		btn.addEventListener('pointerdown', e => { e.stopPropagation(); hideInspect(); fn(e); });
+		btn.addEventListener('pointerdown', e => { e.stopPropagation(); close(); fn(e); });
 		actions.appendChild(btn);
 	};
 	if (inHand && yourTurn) {
@@ -4094,15 +4678,105 @@ function showInspect(card) {
 			: (() => { try { return whyCantPlay(card); } catch (e) { return 'can’t be played right now'; } })();
 		box.appendChild(hint);
 	}
-	box.style.display = 'block';
-	// the chat yields this corner while a card is being read (see #mp-chat.mc-yield)
-	try { document.getElementById('mp-chat')?.classList.add('mc-yield'); } catch (e) {}
-	// the face is drawn with a procedural fallback until its art image and the mana
-	// font load; repaint in place when they arrive (same as the 3D cards' refreshFace)
-	if (inspectArtFn) artListeners.delete(inspectArtFn);
-	inspectArtFn = id => { if (inspectUid === card.uid && (id === '*' || id === card.id)) renderInspectFace(card); };
-	artListeners.add(inspectArtFn);
 }
+
+// ---------- the card FOCUS view (Plans/CONTROLLER_V2_PLAN.md C) ----------
+// A centered, large reader with the board dimmed behind it. Opened by right-click
+// or press-and-hold (mouse / touch), the controller's inspect button, a log name,
+// or confirm on a card you can't act on. ◄ ► (arrow keys, LB/RB) step through the
+// cards beside it (your hand, a board row); Esc / cancel / the backdrop close it.
+// Hidden information never opens: an enemy's hand, a face-down enemy card.
+let focusCard = null, focusArtFn = null, focusOnClose = null;
+const cardFocusOpen = () => !!focusCard;
+function focusSiblings(card) {
+	if (!state || !card || card.zone === 'preview') return [card];
+	const p = state.players[card.controller];
+	if (!p) return [card];
+	const z = card.zone;
+	const list = z === 'hand' ? p.hand : z === 'board' ? p.board : z === 'land' ? p.lands : z === 'artifact' ? p.artifacts : z === 'enchantment' ? p.enchantments : [card];
+	const ok = list.filter(c => c && !(c.disguised && c.controller !== HUMAN));
+	return ok.includes(card) ? ok : [card];
+}
+function canFocusCard(card) {
+	if (!card) return false;
+	if (card.disguised && card.controller !== HUMAN) return false;
+	if (card.controller != null && card.controller !== HUMAN && (card.zone === 'hand' || card.zone === 'deck' || card.zone === 'trap')) return false;
+	return true;
+}
+function showCardFocus(card, opts = {}) {
+	if (!canFocusCard(card)) return false;
+	hideInspect();
+	$('tooltip').style.display = 'none';
+	if ('onClose' in opts) focusOnClose = opts.onClose;
+	focusCard = card;
+	let root = $('card-focus');
+	if (!root) {
+		root = document.createElement('div');
+		root.id = 'card-focus';
+		root.setAttribute('role', 'dialog');
+		root.setAttribute('aria-modal', 'true');
+		root.innerHTML = '<div class="cf-backdrop"></div><div class="cf-panel"></div>';
+		root.querySelector('.cf-backdrop').addEventListener('pointerdown', e => { e.stopPropagation(); hideCardFocus(); });
+		root.querySelector('.cf-panel').addEventListener('pointerdown', e => e.stopPropagation());
+		document.body.appendChild(root);
+	}
+	const panel = root.querySelector('.cf-panel');
+	panel.innerHTML = '';
+	const sib = focusSiblings(card), at = sib.indexOf(card);
+	const nav = document.createElement('div');
+	nav.className = 'cf-nav';
+	const btn = (txt, title, fn, cls) => {
+		const b = document.createElement('button');
+		b.textContent = txt; b.title = title; if (cls) b.className = cls;
+		b.addEventListener('pointerdown', e => { e.stopPropagation(); fn(); });
+		return b;
+	};
+	const label = document.createElement('span');
+	label.className = 'cf-count';
+	label.textContent = sib.length > 1 ? `${at + 1} / ${sib.length}` : '';
+	if (sib.length > 1) nav.append(btn('◄', 'Previous card', () => stepCardFocus(-1), 'cf-prev'), label, btn('►', 'Next card', () => stepCardFocus(1), 'cf-next'));
+	else nav.append(label);
+	nav.append(btn('✕', 'Close', hideCardFocus, 'cf-close'));
+	panel.appendChild(nav);
+	const face = drawCardFace({ ...card, health: card.maxHealth }, inspectFaceOpts(card));
+	face.className = 'cf-face';
+	panel.appendChild(face);
+	fillCardDetail(panel, card, { close: hideCardFocus, open: c => showCardFocus(c) });
+	root.style.display = 'block';
+	if (focusArtFn) artListeners.delete(focusArtFn);
+	focusArtFn = id => {
+		if (focusCard !== card || !(id === '*' || id === card.id)) return;
+		const fresh = drawCardFace({ ...card, health: card.maxHealth }, inspectFaceOpts(card));
+		fresh.className = 'cf-face';
+		const old = panel.querySelector('canvas.cf-face');
+		if (old) panel.replaceChild(fresh, old);
+	};
+	artListeners.add(focusArtFn);
+	return true;
+}
+function hideCardFocus() {
+	if (!focusCard) return;
+	const card = focusCard, cb = focusOnClose;
+	focusCard = null; focusOnClose = null;
+	if (focusArtFn) { artListeners.delete(focusArtFn); focusArtFn = null; }
+	const root = $('card-focus');
+	if (root) root.style.display = 'none';
+	if (cb) cb(card);
+}
+function stepCardFocus(d) {
+	if (!focusCard) return;
+	const sib = focusSiblings(focusCard);
+	if (sib.length < 2) return;
+	const i = sib.indexOf(focusCard);
+	showCardFocus(sib[(i + d + sib.length) % sib.length]);
+}
+// capture phase, so Esc closes the reader before the board's Esc (clearModes) runs
+addEventListener('keydown', ev => {
+	if (!focusCard) return;
+	if (ev.key === 'Escape') { ev.stopPropagation(); ev.preventDefault(); hideCardFocus(); }
+	else if (ev.key === 'ArrowLeft') { ev.stopPropagation(); stepCardFocus(-1); }
+	else if (ev.key === 'ArrowRight') { ev.stopPropagation(); stepCardFocus(1); }
+}, true);
 // resolve a Choose-One from the inspect panel (mirrors openChoiceMenu's per-branch logic)
 function playChoiceFromInspect(card, i) {
 	if (!E.canPlay(state, HUMAN, card)) return;
@@ -4248,14 +4922,28 @@ function openWalkerMenu(card, ev) {
 	menu.style.top = `${Math.min(ev.clientY, innerHeight - 140)}px`;
 }
 
-addEventListener('contextmenu', ev => { ev.preventDefault(); clearModes(); });
+addEventListener('contextmenu', ev => {
+	ev.preventDefault();
+	if (pending || selectedAttacker || placing) { clearModes(); return; }
+	// right-click a card: the card focus view (Plans/CONTROLLER_V2_PLAN.md C)
+	if (ev.target !== renderer.domElement || !state) return;
+	const uid = pick(ev) ?? hoverUid;
+	const c = cardOf(uid) || (uid === 'heropanel' && heroPanelOrbHit(pickHeroPanelUV(ev)) ? classPowerOf(HUMAN) : null);
+	if (c) showCardFocus(c);
+});
 
 renderer.domElement.addEventListener('pointerdown', ev => {
 	hideWalkerMenu();
 	menuDragCandidate = null; // each press starts a fresh gesture
 	if (spectateMode || replayMode || duel.busy) return;
 	if (ev.button !== 0 || !state || state.over) return;
-	const uid = pick(ev);
+	let uid = pick(ev);
+	// a hovered hand card lifts clear of the cursor (fitCardOnScreen); a press
+	// still under it in its column is aimed at that card, so grab it
+	if (uid == null && hoverUid != null && !pending && !selectedAttacker) {
+		const hc = cardOf(hoverUid);
+		if (hc && hc.zone === 'hand' && hc.controller === HUMAN) uid = hoverUid;
+	}
 	const card = cardOf(uid);
 	if (TOUCH) $('tooltip').style.display = 'none';
 	// press-and-hold any card to open its full preview — and block the release
@@ -4268,6 +4956,8 @@ renderer.domElement.addEventListener('pointerdown', ev => {
 	// your own 3D hero panel: the orb fires the class power, elsewhere acts as the
 	// hero (arm an attack, or pick yourself as a spell/attack target via panelClick)
 	if (uid === 'heropanel') {
+		// the planar die orb: armed on press, rolled on a quick release
+		if (heroPanelDieHit(pickHeroPanelUV(ev)) && !pending && !selectedAttacker) { heroPress = { die: true }; return; }
 		const power = classPowerOf(HUMAN);
 		if (heroPanelOrbHit(pickHeroPanelUV(ev)) && !pending && !selectedAttacker && power) {
 			// don't fire on press — arm it: a quick release uses the power (or, when
@@ -4370,14 +5060,10 @@ renderer.domElement.addEventListener('pointerdown', ev => {
 			actSacToken(card.uid); // relays in a duel (guest)
 		}
 	} else if (card.zone === 'artifact' && card.controller === HUMAN && card.tapAbility) {
-		// click an artifact with a {T} ability to tap it (targeted ones pick a target)
-		if (E.canTapArtifact(state, HUMAN, card.uid)) {
-			const spec = E.tapArtifactSpec(state, HUMAN, card.uid);
-			if (spec && spec.required) {
-				const targets = E.legalTargets(state, HUMAN, spec);
-				if (targets.length) { pending = { card, spec, targets, mode: 'tapart' }; updateHud(); }
-			} else { actTapArtifact(card.uid, null); } // relays in a duel (guest)
-		}
+		// click an artifact with a {T} ability to tap it (targeted ones pick a target);
+		// one with several {T} abilities asks which first
+		if (E.artifactTaps(card).length > 1) { if (!card.tapped) openArtifactTapMenu(card, ev); }
+		else if (E.canTapArtifact(state, HUMAN, card.uid)) armArtifactTap(card, 0);
 	} else if (card.zone === 'planeswalker' && card.controller === HUMAN) {
 		// click your planeswalker to pick an ability
 		if (E.canUseWalker(state, HUMAN, card)) openWalkerMenu(card, ev);
@@ -4425,7 +5111,7 @@ function commitPending(t) {
 		else if (p.mode === 'equip') { localFn = () => E.equip(state, HUMAN, p.card.uid, t.uid); intent = { k: 'equip', uid: p.card.uid, target: t.uid }; }
 		else if (p.mode === 'walker') { localFn = () => E.useWalker(state, HUMAN, p.card.uid, p.ability, t); intent = { k: 'walker', uid: p.card.uid, ability: p.ability, target: t || null }; }
 		else if (p.mode === 'tap') { localFn = () => E.tapLand(state, HUMAN, p.card.uid, p.tapIndex, t); intent = { k: 'tap', uid: p.card.uid, tapIndex: p.tapIndex, target: t || null }; }
-		else if (p.mode === 'tapart') { localFn = () => E.tapArtifact(state, HUMAN, p.card.uid, t); intent = { k: 'tapart', uid: p.card.uid, target: t || null }; }
+		else if (p.mode === 'tapart') { localFn = () => E.tapArtifact(state, HUMAN, p.card.uid, t, p.tapIndex || 0); intent = { k: 'tapart', uid: p.card.uid, target: t || null, tapIndex: p.tapIndex || 0 }; }
 		else if (p.mode === 'respond') { const a = { ...p.action, target: t || null }; localFn = () => E.resolveResponse(state, HUMAN, a); intent = { k: 'respond', action: a }; }
 		else if (p.mode === 'adventure') { localFn = () => E.playAdventure(state, HUMAN, p.card.uid, t, p.choice); intent = { k: 'adventure', uid: p.card.uid, target: t || null, choice: p.choice }; }
 		else { localFn = () => E.playCard(state, HUMAN, p.card.uid, t, p.choice, p.position, p.useAlt, p.kicked); intent = { k: 'play', uid: p.card.uid, target: t || null, choice: p.choice, position: p.position, useAlt: p.useAlt, kicked: p.kicked }; }
@@ -4438,7 +5124,7 @@ function commitPending(t) {
 	else if (pending.mode === 'equip') E.equip(state, HUMAN, pending.card.uid, t.uid);
 	else if (pending.mode === 'walker') E.useWalker(state, HUMAN, pending.card.uid, pending.ability, t);
 	else if (pending.mode === 'tap') E.tapLand(state, HUMAN, pending.card.uid, pending.tapIndex, t);
-	else if (pending.mode === 'tapart') E.tapArtifact(state, HUMAN, pending.card.uid, t);
+	else if (pending.mode === 'tapart') E.tapArtifact(state, HUMAN, pending.card.uid, t, pending.tapIndex || 0);
 	else if (pending.mode === 'respond') { E.resolveResponse(state, HUMAN, { ...pending.action, target: t || null }); }
 	else if (pending.mode === 'adventure') E.playAdventure(state, HUMAN, pending.card.uid, t, pending.choice);
 	else E.playCard(state, HUMAN, pending.card.uid, t, pending.choice, pending.position, pending.useAlt, pending.kicked);
@@ -4473,6 +5159,19 @@ const placeMarker = new THREE.Mesh(
 	new THREE.MeshBasicMaterial({ color: 0x57e389, transparent: true, opacity: 0.9 }));
 placeMarker.visible = false;
 scene.add(placeMarker);
+
+// Lift a (hovered hand) card until its whole face is inside the window: its
+// bottom edge, where attack/health sit, fell below the screen in short windows
+// (1366x768 with a taskbar over it). Moves the target back and up a step at a time.
+const _fitV = new THREE.Vector3();
+function fitCardOnScreen(target) {
+	const limit = innerHeight - 14;
+	for (let k = 0; k < 20; k++) {
+		_fitV.set(0, -CARD_H * (target.scale || 1) / 2, 0).applyQuaternion(target.quat).add(target.pos).project(camera);
+		if ((1 - _fitV.y) / 2 * innerHeight <= limit) return;
+		target.pos.z -= 0.16; target.pos.y += 0.05;
+	}
+}
 
 function boardScreenXs() {
 	return state.players[HUMAN].board
@@ -4556,7 +5255,7 @@ function startLongPress(uid, x, y) {
 			// a held card/power is previewed, never triggered — release is suppressed below
 			$('tooltip').style.display = 'none';
 			hideInspect();
-			showInspect(c);
+			if (!showCardFocus(c)) showInspect(c);
 		} else {
 			hoverUid = uid;
 			updateTooltip({ clientX: x, clientY: y });
@@ -4635,6 +5334,15 @@ addEventListener('pointerup', ev => {
 	menuDragCandidate = null; // the gesture ended; a click keeps its menu open
 	if (spectateMode || replayMode || duel.busy) return;
 	// hero-power orb released: a quick click uses it; a press-and-hold only previewed
+	if (heroPress && heroPress.die) {
+		heroPress = null;
+		if (ev.button === 0 && !longPressFired && state && Math.hypot(ev.clientX - lastDownX, ev.clientY - lastDownY) < 14) {
+			if (E.canPlaneswalk(state, HUMAN)) actPlaneswalk();
+			else banner(state.current !== HUMAN ? 'The planar die rolls on your turn'
+				: `The next planar roll costs ${E.planarRollCost(state, HUMAN)} mana`);
+		}
+		return;
+	}
 	if (heroPress) {
 		const power = heroPress.power;
 		heroPress = null;
@@ -4755,6 +5463,7 @@ $('concede').addEventListener('click', () => {
 		const run = multiverseRunMode ? loadMultiverse() : finalfantasyRunMode ? loadFinalfantasy() : swordcoastRunMode ? loadSwordcoast() : middleearthRunMode ? loadMiddleearth() : lorequestRunMode ? loadLorequest() : arenaRunMode ? loadArena() : duelsRunMode ? loadDuels() : tombsRunMode ? loadTombs() : heistRunMode ? loadHeist() : loadRun();
 		const el = dungeonOverlay('CONCEDE?', 'Walking away ends the run. A conceded run never pays a pack.');
 		el.appendChild(overlayButton('Concede the run', () => {
+			mpRunWalkaway(runModeName(), run);
 			if (multiverseRunMode) clearMultiverse(); else if (finalfantasyRunMode) clearFinalfantasy(); else if (swordcoastRunMode) clearSwordcoast(); else if (middleearthRunMode) clearMiddleearth(); else if (lorequestRunMode) clearLorequest(); else if (arenaRunMode) clearArena(); else if (duelsRunMode) clearDuels(); else if (tombsRunMode) clearTombs(); else if (heistRunMode) clearHeist(); else clearRun();
 			state.over = true; // freezes play without firing the defeat payout path
 			const done = dungeonOverlay('RUN CONCEDED', `You walked away at level ${run?.level ?? 1}. No pack this time.`);
@@ -4792,13 +5501,6 @@ $('concede').addEventListener('click', () => {
 		if (duel.on) publishDuel();
 	}));
 	el.appendChild(overlayButton(ffa ? 'Keep playing' : 'Keep fighting', () => hideDungeonOverlay()));
-});
-$('player-count').addEventListener('change', ev => {
-	playerCount = Math.max(2, Math.min(E.MAX_PLAYERS, parseInt(ev.target.value, 10) || 2));
-	const url = new URL(location.href);
-	url.searchParams.set('players', playerCount);
-	history.replaceState(null, '', url);
-	start();
 });
 
 addEventListener('keydown', ev => { if (ev.key === 'Escape') clearModes(); wake(); });
@@ -4846,7 +5548,7 @@ function updateRings() {
 			else if (c.zone === 'planeswalker' && c.controller === HUMAN && E.canUseWalker(state, HUMAN, c)) color = '#57e389';
 			else if ((c.zone === 'companion' || c.zone === 'command') && c.controller === HUMAN && E.canPlay(state, HUMAN, c)) color = '#57e389';
 			else if (c.zone === 'land' && c.controller === HUMAN && E.canTapLand(state, HUMAN, c)) color = '#57e389';
-			else if (c.zone === 'artifact' && c.controller === HUMAN && c.tapAbility && E.canTapArtifact(state, HUMAN, c.uid)) color = '#57e389';
+			else if (c.zone === 'artifact' && c.controller === HUMAN && c.tapAbility && E.artifactTaps(c).some((_, i) => E.canTapArtifact(state, HUMAN, c.uid, i))) color = '#57e389';
 		}
 		if (color && (c.zone === 'board' || c.zone === 'heropower' || c.zone === 'planeswalker' || c.zone === 'companion' || c.zone === 'command' || c.zone === 'land' || c.zone === 'artifact')) {
 			ent.ring.visible = true;
@@ -4977,6 +5679,7 @@ const SHAKE_MS = 320;
 const REDUCED_MOTION = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 let shakeEnd = 0, shakeMag = 0;
 function shake(mag) {
+	rumble(Math.min(1, 0.25 + mag * 1.5), 90 + Math.round(mag * 200));   // the controller feels it too (if rumble is on)
 	if (REDUCED_MOTION) return;
 	shakeMag = performance.now() < shakeEnd ? Math.max(shakeMag, mag) : mag;
 	shakeEnd = performance.now() + SHAKE_MS;
@@ -4988,6 +5691,9 @@ animate();
 // headless test hook
 try { wireModalVeil(); } catch (e) { /* no DOM (node tests) */ }
 window.__game = {
+	logForTest: (msg, refs) => log(msg, refs),
+	get logLinks() { return logLinks.map(a => a.map(l => ({ ...l }))); }, get logLines() { return logHistory.slice(); }, openLogFull, closeLogFull,
+	get cardFocus() { return focusCard ? { uid: focusCard.uid, id: focusCard.id, zone: focusCard.zone } : null; }, showCardFocus, hideCardFocus,
 	get boardVanishLog() { return boardVanishLog; },
 	get state() { return state; },
 	get HUMAN() { return HUMAN; }, // spectate smoke: the view-switch flips this
@@ -5012,6 +5718,22 @@ window.__game = {
 	armAttack(uid) { selectedAttacker = uid; updateHud(); },
 	get telegraphs() { return telegraphs.map(t => ({ ...t })); }, // attack-forecast arrows (enemy turns + replays)
 	// 3D hero-panel test hooks: screen positions of the orb and the panel body
+	get hoverUid() { return hoverUid; }, get handMini() { return handMini; }, get heroOrbCost() { return heroOrbCost; }, get weaponBadgeUV() { return weaponBadgeUV && { ...weaponBadgeUV }; },
+	// the screen y of a card's bottom edge (where attack/health sit)
+	cardBottomY(uid) {
+		const ent = entities.get(uid); if (!ent) return null;
+		const m = ent.mesh;
+		const v = new THREE.Vector3(0, -CARD_H * m.scale.y / 2, 0).applyQuaternion(m.quaternion).add(m.position).project(camera);
+		return (1 - v.y) / 2 * innerHeight;
+	},
+	dieScreenPos() {
+		if (!heroPanelMesh.visible || !dieOrbUV) return null;
+		const g = heroPanelMesh.geometry.parameters;
+		const lx = ((dieOrbUV.x0 + dieOrbUV.x1) / 2 - 0.5) * g.width;
+		const ly = ((dieOrbUV.y0 + dieOrbUV.y1) / 2 - 0.5) * g.height;
+		const v = heroPanelMesh.localToWorld(new THREE.Vector3(lx, ly, 0)).project(camera);
+		return { x: (v.x + 1) / 2 * innerWidth, y: (1 - v.y) / 2 * innerHeight };
+	},
 	orbScreenPos() {
 		if (!heroPanelMesh.visible || !heroOrbUV) return null;
 		const g = heroPanelMesh.geometry.parameters;
@@ -5035,6 +5757,36 @@ window.__game = {
 	actAttack: (...a) => actAttack(...a),
 	publishDuel: () => publishDuel(),
 };
+
+// CONTROLLER PLAY on the board (padboard.js, every player): it drives the
+// same functions a mouse ends in — releasePlay for a hand card, a replayed quick
+// click for anything on the board, commitPending / panelClick for targets.
+initPadboard({
+	get state() { return state; }, get HUMAN() { return HUMAN; }, E,
+	busy: () => spectateMode || replayMode || duel.busy,
+	cardOf, entityUids: () => [...entities.keys()],
+	screenPos: uid => window.__game.screenPosOf(uid),
+	panelPos: () => window.__game.panelScreenPos(), orbPos: () => window.__game.orbScreenPos(), diePos: () => window.__game.dieScreenPos(),
+	foePanels: () => [...foePanelEls.entries()],
+	get pending() { return pending; }, get attacker() { return selectedAttacker; },
+	clearModes, commitPending, panelClick, releasePlay, toggleInspect, hideInspect,
+	// the card focus view: onClose hands focus back to the board on the card you read
+	openCardFocus: (card, onClose) => showCardFocus(card, { onClose }), cardFocusOpen, hideCardFocus,
+	heroPowerCard: () => classPowerOf(HUMAN),
+	// opened from the pad: start the selector on the newest card name
+	openLog: () => {
+		openLogFull();
+		requestAnimationFrame(() => {
+			const last = [...(logFullBody?.querySelectorAll('.log-card') || [])].pop();
+			if (last && window.__padnav) window.__padnav.focusTo(last);
+		});
+	},
+	canvas: renderer.domElement,
+	setHover: (uid, x, y) => { hoverUid = uid; if (x != null) updateTooltip({ clientX: x, clientY: y }); else $('tooltip').style.display = 'none'; },
+	setMouse: (x, y) => { mouseX = x; mouseY = y; },
+	setPlacing: card => { placing = card ? { card, dragging: true } : null; if (!card) placeMarker.visible = false; },
+	boardScreenXs, banner, whyCantPlay,
+});
 
 let classRegistry = [];
 
@@ -5178,8 +5930,6 @@ function startSpectate(cardsById) {
 	$('end-turn').style.display = 'none';
 	$('concede').style.display = 'none';
 	$('coin-btn').style.display = 'none';
-	$('player-count').style.display = 'none';
-	$('class-select').style.display = 'none';
 	mountSpectateViewButton();
 	log(`Watching ${spectateName}'s game…`);
 	let specIdle = 0; // consecutive unchanged polls → adaptive backoff
@@ -5346,8 +6096,6 @@ async function startDuel(cardsById) {
 	duel.size = data.cardmatch.size || 2;
 	duel.seat = data.seat ?? (data.role === 'host' ? 0 : 1); // my seat index (FFA: 0..N-1)
 	startDebugOverlay();
-	$('player-count').style.display = 'none';
-	$('class-select').style.display = 'none';
 	$('concede').style.display = 'none';
 	if (duel.role === 'host') startDuelHost(cardsById);
 	else startDuelGuest(cardsById);
@@ -5502,7 +6250,7 @@ function applyGuestIntent(it) {
 			case 'walker': E.useWalker(state, P, it.uid, it.ability, it.target || null); break;
 			case 'tap': E.tapLand(state, P, it.uid, it.tapIndex, it.target || null); break;
 				case 'sacland': E.sacrificeLand(state, P, it.uid); break;
-				case 'tapart': E.tapArtifact(state, P, it.uid, it.target || null); break;
+				case 'tapart': E.tapArtifact(state, P, it.uid, it.target || null, it.tapIndex || 0); break;
 				case 'sactoken': E.sacrificeToken(state, P, it.uid); break;
 				case 'heroattack': E.heroAttack(state, P, it.target); break;
 			case 'attack': E.attack(state, P, it.attacker, it.target); break;
@@ -5835,9 +6583,9 @@ function actWalker(uid, ability, target) { // planeswalker loyalty ability, no t
 	E.useWalker(state, HUMAN, uid, ability, target || null); pump();
 	if (duel.on) publishDuel();
 }
-function actTapArtifact(uid, target) { // {T} artifact ability (mana rocks etc.)
-	if (isGuest()) return guestApply(() => E.tapArtifact(state, HUMAN, uid, target || null), { k: 'tapart', uid, target: target || null });
-	E.tapArtifact(state, HUMAN, uid, target || null); pump();
+function actTapArtifact(uid, target, idx = 0) { // {T} artifact ability (mana rocks etc.)
+	if (isGuest()) return guestApply(() => E.tapArtifact(state, HUMAN, uid, target || null, idx), { k: 'tapart', uid, target: target || null, tapIndex: idx });
+	E.tapArtifact(state, HUMAN, uid, target || null, idx); pump();
 	if (duel.on) publishDuel();
 }
 function actSacToken(uid) { // cash in a Treasure/Blood/Food token
@@ -6137,10 +6885,10 @@ async function start() {
 	clearModes();
 	Chat.clear(); // fresh game → fresh chat log (no-op if chat isn't mounted)
 	$('restart').style.display = 'none';
-	$('player-count').value = String(playerCount);
 	logEl.innerHTML = '';
 	logHistory.length = 0; // fresh match → fresh log history
-	if (logFull) { logFull.classList.remove('open'); if (logFullBody) logFullBody.innerHTML = ''; }
+	logLinks.length = 0;
+	if (logFull) { closeLogFull(); if (logFullBody) logFullBody.innerHTML = ''; }
 	buildTable();
 	frameCamera();
 	const data = await loadCardsData();
@@ -6152,20 +6900,9 @@ async function start() {
 	if (spectateMode) { startSpectate(cardsById); return; }
 	if (!classRegistry.length) {
 		try {
+			// your class comes from your deck (the deck builder writes magepunk_class_v1);
+			// the in-match class / player-count test bar is gone (owner, 2026-10-01)
 			classRegistry = (await (await fetch('classes.json')).json()).classes;
-			const sel = $('class-select');
-			sel.innerHTML = '<option value="">No class</option>';
-			for (const c of classRegistry) {
-				const opt = document.createElement('option');
-				opt.value = c.id;
-				opt.textContent = c.name + (c.power ? '' : ' (no power yet)');
-				sel.appendChild(opt);
-			}
-			sel.value = localStorage.getItem('magepunk_class_v1') || '';
-			sel.addEventListener('change', ev => {
-				localStorage.setItem('magepunk_class_v1', ev.target.value);
-				start();
-			});
 		} catch (e) { classRegistry = []; }
 	}
 	if (asyncGame.on) { await startAsync(cardsById); return; }
@@ -6186,11 +6923,13 @@ async function start() {
 		if (mode === 'multiverse') { location.href = '?multiverse=1'; return; }
 		menuChosen = true;
 	}
+	_fightGo = takeFightGo(); // a Fight! click on the NEXT screen boots straight into the fight
 	await hydrateRunsFromServer(); // server-authoritative: refresh the localStorage run caches from D1 before booting
+	if (activeRunIO() && _runsEndedAtBoot.has(activeRunIO().key)) { log('Your last run had already ended — its result is saved on the server. Pick a new run.'); banner('Your last run had already ended — its result is saved.', 4000); }
 	if (dungeonRunMode) {
 		let run = loadRun();
 		// a saved run offers resume-or-abandon; it never locks the class choice
-		if (run && run.active && !(await resumeRunOverlay(run))) {
+		if (run && run.active && !fightGoFor(run) && !(await resumeRunOverlay(run))) {
 			clearRun();
 			run = null;
 		}
@@ -6204,12 +6943,14 @@ async function start() {
 			};
 			saveRun(run);
 		}
-		if (resumeRunSnapshot(run, cardsById)) { dungeonBossId = run.bossId; log('Resumed your paused dungeon fight.'); }
+		runBootCardsById = cardsById;
+		if (run.pendingResult) settlePendingResult(run, dungeonVictory, dungeonDefeat, { 2: r => afterBucket(r, r.level + 1) });
+		else if (resumeRunSnapshot(run, cardsById)) { dungeonBossId = run.bossId; log('Resumed your paused dungeon fight.'); }
 		else bootEncounter(cardsById, run.bossId, run.classId, run.deck, run.passives, run.level, run.anomaly);
 	} else if (heistRunMode) {
 		heistCardsById = cardsById; // pre-state overlays need the card defs
 		let run = loadHeist();
-		if (run && run.active && !(await resumeHeistOverlay(run))) {
+		if (run && run.active && !fightGoFor(run) && !(await resumeHeistOverlay(run))) {
 			clearHeist();
 			run = null;
 		}
@@ -6226,11 +6967,13 @@ async function start() {
 			};
 			saveHeist(run);
 		}
-		if (resumeRunSnapshot(run, cardsById)) log('Resumed your paused Heist fight.'); else bootHeistEncounter(cardsById, run);
+		runBootCardsById = cardsById;
+		if (run.pendingResult) settlePendingResult(run, heistVictory, heistDefeat, { 2: r => afterHeistBucket(r, r.level + 1), 3: r => heistTavern(r, r.level + 1) });
+		else if (resumeRunSnapshot(run, cardsById)) log('Resumed your paused Heist fight.'); else bootHeistEncounter(cardsById, run);
 	} else if (tombsRunMode) {
 		tombsCardsById = cardsById; // pre-state overlays need the card defs
 		let run = loadTombs();
-		if (run && run.active && !(await resumeTombsOverlay(run))) {
+		if (run && run.active && !fightGoFor(run) && !(await resumeTombsOverlay(run))) {
 			clearTombs();
 			run = null;
 		}
@@ -6247,11 +6990,13 @@ async function start() {
 			};
 			saveTombs(run);
 		}
-		if (resumeRunSnapshot(run, cardsById)) log('Resumed your paused Tombs fight.'); else bootTombsEncounter(cardsById, run);
+		runBootCardsById = cardsById;
+		if (run.pendingResult) settlePendingResult(run, tombsVictory, tombsDefeat, { 2: r => afterTombsBucket(r, r.level + 1) });
+		else if (resumeRunSnapshot(run, cardsById)) log('Resumed your paused Tombs fight.'); else bootTombsEncounter(cardsById, run);
 	} else if (duelsRunMode) {
 		duelsCardsById = cardsById; // pre-state overlays need the card defs
 		let run = loadDuels();
-		if (run && run.active && !(await resumeDuelsOverlay(run))) {
+		if (run && run.active && !fightGoFor(run) && !(await resumeDuelsOverlay(run))) {
 			clearDuels();
 			run = null;
 		}
@@ -6270,11 +7015,11 @@ async function start() {
 			run = { active: true, heroId, classChoice, powerId, anomaly, deck, passives: [], wins: 0, losses: 0, enemy: genDuelsEnemy(cardsById, 0) };
 			saveDuels(run);
 		}
-		if (resumeRunSnapshot(run, cardsById)) log('Resumed your paused Duels fight.'); else bootDuelsEncounter(cardsById, run);
+		if (run.pendingResult) settlePendingResult(run, duelsVictory, duelsDefeat); else if (run.postGame) resumePostGame(run, duelsLoot, afterDuelsLootBucket, advanceDuels); else if (resumeRunSnapshot(run, cardsById)) log('Resumed your paused Duels fight.'); else bootDuelsEncounter(cardsById, run);
 	} else if (lorequestRunMode) {
 		lorequestCardsById = cardsById; // pre-state overlays need the card defs
 		let run = loadLorequest();
-		if (run && run.active && !(await resumeLorequestOverlay(run))) { clearLorequest(); run = null; }
+		if (run && run.active && !fightGoFor(run) && !(await resumeLorequestOverlay(run))) { mpRunWalkaway('lorequest', run); clearLorequest(); run = null; }
 		if (!run || !run.active) {
 			const characterId = await pickLorequestDeckOverlay(cardsById);
 			const deck = Lorequest.deckOf(cardsById, characterId);
@@ -6282,11 +7027,11 @@ async function start() {
 				enemy: genLorequestEnemy(cardsById, 0, 0, null, characterId) };
 			saveLorequest(run);
 		}
-		if (resumeRunSnapshot(run, cardsById)) log('Resumed your paused Lorequest fight.'); else bootLorequestEncounter(cardsById, run);
+		if (run.pendingResult) settlePendingResult(run, lorequestVictory, lorequestDefeat); else if (run.postGame) resumePostGame(run, lorequestLoot, afterLorequestBucket, advanceLorequest); else if (resumeRunSnapshot(run, cardsById)) log('Resumed your paused Lorequest fight.'); else bootLorequestEncounter(cardsById, run);
 	} else if (middleearthRunMode) {
 		middleearthCardsById = cardsById; // pre-state overlays need the card defs
 		let run = loadMiddleearth();
-		if (run && run.active && !(await resumeMiddleEarthOverlay(run))) { clearMiddleearth(); run = null; }
+		if (run && run.active && !fightGoFor(run) && !(await resumeMiddleEarthOverlay(run))) { mpRunWalkaway('middleearth', run); clearMiddleearth(); run = null; }
 		if (!run || !run.active) {
 			const characterId = await pickMiddleEarthHeroOverlay(cardsById);
 			const deck = Middleearth.deckOf(cardsById, characterId);
@@ -6294,11 +7039,11 @@ async function start() {
 				enemy: genMiddleEarthEnemy(cardsById, 0, null) };
 			saveMiddleearth(run);
 		}
-		if (resumeRunSnapshot(run, cardsById)) log('Resumed your paused Middle-earth fight.'); else bootMiddleEarthEncounter(cardsById, run);
+		if (run.pendingResult) settlePendingResult(run, middleEarthVictory, middleEarthDefeat); else if (run.postGame) resumePostGame(run, middleEarthLoot, afterMiddleEarthReward, advanceMiddleEarth); else if (resumeRunSnapshot(run, cardsById)) log('Resumed your paused Middle-earth fight.'); else bootMiddleEarthEncounter(cardsById, run);
 		} else if (swordcoastRunMode) {
 			swordcoastCardsById = cardsById; // pre-state overlays need the card defs
 			let run = loadSwordcoast();
-			if (run && run.active && !(await resumeSwordCoastOverlay(run))) { clearSwordcoast(); run = null; }
+			if (run && run.active && !fightGoFor(run) && !(await resumeSwordCoastOverlay(run))) { mpRunWalkaway('swordcoast', run); clearSwordcoast(); run = null; }
 			if (!run || !run.active) {
 				const characterId = await pickSwordCoastHeroOverlay(cardsById);
 				const deck = Swordcoast.deckOf(cardsById, characterId);
@@ -6306,11 +7051,11 @@ async function start() {
 					enemy: genSwordCoastEnemy(cardsById, 0, null) };
 				saveSwordcoast(run);
 			}
-			if (resumeRunSnapshot(run, cardsById)) log('Resumed your paused Sword Coast fight.'); else bootSwordCoastEncounter(cardsById, run);
+			if (run.pendingResult) settlePendingResult(run, swordCoastVictory, swordCoastDefeat); else if (run.postGame) resumePostGame(run, swordCoastLoot, afterSwordCoastReward, advanceSwordCoast); else if (resumeRunSnapshot(run, cardsById)) log('Resumed your paused Sword Coast fight.'); else bootSwordCoastEncounter(cardsById, run);
 		} else if (finalfantasyRunMode) {
 			finalfantasyCardsById = cardsById; // pre-state overlays need the card defs
 			let run = loadFinalfantasy();
-			if (run && run.active && !(await resumeFinalFantasyOverlay(run))) { clearFinalfantasy(); run = null; }
+			if (run && run.active && !fightGoFor(run) && !(await resumeFinalFantasyOverlay(run))) { mpRunWalkaway('finalfantasy', run); clearFinalfantasy(); run = null; }
 			if (!run || !run.active) {
 				const characterId = await pickFinalFantasyHeroOverlay(cardsById);
 				const deck = Finalfantasy.deckOf(cardsById, characterId);
@@ -6318,11 +7063,11 @@ async function start() {
 					enemy: genFinalFantasyEnemy(cardsById, 0, null) };
 				saveFinalfantasy(run);
 			}
-			if (resumeRunSnapshot(run, cardsById)) log('Resumed your paused Final Fantasy fight.'); else bootFinalFantasyEncounter(cardsById, run);
+			if (run.pendingResult) settlePendingResult(run, finalFantasyVictory, finalFantasyDefeat); else if (run.postGame) resumePostGame(run, finalFantasyLoot, afterFinalFantasyReward, advanceFinalFantasy); else if (resumeRunSnapshot(run, cardsById)) log('Resumed your paused Final Fantasy fight.'); else bootFinalFantasyEncounter(cardsById, run);
 		} else if (multiverseRunMode) {
 			multiverseCardsById = cardsById; // pre-state overlays need the card defs
 			let run = loadMultiverse();
-			if (run && run.active && !(await resumeMultiverseOverlay(run))) { clearMultiverse(); run = null; }
+			if (run && run.active && !fightGoFor(run) && !(await resumeMultiverseOverlay(run))) { mpRunWalkaway('multiverse', run); clearMultiverse(); run = null; }
 			if (!run || !run.active) {
 				const characterId = await pickMultiverseHeroOverlay(cardsById);
 				const deck = Multiverse.deckOf(cardsById, characterId);
@@ -6330,11 +7075,11 @@ async function start() {
 					enemy: genMultiverseEnemy(cardsById, 0, null) };
 				saveMultiverse(run);
 			}
-			if (resumeRunSnapshot(run, cardsById)) log('Resumed your paused Multiverse fight.'); else bootMultiverseEncounter(cardsById, run);
+			if (run.pendingResult) settlePendingResult(run, multiverseVictory, multiverseDefeat); else if (run.postGame) resumePostGame(run, multiverseLoot, afterMultiverseBucket, advanceMultiverse); else if (resumeRunSnapshot(run, cardsById)) log('Resumed your paused Multiverse fight.'); else bootMultiverseEncounter(cardsById, run);
 	} else if (arenaRunMode) {
 		duelsCardsById = cardsById; // pre-state overlays reuse this stash
 		let run = loadArena();
-		if (run && run.active && !(await resumeArenaOverlay(run))) { clearArena(); run = null; }
+		if (run && run.active && !fightGoFor(run) && !(await resumeArenaOverlay(run))) { clearArena(); run = null; }
 		if (!run || !run.active) {
 			const heroId = await pickDuelsHeroOverlay();
 			let hero = Duels.HEROES.find(h => h.id === heroId);
@@ -6345,7 +7090,9 @@ async function start() {
 			run = { active: true, heroId, classChoice, powerId, anomaly: await pickWeeklyAnomalyOverlay(), deck, wins: 0, losses: 0, enemy: genArenaEnemy(cardsById) };
 			saveArena(run);
 		}
-		if (resumeRunSnapshot(run, cardsById)) log('Resumed your paused Arena fight.'); else bootArenaEncounter(cardsById, run);
+		runBootCardsById = cardsById;
+		if (run.pendingResult) settlePendingResult(run, arenaVictory, arenaDefeat);
+		else if (resumeRunSnapshot(run, cardsById)) log('Resumed your paused Arena fight.'); else bootArenaEncounter(cardsById, run);
 	} else if (dungeonBossId) {
 		// one-off encounter: ?class= if it has a starter deck, else saved, else mage
 		const wanted = new URLSearchParams(location.search).get('class');
@@ -6391,17 +7138,18 @@ function bootEncounter(cardsById, bossId, clsId, deckIds, passives, level, anoma
 	// run both heroes share a scaling life total (15 at level 1, +5 each level);
 	// a one-off ?boss= fight keeps the boss's designed health.
 	const bp = state.players[1];
-	const runHP = level ? 15 + (level - 1) * 5 : null;
+	const runHP = level ? runLifeFor(level) : null;
 	const bossHP = runHP ?? boss.health;
 	E.applyHeroMods(state, 1, { life: bossHP, maxLife: bossHP });
 	if (runHP != null) E.applyHeroMods(state, HUMAN, { life: runHP, maxLife: runHP });
 	E.resetDeckAndHand(state, 1, boss.deck);
 	E.drawCards(state, 1, 4);
+	E.addCoin(state, 1);   // the boss goes second: re-deal its opening Coin (resetDeckAndHand wiped createGame's)
 	if (boss.passive === 'battlecries-twice' || boss.passive === 'both-twice') E.applyHeroMods(state, 1, { battlecriesTwice: true });
 	if (boss.passive === 'deathrattles-twice' || boss.passive === 'both-twice') E.applyHeroMods(state, 1, { deathrattlesTwice: true });
 	E.stripLoadouts(state);
 	applyRunAnomaly(anomalyId);
-	setRunLife(level);
+	setRunLife(level, { full: true });
 	applyTreasures(passives || []);
 	log(`${level ? `Dungeon level ${level}` : 'Dungeon Run'} — ${boss.name} (${bp.life} HP): "${boss.flavor}"`);
 	if (boss.power) log(`Boss power — ${boss.power.name} (${boss.power.cost}): ${boss.power.text}`);
@@ -6673,6 +7421,7 @@ function miniFace(def, width = 96) {
 	const c = drawCardFace(def, {});
 	const height = Math.round(width * 134 / 96);
 	c.style.cssText = `width:${width}px;height:${height}px;border-radius:6px;`;
+	c.dataset.cardId = def.id;   // which card this face is (reward screens, tests)
 	attachTip(c, def);
 	// real art lazy-loads after the first paint — redraw once it has arrived
 	const redraw = () => {
@@ -6773,10 +7522,20 @@ function pickWeeklyAnomalyOverlay() {
 // escalating parity: run fights start small and grow — round 1 is 10 life each,
 // +5 per round for BOTH sides, so every fight stays even. One-off ?boss= fights
 // (no round number) keep the standard 40.
-function setRunLife(round) {
+// Every run fight starts both sides at the same life: 10 on round 1, +5 per round
+// (c72e31ed). The ONE source for it — the boots and the level previews read this.
+function runLifeFor(round) { return 10 + 5 * (round - 1); }
+// opts.full: the hero starts at FULL health (maxLife = life). Dungeon/Heist/Tombs
+//   always meant that (they set maxLife from their old 15+5 formula, which this
+//   then undercut, leaving both heroes "injured" at 15/20 — 2026-10-12 report).
+// opts.humanBonus: life the player earned on top (Heist's Good Food boon).
+function setRunLife(round, opts = {}) {
 	if (!round || round < 1) return;
-	const life = 10 + 5 * (round - 1);
-	for (const p of state.players) p.life = life;
+	const life = runLifeFor(round);
+	state.players.forEach((p, i) => {
+		p.life = life + (i === HUMAN ? (opts.humanBonus || 0) : 0);
+		if (opts.full) p.maxLife = p.life;
+	});
 	log(`❤️ Round ${round}: both sides start at ${life} life.`);
 }
 
@@ -6784,6 +7543,14 @@ function applyRunAnomaly(id) {
 	const a = id && Heist.ANOMALIES[id];
 	if (!a || !Heist.applyAnomaly(state, id)) return;
 	log(`🌀 Anomaly: ${a.name} — ${a.text}`);
+}
+
+// a Lorequest-family run conceded or abandoned ends that hero's win streak on the
+// account (otherwise the hero stays streak-pinned into every later offer)
+function mpRunWalkaway(mode, run) {
+	if (!MP_ON || !run?.characterId) return;
+	if (!['lorequest', 'middleearth', 'swordcoast', 'finalfantasy', 'multiverse'].includes(mode)) return;
+	try { MPX.call('run-walkaway', { mode, character: String(run.characterId) }).catch(() => {}); } catch (e) {}
 }
 
 async function mpRunReward(el, result, score) {
@@ -6827,6 +7594,7 @@ function pickClassOverlay() {
 }
 
 function dungeonVictory(run) {
+	const rwRnd = rewardRng(run, 1); // same offers after a reload
 	const nextLevel = run.level + 1;
 	if (run.level >= 8) {
 		const el = dungeonOverlay('RUN COMPLETE!', `${Dungeon.BOSSES[run.bossId].name} falls — the treasure hoard is yours. Cleared as ${run.classId} with ${run.deck.length} cards.`);
@@ -6842,13 +7610,13 @@ function dungeonVictory(run) {
 	const buckets = [...(Dungeon.BUCKETS[run.classId] || [])];
 	const offered = [];
 	while (offered.length < 3 && buckets.length) {
-		offered.push(buckets.splice(Math.floor(Math.random() * buckets.length), 1)[0]);
+		offered.push(buckets.splice(Math.floor(rwRnd() * buckets.length), 1)[0]);
 	}
 	const cardsOf = bucket => {
 		// the Unique pack draws from the class's whole card pool
 		let ids = bucket.cards;
 		if (ids === 'class-all') {
-			ids = Object.values(state.cardsById).filter(d =>
+			ids = Object.values(runDefs()).filter(d =>
 				d.cardClass === run.classId && !d.token && !d.companion && !d.commander
 				&& d.type !== 'land' && d.type !== 'heropower' && !(d.colors && d.colors.length))
 				.map(d => d.id);
@@ -6856,9 +7624,9 @@ function dungeonVictory(run) {
 		const picks = [];
 		const pool = [...ids];
 		while (picks.length < 3 && pool.length) {
-			picks.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
+			picks.push(pool.splice(Math.floor(rwRnd() * pool.length), 1)[0]);
 		}
-		return picks.map(id => state.cardsById[id]);
+		return picks.map(id => runDefs()[id]);
 	};
 	const row = document.createElement('div');
 	row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:14px;';
@@ -6871,6 +7639,7 @@ function dungeonVictory(run) {
 		box.appendChild(document.createElement('br'));
 		box.appendChild(overlayButton('Take these', () => {
 			run.deck.push(...picks.map(d => d.id));
+			rewardStage(run, 2, saveRun);
 			afterBucket(run, nextLevel);
 		}));
 		row.appendChild(box);
@@ -6879,6 +7648,7 @@ function dungeonVictory(run) {
 }
 
 function afterBucket(run, nextLevel) {
+	const rwRnd = rewardRng(run, 2); // same offers after a reload
 	// a treasure after every odd level, HS-style
 	if (run.level % 2 === 1) {
 		const el = dungeonOverlay('TREASURE!', 'Choose a boon for the rest of the run.');
@@ -6886,7 +7656,7 @@ function afterBucket(run, nextLevel) {
 		const row = document.createElement('div');
 		row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:14px;';
 		for (let i = 0; i < 3 && options.length; i++) {
-			const t = options.splice(Math.floor(Math.random() * options.length), 1)[0];
+			const t = options.splice(Math.floor(rwRnd() * options.length), 1)[0];
 			const box = document.createElement('div');
 			box.style.cssText = 'background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:16px;max-width:190px;';
 			box.innerHTML = `<div style="font-weight:bold;margin-bottom:6px;">${Dungeon.TREASURES[t].name}</div>`
@@ -6906,10 +7676,11 @@ function afterBucket(run, nextLevel) {
 function advanceRun(run, nextLevel) {
 	run.level = nextLevel;
 	run.bossId = Dungeon.randomBoss(nextLevel);
+	delete run.pendingResult; // the reward is taken: the result is settled
 	saveRun(run);
 	const boss = Dungeon.BOSSES[run.bossId];
-	const el = dungeonOverlay(`LEVEL ${nextLevel}`, `Next: ${boss.name} (${boss.health} HP) — "${boss.flavor}"`);
-	el.appendChild(overlayButton('Fight!', () => location.reload()));
+	const el = dungeonOverlay(`LEVEL ${nextLevel}`, `Next: ${boss.name} (${runLifeFor(nextLevel)} HP) — "${boss.flavor}"`);
+	el.appendChild(overlayButton('Fight!', fightNow));
 }
 
 function dungeonDefeat(run) {
@@ -7049,16 +7820,17 @@ function bootHeistEncounter(cardsById, run) {
 	// boss surgery: themed deck, boss HP; the player's life scales with depth
 	// (+5 per Good Food tavern boon banked this run)
 	const bp = state.players[1];
-	const runHP = 15 + (run.level - 1) * 5 + (run.bonusHealth || 0);
+	const runHP = runLifeFor(run.level) + (run.bonusHealth || 0);
 	E.applyHeroMods(state, 1, { life: boss.health, maxLife: boss.health });
 	E.applyHeroMods(state, HUMAN, { life: runHP, maxLife: runHP });
 	E.resetDeckAndHand(state, 1, Heist.buildBossDeck(cardsById, boss.theme));
 	E.drawCards(state, 1, 4);
+	E.addCoin(state, 1);   // the boss goes second: re-deal its opening Coin (resetDeckAndHand wiped createGame's)
 	E.stripLoadouts(state);
 	for (const id of run.passives) Heist.applyPassive(state, HUMAN, id);
 	Heist.applyRunMods(state, HUMAN, run); // tavern deck edits (buffs, opening hand)
 	if (run.anomaly && Heist.ANOMALIES[run.anomaly]) { Heist.applyAnomaly(state, run.anomaly); log(`Anomaly — ${Heist.ANOMALIES[run.anomaly].name}: ${Heist.ANOMALIES[run.anomaly].text}`); }
-	setRunLife(run.level);
+	setRunLife(run.level, { full: true, humanBonus: run.bonusHealth || 0 });
 	log(`Heist fight ${run.level}/8 — ${boss.name} (${bp.life} HP).`);
 	log(`Boss power — ${boss.power.name} (${boss.power.cost}): ${boss.power.text}`);
 	log(`You are ${hero.name} with a ${run.deck.length}-card heist deck.`);
@@ -7066,6 +7838,7 @@ function bootHeistEncounter(cardsById, run) {
 }
 
 function heistVictory(run) {
+	const rwRnd = rewardRng(run, 1); // same offers after a reload
 	const hero = Heist.HEROES.find(h => h.id === run.heroId);
 	const nextLevel = run.level + 1;
 	if (run.level >= 8) {
@@ -7083,12 +7856,12 @@ function heistVictory(run) {
 	const buckets = [...(Dungeon.BUCKETS[hero.heroClass] || [])];
 	const offered = [];
 	while (offered.length < 3 && buckets.length) {
-		offered.push(buckets.splice(Math.floor(Math.random() * buckets.length), 1)[0]);
+		offered.push(buckets.splice(Math.floor(rwRnd() * buckets.length), 1)[0]);
 	}
 	const cardsOf = bucket => {
 		let ids = bucket.cards;
 		if (ids === 'class-all') {
-			ids = Object.values(state.cardsById).filter(d =>
+			ids = Object.values(runDefs()).filter(d =>
 				d.cardClass === hero.heroClass && !d.token && !d.companion && !d.commander
 				&& d.type !== 'land' && d.type !== 'heropower' && !(d.colors && d.colors.length))
 				.map(d => d.id);
@@ -7096,9 +7869,9 @@ function heistVictory(run) {
 		const picks = [];
 		const pool = [...ids];
 		while (picks.length < 3 && pool.length) {
-			picks.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
+			picks.push(pool.splice(Math.floor(rwRnd() * pool.length), 1)[0]);
 		}
-		return picks.map(id => state.cardsById[id]);
+		return picks.map(id => runDefs()[id]);
 	};
 	const row = document.createElement('div');
 	row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:14px;';
@@ -7111,6 +7884,7 @@ function heistVictory(run) {
 		box.appendChild(document.createElement('br'));
 		box.appendChild(overlayButton('Take these', () => {
 			run.deck.push(...picks.map(d => d.id));
+			rewardStage(run, 2, saveHeist);
 			afterHeistBucket(run, nextLevel);
 		}));
 		row.appendChild(box);
@@ -7121,14 +7895,15 @@ function heistVictory(run) {
 // odd fights alternate the run's boons: passives after 1 & 5, an active
 // treasure card into the deck after 3 & 7
 function afterHeistBucket(run, nextLevel) {
+	const rwRnd = rewardRng(run, 2); // same offers after a reload
 	if (run.level === 1 || run.level === 5) {
 		const el = dungeonOverlay('PASSIVE TREASURE!', 'Choose a boon for the rest of the heist.');
 		const options = Object.keys(Heist.PASSIVES).filter(t => !run.passives.includes(t));
 		const row = document.createElement('div');
 		row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:14px;';
 		for (let i = 0; i < 3 && options.length; i++) {
-			const t = options.splice(Math.floor(Math.random() * options.length), 1)[0];
-			const def = state.cardsById['dala_' + t];
+			const t = options.splice(Math.floor(rwRnd() * options.length), 1)[0];
+			const def = runDefs()['dala_' + t];
 			const box = document.createElement('div');
 			box.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:6px;';
 			if (def) box.appendChild(miniFace(def));
@@ -7142,11 +7917,11 @@ function afterHeistBucket(run, nextLevel) {
 		el.appendChild(row);
 	} else if (run.level === 3 || run.level === 7) {
 		const el = dungeonOverlay('TREASURE!', 'One of these joins your deck.');
-		const options = Object.values(state.cardsById).filter(d => d.treasure && !run.deck.includes(d.id));
+		const options = Object.values(runDefs()).filter(d => d.treasure && !run.deck.includes(d.id));
 		const row = document.createElement('div');
 		row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:14px;';
 		for (let i = 0; i < 3 && options.length; i++) {
-			const d = options.splice(Math.floor(Math.random() * options.length), 1)[0];
+			const d = options.splice(Math.floor(rwRnd() * options.length), 1)[0];
 			const box = document.createElement('div');
 			box.style.cssText = 'background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:12px;';
 			box.appendChild(miniFace(d));
@@ -7159,6 +7934,7 @@ function afterHeistBucket(run, nextLevel) {
 		}
 		el.appendChild(row);
 	} else {
+		rewardStage(run, 3, saveHeist);
 		heistTavern(run, nextLevel); // fights 2, 4, 6: stop by the Bar
 	}
 }
@@ -7166,11 +7942,12 @@ function afterHeistBucket(run, nextLevel) {
 // the Bar: 3 random tavern actions (or leave). Actions that target a card
 // open a picker; the rest apply and advance.
 function heistTavern(run, nextLevel) {
+	const rwRnd = rewardRng(run, 3); // same offers after a reload
 	const el = dungeonOverlay('THE BAR', 'The bartender slides you a few options. Take one, or move on.');
 	const keys = Object.keys(Heist.TAVERN);
 	const offered = [];
 	while (offered.length < 3 && keys.length) {
-		offered.push(keys.splice(Math.floor(Math.random() * keys.length), 1)[0]);
+		offered.push(keys.splice(Math.floor(rwRnd() * keys.length), 1)[0]);
 	}
 	const row = document.createElement('div');
 	row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:14px;';
@@ -7193,17 +7970,18 @@ function heistTavern(run, nextLevel) {
 
 // the card-picker for a tavern action that targets a minion
 function heistTavernPick(run, key, nextLevel) {
+	const rwRnd = rewardRng(run, 4); // same offers after a reload
 	const act = Heist.TAVERN[key];
 	let defs;
 	if (act.pick === 'legendary') {
-		const pool = Object.values(state.cardsById).filter(d => d.type === 'creature'
+		const pool = Object.values(runDefs()).filter(d => d.type === 'creature'
 			&& d.rarity === 'legendary' && !d.token && d.collectible !== false
 			&& !d.companion && !d.commander && !(d.colors && d.colors.length));
 		defs = [];
-		while (defs.length < 3 && pool.length) defs.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
+		while (defs.length < 3 && pool.length) defs.push(pool.splice(Math.floor(rwRnd() * pool.length), 1)[0]);
 	} else { // deck-creature: the distinct minions already in the run deck
 		const seen = new Set();
-		defs = run.deck.map(id => state.cardsById[id])
+		defs = run.deck.map(id => runDefs()[id])
 			.filter(d => d && d.type === 'creature' && !seen.has(d.id) && seen.add(d.id));
 	}
 	if (!defs.length) { act.apply(run, null); saveHeist(run); advanceHeist(run, nextLevel); return; }
@@ -7227,10 +8005,11 @@ function heistTavernPick(run, key, nextLevel) {
 function advanceHeist(run, nextLevel) {
 	run.level = nextLevel;
 	run.bossId = heistBossFor(run.wing, nextLevel);
+	delete run.pendingResult; // the reward is taken: the result is settled
 	saveHeist(run);
 	const boss = Heist.BOSSES[run.bossId];
-	const el = dungeonOverlay(`FIGHT ${nextLevel}/8`, `Next: ${boss.name} (${boss.health} HP)`);
-	el.appendChild(overlayButton('Fight!', () => location.reload()));
+	const el = dungeonOverlay(`FIGHT ${nextLevel}/8`, `Next: ${boss.name} (${runLifeFor(nextLevel)} HP)`);
+	el.appendChild(overlayButton('Fight!', fightNow));
 }
 
 function heistDefeat(run) {
@@ -7350,14 +8129,15 @@ function bootTombsEncounter(cardsById, run) {
 	// boss surgery: themed deck & the boss's designed HP; the player's life
 	// scales with depth (15 at fight 1, +5 per fight)
 	const bp = state.players[1];
-	const runHP = 15 + (run.level - 1) * 5;
+	const runHP = runLifeFor(run.level);
 	E.applyHeroMods(state, 1, { life: boss.health, maxLife: boss.health });
 	E.applyHeroMods(state, HUMAN, { life: runHP, maxLife: runHP });
 	E.resetDeckAndHand(state, 1, Tombs.buildBossDeck(cardsById, boss.theme));
 	E.drawCards(state, 1, 4);
+	E.addCoin(state, 1);   // the boss goes second: re-deal its opening Coin (resetDeckAndHand wiped createGame's)
 	E.stripLoadouts(state);
 	applyRunAnomaly(run.anomaly);
-	setRunLife(run.level);
+	setRunLife(run.level, { full: true });
 	for (const id of run.passives) Tombs.applyPassive(state, HUMAN, id);
 	log(`Tombs fight ${run.level}/8 — ${boss.name} (${bp.life} HP).`);
 	log(`Boss power — ${boss.power.name} (${boss.power.cost}): ${boss.power.text}`);
@@ -7366,6 +8146,7 @@ function bootTombsEncounter(cardsById, run) {
 }
 
 function tombsVictory(run) {
+	const rwRnd = rewardRng(run, 1); // same offers after a reload
 	const explorer = Tombs.EXPLORERS.find(h => h.id === run.explorerId);
 	const nextLevel = run.level + 1;
 	if (run.level >= 8) {
@@ -7383,12 +8164,12 @@ function tombsVictory(run) {
 	const buckets = [...(Dungeon.BUCKETS[explorer.heroClass] || [])];
 	const offered = [];
 	while (offered.length < 3 && buckets.length) {
-		offered.push(buckets.splice(Math.floor(Math.random() * buckets.length), 1)[0]);
+		offered.push(buckets.splice(Math.floor(rwRnd() * buckets.length), 1)[0]);
 	}
 	const cardsOf = bucket => {
 		let ids = bucket.cards;
 		if (ids === 'class-all') {
-			ids = Object.values(state.cardsById).filter(d =>
+			ids = Object.values(runDefs()).filter(d =>
 				d.cardClass === explorer.heroClass && !d.token && !d.companion && !d.commander
 				&& d.type !== 'land' && d.type !== 'heropower' && !(d.colors && d.colors.length))
 				.map(d => d.id);
@@ -7396,9 +8177,9 @@ function tombsVictory(run) {
 		const picks = [];
 		const pool = [...ids];
 		while (picks.length < 3 && pool.length) {
-			picks.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
+			picks.push(pool.splice(Math.floor(rwRnd() * pool.length), 1)[0]);
 		}
-		return picks.map(id => state.cardsById[id]);
+		return picks.map(id => runDefs()[id]);
 	};
 	const row = document.createElement('div');
 	row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:14px;';
@@ -7411,6 +8192,7 @@ function tombsVictory(run) {
 		box.appendChild(document.createElement('br'));
 		box.appendChild(overlayButton('Take these', () => {
 			run.deck.push(...picks.map(d => d.id));
+			rewardStage(run, 2, saveTombs);
 			afterTombsBucket(run, nextLevel);
 		}));
 		row.appendChild(box);
@@ -7421,14 +8203,15 @@ function tombsVictory(run) {
 // odd fights alternate the run's boons: passive treasures after 1 & 5, an
 // active treasure card into the deck after 3 & 7; even fights advance straight on
 function afterTombsBucket(run, nextLevel) {
+	const rwRnd = rewardRng(run, 2); // same offers after a reload
 	if (run.level === 1 || run.level === 5) {
 		const el = dungeonOverlay('PASSIVE TREASURE!', 'Choose a boon for the rest of the expedition.');
 		const options = Object.keys(Tombs.PASSIVES).filter(t => !run.passives.includes(t));
 		const row = document.createElement('div');
 		row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:14px;';
 		for (let i = 0; i < 3 && options.length; i++) {
-			const t = options.splice(Math.floor(Math.random() * options.length), 1)[0];
-			const def = state.cardsById['tomb_' + t];
+			const t = options.splice(Math.floor(rwRnd() * options.length), 1)[0];
+			const def = runDefs()['tomb_' + t];
 			const box = document.createElement('div');
 			box.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:6px;';
 			if (def) box.appendChild(miniFace(def));
@@ -7442,11 +8225,11 @@ function afterTombsBucket(run, nextLevel) {
 		el.appendChild(row);
 	} else if (run.level === 3 || run.level === 7) {
 		const el = dungeonOverlay('TREASURE!', 'One of these joins your deck.');
-		const options = Object.values(state.cardsById).filter(d => d.treasure && d.set === 'TOMBS_OF_TERROR' && !run.deck.includes(d.id));
+		const options = Object.values(runDefs()).filter(d => d.treasure && d.set === 'TOMBS_OF_TERROR' && !run.deck.includes(d.id));
 		const row = document.createElement('div');
 		row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:14px;';
 		for (let i = 0; i < 3 && options.length; i++) {
-			const d = options.splice(Math.floor(Math.random() * options.length), 1)[0];
+			const d = options.splice(Math.floor(rwRnd() * options.length), 1)[0];
 			const box = document.createElement('div');
 			box.style.cssText = 'background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:12px;';
 			box.appendChild(miniFace(d));
@@ -7466,10 +8249,11 @@ function afterTombsBucket(run, nextLevel) {
 function advanceTombs(run, nextLevel) {
 	run.level = nextLevel;
 	run.bossId = tombsBossFor(run.chapter, nextLevel);
+	delete run.pendingResult; // the reward is taken: the result is settled
 	saveTombs(run);
 	const boss = Tombs.BOSSES[run.bossId];
-	const el = dungeonOverlay(`FIGHT ${nextLevel}/8`, `Next: ${boss.name} (${boss.health} HP)${boss.plagueLord ? ' — the Plague Lord!' : ''}`);
-	el.appendChild(overlayButton('Fight!', () => location.reload()));
+	const el = dungeonOverlay(`FIGHT ${nextLevel}/8`, `Next: ${boss.name} (${runLifeFor(nextLevel)} HP)${boss.plagueLord ? ' — the Plague Lord!' : ''}`);
+	el.appendChild(overlayButton('Fight!', fightNow));
 }
 
 function tombsDefeat(run) {
@@ -7645,6 +8429,7 @@ function bootDuelsEncounter(cardsById, run) {
 	// both sides share the same generated-deck / loot budget - equal footing (no HP scaling)
 	E.resetDeckAndHand(state, 1, Duels.applyImproves(cardsById, [...enemy.deck], run.wins || 0));
 	E.drawCards(state, 1, 4);
+	E.addCoin(state, 1);   // the boss goes second: re-deal its opening Coin (resetDeckAndHand wiped createGame's)
 	E.stripLoadouts(state);
 	// Darius Crowley: whichever side he is, the battle opens with his Cannons in place
 	for (const sid of hero.startSummon || []) if (cardsById[sid]) E.execEffects(state, HUMAN, [{ type: 'summon', summonId: sid }], null, null);
@@ -7665,6 +8450,7 @@ function duelsDefeat(run) { afterDuelsGame(run, false); }
 // one game resolved: bank the result, end the run at 12 wins / 3 losses, else loot
 function afterDuelsGame(run, won) {
 	if (won) run.wins = (run.wins || 0) + 1; else run.losses = (run.losses || 0) + 1;
+	beginPostGame(run, won);   // checkpoint: a reload resumes the reward, not the fight
 	saveDuels(run);
 	if (run.wins >= Duels.WINS_TO_CLEAR) { duelsRunComplete(run); return; }
 	if (run.losses >= Duels.LOSSES_TO_END) { duelsRunOver(run); return; }
@@ -7673,17 +8459,18 @@ function afterDuelsGame(run, won) {
 
 // loot after every game: choose 1 of 3 HS-Duels buckets (3 cards each)
 function duelsLoot(run, won) {
+	const lootRng = postGameRng(run, 1);   // same offer after a reload
 	const hero = duelsEffectiveHero(run);
 	const el = dungeonOverlay(won ? `WIN - ${run.wins}/12` : `LOSS - ${run.losses}/3`, 'Choose a loot bucket - all 3 cards join your deck.');
-	const offered = Duels.offerBuckets(duelsCardsById, Duels.classesOf(hero), Math.random, 3);
+	const offered = Duels.offerBuckets(duelsCardsById, Duels.classesOf(hero), lootRng, 3);
 	const row = document.createElement('div');
 	row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:14px;';
 	for (const bucket of offered) {
-		const ids = Duels.rollBucket(duelsCardsById, Duels.classesOf(hero), bucket, Math.random, 3);
+		const ids = Duels.rollBucket(duelsCardsById, Duels.classesOf(hero), bucket, lootRng, 3);
 		const box = document.createElement('div');
 		box.style.cssText = 'background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:12px;max-width:330px;';
 		box.innerHTML = `<div style="font-weight:bold;margin-bottom:8px;letter-spacing:1px;">${bucket.name}</div>`;
-		for (const id of ids) if (state.cardsById[id]) box.appendChild(miniFace(state.cardsById[id]));
+		for (const id of ids) if (duelsCardsById[id]) box.appendChild(miniFace(duelsCardsById[id]));
 		box.appendChild(document.createElement('br'));
 		box.appendChild(overlayButton('Take these', () => { run.deck.push(...ids); afterDuelsLootBucket(run); }));
 		row.appendChild(box);
@@ -7693,6 +8480,8 @@ function duelsLoot(run, won) {
 
 // games 1/5/9 also grant a passive; 3/7/11 a treasure card; then the next fight
 function afterDuelsLootBucket(run) {
+	postGameStage(run, 2, saveDuels);   // the step-1 pick is saved
+	const lootRng = postGameRng(run, 2);
 	const games = (run.wins || 0) + (run.losses || 0);
 	if (Duels.PASSIVE_GAMES.includes(games)) {
 		const el = dungeonOverlay('PASSIVE TREASURE!', 'Choose a boon for the rest of the run.');
@@ -7700,7 +8489,7 @@ function afterDuelsLootBucket(run) {
 		const row = document.createElement('div');
 		row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:14px;';
 		for (let i = 0; i < 3 && options.length; i++) {
-			const t = options.splice(Math.floor(Math.random() * options.length), 1)[0];
+			const t = options.splice(Math.floor(lootRng() * options.length), 1)[0];
 			const box = document.createElement('div');
 			box.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:6px;max-width:200px;';
 			box.innerHTML = `<div style="font-weight:bold;">${Duels.PASSIVES[t].name}</div><div style="font-size:13px;opacity:0.85;">${Duels.PASSIVES[t].text}</div>`;
@@ -7710,11 +8499,11 @@ function afterDuelsLootBucket(run) {
 		el.appendChild(row);
 	} else if (Duels.TREASURE_GAMES.includes(games)) {
 		const el = dungeonOverlay('TREASURE!', 'One of these joins your deck.');
-		const options = Object.values(state.cardsById).filter(d => Duels.isActiveTreasure(d) && !run.deck.includes(d.id));
+		const options = Object.values(duelsCardsById).filter(d => Duels.isActiveTreasure(d) && !run.deck.includes(d.id));
 		const row = document.createElement('div');
 		row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:14px;';
 		for (let i = 0; i < 3 && options.length; i++) {
-			const d = options.splice(Math.floor(Math.random() * options.length), 1)[0];
+			const d = options.splice(Math.floor(lootRng() * options.length), 1)[0];
 			const box = document.createElement('div');
 			box.style.cssText = 'background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:12px;';
 			box.appendChild(miniFace(d));
@@ -7727,11 +8516,12 @@ function afterDuelsLootBucket(run) {
 }
 
 function advanceDuels(run) {
+	delete run.postGame;   // the reward is done: the next fight is the checkpoint now
 	const games = (run.wins || 0) + (run.losses || 0);
-	run.enemy = genDuelsEnemy(state.cardsById, games, run.enemy && run.enemy.id); // next opponent (avoid immediate repeat)
+	run.enemy = genDuelsEnemy(duelsCardsById, games, run.enemy && run.enemy.id); // next opponent (avoid immediate repeat)
 	saveDuels(run);
 	const el = dungeonOverlay(`NEXT: ${run.enemy.name}`, `${winLossLabel(run)} - your deck is ${run.deck.length} cards.`);
-	el.appendChild(overlayButton('Fight!', () => location.reload()));
+	el.appendChild(overlayButton('Fight!', fightNow));
 }
 
 function duelsRunComplete(run) {
@@ -7858,7 +8648,7 @@ async function pickLorequestDeckOverlay(cardsById) {
 	const unlocked = Lorequest.unlockedCharacters(stats);
 	const total = Lorequest.PLANESWALKERS.length + Lorequest.BOSSES.length;
 	return new Promise(resolve => {
-		const choices = Lorequest.offerFrom(unlocked, Math.random, 3, Lorequest.streakPins(unlocked, stats, 'lorequest'));
+		const choices = Lorequest.offerFrom(unlocked, Math.random, 3, Lorequest.streakPins(unlocked, stats, 'lorequest', Math.random));
 		const sub = stats
 			? `Pick a 30-card starter deck. ${unlocked.length}/${total} characters unlocked — each finished run unlocks another; bosses unlock through character feats.`
 			: 'Pick a 30-card starter deck (2 copies of each of its 15 cards).';
@@ -7889,8 +8679,8 @@ async function pickLorequestDeckOverlay(cardsById) {
 }
 
 // roll the next enemy: roster by `games` (planeswalkers < 8, then bosses), deck at `wins`-parity
-function genLorequestEnemy(cardsById, games, wins, avoidId, selfId) {
-	const character = Lorequest.randomEnemy(games, Math.random, avoidId, selfId);
+function genLorequestEnemy(cardsById, games, wins, avoidId, selfId, faced) {
+	const character = Lorequest.randomEnemy(games, Math.random, avoidId, selfId, faced);
 	return Lorequest.generateEnemy(cardsById, character, wins, Math.random);
 }
 
@@ -7912,6 +8702,7 @@ function bootLorequestEncounter(cardsById, run) {
 	// both sides use their class default hero power (seated above) — no HP scaling, equal footing
 	E.resetDeckAndHand(state, 1, [...enemy.deck]);
 	E.drawCards(state, 1, 4);
+	E.addCoin(state, 1);   // the boss goes second: re-deal its opening Coin (resetDeckAndHand wiped createGame's)
 	E.stripLoadouts(state);
 	applyRunAnomaly(run.anomaly);
 	setRunLife((run.wins || 0) + (run.losses || 0) + 1);
@@ -7924,12 +8715,41 @@ function bootLorequestEncounter(cardsById, run) {
 	log(`You are ${run.characterId} with a ${run.deck.length}-card deck; ${enemy.name} fields ${enemy.deck.length}.`);
 }
 
+// POST-FIGHT CHECKPOINT. A won (or, in Duels, any) fight banks its result and
+// then shows a reward screen; the next enemy was only chosen after the pick. A
+// reload on that screen (Bryan: laptop asleep on the card select) found the run
+// with the win banked but the beaten enemy still set, so it rebuilt the SAME
+// fight — with the life scaling of one more game — and the reward was lost.
+// Now the run records where it is (stage 1 = the first reward screen, 2 = the
+// second) with a seed, every offer is rolled from that seed (a reload shows the
+// SAME choices: resume is frame-exact), each pick is saved as it is made, and
+// boot reopens the reward instead of a fight. Advancing clears it.
+function beginPostGame(run, won) { delete run.pendingResult; run.postGame = { won: !!won, seed: (Math.random() * 2 ** 31) >>> 0, stage: 1 }; }
+// Every enemy this run has already met, the one just fought included — the next pick
+// skips them (The Balrog at F10 and again at F12; Azog likewise). Saves from before the
+// list existed still name their foes in the fight-replay labels ("Fight 3 — Azog (win)").
+function noteFaced(run) {
+	const seen = new Set(Array.isArray(run.faced) ? run.faced : []);
+	for (const f of Array.isArray(run.fightReplays) ? run.fightReplays : []) { const m = /—\s*(.+?)(?:\s\((?:win|loss)\))?$/.exec((f && f.label) || ''); if (m) seen.add(m[1]); }
+	if (run.enemy && run.enemy.id) seen.add(run.enemy.id);
+	return (run.faced = [...seen]);
+}
+function postGameRng(run, salt) { return E.seededRng(((run.postGame ? run.postGame.seed : (Math.random() * 2 ** 31) >>> 0) + salt * 7919) >>> 0); }
+function postGameStage(run, stage, save) { if (run.postGame) { run.postGame.stage = stage; save(run); } }
+function resumePostGame(run, step1, step2, advance) {
+	const pg = run.postGame;
+	if (pg.stage === 2) return step2(run);
+	if (step1.length > 1) return step1(run, pg.won);   // Duels loots after losses too
+	return pg.won ? step1(run) : advance(run);
+}
+
 function lorequestVictory(run) { afterLorequestGame(run, true); }
 function lorequestDefeat(run) { afterLorequestGame(run, false); }
 
 // one game resolved: bank it, end at 12 wins / 3 losses; loot only on a WIN, else straight to the next fight
 function afterLorequestGame(run, won) {
 	if (won) run.wins = (run.wins || 0) + 1; else run.losses = (run.losses || 0) + 1;
+	beginPostGame(run, won);   // checkpoint: a reload resumes the reward, not the fight
 	saveLorequest(run);
 	if (run.wins >= Lorequest.WINS_TO_CLEAR) { lorequestRunComplete(run); return; }
 	if (run.losses >= Lorequest.LOSSES_TO_END) { lorequestRunOver(run); return; }
@@ -7938,17 +8758,18 @@ function afterLorequestGame(run, won) {
 
 // win loot: choose 1 of 3 class buckets (3 cards each); all 3 join your deck
 function lorequestLoot(run) {
+	const lootRng = postGameRng(run, 1);   // same offer after a reload
 	const cls = [run.cls];
 	const el = dungeonOverlay(`WIN - ${run.wins}/12`, 'Choose a loot bucket - all 3 cards join your deck.');
-	const offered = Duels.offerBuckets(lorequestCardsById, cls, Math.random, 3);
+	const offered = Duels.offerBuckets(lorequestCardsById, cls, lootRng, 3);
 	const row = document.createElement('div');
 	row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:14px;';
 	for (const bucket of offered) {
-		const ids = Duels.rollBucket(lorequestCardsById, cls, bucket, Math.random, 3);
+		const ids = Duels.rollBucket(lorequestCardsById, cls, bucket, lootRng, 3);
 		const box = document.createElement('div');
 		box.style.cssText = 'background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:12px;max-width:330px;';
 		box.innerHTML = `<div style="font-weight:bold;margin-bottom:8px;letter-spacing:1px;">${bucket.name}</div>`;
-		for (const id of ids) if (state.cardsById[id]) box.appendChild(miniFace(state.cardsById[id]));
+		for (const id of ids) if (lorequestCardsById[id]) box.appendChild(miniFace(lorequestCardsById[id]));
 		box.appendChild(document.createElement('br'));
 		box.appendChild(overlayButton('Take these', () => { run.deck.push(...ids); afterLorequestBucket(run); }));
 		row.appendChild(box);
@@ -7958,13 +8779,15 @@ function lorequestLoot(run) {
 
 // milestone wins (2/5/8/11) also grant a treasure card, then the next fight
 function afterLorequestBucket(run) {
+	postGameStage(run, 2, saveLorequest);   // the step-1 pick is saved
+	const lootRng = postGameRng(run, 2);
 	if (Lorequest.TREASURE_WINS.includes(run.wins)) {
 		const el = dungeonOverlay('TREASURE!', 'One of these joins your deck.');
-		const options = Object.values(state.cardsById).filter(d => Duels.isActiveTreasure(d) && !run.deck.includes(d.id));
+		const options = Object.values(lorequestCardsById).filter(d => Duels.isActiveTreasure(d) && !run.deck.includes(d.id));
 		const row = document.createElement('div');
 		row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:14px;';
 		for (let i = 0; i < 3 && options.length; i++) {
-			const d = options.splice(Math.floor(Math.random() * options.length), 1)[0];
+			const d = options.splice(Math.floor(lootRng() * options.length), 1)[0];
 			const box = document.createElement('div');
 			box.style.cssText = 'background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:12px;';
 			box.appendChild(miniFace(d));
@@ -7977,12 +8800,13 @@ function afterLorequestBucket(run) {
 }
 
 function advanceLorequest(run) {
+	delete run.postGame;   // the reward is done: the next fight is the checkpoint now
 	const games = (run.wins || 0) + (run.losses || 0);
-	run.enemy = genLorequestEnemy(state.cardsById, games, run.wins || 0, run.enemy && run.enemy.id, run.characterId);
+	run.enemy = genLorequestEnemy(lorequestCardsById, games, run.wins || 0, run.enemy && run.enemy.id, run.characterId, noteFaced(run));
 	saveLorequest(run);
 	const tier = games < Lorequest.PW_BATTLES ? 'Planeswalker' : 'Boss';
 	const el = dungeonOverlay(`NEXT: ${run.enemy.name}`, `${winLossLabel(run)} - your deck is ${run.deck.length} cards. (${tier})`);
-	el.appendChild(overlayButton('Fight!', () => location.reload()));
+	el.appendChild(overlayButton('Fight!', fightNow));
 }
 
 function lorequestRunComplete(run) {
@@ -8029,7 +8853,7 @@ async function pickMiddleEarthHeroOverlay(cardsById) {
 	const pool = Middleearth.unlockedCharacters(stats);
 	if (middleearthTomUnlocked()) for (const sh of Middleearth.SECRET_HEROES) if (!pool.includes(sh)) pool.push(sh);
 	return new Promise(resolve => {
-		const heroes = stats ? Lorequest.offerFrom(pool, Math.random, 3, Lorequest.streakPins(pool, stats, 'middleearth')) : pool;
+		const heroes = stats ? Lorequest.offerFrom(pool, Math.random, 3, Lorequest.streakPins(pool, stats, 'middleearth', Math.random)) : pool;
 		const el = dungeonOverlay('CHOOSE YOUR HERO', 'Pick a hero of the Free Peoples - a 10-card starter deck you grow as you climb.');
 		const row = document.createElement('div');
 		row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:12px;max-width:920px;';
@@ -8060,8 +8884,8 @@ async function pickMiddleEarthHeroOverlay(cardsById) {
 }
 
 // roll the next enemy: rung by `wins`, avoiding an immediate repeat. STATIC (no loot/parity).
-function genMiddleEarthEnemy(cardsById, wins, avoidId) {
-	const character = Middleearth.randomEnemy(wins, Math.random, avoidId);
+function genMiddleEarthEnemy(cardsById, wins, avoidId, faced) {
+	const character = Middleearth.randomEnemy(wins, Math.random, avoidId, faced);
 	return Middleearth.generateEnemy(cardsById, character);
 }
 
@@ -8081,6 +8905,7 @@ function bootMiddleEarthEncounter(cardsById, run) {
 	state.classPicks = picks;
 	E.resetDeckAndHand(state, 1, [...enemy.deck]);
 	E.drawCards(state, 1, 4);
+	E.addCoin(state, 1);   // the boss goes second: re-deal its opening Coin (resetDeckAndHand wiped createGame's)
 	E.stripLoadouts(state);
 	applyRunAnomaly(run.anomaly);
 	setRunLife((run.wins || 0) + (run.losses || 0) + 1);
@@ -8096,6 +8921,7 @@ function middleEarthDefeat(run) { afterMiddleEarthGame(run, false); }
 
 function afterMiddleEarthGame(run, won) {
 	if (won) run.wins = (run.wins || 0) + 1; else run.losses = (run.losses || 0) + 1;
+	beginPostGame(run, won);   // checkpoint: a reload resumes the reward, not the fight
 	saveMiddleearth(run);
 	if (run.wins >= Middleearth.WINS_TO_CLEAR) { middleEarthRunComplete(run); return; }
 	if (run.losses >= Middleearth.LOSSES_TO_END) { middleEarthRunOver(run); return; }
@@ -8104,16 +8930,17 @@ function afterMiddleEarthGame(run, won) {
 
 // win loot step 1 — SPOILS: take 1 of 3 cards drawn from the vanquished foe's own deck, or none
 function middleEarthLoot(run) {
+	const lootRng = postGameRng(run, 1);   // same offer after a reload
 	const fallen = run.enemy ? run.enemy.name : null;
-	const options = fallen ? Middleearth.spoilsChoices(middleearthCardsById, fallen, Math.random, 3) : [];
+	const options = fallen ? Middleearth.spoilsChoices(middleearthCardsById, fallen, lootRng, 3) : [];
 	const el = dungeonOverlay(`WIN - ${run.wins}/12`, `Spoils of war: take one card from ${fallen || 'the fallen'}'s arsenal, or leave it.`);
 	const row = document.createElement('div');
 	row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:14px;';
 	for (const id of options) {
-		if (!state.cardsById[id]) continue;
+		if (!middleearthCardsById[id]) continue;
 		const box = document.createElement('div');
 		box.style.cssText = 'background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:12px;';
-		box.appendChild(miniFace(state.cardsById[id]));
+		box.appendChild(miniFace(middleearthCardsById[id]));
 		box.appendChild(document.createElement('br'));
 		box.appendChild(overlayButton('Take it', () => { run.deck.push(id); afterMiddleEarthReward(run); }));
 		row.appendChild(box);
@@ -8124,18 +8951,20 @@ function middleEarthLoot(run) {
 
 // win loot step 2 — ALTERNATING AID: a treasure on odd wins, a class bucket on even wins
 function afterMiddleEarthReward(run) {
+	postGameStage(run, 2, saveMiddleearth);   // the step-1 pick is saved
+	const lootRng = postGameRng(run, 2);
 	if (Middleearth.rewardForWin(run.wins) === 'bucket') {
 		const cls = [run.cls];
 		const el = dungeonOverlay(`AID - ${run.wins}/12`, 'Choose a loot bucket - all 3 cards join your deck.');
-		const offered = Duels.offerBuckets(middleearthCardsById, cls, Math.random, 3);
+		const offered = Duels.offerBuckets(middleearthCardsById, cls, lootRng, 3);
 		const row = document.createElement('div');
 		row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:14px;';
 		for (const bucket of offered) {
-			const ids = Duels.rollBucket(middleearthCardsById, cls, bucket, Math.random, 3);
+			const ids = Duels.rollBucket(middleearthCardsById, cls, bucket, lootRng, 3);
 			const box = document.createElement('div');
 			box.style.cssText = 'background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:12px;max-width:330px;';
 			box.innerHTML = `<div style="font-weight:bold;margin-bottom:8px;letter-spacing:1px;">${bucket.name}</div>`;
-			for (const id of ids) if (state.cardsById[id]) box.appendChild(miniFace(state.cardsById[id]));
+			for (const id of ids) if (middleearthCardsById[id]) box.appendChild(miniFace(middleearthCardsById[id]));
 			box.appendChild(document.createElement('br'));
 			box.appendChild(overlayButton('Take these', () => { run.deck.push(...ids); advanceMiddleEarth(run); }));
 			row.appendChild(box);
@@ -8143,11 +8972,11 @@ function afterMiddleEarthReward(run) {
 		el.appendChild(row);
 	} else {
 		const el = dungeonOverlay(`TREASURE! - ${run.wins}/12`, 'One of these joins your deck.');
-		const options = Middleearth.treasurePool(state.cardsById).filter(d => !run.deck.includes(d.id));
+		const options = Middleearth.treasurePool(middleearthCardsById).filter(d => !run.deck.includes(d.id));
 		const row = document.createElement('div');
 		row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:14px;';
 		for (let i = 0; i < 3 && options.length; i++) {
-			const d = options.splice(Math.floor(Math.random() * options.length), 1)[0];
+			const d = options.splice(Math.floor(lootRng() * options.length), 1)[0];
 			const box = document.createElement('div');
 			box.style.cssText = 'background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:12px;';
 			box.appendChild(miniFace(d));
@@ -8160,10 +8989,11 @@ function afterMiddleEarthReward(run) {
 }
 
 function advanceMiddleEarth(run) {
-	run.enemy = genMiddleEarthEnemy(state.cardsById, run.wins || 0, run.enemy && run.enemy.id);
+	delete run.postGame;   // the reward is done: the next fight is the checkpoint now
+	run.enemy = genMiddleEarthEnemy(middleearthCardsById, run.wins || 0, run.enemy && run.enemy.id, noteFaced(run));
 	saveMiddleearth(run);
 	const el = dungeonOverlay(`NEXT: ${run.enemy.name}`, `${winLossLabel(run)} - your deck is ${run.deck.length} cards. (${Middleearth.rungLabel(run.wins || 0)})`);
-	el.appendChild(overlayButton('Fight!', () => location.reload()));
+	el.appendChild(overlayButton('Fight!', fightNow));
 }
 
 function middleEarthRunComplete(run) {
@@ -8211,7 +9041,7 @@ async function pickSwordCoastHeroOverlay(cardsById) {
 	const pool = Swordcoast.unlockedCharacters(stats);
 	if (swordcoastGaleUnlocked()) for (const sh of Swordcoast.SECRET_HEROES) if (!pool.includes(sh)) pool.push(sh);
 	return new Promise(resolve => {
-		const heroes = stats ? Lorequest.offerFrom(pool, Math.random, 3, Lorequest.streakPins(pool, stats, 'swordcoast')) : pool;
+		const heroes = stats ? Lorequest.offerFrom(pool, Math.random, 3, Lorequest.streakPins(pool, stats, 'swordcoast', Math.random)) : pool;
 		const el = dungeonOverlay('CHOOSE YOUR HERO', 'Pick a Companion of the Realms - a 10-card starter deck you grow as you Advance.');
 		const row = document.createElement('div');
 		row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:12px;max-width:920px;';
@@ -8242,8 +9072,8 @@ async function pickSwordCoastHeroOverlay(cardsById) {
 }
 
 // roll the next enemy: rung by `wins`, avoiding an immediate repeat. STATIC (no loot/parity).
-function genSwordCoastEnemy(cardsById, wins, avoidId) {
-	const character = Swordcoast.randomEnemy(wins, Math.random, avoidId);
+function genSwordCoastEnemy(cardsById, wins, avoidId, faced) {
+	const character = Swordcoast.randomEnemy(wins, Math.random, avoidId, faced);
 	return Swordcoast.generateEnemy(cardsById, character);
 }
 
@@ -8263,6 +9093,7 @@ function bootSwordCoastEncounter(cardsById, run) {
 	state.classPicks = picks;
 	E.resetDeckAndHand(state, 1, [...enemy.deck]);
 	E.drawCards(state, 1, 4);
+	E.addCoin(state, 1);   // the boss goes second: re-deal its opening Coin (resetDeckAndHand wiped createGame's)
 	E.stripLoadouts(state);
 	applyRunAnomaly(run.anomaly);
 	setRunLife((run.wins || 0) + (run.losses || 0) + 1);
@@ -8278,6 +9109,7 @@ function swordCoastDefeat(run) { afterSwordCoastGame(run, false); }
 
 function afterSwordCoastGame(run, won) {
 	if (won) run.wins = (run.wins || 0) + 1; else run.losses = (run.losses || 0) + 1;
+	beginPostGame(run, won);   // checkpoint: a reload resumes the reward, not the fight
 	saveSwordcoast(run);
 	if (run.wins >= Swordcoast.WINS_TO_CLEAR) { swordCoastRunComplete(run); return; }
 	if (run.losses >= Swordcoast.LOSSES_TO_END) { swordCoastRunOver(run); return; }
@@ -8286,16 +9118,17 @@ function afterSwordCoastGame(run, won) {
 
 // win loot step 1 — SPOILS: take 1 of 3 cards drawn from the vanquished foe's own deck, or none
 function swordCoastLoot(run) {
+	const lootRng = postGameRng(run, 1);   // same offer after a reload
 	const fallen = run.enemy ? run.enemy.name : null;
-	const options = fallen ? Swordcoast.spoilsChoices(swordcoastCardsById, fallen, Math.random, 3) : [];
+	const options = fallen ? Swordcoast.spoilsChoices(swordcoastCardsById, fallen, lootRng, 3) : [];
 	const el = dungeonOverlay(`WIN - ${run.wins}/12`, `Spoils of war: take one card from ${fallen || 'the fallen'}'s arsenal, or leave it.`);
 	const row = document.createElement('div');
 	row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:14px;';
 	for (const id of options) {
-		if (!state.cardsById[id]) continue;
+		if (!swordcoastCardsById[id]) continue;
 		const box = document.createElement('div');
 		box.style.cssText = 'background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:12px;';
-		box.appendChild(miniFace(state.cardsById[id]));
+		box.appendChild(miniFace(swordcoastCardsById[id]));
 		box.appendChild(document.createElement('br'));
 		box.appendChild(overlayButton('Take it', () => { run.deck.push(id); afterSwordCoastReward(run); }));
 		row.appendChild(box);
@@ -8306,18 +9139,20 @@ function swordCoastLoot(run) {
 
 // win loot step 2 — ALTERNATING AID: a treasure on odd wins, a class bucket on even wins
 function afterSwordCoastReward(run) {
+	postGameStage(run, 2, saveSwordcoast);   // the step-1 pick is saved
+	const lootRng = postGameRng(run, 2);
 	if (Swordcoast.rewardForWin(run.wins) === 'bucket') {
 		const cls = [run.cls];
 		const el = dungeonOverlay(`AID - ${run.wins}/12`, 'Choose a loot bucket - all 3 cards join your deck.');
-		const offered = Duels.offerBuckets(swordcoastCardsById, cls, Math.random, 3);
+		const offered = Duels.offerBuckets(swordcoastCardsById, cls, lootRng, 3);
 		const row = document.createElement('div');
 		row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:14px;';
 		for (const bucket of offered) {
-			const ids = Duels.rollBucket(swordcoastCardsById, cls, bucket, Math.random, 3);
+			const ids = Duels.rollBucket(swordcoastCardsById, cls, bucket, lootRng, 3);
 			const box = document.createElement('div');
 			box.style.cssText = 'background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:12px;max-width:330px;';
 			box.innerHTML = `<div style="font-weight:bold;margin-bottom:8px;letter-spacing:1px;">${bucket.name}</div>`;
-			for (const id of ids) if (state.cardsById[id]) box.appendChild(miniFace(state.cardsById[id]));
+			for (const id of ids) if (swordcoastCardsById[id]) box.appendChild(miniFace(swordcoastCardsById[id]));
 			box.appendChild(document.createElement('br'));
 			box.appendChild(overlayButton('Take these', () => { run.deck.push(...ids); advanceSwordCoast(run); }));
 			row.appendChild(box);
@@ -8325,11 +9160,11 @@ function afterSwordCoastReward(run) {
 		el.appendChild(row);
 	} else {
 		const el = dungeonOverlay(`TREASURE! - ${run.wins}/12`, 'One of these joins your deck.');
-		const options = Swordcoast.treasurePool(state.cardsById).filter(d => !run.deck.includes(d.id));
+		const options = Swordcoast.treasurePool(swordcoastCardsById).filter(d => !run.deck.includes(d.id));
 		const row = document.createElement('div');
 		row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:14px;';
 		for (let i = 0; i < 3 && options.length; i++) {
-			const d = options.splice(Math.floor(Math.random() * options.length), 1)[0];
+			const d = options.splice(Math.floor(lootRng() * options.length), 1)[0];
 			const box = document.createElement('div');
 			box.style.cssText = 'background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:12px;';
 			box.appendChild(miniFace(d));
@@ -8342,15 +9177,16 @@ function afterSwordCoastReward(run) {
 }
 
 function advanceSwordCoast(run) {
-	run.enemy = genSwordCoastEnemy(state.cardsById, run.wins || 0, run.enemy && run.enemy.id);
+	delete run.postGame;   // the reward is done: the next fight is the checkpoint now
+	run.enemy = genSwordCoastEnemy(swordcoastCardsById, run.wins || 0, run.enemy && run.enemy.id, noteFaced(run));
 	saveSwordcoast(run);
 	const el = dungeonOverlay(`NEXT: ${run.enemy.name}`, `${winLossLabel(run)} - your deck is ${run.deck.length} cards. (${Swordcoast.rungLabel(run.wins || 0)})`);
-	el.appendChild(overlayButton('Fight!', () => location.reload()));
+	el.appendChild(overlayButton('Fight!', fightNow));
 }
 
 function swordCoastRunComplete(run) {
 	try { localStorage.setItem(SWORDCOAST_UNLOCK_KEY, '1'); } catch (e) { }
-	const el = dungeonOverlay('12 WINS - TIAMAT IS SLAIN!',
+	const el = dungeonOverlay(Swordcoast.clearHeadline(run.enemy && run.enemy.name),
 		`${run.characterId} clears the Sword Coast with a ${run.deck.length}-card deck. Gale, Waterdeep Prodigy is now a playable hero!`);
 	Col.earnGold(1000);
 	mpRunReward(el, 'win', { wins: run.wins || 0, losses: run.losses || 0, hero: run.characterId });
@@ -8393,7 +9229,7 @@ async function pickFinalFantasyHeroOverlay(cardsById) {
 	const pool = Finalfantasy.unlockedCharacters(stats);
 	if (finalfantasyGilgameshUnlocked()) for (const sh of Finalfantasy.SECRET_HEROES) if (!pool.includes(sh)) pool.push(sh);
 	return new Promise(resolve => {
-		const heroes = stats ? Lorequest.offerFrom(pool, Math.random, 3, Lorequest.streakPins(pool, stats, 'finalfantasy')) : pool;
+		const heroes = stats ? Lorequest.offerFrom(pool, Math.random, 3, Lorequest.streakPins(pool, stats, 'finalfantasy', Math.random)) : pool;
 		const el = dungeonOverlay('CHOOSE YOUR HERO', 'Pick a Final Fantasy hero - a 10-card starter deck you grow as you climb.');
 		const row = document.createElement('div');
 		row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:12px;max-width:920px;';
@@ -8423,8 +9259,8 @@ async function pickFinalFantasyHeroOverlay(cardsById) {
 	});
 }
 
-function genFinalFantasyEnemy(cardsById, wins, avoidId) {
-	const character = Finalfantasy.randomEnemy(wins, Math.random, avoidId);
+function genFinalFantasyEnemy(cardsById, wins, avoidId, faced) {
+	const character = Finalfantasy.randomEnemy(wins, Math.random, avoidId, faced);
 	return Finalfantasy.generateEnemy(cardsById, character);
 }
 
@@ -8443,6 +9279,7 @@ function bootFinalFantasyEncounter(cardsById, run) {
 	state.classPicks = picks;
 	E.resetDeckAndHand(state, 1, [...enemy.deck]);
 	E.drawCards(state, 1, 4);
+	E.addCoin(state, 1);   // the boss goes second: re-deal its opening Coin (resetDeckAndHand wiped createGame's)
 	E.stripLoadouts(state);
 	applyRunAnomaly(run.anomaly);
 	setRunLife((run.wins || 0) + (run.losses || 0) + 1);
@@ -8458,6 +9295,7 @@ function finalFantasyDefeat(run) { afterFinalFantasyGame(run, false); }
 
 function afterFinalFantasyGame(run, won) {
 	if (won) run.wins = (run.wins || 0) + 1; else run.losses = (run.losses || 0) + 1;
+	beginPostGame(run, won);   // checkpoint: a reload resumes the reward, not the fight
 	saveFinalfantasy(run);
 	if (run.wins >= Finalfantasy.WINS_TO_CLEAR) { finalFantasyRunComplete(run); return; }
 	if (run.losses >= Finalfantasy.LOSSES_TO_END) { finalFantasyRunOver(run); return; }
@@ -8465,16 +9303,17 @@ function afterFinalFantasyGame(run, won) {
 }
 
 function finalFantasyLoot(run) {
+	const lootRng = postGameRng(run, 1);   // same offer after a reload
 	const fallen = run.enemy ? run.enemy.name : null;
-	const options = fallen ? Finalfantasy.spoilsChoices(finalfantasyCardsById, fallen, Math.random, 3) : [];
+	const options = fallen ? Finalfantasy.spoilsChoices(finalfantasyCardsById, fallen, lootRng, 3) : [];
 	const el = dungeonOverlay(`WIN - ${run.wins}/12`, `Spoils of war: take one card from ${fallen || 'the fallen'}'s arsenal, or leave it.`);
 	const rowr = document.createElement('div');
 	rowr.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:14px;';
 	for (const id of options) {
-		if (!state.cardsById[id]) continue;
+		if (!finalfantasyCardsById[id]) continue;
 		const box = document.createElement('div');
 		box.style.cssText = 'background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:12px;';
-		box.appendChild(miniFace(state.cardsById[id]));
+		box.appendChild(miniFace(finalfantasyCardsById[id]));
 		box.appendChild(document.createElement('br'));
 		box.appendChild(overlayButton('Take it', () => { run.deck.push(id); afterFinalFantasyReward(run); }));
 		rowr.appendChild(box);
@@ -8484,18 +9323,20 @@ function finalFantasyLoot(run) {
 }
 
 function afterFinalFantasyReward(run) {
+	postGameStage(run, 2, saveFinalfantasy);   // the step-1 pick is saved
+	const lootRng = postGameRng(run, 2);
 	if (Finalfantasy.rewardForWin(run.wins) === 'bucket') {
 		const cls = [run.cls];
 		const el = dungeonOverlay(`AID - ${run.wins}/12`, 'Choose a loot bucket - all 3 cards join your deck.');
-		const offered = Duels.offerBuckets(finalfantasyCardsById, cls, Math.random, 3);
+		const offered = Duels.offerBuckets(finalfantasyCardsById, cls, lootRng, 3);
 		const rowr = document.createElement('div');
 		rowr.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:14px;';
 		for (const bucket of offered) {
-			const ids = Duels.rollBucket(finalfantasyCardsById, cls, bucket, Math.random, 3);
+			const ids = Duels.rollBucket(finalfantasyCardsById, cls, bucket, lootRng, 3);
 			const box = document.createElement('div');
 			box.style.cssText = 'background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:12px;max-width:330px;';
 			box.innerHTML = `<div style="font-weight:bold;margin-bottom:8px;letter-spacing:1px;">${bucket.name}</div>`;
-			for (const id of ids) if (state.cardsById[id]) box.appendChild(miniFace(state.cardsById[id]));
+			for (const id of ids) if (finalfantasyCardsById[id]) box.appendChild(miniFace(finalfantasyCardsById[id]));
 			box.appendChild(document.createElement('br'));
 			box.appendChild(overlayButton('Take these', () => { run.deck.push(...ids); advanceFinalFantasy(run); }));
 			rowr.appendChild(box);
@@ -8503,11 +9344,11 @@ function afterFinalFantasyReward(run) {
 		el.appendChild(rowr);
 	} else {
 		const el = dungeonOverlay(`TREASURE! - ${run.wins}/12`, 'One of these joins your deck.');
-		const options = Finalfantasy.treasurePool(state.cardsById).filter(d => !run.deck.includes(d.id));
+		const options = Finalfantasy.treasurePool(finalfantasyCardsById).filter(d => !run.deck.includes(d.id));
 		const rowr = document.createElement('div');
 		rowr.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:14px;';
 		for (let i = 0; i < 3 && options.length; i++) {
-			const d = options.splice(Math.floor(Math.random() * options.length), 1)[0];
+			const d = options.splice(Math.floor(lootRng() * options.length), 1)[0];
 			const box = document.createElement('div');
 			box.style.cssText = 'background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:12px;';
 			box.appendChild(miniFace(d));
@@ -8520,10 +9361,11 @@ function afterFinalFantasyReward(run) {
 }
 
 function advanceFinalFantasy(run) {
-	run.enemy = genFinalFantasyEnemy(state.cardsById, run.wins || 0, run.enemy && run.enemy.id);
+	delete run.postGame;   // the reward is done: the next fight is the checkpoint now
+	run.enemy = genFinalFantasyEnemy(finalfantasyCardsById, run.wins || 0, run.enemy && run.enemy.id, noteFaced(run));
 	saveFinalfantasy(run);
 	const el = dungeonOverlay(`NEXT: ${run.enemy.name}`, `${winLossLabel(run)} - your deck is ${run.deck.length} cards. (${Finalfantasy.rungLabel(run.wins || 0)})`);
-	el.appendChild(overlayButton('Fight!', () => location.reload()));
+	el.appendChild(overlayButton('Fight!', fightNow));
 }
 
 function finalFantasyRunComplete(run) {
@@ -8572,7 +9414,7 @@ async function pickMultiverseHeroOverlay(cardsById) {
 	const pool = Multiverse.unlockedCharacters(stats);
 	if (multiverseSurferUnlocked()) for (const sh of Multiverse.SECRET_HEROES) if (!pool.includes(sh)) pool.push(sh);
 	return new Promise(resolve => {
-		const heroes = stats ? Lorequest.offerFrom(pool, Math.random, 3, Lorequest.streakPins(pool, stats, 'multiverse')) : pool;
+		const heroes = stats ? Lorequest.offerFrom(pool, Math.random, 3, Lorequest.streakPins(pool, stats, 'multiverse', Math.random)) : pool;
 		const el = dungeonOverlay('CHOOSE YOUR HERO', 'Pick a Marvel hero - a 10-card starter deck you grow as you climb. Enemies always match your loot.');
 		const row = document.createElement('div');
 		row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:12px;max-width:920px;';
@@ -8603,8 +9445,8 @@ async function pickMultiverseHeroOverlay(cardsById) {
 }
 
 // roll the next villain: roster by `wins`, deck at `wins`-parity, avoiding an immediate repeat
-function genMultiverseEnemy(cardsById, wins, avoidId) {
-	const character = Multiverse.randomEnemy(wins, Math.random, avoidId);
+function genMultiverseEnemy(cardsById, wins, avoidId, faced) {
+	const character = Multiverse.randomEnemy(wins, Math.random, avoidId, faced);
 	return Multiverse.generateEnemy(cardsById, character, wins, Math.random);
 }
 
@@ -8624,6 +9466,7 @@ function bootMultiverseEncounter(cardsById, run) {
 	state.classPicks = picks;
 	E.resetDeckAndHand(state, 1, [...enemy.deck]);
 	E.drawCards(state, 1, 4);
+	E.addCoin(state, 1);   // the boss goes second: re-deal its opening Coin (resetDeckAndHand wiped createGame's)
 	E.stripLoadouts(state);
 	applyRunAnomaly(run.anomaly);
 	setRunLife((run.wins || 0) + (run.losses || 0) + 1);
@@ -8639,6 +9482,7 @@ function multiverseDefeat(run) { afterMultiverseGame(run, false); }
 
 function afterMultiverseGame(run, won) {
 	if (won) run.wins = (run.wins || 0) + 1; else run.losses = (run.losses || 0) + 1;
+	beginPostGame(run, won);   // checkpoint: a reload resumes the reward, not the fight
 	saveMultiverse(run);
 	if (run.wins >= Multiverse.WINS_TO_CLEAR) { multiverseRunComplete(run); return; }
 	if (run.losses >= Multiverse.LOSSES_TO_END) { multiverseRunOver(run); return; }
@@ -8647,17 +9491,18 @@ function afterMultiverseGame(run, won) {
 
 // win loot: choose 1 of 3 class buckets (3 cards each); all 3 join your deck (the enemy matches at parity)
 function multiverseLoot(run) {
+	const lootRng = postGameRng(run, 1);   // same offer after a reload
 	const cls = [run.cls];
 	const el = dungeonOverlay(`WIN - ${run.wins}/12`, 'Choose a loot bucket - all 3 cards join your deck. (The next foe matches your loot.)');
-	const offered = Duels.offerBuckets(multiverseCardsById, cls, Math.random, 3);
+	const offered = Duels.offerBuckets(multiverseCardsById, cls, lootRng, 3);
 	const row = document.createElement('div');
 	row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:14px;';
 	for (const bucket of offered) {
-		const ids = Duels.rollBucket(multiverseCardsById, cls, bucket, Math.random, 3);
+		const ids = Duels.rollBucket(multiverseCardsById, cls, bucket, lootRng, 3);
 		const box = document.createElement('div');
 		box.style.cssText = 'background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:12px;max-width:330px;';
 		box.innerHTML = `<div style="font-weight:bold;margin-bottom:8px;letter-spacing:1px;">${bucket.name}</div>`;
-		for (const id of ids) if (state.cardsById[id]) box.appendChild(miniFace(state.cardsById[id]));
+		for (const id of ids) if (multiverseCardsById[id]) box.appendChild(miniFace(multiverseCardsById[id]));
 		box.appendChild(document.createElement('br'));
 		box.appendChild(overlayButton('Take these', () => { run.deck.push(...ids); afterMultiverseBucket(run); }));
 		row.appendChild(box);
@@ -8667,13 +9512,15 @@ function multiverseLoot(run) {
 
 // milestone wins (2/5/8/11) also grant a treasure card, then the next fight
 function afterMultiverseBucket(run) {
+	postGameStage(run, 2, saveMultiverse);   // the step-1 pick is saved
+	const lootRng = postGameRng(run, 2);
 	if (Multiverse.TREASURE_WINS.includes(run.wins)) {
 		const el = dungeonOverlay(`TREASURE! - ${run.wins}/12`, 'One of these joins your deck.');
-		const options = Multiverse.treasurePool(state.cardsById).filter(d => !run.deck.includes(d.id));
+		const options = Multiverse.treasurePool(multiverseCardsById).filter(d => !run.deck.includes(d.id));
 		const row = document.createElement('div');
 		row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:14px;';
 		for (let i = 0; i < 3 && options.length; i++) {
-			const d = options.splice(Math.floor(Math.random() * options.length), 1)[0];
+			const d = options.splice(Math.floor(lootRng() * options.length), 1)[0];
 			const box = document.createElement('div');
 			box.style.cssText = 'background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:12px;';
 			box.appendChild(miniFace(d));
@@ -8686,10 +9533,11 @@ function afterMultiverseBucket(run) {
 }
 
 function advanceMultiverse(run) {
-	run.enemy = genMultiverseEnemy(state.cardsById, run.wins || 0, run.enemy && run.enemy.id);
+	delete run.postGame;   // the reward is done: the next fight is the checkpoint now
+	run.enemy = genMultiverseEnemy(multiverseCardsById, run.wins || 0, run.enemy && run.enemy.id, noteFaced(run));
 	saveMultiverse(run);
 	const el = dungeonOverlay(`NEXT: ${run.enemy.name}`, `${winLossLabel(run)} - your deck is ${run.deck.length} cards. (${Multiverse.rungLabel(run.wins || 0)})`);
-	el.appendChild(overlayButton('Fight!', () => location.reload()));
+	el.appendChild(overlayButton('Fight!', fightNow));
 }
 
 function multiverseRunComplete(run) {
@@ -8752,6 +9600,7 @@ function bootArenaEncounter(cardsById, run) {
 	if (enemy.powerId && cardsById[enemy.powerId]) { const epw = E.instantiate(cardsById[enemy.powerId], 1); epw.zone = 'heropower'; epw.usedThisTurn = false; state.players[1].heroPowers = [epw]; }
 	E.resetDeckAndHand(state, 1, [...enemy.deck]);
 	E.drawCards(state, 1, 4);
+	E.addCoin(state, 1);   // the boss goes second: re-deal its opening Coin (resetDeckAndHand wiped createGame's)
 	E.stripLoadouts(state);
 	for (const sid of hero.startSummon || []) if (cardsById[sid]) E.execEffects(state, HUMAN, [{ type: 'summon', summonId: sid }], null, null);
 	for (const sid of enemy.startSummon || []) if (cardsById[sid]) E.execEffects(state, 1, [{ type: 'summon', summonId: sid }], null, null);
@@ -8767,6 +9616,7 @@ function arenaDefeat(run) { afterArenaGame(run, false); }
 // one game resolved: bank the result, end at 12 wins / 3 losses, else next fight
 function afterArenaGame(run, won) {
 	if (won) run.wins = (run.wins || 0) + 1; else run.losses = (run.losses || 0) + 1;
+	delete run.pendingResult; // the result is banked
 	saveArena(run);
 	if (run.wins >= 12) { arenaRunComplete(run); return; }
 	if (run.losses >= 3) { arenaRunOver(run); return; }
@@ -8774,10 +9624,10 @@ function afterArenaGame(run, won) {
 }
 
 function advanceArena(run, won) {
-	run.enemy = genArenaEnemy(state.cardsById, run.enemy && run.enemy.id); // next opponent (avoid immediate repeat)
+	run.enemy = genArenaEnemy(runDefs(), run.enemy && run.enemy.id); // next opponent (avoid immediate repeat)
 	saveArena(run);
 	const el = dungeonOverlay(won ? `WIN - ${run.wins} win${run.wins === 1 ? '' : 's'}` : `LOSS - ${run.losses}/3`, `Next up: ${run.enemy.name}. ${winLossLabel(run)} - your drafted deck stands pat.`);
-	el.appendChild(overlayButton('Fight!', () => location.reload()));
+	el.appendChild(overlayButton('Fight!', fightNow));
 }
 
 // reward scales with wins: 100 gold + 120 per win, plus the server pack
@@ -9070,6 +9920,22 @@ function renderReplayFrame(i) {
 	}
 	updateHud();
 	updateReplayBar();
+	syncReplayLog();
+}
+// A replay plays no events, so the 📜 Log drawer stayed EMPTY. Each frame carries its
+// caption (the live log's line at that moment): the drawer shows them up to the frame
+// on screen, ending with the result on the last one.
+function syncReplayLog() {
+	if (!replayTape) return;
+	logHistory.length = 0; logLinks.length = 0;
+	let prev = null;
+	for (let k = 0; k <= replayIdx; k++) {
+		const cap = replayTape.frames[k] && replayTape.frames[k].cap;
+		if (cap && cap !== prev) { logHistory.push(cap); logLinks.push([]); }
+		prev = cap;
+	}
+	if (state && state.over) { logHistory.push(watchResultLine()); logLinks.push([]); }
+	if (logFull && logFull.classList.contains('open')) renderLogFull();
 }
 function replayGoto(i) { replayPause(); renderReplayFrame(i); }
 function replayStep(d) { replayPause(); renderReplayFrame(replayIdx + d); }

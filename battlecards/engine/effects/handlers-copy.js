@@ -32,11 +32,13 @@ import {
 	applyRollEntry, targetSpec, legalTargets, runSpell,
 	fireEmerge, staticValue, growBlubberBaron, queueAdapt, returnBlinked, has, MAX_SECRETS, destroyPermanent, findPermanent,
 	EXCAVATE_TIERS, EXCAVATE_LEGENDARIES, ALL_AZERITE_LEGENDARIES,
+	copyDefOf,
 } from '../../engine.js';
 import { damageCreature, healHero } from '../damage.js';
 import { gainArmor } from '../damage.js';
 import { drawCards, toGraveyard, bouncePermanent } from '../zones.js';
 import { runDeathrattle } from '../death.js';
+import { noteResult } from './followups.js';
 
 register('conjure-id', ({ state, pi, enemies }, e) => {
 	// put a specific card (token ids allowed) into your hand (forEnemy: theirs)
@@ -468,10 +470,11 @@ register('copy-to-all-zones', ({ state, pi, target, source, enemies, scaled, hm,
 			// Sathrovarr: add a copy of a chosen friendly creature to hand, deck, and board
 			const t = chosenCreature();
 			const p = state.players[pi];
-			if (t && state.cardsById[t.id]) {
-				if (p.hand.length < MAX_HAND) { const c = instantiate(state.cardsById[t.id], pi); c.zone = 'hand'; p.hand.push(c); emit(state, { type: 'conjure', player: pi, card: c, color: null }); }
-				p.deck.push(t.id); for (let i = p.deck.length - 1; i > 0; i--) { const j = Math.floor(state.rng() * (i + 1)); [p.deck[i], p.deck[j]] = [p.deck[j], p.deck[i]]; }
-				if (p.board.filter(c => !isDead(c)).length < 7) summon(state, pi, state.cardsById[t.id]);
+			const def = t && copyDefOf(state, t);
+			if (def) {
+				if (p.hand.length < MAX_HAND) { const c = instantiate(def, pi); c.zone = 'hand'; p.hand.push(c); emit(state, { type: 'conjure', player: pi, card: c, color: null }); }
+				if (state.cardsById[t.id]) { p.deck.push(t.id); for (let i = p.deck.length - 1; i > 0; i--) { const j = Math.floor(state.rng() * (i + 1)); [p.deck[i], p.deck[j]] = [p.deck[j], p.deck[i]]; } } // a deck holds card ids: a token has none to shuffle in
+				if (p.board.filter(c => !isDead(c)).length < 7) summon(state, pi, def);
 			}
 } });
 
@@ -767,8 +770,21 @@ register('copy-each-friendly-to-hand', ({ state, pi }) => { {
 } });
 
 
-register('summon-enemy-copy-attack-original', ({ state, pi, chosenCreature }) => { {
-			// Funhouse Mirror: summon a copy of an enemy minion under your control; it attacks the original
+register('summon-enemy-copy-attack-original', ({ state, pi, chosenCreature, enemies }, e) => { {
+			// Funhouse Mirror: summon a copy of an enemy minion under your control; it attacks the original.
+			// Soul Mirror (all): every enemy creature gets a copy, and each attacks its original.
+			if (e && e.all) {
+				const foes = [];
+				for (const o of enemies) for (const fc of state.players[o].board) if (!isDead(fc) && fc.type === 'creature') foes.push(fc);
+				const made = [];
+				for (const t of foes) {
+					const def = state.cardsById[t.id] || { id: t.id, name: t.name, type: 'creature', cost: t.cost, rarity: t.rarity, attack: t.attack, health: t.maxHealth, keywords: [...(t.keywords || [])], tribe: t.tribe };
+					const c = summon(state, pi, def);
+					if (c) made.push([c, t]);
+				}
+				for (const [c, t] of made) if (!isDead(c) && !isDead(t)) { c.sick = false; resolveCombat(state, pi, c.uid, { type: 'creature', uid: t.uid, player: t.controller }); }
+				return;
+			}
 			const t = chosenCreature();
 			if (!t) return;
 			const def = state.cardsById[t.id] || { id: t.id, name: t.name, type: 'creature', cost: t.cost, rarity: t.rarity, attack: t.attack, health: t.maxHealth, keywords: [...(t.keywords || [])], tribe: t.tribe };
@@ -981,7 +997,11 @@ register('discover', ({ state, pi, target, source, enemies, scaled, hm, pickEnem
 				if (e.chooseOne && !(Array.isArray(d.choices) && d.choices.length)) return false; // Worthy Expedition: a Choose One card
 				return true;
 			});
-			// `count` queues that many separate Discovers; `to:'board'` summons the pick
+			// `count` queues that many separate Discovers; `to:'board'` summons the pick.
+			// The queued picks are noted on the source so a later effect of the same
+			// spell can act on the discovered card (handlers-followup.js).
+			const _pends = [];
+			noteResult(source, 'discover', _pends);
 			for (let n = 0; n < (e.count || 1); n++) {
 				if (state.players[pi].eliminated) break;
 				const pool = discoverPool();
@@ -993,7 +1013,8 @@ register('discover', ({ state, pi, target, source, enemies, scaled, hm, pickEnem
 				// Staff of Trickery: "Reduce its Cost by your hero's Attack" — dynamic at Discover time
 				const costMod = e.costModByHeroAttack ? -heroAttackValue(state, state.players[pi]) : (e.costMod || null);
 				const _buff = e.buffPerOverload ? { attack: state.players[pi].overloadedGame || 0, health: state.players[pi].overloadedGame || 0 } : (e.buff || null); // Charged Call: +1/+1 per Overloaded crystal this game
-				state.pickQueue.push({ player: pi, ids, discover: true, grant: e.grant || null, buff: _buff, to: e.to || null, costMod, healByCost: e.healByCost || false, summonCopy: e.summonCopy || null, armorByCost: e.armorByCost || false, installSecret: e.installSecret || false, castRandom: e.castRandom || false, castOnDeathUid: (e.castOnDeath && chosenCreature()) ? chosenCreature().uid : undefined, spreadDeathrattle: e.spreadDeathrattle || false, damageSelfByCost: e.damageSelfByCost || false, gainDeathrattleUid: e.gainDeathrattle && source ? source.uid : null, setAttack: e.setAttack ?? null, setHealth: e.setHealth ?? null, setCost: e.setCost ?? null, darkGift: e.darkGift || false, duplicate: e.duplicate || false, mode: (e.fromOwnDeck && e.drawPick) ? 'search' : undefined, shuffleOthers: e.shuffleOthers || false, keepOthersToHand: e.keepOthersToHand || false, toDeckBottomBuff: e.toDeckBottomBuff || null, gainStatsUid: (e.gainStats && source) ? source.uid : null, hataaru: e.hataaru || false, summonTwice: e.summonTwice || false, qonzu: e.qonzu || false, grantCastTwice: e.grantCastTwice || false, damageAllByCost: e.damageAllByCost || false, pairFirst: e.pairFirst || false, pairSecond: e.pairSecond || false, followEchoId: e.followEchoId || null, grantPrepare: e.grantPrepare || false, equipPick: e.equipPick || false, corruptPick: e.corruptPick || false, doomCharge: e.doomCharge || false, mycelium: e.mycelium || false });
+				const _pend = { player: pi, ids, discover: true, grant: e.grant || null, buff: _buff, to: e.to || null, costMod, healByCost: e.healByCost || false, summonCopy: e.summonCopy || null, armorByCost: e.armorByCost || false, installSecret: e.installSecret || false, castRandom: e.castRandom || false, castOnDeathUid: (e.castOnDeath && chosenCreature()) ? chosenCreature().uid : undefined, spreadDeathrattle: e.spreadDeathrattle || false, damageSelfByCost: e.damageSelfByCost || false, gainDeathrattleUid: e.gainDeathrattle && source ? source.uid : null, setAttack: e.setAttack ?? null, setHealth: e.setHealth ?? null, setCost: e.setCost ?? null, darkGift: e.darkGift || false, duplicate: e.duplicate || false, mode: (e.fromOwnDeck && e.drawPick) ? 'search' : undefined, shuffleOthers: e.shuffleOthers || false, keepOthersToHand: e.keepOthersToHand || false, toDeckBottomBuff: e.toDeckBottomBuff || null, gainStatsUid: (e.gainStats && source) ? source.uid : null, hataaru: e.hataaru || false, summonTwice: e.summonTwice || false, qonzu: e.qonzu || false, grantCastTwice: e.grantCastTwice || false, damageAllByCost: e.damageAllByCost || false, pairFirst: e.pairFirst || false, pairSecond: e.pairSecond || false, followEchoId: e.followEchoId || null, grantPrepare: e.grantPrepare || false, equipPick: e.equipPick || false, corruptPick: e.corruptPick || false, doomCharge: e.doomCharge || false, mycelium: e.mycelium || false };
+				state.pickQueue.push(_pend); _pends.push(_pend);
 				emit(state, { type: 'pickStart', player: pi, count: ids.length });
 			}
 } });

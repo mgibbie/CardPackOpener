@@ -81,36 +81,36 @@ export const HERO_POWERS = {
 	Nadaar: P('Selfless Guard', 2, 'Gain 3 life.', [{ type: 'heal', value: 3, target: 'self' }]),
 	Gale: P('Weave the Arcana', 2, 'Roll a d20 and Scry that many.', [{ type: 'roll-scry', sides: 20 }]),
 	// enemies (Rung A)
-	'Gut, True Soul Zealot': P('Zealous Charge', 2, 'Summon a 2/1 Cultist with Rush.', [{ type: 'summon', count: 1, attack: 2, health: 1, name: 'Bhaal Cultist', tribe: 'Goblin', keywords: ['rush'] }]),
-	'Baeloth Barrityl, Entertainer': P('Cruel Spectacle', 2, 'Deal 2 damage to a random enemy.', [{ type: 'random-damage', value: 2, pool: 'enemies', count: 1 }]),
+	'Gut, True Soul Zealot': P('Zealous Charge', 3, 'Summon a 2/1 Cultist with Rush.', [{ type: 'summon', count: 1, attack: 2, health: 1, name: 'Bhaal Cultist', tribe: 'Goblin', keywords: ['rush'] }]),
+	'Baeloth Barrityl, Entertainer': P('Cruel Spectacle', 3, 'Deal 2 damage to a random enemy.', [{ type: 'random-damage', value: 2, pool: 'enemies', count: 1 }]),
 	'Burakos, Party Leader': P('Split the Loot', 2, 'Gain a Coin.', [{ type: 'gain-coin', value: 1 }]),
-	'Safana, Calimport Cutthroat': P('Backstab', 2, 'Deal 2 damage to an enemy creature.', [{ type: 'damage', value: 2, target: 'enemy-creature' }]),
-	'Nalia de\'Arnise': P('Fortify the Keep', 2, 'Summon a 1/2 Guard with Taunt.', [{ type: 'summon', count: 1, attack: 1, health: 2, name: 'Keep Guard', tribe: 'Human', keywords: ['taunt'] }]),
-	'Kalain, Reclusive Painter': P('Crimson Muse', 2, 'Gain a Coin and draw a card.', [{ type: 'gain-coin', value: 1 }, { type: 'draw', value: 1 }]),
+	'Safana, Calimport Cutthroat': P('Backstab', 3, 'Deal 2 damage to an enemy creature.', [{ type: 'damage', value: 2, target: 'enemy-creature' }]),
+	'Nalia de\'Arnise': P('Fortify the Keep', 4, 'Summon a 1/2 Guard with Taunt.', [{ type: 'summon', count: 1, attack: 1, health: 2, name: 'Keep Guard', tribe: 'Human', keywords: ['taunt'] }]),
+	'Kalain, Reclusive Painter': P('Crimson Muse', 3, 'Gain a Coin and draw a card.', [{ type: 'gain-coin', value: 1 }, { type: 'draw', value: 1 }]),
 	'Grumgully, the Generous': P('Generous Gift', 2, 'Give a friendly creature +1/+1.', [{ type: 'buff', attack: 1, health: 1, target: 'friendly-creature' }]),
 	'Targ Nar, Demon-Fang Gnoll': P('Gnoll Pack', 2, 'Summon a 1/1 Gnoll with Rush.', [{ type: 'summon', count: 1, attack: 1, health: 1, name: 'Gnoll Pack-Runner', tribe: 'Gnoll', keywords: ['rush'] }]),
 	'Kazuul, Tyrant of the Cliffs': P('Toll of the Cliffs', 2, 'Summon a 2/2 Ogre with Taunt.', [{ type: 'summon', count: 1, attack: 2, health: 2, name: 'Cliff Ogre', tribe: 'Ogre', keywords: ['taunt'] }]),
 	// enemies (Rung B)
-	'Xanathar, Guild Kingpin': P('Eye Rays', 2, 'Deal 2 damage to an enemy creature.', [{ type: 'damage', value: 2, target: 'enemy-creature' }]),
-	'Karazikar, the Eye Tyrant': P('Disintegration Ray', 2, 'Deal 3 damage to an enemy creature.', [{ type: 'damage', value: 3, target: 'enemy-creature' }]),
+	'Xanathar, Guild Kingpin': P('Eye Rays', 3, 'Deal 2 damage to an enemy creature.', [{ type: 'damage', value: 2, target: 'enemy-creature' }]),
+	'Karazikar, the Eye Tyrant': P('Disintegration Ray', 3, 'Deal 3 damage to an enemy creature.', [{ type: 'damage', value: 3, target: 'enemy-creature' }]),
 	'Captain N\'ghathrod': P('Dredge the Deep', 2, 'Each opponent discards a card.', [{ type: 'enemy-discard', count: 1 }]),
 	'Zalto, Fire Giant Duke': P('Forge-Hammer', 2, 'Deal 2 damage to an enemy creature.', [{ type: 'damage', value: 2, target: 'enemy-creature' }]),
-	'Storvald, Frost Giant Jarl': P('Frost Breath', 2, 'Freeze an enemy creature.', [{ type: 'freeze', target: 'enemy-creature' }]),
-	'Ebondeath, Dracolich': P('Undying Flight', 2, 'Summon a 2/2 Wraith with Reborn.', [{ type: 'summon', count: 1, attack: 2, health: 2, name: 'Dracolich Wraith', tribe: 'Wraith', keywords: ['reborn'] }]),
+	'Storvald, Frost Giant Jarl': P('Frost Breath', 2, 'Freeze an enemy creature and deal 1 damage to it.', [{ type: 'freeze', target: 'enemy-creature' }, { type: 'damage', value: 1, target: 'enemy-creature' }]),
+	'Ebondeath, Dracolich': P('Undying Flight', 3, 'Summon a 2/2 Wraith with Reborn.', [{ type: 'summon', count: 1, attack: 2, health: 2, name: 'Dracolich Wraith', tribe: 'Wraith', keywords: ['reborn'] }]),
 	'Old Gnawbone': P('Hoard-Greed', 2, 'Gain two Coins.', [{ type: 'gain-coin', value: 2 }]),
-	'Baba Lysaga, Night Witch': P('Night Hexes', 2, 'Deal 1 damage to all enemy creatures.', [{ type: 'damage', value: 1, target: 'enemy-creatures' }]),
+	'Baba Lysaga, Night Witch': P('Night Hexes', 3, 'Deal 1 damage to all enemy creatures.', [{ type: 'damage', value: 1, target: 'enemy-creatures' }]),
 	'Jon Irenicus, Shattered One': P('Shatter the Mind', 2, 'Freeze an enemy creature and deal 1 damage to it.', [{ type: 'freeze', target: 'enemy-creature' }, { type: 'damage', value: 1, target: 'enemy-creature' }]),
 	// enemies (Rung C — the Dead Three + archfiends)
 	'Bane, Lord of Darkness': P('Iron Tyranny', 2, 'Give your creatures +1/+0.', [{ type: 'buff', attack: 1, health: 0, target: 'friendly-creatures' }]),
 	'Bhaal, Lord of Murder': P('Murder', 2, 'Deal 2 damage to an enemy creature.', [{ type: 'damage', value: 2, target: 'enemy-creature' }]),
 	'Myrkul, Lord of Bones': P('Call of Bones', 2, 'Summon a 2/2 Skeleton with Deathtouch.', [{ type: 'summon', count: 1, attack: 2, health: 2, name: 'Myrkul Skeleton', tribe: 'Skeleton', keywords: ['deathtouch'] }]),
-	'Orcus, Prince of Undeath': P('Wand of Orcus', 2, 'Summon a 2/2 Undead.', [{ type: 'summon', count: 1, attack: 2, health: 2, name: 'Risen Undead', tribe: 'Zombie' }]),
+	'Orcus, Prince of Undeath': P('Wand of Orcus', 3, 'Summon a 2/2 Undead.', [{ type: 'summon', count: 1, attack: 2, health: 2, name: 'Risen Undead', tribe: 'Zombie' }]),
 	'Acererak the Archlich': P('Delve the Tomb', 2, 'Advance (venture into the dungeon).', [{ type: 'advance' }]),
 	'Sarevok, Deathbringer': P('Deathbringer', 2, 'Give a friendly creature +2/+0 and Deathtouch.', [{ type: 'buff', attack: 2, health: 0, target: 'friendly-creature' }, { type: 'grant', keyword: 'deathtouch', target: 'friendly-creature' }]),
 	'Raphael, Fiendish Savior': P('Infernal Bargain', 2, 'Deal 1 damage to your hero and draw a card.', [{ type: 'damage', value: 1, target: 'own-hero' }, { type: 'draw', value: 1 }]),
 	// enemies (Rung D — final bosses)
-	Tiamat: P('Five Heads Roar', 2, 'Deal 1 damage to all enemy creatures.', [{ type: 'damage', value: 1, target: 'enemy-creatures' }]),
-	'Asmodeus the Archfiend': P('Ruler of the Nine Hells', 2, 'Each opponent discards a card; draw a card.', [{ type: 'enemy-discard', count: 1 }, { type: 'draw', value: 1 }]),
+	Tiamat: P('Five Heads Roar', 3, 'Deal 1 damage to all enemy creatures.', [{ type: 'damage', value: 1, target: 'enemy-creatures' }]),
+	'Asmodeus the Archfiend': P('Ruler of the Nine Hells', 3, 'Each opponent discards a card; draw a card.', [{ type: 'enemy-discard', count: 1 }, { type: 'draw', value: 1 }]),
 };
 export const powerOf = ch => HERO_POWERS[ch] || null;
 
@@ -123,6 +123,15 @@ export function seatOf(character) {
 // ── run constants ──
 export const WINS_TO_CLEAR = 12;
 export const LOSSES_TO_END = 3;
+
+// The clear headline names the foe the 12th win was actually taken from. Either rung-D boss
+// (Tiamat or Asmodeus) can close a run — losing to Tiamat and then beating Asmodeus used to
+// read "TIAMAT IS SLAIN!" (bug 1793048650433).
+export function clearHeadline(finalEnemyName) {
+	if (finalEnemyName === 'Tiamat') return `${WINS_TO_CLEAR} WINS - TIAMAT IS SLAIN!`;
+	if (finalEnemyName) return `${WINS_TO_CLEAR} WINS - ${String(finalEnemyName).toUpperCase()} IS VANQUISHED!`;
+	return `${WINS_TO_CLEAR} WINS - THE SWORD COAST IS SAVED!`;
+}
 
 // ── decks ──
 // hero deck = 10 singleton cards; enemy deck = 2 copies of each of its 15 cards (= 30).
@@ -145,8 +154,12 @@ export const rungFor = wins => (wins <= 2 ? 'A' : wins <= 6 ? 'B' : wins <= 10 ?
 export const rungLabel = wins => ({ A: 'Henchman', B: 'Lieutenant', C: 'Commander', D: 'Archfiend' }[rungFor(wins)]);
 
 // pick the next enemy from the rung for `wins`, avoiding an immediate repeat.
-export function randomEnemy(wins, rng, avoidId) {
-	let roster = enemyRosterFor(wins).filter(c => c !== avoidId);
+// `faced` = every enemy already met this run: one is never offered again while the rung
+// still has someone new (The Balrog at F10 and again at F12 — instinctgauntlet, 2026-10-25).
+export function randomEnemy(wins, rng, avoidId, faced) {
+	const seen = new Set(Array.isArray(faced) ? faced : []);
+	let roster = enemyRosterFor(wins).filter(c => c !== avoidId && !seen.has(c));
+	if (!roster.length) roster = enemyRosterFor(wins).filter(c => c !== avoidId);
 	if (!roster.length) roster = enemyRosterFor(wins);
 	return roster[Math.floor(rng() * roster.length)];
 }

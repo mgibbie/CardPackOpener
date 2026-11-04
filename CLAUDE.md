@@ -1,0 +1,138 @@
+# CardPackOpener — working notes for Claude
+
+Magepunk site: the **Pokémon overworld** web game (`overworld/`), **Battlecards**
+(`battlecards/`), and the accounts/multiplayer backend (`server/mp.mjs`, Cloudflare
+Pages Functions + a D1 database `magepunk-users`, one table `mp_store(key, value,
+updated_at)`). Cloudflare Pages deploys `main` automatically — merging IS shipping.
+
+Two big asset folders are **gitignored** and deployed to their own Pages projects:
+`overworld/data` → magepunk-owdata.pages.dev, `battlecards/art` → magepunk-cardart.pages.dev.
+A fresh clone has neither (see "start setup").
+
+## Owner rules (always)
+- Fix bugs with a **regression test**, and show it **fails with the fix reverted**.
+- Run the gate, then **merge only when the owner says** ("merge it", "merge it when the gate passes").
+- **Never wipe, reset or migrate a save** without a backup and rollback. Never edit a
+  playtester's live save (`ow:<user>`) directly: repairs go to the player as an in-game
+  offer (`repair-send`; they press Z, which runs `importSave` with its stale-revision guard).
+- D1: reads of the playtest accounts (saves, presence, runs, the `err:<date>` rollup,
+  `bug:`/`repair:` rows) are pre-approved for monitoring. Any **write** touches only exact
+  keys, guarded (compare-and-delete), never a bulk wipe.
+- **Never log credentials or secrets.**
+- If the system kills a gate for low memory, wait 1 minute and retry it with `--resume` (one background command: `sleep 60; node overworld/tests/run-all.mjs [--changed] --resume`). Other background jobs: report, don't restart.
+- Worktrees: if `overworld/data` / `node_modules` are junctions/symlinks into the main
+  checkout, remove the LINK first (non-recursive) and verify it is gone; never
+  `git worktree remove --force` while a link remains — it deletes the target's contents.
+
+## The gate
+- **CI gate (the default)**: `.github/workflows/gate.yml` runs on every PR, every push to main
+  and nightly. One check, **`gate`**, is green only when every part passed: the overworld
+  gate sharded over up to 16 runners (2 suites at a time each), the Battlecards node suite
+  and the undefined-name lint. A PR runs the QUICK selection against its base; main, nightly
+  and a manual run (Actions → Gate → Run workflow) run FULL. A PR gets the FULL gate with `[full gate]` in its title
+  (or a `full-gate` label). Wait on it with
+  `gh pr checks <n> --watch`; a failing shard's log (and screenshots) is an artifact
+  (`gh run view <id> --log-failed`). The assets come from their Pages projects by the
+  manifests in `tools/cloud/` (cached; a manifest change refetches). No secrets.
+- Quick (per change): `node overworld/tests/run-all.mjs --changed` — the selected suites +
+  the smoke set + the touched game's lane smoke (`LANES` in `select-changed.mjs`). FULL only
+  when the change reaches shared boot code: `overworld/ow_core.js` code (not comments),
+  `ow_state.js` beyond `field: undefined` lines, a boot `<script>`/import map/modulepreload in
+  `overworld/index.html` (CSS, markup and `/site/` helper tags are quick), a dependency version.
+- Full: `node overworld/tests/run-all.mjs` (~2 h serial here, ~380 suites — let CI do it).
+  After an interruption: add `--resume`. Failures are retried alone at the end; "FLAKY
+  (failed, then passed alone)" is a pass.
+- `--shard i/n` runs one CI shard's slice locally (split by the committed
+  `overworld/tests/gate-timings.json`; refresh it with `node overworld/tests/gate-shard.mjs
+  --update <gate logs>`); `--lane micatro` runs one game's suites; `--list-json` prints the plan.
+  A new game: append a row to `LANES` (its paths, suite-name pattern, 1-3 boot suites).
+- Battlecards engine tests: `npm test` (`battlecards/tests/run-all.mjs`).
+- Tests need a Chrome (`CHROME`, or `/opt/chrome/chrome` after cloud setup) and `overworld/data`
+  (micasurvivor/micatro suites also serve their gitignored assets: `node tools/cloud/fetch-assets.mjs`;
+  after deploying new ones, `--write-manifest`).
+
+## Balance simulator (Lorequest run modes)
+`node tools/runmode-sim.mjs --mode=<lorequest|middleearth|swordcoast|finalfantasy|multiverse> [--rung=A|B|C|D] [--games=10]`
+plays every hero against every enemy in a rung with the game's own AI on both seats and prints the
+hero win rate against each enemy (later rungs grow the hero's deck with the run's own rewards).
+Trust it for ranking ENEMIES (calibrated against tester replays), not heroes. Try a change first
+with `--overrides=trial.json`; find a deck's key cards with `node tools/runmode-ablate.mjs`.
+Owner rules: a nerf is +1 mana by default; a buff never lowers a mana cost. Pin every balance
+change with a regression test.
+
+## "check on the testers"
+`node tools/playtest-digest.mjs` (SELECT-only) diffs the playtest accounts (the default
+`MP_BUG_REPORTERS` list in `server/mp.mjs`) against the last snapshot and writes
+`Desktop/playtest-reports/<date>.md` (on a cloud session: just read its stdout).
+Investigate its ⚠ items. Message a tester via their bell: the `chat:dm:<user>` row
+(append `{from:'mgibbie', text≤140, emote:null, ts}` guarded on the row's length).
+Micatro **refused actions** (what a tester tried that the game refused — the run recipe only keeps what worked; read-only
+monitoring is pre-approved): `SELECT key, value FROM mp_store WHERE key LIKE 'refused:<user>:%'` (one row per UTC day,
+`refused:<user>:<YYYYMMDD>`, the last 200 `{ts, at, runId, ante, round, state, action, card, area, hl, targets, max, min, reason, ver, n}`;
+swept after 30 days). Written by `micatro/js/refusedlog.js` (signed-in players only).
+
+## "do the bug report review list"
+1. Read: `npx wrangler d1 execute magepunk-users --remote --json --command "SELECT key, value FROM mp_store WHERE key LIKE 'bug:%'"`
+2. Fix each (regression test, fails-reverted), gate, merge when told.
+3. Mark done by **exact key**: `DELETE FROM mp_store WHERE key IN ('bug:<ts>-<user>', …)`.
+
+## "do the internal to do list"
+1. Read the owner's card notes: `SELECT length(value) AS n, value FROM mp_store WHERE key='owner_todo'`
+   (entries `{ts, cardId, cardName, text}`).
+2. Apply each to `battlecards/cards.json` (minified — edit with a node script by object
+   reference; re-read the touched ids after writing). Add
+   `battlecards/tests/regression/owner_todo_cards<N>_test.mjs` (next free N) that FIRES the
+   changed effects; it must fail on the old cards.json.
+3. `node tools/pull-live-tuning.mjs` (folds live art/tuning overrides; commit + `npm run deploy-art` if it pulled images).
+4. Clear only what you applied: re-read `length(value)`, then
+   `DELETE FROM mp_store WHERE key='owner_todo' AND length(value)=<n>` (a note filed meanwhile changes the length, so the delete no-ops).
+Card text conventions: keywords alphabetical, `A, B & C.`; a spell's school is its `tribe`;
+"Luck:" = coin flip `{type:'luck', effects}`; Red/Green/... card pools = `landSet` Mountain/Forest/....
+
+## "do the joker design list"
+**Before designing or pitching ANY Pokermon joker** (the owner's requests, the wiki list, a rework): read
+`micatro/mods/pokermon/DESIGN_GUIDE.txt` first: the systems primer (rarity/cost slots, evolution timers, what Energy
+scales), the section for the joker's type (identity, typical numbers by stage, under-explored space, pitfalls), and the
+quick-reference table. Pitch within those conventions and say where a design departs from them. Keep the guide current: when
+a design adds a new pattern (e.g. Energy raising a cap), add it there.
+The owner designs NEW Pokermon jokers on the wiki: every canonical Pokémon with no joker in Pokermon / Nacho /
+Pokermon+ has a card at `designwiki/#/pokermon-jokers/<dex>` with an owner-only "Submit design" box.
+1. Read the designs: `SELECT length(value) AS n, value FROM mp_store WHERE key='owner_todo:jokers'`
+   (entries `{ts, dex, name, ability, rarity, cost, notes}`; the wiki card has the type / stage / line and the art).
+2. Implement each as a joker in the Pokermon mod (`micatro/mods/pokermon/`, ported like its other jokers: ptype, stage,
+   rarity, cost, the ability). Art: the species' `art` in designwiki/data/pokermon_jokers.json says whether Pokermon 3.9.1 already
+   draws it (`source: 'upstream'`, the recipe names the sheet + cell from tools/micatro/specs/pokermon_391_sprite_table.json —
+   on 2026-10-27 all 409 listed species were upstream): then use that 3.9.1 cell (`poke_sprite391`, jokers/pokejokers_designs.js) and there is
+   nothing to deploy. Only where upstream has none: the composed `designwiki/sprites/pokermon_jokers/<dex4>.png` + `_shiny.png`, copied
+   into the gitignored `micatro/mods/pokermon/assets/2x/` and registered in `ATLAS_FILES` (as Rage Candy Bar), then
+   `npm run deploy-micatro-mods` (+ `node tools/cloud/fetch-assets.mjs --write-manifest`). Add a micatro test that PLAYS
+   the ability.
+3. `node tools/micatro/gen_designwiki_pokermon_jokers.mjs` — the species drops off the wiki list (`designwiki_pokermon_jokers_test`
+   fails until it does), then redeploy the wiki art: `npx wrangler pages deploy designwiki/sprites --project-name=magepunk-sprites --branch=cloudflare-migration --commit-dirty=true`.
+4. Clear only what you applied: re-read `length(value)`; all applied →
+   `DELETE FROM mp_store WHERE key='owner_todo:jokers' AND length(value)=<n>`; some → POST `{action:'joker-design-done', tsList:[…]}`
+   with the owner's token (exact timestamps). A design filed meanwhile changes the length, so the delete no-ops.
+
+## "start setup" — a cloud session readies itself (the owner types this, often from the iPhone app)
+Do ALL of it without asking questions; keep replies phone-short.
+1. `bash tools/cloud/setup.sh` (background; ~4 min; idempotent): npm install, Chrome at
+   `/opt/chrome/chrome` (the gate runners and the doctor use it automatically), and the
+   gitignored `overworld/data` from magepunk-owdata.pages.dev.
+2. `node tools/cloud/doctor.mjs`, then fix what it reports yourself:
+   - **Chrome won't launch** — `ldd /opt/chrome/chrome | grep "not found"`, `apt-get install -y`
+     those libraries; or `apt-get install -y chromium` and `ln -sf "$(command -v chromium)" /opt/chrome/chrome`.
+   - **Downloads fail** (npm, Chrome, or overworld/data) — the environment's network access
+     blocks the host. The owner's fix: set the environment's **Network access to Full**.
+   - **D1 fails, no `CLOUDFLARE_API_TOKEN`** — the one thing only the owner can do. Tell them,
+     in these 3 lines (never ask them to paste the token into the chat):
+     1. Cloudflare → My Profile → API Tokens → Create Token → Custom: **Account · D1 · Edit**, their account only.
+     2. This environment's settings → Environment variables → `CLOUDFLARE_API_TOKEN=<token>`.
+     3. Start a new session and type "start setup" again.
+   - **gh not authenticated** — report it (cloud sessions normally have it).
+3. Re-run the doctor. When it prints "all good", reply: "Ready — gate, testers, bug list and to-do list all work here."
+
+Cloud notes: background commands stop at 30 min, so run the full gate as `run-all.mjs`, then
+`run-all.mjs --resume` until it finishes. Each new cloud session starts fresh: "start setup"
+again (or put `bash tools/cloud/setup.sh` in the environment's setup script so it's cached).
+After adding files to `overworld/data` (and deploying them to magepunk-owdata), refresh the
+list with `node tools/cloud/fetch-owdata.mjs --write-manifest`.

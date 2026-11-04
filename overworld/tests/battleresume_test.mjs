@@ -16,6 +16,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { overworldSource } from './owsource.mjs';   // main.js + the modules split out of it
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '../../');
@@ -29,7 +30,7 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 	A(/snapshot\(\) \{/.test(bt) && /applyRestore\(snap\) \{/.test(bt), 'battle.js grows snapshot/applyRestore');
 	A(/turns === Infinity \? 'inf'/.test(bt) && /'inf' \? Infinity/.test(bt), "endless map weather survives JSON (the Infinity trap)");
 	A(/this\.endSpec = null;   \/\/ main\.js/.test(bt), 'a finished battle clears its resume tag');
-	const main = fs.readFileSync(path.join(ROOT, 'overworld/main.js'), 'utf8');
+	const main = overworldSource();
 	for (const kind of ['wild', 'trainer', 'strainer', 'legendary', 'villain', 'rivaltier', 'rivalintro']) {
 		A(new RegExp(`kind: '${kind}'`).test(main), `the '${kind}' ending is tagged and reconstructable`);
 	}
@@ -49,8 +50,12 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 	].find(p => fs.existsSync(p));
 	const PORT = 8968;
 	const STATE = { username: 'smoke', friendCode: 'SMOKEE', decks: [], collection: {}, packs: 0, packInbox: 0, stats: { runs: 0, wins: 0 } };
+	// ability pinned: left unset, the game rolls one of RATTATA's, and HUSTLE (0.8x
+	// physical accuracy) made a Tackle miss in ~36% of runs, failing the
+	// "move after move" check with 0 damage ("LEAD's attack missed!"). GUTS is
+	// inert unless the mon is statused.
 	const PARTY = [{
-		speciesId: 'rattata', name: 'LEAD', level: 40, gender: 'M', friend: 70, types: ['Normal'],
+		speciesId: 'rattata', name: 'LEAD', level: 40, gender: 'M', friend: 70, types: ['Normal'], ability: 'guts',
 		ivs: { hp: 15, atk: 15, def: 15, spa: 15, spd: 15, spe: 15 },
 		stats: { hp: 120, atk: 90, def: 90, spa: 90, spd: 90, spe: 90 }, maxHP: 120, curHP: 120,
 		exp: 64000, moves: [{ id: 'tackle', name: 'Tackle', pp: 35, maxPp: 35 }], sprite: 's608.png', num: 19,
@@ -82,6 +87,8 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 		await page.evaluateOnNewDocument((st, party) => {
 			if (localStorage.getItem('magepunk_mp_token_v1')) return;
 			localStorage.setItem('magepunk_mp_token_v1', 'smoke-token');
+			// instant text + no battle animations: this suite checks outcomes, not pacing
+			localStorage.setItem('magepunk_settings', JSON.stringify({ textSpeed: 'instant', battleAnim: 'off' }));
 			localStorage.setItem('magepunk_mp_state_v1', JSON.stringify(st));
 			localStorage.setItem('magepunk_party_v1', JSON.stringify(party));
 			localStorage.setItem('magepunk_region', 'JOHTO');
@@ -126,6 +133,8 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 		const twoMoves = await page.evaluate(async () => {
 			const ow = window.__ow; const b = ow.battle; const a = b.active;
 			a.foe.maxHP = 4000; a.foe.curHP = 4000; a.foeShownHP = 4000;   // outlive both moves
+			const log = [], orig = b.pushMsg.bind(b);
+			b.pushMsg = (t, fn) => { if (t) log.push(t); return orig(t, fn); };   // what the battle said
 			const key = k => dispatchEvent(new KeyboardEvent('keydown', { key: k }));
 			const wait = ms => new Promise(r => setTimeout(r, ms));
 			const move = async () => {
@@ -137,7 +146,9 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 			const d1 = await move();
 			await wait(1800);          // let the snapshot tick run between moves
 			const d2 = await move();
-			return { d1, d2, phase: a.phase };
+			// on a 0, say why: the lead's ability, and what the battle log said
+			b.pushMsg = orig;
+			return { d1, d2, phase: a.phase, ability: a.me.ability, msgs: log.slice(-10) };
 		});
 		A(twoMoves.d1 > 0 && twoMoves.d2 > 0 && twoMoves.phase === 'menu',
 			'a resumed battle takes move after move (the one-move lock is dead)', JSON.stringify(twoMoves));

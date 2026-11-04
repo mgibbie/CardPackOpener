@@ -212,9 +212,23 @@ function magnetizeTarget(state, pi, card) {
 
 // One AI action per call so the renderer can animate between steps.
 // Returns true if it acted, false when it wants to end the turn.
+// A turn that never ends freezes the game for the player watching it. A card loop
+// can do that — Bill Ferny's Fateful Discovery ("whenever you cast a spell, gain a
+// Coin") met the Coin, a spell, and the AI played Coins forever (2026-10-13, found by
+// the run-mode simulation: 116 of 200 Bill Ferny fights never ended). Past this many
+// voluntary actions in one turn the AI ends it; forced decisions are still answered.
+export const AI_TURN_ACTION_CAP = 200;
+const turnActions = new WeakMap();   // state -> { key, n }; kept off the state so snapshots never carry it
+
 export function step(state, pi = 1) {
 	if (state.over || state.current !== pi || state.players[pi].eliminated) return false;
 	const p = state.players[pi];
+	if (!E.hasPendingDecision(state, pi)) {
+		const key = state.turnNumber + ':' + pi;
+		let t = turnActions.get(state);
+		if (!t || t.key !== key) { t = { key, n: 0 }; turnActions.set(state, t); }
+		if (++t.n > AI_TURN_ACTION_CAP) return false;
+	}
 
 	// -1. resolve any pending scry/gaze this seat owes a decision on:
 	// keep own affordable cards, bury the enemy's best
@@ -279,6 +293,15 @@ export function step(state, pi = 1) {
 			E.resolvePick(state, state.players[pi].lands?.some(l => l.tapped) ? '0' : '1');
 			return true;
 		}
+		if (pend.mode === 'transform-into') {
+			// Tribute Dance: grow our own creature into the strongest body; shrink a foe's into the weakest
+			const all = state.players.flatMap(p => p.board);
+			const t = all.find(c => c.uid === pend.targetUid);
+			const power = id => { const c = all.find(x => x.uid === id); return c ? c.attack + E.hp(c) : 0; };
+			const sorted = [...pend.ids].sort((a, b) => power(b) - power(a));
+			E.resolvePick(state, t && t.controller === pi ? sorted[0] : sorted[sorted.length - 1]);
+			return true;
+		}
 		if (pend.mode === 'tempt') {
 			// bear the Ring on your biggest threat — its Attack drives the L2 loot + L4 burn
 			const board = state.players[pi].board;
@@ -311,18 +334,23 @@ export function step(state, pi = 1) {
 
 	// -1e. tap {T} artifacts whose ability is armed (e.g. Detective's Satchel after a Clue sac)
 	for (const a of [...p.artifacts]) {
-		if (!a.tapAbility || !E.canTapArtifact(state, pi, a.uid)) continue;
-		const spec = E.tapArtifactSpec(state, pi, a.uid);
-		let target = null;
-		if (spec && spec.required) {
-			const legal = E.legalTargets(state, pi, spec);
-			if (!legal.length) continue;
-			// score the target like a spell's (helpful → ours, harmful → their biggest)
-			target = pickFromLegal(state, pi, a.tapAbility.effects, legal)
-				|| pickTarget(state, pi, { id: a.id + ':tap', type: 'sorcery', effects: a.tapAbility.effects || [] })
-				|| legal[Math.floor(state.rng() * legal.length)];
+		const abs = E.artifactTaps(a);
+		// several {T} abilities: the first one that can fire (order = the card's)
+		for (let i = 0; i < abs.length; i++) {
+			const ab = abs[i];
+			if (!E.canTapArtifact(state, pi, a.uid, i)) continue;
+			const spec = E.tapArtifactSpec(state, pi, a.uid, i);
+			let target = null;
+			if (spec && spec.required) {
+				const legal = E.legalTargets(state, pi, spec);
+				if (!legal.length) continue;
+				// score the target like a spell's (helpful → ours, harmful → their biggest)
+				target = pickFromLegal(state, pi, ab.effects, legal)
+					|| pickTarget(state, pi, { id: a.id + ':tap', type: 'sorcery', effects: ab.effects || [] })
+					|| legal[Math.floor(state.rng() * legal.length)];
+			}
+			if (E.tapArtifact(state, pi, a.uid, target, i)) return true;
 		}
-		if (E.tapArtifact(state, pi, a.uid, target)) return true;
 	}
 
 	// -1b. unmask disguised creatures worth their cost
@@ -630,4 +658,48 @@ export function step(state, pi = 1) {
 	}
 
 	return false; // nothing left to do
+}
+
+// Instant-speed decision for a seat holding priority (moved here from game.js so the
+// run-mode simulator answers priority exactly like the game does).
+// value-driven instant-speed decision: counter worthwhile spells, blow out an attack
+// by killing the attacker, remove a real threat — always with the cheapest source.
+export function chooseResponse(state, pi) {
+	const p = state.players[pi];
+	const top = E.pendingSpellFor(state, pi);
+	const crHp = c => c.maxHealth - (c.damage || 0);
+	const dmgOf = fx => (fx || []).filter(e => e.type === 'damage' && (e.target === 'creature' || e.target === 'any')).reduce((a, e) => a + (e.value || 0), 0);
+
+	// 1) counter a spell that is expensive, or aimed at us
+	const counters = E.counterOptions(state, pi);
+	if (counters.length && top && top.kind === 'spell') {
+		const cost = top.card.cost || 0, t = top.target;
+		if (cost >= 3 || (t && t.player === pi && cost >= 1)) return { kind: 'spell', uid: counters[0].uid };
+	}
+
+	// gather my instant-speed damage sources (instants + creature abilities), cheapest first
+	const sources = [];
+	for (const c of E.responseOptions(state, pi)) { const d = c.counterSpell ? 0 : dmgOf(c.effects); if (d > 0) sources.push({ act: { kind: 'spell', uid: c.uid }, dmg: d, cost: E.effectiveCost(state, pi, c) }); }
+	for (const c of [...p.board, ...p.enchantments]) if (c.activated) c.activated.forEach((a, i) => { if (E.canActivate(state, pi, c, i)) { const d = dmgOf(a.effects); if (d > 0) sources.push({ act: { kind: 'ability', uid: c.uid, index: i }, dmg: d, cost: a.cost || 0 }); } });
+	sources.sort((a, b) => a.cost - b.cost || a.dmg - b.dmg);
+	const killer = need => sources.find(s => s.dmg >= need);
+
+	// 2) defending an attack: kill the attacker to blow out the swing
+	if (top && top.kind === 'attack') {
+		let atkr = null;
+		for (const o of state.players) if (o !== p) { const c = o.board.find(x => x.uid === top.attackerUid); if (c) atkr = c; }
+		if (atkr) { const s = killer(crHp(atkr)); if (s) return { ...s.act, target: { type: 'creature', uid: atkr.uid } }; }
+	}
+
+	// 3) kill the biggest worthwhile enemy creature we can
+	let best = null;
+	for (const o of state.players) if (o !== p) for (const cr of o.board) {
+		if (cr.type !== 'creature') continue;
+		const worth = cr.attack + cr.maxHealth;
+		if (worth < 5) continue;
+		const s = killer(crHp(cr));
+		if (s && (!best || worth > best.worth)) best = { act: s.act, uid: cr.uid, worth };
+	}
+	if (best) return { ...best.act, target: { type: 'creature', uid: best.uid } };
+	return null; // hold priority
 }

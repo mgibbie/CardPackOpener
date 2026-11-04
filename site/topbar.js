@@ -14,6 +14,7 @@
 // All server calls go through the existing /api/mp backend via mpmode.js, using
 // the same action signatures the Overworld already uses, so the flow is proven.
 import * as MP from '/battlecards/mpmode.js';
+import { watchHref, micatroActivityLabel } from '/site/livewatch.js';
 
 const CARD_DUEL = id => '/battlecards/?cardpvp=' + encodeURIComponent(id) + '&mp=1';
 const SEEN_KEY = 'mp_inbox_seen_v1';
@@ -25,6 +26,21 @@ const fmtDur = ms => { ms = Math.max(0, ms); const s = Math.floor(ms / 1000); co
 const $ = (sel, root = document) => root.querySelector(sel);
 const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
 const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+// ---------- direct messages ----------
+// A DM to <name> lands in their own inbox room `dm:<name>` (the server lets a
+// friend or the owner post there; anyone but <name> reading it sees only their
+// own messages). Older messages sat in the `u:<name>` live-chat room, so the
+// inbox reads both.
+async function fetchInbox(me) {
+	if (!me) return { messages: [] };
+	const [dm, legacy] = await Promise.all([
+		MP.call('chat-get', { room: 'dm:' + me }).catch(() => ({ messages: [] })),
+		MP.call('chat-get', { room: 'u:' + me }).catch(() => ({ messages: [] })),
+	]);
+	const all = [...(dm.messages || []), ...(legacy.messages || []).filter(m => m.from !== me)];
+	return { messages: all.sort((a, b) => (a.ts || 0) - (b.ts || 0)) };
+}
 
 // ---------- styles (injected once) ----------
 function injectStyles() {
@@ -281,13 +297,15 @@ async function fetchNewsLatest() {
 function badgeCount() {
 	return (state.challenges?.length || 0) + (state.unread || 0) + ((state.packInbox || 0) > 0 ? 1 : 0) + claimableQuests() + streakClaimable() + (featuredClaimable() ? 1 : 0) + (newsUnseen() ? 1 : 0);
 }
+let pollFails = 0;   // consecutive polls whose challenges call failed: the cadence backs off
 async function poll() {
 	if (!MP.hasToken()) return;
 	fetchNewsLatest().then(() => setBadge(badgeCount())); // once per page life
+	let failed = false;
 	try {
 		const [ch, msg, pk, qs] = await Promise.all([
-			MP.call('challenges').catch(() => ({ challenges: [] })),
-			MP.call('chat-get', { room: 'u:' + (MP.cachedState()?.username || '') }).catch(() => ({ messages: [] })),
+			MP.call('challenges').catch(() => { failed = true; return { challenges: [] }; }),
+			fetchInbox(MP.cachedState()?.username || '').catch(() => ({ messages: [] })),
 			MP.call('pack-timer').catch(() => null),
 			MP.call('quests').catch(() => null),
 		]);
@@ -297,7 +315,19 @@ async function poll() {
 		applyPackTimer(pk);
 		if (qs) { state.quests = qs.quests || []; state.questReset = qs.resetsInMs; state.streak = qs.streak || null; }
 		setBadge(badgeCount());
-	} catch (e) {}
+	} catch (e) { failed = true; }
+	pollFails = failed ? pollFails + 1 : 0;
+}
+// The inbox badge's cadence. Each poll is FOUR function calls, on every open page
+// of the site; at every 12s, hidden or not, that was ~1,200 requests an hour per
+// tab, a big share of the 100,000/day that ran out on the free Cloudflare plan
+// (2026-09-24: the API answered 405 for the rest of the day). Now 30s while the
+// page is visible, nothing while it's hidden (a tab brought back polls at once),
+// and x2 back-off per consecutive failure, up to 5 minutes.
+function schedulePoll() {
+	clearTimeout(pollTimer);
+	const wait = Math.min(300_000, 30_000 * 2 ** Math.min(pollFails, 4));
+	pollTimer = setTimeout(async () => { if (!document.hidden) await poll(); schedulePoll(); }, wait);
 }
 
 // ---------- inbox panel ----------
@@ -368,12 +398,11 @@ function closeInbox() {
 }
 
 async function refreshData() {
-	const room = 'u:' + (state.me || '');
 	try {
 		const [ch, fr, msg, pk, qs] = await Promise.all([
 			MP.call('challenges').catch(() => ({ challenges: [] })),
 			MP.call('friends').catch(() => ({ friends: [] })),
-			MP.call('chat-get', { room }).catch(() => ({ messages: [] })),
+			fetchInbox(state.me || '').catch(() => ({ messages: [] })),
 			MP.call('pack-timer').catch(() => null),
 			MP.call('quests').catch(() => null),
 		]);
@@ -606,6 +635,9 @@ async function addFriend(raw) {
 // Overworld heartbeat / the card client's publish-cardstate):
 //   battling:<matchId> → in a Pokémon battle (spectate via the Overworld)
 //   card:<mode>        → in a card duel / run (spectate on the Battlecards page)
+//   factory:<label>    → a Battle Frontier run (spectate in the Overworld)
+//   micatro:<label>    → a Micatro run (spectate on /micatro/); routing: site/livewatch.js
+//   micasurvivor:run   → a MicaSurvivor run (watch on /micasurvivor/?watch=; the server's `friends` sets it from the run beacon)
 const CARD_MODE_LABEL = { dungeon: 'a Dungeon run', pvp: 'a card duel', battle: 'a card battle', heist: 'a Heist run', tombs: 'a Tombs run', duels: 'a Duels run', arena: 'an Arena run', lorequest: 'a Lorequest run', middleearth: 'a Middle-earth run', swordcoast: 'a Sword Coast run', finalfantasy: 'a Final Fantasy run', multiverse: 'a Multiverse run' };
 function friendActivity(f) {
 	const st = f.status || '';
@@ -617,14 +649,18 @@ function friendActivity(f) {
 		const detail = f.region && !/^card (battle|duel)$/i.test(f.region) ? ' · ' + f.region : '';
 		return { live: true, kind: 'card', label: base + detail };
 	}
+	if (st.startsWith('factory:')) return { live: true, kind: 'factory', label: 'in the ' + (f.region || st.slice('factory:'.length) || 'Battle Frontier') };
+	if (st.startsWith('micatro:')) return { live: true, kind: 'micatro', label: micatroActivityLabel(f.region || st.slice('micatro:'.length)) };
+	if (st === 'micasurvivor:run') return { live: true, kind: 'micasurvivor', label: 'in a MicaSurvivor run' + (f.region && !/^micasurvivor$/i.test(f.region) ? ' · ' + f.region : '') };
 	if (st.startsWith('visiting:')) return { live: false, kind: null, label: 'exploring' };
 	return { live: false, kind: null, label: isOnline(f) ? 'online' : 'offline' };
 }
 // route to the right spectator view for a live friend
 function watchFriend(f) {
 	const act = friendActivity(f);
-	if (act.kind === 'pokemon') { if (!act.matchId) { toast('Their battle just ended.'); return; } location.href = '/overworld/?mp=1&watch=' + encodeURIComponent(act.matchId); }
-	else if (act.kind === 'card') location.href = '/battlecards/?spectate=' + encodeURIComponent(f.username) + '&mp=1';
+	const href = act.kind ? watchHref({ username: f.username, kind: act.kind, matchId: act.matchId }) : null; // site/livewatch.js
+	if (href) location.href = href;
+	else if (act.kind === 'pokemon') toast('Their battle just ended.');
 	else toast(f.username + ' isn\'t in a battle right now.');
 }
 // While the Friends tab is open, re-poll presence so a friend going live (or a
@@ -722,12 +758,12 @@ function renderMessages(body) {
 }
 
 // ----- a single DM thread -----
-// A conversation lives in two rooms: messages the friend sent me are in u:<me>,
-// messages I sent are in u:<other> (both readable by both friends). Merge them.
+// A conversation lives in two inboxes: what the friend sent me is in dm:<me>,
+// what I sent is in dm:<other> (the server shows me only my own messages there).
 async function loadThread(other) {
 	const [mine, theirs] = await Promise.all([
-		MP.call('chat-get', { room: 'u:' + state.me }).catch(() => ({ messages: [] })),
-		MP.call('chat-get', { room: 'u:' + other }).catch(() => ({ messages: [] })),
+		fetchInbox(state.me).catch(() => ({ messages: [] })),
+		MP.call('chat-get', { room: 'dm:' + other }).catch(() => ({ messages: [] })),
 	]);
 	state.inbox = mine.messages || state.inbox; // keep the badge/preview source fresh
 	const incoming = (mine.messages || []).filter(m => m.from === other).map(m => ({ ...m, dir: 'them' }));
@@ -754,7 +790,8 @@ function renderThread(body, other) {
 		const text = input.value.trim(); if (!text) return;
 		input.value = '';
 		try {
-			await MP.call('chat-post', { room: 'u:' + other, text });   // lands in the friend's inbox room
+			const r = await MP.call('chat-post', { room: 'dm:' + other, text });   // lands in the friend's DM inbox
+			if (!r || r.error) throw new Error(r && r.error);
 			(state.threadMsgs = state.threadMsgs || []).push({ from: state.me, text, ts: Date.now(), dir: 'me' }); // optimistic echo
 			renderThread(body, other);
 		} catch { toast('Could not send.'); }
@@ -919,6 +956,7 @@ function analyticsLabel() {
 		return 'bc';
 	}
 	if (p.includes('/overworld')) return q.has('battle') ? 'ow:battle' : q.has('watch') ? 'ow:spectate' : 'overworld';
+	if (p.includes('/micatro')) return q.has('spectate') ? 'micatro:spectate' : 'micatro';
 	if (p.includes('/collection')) return 'collection';
 	if (p.includes('/designwiki')) return 'wiki';
 	if (p.includes('/learn')) return 'learn';
@@ -962,8 +1000,8 @@ function start() {
 	sendHit(); // count this page open (fires for logged-out visitors too)
 	if (!MP.hasToken()) return;
 	poll();
-	pollTimer = setInterval(poll, 12000);
-	document.addEventListener('visibilitychange', () => { if (!document.hidden) poll(); });
+	schedulePoll();
+	document.addEventListener('visibilitychange', () => { if (!document.hidden) { poll(); schedulePoll(); } });
 }
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
 else start();

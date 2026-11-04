@@ -14,6 +14,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { overworldSource } from './owsource.mjs';   // main.js + the modules split out of it
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '../../');
@@ -32,7 +33,7 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 	A(/healblock: \{ healBlock: true \}/.test(bt) && /electrify: \{ electrifyTarget: true \}/.test(bt) && /iondeluge: \{ ionDeluge: true \}/.test(bt),
 		'HEAL BLOCK / ELECTRIFY / ION DELUGE are no longer noops');
 	A(/delete mon\.healBlockTurns/.test(bt) && /delete mon\.electrified/.test(bt), 'the new volatiles clear on switch/battle-end');
-	const mn = fs.readFileSync(path.join(ROOT, 'overworld/main.js'), 'utf8');
+	const mn = overworldSource();
 	A(/followMini/.test(mn) && /data\/pokemon_follow\/\$\{base\}/.test(mn), 'followers fall back: base-form sheet, then battle-sprite mini');
 }
 
@@ -101,6 +102,13 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 			for (let i = 0; i < 200; i++) { const a = b.active; if (a && a.phase === 'menu') break; await wait(60); }
 			const a = b.active;
 			a.foe.maxHP = 4000; a.foe.curHP = 4000; a.foeShownHP = 4000;
+			// Pin the dice. Tackle is 95% accurate, so 'a normal Tackle hits' missed ~1 run
+			// in 20; and a wild DIGLETT may roll ARENA TRAP, or the speed-weighted flee
+			// roll may fail, and the one tryRun below then never ends the battle, so the
+			// volatiles-clear check read a battle still in progress.
+			const R = Math.random;
+			Math.random = () => 0.5;   // every accuracy check passes; mid damage rolls
+			a.foe.ability = null;      // no ARENA TRAP pinning the player in
 			const o = {};
 			const cast = async (user, target, id, isFoe) => {
 				const mv = { id, name: id, pp: 10, maxPp: 10 };
@@ -134,8 +142,10 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 			o.delugeTackleBlocked = a.foe.curHP === hp3;
 			await cast(a.me, a.foe, 'watergun', false);
 			o.waterStillHits = a.foe.curHP < hp3; // non-Normal moves are untouched
+			Math.random = () => 0;     // the flee roll succeeds
 			b.startQueue(() => b.tryRun());
 			for (let i = 0; i < 150 && b.active; i++) await wait(60);
+			Math.random = R;
 			o.cleared = ow.party[0].healBlockTurns === undefined && ow.party[0].electrified === undefined;
 			return o;
 		});

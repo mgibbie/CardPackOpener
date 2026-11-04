@@ -5,6 +5,38 @@
 //   MapCollision.lua-> grid collision bits, behaviors, ledges
 //   Player.lua      -> grid movement @120px/s, 9-frame sprite, walk anim
 
+import { metatileId } from './metatile_labels.js';
+import { LOCKED_WARPS } from './locked_warps_data.js';
+import { DEAD_WARPS } from './crystal_dead_warps_data.js';
+// a script-lockable warp cell's value as its LAYOUT ships it, captured the first
+// time the layout object is seen (before any setmetatile reaches it): the bundle
+// cache and the shared JSON keep a closed door closed across visits, which the GBA
+// never does (it reloads every map from ROM), see World.restoreLockedCells
+const LOCKED_PRISTINE = new WeakMap();   // layout object -> Map('x,y' -> value)
+function captureLockedPristine(name, layout) {
+	const cells = LOCKED_WARPS[name];
+	if (!cells || !layout?.map || LOCKED_PRISTINE.has(layout)) return;
+	const m = new Map();
+	for (const c of cells) { const [x, y] = c.split(',').map(Number); const v = layout.map[y]?.[x]; if (v != null) m.set(c, v); }
+	LOCKED_PRISTINE.set(layout, m);
+}
+// A decomp script boolean -> true / false / null. Scripts write TRUE/FALSE
+// (symbolic), 1/0, or real booleans; null/undefined means "not given" (callers
+// keep their default). NEVER Boolean(v) / !!v: the string "FALSE" is truthy.
+// Anything else is not a boolean the scripts use: warn and treat it as not given.
+export function scriptBool(v, what = 'script boolean') {
+	if (v == null) return null;
+	if (typeof v === 'boolean') return v;
+	if (typeof v === 'number') return v !== 0;
+	if (typeof v === 'string') {
+		const t = v.trim().toUpperCase();
+		if (t === 'TRUE' || t === '1') return true;
+		if (t === 'FALSE' || t === '0') return false;
+	}
+	console.warn('[' + what + '] not a boolean:', v);
+	return null;
+}
+
 export const TILE = 8, META = 16;
 // The logical view. 240x160 is the GBA window; portrait phones open the
 // vertical view (main.js fitCanvas drives this through setViewSize). These are
@@ -26,6 +58,16 @@ const METATILE_MASK = 0x3FF, COLLISION_MASK = 0x0C00, BEHAVIOR_MASK = 0x1FF;
 // A map-grid cell is one u16: metatile id | collision | elevation. The editor
 // needs to take it apart and put it back together, so the layout is public.
 export const GRID = { METATILE: METATILE_MASK, COLLISION: COLLISION_MASK, ELEVATION: 0xF000, ELEVATION_SHIFT: 12 };
+// FRLG/Emerald object ELEVATION (event_object_movement.c). Two objects interact
+// (collide, see each other, talk) only at compatible elevations — 0 and 15 (the
+// multi-level cells under a bridge) are compatible with anything — and an
+// object's draw priority comes from its elevation: 1 (and 0) sit ABOVE the map's
+// top layer, 2 below it. Victory Road 1F's trainers stand at elevation 3 UNDER the
+// bridge; ignoring this, they walled the bridge deck above them and were drawn
+// under its top layer (playtest 2026-10-12, Instinct).
+export const elevCompatible = (a, b) => !a || !b || a === 15 || b === 15 || a === b;
+const ELEV_PRIORITY = [2, 2, 2, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 0, 0, 2];
+export const drawsAboveTop = e => (ELEV_PRIORITY[(e | 0) & 15] ?? 2) < 2;
 // how many metatiles this tileset pair can address (palette size for the editor)
 export const metatileCount = ts =>
 	(ts?.primaryMetatileCount || 0) + (ts?.secondary?.metatiles?.length || 0);
@@ -46,37 +88,173 @@ const DATA = 'data';
 
 // ---------- fetch/image caches ----------
 const jsonCache = new Map(), imgCache = new Map();
+// A map/layout/tileset fetch must never hang a warp forever. 2026-10-05: a
+// Pokémon Center exit's request never answered, the warp sat at full black, and
+// the stuck-load watchdog cleared `loading` but left the screen black and every
+// step rejected as "fading". Every fetch now gives up on a silent server (no
+// response headers within FETCH_HEADER_MS) and retries network errors and 5xx
+// (a transient 500 that morning) with backoff, so a stall becomes an ordinary
+// failure the transition's load-guard already handles. A 404 fails at once —
+// optional files (palettes, strings) rely on that.
+//
+// 2026-10-12 (Instinct, three black maps): a slow link is not a dead one. The
+// body timeout was a flat 30 s for the WHOLE download and images had a flat 8 s
+// from the moment they were requested — queue time included. Arriving on a map
+// starts dozens of fetches at once (its tilesheets, its neighbours' maps,
+// layouts and tilesheets, sprites); on a slow connection a 285 KB tilesheet
+// that a lone fetch got in 2.6 s waited its turn past 8 s, was abandoned, and
+// the map drew black — and a reload started the same race over. Now a download
+// is given up only when it STALLS: no response headers for FETCH_HEADER_MS, or
+// no new bytes for FETCH_IDLE_MS. One that keeps arriving, however slowly, is
+// allowed to finish. Timeouts and network errors retry with backoff; a 404
+// (or other definite 4xx) fails at once.
+export const FETCH_HEADER_MS = 12000, FETCH_IDLE_MS = 10000, FETCH_RETRY_MS = [400, 1500, 4000];
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+// how long a map arrival waits for its neighbours before going ahead without the slow ones
+export const CONNECTION_WAIT_MS = 6000;
+// The fetch layer's last sign of life: a request starting (a retry included),
+// headers, a chunk of body, an end. ow_loop's load watchdog measures a load's
+// SILENCE from here. It used to count from the load's start, 20 s flat, while one
+// stalled request alone costs FETCH_HEADER_MS (12 s) before its retry — so two
+// stalls in a row, on a link that then recovered, fired "Loading got stuck" at 20 s
+// and the load landed anyway at ~26 s, moving the player after the HUD said they
+// had stayed (Sky Pillar 5F -> Top, bug:1792549744340, 2026-10-21).
+let netPulseAt = -Infinity;
+const netPulse = () => { netPulseAt = typeof performance !== 'undefined' ? performance.now() : Date.now(); };
+export const netActivityAt = () => netPulseAt;
+// fetch url and read its whole body as bytes, aborting only on silence
+async function fetchBytesOnce(url) {
+	const ac = typeof AbortController === 'function' ? new AbortController() : null;
+	netPulse();
+	let timer = setTimeout(() => ac && ac.abort(), FETCH_HEADER_MS);
+	const kick = () => { netPulse(); clearTimeout(timer); timer = setTimeout(() => ac && ac.abort(), FETCH_IDLE_MS); };
+	try {
+		const r = await fetch(url, ac ? { signal: ac.signal } : undefined);
+		if (!r.ok) {
+			const err = new Error(`${r.status} ${url}`);
+			if (r.status < 500 && r.status !== 408 && r.status !== 429) err.fatal = true;
+			throw err;
+		}
+		kick();
+		if (!r.body || typeof r.body.getReader !== 'function') return new Uint8Array(await r.arrayBuffer());
+		const reader = r.body.getReader(), parts = [];
+		let len = 0;
+		for (;;) {
+			const { done, value } = await reader.read();
+			if (done) break;
+			parts.push(value); len += value.length;
+			kick();   // bytes arrived: the stall clock starts over
+		}
+		const out = new Uint8Array(len);
+		let off = 0;
+		for (const p of parts) { out.set(p, off); off += p.length; }
+		return { bytes: out, type: r.headers.get('content-type') || '' };
+	} catch (e) {
+		if (e && e.name === 'AbortError') { const t = new Error(`timed out ${url}`); t.stalled = true; throw t; }
+		throw e;
+	} finally { clearTimeout(timer); netPulse(); }
+}
+async function fetchResilient(url, parse) {
+	let lastErr = null;
+	for (let attempt = 0; attempt <= FETCH_RETRY_MS.length; attempt++) {
+		try {
+			const got = await fetchBytesOnce(url);
+			const bytes = got instanceof Uint8Array ? got : got.bytes;
+			return await parse(bytes, got.type || '');
+		} catch (e) {
+			if (e && e.fatal) throw e;
+			lastErr = e;
+		}
+		if (attempt < FETCH_RETRY_MS.length) await sleep(FETCH_RETRY_MS[attempt]);
+	}
+	throw lastErr;
+}
+const parseJSON = bytes => JSON.parse(new TextDecoder().decode(bytes));
 export async function getJSON(url) {
 	if (!jsonCache.has(url)) {
-		jsonCache.set(url, fetch(url).then(r => {
-			if (!r.ok) throw new Error(`${r.status} ${url}`);
-			return r.json();
-		}).catch(e => { jsonCache.delete(url); throw e; }));
+		jsonCache.set(url, fetchResilient(url, parseJSON).catch(e => { jsonCache.delete(url); throw e; }));
 	}
 	return jsonCache.get(url);
 }
+// images: fetched as bytes under the same stall rule, then decoded from a blob
+// URL (same-origin, so the canvas stays untainted; the data project also sends
+// Access-Control-Allow-Origin: *). A missing image (404) is a definite answer
+// and is not retried — many maps reference a sprite that doesn't exist, and
+// retrying those slowed every warp onto such a map (backwarp_test).
+function decodeImage(bytes, type) {
+	return new Promise((res, rej) => {
+		const blobUrl = URL.createObjectURL(new Blob([bytes], type ? { type } : undefined));
+		const img = new Image();
+		img.onload = () => { URL.revokeObjectURL(blobUrl); res(img); };
+		img.onerror = () => { URL.revokeObjectURL(blobUrl); const e = new Error('img undecodable'); e.fatal = true; rej(e); };
+		img.src = blobUrl;
+	});
+}
+// without fetch streams (very old browsers): the plain <img> path, with a stall timer
+export const IMG_TIMEOUT_MS = 30000;
+function loadImageLegacy(url) {
+	return new Promise((res, rej) => {
+		const img = new Image();
+		img.crossOrigin = 'anonymous'; // data (sprites/tiles) is served cross-origin (magepunk-owdata project) — keep the canvas untainted
+		const timer = setTimeout(() => { img.onload = img.onerror = null; img.src = ''; const e = new Error('img timed out ' + url); e.stalled = true; rej(e); }, IMG_TIMEOUT_MS);
+		img.onload = () => { clearTimeout(timer); res(img); };
+		img.onerror = () => { clearTimeout(timer); rej(new Error('img ' + url)); };
+		img.src = url;
+	});
+}
+const canStreamImages = () => typeof fetch === 'function' && typeof Blob === 'function' && typeof URL?.createObjectURL === 'function';
 export function getImage(url) {
 	if (!imgCache.has(url)) {
-		imgCache.set(url, new Promise((res, rej) => {
-			const img = new Image();
-			img.crossOrigin = 'anonymous'; // data (sprites/tiles) is served cross-origin (magepunk-owdata project) — keep the canvas untainted
-			img.onload = () => res(img);
-			img.onerror = () => { imgCache.delete(url); rej(new Error('img ' + url)); };
-			img.src = url;
-		}));
+		const p = (canStreamImages()
+			? fetchResilient(url, decodeImage)
+			: loadImageLegacy(url).catch(e => { if (!e.stalled) throw e; return sleep(FETCH_RETRY_MS[0]).then(() => loadImageLegacy(url)); }))
+			// a blob-decoded image's .src is a revoked blob: URL; keep the asset path on it
+			.then(img => { img.dataset.src = url; return img; });
+		imgCache.set(url, p.catch(e => { imgCache.delete(url); throw e; }));   // never cache a failure
 	}
 	return imgCache.get(url);
 }
 
+// A few tilesets have their OWN metatiles but BORROW another tileset's tile
+// graphics and palettes (src/data/tilesets/headers.h). FireRed's gTileset_SilphCo
+// is `.tiles = gTilesetTiles_Condominiums, .palettes = gTilesetPalettes_Condominiums`
+// ("// Shared by SilphCo") — there is no silph_co sheet to export, so silph_co_tiles
+// .png 404'd and Rocket Hideout B1F-B4F, its elevator, the Celadon store elevator,
+// the Five Island warehouse and Silph Co drew a black map under the sprites
+// (production, 2026-10-01). Emerald's Building -> InsideBuilding is the only other
+// such pair, and its sheet was exported under its own name. Graphics only: the
+// metatile JSON keeps the tileset's own name.
+const SHARED_GRAPHICS = { firered: { SilphCo: 'Condominiums' } };
+// map file -> { warp index: its tile } whose exit the decomp makes MAP_DYNAMIC (see World.load)
+const DYNAMIC_EXITS = { TerraCave_Entrance: { 0: { x: 8, y: 18 } } };
+const gfxName = (name, game) => {
+	const own = String(name || '').replace('gTileset_', '');
+	const to = SHARED_GRAPHICS[game] && SHARED_GRAPHICS[game][own];
+	return to ? 'gTileset_' + to : name;
+};
+
 // ---------- tileset name mangling (MapLoader.getTilesetFileName) ----------
+// gTileset_PetalburgWoods -> petalburg_woods, to match the exported asset names.
+//
+// The old rule put an underscore before EVERY capital, which breaks on a run of
+// them: gTileset_SSAnne became s_s_anne while the exported file is ss_anne. The
+// secondary tileset then 404'd, side() swallowed the failed image load, and the
+// whole S.S. Anne interior rendered black with only sprites visible — no console
+// error to go on. Reported from production, where it blocks the Kanto story.
+//
+// Now a standard camel->snake: split only where a run of capitals ENDS (the last
+// capital before a lowercase starts the next word) or where a lowercase meets a
+// capital. Checked against all 191 tilesets the layouts reference — 189 are
+// byte-identical to the old rule, SSAnne is fixed, and the remaining one is a
+// "NULL" placeholder that resolves to nothing either way.
 function mangle(tilesetName) {
 	let n = tilesetName.replace('gTileset_', '');
-	n = n.replace(/([A-Z])/g, c => '_' + c.toLowerCase());
-	n = n.replace(/(\d+)/g, d => '_' + d);
-	n = n.replace(/^_/, '').replace(/__/g, '_');
-	return n;
+	n = n.replace(/([a-z0-9])([A-Z])/g, '$1_$2')      // Petalburg|Woods
+		.replace(/([A-Z]+)([A-Z][a-z])/g, '$1_$2');   // SS|Anne
+	n = n.replace(/([A-Za-z])(\d+)/g, '$1_$2');       // Route1 -> route_1
+	return n.toLowerCase().replace(/^_/, '').replace(/__/g, '_');
 }
-const tilesetPng = (name, game) => `${DATA}/tilesets/${game === 'emerald' ? 'emerald_' : ''}${mangle(name)}_tiles.png`;
+const tilesetPng = (name, game) => `${DATA}/tilesets/${game === 'emerald' ? 'emerald_' : ''}${mangle(gfxName(name, game))}_tiles.png`;
 const metatileJson = (name, isPrimary, game) =>
 	`${DATA}/tilesets/${game === 'emerald' ? 'emerald_' : ''}${isPrimary ? 'primary_' : 'secondary_'}${mangle(name)}_metatiles.json`;
 
@@ -90,11 +268,22 @@ async function loadTilesetsFor(layout) {
 		if (!name) return null;
 		// the PNG and its metatile JSON don't depend on each other — fetch both at
 		// once (each request also pays the _redirects hop, so serial hops add up)
+		let why = '', definite = false;
 		const [img, meta] = await Promise.all([
-			getImage(tilesetPng(name, game)).catch(() => null),
+			getImage(tilesetPng(name, game)).catch(e => { why = (e && e.message) || String(e); definite = !!(e && e.fatal); return null; }),
 			getJSON(metatileJson(name, isPrimary, game)).catch(() => null), // some primaries have none
 		]);
-		if (!img) return null;
+		if (!img) {
+			// never silently: a missing sheet draws a black map under the sprites
+			// (S.S. Anne, then Silph Co). Say which file, which layout, and why. A
+			// sheet that timed out (rather than 404'd) marks the bundle INCOMPLETE:
+			// it is not kept in the render cache, and World retries it in the
+			// background until the map draws (healTilesets).
+			if (!definite) ts.incomplete = true;   // a 404 is an answer; a timeout is not
+			const msg = `tilesheet missing: ${tilesetPng(name, game)} (${isPrimary ? 'primary' : 'secondary'} ${name}, layout ${layout.id || layout.name || '?'})${why ? ' — ' + why : ''}`;
+			try { console.error('[tileset] ' + msg); globalThis.reportErr && globalThis.reportErr(msg, 'engine.loadTilesetsFor'); } catch (e) {}
+			return null;
+		}
 		const bandH = img.height / 16;                       // 16 palette bands
 		const tilesPerBand = (bandH / TILE) * (img.width / TILE);
 		return { img, bandH, tilesPerBand, metatiles: meta?.metatiles || null, attributes: meta?.attributes || null };
@@ -108,7 +297,59 @@ async function loadTilesetsFor(layout) {
 	// split threshold = primary tile capacity (NOT #primaryMetatiles) — MapShared invariant
 	ts.primaryTileCount = ts.primary ? ts.primary.tilesPerBand : 640;
 	ts.primaryMetatileCount = ts.primaryTileCount;
+	await applySharedPalettes(ts, layout);
 	return ts;
+}
+
+// ---------- shared BG palettes ----------
+// Each sheet's 16 bands are coloured with that tileset's OWN palettes, but the GBA
+// shares BG palettes: primary supplies 0..N-1, secondary N..12 (Emerald N=6, FRLG 7).
+// A primary tile drawn with palette 11 must use the SECONDARY's 11 (General's own 11
+// is all zeros — Route 115's Fallarbor terrain came out opaque black), and a
+// secondary tile drawn with 0..N-1 uses the primary's. Repaint those bands per pair
+// from tools/gen_tile_palettes.py's colour indices.
+const NUM_PALS_IN_PRIMARY = { emerald: 6, firered: 7 }, NUM_PALS_TOTAL = 13;
+const palStem = (name, game) => `${game === 'emerald' ? 'emerald_' : ''}${mangle(gfxName(name, game))}`;   // palettes travel with the graphics
+let palIndex = null;
+function tilePalettes(name, game) {
+	palIndex ||= getJSON(`${DATA}/tilesets/pal_index.json`).then(a => new Set(a)).catch(() => new Set());
+	return palIndex.then(have => have.has(palStem(name, game))
+		? getJSON(`${DATA}/tilesets/${palStem(name, game)}_pal.json`).catch(() => null) : null);
+}
+function repaintBands(img, own, other, from, to) {
+	const { w, h } = own;
+	if (img.width !== w || img.height !== h * 16) return img;
+	const c = document.createElement('canvas'); c.width = img.width; c.height = img.height;
+	const g = c.getContext('2d');
+	g.drawImage(img, 0, 0);
+	const raw = atob(own.idx), band = g.createImageData(w, h), d = band.data;
+	for (let b = from; b < to; b++) {
+		const rgb = other.pals[b].map(hex => [1, 3, 5].map(k => parseInt(hex.slice(k, k + 2), 16)));
+		for (let i = 0; i < w * h; i++) {
+			const byte = raw.charCodeAt(i >> 1), v = i & 1 ? byte & 15 : byte >> 4, o = i * 4;
+			if (v) { const col = rgb[v]; d[o] = col[0]; d[o + 1] = col[1]; d[o + 2] = col[2]; d[o + 3] = 255; }
+			else d[o] = d[o + 1] = d[o + 2] = d[o + 3] = 0;   // colour 0 is transparent
+		}
+		g.clearRect(0, b * h, w, h);
+		g.putImageData(band, 0, b * h);
+	}
+	return c;
+}
+const pairCache = new Map();   // "game|primary|secondary" -> { primary, secondary } repainted sheets
+async function applySharedPalettes(ts, layout) {
+	const game = layout.game, n = NUM_PALS_IN_PRIMARY[game];
+	if (!n || !ts.primary || !ts.secondary) return;
+	const key = `${game}|${layout.primary_tileset}|${layout.secondary_tileset}`;
+	if (!pairCache.has(key)) {
+		pairCache.set(key, Promise.all([tilePalettes(layout.primary_tileset, game), tilePalettes(layout.secondary_tileset, game)])
+			.then(([p, s]) => p && s ? {
+				primary: repaintBands(ts.primary.img, p, s, n, NUM_PALS_TOTAL),
+				secondary: repaintBands(ts.secondary.img, s, p, 0, n),
+			} : null));
+		if (pairCache.size > 8) pairCache.delete(pairCache.keys().next().value);
+	}
+	const sheets = await pairCache.get(key);
+	if (sheets) { ts.primary.img = sheets.primary; ts.secondary.img = sheets.secondary; }
 }
 
 function metatileOf(ts, metatileId) {
@@ -214,7 +455,10 @@ export class World {
 	constructor() {
 		this.index = null;
 		this.current = null;    // { map, layout, ts, canvases, border }
-		this.connections = {};  // dir -> { map, layout, ts, canvases, offset, name }
+		// [{ dir, map, layout, ts, canvases, offset, name }] — a LIST, not keyed by
+		// direction: a map can have two connections on one side (Route 111's west edge
+		// meets Route 113 at offset 0 AND Route 112 at offset 20)
+		this.connections = [];
 		this.warps = [];
 		this.lastWarpSource = null; // for Crystal -1 back-warps
 		// fully-fetched-and-rendered bundles by map name (LRU). Crossing a route
@@ -240,6 +484,16 @@ export class World {
 	async loadBundle(name) {
 		const map = await getJSON(`${DATA}/maps/${name}_map.json`);
 		const layout = await getJSON(`${DATA}/layouts/${map.layout}.json`);
+		// Crystal cells whose converted collision bits are wrong (the Celadon Mansion:
+		// a solid roof whose house door couldn't be reached) — set from pokecrystal's
+		// own collision (tools/gen_crystal_collision_fix.mjs). Absolute, so applying it
+		// again to the cached layout changes nothing.
+		const fix = (await getJSON('crystal_collision_fix.json').catch(() => null))?.maps?.[map.id];
+		for (const [x, y, open] of fix || []) {
+			const row = layout.map[y];
+			if (row && row[x] != null) row[x] = open ? row[x] & ~COLLISION_MASK : row[x] | COLLISION_MASK;
+		}
+		captureLockedPristine(name, layout);
 		const ts = await loadTilesetsFor(layout);
 		return { name, map, layout, ts };
 	}
@@ -256,49 +510,160 @@ export class World {
 			b.canvases = renderSection(b.layout, b.ts);
 			b.borderCv = renderBorder(b.layout, b.ts);
 		}
-		this._rendered.set(name, b);
-		while (this._rendered.size > 8) this._rendered.delete(this._rendered.keys().next().value);
+		// a bundle whose tilesheet failed draws black — never cache it, or the map
+		// stays black for the rest of the session even once the sheet is reachable
+		if (!b.ts?.incomplete) {
+			this._rendered.set(name, b);
+			while (this._rendered.size > 8) this._rendered.delete(this._rendered.keys().next().value);
+		} else this._healSoon(b);
 		return b;
+	}
+
+	// Background repair for a bundle drawn without its tilesheet(s): refetch the
+	// tilesets with growing pauses and, once they load, repaint IN PLACE — the
+	// bundle object is the very one `current` (or a connection) holds, and its
+	// layout keeps any tile edits a script has made since. Gives up only after
+	// a long while; a new map load starts a fresh attempt anyway.
+	_healSoon(b) {
+		if (!b || b._healing) return;
+		b._healing = true;
+		const delays = [1500, 4000, 8000, 15000, 30000, 60000];
+		const step = async i => {
+			if (i >= delays.length) { b._healing = false; return; }
+			await sleep(delays[i]);
+			let ts = null;
+			try { ts = await loadTilesetsFor(b.layout); } catch (e) { ts = null; }
+			if (!ts || ts.incomplete) return step(i + 1);
+			b.ts = ts;
+			b.canvases = renderSection(b.layout, ts);
+			b.borderCv = renderBorder(b.layout, ts);
+			b._healing = false;
+			// the current neighbours hold COPIES of a bundle ({...bundle, dir, offset})
+			for (const c of this.connections) if (c !== b && c.name === b.name && c.layout === b.layout) Object.assign(c, { ts, canvases: b.canvases, borderCv: b.borderCv });
+			this._rendered.set(b.name, b);
+			while (this._rendered.size > 8) this._rendered.delete(this._rendered.keys().next().value);
+			try { globalThis.reportErr && globalThis.reportErr(`tilesheets recovered for ${b.name} after ${i + 1} retr${i ? 'ies' : 'y'}`, 'engine.healTilesets'); } catch (e) {}
+		};
+		step(0);
+	}
+
+	// the current map (or a neighbour) is drawn without its tilesheets: try again now
+	healTilesets() {
+		for (const b of [this.current, ...this.connections]) if (b?.ts?.incomplete) this._healSoon(b);
 	}
 
 	async load(name) {
 		const b = await this._renderedBundle(name);
 		this.current = b;
 		this.warps = (b.map.warp_events || []).map(w => ({ ...w, x: +w.x, y: +w.y }));
-		this.connections = {};
+		// Crystal warp_events on a square that is not a warp tile (a landing, a G/S
+		// leftover): the GBC never fires them underfoot, so neither do we. Burned Tower
+		// B1F's (10,8) bounced you back to 1F before the beasts (tools/gen_crystal_dead_warps.mjs).
+		// They keep their place in the list: still the arrival square of the warp naming them.
+		const dead = DEAD_WARPS[name];
+		if (dead) for (const w of this.warps) if (dead.includes(w.x + ',' + w.y)) w.inert = true;
+		// Exits the decomp sends to MAP_DYNAMIC ("back where you came in") that the
+		// exported data hardwired to one route. Terra Cave's exit went to Route 114
+		// warp 4 — a Surf-only pocket — so a player who walked in from Route 116 came
+		// out sealed in it (2026-10-02, Muse). The only such warp of the 64 MAP_DYNAMIC
+		// warps in pokeemerald/pokefirered.
+		for (const [i, w] of this.warps.entries()) {
+			const fix = DYNAMIC_EXITS[name]?.[i];
+			if (fix && w.x === fix.x && w.y === fix.y) { w.dest_map = 'MAP_DYNAMIC'; w.dest_warp_id = 'WARP_ID_DYNAMIC'; }
+		}
+		// Keyed by direction, this kept ONE connection per side, and the two on
+		// Route 111's west edge loaded concurrently: whichever finished last
+		// overwrote the other. When Route 113 won, Route 112 could not be entered
+		// from Route 111 at all (the playtester's hard block on the Hoenn story);
+		// when Route 112 won, Route 113 was cut off instead. Keep every one, in
+		// the map's own order.
+		this.connections = [];   // the previous map's must not outlive its layout while these load
 		const conns = (b.map.connections || []).filter(c => ['up', 'down', 'left', 'right', 'north', 'south', 'east', 'west'].includes(c.direction));
-		await Promise.all(conns.map(async c => {
+		// A neighbour is scenery until you walk onto it, so a slow one must not hold
+		// the warp: wait for them all up to CONNECTION_WAIT_MS, then let the arrival
+		// finish and add the stragglers as they land (2026-10-12: Route 23's map JSON
+		// timing out kept Indigo Plateau "loading" until the 20 s watchdog gave up).
+		// A neighbour that fails is retried a few times in the background.
+		const one = async (c, tries = 0) => {
 			const file = this.fileFor(c.map);
-			if (!file) return;
+			if (!file) return null;
 			try {
 				const cb = await this._renderedBundle(file);
-				this.connections[normDir(c.direction)] = { ...cb, offset: c.offset || 0 };
-			} catch (e) { console.warn('connection failed', c.map, e); }
+				return { ...cb, dir: normDir(c.direction), offset: c.offset || 0 };
+			} catch (e) {
+				console.warn('connection failed', c.map, e);
+				try { globalThis.reportErr && globalThis.reportErr(`connection failed ${c.map} from ${name}: ${(e && e.message) || e}`, 'engine.World.load'); } catch (e2) {}
+				if (tries >= 3) return null;
+				await sleep([3000, 8000, 20000][tries]);
+				return this.current === b ? one(c, tries + 1) : null;
+			}
+		};
+		const pending = conns.map(c => one(c).then(conn => {
+			// a late arrival joins only if the player is still on this map
+			if (conn && this.current === b && !this.connections.some(x => x.name === conn.name && x.dir === conn.dir)) {
+				// keep the map's own connection order, whatever order they land in
+				const order = c2 => conns.findIndex(cc => this.fileFor(cc.map) === c2.name && normDir(cc.direction) === c2.dir);
+				this.connections = [...this.connections, conn].sort((p, q) => order(p) - order(q));
+			}
+			return conn;
 		}));
+		await Promise.race([Promise.all(pending), sleep(CONNECTION_WAIT_MS)]);
 	}
 
-	// world-tile -> grid value (main map or connections); 0 = outside
+	// the decomp's `setmaplayoutindex`: the CURRENT map, drawn and walked with
+	// another of its layouts (Route 131's Sky Pillar approach, the Sky Pillar's
+	// clean floors, Shoal Cave's tides, Seafoam's stopped currents). The cached
+	// bundle keeps its own layout — the swap lives on a copy — so a condition that
+	// flips back (the tide, the Sky Pillar crumbling) loads the original again.
+	// A Hoenn2_ map prefers its own LAYOUT_HOENN2_ copy when there is one.
+	async setLayout(layoutId) {
+		const cur = this.current;
+		if (!cur || !layoutId || cur.layout.id === layoutId) return false;
+		const ids = /^LAYOUT_HOENN2_/.test(cur.map.layout || '') ? [layoutId.replace(/^LAYOUT_/, 'LAYOUT_HOENN2_'), layoutId] : [layoutId];
+		let layout = null;
+		for (const id of ids) {
+			if (cur.layout.id === id) return false;
+			layout = await getJSON(`${DATA}/layouts/${id}.json`).catch(() => null);
+			if (layout) break;
+		}
+		if (!layout) { console.warn('[setmaplayoutindex] no layout', layoutId); return false; }
+		layout = { ...layout, map: layout.map.map(r => r.slice()) };   // tile edits must not reach the shared copy
+		captureLockedPristine(cur.name, layout);
+		const same = layout.primary_tileset === cur.layout.primary_tileset && layout.secondary_tileset === cur.layout.secondary_tileset;
+		const ts = same ? cur.ts : await loadTilesetsFor(layout);
+		const b = { ...cur, layout, ts, canvases: renderSection(layout, ts), borderCv: renderBorder(layout, ts) };
+		delete b._hasGrass;
+		if (this.current !== cur) return false;   // the player left while it loaded
+		this.current = b;
+		return true;
+	}
+
+	// world-tile -> grid value (main map or connections); null = outside every map.
+	// 0 is a REAL cell — metatile 0, no collision. The Crystal tilesets put a
+	// plain ground tile there, and treating 0 as "outside" walled off 1,012
+	// walkable cells on 38 Johto/Kanto maps (Route 34's grass, the Day Care's
+	// front door, Pewter and Viridian streets; 2026-10-07).
 	gridAt(tx, ty) {
 		const lay = this.current.layout;
 		if (tx >= 0 && tx < lay.width && ty >= 0 && ty < lay.height) {
-			return lay.map[ty]?.[tx] ?? 0;
+			return lay.map[ty]?.[tx] ?? null;
 		}
-		for (const dir of Object.keys(this.connections)) {
-			const conn = this.connections[dir];
+		for (const conn of this.connections) {
+			const dir = conn.dir;
 			const [ox, oy] = DIR_OFFSET(dir, lay, conn);
 			const lx = tx - ox, ly = ty - oy;
 			if (lx >= 0 && lx < conn.layout.width && ly >= 0 && ly < conn.layout.height) {
-				return conn.layout.map[ly]?.[lx] ?? 0;
+				return conn.layout.map[ly]?.[lx] ?? null;
 			}
 		}
-		return 0;
+		return null;
 	}
 
 	// which connection (if any) contains this world tile; returns {dir, conn, lx, ly}
 	connectionAt(tx, ty) {
 		const lay = this.current.layout;
-		for (const dir of Object.keys(this.connections)) {
-			const conn = this.connections[dir];
+		for (const conn of this.connections) {
+			const dir = conn.dir;
 			const [ox, oy] = DIR_OFFSET(dir, lay, conn);
 			const lx = tx - ox, ly = ty - oy;
 			if (lx >= 0 && lx < conn.layout.width && ly >= 0 && ly < conn.layout.height) {
@@ -309,13 +674,49 @@ export class World {
 	}
 
 	warpAt(tx, ty) {
-		return this.warps.find(w => w.x === tx && w.y === ty) || null;
+		return this.warps.find(w => w.x === tx && w.y === ty && !w.inert) || null;
+	}
+
+	// Put this map's script-lockable warp cells back the way the LAYOUT ships them,
+	// where that is OPEN, before its setup scripts run: ON_LOAD / the Crystal
+	// callbacks then shut whatever the story still has shut. The GBA reloads a map
+	// from ROM on every entry; this port reuses the edited layout, so a door a script
+	// closed stayed closed after the story opened it (Sootopolis's gym after Archie
+	// and Maxie leave: ON_LOAD stops locking it, but nothing ever unlocked it).
+	// Only cells the layout ships open are touched, so a door a native fix-up opened
+	// (the Trick House, the Sky Pillar) is never closed again here. Returns the count.
+	restoreLockedCells() {
+		const cur = this.current, lay = cur?.layout;
+		const pr = lay && LOCKED_PRISTINE.get(lay);
+		if (!pr) return 0;
+		let n = 0;
+		for (const [c, v] of pr) {
+			const [x, y] = c.split(',').map(Number);
+			if (lay.map[y]?.[x] === v) continue;
+			const { attr } = metatileOf(cur.ts, v & METATILE_MASK);
+			const b = attr & BEHAVIOR_MASK;
+			if ((v & COLLISION_MASK) !== 0 && !(b >= 0x60 && b <= 0x6e)) continue;   // ships shut: leave it
+			lay.map[y][x] = v;
+			this.setMetatile(x, y, v, null);   // repaint (keeps the collision just restored)
+			n++;
+		}
+		return n;
 	}
 
 	isPassable(tx, ty) {
-		if (this.warpAt(tx, ty)) return true; // doors are always enterable
+		if (this.warpAt(tx, ty)) {
+			// doors are always enterable — FRLG/Emerald walk INTO a wall-collision door —
+			// except a warp a script locks (tools/gen_locked_warps.mjs: the Basement Key
+			// door, the Storage Key doors, the sealed tombs): it follows its live cell,
+			// open when clear or a door/warp behavior, shut otherwise
+			if (!LOCKED_WARPS[this.current?.name]?.includes(tx + ',' + ty)) return true;
+			const w = this.gridAt(tx, ty);
+			if (w != null && (w & COLLISION_MASK) === 0) return true;
+			const b = this.behaviorAt(tx, ty);
+			return b >= 0x60 && b <= 0x6e;
+		}
 		const v = this.gridAt(tx, ty);
-		if (v === 0) return false;
+		if (v == null) return false;
 		return (v & COLLISION_MASK) === 0;
 	}
 
@@ -323,15 +724,30 @@ export class World {
 	// the CURRENT section and repaint just that cell into the cached bottom/top
 	// canvases so plot scenes can open a passage / drop an object mid-cutscene.
 	// impassable toggles the collision bits; pass null to keep the tile's current
-	// passability. Returns true if a tile was changed.
+	// passability. It arrives straight from the decomp scripts, which spell it
+	// TRUE/FALSE (957 ops) or 1/0, so it goes through scriptBool: the string
+	// "FALSE" is TRUTHY in JS, and every one of 502 FALSE ops used to wall its
+	// tile off (Trick House puzzle 3's buttons and open doors, 2026-09-30).
+	// Returns true if a tile was changed.
 	setMetatile(tx, ty, tile, impassable) {
+		impassable = scriptBool(impassable, 'setmetatile impassable');
 		const cur = this.current;
 		const lay = cur?.layout;
 		if (!lay || tx < 0 || ty < 0 || tx >= lay.width || ty >= lay.height) return false;
 		if (!lay.map[ty]) return false;
+		// The scripts name tiles the decomp way ("METATILE_VermilionGym_Floor").
+		// `tile & METATILE_MASK` on a string is 0, the "outside the map" metatile, so
+		// every scripted tile edit used to wall the tile off (the Vermilion Gym beams
+		// stayed shut after both switches; 1,098 ops across 95 maps). Resolve the
+		// name; if it can't be resolved, leave the tile alone rather than write void.
+		if (typeof tile === 'string') {
+			const id = metatileId(tile, cur.name);
+			if (id == null) { console.warn('[setmetatile] unknown tile name', tile, 'on', cur.name); return false; }
+			tile = id;
+		}
 		const prev = lay.map[ty][tx] ?? 0;
 		let v = tile & METATILE_MASK;
-		if (impassable == null) v |= (prev & COLLISION_MASK); // keep existing collision
+		if (impassable === null) v |= (prev & COLLISION_MASK); // keep existing collision
 		else if (impassable) v |= COLLISION_MASK;
 		lay.map[ty][tx] = v;
 		// repaint the single cell: clear the old pixels, redraw the new metatile
@@ -370,7 +786,7 @@ export class World {
 
 	behaviorAt(tx, ty) {
 		const v = this.gridAt(tx, ty);
-		if (v === 0) return 0;
+		if (v == null) return 0;
 		const id = v & METATILE_MASK;
 		// behavior must come from the owning section's tilesets
 		const owner = this.connectionAt(tx, ty)?.conn || this.current;
@@ -391,8 +807,8 @@ export class World {
 			let found = false;
 			for (let y = 0; y < lay.height && !found; y++) {
 				for (let x = 0; x < lay.width; x++) {
-					const v = lay.map[y]?.[x] ?? 0;
-					if (v === 0) continue;
+					const v = lay.map[y]?.[x];
+					if (v == null) continue;
 					const { attr } = metatileOf(cur.ts, v & METATILE_MASK);
 					if (isGrassBehavior(attr & BEHAVIOR_MASK)) { found = true; break; }
 				}
@@ -400,6 +816,20 @@ export class World {
 			cur._hasGrass = found;
 		}
 		return cur._hasGrass;
+	}
+	// FRLG metatiles carry the decomp's own encounter type (attribute bits 24-26:
+	// TILE_ENCOUNTER_LAND = 1, _WATER = 2), which is what pokefirered's
+	// wild_encounter.c checks — not the behavior. Answers 'land' / 'water' / 'none'
+	// for an FRLG map, and null where the attributes carry no encounter type
+	// (Emerald and Crystal tilesets), so Encounters.roll keeps its behavior rule.
+	encounterTypeAt(tx, ty) {
+		const cur = this.current;
+		if (cur.layout?.game !== 'firered' || cur.map?._crystal_tileset) return null;
+		const v = this.gridAt(tx, ty);
+		if (v == null) return 'none';
+		const owner = this.connectionAt(tx, ty)?.conn || cur;
+		const t = (metatileOf(owner.ts, v & METATILE_MASK).attr >>> 24) & 7;
+		return t === 1 ? 'land' : t === 2 ? 'water' : 'none';
 	}
 	isCrackedFloor(tx, ty) { return this.behaviorAt(tx, ty) === MB_CRACKED_FLOOR; }
 	// a map whose sea can be dived into (offers a 'dive' overlay); its deep water
@@ -409,8 +839,23 @@ export class World {
 	// surfable water: the 0x10-0x1B "sea/pond/river" behavior band. These
 	// tiles block walking (you need a Water-type to Surf) but are open once
 	// you're riding the waves.
+	// a cell's elevation nibble (0 on Crystal maps, whose grid has none)
+	elevationAt(tx, ty) {
+		const v = this.gridAt(tx, ty);
+		if (v == null) return 0;
+		const owner = this.connectionAt(tx, ty)?.conn || this.current;
+		if (owner?.map?._crystal_tileset) return 0;
+		return (v >> GRID.ELEVATION_SHIFT) & 15;
+	}
 	isSurfable(tx, ty) {
-		if (this.gridAt(tx, ty) === 0) return false;
+		if (this.gridAt(tx, ty) == null) return false;
+		// UNDERWATER the diver swims freely over every open cell: Emerald blocks a
+		// walker from water by ELEVATION, and an underwater map's cells all share the
+		// diver's. Underwater_SootopolisCity's whole floor is MB_DEEP_WATER (0x12), so
+		// treating it as water froze the diver on its one other cell — a warp tile —
+		// with every direction a bump (playtest 2026-10-12, Instinct)
+		const owner = this.connectionAt(tx, ty)?.conn || this.current;
+		if (owner?.map?.map_type === 'MAP_TYPE_UNDERWATER') return false;
 		const b = this.behaviorAt(tx, ty);
 		return b >= 0x10 && b <= 0x1B;
 	}
@@ -459,8 +904,8 @@ export class World {
 			}
 		}
 		// connections
-		for (const dir of Object.keys(this.connections)) {
-			const conn = this.connections[dir];
+		for (const conn of this.connections) {
+			const dir = conn.dir;
 			const [ox, oy] = DIR_OFFSET(dir, lay, conn);
 			const ccv = layer === 'bottom' ? conn.canvases.bottom : conn.canvases.top;
 			blitVisible(ctx, ccv, ox * META - camX, oy * META - camY);
@@ -493,6 +938,7 @@ export class Player {
 		this.tx = 0; this.ty = 0;          // grid position (tiles)
 		this.px = 0; this.py = 0;          // pixel position (top-left of tile)
 		this.facing = 'down';
+		this.elev = 0;                     // object elevation (FRLG/Emerald; see elevCompatible)
 		this.moving = false;
 		this.jumping = false;
 		this.moveFrom = null; this.moveTo = null; this.moveT = 0; this.moveDist = META;
@@ -522,6 +968,13 @@ export class Player {
 		// open ocean, and without this the player is frozen there — every direction
 		// out is water, and you cannot walk onto water.
 		if (this.world?.isSurfable?.(tx, ty)) this.surfing = true;
+		this.updateElevation();
+	}
+	// ObjectEventUpdateElevation: a multi-level cell (15) keeps the elevation you
+	// arrived with — under a bridge or on top of it
+	updateElevation() {
+		const e = this.world?.elevationAt?.(this.tx, this.ty) ?? 0;
+		if (e !== 15) this.elev = e;
 	}
 
 	// Why the last attempted step did or did not start. A refusal that reports
@@ -549,9 +1002,16 @@ export class Player {
 			? (this.world.isSurfable(nx, ny) || this.world.isPassable(nx, ny))
 			: this.world.isPassable(nx, ny) && !this.world.isSurfable(nx, ny);
 		if (!open) { this.moveOutcome = 'bump'; this.onBump?.(nx, ny); return; }   // walls thud too, not just blockers
+		// a WATERFALL (MB_WATERFALL 0x13) is a current that pushes the surfer south
+		// (ForcedMovement_PushedSouthByCurrent, FRLG + Emerald): you can ride it
+		// down, never up or across it. Climbing is the WATERFALL field move's job,
+		// with its badge check. Before this, holding UP surfed straight up Meteor
+		// Falls without the Rain Badge.
+		if (this.surfing && dir !== 'down' && this.world.behaviorAt(nx, ny) === 0x13) { this.moveOutcome = 'bump'; this.onBump?.(nx, ny); return; }
 		// Sky Pillar's cracked floors give way underfoot — only the bike carries you
-		// across (they read as normal floor otherwise, so gate them explicitly)
-		if (this.world.isCrackedFloor(nx, ny) && !this.biking) { this.moveOutcome = 'cracked'; this.onBlockedCracked?.(); return; }
+		// across. Where the map has a floor below (setholewarp, holes.js) you may
+		// walk on and fall through, as on the GBA; anywhere else they stay a wall.
+		if (this.world.isCrackedFloor(nx, ny) && !this.biking && !this.canFall?.()) { this.moveOutcome = 'cracked'; this.onBlockedCracked?.(); return; }
 		if (this.blocked && this.blocked(nx, ny)) {
 			// a Strength boulder in the way may be shoved one tile ahead; if it
 			// moves, the player steps into the vacated tile
@@ -564,6 +1024,9 @@ export class Player {
 			this.onBump?.(nx, ny);
 			return;
 		}
+		// a rotating gate's arm across the step (CheckForObjectEventCollision asks only
+		// once nothing else is in the way): it turns and lets you through, or it can't
+		if (this.gateBlocks && this.gateBlocks(dir, nx, ny)) { this.moveOutcome = 'gate'; this.onBump?.(nx, ny); return; }
 		this.beginMove(nx, ny, META, false);
 		this.moveOutcome = 'moved';
 	}
@@ -582,6 +1045,15 @@ export class Player {
 	update(dt, held) {
 		this.animT += dt;
 		if (this.moving) {
+			// scripts move the PLAYER too (LOCALID_PLAYER), through the same cutscene
+			// driver that borrows `moving` without setting moveFrom/moveTo — so an
+			// interrupted scene can strand the player here exactly as it strands an NPC.
+			// See the twin guard in npcs.js.
+			if (!this.moveTo || !this.moveFrom) {
+				this.px = this.tx * META; this.py = this.ty * META;
+				this.moving = false; this.jumping = false; this.moveT = 0;
+				return;
+			}
 			// the bike is fastest; hold B / Shift to run at nearly double speed
 			const pace = this.biking ? 2.2 : this.run ? 1.85 : 1;
 			this.moveT += (SPEED * pace * dt) / this.moveDist;
@@ -592,6 +1064,7 @@ export class Player {
 				const prevDist = this.moveDist;
 				this.px = this.moveTo[0]; this.py = this.moveTo[1];
 				this.moving = false; this.jumping = false;
+				this.updateElevation();
 				if (this.surfing && !this.world.isSurfable(this.tx, this.ty)) this.surfing = false;
 				// ...and the inverse, which is a rescue rather than a rule: Johto and
 				// JohKanto shipped with no water behaviors at all, so their sea routes
@@ -635,7 +1108,7 @@ export class Player {
 	}
 
 	draw(ctx, camX, camY) {
-		if (!this.img) return;
+		if (!this.img || this.falling) return; // dropping through a cracked floor (holes.js)
 		const sheet = this.rideImg();
 		// only draw the fallback water ellipse when the real surf sheet is missing
 		if (this.surfing && !this.surfImg) {

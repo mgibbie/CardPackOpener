@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<!-- first, before any game code reads storage: per-account local data (site/account_silo.js) -->
+<script src="/site/account_silo.js"></script>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 	<title>Pair of Pears — Meandering Meadow</title>
@@ -27,6 +29,7 @@
 		.ab [data-btn="a"] { right: 0; top: 0; }
 		@media (min-width: 900px) and (pointer: fine) { #pad { opacity: .35; } }
 	</style>
+	<script type="module" src="/site/zoomfix.js"></script> <!-- iPhone: no stuck zoom -->
 </head>
 <body>
 	<div id="wrap"><canvas id="game" width="800" height="600"></canvas></div>

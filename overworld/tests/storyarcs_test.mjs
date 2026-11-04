@@ -18,6 +18,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { overworldSource } from './owsource.mjs';   // main.js + the modules split out of it
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '../../');
@@ -27,7 +28,7 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 
 // ---------- the multiplayer fixes, pinned ----------
 {
-	const mn = fs.readFileSync(path.join(ROOT, 'overworld/main.js'), 'utf8');
+	const mn = overworldSource();
 	A(/waypoint queue/.test(mn) && /catch-up speed scales with backlog/.test(mn),
 		'ghosts walk a waypoint queue with catch-up (the "clipping" fix)');
 	A(/\+\+g\.missed >= 3/.test(mn), 'a missed poll no longer deletes the ghost (the flicker fix)');

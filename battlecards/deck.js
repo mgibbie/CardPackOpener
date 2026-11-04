@@ -8,6 +8,7 @@ import { safeLoad, safeSave, safeSaveStr } from './safestore.js';
 import * as MPX from './mpmode.js';
 import { encodeDeck, decodeDeck } from './codec.js';
 import { correspondenceOffenders } from './format.js';
+import { askText } from '../site/osk.js';
 
 const MP_ON = MPX.mpMode();
 const TOUCH = matchMedia('(pointer: coarse)').matches;
@@ -616,7 +617,7 @@ $('copy-link').onclick = async () => {
 	catch { prompt('Copy this deck link:', url); }
 };
 $('import-code').onclick = async () => {
-	const raw = prompt('Paste a deck code or share link to load it:');
+	const raw = await askText({ title: 'Paste a deck code or share link to load it:', maxLength: 8000 });
 	if (!raw) return;
 	await loadDeckFromCode(codeFromInput(raw));
 };

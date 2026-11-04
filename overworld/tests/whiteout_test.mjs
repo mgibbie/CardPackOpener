@@ -13,6 +13,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { overworldSource } from './owsource.mjs';   // main.js + the modules split out of it
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '../../');
@@ -22,7 +23,7 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 
 // ---------- source ----------
 {
-	const mn = fs.readFileSync(path.join(ROOT, 'overworld/main.js'), 'utf8');
+	const mn = overworldSource();
 	A(/function whiteOut\(\)/.test(mn), 'there is one shared whiteOut()');
 	A(/const WHITEOUT_MONEY_FRACTION = \d+/.test(mn), 'the money penalty is a named constant');
 	// every defeat handler must go through it — none may heal in place any more
@@ -30,7 +31,7 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 	A(healInPlace <= 2, 'no battle-end handler heals in place any more (Trainer Hill aside)', 'found ' + healInPlace);
 	A((mn.match(/whiteOut\(\)/g) || []).length >= 9, 'every losing battle path routes through it',
 		'call sites: ' + ((mn.match(/whiteOut\(\)/g) || []).length - 1));
-	A(/sfx\('heal'\); healParty\(party\); noteHealPoint\(\);/.test(mn), 'the POKeMON CENTER nurse records the heal point');
+	A(/sfx\('heal'\); healParty\((?:S\.)?party\); noteHealPoint\(\);/.test(mn), 'the POKeMON CENTER nurse records the heal point');
 	A(/Trainer Hill challenge ends/.test(mn), 'a Trainer Hill loss still ends the run instead of blacking out');
 	const rs = fs.readFileSync(path.join(ROOT, 'site/owreset.js'), 'utf8');
 	A(/magepunk_healpoint_v1/.test(rs), 'the heal point is part of the canonical save');

@@ -23,6 +23,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { overworldSource } from './owsource.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '../../');
@@ -44,7 +45,7 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 		"EARTHQUAKE's family hits the user's partner in doubles — unless the partner has TELEPATHY");
 	A(/doomdesire' \? 'Steel' : 'Psychic'/.test(bt), 'DOOM DESIRE arrives as Steel, FUTURE SIGHT as Psychic');
 
-	const main = fs.readFileSync(path.join(ROOT, 'overworld/main.js'), 'utf8');
+	const main = overworldSource();   // main.js + the modules split out of it
 	A(/function pcMatches/.test(main) && /pcnav:find/.test(main) && /if \(k === 'f'\) \{ pcPromptSearch\(\)/.test(main),
 		'the PC storage grows a search (F key + FIND button)');
 }
@@ -106,7 +107,7 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 				const b = window.__ow.battle;
 				for (let i = 0; i < 300; i++) {
 					const a = b.active;
-					if (a && a.phase === 'choose') return true;
+					if (a && a.phase === 'menu') return true;   // the battle's idle phase ('choose' no longer exists; every wait ran out its 18s)
 					await new Promise(r => setTimeout(r, 60));
 				}
 				return false;
@@ -126,6 +127,9 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 			await window.__waitIdle();
 			const a = b.active;
 			const out = {};
+			// Pin the dice: Tackle is 95% accurate, so 'a normal move walks through'
+			// (and the foe's single-target Tackle below) missed ~1 run in 20.
+			const R = Math.random; Math.random = () => 0.5;   // every accuracy roll passes
 			// fatten the foe FIRST: a lv-40 tackle one-shots a lv-5 sentret, and a
 			// mid-test KO drops the battle into faint handling and stalls the queue.
 			// shownHP jumps with it so the settled gate never waits on a bar crawl.
@@ -175,6 +179,7 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 			out.hitFor = 500 - a.foe.curHP;
 			await drained();
 			b.finish('ran'); await done;
+			Math.random = R;
 			return out;
 		});
 		A(guard.flagUp && guard.notPersonal, "QUICK GUARD raises a SIDE flag, not the caster's personal Protect", JSON.stringify(guard));
@@ -213,8 +218,11 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 			localStorage.setItem('magepunk_box_v1', JSON.stringify(box));
 			const pm = ow.pcMenu;
 			pm.open = true; pm.side = 1; pm.idx = 0; pm.box = 0; pm.filter = null; pm.confirm = null;
-			window.prompt = () => 'dratini';
+			// F opens the on-screen keyboard (site/osk.js, controller phase 2): type, then Enter
 			dispatchEvent(new KeyboardEvent('keydown', { key: 'f' }));
+			const oskField = document.querySelector('#osk input');
+			if (oskField) { oskField.value = 'dratini'; oskField.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true })); }
+			await new Promise(r => setTimeout(r, 50));
 			const filtered = pm.filter;
 			const partyBefore = ow.party.length;
 			dispatchEvent(new KeyboardEvent('keydown', { key: 'z' }));   // withdraw the single hit

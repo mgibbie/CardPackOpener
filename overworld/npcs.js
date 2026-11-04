@@ -2,8 +2,8 @@
 // collision. Sprite sheets share the player's frame layout (16x32 frames:
 // 0 down, 1 up, 2 left stills; 3-8 walk pairs; right = mirrored left).
 // Sight-range trainers are excluded here — trainers.js owns them.
-import { getJSON, getImage, META, drawOwMon } from './engine.js';
-import { isTrainerEvent, spritePath } from './trainers.js';
+import { getJSON, getImage, META, drawOwMon, elevCompatible } from './engine.js';
+import { isTrainerEvent, peopleFile, spritePath, entrySprite, adoptLateSprite } from './trainers.js';
 import { itemsOwns } from './items.js';
 import { objectHiddenByFlag } from './events.js';
 
@@ -57,6 +57,16 @@ class NPC {
 
 	update(dt, ctx) {
 		if (this.moving) {
+			// `moving` is a flag anyone may set — the cutscene driver borrows it while
+			// animating an actor from the scene's own from/to, without ever filling in
+			// moveFrom/moveTo. Dereferencing them here on that assumption threw every
+			// frame and took the draw loop with it. An actor with nowhere to move to is
+			// simply standing on its tile; heal and carry on.
+			if (!this.moveTo || !this.moveFrom) {
+				this.px = this.tx * META; this.py = this.ty * META;
+				this.moving = false; this.moveT = 0;
+				return;
+			}
 			this.moveT += (NPC_SPEED * dt) / META;
 			if (this.moveT >= 1) {
 				this.px = this.moveTo[0]; this.py = this.moveTo[1];
@@ -92,13 +102,29 @@ class NPC {
 		}
 	}
 
+	// the tiles it stands on: a big doll (Crystal's BIG_OBJECT) fills 2x2 from its corner
+	covers(tx, ty) {
+		// ...and so does a Crystal BIG_OBJECT on a map (SPRITE_BIG_SNORLAX / BIG_ONIX /
+		// BIG_LAPRAS): Vermilion's SNORLAX at (34,8) is a 2x2 body, which is why
+		// SnorlaxAwake's "next to it" tiles are (33,8)/(34,10)/(35,10)/(36,8)/(36,9)
+		if ((this.deco && this.deco.big) || /_GFX_BIG_|^SPRITE_BIG_/.test(this.ev?.graphics_id || '')) return tx >= this.tx && tx <= this.tx + 1 && ty >= this.ty && ty <= this.ty + 1;
+		return this.tx === tx && this.ty === ty;
+	}
+
 	draw(ctx2d, camX, camY) {
 		if (this.hidden) return; // hidden by a script (removeobject/set_invisible)
+		// a decoration: one still picture (FIXED_FACING), drawn 4px up as Crystal's sprites are
+		if (this.deco) {
+			const d = this.deco;
+			ctx2d.drawImage(d.img, d.sx, d.sy, d.w, d.h, Math.round(this.px - camX), Math.round(this.py - 4 - camY), d.w, d.h);
+			return;
+		}
 		if (this.isMon) { drawOwMon(ctx2d, this.img, this.px + META / 2, this.py + META, camX, camY); return; }
 		const stills = { down: 0, up: 1, left: 2, right: 2 };
 		const walks = { down: [3, 4], up: [5, 6], left: [7, 8], right: [7, 8] };
-		let frame = stills[this.facing];
-		if (this.moving && this.frames >= 9 && this.moveT < 0.5) frame = walks[this.facing][this.stepParity];
+		const f = stills[this.facing] != null ? this.facing : 'down';   // never crash on a bad facing
+		let frame = stills[f];
+		if (this.moving && this.frames >= 9 && this.moveT < 0.5) frame = walks[f][this.stepParity];
 		if (frame >= this.frames) frame = 0;
 		const x = Math.round(this.px - camX), y = Math.round(this.py - 16 - camY);
 		const mirror = this.facing === 'right';
@@ -117,6 +143,9 @@ export class NPCs {
 		this.list = [];
 		this.gfx = null;
 		this.owSpecies = new Set(); // species with a data/pokemon_ow sprite (so mon object_events draw as the mon, not a generic man)
+		// Crystal's variable sprites: the player's-room console / dolls / big doll wear
+		// the placed decoration's sprite (decorations.js decoSpriteFor, set by main.js)
+		this.decoSprite = null;
 	}
 
 	async init() {
@@ -128,6 +157,9 @@ export class NPCs {
 	// map an object graphics_id to a Pokémon overworld sprite name, or null
 	speciesOf(graphicsId) {
 		let s = (graphicsId || '').replace('OBJ_EVENT_GFX_', '').replace(/^SPRITE_/, '').toLowerCase();
+		// Crystal's WEIRD_TREE is SUDOWOODO posing as a tree (Route 36). It was dropped
+		// as a prop, so the encounter — and the ROCK SMASH TM after it — never existed
+		if (s === 'weird_tree' && this.owSpecies.has('sudowoodo')) return 'sudowoodo';
 		if (this.owSpecies.has(s)) return s;
 		s = s.replace(/_(front|back|side|asleep|still|normal|standing)$/, '');
 		if (this.owSpecies.has(s)) return s;
@@ -137,7 +169,10 @@ export class NPCs {
 		return this.owSpecies.has(j) ? j : null;
 	}
 
+	// generation-guarded like Trainers.loadForMap: two overlapping loads (the
+	// story-overlay heal re-running setup mid-transition) appended every NPC twice
 	async loadForMap() {
+		const gen = this._loadGen = (this._loadGen || 0) + 1;
 		this.list = [];
 		const evs = this.world.current.map.object_events || [];
 		const crystal = !!this.world.current.map._crystal_tileset;
@@ -153,44 +188,86 @@ export class NPCs {
 			// ~400 obstacles were owned by items.js and unclaimed here. That only stayed
 			// invisible while the blanket flag rule hid them anyway; the moment flags
 			// are read honestly they would each be drawn TWICE, once as a fake NPC.
-			if (itemsOwns(ev.graphics_id)) return;          // items.js draws and drives these
-			// prop objects (cutscene furniture): drawing them with a person-sprite
-			// fallback put "guys" on Oak's counter (the two POKEDEX devices) and
-			// would park villagers where Littleroot's moving TRUCKs sit
-			// ...and the secret-base rooms carry VAR_0..VAR_F decoration
-			// placeholders stacked at (0,0..6) — never people. FOSSIL props
-			// (Mirage Tower / Desert Underpass) draw through the fossil overlay.
-			// non-person props were drawing as a generic "man" (the spritePath fallback):
-			// statues (44 of them!), the SS Tidal / Seagallop / Mr Briney's boat, the
-			// submarine + Kecleon-bridge shadows, cable car, moving boxes, dolls, etc.
-			// Draw nothing rather than a wrong villager.
-			if (/POKEDEX|TRUCK|GFX_VAR_|GFX_FOSSIL|STATUE|SUBMARINE|SS_TIDAL|SS_ANNE|SEAGALLOP|MR_BRINEY|_BOAT|CABLE_CAR|SHADOW|MOVING_BOX|BIRCHS_BAG|CLIPBOARD|CONSOLE|TOWN_MAP|OLD_AMBER|_DOLL|WEIRD_TREE/.test(ev.graphics_id || '')) return;
-			// Pokémon object_events (Kecleon, roamers, dept-store pets, legendaries) were
-			// ALSO drawn as a man — render the actual overworld mon sprite instead
-			const species = this.speciesOf(ev.graphics_id);
-			if (species) {
-				const mimg = await getImage(`data/pokemon_ow/${species}.png`).catch(() => null);
-				if (mimg) { this.list.push(new NPC(ev, mimg, true)); return; }
-			}
-			// Crystal names its graphics SPRITE_X — the fallback only stripped the
-			// GBA prefix, so sprite files like fisher.png were probed as
-			// sprite_fisher.png, silently emptying whole Johto towns
-			const file = this.gfx[ev.graphics_id]
-				|| (ev.graphics_id || '').replace('OBJ_EVENT_GFX_', '').replace(/^SPRITE_/, '').toLowerCase() + '.png';
-			let img = await getImage(`data/people/${file}`).catch(() => null);
-			if (!img) img = await getImage(spritePath(ev.graphics_id, false)).catch(() => null);
-			if (img) this.list.push(new NPC(ev, img));
+			const n = await this.build(ev);
+			if (gen !== this._loadGen) return;   // a newer load owns the list now
+			if (n && !this.list.some(o => o.ev === ev)) this.list.push(n);
 		}));
 	}
+
+	// the NPC for one object_event, or null for what this class doesn't draw
+	// (items.js obstacles, props). Shared by loadForMap and spawn.
+	async build(ev) {
+		if (itemsOwns(ev.graphics_id)) return null;          // items.js draws and drives these
+		const deco = this.decoSprite && this.decoSprite(ev);
+		if (deco) { const n = new NPC(ev, deco.img); n.deco = deco; return n; }
+		// a scripted FOSSIL object — FireRed's Mt. Moon B2F DOME / HELIX pair, which
+		// you choose between after beating MIGUEL — is the decomp's own object with
+		// its own script: draw it with the decomp's fossil sprite (fx/fossil.png,
+		// from pokefirered's object_events/pics/misc) as one still picture, so
+		// facing it runs that script. It used to be skipped as a prop below, which
+		// left both fossils invisible and unchoosable. Emerald's Mirage Tower 4F
+		// pair and the Desert Underpass fossil run their own scripts the same way
+		// now that the tower's specials are ported (mirage.js).
+		if (/GFX_FOSSIL$/.test(ev.graphics_id || '') && ev.script && ev.script !== '0x0') {
+			const fimg = await getImage('fx/fossil.png').catch(() => null);
+			if (fimg) { const n = new NPC(ev, fimg); n.deco = { img: fimg, sx: 0, sy: 0, w: 16, h: 16 }; return n; }
+			return null;
+		}
+		// prop objects (cutscene furniture): drawing them with a person-sprite
+		// fallback put "guys" on Oak's counter (the two POKEDEX devices) and
+		// would park villagers where Littleroot's moving TRUCKs sit
+		// ...and the secret-base rooms carry VAR_0..VAR_F decoration
+		// placeholders stacked at (0,0..6) — never people. FOSSIL props
+		// (Mirage Tower / Desert Underpass) draw through the fossil overlay.
+		// non-person props were drawing as a generic "man" (the spritePath fallback):
+		// statues (44 of them!), the SS Tidal / Seagallop / Mr Briney's boat, the
+		// submarine + Kecleon-bridge shadows, cable car, moving boxes, dolls, etc.
+		// Draw nothing rather than a wrong villager.
+		if (/POKEDEX|TRUCK|GFX_VAR_|GFX_FOSSIL|STATUE|SUBMARINE|SS_TIDAL|SS_ANNE|SEAGALLOP|MR_BRINEY|_BOAT|CABLE_CAR|SHADOW|MOVING_BOX|BIRCHS_BAG|CLIPBOARD|CONSOLE|TOWN_MAP|OLD_AMBER|_DOLL/.test(ev.graphics_id || '')) return null;
+		// Pokémon object_events (Kecleon, roamers, dept-store pets, legendaries) were
+		// ALSO drawn as a man — render the actual overworld mon sprite instead
+		const species = this.speciesOf(ev.graphics_id);
+		if (species) {
+			const { img: mimg, late } = await entrySprite([`data/pokemon_ow/${species}.png`], { mon: true });
+			if (mimg) { const n = new NPC(ev, mimg, true); adoptLateSprite(n, late, o => this.drop(o), true); return n; }
+		}
+		// Crystal names its graphics SPRITE_X — the fallback only stripped the
+		// GBA prefix, so sprite files like fisher.png were probed as
+		// sprite_fisher.png, silently emptying whole Johto towns
+		// (peopleFile: gfx_map, then the Crystal/Emerald -> FireRed aliases, then the
+		// raw name; null for ids with their own people_extra art, e.g. STEVEN)
+		// (a stalled sheet gets a stand-in so map entry goes on: trainers.js entrySprite)
+		const file = peopleFile(this.gfx, ev.graphics_id);
+		const { img, late } = await entrySprite([file ? `data/people/${file}` : null, spritePath(ev.graphics_id, false)]);
+		if (!img) return null;
+		const n = new NPC(ev, img);
+		adoptLateSprite(n, late, o => this.drop(o));
+		return n;
+	}
+
+	// FireRed/Emerald `addobject`: TrySpawnObjectEvent spawns the template whatever
+	// its hide flag says (the flag is only read on map load), so a scene can bring on
+	// an actor its map keeps hidden — the waiting rival, Scott, the credits cast. The
+	// object lasts until removeobject or the next load, like the GBA's.
+	async spawn(ev) {
+		const n = await this.build(ev);
+		if (n && !this.list.some(o => o.ev === ev)) this.list.push(n);
+		return n;
+	}
+
+	// an object whose late sheet turned out not to exist leaves, as a 404 always meant
+	drop(n) { this.list = this.list.filter(o => o !== n); }
 
 	// tile occupied by an NPC (current tile or the one it's stepping into)?
 	occupied(tx, ty, self = null) {
 		if (this.player && this.player.tx === tx && this.player.ty === ty) return true;
-		return this.list.some(n => n !== self && n.tx === tx && n.ty === ty);
+		return this.list.some(n => n !== self && n.covers(tx, ty));
 	}
 
-	npcBlocks(tx, ty) {
-		return this.list.some(n => !n.hidden && n.tx === tx && n.ty === ty);
+	// `elev`: the mover's elevation — an object at an incompatible elevation (under
+	// a bridge you're crossing) doesn't block (engine.js elevCompatible)
+	npcBlocks(tx, ty, elev = 0) {
+		return this.list.some(n => !n.hidden && n.covers(tx, ty) && elevCompatible(elev, Number(n.ev?.elevation) || 0));
 	}
 
 	update(dt) {

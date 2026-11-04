@@ -1,0 +1,134 @@
+// Pokermon 3.2.1 — backs/backs1.lua: the 10 decks. Trainer (Good Rod + a Poké Ball; only with the
+// pokeballs option), Luminous (every joker is created with a random Tera type, +1 Energy if it
+// matches: G.GAME.modifiers.apply_type, see systems/rules.js create_card), Telekinetic (Crystal
+// Ball + 2 Twisted Spoons), Amped (Energy Search + Double Rainbow Energy), Future (+4 Foresight:
+// G.GAME.scry_amount, systems/scry.js), Stadium (+8 enhanced cards), Mega (Reroll Surplus + Glut,
+// a Megastone, -1 shop slot), Vending (a Voucher Tag after each odd Ante's Boss), and the legacy
+// Obituary / Revenant (every card has a Pink / Silver seal; only with pokemon_legacy). Pokermon 3.9.1 (batch 10) adds the
+// Debris deck (key diceydeck: +1 Hazard layer and limit, +1 hand size, $1 per Hazard card in the full deck at cash-out
+// (systems/rules.js evaluate_round), no interest), whose static data data.js (3.2.1) lacks: it is given here in full.
+// Vouchers / consumables in `config` are applied by the vanilla Back.apply_to_run; `apply` /
+// `calculate` run through Micatro's mod-back seams (engine/back.js).
+import { G, P_CENTERS, localize, play_sound, create_card, defineBacks, change_shop_size, poke_change_hazard_max, poke_change_hazard_level } from '../api.js';
+import { Tag, add_tag } from '../../../js/engine/tag.js';
+
+const FILE = 'backs/backs1.lua';
+
+/**
+ * backs1.lua init(): after any back applies, every playing card gets G.GAME.modifiers.poke_force_seal
+ * (created cards get it from rules.js create_card). Only Obituary / Revenant set it in 3.2.1.
+ */
+function force_seal_event() {
+  G.E_MANAGER.add_event(() => {
+    if (G.GAME.modifiers.poke_force_seal) for (const c of G.playing_cards) c.set_seal(G.GAME.modifiers.poke_force_seal, true);
+  });
+}
+
+defineBacks({
+  pokemondeck: {
+    loc_vars() { return { vars: [localize('goodrod_variable'), localize('pokeball_variable')] }; },
+  },
+  luminousdeck: {
+    loc_vars() { return { vars: [] }; },
+    apply() { G.GAME.modifiers.apply_type = true; },
+  },
+  obituarydeck: {
+    loc_vars() { return { vars: [localize('pinkseal_variable')] }; },
+    apply() { G.GAME.modifiers.poke_force_seal = 'poke_pink_seal'; force_seal_event(); },
+  },
+  revenantdeck: {
+    loc_vars() { return { vars: [localize('silverseal_variable')] }; },
+    apply() { G.GAME.modifiers.poke_force_seal = 'poke_silver'; force_seal_event(); },
+  },
+  telekineticdeck: {
+    loc_vars() { return { vars: [localize({ type: 'name_text', key: 'v_crystal_ball', set: 'Voucher' }), localize('twisted_spoon_variable')] }; },
+  },
+  ampeddeck: {
+    loc_vars() { return { vars: [localize({ type: 'name_text', key: 'v_poke_energysearch', set: 'Voucher' }), localize('double_rainbow_energy_variable')] }; },
+  },
+  futuredeck: {
+    loc_vars(self) { return { vars: [self.config.scry] }; },
+    apply(self) { G.GAME.scry_amount = (G.GAME.scry_amount || 0) + self.config.scry; },
+  },
+  stadiumdeck: {
+    loc_vars() { return { vars: [] }; },
+    apply() {
+      G.E_MANAGER.add_event(() => {
+        const enhancements = ['m_bonus', 'm_mult', 'm_wild', 'm_glass', 'm_steel', 'm_stone', 'm_gold', 'm_lucky'];
+        for (const e of enhancements) {
+          // SMODS.add_card{set = 'Base', area = G.deck, no_edition = true, enhancement = e, skip_materialize = true}:
+          // a random playing card (create_card 'Base') joins the deck as a new playing card.
+          const added_card = create_card('Base', G.deck, null, null, true, null, null, null);
+          added_card.set_ability(P_CENTERS[e]);
+          G.playing_card = (G.playing_card || 0) + 1;
+          added_card.playing_card = G.playing_card;
+          G.playing_cards.push(added_card);
+          added_card.add_to_deck();
+          G.deck.emplace(added_card);
+        }
+        G.GAME.starting_deck_size = G.GAME.starting_deck_size + enhancements.length;
+      });
+    },
+  },
+  // Mega Deck (3.9.1, batch 16: + the Crystal Ball voucher; 3.9.1 text)
+  megadeck: {
+    config: { vouchers: ['v_reroll_surplus', 'v_reroll_glut', 'v_crystal_ball'], consumables: ['c_poke_megastone'], shop_size: 1 },
+    loc_vars(self) {
+      return { vars: [localize('megastone_variable'), localize({ type: 'name_text', key: 'v_reroll_surplus', set: 'Voucher' }),
+        localize({ type: 'name_text', key: 'v_reroll_glut', set: 'Voucher' }), self.config.shop_size,
+        localize({ type: 'name_text', key: 'v_crystal_ball', set: 'Voucher' })] };
+    },
+    apply(self) { G.E_MANAGER.add_event(() => { change_shop_size(-self.config.shop_size); }); },
+  },
+  vendingdeck: {
+    loc_vars() { return { vars: [localize({ type: 'name_text', key: 'tag_voucher', set: 'Tag' })] }; },
+    calculate(self, back, context) {
+      if (context.round_eval && G.GAME.last_blind && G.GAME.last_blind.boss && ((G.GAME.round_resets.ante - 1) % 2 === 1)) {
+        G.E_MANAGER.add_event(() => {
+          add_tag(new Tag('tag_voucher'));
+          play_sound('generic1', 0.9, 0.8);
+          play_sound('holo1', 1.2, 0.4);
+        });
+      }
+    },
+  },
+  // Debris Deck (3.9.1 backs1.lua diceydeck; art Catzzadilla, AtlasDecksBasic {10,0})
+  diceydeck: {
+    key: 'diceydeck',
+    name: 'diceydeck',
+    atlas: 'AtlasDecksBasic',
+    pos: { x: 10, y: 0 },
+    artist: 'Catzzadilla',
+    order: 27,
+    unlocked: true,
+    discovered: true,
+    config: { no_interest: true, hazard_layer: 1, hazard_layer_max: 1, h_size: 1, money: 1 },
+    loc_vars(self) { return { vars: [self.config.hazard_layer, self.config.hazard_layer_max, self.config.h_size, self.config.money] }; },
+    apply(self) {
+      G.E_MANAGER.add_event(() => { debris_apply(self.config); });
+    },
+  },
+}, FILE);
+
+/** The Debris deck / sleeve (3.9.1): the Hazard layer and its limit up, hand size up, $ per Hazard card at cash-out. */
+export function debris_apply(cfg) {
+  poke_change_hazard_max(cfg.hazard_layer_max);
+  poke_change_hazard_level(cfg.hazard_layer);
+  G.hand.change_size(cfg.h_size);
+  G.GAME.modifiers.poke_enhance_bonus = 'm_poke_hazard';
+  G.GAME.modifiers.poke_money_per_enhancement = cfg.money;
+  G.GAME.modifiers.poke_enhance_bonus_text = localize('poke_hazards_in_deck');
+}
+
+/**
+ * The Debris Sleeve's alt on the Debris Deck (3.9.1 pokermon.lua Card:set_ability wrap, "To support Debris sleeve combo";
+ * G.GAME.modifiers.poke_negative_hazards): a Hazard card carries card_limit +1 — one more hand size while it is held
+ * (Steamodded's playing-card card_limit: js/engine/smods.js held_card_limit + run.js draw_from_deck_to_hand). A card that
+ * stops being a Hazard gives it back. Called from the set_ability hook (index.js), after the new ability is built (Steamodded
+ * keeps the old ability's fields, card_limit included, across the change, as the Lua relies on).
+ */
+export function debris_hazard_card_limit(card, center, old_center) {
+  if (!G.GAME || !G.GAME.modifiers || !G.GAME.modifiers.poke_negative_hazards || !card.ability) return;
+  if (old_center && old_center.key === 'm_poke_hazard' && typeof card.ability.card_limit === 'number') card.ability.card_limit -= 1;
+  if (center && center.key === 'm_poke_hazard') card.ability.card_limit = (card.ability.card_limit || 0) + 1;
+}

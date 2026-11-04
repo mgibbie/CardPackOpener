@@ -17,7 +17,7 @@
 // Pixelnauta (https://pixelnauta.itch.io/pixel-dimensional-portal-32x32), CC-BY 4.0;
 // recolouring is expressly permitted by the author. Credit: @pxlnauta.
 import { META, getImage } from './engine.js';
-import { GYMS, globalTier } from './quest.js';
+import { GYMS, globalTier, nextGymIndex } from './quest.js';
 import { FLY } from './flydata.js';
 
 let portalSheet = null; // 192x32 (6 frames); the procedural glow is the fallback
@@ -49,7 +49,9 @@ export const PORTAL_TOWNS = (() => {
 // the two OTHER shared regions' gym town at the same tier — the travel destinations
 export function destsFor(region, tier) {
 	return SHARED.filter(r => r !== region).map(r => {
-		const g = GYMS[r][tier];
+		// a region that skipped a gym still owes THAT one (its earliest missing
+		// badge), not this tier's — never portal a player to a leader they've beaten
+		const g = GYMS[r][Math.min(tier, nextGymIndex(r))] || GYMS[r][tier];
 		const mapId = mapIdOf(g.townMap);
 		const land = landingFor(mapId);
 		return { region: r, regionLower: LOWER[r], mapId, town: g.town, x: land.x, y: land.y };

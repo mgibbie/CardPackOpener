@@ -16,6 +16,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { overworldSource } from './owsource.mjs';   // main.js + the modules split out of it
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '../../');
@@ -29,14 +30,18 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 	for (const k of ['magepunk_journal_v1', 'magepunk_repellast', 'magepunk_battle_v1'])
 		A(reset.includes(`'${k}'`), `owreset's canonical key list carries ${k}`);
 
-	const mn = fs.readFileSync(path.join(ROOT, 'overworld/main.js'), 'utf8');
-	A(/const OW_KEYS = OW_RESET_KEYS\.filter\(k => k !== 'magepunk_battle_v1'\)/.test(mn),
-		'the server sync covers the whole canonical save (minus the live battle snapshot)');
+	const mn = overworldSource();
+	// minus the live battle snapshot (and its ended-battle id) and the LOCAL-ONLY conflict stash + its archive
+	// (synced, the stash nested each previous one until the save hit the server's
+	// size limit — see owconflict_test)
+	A(/const OW_KEYS = OW_RESET_KEYS\.filter\(k => k !== 'magepunk_battle_v1' && k !== 'magepunk_battle_ended_v1' && !LOCAL_ONLY_KEYS\.includes\(k\)\)/.test(mn)
+		&& /const LOCAL_ONLY_KEYS = \['magepunk_ow_conflict', 'magepunk_ow_conflict_archive', 'magepunk_ow_story_conflict'\]/.test(mn),
+		'the server sync covers the whole canonical save (minus the live battle snapshot and the local-only conflict stash)');
 	A(/'battleAnim'\]/.test(mn.match(/const OPTION_KEYS = \[[^\]]+\]/)?.[0] || ''),
 		'BATTLE ANIM is reachable from the options menu (the setting existed with no row)');
 	A(/mp_ow_hydrated/.test(mn) && /location\.reload\(\)/.test(mn),
 		'a hydration that changes module-cached keys reloads once, latched against loops');
-	A(/if \(repelSteps === 0\) repelWoreOff\(\)/.test(mn), 'the wear-off site calls the re-offer prompt');
+	A(/if \((?:S\.)?repelSteps === 0\) repelWoreOff\(\)/.test(mn), 'the wear-off site calls the re-offer prompt');
 
 	const sv = fs.readFileSync(path.join(ROOT, 'server/mp.mjs'), 'utf8');
 	for (const a of ['ow-history', 'ow-restore']) A(sv.includes(`action === '${a}'`), `${a} action exists`);
@@ -50,7 +55,7 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 	A(/const OW_MAX_BYTES = 1_000_000/.test(sv), 'the ow size cap grew with the full-save payload');
 
 	const ev = fs.readFileSync(path.join(ROOT, 'overworld/evolution.js'), 'utf8');
-	A(/onEvolved\?\.\(this\.cur\.oldName, mon\.name\)/.test(ev), 'evolution announces itself to the journal hook');
+	A(/onEvolved\?\.\(this\.cur\.oldName, mon\.name[,)]/.test(ev), 'evolution announces itself to the journal hook');
 }
 
 // ---------- pure: the daily-snapshot prune, replicated ----------

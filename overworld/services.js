@@ -58,20 +58,20 @@ const HOENN_MARTS = [
 const GAME_CORNERS = {
 	MAP_CELADON_CITY_GAME_CORNER: [[4, 2], [4, 3], [6, 2], [6, 3]],
 	MAP_CELADON_CITY_GAME_CORNER_PRIZE_ROOM: [[4, 2], [4, 3], [6, 2], [6, 3]],
-	MAP_GOLDENROD_GAME_CORNER: [[3, 2], [3, 3], [16, 2], [16, 3], [18, 2], [18, 3]],
+	// Goldenrod: only the coin clerk. The TM (16,2) and prize-POKeMON (18,2) clerks
+	// run their own Crystal scripts (restored by tools/gen_crystal_scriptvar.mjs).
+	MAP_GOLDENROD_GAME_CORNER: [[3, 2], [3, 3]],
 	MAP_MAUVILLE_CITY_GAME_CORNER: [[11, 2], [11, 3], [13, 2], [13, 3], [14, 2], [14, 3]],
 	MAP_JOHKANTO_CELADON_GAME_CORNER: [[3, 2], [3, 3], [5, 2], [5, 3]],
 	MAP_JOHKANTO_CELADON_GAME_CORNER_PRIZE_ROOM: [[0, 2], [0, 3], [4, 4], [4, 5]],
 };
 
-// CONTEST HALL (Lilycove): the two reception counters run the contests, the
-// Berry Blender corner (the Blend Master + the two group blenders) feeds
-// berries into condition. All existing decomp NPCs — the zones shadow their
-// mute scripts, no new sprites.
+// CONTEST HALL (Lilycove): the two reception counters run the contests. The
+// BERRY BLENDER corner is the decomp's own (its machines + the Blend Master run
+// berry_blender.inc from pokeblock_data.json -> special DoBerryBlending).
 const CONTEST_LOBBIES = {
 	MAP_LILYCOVE_CITY_CONTEST_LOBBY: {
 		contest: [[14, 2], [14, 3], [15, 2], [15, 3]],
-		blend: [[26, 5], [26, 6], [26, 9], [26, 10], [22, 9], [22, 10]],
 	},
 };
 
@@ -98,21 +98,16 @@ const TRICK_HOUSE = {
 	MAP_ROUTE110_TRICK_HOUSE_END: { trickend: [[4, 5], [4, 6], [3, 5], [5, 5]] },
 };
 
-// RUINS OF ALPH: the ancient replica wall in each chamber is the sliding-tile
-// puzzle; solving it opens the floor to that chamber's item room. All four
-// chambers share the same layout (replica at (2,3)/(5,3)).
-const RUINS_CHAMBERS = {
-	MAP_RUINS_OF_ALPH_KABUTO_CHAMBER: 'kabuto',
-	MAP_RUINS_OF_ALPH_OMANYTE_CHAMBER: 'omanyte',
-	MAP_RUINS_OF_ALPH_AERODACTYL_CHAMBER: 'aerodactyl',
-	MAP_RUINS_OF_ALPH_HO_OH_CHAMBER: 'hooh',
-};
-
 // SHOAL CAVE: the salt/shell dig spots (the decomp's mute ShoalSalt/ShoalShell
 // bg events) and the SHELL BELL hermit at the entrance. KURT in Azalea turns
 // apricorns into his handmade balls.
 const SHOAL_SPOTS = {
 	MAP_SHOAL_CAVE_LOW_TIDE_INNER_ROOM: [[31, 8], [14, 26], [41, 20], [41, 10], [6, 9], [16, 13]],
+	// the same room at high tide (ow_features.js loads it as its own map): the decomp
+	// keeps the four SHELL stones whatever the tide and buries only the SALT piles
+	// (ShoalCave_LowTideInnerRoom_EventScript_SetShoalItemMetatiles skips salt on
+	// FLAG_SYS_SHOAL_TIDE) — (41,10) and (6,9) are reachable only by Surf at high tide
+	MAP_SHOAL_CAVE_HIGH_TIDE_INNER_ROOM: [[41, 20], [41, 10], [6, 9], [16, 13]],
 	MAP_SHOAL_CAVE_LOW_TIDE_LOWER_ROOM: [[18, 2]],
 	MAP_SHOAL_CAVE_LOW_TIDE_STAIRS_ROOM: [[11, 11]],
 };
@@ -126,9 +121,9 @@ const TRAINER_HILL = {
 };
 
 // LILYCOVE MUSEUM 2F: the five contest-painting frames + the curator.
-// RUINS word rooms, the Mirage Tower / Desert Underpass fossils, the Fossil
-// Maniac's revival desk, and New Mauville's generator — all decomp spots
-// whose scripts never ran.
+// RUINS word rooms, the Fossil Maniac's revival desk, and New Mauville's
+// generator — all decomp spots whose scripts never ran. (The Mirage Tower /
+// Desert Underpass fossils were here too; their own scripts run now: mirage.js.)
 const MISC_VENUES = {
 	MAP_LILYCOVE_CITY_LILYCOVE_MUSEUM_2F: {
 		museumpaint: [[2, 6], [3, 6], [10, 6], [11, 6], [18, 6], [19, 6], [6, 10], [7, 10], [14, 10], [15, 10]],
@@ -138,8 +133,6 @@ const MISC_VENUES = {
 	MAP_RUINS_OF_ALPH_OMANYTE_WORD_ROOM: { ruinsword: [[6, 1], [7, 1], [8, 1], [9, 1], [10, 1], [11, 1], [12, 1], [13, 1]] },
 	MAP_RUINS_OF_ALPH_AERODACTYL_WORD_ROOM: { ruinsword: [[6, 1], [7, 1], [8, 1], [9, 1], [10, 1], [11, 1], [12, 1], [13, 1]] },
 	MAP_RUINS_OF_ALPH_HO_OH_WORD_ROOM: { ruinsword: [[6, 1], [7, 1], [8, 1], [9, 1], [10, 1], [11, 1], [12, 1], [13, 1]] },
-	MAP_MIRAGE_TOWER_4F: { fossilroot: [[5, 4], [5, 5]], fossilclaw: [[7, 4], [7, 5]] },
-	MAP_DESERT_UNDERPASS: { fossilunder: [[132, 10], [132, 11], [131, 10], [133, 10]] },
 	MAP_ROUTE114_FOSSIL_MANIACS_HOUSE: { fossilmaniac: [[3, 2], [3, 3]] },
 	MAP_NEW_MAUVILLE_INSIDE: { generator: [[32, 2], [32, 3], [32, 4], [33, 4], [34, 4], [35, 4], [35, 3], [35, 2]] },
 };
@@ -154,6 +147,11 @@ const BIKE_SHOPS = {
 
 // per-map service spec: sprites to draw + interact zones
 function specFor(mapId) {
+	// the DOLL COUNTER (dept_dolls.js): a clerk at 4F's empty second counter spot
+	// sells the dolls MOM buys in Crystal (the port has no Bank of Mom)
+	if (mapId === 'MAP_GOLDENROD_DEPT_STORE_4F') {
+		return { sprites: [{ img: 'clerk', tx: 13, ty: 6 }], zones: [{ kind: 'dollcounter', tiles: [[13, 6]] }], solid: [[13, 6]] };
+	}
 	if (BIKE_SHOPS[mapId]) {
 		return { sprites: [], zones: [{ kind: 'bikeshop', tiles: BIKE_SHOPS[mapId] }], solid: [] };
 	}
@@ -184,9 +182,6 @@ function specFor(mapId) {
 		const zones = Object.entries(TRICK_HOUSE[mapId]).map(([kind, tiles]) => ({ kind, tiles }));
 		return { sprites: [], zones, solid: [] };
 	}
-	if (RUINS_CHAMBERS[mapId]) {
-		return { sprites: [], zones: [{ kind: 'ruinspuzzle', tiles: [[2, 3], [2, 4], [5, 3], [5, 4]] }], solid: [] };
-	}
 	if (GAME_CORNERS[mapId]) {
 		return { sprites: [], zones: [{ kind: 'gamecorner', tiles: GAME_CORNERS[mapId] }], solid: [] };
 	}
@@ -196,7 +191,6 @@ function specFor(mapId) {
 			sprites: [],
 			zones: [
 				{ kind: 'contest', tiles: c.contest },
-				{ kind: 'berryblend', tiles: c.blend },
 			],
 			solid: [],
 		};

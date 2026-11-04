@@ -2,7 +2,8 @@
 // (bg_events), Emerald berry trees, and Crystal fruit trees. Port of
 // MapItems.lua + MapTrees.lua; collected state persists in localStorage.
 import { getJSON, getImage, META } from './engine.js';
-import { objectHiddenByFlag } from './events.js';
+import { objectHiddenByFlag, setFlag, getStoredFlag } from './events.js';
+import { parseBallScript, parseCrystalBall, parseItemConst } from './ball_parse.js';
 import * as Bag from './bag.js';
 import { safeLoad, safeSave } from './safestore.js';
 
@@ -29,52 +30,6 @@ const COLLECTED_KEY = 'magepunk_collected_v1';
 const BERRY_KEY = 'magepunk_berrytimes_v1'; // tree key -> last-harvest timestamp (24h regrowth)
 const HARVEST_AMOUNT = 2;
 
-// "<Map>_EventScript_ItemRareCandy2" -> ["rarecandy", "Rare Candy"]
-function parseBallScript(script) {
-	const m = /_EventScript_Item(.+)$/.exec(script || '');
-	if (!m) return null;
-	// The trailing-digit strip disambiguates repeats ("ItemRareCandy2" -> rarecandy).
-	// For a TM or HM the digits ARE the identity, so stripping them produced the id
-	// "tm" — an unsellable junk item that teaches nothing (tmMoveId needs tm<n>).
-	// 29 balls were affected, including HM07 WATERFALL in Icefall Cave.
-	const camel = /^(TM|HM)\d+$/i.test(m[1]) ? m[1] : m[1].replace(/\d+$/, '');
-	const id = camel.toLowerCase().replace(/[^a-z0-9]/g, '');
-	if (!id) return null;
-	const pretty = camel.replace(/([a-z])([A-Z])/g, '$1 $2');
-	return [id, pretty];
-}
-
-// Crystal writes an item ball's script as <Map><Item> — "RockTunnel1FElixer",
-// "Route12Nugget" — with no _EventScript_Item marker for parseBallScript to find.
-// The map stem is the only thing that says where the map name ends, so it is
-// passed in; a JohKanto map carries Crystal's own (unprefixed) name in the script,
-// so both spellings are tried.
-//
-// The three starter balls in Elm's lab are POKE_BALLs too and must NOT become
-// items: picking up a "Cyndaquil" would put a junk id in the bag.
-const STARTER_BALLS = /^(Cyndaquil|Totodile|Chikorita)PokeBallScript$/;
-function parseCrystalBall(script, stem) {
-	if (!script || STARTER_BALLS.test(script)) return null;
-	let tail = script;
-	for (const pre of [stem, String(stem).replace(/^JohKanto/, '')]) {
-		if (pre && tail.startsWith(pre)) { tail = tail.slice(pre.length); break; }
-	}
-	tail = tail.replace(/Script$/, '');
-	if (!tail || tail === script) return null;       // nothing stripped: not this form
-	const id = tail.toLowerCase().replace(/[^a-z0-9]/g, '');
-	if (!id) return null;
-	return [id, tail.replace(/([a-z])([A-Z])/g, '$1 $2')];
-}
-
-// "ITEM_RARE_CANDY" -> ["rarecandy", "Rare Candy"]
-function parseItemConst(c) {
-	if (!c || c === 'ITEM_NONE') return null;
-	const body = c.replace(/^ITEM_/, '');
-	const id = body.toLowerCase().replace(/[^a-z0-9]/g, '');
-	const pretty = body.split('_').map(w => w[0] + w.slice(1).toLowerCase()).join(' ');
-	return [id, pretty];
-}
-
 // "BERRY_TREE_ROUTE_102_ORAN" / "..._CHERI_1" -> "oranberry"
 function emeraldBerry(treeId) {
 	if (!treeId || treeId === '0') return null;
@@ -88,12 +43,25 @@ const berryPretty = id => id.replace(/berry$/, ' Berry').replace(/^./, c => c.to
 // HM-terrain obstacles seeded in code at progression chokepoints (Ilex Cut, Fiery
 // Path rock, etc.) — map data is read-only so these can't live in the map JSON.
 // Filled by the per-region blocker passes; keys are MAP_ ids.
-const CODE_FIELD_OBJS = {
-	// Ilex Forest: the single-tile CUT gap that gates the road south to Goldenrod
-	// (Cut is badge-gated at 2 badges in Johto — HM_GATE). No CUTTABLE_TREE exists in
-	// this map's data, so it's seeded here.
-	MAP_ILEX_FOREST: [{ tx: 8, ty: 25, kind: 'cut' }],
+// (Ilex Forest's CUT gap used to be seeded here as a tree OBJECT over the map's
+// solid tree tile: cutting removed the object and left the tile, so the road
+// south stayed shut — 2026-10-02. It is a Crystal block tree, in cut_blocks.json.)
+const CODE_FIELD_OBJS = {};
+
+// Item balls placed in code, for items the decomps never placed (map data is
+// read-only). The three regional CHARMS (regional_forms.js) sit on the JohKanto
+// postgame routes holding the most wild forms of their region (encounters_postgame.js):
+// JohKanto is reachable only as Grand Champion, so these are postgame finds.
+// Tiles: reachable, passable nooks that block no path (regional_forms_test checks).
+// Keys are fixed `code_<id>` collected-record entries, so a pickup persists.
+export const CODE_ITEM_BALLS = {
+	MAP_JOHKANTO_ROUTE_14:       [{ tx: 16, ty: 2,  id: 'alolacharm', pretty: 'Alola Charm' }],
+	MAP_JOHKANTO_ROUTE_13:       [{ tx: 58, ty: 16, id: 'galarcharm', pretty: 'Galar Charm' }],
+	MAP_JOHKANTO_ROUTE_10_NORTH: [{ tx: 14, ty: 3,  id: 'hisuicharm', pretty: 'Hisui Charm' }],
 };
+
+// an object's hide flag, as a story flag name (or null)
+const storyFlag = f => (f && f !== '0' && /^(FLAG_|EVENT_)/.test(f)) ? f : null;
 
 export class Items {
 	constructor(world) {
@@ -103,17 +71,52 @@ export class Items {
 		this.fieldObjs = [];
 		this.fruitMap = {};
 		this.ballImg = null;
-		{ const c = safeLoad(COLLECTED_KEY, []); this.collected = new Set(Array.isArray(c) ? c : []); }
-		{ const b = safeLoad(BERRY_KEY, {}); this.berryTimes = (b && typeof b === 'object' && !Array.isArray(b)) ? b : {}; }
+		this.reloadCollected();
+	}
+
+	// collected balls/hidden items + berry timers live in localStorage; these are
+	// only caches. Every change re-reads storage first and applies its own delta,
+	// so a record that changed underneath (a sync, another tab) is never written
+	// back stale (rebase-on-write, as trainers.js since #647).
+	// mutators UNION storage into the cache (collected items and berry timers
+	// only grow): a record that grew underneath is picked up, and nothing this
+	// tab holds is dropped when storage can't be read (full / blocked storage)
+	mergeCollected() {
+		const c = safeLoad(COLLECTED_KEY, []); if (Array.isArray(c)) for (const k of c) this.collected.add(k);
+		const b = safeLoad(BERRY_KEY, {});
+		if (b && typeof b === 'object' && !Array.isArray(b)) for (const [k, t] of Object.entries(b)) if (!(k in this.berryTimes) || t > this.berryTimes[k]) this.berryTimes[k] = t;
+	}
+	reloadCollected() {
+		const c = safeLoad(COLLECTED_KEY, []); this.collected = new Set(Array.isArray(c) ? c : []);
+		const b = safeLoad(BERRY_KEY, {}); this.berryTimes = (b && typeof b === 'object' && !Array.isArray(b)) ? b : {};
 	}
 
 	async init() {
 		this.fruitMap = await getJSON('data/berry_trees.json').catch(() => ({}));
+		// Crystal's CUT trees are painted into the map blocks, not objects
+		// (tools/gen_cut_blocks.mjs): { MAP_ID: [[x, y, treeValue, cutValue]] }
+		this.cutBlocks = (await getJSON('cut_blocks.json').catch(() => null))?.maps || {};
+		await this.healPickupFlags();
 		// item balls are drawn procedurally now (drawBall) — the old data/npcs/pokeball.png
 		// was a lumpy off-centre blob with no band/button
 	}
 
+	// SELF-HEAL for saves from before pickups set their story flag: a pickup ball
+	// already in the collected record gets its hide flag set in the story. Only
+	// PLAIN pickup balls (tools/gen_ball_flags.mjs -> ball_flags.json) — a SCRIPTED
+	// ball's flag must not be set from the collected record, which holds old junk
+	// pickups of scripted balls that are meant to come back (items.js loadForMap).
+	async healPickupFlags() {
+		const list = (await getJSON('ball_flags.json').catch(() => null))?.flags;
+		if (!Array.isArray(list)) return 0;
+		const pickup = new Set(list);
+		let n = 0;
+		for (const k of this.collected) if (pickup.has(k) && !getStoredFlag(k)) { setFlag(k); n++; }
+		return n;
+	}
+
 	markCollected(key) {
+		this.mergeCollected();
 		this.collected.add(key);
 		safeSave(COLLECTED_KEY, [...this.collected]);
 	}
@@ -124,6 +127,7 @@ export class Items {
 		return !!ts && Date.now() - ts < 24 * 3600 * 1000;
 	}
 	markHarvested(key) {
+		this.mergeCollected();
 		this.berryTimes[key] = Date.now();
 		safeSave(BERRY_KEY, this.berryTimes);
 	}
@@ -151,7 +155,10 @@ export class Items {
 			// neither, so 15 smashable rocks across Gen-2 Kanto and Johto were inert
 			// scenery. Anchored so it cannot catch OBJ_EVENT_GFX_ROCKET.
 			if (g.includes('BREAKABLE_ROCK') || g.includes('ROCK_SMASH') || /_ROCK$/.test(g)) {
-				this.fieldObjs.push({ tx: +o.x, ty: +o.y, kind: 'rock' });
+				// a rock with its own hide flag stays smashed (`removeobject` set it:
+				// Rusturf Tunnel's two); the flagless ones regrow every visit
+				if (objectHiddenByFlag(o, !!map._crystal_tileset)) continue;
+				this.fieldObjs.push({ tx: +o.x, ty: +o.y, kind: 'rock', flag: /^FLAG_/.test(o.flag || '') ? o.flag : null });
 				continue;
 			}
 			if (g.includes('CUTTABLE_TREE') || g.includes('CUT_TREE')) {
@@ -159,7 +166,13 @@ export class Items {
 				continue;
 			}
 			if (g.includes('BOULDER')) {
-				this.fieldObjs.push({ tx: +o.x, ty: +o.y, kind: 'boulder' });
+				// a boulder that has fallen to the floor below (or not fallen here yet)
+				// is hidden by its flag: Seafoam's lower floors showed every boulder
+				if (objectHiddenByFlag(o, !!map._crystal_tileset)) continue;
+				// FRLG keeps the flag that reveals it on the floor BELOW in the
+				// object's trainer_type (GetBoulderRevealFlagByLocalIdAndMap)
+				const reveal = /^FLAG_/.test(o.trainer_type || '') ? o.trainer_type : null;
+				this.fieldObjs.push({ tx: +o.x, ty: +o.y, kind: 'boulder', flag: /^(FLAG|EVENT)_/.test(o.flag || '') ? o.flag : null, reveal }); // Crystal's are EVENT_*
 				continue;
 			}
 			// POKE_BALL is Crystal's spelling. items.js only ever matched ITEM_BALL, so
@@ -170,20 +183,33 @@ export class Items {
 				// ball must not sit there grabbable — Birch's bag-scene starter
 				// balls were stacked three-deep on the lab floor
 				if (objectHiddenByFlag(o, !!map._crystal_tileset)) continue;
-				// New Mauville's three "item balls" are VOLTORB in disguise. The
-				// generic parser was minting them as junk pickups named after their
-				// script — they ambush instead (main.js springs the battle).
-				if (/EventScript_Voltorb\d+$/.test(o.script || '')) {
-					const key = this.keyFor('', o);
-					if (this.collected.has(key)) continue;
-					this.balls.push({ tx: +o.x, ty: +o.y, ambush: 'voltorb', key, hidden: false });
+				// Crystal names an item ball's script <Map><Item>; that guess is only
+				// valid on a Crystal map. Applied to Emerald/FireRed it turned EVERY
+				// scripted ball into a junk pickup named after its script: Aqua
+				// Hideout's Electrodes ("Found _EVENT SCRIPT_ELECTRODE2!", 2026-10-01),
+				// the Power Plant Electrodes, the Rocket Hideout SILPH SCOPE and LIFT
+				// KEY, the EEVEE / BELDUM / Dojo gift balls.
+				const crystal = !!map._crystal_tileset;
+				const parsed = parseBallScript(o.script) || (crystal ? parseCrystalBall(o.script, this.world.current.name) : null);
+				if (!parsed) {
+					// not an item pickup: a SCRIPTED ball. Talking to it runs its own
+					// authored script (an encounter, a gift, a key item); the script's
+					// hide (removeobject) takes it away. Never minted as an item.
+					if (!crystal && o.script && o.script !== '0x0') {
+						const key = this.keyFor('', o);
+						// LEGACY: before scripted balls, New Mauville's Voltorbs were a one-off
+						// ambush that recorded a FOUGHT ball in `collected` (not its hide flag).
+						// Those stay gone. Every other scripted ball found in `collected` got
+						// there as a junk pickup (no battle, no item, no flag), so it comes
+						// back to be used properly.
+						if (/EventScript_Voltorb\d+$/.test(o.script) && this.collected.has(key)) continue;
+						this.balls.push({ tx: +o.x, ty: +o.y, scripted: true, ev: o, script: o.script, key, hidden: false });
+					}
 					continue;
 				}
-				const parsed = parseBallScript(o.script) || parseCrystalBall(o.script, this.world.current.name);
-				if (!parsed) continue;
 				const key = this.keyFor('', o);
 				if (this.collected.has(key)) continue;
-				this.balls.push({ tx: +o.x, ty: +o.y, id: parsed[0], pretty: parsed[1], key, hidden: false });
+				this.balls.push({ tx: +o.x, ty: +o.y, id: parsed[0], pretty: parsed[1], key, hidden: false, flag: storyFlag(o.flag) });
 			} else if (g.includes('BERRY_TREE') || g.includes('FRUIT_TREE')) {
 				const item = g.includes('BERRY_TREE')
 					? emeraldBerry(o.trainer_sight_or_berry_tree_id)
@@ -193,43 +219,58 @@ export class Items {
 				// berries REGROW: harvested state comes from a 24h timestamp, not
 				// the permanent collected set (legacy entries there are ignored,
 				// so pre-regrowth harvests come back on the next visit)
-				this.trees.push({ tx: +o.x, ty: +o.y, item, name: berryPretty(item), key, harvested: this.berryHarvested(key) });
+				this.trees.push({ tx: +o.x, ty: +o.y, item, name: berryPretty(item), key, harvested: this.berryHarvested(key), ev: o });
 			}
 		}
 		// authentic HM-terrain chokepoints injected in code (map data is read-only):
 		// cut trees / rocks / boulders at progression gates, cleared by the usual HMs
 		for (const o of CODE_FIELD_OBJS[map.id] || []) this.fieldObjs.push({ tx: o.tx, ty: o.ty, kind: o.kind });
+		for (const o of CODE_ITEM_BALLS[map.id] || []) {
+			const key = 'code_' + o.id;
+			if (!this.collected.has(key)) this.balls.push({ tx: o.tx, ty: o.ty, id: o.id, pretty: o.pretty, key, hidden: false, flag: null });
+		}
+		// Crystal block trees: the tile IS the tree (drawn by the map), so CUT has to
+		// swap the tile, not just drop an object. Like every cut tree they grow back
+		// on the next visit — the cached layout was edited, so put the tree back.
+		for (const [tx, ty, tree, cut] of (this.cutBlocks && this.cutBlocks[map.id]) || []) {
+			if (this.world.gridAt(tx, ty) !== tree) this.world.setGridValue(tx, ty, tree);
+			this.fieldObjs.push({ tx, ty, kind: 'cut', tile: true, cutTo: cut });
+		}
 		for (const b of map.bg_events || []) {
 			if (b.type !== 'hidden_item') continue;
 			const parsed = parseItemConst(b.item);
 			if (!parsed) continue;
 			const key = this.keyFor('', b);
 			if (this.collected.has(key)) continue;
-			this.balls.push({ tx: +b.x, ty: +b.y, id: parsed[0], pretty: parsed[1], key, hidden: true });
+			this.balls.push({ tx: +b.x, ty: +b.y, id: parsed[0], pretty: parsed[1], key, hidden: true, flag: storyFlag(b.flag) });
 		}
 	}
 
-	// a disguised-Pokémon "ball" waiting at this tile (the host springs the battle)
-	ambushAt(tx, ty) {
-		return this.balls.find(b => b.ambush && b.tx === tx && b.ty === ty) || null;
+	// a scripted ball at this tile (its script is run by the host, ow_input.js)
+	scriptedAt(tx, ty) {
+		return this.balls.find(b => b.scripted && !b.hidden && b.tx === tx && b.ty === ty) || null;
 	}
-	takeAmbush(b) {
-		this.balls = this.balls.filter(x => x !== b);
-		this.markCollected(b.key);
-	}
+	// the scripted balls, for scripts that address them (removeobject VAR_LAST_TALKED)
+	scriptedBalls() { return this.balls.filter(b => b.scripted); }
 
 	// pickup / harvest at a tile; returns a message or null
-	interactAt(tx, ty) {
-		const i = this.balls.findIndex(b => !b.ambush && b.tx === tx && b.ty === ty);
+	// opts.skipHidden: leave hidden items alone (someone is standing on the tile)
+	interactAt(tx, ty, opts) {
+		const i = this.balls.findIndex(b => !b.scripted && b.tx === tx && b.ty === ty && !(opts && opts.skipHidden && b.hidden));
 		if (i >= 0) {
 			const b = this.balls[i];
 			this.balls.splice(i, 1);
 			this.markCollected(b.key);
+			// the decomp's pickup (finditem + removeobject) also SETS the ball's hide
+			// flag in the story — and story scripts read it: Cinnabar's gym door
+			// unlocks only when FLAG_HIDE_POKEMON_MANSION_B1F_SECRET_KEY is set
+			// (2026-10-04: Instinct had the key in the bag and a locked door)
+			if (b.flag) setFlag(b.flag);
 			Bag.addItem(b.id);
 			Bag.registerName(b.id, b.pretty.toUpperCase());
 			return `Found ${b.pretty.toUpperCase()}!`;
 		}
-		const t = this.trees.find(t => t.tx === tx && t.ty === ty);
+		const t = this.liveTrees().find(t => t.tx === tx && t.ty === ty);
 		if (t) {
 			if (t.harvested) return 'The tree is bare. (Berries regrow in a day.)';
 			t.harvested = true;
@@ -241,10 +282,17 @@ export class Items {
 		return null;
 	}
 
+	// the berry trees standing right now. A tree's object can carry a hide flag:
+	// Route 130's LIECHI tree is MIRAGE ISLAND's, hidden by FLAG_TEMP_HIDE_MIRAGE_ISLAND_BERRY_TREE
+	// whenever the island is down (the route's ON_TRANSITION sets it, after this list
+	// was built), so it is read live. Before, the tree stood in the open sea, solid and
+	// pickable, every day.
+	liveTrees() { return this.trees.filter(t => !(t.ev && objectHiddenByFlag(t.ev))); }
+
 	// visible balls, berry trees, and field obstacles are solid
 	occupied(tx, ty) {
 		return this.balls.some(b => !b.hidden && b.tx === tx && b.ty === ty)
-			|| this.trees.some(t => t.tx === tx && t.ty === ty)
+			|| this.liveTrees().some(t => t.tx === tx && t.ty === ty)
 			|| this.fieldObjs.some(o => o.tx === tx && o.ty === ty);
 	}
 
@@ -254,6 +302,8 @@ export class Items {
 	removeFieldObj(obj) {
 		const i = this.fieldObjs.indexOf(obj);
 		if (i >= 0) this.fieldObjs.splice(i, 1);
+		// a block tree: cutting it swaps in the replacement (walkable) tile
+		if (obj && obj.cutTo != null) this.world.setGridValue(obj.tx, obj.ty, obj.cutTo);
 	}
 	moveFieldObj(obj, tx, ty) {
 		obj.tx = tx; obj.ty = ty;
@@ -276,6 +326,7 @@ export class Items {
 	}
 	draw(ctx, camX, camY) {
 		for (const o of this.fieldObjs) {
+			if (o.tile) continue;   // a block tree: the map tile already draws it
 			const x = o.tx * META - camX, y = o.ty * META - camY;
 			if (o.kind === 'boulder') {
 				// a big rounded strength boulder filling the tile
@@ -311,7 +362,7 @@ export class Items {
 			const x = b.tx * META - camX, y = b.ty * META - camY;
 			this.drawBall(ctx, x, y);
 		}
-		for (const t of this.trees) {
+		for (const t of this.liveTrees()) {
 			const x = t.tx * META - camX, y = t.ty * META - camY;
 			// trunk + canopy
 			ctx.fillStyle = '#734d29';

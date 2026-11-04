@@ -7,7 +7,7 @@ import { validateGameState } from '../../engine/validate.js';
 const raw = JSON.parse(fs.readFileSync(new URL('../../cards.json', import.meta.url)));
 const byId = {}; for (const c of raw.cards) byId[c.id] = c;
 byId._v = { id: '_v', name: 'V', type: 'creature', cost: 1, attack: 1, health: 1, rarity: 'common', tribe: 'Beast' };
-byId._cat = { id: '_cat', name: 'C', type: 'creature', cost: 2, attack: 2, health: 2, rarity: 'common', tribe: 'Cat' };
+byId._cat = { id: '_cat', name: 'C', type: 'creature', cost: 2, attack: 2, health: 2, rarity: 'common', tribe: 'Beast' };   // a Cat — animal tribes are Beast (owner, 2026-10-05)
 byId._heal = { id: '_heal', name: 'H', type: 'sorcery', cost: 0, rarity: 'common', description: 'x', effects: [{ type: 'heal', value: 1, target: 'self' }] };
 let pass = 0, fail = 0;
 const ok = (l, c, x) => { if (c) pass++; else { fail++; console.log('FAIL:', l, x ?? ''); } };
@@ -48,9 +48,9 @@ for (const c of pool) {
 { const st = game(); st.players[0].life = 20; play(st, 0, 'ajani_welcome', null);
   play(st, 0, '_v', null);
   ok('Ajani’s Welcome (Alliance) gains 2 Life when you play a creature', st.players[0].life === 22, st.players[0].life); }
-// mantra: Cat anthem +1/+1
+// mantra: Beast anthem +1/+1 (was Cats; animal tribes became Beast, 2026-10-05)
 { const st = game(); play(st, 0, 'ajani_mantra', null); const cat = put(st, 0, '_cat'); E.recomputeAuras(st);
-  ok('Ajani’s Mantra gives your Cats +1/+1', cat.attack === 3 && E.hp(cat) === 3, [cat.attack, E.hp(cat)]); }
+  ok('Ajani’s Mantra gives your Beasts +1/+1', cat.attack === 3 && E.hp(cat) === 3, [cat.attack, E.hp(cat)]); }
 // pridemate: grows on lifegain
 { const st = game(); st.players[0].life = 20; const pm = put(st, 0, 'ajani_pridemate');
   play(st, 0, '_heal', null);

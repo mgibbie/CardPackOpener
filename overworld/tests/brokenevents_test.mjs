@@ -25,6 +25,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import puppeteer from 'puppeteer-core';
+import { overworldSource } from './owsource.mjs';   // main.js + the modules split out of it
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '../../');
@@ -80,7 +81,7 @@ for (const id of ['fullheal', 'antidote', 'parlyzheal', 'awakening', 'burnheal',
 for (const id of ['nugget', 'masterball', 'elixer', 'maxether', 'sodapop', 'oaksparcel', 'coincase'])
 	A(bagItems.has(id), `common event reward exists: ${id}`);
 A(/kind: 'cure'/.test(bagSrc), "bag.js declares the 'cure' kind");
-A(/item\?\.kind === 'cure'/.test(fs.readFileSync(path.join(ROOT, 'overworld/main.js'), 'utf8')),
+A(/item\?\.kind === 'cure'/.test(overworldSource()),
 	'main.js implements using a status cure');
 
 // ---------- static: no map event still points at a broken destination ----------

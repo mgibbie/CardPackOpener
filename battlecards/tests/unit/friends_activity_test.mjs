@@ -25,7 +25,9 @@ function extractFn(name) {
 	return src.slice(i, k);
 }
 const stubOnline = f => !!f._online; // test-controlled online bit
-const friendActivity = new Function('isOnline', 'CARD_MODE_LABEL', extractFn('friendActivity') + '; return friendActivity;')(stubOnline, CARD_MODE_LABEL);
+// the shared routing/label helpers (site/livewatch.js) are a pure module — import them for real
+const LW = await import(new URL('../../../site/livewatch.js', import.meta.url).href);
+const friendActivity = new Function('isOnline', 'CARD_MODE_LABEL', 'micatroActivityLabel', extractFn('friendActivity') + '; return friendActivity;')(stubOnline, CARD_MODE_LABEL, LW.micatroActivityLabel);
 
 // --- every card mode maps to a human label + is spectatable ---
 const A = friendActivity({ status: 'card:dungeon', region: 'Volcano · Lv 3', _online: true });
@@ -47,11 +49,27 @@ ok('a pokemon battle is live with its matchId (for Overworld spectate)', P.live 
 ok('an exploring friend is not live', !friendActivity({ status: 'visiting:PalletTown' }).live);
 ok('an idle online friend reads "online", not live', (() => { const a = friendActivity({ status: '', _online: true }); return !a.live && a.label === 'online'; })());
 ok('an offline friend reads "offline"', friendActivity({ status: '' }).label === 'offline');
+const M = friendActivity({ status: 'micatro:Ante 3', region: 'Ante 3', _online: true });
+ok('a MICATRO run is live and reads "Playing Micatro — Ante 3"', M.live && M.kind === 'micatro' && M.label === 'Playing Micatro — Ante 3', JSON.stringify(M));
+// MicaSurvivor (M5 batch 12c): the server's `friends` marks a friend in a run (its beacon) as micasurvivor:run
+const MS = friendActivity({ status: 'micasurvivor:run', region: 'Pikachu · Boss Rush', _online: true });
+ok('a MICASURVIVOR run is live (kind micasurvivor) with its label', MS.live && MS.kind === 'micasurvivor' && MS.label === 'in a MicaSurvivor run · Pikachu · Boss Rush', JSON.stringify(MS));
+ok('...the generic region "MicaSurvivor" is not repeated', friendActivity({ status: 'micasurvivor:run', region: 'MicaSurvivor' }).label === 'in a MicaSurvivor run');
+ok('in the MicaSurvivor menus or lobby is NOT watchable', !friendActivity({ status: 'micasurvivor', _online: true }).live && !friendActivity({ status: 'micasurvivor:lobby', _online: true }).live);
+const F = friendActivity({ status: 'factory:BATTLE FACTORY', region: 'BATTLE FACTORY' });
+ok('a Battle Frontier run is live (kind factory)', F.live && F.kind === 'factory', JSON.stringify(F));
 
 // --- source guards: the Watch button + routing must stay wired ---
 ok('renderFriends shows a Watch button for a live friend', /act\.live/.test(src) && /Watch/.test(src) && /watchFriend\(f\)/.test(src));
-ok('watchFriend routes a card game to ?spectate=', /watchFriend/.test(src) && /battlecards\/\?spectate=/.test(src));
-ok('watchFriend routes a pokemon battle to the Overworld watch', /overworld\/\?mp=1&watch=/.test(src));
+// routing lives in site/livewatch.js (shared with the Live now hub + the Overworld)
+const wf = extractFn('watchFriend');
+ok('watchFriend routes through watchHref', /watchHref\(\{ username: f\.username, kind: act\.kind, matchId: act\.matchId \}\)/.test(wf), wf);
+const route = f => LW.watchHref({ username: f.username, kind: friendActivity(f).kind, matchId: friendActivity(f).matchId });
+ok('watchFriend routes a card game to ?spectate=', route({ username: 'amy', status: 'card:dungeon' }) === '/battlecards/?spectate=amy&mp=1');
+ok('watchFriend routes a pokemon battle to the Overworld watch', route({ username: 'amy', status: 'battling:m_abc' }) === '/overworld/?mp=1&watch=m_abc');
+ok('watchFriend routes a Battle Frontier run to the Overworld spectator', route({ username: 'amy', status: 'factory:BATTLE FACTORY' }) === '/overworld/?watchfactory=amy&mp=1');
+ok('watchFriend routes a Micatro run to /micatro/?spectate=', route({ username: 'amy', status: 'micatro:Ante 3' }) === '/micatro/?spectate=amy');
+ok('watchFriend routes a MicaSurvivor run to /micasurvivor/?watch=', route({ username: 'amy', status: 'micasurvivor:run' }) === '/micasurvivor/?watch=amy');
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

@@ -20,6 +20,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { overworldSource } from './owsource.mjs';   // main.js + the modules split out of it
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '../../');
@@ -34,7 +35,7 @@ for (const f of fs.readdirSync(path.join(D, 'maps'))) if (f.endsWith('_map.json'
 // ---------- the loader really does key on the stem ----------
 {
 	const eng = fs.readFileSync(path.join(ROOT, 'overworld/engine.js'), 'utf8');
-	const main = fs.readFileSync(path.join(ROOT, 'overworld/main.js'), 'utf8');
+	const main = overworldSource();
 	A(/return \{ name, map, layout, ts \}/.test(eng),
 		"loadBundle returns the STEM as `name` — so world.current.name is the file stem, not the map's `name` field");
 	A(/loadMapScripts\(world\.current\.name\)/.test(main), 'and loadMapScripts is called with it');

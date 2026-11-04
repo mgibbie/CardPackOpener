@@ -53,6 +53,13 @@ function exportsOf(absPath) {
 		const as = /\bas\s+([A-Za-z0-9_$]+)/.exec(t);
 		set.add(as ? as[1] : t.split(/\s+/)[0]);
 	}
+	// export { a, b as c } from './x.js'  (a re-export) → this module exports a, c too
+	const re = /^\s*export\s+\{([^}]*)\}\s*from\s*['"][^'"]+['"]/gm;
+	while ((m = re.exec(src))) for (const part of m[1].split(',')) {
+		const t = part.trim(); if (!t) continue;
+		const as = /\bas\s+([A-Za-z0-9_$]+)/.exec(t);
+		set.add(as ? as[1] : t.split(/\s+/)[0]);
+	}
 	exportCache.set(absPath, set);
 	return set;
 }

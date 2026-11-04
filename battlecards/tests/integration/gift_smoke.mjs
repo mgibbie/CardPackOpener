@@ -73,6 +73,17 @@ async function waitFor(fn, ms) {
 		const noItems = await api('gift-send', { to: 'giftee', items: {} }, owner);
 		A(/1 and 20/.test(noItems.error || ''), 'an empty gift is refused', JSON.stringify(noItems));
 
+		// money is an AMOUNT (a refund, a prize), capped at 999999 rather than 999 (2026-10-08:
+		// the Safari fee refund for a tester charged by the broken gate)
+		const money = await api('gift-send', { to: 'giftee', title: 'Refund', items: { money: 500 } }, owner);
+		A(money.ok === true && money.gift?.items?.money === 500, 'a money gift of 500 is accepted', JSON.stringify(money));
+		const bigMoney = await api('gift-send', { to: 'giftee', items: { money: 5000 } }, owner);
+		A(bigMoney.ok === true, 'money above 999 is fine (it is an amount, not a count)', JSON.stringify(bigMoney));
+		const absurdMoney = await api('gift-send', { to: 'giftee', items: { money: 1000000 } }, owner);
+		A(/1-999999/.test(absurdMoney.error || ''), 'but not past 999999', JSON.stringify(absurdMoney));
+		// clear those two so the pending counts below start from zero
+		for (const g of ((await api('gift-list', {}, player)).gifts || [])) await api('gift-claim', { id: g.id }, player);
+
 		// ---- send ----
 		const sent = await api('gift-send', {
 			to: 'giftee', title: 'Welcome!', body: 'Glad you are here.', items: { rarecandy: 100 },
@@ -107,9 +118,9 @@ async function waitFor(fn, ms) {
 			'and it is still waiting for its owner');
 
 		// ---- the client half exists and is wired ----
-		const mainSrc = fs.readFileSync(path.join(ROOT, 'overworld/main.js'), 'utf8');
+		const mainSrc = ['overworld/main.js', 'overworld/ow_saves.js'].map(f => fs.readFileSync(path.join(ROOT, f), 'utf8')).join('\n'); // claimGifts moved to ow_saves.js (#562-#600)
 		A(/async function claimGifts\(\)/.test(mainSrc), 'the overworld has a claimGifts()');
-		A(/claimGifts\(\);/.test(mainSrc), 'and calls it on boot');
+		A(/claimGifts\(\)[.;]/.test(mainSrc), 'and calls it on boot');
 		A(/Bag\.addItem\(id, n\)/.test(mainSrc), 'which puts the items in the bag');
 		// scope the ordering check to claimGifts' own body — main.js has other
 		// Bag.addItem(id, n) calls (a cutscene's giveItem) far earlier in the file
@@ -124,6 +135,7 @@ async function waitFor(fn, ms) {
 		A(!/\bawait\b/.test(gap.slice(gap.indexOf('\n'))),
 			'and nothing awaits in between, so a crash cannot spend it without paying',
 			JSON.stringify(gap.slice(0, 120)));
+		A(/id === 'money'\) \{ Bag\.earn\(n\)/.test(body), 'a money gift goes straight into the wallet (Bag.earn), not the bag', JSON.stringify(body.slice(0, 80)));
 	} catch (e) {
 		A(false, 'harness crashed: ' + e.message);
 	} finally {

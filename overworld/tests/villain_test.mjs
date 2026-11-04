@@ -164,7 +164,8 @@ try {
 		const list = window.__ow.trainers.list, data = window.__ow.trainers.data;
 		const leader = list.find(t => data.rosters?.[t.ev.script]?.class === 'Gym Leader');
 		const team = leader ? window.__ow.trainers.buildBattle(leader, window.__ow.battle.data).party.length : 0;
-		const imgW = leader?.img?.width, imgSrc = leader?.img?.src || '';
+		// images decode from blob: URLs since #679, so the asset path lives in dataset.src
+		const imgW = leader?.img?.width, imgSrc = leader?.img?.dataset?.src || leader?.img?.src || '';
 		await window.__ow.moveToMap('Route110');
 		return { leader: !!leader, name: leader && data.rosters[leader.ev.script].name, team, imgW, realArt: /people_extra\/roxanne/.test(imgSrc), route: window.__ow.trainers.list.length };
 	});

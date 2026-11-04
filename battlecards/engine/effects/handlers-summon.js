@@ -29,7 +29,7 @@ import {
 	checkGameOver, questTick, disguiseCreature,
 	spendMana, breakWeapon, resolveCombat, addCardToHand, syncCthun, degradeWeapon,
 	runBattlecry, kindredActive, firePonder,
-	applyRollEntry, targetSpec, legalTargets, runSpell,
+	applyRollEntry, targetSpec, legalTargets, runSpell, copyDefOf,
 	fireEmerge, staticValue, growBlubberBaron, queueAdapt, returnBlinked, has, MAX_SECRETS, destroyPermanent, findPermanent,
 	EXCAVATE_TIERS, EXCAVATE_LEGENDARIES, ALL_AZERITE_LEGENDARIES,
 } from '../../engine.js';
@@ -37,6 +37,7 @@ import { damageCreature, healHero } from '../damage.js';
 import { gainArmor } from '../damage.js';
 import { drawCards, toGraveyard, bouncePermanent } from '../zones.js';
 import { runDeathrattle } from '../death.js';
+import { noteResult } from './followups.js';
 
 register('summon-random-hand-size', ({ state, pi, target, source, enemies, scaled }, e) => {
 			// Astromancer: summon a random creature costing exactly your hand size
@@ -50,10 +51,21 @@ register('blessing-dragon', ({ state, pi, target, source, enemies, scaled }, e) 
 });
 
 
+// ONE Invoke, two counters: galakrondInvokes powers Galakrond up, invokeCount answers
+// "if you've Invoked twice" (Kronx, Scion of Ruin, Veiled Worshipper…). The two Invoke
+// effects used to bump one counter each, so the 10 invoke-galakrond cards never counted
+// toward "Invoked twice" and Dragonblight Cultist / Corrupt Elementalist never upgraded
+// Galakrond (2026-10-26: Kronx took his Armor branch after two Galakrond Invokes).
+function countInvokes(state, pi, n) {
+	const p = state.players[pi];
+	p.galakrondInvokes = (p.galakrondInvokes || 0) + n;
+	p.invokeCount = (p.invokeCount || 0) + n;
+	emit(state, { type: 'invokeGalakrond', player: pi, count: p.galakrondInvokes });
+}
+
 register('invoke-galakrond', ({ state, pi, target, source, enemies, scaled }, e) => {
 			// Invoke Galakrond: power up your Galakrond (base -> upgraded at 2 -> maxed at 4)
-			state.players[pi].galakrondInvokes = (state.players[pi].galakrondInvokes || 0) + 1;
-			emit(state, { type: 'invokeGalakrond', player: pi, count: state.players[pi].galakrondInvokes });
+			countInvokes(state, pi, 1);
 });
 
 
@@ -341,7 +353,7 @@ register('summon-per-enemy-bomb', ({ state, pi, target, source, enemies, scaled,
 register('invoke', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
 			// Descent of Dragons: Invoke Galakrond (tracked as a counter; grants a small bonus)
 			const p = state.players[pi];
-			p.invokeCount = (p.invokeCount || 0) + (e.times || 1);
+			countInvokes(state, pi, e.times || 1);
 			if (source && source.zone === 'board' && !isDead(source) && (e.attack || e.health)) buffCreature(source, e.attack || 0, e.health || 0);
 });
 
@@ -453,9 +465,14 @@ register('enemy-summon-from-deck', ({ state, pi, target, source, enemies, scaled
 register('resurrect-highest-died', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
 			// Calia Menethil: resurrect your highest-Cost minion that died this game
 			const p = state.players[pi];
-			const _pool = [...new Set(p.deathLogIds)].map(id => state.cardsById[id]).filter(d => d && d.type === 'creature').sort((x, y) => (y.cost || 0) - (x.cost || 0));
-			for (let _k = 0; _k < (e.count || 1) && _pool.length; _k++) {
-				const c2 = summon(state, pi, _pool[Math.min(_k, _pool.length - 1)]);
+			// one candidate per real DEATH (deathLogMeta logs every instance; deathLogIds is unique
+			// ids — the fallback for an old snapshot), highest Cost first, never padded: the old
+			// loop re-picked the last candidate until `count`, so Staff of Renewal (count 7) raised
+			// one dead Augur six times off two deaths (instinctgauntlet, 2026-10-28)
+			const _ids = p.deathLogMeta?.length ? p.deathLogMeta.map(m => m.id) : [...new Set(p.deathLogIds)];
+			const _pool = _ids.map(id => state.cardsById[id]).filter(d => d && d.type === 'creature').sort((x, y) => (y.cost || 0) - (x.cost || 0));
+			for (let _k = 0; _k < Math.min(e.count || 1, _pool.length); _k++) {
+				const c2 = summon(state, pi, _pool[_k]);
 				if (c2 && e.grant && !c2.keywords.includes(e.grant)) { c2.keywords.push(e.grant); if (e.grant === 'divine_shield') c2.shield = true; }
 			}
 });
@@ -524,7 +541,7 @@ register('remove-colossal-keyword', ({ state, pi, target, source, enemies, scale
 register('summon-copy-of-target-buffed', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
 			// Ini Stormcoil: summon a copy of a chosen friendly minion with granted keywords
 			const t = chosenCreature();
-			if (t) { const base = state.cardsById[t.id]; if (base) { const c = summon(state, pi, JSON.parse(JSON.stringify(base))); if (c) { for (const kw of e.keywords || []) { if (!c.keywords.includes(kw)) { c.keywords.push(kw); if (kw === KW.DIVINE_SHIELD) c.shield = true; } } if (e.attack || e.health) { c.attack += e.attack || 0; c.maxHealth += e.health || 0; emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) }); } if (e.grantFragile) c.diesToAnyDamage = true; } } } // Aman'Thul (Shape the Stars): copy with +2/+2; Reverberations: fragile copy
+			if (t) { const base = copyDefOf(state, t); if (base) { const c = summon(state, pi, JSON.parse(JSON.stringify(base))); if (c) { for (const kw of e.keywords || []) { if (!c.keywords.includes(kw)) { c.keywords.push(kw); if (kw === KW.DIVINE_SHIELD) c.shield = true; } } if (e.attack || e.health) { c.attack += e.attack || 0; c.maxHealth += e.health || 0; emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) }); } if (e.grantFragile) c.diesToAnyDamage = true; } } } // Aman'Thul (Shape the Stars): copy with +2/+2; Reverberations: fragile copy
 } });
 
 
@@ -1096,17 +1113,22 @@ register('summon-from-hand', ({ state, pi, target, source, enemies, scaled, hm, 
 			// Voidcaller: a random qualifying creature jumps from hand to board.
 			// count>1 pulls that many (Beastmaster Leoroxx: 3 Beasts from hand)
 			const p = state.players[pi];
+			const _put = [];
+			noteResult(source, 'summoned', _put); // Chemical Spill: "...then deal 5 damage to it"
 			for (let n = 0; n < (e.count || 1); n++) {
-				const pool = p.hand.filter(c => c.type === 'creature'
+				let pool = p.hand.filter(c => c.type === 'creature'
 					&& (!e.tribe || (c.tribe || '').includes(e.tribe))
 					&& (e.maxCost == null || (c.cost || 0) <= e.maxCost) // Razorboar
 					&& (!e.requireKeyword || (c.keywords || []).includes(e.requireKeyword)));
 				if (!pool.length) break;
+				// Chemical Spill: the HIGHEST Cost creature (ties broken at random)
+				if (e.highest) { const top = Math.max(...pool.map(c => c.cost || 0)); pool = pool.filter(c => (c.cost || 0) === top); }
 				const c = pool[Math.floor(state.rng() * pool.length)];
 				p.hand = p.hand.filter(x => x !== c);
 				c.zone = 'board';
 				c.sick = true;
 				p.board.push(c);
+				_put.push(c);
 				emit(state, { type: 'summon', player: pi, card: c });
 				fireOngoing(state, pi, 'summoned', { minion: c });
 				recomputeAuras(state);
@@ -1325,7 +1347,7 @@ register('launch-starship', ({ state, pi, target, source, enemies, scaled, hm, p
 						if (hd && hd.launchTransform && state.cardsById[hd.launchTransform]) {
 							const ni = instantiate(state.cardsById[hd.launchTransform], pi);
 							ni.zone = 'hand'; p.hand[hi] = ni;
-							emit(state, { type: 'transformed', player: pi, uid: ni.uid, name: ni.name });
+							emit(state, { type: 'transformed', player: pi, uid: ni.uid, name: ni.name, from: hd.name, card: ni });
 						}
 					}
 					p.deck = p.deck.map(id => {
@@ -1380,6 +1402,7 @@ register('summon-attackers', ({ state, pi, chosenCreature }, e) => {
 			// target — with tribe:'Undead' it asked for "a friendly Undead" and found
 			// no legal target at all.
 			keywords: kws, tribe: e.tokenTribe || null,
+			immuneWhileAttacking: !!e.immuneWhileAttacking, // Furious Fowls: "with Immune while attacking"
 		});
 		if (!tok) break;                                   // board full
 		if (victim && !isDead(victim) && !isDead(tok)) {
@@ -1396,6 +1419,7 @@ register('summon', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy,
 			// forEnemy: tokens go to a random opponent (Leeroy's Whelps);
 			// eachPlayer: every player summons the token(s) (Sokenzan's Arrival)
 			let n = e.count === 'X' ? (source?.xValue || 0) : e.count === 'source-attack' ? (source?.attack || 0) : e.count === 'mana-max' ? (state.players[pi].mana?.max || 0) : (e.count || 1); // Rat Pack / Vision of the Warden (a Treant per Mana Crystal)
+			if (e.per === 'secrets-controlled') n += (state.players[pi].secrets || []).length; // Petting Zoo: "Repeat for each Secret you control"
 			if (e.perEnemy) {
 				n = 0;
 				for (const o of enemies) n += state.players[o].board.filter(c => !isDead(c)).length;
@@ -1414,6 +1438,7 @@ register('summon', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy,
 				// e.g. Gibberling's Spellburst summons another Gibberling that snowballs
 				if (opt.summonId && state.cardsById[opt.summonId]) {
 					const sc = summon(state, ownerIdx, state.cardsById[opt.summonId]);
+					if (sc && ownerIdx !== pi) sc.createdBy = pi; // a gift to another player remembers its maker (Worgen Roadie's Instrument Case)
 					if (sc && e.grant) for (const k of e.grant) { if (!sc.keywords.includes(k)) sc.keywords.push(k); if (k === KW.DIVINE_SHIELD) sc.shield = true; } // Super Simian Sphere: Mukla with Immune+Elusive
 					if (sc && e.buff) { sc.attack += e.buff.attack || 0; sc.maxHealth += e.buff.health || 0; } // Disciple of Sargeras (Forged): the Imps get +2 Health
 					if (sc && e.doom) sc.doomTurn = state.turnNumber; // Ghoul Blitz (Duels): dies at end of turn
@@ -1757,6 +1782,21 @@ register('dragonbone-revive', ({ state, pi, target, source, enemies, scaled, hm,
 	const c = summon(state, pi, state.cardsById[source.id]);
 	if (c) { c.dormantLeft = 99; c.reviveTimer = 2; emit(state, { type: 'dormant', player: pi, uid: c.uid, turns: 2 }); }
 } });
+
+
+register('revive-later', ({ state, pi, source }, e) => {
+	// Inexorable Ghoul: "Deathrattle: Revive after N turns." The creature LEAVES play —
+	// nothing waits on the board to be buffed, frozen or killed — and a FRESH copy
+	// returns later. "N turns" counts the owner's turn starts, the same clock as
+	// Dormant ("Dormant for 2 turns") and Dragonbone Ritual's "Revive in two turns":
+	// it comes back at the start of the owner's 2nd turn after the death, whichever
+	// player's turn it died on (died on your turn 15 -> back on your turn 19).
+	if (!source || !state.cardsById[source.id]) return;
+	const p = state.players[pi];
+	const turns = Math.max(1, e.turns || 2);
+	(p.pendingRevives = p.pendingRevives || []).push({ id: source.id, turnsLeft: turns });
+	emit(state, { type: 'reviveScheduled', player: pi, name: source.name, turns });
+});
 
 
 register('destroy-summon-copy', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {

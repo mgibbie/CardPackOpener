@@ -1,0 +1,308 @@
+// Pokermon 3.9.1 — pokemon/pokejokers_18.lua (Pokédex 511-530: Pansage -> Excadrill), 11 jokers + 2 new in 3.9.1
+// (Munna / Musharna: at the end, new-jokers sub-batch 15; static data: data391.js new_jokers).
+// Line-for-line port of the behaviour; static data comes from data.js + data391.js (see ../PORTING.md).
+// On Pokermon 3.9.1 behaviour since batch 8, the Roggenrola line (the Hazard layer) since batch 10.
+// The Pansage / Pansear / Panpour lines' Shortcut / Four Fingers / Pareidolia effects are
+// find_joker aliases in systems/rules.js (find_joker_alias).
+import {
+  G, P_CENTERS, localize, card_eval_status_text, juice_card_until,
+  defineJokers, type_tooltip, detailed, scaling_evo, item_evo,
+  has_enhancement, has_no_rank, pseudorandom_probability, get_probability_vars,
+  hazard_layer, hazard_level_tip, poke_create_treasure, create_card,
+  scale_card, find_pokemon_type,
+} from '../api.js';
+
+const FILE = 'pokemon/pokejokers_18.lua';
+
+// ------------------------------------------------------------ shared bodies
+/** Roggenrola line: each held no-rank card (Stone / Hazard) gives +mult_mod Mult. */
+function rock_held(card, context, count) {
+  if (context.individual && !context.end_of_round && context.cardarea === G.hand && has_no_rank(context.other_card)) {
+    if (context.other_card.debuff) return { message: localize('k_debuffed'), colour: 'RED', card };
+    if (count && !context.blueprint) card.ability.extra.hazard_triggered = card.ability.extra.hazard_triggered + 1;
+    return { h_mult: card.ability.extra.mult_mod, card };
+  }
+  return undefined;
+}
+/** The Hazard layer jokers' tooltips (3.9.1): the Hazard Layer (current / max) and the Hazard card. */
+function hazard_tips(info_queue) {
+  info_queue.push(hazard_level_tip());
+  info_queue.push(P_CENTERS.m_poke_hazard);
+}
+
+defineJokers({
+  // Pansage 511
+  pansage: {
+    knockoff_starter: true,
+    loc_vars(self, info_queue, card) {
+      type_tooltip(self, info_queue, card);
+      info_queue.push({ set: 'Joker', key: 'j_shortcut', config: {} });
+      info_queue.push(P_CENTERS.c_poke_leafstone);
+      return { vars: [] };
+    },
+    calculate(self, card, context) { return item_evo(self, card, context, 'j_poke_simisage'); },
+  },
+  // Simisage 512
+  simisage: {
+    loc_vars(self, info_queue, card) {
+      type_tooltip(self, info_queue, card);
+      info_queue.push({ set: 'Joker', key: 'j_shortcut', config: {} });
+      info_queue.push(P_CENTERS.m_lucky);
+      const [num, dem] = get_probability_vars(card, card.ability.extra.num, card.ability.extra.dem, 'simisage');
+      return { vars: [num, dem] };
+    },
+    calculate(self, card, context) {
+      if (context.before && context.cardarea === G.jokers && !context.blueprint) {
+        let stall_for_effects = false;
+        for (const v of context.full_hand) {
+          if (v.config.center === P_CENTERS.c_base) {
+            if (pseudorandom_probability(card, 'simisage', card.ability.extra.num, card.ability.extra.dem, 'simisage')) {
+              stall_for_effects = true;
+              v.set_ability(P_CENTERS.m_lucky, null, true);
+              G.E_MANAGER.add_event(() => v.juice_up());
+            }
+          }
+        }
+        if (stall_for_effects) return { message: localize('k_upgrade_ex'), colour: 'GREEN' };
+      }
+      return undefined;
+    },
+  },
+  // Pansear 513
+  pansear: {
+    knockoff_starter: true,
+    loc_vars(self, info_queue, card) {
+      type_tooltip(self, info_queue, card);
+      info_queue.push({ set: 'Joker', key: 'j_four_fingers', config: {} });
+      info_queue.push(P_CENTERS.c_poke_firestone);
+      return { vars: [] };
+    },
+    calculate(self, card, context) { return item_evo(self, card, context, 'j_poke_simisear'); },
+  },
+  // Simisear 514
+  simisear: {
+    loc_vars(self, info_queue, card) {
+      type_tooltip(self, info_queue, card);
+      info_queue.push({ set: 'Joker', key: 'j_four_fingers', config: {} });
+      info_queue.push(P_CENTERS.c_empress);
+      const active = G.GAME && G.GAME.current_round && G.GAME.current_round.hands_played === 0;
+      return { vars: [active ? '(' + localize('k_active_ex') + ')' : ''] };
+    },
+    calculate(self, card, context) {
+      if (context.first_hand_drawn) juice_card_until(card, () => G.GAME.current_round.hands_played === 0, true);
+      // Pokermon 3.9.1: a first hand containing a Straight or a Flush makes The Empress at `before` (with room) and its
+      // unscored cards are destroyed in the destroy_card pass (cardarea 'unscored': remove_playing_cards listeners see it).
+      if (context.poker_hands && G.GAME.current_round.hands_played === 0
+        && (context.poker_hands.Straight.length || context.poker_hands.Flush.length)) {
+        if (context.before && G.consumeables.cards.length + G.GAME.consumeable_buffer < G.consumeables.config.card_limit) {
+          G.GAME.consumeable_buffer = G.GAME.consumeable_buffer + 1;
+          G.E_MANAGER.add_event(() => {
+            const _card = create_card('Tarot', G.consumeables, null, null, null, null, 'c_empress');
+            _card.add_to_deck();
+            G.consumeables.emplace(_card);
+            G.GAME.consumeable_buffer = 0;
+          });
+          return { message: localize('k_plus_tarot'), colour: 'PURPLE' };
+        }
+        if (context.destroy_card && context.cardarea === 'unscored' && !context.blueprint) return { remove: true };
+      }
+      return undefined;
+    },
+  },
+  // Panpour 515
+  panpour: {
+    knockoff_starter: true,
+    loc_vars(self, info_queue, card) {
+      type_tooltip(self, info_queue, card);
+      info_queue.push({ set: 'Joker', key: 'j_pareidolia', config: {} });
+      info_queue.push(P_CENTERS.c_poke_waterstone);
+      return { vars: [] };
+    },
+    calculate(self, card, context) { return item_evo(self, card, context, 'j_poke_simipour'); },
+  },
+  // Simipour 516
+  simipour: {
+    loc_vars(self, info_queue, card) {
+      type_tooltip(self, info_queue, card);
+      info_queue.push({ set: 'Joker', key: 'j_pareidolia', config: {} });
+      info_queue.push(P_CENTERS.m_bonus);
+      return { vars: [] };
+    },
+    calculate(self, card, context) {
+      if (context.before && context.cardarea === G.jokers && !context.blueprint) {
+        let lowest_card = null;
+        for (const v of context.full_hand) {
+          if (v.config.center === P_CENTERS.c_base) {
+            if (!lowest_card) lowest_card = v;
+            else if (v.base.nominal < lowest_card.base.nominal) lowest_card = v;
+          }
+        }
+        if (lowest_card) {
+          lowest_card.set_ability(P_CENTERS.m_bonus, null, true);
+          G.E_MANAGER.add_event(() => lowest_card.juice_up());
+        }
+      }
+      return undefined;
+    },
+  },
+  // Roggenrola 524
+  roggenrola: {
+    loc_vars(self, info_queue, card) {
+      type_tooltip(self, info_queue, card);
+      const abbr = card.ability.extra;
+      hazard_tips(info_queue);
+      return { vars: [abbr.hazard_level, abbr.mult_mod, Math.max(0, self.config.evo_rqmt - abbr.hazard_triggered)] };
+    },
+    calculate(self, card, context) {
+      const r = rock_held(card, context, true);
+      if (r) return r;
+      return scaling_evo(self, card, context, 'j_poke_boldore', card.ability.extra.hazard_triggered, self.config.evo_rqmt);
+    },
+    ...hazard_layer,
+  },
+  // Boldore 525
+  boldore: {
+    loc_vars(self, info_queue, card) {
+      type_tooltip(self, info_queue, card);
+      const abbr = card.ability.extra;
+      hazard_tips(info_queue);
+      if (detailed()) info_queue.push(P_CENTERS.c_poke_linkcable);
+      return { vars: [abbr.hazard_level, abbr.mult_mod] };
+    },
+    calculate(self, card, context) {
+      const r = rock_held(card, context, false);
+      if (r) return r;
+      return item_evo(self, card, context, 'j_poke_gigalith');
+    },
+    ...hazard_layer,
+  },
+  // Gigalith 526
+  gigalith: {
+    loc_vars(self, info_queue, card) {
+      type_tooltip(self, info_queue, card);
+      const abbr = card.ability.extra;
+      hazard_tips(info_queue);
+      return { vars: [abbr.hazard_level, abbr.mult_mod] };
+    },
+    calculate(self, card, context) {
+      const r = rock_held(card, context, false);
+      if (r) return r;
+      if (context.repetition && context.cardarea === G.hand && context.card_effects
+        && ((context.card_effects[0] && Object.keys(context.card_effects[0]).length) || context.card_effects.length > 1) && has_no_rank(context.other_card)) {
+        return { message: localize('k_again_ex'), repetitions: card.ability.extra.retriggers, card };
+      }
+      return undefined;
+    },
+    ...hazard_layer,
+  },
+  // Drilbur 529
+  drilbur: {
+    loc_vars(self, info_queue, center) {
+      type_tooltip(self, info_queue, center);
+      info_queue.push({ set: 'Other', key: 'dril_treasure' });
+      return { vars: [Math.max(0, self.config.evo_rqmt - center.ability.extra.stones_destroyed)] };
+    },
+    calculate(self, card, context) {
+      if (context.first_hand_drawn && !context.blueprint) juice_card_until(card, (c) => c.ability.extra.active, true);
+      if (context.destroying_card) {
+        if (!context.blueprint && has_enhancement(context.destroying_card, 'm_stone') && card.ability.extra.active) {
+          card.ability.extra.active = false;
+          card.ability.extra.stones_destroyed = card.ability.extra.stones_destroyed + 1;
+          card_eval_status_text(card, 'extra', null, null, null, { message: localize('poke_drill_ex'), colour: 'earth' });
+          poke_create_treasure(card, 'drilbur');
+          return true;
+        }
+      }
+      if (context.end_of_round && !context.individual && !context.repetition && !context.blueprint) card.ability.extra.active = true;
+      return scaling_evo(self, card, context, 'j_poke_excadrill', card.ability.extra.stones_destroyed, self.config.evo_rqmt);
+    },
+  },
+  // Excadrill 530
+  excadrill: {
+    loc_vars(self, info_queue, center) {
+      type_tooltip(self, info_queue, center);
+      info_queue.push({ set: 'Other', key: 'exdril_treasure' });
+      return { vars: [center.ability.extra.mult_mod, G.GAME.starting_deck_size,
+        Math.max(0, center.ability.extra.mult_mod * (G.playing_cards ? (G.GAME.starting_deck_size - G.playing_cards.length) : 0))] };
+    },
+    calculate(self, card, context) {
+      if (context.cardarea === G.jokers && context.scoring_hand && context.joker_main) {
+        const Mult = Math.max(0, card.ability.extra.mult_mod * (G.GAME.starting_deck_size - G.playing_cards.length));
+        if (Mult > 0) return { message: localize({ type: 'variable', key: 'a_mult', vars: [Mult] }), colour: 'MULT', mult_mod: Mult };
+      }
+      if (context.destroying_card) {
+        if (!context.blueprint && has_enhancement(context.destroying_card, 'm_stone')) {
+          card_eval_status_text(card, 'extra', null, null, null, { message: localize('poke_drill_ex'), colour: 'earth' });
+          poke_create_treasure(card, 'excadril', true);
+          return true;
+        }
+      }
+      return undefined;
+    },
+  },
+  // ---------------------------------------------------------------- new in 3.9.1 (new-jokers sub-batch 15)
+  // Munna 517: +2 Foresight. When a hand is played, each Enhanced Foreseen card loses its enhancement and Munna gains
+  // +X0.05 Mult for it. Evolves with a Moon Stone (Musharna keeps its X Mult: copy_scaled).
+  // (The Lua strips both the scry view's copy and the real deck card; our scry view IS the deck cards: one set_ability.)
+  munna: {
+    loc_vars(self, info_queue, center) {
+      type_tooltip(self, info_queue, center);
+      return { vars: [center.ability.extra.Xmult_multi, center.ability.extra.Xmult_mod, center.ability.extra.scry] };
+    },
+    calculate(self, card, context) {
+      if (context.before) {
+        let eaten = 0;
+        for (const v of G.scry_view ? G.scry_view.cards : []) {
+          if (v.config.center !== P_CENTERS.c_base && !v.debuff && !v.vampired) {
+            v.vampired = true;
+            eaten = eaten + 1;
+            v.set_ability(P_CENTERS.c_base, null, true);
+            G.E_MANAGER.add_event(() => { v.juice_up(); v.vampired = undefined; });
+          }
+        }
+        if (eaten > 0) {
+          scale_card(card, {
+            ref_value: 'Xmult_multi', scalar_value: 'Xmult_mod',
+            operation: (ref_table, ref_value, initial, change) => { ref_table[ref_value] = initial + (change * eaten); },
+            no_message: true,
+          });
+        }
+      }
+      if (context.joker_main) return { Xmult: card.ability.extra.Xmult_multi };
+      return item_evo(self, card, context, 'j_poke_musharna');
+    },
+    add_to_deck(self, card) { G.GAME.scry_amount = (G.GAME.scry_amount || 0) + card.ability.extra.scry; },
+    remove_from_deck(self, card) { G.GAME.scry_amount = Math.max(0, (G.GAME.scry_amount || 0) - card.ability.extra.scry); },
+  },
+  // Musharna 518: when the Blind is selected, +2 Foresight this round per Psychic joker; each Enhanced Foreseen card gives
+  // X Mult (inherited from Munna).
+  musharna: {
+    loc_vars(self, info_queue, center) {
+      type_tooltip(self, info_queue, center);
+      return { vars: [center.ability.extra.Xmult_multi, center.ability.extra.scry] };
+    },
+    calculate(self, card, context) {
+      if (context.setting_blind) {
+        const psy_count = find_pokemon_type('Psychic').length;
+        if (psy_count > 0) {
+          G.GAME.scry_amount = (G.GAME.scry_amount || 0) + (psy_count * card.ability.extra.scry);
+          card.ability.extra.scry_added = card.ability.extra.scry_added + (psy_count * card.ability.extra.scry);
+          card.juice_up();
+        }
+      }
+      if (context.end_of_round && !context.individual && !context.repetition) {
+        G.GAME.scry_amount = Math.max(0, (G.GAME.scry_amount || 0) - card.ability.extra.scry_added);
+        card.ability.extra.scry_added = 0;
+      }
+      if (context.individual && context.cardarea === G.scry_view && context.other_card.config.center !== P_CENTERS.c_base && !context.end_of_round && !context.other_card.debuff) {
+        return { x_mult: card.ability.extra.Xmult_multi };
+      }
+      return undefined;
+    },
+    remove_from_deck(self, card, from_debuff) {
+      if (!from_debuff && card.ability.extra.scry_added > 0) {
+        G.GAME.scry_amount = Math.max(0, (G.GAME.scry_amount || 0) - card.ability.extra.scry_added);
+      }
+    },
+  },
+}, FILE);

@@ -1,0 +1,13 @@
+{
+  "run_first": ["src/functions.lua"],
+  "files": {
+    "jokers": ["src/pokemon/"],
+    "consumables": ["src/consumables/"],
+    "backs": ["src/backs/"],
+    "stakes": ["src/stakes/"],
+    "stickers": ["src/stickers/"],
+    "challenges": ["src/challenges/"]
+  },
+  "globals": [],
+  "loc": "localization/en-us.lua"
+}

@@ -298,6 +298,7 @@ export function instantiate(def, controller) {
 		transformInHandTribe: def.transformInHandTribe || null, // Hive Queen's Larva: only into a given tribe (Zerg)
 		transformInHandType: def.transformInHandType || null, // Molten Blade: transform into a random weapon (default: creature)
 		transformInHandClass: def.transformInHandClass || null, // Shifting Scroll: restrict the transform pool to a class
+		transformOnSpellCast: def.transformOnSpellCast || false, // Shadow of Demise: while held, becomes a copy of each spell you cast
 		transformWhenDrawn: def.transformWhenDrawn || null,  // Unidentified Maul: on draw, become a random one of these ids
 		keepsEnchantments: !!def.keepsEnchantments,          // Kingsbane: keeps its enchantments across shuffle/redraw
 		relic: !!def.relic,                                  // DH Relics: scale with relicImprove, doubled by Relic Vault
@@ -358,6 +359,7 @@ export function instantiate(def, controller) {
 		shieldMultiHit: def.shieldMultiHit || 0, // Toreth: your Divine Shields take this many hits to break
 		healDoubleAura: def.healDoubleAura || false, // Crystalsmith Kangor: your healing is doubled
 		tapAbility: def.tapAbility || null, // artifact {T} ability: { effects, text, condition? }
+		tapAbilities: def.tapAbilities ? JSON.parse(JSON.stringify(def.tapAbilities)) : null, // several {T} abilities; one tap uses one
 		tapTurns: def.tapTurns || 1,  // artifact {T} recharge: 1 = untaps next turn; 2/3 = double/triple-tap
 		tapCooldown: 0,               // turn-starts remaining before a multi-turn-tap artifact untaps
 		abilityUsedThisTurn: false,   // creatures never tap: abilities are once/turn
@@ -932,7 +934,9 @@ export function mulligan(state, pi, uids) {
 	emit(state, { type: 'mulligan', player: pi, count: swap.length });
 }
 
-export function addCoin(state, pi) {
+// `cause` (optional) rides the coinGiven event so the log can say WHY the Coin came:
+// { kind: 'land', by, land, from? } for an opponent's land develop / upgrade.
+export function addCoin(state, pi, cause) {
 	const p = state.players[pi];
 	if (p.eliminated) return;
 	const def = state.cardsById['coin'];
@@ -940,7 +944,7 @@ export function addCoin(state, pi) {
 	const card = instantiate(def, pi);
 	card.zone = 'hand';
 	p.hand.push(card);
-	emit(state, { type: 'coinGiven', player: pi, card });
+	emit(state, cause ? { type: 'coinGiven', player: pi, card, cause } : { type: 'coinGiven', player: pi, card });
 }
 
 // Tradeable: instead of playing the card, pay 1 mana to shuffle it back
@@ -1211,6 +1215,48 @@ export function concede(state, pi) {
 }
 
 // ---------- summoning ----------
+// "After/whenever you summon a creature" reactors (Su Leadfoot, Impish Aid, Spiked Arms,
+// the AV tactic passives, Collapsing Star). Summoning INCLUDES playing a creature from
+// hand — they used to live only in summon(), so a hand-played creature got nothing
+// (Su Leadfoot: no Divine Shield/Rush on played creatures, 2026-10-26). summon() and
+// playCard's creature branch both call this, once, right after the creature lands.
+export function applySummonReactors(state, pi, c) {
+	const p = state.players[pi];
+	if (p.collapsingStar && (c.tribe || '').includes('Demon')) for (const hpw of p.heroPowers) if (hpw.id === 'collapsing_star') hpw.usedThisTurn = false; // Collapsing Star: summoning a Demon refreshes it
+	// AV tactic passives (Duels): Neutral creatures the tactic-holder summons on their turn
+	if (state.current === pi && c.type === 'creature' && (c.cardClass || 'neutral') === 'neutral') {
+		if (heroPassive(p, 'bolsterDefenses')) { c.attack += 1; c.maxHealth += 2; emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) }); }
+		if (heroPassive(p, 'takeTheBridge')) { c.attack += 2; if (!c.keywords.includes(KW.RUSH)) c.keywords.push(KW.RUSH); emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) }); }
+	}
+	// Duels treasure creatures/weapons that react to the controller's summons
+	if (c.type === 'creature') {
+		if (p.board.some(x => x.suLeadfoot && x !== c && !isDead(x))) { for (const k of [KW.DIVINE_SHIELD, KW.RUSH]) if (!c.keywords.includes(k)) c.keywords.push(k); c.shield = true; emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) }); } // Su Leadfoot
+		if ((c.tribe || '').includes('Demon') && p.board.some(x => x.impishAid && x !== c && !isDead(x))) { c.attack += 2; c.maxHealth += 2; emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) }); } // Impish Aid
+		if (p.weapon && p.weapon.spikedArms) { c.attack += 2; emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) }); damageCreature(state, c, 1, null); } // Spiked Arms (buff first so 1-Health summons keep the Attack for their death log)
+	}
+}
+
+// The def to build a "copy of a creature" from. A real card copies its printed
+// card; a TOKEN (Wolf, Doombot, Voidfiend...) has no cards.json entry, so every
+// "create a copy of it" handler that looked the id up silently did nothing on one
+// (Germination on a Thor Wolf, 2026-10-27). Rebuild the token's printed form
+// from the instance instead: its printed stats, its own (non-aura) keywords,
+// its text, and the copy stays a token.
+export function copyDefOf(state, c) {
+	if (!c) return null;
+	const def = state.cardsById && state.cardsById[c.id];
+	if (def) return def;
+	const clone = v => (v == null ? v : JSON.parse(JSON.stringify(v)));
+	const aura = c.auraKeywords || [];
+	return {
+		id: c.id, name: c.name, type: c.type || 'creature', cardClass: c.cardClass || 'neutral',
+		cost: c.cost || 0, rarity: c.rarity || 'common', description: c.description || '', token: true,
+		attack: c.printedAttack ?? c.attack ?? 0, health: c.printedHealth ?? c.maxHealth ?? 1,
+		keywords: (c.keywords || []).filter(k => !aura.includes(k)), tribe: c.tribe || null,
+		deathrattle: clone(c.deathrattle), ongoing: clone(c.ongoing), effects: clone(c.effects),
+	};
+}
+
 // the Creatures row has no size cap; only eliminated players can't summon
 export function summon(state, pi, tokenDef) {
 	const p = state.players[pi];
@@ -1235,10 +1281,10 @@ export function summon(state, pi, tokenDef) {
 	}
 	if (p.nextTribeSummonBuff && (c.tribe || '').includes(p.nextTribeSummonBuff.tribe)) { c.attack += p.nextTribeSummonBuff.attack || 0; c.maxHealth += p.nextTribeSummonBuff.health || 0; p.nextTribeSummonBuff = null; } // Thornmantle Musician
 	if (p.tribeSummonBuff && state.turnNumber < p.tribeSummonBuff.untilTurn && (c.tribe || '').includes(p.tribeSummonBuff.tribe)) { for (const k of p.tribeSummonBuff.keywords) if (!c.keywords.includes(k)) { c.keywords.push(k); if (k === KW.DIVINE_SHIELD) c.shield = true; } } // Timewarden: Dragons gain Taunt + Divine Shield
-	if (p.collapsingStar && (c.tribe || '').includes('Demon')) for (const hpw of p.heroPowers) if (hpw.id === 'collapsing_star') hpw.usedThisTurn = false; // Collapsing Star: summoning a Demon refreshes it
 	if (p.legionInvasion && (c.tribe || '').includes('Demon')) { c.maxHealth += 2; if (!c.keywords.includes(KW.TAUNT)) c.keywords.push(KW.TAUNT); } // Sargeras (Legion Invasion): future Demons have +2 Health and Taunt
 	if (c.scaleOnEntry) { const n = p.enteredCountById?.[c.id] || 0; if (n > 0) { c.attack += (c.scaleOnEntry.attack || 0) * n; c.maxHealth += (c.scaleOnEntry.health || 0) * n; } } // Astral Automaton: +1/+1 per other summoned this game
 	(p.enteredCountById = p.enteredCountById || {})[c.id] = (p.enteredCountById[c.id] || 0) + 1;
+	if (c.name === 'Treant' || (c.tribe || '').includes('Treant')) p.treantsSummonedGame = (p.treantsSummonedGame || 0) + 1; // Cultivation: Treants created this game
 	if ((c.tribe || '').includes('Totem')) p.totemsSummonedGame = (p.totemsSummonedGame || 0) + 1; // Thing from Below / Gigantotem: Totems summoned this game
 	for (const t of (c.tribe || '').split(/[/\s]+/).filter(Boolean)) (p.tribeSummonedGame = p.tribeSummonedGame || {})[t] = (p.tribeSummonedGame[t] || 0) + 1; // Knight of the Wild / Frostsaber Matriarch: minions of a tribe summoned this game
 	if (state.anomaly && c.type !== 'location') { // Dalaran Heist anomalies, applied symmetrically to every summon
@@ -1249,17 +1295,7 @@ export function summon(state, pi, tokenDef) {
 	p.board.push(c);
 	emit(state, { type: 'summon', player: pi, card: c });
 	questTick(state, 'summon', pi, 1, c);
-	// AV tactic passives (Duels): Neutral creatures the tactic-holder summons on their turn
-	if (state.current === pi && c.type === 'creature' && (c.cardClass || 'neutral') === 'neutral') {
-		if (heroPassive(p, 'bolsterDefenses')) { c.attack += 1; c.maxHealth += 2; emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) }); }
-		if (heroPassive(p, 'takeTheBridge')) { c.attack += 2; if (!c.keywords.includes(KW.RUSH)) c.keywords.push(KW.RUSH); emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) }); }
-	}
-	// Duels treasure creatures/weapons that react to the controller's summons
-	if (c.type === 'creature') {
-		if (p.board.some(x => x.suLeadfoot && x !== c && !isDead(x))) { for (const k of [KW.DIVINE_SHIELD, KW.RUSH]) if (!c.keywords.includes(k)) c.keywords.push(k); c.shield = true; emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) }); } // Su Leadfoot
-		if ((c.tribe || '').includes('Demon') && p.board.some(x => x.impishAid && x !== c && !isDead(x))) { c.attack += 2; c.maxHealth += 2; emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) }); } // Impish Aid
-		if (p.weapon && p.weapon.spikedArms) { c.attack += 2; emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) }); damageCreature(state, c, 1, null); } // Spiked Arms (buff first so 1-Health summons keep the Attack for their death log)
-	}
+	applySummonReactors(state, pi, c);
 	// Runaway-summon guard: "when you summon a creature, summon…" triggers can
 	// recurse without bound — e.g. Spiritsinger Umbra fires a summoned minion's
 	// summon-deathrattle, or a self-copying Pirate (Shoplifter Goldbeard). Past
@@ -1494,7 +1530,7 @@ export function buyLand(state, pi, landId) {
 	if (allowed && !allowed.includes(landId)) return false; // color-locked run mode
 	const p = state.players[pi];
 	spendMana(p, LAND_COST);
-	for (const o of opponentsOf(state, pi)) addCoin(state, o);
+	for (const o of opponentsOf(state, pi)) addCoin(state, o, { kind: 'land', by: pi, land: def.name });
 	const card = instantiate(def, pi);
 	card.zone = 'land';
 	p.lands.push(card);
@@ -1515,12 +1551,13 @@ export function upgradeLand(state, pi, landUid, advId) {
 	const def = state.cardsById[advId];
 	if (!def || def.type !== 'land') return false;
 	spendMana(p, LAND_COST);
-	for (const o of opponentsOf(state, pi)) addCoin(state, o);
+	const from = p.lands[idx].name;
+	for (const o of opponentsOf(state, pi)) addCoin(state, o, { kind: 'land', by: pi, land: def.name, from });
 	const card = instantiate(def, pi);
 	card.zone = 'land';
 	card.tapped = p.lands[idx].tapped;
 	p.lands[idx] = card;
-	emit(state, { type: 'landUpgraded', player: pi, card, mana: availableMana(p) });
+	emit(state, { type: 'landUpgraded', player: pi, card, from, mana: availableMana(p) });
 	landEntered(state, pi, card);
 	return true;
 }
@@ -1580,34 +1617,43 @@ export function tapLand(state, pi, cardUid, tapIndex, target) {
 // def.tapAbility = { effects, text, condition? }: an activated {T} ability on a
 // permanent artifact. It taps (untapping at the owner's next turn start) and runs
 // its effects, optionally gated by a per-turn condition (e.g. sacrificed a Clue).
+// def.tapAbilities = [ability, ...]: an artifact with several {T} abilities (one
+// tap uses one of them; `tapAbility` stays the first so older readers still work).
+export function artifactTaps(card) {
+	if (card?.tapAbilities?.length) return card.tapAbilities;
+	return card?.tapAbility ? [card.tapAbility] : [];
+}
 function tapArtifactCondOk(state, pi, cond) {
 	if (!cond) return true;
 	const p = state.players[pi];
 	if (cond.sacrificedThisTurn) return ((p.sacrificedThisTurn || {})[cond.sacrificedThisTurn] || 0) > 0;
 	return true;
 }
-export function tapArtifactSpec(state, pi, cardUid) {
+export function tapArtifactSpec(state, pi, cardUid, idx = 0) {
 	const card = state.players[pi].artifacts.find(a => a.uid === cardUid);
-	if (!card || !card.tapAbility) return null;
-	return targetSpec(state, pi, { id: card.id, type: 'sorcery', effects: card.tapAbility.effects });
+	const ab = artifactTaps(card)[idx | 0];
+	if (!ab) return null;
+	return targetSpec(state, pi, { id: card.id, type: 'sorcery', effects: ab.effects });
 }
-export function canTapArtifact(state, pi, cardUid) {
+export function canTapArtifact(state, pi, cardUid, idx = 0) {
 	if (state.over || state.current !== pi) return false;
 	const card = state.players[pi].artifacts.find(a => a.uid === cardUid);
-	if (!card || !card.tapAbility || card.tapped) return false;
-	if (!tapArtifactCondOk(state, pi, card.tapAbility.condition)) return false;
-	const spec = tapArtifactSpec(state, pi, cardUid);
+	const ab = artifactTaps(card)[idx | 0];
+	if (!card || !ab || card.tapped) return false;
+	if (!tapArtifactCondOk(state, pi, ab.condition)) return false;
+	const spec = tapArtifactSpec(state, pi, cardUid, idx);
 	if (spec && spec.required && legalTargets(state, pi, spec).length === 0) return false;
 	return true;
 }
-export function tapArtifact(state, pi, cardUid, target = null) {
-	if (!canTapArtifact(state, pi, cardUid)) return false;
+export function tapArtifact(state, pi, cardUid, target = null, idx = 0) {
+	if (!canTapArtifact(state, pi, cardUid, idx)) return false;
 	const card = state.players[pi].artifacts.find(a => a.uid === cardUid);
+	const ab = artifactTaps(card)[idx | 0];
 	card.tapped = true;
 	// double/triple-tap: stay tapped for (tapTurns - 1) extra turn-starts before untapping
 	card.tapCooldown = Math.max(0, (card.tapTurns || 1) - 1);
-	emit(state, { type: 'artifactTapped', player: pi, card, text: card.tapAbility.text, target: target || null });
-	execEffects(state, pi, JSON.parse(JSON.stringify(card.tapAbility.effects)), target, card);
+	emit(state, { type: 'artifactTapped', player: pi, card, text: ab.text, target: target || null });
+	execEffects(state, pi, JSON.parse(JSON.stringify(ab.effects)), target, card);
 	sweepDeaths(state);
 	return true;
 }
@@ -1774,7 +1820,15 @@ export function runBattlecry(state, pi, card, target, choice) {
 		// never by the card that armed it — its own effect sets the flag AFTER this read)
 		const flagDouble = p.nextBattlecryDouble;
 		if (flagDouble) p.nextBattlecryDouble = false;
+		const _ekBefore = state.exactKills || 0;
 		execEffects(state, pi, liveEffectsOf(state, pi, card, choice), target, card);
+		// Honorable Kill on a creature's own Battlecry (Knight-Captain: "Deal 3 damage" exactly
+		// killing a 3-health creature) — only combat + spells checked it, so the battlecry kill
+		// never paid its +3/+3 (instinctgauntlet, 2026-10-27). Once per play, like a spell's.
+		if (card.type === 'creature' && card.honorableKill && (state.exactKills || 0) > _ekBefore) {
+			emit(state, { type: 'honorableKill', uid: card.uid, player: pi });
+			execEffects(state, pi, card.honorableKill, target, card);
+		}
 		// Battle Totem (dungeon treasure / Jin'zo passive) or a live Brann
 		// or Zee's Might (every fifth minion you play triggers its Battlecry twice)
 		if (flagDouble || p.battlecriesTwice
@@ -2439,6 +2493,7 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 		// position = insertion index (adjacency matters); default = right end
 		if (position == null || position >= p.board.length) p.board.push(card);
 		else p.board.splice(Math.max(0, position), 0, card);
+		applySummonReactors(state, pi, card); // Su Leadfoot & co.: playing a creature IS summoning it
 		p.creaturesPlayedThisTurn++;
 		p.minionsPlayedGame = (p.minionsPlayedGame || 0) + 1; // Zee's Might
 		questTick(state, 'summon', pi, 1, card);
@@ -2602,6 +2657,10 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 		{ const sch = schoolOf(card); if (sch) { (p.schoolsCastThisTurn = p.schoolsCastThisTurn || {})[sch] = true; (p.schoolsCastGame = p.schoolsCastGame || {})[sch] = true; if (sch === 'Fel') (p.felSpellsGame = p.felSpellsGame || []).push(card.id); if (sch === 'Frost') p.frostSpellsGame = (p.frostSpellsGame || 0) + 1; if (sch === 'Holy' && p.holyRefreshShield && !p.heroShield) { p.heroShield = true; emit(state, { type: 'heroShield', player: pi }); } } } // Metamorfin / Multicaster / Jace / Bearon; Starlight Groove: Holy spells refresh Divine Shield
 		{ const sc2 = schoolOf(card); if (sc2) for (const hc of [...p.hand]) { const ht2 = hc.handTransformOnSchool; if (ht2 && ht2.schools.includes(sc2) && ht2.forms && ht2.forms.length) { const fdef = state.cardsById[ht2.forms[Math.floor(state.rng() * ht2.forms.length)]]; if (fdef) { const morph = instantiate(fdef, pi); morph.uid = hc.uid; morph.zone = 'hand'; p.hand[p.hand.indexOf(hc)] = morph; emit(state, { type: 'conjure', player: pi, card: morph, color: null }); } } } } // Lady Naz'jar: transform in hand after a Fire/Frost/Arcane spell
 		{ for (const hc of [...p.hand]) { const ht4 = hc.handTransformOnTwoSchools; if (ht4 && ht4.forms && ht4.forms.length && Object.keys(hc.schoolsWhileHeld || {}).length >= 2) { const fdef = state.cardsById[ht4.forms[Math.floor(state.rng() * ht4.forms.length)]]; if (fdef) { const morph = instantiate(fdef, pi); morph.uid = hc.uid; morph.zone = 'hand'; p.hand[p.hand.indexOf(hc)] = morph; emit(state, { type: 'conjure', player: pi, card: morph, color: null }); } } } } // Carress: transform in hand after two different spell schools
+		// Shadow of Demise: while held, each spell you cast turns it into a copy of that
+		// spell — a copy that keeps the Shadow, so it goes on transforming (same uid, so
+		// the hand slot and any selection survive the morph)
+		{ for (const hc of [...p.hand]) { if (!hc.transformOnSpellCast || hc === card) continue; const sdef = state.cardsById[card.id] || card; const morph = instantiate(sdef, pi); morph.uid = hc.uid; morph.zone = 'hand'; morph.transformOnSpellCast = true; morph.description = (morph.description ? morph.description + '\n' : '') + 'Shadow: each time you cast a spell, transform this into a copy of it.'; p.hand[p.hand.indexOf(hc)] = morph; emit(state, { type: 'transformed', uid: hc.uid, player: pi, from: hc.name, card: morph }); } }
 		if ((card.cost || 0) >= 6) p.lastBigSpell = { id: card.id, target }; // Grey Sage Parrot
 		p.lastSpellPlayed = { id: card.id, target }; // Asvedon: opponent's most recent spell (any cost)
 		p.spellsPlayedTotal = (p.spellsPlayedTotal || 0) + 1; // Arcane Giant
@@ -2649,6 +2708,7 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 	questTick(state, 'play', pi, 1, card); // "Play N cards" quests
 	// counted AFTER resolution so Combo sees only cards played EARLIER this turn
 	p.cardsPlayedThisTurn++;
+	if (card.cardClass && card.cardClass !== 'neutral' && card.cardClass !== p.heroClass) p.otherClassPlayedThisTurn = (p.otherClassPlayedThisTurn || 0) + 1; // Ransack: an EARLIER other-class card this turn (counted after resolution, like Combo)
 	// Rat Trap / Motion Denied: an opponent's secret watching the Nth card this turn
 	fireSecretsAll(state, pi, 'enemy-card-played', { played: card, cardsPlayedThisTurn: p.cardsPlayedThisTurn });
 	for (const hc of p.hand) if (hc._locked) hc._locked = false; // Low Security Wing: playing another card unlocks
@@ -3240,6 +3300,7 @@ export function attackersFor(state, pi) {
 
 export function canAttackWith(state, pi, c) {
 	if (state.over || state.current !== pi || state.priority != null || state.stack.length || c.attack <= 0) return false;
+	if (c.type === 'location') return false;   // locations never attack, whatever stats an effect gave them
 	if (c.frozen) return false;
 	if (c.titan && (c._onceAbilities || []).length < (c.activated || []).length) return false; // Titan: can't attack until all 3 abilities are used
 	if (c.cantAttackWhile != null && state.players.some(pl => pl.board.some(x => x.uid === c.cantAttackWhile && !isDead(x)))) return false; // Annoying Fan lock
@@ -3454,8 +3515,10 @@ export function resolveCombat(state, pi, attackerUid, target) {
 		}
 		// Honorable Kill: an EXACT lethal blow (mark the victim so Korrak knows)
 		if (isDead(defender) && defender.damage === defender.maxHealth) defender.honorablyKilled = true; // Korrak the Bloodrager
-		if (attacker.honorableKill && isDead(defender) && defender.damage === defender.maxHealth
-			&& !isDead(attacker)) {
+		// it fires even when the attacker dies in the trade (as in Hearthstone): a
+		// 3/2 Sneaky Scout trading into a 3/3 is the whole point of the card, and
+		// gating on a surviving attacker made its discount never land
+		if (attacker.honorableKill && isDead(defender) && defender.damage === defender.maxHealth) {
 			emit(state, { type: 'honorableKill', uid: attacker.uid, player: pi });
 			runSecretEffects(state, pi, attacker.honorableKill, { self: attacker });
 			// Wing Commander Mulverick: friendly minions with a granted Honorable Kill also fire
@@ -3602,8 +3665,12 @@ export function heroAttack(state, pi, target) {
 				}
 			}
 			// the defending creature strikes back at the hero
-			// (Gladiator's Longbow: the hero is immune while attacking)
-			if (!(w && w.static?.type === 'immune-attacking')) {
+			// (Gladiator's Longbow: the hero is immune while attacking). A Swift
+			// (first-strike) weapon hits FIRST, like a Swift creature: a defender it
+			// kills never strikes back — 2026-10-02, a 3/2 Swift weapon into a 3/2
+			// creature still took the 3.
+			const swiftKill = w && has(w, KW.FIRST_STRIKE) && !has(defender, KW.FIRST_STRIKE) && isDead(defender);
+			if (!(w && w.static?.type === 'immune-attacking') && !swiftKill) {
 				const counter = damageHero(state, pi, defender.attack, defender.controller);
 				if (has(defender, KW.LIFESTEAL) && counter > 0) healHero(state, defender.controller, counter);
 			}
@@ -3665,7 +3732,7 @@ function findWalker(state, uid) {
 	return null;
 }
 
-function damageWalker(state, walker, amount) {
+export function damageWalker(state, walker, amount) {
 	if (amount <= 0) return;
 	walker.loyalty -= amount;
 	emit(state, { type: 'walkerDamage', uid: walker.uid, amount, loyalty: walker.loyalty });
@@ -4065,9 +4132,86 @@ export function buffCreatureChoice(state, pi, attack, health) {
 	emit(state, { type: 'pickStart', player: pi, count: creatures.length });
 }
 
+// Tribute Dance: "Choose a creature. Choose a different creature to transform it
+// into." The first creature is the spell's target; the second is a pick among every
+// OTHER living creature (auto when there's exactly one). The target becomes a fresh
+// copy of the second creature's card, in place, for its own controller.
+export function transformIntoChoice(state, pi, t) {
+	if (!t || isDead(t)) return;
+	const others = [];
+	for (const pl of state.players) for (const c of pl.board) if (c !== t && c.type === 'creature' && !isDead(c)) others.push(c);
+	if (!others.length) return; // nothing to become: fizzles
+	if (others.length === 1) { transformInto(state, t, others[0]); return; }
+	state.pickQueue.push({ player: pi, mode: 'transform-into', targetUid: t.uid, ids: others.map(c => c.uid) });
+	emit(state, { type: 'pickStart', player: pi, count: others.length });
+}
+function transformInto(state, t, model) {
+	const board = state.players[t.controller]?.board;
+	if (!board || board.indexOf(t) < 0) return;
+	const def = state.cardsById[model.id];
+	const tok = instantiate(def || { id: model.id, name: model.name, type: 'creature', cost: model.cost || 0, rarity: model.rarity || 'common', description: model.description || '', attack: model.attack, health: model.maxHealth }, t.controller);
+	tok.zone = 'board';
+	tok.sick = t.sick;
+	board[board.indexOf(t)] = tok;
+	t.zone = 'gone';
+	emit(state, { type: 'transformed', uid: t.uid, player: t.controller, from: t.name, card: tok });
+	recomputeAuras(state);
+}
+
+// A Discover pick can carry follow-ups (`pend.after`) queued by a later effect of
+// the same spell — Soul Searching / Blood Clone copy the pick, Paleomancy keeps all
+// three, Story of Umbra triggers the summoned pick's Deathrattle
+// (effects/handlers-followup.js). They run once the pick itself has resolved.
 export function resolvePick(state, id) {
+	const pend = state.pickQueue[0];
+	const before = pend && pend.after && state.players[pend.player] ? new Set(state.players[pend.player].board.map(c => c.uid)) : null;
+	const r = resolvePickBase(state, id);
+	if (pend && r && Array.isArray(pend.ids)) {
+		pend.chosenId = pend.ids.includes(id) ? id : pend.ids[0];
+		if (before) {
+			const s = state.players[pend.player].board.find(c => !before.has(c.uid) && c.id === pend.chosenId && !isDead(c));
+			pend.summonedUid = s ? s.uid : null;
+			for (const f of pend.after) applyPickFollowup(state, pend, f);
+			sweepDeaths(state);
+		}
+	}
+	return r;
+}
+
+export function applyPickFollowup(state, pend, f) {
+	const pi = pend.player, p = state.players[pi];
+	const def = state.cardsById[pend.chosenId];
+	if (!p || p.eliminated || !def) return;
+	const toHand = d => { if (p.hand.length >= MAX_HAND) return; const c = instantiate(d, pi); c.zone = 'hand'; p.hand.push(c); emit(state, { type: 'conjure', player: pi, card: c, color: null }); };
+	if (f.kind === 'copy') {
+		for (let n = 0; n < (f.count || 1); n++) {
+			if (f.to === 'board') { if (def.type === 'creature') summon(state, pi, { ...def, token: true }); } // Blood Clone: a token copy
+			else toHand(def); // Soul Searching: a copy in hand
+		}
+	} else if (f.kind === 'keep-all') { // Paleomancy: the two you didn't pick as well
+		for (const oid of pend.ids) if (oid !== pend.chosenId && state.cardsById[oid]) toHand(state.cardsById[oid]);
+	} else if (f.kind === 'trigger-deathrattle') { // Story of Umbra
+		const m = pend.summonedUid != null ? p.board.find(c => c.uid === pend.summonedUid) : null;
+		if (m && !isDead(m) && m.deathrattle) runDeathrattle(state, pi, m);
+	}
+}
+
+function resolvePickBase(state, id) {
 	const pend = state.pickQueue.shift();
 	if (!pend) return false;
+	if (pend.mode === 'reduce-drawn') {
+		// Fast Forward: one of the cards just drawn costs (N) less (ids may repeat; uids are exact)
+		const k = Math.max(0, pend.ids.indexOf(id));
+		const c = state.players[pend.player].hand.find(x => x.uid === pend.uids[k]);
+		if (c) { c.cost = Math.max(0, (c.cost || 0) - (pend.value || 1)); emit(state, { type: 'costChange', player: pend.player, uid: c.uid, cost: c.cost }); }
+		return true;
+	}
+	if (pend.mode === 'transform-into') {
+		const t = findCreature(state, pend.targetUid);
+		const model = findCreature(state, pend.ids.includes(id) ? id : pend.ids[0]);
+		if (t && model && !isDead(t) && !isDead(model) && t !== model) transformInto(state, t, model);
+		return true;
+	}
 	if (pend.mode === 'assemble') {
 		const slot = ['0', '1', '2'].includes(String(id)) ? Number(id) : 0;
 		placeContraption(state, pend.player, slot, pend.contraptionId);
@@ -5465,7 +5609,7 @@ export function endTurn(state) {
 	np.heroAttacksUsed = 0;
 	np.landsPlayedThisTurn = 0;
 	np.creaturesPlayedThisTurn = 0;
-	np.cardsPlayedThisTurn = 0; np.cardsDrawnThisTurn = 0;
+	np.cardsPlayedThisTurn = 0; np.cardsDrawnThisTurn = 0; np.otherClassPlayedThisTurn = 0;
 	np.drawsThisTurn = 0; // reset before the mandatory draw so it counts as the first
 	np.spellsPlayedThisTurn = 0; np.schoolsCastThisTurn = {}; np.firstBattlecryThisTurn = null; np.castBigSpellThisTurn = false; // Metamorfin / Bolner Hammerbeak / Arcane Tyrant
 	np.discoveredThisTurn = 0; // Parallax Cannon
@@ -5499,6 +5643,12 @@ export function endTurn(state) {
 	if (np.partyReplacement) { const PKW = ['taunt', 'rush', 'divine_shield', 'lifesteal']; execEffects(state, state.current, [{ type: 'summon', count: 1, attack: 2, health: 2, name: 'Adventurer', keywords: [PKW[Math.floor(state.rng() * PKW.length)]] }], null, null); } // Party Replacement: a 2/2 Adventurer with a random bonus
 	if (np.battleStance) { np.heroTempAttack += 2; emit(state, { type: 'heroAttack', player: state.current, attack: (np.heroAttack || 0) + np.heroTempAttack }); } // Battle Stance (Duels): +2 hero Attack on your turn
 	if (np.weapon && np.weapon.startTurnEffects) execEffects(state, state.current, JSON.parse(JSON.stringify(np.weapon.startTurnEffects)), null, np.weapon); // Horns of Flame / Archmage Staff (Duels)
+	if (np.pendingRevives && np.pendingRevives.length) { // Inexorable Ghoul: "Revive after N turns" (engine/effects/handlers-summon.js revive-later)
+		for (const r of np.pendingRevives) r.turnsLeft--;
+		const due = np.pendingRevives.filter(r => r.turnsLeft <= 0);
+		np.pendingRevives = np.pendingRevives.filter(r => r.turnsLeft > 0);
+		for (const r of due) if (!state.over && state.cardsById[r.id]) summon(state, state.current, state.cardsById[r.id]); // a fresh copy; ready like any creature at your turn start (the sick reset below)
+	}
 	for (const c of np.board) if (c.reviveTimer > 0) { c.reviveTimer--; if (c.reviveTimer <= 0) { c.reviveTimer = 0; c.dormantLeft = 0; c.sick = false; emit(state, { type: 'awaken', player: state.current, uid: c.uid, name: c.name }); } } // Dragonbone Ritual: dormant Dragons revive on schedule
 	if (np.legendaryLoot && !np._legLootUsed) { np._legLootUsed = true; execEffects(state, state.current, [{ type: 'discover', cardType: 'weapon', rarity: 'legendary' }], null, null); } // Legendary Loot: on your first turn, Discover a Legendary weapon
 	// AV tactics (Duels): a tactic-family power transforms into another family member each turn

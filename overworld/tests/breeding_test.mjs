@@ -93,7 +93,7 @@ async function waitFor(fn, ms) {
 			// ---- pairing rules ----
 			const mk = (sp, gender, over = {}) => {
 				const m = B.buildMon(sp, 20, data);
-				m.gender = gender;
+				m.gender = gender; m.shiny = false;   // a random shiny roll would make any plain pair 4x
 				return Object.assign(m, over);
 			};
 			const ditto = mk('ditto', null);

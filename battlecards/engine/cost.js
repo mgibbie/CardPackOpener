@@ -152,8 +152,9 @@ export function effectiveCost(state, pi, card) {
 		const anyCreature = () => state.players.some(pl => pl.board.some(x => !isDead(x) && x.type === 'creature'));
 		const enemyCreatures = () => { let k = 0; for (let i = 0; i < state.players.length; i++) if (i !== pi) k += state.players[i].board.filter(x => !isDead(x) && x.type === 'creature').length; return k; };
 		const heroAtk = (p.weapon ? p.weapon.attack : 0) + (p.heroTempAttack || 0);
-		let met;
+		let met, perCount = 0;
 		switch (s.cond) {
+			case 'treants-summoned': met = true; perCount = p.treantsSummonedGame || 0; break; // Cultivation: (1) less per Treant you've created this game (the cond had no case, so it never discounted)
 			case 'hero-attack-ge': met = heroAtk >= s.threshold; break;
 			case 'big-spell-turn': met = !!p.castBigSpellThisTurn; break;
 			case 'life-le': met = p.life <= s.threshold; break;
@@ -177,7 +178,7 @@ export function effectiveCost(state, pi, card) {
 			case 'hand-size-ge': met = p.hand.length >= s.threshold; break; // The Dark Portal
 			default: met = false;
 		}
-		if (met) { if (s.setCost != null) c = s.setCost; else if (s.amount != null) c += s.amount; }
+		if (met) { if (s.setCost != null) c = s.setCost; else if (s.amount != null) c += s.amount; else if (s.amountPer != null) c += s.amountPer * perCount; }
 	}
 	for (const pl of state.players) {
 		for (const src of [...pl.board, ...pl.enchantments, ...pl.artifacts, ...pl.emblems]) {

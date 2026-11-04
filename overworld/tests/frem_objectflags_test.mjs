@@ -27,6 +27,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { overworldSource } from './owsource.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '../../');
@@ -44,7 +45,7 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 		'...and npcs.js asks THROUGH it rather than keeping a copy that can drift');
 	const ev = fs.readFileSync(path.join(ROOT, 'overworld/events.js'), 'utf8');
 	A(/export function clearTempFlags/.test(ev), 'events.js can wipe the TEMP flag range');
-	const main = fs.readFileSync(path.join(ROOT, 'overworld/main.js'), 'utf8');
+	const main = overworldSource();   // main.js + the modules split out of it
 	A((main.match(/Story\.clearTempFlags\(\)/g) || []).length >= 2,
 		'...and main.js does it at every map load, as ClearTempFieldEventData does');
 }

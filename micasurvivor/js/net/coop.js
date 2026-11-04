@@ -1,0 +1,700 @@
+/* ============ coop.js — partida cooperativa (hasta 4 jugadores) ============
+ *
+ * Quién manda en qué:
+ *   ANFITRIÓN   enemigos (aparición, IA, vida, muerte), objetos del suelo,
+ *               experiencia y nivel del equipo, reloj, fin de la partida.
+ *   CADA UNO    su propio Pokémon: posición, vida, ataques y lo que le golpea.
+ *               Sus golpes a enemigos se mandan al anfitrión, que los aplica.
+ *
+ * Los invitados ven COPIAS de los enemigos del anfitrión (enemy.remote) y los
+ * ataques de los compañeros como "fantasmas" que no hacen daño (ver combat.js).
+ *
+ * Quién está eligiendo (objeto o vínculo) y quién ha elegido carta de nivel va
+ * además en CADA envío (no sólo en un aviso suelto): si un aviso se pierde
+ * porque la conexión parpadea, el siguiente envío lo arregla y nadie se queda
+ * esperando a otro para siempre (pasaba en 2026-10).
+ *
+ * Mensajes (por net.js, unas 15 veces por segundo; 5 si va por el relé):
+ *   invitado -> anfitrión  { k:'f', p:[estado], ev:[eventos] }
+ *   anfitrión -> invitado  { k:'f', t, lv, xp, xn, ki, bo, co, p:{uid:[estado]},
+ *                            e:[[id,x,y,vida,anim,dir,estados]], ev:[eventos],
+ *                            ja:[x,y,anim,dir] (Arceus, sólo en la Sentencia) }
+ *   anfitrión -> todos     { k:'start', seed, host, members:[{uid,name,dex,shiny}] }
+ *   (gap fix 2, 2026-11-02, both ways in ev: ['sp', tx, ty, 0 spring / 1 locked chest, % or -1 at rest] and
+ *    ['au', tx, ty] an altar used: the springs, altars and locked chests are shared; an older peer ignores both)
+ *
+ * MicaSurvivor (M5 batch 12b): switched on, with Magepunk accounts and friends (js/mica/social.js) and the
+ * signalling + relay over the site's backend (js/mica/online.js). The relay runs at RATE_SLOW (3 a second).
+ * The rules are upstream's, unchanged; K below exposes its numbers for the design wiki.
+ */
+G.Coop = (() => {
+  const ANIMS = ['Idle', 'Walk', 'Attack', 'Shoot', 'Charge', 'Hurt', 'Faint'];
+  const COLORS = ['#ffcb3d', '#5fc8ff', '#7ee07a', '#ff8ad8'];
+  // Mensajes por segundo: 15 por la conexión directa y 3 por el relé de la
+  // Realtime Database (apagado: 1 $ el GB).
+  // MicaSurvivor (M5 batch 12b): the relay goes over the site's D1 (rows written), so it runs at 1 a second (owner,
+  // 2026-10-18: "slow relay + time cap"; upstream: 3). Frames still carry the whole state, so it is only choppier, and
+  // netState() / the enemies below glide between them (velocity lead + easing) instead of teleporting.
+  const RATE_FAST = 1 / 15, RATE_SLOW = 1;
+  const rateFor = u => (G.Net.slow(u) ? RATE_SLOW : RATE_FAST);
+  const NEAR = 950;                     // radio de enemigos que se mandan a cada uno
+
+  let active = false, host = false, me = null, hostUid = null;
+  let local = null;                     // tu Player
+  const mates = new Map();              // uid -> { uid, name, color, pl, connected, q:[], flushT, xpMul }
+  let outEv = [];                       // invitado: eventos para el anfitrión
+  let flushT = 0;
+  let hitFrom = null;                   // invitado cuyo golpe se está aplicando (no repetirle el número)
+  let api = {};                         // callbacks del juego (game.js)
+  let waiting = new Set();              // subida de nivel: quién falta por elegir
+  let holds = new Set();                // quién está eligiendo una fusión (la partida se para para todos)
+  // El anfitrión mueve a los enemigos: si cambia de pestaña (o se le congela),
+  // todo se para para todos. Antes los enemigos se quedaban quietos y los demás
+  // seguían jugando con una ventaja enorme.
+  let hostAway = false, stalled = false, lastHostAt = 0;
+  // Cartas de nivel: número de la ronda (anfitrión), la última que te ha llegado
+  // y la última que has elegido (invitado). Y el último "quién elige" aplicado.
+  let levelSeq = 0, levelNow = 1, seenSeq = 0, doneSeq = 0, lastHo = '';
+  const STALL_MS = 2500;
+  // (MicaSurvivor 12b: on the 1-a-second relay a frame can take ~2-3 s to arrive: no "waiting for the host" for that)
+  const STALL_RELAY_MS = 7000;
+  const stallMs = () => (G.Net.slow(hostUid) ? STALL_RELAY_MS : STALL_MS);
+  let members = [];
+
+  // ---------------- escalado de dificultad ----------------
+
+  const scaleRate = n => 1 + 0.75 * Math.max(0, n - 1);
+  const scaleHp = n => 1 + 0.3 * Math.max(0, n - 1);
+
+  // ---------------- arranque / fin ----------------
+
+  /**
+   * @param cfg   { seed, host, members }
+   * @param pl    tu Player (ya creado)
+   * @param cb    { levelStart(lv), resume(), waiting(names), over(data), lost(msg), team(t), shiny(dex) }
+   */
+  function begin(cfg, pl, cb) {
+    active = true;
+    me = G.Net.uid; hostUid = cfg.host;
+    host = me === hostUid;
+    local = pl;
+    api = cb;
+    members = cfg.members;
+    mates.clear();
+    outEv = []; flushT = 0; waiting = new Set(); holds = new Set(); budgetTold = false; zq = []; spSent.clear(); spOut.clear();
+    hostAway = false; stalled = false; lastHostAt = performance.now();
+    levelSeq = 0; levelNow = 1; seenSeq = 0; doneSeq = 0; lastHo = '';
+    cfg.members.forEach((m, i) => {
+      const x = (i - (cfg.members.length - 1) / 2) * 34, y = 0;
+      if (m.uid === me) { pl.x = x; pl.y = y; pl.uid = me; pl.coopHost = host; pl.tagColor = COLORS[i]; return; }
+      const mon = G.DEX_BY[m.dex] || G.DEX_BY[25];
+      const p = new G.Player(mon, {}, !!m.shiny);
+      p.remote = true; p.uid = m.uid; p.tag = m.name; p.tagColor = COLORS[i]; p.revLabel = 'Quédate a su lado';
+      p.x = x; p.y = y;
+      p.net = { x, y, ang: Math.PI / 2, walk: 0, hp: p.maxHp, maxHp: p.maxHp, dead: 0, mv: G.startMoveOf(mon.dex), ml: 1, mag: 78, aim: Math.PI / 2, rev: 0 };
+      G.Sprites.preload([mon.dex], 8000, p.shiny);
+      mates.set(m.uid, { uid: m.uid, name: m.name, color: COLORS[i], pl: p, connected: true, q: [], flushT: 0, xpMul: 1 });
+    });
+  }
+
+  function end() {
+    active = false; host = false; local = null;
+    mates.clear(); outEv = []; waiting = new Set(); holds = new Set(); zq = []; spSent.clear(); spOut.clear();
+  }
+
+  // ---------------- shared springs / altars / locked chests (gap fix 2, 2026-11-02) ----------------
+  // They were each screen's own: a guest's spring, altar or locked chest never reached the host, so the host's tape and live
+  // view (and every other guest) only had the host's. Now each player's screen sends what its Pokémon does to one (a spring's
+  // charge, a locked chest's progress: their % as it changes, coalesced per prop to one per frame sent; an altar used) to the
+  // host, which applies it to its world (G.World.netSpecial / netUse: its chunk is built if the host was never there, so the
+  // tape's field 15 and the live snapshot have it) and passes it on to the other guests; the host's own go to every guest.
+  // What a screen RECEIVES is noted as told (spSent), so it is never echoed back. An older host / guest ignores both events
+  // (js/expedition/core.js's net.event listener only knows its own), and plays on as before.
+  const spSent = new Map();             // "tx,ty" -> the last % told / heard (-1 = at rest)
+  const spOut = new Map();              // guest: the 'sp' events waiting for the next frame to the host, one per prop
+  /** js/systems/interact.js, each frame, for each spring / locked chest near your Pokémon. */
+  function special(p) {
+    if (!active || !p) return;
+    const v = G.World.specialPct(p), k = p.tx + ',' + p.ty;
+    if (v === (spSent.has(k) ? spSent.get(k) : -1)) return;
+    if (v < 0) spSent.delete(k); else spSent.set(k, v);
+    const ev = ['sp', p.tx, p.ty, p.type === 'spring' ? 0 : 1, v];
+    if (host) emitSp(k, ev, null); else spOut.set(k, ev);
+  }
+  /** Host: an 'sp' for every guest but `except`, replacing any not sent yet for the same prop (a guest on the relay gets one). */
+  function emitSp(k, ev, except) {
+    for (const m of mates.values()) if (m.connected && m.uid !== except) (m.sp || (m.sp = new Map())).set(k, ev);
+  }
+  /** js/systems/interact.js: your Pokémon used an altar. */
+  function altarUsed(p) {
+    if (!active || !p) return;
+    if (host) emit(['au', p.tx, p.ty]); else outEv.push(['au', p.tx, p.ty]);
+  }
+  const spArgs = ev => [Math.round(+ev[1]), Math.round(+ev[2]), G.U.clamp(Math.round(+ev[4]) || 0, -1, 100)];
+  /** An 'sp' that came in (host: from guest `from`; guest: from the host). */
+  function specialIn(ev, from) {
+    const [tx, ty, v0] = spArgs(ev);
+    const p = G.World.netSpecial(tx, ty, v0);
+    if (!p) return;
+    const k = tx + ',' + ty, v = G.World.specialPct(p);
+    if (!host) { if (v0 < 0) spSent.delete(k); else spSent.set(k, v0); return; }   // (yours differs, you using it too: told next frame)
+    if (v < 0) spSent.delete(k); else spSent.set(k, v);
+    // (the host's own Pokémon using it too: the merged state goes back to that guest as well)
+    emitSp(k, ['sp', tx, ty, p.type === 'spring' ? 0 : 1, v], v === v0 ? from : null);
+  }
+  function altarIn(ev, from) {
+    const tx = Math.round(+ev[1]), ty = Math.round(+ev[2]);
+    if (!G.World.netUse(tx, ty)) return;
+    if (host) emit(['au', tx, ty], from);
+  }
+
+  // ---------------- another player's Z-move cinematic (gap fix 2026-11-02) ----------------
+  // A partner's Z-move (its co-op frames' field 18 rising to "in use": js/entities/player.js netUpdate) plays the full Z
+  // cinematic on this screen, as player 1's does and as a local partner's does (js/systems/localcoop.js): its card
+  // (G.ZMoves.cineArt) with its name, and the world holds for it (game.js), on the host and on every other guest alike.
+  // One Z cinematic at a time: one that comes while another plays (yours, a local partner's, another online one's) waits its
+  // turn, and none of yours can start meanwhile (G.ZMoves.can). One that waited over ZQ_STALE seconds unseen is dropped.
+  let zq = [];                          // [{p, type, name, color, t, at}]
+  const ZQ_STALE = 6;
+  function remoteZ(p, type) {
+    if (!active || !p || !G.ZMoves) return;
+    zq.push({ p, type: type || G.ZMoves.typeFor(p.dex) || 'normal', name: p.tag || '', color: p.tagColor || '#fff', t: 0, at: performance.now() });
+    if (zq.length > 4) zq.shift();
+  }
+  const zPrune = () => { if (zq.length) zq = zq.filter(z => z.t > 0 || performance.now() - z.at < ZQ_STALE * 1000); };
+  /** game.js, while it plays (the world holds, as for player 1's). */
+  function zCineTick(dt) {
+    const z = zq[0];
+    if (!z) return;
+    if (z.t === 0) G.Audio.sfx('legend');
+    z.t += dt;
+    if (z.t >= G.ZMoves.CINE_T) { zq.shift(); G.Audio.sfx('bossDown'); }
+  }
+  /** Whose card shows now (null: none), for the HUD and the tests. */
+  const zNow = () => { zPrune(); const z = zq[0]; return z && !(G.ZMoves && G.ZMoves.cine) && !(G.LocalCoop && G.LocalCoop.zCine) ? z : null; };
+  function drawZDim(ctx, w, h) {
+    const z = zNow();
+    if (!z) return;
+    ctx.save(); ctx.fillStyle = 'rgba(0,0,10,' + (G.U.clamp(z.t / 0.3, 0, 1) * 0.62).toFixed(3) + ')'; ctx.fillRect(0, 0, w, h); ctx.restore();
+  }
+  function drawZCine(ctx, w, h) {
+    const z = zNow();
+    if (!z || !G.ZMoves.cineArt) return;
+    G.ZMoves.cineArt(ctx, w, h, z.t, z.type);
+    const al = G.U.clamp(z.t / 0.3, 0, 1) * G.U.clamp((G.ZMoves.CINE_T - z.t) / 0.3, 0, 1);
+    ctx.save();
+    ctx.globalAlpha = al;
+    ctx.font = '800 18px Pixelify,"Segoe UI",system-ui,sans-serif'; ctx.textAlign = 'center';
+    ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(0,0,0,.75)';
+    ctx.strokeText(z.name, w / 2, h * 0.42 + 92); ctx.fillStyle = z.color; ctx.fillText(z.name, w / 2, h * 0.42 + 92);
+    ctx.restore();
+  }
+
+  /** Te vas de la partida (los demás siguen). */
+  function leave() {
+    if (!active) return;
+    if (host) {
+      // Si se va el anfitrión, la partida termina para todos.
+      emit(['ov', Object.assign(api.summary ? api.summary() : {}, { why: 'host' })]);
+      flushAll();
+    } else {
+      outEv.push(['bye']);
+      flushClient(true);
+    }
+    end();
+  }
+
+  // ---------------- lista de jugadores ----------------
+
+  function players() {
+    const out = [local];
+    for (const m of mates.values()) if (m.connected) out.push(m.pl);
+    return out;
+  }
+  function puppets() { const out = []; for (const m of mates.values()) if (m.connected) out.push(m.pl); return out; }
+
+  /**
+   * Multiplicador de la experiencia del equipo: la media de los bonus de
+   * cada uno, y repartida entre los que sois (en grupo cae mucho más, y si no
+   * se subiría de nivel el triple de rápido que en solitario).
+   */
+  function xpFactor() {
+    let s = local.xpMul, n = 1;
+    for (const m of mates.values()) if (m.connected) { s += m.xpMul || 1; n++; }
+    return (s / n) / local.xpMul / (1 + 0.6 * (n - 1));
+  }
+
+  // ---------------- estado de un jugador ----------------
+
+  const r1 = v => Math.round(v), r2 = v => Math.round(v * 100) / 100;
+
+  function myState() {
+    // Con un vínculo se manda la órbita si la hay (es lo único que los demás no ven por los 'c').
+    // (DLC D16: every slot fires, so field 15 lists EVERY orbit move [[id, lvl]...] (an old reader ignores it); fields 7-8
+    //  keep one move, the first orbit or slot 1's, for an old reader)
+    const all = local.af ? local.moves : local.activeGroup();
+    const orbs = all.filter(x => x.kind === 'orbit');
+    const m = orbs[0] || local.activeGroup()[0];
+    return [r1(local.x), r1(local.y), r2(local.moveAngle), local.walking ? 1 : 0, r1(local.hp), r1(local.maxHp),
+            local.dead ? 1 : 0, m ? m.id : '', m ? m.lvl : 1, r1(local.magnet), r2(local.aim), r2(local.xpMul),
+            r2(local.reviveT || 0), api.choosing && api.choosing() ? 1 : 0, doneSeq, orbs.map(x => [x.id, x.lvl]), G.Megas ? G.Megas.lookOf(local) : local.dex,   // (U2: field 16, the species you play now: Team mode switches it; U3: its Mega's id once it Mega Evolved)
+            local.item || local.item2 ? [local.item || '', local.item2 || ''] : 0,   // (MP polish: field 17, your held items, 0 = none: the host's tape and live view show them. An older reader ignores it)
+            kitState()];   // (field 18: your Z-move / Dynamax, 0 = none. An older reader ignores it)
+  }
+  /**
+   * Field 18 of a player's state: its Z-move and Dynamax as the others draw them, [kit flags (G.Replay.KF: Z / ready / in use,
+   * Dynamax / ready / on), the Dynamax body scale [x, y] or 0, 1 while hidden in its Z attack, the Z type]; 0 = neither.
+   * The host's puppet of you (and every other guest's) grows and glows with it, the host's tape rows and live view carry it.
+   */
+  function kitState() {
+    const KF = G.Replay && G.Replay.KF, Z = G.ZMoves, D = G.Dynamax;
+    if (!KF || !local) return 0;
+    let kf = 0;
+    const zt = Z && Z.activeType ? Z.activeType(local) : '';
+    if (zt && !G.World.zone && !(Z.blocked && Z.blocked())) kf |= KF.Z | (Z.state ? KF.Z_ON : 0) | (!Z.state && !Z.used ? KF.Z_READY : 0);
+    if (D && D.unlocked && D.unlocked() && !(D.blocked && D.blocked())) kf |= KF.DYN | (D.active ? KF.DYN_ON : 0) | (!D.used && !D.active ? KF.DYN_READY : 0);
+    const ds = local.dynScale;
+    if (!kf && !ds && !local.zHidden) return 0;
+    return [kf, ds ? [r2(ds[0]), r2(ds[1])] : 0, local.zHidden ? 1 : 0, kf & KF.Z ? zt : ''];
+  }
+
+  /**
+   * MicaSurvivor (M5 batch 12b): a player's state from the network, with its velocity when it comes slowly (the
+   * relay): Player.netUpdate leads along it and eases, so 1 update a second glides instead of jumping.
+   */
+  function netState(pl, a, slow) {
+    const n = readState(a), o = pl.net, now = performance.now();
+    n.vx = 0; n.vy = 0;
+    if (slow && o && o.t) {
+      const dts = (now - o.t) / 1000;
+      if (dts > 0.2 && dts < 2.5) { n.vx = G.U.clamp((n.x - o.x) / dts, -400, 400); n.vy = G.U.clamp((n.y - o.y) / dts, -400, 400); }
+    }
+    n.t = now; n.slow = !!slow;
+    pl.net = n;
+    return n;
+  }
+
+  function readState(a) {
+    return { x: a[0], y: a[1], ang: a[2], walk: a[3], hp: a[4], maxHp: a[5], dead: a[6], mv: a[7], ml: a[8],
+             mag: a[9], aim: a[10], xpMul: a[11], rev: a[12], ch: a[13], ld: a[14], ms: Array.isArray(a[15]) ? a[15] : null, dex: a[16] | 0,   // (DLC D16: ms; U2: dex)
+             it: Array.isArray(a[17]) ? a[17].slice(0, 2).map(v => (typeof v === 'string' && G.Items.BY[v] ? v : '')) : a.length > 17 ? ['', ''] : null,   // (MP polish: held items; an older client's frame (17 fields): null, unknown)
+             kit: kitOf(a) };   // (field 18: the Z-move / Dynamax; an older client's frame: null, its puppet as before)
+  }
+  /** Field 18 read: {kf, ds: [x, y] | null, zh, zt}; 0 -> no kit; a frame without the field (an older client) -> null. */
+  function kitOf(a) {
+    if (a.length <= 18) return null;
+    const k = a[18];
+    if (!Array.isArray(k)) return { kf: 0, ds: null, zh: 0, zt: '' };
+    const ds = Array.isArray(k[1]) && k[1].length === 2 ? [G.U.clamp(+k[1][0] || 1, 0.5, 3), G.U.clamp(+k[1][1] || 1, 0.5, 3)] : null;
+    return { kf: k[0] | 0, ds, zh: k[2] ? 1 : 0, zt: typeof k[3] === 'string' ? k[3].slice(0, 12) : '' };
+  }
+
+  // ---------------- envío ----------------
+
+  /** Anfitrión: evento para todos los invitados (menos `except`). */
+  function emit(ev, except) {
+    if (!host) return;
+    for (const m of mates.values()) if (m.connected && m.uid !== except) m.q.push(ev);
+  }
+
+  /** Anfitrión: evento sólo para los que están cerca (números de daño). */
+  function emitNear(ev, x, y, except) {
+    for (const m of mates.values()) {
+      if (!m.connected || m.uid === except) continue;
+      if (G.U.dist2(m.pl.x, m.pl.y, x, y) > 700 * 700) continue;
+      if (m.q.length > 400) continue;
+      m.q.push(ev);
+    }
+  }
+
+  function enemyList(near) {
+    const out = [];
+    const r2n = NEAR * NEAR;
+    for (const e of G.EnemyMgr.all()) {
+      if (e.dead || G.U.dist2(e.x, e.y, near.x, near.y) > r2n) continue;
+      const a = ANIMS.indexOf(e.anim.cur);
+      out.push([e.id, r1(e.x), r1(e.y), Math.ceil(e.hp), a < 0 ? 0 : a, e.anim.dir,
+                (e.burn > 0 ? 1 : 0) | (e.poison > 0 ? 2 : 0) | (e.shield > 0 ? 4 : 0)]);
+    }
+    return out;
+  }
+
+  function hostFrame(m) {
+    const st = api.team();
+    const p = { [me]: myState() };
+    for (const o of mates.values()) {
+      if (o.connected && o.uid !== m.uid && o.state) p[o.uid] = o.state;
+    }
+    const ev = m.q; m.q = [];
+    if (m.sp && m.sp.size) { for (const e of m.sp.values()) ev.push(e); m.sp.clear(); }   // (gap fix 2: the shared springs / chests)
+    const f = { k: 'f', t: r2(st.time), lv: st.level, xp: r2(st.xp), xn: st.xpNext, ki: st.kills, bo: st.bosses, co: st.coins, tk: [st.t1, st.t10],
+                p, e: enemyList(m.pl), ev };
+    const ja = G.Judgment.netState();       // Arceus en la Sentencia
+    if (ja) f.ja = ja;
+    const tw = G.Tower && G.Tower.netState();   // (U2: the Tower's floor, clock and boss)
+    if (tw) f.tw = tw;
+    // Siempre: quién está eligiendo y, si hay cartas de nivel, cuáles (ver arriba).
+    f.ho = holdNames();
+    if (waiting.size) f.lu = [levelSeq, levelNow];
+    // MicaSurvivor (DLC D1): an Expedition run's frames carry its `x` block (no listener / a base run: f unchanged)
+    return G.Hooks.reduce('net.frame', f, m);
+  }
+
+  function flushAll() { for (const m of mates.values()) if (m.connected) G.Net.send(m.uid, hostFrame(m)); }
+
+  /** A guest's frame to the host. (MicaSurvivor DLC D2: through the net.frame seam with no mate, so an Expedition guest adds
+   *  its airborne state; with no listener, or a base run, it is exactly the base frame.) */
+  function clientFrame() {
+    let ev = outEv;
+    if (spOut.size) { ev = outEv.concat([...spOut.values()]); spOut.clear(); }   // (gap fix 2: your springs / chests' changes)
+    return G.Hooks.reduce('net.frame', { k: 'f', p: myState(), ev }, null);
+  }
+
+  function flushClient(force) {
+    if (!force && !outEv.length && flushT > 0) return;
+    G.Net.toHost(clientFrame());
+    outEv = [];
+  }
+
+  /** Cada fotograma (también en la pantalla de subida de nivel). */
+  function tick(dt) {
+    if (!active) return;
+    if (host) {
+      for (const m of mates.values()) {
+        if (!m.connected) continue;
+        m.flushT -= dt;
+        if (m.flushT > 0) continue;
+        m.flushT = rateFor(m.uid);
+        G.Net.send(m.uid, hostFrame(m));
+      }
+    } else {
+      if (!stalled && performance.now() - lastHostAt > stallMs()) { stalled = true; updateAway(); }
+      flushT -= dt;
+      if (flushT <= 0) {
+        flushT = rateFor(hostUid);
+        G.Net.toHost(clientFrame());
+        outEv = [];
+      }
+    }
+  }
+
+  // ---------------- recepción ----------------
+
+  G.Net.on((from, msg) => {
+    if (!msg) return;
+    if (msg.k === 'start') { if (G.Flow.startCoop) G.Flow.startCoop(msg); return; }
+    if (!active || msg.k !== 'f') return;
+    if (host) onClientFrame(from, msg); else if (from === hostUid) onHostFrame(msg);
+  });
+
+  // MicaSurvivor (M5 batch 12b): the relay's daily minutes used up (G.Net.budgetOut): its own message.
+  const BUDGET_MSG = 'Se ha agotado el tiempo de relé de hoy: quien no puede conectarse directamente no puede seguir. Las conexiones directas siguen funcionando.';
+  let budgetTold = false;
+  G.Net.onPeer((u, mode) => {
+    if (!active || (mode !== 'closed' && mode !== 'failed')) return;
+    if (host) {
+      if (G.Net.budgetOut && !budgetTold) { budgetTold = true; G.UI.toast(BUDGET_MSG, 6000); }
+      mateGone(u);
+    }
+    else if (u === hostUid) { const cb = api.lost; end(); if (cb) cb(G.Net.budgetOut ? BUDGET_MSG : 'Se ha perdido la conexión con el anfitrión.', G.Net.budgetOut); }
+  });
+
+  function mateGone(u) {
+    const m = mates.get(u);
+    if (!m || !m.connected) return;
+    m.connected = false;
+    G.Projectiles.clearOrbs(m.pl);
+    G.Spawner.say(m.name + ' ha dejado la partida', 2.6);
+    if (waiting.has(u)) picked(u);
+    if (holds.has(u)) holdOff(u);
+    if (api.mateLeft) api.mateLeft(m);
+  }
+
+  // --- en el anfitrión ---
+
+  function onClientFrame(from, msg) {
+    const m = mates.get(from);
+    if (!m || !m.connected) return;
+    if (msg.p) { m.state = msg.p; netState(m.pl, msg.p, G.Net.slow(from)); m.xpMul = m.pl.net.xpMul || 1; reconcile(from, m.pl.net); }
+    // MicaSurvivor (DLC D2): in an Expedition run a guest's frame carries its own airborne state (x.a.p): kept on the
+    // mate for the host's frames and snapshots, and shown on its puppet. A base guest sends no `x`.
+    if (msg.x && G.Exp && G.Exp.guestAir) G.Exp.guestAir(m, msg.x);
+    for (const ev of msg.ev || []) {
+      switch (ev[0]) {
+        case 'h': {
+          const e = G.EnemyMgr.get(ev[1]);
+          if (!e || e.dead || e.remote) break;
+          hitFrom = from;
+          G.DmgLog.as('ally', () => e.hurt(ev[2], ev[3], ev[4], ev[5], ev[6]));   // (M5 lote 11: lo de un compañero, a "Compañero / equipo")
+          hitFrom = null;
+          break;
+        }
+        case 's': {
+          const e = G.EnemyMgr.get(ev[1]);
+          if (!e || e.dead) break;
+          if (ev[2] === 'b') e.applyBurn(ev[3]);
+          else if (ev[2] === 'p') e.applyPoison(ev[3]);
+          else if (ev[2] === 's') e.applySlow(ev[3]);
+          break;
+        }
+        case 'c':
+          G.Combat.ghostCast(m.pl, ev[1], ev[2], ev[3], ev[4]);
+          if (G.Replay) G.Replay.cast(m.pl, ev[1], ev[2], ev[3], ev[4]);   // (MicaSurvivor U4: the host's session tape has every player's casts)
+          emit(['c', from, ev[1], ev[2], ev[3], ev[4]], from);
+          break;
+        case 'pb':
+          G.World.breakAt(ev[1], ev[2]);
+          emit(['pb', ev[1], ev[2]], from);
+          break;
+        case 'sp': specialIn(ev, from); break;   // (gap fix 2: a guest's spring / locked chest)
+        case 'au': altarIn(ev, from); break;     // (gap fix 2: a guest's altar)
+        case 'lp': picked(from); break;
+        case 'hs': holdOn(from); break;
+        case 'he': holdOff(from); break;
+        case 're': G.Rift.enterRequest(); break;
+        case 'twp': if (G.Tower) G.Tower.netPact(ev[1]); break;   // (U2: a guest's Tower pact)
+        case 'bye': mateGone(from); break;
+        default: G.Hooks.call('net.event', ev, from);   // MicaSurvivor (DLC D11): an Expedition guest's message (a base guest sends none)
+      }
+    }
+  }
+
+  /** Anfitrión: lo que dice cada envío del invitado manda sobre avisos que se hayan perdido. */
+  function reconcile(from, n) {
+    if (n.ch === undefined) return;                        // versión vieja del juego
+    if (n.ch && !holds.has(from)) holdOn(from);
+    else if (!n.ch && holds.has(from)) holdOff(from);
+    if (waiting.has(from) && n.ld >= levelSeq) picked(from);
+  }
+
+  // --- en el invitado ---
+
+  /** Invitado: se para (o sigue) según si el anfitrión está. */
+  function updateAway() { if (api.away) api.away(hostAway || stalled ? nameOf(hostUid) : null); }
+
+  // Anfitrión: al irse de la pestaña avisa a todos al momento (después ya no
+  // podrá mandar nada) y al volver, que sigue.
+  document.addEventListener('visibilitychange', () => {
+    if (!active || !host) return;
+    emit(['ha', document.hidden ? 1 : 0]);
+    flushAll();
+  });
+
+  function onHostFrame(msg) {
+    lastHostAt = performance.now();
+    if (stalled) { stalled = false; updateAway(); }
+    for (const ev of msg.ev || []) applyHostEvent(ev);
+    if (msg.ja) G.Judgment.netApply(msg.ja);
+    if (msg.tw && G.Tower) G.Tower.netApply(msg.tw);   // (U2)
+    // MicaSurvivor (DLC D1): the host's Expedition zone, rebuilt here from the run's seed + its `x` block (never streamed;
+    // the Expedition code is loaded first if needed). A base host sends no `x`.
+    if (msg.x && G.Expedition) G.Expedition.viewZone(G.World.seed, msg.x);
+    // (DLC D2: and the players' airborne state, x.a, on their puppets here; enemies leaping)
+    if (msg.x && G.Exp && G.Exp.hostAir) G.Exp.hostAir(msg.x, u => { const m = mates.get(u); return m ? m.pl : null; });
+    // Quién elige y las cartas de nivel, aunque se haya perdido algún aviso.
+    if (msg.ho) {
+      const k = msg.ho.join('|');
+      if (k !== lastHo) { lastHo = k; api.hold && api.hold(msg.ho); }
+      if (msg.lu && msg.lu[0] > seenSeq) { seenSeq = msg.lu[0]; api.levelStart(msg.lu[1]); }
+      else if (!msg.lu && api.inLevelUp && api.inLevelUp()) api.resume();
+    }
+    api.syncTeam({ time: msg.t, level: msg.lv, xp: msg.xp, xpNext: msg.xn, kills: msg.ki, bosses: msg.bo, coins: msg.co,
+                   t1: (msg.tk || [])[0], t10: (msg.tk || [])[1] });
+    for (const u in msg.p || {}) {
+      const m = mates.get(u);
+      if (m) netState(m.pl, msg.p[u], G.Net.slow(hostUid));
+    }
+    const now = performance.now();
+    const slow = G.Net.slow(hostUid);    // (MicaSurvivor 12b: on the 1-a-second relay, keep the velocity across ~1 s gaps)
+    for (const a of msg.e || []) {
+      const e = G.EnemyMgr.get(a[0]);
+      if (!e || !e.remote || e.dead) continue;
+      const n = e.net;
+      n.slow = slow;
+      const dts = (now - (n.last || now)) / 1000;
+      if (dts > 0.02 && dts < (slow ? 2.5 : 1)) {
+        n.vx = G.U.clamp((a[1] - n.x) / dts, -600, 600);
+        n.vy = G.U.clamp((a[2] - n.y) / dts, -600, 600);
+      } else { n.vx = 0; n.vy = 0; }
+      n.x = a[1]; n.y = a[2]; n.age = 0; n.last = now;
+      e.hp = Math.min(e.maxHp, a[3]);
+      n.anim = a[4]; n.dir = a[5]; n.st = a[6];
+    }
+  }
+
+  function applyHostEvent(ev) {
+    switch (ev[0]) {
+      case 'ne':
+        G.EnemyMgr.addRemote({ id: ev[1], dex: ev[2], x: ev[3], y: ev[4], boss: !!ev[5], shiny: !!ev[6], hp: ev[7], dmg: ev[8], beh: ev[9] });
+        break;
+      case 'ed': G.EnemyMgr.removeRemote(ev[1], true); break;
+      case 'eg': G.EnemyMgr.removeRemote(ev[1], false); break;
+      case 'hn': { const e = G.EnemyMgr.get(ev[1]); if (e && !e.dead) e.showHurt(ev[2], ev[3]); break; }
+      case 'es':
+        G.Projectiles.spawn({ x: ev[1], y: ev[2], vx: ev[3], vy: ev[4], dmg: ev[5], r: ev[6], life: ev[7],
+                              friendly: false, color: '#ff7a9e', vis: G.VFX.forType(ev[8]), mtype: ev[8] });
+        break;
+      case 'c': { const m = mates.get(ev[1]); if (m) { G.Combat.ghostCast(m.pl, ev[2], ev[3], ev[4], ev[5]); if (G.Replay) G.Replay.cast(m.pl, ev[2], ev[3], ev[4], ev[5]); } break; }
+      case 'item': api.item(ev[1]); break;
+      case 'pk': G.Pickups.addRemote(ev[1], ev[2], ev[3], ev[4], ev[5]); break;
+      case 'pc': G.Pickups.removeId(ev[1]); break;
+      case 'mag': G.Pickups.pullAll(); G.FX.ring(local.x, local.y, 10, 420, '#ff9ed8', 0.6, 4); break;
+      case 'bomb':
+        G.FX.ring(ev[1], ev[2], 20, G.Camera.outerRadius(), '#ff7b3d', 0.5, 6);
+        if (G.U.dist2(ev[1], ev[2], local.x, local.y) < 500 * 500) G.Camera.kick(0.8);
+        G.Audio.sfx('break');
+        break;
+      case 'pb': G.World.breakAt(ev[1], ev[2]); break;
+      case 'sp': specialIn(ev, null); break;   // (gap fix 2: someone's spring / locked chest)
+      case 'au': altarIn(ev, null); break;     // (gap fix 2: someone's altar)
+      case 'say': G.Spawner.say(ev[1], ev[2]); break;
+      case 'heal': if (!local.dead) { local.heal(local.maxHp * ev[1]); G.FX.ring(local.x, local.y, 6, 60, '#5fe08a', 0.4, 3); } break;
+      case 'lu': if (!ev[2] || ev[2] > seenSeq) { seenSeq = ev[2] || seenSeq; api.levelStart(ev[1]); } break;
+      case 'lw': api.waiting(ev[1]); break;
+      case 'lr': api.resume(); break;
+      case 'hp': lastHo = (ev[1] || []).join('|'); api.hold && api.hold(ev[1]); break;
+      case 'ha': hostAway = !!ev[1]; updateAway(); break;
+      case 'sh': api.shiny(ev[1]); break;
+      case 'ov': { const cb = api.over; const d = ev[1]; end(); cb(d); break; }
+      case 'rift': case 'riftx': case 'arena': case 'aw': case 'al': G.Rift.onEvent(ev); break;
+      case 'jd': case 'jk': G.Judgment.onEvent(ev); break;
+      case 'twc': if (G.Tower) G.Tower.netClear(ev[1]); break;   // (U2: the host cleared a Tower floor)
+      case 'wx': G.Weather.onEvent(ev); break;
+      case 'ev': G.Events.onNet(ev); break;
+      case 'hz': G.Hazards.add(ev[1], true); break;
+      case 'fxr': G.FX.ring(ev[1], ev[2], 8, ev[3], ev[4], 0.5, 3); break;
+      default: G.Hooks.call('net.event', ev);   // MicaSurvivor (DLC D11): an Expedition host's message for you (a base host sends none)
+    }
+  }
+
+  // ---------------- ganchos que llaman los módulos del juego ----------------
+
+  /** Tu ataque: los demás lo repiten como fantasma. */
+  function cast(pl, m) {
+    if (!active || pl !== local) return;
+    if (host) emit(['c', me, m.id, m.lvl, r2(pl.aim), m.evolved ? 1 : 0]);
+    else outEv.push(['c', m.id, m.lvl, r2(pl.aim), m.evolved ? 1 : 0]);
+  }
+
+  // invitado
+  function hit(e, d, color, dx, dy, knock) { outEv.push(['h', e.id, d, color, r1(dx), r1(dy), knock || 0]); }
+  function status(e, kind, val) { outEv.push(['s', e.id, kind, val]); }
+
+  // anfitrión
+  function hurtShown(e, d, color) { emitNear(['hn', e.id, d, color], e.x, e.y, hitFrom); }
+  function enemyAdded(e) {
+    emit(['ne', e.id, e.dex, r1(e.x), r1(e.y), e.boss ? 1 : 0, e.shiny ? 1 : 0, Math.ceil(e.maxHp), r2(e.dmg), e.behavior]);
+  }
+  function enemyGone(e, died) { emit([died ? 'ed' : 'eg', e.id]); }
+  function enemyShot(p, type) { emit(['es', r1(p.x), r1(p.y), r1(p.vx), r1(p.vy), r2(p.dmg), p.r, p.life, type]); }
+  function pickupAdded(o) { emit(['pk', o.id, o.kind, r1(o.x), r1(o.y), o.value]); }
+  function pickupGone(id) { emit(['pc', id]); }
+  function say(text, secs) { emit(['say', text, secs]); }
+
+  function propBroken(p) {
+    if (host) emit(['pb', p.tx, p.ty]);
+    else outEv.push(['pb', p.tx, p.ty]);
+  }
+
+  /** Anfitrión: alguien ha cogido un objeto. Devuelve true si es para ti. */
+  function collected(p, who) {
+    emit(['pc', p.id]);
+    if (p.kind === 'magnet') emit(['mag']);
+    if (p.kind === 'bomb') emit(['bomb', r1(who.x), r1(who.y)]);
+    if ((p.kind === 'heal' || p.kind === 'item') && who !== local) {
+      const m = mates.get(who.uid);
+      if (m) m.q.push(p.kind === 'heal' ? ['heal', 0.3] : ['item', p.value]);
+    }
+  }
+
+  function shinyCaught(e) { emit(['sh', e.dex]); }
+
+  // ---------------- subida de nivel compartida ----------------
+
+  function levelStart(level) {
+    waiting = new Set([me]);
+    for (const m of mates.values()) if (m.connected) waiting.add(m.uid);
+    levelSeq++; levelNow = level;
+    emit(['lu', level, levelSeq]);
+    flushAll();
+    api.levelStart(level);
+    sendWaiting();
+  }
+
+  function nameOf(u) { return u === me ? (G.Social.me ? G.Social.me.name : 'Tú') : (mates.get(u) || {}).name || '?'; }
+
+  function sendWaiting() {
+    const names = [...waiting].map(nameOf);
+    emit(['lw', names]);
+    api.waiting(names);
+  }
+
+  /** Alguien ha elegido carta (anfitrión). */
+  function picked(u) {
+    if (!waiting.delete(u)) return;
+    if (waiting.size) { sendWaiting(); return; }
+    emit(['lr']);
+    flushAll();
+    api.resume();
+  }
+
+  // ---------------- fusiones: pausa para todos ----------------
+  // Mientras alguien elige qué movimientos fusiona (vínculo de un legendario),
+  // la partida se para para todos, como con las cartas de nivel.
+
+  function holdNames() { return [...holds].map(nameOf); }
+
+  /** Anfitrión: `u` empieza a elegir. */
+  function holdOn(u) {
+    holds.add(u);
+    emit(['hp', holdNames()]); flushAll();
+    api.hold && api.hold(holdNames());
+  }
+
+  /** Anfitrión: `u` ha terminado (o se ha ido). */
+  function holdOff(u) {
+    if (!holds.delete(u)) return;
+    emit(['hp', holdNames()]); flushAll();
+    api.hold && api.hold(holdNames());
+  }
+
+  /** Tú empiezas / terminas de elegir fusión. */
+  function holdStart() { if (host) holdOn(me); else { outEv.push(['hs']); flushClient(true); } }
+  function holdEnd() { if (host) holdOff(me); else { outEv.push(['he']); flushClient(true); } }
+
+  /** Has elegido tu carta. */
+  function localPicked() {
+    if (host) picked(me);
+    else { doneSeq = seenSeq; outEv.push(['lp']); flushClient(true); }
+  }
+
+  /** Anfitrión: se acabó para todos. */
+  function over(data) {
+    emit(['ov', data]);
+    flushAll();
+    end();
+  }
+
+  return {
+    ANIMS, COLORS, begin, end, leave, tick, players, puppets, xpFactor, scaleRate, scaleHp,
+    /** MicaSurvivor (M5 batch 12b): the numbers, for the design wiki (tools/micasurvivor/gen_designwiki.mjs). */
+    K: { rateDirect: Math.round(1 / RATE_FAST), rateRelay: Math.round(1 / RATE_SLOW), stall: STALL_MS / 1000, stallRelay: STALL_RELAY_MS / 1000, near: NEAR },
+    BUDGET_MSG,
+    /** For tests (DLC D16): a player's state row as sent, and as read back. */
+    stateOf: p => { const was = local; local = p; try { return myState(); } finally { local = was; } }, readState,
+    cast, hit, status, hurtShown, enemyAdded, enemyGone, enemyShot, pickupAdded, pickupGone, say,
+    propBroken, collected, shinyCaught, levelStart, localPicked, over, holdStart, holdEnd,
+    remoteZ, zCineTick, drawZDim, drawZCine,   // (gap fix 2026-11-02: another player's Z cinematic)
+    special, altarUsed,   // (gap fix 2: shared springs / altars / locked chests)
+    get zCine() { zPrune(); return active && zq.length > 0; }, get zNow() { return zNow(); },
+    /** Anfitrión: evento para todos. Invitado: evento para el anfitrión. */
+    broadcast(ev) { emit(ev); },
+    toHost(ev) { if (active && !host) { outEv.push(ev); flushClient(true); } },
+    mate(u) { return mates.get(u); },
+    get mates() { return [...mates.values()]; },
+    get members() { return members; },
+    get active() { return active; },
+    get isHost() { return active && host; },
+    get local() { return local; }
+  };
+})();

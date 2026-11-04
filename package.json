@@ -5,6 +5,8 @@
   "description": "Static site + Cloudflare Pages Functions backend (D1) for /login accounts",
   "devDependencies": {
     "esbuild": "^0.28.1",
+    "eslint": "^9.39.5",
+    "globals": "^17.12.0",
     "puppeteer-core": "^25.3.0"
   },
   "scripts": {
@@ -14,6 +16,8 @@
     "dev": "node mp-dev-server.mjs",
     "backup": "bash tools/backup-d1.sh",
     "normalize-cards": "node tools/normalize-cards.mjs",
-    "prepare": "git config core.hooksPath tools/githooks || true"
+    "prepare": "git config core.hooksPath tools/githooks || true",
+    "deploy-micatro-mods": "node tools/micatro/stage_mod_assets.mjs && cd .micatromods && npx wrangler pages deploy . --project-name magepunk-micatromods --branch main --commit-dirty=true",
+    "deploy-micasurvivor": "node tools/micasurvivor/stage_assets.mjs && cd .micasurvivor && npx wrangler pages deploy . --project-name magepunk-micasurvivor --branch main --commit-dirty=true"
   }
 }

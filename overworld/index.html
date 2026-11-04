@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<!-- first, before any game code reads storage: per-account local data (site/account_silo.js) -->
+<script src="/site/account_silo.js"></script>
 	<title>Magepunk — Overworld (web-native)</title>
 	<meta charset="UTF-8">
 	<link rel="preconnect" href="https://magepunk-owdata.pages.dev" crossorigin>
@@ -73,13 +75,14 @@
 		}
 	</style>
 	<meta name="mp-topbar" content="compact">
+	<script type="module" src="/site/zoomfix.js"></script> <!-- iPhone: no stuck zoom -->
 </head>
 <body>
 	<canvas id="screen"></canvas>
 	<div id="bar">
 		<span id="hud">Loading…</span>
 		<span id="objective"></span>
-		<span>arrows/WASD move · Z interact · Enter menu · P party · B bag</span>
+		<span id="keyhints">arrows/WASD move · Z interact · Enter menu · P party · B bag</span>
 		<a href="../">home</a>
 	</div>
 	<div class="tbtn" id="t-up">▲</div>
