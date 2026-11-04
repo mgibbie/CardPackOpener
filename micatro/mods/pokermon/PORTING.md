@@ -4217,6 +4217,45 @@ recorded before r79 replays on the old filter):
   and with Gen 1 off; save / resume; an r78 recipe, `fixtures/pokermon_genfilter_r78_recipe.json`, replays its Turtwig as recorded). Re-pinned:
   `modpin_test`, `pokermon_391_data_test`, `pokermon_new_jokers_test`, `micatro_mod_version_pin`.
 
+### Regional batch C: the Hisuian and Paldean forms (r83, 2026-11-03, branch `feat/pokermon-hisuian-paldean-forms`)
+The owner's "yes" (2026-11-03): the rest of Hisui and Paldea, `jokers/pokejokers_hisui.js` (12 jokers) + Nacho's Hisuian Sneasel / Sneasler
+made obtainable (Nacho r3, `mods/nacho/pokemon/0903_sneasler.js`). Upstream 3.9.1 draws every one (Gen 1 / 2 / 5 / 6 / 7 sheets) but registers
+none: nothing to deploy. Types from the card art (`tools/micatro/pokermon_art_type.mjs`; every cell matched, margin 0.46+). A form's `gen` is its
+base species' (Sneasler and Clodsire are their own species: 8 / 9). The region pill comes from the key (`j_poke_hisuian_*`, `j_poke_paldean_*`).
+- **Own lines** (own pool entries, own families: Common $5 -> Safari $8): Hisuian Growlithe (Earth; +40 Chips, doubled on the round's first hand;
+  5 rounds) -> Hisuian Arcanine (Head Smash: X2.5 on the round's first hand, its first scored card destroyed after scoring; Blueprint copies the X
+  only); Hisuian Voltorb (Grass; scored Seed cards +6 Mult; 4 rounds) -> Hisuian Electrode (Chloroblast: X1 + X0.15 per Seed card in the full
+  deck); Paldean Wooper (Dark; Poison Point: each discarded unenhanced card 1 in 6 to become a Hazard, Clodsire's roll on its own seed; +2 Mult per
+  Hazard in the full deck; 5 rounds -> Clodsire). Paldean Wooper's family is a SECOND one holding Clodsire (`[paldean_wooper, clodsire]`, pushed
+  after the Wooper line's): neither Wooper keeps the other out of the shop, Clodsire's previous evolution stays Wooper, Paldean Wooper's highest
+  form is Clodsire; Kanto Wooper's Dark-Energy route (r77) is unchanged.
+- **Paldean Tauros** (Rare $7, single stage): its breed is rolled when it is OBTAINED (Toxtricity's moment: `card.ability.poke_tauros_breed`,
+  1 in 3 on the seeded `paldean_tauros_breed`); the type follows the breed (protean_set: Combat Fighting, Blaze Fire, Aqua Water; not
+  Monotype-exempt) and so does the card (`systems/anim.js` GEN9_FORM_SPRITES: Gen 1 {6,6} / {8,6} / {10,6}). Combat: scored face cards X1.2;
+  Blaze: +1 discard, scored Hearts X1.2; Aqua: +1 hand, scored Clubs X1.2. A shop card shows Combat ("Breed: rolled when obtained"). Distinct from
+  Tauros (Herd).
+- **Branch evolutions** (`poke_energy_evo` with `rev: HISUI_REV`, the Galarian pattern; the six join their lines from that rev, HISUI_FAMILY_REV ->
+  FAMILY_MEMBER_REV; a run recorded before r83 replays as recorded): Quilava + Psychic -> Hisuian Typhlosion (Frisk: +2 Foresight, each Foreseen
+  Heart X1.25), Dewott + Dark -> Hisuian Samurott (Ceaseless Edge: the first 3 scored cards retrigger, each Hazard held X1.2), Dartrix + Fighting
+  -> Hisuian Decidueye (Triple Arrows: the first 3 scored cards X1.2 each time they score), and from the Basic of our 2-stage lines Petilil +
+  Fighting -> Hisuian Lilligant (Victory Dance: X1 + X0.1 per hand played this round, this hand included), Rufflet + Psychic -> Hisuian Braviary
+  (Esper Wing: X1.5, X2.5 during Boss Blinds), Bergmite + Earth -> Hisuian Avalugg (Mountain Gale: +200 Chips, held Stone cards +20 Chips). The
+  earlier stage's text gets a "Hisuian form" box. **Decision**: the three starter finals keep their line's fixed perk (+1 discard / +1 hand /
+  +1 hand size), as their Stage 1 has it — evolving never takes it away.
+- **Hisuian Sneasel / Sneasler** (Nacho; keys, Uncommon $6 / Safari $10, Fighting, Gen 2 / 8 and the Dawn Stone evolution kept): Sneasel +4 Mult
+  per discard used this round; Sneasler Unburden X3 once every discard this round is used (none left AND at least one used: a round with no
+  discards to use never counts). No mod option (always on with Nacho). Gated by Nacho's rulesRev (SNEASEL_REV 3): a move recorded before it sees
+  them in no pool and without an effect.
+- **Energy** (standard rates; fixed: odds, retriggers, perks, Foresight, the destruction): Growlithe `chips` 52 / 64 / 76, Arcanine `Xmult` 3 / 3.5
+  / 4, Voltorb `mult` 8.4 / 10.8 / 13.2, Electrode `Xmult_mod` 0.18 / 0.21 / 0.24, Sneasel `mult` 5.6 / 7.2 / 8.8, Sneasler `Xmult` 3.6 / 4.2 / 4.8,
+  Typhlosion `Xmult_multi` 1.3125 / 1.375 / 1.4375, Samurott / Decidueye / Tauros `Xmult_multi` 1.26 / 1.32 / 1.38, Lilligant `Xmult_mod` 0.12 /
+  0.14 / 0.16, Braviary `Xmult` 1.8 / 2.1 / 2.4 and `Xmult2` 3 / 3.5 / 4, Avalugg `chips` 260 / 320 / 380 and `chips2` 26 / 32 / 38, Paldean Wooper
+  `mult` 2.8 / 3.6 / 4.4.
+- **Tests**: `micatro/tests/mods/pokermon_hisuian_paldean_test.mjs` (every joker with real hands, each branch + its refusals + the normal path,
+  Sneasel's new effects and an old-rev replay, the breed roll / art / type / perks, Paldean Wooper -> Clodsire, the pills, Energy, save / resume,
+  art types). Re-pinned: `modpin_test`, `pokermon_391_data_test`, `pokermon_new_jokers_test`, `micatro_mod_version_pin`; Nacho's counts in
+  `nacho_test` / `nacho_179_test`.
+
 ### Pending from the 3.9.1 joker rework (after batch 10b)
 Every existing joker is on 3.9.1: `rework_hold` (still on 3.2.1) is empty. What waits, by the batch it waits on (`rework_deferred` =
 on 3.9.1 but one part):

@@ -85,6 +85,8 @@ import { REGIONAL_FAMILIES, REGIONAL_FAMILY_REV, REGIONAL_LOC, REGIONAL_UPSTREAM
 // ... batch B (the 19 Galarian forms; jokers/pokejokers_galarian.js)
 import { GALARIAN_FAMILIES, GALARIAN_OWN_FAMILIES, GALARIAN_BRANCH_FAMILIES, GALARIAN_FAMILY_REV, GALARIAN_LOC, GALARIAN_UPSTREAM_TEXT,
   galarian_corsola_destroyed } from './jokers/pokejokers_galarian.js';
+// The owner's regional forms, batch C (the Hisuian and Paldean forms; jokers/pokejokers_hisui.js)
+import { install_hisui_families, HISUI_FAMILY_REV, HISUI_LOC, HISUI_UPSTREAM_TEXT } from './jokers/pokejokers_hisui.js';
 import { DESIGN_FAMILIES, DESIGN_LOC, regi_chip_bonus, regi_h_x_mult, regi_enh_vars, slot_cost_removed, drifblim_destroyed, contrary_lifts, mummy_sell,
   freeze_keep, freeze_thaw, frozen_by, spore_first_deal, spore_hand_scored, malamar_chip_bonus, prank_reroll_cost, prank_reroll_shop, prank_shop_start,
   pyukumuku_destroyed, pheromosa_rest, komala_destroy_immune, GALAR_UPSTREAM_TEXT, GALAR_FAMILY_REV, rime_final_deal,
@@ -511,6 +513,9 @@ for (const f of GALARIAN_OWN_FAMILIES) family.push(f.slice());
 for (const f of GALARIAN_BRANCH_FAMILIES) set_family(f);
 for (const [name, rev] of Object.entries(GALARIAN_FAMILY_REV)) FAMILY_MEMBER_REV.set(name, rev);
 for (const [name, rev] of Object.entries(REGIONAL_FAMILY_REV)) FAMILY_MEMBER_REV.set(name, rev);
+// (regional batch C: the Hisuian / Paldean lines; the six Hisuian branch finals join their lines from HISUI_REV on)
+install_hisui_families(set_family);
+for (const [name, rev] of Object.entries(HISUI_FAMILY_REV)) FAMILY_MEMBER_REV.set(name, rev);
 for (const f of DATA.groups.consumables) for (const item of listOf(f)) centers.push(consumableCenter(item, f.file));
 // Content 3.9.1 adds that data.js (3.2.1) doesn't have (batch 10: Miracle Seed, Heavy-Duty Boots, the Seed card, the Debris
 // deck): its definition carries the whole static data (key, pos, atlas, config, ...) and is built like data.js's, after it.
@@ -567,6 +572,13 @@ DATA.loc.misc.dictionary = Object.assign(DATA.loc.misc.dictionary || {}, PARADOX
 for (const [set, d] of Object.entries(REGIONAL_LOC)) Object.assign(DATA.loc.descriptions[set] = DATA.loc.descriptions[set] || {}, d);
 for (const [set, d] of Object.entries(GALARIAN_LOC)) Object.assign(DATA.loc.descriptions[set] = DATA.loc.descriptions[set] || {}, d);
 // (Gen 8 batch 3: the Galarian evolutions of Linoone / Corsola / Mr. Mime / Farfetch'd — a box after their own 3.9.1 text)
+// ... and the regional batch C forms' (jokers/pokejokers_hisui.js)
+for (const [set, d] of Object.entries(HISUI_LOC)) Object.assign(DATA.loc.descriptions[set] = DATA.loc.descriptions[set] || {}, d);
+// (+ regional batch C: the six Hisuian branch evolutions' box after the earlier stage's own text)
+for (const [k, lines] of Object.entries(HISUI_UPSTREAM_TEXT)) {
+  const e = DATA.loc.descriptions.Joker[k];
+  if (e && e.text && !e.text.includes(lines[1])) DATA.loc.descriptions.Joker[k] = { ...e, text: [...e.text, ...lines] };
+}
 for (const [k, lines] of Object.entries({ ...GALAR_UPSTREAM_TEXT, ...REGIONAL_UPSTREAM_TEXT, ...GALARIAN_UPSTREAM_TEXT })) {
   const e = DATA.loc.descriptions.Joker[k];
   if (e && e.text && !e.text.includes(lines[1])) DATA.loc.descriptions.Joker[k] = { ...e, text: [...e.text, ...lines] };
@@ -1134,7 +1146,13 @@ export const POKERMON = registerMod({
   // three Legendary birds) and one BRANCH of a Kanto Basic by an Energy (Koffing -> Galarian Weezing: Fairy). The branch, Galarian
   // Corsola's Psychic path and the new family member are gated by rulesRev (systems/energy.js GALAR_FORMS_REV), so runs recorded before
   // r82 replay as recorded.
-  contentRev: 82,
+  // 83 = the owner's regional batch C, the Hisuian and Paldean forms (jokers/pokejokers_hisui.js): own lines (Hisuian Growlithe -> Arcanine,
+  // Hisuian Voltorb -> Electrode, Paldean Wooper -> Clodsire, Paldean Tauros with its breed rolled when obtained), six BRANCH evolutions by an
+  // Energy used on the earlier stage (Quilava -> Hisuian Typhlosion: Psychic; Dewott -> Hisuian Samurott: Dark; Dartrix -> Hisuian
+  // Decidueye: Fighting; Petilil -> Hisuian Lilligant: Fighting; Rufflet -> Hisuian Braviary: Psychic; Bergmite -> Hisuian Avalugg: Earth),
+  // and Nacho's Hisuian Sneasel / Sneasler made obtainable (Nacho rev 3). The branches and their family members are gated by rulesRev
+  // (systems/energy.js HISUI_REV), so runs recorded before r83 replay as recorded.
+  contentRev: 83,
   // Pokermon 3.9.1 pokermon.lua: SMODS.current_mod.optional_features = {quantum_enhancements = true, object_weights = true}.
   // object_weights sends create_card's key, the shop roll, tags, packs, bosses and vouchers through SMODS.poll_object
   // (js/engine/smods.js; batch 17). quantum_enhancements is the engine's check_enhancement, always on.

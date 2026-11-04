@@ -1302,6 +1302,17 @@ House pattern: LUCKY ODDS on the mod_probability pass (Galarian Ponyta / Rapidas
   reads lucky_procs (a card whose two rolls hit counts twice).
 House pattern: a FREE FIRST DISCARD (Galarian Stunfisk, Snap Trap): pre_discard, a player's discard (not The Hook's), discards_used 0, once a round:
   ease_discard(+1) queued before the discard's own -1, so discards left stay and discards_used still counts it.
+House pattern: REGIONAL FORMS, batch C (the owner's Hisuian and Paldean forms; jokers/pokejokers_hisui.js):
+  - A BRANCH from a Basic: in our 2-stage lines the canon Stage 1 is the Basic's evolution, so the Energy branch sits on the Basic (Petilil +
+    Fighting -> Hisuian Lilligant, Rufflet + Psychic, Bergmite + Earth). A starter final reached by a branch KEEPS its line's fixed perk (+1
+    discard / +1 hand / +1 hand size), as its Stage 1 has it.
+  - An own line that ends in a species another line already reaches (Paldean Wooper -> Clodsire): a SECOND family holding that final, pushed after
+    the first (`family.push`), so Clodsire's previous evolution stays the first line's and neither Basic keeps the other out of the shop.
+  - A ROLLED BREED with its own type (Paldean Tauros; Toxtricity's roll on obtain + Ogerpon's protean_set): the breed picks the scored-card rule,
+    a fixed perk and the type (not Monotype-exempt: fixed once rolled); a shop card shows the first breed.
+  - A FIRST-HAND destroyer (Hisuian Arcanine, Head Smash): Steamodded's destroy_card on the round's first hand, the first card of the scoring
+    hand that scores (a debuffed one is never it); Blueprint copies the X only.
+  - ALL DISCARDS USED (Sneasler, Unburden): discards_left 0 AND at least one used this round (a round with no discards never counts).
 
 2.2 Rarity and cost conventions
 -------------------------------

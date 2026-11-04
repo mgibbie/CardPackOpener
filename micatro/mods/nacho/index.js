@@ -27,7 +27,8 @@
  *   - the Elite stake: Pokermon owns it (stake_poke_elite); stake_nacho_elite_stake is a `renamed` alias.
  *   - the Bronzor / Smoliv lines (1.7.9 deprecated them on arrival) and the Impidimp line (can_load = false upstream) and
  *     the G-Max apples (Agarmons only) were never ours: not registered.
- *   - the Toxic-Stall lines (Hisuian Sneasel / Sneasler, the Loyal Three, Pecharunt): data only (pokemon/0903_sneasler.js).
+ *   - the Toxic-Stall lines (the Loyal Three, Pecharunt): data only (pokemon/0903_sneasler.js). Hisuian Sneasel / Sneasler (the same
+ *     Toxic-Stall file) are obtainable from rev 3 with Micatro's own effects (the owner's regional batch C; no option).
  *
  * Options (config.lua, 1.7.9 defaults: every line ON, Clauncher too now): one toggle per evolution line and one per re-keyed
  * Mega. The option keys keep their 1.6.4 names (recipes store them): the Lua `config_key` with each word capitalised.
@@ -72,7 +73,7 @@ import './pokemon/other_excavator.js';
 import './pokemon/legacy/0280_ralts.js';
 import './pokemon/legacy/0333_swablu.js';
 import './pokemon/legacy/0371_bagon.js';
-import { UNAVAILABLE } from './pokemon/0903_sneasler.js';
+import { UNAVAILABLE, SNEASEL_NAMES, SNEASEL_LOC, sneasel_on } from './pokemon/0903_sneasler.js';
 import { APPLES, ANCIENT_PACK, FOSSIL_TAG } from './items.js';
 import { hooks, STELLAR_GRADIENT } from './systems.js';
 
@@ -117,11 +118,14 @@ const centers = [];
 const ATTACH = { mega_gardevoir: 'gardevoir', mega_altaria: 'altaria', mega_gallade: 'gallade' };
 for (const f of DATA.groups.jokers) {
   if (f.ret.can_load === false) continue; // deprecated/, the Impidimp line, the G-Max apples (see the header)
-  const toxic = f.ret.misc_config === 'ToxicStall';
-  const option = toxic ? null : optionKey(f.ret.config_key);
+  const toxic_file = f.ret.misc_config === 'ToxicStall';
+  // (regional batch C: Hisuian Sneasel / Sneasler leave the Toxic-Stall data-only set — their own effects, no option, from rev 3)
+  const sneasel_file = toxic_file && listOf(f).every((it) => SNEASEL_NAMES.includes(it.name));
+  const option = toxic_file ? null : optionKey(f.ret.config_key);
   const names = [];
   for (const item0 of listOf(f)) {
     const name = item0.name;
+    const toxic = toxic_file && !sneasel_file;
     names.push(name);
     const def = toxic ? undefined : NACHO_DEFS[name];
     if (!def && !unavailable.has(name)) throw new Error(`nacho: joker '${name}' has no behaviour`);
@@ -140,6 +144,8 @@ for (const f of DATA.groups.jokers) {
     const c = addon_pokemon_center(item, def, { prefix, file: f.file, atlas });
     if (option) c.mod_option = option;
     if (toxic) { c.mod_option = 'ToxicStall_unavailable'; c.nacho_unavailable = UNAVAILABLE.needs; c.in_pool = () => false; }
+    // (a move recorded before rev 3 sees Hisuian Sneasel / Sneasler as before: in no pool — so it re-plays exactly)
+    if (sneasel_file) { const own = c.in_pool; c.in_pool = (self, args) => sneasel_on() && own(self, args); }
     // (1.7.9 items with their own in_pool and no custom_pool_func: Pokermon's rules AND theirs — the Hisuian Goomy line)
     if (def && typeof def.in_pool === 'function' && !item0.custom_pool_func) { const own = def.in_pool; c.in_pool = (self, args) => pokemon_in_pool(self) && own(self, args); }
     if (c.soul_pos && c.soul_pos.draw !== undefined) delete c.soul_pos.draw;
@@ -150,7 +156,7 @@ for (const f of DATA.groups.jokers) {
   // pokermon.add_family (1.7.9 loader: the file's `family`, else its list)
   const fam = Array.isArray(f.ret.family) && f.ret.family.length > 1 ? f.ret.family : names;
   if (fam.length > 1) add_family(fam);
-  LINES.push({ file: f.file, option, names, unavailable: toxic });
+  LINES.push({ file: f.file, option, names, unavailable: toxic_file && !sneasel_file });
 }
 
 // ------------------------------------------------------------------ legacy definitions (1.6.4; see the header)
@@ -186,6 +192,8 @@ for (const f of DATA164.groups.jokers) {
 // Pokermon's random-Pokémon picks (Poké Balls, Zorua's disguise, Transformation, ...) walk every registered center: keep
 // Nacho's out while the mod or the line is off, and never pick a legacy or an unavailable one.
 POKE_POOL_RULES.push((c) => (c.mod === NACHO_ID && (!centerActive(c) || c.nacho_legacy || c.nacho_unavailable) ? false : undefined));
+// (... nor, on a move recorded before rev 3, Hisuian Sneasel / Sneasler: unavailable there)
+POKE_POOL_RULES.push((c) => (c.mod === NACHO_ID && SNEASEL_NAMES.some((n) => c.key === 'j_nacho_' + n) && !sneasel_on() ? false : undefined));
 // Add-on dedupe (Pokermon precedence; pokermon/systems/precedence.js): the legacy Ralts / Swablu / Bagon lines are Pokermon's.
 // (No 1.7.9 joker is a Pokermon joker: the check is for any future overlap; Pokermon wins it.)
 export const REPLACED = mark_precedence(centers);
@@ -265,6 +273,8 @@ loc.misc.dictionary.poke_stellar_badge = 'Stellar'; // (lovely patch on Pokermon
 for (const f of DATA.groups.jokers) for (const item of listOf(f)) {
   if (item.loc_txt && item.nacho_inject_prefix) loc.descriptions.Joker['j_' + item.nacho_inject_prefix + '_' + item.name] = JSON.parse(JSON.stringify(item.loc_txt));
 }
+// Hisuian Sneasel / Sneasler: their own effects' text (regional batch C), over 1.7.9's Toxic one.
+Object.assign(loc.descriptions.Joker, JSON.parse(JSON.stringify(SNEASEL_LOC)));
 // The Stellar sticker's text (Nacho has none for the sticker key itself): its Stellar Type box.
 loc.descriptions.Other = loc.descriptions.Other || {};
 if (loc.descriptions.Other.stellar_type) loc.descriptions.Other.stellar_sticker = JSON.parse(JSON.stringify(loc.descriptions.Other.stellar_type));
@@ -287,8 +297,10 @@ export const NACHO = registerMod({
   version: '1.7.9-5',
   // Our behaviour counter (mods/pins.js; the pin reads "1.7.9-5 (rev 2)"). 1 = the add-on dedupe (1.6.4). 2 = the 1.7.9-5
   // upgrade (batches 18 / 19) with our deviations: the intended-design fixes and Micatro shapes listed in PORTING.md
-  // "1.7.9 upgrade" (Palafin-Hero's perma X Mult from 0, Mega Gallade's Energy limit on base jokers, Dhelmise's held card).
-  contentRev: 2,
+  // "1.7.9 upgrade" (Palafin-Hero's perma X Mult from 0, Mega Gallade's Energy limit on base jokers, Dhelmise's held card). 3 = the owner's
+  // regional batch C: Hisuian Sneasel / Sneasler obtainable, with Micatro's own effects (pokemon/0903_sneasler.js SNEASEL_REV; a move
+  // recorded before it sees them as before).
+  contentRev: 3,
   by: 'Eternalnacho & contributors (rebuilt for Micatro)',
   badge_colour: '#E9B800',
   requires: ['pokermon'],

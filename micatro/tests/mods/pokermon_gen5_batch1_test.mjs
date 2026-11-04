@@ -150,7 +150,7 @@ await sec('static', () => {
     conkeldurr: [16, 35], tympole: [18, 35], palpitoad: [20, 35], seismitoad: [22, 35], throh: [24, 35], sawk: [26, 35] };
   for (const [n, [x, y]] of Object.entries(cell)) ok(C(n).atlas === 'poke_AtlasJokersBasicNatdex391' && C(n).pos.x === x && C(n).pos.y === y && !C(n).soul_pos, n + ': upstream 3.9.1 cell Natdex {' + x + ',' + y + '}', [C(n).atlas, C(n).pos]);
   ok(C('unfezant').atlas === 'poke_AtlasJokersBasicGen05391' && C('unfezant').pos.x === 0 && C('unfezant').pos.y === 0, 'unfezant: upstream 3.9.1 cell Gen05 {0,0} (its first of 2)', [C('unfezant').atlas, C('unfezant').pos]);
-  const keys = MODS.pokermon.content.centers.filter((x) => x.set === 'Joker').map((x) => x.key.replace('j_poke_', ''));
+  const keys = MODS.pokermon.content.centers.filter((x) => x.set === 'Joker').map((x) => x.key.replace('j_poke_', '')).filter((k) => !/^(j_poke_)?(alolan|galarian|hisuian|paldean)_/.test(k)); // (regional batch C: the Hisuian / Paldean forms sit after their lines and join their families — pokermon_hisuian_paldean_test checks them)
   const run = (after, names, next) => { const i = keys.indexOf(after); return i >= 0 && names.every((n, k) => keys[i + 1 + k] === n) && keys[i + 1 + names.length] === next; };
   ok(run('samurott', ['patrat', 'watchog', 'lillipup', 'herdier', 'stoutland', 'purrloin', 'liepard'], 'pansage'), 'Pokédex order: Samurott (503), Patrat ... Liepard (504-510), Pansage (511)', keys.slice(keys.indexOf('samurott'), keys.indexOf('samurott') + 9));
   ok(run('musharna', ['pidove', 'tranquill', 'unfezant', 'blitzle', 'zebstrika'], 'roggenrola'), 'Musharna (518), Pidove ... Zebstrika (519-523), Roggenrola (524)');
