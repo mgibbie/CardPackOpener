@@ -80,6 +80,8 @@ import './boosters/packs1.js';
 import './jokers/zzzapril_fools.js';
 // The owner's Paradox content (Gen 9 batch 3): the Paradox Ball, the Ancient / Future Packs (the 20 jokers are in jokers/pokejokers_designs.js)
 import { PARADOX_LOC, PARADOX_DICTIONARY, PARADOX_LOC_COLOURS, PACK_COLOURS, paradox_pack_open } from './paradox.js';
+// Batch E, the Primal Reversions: the Blue Orb / Red Orb (Primal Kyogre / Primal Groudon are in jokers/pokejokers_designs.js)
+import { PRIMAL_LOC } from './primal.js';
 // The owner's regional forms, batch A (the 18 Alolan forms; jokers/pokejokers_regional.js)
 import { REGIONAL_FAMILIES, REGIONAL_FAMILY_REV, REGIONAL_LOC, REGIONAL_UPSTREAM_TEXT, poke_card_destroyed } from './jokers/pokejokers_regional.js';
 // ... batch B (the 19 Galarian forms; jokers/pokejokers_galarian.js)
@@ -162,6 +164,9 @@ const ATLAS_FILES = {
   // placeholders): the Paradox Ball's Item card (the Ultra Ball card restyled) and the Ancient / Future Packs (2 rows: Normal x2, Jumbo, Mega).
   paradox_ball: ['paradox_ball.png'],
   paradox_packs: ['paradox_packs.png'],
+  // Batch E (primal.js): the Blue Orb / Red Orb Item cards, composed by tools/micatro/compose_pokermon_orb_art.py (the Water Stone / Fire
+  // Stone cards with a shaded orb and its Primal's mark).
+  primal_orbs: ['primal_orbs.png'],
 };
 for (const g of ['Gen01', 'Gen02', 'Gen03', 'Gen04', 'Gen05', 'Gen06', 'Gen07', 'Gen08', 'Gen09', 'Natdex', 'Others']) {
   ATLAS_FILES['AtlasJokersBasic' + g] = ['Basic Series/AtlasJokersBasic' + g + '.png'];
@@ -572,6 +577,8 @@ for (const [set, d] of Object.entries(DESIGN_LOC)) Object.assign(DATA.loc.descri
 // ... and the Paradox Ball's and the Ancient / Future Packs' (paradox.js; a pack's group name is a dictionary entry)
 for (const [set, d] of Object.entries(PARADOX_LOC)) Object.assign(DATA.loc.descriptions[set] = DATA.loc.descriptions[set] || {}, d);
 DATA.loc.misc.dictionary = Object.assign(DATA.loc.misc.dictionary || {}, PARADOX_DICTIONARY);
+// ... and the Blue / Red Orb's (primal.js)
+for (const [set, d] of Object.entries(PRIMAL_LOC)) Object.assign(DATA.loc.descriptions[set] = DATA.loc.descriptions[set] || {}, d);
 // ... and the regional forms' (jokers/pokejokers_regional.js)
 for (const [set, d] of Object.entries(REGIONAL_LOC)) Object.assign(DATA.loc.descriptions[set] = DATA.loc.descriptions[set] || {}, d);
 for (const [set, d] of Object.entries(GALARIAN_LOC)) Object.assign(DATA.loc.descriptions[set] = DATA.loc.descriptions[set] || {}, d);
@@ -1162,7 +1169,11 @@ export const POKERMON = registerMod({
   // Blaziken, Swampert, Sableye, Mawile, Aggron, Medicham, Manectric, Sharpedo, Banette, Absol, Glalie, Metagross, Latias, Latios, Rayquaza,
   // Garchomp, Diancie) and Mega Salamence hooked to Pokermon's Salamence. The bases' `megas` (a Mega Stone / Mega Berry Juice target) and the
   // Megas' family places are gated by rulesRev (MEGA_D_REV), so runs recorded before r84 replay as recorded.
-  contentRev: 84,
+  // 85 = the owner's batch E, the Primal Reversions (primal.js; jokers/pokejokers_designs.js): the Blue Orb / Red Orb Items turn a Kyogre /
+  // Groudon into Primal Kyogre (+2 hands, Clubs retrigger twice, always raining) / Primal Groudon (+2 discards, Hearts / Diamonds X1.5,
+  // always sunny) for good; a Primal always wins the Primal Clash against the other's normal form. The Orbs reach the pools (Items, and the
+  // Ancient / Future Packs' first card) only from PRIMAL_REV, so runs recorded before r85 replay as recorded.
+  contentRev: 85,
   // Pokermon 3.9.1 pokermon.lua: SMODS.current_mod.optional_features = {quantum_enhancements = true, object_weights = true}.
   // object_weights sends create_card's key, the shop roll, tags, packs, bosses and vouchers through SMODS.poll_object
   // (js/engine/smods.js; batch 17). quantum_enhancements is the engine's check_enhancement, always on.

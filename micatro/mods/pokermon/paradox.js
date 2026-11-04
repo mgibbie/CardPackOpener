@@ -14,6 +14,7 @@ import {
 } from './api.js';
 import { centerActive } from '../../js/mods/registry.js';
 import { PARADOX_ERAS, PARADOX_COLOUR } from './jokers/pokejokers_designs.js';
+import { primal_pack_orb } from './primal.js';
 
 const FILE = 'micatro/paradox';
 
@@ -85,6 +86,9 @@ function pack(era, size, variant) {
     /** One of this era's Paradox jokers, all different within the pack (`paradox_offered`, on the pack card); if the pool runs dry (you
      *  hold nearly all of them), any of the era's. Seeded per era and slot: 'poke_<era>_pack'. */
     create_card(self, card, i) {
+      // (batch E, primal.js: the first card may be this era's Orb — the Red Orb in an Ancient Pack, the Blue Orb in a Future Pack — while it is
+      // in the pool, on PRIMAL_REV; its roll is drawn only then, so every other pack is dealt as before)
+      if (i === 1) { const o = primal_pack_orb(era); if (o) return smods_create_card({ set: 'Item', area: G.pack_cards, key: o, skip_materialize: true }); }
       if (!Array.isArray(card.ability.paradox_offered)) card.ability.paradox_offered = [];
       let pool = paradox_pool(era, card.ability.paradox_offered);
       if (!pool.length) pool = paradox_keys(era);

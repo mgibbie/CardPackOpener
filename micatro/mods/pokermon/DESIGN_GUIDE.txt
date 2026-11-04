@@ -307,6 +307,15 @@ House pattern: a WEATHER TRIO, clash and calm (the owner's Kyogre / Groudon / Ra
     bank in a non-energy field). A rival with no number (Kyogre: +1 hand and a retrigger) is Energy-inert, marked
     poke_no_energy_field: true (the audit in pokermon_new_jokers_test needs one or the other).
   - Tooltip: the clash state ("Kyogre's round (4 Clubs, 1 red)", "calmed by Rayquaza", "no Groudon", "read on the next first deal").
+  - PRIMAL forms (batch E, the owner's "orb version yes", contentRev 85; primal.js): the Blue Orb / Red Orb (Items, $4, saveable) turn the
+    selected / leftmost undebuffed Kyogre / Groudon into Primal Kyogre (+2 hands, Clubs retrigger twice, always raining) / Primal Groudon
+    (+2 discards, Hearts / Diamonds X1.5, always sunny) FOR GOOD. A Primal is its normal form pushed one step (the Mega rule of thumb, but
+    permanent) and stands on that form's SIDE of the trio: the clash, the rain / sun checks and Castform's lock read the side (normal +
+    Primal: `side`, `PRIMAL_SIDES`), so every reader of "Kyogre working" sees Primal Kyogre too. A Primal on one side only wins every round
+    (no count); Primal vs Primal the first deal decides as before; Rayquaza calms all. Represented as a Legendary FORM (rarity 4, stage
+    Legendary, in_pool false, `poke_primal`), not poke_mega: the Mega Stone never touches it, and the reversion fires no poke_evolved.
+    An Orb is in a pool only while its species is held (and only on its rules rev); the Ancient / Future Pack's first card may be the
+    sun / sea Orb 1 in 4. A held Primal keeps its species out of the pools (Showman aside).
 
 House pattern: an EON DUO, a pair on two halves of a resource (the owner's Latias / Latios, jokers/pokejokers_designs.js eon):
   - Each grows on HALF of a resource at full rate: Latias X0.15 per Tarot used, Latios X0.15 per Planet (context.using_consumeable,
@@ -1840,6 +1849,8 @@ Mega design patterns:
      Aerodactyl has a 1 in 4 chance to destroy each Ace.
 Rule of thumb: a Mega trades the line's flexibility for one dramatic axis, and it is temporary
 by nature (you can devolve it once per round).
+Primal Reversions (batch E) are the permanent cousin: an Orb Item, never reverted, the normal form's numbers doubled
+(+1 -> +2, one retrigger -> two, X1.25 -> X1.5); see the weather trio (2.1).
 
 2.9 Shiny (systems/shiny.js)
 ----------------------------

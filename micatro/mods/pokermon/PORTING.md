@@ -4214,6 +4214,26 @@ pill reads "Galarian" from the key (regional batch A). Each after its original l
 - **Tests**: `micatro/tests/mods/pokermon_galarian_test.mjs` (fails on main: 47 of 55). Re-recorded: `modpin_test`, `pokermon_391_data_test`,
   `pokermon_new_jokers_test`, `micatro_mod_version_pin`, `micatro_deckeditor_pages` (+18 jokers).
 
+### Batch E: the Primal Reversions, Blue Orb / Red Orb (2026-11-03, branch `feat/pokermon-primal-orbs`)
+Pinned **`3.9.1+r85`** (`contentRev: 85`, `PRIMAL_REV`; `LEGACY_MOD_VERSIONS` untouched). The owner's "orb version yes": two Items and two Legendary forms.
+- **Blue Orb / Red Orb** (`primal.js`; Items, **$4** like the evolution stones and the Mega Stone, the Items' default pool weight, saveable): the selected
+  undebuffed Kyogre / Groudon, else the leftmost, becomes **Primal Kyogre / Primal Groudon for good** (the Mega Berry Juice's way: nothing remembers or reverts
+  it; a Mega Stone's state is untouched). None to turn: refused. Energy, edition and stickers carry (poke_backend_evolve); no `poke_evolved` context (a
+  reversion isn't an evolution, as a Mega), never rerolled by the Randomizer. **Where**: the Item pool (Pocket Packs' Item slots) and the **Ancient Pack
+  (Red Orb) / Future Pack (Blue Orb)**'s first card 1 in 4 (`poke_<era>_orb`, rolled only then) — each only while you hold its Legendary (a debuffed one
+  counts) and only on r85, so runs recorded before replay their pools as recorded.
+- **Primal Kyogre** (Water): +2 hands each round, every scored Club retriggers twice, always raining. **Primal Groudon** (Earth): +2 discards each round,
+  scored Hearts / Diamonds X1.5 each (`Xmult_multi`, Energy +5%: X1.575 / 1.65 / 1.725), always sunny. **The choices**: Legendary $20, stage Legendary,
+  in_pool false (the transformed-Legendary-form way: Urshifu, Solgaleo), NOT poke_mega (the Mega Stone, the Mega Sleeve's included, never targets or
+  reverts them); each stands on its normal form's SIDE of the weather trio (`PRIMAL_SIDES` / `side` in `jokers/pokejokers_designs.js`): the Primal Clash,
+  Swift Swim's rain, Cherrim's sun and Castform's lock read the side. **Clash**: a Primal on one side only wins every round (no count; the tooltip says
+  "Primal Kyogre's round (every round)"); Primal vs Primal (or none) the round's first deal decides as before; Rayquaza still calms everything. An Orb used
+  mid-round keeps the round's decision (a losing Kyogre turned Primal gives nothing until the next round). A held Primal keeps its species out of the
+  pools (Showman / the Pokédex aside). Pokédex order: each Primal right after its species. Art: upstream 3.9.1's Primal cells with their souls (Gen 3 sheet
+  {4,7} / {5,7}, {2,7} / {3,7}); the Orbs are composed (`tools/micatro/compose_pokermon_orb_art.py` -> `assets/2x/primal_orbs.png`: the Water / Fire Stone
+  cards with a shaded orb carrying Kyogre's alpha / Groudon's omega), deployed to magepunk-micatromods.
+- **Tests**: `micatro/tests/mods/pokermon_primal_test.mjs` (fails on main: no such jokers / items). Re-recorded: `modpin_test`, `pokermon_391_data_test`,
+  `pokermon_new_jokers_test`, `pokermon_gen3_legendaries_test` (Pokédex order), `micatro_mod_version_pin`, `micatro_deckeditor_pages`.
 ### The generation filter holds (r79, 2026-11-03, branch `fix/pokermon-gen-filter`)
 The owner: "the generation filters in the settings don't work — the gen 4 starters come up even when gen 4 is off". `get_gen_allowed` lets a
 joker with no `gen` through, and the sources did not all ask it. Fixed in `systems/pools.js` (GEN_FILTER_REV = 79, gated by rulesRev so a run
