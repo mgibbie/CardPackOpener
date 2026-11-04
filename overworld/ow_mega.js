@@ -36,9 +36,8 @@ export function grantKeyStone(region, badgeId) {
 export function catchUpKeyStone() {
 	if (Bag.count(KEY_STONE)) return false;
 	if (!LEAGUE_REGIONS.some(r => Badges.count(r) >= 8)) return false;
+	// bag + HUD only: boot is too early for story flags / journal writes
 	Bag.addItem(KEY_STONE);
-	Story.setFlag('got_key_stone');
-	Journal.add('Received the KEY STONE');
 	hud.textContent = 'Your 8 badges earned you a KEY STONE! (Mega Evolution: FIGHT > MEGA)';
 	return true;
 }

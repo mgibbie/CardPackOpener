@@ -700,7 +700,11 @@ initTouchHud();   // the touch HUD's observer, installed here where it always ra
 	await trainers.init();
 	applyGymLevelFloors(); // even out same-tier gym difficulty across regions (interleave)
 	refreshLevelCap();     // clamp growth to the tier cleared in EVERY region
-	catchUpKeyStone();     // a save already past its 8th badge gets the KEY STONE (Mega Evolution)
+	// a save already past its 8th badge gets the KEY STONE (Mega Evolution) — once the
+	// game has settled: a bag write in the middle of boot raced the boot-time save
+	// repairs (champion_crown_test's crowned-on-load save came back in PALLET TOWN)
+	const keyStoneCatchUp = () => { if (S.loading || battle.blocking || cutscene.blocking || dialog.blocking) setTimeout(keyStoneCatchUp, 2000); else catchUpKeyStone(); };
+	setTimeout(keyStoneCatchUp, 4000);
 	await services.init();
 	await arcade.init();
 	await blockers.init();
