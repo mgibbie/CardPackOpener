@@ -198,7 +198,7 @@ import {
   add_card, detailed, energy_values, poke_remove_card, ease_dollars, ease_discard, juice_card_until, find_card, get_total_energy, POST_EVOLVE, can_evolve,
   poke_change_growth_level,
   poke_get_adjacent_jokers, emit, find_joker, poke_drain, level_up_hand, poke_evolve, increment_energy, can_increase_energy, smods_debuff_card, blueprint_compat_line,
-  can_be_destroyed_by_joker, change_shop_size, faint_baby_poke, GEN9B2_REV, ALOLA_REV,
+  can_be_destroyed_by_joker, change_shop_size, faint_baby_poke, GEN9B2_REV, ALOLA_REV, POKE_POOL_RULES,
 } from '../api.js';
 import { Tag, add_tag } from '../../../js/engine/tag.js';
 import { blueprint_effect } from './pokejokers_08.js';
@@ -957,6 +957,27 @@ const gender_name = (g) => (g === 'male' ? '♂' : '♀');
 // ------------------------------------------------------------ the weather trio (Kyogre / Groudon / Rayquaza) and the Eon duo (Latias / Latios)
 /** Undebuffed owned jokers of this design (a debuffed one does nothing; a Blueprint copy has its own key, so it never counts). */
 const legends = (name) => ((G.jokers && G.jokers.cards) || []).filter((j) => !j.debuff && j.config.center.key === 'j_poke_' + name);
+/** Batch E, the Primal Reversions (the owner's "orb version yes", 2026-11-03; consumables in ../primal.js): the Blue Orb / Red Orb turn
+ *  a Kyogre / Groudon into Primal Kyogre / Primal Groudon for good. Each Primal stands on its normal form's side of the weather trio: the
+ *  clash, the rain / sun checks and Castform's lock read the SIDE (the normal form and its Primal). A Primal always wins the Clash against
+ *  a side with no Primal; Primal against Primal, the cards held decide as before; Rayquaza still calms everything. The Orbs reach the
+ *  pools (and the Ancient / Future Packs) only on rules rev PRIMAL_REV, so a run recorded before it can't hold a Primal: with none held,
+ *  every rule below reads exactly as it did. */
+export const PRIMAL_REV = 82;
+export const PRIMAL_SIDES = { kyogre: ['j_poke_kyogre', 'j_poke_primal_kyogre'], groudon: ['j_poke_groudon', 'j_poke_primal_groudon'] };
+/** Undebuffed owned jokers of this side (Kyogre / Groudon and its Primal). */
+const side = (name) => ((G.jokers && G.jokers.cards) || []).filter((j) => !j.debuff && PRIMAL_SIDES[name].includes(j.config.center.key));
+/** 'kyogre' | 'groudon' | null: the weather-trio side this joker stands on. */
+const side_of = (card) => (PRIMAL_SIDES.kyogre.includes(card.config.center.key) ? 'kyogre' : PRIMAL_SIDES.groudon.includes(card.config.center.key) ? 'groudon' : null);
+const is_primal = (j) => !!j.config.center.poke_primal;
+// (held, a Primal is its species: no second Kyogre / Groudon in the pools while you hold its Primal, as a held Kyogre keeps Kyogre out;
+// Showman / the Pokedex still allow it. Only a run on PRIMAL_REV can hold a Primal.)
+POKE_POOL_RULES.push((self) => {
+  const k = self && self.key;
+  if (k !== 'j_poke_kyogre' && k !== 'j_poke_groudon') return undefined;
+  if (!find_card('j_poke_primal_' + k.slice(7), true).length || find_joker('Showman').length || find_joker('pokedex').length) return undefined;
+  return false;
+});
 /** Primal Clash's count of the cards held: Castform's Forecast rules (forecast above) for its two sides — Hearts + Diamonds ("red")
  *  vs Clubs; a Wild card counts for both; a debuffed card, a Stone card or a Hazard (no suit: is_suit) for neither. Spades don't count. */
 export function clash_count(cards) {
@@ -975,11 +996,14 @@ export function clash_count(cards) {
 export function primal_read() {
   const GM = G.GAME;
   if (GM.poke_primal && GM.poke_primal.round === GM.round) return GM.poke_primal;
-  const ky = legends('kyogre'), gr = legends('groudon'), ray = legends('rayquaza').length > 0;
+  const ky = side('kyogre'), gr = side('groudon'), ray = legends('rayquaza').length > 0;
   const { red, clubs } = clash_count(G.hand.cards);
-  let winner = null, tie = false;
+  let winner = null, tie = false, primal = null;
   if (ky.length && gr.length && !ray) {
-    if (clubs !== red) winner = clubs > red ? 'kyogre' : 'groudon';
+    // (batch E: a Primal on one side only wins every round; a Primal each, or none, the cards held decide)
+    const pk = ky.some(is_primal), pg = gr.some(is_primal);
+    if (pk !== pg) winner = primal = pk ? 'kyogre' : 'groudon';
+    else if (clubs !== red) winner = clubs > red ? 'kyogre' : 'groudon';
     else {
       tie = true;
       const ek = Math.max(...ky.map(get_total_energy)), eg = Math.max(...gr.map(get_total_energy));
@@ -987,6 +1011,7 @@ export function primal_read() {
     }
   }
   GM.poke_primal = { round: GM.round, kyogre: ky.length > 0, groudon: gr.length > 0, rayquaza: ray, winner, tie, red, clubs };
+  if (primal) GM.poke_primal.primal = primal;
   if (winner) {
     for (const j of winner === 'kyogre' ? gr : ky) primal_take_back(j);
     const w = (winner === 'kyogre' ? ky : gr)[0];
@@ -998,7 +1023,7 @@ export function primal_read() {
 export function primal_on(card) {
   const GM = G.GAME, P = GM && GM.poke_primal;
   if (!P || !P.winner || !GM.facing_blind || P.round !== GM.round) return true;
-  return 'j_poke_' + P.winner === card.config.center.key;
+  return side_of(card) === P.winner;
 }
 /** The clash loser's +1 hand (Kyogre) / +1 discard (Groudon) doesn't apply this round: take back what it gave (once a round; never below
  *  1 hand / 0 discards). primal_taken remembers how much, so selling it this round doesn't take it twice. */
@@ -1044,10 +1069,16 @@ export function castform_lock() {
 /** The tooltip's clash line for Kyogre / Groudon. */
 function clash_state(partner) {
   if (legends('rayquaza').length) return 'calmed by Rayquaza';
-  if (!legends(partner).length) return 'no ' + partner[0].toUpperCase() + partner.slice(1);
+  if (!side(partner).length) return 'no ' + partner[0].toUpperCase() + partner.slice(1);
   const GM = G.GAME, P = GM.poke_primal;
-  if (!GM.facing_blind || !P || P.round !== GM.round || !P.winner) return 'read on the next first deal';
-  return (P.winner === 'kyogre' ? 'Kyogre' : 'Groudon') + "'s round" + (P.tie ? ', a tie' : '') + ' (' + P.clubs + ' Clubs, ' + P.red + ' red)';
+  const cap = (n) => n[0].toUpperCase() + n.slice(1);
+  if (!GM.facing_blind || !P || P.round !== GM.round || !P.winner) {
+    // (batch E: a Primal on one side only wins every round, so say so before the deal too)
+    const pk = side('kyogre').some(is_primal), pg = side('groudon').some(is_primal);
+    return pk !== pg ? 'Primal ' + (pk ? 'Kyogre' : 'Groudon') + ' wins every round' : 'read on the next first deal';
+  }
+  if (P.primal) return 'Primal ' + cap(P.primal) + "'s round (every round)";
+  return cap(P.winner) + "'s round" + (P.tie ? ', a tie' : '') + ' (' + P.clubs + ' Clubs, ' + P.red + ' red)';
 }
 /** Rayquaza, Delta Stream (contentRev 59): +hands hand and +d_size discard each round (Kyogre's and Groudon's gifts together;
  *  Accelgor's hands_discards pair). `delta_on` remembers that this card gave them, so one obtained on the old rules (a resumed pre-r59
@@ -1115,7 +1146,7 @@ const sweet_growth = {
  *  the loser of a Primal Clash this round: primal_on). Rayquaza's Delta Stream keeps Groudon working, so Groudon still means sun
  *  (Rayquaza only un-locks CASTFORM's weather). (b) is live: a Groudon gained or sold mid-round changes it at once. Out of a round
  *  (the shop) only (b) counts. (c) An undebuffed Volcarona held (Gen 5 batch 3: it is always sunny; live, in the shop too). */
-const desolate_sun = () => legends('groudon').some((j) => primal_on(j));
+const desolate_sun = () => side('groudon').some((j) => primal_on(j)); // (+ Primal Groudon: batch E)
 export function cherrim_sunny(card) {
   const ex = card.ability.extra, GM = G.GAME;
   return !!((GM && GM.facing_blind && ex.sun_round === GM.round) || desolate_sun() || volcarona_sun());
@@ -2269,7 +2300,7 @@ function pillars(card, context, x) {
  *  Kyogre: held, undebuffed and not the loser of this round's Primal Clash (primal_on) — so on Groudon's round of a clash it isn't raining
  *  (and the forecast can't be Rainy either: Groudon only wins with at least as many red cards as Clubs). Rayquaza's calm keeps Kyogre
  *  working. (b) is live. Groudon alone doesn't stop a Clubs forecast (Cherrim's sun the other way round). Out of a round only (b) counts. */
-const kyogre_rain = () => legends('kyogre').some((j) => primal_on(j));
+const kyogre_rain = () => side('kyogre').some((j) => primal_on(j)); // (+ Primal Kyogre: batch E)
 export function swift_swim_raining(card) {
   const ex = card.ability.extra, GM = G.GAME;
   return !!((GM && GM.facing_blind && ex.rain_round === GM.round) || kyogre_rain());
@@ -5038,6 +5069,51 @@ defineJokers({
       return undefined;
     },
     ...delta_stream,
+  },
+
+  // ---------------------------------------------------------------- batch E, the Primal Reversions: Primal Kyogre / Primal Groudon (Gen 3)
+  // The owner's "orb version yes" (2026-11-03). Only a Blue Orb / Red Orb used on a Kyogre / Groudon makes one (../primal.js; for good, like
+  // the Mega Berry Juice's Mega), so never in a pool: Legendary $20 and stage Legendary, as the other transformed Legendary forms (Urshifu,
+  // Solgaleo), NOT poke_mega — the Mega Stone (the Mega Sleeve's endless one too) never targets or reverts a Primal, and the Orb isn't a
+  // Mega Evolution. Each is its normal form pushed further and stands on its side of the weather trio (side / primal_read above):
+  // Primal Kyogre +2 hands each round, every scored Club retriggers twice, always raining (the rain check, Castform Rainy); Primal Groudon
+  // +2 discards each round, scored Hearts / Diamonds X1.5 each, always sunny (the sun check, Castform Sunny). A Primal always wins the
+  // Primal Clash against the other's normal form (that one sits out every round); Primal against Primal, the round's first deal decides as
+  // before; Rayquaza calms everything. Energy carries over from the normal form (poke_backend_evolve's energy_count): Primal Groudon's per-card
+  // X is `Xmult_multi` (+5% of base: X1.575 / X1.65 / X1.725); Primal Kyogre has no number (Energy-inert, as Kyogre). Art: upstream 3.9.1's
+  // own Primal cells with their souls (Gen 3 sheet: Primal Groudon {2,7} / {3,7}, Primal Kyogre {4,7} / {5,7}).
+  primal_kyogre: {
+    name: 'primal_kyogre', poke_sprite391: sprite('Gen03', 4, 7, [5, 7]),
+    config: { extra: { hands: 2, retriggers: 2 } },
+    rarity: 4, cost: 20, stage: 'Legendary', ptype: 'Water', gen: 3, blueprint_compat: true, custom_pool_func: true,
+    attributes: ['hands', 'retrigger', 'suit', 'clubs', 'types'], poke_after: 'kyogre',
+    poke_no_energy_field: true, poke_primal: 'kyogre',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [ex.hands, clash_state('groudon'), ex.retriggers] }; },
+    calculate(self, card, context) {
+      if (first_deal(card, context)) { card.ability.extra.forecast_round = G.GAME.round; primal_read(); return undefined; }
+      if (context.repetition && !context.end_of_round && context.cardarea === G.play && primal_on(card) && context.other_card.is_suit('Clubs')) {
+        return { message: localize('k_again_ex'), repetitions: card.ability.extra.retriggers, card };
+      }
+      return undefined;
+    },
+    ...primal_bonus('hands'),
+    in_pool() { return false; },
+  },
+  primal_groudon: {
+    name: 'primal_groudon', poke_sprite391: sprite('Gen03', 2, 7, [3, 7]),
+    config: { extra: { d_size: 2, Xmult_multi: 1.5 } },
+    rarity: 4, cost: 20, stage: 'Legendary', ptype: 'Earth', gen: 3, blueprint_compat: true, custom_pool_func: true,
+    attributes: ['discard', 'xmult', 'suit', 'hearts', 'diamonds', 'types'], poke_after: 'groudon',
+    poke_primal: 'groudon',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [ex.d_size, r3(ex.Xmult_multi), clash_state('kyogre')] }; },
+    calculate(self, card, context) {
+      if (first_deal(card, context)) { card.ability.extra.forecast_round = G.GAME.round; primal_read(); return undefined; }
+      if (context.individual && context.cardarea === G.play && !context.end_of_round && primal_on(card)
+        && (context.other_card.is_suit('Hearts') || context.other_card.is_suit('Diamonds'))) return { x_mult: card.ability.extra.Xmult_multi, card };
+      return undefined;
+    },
+    ...primal_bonus('d_size'),
+    in_pool() { return false; },
   },
 
   // ---------------------------------------------------------------- LINE J: Cherubi -> Cherrim (Grass, Gen 4)
@@ -11257,6 +11333,8 @@ const SPIT_UP = ['{C:attention}Spit Up:{} on the final hand of', 'the round, {X:
 const AFTERMATH = ['{C:attention}Aftermath:{} when this Joker is', 'sold or destroyed, create a', '{C:dark_edition}Negative{} {C:spectral}Spectral{} card', '{C:inactive}(Not when it transforms)'];
 const HONEY = ['{C:attention}Honey Gather:{} at end of', 'round, the Jokers directly left', 'and right of this one each', 'gain {C:money}$#1#{} of sell value'];
 const COMMANDER = ['{C:attention}Commander:{} the leftmost', '{X:poke_water,C:white}Water{} Joker gives'];
+/** A Primal's clash box (batch E): it wins every round against the other's normal form. */
+const PRIMAL_CLASH = (other, n) => ['{C:attention}Primal Clash:{} wins every round', 'against a normal {C:attention}' + other + '{}', '{C:inactive,s:0.8}(against Primal ' + other + ', the', "{C:inactive,s:0.8}round's first deal picks one;", '{C:inactive,s:0.8}Rayquaza calms both)', '{C:inactive}(#' + n + '#)'];
 const CLASH = (n) => ['{C:attention}Primal Clash:{} with {C:attention}Kyogre{} and', '{C:attention}Groudon{} and no {C:attention}Rayquaza{}, the', "round's first deal picks one:", 'more {C:clubs}Clubs{} held, Kyogre; more', '{C:hearts}Hearts{} + {C:diamonds}Diamonds{}, Groudon', '{C:inactive}(a tie: more Energy, else Kyogre)', 'The other does nothing that round', '{C:inactive}(#' + n + '#)'];
 // contentRev 59 (solo): the other kind grows it by half (#3#).
 const EON = (other) => ['{C:attention}Soul Dew:{} also gains', '{X:mult,C:white} X#3# {} Mult each time', 'you use a ' + other + ' card'];
@@ -11624,6 +11702,14 @@ export const DESIGN_LOC = {
     j_poke_groudon: { name: 'Groudon', text: [
       ['{C:attention}Desolate Land:{} {C:red}+#1#{} discard', 'each round', 'Scored {C:hearts}Hearts{} and {C:diamonds}Diamonds{}', 'each give {X:mult,C:white} X#2# {} Mult', '{C:attention}Castform{} is always {C:poke_sun}Sunny{}'],
       CLASH(3),
+    ] },
+    j_poke_primal_kyogre: { name: 'Primal Kyogre', text: [
+      ['{C:attention}Primordial Sea:{} {C:chips}+#1#{} hands', 'each round', 'Every scored {C:clubs}Club{}', 'retriggers {C:attention}twice{}', "It's always {C:poke_rain}raining{}", '{C:inactive,s:0.8}(Castform is always Rainy)'],
+      PRIMAL_CLASH('Groudon', 2),
+    ] },
+    j_poke_primal_groudon: { name: 'Primal Groudon', text: [
+      ['{C:attention}Desolate Land:{} {C:red}+#1#{} discards', 'each round', 'Scored {C:hearts}Hearts{} and {C:diamonds}Diamonds{}', 'each give {X:mult,C:white} X#2# {} Mult', "It's always {C:poke_sun}sunny{}", '{C:inactive,s:0.8}(Castform is always Sunny)'],
+      PRIMAL_CLASH('Kyogre', 3),
     ] },
     j_poke_rayquaza: { name: 'Rayquaza', text: [
       ['{C:attention}Delta Stream:{} {C:chips}+#3#{} hand and', '{C:red}+#4#{} discard each round', '{C:inactive,s:0.8}(Also calms Kyogre and Groudon:', '{C:inactive,s:0.8}no Primal Clash)'],

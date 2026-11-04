@@ -269,7 +269,8 @@ export function poke_backend_evolve(card, to_key, energize_amount) {
   card.set_ability(new_card, true);
   card.set_cost();
   // Nacho's Pokermon Dip adds this context right here (lovely patch on pokefunctions.lua).
-  if (new_card.rarity !== 'poke_mega' && P_CENTERS[old_key].rarity !== 'poke_mega') calculate_context({ poke_evolved: true, card, from: old_key, to: to_key });
+  // (batch E: an Orb's Primal Reversion isn't an evolution either — poke_primal, primal.js)
+  if (new_card.rarity !== 'poke_mega' && P_CENTERS[old_key].rarity !== 'poke_mega' && !new_card.poke_primal) calculate_context({ poke_evolved: true, card, from: old_key, to: to_key });
 
   const ex = card.ability.extra;
   if (isTable(ex)) {

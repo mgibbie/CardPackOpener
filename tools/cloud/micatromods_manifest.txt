@@ -2040,6 +2040,7 @@ pokermon/assets/2x/poke_logo_alt.png
 pokermon/assets/2x/poke_logo_multi.png
 pokermon/assets/2x/pokestakes.png
 pokermon/assets/2x/pokestakes_stickers.png
+pokermon/assets/2x/primal_orbs.png
 pokermon/assets/2x/rage_candy_bar.png
 pokermon/assets/2x/repel.png
 pokermon/assets/2x/shiny_capture_disc.png

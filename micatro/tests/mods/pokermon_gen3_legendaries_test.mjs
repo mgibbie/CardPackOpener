@@ -100,7 +100,7 @@ sec('static', () => {
   ok(energy_values.Xmult_multi === 0.05 && energy_values.Xmult_mod === 0.2 && !('hands' in energy_values) && !('retriggers' in energy_values) && !('d_size' in energy_values), 'energy fields: Xmult_multi +5%, Xmult_mod +20%; hands / retriggers / d_size none');
   const keys = MODS.pokermon.content.centers.filter((x) => x.set === 'Joker').map((x) => x.key);
   const i = keys.indexOf('j_poke_registeel');
-  ok(keys.slice(i, i + 7).join() === 'j_poke_registeel,j_poke_latias,j_poke_latios,j_poke_kyogre,j_poke_groudon,j_poke_rayquaza,j_poke_jirachi', 'Pokédex order: Registeel (379), Latias ... Rayquaza (384), Jirachi (385)', keys.slice(i, i + 7));
+  ok(keys.slice(i, i + 9).join() === 'j_poke_registeel,j_poke_latias,j_poke_latios,j_poke_kyogre,j_poke_primal_kyogre,j_poke_groudon,j_poke_primal_groudon,j_poke_rayquaza,j_poke_jirachi', 'Pokédex order: Registeel (379), Latias ... Rayquaza (384), Jirachi (385) (+ each Primal after its species: batch E)', keys.slice(i, i + 9));
   const [leg] = get_current_pool('Joker', 4, true);
   ok(NEW.every((n) => leg.includes('j_poke_' + n)), 'all five are in the Legendary pool', leg.filter((k) => NEW.some((n) => k.includes(n))));
   for (const r of [1, 2, 3]) { const [p] = get_current_pool('Joker', r); ok(!NEW.some((n) => p.includes('j_poke_' + n)), 'not in the rarity ' + r + ' pool'); }

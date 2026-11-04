@@ -155,7 +155,7 @@ export function speciesOfJoker(name, numOfKey) {
   let n = String(name || '').toLowerCase();
   if (NOT_A_SPECIES.has(n)) return null;
   n = JOKER_ALIASES[n] || n;
-  n = n.replace(/^mega_/, '').replace(/^(hisuian|galarian|alolan|paldean)_/, '');
+  n = n.replace(/^(mega|primal)_/, '').replace(/^(hisuian|galarian|alolan|paldean)_/, '');
   const tries = [n, n.replace(/_/g, '')];
   let m = n;
   while (m.includes('_')) { m = m.slice(0, m.lastIndexOf('_')); tries.push(m, m.replace(/_/g, '')); }
