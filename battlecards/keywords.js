@@ -24,6 +24,7 @@ const K = [
 	{ p: ['Venomous'], t: 'Like Deathtouch, but one-shot: the first time it damages a creature that creature is destroyed, then Venomous is used up.', tag: 'venomous' },
 	{ p: ['Poisonous'], t: 'A creature this damages becomes Poisoned: it loses 2 Health at the end of its controller\'s turn (until cleansed or destroyed).', tag: 'poisonous' },
 	{ p: ['Poisoned'], t: "At the end of its controller's turn, a Poisoned creature takes 2 damage. The condition stays until it's cleansed or dies.", tag: 'poisoned' },
+	{ p: ['Background'], t: 'A label on an enchantment. It does nothing by itself and you may control any number — but some cards are stronger while you have one.', tag: 'background' },
 	{ p: ['Elusive'], t: "Can't be targeted by spells or Hero Powers — by anyone, including its controller.", tag: 'elusive' },
 	{ p: ['Hexproof'], t: "Your opponents can't target it with spells or Hero Powers; you still can.", tag: 'hexproof' },
 	{ p: ['Trample'], t: 'Excess lethal damage carries over to the hero.', tag: 'trample' },
