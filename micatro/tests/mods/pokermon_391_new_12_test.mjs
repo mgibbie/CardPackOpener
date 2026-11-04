@@ -62,7 +62,7 @@ sec(() => {
   const keys = MODS.pokermon.content.centers.filter((c) => c.set === 'Joker').map((c) => c.key);
   // (b follows a, past any joker from upstream main between them: sub-batch 15b's sit in main's order among 3.9.1's)
   // (and past the owner's designs: the Spoink line sits between Torkoal and Spinda)
-  const fromMain = new Set([...Object.entries(D391.new_jokers || {}).filter(([, v]) => v.upstream === 'main').map(([n]) => 'j_poke_' + n), ...(STATUS.PORTED_FILES['micatro/pokejokers_designs'] || []).map((n) => 'j_poke_' + n)]);
+  const fromMain = new Set([...Object.entries(D391.new_jokers || {}).filter(([, v]) => v.upstream === 'main').map(([n]) => 'j_poke_' + n), ...(STATUS.PORTED_FILES['micatro/pokejokers_designs'] || []).map((n) => 'j_poke_' + n), ...(STATUS.PORTED_FILES['micatro/pokejokers_megas'] || []).map((n) => 'j_poke_' + n)]);
   const after = (a, b) => { let i = keys.indexOf('j_poke_' + a) + 1; while (fromMain.has(keys[i])) i++; return i > 0 && keys[i] === 'j_poke_' + b; };
   ok(after('skitty', 'delcatty') && after('delcatty', 'sableye') && after('sableye', 'aron') && after('aggron', 'meditite') && after('minun', 'volbeat')
     && after('wailord', 'numel') && after('mega_camerupt', 'torkoal') && after('torkoal', 'spinda'), 'inserted in 3.9.1 file order');
@@ -94,9 +94,9 @@ sec(() => {
 sec(() => {
   // Families (3.9.1 functions/pokefamily.lua), minus jokers not ported yet
   ok(JSON.stringify(poke_get_family_list('skitty')) === JSON.stringify(['skitty', 'delcatty']), 'family: skitty / delcatty', poke_get_family_list('skitty'));
-  ok(JSON.stringify(poke_get_family_list('medicham')) === JSON.stringify(['meditite', 'medicham'])
-    && JSON.stringify(poke_get_family_list('carvanha')) === JSON.stringify(['carvanha', 'sharpedo'])
-    && JSON.stringify(poke_get_family_list('wailord')) === JSON.stringify(['wailmer', 'wailord']), 'families: Meditite, Carvanha, Wailmer lines');
+  ok(JSON.stringify(poke_get_family_list('medicham')) === JSON.stringify(['meditite', 'medicham', 'mega_medicham'])
+    && JSON.stringify(poke_get_family_list('carvanha')) === JSON.stringify(['carvanha', 'sharpedo', 'mega_sharpedo'])
+    && JSON.stringify(poke_get_family_list('wailord')) === JSON.stringify(['wailmer', 'wailord']), 'families: Meditite, Carvanha, Wailmer lines (+ Mega batch D: Mega Medicham, Mega Sharpedo)');
   ok(JSON.stringify(poke_get_family_list('roselia')) === JSON.stringify(['budew', 'roselia', 'roserade']) && get_family_keys('roselia').includes('j_poke_roserade'), 'family: Budew / Roselia / Roserade (sub-batch 14)', poke_get_family_list('roselia'));
 });
 sec(() => {

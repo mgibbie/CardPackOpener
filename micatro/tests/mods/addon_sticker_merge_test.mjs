@@ -35,7 +35,7 @@ try { SUP = await import('../../js/mods/superseded.js'); } catch (e) { /* missin
 const DUPES = {
   j_nacho_ralts: 'j_poke_ralts', j_nacho_kirlia: 'j_poke_kirlia', j_nacho_gardevoir: 'j_poke_gardevoir', j_nacho_gallade: 'j_poke_gallade',
   j_nacho_swablu: 'j_poke_swablu', j_nacho_altaria: 'j_poke_altaria',
-  j_nacho_bagon: 'j_poke_bagon', j_nacho_shelgon: 'j_poke_shelgon', j_nacho_salamence: 'j_poke_salamence',
+  j_nacho_bagon: 'j_poke_bagon', j_nacho_shelgon: 'j_poke_shelgon', j_nacho_salamence: 'j_poke_salamence', j_nacho_mega_salamence: 'j_poke_mega_salamence', // (+ Mega batch D)
   j_sonfive_nincada: 'j_poke_nincada', j_sonfive_ninjask: 'j_poke_ninjask', j_sonfive_shedinja: 'j_poke_shedinja',
 };
 const LOCAL = (u) => 'micatro_joker_wins_v1:' + u;
@@ -48,7 +48,7 @@ await sec('superseded table', () => {
   const detected = {};
   for (const k of Object.keys(P_CENTERS).sort()) { const to = P.replaced_by(k); if (to) detected[k] = to; }
   ok(same(SUP.SUPERSEDED, detected), 'superseded.js matches replaced_by over every registered card (all shipped mods): regenerate with node tools/micatro/gen_superseded.mjs', { table: SUP.SUPERSEDED, detected });
-  ok(Object.keys(DUPES).every((k) => SUP.supersededBy(k) === DUPES[k]) && Object.keys(SUP.SUPERSEDED).length === 12, 'the 12 known duplicates');
+  ok(Object.keys(DUPES).every((k) => SUP.supersededBy(k) === DUPES[k]) && Object.keys(SUP.SUPERSEDED).length === 13, 'the 13 known duplicates (+ the legacy Mega Salamence, Mega batch D)');
   ok(same(SUP.supersededFrom('j_poke_ralts'), ['j_nacho_ralts']) && same(SUP.supersededFrom('j_joker'), []) && SUP.supersededBy('j_poke_ralts') === undefined, 'supersededFrom / supersededBy');
 });
 

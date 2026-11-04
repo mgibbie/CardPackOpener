@@ -240,6 +240,10 @@ export const ALOLA_REV = 81;
 /** Regional batch B, the Galarian forms (the owner's, 2026-11-03): Koffing -> Galarian Weezing (a Fairy Energy), Galarian Corsola -> Cursola
  *  (a Psychic Energy), Galarian Weezing's place in Koffing's line, and Galarian Corsola's destroyed-card bank. */
 export const GALAR_FORMS_REV = 82;
+/** Regional batch C, the Hisuian and Paldean forms (the owner's, 2026-11-03; jokers/pokejokers_hisui.js): Quilava -> Hisuian Typhlosion
+ *  (Psychic), Dewott -> Hisuian Samurott (Dark), Petilil -> Hisuian Lilligant (Fighting), Rufflet -> Hisuian Braviary (Psychic), Bergmite ->
+ *  Hisuian Avalugg (Earth), Dartrix -> Hisuian Decidueye (Fighting), each an Energy used on it, and those lines' new members. */
+export const HISUI_REV = 83;
 function energy_evolve(v) { poke_evolve(v, v.config.center.poke_energy_evo.into); }
 
 /** The first joker (left to right) this Energy can go on, or false. */

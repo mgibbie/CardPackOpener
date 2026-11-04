@@ -218,6 +218,11 @@ sec('clash', () => {
   ok(G.GAME.poke_primal.winner === null && G.GAME.poke_primal.rayquaza, 'with Rayquaza: no clash', G.GAME.poke_primal);
   ok(play2(['C_A']).chips === 38 && near(play2(['H_K']).mult, 1.25), 'both work: Clubs twice, Hearts X1.25');
   ok(/calmed by Rayquaza/.test(lines(J('j_poke_primal_kyogre'))), 'tooltip: calmed by Rayquaza');
+  // ... and so does a Mega Rayquaza (Mega batch D: Delta Stream is its own ability)
+  if (P_CENTERS.j_poke_mega_rayquaza) {
+    deal('PRM6f2', REDS, ['j_poke_kyogre', 'j_poke_groudon', 'j_poke_mega_rayquaza'], () => { useOrb('c_poke_blueorb'); });
+    ok(G.GAME.poke_primal.winner === null && play2(['C_A']).chips === 38, 'with a Mega Rayquaza: no clash either, Primal Kyogre works', G.GAME.poke_primal);
+  }
   // the round's decision holds: an Orb used mid-round on the losing Kyogre gives nothing this round, wins from the next
   deal('PRM6g', REDS, ['j_poke_kyogre', 'j_poke_groudon']);
   ok(G.GAME.poke_primal.winner === 'groudon', 'Kyogre vs Groudon, red: Groudon\'s round');

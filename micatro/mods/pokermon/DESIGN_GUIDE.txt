@@ -307,7 +307,7 @@ House pattern: a WEATHER TRIO, clash and calm (the owner's Kyogre / Groudon / Ra
     bank in a non-energy field). A rival with no number (Kyogre: +1 hand and a retrigger) is Energy-inert, marked
     poke_no_energy_field: true (the audit in pokermon_new_jokers_test needs one or the other).
   - Tooltip: the clash state ("Kyogre's round (4 Clubs, 1 red)", "calmed by Rayquaza", "no Groudon", "read on the next first deal").
-  - PRIMAL forms (batch E, the owner's "orb version yes", contentRev 83; primal.js): the Blue Orb / Red Orb (Items, $4, saveable) turn the
+  - PRIMAL forms (batch E, the owner's "orb version yes", contentRev 85; primal.js): the Blue Orb / Red Orb (Items, $4, saveable) turn the
     selected / leftmost undebuffed Kyogre / Groudon into Primal Kyogre (+2 hands, Clubs retrigger twice, always raining) / Primal Groudon
     (+2 discards, Hearts / Diamonds X1.5, always sunny) FOR GOOD. A Primal is its normal form pushed one step (the Mega rule of thumb, but
     permanent) and stands on that form's SIDE of the trio: the clash, the rain / sun checks and Castform's lock read the side (normal +
@@ -1311,6 +1311,17 @@ House pattern: LUCKY ODDS on the mod_probability pass (Galarian Ponyta / Rapidas
   reads lucky_procs (a card whose two rolls hit counts twice).
 House pattern: a FREE FIRST DISCARD (Galarian Stunfisk, Snap Trap): pre_discard, a player's discard (not The Hook's), discards_used 0, once a round:
   ease_discard(+1) queued before the discard's own -1, so discards left stay and discards_used still counts it.
+House pattern: REGIONAL FORMS, batch C (the owner's Hisuian and Paldean forms; jokers/pokejokers_hisui.js):
+  - A BRANCH from a Basic: in our 2-stage lines the canon Stage 1 is the Basic's evolution, so the Energy branch sits on the Basic (Petilil +
+    Fighting -> Hisuian Lilligant, Rufflet + Psychic, Bergmite + Earth). A starter final reached by a branch KEEPS its line's fixed perk (+1
+    discard / +1 hand / +1 hand size), as its Stage 1 has it.
+  - An own line that ends in a species another line already reaches (Paldean Wooper -> Clodsire): a SECOND family holding that final, pushed after
+    the first (`family.push`), so Clodsire's previous evolution stays the first line's and neither Basic keeps the other out of the shop.
+  - A ROLLED BREED with its own type (Paldean Tauros; Toxtricity's roll on obtain + Ogerpon's protean_set): the breed picks the scored-card rule,
+    a fixed perk and the type (not Monotype-exempt: fixed once rolled); a shop card shows the first breed.
+  - A FIRST-HAND destroyer (Hisuian Arcanine, Head Smash): Steamodded's destroy_card on the round's first hand, the first card of the scoring
+    hand that scores (a debuffed one is never it); Blueprint copies the X only.
+  - ALL DISCARDS USED (Sneasler, Unburden): discards_left 0 AND at least one used this round (a round with no discards never counts).
 
 2.2 Rarity and cost conventions
 -------------------------------
@@ -1810,6 +1821,16 @@ How Megas work:
     else is random (getMega_by_position).
   - There are 41 Megas: 34 Pokermon, 6 Nacho, 1 Pokermon+. Rarity poke_mega, cost $12 is
     standard, and none of them evolve.
+  - Mega batch D (contentRev 84, jokers/pokejokers_megas.js) adds the 18 classic X/Y + ORAS Megas and
+    Mega Salamence (Pokermon's): 53 Pokermon Megas. A new Mega on an EXISTING base: give the base `megas` behind
+    the rules rev (attach_classic_megas' getter) so old runs re-play their Mega Stone onto the same joker.
+  - BANKS ACROSS A MEGA (house, batch D CARRY): a bank both forms use crosses as is (Garchomp's Bite Mult, the Eon
+    duo's X); a bank only one form uses rides along in ability.extra.poke_kept and comes back on the revert
+    (Aggron's eaten X, Banette's Mult, Mega Banette's own X). Say on the card when a bank waits ("Aggron's X2.2 is
+    kept for when it reverts"; "Kept on the card when it reverts").
+  - Batch D numbers: per-card X X1.25-X2 (Xmult_multi), joker X X1.5-X4 (Xmult; X4 behind a condition: 0 discards,
+    a repeated hand), gains X0.25-X1 (Xmult_mod); money, hands, discards, slots and debt stay fixed. A guarantee
+    (Mega Absol: every listed probability numerator = denominator) is the inverse of a base's 0.
 
 Mega design patterns:
   1. One enormous stat.

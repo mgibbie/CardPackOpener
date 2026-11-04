@@ -98,7 +98,8 @@ sec('static', () => {
   }
   ok(P_CENTERS.j_poke_kyogre.poke_no_energy_field === true && !P_CENTERS.j_poke_groudon.poke_no_energy_field, 'Kyogre is Energy-inert by design (poke_no_energy_field); the others have energy fields');
   ok(energy_values.Xmult_multi === 0.05 && energy_values.Xmult_mod === 0.2 && !('hands' in energy_values) && !('retriggers' in energy_values) && !('d_size' in energy_values), 'energy fields: Xmult_multi +5%, Xmult_mod +20%; hands / retriggers / d_size none');
-  const keys = MODS.pokermon.content.centers.filter((x) => x.set === 'Joker').map((x) => x.key);
+  // (Mega batch D's Megas sit after their bases: pokermon_megas_classic_test.mjs checks them; skipped here)
+  const keys = MODS.pokermon.content.centers.filter((x) => x.set === 'Joker' && x.poke_file !== 'micatro/pokejokers_megas').map((x) => x.key);
   const i = keys.indexOf('j_poke_registeel');
   ok(keys.slice(i, i + 9).join() === 'j_poke_registeel,j_poke_latias,j_poke_latios,j_poke_kyogre,j_poke_primal_kyogre,j_poke_groudon,j_poke_primal_groudon,j_poke_rayquaza,j_poke_jirachi', 'Pokédex order: Registeel (379), Latias ... Rayquaza (384), Jirachi (385) (+ each Primal after its species: batch E)', keys.slice(i, i + 9));
   const [leg] = get_current_pool('Joker', 4, true);
