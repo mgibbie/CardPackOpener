@@ -166,7 +166,7 @@ await sec('static', () => {
   ok(r3 === true, 'Pokédex order: Scrafty (560), Sigilyph ... Archeops (561-567), Trubbish (568)', r3);
   const r4 = run('zoroark', ['minccino', 'cinccino'], 'gothita');
   ok(r4 === true, 'Pokédex order: Zoroark (571), Minccino, Cinccino (572-573), Gothita (574)', r4);
-  const fam = (n) => poke_get_family_list(n).map((x) => (typeof x === 'string' ? x : x.key || x.name)).join();
+  const fam = (n) => poke_get_family_list(n).map((x) => (typeof x === 'string' ? x : x.key || x.name)).filter((k) => !/^(j_poke_)?(alolan|galarian|hisuian|paldean)_/.test(k)).join(); // (regional batch C: the Hisuian / Paldean forms sit after their lines and join their families — pokermon_hisuian_paldean_test checks them)
   for (const line of Object.values(LINES)) if (line.length > 1) ok(fam(line[0]) === line.join(), 'one family: ' + line.join(' -> '), fam(line[0]));
   const inert = ['cottonee', 'whimsicott', 'petilil', 'lilligant', 'sigilyph', 'minccino', 'cinccino'];
   ok(inert.every((n) => C(n).poke_no_energy_field === true) && NAMES.filter((n) => !inert.includes(n)).every((n) => !C(n).poke_no_energy_field),

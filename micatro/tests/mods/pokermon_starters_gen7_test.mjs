@@ -89,7 +89,7 @@ await sec('static', () => {
   ok(E('popplio').mult === 3 && E('brionne').mult === 5 && E('primarina').Xmult_multi === 1.2, 'Popplio line: +3 / +5 Mult, X1.2 per Heart');
   ok(near(energy_values.Xmult_multi, 0.05) && near(energy_values.mult, 0.4) && near(energy_values.Xmult_mod, 0.2)
     && !['retriggers', 'h_size', 'd_size', 'hands', 'rounds'].some((f) => f in energy_values), 'Energy fields: Xmult_multi +5%, mult +40%, Xmult_mod +20%; the perks, retriggers and rounds fixed');
-  const keys = MODS.pokermon.content.centers.filter((c) => c.set === 'Joker').map((c) => c.key);
+  const keys = MODS.pokermon.content.centers.filter((c) => c.set === 'Joker').map((c) => c.key).filter((k) => !/^(j_poke_)?(alolan|galarian|hisuian|paldean)_/.test(k)); // (regional batch C: the Hisuian / Paldean forms sit after their lines and join their families — pokermon_hisuian_paldean_test checks them)
   const i = keys.indexOf('j_poke_rowlet');
   ok(i > 0 && keys[i - 1] === 'j_poke_volcanion' && ALL.every((n, k) => keys[i + k] === 'j_poke_' + n) && keys[i + 9] === 'j_poke_pikipek',
     'Pokédex order: Volcanion (721), Rowlet ... Primarina (722-730), then Pikipek (731, Gen 7 batch 1)', keys.slice(i - 1, i + 10));

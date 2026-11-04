@@ -7,7 +7,7 @@ import {
   ease_discard, ease_hands_played,
   defineJokers, type_tooltip, detailed, scaling_evo, level_evo, item_evo, ease_poke_dollars,
   get_probability_vars, pseudorandom_probability, poke_total_chips, find_pokemon_type, faint_baby_poke,
-  add_card, P_CENTER_POOLS, is_type, create_consumeable, get_first_of_each_suit,
+  add_card, P_CENTER_POOLS, is_type, create_consumeable, get_first_of_each_suit, HISUI_REV,
 } from '../api.js';
 
 const FILE = 'pokemon/pokejokers_06.lua';
@@ -256,6 +256,9 @@ defineJokers({
   },
   // Quilava 156
   quilava: {
+    // (+ regional batch C: a Psychic Energy used on it evolves it into Hisuian Typhlosion — systems/energy.js energy_evo_target, from
+    // HISUI_REV; its level_evo into Typhlosion is unchanged)
+    poke_energy_evo: { etype: 'Psychic', into: 'j_poke_hisuian_typhlosion', rev: HISUI_REV },
     loc_vars(self, info_queue, card) {
       type_tooltip(self, info_queue, card);
       return { vars: [card.ability.extra.d_size, card.ability.extra.mult, card.ability.extra.rounds, card.ability.extra.mult * G.GAME.current_round.discards_left] };

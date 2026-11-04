@@ -23,7 +23,7 @@ import { rulesRev } from '../../../js/mods/pins.js';
 import { gold_held, diamond_storm } from './pokejokers_designs.js';
 
 /** The rules rev the 19 Megas arrive on (index.js contentRev). */
-export const MEGA_D_REV = 83;
+export const MEGA_D_REV = 84;
 export const mega_d_on = () => rulesRev('pokermon') >= MEGA_D_REV;
 
 const FILE = 'micatro/pokejokers_megas';

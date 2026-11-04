@@ -375,6 +375,250 @@
 	},
 	"entries": [
 		{
+			"sha": "12bfe13",
+			"date": "2026-11-03",
+			"kind": "micatro",
+			"title": "Pokermon r82: regional batch B, the 19 Galarian forms",
+			"body": "",
+			"cards": [],
+			"micatroMods": [
+				{
+					"id": "pokermon",
+					"name": "Pokermon",
+					"added": [
+						{
+							"key": "j_poke_galarian_ponyta",
+							"name": "Galarian Ponyta",
+							"set": "Joker",
+							"rarity": "common",
+							"cost": 5,
+							"atlas": "@poke_AtlasJokersBasicGen01391",
+							"pos": {
+								"x": 10,
+								"y": 4
+							}
+						},
+						{
+							"key": "j_poke_galarian_rapidash",
+							"name": "Galarian Rapidash",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 8,
+							"atlas": "@poke_AtlasJokersBasicGen01391",
+							"pos": {
+								"x": 12,
+								"y": 4
+							}
+						},
+						{
+							"key": "j_poke_galarian_slowpoke",
+							"name": "Galarian Slowpoke",
+							"set": "Joker",
+							"rarity": "common",
+							"cost": 5,
+							"atlas": "@poke_AtlasJokersBasicGen01391",
+							"pos": {
+								"x": 14,
+								"y": 4
+							}
+						},
+						{
+							"key": "j_poke_galarian_slowbro",
+							"name": "Galarian Slowbro",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 8,
+							"atlas": "@poke_AtlasJokersBasicGen01391",
+							"pos": {
+								"x": 0,
+								"y": 5
+							}
+						},
+						{
+							"key": "j_poke_galarian_farfetchd",
+							"name": "Galarian Farfetch'd",
+							"set": "Joker",
+							"rarity": "common",
+							"cost": 5,
+							"atlas": "@poke_AtlasJokersBasicGen01391",
+							"pos": {
+								"x": 2,
+								"y": 5
+							}
+						},
+						{
+							"key": "j_poke_galarian_weezing",
+							"name": "Galarian Weezing",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 8,
+							"atlas": "@poke_AtlasJokersBasicGen01391",
+							"pos": {
+								"x": 4,
+								"y": 5
+							}
+						},
+						{
+							"key": "j_poke_galarian_mrmime",
+							"name": "Galarian Mr. Mime",
+							"set": "Joker",
+							"rarity": "rare",
+							"cost": 8,
+							"atlas": "@poke_AtlasJokersBasicGen01391",
+							"pos": {
+								"x": 6,
+								"y": 5
+							}
+						},
+						{
+							"key": "j_poke_galarian_articuno",
+							"name": "Galarian Articuno",
+							"set": "Joker",
+							"rarity": "legendary",
+							"cost": 20,
+							"atlas": "@poke_AtlasJokersBasicGen01391",
+							"pos": {
+								"x": 8,
+								"y": 5
+							},
+							"soul": {
+								"x": 9,
+								"y": 5
+							}
+						},
+						{
+							"key": "j_poke_galarian_zapdos",
+							"name": "Galarian Zapdos",
+							"set": "Joker",
+							"rarity": "legendary",
+							"cost": 20,
+							"atlas": "@poke_AtlasJokersBasicGen01391",
+							"pos": {
+								"x": 10,
+								"y": 5
+							},
+							"soul": {
+								"x": 11,
+								"y": 5
+							}
+						},
+						{
+							"key": "j_poke_galarian_moltres",
+							"name": "Galarian Moltres",
+							"set": "Joker",
+							"rarity": "legendary",
+							"cost": 20,
+							"atlas": "@poke_AtlasJokersBasicGen01391",
+							"pos": {
+								"x": 12,
+								"y": 5
+							},
+							"soul": {
+								"x": 13,
+								"y": 5
+							}
+						},
+						{
+							"key": "j_poke_galarian_slowking",
+							"name": "Galarian Slowking",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 8,
+							"atlas": "@poke_AtlasJokersBasicGen02391",
+							"pos": {
+								"x": 6,
+								"y": 4
+							}
+						},
+						{
+							"key": "j_poke_galarian_corsola",
+							"name": "Galarian Corsola",
+							"set": "Joker",
+							"rarity": "rare",
+							"cost": 7,
+							"atlas": "@poke_AtlasJokersBasicGen02391",
+							"pos": {
+								"x": 8,
+								"y": 4
+							}
+						},
+						{
+							"key": "j_poke_galarian_zigzagoon",
+							"name": "Galarian Zigzagoon",
+							"set": "Joker",
+							"rarity": "uncommon",
+							"cost": 6,
+							"atlas": "@poke_AtlasJokersBasicGen03391",
+							"pos": {
+								"x": 8,
+								"y": 7
+							}
+						},
+						{
+							"key": "j_poke_galarian_linoone",
+							"name": "Galarian Linoone",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 8,
+							"atlas": "@poke_AtlasJokersBasicGen03391",
+							"pos": {
+								"x": 10,
+								"y": 7
+							}
+						},
+						{
+							"key": "j_poke_galarian_darumaka",
+							"name": "Galarian Darumaka",
+							"set": "Joker",
+							"rarity": "common",
+							"cost": 5,
+							"atlas": "@poke_AtlasJokersBasicGen05391",
+							"pos": {
+								"x": 10,
+								"y": 7
+							}
+						},
+						{
+							"key": "j_poke_galarian_darmanitan",
+							"name": "Galarian Darmanitan",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 8,
+							"atlas": "@poke_AtlasJokersBasicGen05391",
+							"pos": {
+								"x": 0,
+								"y": 8
+							}
+						},
+						{
+							"key": "j_poke_galarian_yamask",
+							"name": "Galarian Yamask",
+							"set": "Joker",
+							"rarity": "common",
+							"cost": 5,
+							"atlas": "@poke_AtlasJokersBasicGen05391",
+							"pos": {
+								"x": 4,
+								"y": 8
+							}
+						},
+						{
+							"key": "j_poke_galarian_stunfisk",
+							"name": "Galarian Stunfisk",
+							"set": "Joker",
+							"rarity": "rare",
+							"cost": 7,
+							"atlas": "@poke_AtlasJokersBasicGen05391",
+							"pos": {
+								"x": 6,
+								"y": 8
+							}
+						}
+					]
+				}
+			]
+		},
+		{
 			"sha": "5806840",
 			"date": "2026-11-03",
 			"kind": "micatro",
