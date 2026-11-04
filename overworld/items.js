@@ -48,6 +48,18 @@ const berryPretty = id => id.replace(/berry$/, ' Berry').replace(/^./, c => c.to
 // south stayed shut — 2026-10-02. It is a Crystal block tree, in cut_blocks.json.)
 const CODE_FIELD_OBJS = {};
 
+// Item balls placed in code, for items the decomps never placed (map data is
+// read-only). The three regional CHARMS (regional_forms.js) sit on the JohKanto
+// postgame routes holding the most wild forms of their region (encounters_postgame.js):
+// JohKanto is reachable only as Grand Champion, so these are postgame finds.
+// Tiles: reachable, passable nooks that block no path (regional_forms_test checks).
+// Keys are fixed `code_<id>` collected-record entries, so a pickup persists.
+export const CODE_ITEM_BALLS = {
+	MAP_JOHKANTO_ROUTE_14:       [{ tx: 16, ty: 2,  id: 'alolacharm', pretty: 'Alola Charm' }],
+	MAP_JOHKANTO_ROUTE_13:       [{ tx: 58, ty: 16, id: 'galarcharm', pretty: 'Galar Charm' }],
+	MAP_JOHKANTO_ROUTE_10_NORTH: [{ tx: 14, ty: 3,  id: 'hisuicharm', pretty: 'Hisui Charm' }],
+};
+
 // an object's hide flag, as a story flag name (or null)
 const storyFlag = f => (f && f !== '0' && /^(FLAG_|EVENT_)/.test(f)) ? f : null;
 
@@ -213,6 +225,10 @@ export class Items {
 		// authentic HM-terrain chokepoints injected in code (map data is read-only):
 		// cut trees / rocks / boulders at progression gates, cleared by the usual HMs
 		for (const o of CODE_FIELD_OBJS[map.id] || []) this.fieldObjs.push({ tx: o.tx, ty: o.ty, kind: o.kind });
+		for (const o of CODE_ITEM_BALLS[map.id] || []) {
+			const key = 'code_' + o.id;
+			if (!this.collected.has(key)) this.balls.push({ tx: o.tx, ty: o.ty, id: o.id, pretty: o.pretty, key, hidden: false, flag: null });
+		}
 		// Crystal block trees: the tile IS the tree (drawn by the map), so CUT has to
 		// swap the tile, not just drop an object. Like every cut tree they grow back
 		// on the next visit — the cached layout was edited, so put the tree back.
