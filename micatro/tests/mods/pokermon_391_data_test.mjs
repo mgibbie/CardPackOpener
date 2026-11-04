@@ -197,7 +197,9 @@ else {
     'bl_poke_mirror', 'bl_poke_rocket', 'bl_poke_star', 'bl_poke_gray_godfather', 'bl_poke_white_executive', 'm_poke_ludicolo',
     ...Object.keys(D391.new_jokers || {}).map((n) => 'j_poke_' + n),
     // (the owner's designs: new to the port, no 3.2.1 joker to compare; pokermon_new_jokers_test.mjs checks their 3.9.1 cells)
-    ...(P.PORTED_FILES['micatro/pokejokers_designs'] || []).map((n) => 'j_poke_' + n)]);
+    ...(P.PORTED_FILES['micatro/pokejokers_designs'] || []).map((n) => 'j_poke_' + n),
+    // (regional batch C, the Hisuian / Paldean forms: new to the port; pokermon_hisuian_paldean_test checks their 3.9.1 cells and types)
+    ...(P.PORTED_FILES['micatro/pokejokers_hisui'] || []).map((n) => 'j_poke_' + n)]);
   const cards = [...C2.centers, ...C2.blinds, ...C2.stickers, ...MODS.pokermon.sleeves].filter((c) => !NEW_391.has(c.key) && (/391$/.test(c.atlas || '') && c.pos && !/AtlasJokersBasicOthers391|AtlasDecksBasic391/.test(c.atlas) || ['j_poke_rival', 'b_poke_pokemondeck'].includes(c.key)));
   const fileOf = (a) => decodeURIComponent(ATLASES[a].src).replace(/^.*\/assets\/2x\//, '');
   const cell = (a, pos) => { const A = ATLASES[a], cw = (A.px || 71) * 2, chh = (A.py || 95) * 2; return [pos.x * cw, pos.y * chh, cw, chh]; };
