@@ -20,7 +20,7 @@ import {
 import * as B from './bignum.js';
 import { get_poker_hand_info, calculate_context } from './run.js';
 import { Tag, add_tag } from './tag.js';
-import { firstHook, ACTIVE as ACTIVE_MODS } from '../mods/registry.js';
+import { firstHook, callHook, ACTIVE as ACTIVE_MODS } from '../mods/registry.js';
 import { wanted, scale_card, base_seal_roll } from './smods.js';
 
 /**
@@ -33,7 +33,13 @@ import { wanted, scale_card, base_seal_roll } from './smods.js';
  * runs, unchanged. The jokers keep their own vanilla popups (computed after the scaling).
  */
 function vscale(card, ref_table, ref_value, scalar_table, scalar_value, factor, operation) {
-  if (!ACTIVE_MODS.length || !wanted('scaling_card')) return false;
+  if (!ACTIVE_MODS.length) return false;
+  if (!wanted('scaling_card')) {
+    // (not routed: the caller's vanilla line scales. The mods' card_scaled hook still hears a '+' growth — scale_card tells it
+    // otherwise; every vanilla '-' / function operation here lowers the value)
+    if ((operation || '+') === '+' && Number((scalar_table || ref_table)[scalar_value]) * (factor || 1) > 0) callHook('card_scaled', card, true);
+    return false;
+  }
   scale_card(card, { ref_table, ref_value, scalar_table: scalar_table || undefined, scalar_value, scalar_factor: factor, operation: operation || '+', no_message: true });
   return true;
 }

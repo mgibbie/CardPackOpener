@@ -159,6 +159,17 @@ export const GEN8_LEGEND_FORMS = {
 };
 
 /**
+ * Ogerpon's masks (Gen 9 batch 4, jokers/pokejokers_designs.js OGERPON_MASKS / mask_now): upstream 3.9.1 draws each mask with its own floating
+ * soul on the Gen 9 sheet (sprite table ogerpon {4,4} = Teal, its own card; ogerpon_wellspring {2,5}, ogerpon_hearthflame {8,4},
+ * ogerpon_cornerstone {6,5}) — by the view's form (the center's poke_view_form: the mask of the current Ante). The unlisted cells beside
+ * them ({6,4}, {0,5}, {4,5}, {8,5}: the Terastallized masks, no soul) are not used. Each cell's type icon is the mask's type
+ * (pokermon_art_type.mjs; pokermon_gen9_legendaries_test 'cell types').
+ */
+export const GEN9_LEGEND_FORMS = {
+  j_poke_ogerpon: { wellspring: memory(2, 5), hearthflame: memory(8, 4), cornerstone: memory(6, 5) },
+};
+
+/**
  * Deerling's and Sawsbuck's seasons (the owner's Gen 5 batch 3, jokers/pokejokers_designs.js SEASONS): upstream 3.9.1 draws all four forms
  * of both on the Gen 5 sheet, one after another (Deerling Spring {2,1}, Summer {4,1}, Autumn {6,1}, Winter {8,1}; Sawsbuck Spring {10,1},
  * Summer {0,2}, Autumn {2,2}, Winter {4,2}; pokespriteload.lua lists only the Spring ones) — by the view's form (the center's
@@ -218,6 +229,19 @@ export const GEN8_FORM_SPRITES = {
   j_poke_eiscue: { noice: { x: 10, y: 8 } },
   j_poke_indeedee: { female: { x: 14, y: 8 } },
   j_poke_morpeko: { hangry: { x: 2, y: 9 } },
+};
+/**
+ * Gen 9 batch 1's form (the owner's, jokers/pokejokers_designs.js): Squawkabilly's plumage, rolled when it is obtained (card.ability.poke_plumage,
+ * its center's poke_view_form). Upstream 3.9.1 draws all four on the Gen 9 sheet, UNLISTED beside its own Green card ({8,0}, the one
+ * pokespriteload.lua lists): Blue {0,1}, Yellow {2,1}, White {4,1}. Drawn by ui.js ownFace (+ the Shiny sheet's twins). Each cell's type icon
+ * is Colorless (pokermon_gen9_batch1_test 'art').
+ */
+export const GEN9_FORM_SPRITES = {
+  j_poke_squawkabilly: { blue: { x: 0, y: 1 }, yellow: { x: 2, y: 1 }, white: { x: 4, y: 1 } },
+  // (regional batch C: Paldean Tauros's breed, rolled when it is obtained — card.ability.poke_tauros_breed, its center's poke_view_form; upstream
+  // 3.9.1 draws the three breeds on the Gen 1 sheet, Combat {6,6} = its own card, Blaze {8,6}, Aqua {10,6}; jokers/pokejokers_hisui.js. Each
+  // cell's type icon is its breed's: Fighting / Fire / Water, pokermon_hisuian_paldean_test 'art'.)
+  j_poke_paldean_tauros: { blaze: { x: 8, y: 6 }, aqua: { x: 10, y: 6 } },
 };
 export function view_card(card, v) {
   const c = card.config.center;

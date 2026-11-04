@@ -1,6 +1,6 @@
 // Nacho's Pokermon Dip 1.6.4 -> 1.7.9-5 (Plans/MICATRO_MODS_UPGRADES.md batches 18 / 19; micatro/mods/nacho/PORTING.md "1.7.9
 // upgrade"). Every effect is FIRED through real plays (act):
-//   - the pin (1.7.9-5+r2, LEGACY_MOD_VERSIONS untouched), the data (data179.js / sprites179.js), the inventory: the 1.7.9 jokers,
+//   - the pin (1.7.9-5+r3: r3 the owner's regional batch C, Hisuian Sneasel / Sneasler obtainable; LEGACY_MOD_VERSIONS untouched), the data (data179.js / sprites179.js), the inventory: the 1.7.9 jokers,
 //     the Toxic-Stall data-only lines, the legacy definitions, nothing for the deprecated / never-loaded upstream lines
 //   - batch 18: the legacy definitions (registered, out of every pool, evolving into Pokermon's, their 1.6.4 behaviour), the
 //     re-keyed Megas (j_poke_mega_*: a Mega Stone on POKERMON's Gardevoir / Altaria / Gallade, their 1.7.9 effects, reverting),
@@ -68,14 +68,14 @@ const evolveNow = (j) => { winRound(); flush(); return key(j); };
 const NEW = ['cranidos', 'rampardos', 'shieldon', 'bastiodon', 'snover', 'abomasnow', 'mega_abomasnow', 'victini', 'solosis', 'duosion',
   'reuniclus', 'bounsweet', 'steenee', 'tsareena', 'wimpod', 'golisopod', 'togedemaru', 'dhelmise', 'applin', 'flapple', 'appletun',
   'dipplin', 'hydrapple', 'finizen', 'palafin', 'palafin_hero', 'frigibax', 'arctibax', 'baxcalibur', 'mega_baxcalibur', 'excavator'];
-const TOXIC = ['hisuian_sneasel', 'sneasler', 'okidogi', 'munkidori', 'fezandipiti', 'pecharunt'];
+const TOXIC = ['okidogi', 'munkidori', 'fezandipiti', 'pecharunt']; // (Hisuian Sneasel / Sneasler: obtainable from rev 3 — pokermon_hisuian_paldean_test)
 const LEGACY = ['ralts', 'kirlia', 'gardevoir', 'gallade', 'swablu', 'altaria', 'bagon', 'shelgon', 'salamence', 'mega_salamence'];
 const REKEYED = { mega_gardevoir: 'gardevoir', mega_altaria: 'altaria', mega_gallade: 'gallade' };
 const NOT_PORTED = ['bronzor', 'bronzong', 'smoliv', 'dolliv', 'arboliva', 'impidimp', 'morgrem', 'grimmsnarl', 'gmax_flapple', 'gmax_appletun'];
 
 // =================================================================== the pin, the data, the inventory
 sec('pin', () => {
-  ok(MODS.nacho.version === '1.7.9-5' && MODS.nacho.contentRev === 2 && PINS.modPin('nacho') === '1.7.9-5+r2', 'Nacho pinned 1.7.9-5+r2', PINS.modPin('nacho'));
+  ok(MODS.nacho.version === '1.7.9-5' && MODS.nacho.contentRev === 3 && PINS.modPin('nacho') === '1.7.9-5+r3', 'Nacho pinned 1.7.9-5+r3', PINS.modPin('nacho'));
   ok(PINS.LEGACY_MOD_VERSIONS.nacho === '1.6.4', 'LEGACY_MOD_VERSIONS untouched (nacho 1.6.4)', PINS.LEGACY_MOD_VERSIONS.nacho);
   ok(DATA179.source === 'NachosPokermonDip-1.7.9-5' && DATA179.groups.jokers.length === 42, 'data179.js: the 1.7.9-5 extract (42 joker files)', [DATA179.source, DATA179.groups.jokers.length]);
   ok(NEW.every((n) => SPRITES179[n] || ['excavator', 'palafin_hero', 'mega_baxcalibur'].includes(n)), 'sprites179.js: a 3.9.1 cell for every new joker without its own atlas');
@@ -83,7 +83,7 @@ sec('pin', () => {
 sec('inventory', () => {
   const C = (n, p = 'nacho') => P_CENTERS['j_' + p + '_' + n];
   ok(NEW.every((n) => C(n) && !C(n).unported && STATUS.ported.includes('j_nacho_' + n)), 'batch 19: the 31 new jokers that load are registered and ported', NEW.filter((n) => !C(n) || C(n).unported));
-  ok(TOXIC.every((n) => C(n) && C(n).nacho_unavailable === 'ToxicStall' && STATUS.unavailable.includes('j_nacho_' + n)), 'the 6 Toxic-Stall jokers: data only (unavailable)');
+  ok(TOXIC.every((n) => C(n) && C(n).nacho_unavailable === 'ToxicStall' && STATUS.unavailable.includes('j_nacho_' + n)), 'the 4 Toxic-Stall jokers still data only (unavailable)');
   ok(LEGACY.every((n) => C(n) && C(n).nacho_legacy === '1.6.4') && LEGACY_KEYS.length === 10, 'batch 18: 10 legacy definitions (the Ralts / Swablu / Bagon lines + Mega Salamence)', LEGACY_KEYS);
   ok(Object.keys(REKEYED).every((n) => C(n, 'poke') && C(n, 'poke').mod === 'nacho' && !C(n)), 'the 3 Megas are re-keyed to j_poke_* (registered by Nacho), the j_nacho_* keys gone');
   ok(NOT_PORTED.every((n) => !C(n) && !C(n, 'poke') || (C(n, 'poke') && C(n, 'poke').mod === 'pokermon')), 'deprecated / never-loaded upstream lines (Bronzor, Smoliv, Impidimp, G-Max) are not registered by Nacho');
@@ -93,7 +93,7 @@ sec('inventory', () => {
   const pokeNames = new Set(Object.values(P_CENTERS).filter((c) => c.mod === 'pokermon' && c.set === 'Joker').map((c) => c.name));
   const clash = nacho.filter((c) => !c.nacho_legacy && pokeNames.has(c.name)).map((c) => c.key);
   ok(clash.length === 0, 'precedence: no 1.7.9 joker shares a name with a Pokermon joker', clash);
-  ok(JSON.stringify(REPLACED.slice().sort()) === JSON.stringify(LEGACY.filter((n) => n !== 'mega_salamence').map((n) => 'j_nacho_' + n).sort()), 'mark_precedence: exactly the 9 legacy duplicates are replaced', REPLACED);
+  ok(JSON.stringify(REPLACED.slice().sort()) === JSON.stringify(LEGACY.map((n) => 'j_nacho_' + n).sort()), 'mark_precedence: exactly the 10 legacy duplicates are replaced (Mega Salamence too since Mega batch D: Pokermon has its own)', REPLACED);
   ok(LEGACY.filter((n) => n !== 'mega_salamence').every((n) => SUPERSEDED['j_nacho_' + n] === 'j_poke_' + n), 'the sticker merge (superseded.js) still maps the legacy keys to Pokermon\'s');
   ok(P_CENTERS.c_nacho_tartapple && P_CENTERS.c_nacho_sweetapple && P_CENTERS.c_nacho_syrupyapple && P_CENTERS.p_nacho_ancient_pack && P_TAGS.tag_nacho_fossil_tag, 'the apples, the Ancient Pack and the Fossil Tag');
   ok(!P_STAKES.stake_nacho_elite_stake && P_STAKES.stake_poke_elite, 'no Nacho stake any more (Pokermon owns the Elite stake)');
@@ -102,7 +102,7 @@ sec('inventory', () => {
 sec('options + pools', () => {
   start('N179_ON');
   const act_ = Object.values(P_CENTERS).filter((c) => c.mod === 'nacho' && c.set === 'Joker' && centerActive(c));
-  ok(act_.length === 76, 'on: 76 jokers active by default (all lines incl. Clauncher; Toxic-Stall off)', act_.length);
+  ok(act_.length === 78, 'on: 78 jokers active by default (all lines incl. Clauncher and Hisuian Sneasel; Toxic-Stall off)', act_.length);
   ok(P_CENTER_POOLS.Joker.includes(P_CENTERS.j_nacho_clauncher) && P_CENTER_POOLS.Joker.includes(P_CENTERS.j_nacho_cranidos), '1.7.9 default: Clauncher is in (1.6.4: off)');
   const legacyIn = LEGACY.filter((n) => P_CENTER_POOLS.Joker.includes(P_CENTERS['j_nacho_' + n]) && P_CENTERS['j_nacho_' + n].in_pool && P_CENTERS['j_nacho_' + n].in_pool(P_CENTERS['j_nacho_' + n], {}));
   ok(legacyIn.length === 0, 'legacy definitions are never in a pool', legacyIn);

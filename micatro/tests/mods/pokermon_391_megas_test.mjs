@@ -73,8 +73,9 @@ sec(() => {
   ok(after('raichu', 'mega_raichu_x') && after('mega_raichu_x', 'mega_raichu_y') && after('clefable', 'mega_clefable') && after('victreebel', 'mega_victreebel')
     && after('starmie', 'mega_starmie') && after('dragonite', 'mega_dragonite') && after('meganium', 'mega_meganium') && after('feraligatr', 'mega_feraligatr')
     && after('skarmory', 'mega_skarmory') && after('lucario', 'mega_lucario') && after('drampa', 'mega_drampa'), 'each Mega follows its base (3.9.1 order)');
-  ok(!P_CENTERS.j_poke_mega_mawile && !P_CENTERS.j_poke_mega_manectric && C('mawile').megas === undefined && C('manectric').megas === undefined,
-    'no Mega Mawile / Manectric: upstream main @ af0b656 has their sprites only, no joker');
+  // (upstream main @ af0b656 draws Mega Mawile / Manectric with no joker; the owner's Mega batch D made them: pokermon_megas_classic_test.mjs)
+  ok(P_CENTERS.j_poke_mega_mawile && P_CENTERS.j_poke_mega_manectric && !D391.new_jokers.mega_mawile && !D391.new_jokers.mega_manectric,
+    'Mega Mawile / Manectric: not from 3.9.1 (upstream draws them only), made by Mega batch D (the owner)');
 });
 sec(() => {
   // text: every #n# the 3.9.1 text names is filled by loc_vars
@@ -367,9 +368,9 @@ sec(() => {
   const megaNames = new Set(MEGAS.map((n) => String(localize({ type: 'name_text', set: 'Joker', key: 'j_poke_' + n })).toLowerCase()));
   const clash = addon.filter((c) => MEGAS.includes(c.name) || megaNames.has(String(localize({ type: 'name_text', set: 'Joker', key: c.key })).toLowerCase()));
   ok(clash.length === 0 && addon.length > 50 && addon.some((c) => c.name === 'mega_gardevoir'), 'no Nacho / Pokermon+ joker is one of these Megas (by name or display name)', clash.map((c) => c.key));
-  ok(MEGAS.every((n) => !replaced_by('j_poke_' + n)) && addon.filter((c) => /mega/.test(c.key)).every((c) => !replaced_by(c.key)), 'replaced_by: none of the 11, and no add-on Mega, is a duplicate');
-  ok(addon.filter((c) => replaced_by(c.key)).map((c) => c.key).sort().join() === 'j_nacho_altaria,j_nacho_bagon,j_nacho_gallade,j_nacho_gardevoir,j_nacho_kirlia,j_nacho_ralts,j_nacho_salamence,j_nacho_shelgon,j_nacho_swablu,j_sonfive_nincada,j_sonfive_ninjask,j_sonfive_shedinja',
-    'the duplicate set is unchanged (12)', addon.filter((c) => replaced_by(c.key)).map((c) => c.key));
+  ok(MEGAS.every((n) => !replaced_by('j_poke_' + n)) && addon.filter((c) => /mega/.test(c.key) && c.key !== 'j_nacho_mega_salamence').every((c) => !replaced_by(c.key)), 'replaced_by: none of the 11, and no add-on Mega (but the Nacho 1.6.4 legacy Mega Salamence, a Pokermon duplicate since Mega batch D), is a duplicate');
+  ok(addon.filter((c) => replaced_by(c.key)).map((c) => c.key).sort().join() === 'j_nacho_altaria,j_nacho_bagon,j_nacho_gallade,j_nacho_gardevoir,j_nacho_kirlia,j_nacho_mega_salamence,j_nacho_ralts,j_nacho_salamence,j_nacho_shelgon,j_nacho_swablu,j_sonfive_nincada,j_sonfive_ninjask,j_sonfive_shedinja',
+    'the duplicate set (13: + the legacy Mega Salamence, Mega batch D)', addon.filter((c) => replaced_by(c.key)).map((c) => c.key));
   // with the add-ons on, a Pokermon base gives Pokermon's Mega
   const [j] = megaOf('lucario');
   ok(key(j) === 'j_poke_mega_lucario', 'with Nacho + Pokermon+ on: Lucario -> Pokermon\'s Mega Lucario', key(j));

@@ -96,6 +96,10 @@ export function set_debuff(card) {
   if (card.ability.name === 'komala') return 'prevent_debuff';
   // (the owner's Cresselia, Lunar Blessing: the same rule; find_joker skips a debuffed Cresselia)
   if ((card.ability.set === 'Default' || card.ability.set === 'Enhanced') && find_joker('cresselia').length) return 'prevent_debuff';
+  // (the owner's Mabosstiff, Gen 9 batch 1, Guard Dog: your Jokers can't be debuffed while it is held, itself included — a Boss Blind
+  // (Crimson Heart), an SMODS debuff source... — but a Perishable's end of life still debuffs (a sticker's cost), and a fainted Baby's
+  // rule above answers first (a joker's own cost); find_joker skips a debuffed Mabosstiff, which only a Perishable end can make)
+  if (card.ability.set === 'Joker' && card.area === G.jokers && !(card.ability.perishable && card.ability.perish_tally <= 0) && find_joker('mabosstiff').length) return 'prevent_debuff';
   if (card.ability.name === 'Wild Card' && find_joker('tangrowth').length) return 'prevent_debuff';
   if (card.get_id() === 10 && find_joker('tentacruel').length) return 'prevent_debuff';
   return undefined;
@@ -338,6 +342,11 @@ export function calculate(context) {
   // debuffed hand too, so during the next hand's scoring it still names the previous one), and the Boss Blinds beaten (Mareanie /
   // Toxapex: +1 in the main end-of-round pass of a won Boss Blind).
   if (context.after && context.scoring_name) G.GAME.poke_last_hand = context.scoring_name;
+  // The owner's Gen 9 batch 2 (Varoom / Revavroom, Rev the Engine): hands played in a row without a discard, run-wide (a late buy sees the
+  // streak so far): +1 after every hand played (a debuffed hand too), 0 on any discard YOU make (post_discard: never an effect's discard);
+  // kept across rounds.
+  if (context.after) G.GAME.poke_rev_streak = (G.GAME.poke_rev_streak || 0) + 1;
+  if (context.post_discard) G.GAME.poke_rev_streak = 0;
   if (context.end_of_round && context.main_eval && context.beat_boss && !context.game_over) G.GAME.poke_bosses_beaten = (G.GAME.poke_bosses_beaten || 0) + 1;
   // Leafeon (3.9.1): count Lucky cards that successfully triggered this round (run-wide, Leafeon or not); reset at the
   // end of the round. (The engine passes `individual` / `end_of_round` here too: smods.js MOD_VANILLA_CONTEXTS.)

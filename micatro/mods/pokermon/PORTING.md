@@ -3891,7 +3891,7 @@ Enamorus {8,11}); nothing to deploy. Gen 8 is now complete on the wiki (59 missi
   `micatro_deckeditor_pages` (1205 jokers), `designwiki_pokermon_jokers_test` (Ting-Lu is now its Legendary).
 
 ### The owner's Grimmsnarl tweak (r75, 2026-11-03, branch `feat/pokermon-r75-grimmsnarl`)
-Pinned **`3.9.1+r75`** (`contentRev: 75`; `LEGACY_MOD_VERSIONS` untouched). Gated by `rulesRev('pokermon') >= 75` (`prank_discount75`), so runs
+Pinned **`3.9.1+r77`** (`contentRev: 77`; r76 is Gen 9 batch 1, r75 the Grimmsnarl tweak; `LEGACY_MOD_VERSIONS` untouched). Gated by `rulesRev('pokermon') >= 75` (`prank_discount75`), so runs
 recorded on r71-r74 replay as recorded (never retroactive):
 - **Grimmsnarl** keeps **Impidimp's $1 reroll discount** too (`reroll_discount` 1, fixed, not an Energy field; stacks with Impidimps', Morgrems' and
   other Grimmsnarls', never below $1, a free reroll stays free) on top of its free first reroll and its X0.1 per reroll: the first reroll free, then
@@ -3904,6 +3904,400 @@ recorded on r71-r74 replay as recorded (never retroactive):
 - **Tests**: `pokermon_gen8_batch2_test` (r75: Grimmsnarl alone $4 after the free one, + Impidimp / + Morgrem stacking, never below $1, debuffed,
   the text; r74 rules: no discount; an r74 recipe resumed / stepped as recorded), `designwiki_micatro_mods_test` (no `#n#` anywhere in the generated
   mod data). Re-pinned: `modpin_test`, `pokermon_391_data_test`, `pokermon_new_jokers_test`, `micatro_mod_version_pin`.
+### Gen 9, batch 1 (2026-11-03, branch `feat/pokermon-gen9-batch1`)
+Pinned **`3.9.1+r76`** (`contentRev: 76`; r75 is the owner's Grimmsnarl tweak; `LEGACY_MOD_VERSIONS` untouched). The owner's "Yes": 15 jokers, #919-950, on the
+guide's price slots (3-stage U $6 / S $8 / S $10, 2-stage C $5 / S $8, single-stage R $7), in `jokers/pokejokers_designs.js` (`lunge` / `volt_count` /
+`pawmot_revive` / `parrot` / `electromorphosis` / `wind_money` / `guard_dog_refresh` / `mycelium` / `anger_x`). Evolution by rounds: 4 for the early
+evolvers (Nymble, Pawmi, Wattrel), 5 for the rest. Types = the cards'. Pokédex order: Nymble ... Pawmot after Spidops, Squawkabilly after Arboliva, Tadbulb
+... Mabosstiff after Ceruledge, Toedscool ... Klawf after Brambleghast. Art: upstream 3.9.1 cells (Natdex {6,61}-{8,63}; Squawkabilly Gen 9 {8,0} Green, and
+UNLISTED beside it {0,1} Blue / {2,1} Yellow / {4,1} White: `systems/anim.js` GEN9_FORM_SPRITES, ui.js ownFace, Shiny twins too); nothing to deploy.
+Neither Nacho nor Pokermon+ has any.
+- **Nymble** (Grass) / **Lokix**, Lunge: **+15 Mult** / **X2.5** if the PLAYED hand has 3 or fewer cards (full_hand: kickers count).
+- **Pawmi** (Lightning): **+2 Mult per Lightning Joker**, itself included (is_type, undebuffed; a Tera counts and replaces the type). **Pawmo**: **each scored
+  face card earns $1** (Emolga's Static: retriggers pay again); carries Pawmot's `Xmult` ("Energy carries to Pawmot"). **Pawmot**: **X1.5** and **Revival
+  Blessing** (`pawmot_revive`, index.js hooks.start_dissolve, run last): once per Ante, when ANOTHER of your Jokers is destroyed (any start_dissolve: Dagger,
+  Madness, Hex, Ankh, Bewear, Cursola, Mr. Bones), it comes back at once. **The choices**: a copy_card copy (Ankh's: center, edition — Negative keeps its own
+  slot —, Eternal / Perishable with its tally / Rental, Tera, Energy, every banked value: card.ability exactly), emplaced at the leaving card's slot before it
+  goes (same position, the freed slot, the row never grows); it comes back undebuffed (a lasting source is re-read); only with room (others + joker_buffer
+  below the limit; else nothing and the blessing waits); selling, evolving and "eaten" self-removals (Gros Michel, Ice Cream, the eggs) are not destroying; a
+  lone Pawmot never revives itself, two revive each other; a debuffed Pawmot does nothing. Tooltip "(Revival Blessing: ready / used this Ante)".
+- **Squawkabilly** (Colorless, R $7), Parrot: **each Planet used, 1 in 2 to level that hand once more** (pseudorandom_probability 'squawkabilly': Oops! raises
+  it; Sigilyph's level_up_hand; not Blueprint). Plumage rolled when OBTAINED (add_to_deck, seeded 'squawkabilly_plumage', 1 in 4 each; `card.ability.poke_plumage`;
+  art only). A Colorless Joker: Starly's flock counts it. Energy-inert.
+- **Tadbulb** (Lightning): **+3 Mult per discard used this round** (current_round.discards_used; The Hook's don't count). **Bellibolt**, Electromorphosis: **each
+  discard used adds +X0.25 to a charge** (from X1, `charge_Xmult`); the next hand that scores fires it (joker_main; Blueprint copies the X) and `after` resets
+  it to X1; a debuffed hand doesn't fire it. **The choice**: the charge is lost at the end of the round (the main end_of_round pass).
+- **Wattrel** (Lightning) / **Kilowattrel**, Wind Power: **$1 / $2 per discard left** at end of round (calc_dollar_bonus, a cash-out row; Blueprint never; fixed:
+  Energy-inert).
+- **Maschiff** (Dark) / **Mabosstiff**: **+12 Mult** / **X1.5 during Boss Blinds**. Mabosstiff's **Guard Dog**: your Jokers can't be debuffed, itself included
+  (`systems/rules.js` set_debuff 'prevent_debuff': Crimson Heart, SMODS debuff sources, a mod's answer). **The choice**: a Perishable's end of life still debuffs
+  (a sticker's cost) and a Baby still faints (its rule answers first); gaining it lifts current debuffs at once, losing it re-reads the lasting sources.
+- **Toedscool** (Grass) / **Toedscruel**, Mycelium: **+4 Chips per card in the full deck above 52** / **X1 + X0.02 per card above 40** (X1.24 on 52; never below).
+- **Klawf** (Earth, R $7), Anger Shell: **X1 + X1 per hand already played this round**. **The interpretation**: a round goes on only while the Blind is unbeaten, so
+  every earlier hand of the round is one that didn't beat it = current_round.hands_played; X1 / 2 / 3 / 4 on the Red Deck's hands.
+- **Energy** (1 / 2 / 3): Nymble +21 / 27 / 33; Lokix X3 / 3.5 / 4; Pawmi +2.8 / 3.6 / 4.4 a Joker; Pawmo (carried) and Pawmot X1.8 / 2.1 / 2.4; Tadbulb +4.2 / 5.4 /
+  6.6 a discard; Bellibolt +X0.3 / 0.35 / 0.4 a discard; Maschiff +16.8 / 21.6 / 26.4; Mabosstiff X1.8 / 2.1 / 2.4; Toedscool +5.2 / 6.4 / 7.6 a card; Toedscruel
+  +X0.024 / 0.028 / 0.032 a card; Klawf +X1.2 / 1.4 / 1.6 a hand. Fixed: the $ (Pawmo, Wattrel, Kilowattrel), Squawkabilly's odds and level, the blessing, the
+  guard, the thresholds; Squawkabilly / Wattrel / Kilowattrel Energy-inert; banks never retroactive.
+- **Wiki**: regenerated (44 missing, all Gen 9); the wiki sprites of the 15 are gone (no new art).
+- **Tests**: `micatro/tests/mods/pokermon_gen9_batch1_test.mjs` (fails on main: no such jokers). Re-recorded: `modpin_test`, `pokermon_391_data_test`,
+  `pokermon_new_jokers_test` (the Pokédex order, +15 defs), `micatro_mod_version_pin`, `micatro_deckeditor_pages` (1220 jokers), `designwiki_pokermon_jokers_test`
+  (Pawmot was the last Stage 2 on the wiki: its card pages now use Varoom / Revavroom; Brute Bonnet replaces Toedscool as the art-vs-mapping spot check).
+### Gen 9, batch 2 (2026-11-03, branch `feat/pokermon-gen9-batch2`)
+Pinned **`3.9.1+r77`** (`contentRev: 77`; r76 is Gen 9 batch 1, r75 the Grimmsnarl tweak; `LEGACY_MOD_VERSIONS` untouched). The owner's "Yes": 17 jokers, #951-1013, in `jokers/pokejokers_designs.js`
+(`opportunist_scaled` / `spicy` / `stork_delivery` / `rev_streak` / `toxic_debris` / `fillet_away` / `dondozo_commanded` / `clodsire_poison` / `row_value`),
+one a NEW EVOLUTION of an existing joker (the Gen 8 Galarian exception, owner-approved: Wooper -> Clodsire; Wooper -> Quagsire unchanged). Pokédex order:
+Capsakid / Scovillain after Klawf, Flittle / Espathra after Rabsca, Bombirdier ... Glimmora after Wugtrio, Flamigo / Veluza / Dondozo after
+Houndstone, Clodsire after Annihilape, Poltchageist / Sinistcha after Gholdengo. Neither Nacho nor Pokermon+ has any. Prices: 2-stage C $5 / S $8,
+single-stage R $7, Clodsire Stage 1 S $8; every 2-stage Basic evolves after **5 rounds**. Types = the cards'. Art: upstream 3.9.1 Natdex cells ({10,63}-{14,67});
+nothing to deploy.
+- **Engine seam** (`card_scaled`): js/engine/smods.js scale_card tells the mods' hook when a card's value went UP (read off the value before and
+  after); js/engine/jokers.js vscale tells it for a vanilla '+' scaling when nothing listens to scaling_card (else scale_card does). No-op without a
+  hook, so vanilla and old runs are unchanged.
+- **Never retroactive (rules rev 77)**: the Dark Energy evolution checks `rulesRev('pokermon') >= GEN9B2_REV` (`poke_energy_evo.rev`); Clodsire is
+  hidden from Wooper's family on older revs (FAMILY_MEMBER_REV), so Transformation on a Wooper recorded before r77 still gives Quagsire
+  (pokermon_gen9_batch2_test 'old-rev replay'). The streak counter (`G.GAME.poke_rev_streak`) is kept on every rev (harmless).
+- **Capsakid** (Grass, C $5) -> **Scovillain** (Fire, S $8), Spicy: **scored Clubs +20 Chips**; Scovillain also **scored Hearts X1.2** and **+1 discard each round**.
+- **Flittle** (Psychic, C $5) -> **Espathra** (S $8), Opportunist: **+1 Mult banked whenever another Joker permanently grows**; Espathra gives Flittle's
+  Mult and banks **+X0.05** per growth instead. **The choices**: "grows" = a scale_card gain event (every house bank — Torch Song, Moxie, grudge, Veluza,
+  the Legendaries' banks... —, the upstream jokers that scale through it, the vanilla Ride the Bus / Green Joker / Hologram / Campfire ...); one event per
+  call whatever the amount; a drop (Green Joker's discard, Ice Cream) isn't; a per-round gain that later resets (Green Joker) still counts when it
+  grows; a Flittle / Espathra's own gain never counts for another; Blueprint copies the payoff, never banks; a debuffed one banks nothing.
+- **Bombirdier** (Dark, R $7), Stork Delivery: **at the end of each shop, 1 in 2 for a random Tag** (the run's seeded Tag pool, get_next_tag_key; an
+  Orbital Tag names a random visible hand). **The choice: Blueprint copies it** (its own roll). Energy-inert.
+- **Varoom** (Metal, C $5) -> **Revavroom** (S $8), Rev the Engine: **+2 Mult / X1 + X0.1 per hand in a row without a discard, this hand included**.
+  **The choices**: one run-wide streak (systems/rules.js: +1 after every hand played, a debuffed hand too; 0 on a discard YOU make — an effect's discard
+  doesn't break it), **kept across rounds**, so a late buy sees the whole streak.
+- **Cyclizar** (Dragon, R $7), Ride: **+1 hand each round and +1 hand size** (one add / remove pair). Energy-inert.
+- **Orthworm** (Metal, R $7), Earth Eater: **+15 Chips per Steel card in your full deck**.
+- **Glimmet** (Earth, C $5) -> **Glimmora** (S $8): **scored Stone cards +6 Mult**; Toxic Debris: **each scored Stone turns a random deck card into a
+  Hazard** and **each Hazard held in hand X1.15**. **The choices**: unenhanced cards first, then any non-Hazard; **never a Stone card nor a card of the
+  played hand**; **at most 3 a hand**; not Blueprint (it changes the deck; the held X is copied).
+- **Flamigo** (Fighting, R $7): **X1.5, X2 if the played hand is a Pair** (scoring name 'Pair' only: Two Pair / Full House are X1.5).
+- **Veluza** (Water, R $7), Fillet Away: **at end of round, -$1 of its sell value and +X0.25 banked**. **The choice: it stops at $1** (Pokermon's
+  sell-value floor, systems/rules.js set_cost) and banks nothing there; refilled (Poltchageist, Combee) it fillets again. From $3: X1.25, X1.5.
+- **Dondozo** (Water, R $7), Commander: **X2; X4 while an undebuffed Tatsugiri is directly to its left** (Tatsugiri's own Commander still applies).
+- **Wooper -> Clodsire** (Dark, Stage 1 S $8): **a Dark Energy used on Wooper evolves it at once** (energy_evo_target, as Linoone: energizes first when it
+  would, then evolves; picked, else the leftmost joker it can energize, else the leftmost Wooper; refused while debuffed / with an Everstone).
+  Poison Point: **each card you discard (unenhanced) 1 in 4 to become a Hazard** (Silicobra's Sand Spit, its own seed; Blueprint copies it) and **X1 +
+  X0.05 per Hazard card in your full deck**. Wooper's 3.9.1 text gets a "Paldean form" box.
+- **Poltchageist** (Grass, C $5) -> **Sinistcha** (S $8), Hospitality: **at end of round the Jokers directly left and right gain $1 of sell value**
+  (Combee's honey; never itself; not Blueprint); Sinistcha also **X1 + X0.05 per $1 of sell value of ALL your Jokers, itself included** (**the
+  choices**: debuffed Jokers count — sell value isn't an ability —; no cap). Poltchageist carries Sinistcha's `Xmult_mod` ("Energy carries to Sinistcha").
+- **Energy** (1 / 2 / 3): Capsakid / Scovillain +26 / 32 / 38 Chips a Club; Scovillain X1.26 / 1.32 / 1.38 a Heart; Flittle +1.2 / 1.4 / 1.6 a growth;
+  Espathra +X0.06 / 0.07 / 0.08; Varoom +2.4 / 2.8 / 3.2 a hand; Revavroom +X0.12 / 0.14 / 0.16; Orthworm +19.5 / 24 / 28.5 a Steel; Glimmet +8.4 / 10.8 /
+  13.2; Glimmora X1.2075 / 1.265 / 1.3225 a held Hazard; Flamigo X1.8 / 2.1 / 2.4 (Pair X2.4 / 2.8 / 3.2); Veluza +X0.3 / 0.35 / 0.4 a round; Dondozo
+  X2.4 / 2.8 / 3.2 (Commander X4.8 / 5.6 / 6.4); Clodsire +X0.06 / 0.07 / 0.08 a Hazard; Poltchageist (carried) / Sinistcha +X0.06 / 0.07 / 0.08 per $1.
+  Fixed: money, odds, the discard / hand / hand size, Tags, the conversions and their cap; banks never retroactive (opp_mult / opp_Xmult / fillet_Xmult).
+- **Wiki**: regenerated (27 missing: the Paradox Pokémon and the Gen 9 Legendaries); the wiki sprites of the 17 are gone (no new art).
+- **Tests**: `micatro/tests/mods/pokermon_gen9_batch2_test.mjs` (fails on main: no such jokers). Re-recorded: `modpin_test`, `pokermon_391_data_test`,
+  `pokermon_new_jokers_test` (defs + the Pokédex order), `pokermon_gen9_batch1_test` (Klawf, then Capsakid), `pokermon_art_types_test`,
+  `micatro_mod_version_pin`, `micatro_deckeditor_pages` (1237 jokers), `designwiki_pokermon_jokers_test` (no Stage 1 is left: Iron Crown / Iron Treads /
+  Great Tusk / Miraidon are its spot checks now).
+
+### Gen 9, batch 3: the Paradox Pokémon (2026-11-03, branch `feat/pokermon-gen9-paradox`)
+Pinned **`3.9.1+r78`** (`contentRev: 78`; r76 / r77 are Gen 9 batches 1 / 2; `LEGACY_MOD_VERSIONS` untouched). The owner's "yes": "paradox, ancient
+and future need to be tags like safari. i want a pokeball card that gives you a paradox pokemon and an ancient pack type and a future pack type for
+paradox pokemon as well." New content only (no older rule changes).
+- **The Paradox rarity** (`index.js` rarities: `poke_paradox`, "Paradox", weight 0, badge #7B3FBF): Safari's way — never a shop roll. Each Paradox
+  center carries `poke_paradox: 'ancient' | 'future'`; its `set_badges` (`paradox_badges`) adds the second pill, **Ancient** (#9A5B1E) or **Future**
+  (#1F7A99), before the type pill (white text contrast 6.35 / 5.4 / 4.88, all above 4.5). `systems/pools.js` get_random_poke_key skips the rarity unless asked for
+  it, so no Poké Ball, Transformation or illusion rolls one (they were never in those pools before, so older runs replay as recorded).
+- **The 20 jokers** (`jokers/pokejokers_designs.js`, Paradox $7, single-stage Basics, Blueprint-compatible; types = the cards'): Ancient — Great Tusk
+  (Earth: Stone X1.3), Scream Tail (Fairy: Spade +6 Mult), Brute Bonnet (Dark: +25 Mult), Flutter Mane (Psychic: X2), Slither Wing (Grass: Heart
+  X1.2), Sandy Shocks (Lightning: +20 Chips per Steel in the full deck), Roaring Moon (Dark: +4 Mult per Straight played this run, a Straight Flush
+  counts), Walking Wake (Water: Club X1.2), Gouging Fire (Fire: +1 discard, X1.5), Raging Bolt (Lightning: X1 + X0.25 per hand left, this one
+  included); Future — Iron Treads (Metal: +100 Chips), Iron Bundle (Water: end of round a random Tarot or Planet, room needed), Iron Hands (Fighting:
+  face X1.25), Iron Jugulis (Dark: X2), Iron Moth (Fire: Diamond X1.2), Iron Thorns (Lightning: Stone +30 Chips), Iron Valiant (Fairy: Queen / King
+  X1.2), Iron Leaves (Grass: Club X1.2), Iron Boulder (Earth: the first scored card X2), Iron Crown (Metal: Spade X1.2).
+- **Protosynthesis / Quark Drive**: 50% stronger (a +number x1.5; an X's bonus x1.5) while it's sunny (Ancient: `cherrim_sunny`, read from its own
+  first deal) / on **Electric Terrain** (Future: the house terrain, `is_electric_terrain` — the round's first deal holds strictly more Diamonds than
+  any other suit; Wild counts for all). Iron Bundle's creation is never boosted (its card has no boost box).
+- **Energy** (1 / 2 / 3, the standard shares; the boost on top of the energized number): Great Tusk X1.365 / 1.43 / 1.495; Scream Tail +8.4 / 10.8 /
+  13.2; Brute Bonnet +35 / 45 / 55; Flutter Mane X2.4 / 2.8 / 3.2; Slither Wing, Iron Moth, Iron Valiant, Walking Wake, Iron Leaves, Iron Crown X1.26 /
+  1.32 / 1.38; Sandy Shocks +26 / 32 / 38 a Steel; Iron Treads +130 / 160 / 190; Iron Hands X1.3125 / 1.375 / 1.4375; Iron Jugulis X2.4 / 2.8 / 3.2;
+  Iron Thorns +39 / 48 / 57; Roaring Moon +5.6 / 7.2 / 8.8 a Straight; Gouging Fire X1.8 / 2.1 / 2.4; Raging Bolt +X0.3 / 0.35 / 0.4 a hand; Iron Boulder
+  X2.1 / 2.2 / 2.3. Fixed: Gouging Fire's discard. Energy-inert: Iron Bundle.
+- **The Paradox Ball** (`paradox.js`, an Item, $4 like the Ultra Ball, pool weight 3 like the Great Ball, the pokeballs option and Gen 9 gate it):
+  "Create a random Paradox Joker card (Ancient or Future) (Must have room)" — seeded `'paradoxball'`, the Poké Balls' pool rules (none you hold).
+- **The Ancient / Future Packs** (`paradox.js`): Normal $4 choose 1 of 2 (two art variants), Jumbo $6 1 of 4, Mega $8 2 of 4 (Buffoon's sizes);
+  shop weights 0.3 each Normal / 0.3 Jumbo / 0.075 Mega (half the Buffoon Packs'; both eras together weigh one Buffoon). Kind "Ancient" / "Future"
+  (the pack screen says "Ancient Pack"); only that era's Paradox jokers, all different within a pack (`paradox_offered`), the held ones left out
+  until the pool runs dry; the view hook gives the pack screen amber / steel-blue colours.
+- **Art**: the 20 jokers draw upstream 3.9.1's own Natdex cells (65-68) with their souls — Walking Wake's soul is {7,67} and Iron Leaves' {9,67} (the
+  sprite table's {5,67} / {7,67} are Miraidon's and Walking Wake's). The Paradox Ball card and the 8 pack cells are composed by
+  `tools/micatro/compose_pokermon_paradox_art.py` (owner rule: no placeholders): the Ultra Ball card restyled (Paradox purple, the stripes split
+  amber / cyan, re-lettered "PARADOX BALL" in the sheet's own font) and the Pocket Packs gradient-mapped to amber / cyan with a sun disc or quark
+  ring, a Paradox Pokémon's own card sprite, and an "ANCIENT / FUTURE PACK" plaque. `assets/2x/paradox_ball.png`, `paradox_packs.png` (deployed to
+  magepunk-micatromods; `tools/cloud/micatromods_manifest.txt`).
+- **Wiki**: regenerated (the 20 dropped off the missing list; their wiki sprites removed); the mods wiki lists the ball and the packs.
+- **Tests**: `micatro/tests/mods/pokermon_gen9_paradox_test.mjs` (every joker through real hands, both boosts off / on from real first deals, the
+  pools, the ball, every pack size, Energy, save / resume + stepper, art types) and `overworld/tests/micatro_pokermon_paradox_ui_test.mjs` (the
+  tooltip pills, the ball and four packs on the pack screen in a real browser). Re-recorded: `modpin_test`, `pokermon_391_data_test`,
+  `pokermon_new_jokers_test`, `micatro_mod_version_pin`, `micatro_deckeditor_pages`, `designwiki_pokermon_jokers_test`.
+### Gen 9, batch 4: the Gen 9 Legendaries (2026-11-03, branch `feat/pokermon-gen9-legendaries`)
+Pinned **`3.9.1+r80`** (`contentRev: 80`; r76-r78 are Gen 9 batches 1-3, the Paradox batch r78, r79 the generation filter fix; `LEGACY_MOD_VERSIONS` untouched). The owner's "yes": the
+7 Gen 9 Legendaries, each complete ALONE (the solo rule, r59), all **Legendary $20** (The Soul / the Legendary pool), in `jokers/pokejokers_designs.js`
+(`tablets_of_ruin` / `beads_of_ruin` / `beads_disable` / `paradox_count` / `pulse_x` / `OGERPON_MASKS` / `mask_now` / `ogerpon_sync` / `wellspring_hand`;
+Ting-Lu reuses Dubwool's `cotton_guard`). Pokédex order: Wo-Chien, Chien-Pao, Ting-Lu, Chi-Yu after Gholdengo (1000); Koraidon and Miraidon after the
+Paradoxes 1005-1006; Ogerpon after Sinistcha (1013). Types = the cards' (Ogerpon: its mask's). Art: upstream 3.9.1 cells (Natdex {20..27,66} for the
+Ruinous four, {2,67} / {4,67} for Koraidon / Miraidon — their souls sit LEFT of the card, {1,67} / {3,67}, as the sprite table lists them —; Ogerpon on the
+Gen 9 sheet: Teal {4,4} its own card, Wellspring {2,5}, Hearthflame {8,4}, Cornerstone {6,5}, card + soul, `systems/anim.js` GEN9_LEGEND_FORMS; the
+unlisted Terastal mask cells {6,4} / {0,5} / {4,5} / {8,5} have no soul and are not used); nothing to deploy.
+- **Wo-Chien** (Grass), Tablets of Ruin: **every Blind's chip requirement is 15% lower**. **The choices**: cut when the Blind is set (queued after the
+  setting_blind pass, so The Wall's x4 / Violet Vessel's x6 are in it; Chicot's halving composes), floor of 15% off, never below 1 chip; the HUD's
+  "Score at least" updates (the 'blind' chips event); **one cut per Blind** whatever the copies (the shared record `G.GAME.poke_ruin_tablets`, keyed by
+  the round: the best of equals wins, nothing stacks; a Blueprint copies nothing); a Wo-Chien gained mid-Blind cuts from the next Blind, one sold
+  mid-Blind leaves this Blind's cut; a debuffed one at the selection cuts nothing. In G.GAME, so a resume and a replay rebuild the shown requirement
+  exactly. Energy-inert (the 15% is fixed).
+- **Chien-Pao** (Water), Sword of Ruin: **every scored card X1.1** (`Xmult_multi`). Blueprint copies it.
+- **Ting-Lu** (Earth), Vessel of Ruin: **+2 hands during Boss Blinds** (Dubwool's Cotton Guard, `hands` 2: given when the Boss is selected, an unused one
+  taken back at the round's end before the cash-out, so they never pay $1; sold mid-Boss it takes them back, never the last hand). Energy-inert; not Blueprint.
+- **Chi-Yu** (Fire), Beads of Ruin: **the Boss Blind's ability is disabled** (Chicot's: at the Boss's selection, and when gained or un-debuffed during
+  one). **The choices**: with an undebuffed Chicot held, Chicot does it and Chi-Yu does nothing, and it never disables an already disabled Blind
+  (Blind:disable isn't idempotent: The Wall would be halved twice); Energy-inert (no number); not Blueprint (as Chicot).
+- **Koraidon** (Dragon), Orichalcum Pulse: **always sunny while held** — it feeds the shared sun check (`volcarona_sun`, so Cherrim, Larvesta, Lurantis,
+  Castform Sunny on its first deal and the Ancient Paradoxes' Protosynthesis all see it); **Kyogre's rain coexists** (Castform stays Rainy under Kyogre's
+  lock, Swift Swim still rains). **X2 + X0.5 per Ancient Paradox Joker held** (undebuffed, by the Paradox batch's Ancient badge). Blueprint copies the X.
+- **Miraidon** (Dragon), Hadron Engine: **always Electric Terrain while held** (feeds `is_electric_terrain()`, the Future Paradoxes' Quark Drive). **X2 +
+  X0.5 per Future Paradox Joker held**. Blueprint copies the X.
+- **Ogerpon** (Grass), Masks: **a mask each Ante**, Deerling's seasons (from `round_resets.ante`: Teal at Ante 1, Wellspring, Hearthflame, Cornerstone,
+  then again; nothing rolled or stored). Its type follows the mask (`protean_set` from the center's `update`, so is_type / Energy / Kecleon see it at
+  once; a Tera sticker still overrides; **Monotype-exempt**) and so does its card. **Teal** +30 Mult; **Wellspring** +1 hand each round (Cotton Guard's
+  grant: an unused one taken back, never pays $1) and X1.5; **Hearthflame** X2.5; **Cornerstone** +150 Chips. Blueprint copies the score, never the hand.
+- **Energy** (1 / 2 / 3): Chien-Pao X1.155 / 1.21 / 1.265 a card; Koraidon / Miraidon X2.4 / 2.8 / 3.2 and +X0.6 / 0.7 / 0.8 a Paradox; Ogerpon +42 / 54 / 66
+  Mult, X1.8 / 2.1 / 2.4, X3 / 3.5 / 4, +195 / 240 / 285 Chips (each mask's own field, all raised at once; its CURRENT type's Energy matches). Fixed: the 15%,
+  the hands, the Boss disable, the weather. Energy-inert: Wo-Chien, Ting-Lu, Chi-Yu.
+- **Wiki**: regenerated (the 7 drop off the missing list; no new art).
+- **Tests**: `micatro/tests/mods/pokermon_gen9_legendaries_test.mjs` (fails on main: no such jokers). Re-recorded: `modpin_test`, `pokermon_391_data_test`,
+  `pokermon_new_jokers_test`, `micatro_mod_version_pin`, `micatro_deckeditor_pages`, `designwiki_pokermon_jokers_test` (its Legendary spot checks).
+### Mega batch D: the 18 classic Megas + Mega Salamence hooked up (2026-11-03, branch `feat/pokermon-megas-classic`)
+Pinned **`3.9.1+r84`** (`contentRev: 84`, `MEGA_D_REV`; `LEGACY_MOD_VERSIONS` untouched). The owner's "yes": the 18 X/Y + ORAS Megas Pokermon never made
+a joker for (Sceptile, Blaziken, Swampert, Sableye, Mawile, Aggron, Medicham, Manectric, Sharpedo, Banette, Absol, Glalie, Metagross, Latias, Latios,
+Rayquaza, Garchomp, Diancie) and **Mega Salamence** on Pokermon's Salamence (Nacho 1.6.4's legacy one hung off its retired Salamence, out of every pool;
+it is now a duplicate of Pokermon's: precedence). Their own file `jokers/pokejokers_megas.js` (`MEGA_D_LOC`, `CARRY`, `attach_classic_megas`, wired in
+index.js). Each `poke_mega`, stage Mega, $12, the base's type and Gen; upstream 3.9.1's Gen 3 / Gen 4 / Gen 6 cells with their souls (nothing to
+deploy). Upstream's sprite table points Mega Latios's soul at {3,7} (Primal Groudon's): ours is {1,7}, its own.
+- **Never retroactive (rules rev 84)**: each base's `megas` is a getter (`attach_classic_megas`) that exists only from MEGA_D_REV on, and the Megas join
+  their families only from it (FAMILY_MEMBER_REV). A run recorded earlier re-plays its Mega Stone onto the joker it picked (Absol + Venusaur: Mega
+  Venusaur), and the Mega Stone's pool / target reads are as they were.
+- **Banks travel both ways** (`CARRY`, an EVOLVE_INTERCEPTS stash + POST_EVOLVE): a bank both forms use crosses as it is (Garchomp's `bite_mult`, the
+  Eon duo's `eon_Xmult`, Rayquaza's `ascent_Xmult`, Sableye's X -> Mega Sableye's `deplete_Xmult` + its counted enhancements); a bank only one form uses
+  rides along in `ability.extra.poke_kept` and is restored when it changes back (Aggron's eaten X / count, Banette's +Mult, Sceptile's $ tally, Mega
+  Banette's own X). Energy carries (`energy_count`) and is re-applied to each form's base; the Nature (Treecko line `targets`) carries.
+- **The choices ("state")**: Mega Sceptile / Blaziken keep the starter perk (+1 hand size / +1 discard); Mega Swampert +2 hands instead of +1; Mega
+  Banette +2 Joker slots INSTEAD of Banette's +1 slot / -1 hand, its X from ANY Joker sold (not only during the Blind), kept on the card when it reverts;
+  Mega Sharpedo never destroys a Joker; Mega Glalie does NOT reset money to $0 at end of round (the debt is real); Mega Aggron gives only its X1.5 (Aggron's
+  bank waits for the revert); Mega Rayquaza is Delta Stream's own Pokémon, so it calms Kyogre and Groudon too (pokejokers_designs.js `delta_calm`);
+  Mega Manectric is Energy-inert (its $4 is the fixed money); Mega Absol's guarantee is fix_probability's numerator = denominator (a held Absol beside
+  it: whichever acts last).
+- Tests: micatro/tests/mods/pokermon_megas_classic_test.mjs (every Mega in and out through a real Mega Stone, the banks both ways, each effect in real
+  hands, Energy at 1/2/3, resume + the replay stepper, an r83 recipe replayed, every cell's type).
+
+### Regional batch A: the 18 Alolan forms + the regional pill (2026-11-03, branch `feat/pokermon-alolan-forms`)
+Pinned **`3.9.1+r82`** (`contentRev: 82`; `LEGACY_MOD_VERSIONS` untouched). The owner's "Yes": the 18 Alolan forms, in their own file
+`jokers/pokejokers_regional.js` (`REGIONAL_FAMILIES` / `REGIONAL_LOC` / `REGIONAL_UPSTREAM_TEXT` / `REGIONAL_FAMILY_REV`, wired in index.js). Types = the
+cards' (tools/micatro/pokermon_art_type.mjs, margins 0.46+). Art: upstream 3.9.1's Gen 1 sheet cells (AtlasJokersBasicGen01 {2,2}-{6,4}); nothing to
+deploy. Gen 1 (a regional form takes its base species' generation: the generation-filter rule). Each after its Kanto line in Pokédex order
+(Alolan Raichu after Raichu's Megas). Neither Nacho nor Pokermon+ has any.
+- **Two shapes.** OWN LINES, their own pool entries beside the Kanto originals, on **the Kanto line's rarity / cost slot stage by stage** (Rattata C $5 /
+  S $7, Sandshrew C $4 / S $6, Vulpix C $4 / S $8, Diglett C $5 / **Dugtrio U $6, shop-able as Dugtrio**, Meowth C $5 / S $9, Geodude C $6 / S $8 / S $10,
+  Grimer C $4 / S $6), evolving by rounds (Sandshrew / Diglett / Geodude **4**, the rest **5**; Graveler 5); separate families, so a Kanto one held never
+  keeps its Alolan form out of the shop (or the reverse). BRANCH EVOLUTIONS of a Kanto Basic by an Energy used on it (energy_evo_target, the Gen 8
+  Galarian pattern: energize first when it would, then evolve; picked, else the leftmost joker it can energize, else the leftmost it evolves; refused
+  while debuffed / with an Everstone): **Pikachu + Psychic -> Alolan Raichu**, **Exeggcute + Dragon -> Alolan Exeggutor**, **Cubone + Fire -> Alolan
+  Marowak** (each Safari, the Kanto evolution's slot: $8 / $10 / $8). The Kanto paths (Thunder Stone, Leaf Stone, Cubone's 20 consumables) are unchanged.
+  Each Basic's 3.9.1 text gets an "Alolan form" box.
+- **Never retroactive (rules rev 82)**: the three branches check `rulesRev('pokermon') >= ALOLA_REV` (`poke_energy_evo.rev`, systems/energy.js); the
+  three join their Kanto families (Alolan Raichu before Raichu's Megas) only from that rev (FAMILY_MEMBER_REV), so Transformation on a Pikachu
+  recorded earlier still gives Raichu; Eiscue's Ninetales snow is gated the same way (pokermon_alolan_test 'old-rev replay').
+- **The regional pill** (systems/types.js `REGIONS` / `region_of` / `region_badge`, in `poke_set_type_badge`): after the rarity pill, before the type
+  pill, the region's name on its colour, white text (WCAG AA): **Alolan #C2410C** (5.2:1), Galarian #3557A6 (6.9:1), Hisuian #556B2F (6.0:1), Paldean
+  #A8326E (6.3:1). The region is the center's `poke_region`, else its key (`j_<prefix>_<region>_<name>`), so the **7 existing regional forms are
+  retrofitted with no change** (Pokermon's Hisuian Qwilfish; Nacho's Galarian Meowth and Hisuian Sneasel / Zorua / Zoroark / Sliggoo / Goodra).
+  Display only: no rule reads it (Perrserker / Overqwil / Obstagoon, regional evolutions with their own dex numbers, have no pill). It is the same
+  set_badges mechanism the Paradox batch's era pills use (a pushed `{key, label, colour}` badge).
+- **The house snow** (pokejokers_designs.js `is_snowy` / `snow_read` / `snow_state` / `snow_warning`, beside cherrim_sunny / swift_swim_raining /
+  is_sandstorm): snowy = the round's first deal's forecast is Snowy (round_forecast, Castform's own read: Spades held most, unless Kyogre / Groudon
+  lock it or Volcarona brings the sun; read once a round on the card) **or** an undebuffed **Alolan Ninetales** is held (Snow Warning: live, in the
+  shop too). **The choices**: snow ADDS, never removes (rain, sun and sand hold beside it; a Kyogre's locked rain still lets Ninetales snow);
+  **Castform's form never changes for it**; **Eiscue's ice re-forms on the first deal of any round with Ninetales held** (r81+).
+- **Alolan Rattata** (Dark) -> **Alolan Raticate**, Hoarder: **scored 2s, 3s and 4s +5 Mult**; Raticate **X1 + X0.2 per consumable held**, and **keeps
+  the +5** (the owner's r73 rule: a Stage 1 keeps its Basic's effect).
+- **Alolan Raichu** (Psychic), Surge Surfer: **X1.5; each Planet used permanently adds X0.1** (banked in `surf_Xmult`; a Black Hole is a Spectral and
+  doesn't count; not Blueprint).
+- **Alolan Sandshrew** (Water) -> **Alolan Sandslash**, Slush Rush: **+30 Chips on a snowy round**; Sandslash **X2 on a snowy round, +30 Chips otherwise**.
+- **Alolan Vulpix** (Water) -> **Alolan Ninetales** (Fairy): **scored Spades +4 Mult**; Ninetales **Snow Warning** and **scored Spades X1.2**.
+- **Alolan Diglett** (Metal) -> **Alolan Dugtrio**, Golden hair: **each Gold card held at end of round earns $1 more** (the held pass where the Gold card
+  pays: Mime / a Red Seal repeat it; a debuffed one pays nothing); Dugtrio **each Gold card held X1.2** and keeps the $1. Diglett carries Dugtrio's
+  `Xmult_multi` ("Energy carries to Alolan Dugtrio").
+- **Alolan Meowth** (Dark) -> **Alolan Persian**, Pay Day: **$2 at end of round** (a cash-out row); Persian **X1 + X0.1 per $10 you have** (current
+  money, floored to tens, nothing at or below $0) and keeps the $2. Meowth carries Persian's `Xmult_mod`.
+- **Alolan Geodude** (Lightning) -> **Graveler** -> **Golem**, Galvanize: **each scored Stone card earns $1**; Graveler **+6 Mult** too; Golem **X1.25**
+  per scored Stone (the $1 kept) and **Stone cards held in hand count as Steel cards for their held X**: X1.5, or the best Registeel / Durant /
+  Escavalier rule's (the same card-level rule, regi_h_x_mult / `galvanized`; never stacking; Mime / a Red Seal repeat it; a debuffed one nothing).
+  **The choice**: only the held X — a Stone card doesn't count as Steel for deck counts or Steel-reading jokers. Geodude carries Graveler's `mult`.
+- **Alolan Grimer** (Dark) -> **Alolan Muk**, Gluttony: **when a Blind is selected, destroy the lowest-ranked card in your full deck** (Aces high; Stone
+  / rankless cards skipped; a tie is the seeded pick 'poke_alolan_gluttony'; poke_remove_card, so every "destroyed" payoff sees it; not Blueprint;
+  nothing ranked, nothing eaten) and bank **+3 Mult** (Grimer, `eat_mult`) / **X0.1** (Muk, `eat_Xmult`; Grimer's Mult kept and still given).
+  **The choice: when a Blind is selected** (the deck shrinks before the deal, and Alolan Marowak's "this round" sees it).
+- **Alolan Exeggutor** (Dragon), Long Neck: **+1 hand size; X2 when the played hand has 5 cards** (kickers count).
+- **Alolan Marowak** (Fire), Shadow Bone: **X2, X2.5 if any playing card was destroyed this round** (`G.GAME.poke_destroyed_round`, set by index.js's
+  card_removed hook for any card of your deck: run-wide, so a Cubone evolving mid-round sees an earlier one).
+- **Energy** (1 / 2 / 3): A-Rattata / A-Raticate +7 / 9 / 11 Mult a low card; A-Raticate +X0.24 / 0.28 / 0.32 a consumable; A-Raichu X1.8 / 2.1 / 2.4 and
+  +X0.12 / 0.14 / 0.16 a Planet; A-Sandshrew / A-Sandslash +39 / 48 / 57 Chips; A-Sandslash X2.4 / 2.8 / 3.2; A-Vulpix +5.6 / 7.2 / 8.8 a Spade;
+  A-Ninetales X1.26 / 1.32 / 1.38 a Spade; A-Diglett (carried) / A-Dugtrio X1.26 / 1.32 / 1.38 a held Gold; A-Meowth (carried) / A-Persian +X0.12 / 0.14 /
+  0.16 per $10; A-Geodude (carried) / A-Graveler +8.4 / 10.8 / 13.2 a Stone; A-Golem X1.3125 / 1.375 / 1.4375 a Stone; A-Grimer +3.6 / 4.2 / 4.8 an eat;
+  A-Muk +X0.12 / 0.14 / 0.16 an eat; A-Exeggutor X2.4 / 2.8 / 3.2; A-Marowak X2.4 / 2.8 / 3.2 (X3 / 3.5 / 4 after a destruction). Fixed: money, the hand
+  size, Golem's held-Stone X1.5; banks never retroactive (surf_Xmult / eat_mult / eat_Xmult).
+- **Tests**: `micatro/tests/mods/pokermon_alolan_test.mjs` (fails on main: no such jokers / pill) and `overworld/tests/micatro_pokermon_regional_ui_test.mjs`
+  (the pills drawn, the retrofits, no pill on a Kanto joker). Re-recorded: `modpin_test`, `pokermon_391_data_test`, `pokermon_new_jokers_test`,
+  `micatro_mod_version_pin`, `micatro_deckeditor_pages` (+18 jokers).
+
+### Regional batch B: the 19 Galarian forms (2026-11-03, branch `feat/pokermon-galarian-forms`)
+Pinned **`3.9.1+r82`** (`contentRev: 82`; `LEGACY_MOD_VERSIONS` untouched). The owner's "yes": the 19 Galarian forms (18 jokers: Galarian Darmanitan's
+Zen Mode is its form), in their own file `jokers/pokejokers_galarian.js` (`GALARIAN_FAMILIES` / `GALARIAN_OWN_FAMILIES` / `GALARIAN_BRANCH_FAMILIES` /
+`GALARIAN_FAMILY_REV` / `GALARIAN_LOC` / `GALARIAN_UPSTREAM_TEXT` / `galarian_corsola_destroyed`, wired in index.js). Types = the cards'
+(tools/micatro/pokermon_art_type.mjs). Art: upstream 3.9.1's cells (pokespriteload.lua galarian_*: Gen01 {10,4}-{13,5} with the birds' souls, Gen02 {6,4}
+{8,4}, Gen03 {8,7} {10,7}, Gen05 {10,7} {0,8} {4,8} {6,8}); nothing to deploy. **Zen Mode**: the forms audit found no cell for it (the sprite table lists
+none), but 3.9.1 DRAWS it, unlisted, beside the Standard Mode card: **Gen05 {2,8}** (+ its Shiny twin; the Pokémon of the overworld battle sprite
+s17763 `darmanitan_galar_zen`, a Water card like the Standard one), so it takes upstream's card (the owner's "upstream first") instead of a composed one.
+Generation = the base species' (Slowking 2, Corsola 2, Zigzagoon / Linoone 3, Darumaka / Darmanitan / Yamask / Stunfisk 5, the rest 1). The regional
+pill reads "Galarian" from the key (regional batch A). Each after its original line in Pokédex order. Neither Nacho nor Pokermon+ has any of them.
+- **Three shapes.** OWN LINES, their own pool entries beside the originals, on the spec's slots: **Ponyta C $5 -> Rapidash S $8**, **Slowpoke C $5 ->
+  Slowbro / Slowking S $8**, **Zigzagoon U $6 -> Linoone S $8** (-> Obstagoon), **Darumaka C $5 -> Darmanitan S $8**, **Farfetch'd C $5**, **Mr. Mime R $8**
+  (Kanto Mr. Mime's slot), **Corsola R $7**, **Yamask C $5**, **Stunfisk R $7**, the **birds Legendary $20** (complete alone). Timers: Ponyta / Slowpoke /
+  Mr. Mime / Linoone 5 rounds, Zigzagoon / Darumaka 4. NATURAL EVOLUTIONS into the Gen 8 batch 3 forms: **G-Linoone -> Obstagoon (5 rounds), G-Farfetch'd
+  -> Sirfetch'd (3 Lucky triggers in a round: Farfetch'd's `farfetchd_lucky`, now exported), G-Corsola -> Cursola (a Psychic Energy, energize first:
+  `poke_energy_evo`), G-Mr. Mime -> Mr. Rime (5 rounds), G-Yamask -> Runerigus (10 Stone cards scored: RUNERIGUS_STONES)**. A BRANCH of a Kanto Basic:
+  **Koffing + a Fairy Energy -> Galarian Weezing** (S $8; refused while debuffed / with an Everstone; Koffing's 3.9.1 text gets a "Galarian form" box).
+  The PR #940 Energy paths (Linoone Dark, Corsola Psychic, Mr. Mime Water) and Koffing's 2 rounds -> Weezing are unchanged.
+- **Families (the choice).** set_family REPLACES the family sharing a member, so the lines that end in an existing final are PUSHED as their own
+  families (`GALARIAN_OWN_FAMILIES`: [G-Zigzagoon, G-Linoone, Obstagoon], [G-Farfetch'd, Sirfetch'd], [G-Corsola, Cursola], [G-Mr. Mime, Mr. Rime],
+  [G-Yamask, Runerigus]): an original held never keeps its Galarian form out of the shop (or the reverse); an Obstagoon held keeps G-Zigzagoon out (its
+  line's final); the Galarian line's highest / previous evo are its own, and the shared final's own lookups (its devolve, the Pokédex) keep finding its
+  original line first (Obstagoon devolves to Linoone). G-Weezing joins Koffing's line, seen from r82 (FAMILY_MEMBER_REV).
+- **Never retroactive (rules rev 82)**: Koffing's branch and G-Corsola's path check `rulesRev('pokermon') >= GALAR_FORMS_REV` (systems/energy.js, the
+  `rev` on each `poke_energy_evo`); a move recorded before it replays as recorded (pokermon_galarian_test 'old-rev replay'). No existing joker's
+  behaviour changes otherwise (Farfetch'd's helper is only exported).
+- **Galarian Ponyta** (Psychic), Pastel Veil: **scored Lucky cards always trigger their Mult** (the `mod_probability` pass on 'lucky_mult': the numerator
+  raised to the denominator; Absol's fix at 0 still wins). Carries Rapidash's `Xmult_multi`. -> **Galarian Rapidash**: **Lucky cards' odds doubled** (both
+  rolls, numerator x2 in the same pass. **Stacking (the choice)**: two Rapidash x4; Oops! All 6s doubles again after the pass; Super Luck's +1 adds where it
+  stands in the row, left to right) and **each Lucky trigger X1.2** (a card whose two rolls hit: X1.2 twice). Rapidash doesn't keep Ponyta's "always".
+- **Galarian Slowpoke** (Psychic): **+1 Mult banked at the end of each round** (`slow_mult`, banked before its countdown). After 5 rounds, by position
+  (Charizard's Mega X / Y): **Galarian Slowbro if it is your leftmost Slowpoke, Galarian Slowking if your rightmost; alone or between two others, a
+  seeded pick** ('galarian_slowpoke'; Kanto Slowpokes count as Slowpokes). Both are **Dark** and **keep the bank and give it, banking no more (the choice,
+  as Alolan Muk)**. **Slowbro, Quick Draw**: each hand a **1 in 3** roll (in `before`; Oops! doubles it) to **retrigger every scored card** (Energy-inert).
+  **Slowking, Curious Medicine**: **+X0.25 per Spectral card used** (`med_Xmult`; Slowpoke carries its `Xmult_mod`).
+- **Galarian Farfetch'd** (Fighting): **each Lucky card trigger +5 Mult**; Sirfetch'd on Farfetch'd's 3-trigger rule.
+- **Galarian Weezing** (Fairy), Neutralizing Gas: **X1.5; when a Blind is selected one Hazard card of your deck (seeded) loses its enhancement and it
+  permanently gains X0.1** (`gas_Xmult`; once a round; nothing without a Hazard card).
+- **Galarian Mr. Mime** (Water): **each Glass card held in hand +10 Mult** (h_mult: Mime / a Red Seal repeat it).
+- **Galarian Corsola** (Psychic), Cursed Body: **+X0.1 per playing card of your deck destroyed while it is held** (index.js's card_removed hook beside
+  Alolan Marowak's; a debuffed one gains nothing; `curse_Xmult`).
+- **Galarian Zigzagoon** (Dark): **scored Spades +4 Mult** -> **Galarian Linoone**: **scored Spades X1.15**.
+- **Galarian Darumaka** (Water), Gorilla Tactics: **+12 Mult if the played poker hand is your most played** (`G.GAME.hands[].played`, this hand already
+  counted; **a tie for the most counts**) -> **Galarian Darmanitan**: **X3 under the same condition, else nothing; Zen Mode: X4 on the round's final hand
+  whatever the hand** (no hands left while it scores). Its face is the Zen card while the next hand is the final one (a round with at most 1 hand left;
+  `poke_view_form` 'zen' + the new center field `poke_form_art`, ui.js ownFace; Shiny: the Shiny sheet's {2,8}); its type stays Water.
+- **Galarian Yamask** (Earth): **scored Stone cards +5 Mult**; Runerigus once 10 Stones scored while held (end of round).
+- **Galarian Stunfisk** (Metal), Snap Trap: **your first discard each round is free** (a player's discard, not The Hook's: +1 discard as it is used, so
+  discards left stay the same; `discards_used` still counts it, so "before any discard" readers see a discard). Energy-inert.
+- **Galarian Articuno** (Psychic), Freezing Glare: **on the round's final hand every scored card retriggers once**. **Galarian Zapdos** (Fighting),
+  Thunderous Kick: **the first scored card of each hand retriggers 3 times**. **Galarian Moltres** (Dark), Fiery Wrath: **+1 discard; X3.5 on the round's
+  final hand**. All Legendary $20, complete alone; Articuno / Zapdos Energy-inert.
+- **Energy** (1 / 2 / 3): G-Ponyta (carried) / G-Rapidash X1.26 / 1.32 / 1.38 a trigger; G-Slowpoke +1.2 / 1.4 / 1.6 a round; G-Slowking +X0.3 / 0.35 / 0.4
+  a Spectral; G-Farfetch'd +7 / 9 / 11 a trigger; G-Weezing X1.8 / 2.1 / 2.4 and +X0.12 / 0.14 / 0.16 a Hazard; G-Mr. Mime +14 / 18 / 22 a Glass; G-Corsola
+  +X0.12 / 0.14 / 0.16 a card; G-Zigzagoon +5.6 / 7.2 / 8.8 a Spade; G-Linoone X1.2075 / 1.265 / 1.3225 a Spade; G-Darumaka +16.8 / 21.6 / 26.4; G-Darmanitan
+  X3.6 / 4.2 / 4.8, Zen X4.8 / 5.6 / 6.4; G-Yamask +7 / 9 / 11 a Stone; G-Moltres X4.2 / 4.9 / 5.6. Fixed: odds, retriggers, discards. Energy-inert:
+  G-Slowbro, G-Stunfisk, G-Articuno, G-Zapdos. Banks never retroactive (slow_mult / med_Xmult / gas_Xmult / curse_Xmult).
+- **Tests**: `micatro/tests/mods/pokermon_galarian_test.mjs` (fails on main: 47 of 55). Re-recorded: `modpin_test`, `pokermon_391_data_test`,
+  `pokermon_new_jokers_test`, `micatro_mod_version_pin`, `micatro_deckeditor_pages` (+18 jokers).
+
+### Batch E: the Primal Reversions, Blue Orb / Red Orb (2026-11-03, branch `feat/pokermon-primal-orbs`)
+Pinned **`3.9.1+r85`** (`contentRev: 85`, `PRIMAL_REV`; `LEGACY_MOD_VERSIONS` untouched). The owner's "orb version yes": two Items and two Legendary forms.
+- **Blue Orb / Red Orb** (`primal.js`; Items, **$4** like the evolution stones and the Mega Stone, the Items' default pool weight, saveable): the selected
+  undebuffed Kyogre / Groudon, else the leftmost, becomes **Primal Kyogre / Primal Groudon for good** (the Mega Berry Juice's way: nothing remembers or reverts
+  it; a Mega Stone's state is untouched). None to turn: refused. Energy, edition and stickers carry (poke_backend_evolve); no `poke_evolved` context (a
+  reversion isn't an evolution, as a Mega), never rerolled by the Randomizer. **Where**: the Item pool (Pocket Packs' Item slots) and the **Ancient Pack
+  (Red Orb) / Future Pack (Blue Orb)**'s first card 1 in 4 (`poke_<era>_orb`, rolled only then) — each only while you hold its Legendary (a debuffed one
+  counts) and only on r85, so runs recorded before replay their pools as recorded.
+- **Primal Kyogre** (Water): +2 hands each round, every scored Club retriggers twice, always raining. **Primal Groudon** (Earth): +2 discards each round,
+  scored Hearts / Diamonds X1.5 each (`Xmult_multi`, Energy +5%: X1.575 / 1.65 / 1.725), always sunny. **The choices**: Legendary $20, stage Legendary,
+  in_pool false (the transformed-Legendary-form way: Urshifu, Solgaleo), NOT poke_mega (the Mega Stone, the Mega Sleeve's included, never targets or
+  reverts them); each stands on its normal form's SIDE of the weather trio (`PRIMAL_SIDES` / `side` in `jokers/pokejokers_designs.js`): the Primal Clash,
+  Swift Swim's rain, Cherrim's sun and Castform's lock read the side. **Clash**: a Primal on one side only wins every round (no count; the tooltip says
+  "Primal Kyogre's round (every round)"); Primal vs Primal (or none) the round's first deal decides as before; Rayquaza still calms everything. An Orb used
+  mid-round keeps the round's decision (a losing Kyogre turned Primal gives nothing until the next round). A held Primal keeps its species out of the
+  pools (Showman / the Pokédex aside). Pokédex order: each Primal right after its species. Art: upstream 3.9.1's Primal cells with their souls (Gen 3 sheet
+  {4,7} / {5,7}, {2,7} / {3,7}); the Orbs are composed (`tools/micatro/compose_pokermon_orb_art.py` -> `assets/2x/primal_orbs.png`: the Water / Fire Stone
+  cards with a shaded orb carrying Kyogre's alpha / Groudon's omega), deployed to magepunk-micatromods.
+- **Tests**: `micatro/tests/mods/pokermon_primal_test.mjs` (fails on main: no such jokers / items). Re-recorded: `modpin_test`, `pokermon_391_data_test`,
+  `pokermon_new_jokers_test`, `pokermon_gen3_legendaries_test` (Pokédex order), `micatro_mod_version_pin`, `micatro_deckeditor_pages`.
+### The generation filter holds (r79, 2026-11-03, branch `fix/pokermon-gen-filter`)
+The owner: "the generation filters in the settings don't work — the gen 4 starters come up even when gen 4 is off". `get_gen_allowed` lets a
+joker with no `gen` through, and the sources did not all ask it. Fixed in `systems/pools.js` (GEN_FILTER_REV = 79, gated by rulesRev so a run
+recorded before r79 replays on the old filter):
+- **Every Pokémon carries its generation** (GEN_FIXES, applied by `install_gen_filter`, the mod's `reset_run`, after every add-on registered; the
+  old value stays as `poke_gen_before` for the pre-r79 replays; the sprite atlases were chosen at registration and don't move): Nacho's 22 with
+  none (Turtwig / Chimchar / Piplup lines, Victini, Clauncher line, Dedenne, Oranguru, Passimian, Turtonator, Dhelmise, Perrserker, the Bagon line),
+  Pokermon+'s 6 with none (Nincada line, Croagunk line), Pokermon's Hisuian Qwilfish (none), and three wrong ones (Mega Skarmory 1 -> 2, Nacho's Mega
+  Gallade 3 -> 4, Pokermon+'s Archaludon 8 -> 9). **Rule**: a joker's `gen` is the National Dex generation of its species; a regional form or a
+  Mega is its base species' (as upstream numbers all of its own: Galarian Meowth 1, Mega Lucario 4, Hisuian Zorua 5).
+- **Every source asks**: the Starter Pack / Starter Pack...? lists (the Starter Tag, the Professors) never did — with Gen 4 off a Starter Pack
+  offered Nacho's Sinnoh starters, with only Gen 3 on it offered every generation's; an empty slot's Caterpie fallback becomes an allowed Basic
+  while Gen 1 is off (`fallback_poke_key`; get_random_poke_key too). The attribute pools (SMODS.poll_object with attributes: the Mystery Egg's
+  hatch, Tall Grass, Corsola, Nacho's Ancient Pack — `cull_pool` reads only `in_pool`, not the pool_filter hook) skipped the filter: every
+  Pokémon's `in_pool` now asks `gen_pool_rule` first (custom_pool_func jokers such as Ditto included). Ruins of Alph (Unown), Pokermon+'s Member
+  Card (Darkrai) and Mystery Box (Meltan) leave the pools with their Pokémon's generation (GEN_SOURCES). get_random_poke_key skipped the joke
+  content's in_pool: Spiclops (no generation) came out of Master Balls with April Fools off — now only with `pokemon_aprilfools`.
+- **Not filtered (by design)**: evolving / devolving / Mega-evolving a joker you hold (its own line, even across generations: a Gen 1 Eevee still
+  becomes Sylveon), the Daycare's egg of a held parent, a challenge's fixed jokers (Sinnoh Adventure's starters, Imposter Syndrome's Dittos).
+  The shop, Buffoon packs, Poké / Great / Ultra / Master / Timer / Paradox Balls, The Soul and the Paradox packs already asked (all 20 Paradox
+  jokers are Gen 9) — now with the fixed generations.
+- **Tests**: `micatro/tests/mods/pokermon_gen_filter_test.mjs` (every registered Pokémon joker's gen against a dex -> gen table over all 1025
+  species, `micatro/tests/fixtures/national_dex.json`, with the non-species listed; every source fired with Gen 4 off, with only Gen 3 / 4 / 9 on
+  and with Gen 1 off; save / resume; an r78 recipe, `fixtures/pokermon_genfilter_r78_recipe.json`, replays its Turtwig as recorded). Re-pinned:
+  `modpin_test`, `pokermon_391_data_test`, `pokermon_new_jokers_test`, `micatro_mod_version_pin`.
+
+### Regional batch C: the Hisuian and Paldean forms (r83, 2026-11-03, branch `feat/pokermon-hisuian-paldean-forms`)
+The owner's "yes" (2026-11-03): the rest of Hisui and Paldea, `jokers/pokejokers_hisui.js` (12 jokers) + Nacho's Hisuian Sneasel / Sneasler
+made obtainable (Nacho r3, `mods/nacho/pokemon/0903_sneasler.js`). Upstream 3.9.1 draws every one (Gen 1 / 2 / 5 / 6 / 7 sheets) but registers
+none: nothing to deploy. Types from the card art (`tools/micatro/pokermon_art_type.mjs`; every cell matched, margin 0.46+). A form's `gen` is its
+base species' (Sneasler and Clodsire are their own species: 8 / 9). The region pill comes from the key (`j_poke_hisuian_*`, `j_poke_paldean_*`).
+- **Own lines** (own pool entries, own families: Common $5 -> Safari $8): Hisuian Growlithe (Earth; +40 Chips, doubled on the round's first hand;
+  5 rounds) -> Hisuian Arcanine (Head Smash: X2.5 on the round's first hand, its first scored card destroyed after scoring; Blueprint copies the X
+  only); Hisuian Voltorb (Grass; scored Seed cards +6 Mult; 4 rounds) -> Hisuian Electrode (Chloroblast: X1 + X0.15 per Seed card in the full
+  deck); Paldean Wooper (Dark; Poison Point: each discarded unenhanced card 1 in 6 to become a Hazard, Clodsire's roll on its own seed; +2 Mult per
+  Hazard in the full deck; 5 rounds -> Clodsire). Paldean Wooper's family is a SECOND one holding Clodsire (`[paldean_wooper, clodsire]`, pushed
+  after the Wooper line's): neither Wooper keeps the other out of the shop, Clodsire's previous evolution stays Wooper, Paldean Wooper's highest
+  form is Clodsire; Kanto Wooper's Dark-Energy route (r77) is unchanged.
+- **Paldean Tauros** (Rare $7, single stage): its breed is rolled when it is OBTAINED (Toxtricity's moment: `card.ability.poke_tauros_breed`,
+  1 in 3 on the seeded `paldean_tauros_breed`); the type follows the breed (protean_set: Combat Fighting, Blaze Fire, Aqua Water; not
+  Monotype-exempt) and so does the card (`systems/anim.js` GEN9_FORM_SPRITES: Gen 1 {6,6} / {8,6} / {10,6}). Combat: scored face cards X1.2;
+  Blaze: +1 discard, scored Hearts X1.2; Aqua: +1 hand, scored Clubs X1.2. A shop card shows Combat ("Breed: rolled when obtained"). Distinct from
+  Tauros (Herd).
+- **Branch evolutions** (`poke_energy_evo` with `rev: HISUI_REV`, the Galarian pattern; the six join their lines from that rev, HISUI_FAMILY_REV ->
+  FAMILY_MEMBER_REV; a run recorded before r83 replays as recorded): Quilava + Psychic -> Hisuian Typhlosion (Frisk: +2 Foresight, each Foreseen
+  Heart X1.25), Dewott + Dark -> Hisuian Samurott (Ceaseless Edge: the first 3 scored cards retrigger, each Hazard held X1.2), Dartrix + Fighting
+  -> Hisuian Decidueye (Triple Arrows: the first 3 scored cards X1.2 each time they score), and from the Basic of our 2-stage lines Petilil +
+  Fighting -> Hisuian Lilligant (Victory Dance: X1 + X0.1 per hand played this round, this hand included), Rufflet + Psychic -> Hisuian Braviary
+  (Esper Wing: X1.5, X2.5 during Boss Blinds), Bergmite + Earth -> Hisuian Avalugg (Mountain Gale: +200 Chips, held Stone cards +20 Chips). The
+  earlier stage's text gets a "Hisuian form" box. **Decision**: the three starter finals keep their line's fixed perk (+1 discard / +1 hand /
+  +1 hand size), as their Stage 1 has it — evolving never takes it away.
+- **Hisuian Sneasel / Sneasler** (Nacho; keys, Uncommon $6 / Safari $10, Fighting, Gen 2 / 8 and the Dawn Stone evolution kept): Sneasel +4 Mult
+  per discard used this round; Sneasler Unburden X3 once every discard this round is used (none left AND at least one used: a round with no
+  discards to use never counts). No mod option (always on with Nacho). Gated by Nacho's rulesRev (SNEASEL_REV 3): a move recorded before it sees
+  them in no pool and without an effect.
+- **Energy** (standard rates; fixed: odds, retriggers, perks, Foresight, the destruction): Growlithe `chips` 52 / 64 / 76, Arcanine `Xmult` 3 / 3.5
+  / 4, Voltorb `mult` 8.4 / 10.8 / 13.2, Electrode `Xmult_mod` 0.18 / 0.21 / 0.24, Sneasel `mult` 5.6 / 7.2 / 8.8, Sneasler `Xmult` 3.6 / 4.2 / 4.8,
+  Typhlosion `Xmult_multi` 1.3125 / 1.375 / 1.4375, Samurott / Decidueye / Tauros `Xmult_multi` 1.26 / 1.32 / 1.38, Lilligant `Xmult_mod` 0.12 /
+  0.14 / 0.16, Braviary `Xmult` 1.8 / 2.1 / 2.4 and `Xmult2` 3 / 3.5 / 4, Avalugg `chips` 260 / 320 / 380 and `chips2` 26 / 32 / 38, Paldean Wooper
+  `mult` 2.8 / 3.6 / 4.4.
+- **Tests**: `micatro/tests/mods/pokermon_hisuian_paldean_test.mjs` (every joker with real hands, each branch + its refusals + the normal path,
+  Sneasel's new effects and an old-rev replay, the breed roll / art / type / perks, Paldean Wooper -> Clodsire, the pills, Energy, save / resume,
+  art types). Re-pinned: `modpin_test`, `pokermon_391_data_test`, `pokermon_new_jokers_test`, `micatro_mod_version_pin`; Nacho's counts in
+  `nacho_test` / `nacho_179_test`.
 
 ### Pending from the 3.9.1 joker rework (after batch 10b)
 Every existing joker is on 3.9.1: `rework_hold` (still on 3.2.1) is empty. What waits, by the batch it waits on (`rework_deferred` =

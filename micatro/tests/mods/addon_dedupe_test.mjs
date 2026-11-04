@@ -1,12 +1,12 @@
 // Add-on dedupe (Pokermon precedence; micatro/mods/pokermon/PORTING.md "Add-on dedupe (Pokermon precedence)"): with Pokermon,
 // Nacho's Pokermon Dip and Pokermon+ loaded, the add-on duplicates of Pokermon jokers are out of play but stay registered.
-//   - the inventory: every registered joker of the three mods by name — exactly the 12 known duplicates (Nacho's Ralts / Swablu /
+//   - the inventory: every registered joker of the three mods by name — exactly the 13 known duplicates (Nacho's Ralts / Swablu /
 //     Bagon lines with Gallade, Pokermon+'s Nincada line); regional forms and Megas are distinct cards
 //   - pools: many seeded runs, every joker rarity (create_card, the shop, Buffoon packs, rarity Tags) and every random-Pokémon
 //     pick (get_random_poke_key: stages, types, Showman held) — no duplicate key, ever; the Pokermon twins still roll
 //   - evolutions retarget: a legacy add-on line evolves into Pokermon's (level, item, Rare Candy / highest evo, Pokermon+'s
 //     Shedinja); a Mega Stone on Pokermon's Gardevoir / Gallade / Altaria gives Nacho's Mega (re-keyed j_poke_mega_* since Nacho
-//     1.7.9, batch 18), and it devolves back; Pokermon's Salamence has none (1.7.9 dropped Mega Salamence)
+//     1.7.9, batch 18), and it devolves back; Pokermon's Salamence gives Pokermon's own Mega Salamence (Mega batch D; 1.7.9 dropped Nacho's)
 //   - legacy keys: a recipe (custom deck) holding j_nacho_ralts replays and the card works; Pokermon+'s Wonder Guard challenge
 //     still starts with its Shedinja; a removed key keeps its name / text / art, is not "retired", resolves to itself; win
 //     stickers it earns go to Pokermon's line
@@ -45,6 +45,8 @@ const DUPES = {
   j_nacho_ralts: 'j_poke_ralts', j_nacho_kirlia: 'j_poke_kirlia', j_nacho_gardevoir: 'j_poke_gardevoir', j_nacho_gallade: 'j_poke_gallade',
   j_nacho_swablu: 'j_poke_swablu', j_nacho_altaria: 'j_poke_altaria',
   j_nacho_bagon: 'j_poke_bagon', j_nacho_shelgon: 'j_poke_shelgon', j_nacho_salamence: 'j_poke_salamence',
+  // (Mega batch D: Pokermon has its own Mega Salamence, so Nacho 1.6.4's legacy one is a duplicate too)
+  j_nacho_mega_salamence: 'j_poke_mega_salamence',
   j_sonfive_nincada: 'j_poke_nincada', j_sonfive_ninjask: 'j_poke_ninjask', j_sonfive_shedinja: 'j_poke_shedinja',
 };
 // (Nacho 1.7.9, batch 18: the Megas are re-keyed into Pokermon's namespace — registered by Nacho — and Mega Salamence is dropped)
@@ -60,15 +62,15 @@ sec('inventory', () => {
   const found = {};
   for (const [, ks] of shared) { const base = ks.find((k) => P_CENTERS[k].mod === 'pokermon'); for (const k of ks) if (k !== base) found[k] = base; }
   ok(JSON.stringify(Object.keys(found).sort()) === JSON.stringify(Object.keys(DUPES).sort()) && Object.entries(DUPES).every(([k, v]) => found[k] === v),
-    'every joker of Pokermon / Nacho / Pokermon+ by name: exactly the 12 known add-on duplicates', found);
+    'every joker of Pokermon / Nacho / Pokermon+ by name: exactly the 13 known add-on duplicates', found);
   ok(!Object.values(byName).some((ks) => ks.length > 1 && ks.every((k) => P_CENTERS[k].mod !== 'pokermon')), 'Nacho and Pokermon+ share no joker');
   // display names too (a renamed key with the same Pokémon): only the 12, plus Pokermon's own forms (Shellder's shell, Jirachi's)
   const disp = {};
   for (const c of jokers) { const n = String(localize({ type: 'name_text', set: 'Joker', key: c.key })).toLowerCase(); (disp[n] = disp[n] || []).push(c.key); }
   const cross = Object.values(disp).filter((ks) => new Set(ks.map((k) => P_CENTERS[k].mod)).size > 1).flat().filter((k) => P_CENTERS[k].mod !== 'pokermon');
-  ok(cross.every((k) => DUPES[k]) && cross.length === 12, 'by display name: the same 12', cross);
+  ok(cross.every((k) => DUPES[k]) && cross.length === 13, 'by display name: the same 13', cross);
   // distinct forms stay: regional forms and the add-on Megas Pokermon doesn't have
-  for (const k of ['j_nacho_galarian_meowth', 'j_nacho_hisuian_sneasel', 'j_nacho_hisuian_zorua', 'j_nacho_hisuian_zoroark', ...Object.values(NACHO_MEGAS), 'j_nacho_mega_salamence', 'j_nacho_mega_audino']) {
+  for (const k of ['j_nacho_galarian_meowth', 'j_nacho_hisuian_sneasel', 'j_nacho_hisuian_zorua', 'j_nacho_hisuian_zoroark', ...Object.values(NACHO_MEGAS), 'j_nacho_mega_audino']) {
     ok(P_CENTERS[k] && !P.replaced_by(k) && !P_CENTERS[k].poke_replaced_by, k + ': a distinct form, not a duplicate');
   }
   for (const [k, v] of Object.entries(DUPES)) {
@@ -202,11 +204,14 @@ sec('megas', () => {
   add('j_poke_gardevoir');
   const st2 = add('c_poke_megastone');
   ok(!P.megastone_can_use(st2), 'Nacho\'s Mega Gardevoir off: no Mega Gardevoir');
-  // Pokermon's Salamence: Nacho 1.7.9 dropped Mega Salamence — no Mega; the legacy key stays registered for old saves
+  // Pokermon's Salamence: Nacho 1.7.9 dropped Mega Salamence; since Mega batch D it is Pokermon's own (j_poke_mega_salamence), and the
+  // legacy key stays registered for old saves, a duplicate of it
   start('DDMEGASAL');
-  add('j_poke_salamence');
+  const sal = add('j_poke_salamence');
   const st3 = add('c_poke_megastone');
-  ok(!P.megastone_can_use(st3) && P_CENTERS.j_nacho_mega_salamence, 'Pokermon\'s Salamence: no Mega any more (j_nacho_mega_salamence: legacy)');
+  ok(P.megastone_can_use(st3) && P_CENTERS.j_nacho_mega_salamence, 'Pokermon Salamence: a Mega Stone target (Mega batch D)');
+  use(st3, [sal.sort_id]);
+  ok(sal.config.center.key === 'j_poke_mega_salamence', '... it becomes the Pokermon Mega Salamence, not the legacy one', sal.config.center.key);
 });
 
 // ===================================================================== legacy keys still load
@@ -253,7 +258,7 @@ sec('dex / pins', () => {
     const g = familyOf({ center: 'j_nacho_ralts' });
     ok(g[0] === 'j_nacho_ralts' && g.includes('j_poke_kirlia') && !g.includes('j_nacho_kirlia'), 'Pokédex on a legacy card: itself, then Pokermon\'s line', g);
   }
-  ok(PINS.modPin('nacho') === '1.7.9-5+r2' && PINS.modPin('pokermonplus') === '1.2.0-261018a+r2', 'pins: Nacho 1.7.9-5+r2 (batch 18), Pokermon+ 1.2.0-261018a+r2 (batch 20)', [PINS.modPin('nacho'), PINS.modPin('pokermonplus')]);
+  ok(PINS.modPin('nacho') === '1.7.9-5+r3' && PINS.modPin('pokermonplus') === '1.2.0-261018a+r2', 'pins: Nacho 1.7.9-5+r3 (batch 18; r3 regional batch C), Pokermon+ 1.2.0-261018a+r2 (batch 20)', [PINS.modPin('nacho'), PINS.modPin('pokermonplus')]);
   ok(PINS.LEGACY_MOD_VERSIONS.nacho === '1.6.4' && PINS.LEGACY_MOD_VERSIONS.pokermonplus === '1.0.3-251101e', 'LEGACY_MOD_VERSIONS untouched');
   const d = PINS.pinDiff({ mods: ['pokermon', 'nacho'], modVersions: { pokermon: PINS.modPin('pokermon'), nacho: '1.6.4' } });
   ok(d.length === 1 && d[0].id === 'nacho', 'a run recorded on Nacho 1.6.4 (rev 0) warns on resume', d);

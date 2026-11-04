@@ -20,7 +20,7 @@ function fresh(seed = 78) {
 }
 const put = (st, pi, def) => { const c = E.instantiate(def, pi); c.zone = 'board'; c.sick = false; st.players[pi].board.push(c); E.recomputeAuras(st); return c; };
 const give = (st, pi, def) => { const c = E.instantiate(def, pi); c.zone = 'hand'; st.players[pi].hand.push(c); return c; };
-const isSpell = d => d && ['sorcery', 'instant', 'spell'].includes(d.type);
+const isSpell = d => d && (E.isSpellType(d) || d.type === 'spell');
 
 // ---- 1) Magitek Infantry ----
 {

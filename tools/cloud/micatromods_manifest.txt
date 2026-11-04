@@ -2027,6 +2027,8 @@ pokermon/assets/2x/j_poke_unown_swarm_soul-391-t2.png
 pokermon/assets/2x/j_poke_unown_swarm_soul-391.png
 pokermon/assets/2x/j_poke_unown_swarm_soul.png
 pokermon/assets/2x/miror_budicolo.png
+pokermon/assets/2x/paradox_ball.png
+pokermon/assets/2x/paradox_packs.png
 pokermon/assets/2x/placeholder_blind.png
 pokermon/assets/2x/placeholder_deck.png
 pokermon/assets/2x/placeholder_item.png
@@ -2038,6 +2040,7 @@ pokermon/assets/2x/poke_logo_alt.png
 pokermon/assets/2x/poke_logo_multi.png
 pokermon/assets/2x/pokestakes.png
 pokermon/assets/2x/pokestakes_stickers.png
+pokermon/assets/2x/primal_orbs.png
 pokermon/assets/2x/rage_candy_bar.png
 pokermon/assets/2x/repel.png
 pokermon/assets/2x/shiny_capture_disc.png

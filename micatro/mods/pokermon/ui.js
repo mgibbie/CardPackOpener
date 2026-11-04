@@ -33,7 +33,7 @@ import { family_display_key } from './systems/precedence.js';
 import { TYPE_COLOURS } from './systems/types.js';
 import { KECLEON_ATLAS, KECLEON_SPRITES, CASTFORM_SPRITES, CHERRIM_SPRITES, GIRATINA_ORIGIN, CLOAK_ATLAS, BURMY_SPRITES, DEOXYS_SOULS, IMPOSTER_REVEALED, SERIES_A_ANIM } from './systems/anim.js';
 import D391 from './data391.js';
-import { SEA_ATLAS, SEA_SPRITES, BASCULIN_SPRITES, GEN5_LEGEND_FORMS, SEASON_SPRITES, GEN6_FORM_SPRITES, GEN6_LEGEND_FORMS, GEN7_FORM_SPRITES, GEN7_LEGEND_FORMS, GEN8_FORM_SPRITES, GEN8_LEGEND_FORMS } from './systems/anim.js';
+import { SEA_ATLAS, SEA_SPRITES, BASCULIN_SPRITES, GEN5_LEGEND_FORMS, SEASON_SPRITES, GEN6_FORM_SPRITES, GEN6_LEGEND_FORMS, GEN7_FORM_SPRITES, GEN7_LEGEND_FORMS, GEN8_FORM_SPRITES, GEN8_LEGEND_FORMS, GEN9_FORM_SPRITES, GEN9_LEGEND_FORMS } from './systems/anim.js';
 
 const MOD = 'pokermon';
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -342,6 +342,9 @@ function ownFace(d0) {
     const at = P_CENTERS[d0.center].atlas;
     return { ...d0, atlas: lf8.sheet ? at.replace('BasicNatdex', 'Basic' + lf8.sheet) : at, pos: lf8.pos, soul_pos: lf8.soul_pos };
   }
+  // The Gen 9 Legendaries (Gen 9 batch 4): Ogerpon's Wellspring / Hearthflame / Cornerstone masks (Teal is its own card) — card and soul
+  const lf9 = p && GEN9_LEGEND_FORMS[d0.center] && GEN9_LEGEND_FORMS[d0.center][p.form];
+  if (lf9) return { ...d0, atlas: P_CENTERS[d0.center].atlas, pos: lf9.pos, soul_pos: lf9.soul_pos };
   // Burmy / Wormadam (the owner's design): the cloak's card (the Gen 4 sheet); Plant = its own card
   const bm = p && BURMY_SPRITES[d.center] && BURMY_SPRITES[d.center][p.form];
   if (bm) return { ...d, atlas: CLOAK_ATLAS, pos: bm };
@@ -368,6 +371,13 @@ function ownFace(d0) {
   // Gen 8 batch 1 (the owner's): Cramorant's Gulping Form while a missile is loaded (the Gen 8 sheet)
   const g8 = p && GEN8_FORM_SPRITES[d.center] && GEN8_FORM_SPRITES[d.center][p.form];
   if (g8) return { ...d, atlas: P_CENTERS[d.center].atlas, pos: g8 };
+  // Gen 9 batch 1 (the owner's): Squawkabilly's plumage (the Gen 9 sheet)
+  const g9 = p && GEN9_FORM_SPRITES[d.center] && GEN9_FORM_SPRITES[d.center][p.form];
+  if (g9) return { ...d, atlas: P_CENTERS[d.center].atlas, pos: g9 };
+  // A form named on the center itself (regional batch B: Galarian Darmanitan's Zen Mode, upstream's unlisted Gen 5 {2,8}): poke_form_art
+  // {form: {atlas, pos}} (its Shiny twin: basicShiny, the sheet's Shiny twin)
+  const fa = p && P_CENTERS[d0.center] && P_CENTERS[d0.center].poke_form_art && P_CENTERS[d0.center].poke_form_art[p.form];
+  if (fa) return { ...d0, atlas: fa.atlas, pos: fa.pos, soul_pos: undefined };
   // Unown: its form's letter floats over the card
   const u = withUnownForm(d);
   return u === d0 ? null : u;

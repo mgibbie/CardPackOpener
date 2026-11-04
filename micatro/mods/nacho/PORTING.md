@@ -117,6 +117,12 @@ Intended-design fixes and Micatro shapes, each marked in the code:
   formula for a table `extra` (our Pokermon port's `energize` has no amount).
 - Not ported (cosmetic): the "Dip+BFP" mod badge, the "better fossil UI" option, the Tera Orb's Stellar text override, JokerDisplay.
 
+### Hisuian Sneasel / Sneasler obtainable (contentRev 3, the owner's regional batch C, 2026-11-03)
+The Toxic-Stall file `0903_sneasler.lua`'s two jokers leave the data-only set with Micatro's own effects (no Toxic): Hisuian Sneasel +4 Mult per
+discard used this round (Dawn Stone, as 1.7.9), Sneasler Unburden X3 once every discard this round is used (and at least one was). Keys, rarity,
+cost, type and the evolution are 1.7.9's. No option; gated by rulesRev (`SNEASEL_REV` 3): a move recorded before it sees them in no pool and
+without an effect. The Loyal Three and Pecharunt stay data only. Tests: `micatro/tests/mods/pokermon_hisuian_paldean_test.mjs`.
+
 ### Engine / Pokermon seams added (all inert without Nacho)
 - `js/engine/core.js`: Card:set_debuff -> hook `debuff_set` (Turtonator); get_chip_h_x_mult -> hook `chip_h_x_mult` (Dhelmise).
 - `js/engine/run.js`: hook `held_card_evaluated` after each held card's scoring / end-of-round pass (Dedenne's dedenne_trig).

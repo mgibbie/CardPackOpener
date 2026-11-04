@@ -95,12 +95,13 @@ await sec('static', () => {
   ok(c && c.rarity === 'poke_safari' && c.cost === 10 && c.stage === 'Two' && c.ptype === 'Dragon' && c.config.extra.Xmult_mod === 0.5 && !('evo_rqmt' in c.config) && c.blueprint_compat,
     'Garchomp: Safari $10, Stage 2, Dragon, X0.5 a held Gold card, no evolution', c && [c.rarity, c.cost, c.stage, c.ptype, c.config]);
   ok(LINE.every((n) => (P_CENTERS['j_poke_' + n].poke_custom_values_to_keep || []).includes('bite_mult')), 'every stage keeps bite_mult through evolution');
-  const keys = MODS.pokermon.content.centers.filter((x) => x.set === 'Joker').map((x) => x.key);
+  // (Mega batch D's Megas sit after their bases: pokermon_megas_classic_test.mjs checks them; skipped here)
+  const keys = MODS.pokermon.content.centers.filter((x) => x.set === 'Joker' && x.poke_file !== 'micatro/pokejokers_megas').map((x) => x.key);
   const i = keys.indexOf('j_poke_gible');
   ok(i > 0 && keys[i - 1] === 'j_poke_spiritomb' && keys[i + 1] === 'j_poke_gabite' && keys[i + 2] === 'j_poke_garchomp' && keys[i + 3] === 'j_poke_munchlax',
     'Pokédex order: Spiritomb (442), Gible, Gabite, Garchomp, Munchlax (446)', keys.slice(i - 1, i + 4));
   const fam = (n) => poke_get_family_list(n).map((x) => (typeof x === 'string' ? x : x.key || x.name)).join();
-  ok(fam('gible') === 'gible,gabite,garchomp' && fam('garchomp') === fam('gible'), 'one family: Gible, Gabite, Garchomp', fam('gible'));
+  ok(fam('gible') === 'gible,gabite,garchomp,mega_garchomp' && fam('garchomp') === fam('gible'), 'one family: Gible, Gabite, Garchomp (+ Mega Garchomp, Mega batch D)', fam('gible'));
   ok(g.atlas === 'poke_AtlasJokersBasicNatdex391' && b.atlas === g.atlas && c.atlas === g.atlas && g.pos.x === 14 && b.pos.x === 16 && c.pos.x === 18 && [g, b, c].every((x) => x.pos.y === 29),
     'art: upstream 3.9.1\'s own cells (Natdex {14,29} / {16,29} / {18,29}; nothing to deploy)', [g.atlas, g.pos, b.pos, c.pos]);
   ok(pool_filter(g, 'Joker') === undefined && g.in_pool(g) !== false, 'Gible can be rolled in the shop (Uncommon)');

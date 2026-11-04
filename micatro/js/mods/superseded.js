@@ -10,6 +10,7 @@ export const SUPERSEDED = Object.freeze({
   j_nacho_gallade: 'j_poke_gallade',
   j_nacho_gardevoir: 'j_poke_gardevoir',
   j_nacho_kirlia: 'j_poke_kirlia',
+  j_nacho_mega_salamence: 'j_poke_mega_salamence',
   j_nacho_ralts: 'j_poke_ralts',
   j_nacho_salamence: 'j_poke_salamence',
   j_nacho_shelgon: 'j_poke_shelgon',

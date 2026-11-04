@@ -78,13 +78,26 @@ import './consumables/mart1.js';
 import './consumables/mart2.js';
 import './boosters/packs1.js';
 import './jokers/zzzapril_fools.js';
+// The owner's Paradox content (Gen 9 batch 3): the Paradox Ball, the Ancient / Future Packs (the 20 jokers are in jokers/pokejokers_designs.js)
+import { PARADOX_LOC, PARADOX_DICTIONARY, PARADOX_LOC_COLOURS, PACK_COLOURS, paradox_pack_open } from './paradox.js';
+// Batch E, the Primal Reversions: the Blue Orb / Red Orb (Primal Kyogre / Primal Groudon are in jokers/pokejokers_designs.js)
+import { PRIMAL_LOC } from './primal.js';
+// The owner's regional forms, batch A (the 18 Alolan forms; jokers/pokejokers_regional.js)
+import { REGIONAL_FAMILIES, REGIONAL_FAMILY_REV, REGIONAL_LOC, REGIONAL_UPSTREAM_TEXT, poke_card_destroyed } from './jokers/pokejokers_regional.js';
+// ... batch B (the 19 Galarian forms; jokers/pokejokers_galarian.js)
+import { GALARIAN_FAMILIES, GALARIAN_OWN_FAMILIES, GALARIAN_BRANCH_FAMILIES, GALARIAN_FAMILY_REV, GALARIAN_LOC, GALARIAN_UPSTREAM_TEXT,
+  galarian_corsola_destroyed } from './jokers/pokejokers_galarian.js';
+// The owner's regional forms, batch C (the Hisuian and Paldean forms; jokers/pokejokers_hisui.js)
+import { install_hisui_families, HISUI_FAMILY_REV, HISUI_LOC, HISUI_UPSTREAM_TEXT } from './jokers/pokejokers_hisui.js';
+// The owner's Mega batch D (the 18 classic Megas + Mega Salamence hooked up; jokers/pokejokers_megas.js)
+import { MEGA_D_LOC, attach_classic_megas } from './jokers/pokejokers_megas.js';
 import { DESIGN_FAMILIES, DESIGN_LOC, regi_chip_bonus, regi_h_x_mult, regi_enh_vars, slot_cost_removed, drifblim_destroyed, contrary_lifts, mummy_sell,
   freeze_keep, freeze_thaw, frozen_by, spore_first_deal, spore_hand_scored, malamar_chip_bonus, prank_reroll_cost, prank_reroll_shop, prank_shop_start,
   pyukumuku_destroyed, pheromosa_rest, komala_destroy_immune, GALAR_UPSTREAM_TEXT, GALAR_FAMILY_REV, rime_final_deal,
-  jokers_gone_count, glass_x_mult } from './jokers/pokejokers_designs.js';
+  jokers_gone_count, glass_x_mult, pawmot_revive, opportunist_scaled } from './jokers/pokejokers_designs.js';
 
 import { poke_set_type_badge, type_badge, type_tooltip, TYPE_COLOURS } from './systems/types.js';
-import { pokemon_in_pool, pool_filter, init_game_object, evo_item_in_pool } from './systems/pools.js';
+import { pokemon_in_pool, pool_filter, init_game_object, evo_item_in_pool, install_gen_filter } from './systems/pools.js';
 import { shiny_edition, shiny_hooks } from './systems/shiny.js';
 import * as rules from './systems/rules.js';
 import { install_scry, scoring_areas, scry_view, scry_visible } from './systems/scry.js';
@@ -94,7 +107,7 @@ import { SLEEVES } from './sleeves.js';
 import { TYPE_SLEEVE_LOC } from './typesleeves.js';
 import { POKE_UI } from './ui.js';
 import { cfg, hazard_deal_tip } from './systems/utils.js';
-import { family_win_keys, set_family, FAMILY_MEMBER_REV } from './systems/evolution.js';
+import { family_win_keys, set_family, family, FAMILY_MEMBER_REV } from './systems/evolution.js';
 import { runbadge_hooks as RB, runbadge_view } from './systems/runbadges.js';
 import { ELITE_STAKE, elite_boss_eligible } from './stakes.js';
 import { capture_disc_action, APRIL_FOOLS } from './jokers/zzzapril_fools.js';
@@ -147,6 +160,13 @@ const ATLAS_FILES = {
   // white JOKER card and the overworld item icons (PORTING.md "Batch 17").
   rage_candy_bar: ['rage_candy_bar.png'],
   repel: ['repel.png'],
+  // The owner's Paradox content (Gen 9 batch 3, paradox.js), composed by tools/micatro/compose_pokermon_paradox_art.py (owner rule: no
+  // placeholders): the Paradox Ball's Item card (the Ultra Ball card restyled) and the Ancient / Future Packs (2 rows: Normal x2, Jumbo, Mega).
+  paradox_ball: ['paradox_ball.png'],
+  paradox_packs: ['paradox_packs.png'],
+  // Batch E (primal.js): the Blue Orb / Red Orb Item cards, composed by tools/micatro/compose_pokermon_orb_art.py (the Water Stone / Fire
+  // Stone cards with a shaded orb and its Primal's mark).
+  primal_orbs: ['primal_orbs.png'],
 };
 for (const g of ['Gen01', 'Gen02', 'Gen03', 'Gen04', 'Gen05', 'Gen06', 'Gen07', 'Gen08', 'Gen09', 'Natdex', 'Others']) {
   ATLAS_FILES['AtlasJokersBasic' + g] = ['Basic Series/AtlasJokersBasic' + g + '.png'];
@@ -491,6 +511,20 @@ for (const [name, def] of Object.entries(DEFS.jokers)) {
 for (const f of DESIGN_FAMILIES) set_family(f);
 // (Gen 8 batch 3, r72: the Galarian evolutions joined existing lines — older recorded moves look those lines up without them)
 for (const [name, rev] of Object.entries(GALAR_FAMILY_REV)) FAMILY_MEMBER_REV.set(name, rev);
+// (regional batch A: the Alolan lines; Alolan Raichu / Exeggutor / Marowak join the Kanto lines from ALOLA_REV on)
+for (const f of REGIONAL_FAMILIES) set_family(f);
+// (regional batch B: the Galarian lines; the ones sharing an existing final are their own families beside the Kanto line — pushed, not
+// set_family, which would replace it; Galarian Weezing joins Koffing's line from GALAR_FORMS_REV on)
+for (const f of GALARIAN_FAMILIES) set_family(f);
+for (const f of GALARIAN_OWN_FAMILIES) family.push(f.slice());
+for (const f of GALARIAN_BRANCH_FAMILIES) set_family(f);
+for (const [name, rev] of Object.entries(GALARIAN_FAMILY_REV)) FAMILY_MEMBER_REV.set(name, rev);
+for (const [name, rev] of Object.entries(REGIONAL_FAMILY_REV)) FAMILY_MEMBER_REV.set(name, rev);
+// (regional batch C: the Hisuian / Paldean lines; the six Hisuian branch finals join their lines from HISUI_REV on)
+install_hisui_families(set_family);
+for (const [name, rev] of Object.entries(HISUI_FAMILY_REV)) FAMILY_MEMBER_REV.set(name, rev);
+// (Mega batch D: the 19 bases' `megas` and the Megas' family places, both from MEGA_D_REV on)
+attach_classic_megas(centers);
 for (const f of DATA.groups.consumables) for (const item of listOf(f)) centers.push(consumableCenter(item, f.file));
 // Content 3.9.1 adds that data.js (3.2.1) doesn't have (batch 10: Miracle Seed, Heavy-Duty Boots, the Seed card, the Debris
 // deck): its definition carries the whole static data (key, pos, atlas, config, ...) and is built like data.js's, after it.
@@ -540,8 +574,25 @@ for (const [k, d] of Object.entries(D391.loc)) {
 }
 // The owner's designs' text (jokers/pokejokers_designs.js DESIGN_LOC)
 for (const [set, d] of Object.entries(DESIGN_LOC)) Object.assign(DATA.loc.descriptions[set] = DATA.loc.descriptions[set] || {}, d);
+// ... and the Paradox Ball's and the Ancient / Future Packs' (paradox.js; a pack's group name is a dictionary entry)
+for (const [set, d] of Object.entries(PARADOX_LOC)) Object.assign(DATA.loc.descriptions[set] = DATA.loc.descriptions[set] || {}, d);
+DATA.loc.misc.dictionary = Object.assign(DATA.loc.misc.dictionary || {}, PARADOX_DICTIONARY);
+// ... and the Blue / Red Orb's (primal.js)
+for (const [set, d] of Object.entries(PRIMAL_LOC)) Object.assign(DATA.loc.descriptions[set] = DATA.loc.descriptions[set] || {}, d);
+// ... and the regional forms' (jokers/pokejokers_regional.js)
+for (const [set, d] of Object.entries(REGIONAL_LOC)) Object.assign(DATA.loc.descriptions[set] = DATA.loc.descriptions[set] || {}, d);
+for (const [set, d] of Object.entries(GALARIAN_LOC)) Object.assign(DATA.loc.descriptions[set] = DATA.loc.descriptions[set] || {}, d);
+// ... and Mega batch D's (jokers/pokejokers_megas.js)
+for (const [set, d] of Object.entries(MEGA_D_LOC)) Object.assign(DATA.loc.descriptions[set] = DATA.loc.descriptions[set] || {}, d);
 // (Gen 8 batch 3: the Galarian evolutions of Linoone / Corsola / Mr. Mime / Farfetch'd — a box after their own 3.9.1 text)
-for (const [k, lines] of Object.entries(GALAR_UPSTREAM_TEXT)) {
+// ... and the regional batch C forms' (jokers/pokejokers_hisui.js)
+for (const [set, d] of Object.entries(HISUI_LOC)) Object.assign(DATA.loc.descriptions[set] = DATA.loc.descriptions[set] || {}, d);
+// (+ regional batch C: the six Hisuian branch evolutions' box after the earlier stage's own text)
+for (const [k, lines] of Object.entries(HISUI_UPSTREAM_TEXT)) {
+  const e = DATA.loc.descriptions.Joker[k];
+  if (e && e.text && !e.text.includes(lines[1])) DATA.loc.descriptions.Joker[k] = { ...e, text: [...e.text, ...lines] };
+}
+for (const [k, lines] of Object.entries({ ...GALAR_UPSTREAM_TEXT, ...REGIONAL_UPSTREAM_TEXT, ...GALARIAN_UPSTREAM_TEXT })) {
   const e = DATA.loc.descriptions.Joker[k];
   if (e && e.text && !e.text.includes(lines[1])) DATA.loc.descriptions.Joker[k] = { ...e, text: [...e.text, ...lines] };
 }
@@ -721,7 +772,9 @@ const hooks = {
   calculate: rules.calculate,
   add_to_deck: shiny_hooks.add_to_deck,
   // (+ the owner's Purugly: a debuffed one leaving gives its Joker slot back — jokers/pokejokers_designs.js slot_cost_removed)
-  card_removed(card) { slot_cost_removed(card); const r = shiny_hooks.card_removed(card); if (card.area === G.jokers) G.E_MANAGER.add_event(sync_kecleon); return r; },
+  // (+ regional batch A, Alolan Marowak's Shadow Bone: a card of your deck destroyed marks the round — poke_card_destroyed)
+  // (+ regional batch B, Galarian Corsola's Cursed Body: a card of your deck destroyed while it is held — galarian_corsola_destroyed)
+  card_removed(card) { poke_card_destroyed(card); galarian_corsola_destroyed(card); slot_cost_removed(card); const r = shiny_hooks.card_removed(card); if (card.area === G.jokers) G.E_MANAGER.add_event(sync_kecleon); return r; },
   set_edition: shiny_hooks.set_edition,
   // (the Debris Sleeve's alt on the Debris Deck: a Hazard card holds card_limit +1 — backs/backs1.js)
   set_ability: debris_hazard_card_limit,
@@ -731,7 +784,11 @@ const hooks = {
   // (the owner's Drifblim, Aftermath: an owned Drifblim being destroyed makes a Negative Spectral — jokers/pokejokers_designs.js;
   // and the owner's Pyukumuku, Innards Out: a destroyed one pays $1 per round held)
   // (+ the owner's Basculegion, Gen 8 batch 3: an owned Joker destroyed counts for Last Respects — jokers_gone_count)
-  start_dissolve(card) { drifblim_destroyed(card); pyukumuku_destroyed(card); jokers_gone_count(card); },
+  // (+ the owner's Pawmot, Gen 9 batch 1, Revival Blessing: once per Ante an owned Joker destroyed comes back in its place — last, after the
+  // others have seen it leave)
+  start_dissolve(card) { drifblim_destroyed(card); pyukumuku_destroyed(card); jokers_gone_count(card); pawmot_revive(card); },
+  // (the owner's Flittle / Espathra, Opportunist, Gen 9 batch 2: another Joker grew through SMODS.scale_card — js/engine/smods.js / jokers.js)
+  card_scaled: opportunist_scaled,
   // (the owner's Komala, Comatose, r68: Jokers skip it when choosing what to destroy, as an Eternal — the engine's can_be_destroyed_by_joker)
   joker_destroy_immune: komala_destroy_immune,
   edition_weight(w, type) {
@@ -812,6 +869,9 @@ const hooks = {
     if (G.scry_view && scry_visible()) view.areas.scry = scry_view.cards.map((c) => { const v = cardView(c); delete v.facing; delete v.hl; return v; });
     view.poke = { scry_amount: G.GAME.scry_amount || 0, energies_used: G.GAME.energies_used || 0 };
     view.run_badges = runbadge_view();
+    // (an Ancient / Future Pack open: its own pack-screen colours, amber / steel blue; paradox.js)
+    const pp = /^MOD_PACK/.test(view.state || '') && paradox_pack_open();
+    if (pp) view.pack_colours = PACK_COLOURS[pp];
   },
 };
 
@@ -1064,7 +1124,56 @@ export const POKERMON = registerMod({
   // 75 = the owner's Grimmsnarl tweak (2026-11-03): Grimmsnarl keeps Impidimp's $1 reroll discount too (stacking with Impidimp / Morgrem
   // copies), on top of its free first reroll and X0.1 per reroll. Gated by rulesRev (prank_discount75), so runs recorded before r75 replay
   // as recorded.
-  contentRev: 75,
+  // 76 = Gen 9 batch 1 (jokers/pokejokers_designs.js, #919-950; r75 is the owner's Grimmsnarl tweak): Nymble / Lokix (Lunge: 3 or fewer
+  // cards), Pawmi / Pawmo / Pawmot (Lightning team; face $; Revival Blessing: hooks.start_dissolve above), Squawkabilly (Parrot: Planets 1 in 2
+  // to level twice; plumage rolled when obtained), Tadbulb / Bellibolt (discards; Electromorphosis charge), Wattrel / Kilowattrel (Wind Power:
+  // $ per discard left), Maschiff / Mabosstiff (Boss Blinds; Guard Dog: your Jokers can't be debuffed, systems/rules.js set_debuff),
+  // Toedscool / Toedscruel (Mycelium: full deck size) and Klawf (Anger Shell). New jokers only: nothing a recorded run held changes.
+  // 77 = Gen 9 batch 2 (jokers/pokejokers_designs.js, #951-1013): Capsakid / Scovillain (Spicy), Flittle / Espathra (Opportunist: hook
+  // card_scaled), Bombirdier (Stork Delivery: Tags), Varoom / Revavroom (Rev the Engine: systems/rules.js poke_rev_streak), Cyclizar (Ride),
+  // Orthworm (Earth Eater), Glimmet / Glimmora (Toxic Debris: Hazards), Flamigo, Veluza (Fillet Away), Dondozo (Commander, with Tatsugiri),
+  // Poltchageist / Sinistcha (Hospitality) and a NEW EVOLUTION: Wooper -> Clodsire (a Dark Energy used on it; Poison Point), gated by
+  // rulesRev (systems/energy.js GEN9B2_REV; FAMILY_MEMBER_REV), so runs recorded before r77 replay as recorded.
+  // 78 = Gen 9 batch 3, the owner's Paradox Pokémon (jokers/pokejokers_designs.js, #984-1023): 20 single-stage jokers of a new rarity, Paradox
+  // (weight 0, Safari's way: never a shop roll, never a Poké Ball's), each Ancient (Protosynthesis: 50% stronger while it's sunny) or Future
+  // (Quark Drive: 50% stronger on Electric Terrain, the house terrain: is_electric_terrain); the Paradox Ball and the Ancient / Future Packs
+  // (paradox.js) are their only sources. New content only: no older rule changes.
+  // 79 = the generation filter holds (the owner's bug, 2026-11-03: Gen 4 starters with Gen 4 off; systems/pools.js GEN_FILTER_REV): every
+  // Pokémon carries its species' generation (GEN_FIXES: Nacho's 22, Pokermon+'s 6 + Archaludon 9, Hisuian Qwilfish, Mega Skarmory 2,
+  // Mega Gallade 4), the Starter Packs ask the toggles, the attribute pools (Mystery Egg, Tall Grass, Ancient Pack) too, Ruins of
+  // Alph / the Member Card / the Mystery Box leave with their Pokémon's generation, and the random picks (Balls, ...) skip the joke
+  // content while it is off (Spiclops came out of Master Balls). Gated by rulesRev: runs recorded before r79 replay
+  // on the old filter.
+  // 80 = Gen 9 batch 4, the Gen 9 Legendaries (jokers/pokejokers_designs.js, #1001-1017), each complete alone: Wo-Chien (every Blind 15%
+  // lower), Chien-Pao (scored cards X1.1), Ting-Lu (+2 hands in Boss Blinds), Chi-Yu (Boss Blinds disabled), Koraidon (always sunny) and
+  // Miraidon (always Electric Terrain; X2 + X0.5 per Paradox of their era), Ogerpon (a mask an Ante). New content only.
+  // 81 = the owner's regional batch A, the 18 Alolan forms (jokers/pokejokers_regional.js): own lines beside the Kanto originals (Rattata,
+  // Sandshrew, Vulpix, Diglett, Meowth, Geodude, Grimer), three BRANCH evolutions of Kanto Basics by an Energy used on them (Pikachu ->
+  // Alolan Raichu: Psychic; Exeggcute -> Alolan Exeggutor: Dragon; Cubone -> Alolan Marowak: Fire), the house snow (is_snowy; Alolan
+  // Ninetales's Snow Warning, which re-forms Eiscue's ice too) and the regional pill (systems/types.js region_badge; display only). The
+  // branches, their family members and Eiscue's snow are gated by rulesRev (systems/energy.js ALOLA_REV), so runs recorded before r81 replay
+  // as recorded.
+  // 82 = the owner's regional batch B, the 19 Galarian forms (jokers/pokejokers_galarian.js): own lines beside the originals (Ponyta,
+  // Slowpoke -> Slowbro / Slowking by position, Zigzagoon -> Linoone -> Obstagoon, Darumaka -> Darmanitan with its Zen Mode (upstream's unlisted card), the
+  // single Farfetch'd / Mr. Mime / Corsola / Yamask / Stunfisk evolving naturally into Sirfetch'd / Mr. Rime / Cursola / Runerigus, the
+  // three Legendary birds) and one BRANCH of a Kanto Basic by an Energy (Koffing -> Galarian Weezing: Fairy). The branch, Galarian
+  // Corsola's Psychic path and the new family member are gated by rulesRev (systems/energy.js GALAR_FORMS_REV), so runs recorded before
+  // r82 replay as recorded.
+  // 83 = the owner's regional batch C, the Hisuian and Paldean forms (jokers/pokejokers_hisui.js): own lines (Hisuian Growlithe -> Arcanine,
+  // Hisuian Voltorb -> Electrode, Paldean Wooper -> Clodsire, Paldean Tauros with its breed rolled when obtained), six BRANCH evolutions by an
+  // Energy used on the earlier stage (Quilava -> Hisuian Typhlosion: Psychic; Dewott -> Hisuian Samurott: Dark; Dartrix -> Hisuian
+  // Decidueye: Fighting; Petilil -> Hisuian Lilligant: Fighting; Rufflet -> Hisuian Braviary: Psychic; Bergmite -> Hisuian Avalugg: Earth),
+  // and Nacho's Hisuian Sneasel / Sneasler made obtainable (Nacho rev 3). The branches and their family members are gated by rulesRev
+  // (systems/energy.js HISUI_REV), so runs recorded before r83 replay as recorded.
+  // 84 = the owner's Mega batch D (jokers/pokejokers_megas.js): the 18 classic X/Y and ORAS Megas Pokermon had no joker for (Sceptile,
+  // Blaziken, Swampert, Sableye, Mawile, Aggron, Medicham, Manectric, Sharpedo, Banette, Absol, Glalie, Metagross, Latias, Latios, Rayquaza,
+  // Garchomp, Diancie) and Mega Salamence hooked to Pokermon's Salamence. The bases' `megas` (a Mega Stone / Mega Berry Juice target) and the
+  // Megas' family places are gated by rulesRev (MEGA_D_REV), so runs recorded before r84 replay as recorded.
+  // 85 = the owner's batch E, the Primal Reversions (primal.js; jokers/pokejokers_designs.js): the Blue Orb / Red Orb Items turn a Kyogre /
+  // Groudon into Primal Kyogre (+2 hands, Clubs retrigger twice, always raining) / Primal Groudon (+2 discards, Hearts / Diamonds X1.5,
+  // always sunny) for good; a Primal always wins the Primal Clash against the other's normal form. The Orbs reach the pools (Items, and the
+  // Ancient / Future Packs' first card) only from PRIMAL_REV, so runs recorded before r85 replay as recorded.
+  contentRev: 85,
   // Pokermon 3.9.1 pokermon.lua: SMODS.current_mod.optional_features = {quantum_enhancements = true, object_weights = true}.
   // object_weights sends create_card's key, the shop roll, tags, packs, bosses and vouchers through SMODS.poll_object
   // (js/engine/smods.js; batch 17). quantum_enhancements is the engine's check_enhancement, always on.
@@ -1120,15 +1229,21 @@ export const POKERMON = registerMod({
       poke_fairy: '#ff3db6', poke_fighting: '#b85838', poke_colorless: '#c8c0f8', poke_psychic: '#c135ff', poke_metal: '#888080',
       poke_grass: '#289830', poke_dragon: '#c8a800', poke_bird: '#f7b58c', poke_pink: '#ff7abf', poke_pocket: '#e8c069',
       poke_hazard: '#ba7333', poke_sun: '#f48e62', poke_rain: '#6169ff', poke_sand: '#e1c019', poke_snow: '#82c8e8',
+      ...PARADOX_LOC_COLOURS, // (the owner's Paradox pills: {X:poke_paradox} / {X:poke_ancient} / {X:poke_future}, paradox.js)
     },
     rarities: [
       { key: 'poke_safari', name: 'Safari', weight: 0, badge_colour: '#F2C74E' },
       { key: 'poke_mega', name: 'Mega', weight: 0, badge_colour: '#E8578E' },
+      // The owner's Paradox rarity (Gen 9 batch 3): Safari's way, weight 0 (never a shop roll); only the Paradox Ball and the Ancient / Future
+      // Packs make one (paradox.js). Its jokers carry a second pill, Ancient or Future (jokers/pokejokers_designs.js paradox_badges).
+      { key: 'poke_paradox', name: 'Paradox', weight: 0, badge_colour: PARADOX_LOC_COLOURS.poke_paradox },
     ],
     atlases,
     loc: DATA.loc,
   },
   hooks,
+  // every run, after every add-on registered: the generation fixes + every Pokémon's in_pool asks the gen filter (systems/pools.js)
+  reset_run: install_gen_filter,
   challenges: CHALLENGES, // (challenges.js: engine/challenge.js plays them)
   sleeves: SLEEVES, // (sleeves.js: deck variants, engine/sleeve.js)
   ui: POKE_UI, // (ui.js: type pills, energy pips, the Pokédex, shaders, animations — micatro/js/ui/modui.js)

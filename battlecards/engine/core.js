@@ -17,6 +17,9 @@ export const KW = {
 	PACIFIST: 'pacifist',   // can't attack (Ragnaros, Ancient Watcher)
 	CLEAVE: 'cleave',       // combat damage splashes to the defender's neighbors
 	REBORN: 'reborn',       // first death returns it at 1 health
+	BACKGROUND: 'background', // Baldur's Gate: a label on enchantments. Inert on its own and
+	                          // you may control any number; other cards test for one via
+	                          // conditional `if.controlBackground`.
 	SANGUINE: 'sanguine',   // attacking or being attacked banks a Blood Token
 	IMPULSIVE: 'impulsive', // must attack: swings on its own before the turn ends
 	CHROMATIC: 'chromatic', // color boosts roll twice and keep both

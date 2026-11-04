@@ -3657,6 +3657,14 @@ async function pokermonJokersView() {
   let qt = null;
   qIn.oninput = () => { clearTimeout(qt); qt = setTimeout(() => { st.q = qIn.value.trim(); render(); }, 120); };
   const bm = c.byMod;
+  // (Gen 9 batch 4, 2026-11-03: every canonical species has a joker — the list is empty, so the page says so instead of an empty grid)
+  if (!c.missing) {
+    return content.replaceChildren(h('div', { class: 'pj-head pj-done' },
+      h('h1', null, 'Pokermon jokers not in the game yet ', h('span', { class: 'num' }, '(0)')),
+      h('p', null, 'All ' + c.dex + ' canonical Pokémon have a joker in ', h('a', { href: '#/micatro-mods/mod/pokermon' }, 'Pokermon'),
+        ' (' + bm.pokermon.species + ' species), ', h('a', { href: '#/micatro-mods/mod/nacho' }, 'Nacho’s Pokermon Dip'), ' (' + bm.nacho.species + ') or ',
+        h('a', { href: '#/micatro-mods/mod/pokermonplus' }, 'Sonfive’s Pokermon+'), ' (' + bm.pokermonplus.species + '). Nothing is left to design here.')));
+  }
   content.replaceChildren(
     h('div', { class: 'pj-head' },
       h('h1', null, 'Pokermon jokers not in the game yet ', h('span', { class: 'num' }, '(' + c.missing + ')')),

@@ -71,7 +71,7 @@ sec(() => {
   const keys = MODS.pokermon.content.centers.filter((c) => c.set === 'Joker').map((c) => c.key);
   // (b follows a, past any joker from upstream main between them: sub-batch 15b's sit in main's order among 3.9.1's)
   // (and past the owner's designs: the Trapinch line sits between Spinda and Cacnea)
-  const fromMain = new Set([...Object.entries(D391.new_jokers || {}).filter(([, v]) => v.upstream === 'main').map(([n]) => 'j_poke_' + n), ...(STATUS.PORTED_FILES['micatro/pokejokers_designs'] || []).map((n) => 'j_poke_' + n)]);
+  const fromMain = new Set([...Object.entries(D391.new_jokers || {}).filter(([, v]) => v.upstream === 'main').map(([n]) => 'j_poke_' + n), ...(STATUS.PORTED_FILES['micatro/pokejokers_designs'] || []).map((n) => 'j_poke_' + n), ...(STATUS.PORTED_FILES['micatro/pokejokers_megas'] || []).map((n) => 'j_poke_' + n)]);
   const after = (a, b) => { let i = keys.indexOf('j_poke_' + a) + 1; while (fromMain.has(keys[i])) i++; return i > 0 && keys[i] === 'j_poke_' + b; };
   ok(after('spinda', 'cacnea') && after('cacturne', 'swablu') && after('armaldo', 'feebas') && after('milotic', 'kecleon') && after('kecleon', 'duskull')
     && after('dusclops', 'shuppet') && after('banette', 'tropius') && after('chimecho', 'absol'), 'inserted in 3.9.1 file order');
@@ -96,7 +96,7 @@ sec(() => {
   const fam = (n) => JSON.stringify(poke_get_family_list(n));
   ok(fam('cacturne') === '["cacnea","cacturne"]' && fam('swablu') === '["swablu","altaria"]' && fam('crawdaunt') === '["corphish","crawdaunt"]'
     && fam('claydol') === '["baltoy","claydol"]' && fam('lileep') === '["lileep","cradily"]' && fam('armaldo') === '["anorith","armaldo"]'
-    && fam('banette') === '["shuppet","banette"]', 'families: the 7 lines');
+    && fam('banette') === '["shuppet","banette","mega_banette"]', 'families: the 7 lines (+ Mega batch D: Mega Banette)');
   ok(fam('chimecho') === '["chingling","chimecho"]', 'family: Chingling / Chimecho (Chingling: sub-batch 14)', poke_get_family_list('chimecho'));
 });
 sec(() => {

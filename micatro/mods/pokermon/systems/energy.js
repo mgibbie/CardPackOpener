@@ -223,14 +223,27 @@ function energy_override(kind, self, card, area, copier) {
  * (poke_evolve; the evolved card re-applies its Energy to the new base). Never while debuffed, nor with an Everstone owned (it
  * blocks every evolution). Targeting (energy_card): a highlighted joker as ever; with none highlighted the Energy still goes to the
  * leftmost joker it can ENERGIZE, and only when there is none to the leftmost joker it can evolve. Moves recorded before r72 (a
- * resumed / replayed old run, js/mods/pins.js RULES) never see it: such an Energy was refused there.
+ * resumed / replayed old run, js/mods/pins.js RULES) never see it: such an Energy was refused there. A later path names its own rev
+ * (`rev`: the Gen 9 batch 2 Wooper -> Clodsire, a Dark Energy), so runs recorded before it replay as recorded too.
  */
 export function energy_evo_target(v, etype) {
   const ee = v && v.config && v.config.center && v.config.center.poke_energy_evo;
   if (!ee || !etype || ee.etype !== etype || !P_CENTERS[ee.into] || v.debuff || v.removed) return false;
-  if (rulesRev('pokermon') < 72 || find_joker('everstone').length > 0) return false;
+  if (rulesRev('pokermon') < (ee.rev || 72) || find_joker('everstone').length > 0) return false;
   return true;
 }
+/** The Gen 9 batch 2 rules rev (the owner's, 2026-11-03): Wooper -> Clodsire (a Dark Energy), and the line's new member. */
+export const GEN9B2_REV = 77;
+/** Regional batch A, the Alolan forms (the owner's, 2026-11-03): Pikachu -> Alolan Raichu (Psychic), Exeggcute -> Alolan Exeggutor (Dragon),
+ *  Cubone -> Alolan Marowak (Fire), each an Energy used on it, and those lines' new members; Alolan Ninetales's snow for Eiscue. */
+export const ALOLA_REV = 81;
+/** Regional batch B, the Galarian forms (the owner's, 2026-11-03): Koffing -> Galarian Weezing (a Fairy Energy), Galarian Corsola -> Cursola
+ *  (a Psychic Energy), Galarian Weezing's place in Koffing's line, and Galarian Corsola's destroyed-card bank. */
+export const GALAR_FORMS_REV = 82;
+/** Regional batch C, the Hisuian and Paldean forms (the owner's, 2026-11-03; jokers/pokejokers_hisui.js): Quilava -> Hisuian Typhlosion
+ *  (Psychic), Dewott -> Hisuian Samurott (Dark), Petilil -> Hisuian Lilligant (Fighting), Rufflet -> Hisuian Braviary (Psychic), Bergmite ->
+ *  Hisuian Avalugg (Earth), Dartrix -> Hisuian Decidueye (Fighting), each an Energy used on it, and those lines' new members. */
+export const HISUI_REV = 83;
 function energy_evolve(v) { poke_evolve(v, v.config.center.poke_energy_evo.into); }
 
 /** The first joker (left to right) this Energy can go on, or false. */

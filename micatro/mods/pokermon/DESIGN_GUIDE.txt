@@ -124,7 +124,8 @@ Notable gaps:
   - Legendaries and mythicals: most of Gens 4-9 (the Regis, the Lati twins, the weather trio, the
     creation trio, Regigigas, Arceus, the Lake trio, Cresselia, Manaphy and Phione, all 12 Gen 5 Legendaries, Yveltal / Zygarde / Diancie / Hoopa / Volcanion and the 14 Gen 7 Legendaries (Type: Null, the
     Tapus, the Cosmog line, Necrozma, Magearna, Marshadow, Zeraora) and the 10 Gen 8 Legendaries (Zacian, Zamazenta, Eternatus, Zarude, Regieleki,
-    Regidrago, Glastrier, Spectrier, Calyrex, Enamorus; contentRev 74) are now the owner's designs): the Ruinous four, Koraidon and Miraidon.
+    Regidrago, Glastrier, Spectrier, Calyrex, Enamorus; contentRev 74) and the 7 Gen 9 Legendaries (the Ruinous four, Koraidon, Miraidon,
+    Ogerpon; contentRev 80) are now the owner's designs).
   - Fossils: the four Galar fossils are still missing; the Tirtouga and Archen lines (Gen 5) and the Tyrunt and
     Amaura lines (Gen 6) are now house fossils on the "Ancient" mechanic (2.5).
   - Ultra Beasts: all 11 are now the owner's designs (Gen 7 batch 3, contentRev 66), on a shared UB mechanic,
@@ -306,6 +307,15 @@ House pattern: a WEATHER TRIO, clash and calm (the owner's Kyogre / Groudon / Ra
     bank in a non-energy field). A rival with no number (Kyogre: +1 hand and a retrigger) is Energy-inert, marked
     poke_no_energy_field: true (the audit in pokermon_new_jokers_test needs one or the other).
   - Tooltip: the clash state ("Kyogre's round (4 Clubs, 1 red)", "calmed by Rayquaza", "no Groudon", "read on the next first deal").
+  - PRIMAL forms (batch E, the owner's "orb version yes", contentRev 85; primal.js): the Blue Orb / Red Orb (Items, $4, saveable) turn the
+    selected / leftmost undebuffed Kyogre / Groudon into Primal Kyogre (+2 hands, Clubs retrigger twice, always raining) / Primal Groudon
+    (+2 discards, Hearts / Diamonds X1.5, always sunny) FOR GOOD. A Primal is its normal form pushed one step (the Mega rule of thumb, but
+    permanent) and stands on that form's SIDE of the trio: the clash, the rain / sun checks and Castform's lock read the side (normal +
+    Primal: `side`, `PRIMAL_SIDES`), so every reader of "Kyogre working" sees Primal Kyogre too. A Primal on one side only wins every round
+    (no count); Primal vs Primal the first deal decides as before; Rayquaza calms all. Represented as a Legendary FORM (rarity 4, stage
+    Legendary, in_pool false, `poke_primal`), not poke_mega: the Mega Stone never touches it, and the reversion fires no poke_evolved.
+    An Orb is in a pool only while its species is held (and only on its rules rev); the Ancient / Future Pack's first card may be the
+    sun / sea Orb 1 in 4. A held Primal keeps its species out of the pools (Showman aside).
 
 House pattern: an EON DUO, a pair on two halves of a resource (the owner's Latias / Latios, jokers/pokejokers_designs.js eon):
   - Each grows on HALF of a resource at full rate: Latias X0.15 per Tarot used, Latios X0.15 per Planet (context.using_consumeable,
@@ -501,7 +511,8 @@ House pattern: NO DEBUFF, a rule-bender Legendary (the owner's Cresselia, Lunar 
   - The debuff state is only recomputed when something asks (the Blind's set_blind / disable pass, a card's set_ability). So the joker
     re-runs the Blind's pass over G.playing_cards from add_to_deck AND remove_from_deck (which also run on a debuff / un-debuff), QUEUED
     (an event): by then the card has landed, left, or been marked debuffed. Only while facing a Blind (nothing is debuffed outside one).
-  - It protects playing cards only: jokers can still be debuffed (Crimson Heart), the joker itself included. Jokers that debuff on purpose
+  - It protects playing cards only: jokers can still be debuffed (Crimson Heart), the joker itself included (the Gen 9 Mabosstiff is the
+    Jokers' version: YOUR JOKERS CAN'T BE DEBUFFED, below). Jokers that debuff on purpose
     for their own payoff (Baby faints, "debuff self this round") are jokers, so they still work.
   - The rule is Energy-inert; give the joker a number (Cresselia's X1.5, `Xmult`) so Energy still has something to raise. With Pokermon+'s
     Darkrai: no interaction to write (it never debuffs cards); its held-Energy energizing raises the X like any joker's.
@@ -681,7 +692,84 @@ House pattern: a GLASS-X RULE on the card (the Gen 8 Glastrier; glass_x_mult): t
 House pattern: a SELL-VALUE DRAIN BANK (the Gen 8 Zarude; jungle_drain): when a Blind is selected each OTHER Joker loses $1 (Lampent's poke_drain,
   one way, never below $1) and the joker banks X per $1 actually drained (measured as the sell_cost drop). Not Blueprint (a copy would drain twice).
   It eats its own row's sell value: a cost the player sees, and runs dry once every Joker is at $1.
+House pattern: a REVIVAL, a destroyed Joker comes back (the Gen 9 Pawmot, Revival Blessing; pawmot_revive):
+  - Pokermon's hooks.start_dissolve (every DESTROYING path ends in Card:start_dissolve: Ceremonial Dagger, Madness, Hex, Ankh, Bewear,
+    Cursola's crumble, Mr. Bones); SELLING never reaches it (Card:sell_card removes the card itself), nor an evolution (set_ability), nor the
+    "eaten" self-removals (Gros Michel, Ice Cream, Popcorn, Jelly Donut, the eggs: remove(), not a dissolve). Run it LAST in the hook, after
+    the leaving card has been counted (Drifblim's Aftermath, Basculegion's Last Respects still see it go).
+  - Synchronous, in the hook: copy_card (Ankh's copy: center, edition — a Negative keeps its own slot —, Eternal / Perishable with its tally /
+    Rental, Tera sticker, Energy, every banked value: card.ability exactly), add_to_deck, then emplace at the leaving card's 1-based slot
+    (G.jokers.emplace(copy, index + 1)), so the copy holds its place when the original goes: the row never grows and never reorders. Clear the
+    copied queue_negative_removal and debuff; re-read set_debuff after (a lasting source comes back, a Crimson Heart pick doesn't).
+  - Room: only if the row WITHOUT the leaving card plus G.GAME.joker_buffer is below the limit (a pending creation already owns the freed
+    slot: nothing comes back, the blessing stays ready). Once per Ante, on the reviver (`blessing_ante`, fixed); another of your Jokers only
+    (a lone Pawmot destroyed stays gone; two Pawmots revive each other); a debuffed reviver does nothing. No RNG, so resume / replay match.
+  - It turns every "destroy a Joker" payoff into a free gain once an Ante (Ceremonial Dagger's Mult, Madness's X0.5): fine on a Stage 2,
+    keep it once per Ante.
+House pattern: YOUR JOKERS CAN'T BE DEBUFFED (the Gen 9 Mabosstiff, Guard Dog; systems/rules.js set_debuff, guard_dog_refresh):
+  - Cresselia's NO DEBUFF line, for Jokers: a Joker in G.jokers answers 'prevent_debuff' while find_joker finds the guard (itself included).
+    It blocks Crimson Heart (its pick is made, then refused), SMODS debuff sources and any mod's set_debuff answer.
+  - Not a Perishable's end of life (perish_tally 0: the sticker's cost, so the guard gives no answer there and the engine's perishable check
+    debuffs it — the guard itself too, which then stops guarding), and not a fainted Baby (rules.js answers true for it FIRST: a joker's own
+    cost). Say both on the card.
+  - Gaining it lifts the row's current debuffs at once (re-run set_debuff on each debuffed Joker, queued); losing it re-reads only the
+    lasting sources (debuff_sources). Crimson Heart's last pick is gone with the guard; it picks again on the next hand.
+House pattern: a CHARGE fired by the NEXT scoring hand (the Gen 9 Bellibolt, Electromorphosis; Cramorant's missile, with a growing X):
+  each player discard (pre_discard without `hook`, once per discard) banks +X0.25 on `charge_Xmult` (from X1; gain `Xmult_mod` +20%);
+  joker_main gives it and MARKS it fired (not a Blueprint's), `after` resets it to X1 (Drifblim's Blueprint-safe release: a Blueprint either
+  side copies the full X, one reset); a debuffed hand has no joker_main, so it doesn't fire; lost at the main end_of_round.
+House pattern: $ PER DISCARD LEFT (the Gen 9 Wattrel / Kilowattrel, Wind Power): calc_dollar_bonus reads current_round.discards_left at the
+  cash-out (Delayed Gratification's read without its "no discard used" condition): $1 / $2 each, fixed (Energy-inert), a row of the cash-out
+  list; Blueprint never copies it, a debuffed one pays nothing. The Red Deck's 4 discards make it $4 / $8 unspent.
+House pattern: FULL-DECK SIZE (the Gen 9 Toedscool / Toedscruel, Mycelium): G.playing_cards minus broken / destroyed (unbroken), counted
+  ABOVE a threshold, never below 0: +4 Chips per card above 52, X1 + X0.02 per card above 40 (X1.24 on a fresh deck). Rewards Pokermon's
+  deck growth (Seeds, Hazards, Certificate, DNA, Marble); a deck thinned below the line gives nothing.
+House pattern: HANDS ALREADY PLAYED THIS ROUND as an X (the Gen 9 Klawf, Anger Shell): X1 + X1 per current_round.hands_played (the
+  pre-hand count while scoring: the first hand X1). A round goes on only while the Blind is unbeaten, so "each earlier hand that didn't beat
+  it" IS hands_played. X1 / 2 / 3 / 4 on the Red Deck's hands (X1 / 2.6 / 4.2 / 5.8 with 3 Energy): big only on hands that already failed,
+  so it rescues rounds rather than racing them (Regidrago's X falls with the same count).
+House pattern: GROWTH OF OTHER JOKERS (the Gen 9 Flittle / Espathra, Opportunist; opportunist_scaled): the engine tells the mods' `card_scaled` hook
+  whenever a card's value goes UP through SMODS.scale_card (js/engine/smods.js; the vanilla jokers Steamodded routes there, js/engine/jokers.js
+  vscale, are heard even when nothing listens to the scaling_card seam). That covers every house bank (bank / round_bank) and every upstream joker
+  that scales through scale_card; a value raised by a plain `+=` is not heard (route a new bank through bank()). One call = one event, whatever
+  the amount; a '-' or a lowering function is no growth (the hook reads the value before and after). The listener's OWN gain must never count for
+  another listener (two Flittles would feed each other forever): skip the listeners' keys. Blueprint never scales, so it never counts.
+  Prefer the hook over a scaling_card listener in a center's calculate: a listener there turns on the seam for every Pokermon run (`wanted`),
+  which re-routes the vanilla jokers' scaling (a risk for old replays).
+House pattern: a RUN-WIDE STREAK the mod keeps (the Gen 9 Varoom / Revavroom, Rev the Engine; G.GAME.poke_rev_streak in systems/rules.js
+  calculate): +1 in `after` of every hand played (a debuffed hand too), 0 on post_discard (only YOUR discards: an effect's never fires it), kept
+  across rounds, so a late buy sees the whole streak. While a hand scores the joker counts it (streak + 1: "this hand included").
+House pattern: a SELL-VALUE SHEDDER (the Gen 9 Veluza, Fillet Away; fillet_away): at end of round it loses $1 of its OWN sell value (extra_value
+  down, set_cost) and banks X. Pokermon's sell value never goes below $1 (systems/rules.js set_cost, the drain floor), so it stops at $1 and
+  stops banking there; a neighbour feeding it (Poltchageist / Combee honey) restarts it. Check the drop against the floor (sell_cost - loss >= 1),
+  never against $0, or it would bank forever while extra_value sinks.
+House pattern: a SCORED-CARD DECK CONVERSION with a cap (the Gen 9 Glimmora, Toxic Debris): each scored Stone turns a random deck card into a
+  Hazard (deck_convert: unenhanced first) but never a Stone (its own fuel) nor a card of the played hand (still scoring), at most 3 a hand
+  (`debris_cap`, keyed by G.GAME.hands_played). Not Blueprint (it changes the deck).
+House pattern: a PARTNER BY POSITION (the Gen 9 Dondozo, Commander): X2, X4 while an undebuffed Tatsugiri is DIRECTLY to its left. Tatsugiri's own
+  Commander (the leftmost Water Joker) still applies, so Tatsugiri + Dondozo at the left end pay both.
+  The Energy-triggered evolution (energy_evo_target) takes a per-path rules rev (`poke_energy_evo.rev`, default 72): Wooper -> Clodsire (a Dark
+  Energy) checks the Gen 9 batch 2 rev (systems/energy.js GEN9B2_REV); its family member rev is in FAMILY_MEMBER_REV (GALAR_FAMILY_REV). A second
+  Stage 1 on the same line (Quagsire / Clodsire) makes Transformation's highest form a seeded pick of the two (Yamask's).
 
+House pattern: a REQUIREMENT CUT when the Blind is set (the Gen 9 Wo-Chien, Tablets of Ruin; tablets_of_ruin): Poison Gas's requirement plumbing
+  (BN math, blind.chip_text, emit('blind', {action: 'chips'}) so the HUD's "Score at least" shows it) at setting_blind, QUEUED so the Blind's own
+  set-up (The Wall's x4, Violet Vessel's x6, a mod blind's setting_blind) is already in the number; Chicot's halving composes (two multiplications).
+  One cut per Blind whatever the copies: a shared G.GAME record keyed by the round (nothing stacks; a Blueprint copies nothing). Gained mid-Blind:
+  from the next Blind; sold mid-Blind: this Blind keeps it. A % that is the whole ability is fixed (Energy-inert), so a second copy is worthless.
+House pattern: a BOSS DISABLER beside Chicot (the Gen 9 Chi-Yu, Beads of Ruin; beads_disable): Chicot's two moments (setting_blind for a Boss,
+  queued; add_to_deck during a Boss, un-debuffing included). Blind:disable is NOT idempotent (The Wall halves again, The Needle / The Water give
+  again), so a second disabler checks `blind.disabled` at the moment it acts AND stands down while an undebuffed Chicot is held (Chicot's own
+  setting_blind never checks: vanilla two-Chicot behaviour is left alone). Energy-inert, not Blueprint.
+House pattern: a WEATHER SOURCE (the Gen 9 Koraidon / Miraidon): a Legendary that makes the weather adds itself to the ONE shared check every reader
+  uses (volcarona_sun for the sun: Cherrim / Larvesta / Lurantis / Castform / Protosynthesis; is_electric_terrain for the terrain), never a copy of it,
+  so every present and future reader agrees. It ADDS weather, never removes another's: Kyogre's lock still keeps Castform Rainy and Swift Swim's rain
+  still falls. Live (bought / sold / debuffed changes it at once). Pair it with a number (X2 + X0.5 per Paradox of its era) so Energy has a target.
+House pattern: a FORM PER ANTE with its own type (the Gen 9 Ogerpon's masks; OGERPON_MASKS / mask_now / ogerpon_sync): Deerling's derived cycle
+  (mask_of_ante: nothing rolled or stored) + Greninja's protean_set for the type, run from the center's `update` hook (it runs before every calculate,
+  so other jokers' type counts see the new mask at once), on add_to_deck and in the tooltip; Monotype-exempt (it changes on its own). One energy field
+  per mask's number (mult / Xmult / Xmult2 / chips: every Energy raises all four, Castform's way); the CURRENT type's Energy matches. A per-round
+  "+1 hand" while in one mask is Dubwool's Cotton Guard grant (`well_round`), taken back unused at the round's end, never round_resets.
 House pattern: SCORING A DEBUFFED CARD, and debuffs as a resource (the owner's Snivy line, Contrary; jokers/pokejokers_designs.js
 contrary_held / contrary_lifts):
   - A held-in-hand payoff for DEBUFFED cards (Snivy +4 / Servine +8 Mult each): the individual context on G.hand with
@@ -1072,6 +1160,18 @@ House pattern: SANDSTORM, the house sandstorm (the Gen 8 Sandaconda; jokers/poke
   - Flygon's "{C:poke_sand}Sandstorm:" and the Hippopotas line's "{C:poke_sand}Sand Stream:" are move NAMES (their own Stone / discard
     rules); they neither make nor read the weather. Castform has no sand form: a sandstorm never changes its forecast (its Clubs /
     red / Spades read stands). Sun, rain and sand are independent (all three can hold at once).
+House pattern: ELECTRIC TERRAIN, the house terrain (the Gen 9 Future Paradox Pokemon; jokers/pokejokers_designs.js is_electric_terrain /
+  electric_terrain, exported):
+  - The FOURTH shared weather check: the round's FIRST deal holds strictly MORE Diamonds than any other suit (a tie for the top is not; a
+    Wild card counts for every suit, so it never breaks a tie; Stone / debuffed / suitless cards count for none). Read on the first deal
+    like the forecast (paradox_read: `terrainread_round` / `terrain_round` on the card), so a Future gained mid-round waits for the next
+    deal. Nothing makes it yet: a future terrain setter (Miraidon, Pincurchin's Electric Surge...) adds itself to is_electric_terrain.
+  - A Diamonds-heavy first deal is red, so it is sunny too: an Ancient and a Future are both boosted on an all-Diamonds deal.
+House pattern: PARADOX BOOSTS, Protosynthesis / Quark Drive (the Gen 9 Paradox Pokemon): "boosted" = 50% stronger. A +Mult / +Chips
+  number x1.5; an X number's BONUS part x1.5 (X2 -> X2.5, X1.2 -> X1.3; boost_add / boost_x). Ancient: while it's sunny
+  (cherrim_sunny: the red first deal, a working Groudon, Volcarona — read from its own first deal, Larvesta's fields); Future: on Electric
+  Terrain. Energy raises the base number at the usual share; the boost multiplies the energized value. Blueprint copies the boosted value
+  (it never reads the weather itself). A creation (Iron Bundle's Tarot / Planet) is never boosted.
   - Sandaconda's own payoff is weather-free (scored Stone +20 Chips and X1.2: Stone "extra" rules on the joker, Sand Stream's shape).
     r73 (the owner's): it keeps Silicobra's Sand Spit too (its own num / dem, the same 'silicobra_spit' roll), so the Stage 1 makes the
     Stones it pays for.
@@ -1175,6 +1275,54 @@ House pattern: Ancient JACKS (the Galar fossils Dracozolt / Arctozolt / Dracovis
   evolution; a 2+ tier may be a retrigger (every scored Jack, or only the FIRST scored Jack twice), a 3+ tier $3 (once a hand) or +1 hand
   (once a round, not Blueprint).
 
+House pattern: REGIONAL FORMS (the owner's regional batch A, the 18 Alolan forms; jokers/pokejokers_regional.js):
+  - Own lines (the form has its own line: Alolan Rattata / Sandshrew / Vulpix / Diglett / Meowth / Geodude / Grimer) are their OWN pool entries
+    beside the originals, on the original line's rarity / cost slot stage by stage, with their own families (neither keeps the other out of the
+    shop); a level_evo of 4-5 rounds. Branch forms (the original's Basic evolves into the form: Raichu, Exeggutor, Marowak) use the
+    ENERGY-TRIGGERED EVOLUTION with a `rev` (Pikachu + Psychic, Exeggcute + Dragon, Cubone + Fire; FAMILY_MEMBER_REV for the line's new member;
+    a branch member goes BEFORE the line's Megas in set_family so get_highest_evo still finds both Stage 1s).
+  - The REGIONAL PILL (systems/types.js region_badge): every regional form shows "Alolan" / "Galarian" / "Hisuian" / "Paldean" between its
+    rarity and type pills, read from `poke_region` or the key (`j_<prefix>_<region>_<name>`), so a new form needs nothing more. Display only.
+House pattern: SNOW, the house snow (Alolan Sandshrew / Sandslash / Ninetales; pokejokers_designs.js is_snowy / snow_read, exported): the FOURTH
+  weather. Snowy = the round's first-deal forecast is Snowy (round_forecast: Castform's read with the Kyogre / Groudon locks and Volcarona's sun),
+  read once a round on the card, OR an undebuffed Alolan Ninetales held (Snow Warning: live, the shop too). Snow adds, never removes; Castform's
+  form never changes for Ninetales; Eiscue's ice re-forms on a snowy round (Ninetales included, from the batch's rev). A future snow source
+  (Snow Warning on another joker) adds itself to snow_warning.
+House pattern: HELD STONE AS STEEL (Alolan Golem, Galvanize; pokejokers_designs.js galvanized in regi_h_x_mult): a Stone card held counts as a
+  Steel card for its held X only (X1.5, or the best Registeel / Durant / Escavalier rule's: the card-level rule, never stacking); no other Steel
+  read sees it.
+House pattern: a FULL-DECK DEVOURER on Blind select (Alolan Grimer / Muk, Gluttony): when a Blind is selected the lowest-ranked card of the full
+  deck (Aces high, rankless skipped, ties seeded) is destroyed through poke_remove_card; the bank's gain is energized, the bank isn't.
+House pattern: DESTROYED THIS ROUND, run-wide (Alolan Marowak; G.GAME.poke_destroyed_round from index.js's card_removed hook): any card of your
+  deck destroyed marks the round, so a joker gained mid-round still sees an earlier destruction.
+House pattern: REGIONAL FORMS that share an existing final (the owner's regional batch B, the Galarian forms; jokers/pokejokers_galarian.js):
+  set_family REPLACES the family that shares a member, so a regional line ending in an existing evolution (G-Zigzagoon -> G-Linoone -> Obstagoon,
+  G-Farfetch'd -> Sirfetch'd, G-Corsola -> Cursola, G-Mr. Mime -> Mr. Rime, G-Yamask -> Runerigus) is PUSHED as its own family: its own pool entry
+  (the original never blocks it), its own highest / previous evo, while the final's own lookups keep its original line (it is found there first).
+  Reuse the original's evolution rule where it has one (farfetchd_lucky, RUNERIGUS_STONES, the Energy path) so both forms evolve the same way.
+House pattern: an EVOLUTION BRANCH BY POSITION (Galarian Slowpoke; slow_branch): Charizard's Mega X / Y read at evolution time — leftmost of your
+  Slowpokes (any form) one branch, rightmost the other, alone / between a seeded pick on the joker's own stream; read only in the countdown pass.
+House pattern: the ROUND'S FINAL HAND (Galarian Darmanitan / Articuno / Moltres; final_hand / final_next): while it scores, hands_left is 0; the face
+  and tooltip read "a round with at most 1 hand left" (Zen Mode's card shows then). A form drawn on another sheet cell: the center's `poke_form_art`
+  {form: {atlas, pos}} with poke_view_form (ui.js ownFace; Shiny through basicShiny). Check the sheet before composing art: 3.9.1 draws some forms
+  UNLISTED beside the listed card (Galarian Zen Darmanitan, Gen05 {2,8}).
+House pattern: LUCKY ODDS on the mod_probability pass (Galarian Ponyta / Rapidash; Pidove's super_luck): "always triggers" raises the numerator to
+  the denominator on 'lucky_mult' only; "doubled" multiplies both rolls' numerators (Oops!'s shape, Lucky only; copies multiply). A per-trigger payoff
+  reads lucky_procs (a card whose two rolls hit counts twice).
+House pattern: a FREE FIRST DISCARD (Galarian Stunfisk, Snap Trap): pre_discard, a player's discard (not The Hook's), discards_used 0, once a round:
+  ease_discard(+1) queued before the discard's own -1, so discards left stay and discards_used still counts it.
+House pattern: REGIONAL FORMS, batch C (the owner's Hisuian and Paldean forms; jokers/pokejokers_hisui.js):
+  - A BRANCH from a Basic: in our 2-stage lines the canon Stage 1 is the Basic's evolution, so the Energy branch sits on the Basic (Petilil +
+    Fighting -> Hisuian Lilligant, Rufflet + Psychic, Bergmite + Earth). A starter final reached by a branch KEEPS its line's fixed perk (+1
+    discard / +1 hand / +1 hand size), as its Stage 1 has it.
+  - An own line that ends in a species another line already reaches (Paldean Wooper -> Clodsire): a SECOND family holding that final, pushed after
+    the first (`family.push`), so Clodsire's previous evolution stays the first line's and neither Basic keeps the other out of the shop.
+  - A ROLLED BREED with its own type (Paldean Tauros; Toxtricity's roll on obtain + Ogerpon's protean_set): the breed picks the scored-card rule,
+    a fixed perk and the type (not Monotype-exempt: fixed once rolled); a shop card shows the first breed.
+  - A FIRST-HAND destroyer (Hisuian Arcanine, Head Smash): Steamodded's destroy_card on the round's first hand, the first card of the scoring
+    hand that scores (a debuffed one is never it); Blueprint copies the X only.
+  - ALL DISCARDS USED (Sneasler, Unburden): discards_left 0 AND at least one used this round (a round with no discards never counts).
+
 2.2 Rarity and cost conventions
 -------------------------------
 Rarities:
@@ -1182,6 +1330,11 @@ Rarities:
   Safari: weight 0. The tooltip says "Can only be obtained through Evolution or certain
     Pokeball Items" (also the Safari Tag). Nearly every evolved Pokemon is Safari.
   Mega: weight 0. Only reached with a Mega Stone or a Mega Berry Juice.
+  Paradox (the owner's, Gen 9 batch 3, 'poke_paradox'): weight 0, Safari's way. Only the Paradox Ball (an Item, $4, pool weight 3)
+    and the Ancient / Future Packs (Buffoon sizes: $4 1 of 2, $6 1 of 4, $8 2 of 4; shop weights 0.3 / 0.3 / 0.075, half a Buffoon's)
+    make one; get_random_poke_key skips the rarity unless asked for it (no Poke Ball, Transformation or illusion rolls one). The 20
+    Paradox Pokemon are single-stage Basics, $7, Rare-equivalent power, each with a second pill: Ancient (amber) or Future (steel
+    blue), the center's `poke_paradox` era. A new Paradox design: give it `paradox(...)` and its era's boost box (PROTO / QUARK).
 
 Observed rarity/cost, Pokemon jokers in all three mods (count in brackets):
   Baby       U $4 (10), C $3 (4); rarely R $3-$6 (Wynaut, Chingling, Riolu)
@@ -1398,11 +1551,26 @@ the Gen 8 batch 2 fixed fields: reroll_discount (Impidimp's $1; Morgrem's since 
 card.ability), the banks burn_mult / burn_Xmult / prank_Xmult (their gains mult_mod / Xmult_mod are energized), the state burn_round. Carried
 for the next stage: Impidimp / Morgrem `Xmult_mod` (Grimmsnarl's). Two energy fields on one number pair: Toxtricity's Amped `Xmult` and Low Key
 `chips`;
+the Gen 9 batch 2 fixed fields: d_size (Scovillain), num / dem (Bombirdier's 1 in 2, Clodsire's 1 in 4), hands / h_size (Cyclizar), debris_cap
+(Glimmora's 3 a hand), val_loss (Veluza's $1), honey (Poltchageist / Sinistcha's $1); the banks opp_mult / opp_Xmult (Flittle / Espathra; gains
+mult_mod / Xmult_mod energized) and fillet_Xmult (Veluza; gain Xmult_mod). Carried for the next stage: Poltchageist `Xmult_mod` (Sinistcha's).
+Two energy fields on one number pair: Scovillain `chips` / `Xmult_multi`, Flamigo `Xmult` / `Xmult2`, Dondozo `Xmult` / `Xmult2`. Energy-inert:
+Bombirdier (odds), Cyclizar (hand, hand size);
 the Gen 8 batch 3 fixed fields: perish_rounds (Cursola), card_limit / tarot_money / gender (Indeedee), steel_money (Copperajah),
 ancient_money / retriggers / hands / hand_round (the Galar fossils), form (Eiscue's face, Morpeko's mode, Alcremie's 63 Sweet x Cream),
 the counters lucky_round / lucky_count (Farfetch'd / Sirfetch'd), stones_scored (Yamask), stripe_scored (Basculin), snow_round (Eiscue).
 Two energy fields on one number pair: Obstagoon `Xmult` / `Xmult2` (X2 / X3), Eiscue `Xmult` / `Xmult2` (Ice / Noice), Morpeko `mult` / `Xmult`.
 Energy-inert by design: Mr. Rime (no number), Copperajah (its $ is fixed), a ♀ Indeedee (its `Xmult` is dropped when it rolls ♀).
+the Gen 9 batch 1 fixed fields: face_money (Pawmo's $1), blessing_ante (Pawmot's once per Ante), num / dem / levels (Squawkabilly's 1 in 2, one
+extra level), wind_money (Wattrel / Kilowattrel), the bank charge_Xmult (Bellibolt; its gain Xmult_mod is energized) and its state charge_fired,
+the plumage poke_plumage (on card.ability). Carried for the next stage: Pawmo `Xmult` (Pawmot's X1.5; no Xmult_mod beside it, so evolution never
+copies it over). Energy-inert by design: Squawkabilly (odds and a level), Wattrel / Kilowattrel (their $ is fixed).
+the Gen 9 Paradox Pokemon's fixed fields: d_size (Gouging Fire's discard), the reads sunread_round / sun_round / terrainread_round /
+terrain_round; Energy-inert: Iron Bundle (no number). Per-card X stays Xmult_multi (+5%: Iron Boulder's first-card X2 -> 2.1 / 2.2 / 2.3).
+the Gen 9 Legendaries' fixed fields: hands / guard_round (Ting-Lu's Boss hands), hands / well_round (Ogerpon's Wellspring hand); one energy field per
+Ogerpon mask (mult / Xmult / Xmult2 / chips). Energy-inert by design: Wo-Chien (the 15% cut), Ting-Lu (+2 Boss hands), Chi-Yu (the Boss disable).
+the Galarian forms' fixed fields: quick_num / quick_dem (G-Slowbro's 1 in 3), retriggers (the birds), d_size (G-Moltres), stones_scored; banks slow_mult /
+med_Xmult / gas_Xmult / curse_Xmult. Energy-inert by design: G-Slowbro, G-Stunfisk, G-Articuno, G-Zapdos. G-Ponyta carries Rapidash's Xmult_multi.
 
 Designer consequences:
   1. The field name is a balance choice. A joker-wide X stored as Xmult grows 20% of its base
@@ -1653,6 +1821,16 @@ How Megas work:
     else is random (getMega_by_position).
   - There are 41 Megas: 34 Pokermon, 6 Nacho, 1 Pokermon+. Rarity poke_mega, cost $12 is
     standard, and none of them evolve.
+  - Mega batch D (contentRev 84, jokers/pokejokers_megas.js) adds the 18 classic X/Y + ORAS Megas and
+    Mega Salamence (Pokermon's): 53 Pokermon Megas. A new Mega on an EXISTING base: give the base `megas` behind
+    the rules rev (attach_classic_megas' getter) so old runs re-play their Mega Stone onto the same joker.
+  - BANKS ACROSS A MEGA (house, batch D CARRY): a bank both forms use crosses as is (Garchomp's Bite Mult, the Eon
+    duo's X); a bank only one form uses rides along in ability.extra.poke_kept and comes back on the revert
+    (Aggron's eaten X, Banette's Mult, Mega Banette's own X). Say on the card when a bank waits ("Aggron's X2.2 is
+    kept for when it reverts"; "Kept on the card when it reverts").
+  - Batch D numbers: per-card X X1.25-X2 (Xmult_multi), joker X X1.5-X4 (Xmult; X4 behind a condition: 0 discards,
+    a repeated hand), gains X0.25-X1 (Xmult_mod); money, hands, discards, slots and debt stay fixed. A guarantee
+    (Mega Absol: every listed probability numerator = denominator) is the inverse of a base's 0.
 
 Mega design patterns:
   1. One enormous stat.
@@ -1671,6 +1849,8 @@ Mega design patterns:
      Aerodactyl has a 1 in 4 chance to destroy each Ace.
 Rule of thumb: a Mega trades the line's flexibility for one dramatic axis, and it is temporary
 by nature (you can devolve it once per round).
+Primal Reversions (batch E) are the permanent cousin: an Orb Item, never reverted, the normal form's numbers doubled
+(+1 -> +2, one retrigger -> two, X1.25 -> X1.5); see the weather trio (2.1).
 
 2.9 Shiny (systems/shiny.js)
 ----------------------------
@@ -1713,6 +1893,8 @@ Type and keyword colours (pokesprites.lua pokermon.colours; Micatro TYPE_COLOURS
     ("{C:poke_sun}Sunny Form:", "{C:poke_rain}Rainy Form:", "{C:poke_snow}Snowy Form:").
     Gen 8 batch 1: poke_sand for the house sandstorm (Sandaconda, "{C:poke_sand}Sandstorm:"; is_sandstorm, 2.1).
     Gen 8 batch 3: poke_snow for Eiscue's Snowy round ("is {C:poke_snow}Snowy{}"; round_forecast, 2.1).
+    Gen 9 batch 3: poke_paradox / poke_ancient / poke_future (the Paradox pills, {X:poke_paradox,C:white}), poke_sun for Protosynthesis
+    and {X:poke_lightning,C:black} for Electric Terrain (Quark Drive).
 Most used tags overall:
   attention 1166, inactive 540, mult 230, X:mult 218, chips 184, money 122, br:2 106,
   green 77, dark_edition 49.

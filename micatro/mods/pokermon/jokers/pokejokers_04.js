@@ -6,7 +6,7 @@ import {
   copy_card, juice_card_until, playing_card_joker_effects, play_sound,
   defineJokers, type_tooltip, detailed, scaling_evo, level_evo, item_evo, type_evo, deck_enhance_evo,
   ease_poke_dollars, has_enhancement, find_joker, get_probability_vars, pseudorandom_probability,
-  volatile_active, remove, add_card,
+  volatile_active, remove, add_card, ALOLA_REV, GALAR_FORMS_REV,
 } from '../api.js';
 import { Tag, add_tag } from '../../../js/engine/tag.js';
 import { create_consumeable } from './pokejokers_03.js';
@@ -319,7 +319,9 @@ defineJokers({
     },
   },
   // Exeggcute 102
+  // (+ regional batch A: a Dragon Energy used on it evolves it into Alolan Exeggutor; its Leaf Stone evolution is unchanged)
   exeggcute: {
+    poke_energy_evo: { etype: 'Dragon', into: 'j_poke_alolan_exeggutor', rev: ALOLA_REV },
     loc_vars(self, info_queue, center) {
       type_tooltip(self, info_queue, center);
       if (detailed()) info_queue.push(P_CENTERS.c_poke_leafstone);
@@ -357,7 +359,9 @@ defineJokers({
     },
   },
   // Cubone 104
+  // (+ regional batch A: a Fire Energy used on it evolves it into Alolan Marowak; its evolution into Marowak is unchanged)
   cubone: {
+    poke_energy_evo: { etype: 'Fire', into: 'j_poke_alolan_marowak', rev: ALOLA_REV },
     loc_vars(self, info_queue, card) {
       type_tooltip(self, info_queue, card);
       if (detailed()) {
@@ -463,7 +467,9 @@ defineJokers({
     },
   },
   // Koffing 109 (3.9.1: Volatile Left +Mult; evolves after 2 rounds not debuffed)
+  // (+ regional batch B: a Fairy Energy used on it evolves it into Galarian Weezing; its evolution into Weezing is unchanged)
   koffing: {
+    poke_energy_evo: { etype: 'Fairy', into: 'j_poke_galarian_weezing', rev: GALAR_FORMS_REV },
     loc_vars(self, info_queue, center) {
       type_tooltip(self, info_queue, center);
       volatile_tip(info_queue, center);

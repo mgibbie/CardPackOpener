@@ -83,7 +83,7 @@ sec('precedence', () => {
     ok(!P.replaced_by('j_sonfive_' + n) && !P_CENTERS['j_poke_' + n], 'precedence: no Pokermon joker named ' + n + ' (added)');
   }
   ok(['nincada', 'ninjask', 'shedinja'].every((n) => P.replaced_by('j_sonfive_' + n) === 'j_poke_' + n), 'the legacy Nincada line stays superseded by Pokermon\'s');
-  ok(Object.keys(SUPERSEDED).length === 12, 'superseded.js: still the 12 duplicates');
+  ok(Object.keys(SUPERSEDED).length === 13, 'superseded.js: the 13 duplicates (12 + the legacy Mega Salamence, Mega batch D)');
 });
 
 // ============================================================================ Heatran
