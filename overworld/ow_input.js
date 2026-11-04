@@ -1,5 +1,6 @@
 // ow_input.js — keyboard input: held-key tracking, the movement gates, the run button, and the item/repel helpers bound to input.
 // Split out of main.js (Plans/MAIN_JS_SPLIT_PLAN.md, phase 3); cut and paste only.
+import { megaNpcTalk } from './ow_mega.js';
 import { phoneTalkDefeated } from './phone.js';
 import * as Bag from './bag.js';
 import { elevCompatible } from './engine.js';
@@ -369,6 +370,8 @@ export function interact() {
 		if (hg) { startHillBattle(hg.key, hg.i); return; }
 	}
 	if (S.baseCtx && baseDecoInteract(fx, fy)) return;
+	// MT. PYRE's old couple keep the Primal ORBS for Hoenn's Champion (ow_mega.js)
+	if (megaNpcTalk(fx, fy)) return;
 	// a service desk is talked to ACROSS ITS COUNTER the same way as the NPC below
 	// (the Trainer Hill attendant at (11,6) sits behind (10,6); with the zone only
 	// answering its own tiles, sign-up could never be reached — playtest 2026-10-08)

@@ -72,7 +72,8 @@ sec(() => {
 sec(() => {
   // Their place in the joker list: main's file order. (The owner's designs, PORTING.md "The owner's 25 new jokers", sit among them
   // in Pokédex order: Tatsugiri after Houndstone; skipped here.)
-  const designs = new Set([...(STATUS.PORTED_FILES['micatro/pokejokers_designs'] || []), ...(STATUS.PORTED_FILES['micatro/pokejokers_megas'] || [])].map((n) => 'j_poke_' + n));
+  // (+ the regional forms, Micatro's own files: each after its original line)
+  const designs = new Set(['micatro/pokejokers_designs', 'micatro/pokejokers_regional', 'micatro/pokejokers_galarian', 'micatro/pokejokers_megas'].flatMap((f) => STATUS.PORTED_FILES[f] || []).map((n) => 'j_poke_' + n));
   const keys = MODS.pokermon.content.centers.filter((c) => c.set === 'Joker' && !designs.has(c.key)).map((c) => c.key);
   const after = (a, b) => keys.indexOf('j_poke_' + b) === keys.indexOf('j_poke_' + a) + 1;
   ok(after('dustox', 'lotad') && after('lotad', 'lombre') && after('lombre', 'ludicolo') && after('ludicolo', 'seedot')

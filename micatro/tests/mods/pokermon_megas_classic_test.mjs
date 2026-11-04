@@ -27,7 +27,7 @@ const { ok, done } = T();
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 // (imported softly, so on a checkout without batch D the checks fail instead of the import)
 const MEGAS = await import('../../mods/pokermon/jokers/pokejokers_megas.js').catch(() => ({}));
-const REV = MEGAS.MEGA_D_REV || 82;
+const REV = MEGAS.MEGA_D_REV || 83;
 const key = (c) => c.config.center.key;
 const near = (a, b) => Math.abs(a - b) < 1e-9;
 const flush = () => G.E_MANAGER.flush();

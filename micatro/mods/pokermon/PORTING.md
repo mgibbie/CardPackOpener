@@ -4072,13 +4072,13 @@ unlisted Terastal mask cells {6,4} / {0,5} / {4,5} / {8,5} have no soul and are 
 - **Tests**: `micatro/tests/mods/pokermon_gen9_legendaries_test.mjs` (fails on main: no such jokers). Re-recorded: `modpin_test`, `pokermon_391_data_test`,
   `pokermon_new_jokers_test`, `micatro_mod_version_pin`, `micatro_deckeditor_pages`, `designwiki_pokermon_jokers_test` (its Legendary spot checks).
 ### Mega batch D: the 18 classic Megas + Mega Salamence hooked up (2026-11-03, branch `feat/pokermon-megas-classic`)
-Pinned **`3.9.1+r82`** (`contentRev: 82`, `MEGA_D_REV`; `LEGACY_MOD_VERSIONS` untouched). The owner's "yes": the 18 X/Y + ORAS Megas Pokermon never made
+Pinned **`3.9.1+r83`** (`contentRev: 83`, `MEGA_D_REV`; `LEGACY_MOD_VERSIONS` untouched). The owner's "yes": the 18 X/Y + ORAS Megas Pokermon never made
 a joker for (Sceptile, Blaziken, Swampert, Sableye, Mawile, Aggron, Medicham, Manectric, Sharpedo, Banette, Absol, Glalie, Metagross, Latias, Latios,
 Rayquaza, Garchomp, Diancie) and **Mega Salamence** on Pokermon's Salamence (Nacho 1.6.4's legacy one hung off its retired Salamence, out of every pool;
 it is now a duplicate of Pokermon's: precedence). Their own file `jokers/pokejokers_megas.js` (`MEGA_D_LOC`, `CARRY`, `attach_classic_megas`, wired in
 index.js). Each `poke_mega`, stage Mega, $12, the base's type and Gen; upstream 3.9.1's Gen 3 / Gen 4 / Gen 6 cells with their souls (nothing to
 deploy). Upstream's sprite table points Mega Latios's soul at {3,7} (Primal Groudon's): ours is {1,7}, its own.
-- **Never retroactive (rules rev 82)**: each base's `megas` is a getter (`attach_classic_megas`) that exists only from MEGA_D_REV on, and the Megas join
+- **Never retroactive (rules rev 83)**: each base's `megas` is a getter (`attach_classic_megas`) that exists only from MEGA_D_REV on, and the Megas join
   their families only from it (FAMILY_MEMBER_REV). A run recorded earlier re-plays its Mega Stone onto the joker it picked (Absol + Venusaur: Mega
   Venusaur), and the Mega Stone's pool / target reads are as they were.
 - **Banks travel both ways** (`CARRY`, an EVOLVE_INTERCEPTS stash + POST_EVOLVE): a bank both forms use crosses as it is (Garchomp's `bite_mult`, the
@@ -4092,10 +4092,10 @@ deploy). Upstream's sprite table points Mega Latios's soul at {3,7} (Primal Grou
   Mega Manectric is Energy-inert (its $4 is the fixed money); Mega Absol's guarantee is fix_probability's numerator = denominator (a held Absol beside
   it: whichever acts last).
 - Tests: micatro/tests/mods/pokermon_megas_classic_test.mjs (every Mega in and out through a real Mega Stone, the banks both ways, each effect in real
-  hands, Energy at 1/2/3, resume + the replay stepper, an r81 recipe replayed, every cell's type).
+  hands, Energy at 1/2/3, resume + the replay stepper, an r82 recipe replayed, every cell's type).
 
 ### Regional batch A: the 18 Alolan forms + the regional pill (2026-11-03, branch `feat/pokermon-alolan-forms`)
-Pinned **`3.9.1+r81`** (`contentRev: 81`; `LEGACY_MOD_VERSIONS` untouched). The owner's "Yes": the 18 Alolan forms, in their own file
+Pinned **`3.9.1+r82`** (`contentRev: 82`; `LEGACY_MOD_VERSIONS` untouched). The owner's "Yes": the 18 Alolan forms, in their own file
 `jokers/pokejokers_regional.js` (`REGIONAL_FAMILIES` / `REGIONAL_LOC` / `REGIONAL_UPSTREAM_TEXT` / `REGIONAL_FAMILY_REV`, wired in index.js). Types = the
 cards' (tools/micatro/pokermon_art_type.mjs, margins 0.46+). Art: upstream 3.9.1's Gen 1 sheet cells (AtlasJokersBasicGen01 {2,2}-{6,4}); nothing to
 deploy. Gen 1 (a regional form takes its base species' generation: the generation-filter rule). Each after its Kanto line in Pokédex order
@@ -4108,7 +4108,7 @@ deploy. Gen 1 (a regional form takes its base species' generation: the generatio
   while debuffed / with an Everstone): **Pikachu + Psychic -> Alolan Raichu**, **Exeggcute + Dragon -> Alolan Exeggutor**, **Cubone + Fire -> Alolan
   Marowak** (each Safari, the Kanto evolution's slot: $8 / $10 / $8). The Kanto paths (Thunder Stone, Leaf Stone, Cubone's 20 consumables) are unchanged.
   Each Basic's 3.9.1 text gets an "Alolan form" box.
-- **Never retroactive (rules rev 81)**: the three branches check `rulesRev('pokermon') >= ALOLA_REV` (`poke_energy_evo.rev`, systems/energy.js); the
+- **Never retroactive (rules rev 82)**: the three branches check `rulesRev('pokermon') >= ALOLA_REV` (`poke_energy_evo.rev`, systems/energy.js); the
   three join their Kanto families (Alolan Raichu before Raichu's Megas) only from that rev (FAMILY_MEMBER_REV), so Transformation on a Pikachu
   recorded earlier still gives Raichu; Eiscue's Ninetales snow is gated the same way (pokermon_alolan_test 'old-rev replay').
 - **The regional pill** (systems/types.js `REGIONS` / `region_of` / `region_badge`, in `poke_set_type_badge`): after the rarity pill, before the type
@@ -4153,6 +4153,66 @@ deploy. Gen 1 (a regional form takes its base species' generation: the generatio
 - **Tests**: `micatro/tests/mods/pokermon_alolan_test.mjs` (fails on main: no such jokers / pill) and `overworld/tests/micatro_pokermon_regional_ui_test.mjs`
   (the pills drawn, the retrofits, no pill on a Kanto joker). Re-recorded: `modpin_test`, `pokermon_391_data_test`, `pokermon_new_jokers_test`,
   `micatro_mod_version_pin`, `micatro_deckeditor_pages` (+18 jokers).
+
+### Regional batch B: the 19 Galarian forms (2026-11-03, branch `feat/pokermon-galarian-forms`)
+Pinned **`3.9.1+r82`** (`contentRev: 82`; `LEGACY_MOD_VERSIONS` untouched). The owner's "yes": the 19 Galarian forms (18 jokers: Galarian Darmanitan's
+Zen Mode is its form), in their own file `jokers/pokejokers_galarian.js` (`GALARIAN_FAMILIES` / `GALARIAN_OWN_FAMILIES` / `GALARIAN_BRANCH_FAMILIES` /
+`GALARIAN_FAMILY_REV` / `GALARIAN_LOC` / `GALARIAN_UPSTREAM_TEXT` / `galarian_corsola_destroyed`, wired in index.js). Types = the cards'
+(tools/micatro/pokermon_art_type.mjs). Art: upstream 3.9.1's cells (pokespriteload.lua galarian_*: Gen01 {10,4}-{13,5} with the birds' souls, Gen02 {6,4}
+{8,4}, Gen03 {8,7} {10,7}, Gen05 {10,7} {0,8} {4,8} {6,8}); nothing to deploy. **Zen Mode**: the forms audit found no cell for it (the sprite table lists
+none), but 3.9.1 DRAWS it, unlisted, beside the Standard Mode card: **Gen05 {2,8}** (+ its Shiny twin; the Pokémon of the overworld battle sprite
+s17763 `darmanitan_galar_zen`, a Water card like the Standard one), so it takes upstream's card (the owner's "upstream first") instead of a composed one.
+Generation = the base species' (Slowking 2, Corsola 2, Zigzagoon / Linoone 3, Darumaka / Darmanitan / Yamask / Stunfisk 5, the rest 1). The regional
+pill reads "Galarian" from the key (regional batch A). Each after its original line in Pokédex order. Neither Nacho nor Pokermon+ has any of them.
+- **Three shapes.** OWN LINES, their own pool entries beside the originals, on the spec's slots: **Ponyta C $5 -> Rapidash S $8**, **Slowpoke C $5 ->
+  Slowbro / Slowking S $8**, **Zigzagoon U $6 -> Linoone S $8** (-> Obstagoon), **Darumaka C $5 -> Darmanitan S $8**, **Farfetch'd C $5**, **Mr. Mime R $8**
+  (Kanto Mr. Mime's slot), **Corsola R $7**, **Yamask C $5**, **Stunfisk R $7**, the **birds Legendary $20** (complete alone). Timers: Ponyta / Slowpoke /
+  Mr. Mime / Linoone 5 rounds, Zigzagoon / Darumaka 4. NATURAL EVOLUTIONS into the Gen 8 batch 3 forms: **G-Linoone -> Obstagoon (5 rounds), G-Farfetch'd
+  -> Sirfetch'd (3 Lucky triggers in a round: Farfetch'd's `farfetchd_lucky`, now exported), G-Corsola -> Cursola (a Psychic Energy, energize first:
+  `poke_energy_evo`), G-Mr. Mime -> Mr. Rime (5 rounds), G-Yamask -> Runerigus (10 Stone cards scored: RUNERIGUS_STONES)**. A BRANCH of a Kanto Basic:
+  **Koffing + a Fairy Energy -> Galarian Weezing** (S $8; refused while debuffed / with an Everstone; Koffing's 3.9.1 text gets a "Galarian form" box).
+  The PR #940 Energy paths (Linoone Dark, Corsola Psychic, Mr. Mime Water) and Koffing's 2 rounds -> Weezing are unchanged.
+- **Families (the choice).** set_family REPLACES the family sharing a member, so the lines that end in an existing final are PUSHED as their own
+  families (`GALARIAN_OWN_FAMILIES`: [G-Zigzagoon, G-Linoone, Obstagoon], [G-Farfetch'd, Sirfetch'd], [G-Corsola, Cursola], [G-Mr. Mime, Mr. Rime],
+  [G-Yamask, Runerigus]): an original held never keeps its Galarian form out of the shop (or the reverse); an Obstagoon held keeps G-Zigzagoon out (its
+  line's final); the Galarian line's highest / previous evo are its own, and the shared final's own lookups (its devolve, the Pokédex) keep finding its
+  original line first (Obstagoon devolves to Linoone). G-Weezing joins Koffing's line, seen from r82 (FAMILY_MEMBER_REV).
+- **Never retroactive (rules rev 82)**: Koffing's branch and G-Corsola's path check `rulesRev('pokermon') >= GALAR_FORMS_REV` (systems/energy.js, the
+  `rev` on each `poke_energy_evo`); a move recorded before it replays as recorded (pokermon_galarian_test 'old-rev replay'). No existing joker's
+  behaviour changes otherwise (Farfetch'd's helper is only exported).
+- **Galarian Ponyta** (Psychic), Pastel Veil: **scored Lucky cards always trigger their Mult** (the `mod_probability` pass on 'lucky_mult': the numerator
+  raised to the denominator; Absol's fix at 0 still wins). Carries Rapidash's `Xmult_multi`. -> **Galarian Rapidash**: **Lucky cards' odds doubled** (both
+  rolls, numerator x2 in the same pass. **Stacking (the choice)**: two Rapidash x4; Oops! All 6s doubles again after the pass; Super Luck's +1 adds where it
+  stands in the row, left to right) and **each Lucky trigger X1.2** (a card whose two rolls hit: X1.2 twice). Rapidash doesn't keep Ponyta's "always".
+- **Galarian Slowpoke** (Psychic): **+1 Mult banked at the end of each round** (`slow_mult`, banked before its countdown). After 5 rounds, by position
+  (Charizard's Mega X / Y): **Galarian Slowbro if it is your leftmost Slowpoke, Galarian Slowking if your rightmost; alone or between two others, a
+  seeded pick** ('galarian_slowpoke'; Kanto Slowpokes count as Slowpokes). Both are **Dark** and **keep the bank and give it, banking no more (the choice,
+  as Alolan Muk)**. **Slowbro, Quick Draw**: each hand a **1 in 3** roll (in `before`; Oops! doubles it) to **retrigger every scored card** (Energy-inert).
+  **Slowking, Curious Medicine**: **+X0.25 per Spectral card used** (`med_Xmult`; Slowpoke carries its `Xmult_mod`).
+- **Galarian Farfetch'd** (Fighting): **each Lucky card trigger +5 Mult**; Sirfetch'd on Farfetch'd's 3-trigger rule.
+- **Galarian Weezing** (Fairy), Neutralizing Gas: **X1.5; when a Blind is selected one Hazard card of your deck (seeded) loses its enhancement and it
+  permanently gains X0.1** (`gas_Xmult`; once a round; nothing without a Hazard card).
+- **Galarian Mr. Mime** (Water): **each Glass card held in hand +10 Mult** (h_mult: Mime / a Red Seal repeat it).
+- **Galarian Corsola** (Psychic), Cursed Body: **+X0.1 per playing card of your deck destroyed while it is held** (index.js's card_removed hook beside
+  Alolan Marowak's; a debuffed one gains nothing; `curse_Xmult`).
+- **Galarian Zigzagoon** (Dark): **scored Spades +4 Mult** -> **Galarian Linoone**: **scored Spades X1.15**.
+- **Galarian Darumaka** (Water), Gorilla Tactics: **+12 Mult if the played poker hand is your most played** (`G.GAME.hands[].played`, this hand already
+  counted; **a tie for the most counts**) -> **Galarian Darmanitan**: **X3 under the same condition, else nothing; Zen Mode: X4 on the round's final hand
+  whatever the hand** (no hands left while it scores). Its face is the Zen card while the next hand is the final one (a round with at most 1 hand left;
+  `poke_view_form` 'zen' + the new center field `poke_form_art`, ui.js ownFace; Shiny: the Shiny sheet's {2,8}); its type stays Water.
+- **Galarian Yamask** (Earth): **scored Stone cards +5 Mult**; Runerigus once 10 Stones scored while held (end of round).
+- **Galarian Stunfisk** (Metal), Snap Trap: **your first discard each round is free** (a player's discard, not The Hook's: +1 discard as it is used, so
+  discards left stay the same; `discards_used` still counts it, so "before any discard" readers see a discard). Energy-inert.
+- **Galarian Articuno** (Psychic), Freezing Glare: **on the round's final hand every scored card retriggers once**. **Galarian Zapdos** (Fighting),
+  Thunderous Kick: **the first scored card of each hand retriggers 3 times**. **Galarian Moltres** (Dark), Fiery Wrath: **+1 discard; X3.5 on the round's
+  final hand**. All Legendary $20, complete alone; Articuno / Zapdos Energy-inert.
+- **Energy** (1 / 2 / 3): G-Ponyta (carried) / G-Rapidash X1.26 / 1.32 / 1.38 a trigger; G-Slowpoke +1.2 / 1.4 / 1.6 a round; G-Slowking +X0.3 / 0.35 / 0.4
+  a Spectral; G-Farfetch'd +7 / 9 / 11 a trigger; G-Weezing X1.8 / 2.1 / 2.4 and +X0.12 / 0.14 / 0.16 a Hazard; G-Mr. Mime +14 / 18 / 22 a Glass; G-Corsola
+  +X0.12 / 0.14 / 0.16 a card; G-Zigzagoon +5.6 / 7.2 / 8.8 a Spade; G-Linoone X1.2075 / 1.265 / 1.3225 a Spade; G-Darumaka +16.8 / 21.6 / 26.4; G-Darmanitan
+  X3.6 / 4.2 / 4.8, Zen X4.8 / 5.6 / 6.4; G-Yamask +7 / 9 / 11 a Stone; G-Moltres X4.2 / 4.9 / 5.6. Fixed: odds, retriggers, discards. Energy-inert:
+  G-Slowbro, G-Stunfisk, G-Articuno, G-Zapdos. Banks never retroactive (slow_mult / med_Xmult / gas_Xmult / curse_Xmult).
+- **Tests**: `micatro/tests/mods/pokermon_galarian_test.mjs` (fails on main: 47 of 55). Re-recorded: `modpin_test`, `pokermon_391_data_test`,
+  `pokermon_new_jokers_test`, `micatro_mod_version_pin`, `micatro_deckeditor_pages` (+18 jokers).
 
 ### The generation filter holds (r79, 2026-11-03, branch `fix/pokermon-gen-filter`)
 The owner: "the generation filters in the settings don't work — the gen 4 starters come up even when gen 4 is off". `get_gen_allowed` lets a

@@ -4,6 +4,8 @@
 // no natures; moveset = last 4 level-up moves at the mon's level).
 import { getJSON, getImage, VIEW_W, VIEW_H } from './engine.js';
 import * as Bag from './bag.js';
+import { KEY_STONE, MEGA_ABILITY_NAMES, MEGA_FORMS, armTrainerMega, itemLocked, megaFormFor, primalFormFor } from './mega.js';
+import { applyRegionalForms } from './regional_forms.js';
 import { rumble } from '../site/gamepad.js';
 import * as UI from './battleui.js';
 import { cry, sfx } from './sound.js';
@@ -750,6 +752,8 @@ export class Battle {
 			getJSON('data/egg_moves.json').catch(() => ({})),
 		]);
 		this.data = { species, moves, extra, abilities, tmLearn, genders, evYields, eggMoves };
+		// regional forms' own movepools + the charm-gated regional evolutions (regional_forms.js)
+		applyRegionalForms(this.data);
 		// the Love2D build's pixel font, so battle text matches the desktop game — Micatro's copy, which also draws ♀ / ♂ (tools/micatro/add_gender_glyphs.py); the original in data/fonts has neither
 		try {
 			const f = new FontFace('m6x11plus', 'url(../micatro/assets/fonts/m6x11plus.ttf?v=2)');
@@ -869,7 +873,8 @@ export class Battle {
 		if (opts?.roamer?.status) foe.status = opts.roamer.status;
 		this._starting = false; // active now drives `blocking`
 		if (restore) { this.applyRestore(restore); return; }
-		for (const m of party) this.clearVolatiles(m);
+		this.active.megaUsed = {};
+		for (const m of party) { this.revertMega(m); this.clearVolatiles(m); delete m.battleCrits; }
 		// the map's weather is worth a line — it changes the fight
 		if (this.active.weather?.kind) {
 			const wmsg = { rain: 'Rain pours down.', sandstorm: 'A sandstorm rages.', hail: 'Hail pelts down.', sun: 'The sunlight is harsh.' };
@@ -977,7 +982,18 @@ export class Battle {
 			caughtMon: null,
 		};
 		this._starting = false; // active now drives `blocking`
-		if (!restore) for (const m of [...party, ...(this.active.partner?.party || [])]) this.clearVolatiles(m);
+		if (!restore) for (const m of [...party, ...(this.active.partner?.party || [])]) { this.revertMega(m); this.clearVolatiles(m); delete m.battleCrits; }
+		// MEGA EVOLUTION opens for both sides with the player's KEY STONE: from then on
+		// the leaders, Elite Four and Champions in mega.js TRAINER_MEGAS hand their ace
+		// its stone (and an in-game partner too). Before it, no trainer Mega Evolves —
+		// the early gyms keep their curve.
+		if (!restore) {
+			this.active.megaUsed = {};
+			if (Bag.count(KEY_STONE)) {
+				if (armTrainerMega(info?.displayName, foeParty)) info.megaOK = true;
+				if (this.active.partner && armTrainerMega(this.active.partner.name, this.active.partner.party)) this.active.partner.megaOK = true;
+			}
+		}
 		if (this.active.double) {
 			this.active.meAllyImg = backSprites.get(this.active.meAlly);
 			this.active.foeAllyImg = foeSprites.get(this.active.foeAlly);
@@ -1083,7 +1099,11 @@ export class Battle {
 			meSide: a.meSide, foeSide: a.foeSide,
 			meHazards: a.meHazards, foeHazards: a.foeHazards,
 			meFuture: a.meFuture, foeFuture: a.foeFuture,
-			weather: a.weather ? { kind: a.weather.kind, turns: a.weather.turns === Infinity ? 'inf' : a.weather.turns } : null,
+			weather: a.weather ? { kind: a.weather.kind, turns: a.weather.turns === Infinity ? 'inf' : a.weather.turns, primal: a.weather.primal || undefined } : null,
+			// the save holds the player's mons in their BASE form (party.js), so the
+			// snapshot names which of them stood Mega; foes/partner travel whole
+			megaUsed: a.megaUsed || {},
+			megaMine: a.party.map((m, i) => (m?.megaForm ? [i, m.megaForm] : null)).filter(Boolean),
 			terrain: a.terrain, fieldFx: a.fieldFx,
 			turnCount: a.turnCount || 0, lastMove: a.lastMove, runAttempts: a.runAttempts || 0,
 			safari: !!a.safari,
@@ -1102,6 +1122,10 @@ export class Battle {
 		put(a.fieldFx, snap.fieldFx);
 		a.terrain = snap.terrain || null;
 		a.weather = snap.weather ? { kind: snap.weather.kind, turns: snap.weather.turns === 'inf' ? Infinity : snap.weather.turns } : null;
+		if (a.weather && snap.weather.primal) a.weather.primal = snap.weather.primal;
+		a.megaUsed = { ...(snap.megaUsed || {}) };
+		for (const [i, f] of snap.megaMine || []) if (a.party[i] && !a.party[i].megaForm) this.applyMegaForm(a.party[i], f);
+		for (const m of [a.foe, a.foeAlly, a.meAlly]) if (m?.megaForm && m._megaBase) this.swapMegaSprite(m);
 		a.meFuture = snap.meFuture || null;
 		a.foeFuture = snap.foeFuture || null;
 		a.turnCount = snap.turnCount || 0;
@@ -1164,6 +1188,130 @@ export class Battle {
 				if ((mon.form || mon.speciesId) !== want) this.changeForm(mon, want, side, `${mon.name} transformed with the weather!`);
 			}
 		}
+	}
+
+	// ---------- MEGA EVOLUTION / PRIMAL REVERSION (mega.js, mega_data.js) ----------
+	// Each TRAINER Mega Evolves once per battle: the player (holding the KEY STONE),
+	// an in-game partner and the foe trainer (both armed by mega.js TRAINER_MEGAS).
+	// Wild POKeMON never do. Primal Reversion is not a Mega: it needs no Key Stone,
+	// spends nothing, and happens by itself whenever Kyogre/Groudon enters battle
+	// holding its ORB.
+	megaOwner(mon) { return this.ownerOf(mon) || 'foe'; }
+	// the Mega form `mon` could take right now, or null
+	canMega(mon) {
+		const a = this.active;
+		if (!a || !mon || mon.curHP <= 0 || mon.megaForm || a.safari) return null;
+		if (mon.transformedMoves) return null;   // a Transformed mon is wearing someone else's form
+		if (![a.me, a.meAlly, a.foe, a.foeAlly].includes(mon)) return null;
+		const owner = this.megaOwner(mon);
+		if (a.megaUsed?.[owner]) return null;
+		if (owner === 'player' && !Bag.count(KEY_STONE)) return null;
+		if (owner === 'partner' && !a.partner?.megaOK) return null;
+		if (owner === 'foe' && !(a.isTrainer && a.info?.megaOK)) return null;
+		return megaFormFor(mon);
+	}
+	// the foe / partner AI: Mega Evolve the armed ace the first turn it can — the
+	// form is strictly stronger, and holding it back only gives the player a turn
+	aiWantsMega(mon) { return !!this.canMega(mon); }
+	// Swap `mon` into a Mega/Primal form. Stats, types and ability change NOW (so the
+	// Mega's Speed orders this very turn, as from Gen 7). The base values ride on
+	// `_megaBase`; revertMega() puts them back when the battle ends, and party.js
+	// saveParty() writes them instead of the Mega's, so a Mega never reaches the save.
+	// HP does not move: every Mega keeps its base form's HP stat.
+	applyMegaForm(mon, formId, sprite = true) {
+		const f = MEGA_FORMS[formId];
+		if (!f || !mon) return false;
+		if (!mon._megaBase) mon._megaBase = { stats: { ...mon.stats }, types: [...mon.types], ability: mon.ability ?? null };
+		mon.megaForm = formId;
+		this.refreshMegaStats(mon);
+		mon.types = [...f.types];
+		mon.ability = f.ability;
+		// a snapshot taken earlier this battle (Soak, Skill Swap, Power Trick...)
+		// restores TO the Mega on a switch, never back to the base form
+		if (mon._origTypes) mon._origTypes = [...f.types];
+		if ('_origAbility' in mon) mon._origAbility = f.ability;
+		if (sprite) this.swapMegaSprite(mon);
+		return true;
+	}
+	// the Mega's stats from its form's base stats (same level/IVs/EVs/nature); also
+	// re-run after a level-up mid-battle, which recomputes the BASE form's stats
+	refreshMegaStats(mon) {
+		const f = MEGA_FORMS[mon?.megaForm];
+		if (!f || !mon._megaBase) return;
+		const st = statsFor(f, mon.ivs || { hp: 15, atk: 15, def: 15, spa: 15, spd: 15, spe: 15 }, mon.level, { nature: mon.nature, evs: mon.evs });
+		st.hp = mon.stats.hp;
+		mon.stats = st;
+		if (mon._origStats) mon._origStats = { ...st };
+	}
+	// back to the base form: every battle end (finish), and any stale Mega at a start
+	revertMega(mon) {
+		const b = mon?._megaBase;
+		if (!b) { if (mon) delete mon.megaForm; return; }
+		mon.stats = { ...b.stats };
+		mon.types = [...b.types];
+		mon.ability = b.ability;
+		delete mon._megaBase;
+		delete mon.megaForm;
+	}
+	megaSprite(mon, back) {
+		const f = MEGA_FORMS[mon?.megaForm];
+		if (!f) return Promise.resolve(null);
+		const name = back ? f.sprite.replace(/\.png$/, '-b.png') : f.sprite;
+		return getImage(name).catch(() => null);   // wave 1: mega_sprites/, wave 2: data/pokemon/
+	}
+	swapMegaSprite(mon) {
+		const a = this.active;
+		if (!a || !mon) return;
+		const mine = this.ownerOf(mon) !== 'foe';
+		this.megaSprite(mon, mine).then(img => {
+			if (!img || this.active !== a) return;
+			if (mine) a.backSprites?.set(mon, img); else a.foeSprites?.set(mon, img);
+			if (mon === a.me) a.meImg = img;
+			else if (mon === a.meAlly) a.meAllyImg = img;
+			else if (mon === a.foe) a.foeImg = img;
+			else if (mon === a.foeAlly) a.foeAllyImg = img;
+		}).catch(() => {});
+	}
+	// the Mega Evolution itself: the Key Stone line, the flash, the new form, and
+	// its ability's entrance (Mega Charizard Y's Drought, Mega Manectric's Intimidate)
+	megaEvolve(mon) {
+		const formId = this.canMega(mon);
+		if (!formId) return false;
+		const a = this.active;
+		const owner = this.megaOwner(mon);
+		(a.megaUsed ||= {})[owner] = true;
+		const f = MEGA_FORMS[formId];
+		const side = this.sideOfMon(mon);
+		const trainer = owner === 'player' ? 'your KEY STONE' : owner === 'partner' ? `${a.partner.name}'s KEY STONE` : `${a.info?.displayName || 'the foe'}'s KEY STONE`;
+		this.pushMsg(f.move
+			? `${owner === 'player' ? 'Your' : owner === 'partner' ? `${a.partner.name}'s` : `${a.info?.displayName || 'The foe'}'s`} fervent wish has reached ${this.label(mon)}!`
+			: `${this.label(mon)}'s ${Bag.nameOf(mon.heldItem)} is reacting to ${trainer}!`);
+		this.applyMegaForm(mon, formId, false);
+		this.pushAnim('mega', side, 0.9, () => this.swapMegaSprite(mon), { mon, slot: this.slotOfMon(mon) });
+		this.pushMsg(`${this.label(mon)} has Mega Evolved into ${f.name.replace(/-/g, ' ').toUpperCase()}!`, () => sfx('levelup'));
+		this.switchInAbility(mon, side, true);
+		return true;
+	}
+	// PRIMAL REVERSION: Kyogre + BLUE ORB / Groudon + RED ORB, on entering battle
+	tryPrimal(mon, side) {
+		const formId = primalFormFor(mon);
+		if (!formId || mon.curHP <= 0) return false;
+		this.applyMegaForm(mon, formId, false);
+		this.pushAnim('mega', side, 0.9, () => this.swapMegaSprite(mon), { mon, slot: this.slotOfMon(mon) });
+		this.pushMsg(`${this.label(mon)}'s Primal Reversion! It reverted to its primal form!`, () => sfx('levelup'));
+		return true;
+	}
+	// the three PRIMAL weathers: no ordinary weather replaces them, and each ends the
+	// moment no POKeMON with its ability is left on the field
+	weatherLocked() { return !!this.active?.weather?.primal; }
+	checkPrimalWeather() {
+		const a = this.active;
+		const p = a?.weather?.primal;
+		if (!p) return;
+		if ([a.me, a.meAlly, a.foe, a.foeAlly].some(m => m && m.curHP > 0 && this.abilityOf(m) === p)) return;
+		a.weather = null;
+		this.pushMsg({ primordialsea: 'The heavy rain has lifted!', desolateland: 'The extremely harsh sunlight faded!',
+			deltastream: 'The mysterious strong winds have dissipated!' }[p] || 'The weather returned to normal.');
 	}
 
 	actorMons() {
@@ -1395,7 +1543,7 @@ export class Battle {
 
 	// ---------- abilities ----------
 	abilityOf(mon) { return mon.abilitySuppressed ? null : (mon.ability || null); }
-	abilityName(id) { return this.data.abilities?._names?.[id] || (id || '').toUpperCase(); }
+	abilityName(id) { return this.data.abilities?._names?.[id] || MEGA_ABILITY_NAMES[id] || (id || '').toUpperCase(); }
 	// weather is nulled while a Cloud Nine / Air Lock mon is on the field
 	weatherKind() {
 		const a = this.active;
@@ -1463,9 +1611,10 @@ export class Battle {
 		return true;
 	}
 	// announce + apply an ability's switch-in effect
-	switchInAbility(mon, side) {
+	switchInAbility(mon, side, megaEntrance) {
 		const a = this.active;
-		mon.justSwitchedIn = true;   // STAKEOUT reads this; cleared at end of turn
+		if (!megaEntrance) mon.justSwitchedIn = true;   // STAKEOUT reads this; cleared at end of turn
+		this.tryPrimal(mon, side);   // the ORB acts before the ability it hands over
 		const ab = this.abilityOf(mon);
 		if (!ab || mon.curHP <= 0) return;
 		const other = side === 'me' ? a.foe : a.me;
@@ -1479,7 +1628,14 @@ export class Battle {
 			}
 		}
 		const weatherAb = { drizzle: 'rain', drought: 'sun', sandstream: 'sand', snowwarning: 'hail' }[ab];
-		if (weatherAb && a.weather?.kind !== weatherAb) {
+		const primalWx = { primordialsea: ['rain', 'A heavy rain began to fall!'], desolateland: ['sun', 'The sunlight turned extremely harsh!'],
+			deltastream: ['strongwinds', 'Mysterious strong winds are protecting Flying-type POKeMON!'] }[ab];
+		if (primalWx) {
+			if (a.weather?.primal !== ab) {
+				a.weather = { kind: primalWx[0], turns: Infinity, primal: ab };
+				this.pushMsg(primalWx[1]);
+			}
+		} else if (weatherAb && a.weather?.kind !== weatherAb && !this.weatherLocked()) {
 			a.weather = { kind: weatherAb, turns: 8 };
 			this.pushMsg(`${this.label(mon)}'s ${this.abilityName(ab)} kicked up the weather!`);
 		}
@@ -2362,14 +2518,25 @@ export class Battle {
 		}
 		if (fx.selfKO && (uAb === 'damp' || tAb === 'damp')) { this.pushMsg('The Damp ability prevents explosions!'); return; }
 		if (fx.ohko && tAb === 'sturdy') { this.pushMsg(`${this.label(target)}'s Sturdy blocks one-hit KOs!`); return; }
+		// heavy rain douses Fire, extremely harsh sunlight evaporates Water (Primals)
+		if (a.weather?.primal === 'primordialsea' && mv.type === 'Fire' && this.weatherKind()) { this.pushMsg('The Fire-type attack fizzled out in the heavy rain!'); return; }
+		if (a.weather?.primal === 'desolateland' && mv.type === 'Water' && this.weatherKind()) { this.pushMsg('The Water-type attack evaporated in the harsh sunlight!'); return; }
 		let eff = effectiveness(mv.type, target.types);
+		// DELTA STREAM's strong winds take the super-effectiveness off a Flying type
+		if (a.weather?.primal === 'deltastream' && this.weatherKind() && target.types.includes('Flying') && effectiveness(mv.type, ['Flying']) > 1) {
+			eff /= 2;
+			this.pushMsg('The mysterious strong winds weakened the attack!');
+		}
 		if (eff === 0 && target.foresight) eff = 1;
 		if (eff === 0 && uAb === 'scrappy' && (mv.type === 'Normal' || mv.type === 'Fighting')
 			&& target.types.includes('Ghost')) eff = effectiveness(mv.type, target.types.filter(t => t !== 'Ghost'));
 		if (eff === 0) { this.pushMsg(`It doesn't affect ${target.name}...`); return; }
 		if (tAb === 'wonderguard' && eff <= 1) { this.pushMsg(`${this.label(target)}'s Wonder Guard blocks it!`); return; }
 		const stab = user.types.includes(mv.type) ? 1.5 : 1;
-		const nHits = fx.hits ? (uAb === 'skilllink' ? fx.hits[1] : fx.hits[0] + Math.floor(Math.random() * (fx.hits[1] - fx.hits[0] + 1))) : 1;
+		// PARENTAL BOND (Mega Kangaskhan): a single-target, single-hit move strikes twice,
+		// the second time at a quarter of the power (Gen 7)
+		const parental = uAb === 'parentalbond' && !fx.hits && !opts.spread && !fx.selfKO && !fx.fixed;
+		const nHits = fx.hits ? (uAb === 'skilllink' ? fx.hits[1] : fx.hits[0] + Math.floor(Math.random() * (fx.hits[1] - fx.hits[0] + 1))) : parental ? 2 : 1;
 		// Reflect / Light Screen on the defender's side halves the matching category
 		const defScreens = isFoe ? a.meScreens : a.foeScreens;
 		const screened = uAb === 'infiltrator' ? 1 : (defScreens?.[phys ? 'reflect' : 'light'] > 0 ? 0.5 : 1);
@@ -2511,9 +2678,13 @@ export class Battle {
 		} else {
 			for (let h = 0; h < nHits; h++) {
 				const crit = Math.random() < critChance;
-				if (crit) crits++;
+				if (crit) {
+					crits++;
+					// Galarian Farfetch'd evolves after 3 critical hits in one battle
+					if (!isFoe) user.battleCrits = (user.battleCrits || 0) + 1;
+				}
 				let dmg = Math.floor(Math.floor(Math.floor(2 * L / 5 + 2) * Pw * A / D) / 50) + 2;
-				dmg = Math.max(1, Math.floor(dmg * (crit ? critMult : 1) * stab * eff * screened * envMult * (0.85 + Math.random() * 0.15)));
+				dmg = Math.max(1, Math.floor(dmg * (crit ? critMult : 1) * stab * eff * screened * envMult * (parental && h === 1 ? 0.25 : 1) * (0.85 + Math.random() * 0.15)));
 				total += dmg;
 			}
 		}
@@ -2664,7 +2835,7 @@ export class Battle {
 					user.curHP = Math.max(0, user.curHP - chip);
 					this.pushMsg(`${this.label(user)} was hurt by ${this.abilityName(rAb)}!`);
 				}
-				if (rx.weather && a.weather?.kind !== rx.weather) {
+				if (rx.weather && a.weather?.kind !== rx.weather && !this.weatherLocked()) {
 					a.weather = { kind: rx.weather, turns: 5 };
 					this.pushMsg(`${this.label(target)}'s ${this.abilityName(rAb)} whipped up a storm!`);
 				}
@@ -2804,7 +2975,7 @@ export class Battle {
 				}
 				// MAGICIAN lifts the TARGET's item when it lands a hit (inert: 7)
 				if (this.abilityOf(user) === 'magician' && target.heldItem && !user.heldItem
-					&& this.abilityOf(target) !== 'stickyhold') {
+					&& this.abilityOf(target) !== 'stickyhold' && !itemLocked(target)) {
 					this.noteItemTaken(target);
 					user.heldItem = target.heldItem; target.heldItem = null;
 					this.pushMsg(`${this.label(user)} magicked away the ${this.itemName(user)}!`);
@@ -2816,7 +2987,7 @@ export class Battle {
 				}
 				// PICKPOCKET lifts the attacker's item on contact (was inert: 16)
 				if (dAb === 'pickpocket' && user.heldItem && !target.heldItem
-					&& this.abilityOf(user) !== 'stickyhold') {
+					&& this.abilityOf(user) !== 'stickyhold' && !itemLocked(user)) {
 					this.noteItemTaken(user);
 					target.heldItem = user.heldItem; user.heldItem = null;
 					this.pushMsg(`${this.label(target)} pickpocketed the ${this.itemName(target)}!`);
@@ -2871,6 +3042,7 @@ export class Battle {
 					this.pushMsg(`${this.label(target)}'s Sticky Hold kept its item!`);
 					return;
 				}
+				if (itemLocked(target)) return;   // a Mega Stone / Orb never leaves its own POKeMON
 				if (fx.knockOff) {
 					this.pushMsg(`${this.label(user)} knocked off ${target.name}'s ${this.itemName(target)}!`, () => {
 						this.noteItemTaken(target);
@@ -3574,6 +3746,11 @@ export class Battle {
 		// boss counter-switch: replaces the foe's move and resolves first (like
 		// any trainer switch), so your move hits the incoming mon
 		const swIdx = a.foe.chargeMove ? -1 : this.shouldFoeSwitch();
+		// MEGA EVOLUTION happens before anything else in the turn
+		const myMega = a.megaPlan === a.me;
+		a.megaPlan = null; a.megaArmed = false;
+		if (myMega) this.megaEvolve(a.me);
+		if (swIdx < 0 && this.aiWantsMega(a.foe)) this.megaEvolve(a.foe);
 		if (swIdx >= 0) {
 			const next = a.foes[swIdx];
 			a.foeSwitchCd = 3;
@@ -3666,6 +3843,7 @@ export class Battle {
 		// and has no faintCounted guard — a fainted primary foe left in its slot was
 		// "fainted" again and paid its EXP again at every end of turn.
 		this.checkFormTriggers(); // HP dropped past a threshold → Zen Mode / Schooling / Power Construct
+		this.checkPrimalWeather();
 		if (a.double) { this.checkFaintsD(); return; }
 		const meDown = a.me.curHP <= 0;
 		if (a.foe.curHP <= 0) {
@@ -3847,6 +4025,8 @@ export class Battle {
 				// the level-up recalc is the new canonical statline — don't let a
 				// Transform-snapshot restore roll it back after the battle
 				if (mon._origStats) mon._origStats = { ...mon.stats };
+				// a Mega levels as its BASE form (that is what the save keeps) and stays Mega
+				if (mon._megaBase) { mon._megaBase.stats = { ...mon.stats }; this.refreshMegaStats(mon); }
 				mon.maxHP = mon.stats.hp;
 				// the max-HP growth is added to a standing mon only: HP 0 stays 0
 				if (mon.curHP > 0) mon.curHP = Math.min(mon.maxHP, mon.curHP + (mon.maxHP - oldMax));
@@ -4066,7 +4246,10 @@ export class Battle {
 				delete m._preTheftItem;
 			}
 			this.clearVolatiles(m, true);
+			this.revertMega(m);
 		}
+		// the foe's and the partner's Megas end with the battle as well
+		for (const m of [...(a.foes || []), a.foe, a.foeAlly, ...(a.partner?.party || [])]) if (m) this.revertMega(m);
 		// the CAUGHT mon leaves battle too: Mimic's copied move, a Transform, stat
 		// snapshots — none of it may be saved into its owned moveset (a Sudowoodo
 		// caught after Mimic kept the mimicked Sleep Powder, and the mimicSlot marker)
@@ -4172,6 +4355,8 @@ export class Battle {
 			// swaps them (same slot or X cancels). The order lives on the mon, so
 			// it carries out of battle and into every later fight.
 			if (k === 's') { a.swapFrom = a.swapFrom == null ? a.moveIdx : null; sfx('ui_select'); return; }
+			// M arms MEGA EVOLUTION for the move about to be picked (the toggle under the moves)
+			if (k === 'm') { if (this.megaToggleOK(who)) { a.megaArmed = !a.megaArmed; sfx(a.megaArmed ? 'ui_select' : 'ui_cancel'); } return; }
 			if (k === 'x') {
 				if (a.swapFrom != null) { a.swapFrom = null; sfx('ui_cancel'); return; }
 				a.phase = 'menu';
@@ -4188,6 +4373,7 @@ export class Battle {
 				}
 				const mv = who.moves[a.moveIdx];
 				if (this.moveUsable(who, mv, 'me')) {
+					if (!a.double && a.megaArmed && this.megaToggleOK(who)) a.megaPlan = who;
 					if (a.double) this.planMove(mv);
 					else this.startQueue(() => this.resolveTurn(mv));
 				} else {
@@ -4230,6 +4416,7 @@ export class Battle {
 		if (fx.corrode) {
 			if (!target.heldItem) { this.pushMsg('But it failed!'); return true; }
 			if (this.abilityOf(target) === 'stickyhold') { this.pushMsg(`${this.label(target)}'s Sticky Hold kept its item!`); return true; }
+			if (itemLocked(target)) { this.pushMsg('But it failed!'); return true; }
 			this.pushMsg(`Corrosive gas melted ${target.name}'s ${this.itemName(target)}!`, () => {
 				this.noteItemTaken(target);
 				target.heldItem = null;
@@ -4377,7 +4564,7 @@ export class Battle {
 		}
 		if (fx.noop) { this.pushMsg('But it failed!'); return true; }
 		if (fx.itemSwap) {
-			if (this.abilityOf(target) === 'stickyhold' || (!user.heldItem && !target.heldItem)) {
+			if (this.abilityOf(target) === 'stickyhold' || (!user.heldItem && !target.heldItem) || itemLocked(user) || itemLocked(target)) {
 				this.pushMsg('But it failed!');
 				return true;
 			}
@@ -4406,7 +4593,7 @@ export class Battle {
 		if (fx.splashMsg) { this.pushMsg('But nothing happened!'); return true; }
 		if (fx.weather) {
 			const names = { rain: 'It started to rain!', sun: 'The sunlight turned harsh!', sand: 'A sandstorm brewed!', hail: 'It started to hail!' };
-			if (a.weather?.kind === fx.weather) { this.pushMsg('But it failed!'); return true; }
+			if (a.weather?.kind === fx.weather || this.weatherLocked()) { this.pushMsg('But it failed!'); return true; }
 			a.weather = { kind: fx.weather, turns: 5 };
 			this.pushMsg(names[fx.weather]);
 			return true;
@@ -4871,6 +5058,13 @@ export class Battle {
 		const a = this.active;
 		return a.actionFor === 1 ? a.meAlly : a.me;
 	}
+	// may the player's mon being commanded take the MEGA toggle? (once per battle:
+	// in a double, not when the other one already has it planned this turn)
+	megaToggleOK(mon) {
+		const a = this.active;
+		if (!a || this.ownerOf(mon) !== 'player' || !this.canMega(mon)) return false;
+		return !(a.plans || []).some(p => p.mega) && !(a.pendingPlan?.mega);
+	}
 	chooserBoosts() {
 		const a = this.active;
 		return a.actionFor === 1 ? a.meAllyBoosts : a.meBoosts;
@@ -4890,13 +5084,15 @@ export class Battle {
 		const foes = this.livingFoes();
 		const info = this.data.moves[mv.id] || {};
 		const needsTarget = info.category !== 'Status' && foes.length > 1 && !SPREAD_MOVES.has(mv.id);
+		const mega = !!(a.megaArmed && this.megaToggleOK(this.chooser()));
+		a.megaArmed = false;
 		if (needsTarget) {
-			a.pendingPlan = { user: this.chooser(), boosts: this.chooserBoosts(), move: mv };
+			a.pendingPlan = { user: this.chooser(), boosts: this.chooserBoosts(), move: mv, mega };
 			a.phase = 'target';
 			a.targetIdx = 0;
 			return;
 		}
-		this.pushPlan({ user: this.chooser(), boosts: this.chooserBoosts(), move: mv, target: foes[0] });
+		this.pushPlan({ user: this.chooser(), boosts: this.chooserBoosts(), move: mv, target: foes[0], mega });
 	}
 	pushPlan(plan) {
 		const a = this.active;
@@ -4938,6 +5134,10 @@ export class Battle {
 				? foes.reduce((best, m) => this.matchupScore(pal, m) > this.matchupScore(pal, best) ? m : best, foes[0])
 				: a.foe;
 			acts.push({ user: pal, boosts: this.boostsOf(pal), move: this.chooseFoeMove(pal, target, 'me'), target });
+		}
+		// MEGA EVOLUTION before the speed order, so a Mega's Speed counts this turn
+		for (const act of acts) {
+			if (act.mega || (this.ownerOf(act.user) !== 'player' && this.aiWantsMega(act.user))) this.megaEvolve(act.user);
 		}
 		// speed order with priority (Prankster: +1 on status moves)
 		const actPrio = act => this.movePriority(act.user, act.move);
@@ -5721,12 +5921,15 @@ export class Battle {
 		// keeps bottom-anchoring consistent so feet sit on the platform. `battleScale` then
 		// restores authentic relative size per species (Diglett small, Wailord huge); absent = 1.
 		const bScale = this.data.species[mon.speciesId]?.battleScale || 1;
+		const tSide = side === 'foe' ? 'front' : 'back';
 		// per-species sprite tuning (sprite_tuning.json): `crop` is the measured
 		// visible-pixel box ([x,y,w,h] as canvas fractions, from sprite-audit) —
 		// sprites exported with big transparent margins normalize and anchor by
 		// their VISIBLE pixels, so they draw at intended size, feet on the
 		// platform, centred. s/x/y are hand tweaks on top (spritetune overlay).
-		const tune = UI.SPRITE_TUNING[mon.speciesId]?.[side === 'foe' ? 'front' : 'back'];
+		const tune = mon.megaForm
+			? { ...(UI.SPRITE_TUNING[mon.speciesId]?.[tSide] || {}), crop: UI.SPRITE_TUNING[mon.megaForm]?.[tSide]?.crop }
+			: UI.SPRITE_TUNING[mon.speciesId]?.[tSide];
 		const cb = tune?.crop;
 		const em = cb ? Math.max(img.width * cb[2], img.height * cb[3]) : Math.max(img.width, img.height);
 		const norm = (96 / em) * bScale * (tune?.s || 1);
@@ -5735,6 +5938,28 @@ export class Battle {
 		const ay = cb ? (cb[1] + cb[3]) * h : h;
 		ctx.drawImage(img, pose.x + pose.dx - ax + (tune?.x || 0) * u, pose.y + pose.dy - ay + (10 + (tune?.y || 0)) * u, w, h);
 		ctx.restore();
+		// MEGA EVOLUTION / PRIMAL REVERSION: a rainbow of rings closes in, then a flash
+		const mfx = this.active?.fx;
+		if (mfx?.kind === 'mega' && mfx.mon === mon) {
+			const p = Math.min(1, mfx.t / mfx.dur);
+			const cx = pose.x + pose.dx, cy = pose.y + pose.dy - 40 * u;
+			ctx.save();
+			const cols = ['#ff5a5a', '#ffb347', '#fff36b', '#6bff8f', '#6bc8ff', '#b46bff'];
+			ctx.lineWidth = 3 * u;
+			for (let i = 0; i < cols.length; i++) {
+				const r = (90 - p * 70 + i * 8) * u;
+				if (r <= 0) continue;
+				ctx.globalAlpha = Math.max(0, 0.9 - p * 0.6);
+				ctx.strokeStyle = cols[i];
+				ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.stroke();
+			}
+			if (p > 0.7) {
+				ctx.globalAlpha = (1 - p) / 0.3 * 0.85;
+				ctx.fillStyle = '#ffffff';
+				ctx.beginPath(); ctx.arc(cx, cy, 70 * u, 0, Math.PI * 2); ctx.fill();
+			}
+			ctx.restore();
+		}
 		if (mon.shiny) {
 			// golden twinkles orbit a shiny so it reads at a glance
 			const t = performance.now() / 1000;
@@ -5898,8 +6123,13 @@ export class Battle {
 			});
 			this.drawSpeedHint(ctx, a, 20 * ub, barY + barH - 6 * ub, ub);
 			btn({ x: W - 8 * ub - backW - 8 * ub, y: barY + 9 * ub, w: backW, h: 44 * ub, label: 'BACK', center: true }, 'back');
-			btn({ x: W - 8 * ub - backW - 8 * ub, y: barY + 61 * ub, w: backW, h: 44 * ub,
-				label: a.swapFrom != null ? 'CANCEL' : 'SWAP', center: true, kbSel: a.swapFrom != null }, 'swapbtn');
+			// MEGA EVOLUTION shares the bottom slot with SWAP when the commanded mon can
+			const megaOK = this.megaToggleOK(a.double ? this.chooser() : a.me);
+			const halfW = (backW - 6 * ub) / 2;
+			btn({ x: W - 8 * ub - backW - 8 * ub, y: barY + 61 * ub, w: megaOK ? halfW : backW, h: 44 * ub,
+				label: a.swapFrom != null ? (megaOK ? 'X' : 'CANCEL') : 'SWAP', center: true, kbSel: a.swapFrom != null }, 'swapbtn');
+			if (megaOK) btn({ x: W - 8 * ub - backW - 8 * ub + halfW + 6 * ub, y: barY + 61 * ub, w: halfW, h: 44 * ub,
+				label: a.megaArmed ? 'MEGA✓' : 'MEGA', center: true, kbSel: !!a.megaArmed, type: a.megaArmed ? 'Dragon' : undefined }, 'megabtn');
 		} else if (a.phase === 'target') {
 			ctx.fillStyle = UI.C.text;
 			ctx.font = `${Math.round(16 * ub)}px m6x11plus, monospace`;
@@ -6009,9 +6239,13 @@ export class Battle {
 				}, 'move:' + i);
 			});
 			const rowY = barY + 12 * u + 2 * (bh + gap) + 6 * u;
-			btn({ x: pad, y: rowY, w: (fullW - gap) / 2, h: 60 * u, label: 'BACK', center: true }, 'back');
-			btn({ x: pad + (fullW + gap) / 2, y: rowY, w: (fullW - gap) / 2, h: 60 * u,
+			const megaOK = this.megaToggleOK(a.double ? this.chooser() : a.me);
+			const cols = megaOK ? 3 : 2, cw = (fullW - gap * (cols - 1)) / cols;
+			btn({ x: pad, y: rowY, w: cw, h: 60 * u, label: 'BACK', center: true }, 'back');
+			btn({ x: pad + cw + gap, y: rowY, w: cw, h: 60 * u,
 				label: a.swapFrom != null ? 'CANCEL' : 'SWAP', center: true, kbSel: a.swapFrom != null }, 'swapbtn');
+			if (megaOK) btn({ x: pad + 2 * (cw + gap), y: rowY, w: cw, h: 60 * u,
+				label: a.megaArmed ? 'MEGA ✓' : 'MEGA', center: true, kbSel: !!a.megaArmed, type: a.megaArmed ? 'Dragon' : undefined }, 'megabtn');
 			this.drawSpeedHint(ctx, a, pad, rowY + 60 * u + 16 * u, u);
 		} else if (a.phase === 'target') {
 			ctx.fillStyle = UI.C.text;
@@ -6118,6 +6352,7 @@ export class Battle {
 		if (kind === 'menu') { a.menuIdx = +arg; this.key('z'); return; }
 		if (kind === 'move') { a.moveIdx = +arg; this.key('z'); return; }
 		if (kind === 'swapbtn') { this.key('s'); return; }
+		if (kind === 'megabtn') { this.key('m'); return; }
 		if (kind === 'target') { a.targetIdx = +arg; this.key('z'); return; }
 		if (kind === 'bag') { a.bagIdx = +arg; this.key('z'); return; }
 		if (kind === 'switch') { a.switchIdx = +arg; this.key('z'); return; }
