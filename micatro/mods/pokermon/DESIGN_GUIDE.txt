@@ -1286,6 +1286,22 @@ House pattern: a FULL-DECK DEVOURER on Blind select (Alolan Grimer / Muk, Glutto
   deck (Aces high, rankless skipped, ties seeded) is destroyed through poke_remove_card; the bank's gain is energized, the bank isn't.
 House pattern: DESTROYED THIS ROUND, run-wide (Alolan Marowak; G.GAME.poke_destroyed_round from index.js's card_removed hook): any card of your
   deck destroyed marks the round, so a joker gained mid-round still sees an earlier destruction.
+House pattern: REGIONAL FORMS that share an existing final (the owner's regional batch B, the Galarian forms; jokers/pokejokers_galarian.js):
+  set_family REPLACES the family that shares a member, so a regional line ending in an existing evolution (G-Zigzagoon -> G-Linoone -> Obstagoon,
+  G-Farfetch'd -> Sirfetch'd, G-Corsola -> Cursola, G-Mr. Mime -> Mr. Rime, G-Yamask -> Runerigus) is PUSHED as its own family: its own pool entry
+  (the original never blocks it), its own highest / previous evo, while the final's own lookups keep its original line (it is found there first).
+  Reuse the original's evolution rule where it has one (farfetchd_lucky, RUNERIGUS_STONES, the Energy path) so both forms evolve the same way.
+House pattern: an EVOLUTION BRANCH BY POSITION (Galarian Slowpoke; slow_branch): Charizard's Mega X / Y read at evolution time — leftmost of your
+  Slowpokes (any form) one branch, rightmost the other, alone / between a seeded pick on the joker's own stream; read only in the countdown pass.
+House pattern: the ROUND'S FINAL HAND (Galarian Darmanitan / Articuno / Moltres; final_hand / final_next): while it scores, hands_left is 0; the face
+  and tooltip read "a round with at most 1 hand left" (Zen Mode's card shows then). A form drawn on another sheet cell: the center's `poke_form_art`
+  {form: {atlas, pos}} with poke_view_form (ui.js ownFace; Shiny through basicShiny). Check the sheet before composing art: 3.9.1 draws some forms
+  UNLISTED beside the listed card (Galarian Zen Darmanitan, Gen05 {2,8}).
+House pattern: LUCKY ODDS on the mod_probability pass (Galarian Ponyta / Rapidash; Pidove's super_luck): "always triggers" raises the numerator to
+  the denominator on 'lucky_mult' only; "doubled" multiplies both rolls' numerators (Oops!'s shape, Lucky only; copies multiply). A per-trigger payoff
+  reads lucky_procs (a card whose two rolls hit counts twice).
+House pattern: a FREE FIRST DISCARD (Galarian Stunfisk, Snap Trap): pre_discard, a player's discard (not The Hook's), discards_used 0, once a round:
+  ease_discard(+1) queued before the discard's own -1, so discards left stay and discards_used still counts it.
 
 2.2 Rarity and cost conventions
 -------------------------------
@@ -1533,6 +1549,8 @@ the Gen 9 Paradox Pokemon's fixed fields: d_size (Gouging Fire's discard), the r
 terrain_round; Energy-inert: Iron Bundle (no number). Per-card X stays Xmult_multi (+5%: Iron Boulder's first-card X2 -> 2.1 / 2.2 / 2.3).
 the Gen 9 Legendaries' fixed fields: hands / guard_round (Ting-Lu's Boss hands), hands / well_round (Ogerpon's Wellspring hand); one energy field per
 Ogerpon mask (mult / Xmult / Xmult2 / chips). Energy-inert by design: Wo-Chien (the 15% cut), Ting-Lu (+2 Boss hands), Chi-Yu (the Boss disable).
+the Galarian forms' fixed fields: quick_num / quick_dem (G-Slowbro's 1 in 3), retriggers (the birds), d_size (G-Moltres), stones_scored; banks slow_mult /
+med_Xmult / gas_Xmult / curse_Xmult. Energy-inert by design: G-Slowbro, G-Stunfisk, G-Articuno, G-Zapdos. G-Ponyta carries Rapidash's Xmult_multi.
 
 Designer consequences:
   1. The field name is a balance choice. A joker-wide X stored as Xmult grows 20% of its base
