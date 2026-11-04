@@ -60,6 +60,13 @@ export const ITEMS = {
 	leppaberry:  { name: 'LEPPA BERRY',  price: 200,  kind: 'held', held: { ppRestore: 10 } },
 	leftovers:   { name: 'LEFTOVERS',    price: 3000, kind: 'held', held: { endHealFrac: 1 / 16 } },
 	everstone:   { name: 'EVERSTONE',    price: 200,  kind: 'held', held: {} }, // breeding: the holder's nature passes to the egg
+	// regional CHARMS (owner-approved stand-in for "evolve while in that region"):
+	// a holder evolves into its species' regional branch (regional_forms.js
+	// pickEvo); held, never consumed. Not for sale: found on JohKanto's postgame
+	// routes (items.js CODE_ITEM_BALLS).
+	alolacharm:  { name: 'ALOLA CHARM',  price: 0, kind: 'held', held: { evoRegion: 'alola' } },
+	galarcharm:  { name: 'GALAR CHARM',  price: 0, kind: 'held', held: { evoRegion: 'galar' } },
+	hisuicharm:  { name: 'HISUI CHARM',  price: 0, kind: 'held', held: { evoRegion: 'hisui' } },
 	destinyknot: { name: 'DESTINY KNOT', price: 3000, kind: 'held', held: {} }, // breeding: 5 IVs inherit instead of 3
 	// nature mints (the five most-wanted) + the ability swapper
 	adamantmint: { name: 'ADAMANT MINT', price: 4000, kind: 'mint', nature: 'adamant' },

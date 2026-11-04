@@ -20,7 +20,7 @@ import { rulesRev } from '../../../js/mods/pins.js';
  *  rev; the evolution only on r72+ (a move recorded before r72 replays as recorded). */
 export const SIRFETCH_LUCKY = 3;
 export const farfetchd_lucky_count = (card) => { const ex = card.ability.extra; return G.GAME && ex.lucky_round === G.GAME.round ? (ex.lucky_count || 0) : 0; };
-function farfetchd_lucky(self, card, context) {
+export function farfetchd_lucky(self, card, context) {
   const ex = card.ability.extra;
   if (context.individual && context.cardarea === G.play && !context.end_of_round && !context.blueprint && context.other_card && context.other_card.lucky_trigger) {
     const n = farfetchd_lucky_count(card);

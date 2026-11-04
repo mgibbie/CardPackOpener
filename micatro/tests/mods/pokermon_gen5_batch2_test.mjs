@@ -155,7 +155,8 @@ await sec('static', () => {
     ok(c.atlas === 'poke_AtlasJokersBasic' + sheet + '391' && c.pos.x === x && c.pos.y === y && !c.soul_pos, `${n}: upstream 3.9.1 cell ${sheet} {${x},${y}} (nothing to deploy)`, [c.atlas, c.pos]);
   }
   ok(C('tirtouga').config.evo_rqmt === 5 && C('archen').config.evo_rqmt === 5, 'the fossils evolve after their 3+ tier fires 5 times (evo_rqmt 5)');
-  const keys = MODS.pokermon.content.centers.filter((c) => c.set === 'Joker').map((c) => c.key).filter((k) => !/^(j_poke_)?(alolan|galarian|hisuian|paldean)_/.test(k)); // (regional batch C: the Hisuian / Paldean forms sit after their lines and join their families — pokermon_hisuian_paldean_test checks them)
+  // (the regional forms sit after their original lines: skipped here)
+  const keys = MODS.pokermon.content.centers.filter((c) => c.set === 'Joker' && !/^j_poke_(alolan|galarian|hisuian|paldean)_/.test(c.key)).map((c) => c.key);
   const run = (from, list, to) => { const i = keys.indexOf('j_poke_' + list[0]); return i > 0 && [from, ...list, to].every((k, n) => keys[i - 1 + n] === 'j_poke_' + k) ? true : keys.slice(i - 1, i + list.length + 1); };
   const r1 = run(keys[keys.indexOf('j_poke_sewaddle') - 1].slice(7), ['sewaddle', 'swadloon', 'leavanny', 'venipede', 'whirlipede', 'scolipede', 'cottonee', 'whimsicott', 'petilil', 'lilligant', 'basculin', 'sandile', 'krokorok', 'krookodile', 'darumaka'].slice(0, 14), 'darumaka');
   ok(r1 === true && /^j_poke_(excadrill|sawk)$/.test(keys[keys.indexOf('j_poke_sewaddle') - 1]), 'Pokédex order: Excadrill (530) or Sawk (539), Sewaddle ... Krookodile (540-553), Darumaka (554)', r1);

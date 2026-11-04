@@ -1,5 +1,5 @@
 {
- "source": "https://pokeapi.co/api/v2/pokemon/<id> (the -mega varieties)",
+ "source": "https://pokeapi.co/api/v2/pokemon/<id> (the -mega and -primal varieties)",
  "fetched": "2026-10-26",
  "forms": [
   {
@@ -1630,6 +1630,39 @@
     143,
     101,
     124
+   ]
+  },
+  {
+   "name": "kyogre-primal",
+   "id": 10077,
+   "species": 382,
+   "types": [
+    "water"
+   ],
+   "stats": [
+    100,
+    150,
+    90,
+    180,
+    160,
+    90
+   ]
+  },
+  {
+   "name": "groudon-primal",
+   "id": 10078,
+   "species": 383,
+   "types": [
+    "ground",
+    "fire"
+   ],
+   "stats": [
+    100,
+    180,
+    160,
+    150,
+    90,
+    90
    ]
   }
  ]

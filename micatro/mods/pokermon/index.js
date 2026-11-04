@@ -82,6 +82,9 @@ import './jokers/zzzapril_fools.js';
 import { PARADOX_LOC, PARADOX_DICTIONARY, PARADOX_LOC_COLOURS, PACK_COLOURS, paradox_pack_open } from './paradox.js';
 // The owner's regional forms, batch A (the 18 Alolan forms; jokers/pokejokers_regional.js)
 import { REGIONAL_FAMILIES, REGIONAL_FAMILY_REV, REGIONAL_LOC, REGIONAL_UPSTREAM_TEXT, poke_card_destroyed } from './jokers/pokejokers_regional.js';
+// ... batch B (the 19 Galarian forms; jokers/pokejokers_galarian.js)
+import { GALARIAN_FAMILIES, GALARIAN_OWN_FAMILIES, GALARIAN_BRANCH_FAMILIES, GALARIAN_FAMILY_REV, GALARIAN_LOC, GALARIAN_UPSTREAM_TEXT,
+  galarian_corsola_destroyed } from './jokers/pokejokers_galarian.js';
 // The owner's regional forms, batch C (the Hisuian and Paldean forms; jokers/pokejokers_hisui.js)
 import { install_hisui_families, HISUI_FAMILY_REV, HISUI_LOC, HISUI_UPSTREAM_TEXT } from './jokers/pokejokers_hisui.js';
 import { DESIGN_FAMILIES, DESIGN_LOC, regi_chip_bonus, regi_h_x_mult, regi_enh_vars, slot_cost_removed, drifblim_destroyed, contrary_lifts, mummy_sell,
@@ -100,7 +103,7 @@ import { SLEEVES } from './sleeves.js';
 import { TYPE_SLEEVE_LOC } from './typesleeves.js';
 import { POKE_UI } from './ui.js';
 import { cfg, hazard_deal_tip } from './systems/utils.js';
-import { family_win_keys, set_family, FAMILY_MEMBER_REV } from './systems/evolution.js';
+import { family_win_keys, set_family, family, FAMILY_MEMBER_REV } from './systems/evolution.js';
 import { runbadge_hooks as RB, runbadge_view } from './systems/runbadges.js';
 import { ELITE_STAKE, elite_boss_eligible } from './stakes.js';
 import { capture_disc_action, APRIL_FOOLS } from './jokers/zzzapril_fools.js';
@@ -503,6 +506,12 @@ for (const f of DESIGN_FAMILIES) set_family(f);
 for (const [name, rev] of Object.entries(GALAR_FAMILY_REV)) FAMILY_MEMBER_REV.set(name, rev);
 // (regional batch A: the Alolan lines; Alolan Raichu / Exeggutor / Marowak join the Kanto lines from ALOLA_REV on)
 for (const f of REGIONAL_FAMILIES) set_family(f);
+// (regional batch B: the Galarian lines; the ones sharing an existing final are their own families beside the Kanto line — pushed, not
+// set_family, which would replace it; Galarian Weezing joins Koffing's line from GALAR_FORMS_REV on)
+for (const f of GALARIAN_FAMILIES) set_family(f);
+for (const f of GALARIAN_OWN_FAMILIES) family.push(f.slice());
+for (const f of GALARIAN_BRANCH_FAMILIES) set_family(f);
+for (const [name, rev] of Object.entries(GALARIAN_FAMILY_REV)) FAMILY_MEMBER_REV.set(name, rev);
 for (const [name, rev] of Object.entries(REGIONAL_FAMILY_REV)) FAMILY_MEMBER_REV.set(name, rev);
 // (regional batch C: the Hisuian / Paldean lines; the six Hisuian branch finals join their lines from HISUI_REV on)
 install_hisui_families(set_family);
@@ -561,6 +570,7 @@ for (const [set, d] of Object.entries(PARADOX_LOC)) Object.assign(DATA.loc.descr
 DATA.loc.misc.dictionary = Object.assign(DATA.loc.misc.dictionary || {}, PARADOX_DICTIONARY);
 // ... and the regional forms' (jokers/pokejokers_regional.js)
 for (const [set, d] of Object.entries(REGIONAL_LOC)) Object.assign(DATA.loc.descriptions[set] = DATA.loc.descriptions[set] || {}, d);
+for (const [set, d] of Object.entries(GALARIAN_LOC)) Object.assign(DATA.loc.descriptions[set] = DATA.loc.descriptions[set] || {}, d);
 // (Gen 8 batch 3: the Galarian evolutions of Linoone / Corsola / Mr. Mime / Farfetch'd — a box after their own 3.9.1 text)
 // ... and the regional batch C forms' (jokers/pokejokers_hisui.js)
 for (const [set, d] of Object.entries(HISUI_LOC)) Object.assign(DATA.loc.descriptions[set] = DATA.loc.descriptions[set] || {}, d);
@@ -569,7 +579,7 @@ for (const [k, lines] of Object.entries(HISUI_UPSTREAM_TEXT)) {
   const e = DATA.loc.descriptions.Joker[k];
   if (e && e.text && !e.text.includes(lines[1])) DATA.loc.descriptions.Joker[k] = { ...e, text: [...e.text, ...lines] };
 }
-for (const [k, lines] of Object.entries({ ...GALAR_UPSTREAM_TEXT, ...REGIONAL_UPSTREAM_TEXT })) {
+for (const [k, lines] of Object.entries({ ...GALAR_UPSTREAM_TEXT, ...REGIONAL_UPSTREAM_TEXT, ...GALARIAN_UPSTREAM_TEXT })) {
   const e = DATA.loc.descriptions.Joker[k];
   if (e && e.text && !e.text.includes(lines[1])) DATA.loc.descriptions.Joker[k] = { ...e, text: [...e.text, ...lines] };
 }
@@ -750,7 +760,8 @@ const hooks = {
   add_to_deck: shiny_hooks.add_to_deck,
   // (+ the owner's Purugly: a debuffed one leaving gives its Joker slot back — jokers/pokejokers_designs.js slot_cost_removed)
   // (+ regional batch A, Alolan Marowak's Shadow Bone: a card of your deck destroyed marks the round — poke_card_destroyed)
-  card_removed(card) { poke_card_destroyed(card); slot_cost_removed(card); const r = shiny_hooks.card_removed(card); if (card.area === G.jokers) G.E_MANAGER.add_event(sync_kecleon); return r; },
+  // (+ regional batch B, Galarian Corsola's Cursed Body: a card of your deck destroyed while it is held — galarian_corsola_destroyed)
+  card_removed(card) { poke_card_destroyed(card); galarian_corsola_destroyed(card); slot_cost_removed(card); const r = shiny_hooks.card_removed(card); if (card.area === G.jokers) G.E_MANAGER.add_event(sync_kecleon); return r; },
   set_edition: shiny_hooks.set_edition,
   // (the Debris Sleeve's alt on the Debris Deck: a Hazard card holds card_limit +1 — backs/backs1.js)
   set_ability: debris_hazard_card_limit,
@@ -1129,6 +1140,12 @@ export const POKERMON = registerMod({
   // Ninetales's Snow Warning, which re-forms Eiscue's ice too) and the regional pill (systems/types.js region_badge; display only). The
   // branches, their family members and Eiscue's snow are gated by rulesRev (systems/energy.js ALOLA_REV), so runs recorded before r81 replay
   // as recorded.
+  // 82 = the owner's regional batch B, the 19 Galarian forms (jokers/pokejokers_galarian.js): own lines beside the originals (Ponyta,
+  // Slowpoke -> Slowbro / Slowking by position, Zigzagoon -> Linoone -> Obstagoon, Darumaka -> Darmanitan with its Zen Mode (upstream's unlisted card), the
+  // single Farfetch'd / Mr. Mime / Corsola / Yamask / Stunfisk evolving naturally into Sirfetch'd / Mr. Rime / Cursola / Runerigus, the
+  // three Legendary birds) and one BRANCH of a Kanto Basic by an Energy (Koffing -> Galarian Weezing: Fairy). The branch, Galarian
+  // Corsola's Psychic path and the new family member are gated by rulesRev (systems/energy.js GALAR_FORMS_REV), so runs recorded before
+  // r82 replay as recorded.
   // 83 = the owner's regional batch C, the Hisuian and Paldean forms (jokers/pokejokers_hisui.js): own lines (Hisuian Growlithe -> Arcanine,
   // Hisuian Voltorb -> Electrode, Paldean Wooper -> Clodsire, Paldean Tauros with its breed rolled when obtained), six BRANCH evolutions by an
   // Energy used on the earlier stage (Quilava -> Hisuian Typhlosion: Psychic; Dewott -> Hisuian Samurott: Dark; Dartrix -> Hisuian

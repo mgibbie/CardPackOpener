@@ -375,6 +375,238 @@
 	},
 	"entries": [
 		{
+			"sha": "5806840",
+			"date": "2026-11-03",
+			"kind": "micatro",
+			"title": "Pokermon r81: regional batch A, the 18 Alolan forms + the regional pill",
+			"body": "",
+			"cards": [],
+			"micatroMods": [
+				{
+					"id": "pokermon",
+					"name": "Pokermon",
+					"added": [
+						{
+							"key": "j_poke_alolan_rattata",
+							"name": "Alolan Rattata",
+							"set": "Joker",
+							"rarity": "common",
+							"cost": 5,
+							"atlas": "@poke_AtlasJokersBasicGen01391",
+							"pos": {
+								"x": 2,
+								"y": 2
+							}
+						},
+						{
+							"key": "j_poke_alolan_raticate",
+							"name": "Alolan Raticate",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 7,
+							"atlas": "@poke_AtlasJokersBasicGen01391",
+							"pos": {
+								"x": 4,
+								"y": 2
+							}
+						},
+						{
+							"key": "j_poke_alolan_raichu",
+							"name": "Alolan Raichu",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 8,
+							"atlas": "@poke_AtlasJokersBasicGen01391",
+							"pos": {
+								"x": 6,
+								"y": 2
+							}
+						},
+						{
+							"key": "j_poke_alolan_sandshrew",
+							"name": "Alolan Sandshrew",
+							"set": "Joker",
+							"rarity": "common",
+							"cost": 4,
+							"atlas": "@poke_AtlasJokersBasicGen01391",
+							"pos": {
+								"x": 8,
+								"y": 2
+							}
+						},
+						{
+							"key": "j_poke_alolan_sandslash",
+							"name": "Alolan Sandslash",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 6,
+							"atlas": "@poke_AtlasJokersBasicGen01391",
+							"pos": {
+								"x": 10,
+								"y": 2
+							}
+						},
+						{
+							"key": "j_poke_alolan_vulpix",
+							"name": "Alolan Vulpix",
+							"set": "Joker",
+							"rarity": "common",
+							"cost": 4,
+							"atlas": "@poke_AtlasJokersBasicGen01391",
+							"pos": {
+								"x": 12,
+								"y": 2
+							}
+						},
+						{
+							"key": "j_poke_alolan_ninetales",
+							"name": "Alolan Ninetales",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 8,
+							"atlas": "@poke_AtlasJokersBasicGen01391",
+							"pos": {
+								"x": 14,
+								"y": 2
+							}
+						},
+						{
+							"key": "j_poke_alolan_diglett",
+							"name": "Alolan Diglett",
+							"set": "Joker",
+							"rarity": "common",
+							"cost": 5,
+							"atlas": "@poke_AtlasJokersBasicGen01391",
+							"pos": {
+								"x": 0,
+								"y": 3
+							}
+						},
+						{
+							"key": "j_poke_alolan_dugtrio",
+							"name": "Alolan Dugtrio",
+							"set": "Joker",
+							"rarity": "uncommon",
+							"cost": 6,
+							"atlas": "@poke_AtlasJokersBasicGen01391",
+							"pos": {
+								"x": 2,
+								"y": 3
+							}
+						},
+						{
+							"key": "j_poke_alolan_meowth",
+							"name": "Alolan Meowth",
+							"set": "Joker",
+							"rarity": "common",
+							"cost": 5,
+							"atlas": "@poke_AtlasJokersBasicGen01391",
+							"pos": {
+								"x": 4,
+								"y": 3
+							}
+						},
+						{
+							"key": "j_poke_alolan_persian",
+							"name": "Alolan Persian",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 9,
+							"atlas": "@poke_AtlasJokersBasicGen01391",
+							"pos": {
+								"x": 6,
+								"y": 3
+							}
+						},
+						{
+							"key": "j_poke_alolan_geodude",
+							"name": "Alolan Geodude",
+							"set": "Joker",
+							"rarity": "common",
+							"cost": 6,
+							"atlas": "@poke_AtlasJokersBasicGen01391",
+							"pos": {
+								"x": 8,
+								"y": 3
+							}
+						},
+						{
+							"key": "j_poke_alolan_graveler",
+							"name": "Alolan Graveler",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 8,
+							"atlas": "@poke_AtlasJokersBasicGen01391",
+							"pos": {
+								"x": 10,
+								"y": 3
+							}
+						},
+						{
+							"key": "j_poke_alolan_golem",
+							"name": "Alolan Golem",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 10,
+							"atlas": "@poke_AtlasJokersBasicGen01391",
+							"pos": {
+								"x": 12,
+								"y": 3
+							}
+						},
+						{
+							"key": "j_poke_alolan_grimer",
+							"name": "Alolan Grimer",
+							"set": "Joker",
+							"rarity": "common",
+							"cost": 4,
+							"atlas": "@poke_AtlasJokersBasicGen01391",
+							"pos": {
+								"x": 14,
+								"y": 3
+							}
+						},
+						{
+							"key": "j_poke_alolan_muk",
+							"name": "Alolan Muk",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 6,
+							"atlas": "@poke_AtlasJokersBasicGen01391",
+							"pos": {
+								"x": 0,
+								"y": 4
+							}
+						},
+						{
+							"key": "j_poke_alolan_exeggutor",
+							"name": "Alolan Exeggutor",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 10,
+							"atlas": "@poke_AtlasJokersBasicGen01391",
+							"pos": {
+								"x": 2,
+								"y": 4
+							}
+						},
+						{
+							"key": "j_poke_alolan_marowak",
+							"name": "Alolan Marowak",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 8,
+							"atlas": "@poke_AtlasJokersBasicGen01391",
+							"pos": {
+								"x": 6,
+								"y": 4
+							}
+						}
+					]
+				}
+			]
+		},
+		{
 			"sha": "0dbdce7",
 			"date": "2026-11-03",
 			"kind": "micatro",
