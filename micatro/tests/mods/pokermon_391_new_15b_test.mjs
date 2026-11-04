@@ -73,7 +73,7 @@ sec(() => {
   // Their place in the joker list: main's file order. (The owner's designs, PORTING.md "The owner's 25 new jokers", sit among them
   // in Pokédex order: Tatsugiri after Houndstone; skipped here.)
   // (+ the regional forms, Micatro's own files: each after its original line)
-  const designs = new Set(['micatro/pokejokers_designs', 'micatro/pokejokers_regional', 'micatro/pokejokers_galarian'].flatMap((f) => STATUS.PORTED_FILES[f] || []).map((n) => 'j_poke_' + n));
+  const designs = new Set(['micatro/pokejokers_designs', 'micatro/pokejokers_regional', 'micatro/pokejokers_galarian', 'micatro/pokejokers_megas'].flatMap((f) => STATUS.PORTED_FILES[f] || []).map((n) => 'j_poke_' + n));
   const keys = MODS.pokermon.content.centers.filter((c) => c.set === 'Joker' && !designs.has(c.key)).map((c) => c.key);
   const after = (a, b) => keys.indexOf('j_poke_' + b) === keys.indexOf('j_poke_' + a) + 1;
   ok(after('dustox', 'lotad') && after('lotad', 'lombre') && after('lombre', 'ludicolo') && after('ludicolo', 'seedot')
@@ -99,11 +99,12 @@ sec(() => {
 sec(() => {
   // Families (main's functions/pokefamily.lua); no Mega for Mawile / Manectric yet
   const fam = (n) => JSON.stringify(poke_get_family_list(n));
-  ok(fam('lombre') === '["lotad","lombre","ludicolo"]' && fam('manectric') === '["electrike","manectric"]' && fam('greavard') === '["greavard","houndstone"]',
+  ok(fam('lombre') === '["lotad","lombre","ludicolo"]' && fam('manectric') === '["electrike","manectric","mega_manectric"]' && fam('greavard') === '["greavard","houndstone"]',
     'families: the 3 lines', [fam('lombre'), fam('manectric'), fam('greavard')]);
-  ok(poke_get_family_list('mawile').length <= 1 && poke_get_family_list('cryogonal').length <= 1, 'Mawile and Cryogonal stand alone');
-  ok(C('mawile').megas === undefined && C('manectric').megas === undefined && !P_CENTERS.j_poke_mega_mawile && !P_CENTERS.j_poke_mega_manectric,
-    'no Mega Mawile / Mega Manectric: upstream main has their sprites only, no joker (batch 16 / later)');
+  ok(JSON.stringify(poke_get_family_list('mawile')) === '["mawile","mega_mawile"]' && poke_get_family_list('cryogonal').length <= 1, 'Mawile only with its Mega (Mega batch D), Cryogonal alone');
+  // (upstream main draws Mega Mawile / Manectric with no joker; the owner's Mega batch D made them: pokermon_megas_classic_test.mjs)
+  ok(String(C('mawile').megas) === 'mega_mawile' && String(C('manectric').megas) === 'mega_manectric' && P_CENTERS.j_poke_mega_mawile.poke_file === 'micatro/pokejokers_megas',
+    'Mega Mawile / Mega Manectric: the owner designs of Mega batch D (upstream main draws them only)');
   ok(!D391.new_deferred.some(([n]) => NEW.includes(n)), 'nothing of theirs is deferred');
 });
 sec(() => {

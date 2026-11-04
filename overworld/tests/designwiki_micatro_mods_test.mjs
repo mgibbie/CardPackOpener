@@ -129,7 +129,7 @@ console.log('     items per mod: ' + counts.join(', ') + ` (total ${totalItems})
 {
 	const dupes = Object.values(core.P_CENTERS).filter(c => c.poke_replaced_by).map(c => c.key);
 	const listedAll = new Set(Object.values(files).filter(Boolean).flatMap(F => F.sections.flatMap(x => x.items.map(i => i.key))));
-	A(dupes.length === 12 && !dupes.some(k => listedAll.has(k)), `add-on dedupe: the ${dupes.length} add-on duplicates of Pokermon jokers get no entry`, dupes.filter(k => listedAll.has(k)).join(','));
+	A(dupes.length === 13 && !dupes.some(k => listedAll.has(k)), `add-on dedupe: the ${dupes.length} add-on duplicates of Pokermon jokers get no entry`, dupes.filter(k => listedAll.has(k)).join(','));
 }
 A(SKINS.length >= 16 && Object.values(files).some(F => F && F.sections.some(x => x.id === 'sleeves')) && Object.values(files).some(F => F && F.sections.some(x => x.id === 'skins')), `sleeves and the ${SKINS.length} deck skins are listed`);
 // categories: every mod section in exactly one, counts add up (overview tiles + category pages read these)

@@ -1812,6 +1812,16 @@ How Megas work:
     else is random (getMega_by_position).
   - There are 41 Megas: 34 Pokermon, 6 Nacho, 1 Pokermon+. Rarity poke_mega, cost $12 is
     standard, and none of them evolve.
+  - Mega batch D (contentRev 84, jokers/pokejokers_megas.js) adds the 18 classic X/Y + ORAS Megas and
+    Mega Salamence (Pokermon's): 53 Pokermon Megas. A new Mega on an EXISTING base: give the base `megas` behind
+    the rules rev (attach_classic_megas' getter) so old runs re-play their Mega Stone onto the same joker.
+  - BANKS ACROSS A MEGA (house, batch D CARRY): a bank both forms use crosses as is (Garchomp's Bite Mult, the Eon
+    duo's X); a bank only one form uses rides along in ability.extra.poke_kept and comes back on the revert
+    (Aggron's eaten X, Banette's Mult, Mega Banette's own X). Say on the card when a bank waits ("Aggron's X2.2 is
+    kept for when it reverts"; "Kept on the card when it reverts").
+  - Batch D numbers: per-card X X1.25-X2 (Xmult_multi), joker X X1.5-X4 (Xmult; X4 behind a condition: 0 discards,
+    a repeated hand), gains X0.25-X1 (Xmult_mod); money, hands, discards, slots and debt stay fixed. A guarantee
+    (Mega Absol: every listed probability numerator = denominator) is the inverse of a base's 0.
 
 Mega design patterns:
   1. One enormous stat.
