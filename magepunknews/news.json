@@ -389,6 +389,326 @@
 	},
 	"entries": [
 		{
+			"sha": "3e1363e",
+			"date": "2026-11-04",
+			"kind": "micatro",
+			"title": "Pokermon r84: Mega batch D, the 18 classic Megas + Mega Salamence",
+			"body": "",
+			"cards": [],
+			"micatroMods": [
+				{
+					"id": "pokermon",
+					"name": "Pokermon",
+					"added": [
+						{
+							"key": "j_poke_mega_sceptile",
+							"name": "Mega Sceptile",
+							"set": "Joker",
+							"rarity": "mega",
+							"cost": 12,
+							"atlas": "@poke_AtlasJokersBasicGen03391",
+							"pos": {
+								"x": 0,
+								"y": 4
+							},
+							"soul": {
+								"x": 1,
+								"y": 4
+							}
+						},
+						{
+							"key": "j_poke_mega_blaziken",
+							"name": "Mega Blaziken",
+							"set": "Joker",
+							"rarity": "mega",
+							"cost": 12,
+							"atlas": "@poke_AtlasJokersBasicGen03391",
+							"pos": {
+								"x": 2,
+								"y": 4
+							},
+							"soul": {
+								"x": 3,
+								"y": 4
+							}
+						},
+						{
+							"key": "j_poke_mega_swampert",
+							"name": "Mega Swampert",
+							"set": "Joker",
+							"rarity": "mega",
+							"cost": 12,
+							"atlas": "@poke_AtlasJokersBasicGen03391",
+							"pos": {
+								"x": 4,
+								"y": 4
+							},
+							"soul": {
+								"x": 5,
+								"y": 4
+							}
+						},
+						{
+							"key": "j_poke_mega_sableye",
+							"name": "Mega Sableye",
+							"set": "Joker",
+							"rarity": "mega",
+							"cost": 12,
+							"atlas": "@poke_AtlasJokersBasicGen03391",
+							"pos": {
+								"x": 8,
+								"y": 4
+							},
+							"soul": {
+								"x": 9,
+								"y": 4
+							}
+						},
+						{
+							"key": "j_poke_mega_mawile",
+							"name": "Mega Mawile",
+							"set": "Joker",
+							"rarity": "mega",
+							"cost": 12,
+							"atlas": "@poke_AtlasJokersBasicGen03391",
+							"pos": {
+								"x": 10,
+								"y": 4
+							},
+							"soul": {
+								"x": 11,
+								"y": 4
+							}
+						},
+						{
+							"key": "j_poke_mega_aggron",
+							"name": "Mega Aggron",
+							"set": "Joker",
+							"rarity": "mega",
+							"cost": 12,
+							"atlas": "@poke_AtlasJokersBasicGen03391",
+							"pos": {
+								"x": 0,
+								"y": 5
+							},
+							"soul": {
+								"x": 1,
+								"y": 5
+							}
+						},
+						{
+							"key": "j_poke_mega_medicham",
+							"name": "Mega Medicham",
+							"set": "Joker",
+							"rarity": "mega",
+							"cost": 12,
+							"atlas": "@poke_AtlasJokersBasicGen03391",
+							"pos": {
+								"x": 2,
+								"y": 5
+							},
+							"soul": {
+								"x": 3,
+								"y": 5
+							}
+						},
+						{
+							"key": "j_poke_mega_manectric",
+							"name": "Mega Manectric",
+							"set": "Joker",
+							"rarity": "mega",
+							"cost": 12,
+							"atlas": "@poke_AtlasJokersBasicGen03391",
+							"pos": {
+								"x": 4,
+								"y": 5
+							},
+							"soul": {
+								"x": 5,
+								"y": 5
+							}
+						},
+						{
+							"key": "j_poke_mega_sharpedo",
+							"name": "Mega Sharpedo",
+							"set": "Joker",
+							"rarity": "mega",
+							"cost": 12,
+							"atlas": "@poke_AtlasJokersBasicGen03391",
+							"pos": {
+								"x": 10,
+								"y": 5
+							},
+							"soul": {
+								"x": 11,
+								"y": 5
+							}
+						},
+						{
+							"key": "j_poke_mega_banette",
+							"name": "Mega Banette",
+							"set": "Joker",
+							"rarity": "mega",
+							"cost": 12,
+							"atlas": "@poke_AtlasJokersBasicGen03391",
+							"pos": {
+								"x": 6,
+								"y": 5
+							},
+							"soul": {
+								"x": 7,
+								"y": 5
+							}
+						},
+						{
+							"key": "j_poke_mega_absol",
+							"name": "Mega Absol",
+							"set": "Joker",
+							"rarity": "mega",
+							"cost": 12,
+							"atlas": "@poke_AtlasJokersBasicGen03391",
+							"pos": {
+								"x": 8,
+								"y": 5
+							},
+							"soul": {
+								"x": 9,
+								"y": 5
+							}
+						},
+						{
+							"key": "j_poke_mega_glalie",
+							"name": "Mega Glalie",
+							"set": "Joker",
+							"rarity": "mega",
+							"cost": 12,
+							"atlas": "@poke_AtlasJokersBasicGen03391",
+							"pos": {
+								"x": 4,
+								"y": 6
+							},
+							"soul": {
+								"x": 5,
+								"y": 6
+							}
+						},
+						{
+							"key": "j_poke_mega_salamence",
+							"name": "Mega Salamence",
+							"set": "Joker",
+							"rarity": "mega",
+							"cost": 12,
+							"atlas": "@poke_AtlasJokersBasicGen03391",
+							"pos": {
+								"x": 8,
+								"y": 6
+							},
+							"soul": {
+								"x": 9,
+								"y": 6
+							}
+						},
+						{
+							"key": "j_poke_mega_metagross",
+							"name": "Mega Metagross",
+							"set": "Joker",
+							"rarity": "mega",
+							"cost": 12,
+							"atlas": "@poke_AtlasJokersBasicGen03391",
+							"pos": {
+								"x": 6,
+								"y": 6
+							},
+							"soul": {
+								"x": 7,
+								"y": 6
+							}
+						},
+						{
+							"key": "j_poke_mega_latias",
+							"name": "Mega Latias",
+							"set": "Joker",
+							"rarity": "mega",
+							"cost": 12,
+							"atlas": "@poke_AtlasJokersBasicGen03391",
+							"pos": {
+								"x": 10,
+								"y": 6
+							},
+							"soul": {
+								"x": 11,
+								"y": 6
+							}
+						},
+						{
+							"key": "j_poke_mega_latios",
+							"name": "Mega Latios",
+							"set": "Joker",
+							"rarity": "mega",
+							"cost": 12,
+							"atlas": "@poke_AtlasJokersBasicGen03391",
+							"pos": {
+								"x": 0,
+								"y": 7
+							},
+							"soul": {
+								"x": 1,
+								"y": 7
+							}
+						},
+						{
+							"key": "j_poke_mega_rayquaza",
+							"name": "Mega Rayquaza",
+							"set": "Joker",
+							"rarity": "mega",
+							"cost": 12,
+							"atlas": "@poke_AtlasJokersBasicGen03391",
+							"pos": {
+								"x": 6,
+								"y": 7
+							},
+							"soul": {
+								"x": 7,
+								"y": 7
+							}
+						},
+						{
+							"key": "j_poke_mega_garchomp",
+							"name": "Mega Garchomp",
+							"set": "Joker",
+							"rarity": "mega",
+							"cost": 12,
+							"atlas": "@poke_AtlasJokersBasicGen04391",
+							"pos": {
+								"x": 2,
+								"y": 7
+							},
+							"soul": {
+								"x": 3,
+								"y": 7
+							}
+						},
+						{
+							"key": "j_poke_mega_diancie",
+							"name": "Mega Diancie",
+							"set": "Joker",
+							"rarity": "mega",
+							"cost": 12,
+							"atlas": "@poke_AtlasJokersBasicGen06391",
+							"pos": {
+								"x": 0,
+								"y": 12
+							},
+							"soul": {
+								"x": 1,
+								"y": 12
+							}
+						}
+					]
+				}
+			]
+		},
+		{
 			"sha": "c157a28",
 			"date": "2026-11-03",
 			"kind": "micatro",
