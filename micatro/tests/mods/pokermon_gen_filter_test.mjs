@@ -170,7 +170,7 @@ sec('sinnoh starters', () => {
   ok(['j_nacho_turtwig', 'j_nacho_chimchar', 'j_nacho_piplup'].some((k) => on.has(k)), 'Gen 4 on: they still come', [...on].filter((k) => /nacho/.test(k)));
 });
 // only one generation on: only it appears (Gen 3 has every kind of joker: starters, a pseudo, legendaries; Gen 9 its Paradoxes)
-for (const only of [3, 4, 9]) {
+for (const only of [1, 2, 3, 4, 5, 6, 7, 8, 9]) {
   sec('only gen ' + only, () => {
     const { bad, made } = sweep('GFO' + only, [only]);
     ok(Object.keys(bad).length === 0, `only Gen ${only} on: every source makes Gen ${only} only`, bad);
@@ -178,6 +178,15 @@ for (const only of [3, 4, 9]) {
   });
 }
 // Gen 1 off: the Starter Pack's Pikachu / Eevee slot (both Gen 1) falls back to an allowed Basic, not Caterpie
+sec('empty generation pool', () => {
+  start('GFEMPTY', []);
+  const result = get_random_poke_key('empty', 'Basic');
+  ok(!result || !isPoke(P_CENTERS[result]), 'all generations off: an empty Pokémon pool never falls back to a disabled Pokémon', result);
+  start('GFEMPTYTAG', [], { customDeck: { name: 'Starter', mods: MODS3, tags: [{ key: 'tag_poke_starter_tag' }] } });
+  ok(G.pack_cards.cards.length === 4 && G.pack_cards.cards.every(c => !isPoke(c.config.center)), 'empty starter pack uses non-Pokémon fallback cards', G.pack_cards.cards.map(key));
+  start('GFEMPTYBALL', []); act({ type: 'select_blind' }); flush();
+  ok(useN('c_poke_pokeball', 1).length === 0, 'empty Poké Ball produces no disabled Pokémon');
+});
 sec('gen 1 off fallback', () => {
   start('GFNO1', [2, 3, 4, 5, 6, 7, 8, 9], { customDeck: { name: 'Starter', mods: MODS3, tags: [{ key: 'tag_poke_starter_tag' }] } });
   const got = G.pack_cards.cards.map(key);

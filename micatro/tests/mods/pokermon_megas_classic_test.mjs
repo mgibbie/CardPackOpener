@@ -312,6 +312,18 @@ await sec('mega salamence reachable', () => {
   G.GAME.hands.Straight.played = 3;
   const r = play(['S_5']);
   ok(near(r.mult, 1 + 30), 'Mega Salamence, Aerilate: +10 Mult per Straight played this run (3 -> +30)', r.total);
+  G.GAME.hands.Straight.played = 10;
+  const before = G.hand.config.card_limit;
+  round();
+  ok(G.hand.config.card_limit === before + 2 && G.GAME.round_resets.temp_handsize === 2, 'Mega Salamence retains +1 temporary hand size per 5 Straights at blind select', [before, G.hand.config.card_limit, G.GAME.round_resets.temp_handsize]);
+  ok(/hand size/i.test(plain(s)) && /5/.test(plain(s)), 'Mega Salamence tooltip describes the hand-size bonus', plain(s));
+  G.GAME.hands.Straight.played = 4;
+  round();
+  ok(G.hand.config.card_limit === before, 'the temporary hand size expires and fewer than 5 Straights grants nothing', G.hand.config.card_limit);
+  G.GAME.hands.Straight.played = 10;
+  PINS.RULES.pins = { pokermon: '3.9.1+r105' };
+  try { round(); ok(G.hand.config.card_limit === before, 'r105 replays retain the old Mega Salamence behavior', G.hand.config.card_limit); }
+  finally { PINS.RULES.pins = null; }
   revert(s, st);
   ok(key(s) === 'j_poke_salamence', '... and back to Salamence');
 });

@@ -585,6 +585,13 @@ for (const [set, d] of Object.entries(GALARIAN_LOC)) Object.assign(DATA.loc.desc
 // ... and Mega batch D's (jokers/pokejokers_megas.js)
 for (const [set, d] of Object.entries(MEGA_D_LOC)) Object.assign(DATA.loc.descriptions[set] = DATA.loc.descriptions[set] || {}, d);
 DATA.loc.descriptions.Spectral.c_poke_megastone.text.push('{C:inactive}(Select a Pokémon when more than one qualifies)');
+// Selected-card Items use Tarot-style one-to-maximum selection (r107).
+for (const k of ['c_poke_firestone', 'c_poke_sunstone', 'c_poke_icestone', 'c_poke_upgrade']) {
+  const e = DATA.loc.descriptions.Item[k];
+  e.text = e.text.map(line => line.replace('{C:attention}#1#{} selected cards', 'up to {C:attention}#1#{} selected cards'));
+}
+DATA.loc.descriptions.Item.c_poke_linkcable.text = ['{C:attention}Evolution Card{}', '{br:2}ERROR - CONTACT STEAK', 'Select up to {C:attention}#1#{} cards,', '{C:attention}increase{} the left card’s rank,', 'and {C:attention}decrease{} the right if two'];
+DATA.loc.descriptions.Item.c_poke_heartscale.text = ['Select up to {C:attention}#1#{} cards,', 'copy the right onto the left if two,', 'then turn them into {C:hearts}#2#{}', '{C:inactive}(Drag to rearrange)'];
 // (Gen 8 batch 3: the Galarian evolutions of Linoone / Corsola / Mr. Mime / Farfetch'd — a box after their own 3.9.1 text)
 // ... and the regional batch C forms' (jokers/pokejokers_hisui.js)
 for (const [set, d] of Object.entries(HISUI_LOC)) Object.assign(DATA.loc.descriptions[set] = DATA.loc.descriptions[set] || {}, d);
@@ -1174,7 +1181,10 @@ export const POKERMON = registerMod({
   // Groudon into Primal Kyogre (+2 hands, Clubs retrigger twice, always raining) / Primal Groudon (+2 discards, Hearts / Diamonds X1.5,
   // always sunny) for good; a Primal always wins the Primal Clash against the other's normal form. The Orbs reach the pools (Items, and the
   // Ancient / Future Packs' first card) only from PRIMAL_REV, so runs recorded before r85 replay as recorded.
-  contentRev: 104,
+  // 105: an exhausted generation-filtered pool no longer produces an excluded Caterpie.
+  // 106: Mega Salamence retains Salamence's temporary hand-size bonus at blind select.
+  // 107: selected-card Items accept one through their maximum, with single-card effects for paired Items.
+  contentRev: 107,
   // Pokermon 3.9.1 pokermon.lua: SMODS.current_mod.optional_features = {quantum_enhancements = true, object_weights = true}.
   // object_weights sends create_card's key, the shop roll, tags, packs, bosses and vouchers through SMODS.poll_object
   // (js/engine/smods.js; batch 17). quantum_enhancements is the engine's check_enhancement, always on.

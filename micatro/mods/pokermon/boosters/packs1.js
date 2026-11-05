@@ -133,7 +133,7 @@ defineBoosters({
       else if (i === 4 && L.pika_eevee.length > 0) pack_key = pseudorandom_element(L.pika_eevee, pseudoseed('pikaeevee'))[0];
       else if (i === 5 && L.pseudo.length > 0) pack_key = pseudorandom_element(L.pseudo, pseudoseed('pseudo'))[0];
       else pack_key = fallback_poke_key('starter' + i); // (Caterpie; r79: an allowed Basic while Gen 1 is off)
-      return smods_create_card({ set: 'Joker', area: G.pack_cards, key: pack_key, no_edition: true, skip_materialize: true });
+      return smods_create_card({ set: 'Joker', area: G.pack_cards, key: pack_key || 'j_joker', no_edition: true, skip_materialize: true });
     },
     loc_vars(self, info_queue, card) { return { vars: [card.config.center.config.choose, card.ability.extra] }; },
     in_pool() { return false; },
@@ -165,7 +165,7 @@ defineBoosters({
       else if (i === 4 && L.bidoof_yamper.length > 0) pack_key = pseudorandom_element(L.bidoof_yamper, pseudoseed('pikaeevee'))[0];
       else if (i === 5 && L.pseudo.length > 0) pack_key = pseudorandom_element(L.pseudo, pseudoseed('pseudo'))[0];
       else pack_key = fallback_poke_key('starter' + i); // (Caterpie; r79: an allowed Basic while Gen 1 is off)
-      return smods_create_card({ set: 'Joker', area: G.pack_cards, key: pack_key, no_edition: true, skip_materialize: true });
+      return smods_create_card({ set: 'Joker', area: G.pack_cards, key: pack_key || 'j_joker', no_edition: true, skip_materialize: true });
     },
     loc_vars(self, info_queue, card) { return { vars: [card.config.center.config.choose, card.ability.extra] }; },
     in_pool() { return false; },

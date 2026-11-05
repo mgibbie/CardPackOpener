@@ -20,6 +20,7 @@ function open_free_pack(key) {
 
 /** store_joker_create: the tag's joker appears (couponed = free) once the tag pops. */
 function shop_joker(tag, card, colour) {
+  if (!card) return undefined;
   card.states_visible = false;
   tag.yep('+', colour, () => {
     card.states_visible = undefined;
