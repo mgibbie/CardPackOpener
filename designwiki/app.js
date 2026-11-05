@@ -3593,7 +3593,7 @@ const pjIsOwner = () => {
   try { cached = JSON.parse(localStorage.getItem('magepunk_mp_state_v1') || 'null'); } catch (e) { /* no login */ }
   return cached?.username === 'mgibbie';
 };
-const pjDexLabel = n => '#' + String(n).padStart(4, '0');
+const pjDexLabel = n => n < 0 ? 'Fakemon ' + n : '#' + String(n).padStart(4, '0');
 const pjBadge = t => h('span', { class: 'pj-ptype', style: 'background:' + (PJ_COLOURS[t] || '#888') + ';color:' + (PJ_DARK_TEXT.has(t) ? '#1c2230' : '#fff') }, t);
 /** The card page's art-source label (art.source: 'upstream' = Pokermon 3.9.1's own card, 'composed' = ours). */
 const PJ_ART_LABEL = { upstream: 'Art: Pokermon upstream', composed: 'Art: composed (no upstream card yet)' };
@@ -3613,14 +3613,16 @@ async function pokermonJokersView() {
   try { D = await loadPokermonJokers(); }
   catch (e) { return content.replaceChildren(h('h1', null, 'Pokermon jokers not in the game yet'), h('p', { class: 'muted' }, 'Could not load the list.')); }
   if (!pjOn()) return;
+  const species = [...D.species, ...(D.fakemon || [])];
   const P = new URLSearchParams(location.hash.split('?')[1] || '');
   const st = { gen: P.get('gen') || '', type: P.get('type') || '', q: P.get('q') || '' };
   const c = D.counts;
   const typeCount = {};
-  for (const s of D.species) typeCount[s.ptype] = (typeCount[s.ptype] || 0) + 1;
+  for (const s of species) typeCount[s.ptype] = (typeCount[s.ptype] || 0) + 1;
   const genSel = h('select', { class: 'pj-sel', id: 'pjGen', 'aria-label': 'Generation' },
     h('option', { value: '' }, 'All generations'),
-    Object.entries(c.byGen).filter(([, n]) => n).map(([g, n]) => h('option', { value: g }, 'Generation ' + g + ' (' + n + ')')));
+    Object.entries(c.byGen).filter(([, n]) => n).map(([g, n]) => h('option', { value: g }, 'Generation ' + g + ' (' + n + ')')),
+    D.fakemon?.length ? h('option', { value: '0' }, 'Fakemon (' + D.fakemon.length + ')') : null);
   const typeSel = h('select', { class: 'pj-sel', id: 'pjType', 'aria-label': 'Pokermon type' },
     h('option', { value: '' }, 'All types'),
     Object.keys(PJ_COLOURS).filter(t => typeCount[t]).map(t => h('option', { value: t }, t + ' (' + typeCount[t] + ')')));
@@ -3636,14 +3638,14 @@ async function pokermonJokersView() {
     if (st.q) qs.set('q', st.q);
     const target = PJ + (qs.toString() ? '?' + qs : '');
     if (location.hash !== target) history.replaceState(null, '', target);
-    const nq = norm(st.q), qDex = /^#?\d+$/.test(st.q.trim()) ? +st.q.trim().replace('#', '') : null;
-    const list = D.species.filter(s => (!st.gen || String(s.gen) === st.gen) && (!st.type || s.ptype === st.type)
+    const nq = norm(st.q), qDex = /^#?-?\d+$/.test(st.q.trim()) ? +st.q.trim().replace('#', '') : null;
+    const list = species.filter(s => (!st.gen || String(s.gen) === st.gen) && (!st.type || s.ptype === st.type)
       && (!nq || (qDex != null ? s.dex === qDex : norm(s.name).includes(nq))));
-    shown.textContent = list.length === D.species.length ? '' : list.length + ' shown';
+    shown.textContent = list.length === species.length ? '' : list.length + ' shown';
     const byGen = new Map();
     for (const s of list) { if (!byGen.has(s.gen)) byGen.set(s.gen, []); byGen.get(s.gen).push(s); }
     body.replaceChildren(...(list.length ? [...byGen.entries()].map(([g, ss]) => h('section', { class: 'pj-gen', 'data-gen': g },
-      h('h2', null, 'Generation ' + g, ' ', h('span', { class: 'num' }, '(' + ss.length + ')')),
+      h('h2', null, g === 0 ? 'Overworld Fakemon' : 'Generation ' + g, ' ', h('span', { class: 'num' }, '(' + ss.length + ')')),
       h('div', { class: 'pj-grid' }, ss.map(s => h('a', { class: 'pj-tile', href: PJ + '/' + s.dex, 'data-dex': s.dex, 'data-ptype': s.ptype },
         pjImg(s.art.normal + CB, s.name),
         h('span', { class: 'pj-name' }, s.name),
@@ -3658,7 +3660,7 @@ async function pokermonJokersView() {
   qIn.oninput = () => { clearTimeout(qt); qt = setTimeout(() => { st.q = qIn.value.trim(); render(); }, 120); };
   const bm = c.byMod;
   // (Gen 9 batch 4, 2026-11-03: every canonical species has a joker — the list is empty, so the page says so instead of an empty grid)
-  if (!c.missing) {
+  if (!c.missing && !(D.fakemon || []).length) {
     return content.replaceChildren(h('div', { class: 'pj-head pj-done' },
       h('h1', null, 'Pokermon jokers not in the game yet ', h('span', { class: 'num' }, '(0)')),
       h('p', null, 'All ' + c.dex + ' canonical Pokémon have a joker in ', h('a', { href: '#/micatro-mods/mod/pokermon' }, 'Pokermon'),
@@ -3667,13 +3669,14 @@ async function pokermonJokersView() {
   }
   content.replaceChildren(
     h('div', { class: 'pj-head' },
-      h('h1', null, 'Pokermon jokers not in the game yet ', h('span', { class: 'num' }, '(' + c.missing + ')')),
+      h('h1', null, 'Pokermon jokers not in the game yet ', h('span', { class: 'num' }, '(' + species.length + ')')),
       h('p', null, c.missing + ' of the ' + c.dex + ' canonical Pokémon have no joker in ', h('a', { href: '#/micatro-mods/mod/pokermon' }, 'Pokermon'),
         ' (' + bm.pokermon.species + ' species), ', h('a', { href: '#/micatro-mods/mod/nacho' }, 'Nacho’s Pokermon Dip'), ' (' + bm.nacho.species + ') or ',
         h('a', { href: '#/micatro-mods/mod/pokermonplus' }, 'Sonfive’s Pokermon+'), ' (' + bm.pokermonplus.species + ') yet — ' + c.covered + ' are covered. ',
-        (c.art && !c.art.composed ? 'Every card below is Pokermon’s own: upstream already draws all of them (' + c.art.upstream + '), it just has no joker for them yet. '
+        (!c.missing ? 'All canonical species are covered. Fakemon cards use the overworld battle sprites on composed Pokermon frames. '
+          : c.art && !c.art.composed ? 'Every canonical card below is Pokermon’s own: upstream already draws all of them (' + c.art.upstream + '), it just has no joker for them yet. '
           : 'Each card below is Pokermon’s own where upstream already draws it (' + ((c.art && c.art.upstream) || 0) + '); the rest (' + ((c.art && c.art.composed) || 0) + ') are composed the way Pokermon draws its own: the frame for its Pokermon type and stage, a scene from its family or type, and its battle sprite. '),
-        'Type, stage and a rarity guess follow Pokermon’s conventions; the ability is still to be designed. Megas and regional forms are left out (only base species), and so are fakemon.'),
+        'Type, stage and a rarity guess follow Pokermon’s conventions; the ability is still to be designed. The list also includes ' + (D.fakemon || []).length + ' overworld Fakemon; their negative IDs are internal identifiers, not National Dex numbers.'),
       pjIsOwner() ? h('p', { class: 'pj-ownernote' }, 'Owner: open a card to submit a design for it. Designs go to the joker design list.') : null),
     h('div', { class: 'pj-filters' }, genSel, typeSel, qIn, shown),
     body);
@@ -3693,14 +3696,14 @@ async function pokermonJokerDetail(id) {
   try { D = await loadPokermonJokers(); }
   catch (e) { return content.replaceChildren(h('h1', null, 'Pokermon joker'), h('p', { class: 'muted' }, 'Could not load the list.')); }
   if (!pjOn(id)) return;
-  const s = D.species.find(x => String(x.dex) === String(id));
+  const s = [...D.species, ...(D.fakemon || [])].find(x => String(x.dex) === String(id));
   const back = h('p', { class: 'lp-back' }, h('a', { href: PJ }, '← Pokermon jokers not in the game yet'));
   if (!s) return content.replaceChildren(back, h('h1', null, 'Not on the list'), h('p', { class: 'muted' }, 'That Pokémon already has a joker, or is not a canonical species.'));
   let shiny = false;
   const art = pjImg(s.art.normal + CB, s.name, 'pj-art pj-art-big');
   const flip = h('button', { type: 'button', class: 'pj-flip' }, 'Show Shiny');
   flip.onclick = () => { shiny = !shiny; art.src = (shiny ? s.art.shiny : s.art.normal) + CB; flip.textContent = shiny ? 'Show normal' : 'Show Shiny'; };
-  const missing = new Set(D.species.map(x => x.dex));
+  const missing = new Set([...D.species, ...(D.fakemon || [])].map(x => x.dex));
   const lineEl = h('ol', { class: 'pj-line' }, s.line.map(l => h('li', { class: l.dex === s.dex ? 'cur' : null },
     l.dex === s.dex ? h('b', null, l.name)
       : missing.has(l.dex) ? h('a', { href: PJ + '/' + l.dex }, l.name)
@@ -3721,7 +3724,7 @@ async function pokermonJokerDetail(id) {
           row('Evolution line', s.line.length > 1 ? lineEl : h('span', { class: 'muted' }, 'Does not evolve')),
           row('Rarity (guess)', s.rarityLabel),
           row('Cost (guess)', s.cost != null ? '$' + s.cost : '—'),
-          row('Generation', String(s.gen)),
+          row(s.dex < 0 ? 'Source' : 'Generation', s.dex < 0 ? ({ cap: 'Create-A-Pokémon', uranium: 'Pokémon Uranium', ransei: 'Radical Ransei' }[s.source] || 'Overworld Fakemon') : String(s.gen)),
           row('Pokédex', pk ? h('a', { href: '#/pokemon/' + s.key }, s.name + '’s Pokédex page') : h('span', { class: 'muted' }, '—'))),
         h('h2', null, 'Ability'),
         h('p', { class: 'pj-ability muted' }, 'Not designed yet.'),

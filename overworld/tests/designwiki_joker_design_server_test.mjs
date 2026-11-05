@@ -134,7 +134,7 @@ try {
 	A((await call('joker-design-list', { dex: 1 }, owner)).designs.length === 0, 'a species with none: []');
 
 	// ---------- appends never clobber ----------
-	const N = 12;
+	const N = 11; // leave one rate-limit slot for the Fakemon submission below
 	const results = await Promise.all(Array.from({ length: N }, (_, i) => call('joker-design-add', design({ dex: 400 + i, ability: 'race ' + i }), owner)));
 	A(results.every((r) => r.ok), `${N} concurrent submissions all succeed`, JSON.stringify(results.filter((r) => !r.ok)));
 	const after = row();
@@ -159,6 +159,9 @@ try {
 		'an append racing a clear: the append survives and the cleared design is gone', JSON.stringify({ addR, doneR, n: mixed.length }).slice(0, 200));
 	const last = await call('joker-design-done', { tsList: row().map((e) => e.ts) }, owner);
 	A(last.ok && last.count === 0 && row() === null, 'clearing every named design deletes the row');
+	const fake = await call('joker-design-add', design({ dex: -1, name: 'Syclar' }), owner);
+	A(fake.ok && (await call('joker-design-list', { dex: -1 }, owner)).designs[0]?.name === 'Syclar', 'negative Fakemon IDs can be filed and retrieved separately');
+	await call('joker-design-done', { ts: fake.design.ts }, owner);
 
 	// ---------- bounded ----------
 	const full = Array.from({ length: 500 }, (_, i) => ({ ts: 1000 + i, dex: 1 + (i % 1025), name: 'x', ability: 'seed', rarity: '', cost: null, notes: '' }));
