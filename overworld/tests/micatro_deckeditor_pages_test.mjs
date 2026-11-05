@@ -40,7 +40,7 @@ const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/ja
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 async function waitFor(fn, ms) { const t0 = Date.now(); while (Date.now() - t0 < ms) { try { if (await fn()) return true; } catch { } await sleep(100); } return false; }
 const MODS = ['pokermon', 'nacho', 'pokermonplus'];
-const TOTAL = 1353;         // the previous 1335 plus the 18 batch F Megas
+const TOTAL = 1360;         // plus seven Mega Dimension forms
 const OPEN_BUDGET = 4000;   // ms, tap -> the first page drawn, at CPU x4
 
 const server = http.createServer(async (req, res) => {

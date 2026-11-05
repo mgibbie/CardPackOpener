@@ -48,11 +48,11 @@ const ex = (j) => j.ability.extra;
 const C = (n) => P_CENTERS['j_poke_' + n];
 const plain = (j) => describe(j).lines.join(' | ').replace(/\{[^}]*\}/g, '').replace(/\s+/g, ' ');
 const LINES = {
-  pikipek: ['pikipek', 'trumbeak', 'toucannon'], yungoos: ['yungoos', 'gumshoos'], crabrawler: ['crabrawler', 'crabominable'], oricorio: ['oricorio'],
+  pikipek: ['pikipek', 'trumbeak', 'toucannon'], yungoos: ['yungoos', 'gumshoos'], crabrawler: ['crabrawler', 'crabominable', 'mega_crabominable'], oricorio: ['oricorio'],
   cutiefly: ['cutiefly', 'ribombee'], wishiwashi: ['wishiwashi'], mareanie: ['mareanie', 'toxapex'], dewpider: ['dewpider', 'araquanid'],
   fomantis: ['fomantis', 'lurantis'], morelull: ['morelull', 'shiinotic'],
 };
-const NAMES = Object.values(LINES).flat();
+const NAMES = Object.values(LINES).flat().filter(n => !n.startsWith('mega_'));
 function debuff(c) { c.ability.debuff_sources = { test: true }; c.set_debuff(); flush(); return c; }
 function undebuff(c) { c.ability.debuff_sources = {}; c.set_debuff(); flush(); return c; }
 function mk(spec, area) {
@@ -174,7 +174,7 @@ await sec('static', () => {
   const run = (from, list, to) => { const i = keys.indexOf('j_poke_' + list[0]); return i > 0 && [from, ...list, to].every((k, n) => keys[i - 1 + n] === 'j_poke_' + k) ? true : keys.slice(i - 1, i + list.length + 1); };
   const RUNS = [
     ['primarina', ['pikipek', 'trumbeak', 'toucannon', 'yungoos', 'gumshoos'], 'grubbin'],
-    ['vikavolt', ['crabrawler', 'crabominable', 'oricorio', 'cutiefly', 'ribombee'], 'rockruff'],
+    ['vikavolt', ['crabrawler', 'crabominable', 'mega_crabominable', 'oricorio', 'cutiefly', 'ribombee'], 'rockruff'],
     ['lycanroc_dusk', ['wishiwashi', 'mareanie', 'toxapex'], 'mudbray'],
     ['mudsdale', ['dewpider', 'araquanid', 'fomantis', 'lurantis', 'morelull', 'shiinotic'], 'salandit'],
   ];

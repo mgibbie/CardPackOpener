@@ -130,11 +130,11 @@ await sec('static', () => {
   }
   const keys = MODS.pokermon.content.centers.filter((c) => c.set === 'Joker').map((c) => c.key);
   const run = (list) => { const i = keys.indexOf('j_poke_' + list[0]); return i > 0 && list.every((k, n) => keys[i + n] === 'j_poke_' + k) ? true : keys.slice(i - 1, i + list.length + 1); };
-  for (const ch of [['capsakid', 'scovillain', 'rellor'], ['rabsca', 'flittle', 'espathra', 'tinkatink'], ['wugtrio', 'bombirdier', 'varoom', 'revavroom', 'cyclizar', 'orthworm', 'glimmet', 'glimmora', 'greavard'],
-    ['houndstone', 'flamigo', 'veluza', 'dondozo', 'tatsugiri', 'annihilape', 'clodsire', 'farigiraf'], ['iron_leaves', 'poltchageist', 'sinistcha']]) {
+  for (const ch of [['capsakid', 'scovillain', 'mega_scovillain', 'rellor'], ['rabsca', 'flittle', 'espathra', 'tinkatink'], ['wugtrio', 'bombirdier', 'varoom', 'revavroom', 'cyclizar', 'orthworm', 'glimmet', 'glimmora', 'mega_glimmora', 'greavard'],
+    ['houndstone', 'flamigo', 'veluza', 'dondozo', 'tatsugiri', 'mega_tatsugiri', 'annihilape', 'clodsire', 'farigiraf'], ['iron_leaves', 'poltchageist', 'sinistcha']]) {
     ok(run(ch) === true, 'Pokédex order: ' + ch.join(' > '), run(ch));
   }
-  const FAM = { wooper: 'wooper,quagsire,clodsire', capsakid: 'capsakid,scovillain', flittle: 'flittle,espathra', varoom: 'varoom,revavroom', glimmet: 'glimmet,glimmora', poltchageist: 'poltchageist,sinistcha' };
+  const FAM = { wooper: 'wooper,quagsire,clodsire', capsakid: 'capsakid,scovillain,mega_scovillain', flittle: 'flittle,espathra', varoom: 'varoom,revavroom', glimmet: 'glimmet,glimmora,mega_glimmora', poltchageist: 'poltchageist,sinistcha' };
   for (const [n, f] of Object.entries(FAM)) ok(fam(n) === f, 'family: ' + f, fam(n));
   ok(['bombirdier', 'cyclizar', 'orthworm', 'flamigo', 'veluza', 'dondozo'].every((n) => fam(n) === '' || fam(n) === n), 'the single-stage ones have no line');
   ok(NEW.filter((n) => C(n).poke_no_energy_field).sort().join() === 'bombirdier,cyclizar', 'Energy-inert: Bombirdier (odds) and Cyclizar (hand, hand size); every other one has a main number');

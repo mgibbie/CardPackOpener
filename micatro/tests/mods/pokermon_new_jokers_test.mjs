@@ -98,7 +98,7 @@ sec('static', () => {
     && fam('thwackey') === '["grookey","thwackey","rillaboom"]' && fam('urshifu_rapid') === '["kubfu","urshifu_single","urshifu_rapid"]'
     && fam('maushold') === '["tandemaus","maushold"]' && fam('darmanitan') === '["darumaka","darmanitan"]' && fam('scrafty') === '["scraggy","scrafty"]'
     && fam('mudsdale') === '["mudbray","mudsdale"]', 'families: the 9 lines');
-  ok(poke_get_family_list('xerneas').length <= 1 && poke_get_family_list('spiritomb').length <= 1 && poke_get_family_list('tatsugiri').length <= 1, 'Xerneas, Spiritomb, Tatsugiri stand alone');
+  ok(poke_get_family_list('xerneas').length <= 1 && poke_get_family_list('spiritomb').length <= 1 && poke_get_family_list('tatsugiri').length === 2, 'Xerneas, Spiritomb, Tatsugiri stand alone');
 });
 sec('text', () => {
   const L = MODS.pokermon.content.loc.descriptions;

@@ -16,11 +16,12 @@
 // hands, discards, Joker slots, debt, money and the guarantee are fixed. Gen = the base species' (pokermon_gen_filter_test).
 import {
   G, P_CENTERS, localize, card_eval_status_text, defineJokers, type_tooltip, has_enhancement, get_depleted, get_enhancements, scale_card, create_card,
-  ease_discard, ease_hands_played, ease_poke_dollars, poke_create_treasure, find_pokemon_type, get_poke_target_card_ranks, detailed,
+  ease_discard, ease_hands_played, ease_poke_dollars, poke_create_treasure, find_pokemon_type, get_poke_target_card_ranks, detailed, copy_card, playing_card_joker_effects, all_cards, is_type, pseudorandom, pseudorandom_element, pseudoseed,
   EVOLVE_INTERCEPTS, POST_EVOLVE, FAMILY_MEMBER_REV, set_family, family,
 } from '../api.js';
 import { rulesRev } from '../../../js/mods/pins.js';
-import { gold_held, diamond_storm, poison_point, flame_charge, flame_streak, flame_main, discards_scry, mystical_fire, skrelp_poison, hazard_held_x, moxie, zygarde_give, protean_pick, protean_set, ninja_others } from './pokejokers_designs.js';
+import * as BN from '../../../js/engine/bignum.js';
+import { gold_held, diamond_storm, poison_point, flame_charge, flame_streak, flame_main, discards_scry, mystical_fire, skrelp_poison, hazard_held_x, toxic_debris, recoil, moxie, zygarde_give, protean_pick, protean_set, ninja_others } from './pokejokers_designs.js';
 
 /** The rules rev the 19 Megas arrive on (index.js contentRev). */
 export const MEGA_D_REV = 84;
@@ -107,6 +108,13 @@ export const CARRY = {
   pyroar: { rev: 102 },
   zygarde: { rev: 103, shared: [['cells', 'cells']] },
   greninja: { rev: 104, shared: [['ptype', 'ptype']] },
+  glimmora: { rev: 108, shared: [['debris_hand', 'debris_hand'], ['debris_count', 'debris_count']] },
+  crabominable: { rev: 108 },
+  scovillain: { rev: 108 },
+  chimecho: { rev: 108, shared: [['glass_restored', 'glass_restored']] },
+  staraptor: { rev: 108 },
+  tatsugiri: { rev: 108, shared: [['form', 'form']] },
+  meowstic: { rev: 108, shared: [['form', 'form']], mega_own: ['male_Xmult', 'replaced_round'] },
 };
 const copy = (v) => (v !== null && typeof v === 'object' ? JSON.parse(JSON.stringify(v)) : v);
 /** The CARRY entry when `from` -> `to` is a base <-> its Mega (either way), with the direction. */
@@ -190,6 +198,128 @@ const steel_stone_gold = (c) => has_enhancement(c, 'm_steel') || has_enhancement
 const straights = () => (G.GAME.hands.Straight ? G.GAME.hands.Straight.played : 0);
 
 defineJokers({
+  mega_meowstic: {
+    name: 'mega_meowstic', poke_sprite391: sprite('Gen06', 6, 13, [7, 13]),
+    config: { extra: { Xmult: 2, Xmult_mod: 0.5, male_Xmult: 1, male_gain: 0.15 } },
+    ...MEGA, ptype: 'Psychic', gen: 6, poke_after: 'meowstic',
+    attributes: ['xmult', 'scaling', 'tarot', 'generation'],
+    set_ability(self, card, initial) { if (initial) card.ability.extra.form = pseudorandom(pseudoseed('mega_meowstic_gender')) < 0.5 ? 'female' : 'male'; },
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [ex.form === 'female' ? '♀' : ex.form === 'male' ? '♂' : '?', r3(ex.Xmult), r3(ex.Xmult_mod), r3(ex.male_Xmult), r3(ex.male_gain)] }; },
+    calculate(self, card, context) {
+      const ex = card.ability.extra;
+      const makeTarot = () => {
+        if (!G.consumeables || G.consumeables.cards.length + (G.GAME.consumeable_buffer || 0) >= G.consumeables.config.card_limit) return false;
+        G.GAME.consumeable_buffer = (G.GAME.consumeable_buffer || 0) + 1;
+        G.E_MANAGER.add_event(() => { const c = create_card('Tarot', G.consumeables, null, null, null, null, undefined, 'mega_meowstic'); c.add_to_deck(); G.consumeables.emplace(c); G.GAME.consumeable_buffer--; });
+        return true;
+      };
+      if (context.using_consumeable && context.consumeable?.ability.set === 'Tarot' && !context.blueprint && !context.retrigger_joker) {
+        if (ex.form === 'male') ex.male_Xmult = r3(ex.male_Xmult + ex.male_gain);
+        else if (ex.form === 'female' && ex.replaced_round !== G.GAME.round) {
+          G.E_MANAGER.add_event(() => { if (ex.replaced_round !== G.GAME.round && makeTarot()) ex.replaced_round = G.GAME.round; });
+        }
+      }
+      if (ex.form === 'male' && context.end_of_round && context.main_eval && !context.game_over && !context.blueprint && !context.retrigger_joker) makeTarot();
+      if (context.joker_main) {
+        const x = ex.form === 'male' ? ex.male_Xmult : ex.Xmult + ex.Xmult_mod * (G.consumeables?.cards || []).filter(c => c.ability.set === 'Tarot').length;
+        return { message: a_xmult(r3(x)), colour: 'XMULT', Xmult_mod: x };
+      }
+    },
+  },
+  mega_tatsugiri: {
+    name: 'mega_tatsugiri', poke_sprite391: sprite('Gen09', 2, 7, [3, 7]),
+    config: { extra: { Xmult_multi: 2.25, chips: 180, mult: 35 } },
+    ...MEGA, ptype: 'Dragon', gen: 9, poke_after: 'tatsugiri',
+    attributes: ['xmult', 'chips', 'mult', 'joker', 'types', 'nature', 'position', 'retrigger'],
+    set_ability(self, card, initial) { if (initial) card.ability.extra.form = pseudorandom_element(['curly', 'droopy', 'stretchy'], pseudoseed('mega_tatsugiri'))[0]; },
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [ex.Xmult_multi, ex.chips, ex.mult, ex.form || 'unknown'] }; },
+    calculate(self, card, context) {
+      const target = (G.jokers?.cards || []).find(j => j !== card && is_type(j, 'Water'));
+      if (context.retrigger_joker_check && !context.blueprint && context.other_card === target && target?.config.center.key === 'j_poke_dondozo') return { repetitions: 1, card };
+      if (!context.retrigger_joker_check && context.other_joker && context.other_joker === target) {
+        const ex = card.ability.extra;
+        if (ex.form === 'curly') return { Xmult_mod: ex.Xmult_multi, card };
+        if (ex.form === 'droopy') return { chip_mod: ex.chips, card };
+        if (ex.form === 'stretchy') return { mult_mod: ex.mult, card };
+      }
+    },
+  },
+  mega_staraptor: {
+    name: 'mega_staraptor', poke_sprite391: sprite('Gen04', 4, 7, [5, 7]),
+    config: { extra: { Xmult_mod: 0.75, recoil: 1, refund: 3 } },
+    ...MEGA, ptype: 'Fighting', gen: 4, poke_after: 'staraptor',
+    attributes: ['xmult', 'types', 'money'],
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra, n = (G.jokers?.cards || []).filter(j => !j.debuff && is_type(j, 'Colorless')).length; return { vars: [r3(ex.Xmult_mod), ex.recoil, ex.refund, n, r3(1 + ex.Xmult_mod * n)] }; },
+    calculate(self, card, context) {
+      recoil(card, context);
+      if (context.after && context.cardarea === G.jokers && !context.blueprint && !context.retrigger_joker) G.E_MANAGER.add_event(() => {
+        if (G.GAME.facing_blind && G.GAME.blind && BN.beats(G.GAME.chips, G.GAME.blind.chips)) ease_poke_dollars(card, 'mega_staraptor', card.ability.extra.refund);
+      });
+      if (context.joker_main) { const n = (G.jokers?.cards || []).filter(j => !j.debuff && is_type(j, 'Colorless')).length, x = r3(1 + card.ability.extra.Xmult_mod * n); return { message: a_xmult(x), colour: 'XMULT', Xmult_mod: x }; }
+    },
+  },
+  mega_chimecho: {
+    name: 'mega_chimecho', poke_sprite391: sprite('Gen03', 0, 8, [1, 8]),
+    config: { extra: { glass_limit: 4, glass_restored: 0, chips: 10 } },
+    ...MEGA, ptype: 'Psychic', gen: 3, poke_after: 'chimecho', blueprint_compat: false,
+    attributes: ['economy', 'enhancements', 'modify_card', 'chips'],
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); info_queue.push(P_CENTERS.m_glass); const ex = card.ability.extra; return { vars: [ex.glass_limit, ex.chips, Math.max(0, ex.glass_limit - ex.glass_restored)] }; },
+    calculate(self, card, context) {
+      const ex = card.ability.extra;
+      if (context.remove_playing_cards && !context.blueprint && !context.retrigger_joker) for (const v of context.removed) {
+        if (!(has_enhancement(v, 'm_glass') || v.glass_trigger) || ex.glass_restored >= ex.glass_limit) continue;
+        const area = context.poke_removed_at_end ? G.deck : G.hand;
+        G.E_MANAGER.add_event(() => {
+          const c = copy_card(v, null, null, G.playing_card); c.ability.perma_bonus = (c.ability.perma_bonus || 0) + ex.chips;
+          c.add_to_deck(); G.deck.config.card_limit++; G.playing_cards.push(c); area.emplace(c); c.start_materialize(); playing_card_joker_effects([c]);
+        });
+        ex.glass_restored++;
+      }
+      if (context.end_of_round && !context.individual && !context.repetition && !context.blueprint) ex.glass_restored = 0;
+    },
+    add_to_deck() { G.E_MANAGER.add_event(() => { for (const c of all_cards()) if (c.set_cost) c.set_cost(); }); },
+    remove_from_deck() { G.E_MANAGER.add_event(() => { for (const c of all_cards()) if (c.set_cost) c.set_cost(); }); },
+  },
+  mega_crabominable: {
+    name: 'mega_crabominable', poke_sprite391: sprite('Gen07', 10, 5, [11, 5]),
+    config: { extra: { mult_mod: 2, mult_mod2: 6, dollars: 3 } },
+    ...MEGA, ptype: 'Water', gen: 7, poke_after: 'crabominable', blueprint_compat: false,
+    attributes: ['mult', 'scaling', 'modify_card', 'money'],
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.mult_mod), r3(ex.mult_mod2), ex.dollars] }; },
+    calculate(self, card, context) {
+      if (!scored(context) || context.blueprint || context.retrigger_joker || !context.scoring_hand) return;
+      const ex = card.ability.extra, target = context.other_card, hand = G.GAME.hands_played;
+      if (ex.punch_hand !== hand) { ex.punch_hand = hand; ex.punch_cards = []; }
+      if (ex.punch_cards.includes(target.sort_id)) return;
+      ex.punch_cards.push(target.sort_id);
+      const first = target === context.scoring_hand[0];
+      target.ability.perma_mult = r3((target.ability.perma_mult || 0) + (first ? ex.mult_mod2 : ex.mult_mod));
+      if (first && target.is_face()) ease_poke_dollars(card, 'mega_crabominable', ex.dollars);
+      return { extra: { message: localize('k_upgrade_ex'), colour: 'MULT' }, colour: 'MULT', card };
+    },
+  },
+  mega_scovillain: {
+    name: 'mega_scovillain', poke_sprite391: sprite('Gen09', 8, 6, [9, 6]),
+    config: { extra: { chips: 40, Xmult_multi: 1.5, d_size: 2 } },
+    ...MEGA, ptype: 'Fire', gen: 9, poke_after: 'scovillain',
+    attributes: ['chips', 'xmult', 'suit', 'discard', 'retrigger'],
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [ex.d_size, r3(ex.chips), r3(ex.Xmult_multi)] }; },
+    calculate(self, card, context) {
+      const c = context.other_card, sh = context.scoring_hand;
+      if (!c || c.debuff || context.cardarea !== G.play || !c.is_suit('Hearts')) return;
+      if (scored(context)) return { chips: card.ability.extra.chips, x_mult: card.ability.extra.Xmult_multi, card };
+      if (context.repetition && sh?.some(v => !v.debuff && v.is_suit('Hearts')) && sh.some(v => !v.debuff && v.is_suit('Clubs'))) return { message: localize('k_again_ex'), repetitions: 1, card };
+    },
+    ...discards,
+  },
+  mega_glimmora: {
+    name: 'mega_glimmora', poke_sprite391: sprite('Gen09', 0, 7, [1, 7]),
+    config: { extra: { Xmult_multi: 1.35, debris_cap: 4 } },
+    ...MEGA, ptype: 'Earth', gen: 9, poke_after: 'glimmora',
+    attributes: ['xmult', 'enhancements', 'modify_card', 'full_deck', 'hand'],
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); info_queue.push(P_CENTERS.m_stone, P_CENTERS.m_poke_hazard); return { vars: [r3(card.ability.extra.Xmult_multi), card.ability.extra.debris_cap] }; },
+    calculate(self, card, context) { toxic_debris(card, context); return hazard_held_x(card, context); },
+  },
   mega_greninja: {
     name: 'mega_greninja', poke_sprite391: sprite('Gen06', 0, 13, [1, 13]),
     config: { extra: { hands: 1, Xmult: 2, Xmult_mod: 1 } },
@@ -784,6 +914,20 @@ const BR = '{br:2}ERROR - CONTACT STEAK';
 const NAT = (a, b, c) => '{C:attention}Nature: {C:inactive}({C:attention}#' + a + '#, #' + b + '#, #' + c + '#{C:inactive}){}';
 export const MEGA_D_LOC = {
   Joker: {
+    j_poke_mega_meowstic: { name: 'Mega Meowstic', text: [
+      '{C:attention}Gender: #1#{}', '♂: create a Tarot at end of round;', 'gain {X:mult,C:white} X#5# {} per Tarot used {C:inactive}(X#4#)', '♀: {X:mult,C:white} X#2# {} plus {X:mult,C:white} X#3# {} per Tarot held;', 'once per round, replace a Tarot used', '{C:inactive}(Must have room)'] },
+    j_poke_mega_tatsugiri: { name: 'Mega Tatsugiri', text: [
+      '{C:attention}Nature: #4#{}; the leftmost', '{X:poke_water,C:white}Water{} Joker gives:', 'Curly: {X:mult,C:white} X#1# {} Mult, Droopy: {C:chips}+#2#{} Chips,', 'Stretchy: {C:mult}+#3#{} Mult', 'If it is {C:attention}Dondozo{}, retrigger it'] },
+    j_poke_mega_staraptor: { name: 'Mega Staraptor', text: [
+      '{X:mult,C:white} X1 {} Mult plus {X:mult,C:white} X#1# {} for each', '{X:poke_colorless,C:white}Colorless{} Joker {C:inactive}(#4#: X#5#)', 'Lose {C:money}$#2#{} each hand; earn {C:money}$#3#{}', 'if that hand defeats the Blind'] },
+    j_poke_mega_chimecho: { name: 'Mega Chimecho', text: [
+      '{C:attention}Vouchers{} in the shop are {C:money}free{}', 'The first {C:attention}#1# Glass cards{} destroyed', 'each round return as copies and', 'permanently gain {C:chips}+#2#{} Chips', '{C:inactive}(#3# remaining this round)'] },
+    j_poke_mega_crabominable: { name: 'Mega Crabominable', text: [
+      'Scored cards permanently gain', '{C:mult}+#1#{} Mult; the first gains {C:mult}+#2#{} instead', 'If the first is a face card, earn {C:money}$#3#{}', '{C:inactive}(Once per card each hand)'] },
+    j_poke_mega_scovillain: { name: 'Mega Scovillain', text: [
+      '{C:red}+#1#{} discards each round', 'Scored {C:hearts}Hearts{} give {C:chips}+#2#{} Chips', 'and {X:mult,C:white} X#3# {} Mult; retrigger them', 'if a {C:hearts}Heart{} and a {C:clubs}Club{} score'] },
+    j_poke_mega_glimmora: { name: 'Mega Glimmora', text: [
+      'Scored {C:attention}Stone{} cards turn a', 'random deck card into a {C:attention}Hazard{},', 'up to {C:attention}#2#{} per hand', 'Each {C:attention}Hazard{} held in hand', 'gives {X:mult,C:white} X#1# {} Mult'] },
     j_poke_mega_greninja: { name: 'Mega Greninja', text: [
       '{C:chips}+#1#{} hand; adopts the team\'s type', '{X:mult,C:white} X#2# {} Mult plus {X:mult,C:white} X#3# {} per other', 'Joker of its current type {C:inactive}(#4#){}', 'Retrigger the first scored card once', 'per matching Joker {C:inactive}(max 3)'] },
     j_poke_mega_zygarde: { name: 'Mega Zygarde', text: [

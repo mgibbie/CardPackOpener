@@ -805,7 +805,7 @@ function flock_main(card, context) {
   return { message: a_mult(mult), colour: 'MULT', mult_mod: mult };
 }
 /** Staraptor's Recoil: each hand played costs `recoil` dollars, never past the run's debt limit (bankrupt_at: $0, Credit Card -$20). */
-function recoil(card, context) {
+export function recoil(card, context) {
   if (!(context.before && context.cardarea === G.jokers) || context.blueprint) return;
   const lose = card.ability.extra.recoil, buffer = G.GAME.dollar_buffer || 0;
   if ((G.GAME.dollars || 0) + buffer - lose < (G.GAME.bankrupt_at || 0)) return;
@@ -10396,7 +10396,7 @@ const hands_hand_size = {
 /** Glimmora, Toxic Debris: each scored Stone card (undebuffed; a retrigger again) turns one random card of the full deck into a Hazard card
  *  (deck_convert: unenhanced first, then any card that isn't one; NEVER a Stone card — its own fuel — nor a card of the played hand, which is
  *  still scoring), at most `debris_cap` (3, fixed) a hand (G.GAME.hands_played names the hand). Not a Blueprint's (it modifies the deck). */
-function toxic_debris(card, context) {
+export function toxic_debris(card, context) {
   if (!stone_scored(context) || context.other_card.debuff || context.blueprint || context.retrigger_joker) return;
   const ex = card.ability.extra, hand_id = G.GAME.hands_played;
   const n = ex.debris_hand === hand_id ? (ex.debris_count || 0) : 0;
@@ -10421,7 +10421,7 @@ function fillet_away(card, context) {
 /** Dondozo, Commander: an undebuffed Tatsugiri directly to its LEFT. */
 const dondozo_commanded = (card) => {
   const row = (G.jokers && G.jokers.cards) || [], i = row.indexOf(card), left = i > 0 ? row[i - 1] : null;
-  return !!left && !left.debuff && left.config.center.key === 'j_poke_tatsugiri';
+  return !!left && !left.debuff && ['j_poke_tatsugiri', 'j_poke_mega_tatsugiri'].includes(left.config.center.key);
 };
 /** Clodsire, Poison Point: Silicobra's Sand Spit (each card the PLAYER discards that is unenhanced, num in dem on 'clodsire_poison', Oops!
  *  raises it), making a Hazard card instead of Stone. Blueprint copies it (its own roll). Shares Sand Spit's record of the discard. */

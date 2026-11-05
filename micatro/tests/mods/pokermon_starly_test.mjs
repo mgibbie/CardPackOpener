@@ -64,10 +64,10 @@ sec('static', () => {
     'Staraptor: Safari $10, Stage 2, Colorless, X0.5 per joker, $1 recoil', [r.rarity, r.cost, r.stage, r.config.extra]);
   const keys = MODS.pokermon.content.centers.filter((x) => x.set === 'Joker').map((x) => x.key);
   const i = keys.indexOf('j_poke_starly');
-  ok(i > 0 && keys[i - 1] === 'j_poke_deoxys' && keys[i + 1] === 'j_poke_staravia' && keys[i + 2] === 'j_poke_staraptor' && keys[i + 3] === 'j_poke_bidoof',
+  ok(i > 0 && keys[i - 1] === 'j_poke_deoxys' && keys[i + 1] === 'j_poke_staravia' && keys[i + 2] === 'j_poke_staraptor' && keys[i + 3] === 'j_poke_mega_staraptor' && keys[i + 4] === 'j_poke_bidoof',
     'Pokédex order: Deoxys (386), Starly, Staravia, Staraptor, Bidoof (399)', keys.slice(i - 1, i + 4));
   const fam = (n) => poke_get_family_list(n).map((x) => (typeof x === 'string' ? x : x.key || x.name)).join();
-  ok(/starly.*staravia.*staraptor/.test(fam('starly')) && fam('starly') === fam('staraptor') && poke_get_family_list('starly').length === 3, 'one family: Starly -> Staravia -> Staraptor', fam('starly'));
+  ok(/starly.*staravia.*staraptor/.test(fam('starly')) && fam('starly') === fam('staraptor') && poke_get_family_list('starly').length === 4, 'one family: Starly -> Staravia -> Staraptor', fam('starly'));
   ok([[s, 10], [v, 12], [r, 14]].every(([c, x]) => c.atlas === 'poke_AtlasJokersBasicNatdex391' && c.pos.x === x && c.pos.y === 26),
     'art: upstream 3.9.1\'s own cells (Natdex 10,26 / 12,26 / 14,26: the Colorless frame)', [s.atlas, s.pos, v.pos, r.pos]);
   ok(pool_filter(s, 'Joker') === undefined && s.in_pool(s) !== false, 'Starly can be rolled in the shop (Uncommon)');

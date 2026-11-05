@@ -1,5 +1,5 @@
 {
-	"generated": "2026-11-04",
+	"generated": "2026-11-05",
 	"micatroAtlas": {
 		"@poke_primal_orbs": {
 			"src": "/micatro/mods/pokermon/assets/2x/primal_orbs.png",
@@ -402,6 +402,134 @@
 		}
 	},
 	"entries": [
+		{
+			"sha": "3b49f25",
+			"date": "2026-11-05",
+			"kind": "micatro",
+			"title": "Pokermon: seven Mega Dimension forms",
+			"body": "",
+			"cards": [],
+			"micatroMods": [
+				{
+					"id": "pokermon",
+					"name": "Pokermon",
+					"added": [
+						{
+							"key": "j_poke_mega_chimecho",
+							"name": "Mega Chimecho",
+							"set": "Joker",
+							"rarity": "mega",
+							"cost": 12,
+							"atlas": "@poke_AtlasJokersBasicGen03391",
+							"pos": {
+								"x": 0,
+								"y": 8
+							},
+							"soul": {
+								"x": 1,
+								"y": 8
+							}
+						},
+						{
+							"key": "j_poke_mega_staraptor",
+							"name": "Mega Staraptor",
+							"set": "Joker",
+							"rarity": "mega",
+							"cost": 12,
+							"atlas": "@poke_AtlasJokersBasicGen04391",
+							"pos": {
+								"x": 4,
+								"y": 7
+							},
+							"soul": {
+								"x": 5,
+								"y": 7
+							}
+						},
+						{
+							"key": "j_poke_mega_meowstic",
+							"name": "Mega Meowstic",
+							"set": "Joker",
+							"rarity": "mega",
+							"cost": 12,
+							"atlas": "@poke_AtlasJokersBasicGen06391",
+							"pos": {
+								"x": 6,
+								"y": 13
+							},
+							"soul": {
+								"x": 7,
+								"y": 13
+							}
+						},
+						{
+							"key": "j_poke_mega_crabominable",
+							"name": "Mega Crabominable",
+							"set": "Joker",
+							"rarity": "mega",
+							"cost": 12,
+							"atlas": "@poke_AtlasJokersBasicGen07391",
+							"pos": {
+								"x": 10,
+								"y": 5
+							},
+							"soul": {
+								"x": 11,
+								"y": 5
+							}
+						},
+						{
+							"key": "j_poke_mega_scovillain",
+							"name": "Mega Scovillain",
+							"set": "Joker",
+							"rarity": "mega",
+							"cost": 12,
+							"atlas": "@poke_AtlasJokersBasicGen09391",
+							"pos": {
+								"x": 8,
+								"y": 6
+							},
+							"soul": {
+								"x": 9,
+								"y": 6
+							}
+						},
+						{
+							"key": "j_poke_mega_glimmora",
+							"name": "Mega Glimmora",
+							"set": "Joker",
+							"rarity": "mega",
+							"cost": 12,
+							"atlas": "@poke_AtlasJokersBasicGen09391",
+							"pos": {
+								"x": 0,
+								"y": 7
+							},
+							"soul": {
+								"x": 1,
+								"y": 7
+							}
+						},
+						{
+							"key": "j_poke_mega_tatsugiri",
+							"name": "Mega Tatsugiri",
+							"set": "Joker",
+							"rarity": "mega",
+							"cost": 12,
+							"atlas": "@poke_AtlasJokersBasicGen09391",
+							"pos": {
+								"x": 2,
+								"y": 7
+							},
+							"soul": {
+								"x": 3,
+								"y": 7
+							}
+						}
+					]
+				}
+			]
+		},
 		{
 			"sha": "dbd7496",
 			"date": "2026-11-04",
