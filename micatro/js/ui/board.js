@@ -3,7 +3,7 @@
 // (engine/view.js toView()) plus the UI event stream fed by the Player — never
 // from the engine's G — so a spectator draws exactly what the runner sees.
 import { CardSprite, modAtlasesOf } from './cardsprite.js';
-import { cellEl, drawCell, drawModCell, CENTERS, CARDS, BLINDS, TAGS, LOC, onModAtlas, MODREG, modType, cssColour, isConsumableSet } from './assets.js';
+import { cellEl, drawCell, drawModCell, CENTERS, CARDS, BLINDS, TAGS, STAKES, LOC, onModAtlas, MODREG, modType, cssColour, isConsumableSet } from './assets.js';
 import { backgroundFor } from './gl.js';
 import { markup, fmt, esc, titleHtml, isPlayingDesc, describePlaying, describeCenterFallback, BADGE_COL } from './markup.js';
 import { isNumeric, isBig } from '../engine/bignum.js';
@@ -612,11 +612,12 @@ export class Board {
     this.renderBlindPanel(v.blind, v.state);
     this.renderTagsEtc(v);
   }
-  /** The chips atlas has five columns and two rows; hold its last color in high antes. */
+  /** Use the run's stake chip, whose atlas positions are not in stake-level order. */
   renderScoreChip() {
-    const ante = Number(this.hud.ante);
-    const cell = Math.max(0, Math.min(9, Number.isFinite(ante) ? Math.floor(ante) - 1 : 0));
-    this.H.scoreChip.style.backgroundPosition = `${-30 * (cell % 5)}px ${-30 * Math.floor(cell / 5)}px`;
+    const stake = Number(this.view?.stake);
+    const level = Math.max(1, Math.min(8, Number.isFinite(stake) ? Math.floor(stake) : 1));
+    const pos = Object.values(STAKES).find(s => s.stake_level === level)?.pos || { x: 0, y: 0 };
+    this.H.scoreChip.style.backgroundPosition = `${-30 * pos.x}px ${-30 * pos.y}px`;
   }
   renderBlindPanel(b, state) {
     const H = this.H;
@@ -1498,7 +1499,7 @@ export class Board {
       case 'hands': this.hud.hands = ev.total; this.H.hands.textContent = ev.total; this.bump(this.H.hands); return 0.05;
       case 'discards': this.hud.discards = ev.total; this.H.discards.textContent = ev.total; this.bump(this.H.discards); return 0.05;
       case 'round': this.hud.round = ev.total; this.H.round.textContent = ev.total; this.bump(this.H.round); return 0.1;
-      case 'ante': this.hud.ante = ev.total; this.H.ante.textContent = ev.total; this.renderScoreChip(); this.bump(this.H.ante); return 0.2;
+      case 'ante': this.hud.ante = ev.total; this.H.ante.textContent = ev.total; this.bump(this.H.ante); return 0.2;
       case 'level_up': {
         const hh = this.hud.hand;
         hh.total = null; hh.name = ev.hand; hh.level = ev.level; hh.chips = ev.chips; hh.mult = ev.mult;
