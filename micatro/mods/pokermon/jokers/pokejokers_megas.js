@@ -667,15 +667,23 @@ defineJokers({
     add_to_deck(self, card) { G.GAME.bankrupt_at -= card.ability.extra.debt; },
     remove_from_deck(self, card) { G.GAME.bankrupt_at += card.ability.extra.debt; },
   },
-  // Mega Salamence 373-1 (Dragon), Aerilate: +10 Mult (`mult_mod` +20%: 12 / 14 / 16) for each Straight played this run (Salamence's +5).
+  // Mega Salamence 373-1 (Dragon), Aerilate: +10 Mult per Straight; r106 keeps Salamence's temporary hand size at blind select.
   // Pokermon's Salamence lists it (Nacho 1.6.4's legacy Mega Salamence, unreachable, is now a duplicate of this one: precedence).
   mega_salamence: {
     name: 'mega_salamence', poke_sprite391: sprite('Gen03', 8, 6, [9, 6]),
-    config: { extra: { mult_mod: 10 } },
+    config: { extra: { mult_mod: 10, divisor: 5 } },
     ...MEGA, ptype: 'Dragon', gen: 3, poke_after: 'salamence',
-    attributes: ['mult', 'hand_type', 'straight'],
-    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.mult_mod), r3(straights() * ex.mult_mod)] }; },
+    attributes: ['mult', 'hand_type', 'straight', 'hand_size'],
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.mult_mod), r3(straights() * ex.mult_mod), ex.divisor || 5] }; },
     calculate(self, card, context) {
+      if (rulesRev('pokermon') >= 106 && context.setting_blind) {
+        const n = Math.floor(straights() / (card.ability.extra.divisor || 5));
+        if (n > 0) {
+          card_eval_status_text(context.blueprint_card || card, 'extra', null, null, null, { message: localize({ type: 'variable', key: 'a_handsize', vars: [n] }) });
+          G.hand.change_size(n);
+          G.GAME.round_resets.temp_handsize = (G.GAME.round_resets.temp_handsize || 0) + n;
+        }
+      }
       if (context.joker_main) { const m = r9(straights() * card.ability.extra.mult_mod); if (m > 0) return { message: a_mult(r3(m)), colour: 'MULT', mult_mod: m }; }
       return undefined;
     },
@@ -842,7 +850,8 @@ export const MEGA_D_LOC = {
       'Go up to {C:mult}-$#1#{} in debt', BR, '{C:attention}Refrigerate:{} {X:mult,C:white} X1 {} Mult, plus', '{X:mult,C:white} X#2# {} for each {C:money}$1{} of debt',
       '{C:inactive}(Currently {X:mult,C:white} X#3# {C:inactive} Mult)'] },
     j_poke_mega_salamence: { name: 'Mega Salamence', text: [
-      '{C:attention}Aerilate:{} {C:mult}+#1#{} Mult for each', '{C:attention}Straight{} played this run', '{C:inactive}(Currently {C:mult}+#2#{C:inactive} Mult)'] },
+      '{C:attention}Aerilate:{} {C:mult}+#1#{} Mult for each', '{C:attention}Straight{} played this run', '{C:inactive}(Currently {C:mult}+#2#{C:inactive} Mult)',
+      BR, 'At Blind select, {C:attention}+1 hand size{}', 'this round per {C:attention}#3# Straights{} played'] },
     j_poke_mega_metagross: { name: 'Mega Metagross', text: [
       '{C:attention}Tough Claws:{} if {C:attention}poker hand{}', 'is a {C:attention}Four of a Kind{}, each', 'played card gives {X:mult,C:white} X#1# {} Mult'] },
     j_poke_mega_latias: { name: 'Mega Latias', text: [
