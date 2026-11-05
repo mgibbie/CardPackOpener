@@ -1871,7 +1871,7 @@ export default async function handler(req, env) {
 		let entry = null, drop = null;
 		if (action === 'joker-design-add') {
 			const dex = Number(body.dex);
-			if (!Number.isInteger(dex) || dex < 1 || dex > 1025) return json({ error: 'bad dex number' }, 400);
+			if (!Number.isInteger(dex) || dex === 0 || dex < -654 || dex > 1025) return json({ error: 'bad dex number' }, 400);
 			const ability = String(body.ability || '').trim();
 			if (!ability) return json({ error: 'write the ability first' }, 400);
 			const name = String(body.name || '').trim(), rarity = String(body.rarity || '').trim(), notes = String(body.notes || '').trim();
