@@ -52,6 +52,10 @@ const vB = sess.view();
 sess.act({ type: 'highlight', ids: vB.areas.hand.slice(0, 2).map(c => c.id) });
 const r3 = sess.act({ type: 'discard' });
 const snapC = { view: sess.view(), events: r3.events.slice(-3) };
+const goldSession = new Session();
+goldSession.start({ seed: 'GOLDCHIP', back: 'b_red', stake: 8 });
+goldSession.act({ type: 'select_blind' });
+const goldView = goldSession.view();
 
 // ---- server: static files + /api/mp stub (records what the client sent)
 const seen = { publish: [], score: [], spec: 0 };
@@ -199,21 +203,23 @@ try {
 		A(v.state === 'SELECTING_HAND' && v.areas.hand.length === 8, 'selecting the blind deals a hand of 8', v.state);
 		A(await page.evaluate(() => document.querySelectorAll('.cards-layer .card').length) >= 8, 'the hand is drawn as card sprites');
 		const scoreChip = await page.$('.hud-score .chip-ico');
-		await page.evaluate(() => { const b = window.__micatro.board; b.hud.ante = 1; b.renderScoreChip(); });
+		await page.evaluate(() => { const b = window.__micatro.board; b.view.stake = 1; b.renderScoreChip(); });
 		const chipOne = await scoreChip.screenshot();
-		await page.evaluate(() => { const b = window.__micatro.board; b.hud.ante = 2; b.renderScoreChip(); });
+		await page.evaluate(stake => { const b = window.__micatro.board; b.view.stake = stake; b.renderScoreChip(); }, goldView.stake);
 		const chipTwo = await scoreChip.screenshot();
 		const chipState = await page.evaluate(() => {
 			const b = window.__micatro.board, c = document.querySelector('.hud-score .chip-ico');
-			const second = getComputedStyle(c).backgroundPosition;
+			const gold = getComputedStyle(c).backgroundPosition;
 			b.applyEvent({ type: 'ante', total: 6 });
-			const sixth = getComputedStyle(c).backgroundPosition;
-			b.hud.ante = 99; b.renderScoreChip(); const high = getComputedStyle(c).backgroundPosition;
-			b.hud.ante = b.view.ante; b.renderHud();
-			return { second, sixth, high, restored: getComputedStyle(c).backgroundPosition };
+			const laterAnte = getComputedStyle(c).backgroundPosition;
+			b.view.stake = 4; b.renderScoreChip(); const black = getComputedStyle(c).backgroundPosition;
+			b.view.stake = 5; b.renderScoreChip(); const blue = getComputedStyle(c).backgroundPosition;
+			b.view.stake = 1; b.hud.ante = b.view.ante; b.renderHud();
+			return { gold, laterAnte, black, blue, restored: getComputedStyle(c).backgroundPosition };
 		});
-		A(chipState.second === '-30px 0px' && chipState.sixth === '0px -30px' && chipState.high === '-120px -30px' && chipState.restored === '0px 0px', 'round-score chip follows ante changes and caps at the last atlas cell', JSON.stringify(chipState));
-		A(!Buffer.from(chipOne).equals(Buffer.from(chipTwo)), 'round-score chip screenshots show different artwork at antes 1 and 2');
+		A(chipState.gold === '-60px -30px' && chipState.laterAnte === chipState.gold && chipState.black === '-120px 0px' && chipState.blue === '-90px 0px' && chipState.restored === '0px 0px', 'round-score chip matches the stake, including Gold, Black and Blue, independently of ante', JSON.stringify(chipState));
+		A(goldView.stake === 8, 'the Gold Stake test uses a real Gold Stake run');
+		A(!Buffer.from(chipOne).equals(Buffer.from(chipTwo)), 'round-score chip screenshots differ for White and Gold Stakes');
 
 		// canvases aren't blank: the WebGL background and a card face
 		const px = await page.evaluate(() => {
