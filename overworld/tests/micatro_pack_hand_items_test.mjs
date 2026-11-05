@@ -132,6 +132,17 @@ try {
 	A(!t1.length && v.state === 'SHOP' && !v.areas.pack_cards.some((c) => c.id === ms) && !v.areas.consumeables.some((c) => c.id === ms),
 		'Use goes through: the Moon Stone is consumed and the pack closes (1-in-2: the hand levels up or "Nope!")', JSON.stringify({ toasts: t1, s: v.state, up }));
 	await shot('2-moonstone-used.png');
+	// Fire Stone can be used on one selected card directly from a Pocket Pack.
+	const fire = await openWith('p_poke_pokepack_normal_1', 'c_poke_firestone', 'Item');
+	v = await V();
+	await tap(`.card[data-id="${fire}"]`);
+	await tap(`.card[data-id="${v.areas.hand[0].id}"]`);
+	await toasts();
+	const fireButton = await tapBtn(fire, 'Use');
+	if (fireButton) await idle();
+	v = await V();
+	const fireToasts = await toasts();
+	A(fireButton && v.state === 'SHOP' && !fireToasts.length, 'Fire Stone works on one selected card from a Pocket Pack', JSON.stringify({ fireButton, state: v.state, toasts: fireToasts }));
 
 	// ---- 2. Save: a second Pocket pack, keep the Moon Stone
 	ms = await openWith('p_poke_pokepack_normal_1', 'c_poke_moonstone', 'Item');

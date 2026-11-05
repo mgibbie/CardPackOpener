@@ -93,8 +93,6 @@ function toShop() { winRound(); act({ type: 'cash_out' }); }
   const vp = add('j_poke_vulpix');
   const cs = hand(['S_2', 'S_3', 'S_4', 'S_5']);
   const n0 = G.playing_cards.length;
-  ok(!use(add('c_poke_firestone'), cs.slice(0, 3)).ok, 'Fire Stone needs exactly 4');
-  G.consumeables.cards.slice().forEach((c) => c.remove());
   ok(use(add('c_poke_firestone'), cs).ok, 'Fire Stone on 4');
   ok(G.playing_cards.length === n0 - 1 && cs.filter((c) => G.playing_cards.includes(c)).every((c) => key(c) === 'm_mult'), 'Fire Stone: 4 Mult cards, one destroyed', G.playing_cards.length - n0);
   ok(vp.ability.extra.evolve === true, 'Fire Stone marks Vulpix');

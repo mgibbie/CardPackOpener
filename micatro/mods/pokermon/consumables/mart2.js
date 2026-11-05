@@ -13,9 +13,14 @@ import {
   object_weights, poll_enhancement_weighted, type_colour,
 } from '../api.js';
 import { get_current_pool } from '../../../js/engine/core.js';
+import { rulesRev } from '../../../js/mods/pins.js';
 
 const FILE = 'consumables/mart2.lua';
 const joker_target_ok = (self) => G.jokers.highlighted && G.jokers.highlighted.length === 1 && is_evo_item_for(self, G.jokers.highlighted[0]);
+const selection_ok = (self, legacyMin) => {
+  const n = G.hand?.highlighted?.length || 0;
+  return n >= (rulesRev('pokermon') >= 107 ? 1 : legacyMin) && n <= self.config.max_highlighted;
+};
 const PACKS = () => [G.STATES.MOD_PACK, G.STATES.MOD_PACK_HAND, G.STATES.TAROT_PACK, G.STATES.SPECTRAL_PACK, G.STATES.PLANET_PACK, G.STATES.STANDARD_PACK];
 /** Hand index stands in for screen x (Lua compares card.T.x). */
 const hand_x = (c) => G.hand.cards.indexOf(c);
@@ -184,16 +189,16 @@ defineConsumables({
     in_pool() { return true; },
   },
 
-  // Fire Stone: exactly 4 selected cards become Mult cards, then one of them is destroyed.
+  // Fire Stone: up to 4 selected cards become Mult cards, then one of them is destroyed.
   firestone: {
     loc_vars(self, info_queue) { info_queue.push({ set: 'Other', key: 'eitem' }); info_queue.push(P_CENTERS.m_mult); return { vars: [self.config.max_highlighted] }; },
     can_use(self, card) {
       if (joker_target_ok(self)) return true;
-      return !!(G.hand.highlighted && G.hand.highlighted.length === 4);
+      return selection_ok(self, 4);
     },
     use(self, card, area, copier) {
       set_spoon_item(card);
-      if (G.hand.highlighted && G.hand.highlighted.length === 4) {
+      if (selection_ok(self, 4)) {
         juice_flip(card);
         for (const c of G.hand.highlighted) c.set_ability(P_CENTERS.m_mult, null, true);
         juice_flip(card, true);
@@ -237,20 +242,20 @@ defineConsumables({
     in_pool() { return true; },
   },
 
-  // Link Cable: of 2 selected cards, the left goes up a rank and the right goes down a rank.
+  // Link Cable: the left card goes up a rank; a second card goes down.
   linkcable: {
     loc_vars(self, info_queue) { info_queue.push({ set: 'Other', key: 'eitem' }); return { vars: [self.config.max_highlighted] }; },
     can_use(self, card) {
       if (joker_target_ok(self)) return true;
-      return !!(G.hand.highlighted && G.hand.highlighted.length === 2);
+      return selection_ok(self, 2);
     },
     use(self, card, area, copier) {
       set_spoon_item(card);
-      if (G.hand.highlighted && G.hand.highlighted.length === 2) {
+      if (selection_ok(self, 2)) {
         const rightmost = rightmost_of(G.hand.highlighted);
         juice_flip(card);
         for (const c of G.hand.highlighted) {
-          if (c !== rightmost) poke_vary_rank(c, false);
+          if (G.hand.highlighted.length === 1 || c !== rightmost) poke_vary_rank(c, false);
           else poke_vary_rank(c, true);
         }
         juice_flip(card, true);
