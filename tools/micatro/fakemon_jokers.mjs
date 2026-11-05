@@ -34,5 +34,8 @@ export function listFakemon(M, data = path.join(ROOT, 'overworld/data')) {
       stage, stageLabel: STAGE_LABEL[stage], rarity, rarityLabel: RARITY_LABEL[rarity] || String(rarity), cost: guess.cost,
       source: sources[key]?.src || 'ransei', sprite: s.sprite,
       line: line.map(k => ({ dex: byKey.get(k).num, name: byKey.get(k).name, joker: null })) };
-  }).sort((a, b) => b.dex - a.dex);
+  }).sort((a, b) => {
+    const first = s => Math.max(...s.line.map(l => l.dex));
+    return first(b) - first(a) || a.line.findIndex(l => l.dex === a.dex) - b.line.findIndex(l => l.dex === b.dex);
+  });
 }

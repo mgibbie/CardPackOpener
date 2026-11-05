@@ -143,7 +143,11 @@ export function decode(file) {
   };
   for (let i = 0; i < w * h; i++) {
     if (ctype === 6) px.copy(rgba, i * 4, i * 4, i * 4 + 4);
-    else if (ctype === 2) { px.copy(rgba, i * 4, i * 3, i * 3 + 3); rgba[i * 4 + 3] = 255; }
+    else if (ctype === 2) {
+      px.copy(rgba, i * 4, i * 3, i * 3 + 3);
+      const transparent = trns && trns.length >= 6 && px[i * 3] === trns.readUInt16BE(0) && px[i * 3 + 1] === trns.readUInt16BE(2) && px[i * 3 + 2] === trns.readUInt16BE(4);
+      rgba[i * 4 + 3] = transparent ? 0 : 255;
+    }
     else { const k = index(i); rgba[i * 4] = pal[k * 3]; rgba[i * 4 + 1] = pal[k * 3 + 1]; rgba[i * 4 + 2] = pal[k * 3 + 2]; rgba[i * 4 + 3] = trns && k < trns.length ? trns[k] : 255; }
   }
   return { w, h, rgba };

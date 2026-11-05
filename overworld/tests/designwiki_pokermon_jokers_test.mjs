@@ -211,6 +211,10 @@ try {
 	A(fake.find(s => s.key === 'terribeem')?.ptype === 'Colorless', 'Terribeem uses the owner-selected Colorless card type');
 	A(fake.find(s => s.key === 'kuranpu')?.ptype === 'Dark' && fake.find(s => s.key === 'kuranpu')?.stage === 'Legendary' && fake.find(s => s.key === 'kuranpu')?.rarityLabel === 'Legendary', 'Kuranpu is a Dark Legendary card');
 	A(fake.find(s => s.key === 'garlikid')?.stage === 'Legendary' && fake.find(s => s.key === 'garlikid')?.rarityLabel === 'Legendary', 'Garlikid is a Legendary card');
+	const protoIndex = fake.findIndex(s => s.key === 'protowatt');
+	A(protoIndex >= 0 && fake[protoIndex + 1]?.key === 'krilowatt' && fake[protoIndex].line.some(s => s.name === 'Krilowatt'), 'Protowatt appears immediately before its actual evolution Krilowatt');
+	const protoSprite = C.decode(path.join(ROOT, 'overworld/data/pokemon/s536872992.png'));
+	A(protoSprite.rgba[3] === 0 && [...Array(protoSprite.w * protoSprite.h).keys()].some(i => protoSprite.rgba[i * 4 + 3] === 255), 'RGB PNG transparent-key pixels remain transparent in Protowatt artwork');
 	const extra = (fs.existsSync(realArt) ? fs.readdirSync(realArt) : []).filter(f => ![...D.species, ...(D.fakemon || [])].some(s => s.art.normal.endsWith('/' + f) || s.art.shiny.endsWith('/' + f)));
 	A(!extra.length, 'no stale card art for species that now have jokers (none is left: every species has a joker)', extra.join(', '));
 	// re-running the generator (into a scratch folder) gives the committed JSON and art, byte for byte
