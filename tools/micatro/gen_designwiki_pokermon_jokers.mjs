@@ -17,7 +17,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { computeMissing, MODS, MOD_NAMES, TYPE_TO_PTYPE, STAGE_LABEL, RARITY_LABEL, GENS, ROOT } from './pokermon_missing_jokers.mjs';
+import { computeMissing, MODS, MOD_NAMES, TYPE_TO_PTYPE, STAGE_LABEL, RARITY_LABEL, GENS, ROOT, ptypeOf } from './pokermon_missing_jokers.mjs';
 import { listFakemon } from './fakemon_jokers.mjs';
 
 export const OUT_JSON = path.join(ROOT, 'designwiki/data/pokermon_jokers.json');
@@ -90,7 +90,7 @@ export async function buildData({ art = true, out, pretend } = {}) {
       rarity: s.rarity, rarityLabel: s.rarityLabel, cost: s.cost, line: s.line,
       art: { source: (made.get(s.dex) || {}).source || null, normal: fileOf(s.dex, false), shiny: fileOf(s.dex, true), recipe: (made.get(s.dex) || {}).recipe || null },
     })),
-    fakemon: fakemon.map(({ sprite, ...s }) => ({ ...s, mapped_ptype: s.ptype,
+    fakemon: fakemon.map(({ sprite, ...s }) => ({ ...s, mapped_ptype: ptypeOf(s.types),
       art: { source: 'composed', normal: ART_DIR + 'fakemon_' + s.key + '.png', shiny: ART_DIR + 'fakemon_' + s.key + '_shiny.png' } })),
   };
 }
