@@ -16,11 +16,14 @@
 // hands, discards, Joker slots, debt, money and the guarantee are fixed. Gen = the base species' (pokermon_gen_filter_test).
 import {
   G, P_CENTERS, localize, card_eval_status_text, defineJokers, type_tooltip, has_enhancement, get_depleted, get_enhancements, scale_card, create_card,
-  ease_discard, ease_hands_played, ease_poke_dollars, poke_create_treasure, find_pokemon_type, get_poke_target_card_ranks, detailed, copy_card, playing_card_joker_effects, all_cards, is_type, pseudorandom, pseudorandom_element, pseudoseed,
+  ease_discard, ease_hands_played, ease_poke_dollars, poke_create_treasure, find_pokemon_type, get_poke_target_card_ranks, detailed, copy_card, playing_card_joker_effects, all_cards, is_type, pseudorandom, pseudorandom_probability, pseudorandom_element, pseudoseed,
   EVOLVE_INTERCEPTS, POST_EVOLVE, FAMILY_MEMBER_REV, set_family, family,
 } from '../api.js';
 import { rulesRev } from '../../../js/mods/pins.js';
 import * as BN from '../../../js/engine/bignum.js';
+import { attach_mega } from '../systems/precedence.js';
+import { forge_scored_card } from '../../pokermonplus/src/pokemon/485_heatran_line.js';
+import { faint } from '../../nacho/dip.js';
 import { gold_held, diamond_storm, poison_point, flame_charge, flame_streak, flame_main, discards_scry, mystical_fire, skrelp_poison, hazard_held_x, toxic_debris, recoil, moxie, zygarde_give, protean_pick, protean_set, ninja_others } from './pokejokers_designs.js';
 
 /** The rules rev the 19 Megas arrive on (index.js contentRev). */
@@ -79,7 +82,7 @@ export const CARRY = {
   medicham: {},
   manectric: {},
   banette: { base_own: ['mult'], mega_own: ['banette_Xmult'] },
-  absol: {},
+  absol: { z: true },
   sableye: { shared: [['Xmult', 'deplete_Xmult'], ['enhancements', 'enhancements']] },
   sharpedo: {},
   glalie: {},
@@ -88,7 +91,7 @@ export const CARRY = {
   latias: { shared: [['eon_Xmult', 'eon_Xmult']] },
   latios: { shared: [['eon_Xmult', 'eon_Xmult']] },
   rayquaza: { shared: [['ascent_Xmult', 'ascent_Xmult']] },
-  garchomp: { shared: [['bite_mult', 'bite_mult']] },
+  garchomp: { z: true, shared: [['bite_mult', 'bite_mult']] },
   diancie: {},
   barbaracle: { rev: 87 },
   hawlucha: { rev: 89 },
@@ -115,18 +118,38 @@ export const CARRY = {
   staraptor: { rev: 108 },
   tatsugiri: { rev: 108, shared: [['form', 'form']] },
   meowstic: { rev: 108, shared: [['form', 'form']], mega_own: ['male_Xmult', 'replaced_round'] },
+  magearna: { rev: 109, mega_own: ['soul_Xmult', 'form'] },
+  zeraora: { rev: 109 },
+  golurk: { rev: 109 },
 };
 const copy = (v) => (v !== null && typeof v === 'object' ? JSON.parse(JSON.stringify(v)) : v);
 /** The CARRY entry when `from` -> `to` is a base <-> its Mega (either way), with the direction. */
 function pair_of(from, to) {
   for (const [base, spec] of Object.entries(CARRY)) {
     const b = 'j_poke_' + base, m = 'j_poke_mega_' + base;
-    if (from === b && to === m) return { spec, to_mega: true };
-    if (from === m && to === b) return { spec, to_mega: false };
+    if (from === b && (to === m || (spec.z && to === m + '_z'))) return { spec, to_mega: true };
+    if ((from === m || (spec.z && from === m + '_z')) && to === b) return { spec, to_mega: false };
   }
   return null;
 }
 const STASH = new Map();
+const GOLISOPOD_STASH = new Map();
+EVOLVE_INTERCEPTS.push({ backend(card, to) {
+  const from = card.config.center.key;
+  if ((from === 'j_nacho_golisopod' && to === 'j_poke_mega_golisopod') || (from === 'j_poke_mega_golisopod' && to === 'j_nacho_golisopod')) GOLISOPOD_STASH.set(card, copy(card.ability.extra));
+  return false;
+} });
+POST_EVOLVE.push((card, from, to) => {
+  const old = GOLISOPOD_STASH.get(card);
+  GOLISOPOD_STASH.delete(card);
+  if (!old || !['j_nacho_golisopod', 'j_poke_mega_golisopod'].includes(to)) return;
+  const ex = card.ability.extra;
+  const bonus = old.golisopod_bonus ?? (old.raised ? old.h_size || 1 : 0);
+  ex.golisopod_bonus = bonus;
+  ex.raised = bonus > 0;
+  ex.ante_debuffed = old.ante_debuffed;
+  if (card.added_to_deck && !card.debuff && bonus) G.hand.change_size(bonus);
+});
 // Before the swap: remember the old form's ability.extra (the swap rebuilds it from the new center's config).
 EVOLVE_INTERCEPTS.push({ backend(card, to_key) { if (pair_of(card.config.center.key, to_key)) STASH.set(card, copy(card.ability.extra)); return false; } });
 // After it (kept values restored, Energy re-applied): the banks cross over exactly.
@@ -151,12 +174,20 @@ const kept = (card, f, dflt) => (card.ability.extra.poke_kept && card.ability.ex
 
 /** index.js, once the centers exist: each base's `megas` (a getter: only from MEGA_D_REV on), its Mega tooltip, and the Megas' families. */
 export function attach_classic_megas(centers) {
+  attach_mega('j_sonfive_heatran', 'j_poke_mega_heatran', () => rulesRev('pokermon') >= 109);
+  attach_mega('j_nacho_golisopod', 'j_poke_mega_golisopod', () => rulesRev('pokermon') >= 109);
   const byKey = new Map(centers.map((c) => [c.key, c]));
   for (const [base, spec] of Object.entries(CARRY)) {
     const c = byKey.get('j_poke_' + base), mega = 'mega_' + base;
     if (!c || !byKey.get('j_poke_' + mega)) throw new Error(`pokermon: Mega batch D needs '${base}' and '${mega}'`);
     const available = () => rulesRev('pokermon') >= (spec.rev || MEGA_D_REV);
-    Object.defineProperty(c, 'megas', { get: () => (available() ? [mega] : undefined), enumerable: true, configurable: true });
+    Object.defineProperty(c, 'megas', { get: () => (available() ? (spec.z && rulesRev('pokermon') >= 109 ? [mega, mega + '_z'] : [mega]) : undefined), enumerable: true, configurable: true });
+    if (spec.z) c.getMega = (self, card) => {
+      const row = G.jokers?.cards || [], index = row.indexOf(card);
+      if (index === 0) return self.megas[0];
+      if (index === row.length - 1) return self.megas[1];
+      return pseudorandom_element(self.megas, pseudoseed('megastone_' + self.name))[0];
+    };
     const lv = c.loc_vars;
     c.loc_vars = function (self, info_queue, card) {
       const r = lv ? lv.call(this, self, info_queue, card) : undefined;
@@ -168,6 +199,21 @@ export function attach_classic_megas(centers) {
     const fam = family.find((f) => f.some((y) => (typeof y === 'string' ? y : y.key) === base)) || [];
     set_family(fam.length ? [...fam.filter((y) => (typeof y === 'string' ? y : y.key) !== mega), mega] : [base, mega]);
     FAMILY_MEMBER_REV.set(mega, spec.rev || MEGA_D_REV);
+    if (spec.z) { set_family([...family.find(f => f.some(y => (typeof y === 'string' ? y : y.key) === base)), mega + '_z']); FAMILY_MEMBER_REV.set(mega + '_z', 109); }
+  }
+  const lucario = byKey.get('j_poke_lucario');
+  if (lucario) {
+    const previous = lucario.megas;
+    Object.defineProperty(lucario, 'megas', { get: () => rulesRev('pokermon') >= 109 ? ['mega_lucario', 'mega_lucario_z'] : previous, enumerable: true, configurable: true });
+    lucario.getMega = (self, card) => {
+      const row = G.jokers?.cards || [], index = row.indexOf(card);
+      if (index === 0) return self.megas[0];
+      if (index === row.length - 1) return self.megas[1];
+      return pseudorandom_element(self.megas, pseudoseed('megastone_' + self.name))[0];
+    };
+    const fam = family.find(f => f.some(y => (typeof y === 'string' ? y : y.key) === 'lucario')) || ['lucario', 'mega_lucario'];
+    set_family([...fam, 'mega_lucario_z']);
+    FAMILY_MEMBER_REV.set('mega_lucario_z', 109);
   }
 }
 
@@ -198,6 +244,128 @@ const steel_stone_gold = (c) => has_enhancement(c, 'm_steel') || has_enhancement
 const straights = () => (G.GAME.hands.Straight ? G.GAME.hands.Straight.played : 0);
 
 defineJokers({
+  mega_golisopod: {
+    name: 'mega_golisopod', poke_sprite391: sprite('Gen07', 0, 6, [1, 6]),
+    config: { extra: { Xmult: 4, golisopod_bonus: 0, h_size: 1 } },
+    ...MEGA, ptype: 'Grass', gen: 7, poke_after: 'magearna', poke_mega_base: 'j_nacho_golisopod', eternal_compat: false,
+    attributes: ['xmult', 'hand_size', 'faint'],
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.Xmult), ex.golisopod_bonus] }; },
+    calculate(self, card, context) {
+      const ex = card.ability.extra, main = context.main_eval || context.cardarea === G.jokers;
+      if (context.before && main && !context.blueprint && G.GAME.current_round.hands_played >= 2) { ex.ante_debuffed = true; faint(card, false, true); }
+      if (context.joker_main) return { Xmult: ex.Xmult };
+      if (context.end_of_round && main && !context.individual && !context.repetition && !context.blueprint && !context.retrigger_joker && context.beat_boss) {
+        if (!ex.ante_debuffed) { ex.golisopod_bonus++; ex.raised = true; G.hand.change_size(1); }
+        ex.ante_debuffed = undefined;
+      }
+    },
+    add_to_deck(self, card, from_debuff) { if (from_debuff && card.ability.extra.golisopod_bonus) G.hand.change_size(card.ability.extra.golisopod_bonus); },
+    remove_from_deck(self, card) {
+      const ex = card.ability.extra;
+      if (ex.golisopod_bonus) G.hand.change_size(-ex.golisopod_bonus);
+      if (ex.ante_debuffed) { ex.golisopod_bonus = 0; ex.raised = undefined; }
+    },
+  },
+  mega_heatran: {
+    name: 'mega_heatran', poke_sprite391: sprite('Gen04', 0, 8, [1, 8]),
+    config: { extra: { chips: 15, mult: 2 } },
+    ...MEGA, ptype: 'Fire', gen: 4, poke_after: 'froslass', poke_mega_base: 'j_sonfive_heatran', blueprint_compat: false,
+    attributes: ['enhancements', 'modify_card', 'chips', 'mult'],
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); return { vars: [card.ability.extra.chips, card.ability.extra.mult] }; },
+    calculate(self, card, context) {
+      if (!scored(context) || context.blueprint || context.retrigger_joker || !context.scoring_hand) return;
+      const c = context.other_card, ex = card.ability.extra;
+      if (!forge_scored_card(c)) return;
+      const hand = G.GAME.hands_played;
+      if (ex.forged_hand !== hand) {
+        ex.forged_hand = hand;
+        c.ability.perma_bonus = (c.ability.perma_bonus || 0) + ex.chips;
+        c.ability.perma_mult = (c.ability.perma_mult || 0) + ex.mult;
+      }
+    },
+  },
+  mega_lucario_z: {
+    name: 'mega_lucario_z', poke_sprite391: sprite('Gen04', 8, 7, [9, 7]),
+    config: { extra: { Xmult_multi: 1.75 } },
+    ...MEGA, ptype: 'Fighting', gen: 4, poke_after: 'mega_lucario',
+    attributes: ['xmult', 'edition', 'retrigger'],
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); return { vars: [r3(card.ability.extra.Xmult_multi)] }; },
+    calculate(self, card, context) {
+      const c = context.other_card;
+      if (!c || c.debuff || !c.edition || context.cardarea !== G.hand || context.end_of_round) return;
+      if (context.individual) return { x_mult: card.ability.extra.Xmult_multi, card };
+      if (context.repetition) {
+        const editions = new Set((G.hand?.cards || []).filter(v => !v.debuff && v.edition).map(v => v.edition.key || Object.keys(v.edition).find(k => v.edition[k] === true)));
+        if (editions.size >= 2) return { message: localize('k_again_ex'), repetitions: 1, card };
+      }
+    },
+  },
+  mega_absol_z: {
+    name: 'mega_absol_z', poke_sprite391: sprite('Gen03', 2, 8, [3, 8]),
+    config: { extra: { Xmult: 2 } },
+    ...MEGA, ptype: 'Dark', gen: 3, poke_after: 'absol',
+    attributes: ['xmult', 'mod_chance'],
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); return { vars: [r3(card.ability.extra.Xmult)] }; },
+    calculate(self, card, context) {
+      if (context.fix_probability && !context.blueprint) return { numerator: (G.GAME.current_round.hands_played || 0) === 0 ? 0 : context.denominator };
+      if (context.joker_main) return { Xmult_mod: card.ability.extra.Xmult, card };
+    },
+  },
+  mega_garchomp_z: {
+    name: 'mega_garchomp_z', poke_sprite391: sprite('Gen04', 6, 7, [7, 7]),
+    config: { extra: { bite_mult: 0, Xmult_multi: 1.75, mult: 5 } },
+    ...MEGA, ptype: 'Dragon', gen: 4, poke_after: 'garchomp',
+    attributes: ['mult', 'xmult', 'enhancements', 'gold'],
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.Xmult_multi), ex.mult, r3(ex.bite_mult)] }; },
+    calculate(self, card, context) {
+      const ex = card.ability.extra, c = context.other_card;
+      if (context.joker_main && ex.bite_mult) return { mult_mod: ex.bite_mult, card };
+      if (context.individual && context.cardarea === G.hand && !context.end_of_round && c && !c.debuff && has_enhancement(c, 'm_gold')) return { x_mult: ex.Xmult_multi, mult: gold_held() >= 3 ? ex.mult : 0, card };
+    },
+  },
+  mega_golurk: {
+    name: 'mega_golurk', poke_sprite391: sprite('Gen05', 6, 10, [7, 10]),
+    config: { extra: { Xmult_multi: 1.75, num: 1, dem: 4 } },
+    ...MEGA, ptype: 'Psychic', gen: 5, poke_after: 'golurk',
+    attributes: ['xmult', 'hazard', 'probability', 'retrigger'],
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.Xmult_multi), ex.num, ex.dem] }; },
+    calculate(self, card, context) {
+      const c = context.other_card;
+      if (!c || c.debuff || context.cardarea !== G.hand || context.end_of_round) return;
+      const hazard = has_enhancement(c, 'm_poke_hazard');
+      if (context.repetition && hazard) return { message: localize('k_again_ex'), repetitions: 1, card };
+      if (context.individual && (hazard || pseudorandom_probability(card, 'mega_golurk', card.ability.extra.num, card.ability.extra.dem, 'mega_golurk'))) return { x_mult: card.ability.extra.Xmult_multi, card };
+    },
+  },
+  mega_magearna: {
+    name: 'mega_magearna', poke_sprite391: sprite('Gen07', 4, 6, [5, 6]),
+    config: { extra: { Xmult_multi: 1.75, soul_Xmult: 1, soul_gain: 0.1 } },
+    ...MEGA, ptype: 'Metal', gen: 7, poke_after: 'magearna',
+    attributes: ['xmult', 'scaling', 'enhancements'],
+    set_ability(self, card, initial) { if (initial) card.ability.extra.form = pseudorandom(pseudoseed('mega_magearna_form')) < 0.5 ? 'original' : 'standard'; },
+    poke_view_form(self, card) { return card.ability.extra.form; },
+    poke_form_art: { original: { atlas: 'poke_mega_variants', pos: { x: 4, y: 0 }, soul_pos: { x: 5, y: 0 } } },
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); info_queue.push(P_CENTERS.m_steel); const ex = card.ability.extra; return { vars: [r3(ex.Xmult_multi), r3(ex.soul_gain), r3(ex.soul_Xmult)] }; },
+    calculate(self, card, context) {
+      const ex = card.ability.extra;
+      if (scored(context) && has_enhancement(context.other_card, 'm_steel')) return { x_mult: ex.Xmult_multi, card };
+      if (context.after && context.cardarea === G.jokers && !context.blueprint && !context.retrigger_joker && (context.scoring_hand || []).filter(c => !c.debuff && has_enhancement(c, 'm_steel')).length >= 2) ex.soul_Xmult = r3(ex.soul_Xmult + ex.soul_gain);
+      if (context.joker_main && ex.soul_Xmult > 1) return { Xmult_mod: ex.soul_Xmult, card };
+    },
+  },
+  mega_zeraora: {
+    name: 'mega_zeraora', poke_sprite391: sprite('Gen07', 8, 6, [9, 6]),
+    config: { extra: { Xmult_multi: 1.35, dollars: 2 } },
+    ...MEGA, ptype: 'Lightning', gen: 7, poke_after: 'zeraora',
+    attributes: ['xmult', 'money', 'face', 'retrigger'],
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [ex.dollars, r3(ex.Xmult_multi)] }; },
+    calculate(self, card, context) {
+      const c = context.other_card, sh = context.scoring_hand;
+      if (!c || c.debuff || context.cardarea !== G.play || !c.is_face()) return;
+      if (scored(context)) return { x_mult: card.ability.extra.Xmult_multi, dollars: pay(card.ability.extra.dollars), card };
+      if (context.repetition && sh?.filter(v => !v.debuff && v.is_face()).length >= 3 && sh.find(v => !v.debuff && v.is_face()) === c) return { message: localize('k_again_ex'), repetitions: 1, card };
+    },
+  },
   mega_meowstic: {
     name: 'mega_meowstic', poke_sprite391: sprite('Gen06', 6, 13, [7, 13]),
     config: { extra: { Xmult: 2, Xmult_mod: 0.5, male_Xmult: 1, male_gain: 0.15 } },
@@ -232,6 +400,11 @@ defineJokers({
     ...MEGA, ptype: 'Dragon', gen: 9, poke_after: 'tatsugiri',
     attributes: ['xmult', 'chips', 'mult', 'joker', 'types', 'nature', 'position', 'retrigger'],
     set_ability(self, card, initial) { if (initial) card.ability.extra.form = pseudorandom_element(['curly', 'droopy', 'stretchy'], pseudoseed('mega_tatsugiri'))[0]; },
+    poke_view_form(self, card) { return card.ability.extra.form; },
+    poke_form_art: {
+      droopy: { atlas: 'poke_mega_variants', pos: { x: 0, y: 0 }, soul_pos: { x: 1, y: 0 } },
+      stretchy: { atlas: 'poke_mega_variants', pos: { x: 2, y: 0 }, soul_pos: { x: 3, y: 0 } },
+    },
     loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [ex.Xmult_multi, ex.chips, ex.mult, ex.form || 'unknown'] }; },
     calculate(self, card, context) {
       const target = (G.jokers?.cards || []).find(j => j !== card && is_type(j, 'Water'));
@@ -914,6 +1087,22 @@ const BR = '{br:2}ERROR - CONTACT STEAK';
 const NAT = (a, b, c) => '{C:attention}Nature: {C:inactive}({C:attention}#' + a + '#, #' + b + '#, #' + c + '#{C:inactive}){}';
 export const MEGA_D_LOC = {
   Joker: {
+    j_poke_mega_golisopod: { name: 'Mega Golisopod', text: [
+      '{X:mult,C:white} X#1# {} Mult; faints before the', 'third hand of a round', 'Beat a Boss Blind without fainting this', 'ante to gain {C:attention}+1 hand size{}; lose', 'these gains if it later faints', '{C:inactive}(Currently +#2# hand size)'] },
+    j_poke_mega_heatran: { name: 'Mega Heatran', text: [
+      '{C:attention}Forge{} scored cards, converting', 'their modifiers into permanent effects', 'The first card forged each hand gains', '{C:chips}+#1#{} permanent Chips and {C:mult}+#2#{} Mult'] },
+    j_poke_mega_lucario_z: { name: 'Mega Lucario Z', text: [
+      'Each held card with an {C:attention}Edition{}', 'gives {X:mult,C:white} X#1# {} Mult', 'If at least 2 different Editions are', 'held, retrigger those cards once'] },
+    j_poke_mega_absol_z: { name: 'Mega Absol Z', text: [
+      '{X:mult,C:white} X#1# {} Mult', 'Listed probabilities are zero on the', 'first hand of each round, then guaranteed'] },
+    j_poke_mega_garchomp_z: { name: 'Mega Garchomp Z', text: [
+      '{C:mult}+#3#{} Mult; held {C:attention}Gold{} cards each', 'give {X:mult,C:white} X#1# {} Mult', 'With 3 or more held Gold cards,', 'each also gives {C:mult}+#2#{} Mult'] },
+    j_poke_mega_golurk: { name: 'Mega Golurk', text: [
+      'Held {C:attention}Hazard{} cards give {X:mult,C:white} X#1# {} Mult', 'and are retriggered once', 'Other held cards have a {C:green}#2# in #3#{}', 'chance to give {X:mult,C:white} X#1# {} Mult'] },
+    j_poke_mega_magearna: { name: 'Mega Magearna', text: [
+      'Scored {C:attention}Steel{} cards give {X:mult,C:white} X#1# {} Mult', 'After scoring at least 2 Steel cards,', 'gain {X:mult,C:white} X#2# {} Mult {C:inactive}(Currently X#3#)'] },
+    j_poke_mega_zeraora: { name: 'Mega Zeraora', text: [
+      'Scored {C:attention}face{} cards earn {C:money}$#1#{}', 'and give {X:mult,C:white} X#2# {} Mult', 'If 3 or more face cards score,', 'retrigger the first scored face card'] },
     j_poke_mega_meowstic: { name: 'Mega Meowstic', text: [
       '{C:attention}Gender: #1#{}', '♂: create a Tarot at end of round;', 'gain {X:mult,C:white} X#5# {} per Tarot used {C:inactive}(X#4#)', '♀: {X:mult,C:white} X#2# {} plus {X:mult,C:white} X#3# {} per Tarot held;', 'once per round, replace a Tarot used', '{C:inactive}(Must have room)'] },
     j_poke_mega_tatsugiri: { name: 'Mega Tatsugiri', text: [

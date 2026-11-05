@@ -377,7 +377,7 @@ function ownFace(d0) {
   // A form named on the center itself (regional batch B: Galarian Darmanitan's Zen Mode, upstream's unlisted Gen 5 {2,8}): poke_form_art
   // {form: {atlas, pos}} (its Shiny twin: basicShiny, the sheet's Shiny twin)
   const fa = p && P_CENTERS[d0.center] && P_CENTERS[d0.center].poke_form_art && P_CENTERS[d0.center].poke_form_art[p.form];
-  if (fa) return { ...d0, atlas: fa.atlas, pos: fa.pos, soul_pos: undefined };
+  if (fa) return { ...d0, atlas: fa.atlas, pos: fa.pos, soul_pos: fa.soul_pos };
   // Unown: its form's letter floats over the card
   const u = withUnownForm(d);
   return u === d0 ? null : u;

@@ -86,7 +86,7 @@ await sec('pin', () => {
   }
   ok(['beast_boosts', 'h_size', 'val_gain', 'retriggers', 'gluttony_Xmult', 'recoil', 'rounds'].every((f) => !(f in energy_values)), 'the Beast Boost count, the hand size, the $1, the retriggers, the bank and the $2 are no energy fields');
   ok(P_CENTERS.j_poke_nihilego.poke_no_energy_field === true && !P_CENTERS.j_poke_nihilego.poke_beast_boost, 'Nihilego: no number (Energy-inert, no Beast Boost)');
-  const keys = MODS.pokermon.content.centers.filter((c) => c.set === 'Joker').map((c) => c.key);
+  const keys = MODS.pokermon.content.centers.filter((c) => c.set === 'Joker' && !['j_poke_mega_magearna', 'j_poke_mega_golisopod', 'j_poke_mega_zeraora'].includes(c.key)).map((c) => c.key);
   const chain = ['nihilego', 'buzzwole', 'pheromosa', 'xurkitree', 'celesteela', 'kartana', 'guzzlord', 'necrozma', 'magearna', 'marshadow', 'poipole', 'naganadel', 'stakataka', 'blacephalon', 'zeraora', 'grookey']; // (with Gen 7 batch 4's Necrozma, Magearna, Marshadow 800-802 and Zeraora 807)
   const i = keys.indexOf('j_poke_nihilego');
   ok(i > 0 && chain.every((n, k) => keys[i + k] === 'j_poke_' + n), 'Pokédex order: Nihilego (793) ... Guzzlord (799), Necrozma ... Marshadow, Poipole (803) ... Blacephalon (806), Zeraora, then Grookey (810)', keys.slice(i - 1, i + 17));

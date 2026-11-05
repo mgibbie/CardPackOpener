@@ -109,7 +109,7 @@ await sec('static', () => {
   ok(C('finneon').config.extra.chips === 40 && C('finneon').config.extra.rounds === 5 && C('lumineon').config.extra.chips === 15, 'Finneon +40, 5 rounds; Lumineon +15 a card');
   const keys = MODS.pokermon.content.centers.filter((x) => x.set === 'Joker').map((x) => x.key);
   const i = keys.indexOf('j_poke_hippopotas');
-  ok(keys.slice(i - 1, i + 8).join() === ['mega_lucario', ...NEW, 'mantyke'].map((n) => 'j_poke_' + n).join(), 'Pokédex order: Mega Lucario (448), 449-452, 455-457, Mantyke (458)', keys.slice(i - 1, i + 8));
+  ok(keys.slice(i - 1, i + 8).join() === ['mega_lucario_z', ...NEW, 'mantyke'].map((n) => 'j_poke_' + n).join(), 'Pokédex order: Mega Lucario Z (448), 449-452, 455-457, Mantyke (458)', keys.slice(i - 1, i + 8));
   const fam = (n) => poke_get_family_list(n).map((x) => (typeof x === 'string' ? x : x.key || x.name)).join();
   ok(fam('hippopotas') === 'hippopotas,hippowdon' && fam('skorupi') === 'skorupi,drapion' && fam('lumineon') === 'finneon,lumineon', 'families: Hippopotas / Skorupi / Finneon lines', [fam('hippopotas'), fam('skorupi'), fam('lumineon')]);
   const cells = { hippopotas: [26, 29], hippowdon: [28, 29], skorupi: [0, 30], drapion: [2, 30], carnivine: [8, 30], finneon: [10, 30], lumineon: [12, 30] };

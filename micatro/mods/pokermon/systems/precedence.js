@@ -81,7 +81,10 @@ export function addon_megas(x) {
   if (!c) return [];
   const out = [];
   // An add-on's Megas attached to this joker (attach_mega: Nacho 1.7.9's take_ownership `megas` on Pokermon's Gardevoir).
-  for (const k of ATTACHED.get(c.key) || []) if (P_CENTERS[k] && !replaced_by(k) && centerActive(P_CENTERS[k]) && !out.includes(k)) out.push(k);
+  for (const entry of ATTACHED.get(c.key) || []) {
+    const k = typeof entry === 'string' ? entry : entry.key;
+    if ((typeof entry === 'string' || entry.available()) && P_CENTERS[k] && !replaced_by(k) && centerActive(P_CENTERS[k]) && !out.includes(k)) out.push(k);
+  }
   if (c.mod === POKERMON && !c.megas) {
     const list = megaIndex().get(c.key);
     if (list) for (const k of list) if (centerActive(P_CENTERS[k]) && !out.includes(k)) out.push(k);
@@ -96,13 +99,13 @@ export function addon_megas(x) {
  * option on). Additive; with nothing attached Pokermon is unchanged.
  */
 const ATTACHED = new Map();
-export function attach_mega(base_key, mega_key) {
+export function attach_mega(base_key, mega_key, available) {
   const list = ATTACHED.get(base_key) || [];
-  if (!list.includes(mega_key)) list.push(mega_key);
+  if (!list.some(v => (typeof v === 'string' ? v : v.key) === mega_key)) list.push(available ? { key: mega_key, available } : mega_key);
   ATTACHED.set(base_key, list);
 }
 /** The attached Megas of a base key (for docs and tests). */
-export const attached_megas = (base_key) => (ATTACHED.get(base_key) || []).slice();
+export const attached_megas = (base_key) => (ATTACHED.get(base_key) || []).map(v => typeof v === 'string' ? v : v.key);
 
 /**
  * A family member's key for DISPLAY (the Pokédex): a replaced add-on key shows Pokermon's; a Pokermon key Pokermon

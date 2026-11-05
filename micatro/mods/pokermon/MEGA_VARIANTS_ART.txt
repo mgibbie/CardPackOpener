@@ -1,0 +1,8 @@
+Mega appearance atlas: mega-variants.png
+
+The card frames are from Pokermon 3.9.1. The three form images were resized
+from the following Pokémon Legends: Z-A images on Serebii.net:
+https://www.serebii.net/legendsz-a/pokemon/978-md.png (Droopy Tatsugiri)
+https://www.serebii.net/legendsz-a/pokemon/978-ms.png (Stretchy Tatsugiri)
+https://www.serebii.net/legendsz-a/pokemon/801-mo.png (Original Color Magearna)
+Pokémon and their artwork are trademarks and copyright of their respective owners.

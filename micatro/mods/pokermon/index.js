@@ -207,6 +207,7 @@ for (const g of ['Gen01', 'Gen02', 'Gen03', 'Gen04', 'Gen05', 'Gen06', 'Gen07', 
 }
 for (const [n, a] of Object.entries(SERIES_A_ANIM)) for (const sh of ['', 'Shiny']) ATLAS_FILES[n + sh] = ['Series A/' + n + sh + '.png', 71, 95, a.frames];
 const atlases = {};
+atlases.poke_mega_variants = { src: '/micatro/mods/pokermon/mega-variants.png', px: 71, py: 95 };
 for (const [name, [path, px = 71, py = 95, frames]] of Object.entries(ATLAS_FILES)) {
   atlases['poke_' + name] = { src: art(path), px, py, ...(frames ? { frames } : {}) };
 }
@@ -1185,7 +1186,7 @@ export const POKERMON = registerMod({
   // 106: Mega Salamence retains Salamence's temporary hand-size bonus at blind select.
   // 107: selected-card Items accept one through their maximum, with single-card effects for paired Items.
   // 108: approved Mega Dimension forms.
-  contentRev: 108,
+  contentRev: 109,
   // Pokermon 3.9.1 pokermon.lua: SMODS.current_mod.optional_features = {quantum_enhancements = true, object_weights = true}.
   // object_weights sends create_card's key, the shop roll, tags, packs, bosses and vouchers through SMODS.poll_object
   // (js/engine/smods.js; batch 17). quantum_enhancements is the engine's check_enhancement, always on.

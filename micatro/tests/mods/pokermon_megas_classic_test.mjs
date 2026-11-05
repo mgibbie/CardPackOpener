@@ -95,7 +95,7 @@ await sec('registry', () => {
   for (const b of BASES) {
     const m = C('mega_' + b);
     ok(m && m.rarity === 'poke_mega' && m.stage === 'Mega' && m.cost === 12 && m.ptype === C(b).ptype && m.gen === C(b).gen, `mega_${b}: Mega rarity / stage / $12, ${C(b).ptype}, Gen ${C(b).gen} (its base's)`, m && [m.rarity, m.stage, m.cost, m.ptype, m.gen]);
-    ok(JSON.stringify(C(b).megas) === JSON.stringify(['mega_' + b]), `${b} lists mega_${b} (the Mega Stone's target)`, C(b).megas);
+    ok(C(b).megas.includes('mega_' + b), `${b} lists mega_${b} (the Mega Stone's target)`, C(b).megas);
     ok(keys.indexOf('j_poke_mega_' + b) === keys.indexOf('j_poke_' + b) + 1, `mega_${b} follows ${b} (Pokédex order)`);
     const e = L['j_poke_mega_' + b];
     start('MDT' + b);
