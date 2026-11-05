@@ -1826,6 +1826,7 @@ How Megas work:
   - Mega batch D (contentRev 84, jokers/pokejokers_megas.js) adds the 18 classic X/Y + ORAS Megas and
     Mega Salamence (Pokermon's): 53 Pokermon Megas. A new Mega on an EXISTING base: give the base `megas` behind
     the rules rev (attach_classic_megas' getter) so old runs re-play their Mega Stone onto the same joker.
+    Mega Salamence retains Salamence's +1 temporary hand size per 5 Straights at blind select (r106).
   - BANKS ACROSS A MEGA (house, batch D CARRY): a bank both forms use crosses as is (Garchomp's Bite Mult, the Eon
     duo's X); a bank only one form uses rides along in ability.extra.poke_kept and comes back on the revert
     (Aggron's eaten X, Banette's Mult, Mega Banette's own X). Say on the card when a bank waits ("Aggron's X2.2 is
