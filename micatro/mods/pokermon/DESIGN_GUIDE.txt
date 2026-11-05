@@ -1827,6 +1827,10 @@ How Megas work:
     Mega Salamence (Pokermon's): 53 Pokermon Megas. A new Mega on an EXISTING base: give the base `megas` behind
     the rules rev (attach_classic_megas' getter) so old runs re-play their Mega Stone onto the same joker.
     Mega Salamence retains Salamence's +1 temporary hand size per 5 Straights at blind select (r106).
+  - Mega Dimension (r108): Staraptor, Glimmora, Tatsugiri, Chimecho, Meowstic, Crabominable and
+    Scovillain. Mega Stone targets are revision-gated; Tatsugiri's form, Meowstic's gender and its
+    male bank, Chimecho's restored-Glass count, and Glimmora's per-hand conversion count survive
+    their Mega swaps. Staraptor's Mega art is Fighting, so it counts only actual Colorless Jokers.
   - BANKS ACROSS A MEGA (house, batch D CARRY): a bank both forms use crosses as is (Garchomp's Bite Mult, the Eon
     duo's X); a bank only one form uses rides along in ability.extra.poke_kept and comes back on the revert
     (Aggron's eaten X, Banette's Mult, Mega Banette's own X). Say on the card when a bank waits ("Aggron's X2.2 is

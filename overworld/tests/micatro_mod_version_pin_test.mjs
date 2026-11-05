@@ -66,7 +66,7 @@ const poke = playRun({ seed: 'PINPOKE', back: 'b_red', stake: 1, mods: ['pokermo
 const van = playRun({ seed: 'PINVAN', back: 'b_blue', stake: 1 }, { seed: 2, maxSteps: 260, weak: true });
 if (!poke.session.over || !van.session.over) throw new Error('the fixture runs must end');
 const OLD = { pokermon: '3.2.1' };                    // recorded on Pokermon 3.2.1 before contentRev 1 (the 2026-10-18/19 house rules)
-const CUR = '3.9.1+r107'; // Pokermon generation-filter fix
+const CUR = '3.9.1+r108'; // Pokermon generation-filter fix
 const part = (run, n) => ({ ...strip(run.recipe), actions: run.recipe.actions.slice(0, n) });
 const savedOld = { ...part(poke, 5), modVersions: OLD, engineRev: 1 };            // a save on the old Pokermon rules
 const savedLegacy = part(van, 5);                                                 // a save from before pins
@@ -238,7 +238,7 @@ try {
 		const shown = await promptShown(page);
 		A(shown, 'resuming a run recorded on older Pokermon rules shows a prompt (not a silent resume)');
 		const txt = shown ? await page.evaluate(() => document.querySelector('.resume-modal').textContent) : '';
-		A(/Pokermon/.test(txt) && /3\.2\.1\s*→\s*3\.9\.1 \(rev 107\)/.test(txt) && /may play differently/.test(txt), 'the prompt names the mod and both versions, and says the run may play differently', txt.slice(0, 300));
+		A(/Pokermon/.test(txt) && /3\.2\.1\s*→\s*3\.9\.1 \(rev 108\)/.test(txt) && /may play differently/.test(txt), 'the prompt names the mod and both versions, and says the run may play differently', txt.slice(0, 300));
 		A(shown && await page.evaluate(() => !!document.querySelector('.resume-modal .b-resume-continue')), 'it offers "Continue anyway" and "Abandon run"');
 		A(!(await page.evaluate(() => window.__micatro.session)), 'nothing resumes before the player chooses');
 		if (shown) await shot(page, 'resume_prompt.png');
@@ -301,7 +301,7 @@ try {
 		await go('/micatro/?replay=aaaa0001');
 		await waitFor(() => page.evaluate(() => !!(window.__micatro.replay && window.__micatro.replay.ready)), 30000);
 		const bn = await page.evaluate(() => { const e = document.querySelector('.banner .mod-pin-warn'); return e ? e.textContent : ''; });
-		A(/Recorded with Pokermon 3\.2\.1; current 3\.9\.1 \(rev 107\)\. Playback may differ\./.test(bn), 'a replay recorded on other versions shows the warning banner up front', bn);
+		A(/Recorded with Pokermon 3\.2\.1; current 3\.9\.1 \(rev 108\)\. Playback may differ\./.test(bn), 'a replay recorded on other versions shows the warning banner up front', bn);
 		if (bn) await shot(page, 'replay_banner.png');
 		A(await waitFor(async () => { const r = await R(); return r && r.ended; }, 120000), 'it still plays (to the end)');
 		const r1 = await R();
@@ -317,7 +317,7 @@ try {
 		await waitFor(() => page.evaluate(() => !!(window.__micatro.replay && window.__micatro.replay.ready)), 30000);
 		A(await waitFor(async () => { const r = await R(); return r && r.ended; }, 60000), 'a desynced replay ends (it does not hang)');
 		const r3 = await R();
-		A(r3 && r3.index === 5 && !r3.playing && /Playback stopped at move 6 of \d+/.test(r3.notice) && /Pokermon 3\.2\.1 → 3\.9\.1 \(rev 107\)/.test(r3.notice), 'it stops at the rejected move with a message naming the version change', JSON.stringify(r3 && { i: r3.index, n: r3.notice }));
+		A(r3 && r3.index === 5 && !r3.playing && /Playback stopped at move 6 of \d+/.test(r3.notice) && /Pokermon 3\.2\.1 → 3\.9\.1 \(rev 108\)/.test(r3.notice), 'it stops at the rejected move with a message naming the version change', JSON.stringify(r3 && { i: r3.index, n: r3.notice }));
 		await tryClick(page, '.rb-play'); await sleep(600);
 		const r4 = await R();
 		A(r4 && r4.index === 5 && !r4.playing, 'pressing play again stays stopped (no loop, no hang)', JSON.stringify(r4 && { i: r4.index, p: r4.playing }));

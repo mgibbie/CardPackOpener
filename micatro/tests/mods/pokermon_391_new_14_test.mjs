@@ -107,7 +107,7 @@ sec(() => {
   const fam = (n) => JSON.stringify(poke_get_family_list(n));
   ok(fam('clamperl') === '["clamperl","huntail","gorebyss"]' && fam('salamence') === '["bagon","shelgon","salamence","mega_salamence"]'
     && fam('bronzong') === '["bronzor","bronzong"]', 'families: Clamperl, Bagon (+ Mega Salamence, Mega batch D), Bronzor lines');
-  ok(fam('roselia') === '["budew","roselia","roserade"]' && fam('chimecho') === '["chingling","chimecho"]', 'families: Budew / Roselia / Roserade, Chingling / Chimecho');
+  ok(fam('roselia') === '["budew","roselia","roserade"]' && fam('chimecho') === '["chingling","chimecho","mega_chimecho"]', 'families: Budew / Roselia / Roserade, Chingling / Chimecho');
   ok(fam('kirlia') === '["ralts","kirlia","gardevoir","gallade"]' && get_family_keys('kirlia').includes('j_poke_gallade'), 'family: the Ralts line with Gallade', poke_get_family_list('kirlia'));
   const dk = get_family_keys('deoxys');
   ok(dk.length === 4 && dk.every((k) => k.key === 'j_poke_deoxys') && dk.map((k) => k.form).join() === '4,1,2,3', 'family: Deoxys and its 3 formes (forms)', dk);
