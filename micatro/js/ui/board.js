@@ -148,7 +148,7 @@ export class Board {
     const $ = (s) => this.hudEl.querySelector(s);
     this.H = {
       blind: $('.hud-blind'), bName: $('.hb-name'), bChip: $('.hb-chip'), bTarget: $('.hb-target'), bReward: $('.hb-reward .money'),
-      bDesc: $('.hb-desc'), bInfo: $('.hb-info'), score: $('.hs-num'), hand: $('.hh-hand'), lvl: $('.hh-lvl'), chips: $('.hh-chips'), mult: $('.hh-mult'),
+      bDesc: $('.hb-desc'), bInfo: $('.hb-info'), score: $('.hs-num'), scoreChip: $('.hud-score .chip-ico'), hand: $('.hh-hand'), lvl: $('.hh-lvl'), chips: $('.hh-chips'), mult: $('.hh-mult'),
       hands: $('.s-hands .stat-v'), discards: $('.s-discards .stat-v'), dollars: $('.s-dollars .stat-v'), ante: $('.ante-n'), anteW: $('.ante-w'),
       round: $('.s-round .stat-v'), tags: $('.hud-tags'), handBox: $('.hud-hand'), rbadges: $('.hud-rbadges'),
     };
@@ -604,12 +604,19 @@ export class Board {
     H.hands.textContent = hud.hands;
     H.discards.textContent = hud.discards;
     H.ante.textContent = hud.ante;
+    this.renderScoreChip();
     H.anteW.textContent = v.win_ante || 8;
     H.round.textContent = hud.round;
     H.score.textContent = fmt(this.shownScore);
     this.renderHandBox();
     this.renderBlindPanel(v.blind, v.state);
     this.renderTagsEtc(v);
+  }
+  /** The chips atlas has five columns and two rows; hold its last color in high antes. */
+  renderScoreChip() {
+    const ante = Number(this.hud.ante);
+    const cell = Math.max(0, Math.min(9, Number.isFinite(ante) ? Math.floor(ante) - 1 : 0));
+    this.H.scoreChip.style.backgroundPosition = `${-30 * (cell % 5)}px ${-30 * Math.floor(cell / 5)}px`;
   }
   renderBlindPanel(b, state) {
     const H = this.H;
@@ -1491,7 +1498,7 @@ export class Board {
       case 'hands': this.hud.hands = ev.total; this.H.hands.textContent = ev.total; this.bump(this.H.hands); return 0.05;
       case 'discards': this.hud.discards = ev.total; this.H.discards.textContent = ev.total; this.bump(this.H.discards); return 0.05;
       case 'round': this.hud.round = ev.total; this.H.round.textContent = ev.total; this.bump(this.H.round); return 0.1;
-      case 'ante': this.hud.ante = ev.total; this.H.ante.textContent = ev.total; this.bump(this.H.ante); return 0.2;
+      case 'ante': this.hud.ante = ev.total; this.H.ante.textContent = ev.total; this.renderScoreChip(); this.bump(this.H.ante); return 0.2;
       case 'level_up': {
         const hh = this.hud.hand;
         hh.total = null; hh.name = ev.hand; hh.level = ev.level; hh.chips = ev.chips; hh.mult = ev.mult;

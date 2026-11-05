@@ -198,6 +198,22 @@ try {
 		v = await V(page);
 		A(v.state === 'SELECTING_HAND' && v.areas.hand.length === 8, 'selecting the blind deals a hand of 8', v.state);
 		A(await page.evaluate(() => document.querySelectorAll('.cards-layer .card').length) >= 8, 'the hand is drawn as card sprites');
+		const scoreChip = await page.$('.hud-score .chip-ico');
+		await page.evaluate(() => { const b = window.__micatro.board; b.hud.ante = 1; b.renderScoreChip(); });
+		const chipOne = await scoreChip.screenshot();
+		await page.evaluate(() => { const b = window.__micatro.board; b.hud.ante = 2; b.renderScoreChip(); });
+		const chipTwo = await scoreChip.screenshot();
+		const chipState = await page.evaluate(() => {
+			const b = window.__micatro.board, c = document.querySelector('.hud-score .chip-ico');
+			const second = getComputedStyle(c).backgroundPosition;
+			b.applyEvent({ type: 'ante', total: 6 });
+			const sixth = getComputedStyle(c).backgroundPosition;
+			b.hud.ante = 99; b.renderScoreChip(); const high = getComputedStyle(c).backgroundPosition;
+			b.hud.ante = b.view.ante; b.renderHud();
+			return { second, sixth, high, restored: getComputedStyle(c).backgroundPosition };
+		});
+		A(chipState.second === '-30px 0px' && chipState.sixth === '0px -30px' && chipState.high === '-120px -30px' && chipState.restored === '0px 0px', 'round-score chip follows ante changes and caps at the last atlas cell', JSON.stringify(chipState));
+		A(!Buffer.from(chipOne).equals(Buffer.from(chipTwo)), 'round-score chip screenshots show different artwork at antes 1 and 2');
 
 		// canvases aren't blank: the WebGL background and a card face
 		const px = await page.evaluate(() => {
