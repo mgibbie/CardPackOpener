@@ -207,6 +207,10 @@ try {
 	const fake = D.fakemon || [];
 	A(fake.length === 622 && new Set(fake.map(s => s.dex)).size === fake.length && fake.every(s => s.dex < 0 && s.line.length && ['cap', 'uranium', 'ransei'].includes(s.source)), 'all 622 missing overworld Fakemon have unique negative IDs and source metadata');
 	A(fake.every(s => fs.existsSync(path.join(realArt, path.basename(s.art.normal))) && fs.existsSync(path.join(realArt, path.basename(s.art.shiny)))), 'every Fakemon has normal and Shiny card art');
+	A(['dekoi', 'imitacean'].every(k => fake.find(s => s.key === k)?.ptype === 'Water' && fake.find(s => s.key === k)?.type_source === 'override'), 'Dekoi and Imitacean use the owner-selected Water card type');
+	A(fake.find(s => s.key === 'terribeem')?.ptype === 'Colorless', 'Terribeem uses the owner-selected Colorless card type');
+	A(fake.find(s => s.key === 'kuranpu')?.ptype === 'Dark' && fake.find(s => s.key === 'kuranpu')?.stage === 'Legendary' && fake.find(s => s.key === 'kuranpu')?.rarityLabel === 'Legendary', 'Kuranpu is a Dark Legendary card');
+	A(fake.find(s => s.key === 'garlikid')?.stage === 'Legendary' && fake.find(s => s.key === 'garlikid')?.rarityLabel === 'Legendary', 'Garlikid is a Legendary card');
 	const extra = (fs.existsSync(realArt) ? fs.readdirSync(realArt) : []).filter(f => ![...D.species, ...(D.fakemon || [])].some(s => s.art.normal.endsWith('/' + f) || s.art.shiny.endsWith('/' + f)));
 	A(!extra.length, 'no stale card art for species that now have jokers (none is left: every species has a joker)', extra.join(', '));
 	// re-running the generator (into a scratch folder) gives the committed JSON and art, byte for byte

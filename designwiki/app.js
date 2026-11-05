@@ -3719,7 +3719,7 @@ async function pokermonJokerDetail(id) {
         h('h1', null, s.name, ' ', h('span', { class: 'num' }, pjDexLabel(s.dex))),
         h('table', { class: 'pj-facts' },
           row('Pokermon type', pjBadge(s.ptype), h('span', { class: 'muted pj-typesrc', 'data-source': s.type_source || 'mapping' },
-            (s.type_source === 'art' ? ' as its card shows (' : ' from the mapping (') + s.types.join(' / ') + ')')),
+            (s.type_source === 'art' ? ' as its card shows (' : s.type_source === 'override' ? ' selected for this card; overworld type (' : ' from the mapping (') + s.types.join(' / ') + ')')),
           row('Stage', s.stageLabel),
           row('Evolution line', s.line.length > 1 ? lineEl : h('span', { class: 'muted' }, 'Does not evolve')),
           row('Rarity (guess)', s.rarityLabel),
