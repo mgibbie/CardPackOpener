@@ -36,6 +36,15 @@ A(cards.length === 18 && cards.every(c => {
 	const hasArt = pos => item?.art?.some(([a, p]) => a === c.atlas && p.x === pos?.x && p.y === pos?.y);
 	return item && item.name === c.name && item.lines?.length && c.set === 'Joker' && c.rarity === 'mega' && atlas?.src && atlas.cw && atlas.ch && hasArt(c.pos) && hasArt(c.soul);
 }), 'Batch F cards have wiki descriptions and matching base and soul artwork');
+const dimension = shipped.entries.filter(e => /Pokermon.*Mega Dimension/i.test(e.title));
+const dimensionExpected = 'staraptor glimmora tatsugiri chimecho meowstic crabominable scovillain'.split(' ').map(n => 'j_poke_mega_' + n).sort();
+const dimensionCards = dimension[0]?.micatroMods?.find(m => m.id === 'pokermon')?.added || [];
+A(dimension.length === 1 && JSON.stringify(dimensionCards.map(c => c.key).sort()) === JSON.stringify(dimensionExpected), 'Mega Dimension appears once with all seven individual cards');
+A(dimensionCards.length === 7 && dimensionCards.every(c => {
+	const item = items.get(c.key), atlas = shipped.micatroAtlas[c.atlas];
+	const hasArt = pos => item?.art?.some(([a, p]) => a === c.atlas && p.x === pos?.x && p.y === pos?.y);
+	return item && item.name === c.name && item.lines?.length && atlas?.src && atlas.cw && atlas.ch && hasArt(c.pos) && hasArt(c.soul);
+}), 'Mega Dimension cards match their wiki descriptions and artwork');
 
 // ---------- 1. generator over a synthetic history
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'mpnews-mods-'));
@@ -133,6 +142,11 @@ try {
 	await page.waitForFunction(() => /Mega Froslass/.test(document.getElementById('mc-tip').textContent), { timeout: 5000 });
 	const realTip = await page.evaluate(() => document.getElementById('mc-tip').textContent);
 	A(/Mega Froslass/.test(realTip) && /debt/i.test(realTip), 'Batch F card hover loads its actual wiki description', realTip);
+	feedJson = JSON.stringify({ ...shipped, entries: dimension });
+	await page.reload({ waitUntil: 'networkidle0' });
+	await page.click('button[data-f="micatro"]');
+	const megaChips = await page.evaluate(() => [...document.querySelectorAll('a.mc-chip[data-mc]')].map(c => ({ key: c.dataset.mc, href: c.getAttribute('href'), bg: c.querySelector('.mc-thumb')?.style.backgroundImage })));
+	A(megaChips.length === 7 && megaChips.every(c => c.href === '/designwiki/#/micatro/mod/pokermon?item=' + c.key && /AtlasJokersBasicGen/.test(c.bg || '')) && dimensionExpected.every(k => megaChips.some(c => c.key === k)), 'Mega Dimension renders all seven individual wiki links and atlas thumbnails', JSON.stringify(megaChips));
 	A(errors.length === 0, 'no page errors', errors.join(' | '));
 } catch (e) {
 	fail++; console.log('FAIL: exception', e && e.stack);
