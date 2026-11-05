@@ -504,6 +504,21 @@ sec('golisopod', () => {
   ok(near(r.total.mult, 3), 'Golisopod: X3 Mult', r.total);
   ok(j.ability.extra.raised === true && G.hand.config.card_limit === hs + 1, 'Golisopod: a Boss beaten without fainting -> +1 hand size', [j.ability.extra, G.hand.config.card_limit - hs]);
 });
+sec('mega golisopod carry', () => {
+  start('MEGAGOLI');
+  const hs = G.hand.config.card_limit, j = add('j_nacho_golisopod');
+  j.ability.extra.raised = true; G.hand.change_size(1);
+  const stone = add('c_poke_megastone'); use(stone, [j.sort_id]);
+  ok(key(j) === 'j_poke_mega_golisopod' && j.ability.extra.golisopod_bonus === 1 && G.hand.config.card_limit === hs + 1, 'Mega Golisopod carries existing hand size across evolution', [key(j), j.ability.extra, G.hand.config.card_limit]);
+  const center = j.config.center;
+  center.calculate(center, j, { end_of_round: true, cardarea: G.jokers, beat_boss: true }); flush();
+  ok(j.ability.extra.golisopod_bonus === 2 && G.hand.config.card_limit === hs + 2, 'Mega Golisopod accumulates another hand size on a safe Boss');
+  N.poke_backend_evolve(j, 'j_nacho_golisopod'); flush();
+  ok(key(j) === 'j_nacho_golisopod' && j.ability.extra.golisopod_bonus === 2 && G.hand.config.card_limit === hs + 2, 'Golisopod retains its entire Mega bonus on reversion', [key(j), j.ability.extra, G.hand.config.card_limit]);
+  j.ability.extra.ante_debuffed = true;
+  j.remove_from_deck(); flush();
+  ok(G.hand.config.card_limit === hs && j.ability.extra.golisopod_bonus === 0, 'Golisopod loses the entire accumulated bonus on faint');
+});
 sec('appletun / hydrapple / apples', () => {
   start('APPLETUN');
   add('j_nacho_appletun');

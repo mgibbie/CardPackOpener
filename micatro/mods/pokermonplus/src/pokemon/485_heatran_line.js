@@ -38,26 +38,32 @@ const SEAL = {
 const editionKey = (c) => (c.edition ? (c.edition.key || (c.edition.foil && 'e_foil') || (c.edition.holo && 'e_holo') || (c.edition.polychrome && 'e_polychrome')) : null);
 const forge = (c) => { if (!c.ability[FORGED]) c.ability[FORGED] = true; };
 
+/** Forge recognized modifiers and report whether this invocation consumed any. */
+export function forge_scored_card(target) {
+  if (!target) return false;
+  let forged = false;
+  const ck = target.config.center.key;
+  if (ck !== 'c_base') {
+    const effect = ENHANCEMENT[ck];
+    if (effect) { effect(target); target.set_ability(P_CENTERS.c_base, null, true); forge(target); forged = true; }
+  }
+  if (target.edition) {
+    const effect = EDITION[editionKey(target)];
+    if (effect) { effect(target); target.set_edition(null, true, true); forge(target); forged = true; }
+  }
+  if (target.seal) {
+    const effect = SEAL[target.seal];
+    if (effect) { effect(target); target.set_seal(null, true); forge(target); forged = true; }
+  }
+  return forged;
+}
+
 export default {
   heatran: {
     loc_vars() { return { vars: [] }; },
     calculate(self, card, context) {
       if (!(context.individual && context.cardarea === G.play && context.scoring_hand)) return undefined;
-      const target = context.other_card;
-      if (!target) return undefined;
-      const ck = target.config.center.key;
-      if (ck !== 'c_base') {
-        const effect = ENHANCEMENT[ck];
-        if (effect) { effect(target); target.set_ability(P_CENTERS.c_base, null, true); forge(target); }
-      }
-      if (target.edition) {
-        const effect = EDITION[editionKey(target)];
-        if (effect) { effect(target); target.set_edition(null, true, true); forge(target); }
-      }
-      if (target.seal) {
-        const effect = SEAL[target.seal];
-        if (effect) { effect(target); target.set_seal(null, true); forge(target); }
-      }
+      forge_scored_card(context.other_card);
       return undefined;
     },
   },

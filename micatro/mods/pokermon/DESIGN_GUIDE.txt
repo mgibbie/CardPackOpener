@@ -1831,6 +1831,12 @@ How Megas work:
     Scovillain. Mega Stone targets are revision-gated; Tatsugiri's form, Meowstic's gender and its
     male bank, Chimecho's restored-Glass count, and Glimmora's per-hand conversion count survive
     their Mega swaps. Staraptor's Mega art is Fighting, so it counts only actual Colorless Jokers.
+  - Final Megas (r109): Absol Z, Garchomp Z, Lucario Z, Heatran, Golurk, Golisopod, Magearna and
+    Zeraora. Leftmost / rightmost select original / Z for the three Z branches. Heatran requires
+    Pokermon+ and Golisopod requires Nacho; their Mega Stones return them to their add-on bases.
+    Golisopod carries its accumulated hand-size gain through both swaps and loses it on fainting.
+    Mega Tatsugiri's Droopy / Stretchy and Mega Magearna's Original Color use the credited variant
+    atlas; Magearna's Mega appearance and Soul-Heart bank persist through reversion.
   - BANKS ACROSS A MEGA (house, batch D CARRY): a bank both forms use crosses as is (Garchomp's Bite Mult, the Eon
     duo's X); a bank only one form uses rides along in ability.extra.poke_kept and comes back on the revert
     (Aggron's eaten X, Banette's Mult, Mega Banette's own X). Say on the card when a bank waits ("Aggron's X2.2 is

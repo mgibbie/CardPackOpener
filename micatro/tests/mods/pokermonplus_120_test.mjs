@@ -42,6 +42,18 @@ const destroy = (cards) => { const h = add('c_hanged_man'); act({ type: 'use', i
 const NEW12 = ['heatran', 'mega_darkrai', 'helioptile', 'heliolisk', 'minior', 'duraludon', 'archaludon', 'shroodle', 'grafaiai', 'canari_plush', 'member_card', 'mystery_box'];
 const DROPPED7 = ['nincada', 'ninjask', 'shedinja', 'croagunk', 'toxicroak', 'vullaby', 'mandibuzz'];
 
+sec('mega heatran', () => {
+  start('MEGAHEATRAN');
+  const heatran = add('j_sonfive_heatran'), stone = add('c_poke_megastone');
+  useOn(stone, heatran);
+  ok(key(heatran) === 'j_poke_mega_heatran', 'Heatran Mega Evolves across the add-on boundary', key(heatran));
+  ok(P.get_previous_evo(heatran, true) === 'j_sonfive_heatran', 'Mega Heatran reverts to Pokermon+ Heatran');
+  const [first, second] = hand(['S_2', 'H_3'], { center: 'm_bonus' });
+  const center = heatran.config.center;
+  for (const c of [first, second, first]) center.calculate(center, heatran, { individual: true, cardarea: G.play, other_card: c, scoring_hand: [first, second] });
+  ok(first.ability.perma_bonus === 45 && first.ability.perma_mult === 2 && second.ability.perma_bonus === 30, 'Mega Heatran gives its first forged card the once-per-hand bonus');
+});
+
 // ============================================================================ registry, pin, legacy, precedence
 sec('registry', () => {
   start('REG', { noBlind: true });

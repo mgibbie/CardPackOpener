@@ -101,7 +101,7 @@ await sec('pin', () => {
   ok(P_CENTERS.j_poke_silvally.poke_mono_exempt === true && !P_CENTERS.j_poke_typenull.poke_mono_exempt && !P_CENTERS.j_poke_necrozma.poke_mono_exempt, 'Silvally Monotype-exempt (Type: Null and Necrozma are not)');
   ok(P_CENTERS.j_poke_tapu_lele.poke_no_energy_field === true && P_CENTERS.j_poke_tapu_fini.poke_no_energy_field === true, 'Tapu Lele and Tapu Fini have no number: Energy-inert');
   // Pokédex order
-  const keys = MODS.pokermon.content.centers.filter((c) => c.set === 'Joker').map((c) => c.key.replace('j_poke_', ''));
+  const keys = MODS.pokermon.content.centers.filter((c) => c.set === 'Joker' && !['j_poke_mega_magearna', 'j_poke_mega_golisopod', 'j_poke_mega_zeraora'].includes(c.key)).map((c) => c.key.replace('j_poke_', ''));
   const after = (a, b) => keys.indexOf(b) === keys.indexOf(a) + 1;
   ok(after('pyukumuku', 'typenull') && after('typenull', 'silvally') && after('silvally', 'komala'), 'Pokédex order: Pyukumuku (771) > Type: Null > Silvally > Komala (775)', keys.slice(keys.indexOf('pyukumuku'), keys.indexOf('pyukumuku') + 4));
   const chain = ['kommoo', 'tapu_koko', 'tapu_lele', 'tapu_bulu', 'tapu_fini', 'cosmog', 'cosmoem', 'solgaleo', 'lunala', 'nihilego'];

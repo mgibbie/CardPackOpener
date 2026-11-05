@@ -375,7 +375,7 @@ function highest_evo_options(card) {
 
 export function get_previous_from_mega(name, prefix, full_key) {
   let prev = name.slice(5);
-  if (prev.slice(-2) === '_x' || prev.slice(-2) === '_y') prev = prev.slice(0, -2);
+  if (prev.slice(-2) === '_x' || prev.slice(-2) === '_y' || prev.slice(-2) === '_z') prev = prev.slice(0, -2);
   const k = 'j_' + prefix + '_' + prev;
   if (full_key) return P_CENTERS[k] ? k : undefined;
   return P_CENTERS[k] ? prev : undefined;
@@ -386,6 +386,7 @@ const STAGES = ['Baby', 'Basic', 'One', 'Two', 'Legendary', 'Mega'];
 export function get_previous_evo(card, full_key) {
   const prefix = card.config.center.poke_custom_prefix || 'poke';
   const name = nameOf(card);
+  if (card.config.center.poke_mega_base && P_CENTERS[card.config.center.poke_mega_base]) return full_key ? card.config.center.poke_mega_base : P_CENTERS[card.config.center.poke_mega_base].name;
   let prev;
   if (name.slice(0, 5) === 'mega_') { const mega = get_previous_from_mega(name, prefix, full_key); if (mega) return mega; }
   const ovp = evo_overrides(name).previous_evo;

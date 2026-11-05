@@ -64,7 +64,7 @@ sec(() => {
   ok(MEGAS.every((n) => C(n).rarity === 'poke_mega' && C(n).stage === 'Mega'), 'rarity poke_mega, stage Mega');
   const cost = Object.fromEntries(MEGAS.map((n) => [n, C(n).cost]));
   ok(cost.mega_raichu_x === 10 && cost.mega_raichu_y === 10 && cost.mega_lucario === 11 && MEGAS.filter((n) => cost[n] === 12).length === 8, '3.9.1 costs (Raichu X / Y 10, Lucario 11, the rest 12)', cost);
-  ok(Object.entries(BASES).every(([b, m]) => JSON.stringify(C(b).megas) === JSON.stringify(m)), 'each base form links its Mega(s) (Mega Stone target)', Object.keys(BASES).map((b) => C(b).megas));
+  ok(Object.entries(BASES).every(([b, m]) => m.every(mega => C(b).megas.includes(mega))), 'each base form links its original Mega(s) (Mega Stone target)', Object.keys(BASES).map((b) => C(b).megas));
   ok(Object.keys(BASES).every((b) => D391.jokers[b] ? JSON.stringify(D391.jokers[b].megas || D391.new_jokers[b]?.item.megas) === JSON.stringify(BASES[b]) : JSON.stringify(D391.new_jokers[b].item.megas) === JSON.stringify(BASES[b])),
     'the links come from 3.9.1 (data391.js jokers / new_jokers megas)');
   ok(D391.new_deferred.length === 0 && !D391.rework_deferred.some(([n]) => n === 'lucario' || n === 'skarmory'), 'nothing waits for batch 16 (new_deferred empty; Lucario / Skarmory off rework_deferred)', [D391.new_deferred, D391.rework_deferred.map(([n]) => n)]);

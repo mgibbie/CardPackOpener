@@ -1,6 +1,8 @@
 // Mega Dimension: Glimmora's Mega Stone target and held-Hazard scoring.
 import { T, start, hand, add, act, G, P_CENTERS } from './poke_helpers.mjs';
 import { RULES } from '../../js/mods/pins.js';
+import { get_previous_evo } from '../../mods/pokermon/systems/evolution.js';
+import { POKE_UI } from '../../mods/pokermon/ui.js';
 const { ok, done } = T();
 for (const n of ['staraptor', 'glimmora', 'tatsugiri', 'chimecho', 'meowstic', 'crabominable', 'scovillain']) {
   start('MD' + n);
@@ -69,6 +71,9 @@ const tc = tatsu.config.center;
 ok(tc.key === 'j_poke_mega_tatsugiri' && tatsu.ability.extra.form === 'droopy', 'Mega Tatsugiri preserves its rolled form');
 ok(tc.calculate(tc, tatsu, { other_joker: dozo })?.chip_mod === 180, 'Droopy Mega Tatsugiri gives its commanded Dondozo +180 Chips');
 ok(tc.calculate(tc, tatsu, { retrigger_joker_check: true, other_card: dozo })?.repetitions === 1, 'Mega Tatsugiri retriggers commanded Dondozo');
+const droopyFace = POKE_UI.face({ center: tc.key, facing: 'front', atlas: tc.atlas, pos: tc.pos, poke: { form: 'droopy' } });
+const stretchyFace = POKE_UI.face({ center: tc.key, facing: 'front', atlas: tc.atlas, pos: tc.pos, poke: { form: 'stretchy' } });
+ok(droopyFace?.atlas === 'poke_mega_variants' && droopyFace.soul_pos?.x === 1 && stretchyFace?.pos?.x === 2 && stretchyFace.soul_pos?.x === 3, 'Mega Tatsugiri displays the correct form-specific base and floating art');
 start('MDMEOW');
 const meow = add('j_poke_meowstic'); meow.ability.extra.form = 'male';
 const ms = add('c_poke_megastone'); act({ type: 'use', id: ms.sort_id, joker_targets: [meow.sort_id] }); G.E_MANAGER.flush();
@@ -89,4 +94,42 @@ const realStone = add('c_poke_megastone'); act({ type: 'use', id: realStone.sort
 const tarot = add('c_hermit');
 const used = act({ type: 'use', id: tarot.sort_id }); G.E_MANAGER.flush();
 ok(used.ok && G.consumeables.cards.filter(c => c.ability.set === 'Tarot').length === 1, 'female Mega Meowstic replaces a Tarot used from a full consumable row');
+start('MDMAGEARNA');
+const mage = add('j_poke_magearna'), mageStone = add('c_poke_megastone');
+act({ type: 'use', id: mageStone.sort_id, joker_targets: [mage.sort_id] }); G.E_MANAGER.flush();
+const steels = hand(['S_2', 'H_3'], { center: 'm_steel' }), mageCenter = mage.config.center;
+ok(mageCenter.key === 'j_poke_mega_magearna', 'Magearna evolves into Mega Magearna');
+const originalMage = POKE_UI.face({ center: mageCenter.key, facing: 'front', atlas: mageCenter.atlas, pos: mageCenter.pos, poke: { form: 'original' } });
+ok(originalMage?.atlas === 'poke_mega_variants' && originalMage.pos.x === 4 && originalMage.soul_pos?.x === 5, 'Mega Magearna displays Original Color art');
+ok(mageCenter.calculate(mageCenter, mage, { individual: true, cardarea: G.play, other_card: steels[0] })?.x_mult === 1.75, 'Mega Magearna gives scored Steel X1.75');
+mageCenter.calculate(mageCenter, mage, { after: true, cardarea: G.jokers, scoring_hand: steels });
+ok(mage.ability.extra.soul_Xmult === 1.1, 'Mega Magearna banks X0.1 for two scored Steel cards');
+start('MDZERAORA');
+const zera = add('j_poke_zeraora'), zeraStone = add('c_poke_megastone');
+act({ type: 'use', id: zeraStone.sort_id, joker_targets: [zera.sort_id] }); G.E_MANAGER.flush();
+const faces = hand(['S_K', 'H_Q', 'C_J']), zeraCenter = zera.config.center;
+ok(zeraCenter.key === 'j_poke_mega_zeraora', 'Zeraora evolves into Mega Zeraora');
+const faceEffect = zeraCenter.calculate(zeraCenter, zera, { individual: true, cardarea: G.play, other_card: faces[0], scoring_hand: faces });
+ok(faceEffect?.x_mult === 1.35 && faceEffect?.dollars === 2, 'Mega Zeraora gives face cards X1.35 and $2');
+ok(zeraCenter.calculate(zeraCenter, zera, { repetition: true, cardarea: G.play, other_card: faces[0], scoring_hand: faces })?.repetitions === 1, 'Mega Zeraora retriggers the first of three faces');
+start('MDGOLURK');
+const golurk = add('j_poke_golurk'), golurkStone = add('c_poke_megastone');
+act({ type: 'use', id: golurkStone.sort_id, joker_targets: [golurk.sort_id] }); G.E_MANAGER.flush();
+const [golurkHazard] = hand(['S_2'], { center: 'm_poke_hazard' }), golurkCenter = golurk.config.center;
+ok(golurkCenter.key === 'j_poke_mega_golurk', 'Golurk evolves into Mega Golurk');
+ok(golurkCenter.calculate(golurkCenter, golurk, { individual: true, cardarea: G.hand, other_card: golurkHazard })?.x_mult === 1.75, 'Mega Golurk gives held Hazard cards X1.75');
+ok(golurkCenter.calculate(golurkCenter, golurk, { repetition: true, cardarea: G.hand, other_card: golurkHazard })?.repetitions === 1, 'Mega Golurk retriggers held Hazard cards');
+start('MDZFORMS');
+for (const name of ['absol', 'garchomp', 'lucario']) {
+  const base = P_CENTERS['j_poke_' + name];
+  ok(base.megas.includes('mega_' + name + '_z'), name + ' offers its Z Mega');
+  RULES.pins = { pokermon: '3.9.1+r108' };
+  try { ok(!base.megas.includes('mega_' + name + '_z'), name + ' Z Mega is unavailable in old replays'); } finally { RULES.pins = null; }
+}
+const absolZ = add('j_poke_mega_absol_z'), az = absolZ.config.center;
+ok(get_previous_evo(absolZ, true) === 'j_poke_absol', 'Mega Absol Z reverts to Absol');
+G.GAME.current_round.hands_played = 0;
+ok(az.calculate(az, absolZ, { fix_probability: true, denominator: 4 })?.numerator === 0, 'Mega Absol Z prevents probability rolls on the first hand');
+G.GAME.current_round.hands_played = 1;
+ok(az.calculate(az, absolZ, { fix_probability: true, denominator: 4 })?.numerator === 4, 'Mega Absol Z guarantees probability rolls on later hands');
 done();
