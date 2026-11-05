@@ -23,6 +23,20 @@ const PORT = 8747;
 let pass = 0, fail = 0;
 const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else { fail++; console.log('FAIL: ' + m + (extra != null ? '  ' + extra : '')); } };
 
+// The shipped Batch F release must carry real card records, not a text-only feature.
+const shipped = JSON.parse(fs.readFileSync(process.env.NEWS_TEST_FEED || path.join(ROOT, 'magepunknews/news.json'), 'utf8'));
+const wiki = JSON.parse(fs.readFileSync(path.join(ROOT, 'designwiki/data/micatro_mods/pokermon.json'), 'utf8'));
+const expected = 'froslass emboar excadrill scolipede scrafty eelektross chandelure chesnaught delphox greninja pyroar floette malamar barbaracle dragalge hawlucha zygarde falinks'.split(' ').map(n => 'j_poke_mega_' + n).sort();
+const batch = shipped.entries.filter(e => /Pokermon.*Mega batch F/i.test(e.title));
+const cards = batch[0]?.micatroMods?.find(m => m.id === 'pokermon')?.added || [];
+const items = new Map(wiki.sections.flatMap(s => s.items || []).map(i => [i.key, i]));
+A(batch.length === 1 && JSON.stringify(cards.map(c => c.key).sort()) === JSON.stringify(expected), 'Batch F appears once with all 18 linked Mega cards');
+A(cards.length === 18 && cards.every(c => {
+	const item = items.get(c.key), atlas = shipped.micatroAtlas[c.atlas];
+	const hasArt = pos => item?.art?.some(([a, p]) => a === c.atlas && p.x === pos?.x && p.y === pos?.y);
+	return item && item.name === c.name && item.lines?.length && c.set === 'Joker' && c.rarity === 'mega' && atlas?.src && atlas.cw && atlas.ch && hasArt(c.pos) && hasArt(c.soul);
+}), 'Batch F cards have wiki descriptions and matching base and soul artwork');
+
 // ---------- 1. generator over a synthetic history
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'mpnews-mods-'));
 const g = (...args) => execFileSync('git', args, { cwd: tmp, encoding: 'utf8', stdio: ['pipe', 'pipe', 'ignore'] });
@@ -72,7 +86,7 @@ A(!byTitle('Tag Team: comment only') || byTitle('Tag Team: comment only').kind =
 A(!rel || !rel.micatroFeatures, 'features are announced once');
 
 // ---------- 2. the page
-const feedJson = JSON.stringify({ ...news, micatroAtlas: { ...news.micatroAtlas, [probe ? probe.atlas : '@x']: { src: '/micatro/assets/textures/Jokers.png', cw: 142, ch: 190, w: 1420, h: 3040 } } });
+let feedJson = JSON.stringify({ ...news, micatroAtlas: { ...news.micatroAtlas, [probe ? probe.atlas : '@x']: { src: '/micatro/assets/textures/Jokers.png', cw: 142, ch: 190, w: 1420, h: 3040 } } });
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.json': 'application/json', '.css': 'text/css', '.png': 'image/png' };
 const modJson = JSON.stringify({ id: 'tagteam', sections: [{ id: 'jokers', items: [{ key: 'j_newsprobe_mod', name: 'Mod News Probe', lines: ['Probe text {C:mult}+4{} Mult'] }] }] });
 const server = http.createServer((req, res) => {
@@ -109,6 +123,16 @@ try {
 	await page.waitForFunction(() => /Probe text/.test(document.getElementById('mc-tip').textContent), { timeout: 5000 }).catch(() => { });
 	const tip = await page.evaluate(() => { const t = document.getElementById('mc-tip'); return { shown: getComputedStyle(t).display === 'block', text: t.textContent, big: (t.querySelector('.big') || {}).offsetWidth }; });
 	A(tip.shown && /Mod News Probe/.test(tip.text) && /Probe text \+4 Mult/.test(tip.text) && tip.big === 142, 'hover: the card text from the mod’s wiki file + the big sprite', JSON.stringify(tip));
+	// Render the actual release, not just a synthetic card: every Mega must have its own wiki link and sprite.
+	feedJson = JSON.stringify({ ...shipped, entries: batch });
+	await page.reload({ waitUntil: 'networkidle0' });
+	await page.click('button[data-f="micatro"]');
+	const chips = await page.evaluate(() => [...document.querySelectorAll('a.mc-chip[data-mc]')].map(c => ({ key: c.dataset.mc, href: c.getAttribute('href'), bg: c.querySelector('.mc-thumb')?.style.backgroundImage })));
+	A(chips.length === 18 && chips.every(c => c.href === '/designwiki/#/micatro/mod/pokermon?item=' + c.key && /AtlasJokersBasicGen/.test(c.bg || '')) && expected.every(k => chips.some(c => c.key === k)), 'Batch F renders all 18 individual wiki links and atlas thumbnails', JSON.stringify(chips));
+	await page.hover('a.mc-chip[data-mc="j_poke_mega_froslass"]');
+	await page.waitForFunction(() => /Mega Froslass/.test(document.getElementById('mc-tip').textContent), { timeout: 5000 });
+	const realTip = await page.evaluate(() => document.getElementById('mc-tip').textContent);
+	A(/Mega Froslass/.test(realTip) && /debt/i.test(realTip), 'Batch F card hover loads its actual wiki description', realTip);
 	A(errors.length === 0, 'no page errors', errors.join(' | '));
 } catch (e) {
 	fail++; console.log('FAIL: exception', e && e.stack);
