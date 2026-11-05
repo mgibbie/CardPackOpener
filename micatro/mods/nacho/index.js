@@ -265,6 +265,9 @@ for (const [set, entries] of Object.entries(DATA.loc.descriptions || {})) {
   const to = LOC_SET[set] || set;
   loc.descriptions[to] = { ...(loc.descriptions[to] || {}), ...JSON.parse(JSON.stringify(entries)) };
 }
+for (const [key, benefit] of [['c_nacho_tartapple', 'gains {C:mult}+1{} Mult'], ['c_nacho_sweetapple', 'earns {C:money}$2{}']]) {
+  loc.descriptions.Item[key].text = ['{C:attention}Evolution Card{}', '{br:2}ERROR - CONTACT STEAK', 'Select up to {C:attention}#1#{} cards,', 'the left ' + benefit + ',', '{C:inactive}(doubled if Wild){}; destroy', 'the right card if two selected', '{C:inactive}(Drag to rearrange)'];
+}
 loc.misc = loc.misc || {};
 for (const [k, v] of Object.entries(DATA.loc.misc || {})) loc.misc[k] = { ...(loc.misc[k] || {}), ...JSON.parse(JSON.stringify(v)) };
 loc.misc.dictionary = loc.misc.dictionary || {};

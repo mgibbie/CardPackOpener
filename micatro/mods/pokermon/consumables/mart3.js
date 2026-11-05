@@ -5,6 +5,7 @@ import {
   defineConsumables, set_spoon_item, is_evo_item_for, evo_item_use_total, highlighted_evo_item,
   poke_unhighlight_cards, poke_drain, find_pokemon_type, juice_flip, juice_flip_table,
 } from '../api.js';
+import { rulesRev } from '../../../js/mods/pins.js';
 
 const FILE = 'consumables/mart3.lua';
 const joker_target_ok = (self) => G.jokers.highlighted && G.jokers.highlighted.length === 1 && is_evo_item_for(self, G.jokers.highlighted[0]);
@@ -143,10 +144,14 @@ defineConsumables({
     in_pool() { return true; },
   },
 
-  // Heart Scale: of 2 selected cards, the left becomes a copy of the right; both become Hearts.
-  // (No can_use in the Lua: the vanilla rule — exactly 2 selected — applies.) Never in a pool.
+  // Heart Scale: a selected card becomes Hearts; with two, the left also becomes a copy of the right.
   heartscale: {
     loc_vars(self) { return { vars: [self.config.max_highlighted, localize(self.config.suit, 'suits_plural')] }; },
+    can_use(self) {
+      const n = G.hand?.highlighted?.length || 0;
+      const states = [G.STATES.SELECTING_HAND, G.STATES.TAROT_PACK, G.STATES.SPECTRAL_PACK, G.STATES.PLANET_PACK, G.STATES.MOD_PACK_HAND];
+      return states.includes(G.STATE) && n >= (rulesRev('pokermon') >= 107 ? 1 : 2) && n <= self.config.max_highlighted;
+    },
     use(self, card) {
       set_spoon_item(card);
       juice_flip(card);
