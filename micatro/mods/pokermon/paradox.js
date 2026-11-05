@@ -51,6 +51,7 @@ defineConsumables({
       G.E_MANAGER.add_event(() => {
         play_sound('timpani');
         const _card = create_random_poke_joker('paradoxball', null, 'poke_paradox');
+        if (!_card) return;
         _card.add_to_deck();
         G.jokers.emplace(_card);
       });

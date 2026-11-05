@@ -1174,7 +1174,8 @@ export const POKERMON = registerMod({
   // Groudon into Primal Kyogre (+2 hands, Clubs retrigger twice, always raining) / Primal Groudon (+2 discards, Hearts / Diamonds X1.5,
   // always sunny) for good; a Primal always wins the Primal Clash against the other's normal form. The Orbs reach the pools (Items, and the
   // Ancient / Future Packs' first card) only from PRIMAL_REV, so runs recorded before r85 replay as recorded.
-  contentRev: 104,
+  // 105: an exhausted generation-filtered pool no longer produces an excluded Caterpie.
+  contentRev: 105,
   // Pokermon 3.9.1 pokermon.lua: SMODS.current_mod.optional_features = {quantum_enhancements = true, object_weights = true}.
   // object_weights sends create_card's key, the shop roll, tags, packs, bosses and vouchers through SMODS.poll_object
   // (js/engine/smods.js; batch 17). quantum_enhancements is the engine's check_enhancement, always on.

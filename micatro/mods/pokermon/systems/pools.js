@@ -192,6 +192,8 @@ export function get_random_poke_key(pseed, stage, pokerarity, area, poketype, ex
   if (gen_filter_fixed() && (stage || pokerarity || poketype) && P_CENTERS.j_poke_caterpie && !get_gen_allowed(P_CENTERS.j_poke_caterpie)) {
     return get_random_poke_key(pseed, null, null, area, null, exclude_keys, exclude_types);
   }
+  // From r105 an exhausted pool must not silently create a disabled Gen 1 Pokémon.
+  if (rulesRev('pokermon') >= 105 && !get_gen_allowed(P_CENTERS.j_poke_caterpie)) return undefined;
   return 'j_poke_caterpie';
 }
 /** A pack slot's fallback (the Lua's Caterpie); r79: an allowed Basic when Caterpie's generation is off. */
@@ -216,7 +218,8 @@ export function get_random_poke_key_options(options) {
 }
 
 export function create_random_poke_joker(pseed, stage, pokerarity, area, poketype) {
-  return smods_create_card({ set: 'Joker', area: area || G.jokers, key: get_random_poke_key(pseed, stage, pokerarity, area, poketype) });
+  const key = get_random_poke_key(pseed, stage, pokerarity, area, poketype);
+  return key ? smods_create_card({ set: 'Joker', area: area || G.jokers, key }) : undefined;
 }
 
 /** In pool while some held joker needs this item to evolve. */

@@ -21,6 +21,7 @@ function ball(stage, spoon) {
       G.E_MANAGER.add_event(() => {
         play_sound('timpani');
         const _card = create_random_poke_joker(self.name, stage);
+        if (!_card) return;
         _card.add_to_deck();
         G.jokers.emplace(_card);
       });
