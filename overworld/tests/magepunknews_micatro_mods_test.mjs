@@ -45,6 +45,11 @@ A(dimensionCards.length === 7 && dimensionCards.every(c => {
 	const hasArt = pos => item?.art?.some(([a, p]) => a === c.atlas && p.x === pos?.x && p.y === pos?.y);
 	return item && item.name === c.name && item.lines?.length && atlas?.src && atlas.cw && atlas.ch && hasArt(c.pos) && hasArt(c.soul);
 }), 'Mega Dimension cards match their wiki descriptions and artwork');
+const finalMega = shipped.entries.filter(e => /Pokermon.*final eight Mega/i.test(e.title));
+const finalExpected = 'absol_z garchomp_z lucario_z heatran golurk golisopod magearna zeraora'.split(' ').map(n => 'j_poke_mega_' + n).sort();
+const finalCards = finalMega[0]?.micatroMods?.find(m => m.id === 'pokermon')?.added || [];
+A(finalMega.length === 1 && JSON.stringify(finalCards.map(c => c.key).sort()) === JSON.stringify(finalExpected), 'Final Mega release lists all eight individual cards');
+A(finalCards.length === 8 && finalCards.every(c => items.get(c.key)?.lines?.length && shipped.micatroAtlas[c.atlas]?.src), 'Final Mega cards have wiki descriptions and artwork');
 
 // ---------- 1. generator over a synthetic history
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'mpnews-mods-'));
@@ -147,6 +152,11 @@ try {
 	await page.click('button[data-f="micatro"]');
 	const megaChips = await page.evaluate(() => [...document.querySelectorAll('a.mc-chip[data-mc]')].map(c => ({ key: c.dataset.mc, href: c.getAttribute('href'), bg: c.querySelector('.mc-thumb')?.style.backgroundImage })));
 	A(megaChips.length === 7 && megaChips.every(c => c.href === '/designwiki/#/micatro/mod/pokermon?item=' + c.key && /AtlasJokersBasicGen/.test(c.bg || '')) && dimensionExpected.every(k => megaChips.some(c => c.key === k)), 'Mega Dimension renders all seven individual wiki links and atlas thumbnails', JSON.stringify(megaChips));
+	feedJson = JSON.stringify({ ...shipped, entries: finalMega });
+	await page.reload({ waitUntil: 'networkidle0' });
+	await page.click('button[data-f="micatro"]');
+	const finalChips = await page.evaluate(() => [...document.querySelectorAll('a.mc-chip[data-mc]')].map(c => ({ key: c.dataset.mc, href: c.getAttribute('href'), bg: c.querySelector('.mc-thumb')?.style.backgroundImage })));
+	A(finalChips.length === 8 && finalChips.every(c => c.href === '/designwiki/#/micatro/mod/pokermon?item=' + c.key && /AtlasJokersBasicGen/.test(c.bg || '')) && finalExpected.every(k => finalChips.some(c => c.key === k)), 'Final Mega release renders all eight individual wiki links and thumbnails', JSON.stringify(finalChips));
 	A(errors.length === 0, 'no page errors', errors.join(' | '));
 } catch (e) {
 	fail++; console.log('FAIL: exception', e && e.stack);

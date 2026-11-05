@@ -403,6 +403,150 @@
 	},
 	"entries": [
 		{
+			"sha": "e7fbe5c",
+			"date": "2026-11-05",
+			"kind": "micatro",
+			"title": "Pokermon: final eight Mega forms and variants",
+			"body": "",
+			"cards": [],
+			"micatroMods": [
+				{
+					"id": "pokermon",
+					"name": "Pokermon",
+					"added": [
+						{
+							"key": "j_poke_mega_absol_z",
+							"name": "Mega Absol Z",
+							"set": "Joker",
+							"rarity": "mega",
+							"cost": 12,
+							"atlas": "@poke_AtlasJokersBasicGen03391",
+							"pos": {
+								"x": 2,
+								"y": 8
+							},
+							"soul": {
+								"x": 3,
+								"y": 8
+							}
+						},
+						{
+							"key": "j_poke_mega_garchomp_z",
+							"name": "Mega Garchomp Z",
+							"set": "Joker",
+							"rarity": "mega",
+							"cost": 12,
+							"atlas": "@poke_AtlasJokersBasicGen04391",
+							"pos": {
+								"x": 6,
+								"y": 7
+							},
+							"soul": {
+								"x": 7,
+								"y": 7
+							}
+						},
+						{
+							"key": "j_poke_mega_lucario_z",
+							"name": "Mega Lucario Z",
+							"set": "Joker",
+							"rarity": "mega",
+							"cost": 12,
+							"atlas": "@poke_AtlasJokersBasicGen04391",
+							"pos": {
+								"x": 8,
+								"y": 7
+							},
+							"soul": {
+								"x": 9,
+								"y": 7
+							}
+						},
+						{
+							"key": "j_poke_mega_heatran",
+							"name": "Mega Heatran",
+							"set": "Joker",
+							"rarity": "mega",
+							"cost": 12,
+							"atlas": "@poke_AtlasJokersBasicGen04391",
+							"pos": {
+								"x": 0,
+								"y": 8
+							},
+							"soul": {
+								"x": 1,
+								"y": 8
+							}
+						},
+						{
+							"key": "j_poke_mega_golurk",
+							"name": "Mega Golurk",
+							"set": "Joker",
+							"rarity": "mega",
+							"cost": 12,
+							"atlas": "@poke_AtlasJokersBasicGen05391",
+							"pos": {
+								"x": 6,
+								"y": 10
+							},
+							"soul": {
+								"x": 7,
+								"y": 10
+							}
+						},
+						{
+							"key": "j_poke_mega_magearna",
+							"name": "Mega Magearna",
+							"set": "Joker",
+							"rarity": "mega",
+							"cost": 12,
+							"atlas": "@poke_AtlasJokersBasicGen07391",
+							"pos": {
+								"x": 4,
+								"y": 6
+							},
+							"soul": {
+								"x": 5,
+								"y": 6
+							}
+						},
+						{
+							"key": "j_poke_mega_golisopod",
+							"name": "Mega Golisopod",
+							"set": "Joker",
+							"rarity": "mega",
+							"cost": 12,
+							"atlas": "@poke_AtlasJokersBasicGen07391",
+							"pos": {
+								"x": 0,
+								"y": 6
+							},
+							"soul": {
+								"x": 1,
+								"y": 6
+							}
+						},
+						{
+							"key": "j_poke_mega_zeraora",
+							"name": "Mega Zeraora",
+							"set": "Joker",
+							"rarity": "mega",
+							"cost": 12,
+							"atlas": "@poke_AtlasJokersBasicGen07391",
+							"pos": {
+								"x": 8,
+								"y": 6
+							},
+							"soul": {
+								"x": 9,
+								"y": 6
+							}
+						}
+					]
+				}
+			]
+		},
+		{
 			"sha": "3b49f25",
 			"date": "2026-11-05",
 			"kind": "micatro",
