@@ -14,6 +14,7 @@
 /overworld/data/* https://magepunk-owdata.pages.dev/:splat 301
 /designwiki/sprites/* https://magepunk-sprites.pages.dev/:splat 301
 # Micatro mod art (one line per mod; Cloudflare doesn't match a :placeholder combined with a * splat).
+/micatro/mods/jokertoggle/assets/* https://magepunk-micatromods.pages.dev/jokertoggle/assets/:splat 301
 /micatro/mods/pokermon/assets/* https://magepunk-micatromods.pages.dev/pokermon/assets/:splat 301
 /micatro/mods/nacho/assets/* https://magepunk-micatromods.pages.dev/nacho/assets/:splat 301
 /micatro/mods/pokermonplus/assets/* https://magepunk-micatromods.pages.dev/pokermonplus/assets/:splat 301

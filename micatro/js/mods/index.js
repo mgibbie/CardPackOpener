@@ -211,13 +211,13 @@ export function modOptionList(id) {
   for (const c of (manifest(id) && m.content && m.content.centers) || []) {
     if (!c.key || !c.set || c.legacy || c.unported) continue;
     const loc = (MOD_LOC.descriptions[c.set] || {})[c.key] || {};
-    options.push({ key: 'content:' + c.key, default: true, label: `${c.set}: ${loc.name || c.name || c.key}`, type: 'bool', choices: null });
+    options.push({ key: 'content:' + c.key, default: true, label: `${c.set}: ${String(loc.name || c.name || c.key).replace(/\{[^}]*\}/g, '')}`, type: 'bool', choices: null });
   }
   for (const [group, label] of [['tags', 'Tag'], ['blinds', 'Blind'], ['seals', 'Seal'], ['stakes', 'Stake'], ['suits', 'Suit'], ['poker_hands', 'Poker Hand'], ['poker_hand_parts', 'Hand Part'], ['stickers', 'Sticker']]) {
     for (const c of (manifest(id) && m.content && m.content[group]) || []) {
       if (!c.key || c.legacy || c.unported) continue;
       const loc = (MOD_LOC.descriptions[label] || {})[c.key] || {};
-      options.push({ key: 'content:' + c.key, default: true, label: `${label}: ${loc.name || c.name || c.key}`, type: 'bool', choices: null });
+      options.push({ key: 'content:' + c.key, default: true, label: `${label}: ${String(loc.name || c.name || c.key).replace(/\{[^}]*\}/g, '')}`, type: 'bool', choices: null });
     }
   }
   return options;

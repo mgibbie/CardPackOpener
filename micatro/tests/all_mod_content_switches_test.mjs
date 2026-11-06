@@ -14,6 +14,7 @@ for (const manifest of AVAILABLE) {
   const options = Object.fromEntries(items.map((item) => ['content:' + item.key, false]));
   activateMods([manifest.id], { [manifest.id]: options });
   const shown = new Set(modOptionList(manifest.id).map((o) => o.key));
+  assert(modOptionList(manifest.id).filter((o) => o.key.startsWith('content:')).every((o) => !/\{[^}]*\}/.test(o.label)), `${manifest.id} content labels contain no raw markup`);
   for (const item of items) {
     const option = 'content:' + item.key;
     assert(shown.has(option), `${manifest.id} exposes ${option}`);
