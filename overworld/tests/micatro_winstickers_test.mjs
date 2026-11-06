@@ -67,6 +67,8 @@ try {
 	const idle = () => waitFor(() => page.evaluate(() => window.__micatro.idle()), 30000);
 	await page.evaluate(() => document.querySelector('.b-joker-collection').click());
 	A(await page.evaluate(() => document.querySelectorAll('.joker-collection-item').length === 150), 'main menu collection lists all 150 base jokers');
+	A(await page.evaluate(() => { const box = document.querySelector('.joker-collection-modal .modal-box').getBoundingClientRect(); const back = document.querySelector('.joker-collection-modal .b-back').getBoundingClientRect(); return back.bottom <= box.bottom && back.top >= box.top; }), 'collection Back remains visible without scrolling');
+	if (process.env.SHOTS) { fs.mkdirSync(process.env.SHOTS, { recursive: true }); await page.screenshot({ path: path.join(process.env.SHOTS, 'joker-collection.png') }); }
 	A(await page.evaluate(() => /0 \/ 150/.test(document.querySelector('.joker-collection-summary').textContent)), 'fresh collection shows no win stickers');
 	await page.type('.joker-collection-search', 'greedy joker');
 	A(await page.evaluate(() => document.querySelectorAll('.joker-collection-item').length === 1 && /Greedy Joker/.test(document.querySelector('.joker-collection-item').textContent)), 'collection search filters by joker name');

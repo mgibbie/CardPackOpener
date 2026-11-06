@@ -583,9 +583,9 @@ export class Card {
     if (G.GAME && G.GAME.used_jokers && !contentDisabled(center)) {
       for (const [k, v] of Object.entries(P_CENTERS)) if (v.name === this.ability.name) G.GAME.used_jokers[k] = true;
     }
-    if (center.set_ability) center.set_ability(center, this, initial, delay_sprites);
+    if (!contentDisabled(center) && center.set_ability) center.set_ability(center, this, initial, delay_sprites);
     // Mods acting on any set_ability (a Lua Card:set_ability wrap; BETMMA's Chaos / Real Random).
-    if (smods) callHook('set_ability', this, center, old_center, initial);
+    if (smods && !contentDisabled(center)) callHook('set_ability', this, center, old_center, initial);
     if (was_added_to_deck && !this.debuff) this.add_to_deck();
     if (!initial && G.GAME.blind) G.GAME.blind.debuff_card(this);
     if (!initial) emit('card_changed', { card: this.sort_id });
@@ -607,7 +607,7 @@ export class Card {
     if (this.ability.rental) this.cost = 1;
     this.sell_cost = Math.max(1, Math.floor(this.cost / 2)) + (this.ability.extra_value || 0);
     if (this.area && this.ability.couponed && (this.area === G.shop_jokers || this.area === G.shop_booster)) this.cost = 0;
-    callHook('set_cost', this);
+    if (!contentDisabled(this.config.center)) callHook('set_cost', this);
   }
 
   set_edition(edition, immediate, silent) {

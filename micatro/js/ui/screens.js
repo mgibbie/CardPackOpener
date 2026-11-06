@@ -138,7 +138,8 @@ export function jokerCollection() {
         if (!body.isConnected) return;
         if (!description) {
           const raw = center.mod ? (MODREG.loc.descriptions.Joker || {})[key] : (LOC.descriptions.Joker || {})[key];
-          description = { name, lines: (raw && raw.text) || [] };
+          const values = Object.values(center.config || {}).flatMap((v) => typeof v === 'number' || typeof v === 'string' ? [v] : v && typeof v === 'object' ? Object.values(v).filter((x) => typeof x === 'number' || typeof x === 'string') : []);
+          description = { name, lines: ((raw && raw.text) || []).map((line) => String(line).replace(/#(\d+)#/g, (_, i) => values[+i - 1] == null ? '?' : String(values[+i - 1]))) };
         }
         const detail = h('div', 'joker-collection-detail');
         detail.append(center.mod ? liveCard({ center: key, set: 'Joker', mod: center.mod, atlas: center.atlas, pos: center.pos, soul_pos: center.soul_pos }) : cardCanvas({ center: key, set: 'Joker' }));
