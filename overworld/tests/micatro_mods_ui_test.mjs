@@ -310,6 +310,26 @@ try {
 		A(errors.length === 0, 'no console errors (player)', errors.join(' | '));
 	}
 
+	// A real menu choice is carried into the run recipe and survives Continue.
+	{
+		const { page, ctx } = await open({ url: '/micatro/' });
+		await clickSel(page, '.b-menu-play');
+		await clickSel(page, '.b-mods');
+		await tap(page, '.mod-row[data-mod="jokertoggle"] .mod-toggle');
+		await waitFor(() => page.evaluate(() => !!document.querySelector('.mod-row[data-mod="jokertoggle"] .mod-opts-toggle')), 8000);
+		await tap(page, '.mod-row[data-mod="jokertoggle"] .mod-opts-toggle');
+		await tap(page, '.mod-row[data-mod="jokertoggle"] [data-opt="j_joker"]');
+		await tap(page, '.mods-modal .b-back');
+		await tap(page, '.b-start');
+		A(await waitFor(() => page.evaluate(async () => !!window.__micatro.session && (await import('/micatro/js/engine/core.js')).G.GAME.banned_keys.j_joker === true), 15000), 'a Joker switch selected in the menu is enforced in the run');
+		A(await page.evaluate(() => window.__micatro.session.recipe.modOptions.jokertoggle.j_joker === false), 'the run recipe records the Joker switch');
+		await page.reload({ waitUntil: 'domcontentloaded' });
+		await waitFor(() => page.evaluate(() => !!(window.__micatro && window.__micatro.ready)), 30000);
+		await clickSel(page, '.b-continue');
+		A(await waitFor(() => page.evaluate(async () => !!window.__micatro.session && (await import('/micatro/js/engine/core.js')).G.GAME.banned_keys.j_joker === true), 15000), 'Continue restores the disabled Joker');
+		await ctx.close();
+	}
+
 	// ================================================================ spectator
 	{
 		const { page, errors } = await open({ url: '/micatro/?spectate=bob' });
