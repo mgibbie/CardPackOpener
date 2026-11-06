@@ -74,9 +74,9 @@ try {
 	A(await page.evaluate(() => document.querySelectorAll('.joker-collection-item').length === 1 && /Greedy Joker/.test(document.querySelector('.joker-collection-item').textContent)), 'collection search filters by joker name');
 	const padCollection = await page.evaluate(() => { const p = window.__micatroPad, seen = []; p.ensure(); for (const direction of ['up', 'left', 'down', 'left', 'up', 'right', 'down', 'left', 'up']) { seen.push(p.focus && p.focus.cls); if (p.focus && /joker-collection-item/.test(p.focus.cls || '')) return { ok: true, seen }; p.move(direction); } return { ok: false, seen }; });
 	A(padCollection.ok, 'controller focus reaches a collection Joker', JSON.stringify(padCollection.seen));
-	await page.click('.joker-collection-item');
+	await page.evaluate(() => document.querySelector('.joker-collection-item').click());
 	A(await waitFor(() => page.evaluate(() => /Mult/.test((document.querySelector('.joker-detail-modal') || {}).textContent || '')), 5000), 'selecting a Joker opens its description');
-	await page.click('.joker-detail-modal .b-back');
+	await page.evaluate(() => document.querySelector('.joker-detail-modal .b-back').click());
 	await page.setViewport({ width: 390, height: 844 });
 	await sleep(500);
 	A(await page.evaluate(() => { const r = document.querySelector('.joker-collection-modal .modal-box').getBoundingClientRect(); return r.left >= -1 && r.right <= innerWidth + 1 && r.top >= -1 && r.bottom <= innerHeight + 1; }), 'collection modal fits a portrait phone');
@@ -146,7 +146,8 @@ try {
 	const withSticker = await px('j_joker');
 	const sticker = await page.evaluate(async () => (await import('/micatro/js/ui/stickers.js')).winSticker('j_joker'));
 	A(sticker === 'Red', 'the Joker has a Red Stake sticker (a Pokermon win: the Red-ringed Pikachu)', sticker);
-	const tip = await page.evaluate(() => { const b = window.__micatro.board; for (const id of b.areas.jokers) { const s = b.sprites.get(id); if (s.d.center === 'j_joker') b.showCardTip(s, true); } return b.tip.textContent; });
+	await waitFor(() => page.evaluate(() => { const b = window.__micatro.board; return b.areas.jokers.some(id => b.sprites.get(id)?.d?.center === 'j_joker'); }), 10000);
+	const tip = await page.evaluate(() => { const b = window.__micatro.board; for (const id of b.areas.jokers) { const s = b.sprites.get(id); if (s && s.d.center === 'j_joker') b.showCardTip(s, true); } return b.tip.textContent; });
 	A(/Pokermon win — Red Stake/.test(tip) && /Pikachu sticker/.test(tip), 'its tooltip explains the sticker', tip.slice(0, 160));
 	A(!(await page.evaluate(async () => (await import('/micatro/js/ui/stickers.js')).winSticker('j_greedy_joker'))), 'a joker never won with has none');
 	await page.evaluate(() => document.querySelector('.b-options').click());
