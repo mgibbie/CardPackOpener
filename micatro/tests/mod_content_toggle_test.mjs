@@ -46,6 +46,12 @@ for (const id of ['mikas', 'betmma']) {
       const voucher = new Card(null, center);
       voucher.redeem();
       assert(!G.GAME.used_vouchers[center.key], 'a directly redeemed disabled voucher has no effect');
+      let applied = false;
+      const redeem = center.redeem;
+      center.redeem = () => { applied = true; };
+      Card.apply_to_run(null, center);
+      center.redeem = redeem;
+      assert(!applied, 'a directly applied disabled voucher has no effect');
     }
     if (center.consumeable) {
       const consumable = new Card(null, center);

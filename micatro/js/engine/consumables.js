@@ -763,6 +763,7 @@ Card.prototype.redeem = function (layer) {
 // ---------------------------------------------------------- Card:apply_to_run
 /** Card.apply_to_run(self, center) — `self` may be null (backs/tags call it as Card.apply_to_run(nil, center)). */
 function apply_to_run(self, center) {
+  if (contentDisabled(center || (self && self.config.center))) return;
   // Mods seeing every voucher applied (a Lua Card:apply_to_run wrap; BETMMA's Collector counts them).
   if (ACTIVE_MODS.length) callHook('apply_to_run', self, center);
   // Steamodded: a mod voucher's redeem(self, card) replaces the vanilla effects.

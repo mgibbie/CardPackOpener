@@ -17,4 +17,8 @@ const commonOff = Object.fromEntries(BASE_JOKERS.filter(([, c]) => c.rarity === 
 newRun({ seed: 'TOGGLE', mods: ['jokertoggle'], modOptions: { jokertoggle: commonOff } });
 const fallback = get_current_pool('Joker', 0.2)[0];
 assert(fallback.length && fallback.every((key) => !G.GAME.banned_keys[key]), 'empty rarity never restores a banned fallback');
+for (const [key] of BASE_JOKERS) {
+  newRun({ seed: 'TOGGLE', mods: ['jokertoggle'], modOptions: { jokertoggle: { [key]: false } } });
+  assert(G.GAME.banned_keys[key], `${key} is disabled`);
+}
 console.log('Joker Toggle: original Joker count and enabled/disabled pool checks passed');
