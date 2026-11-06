@@ -154,8 +154,9 @@ try {
 		localStorage.setItem('magepunk_pos_v1', JSON.stringify({ map: 'EverGrandeCity_ChampionsRoom', x: 6, y: 8, back: null, dyn: null }));
 		localStorage.removeItem('magepunk_battle_v1');
 	});
-	await page.goto(`http://localhost:${PORT}/overworld/index.html`, { waitUntil: 'domcontentloaded' });
+	await page.goto(`http://localhost:${PORT}/overworld/index.html?map=EverGrandeCity_ChampionsRoom&x=6&y=8`, { waitUntil: 'domcontentloaded' });
 	await boot('EverGrandeCity_ChampionsRoom');
+	if ((await pos()).map !== 'EverGrandeCity_ChampionsRoom') throw new Error('Hoenn Champion room did not load: ' + JSON.stringify(await pos()));
 	await W(() => window.__ow.runScriptLabel('EverGrandeCity_ChampionsRoom_EventScript_Wallace'));
 	let wb = false;
 	for (let i = 0; i < 80 && !wb; i++) { const s = await W(() => ({ b: !!window.__ow.battle.active, d: !!window.__ow.dialog.blocking })); wb = s.b; if (!wb) { if (s.d) await page.keyboard.press('z'); await sleep(120); } }
