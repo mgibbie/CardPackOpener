@@ -400,6 +400,7 @@ try {
 	await dA.page.evaluate(async () => { await window.__micatro.newRun({ back: 'b_red', stake: 'stake_poke_elite', mods: ['pokermon'] }); });
 	await waitFor(() => dA.page.evaluate(() => !!window.__micatro.view() && window.__micatro.idle()), 40000);
 	A((await dA.page.evaluate(() => window.__micatro.view().stake)) === 8, 'an Elite Stake run plays at level 8 (view.stake)');
+	A(await waitFor(() => dA.page.evaluate(() => window.__micatro.view().stake_chip?.atlas === 'poke_elite_stake' && document.querySelector('.hud-score .chip-ico').style.backgroundImage.startsWith('url("data:image/png')), 15000), 'Elite Stake displays its custom score chip');
 	A(await winNow(dA, ['j_poke_charmander']), 'an Elite Stake Nuzlocke + Fire Monotype run won');
 	const ep = await dA.page.evaluate(() => window.__micatro.progress.getProgress());
 	A(ep.nuzStake === 9 && (ep.bothStake || {}).fire === 9 && (ep.monoStake || {}).fire === 9, 'the record keeps the win at level 9 (Elite), not Gold 8', JSON.stringify(ep));

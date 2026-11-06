@@ -853,6 +853,7 @@ G.I18n.add({
   'Modos de juego': 'Game modes', 'Desafío diario y más': 'Daily Challenge and more', 'Elige un modo': 'Choose a mode',
   'Partida normal': 'Normal run', 'La experiencia de siempre, igual que el juego original.': 'The classic experience, just like the original game.',
   'Desafío diario': 'Daily Challenge', 'Hoy: {x} con la regla «{x}» (misma para todos). +25% de monedas.': 'Today: {x} with the rule “{x}” (same for everyone). +25% coins.',
+  'Hoy: {x} con la regla «{x}» (misma para todos; reinicio a las 00:00 UTC). +25% de monedas.': 'Today: {x} with the rule “{x}” (same for everyone; resets at 00:00 UTC). +25% coins.',
   'Tu mejor tiempo de hoy: {x}': 'Your best time today: {x}', 'Aún no lo has jugado hoy.': "You haven't played it today.",
   'Modo Fiesta': 'Party Mode', 'Cualquier Pokémon, no puedes morir y no se guarda progreso. Pokémon: {x}': "Any Pokémon, you can't die and no progress is saved. Pokémon: {x}",
   'Elegir Pokémon de la fiesta': 'Choose the party Pokémon', 'Toca un Pokémon para la fiesta': 'Tap a Pokémon for the party',

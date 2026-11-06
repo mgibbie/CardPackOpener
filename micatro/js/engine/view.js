@@ -2,7 +2,7 @@
 // The local player renders toView() of the live engine; a spectator renders
 // the same object received over the network — so both see the same screen.
 
-import { G, P_BLINDS, P_TAGS, P_CENTERS, P_SEALS, get_blind_amount, setEventCardView } from './core.js';
+import { G, P_BLINDS, P_TAGS, P_CENTERS, P_SEALS, P_STAKES, get_blind_amount, setEventCardView } from './core.js';
 import { STATE_NAMES, HANDLIST, legal, get_poker_hand_info } from './run.js';
 import { describe, describeBlind, describeTag, enh_live_vars } from './describe.js';
 import { callHook, MOD_LOC } from '../mods/registry.js';
@@ -118,6 +118,7 @@ export function toView() {
     seed: GM.pseudorandom.seed,
     back: GM.selected_back_key,
     stake: GM.stake,
+    stake_chip: GM.stake_key && P_STAKES[GM.stake_key]?.atlas ? { atlas: P_STAKES[GM.stake_key].atlas, pos: P_STAKES[GM.stake_key].pos } : undefined,
     state: STATE_NAMES[G.STATE],
     ante: rr.ante,
     round: GM.round,
