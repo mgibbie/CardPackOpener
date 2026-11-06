@@ -46,7 +46,7 @@ A fresh clone has neither (see "start setup").
   `overworld/tests/gate-timings.json`; refresh it with `node overworld/tests/gate-shard.mjs
   --update <gate logs>`); `--lane micatro` runs one game's suites; `--list-json` prints the plan.
   A new game: append a row to `LANES` (its paths, suite-name pattern, 1-3 boot suites).
-- Battlecards engine tests: `npm test` (`battlecards/tests/run-all.mjs`).
+- Battlecards engine tests: `npm run test-battlecards` (`battlecards/tests/run-all.mjs`). `npm test` runs Battlecards followed by the full overworld gate.
 - Tests need a Chrome (`CHROME`, or `/opt/chrome/chrome` after cloud setup) and `overworld/data`
   (micasurvivor/micatro suites also serve their gitignored assets: `node tools/cloud/fetch-assets.mjs`;
   after deploying new ones, `--write-manifest`).

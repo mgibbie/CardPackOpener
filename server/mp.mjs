@@ -819,7 +819,7 @@ const ART_OVERRIDE_MAX = 500_000;   // one re-encoded 768px jpeg as a data URL
 const ART_OVERRIDE_SLOTS = 20;      // bounded: fold into the repo before saving more
 // the owner's joker-design inbox (owner_todo:jokers): field caps (characters) and how many designs it holds before it
 // must be applied (500 x ~4 KB stays well under D1's row limit)
-const JOKER_DESIGN_MAX = { ability: 2000, notes: 2000, name: 60, rarity: 40, entries: 500 };
+const JOKER_DESIGN_MAX = { ability: 2000, notes: 2000, name: 60, rarity: 40, entries: 1000 };
 const BUG_TEXT_MAX = 60_000;        // a bug report: up to ~60KB of markdown (testers write long ones)
 const BUG_OPEN_MAX = 60;            // per reporter, open (un-reviewed) reports
 const REPAIR_MAX_BYTES = 600_000;   // one queued save repair (a full save export)
@@ -1871,7 +1871,7 @@ export default async function handler(req, env) {
 		let entry = null, drop = null;
 		if (action === 'joker-design-add') {
 			const dex = Number(body.dex);
-			if (!Number.isInteger(dex) || dex === 0 || dex < -654 || dex > 1025) return json({ error: 'bad dex number' }, 400);
+			if (!Number.isSafeInteger(dex) || dex === 0 || dex > 1025) return json({ error: 'bad dex number' }, 400);
 			const ability = String(body.ability || '').trim();
 			if (!ability) return json({ error: 'write the ability first' }, 400);
 			const name = String(body.name || '').trim(), rarity = String(body.rarity || '').trim(), notes = String(body.notes || '').trim();

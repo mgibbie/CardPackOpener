@@ -419,6 +419,7 @@ export class Board {
     }
     if (!atlas && this.view) { this.renderOverlay(); this.layout(); this.setBackground(this.view); }
     this._tagsKey = null; // (mod tag icons are drawn from mod atlases)
+    if (this.view && (!atlas || atlas === this.view.stake_chip?.atlas)) this.renderScoreChip();
     if (this.view) this.renderTagsEtc(this.view);
   }
   /** The visible areas: the base ones plus the view's mod areas. */
@@ -614,6 +615,19 @@ export class Board {
   }
   /** Use the run's stake chip, whose atlas positions are not in stake-level order. */
   renderScoreChip() {
+    const chip = this.view?.stake_chip;
+    if (chip?.atlas && chip.pos) {
+      const canvas = document.createElement('canvas');
+      canvas.width = canvas.height = 60;
+      if (drawModCell(canvas.getContext('2d'), chip.atlas, chip.pos, 0, 0, 60, 60)) {
+        this.H.scoreChip.style.backgroundImage = `url(${canvas.toDataURL()})`;
+        this.H.scoreChip.style.backgroundSize = '30px 30px';
+        this.H.scoreChip.style.backgroundPosition = '0px 0px';
+        return;
+      }
+    }
+    this.H.scoreChip.style.backgroundImage = '';
+    this.H.scoreChip.style.backgroundSize = '';
     const stake = Number(this.view?.stake);
     const level = Math.max(1, Math.min(8, Number.isFinite(stake) ? Math.floor(stake) : 1));
     const pos = Object.values(STAKES).find(s => s.stake_level === level)?.pos || { x: 0, y: 0 };

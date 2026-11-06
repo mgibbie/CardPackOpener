@@ -201,7 +201,8 @@ try {
 				...G.AchDefs.LIST.filter(a => a.cat === 'modos').flatMap(a => [a.name, a.desc, a.title || ''].filter(Boolean))];
 			return {
 				rifts: M.RIFTS, coins: M.COINS, k: M.K, mods: M.MOD_IDS, types: M.TYPES.length, typeMin: M.TYPE_DONE_MIN, list: M.LIST, party: M.PARTY_DEX,
-				seed: M.dailySeed(new Date(2026, 9, 17)), seedJan: M.dailySeed(new Date(2027, 0, 5)),
+				seed: M.dailySeed(new Date('2026-10-17T12:00:00Z')), seedJan: M.dailySeed(new Date('2027-01-05T12:00:00Z')),
+				beforeReset: M.dailySeed(new Date('2026-10-17T23:59:59Z')), afterReset: M.dailySeed(new Date('2026-10-18T00:00:00Z')),
 				dex: M.dailyDex(sd), want: pool[(sd * 7919 + 13) % pool.length], noLeg: pool.every(d => !G.DEX_BY[d].leg),
 				mod: M.dailyMod(sd), wantMod: M.MOD_IDS[(sd * 31 + 7) % 6],
 				en: strings.map(s => [s, G.I18n.t(s)]),
@@ -214,6 +215,7 @@ try {
 			'the 6 modifiers in the port\'s order with its factors (fast 1.4 / bosses 1.15, horde 1.8, tank 1.6, hard 1.5, frail 0.5)', JSON.stringify([r.k, r.mods]));
 		A(r.types === 18 && r.typeMin === 10 && r.party === 25 && JSON.stringify(r.list) === '["normal","daily","rush","party","coop","tower","rifts","type","team"]', '18 types, 10 minutes marks a type, party Pokémon defaults to Pikachu (25), the batch-6 modes (+ team, batch 7; + Boss Rush and the Tower in the menu order of the port, batch 8; + Co-op, batch 12a)');
 		A(r.seed === 20261017 && r.seedJan === 20270105, 'the daily seed is the date as YYYYMMDD (save_data.gd daily_seed)', JSON.stringify([r.seed, r.seedJan]));
+		A(r.beforeReset === 20261017 && r.afterReset === 20261018, 'daily seed changes at midnight UTC', JSON.stringify(r));
 		A(r.dex === r.want && r.noLeg && r.mod === r.wantMod, `the daily Pokémon = pool[(sd*7919+13) % n] (non-legendary) and the rule = MOD_IDS[(sd*31+7) % 6] (${r.dex}, ${r.mod})`, JSON.stringify(r));
 		const bad = r.en.filter(([es, en]) => es === en && !/^(Horda|No)$/.test(es) || SPANISH.test(en.replace(/Pok[ée]mon/g, '')));
 		A(bad.length === 0, `every new string has English (lang_en.json wording; ${r.en.length} checked)`, JSON.stringify(bad));
