@@ -15,6 +15,7 @@ import { initPad } from './pad.js';
 import { first as modFirst } from './modui.js';
 import { installZoomGuard } from './zoomguard.js';
 import { describeRefusal, createRefusedLog, rulesOf } from '../refusedlog.js';
+import { recordJokerUsage, usageUser } from './jokerusage.js';
 
 const params = new URLSearchParams(location.search);
 const SPECTATE = (params.get('spectate') || '').trim();
@@ -95,11 +96,12 @@ function modsApi() {
     load: (ids) => M.loadMods(ids),
     isLoaded: (id) => !!M.MODS[id],
     optionList: (id) => M.modOptionList(id),
+    customType: (name) => !!M.CONSUMABLE_TYPES[name],
     withRequirements: (ids) => M.withRequirements(ids),
     dependentsOf: (id, ids) => M.dependentsOf(id, ids),
     modName: (id) => M.modName(id),
     backs: (ids, options) => (M.modBacks ? M.modBacks(ids, options) : []),
-    stakes: (ids) => (M.modStakes ? M.modStakes(ids) : []),
+    stakes: (ids, options) => (M.modStakes ? M.modStakes(ids, options) : []),
   };
 }
 
@@ -148,6 +150,7 @@ function onAction(a) {
   currentView = view;
   player.push(view, r.events);
   stickerKeys(view, seenJokers);
+  recordJokerUsage(usageUser(), runIdOf(), ((view.areas || {}).jokers || []).map((c) => c.center), (r.events || []).some((e) => e.type === 'win'));
   if (RunSync) RunSync.track(session.recipe, view); // (pushed to the account when due: round checkpoints, idle, hide)
   afterAct(view, r.events);
   return r;
@@ -328,6 +331,7 @@ function beginRun(events, { fresh = false } = {}) {
   record(events);
   currentView = viewOf();
   seenJokers.clear(); stickerKeys(currentView, seenJokers);
+  recordJokerUsage(usageUser(), runIdOf(), ((currentView.areas || {}).jokers || []).map((c) => c.center));
   player.lastSeq = 0;
   player.push(currentView, [], { jump: true });
   sound.play('whoosh', 1, 0.6);

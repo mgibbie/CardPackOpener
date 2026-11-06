@@ -318,7 +318,7 @@ function apply_mod_suits() {
   if (!keys.length) return;
   for (const k of keys) {
     const s = MOD_SUITS[k];
-    const on = activeSet.has(s.mod);
+    const on = centerActive(s);
     RANK_KEYS.forEach(([rk, value], i) => {
       const ck = s.card_key + '_' + rk;
       if (on) P_CARDS[ck] = { key: ck, name: value + ' of ' + s.key, value, suit: s.key, pos: { x: i, y: (s.pos && s.pos.y) || 0 }, atlas: s.atlas, mod: s.mod };
@@ -330,12 +330,12 @@ function apply_mod_suits() {
 /** Active mod suits, in registration order. */
 export function activeModSuits() {
   const out = [];
-  for (const s of Object.values(MOD_SUITS)) if (activeSet.has(s.mod)) out.push(s);
+  for (const s of Object.values(MOD_SUITS)) if (centerActive(s)) out.push(s);
   return out;
 }
 /** Active mod poker hands / parts. */
-export function activeModHands() { return Object.values(MOD_POKER_HANDS).filter((h) => activeSet.has(h.mod)); }
-export function activeModHandParts() { return Object.values(MOD_HAND_PARTS).filter((h) => activeSet.has(h.mod)); }
+export function activeModHands() { return Object.values(MOD_POKER_HANDS).filter(centerActive); }
+export function activeModHandParts() { return Object.values(MOD_HAND_PARTS).filter(centerActive); }
 
 /**
  * Register a mod. Besides its content: `version` (upstream's) and optional `contentRev` (OUR behaviour
@@ -437,10 +437,17 @@ export function resolveMods(ids) {
 export function isActive(id) { return activeSet.has(id); }
 export function activeMods() { return ACTIVE.map((id) => MODS[id]); }
 
+/** A player's explicit per-item switch, independent of legacy group options. */
+export function contentDisabled(c) {
+  return !!(c && c.key && ((c.mod && modOptions[c.mod] && modOptions[c.mod]['content:' + c.key] === false)
+    || (!c.mod && c.set === 'Joker' && activeSet.has('jokertoggle') && modOptions.jokertoggle && modOptions.jokertoggle[c.key] === false)));
+}
+
 /** Is this center/tag/blind/... available in the current run? Base content always is. */
 export function centerActive(c) {
   if (!c || !c.mod) return true;
   if (!activeSet.has(c.mod)) return false;
+  if (contentDisabled(c)) return false;
   // A center may need one of its mod's options (`mod_option`, e.g. Nacho's per-line toggles):
   // off = gone, exactly like an inactive mod.
   if (c.mod_option && !(modOptions[c.mod] && modOptions[c.mod][c.mod_option])) return false;

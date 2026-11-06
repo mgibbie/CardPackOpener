@@ -13,6 +13,7 @@ import { supersededFrom } from '../mods/superseded.js';
 import { stakeLadder, deckBest, stakeOpen, fallbackIndex, lockText } from './stakeunlocks.js';
 import { stickDeckCanvas, stickDeckCanvasCentred } from './decksticker.js';
 import { getProgress, badgePills, ACHIEVEMENTS, TYPES, typeStyle, typesBeaten, monoWins, typeRecord, totalLevels } from './progress.js';
+import { jokerUsage, usageUser } from './jokerusage.js';
 
 const h = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
 const btn = (label, cls, fn) => { const b = h('button', 'btn ' + cls, label); b.type = 'button'; b.addEventListener('click', (e) => { sound.play('button'); fn(e); }); return b; };
@@ -61,6 +62,7 @@ export function mainMenu(o) {
   if (o.replays) bar.appendChild(btn('Replays', 'orange big b-replays', () => replaysList(o.replays)));
   if (o.challenges) bar.appendChild(btn('Chal&shy;lenges', 'red big b-challenges', () => challengesScreen(o)));
   bar.appendChild(btn('Achieve&shy;ments', 'green big b-achievements', () => achievementsScreen()));
+  bar.appendChild(btn('Joker<br>collection', 'blue big b-joker-collection', () => jokerCollection()));
   el.appendChild(bar);
   // the run on offer came from the account (ui/runsync.js): say where it came from
   const cl = o.cloud;
@@ -87,6 +89,78 @@ export function mainMenu(o) {
     requestAnimationFrame(spin);
   };
   requestAnimationFrame(spin);
+}
+
+/** Base-game jokers and their earned win stickers, independent of the table sticker setting. */
+export function jokerCollection() {
+  const jokers = Object.entries(CENTERS).filter(([, c]) => c.set === 'Joker' && !c.mod)
+    .sort((a, b) => (a[1].order || 0) - (b[1].order || 0));
+  const body = h('div', 'joker-collection');
+  const summary = h('div', 'joker-collection-summary');
+  const search = document.createElement('input');
+  search.type = 'search';
+  search.className = 'joker-collection-search';
+  search.placeholder = 'Search jokers';
+  search.setAttribute('aria-label', 'Search jokers');
+  const grid = h('div', 'joker-collection-grid');
+  const pages = h('div', 'joker-collection-pages');
+  let page = 0;
+  const nameOf = ([key, center]) => ((center.mod ? (MODREG.loc.descriptions.Joker || {}) : LOC.descriptions.Joker)[key] || {}).name || center.name || key;
+  body.append(summary, h('div', 'joker-collection-record', 'Usage is recorded on this device from this update onward. Mod Jokers shown are from enabled mods.'), search, pages, grid);
+  function draw() {
+    grid.replaceChildren();
+    pages.replaceChildren();
+    const usage = jokerUsage(usageUser());
+    const won = jokers.filter(([key]) => Object.keys(winRecord(key)).length).length;
+    summary.textContent = `${won} / ${jokers.length} jokers with a win sticker`;
+    const matches = jokers.filter((item) => nameOf(item).toLowerCase().includes(search.value.trim().toLowerCase()));
+    const count = Math.max(1, Math.ceil(matches.length / 150));
+    page = Math.min(page, count - 1);
+    if (count > 1) {
+      const prev = btn('Previous', 'grey small', () => { page--; draw(); }); prev.disabled = page === 0;
+      const next = btn('Next', 'grey small', () => { page++; draw(); }); next.disabled = page === count - 1;
+      pages.append(prev, h('span', '', `Page ${page + 1} / ${count}`), next);
+    }
+    for (const [key, center] of matches.slice(page * 150, (page + 1) * 150)) {
+      const record = winRecord(key);
+      const details = Object.entries(record).map(([category, level]) => `${category}: ${stickerName(level)} Stake`).join(', ');
+      const item = h('button', 'joker-collection-item');
+      item.type = 'button';
+      const name = nameOf([key, center]);
+      item.title = `${name} — ${details || 'No win sticker yet'}`;
+      const stats = usage[key] || { runs: 0, wins: 0 };
+      const face = center.mod ? liveCard({ center: key, set: 'Joker', mod: center.mod, atlas: center.atlas, pos: center.pos, soul_pos: center.soul_pos }) : cardCanvas({ center: key, set: 'Joker' });
+      item.append(face, h('div', 'joker-collection-name', esc(name)), h('div', 'joker-collection-record', esc(details || 'No sticker')), h('div', 'joker-collection-record', `Runs: ${stats.runs} · Wins: ${stats.wins}`));
+      item.addEventListener('click', async () => {
+        let description;
+        try { description = (await import('../engine/describe.js')).describeCenter(key); } catch (_) { /* use the printed description */ }
+        if (!body.isConnected) return;
+        if (!description) {
+          const raw = center.mod ? (MODREG.loc.descriptions.Joker || {})[key] : (LOC.descriptions.Joker || {})[key];
+          description = { name, lines: (raw && raw.text) || [] };
+        }
+        const detail = h('div', 'joker-collection-detail');
+        detail.append(center.mod ? liveCard({ center: key, set: 'Joker', mod: center.mod, atlas: center.atlas, pos: center.pos, soul_pos: center.soul_pos }) : cardCanvas({ center: key, set: 'Joker' }));
+        detail.appendChild(h('div', 'joker-collection-description', (description.lines || []).map((line) => markup(line)).join('<br>')));
+        detail.appendChild(h('div', 'joker-collection-record', esc(details || 'No win sticker yet')));
+        detail.appendChild(h('div', 'joker-collection-record', `Runs: ${stats.runs} · Wins: ${stats.wins}`));
+        modal(detail, { title: description.name || name, cls: 'joker-detail-modal' });
+      });
+      grid.appendChild(item);
+    }
+  }
+  search.addEventListener('input', () => { page = 0; draw(); });
+  draw();
+  const off = onWinStickers(() => { if (body.isConnected) draw(); });
+  modal(body, { title: 'Joker Collection', cls: 'joker-collection-modal', onClose: off });
+  const selected = loadModPrefs().ids;
+  if (modsApi && selected.length) modsApi.load(selected).then(() => {
+    if (!body.isConnected) return;
+    for (const id of selected) for (const c of ((MODREG.mods[id] || {}).content || {}).centers || []) {
+      if (c.set === 'Joker' && !c.legacy && !c.unported && !jokers.some(([key]) => key === c.key)) jokers.push([c.key, c]);
+    }
+    draw();
+  }).catch((e) => console.warn('micatro: collection mods failed to load', e));
 }
 
 /** What a mod UI module gets to draw its screens with (ui/modui.js: Pokermon's Pokédex). */
@@ -174,7 +248,7 @@ export function newRunScreen(o) {
   const stakeId = (s) => (s ? s.level || s.key : null);
   const refreshStakes = (sel) => {
     const cur = stakeId(stakes[si]);
-    const extra = modsApi && modsApi.stakes ? modsApi.stakes(sel.ids.filter((id) => modsApi.isLoaded(id))) : [];
+    const extra = modsApi && modsApi.stakes ? modsApi.stakes(sel.ids.filter((id) => modsApi.isLoaded(id)), sel.options) : [];
     stakes = STAKE_LIST.map((s, i) => ({ ...s, level: i + 1 })).concat(extra);
     ladder = stakeLadder(stakes);
     si = Math.max(0, stakes.findIndex((s) => stakeId(s) === cur));
@@ -1293,8 +1367,8 @@ function activeModsBox(ids, modOptions) {
   for (const id of ids) {
     const r = h('div', 'am-row');
     r.innerHTML = modBadges([id]);
-    const list = modsApi ? modsApi.optionList(id).filter((op) => !op.cosmetic) : []; // (a cosmetic option isn't the run's)
     const vals = modOptions[id] || {};
+    const list = modsApi ? modsApi.optionList(id).filter((op) => !op.cosmetic && (!(op.key.startsWith('content:') || id === 'jokertoggle') || vals[op.key] === false)) : []; // only list item overrides, not hundreds of defaults
     const parts = list.map((op) => `${esc(op.label)}: <b>${esc(fmtOpt(vals[op.key] !== undefined ? vals[op.key] : op.default))}</b>`);
     if (parts.length) r.appendChild(h('span', 'am-opts', parts.join(' · ')));
     box.appendChild(r);
@@ -1310,6 +1384,7 @@ export function modsPanel(sel, onChange) {
   el.append(list, note);
   const loading = new Set(), failed = new Set();
   const expanded = new Set(); // mods whose long option lists are open (collapsed by default)
+  const searches = new Map();
   const changed = () => { saveModPrefs(sel); if (onChange) onChange(sel); };
   const say = (t) => { note.textContent = t || ''; note.style.display = t ? '' : 'none'; };
   say('');
@@ -1348,6 +1423,24 @@ export function modsPanel(sel, onChange) {
     draw();
   }
   function setOpt(id, key, v) {
+    if (id === 'jokertoggle' && v === false) {
+      const options = modsApi.optionList(id);
+      if (options.every((op) => op.key === key || (sel.options[id] && sel.options[id][op.key] === false))) {
+        say('Keep at least one original Joker enabled so a run can generate Jokers.');
+        return;
+      }
+    }
+    if (key.startsWith('content:') && v === false && modsApi.customType) {
+      const current = modsApi.optionList(id).find((op) => op.key === key);
+      const type = current && current.label.split(':', 1)[0];
+      if (type && modsApi.customType(type)) {
+        const others = sel.ids.flatMap((mod) => modsApi.isLoaded(mod) ? modsApi.optionList(mod).filter((op) => op.key.startsWith('content:') && op.label.startsWith(type + ':')).map((op) => ({ mod, op })) : []);
+        if (others.length && others.every(({ mod, op }) => (mod === id && op.key === key) || (sel.options[mod] && sel.options[mod][op.key] === false))) {
+          say(`Keep at least one ${type} card enabled while its mod is on.`);
+          return;
+        }
+      }
+    }
     sel.options[id] = { ...(sel.options[id] || {}), [key]: v };
     changed();
     draw();
@@ -1389,7 +1482,17 @@ export function modsPanel(sel, onChange) {
             tg.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
             opts.appendChild(tg);
           }
-          for (const op of (collapsed ? [] : optList)) {
+          if (!collapsed && optList.length > LONG) {
+            const search = document.createElement('input');
+            search.type = 'search'; search.className = 'mod-options-search';
+            search.placeholder = 'Search options'; search.value = searches.get(m.id) || '';
+            search.setAttribute('aria-label', `Search ${m.name || m.id} options`);
+            search.dataset.k = 'search:' + m.id;
+            search.addEventListener('input', () => { const end = search.selectionStart; searches.set(m.id, search.value); draw(); const next = list.querySelector(`[data-k="search:${m.id}"]`); if (next) { next.focus(); try { next.setSelectionRange(end, end); } catch (_) {} } });
+            opts.appendChild(search);
+          }
+          const query = (searches.get(m.id) || '').trim().toLowerCase();
+          for (const op of (collapsed ? [] : optList.filter((op) => !query || (op.label + ' ' + op.key).toLowerCase().includes(query)))) {
             const cur = sel.options[m.id] && sel.options[m.id][op.key] !== undefined ? sel.options[m.id][op.key] : op.default;
             const r = h('div', 'mod-opt');
             r.appendChild(h('div', 'mod-opt-l', esc(op.label)));

@@ -6,6 +6,11 @@ import { P_CENTERS, P_STAKES, P_SEALS } from '../engine/core.js';
 export const AVAILABLE = [
   // { id, name, by, requires: [ids], description?, size?, load: () => import('./<id>/index.js') }
   {
+    id: 'jokertoggle', name: 'Joker Toggle', by: 'Micatro', requires: [],
+    description: 'Choose which original Jokers can appear in a run.',
+    load: () => import('../../mods/jokertoggle/index.js'),
+  },
+  {
     id: 'pokermon', name: 'Pokermon', size: '~30 MB art', by: 'InertSteak & contributors (rebuilt for Micatro)', requires: [],
     description: 'Pokémon jokers that evolve, Energy and Item cards, Tera types, Megas and shinies.',
     load: () => import('../../mods/pokermon/index.js'),
@@ -136,16 +141,16 @@ export const sealByKey = (key) => P_SEALS[key] || null;
  * over (`superseded_by`) is left out while that one is listed; it stays registered. (Nacho 1.6.4's Elite used it; Nacho 1.7.9
  * re-keyed its stake to Pokermon's, js/mods/aliases.js.)
  */
-export function modStakes(ids) {
+export function modStakes(ids, options = {}) {
   const on = new Set(withRequirements(ids || []));
-  const listed = (s) => s && s.mod && on.has(s.mod);
+  const listed = (s) => s && s.mod && on.has(s.mod) && (options[s.mod] || {})['content:' + s.key] !== false;
   return Object.values(P_STAKES).filter((s) => listed(s) && !listed(P_STAKES[s.superseded_by]))
     .map((s) => ({ ...s, text: (MOD_LOC.descriptions.Stake || {})[s.key] || null }));
 }
 export function modBacks(ids, options = {}) {
   const on = new Set(withRequirements(ids || []));
   return Object.values(P_CENTERS)
-    .filter((c) => c.set === 'Back' && c.mod && on.has(c.mod) && !c.unported && !c.legacy) // (legacy: a deck its mod dropped, kept for old runs)
+    .filter((c) => c.set === 'Back' && c.mod && on.has(c.mod) && !c.unported && !c.legacy && (options[c.mod] || {})['content:' + c.key] !== false) // (legacy: a deck its mod dropped, kept for old runs)
     .filter((c) => {
       const need = c.mod_option || c.poke_option;
       if (!need) return true;
@@ -196,9 +201,24 @@ export const optionHidden = (o) => !!(o && (typeof o.hidden === 'function' ? o.h
 export function modOptionList(id) {
   const m = MODS[id];
   if (!m || !m.options) return [];
-  return Object.entries(m.options).filter(([, o]) => !optionHidden(o)).map(([key, o]) => {
+  const options = Object.entries(m.options).filter(([, o]) => !optionHidden(o)).map(([key, o]) => {
     o = o || {};
     const type = o.type || (Array.isArray(o.choices) ? 'choice' : typeof o.default === 'boolean' ? 'bool' : 'value');
     return { key, default: o.default, label: o.label || key.replace(/_/g, ' '), type, choices: Array.isArray(o.choices) ? o.choices : null, ...(o.cosmetic ? { cosmetic: true } : {}) };
   });
+  // Individual registered centers are optional in addition to any upstream
+  // group switches. Store only overrides; old recipes therefore keep all on.
+  for (const c of (manifest(id) && m.content && m.content.centers) || []) {
+    if (!c.key || !c.set || c.legacy || c.unported) continue;
+    const loc = (MOD_LOC.descriptions[c.set] || {})[c.key] || {};
+    options.push({ key: 'content:' + c.key, default: true, label: `${c.set}: ${loc.name || c.name || c.key}`, type: 'bool', choices: null });
+  }
+  for (const [group, label] of [['tags', 'Tag'], ['blinds', 'Blind'], ['seals', 'Seal'], ['stakes', 'Stake'], ['suits', 'Suit'], ['poker_hands', 'Poker Hand'], ['poker_hand_parts', 'Hand Part'], ['stickers', 'Sticker']]) {
+    for (const c of (manifest(id) && m.content && m.content[group]) || []) {
+      if (!c.key || c.legacy || c.unported) continue;
+      const loc = (MOD_LOC.descriptions[label] || {})[c.key] || {};
+      options.push({ key: 'content:' + c.key, default: true, label: `${label}: ${loc.name || c.name || c.key}`, type: 'bool', choices: null });
+    }
+  }
+  return options;
 }

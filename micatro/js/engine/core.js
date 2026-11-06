@@ -15,7 +15,7 @@
 
 import DATA from '../../data/balatro_data.js';
 import * as B from './bignum.js';
-import { callHook, reduceHook, firstHook, activeConsumableTypes, CONSUMABLE_TYPES, MOD_LOC, ACTIVE as ACTIVE_MODS, centerActive, activeModEditions, MOD_SUITS, activeModSuits, RARITIES, resolve_set, SET_ALIASES } from '../mods/registry.js';
+import { callHook, reduceHook, firstHook, activeConsumableTypes, CONSUMABLE_TYPES, MOD_LOC, STICKERS, ACTIVE as ACTIVE_MODS, centerActive, contentDisabled, activeModEditions, MOD_SUITS, activeModSuits, RARITIES, resolve_set, SET_ALIASES } from '../mods/registry.js';
 // (Steamodded seams for Pokermon 3.9.1 — opt-in contexts and the object_weights routes; all no-ops unless a mod uses them)
 import { wanted, calculate_seam, object_weights, poll_object, SEAM_STATE } from './smods.js';
 
@@ -326,6 +326,7 @@ export class CardArea {
     this.config = Object.assign({ card_limit: 52, type: 'hand', highlighted_limit: 5 }, config || {});
   }
   emplace(card, location, stay_flipped) {
+    if (card && contentDisabled(card.config && card.config.center)) return;
     if (location === 'front' || this.config.type === 'deck') this.cards.unshift(card);
     // Pokermon's lovely patch (cardarea.lua): a numeric location inserts at that 1-based slot.
     else if (typeof location === 'number') this.cards.splice(Math.max(0, location - 1), 0, card);
@@ -506,6 +507,9 @@ export class Card {
   }
 
   set_ability(center, initial, delay_sprites) {
+    // A disabled mod center must not be introduced by a transformation.
+    // Leave the existing card unchanged rather than substituting another effect.
+    if (this.ability && contentDisabled(center)) return;
     const old_center = this.config.center;
     // Steamodded (lovely/fixes.toml): with mods installed a card already in the deck takes
     // its old center's remove_from_deck / new center's add_to_deck effects across the swap,
@@ -551,6 +555,15 @@ export class Card {
     }
     // SMODS center.toml: a mod center's whole config is copied onto the ability.
     if (center.mod) for (const [k, v] of Object.entries(c)) if (k !== 'bonus' && k !== 'extra') this.ability[k] = copy_table(v);
+    // A disabled mod sticker cannot be attached through direct ability writes.
+    // Use the proxy only in runs with an explicit sticker override.
+    if (ACTIVE_MODS.length && Object.values(STICKERS).some(contentDisabled)) {
+      for (const key of Object.keys(this.ability)) if (contentDisabled(STICKERS[key])) delete this.ability[key];
+      this.ability = new Proxy(this.ability, { set(target, key, value) {
+        if (typeof key === 'string' && contentDisabled(STICKERS[key]) && value) return true;
+        target[key] = value; return true;
+      } });
+    }
     if (this.ability.name === 'Invisible Joker') this.ability.invis_rounds = 0;
     if (this.ability.name === 'To Do List') {
       const ph = Object.keys(G.GAME.hands).filter((k) => G.GAME.hands[k].visible);
@@ -567,7 +580,7 @@ export class Card {
     if (this.ability.name === 'Loyalty Card') { this.ability.burnt_hand = 0; this.ability.loyalty_remaining = this.ability.extra.every; }
     this.base_cost = center.cost || 1;
     this.ability.hands_played_at_create = (G.GAME && G.GAME.hands_played) || 0;
-    if (G.GAME && G.GAME.used_jokers) {
+    if (G.GAME && G.GAME.used_jokers && !contentDisabled(center)) {
       for (const [k, v] of Object.entries(P_CENTERS)) if (v.name === this.ability.name) G.GAME.used_jokers[k] = true;
     }
     if (center.set_ability) center.set_ability(center, this, initial, delay_sprites);
@@ -602,6 +615,7 @@ export class Card {
     // ('e_poke_shiny') or {poke_shiny: true}. Mods may refuse an edition (set_edition hook);
     // the old mod edition's on_remove / the new one's on_apply run like SMODS's set_edition.
     const ek = edition_key_of(edition);
+    if (contentDisabled(P_CENTERS[ek])) return;
     if (ek && callHook('set_edition', this, ek).includes(false)) return;
     const old = this.edition;
     if (old && old.key && P_CENTERS[old.key] && P_CENTERS[old.key].mod && P_CENTERS[old.key].on_remove) P_CENTERS[old.key].on_remove(this);
@@ -642,6 +656,7 @@ export class Card {
   }
 
   set_seal(_seal, silent) {
+    if (_seal && contentDisabled(P_SEALS[_seal])) return;
     const prev = this.seal;
     this.seal = _seal || null;
     // (SMODS seal / AMM Stamp apply-unapply: e.g. Jimbo's Stamp's +1 hand size while it's on an owned joker)
@@ -710,6 +725,7 @@ export class Card {
   }
 
   add_to_deck(from_debuff) {
+    if (contentDisabled(this.config.center)) return;
     if (this.added_to_deck) return;
     this.added_to_deck = true;
     callHook('add_to_deck', this, from_debuff);
@@ -1394,7 +1410,7 @@ export function get_current_pool(_type, _rarity, _legendary, _append) {
     _starting_pool = (P_CENTER_POOLS[_type] || []).filter((v) => v.rarity === rarity);
     _pool_key = _pool_key + (_append || '');
   } else {
-    _starting_pool = P_CENTER_POOLS[_type];
+    _starting_pool = P_CENTER_POOLS[_type] || [];
     _pool_key = _type + (_append || '');
   }
   // (a custom deck may allow duplicates: Deck Creator's allow_duplicate_jokers)
@@ -1444,6 +1460,17 @@ export function get_current_pool(_type, _rarity, _legendary, _append) {
     else if (_type === 'Edition') _pool.push('e_foil');
     else if (CONSUMABLE_TYPES[_type] && CONSUMABLE_TYPES[_type].default) _pool.push(CONSUMABLE_TYPES[_type].default);
     else _pool.push(reduceHook('empty_pool_default', 'j_joker', _type));
+    // A fallback must not resurrect explicitly banned content. For an empty
+    // Joker rarity, use another eligible rarity instead of a disabled Joker.
+    if ((_type === 'Joker' && ACTIVE_MODS.includes('jokertoggle') && G.GAME.banned_keys[_pool[0]]) || contentDisabled(P_CENTERS[_pool[0]])) {
+      const candidates = (_type === 'Joker' ? P_CENTER_POOLS.Joker : _starting_pool || [])
+        .filter((v) => !G.GAME.banned_keys[v.key] && !(G.GAME.used_jokers[v.key] && !showman)
+          && !contentDisabled(v)
+          && (v.unlocked !== false || v.rarity === 4) && (!v.in_pool || v.in_pool(v, { type: _type, append: _append }))
+          && !callHook('pool_filter', v, _type, _append).includes(false));
+      if (!candidates.length) throw new Error(`No available ${_type} remains after content bans`);
+      _pool.splice(0, 1, ...candidates.map((v) => v.key));
+    }
   }
   return [_pool, _pool_key + (!_legendary ? G.GAME.round_resets.ante : '')];
 }
@@ -1580,7 +1607,7 @@ export function create_card(_type, area, legendary, _rarity, skip_materialize, s
   if (_type === 'Base') forced_key = 'c_base';
   // Steamodded object_weights: the key comes from SMODS.poll_object (weighted, modify_weights)
   if (!forced_key && object_weights()) forced_key = poll_object({ type: _type, guaranteed: true, rarities: legendary ? ['Legendary'] : (_rarity !== undefined && _rarity !== null && _rarity !== false) ? [_rarity] : undefined, append: key_append });
-  if (forced_key && !G.GAME.banned_keys[forced_key]) {
+  if (forced_key && !G.GAME.banned_keys[forced_key] && !contentDisabled(P_CENTERS[forced_key])) {
     center = P_CENTERS[forced_key];
     _type = center.set !== 'Default' ? center.set : _type;
   } else {
@@ -1719,10 +1746,12 @@ export function get_new_boss() {
   if (G.GAME.perscribed_bosses[ante]) {
     const b = G.GAME.perscribed_bosses[ante];
     delete G.GAME.perscribed_bosses[ante];
-    G.GAME.bosses_used[b] += 1;
-    return b;
+    if (!contentDisabled(P_BLINDS[b])) {
+      G.GAME.bosses_used[b] += 1;
+      return b;
+    }
   }
-  if (G.FORCE_BOSS) return G.FORCE_BOSS;
+  if (G.FORCE_BOSS && !contentDisabled(P_BLINDS[G.FORCE_BOSS])) return G.FORCE_BOSS;
   if (object_weights()) { // (Steamodded object_weights: SMODS.poll_object over SMODS.create_blind_pool)
     const b = poll_object({ type: 'Blind', blind_type: 'boss', seed: 'boss' });
     G.GAME.bosses_used[b] = (G.GAME.bosses_used[b] || 0) + 1;

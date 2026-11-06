@@ -10,7 +10,7 @@ import {
   level_up_hand, update_hand_text, calculate_reroll_cost, get_next_voucher_key, with_actor,
 } from './core.js';
 import { use_card, reroll_boss, HANDLIST } from './run.js';
-import { callHook, firstHook, ACTIVE as ACTIVE_MODS } from '../mods/registry.js';
+import { callHook, firstHook, contentDisabled, ACTIVE as ACTIVE_MODS } from '../mods/registry.js';
 
 /**
  * create_UIBox_blind_choice (UI_definitions.lua) rolls the Orbital Tag hand for
@@ -390,6 +390,7 @@ export class Tag {
 export function add_tag(_tag) {
   // A mod may swap the new tag (Bunco's Pin Collector: Double Tags arrive as Triple Tags).
   if (ACTIVE_MODS.length) { const r = firstHook('add_tag', _tag); if (r) _tag = r; }
+  if (_tag && contentDisabled(P_TAGS[_tag.key])) return;
   for (let i = 0; i < G.GAME.tags.length; i++) {
     G.GAME.tags[i].apply_to_run({ type: 'tag_add', tag: _tag });
   }

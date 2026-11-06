@@ -1,0 +1,20 @@
+import assert from 'node:assert/strict';
+import { BASE_JOKERS } from '../mods/jokertoggle/index.js';
+import { newRun } from '../js/engine/run.js';
+import { G, get_current_pool, Card, P_CENTERS } from '../js/engine/core.js';
+
+assert.equal(BASE_JOKERS.length, 150);
+newRun({ seed: 'TOGGLE', mods: ['jokertoggle'], modOptions: { jokertoggle: { j_joker: false } } });
+assert.equal(G.GAME.banned_keys.j_joker, true);
+assert(!get_current_pool('Joker', 0.2)[0].includes('j_joker'));
+const forced = new Card(null, P_CENTERS.j_joker);
+forced.add_to_deck(); G.jokers.emplace(forced);
+assert(!forced.added_to_deck && !G.jokers.cards.includes(forced), 'a direct constructor cannot bypass the switch');
+newRun({ seed: 'TOGGLE', mods: ['jokertoggle'], modOptions: { jokertoggle: { j_joker: true } } });
+assert(!G.GAME.banned_keys.j_joker);
+assert(get_current_pool('Joker', 0.2)[0].includes('j_joker'));
+const commonOff = Object.fromEntries(BASE_JOKERS.filter(([, c]) => c.rarity === 1).map(([key]) => [key, false]));
+newRun({ seed: 'TOGGLE', mods: ['jokertoggle'], modOptions: { jokertoggle: commonOff } });
+const fallback = get_current_pool('Joker', 0.2)[0];
+assert(fallback.length && fallback.every((key) => !G.GAME.banned_keys[key]), 'empty rarity never restores a banned fallback');
+console.log('Joker Toggle: original Joker count and enabled/disabled pool checks passed');
