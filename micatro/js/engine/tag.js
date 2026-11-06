@@ -36,6 +36,7 @@ export class Tag {
   constructor(_tag, for_collection, _blind_type) {
     this.key = _tag;
     const proto = P_TAGS[_tag] || { config: {}, name: 'Undiscovered Tag' };
+    const disabled = !for_collection && contentDisabled(proto);
     this.config = copy_table(proto.config);
     this.pos = proto.pos;
     this.name = proto.name;
@@ -43,13 +44,13 @@ export class Tag {
     this.triggered = false;
     G.tagid = G.tagid || 0;
     this.ID = G.tagid;
-    G.tagid = G.tagid + 1;
+    if (!disabled) G.tagid = G.tagid + 1;
     this.ability = {
       orbital_hand: '[' + localize('k_poker_hand') + ']',
       blind_type: _blind_type,
     };
-    G.GAME.tag_tally = G.GAME.tag_tally ? G.GAME.tag_tally + 1 : 1;
-    if (!for_collection) this.set_ability();
+    if (!disabled) G.GAME.tag_tally = G.GAME.tag_tally ? G.GAME.tag_tally + 1 : 1;
+    if (!for_collection && !disabled) this.set_ability();
   }
 
   nope() {
