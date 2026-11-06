@@ -43,6 +43,11 @@ for (const id of ['mikas', 'betmma']) {
       voucher.redeem();
       assert(!G.GAME.used_vouchers[center.key], 'a directly redeemed disabled voucher has no effect');
     }
+    if (center.consumeable) {
+      const consumable = new Card(null, center);
+      consumable.use_consumeable();
+      assert(!G.GAME.consumeable_usage[center.key], 'a directly used disabled consumable has no effect');
+    }
   }
 }
 await loadMods(['bunco']);

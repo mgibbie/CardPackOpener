@@ -123,7 +123,8 @@ export function jokerCollection() {
     }
     for (const [key, center] of matches.slice(page * 150, (page + 1) * 150)) {
       const record = winRecord(key);
-      const details = Object.entries(record).map(([category, level]) => `${category}: ${stickerName(level)} Stake`).join(', ');
+      const categoryNames = { win: 'Win', poke: 'Pokermon', nuz: 'Nuzlocke', mono: 'Monotype', both: 'Nuzlocke + Monotype' };
+      const details = Object.entries(record).map(([category, level]) => `${categoryNames[category] || category}: ${stickerName(level)} Stake`).join(', ');
       const item = h('button', 'joker-collection-item');
       item.type = 'button';
       const name = nameOf([key, center]);
