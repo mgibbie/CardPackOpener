@@ -618,7 +618,13 @@ b { font-weight: normal; }
 .rb-mark.ante { top: 2px; height: 22px; width: 3px; background: var(--attn); }
 .rb-mark.win { top: -4px; width: auto; height: auto; background: none; color: var(--money); font-size: 14px; transform: translateX(-50%); }
 .rb-mark.stop { top: 0; height: 26px; width: 3px; background: var(--red); }
-.rb-antes { display: flex; gap: 5px; overflow-x: auto; overscroll-behavior: contain; padding-bottom: 2px; scrollbar-width: thin; }
+.rb-ante-row { display: flex; align-items: flex-start; gap: 5px; min-width: 0; }
+.rb-antes { display: flex; flex: 1; min-width: 0; gap: 5px; overflow-x: auto; overscroll-behavior: contain; padding-bottom: 2px; scrollbar-width: thin; }
+.rb-ante-more { display: none; flex: none; }
+@media (orientation: portrait) {
+	.rb-ante-more { display: block; }
+	.rb-ante-row.expanded .rb-antes { flex-wrap: wrap; max-height: 35vh; overflow: auto; }
+}
 .rb-ante { flex: none; font-size: 15px; min-height: 28px; min-width: 0; padding: 4px 8px 2px; }
 .rb-ante.on { background: var(--attn); box-shadow: 0 3px 0 #b86f00; }
 .rb-ante.rb-win { background: #8a6d2a; }
