@@ -111,4 +111,9 @@ const { apply_type_sticker } = await import('../mods/pokermon/systems/types.js')
 const beforeType = tera.ability.extra.ptype;
 apply_type_sticker(tera, 'Fire');
 assert(!tera.ability.fire_sticker && tera.ability.extra.ptype === beforeType, 'disabled Tera type does not change the Joker type');
+const { POKETYPES } = await import('../mods/pokermon/systems/types.js');
+const onlyFire = Object.fromEntries(POKETYPES.filter((t) => t !== 'Fire').map((t) => ['content:' + t.toLowerCase() + '_sticker', false]));
+newRun({ seed: 'TOGGLE', mods: ['pokermon'], modOptions: { pokermon: onlyFire } });
+const randomTera = new Card(null, P_CENTERS.j_poke_bulbasaur);
+assert.equal(apply_type_sticker(randomTera), 'Fire', 'random Tera selection only offers enabled stickers');
 console.log('Mod center switch: default on, disabled pool, and subsequent enabled run passed');
