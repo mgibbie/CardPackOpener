@@ -5,14 +5,18 @@ await loadMods(AVAILABLE.map((m) => m.id));
 let checked = 0;
 for (const manifest of AVAILABLE) {
   const mod = MODS[manifest.id];
+  const items = [];
   for (const group of ['centers', 'tags', 'blinds', 'seals', 'stakes', 'suits', 'poker_hands', 'poker_hand_parts', 'stickers']) {
-    const item = (mod.content[group] || []).find((c) => c.key && !c.legacy && !c.unported && (group !== 'centers' || c.set));
-    if (!item) continue;
+    items.push(...(mod.content[group] || []).filter((c) => c.key && !c.legacy && !c.unported && (group !== 'centers' || c.set)));
+  }
+  const options = Object.fromEntries(items.map((item) => ['content:' + item.key, false]));
+  activateMods([manifest.id], { [manifest.id]: options });
+  const shown = new Set(modOptionList(manifest.id).map((o) => o.key));
+  for (const item of items) {
     const option = 'content:' + item.key;
-    assert(modOptionList(manifest.id).some((o) => o.key === option), `${manifest.id} exposes ${option}`);
-    activateMods([manifest.id], { [manifest.id]: { [option]: false } });
+    assert(shown.has(option), `${manifest.id} exposes ${option}`);
     assert.equal(centerActive(item), false, `${manifest.id} disables ${option}`);
     checked++;
   }
 }
-console.log(`${checked} content categories across shipped mods expose and apply individual switches`);
+console.log(`${checked} individual content switches across shipped mods are exposed and applied`);
