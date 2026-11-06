@@ -469,6 +469,7 @@ export class Card {
   /** Card(front, center, params) — positions/sizes from the Lua signature are dropped. */
   constructor(card, center, params) {
     this.params = (params && typeof params === 'object') ? params : {};
+    if ('playing_card' in this.params && center && center.set === 'Enhanced' && contentDisabled(center)) center = P_CENTERS.c_base;
     this.config = { card: card || {}, center };
     this.playing_card = this.params.playing_card;
     G.sort_id = (G.sort_id || 0) + 1;
@@ -717,6 +718,7 @@ export class Card {
   }
 
   change_suit(new_suit) {
+    if (contentDisabled(MOD_SUITS[new_suit])) return;
     const code = { Diamonds: 'D_', Spades: 'S_', Clubs: 'C_', Hearts: 'H_' }[new_suit] || (MOD_SUITS[new_suit] && MOD_SUITS[new_suit].card_key + '_');
     const v = this.base.value;
     const val = v === 'Ace' ? 'A' : v === 'King' ? 'K' : v === 'Queen' ? 'Q' : v === 'Jack' ? 'J' : v === '10' ? 'T' : v;
@@ -1466,6 +1468,7 @@ export function get_current_pool(_type, _rarity, _legendary, _append) {
       const candidates = (_type === 'Joker' ? P_CENTER_POOLS.Joker : _starting_pool || [])
         .filter((v) => !G.GAME.banned_keys[v.key] && !(G.GAME.used_jokers[v.key] && !showman)
           && !contentDisabled(v)
+          && !v.hidden && !(v.no_pool_flag && G.GAME.pool_flags[v.no_pool_flag]) && !(v.yes_pool_flag && !G.GAME.pool_flags[v.yes_pool_flag])
           && (v.unlocked !== false || v.rarity === 4) && (!v.in_pool || v.in_pool(v, { type: _type, append: _append }))
           && !callHook('pool_filter', v, _type, _append).includes(false));
       if (!candidates.length) throw new Error(`No available ${_type} remains after content bans`);
@@ -1661,6 +1664,7 @@ export function create_playing_card(card_init, area) {
   card_init = card_init || {};
   card_init.front = card_init.front || pseudorandom_element(P_CARDS_LIST(), pseudoseed('front'))[0];
   card_init.center = card_init.center || P_CENTERS.c_base;
+  if (contentDisabled(card_init.center)) card_init.center = P_CENTERS.c_base;
   G.playing_card = (G.playing_card || 0) + 1;
   const card = new Card(card_init.front, card_init.center, { playing_card: G.playing_card });
   G.playing_cards.push(card);
