@@ -1,5 +1,5 @@
 // More Fluff seeded run fingerprints: a fixed set of bot runs (micatro/tests/replay_bot.mjs, the live Session path)
-// with More Fluff on — its decks and stakes included — hashed frame by frame (every view + every action's events),
+// with More Fluff on — its decks and stakes included — hashed frame by frame (views + every action's events),
 // compared to the recorded baseline for THIS More Fluff pin (fixtures/morefluff_<pin>_fingerprints.json).
 // Any change to how the mod plays changes a hash: bump the mod's contentRev (js/mods/pins.js) and re-record:
 //   node micatro/tests/mods/morefluff_fingerprint_test.mjs --record
@@ -31,7 +31,13 @@ const got = {};
 for (const r of RUNS) {
   const { frames, recipe } = playRun(r.start, { seed: r.bot, endless: !!r.endless, maxSteps: 700 });
   const h = crypto.createHash('sha256');
-  for (const f of frames) { h.update(f.view); h.update(f.events); }
+  for (const f of frames) {
+    // stake_chip is presentation-only atlas metadata, not a More Fluff gameplay change.
+    // Its rendering is covered separately by overworld/tests/micatro_nuzlocke_test.mjs.
+    const view = JSON.parse(f.view);
+    delete view.stake_chip;
+    h.update(JSON.stringify(view)); h.update(f.events);
+  }
   got[r.name] = { actions: recipe.actions.length, frames: frames.length, hash: h.digest('hex').slice(0, 24) };
 }
 
