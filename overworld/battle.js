@@ -1035,8 +1035,13 @@ export class Battle {
 	// whole entry is dropped (an end-of-turn heal queued before a lethal hit landed)
 	pushMsg(text, fn, ifAlive) { this.active.queue.push(ifAlive ? { text, fn, ifAlive } : { text, fn }); }
 	// a line that only still applies if `when()` holds when it comes up — dropped
-	// (text and effect) otherwise
-	pushMsgIf(text, fn, when) { this.active.queue.push({ text, fn, when }); }
+	// (text and effect) otherwise. It goes THROUGH pushMsg (the one funnel every battle
+	// line takes — logs and the test harnesses hook it) and then tags the entry it queued.
+	pushMsgIf(text, fn, when) {
+		const q = this.active.queue, n = q.length;
+		this.pushMsg(text, fn);
+		if (q.length > n) q[q.length - 1].when = when;
+	}
 	// end-of-turn recovery never lifts a fainted mon: HP 0 is terminal until a revive
 	healAlive(mon, n) {
 		if (!mon || mon.curHP <= 0) return 0;

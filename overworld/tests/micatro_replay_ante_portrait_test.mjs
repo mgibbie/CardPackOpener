@@ -51,7 +51,14 @@ try {
     check(await page.evaluate(() => document.querySelector('.rb-ante-more').getAttribute('aria-expanded') === 'false'), 'the list can also be collapsed without seeking');
     await page.tap('.rb-ante-more');
     await page.setViewport({ width: 844, height: 390, isMobile: true, hasTouch: true, deviceScaleFactor: 1 });
-    check(await page.evaluate(() => getComputedStyle(document.querySelector('.rb-ante-more')).display === 'none' && document.querySelector('.rb-ante-more').getAttribute('aria-expanded') === 'false'), 'landscape closes the expansion and retains the existing ante row');
+    // The rotation reaches the page through matchMedia's 'change' event, which the browser
+    // dispatches on its next rendering step — never inside setViewport — so the collapse is
+    // waited for (bounded). Checking it in the same tick raced on loaded CI shards.
+    const closed = () => getComputedStyle(document.querySelector('.rb-ante-more')).display === 'none' && document.querySelector('.rb-ante-more').getAttribute('aria-expanded') === 'false';
+    // polled on a timer, not 'raf': the wait must not itself depend on the frame it waits for
+    const ok = await page.waitForFunction(closed, { timeout: 5000, polling: 100 }).then(() => true, () => false);
+    const seen = ok ? '' : '  ' + await page.evaluate(() => { const m = document.querySelector('.rb-ante-more'); return JSON.stringify({ display: getComputedStyle(m).display, expanded: m.getAttribute('aria-expanded'), portrait: matchMedia('(orientation: portrait)').matches, w: innerWidth, h: innerHeight }); });
+    check(ok, 'landscape closes the expansion and retains the existing ante row' + seen);
   }
 } catch (err) { failed++; console.error(err); }
 finally { if (browser) await browser.close(); server.close(); }
