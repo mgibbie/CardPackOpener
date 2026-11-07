@@ -19,6 +19,7 @@
  */
 import { G, P_CENTERS, emit, card_eval_status_text, localize, play_sound, pseudorandom_element, pseudoseed, find_joker } from '../../../js/engine/core.js';
 import { juice_card_until } from '../../../js/engine/jokers.js';
+import { contentDisabled } from '../../../js/mods/registry.js';
 import { calculate_context } from '../../../js/engine/run.js';
 import DATA from '../data.js';
 import { find_card, any, cfg } from './utils.js';
@@ -201,6 +202,7 @@ export function poke_evolve(card, to_key, immediate, evolve_message, transformat
   if (!to_key) return undefined;
   // Add-on dedupe (precedence.js): an evolution into an add-on duplicate of a Pokermon joker gives Pokermon's.
   to_key = precedence_key(to_key);
+  if (contentDisabled(P_CENTERS[to_key])) return undefined;
   for (const f of EVOLVE_INTERCEPTS) if (f.immediate && f.immediate(card, to_key)) immediate = true;
   if (immediate) { poke_backend_evolve(card, to_key, energize_amount); return undefined; }
   G.E_MANAGER.add_event(() => {
@@ -240,6 +242,7 @@ export const EVOLVE_INTERCEPTS = [];
 
 export function poke_backend_evolve(card, to_key, energize_amount) {
   to_key = precedence_key(to_key); // (add-on dedupe, as poke_evolve)
+  if (contentDisabled(P_CENTERS[to_key])) return;
   for (const f of EVOLVE_INTERCEPTS) if (f.backend && f.backend(card, to_key)) return;
   const custom_values_to_keep = {};
   let has_custom = false;
