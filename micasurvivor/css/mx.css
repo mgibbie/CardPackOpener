@@ -215,11 +215,11 @@
 }
 
 /* The main menu, collection and upgrades share the Play flow's Micatro palette.
-   Keep their existing layout and selectors so touch, pad and save logic are unchanged. */
+   Keep their existing layout and selectors so touch, pad and save logic are unchanged.
+   No screen background: the animated map stays visible behind the Micatro panels (owner's call). */
 :is(#scr-menu, #scr-dex, #scr-upgrades, #scr-modes) {
   --muted: #c6d1d3; --gold: #f3b958;
   color: #fff; font-family: 'm6x11', 'Courier New', monospace;
-  background: radial-gradient(circle at 45% 45%, #4f8a74 0%, #2f5a4b 45%, #18262a 100%);
   text-shadow: 0 2px 0 rgba(0,0,0,.35);
 }
 :is(#scr-menu, #scr-dex, #scr-upgrades, #scr-modes) :is(.box, .panel, .partner-card) {

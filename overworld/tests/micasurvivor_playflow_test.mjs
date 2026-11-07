@@ -211,8 +211,9 @@ try {
 	{
 		const d = await device({ guestSave: SAVE('Trainer') });
 		A(await d.boot(), 'a guest boots to the menu (1280x720)');
-		const menuStyle = await d.E(() => ({ font: getComputedStyle(document.getElementById('scr-menu')).fontFamily, panel: getComputedStyle(document.querySelector('#scr-menu .box')).backgroundColor }));
+		const menuStyle = await d.E(() => { const s = getComputedStyle(document.getElementById('scr-menu')); return { font: s.fontFamily, bgImage: s.backgroundImage, bgColor: s.backgroundColor, panel: getComputedStyle(document.querySelector('#scr-menu .box')).backgroundColor }; });
 		A(/m6x11/.test(menuStyle.font) && menuStyle.panel === 'rgb(58, 75, 79)', 'main menu uses Micatro font and slate panels', JSON.stringify(menuStyle));
+		A(menuStyle.bgImage === 'none' && /rgba\(0, 0, 0, 0\)|transparent/.test(menuStyle.bgColor), 'the animated map stays visible behind the menu (no screen background)', JSON.stringify(menuStyle));
 		await d.shot('menu_micatro_desktop.png');
 		await d.E(() => document.querySelector('#scr-menu [data-go=upgrades]').click());
 		const upgradesStyle = await d.E(() => ({ open: G.UI.isOpen('scr-upgrades'), font: getComputedStyle(document.getElementById('scr-upgrades')).fontFamily, panel: getComputedStyle(document.querySelector('#scr-upgrades .box')).backgroundColor, cards: document.querySelectorAll('#upg-list .upg-item').length, selected: +document.getElementById('upg-mon').value }));
