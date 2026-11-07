@@ -149,9 +149,9 @@ try {
 			G.E_MANAGER.flush();
 			G.GAME.round_resets.ante = G.GAME.win_ante;
 		}, opts.jokers || []);
-		const act = async (a) => { await idle(d); const r = await d.page.evaluate((a) => window.__micatro.act(a), a); await idle(d); return r; };
+		const act = async (a) => { await idle(d); const r = await d.page.evaluate((a) => window.__micatro.act(a), a); await idle(d); if (a.type === 'cash_out' && /_PACK/.test((await d.page.evaluate(() => window.__micatro.view())).state)) { await d.page.evaluate(() => window.__micatro.act({ type: 'skip_booster' })); await idle(d); } /* (a Page's prize pack opens after the cash-out) */ return r; };
 		for (let b = 0; b < 3; b++) {
-			await act({ type: 'select_blind' }); await act({ type: 'pick_page', index: 0 }); // (Pages)
+			await idle(d); await d.page.evaluate(() => window.__micatro.selectBlind()); await idle(d); // (Pages: a plain Page)
 			const ids = await d.page.evaluate(async () => { const { G } = await import('/micatro/js/engine/core.js'); G.GAME.chips = G.GAME.blind.chips; return [G.hand.cards[0].sort_id]; });
 			await act({ type: 'highlight', ids });
 			await act({ type: 'play' });

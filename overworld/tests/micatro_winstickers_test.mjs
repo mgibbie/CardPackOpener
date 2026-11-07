@@ -99,9 +99,9 @@ try {
 			G.GAME.round_resets.ante = G.GAME.win_ante;
 			G.GAME.round_resets.blind_choices.Boss = 'bl_wall';   // (a plain boss: the Elite stake's last antes are showdowns)
 		}, opts.jokers || []);
-		const act = async (a) => { await idle(); const r = await page.evaluate((a) => window.__micatro.act(a), a); await idle(); return r; };
+		const act = async (a) => { await idle(); const r = await page.evaluate((a) => window.__micatro.act(a), a); await idle(); if (a.type === 'cash_out' && /_PACK/.test((await page.evaluate(() => window.__micatro.view())).state)) { await page.evaluate(() => window.__micatro.act({ type: 'skip_booster' })); await idle(); } /* (a Page's prize pack opens after the cash-out) */ return r; };
 		for (let b = 0; b < 3; b++) {
-			await act({ type: 'select_blind' }); await act({ type: 'pick_page', index: 0 }); // (Pages)
+			await idle(); await page.evaluate(() => window.__micatro.selectBlind()); await idle(); // (Pages: a plain Page)
 			const ids = await page.evaluate(async () => { const { G } = await import('/micatro/js/engine/core.js'); G.GAME.chips = G.GAME.blind.chips; return [G.hand.cards[0].sort_id]; });
 			await act({ type: 'highlight', ids });
 			await act({ type: 'play' });

@@ -177,7 +177,7 @@ try {
 		return ok;
 	};
 	const idle = (d) => waitFor(() => d.page.evaluate(() => window.__micatro.idle()), 30000);
-	const act = async (d, a) => { await idle(d); const r = await d.page.evaluate((a) => { const r = window.__micatro.act(a); return { ok: r.ok, error: r.error }; }, a); await idle(d); return r; };
+	const act = async (d, a) => { await idle(d); const r = await d.page.evaluate((a) => { const r = window.__micatro.act(a); return { ok: r.ok, error: r.error }; }, a); await idle(d); if (a.type === 'cash_out' && /_PACK/.test((await d.page.evaluate(() => window.__micatro.view())).state)) { await d.page.evaluate(() => window.__micatro.act({ type: 'skip_booster' })); await idle(d); } /* (a Page's prize pack opens after the cash-out) */ return r; };
 	/** The tester's real run (replayable): play its actions [from, to) through the board. */
 	const playFx = async (d, from, to) => {
 		for (let i = from; i < to; i++) { const r = await act(d, FX.actions[i]); if (!r.ok) return { i, r }; }
@@ -185,7 +185,7 @@ try {
 	};
 	/** A few replayable moves in a fresh run: select the blind, pick a card, discard it. */
 	const fewMoves = async (d) => {
-		await act(d, { type: 'select_blind' }); await act(d, { type: 'pick_page', index: 0 }); // (Pages)
+		await idle(d); await d.page.evaluate(() => window.__micatro.selectBlind()); await idle(d); // (Pages: a plain Page)
 		const ids = await d.page.evaluate(() => [window.__micatro.view().areas.hand[0].id]);
 		await act(d, { type: 'highlight', ids });
 		await act(d, { type: 'discard' });
@@ -194,7 +194,7 @@ try {
 	const winNow = async (d) => {
 		await d.page.evaluate(async () => { const { G } = await import('/micatro/js/engine/core.js'); G.GAME.round_resets.ante = G.GAME.win_ante; });
 		for (let b = 0; b < 3; b++) {
-			await act(d, { type: 'select_blind' }); await act(d, { type: 'pick_page', index: 0 }); // (Pages)
+			await idle(d); await d.page.evaluate(() => window.__micatro.selectBlind()); await idle(d); // (Pages: a plain Page)
 			const ids = await d.page.evaluate(async () => { const { G } = await import('/micatro/js/engine/core.js'); G.GAME.chips = G.GAME.blind.chips; return [G.hand.cards[0].sort_id]; });
 			await act(d, { type: 'highlight', ids });
 			await act(d, { type: 'play' });
@@ -326,7 +326,7 @@ try {
 	await clickContinue(devB);
 	A(await waitFor(() => devB.page.evaluate(() => !!document.querySelector('.run-choice .b-run-local') && !!document.querySelector('.run-choice .b-run-account')), 10000), 'Continue asks which run to continue');
 	const choiceText = await devB.page.evaluate(() => document.querySelector('.run-choice').textContent.replace(/\u00a0/g, ' '));
-	A(/On this device/.test(choiceText) && /From another device \(PC\)/.test(choiceText) && (choiceText.match(/Ante 1 · Round 1/g) || []).length === 2 && /3 moves/.test(choiceText), 'it shows both runs with where they are', choiceText.slice(0, 300));
+	A(/On this device/.test(choiceText) && /From another device \(PC\)/.test(choiceText) && (choiceText.match(/Ante 1 · Round 1/g) || []).length === 2 && /4 moves/.test(choiceText), 'it shows both runs with where they are', choiceText.slice(0, 300));
 	await shot(devB, 'runsync-choice-desktop.png');
 	await devB.page.setViewport(PHONE);
 	A(await boot(devB, 'rsync'), 'device B at phone size');

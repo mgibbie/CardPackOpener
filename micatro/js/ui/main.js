@@ -818,12 +818,20 @@ async function boot() {
     view: () => (session ? viewOf() : board.view),
     loadMods: (ids) => ensureMods(ids),
     act: (a) => onAction(a),
-    // (tests / bots: select the blind on deck and, in a run with Pages, take Page `page` once the screen is up -> the pick's result)
-    selectBlind: async (page = 0) => {
+    // (tests / bots: select the blind on deck and, in a run with Pages, take a Page once the screen is up -> the pick's result.
+    //  `page`: an index, or 'plain' (default) = the quietest prize for a test that isn't about Pages: money, else a card, else a
+    //  next-shop perk, else a pack — so the cash-out goes straight to the shop whenever it can)
+    selectBlind: async (page = 'plain') => {
       const r = onAction({ type: 'select_blind' });
       if (!r.ok || !session || !session.view().pages) return r;
       await new Promise((res) => { const t = () => (player.idle() ? res() : setTimeout(t, 30)); t(); });
-      return onAction({ type: 'pick_page', index: page });
+      let i = page;
+      if (!Number.isInteger(i)) {
+        const ch = session.view().pages.choices;
+        i = 0;
+        for (const kind of ['pack', 'shop', 'card', 'money']) { const j = ch.findIndex((p) => p.prize && p.prize.kind === kind); if (j >= 0) i = j; }
+      }
+      return onAction({ type: 'pick_page', index: i });
     },
     events: allEvents,
     mode: MODE,

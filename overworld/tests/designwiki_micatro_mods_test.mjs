@@ -359,7 +359,7 @@ try {
 	A(await open('micatro/big-numbers', 'table', 1) && await page.$eval('#content', el => /9\.99e999/.test(el.textContent) && /naneinf/.test(el.textContent)), 'big-number page');
 	A(await open('micatro/replays', 'table', 1) && await page.$eval('#content', el => /\/mr\/<id>/.test(el.textContent) && /whole run/.test(el.textContent)), 'replays page');
 	A(await open('micatro/pages', 'table', 2) && await page.$eval('#content', el => /Prize tiers/.test(el.textContent) && /Brutal/.test(el.textContent) && /Joker Toggle/.test(el.textContent)), 'Pages page');
-	A(await open('micatro', '.mc-featlink', 3) && await page.$$eval('#content .mc-featlink', e => e.length) === 3 && await page.$$eval('#content .mc-idx', e => e.length) === 11, 'vanilla overview: its 11 categories + the 3 built-in feature pages');
+	A(await open('micatro', '.mc-featlink', 4) && await page.$$eval('#content .mc-featlink', e => e.length) === 4 && await page.$$eval('#content .mc-idx', e => e.length) === 11, 'vanilla overview: its 11 categories + the 4 built-in feature pages (Pages too)');
 	// phone
 	await page.setViewport({ width: 390, height: 844 });
 	for (const r of ['micatro-mods', 'micatro-mods/jokers', 'micatro-mods/jokers?mod=bunco', 'micatro-mods/new-consumables', 'micatro-mods/blinds', 'micatro-mods/modifiers', 'micatro-mods/challenges', 'micatro-mods/skins', 'micatro-mods/mod/bunco', 'micatro-mods/mod/pokermon', 'micatro/deck-editor', 'micatro/replays', 'search?q=joker']) {

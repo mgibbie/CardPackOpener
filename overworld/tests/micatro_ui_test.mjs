@@ -199,7 +199,7 @@ try {
 
 		await clickSel(page, '.b-select');
 		await idle(page); await sleep(400);
-		A((await V(page)).state === 'PAGES' && await page.evaluate(() => document.querySelectorAll('.overlay .page-card').length === 3), 'Select opens the Pages screen');
+		A((await V(page)).state === 'PAGES' && await page.evaluate(() => document.querySelectorAll('.overlay .page-card').length === 3), 'Select opens the Pages screen', JSON.stringify(await page.evaluate(() => [window.__micatro.view().state, window.__micatro.view().pages_on, document.querySelectorAll('.overlay .page-card').length])));
 		await clickSel(page, '.b-pick-page');
 		await idle(page); await sleep(400);
 		v = await V(page);
