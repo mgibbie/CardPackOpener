@@ -112,19 +112,33 @@ export async function startReplay(ctx) {
   if (scan.end.error) { const m = h('span', 'rb-mark stop'); m.style.left = pct(scan.end.error.index) + '%'; m.title = 'The replay stops here'; marks.appendChild(m); }
   scrubWrap.append(marks, range);
   // ante chips
+  const anteRow = h('div', 'rb-ante-row');
   const chips = h('div', 'rb-antes');
+  chips.id = 'rb-ante-list';
+  const more = B('…', 'rb-ante-more', 'Show all antes', () => setAnteExpanded(!anteRow.classList.contains('expanded')));
+  more.setAttribute('aria-controls', chips.id);
+  more.setAttribute('aria-expanded', 'false');
+  function setAnteExpanded(open) {
+    anteRow.classList.toggle('expanded', open);
+    more.setAttribute('aria-expanded', String(open));
+    more.setAttribute('aria-label', open ? 'Collapse ante list' : 'Show all antes');
+    more.title = open ? 'Collapse ante list' : 'Show all antes';
+  }
+  const portrait = matchMedia('(orientation: portrait)');
+  portrait.addEventListener('change', () => { if (!portrait.matches) setAnteExpanded(false); });
   for (const a of scan.antes) {
-    const c = B('Ante ' + a.ante, 'rb-ante', `Skip to Ante ${a.ante}`, () => seekTo(a.index));
+    const c = B('Ante ' + a.ante, 'rb-ante', `Skip to Ante ${a.ante}`, () => { setAnteExpanded(false); seekTo(a.index); });
     c.dataset.index = a.index; c.dataset.ante = a.ante;
     chips.appendChild(c);
   }
-  if (scan.winIndex != null) { const c = B('★ Win', 'rb-ante rb-win', 'Skip to the win', () => seekTo(scan.winIndex)); c.dataset.index = scan.winIndex; chips.appendChild(c); }
+  if (scan.winIndex != null) { const c = B('★ Win', 'rb-ante rb-win', 'Skip to the win', () => { setAnteExpanded(false); seekTo(scan.winIndex); }); c.dataset.index = scan.winIndex; chips.appendChild(c); }
+  anteRow.append(chips, more);
   const note = h('div', 'rb-note');
   note.style.display = 'none';
   const tuck = h('button', 'rb-handle', '▴ Replay');
   tuck.type = 'button';
   tuck.addEventListener('click', (e) => { e.stopPropagation(); poke(); });
-  bar.append(tuck, note, row1, scrubWrap, chips);
+  bar.append(tuck, note, row1, scrubWrap, anteRow);
   document.body.appendChild(bar);
   document.body.classList.add('has-replay-bar');
   // the controller's hint strip sits just above the bar (--rb-h)
@@ -282,7 +296,7 @@ export async function startReplay(ctx) {
   function poke() {
     bar.classList.remove('tucked'); document.body.classList.remove('rb-tucked');
     clearTimeout(tuckTimer);
-    tuckTimer = setTimeout(() => { if (playing && !scrubbing && !mouseIn) { bar.classList.add('tucked'); document.body.classList.add('rb-tucked'); } else if (playing) poke(); }, 4000);
+    tuckTimer = setTimeout(() => { if (playing && !scrubbing && !mouseIn && !anteRow.classList.contains('expanded')) { bar.classList.add('tucked'); document.body.classList.add('rb-tucked'); } else if (playing) poke(); }, 4000);
   }
   addEventListener('pointermove', (e) => { if (e.pointerType === 'mouse' && e.clientY > innerHeight - 220) poke(); }, { passive: true });
   // a tap on the TUCKED bar only brings it back: the click that follows lands on whatever slid up

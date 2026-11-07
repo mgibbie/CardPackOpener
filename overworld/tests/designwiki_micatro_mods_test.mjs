@@ -212,7 +212,9 @@ try {
 	// big lists draw 60 at a time: press every "Show all" (category / mod pages)
 	const showAll = () => page.$$eval('#content .mm-pager:not([hidden]) .mm-all', b => b.forEach(x => x.click()));
 	// the overview: hero, one tile per category (with its count), the By-mod grid
-	A(await open('micatro-mods', '.mc-modcard', W.mods.length) && await page.$$eval('#content .mc-modcard', e => e.length) === W.mods.length, `#/micatro-mods: the By-mod grid lists all ${W.mods.length} mods`);
+	const overviewReady = await open('micatro-mods', '.mc-modcard', W.mods.length);
+	const overviewMods = await page.$$eval('#content .mc-modcard', e => e.map(x => x.dataset.mod));
+	A(overviewReady && overviewMods.length === W.mods.length, `#/micatro-mods: the By-mod grid lists all ${W.mods.length} mods`, JSON.stringify(overviewMods));
 	const tiles = await page.$$eval('#content .mc-idx[data-cat]', e => e.map(x => [x.dataset.cat, x.getAttribute('href'), x.textContent]));
 	A(tiles.length === W.categories.length && W.categories.every((c, i) => tiles[i][0] === c.id && tiles[i][1] === '#/micatro-mods/' + c.id && tiles[i][2].includes(c.count.toLocaleString('en-US') + ' entries')), `#/micatro-mods: a tile per category (${W.categories.length}) with its count`, JSON.stringify(tiles.slice(0, 3)));
 	A(await page.$eval('#content .mc-hero h1', e => e.textContent) === 'Micatro Mods', 'overview: its own hero');

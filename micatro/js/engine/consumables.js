@@ -23,7 +23,7 @@ import {
   set_consumeable_usage, check_for_unlock, inc_career_stat, probability_roll, has_quantum_enhancement, mod_context_effect,
   with_actor,
 } from './core.js';
-import { callHook, reduceHook, firstHook, ACTIVE as ACTIVE_MODS } from '../mods/registry.js';
+import { callHook, reduceHook, firstHook, contentDisabled, ACTIVE as ACTIVE_MODS } from '../mods/registry.js';
 import { change_shop_size } from './run.js';
 import { wanted, calculate_seam, SEAM_STATE, base_seal_roll } from './smods.js';
 
@@ -83,6 +83,7 @@ const hand_x = (c) => G.hand.cards.indexOf(c);
 
 // ------------------------------------------------------ Card:use_consumeable
 Card.prototype.use_consumeable = function (area, copier) {
+  if (contentDisabled(this.config.center)) return;
   stop_use();
   if (!copier) set_consumeable_usage(this);
   if (this.debuff) return undefined;
@@ -556,6 +557,7 @@ Card.prototype.explode = function () {
 
 // ----------------------------------------------------------------- Card:open
 Card.prototype.open = function () {
+  if (contentDisabled(this.config.center)) return;
   if (this.ability.set === 'Booster') {
     // A mod may re-open the pack in place (Bunco's Shell Game: reroll its contents once): its state, size and
     // choices stay as they are, and it isn't paid for or exploded again (Shell Game lovely patches 4-10).
@@ -715,6 +717,7 @@ Card.prototype.open = function () {
 
 // --------------------------------------------------------------- Card:redeem
 Card.prototype.redeem = function (layer) {
+  if (contentDisabled(this.config.center)) return;
   if (this.ability.set === 'Voucher') {
     // Mods acting as a voucher is redeemed (a Lua Card:redeem wrap; BETMMA's B1G vouchers): what they
     // return runs once this redeem is done.
@@ -760,6 +763,7 @@ Card.prototype.redeem = function (layer) {
 // ---------------------------------------------------------- Card:apply_to_run
 /** Card.apply_to_run(self, center) — `self` may be null (backs/tags call it as Card.apply_to_run(nil, center)). */
 function apply_to_run(self, center) {
+  if (contentDisabled(center || (self && self.config.center))) return;
   // Mods seeing every voucher applied (a Lua Card:apply_to_run wrap; BETMMA's Collector counts them).
   if (ACTIVE_MODS.length) callHook('apply_to_run', self, center);
   // Steamodded: a mod voucher's redeem(self, card) replaces the vanilla effects.

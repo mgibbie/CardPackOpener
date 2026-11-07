@@ -14,6 +14,7 @@
  * and the energy tooltip; Micatro does that through the engine's `describe` hook.
  */
 import { G, pseudorandom_element, pseudoseed, localize } from '../../../js/engine/core.js';
+import { STICKERS, contentDisabled } from '../../../js/mods/registry.js';
 import { cfg } from './utils.js';
 
 export const POKETYPES = ['Grass', 'Fire', 'Water', 'Lightning', 'Psychic', 'Fighting', 'Colorless', 'Dark', 'Metal', 'Fairy', 'Dragon', 'Earth'];
@@ -125,7 +126,12 @@ export function apply_type_sticker(card, sticker_type) {
   let apply_type;
   for (const f of TERA_OVERRIDES) { const t = f(card, sticker_type); if (t) sticker_type = t; }
   if (sticker_type) apply_type = sticker_type;
-  else apply_type = pseudorandom_element(POKETYPES, pseudoseed('tera'))[0];
+  else {
+    const types = POKETYPES.filter((type) => !contentDisabled(STICKERS[type.toLowerCase() + '_sticker']));
+    if (!types.length) return undefined;
+    apply_type = pseudorandom_element(types, pseudoseed('tera'))[0];
+  }
+  if (contentDisabled(STICKERS[apply_type.toLowerCase() + '_sticker'])) return undefined;
   card.ability[apply_type.toLowerCase() + '_sticker'] = true;
   for (const v of POKETYPES) if (v.toLowerCase() !== apply_type.toLowerCase()) card.ability[v.toLowerCase() + '_sticker'] = false;
   const ex = extraTable(card);
