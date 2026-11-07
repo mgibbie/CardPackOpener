@@ -19,7 +19,7 @@
 // snapshotted (its micatro/ tree, through a temporary git index — no checkout) and its mods are
 // loaded headlessly by tools/micatro/dump_mod_items.mjs. A mod's first appearance is a mod release
 // (per-set counts); later cards it gains are listed as new mod cards. Snapshots are cached by the
-// micatro/ tree hash in the OS temp dir. Built-in features (big-number scoring, the deck editor,
+// micatro/ tree hash in the OS temp dir. Built-in features (big-number scoring, the deck editor, Pages,
 // replays) get an entry on the commit that first adds their engine file.
 
 import { execFileSync } from 'child_process';
@@ -96,6 +96,7 @@ const MICATRO_FEATURES = [
 	{ file: 'micatro/js/engine/bignum.js', id: 'big-numbers', title: 'Big-number scoring', blurb: 'Scores go past Balatro’s naneinf, up to 9.99e999 — in every run.' },
 	{ file: 'micatro/js/engine/customdeck.js', id: 'deck-editor', title: 'Deck editor', blurb: 'Build, share and play your own decks (New Run → Custom deck).' },
 	{ file: 'micatro/js/replays.js', id: 'replays', title: 'Replays', blurb: 'Watch any finished run again, start to finish — and share the link.' },
+	{ file: 'micatro/js/engine/pages.js', id: 'pages', title: 'Pages', blurb: 'Before every Blind, pick one of 3 Pages: a twist for the round and a prize for beating it.' },
 ];
 const featureAt = {};
 for (const ft of MICATRO_FEATURES) {
