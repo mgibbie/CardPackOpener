@@ -43,6 +43,13 @@ for (const [stem, ops] of Object.entries(scripts).sort()) {
 	const m = id && loadMap(id);
 	if (!m) continue;
 	for (const w of m.warps) {
+		// A Trick House maze exit belongs to the port's own gate (ow_venues.js
+		// trickWarp: sealed until the room's SCROLL is found). Emerald opens it with
+		// a setmetatile from a door you press A on (MB_TRICK_HOUSE_PUZZLE_DOOR), which
+		// the port never runs — so governing it by its cell left Puzzle 1's exit a
+		// wall for good, scroll or no scroll (bug:1793645886886). Puzzles 2-8 were
+		// never listed (their door script lives in the Entrance's file).
+		if (/TrickHousePuzzle\d$/.test(stem) && /TRICK_HOUSE_END$/.test(w.dest_map)) continue;
 		const values = [];
 		for (const o of ops) {
 			if (o.op === 'setmetatile' && +o.x === w.x && +o.y === w.y) {

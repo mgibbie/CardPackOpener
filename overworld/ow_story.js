@@ -32,12 +32,12 @@ import { BOSS_CLASSES } from './trainers.js';
 // main.js's own declarations (a safe cycle: only used inside functions)
 import { openRadio, playerTID } from './ow_features.js';
 import { startNpcTrade } from './ow_screens.js';
-import { bossLevelFor, inJohKanto, johkantoLeagueKind, routeTrainerLevel, startCutscene, startMarowakBattle } from './ow_scaling.js';
+import { bossLevelFor, inJohKanto, johkantoLeagueKind, routeTrainerLevel, startCutscene, startMarowakBattle, startScriptedWildBattle } from './ow_scaling.js';
 import { enterSafariMode, exitSafariMode, whiteOut } from './ow_places.js';
 import { PC_BOXES, PC_BOX_CAP, getBox, openSeagallopMenu, seagallopSpawn } from './ow_menukeys.js';
 import { enterHallOfFame, notePostBattleFinished, onTrainerDefeated, playerRegion } from './ow_progression.js';
 import { buildMonForGift } from './ow_gamecorner.js';
-import { dexMilestoneCheck, hideResolvedLegendaryObjects, refreshFollower } from './ow_follower.js';
+import { dexMilestoneCheck, hideResolvedLegendaryObjects, legendariesHere, refreshFollower } from './ow_follower.js';
 import { halfParty, openHalfParty, openTownMap } from './ow_music.js';
 import { townMap } from './ow_menustate.js';
 import { describeDecoration, playersHousePCSpecial, toggleDecorationsVisibility, toggleMaptileDecorations } from './decorations.js';
@@ -1237,6 +1237,17 @@ export function runSpecial(name, store, op) {
 		// Pokémon Tower 6F's ghost MAROWAK (FireRed): a no-store action special that
 		// was missing, so the script read a stale VAR_RESULT and never fought
 		case 'StartMarowakBattle': return startMarowakBattle();
+		// Emerald's legendary lairs (`setwildbattle SPECIES_GROUDON, 70` + this special;
+		// the transpile dropped the setwildbattle). Unhandled, it fought nothing and the
+		// script read WON: Terra Cave's trigger square (17,26) IS the tile the native
+		// GROUDON encounter sits on, the coord script ran first, "defeated" GROUDON with
+		// no battle and swallowed the step (bug:1793979117166). Fight the map's placed
+		// legendary instead — same flag, so a save still gets exactly one.
+		case 'BattleSetup_StartLegendaryBattle': {
+			const legs = legendariesHere();
+			if (legs.length !== 1) return;
+			return startScriptedWildBattle(legs[0].species, legs[0].level);
+		}
 		// Lilycove Department Store's elevator (its menu + dynamic warp are
 		// restored by tools/gen_multichoice.mjs). The floor you rode from is the
 		// map you came in by; the menu's cursor starts on it (5F is option 0).
