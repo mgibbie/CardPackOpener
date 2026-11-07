@@ -211,10 +211,28 @@ try {
 	{
 		const d = await device({ guestSave: SAVE('Trainer') });
 		A(await d.boot(), 'a guest boots to the menu (1280x720)');
+		const menuStyle = await d.E(() => ({ font: getComputedStyle(document.getElementById('scr-menu')).fontFamily, panel: getComputedStyle(document.querySelector('#scr-menu .box')).backgroundColor }));
+		A(/m6x11/.test(menuStyle.font) && menuStyle.panel === 'rgb(58, 75, 79)', 'main menu uses Micatro font and slate panels', JSON.stringify(menuStyle));
+		await d.shot('menu_micatro_desktop.png');
+		await d.E(() => document.querySelector('#scr-menu [data-go=upgrades]').click());
+		const upgradesStyle = await d.E(() => ({ open: G.UI.isOpen('scr-upgrades'), font: getComputedStyle(document.getElementById('scr-upgrades')).fontFamily, panel: getComputedStyle(document.querySelector('#scr-upgrades .box')).backgroundColor, cards: document.querySelectorAll('#upg-list .upg-item').length, selected: +document.getElementById('upg-mon').value }));
+		A(upgradesStyle.open && /m6x11/.test(upgradesStyle.font) && upgradesStyle.panel === 'rgb(58, 75, 79)' && upgradesStyle.cards > 0 && upgradesStyle.selected === 4, 'character upgrades retain the selected partner and use Micatro styling', JSON.stringify(upgradesStyle));
+		await d.shot('upgrades_micatro_desktop.png');
+		await d.E(() => document.querySelector('#scr-upgrades [data-back]').click());
+		await d.E(() => { document.querySelector('#scr-menu [data-go=dex]').click(); [...document.querySelectorAll('#dex-grid .cell')].find(c => c.querySelector('.no').textContent === '002').click(); document.getElementById('dex-pick').click(); document.querySelector('#scr-dex [data-back]').click(); document.querySelector('#scr-menu [data-go=play]').click(); });
+		A((await d.state()).step === 2 && await d.E(() => G.DB.save.partner === 2 && document.querySelector('.mx-selected-partner').innerText.includes(G.DEX_BY[2].name)), 'collection partner carries through the menu to mode selection');
+		await d.click('#mx-change-character');
+		await d.click('#mx-back');
+		A((await d.state()).step === 2, 'back from the optional picker returns to mode selection');
+		await d.click('#mx-back');
+		A(await d.visible('scr-menu'), 'back from mode selection returns to the menu');
+		await d.E(() => { G.DB.save.partner = 4; G.DB.commit(); });
 		await d.E(() => document.querySelector('#scr-menu [data-go=play]').click());
 		await sleep(150);
 		let s = await d.state();
-		A(await d.visible('scr-play') && s.step === 1 && await d.E(() => G.Game.state === 'ui'), 'menu Play opens the flow at step 1 (Pokémon), no run', JSON.stringify(s));
+		A(await d.visible('scr-play') && s.step === 2 && await d.E(() => G.Game.state === 'ui' && document.querySelector('#mx-change-character') && document.querySelector('.mx-selected-partner').innerText.includes(G.DEX_BY[G.DB.save.partner].name)), 'menu Play keeps the selected partner and opens mode selection', JSON.stringify(s));
+		await d.click('#mx-change-character');
+		A((await d.state()).step === 1, 'the character picker remains available on request');
 		const mine = await d.E(() => { const o = Object.keys(G.DB.save.owned).map(Number).filter(x => G.DEX_BY[x] && G.SPRITE_META[x]).sort((a, b) => a - b); return { g1: o.filter(x => G.DEX_BY[x].gen === 1), gens: [...new Set(o.map(x => G.DEX_BY[x].gen))].length, n: o.length }; });
 		const g1 = await d.E(() => ({ cells: [...document.querySelectorAll('#scr-play .mx-cell')].map(c => +c.dataset.dex), on: +(document.querySelector('#scr-play .mx-cell.on') || {}).dataset?.dex,
 			tabs: [...document.querySelectorAll('#scr-play .mx-tab')].map(t => t.innerText.replace(/\s+/g, ' ')), crumbs: document.getElementById('mx-crumbs').innerText.replace(/\s+/g, ' '),
@@ -258,7 +276,7 @@ try {
 			A((await d.state()).step === 2, `Back from ${c}'s variants -> step 2`);
 		}
 		// picking another character now writes the League pick at once (the Expedition is loaded)
-		await d.click('#mx-back');
+		await d.click('#mx-change-character');
 		await d.click('[data-dex="7"]');
 		const lg2 = await d.E(() => ({ partner: G.DB.save.partner, pick: G.ExpLeague.readPick(), form: G.ExpLeague.formFor(G.ExpLeague.pickFor()) }));
 		A(lg2.partner === 7 && lg2.pick === 7 && lg2.form === 7, 'a new character with the Expedition loaded: base partner AND League pick / form = Squirtle', JSON.stringify(lg2));
@@ -482,7 +500,9 @@ try {
 		await d.press(13); await sleep(150);
 		A(await d.navTo('#scr-menu [data-go=play]'), 'pad: the D-pad reaches Play');
 		await d.press(1); await sleep(250);   // (Nintendo layout: the right face button confirms)
-		A((await d.state()).step === 1 && await d.visible('scr-play'), 'pad: confirm on Play opens step 1');
+		A((await d.state()).step === 2 && await d.visible('scr-play'), 'pad: confirm on Play opens mode selection');
+		A(await d.navTo('#mx-change-character'), 'pad: the character picker is reachable');
+		await d.press(1); await sleep(200);
 		A(await waitFor(() => d.E(() => { const f = document.querySelector('.pad-focus'); return !!f && f.matches('.mx-cell.on') && +f.dataset.dex === G.DB.save.partner; }), 2000), 'pad: step 1 focuses your partner\'s cell');
 		await d.shot('play_pad_step1.png');
 		await d.press(1); await sleep(200);
@@ -511,13 +531,13 @@ try {
 		const ty1 = await d.E(() => ({ type: G.Modes.prefs().type, focus: document.querySelector('.pad-focus') && document.querySelector('.pad-focus').dataset.car }));
 		A(ty1.type !== ty0 && ty1.focus === 'type', 'pad: confirm on › changes the type and keeps the focus on the arrow', JSON.stringify([ty0, ty1]));
 		await d.shot('play_pad_setup.png');
-		// back to the menu with cancel x5, then confirm x6 replays the last setup (Type Survival, solo)
-		for (let i = 0; i < 5; i++) { await d.press(0); await sleep(150); }
-		A(await d.visible('scr-menu'), 'pad: cancel from Setup x5 -> the menu');
+		// back to the menu, then replay the last setup (Type Survival, solo)
+		for (let i = 0; i < 4; i++) { await d.press(0); await sleep(150); }
+		A(await d.visible('scr-menu'), 'pad: cancel from Setup x4 -> the menu');
 		await d.navTo('#scr-menu [data-go=play]');
 		const typeNow = await d.E(() => G.Modes.prefs().type);
-		for (let i = 0; i < 6; i++) { await d.press(1); await sleep(250); }
-		A(await waitFor(() => d.E(() => G.Game.state === 'playing'), 15000), 'pad: confirm x6 from the menu replays the last setup and starts the run');
+		for (let i = 0; i < 5; i++) { await d.press(1); await sleep(250); }
+		A(await waitFor(() => d.E(() => G.Game.state === 'playing'), 15000), 'pad: confirm x5 from the menu replays the last setup and starts the run');
 		const run = await d.E(() => G.Modes.run);
 		A(run.mode === 'type' && run.type === typeNow, 'pad: ...the same Type Survival run', JSON.stringify(run));
 		await d.E(() => { window.__pads[0] = null; });
@@ -529,8 +549,15 @@ try {
 	{
 		const d = await device({ guestSave: SAVE('Trainer') }, { width: 844, height: 390, hasTouch: true, isMobile: true });
 		A(await d.boot(), 'phone 844x390 boots');
+		await d.shot('menu_micatro_phone.png');
+		await d.E(() => document.querySelector('#scr-menu [data-go=upgrades]').click());
+		const upPhone = await d.E(() => { const box = document.querySelector('#scr-upgrades .box').getBoundingClientRect(), select = document.getElementById('upg-mon').getBoundingClientRect(); return { l: box.left, r: box.right, b: box.bottom, selectRight: select.right, scroll: document.documentElement.scrollWidth }; });
+		A(upPhone.l >= 0 && upPhone.r <= 844 && upPhone.b <= 390 && upPhone.selectRight <= 844 && upPhone.scroll <= 844, 'phone: Micatro-style upgrades stay on screen', JSON.stringify(upPhone));
+		await d.shot('upgrades_micatro_phone.png');
+		await d.E(() => document.querySelector('#scr-upgrades [data-back]').click());
 		const tap = async (sel) => { const el = await d.page.$('#scr-play ' + sel); if (!el) return false; await el.tap(); await sleep(120); return true; };
 		await d.E(() => document.querySelector('#scr-menu [data-go=play]').click()); await sleep(200);
+		A((await d.state()).step === 2 && await tap('#mx-change-character'), 'phone: mode selection keeps the partner and offers a character change');
 		let f = await d.fits(); A(f.ok, 'phone: step 1 fits, no sideways scroll', f.why);
 		await d.shot('play_1_pokemon_phone.png');
 		A(await tap('[data-dex="25"]') && (await d.state()).step === 2 && await d.E(() => G.DB.save.partner === 25), 'phone: tapping Pikachu picks it -> step 2');
