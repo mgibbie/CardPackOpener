@@ -1044,7 +1044,7 @@ export function freezeCreature(state, c) {
 	if (isDead(c)) return;
 	const wasFrozen = c.frozen;
 	c.frozen = state.turnNumber;
-	emit(state, { type: 'freeze', uid: c.uid });
+	emit(state, { type: 'freeze', uid: c.uid, name: c.name });
 	// let each player's triggers react ("After an enemy creature is Frozen...")
 	if (!wasFrozen) for (let s = 0; s < state.players.length; s++) {
 		fireOngoing(state, s, 'creature-frozen', { frozen: c, byEnemy: c.controller !== s });
@@ -3701,7 +3701,7 @@ export function heroAttack(state, pi, target) {
 	if (w && w.afterHeroAttack && w.afterHeroAttack.length && !state.over) for (const eff of w.afterHeroAttack) execEffects(state, pi, JSON.parse(JSON.stringify(eff)), null, w);
 	// Traktamer Aelessa (Duels): BOARD creatures riding "after your hero attacks"
 	if (!state.over) for (const bc of [...state.players[pi].board]) if (bc.onHeroAttack && !isDead(bc)) execEffects(state, pi, JSON.parse(JSON.stringify(bc.onHeroAttack)), null, bc);
-	fireOngoing(state, pi, 'hero-attacks', {}); // Hench-Clan Thug: minion reacts to your hero attacking
+	fireOngoing(state, pi, 'hero-attacks', { swingTarget: hitCreature ? findCreature(state, target.uid) : null }); // Hench-Clan Thug: minion reacts to your hero attacking; swingTarget: "Swing: Freeze an enemy creature" takes the creature you struck
 	if (hitCreature) fireOngoing(state, pi, 'hero-attacks-creature', { target: findCreature(state, target.uid), damaged: findCreature(state, target.uid) }); // Keeneye Spotter
 	// a single fire (fireOngoing-only, so weapon ongoings don't double-fire) for
 	// "hero attacks a minion and it survives" — Kodo Hide Whip
@@ -3870,7 +3870,12 @@ export function resolveScry(state, picks) {
 	emit(state, { type: 'scryDone', chooser: pending.chooser, deckOwner: pending.deckOwner, bottomed: bottoms.length });
 	// run any effects that were deferred until this scry resolved (e.g. "Scry 1, THEN draw a card" —
 	// so the draw now pulls the card you kept on top). Threaded pi/target/source from execEffects.
-	if (pending.then) execEffects(state, pending.then.pi, pending.then.effects, pending.then.target, pending.then.source);
+	if (pending.then) {
+		if (pending.then.trigger) runSecretEffects(state, pending.then.pi, pending.then.effects, { self: pending.then.source || null });
+		else execEffects(state, pending.then.pi, pending.then.effects, pending.then.target, pending.then.source);
+	}
+	// the turn's own draw waited for a start-of-turn scry of this deck (see beginTurn)
+	if (pending.turnDraw && !state.over) drawCards(state, pending.deckOwner, pending.turnDraw);
 	return true;
 }
 
@@ -5771,9 +5776,9 @@ export function endTurn(state) {
 		} else if (cp.geddonDraw && cp.deck.length) {
 			execEffects(state, state.current, [{ type: 'discover', fromOwnDeck: true, cardType: 'any', drawPick: true, costMod: -3 }], null, null);
 		} else if (!cp.board.some(c => c.skipStartDraw && !isDead(c))) {
-			drawCards(state, state.current, 1);
+			turnDraw(state, state.current, 1);
 		}
-		if (cp.extraTurnDraw) drawCards(state, state.current, cp.extraTurnDraw); // Elixir of Vim
+		if (cp.extraTurnDraw) turnDraw(state, state.current, cp.extraTurnDraw); // Elixir of Vim
 	}
 	// Temporal Loop (Duels): remember how this turn began, so the power can
 	// restart it. Stashed non-enumerably — snapshots must not nest themselves.
@@ -5785,6 +5790,18 @@ export function endTurn(state) {
 			Object.defineProperty(state, '_loopSnap', { value: JSON.parse(JSON.stringify(toSnapshot(state))), writable: true, configurable: true, enumerable: false });
 		}
 	}
+}
+
+// The turn draw comes AFTER start-of-turn triggers (MTG upkeep before the draw step). When one
+// of them left a scry of this player's deck pending (Elven Chorus "Scry 1, then draw"), the
+// draw waits on that scry — drawing now would pull the card beneath the one still being
+// decided, and a kept-top card was skipped every Chorus turn (bug:1794007175555 / 1794008211404).
+function turnDraw(state, pi, n) {
+	const q = state.scryQueue || [];
+	let last = null;
+	for (const e of q) if (e.deckOwner === pi) last = e;
+	if (last) { last.turnDraw = (last.turnDraw || 0) + n; return; }
+	drawCards(state, pi, n);
 }
 
 // Hand the turn off when the active player eliminated THEMSELVES mid-turn.
