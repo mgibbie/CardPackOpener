@@ -403,6 +403,22 @@
 	},
 	"entries": [
 		{
+			"sha": "adbd151",
+			"date": "2026-11-07",
+			"kind": "micatro",
+			"title": "Micatro: Pages — pick one of 3 Pages before every Blind",
+			"body": "Before every Blind you now pick one of 3 Pages: a target (a suit, odd or even cards, face cards or Aces), what those cards do when they score (Chips, Mult, money, a chance at a Tarot or Planet, or a chance to turn Lucky / Bonus when discarded), a change to the Blind's score target (-10% to +30%), and a prize for beating it that grows with the risk: money, a named Tarot or Spectral, a free booster pack, or a next-shop perk (half off, 3 free rerolls, a Negative Joker). Pages come from the seed, so replays and spectators see the same ones. On in every run except challenges; switch them off in the Joker Toggle mod.",
+			"cards": [],
+			"micatroFeatures": [
+				{
+					"id": "pages",
+					"title": "Pages",
+					"blurb": "Before every Blind, pick one of 3 Pages: a twist for the round and a prize for beating it.",
+					"wiki": "/designwiki/#/micatro/pages"
+				}
+			]
+		},
+		{
 			"sha": "e7fbe5c",
 			"date": "2026-11-05",
 			"kind": "micatro",
