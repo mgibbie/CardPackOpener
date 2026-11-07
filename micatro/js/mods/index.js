@@ -7,7 +7,7 @@ export const AVAILABLE = [
   // { id, name, by, requires: [ids], description?, size?, load: () => import('./<id>/index.js') }
   {
     id: 'jokertoggle', name: 'Joker Toggle', by: 'Micatro', requires: [],
-    description: 'Choose which original Jokers can appear in a run.',
+    description: 'Choose which original Jokers can appear in a run, and switch Pages off.',
     load: () => import('../../mods/jokertoggle/index.js'),
   },
   {

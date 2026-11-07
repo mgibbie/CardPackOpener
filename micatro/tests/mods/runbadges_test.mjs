@@ -3,6 +3,7 @@
 // the win's earned badges, seeded / challenge eligibility, non-Pokermon runs, and save/resume.
 //   node micatro/tests/mods/runbadges_test.mjs
 import { T, start, hand, add, winRound, clearHand, G, P_CENTERS, act, STATES } from './poke_helpers.mjs';
+// (Session runs here start with engineRev: 1 = the rules before Pages: these suites measure the mod alone)
 import { create_card, copy_card } from '../../js/engine/core.js';
 import { newRun, get_poker_hand_info } from '../../js/engine/run.js';
 import { toView } from '../../js/engine/view.js';
@@ -470,7 +471,7 @@ ok(!RB().mono && RB().mono_reason === 'started a round with Squirtle (Water/Gras
   let s = null, tera = null;
   for (let i = 0; i < 30 && !s; i++) {
     const t = new Session();
-    t.start({ customDeck: { name: 'Kyle', mods: ['pokermon'], jokers: [{ key: 'j_poke_dragonite' }], consumables: [{ key: 'c_poke_teraorb' }, { key: 'c_ankh' }] } });
+    t.start({ engineRev: 1, customDeck: { name: 'Kyle', mods: ['pokermon'], jokers: [{ key: 'j_poke_dragonite' }], consumables: [{ key: 'c_poke_teraorb' }, { key: 'c_ankh' }] } });
     const orb = G.consumeables.cards.find((c) => keyOf(c) === 'c_poke_teraorb');
     if (orb && orb.ability.extra.change_to_type !== 'Dragon') { s = t; tera = orb.ability.extra.change_to_type; }
   }
@@ -559,7 +560,7 @@ act({ type: 'next_round' });
   let s = null, b = null;
   for (let i = 0; i < 20 && !b; i++) {
     s = new Session();
-    s.start({ customDeck: { name: 'Banana', mods: ['pokermon'], jokers: [{ key: 'j_poke_tropius' }] } });
+    s.start({ engineRev: 1, customDeck: { name: 'Banana', mods: ['pokermon'], jokers: [{ key: 'j_poke_tropius' }] } });
     s.act({ type: 'select_blind' });
     for (let k = 0; k < 8 && G.STATE === STATES.SELECTING_HAND; k++) {
       // (the best hand by brute force: a Small Blind of ante 1 falls to it)
@@ -687,7 +688,7 @@ ok(G.GAME.won && RV().eligible === false && RV().earned === undefined, 'a seeded
 // ======================================================== starting jokers + save / resume
 {
   const s = new Session();
-  s.start({ customDeck: { name: 'Two Types', mods: ['pokermon'], jokers: [{ key: 'j_poke_charmander' }, { key: 'j_poke_squirtle' }] } });
+  s.start({ engineRev: 1, customDeck: { name: 'Two Types', mods: ['pokermon'], jokers: [{ key: 'j_poke_charmander' }, { key: 'j_poke_squirtle' }] } });
   ok(G.jokers.cards.length === 2 && RB().gains === 2 && RB().window_gains === 0, 'starting jokers don\'t use the first window\'s one', RB());
   ok(RB().nuz && RB().mono, 'two starting types: nothing broken before the first blind', RB());
   ok(s.act({ type: 'select_blind' }).ok && !RB().mono && RB().mono_reason === 'started a round with Squirtle (Water) in a Fire run', 'starting jokers are type-checked at the first blind start', RB());
@@ -706,14 +707,14 @@ ok(G.GAME.won && RV().eligible === false && RV().earned === undefined, 'a seeded
 // as a typed one -> "seeded": its win earned no stickers / badges / record); a typed seed stays seeded
 {
   const s = new Session();
-  s.start({ back: 'b_red', mods: ['pokermon'] });
+  s.start({ engineRev: 1, back: 'b_red', mods: ['pokermon'] });
   ok(s.recipe.seeded === undefined && G.GAME.seeded === false && RV().eligible === true, 'a random-seed run: not seeded, eligible');
   Session.fromRecipe(JSON.parse(JSON.stringify(s.recipe)));
   ok(G.GAME.seeded === false && RV().eligible === true, 'resumed (fromRecipe): still not seeded, still eligible', RV());
   const st = Session.stepper(JSON.parse(JSON.stringify(s.recipe)));
   ok(G.GAME.seeded === false && st.view().run_badges.eligible === true, 'a replay of it: eligible too');
   const t = new Session();
-  t.start({ seed: 'TYPED1', back: 'b_red', mods: ['pokermon'] });
+  t.start({ engineRev: 1, seed: 'TYPED1', back: 'b_red', mods: ['pokermon'] });
   ok(t.recipe.seeded === true && RV().eligible === false, 'a typed seed: recipe.seeded, not eligible');
   Session.fromRecipe(JSON.parse(JSON.stringify(t.recipe)));
   ok(G.GAME.seeded === true && RV().eligible === false, 'resumed: still seeded');

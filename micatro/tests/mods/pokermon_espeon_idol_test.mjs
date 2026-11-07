@@ -6,6 +6,7 @@
 // Every ability is FIRED through real plays with exact numbers.
 //   node micatro/tests/mods/pokermon_espeon_idol_test.mjs
 import { readFileSync } from 'fs';
+// (Session runs here start with engineRev: 1 = the rules before Pages: these suites measure the mod alone)
 import { T, start, hand, add, play, G, P_CENTERS, STATES } from './poke_helpers.mjs';
 import { MODS } from '../../js/mods/registry.js';
 import * as PINS from '../../js/mods/pins.js';
@@ -202,7 +203,7 @@ sec('legacy extra', () => {
 
 sec('save and resume', () => {
   const s = new Session();
-  s.start({ seed: 'ESPRES', mods: ['pokermon'], customDeck: { name: 'Sunstone', mods: ['pokermon'], jokers: [{ key: 'j_poke_espeon' }] } });
+  s.start({ engineRev: 1, seed: 'ESPRES', mods: ['pokermon'], customDeck: { name: 'Sunstone', mods: ['pokermon'], jokers: [{ key: 'j_poke_espeon' }] } });
   flush();
   s.act({ type: 'select_blind' }); flush();
   const j = G.jokers.cards.find((c) => key(c) === 'j_poke_espeon');

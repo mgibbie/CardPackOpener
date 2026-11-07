@@ -181,7 +181,7 @@ await sec('old-rev replay', () => {
     const s = new Session();
     PINS.RULES.pins = pins;
     try {
-      s.start({ seed: 'KMREC', mods: ['pokermon', 'morefluff'], customDeck: deck });
+      s.start({ seed: 'KMREC', mods: ['pokermon', 'morefluff'], customDeck: deck, engineRev: 1 }); // (engine rev 1: before Pages, as recorded)
       s.act({ type: 'select_blind' }); flush();
       for (let b = 0; b < 2; b++) {
         for (let i = 0; i < 4 && G.STATE === STATES.SELECTING_HAND; i++) { s.act({ type: 'highlight', ids: G.hand.cards.slice(0, 5).map((c) => c.sort_id) }); s.act({ type: 'play' }); flush(); }

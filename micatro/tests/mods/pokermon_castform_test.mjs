@@ -11,6 +11,7 @@
 // Every ability is FIRED through real rounds (act: select_blind deals the first hand) with exact numbers.
 //   node micatro/tests/mods/pokermon_castform_test.mjs
 import path from 'path';
+// (Session runs here start with engineRev: 1 = the rules before Pages: these suites measure the mod alone)
 import { T, start, hand, add, play, winRound, clearHand, G, P_CENTERS, act, STATES } from './poke_helpers.mjs';
 import { create_playing_card, P_CARDS } from '../../js/engine/core.js';
 import { newRun } from '../../js/engine/run.js';
@@ -331,7 +332,7 @@ sec('resume', () => {
   let tried = 0, checked = false;
   for (const seed of ['CFRES1', 'CFRES2', 'CFRES3', 'CFRES4', 'CFRES5', 'CFRES6', 'CFRES7', 'CFRES8']) {
     const s = new Session();
-    s.start({ seed, customDeck: { name: 'Weather', mods: ['pokermon'], jokers: [{ key: 'j_poke_castform' }] } });
+    s.start({ engineRev: 1, seed, customDeck: { name: 'Weather', mods: ['pokermon'], jokers: [{ key: 'j_poke_castform' }] } });
     s.act({ type: 'select_blind' }); flush();
     const cf = G.jokers.cards.find((c) => key(c) === 'j_poke_castform');
     tried++;

@@ -67,7 +67,7 @@ try {
 		const c = C.create_card('Joker', C.G.jokers, null, null, true, true, 'j_poke_hoothoot', null);
 		c.add_to_deck(); C.G.jokers.emplace(c); C.G.E_MANAGER.flush();
 	});
-	await page.evaluate(() => window.__micatro.act({ type: 'select_blind' }));
+	await page.evaluate(() => window.__micatro.selectBlind());
 	await idle();
 
 	/** What the board draws in the scry area vs the engine's deck top. */

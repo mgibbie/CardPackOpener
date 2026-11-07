@@ -15,6 +15,7 @@
 // overworld/tests/micatro_pokermon_regional_ui_test.mjs checks them drawn.
 //   node micatro/tests/mods/pokermon_alolan_test.mjs
 import path from 'path';
+// (Session runs here start with engineRev: 1 = the rules before Pages: these suites measure the mod alone)
 import { fileURLToPath, pathToFileURL } from 'url';
 import { T, start, hand, add, clearHand, G, P_CENTERS, act, STATES } from './poke_helpers.mjs';
 import { P_CARDS, create_playing_card, get_current_pool } from '../../js/engine/core.js';
@@ -621,7 +622,7 @@ await sec('old-rev replay', () => {
     const s = new Session();
     PINS.RULES.pins = pins;
     try {
-      s.start({ seed, mods: ['pokermon'], customDeck: deck });
+      s.start({ engineRev: 1, seed, mods: ['pokermon'], customDeck: deck });
       s.act({ type: 'select_blind' }); flush();
       const en = G.consumeables.cards.find((c) => key(c) === 'c_poke_psychic_energy');
       s.act({ type: 'use', id: en.sort_id, targets: [], joker_targets: [G.jokers.cards[0].sort_id] }); flush();
@@ -655,7 +656,7 @@ await sec('old-rev replay', () => {
 // ------------------------------------------------------------------- save / resume
 await sec('resume', () => {
   const s = new Session();
-  s.start({ seed: 'ALOLARES', customDeck: { name: 'Alola', mods: ['pokermon'], params: { blind_scaling: 0.05 },
+  s.start({ engineRev: 1, seed: 'ALOLARES', customDeck: { name: 'Alola', mods: ['pokermon'], params: { blind_scaling: 0.05 },
     cards: [['S_J', 0, 0, 0, 12], ['H_9', 'm_stone', 0, 0, 10], ['D_5', 'm_gold', 0, 0, 6], ['C_2', 0, 0, 0, 12], ['S_7', 0, 0, 0, 12]],
     consumables: [{ key: 'c_poke_fire_energy' }, { key: 'c_pluto' }],
     jokers: [{ key: 'j_poke_cubone' }, { key: 'j_poke_alolan_raichu' }, { key: 'j_poke_alolan_grimer' }, { key: 'j_poke_alolan_sandshrew' }, { key: 'j_poke_alolan_golem' }] } });

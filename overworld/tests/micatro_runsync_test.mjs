@@ -185,7 +185,7 @@ try {
 	};
 	/** A few replayable moves in a fresh run: select the blind, pick a card, discard it. */
 	const fewMoves = async (d) => {
-		await act(d, { type: 'select_blind' });
+		await act(d, { type: 'select_blind' }); await act(d, { type: 'pick_page', index: 0 }); // (Pages)
 		const ids = await d.page.evaluate(() => [window.__micatro.view().areas.hand[0].id]);
 		await act(d, { type: 'highlight', ids });
 		await act(d, { type: 'discard' });
@@ -194,7 +194,7 @@ try {
 	const winNow = async (d) => {
 		await d.page.evaluate(async () => { const { G } = await import('/micatro/js/engine/core.js'); G.GAME.round_resets.ante = G.GAME.win_ante; });
 		for (let b = 0; b < 3; b++) {
-			await act(d, { type: 'select_blind' });
+			await act(d, { type: 'select_blind' }); await act(d, { type: 'pick_page', index: 0 }); // (Pages)
 			const ids = await d.page.evaluate(async () => { const { G } = await import('/micatro/js/engine/core.js'); G.GAME.chips = G.GAME.blind.chips; return [G.hand.cards[0].sort_id]; });
 			await act(d, { type: 'highlight', ids });
 			await act(d, { type: 'play' });

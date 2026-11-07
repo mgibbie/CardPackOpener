@@ -37,7 +37,7 @@ const eng = (p) => import(pathToFileURL(path.join(ROOT, 'micatro/js/engine', p))
 const { Session } = await eng('session.js');
 const sess = new Session();
 sess.start({ seed: 'SPECT1', back: 'b_blue', stake: 1 });
-sess.act({ type: 'select_blind' });
+sess.act({ type: 'select_blind' }); sess.act({ type: 'pick_page', index: 0 }); // (Pages)
 const v0 = sess.view();
 sess.act({ type: 'highlight', ids: v0.areas.hand.slice(0, 2).map(c => c.id) });
 const snapA = { view: sess.view(), events: [] };
@@ -54,7 +54,7 @@ const r3 = sess.act({ type: 'discard' });
 const snapC = { view: sess.view(), events: r3.events.slice(-3) };
 const goldSession = new Session();
 goldSession.start({ seed: 'GOLDCHIP', back: 'b_red', stake: 8 });
-goldSession.act({ type: 'select_blind' });
+goldSession.act({ type: 'select_blind' }); goldSession.act({ type: 'pick_page', index: 0 }); // (Pages)
 const goldView = goldSession.view();
 
 // ---- server: static files + /api/mp stub (records what the client sent)
@@ -198,6 +198,9 @@ try {
 		A(await page.evaluate(() => document.querySelectorAll('.ov-blinds .blind-col').length === 3), 'three blinds are offered');
 
 		await clickSel(page, '.b-select');
+		await idle(page); await sleep(400);
+		A((await V(page)).state === 'PAGES' && await page.evaluate(() => document.querySelectorAll('.overlay .page-card').length === 3), 'Select opens the Pages screen');
+		await clickSel(page, '.b-pick-page');
 		await idle(page); await sleep(400);
 		v = await V(page);
 		A(v.state === 'SELECTING_HAND' && v.areas.hand.length === 8, 'selecting the blind deals a hand of 8', v.state);
@@ -364,7 +367,7 @@ try {
 		const { page, errors, ctx } = await open({ url: '/micatro/', signedIn: false });
 		await page.evaluate(() => window.__micatro.newRun({ seed: 'LAYOUT1' }));
 		await idle(page);
-		await page.evaluate(() => window.__micatro.act({ type: 'select_blind' }));
+		await page.evaluate(() => window.__micatro.selectBlind());
 		await idle(page); await sleep(900);
 		let g = await handGeom(page);
 		A(g.n === 8 && g.overButtons === 0 && g.offscreen === 0 && g.underCounter === 0, '1600×900, 8 cards: the hand clears Play/Discard and the counter', JSON.stringify(g));
@@ -416,7 +419,7 @@ try {
 		A(await page.evaluate(() => { const a = document.querySelector('.main-menu .back-link'); return !!a && a.getAttribute('href') === '/overworld/' && /overworld/i.test(a.textContent); }), '?direct=1 (the arcade cabinet) offers "Back to the overworld"');
 		await page.evaluate(() => window.__micatro.newRun({ seed: 'PHONE1' }));
 		await idle(page);
-		await page.evaluate(() => window.__micatro.act({ type: 'select_blind' }));
+		await page.evaluate(() => window.__micatro.selectBlind());
 		await idle(page); await sleep(500); await settle(page);
 		const lay = await page.evaluate(() => {
 			const st = document.getElementById('stage').getBoundingClientRect();

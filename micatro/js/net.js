@@ -191,7 +191,8 @@ export function modList(mods) {
 // A run with mods posts to the separate Modded board (mode 'micatro_modded') with its mod list.
 // A run with a CUSTOM DECK (the deck editor) is modded too: customDeck = the deck's name.
 // badges: a won Pokermon run's {nuz:true, mono:'fire'} (ui/progress.js wireBadges) — client-reported, shape-checked by the server.
-export async function submitScore({ score, ante = 0, seed = '', back = '', stake = 0, won = false, mods = [], customDeck = '', replay = null, badges = null } = {}) {
+// pages: the run played with Pages (engine/pages.js; base game from engine rev 2): its board row says so.
+export async function submitScore({ score, ante = 0, seed = '', back = '', stake = 0, won = false, mods = [], customDeck = '', replay = null, badges = null, pages = false } = {}) {
 	if (!isLoggedIn()) return { error: 'not logged in' };
 	const s = wireScore(score);
 	if (s == null) return { error: 'bad score' };
@@ -200,6 +201,7 @@ export async function submitScore({ score, ante = 0, seed = '', back = '', stake
 	const body = { mode: ml.length || cd ? 'micatro_modded' : 'micatro', score: s, ante, seed: String(seed || ''), back: String(back || ''), stake, won: !!won };
 	if (ml.length) body.mods = ml;
 	if (cd) body.customDeck = cd;
+	if (pages === true) body.pages = true;
 	if (replay && /^[a-f0-9]{8,20}$/.test(String(replay))) body.replay = String(replay); // the run's replay: the board row links to it
 	if (won && badges && typeof badges === 'object' && (badges.nuz || badges.mono)) body.badges = { ...(badges.nuz ? { nuz: true } : {}), ...(badges.mono ? { mono: String(badges.mono) } : {}) };
 	try { return await MP.call('run-score', body); }

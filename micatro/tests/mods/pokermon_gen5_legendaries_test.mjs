@@ -17,6 +17,7 @@
 // Every ability is FIRED through real hands and rounds with exact numbers.
 //   node micatro/tests/mods/pokermon_gen5_legendaries_test.mjs
 import fs from 'fs';
+// (Session runs here start with engineRev: 1 = the rules before Pages: these suites measure the mod alone)
 import path from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
 import { T, start, hand, add, clearHand, G, P_CENTERS, act, STATES } from './poke_helpers.mjs';
@@ -406,7 +407,7 @@ await sec('meloetta', () => {
 await sec('meloetta resume', () => {
   for (const hands of [1, 2, 3]) {
     const s = new Session();
-    s.start({ seed: 'MELRES' + hands, customDeck: { name: 'Relic', mods: ['pokermon'], jokers: [{ key: 'j_poke_meloetta' }] } });
+    s.start({ engineRev: 1, seed: 'MELRES' + hands, customDeck: { name: 'Relic', mods: ['pokermon'], jokers: [{ key: 'j_poke_meloetta' }] } });
     s.act({ type: 'select_blind' }); flush();
     for (let h = 0; h < hands; h++) { s.act({ type: 'highlight', ids: G.hand.cards.slice(0, 1).map((c) => c.sort_id) }); s.act({ type: 'play' }); flush(); }
     const j = G.jokers.cards.find((c) => key(c) === 'j_poke_meloetta');

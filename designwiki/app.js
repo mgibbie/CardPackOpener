@@ -1684,6 +1684,7 @@ async function micatroView() {
         ['deck-editor', 'Deck editor', 'Build, share and play your own decks.'],
         ['replays', 'Replays', 'Watch any finished run again, start to finish.'],
         ['big-numbers', 'Big-number scoring', 'Scores past naneinf, up to 9.99e999.'],
+        ['pages', 'Pages', 'Pick one of 3 Pages before every Blind: a twist, a target and a prize.'],
       ].map(([k, label, blurb]) => h('a', { class: 'lp-tile mc-featlink', href: '#/micatro/' + k }, h('span', { class: 'lp-name' }, label), h('span', { class: 'lp-count mc-wrap' }, blurb)))),
       h('p', { class: 'mc-crosslink' }, 'Looking for mod content? Pokermon, Bunco, More Fluff and the other rebuilt mods have their own section: ', h('a', { href: '#/micatro-mods' }, 'Micatro Mods →'))),
     mcSection('Getting there', null,
@@ -2422,6 +2423,31 @@ async function micatroDeckEditorView() {
     mcSection('Limits', null, h('p', { class: 'muted' }, 'Name ' + E.limits.name + ' characters · description ' + E.limits.desc + ' · ' + E.limits.cards + ' cards · ' + E.limits.jokers + ' Jokers · ' + E.limits.consumables + ' consumables · ' + E.limits.vouchers + ' Vouchers · ' + E.limits.tags + ' Tags · ' + E.limits.bans + ' bans · ' + E.limits.mods + ' mods.')));
 }
 
+async function micatroPagesView() {
+  const F = await mcFeatureData('Pages', 'pages'); if (!F) return;
+  const P = F.pages;
+  const mk = (t) => t.replace(/\{[^}]*\}/g, '');
+  const range = (t) => (t.from == null ? 'up to ' + t.to : t.to == null ? t.from + ' and up' : t.from + ' to ' + t.to);
+  mcPut(mcBack(),
+    mcHead('Pages', null, null, 'Micatro’s own rule (not Balatro’s): before every Blind you pick one of 3 Pages — a twist for that round and a prize for beating it.'),
+    mcSection('How it works', null, h('ul', { class: 'mc-list' },
+      h('li', null, 'After you ', h('b', null, 'select any Blind'), ' (Small, Big or Boss) the Pages screen opens with ', h('b', null, '3 Pages'), '. There is no Back and no Skip: take one to start the round.'),
+      h('li', null, 'A Page names a ', h('b', null, 'target'), ' (a suit, odd or even cards, face cards or Aces), an ', h('b', null, 'effect'), ' each target card has when it scores (every trigger, retriggers included — or, for Lucky / Bonus Pages, when you discard it), a change to the Blind’s ', h('b', null, 'required score'), ' and a ', h('b', null, 'prize'), '.'),
+      h('li', null, 'The effect lasts for that round. The prize comes when you ', h('b', null, 'beat the Blind'), ' (on the cash-out); none if the run ends on it, or if Mr. Bones saved you. A pack opens after the cash-out; a next-shop prize applies to the next shop.'),
+      h('li', null, 'The required-score change applies to the Blind’s own size (The Wall and Violet Vessel included), before Jokers act on it: Chicot halves The Wall after it, Wo-Chien’s −15% comes on top.'),
+      h('li', null, 'Pages come from the run’s seed, so a seed always offers the same Pages; resuming (even on the Pages screen), replays and spectators show exactly the same ones.'),
+      h('li', null, h('b', null, 'On in every run'), ' since engine rev ' + P.rev + ', except challenges (and the daily challenge). Turn them off with the ', h('a', { href: '#/micatro-mods/mod/jokertoggle' }, 'Joker Toggle'), ' mod’s ', h('b', null, 'Pages'), ' switch. Runs recorded before Pages replay exactly as they were. Leaderboard rows of runs played with Pages say so.'))),
+    mcSection('Targets', null, h('p', null, P.targets.join(' · '), '. Wild cards count as every suit; Stone cards are never a target.')),
+    mcSection('Effects', 'Per scoring trigger of a target card (Lucky / Bonus: per discarded target card).', mcTable(['Effect', ''], P.effects.map((e) => ['Target cards ' + mk(e.text), e.down ? h('span', { class: 'mc-pill' }, 'downside') : '']))),
+    mcSection('Required score', null, h('p', null, P.pcts.map((p) => (p > 0 ? '+' : '') + p + '%').join(' · '), ' of the Blind’s requirement.')),
+    mcSection('Prize tiers', 'Difficulty = the required-score change in %, +' + P.downsideBonus + ' for a downside effect (−1 Mult, Lose $1). The prize is drawn from the tier of that difficulty.',
+      mcTable(['Tier', 'Difficulty', 'Prizes (one, at random)'], P.tiers.map((t) => [t.name, range(t), t.prizes.join(' · ')]))),
+    mcSection('Details', null, h('ul', { class: 'mc-list' },
+      h('li', null, '−1 Mult never takes Mult below 1. Lose $1 only spends what the run lets you (Credit Card’s debt included).'),
+      h('li', null, 'Tarot / Planet chances and Lucky / Bonus chances are listed odds: Oops! All 6s raises them. A card prize needs a free consumable slot, else you get its price in $.'),
+      h('li', null, 'Lucky / Bonus Pages only change unenhanced cards. Half off halves every price in the next shop (on top of Clearance Sale / Liquidation; rerolls are not halved). The free rerolls stack with Chaos the Clown’s. The Negative Joker prize makes one of the next shop’s Jokers Negative (seeded).'))));
+}
+
 async function micatroReplaysView() {
   const F = await mcFeatureData('Replays', 'replays'); if (!F) return;
   const R = F.replays;
@@ -2476,6 +2502,7 @@ function micatroVanillaRoute(sub) {
     case 'big-numbers': return micatroBigNumbersView();
     case 'deck-editor': return micatroDeckEditorView();
     case 'replays': return micatroReplaysView();
+    case 'pages': return micatroPagesView();
     case '': return micatroView();
     case 'jokers': return micatroJokersView();
     case 'consumables': return micatroConsumablesView();

@@ -17,6 +17,7 @@
 // Every ability is FIRED through real hands / rounds / Blinds / sales with exact numbers.
 //   node micatro/tests/mods/pokermon_gen7_batch2_test.mjs
 import fs from 'fs';
+// (Session runs here start with engineRev: 1 = the rules before Pages: these suites measure the mod alone)
 import path from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
 import { T, start, hand, add, clearHand, G, P_CENTERS, act, STATES } from './poke_helpers.mjs';
@@ -556,7 +557,7 @@ await sec('energy', () => {
 // ------------------------------------------------------------------- save / resume: genders, banks, counts
 await sec('resume', () => {
   const s = new Session();
-  s.start({ seed: 'G7B2RES', customDeck: { name: 'Gen 7', mods: ['pokermon'], params: { blind_scaling: 0.05 },
+  s.start({ engineRev: 1, seed: 'G7B2RES', customDeck: { name: 'Gen 7', mods: ['pokermon'], params: { blind_scaling: 0.05 },
     cards: [['S_K', 0, 0, 0, 14], ['H_Q', 0, 0, 0, 14], ['D_9', 'm_stone', 0, 0, 12]],
     jokers: [{ key: 'j_poke_salandit' }, { key: 'j_poke_sandygast' }, { key: 'j_poke_pyukumuku' }, { key: 'j_poke_jangmoo' }, { key: 'j_poke_comfey' }, { key: 'j_poke_komala' }] } });
   s.act({ type: 'select_blind' }); flush();

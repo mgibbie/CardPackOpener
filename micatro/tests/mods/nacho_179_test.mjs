@@ -132,7 +132,7 @@ sec('elite alias', () => {
 sec('old recipe', () => {
   // A replay / save recorded on 1.6.4: its custom deck names the old Mega key and a legacy joker, its stake the old Elite.
   const sess = new Session();
-  sess.start({ seed: 'N179_OLD', back: 'b_red', stake: 'stake_nacho_elite_stake', mods: ['pokermon', 'nacho'], modOptions: { nacho: { Ralts: true, Clauncher: false, customStakes: true } } });
+  sess.start({ seed: 'N179_OLD', back: 'b_red', stake: 'stake_nacho_elite_stake', mods: ['pokermon', 'nacho'], modOptions: { nacho: { Ralts: true, Clauncher: false, customStakes: true } }, engineRev: 1 }); // (engine rev 1: no Pages — the hand's score alone)
   ok(G.GAME.stake_key === 'stake_poke_elite', 'the old stake key starts Pokermon\'s Elite');
   ok(G.GAME.mod_options.nacho.Clauncher === false, 'a stored 1.6.4 option (Clauncher off) still applies');
   const j = add(resolveCardKey('j_nacho_mega_gardevoir'));

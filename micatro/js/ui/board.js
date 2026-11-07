@@ -60,6 +60,7 @@ export function visibleBox() {
   const s = safeInsets();
   return { x: s.l, y: s.t, w: Math.max(100, w - s.l - s.r), h: Math.max(100, h - s.t - s.b) };
 }
+const plainText = (l) => String(l || '').replace(/\{[^}]*\}/g, '');
 const h = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
 const STATUS_COL = { chips: '#009dff', mult: '#fe5f55', h_mult: '#fe5f55', x_mult: '#fe5f55', h_x_mult: '#fe5f55', dollars: '#f3b958', debuff: '#fe5f55', swap: '#8867a5' };
 const NAMED_COL = { red: '#fe5f55', mult: '#fe5f55', blue: '#009dff', chips: '#009dff', green: '#4bc292', money: '#f3b958', gold: '#eac058', attention: '#ff9a00', filter: '#ff9a00', purple: '#8867a5', tarot: '#a782d1', planet: '#13afce', spectral: '#4584fa', secondary_set: '#4f6367', black: '#374244', white: '#ffffff', edition: '#4ca893', dark_edition: '#5a4fcf' };
@@ -126,6 +127,7 @@ export class Board {
           </div>
         </div>
         <div class="hb-desc"></div>
+        <button type="button" class="hb-page" data-pad hidden></button>
       </div>
       <div class="hud-score"><div class="hs-l">Round<br>score</div><div class="hs-v"><span class="chip-ico"></span><span class="hs-num">0</span></div></div>
       <div class="hud-hand">
@@ -150,8 +152,12 @@ export class Board {
       blind: $('.hud-blind'), bName: $('.hb-name'), bChip: $('.hb-chip'), bTarget: $('.hb-target'), bReward: $('.hb-reward .money'),
       bDesc: $('.hb-desc'), bInfo: $('.hb-info'), score: $('.hs-num'), scoreChip: $('.hud-score .chip-ico'), hand: $('.hh-hand'), lvl: $('.hh-lvl'), chips: $('.hh-chips'), mult: $('.hh-mult'),
       hands: $('.s-hands .stat-v'), discards: $('.s-discards .stat-v'), dollars: $('.s-dollars .stat-v'), ante: $('.ante-n'), anteW: $('.ante-w'),
-      round: $('.s-round .stat-v'), tags: $('.hud-tags'), handBox: $('.hud-hand'), rbadges: $('.hud-rbadges'),
+      round: $('.s-round .stat-v'), tags: $('.hud-tags'), handBox: $('.hud-hand'), rbadges: $('.hud-rbadges'), page: $('.hb-page'),
     };
+    // the round's Page (Pages): a badge under the blind; hover / tap / pad confirm shows its text
+    this.H.page.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse' && this.view && this.view.page) this.showPageTip(this.view.page, this.H.page); });
+    this.H.page.addEventListener('pointerleave', () => this.hideTip());
+    this.H.page.addEventListener('click', (e) => { e.stopPropagation(); if (this.view && this.view.page) { if (this.tipFor === 'page') this.hideTip(); else this.showPageTip(this.view.page, this.H.page); } });
     $('.b-runinfo').addEventListener('click', () => { sound.play('button'); this.opts.onMenu && this.opts.onMenu('runinfo'); });
     $('.b-options').addEventListener('click', () => { sound.play('button'); this.opts.onMenu && this.opts.onMenu('options'); });
     this.H.blind.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse' && this.view && this.view.blind) this.showBlindTip(this.view.blind, this.H.blind); });
@@ -369,7 +375,7 @@ export class Board {
       // view itself holds in hand) waits there: the deal after Select (or a pack's hand) moves cards in while the view still says
       // BLIND_SELECT / SHOP, and those fly straight to the hand row (a kept one rises with them), never below the screen.
       const kept = new Set(((this.view && this.view.areas && this.view.areas.hand) || []).map((c) => c.id));
-      const away = (state === 'SHOP' || state === 'ROUND_EVAL' || state === 'BLIND_SELECT') && handIds.every((id) => kept.has(id));
+      const away = (state === 'SHOP' || state === 'ROUND_EVAL' || state === 'BLIND_SELECT' || state === 'PAGES') && handIds.every((id) => kept.has(id));
       this.rowTargets(handIds, handRect, { fan: FAN[this.mode], z: 100, gap: 1.02 }).forEach((t, i) => {
         if (away) t.y = this.SH + this.ch;
         if (hl(handIds[i])) t.y -= this.ch * 0.3;
@@ -611,6 +617,7 @@ export class Board {
     H.score.textContent = fmt(this.shownScore);
     this.renderHandBox();
     this.renderBlindPanel(v.blind, v.state);
+    this.renderPageBadge(v);
     this.renderTagsEtc(v);
   }
   /** Use the run's stake chip, whose atlas positions are not in stake-level order. */
@@ -635,12 +642,12 @@ export class Board {
   }
   renderBlindPanel(b, state) {
     const H = this.H;
-    const selecting = state === 'BLIND_SELECT' || state === 'SHOP' || !b || !b.key || b.key === 'bl_none';
+    const selecting = state === 'BLIND_SELECT' || state === 'SHOP' || state === 'PAGES' || !b || !b.key || b.key === 'bl_none';
     const col = b && b.key && !selecting ? (b.boss ? (b.colour || '#b44430') : '#50846e') : '#3f5154';
     H.blind.style.setProperty('--bcol', col);
     H.blind.classList.toggle('selecting', selecting);
     if (selecting) {
-      H.bName.textContent = state === 'SHOP' ? 'Shop' : 'Choose your next Blind';
+      H.bName.textContent = state === 'SHOP' ? 'Shop' : state === 'PAGES' ? 'Choose a Page' : 'Choose your next Blind';
       H.bChip.innerHTML = ''; H.bInfo.style.visibility = 'hidden'; H.bDesc.innerHTML = '';
       this.chipAnim = null;
     } else {
@@ -658,6 +665,25 @@ export class Board {
       const desc = b.desc;
       H.bDesc.innerHTML = b.boss && desc ? (desc.lines || []).map((l) => markup(l)).join('<br>') + (b.disabled ? '<br><span style="color:#4bc292">Disabled</span>' : '') : '';
     }
+  }
+  /** The round's Page (view.page): a small badge under the blind with its effect; all its text on hover / tap. */
+  renderPageBadge(v) {
+    const el = this.H.page, p = v && v.page;
+    const show = !!(p && p.desc && v.state !== 'PAGES');
+    el.hidden = !show;
+    if (!show) { this._pageKey = null; if (this.tipFor === 'page') this.hideTip(); return; }
+    const key = JSON.stringify(p);
+    if (key === this._pageKey) return;
+    this._pageKey = key;
+    el.className = 'hb-page tier-' + (p.tier || 1);
+    el.innerHTML = `<span class="hp-l">Page</span> ${markup(p.desc.lines[0])}`;
+    el.setAttribute('aria-label', 'Page: ' + p.desc.lines.map(plainText).join('. '));
+  }
+  showPageTip(p, el) {
+    this.renderTip({ name: p.desc.name, lines: p.desc.lines }, null);
+    const c = this.elCenter(el);
+    this.tipFor = 'page';
+    this.placeTipAt(c.x, c.y, c.h);
   }
   /** Pokermon's live Nuzlocke / Monotype badges (view.run_badges: only a Pokermon run's view has it; hidden when
    *  the run isn't eligible — seeded / challenge). A broken badge disappears (its toast says why). */
@@ -773,6 +799,7 @@ export class Board {
       else if (v.state === 'ROUND_EVAL' && v.round_eval) this.renderCashOut(ov, v);
       else if (v.state === 'SHOP') this.renderShop(ov, v);
       else if (PACK_STATES.includes(v.state)) this.renderPack(ov, v);
+      else if (v.state === 'PAGES' && v.pages) this.renderPages(ov, v);
     }
     // the hand counter follows the hand row (a pack that shows the hand may lower it: renderPack)
     const lbl = this.packHand ? this.packHand.lbl : this.R && this.R.handLbl;
@@ -837,6 +864,62 @@ export class Board {
     ov.appendChild(row);
   }
 
+  /**
+   * The Pages screen (Micatro's Pages: a Blind was selected; pick one of 3 Pages, no Back, no Skip). Laid out like a pack's
+   * screen: the three Pages where a pack's cards deal, its bar (name / Choose) under them. A tap / click / pad confirm raises a
+   * Page, again (or Choose, Enter, RB) takes it; keys 1-3 raise one. The pick animates from the engine's page_picked event,
+   * so a spectator and a replay see it too.
+   */
+  renderPages(ov, v) {
+    ov.classList.add('ov-pages');
+    const R = this.R;
+    const n = v.pages.choices.length;
+    const sig = JSON.stringify(v.pages);
+    if (this._pagesFor !== sig) { this.pageSel = this.readOnly ? -1 : 0; this._pagesFor = sig; }
+    const wrap = h('div', 'pages-wrap');
+    wrap.style.left = (R.play.x - R.overlay.x) + 'px';
+    wrap.style.width = R.play.w + 'px';
+    wrap.style.top = Math.max(0, R.play.y - R.overlay.y - (this.mode === 'portrait' ? 40 : 70)) + 'px';
+    const row = h('div', 'pages-row');
+    v.pages.choices.forEach((p, i) => {
+      const card = h('button', `page-card tier-${p.tier || 1}${i === this.pageSel ? ' sel' : ''}${p.down ? ' down' : ''}`);
+      card.type = 'button';
+      card.dataset.page = String(i);
+      const d = p.desc || { name: 'Page', lines: [] };
+      card.innerHTML = `<div class="pg-name">${esc(d.name)}</div><div class="pg-eff"><span>${markup(d.lines[0] || '')}</span></div>` +
+        `<div class="pg-req">${markup(d.lines[1] || '')}</div><div class="pg-prize">${markup(d.lines[2] || '')}</div>`;
+      card.setAttribute('aria-label', `Page ${i + 1}: ` + d.lines.map(plainText).join('. '));
+      card.addEventListener('click', () => {
+        if (this.readOnly || this.locked) return;
+        if (this.pageSel === i) { this.pickPage(); return; }
+        this.pageSel = i; sound.play('cardSlide1', 1.1, 0.6);
+        for (const c of row.children) c.classList.toggle('sel', +c.dataset.page === i);
+      });
+      row.appendChild(card);
+    });
+    wrap.appendChild(row);
+    const bar = h('div', 'pack-head pages-head', `<div class="pack-name">Choose a Page</div><div class="pack-choose">${esc(v.pages.blind || '')} Blind</div>`);
+    const go = h('button', 'btn green b-pick-page', 'Choose'); go.type = 'button';
+    go.disabled = this.readOnly || this.locked;
+    go.addEventListener('click', () => this.pickPage());
+    bar.appendChild(go);
+    wrap.appendChild(bar);
+    ov.appendChild(wrap);
+  }
+  /** Take the raised Page. */
+  pickPage() {
+    if (this.readOnly || this.locked || !this.view || this.view.state !== 'PAGES' || !(this.pageSel >= 0)) return false;
+    this.act({ type: 'pick_page', index: this.pageSel }, 'button');
+    return true;
+  }
+  /** Keys 1-3 on the Pages screen: raise that Page (again: take it). */
+  keyPage(i) {
+    if (this.readOnly || !this.view || this.view.state !== 'PAGES' || !this.view.pages || !this.view.pages.choices[i]) return false;
+    const el = this.overlay.querySelector(`.page-card[data-page="${i}"]`);
+    if (el) el.click();
+    return true;
+  }
+
   renderCashOut(ov, v) {
     ov.classList.add('ov-eval');
     const panel = h('div', 'eval-panel');
@@ -858,6 +941,7 @@ export class Board {
       else if (r.name === 'interest') label = `<b class="money">${r.disp}</b> interest per <b class="money">$5</b> <span class="ev-sub">(${(v.interest_cap || 25) / 5} max)</span>`;
       else if (/^joker/.test(r.name)) label = esc((CENTERS[r.center] && CENTERS[r.center].name) || 'Joker');
       else if (/^tag/.test(r.name)) label = esc((TAGS[r.tag] && TAGS[r.tag].name) || 'Tag');
+      else if (r.name === 'page') label = `Page prize <span class="ev-sub">${esc(r.prize || '')}</span>`;
       else label = esc(r.name);
       const amt = r.dollars <= 0 ? '<span class="muted">-</span>' : (r.dollars <= 9 ? '$'.repeat(r.dollars) : '$' + fmt(r.dollars));
       const row = h('div', 'eval-row' + (r.name === 'blind1' ? ' first' : ''), `<div class="ev-l">${label}</div><div class="ev-r money">${amt}</div>`);
@@ -1621,6 +1705,14 @@ export class Board {
       case 'balanced': this.hud.hand.chips = ev.chips; this.hud.hand.mult = ev.mult; this.renderHandBox(); this.bump(this.H.handBox); return 0.6;
       case 'redeemed': return 0.2;
       case 'pack_opened': return 0.2;
+      case 'pages_open': sound.play('cardSlide1', 0.9, 0.7); return 0.1;
+      case 'page_picked': {
+        // the pick, for the player, a spectator and a replay alike: the chosen Page rises and glows, the others fade
+        const cards = this.overlay.querySelectorAll('.page-card');
+        cards.forEach((c) => { c.classList.toggle('picked', +c.dataset.page === ev.index); c.classList.toggle('passed', +c.dataset.page !== ev.index); c.classList.remove('sel'); });
+        sound.play('card1', 1, 0.8);
+        return cards.length ? 0.7 : 0;
+      }
       case 'boss_rerolled': sound.play('whoosh2'); return 0.35;
       case 'attention': this.attn(ev.text); return 0.6;
       case 'blind_juice': this.bump(this.H.blind); return 0;

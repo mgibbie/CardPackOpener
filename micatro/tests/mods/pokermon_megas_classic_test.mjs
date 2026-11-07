@@ -10,6 +10,7 @@
 // MEGA_D_REV replays unchanged (its Mega Stone still picks the joker it picked).
 //   node micatro/tests/mods/pokermon_megas_classic_test.mjs
 import path from 'path';
+// (Session runs here start with engineRev: 1 = the rules before Pages: these suites measure the mod alone)
 import { fileURLToPath, pathToFileURL } from 'url';
 import { T, start, hand, add, clearHand, G, P_CENTERS, P_CARDS, act, STATES } from './poke_helpers.mjs';
 import { create_playing_card, probability_vars, get_current_pool } from '../../js/engine/core.js';
@@ -416,7 +417,7 @@ await sec('energy', () => {
 // ------------------------------------------------------------------- save / resume, the replay stepper
 await sec('resume', () => {
   const s = new Session();
-  s.start({ seed: 'MDRESUME', customDeck: { name: 'MegaD', mods: ['pokermon'], params: { joker_slots: 10, consumable_slots: 8 },
+  s.start({ engineRev: 1, seed: 'MDRESUME', customDeck: { name: 'MegaD', mods: ['pokermon'], params: { joker_slots: 10, consumable_slots: 8 },
     jokers: [{ key: 'j_poke_latias' }, { key: 'j_poke_aggron' }, { key: 'j_poke_glalie' }],
     consumables: [{ key: 'c_hermit' }, { key: 'c_poke_megastone' }, { key: 'c_poke_megastone' }] } });
   flush();
@@ -443,7 +444,7 @@ await sec('resume', () => {
 // ------------------------------------------------------------------- a run recorded before MEGA_D_REV replays unchanged
 await sec('old rev', () => {
   const s = new Session();
-  s.start({ seed: 'MDOLD', customDeck: { name: 'MegaOld', mods: ['pokermon'], params: { joker_slots: 6, consumable_slots: 4 },
+  s.start({ engineRev: 1, seed: 'MDOLD', customDeck: { name: 'MegaOld', mods: ['pokermon'], params: { joker_slots: 6, consumable_slots: 4 },
     jokers: [{ key: 'j_poke_absol' }, { key: 'j_poke_venusaur' }], consumables: [{ key: 'c_poke_megastone' }] } });
   flush();
   s.act({ type: 'select_blind' }); flush();

@@ -216,7 +216,7 @@ try {
 		const b = C.add_joker('j_poke_burmy'); b.ability.extra.gender = 'male';
 		C.add_joker('j_poke_nidoranf'); C.add_joker('j_poke_nidoranm');
 		C.G.E_MANAGER.flush();
-		await window.__micatro.act({ type: 'select_blind' });
+		await window.__micatro.selectBlind();
 	});
 	await page.waitForFunction(() => window.__micatro.idle(), { timeout: 30000 });
 	const settle = () => waitFor(() => page.evaluate(() => {

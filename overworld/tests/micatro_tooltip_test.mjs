@@ -59,7 +59,7 @@ try {
 			C.add_joker('j_ticket', 'foil', false, true); // (three info boxes: Gold Card, Foil, Eternal)
 			C.add_joker('c_mercury'); // a consumable too
 			C.G.E_MANAGER.flush();
-			await window.__micatro.act({ type: 'select_blind' });
+			await window.__micatro.selectBlind();
 		});
 		await page.waitForFunction(() => window.__micatro.idle(), { timeout: 20000 });
 		await new Promise(r => setTimeout(r, 600));

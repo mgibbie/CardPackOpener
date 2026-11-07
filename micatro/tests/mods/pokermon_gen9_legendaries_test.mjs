@@ -12,6 +12,7 @@
 // Then Energy (the standard shares; the fixed numbers stay), save / resume + replay and the art (every cell's type, Ogerpon's mask cells).
 //   node micatro/tests/mods/pokermon_gen9_legendaries_test.mjs
 import path from 'path';
+// (Session runs here start with engineRev: 1 = the rules before Pages: these suites measure the mod alone)
 import { fileURLToPath, pathToFileURL } from 'url';
 import { T, start, hand, add, clearHand, G, P_CENTERS, act, STATES } from './poke_helpers.mjs';
 import { Session } from '../../js/engine/session.js';
@@ -406,7 +407,7 @@ await sec('energy', () => {
 // ------------------------------------------------------------------- save / resume (a run is its recipe) and the replay stepper
 await sec('resume', () => {
   const s = new Session();
-  s.start({ seed: 'G9RESUME', customDeck: { name: 'Gen9L', mods: ['pokermon'], params: { joker_slots: 12, consumable_slots: 10, blind_scaling: 0.05 },
+  s.start({ engineRev: 1, seed: 'G9RESUME', customDeck: { name: 'Gen9L', mods: ['pokermon'], params: { joker_slots: 12, consumable_slots: 10, blind_scaling: 0.05 },
     jokers: [{ key: 'j_poke_wochien' }, { key: 'j_poke_chienpao' }, { key: 'j_poke_tinglu' }, { key: 'j_poke_chiyu' }, { key: 'j_poke_koraidon' }, { key: 'j_poke_miraidon' },
       { key: 'j_poke_ogerpon' }, { key: 'j_poke_cherrim' }, { key: 'j_cavendish' }],
     consumables: [{ key: 'c_black_hole' }, { key: 'c_black_hole' }, { key: 'c_poke_water_energy' }] } });

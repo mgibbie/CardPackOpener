@@ -13,6 +13,7 @@
 // Then Energy (the standard shares; the fixed numbers stay), the art (every form cell's type) and save / resume.
 //   node micatro/tests/mods/pokermon_gen7_legendaries_test.mjs
 import path from 'path';
+// (Session runs here start with engineRev: 1 = the rules before Pages: these suites measure the mod alone)
 import { fileURLToPath, pathToFileURL } from 'url';
 import { T, start, hand, add, clearHand, G, P_CENTERS, act, STATES } from './poke_helpers.mjs';
 import { newRun } from '../../js/engine/run.js';
@@ -506,7 +507,7 @@ await sec('energy', () => {
 // ------------------------------------------------------------------- save / resume (a run is its recipe)
 await sec('resume', () => {
   const s = new Session();
-  s.start({ seed: 'G7RESUME', customDeck: { name: 'Gen7', mods: ['pokermon'], params: { joker_slots: 10, consumable_slots: 30, blind_scaling: 0.05 },
+  s.start({ engineRev: 1, seed: 'G7RESUME', customDeck: { name: 'Gen7', mods: ['pokermon'], params: { joker_slots: 10, consumable_slots: 30, blind_scaling: 0.05 },
     jokers: [{ key: 'j_poke_typenull' }, { key: 'j_poke_cosmog' }, { key: 'j_poke_necrozma' }, { key: 'j_poke_tapu_lele' }, { key: 'j_poke_tapu_fini' }, { key: 'j_poke_marshadow' }, { key: 'j_poke_zeraora' }],
     consumables: [...Array.from({ length: 20 }, () => ({ key: 'c_pluto' })), { key: 'c_hermit' }, { key: 'c_poke_colorless_energy' }] } });
   flush();
@@ -536,7 +537,7 @@ await sec('resume', () => {
   ok(!st.error && JSON.stringify(snap()) === JSON.stringify(live2), 'the replay stepper too', snap());
   // a Silvally's type from an Energy comes back with its Memory card
   const s2 = new Session();
-  s2.start({ seed: 'G7RESUME2', customDeck: { name: 'Gen7b', mods: ['pokermon'], params: { joker_slots: 8, consumable_slots: 8, blind_scaling: 0.05 },
+  s2.start({ engineRev: 1, seed: 'G7RESUME2', customDeck: { name: 'Gen7b', mods: ['pokermon'], params: { joker_slots: 8, consumable_slots: 8, blind_scaling: 0.05 },
     jokers: [{ key: 'j_poke_squirtle' }, { key: 'j_poke_silvally' }], consumables: [{ key: 'c_poke_water_energy' }] } });
   flush();
   const m2 = (a) => { const rr = s2.act(a); flush(); if (!rr.ok) throw new Error(JSON.stringify(a) + ': ' + rr.error); return rr; };

@@ -115,7 +115,7 @@ try {
 	// ---- play the first blind out (same seeded bot as micatro_ui_test) and cash out into the shop
 	await page.evaluate(async (seed) => { await window.__micatro.newRun({ seed, back: 'b_red' }); }, SEED);
 	await idle();
-	await act({ type: 'select_blind' });
+	await act({ type: 'select_blind' }); await act({ type: 'pick_page', index: 0 }); // (Pages)
 	for (let guard = 0; guard < 14; guard++) {
 		const v = await V();
 		if (v.state !== 'SELECTING_HAND') break;

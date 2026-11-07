@@ -28,6 +28,7 @@ const REG = await imp('micatro/js/mods/registry.js');
 const B = await imp('micatro/js/engine/bignum.js');
 const CD = await imp('micatro/js/engine/customdeck.js');
 const RP = await imp('micatro/js/replays.js');
+const PG = await imp('micatro/js/engine/pages.js');
 const SLV = await imp('micatro/js/engine/sleeve.js');
 const { challengeItem } = await import('./gen_designwiki_challenges.mjs');
 const { G, P_CENTERS, P_TAGS, P_BLINDS, P_SEALS, P_STAKES } = core;
@@ -527,6 +528,14 @@ const features = {
     })(),
   },
   replays: { localMax: RP.LOCAL_MAX, actionsMax: RP.ACTIONS_MAX, packedMax: RP.PACKED_MAX },
+  // Pages (micatro/js/engine/pages.js): the parts of a Page and the prize-tier table, straight from the engine
+  pages: {
+    rev: PG.PAGES_REV, downsideBonus: PG.DOWNSIDE_BONUS, pcts: PG.PAGE_PCTS,
+    targets: PG.TARGET_KEYS.map((k) => PG.PAGE_TARGETS[k].name),
+    effects: PG.EFFECT_KEYS.map((k) => ({ key: k, text: PG.PAGE_EFFECTS[k].text.replace('#1#', '1'), down: !!PG.PAGE_EFFECTS[k].down })),
+    tiers: PG.PRIZE_TIERS.map((t, i) => ({ tier: t.tier, name: t.name, from: i ? PG.PRIZE_TIERS[i - 1].max + 5 : null, to: Number.isFinite(t.max) ? t.max : null,
+      prizes: t.prizes.map((z) => (z.kind === 'card' ? (z.set === 'Item' || z.set === 'Oddity' ? `an ${z.set} card (with ${z.set === 'Item' ? 'Pokermon' : 'AutumnMood'})` : `a random ${z.set} card`) : PG.prizeText(z))) })),
+  },
 };
 
 const out = { generated: 'tools/micatro/gen_designwiki_mods.mjs', mods: index, categories, atlases: ATLASES, features };

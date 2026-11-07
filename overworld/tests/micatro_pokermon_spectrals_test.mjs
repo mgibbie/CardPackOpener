@@ -91,7 +91,7 @@ try {
 	const clearTip = () => page.evaluate(() => { const b = window.__micatro.board; b.sel = null; b.jsel = null; b.hideTip(); b.refreshSelection(); });
 
 	// win the first blind and cash out into the shop
-	await page.evaluate(() => window.__micatro.act({ type: 'select_blind' }));
+	await page.evaluate(() => window.__micatro.selectBlind());
 	await idle();
 	await page.evaluate(async () => { const C = await import('/micatro/js/engine/core.js'); C.G.GAME.blind.chips = 1; return window.__micatro.act({ type: 'highlight', ids: [window.__micatro.view().areas.hand[0].id] }); });
 	await idle();
@@ -160,7 +160,7 @@ try {
 
 	// ---- 2. next round: the sealed cards in hand — the seal is drawn and named in the tooltip
 	await page.evaluate(() => window.__micatro.act({ type: 'next_round' })); await idle();
-	await page.evaluate(() => window.__micatro.act({ type: 'select_blind' })); await idle();
+	await page.evaluate(() => window.__micatro.selectBlind()); await idle();
 	await core((C, ids) => {
 		for (const id of ids) { const c = C.G.playing_cards.find((x) => x.sort_id === id); if (c.area !== C.G.hand) { c.area.remove_card(c); C.G.hand.emplace(c); } }
 		for (const c of C.G.consumeables.cards.slice()) { c.remove_from_deck(); C.G.consumeables.remove_card(c); c.remove(); }

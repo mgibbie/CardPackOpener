@@ -6,6 +6,7 @@
 //   node micatro/tests/mods/pokermon_type_sleeves_test.mjs
 globalThis.localStorage = globalThis.localStorage || { getItem() { return null; }, setItem() {}, removeItem() {} };
 import { G, P_CENTERS } from '../../js/engine/core.js';
+// (Session runs here start with engineRev: 1 = the rules before Pages: these suites measure the mod alone)
 import { STATES, get_poker_hand_info } from '../../js/engine/run.js';
 import { Session } from '../../js/engine/session.js';
 import { MODS, ATLASES } from '../../js/mods/registry.js';
@@ -31,7 +32,7 @@ const flush = () => G.E_MANAGER.flush();
 
 function start(sleeve, seed, extra = {}) {
   const s = new Session();
-  s.start({ seed, back: extra.back || 'b_red', sleeve, mods: ['pokermon'], modOptions: extra.modOptions ? { pokermon: extra.modOptions } : {} });
+  s.start({ engineRev: 1, seed, back: extra.back || 'b_red', sleeve, mods: ['pokermon'], modOptions: extra.modOptions ? { pokermon: extra.modOptions } : {} });
   flush();
   return s;
 }
@@ -180,7 +181,7 @@ sec('pool rules', () => {
   // precedence: an add-on's duplicate of a Pokermon joker never is the pick (Nacho / Pokermon+ on)
   let addon = 0, n = 0, fromAddon = 0;
   for (let k = 0; k < 15; k++) {
-    const s2 = new Session(); s2.start({ seed: 'TSLADD' + k, back: 'b_red', sleeve: SKEY('Water'), mods: ['pokermon', 'nacho', 'pokermonplus'] }); flush();
+    const s2 = new Session(); s2.start({ engineRev: 1, seed: 'TSLADD' + k, back: 'b_red', sleeve: SKEY('Water'), mods: ['pokermon', 'nacho', 'pokermonplus'] }); flush();
     for (let m = 1; m <= 2; m++) {
       forceShop(s2); const c = lastSlot(); n++;
       if (c.config.center.mod !== 'pokermon') fromAddon++;

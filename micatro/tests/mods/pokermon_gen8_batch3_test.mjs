@@ -19,6 +19,7 @@
 // Every ability is FIRED through real hands / rounds with exact numbers.
 //   node micatro/tests/mods/pokermon_gen8_batch3_test.mjs
 import fs from 'fs';
+// (Session runs here start with engineRev: 1 = the rules before Pages: these suites measure the mod alone)
 import path from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
 import { T, start, hand, add, clearHand, G, P_CENTERS, act, STATES } from './poke_helpers.mjs';
@@ -698,7 +699,7 @@ await sec('r71 replay', () => {
     const s = new Session();
     PINS.RULES.pins = pins;
     try {
-      s.start({ seed: 'G8B3REC', mods: ['pokermon'], customDeck: deck });
+      s.start({ engineRev: 1, seed: 'G8B3REC', mods: ['pokermon'], customDeck: deck });
       s.act({ type: 'select_blind' }); flush();
       for (let b = 0; b < 5; b++) {
         for (let i = 0; i < 4 && G.STATE === STATES.SELECTING_HAND; i++) { s.act({ type: 'highlight', ids: G.hand.cards.slice(0, 5).map((c) => c.sort_id) }); s.act({ type: 'play' }); flush(); }
@@ -760,7 +761,7 @@ await sec('upstream unchanged', () => {
 // ------------------------------------------------------------------- save / resume
 await sec('resume', () => {
   const s = new Session();
-  s.start({ seed: 'G8B3RES', customDeck: { name: 'Gen 8', mods: ['pokermon'], params: { blind_scaling: 0.05 },
+  s.start({ engineRev: 1, seed: 'G8B3RES', customDeck: { name: 'Gen 8', mods: ['pokermon'], params: { blind_scaling: 0.05 },
     cards: [['S_J', 0, 0, 0, 12], ['H_9', 'm_glass', 0, 0, 10], ['D_5', 'm_steel', 0, 0, 10], ['C_7', 'm_stone', 0, 0, 20]],
     jokers: [{ key: 'j_poke_morpeko' }, { key: 'j_poke_eiscue' }, { key: 'j_poke_indeedee' }, { key: 'j_poke_alcremie' }, { key: 'j_poke_cursola' }, { key: 'j_poke_arctovish' }] } });
   s.act({ type: 'select_blind' }); flush();

@@ -602,7 +602,8 @@ export class Card {
       this.extra_cost += (this.edition.holo ? 3 : 0) + (this.edition.foil ? 2 : 0) + (this.edition.polychrome ? 5 : 0) + (this.edition.negative ? 5 : 0);
       if (this.edition.key && P_CENTERS[this.edition.key] && P_CENTERS[this.edition.key].mod) this.extra_cost += P_CENTERS[this.edition.key].extra_cost || 0;
     }
-    this.cost = Math.max(1, Math.floor((this.base_cost + this.extra_cost + 0.5) * (100 - G.GAME.discount_percent) / 100));
+    // (a Page's "half off" prize: the next shop's prices halve on top of Clearance Sale / Liquidation, same rounding)
+    this.cost = Math.max(1, Math.floor((this.base_cost + this.extra_cost + 0.5) * (100 - G.GAME.discount_percent) / (G.GAME.page_half_off ? 200 : 100)));
     if (this.ability.set === 'Booster' && G.GAME.modifiers.booster_ante_scaling) this.cost += G.GAME.round_resets.ante - 1;
     if ((this.ability.set === 'Planet' || (this.ability.set === 'Booster' && this.ability.name.includes('Celestial'))) && find_joker('Astronomer').length > 0) this.cost = 0;
     if (this.ability.rental) this.cost = 1;

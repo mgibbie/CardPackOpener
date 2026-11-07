@@ -208,7 +208,7 @@ try {
 		const sv = await LS(page, 'micatro_run_v1');
 		A(sv && sv.modVersions && sv.modVersions.pokermon === CUR && sv.engineRev === 1, 'a new Pokermon run\'s save records {pokermon: "3.9.1+r85"} + the engine rev', JSON.stringify(sv && { mv: sv.modVersions, e: sv.engineRev }));
 		// play it to a game over: its replay is kept locally + uploaded
-		await page.evaluate(() => window.__micatro.act({ type: 'select_blind' }));
+		await page.evaluate(() => window.__micatro.selectBlind());
 		await idle(page);
 		for (let i = 0; i < 8; i++) {
 			const v = await page.evaluate(() => window.__micatro.view());

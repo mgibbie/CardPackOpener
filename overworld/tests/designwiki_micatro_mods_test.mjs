@@ -179,6 +179,7 @@ const F = W.features || {};
 A(F.bignum && F.bignum.maxExp === 1000 && F.bignum.examples.some(x => x.shown === 'naneinf') && F.bignum.examples.some(x => /e450$/.test(x.shown)), 'feature data: big numbers (formatter examples)');
 A(F.deckeditor && F.deckeditor.params.length >= 3 && F.deckeditor.rules.length >= 1 && F.deckeditor.examples.some(x => x.name === 'Goth Deck') && F.deckeditor.fixes.length >= 3, 'feature data: deck editor (settings, rules, Goth Deck, fixes)');
 A(F.replays && F.replays.localMax > 0 && F.replays.actionsMax > 0, 'feature data: replays');
+A(F.pages && F.pages.tiers.length === 4 && F.pages.targets.length === 8 && F.pages.effects.length >= 11 && F.pages.tiers.every((t) => t.prizes.length > 0), 'feature data: Pages (targets, effects, the prize tiers)');
 
 // ---------- 2. the pages
 const server = http.createServer((req, res) => {
@@ -357,6 +358,7 @@ try {
 	A(await open('micatro/deck-editor', 'table', de.params.length + de.rules.length + 1) && await page.$eval('#content', el => /Goth Deck/.test(el.textContent) && /Deck Creator/.test(el.textContent) && !/object HTML/.test(el.textContent)), 'deck editor page: settings, rules, examples');
 	A(await open('micatro/big-numbers', 'table', 1) && await page.$eval('#content', el => /9\.99e999/.test(el.textContent) && /naneinf/.test(el.textContent)), 'big-number page');
 	A(await open('micatro/replays', 'table', 1) && await page.$eval('#content', el => /\/mr\/<id>/.test(el.textContent) && /whole run/.test(el.textContent)), 'replays page');
+	A(await open('micatro/pages', 'table', 2) && await page.$eval('#content', el => /Prize tiers/.test(el.textContent) && /Brutal/.test(el.textContent) && /Joker Toggle/.test(el.textContent)), 'Pages page');
 	A(await open('micatro', '.mc-featlink', 3) && await page.$$eval('#content .mc-featlink', e => e.length) === 3 && await page.$$eval('#content .mc-idx', e => e.length) === 11, 'vanilla overview: its 11 categories + the 3 built-in feature pages');
 	// phone
 	await page.setViewport({ width: 390, height: 844 });

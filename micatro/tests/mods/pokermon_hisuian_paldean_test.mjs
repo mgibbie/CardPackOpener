@@ -17,6 +17,7 @@
 // recorded run replays as recorded).
 //   node micatro/tests/mods/pokermon_hisuian_paldean_test.mjs
 import path from 'path';
+// (Session runs here start with engineRev: 1 = the rules before Pages: these suites measure the mod alone)
 import { fileURLToPath, pathToFileURL } from 'url';
 import { T, start, hand, add, clearHand, G, P_CENTERS, act, STATES } from './poke_helpers.mjs';
 import { P_CARDS, create_playing_card, get_current_pool, create_card } from '../../js/engine/core.js';
@@ -570,7 +571,7 @@ await sec('old-rev replay', () => {
     const s = new Session();
     PINS.RULES.pins = pins;
     try {
-      s.start({ seed, mods: ['pokermon', 'nacho'], customDeck: deck });
+      s.start({ engineRev: 1, seed, mods: ['pokermon', 'nacho'], customDeck: deck });
       s.act({ type: 'select_blind' }); flush();
       const en = G.consumeables.cards.find((c) => key(c) === 'c_poke_psychic_energy');
       s.act({ type: 'use', id: en.sort_id, targets: [], joker_targets: [G.jokers.cards[0].sort_id] }); flush();
@@ -606,7 +607,7 @@ await sec('old-rev replay', () => {
 // ------------------------------------------------------------------- save / resume
 await sec('resume', () => {
   const s = new Session();
-  s.start({ seed: 'HISUIRES', customDeck: { name: 'Hisui', mods: ['pokermon', 'nacho'], params: { blind_scaling: 0.05 },
+  s.start({ engineRev: 1, seed: 'HISUIRES', customDeck: { name: 'Hisui', mods: ['pokermon', 'nacho'], params: { blind_scaling: 0.05 },
     cards: [['S_J', 0, 0, 0, 12], ['H_9', 'm_poke_seed', 0, 0, 10], ['D_5', 'm_stone', 0, 0, 6], ['C_2', 0, 0, 0, 12], ['H_7', 0, 0, 0, 12]],
     consumables: [{ key: 'c_poke_fighting_energy' }],
     jokers: [{ key: 'j_poke_petilil' }, { key: 'j_poke_paldean_tauros' }, { key: 'j_poke_hisuian_growlithe' }, { key: 'j_poke_paldean_wooper' }, { key: 'j_nacho_hisuian_sneasel' }] } });

@@ -98,6 +98,8 @@ try {
 	for (let round = 0; round < ROUNDS; round++) {
 		await act({ type: 'select_blind' });
 		await settle();
+		await act({ type: 'pick_page', index: 0 }); // (Pages)
+		await settle();
 		await page.evaluate(async () => { const C = await import('/micatro/js/engine/core.js'); C.G.GAME.blind.chips = 1; C.G.GAME.dollars = 200; const v = window.__micatro.view(); return window.__micatro.act({ type: 'highlight', ids: [v.areas.hand[0].id] }); });
 		await act({ type: 'play' });
 		await waitFor(() => page.evaluate(() => ['SHOP', 'ROUND_EVAL'].includes(window.__micatro.view().state)), 60000);

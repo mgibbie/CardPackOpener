@@ -8,6 +8,7 @@ import { describe, describeBlind, describeTag, enh_live_vars } from './describe.
 import { callHook, MOD_LOC } from '../mods/registry.js';
 import { mul, toJSONValue as J } from './bignum.js';
 import { held_card_limit } from './smods.js';
+import { pageView } from './pages.js';
 
 export const VIEW_VERSION = 1;
 
@@ -175,6 +176,13 @@ export function toView() {
     mods: GM.mods || [],
     interest_cap: GM.interest_cap,
   };
+  // Pages (engine/pages.js): the offer while choosing (state PAGES), the round's Page while it plays (only in a run with Pages,
+  // so a vanilla view is unchanged)
+  if (GM.pages_on) {
+    view.pages_on = true;
+    if (GM.pages) view.pages = { blind: GM.pages.blind, choices: GM.pages.choices.map(pageView) };
+    if (GM.page) view.page = pageView(GM.page);
+  }
   // Mods add their own fields / areas (Pokermon: view.areas.scry).
   callHook('view', view, cardView);
   return view;

@@ -46,7 +46,7 @@ await import(pathToFileURL(path.join(ROOT, 'micatro/tests/fixtures/testmod/index
 const { Session } = await import(pathToFileURL(path.join(ROOT, 'micatro/js/engine/session.js')).href);
 const sess = new Session();
 sess.start({ seed: 'MODSPEC', back: 'b_red', stake: 1, mods: ['tmui'] });
-sess.act({ type: 'select_blind' });
+sess.act({ type: 'select_blind' }); sess.act({ type: 'pick_page', index: 0 }); // (Pages)
 const specView = sess.view();
 specView.mods = [...specView.mods, 'nosuchmod'];   // a mod this site doesn't ship: skipped gracefully
 const SNAP = { view: specView, events: [] };
@@ -242,7 +242,7 @@ try {
 		await tap(page, '.ri-modal .b-back');
 
 		// select the blind, then reload and Continue: the mods come back
-		await page.evaluate(() => window.__micatro.act({ type: 'select_blind' }));
+		await page.evaluate(() => window.__micatro.selectBlind());
 		await idle(page);
 		await page.reload({ waitUntil: 'domcontentloaded' });
 		await waitFor(() => page.evaluate(() => !!(window.__micatro && window.__micatro.ready)), 30000);

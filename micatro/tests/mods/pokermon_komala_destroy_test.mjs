@@ -7,6 +7,7 @@
 // Never retroactive: a run recorded on r67 replays as recorded (js/mods/pins.js RULES).
 //   node micatro/tests/mods/pokermon_komala_destroy_test.mjs
 import { T, start, hand, add, clearHand, G, act, STATES } from './poke_helpers.mjs';
+// (Session runs here start with engineRev: 1 = the rules before Pages: these suites measure the mod alone)
 import { Session } from '../../js/engine/session.js';
 import { MODS } from '../../js/mods/registry.js';
 import * as PINS from '../../js/mods/pins.js';
@@ -160,7 +161,7 @@ await sec('r67 replay', () => {
     const s = new Session();
     PINS.RULES.pins = pins;
     try {
-      s.start({ seed: 'KDREC', mods: ['pokermon'], customDeck: deck });
+      s.start({ engineRev: 1, seed: 'KDREC', mods: ['pokermon'], customDeck: deck });
       s.act({ type: 'select_blind' }); flush();
       for (let b = 0; b < 2; b++) {
         for (let i = 0; i < 4 && G.STATE === STATES.SELECTING_HAND; i++) { s.act({ type: 'highlight', ids: G.hand.cards.slice(0, 5).map((c) => c.sort_id) }); s.act({ type: 'play' }); flush(); }

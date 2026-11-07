@@ -13,6 +13,7 @@
 // Then Energy (the standard shares; the fixed numbers stay), save / resume and the art (every cell's type, the forms' cells).
 //   node micatro/tests/mods/pokermon_gen8_legendaries_test.mjs
 import path from 'path';
+// (Session runs here start with engineRev: 1 = the rules before Pages: these suites measure the mod alone)
 import { fileURLToPath, pathToFileURL } from 'url';
 import { T, start, hand, add, clearHand, G, P_CENTERS, act, STATES } from './poke_helpers.mjs';
 import { Session } from '../../js/engine/session.js';
@@ -421,7 +422,7 @@ await sec('energy', () => {
 // ------------------------------------------------------------------- save / resume (a run is its recipe)
 await sec('resume', () => {
   const s = new Session();
-  s.start({ seed: 'G8RESUME', customDeck: { name: 'Gen8L', mods: ['pokermon'], params: { joker_slots: 12, consumable_slots: 10, blind_scaling: 0.05 },
+  s.start({ engineRev: 1, seed: 'G8RESUME', customDeck: { name: 'Gen8L', mods: ['pokermon'], params: { joker_slots: 12, consumable_slots: 10, blind_scaling: 0.05 },
     jokers: [{ key: 'j_poke_zacian' }, { key: 'j_poke_zamazenta' }, { key: 'j_poke_eternatus' }, { key: 'j_poke_zarude' }, { key: 'j_poke_regieleki' }, { key: 'j_poke_regidrago' },
       { key: 'j_poke_glastrier' }, { key: 'j_poke_spectrier' }, { key: 'j_poke_calyrex' }, { key: 'j_poke_enamorus' }, { key: 'j_cavendish' }],
     consumables: [{ key: 'c_black_hole' }, { key: 'c_black_hole' }, { key: 'c_poke_fairy_energy' }] } });

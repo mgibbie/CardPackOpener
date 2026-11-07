@@ -16,6 +16,7 @@
 // Every ability is FIRED through real hands / rounds with exact numbers.
 //   node micatro/tests/mods/pokermon_gen9_batch2_test.mjs
 import fs from 'fs';
+// (Session runs here start with engineRev: 1 = the rules before Pages: these suites measure the mod alone)
 import path from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
 import { T, start, hand, add, clearHand, G, P_CENTERS, act, STATES } from './poke_helpers.mjs';
@@ -554,7 +555,7 @@ await sec('old-rev replay', () => {
     const s = new Session();
     PINS.RULES.pins = pins;
     try {
-      s.start({ seed, mods: ['pokermon'], customDeck: deck });
+      s.start({ engineRev: 1, seed, mods: ['pokermon'], customDeck: deck });
       s.act({ type: 'select_blind' }); flush();
       const tr = G.consumeables.cards.find((c) => key(c) === 'c_poke_transformation');
       s.act({ type: 'use', id: tr.sort_id, targets: [] }); flush();
@@ -589,7 +590,7 @@ await sec('old-rev replay', () => {
 // ------------------------------------------------------------------- save / resume
 await sec('resume', () => {
   const s = new Session();
-  s.start({ seed: 'G9B2RES', customDeck: { name: 'Gen 9', mods: ['pokermon'], params: { blind_scaling: 0.05 },
+  s.start({ engineRev: 1, seed: 'G9B2RES', customDeck: { name: 'Gen 9', mods: ['pokermon'], params: { blind_scaling: 0.05 },
     cards: [['S_J', 0, 0, 0, 12], ['H_9', 'm_stone', 0, 0, 14], ['D_5', 'm_steel', 0, 0, 6], ['C_7', 0, 0, 0, 20]],
     consumables: [{ key: 'c_poke_darkness_energy' }],
     jokers: [{ key: 'j_poke_wooper' }, { key: 'j_poke_flittle' }, { key: 'j_poke_varoom' }, { key: 'j_poke_veluza' }, { key: 'j_poke_poltchageist' }, { key: 'j_poke_glimmora' }, { key: 'j_poke_bombirdier' }] } });

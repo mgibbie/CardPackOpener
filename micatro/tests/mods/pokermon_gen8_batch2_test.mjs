@@ -15,6 +15,7 @@
 // Every ability is FIRED through real hands / rounds / shops with exact numbers.
 //   node micatro/tests/mods/pokermon_gen8_batch2_test.mjs
 import fs from 'fs';
+// (Session runs here start with engineRev: 1 = the rules before Pages: these suites measure the mod alone)
 import path from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
 import { T, start, hand, add, clearHand, G, P_CENTERS, act, STATES } from './poke_helpers.mjs';
@@ -586,7 +587,7 @@ await sec('prankster r73', () => {
     const s = new Session();
     PINS.RULES.pins = pins;
     try {
-      s.start({ seed: 'PRK73REC', customDeck: deck });
+      s.start({ engineRev: 1, seed: 'PRK73REC', customDeck: deck });
       s.act({ type: 'select_blind' }); flush();
       for (let i = 0; i < 4 && G.STATE === STATES.SELECTING_HAND; i++) { s.act({ type: 'highlight', ids: G.hand.cards.slice(0, 5).map((c) => c.sort_id) }); s.act({ type: 'play' }); flush(); }
       if (G.STATE === STATES.ROUND_EVAL) { s.act({ type: 'cash_out' }); flush(); }
@@ -671,7 +672,7 @@ await sec('prankster r75', () => {
     const s = new Session();
     PINS.RULES.pins = pins;
     try {
-      s.start({ seed: 'PRK75REC', customDeck: deck });
+      s.start({ engineRev: 1, seed: 'PRK75REC', customDeck: deck });
       s.act({ type: 'select_blind' }); flush();
       for (let i = 0; i < 4 && G.STATE === STATES.SELECTING_HAND; i++) { s.act({ type: 'highlight', ids: G.hand.cards.slice(0, 5).map((c) => c.sort_id) }); s.act({ type: 'play' }); flush(); }
       if (G.STATE === STATES.ROUND_EVAL) { s.act({ type: 'cash_out' }); flush(); }
@@ -754,7 +755,7 @@ await sec('energy', () => {
 // ------------------------------------------------------------------- save / resume
 await sec('resume', () => {
   const s = new Session();
-  s.start({ seed: 'G8B2RES', customDeck: { name: 'Gen 8b', mods: ['pokermon'], params: { blind_scaling: 0.05 },
+  s.start({ engineRev: 1, seed: 'G8B2RES', customDeck: { name: 'Gen 8b', mods: ['pokermon'], params: { blind_scaling: 0.05 },
     cards: [['S_K', 0, 0, 0, 12], ['H_9', 0, 0, 0, 10], ['D_5', 0, 0, 0, 10], ['C_7', 0, 0, 0, 20]],
     jokers: [{ key: 'j_poke_toxtricity' }, { key: 'j_poke_sizzlipede' }, { key: 'j_poke_sinistea' }, { key: 'j_poke_hatterene' }, { key: 'j_joker' }, { key: 'j_poke_grimmsnarl' }, { key: 'j_poke_grapploct' }] } });
   s.act({ type: 'select_blind' }); flush();

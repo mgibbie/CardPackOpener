@@ -151,7 +151,7 @@ try {
 		}, opts.jokers || []);
 		const act = async (a) => { await idle(d); const r = await d.page.evaluate((a) => window.__micatro.act(a), a); await idle(d); return r; };
 		for (let b = 0; b < 3; b++) {
-			await act({ type: 'select_blind' });
+			await act({ type: 'select_blind' }); await act({ type: 'pick_page', index: 0 }); // (Pages)
 			const ids = await d.page.evaluate(async () => { const { G } = await import('/micatro/js/engine/core.js'); G.GAME.chips = G.GAME.blind.chips; return [G.hand.cards[0].sort_id]; });
 			await act({ type: 'highlight', ids });
 			await act({ type: 'play' });
@@ -176,7 +176,7 @@ try {
 	await devB.page.evaluate(() => window.__micatro.newRun({ stake: 1 }));
 	await idle(devB);
 	await devB.page.evaluate(async () => { const { G, add_joker } = await import('/micatro/js/engine/core.js'); add_joker('j_joker'); G.E_MANAGER.flush(); });
-	await devB.page.evaluate(() => window.__micatro.act({ type: 'select_blind' }));
+	await devB.page.evaluate(() => window.__micatro.selectBlind());
 	await idle(devB);
 	const tipB = await devB.page.evaluate(() => { const b = window.__micatro.board; for (const id of b.areas.jokers) { const s = b.sprites.get(id); if (s.d.center === 'j_joker') b.showCardTip(s, true); } return b.tip ? b.tip.textContent : ''; });
 	A(/Red Sticker/.test(tipB), 'its Joker on the table wears the Red sticker (tooltip)', tipB.slice(0, 120));

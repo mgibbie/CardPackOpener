@@ -21,7 +21,28 @@
 import { MODS } from './registry.js';
 
 /** Base-game behaviour counter. Bump it when an engine change makes old runs play out differently. */
-export const ENGINE_CONTENT_REV = 1;
+export const ENGINE_CONTENT_REV = 2;
+/**
+ * Engine revs whose new rules are GATED on the run's own recorded rev (a run recorded before them never sees them), so a
+ * recipe from an older rev still re-simulates exactly: no "versions changed" prompt / replay warning for those.
+ *   2  Pages (engine/pages.js), 2026-11-07
+ */
+export const GATED_ENGINE_REVS = Object.freeze([2]);
+/** Is every engine rev after `from` up to the current one gated (so a run recorded on `from` plays exactly as it did)? */
+export function engineRevCompatible(from) {
+  if (!Number.isInteger(from) || from > ENGINE_CONTENT_REV) return false;
+  for (let r = from + 1; r <= ENGINE_CONTENT_REV; r++) if (!GATED_ENGINE_REVS.includes(r)) return false;
+  return true;
+}
+/**
+ * The engine rules rev a recipe's run STARTED on (newRun's `engineRev`): its own rev — or, once "Continue anyway" re-pinned it,
+ * the rev it was first recorded on (repinned[0]), so a re-pinned old run still never gains rules gated on a later rev.
+ */
+export function startEngineRev(recipe) {
+  const hist = Array.isArray(recipe && recipe.repinned) ? recipe.repinned : [];
+  if (hist.length && hist[0] && Number.isInteger(hist[0].engineRev)) return hist[0].engineRev;
+  return recordedPins(recipe).engineRev;
+}
 /** The day pins landed: a recipe without pins is assumed to be from these versions. */
 export const PIN_DATE = '2026-10-19';
 export const LEGACY_ENGINE_REV = 1;
@@ -99,7 +120,7 @@ const modName = (id) => (MODS[id] && MODS[id].name) || String(id);
 export function pinDiff(recipe) {
   const rec = recordedPins(recipe);
   const out = [];
-  if (rec.engineRev !== ENGINE_CONTENT_REV) out.push({ id: 'engine', name: 'Micatro', recorded: 'rev ' + rec.engineRev, current: 'rev ' + ENGINE_CONTENT_REV, engine: true });
+  if (rec.engineRev !== ENGINE_CONTENT_REV && !engineRevCompatible(rec.engineRev)) out.push({ id: 'engine', name: 'Micatro', recorded: 'rev ' + rec.engineRev, current: 'rev ' + ENGINE_CONTENT_REV, engine: true });
   const ids = [...new Set([...((recipe && recipe.mods) || []), ...Object.keys(rec.modVersions)])];
   for (const id of ids) {
     const was = rec.modVersions[id] ?? null, now = modPin(id);

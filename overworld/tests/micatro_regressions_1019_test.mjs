@@ -99,7 +99,7 @@ const shot = async (page, name) => { if (SHOTS) await page.screenshot({ path: pa
 async function toShop(page, mods) {
 	await page.evaluate(async (mods) => { if (mods.length) await window.__micatro.loadMods(mods); await window.__micatro.newRun({ seed: 'REG1019', back: 'b_red', mods }); }, mods);
 	await idle(page);
-	await page.evaluate(() => window.__micatro.act({ type: 'select_blind' }));
+	await page.evaluate(() => window.__micatro.selectBlind());
 	await idle(page);
 	await page.evaluate(async () => { const C = await import('/micatro/js/engine/core.js'); C.G.GAME.blind.chips = 1; return window.__micatro.act({ type: 'highlight', ids: [window.__micatro.view().areas.hand[0].id] }); });
 	await idle(page);
@@ -181,7 +181,7 @@ async function titles(mods, label) {
 			C.G.E_MANAGER.flush();
 		}, extra);
 		await page.evaluate(() => window.__micatro.act({ type: 'next_round' })); await idle(page);
-		await page.evaluate(() => window.__micatro.act({ type: 'select_blind' })); await idle(page);
+		await page.evaluate(() => window.__micatro.selectBlind()); await idle(page);
 		// put the 6 of Hearts in the hand (the engine card), plus a mod enhancement and a mod seal in a Pokermon run
 		const hand = await page.evaluate(async (id, modded) => {
 			const C = await import('/micatro/js/engine/core.js');

@@ -31,6 +31,7 @@ import './consumables.js';
 import { CUSTOM_DECK_ID, CUSTOM_DECK_BACK, validateDeck } from './customdeck.js';
 import { CHALLENGE_ID, findChallenge, prepareChallenge, apply_challenge, challenge_protos, challengeBack, challengeMods } from './challenge.js';
 import { SLEEVE_ID, findSleeve, sleeveFor, prepareSleeve, apply_sleeve } from './sleeve.js';
+import { decidePages, generatePages, applyPageChips, pageIndividual, pageDiscard, pagePrizeRow, openPagePack, shopOpening, shopStocked, shopClosing } from './pages.js';
 // (Steamodded seams for Pokermon 3.9.1: opt-in contexts, Blind:calculate, the object_weights shop roll — no-ops unless a mod uses them)
 import { wanted, calculate_seam, modify_scoring_hand, blind_calculate, SEAM_STATE, object_weights, poll_object, poll_object_type, merge_defaults, mod_calculate, seam_mod, quantum_mod_calculate, held_card_limit,
   eor_retrigger_seam, eor_seam_center, not_eor_seam_center, eor_calculated } from './smods.js';
@@ -41,6 +42,8 @@ export const STATES = {
   STANDARD_PACK: 17, BUFFOON_PACK: 18, NEW_ROUND: 19,
   // Mod boosters (SMODS_BOOSTER_OPENED in Steamodded): with / without the hand drawn.
   MOD_PACK: 20, MOD_PACK_HAND: 21,
+  // Micatro's Pages (engine/pages.js): a Blind was selected, the player picks one of 3 Pages before the round starts.
+  PAGES: 22,
 };
 export const STATE_NAMES = Object.fromEntries(Object.entries(STATES).map(([k, v]) => [v, k]));
 SEAM_STATE.STATES = STATES;
@@ -195,11 +198,14 @@ const STATE_HANDLERS = {
       G.GAME.blind_on_deck = !gone(bs.Small) ? 'Small' : !gone(bs.Big) ? 'Big' : 'Boss';
       bs[G.GAME.blind_on_deck] = 'Select';
       emit('blind_select', { on_deck: G.GAME.blind_on_deck });
+      // (a Page's prize pack waiting for a shop a mod skipped — Bunco's The Miser: it opens here, like a tag's)
+      if (G.GAME.page_pack && openPagePack(use_card)) return;
       if (ACTIVE_MODS.length) callHook('blind_on_deck', G.GAME.blind_on_deck); // (a custom deck's skip-disable rolls)
       for (const t of G.GAME.tags.slice()) t.apply_to_run({ type: 'immediate' });
       for (const t of G.GAME.tags.slice()) if (t.apply_to_run({ type: 'new_blind_choice' })) break;
     });
   },
+  [STATES.PAGES]() { emit('pages_open', { blind: G.GAME.pages && G.GAME.pages.blind }); },
   [STATES.TAROT_PACK]() { G.E_MANAGER.add_event(() => draw_from_deck_to_hand()); },
   [STATES.SPECTRAL_PACK]() { G.E_MANAGER.add_event(() => draw_from_deck_to_hand()); },
   [STATES.PLANET_PACK]() {},
@@ -253,6 +259,9 @@ export function newRun(args = {}) {
   if (cdeck) { delete G.GAME.mod_options[CUSTOM_DECK_ID]; G.GAME.custom_deck = cdeck; }
   if (chal || sleeve0) { G.GAME.mods = G.GAME.mods.filter((id) => id !== CHALLENGE_ID && id !== SLEEVE_ID); delete G.GAME.mod_options[CHALLENGE_ID]; delete G.GAME.mod_options[SLEEVE_ID]; }
   for (const t of activeConsumableTypes()) G.GAME[t.rate_key] = t.shop_rate || 0;
+  // Pages (engine/pages.js): from engine rules rev 2 — `engineRev` is the run's (session.js passes the recipe's; omitted =
+  // the legacy rules, which the engine unit tests play on) — unless a challenge or the Joker Toggle switch says no.
+  decidePages(args.engineRev, chal);
   callHook('init_game_object', G.GAME);
   // Mod stakes (SMODS.Stake): `stake` may be an active mod stake's key (see mod_stake_chain);
   // it plays at the level of the stakes it applies, then runs its modifiers() below.
@@ -479,6 +488,9 @@ function new_round() {
     else { rr.blind_states.Boss = 'Current'; blhash = 'L'; }
     G.GAME.subhash = rr.ante + blhash;
     G.GAME.blind.set_blind(rr.blind);
+    // the round's Page: its required-score percent on the Blind's own size (The Wall / Violet Vessel included), before the
+    // jokers' setting_blind (Chicot's disable halves the result; Pokermon's Wo-Chien's -15% applies on top)
+    if (G.GAME.page) applyPageChips();
     callHook('new_round');
     for (const j of G.jokers.cards.slice()) {
       const sctx = { setting_blind: true, blind: rr.blind };
@@ -1181,6 +1193,8 @@ function evaluate_play() {
           // Mod effects on the card itself after its seal (SMODS trigger order: AMM Aspects), each a full SMODS effect.
           if (ef.post_effects) for (const pe of ef.post_effects) [hand_chips, mult] = smods_effect(pe, sc, hand_chips, mult);
         }
+        // the round's Page (engine/pages.js): on every scoring trigger of a card it targets, after the jokers
+        if (G.GAME.page) [hand_chips, mult] = pageIndividual(sc, hand_chips, mult);
       }
     };
     // SMODS optional feature 'unscored' (a mod turns it on): the played cards that don't score get their own
@@ -1515,6 +1529,8 @@ function evaluate_round() {
     dollars = ctx.amount;
   }
   for (const r of callHook('evaluate_round', rows)) for (const row of [].concat(r)) { rows.push(row); dollars += row.dollars || 0; }
+  // the round's Page: its prize when the Blind was beaten (not when Mr. Bones saved the run); the Page ends here
+  if (G.GAME.page) dollars += pagePrizeRow(row, B.beats(G.GAME.chips, G.GAME.blind.chips));
   G.GAME.current_round.dollars = dollars;
   const pb = G.GAME.blind.config && G.GAME.blind.config.blind;
   // The blind is cleared on defeat (as in Lua); keep what the cash-out screen shows.
@@ -1609,6 +1625,7 @@ function create_shop_card(area) {
 function update_shop() {
   G.shop_open = true;
   G.E_MANAGER.add_event(() => {
+    if (G.GAME.page_shop && !G.shop_populated) shopOpening(); // (a Page's next-shop prize: Half off, free rerolls)
     for (const t of G.GAME.tags.slice()) t.apply_to_run({ type: 'shop_start' });
     callHook('shop_start');
     if (!G.shop_populated) {
@@ -1639,7 +1656,9 @@ function update_shop() {
       if (ACTIVE_MODS.length) callHook('voucher_add', 'after_tags');
       for (const t of G.GAME.tags.slice()) t.apply_to_run({ type: 'shop_final_pass' });
       if (ACTIVE_MODS.length) callHook('shop_stocked'); // (BETMMA's Bargain / Clearance Aisle)
+      if (G.GAME.page_shop_now) shopStocked(); // (a Page's Negative Joker; Half off re-prices the stock)
     }
+    if (G.GAME.page_pack) openPagePack(use_card); // (a Page's prize pack, opened as the shop opens)
   });
 }
 /**
@@ -1951,6 +1970,7 @@ function toggle_shop() {
     clear_area(G.shop_vouchers);
     clear_area(G.shop_booster);
     if (ACTIVE_MODS.length) callHook('shop_end'); // (a Lua G.FUNCS.toggle_shop wrap: Reverie ends its Cine shop)
+    if (G.GAME.page_half_off) shopClosing();
     G.shop_open = false;
     G.shop_populated = false;
     G.STATE_COMPLETE = false;
@@ -2038,6 +2058,7 @@ export function discard_cards_from_highlighted(hook) {
     const c = hl[i];
     c.calculate_seal({ discard: true });
     if (ACTIVE_MODS.length) callHook('discard_card', c, { full_hand: hl, hook }); // (BETMMA's Echo Wall)
+    if (G.GAME.page && !hook) pageDiscard(c); // (a "become Lucky / Bonus" Page: the player's discards only)
     let removed = false;
     for (const j of G.jokers.cards.slice()) {
       const dctx = { discard: true, other_card: c, full_hand: hl };
@@ -2112,7 +2133,24 @@ function applyAction(a) {
       can(S === STATES.BLIND_SELECT, 'not choosing a blind');
       const which = G.GAME.blind_on_deck;
       can(which && G.GAME.round_resets.blind_states[which] === 'Select', 'no blind to select');
+      // Pages: the Blind is chosen, but the round waits for the player's Page (no going back to the blind choice)
+      if (G.GAME.pages_on) {
+        G.GAME.pages = { blind: which, choices: generatePages(which) };
+        G.STATE = STATES.PAGES;
+        G.STATE_COMPLETE = false;
+        break;
+      }
       select_blind(which);
+      break;
+    }
+    case 'pick_page': {
+      can(S === STATES.PAGES && G.GAME.pages, 'no Pages to pick from');
+      const i = a.index;
+      can(Number.isInteger(i) && i >= 0 && i < G.GAME.pages.choices.length, 'no such Page');
+      G.GAME.page = G.GAME.pages.choices[i];
+      G.GAME.pages = null;
+      emit('page_picked', { index: i });
+      select_blind(G.GAME.blind_on_deck);
       break;
     }
     case 'skip_blind': {
@@ -2302,6 +2340,8 @@ export function legal() {
     can_reroll: S === STATES.SHOP && !(G.GAME.dollars - G.GAME.bankrupt_at - G.GAME.current_round.reroll_cost < 0 && G.GAME.current_round.reroll_cost !== 0),
     can_skip_blind: S === STATES.BLIND_SELECT && G.GAME.blind_on_deck !== 'Boss' && !(ACTIVE_MODS.length && callHook('can_skip_blind').includes(false)),
     can_reroll_boss: S === STATES.BLIND_SELECT && G.GAME.dollars - G.GAME.bankrupt_at - 10 >= 0 && !!(G.GAME.used_vouchers.v_retcon || (G.GAME.used_vouchers.v_directors_cut && !G.GAME.round_resets.boss_rerolled)),
+    // (only on the Pages screen: a view without Pages is the same as before them)
+    ...(S === STATES.PAGES ? { can_pick_page: true } : {}),
   };
 }
 

@@ -145,7 +145,13 @@ try {
 		await tap(B.confirm);
 		await idle(); await sleep(300);
 		v = await V();
-		A(v.state === 'SELECTING_HAND', 'confirm selects the blind', v.state);
+		A(v.state === 'PAGES', 'confirm selects the blind: the Pages screen', v.state);
+		f = await focus();
+		A(f && /page-card/.test(f.cls), 'the reticle homes on a Page', JSON.stringify(f));
+		await tap(B.confirm); // (confirm on the raised Page takes it)
+		await idle(); await sleep(300);
+		v = await V();
+		A(v.state === 'SELECTING_HAND', 'confirm takes the Page: the round starts', v.state);
 		f = await focus();
 		A(f && f.area === 'hand', 'focus moves onto the hand', JSON.stringify(f));
 
@@ -253,6 +259,7 @@ try {
 		// into the next round, then a phone in portrait: the hint bar must not cover Play / Discard
 		await sleep(250);
 		await tap(B.confirm); await idle(); await sleep(300);
+		await tap(B.R); await idle(); await sleep(300); // (Pages: RB takes the raised Page)
 		await page.setViewport({ width: 390, height: 844 }); await sleep(900);
 		const hb = await page.evaluate(() => {
 			const R = (el) => el.getBoundingClientRect();
