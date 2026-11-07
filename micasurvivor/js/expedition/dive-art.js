@@ -14,7 +14,9 @@
  *                  (pixels: face / top / liquid / ground); opt.keepMask: also mask, the wall / liquid mask)}. The lush
  *                  routes (DV3) also bake bands + occ: the canopy's leafy lip hanging past the walls over the floor, as
  *                  depth strips (each keeps the art y of the wall px it hangs from) and a Uint16 per art px holding that
- *                  y (0 = no canopy over it) for drawSilhouettes; bandBytes counts both. Per art pixel:
+ *                  y (0 = no canopy over it) for drawSilhouettes; bandBytes counts both. Every route bakes lights (DV4):
+ *                  the 24 art px cells holding emissive pixels as {x, y (world px), r, c (rgb), f, p (flicker rate and
+ *                  phase)} — the holes the light map cuts. Per art pixel:
  *                    masks   the wall and liquid grids blown up with a smoothstep blend + a little noise: rounded, organic
  *                            outlines on the 16 px grid instead of tile stairs; chamfer distance fields into the walls, the
  *                            water, from the walls and to the spawn -> stairs path; per column, the wall runs up / down
@@ -28,7 +30,8 @@
  *                            flowers, fallen leaves, pebbles at the foot of the cliffs, darker ground by the walls, a contact
  *                            shadow under the faces, a wet line on the shore
  *                    water   light rim -> shallow -> deep by the distance to the shore, ripples
- *                    light   the route's tint over everything but the emissive pixels (embers, glowing spots, lava)
+ *                    light   the route's tint over everything but the emissive pixels (embers, glowing spots, lava);
+ *                            dim (the route table) is DV4's darkness overlay, composited by dive.js drawLight
  *                  Every ramp is 7 shades, dark -> light, blended with a 4 x 4 ordered dither.
  *   draw(ctx, cam, zone)  G.World.drawGround's Dive branch: the top pattern over the view (only where it reaches past the
  *                  floor), then the visible crop of the baked canvas. Bakes on first use (the floor change's flash); keeps
@@ -104,10 +107,13 @@ G.DiveArt = (() => {
   // ---------------- the routes ----------------
   // Every ramp is 7 shades, dark -> light. lush: the walls are canopy ('trees' / 'shrooms'; verge: the grass between the
   // rim and the crowns); else top: the rock. face: its ramp and style. light: a multiply over the whole floor (the route's
-  // light; DV4 adds the light map). Tuned side by side against PokéDive's 8 routes (scratchpad dive-style/pd_*.png).
+  // light). dim: [r, g, b, a], the darkness the light map fills the view with (DV4, plan §1: lava [44,16,34,.74], swamp
+  // .5, shroom .6, sea .38, ice .24, ruins .12, forest / desert none) — dive.js drawLight composites it with holes cut
+  // for the lamp; null routes keep today's plain vignette. Tuned side by side against PokéDive's 8 routes
+  // (scratchpad dive-style/pd_*.png).
   const ROUTES = {
     forest: {   // Mossy Woods
-      lush: 'trees', light: null,
+      lush: 'trees', light: null, dim: null,   // the woods are lit: no light map (plan §1)
       ground: H(['#3a6a30', '#487c37', '#578e3f', '#659d47', '#73aa50', '#83b65a', '#98c46a']), patch: 0.18,
       blades: H(['#4a7e38', '#9ccb6e', '#b4da86']), bladeP: 0.5, flowers: H(['#f4e27a', '#f6f6ff', '#a8b4f4', '#f2a0c0']), flowerP: 0.08, leaves: H(['#d88a2c', '#e8b23a']), leafP: 0.05,
       trail: H(['#6e4526', '#82532e', '#965f34', '#a96e3c', '#b67b46', '#c48c56', '#d4a068']),
@@ -118,7 +124,7 @@ G.DiveArt = (() => {
       water: H(['#1f4e8c', '#24609e', '#2c74b2', '#3a88c4', '#4e9ed2', '#78bce0', '#c4e8f6']), wet: hx('#2a4c2a')
     },
     marsh: {   // Gloom Marsh
-      lush: 'trees', light: null,
+      lush: 'trees', light: null, dim: [14, 24, 16, .5],   // the swamp's gloom (plan §1: swamp .5)
       ground: H(['#1f2c1a', '#283821', '#324428', '#3c5030', '#475c37', '#546a40', '#62784a']), patch: 0.2,
       blades: H(['#2a3a22', '#6a7c48', '#869a5a']), bladeP: 0.55, flowers: H(['#d84a5a', '#e8d878', '#b8a8e0']), flowerP: 0.03, leaves: H(['#7a6a3a', '#8a5a3a']), leafP: 0.04,
       trail: H(['#2c2618', '#383020', '#443a28', '#504430', '#5c4e38', '#6a5a42', '#78684c']),
@@ -129,7 +135,7 @@ G.DiveArt = (() => {
       water: H(['#16261c', '#1c3022', '#233b29', '#2c4832', '#38583e', '#4c6c50', '#7e9a78']), wet: hx('#18221a')
     },
     fungal: {   // Fungal Grove
-      lush: 'shrooms', light: null,
+      lush: 'shrooms', light: null, dim: [26, 14, 36, .6],   // the grove's spore-dark (plan §1: shroom .6)
       ground: H(['#1c1430', '#241a3a', '#2c2146', '#352852', '#3f305e', '#4a396a', '#584478']), patch: 0.24,
       blades: H(['#241a3a', '#6a5a92', '#8a78b4']), bladeP: 0.35, flowers: H(['#f08ad0', '#7ae0e8', '#f4e4ff']), flowerP: 0.06, glow: H(['#7af0e8', '#f2a0e8']), glowP: 0.012,
       trail: H(['#2a2038', '#33283f', '#3c304a', '#463855', '#504260', '#5c4c6c', '#6a5878']),
@@ -142,7 +148,7 @@ G.DiveArt = (() => {
       water: H(['#2a1a52', '#34226a', '#402c80', '#503a96', '#644ea8', '#8670c0', '#c4b0e8']), wet: hx('#1a1228')
     },
     canyon: {   // Golden Canyon
-      light: null,
+      light: null, dim: null,   // the desert at noon: no light map (plan §1)
       ground: H(['#a8683a', '#c07e4a', '#d09258', '#dca468', '#e6b478', '#eec488', '#f4d49c']), patch: 0.16, wind: true,
       top: H(['#7a4228', '#8c4e2e', '#a05c36', '#b06a3e', '#bd7646', '#c98450', '#d5925c']), topPatch: 0.12,
       rim: [hx('#4a2414'), hx('#f2c88c')],
@@ -152,7 +158,7 @@ G.DiveArt = (() => {
       water: H(['#1e5c8a', '#24709e', '#2c86b0', '#3a9cc0', '#52b2cc', '#7cc8d8', '#c8ecee']), wet: hx('#8e5a34')
     },
     crater: {   // Ember Crater
-      light: null,
+      light: null, dim: [44, 16, 34, .74],   // the lava's darkness (plan §1: lava [44,16,34,.74])
       ground: H(['#1e1016', '#28151c', '#321b21', '#3c2127', '#47282d', '#523034', '#5e3a3c']), patch: 0.22, cracks: true,
       top: H(['#120a0e', '#180d12', '#1f1116', '#27161b', '#301b20', '#3a2126', '#45282c']), topPatch: 0.25,
       rim: [hx('#08040a'), hx('#6a3e36')],
@@ -163,7 +169,7 @@ G.DiveArt = (() => {
       water: H(['#3a0c06', '#5a1608', '#7e220a', '#a8340c', '#d04e12', '#f07a22', '#ffc060']), wet: hx('#1a0a0a'), lavaGlow: true
     },
     reef: {   // Sunken Reef
-      light: null,
+      light: null, dim: [6, 22, 44, .38],   // the deep (plan §1: sea .38)
       ground: H(['#123e4e', '#18505e', '#1f606c', '#287078', '#338084', '#42908e', '#5aa49c']), patch: 0.14, caustic: true,
       top: H(['#14203a', '#1a2a48', '#223454', '#2a3e60', '#34496a', '#3e5474', '#4a6080']), topPatch: 0.12, seagrass: H(['#183a3a', '#1e4642', '#26524a']),
       rim: [hx('#0a1222'), hx('#6a8cb8')],
@@ -174,7 +180,7 @@ G.DiveArt = (() => {
       water: H(['#0a1a36', '#0e2244', '#142c54', '#1a3864', '#244876', '#3a6490', '#7aa8c8']), wet: hx('#123c4a')
     },
     grotto: {   // Frost Grotto
-      light: null,
+      light: null, dim: [16, 30, 48, .24],   // the ice dark (plan §1: ice .24)
       ground: H(['#7088ac', '#8a9ebc', '#a0b2cc', '#b2c2d8', '#c2d0e2', '#d2deec', '#e6eef8']), patch: 0.2, ice: true,
       top: H(['#1e2c4a', '#26385a', '#304468', '#3a5076', '#465e84', '#546c92', '#647ca0']), topPatch: 0.2,
       snow: H(['#8a9cbc', '#a4b4d0', '#bccae0', '#d0dcec', '#e2eaf6', '#eff4fb', '#fafcff']),
@@ -185,7 +191,7 @@ G.DiveArt = (() => {
       water: H(['#1a3a6a', '#204a7e', '#285c92', '#3270a6', '#4486b8', '#64a2cc', '#b4daf0']), wet: hx('#6a80a4')
     },
     ruins: {   // Forgotten Ruins
-      light: null,
+      light: null, dim: [22, 18, 26, .12],   // the ruins' shade (plan §1: ruins .12)
       ground: H(['#4a5446', '#566050', '#626c5a', '#6e7866', '#7a8470', '#88907c', '#969e8a']), patch: 0.22, slabs: true,
       moss: H(['#2e4228', '#384e2e', '#425a34', '#4c663a', '#587242']),
       top: H(['#24361e', '#2c4224', '#344e2a', '#3e5a30', '#486636', '#54723e', '#628048']), topPatch: 0.32,
@@ -196,7 +202,7 @@ G.DiveArt = (() => {
       water: H(['#1a3a4e', '#204a60', '#285a72', '#326c84', '#407e94', '#5a96a8', '#a0ccd6']), wet: hx('#3a4236')
     },
     origin: {   // the Route of Origin (no PokéDive twin: Sky Pillar marble and gold)
-      light: null,
+      light: null, dim: null,   // no PokéDive twin, so no PokéDive light: the plain vignette
       ground: H(['#8a8478', '#9c9688', '#aea898', '#beb8a8', '#ccc6b6', '#dad4c6', '#e8e4d8']), patch: 0.18, slabs: 'marble', gold: hx('#d8b45a'),
       top: H(['#4a463e', '#56524a', '#625e56', '#6e6a60', '#7a766c', '#888478', '#969286']), topPatch: 0.24,
       rim: [hx('#2a2620'), hx('#f0e8d0')],
@@ -459,6 +465,31 @@ G.DiveArt = (() => {
     const t4 = performance.now();
     // 4) the route's light, then the canvases
     if (R.light) for (let i = 0; i < N; i++) if (!emis[i]) buf[i] = mul3(buf[i], R.light);
+    // 4b) the floor's own lights (DV4): every 24 art px cell holding emissive pixels (lava, the glowing spots, the
+    //     embers) becomes one hole in the light map (dive.js drawLight). The colour is the cell's emissive average and
+    //     its flicker comes from the art stream (seedOf's ART key) — never Math.random, so a replay and a viewer cut
+    //     the same holes at the same moment.
+    const lights = [];
+    {
+      const PX = G.Sprites.PX, CELL = 24;
+      for (let cy = 0; cy < Hh; cy += CELL) for (let cx = 0; cx < W; cx += CELL) {
+        const x1 = Math.min(W, cx + CELL), y1 = Math.min(Hh, cy + CELL);
+        let n = 0, sr = 0, sg = 0, sb = 0;
+        for (let y = cy; y < y1; y++) for (let x = cx; x < x1; x++) {
+          const i = y * W + x;
+          if (!emis[i]) continue;
+          const c = buf[i];
+          n++; sr += c & 255; sg += (c >> 8) & 255; sb += (c >> 16) & 255;
+        }
+        if (n < 6) continue;                             // a lone ember or spore speck: the floor paints it, no hole
+        lights.push({
+          x: (ox + ((cx + x1) >> 1)) * PX, y: (oy + ((cy + y1) >> 1)) * PX,   // the cell's centre, world px
+          r: 14 + 26 * Math.min(1, n / (CELL * CELL / 4)),                     // density -> radius: a lava sheet (r 40)
+          c: [Math.round(sr / n), Math.round(sg / n), Math.round(sb / n)],     // covers the cell, a spore cluster a dot
+          f: 3 + hh(cx, cy, s + 121) * 5, p: hh(cx, cy, s + 120) * 6.2832     // the flicker: rate + phase per cell
+        });
+      }
+    }
     const cv = canvas(W, Hh), g = cv.getContext('2d'), img = g.createImageData(W, Hh);
     new Uint32Array(img.data.buffer).set(buf);
     g.putImageData(img, 0, 0);
@@ -535,7 +566,7 @@ G.DiveArt = (() => {
     }
     const ms = Math.round((performance.now() - t0) * 10) / 10;
     const art = { canvas: cv, top: pc, pattern: null, ox, oy, w: W, h: Hh, route, ms, bytes: (W * Hh + PW * PH) * 4, counts,
-                  bands, occ, bandBytes };
+                  bands, occ, bandBytes, lights };
     if (opt && opt.keepMask) art.mask = M;   // (tests: the wall / liquid mask)
     stats.last = { ms, route, bytes: art.bytes, parts: [t1 - t0, t2 - t1, t3 - t2, t4 - t3, performance.now() - t4].map(v => Math.round(v)) };
     stats.bakes++;

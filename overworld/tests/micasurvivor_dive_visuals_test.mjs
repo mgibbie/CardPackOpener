@@ -1,4 +1,4 @@
-// micasurvivor_dive_visuals_test.mjs — MicaSurvivor Dive visuals DV1 + DV2 + DV3: the floor art painter
+// micasurvivor_dive_visuals_test.mjs — MicaSurvivor Dive visuals DV1 + DV2 + DV3 + DV4: the floor art painter
 // (micasurvivor/js/expedition/dive-art.js; Plans/MICASURVIVOR_DIVE_VISUALS_PLAN.md). A static server, headless Chrome,
 // a fixed guest profile.
 //   1. deterministic: two pages bake byte-identical pixels for the same floor (seed, route, floor), with no Math.random
@@ -13,8 +13,13 @@
 //      and both pages bake the same lip; an actor the canopy hides comes back over it as a tinted silhouette (gold for
 //      you, pale blue for anyone else), the same actor on open ground draws nothing; in a Dive run both gates in
 //      game.drawScene fire every frame, and a Normal run never reaches either
-//   SHOTS=<dir> also saves dv2_<route>_1.png (floor 1) and dv2_<route>_2.png (floor 26) of the 8 routes, and
-//   dv3_silhouette.png (you behind a wall, under the lip).
+//   6. the light pass (DV4): every route's light map is the plan's colour and alpha (lava .74, swamp .5, shroom .6,
+//      sea .38, ice .24, ruins .12; the woods, the desert and the Origin none), in a run it fills the view and cuts a
+//      hole for your lamp, fx 0 skips it (and the shafts), calm stops the flicker, and the pass draws no rng: the same
+//      time paints the same canvas. The lit routes get sun shafts + motes, the woods no light map at all
+//   SHOTS=<dir> also saves dv2_<route>_1.png (floor 1) and dv2_<route>_2.png (floor 26) of the 8 routes,
+//   dv3_silhouette.png (you behind a wall, under the lip), dv4_light.png (the crater's light map) and
+//   dv4_shafts.png (the forest's sun shafts).
 //   node overworld/tests/micasurvivor_dive_visuals_test.mjs [--record]    (--record rewrites the fixture's golden pixels)
 // (In a git worktree add MAGEPUNK_ASSET_ROOT=<main checkout> for the gitignored sprites.)
 import http from 'http';
@@ -99,7 +104,9 @@ try {
 		await waitFor(() => page.evaluate(() => typeof G === 'object' && G.Game && document.getElementById('boot').classList.contains('hidden')), 30000);
 		if (await visible('tap-start')) await page.click('#tap-start');
 		const menu = await waitFor(() => visible('scr-menu'), 15000);
-		await page.evaluate(() => { G.Audio.sfx = () => {}; G.Audio.music = () => {}; });
+		await page.evaluate(() => {   // music off (the real fn, kept: it also stops the note scheduler, which draws rng)
+			G.Audio.sfx = () => {}; G.Audio._music = G.Audio.music; G.Audio.music = () => {}; G.Audio._music(null);
+		});
 		const loaded = await page.evaluate(() => G.Expedition.load().then(() => !!G.DiveArt, e => String(e)));
 		return { ctx, page, menu, loaded };
 	}
@@ -220,10 +227,13 @@ try {
 		G.Expedition.diveRoute('forest'); G.Expedition.diveStart(1);
 		await G.Flow.play('exp-dive');
 		const b0 = G.DiveArt.stats.bakes;
-		H.hooks = { bands: 0, sil: 0 };   // (DV3) the two canopy gates game.drawScene opens, counted
+		H.hooks = { bands: 0, sil: 0, light: 0, amb: 0 };   // the canopy gates (DV3) and the style pass (DV4), counted
 		H._db = G.ExpDive.bands; H._ds = G.ExpDive.drawSilhouettes;
+		H._dl = G.ExpDive.drawLight; H._da = G.ExpDive.drawAmbience;
 		G.ExpDive.bands = cam => { H.hooks.bands++; return H._db(cam); };
 		G.ExpDive.drawSilhouettes = (c, ents) => { H.hooks.sil++; return H._ds(c, ents); };
+		G.ExpDive.drawLight = (c, w, h, t) => { H.hooks.light++; return H._dl(c, w, h, t); };
+		G.ExpDive.drawAmbience = (c, w, h, t) => { H.hooks.amb++; return H._da(c, w, h, t); };
 		H.thaw();
 		await new Promise(r => setTimeout(r, 700));
 		H.freeze();
@@ -328,6 +338,148 @@ try {
 	A(!base.error && base.after.bands === base.before.bands && base.after.sil === base.before.sil,
 		'a Normal run never reaches the canopy gates (no bands pushed, no silhouettes drawn)', JSON.stringify(base));
 
+	// ======================== 6. the light map, the biome vignette, the ambience (DV4)
+	// (a) per-biome colour and alpha (plan §1): the darkness overlay is lava [44,16,34,.74], swamp .5, shroom .6,
+	//     sea .38, ice .24, ruins .12 — and no light map at all in the woods, the desert or the Route of Origin.
+	const dim = await E(a.page, () => {
+		const out = {};
+		for (const r of Object.keys(G.DiveArt.ROUTES)) out[r] = G.DiveArt.ROUTES[r].dim || null;
+		return out;
+	});
+	const ALPHA = { crater: 0.74, marsh: 0.5, fungal: 0.6, reef: 0.38, grotto: 0.24, ruins: 0.12 };
+	A(dim && !dim.error && ['forest', 'canyon', 'origin'].every(r => dim[r] === null),
+		'no light map in the woods, the desert or the Route of Origin', JSON.stringify(dim));
+	A(Object.keys(ALPHA).every(r => dim[r] && Math.abs(dim[r][3] - ALPHA[r]) < 1e-9 && dim[r].slice(0, 3).reduce((s, v) => s + v, 0) < 170),
+		'per-biome alpha and colour: lava .74, swamp .5, shroom .6, sea .38, ice .24, ruins .12, each a dark tint', JSON.stringify(dim));
+
+	// (b) in a Dive run on the crater: the light map fills the view with the lava's darkness and cuts a hole for your
+	//     lamp; fx 0 skips it; calm stops the flicker; and the pass draws no rng (a replay paints the same frame).
+	const crater = await E(a.page, async () => {
+		const H = window.__t, wait = ms => new Promise(r => setTimeout(r, ms));
+		H.thaw();
+		G.Game.quit && G.Game.quit(); await wait(200);
+		G.Game.toUI(); G.UI.hideAll(); G.Flow.goMenu(); await wait(200);
+		G.Settings.set('quality', 'high');
+		G.Expedition.diveRoute('crater'); G.Expedition.diveStart(1);
+		await G.Flow.play('exp-dive');
+		await wait(500);
+		H.freeze();
+		const r0 = H.rnd, W = G.Camera.cw, Hh = G.Camera.ch;   // the game's own canvas: the holes are cut for it
+		const cv = document.createElement('canvas'); cv.width = W; cv.height = Hh;
+		const ctx = cv.getContext('2d', { willReadFrequently: true });
+		const white = () => { ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over'; ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, W, Hh); };
+		const darkest = () => { const d = ctx.getImageData(0, 0, W, Hh).data; let m = 766; for (let i = 0; i < d.length; i += 4) { const s = d[i] + d[i + 1] + d[i + 2]; if (s < m) m = s; } return m; };
+		const lhash = () => {
+			const lc = G.ExpDive.lightCv;
+			if (!lc) return null;
+			const d = lc.getContext('2d').getImageData(0, 0, lc.width, lc.height).data;
+			let h = 0x811c9dc5; for (let i = 0; i < d.length; i++) { h ^= d[i]; h = Math.imul(h, 0x01000193); }
+			return h >>> 0;
+		};
+		let style = 0;   // rng drawn inside a style-pass call: the pass draws none (measured per synchronous call)
+		const DL = t => { const b = H.rnd, r = G.ExpDive.drawLight(ctx, W, Hh, t); style += H.rnd - b; return r; };
+		const LS = t => { const b = H.rnd, r = G.ExpDive.lightSpec(t); style += H.rnd - b; return r; };
+		await wait(60);                        // so this call repaints the light canvas with the settled camera
+		white();
+		const r1 = DL(performance.now() / 1000);
+		const min1 = darkest();
+		// the painted canvas: the route's colour at its alpha, with your lamp punched through it
+		const lc = G.ExpDive.lightCv;
+		const d = lc.getContext('2d').getImageData(0, 0, lc.width, lc.height).data;
+		let maxA = 0, at = 0;
+		for (let i = 3; i < d.length; i += 4) if (d[i] > maxA) { maxA = d[i]; at = i - 3; }
+		const cam = G.Camera, pl = G.Game.player;
+		const hx = Math.round((pl.x - cam.left() + cam._sx) * cam.scale / 4), hy = Math.round((pl.y - cam.top() + cam._sy) * cam.scale / 4);
+		const holeA = d[(Math.min(lc.height - 1, Math.max(0, hy)) * lc.width + Math.min(lc.width - 1, Math.max(0, hx))) * 4 + 3];
+		// fx 0: the light map is skipped outright (and never rebuilt); the vignette alone stays
+		const h0 = lhash();
+		await wait(70);
+		G.Settings.set('quality', 'low');
+		white();
+		const r2 = DL(performance.now() / 1000);
+		const min2 = darkest(), h1 = lhash();
+		G.Settings.set('quality', 'high');
+		// calm stops the flicker: the lava's holes breathe with time, and hold still under calm
+		const spec = t => JSON.stringify(LS(t));
+		G.Settings.set('calm', false);
+		const o1 = spec(1.25), o2 = spec(9.75), n = LS(1.25).holes.length;
+		G.Settings.set('calm', true);
+		const c1 = spec(1.25), c2 = spec(9.75);
+		// replay-stable: two paints a moment apart give the same canvas back (nothing moves under calm) — so repaint
+		// under calm first: the baseline has to be a canvas painted with the same settings as the second paint
+		DL(performance.now() / 1000);
+		const y0 = lhash();
+		await wait(70);
+		DL(performance.now() / 1000);
+		const y1 = lhash();
+		G.Settings.set('calm', false);
+		return { r1, r2, fill: [d[at], d[at + 1], d[at + 2], maxA], holeA, min1, min2, hSkip: h0 === h1,
+			     flick: o1 !== o2, calm: c1 === c2, n, same: y0 === y1, style, rnd: H.rnd - r0,
+			     dive: !!(G.World.zone && G.World.zone.dive) };
+	});
+	A(crater && !crater.error && crater.dive && crater.r1 && crater.r1.light && crater.r1.fill === '44,16,34,0.74' && crater.r1.holes > 0,
+		'the light map composites over the scene: the crater\'s fill, holes cut for the lamp and the lava', JSON.stringify(crater && crater.r1));
+	A(crater && Math.abs(crater.fill[0] - 44) <= 2 && Math.abs(crater.fill[1] - 16) <= 2 && Math.abs(crater.fill[2] - 34) <= 2 && Math.abs(crater.fill[3] - 189) <= 2,
+		'the painted light canvas is the biome colour at the plan\'s alpha (44,16,34 @ 189)', JSON.stringify(crater && crater.fill));
+	A(crater && crater.holeA < 40 && crater.fill[3] > 150,
+		`your lamp punches through the darkness (hole alpha ${crater && crater.holeA}, the fill ${crater && crater.fill[3]})`, JSON.stringify(crater && crater.fill));
+	A(crater && crater.min1 < crater.min2 - 20,
+		`the composite lands on the scene: darkest pixel with the light map ${crater && crater.min1} vs fx 0 ${crater && crater.min2}`, JSON.stringify(crater && [crater.min1, crater.min2]));
+	A(crater && crater.r2 && crater.r2.light === false && crater.r2.why === 'fx0' && crater.r2.holes === 0 && crater.hSkip,
+		'fx 0 skips the light map: no composite, no rebuild of the canvas', JSON.stringify(crater && crater.r2) + ' hSkip=' + crater && crater.hSkip);
+	A(crater && crater.flick && crater.calm && crater.n > 5,
+		'calm stops the flicker: the lava\'s holes breathe with time and hold still under calm', JSON.stringify(crater && { flick: crater.flick, calm: crater.calm, n: crater.n }));
+	A(crater && crater.same && crater.style === 0,
+		'the style pass draws no rng and the same time paints the same light canvas (replay-stable)', JSON.stringify(crater && { same: crater.same, style: crater.style, rnd: crater.rnd }));
+
+	// (c) the ambience: the 4 lit routes (forest, canyon, reef, ruins) get sun shafts + motes, fx 0 skips them, calm
+	//     holds them still; and the woods have no light map at all (the plain biome vignette).
+	const woods = await E(a.page, async () => {
+		const H = window.__t, wait = ms => new Promise(r => setTimeout(r, ms));
+		H.thaw();
+		G.Game.quit && G.Game.quit(); await wait(200);
+		G.Game.toUI(); G.UI.hideAll(); G.Flow.goMenu(); await wait(200);
+		G.Settings.set('quality', 'high');
+		G.Expedition.diveRoute('forest'); G.Expedition.diveStart(1);
+		await G.Flow.play('exp-dive');
+		await wait(400);
+		H.freeze();
+		const r0 = H.rnd, W = G.Camera.cw, Hh = G.Camera.ch;
+		const cv = document.createElement('canvas'); cv.width = W; cv.height = Hh;
+		const ctx = cv.getContext('2d', { willReadFrequently: true });
+		const black = () => { ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over'; ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, Hh); };
+		const hash = () => { const d = ctx.getImageData(0, 0, W, Hh).data; let h = 0x811c9dc5; for (let i = 0; i < d.length; i++) { h ^= d[i]; h = Math.imul(h, 0x01000193); } return h >>> 0; };
+		let style = 0;   // rng drawn inside a style-pass call: the pass draws none (measured per synchronous call)
+		const DA = t => { const b = H.rnd, r = G.ExpDive.drawAmbience(ctx, W, Hh, t); style += H.rnd - b; return r; };
+		const DL = t => { const b = H.rnd, r = G.ExpDive.drawLight(ctx, W, Hh, t); style += H.rnd - b; return r; };
+		black(); const a1 = DA(3); const p1 = hash();
+		black(); const a2 = DA(8.5); const p2 = hash();
+		G.Settings.set('calm', true);
+		black(); DA(3); const q1 = hash();
+		black(); DA(8.5); const q2 = hash();
+		G.Settings.set('calm', false);
+		G.Settings.set('quality', 'low');
+		black(); const a3 = DA(3);
+		G.Settings.set('quality', 'auto');
+		black();
+		const lg = DL(performance.now() / 1000);
+		return { a1, a2, a3, moves: p1 !== p2, still: q1 === q2, lg, style, rnd: H.rnd - r0,
+			     dive: !!(G.World.zone && G.World.zone.dive) };
+	});
+	A(woods && !woods.error && woods.dive && woods.a1.shafts === 4 && woods.a1.motes === 16,
+		'the lit routes get sun shafts and motes (fx high)', JSON.stringify(woods && woods.a1));
+	A(woods && woods.a3.shafts === 0 && woods.a3.motes === 0,
+		'fx 0 skips the ambience too', JSON.stringify(woods && woods.a3));
+	A(woods && woods.moves && woods.still,
+		'the ambience drifts with time and holds still under calm', JSON.stringify(woods && { moves: woods.moves, still: woods.still }));
+	A(woods && woods.lg && woods.lg.light === false && woods.lg.why === 'nodim',
+		'the woods have no light map: the plain biome vignette', JSON.stringify(woods && woods.lg));
+	A(woods && woods.style === 0, 'the ambience draws no Math.random', JSON.stringify(woods && { style: woods.style, rnd: woods.rnd }));
+	A(run.hooks && run.hooks.light > 0 && run.hooks.amb > 0,
+		'in a Dive run the style pass fires every frame (light map + shafts)', JSON.stringify(run.hooks));
+	A(base.after && base.after.light === base.before.light && base.after.amb === base.before.amb,
+		'a Normal run never reaches the style pass (no light map, no shafts)', JSON.stringify({ before: base.before, after: base.after }));
+
 	// a page whose /overworld/data/ 404s still paints (no assets needed), with no page errors
 	block404 = true;
 	const e0 = errors.length;
@@ -406,6 +558,23 @@ try {
 		await d.page.screenshot({ path: sfile });
 		console.log(`     screenshot: ${sfile} (the lip at ${spot}; held ${JSON.stringify(diag)})`);
 		await d.ctx.close();
+		// DV4: the crater's light map (the darkness with your lamp's hole in it) and the forest's sun shafts
+		for (const [route, name] of [['crater', 'dv4_light'], ['forest', 'dv4_shafts']]) {
+			const e2 = await bootPage();
+			await E(e2.page, async (route) => {
+				const H = window.__t;
+				G.Settings.set('quality', 'high');
+				G.Expedition.diveRoute(route); G.Expedition.diveStart(1);
+				await G.Flow.play('exp-dive');
+				const pl = G.Game.player; pl.gainXp = () => 0; pl.hurt = () => {};
+				H.thaw();
+			}, route);
+			await sleep(1600);
+			const f2 = path.join(SHOTS, `${name}.png`);
+			await e2.page.screenshot({ path: f2 });
+			console.log(`     screenshot: ${f2}`);
+			await e2.ctx.close();
+		}
 	}
 	A(errors.length === 0, 'no page errors', errors.slice(0, 5).join(' | '));
 	await a.ctx.close(); await b.ctx.close();

@@ -952,7 +952,12 @@ G.Game = (() => {
     ctx.restore();
 
     G.Weather.draw(ctx, w, h, frameDt);
-    G.World.drawVignette(ctx, w, h);
+    // MicaSurvivor (DV4): in a Dive the style pass is its own (expedition/dive.js) — the biome vignette with the light
+    // map and the sun shafts; every other mode keeps the plain vignette.
+    if (G.World.zone && G.World.zone.dive && G.ExpDive && G.ExpDive.drawLight) {
+      G.ExpDive.drawLight(ctx, w, h, time);
+      G.ExpDive.drawAmbience(ctx, w, h, time);
+    } else G.World.drawVignette(ctx, w, h);
     // Niebla: la viñeta se cierra un poco (sin tapar el centro).
     const fog = G.Weather.vignette;
     if (fog > 0) {
