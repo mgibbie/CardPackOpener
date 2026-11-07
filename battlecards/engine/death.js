@@ -23,7 +23,34 @@ export function isDead(c) {
 	return c.doomed || c.damage >= c.maxHealth;
 }
 
+// A death chain is bounded. "Deathrattles can kill more" re-sweeps, and some
+// combinations re-kill forever: the Nesting anomaly gives every creature
+// "Deathrattle: summon a 1/1 copy", and Spiked Arms deals 1 damage to each
+// summon, so each copy dies on entry and nests again (Lorequest Jace fight,
+// 2026-11-05: the AI's Mad Summoner turn froze the tab, and every resume froze
+// it again). Past MAX_DEATH_WAVES nested sweeps the chain fizzles: the
+// remaining dead leave play (death event + graveyard) without firing their
+// Deathrattles. Real chains are a handful of waves deep.
+export const MAX_DEATH_WAVES = 40;
+let deathWave = 0;
+
+function fizzleDeaths(state) {
+	for (let pi = 0; pi < state.players.length; pi++) {
+		const p = state.players[pi];
+		const dead = p.board.filter(isDead);
+		if (!dead.length) continue;
+		p.board = p.board.filter(c => !isDead(c));
+		for (const c of dead) { emit(state, { type: 'death', uid: c.uid, player: pi, name: c.name }); toGraveyard(state, pi, c); }
+	}
+}
+
 export function sweepDeaths(state) {
+	if (deathWave >= MAX_DEATH_WAVES) { fizzleDeaths(state); recomputeAuras(state); checkGameOver(state); return; }
+	deathWave++;
+	try { sweepDeathsWave(state); } finally { deathWave--; }
+}
+
+function sweepDeathsWave(state) {
 	for (let pi = 0; pi < state.players.length; pi++) {
 		const p = state.players[pi];
 		const dead = p.board.filter(isDead);

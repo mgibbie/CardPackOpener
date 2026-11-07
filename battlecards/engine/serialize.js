@@ -65,6 +65,10 @@ const FIELD_DEFAULTS = {
 	drawTrigLock: false,
 	enemyDrawLock: false,
 	emergeLock: false,
+	// set by the client (game.js recordRunResult) once a finished fight's result
+	// is recorded: ONE fight, ONE result. Kept in the snapshot so a finished state
+	// that is ever re-serialized and restored can't record a second result.
+	resultRecorded: false,
 };
 
 const defaultFor = key => {

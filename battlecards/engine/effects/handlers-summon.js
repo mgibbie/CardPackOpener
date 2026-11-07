@@ -216,14 +216,15 @@ register('fill-board-self', ({ state, pi, target, source, enemies, scaled, hm, p
 			// Hir'eek, the Bat: fill your board with copies of this creature
 			const p = state.players[pi];
 			const def = source && (state.cardsById[source.id] || source);
-			if (def) while (p.board.filter(c => !isDead(c)).length < 7) { const c = summon(state, pi, def); if (!c) break; }
+			// bounded: a copy that dies on entry (Spiked Arms) is a used attempt, never a reason to spin
+			if (def) for (let tries = 7; tries > 0 && p.board.filter(c => !isDead(c)).length < 7; tries--) { const c = summon(state, pi, def); if (!c) break; }
 });
 
 register('fill-board-token', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
 			// Onyxia / Shu'ma: fill your board with 1/1 tokens (up to 7 minions total)
 			const p = state.players[pi];
 			const def = { id: 'token_' + (e.name || 'token').toLowerCase().replace(/[^a-z0-9]+/g, '_'), name: e.name || 'Token', type: 'creature', cost: e.cost || 1, token: true, rarity: 'common', attack: e.attack ?? 1, health: e.health ?? 1, tribe: e.tribe || null, keywords: e.keywords || [], description: `A ${e.attack ?? 1}/${e.health ?? 1} token.` };
-			while (p.board.filter(c => !isDead(c) && c.type !== 'location').length < 7) { const c = summon(state, pi, def); if (!c) break; }
+			for (let tries = 7; tries > 0 && p.board.filter(c => !isDead(c) && c.type !== 'location').length < 7; tries--) { const c = summon(state, pi, def); if (!c) break; } // bounded (see fill-board-each)
 });
 
 
@@ -824,7 +825,7 @@ register('fill-board-random-cost', ({ state, pi, target, source, enemies, scaled
 			const p = state.players[pi];
 			const cost = e.cost != null ? e.cost : 0;
 			const pool = Object.values(state.cardsById).filter(d => d.type === 'creature' && (d.cost || 0) === cost && !d.token && d.collectible !== false && !d.companion && !d.commander && !(d.colors && d.colors.length));
-			while (pool.length && p.board.filter(c => !isDead(c)).length < 7) summon(state, pi, pool[Math.floor(state.rng() * pool.length)]);
+			for (let tries = 7; tries > 0 && pool.length && p.board.filter(c => !isDead(c)).length < 7; tries--) { if (!summon(state, pi, pool[Math.floor(state.rng() * pool.length)])) break; } // bounded (see fill-board-each)
 } });
 
 
@@ -1599,7 +1600,10 @@ register('fill-board-each', ({ state, pi, target, source, enemies, scaled, hm, p
 			// Mad Summoner: fill every player's board with tokens
 			for (let s2 = 0; s2 < state.players.length; s2++) {
 				if (state.players[s2].eliminated) continue;
-				while (state.players[s2].board.filter(c => !isDead(c)).length < 7) {
+				// at most 7 summon attempts per board: a token killed on entry (Spiked Arms deals 1 to
+				// each summon) stays in the row as a dead entry that the alive count skips, so an
+				// unbounded "while alive < 7" loop never ended and froze the tab (Lorequest Jace, 2026-11-05)
+				for (let tries = 7; tries > 0 && state.players[s2].board.filter(c => !isDead(c)).length < 7; tries--) {
 					const c = summon(state, s2, { id: 'token_' + (e.name || 'imp').toLowerCase(), name: e.name || 'Imp', type: 'creature', cost: 1, token: true, tribe: e.tribe || null, rarity: 'common', attack: e.attack || 1, health: e.health || 1, description: `A ${e.attack || 1}/${e.health || 1} token.` });
 					if (!c) break;
 				}

@@ -893,6 +893,7 @@ const GC_TABLE = [
 // saved). run_keys_test keeps this in step with game.js.
 const RUN_KEYS = new Set(['magepunk_dungeon_v1', 'magepunk_heist_v1', 'magepunk_tombs_v1', 'magepunk_duels_v1', 'magepunk_arena_v1', 'magepunk_lorequest_v1', 'magepunk_middleearth_v1', 'magepunk_swordcoast_v1', 'magepunk_finalfantasy_v1', 'magepunk_multiverse_v1']);
 const RUN_MAX_BYTES = 700_000; // a run may carry a mid-fight snapshot (both hands/board/deck order)
+const RUN_PACKED_MAX = 300_000; // a packed (gzip, base64url) run from the unload hand-off
 // The overworld blob now carries the WHOLE canonical save (story flags, badges,
 // bag, dex, collected items — not just party/boxes), so the ceiling moved up.
 const OW_MAX_BYTES = 1_000_000;
@@ -1108,16 +1109,23 @@ function userStore(db) {
 		// then wrote the finished run back over it, and the next boot resumed (or
 		// rebuilt) a fight from a run that had already ended (Muse's Final Fantasy
 		// runs, 2026-10: 36 fights played past a third loss). Refused, as one guard:
-		// a run its client has ENDED (the `ended` marker run-clear leaves), and an
-		// older revision of the stored run. Returns true when the entry was written.
-		setRunEntry: async (k, mode, entry, runId, rev) => {
+		// a run its client has ENDED (the `ended` marker run-clear leaves), an older
+		// revision of the stored run, and an OLDER, DIFFERENT run over a newer active one
+		// (by the runs' own updatedAt stamps): a browser that came back with a stale
+		// profile (and missed the boot reconciliation) used to overwrite the server's newer
+		// run with its old one -- instinctgauntlet, 2026-11-05: a day-old Lukka run replaced
+		// the Ob Nixilis run being played. A run started after the stored one (a new run
+		// after an abandon whose clear was lost) still saves. Returns true when written.
+		setRunEntry: async (k, mode, entry, runId, rev, updatedAt = 0) => {
 			const p = '$.' + mode;
 			const r = await db.prepare(
 				'INSERT INTO mp_store (key, value, updated_at) VALUES (?, json_object(?, json(?)), unixepoch()) ' +
 				'ON CONFLICT(key) DO UPDATE SET value = json_set(mp_store.value, ?, json(?)), updated_at = unixepoch() ' +
 				'WHERE ? IS NULL OR (COALESCE(json_extract(mp_store.value, ?), \'\') <> ? ' +
-				'AND NOT (COALESCE(json_extract(mp_store.value, ?), \'\') = ? AND COALESCE(json_extract(mp_store.value, ?), 0) > ?))'
-			).bind(k, mode, entry, p, entry, runId, p + '.ended', runId, p + '.run.runId', runId, p + '.run.rev', rev).run();
+				'AND NOT (COALESCE(json_extract(mp_store.value, ?), \'\') = ? AND COALESCE(json_extract(mp_store.value, ?), 0) > ?) ' +
+				'AND NOT (COALESCE(json_extract(mp_store.value, ?), ?) <> ? AND COALESCE(json_extract(mp_store.value, ?), 0) > ?))'
+			).bind(k, mode, entry, p, entry, runId, p + '.ended', runId, p + '.run.runId', runId, p + '.run.rev', rev,
+				p + '.run.runId', runId, runId, p + '.run.updatedAt', updatedAt).run();
 			const changes = r && r.meta ? r.meta.changes : r && r.changes;
 			return Number(changes) > 0;
 		},
@@ -4896,19 +4904,28 @@ export default async function handler(req, env) {
 	if (action === 'run-save') {
 		const key = String(body.key || '');
 		if (!RUN_KEYS.has(key)) return json({ error: 'bad run key' }, 400);
-		const run = body.run;
+		let run = body.run;
+		// the unload hand-off sends the run gzip-packed ('G1.' base64url, like replay tapes):
+		// a keepalive request body is capped at ~64KB and a mid-fight run is ~150KB of JSON
+		if (run == null && typeof body.packed === 'string') {
+			if (body.packed.length > RUN_PACKED_MAX) return json({ error: 'run too large' }, 413);
+			const text = await unpackCapped(body.packed, RUN_MAX_BYTES);
+			if (text == null) return json({ error: 'bad run' }, 400);
+			try { run = JSON.parse(text); } catch { return json({ error: 'bad run' }, 400); }
+		}
 		if (!run || typeof run !== 'object' || Array.isArray(run)) return json({ error: 'bad run' }, 400);
 		if (JSON.stringify(run).length > RUN_MAX_BYTES) return json({ error: 'run too large' }, 413);
 		const entry = JSON.stringify({ run, updated_at: Date.now() });
 		const runId = run.runId ? String(run.runId) : null;   // legacy runs (no id) write unguarded, as before
-		const written = await store.setRunEntry('run:' + username, key, entry, runId, Number(run.rev) || 0);
+		const written = await store.setRunEntry('run:' + username, key, entry, runId, Number(run.rev) || 0, Number(run.updatedAt) || 0);
 		if (written) return json({ ok: true });
 		// Refused: say WHY, so the client can act instead of playing on unsaved. `ended`:
 		// this run is over (its slot holds the run-clear marker) — a local copy is a zombie
 		// whose removal the browser lost. Otherwise the server holds a newer revision
 		// (`rev`), i.e. another tab or device moved the run on. (Read only on refusal.)
 		const cur = ((await store.get('run:' + username)) || {})[key] || null;
-		return json({ ok: false, stale: true, ended: !!(cur && cur.ended && runId && String(cur.ended) === runId), rev: cur && cur.run ? (Number(cur.run.rev) || 0) : null });
+		const otherRun = !!(cur && cur.run && cur.run.runId && runId && String(cur.run.runId) !== runId);   // a newer, different run holds the slot
+		return json({ ok: false, stale: true, ended: !!(cur && cur.ended && runId && String(cur.ended) === runId), otherRun, rev: cur && cur.run ? (Number(cur.run.rev) || 0) : null });
 	}
 	if (action === 'run-load') {
 		return json({ runs: (await store.get('run:' + username)) || {} });
