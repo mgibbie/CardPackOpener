@@ -141,22 +141,26 @@ try {
 		}
 	};
 	const closeDialogs = async () => { for (let i = 0; i < 30 && (await W(() => window.__ow.dialog.blocking)); i++) { await key('z'); await sleep(80); } };
+	// tap until the player stands on (x,y) — a loaded machine can drop a tap, so a
+	// lost key repeats rather than failing the walk (the step itself is still real)
+	const to = async (k, x, y) => { for (let i = 0; i < 8; i++) { const p = await where(); if (p.x === x && p.y === y) return; if (p.text) await closeDialogs(); await key(k); } };
+	// tap until the map changes (a warp, a connection)
+	const leave = async k => { const m = (await where()).map; for (let i = 0; i < 6 && (await where()).map === m; i++) { await key(k); await settle(8000); } };
+	// face and press Z until something answers
+	const talk = async f => { for (let i = 0; i < 4; i++) { await W(f => { window.__ow.player.facing = f; }, f); await key('z'); const p = await where(); if (p.text || p.battle) return p; await sleep(200); } return where(); };
 	const fieldMove = mv => W(async mv => { const FM = await import('./ow_fieldmoves.js'); FM.HM_FIELD[mv].use(); }, mv);
 
 	// ===== 1. LAVARIDGE GYM: hop the B1F ledge into the (12,12) pocket, ride its geyser to FLANNERY =====
 	await scene('LavaridgeTown_Gym_B1F', 11, 9, 'down');
-	await key('ArrowDown');
+	await to('ArrowDown', 11, 11);
 	const hop = await where();
 	A(hop.map === 'LavaridgeTown_Gym_B1F' && hop.x === 11 && hop.y === 11 && hop.out === 'hop', '1. B1F (11,9) hops the y10 ledge into the sealed-looking pocket', JSON.stringify(hop));
-	await key('ArrowRight'); await key('ArrowDown');
-	await settle(8000);
+	await to('ArrowRight', 12, 11); await leave('ArrowDown');
 	const up = await where();
 	A(up.map === 'LavaridgeTown_Gym_1F' && up.x === 12 && up.y === 12, "1. the pocket's (12,12) geyser lifts you onto FLANNERY's platform on 1F", JSON.stringify(up));
 	await closeDialogs();
-	await key('ArrowUp', 3);
-	await W(() => { window.__ow.player.facing = 'right'; });
-	await key('z');
-	const fl = await where();
+	await to('ArrowUp', 12, 9);
+	const fl = await talk('right');
 	A(fl.x === 12 && fl.y === 9 && (/FLANNERY|Lavaridge|GYM|leader/i.test(fl.text) || fl.battle), '1. ...and FLANNERY answers from (12,9)', JSON.stringify(fl));
 
 	// ===== 2. ROUTE 110 -> SLATEPORT through the cycling-road gatehouse =====
@@ -164,8 +168,7 @@ try {
 	for (let i = 0; i < 16 && (await where()).x > 2; i++) { await key('ArrowLeft'); await closeDialogs(); }
 	const gate = await where();
 	A(gate.map === 'Route110_SeasideCyclingRoadSouthEntrance' && gate.x === 2, '2. on foot, the gatehouse lets you through from the cycling-road door to the path door', JSON.stringify(gate));
-	await key('ArrowDown');
-	await settle(8000);
+	await leave('ArrowDown');
 	const out = await where();
 	A(out.map === 'Route110' && out.x === 16 && out.y === 88, "2. ...out onto Route 110's path side (16,88), south of TEAM AQUA", JSON.stringify(out));
 	for (let i = 0; i < 20 && (await where()).map === 'Route110'; i++) { await key('ArrowDown'); await closeDialogs(); }
@@ -175,13 +178,12 @@ try {
 
 	// ===== 3. TRICK HOUSE PUZZLE 1: the exit, with real keys =====
 	await scene('Route110_TrickHousePuzzle1', 13, 2, 'up', { extra: { magepunk_trickhouse_v1: { stage: 0, scroll: false } } });
-	await key('ArrowUp');
+	for (let i = 0; i < 4 && !(await where()).text; i++) await key('ArrowUp');
 	const locked = await where();
 	A(locked.map === 'Route110_TrickHousePuzzle1' && /locked|SCROLL/i.test(locked.text), '3. without the scroll the exit refuses, and says why', JSON.stringify(locked));
 	await closeDialogs();
 	await scene('Route110_TrickHousePuzzle1', 13, 2, 'up', { extra: { magepunk_trickhouse_v1: { stage: 0, scroll: true } } });
-	await key('ArrowUp');
-	await settle(8000);
+	await leave('ArrowUp');
 	const th = await where();
 	A(th.map === 'Route110_TrickHouseEnd', '3. with the scroll, pressing Up walks through the exit into the End room', JSON.stringify(th));
 
@@ -192,33 +194,30 @@ try {
 	A(rockFirst.x === 6 && rockFirst.y === 8, '4. the rock at (6,7) stands in the chamber door', JSON.stringify(rockFirst));
 	await fieldMove('rocksmash');
 	await closeDialogs(); await settle();
-	await key('ArrowUp', 3);
+	await to('ArrowUp', 6, 5);
 	const ch = await where();
 	A(ch.map === 'MirageTower_4F' && ch.x === 6 && ch.y === 5, '4. ...smashed, it opens the way through (6,6) into the fossil chamber', JSON.stringify(ch));
-	await key('ArrowLeft');
-	await W(() => { window.__ow.player.facing = 'up'; });
-	await key('z');
-	const fos = await where();
+	await to('ArrowLeft', 5, 5);
+	const fos = await talk('up');
 	A(/ROOT FOSSIL/i.test(fos.text), '4. ...and the ROOT FOSSIL at (5,4) answers', JSON.stringify(fos));
 
 	// ===== 5. ROUTE 117: CUT the (15,2) tree, collect the REVIVE at (9,1) =====
 	await scene('Route117', 16, 2, 'left');
 	await fieldMove('cut');
 	await closeDialogs(); await settle();
-	await key('ArrowLeft', 6);
+	for (let x = 15; x >= 10; x--) await to('ArrowLeft', x, 2);
 	const r117 = await where();
 	A(r117.x === 10 && r117.y === 2, '5. past the CUT tree into the pocket', JSON.stringify(r117));
-	await key('ArrowUp');
-	await W(() => { window.__ow.player.facing = 'left'; });
+	await to('ArrowUp', 10, 1);
 	const before = await W(() => window.__ow.Bag.count('revive'));
-	await key('z');
+	await talk('left');
 	await closeDialogs();
 	const after = await W(() => window.__ow.Bag.count('revive'));
 	A(after === before + 1, '5. ...and the REVIVE ball at (9,1) is picked up', JSON.stringify({ before, after }));
 
 	// ===== 6. TERRA CAVE: the trigger square starts the GROUDON battle =====
 	await scene('TerraCave_End', 16, 26, 'right');
-	await key('ArrowRight');
+	for (let i = 0; i < 4 && (await where()).x === 16; i++) await key('ArrowRight');
 	let g = null;
 	for (let i = 0; i < 100; i++) {
 		g = await W(() => { const O = window.__ow; return { battle: !!O.battle.active, foe: O.battle.foe?.speciesId || O.battle.enemy?.speciesId || null, defeated: O.Story.getFlag('FLAG_DEFEATED_GROUDON') }; });
