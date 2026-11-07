@@ -19,7 +19,8 @@ import * as SFX from './sfx.js';
 import { checkToasts as achCheck } from '../site/achievements.js';
 import { safeLoad, safeSave, safeSaveRetry } from './safestore.js';
 import { PARTIAL_DISCARD_KEY, makePartial, matchPartial } from './partialchoice.js';
-import { pickCanonicalRun, useLocalAsyncTurn, serverEndedRun, serverSupersededRun } from './runsync.js';
+import { pickCanonicalRun, useLocalAsyncTurn, serverEndedRun, serverSupersededRun, maySaveSnapshot, snapshotForCurrentFight, runProgress } from './runsync.js';
+import { packString } from './codec.js';
 import { winLossLabel, plural } from './runlabel.js';
 import { runSummary } from './runlabel.js';
 import { keywordsFor, keywordLabel, richHtml, runePipsHtml } from './keywords.js';
@@ -258,8 +259,17 @@ function saveRunSnapshot() {
 	if (state.over) { recordRunResult(); return; }
 	const run = io.load();
 	if (!run || !run.active) return;
+	// only the tab playing the run's CURRENT fight may write its board into the run:
+	// a tab left on an older fight (another tab moved the run on, or this fight's
+	// result is already recorded) would otherwise overwrite the run's snapshot with
+	// a board from a different fight, and "Continue the run" would restore it
+	if (!maySaveSnapshot(run, _fightId)) { staleFightTab(io.key, run); return; }
 	try {
 		const json = JSON.stringify(E.toSnapshot(state));
+		// nothing changed since this tab's last write (a hide/pagehide right after a
+		// settled frame): don't re-stamp the same board -- a new rev for an identical
+		// snapshot only makes the packed hand-off copy look out of date
+		if (json === _lastSnapJson && run.snapshot && run.snapshotAt === _lastSnapAt && run.rev === _lastSnapRev) return;
 		// A snapshot must ALWAYS land — losing it rewinds the player's fight to an
 		// older turn. The old code silently `return`ed on an oversize board and
 		// ignored a failed (quota) write, which is exactly how a resume ended up
@@ -268,9 +278,71 @@ function saveRunSnapshot() {
 		if (json.length > RUN_SNAP_MAX) console.warn('run snapshot is very large (' + json.length + 'B) — saving anyway');
 		run.snapshot = JSON.parse(json); // deep copy — toSnapshot shares `players` by reference
 		run.snapshotAt = Date.now(); // freshness stamp so boot never discards this for a stale server copy
+		if (_fightId) run.snapshotFight = _fightId; // which fight this board belongs to (checked on resume)
+		run.snapshotProgress = runProgress(run);
 		stampRun(run); // identity + monotonic rev, so reconciliation can order this write
-		if (!safeSaveRetry(io.key, run, freeSpaceForSnapshot)) runSaveFailed(io.key); // local only; never silently skipped
-	} catch (e) { /* never let a save break play */ }
+		if (!safeSaveRetry(io.key, run, freeSpaceForSnapshot)) { runSaveFailed(io.key); return; } // local only; never silently skipped
+		_lastSnapJson = json; _lastSnapAt = run.snapshotAt; _lastSnapRev = run.rev;
+		packRunForHandoff(io.key, run);
+	} catch (e) { // never let a save break play -- but never fail silently either
+		console.warn('run snapshot save failed', e);
+		try { window.reportErr?.('run snapshot save threw: ' + String(e && e.message || e).slice(0, 80), 'game.js saveRunSnapshot'); } catch (e2) { /* ignore */ }
+	}
+}
+let _lastSnapJson = '', _lastSnapAt = 0, _lastSnapRev = 0;
+// ---------- which fight is this tab playing? ----------
+// Every fight boot mints a fightId onto the run; a resume adopts the snapshot's. A tab
+// writes its board into the run only while the run still names its fight (see
+// runsync.maySaveSnapshot), and a resume only restores a snapshot of the run's current
+// fight (runsync.snapshotForCurrentFight).
+let _fightId = null;
+const newFightId = () => 'f' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+function bindRunFight() {
+	_fightId = null;
+	const io = activeRunIO();
+	if (!io || !state || state.over || replayMode || spectateMode || (typeof isGuest === 'function' && isGuest())) return;
+	const run = io.load();
+	if (!run || !run.active) return;
+	_fightId = (_resumedFight && run.snapshot && (run.snapshotFight || run.fightId)) || newFightId();
+	if (run.fightId !== _fightId) { run.fightId = _fightId; io.save(run); }
+}
+let _staleTabWarned = false;
+function staleFightTab(key, run) {
+	if (_staleTabWarned) return;
+	_staleTabWarned = true;
+	console.warn(`run snapshot not saved: this tab's fight (${_fightId}) is not the run's current fight (${run && run.fightId})`);
+	try { banner('⚠ This run has moved on (in another tab, or this fight is over) — this tab no longer saves it. Reload to continue the run.', 0, 'warn'); } catch (e) { /* no DOM */ }
+	try { window.reportErr?.('stale tab: snapshot write refused (' + key + ')', 'game.js staleFightTab'); } catch (e) { /* ignore */ }
+}
+// ---------- cross-device hand-off: a packed copy ready for the unload push ----------
+// The full run (with the mid-fight snapshot) reaches the server only when the tab is
+// hidden or closed. The close path can only send a keepalive request, and keepalive
+// bodies are capped at 64KB -- a mid-fight run is ~100-150KB of JSON, so that push was
+// rejected and the rejection swallowed: a cross-device resume restarted the fight
+// (instinctgauntlet, 2026-11-04). gzip shrinks it several times over, but compression is
+// async and the page is gone by then, so a packed copy is kept current here, after every
+// snapshot write (coalesced: one pack at a time, re-run once if the run changed meanwhile).
+const KEEPALIVE_MAX = 60_000;   // keepalive's ~64KB body cap, with room for the envelope
+let _packed = null;             // { key, runId, rev, code } -- the latest packed run
+let _packBusy = false, _packAgain = null;
+function packRunForHandoff(key, run) {
+	if (!MP_ON || (typeof isGuest === 'function' && isGuest())) return;
+	if (_packBusy) { _packAgain = key; return; }
+	_packBusy = true;
+	const rev = run.rev, runId = run.runId;
+	packString(JSON.stringify(run)).then(code => { _packed = { key, runId, rev, code }; }).catch(() => {}).finally(() => {
+		_packBusy = false;
+		if (!_packAgain) return;
+		const k = _packAgain; _packAgain = null;
+		const io = activeRunIO(); const r = io && io.key === k ? io.load() : null;
+		if (r && r.active) packRunForHandoff(k, r);
+	});
+}
+// a small, reload-surviving log of the unload pushes (what was sent, how big, packed or
+// not), so a lost hand-off can be diagnosed afterwards instead of vanishing silently
+const RUN_PUSH_LOG_KEY = 'magepunk_run_push_log_v1';
+function logRunPush(entry) {
+	try { const l = safeLoad(RUN_PUSH_LOG_KEY, []); const list = Array.isArray(l) ? l : []; list.push({ at: Date.now(), ...entry }); safeSave(RUN_PUSH_LOG_KEY, list.slice(-20)); } catch (e) { /* best effort */ }
 }
 // drop the in-fight snapshot when a fight ends (so the next fight boots fresh, not resumes the finished one)
 function clearRunSnapshot() {
@@ -305,6 +377,19 @@ let _resumedFight = false;
 // restore the live `state` from a run's snapshot; returns true on success (else caller boots fresh)
 function resumeRunSnapshot(run, byId) {
 	if (!run || !run.snapshot) return false;
+	// a board from a DIFFERENT fight of this run (a stale tab wrote it back after the run
+	// moved on) must never be restored: playing it out would record its result onto the
+	// current fight. Put it away (recoverable, never deleted) and boot the current fight.
+	const belongs = snapshotForCurrentFight(run);
+	if (!belongs.ok) {
+		const io = activeRunIO();
+		console.warn('resume: the saved board is from another fight of this run (' + belongs.reason + ') — booting the current fight');
+		try { if (io) safeSave(io.key + '__stale_snapshot_v1', { snapshot: run.snapshot, snapshotAt: run.snapshotAt, snapshotFight: run.snapshotFight, fightId: run.fightId, reason: belongs.reason, rev: run.rev, at: Date.now() }); } catch (e) { /* best effort */ }
+		try { window.reportErr?.('resume: stale snapshot from another fight (' + belongs.reason + ', ' + (io && io.key) + ')', 'game.js resumeRunSnapshot'); } catch (e) { /* ignore */ }
+		delete run.snapshot; delete run.snapshotAt; delete run.snapshotFight; delete run.snapshotProgress;
+		if (io) io.save(run);
+		return false;
+	}
 	try {
 		const snap = run.snapshot;
 		if ((snap.schemaVersion || 0) !== E.SCHEMA_VERSION) return false; // version guard -> fresh boot
@@ -380,6 +465,7 @@ function onRunWriteReply(key, sent, json, d, mustLand) {
 	const local = safeLoad(key, null);
 	const sameRun = !!(local && sent && local.runId && String(local.runId) === String(sent.runId));
 	if (d.stale && d.ended) { if (sameRun) runEndedOnServer(key, local); return; }
+	if (d.stale && d.otherRun) { if (sameRun) newerRunOnServer(key, local); return; }
 	if (d.stale) {
 		// the server holds a NEWER revision of this run (another tab or device moved it on)
 		if (sameRun && d.rev != null && (local.rev || 0) < d.rev && _runSyncWarned !== 'stale') {
@@ -396,6 +482,24 @@ function onRunWriteReply(key, sent, json, d, mustLand) {
 	}
 }
 let _runSyncWarned = '';
+// The server holds a DIFFERENT, newer run in this slot and refused this browser's older
+// one (instinctgauntlet, 2026-11-05: a browser that came back with an old profile kept
+// its day-old Lukka run, and its saves overwrote the newer Ob Nixilis run on the server
+// -- the whole run rolled back). Take the server's run, keep this copy recoverable.
+let _newerRunWarned = false;
+async function newerRunOnServer(key, local) {
+	if (_newerRunWarned) return;
+	_newerRunWarned = true;
+	let entry = null;
+	try { const r = await MPX.call('run-load'); entry = r && r.runs && r.runs[key]; } catch (e) { entry = null; }
+	const verdict = entry && entry.run ? pickCanonicalRun(local, entry.run, entry.updated_at) : null;
+	if (verdict && verdict.pick === 'server') {
+		preserveRunConflict(key, local, 'server-has-newer-run');
+		safeSave(key, entry.run);
+		banner('⚠ A newer run from another session is on the server — this older run was put aside. Reload to continue the newer one.', 0, 'warn');
+	} else banner('⚠ The server holds a different run for this mode — reload to sort it out.', 8000, 'warn');
+	try { window.reportErr?.('run save refused: the server holds a newer, different run (' + key + ')', 'game.js newerRunOnServer'); } catch (e) { /* ignore */ }
+}
 function pushActiveRun(withSnapshot, keepalive, mustLand) {
 	if (!MP_ON || (typeof isGuest === 'function' && isGuest())) return;
 	const io = activeRunIO(); if (!io) return;
@@ -404,12 +508,43 @@ function pushActiveRun(withSnapshot, keepalive, mustLand) {
 	const json = JSON.stringify(toPush);
 	if (!withSnapshot && json === _lastPushedRunJson) return; // metadata unchanged (and already on the server)
 	_lastPushedRunJson = json;
-	// keepalive lets the final push survive a hard tab-close (small snapshots only —
-	// keepalive caps the body at ~64KB, so large boards fall back to the local snapshot)
-	const payload = { key: io.key, run: toPush };
+	let payload = { key: io.key, run: toPush };
+	// keepalive lets the final push survive a hard tab-close, but caps the body at ~64KB:
+	// a mid-fight run is bigger, so it goes as the packed (gzip) copy kept current by
+	// packRunForHandoff. Without a packed copy that fits, the run still lands without its
+	// board (the run itself is never lost) and the miss is logged, not swallowed.
+	if (keepalive) {
+		const pk = handoffPayload(io.key, run, json);
+		// hidden then pagehide fire back to back on a close: one hand-off per revision (the
+		// browser's 64KB keepalive allowance is shared by every request still in flight)
+		const tag = io.key + '#' + (run.rev || 0) + '#' + pk.ev;
+		if (tag === _handoffSent) return;
+		if (pk.ev === 'too-large' && keepalive === 'hidden') {
+			// only hidden (a tab switch): the page lives on, so the full run can still go
+			// as an ordinary, uncapped request -- as before
+			keepalive = false;
+		} else {
+			payload = pk.payload;
+			_handoffSent = tag;
+			if (pk.ev === 'too-large') console.warn('run hand-off: the mid-fight board (' + json.length + 'B) is too big for the unload push and no packed copy was ready — the run saves without it');
+		}
+		logRunPush({ ev: keepalive ? pk.ev : 'hidden-uncapped', key: io.key, rev: run.rev || 0, bytes: json.length, sent: keepalive ? pk.bytes : json.length, packedRev: pk.packedRev });
+	}
 	const sent = mustLand ? runWrite('run-save', payload, { keepalive: !!keepalive })
 		: MPX.call('run-save', payload, { keepalive: !!keepalive }).catch(() => null);
 	sent.then(d => onRunWriteReply(io.key, run, json, d, mustLand)).catch(() => {});
+}
+// What the unload (keepalive) push sends: the plain run when it fits the keepalive cap,
+// else the packed copy of this very run (same runId; an older rev still beats nothing --
+// the server refuses it only if it already holds a newer one), else the run without its
+// board. Pure apart from reading _packed, so the decision is unit-testable via the hook.
+let _handoffSent = '';
+function handoffPayload(key, run, json) {
+	if (json.length <= KEEPALIVE_MAX) return { ev: 'plain', payload: { key, run }, bytes: json.length };
+	const pk = _packed;
+	if (pk && pk.key === key && pk.runId === run.runId && pk.code.length <= KEEPALIVE_MAX) return { ev: pk.rev === run.rev ? 'packed' : 'packed-older', payload: { key, packed: pk.code }, bytes: pk.code.length, packedRev: pk.rev };
+	const bare = { ...run, snapshot: undefined, snapshotAt: undefined };
+	return { ev: 'too-large', payload: { key, run: bare }, bytes: JSON.stringify(bare).length };
 }
 // The server ended this run (its slot holds `{ended: runId}`), but this browser
 // still has it — the writes that removed it were lost (a killed or crashed browser
@@ -457,10 +592,13 @@ function recordRunResult() {
 	if (!io || !RESULT_RUN_KEYS.has(io.key)) return;
 	const run = io.load();
 	if (!run || !run.active) return;
+	// a stale tab's finished fight is not the run's current fight: never record it
+	if (!maySaveSnapshot(run, _fightId)) { staleFightTab(io.key, run); return; }
 	state.resultRecorded = true;   // whether recorded now or already accounted for (a pending result / reward)
 	if (run.postGame || run.pendingResult) return;
 	run.pendingResult = { won: state.winner === HUMAN, at: Date.now(), seed: (Math.random() * 2 ** 31) >>> 0 };
 	delete run.snapshot; delete run.snapshotAt;   // the fight is over: never resume it
+	delete run.fightId; delete run.snapshotFight; delete run.snapshotProgress;   // ...and no tab still on it may write it back
 	io.save(run);
 	pushActiveRun(true, false, true);   // the result MUST reach the server: retried with backoff, never silently dropped
 }
@@ -557,7 +695,9 @@ async function hydrateRunsFromServer() {
 	} catch (e) { /* offline / logged out -> keep the localStorage cache */ }
 }
 try {
-	document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') { saveRunSnapshot(); saveAsyncSnapshot(); pushActiveRun(true); } });
+	// hidden is the first event of a tab close (and on phones often the last one that runs):
+	// keepalive here too, so the push is not cancelled by the unload that follows
+	document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') { saveRunSnapshot(); saveAsyncSnapshot(); pushActiveRun(true, 'hidden'); } });
 	// pagehide is the real unload — keepalive so the final push survives a hard tab-close
 	window.addEventListener('pagehide', () => { saveRunSnapshot(); saveAsyncSnapshot(); pushActiveRun(true, true); });
 	setInterval(() => pushActiveRun(false), 5000); // coarse metadata heartbeat to the server
@@ -613,6 +753,21 @@ renderer.setSize(innerWidth, innerHeight);
 let lastActivity = performance.now();
 const wake = () => { lastActivity = performance.now(); };
 container.appendChild(renderer.domElement);
+// The board is drawn in WebGL; if the browser drops the context (GPU reset, too many
+// WebGL tabs) the canvas goes blank while the game itself runs on. Testers saw a blank
+// fight board after Fight! three times on 2026-11-06 with no error to go on (a reload of
+// the plain URL + Continue recovered each time). Say so, and report it, instead of
+// leaving a silent black board -- the fight is saved, so a reload resumes it.
+renderer.domElement.addEventListener('webglcontextlost', e => {
+	e.preventDefault();   // lets the browser restore the context
+	console.warn('battlecards: the WebGL context was lost — the board cannot draw until it is restored');
+	try { window.reportErr?.('webgl context lost (' + (state ? (state.over ? 'over' : 'turn ' + state.turnNumber) : 'no game') + ')', 'game.js webglcontextlost'); } catch (e2) { /* ignore */ }
+	try { banner('⚠ The board\'s graphics stopped (the browser dropped them). Your fight is saved — reload the page to continue.', 0, 'warn'); } catch (e2) { /* no DOM yet */ }
+}, false);
+renderer.domElement.addEventListener('webglcontextrestored', () => {
+	try { window.reportErr?.('webgl context restored', 'game.js webglcontextrestored'); } catch (e) { /* ignore */ }
+	try { banner('✓ The board is back.', 3000); wake(); } catch (e) { /* ignore */ }
+}, false);
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color('#0d0a14');
@@ -5690,7 +5845,9 @@ animate();
 // ---------- boot ----------
 // headless test hook
 try { wireModalVeil(); } catch (e) { /* no DOM (node tests) */ }
+window.__gameBooted = true;   // index.html's boot watchdog: the module ran this far
 window.__game = {
+	runHandoff: { handoffPayload, maySaveSnapshot, get fightId() { return _fightId; }, get packed() { return _packed; }, KEEPALIVE_MAX },
 	logForTest: (msg, refs) => log(msg, refs),
 	get logLinks() { return logLinks.map(a => a.map(l => ({ ...l }))); }, get logLines() { return logHistory.slice(); }, openLogFull, closeLogFull,
 	get cardFocus() { return focusCard ? { uid: focusCard.uid, id: focusCard.id, zone: focusCard.zone } : null; }, showCardFocus, hideCardFocus,
@@ -7113,6 +7270,7 @@ async function start() {
 		if (picks[HUMAN]) log(`You are a ${picks[HUMAN].name}.`);
 		if (playerCount > 2) log(`Free-for-all: ${playerCount} players, last hero standing wins.`);
 	}
+	bindRunFight();   // this tab now plays the run's current fight (fresh boot or resume)
 	buildPanels();
 	buildSlotMarkers();
 	pump();
