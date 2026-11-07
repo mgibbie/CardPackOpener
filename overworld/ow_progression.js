@@ -404,8 +404,48 @@ function allTrainersOnMap() {
 	});
 }
 
+// A GYM LEADER BEATEN WHOSE DEFEAT SCRIPT NEVER RAN. Until the resume fix in
+// ow_battleresume.js ('strainer'), a leader's battle that spanned a reload landed
+// the win and the badge and dropped the rest of the leader's script — the
+// `trainerbattle ..., <Leader>Defeated` label that sets FLAG_DEFEATED_<GYM>, the
+// city's story var and the TM. Remytest's save holds the STONE and DYNAMO badges
+// with Roxanne and Wattson beaten and neither defeat flag set, so the Devon Goods
+// chain (VAR_RUSTBORO_CITY_STATE 1) could never start (2026-11-06). On entering
+// the gym, run that label once: it is the same script the win would have run, and
+// it sets its own FLAG_DEFEATED_* first thing, so it cannot run twice.
+// Only a gym leader the save has beaten, only while the flag that label sets is
+// still unset.
+export function gymDefeatLabelOf(script) {
+	const ops = script && S.mapScripts[script];
+	if (!Array.isArray(ops)) return null;
+	const tb = ops.find(o => o && o.op === 'trainerbattle');
+	const post = tb && (tb.args || []).find(x => /_EventScript_/.test(x));
+	const body = post && S.mapScripts[post];
+	if (!Array.isArray(body)) return null;
+	const set = body.find(o => o && o.op === 'setflag' && /^FLAG_DEFEATED_/.test(o.flag || ''));
+	return set ? { label: post, flag: set.flag } : null;
+}
+function catchUpGymDefeat() {
+	const st = postBattleStore();
+	for (const { t, key } of allTrainersOnMap()) {
+		const script = t.ev && t.ev.script;
+		if (!script || !trainers.defeated.has(key)) continue;
+		if (Badges.scriptInfo(script)?.kind !== 'gym') continue;
+		const d = gymDefeatLabelOf(script);
+		if (!d || Story.getStoredFlag(d.flag)) continue;
+		const tryKey = 'gymdefeat:' + key;
+		if ((st.tries[tryKey] || 0) >= MAX_POSTBATTLE_TRIES) continue;
+		markPostBattleTry(tryKey);
+		console.warn('[gym-defeat] catching up', d.label, '(', d.flag, 'was never set )');
+		Story.setVar('VAR_RESULT', 1);
+		if (runScriptLabel(d.label, t.ev && trainers.list.includes(t) ? t : null)) return true;
+	}
+	return false;
+}
+
 export function catchUpPostBattleScripts() {
 	if (cutscene.blocking || dialog.blocking || battle.blocking) return;
+	if (catchUpGymDefeat()) return;
 	const st = postBattleStore();
 	const done = new Set(st.done);
 	for (const { t, key } of allTrainersOnMap()) {

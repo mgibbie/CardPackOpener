@@ -145,6 +145,25 @@ export function setTrainerBeaten(tid, on) {
 	if (on) Story.setFlag(TRAINER_FLAG(tid)); else Story.clearFlag(TRAINER_FLAG(tid));
 }
 
+// WHERE A SCRIPTED BATTLE'S SCRIPT GOES ON FROM, for a battle resumed after a
+// reload. The `trainerbattle` op expands into a private sequence (events.js
+// '__tb__': intro, battle, defeat text, then `goto` its post-battle label or
+// `return` to the script). The resume used to "land the flags, skip the speech":
+// it recorded the win and the badge and dropped everything after the battle — the
+// leader's own defeat script. A gym leader beaten across a reload kept the badge
+// but never got FLAG_DEFEATED_RUSTBORO_GYM, VAR_RUSTBORO_CITY_STATE = 1 or the TM
+// flag, so the Devon Goods chain never started (2026-11-06, Remytest; Wattson's
+// FLAG_DEFEATED_MAUVILLE_GYM the same). Saved as plain data: the rest of that
+// sequence + the bookmarked frames under it, so the resume can run it for real.
+function strainerContinuation() {
+	const frames = cutscene.bookmark(1);   // past the __battle op being executed
+	if (!frames || !frames.length) return {};
+	const top = frames[frames.length - 1];
+	const seq = cutscene.cur?.program?.__tb__;
+	if (top.label !== '__tb__' || !Array.isArray(seq)) return {};
+	const rest = seq.slice(top.i).map(o => ({ ...o }));
+	return { map: world.current?.name || null, rest, frames: frames.map((f, n) => n === frames.length - 1 ? { label: '__tbresume__', i: 0 } : f) };
+}
 export function startScriptedBattle(trainerId, scriptLabel, talker) {
 	if (!S.party || !leadMon(S.party)) { Story.setVar('VAR_RESULT', 1); return 'skip'; }
 	// canonical team by TRAINER_ id first (exact species/level/moves), then the
@@ -211,7 +230,7 @@ export function startScriptedBattle(trainerId, scriptLabel, talker) {
 		defeatText: '', money: high * 8,
 		boss: BOSS_CLASSES.has(className), // gym leaders / E4 / champions via scripts
 	};
-	battle.endSpec = { kind: 'strainer', script: talker?.ev?.script || null };
+	battle.endSpec = { kind: 'strainer', script: talker?.ev?.script || null, ...strainerContinuation() };
 	battle.startTrainer(S.party, foeParty, info, result => {
 		if (result === 'victory') {
 			Story.setVar('VAR_RESULT', 1);
@@ -933,13 +952,48 @@ Story.setEngineBadgeResolver(id => ['JOHTO', 'JOHKANTO'].some(r => Badges.BADGES
 // once he's been met (2..5), and reaching 6 does what the game's own
 // Common_EventScript_ReadyPetalburgGymForBattle does.
 const NORMAN_PREREQS = ['stone', 'knuckle', 'dynamo', 'heat'];
+// Norman beaten for real: his own script's flag, or the BALANCE BADGE however won
+const normanBeaten = () => Story.getStoredFlag('FLAG_DEFEATED_PETALBURG_GYM') || Badges.has('HOENN', 'balance');
+// 2 (met him) + one per prerequisite badge held, never past 6 (ready to battle)
+const petalburgGymWant = () => Math.min(6, 2 + NORMAN_PREREQS.filter(id => Badges.has('HOENN', id)).length);
+function readyPetalburgGym() { Story.clearFlag('FLAG_HIDE_PETALBURG_GYM_GREETER'); Story.setFlag('FLAG_PETALBURG_MART_EXPANDED_ITEMS'); }
+// COUNTED TWICE. The four prerequisite leaders' defeat scripts each end with
+// `addvar VAR_PETALBURG_GYM_STATE, 1` — and the badge they hand over has, by then,
+// already gone through Badges.earn -> syncStoryVars -> the derivation below, which
+// counted it. Each scripted gym win moved the state up by TWO: met Norman (2), then
+// Roxanne 2->3 (sync) ->4 (script), and by the fourth badge the state stood at 7 —
+// Norman's POST-battle state. He handed over TM42 FACADE and the "visit your
+// mother" lines and never offered the battle (2026-11-02, Instinct). The state is
+// derived from the badges held, so a gym's addvar is answered by the derivation
+// instead of being added on top of it. Before Norman has been met (state 0/1) it
+// adds nothing (the state 1 is the Wally-tutorial return, not a badge count); once
+// he is beaten the scripts are left to their own state machine.
+function petalburgAddVar(v) {
+	if (v !== 'VAR_PETALBURG_GYM_STATE') return null;
+	const s = Story.getVar(v);
+	if (normanBeaten()) return s;
+	if (s < 2) return s;
+	return petalburgGymWant();
+}
+Story.setAddVarResolver(petalburgAddVar);
 function syncPetalburgGym() {
 	const s = Story.getVar('VAR_PETALBURG_GYM_STATE');
+	// a save the double count above already pushed past 6 — state 7 (or 8) with
+	// Norman never beaten and no BALANCE BADGE — is put back on its derivation, so
+	// the first battle is offered. 7 is only ever written by his defeat script (and
+	// PetalburgCity's 8->7 after the League), both after FLAG_DEFEATED_PETALBURG_GYM.
+	if (s >= 7 && !normanBeaten()) {
+		const want = petalburgGymWant();
+		console.warn('[petalburg-gym] state', s, 'without a Norman victory -> derived', want);
+		Story.setVar('VAR_PETALBURG_GYM_STATE', want);
+		if (want === 6) readyPetalburgGym();
+		return;
+	}
 	if (s < 2 || s > 5) return;
-	const want = 2 + NORMAN_PREREQS.filter(id => Badges.has('HOENN', id)).length;
+	const want = petalburgGymWant();
 	if (want <= s) return;
 	Story.setVar('VAR_PETALBURG_GYM_STATE', want);
-	if (want === 6) { Story.clearFlag('FLAG_HIDE_PETALBURG_GYM_GREETER'); Story.setFlag('FLAG_PETALBURG_MART_EXPANDED_ITEMS'); }
+	if (want === 6) readyPetalburgGym();
 }
 
 // Vars the scripts READ but nothing here ever WROTE, so every branch on them

@@ -91,6 +91,11 @@ const ENGINE_BADGE_RE = /^ENGINE_([A-Z]+)BADGE$/;
 // (a stored true still counts), so clearing KANTO never reads as HOENN cleared
 let gameClearResolver = null;
 export function setGameClearResolver(fn) { gameClearResolver = typeof fn === 'function' ? fn : null; }
+// A var the port DERIVES must not also be counted by the scripts' `addvar`: the
+// resolver answers the value an `addvar V, n` should leave (null = add as usual).
+// VAR_PETALBURG_GYM_STATE is the one (ow_story.js petalburgAddVar).
+let addVarResolver = null;
+export function setAddVarResolver(fn) { addVarResolver = typeof fn === 'function' ? fn : null; }
 export function getFlag(f) {
 	if (f === 'FLAG_SYS_GAME_CLEAR' && gameClearResolver) {
 		try { const r = gameClearResolver(); if (r != null) return !!r; } catch (e) { /* fall back to the store */ }
@@ -427,6 +432,18 @@ export class Cutscene {
 		const frames = c.frames.map((f, n) => ({ label: labelOf(f.ops), i: f.i + (n === c.frames.length - 1 ? skip : 0) }));
 		return frames.every(f => f.label) ? frames : null;
 	}
+	// Push `label` as a CALL on the paused script, so it runs first when the script
+	// resumes and the script carries on after it — the GBA running a map's
+	// ON_RESUME script on the return from a battle, before the script that started
+	// the battle continues past `dowildbattle`. Only a label of the running program.
+	callLabel(label) {
+		const c = this.cur;
+		const ops = c && c.program && c.program[label];
+		if (!Array.isArray(ops)) return false;
+		applyScenes(label);
+		c.frames.push({ ops, i: 0, asCall: true });   // its `end` returns here (see 'end')
+		return true;
+	}
 	// the labels of the running script's frames, innermost last — the ones that
 	// can be named (a trainerbattle's expanded sub-sequence can't, and bookmark()
 	// returns nothing at all then)
@@ -522,7 +539,14 @@ export class Cutscene {
 				case 'setflag': setFlag(op.flag); break;
 				case 'clearflag': clearFlag(op.flag); break;
 				case 'setvar': setVar(op.var, resolveValue(op.value)); break;
-				case 'addvar': { const n = numericOperand(op.value, 'addvar'); if (n !== null) setVar(op.var, getVar(op.var) + n); break; }
+				case 'addvar': {
+					const n = numericOperand(op.value, 'addvar');
+					if (n === null) break;
+					let r = null;
+					if (addVarResolver) { try { r = addVarResolver(op.var, n); } catch (e) { r = null; } }
+					setVar(op.var, r != null ? r : getVar(op.var) + n);
+					break;
+				}
 				// a decomp `subvar` whose operand is a symbol (subvar_fix.js restores these;
 				// the transpile had turned them into addvars — the Glass Workshop GAVE ash)
 				case 'subvar': { const n = numericOperand(op.value, 'subvar'); if (n !== null) setVar(op.var, getVar(op.var) - n); break; }
@@ -647,7 +671,15 @@ export class Cutscene {
 				case 'call': this._advance(); this._goto(op.label, true); continue;
 				case 'return': if (c.frames.length) c.frames.pop(); continue;
 				// Crystal: `end` in a called label returns to the caller (fallthrough.js)
-				case 'end': if (c.program.__crystalEnd && c.frames.length > 1) { c.frames.pop(); continue; } return this._finish();
+				case 'end': {
+					if (c.program.__crystalEnd && c.frames.length > 1) { c.frames.pop(); continue; }
+					// a script pushed by callLabel (a map's ON_RESUME) ends back into the
+					// script it interrupted, not the whole scene
+					let k = c.frames.length - 1;
+					while (k >= 0 && !c.frames[k].asCall) k--;
+					if (k >= 0) { c.frames.length = k; continue; }
+					return this._finish();
+				}
 				case 'branch': {
 					let hit;
 					// `checkitem X` -> an ITEM condition. It used to transpile to a
@@ -709,14 +741,23 @@ export class Cutscene {
 					const texts = a.filter(x => /_Text_/.test(x));
 					const post = a.find(x => /_EventScript_/.test(x));
 					const seq = [];
-					if (texts[0]) seq.push({ op: 'msg', text: texts[0] });
+					// `trainerbattle_no_intro TRAINER, DEFEAT_TEXT` (174 battles — scripted
+					// fights whose challenge is the script's own msgbox) carries ONE text,
+					// and it is the DEFEAT line. Shown as an intro, the Slateport Museum
+					// grunts said "Awaaaah! A kid beat me!" before the fight began
+					// (2026-11-02, Instinct). Every form with an intro also has a defeat
+					// text, so one text is always the no-intro form.
+					const noIntro = texts.length === 1;
+					const intro = noIntro ? null : texts[0];
+					const defeat = noIntro ? texts[0] : texts[1];
+					if (intro) seq.push({ op: 'msg', text: intro });
 					// the TRAINER, not the battle form: most layouts lead with the
 					// trainer, but `trainerbattle TRAINER_BATTLE_CONTINUE_SCRIPT,
 					// TRAINER_JEFF, LOCALID_JEFF, ...` (Lavaridge Gym, 20 uses) leads with
 					// the mode, and passing that built a fallback team (2026-09-30)
 					const tid = /^TRAINER_BATTLE_/.test(a[0] || '') ? (a.find(x => /^TRAINER_(?!BATTLE_)/.test(x)) || a[0]) : a[0];
 					seq.push({ op: '__battle', trainer: tid });
-					if (texts[1]) seq.push({ op: '__wontext', text: texts[1] });
+					if (defeat) seq.push({ op: '__wontext', text: defeat });
 					// a CONTINUE_SCRIPT battle goes ON to its post script and never comes
 					// back; if that label is not loaded here, the script ends rather than
 					// fall back into the after-battle line meant for a LATER talk
