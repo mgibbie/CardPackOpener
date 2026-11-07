@@ -624,8 +624,10 @@ export function interact() {
 	// clerks behind their counters could not be spoken to at all.
 	// only someone at a compatible elevation (not under the bridge you stand on)
 	const atElev = n => elevCompatible(player.elev, Number(n.ev?.elevation) || 0);
-	const npc = npcs.list.find(n => (n.covers ? n.covers(fx, fy) : n.tx === fx && n.ty === fy) && atElev(n))
-		|| (world.behaviorAt(fx, fy) === MB_COUNTER ? npcs.list.find(n => n.tx === fx + dx && n.ty === fy + dy) : null);
+	// ...and never one a script or its hide flag took away (removeobject, ow_objsync):
+	// it isn't drawn and doesn't block, so it must not answer either
+	const npc = npcs.list.find(n => !n.hidden && (n.covers ? n.covers(fx, fy) : n.tx === fx && n.ty === fy) && atElev(n))
+		|| (world.behaviorAt(fx, fy) === MB_COUNTER ? npcs.list.find(n => !n.hidden && n.tx === fx + dx && n.ty === fy + dy) : null);
 	if (npc) {
 		npc.facing = { up: 'down', down: 'up', left: 'right', right: 'left' }[player.facing] || npc.facing;
 		// single-purpose service buildings: talking to the attendant runs it

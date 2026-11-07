@@ -1034,6 +1034,9 @@ export class Battle {
 	// ifAlive: a mon that must still be standing when the line comes up, or the
 	// whole entry is dropped (an end-of-turn heal queued before a lethal hit landed)
 	pushMsg(text, fn, ifAlive) { this.active.queue.push(ifAlive ? { text, fn, ifAlive } : { text, fn }); }
+	// a line that only still applies if `when()` holds when it comes up — dropped
+	// (text and effect) otherwise
+	pushMsgIf(text, fn, when) { this.active.queue.push({ text, fn, when }); }
 	// end-of-turn recovery never lifts a fainted mon: HP 0 is terminal until a revive
 	healAlive(mon, n) {
 		if (!mon || mon.curHP <= 0) return 0;
@@ -1071,7 +1074,14 @@ export class Battle {
 	// is reapplied. Infinity survives as 'inf' (JSON drops it otherwise).
 	snapshot() {
 		const a = this.active;
-		if (!a || a.phase === 'done' || a.decided || a.caughtMon || !a.me || !a.foe || a.foe.curHP <= 0 || a.me.curHP <= 0) return null;
+		// A WILD DOUBLE GOES ON WITH ITS LEAD FOE DOWN. The fainted mon keeps the `foe`
+		// slot (checkFaintsD thins the wild side, it never refills it) while its
+		// partner fights on, and this used to read that as "no picture to take" for
+		// the REST of the battle — so the save kept the picture from before the first
+		// KO, with that foe at full HP. Any reload after it replayed the KO and paid
+		// its EXP again (2026-11-05, Remytest: HAGOOP back at 36/36, +166 twice).
+		const leadDownWild = !!(a && a.double && !a.isTrainer && a.foe && a.foe.curHP <= 0 && a.foeAlly && a.foeAlly.curHP > 0);
+		if (!a || a.phase === 'done' || a.decided || a.caughtMon || !a.me || !a.foe || (a.foe.curHP <= 0 && !leadDownWild) || a.me.curHP <= 0) return null;
 		const strip = m => {
 			const seen = new WeakSet();   // per CALL — foes[i] and foe are the same object across calls
 			return JSON.parse(JSON.stringify(m, (k, v) => {
@@ -3197,11 +3207,18 @@ export class Battle {
 					? Math.max(1, Math.floor(mon.maxHP / 16) * Math.min(15, mon.toxicN || 1))
 					: Math.max(1, Math.floor(mon.maxHP / 8));
 				if (mon.badPsn) mon.toxicN = (mon.toxicN || 1) + 1;
-				this.pushMsg(`${this.label(mon)} is hurt by its ${mon.status === 'brn' ? 'burn' : 'poison'}!`,
+				// THE STATUS MUST STILL BE THERE WHEN THE CHIP LANDS. A held cure berry
+				// eats on a queued callback (applyStatus -> checkBerry), and the end of
+				// the turn is queued BEFORE that callback runs — so a POISON POWDER that
+				// was the turn's last move queued "is hurt by its poison!" from the
+				// status the PECHA BERRY then cured, and the cure was followed by the
+				// damage it should have prevented (2026-11-03, Instinct: 103 -> 91 HP).
+				const st = mon.status;
+				this.pushMsgIf(`${this.label(mon)} is hurt by its ${st === 'brn' ? 'burn' : 'poison'}!`,
 					() => {
 						mon.curHP = Math.max(0, mon.curHP - chip);
 						this.float(side, `-${chip}`, '#c98fe8');
-					});
+					}, () => mon.status === st);
 			}
 			if (mon.seeded && this.abilityOf(mon) !== 'magicguard') {
 				const other = this.sideOfMon(mon) === 'me' ? a.foe : a.me;
@@ -5538,6 +5555,7 @@ export class Battle {
 			if ((a.msgT > dwell || a.msgT >= 99) && settled) {
 				const next = a.queue.shift();
 				if (next && next.ifAlive && next.ifAlive.curHP <= 0) { a.msgT = 99; return; }
+				if (next && next.when && !next.when()) { a.msgT = 99; return; }   // pushMsgIf: no longer true
 				if (next) {
 					if (next.anim) {
 						a.fx = { ...next.anim, t: 0 };

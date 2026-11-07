@@ -231,6 +231,22 @@ export function staticBattleOutcome(result, legendFlag = null) {
 	saveParty(S.party);
 	return true;
 }
+// THE RETURN FROM A BATTLE RUNS THE MAP'S ON_RESUME SCRIPT (CB2_ReturnToField ->
+// RunOnResumeMapScript), BEFORE the script that started the battle goes on past
+// `dowildbattle` — while that script still holds FLAG_SYS_SPECIAL_WILD_BATTLE /
+// FLAG_SYS_CTRL_OBJ_DELETE. That is where every FireRed/Emerald static encounter
+// leaves the map: Route 16's `Route16_OnResume: call_if_set
+// FLAG_SYS_SPECIAL_WILD_BATTLE, ..RemoveSnorlax` -> `removeobject VAR_LAST_TALKED`.
+// Its own script only sets the hide flag (read on the next map load) and says
+// "SNORLAX calmed down and returned to the mountains", so with no ON_RESUME here
+// the beaten or fled SNORLAX went on lying across the road — solid, and good for
+// another full Lv30 battle — until you left and came back (2026-11-03, Instinct).
+// Pushed as a call onto the paused script, so it runs at exactly that point.
+export function runOnResumeAfterBattle() {
+	const label = S.mapScripts?.__map__?.onResume;
+	if (!label || !cutscene.cur || cutscene.cur.program !== S.mapScripts) return false;
+	return cutscene.callLabel(label);
+}
 // which object_event the script came from (VAR_LAST_TALKED: the ball or mon it
 // removes). By index: a FireRed item ball has no local_id.
 function staticObjIndex() {
@@ -257,7 +273,11 @@ export function startScriptedWildBattle(species, level) {
 		? { kind: 'static', map: world.current?.name || null, frames, obj: staticObjIndex(), ...(leg ? { legendFlag: leg.flag } : {}) }
 		: { kind: 'wild' };
 	if (leg) battle.themeHint = 'legendary';
-	battle.start(S.party, species, level, result => { if (staticBattleOutcome(result, leg?.flag)) cutscene.resume(); });
+	battle.start(S.party, species, level, result => {
+		if (!staticBattleOutcome(result, leg?.flag)) return;
+		runOnResumeAfterBattle();
+		cutscene.resume();
+	});
 	return 'wait';
 }
 // FireRed's `special StartMarowakBattle` (Pokémon Tower 6F). Unimplemented, it
