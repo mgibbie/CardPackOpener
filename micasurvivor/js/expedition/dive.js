@@ -939,7 +939,9 @@ G.ExpDive = (() => {
   function drawCombo(ctx, w, S, F) {
     const c = S.combo;
     if (!c || c.n < 2) return;
-    const x = w / 2, y = 92, col = c.n >= COMBO.FIRE ? '#ff7a3d' : c.n >= COMBO.HOT ? '#ffb347' : '#ffe9a0';
+    // MicaSurvivor (DV5): the Dive's floor pill owns 63..85, so the racha drops to a 99 baseline (its bar 104..108)
+    // and the boss bar follows at 114 (hud.js). Only this Dive combo moves; nothing else reads y here.
+    const x = w / 2, y = 99, col = c.n >= COMBO.FIRE ? '#ff7a3d' : c.n >= COMBO.HOT ? '#ffb347' : '#ffe9a0';
     const bump = 1 + Math.max(0, (c.t - (COMBO.WINDOW - 0.15)) / 0.15) * 0.25;
     ctx.save();
     ctx.translate(x, y); ctx.scale(bump, bump);
@@ -1132,9 +1134,18 @@ G.ExpDive = (() => {
     return T().f('PISO {x}', S.floor) + ' · ' + T().t(NAME[S.route]).toUpperCase() + ' · ' + T().f('{x} asegurado · {x} en juego', Math.floor(S.bank), Math.floor(S.stake));
   }
   const hudColor = () => { const S = cur(); return S && S.sealed ? '#ff9a6b' : S && S.ropeT > 0 ? '#b48aff' : '#9fd8ff'; };
-  function drawHud(ctx, w, h, pl, st, F) {
+  function drawHud(ctx, w, h, pl, st, F, mark) {
     const S = cur();
     if (!S) return;
+    // MicaSurvivor (DV5, plan D4): the floor pill — PokéDive's red pill holding the route's 25 pips, centred under
+    // the clock line (the classic HUD draws no pill; the pips used to float on the world).
+    const pw = 276, px0 = w / 2 - pw / 2, py0 = 63, ph = 22;
+    ctx.save();
+    G.HUD.roundRect(ctx, px0, py0, pw, ph, ph / 2);
+    ctx.fillStyle = 'rgba(190,34,50,.95)'; ctx.fill();
+    ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(255,255,255,.92)'; ctx.stroke();
+    ctx.restore();
+    if (mark) mark('floor', px0, py0, pw, ph);
     drawCombo(ctx, w, S, F);   // (V5)
     // the route's 25 pips (every 5th: alpha, the 25th: the guardian)
     const pos = ((S.floor - 1) % 25) + 1, x0 = w / 2 - 25 * 5, y = 74;

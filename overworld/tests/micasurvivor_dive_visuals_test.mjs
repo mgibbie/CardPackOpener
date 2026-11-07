@@ -1,4 +1,4 @@
-// micasurvivor_dive_visuals_test.mjs — MicaSurvivor Dive visuals DV1 + DV2 + DV3 + DV4: the floor art painter
+// micasurvivor_dive_visuals_test.mjs — MicaSurvivor Dive visuals DV1 + DV2 + DV3 + DV4 + DV5: the floor art painter
 // (micasurvivor/js/expedition/dive-art.js; Plans/MICASURVIVOR_DIVE_VISUALS_PLAN.md). A static server, headless Chrome,
 // a fixed guest profile.
 //   1. deterministic: two pages bake byte-identical pixels for the same floor (seed, route, floor), with no Math.random
@@ -17,9 +17,12 @@
 //      sea .38, ice .24, ruins .12; the woods, the desert and the Origin none), in a run it fills the view and cuts a
 //      hole for your lamp, fx 0 skips it (and the shafts), calm stops the flicker, and the pass draws no rng: the same
 //      time paints the same canvas. The lit routes get sun shafts + motes, the woods no light map at all
+//   7. the Dive view + HUD (DV5): a Dive camera is the plan's 640 x 350 at 1280 x 720 (scale 2), it follows at 6/s
+//      instead of the classic 9/s, the HUD line keeps its text, and on the phone (844 x 390) the camera refits and
+//      every HUD element fits inside the screen, the Dive card, the floor pill and the minimap not overlapping
 //   SHOTS=<dir> also saves dv2_<route>_1.png (floor 1) and dv2_<route>_2.png (floor 26) of the 8 routes,
 //   dv3_silhouette.png (you behind a wall, under the lip), dv4_light.png (the crater's light map) and
-//   dv4_shafts.png (the forest's sun shafts).
+//   dv4_shafts.png (the forest's sun shafts), dv5_hud.png (the Dive HUD) and dv5_phone.png (it at 844 x 390).
 //   node overworld/tests/micasurvivor_dive_visuals_test.mjs [--record]    (--record rewrites the fixture's golden pixels)
 // (In a git worktree add MAGEPUNK_ASSET_ROOT=<main checkout> for the gitignored sprites.)
 import http from 'http';
@@ -480,6 +483,75 @@ try {
 	A(base.after && base.after.light === base.before.light && base.after.amb === base.before.amb,
 		'a Normal run never reaches the style pass (no light map, no shafts)', JSON.stringify({ before: base.before, after: base.after }));
 
+	// ======================== 7. the Dive view + HUD (DV5)
+	// (a) at 1280 x 720 a Dive draws the plan's tight view (display.js DIVE 640 x 350 at the default FOV): the camera
+	//     is 640 wide at scale 2, it follows at 6/s instead of the classic 9/s, and the HUD line keeps its text.
+	const near = (x, y, e = 0.01) => typeof x === 'number' && Math.abs(x - y) <= e;
+	const dv5 = await E(a.page, () => {
+		const H = window.__t;
+		H.freeze();
+		const cam0 = { vw: G.Camera.VIEW_W, mh: G.Camera.MIN_VIEW_H, w: G.Camera.w, h: G.Camera.h, scale: G.Camera.scale, cw: G.Camera.cw, ch: G.Camera.ch };
+		// the follow rate: damp 6 in a Dive (not the classic 9)
+		const sx = G.Camera.x, sy = G.Camera.y;
+		G.Camera.shake = 0; G.Camera.x = 0; G.Camera.y = 0;
+		G.Camera.follow(100, 0, 1 / 60);
+		const fx = G.Camera.x, d6 = G.U.damp(0, 100, 6, 1 / 60), d9 = G.U.damp(0, 100, 9, 1 / 60);
+		G.Camera.x = sx; G.Camera.y = sy;
+		// the HUD line: the exact text micasurvivor_dive_test reads at floor 1
+		const S = G.ExpDive.run, line = G.ExpDive.hudLine();
+		const want = 'FLOOR ' + S.floor + ' · MOSSY WOODS · ' + Math.floor(S.bank) + ' secured · ' + Math.floor(S.stake) + ' at stake';
+		return { cam0, dive: G.Display.dive(), DIVE: G.Display.DIVE, fx, d6, d9, line, want, floor: S.floor, bank: S.bank };
+	});
+	A(dv5 && !dv5.error && dv5.dive && dv5.DIVE && dv5.DIVE.w === 640 && dv5.DIVE.h === 350,
+		'a Dive reads DIVE (640 x 350), the classic VIEW untouched', JSON.stringify(dv5 && dv5.DIVE));
+	A(dv5 && near(dv5.cam0.vw, 640) && near(dv5.cam0.mh, 350) && near(dv5.cam0.scale, 2, 1e-6) && near(dv5.cam0.w, 640) && near(dv5.cam0.h, 360),
+		'the Dive view width: 640 x 350 of world at 1280 x 720 (scale 2, camera 640 x 360)', JSON.stringify(dv5 && dv5.cam0));
+	A(dv5 && Math.abs(dv5.fx - dv5.d6) < 1e-9 && Math.abs(dv5.fx - dv5.d9) > 1e-6,
+		'a Dive follows at 6/s (damp 6), not the classic 9/s', JSON.stringify(dv5 && { fx: dv5.fx, d6: dv5.d6, d9: dv5.d9 }));
+	A(dv5 && dv5.line === dv5.want && (dv5.floor !== 1 || dv5.bank !== 0 || dv5.line === 'FLOOR 1 · MOSSY WOODS · 0 secured · 0 at stake'),
+		'the HUD line text is unchanged (micasurvivor_dive_test still passes)', JSON.stringify(dv5 && { line: dv5.line, want: dv5.want }));
+
+	// (b) the phone, 844 x 390: the camera refits to it (the whole 350-tall view fits) and every HUD element fits
+	//     inside the screen, with the Dive card, the floor pill and the minimap not overlapping each other.
+	await E(a.page, () => { const H = window.__t, pl = G.Game.player; pl.hurt = () => {}; pl.gainXp = () => 0; H.thaw(); });
+	await a.page.setViewport({ width: 844, height: 390, deviceScaleFactor: 1 });
+	await sleep(700);
+	const phone = await E(a.page, () => {
+		const H = window.__t;
+		H.freeze();
+		const k = G.HUD.k, iw = innerWidth, ih = innerHeight;
+		const R = G.HUD.rects().map(r => ({ name: r.name, x: r.x * k, y: r.y * k, w: r.w * k, h: r.h * k }));
+		const pick = n => R.find(r => r.name === n) || null;
+		const hit = (a, b) => a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+		const pairs = [];
+		for (const [p, q] of [['hp', 'floor'], ['hp', 'minimap'], ['floor', 'minimap']]) {
+			const a1 = pick(p), b1 = pick(q);
+			if (a1 && b1 && hit(a1, b1)) pairs.push(p + '~' + q);
+		}
+		return {
+			iw, ih, k, dive: G.Display.dive(),
+			cam: { cw: G.Camera.cw, ch: G.Camera.ch, vw: G.Camera.VIEW_W, w: G.Camera.w, h: G.Camera.h, scale: G.Camera.scale },
+			names: R.map(r => r.name),
+			need: ['hp', 'floor', 'minimap', 'clock', 'moves'].filter(n => !pick(n)),
+			off: R.filter(r => r.x < -1 || r.y < -1 || r.x + r.w > iw + 1 || r.y + r.h > ih + 1)
+				.map(r => r.name + JSON.stringify([Math.round(r.x), Math.round(r.y), Math.round(r.w), Math.round(r.h)])),
+			pairs, mm: !!G.HUD.minimap, line: G.ExpDive.hudLine(),
+		};
+	});
+	A(phone && !phone.error && phone.dive && phone.cam.cw === 844 && phone.cam.ch === 390
+		&& near(phone.cam.scale * phone.cam.w, 844) && near(phone.cam.scale * phone.cam.h, 390),
+		'on the phone (844 x 390) the camera refits: scale x view = the screen', JSON.stringify(phone && phone.cam));
+	A(phone && near(phone.cam.vw, 640) && near(phone.cam.h, 350),
+		'the Dive still shows its 350-tall view on the phone (the 640 width is the plan\'s)', JSON.stringify(phone && phone.cam));
+	A(phone && !phone.need.length,
+		'the phone HUD draws every element (hp, floor, minimap, clock, moves)', JSON.stringify(phone && { need: phone.need, names: phone.names }));
+	A(phone && !phone.off.length,
+		`everything fits in 844 x 390 (${phone ? phone.off.length : '?'} off)`, JSON.stringify(phone && phone.off));
+	A(phone && phone.mm && !phone.pairs.length,
+		'the Dive card, the floor pill and the minimap fit together without overlapping', JSON.stringify(phone && { pairs: phone.pairs, mm: phone.mm, names: phone.names }));
+	A(phone && /^FLOOR \d+ · [A-Z' ]+ · \d+ secured · \d+ at stake$/.test(phone.line),
+		'the HUD line reads the same on the phone', JSON.stringify(phone && phone.line));
+
 	// a page whose /overworld/data/ 404s still paints (no assets needed), with no page errors
 	block404 = true;
 	const e0 = errors.length;
@@ -575,6 +647,26 @@ try {
 			console.log(`     screenshot: ${f2}`);
 			await e2.ctx.close();
 		}
+		// DV5: the Dive HUD (the white card, the floor pill, the rounded minimap) and the same run on the phone
+		const e3 = await bootPage();
+		await E(e3.page, async () => {
+			const H = window.__t;
+			G.Expedition.diveRoute('forest'); G.Expedition.diveStart(1);
+			await G.Flow.play('exp-dive');
+			const pl = G.Game.player; pl.gainXp = () => 0; pl.hurt = () => {};
+			pl.xp = Math.round(pl.xpNext * 0.65);   // a partly filled XP bar
+			H.thaw();
+		});
+		await sleep(6500);   // the run's opening toasts (achievement, shop, tips) out of the way of the pill
+		const f3 = path.join(SHOTS, 'dv5_hud.png');
+		await e3.page.screenshot({ path: f3 });
+		console.log(`     screenshot: ${f3}`);
+		await e3.page.setViewport({ width: 844, height: 390, deviceScaleFactor: 1 });
+		await sleep(2500);
+		const f4 = path.join(SHOTS, 'dv5_phone.png');
+		await e3.page.screenshot({ path: f4 });
+		console.log(`     screenshot: ${f4}`);
+		await e3.ctx.close();
 	}
 	A(errors.length === 0, 'no page errors', errors.slice(0, 5).join(' | '));
 	await a.ctx.close(); await b.ctx.close();

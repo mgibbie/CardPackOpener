@@ -897,6 +897,7 @@ G.World = (() => {
     data.clear(); images.clear(); clearProps();
     fade = null; arena = null;
     zone = null;   // DLC D1: a new world has no Expedition zone until the Expedition sets one (setZone)
+    if (G.Camera && G.Camera.refit) G.Camera.refit();   // DV5: back to the classic view (a Dive's zone is gone)
   }
 
   /**
@@ -959,6 +960,7 @@ G.World = (() => {
       if (zone) zone.id = ++zoneIds;
       data.clear(); images.clear(); clearProps();
       if (fade) fade.images = new Map();
+      if (G.Camera && G.Camera.refit) G.Camera.refit();   // DV5: a Dive zone switches the view to DIVE (display.js)
     },
     get zone() { return zone; }, maskAt, layerAt, ledgeDown
   };

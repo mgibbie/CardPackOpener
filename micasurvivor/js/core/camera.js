@@ -30,8 +30,11 @@ G.Camera = {
   refit() { if (this.cw) this.resize(this.cw, this.ch, this.dpr); },
 
   follow(tx, ty, dt) {
-    this.x = G.U.damp(this.x, tx, 9, dt);
-    this.y = G.U.damp(this.y, ty, 9, dt);
+    // MicaSurvivor (DV5, plan D4): a Dive follows slower (6/s vs 9/s): the corridor is read close, and a
+    // lazier camera makes the walls and the guardian readable instead of sliding past.
+    const rate = (G.World && G.World.zone && G.World.zone.dive) ? 6 : 9;
+    this.x = G.U.damp(this.x, tx, rate, dt);
+    this.y = G.U.damp(this.y, ty, rate, dt);
     if (this.shake > 0) {
       this.shake = Math.max(0, this.shake - dt * 2.4);
       const a = this.shake * 7;
