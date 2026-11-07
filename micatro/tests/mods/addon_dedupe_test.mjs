@@ -217,7 +217,7 @@ sec('megas', () => {
 // ===================================================================== legacy keys still load
 sec('recipe', () => {
   const s = new Session();
-  s.start({ seed: 'DDRECIPE', mods: MODS3, customDeck: { name: 'Legacy', jokers: [{ key: 'j_nacho_ralts' }, { key: 'j_sonfive_shedinja' }] } });
+  s.start({ seed: 'DDRECIPE', mods: MODS3, customDeck: { name: 'Legacy', jokers: [{ key: 'j_nacho_ralts' }, { key: 'j_sonfive_shedinja' }] }, engineRev: 1 }); // (engine rev 1: no Pages, the jokers' Mult alone)
   const rec = JSON.parse(JSON.stringify(s.recipe));
   ok(rec.customDeck.jokers.some((j) => j.key === 'j_nacho_ralts'), 'a recipe holding j_nacho_ralts');
   const s2 = Session.fromRecipe(rec);

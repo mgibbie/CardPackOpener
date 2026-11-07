@@ -76,7 +76,7 @@ try {
 	await page.evaluate(() => { const b = window.__micatro.board; const o = b.toast.bind(b); window.__toasts = []; b.toast = (m) => { window.__toasts.push(m); return o(m); }; });
 
 	// win the first blind and cash out into the shop
-	await page.evaluate(() => window.__micatro.act({ type: 'select_blind' }));
+	await page.evaluate(() => window.__micatro.selectBlind());
 	await idle();
 	await page.evaluate(async () => { const C = await import('/micatro/js/engine/core.js'); C.G.GAME.blind.chips = 1; return window.__micatro.act({ type: 'highlight', ids: [window.__micatro.view().areas.hand[0].id] }); });
 	await idle();

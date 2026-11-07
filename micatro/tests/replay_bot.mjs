@@ -42,6 +42,8 @@ export function playRun(startOpts, { seed = 1, endless = false, maxSteps = 900, 
     if (S === STATES.BLIND_SELECT) {
       if (G.GAME.blind_on_deck !== 'Boss' && r() < 0.1 && doAct({ type: 'skip_blind' })) continue;
       doAct({ type: 'select_blind' });
+    } else if (S === STATES.PAGES) {
+      doAct({ type: 'pick_page', index: Math.floor(r() * 3) }); // (Pages: the run's Page for this blind)
     } else if (S === STATES.SELECTING_HAND) {
       if (G.consumeables.cards.length && r() < 0.3) {
         const c = G.consumeables.cards[0];

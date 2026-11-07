@@ -473,11 +473,13 @@ export async function leaderboard(net, highlight, opts = {}) {
           const back = x.back && CENTERS[x.back] ? CENTERS[x.back].name.replace(' Deck', '') : mc ? String(mc.name || '').replace(' Deck', '') : '';
           const mods = (Array.isArray(x.mods) && x.mods.length ? `<span class="lb-mods">${modBadges(x.mods)}</span>` : '') +
             (x.customDeck ? `<span class="lb-cdeck">Custom deck: ${esc(x.customDeck)}</span>` : '');
+          // (a run played with Pages: noted, as its best hand could lean on a Page)
+          const pg = x.pages === true ? ' <span class="lb-pages" title="Played with Pages">Pages</span>' : '';
           // the row's run replay (a whole run, re-simulated in the viewer) — a ▶ beside the name
           const rp = typeof x.replay === 'string' && /^[a-f0-9]{8,20}$/.test(x.replay) ? `<a class="lb-replay b-lb-replay" href="/micatro/?replay=${x.replay}" title="Watch this run" aria-label="Watch ${esc(user)}'s run">▶</a>` : '';
           // a won Pokermon run's Nuzlocke / Monotype tag (client-reported, like the score)
           const rbs = lbBadges(x.badges);
-          return `<div class="lb-row${hl && hl === user ? ' me' : ''}${mods ? ' modded' : ''}"><span>${x.rank || i + 1}</span><span>${rp}${esc(user)}${x.won ? ' <span class="won">★</span>' : ''}${rbs}${mods}</span><span class="chips">${lbScore(x)}</span><span>${x.ante || ''}</span><span>${esc(back)}${x.stake > 1 ? ' · ' + x.stake : ''}</span></div>`;
+          return `<div class="lb-row${hl && hl === user ? ' me' : ''}${mods ? ' modded' : ''}"><span>${x.rank || i + 1}</span><span>${rp}${esc(user)}${x.won ? ' <span class="won">★</span>' : ''}${rbs}${pg}${mods}</span><span class="chips">${lbScore(x)}</span><span>${x.ante || ''}</span><span>${esc(back)}${x.stake > 1 ? ' · ' + x.stake : ''}</span></div>`;
         }).join('');
       body.innerHTML = '';
       body.appendChild(tbl);
@@ -1425,8 +1427,8 @@ export function modsPanel(sel, onChange) {
     draw();
   }
   function setOpt(id, key, v) {
-    if (id === 'jokertoggle' && v === false) {
-      const options = modsApi.optionList(id);
+    if (id === 'jokertoggle' && v === false && key !== 'pages') {
+      const options = modsApi.optionList(id).filter((op) => op.key !== 'pages'); // (the Pages switch is not a Joker)
       if (options.every((op) => op.key === key || (sel.options[id] && sel.options[id][op.key] === false))) {
         say('Keep at least one original Joker enabled so a run can generate Jokers.');
         return;

@@ -9,6 +9,7 @@
 //     Legendary, only on PRIMAL_REV (a run recorded before it replays as recorded); never a Primal in a pool; the art.
 //   node micatro/tests/mods/pokermon_primal_test.mjs
 import fs from 'fs';
+// (Session runs here start with engineRev: 1 = the rules before Pages: these suites measure the mod alone)
 import path from 'path';
 import { T, start, hand, add, play, winRound, clearHand, G, P_CENTERS, act, STATES } from './poke_helpers.mjs';
 import { create_playing_card, P_CARDS, create_card, get_current_pool } from '../../js/engine/core.js';
@@ -324,7 +325,7 @@ sec('paradox packs', () => {
 // ------------------------------------------------------------------- save / resume, and an old run replays as recorded
 sec('resume', () => {
   const s = new Session();
-  s.start({ seed: 'PRMRESUME', customDeck: { name: 'Primal', mods: ['pokermon'], params: { joker_slots: 8, consumable_slots: 6, blind_scaling: 0.05 },
+  s.start({ engineRev: 1, seed: 'PRMRESUME', customDeck: { name: 'Primal', mods: ['pokermon'], params: { joker_slots: 8, consumable_slots: 6, blind_scaling: 0.05 },
     jokers: [{ key: 'j_poke_kyogre' }, { key: 'j_poke_groudon' }, { key: 'j_poke_castform' }],
     consumables: [{ key: 'c_poke_blueorb' }, { key: 'c_poke_earth_energy' }, { key: 'c_poke_redorb' }] } });
   flush();
@@ -359,7 +360,7 @@ sec('old run', () => {
   const snap = () => [G.jokers.cards.map(key).join(','), G.consumeables.cards.map(key).join(','), (G.shop_jokers ? G.shop_jokers.cards.map(key) : []).join(','), G.GAME.dollars, String(G.GAME.chips), JSON.stringify(G.GAME.poke_primal)];
   try {
     const s = new Session();
-    s.start({ seed: 'PRMOLD', customDeck: { name: 'Old', mods: ['pokermon'], params: { joker_slots: 8, consumable_slots: 6, blind_scaling: 0.05 },
+    s.start({ engineRev: 1, seed: 'PRMOLD', customDeck: { name: 'Old', mods: ['pokermon'], params: { joker_slots: 8, consumable_slots: 6, blind_scaling: 0.05 },
       jokers: [{ key: 'j_poke_kyogre' }, { key: 'j_poke_groudon' }], consumables: [] } });
     flush();
     ok(s.recipe.modVersions.pokermon === OLD.pokermon, 'recorded on ' + OLD.pokermon, s.recipe.modVersions);

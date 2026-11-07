@@ -44,7 +44,7 @@ try {
 		C.add_joker('j_joker'); C.add_joker('j_poke_charcadet'); // Charcadet is NOT leftmost
 		const s = C.create_card('Item', C.G.consumeables, null, null, null, null, 'c_poke_dawnstone'); C.G.consumeables.emplace(s);
 		C.G.E_MANAGER.flush();
-		await window.__micatro.act({ type: 'select_blind' });
+		await window.__micatro.selectBlind();
 	});
 	await page.waitForFunction(() => window.__micatro.idle(), { timeout: 30000 });
 	await sleep(500);

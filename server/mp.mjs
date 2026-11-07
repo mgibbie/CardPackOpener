@@ -2497,6 +2497,8 @@ export default async function handler(req, env) {
 			};
 			if (mode === 'micatro_modded') run.mods = modList;
 			if (customDeck) run.customDeck = customDeck;
+			// a run played with Micatro's Pages (base game since engine rev 2; off with Joker Toggle's switch, never in a challenge): noted on its row
+			if (body.pages === true) run.pages = true;
 			// Pokermon run badges ({nuz:true, mono:'fire'}): CLIENT-REPORTED like the score itself — the server can't
 			// re-check a run, so only the shape is validated. Only a won run carries them; a bad shape is refused.
 			if (body.badges != null) {

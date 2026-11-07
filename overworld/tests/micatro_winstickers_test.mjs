@@ -99,9 +99,9 @@ try {
 			G.GAME.round_resets.ante = G.GAME.win_ante;
 			G.GAME.round_resets.blind_choices.Boss = 'bl_wall';   // (a plain boss: the Elite stake's last antes are showdowns)
 		}, opts.jokers || []);
-		const act = async (a) => { await idle(); const r = await page.evaluate((a) => window.__micatro.act(a), a); await idle(); return r; };
+		const act = async (a) => { await idle(); const r = await page.evaluate((a) => window.__micatro.act(a), a); await idle(); if (a.type === 'cash_out' && /_PACK/.test((await page.evaluate(() => window.__micatro.view())).state)) { await page.evaluate(() => window.__micatro.act({ type: 'skip_booster' })); await idle(); } /* (a Page's prize pack opens after the cash-out) */ return r; };
 		for (let b = 0; b < 3; b++) {
-			await act({ type: 'select_blind' });
+			await idle(); await page.evaluate(() => window.__micatro.selectBlind()); await idle(); // (Pages: a plain Page)
 			const ids = await page.evaluate(async () => { const { G } = await import('/micatro/js/engine/core.js'); G.GAME.chips = G.GAME.blind.chips; return [G.hand.cards[0].sort_id]; });
 			await act({ type: 'highlight', ids });
 			await act({ type: 'play' });
@@ -132,7 +132,7 @@ try {
 		add_joker('j_joker'); add_joker('j_greedy_joker'); G.E_MANAGER.flush();
 	});
 	await idle();
-	await page.evaluate(() => window.__micatro.act({ type: 'select_blind' }));
+	await page.evaluate(() => window.__micatro.selectBlind());
 	await idle();
 	const px = (center) => page.evaluate((center) => {
 		const b = window.__micatro.board;
@@ -171,7 +171,7 @@ try {
 		add_joker('j_poke_bulbasaur'); G.E_MANAGER.flush();
 	});
 	await idle();
-	await page.evaluate(() => window.__micatro.act({ type: 'select_blind' }));
+	await page.evaluate(() => window.__micatro.selectBlind());
 	await idle();
 	await page.evaluate(() => { const b = window.__micatro.board; const s = b.sprites.get(b.areas.jokers[0]); s.el.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true })); });
 	await waitFor(() => page.evaluate(() => document.querySelectorAll('.dex-card').length === 4), 5000);
@@ -204,7 +204,7 @@ try {
 	await waitFor(() => page.evaluate(() => !!window.__micatro.view() && window.__micatro.idle()), 20000);
 	await page.evaluate(async () => { const { G, add_joker } = await import('/micatro/js/engine/core.js'); add_joker('j_scholar'); add_joker('j_mime'); add_joker('j_joker'); G.E_MANAGER.flush(); });
 	await idle();
-	await page.evaluate(() => window.__micatro.act({ type: 'select_blind' }));
+	await page.evaluate(() => window.__micatro.selectBlind());
 	await idle();
 	await page.evaluate(async () => (await import('/micatro/js/ui/stickers.js')).specialImage('pikachu'));
 	await sleep(800);

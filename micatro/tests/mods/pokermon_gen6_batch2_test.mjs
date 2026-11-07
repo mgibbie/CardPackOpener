@@ -22,6 +22,7 @@
 // Every ability is FIRED through real hands / Tarots / rounds / shops with exact numbers.
 //   node micatro/tests/mods/pokermon_gen6_batch2_test.mjs
 import fs from 'fs';
+// (Session runs here start with engineRev: 1 = the rules before Pages: these suites measure the mod alone)
 import path from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
 import { T, start, hand, add, clearHand, G, P_CENTERS, act, STATES } from './poke_helpers.mjs';
@@ -364,7 +365,7 @@ await sec('malamar old-rev replay', () => {
     const s = new Session();
     PINS.RULES.pins = pins;
     try {
-      s.start({ seed: 'MAL73REC', customDeck: deck });
+      s.start({ engineRev: 1, seed: 'MAL73REC', customDeck: deck });
       s.act({ type: 'select_blind' }); flush();
       for (const c of G.consumeables.cards.slice()) { s.act({ type: 'use', id: c.sort_id, targets: [] }); flush(); }
       s.act({ type: 'highlight', ids: G.hand.cards.slice(0, 5).map((c) => c.sort_id) }); s.act({ type: 'play' }); flush();
@@ -756,7 +757,7 @@ await sec('energy', () => {
 // ------------------------------------------------------------------- save / resume: the banks, the counts, the converted cards
 await sec('resume', () => {
   const s = new Session();
-  s.start({ seed: 'G6B2RES', customDeck: { name: 'Gen 6', mods: ['pokermon'], params: { blind_scaling: 0.05 },
+  s.start({ engineRev: 1, seed: 'G6B2RES', customDeck: { name: 'Gen 6', mods: ['pokermon'], params: { blind_scaling: 0.05 },
     cards: [['S_K', 0, 0, 0, 12], ['H_9', 'm_glass', 0, 0, 20], ['D_5', 0, 0, 0, 20]],
     jokers: [{ key: 'j_poke_noibat' }, { key: 'j_poke_swirlix' }, { key: 'j_poke_skrelp' }, { key: 'j_poke_tyrunt' }, { key: 'j_poke_malamar' }],
     consumables: [{ key: 'c_hermit', n: 2 }], vouchers: ['v_grabber'] } });

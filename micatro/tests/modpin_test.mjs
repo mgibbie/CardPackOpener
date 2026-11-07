@@ -80,7 +80,8 @@ ok(Array.isArray(cont.recipe.repinned) && cont.recipe.repinned[0].from.pokermon 
 MODS.pokermon.contentRev = was;
 
 // ---------------------------------------------------------------- legacy (no pins)
-const legacy = JSON.parse(JSON.stringify(run.recipe));
+// (a recipe from before pins is from before Pages too: its moves are played on the engine's rev 1)
+const legacy = JSON.parse(JSON.stringify(playRun({ seed: 'PINRUN', back: 'b_red', stake: 1, mods: ['pokermon'], engineRev: 1 }, { seed: 3, maxSteps: 120 }).recipe));
 delete legacy.modVersions; delete legacy.engineRev;
 const lp = PINS.recordedPins(legacy);
 ok(lp.assumed && lp.modVersions.pokermon === PINS.LEGACY_MOD_VERSIONS.pokermon && lp.engineRev === PINS.LEGACY_ENGINE_REV, 'a recipe without pins reads as the legacy table', lp);

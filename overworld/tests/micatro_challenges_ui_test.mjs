@@ -50,7 +50,7 @@ globalThis.localStorage = { getItem() { return null; }, setItem() { }, removeIte
 const { Session } = await import(pathToFileURL(path.join(ROOT, 'micatro/js/engine/session.js')).href);
 const sess = new Session();
 sess.start({ seed: 'CHSPEC', challenge: 'c_omelette_1' });
-sess.act({ type: 'select_blind' });
+sess.act({ type: 'select_blind' }); sess.act({ type: 'pick_page', index: 0 }); // (Pages)
 const SNAP = { view: sess.view(), events: [] };
 
 const seen = { score: [] };
@@ -142,7 +142,7 @@ try {
 		A(await waitFor(() => page.evaluate(() => /Luxury Tax/.test((document.querySelector('.ri-challenge') || {}).textContent || '')), 5000), 'Run Info names the challenge');
 		await page.evaluate(() => document.querySelector('.ri-modal .b-back').click());
 		// Continue after a reload keeps the challenge
-		await page.evaluate(() => window.__micatro.act({ type: 'select_blind' }));
+		await page.evaluate(() => window.__micatro.selectBlind());
 		await idle(page);
 		await page.reload({ waitUntil: 'domcontentloaded' });
 		await waitFor(() => page.evaluate(() => !!(window.__micatro && window.__micatro.ready)), 30000);
@@ -211,7 +211,7 @@ try {
 		A(await page.evaluate(() => localStorage.getItem('micatro_sleeve_v1:chtester')) === 'sleeve_poke_pokemonsleeve', 'the sleeve pick is remembered per player');
 
 		// ---- deck skins
-		await page.evaluate(() => window.__micatro.act({ type: 'select_blind' }));
+		await page.evaluate(() => window.__micatro.selectBlind());
 		await idle(page);
 		const kSpade = () => page.evaluate(() => {
 			const b = window.__micatro.board;
@@ -342,7 +342,7 @@ try {
 		const { page, errors, ctx } = await open({ w, h, mobile });
 		await page.evaluate(() => window.__micatro.newRun({ seed: 'REV1', mods: ['reverie'] }));
 		await waitFor(() => page.evaluate(() => window.__micatro.view() && window.__micatro.idle()), 40000);
-		await page.evaluate(() => window.__micatro.act({ type: 'select_blind' }));
+		await page.evaluate(() => window.__micatro.selectBlind());
 		await idle(page);
 		const r = await page.evaluate(() => {
 			const b = window.__micatro.board;

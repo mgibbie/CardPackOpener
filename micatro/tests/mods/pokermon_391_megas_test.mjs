@@ -11,6 +11,7 @@
 //   - the art: every Mega's 3.9.1 cell, its soul layer and their Shiny twins, and the juice (needs the gitignored art: MICATRO_MAIN)
 //   node micatro/tests/mods/pokermon_391_megas_test.mjs
 import path from 'path';
+// (Session runs here start with engineRev: 1 = the rules before Pages: these suites measure the mod alone)
 import { T, start, hand, add, play, winRound, clearHand, statusMsgs, G, P_CENTERS, act } from './poke_helpers.mjs';
 import { create_playing_card, P_CARDS, localize, get_current_pool } from '../../js/engine/core.js';
 import { MODS } from '../../js/mods/registry.js';
@@ -337,7 +338,7 @@ sec(() => {
 });
 sec(() => {
   // poke_infinite_megastone: the Mega Sleeve on the Mega Deck (its alt). Off the Mega Deck: the sleeve's own effect (+ Crystal Ball).
-  const s = new Session(); s.start({ seed: 'MINF', back: 'b_poke_megadeck', sleeve: 'sleeve_poke_megasleeve', mods: ['pokermon'] }); flush();
+  const s = new Session(); s.start({ engineRev: 1, seed: 'MINF', back: 'b_poke_megadeck', sleeve: 'sleeve_poke_megasleeve', mods: ['pokermon'] }); flush();
   ok(G.GAME.modifiers.poke_infinite_megastone === true, 'Mega Sleeve on the Mega Deck: poke_infinite_megastone');
   ok(G.GAME.used_vouchers.v_crystal_ball && G.GAME.used_vouchers.v_reroll_glut, 'the Mega Deck: Reroll Surplus / Glut and the Crystal Ball (3.9.1)', Object.keys(G.GAME.used_vouchers));
   ok(G.consumeables.cards.filter((c) => key(c) === 'c_poke_megastone').length === 1, 'one Mega Stone (the sleeve alt adds none)', consumables());
@@ -360,7 +361,7 @@ sec(() => {
 
 sec(() => {
   const session = new Session();
-  session.start({ seed: 'MEWTWOINFINITE', back: 'b_poke_megadeck', sleeve: 'sleeve_poke_megasleeve', mods: ['pokermon'] });
+  session.start({ engineRev: 1, seed: 'MEWTWOINFINITE', back: 'b_poke_megadeck', sleeve: 'sleeve_poke_megasleeve', mods: ['pokermon'] });
   flush(); act({ type: 'select_blind' }); clearHand();
   const mewtwo = add('j_poke_mewtwo'), drampa = add('j_poke_drampa');
   const stone = G.consumeables.cards.find((c) => key(c) === 'c_poke_megastone');

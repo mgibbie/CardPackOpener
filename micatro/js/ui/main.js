@@ -442,7 +442,7 @@ function submit(view, won, replay) {
   if (!loggedIn() || !net.submitScore) return null;
   if (view.challenge) return null; // (Balatro: challenge runs post no high scores — the replay is still kept)
   const badges = won && Progress && view.run_badges ? Progress.wireBadges(view.run_badges.earned) : null; // (Pokermon: the row's Nuzlocke / Monotype tag)
-  return net.submitScore({ score: (view.stats && view.stats.best_hand) || 0, ante: view.ante, seed: view.seed, back: view.back, stake: view.stake, won: !!won, mods: view.mods || [], customDeck: view.custom_deck ? view.custom_deck.name : '', ...(replay ? { replay } : {}), ...(badges ? { badges } : {}) });
+  return net.submitScore({ score: (view.stats && view.stats.best_hand) || 0, ante: view.ante, seed: view.seed, back: view.back, stake: view.stake, won: !!won, mods: view.mods || [], customDeck: view.custom_deck ? view.custom_deck.name : '', ...(view.pages_on ? { pages: true } : {}), ...(replay ? { replay } : {}), ...(badges ? { badges } : {}) });
 }
 /** Put the player's win stickers for `keys` on `o` (a published view / a replay recipe): win_stickers, and
  * win_stickers_revoked only when a Pokermon twin among them has a revocation (stickers.js "Superseded add-on jokers"). */
@@ -684,7 +684,7 @@ function stateKey(k) {
   const click = (sel) => { const b = stage.querySelector(sel); if (b && !b.disabled && b.offsetParent) { b.click(); return true; } return false; };
   // 1–9, 0: the nth card (0 = the 10th) — the hand's while it can be picked (also in Arcana / Spectral / a mod's
   // hand packs), else a pack's own cards; again on a picked card lets it go
-  if (/^[0-9]$/.test(k)) { if (player.idle()) board.keyPick(k === '0' ? 9 : +k - 1); return; }
+  if (/^[0-9]$/.test(k)) { if (player.idle()) { if (v.state === 'PAGES') board.keyPage(+k - 1); else board.keyPick(k === '0' ? 9 : +k - 1); } return; }
   if (v.state === 'SELECTING_HAND') {
     if (k === 'enter' || k === 'p') click('.b-play');
     else if (k === 'd' || k === 'delete' || k === 'backspace') click('.b-discard');
@@ -694,6 +694,9 @@ function stateKey(k) {
   } else if (v.state === 'BLIND_SELECT') {
     if (k === 'enter' || k === ' ') click('.b-select');
     else if (k === 's') click('.b-skip:not([disabled])');
+  } else if (v.state === 'PAGES') {
+    // (Pages: 1-3 raise a Page, Enter / Space takes the raised one; no Back, no Skip)
+    if (k === 'enter' || k === ' ') click('.b-pick-page');
   } else if (v.state === 'ROUND_EVAL') {
     if (k === 'enter' || k === ' ') click('.b-cashout');
   } else if (v.state === 'SHOP') {
@@ -815,6 +818,21 @@ async function boot() {
     view: () => (session ? viewOf() : board.view),
     loadMods: (ids) => ensureMods(ids),
     act: (a) => onAction(a),
+    // (tests / bots: select the blind on deck and, in a run with Pages, take a Page once the screen is up -> the pick's result.
+    //  `page`: an index, or 'plain' (default) = the quietest prize for a test that isn't about Pages: money, else a card, else a
+    //  next-shop perk, else a pack — so the cash-out goes straight to the shop whenever it can)
+    selectBlind: async (page = 'plain') => {
+      const r = onAction({ type: 'select_blind' });
+      if (!r.ok || !session || !session.view().pages) return r;
+      await new Promise((res) => { const t = () => (player.idle() ? res() : setTimeout(t, 30)); t(); });
+      let i = page;
+      if (!Number.isInteger(i)) {
+        const ch = session.view().pages.choices;
+        i = 0;
+        for (const kind of ['pack', 'shop', 'card', 'money']) { const j = ch.findIndex((p) => p.prize && p.prize.kind === kind); if (j >= 0) i = j; }
+      }
+      return onAction({ type: 'pick_page', index: i });
+    },
     events: allEvents,
     mode: MODE,
     idle: () => player.idle(),

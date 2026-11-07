@@ -144,7 +144,7 @@ try {
 	await S((M) => M.recordWin({ jokers: ['j_greedy_joker'], stake: 8, categories: ['nuz'] }));
 	await page.evaluate(async () => { const { G, add_joker } = await import('/micatro/js/engine/core.js'); add_joker('j_greedy_joker'); add_joker('j_scholar'); G.E_MANAGER.flush(); });
 	await waitFor(() => page.evaluate(() => window.__micatro.idle()), 20000);
-	await page.evaluate(() => window.__micatro.act({ type: 'select_blind' }));
+	await page.evaluate(() => window.__micatro.selectBlind());
 	await waitFor(() => page.evaluate(() => window.__micatro.idle()), 20000);
 	const tip = (center) => page.evaluate((center) => { const b = window.__micatro.board; for (const id of b.areas.jokers) { const s = b.sprites.get(id); if (s.d.center === center) b.showCardTip(s, true); } return b.tip ? b.tip.textContent : ''; }, center);
 	const tg = await tip('j_greedy_joker');

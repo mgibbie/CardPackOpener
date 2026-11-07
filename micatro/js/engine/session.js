@@ -7,7 +7,7 @@
 import { G } from './core.js';
 import { newRun, act } from './run.js';
 import { toView } from './view.js';
-import { stampRecipe, recordLegacyAssumption, pinDiff, repin, RULES, pinsAt } from '../mods/pins.js';
+import { stampRecipe, recordLegacyAssumption, pinDiff, repin, RULES, pinsAt, ENGINE_CONTENT_REV, startEngineRev } from '../mods/pins.js';
 
 // The recipe FORMAT version (a saved run with another `v` is not offered). Not the rules: those are pinned per
 // run in recipe.modVersions / recipe.engineRev (mods/pins.js ENGINE_CONTENT_REV) — bumping this would drop saves.
@@ -26,9 +26,12 @@ export const recipeSeeded = (recipe) => !!(recipe && recipe.seeded === true);
 export class Session {
   constructor() { this.recipe = null; this.events = []; }
 
-  start({ seed, back = 'b_red', stake = 1, mods = [], modOptions = {}, customDeck = null, challenge = null, sleeve = null, daily = null } = {}) {
+  start({ seed, back = 'b_red', stake = 1, mods = [], modOptions = {}, customDeck = null, challenge = null, sleeve = null, daily = null, engineRev = ENGINE_CONTENT_REV } = {}) {
+    // (`engineRev`: the base-game rules this run plays on — always the current ones in the game; a test may ask for an
+    //  older rev, e.g. 1 = before Pages, and the recipe records it, so its resume / replay plays those rules too)
+    if (!(Number.isInteger(engineRev) && engineRev >= 1 && engineRev <= ENGINE_CONTENT_REV)) engineRev = ENGINE_CONTENT_REV;
     // (`daily`: today's date for a daily challenge — Pokermon's Mystery Dungeon — passed by the UI; it becomes the recorded seed)
-    newRun({ seed, back, stake, mods, modOptions, customDeck, challenge, sleeve, daily });
+    newRun({ seed, back, stake, mods, modOptions, customDeck, challenge, sleeve, daily, engineRev });
     this.recipe = { v: ENGINE_VERSION, seed: G.GAME.pseudorandom.seed, back, stake, mods: G.GAME.mods.slice(), modOptions: G.GAME.mod_options, actions: [], started: Date.now() };
     // (every recipe carries a seed — the random one too — so whether the PLAYER chose it is recorded: a resumed or
     //  replayed run must not turn into a seeded one, which earns no win stickers / Nuzlocke / Monotype)
@@ -41,6 +44,7 @@ export class Session {
     if (G.GAME.selected_sleeve) this.recipe.sleeve = G.GAME.selected_sleeve;
     // the versions this run plays on: each active mod's version + contentRev, and the engine's (mods/pins.js)
     stampRecipe(this.recipe);
+    if (engineRev !== ENGINE_CONTENT_REV) this.recipe.engineRev = engineRev;
     this.events = G.ui_events.splice(0);
     this.save();
     return this.events;
@@ -70,7 +74,7 @@ export class Session {
     const s = new Session();
     // (the run's start too: a starting Joker's add_to_deck runs on the rules of the run's first move — Pokermon r59's Rayquaza)
     RULES.pins = pinsAt(recipe, 0);
-    try { newRun({ seed: recipe.seed, seeded: recipeSeeded(recipe), back: recipe.back, stake: recipe.stake, mods: recipe.mods || [], modOptions: recipe.modOptions || {}, customDeck: recipe.customDeck || null, challenge: recipe.challenge || null, sleeve: recipe.sleeve || null }); } finally { RULES.pins = null; }
+    try { newRun({ seed: recipe.seed, seeded: recipeSeeded(recipe), back: recipe.back, stake: recipe.stake, mods: recipe.mods || [], modOptions: recipe.modOptions || {}, customDeck: recipe.customDeck || null, challenge: recipe.challenge || null, sleeve: recipe.sleeve || null, engineRev: startEngineRev(recipe) }); } finally { RULES.pins = null; }
     s.recipe = { ...recipe, actions: [] };
     recordLegacyAssumption(s.recipe);
     const all = recipe.actions || [];
@@ -176,7 +180,7 @@ export class ReplayStepper {
   reset() {
     const r = this.recipe;
     RULES.pins = pinsAt(r, 0); // (the start on the first move's rules, as fromRecipe)
-    try { newRun({ seed: r.seed, seeded: recipeSeeded(r), back: r.back || 'b_red', stake: r.stake == null ? 1 : r.stake, mods: r.mods || [], modOptions: r.modOptions || {}, customDeck: r.customDeck || null, challenge: r.challenge || null, sleeve: r.sleeve || null }); } finally { RULES.pins = null; }
+    try { newRun({ seed: r.seed, seeded: recipeSeeded(r), back: r.back || 'b_red', stake: r.stake == null ? 1 : r.stake, mods: r.mods || [], modOptions: r.modOptions || {}, customDeck: r.customDeck || null, challenge: r.challenge || null, sleeve: r.sleeve || null, engineRev: startEngineRev(r) }); } finally { RULES.pins = null; }
     this.index = 0;
     this.error = null;
     this.startEvents = G.ui_events.splice(0);

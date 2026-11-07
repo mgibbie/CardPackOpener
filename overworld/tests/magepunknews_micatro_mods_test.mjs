@@ -2,7 +2,7 @@
 // News automatically, like new Micatro cards do (tools/gen-magepunknews.mjs + micatro/dump_mod_items.mjs).
 //   1. a throwaway git repo: commit 1 is unrelated; commit 2 adds micatro/ (engine, data, and two
 //      mods: Milatro + Tag Team) — a launch entry with a release block per mod (per-set counts) and
-//      the three built-in features (big numbers, deck editor, replays); commit 3 gives Tag Team a
+//      the four built-in features (big numbers, deck editor, Pages, replays); commit 3 gives Tag Team a
 //      brand-new joker — a 'micatro' entry listing exactly that card (name, set, rarity, cost, atlas,
 //      pos); commit 4 only touches a mod's comments — no entry
 //   2. renders magepunknews/index.html against that feed: badges, mod blocks, the feature cards,
@@ -90,7 +90,7 @@ A(mil && mil.launch && mil.launch.Joker === 30 && mil.total === 30 && mil.name =
 A(tt && tt.launch && tt.launch.Joker === 1, 'Tag Team release: 1 Joker', JSON.stringify(tt));
 A(mods.length === 2, 'only the mods in the tree are released (the rest of the manifest is absent there)', mods.map(m => m.id).join(','));
 const feats = (launch && launch.micatroFeatures || []).map(f => f.id).sort().join();
-A(feats === 'big-numbers,deck-editor,replays', 'the built-in features are announced with the files that add them', feats);
+A(feats === 'big-numbers,deck-editor,pages,replays', 'the built-in features are announced with the files that add them', feats);
 const rel = byTitle('Tag Team: a new joker');
 const added = rel && rel.micatroMods && rel.micatroMods.length === 1 && rel.micatroMods[0].added;
 const probe = added && added[0];
@@ -131,7 +131,7 @@ try {
 	A(s.badges.some(b => /1 new Micatro mod card/.test(b)), 'badge: "1 new Micatro mod card"', JSON.stringify(s.badges));
 	A(s.blocks.some(b => /^Milatro$/.test(b)) && s.blocks.some(b => /^Tag Team: 1 new card$/.test(b)), 'a block per mod: the release and the new card', JSON.stringify(s.blocks));
 	A(/30\s*Jokers/.test(s.launchText), 'mod release shows its per-set counts', s.launchText);
-	A(s.feats.length === 3 && s.feats.every(f => /\|\/designwiki\/#\/micatro\/(big-numbers|deck-editor|replays)$/.test(f)), 'the three feature cards link to their wiki pages', JSON.stringify(s.feats));
+	A(s.feats.length === 4 && s.feats.every(f => /\|\/designwiki\/#\/micatro\/(big-numbers|deck-editor|pages|replays)$/.test(f)), 'the four feature cards link to their wiki pages', JSON.stringify(s.feats));
 	A(s.chip && s.chip.href === '/designwiki/#/micatro/mod/tagteam?item=j_newsprobe_mod' && /Jokers\.png/.test(s.chip.bg) && /Mod News Probe/.test(s.chip.text), 'new mod card chip: atlas thumbnail + link to its card on the mod page', JSON.stringify(s.chip));
 	await page.hover('a.mc-chip[data-mc="j_newsprobe_mod"]');
 	await page.waitForFunction(() => /Probe text/.test(document.getElementById('mc-tip').textContent), { timeout: 5000 }).catch(() => { });

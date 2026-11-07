@@ -101,7 +101,7 @@ const SAMPLER = () => {
 	const shopSprites = ['shop_jokers', 'shop_vouchers', 'shop_booster'].flatMap(k => B.areas[k] || []).map(id => B.sprites.get(id)).filter(Boolean);
 	return {
 		state: B.view && B.view.state, ov: cls, pack: (B.areas.pack_cards || []).length, hand: (B.areas.hand || []).length,
-		shopPanel: !!document.querySelector('.overlay .shop-panel'), blindRow: !!document.querySelector('.overlay .blind-row'),
+		shopPanel: !!document.querySelector('.overlay .shop-panel'), blindRow: !!document.querySelector('.overlay .blind-row'), evalPanel: !!document.querySelector('.overlay .eval-panel'),
 		packName: (document.querySelector('.overlay .pack-name') || {}).textContent || '',
 		shopOnScreen: shopSprites.filter(s => s.tgt.y < B.SH).length,
 		idle: M.idle(), index: M.replay && M.replay.ready ? M.replay.index : null, t: performance.now(),
@@ -118,7 +118,10 @@ const look = (page) => page.evaluate((src) => eval('(' + src + ')')(), SAMPLER.t
 const KIND_NAME = { Arcana: 'Arcana Pack', Celestial: 'Celestial Pack', Spectral: 'Spectral Pack', Standard: 'Standard Pack', Buffoon: 'Buffoon Pack' };
 const HAND_PACK = (o) => o.state === 'MOD_PACK_HAND' || o.kind === 'Arcana' || o.kind === 'Spectral';
 /** pack cards drawn over the shop / blind choice: the bug */
-const overShop = (samples) => samples.filter(s => s.pack > 0 && (!/ov-pack/.test(s.ov) || s.shopPanel || s.blindRow));
+const overShop = (samples) => samples.filter(s => s.pack > 0 && (!/ov-pack/.test(s.ov) || s.shopPanel || s.blindRow || s.evalPanel));
+// where a pack opened from: the shop (bought), the blind choice (a skip tag), or the cash-out (a Page's prize pack — Pages)
+const FROM = { SHOP: 'shop', BLIND_SELECT: 'blind choice', ROUND_EVAL: 'cash-out' };
+const onFrom = (s, from) => (from === 'SHOP' ? s.shopPanel : from === 'ROUND_EVAL' ? s.evalPanel : s.blindRow);
 
 let browser;
 try {
@@ -155,11 +158,11 @@ try {
 		A(await replayReady(page), `${label}: the replay loads`, JSON.stringify(await page.evaluate(() => window.__micatro.replay && window.__micatro.replay.error)));
 		let shotMid = false;
 		for (const o of run.opened) {
-			const tag = `${label}: ${o.kind} pack (${o.via === 'buy' ? 'from the shop' : 'from a tag, at the blind choice'}, move ${o.index})`;
+			const tag = `${label}: ${o.kind} pack (${o.via === 'buy' ? 'from the shop' : o.via === 'cash_out' ? 'a Page prize, after the cash-out' : 'from a tag, at the blind choice'}, move ${o.index})`;
 			// --- step forward onto the open, animated: the cards deal into the pack screen, never over the shop
 			await seek(page, o.index - 1);
 			const before = await look(page);
-			A(before.state === o.from && (o.from === 'SHOP' ? before.shopPanel : before.blindRow), `${tag}: before the open the table is on ${o.from}`, JSON.stringify(before));
+			A(before.state === o.from && onFrom(before, o.from), `${tag}: before the open the table is on ${o.from}`, JSON.stringify(before));
 			await startSampling(page);
 			await page.evaluate(() => window.__micatro.replay.stepForward());
 			let midShot = null;
@@ -167,7 +170,7 @@ try {
 			await idle(page); await sleep(120);
 			const samples = await stopSampling(page);
 			const bad = overShop(samples);
-			A(samples.some(s => s.pack > 0) && bad.length === 0, `${tag}: no frame of the opening draws the pack's cards over the ${o.from === 'SHOP' ? 'shop' : 'blind choice'}`, bad.length ? `${bad.length}/${samples.length} frames, e.g. ${JSON.stringify(bad[0])}` : `${samples.length} frames`);
+			A(samples.some(s => s.pack > 0) && bad.length === 0, `${tag}: no frame of the opening draws the pack's cards over the ${FROM[o.from] || o.from}`, bad.length ? `${bad.length}/${samples.length} frames, e.g. ${JSON.stringify(bad[0])}` : `${samples.length} frames`);
 			const at = await look(page);
 			const name = KIND_NAME[o.kind] || '';
 			A(at.index === o.index && at.state === o.state && /ov-pack/.test(at.ov) && !at.shopPanel && !at.blindRow && at.pack > 0 && at.shopOnScreen === 0 && (!name || at.packName === name),

@@ -14,6 +14,7 @@
 // Then Energy (the standard shares; the fixed numbers stay), save / resume, and the art (each cell's type).
 //   node micatro/tests/mods/pokermon_gen7_ultrabeasts_test.mjs
 import path from 'path';
+// (Session runs here start with engineRev: 1 = the rules before Pages: these suites measure the mod alone)
 import { fileURLToPath, pathToFileURL } from 'url';
 import { T, start, hand, add, clearHand, G, P_CENTERS, act, STATES } from './poke_helpers.mjs';
 import { Session } from '../../js/engine/session.js';
@@ -386,7 +387,7 @@ await sec('energy', () => {
 // ------------------------------------------------------------------- save / resume (a run is its recipe)
 await sec('resume', () => {
   const s = new Session();
-  s.start({ seed: 'UBRESUME', customDeck: { name: 'UB', mods: ['pokermon'], params: { joker_slots: 9, consumable_slots: 8, blind_scaling: 5 },
+  s.start({ engineRev: 1, seed: 'UBRESUME', customDeck: { name: 'UB', mods: ['pokermon'], params: { joker_slots: 9, consumable_slots: 8, blind_scaling: 5 },
     jokers: [{ key: 'j_poke_pheromosa' }, { key: 'j_poke_celesteela' }, { key: 'j_poke_guzzlord' }, { key: 'j_poke_buzzwole' }, { key: 'j_poke_poipole' }, { key: 'j_poke_blacephalon' }],
     consumables: [{ key: 'c_pluto' }, { key: 'c_pluto' }, { key: 'c_pluto' }, { key: 'c_pluto' }] } });
   flush();

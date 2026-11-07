@@ -13,6 +13,7 @@
 // Every ability is FIRED through real hands / rounds / shops with exact numbers.
 //   node micatro/tests/mods/pokermon_gen9_batch1_test.mjs
 import fs from 'fs';
+// (Session runs here start with engineRev: 1 = the rules before Pages: these suites measure the mod alone)
 import path from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
 import { T, start, hand, add, clearHand, G, P_CENTERS, act, STATES } from './poke_helpers.mjs';
@@ -603,7 +604,7 @@ await sec('energy', () => {
 // ------------------------------------------------------------------- save / resume
 await sec('resume', () => {
   const s = new Session();
-  s.start({ seed: 'G9B1RES', customDeck: { name: 'Gen 9a', mods: ['pokermon'], params: { blind_scaling: 0.05 },
+  s.start({ engineRev: 1, seed: 'G9B1RES', customDeck: { name: 'Gen 9a', mods: ['pokermon'], params: { blind_scaling: 0.05 },
     cards: [['S_K', 0, 0, 0, 12], ['H_9', 0, 0, 0, 10], ['D_5', 0, 0, 0, 10], ['C_7', 0, 0, 0, 20]],
     jokers: [{ key: 'j_ceremonial' }, { key: 'j_poke_sizzlipede' }, { key: 'j_poke_pawmot' }, { key: 'j_poke_squawkabilly' }, { key: 'j_poke_bellibolt' }] } });
   s.act({ type: 'select_blind' }); flush();

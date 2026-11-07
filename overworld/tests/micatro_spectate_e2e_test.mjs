@@ -127,7 +127,7 @@ try {
 	A(await ready(alice.page), 'alice: game ready');
 	await alice.page.evaluate(() => window.__micatro.newRun({ seed: 'E2ESPEC' }));
 	await idle(alice.page);
-	await alice.page.evaluate(() => window.__micatro.act({ type: 'select_blind' }));
+	await alice.page.evaluate(() => window.__micatro.selectBlind());
 	await idle(alice.page);
 
 	// she shows up as live for bob
@@ -243,7 +243,7 @@ try {
 		const R = await import('/micatro/js/engine/run.js');
 		R.G.GAME.current_round.hands_left = 1; R.G.GAME.chips = 0;
 	});
-	await alice2.page.evaluate(() => window.__micatro.act({ type: 'select_blind' }));
+	await alice2.page.evaluate(() => window.__micatro.selectBlind());
 	await idle(alice2.page);
 	await alice2.page.evaluate(async () => { const R = await import('/micatro/js/engine/run.js'); R.G.GAME.current_round.hands_left = 1; R.G.GAME.chips = 0; });
 	await alice2.page.evaluate(() => { const v = window.__micatro.view(); window.__micatro.act({ type: 'highlight', ids: [v.areas.hand[0].id] }); return window.__micatro.act({ type: 'play' }); });

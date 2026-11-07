@@ -71,7 +71,7 @@ try {
 
 	await page.evaluate(async () => { await window.__micatro.loadMods(['pokermon']); await window.__micatro.newRun({ back: 'b_blue', stake: 2, mods: ['pokermon'] }); });
 	await idle();
-	await page.evaluate(() => window.__micatro.act({ type: 'select_blind' }));
+	await page.evaluate(() => window.__micatro.selectBlind());
 	await page.waitForFunction(() => window.__micatro.view().state === 'SELECTING_HAND', { timeout: 30000 });
 	await idle();
 
@@ -233,7 +233,7 @@ try {
 	// ---- 9. a seeded run restarts on its seed (Balatro)
 	await page.evaluate(async () => { await window.__micatro.newRun({ seed: 'KEYSEED1', back: 'b_red', stake: 1 }); });
 	await idle();
-	await page.evaluate(() => window.__micatro.act({ type: 'select_blind' }));
+	await page.evaluate(() => window.__micatro.selectBlind());
 	await idle();
 	await page.keyboard.down('r'); await sleep(1300); await page.keyboard.up('r');
 	await sleep(300); await idle();

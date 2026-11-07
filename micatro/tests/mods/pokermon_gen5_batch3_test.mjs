@@ -24,6 +24,7 @@
 // Every ability is FIRED through real hands / discards / rounds / shops with exact numbers.
 //   node micatro/tests/mods/pokermon_gen5_batch3_test.mjs
 import fs from 'fs';
+// (Session runs here start with engineRev: 1 = the rules before Pages: these suites measure the mod alone)
 import path from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
 import { T, start, hand, add, clearHand, G, P_CENTERS, act, state, STATES } from './poke_helpers.mjs';
@@ -735,7 +736,7 @@ await sec('freeze resume', () => {
   let done1 = false;
   for (let i = 0; i < 20 && !done1; i++) {
     const s = new Session();
-    s.start({ seed: 'FRZRES' + i, customDeck: { name: 'Ice', mods: ['pokermon'], params: { blind_scaling: 0.05 }, jokers: [{ key: 'j_poke_beartic' }] } });
+    s.start({ engineRev: 1, seed: 'FRZRES' + i, customDeck: { name: 'Ice', mods: ['pokermon'], params: { blind_scaling: 0.05 }, jokers: [{ key: 'j_poke_beartic' }] } });
     s.act({ type: 'select_blind' }); flush();
     const hc = G.hand.cards.slice();
     const play5 = hc.slice(1, 6);

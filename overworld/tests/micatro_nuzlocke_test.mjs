@@ -135,7 +135,7 @@ try {
 		return waitFor(() => d.page.evaluate(() => !!(window.__micatro && window.__micatro.ready)), 40000);
 	};
 	const idle = (d) => waitFor(() => d.page.evaluate(() => window.__micatro.idle()), 30000);
-	const act = async (d, a) => { await idle(d); const r = await d.page.evaluate((a) => window.__micatro.act(a), a); await idle(d); return r; };
+	const act = async (d, a) => { await idle(d); const r = await d.page.evaluate((a) => window.__micatro.act(a), a); await idle(d); if (a.type === 'cash_out' && /_PACK/.test((await d.page.evaluate(() => window.__micatro.view())).state)) { await d.page.evaluate(() => window.__micatro.act({ type: 'skip_booster' })); await idle(d); } /* (a Page's prize pack opens after the cash-out) */ return r; };
 	const shot = async (d, name) => { if (SHOTS) await d.page.screenshot({ path: path.join(SHOTS, name) }); };
 	const pokeRun = async (d) => {
 		await d.page.evaluate(async () => { await window.__micatro.loadMods(['pokermon']); await window.__micatro.newRun({ back: 'b_red', mods: ['pokermon'] }); });
@@ -153,7 +153,7 @@ try {
 	};
 	/** Blind select -> win the blind (forced chips) -> cash out -> the shop. */
 	const toShop = async (d) => {
-		await act(d, { type: 'select_blind' });
+		await idle(d); await d.page.evaluate(() => window.__micatro.selectBlind()); await idle(d); // (Pages: a plain Page)
 		const ids = await d.page.evaluate(async () => { const { G } = await import('/micatro/js/engine/core.js'); G.GAME.chips = G.GAME.blind.chips; return [G.hand.cards[0].sort_id]; });
 		await act(d, { type: 'highlight', ids });
 		await act(d, { type: 'play' });
@@ -168,7 +168,7 @@ try {
 			G.GAME.round_resets.ante = G.GAME.win_ante;
 		}, jokers);
 		for (let b = 0; b < 3; b++) {
-			await act(d, { type: 'select_blind' });
+			await idle(d); await d.page.evaluate(() => window.__micatro.selectBlind()); await idle(d); // (Pages: a plain Page)
 			const ids = await d.page.evaluate(async () => { const { G } = await import('/micatro/js/engine/core.js'); G.GAME.chips = G.GAME.blind.chips; return [G.hand.cards[0].sort_id]; });
 			await act(d, { type: 'highlight', ids });
 			await act(d, { type: 'play' });
@@ -232,7 +232,7 @@ try {
 	A(await dA.page.evaluate(() => !!document.querySelector('.rb-toast.warn') && !!document.querySelector('.rb-pill.rb-mono.rb-risk')), 'the warning toast is the gentle style and the Monotype pill is marked at risk');
 	await shot(dA, 'monotype_warning.png');
 	await act(dA, { type: 'next_round' });
-	await act(dA, { type: 'select_blind' });
+	await idle(dA); await dA.page.evaluate(() => window.__micatro.selectBlind()); await idle(dA); // (Pages: a plain Page)
 	A(JSON.stringify(await pills(dA)) === '["Nuzlocke"]', 'a round started with the Water joker: the Monotype badge disappears', JSON.stringify(await pills(dA)));
 	A(await rbToast(dA) === 'Monotype broken: started a round with Squirtle (Water) in a Lightning run', 'a toast says why ("...started a round with Squirtle (Water) in a Lightning run")', await rbToast(dA));
 	await shot(dA, 'break_toast_monotype.png');
@@ -256,7 +256,7 @@ try {
 	A(await rbToast(dA) === 'Nuzlocke broken: gained a non-Pokémon joker (Joker)\nSell off-type jokers before the next round to keep Monotype', 'the toast gives the break and the Monotype warning (two lines)', JSON.stringify(await rbToast(dA)));
 	await shot(dA, 'break_toast_non_pokemon.png');
 	await act(dA, { type: 'next_round' });
-	await act(dA, { type: 'select_blind' });
+	await idle(dA); await dA.page.evaluate(() => window.__micatro.selectBlind()); await idle(dA); // (Pages: a plain Page)
 	A((await pills(dA)).length === 0 && await rbToast(dA) === 'Monotype broken: started a round with Joker (no type)', 'kept into a round, it breaks the Monotype', await rbToast(dA));
 
 	// ===== 3. a won run =====
@@ -268,7 +268,7 @@ try {
 		G.GAME.round_resets.ante = G.GAME.win_ante;
 	});
 	for (let b = 0; b < 3; b++) {
-		await act(dA, { type: 'select_blind' });
+		await idle(dA); await dA.page.evaluate(() => window.__micatro.selectBlind()); await idle(dA); // (Pages: a plain Page)
 		const ids = await dA.page.evaluate(async () => { const { G } = await import('/micatro/js/engine/core.js'); G.GAME.chips = G.GAME.blind.chips; return [G.hand.cards[0].sort_id]; });
 		await act(dA, { type: 'highlight', ids });
 		await act(dA, { type: 'play' });

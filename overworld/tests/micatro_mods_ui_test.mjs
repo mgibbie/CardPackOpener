@@ -46,7 +46,7 @@ await import(pathToFileURL(path.join(ROOT, 'micatro/tests/fixtures/testmod/index
 const { Session } = await import(pathToFileURL(path.join(ROOT, 'micatro/js/engine/session.js')).href);
 const sess = new Session();
 sess.start({ seed: 'MODSPEC', back: 'b_red', stake: 1, mods: ['tmui'] });
-sess.act({ type: 'select_blind' });
+sess.act({ type: 'select_blind' }); sess.act({ type: 'pick_page', index: 0 }); // (Pages)
 const specView = sess.view();
 specView.mods = [...specView.mods, 'nosuchmod'];   // a mod this site doesn't ship: skipped gracefully
 const SNAP = { view: specView, events: [] };
@@ -147,7 +147,8 @@ try {
 		await tap(page, '.mod-row[data-mod="jokertoggle"] .mod-toggle');
 		await waitFor(() => page.evaluate(() => !!document.querySelector('.mod-row[data-mod="jokertoggle"] .mod-opts-toggle')), 8000);
 		await tap(page, '.mod-row[data-mod="jokertoggle"] .mod-opts-toggle');
-		A(await page.evaluate(() => document.querySelectorAll('.mod-row[data-mod="jokertoggle"] .mod-opt').length === 150), 'Joker Toggle exposes all 150 original Jokers');
+		A(await page.evaluate(() => document.querySelectorAll('.mod-row[data-mod="jokertoggle"] .mod-opt').length === 151), 'Joker Toggle exposes all 150 original Jokers (+ the Pages switch)');
+		A(await page.evaluate(() => { const b = document.querySelector('.mod-row[data-mod="jokertoggle"] [data-opt="pages"]'); return !!b && b.classList.contains('on') && /Pages/.test(b.closest('.mod-opt').textContent); }), 'its first option is the Pages switch, on by default');
 		await page.type('.mod-row[data-mod="jokertoggle"] .mod-options-search', 'greedy joker');
 		A(await page.evaluate(() => document.querySelectorAll('.mod-row[data-mod="jokertoggle"] .mod-opt').length === 1), 'long content lists can be searched');
 		await page.$eval('.mod-row[data-mod="jokertoggle"] .mod-options-search', e => { e.value = ''; e.dispatchEvent(new Event('input', { bubbles: true })); });
@@ -242,7 +243,7 @@ try {
 		await tap(page, '.ri-modal .b-back');
 
 		// select the blind, then reload and Continue: the mods come back
-		await page.evaluate(() => window.__micatro.act({ type: 'select_blind' }));
+		await page.evaluate(() => window.__micatro.selectBlind());
 		await idle(page);
 		await page.reload({ waitUntil: 'domcontentloaded' });
 		await waitFor(() => page.evaluate(() => !!(window.__micatro && window.__micatro.ready)), 30000);
@@ -261,6 +262,8 @@ try {
 		await waitFor(() => page.evaluate(() => window.__micatro.view().state === 'ROUND_EVAL'), 15000);
 		await page.evaluate(() => window.__micatro.act({ type: 'cash_out' }));
 		await idle(page);
+		// (a Page's prize pack opens after the cash-out: skip it to reach the shop)
+		if (/_PACK/.test((await V(page)).state)) { await page.evaluate(() => window.__micatro.act({ type: 'skip_booster' })); await idle(page); }
 		v = await V(page);
 		const box = v.areas.shop_booster.find(c => c.center === 'p_tmui_box');
 		A(v.state === 'SHOP' && !!box, 'the mod pack is in the shop', JSON.stringify(v.areas.shop_booster.map(c => c.center)));

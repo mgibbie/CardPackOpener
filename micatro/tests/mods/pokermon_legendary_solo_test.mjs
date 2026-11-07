@@ -20,6 +20,7 @@
 // run RECORDED on r59 (micatro/tests/fixtures/pokermon_swordtie_r59_recipe.json, on main before r60) that must re-play with ties counting.
 //   node micatro/tests/mods/pokermon_legendary_solo_test.mjs
 import { readFileSync } from 'fs';
+// (Session runs here start with engineRev: 1 = the rules before Pages: these suites measure the mod alone)
 import { T, start, hand, add, clearHand, G, P_CENTERS, act, STATES } from './poke_helpers.mjs';
 import { Session } from '../../js/engine/session.js';
 import { MODS } from '../../js/mods/registry.js';
@@ -490,7 +491,7 @@ await sec('kyurem', () => {
 // ------------------------------------------------------------------- save / resume (a run is its recipe)
 await sec('resume', () => {
   const s = new Session();
-  s.start({ seed: 'LSRESUME', customDeck: { name: 'Solo', mods: ['pokermon'], params: { joker_slots: 8, consumable_slots: 8, blind_scaling: 0.05 },
+  s.start({ engineRev: 1, seed: 'LSRESUME', customDeck: { name: 'Solo', mods: ['pokermon'], params: { joker_slots: 8, consumable_slots: 8, blind_scaling: 0.05 },
     jokers: [{ key: 'j_poke_giratina' }, { key: 'j_poke_keldeo' }, { key: 'j_poke_tornadus' }, { key: 'j_poke_reshiram' }, { key: 'j_poke_kyurem' }, { key: 'j_poke_rayquaza' }],
     consumables: [{ key: 'c_hanged_man' }, { key: 'c_hanged_man' }, { key: 'c_poke_fire_energy' }] } });
   flush();

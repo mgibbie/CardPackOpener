@@ -15,6 +15,7 @@
 // Every ability is FIRED through real hands / rounds with exact numbers.
 //   node micatro/tests/mods/pokermon_galarian_test.mjs
 import path from 'path';
+// (Session runs here start with engineRev: 1 = the rules before Pages: these suites measure the mod alone)
 import { fileURLToPath, pathToFileURL } from 'url';
 import { T, start, hand, add, clearHand, G, P_CENTERS, act, STATES } from './poke_helpers.mjs';
 import { P_CARDS, create_playing_card, get_current_pool } from '../../js/engine/core.js';
@@ -531,7 +532,7 @@ await sec('old-rev replay', () => {
     const s = new Session();
     PINS.RULES.pins = pins;
     try {
-      s.start({ seed, mods: ['pokermon'], customDeck: deck });
+      s.start({ engineRev: 1, seed, mods: ['pokermon'], customDeck: deck });
       s.act({ type: 'select_blind' }); flush();
       const en = G.consumeables.cards.find((c) => key(c) === 'c_poke_fairy_energy');
       s.act({ type: 'use', id: en.sort_id, targets: [], joker_targets: [G.jokers.cards[0].sort_id] }); flush();
@@ -565,7 +566,7 @@ await sec('old-rev replay', () => {
 // ------------------------------------------------------------------- save / resume
 await sec('resume', () => {
   const s = new Session();
-  s.start({ seed: 'GALARRES', customDeck: { name: 'Galar', mods: ['pokermon'], params: { blind_scaling: 0.05 },
+  s.start({ engineRev: 1, seed: 'GALARRES', customDeck: { name: 'Galar', mods: ['pokermon'], params: { blind_scaling: 0.05 },
     cards: [['S_J', 0, 0, 0, 12], ['H_9', 'm_poke_hazard', 0, 0, 4], ['D_5', 'm_lucky', 0, 0, 8], ['C_2', 'm_glass', 0, 0, 8], ['S_7', 'm_stone', 0, 0, 8], ['S_4', 0, 0, 0, 12]],
     consumables: [{ key: 'c_poke_fairy_energy' }, { key: 'c_familiar' }],
     jokers: [{ key: 'j_poke_koffing' }, { key: 'j_poke_galarian_slowking' }, { key: 'j_poke_galarian_corsola' }, { key: 'j_poke_galarian_slowpoke' }, { key: 'j_poke_galarian_stunfisk' }] } });

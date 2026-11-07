@@ -62,8 +62,10 @@ const { playRun } = await import(pathToFileURL(path.join(ROOT, 'micatro/tests/re
 const RPm = await import(pathToFileURL(path.join(ROOT, 'micatro/js/replays.js')).href);
 await import(pathToFileURL(path.join(ROOT, 'micatro/mods/pokermon/index.js')).href);
 const strip = (r) => { const o = J(r); delete o.modVersions; delete o.engineRev; delete o.pinAssumed; return o; };
-const poke = playRun({ seed: 'PINPOKE', back: 'b_red', stake: 1, mods: ['pokermon'] }, { seed: 7, maxSteps: 260, weak: true });
-const van = playRun({ seed: 'PINVAN', back: 'b_blue', stake: 1 }, { seed: 2, maxSteps: 260, weak: true });
+// (the fixtures stand for saves / replays made before Pages: they play on the engine's rev 1; a new run below is on the current rev)
+const poke = playRun({ seed: 'PINPOKE', back: 'b_red', stake: 1, mods: ['pokermon'], engineRev: 1 }, { seed: 7, maxSteps: 260, weak: true });
+const van = playRun({ seed: 'PINVAN', back: 'b_blue', stake: 1, engineRev: 1 }, { seed: 2, maxSteps: 260, weak: true });
+const ENGINE_REV = 2; // (mods/pins.js ENGINE_CONTENT_REV: 2 since Pages)
 if (!poke.session.over || !van.session.over) throw new Error('the fixture runs must end');
 const OLD = { pokermon: '3.2.1' };                    // recorded on Pokermon 3.2.1 before contentRev 1 (the 2026-10-18/19 house rules)
 const CUR = '3.9.1+r109'; // Pokermon generation-filter fix
@@ -206,9 +208,9 @@ try {
 		await waitFor(() => page.evaluate(() => !!localStorage.getItem('micatro_run_v1')), 20000);
 		await idle(page);
 		const sv = await LS(page, 'micatro_run_v1');
-		A(sv && sv.modVersions && sv.modVersions.pokermon === CUR && sv.engineRev === 1, 'a new Pokermon run\'s save records {pokermon: "3.9.1+r85"} + the engine rev', JSON.stringify(sv && { mv: sv.modVersions, e: sv.engineRev }));
+		A(sv && sv.modVersions && sv.modVersions.pokermon === CUR && sv.engineRev === ENGINE_REV, 'a new Pokermon run\'s save records {pokermon: "3.9.1+r85"} + the engine rev', JSON.stringify(sv && { mv: sv.modVersions, e: sv.engineRev }));
 		// play it to a game over: its replay is kept locally + uploaded
-		await page.evaluate(() => window.__micatro.act({ type: 'select_blind' }));
+		await page.evaluate(() => window.__micatro.selectBlind());
 		await idle(page);
 		for (let i = 0; i < 8; i++) {
 			const v = await page.evaluate(() => window.__micatro.view());
@@ -221,8 +223,8 @@ try {
 		await waitFor(() => seen.put.length > 0, 15000);
 		const put = seen.put[0];
 		const rec = put ? await RPm.unpackRecipe(put.code) : null;
-		A(put && put.meta && put.meta.modVersions && put.meta.modVersions.pokermon === CUR && put.meta.engineRev === 1, 'the uploaded replay\'s meta carries the versions', JSON.stringify(put && put.meta && { mv: put.meta.modVersions, e: put.meta.engineRev }));
-		A(rec && rec.modVersions && rec.modVersions.pokermon === CUR && rec.engineRev === 1, 'the uploaded replay\'s recipe carries the versions', JSON.stringify(rec && rec.modVersions));
+		A(put && put.meta && put.meta.modVersions && put.meta.modVersions.pokermon === CUR && put.meta.engineRev === ENGINE_REV, 'the uploaded replay\'s meta carries the versions', JSON.stringify(put && put.meta && { mv: put.meta.modVersions, e: put.meta.engineRev }));
+		A(rec && rec.modVersions && rec.modVersions.pokermon === CUR && rec.engineRev === ENGINE_REV, 'the uploaded replay\'s recipe carries the versions', JSON.stringify(rec && rec.modVersions));
 		const local = await LS(page, 'micatro_replays_v1');
 		A(local && local[0] && local[0].recipe.modVersions && local[0].recipe.modVersions.pokermon === CUR && local[0].meta.modVersions.pokermon === CUR, 'the local replay (recipe + meta) carries the versions', JSON.stringify(local && local[0] && local[0].meta.modVersions));
 		A(!errors.length, 'no page errors (recording)', errors.join(' | '));

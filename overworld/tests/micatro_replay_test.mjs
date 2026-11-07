@@ -131,7 +131,7 @@ try {
 	const loseRun = async (page, seed) => {
 		await page.evaluate((seed) => window.__micatro.newRun({ seed }), seed);
 		await idle(page);
-		await page.evaluate(() => window.__micatro.act({ type: 'select_blind' }));
+		await page.evaluate(() => window.__micatro.selectBlind());
 		await idle(page);
 		for (let i = 0; i < 6; i++) {
 			const v = await page.evaluate(() => window.__micatro.view());
@@ -331,7 +331,8 @@ try {
 		// the deal after a blind is chosen: the cards fly from the deck straight into the hand row. (#888's Beartic Freeze parks a KEPT
 		// card below the screen between rounds — a card being dealt is not kept: it must never aim below the screen while the board's
 		// view still says BLIND_SELECT, or the hand rises late from under the replay bar and the d-pad lands on it there.)
-		const sel = long.recipe.actions.findIndex((a, i) => a.type === 'select_blind' && JSON.parse(long.frames[i].view).state === 'BLIND_SELECT');
+		// (with Pages the deal follows the Page's pick, on the Pages screen)
+		const sel = long.recipe.actions.findIndex((a, i) => a.type === 'pick_page' && JSON.parse(long.frames[i].view).state === 'PAGES');
 		await page.evaluate((i) => window.__micatro.replay.seekTo(i, { keepPlaying: false }), sel);
 		await sleep(300); await idle(page);
 		const deal = await page.evaluate(async () => {

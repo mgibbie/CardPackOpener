@@ -117,7 +117,7 @@ ok(C.meta.won && C.meta.endless && C.meta.customDeck === 'Easy Street' && C.scan
 {
   const { loadMods } = await import('../js/mods/index.js');
   await loadMods(['pokermon']);
-  const mod = playRun({ seed: 'POKE1', back: 'b_red', stake: 1, mods: ['pokermon'], modOptions: {} }, { seed: 22, maxSteps: 700 });
+  const mod = playRun({ seed: 'POKE1', back: 'b_red', stake: 1, mods: ['pokermon'], modOptions: {} }, { seed: 23, maxSteps: 700 }); // (bot seed 23 since Pages: 22's run no longer ends holding a Pokermon joker)
   ok(mod.recipe.mods.includes('pokermon') && mod.session.over, 'modded: a Pokermon run plays to game over', mod.recipe.actions.length);
   ok(mod.finalView.areas.jokers.some((c) => c.mod === 'pokermon'), 'modded: the run bought a Pokermon joker');
   const M = verifyRecipe('modded', mod);

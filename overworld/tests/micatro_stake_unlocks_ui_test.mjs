@@ -222,7 +222,7 @@ try {
 		await page.evaluate(() => document.querySelector('.nr-modal .b-back').click());
 		await page.evaluate(() => window.__micatro.newRun({ back: 'b_blue', stake: 7 }));
 		await waitFor(() => page.evaluate(() => !!window.__micatro.view() && window.__micatro.idle()), 20000);
-		await page.evaluate(() => window.__micatro.act({ type: 'select_blind' }));
+		await page.evaluate(() => window.__micatro.selectBlind());
 		await waitFor(() => page.evaluate(() => window.__micatro.idle()), 20000);
 		await sleep(600);
 		await page.reload({ waitUntil: 'domcontentloaded' });

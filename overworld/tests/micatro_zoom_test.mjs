@@ -81,7 +81,7 @@ try {
 	// touch-action:none for dragging, which Safari doesn't treat as "no double-tap zoom", so the
 	// board cancels the second tap of a quick double tap ON A CARD (selection is pointer events,
 	// unaffected); buttons and slow taps are left alone.
-	await page.evaluate(async () => { await window.__micatro.newRun({ seed: 'DBLTAP', back: 'b_red' }); await window.__micatro.act({ type: 'select_blind' }); });
+	await page.evaluate(async () => { await window.__micatro.newRun({ seed: 'DBLTAP', back: 'b_red' }); await window.__micatro.selectBlind(); });
 	await page.waitForFunction(() => window.__micatro.idle() && document.querySelectorAll('.card').length > 3, { timeout: 30000 });
 	const taps = await page.evaluate(async () => {
 		const tap = (el) => {
