@@ -162,7 +162,7 @@ try {
 
 	// start a run
 	await page.click('#scr-menu [data-go=play]');
-	await page.evaluate(() => { for (const s of ['#mx-next', '[data-cat=survival]', '[data-var=normal]', '[data-players=solo]', '#mx-start']) document.querySelector('#scr-play ' + s).click(); });   // (U1: Play opens the flow: Pokémon -> Survival -> Normal -> Solo -> Start)
+	await page.evaluate(() => { for (const s of ['[data-cat=survival]', '[data-var=normal]', '[data-players=solo]', '#mx-start']) document.querySelector('#scr-play ' + s).click(); });
 	A(await waitFor(() => page.evaluate(() => G.Game.state === 'playing'), 15000), 'run starts', await page.evaluate(() => G.Game.state));
 	// the bot takes the first card at every level-up / item / bond screen
 	let picks = 0, levelShot = false, midShot = false;

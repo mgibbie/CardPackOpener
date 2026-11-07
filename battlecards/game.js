@@ -3859,7 +3859,7 @@ function nextEvent() {
 			break;
 		}
 		case 'marked': floatText('☠', '#ffd25f', creaturePos(ev.uid)); delay = 220; break;
-		case 'freeze': SFX.play('freeze'); floatText('❄', '#7fd8ff', creaturePos(ev.uid)); delay = 260; break;
+		case 'freeze': SFX.play('freeze'); floatText('❄', '#7fd8ff', creaturePos(ev.uid)); if (ev.name) log(`${ev.name} is Frozen`); delay = 260; break;
 		case 'paralyzed': floatText('⚡', '#c9a0ff', creaturePos(ev.uid)); log(`${ev.name} is Paralyzed!`); delay = 300; break;
 		case 'attackFizzled': floatText('MISS', '#c9a0ff', creaturePos(ev.attackerUid)); log(`${ev.name}'s attack fizzled (Paralyzed)!`); delay = 320; break;
 		case 'burned': floatText('🔥', '#ff8a3d', creaturePos(ev.uid)); log(`${ev.name} is Burned!`); delay = 300; break;
@@ -4218,7 +4218,7 @@ function nextEvent() {
 		case 'transformed': {
 			const ent = entities.get(ev.uid);
 			if (ent) { ent.dying = performance.now(); floatText('✦', '#d78cff', ent.mesh.position); }
-			log(`${ev.from} was transformed into ${ev.card.name}`);
+			log(`${ev.from || ent?.card?.name || 'A creature'} was transformed into ${ev.card?.name || ev.name}`);
 			delay = 450;
 			break;
 		}
@@ -5019,7 +5019,7 @@ function openAdventureMenu(card, ev) {
 	menu.innerHTML = `<div class="wm-title">${card.name}</div>`;
 	// summon the creature
 	const cbtn = document.createElement('button');
-	cbtn.innerHTML = `<span class="wm-cost">${card.cost}</span>Summon ${card.name} (${card.attack}/${card.health})`;
+	cbtn.innerHTML = `<span class="wm-cost">${card.cost}</span>Summon ${card.name} (${card.attack}/${card.maxHealth ?? card.health})`; // an in-hand instance carries maxHealth, not health (bug:1793635342471 "3/undefined")
 	cbtn.disabled = !E.canPlay(state, HUMAN, card);
 	cbtn.addEventListener('pointerdown', e => {
 		e.stopPropagation();
@@ -7581,15 +7581,22 @@ function miniFace(def, width = 96) {
 	c.style.cssText = `width:${width}px;height:${height}px;border-radius:6px;`;
 	c.dataset.cardId = def.id;   // which card this face is (reward screens, tests)
 	attachTip(c, def);
-	// real art lazy-loads after the first paint — redraw once it has arrived
+	// real art lazy-loads after the first paint — redraw when it ARRIVES. This used to be two
+	// fixed timers (0.7s, 2.2s): a reward screen whose images took longer than 2.2s (a boss loot
+	// of 9 cold-cache crops) kept its procedural placeholders forever (bug:1793824346933).
 	const redraw = () => {
 		const f = drawCardFace(def, {});
 		const ctx = c.getContext('2d');
 		ctx.clearRect(0, 0, c.width, c.height);
 		ctx.drawImage(f, 0, 0);
 	};
-	setTimeout(redraw, 700);
-	setTimeout(redraw, 2200);
+	const artId = def.artFrom || def.id;
+	const onArt = id => {
+		if (!c.isConnected) { artListeners.delete(onArt); return; } // the screen closed
+		if (id === '*' || id === artId) redraw();
+	};
+	artListeners.add(onArt);
+	setTimeout(redraw, 700); // the art may already be loading from an earlier paint
 	return c;
 }
 
@@ -7683,16 +7690,22 @@ function pickWeeklyAnomalyOverlay() {
 // Every run fight starts both sides at the same life: 10 on round 1, +5 per round
 // (c72e31ed). The ONE source for it — the boots and the level previews read this.
 function runLifeFor(round) { return 10 + 5 * (round - 1); }
-// opts.full: the hero starts at FULL health (maxLife = life). Dungeon/Heist/Tombs
-//   always meant that (they set maxLife from their old 15+5 formula, which this
-//   then undercut, leaving both heroes "injured" at 15/20 — 2026-10-12 report).
+// Every run fight starts both heroes at FULL health: maxLife = the fight's starting life.
+//   Dungeon/Heist/Tombs always meant that (they set maxLife from their old 15+5 formula,
+//   which this then undercut, leaving both heroes "injured" at 15/20 — 2026-10-12 report).
+//   The climbs (Duels/Lorequest/Middle-earth/Sword Coast/FF/Multiverse/Arena) used to leave
+//   maxLife unset, so "full" fell back to the constant-mode 40: Wish's "Fully heal your hero"
+//   healed a round-1 hero from 10 to 40 but did nothing at 54 in a 60-life round 11
+//   (bug:1793636524105). Ordinary healing stays uncapped (MTG-style); only the full-heal
+//   reference (Reno/Wish, Alexstrasza's "full Health") follows the fight's life now.
+//   opts.full is kept for the call sites that pass it.
 // opts.humanBonus: life the player earned on top (Heist's Good Food boon).
 function setRunLife(round, opts = {}) {
 	if (!round || round < 1) return;
 	const life = runLifeFor(round);
 	state.players.forEach((p, i) => {
 		p.life = life + (i === HUMAN ? (opts.humanBonus || 0) : 0);
-		if (opts.full) p.maxLife = p.life;
+		p.maxLife = p.life;
 	});
 	log(`❤️ Round ${round}: both sides start at ${life} life.`);
 }

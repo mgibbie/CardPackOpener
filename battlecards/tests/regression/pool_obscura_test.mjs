@@ -80,6 +80,7 @@ for (const c of pool) {
 // ---- ascendancy enchantment: turn-start scry + draw ----
 { const st = game(); play(st, 0, 'obscura_ascendancy', null); const h0 = st.players[0].hand.length;
   E.fireOngoing(st, 0, 'turn-start');
+  while (st.scryQueue.length) E.resolveScry(st, []); // "Scry, then draw": the draw waits on the scry choice (bug:1794007175555)
   ok('Ascendancy draws a card at turn start', st.players[0].hand.length === h0 + 1, [h0, st.players[0].hand.length]); }
 
 // ---- crown artifact: tap team +1/+0 and Elusive ----

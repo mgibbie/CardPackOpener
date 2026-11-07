@@ -32,6 +32,7 @@ import { drawFollower, follower, updateFollower } from './ow_follower.js';
 import { bgmTick, daycareMenu, halfParty, moveShop, nameRater, tradeMenu } from './ow_music.js';
 import { cardsMenu, deckSelect, dexMenu, drawWaterAnim, optionsMenu, partyMenu, playerMenu, questMenu, runMenu, startMenu, townMap, trade, trainerCard } from './ow_menustate.js';
 import { persistBattle } from './ow_battleresume.js';
+import { syncFlaggedObjects } from './ow_objsync.js';
 import { findLanding } from './ow_transitions.js';
 import { FADE_SPEED, fade } from './ow_fade.js';
 import { drawUnownPuzzle, unownPuzzle } from './unown_puzzle.js';
@@ -312,6 +313,9 @@ export function tick(now) {
 				else hud.textContent = 'Movement is blocked by: ' + (g.blockedBy || 'something invisible') + '. Reloading recovers it.';
 			}
 		} else S.rejectStarveT = 0;
+		// a hide flag set (or cleared) while you're on the map reaches its objects
+		// the way the GBA camera does (ow_objsync.js)
+		syncFlaggedObjects();
 		npcs.update(dt);
 		updateFollower(dt);
 	}
