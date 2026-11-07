@@ -35,7 +35,7 @@ ok('hydrateRunsFromServer checks serverSupersededRun', !!hyd && /serverSupersede
 
 // and run writes never fail silently: the run savers retry after evicting replays and say so
 ok('run saves go through safeSaveRetry + a visible warning', /const saverFor = key => run => \{ const ok = safeSaveRetry\(key, stampRun\(run\), freeSpaceForSnapshot\); if \(!ok\) runSaveFailed\(key\);/.test(src));
-ok('a failed mid-fight snapshot write warns too', /if \(!safeSaveRetry\(io\.key, run, freeSpaceForSnapshot\)\) runSaveFailed\(io\.key\);/.test(src));
+ok('a failed mid-fight snapshot write warns too', /if \(!safeSaveRetry\(io\.key, run, freeSpaceForSnapshot\)\) \{? ?runSaveFailed\(io\.key\);/.test(src));
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

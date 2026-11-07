@@ -14,7 +14,7 @@ for (const a of ['run-save', 'run-load', 'run-clear', 'ow-save', 'ow-load'])
   ok(`${a} action exists`, src.includes(`action === '${a}'`));
 
 // --- run-save: validated + capped + durable dedicated key + updated_at ---
-const rs = block('run-save');
+const rs = block('run-save', 1400); // wider: the packed hand-off branch (run_handoff_test) sits before the checks
 ok('run-save validates the run key against RUN_KEYS', /RUN_KEYS\.has\(key\)/.test(rs));
 ok('run-save rejects a non-object run', /typeof run !== 'object'|Array\.isArray\(run\)/.test(rs));
 ok('run-save enforces a size cap', /RUN_MAX_BYTES/.test(rs) && /413/.test(rs));
