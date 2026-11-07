@@ -18,7 +18,7 @@ register('transform-all-into-token', ({ state, pi, target, source, enemies, scal
 			const nt = instantiate({ id: 'token_' + tok.name.toLowerCase().replace(/[^a-z0-9]+/g, '_'), name: tok.name, type: 'creature', cost: 1, rarity: 'common', token: true, description: `A ${tok.attack}/${tok.health} ${tok.name}.`, attack: tok.attack, health: tok.health, tribe: tok.tribe, keywords: [...tok.keywords] }, pl === state.players[pi] ? pi : (pl.__pi ?? state.players.indexOf(pl)));
 			nt.zone = 'board'; nt.sick = c.sick;
 			pl.board[i] = nt;
-			emit(state, { type: 'transformed', uid: c.uid, player: state.players.indexOf(pl), name: nt.name, card: nt });
+			emit(state, { type: 'transformed', uid: c.uid, player: state.players.indexOf(pl), from: c.name, name: nt.name, card: nt }); // from: the log line names it (bug:1793975867085 "undefined was transformed")
 		}
 	}
 	recomputeAuras(state);

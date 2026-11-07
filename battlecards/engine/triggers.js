@@ -25,7 +25,7 @@ export function fireCreatureTrigger(state, c, when, extra = {}) {
 
 // condition on an ongoing trigger, judged against the event's subject card
 // (the summoned/played/dead/damaged creature) or the owner's own state
-export const ONGOING_COND_KEYS = new Set(['maxAttack', 'tribe', 'overload', 'cardType', 'keyword', 'maxHealthSubj', 'spellCost', 'maxCost', 'minCost', 'spellsThisTurn', 'otherClass', 'controlSecret', 'creature', 'nontoken', 'yourTurn', 'enemySubj', 'adjacentSelf', 'cardId', 'self', 'selfTarget', 'enemy', 'school', 'controlArtEnch', 'damageAmount', 'heroHealed', 'minAttackSelf', 'attackEqualsSelf', 'handMax', 'tribeSubj', 'dormantSelf', 'playedBefore', 'selfFullHealth', 'friendlyTarget', 'friendlySecret', 'dealtHeroDamage', 'drawsThisTurnAtLeast']);
+export const ONGOING_COND_KEYS = new Set(['maxAttack', 'tribe', 'overload', 'cardType', 'keyword', 'maxHealthSubj', 'spellCost', 'maxCost', 'minCost', 'spellsThisTurn', 'otherClass', 'controlSecret', 'creature', 'nontoken', 'yourTurn', 'enemySubj', 'adjacentSelf', 'cardId', 'self', 'selfTarget', 'enemy', 'school', 'controlArtEnch', 'damageAmount', 'heroHealed', 'friendlyHealed', 'minAttackSelf', 'attackEqualsSelf', 'handMax', 'tribeSubj', 'dormantSelf', 'playedBefore', 'selfFullHealth', 'friendlyTarget', 'friendlySecret', 'dealtHeroDamage', 'drawsThisTurnAtLeast']);
 const _warnedCond = new Set();
 export function ongoingCondOk(state, pi, cond, ctx) {
 	const subj = ctx.minion || ctx.played || ctx.dead || ctx.damaged || ctx.frozen || null;
@@ -61,7 +61,11 @@ export function ongoingCondOk(state, pi, cond, ctx) {
 	if (cond.school && !(subj && schoolOf(subj) === cond.school)) return false; // "cast an Arcane spell"
 	if (cond.controlArtEnch && !(state.players[pi].artifacts.length || state.players[pi].enchantments.length)) return false; // "if you control an artifact or an enchantment"
 	if (cond.damageAmount != null && ctx.amount !== cond.damageAmount) return false; // Holotechnician: took exactly N damage
-	if (cond.heroHealed && ctx.healedHero == null) return false; // Screaming Banshee: your HERO gained Health
+	// 'healed' is broadcast to EVERY player's ongoings (Lightwarden: "a character is healed"),
+	// so "you" triggers must check whose character it was (bug:1793819722112 Sorrowbringer
+	// grew off the opponent's lifesteal; bug:1793987150475 Sanguine Bond fired on the foe's heal)
+	if (cond.heroHealed && ctx.healedHero !== pi) return false; // "Whenever you gain Life" / Screaming Banshee: YOUR hero gained Health
+	if (cond.friendlyHealed && !(ctx.healedHero === pi || (ctx.healedCreature && ctx.healedCreature.controller === pi))) return false; // "Whenever you restore Health": your hero or one of your creatures
 	if (cond.minAttackSelf && !(subj && ctx.self && subj.attack > ctx.self.attack)) return false; // Observer of Myths: a minion with MORE Attack than this
 	if (cond.attackEqualsSelf && !(subj && ctx.self && subj.attack === ctx.self.attack)) return false; // The Replicator-inator: same Attack as this
 	if (cond.handMax != null && !(state.players[pi].hand.length <= cond.handMax)) return false; // Howdyfin: fewer than N cards in hand

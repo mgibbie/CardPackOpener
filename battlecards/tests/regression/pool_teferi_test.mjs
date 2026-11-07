@@ -52,6 +52,7 @@ for (const c of pool) {
 // ---- tutelage: card advantage at turn start ----
 { const st = game(); play(st, 0, 'teferi_tutelage', null); const h0 = st.players[0].hand.length;
   E.fireOngoing(st, 0, 'turn-start');
+  while (st.scryQueue.length) E.resolveScry(st, []); // "Scry, then draw": the draw waits on the scry choice (bug:1794007175555)
   ok('Tutelage draws a card at the start of your turn', st.players[0].hand.length === h0 + 1, [h0, st.players[0].hand.length]); }
 
 // ---- puzzlebox artifact: tap to draw + scry ----
