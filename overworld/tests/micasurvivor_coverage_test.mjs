@@ -314,6 +314,9 @@ try {
 	const pf = await E(async () => {
 		document.querySelector('#scr-menu [data-go=play]').click();
 		await new Promise(r => setTimeout(r, 200));
+		// (Play keeps your partner and opens mode selection; the picker is one tap away)
+		document.querySelector('#mx-change-character').click();
+		await new Promise(r => setTimeout(r, 200));
 		const tab = document.querySelector('#scr-play .mx-tab[data-gen="7"]') || [...document.querySelectorAll('#scr-play .mx-tab')].find(t => /Alola/.test(t.innerText));
 		if (tab) tab.click();
 		await new Promise(r => setTimeout(r, 150));
