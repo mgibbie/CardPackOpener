@@ -61,9 +61,6 @@ export const LOCKED_WARPS = {
 	"Hoenn2_Route110_TrickHouseEnd": [
 		"10,1"
 	],
-	"Hoenn2_Route110_TrickHousePuzzle1": [
-		"13,1"
-	],
 	"Hoenn2_Route111": [
 		"29,87"
 	],
@@ -125,9 +122,6 @@ export const LOCKED_WARPS = {
 	],
 	"Route110_TrickHouseEnd": [
 		"10,1"
-	],
-	"Route110_TrickHousePuzzle1": [
-		"13,1"
 	],
 	"Route111": [
 		"29,87"

@@ -24,6 +24,7 @@
  */
 G.I18n.add({
   'Pokémon': 'Pokémon', 'Modo': 'Mode', 'Variante': 'Variant', 'Jugadores': 'Players', 'Preparación': 'Setup',
+  'Cambiar Pokémon': 'Change Pokémon',
   'Elige tu Pokémon': 'Choose your Pokémon', 'Elige un modo': 'Choose a mode', 'Elige la variante': 'Choose the variant',
   '¿Cuántos jugáis?': 'How many players?', 'Prepara la partida': 'Set up the run',
   'Atrás': 'Back', 'Continuar': 'Continue', 'Variocolor: sí': 'Shiny: on', 'Variocolor: no': 'Shiny: off',
@@ -129,7 +130,7 @@ G.PlayUI = (() => {
   const KEY = 'micasurvivor_playflow';
 
   // ---------------- state (the last category / variant / players are remembered on this device: a convenience) ----------------
-  const st = { step: 1, cat: 'survival', variant: 'normal', players: 'solo', gen: 1, sub: null, subGen: 1, busy: false, joined: [],
+  const st = { step: 1, cat: 'survival', variant: 'normal', players: 'solo', gen: 1, sub: null, subGen: 1, busy: false, joined: [], usePartner: false,
                map: null, diff: null, route: null };
   try {
     const v = JSON.parse(localStorage.getItem(KEY) || 'null');
@@ -151,10 +152,11 @@ G.PlayUI = (() => {
   }
 
   // ---------------- open / close / back ----------------
-  function open() {
+  function open({ usePartner = false } = {}) {
     G.UI.chrome(false);
     G.UI.show('scr-play');
-    st.step = 1; st.sub = null;
+    st.usePartner = usePartner;
+    st.step = usePartner ? 2 : 1; st.sub = null;
     const p = G.DEX_BY[save().partner];
     st.gen = p ? p.gen : 1;
     render();
@@ -163,6 +165,8 @@ G.PlayUI = (() => {
   function back() {
     if (!isOpen()) return false;
     if (st.sub) { st.sub = null; render(); return true; }
+    if (st.step === 1 && st.usePartner) { go(2); return true; }
+    if (st.step === 2 && st.usePartner) return false;
     if (st.step > 1) { go(st.step - 1); return true; }
     return false;
   }
@@ -307,6 +311,13 @@ G.PlayUI = (() => {
 
   // ---- step 2: the category ----
   function renderCats(body) {
+    if (st.usePartner) {
+      const selected = document.createElement('div');
+      selected.className = 'mx-selected-partner';
+      selected.innerHTML = `<span>${esc(nameOf(save().partner))}</span><button type="button" id="mx-change-character" class="mx-btn small blue">${esc(T('Cambiar Pokémon'))}</button>`;
+      selected.querySelector('button').onclick = () => go(1);
+      body.appendChild(selected);
+    }
     const box = document.createElement('div');
     box.className = 'mx-tiles big';
     box.innerHTML = Object.keys(CATS).map(c => tile('data-cat', c, CATS[c].col, CATS[c].icon, CATS[c].name, [CATS[c].desc], null)).join('');

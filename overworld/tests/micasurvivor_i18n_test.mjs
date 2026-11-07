@@ -137,7 +137,7 @@ try {
 	// 4. a run: HUD, level-up, pause, summary
 	await page.evaluate(() => document.querySelector('#scr-menu [data-go=play]').click());
 	// (U1: Play opens the flow: Pokémon -> Survival -> Normal -> Solo -> Start; each step swept for Spanish)
-	for (const sel of ['#mx-next', '[data-cat=survival]', '[data-var=normal]', '[data-players=solo]', '#mx-start']) {
+	for (const sel of ['[data-cat=survival]', '[data-var=normal]', '[data-players=solo]', '#mx-start']) {
 		await sleep(300);
 		await sweep('play flow ' + sel, '#scr-play');
 		const ok = await page.evaluate(sel => { const el = document.querySelector('#scr-play ' + sel); if (el) el.click(); return !!el; }, sel);
