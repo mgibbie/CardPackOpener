@@ -13,7 +13,9 @@ let fails = 0, passes = 0;
 function ok(cond, msg, extra) {
   if (cond) { passes++; } else { fails++; console.log('FAIL ' + msg + (extra !== undefined ? ' ' + JSON.stringify(extra) : '')); }
 }
-const REV = PINS.ENGINE_CONTENT_REV;
+// (Pages v1: the tables of engine rules rev 2 — a run recorded then keeps them; v2's are in pages_v2_test.mjs)
+const REV = P.PAGES_REV;
+const CUR = PINS.ENGINE_CONTENT_REV;
 const state = () => STATE_NAMES[G.STATE];
 
 // ------------------------------------------------------------------ on / off
@@ -253,7 +255,7 @@ shopWith('negative', 'NEG1'); ok(n1 === G.shop_jokers.cards.map((c) => c.config.
 
 // ------------------------------------------------------------------ save / resume / replay
 const s = new Session(); s.start({ seed: 'RESUME' });
-ok(s.recipe.engineRev === REV, 'a new run records the engine rev');
+ok(s.recipe.engineRev === CUR, 'a new run records the engine rev');
 s.act({ type: 'select_blind' });
 const want = JSON.stringify(s.view().pages);
 const back = Session.fromRecipe(JSON.parse(JSON.stringify(s.recipe)));
@@ -268,7 +270,7 @@ const o = Session.fromRecipe(old);
 ok(o.view().state === 'SELECTING_HAND' && !o.view().pages_on, 'a rev-1 recipe replays without Pages');
 ok(!Session.pinDiff(old).some((d) => d.engine), 'a rev-1 recipe: no "versions changed" for the engine (Pages are gated)');
 ok(PINS.startEngineRev({ ...old, engineRev: 2, repinned: [{ at: 3, from: {}, engineRev: 1 }] }) === 1, 'a re-pinned old run keeps its starting rev');
-ok(Session.pinDiff({ ...old, engineRev: REV + 1 }).some((d) => d.engine), 'a future ungated rev still differs');
+ok(Session.pinDiff({ ...old, engineRev: CUR + 1 }).some((d) => d.engine), 'a future ungated rev still differs');
 
 console.log(`pages: ${passes} passed, ${fails} failed`);
 process.exit(fails ? 1 : 0);

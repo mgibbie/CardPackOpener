@@ -216,7 +216,7 @@ export function backgroundFor(state, blind, won, pack) {
   if (state === 'STANDARD_PACK') return args({ new_colour: darken(C.BLACK, 0.2), special_colour: C.RED, contrast: 3 });
   if (state === 'BUFFOON_PACK') return args({ new_colour: C.FILTER, special_colour: C.BLACK, contrast: 2 });
   if (state === 'PLANET_PACK') return args({ new_colour: C.BLACK, contrast: 3 });
-  if (state === 'PAGES') return args({ new_colour: mix(C.FILTER, C.BLACK, 0.45), special_colour: darken(C.BLACK, 0.2), contrast: 1.6 }); // (Micatro's Pages)
+  if (state === 'PAGES' || state === 'PAGE_REMOVE') return args({ new_colour: mix(C.FILTER, C.BLACK, 0.45), special_colour: darken(C.BLACK, 0.2), contrast: 1.6 }); // (Micatro's Pages)
   if (won) return args({ new_colour: C.WON, contrast: 1 });
   if (!blind || !blind.boss || state === 'SHOP' || state === 'BLIND_SELECT' || state === 'MENU') {
     if (state === 'MENU') return { new_colour: C.RED, special_colour: C.BLUE, tertiary_colour: darken(C.BLACK, 0.4), contrast: 1.4 };

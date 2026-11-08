@@ -44,6 +44,8 @@ export function playRun(startOpts, { seed = 1, endless = false, maxSteps = 900, 
       doAct({ type: 'select_blind' });
     } else if (S === STATES.PAGES) {
       doAct({ type: 'pick_page', index: Math.floor(r() * 3) }); // (Pages: the run's Page for this blind)
+    } else if (S === STATES.PAGE_REMOVE) {
+      doAct({ type: 'page_remove', id: G.playing_cards[Math.floor(r() * G.playing_cards.length)].sort_id }); // (Pages v2: remove a card)
     } else if (S === STATES.SELECTING_HAND) {
       if (G.consumeables.cards.length && r() < 0.3) {
         const c = G.consumeables.cards[0];

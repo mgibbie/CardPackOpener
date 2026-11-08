@@ -694,6 +694,9 @@ function stateKey(k) {
   } else if (v.state === 'BLIND_SELECT') {
     if (k === 'enter' || k === ' ') click('.b-select');
     else if (k === 's') click('.b-skip:not([disabled])');
+  } else if (v.state === 'PAGE_REMOVE') {
+    // (a Page's "remove a card" prize: click / tap / pad raises a card, Enter / Space removes the raised one; no Skip)
+    if (k === 'enter' || k === ' ') click('.b-page-remove');
   } else if (v.state === 'PAGES') {
     // (Pages: 1-3 raise a Page, Enter / Space takes the raised one; no Back, no Skip)
     if (k === 'enter' || k === ' ') click('.b-pick-page');
@@ -827,9 +830,12 @@ async function boot() {
       await new Promise((res) => { const t = () => (player.idle() ? res() : setTimeout(t, 30)); t(); });
       let i = page;
       if (!Number.isInteger(i)) {
+        // (and, Pages v2, one without a Round rule or a downside: the quietest round)
         const ch = session.view().pages.choices;
+        const KIND = ['money', 'card', 'shop', 'pack'];
+        const cost = (p) => (p.rule || p.down ? 10 : 0) + (p.prize && KIND.includes(p.prize.kind) ? KIND.indexOf(p.prize.kind) : 5);
         i = 0;
-        for (const kind of ['pack', 'shop', 'card', 'money']) { const j = ch.findIndex((p) => p.prize && p.prize.kind === kind); if (j >= 0) i = j; }
+        ch.forEach((p, j) => { if (cost(p) < cost(ch[i])) i = j; });
       }
       return onAction({ type: 'pick_page', index: i });
     },

@@ -182,6 +182,10 @@ export function toView() {
     view.pages_on = true;
     if (GM.pages) view.pages = { blind: GM.pages.blind, choices: GM.pages.choices.map(pageView) };
     if (GM.page) view.page = pageView(GM.page);
+    // (Pages v2's "remove a card" prize, after the cash-out: every deck card, with its id, to pick one)
+    if (G.STATE === G.STATES.PAGE_REMOVE) view.page_remove = { n: GM.page_remove || 0, cards: G.playing_cards.map((c) => ({ id: c.sort_id, front: c.config.card.key, center: c.config.center.key, edition: c.edition ? c.edition.type : 0, seal: c.seal || 0 })) };
+    if (GM.page_interest) view.interest_cap = GM.interest_cap + GM.page_interest; // (a Page's +$5 interest cap, this cash-out)
+    if (GM.page_next_hs) view.page_next_hs = GM.page_next_hs;
   }
   // Mods add their own fields / areas (Pokermon: view.areas.scry).
   callHook('view', view, cardView);

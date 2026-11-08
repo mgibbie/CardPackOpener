@@ -17,7 +17,8 @@ const RUNS = Number(process.argv[2] || 60);
 // selects. MICATRO_FUZZ_PAGES=0 plays the legacy (pre-Pages) rules instead: the vanilla path is then byte-identical to
 // the bot's runs before Pages (fuzz_pages_off_test.mjs checks that the two never mix).
 const PAGES = process.env.MICATRO_FUZZ_PAGES !== '0';
-const RUN_REV = PAGES ? ENGINE_CONTENT_REV : 1;
+// MICATRO_FUZZ_REV=<n> plays engine rules rev n instead (2 = Pages v1: fuzz_pages_v1_test.mjs pins those runs byte for byte).
+const RUN_REV = process.env.MICATRO_FUZZ_REV ? Number(process.env.MICATRO_FUZZ_REV) : PAGES ? ENGINE_CONTENT_REV : 1;
 // Optional mod set: the runs (and their replays) play with these mods on.
 let MODS = (process.argv[3] || '').split(',').filter(Boolean);
 if (MODS.length) {
@@ -63,6 +64,7 @@ function pickAction(r) {
     return { type: 'select_blind' };
   }
   if (S === STATES.PAGES) return { type: 'pick_page', index: Math.floor(r() * G.GAME.pages.choices.length) };
+  if (S === STATES.PAGE_REMOVE) return { type: 'page_remove', id: G.playing_cards[Math.floor(r() * G.playing_cards.length)].sort_id }; // (Pages v2's prize)
   if (S === STATES.SELECTING_HAND) {
     // Use a consumable sometimes (with random targets)
     if (G.consumeables.cards.length && r() < 0.3) {

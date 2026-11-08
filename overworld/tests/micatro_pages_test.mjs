@@ -10,6 +10,10 @@
 //      (the chosen Page rises, the others fade) before the round; step back returns to the Pages; a seek and the scrubber
 //      land on it; autoplay holds on it (~1.3 s at 1x) before the pick
 //   6. a spectator sees the Pages screen read-only, and the pick animate
+//   7. Pages v2 (engine rev 3): a Page with a Round rule shows it as a 4th line (desktop + phone portrait / landscape: every
+//      line inside its card, the cards on screen), a Legendary Page its own colour, the round's badge the rule; the "remove a
+//      card" prize opens the deck after the cash-out (fits desktop + phone), a click raises a card, Remove takes it out, then
+//      the shop
 // Screenshots: MICATRO_SHOTS=<dir>.
 //   node overworld/tests/micatro_pages_test.mjs
 import http from 'http';
@@ -41,7 +45,7 @@ globalThis.localStorage = { getItem() { return null; }, setItem() { }, removeIte
 const { playRun } = await import(pathToFileURL(path.join(ROOT, 'micatro/tests/replay_bot.mjs')).href);
 const RPm = await import(pathToFileURL(path.join(ROOT, 'micatro/js/replays.js')).href);
 const { Session } = await import(pathToFileURL(path.join(ROOT, 'micatro/js/engine/session.js')).href);
-const RUN = playRun({ seed: 'PAGESRP', back: 'b_red', stake: 1 }, { seed: 7, maxSteps: 200 });
+const RUN = playRun({ seed: 'PAGESRP', back: 'b_red', stake: 1 }, { seed: 9, maxSteps: 200 }); // (Pages v2: a run that lives through 3 blinds)
 const walk = (() => {
 	const st = Session.stepper(RUN.recipe);
 	const views = [st.view()], steps = [null];
@@ -52,6 +56,16 @@ const walk = (() => {
 const PAGE_AT = walk.views.map((v, i) => (v.state === 'PAGES' ? i : -1)).filter(i => i >= 0);
 if (PAGE_AT.length < 3) throw new Error('the fixture run must select at least 3 blinds: ' + PAGE_AT.length);
 if (RUN.recipe.actions[PAGE_AT[0]].type !== 'pick_page') throw new Error('a Pages screen must be followed by its pick');
+// Pages v2 fixtures: a seed whose first offer has a Page with a Round rule and a Legendary Page; one with a "remove a card" prize
+const firstOffer = (seed) => { const s = new Session(); s.start({ seed }); s.act({ type: 'select_blind' }); return s.view().pages.choices; };
+let V2SEED = null, RMSEED = null;
+for (let i = 0; i < 3000 && !(V2SEED && RMSEED); i++) {
+	const ch = firstOffer('PGV2_' + i);
+	if (!V2SEED && ch.some(p => p.rule && p.tier !== 5) && ch.some(p => p.tier === 5)) V2SEED = { seed: 'PGV2_' + i, rule: ch.findIndex(p => p.rule && p.tier !== 5), leg: ch.findIndex(p => p.tier === 5) };
+	const j = ch.findIndex(p => p.prize.kind === 'remove_card' && !p.rule && !['debuffed', 'destroy'].includes(p.effect));
+	if (!RMSEED && j >= 0) RMSEED = { seed: 'PGV2_' + i, index: j };
+}
+if (!V2SEED || !RMSEED) throw new Error('no Pages v2 fixture seed');
 const SERVER = { ab000001: { code: await RPm.packRecipe(RUN.recipe), meta: RPm.buildMeta(RUN.recipe, walk.views[walk.views.length - 1], { username: 'bob' }), by: 'bob', when: Date.now() } };
 let SPEC = null;
 
@@ -348,6 +362,85 @@ try {
 		const smp = await stopSampling(page);
 		A(smp.some(x => x.picked === RUN.recipe.actions[at].index), 'spectate: the pick animates for the watcher too', JSON.stringify(smp.map(x => x.picked).filter(x => x >= 0).slice(0, 2)));
 		A(errors.length === 0, 'spectate: no page errors', errors.slice(0, 3).join(' | '));
+		await page.browserContext().close();
+	}
+
+	// ======================================================= 7. Pages v2: Round rules, Legendary, the remove screen
+	const LOOK2 = () => {
+		const cards = [...document.querySelectorAll('.overlay .page-card')];
+		const r = (e) => { const b = e.getBoundingClientRect(); return { l: b.left, t: b.top, r: b.right, b: b.bottom }; };
+		// a line is readable when it sits inside its card and its text isn't clipped
+		const inside = (c) => [...c.children].every(x => { const a = r(x), b = r(c); return a.t >= b.t - 1 && a.b <= b.b + 1 && a.l >= b.l - 1 && a.r <= b.r + 1 && x.scrollHeight <= x.clientHeight + 2 && x.scrollWidth <= x.clientWidth + 2; });
+		return { cards: cards.map(c => ({ cls: c.className, name: c.querySelector('.pg-name').textContent, rule: (c.querySelector('.pg-rule') || {}).textContent || '', inside: inside(c), rect: r(c), font: parseFloat(getComputedStyle(c.querySelector('.pg-req')).fontSize) })), vw: innerWidth, vh: innerHeight };
+	};
+	const look2 = (page) => page.evaluate((src) => eval('(' + src + ')')(), LOOK2.toString());
+	const plain = (t) => String(t || '').replace(/\{[^}]*\}/g, '');
+	for (const vp of [{ name: 'desktop', width: 1600, height: 900 }, { name: 'phone portrait', file: 'phone_portrait', width: 390, height: 844, touch: true }, { name: 'phone landscape', file: 'phone_landscape', width: 844, height: 390, touch: true }]) {
+		const tag = 'v2 ' + vp.name;
+		const { page, errors, go } = await newPage({ width: vp.width, height: vp.height, touch: !!vp.touch });
+		await go('/micatro/');
+		await newRun(page, V2SEED.seed);
+		await page.evaluate(() => window.__micatro.act({ type: 'select_blind' }));
+		A(await onPages(page), `${tag}: the Pages screen`);
+		await sleep(700);
+		const v = await V(page);
+		const s = await look2(page);
+		const want = v.pages.choices[V2SEED.rule];
+		A(s.cards[V2SEED.rule].rule && plain(want.desc.lines[3]) === s.cards[V2SEED.rule].rule && /^Round rule: /.test(s.cards[V2SEED.rule].rule) && s.cards[V2SEED.rule].cls.includes('has-rule'), `${tag}: a Page with a Round rule shows it as a 4th line`, s.cards[V2SEED.rule].rule);
+		A(s.cards[V2SEED.leg].name === 'Legendary Page' && s.cards[V2SEED.leg].cls.includes('tier-5'), `${tag}: a Legendary Page, in its own colour`, s.cards[V2SEED.leg].name);
+		A(s.cards.every(c => c.inside), `${tag}: every line inside its card, nothing clipped`, JSON.stringify(s.cards.map(c => c.inside)));
+		A(s.cards.every(c => c.rect.l >= -1 && c.rect.t >= -1 && c.rect.r <= s.vw + 1 && c.rect.b <= s.vh + 1) && noOverlap(s.cards.map(c => c.rect)), `${tag}: the 3 Pages on screen, side by side`);
+		await shot(page, `pages2_offer_${vp.file || vp.name}.png`);
+		await page.evaluate((i) => window.__micatro.act({ type: 'pick_page', index: i }), V2SEED.rule);
+		await waitFor(async () => (await V(page)).state === 'SELECTING_HAND', 10000); await idle(page); await sleep(300);
+		const badge = await page.evaluate(() => { const b = document.querySelector('.hb-page'); const r = b.querySelector('.hp-rule'); return { shown: !b.hidden, rule: r ? r.textContent : '' }; });
+		A(badge.shown && badge.rule === plain(want.desc.lines[3]), `${tag}: the round's badge shows the Round rule`, badge.rule);
+		const vr = await V(page);
+		A(vr.page && vr.page.rule === want.rule, `${tag}: the round plays the rule`, vr.page && vr.page.rule);
+		await shot(page, `pages2_round_${vp.file || vp.name}.png`);
+		A(errors.length === 0, `${tag}: no page errors`, errors.slice(0, 3).join(' | '));
+		await page.browserContext().close();
+	}
+	for (const vp of [{ name: 'desktop', width: 1600, height: 900 }, { name: 'phone portrait', file: 'phone_portrait', width: 390, height: 844, touch: true }, { name: 'phone landscape', file: 'phone_landscape', width: 844, height: 390, touch: true }]) {
+		const tag = 'v2 remove ' + vp.name;
+		const { page, errors, go } = await newPage({ width: vp.width, height: vp.height, touch: !!vp.touch });
+		await go('/micatro/');
+		await newRun(page, RMSEED.seed);
+		await page.evaluate(() => window.__micatro.act({ type: 'select_blind' }));
+		A(await onPages(page), `${tag}: the Pages screen`);
+		await page.evaluate((i) => window.__micatro.act({ type: 'pick_page', index: i }), RMSEED.index);
+		await waitFor(async () => (await V(page)).state === 'SELECTING_HAND', 10000); await idle(page);
+		// (the test wins this Blind with any hand: its requirement set to 1 in the page's engine)
+		await page.evaluate(async () => { const { G } = await import('/micatro/js/engine/core.js'); G.GAME.blind.chips = 1; });
+		await page.evaluate(() => { const v = window.__micatro.view(); window.__micatro.act({ type: 'highlight', ids: [v.areas.hand[0].id] }); return window.__micatro.act({ type: 'play' }); });
+		A(await waitFor(async () => (await V(page)).state === 'ROUND_EVAL', 20000), `${tag}: the Blind is beaten`);
+		await idle(page); await sleep(300);
+		const prize = await page.evaluate(() => [...document.querySelectorAll('.eval-row')].map(r => r.textContent).find(t => /Page prize/.test(t)) || '');
+		A(/Remove a card/.test(prize), `${tag}: the cash-out names the prize`, prize);
+		await page.evaluate(() => document.querySelector('.b-cashout').click());
+		A(await waitFor(async () => (await V(page)).state === 'PAGE_REMOVE', 20000), `${tag}: after the cash-out, the remove screen`);
+		await idle(page); await sleep(500);
+		const rm = await page.evaluate(() => {
+			const cs = [...document.querySelectorAll('.overlay .premove-card')];
+			const r = (e) => { const b = e.getBoundingClientRect(); return { l: b.left, t: b.top, r: b.right, b: b.bottom }; };
+			const go = document.querySelector('.overlay .b-page-remove');
+			return { n: cs.length, rects: cs.map(r), go: go ? r(go) : null, goOn: !!(go && !go.disabled), vw: innerWidth, vh: innerHeight, hud: document.querySelector('.hb-name').textContent, skip: !!document.querySelector('.overlay .b-skip-pack, .overlay .b-next') };
+		});
+		A(rm.n === 52 && rm.hud === 'Remove a card', `${tag}: the whole deck (52 cards)`, rm.n);
+		A(rm.rects.every(x => x.l >= -1 && x.t >= -1 && x.r <= rm.vw + 1 && x.b <= rm.vh + 1) && rm.go && rm.go.b <= rm.vh + 1 && rm.go.r <= rm.vw + 1, `${tag}: every card and Remove on screen`, JSON.stringify(rm.go) + ` ${rm.vw}x${rm.vh}`);
+		A(!rm.goOn && !rm.skip, `${tag}: Remove waits for a card; no Skip`);
+		await shot(page, `pages2_remove_${vp.file || vp.name}.png`);
+		const pickAt = rm.rects[5];
+		if (vp.touch) await page.touchscreen.tap((pickAt.l + pickAt.r) / 2, pickAt.t + 8); else await page.mouse.click((pickAt.l + pickAt.r) / 2, pickAt.t + 8);
+		await sleep(250);
+		const sel = await page.evaluate(() => { const c = document.querySelector('.overlay .premove-card.sel'); return c ? +c.dataset.card : null; });
+		A(sel != null && await page.evaluate(() => !document.querySelector('.overlay .b-page-remove').disabled), `${tag}: a ${vp.touch ? 'tap' : 'click'} raises a card`);
+		await shot(page, `pages2_remove_${vp.file || vp.name}_raised.png`);
+		await page.evaluate(() => document.querySelector('.overlay .b-page-remove').click());
+		A(await waitFor(async () => (await V(page)).state === 'SHOP', 20000), `${tag}: Remove -> the shop`);
+		const after = await V(page);
+		A(after.deck_list.length === 51, `${tag}: the card is gone from the deck`, after.deck_list.length);
+		A(errors.length === 0, `${tag}: no page errors`, errors.slice(0, 3).join(' | '));
 		await page.browserContext().close();
 	}
 } catch (e) {

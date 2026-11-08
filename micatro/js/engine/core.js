@@ -1161,6 +1161,9 @@ export function add_joker(joker, edition, silent, eternal) {
 /** draw_card(from, to, percent, dir, sort, card, ...) — queued, like Lua. */
 export function draw_card(from, to, percent, dir, sort, card, _delay, mute, stay_flipped, vol, discarded_only) {
   G.E_MANAGER.add_event(() => {
+    // (a card destroyed after this move was queued stays gone: e.g. a Beartic-kept hand's cards are listed up front and Anorith
+    //  dissolves one of them first — moving it would put a card that's no longer in the deck back into an area)
+    if (card && card.removed) return;
     if (card) {
       if (from) card = from.remove_card(card);
       if (card) {
