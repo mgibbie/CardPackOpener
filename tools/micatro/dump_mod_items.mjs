@@ -27,7 +27,8 @@ try {
   const name = (set, key, dflt) => String(((L.descriptions[set] || {})[key] || {}).name || dflt || key).replace(/\{[^}]*\}/g, '').trim();
   const RARITY = { 1: 'common', 2: 'uncommon', 3: 'rare', 4: 'legendary' };
   const SET = { Back: 'Deck', Enhanced: 'Enhancement' };
-  const add = (id, it) => { (out.mods[id] ||= { name: (IDX.AVAILABLE.find((m) => m.id === id) || {}).name || id, items: [] }).items.push(it); };
+  // (only the site's shipped mods: an engine-internal hidden one — Multiplayer's 'pvp', with its Nemesis blind — is not a release)
+  const add = (id, it) => { if (!(IDX.AVAILABLE || []).some((m) => m.id === id)) return; (out.mods[id] ||= { name: (IDX.AVAILABLE.find((m) => m.id === id) || {}).name || id, items: [] }).items.push(it); };
   const art = (o) => ({ ...(o.atlas ? { atlas: '@' + o.atlas } : {}), ...(o.pos ? { pos: { x: o.pos.x || 0, y: o.pos.y || 0 } } : {}), ...(o.soul_pos ? { soul: { x: o.soul_pos.x || 0, y: o.soul_pos.y || 0 } } : {}) });
   for (const c of Object.values(core.P_CENTERS)) {
     if (!c.mod || c.unported || failed.has(c.mod) || ['Shader', 'Other', 'Default'].includes(c.set)) continue;
