@@ -403,6 +403,14 @@
 	},
 	"entries": [
 		{
+			"sha": "c69b1ba",
+			"date": "2026-11-08",
+			"kind": "micatro",
+			"title": "Micatro Multiplayer: Showdown, Survival, the Hurry timer and more",
+			"body": "Micatro Multiplayer lobbies have new options. Pick a mode when you create a lobby: Attrition (as before), Showdown (from ante 3 the Small, Big and Boss blinds are all Your Nemesis, so there is more time to prepare, then three duels an ante) or Survival (no Nemesis and one life each: whoever beats the furthest blind wins; if you fail first, you wait to see whether your opponent gets past you). The host can also turn on the Hurry timer (on by default: once you are READY at the Nemesis, press Hurry! to give a slower opponent 150 seconds to get there, or they lose a life, and again every 150 seconds until they arrive; skipping ahead earns extra time), hide the enemy score until you have played a hand, and play the Nemesis on a real Boss Blind with its effect on (the same boss for both players, most chips wins). The timer length, the time per skip and the Showdown starting ante are options too; your opponent sees every option before readying.",
+			"cards": []
+		},
+		{
 			"sha": "4e1fce9",
 			"date": "2026-11-08",
 			"kind": "micatro",
