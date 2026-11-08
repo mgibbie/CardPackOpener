@@ -545,6 +545,7 @@ const features = {
         ...Object.entries(V.shop).map(([k, v]) => [PG.prizeText({ kind: 'shop', perk: k }), '+' + v + '%']),
         ...Object.entries(V.tag).map(([k, v]) => [PG.prizeText({ kind: 'tag', key: k }).replace(/^a /, ''), '+' + v + '%']),
         ...Object.entries(V.joker).map(([r, v]) => [PG.prizeText({ kind: 'joker', rarity: +r }).replace(/^a /, 'A '), '+' + v + '%']),
+        ['A named Joker (Common / Uncommon / a Basic Pokermon Joker)', '+' + V.joker_per_cost + '% per $ of its shop cost'],
         ...Object.entries(V.kind).map(([k, v]) => [PG.prizeText({ kind: k }), '+' + v + '%']),
       ];
     })(),
@@ -553,7 +554,7 @@ const features = {
     rules: PG.RULE_KEYS.map((k) => ({ key: k, text: PG.ROUND_RULES[k].text, d: PG.ROUND_RULES[k].d })),
     tags: PG.PRIZE_TAGS.map((k) => PG.prizeText({ kind: 'tag', key: k }).replace(/^a /, '')),
     tiers: PG.PRIZE_TIERS_V2.map((t, i) => ({ tier: t.tier, name: t.name, from: t.tier === 5 ? null : i ? PG.PRIZE_TIERS_V2[i - 1].max + 5 : null, to: t.tier < 5 && Number.isFinite(t.max) ? t.max : null, legendary: t.tier === 5,
-      prizes: t.prizes.map((z) => (z.kind === 'card' ? (z.set === 'Item' || z.set === 'Oddity' ? `an ${z.set} card (with ${z.set === 'Item' ? 'Pokermon' : 'AutumnMood'})` : `a random ${z.set} card`)
+      prizes: t.prizes.map((z) => (z.kind === 'card' && z.key ? PG.prizeText(z) : z.kind === 'card' ? (z.set === 'Item' || z.set === 'Oddity' ? `an ${z.set} card (with ${z.set === 'Item' ? 'Pokermon' : 'AutumnMood'})` : `a named ${z.set} card`)
         : z.kind === 'tag' ? 'a Tag (' + PG.PRIZE_TAGS.map((k) => PG.prizeText({ kind: 'tag', key: k }).replace(/^a /, '')).join(', ') + ')'
           : z.kind === 'poke' ? 'a Poke Ball or a random Energy card (with Pokermon)' : PG.prizeText(z))) })),
   },

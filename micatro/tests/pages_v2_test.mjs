@@ -111,8 +111,9 @@ for (let i = 0; i < N; i++) {
     if (p.target === 'nature') ok(p.ranks.length === 3 && new Set(p.ranks).size === 3 && p.ranks.every((x) => x >= 2 && x <= 14) && /^\{C:attention\}Nature \(/.test(P.describePage(p).lines[0]), 'offer: a Nature of 3 different ranks', p);
     if (P.LEGENDARY_PCTS.includes(p.roll)) {
       ok(!p.rule || P.ROUND_RULES[p.rule].d > 0, 'offer: a +40% / +50% roll never has an easier rule', p);
-      ok(p.prize.kind === 'none' || (['joker', 'joker_slot'].includes(p.prize.kind) && (p.prize.kind !== 'joker' || p.prize.rarity === 4) && p.tier === 5), 'offer: +40% / +50% is Legendary: a Legendary-only prize (or none)', p);
-    } else ok(!(p.prize.kind === 'joker' && p.prize.rarity === 4) && p.prize.kind !== 'joker_slot', 'offer: Legendary prizes only on a +40% / +50% roll', p);
+      ok(p.prize.kind === 'none' || ((['joker', 'joker_slot'].includes(p.prize.kind) || p.prize.key === 'c_soul') && (p.prize.kind !== 'joker' || p.prize.rarity === 4) && p.tier === 5), 'offer: +40% / +50% is Legendary: a Legendary-only prize (or none)', p);
+    } else ok(!(p.prize.kind === 'joker' && p.prize.rarity === 4) && p.prize.kind !== 'joker_slot' && p.prize.key !== 'c_soul', 'offer: Legendary prizes only on a +40% / +50% roll', p);
+    if (p.prize.kind === 'named_joker') ok(P_CENTERS[p.prize.key] && P_CENTERS[p.prize.key].rarity === p.prize.rarity && p.prize.rarity <= 2 && /\(Joker\)/.test(P.describePage(p).lines[2]), 'offer: a named Common / Uncommon Joker', p.prize);
     if (p.target === 'rank') ok(p.rank >= 2 && p.rank <= 14 && G.playing_cards.some((c) => c.get_id() === p.rank), 'offer: the round\'s rank is a rank of the deck', p);
     if (p.effect === 'become') ok(P.BECOME_ENH.includes(p.enh), 'offer: become names Glass / Steel / Gold', p);
     ok(!(p.prize.kind === 'card' && ['Item', 'Energy'].includes(p.prize.set)) && p.prize.kind !== 'poke', 'offer: no Pokermon prize without Pokermon', p.prize);
@@ -132,7 +133,7 @@ for (const k of P.PAGE_PCTS_V2) ok(seen.pct.has(k), 'offer: modifier offered: ' 
 for (const k of P.RULE_KEYS) ok(seen.rule.has(k), 'offer: Round rule offered: ' + k);
 for (const k of P.BECOME_ENH) ok(seen.enh.has(k), 'offer: become ' + k);
 ok(seen.tier.size === 5, 'offer: all 5 tiers', [...seen.tier]);
-for (const k of ['tag', 'level_most', 'joker1', 'enhanced_card', 'hand_size', 'joker2', 'remove_card', 'interest', 'joker3', 'joker_edition', 'joker4', 'joker_slot']) ok(seen.prize.has(k), 'offer: prize offered: ' + k, [...seen.prize]);
+for (const k of ['cardPlanet', 'named_joker1', 'named_joker2', 'tag', 'level_most', 'joker1', 'enhanced_card', 'hand_size', 'joker2', 'remove_card', 'interest', 'joker3', 'joker_edition', 'joker4', 'joker_slot']) ok(seen.prize.has(k), 'offer: prize offered: ' + k, [...seen.prize]);
 ok(P.tierOfV2(49).tier === 1 && P.tierOfV2(50).tier === 2 && P.tierOfV2(99).tier === 2 && P.tierOfV2(100).tier === 3 && P.tierOfV2(174).tier === 3 && P.tierOfV2(175).tier === 4 && P.tierOfV2(274).tier === 4 && P.tierOfV2(275).tier === 5, 'the v2 tier labels (from the total)');
 ok(P.poolOfV2(-5, -5).tier === 1 && P.poolOfV2(15, 15).tier === 2 && P.poolOfV2(25, 25).tier === 3 && P.poolOfV2(26, 20).tier === 4 && P.poolOfV2(25, 40).tier === 5, 'the v2 prize pools (from the roll)');
 // prize values (one table, owner-tunable): Temperance on a +10% roll lands around +150-200% (Jack's example)
@@ -189,7 +190,7 @@ ok(score() === (10 + 10) * 3, 'target first: a debuffed card is skipped (the fir
 // the round's rank
 {
   let found = null;
-  for (let i = 0; i < 400 && !found; i++) for (const p of offer('V2RANK' + i)) if (p.target === 'rank' && p.effect === 'chips') { found = p; break; }
+  for (let i = 0; i < 1500 && !found; i++) for (const p of offer('V2RANK' + i)) if (p.target === 'rank' && p.effect === 'chips') { found = p; break; }
   ok(found && P.describePage(found).lines[0].includes({ 2: 'Twos', 3: 'Threes', 4: 'Fours', 5: 'Fives', 6: 'Sixes', 7: 'Sevens', 8: 'Eights', 9: 'Nines', 10: 'Tens', 11: 'Jacks', 12: 'Queens', 13: 'Kings', 14: 'Aces' }[found.rank]), 'target rank: the rank shows in the text', found && P.describePage(found).lines[0]);
   const rk = found ? found.rank : 13;
   const key = 'S_' + ({ 10: 'T', 11: 'J', 12: 'Q', 13: 'K', 14: 'A' }[rk] || String(rk));
@@ -442,6 +443,50 @@ P.PAGE_ODDS.chance = CHANCE;
   ok(all === 40, 'rev 2 (Pages v1): every Blind still has its Pages', all);
 }
 P.PAGE_ODDS.chance = 1;
+
+// ------------------------------------------------------------------ every specific prize (owner, 2026-11-08): each one granted in a real round
+{
+  newRun({ seed: 'V2ELIG', engineRev: REV });
+  const list = P.eligiblePrizes();
+  const by = (f) => list.filter(f).length;
+  ok(by((z) => z.set === 'Tarot') === 22 && by((z) => z.set === 'Planet') >= 9 && by((z) => z.set === 'Spectral') === 18 && by((z) => z.kind === 'named_joker' && z.rarity === 1) > 50 && by((z) => z.kind === 'named_joker' && z.rarity === 2) > 50,
+    'eligible: every Tarot, the open Planets, every Spectral (Black Hole + The Soul), Common + Uncommon Jokers', { t: by((z) => z.set === 'Tarot'), p: by((z) => z.set === 'Planet'), s: by((z) => z.set === 'Spectral'), j1: by((z) => z.rarity === 1), j2: by((z) => z.rarity === 2) });
+  ok(list.some((z) => z.key === 'c_black_hole') && list.some((z) => z.key === 'c_soul') && !P.prizePoolV2('Spectral').some((v) => v.key === 'c_soul'), 'eligible: Black Hole a Spectral prize; The Soul only as its own (Legendary) prize');
+  ok(!list.some((z) => z.kind === 'named_joker' && P_CENTERS[z.key].rarity > 2) && !list.some((z) => z.basic), 'eligible: no Rare / Legendary named Joker, no Pokermon without Pokermon');
+  ok(list.every((z) => P.prizeValue(z) > 0), 'eligible: every one has a value');
+  ok(P.prizeValue({ kind: 'named_joker', key: 'j_joker' }) === 15 * P_CENTERS.j_joker.cost && P.prizeValue({ kind: 'card', set: 'Planet', key: 'c_pluto' }) === 35 && P.prizeValue({ kind: 'card', set: 'Spectral', key: 'c_black_hole' }) === 160 && P.prizeValue({ kind: 'card', set: 'Spectral', key: 'c_soul' }) === 300, 'values: a Joker by its cost x15, a Planet +35%, Black Hole +160%, The Soul +300%');
+  let granted = 0;
+  const failed = [];
+  const grantAll = (items, seed, mods) => {
+    for (const z of items) {
+      newRun({ seed, engineRev: REV, ...(mods ? { mods } : {}) });
+      act({ type: 'select_blind' });
+      G.GAME.pages.choices[0] = { v: 2, target: 'Hearts', effect: 'chips', roll: 0, value: 0, pct: 0, difficulty: 0, tier: 1, prize: z };
+      act({ type: 'pick_page', index: 0 });
+      G.consumeables.config.card_limit = 5;
+      const row = winNow();
+      const area = z.kind === 'named_joker' ? G.jokers : G.consumeables;
+      if (row && area.cards.some((c) => c.config.center.key === z.key)) granted++; else failed.push(z.key);
+    }
+  };
+  grantAll(list, 'V2ELIG');
+  // with Pokermon on: its Items and every Basic-stage Pokermon Joker too
+  newRun({ seed: 'V2ELIGP', engineRev: REV, mods: ['pokermon'] });
+  const plist = P.eligiblePrizes().filter((z) => z.set === 'Item' || z.basic);
+  ok(plist.filter((z) => z.basic).length > 300 && plist.some((z) => z.set === 'Item'), 'eligible with Pokermon: its Items + its Basic Jokers', plist.length);
+  ok(plist.filter((z) => z.basic).every((z) => P_CENTERS[z.key].stage === 'Basic' && P_CENTERS[z.key].mod === 'pokermon'), 'eligible with Pokermon: Basic stage only');
+  grantAll(plist, 'V2ELIGP', ['pokermon']);
+  ok(failed.length === 0, `every eligible prize is granted in a real round (${granted} of ${list.length + plist.length})`, failed.slice(0, 10));
+  // switched off / banned content never appears
+  await import('../mods/jokertoggle/index.js');
+  newRun({ seed: 'V2ELIGT', engineRev: REV, mods: ['jokertoggle'], modOptions: { jokertoggle: { j_joker: false } } });
+  ok(!P.eligiblePrizes().some((z) => z.key === 'j_joker') && P.eligiblePrizes().some((z) => z.key === 'j_greedy_joker'), 'Joker Toggle: a switched-off Joker is never a prize');
+  newRun({ seed: 'V2ELIGT', engineRev: REV }); add_joker('j_greedy_joker'); E_MANAGER.flush();
+  ok(!P.eligiblePrizes().some((z) => z.key === 'j_greedy_joker'), 'a Joker you own is not offered again');
+  // no room: its sell value
+  const row2 = winWith({ kind: 'named_joker', rarity: 1, key: 'j_joker' }, 'V2PRZ', () => { G.jokers.config.card_limit = 0; });
+  ok(row2 && row2.dollars >= 1 && G.jokers.cards.length === 0, 'a named Joker with no room: its sell value', row2);
+}
 
 // ------------------------------------------------------------------ save / resume / replay
 const s = new Session(); s.start({ seed: 'V2RESUME' });

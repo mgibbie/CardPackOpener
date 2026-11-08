@@ -28,7 +28,7 @@ import {
   pseudorandom_element, mod_context_effect,
 } from './core.js';
 import * as B from './bignum.js';
-import { opt, centerActive, activeConsumableTypes, contentDisabled } from '../mods/registry.js';
+import { opt, centerActive, activeConsumableTypes, contentDisabled, callHook } from '../mods/registry.js';
 import { Tag, add_tag } from './tag.js';
 import { playing_card_joker_effects } from './consumables.js';
 
@@ -102,7 +102,7 @@ export function decidePages(engineRev, challenge) {
 // ------------------------------------------------------------------ the offer
 /** A consumable set a prize may name now (base sets always; a mod's only while that mod's type is active). */
 function setAvailable(set) {
-  if (set === 'Tarot' || set === 'Spectral') return true;
+  if (set === 'Tarot' || set === 'Spectral' || set === 'Planet') return true;
   return activeConsumableTypes().some((t) => t.key === set);
 }
 /** The consumables a prize may name: in the set's pool, not banned / hidden / switched off. */
@@ -239,11 +239,43 @@ export function comboOk(target, effect, rule) {
  */
 export const PRIZE_TIERS_V2 = [
   { tier: 1, name: 'Easy', max: -5, prizes: PRIZE_TIERS[0].prizes },
-  { tier: 2, name: 'Fair', max: 15, prizes: [...PRIZE_TIERS[1].prizes, { kind: 'tag' }, { kind: 'level_most' }, { kind: 'joker', rarity: 1 }, { kind: 'enhanced_card' }] },
-  { tier: 3, name: 'Hard', max: 25, prizes: [...PRIZE_TIERS[2].prizes, { kind: 'hand_size' }, { kind: 'joker', rarity: 2 }, { kind: 'remove_card' }, { kind: 'interest' }, { kind: 'poke' }] },
+  { tier: 2, name: 'Fair', max: 15, prizes: [...PRIZE_TIERS[1].prizes, { kind: 'card', set: 'Planet' }, { kind: 'tag' }, { kind: 'level_most' }, { kind: 'joker', rarity: 1 }, { kind: 'named_joker', rarity: 1 }, { kind: 'enhanced_card' }] },
+  { tier: 3, name: 'Hard', max: 25, prizes: [...PRIZE_TIERS[2].prizes, { kind: 'hand_size' }, { kind: 'joker', rarity: 2 }, { kind: 'named_joker', rarity: 2 }, { kind: 'named_joker', basic: true }, { kind: 'remove_card' }, { kind: 'interest' }, { kind: 'poke' }] },
   { tier: 4, name: 'Brutal', max: Infinity, prizes: [...PRIZE_TIERS[3].prizes, { kind: 'joker', rarity: 3 }, { kind: 'joker_edition' }] },
-  { tier: 5, name: 'Legendary', max: Infinity, prizes: [{ kind: 'joker', rarity: 4 }, { kind: 'joker_slot' }] },
+  { tier: 5, name: 'Legendary', max: Infinity, prizes: [{ kind: 'joker', rarity: 4 }, { kind: 'joker_slot' }, { kind: 'card', set: 'Spectral', key: 'c_soul' }] },
 ];
+/**
+ * A specific prize may name ANY eligible card of its kind (owner, 2026-11-08): every Tarot / Planet / Spectral (Black Hole too; The Soul
+ * only as a Legendary prize), every Item / Oddity while their mod is on, every Common / Uncommon Joker, every Basic-stage Pokermon Joker
+ * while Pokermon is on. Eligible = what the run could generate: not banned (Joker Toggle), not switched off (content toggles / mod switches),
+ * not hidden, unlocked, its own in_pool and the mods' pool filters / pool flags allow it, a Planet's softlock passed, a Joker not owned.
+ * The prize draws a category from its pool (uniformly), then a card uniformly within it.
+ */
+function eligible(v, type) {
+  if (!v || !v.key || G.GAME.banned_keys[v.key] || contentDisabled(v) || !centerActive(v)) return false;
+  if (v.hidden && v.key !== 'c_soul' && v.key !== 'c_black_hole') return false; // (Black Hole: a Spectral prize; The Soul: a Legendary one)
+  if (v.unlocked === false && v.rarity !== 4) return false;
+  if (v.in_pool && !v.in_pool(v, { type })) return false;
+  if (callHook('pool_filter', v, type).includes(false)) return false;
+  if ((v.no_pool_flag && G.GAME.pool_flags[v.no_pool_flag]) || (v.yes_pool_flag && !G.GAME.pool_flags[v.yes_pool_flag])) return false;
+  if (v.set === 'Planet' && v.config && v.config.softlock && !(G.GAME.hands[v.config.hand_type] && G.GAME.hands[v.config.hand_type].played > 0)) return false;
+  if (v.set === 'Joker' && G.GAME.used_jokers[v.key]) return false;
+  return true;
+}
+/** The cards a "card" prize of this set may name (v2: The Soul only by its own Legendary prize). */
+export function prizePoolV2(set) { return (P_CENTER_POOLS[set] || []).filter((v) => v.key !== 'c_soul' && eligible(v, set)); }
+/** The Jokers a "named Joker" prize may name: Common (1) / Uncommon (2) Jokers, or Pokermon's Basic-stage ones (`basic`). */
+export function namedJokerPool(z) {
+  return (P_CENTER_POOLS.Joker || []).filter((v) => (z.basic ? v.mod === 'pokermon' && v.stage === 'Basic' : v.rarity === z.rarity) && eligible(v, 'Joker'));
+}
+/** Every specific prize the current run could be offered (tests grant each one; the wiki lists the categories). */
+export function eligiblePrizes() {
+  const out = [];
+  for (const set of ['Tarot', 'Planet', 'Spectral', 'Item', 'Oddity']) if (setAvailable(set)) for (const v of prizePoolV2(set)) out.push({ kind: 'card', set, key: v.key });
+  if (P_CENTERS.c_soul && eligible(P_CENTERS.c_soul, 'Spectral')) out.push({ kind: 'card', set: 'Spectral', key: 'c_soul' });
+  for (const z of [{ rarity: 1 }, { rarity: 2 }, { basic: true }]) for (const v of namedJokerPool(z)) out.push({ kind: 'named_joker', key: v.key, ...z });
+  return out;
+}
 /** The prize POOL a Page draws from: by its rolled difficulty (roll + effect + rule), a +40% / +50% roll the Legendary pool. */
 export const poolOfV2 = (difficulty, roll) => (LEGENDARY_PCTS.includes(roll) ? PRIZE_TIERS_V2[4] : PRIZE_TIERS_V2.slice(0, 4).find((t) => difficulty <= t.max));
 /**
@@ -259,14 +291,16 @@ export const tierOfV2 = (difficulty) => PRIZE_TIERS_V2[TIER_LABEL_MAX.findIndex(
  */
 export const PRIZE_VALUE = {
   per_dollar: 10,
-  set: { Tarot: 45, Spectral: 90, Item: 60, Energy: 50, Oddity: 50 },
+  set: { Tarot: 45, Planet: 35, Spectral: 90, Item: 60, Energy: 50, Oddity: 50 },
+  // a named Joker: its shop cost x 15 (a $5 Common +75%, an $8 Uncommon +120%) unless listed in `card`
+  joker_per_cost: 15,
   card: {
     c_temperance: 150, c_hermit: 120, c_judgement: 120, c_emperor: 60, c_high_priestess: 60, c_wheel_of_fortune: 60, c_death: 60,
     c_justice: 50, c_strength: 50, c_fool: 50, c_hanged_man: 50, c_devil: 50, c_chariot: 45, c_magician: 40, c_empress: 40,
     c_heirophant: 40, c_lovers: 40, c_tower: 40, c_star: 40, c_moon: 40, c_sun: 40, c_world: 40,
     c_ankh: 150, c_wraith: 150, c_ectoplasm: 140, c_hex: 120, c_cryptid: 110, c_immolate: 110, c_aura: 110, c_talisman: 100,
     c_deja_vu: 100, c_trance: 90, c_medium: 90, c_sigil: 70, c_ouija: 70, c_familiar: 70, c_grim: 70, c_incantation: 70,
-    c_poke_pokeball: 70,
+    c_poke_pokeball: 70, c_black_hole: 160, c_soul: 300,
   },
   pack: {
     p_arcana_normal_1: 50, p_celestial_normal_1: 50, p_standard_normal_1: 45, p_buffoon_normal_1: 70,
@@ -287,6 +321,7 @@ export function prizeValue(z) {
   if (z.kind === 'shop') return V.shop[z.perk] || 0;
   if (z.kind === 'tag') return V.tag[z.key] != null ? V.tag[z.key] : 50;
   if (z.kind === 'joker') return V.joker[z.rarity] || 60;
+  if (z.kind === 'named_joker') return V.card[z.key] != null ? V.card[z.key] : V.joker_per_cost * Math.max(1, (P_CENTERS[z.key] && P_CENTERS[z.key].cost) || 4);
   return V.kind[z.kind] || 0;
 }
 
@@ -354,10 +389,11 @@ function generatePagesV2(which) {
   return out;
 }
 function rollPrizeV2(r, tier) {
-  const options = tier.prizes.filter((p) => (p.kind !== 'card' || (setAvailable(p.set) && prizePool(p.set).length)) && (p.kind !== 'poke' || pokeOn()) &&
-    (p.kind !== 'tag' || PRIZE_TAGS.some(tagOk)));
+  const options = tier.prizes.filter((p) => (p.kind !== 'card' || (setAvailable(p.set) && (p.key ? eligible(P_CENTERS[p.key], p.set) : prizePoolV2(p.set).length))) && (p.kind !== 'poke' || pokeOn()) &&
+    (p.kind !== 'tag' || PRIZE_TAGS.some(tagOk)) && (p.kind !== 'named_joker' || namedJokerPool(p).length));
   const p = pick(r, options.length ? options : [{ kind: 'money', amount: tier.tier }]);
-  if (p.kind === 'card') return { kind: 'card', set: p.set, key: pick(r, prizePool(p.set)).key };
+  if (p.kind === 'card') return { kind: 'card', set: p.set, key: p.key || pick(r, prizePoolV2(p.set)).key };
+  if (p.kind === 'named_joker') return { kind: 'named_joker', ...(p.basic ? { basic: true } : { rarity: p.rarity }), key: pick(r, namedJokerPool(p)).key };
   if (p.kind === 'tag') return { kind: 'tag', key: pick(r, PRIZE_TAGS.filter(tagOk)) };
   // (Pokermon on: a Poke Ball Item, or a random Energy card — then a named consumable like any card prize)
   if (p.kind === 'poke') return r() < 0.5 && setAvailable('Item') ? { kind: 'card', set: 'Item', key: 'c_poke_pokeball' } : { kind: 'card', set: 'Energy', key: pick(r, prizePool('Energy')).key };
@@ -605,6 +641,18 @@ function prizeRowV2(p, z, row) {
       card.set_cost();
       return out(Math.max(1, card.sell_cost || 1), ' (no room: ' + centerName(card.config.center.key) + ')');
     }
+    case 'named_joker': {
+      if (!P_CENTERS[z.key]) return out(0, ' (not available)');
+      const card = create_card('Joker', G.jokers, null, null, null, null, z.key, 'pag');
+      if (G.jokers.cards.length + (G.GAME.joker_buffer || 0) < G.jokers.config.card_limit) {
+        card.add_to_deck();
+        G.jokers.emplace(card);
+        emit('materialize', { card: card.sort_id });
+        return out(0);
+      }
+      card.set_cost();
+      return out(Math.max(1, card.sell_cost || 1), ' (no room)');
+    }
     case 'enhanced_card': {
       const [front] = pseudorandom_element(P_CARDS_LIST(), pseudoseed('page_card_fr'));
       const [center] = pseudorandom_element(enhancement_pool().filter((v) => !contentDisabled(v)), pseudoseed('page_card_enh'));
@@ -740,6 +788,7 @@ export function prizeText(z) {
   if (z.kind === 'shop') return SHOP_PERKS[z.perk] || z.perk;
   if (z.kind === 'tag') return 'a ' + tagName(z.key);
   if (z.kind === 'joker') return `a random ${(JOKER_RARITY[z.rarity] || JOKER_RARITY[1]).name} Joker`;
+  if (z.kind === 'named_joker') return z.key ? `${centerName(z.key)} (Joker)` : z.basic ? 'a named Basic Pokermon Joker' : `a named ${(JOKER_RARITY[z.rarity] || JOKER_RARITY[1]).name} Joker`;
   return PRIZE_TEXT_V2[z.kind] || '';
 }
 const pctText = (pct) => (pct > 0 ? '+' : pct < 0 ? '-' : '±') + Math.abs(pct) + '%';
@@ -752,7 +801,7 @@ const singular = (t) => { for (const [a, b] of VERB_ONE) if (t.startsWith(a)) re
 function prizeLineV2(z) {
   const t = prizeText(z);
   if (z.kind === 'tag') return `{C:attention}${t}`;
-  if (z.kind === 'joker') return `{C:attention}${t}{} {C:inactive}(must have room, else its sell value)`;
+  if (z.kind === 'joker' || z.kind === 'named_joker') return `{C:attention}${t}{} {C:inactive}(must have room, else its sell value)`;
   if (z.kind === 'remove_card') return `{C:attention}${t}{} {C:inactive}(after the cash-out)`;
   if (z.kind === 'joker_edition') return `{C:attention}${t}{} {C:inactive}(without one; none: $5)`;
   if (z.kind === 'level_most' || z.kind === 'enhanced_card' || z.kind === 'hand_size' || z.kind === 'interest' || z.kind === 'joker_slot') return `{C:attention}${t}`;
