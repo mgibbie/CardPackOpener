@@ -18,6 +18,7 @@ import { createMatch, submitAction, replaceFainted, sideOf } from '../battlecard
 import POOL from './pool-rarity.json';
 import LOADOUTS from './loadout-cards.json'; // { id: { kind:'commander'|'companion', cls } }
 import CORR_BANS from './correspondence-bans.json'; // countering is banned in play-by-mail (gen-correspondence-bans.mjs)
+import { handleMtpvp, PP as MTPVP } from './micatro_pvp.mjs'; // Micatro Multiplayer (PvP): the lobby + the match referee
 
 const SECRET = process.env.MP_SECRET || 'magepunk-dev-secret-set-MP_SECRET';
 const TOKEN_DAYS = 30;
@@ -772,6 +773,11 @@ const RATE_LIMITS = {
 	'cardstate': [40, 10_000], 'card-poll': [80, 10_000],
 	// Micatro: the runner publishes at most ~1/1.2s, spectators poll ~1/s
 	'publish-micatro': [120, 10_000], 'micatro-state': [40, 10_000],
+	// Micatro Multiplayer (PvP, server/micatro_pvp.mjs): the client syncs ~1/s in a Nemesis round, ~1/2-3 s elsewhere,
+	// and reports a hand / a blind / a ready press on each such move — these brake a runaway client, not play
+	'mtpvp-create': [10, 60_000], 'mtpvp-peek': [30, 60_000], 'mtpvp-join': [20, 60_000], 'mtpvp-leave': [20, 60_000],
+	'mtpvp-mine': [30, 60_000], 'mtpvp-update': [60, 60_000], 'mtpvp-sync': [40, 10_000], 'mtpvp-ready': [30, 10_000],
+	'mtpvp-hand': [40, 10_000], 'mtpvp-blind': [30, 10_000], 'mtpvp-forfeit': [10, 60_000], 'mtpvp-rematch': [20, 60_000],
 	'micatro-decks-put': [20, 60_000], // saving custom decks (the deck editor) — deliberate edits, never hot
 	// win stickers: a load per page boot + a debounced push per won run (and its retries) — never hot
 	'micatro-stickers-get': [30, 60_000], 'micatro-stickers-put': [30, 60_000],
@@ -880,6 +886,10 @@ const GC_TABLE = [
 	['msurvreplays:', 60 * 24 * HR], // the per-player replay index (self-heals against swept replays on read)
 	['msurvsess:', 30 * 24 * HR], ['msurvseg:', 30 * 24 * HR], // U4: a replay session's index and its segments — a month too
 	['msurvseason:', 42 * 24 * HR], // MicaSurvivor Expedition weekly season boards (DLC D9): 4 past seasons stay readable
+	// Micatro Multiplayer (PvP): a lobby / match, its join code, each player's "my lobby" pointer and each player's own row.
+	// Their LOGICAL lives are far shorter (a waiting lobby closes when its host goes quiet, a quiet player forfeits after
+	// 120 s); these sweeps only reclaim rows nobody closed
+	['mtpvp:', 12 * HR], ['mtpvpcode:', 12 * HR], ['mtpvpcur:', 12 * HR], ['mtpvpp:', 12 * HR],
 ];
 
 // ---------- authoritative single-player state (durable, server-owned) ----------
@@ -2895,8 +2905,10 @@ export default async function handler(req, env) {
 				...(replay ? { replay } : {}),
 			});
 		}
-		// presence: "playing Micatro" while live; a finished run goes back to plain online
-		const status = over ? '' : ('micatro:' + label).slice(0, 64);
+		// presence: "playing Micatro" while live; a finished run goes back to plain online. A Multiplayer match
+		// (body.pvp = its lobby id) says so: friends see "Micatro PvP" and Watch it the same way.
+		const pvpId = /^[0-9a-f]{12}$/.test(String(body.pvp || '')) ? String(body.pvp) : '';
+		const status = over ? '' : (pvpId ? 'micatropvp:match:' + pvpId + ':' + label : 'micatro:' + label).slice(0, 96);
 		const pres = await store.get('presence:' + username);
 		if (!pres || pres.status !== status || pres.region !== label || now - (pres.lastSeen || 0) >= MICATRO_PRESENCE_MS) {
 			await store.setJSON('presence:' + username, {
@@ -3253,6 +3265,19 @@ export default async function handler(req, env) {
 		}
 		const now = await store.get(key);
 		return json({ error: 'stale', rev: (now && now.rev) || 0, save: (now && now.save) || null }, 409);
+	}
+
+	// MICATRO MULTIPLAYER (PvP): lobbies by join code + the match referee (server/micatro_pvp.mjs, its header has the
+	// rows). Anyone signed in may join with the code (owner D1); friends see a waiting lobby on their list (presence).
+	if (action.startsWith('mtpvp-')) {
+		// (globalThis.__msurvClock: the tests' injectable clock, shared with MicaSurvivor's lobby; never set live)
+		const now = msurvNow();
+		const presence = async (status, label) => {
+			const pres = await store.get('presence:' + username);
+			if (pres && pres.status === status && now - (pres.lastSeen || 0) < MTPVP.PRESENCE_MS) return;
+			await store.setJSON('presence:' + username, { name: username, map: '', x: 0, y: 0, facing: 'down', status: status.slice(0, 64), region: label, lastSeen: now });
+		};
+		return handleMtpvp({ action, body, store, user, username, json, now, presence, randomHex: (n) => randomBytes(n).toString('hex'), rnd: () => randomBytes(4).readUInt32BE(0) / 4294967296 });
 	}
 
 	// MICASURVIVOR online co-op (M5 batch 12b): friends-only lobbies, WebRTC signalling and the
@@ -3875,7 +3900,7 @@ export default async function handler(req, env) {
 				const fs = await store.get('factorystate:' + f);
 				if (!fs || now - fs.ts >= CARDSTATE_MS) continue; // publishing stopped → not watchable
 				live.push({ username: f, kind: 'factory', mode: 'factory', label: p.region || st.slice('factory:'.length), watchers: fs.watchers || 0, full: (fs.watchers || 0) >= SPEC_CAP });
-			} else if (st.startsWith('micatro:')) {
+			} else if (st.startsWith('micatro:') || st.startsWith('micatropvp:match:')) {
 				const ms = await store.get('micatrostate:' + f);
 				if (!ms || ms.over || now - ms.ts >= MICATRO_STALE_MS) continue; // finished / stopped publishing
 				live.push({ username: f, kind: 'micatro', mode: 'micatro', label: ms.label || p.region || st.slice('micatro:'.length), watchers: ms.watchers || 0, full: (ms.watchers || 0) >= SPEC_CAP });
