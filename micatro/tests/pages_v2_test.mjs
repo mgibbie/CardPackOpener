@@ -20,7 +20,7 @@ const state = () => STATE_NAMES[G.STATE];
 const CHANCE = P.PAGE_ODDS.chance;
 ok(CHANCE === 0.25, 'Pages on 25% of Blinds (owner)');
 P.PAGE_ODDS.chance = 1;
-ok(PINS.ENGINE_CONTENT_REV === REV && PINS.GATED_ENGINE_REVS.includes(2) && PINS.GATED_ENGINE_REVS.includes(3), 'engine rev 3, gated');
+ok(PINS.ENGINE_CONTENT_REV >= REV && PINS.GATED_ENGINE_REVS.includes(2) && PINS.GATED_ENGINE_REVS.includes(3), 'engine rev 3, gated'); // (rev 4's no-prize Fair guarantee: pages_fair_test.mjs)
 
 // ------------------------------------------------------------------ helpers
 /** A fresh rev-3 run on the Small Blind with this (v2) Page; the hand's first cards set to `cards` (P_CARDS keys). */
@@ -503,7 +503,7 @@ P.PAGE_ODDS.chance = 1;
 
 // ------------------------------------------------------------------ save / resume / replay
 const s = new Session(); s.start({ seed: 'V2RESUME' });
-ok(s.recipe.engineRev === REV, 'a new run records engine rev 3');
+ok(s.recipe.engineRev === PINS.ENGINE_CONTENT_REV && s.recipe.engineRev >= REV, 'a new run records the current engine rev (3+)');
 s.act({ type: 'select_blind' });
 const want = JSON.stringify(s.view().pages);
 ok(s.view().pages.choices.every((p) => p.v === 2), 'a new run offers v2 Pages');
