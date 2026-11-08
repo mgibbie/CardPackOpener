@@ -2042,7 +2042,9 @@ export function play_cards_from_highlighted() {
   }
   G.GAME.blind.press_play();
   G.E_MANAGER.add_event(() => {
-    G.E_MANAGER.add_event(() => evaluate_play());
+    // (nothing left to score — every played card was taken away before scoring, e.g. a mod's free play of a destroyed card:
+    //  Balatro's evaluate_play would crash on the 'NULL' hand, so no recorded run ever got past this)
+    G.E_MANAGER.add_event(() => { if (G.play.cards.length) evaluate_play(); });
     G.E_MANAGER.add_event(() => {
       draw_from_play_to_discard();
       G.GAME.hands_played += 1;

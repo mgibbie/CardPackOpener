@@ -532,7 +532,7 @@ const features = {
   // (Pages v2, engine rev 3: the current tables — targets, effects, modifiers, Round rules and the five prize tiers)
   pages: {
     rev: PG.PAGES_REV, v2rev: PG.PAGES_V2_REV, downsideBonus: PG.DOWNSIDE_BONUS, pcts: PG.PAGE_PCTS_V2, lowPcts: PG.LOW_PCTS, legendaryPcts: PG.LEGENDARY_PCTS,
-    lowChance: PG.LOW_CHANCE, legendaryChance: PG.LEGENDARY_CHANCE, ruleChance: PG.RULE_CHANCE, pageChance: PG.PAGE_ODDS.chance,
+    lowChance: PG.LOW_CHANCE, legendaryChance: PG.LEGENDARY_CHANCE, ruleChance: PG.RULE_CHANCE, pageChance: PG.PAGE_ODDS.chance, prizeChance: PG.PRIZE_CHANCE,
     tierLabels: PG.PRIZE_TIERS_V2.map((t, i) => ({ name: t.name, from: i ? PG.TIER_LABEL_MAX[i - 1] + 1 : null, to: Number.isFinite(PG.TIER_LABEL_MAX[i]) ? PG.TIER_LABEL_MAX[i] : null })),
     // (the prize-value table: what each prize adds to the required score, %)
     values: (() => {

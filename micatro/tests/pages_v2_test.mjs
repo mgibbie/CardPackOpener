@@ -85,7 +85,7 @@ function offer(seed, which = 'Small', mods) {
 }
 ok(JSON.stringify(offer('V2A')) === JSON.stringify(offer('V2A')), 'offer: same seed, same Pages');
 const seen = { t: new Set(), e: new Set(), pct: new Set(), tier: new Set(), rule: new Set(), prize: new Set(), enh: new Set() };
-let pages = 0, withRule = 0, legendary = 0, low = 0;
+let pages = 0, withRule = 0, legendary = 0, low = 0, withPrize = 0;
 const N = 1500;
 for (let i = 0; i < N; i++) {
   const ch = offer('V2GEN' + i, ['Small', 'Big', 'Boss'][i % 3]);
@@ -93,6 +93,7 @@ for (let i = 0; i < N; i++) {
   for (const p of ch) {
     pages++;
     if (p.rule) withRule++;
+    if (p.prize.kind !== 'none') withPrize++;
     if (P.LEGENDARY_PCTS.includes(p.roll)) legendary++;
     if (P.LOW_PCTS.includes(p.roll)) low++;
     seen.t.add(p.target); seen.e.add(p.effect); seen.pct.add(p.roll); seen.tier.add(p.tier); if (p.rule) seen.rule.add(p.rule); if (p.enh) seen.enh.add(p.enh);
@@ -100,7 +101,7 @@ for (let i = 0; i < N; i++) {
     ok(p.v === 2, 'offer: a v2 Page', p);
     ok(P.comboOk(p.target, p.effect, p.rule), 'offer: an allowed target / effect / rule', p);
     ok(P.PAGE_PCTS_V2.includes(p.roll), 'offer: a v2 modifier (the roll)', p);
-    ok(p.value === P.prizeValue(p.prize) && p.value > 0 && p.pct === p.roll + p.value, 'offer: required score = the roll + the prize\'s value', p);
+    ok(p.value === P.prizeValue(p.prize) && (p.prize.kind === 'none' ? p.value === 0 : p.value > 0) && p.pct === p.roll + p.value, 'offer: required score = the roll + the prize\'s value', p);
     const down = P.effectWeight(p.effect) > 0, harderRule = p.rule && P.ROUND_RULES[p.rule].d > 0;
     if (P.LOW_PCTS.includes(p.roll)) ok(down || harderRule, 'offer: -15% / -20% only with a downside or a harder Round rule', p);
     ok(p.difficulty === p.pct + P.effectWeight(p.effect) + (p.rule ? P.ROUND_RULES[p.rule].d : 0), 'offer: difficulty = total required % + effect + rule', p);
@@ -109,21 +110,22 @@ for (let i = 0; i < N; i++) {
     if (p.target === 'single') ok(p.rank >= 2 && p.rank <= 14, 'offer: one rank', p);
     if (p.target === 'nature') ok(p.ranks.length === 3 && new Set(p.ranks).size === 3 && p.ranks.every((x) => x >= 2 && x <= 14) && /^\{C:attention\}Nature \(/.test(P.describePage(p).lines[0]), 'offer: a Nature of 3 different ranks', p);
     if (P.LEGENDARY_PCTS.includes(p.roll)) {
-      ok(p.tier === 5 && (!p.rule || P.ROUND_RULES[p.rule].d > 0), 'offer: +40% / +50% is Legendary, never with an easier rule', p);
-      ok(['joker', 'joker_slot'].includes(p.prize.kind) && (p.prize.kind !== 'joker' || p.prize.rarity === 4), 'offer: a Legendary-only prize', p.prize);
-    } else ok(p.tier <= 4 && !(p.prize.kind === 'joker' && p.prize.rarity === 4) && p.prize.kind !== 'joker_slot', 'offer: Legendary prizes only on Legendary Pages (a +40% / +50% roll)', p);
+      ok(!p.rule || P.ROUND_RULES[p.rule].d > 0, 'offer: a +40% / +50% roll never has an easier rule', p);
+      ok(p.prize.kind === 'none' || (['joker', 'joker_slot'].includes(p.prize.kind) && (p.prize.kind !== 'joker' || p.prize.rarity === 4) && p.tier === 5), 'offer: +40% / +50% is Legendary: a Legendary-only prize (or none)', p);
+    } else ok(!(p.prize.kind === 'joker' && p.prize.rarity === 4) && p.prize.kind !== 'joker_slot', 'offer: Legendary prizes only on a +40% / +50% roll', p);
     if (p.target === 'rank') ok(p.rank >= 2 && p.rank <= 14 && G.playing_cards.some((c) => c.get_id() === p.rank), 'offer: the round\'s rank is a rank of the deck', p);
     if (p.effect === 'become') ok(P.BECOME_ENH.includes(p.enh), 'offer: become names Glass / Steel / Gold', p);
     ok(!(p.prize.kind === 'card' && ['Item', 'Energy'].includes(p.prize.set)) && p.prize.kind !== 'poke', 'offer: no Pokermon prize without Pokermon', p.prize);
     const d = P.describePage(p);
-    ok(d.lines.length === (p.rule ? 4 : 3) && /Required score/.test(d.lines[1]) && /^Prize: /.test(d.lines[2]) && (!p.rule || /^Round rule: /.test(d.lines[3])), 'offer: text lines (+ the Round rule)', d);
+    ok(d.lines.length === (p.rule ? 4 : 3) && /Required score/.test(d.lines[1]) && (p.prize.kind === 'none' ? d.lines[2] === '{C:inactive}No prize' : /^Prize: /.test(d.lines[2])) && (!p.rule || /^Round rule: /.test(d.lines[3])), 'offer: text lines (+ the Round rule)', d);
     ok(!/[pc]_[a-z]|#\d#|undefined/.test(d.lines.join(' ')), 'offer: names, not keys', d.lines);
   }
 }
 const ruleShare = withRule / pages, legShare = legendary / pages;
-console.log(`  offer: ${pages} Pages, Round rule ${(ruleShare * 100).toFixed(1)}%, Legendary ${(legShare * 100).toFixed(1)}%, -15/-20% ${(low / pages * 100).toFixed(1)}%`);
+console.log(`  offer: ${pages} Pages, prize ${(withPrize / pages * 100).toFixed(1)}%, Round rule ${(ruleShare * 100).toFixed(1)}%, Legendary ${(legShare * 100).toFixed(1)}%, -15/-20% ${(low / pages * 100).toFixed(1)}%`);
 ok(Math.abs(ruleShare - 0.30) < 0.025, 'offer: Round rules on ~30% of Pages (owner)', ruleShare);
 ok(legShare > 0.03 && legShare < 0.07, 'offer: Legendary ~5% of Pages', legShare);
+ok(Math.abs(withPrize / pages - 0.5) < 0.03, 'offer: a prize on ~50% of Pages (owner)', withPrize / pages);
 for (const k of P.TARGET_KEYS_V2) ok(seen.t.has(k), 'offer: target offered: ' + k);
 for (const k of P.EFFECT_KEYS_V2) ok(seen.e.has(k), 'offer: effect offered: ' + k);
 for (const k of P.PAGE_PCTS_V2) ok(seen.pct.has(k), 'offer: modifier offered: ' + k);
@@ -309,6 +311,16 @@ round({ target: 'Hearts', effect: 'chips', rule: 'no_discards' });
 ok(toView().page.rule === 'no_discards' && /No discards/.test(toView().page.desc.lines[3]), 'rule: in the round\'s view (the badge)', toView().page.desc);
 
 // ------------------------------------------------------------------ prizes (won, cashed out, used in the next rounds / shops)
+// no prize (half of the Pages): no cash-out row, nothing added to the score
+{
+  newRun({ seed: 'V2NONE', engineRev: REV }); act({ type: 'select_blind' });
+  const pg = { v: 2, target: 'Hearts', effect: 'chips', roll: 20, prize: { kind: 'none' } };
+  pg.value = P.prizeValue(pg.prize); pg.pct = pg.roll + pg.value; pg.difficulty = pg.pct; pg.tier = P.tierOfV2(pg.difficulty).tier;
+  G.GAME.pages.choices[0] = pg; act({ type: 'pick_page', index: 0 });
+  ok(pg.value === 0 && Number(G.GAME.blind.chips) === 360 && P.describePage(pg).lines[2] === '{C:inactive}No prize', 'no prize: the score is just the roll (+20%: 360), the card says "No prize"', [Number(G.GAME.blind.chips), P.describePage(pg).lines[2]]);
+  const r0 = winNow();
+  ok(!r0 && !G.GAME.page, 'no prize: no cash-out row');
+}
 let row = winWith({ kind: 'tag', key: 'tag_juggle' });
 ok(row && /Juggle Tag/.test(row.prize) && G.GAME.tags.some((t) => t.key === 'tag_juggle'), 'prize tag: the Tag is yours', row);
 nextRound();

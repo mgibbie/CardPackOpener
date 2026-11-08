@@ -211,6 +211,8 @@ export const ROUND_RULES = {
 export const RULE_KEYS = Object.keys(ROUND_RULES);
 /** The share of v2 Pages with a Round rule (owner, 2026-11-07: exactly a 30% roll per Page). */
 export const RULE_CHANCE = 0.3;
+/** The share of v2 Pages with a prize (owner, 2026-11-08: a seeded 50% roll per Page). Without one, nothing is added to the score. */
+export const PRIZE_CHANCE = 0.5;
 /** v2 required-score modifiers: v1's, plus -15 / -20 (only with a downside or a harder rule) and +40 / +50 (Legendary). */
 export const LOW_PCTS = [-15, -20];
 export const LEGENDARY_PCTS = [40, 50];
@@ -341,7 +343,7 @@ function generatePagesV2(which) {
     // the prize comes from the pool of the rolled difficulty; its value is then ADDED to the required score, and the tier label is
     // read from the total
     const pool = poolOfV2(difficultyOfV2(effect, pct, page.rule), pct);
-    page.prize = rollPrizeV2(r, pool);
+    page.prize = r() < PRIZE_CHANCE ? rollPrizeV2(r, pool) : { kind: 'none' }; // (half of the Pages: no prize, no value)
     page.roll = pct;
     page.value = prizeValue(page.prize);
     page.pct = pct + page.value;
@@ -776,7 +778,7 @@ export function describePage(p) {
     : z.kind === 'card' ? `${prizeText(z)} {C:inactive}(must have room, else $${Math.max(1, (P_CENTERS[z.key] && P_CENTERS[z.key].cost) || 3)})`
     : (p.v === 2 && prizeLineV2(z)) || `{C:money}${prizeText(z)}`;
   const who = p.v === 2 && p.target === 'rank' ? `{C:attention}${pageLabel(p)}{} {C:inactive}(this Page's rank){}` : `{C:attention}${pageLabel(p)}{}`;
-  const lines = [`${who} ${eff}`, `Required score {C:${p.pct > 0 ? 'red' : p.pct < 0 ? 'green' : 'inactive'}}${pctText(p.pct)}`, `Prize: ${prize}`];
+  const lines = [`${who} ${eff}`, `Required score {C:${p.pct > 0 ? 'red' : p.pct < 0 ? 'green' : 'inactive'}}${pctText(p.pct)}`, z.kind === 'none' ? '{C:inactive}No prize' : `Prize: ${prize}`];
   if (p.v === 2 && p.rule && ROUND_RULES[p.rule]) lines.push(`Round rule: ${ROUND_RULES[p.rule].text}`);
   return { name: `${tier.name} Page`, tier: tier.tier, lines };
 }

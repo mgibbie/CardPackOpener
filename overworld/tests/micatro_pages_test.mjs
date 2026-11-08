@@ -180,7 +180,7 @@ try {
 		let s = await look(page);
 		const v = await V(page);
 		A(s.n === 3 && JSON.stringify(s.names) === JSON.stringify(descNames(v)), 'live: the 3 Pages of the view', JSON.stringify(s.names));
-		A(s.text.every((t) => /Required score/.test(t) && /Prize:/.test(t)), 'live: each Page says its effect, its required score and its prize in words', s.text[0]);
+		A(s.text.every((t) => /Required score/.test(t) && /Prize:|No prize/.test(t)), 'live: each Page says its effect, its required score and its prize (or "No prize") in words', s.text[0]);
 		A(s.chooseOn && !s.back, 'live: Choose, and no Select / Skip / Skip Blind (no going back)', JSON.stringify({ choose: s.chooseOn, back: s.back }));
 		A(s.hudName === 'Choose a Page' && s.sel === 0, 'live: the HUD says "Choose a Page"; the first Page is raised', JSON.stringify(s));
 		await shot(page, 'pages_desktop.png');
@@ -212,7 +212,7 @@ try {
 		A(req.replace(/,/g, '') === String(after.blind.chips), 'live: the blind shows the Page\'s required score', req + ' vs ' + after.blind.chips);
 		await page.hover('.hb-page'); await sleep(250);
 		const tip = await page.evaluate(() => { const t = document.querySelector('.tip, .tooltip, #tip'); return t && getComputedStyle(t).display !== 'none' ? t.textContent : ''; });
-		A(/Required score/.test(tip) && /Prize/.test(tip), 'live: hovering the badge shows the Page\'s text', tip.slice(0, 120));
+		A(/Required score/.test(tip) && /prize/i.test(tip), 'live: hovering the badge shows the Page\'s text', tip.slice(0, 120));
 		await shot(page, 'pages_round_badge.png');
 		A(errors.length === 0, 'live: no page errors', errors.slice(0, 3).join(' | '));
 		await page.browserContext().close();
