@@ -7,7 +7,7 @@ import {
   energy_max, energy_increase, type_sticker_applied, get_highest_evo, can_evolve_to_highest, poke_evolve,
   megastone_can_use, megastone_use, megastone_remove_from_deck, megastone_in_pool, card_eval_status_text,
   increment_energy, matching_energy, has_type, remove, create_card, poke_unhighlight_cards,
-  can_increase_energy, energy_values, megastone_mega, megastone_end_of_round,
+  can_increase_energy, energy_values, megastone_mega, megastone_end_of_round, megastone_add_to_deck,
 } from '../api.js';
 
 const FILE = 'consumables/mart1.lua';
@@ -120,14 +120,15 @@ const defs = {
       return { vars: [] };
     },
     can_use(self, card) { return megastone_can_use(card); },
-    use(self, card) { megastone_use(card); },
+    use(self, card, area) { megastone_use(card, area); },
     calculate(self, card, context) {
       if (context.end_of_round) megastone_end_of_round(card);
       return undefined;
     },
     keep_on_use() { return true; },
     in_pool() { return megastone_in_pool(); },
-    add_to_deck(self, card, from_debuff) { if (!from_debuff) card.ability.extra.used_on = undefined; card.ability.extra.usable = true; },
+    // (r110: used straight from a pack, the stone's move to the consumable slots keeps its Mega: systems/items.js MEGASTONE_PACK_REV)
+    add_to_deck(self, card, from_debuff) { megastone_add_to_deck(card, from_debuff); },
     remove_from_deck(self, card) { megastone_remove_from_deck(card); },
   },
 };

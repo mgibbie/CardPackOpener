@@ -245,8 +245,17 @@ export function getMega_by_position(self, card) {
  */
 export const MEGASTONE_RESET = [];
 
-/** Megastone.use: mega-evolve (or revert) the target. */
-export function megastone_use(stone) {
+/**
+ * rulesRev 110 (a tester, 2026-11-08: a Mega Stone used straight from a pack "forgot" its Mega, so selling it reverted nothing):
+ * a kept consumable used from a pack then moves to the consumable slots (run.js use_card: add_to_deck + emplace), and the stone's
+ * add_to_deck, meant for a NEW stone, cleared the used_on just set (and made it usable again). From r110 that move is not a new stone:
+ * the stone keeps its Mega and stays spent until the end of the round, as a stone used from the consumable slots does. Gated, so a run
+ * recorded before r110 replays as recorded.
+ */
+export const MEGASTONE_PACK_REV = 110;
+
+/** Megastone.use: mega-evolve (or revert) the target. `area`: where it was used from (the pack: see MEGASTONE_PACK_REV). */
+export function megastone_use(stone, area) {
   const target = megastone_target(stone);
   if (!target) return;
   if (hasMegas(target.config.center)) {
@@ -260,6 +269,15 @@ export function megastone_use(stone) {
     poke_evolve(target, forced_key, undefined, localize('poke_devolve_success')); // (pokermon.devolve: "Reverted")
   }
   stone.ability.extra.usable = false;
+  // (a transient card field, not ability: a copy of the stone is a new stone; megastone_add_to_deck clears it in the same move)
+  if (area && area === G.pack_cards && rulesRev('pokermon') >= MEGASTONE_PACK_REV) stone.poke_megastone_from_pack = true;
+}
+
+/** Megastone add_to_deck: a new stone remembers no Mega and is usable; the post-use move out of a pack (r110) is not a new stone. */
+export function megastone_add_to_deck(stone, from_debuff) {
+  if (stone.poke_megastone_from_pack) { stone.poke_megastone_from_pack = undefined; return; }
+  if (!from_debuff) stone.ability.extra.used_on = undefined;
+  stone.ability.extra.usable = true;
 }
 
 export function megastone_can_use(stone) {
