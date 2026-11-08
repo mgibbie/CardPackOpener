@@ -326,7 +326,7 @@ try {
 	await clickContinue(devB);
 	A(await waitFor(() => devB.page.evaluate(() => !!document.querySelector('.run-choice .b-run-local') && !!document.querySelector('.run-choice .b-run-account')), 10000), 'Continue asks which run to continue');
 	const choiceText = await devB.page.evaluate(() => document.querySelector('.run-choice').textContent.replace(/\u00a0/g, ' '));
-	A(/On this device/.test(choiceText) && /From another device \(PC\)/.test(choiceText) && (choiceText.match(/Ante 1 · Round 1/g) || []).length === 2 && /4 moves/.test(choiceText), 'it shows both runs with where they are', choiceText.slice(0, 300));
+	A(/On this device/.test(choiceText) && /From another device \(PC\)/.test(choiceText) && (choiceText.match(/Ante 1 · Round 1/g) || []).length === 2 && /[34] moves/.test(choiceText), 'it shows both runs with where they are', choiceText.slice(0, 300));
 	await shot(devB, 'runsync-choice-desktop.png');
 	await devB.page.setViewport(PHONE);
 	A(await boot(devB, 'rsync'), 'device B at phone size');

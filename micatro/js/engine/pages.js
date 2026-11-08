@@ -280,49 +280,54 @@ export function eligiblePrizes() {
 export const poolOfV2 = (difficulty, roll) => (LEGENDARY_PCTS.includes(roll) ? PRIZE_TIERS_V2[4] : PRIZE_TIERS_V2.slice(0, 4).find((t) => difficulty <= t.max));
 /**
  * The Page's tier LABEL (owner, 2026-11-08: from the TOTAL): difficulty = total required-score % (roll + the prize's value) +
- * the effect's downside weight + the Round rule's. Easy < 50, Fair < 100, Hard < 175, Brutal < 275, Legendary 275 and up.
+ * the effect's downside weight + the Round rule's. Easy < 50, Fair < 80, Hard < 110, Brutal < 140, Legendary 140 and up.
  */
-export const TIER_LABEL_MAX = [49, 99, 174, 274, Infinity];
+export const TIER_LABEL_MAX = [49, 79, 109, 139, Infinity];
 export const tierOfV2 = (difficulty) => PRIZE_TIERS_V2[TIER_LABEL_MAX.findIndex((m) => difficulty <= m)];
 /**
- * PRIZE VALUE (owner, 2026-11-08, from tester feedback — "Temperance for +10% should be more like 250% of the blind"): what a prize
- * is worth, as a required-score % ADDED to the Page's rolled modifier. One table, to tune: money $1 = +10%; a card by its worth
- * (the set's default unless listed); packs by size / kind; next-shop perks; Tags; Jokers by rarity; the rest by kind.
+ * PRIZE VALUE (owner, 2026-11-08, from tester feedback: prizes were far too cheap): what a prize is worth, as a required-score %
+ * ADDED to the Page's rolled modifier, always +40% .. +100% (owner). One table, to tune: money +35% + 5% per $; a card by its worth
+ * (the set's default unless listed); packs by size / kind; next-shop perks; Tags; Jokers by rarity / cost; the rest by kind.
  */
 export const PRIZE_VALUE = {
-  per_dollar: 10,
-  set: { Tarot: 45, Planet: 35, Spectral: 90, Item: 60, Energy: 50, Oddity: 50 },
-  // a named Joker: its shop cost x 15 (a $5 Common +75%, an $8 Uncommon +120%) unless listed in `card`
-  joker_per_cost: 15,
+  // (owner, 2026-11-08: every value is clamped to +40% .. +100%)
+  min: 40, max: 100,
+  // money: +35% + 5% per $ ($1 +40% .. $5 +60%)
+  money_base: 35, per_dollar: 5,
+  set: { Tarot: 50, Planet: 45, Spectral: 75, Item: 55, Energy: 50, Oddity: 50 },
+  // a named Joker: +40% + 5% per $ of its shop cost (a $4 Common +60%, an $8 Uncommon +80%) unless listed in `card`
+  joker_base: 40, joker_per_cost: 5,
   card: {
-    c_temperance: 150, c_hermit: 120, c_judgement: 120, c_emperor: 60, c_high_priestess: 60, c_wheel_of_fortune: 60, c_death: 60,
-    c_justice: 50, c_strength: 50, c_fool: 50, c_hanged_man: 50, c_devil: 50, c_chariot: 45, c_magician: 40, c_empress: 40,
-    c_heirophant: 40, c_lovers: 40, c_tower: 40, c_star: 40, c_moon: 40, c_sun: 40, c_world: 40,
-    c_ankh: 150, c_wraith: 150, c_ectoplasm: 140, c_hex: 120, c_cryptid: 110, c_immolate: 110, c_aura: 110, c_talisman: 100,
-    c_deja_vu: 100, c_trance: 90, c_medium: 90, c_sigil: 70, c_ouija: 70, c_familiar: 70, c_grim: 70, c_incantation: 70,
-    c_poke_pokeball: 70, c_black_hole: 160, c_soul: 300,
+    c_temperance: 85, c_judgement: 80, c_hermit: 75, c_emperor: 60, c_high_priestess: 60, c_death: 60, c_wheel_of_fortune: 55,
+    c_justice: 55, c_strength: 55, c_fool: 55, c_hanged_man: 55, c_devil: 55, c_chariot: 50, c_magician: 45, c_empress: 45,
+    c_heirophant: 45, c_lovers: 45, c_tower: 45, c_star: 45, c_moon: 45, c_sun: 45, c_world: 45,
+    c_soul: 100, c_ankh: 100, c_wraith: 95, c_ectoplasm: 95, c_black_hole: 95, c_hex: 90, c_cryptid: 85, c_immolate: 85, c_aura: 85,
+    c_talisman: 80, c_deja_vu: 80, c_trance: 75, c_medium: 75, c_sigil: 65, c_ouija: 65, c_familiar: 65, c_grim: 65, c_incantation: 65,
+    c_poke_pokeball: 60,
   },
   pack: {
-    p_arcana_normal_1: 50, p_celestial_normal_1: 50, p_standard_normal_1: 45, p_buffoon_normal_1: 70,
-    p_arcana_jumbo_1: 80, p_celestial_mega_1: 110, p_standard_mega_1: 100, p_buffoon_jumbo_1: 110, p_spectral_normal_1: 100,
+    p_arcana_normal_1: 50, p_celestial_normal_1: 50, p_standard_normal_1: 45, p_buffoon_normal_1: 60,
+    p_arcana_jumbo_1: 65, p_standard_mega_1: 70, p_celestial_mega_1: 75, p_spectral_normal_1: 75, p_buffoon_jumbo_1: 80,
   },
-  shop: { half_off: 70, rerolls: 50, negative: 120 },
-  tag: { tag_double: 60, tag_investment: 100, tag_juggle: 40, tag_coupon: 70, tag_d_six: 50, tag_top_up: 90 },
-  joker: { 1: 60, 2: 90, 3: 150, 4: 300 },
-  kind: { level_most: 40, enhanced_card: 30, hand_size: 40, remove_card: 50, interest: 30, joker_edition: 120, joker_slot: 300 },
+  shop: { rerolls: 50, half_off: 60, negative: 85 },
+  tag: { tag_juggle: 45, tag_d_six: 50, tag_double: 55, tag_coupon: 60, tag_top_up: 70, tag_investment: 75 },
+  joker: { 1: 55, 2: 70, 3: 90, 4: 100 },
+  kind: { enhanced_card: 40, interest: 40, level_most: 45, hand_size: 45, remove_card: 50, joker_edition: 85, joker_slot: 100 },
 };
-/** A prize's value (required-score %). */
+/** A prize's value (required-score %, clamped to PRIZE_VALUE.min .. max); no prize: 0. */
 export function prizeValue(z) {
   const V = PRIZE_VALUE;
-  if (!z) return 0;
-  if (z.kind === 'money') return V.per_dollar * z.amount;
-  if (z.kind === 'card') return V.card[z.key] != null ? V.card[z.key] : V.set[z.set] != null ? V.set[z.set] : 50;
-  if (z.kind === 'pack') return V.pack[z.key] != null ? V.pack[z.key] : 60;
-  if (z.kind === 'shop') return V.shop[z.perk] || 0;
-  if (z.kind === 'tag') return V.tag[z.key] != null ? V.tag[z.key] : 50;
-  if (z.kind === 'joker') return V.joker[z.rarity] || 60;
-  if (z.kind === 'named_joker') return V.card[z.key] != null ? V.card[z.key] : V.joker_per_cost * Math.max(1, (P_CENTERS[z.key] && P_CENTERS[z.key].cost) || 4);
-  return V.kind[z.kind] || 0;
+  if (!z || z.kind === 'none') return 0;
+  let v;
+  if (z.kind === 'money') v = V.money_base + V.per_dollar * z.amount;
+  else if (z.kind === 'card') v = V.card[z.key] != null ? V.card[z.key] : V.set[z.set] != null ? V.set[z.set] : 50;
+  else if (z.kind === 'pack') v = V.pack[z.key] != null ? V.pack[z.key] : 60;
+  else if (z.kind === 'shop') v = V.shop[z.perk];
+  else if (z.kind === 'tag') v = V.tag[z.key] != null ? V.tag[z.key] : 50;
+  else if (z.kind === 'joker') v = V.joker[z.rarity];
+  else if (z.kind === 'named_joker') v = V.card[z.key] != null ? V.card[z.key] : V.joker_base + V.joker_per_cost * Math.max(1, (P_CENTERS[z.key] && P_CENTERS[z.key].cost) || 4);
+  else v = V.kind[z.kind];
+  return Math.min(V.max, Math.max(V.min, v == null ? 50 : v));
 }
 
 // ---- how often a Blind gets Pages (v2): 25% a Blind, seeded; a Boss after a whole ante without one always does

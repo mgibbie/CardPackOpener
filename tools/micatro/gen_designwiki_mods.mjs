@@ -538,14 +538,14 @@ const features = {
     values: (() => {
       const V = PG.PRIZE_VALUE, nm = (k) => PG.prizeText({ kind: 'card', set: 'Tarot', key: k }).replace(/ \(.*\)$/, '');
       return [
-        ['Money', '+' + V.per_dollar + '% per $'],
+        ['Money', '+' + V.money_base + '% + ' + V.per_dollar + '% per $'],
         ...Object.entries(V.set).map(([s, v]) => ['Any other ' + s + ' card', '+' + v + '%']),
         ...Object.entries(V.card).map(([k, v]) => [nm(k), '+' + v + '%']),
         ...Object.entries(V.pack).map(([k, v]) => [PG.prizeText({ kind: 'pack', key: k }).replace(/^a /, ''), '+' + v + '%']),
         ...Object.entries(V.shop).map(([k, v]) => [PG.prizeText({ kind: 'shop', perk: k }), '+' + v + '%']),
         ...Object.entries(V.tag).map(([k, v]) => [PG.prizeText({ kind: 'tag', key: k }).replace(/^a /, ''), '+' + v + '%']),
         ...Object.entries(V.joker).map(([r, v]) => [PG.prizeText({ kind: 'joker', rarity: +r }).replace(/^a /, 'A '), '+' + v + '%']),
-        ['A named Joker (Common / Uncommon / a Basic Pokermon Joker)', '+' + V.joker_per_cost + '% per $ of its shop cost'],
+        ['A named Joker (Common / Uncommon / a Basic Pokermon Joker)', '+' + V.joker_base + '% + ' + V.joker_per_cost + '% per $ of its shop cost'],
         ...Object.entries(V.kind).map(([k, v]) => [PG.prizeText({ kind: k }), '+' + v + '%']),
       ];
     })(),

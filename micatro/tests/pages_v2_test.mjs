@@ -134,19 +134,32 @@ for (const k of P.RULE_KEYS) ok(seen.rule.has(k), 'offer: Round rule offered: ' 
 for (const k of P.BECOME_ENH) ok(seen.enh.has(k), 'offer: become ' + k);
 ok(seen.tier.size === 5, 'offer: all 5 tiers', [...seen.tier]);
 for (const k of ['cardPlanet', 'named_joker1', 'named_joker2', 'tag', 'level_most', 'joker1', 'enhanced_card', 'hand_size', 'joker2', 'remove_card', 'interest', 'joker3', 'joker_edition', 'joker4', 'joker_slot']) ok(seen.prize.has(k), 'offer: prize offered: ' + k, [...seen.prize]);
-ok(P.tierOfV2(49).tier === 1 && P.tierOfV2(50).tier === 2 && P.tierOfV2(99).tier === 2 && P.tierOfV2(100).tier === 3 && P.tierOfV2(174).tier === 3 && P.tierOfV2(175).tier === 4 && P.tierOfV2(274).tier === 4 && P.tierOfV2(275).tier === 5, 'the v2 tier labels (from the total)');
+ok(P.tierOfV2(49).tier === 1 && P.tierOfV2(50).tier === 2 && P.tierOfV2(79).tier === 2 && P.tierOfV2(80).tier === 3 && P.tierOfV2(109).tier === 3 && P.tierOfV2(110).tier === 4 && P.tierOfV2(139).tier === 4 && P.tierOfV2(140).tier === 5, 'the v2 tier labels (from the total)');
 ok(P.poolOfV2(-5, -5).tier === 1 && P.poolOfV2(15, 15).tier === 2 && P.poolOfV2(25, 25).tier === 3 && P.poolOfV2(26, 20).tier === 4 && P.poolOfV2(25, 40).tier === 5, 'the v2 prize pools (from the roll)');
-// prize values (one table, owner-tunable): Temperance on a +10% roll lands around +150-200% (Jack's example)
-ok(P.prizeValue({ kind: 'money', amount: 3 }) === 30 && P.prizeValue({ kind: 'card', set: 'Tarot', key: 'c_temperance' }) === 150 && P.prizeValue({ kind: 'card', set: 'Tarot', key: 'c_star' }) === 40 &&
-  P.prizeValue({ kind: 'pack', key: 'p_arcana_normal_1' }) === 50 && P.prizeValue({ kind: 'pack', key: 'p_arcana_jumbo_1' }) === 80 && P.prizeValue({ kind: 'pack', key: 'p_celestial_mega_1' }) === 110 &&
-  P.prizeValue({ kind: 'joker', rarity: 1 }) === 60 && P.prizeValue({ kind: 'joker', rarity: 2 }) === 90 && P.prizeValue({ kind: 'joker', rarity: 3 }) === 150 && P.prizeValue({ kind: 'joker', rarity: 4 }) === 300 && P.prizeValue({ kind: 'joker_slot' }) === 300, 'prize values');
+// prize values (one table, owner-tunable; owner: always +40% .. +100%)
+ok(P.prizeValue({ kind: 'money', amount: 1 }) === 40 && P.prizeValue({ kind: 'money', amount: 5 }) === 60 && P.prizeValue({ kind: 'card', set: 'Tarot', key: 'c_temperance' }) === 85 && P.prizeValue({ kind: 'card', set: 'Tarot', key: 'c_star' }) === 45 &&
+  P.prizeValue({ kind: 'pack', key: 'p_arcana_normal_1' }) === 50 && P.prizeValue({ kind: 'pack', key: 'p_arcana_jumbo_1' }) === 65 && P.prizeValue({ kind: 'pack', key: 'p_celestial_mega_1' }) === 75 &&
+  P.prizeValue({ kind: 'joker', rarity: 1 }) === 55 && P.prizeValue({ kind: 'joker', rarity: 2 }) === 70 && P.prizeValue({ kind: 'joker', rarity: 3 }) === 90 && P.prizeValue({ kind: 'joker', rarity: 4 }) === 100 && P.prizeValue({ kind: 'joker_slot' }) === 100 && P.prizeValue({ kind: 'none' }) === 0, 'prize values');
 {
-  // a real round: Temperance on a +10% roll -> +160%: the Small Blind's 300 becomes 780
+  const all = [];
+  for (const k of ['money1', 'money5']) all.push({ kind: 'money', amount: +k.slice(5) });
+  for (const [k] of Object.entries(P.PRIZE_VALUE.card)) all.push({ kind: 'card', set: 'Tarot', key: k });
+  for (const k of Object.keys(P.PRIZE_VALUE.pack)) all.push({ kind: 'pack', key: k });
+  for (const k of Object.keys(P.PRIZE_VALUE.shop)) all.push({ kind: 'shop', perk: k });
+  for (const k of Object.keys(P.PRIZE_VALUE.tag)) all.push({ kind: 'tag', key: k });
+  for (const k of Object.keys(P.PRIZE_VALUE.kind)) all.push({ kind: k });
+  for (const r of [1, 2, 3, 4]) all.push({ kind: 'joker', rarity: r });
+  for (const v of Object.values(P_CENTERS).filter((c) => c.set === 'Joker')) all.push({ kind: 'named_joker', key: v.key, rarity: v.rarity });
+  const bad = all.filter((z) => { const v = P.prizeValue(z); return !(v >= 40 && v <= 100); });
+  ok(bad.length === 0, 'every prize value is +40% .. +100% (owner)', bad.slice(0, 3));
+}
+{
+  // a real round: Temperance on a +10% roll -> +95%: the Small Blind's 300 becomes 585
   newRun({ seed: 'V2TEMP', engineRev: REV }); act({ type: 'select_blind' });
   const pg = { v: 2, target: 'Hearts', effect: 'chips', roll: 10, prize: { kind: 'card', set: 'Tarot', key: 'c_temperance' } };
   pg.value = P.prizeValue(pg.prize); pg.pct = pg.roll + pg.value; pg.difficulty = pg.pct; pg.tier = P.tierOfV2(pg.difficulty).tier;
   G.GAME.pages.choices[0] = pg; act({ type: 'pick_page', index: 0 });
-  ok(pg.pct === 160 && Number(G.GAME.blind.chips) === 780 && /\+160%/.test(P.describePage(pg).lines[1]) && P.describePage(pg).name === 'Hard Page', 'Temperance on +10%: required score +160% (780 of 300), a Hard Page', [Number(G.GAME.blind.chips), P.describePage(pg)]);
+  ok(pg.pct === 95 && Number(G.GAME.blind.chips) === 585 && /\+95%/.test(P.describePage(pg).lines[1]) && P.describePage(pg).name === 'Hard Page', 'Temperance on +10%: required score +95% (585 of 300), a Hard Page', [Number(G.GAME.blind.chips), P.describePage(pg)]);
 }
 // the combos a Page never pairs
 ok(!P.comboOk('first', 'lucky_discard') && !P.comboOk('last', 'debuffed') && !P.comboOk('enhanced', 'become') && !P.comboOk('sealed', 'gain_seal') && !P.comboOk('unenhanced', 'debuffed') && !P.comboOk('numbered', 'debuffed') && !P.comboOk('Hearts', 'bonus_discard', 'no_discards') && P.comboOk('red', 'debuffed'), 'combos that could never act are never offered');
@@ -454,7 +467,7 @@ P.PAGE_ODDS.chance = 1;
   ok(list.some((z) => z.key === 'c_black_hole') && list.some((z) => z.key === 'c_soul') && !P.prizePoolV2('Spectral').some((v) => v.key === 'c_soul'), 'eligible: Black Hole a Spectral prize; The Soul only as its own (Legendary) prize');
   ok(!list.some((z) => z.kind === 'named_joker' && P_CENTERS[z.key].rarity > 2) && !list.some((z) => z.basic), 'eligible: no Rare / Legendary named Joker, no Pokermon without Pokermon');
   ok(list.every((z) => P.prizeValue(z) > 0), 'eligible: every one has a value');
-  ok(P.prizeValue({ kind: 'named_joker', key: 'j_joker' }) === 15 * P_CENTERS.j_joker.cost && P.prizeValue({ kind: 'card', set: 'Planet', key: 'c_pluto' }) === 35 && P.prizeValue({ kind: 'card', set: 'Spectral', key: 'c_black_hole' }) === 160 && P.prizeValue({ kind: 'card', set: 'Spectral', key: 'c_soul' }) === 300, 'values: a Joker by its cost x15, a Planet +35%, Black Hole +160%, The Soul +300%');
+  ok(P.prizeValue({ kind: 'named_joker', key: 'j_joker' }) === 40 + 5 * P_CENTERS.j_joker.cost && P.prizeValue({ kind: 'card', set: 'Planet', key: 'c_pluto' }) === 45 && P.prizeValue({ kind: 'card', set: 'Spectral', key: 'c_black_hole' }) === 95 && P.prizeValue({ kind: 'card', set: 'Spectral', key: 'c_soul' }) === 100, 'values: a named Joker +40% + 5% per $ of its cost, a Planet +45%, Black Hole +95%, The Soul +100%');
   let granted = 0;
   const failed = [];
   const grantAll = (items, seed, mods) => {
