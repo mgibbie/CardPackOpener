@@ -403,6 +403,22 @@
 	},
 	"entries": [
 		{
+			"sha": "7ee9b7e",
+			"date": "2026-11-08",
+			"kind": "micatro",
+			"title": "Micatro: Pages v2 — new targets, effects and prizes, Round rules, a Legendary tier",
+			"body": "Pages got a big update. A Pages screen now comes up on 25% of Blinds, and a Boss is guaranteed one if the whole ante before it had none. New targets: red or black cards, low / high / numbered cards, enhanced, unenhanced or sealed cards, the first or last scored card, one rank, the round's rank, or a Nature of three ranks. New effects: X1.1 Mult, +3 Mult in 5-card hands, retriggers, seals, turning into Glass / Steel / Gold, hand level-ups and Spectral cards, plus new downsides (-10 Chips, X0.9 Mult, cards destroyed, or debuffed for the round). 30% of Pages carry a Round rule: -1 hand, +1 discard, -1 hand size, no discards, or a doubled first hand. Half of all Pages have a prize, which can now be any specific Tarot, Planet, Spectral, Common or Uncommon Joker (or Basic Pokermon Joker), a Tag, Joker slots and more. Each prize raises the Blind's score target by 40% to 100% depending on how good it is, and the Page shows the total. The rarest Pages are Legendary, with Legendary Jokers, The Soul or an extra Joker slot as prizes. Runs started before this update keep the old Pages.",
+			"cards": [],
+			"micatroFeatures": [
+				{
+					"id": "pages",
+					"title": "Pages",
+					"blurb": "Before some Blinds, pick one of 3 Pages: a twist for the round, a Round rule, and maybe a prize that raises the stakes.",
+					"wiki": "/designwiki/#/micatro/pages"
+				}
+			]
+		},
+		{
 			"sha": "adbd151",
 			"date": "2026-11-07",
 			"kind": "micatro",
