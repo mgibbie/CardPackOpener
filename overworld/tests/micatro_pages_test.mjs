@@ -45,7 +45,13 @@ globalThis.localStorage = { getItem() { return null; }, setItem() { }, removeIte
 const { playRun } = await import(pathToFileURL(path.join(ROOT, 'micatro/tests/replay_bot.mjs')).href);
 const RPm = await import(pathToFileURL(path.join(ROOT, 'micatro/js/replays.js')).href);
 const { Session } = await import(pathToFileURL(path.join(ROOT, 'micatro/js/engine/session.js')).href);
-const RUN = playRun({ seed: 'PAGESRP', back: 'b_red', stake: 1 }, { seed: 9, maxSteps: 200 }); // (Pages v2: a run that lives through 3 blinds)
+// (Pages v2: Pages on 25% of Blinds — the first seed whose bot run opens the Pages screen at least 3 times)
+let RUN = null;
+for (let i = 0; i < 200 && !RUN; i++) {
+	const r = playRun({ seed: 'PAGESRP' + i, back: 'b_red', stake: 1 }, { seed: 9, maxSteps: 300 });
+	if (r.recipe.actions.filter(a => a.type === 'pick_page').length >= 3) RUN = r;
+}
+if (!RUN) throw new Error('no fixture run with 3 Pages screens');
 const walk = (() => {
 	const st = Session.stepper(RUN.recipe);
 	const views = [st.view()], steps = [null];
@@ -57,10 +63,14 @@ const PAGE_AT = walk.views.map((v, i) => (v.state === 'PAGES' ? i : -1)).filter(
 if (PAGE_AT.length < 3) throw new Error('the fixture run must select at least 3 blinds: ' + PAGE_AT.length);
 if (RUN.recipe.actions[PAGE_AT[0]].type !== 'pick_page') throw new Error('a Pages screen must be followed by its pick');
 // Pages v2 fixtures: a seed whose first offer has a Page with a Round rule and a Legendary Page; one with a "remove a card" prize
-const firstOffer = (seed) => { const s = new Session(); s.start({ seed }); s.act({ type: 'select_blind' }); return s.view().pages.choices; };
+const firstOffer = (seed) => { const s = new Session(); s.start({ seed }); s.act({ type: 'select_blind' }); return s.view().pages ? s.view().pages.choices : null; };
+/** (Pages v2: 25% of Blinds) the first seed `prefix`N whose first Blind opens the Pages screen */
+const pagesSeed = (prefix) => { for (let i = 0; i < 400; i++) if (firstOffer(prefix + i)) return prefix + i; throw new Error('no Pages seed ' + prefix); };
+const SEEDS = { ui: pagesSeed('PAGESUI'), ph: pagesSeed('PAGESPH'), pad: pagesSeed('PAGESPAD'), res: pagesSeed('PAGESRES') };
 let V2SEED = null, RMSEED = null;
 for (let i = 0; i < 3000 && !(V2SEED && RMSEED); i++) {
 	const ch = firstOffer('PGV2_' + i);
+	if (!ch) continue;
 	if (!V2SEED && ch.some(p => p.rule && p.tier !== 5) && ch.some(p => p.tier === 5)) V2SEED = { seed: 'PGV2_' + i, rule: ch.findIndex(p => p.rule && p.tier !== 5), leg: ch.findIndex(p => p.tier === 5) };
 	const j = ch.findIndex(p => p.prize.kind === 'remove_card' && !p.rule && !['debuffed', 'destroy'].includes(p.effect));
 	if (!RMSEED && j >= 0) RMSEED = { seed: 'PGV2_' + i, index: j };
@@ -163,7 +173,7 @@ try {
 	{
 		const { page, errors, go } = await newPage();
 		await go('/micatro/');
-		await newRun(page, 'PAGESUI1');
+		await newRun(page, SEEDS.ui);
 		A((await V(page)).state === 'BLIND_SELECT', 'live: the run starts on the blind choice');
 		await page.evaluate(() => document.querySelector('.overlay .b-select').click());
 		A(await onPages(page), 'live: Select opens the Pages screen');
@@ -212,7 +222,7 @@ try {
 	for (const vp of [{ name: 'portrait', width: 390, height: 844 }, { name: 'landscape', width: 844, height: 390 }]) {
 		const { page, errors, go } = await newPage({ width: vp.width, height: vp.height, touch: true });
 		await go('/micatro/');
-		await newRun(page, 'PAGESPH');
+		await newRun(page, SEEDS.ph);
 		await page.evaluate(() => document.querySelector('.overlay .b-select').click());
 		A(await onPages(page), `${vp.name}: the Pages screen`);
 		await sleep(600);
@@ -237,7 +247,7 @@ try {
 		const { page, errors, go } = await newPage({ pad: true });
 		await go('/micatro/');
 		await waitFor(() => page.evaluate(() => !!window.__micatroPad), 10000);
-		await newRun(page, 'PAGESPAD');
+		await newRun(page, SEEDS.pad);
 		const tap = async (b) => { await page.evaluate((b) => window.__padTap(b), b); await sleep(160); };
 		await tap(B.right); // (the first press only shows the reticle)
 		await tap(B.L);     // LB: Select
@@ -266,7 +276,7 @@ try {
 	{
 		const { page, errors, go } = await newPage();
 		await go('/micatro/');
-		await newRun(page, 'PAGESRES');
+		await newRun(page, SEEDS.res);
 		await page.evaluate(() => window.__micatro.act({ type: 'select_blind' }));
 		A(await onPages(page), 'resume: on the Pages screen');
 		const before = (await V(page)).pages;

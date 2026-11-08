@@ -16,6 +16,10 @@ function ok(cond, msg, extra) {
 }
 const REV = P.PAGES_V2_REV;
 const state = () => STATE_NAMES[G.STATE];
+// (every Blind gets its Pages screen in the checks below; the 25% chance + the pity timer have their own section, at the real odds)
+const CHANCE = P.PAGE_ODDS.chance;
+ok(CHANCE === 0.25, 'Pages on 25% of Blinds (owner)');
+P.PAGE_ODDS.chance = 1;
 ok(PINS.ENGINE_CONTENT_REV === REV && PINS.GATED_ENGINE_REVS.includes(2) && PINS.GATED_ENGINE_REVS.includes(3), 'engine rev 3, gated');
 
 // ------------------------------------------------------------------ helpers
@@ -89,21 +93,25 @@ for (let i = 0; i < N; i++) {
   for (const p of ch) {
     pages++;
     if (p.rule) withRule++;
-    if (P.LEGENDARY_PCTS.includes(p.pct)) legendary++;
-    if (P.LOW_PCTS.includes(p.pct)) low++;
-    seen.t.add(p.target); seen.e.add(p.effect); seen.pct.add(p.pct); seen.tier.add(p.tier); if (p.rule) seen.rule.add(p.rule); if (p.enh) seen.enh.add(p.enh);
+    if (P.LEGENDARY_PCTS.includes(p.roll)) legendary++;
+    if (P.LOW_PCTS.includes(p.roll)) low++;
+    seen.t.add(p.target); seen.e.add(p.effect); seen.pct.add(p.roll); seen.tier.add(p.tier); if (p.rule) seen.rule.add(p.rule); if (p.enh) seen.enh.add(p.enh);
     seen.prize.add(p.prize.kind + (p.prize.perk || p.prize.set || p.prize.rarity || ''));
     ok(p.v === 2, 'offer: a v2 Page', p);
     ok(P.comboOk(p.target, p.effect, p.rule), 'offer: an allowed target / effect / rule', p);
-    ok(P.PAGE_PCTS_V2.includes(p.pct), 'offer: a v2 modifier', p);
+    ok(P.PAGE_PCTS_V2.includes(p.roll), 'offer: a v2 modifier (the roll)', p);
+    ok(p.value === P.prizeValue(p.prize) && p.value > 0 && p.pct === p.roll + p.value, 'offer: required score = the roll + the prize\'s value', p);
     const down = P.effectWeight(p.effect) > 0, harderRule = p.rule && P.ROUND_RULES[p.rule].d > 0;
-    if (P.LOW_PCTS.includes(p.pct)) ok(down || harderRule, 'offer: -15% / -20% only with a downside or a harder Round rule', p);
-    ok(p.difficulty === p.pct + P.effectWeight(p.effect) + (p.rule ? P.ROUND_RULES[p.rule].d : 0), 'offer: difficulty = pct + effect + rule', p);
-    ok(p.tier === P.tierOfV2(p.difficulty, p.pct).tier, 'offer: tier from difficulty', p);
-    if (P.LEGENDARY_PCTS.includes(p.pct)) {
+    if (P.LOW_PCTS.includes(p.roll)) ok(down || harderRule, 'offer: -15% / -20% only with a downside or a harder Round rule', p);
+    ok(p.difficulty === p.pct + P.effectWeight(p.effect) + (p.rule ? P.ROUND_RULES[p.rule].d : 0), 'offer: difficulty = total required % + effect + rule', p);
+    ok(p.tier === P.tierOfV2(p.difficulty).tier, 'offer: tier label from the total', p);
+    ok(P.describePage(p).lines[1].includes((p.pct > 0 ? '+' : p.pct < 0 ? '-' : '±') + Math.abs(p.pct) + '%'), 'offer: the card shows the total required score', P.describePage(p).lines[1]);
+    if (p.target === 'single') ok(p.rank >= 2 && p.rank <= 14, 'offer: one rank', p);
+    if (p.target === 'nature') ok(p.ranks.length === 3 && new Set(p.ranks).size === 3 && p.ranks.every((x) => x >= 2 && x <= 14) && /^\{C:attention\}Nature \(/.test(P.describePage(p).lines[0]), 'offer: a Nature of 3 different ranks', p);
+    if (P.LEGENDARY_PCTS.includes(p.roll)) {
       ok(p.tier === 5 && (!p.rule || P.ROUND_RULES[p.rule].d > 0), 'offer: +40% / +50% is Legendary, never with an easier rule', p);
       ok(['joker', 'joker_slot'].includes(p.prize.kind) && (p.prize.kind !== 'joker' || p.prize.rarity === 4), 'offer: a Legendary-only prize', p.prize);
-    } else ok(p.tier <= 4 && !(p.prize.kind === 'joker' && p.prize.rarity === 4) && p.prize.kind !== 'joker_slot', 'offer: Legendary prizes only on Legendary Pages', p);
+    } else ok(p.tier <= 4 && !(p.prize.kind === 'joker' && p.prize.rarity === 4) && p.prize.kind !== 'joker_slot', 'offer: Legendary prizes only on Legendary Pages (a +40% / +50% roll)', p);
     if (p.target === 'rank') ok(p.rank >= 2 && p.rank <= 14 && G.playing_cards.some((c) => c.get_id() === p.rank), 'offer: the round\'s rank is a rank of the deck', p);
     if (p.effect === 'become') ok(P.BECOME_ENH.includes(p.enh), 'offer: become names Glass / Steel / Gold', p);
     ok(!(p.prize.kind === 'card' && ['Item', 'Energy'].includes(p.prize.set)) && p.prize.kind !== 'poke', 'offer: no Pokermon prize without Pokermon', p.prize);
@@ -123,7 +131,20 @@ for (const k of P.RULE_KEYS) ok(seen.rule.has(k), 'offer: Round rule offered: ' 
 for (const k of P.BECOME_ENH) ok(seen.enh.has(k), 'offer: become ' + k);
 ok(seen.tier.size === 5, 'offer: all 5 tiers', [...seen.tier]);
 for (const k of ['tag', 'level_most', 'joker1', 'enhanced_card', 'hand_size', 'joker2', 'remove_card', 'interest', 'joker3', 'joker_edition', 'joker4', 'joker_slot']) ok(seen.prize.has(k), 'offer: prize offered: ' + k, [...seen.prize]);
-ok(P.tierOfV2(-5, -5).tier === 1 && P.tierOfV2(15, 15).tier === 2 && P.tierOfV2(25, 25).tier === 3 && P.tierOfV2(26, 20).tier === 4 && P.tierOfV2(25, 40).tier === 5 && P.tierOfV2(115, 50).tier === 5, 'the v2 tier table');
+ok(P.tierOfV2(49).tier === 1 && P.tierOfV2(50).tier === 2 && P.tierOfV2(99).tier === 2 && P.tierOfV2(100).tier === 3 && P.tierOfV2(174).tier === 3 && P.tierOfV2(175).tier === 4 && P.tierOfV2(274).tier === 4 && P.tierOfV2(275).tier === 5, 'the v2 tier labels (from the total)');
+ok(P.poolOfV2(-5, -5).tier === 1 && P.poolOfV2(15, 15).tier === 2 && P.poolOfV2(25, 25).tier === 3 && P.poolOfV2(26, 20).tier === 4 && P.poolOfV2(25, 40).tier === 5, 'the v2 prize pools (from the roll)');
+// prize values (one table, owner-tunable): Temperance on a +10% roll lands around +150-200% (Jack's example)
+ok(P.prizeValue({ kind: 'money', amount: 3 }) === 30 && P.prizeValue({ kind: 'card', set: 'Tarot', key: 'c_temperance' }) === 150 && P.prizeValue({ kind: 'card', set: 'Tarot', key: 'c_star' }) === 40 &&
+  P.prizeValue({ kind: 'pack', key: 'p_arcana_normal_1' }) === 50 && P.prizeValue({ kind: 'pack', key: 'p_arcana_jumbo_1' }) === 80 && P.prizeValue({ kind: 'pack', key: 'p_celestial_mega_1' }) === 110 &&
+  P.prizeValue({ kind: 'joker', rarity: 1 }) === 60 && P.prizeValue({ kind: 'joker', rarity: 2 }) === 90 && P.prizeValue({ kind: 'joker', rarity: 3 }) === 150 && P.prizeValue({ kind: 'joker', rarity: 4 }) === 300 && P.prizeValue({ kind: 'joker_slot' }) === 300, 'prize values');
+{
+  // a real round: Temperance on a +10% roll -> +160%: the Small Blind's 300 becomes 780
+  newRun({ seed: 'V2TEMP', engineRev: REV }); act({ type: 'select_blind' });
+  const pg = { v: 2, target: 'Hearts', effect: 'chips', roll: 10, prize: { kind: 'card', set: 'Tarot', key: 'c_temperance' } };
+  pg.value = P.prizeValue(pg.prize); pg.pct = pg.roll + pg.value; pg.difficulty = pg.pct; pg.tier = P.tierOfV2(pg.difficulty).tier;
+  G.GAME.pages.choices[0] = pg; act({ type: 'pick_page', index: 0 });
+  ok(pg.pct === 160 && Number(G.GAME.blind.chips) === 780 && /\+160%/.test(P.describePage(pg).lines[1]) && P.describePage(pg).name === 'Hard Page', 'Temperance on +10%: required score +160% (780 of 300), a Hard Page', [Number(G.GAME.blind.chips), P.describePage(pg)]);
+}
 // the combos a Page never pairs
 ok(!P.comboOk('first', 'lucky_discard') && !P.comboOk('last', 'debuffed') && !P.comboOk('enhanced', 'become') && !P.comboOk('sealed', 'gain_seal') && !P.comboOk('unenhanced', 'debuffed') && !P.comboOk('numbered', 'debuffed') && !P.comboOk('Hearts', 'bonus_discard', 'no_discards') && P.comboOk('red', 'debuffed'), 'combos that could never act are never offered');
 // rev 2 (Pages v1) never offers a v2 Page
@@ -176,6 +197,18 @@ ok(score() === (10 + 10) * 3, 'target first: a debuffed card is skipped (the fir
   round({ target: 'rank', rank: rk, effect: 'mult' }, [other]); play(1);
   ok(score() === 15, 'target rank: another rank doesn\'t');
 }
+
+// one rank / a Nature, in play
+round({ target: 'single', rank: 7, effect: 'chips' }, ['S_7']); play(1);
+ok(score() === 5 + 7 + 15, 'target single: a Seven scores +15 Chips', score());
+round({ target: 'single', rank: 7, effect: 'chips' }, ['S_8']); play(1);
+ok(score() === 5 + 8, 'target single: an Eight doesn\'t');
+ok(P.describePage({ v: 2, target: 'single', rank: 7, effect: 'chips', pct: 0, tier: 1, prize: { kind: 'money', amount: 1 } }).lines[0].startsWith('{C:attention}Sevens{}'), 'target single: named ("Sevens give ...")');
+for (const [card, hit] of [['S_4', true], ['S_9', true], ['S_K', true], ['S_5', false], ['S_A', false]]) {
+  round({ target: 'nature', ranks: [4, 9, 13], effect: 'mult' }, [card]); const base = 5 + G.hand.cards[0].get_chip_bonus(); play(1);
+  ok(score() === base * (hit ? 2 : 1), `target nature (4, 9, King): ${card} ${hit ? 'scores +1 Mult' : 'doesn\'t'}`, score());
+}
+ok(P.describePage({ v: 2, target: 'nature', ranks: [4, 9, 13], effect: 'mult', pct: 0, tier: 1, prize: { kind: 'money', amount: 1 } }).lines[0].includes('Nature (4, 9, King)'), 'target nature: "Nature (4, 9, King)"');
 
 // ------------------------------------------------------------------ effects (in play)
 round({ target: 'face', effect: 'xmult' }, ['S_K']); play(1);
@@ -350,6 +383,54 @@ ok(G.jokers.config.card_limit === 6, 'prize joker_slot: for the rest of the run'
   ok(G.consumeables.cards.some((c) => c.config.center.key === 'c_poke_pokeball'), 'prize poke: a Poke Ball Item');
 }
 
+// ------------------------------------------------------------------ 25% of Blinds, and the pity timer (the real odds)
+P.PAGE_ODDS.chance = CHANCE;
+{
+  // a bot plays real runs (every Blind selected, won at once): how often a Pages screen opens, and the pity timer
+  let blinds = 0, shown = 0, pityBosses = 0, pityMissed = 0, quietAntes = 0;
+  for (let i = 0; i < 120; i++) {
+    newRun({ seed: 'V2ODDS' + i, engineRev: REV });
+    const seenAnte = {};
+    for (let n = 0; n < 200 && G.GAME.round_resets.ante <= 5 && !G.GAME.over; n++) {
+      const st = state();
+      if (st === 'BLIND_SELECT') {
+        const which = G.GAME.blind_on_deck, ante = G.GAME.round_resets.ante;
+        const owed = which === 'Boss' && ante > 1 && !seenAnte[ante - 1] && !seenAnte[ante];
+        const v = toView();
+        if (which === 'Boss') ok(!!v.page_pity === owed, 'pity: the blind choice says "Page guaranteed this Boss" exactly when owed', { ante, owed });
+        act({ type: 'select_blind' });
+        blinds++;
+        const got = state() === 'PAGES';
+        if (got) { shown++; seenAnte[ante] = true; }
+        if (owed) { pityBosses++; if (!got) pityMissed++; }
+        if (got) act({ type: 'pick_page', index: G.GAME.pages.choices.findIndex((p) => !p.rule && !P.effectWeight(p.effect)) >= 0 ? G.GAME.pages.choices.findIndex((p) => !p.rule && !P.effectWeight(p.effect)) : 0 });
+        if (which === 'Boss' && !seenAnte[ante]) quietAntes++;
+      } else if (st === 'SELECTING_HAND') { G.GAME.blind.chips = 1; play(1); }
+      else if (st === 'ROUND_EVAL') act({ type: 'cash_out' });
+      else if (st === 'PAGE_REMOVE') act({ type: 'page_remove', id: G.playing_cards[0].sort_id });
+      else if (/_PACK/.test(st)) act({ type: 'skip_booster' });
+      else if (st === 'SHOP') act({ type: 'next_round' });
+      else break;
+    }
+  }
+  const share = shown / blinds;
+  console.log(`  odds: ${blinds} Blinds, Pages on ${(share * 100).toFixed(1)}%, pity Bosses ${pityBosses}, whole antes without a Page ${quietAntes}`);
+  ok(pityBosses > 10 && pityMissed === 0, 'pity: a Boss after an ante without a Page always gets one', { pityBosses, pityMissed });
+  ok(share > 0.25 && share < 0.36, 'Pages on ~25% of Blinds (+ the pity Bosses)', share);
+  // the roll alone (no pity): ~25% of the first Small Blinds
+  let first = 0;
+  for (let i = 0; i < 800; i++) { newRun({ seed: 'V2FIRST' + i, engineRev: REV }); act({ type: 'select_blind' }); if (state() === 'PAGES') first++; }
+  ok(Math.abs(first / 800 - 0.25) < 0.04, 'a Blind gets Pages 25% of the time (seeded roll)', first / 800);
+  newRun({ seed: 'V2FIRST1', engineRev: REV }); act({ type: 'select_blind' }); const a1 = state();
+  newRun({ seed: 'V2FIRST1', engineRev: REV }); act({ type: 'select_blind' });
+  ok(a1 === state(), 'the roll is seeded');
+  // a rev-2 run: Pages on every Blind, as recorded
+  let all = 0;
+  for (let i = 0; i < 40; i++) { newRun({ seed: 'V2FIRST' + i, engineRev: 2 }); act({ type: 'select_blind' }); if (state() === 'PAGES') all++; }
+  ok(all === 40, 'rev 2 (Pages v1): every Blind still has its Pages', all);
+}
+P.PAGE_ODDS.chance = 1;
+
 // ------------------------------------------------------------------ save / resume / replay
 const s = new Session(); s.start({ seed: 'V2RESUME' });
 ok(s.recipe.engineRev === REV, 'a new run records engine rev 3');
@@ -360,18 +441,17 @@ const back = Session.fromRecipe(JSON.parse(JSON.stringify(s.recipe)));
 ok(JSON.stringify(back.view().pages) === want, 'resume mid-Pages: the same 3 v2 Pages');
 // a remove-a-card prize, saved on its screen
 {
-  const s2 = new Session(); s2.start({ seed: 'V2RM' });
-  s2.act({ type: 'select_blind' });
-  G.GAME.pages.choices[0] = { v: 2, target: 'Hearts', effect: 'chips', pct: 0, difficulty: 20, tier: 3, prize: { kind: 'remove_card' } };
-  // (a real recipe can't edit the offer: find a seed whose offer has the prize instead)
+  // (a real recipe can't edit the offer: find a seed whose first offer has the prize; the deck is 40 Aces of Spades so the bot's
+  //  first hand — a Flush Five — beats the raised requirement)
+  const ACES = { name: 'Aces', cards: [['S_A', 0, 0, 0, 40]] };
   let seed = null;
   for (let i = 0; i < 2000 && !seed; i++) {
-    newRun({ seed: 'V2RMS' + i, engineRev: REV }); act({ type: 'select_blind' });
-    const j = G.GAME.pages.choices.findIndex((p) => p.prize.kind === 'remove_card' && !p.rule && !P.PAGE_EFFECTS_V2[p.effect]);
+    newRun({ seed: 'V2RMS' + i, engineRev: REV, customDeck: ACES }); act({ type: 'select_blind' });
+    const j = G.GAME.pages.choices.findIndex((p) => p.prize.kind === 'remove_card' && !p.rule && !P.effectWeight(p.effect));
     if (j >= 0) seed = ['V2RMS' + i, j];
   }
   ok(!!seed, 'a seed whose first offer has the remove prize');
-  const s3 = new Session(); s3.start({ seed: seed[0] });
+  const s3 = new Session(); s3.start({ seed: seed[0], customDeck: ACES });
   s3.act({ type: 'select_blind' }); s3.act({ type: 'pick_page', index: seed[1] });
   let guard = 0;
   while (s3.view().state === 'SELECTING_HAND' && guard++ < 10) {
@@ -379,15 +459,15 @@ ok(JSON.stringify(back.view().pages) === want, 'resume mid-Pages: the same 3 v2 
     s3.act({ type: 'highlight', ids }); s3.act({ type: 'play' });
   }
   if (s3.view().state === 'ROUND_EVAL') s3.act({ type: 'cash_out' });
-  ok(s3.view().state === 'PAGE_REMOVE' && s3.view().page_remove.cards.length === 52, 'a real run reaches the remove screen', s3.view().state);
+  ok(s3.view().state === 'PAGE_REMOVE' && s3.view().page_remove.cards.length === 40, 'a real run reaches the remove screen', s3.view().state);
   const r3 = Session.fromRecipe(JSON.parse(JSON.stringify(s3.recipe)));
   ok(r3.view().state === 'PAGE_REMOVE' && JSON.stringify(r3.view().page_remove) === JSON.stringify(s3.view().page_remove), 'resume on the remove screen: frame-exact');
   const id = r3.view().page_remove.cards[7].id;
-  ok(r3.act({ type: 'page_remove', id }).ok && r3.view().state === 'SHOP' && r3.view().deck_list.length === 51, 'and the removal works after the resume');
+  ok(r3.act({ type: 'page_remove', id }).ok && r3.view().state === 'SHOP' && r3.view().deck_list.length === 39, 'and the removal works after the resume');
   const st = Session.stepper(r3.recipe); st.seek(r3.recipe.actions.length - 1);
   ok(st.view().state === 'PAGE_REMOVE', 'the replay shows the remove screen');
   st.seek(r3.recipe.actions.length);
-  ok(st.view().state === 'SHOP' && st.view().deck_list.length === 51, 'and the removal');
+  ok(st.view().state === 'SHOP' && st.view().deck_list.length === 39, 'and the removal');
 }
 // a Pages-v1 recipe (rev 2) replays on v1 tables, no "versions changed"
 {

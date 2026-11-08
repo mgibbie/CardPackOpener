@@ -254,8 +254,8 @@ shopWith('negative', 'NEG1'); const n1 = G.shop_jokers.cards.map((c) => c.config
 shopWith('negative', 'NEG1'); ok(n1 === G.shop_jokers.cards.map((c) => c.config.center.key + (c.edition ? c.edition.type : '')).join(), 'seeded');
 
 // ------------------------------------------------------------------ save / resume / replay
-const s = new Session(); s.start({ seed: 'RESUME' });
-ok(s.recipe.engineRev === CUR, 'a new run records the engine rev');
+const s = new Session(); s.start({ seed: 'RESUME', engineRev: REV }); // (a Pages v1 run)
+ok(s.recipe.engineRev === REV, 'the run records its engine rev');
 s.act({ type: 'select_blind' });
 const want = JSON.stringify(s.view().pages);
 const back = Session.fromRecipe(JSON.parse(JSON.stringify(s.recipe)));

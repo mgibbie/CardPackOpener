@@ -179,7 +179,7 @@ const F = W.features || {};
 A(F.bignum && F.bignum.maxExp === 1000 && F.bignum.examples.some(x => x.shown === 'naneinf') && F.bignum.examples.some(x => /e450$/.test(x.shown)), 'feature data: big numbers (formatter examples)');
 A(F.deckeditor && F.deckeditor.params.length >= 3 && F.deckeditor.rules.length >= 1 && F.deckeditor.examples.some(x => x.name === 'Goth Deck') && F.deckeditor.fixes.length >= 3, 'feature data: deck editor (settings, rules, Goth Deck, fixes)');
 A(F.replays && F.replays.localMax > 0 && F.replays.actionsMax > 0, 'feature data: replays');
-A(F.pages && F.pages.tiers.length === 5 && F.pages.targets.length === 19 && F.pages.effects.length >= 22 && F.pages.rules.length === 5 && F.pages.ruleChance === 0.3 && F.pages.tiers.every((t) => t.prizes.length > 0) && F.pages.tiers[4].legendary, 'feature data: Pages v2 (targets, effects, Round rules, the five prize tiers)');
+A(F.pages && F.pages.tiers.length === 5 && F.pages.effects.length >= 22 && F.pages.rules.length === 5 && F.pages.ruleChance === 0.3 && F.pages.pageChance === 0.25 && F.pages.values.length > 40 && F.pages.targets.length === 21 && F.pages.tiers.every((t) => t.prizes.length > 0) && F.pages.tiers[4].legendary, 'feature data: Pages v2 (targets, effects, Round rules, the five prize tiers)');
 
 // ---------- 2. the pages
 const server = http.createServer((req, res) => {
@@ -358,7 +358,7 @@ try {
 	A(await open('micatro/deck-editor', 'table', de.params.length + de.rules.length + 1) && await page.$eval('#content', el => /Goth Deck/.test(el.textContent) && /Deck Creator/.test(el.textContent) && !/object HTML/.test(el.textContent)), 'deck editor page: settings, rules, examples');
 	A(await open('micatro/big-numbers', 'table', 1) && await page.$eval('#content', el => /9\.99e999/.test(el.textContent) && /naneinf/.test(el.textContent)), 'big-number page');
 	A(await open('micatro/replays', 'table', 1) && await page.$eval('#content', el => /\/mr\/<id>/.test(el.textContent) && /whole run/.test(el.textContent)), 'replays page');
-	A(await open('micatro/pages', 'table', 2) && await page.$eval('#content', el => /Prize tiers/.test(el.textContent) && /Brutal/.test(el.textContent) && /Legendary/.test(el.textContent) && /Round rules/.test(el.textContent) && /The round.s rank/.test(el.textContent) && /Joker Toggle/.test(el.textContent)), 'Pages page (v2: Legendary, Round rules, the new targets)');
+	A(await open('micatro/pages', 'table', 2) && await page.$eval('#content', el => /Prize pools/.test(el.textContent) && /Brutal/.test(el.textContent) && /Legendary/.test(el.textContent) && /Round rules/.test(el.textContent) && /Prize value/.test(el.textContent) && /Pity timer/.test(el.textContent) && /The round.s rank/.test(el.textContent) && /Joker Toggle/.test(el.textContent)), 'Pages page (v2: Legendary, Round rules, the new targets)');
 	A(await open('micatro', '.mc-featlink', 4) && await page.$$eval('#content .mc-featlink', e => e.length) === 4 && await page.$$eval('#content .mc-idx', e => e.length) === 11, 'vanilla overview: its 11 categories + the 4 built-in feature pages (Pages too)');
 	// phone
 	await page.setViewport({ width: 390, height: 844 });

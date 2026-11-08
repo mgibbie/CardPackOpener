@@ -834,6 +834,8 @@ export class Board {
       chip._atlas = c.atlas;
       body.appendChild(chip);
       if (k === 'Boss' && c.desc) body.appendChild(h('div', 'blind-desc', (c.desc.lines || []).map(markup).join('<br>')));
+      // (Pages v2's pity timer: no Page all last ante -> this Boss gets one)
+      if (k === 'Boss' && v.page_pity) body.appendChild(h('div', 'blind-pity', 'Page guaranteed this Boss'));
       body.appendChild(h('div', 'blind-req', `<div class="req-l">Score at least</div><div class="req-v"><span class="chip-ico"></span>${fmt(c.chips)}</div>`));
       body.appendChild(h('div', 'blind-rew', c.dollars ? `Reward: <span class="money">${'$'.repeat(Math.min(10, c.dollars))}+</span>` : '<span class="muted">No reward money</span>'));
       col.appendChild(body);

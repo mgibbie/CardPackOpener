@@ -23,7 +23,7 @@ const CHROME = process.env.CHROME || [
 	'/opt/chrome/chrome',
 ].find(p => fs.existsSync(p));
 const PORT = 8742;
-const SEED = 'DEMO2';
+const SEED = 'DEMO4'; // (Pages v2: a seed whose first shop still has an affordable booster after the Joker)
 let pass = 0, fail = 0;
 const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else { fail++; console.log('FAIL: ' + m + (extra != null ? '  ' + extra : '')); } };
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.json': 'application/json', '.css': 'text/css', '.png': 'image/png', '.jpg': 'image/jpeg', '.ogg': 'audio/ogg', '.ttf': 'font/ttf', '.svg': 'image/svg+xml' };
@@ -199,9 +199,15 @@ try {
 
 		await clickSel(page, '.b-select');
 		await idle(page); await sleep(400);
-		A((await V(page)).state === 'PAGES' && await page.evaluate(() => document.querySelectorAll('.overlay .page-card').length === 3), 'Select opens the Pages screen', JSON.stringify(await page.evaluate(() => [window.__micatro.view().state, window.__micatro.view().pages_on, document.querySelectorAll('.overlay .page-card').length])));
-		await clickSel(page, '.b-pick-page');
-		await idle(page); await sleep(400);
+		// (Pages v2: a Pages screen on 25% of Blinds — micatro_pages_test covers it; here, when it opens, the quietest Page: no Round
+		//  rule, no downside, a plain prize, so the round plays as this suite expects)
+		const st0 = (await V(page)).state;
+		A(st0 === 'SELECTING_HAND' || (st0 === 'PAGES' && await page.evaluate(() => document.querySelectorAll('.overlay .page-card').length === 3)), 'Select starts the round (or opens the Pages screen)', st0);
+		if (st0 === 'PAGES') {
+			await page.evaluate(() => { const ch = window.__micatro.view().pages.choices; const K = ['money', 'card', 'shop', 'pack']; const cost = (p) => (p.rule || p.down ? 10 : 0) + (K.includes(p.prize.kind) ? K.indexOf(p.prize.kind) : 5); let i = 0; ch.forEach((p, j) => { if (cost(p) < cost(ch[i])) i = j; }); window.__micatro.board.keyPage(i); return i; }); await sleep(150);
+			await clickSel(page, '.b-pick-page');
+			await idle(page); await sleep(400);
+		}
 		v = await V(page);
 		A(v.state === 'SELECTING_HAND' && v.areas.hand.length === 8, 'selecting the blind deals a hand of 8', v.state);
 		A(await page.evaluate(() => document.querySelectorAll('.cards-layer .card').length) >= 8, 'the hand is drawn as card sprites');

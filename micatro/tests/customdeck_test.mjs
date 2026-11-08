@@ -767,6 +767,7 @@ function RANKS13(cs) { const by = {}; for (const c of cs) by[c.base.value] = (by
     const v = s.view();
     if (v.state === 'BLIND_SELECT') s.act({ type: 'select_blind' });
     else if (v.state === 'PAGES') s.act({ type: 'pick_page', index: guard % 3 });
+    else if (v.state === 'PAGE_REMOVE') s.act({ type: 'page_remove', id: v.page_remove.cards[0].id }); // (Pages v2's prize)
     else if (v.state === 'SELECTING_HAND') { s.act({ type: 'highlight', ids: v.areas.hand.slice(0, 5).map((c) => c.id) }); s.act({ type: 'play' }); }
     else if (v.state === 'ROUND_EVAL') s.act({ type: 'cash_out' });
     else if (v.state === 'SHOP') s.act({ type: 'next_round' });
@@ -814,7 +815,8 @@ function RANKS13(cs) { const by = {}; for (const c of cs) by[c.base.value] = (by
         const st = v.state;
         let a;
         if (st === 'BLIND_SELECT') a = v.legal.can_skip_blind && rnd() < 0.2 ? { type: 'skip_blind' } : { type: 'select_blind' };
-        else if (st === 'PAGES') a = { type: 'pick_page', index: Math.floor(rnd() * 3) };
+        else if (st === 'PAGES') { const ch = v.pages.choices; a = { type: 'pick_page', index: ch.indexOf(ch.reduce((m, p) => (p.pct < m.pct ? p : m))) }; } // (the easiest Page: v2's prizes raise the score)
+        else if (st === 'PAGE_REMOVE') a = { type: 'page_remove', id: pickR(v.page_remove.cards).id }; // (Pages v2's prize)
         else if (st === 'SELECTING_HAND') {
           const ids = v.areas.hand.map((c) => c.id);
           const cons = v.areas.consumeables.find((c) => rnd() < 0.3);
@@ -844,7 +846,8 @@ function RANKS13(cs) { const by = {}; for (const c of cs) by[c.base.value] = (by
       else console.log('replay diverged', i);
     } catch (e) { crashes++; console.log('stress crash', i, e && e.stack && e.stack.split('\n').slice(0, 4).join(' | ')); }
   }
-  ok(crashes === 0 && acts > 600, '12 random custom decks played by a bot: no engine errors', { crashes, acts });
+  // (Pages v2: a Page's prize raises its Blind's score, so this random bot's runs end sooner — fewer moves than before Pages)
+  ok(crashes === 0 && acts > 250, '12 random custom decks played by a bot: no engine errors', { crashes, acts });
   ok(replays === 12, 'and every one replays from its recipe to the identical state', replays);
 }
 
@@ -862,7 +865,7 @@ function RANKS13(cs) { const by = {}; for (const c of cs) by[c.base.value] = (by
   ok(['v_planet_merchant', 'v_planet_tycoon', 'v_paint_brush', 'v_palette'].every((v) => G.GAME.used_vouchers[v]) && G.GAME.planet_rate === 4 * P_CENTERS.v_planet_tycoon.config.extra, 'Planet Merchant + Tycoon, Paint Brush + Palette', G.GAME.planet_rate);
   ok(G.hand.config.card_limit === 10 && G.playing_cards.length === 52 && G.GAME.dollars === 4 && G.GAME.round_resets.hands === 4 && G.GAME.round_resets.discards === 3, 'hand size 8 + 2, the standard 52, vanilla money / hands / discards');
   const r = s.act({ type: 'select_blind' });
-  ok(r.ok && s.view().state === 'PAGES' && s.act({ type: 'pick_page', index: 0 }).ok, 'the Pages screen, a Page picked');
+  ok(r.ok && (s.view().state !== 'PAGES' || s.act({ type: 'pick_page', index: 0 }).ok), 'the Pages screen (25% of Blinds), a Page picked');
   ok(r.ok && s.view().state === 'SELECTING_HAND' && s.view().areas.hand.length === 10, 'the run starts: blind selected, 10 cards drawn');
   const r2 = s.act({ type: 'highlight', ids: s.view().areas.hand.slice(0, 5).map((c) => c.id) });
   ok(r2.ok && s.act({ type: 'play' }).ok, 'a hand plays');

@@ -155,7 +155,13 @@ export const PAGE_TARGETS_V2 = {
   last: { name: 'The last scored card', one: true, positional: true, test: (c, p, x) => { const l = live(x); return l.length > 0 && l[l.length - 1] === c; } },
   // (one rank drawn from the deck when the Page is made, like The Idol; stored on the Page as `rank`)
   rank: { name: 'The round\'s rank', test: (c, p) => !!p && id(c) === p.rank },
+  // (one rank, 2 .. Ace, drawn when the Page is made: "Sevens"; stored as `rank`)
+  single: { name: 'One rank', test: (c, p) => !!p && id(c) === p.rank },
+  // (3 different ranks drawn when the Page is made, like the Pokermon starters' Nature: "Nature (4, 9, King)"; stored as `ranks`)
+  nature: { name: 'Nature (3 ranks)', test: (c, p) => !!(p && p.ranks) && p.ranks.includes(id(c)) },
 };
+const RANK_SHORT = { 11: 'Jack', 12: 'Queen', 13: 'King', 14: 'Ace' };
+const rankShort = (r) => RANK_SHORT[r] || String(r);
 const ALL_TARGETS = { ...PAGE_TARGETS, ...PAGE_TARGETS_V2 };
 export const TARGET_KEYS_V2 = [...TARGET_KEYS, ...Object.keys(PAGE_TARGETS_V2)];
 /** Does Page `p` act on card `c`? (v1 and v2 targets alike) */
@@ -236,7 +242,67 @@ export const PRIZE_TIERS_V2 = [
   { tier: 4, name: 'Brutal', max: Infinity, prizes: [...PRIZE_TIERS[3].prizes, { kind: 'joker', rarity: 3 }, { kind: 'joker_edition' }] },
   { tier: 5, name: 'Legendary', max: Infinity, prizes: [{ kind: 'joker', rarity: 4 }, { kind: 'joker_slot' }] },
 ];
-export const tierOfV2 = (difficulty, pct) => (LEGENDARY_PCTS.includes(pct) ? PRIZE_TIERS_V2[4] : PRIZE_TIERS_V2.slice(0, 4).find((t) => difficulty <= t.max));
+/** The prize POOL a Page draws from: by its rolled difficulty (roll + effect + rule), a +40% / +50% roll the Legendary pool. */
+export const poolOfV2 = (difficulty, roll) => (LEGENDARY_PCTS.includes(roll) ? PRIZE_TIERS_V2[4] : PRIZE_TIERS_V2.slice(0, 4).find((t) => difficulty <= t.max));
+/**
+ * The Page's tier LABEL (owner, 2026-11-08: from the TOTAL): difficulty = total required-score % (roll + the prize's value) +
+ * the effect's downside weight + the Round rule's. Easy < 50, Fair < 100, Hard < 175, Brutal < 275, Legendary 275 and up.
+ */
+export const TIER_LABEL_MAX = [49, 99, 174, 274, Infinity];
+export const tierOfV2 = (difficulty) => PRIZE_TIERS_V2[TIER_LABEL_MAX.findIndex((m) => difficulty <= m)];
+/**
+ * PRIZE VALUE (owner, 2026-11-08, from tester feedback — "Temperance for +10% should be more like 250% of the blind"): what a prize
+ * is worth, as a required-score % ADDED to the Page's rolled modifier. One table, to tune: money $1 = +10%; a card by its worth
+ * (the set's default unless listed); packs by size / kind; next-shop perks; Tags; Jokers by rarity; the rest by kind.
+ */
+export const PRIZE_VALUE = {
+  per_dollar: 10,
+  set: { Tarot: 45, Spectral: 90, Item: 60, Energy: 50, Oddity: 50 },
+  card: {
+    c_temperance: 150, c_hermit: 120, c_judgement: 120, c_emperor: 60, c_high_priestess: 60, c_wheel_of_fortune: 60, c_death: 60,
+    c_justice: 50, c_strength: 50, c_fool: 50, c_hanged_man: 50, c_devil: 50, c_chariot: 45, c_magician: 40, c_empress: 40,
+    c_heirophant: 40, c_lovers: 40, c_tower: 40, c_star: 40, c_moon: 40, c_sun: 40, c_world: 40,
+    c_ankh: 150, c_wraith: 150, c_ectoplasm: 140, c_hex: 120, c_cryptid: 110, c_immolate: 110, c_aura: 110, c_talisman: 100,
+    c_deja_vu: 100, c_trance: 90, c_medium: 90, c_sigil: 70, c_ouija: 70, c_familiar: 70, c_grim: 70, c_incantation: 70,
+    c_poke_pokeball: 70,
+  },
+  pack: {
+    p_arcana_normal_1: 50, p_celestial_normal_1: 50, p_standard_normal_1: 45, p_buffoon_normal_1: 70,
+    p_arcana_jumbo_1: 80, p_celestial_mega_1: 110, p_standard_mega_1: 100, p_buffoon_jumbo_1: 110, p_spectral_normal_1: 100,
+  },
+  shop: { half_off: 70, rerolls: 50, negative: 120 },
+  tag: { tag_double: 60, tag_investment: 100, tag_juggle: 40, tag_coupon: 70, tag_d_six: 50, tag_top_up: 90 },
+  joker: { 1: 60, 2: 90, 3: 150, 4: 300 },
+  kind: { level_most: 40, enhanced_card: 30, hand_size: 40, remove_card: 50, interest: 30, joker_edition: 120, joker_slot: 300 },
+};
+/** A prize's value (required-score %). */
+export function prizeValue(z) {
+  const V = PRIZE_VALUE;
+  if (!z) return 0;
+  if (z.kind === 'money') return V.per_dollar * z.amount;
+  if (z.kind === 'card') return V.card[z.key] != null ? V.card[z.key] : V.set[z.set] != null ? V.set[z.set] : 50;
+  if (z.kind === 'pack') return V.pack[z.key] != null ? V.pack[z.key] : 60;
+  if (z.kind === 'shop') return V.shop[z.perk] || 0;
+  if (z.kind === 'tag') return V.tag[z.key] != null ? V.tag[z.key] : 50;
+  if (z.kind === 'joker') return V.joker[z.rarity] || 60;
+  return V.kind[z.kind] || 0;
+}
+
+// ---- how often a Blind gets Pages (v2): 25% a Blind, seeded; a Boss after a whole ante without one always does
+/** The chance a selected Blind gets a Pages screen (owner, 2026-11-08: 25%). A test may raise it. */
+export const PAGE_ODDS = { chance: 0.25 };
+/** Pity: no Page during the whole previous ante (and none yet this ante) -> this ante's Boss Blind gets one. */
+export function pageGuaranteed(which) {
+  const ante = G.GAME.round_resets.ante, seen = G.GAME.pages_seen || {};
+  return which === 'Boss' && ante > 1 && !seen[ante - 1] && !seen[ante];
+}
+/** select_blind (run.js): does this Blind get a Pages screen? (the roll is made every time: seeded 'page_chance' + ante + blind) */
+export function pageRolls(which) {
+  const roll = seeded(pseudoseed('page_chance' + G.GAME.round_resets.ante + which))();
+  return pageGuaranteed(which) || roll < PAGE_ODDS.chance;
+}
+/** A Pages screen opened this ante (for the pity timer). */
+export function pageSeen() { (G.GAME.pages_seen = G.GAME.pages_seen || {})[G.GAME.round_resets.ante] = true; }
 /** The Tags a Tag prize may name (granted like a skip's). */
 export const PRIZE_TAGS = ['tag_double', 'tag_investment', 'tag_juggle', 'tag_coupon', 'tag_d_six', 'tag_top_up'];
 const JOKER_RARITY = { 1: { name: 'Common', roll: 0 }, 2: { name: 'Uncommon', roll: 0.9 }, 3: { name: 'Rare', roll: 0.99 }, 4: { name: 'Legendary', legendary: true } };
@@ -258,6 +324,8 @@ function generatePagesV2(which) {
     if (!comboOk(target, effect) || seen.has(target + '|' + effect)) continue;
     const page = { v: 2, target, effect };
     if (target === 'rank') { page.rank = rollRank(r); if (page.rank == null) continue; }
+    if (target === 'single') page.rank = 2 + Math.floor(r() * 13);
+    if (target === 'nature') { const all = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]; page.ranks = []; for (let k = 0; k < 3; k++) page.ranks.push(all.splice(Math.floor(r() * all.length), 1)[0]); page.ranks.sort((a, b) => a - b); }
     if (effect === 'become') { if (!enhs.length) continue; page.enh = pick(r, enhs); }
     seen.add(target + '|' + effect);
     // the Round rule: exactly a RULE_CHANCE roll per Page
@@ -270,11 +338,15 @@ function generatePagesV2(which) {
     else if (band < LEGENDARY_CHANCE + LOW_CHANCE && (down || hasRule)) { pct = pick(r, LOW_PCTS); if (!down) rules = harder; } // (only with a downside or a harder rule)
     else pct = pick(r, PAGE_PCTS);
     if (hasRule) page.rule = pick(r, rules);
-    page.pct = pct;
-    page.difficulty = difficultyOfV2(effect, pct, page.rule);
-    const tier = tierOfV2(page.difficulty, pct);
-    page.tier = tier.tier;
-    page.prize = rollPrizeV2(r, tier);
+    // the prize comes from the pool of the rolled difficulty; its value is then ADDED to the required score, and the tier label is
+    // read from the total
+    const pool = poolOfV2(difficultyOfV2(effect, pct, page.rule), pct);
+    page.prize = rollPrizeV2(r, pool);
+    page.roll = pct;
+    page.value = prizeValue(page.prize);
+    page.pct = pct + page.value;
+    page.difficulty = difficultyOfV2(effect, page.pct, page.rule);
+    page.tier = tierOfV2(page.difficulty).tier;
     out.push(page);
   }
   return out;
@@ -669,7 +741,8 @@ export function prizeText(z) {
   return PRIZE_TEXT_V2[z.kind] || '';
 }
 const pctText = (pct) => (pct > 0 ? '+' : pct < 0 ? '-' : '±') + Math.abs(pct) + '%';
-export const pageLabel = (p) => (p.target === 'rank' && RANK_NAMES[p.rank] ? RANK_NAMES[p.rank] : ALL_TARGETS[p.target] ? ALL_TARGETS[p.target].name : p.target);
+export const pageLabel = (p) => ((p.target === 'rank' || p.target === 'single') && RANK_NAMES[p.rank] ? RANK_NAMES[p.rank]
+  : p.target === 'nature' && p.ranks ? `Nature (${p.ranks.map(rankShort).join(', ')})` : ALL_TARGETS[p.target] ? ALL_TARGETS[p.target].name : p.target);
 /** A single-card target's verb: "give" -> "gives" ("The first scored card gives +15 Chips"). */
 const VERB_ONE = [['permanently gain ', 'permanently gains '], ['give ', 'gives '], ['have ', 'has '], ['cost ', 'costs '], ['are ', 'is ']];
 const singular = (t) => { for (const [a, b] of VERB_ONE) if (t.startsWith(a)) return b + t.slice(a.length); return t; };
@@ -690,7 +763,7 @@ function prizeLineV2(z) {
  */
 export function describePage(p) {
   const tiers = p.v === 2 ? PRIZE_TIERS_V2 : PRIZE_TIERS;
-  const tier = tiers.find((t) => t.tier === p.tier) || (p.v === 2 ? tierOfV2(p.difficulty, p.pct) : tierOf(p.difficulty));
+  const tier = tiers.find((t) => t.tier === p.tier) || (p.v === 2 ? tierOfV2(p.difficulty) : tierOf(p.difficulty));
   const odds = String((G.GAME && G.GAME.probabilities && G.GAME.probabilities.normal) || 1);
   const E = p.v === 2 ? ALL_EFFECTS : PAGE_EFFECTS;
   let eff = (E[p.effect] ? E[p.effect].text : p.effect).replace('#1#', odds);
@@ -711,6 +784,6 @@ export function describePage(p) {
 export function pageView(p) {
   if (!p) return null;
   const v = { target: p.target, effect: p.effect, pct: p.pct, tier: p.tier, difficulty: p.difficulty, prize: { ...p.prize }, down: !!(PAGE_EFFECTS[p.effect] && PAGE_EFFECTS[p.effect].down), desc: describePage(p) };
-  if (p.v === 2) Object.assign(v, { v: 2, down: !!(ALL_EFFECTS[p.effect] && ALL_EFFECTS[p.effect].down), ...(p.rule ? { rule: p.rule } : {}), ...(p.rank ? { rank: p.rank } : {}), ...(p.enh ? { enh: p.enh } : {}) });
+  if (p.v === 2) Object.assign(v, { v: 2, down: !!(ALL_EFFECTS[p.effect] && ALL_EFFECTS[p.effect].down), ...(p.rule ? { rule: p.rule } : {}), ...(p.rank ? { rank: p.rank } : {}), ...(p.ranks ? { ranks: p.ranks.slice() } : {}), ...(p.enh ? { enh: p.enh } : {}), ...(p.roll != null ? { roll: p.roll, value: p.value } : {}) });
   return v;
 }

@@ -89,7 +89,7 @@ assert(!stickerCard.ability[sticker.key.slice(8)], 'disabled sticker cannot be a
 const stickerRun = new Session();
 stickerRun.start({ seed: 'STICKER', mods: ['bunco'], modOptions: { bunco: { [sticker.key]: false } } });
 assert(stickerRun.act({ type: 'select_blind' }).ok);
-assert(stickerRun.act({ type: 'pick_page', index: 0 }).ok); // (Pages)
+if (stickerRun.view().state === 'PAGES') assert(stickerRun.act({ type: 'pick_page', index: 0 }).ok); // (Pages: 25% of Blinds)
 assert(stickerRun.act({ type: 'highlight', id: G.hand.cards[0].sort_id }).ok);
 assert(stickerRun.act({ type: 'play' }).ok);
 const restoredStickerRun = Session.fromRecipe(stickerRun.recipe);
