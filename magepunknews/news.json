@@ -403,6 +403,14 @@
 	},
 	"entries": [
 		{
+			"sha": "74ff657",
+			"date": "2026-11-08",
+			"kind": "micatro",
+			"title": "Micatro: Multiplayer — play a friend on the same seed",
+			"body": "Micatro now has Multiplayer (signed in). Create a lobby from the main menu — pick the deck, stake, seed and mods like a new run — and share its 5-letter code or link; friends see you waiting in a lobby on their friends list and can Join from there. Both players play the same seed, deck, stake and the host's mods. From ante 2 every Boss Blind is Your Nemesis: both press READY, a 3-2-1 countdown, and you enter together. There is no score target — you play all your hands while your opponent's score shows live, and when the one behind runs out of hands, the lower score loses a life (a tie costs nobody). Failing a normal blind costs a life too but never ends your run, and you get $4 of comeback money after losing one. Everyone starts with 4 lives; the last player with lives wins. The host can change the lives, the ante the Nemesis starts at, and more. Cards that would break the duel (Mr. Bones, Chicot, boss rerolls, ante changers and the mods' equivalents) are banned. Reloading rejoins your match; a player away for 2 minutes forfeits. At the end you see each other's Jokers and can Rematch. Friends can Watch a match.",
+			"cards": []
+		},
+		{
 			"sha": "7ee9b7e",
 			"date": "2026-11-08",
 			"kind": "micatro",
