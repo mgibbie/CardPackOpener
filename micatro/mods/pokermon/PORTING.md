@@ -1640,6 +1640,10 @@ Deck / Sleeve changes. The plan's "12 Megas" counted Mega Steelix, which the por
     its own Mega, never the twin.
   - **A used stone targets only its own Mega** (3.9.1 `get_mega_target`), to revert it. Before, it could Mega Evolve a second joker.
   - **r88 targeting safety:** when more than one Joker qualifies, select one explicitly; with only one eligible target the stone still selects it automatically. Older replays retain the leftmost fallback. A normal used stone still finds its own Mega automatically.
+  - **r110 pack fix:** a stone used straight from a pack then moves to the consumable slots (engine `use_card`: `add_to_deck` + emplace);
+    its `add_to_deck` (a NEW stone forgets any Mega and is usable) used to wipe the `used_on` it had just set, so selling it reverted
+    nothing (a tester's Mega Charizard Y, 2026-11-08). From r110 (`MEGASTONE_PACK_REV`) that move keeps `used_on` and `usable = false`;
+    runs recorded before r110 replay as recorded (test: micatro/tests/mods/pokermon_megastone_pack_test.mjs).
   - **At every end of round a stone whose Mega is gone forgets it** (sold, destroyed, reverted another way) and is free again.
   - Reverting says "Reverted" (3.9.1 `pokermon.devolve`). The tooltip names the Mega the stone made.
   - Kept: the house rule "the highlighted joker if it qualifies, else the leftmost that does" (3.9.1 stops at a highlighted joker that

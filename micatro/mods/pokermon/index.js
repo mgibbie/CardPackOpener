@@ -1186,7 +1186,8 @@ export const POKERMON = registerMod({
   // 106: Mega Salamence retains Salamence's temporary hand-size bonus at blind select.
   // 107: selected-card Items accept one through their maximum, with single-card effects for paired Items.
   // 108: approved Mega Dimension forms.
-  contentRev: 109,
+  // 110: a Mega Stone used straight from a pack keeps its Mega (selling it reverts it) and stays spent (systems/items.js MEGASTONE_PACK_REV).
+  contentRev: 110,
   // Pokermon 3.9.1 pokermon.lua: SMODS.current_mod.optional_features = {quantum_enhancements = true, object_weights = true}.
   // object_weights sends create_card's key, the shop roll, tags, packs, bosses and vouchers through SMODS.poll_object
   // (js/engine/smods.js; batch 17). quantum_enhancements is the engine's check_enhancement, always on.
