@@ -53,7 +53,7 @@ function walk(recipe) {
 	while (!st.done) { const r = st.step(); if (!r || !r.ok) break; const v = st.view(); states.push(v.state); views.push(v); steps.push(r.events); }
 	return { states, steps, views };
 }
-const VAN = packRun({ seed: 'PACKS2', back: 'b_red', stake: 1, customDeck: RICH_DECK });
+const VAN = packRun({ seed: 'PACKS8', back: 'b_red', stake: 1, customDeck: RICH_DECK }); // (Pages v2: a seed that still opens every vanilla kind)
 const vanKinds = new Set(VAN.opened.map(o => o.kind));
 if (!['Arcana', 'Celestial', 'Spectral', 'Standard', 'Buffoon'].every(k => vanKinds.has(k)) || !VAN.opened.some(o => o.via === 'skip_blind'))
 	throw new Error('the vanilla pack fixture must open every vanilla pack kind and a skip-tag pack: ' + JSON.stringify(VAN.opened));
@@ -237,7 +237,7 @@ try {
 		const { page, errors, go } = await newPage(1);
 		await go('/micatro/');
 		const o = VAN.opened.find(x => x.kind === 'Arcana' && x.via === 'buy') || VAN.opened[0];
-		await page.evaluate((deck) => window.__micatro.newRun({ seed: 'PACKS2', back: 'b_red', stake: 1, customDeck: deck }), RICH_DECK);
+		await page.evaluate((deck) => window.__micatro.newRun({ seed: 'PACKS8', back: 'b_red', stake: 1, customDeck: deck }), RICH_DECK);
 		await idle(page);
 		let okRun = true;
 		for (let i = 0; i < o.index - 1; i++) {
@@ -348,7 +348,7 @@ try {
 			const o = VAN.opened.find((x) => x.kind === 'Arcana' && x.via === 'buy');
 			const { page, errors, go } = await touchPage();
 			await go('/micatro/');
-			await page.evaluate((deck) => window.__micatro.newRun({ seed: 'PACKS2', back: 'b_red', stake: 1, customDeck: deck }), RICH_DECK);
+			await page.evaluate((deck) => window.__micatro.newRun({ seed: 'PACKS8', back: 'b_red', stake: 1, customDeck: deck }), RICH_DECK);
 			await idle(page);
 			let okRun = true;
 			for (let i = 0; i < o.index - 1; i++) {

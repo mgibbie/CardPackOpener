@@ -114,10 +114,10 @@ const GLAM_SCENARIOS = {
   evolves: (run) => { const j = glamFind(); return !!j && glamCash(run) >= 8 && key(j) === 'j_poke_purugly' && limit() === 4; },
   waits: (run) => { const j = glamFind(); return !!j && glamCash(run) >= 8 && key(j) === 'j_poke_glameow' && ex(j).rounds === 0 && G.jokers.cards.length >= limit(); },
 };
-const GLAM_CANDIDATES = { evolves: [['GLAMRES6', 3], ['GLAMRES2', 2]], waits: [['GLAMRES3', 1]] };
+const GLAM_CANDIDATES = { evolves: [['GLAMRES43', 1], ['GLAMRES6', 3], ['GLAMRES2', 2]], waits: [['GLAMRES3', 6], ['GLAMRES3', 1]] }; // (GLAMRES43 / GLAMRES3 bot 6 since Pages v2)
 function glamPick(kind) {
   const tries = [...GLAM_CANDIDATES[kind]];
-  for (let k = 2; k < 40; k++) for (let b = 1; b <= 6; b++) tries.push(['GLAMRES' + k, b]);
+  for (let k = 2; k < 160; k++) for (let b = 1; b <= 6; b++) tries.push(['GLAMRES' + k, b]); // (Pages v2 raise some Blinds: a wider search)
   for (const [seed, bot] of tries) { const run = glamRun(seed, bot); if (GLAM_SCENARIOS[kind](run)) return { seed, bot, run }; }
   return { seed: GLAM_CANDIDATES[kind][0][0], bot: GLAM_CANDIDATES[kind][0][1], run: glamRun(...GLAM_CANDIDATES[kind][0]) };
 }

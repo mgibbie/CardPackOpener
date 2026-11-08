@@ -33,6 +33,8 @@ export function packRun(startOpts, { maxSteps = 400, antes = 8 } = {}) {
       doAct({ type: 'select_blind' });
     } else if (S === 'PAGES') {
       doAct({ type: 'pick_page', index: steps % 3 }); // (Pages: the run's Page for this blind)
+    } else if (S === 'PAGE_REMOVE') {
+      doAct({ type: 'page_remove', id: G.playing_cards[steps % G.playing_cards.length].sort_id }); // (Pages v2: remove a card)
     } else if (S === 'SELECTING_HAND') {
       doAct({ type: 'highlight', ids: G.hand.cards.slice(0, 5).map((c) => c.sort_id) });
       doAct({ type: 'play' });

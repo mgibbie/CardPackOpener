@@ -11,6 +11,7 @@
 //   secondary owned card: sell · shop consumable: buy & use · otherwise: sort hand (rank ⇄ suit)
 //   context   card info (tooltip) on/off
 //             a Page (the Pages screen): raise it · again: take it
+//             a deck card (a Page's "remove a card" prize): raise it · again: remove it
 //   LB / RB   the screen's two main buttons: Play Hand / Discard, Select / Skip blind, (Pages) RB: Choose,
 //             Next Round / Reroll, Cash Out, Skip pack
 //             (in the deck editor's picker: previous / next page)
@@ -88,6 +89,7 @@ export function initPad({ board, stage, UI, readOnly, onMenu, mainMenu, replay =
     const firstCard = (area) => { const id = board.areas[area].find((x) => list.some((s) => s.card === x)); return id != null ? list.find((s) => s.card === id) : null; };
     if (v.state === 'BLIND_SELECT') return pick('.b-select') || list[0];
     if (v.state === 'PAGES') return pick('.page-card.sel') || pick('.page-card') || list[0];
+    if (v.state === 'PAGE_REMOVE') return pick('.premove-card.sel') || pick('.premove-card') || list[0];
     if (v.state === 'ROUND_EVAL') return pick('.b-cashout') || list[0];
     if (v.state === 'SHOP') return firstCard('shop_jokers') || firstCard('shop_booster') || pick('.b-next') || list[0];
     if (PACK.test(v.state)) return firstCard('pack_cards') || pick('.b-skip-pack') || list[0];
@@ -215,6 +217,7 @@ export function initPad({ board, stage, UI, readOnly, onMenu, mainMenu, replay =
     SELECTING_HAND: ['.b-play', '.b-discard'],
     BLIND_SELECT: ['.b-select', '.b-skip'],
     PAGES: [null, '.b-pick-page'],
+    PAGE_REMOVE: [null, '.b-page-remove'],
     SHOP: ['.b-next', '.b-reroll'],
     ROUND_EVAL: ['.b-cashout', null],
   };
@@ -338,7 +341,7 @@ export function initPad({ board, stage, UI, readOnly, onMenu, mainMenu, replay =
       else if (s && s.area === 'shop_jokers' && isConsumableSet((board.data.get(s.id) || {}).set)) sec = 'Buy & Use';
       else if (v && v.state === 'SELECTING_HAND') sec = 'Sort';
       if (sec) parts.push(`${L('secondary')} ${sec}`);
-      const names = { '.b-play': 'Play', '.b-discard': 'Discard', '.b-select': 'Select', '.b-skip': 'Skip', '.b-next': 'Next Round', '.b-reroll': 'Reroll', '.b-cashout': 'Cash Out', '.b-skip-pack': 'Skip', '.b-pick-page': 'Choose' };
+      const names = { '.b-play': 'Play', '.b-discard': 'Discard', '.b-select': 'Select', '.b-skip': 'Skip', '.b-next': 'Next Round', '.b-reroll': 'Reroll', '.b-cashout': 'Cash Out', '.b-skip-pack': 'Skip', '.b-pick-page': 'Choose', '.b-page-remove': 'Remove' };
       const [p, n] = pairFor(v);
       if (p) parts.push(`${L('prev')} ${names[p]}`);
       if (n) parts.push(`${L('next')} ${names[n]}`);

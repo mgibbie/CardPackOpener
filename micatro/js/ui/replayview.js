@@ -18,7 +18,8 @@ const STEP_PAUSE = { instant: 0.22, move: 0.38, pack: 1.3 };   // seconds (at 1Ã
 // An open booster pack (shop, skip tag, a tag / joker / mod's pack): live play sits on the pack screen while the
 // player chooses, so the replay holds it too (STEP_PAUSE.pack) â€” the pick never follows the opening at once.
 // The Pages screen (Micatro's Pages) holds the same way: the 3 Pages show for a moment before the pick animates.
-const PACK_STATE = /^(TAROT|PLANET|SPECTRAL|STANDARD|BUFFOON)_PACK$|^MOD_PACK|^PAGES$/;
+// (and a Page's "remove a card" screen: the deck shows a moment before the removal)
+const PACK_STATE = /^(TAROT|PLANET|SPECTRAL|STANDARD|BUFFOON)_PACK$|^MOD_PACK|^PAGES$|^PAGE_REMOVE$/;
 
 const h = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));

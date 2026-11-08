@@ -529,12 +529,34 @@ const features = {
   },
   replays: { localMax: RP.LOCAL_MAX, actionsMax: RP.ACTIONS_MAX, packedMax: RP.PACKED_MAX },
   // Pages (micatro/js/engine/pages.js): the parts of a Page and the prize-tier table, straight from the engine
+  // (Pages v2, engine rev 3: the current tables — targets, effects, modifiers, Round rules and the five prize tiers)
   pages: {
-    rev: PG.PAGES_REV, downsideBonus: PG.DOWNSIDE_BONUS, pcts: PG.PAGE_PCTS,
-    targets: PG.TARGET_KEYS.map((k) => PG.PAGE_TARGETS[k].name),
-    effects: PG.EFFECT_KEYS.map((k) => ({ key: k, text: PG.PAGE_EFFECTS[k].text.replace('#1#', '1'), down: !!PG.PAGE_EFFECTS[k].down })),
-    tiers: PG.PRIZE_TIERS.map((t, i) => ({ tier: t.tier, name: t.name, from: i ? PG.PRIZE_TIERS[i - 1].max + 5 : null, to: Number.isFinite(t.max) ? t.max : null,
-      prizes: t.prizes.map((z) => (z.kind === 'card' ? (z.set === 'Item' || z.set === 'Oddity' ? `an ${z.set} card (with ${z.set === 'Item' ? 'Pokermon' : 'AutumnMood'})` : `a random ${z.set} card`) : PG.prizeText(z))) })),
+    rev: PG.PAGES_REV, v2rev: PG.PAGES_V2_REV, downsideBonus: PG.DOWNSIDE_BONUS, pcts: PG.PAGE_PCTS_V2, lowPcts: PG.LOW_PCTS, legendaryPcts: PG.LEGENDARY_PCTS,
+    lowChance: PG.LOW_CHANCE, legendaryChance: PG.LEGENDARY_CHANCE, ruleChance: PG.RULE_CHANCE, pageChance: PG.PAGE_ODDS.chance, prizeChance: PG.PRIZE_CHANCE,
+    tierLabels: PG.PRIZE_TIERS_V2.map((t, i) => ({ name: t.name, from: i ? PG.TIER_LABEL_MAX[i - 1] + 1 : null, to: Number.isFinite(PG.TIER_LABEL_MAX[i]) ? PG.TIER_LABEL_MAX[i] : null })),
+    // (the prize-value table: what each prize adds to the required score, %)
+    values: (() => {
+      const V = PG.PRIZE_VALUE, nm = (k) => PG.prizeText({ kind: 'card', set: 'Tarot', key: k }).replace(/ \(.*\)$/, '');
+      return [
+        ['Money', '+' + V.money_base + '% + ' + V.per_dollar + '% per $'],
+        ...Object.entries(V.set).map(([s, v]) => ['Any other ' + s + ' card', '+' + v + '%']),
+        ...Object.entries(V.card).map(([k, v]) => [nm(k), '+' + v + '%']),
+        ...Object.entries(V.pack).map(([k, v]) => [PG.prizeText({ kind: 'pack', key: k }).replace(/^a /, ''), '+' + v + '%']),
+        ...Object.entries(V.shop).map(([k, v]) => [PG.prizeText({ kind: 'shop', perk: k }), '+' + v + '%']),
+        ...Object.entries(V.tag).map(([k, v]) => [PG.prizeText({ kind: 'tag', key: k }).replace(/^a /, ''), '+' + v + '%']),
+        ...Object.entries(V.joker).map(([r, v]) => [PG.prizeText({ kind: 'joker', rarity: +r }).replace(/^a /, 'A '), '+' + v + '%']),
+        ['A named Joker (Common / Uncommon / a Basic Pokermon Joker)', '+' + V.joker_base + '% + ' + V.joker_per_cost + '% per $ of its shop cost'],
+        ...Object.entries(V.kind).map(([k, v]) => [PG.prizeText({ kind: k }), '+' + v + '%']),
+      ];
+    })(),
+    targets: PG.TARGET_KEYS_V2.map((k) => ({ key: k, name: (PG.PAGE_TARGETS[k] || PG.PAGE_TARGETS_V2[k]).name, v2: !PG.PAGE_TARGETS[k] })),
+    effects: PG.EFFECT_KEYS_V2.map((k) => { const e = PG.PAGE_EFFECTS[k] || PG.PAGE_EFFECTS_V2[k]; return { key: k, text: e.text.replace('#1#', '1').replace('#2#', 'Glass, Steel or Gold'), down: !!e.down, weight: PG.effectWeight(k), v2: !PG.PAGE_EFFECTS[k] }; }),
+    rules: PG.RULE_KEYS.map((k) => ({ key: k, text: PG.ROUND_RULES[k].text, d: PG.ROUND_RULES[k].d })),
+    tags: PG.PRIZE_TAGS.map((k) => PG.prizeText({ kind: 'tag', key: k }).replace(/^a /, '')),
+    tiers: PG.PRIZE_TIERS_V2.map((t, i) => ({ tier: t.tier, name: t.name, from: t.tier === 5 ? null : i ? PG.PRIZE_TIERS_V2[i - 1].max + 5 : null, to: t.tier < 5 && Number.isFinite(t.max) ? t.max : null, legendary: t.tier === 5,
+      prizes: t.prizes.map((z) => (z.kind === 'card' && z.key ? PG.prizeText(z) : z.kind === 'card' ? (z.set === 'Item' || z.set === 'Oddity' ? `an ${z.set} card (with ${z.set === 'Item' ? 'Pokermon' : 'AutumnMood'})` : `a named ${z.set} card`)
+        : z.kind === 'tag' ? 'a Tag (' + PG.PRIZE_TAGS.map((k) => PG.prizeText({ kind: 'tag', key: k }).replace(/^a /, '')).join(', ') + ')'
+          : z.kind === 'poke' ? 'a Poke Ball or a random Energy card (with Pokermon)' : PG.prizeText(z))) })),
   },
 };
 
