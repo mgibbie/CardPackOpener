@@ -403,6 +403,22 @@
 	},
 	"entries": [
 		{
+			"sha": "4e1fce9",
+			"date": "2026-11-08",
+			"kind": "micatro",
+			"title": "Micatro: every Pages screen has a safe pick",
+			"body": "Every Pages screen now offers at least one Fair Page with no prize: a middle-difficulty pick with no prize value added to the Blind's score target. When the 3 Pages you're offered have no such Page, one of them is re-rolled into one (from the seed, so a seed still always offers the same Pages); the other two stay as they were. Runs started before this update keep the Pages they were offered.",
+			"cards": [],
+			"micatroFeatures": [
+				{
+					"id": "pages",
+					"title": "Pages",
+					"blurb": "Before some Blinds, pick one of 3 Pages: a twist for the round, a Round rule, and maybe a prize that raises the stakes.",
+					"wiki": "/designwiki/#/micatro/pages"
+				}
+			]
+		},
+		{
 			"sha": "74ff657",
 			"date": "2026-11-08",
 			"kind": "micatro",
