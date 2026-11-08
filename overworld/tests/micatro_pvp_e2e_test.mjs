@@ -9,6 +9,8 @@
 //   carol watches alice (?spectate=alice): the PvP HUD with bob's name
 //   bob reloads mid-match -> rejoins the same run; bob forfeits -> both get the end screen; Rematch (both) -> match 2
 //   bob's browser goes away -> after the grace period alice wins by forfeit
+//   stage 6: dave picks Showdown + host options (erin sees them read-only); dave READY + Hurry! -> erin's timer runs out
+//   (a life, as a recorded action) -> erin READY -> both play the Small-blind Nemesis -> next is the Big (same ante)
 // Screenshots go to $MTPVP_SHOTS when set.
 //   node overworld/tests/micatro_pvp_e2e_test.mjs
 import fs from 'fs';
@@ -81,7 +83,7 @@ const server = http.createServer(async (req, res) => {
 await new Promise(r => server.listen(PORT, r));
 
 const tokens = {};
-for (const n of ['alice', 'bob', 'carol']) tokens[n] = (await call('register', { username: n, password: 'mtpvp-e2e-pass' })).token;
+for (const n of ['alice', 'bob', 'carol', 'dave', 'erin']) tokens[n] = (await call('register', { username: n, password: 'mtpvp-e2e-pass' })).token;
 await call('add-friend', { username: 'alice' }, tokens.carol);
 A(tokens.alice && tokens.bob && tokens.carol, 'three accounts (carol is alice\'s friend; bob is not)');
 const stateOf = async (n) => (await call('state', {}, tokens[n])).state || { username: n };
@@ -221,6 +223,76 @@ try {
 	A(await waitFor(() => alice.page.evaluate(() => !!document.querySelector('.pvp-end-title.won')), 30000), 'after the grace period alice wins by forfeit');
 	const errs = [...alice.errors, ...carol.errors].filter((e) => !/favicon|net::/.test(e));
 	A(!errs.length, 'no page errors', errs.join(' | '));
+
+	// ======== stage 6: a Showdown lobby (host options, read-only for the guest), the Hurry timer runs out on the slower
+	// player (a life, as a recorded action), then a Small-blind Nemesis played together ========
+	const dave = await open('dave', '/micatro/');
+	A(await ready(dave.page), 'dave: game ready');
+	await waitFor(() => click(dave.page, '.b-multiplayer'), 10000);
+	A(await waitFor(() => click(dave.page, '.b-pvp-mode-showdown'), 6000), 'the Multiplayer screen offers the modes (Showdown picked)');
+	await shot(dave.page, '10-mode-pick');
+	await click(dave.page, '.b-pvp-create');
+	await waitFor(() => dave.page.evaluate(() => { const b = document.querySelector('.b-start'); return b && /Create lobby/.test(b.textContent); }), 8000);
+	await click(dave.page, '.b-start');
+	A(await waitFor(() => dave.page.evaluate(() => (document.querySelector('.pvp-mode') || {}).textContent === 'Showdown'), 10000), 'the lobby is created in Showdown mode');
+	const code2 = await dave.page.evaluate(() => document.querySelector('.pvp-code-v').textContent);
+	const optV = (page, k) => page.evaluate((k) => (document.querySelector('.pvp-' + k) || {}).textContent, k);
+	for (let i = 0; i < 2; i++) { await click(dave.page, '.b-pvp-dec-showdownStart'); await waitFor(async () => (await optV(dave.page, 'showdownStart')) === String(2 - i), 5000); }
+	for (const want of ['120 s', '90 s', '60 s', '30 s']) { await click(dave.page, '.b-pvp-dec-timerBase'); await waitFor(async () => (await optV(dave.page, 'timerBase')) === want, 5000); }
+	A((await optV(dave.page, 'showdownStart')) === '1' && (await optV(dave.page, 'timerBase')) === '30 s', 'host options: Showdown from ante 1, a 30 s Hurry timer');
+	await shot(dave.page, '11-lobby-showdown-host');
+	const erin = await open('erin', '/micatro/?join=' + code2);
+	A(await ready(erin.page), 'erin: game ready');
+	A(await waitFor(() => erin.page.evaluate(() => !!document.querySelector('.b-pvp-ready-lobby')), 15000), 'erin joined the Showdown lobby');
+	const ro = await erin.page.evaluate(() => ({ mode: (document.querySelector('.pvp-mode') || {}).textContent, tb: (document.querySelector('.pvp-timerBase') || {}).textContent, arrows: document.querySelectorAll('.pvp-opts [class*="b-pvp-dec-"], .pvp-opts [class*="b-pvp-tog-"]').length, note: /Only the host/.test(document.querySelector('.pvp-opts')?.textContent || '') }));
+	A(ro.mode === 'Showdown' && ro.tb === '30 s' && ro.arrows === 0 && ro.note, 'the guest sees the host\'s options read-only', JSON.stringify(ro));
+	await shot(erin.page, '12-lobby-showdown-guest');
+	await click(erin.page, '.b-pvp-ready-lobby');
+	await waitFor(() => dave.page.evaluate(() => { const b = document.querySelector('.b-pvp-start'); return b && !b.disabled; }), 10000);
+	await click(dave.page, '.b-pvp-start');
+	A(await waitFor(async () => (await view(dave.page))?.pvp && (await view(erin.page))?.pvp, 20000), 'Start: both in the Showdown match');
+	await idle(dave.page); await idle(erin.page);
+	const vd = await view(dave.page);
+	A(vd.pvp.mode === 'showdown' && vd.pvp.slots.Small && vd.onDeck === 'Small', 'Showdown from ante 1: the SMALL blind is a Nemesis round', JSON.stringify(vd.pvp.slots));
+	A(await dave.page.evaluate(() => !!document.querySelector('.blind-col .b-pvp-ready') && !document.querySelector('.b-skip')), 'the Small column has READY and no Skip');
+	// dave is READY first; Hurry! starts erin's timer
+	await click(dave.page, '.b-pvp-ready');
+	A(await waitFor(() => dave.page.evaluate(() => { const b = document.querySelector('.b-pvp-hurry'); return !!b && b.style.display !== 'none' && /Hurry/.test(b.textContent); }), 8000), 'READY at the Nemesis (the opponent not): the HUD offers Hurry!');
+	A(await erin.page.evaluate(() => { const b = document.querySelector('.b-pvp-hurry'); return !b || b.style.display === 'none'; }), 'erin (not READY) has no Hurry button');
+	await click(dave.page, '.b-pvp-hurry');
+	A(await waitFor(() => erin.page.evaluate(() => { const t = document.querySelector('.pvp-hud .ph-timer.on-me'); return t && t.style.display !== 'none' && /Hurry!/.test(t.textContent); }), 8000), 'erin sees the Hurry countdown on her');
+	await shot(erin.page, '13-hurry-on-me');
+	await shot(dave.page, '14-hurry-started');
+	const lid2 = await dave.page.evaluate(() => window.__micatro.pvp.lobbyId);
+	A(row('mtpvp:' + lid2).m.timer && row('mtpvp:' + lid2).m.timer.on === 'erin', 'the timer runs on the server, on erin');
+	A(await waitFor(async () => (await view(erin.page)).pvp.lives === 3, 45000), 'the timer runs out: erin loses a life');
+	const rec = await erin.page.evaluate(() => window.__micatro.session.recipe.actions.filter((a) => a.type === 'pvp_timer'));
+	A(rec.length === 1 && rec[0].n === 1 && row('mtpvp:' + lid2).m.tl.erin === 1 && row('mtpvp:' + lid2).m.lives.erin === 3, 'the life arrives as a RECORDED action (pvp_timer n 1), matching the referee', JSON.stringify(rec));
+	A(await waitFor(async () => (await view(dave.page)).opp.lives === 3, 8000), 'dave sees erin at 3 lives');
+	await shot(erin.page, '15-timer-life-lost');
+	// erin reaches the Nemesis: both enter the SMALL-blind Nemesis together; the timer is gone
+	await click(erin.page, '.b-pvp-ready');
+	A(await waitFor(async () => (await view(dave.page)).blind === 'bl_mp_nemesis' && (await view(erin.page)).blind === 'bl_mp_nemesis', 15000), 'both READY -> both in the Small-blind Nemesis');
+	A(!row('mtpvp:' + lid2).m.timer, 'no timer in a Nemesis round');
+	await idle(dave.page); await idle(erin.page);
+	A((await view(erin.page)).pvp.slot === 'Small', 'the round is the Small blind');
+	await playWeak(erin.page);
+	await shot(dave.page, '16-showdown-small-nemesis');
+	for (let i = 0; i < 6 && (await view(erin.page)).state === 'SELECTING_HAND'; i++) await playWeak(erin.page);
+	for (let i = 0; i < 6 && (await view(dave.page)).state === 'SELECTING_HAND'; i++) await playStrong(dave.page);
+	A(await waitFor(async () => (await view(dave.page)).state === 'ROUND_EVAL' && (await view(erin.page)).state === 'ROUND_EVAL', 20000), 'the Small round is decided -> both cash out');
+	const r6 = row('mtpvp:' + lid2).m;
+	A(r6.round.b === 11 && r6.round.res && r6.hist[0].slot === 'Small', 'the referee decided round b 11 (ante 1 Small)', JSON.stringify(r6.round));
+	await idle(dave.page);
+	let co = null;
+	await waitFor(async () => { co = await act(dave.page, { type: 'cash_out' }); return co && co.ok; }, 10000);
+	await idle(dave.page);
+	const nr = await act(dave.page, { type: 'next_round' }); await idle(dave.page);
+	const vd2 = await view(dave.page);
+	A(co && co.ok && vd2.ante === 1 && vd2.onDeck === 'Big' && vd2.state === 'BLIND_SELECT', 'a Small-slot Nemesis counts as the Small blind: next is the Big (same ante)', JSON.stringify([co && co.error, nr && nr.error, vd2.ante, vd2.onDeck, vd2.state]));
+	await shot(dave.page, '17-showdown-next-big');
+	const errs2 = [...dave.errors, ...erin.errors].filter((e) => !/favicon|net::/.test(e));
+	A(!errs2.length, 'stage 6: no page errors', errs2.join(' | '));
 } catch (e) {
 	fail++; console.log('FAIL: threw ' + (e && e.stack));
 } finally {

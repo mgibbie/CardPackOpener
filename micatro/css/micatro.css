@@ -918,6 +918,13 @@ body.has-replay-bar.rb-tucked #pad-hints { bottom: 40px; }
 .pvp-hud .ph-loc b { color: #fe5f55; }
 .pvp-hud .ph-banner { font-size: 16px; color: #f2be48; margin-top: 2px; white-space: normal; }
 .pvp-hud.ph-nemesis { border-color: #fe5f55; }
+.pvp-hud .ph-timer { font-size: 18px; color: #f2be48; margin-top: 2px; display: flex; gap: 10px; align-items: center; justify-content: center; }
+.pvp-hud .ph-timer.on-me { color: #fe5f55; font-size: 24px; }
+.pvp-hud .ph-timer .btn { pointer-events: auto; font-size: 16px; padding: 2px 10px; }
+.pvp-hud .ph-far { color: #f2be48; }
+.pvp-modal .pvp-modes { display: flex; gap: 6px; justify-content: center; margin: 6px 0; flex-wrap: wrap; }
+.pvp-modal .pvp-modes .btn.on { box-shadow: 0 0 0 3px #f2be48; }
+.pvp-modal .pvp-mode-desc { max-width: 520px; margin: 2px auto 6px; font-size: 16px; text-align: center; }
 .btn.b-pvp-ready.on { background: #4f6367; }
 .blind-rew.pvp-vs { color: #fff; }
 .pvp-modal .pvp-intro { max-width: 520px; margin: 0 auto 10px; }
@@ -931,6 +938,11 @@ body.has-replay-bar.rb-tucked #pad-hints { bottom: 40px; }
 .pvp-modal .pvp-opt { display: flex; gap: 8px; align-items: center; justify-content: space-between; margin: 3px 0; }
 .pvp-modal .pvp-opt-v { min-width: 2em; text-align: center; }
 .pvp-modal .pvp-ok { color: #4bc292; }
+.pvp-modal .pvp-lobby { width: 820px; max-width: 100%; }
+.pvp-modal .pvp-lobby .pvp-opts { display: grid; grid-template-columns: 1fr 1fr; column-gap: 28px; row-gap: 2px; max-width: 820px; }
+.pvp-modal .pvp-lobby .pvp-opts > .pvp-opt:first-child, .pvp-modal .pvp-lobby .pvp-opts > .pvp-mode-desc, .pvp-modal .pvp-lobby .pvp-opts > .pvp-host-only { grid-column: 1 / -1; }
+.pvp-modal .pvp-lobby .pvp-opt .btn { font-size: 18px; padding: 2px 10px 4px; min-height: 0; }
+.portrait .pvp-modal .pvp-lobby .pvp-opts { grid-template-columns: 1fr; }
 .pvp-end .pvp-end-title { font-size: 44px; text-align: center; }
 .pvp-end .pvp-end-title.won { color: #4bc292; } .pvp-end .pvp-end-title.lost { color: #fe5f55; } .pvp-end .pvp-end-title.draw { color: #f2be48; }
 .pvp-end .pvp-end-why, .pvp-end .pvp-end-lives, .pvp-end .pvp-end-hist { text-align: center; margin: 4px 0; }

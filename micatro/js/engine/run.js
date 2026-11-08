@@ -31,7 +31,7 @@ import './consumables.js';
 import { CUSTOM_DECK_ID, CUSTOM_DECK_BACK, validateDeck } from './customdeck.js';
 import { CHALLENGE_ID, findChallenge, prepareChallenge, apply_challenge, challenge_protos, challengeBack, challengeMods } from './challenge.js';
 import { SLEEVE_ID, findSleeve, sleeveFor, prepareSleeve, apply_sleeve } from './sleeve.js';
-import { PVP_ID, pvpConfig, setupPvp, pvpMods, pvpRoundLost, pvpRoundWon, pvpSkipped, pvpActionError, pvpApply, NEMESIS } from './pvp.js';
+import { PVP_ID, pvpConfig, setupPvp, pvpMods, pvpRoundLost, pvpRoundWon, pvpSkipped, pvpActionError, pvpApply, pvpSlot } from './pvp.js';
 import { decidePages, generatePages, applyPageChips, pageIndividual, pageDiscard, pagePrizeRow, openPagePack, shopOpening, shopStocked, shopClosing, pageRepetitions, pageDestroys, pageRoundStart, pageScoreAdded, pageRemovePending, pageRemoveCard, pageRolls, pageSeen } from './pages.js';
 // (Steamodded seams for Pokermon 3.9.1: opt-in contexts, Blind:calculate, the object_weights shop roll — no-ops unless a mod uses them)
 import { wanted, calculate_seam, modify_scoring_hand, blind_calculate, SEAM_STATE, object_weights, poll_object, poll_object_type, merge_defaults, mod_calculate, seam_mod, quantum_mod_calculate, held_card_limit,
@@ -533,7 +533,8 @@ function end_round() {
     if (B.beats(G.GAME.chips, G.GAME.blind.chips)) game_over = false;
     // Multiplayer: a failed blind never ends the run (a normal one costs a life; the Nemesis has no target)
     if (G.GAME.pvp) {
-      const rr0 = G.GAME.round_resets, pslot = rr0.blind === P_BLINDS.bl_small ? 'Small' : rr0.blind === P_BLINDS.bl_big ? 'Big' : 'Boss';
+      if (G.GAME.pvp_blind) G.GAME.pvp_eval = true; // (a PvP round: its cash-out pays no unused-hands money — pvp.js)
+      const rr0 =G.GAME.round_resets, pslot = rr0.blind === P_BLINDS.bl_small ? 'Small' : rr0.blind === P_BLINDS.bl_big ? 'Big' : 'Boss';
       if (game_over && pvpRoundLost(pslot)) game_over = false;
       else pvpRoundWon(pslot);
     }
@@ -2173,7 +2174,7 @@ function applyAction(a) {
       const which = G.GAME.blind_on_deck;
       can(which && G.GAME.round_resets.blind_states[which] === 'Select', 'no blind to select');
       // (Multiplayer: the Nemesis starts for both players together — READY, then pvp_start_blind)
-      can(!(G.GAME.pvp && which === 'Boss' && G.GAME.round_resets.blind_choices.Boss === NEMESIS), 'press READY: the Nemesis starts for both players together');
+      can(!(G.GAME.pvp && pvpSlot(which)),'press READY: the Nemesis starts for both players together');
       // Pages: the Blind is chosen, but the round waits for the player's Page (no going back to the blind choice)
       // (Pages v2: only on 25% of Blinds, seeded, + the pity timer — engine/pages.js pageRolls)
       if (G.GAME.pages_on && (!G.GAME.pages_v2 || pageRolls(which))) {
@@ -2376,7 +2377,8 @@ function applyAction(a) {
     }
     case 'pvp_start_blind':
     case 'pvp_outcome':
-    case 'pvp_end': {
+    case 'pvp_end':
+    case 'pvp_timer': {
       const why = pvpActionError(a, S, STATES);
       can(!why, why);
       pvpApply(a, STATES, select_blind);

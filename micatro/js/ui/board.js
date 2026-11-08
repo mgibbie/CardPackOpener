@@ -660,7 +660,7 @@ export class Board {
       // (Multiplayer: the Nemesis has no target — the opponent's live score instead)
       const np = nemesisPanel(b, this.view);
       if (this.H.bReqL) this.H.bReqL.textContent = np ? np.label : 'Score at least';
-      if (np) { H.bName.textContent = np.name; H.bTarget.textContent = np.target; }
+      if (np) { if (np.name) H.bName.textContent = np.name; H.bTarget.textContent = np.target; }
       H.bReward.textContent = b.dollars > 0 ? '$'.repeat(Math.min(b.dollars, 8)) + '+' : '';
       if (b.dollars > 0) H.bReward.textContent = '$'.repeat(Math.min(b.dollars, 10));
       // (the reward row's label: "Hands left:" in the Nemesis — the node before the money span)
@@ -829,7 +829,7 @@ export class Board {
       const col = h('div', `blind-col st-${stateCls} ${k === 'Boss' ? 'boss' : ''}`);
       col.style.setProperty('--bcol', k === 'Boss' ? (c.colour || '#b44430') : (k === 'Small' ? '#3b7fa8' : '#d68f28'));
       const head = h('div', 'blind-head');
-      const nc = k === 'Boss' ? nemesisChoice(c, v) : null; // (Multiplayer: READY for the Nemesis — both players start together)
+      const nc = nemesisChoice(c, v, k); // (Multiplayer: READY for a PvP round — both players start together; any slot in Showdown)
       if (nc && c.state === 'Select') {
         const b = h('button', 'btn orange b-select b-pvp-ready' + (nc.active ? ' on' : ''), nc.label);
         b.type = 'button';
@@ -858,7 +858,7 @@ export class Board {
       if (nc && nc.reward) body.appendChild(h('div', 'blind-rew pvp-vs', nc.reward));
       else body.appendChild(h('div', 'blind-rew', c.dollars ? `Reward: <span class="money">${'$'.repeat(Math.min(10, c.dollars))}+</span>` : '<span class="muted">No reward money</span>'));
       col.appendChild(body);
-      if (k !== 'Boss' && c.tag) {
+      if (k !== 'Boss' && c.tag && !nc) { // (a PvP round is never skipped)
         const sk = h('div', 'blind-skip');
         sk.innerHTML = '<div class="or">or</div>';
         const line = h('div', 'skip-line');

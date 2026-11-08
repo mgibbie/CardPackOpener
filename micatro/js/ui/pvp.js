@@ -11,14 +11,25 @@
 //   referee's decisions are applied as RECORDED engine actions (pvp_start_blind / pvp_outcome / pvp_end), so the run's
 //   recipe resumes and replays exactly. A reload rejoins (mtpvp-mine + the local PvP save); a player quiet for 120 s
 //   forfeits (server); the end screen shows both players' jokers + decks; Rematch / Leave.
-import { locText, NEMESIS } from './pvphud.js';
+//   Stage 6: the mode (Attrition / Showdown / Survival) is picked on the Multiplayer screen and is a host option with the
+//   rest (Showdown's starting ante, Boss Blind effects, hidden scores, the Hurry timer's length + skip time; read-only for
+//   the guest). A round is the blind on deck (any slot in Showdown). READY at a Nemesis the opponent hasn't readied for
+//   offers Hurry!: the server's timer on them; each expiry the referee counts arrives here as a recorded pvp_timer action.
+import { locText, blindText } from './pvphud.js';
 import { esc } from './markup.js';
 
-export const PVP_PROTOCOL = 1;
+export const PVP_PROTOCOL = 2;   // (server/micatro_pvp.mjs MTPVP_PROTOCOL: 2 = stage 6 — modes, the Hurry timer, hidden scores)
 const META_KEY = 'micatro_pvp_meta_v1';   // {id, n}: the match this device's PvP save belongs to
 const LOBBY_MS = 2000, FAST_MS = 1000, SLOW_MS = 2500;
 const AWAY_MS = 8000, GRACE_S = 120;
-const DEFAULT_OPTS = { lives: 4, pvpStart: 2, deathOnLoss: true, comeback: true };
+const DEFAULT_OPTS = { lives: 4, pvpStart: 2, deathOnLoss: true, comeback: true, mode: 'attrition', showdownStart: 3, bossFx: false, hideScore: false, timer: true, timerBase: 150, timerInc: 60 };
+const MODES = {
+  attrition: { name: 'Attrition', desc: 'From ante 2 every Boss Blind is <b>Your Nemesis</b>: both play all their hands, the lower score loses a life. Last one with lives wins.' },
+  showdown: { name: 'Showdown', desc: 'Time to prepare: from ante 3 the Small, Big AND Boss blinds are all <b>Your Nemesis</b>.' },
+  survival: { name: 'Survival', desc: 'No Nemesis, one life each: whoever beats the furthest blind wins.' },
+};
+const SLOT_N = { Small: 1, Big: 2, Boss: 3 };
+const blindNum = (ante, slot) => ante * 10 + (SLOT_N[slot] || 3);
 
 const h = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
 const btn = (label, cls, fn) => { const b = h('button', 'btn ' + cls, label); b.type = 'button'; b.addEventListener('click', fn); return b; };
@@ -44,6 +55,7 @@ export function createPvp(ctx) {
   let handN = 0, handSent = '', nemesisAnte = 0;
   let outcomeApplied = 0, endApplied = false, endShown = false, endData = null;
   let countdownTimer = null, countdown = 0;
+  let clockTimer = null;   // (redraws the Hurry timer's countdown while one runs)
   let lobbyEl = null;
   const me = () => ctx.me();
 
@@ -51,9 +63,19 @@ export function createPvp(ctx) {
   function open() {
     if (!ctx.net.isLoggedIn()) { ctx.net.requireLogin(); return; }
     const el = h('div', 'pvp-menu');
-    el.appendChild(h('p', 'pvp-intro', 'Play a friend on the same seed. From ante 2 every Boss Blind is <b>Your Nemesis</b>: both play all their hands, the lower score loses a life. Last one with lives wins.'));
+    el.appendChild(h('p', 'pvp-intro', 'Play a friend on the same seed and deck. Pick the mode for your lobby:'));
+    // the mode, chosen on create (Attrition by default; the host can still change it in the lobby)
+    let mode = 'attrition';
+    const modes = h('div', 'pvp-modes');
+    const desc = h('div', 'pvp-mode-desc', MODES[mode].desc);
+    const drawModes = () => {
+      modes.innerHTML = '';
+      for (const [k, M] of Object.entries(MODES)) modes.appendChild(btn(M.name, (k === mode ? 'orange on' : 'grey') + ' b-pvp-mode-' + k, () => { mode = k; desc.innerHTML = MODES[k].desc; drawModes(); }));
+    };
+    drawModes();
+    el.appendChild(modes); el.appendChild(desc);
     const row = h('div', 'pvp-row');
-    row.appendChild(btn('Create lobby', 'blue big b-pvp-create', () => createFlow()));
+    row.appendChild(btn('Create lobby', 'blue big b-pvp-create', () => createFlow(mode)));
     el.appendChild(row);
     const jr = h('div', 'pvp-join');
     jr.innerHTML = '<input class="pvp-code" maxlength="5" placeholder="CODE" autocomplete="off" spellcheck="false">';
@@ -79,14 +101,14 @@ export function createPvp(ctx) {
   }
 
   // the host: the New Run screen picks the deck / stake / seed / mods (+ their options and content switches)
-  function createFlow() {
+  function createFlow(mode = 'attrition') {
     ctx.newRunScreen({ pvpHost: true, onNew: async (o) => {
       const banned = ctx.bannedKeys();
       if (banned.includes(String(o.stake)) || (o.sleeve && banned.includes(o.sleeve)) || banned.includes(o.back)) { ctx.toast('That deck / stake / sleeve is banned in Multiplayer'); return open(); }
       const ids = ctx.withRequirements(o.mods || []);
       if (ids.length) { const r = await ctx.ensureMods(ids); if (!r.ok || r.missing.length) { ctx.toast('A mod failed to load'); return; } }
       const mods = { ids, options: o.modOptions || {}, pins: { engineRev: ctx.engineRev, modVersions: ctx.currentPins(ids) } };
-      const opts = { ...DEFAULT_OPTS, back: o.back || 'b_red', stake: o.stake || 1, seed: o.seed || '', sleeve: o.sleeve || '' };
+      const opts = { ...DEFAULT_OPTS, mode, back: o.back || 'b_red', stake: o.stake || 1, seed: o.seed || '', sleeve: o.sleeve || '' };
       const d = await call('mtpvp-create', { pv: PVP_PROTOCOL, opts, mods });
       if (!d || d.error) { ctx.toast((d && d.error) || 'Offline — try again'); if (d && d.id) rejoinById(d.id, d.code); return; }
       enterLobby(d.lobby);
@@ -163,14 +185,38 @@ export function createPvp(ctx) {
       else r.appendChild(h('b', null, o[key] ? 'On' : 'Off'));
       opt.appendChild(r);
     };
-    num('Lives', 'lives', 1, 9);
-    num('Nemesis from ante', 'pvpStart', 1, 8);
-    tog('Lose a life on a failed blind', 'deathOnLoss');
-    tog('Comeback money ($4)', 'comeback');
+    // a cycling choice: ‹ value › (the host), the value alone (the guest)
+    const cyc = (label, key, values, show) => {
+      const r = h('div', 'pvp-opt', `<span>${label}</span>`);
+      const i = Math.max(0, values.indexOf(o[key]));
+      if (isHost) r.appendChild(btn('‹', 'arrow red b-pvp-dec-' + key, () => setOpt(key, values[(i + values.length - 1) % values.length])));
+      r.appendChild(h('b', 'pvp-opt-v pvp-' + key, esc(show(o[key]))));
+      if (isHost) r.appendChild(btn('›', 'arrow red b-pvp-inc-' + key, () => setOpt(key, values[(i + 1) % values.length])));
+      opt.appendChild(r);
+    };
+    const mode = o.mode || 'attrition';
+    cyc('Mode', 'mode', Object.keys(MODES), (m) => (MODES[m] || MODES.attrition).name);
+    opt.appendChild(h('div', 'pvp-mode-desc muted', MODES[mode] ? MODES[mode].desc.replace('ante 2', 'ante ' + o.pvpStart).replace('ante 3', 'ante ' + o.showdownStart) : ''));
+    if (mode !== 'survival') num('Lives', 'lives', 1, 9);
+    if (mode === 'attrition') num('Nemesis from ante', 'pvpStart', 1, 8);
+    if (mode === 'showdown') num('Showdown starting ante', 'showdownStart', 1, 20);
+    if (mode !== 'survival') {
+      tog('Lose a life on a failed blind', 'deathOnLoss');
+      tog('Comeback money ($4)', 'comeback');
+      tog('Enable Boss Blind effects', 'bossFx');
+      tog('Hide enemy score until you play', 'hideScore');
+      tog('Hurry timer', 'timer');
+      if (o.timer) {
+        cyc('Timer length', 'timerBase', [30, 60, 90, 120, 150, 180, 210, 240], (s) => s + ' s');
+        cyc('Time per skip ahead', 'timerInc', [0, 30, 60, 90, 120, 150, 180], (s) => '+' + s + ' s');
+      }
+    }
+    if (!isHost) opt.appendChild(h('div', 'muted pvp-host-only', 'Only the host can change these options.'));
     el.appendChild(opt);
     const mods = (L.mods && L.mods.ids) || [];
     el.appendChild(h('div', 'pvp-setup', `Deck <b>${esc(o.back)}</b> · Stake <b>${esc(o.stake)}</b>${o.seed ? ' · Seed <b>' + esc(o.seed) + '</b>' : ''}${o.sleeve ? ' · Sleeve <b>' + esc(o.sleeve) + '</b>' : ''}<br>Mods: ${mods.length ? mods.map(esc).join(', ') : 'none (vanilla)'} <span class="muted">— everyone plays the host's set</span>`));
-    el.appendChild(h('div', 'pvp-bans muted', `Banned in Multiplayer: ${ctx.bannedKeys().length} cards (Mr. Bones, Chicot, Luchador, Matador, boss rerolls, ante changers and the mods' equivalents).`));
+    el.appendChild(h('div', 'pvp-bans muted', mode === 'survival' ? `Banned in Survival: ${ctx.bannedKeys(mode).length} cards (ante changers and the mods' PvP-breaking cards).`
+      : `Banned in Multiplayer: ${ctx.bannedKeys(mode).length} cards (Mr. Bones, Chicot, Luchador, Matador, boss rerolls, ante changers and the mods' equivalents).`));
     const bar = h('div', 'pvp-bar');
     if (isHost) {
       const st = btn('Start', 'blue big b-pvp-start', () => update({ start: true }));
@@ -201,7 +247,7 @@ export function createPvp(ctx) {
   }
 
   // ---------------------------------------------------------------- the poll
-  function stop() { stopped = true; clearTimeout(timer); timer = null; clearInterval(countdownTimer); countdownTimer = null; }
+  function stop() { stopped = true; clearTimeout(timer); timer = null; clearInterval(countdownTimer); countdownTimer = null; clearInterval(clockTimer); clockTimer = null; }
   function schedule(ms) { clearTimeout(timer); if (!stopped) timer = setTimeout(tick, ms); }
   const cadence = () => {
     const v = ctx.view();
@@ -261,7 +307,7 @@ export function createPvp(ctx) {
       await ctx.startMatchRun({
         seed: m.seed, back: L.opts.back, stake: L.opts.stake, sleeve: L.opts.sleeve || null,
         mods: (L.mods && L.mods.ids) || [], modOptions: (L.mods && L.mods.options) || {},
-        pvp: { lives: L.opts.lives, pvpStart: L.opts.pvpStart, deathOnLoss: L.opts.deathOnLoss, comeback: L.opts.comeback },
+        pvp: { lives: L.opts.lives, pvpStart: L.opts.pvpStart, deathOnLoss: L.opts.deathOnLoss, comeback: L.opts.comeback, mode: L.opts.mode || 'attrition', showdownStart: L.opts.showdownStart || 3, bossFx: !!L.opts.bossFx },
         lobbyId: L.id,
       });
     } else { matchN = m.n; resetRound(); }
@@ -270,7 +316,7 @@ export function createPvp(ctx) {
     decorate();
     schedule(0);
   }
-  function stopTimersOnly() { clearTimeout(timer); clearInterval(countdownTimer); countdownTimer = null; }
+  function stopTimersOnly() { clearTimeout(timer); clearInterval(countdownTimer); countdownTimer = null; clearInterval(clockTimer); clockTimer = null; }
   function resetRound() { meReady = false; readyAnte = 0; handN = 0; handSent = ''; nemesisAnte = 0; outcomeApplied = 0; endApplied = false; endShown = false; endData = null; countdown = 0; mySeq = 0; mySum = ''; oseq = null; }
 
   /** What the opponent's HUD shows of this player (small; changes only on meaningful moves). */
@@ -300,9 +346,18 @@ export function createPvp(ctx) {
     if (!m) return;
     const v = ctx.view();
     if (!v || !v.pvp) { decorate(); return; }
+    // (0) the Hurry timer's lives (the referee's count of expiries on this player), each a recorded action, in order
+    const tlDue = Math.max(0, ((m.tl && m.tl[me()]) | 0) - (v.pvp.tlost | 0));
+    if (tlDue > 0 && !v.over && ctx.idle()) {
+      const r = ctx.act({ type: 'pvp_timer', n: (v.pvp.tlost | 0) + 1 });
+      if (r && r.ok) { ctx.toast('Out of time: -1 life'); schedule(60); }
+    }
+    // the countdown on screen while a timer runs
+    if (m.timer && m.timer.endAt && !m.over) { if (!clockTimer) clockTimer = setInterval(() => ctx.redraw({ hud: true }), 250); }
+    else if (clockTimer) { clearInterval(clockTimer); clockTimer = null; }
     // (1) the match is over: end the run (recorded), then the end screen
     if (m.over) {
-      if (!v.over && !endApplied && ctx.idle()) {
+      if (!v.over && !endApplied && !tlDue && ctx.idle()) {
         const result = m.over.draw ? 'draw' : m.over.winner === me() ? 'win' : 'lose';
         const r = ctx.act({ type: 'pvp_end', result });
         if (r && r.ok) endApplied = true;
@@ -321,36 +376,40 @@ export function createPvp(ctx) {
       break;
     }
     const rd = m.round;
-    // (3) the Nemesis: start together after the countdown
-    const atNemesis = v.state === 'BLIND_SELECT' && v.blind_on_deck === 'Boss' && v.choices && v.choices.Boss && v.choices.Boss.key === NEMESIS && v.choices.Boss.state === 'Select';
-    if (atNemesis && rd && rd.ante === v.ante && rd.startAt && !rd.res) {
+    const rdB = rd ? rd.b || blindNum(rd.ante, 'Boss') : 0;
+    // (3) a PvP round (the Boss; any slot in Showdown): start together after the countdown
+    const on = v.blind_on_deck;
+    const atNemesis = v.state === 'BLIND_SELECT' && !!on && !!(v.pvp.slots && v.pvp.slots[on]) && !!(v.choices && v.choices[on] && v.choices[on].state === 'Select');
+    const vb = atNemesis ? blindNum(v.ante, on) : 0;
+    if (atNemesis && rd && rdB === vb && rd.startAt && !rd.res) {
       const left = rd.startAt - serverNow();
       if (left <= 0) {
         if (ctx.idle()) {
           const r = ctx.act({ type: 'pvp_start_blind' });
-          if (r && r.ok) { nemesisAnte = v.ante; meReady = false; countdown = 0; handN = 0; handSent = ''; clearInterval(countdownTimer); countdownTimer = null; }
+          if (r && r.ok) { nemesisAnte = vb; meReady = false; countdown = 0; handN = 0; handSent = ''; clearInterval(countdownTimer); countdownTimer = null; }
         }
       } else if (!countdownTimer) {
         countdownTimer = setInterval(() => { countdown = Math.max(0, Math.ceil((rd.startAt - serverNow()) / 1000)); decorate(); if (countdown <= 0) { clearInterval(countdownTimer); countdownTimer = null; schedule(0); } }, 200);
       }
     }
-    if (atNemesis && rd && rd.ante === v.ante && !rd.startAt) meReady = !!(rd.ready && rd.ready[me()]);
+    if (atNemesis && rd && rdB === vb && !rd.startAt) meReady = !!(rd.ready && rd.ready[me()]);
     // (4) in the Nemesis: report every hand (cumulative score + hands left)
     const v2 = ctx.view();
     if (v2 && v2.pvp && v2.pvp.nemesis) {
-      if (!nemesisAnte) nemesisAnte = v2.ante;
+      if (!nemesisAnte) nemesisAnte = blindNum(v2.ante, v2.pvp.slot || 'Boss');   // (the round's blind number)
       const hands = v2.state === 'PVP_WAIT' ? 0 : v2.hands_left;
       const sc = String(v2.chips == null ? 0 : v2.chips);
       const sig = sc + '|' + hands;
       const mine = rd && rd.scores && rd.scores[me()];
-      if (rd && rd.ante === nemesisAnte && rd.startAt && !rd.res && (sig !== handSent || !mine || mine.n == null)) {
+      if (rd && rdB === nemesisAnte && rd.startAt && !rd.res && (sig !== handSent || !mine || mine.n == null)) {
         handN = Math.max(handN + 1, mine && mine.n != null ? mine.n + 1 : 0);
-        const d = await call('mtpvp-hand', { id: L.id, ante: nemesisAnte, score: sc, hands, n: handN });
+        const slot = ['', 'Small', 'Big', 'Boss'][nemesisAnte % 10] || 'Boss';
+        const d = await call('mtpvp-hand', { id: L.id, ante: Math.floor(nemesisAnte / 10), slot, score: sc, hands, n: handN, hp: v2.pvp.hands_played | 0 });
         if (d && d.lobby) { handSent = sig; lobby = d.lobby; }
       }
       // (5) the round's result -> the recorded outcome (lives from the referee)
       const r2 = lobby.m.round;
-      if (r2 && r2.ante === nemesisAnte && r2.res && outcomeApplied !== nemesisAnte && ctx.idle()) {
+      if (r2 && (r2.b || blindNum(r2.ante, 'Boss')) === nemesisAnte && r2.res && outcomeApplied !== nemesisAnte && ctx.idle()) {
         const result = r2.res.loser === '' ? 'tie' : r2.res.loser === me() ? 'lose' : 'win';
         const r = ctx.act({ type: 'pvp_outcome', result, lives: Math.max(0, lobby.m.lives[me()] | 0) });
         if (r && r.ok) { outcomeApplied = nemesisAnte; nemesisAnte = 0; ctx.toast(result === 'win' ? 'You won the round!' : result === 'lose' ? 'You lost the round: -1 life' : 'A tie: no lives lost'); }
@@ -362,9 +421,21 @@ export function createPvp(ctx) {
     const v = ctx.view();
     if (!lobby || !lobby.m || !v) return;
     const want = !meReady;
-    const d = await call('mtpvp-ready', { id: lobby.id, ante: v.ante, ready: want });
+    const d = await call('mtpvp-ready', { id: lobby.id, ante: v.ante, slot: v.blind_on_deck || 'Boss', ready: want });
     if (!d || d.error) { ctx.toast((d && d.error) || 'Offline — try again'); return; }
     meReady = want; readyAnte = v.ante;
+    lobby = d.lobby;
+    if (Number.isFinite(d.now)) skew = d.now - Date.now();
+    await referee();
+    schedule(0);
+  }
+  /** The Hurry button (READY at a PvP round, the opponent not): start / resume the timer on them, or pause it. */
+  async function pressHurry() {
+    const m = lobby && lobby.m;
+    if (!m) return;
+    const on = !(m.timer && m.timer.by === me() && m.timer.endAt);
+    const d = await call('mtpvp-timer', { id: lobby.id, on });
+    if (!d || d.error) { ctx.toast((d && d.error) || 'Offline — try again'); return; }
     lobby = d.lobby;
     if (Number.isFinite(d.now)) skew = d.now - Date.now();
     await referee();
@@ -380,15 +451,27 @@ export function createPvp(ctx) {
     const rd = m.round;
     const sc = rd && rd.scores && rd.scores[name];
     const v = ctx.view();
+    const mode = m.mode || L.opts.mode || 'attrition';
+    const inRound = !!(v && v.pvp && v.pvp.nemesis);
+    const t = m.timer;
     const o = {
-      me: me(), name, lives: m.lives[name], max: L.opts.lives, myLives: m.lives[me()],
+      me: me(), name, lives: m.lives[name], max: mode === 'survival' ? 1 : L.opts.lives, myLives: m.lives[me()], mode,
+      far: (m.far && m.far[name]) || 0, myFar: (m.far && m.far[me()]) || 0,
       loc: s.loc || '', ante: s.ante || 0, ready: !!(rd && rd.ready && rd.ready[name]), meReady, countdown,
-      score: v && v.pvp && v.pvp.nemesis && sc ? sc.s : null, hands: v && v.pvp && v.pvp.nemesis && sc ? sc.h : null,
+      // ("Hide enemy score until you play": the referee sends no score until this player has played a hand — ???)
+      score: inRound && sc ? sc.s : null, hidden: !!(inRound && sc && sc.hid), hands: inRound && sc ? sc.h : null,
+      timer: t && !m.over ? { onMe: t.on === me(), mine: t.by === me(), paused: !t.endAt, left: Math.max(0, (t.endAt ? t.endAt - serverNow() : t.left || 0) / 1000) } : null,
+      canHurry: !!(L.opts.timer && mode !== 'survival' && !m.over && !m.pending && meReady && rd && !rd.startAt && !(rd.ready && rd.ready[name]) && !(t && t.by === me() && t.endAt)),
     };
     // banners: the opponent away (the forfeit clock), a pending death
     const banners = [];
     if (opp && opp.age != null && opp.age > AWAY_MS && !m.over) banners.push(`${esc(name)} disconnected — waiting for them to come back (${Math.max(0, GRACE_S - Math.floor(opp.age / 1000))} s)`);
-    if (m.pending && !m.over) {
+    if (m.pending && !m.over && mode === 'survival') {
+      const [pa, ps] = m.pending.key.split(':');
+      const df = blindText(m.pending.far || 0);
+      banners.push(m.pending.dead === me() ? `<b>OUT OF LIVES</b> (furthest: ${df}) — waiting for ${esc(name)} to reach this blind (ante ${pa} ${ps}): they win only by beating it. Leaving is not a forfeit.`
+        : `${esc(name)} is out (furthest: ${df}) — beat ante ${pa} ${ps} to win the match!`);
+    } else if (m.pending && !m.over) {
       const [pa, ps] = m.pending.key.split(':');
       banners.push(m.pending.dead === me() ? `<b>OUT OF LIVES</b> — your result is pending: ${esc(name)} must beat the same blind (ante ${pa} ${ps}). Leaving is not a forfeit.`
         : `${esc(name)} lost their last life on ante ${pa} ${ps} — beat that blind to win the match!`);
@@ -407,11 +490,12 @@ export function createPvp(ctx) {
     const oppName = m.players.find((p) => p !== me()) || '';
     const el = h('div', 'pvp-end');
     el.appendChild(h('div', 'pvp-end-title ' + (draw ? 'draw' : won ? 'won' : 'lost'), draw ? 'Draw' : won ? 'You win!' : 'You lose'));
-    const why = { lives: 'out of lives', forfeit: won ? oppName + ' forfeited' : 'forfeit', pending: 'the pending blind decided it' }[m.over.why] || '';
+    const why = { lives: 'out of lives', forfeit: won ? oppName + ' forfeited' : 'forfeit', pending: 'the pending blind decided it', timer: 'out of time (the Hurry timer)', furthest: 'the furthest blind decided it' }[m.over.why] || '';
     el.appendChild(h('div', 'pvp-end-why muted', esc(why)));
-    el.appendChild(h('div', 'pvp-end-lives', `${esc(me())} ♥${m.lives[me()]} · ${esc(oppName)} ♥${m.lives[oppName]}`));
+    el.appendChild(h('div', 'pvp-end-lives', m.mode === 'survival' ? `Furthest blind: ${esc(me())} ${blindText((m.far || {})[me()] || 0)} · ${esc(oppName)} ${blindText((m.far || {})[oppName] || 0)}`
+      : `${esc(me())} ♥${m.lives[me()]} · ${esc(oppName)} ♥${m.lives[oppName]}`));
     if (m.hist && m.hist.length) {
-      el.appendChild(h('div', 'pvp-end-hist', m.hist.map((x) => `Ante ${x.ante}: ${esc(x.s[me()] || '0')} vs ${esc(x.s[oppName] || '0')} ${x.loser === '' ? '(tie)' : x.loser === me() ? '(lost)' : '(won)'}`).join('<br>')));
+      el.appendChild(h('div', 'pvp-end-hist', m.hist.map((x) => `Ante ${x.ante}${x.slot && x.slot !== 'Boss' ? ' ' + x.slot : ''}: ${esc(x.s[me()] || '0')} vs ${esc(x.s[oppName] || '0')} ${x.loser === '' ? '(tie)' : x.loser === me() ? '(lost)' : '(won)'}`).join('<br>')));
     }
     const tabs = h('div', 'pvp-end-tabs');
     const box = h('div', 'pvp-end-cards');
@@ -472,7 +556,7 @@ export function createPvp(ctx) {
   }
 
   return {
-    open, joinFlow, resume, leave, forfeitConfirm, pressReady,
+    open, joinFlow, resume, leave, forfeitConfirm, pressReady, pressHurry,
     get active() { return inMatch && !!lobby; },
     get lobbyId() { return lobby && lobby.id; },
     oppInfo,
