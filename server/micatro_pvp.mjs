@@ -28,7 +28,7 @@
 
 export const MTPVP_PROTOCOL = 1;
 export const PP = {
-	BEAT_MS: 10_000,                 // a player row is rewritten at least this often while polling (liveness)
+	BEAT_MS: 10_000,                 // a player row is rewritten at least this often while polling (liveness; <= GRACE_MS / 4, below)
 	MIN_WRITE_MS: 900,               // ...and at most this often (a summary that changes on every click)
 	LOBBY_IDLE_MS: +(globalThis.process && process.env && process.env.MTPVP_LOBBY_IDLE_MS) || 60_000,
 	GUEST_IDLE_MS: +(globalThis.process && process.env && process.env.MTPVP_GUEST_IDLE_MS) || 45_000,
@@ -40,6 +40,8 @@ export const PP = {
 	MODS_MAX: 24_000,                // the host's mod set + options + pins
 	DEFAULTS: { lives: 4, pvpStart: 2, deathOnLoss: true, comeback: true, seed: '', back: 'b_red', stake: 1, sleeve: '' },
 };
+// (a short grace period — a test's — keeps the heartbeat well inside it)
+PP.BEAT_MS = Math.min(PP.BEAT_MS, Math.floor(PP.GRACE_MS / 4));
 const CODE_ABC = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';   // no I, O, 0, 1
 const SEED_ABC = 'ABCDEFGHIJKLMNPQRSTUVWXYZ123456789';
 const KEY_RE = /^[A-Za-z0-9_]{1,64}$/;
@@ -484,7 +486,7 @@ export async function handleMtpvp(ctx) {
 			if (m.over) return false;
 			// the dead player of a pending death leaving is not a forfeit (the opponent's blind decides)
 			if (m.pending && m.pending.dead === username) { (m.left = m.left || {})[username] = 1; return; }
-			(m.left = m.left || {})[username] = 1;
+			// (a forfeit is not a leave: the pair can still rematch)
 			end(m, m.players.find((x) => x !== username), 'forfeit');
 		});
 		if (r.error) return fail(r);

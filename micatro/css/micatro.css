@@ -906,3 +906,35 @@ body.has-replay-bar.rb-tucked #pad-hints { bottom: 40px; }
 .premove-wrap .pack-head { max-width: 100%; box-sizing: border-box; flex-wrap: wrap; justify-content: center; }
 .portrait .premove-wrap .pack-choose { display: none; }
 .blind-pity { margin-top: 4px; padding: 2px 6px 0; border-radius: 6px; background: #f3ead6; color: #2c2318; font-size: 15px; text-align: center; box-shadow: inset 0 0 0 2px #b26cbb; }
+
+/* ---- Multiplayer (PvP): the in-run HUD (ui/pvphud.js) + the lobby / end screens (ui/pvp.js) ---- */
+.pvp-hud { position: absolute; left: 50%; top: 8px; transform: translateX(-50%); z-index: 40; background: rgba(31,42,44,.92); color: #fff;
+  font-family: 'm6x11', monospace; font-size: 20px; padding: 6px 14px 4px; border-radius: 12px; border: 2px solid #8f3550; text-align: center; pointer-events: none; max-width: 70%; }
+.pvp-hud .ph-row { display: flex; gap: 14px; align-items: center; justify-content: center; white-space: nowrap; }
+.pvp-hud .ph-vs { color: #f2be48; }
+.pvp-hud .ph-h { color: #fe5f55; letter-spacing: 1px; }
+.pvp-hud .ph-h0 { color: #4f6367; letter-spacing: 1px; }
+.pvp-hud .ph-loc { font-size: 16px; color: #c8d0d0; }
+.pvp-hud .ph-loc b { color: #fe5f55; }
+.pvp-hud .ph-banner { font-size: 16px; color: #f2be48; margin-top: 2px; white-space: normal; }
+.pvp-hud.ph-nemesis { border-color: #fe5f55; }
+.btn.b-pvp-ready.on { background: #4f6367; }
+.blind-rew.pvp-vs { color: #fff; }
+.pvp-modal .pvp-intro { max-width: 520px; margin: 0 auto 10px; }
+.pvp-modal .pvp-row, .pvp-modal .pvp-bar { display: flex; gap: 10px; justify-content: center; margin: 10px 0; flex-wrap: wrap; }
+.pvp-modal .pvp-join { display: flex; gap: 8px; justify-content: center; align-items: center; margin: 8px 0; }
+.pvp-modal .pvp-code { width: 7em; font: 24px 'm6x11', monospace; text-align: center; text-transform: uppercase; padding: 4px; border-radius: 8px; border: 2px solid #4f6367; }
+.pvp-modal .pvp-friend { display: flex; gap: 10px; justify-content: center; align-items: center; margin: 4px 0; }
+.pvp-modal .pvp-code-row { display: flex; gap: 12px; align-items: center; justify-content: center; }
+.pvp-modal .pvp-code-v { font-size: 40px; letter-spacing: 6px; color: #f2be48; }
+.pvp-modal .pvp-players, .pvp-modal .pvp-opts, .pvp-modal .pvp-setup, .pvp-modal .pvp-bans { margin: 8px auto; max-width: 560px; }
+.pvp-modal .pvp-opt { display: flex; gap: 8px; align-items: center; justify-content: space-between; margin: 3px 0; }
+.pvp-modal .pvp-opt-v { min-width: 2em; text-align: center; }
+.pvp-modal .pvp-ok { color: #4bc292; }
+.pvp-end .pvp-end-title { font-size: 44px; text-align: center; }
+.pvp-end .pvp-end-title.won { color: #4bc292; } .pvp-end .pvp-end-title.lost { color: #fe5f55; } .pvp-end .pvp-end-title.draw { color: #f2be48; }
+.pvp-end .pvp-end-why, .pvp-end .pvp-end-lives, .pvp-end .pvp-end-hist { text-align: center; margin: 4px 0; }
+.pvp-end .pvp-end-tabs { display: flex; gap: 8px; justify-content: center; margin-top: 8px; }
+.pvp-end .pvp-end-jokers { display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; }
+.pvp-end .pvp-end-joker { width: 71px; height: 95px; }
+@media (max-width: 600px), (max-height: 500px) { .pvp-hud { font-size: 15px; padding: 4px 8px 2px; max-width: 92%; } .pvp-hud .ph-loc, .pvp-hud .ph-banner { font-size: 13px; } }

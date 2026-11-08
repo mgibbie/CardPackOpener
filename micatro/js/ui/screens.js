@@ -56,6 +56,8 @@ export function mainMenu(o) {
   el.appendChild(card);
   const bar = h('div', 'menu-bar');
   bar.appendChild(btn('Play', 'blue big b-menu-play', () => newRunScreen(o)));
+  // Multiplayer (signed in: lobbies + friends need an account)
+  if (o.loggedIn && o.multiplayer) bar.appendChild(btn('Multi&shy;player', 'red big b-multiplayer', () => o.multiplayer()));
   if (o.saved) bar.appendChild(btn('Continue', 'orange big b-continue', () => o.onContinue()));
   bar.appendChild(btn('Leader<br>board', 'green big b-leaders', () => leaderboard(o.net)));
   bar.appendChild(btn('How to<br>play', 'red big b-howto', () => howTo()));
@@ -370,7 +372,9 @@ export function newRunScreen(o) {
   refreshSleeves(msel);
   // decks of saved-on mods appear once those mods have loaded
   if (modsApi && msel.ids.length) Promise.resolve(modsApi.load(modsApi.withRequirements(msel.ids))).then(() => { refreshBacks(msel); refreshStakes(msel); refreshSleeves(msel); if (el.isConnected) draw(); }).catch(() => {});
-  const play = btn('Play', 'blue big wide b-start', () => {
+  // (Multiplayer's lobby setup: the same choices become the lobby's; no custom decks in a match yet)
+  if (o.pvpHost) { crow.style.display = 'none'; csel = null; drawC(); }
+  const play = btn(o.pvpHost ? 'Create lobby' : 'Play', 'blue big wide b-start', () => {
     if (!stakeIsOpen(si)) { draw(); return; }   // (a locked stake can't be started: the button is disabled anyway)
     const back = backs[bi].key;
     const st = stakes[si] || stakes[0];
@@ -437,7 +441,7 @@ export function newRunScreen(o) {
     play.title = open ? '' : 'Locked: ' + why;
   }
   draw();
-  modal(el, { title: 'New Run', cls: 'nr-modal' });
+  modal(el, { title: o.pvpHost ? 'Multiplayer lobby' : 'New Run', cls: 'nr-modal' });
 }
 
 // ------------------------------------------------------- leaderboard

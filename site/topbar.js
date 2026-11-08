@@ -14,7 +14,7 @@
 // All server calls go through the existing /api/mp backend via mpmode.js, using
 // the same action signatures the Overworld already uses, so the flow is proven.
 import * as MP from '/battlecards/mpmode.js';
-import { watchHref, micatroActivityLabel } from '/site/livewatch.js';
+import { watchHref, joinHref, micatroActivityLabel } from '/site/livewatch.js';
 
 const CARD_DUEL = id => '/battlecards/?cardpvp=' + encodeURIComponent(id) + '&mp=1';
 const SEEN_KEY = 'mp_inbox_seen_v1';
@@ -651,6 +651,10 @@ function friendActivity(f) {
 	}
 	if (st.startsWith('factory:')) return { live: true, kind: 'factory', label: 'in the ' + (f.region || st.slice('factory:'.length) || 'Battle Frontier') };
 	if (st.startsWith('micatro:')) return { live: true, kind: 'micatro', label: micatroActivityLabel(f.region || st.slice('micatro:'.length)) };
+	// Micatro Multiplayer: a match is watched like a run; a lobby with a free seat gets JOIN (site/livewatch.js joinHref)
+	if (st.startsWith('micatropvp:match:')) return { live: true, kind: 'micatro', label: 'in a Micatro PvP match' + (f.region ? ' · ' + f.region : '') };
+	if (/^micatropvp:lobby:[A-Z0-9]{5}$/.test(st)) return { live: false, kind: 'micatro-lobby', joinable: true, label: 'In a Micatro lobby' };
+	if (st.startsWith('micatropvp:full:')) return { live: false, kind: null, label: 'In a Micatro lobby' };
 	if (st === 'micasurvivor:run') return { live: true, kind: 'micasurvivor', label: 'in a MicaSurvivor run' + (f.region && !/^micasurvivor$/i.test(f.region) ? ' · ' + f.region : '') };
 	if (st.startsWith('visiting:')) return { live: false, kind: null, label: 'exploring' };
 	return { live: false, kind: null, label: isOnline(f) ? 'online' : 'offline' };
@@ -715,7 +719,11 @@ function renderFriends(body) {
 			<div class="meta"><div class="name">${esc(f.username)}${act.live ? ' <span class="live">● LIVE</span>' : ''}</div><div class="sub">${esc(act.label)}</div></div>
 			<div class="acts"></div>`;
 		const acts = $('.acts', row);
-		if (act.live) {
+		if (act.joinable) {
+			// waiting in a Micatro Multiplayer lobby: join their match
+			const join = el('button', 'mini primary', '🃏 Join'); join.title = 'Join their Micatro lobby';
+			join.addEventListener('click', () => { const href = joinHref(f); if (href) location.href = href; }); acts.appendChild(join);
+		} else if (act.live) {
 			// mid-match: you can't challenge them, but you can watch
 			const watch = el('button', 'mini primary', '👁 Watch'); watch.title = 'Spectate'; watch.addEventListener('click', () => watchFriend(f)); acts.appendChild(watch);
 		} else {

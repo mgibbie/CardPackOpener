@@ -13,6 +13,7 @@ import { onSkins } from './skins.js';
 import { onWinStickers, winStickerInfo, STICKER_TEXT } from './stickers.js';
 import { stickDeckCanvas } from './decksticker.js';
 import { liveCard } from './screens.js';
+import { renderPvpHud, nemesisPanel, nemesisChoice } from './pvphud.js';
 
 // 'scry': Pokermon's scry view (view.areas.scry, the next cards to be drawn), shown face up above the deck.
 const VISIBLE = ['hand', 'play', 'jokers', 'consumeables', 'shop_jokers', 'shop_vouchers', 'shop_booster', 'pack_cards', 'scry'];
@@ -151,7 +152,7 @@ export class Board {
     const $ = (s) => this.hudEl.querySelector(s);
     this.H = {
       blind: $('.hud-blind'), bName: $('.hb-name'), bChip: $('.hb-chip'), bTarget: $('.hb-target'), bReward: $('.hb-reward .money'),
-      bDesc: $('.hb-desc'), bInfo: $('.hb-info'), score: $('.hs-num'), scoreChip: $('.hud-score .chip-ico'), hand: $('.hh-hand'), lvl: $('.hh-lvl'), chips: $('.hh-chips'), mult: $('.hh-mult'),
+      bDesc: $('.hb-desc'), bInfo: $('.hb-info'), bReqL: $('.hb-req-l'), score: $('.hs-num'), scoreChip: $('.hud-score .chip-ico'), hand: $('.hh-hand'), lvl: $('.hh-lvl'), chips: $('.hh-chips'), mult: $('.hh-mult'),
       hands: $('.s-hands .stat-v'), discards: $('.s-discards .stat-v'), dollars: $('.s-dollars .stat-v'), ante: $('.ante-n'), anteW: $('.ante-w'),
       round: $('.s-round .stat-v'), tags: $('.hud-tags'), handBox: $('.hud-hand'), rbadges: $('.hud-rbadges'), page: $('.hb-page'),
     };
@@ -613,11 +614,12 @@ export class Board {
     H.discards.textContent = hud.discards;
     H.ante.textContent = hud.ante;
     this.renderScoreChip();
-    H.anteW.textContent = v.win_ante || 8;
+    H.anteW.textContent = v.pvp ? '∞' : v.win_ante || 8; // (Multiplayer: no ante-8 win)
     H.round.textContent = hud.round;
     H.score.textContent = fmt(this.shownScore);
     this.renderHandBox();
     this.renderBlindPanel(v.blind, v.state);
+    renderPvpHud(this, v); // (Multiplayer: lives, the opponent; hidden in a solo run)
     this.renderPageBadge(v);
     this.renderTagsEtc(v);
   }
@@ -655,8 +657,16 @@ export class Board {
       H.bName.textContent = (b.desc && b.desc.name && b.atlas ? b.desc.name : b.name); // (a mod blind: its loc name, not its key)
       H.bInfo.style.visibility = '';
       H.bTarget.textContent = fmt(b.chips);
+      // (Multiplayer: the Nemesis has no target — the opponent's live score instead)
+      const np = nemesisPanel(b, this.view);
+      if (this.H.bReqL) this.H.bReqL.textContent = np ? np.label : 'Score at least';
+      if (np) { H.bName.textContent = np.name; H.bTarget.textContent = np.target; }
       H.bReward.textContent = b.dollars > 0 ? '$'.repeat(Math.min(b.dollars, 8)) + '+' : '';
       if (b.dollars > 0) H.bReward.textContent = '$'.repeat(Math.min(b.dollars, 10));
+      // (the reward row's label: "Hands left:" in the Nemesis — the node before the money span)
+      const rl = H.bReward.previousSibling || (H.bReward.parentNode && H.bReward.parentNode.firstChild);
+      if (rl && rl.nodeType === 3) rl.textContent = np ? np.rewardLabel : 'Reward: ';
+      if (np) H.bReward.textContent = np.reward;
       if (!this.chipAnim || this.chipAnim.key !== b.key) {
         H.bChip.innerHTML = '';
         const c = document.createElement('canvas'); c.width = 68; c.height = 68; c.className = 'blind-chip';
@@ -819,7 +829,14 @@ export class Board {
       const col = h('div', `blind-col st-${stateCls} ${k === 'Boss' ? 'boss' : ''}`);
       col.style.setProperty('--bcol', k === 'Boss' ? (c.colour || '#b44430') : (k === 'Small' ? '#3b7fa8' : '#d68f28'));
       const head = h('div', 'blind-head');
-      if (c.state === 'Select') {
+      const nc = k === 'Boss' ? nemesisChoice(c, v) : null; // (Multiplayer: READY for the Nemesis — both players start together)
+      if (nc && c.state === 'Select') {
+        const b = h('button', 'btn orange b-select b-pvp-ready' + (nc.active ? ' on' : ''), nc.label);
+        b.type = 'button';
+        b.disabled = this.readOnly || !this.onPvpReady;
+        b.addEventListener('click', () => this.onPvpReady && this.onPvpReady());
+        head.appendChild(b);
+      } else if (c.state === 'Select') {
         const b = h('button', 'btn orange b-select', 'Select');
         b.type = 'button';
         b.disabled = this.readOnly || this.locked;
@@ -836,8 +853,10 @@ export class Board {
       if (k === 'Boss' && c.desc) body.appendChild(h('div', 'blind-desc', (c.desc.lines || []).map(markup).join('<br>')));
       // (Pages v2's pity timer: no Page all last ante -> this Boss gets one)
       if (k === 'Boss' && v.page_pity) body.appendChild(h('div', 'blind-pity', 'Page guaranteed this Boss'));
-      body.appendChild(h('div', 'blind-req', `<div class="req-l">Score at least</div><div class="req-v"><span class="chip-ico"></span>${fmt(c.chips)}</div>`));
-      body.appendChild(h('div', 'blind-rew', c.dollars ? `Reward: <span class="money">${'$'.repeat(Math.min(10, c.dollars))}+</span>` : '<span class="muted">No reward money</span>'));
+      if (nc) body.appendChild(h('div', 'blind-req', `<div class="req-l">${nc.req}</div><div class="req-v">${nc.value}</div>`));
+      else body.appendChild(h('div', 'blind-req', `<div class="req-l">Score at least</div><div class="req-v"><span class="chip-ico"></span>${fmt(c.chips)}</div>`));
+      if (nc && nc.reward) body.appendChild(h('div', 'blind-rew pvp-vs', nc.reward));
+      else body.appendChild(h('div', 'blind-rew', c.dollars ? `Reward: <span class="money">${'$'.repeat(Math.min(10, c.dollars))}+</span>` : '<span class="muted">No reward money</span>'));
       col.appendChild(body);
       if (k !== 'Boss' && c.tag) {
         const sk = h('div', 'blind-skip');

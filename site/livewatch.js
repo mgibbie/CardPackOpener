@@ -8,6 +8,8 @@
 //   - a `live-friends` entry: { username, kind, matchId?, label? }
 //   - a presence row (friends / presence actions): { username, status, region }
 //     where status is battling:<matchId> | card:<mode> | factory:<label> | micatro:<label> | micasurvivor:run
+//     | micatropvp:lobby:<CODE> (a Micatro Multiplayer lobby with a free seat: JOIN, not watch) | micatropvp:full:<CODE>
+//     | micatropvp:match:<lobbyId>:<label> (a Multiplayer match: watched like a Micatro run)
 //     (a MicaSurvivor run, M5 batch 12c: the server's `friends` marks a friend in one by its run beacon)
 
 // what a presence status means → { live, kind, matchId?, mode?, label }
@@ -17,6 +19,9 @@ export function activityFromStatus(status, region) {
 	if (st.startsWith('card:')) return { live: true, kind: 'card', mode: st.slice('card:'.length), label: region || '' };
 	if (st.startsWith('factory:')) return { live: true, kind: 'factory', label: region || st.slice('factory:'.length) || 'BATTLE FRONTIER' };
 	if (st.startsWith('micatro:')) return { live: true, kind: 'micatro', label: region || st.slice('micatro:'.length) };
+	if (st.startsWith('micatropvp:match:')) return { live: true, kind: 'micatro', pvp: true, label: region || 'Micatro PvP' };
+	if (/^micatropvp:lobby:[A-Z0-9]{5}$/.test(st)) return { live: false, kind: 'micatro-lobby', joinable: true, code: st.slice('micatropvp:lobby:'.length), label: 'In a Micatro lobby' };
+	if (st.startsWith('micatropvp:full:')) return { live: false, kind: null, label: 'In a Micatro lobby' };
 	if (st === 'micasurvivor:run') return { live: true, kind: 'micasurvivor', label: micasurvivorActivityLabel(region) };
 	return { live: false, kind: null, label: '' };
 }
@@ -31,6 +36,12 @@ export function micatroActivityLabel(label) {
 export function micasurvivorActivityLabel(label) {
 	const l = String(label || '').trim();
 	return 'Playing MicaSurvivor' + (l && !/^micasurvivor$/i.test(l) ? ' — ' + l : '');
+}
+
+// a friend's Micatro Multiplayer lobby they can be joined in: /micatro/?join=CODE, or null
+export function joinHref(f) {
+	const a = f && activityFromStatus(f.status, f.region);
+	return a && a.joinable ? '/micatro/?join=' + encodeURIComponent(a.code) : null;
 }
 
 // the spectator URL for a live friend, or null when there's nothing to open

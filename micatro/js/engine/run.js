@@ -31,6 +31,7 @@ import './consumables.js';
 import { CUSTOM_DECK_ID, CUSTOM_DECK_BACK, validateDeck } from './customdeck.js';
 import { CHALLENGE_ID, findChallenge, prepareChallenge, apply_challenge, challenge_protos, challengeBack, challengeMods } from './challenge.js';
 import { SLEEVE_ID, findSleeve, sleeveFor, prepareSleeve, apply_sleeve } from './sleeve.js';
+import { PVP_ID, pvpConfig, setupPvp, pvpMods, pvpRoundLost, pvpRoundWon, pvpSkipped, pvpActionError, pvpApply, NEMESIS } from './pvp.js';
 import { decidePages, generatePages, applyPageChips, pageIndividual, pageDiscard, pagePrizeRow, openPagePack, shopOpening, shopStocked, shopClosing, pageRepetitions, pageDestroys, pageRoundStart, pageScoreAdded, pageRemovePending, pageRemoveCard, pageRolls, pageSeen } from './pages.js';
 // (Steamodded seams for Pokermon 3.9.1: opt-in contexts, Blind:calculate, the object_weights shop roll — no-ops unless a mod uses them)
 import { wanted, calculate_seam, modify_scoring_hand, blind_calculate, SEAM_STATE, object_weights, poll_object, poll_object_type, merge_defaults, mod_calculate, seam_mod, quantum_mod_calculate, held_card_limit,
@@ -46,6 +47,8 @@ export const STATES = {
   PAGES: 22,
   // Pages v2's "remove a card of your choice" prize: after the cash-out, before the shop, the player picks a deck card to remove.
   PAGE_REMOVE: 23,
+  // Multiplayer (engine/pvp.js): out of hands in the Nemesis blind, waiting for the referee's result
+  PVP_WAIT: 24,
 };
 export const STATE_NAMES = Object.fromEntries(Object.entries(STATES).map(([k, v]) => [v, k]));
 SEAM_STATE.STATES = STATES;
@@ -144,12 +147,16 @@ export function pump() {
 
 const STATE_HANDLERS = {
   [STATES.SELECTING_HAND]() {
-    if (G.hand.cards.length < 1 && G.deck.cards.length < 1) end_round();
+    // (Multiplayer: out of cards in the Nemesis blind -> out of hands, waiting for the result — the mod's deck-out)
+    if (G.hand.cards.length < 1 && G.deck.cards.length < 1 && G.GAME.pvp_blind) { G.GAME.current_round.hands_left = 0; G.STATE = STATES.PVP_WAIT; G.STATE_COMPLETE = false; }
+    else if (G.hand.cards.length < 1 && G.deck.cards.length < 1) end_round();
     else check_hand_lock();
   },
   [STATES.HAND_PLAYED]() {
     G.E_MANAGER.add_event(() => {
-      if (B.beats(G.GAME.chips, G.GAME.blind.chips) || G.GAME.current_round.hands_left < 1) G.STATE = STATES.NEW_ROUND;
+      // (Multiplayer's Nemesis: no target — every hand is played; out of hands, wait for the referee)
+      if (G.GAME.pvp_blind) G.STATE = G.GAME.current_round.hands_left < 1 ? STATES.PVP_WAIT : STATES.DRAW_TO_HAND;
+      else if (B.beats(G.GAME.chips, G.GAME.blind.chips) || G.GAME.current_round.hands_left < 1) G.STATE = STATES.NEW_ROUND;
       else G.STATE = STATES.DRAW_TO_HAND;
       G.STATE_COMPLETE = false;
     });
@@ -209,6 +216,7 @@ const STATE_HANDLERS = {
   },
   [STATES.PAGES]() { emit('pages_open', { blind: G.GAME.pages && G.GAME.pages.blind }); },
   [STATES.PAGE_REMOVE]() { emit('page_remove_open', {}); },
+  [STATES.PVP_WAIT]() { emit('pvp_wait', { chips: G.GAME.chips }); },
   [STATES.TAROT_PACK]() { G.E_MANAGER.add_event(() => draw_from_deck_to_hand()); },
   [STATES.SPECTRAL_PACK]() { G.E_MANAGER.add_event(() => draw_from_deck_to_hand()); },
   [STATES.PLANET_PACK]() {},
@@ -253,14 +261,18 @@ export function newRun(args = {}) {
   if (chal && chal.daily_seed && typeof args.daily === 'string' && /^\d{8}$/.test(args.daily)) args = { ...args, seed: chal.daily_seed(args.daily), seeded: false };
   if (chal || sleeve0) { prepareChallenge(chal); prepareSleeve(sleeveFor(sleeve0, args.back)); }
   const runMods = (ids) => (chal ? [...ids, ...challengeMods(chal), CHALLENGE_ID] : sleeve0 ? [...ids, sleeve0.mod, SLEEVE_ID] : ids);
+  // A Multiplayer match (engine/pvp.js): its internal rules mod (+ the options it forces). Not with a challenge / custom deck.
+  const pvp = !cdeck && !chal ? pvpConfig(args.pvp) : null;
+  const pm = pvp ? pvpMods(args.mods || [], args.modOptions || {}) : null;
   // Mods first: they decide what the pools contain and may adjust the game object.
-  activateMods(runMods(cdeck ? [...(args.mods || []), ...cdeck.mods, CUSTOM_DECK_ID] : (args.mods || [])), args.modOptions || {});
+  activateMods(runMods(pm ? pm.ids : cdeck ? [...(args.mods || []), ...cdeck.mods, CUSTOM_DECK_ID] : (args.mods || [])), pm ? pm.options : (args.modOptions || {}));
   rebuild_handlist(); // (mod poker hands join the hand list; the base list otherwise)
   G.GAME = init_game_object();
   G.GAME.mods = cdeck ? ACTIVE_MODS.filter((id) => id !== CUSTOM_DECK_ID) : ACTIVE_MODS.slice();
   G.GAME.mod_options = allOptions();
   if (cdeck) { delete G.GAME.mod_options[CUSTOM_DECK_ID]; G.GAME.custom_deck = cdeck; }
   if (chal || sleeve0) { G.GAME.mods = G.GAME.mods.filter((id) => id !== CHALLENGE_ID && id !== SLEEVE_ID); delete G.GAME.mod_options[CHALLENGE_ID]; delete G.GAME.mod_options[SLEEVE_ID]; }
+  if (pvp) { G.GAME.mods = G.GAME.mods.filter((id) => id !== PVP_ID); delete G.GAME.mod_options[PVP_ID]; setupPvp(pvp); }
   for (const t of activeConsumableTypes()) G.GAME[t.rate_key] = t.shop_rate || 0;
   // Pages (engine/pages.js): from engine rules rev 2 — `engineRev` is the run's (session.js passes the recipe's; omitted =
   // the legacy rules, which the engine unit tests play on) — unless a challenge or the Joker Toggle switch says no.
@@ -519,6 +531,12 @@ function end_round() {
   G.E_MANAGER.add_event(() => {
     let game_over = true, game_won = false;
     if (B.beats(G.GAME.chips, G.GAME.blind.chips)) game_over = false;
+    // Multiplayer: a failed blind never ends the run (a normal one costs a life; the Nemesis has no target)
+    if (G.GAME.pvp) {
+      const rr0 = G.GAME.round_resets, pslot = rr0.blind === P_BLINDS.bl_small ? 'Small' : rr0.blind === P_BLINDS.bl_big ? 'Big' : 'Boss';
+      if (game_over && pvpRoundLost(pslot)) game_over = false;
+      else pvpRoundWon(pslot);
+    }
     // (smods.js eor_retrigger_seam: an opted-in mod's held-card centers are evaluated per pass in the loop below)
     const eor = eor_retrigger_seam();
     let pceor;
@@ -650,6 +668,7 @@ function end_round() {
       reset_castle_card();
       callHook('reset_game_globals', false);
       for (const v of G.playing_cards) { v.ability.discarded = undefined; v.ability.forced_selection = undefined; }
+      if (G.GAME.pvp) G.GAME.pvp_blind = undefined;
     });
   });
 }
@@ -1498,7 +1517,8 @@ function evaluate_round() {
   const rows = [];
   let dollars = 0;
   const row = (r) => { rows.push(r); };
-  if (B.beats(G.GAME.chips, G.GAME.blind.chips)) {
+  // (Multiplayer: a failed normal blind counts as passed — its reward is paid, as in the mod)
+  if (B.beats(G.GAME.chips, G.GAME.blind.chips) || G.GAME.pvp_failed) {
     row({ name: 'blind1', dollars: G.GAME.blind.dollars, blind: G.GAME.blind.config.blind && G.GAME.blind.config.blind.key });
     dollars += G.GAME.blind.dollars;
   } else {
@@ -1547,6 +1567,7 @@ function evaluate_round() {
   // The blind is cleared on defeat (as in Lua); keep what the cash-out screen shows.
   const blind = pb ? { key: pb.key, name: G.GAME.blind.name, chips: G.GAME.blind.chips, dollars: G.GAME.blind.dollars, boss: !!G.GAME.blind.boss, colour: pb.boss_colour, pos: pb.pos, defeated: true } : null;
   G.GAME.round_eval = { rows, total: dollars, blind };
+  if (G.GAME.pvp_failed) G.GAME.pvp_failed = undefined;
   emit('round_eval', { rows, total: dollars });
   if (undo) for (const f of undo) f();
 }
@@ -1878,6 +1899,7 @@ function skip_blind() {
   if (!tagKey) return;
   add_tag(new Tag(tagKey, false, skipped));
   const skip_to = skipped === 'Small' ? 'Big' : 'Boss';
+  if (G.GAME.pvp) pvpSkipped(skipped); // (Multiplayer: a skip counts as beaten for the referee)
   rr.blind_states[skipped] = 'Skipped';
   rr.blind_states[skip_to] = 'Select';
   G.GAME.blind_on_deck = skip_to;
@@ -2127,6 +2149,8 @@ export function act(a) {
   try {
     can(!G.GAME.over, 'run is over');
     can(G.STATE_COMPLETE, 'busy');
+    // (Multiplayer: out of lives, the run waits for the match result — only the referee's actions)
+    if (G.GAME.pvp && G.GAME.pvp.lives <= 0) can(a && /^pvp_/.test(a.type), 'out of lives: waiting for the result');
     applyAction(a);
     pump();
     // Mods' per-frame checks (Lua Card:update / Game:update), after every action (BETMMA: Stow / Stash debuffs).
@@ -2148,6 +2172,8 @@ function applyAction(a) {
       can(S === STATES.BLIND_SELECT, 'not choosing a blind');
       const which = G.GAME.blind_on_deck;
       can(which && G.GAME.round_resets.blind_states[which] === 'Select', 'no blind to select');
+      // (Multiplayer: the Nemesis starts for both players together — READY, then pvp_start_blind)
+      can(!(G.GAME.pvp && which === 'Boss' && G.GAME.round_resets.blind_choices.Boss === NEMESIS), 'press READY: the Nemesis starts for both players together');
       // Pages: the Blind is chosen, but the round waits for the player's Page (no going back to the blind choice)
       // (Pages v2: only on 25% of Blinds, seeded, + the pity timer — engine/pages.js pageRolls)
       if (G.GAME.pages_on && (!G.GAME.pages_v2 || pageRolls(which))) {
@@ -2348,8 +2374,17 @@ function applyAction(a) {
       cash_out();
       break;
     }
+    case 'pvp_start_blind':
+    case 'pvp_outcome':
+    case 'pvp_end': {
+      const why = pvpActionError(a, S, STATES);
+      can(!why, why);
+      pvpApply(a, STATES, select_blind);
+      break;
+    }
     case 'endless': {
       can(G.GAME.won && S === STATES.ROUND_EVAL || S === STATES.SHOP, 'not won yet');
+      can(!G.GAME.pvp, 'a multiplayer run has no Endless');
       G.GAME.endless = true;
       break;
     }

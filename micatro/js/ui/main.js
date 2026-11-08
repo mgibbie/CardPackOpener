@@ -50,6 +50,9 @@ function stickerKeys(view, into = new Set()) {
 }
 let Progress = null;    // ui/progress.js (the Nuzlocke / Monotype record + achievements), once loaded
 let RunSync = null;     // ui/runsync.js (the run in progress, saved on the account so it follows the player between devices)
+let Pvp = null;         // ui/pvp.js (Multiplayer: the lobby + the match loop), signed in only
+/** Is the session a Multiplayer match's run? (its own save slot; no run sync, restart, stickers or board) */
+const pvpRun = () => !!(session && session.recipe && session.recipe.pvp);
 
 const stage = document.getElementById('stage');
 
@@ -63,7 +66,9 @@ async function loadEngine() {
   try { CH = { ...(await import('../engine/challenge.js')), ...(await import('../engine/sleeve.js')) }; } catch (e) { console.warn('micatro: challenges unavailable', e); }
   // mod version pins (resume prompt, replay banner)
   const PN = await import('../mods/pins.js');
-  return { Session: S.Session, pokerInfo: R.pokerInfo, G: R.G, describeBack, RP, CH, INSTANT_ACTIONS: S.INSTANT_ACTIONS, viewChecksum: S.viewChecksum, ENGINE_VERSION: S.ENGINE_VERSION, pins: PN };
+  // Multiplayer's engine rules (the banned list for the lobby screen; the PvP save slot)
+  const PV = await import('../engine/pvp.js');
+  return { PV, PVP_SAVE_KEY: S.PVP_SAVE_KEY, Session: S.Session, pokerInfo: R.pokerInfo, G: R.G, describeBack, RP, CH, INSTANT_ACTIONS: S.INSTANT_ACTIONS, viewChecksum: S.viewChecksum, ENGINE_VERSION: S.ENGINE_VERSION, pins: PN };
 }
 // ------------------------------------------------------------------- mods
 /** The mods manifest + loader (micatro/js/mods/index.js). Imported once; never throws. */
@@ -115,7 +120,11 @@ const myName = () => {
 };
 
 /** The session's view (+ the mod pack's kind, which view.js only reports for vanilla packs). */
-function viewOf() { return decorateView(session.view()); }
+function viewOf() {
+  const v = decorateView(session.view());
+  if (v && v.pvp && Pvp) v.pvp_opp = Pvp.oppInfo(); // (Multiplayer: the opponent on the HUD — and to spectators)
+  return v;
+}
 /** (the engine's live view — the session's, or the replay stepper's) */
 function decorateView(v) {
   if (v && !v.pack_kind && /^MOD_PACK/.test(v.state || '') && Engine && Engine.G && Engine.G.GAME) v.pack_kind = Engine.G.GAME.pack_kind || null;
@@ -151,8 +160,9 @@ function onAction(a) {
   player.push(view, r.events);
   stickerKeys(view, seenJokers);
   recordJokerUsage(usageUser(), runIdOf(), ((view.areas || {}).jokers || []).map((c) => c.center), (r.events || []).some((e) => e.type === 'win'));
-  if (RunSync) RunSync.track(session.recipe, view); // (pushed to the account when due: round checkpoints, idle, hide)
+  if (RunSync && !pvpRun()) RunSync.track(session.recipe, view); // (pushed to the account when due: round checkpoints, idle, hide)
   afterAct(view, r.events);
+  if (pvpRun() && Pvp) Pvp.afterAct();
   return r;
 }
 // Refused actions (micatro/js/refusedlog.js): quietly logged on the account for testing (refused:<user>:<YYYYMMDD>).
@@ -177,6 +187,8 @@ function record(events) {
   if (pendingPublish.length > PUBLISH_CAP) pendingPublish.splice(0, pendingPublish.length - PUBLISH_CAP);
 }
 function afterAct(view, events) {
+  // (a Multiplayer match ends on the referee's word: ui/pvp.js shows its end screen; no stickers / records / board)
+  if (pvpRun()) { if (view.over) overHandled = true; return; }
   const won = (events || []).some((e) => e.type === 'win');
   // Balatro's set_joker_win: the run's jokers (+ a mod's extra keys) earn this stake's sticker — not in a
   // seeded or a challenge run (win_game skips it). Only the player's own live run records (never a replay).
@@ -324,6 +336,29 @@ function restartRun() {
   abandonSaved('restart (hold R)');
   return startRun(o);
 }
+// Multiplayer (ui/pvp.js): a match's run — the lobby's seed, deck, stake and the HOST's mods + options (passed straight to the
+// engine: this player's own saved mod settings are never changed), in its own save slot.
+async function startMatchRun({ seed, back, stake, sleeve, mods = [], modOptions = {}, pvp }) {
+  stopPublishing();
+  if (mods.length) {
+    const r = await ensureMods(mods);
+    if (!r.ok || r.missing.length) { board.toast('A mod of this match failed to load'); return false; }
+  }
+  session = new Engine.Session({ saveKey: Engine.PVP_SAVE_KEY });
+  const evs = session.start({ seed, back, stake, mods, modOptions, pvp, ...(sleeve ? { sleeve } : {}) });
+  beginRun(evs, { fresh: true });
+  return true;
+}
+/** Rejoin: this device's saved match run (its recipe re-simulates, the referee's actions included). */
+async function resumeMatchRun() {
+  const rec = Engine.Session.savedPvp();
+  if (!rec) return false;
+  stopPublishing();
+  if (rec.mods && rec.mods.length) await ensureMods(rec.mods);
+  try { session = Engine.Session.fromRecipe(rec); } catch (e) { console.error(e); return false; }
+  beginRun([]);
+  return true;
+}
 function beginRun(events, { fresh = false } = {}) {
   UI.closeAll();
   overHandled = false; winShown = !!(session.view().won);
@@ -337,8 +372,9 @@ function beginRun(events, { fresh = false } = {}) {
   sound.play('whoosh', 1, 0.6);
   startPublishing();
   // the account's copy: a new run replaces it (the old one backed up), a resumed one is pushed if it moved on
-  if (RunSync) { if (fresh) RunSync.startedRun(session.recipe, currentView); else RunSync.track(session.recipe, currentView, { now: true }); }
-  if (currentView.over) { overHandled = true; if (RunSync) RunSync.endedRun('lost', session.recipe); whenIdle(() => showGameOver(currentView)); }
+  if (RunSync && !pvpRun()) { if (fresh) RunSync.startedRun(session.recipe, currentView); else RunSync.track(session.recipe, currentView, { now: true }); }
+  if (currentView.over && pvpRun()) overHandled = true;
+  else if (currentView.over) { overHandled = true; if (RunSync) RunSync.endedRun('lost', session.recipe); whenIdle(() => showGameOver(currentView)); }
 }
 
 /**
@@ -397,7 +433,9 @@ function startPublishing() {
       pendingPublish = [];
       return snap;
     },
-    () => (currentView ? `Ante ${currentView.ante} · Round ${currentView.round} · $${currentView.dollars}` : 'Micatro'),
+    () => (currentView && currentView.pvp_opp ? `PvP vs ${currentView.pvp_opp.name} · Ante ${currentView.ante} · ♥${currentView.pvp_opp.myLives ?? currentView.pvp.lives}`
+      : currentView ? `Ante ${currentView.ante} · Round ${currentView.round} · $${currentView.dollars}` : 'Micatro'),
+    pvpRun() && Pvp ? { pvp: Pvp.lobbyId } : {},
   );
   if (publisher.onWatchers) publisher.onWatchers((n, names) => setWatchers(n, names));
   if (!chat && net.mountChat) {
@@ -546,6 +584,7 @@ function menuOpts() {
     replays: replaysApi(), me: myName(),
     challenges: challengesApi(), sleeves: sleevesApi(),
     progress: Progress,
+    multiplayer: Pvp ? () => Pvp.open() : null,
   };
 }
 /** The Challenges screen: Balatro's 20 + the enabled mods' (their modules load first). */
@@ -608,8 +647,9 @@ function onMenu(what) {
   else if (what === 'options') {
     UI.options({
       speed: player.speed, onSpeed: (s) => player.setSpeed(s), direct: DIRECT,
-      onNewRun: MODE === 'normal' ? () => UI.newRunScreen(menuOpts()) : null,
-      onMainMenu: MODE === 'normal' ? () => showMenu() : null,
+      // (Multiplayer: leaving a match is a forfeit — asked first)
+      onNewRun: MODE === 'normal' ? () => (pvpRun() && Pvp && Pvp.active && !(board.view && board.view.over) ? Pvp.forfeitConfirm() : UI.newRunScreen(menuOpts())) : null,
+      onMainMenu: MODE === 'normal' ? () => (pvpRun() && Pvp && Pvp.active && !(board.view && board.view.over) ? Pvp.forfeitConfirm() : showMenu()) : null,
       mods: v && v.mods && v.mods.length ? v.mods : null,
       modOptions: (session && session.recipe && session.recipe.modOptions) || {},
     });
@@ -623,7 +663,7 @@ function onMenu(what) {
 const R_TAP_MS = 250, R_HOLD_MS = 1000, R_BAR_MS = 150;
 let rHold = null; // {t0, raf, el, done}
 /** Can R restart now: a live run of the player's own, nothing open over the table. */
-const canRestart = () => MODE === 'normal' && !!(session && session.recipe && !session.over && board.view && !board.view.over) && !UI.modalOpen();
+const canRestart = () => MODE === 'normal' && !pvpRun() && !!(session && session.recipe && !session.over && board.view && !board.view.over) && !UI.modalOpen();
 function rBar(frac) {
   let el = rHold.el;
   if (!el) {
@@ -862,7 +902,38 @@ async function boot() {
     const first = await Promise.race([ready.then(() => true), new Promise((r) => setTimeout(() => r(false), 3000))]);
     if (!first) ready.then(() => redrawMenu()).catch(() => {});
   }
+  // Multiplayer (signed in): the lobby / match this player is in comes back after a reload; ?join=CODE joins a lobby
+  if (loggedIn()) {
+    try {
+      const PM = await import('./pvp.js');
+      Pvp = PM.createPvp({
+        net, UI, Engine, ensureMods, board, stage,
+        withRequirements: (ids) => (Mods && Mods.withRequirements ? Mods.withRequirements(ids) : ids),
+        currentPins: (ids) => Engine.pins.currentPins(ids), engineRev: Engine.pins.ENGINE_CONTENT_REV,
+        bannedKeys: () => Engine.PV.pvpBannedKeys(),
+        me: () => myName(), toast: (m) => board.toast(m), showMenu: () => showMenu(),
+        newRunScreen: (o) => UI.newRunScreen({ ...menuOpts(), ...o }),
+        startMatchRun, resumeMatchRun,
+        act: (a) => onAction(a), idle: () => player.idle(),
+        view: () => (session && pvpRun() ? decorateView(session.view()) : null), // (undecorated: oppInfo reads it)
+        redraw: () => {
+          if (!pvpRun() || !board.view) return;
+          currentView = viewOf();
+          board.view.pvp_opp = currentView.pvp_opp;
+          board.renderHud();
+          if (board.view.state === 'BLIND_SELECT' && !UI.modalOpen()) board.renderOverlay();
+        },
+        endPublishing: (won) => finishPublishing(won, null),
+      });
+      board.onPvpReady = () => Pvp.pressReady();
+      window.__micatro.pvp = Pvp;
+    } catch (e) { console.warn('micatro: multiplayer unavailable', e); }
+  }
   UI.mainMenu(menuOpts());
   window.__micatro.ready = true;
+  if (Pvp) {
+    const code = (params.get('join') || '').trim().toUpperCase();
+    Pvp.resume(code ? { code } : {}).catch((e) => console.warn('micatro: multiplayer resume failed', e));
+  }
 }
 boot().catch((e) => { console.error('micatro boot failed', e); });

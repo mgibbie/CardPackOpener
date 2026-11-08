@@ -30,7 +30,8 @@ export const watchUrl = (user) => '/micatro/?spectate=' + encodeURIComponent(Str
 //   getSnapshot(): a JSON-able view of the run (what a spectator renders)
 //   getLabel():    a short progress string, e.g. "Ante 3 · Big Blind" (≤48 chars shown)
 // onWatchers(cb) calls cb(count, names) whenever the server's watcher list changes.
-export function startPublisher(getSnapshot, getLabel) {
+// opts.pvp: a Multiplayer match's lobby id (the presence says "Micatro PvP", Watch works the same)
+export function startPublisher(getSnapshot, getLabel, opts = {}) {
 	const cbs = new Set();
 	let watchers = 0, watcherNames = [];
 	const noop = { stop() {}, finish: async () => {}, onWatchers(cb) { cbs.add(cb); return () => cbs.delete(cb); }, get watchers() { return watchers; }, get watcherNames() { return watcherNames; } };
@@ -64,7 +65,7 @@ export function startPublisher(getSnapshot, getLabel) {
 		const now = Date.now();
 		if (!needSnap && !over && now - lastSentAt < KEEPALIVE_MS) return; // nothing new, keep-alive not due
 		if (needSnap && json !== seqJson) { seq++; seqJson = json; }
-		const body = { seq, label, over, won: !!won };
+		const body = { seq, label, over, won: !!won, ...(opts.pvp ? { pvp: opts.pvp } : {}) };
 		if (over && replay) body.replay = String(replay); // spectators of the finished run can watch its replay
 		if (needSnap) body.snapshot = snap;
 		lastSentAt = now;
@@ -336,4 +337,11 @@ export async function sendRefused(entries, { keepalive = false } = {}) {
 	if (!isLoggedIn() || !Array.isArray(entries) || !entries.length) return { error: 'skip' };
 	try { return (await MP.call('micatro-refused', { entries }, keepalive ? { keepalive: true } : {})) || { error: 'bad response' }; }
 	catch { return { error: 'offline' }; }
+}
+
+// ---------------------------------------------------------------- multiplayer (PvP)
+// The lobby + match referee (server/micatro_pvp.mjs): mtpvp-create / peek / join / leave / mine / update / sync / ready /
+// hand / blind / forfeit / rematch. Returns the server's JSON ({error} on a refusal); null when offline.
+export async function pvpCall(action, body = {}) {
+	try { return await MP.call(action, body); } catch (e) { return null; }
 }
