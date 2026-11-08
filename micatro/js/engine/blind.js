@@ -46,6 +46,7 @@ export class Blind {
    */
   suspend(on) {
     if (!!this.suspended === !!on) return;
+    if (on && G.GAME.pvp_blind) return; // (Multiplayer: a PvP round's blind is never switched off — engine/pvp.js)
     this.suspended = on ? true : undefined;
     if (!on && !this.disabled) {
       if (this.name === 'Crimson Heart' && G.jokers.cards[0]) this.prepped = true;
@@ -225,6 +226,8 @@ export class Blind {
 
   // ------------------------------------------------------------- disable
   disable() {
+    // (Multiplayer: Blind:disable is a no-op on a PvP round's blind — the mod's rule; a real boss there keeps its effect)
+    if (G.GAME.pvp_blind && this.name !== 'Verdant Leaf') return;
     this.disabled = true;
     this.suspended = undefined; // (for good now: a suspension ending later must not bring it back)
     for (const v of G.jokers.cards) {

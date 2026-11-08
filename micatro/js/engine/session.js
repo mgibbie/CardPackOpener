@@ -7,6 +7,7 @@
 import { G } from './core.js';
 import { newRun, act } from './run.js';
 import { toView } from './view.js';
+import { pvpRecipeConfig } from './pvp.js';
 import { stampRecipe, recordLegacyAssumption, pinDiff, repin, RULES, pinsAt, ENGINE_CONTENT_REV, startEngineRev } from '../mods/pins.js';
 
 // The recipe FORMAT version (a saved run with another `v` is not offered). Not the rules: those are pinned per
@@ -39,7 +40,7 @@ export class Session {
     // (`pvp`: a Multiplayer match's config — engine/pvp.js; its seed is the lobby's, which is never a "typed" one)
     newRun({ seed, back, stake, mods, modOptions, customDeck, challenge, sleeve, daily, engineRev, ...(pvp ? { pvp, seeded: false } : {}) });
     this.recipe = { v: ENGINE_VERSION, seed: G.GAME.pseudorandom.seed, back, stake, mods: G.GAME.mods.slice(), modOptions: G.GAME.mod_options, actions: [], started: Date.now() };
-    if (G.GAME.pvp) this.recipe.pvp = { v: G.GAME.pvp.v, lives: G.GAME.pvp.max, pvpStart: G.GAME.pvp.pvpStart, deathOnLoss: G.GAME.pvp.deathOnLoss, comeback: G.GAME.pvp.comeback };
+    if (G.GAME.pvp) this.recipe.pvp = pvpRecipeConfig(G.GAME.pvp);
     // (every recipe carries a seed — the random one too — so whether the PLAYER chose it is recorded: a resumed or
     //  replayed run must not turn into a seeded one, which earns no win stickers / Nuzlocke / Monotype)
     if (G.GAME.seeded) this.recipe.seeded = true;

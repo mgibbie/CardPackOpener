@@ -13,10 +13,26 @@
 // reports (scores are client-reported, as in the mod). Everything a client applies to its engine from here is a
 // RECORDED action (engine/pvp.js), so a resume / replay rebuilds exactly what was played.
 //
+// Stage 6 (host options, defaults per the mod — ANALYSIS.md §5 / §1.2 / Part B §1):
+//   * MODE: Attrition (the Boss from ante `pvpStart` is the Nemesis) | Showdown (from ante `showdownStart` Small, Big AND Boss
+//     are all Nemesis rounds) | Survival (no Nemesis, 1 life: the player who beat the furthest blind wins; one who fails on
+//     their last life waits for the opponent to reach that blind — decideSurvival). A round is keyed by its blind number
+//     b = ante*10 + 1|2|3 (Small|Big|Boss), so Showdown's three rounds an ante are three rounds.
+//   * the HURRY timer (`timer`, `timerBase` s, `timerInc` s): a player READY at a Nemesis may start it on an opponent who
+//     isn't; it runs on SERVER time (m.timer.endAt), never in a Nemesis round (a round's start clears it); at 0 the timed
+//     player loses a life (every expiry: unguarded, as in the mod) and it restarts at full length until they reach the
+//     Nemesis. Skipping further ahead (skips since the last Nemesis round, m.sk) is worth `timerInc` s per extra skip,
+//     taken back when the opponent catches up (never below 10 s left). The client applies each loss as a RECORDED action.
+//   * `hideScore`: the opponent's live score is "???" (null in this player's view) until they've played a hand this round.
+//   * `bossFx`: the PvP Boss is the ante's real boss, its effect on (the engine's; the referee just sees a PvP round).
+//
 // Rows (every write is an exact key; the shared lobby row is a compare-and-set on `rev`):
 //   mtpvp:<id>             {id, code, rev, at, ts, host, guest, gready, opts, mods, pv, m: null | match}
-//                          match = {n, seed, at, players:[host, guest], lives:{name}, lost:{name}, round, hist[],
-//                                   res:{name:{'ante:slot':'b'|'f'}}, guard:{name:{key:1}}, pending, over, rematch:{name}}
+//                          match = {n, seed, at, mode, players:[host, guest], lives:{name}, lost:{name}, round, hist[],
+//                                   res:{name:{'ante:slot':'b'|'f'}}, far:{name: furthest blind}, sk:{name: skips since the
+//                                   last round}, tl:{name: timer lives lost}, timer, guard:{name:{key:1}}, pending, over, rematch:{name}}
+//                          round = {ante, slot, b, ready:{name}, startAt, scores:{name:{s, h, n, hp}}, res}
+//                          timer = {on: the timed player, by, b, endAt (running) | 0, left (paused, ms), adj, n}
 //   mtpvpcode:<CODE>       {id}         a 5-letter join code (no I, O, 0, 1) -> the lobby
 //   mtpvpcur:<user>        {id, at}     the lobby a player is in (rejoin after a reload / on another tab)
 //   mtpvpp:<id>:<user>     {ts, seq, sum, end?}   one player's own row: liveness (ts), the summary the opponent's
@@ -26,7 +42,7 @@
 // when its host goes quiet (PP.LOBBY_IDLE_MS); a guest who goes quiet is dropped; in a match a player quiet for
 // PP.GRACE_MS (120 s, owner D7) forfeits — checked lazily by whoever polls (D1 has no clock).
 
-export const MTPVP_PROTOCOL = 1;
+export const MTPVP_PROTOCOL = 2;   // (2: stage 6 — rounds keyed by blind, modes, the Hurry timer, hidden scores)
 export const PP = {
 	BEAT_MS: 10_000,                 // a player row is rewritten at least this often while polling (liveness; <= GRACE_MS / 4, below)
 	MIN_WRITE_MS: 900,               // ...and at most this often (a summary that changes on every click)
@@ -38,8 +54,13 @@ export const PP = {
 	SUM_MAX: 6_000,                  // one player summary (JSON chars)
 	END_MAX: 40_000,                 // the end-of-match jokers + deck
 	MODS_MAX: 24_000,                // the host's mod set + options + pins
-	DEFAULTS: { lives: 4, pvpStart: 2, deathOnLoss: true, comeback: true, seed: '', back: 'b_red', stake: 1, sleeve: '' },
+	DEFAULTS: {
+		lives: 4, pvpStart: 2, deathOnLoss: true, comeback: true, seed: '', back: 'b_red', stake: 1, sleeve: '',
+		mode: 'attrition', showdownStart: 3, bossFx: false, hideScore: false, timer: true, timerBase: 150, timerInc: 60,
+	},
+	TIMER_FLOOR_MS: 10_000,          // a skip taken back never leaves less than this on the Hurry timer
 };
+export const MODES = ['attrition', 'showdown', 'survival'];
 // (a short grace period — a test's — keeps the heartbeat well inside it)
 PP.BEAT_MS = Math.min(PP.BEAT_MS, Math.floor(PP.GRACE_MS / 4));
 const CODE_ABC = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';   // no I, O, 0, 1
@@ -98,20 +119,110 @@ export function decidePending(opp) {
 	if (!opp.present) return { outcome: 'win', winner: 'dead' };
 	return { outcome: 'pending', winner: null };
 }
+/**
+ * Survival (the mod's legacy mode): `dead` failed a blind on their (only) life with `deadFar` = the furthest blind they had
+ * beaten; the opponent plays on. opp = {far, dead, present} -> {outcome: 'pending' | 'win' | 'draw', winner: 'opp' | 'dead' | null}.
+ * The opponent wins once they beat a blind past the dead player's furthest; if they fail first, the furthest blind decides
+ * (equal -> draw); an opponent who leaves before getting past it loses.
+ */
+export function decideSurvival(deadFar, opp) {
+	const of = opp.far || 0, df = deadFar || 0;
+	if (of > df) return { outcome: 'win', winner: 'opp' };
+	if (opp.dead) return of === df ? { outcome: 'draw', winner: null } : { outcome: 'win', winner: 'dead' };
+	if (!opp.present) return { outcome: 'win', winner: 'dead' };
+	return { outcome: 'pending', winner: null };
+}
+/** A blind's number: ante*10 + 1 | 2 | 3 (Small | Big | Boss) — the mod's "furthest blind", and a round's key. */
+export const blindNum = (ante, slot) => ante * 10 + (SLOTS.indexOf(slot) + 1);
+/** Is this blind a PvP round under the lobby's options? (engine/pvp.js pvpSlots is the same table) */
+export function isPvpSlot(o, ante, slot) {
+	const mode = (o && o.mode) || 'attrition';
+	if (mode === 'survival') return false;
+	if (mode === 'showdown') return ante >= (o.showdownStart || 3);
+	return slot === 'Boss' && ante >= ((o && o.pvpStart) || 2);
+}
+/** The lives a match starts with (Survival: 1). */
+export const startLives = (o) => (o.mode === 'survival' ? 1 : o.lives);
+
+// ---- the Hurry timer (pure: m = the match, o = the lobby's options, now = server ms)
+const otherOf = (m, who) => m.players.find((x) => x !== who);
+/** Extra skips the timed player is ahead by, since the last Nemesis round. */
+export const timerExtra = (m, who) => Math.max(0, ((m.sk && m.sk[who]) || 0) - ((m.sk && m.sk[otherOf(m, who)]) || 0));
+/** One full run of the timer for `extra` skips ahead (ms). */
+export const timerLen = (o, extra) => Math.max(PP.TIMER_FLOOR_MS, (o.timerBase + o.timerInc * (extra || 0)) * 1000);
+/** Start (or resume a paused) timer on `target`, by `by`, for round b. */
+export function timerStart(m, o, now, by, target, b) {
+	const t = m.timer;
+	if (t && t.on === target && t.b === b && t.endAt) return false;                          // (already running)
+	if (t && t.on === target && t.b === b && t.left > 0) { t.endAt = now + t.left; t.left = 0; t.by = by; return true; }
+	const adj = timerExtra(m, target);
+	m.timer = { on: target, by, b, endAt: now + timerLen(o, adj), left: 0, adj, n: 0 };
+	return true;
+}
+/** Pause a running timer (its time left is kept for a resume). */
+export function timerPause(m, now) {
+	const t = m.timer;
+	if (!t || !t.endAt) return false;
+	t.left = Math.max(1, t.endAt - now); t.endAt = 0;
+	return true;
+}
+/**
+ * The timer's expiries up to `now`: each costs the timed player a life (unguarded — every expiry, as in the mod) and
+ * restarts it at full length from the moment it ran out; out of lives -> the match is over. Returns the expiries applied.
+ */
+export function timerAdvance(m, o, now) {
+	const t = m.timer;
+	if (!t || !t.endAt || m.over) return 0;
+	let k = 0;
+	while (t.endAt <= now && k < 50) {
+		k++;
+		const T = t.on;
+		t.n = (t.n || 0) + 1;
+		m.lives[T] = Math.max(0, (m.lives[T] || 0) - 1);
+		m.lost[T] = (m.lost[T] || 0) + 1;
+		(m.tl = m.tl || {})[T] = (m.tl[T] || 0) + 1;
+		if (m.lives[T] <= 0) { m.timer = null; if (!m.over) m.over = { winner: otherOf(m, T), draw: false, why: 'timer', at: t.endAt }; break; }
+		t.adj = timerExtra(m, T);
+		t.endAt += timerLen(o, t.adj);
+	}
+	return k;
+}
+/** A skip by `who` (a new one): skips since the last Nemesis round; a running / paused timer gains or gives back its time. */
+export function timerSkip(m, o, now, who) {
+	(m.sk = m.sk || {})[who] = (m.sk[who] || 0) + 1;
+	const t = m.timer;
+	if (!t) return;
+	const adj = timerExtra(m, t.on), delta = (adj - (t.adj || 0)) * o.timerInc * 1000;
+	t.adj = adj;
+	if (!delta) return;
+	const floor = (v, f) => (delta < 0 ? Math.max(Math.min(v, f), v + delta) : v + delta);
+	if (t.endAt) t.endAt = floor(t.endAt, now + PP.TIMER_FLOOR_MS);
+	else t.left = floor(t.left, PP.TIMER_FLOOR_MS);
+}
+
 /** The lobby's options, validated against the defaults (host input). */
 export function cleanOpts(o) {
 	o = o && typeof o === 'object' && !Array.isArray(o) ? o : {};
 	const D = PP.DEFAULTS, int = (v, lo, hi, d) => (Number.isInteger(+v) && +v >= lo && +v <= hi ? +v : d);
+	const step = (v, lo, hi, st, d) => { const n = int(v, lo, hi, d); return n % st === 0 ? n : d; };
+	const bool = (v, d) => (v === undefined ? d : !!v);
 	const seed = typeof o.seed === 'string' ? o.seed.trim().toUpperCase() : '';
 	return {
 		lives: int(o.lives, 1, 9, D.lives),
 		pvpStart: int(o.pvpStart, 1, 8, D.pvpStart),
-		deathOnLoss: o.deathOnLoss === undefined ? D.deathOnLoss : !!o.deathOnLoss,
-		comeback: o.comeback === undefined ? D.comeback : !!o.comeback,
+		deathOnLoss: bool(o.deathOnLoss, D.deathOnLoss),
+		comeback: bool(o.comeback, D.comeback),
 		seed: /^[A-Z0-9]{1,8}$/.test(seed) ? seed : '',
 		back: typeof o.back === 'string' && KEY_RE.test(o.back) ? o.back : D.back,
 		stake: typeof o.stake === 'string' ? (KEY_RE.test(o.stake) ? o.stake : D.stake) : int(o.stake, 1, 8, D.stake),
 		sleeve: typeof o.sleeve === 'string' && KEY_RE.test(o.sleeve) ? o.sleeve : '',
+		mode: MODES.includes(o.mode) ? o.mode : D.mode,
+		showdownStart: int(o.showdownStart, 1, 20, D.showdownStart),
+		bossFx: bool(o.bossFx, D.bossFx),
+		hideScore: bool(o.hideScore, D.hideScore),
+		timer: bool(o.timer, D.timer),
+		timerBase: step(o.timerBase, 30, 240, 30, D.timerBase),
+		timerInc: step(o.timerInc, 0, 180, 30, D.timerInc),
 	};
 }
 /** The host's mod set: {ids, options, pins: {engineRev, modVersions}} -> a clean copy + its signature, or {error}. */
@@ -171,7 +282,18 @@ export async function handleMtpvp(ctx) {
 	const view = (lb, rows) => {
 		const ages = {};
 		for (const n of [lb.host, lb.guest]) if (n) ages[n] = rows && rows[n] ? Math.min(now - rows[n].ts, 86_400_000) : null;
-		return { id: lb.id, code: lb.code, v: lb.rev, host: lb.host, guest: lb.guest || null, gready: !!lb.gready, opts: lb.opts, mods: lb.mods, pv: lb.pv, m: lb.m || null, ages };
+		return { id: lb.id, code: lb.code, v: lb.rev, host: lb.host, guest: lb.guest || null, gready: !!lb.gready, opts: lb.opts, mods: lb.mods, pv: lb.pv, m: lb.m ? hideScores(lb) : null, ages };
+	};
+	// "Hide enemy score until you play": until this player has played a hand in the round, the opponent's score is not
+	// sent at all (null + hid) — the round's result and the history still show it once decided
+	const hideScores = (lb) => {
+		const m = lb.m, rd = m.round;
+		if (!lb.opts.hideScore || !rd || !rd.startAt || rd.res || !member(lb, username)) return m;
+		const mine = rd.scores && rd.scores[username];
+		if (mine && mine.hp > 0) return m;
+		const opp = other(lb, username), os = rd.scores && rd.scores[opp];
+		if (!os) return m;
+		return { ...m, round: { ...rd, scores: { ...rd.scores, [opp]: { ...os, s: null, hid: 1 } } } };
 	};
 	// compare-and-set on the lobby row: fn(lb, rows) edits lb in place; returns {error, status} to refuse, false for no write
 	const mutate = async (fn) => {
@@ -199,9 +321,9 @@ export async function handleMtpvp(ctx) {
 	const freshMatch = (lb, n) => {
 		const seed = lb.opts.seed || randFrom(SEED_ABC, 8, ctx.rnd);
 		const players = [lb.host, lb.guest];
-		const lives = {}, lost = {}, res = {}, guard = {};
-		for (const p of players) { lives[p] = lb.opts.lives; lost[p] = 0; res[p] = {}; guard[p] = {}; }
-		return { n, seed, at: now, players, lives, lost, round: null, hist: [], res, guard, pending: null, over: null, rematch: {} };
+		const lives = {}, lost = {}, res = {}, guard = {}, far = {}, sk = {}, tl = {};
+		for (const p of players) { lives[p] = startLives(lb.opts); lost[p] = 0; res[p] = {}; guard[p] = {}; far[p] = 0; sk[p] = 0; tl[p] = 0; }
+		return { n, seed, at: now, mode: lb.opts.mode, players, lives, lost, round: null, hist: [], res, far, sk, tl, timer: null, guard, pending: null, over: null, rematch: {} };
 	};
 	const end = (m, winner, why, draw = false) => { if (!m.over) m.over = { winner: winner || '', draw: !!draw, why, at: now }; };
 	// a life lost (at most once per key: a Nemesis round 'pvp:<ante>', a blind '<ante>:<slot>')
@@ -218,9 +340,21 @@ export async function handleMtpvp(ctx) {
 		if (!p || m.over) return;
 		const opp = m.players.find((x) => x !== p.dead);
 		const present = !(m.left && m.left[opp]) && ageOf(rows && rows[opp]) < PP.GRACE_MS;
-		const d = decidePending({ result: (m.res[opp] || {})[p.key], lives: m.lives[opp], present });
-		if (d.outcome === 'draw') end(m, '', 'pending', true);
-		else if (d.outcome === 'win') end(m, d.winner === 'opp' ? opp : p.dead, 'pending');
+		// (Survival: the furthest blind decides; else the opponent's result on the same blind)
+		const d = m.mode === 'survival' ? decideSurvival(p.far, { far: (m.far || {})[opp], dead: !(m.lives[opp] > 0), present })
+			: decidePending({ result: (m.res[opp] || {})[p.key], lives: m.lives[opp], present });
+		const why = m.mode === 'survival' ? 'furthest' : 'pending';
+		if (d.outcome === 'draw') end(m, '', why, true);
+		else if (d.outcome === 'win') end(m, d.winner === 'opp' ? opp : p.dead, why);
+	};
+	// what the clock decides, evaluated by whoever polls (D1 has no clock): the forfeit clock, a pending death's "opponent
+	// left", the Hurry timer's expiries. -> true when the match changed.
+	const housekeep = (lb, rows) => {
+		const m = lb.m;
+		if (!m || m.over) return false;
+		if (checkStale(m, rows)) return true;
+		if (m.pending) { settlePending(m, rows); if (m.over) return true; }
+		return timerAdvance(m, lb.opts, now) > 0;
 	};
 	// the forfeit clock: a player quiet past the grace period loses (not the dead player of a pending death: leaving
 	// then is not a forfeit — the opponent's result for the blind decides)
@@ -382,9 +516,9 @@ export async function handleMtpvp(ctx) {
 		}
 		// the forfeit clock and the pending death's "opponent left", evaluated by whoever polls
 		if (lb.m && !lb.m.over) {
-			const probe = JSON.parse(JSON.stringify(lb.m));
-			if (checkStale(probe, rows) || (probe.pending && (settlePending(probe, rows), probe.over))) {
-				const r = await mutate((l, rr) => { rr[username] = rows[username]; if (!l.m || l.m.over) return false; if (!checkStale(l.m, rr)) { settlePending(l.m, rr); if (!l.m.over) return false; } });
+			const probe = { ...lb, m: JSON.parse(JSON.stringify(lb.m)) };
+			if (housekeep(probe, rows)) {
+				const r = await mutate((l, rr) => { rr[username] = rows[username]; if (!housekeep(l, rr)) return false; });
 				if (!r.error) { lb = r.lb; rows = { ...r.rows, [username]: rows[username] }; }
 			}
 		}
@@ -405,24 +539,55 @@ export async function handleMtpvp(ctx) {
 		return null;
 	};
 
+	// the round's blind (a client before protocol 2 sends no slot: its rounds were always the Boss)
+	const slot = body.slot == null ? 'Boss' : String(body.slot);
+	const bnum = SLOTS.includes(slot) && ante >= 1 && ante <= 1e6 ? blindNum(ante, slot) : 0;
+
 	if (action === 'mtpvp-ready') {
-		if (!(ante >= 1 && ante <= 1e6)) return json({ error: 'bad ante' }, 400);
-		const r = await mutate((lb) => {
+		if (!bnum) return json({ error: 'bad blind' }, 400);
+		const r = await mutate((lb, rows) => {
 			const e = inMatch(lb); if (e) return e;
 			const m = lb.m;
-			if (m.over || m.pending) return false;
-			if (m.round && m.round.ante > ante) return { error: 'that round is over', status: 409 };
-			if (!m.round || m.round.ante < ante) {
+			const changed = housekeep(lb, rows);
+			if (m.over || m.pending) return changed ? undefined : false;
+			if (!isPvpSlot(lb.opts, ante, slot)) return { error: 'that blind is not a Nemesis round', status: 409 };
+			if (m.round && (m.round.b || blindNum(m.round.ante, 'Boss')) > bnum) return { error: 'that round is over', status: 409 };
+			if (!m.round || (m.round.b || blindNum(m.round.ante, 'Boss')) < bnum) {
 				if (m.round && !m.round.res && m.round.startAt) return { error: 'the last round is still being played', status: 409 };
-				m.round = { ante, ready: {}, startAt: 0, scores: {}, res: null };
+				m.round = { ante, slot, b: bnum, ready: {}, startAt: 0, scores: {}, res: null };
+				if (m.timer && m.timer.b !== bnum) m.timer = null;
 			}
 			const rd = m.round;
-			if (rd.startAt) return false;                      // (already counting down / playing)
+			if (rd.startAt) return changed ? undefined : false;  // (already counting down / playing)
 			rd.ready[username] = !!body.ready;
+			// un-READY pauses a Hurry timer this player started; READY by the timed player: they reached the Nemesis
+			if (!body.ready && m.timer && m.timer.by === username) timerPause(m, now);
 			if (m.players.every((p) => rd.ready[p])) {
 				rd.startAt = now + PP.COUNTDOWN_MS;
 				for (const p of m.players) rd.scores[p] = { s: '0', h: null };
+				// (the round starts: no timer in a Nemesis round; skips count again from here)
+				m.timer = null; m.sk = {};
 			}
+		});
+		if (r.error) return fail(r);
+		return json({ lobby: view(r.lb, r.rows), now });
+	}
+
+	// the Hurry timer: {on: true} starts (or resumes) it on the opponent — only from READY at a Nemesis the opponent hasn't
+	// readied for; {on: false} pauses it
+	if (action === 'mtpvp-timer') {
+		const r = await mutate((lb, rows) => {
+			const e = inMatch(lb); if (e) return e;
+			const m = lb.m;
+			const changed = housekeep(lb, rows);
+			if (m.over || m.pending) return changed ? undefined : false;
+			if (!lb.opts.timer || lb.opts.mode === 'survival') return { error: 'the timer is off in this lobby', status: 409 };
+			const opp = other(lb, username), rd = m.round;
+			if (body.on) {
+				if (!rd || rd.startAt || !rd.ready[username]) return { error: 'press READY at the Nemesis first', status: 409 };
+				if (rd.ready[opp]) return { error: 'your opponent is ready', status: 409 };
+				if (!timerStart(m, lb.opts, now, username, opp, rd.b || blindNum(rd.ante, 'Boss')) && !changed) return false;
+			} else if (!(m.timer && m.timer.by === username && timerPause(m, now)) && !changed) return false;
 		});
 		if (r.error) return fail(r);
 		return json({ lobby: view(r.lb, r.rows), now });
@@ -432,6 +597,8 @@ export async function handleMtpvp(ctx) {
 		const score = String(body.score == null ? '' : body.score);
 		const hands = Math.floor(+body.hands);
 		const n = Math.floor(+body.n);   // (the report's number within the round: a retried older one arriving late is dropped)
+		const hp = Math.max(0, Math.min(1000, Math.floor(+body.hp) || 0));   // (hands played this round: "hide score until you play")
+		if (!bnum) return json({ error: 'bad blind' }, 400);
 		if (!scoreKey(score)) return json({ error: 'bad score' }, 400);
 		if (!(n >= 0 && n <= 1e6)) return json({ error: 'bad report number' }, 400);
 		if (!(hands >= 0 && hands <= 1000)) return json({ error: 'bad hands' }, 400);
@@ -439,19 +606,19 @@ export async function handleMtpvp(ctx) {
 			const e = inMatch(lb); if (e) return e;
 			const m = lb.m, rd = m.round;
 			if (m.over) return false;
-			if (!rd || rd.ante !== ante || !rd.startAt) return { error: 'no round to report to', status: 409 };
+			if (!rd || (rd.b || blindNum(rd.ante, 'Boss')) !== bnum || !rd.startAt) return { error: 'no round to report to', status: 409 };
 			if (rd.res) return false;                           // (decided: later hands change nothing)
 			const cur = rd.scores[username] || {};
 			if (cur.n != null && n <= cur.n) return false;
-			rd.scores[username] = { s: score, h: hands, n };
+			rd.scores[username] = { s: score, h: hands, n, hp: Math.max(hp, cur.hp || 0) };
 			const [a, b] = m.players;
 			const res = resolve2p(rd.scores[a], rd.scores[b]);
 			if (!res) return;
 			const loser = res.tie ? '' : (res.loser === 'a' ? a : b);
 			rd.res = { loser, at: now };
-			m.hist.push({ ante, s: { [a]: rd.scores[a].s, [b]: rd.scores[b].s }, loser });
+			m.hist.push({ ante, slot: rd.slot || 'Boss', s: { [a]: rd.scores[a].s, [b]: rd.scores[b].s }, loser });
 			if (m.hist.length > 40) m.hist.splice(0, m.hist.length - 40);
-			if (loser && loseLife(m, loser, 'pvp:' + ante) && m.lives[loser] <= 0) end(m, m.players.find((x) => x !== loser), 'lives');
+			if (loser && loseLife(m, loser, 'pvp:' + bnum) && m.lives[loser] <= 0) end(m, m.players.find((x) => x !== loser), 'lives');
 		});
 		if (r.error) return fail(r);
 		return json({ lobby: view(r.lb, r.rows), now });
@@ -465,13 +632,19 @@ export async function handleMtpvp(ctx) {
 		const r = await mutate((lb, rows) => {
 			const e = inMatch(lb); if (e) return e;
 			const m = lb.m;
-			if (m.over) return false;
+			const changed = housekeep(lb, rows);
+			if (m.over) return changed ? undefined : false;
 			m.res[username] = m.res[username] || {};
-			if (m.res[username][key] === 'f') return false;     // a failure is final
-			if (m.res[username][key] && result !== 'fail') return false;
+			if (m.res[username][key] === 'f') return changed ? undefined : false;     // a failure is final
+			if (m.res[username][key] && result !== 'fail') return changed ? undefined : false;
 			m.res[username][key] = result === 'fail' ? 'f' : 'b';
-			if (result === 'fail' && lb.opts.deathOnLoss && loseLife(m, username, key) && m.lives[username] <= 0 && !m.pending) {
-				m.pending = { dead: username, key, at: now };
+			// the furthest blind beaten (or skipped) — Survival's progress; a skip is worth Hurry time
+			if (result !== 'fail') (m.far = m.far || {})[username] = Math.max((m.far || {})[username] || 0, bnum);
+			if (result === 'skip') timerSkip(m, lb.opts, now, username);
+			const deathOnLoss = lb.opts.deathOnLoss || m.mode === 'survival';
+			if (result === 'fail' && deathOnLoss && loseLife(m, username, key) && m.lives[username] <= 0 && !m.pending) {
+				m.pending = { dead: username, key, at: now, far: (m.far || {})[username] || 0 };
+				if (m.timer) m.timer = null;
 			}
 			settlePending(m, rows);
 		});

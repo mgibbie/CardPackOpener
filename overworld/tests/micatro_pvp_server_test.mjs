@@ -58,6 +58,54 @@ const R = await import(pathToFileURL(path.join(ROOT, 'server/micatro_pvp.mjs')).
 	A(o.lives === 4 && o.pvpStart === 2 && o.deathOnLoss === false && o.comeback === true && o.seed === '' && o.stake === 1 && o.back === 'b_red', 'cleanOpts: out-of-range values fall back to the defaults', JSON.stringify(o));
 	A(cleanOpts({ lives: 2, pvpStart: 3, seed: 'pvp12', stake: 'stake_mod_x' }).seed === 'PVP12' && cleanOpts({ stake: 'stake_mod_x' }).stake === 'stake_mod_x', 'cleanOpts: a custom seed (upper-cased) and a mod stake key are kept');
 	A(pinSig({ engineRev: 3, modVersions: { b: '1', a: '2' } }) === 'e3|a=2,b=1', 'pinSig is canonical (sorted)');
+
+	// ---- stage 6: options, schedules, Survival, the Hurry timer
+	const d0 = cleanOpts({});
+	A(d0.mode === 'attrition' && d0.showdownStart === 3 && d0.bossFx === false && d0.hideScore === false && d0.timer === true && d0.timerBase === 150 && d0.timerInc === 60,
+		'cleanOpts: stage-6 defaults per the mod (Attrition, Showdown from 3, no boss effects, score shown, timer on 150 s, +60 s a skip)', JSON.stringify(d0));
+	const d1 = cleanOpts({ mode: 'survival', showdownStart: 20, bossFx: 1, hideScore: true, timer: false, timerBase: 240, timerInc: 0 });
+	A(d1.mode === 'survival' && d1.showdownStart === 20 && d1.bossFx === true && d1.hideScore && !d1.timer && d1.timerBase === 240 && d1.timerInc === 0, 'cleanOpts: the stage-6 ranges (ends included)', JSON.stringify(d1));
+	const d2 = cleanOpts({ mode: 'royale', showdownStart: 21, timerBase: 45, timerInc: 210 });
+	A(d2.mode === 'attrition' && d2.showdownStart === 3 && d2.timerBase === 150 && d2.timerInc === 60, 'cleanOpts: an unknown mode / off-step timer / out-of-range ante -> the defaults', JSON.stringify(d2));
+	const { isPvpSlot, blindNum, decideSurvival, timerLen, timerStart, timerPause, timerAdvance, timerSkip, startLives } = R;
+	A(blindNum(3, 'Small') === 31 && blindNum(3, 'Big') === 32 && blindNum(12, 'Boss') === 123, 'blindNum: ante*10 + 1|2|3');
+	const sch = (o) => [1, 2, 3, 4].map((a) => ['Small', 'Big', 'Boss'].map((s) => (isPvpSlot(o, a, s) ? 'N' : '.')).join('')).join(' ');
+	A(sch(cleanOpts({})) === '... ..N ..N ..N', 'schedule: Attrition — the Boss from ante 2', sch(cleanOpts({})));
+	A(sch(cleanOpts({ mode: 'showdown' })) === '... ... NNN NNN', 'schedule: Showdown — Small, Big AND Boss from ante 3', sch(cleanOpts({ mode: 'showdown' })));
+	A(sch(cleanOpts({ mode: 'showdown', showdownStart: 1 })) === 'NNN NNN NNN NNN' && sch(cleanOpts({ mode: 'survival' })) === '... ... ... ...', 'schedule: Showdown from ante 1; Survival never');
+	A(startLives(cleanOpts({ mode: 'survival', lives: 6 })) === 1 && startLives(cleanOpts({ lives: 6 })) === 6, 'Survival plays on 1 life');
+	const SV = [
+		[11, { far: 12, dead: false, present: true }, 'win', 'opp', 'the opponent beats a blind past the dead player\'s furthest -> wins'],
+		[11, { far: 11, dead: false, present: true }, 'pending', null, 'not past it yet -> the dead player waits ("for enemy to reach this blind")'],
+		[11, { far: 3, dead: true, present: true }, 'win', 'dead', 'the opponent fails short of it -> the dead player wins'],
+		[11, { far: 11, dead: true, present: true }, 'draw', null, 'the opponent fails at the same furthest blind -> draw'],
+		[11, { far: 5, dead: false, present: false }, 'win', 'dead', 'the opponent leaves before getting past it -> the dead player wins'],
+		[0, { far: 0, dead: true, present: true }, 'draw', null, 'both fail their very first blind -> draw'],
+	];
+	for (const [df, o, outc, w, why] of SV) { const d = decideSurvival(df, o); A(d.outcome === outc && d.winner === w, 'decideSurvival: ' + why, JSON.stringify(d)); }
+	// the timer's math
+	const O = cleanOpts({}), mk = () => ({ players: ['p', 'q'], lives: { p: 4, q: 4 }, lost: { p: 0, q: 0 }, sk: {}, tl: {}, timer: null, over: null });
+	A(timerLen(O, 0) === 150_000 && timerLen(O, 2) === 270_000 && timerLen(cleanOpts({ timerBase: 30, timerInc: 0 }), 0) === 30_000, 'timerLen: base + increment per extra skip');
+	let tm = mk();
+	timerStart(tm, O, 1000, 'p', 'q', 23);
+	A(tm.timer.on === 'q' && tm.timer.endAt === 151_000, 'timerStart: 150 s on the opponent', JSON.stringify(tm.timer));
+	A(timerAdvance(tm, O, 150_999) === 0 && tm.lives.q === 4, 'timerAdvance: nothing before it runs out');
+	A(timerAdvance(tm, O, 151_000) === 1 && tm.lives.q === 3 && tm.tl.q === 1 && tm.timer.endAt === 301_000, 'at 0: the timed player loses a life (once) and it restarts at full length', JSON.stringify(tm.timer));
+	A(timerAdvance(tm, O, 151_000) === 0 && tm.lives.q === 3, '... once per expiry (a second poll at the same time costs nothing)');
+	A(timerAdvance(tm, O, 451_000) === 2 && tm.lives.q === 1 && tm.tl.q === 3, 'a long silence: every expiry counts (unguarded, as in the mod)');
+	A(timerAdvance(tm, O, 601_000) === 1 && tm.lives.q === 0 && tm.over && tm.over.winner === 'p' && tm.over.why === 'timer' && !tm.timer, 'the last life to the timer ends the match', JSON.stringify(tm.over));
+	tm = mk();
+	tm.sk = { q: 2 };
+	timerStart(tm, O, 0, 'p', 'q', 23);
+	A(tm.timer.endAt === 270_000 && tm.timer.adj === 2, 'skipped 2 further ahead: +60 s a skip (270 s)');
+	timerSkip(tm, O, 10_000, 'q');
+	A(tm.timer.endAt === 330_000 && tm.timer.adj === 3, 'a skip while it runs: +60 s');
+	timerSkip(tm, O, 10_000, 'p'); timerSkip(tm, O, 10_000, 'p');
+	A(tm.timer.endAt === 210_000 && tm.timer.adj === 1, 'the opponent catching up takes the time back', tm.timer.endAt);
+	timerSkip(tm, O, 195_000, 'p');
+	A(tm.timer.endAt === 205_000 && tm.timer.adj === 0, 'taken back, it never leaves less than 10 s (floor)', tm.timer.endAt);
+	A(timerPause(tm, 200_000) && tm.timer.endAt === 0 && tm.timer.left === 5_000 && timerAdvance(tm, O, 900_000) === 0 && tm.lives.q === 4, 'paused: it keeps its time left and never runs out');
+	A(timerStart(tm, O, 900_000, 'p', 'q', 23) && tm.timer.endAt === 905_000, 'resumed: from the time it had left');
 }
 
 // ---------- the handler over sqlite ----------
@@ -85,6 +133,9 @@ buildSync({
 });
 const { default: handler } = await import(pathToFileURL(bundle).href);
 let clock = Date.now();
+// (the rate limits run on Date.now: the stage-6 tests move it with the fake clock, so a test's minutes are real minutes to them)
+let rlShift = 0;
+{ const realNow = Date.now.bind(Date); Date.now = () => realNow() + rlShift; }
 globalThis.__msurvClock = () => clock;
 let ipN = 0;
 const raw = async (action, body = {}, token) => {
@@ -333,12 +384,163 @@ try {
 		A((await as('alice').call('mtpvp-hand', { id: c.id, ante: 2, score: 'NaN', hands: 1, n: 1 })).status === 400, 'a malformed score is refused');
 	}
 
+	// ===== 7. stage 6: the Hurry timer, hidden scores, Showdown, Survival =====
+	const done = async (...ids) => { for (const id of ids) for (const n of ['alice', 'bob', 'carol', 'dave', 'erin', 'fred']) await as(n).call('mtpvp-leave', { id }); clock += 61_000; rlShift += 61_000; }; // (+ the create rate limit's minute)
+	const timerCall = (who, id, on) => as(who).call('mtpvp-timer', { id, on });
+	const readyS = (who, id, ante, slot, ready = true) => as(who).call('mtpvp-ready', { id, ante, slot, ready });
+	// time passes with both players polling (in steps inside the 120 s forfeit clock)
+	const pass = async (ms, id, ...who) => { while (ms > 0) { const st = Math.min(ms, 50_000); clock += st; rlShift += st; ms -= st; for (const w of who) await as(w).call('mtpvp-sync', { id }); } };
+	for (const n of ['alice', 'bob', 'carol', 'dave', 'erin', 'fred']) { const mine = await as(n).call('mtpvp-mine', {}); if (mine.body.lobby) await as(n).call('mtpvp-leave', { id: mine.body.lobby.id }); }
+	{
+		// the timer: only from READY at the Nemesis, on server time, a life per expiry, restarts, paused by a round
+		const lb = await newMatch('alice', 'bob');
+		const t0 = await timerCall('alice', lb.id, true);
+		A(t0.status === 409 && /READY/.test(t0.body.error), 'timer: not READY at the Nemesis -> refused', JSON.stringify(t0.body));
+		await blind('alice', lb.id, 2, 'Small', 'beat'); await blind('alice', lb.id, 2, 'Big', 'beat');
+		await readyS('alice', lb.id, 2, 'Boss');
+		const t1 = await timerCall('alice', lb.id, true);
+		A(t1.status === 200 && t1.body.lobby.m.timer.on === 'bob' && t1.body.lobby.m.timer.endAt === clock + 150_000, 'timer: READY at the Nemesis -> 150 s on the opponent (server time)', JSON.stringify(t1.body.lobby && t1.body.lobby.m.timer));
+		A((await timerCall('bob', lb.id, true)).status === 409, 'timer: the timed player (not READY) cannot time back');
+		await pass(149_000, lb.id, 'alice', 'bob');
+		A(lobbyOf(lb.id).m.lives.bob === 4, 'timer: 1 s left -> no life yet');
+		clock += 1_000;
+		const s1 = await as('bob').call('mtpvp-sync', { id: lb.id });
+		let mm = lobbyOf(lb.id).m;
+		A(mm.lives.bob === 3 && mm.tl.bob === 1 && mm.timer.endAt === clock + 150_000 && s1.body.lobby.m.tl.bob === 1, 'timer: at 0 -> a life, decided lazily by whoever polls, and it restarts at full length', JSON.stringify(mm.timer));
+		await as('alice').call('mtpvp-sync', { id: lb.id });
+		A(lobbyOf(lb.id).m.lives.bob === 3, 'timer: one life per expiry (both polling)');
+		// a skip by the timed player: +60 s; unREADY pauses it; READY again resumes it
+		await blind('bob', lb.id, 2, 'Small', 'skip');
+		A(lobbyOf(lb.id).m.timer.endAt === clock + 210_000, 'timer: the timed player skips further ahead -> +60 s', lobbyOf(lb.id).m.timer.endAt - clock);
+		await pass(10_000, lb.id, 'alice', 'bob');
+		await readyS('alice', lb.id, 2, 'Boss', false);
+		mm = lobbyOf(lb.id).m;
+		A(!mm.timer.endAt && mm.timer.left === 200_000, 'timer: un-READY pauses it (time left kept)', JSON.stringify(mm.timer));
+		const t2 = await timerCall('alice', lb.id, true);
+		A(t2.status === 409 && !lobbyOf(lb.id).m.timer.endAt, 'timer: no longer READY -> cannot start it', JSON.stringify(t2.body));
+		await pass(400_000, lb.id, 'alice', 'bob');
+		A(lobbyOf(lb.id).m.lives.bob === 3, 'timer: a paused timer never runs out');
+		await readyS('alice', lb.id, 2, 'Boss');
+		await timerCall('alice', lb.id, true);
+		A(lobbyOf(lb.id).m.timer.endAt === clock + 200_000, 'timer: READY + Hurry again resumes it');
+		// the timed player reaches the Nemesis: the round starts, the timer is gone, and it never runs in the round
+		await readyS('bob', lb.id, 2, 'Boss');
+		mm = lobbyOf(lb.id).m;
+		A(mm.round.startAt && !mm.timer && JSON.stringify(mm.sk) === '{}', 'timer: the timed player reaches the Nemesis -> the round starts, no timer (skips count afresh)');
+		A((await timerCall('alice', lb.id, true)).status === 409, 'timer: none in a Nemesis round');
+		await pass(1_000_000, lb.id, 'alice', 'bob');
+		A(lobbyOf(lb.id).m.lives.bob === 3 && !lobbyOf(lb.id).m.over, 'timer: nothing ticks during the Nemesis round', JSON.stringify(lobbyOf(lb.id).m.over));
+		await done(lb.id);
+	}
+	{
+		// the last life to the timer ends the match; a lobby with the timer off refuses it
+		const lb = await newMatch('carol', 'dave', { lives: 1, timerBase: 30 });
+		await readyS('carol', lb.id, 2, 'Boss');
+		await timerCall('carol', lb.id, true);
+		await pass(30_000, lb.id, 'carol', 'dave');
+		const mm = lobbyOf(lb.id).m;
+		A(mm.over && mm.over.winner === 'carol' && mm.over.why === 'timer' && mm.lives.dave === 0, 'timer: the timed player\'s last life -> the match is over (host option 30 s)', JSON.stringify(mm.over));
+		await done(lb.id);
+		const lb2 = await newMatch('carol', 'dave', { timer: false });
+		await readyS('carol', lb2.id, 2, 'Boss');
+		A((await timerCall('carol', lb2.id, true)).status === 409, 'timer: off in the lobby -> refused');
+		await done(lb2.id);
+	}
+	{
+		// "Hide enemy score until you play"
+		const lb = await newMatch('erin', 'fred', { hideScore: true });
+		await readyS('erin', lb.id, 2, 'Boss'); await readyS('fred', lb.id, 2, 'Boss');
+		await as('fred').call('mtpvp-hand', { id: lb.id, ante: 2, slot: 'Boss', score: '500', hands: 3, n: 1, hp: 1 });
+		let ve = (await as('erin').call('mtpvp-sync', { id: lb.id })).body.lobby.m.round.scores;
+		A(ve.fred.s === null && ve.fred.hid && ve.fred.h === 3, 'hide score: before playing a hand, the opponent\'s score is not sent (???)', JSON.stringify(ve));
+		A(lobbyOf(lb.id).m.round.scores.fred.s === '500', '... while the referee keeps it');
+		const vf = (await as('fred').call('mtpvp-sync', { id: lb.id })).body.lobby.m.round.scores;
+		A(vf.erin.s === '0', 'hide score: fred (played a hand) sees erin\'s score');
+		await as('erin').call('mtpvp-hand', { id: lb.id, ante: 2, slot: 'Boss', score: '200', hands: 3, n: 1, hp: 1 });
+		ve = (await as('erin').call('mtpvp-sync', { id: lb.id })).body.lobby.m.round.scores;
+		A(ve.fred.s === '500', 'hide score: after your first hand, the opponent\'s score shows', JSON.stringify(ve));
+		await done(lb.id);
+		const lb2 = await newMatch('erin', 'fred');
+		await readyS('erin', lb2.id, 2, 'Boss'); await readyS('fred', lb2.id, 2, 'Boss');
+		await as('fred').call('mtpvp-hand', { id: lb2.id, ante: 2, slot: 'Boss', score: '500', hands: 3, n: 1, hp: 1 });
+		A((await as('erin').call('mtpvp-sync', { id: lb2.id })).body.lobby.m.round.scores.fred.s === '500', 'hide score off (default): the score shows at once');
+		await done(lb2.id);
+	}
+	{
+		// Showdown: Small, Big and Boss are all Nemesis rounds from the starting ante; each is its own round
+		const lb = await newMatch('alice', 'bob', { mode: 'showdown', showdownStart: 3 });
+		A(lb.m.mode === 'showdown', 'showdown: the match carries its mode');
+		A((await readyS('alice', lb.id, 2, 'Boss')).status === 409, 'showdown: before the starting ante there is no Nemesis');
+		await readyS('alice', lb.id, 3, 'Small'); const r = await readyS('bob', lb.id, 3, 'Small');
+		A(r.body.lobby.m.round.b === 31 && r.body.lobby.m.round.slot === 'Small' && r.body.lobby.m.round.startAt, 'showdown: a Nemesis round on the SMALL blind (b 31)', JSON.stringify(r.body.lobby.m.round));
+		await hand('alice', lb.id, 3, 300, 0, 1);
+		A((await hand('bob', lb.id, 3, 100, 0, 1)).status === 409, 'showdown: a report for the Boss is not the Small round');
+		await as('bob').call('mtpvp-hand', { id: lb.id, ante: 3, slot: 'Small', score: '100', hands: 0, n: 1 });
+		await as('alice').call('mtpvp-hand', { id: lb.id, ante: 3, slot: 'Small', score: '300', hands: 0, n: 2 });
+		let mm = lobbyOf(lb.id).m;
+		A(mm.round.res && mm.round.res.loser === 'bob' && mm.lives.bob === 3, 'showdown: the Small round is decided', JSON.stringify(mm.round));
+		await readyS('alice', lb.id, 3, 'Big'); await readyS('bob', lb.id, 3, 'Big');
+		await as('bob').call('mtpvp-hand', { id: lb.id, ante: 3, slot: 'Big', score: '10', hands: 0, n: 1 });
+		await as('alice').call('mtpvp-hand', { id: lb.id, ante: 3, slot: 'Big', score: '30', hands: 0, n: 1 });
+		mm = lobbyOf(lb.id).m;
+		A(mm.round.b === 32 && mm.lives.bob === 2 && mm.hist.map((h) => h.slot).join() === 'Small,Big', 'showdown: the Big round of the same ante is a round of its own (its own life)', JSON.stringify(mm.hist));
+		A((await readyS('alice', lb.id, 3, 'Small')).status === 409, 'showdown: an earlier round of the ante is over');
+		await done(lb.id);
+		const at = await newMatch('alice', 'bob');
+		A((await readyS('alice', at.id, 3, 'Small')).status === 409, 'attrition: a Small blind is never a Nemesis round');
+		await done(at.id);
+	}
+	{
+		// Survival: 1 life, no Nemesis; the furthest blind decides
+		const sv = async (label, script, expect) => {
+			const lb = await newMatch('carol', 'dave', { mode: 'survival', lives: 4, deathOnLoss: false });
+			await script(lb.id);
+			const mm = lobbyOf(lb.id).m;
+			A(JSON.stringify(mm.over && { w: mm.over.winner, d: mm.over.draw, why: mm.over.why }) === JSON.stringify(expect), 'survival: ' + label, JSON.stringify({ over: mm.over, far: mm.far, lives: mm.lives, pending: mm.pending }));
+			await done(lb.id);
+			return mm;
+		};
+		const lb0 = await newMatch('carol', 'dave', { mode: 'survival', lives: 4 });
+		A(lb0.m.lives.carol === 1 && lb0.m.lives.dave === 1, 'survival: everyone starts on 1 life (whatever the lives option)');
+		A((await readyS('carol', lb0.id, 2, 'Boss')).status === 409 && (await timerCall('carol', lb0.id, true)).status === 409, 'survival: no Nemesis round, no timer');
+		await done(lb0.id);
+		const m1 = await sv('dave fails 1:Big (furthest 1:Small) -> pending; carol passes it -> carol wins', async (id) => {
+			await blind('dave', id, 1, 'Small', 'beat'); await blind('dave', id, 1, 'Big', 'fail');
+			let mm = lobbyOf(id).m;
+			A(mm.pending && mm.pending.dead === 'dave' && mm.pending.far === 11 && !mm.over && mm.lives.dave === 0, 'survival: a fail on the last life (deathOnLoss forced) -> waiting for the opponent', JSON.stringify(mm.pending));
+			await blind('carol', id, 1, 'Small', 'skip');
+			mm = lobbyOf(id).m;
+			A(!mm.over && mm.far.carol === 11, 'survival: reaching the same furthest blind (a skip counts) is not past it');
+			await blind('carol', id, 1, 'Big', 'beat');
+		}, { w: 'carol', d: false, why: 'furthest' });
+		void m1;
+		await sv('carol already further when dave dies -> carol wins at once', async (id) => {
+			for (const s of ['Small', 'Big', 'Boss']) await blind('carol', id, 1, s, 'beat');
+			await blind('dave', id, 1, 'Small', 'beat'); await blind('dave', id, 1, 'Big', 'fail');
+		}, { w: 'carol', d: false, why: 'furthest' });
+		await sv('the opponent fails short of it -> the dead player wins', async (id) => {
+			await blind('dave', id, 1, 'Small', 'beat'); await blind('dave', id, 1, 'Big', 'fail');
+			await blind('carol', id, 1, 'Small', 'fail');
+		}, { w: 'dave', d: false, why: 'furthest' });
+		await sv('both fail at the same furthest blind -> draw', async (id) => {
+			await blind('dave', id, 1, 'Small', 'beat'); await blind('dave', id, 1, 'Big', 'fail');
+			await blind('carol', id, 1, 'Small', 'beat'); await blind('carol', id, 1, 'Big', 'fail');
+		}, { w: '', d: true, why: 'furthest' });
+		await sv('the dead player going quiet is not a forfeit; the opponent leaving before passing -> the dead player wins', async (id) => {
+			await blind('dave', id, 1, 'Small', 'beat'); await blind('dave', id, 1, 'Big', 'fail');
+			clock += 130_000;
+			await as('carol').call('mtpvp-sync', { id });
+			A(!lobbyOf(id).m.over, 'survival: the dead player quiet past the grace period -> still waiting');
+			await as('carol').call('mtpvp-forfeit', { id });
+		}, { w: 'dave', d: false, why: 'forfeit' });
+	}
+
 	// registration
 	const src = fs.readFileSync(path.join(ROOT, 'server/mp.mjs'), 'utf8');
 	const gc = src.slice(src.indexOf('const GC_TABLE'), src.indexOf('];', src.indexOf('const GC_TABLE')));
 	for (const p of ['mtpvp:', 'mtpvpcode:', 'mtpvpcur:', 'mtpvpp:']) A(gc.includes("['" + p + "'"), 'GC_TABLE sweeps ' + p);
 	const rl = src.slice(src.indexOf('const RATE_LIMITS'), src.indexOf('const HIT_LIMIT'));
-	for (const a of ['create', 'peek', 'join', 'leave', 'mine', 'update', 'sync', 'ready', 'hand', 'blind', 'forfeit', 'rematch']) A(new RegExp("'mtpvp-" + a + "': \\[\\d+, [\\d_]+\\]").test(rl), 'mtpvp-' + a + ' is rate-limited');
+	for (const a of ['create', 'peek', 'join', 'leave', 'mine', 'update', 'sync', 'ready', 'hand', 'blind', 'forfeit', 'rematch', 'timer']) A(new RegExp("'mtpvp-" + a + "': \\[\\d+, [\\d_]+\\]").test(rl), 'mtpvp-' + a + ' is rate-limited');
 } catch (e) {
 	fail++; console.log('FAIL: threw ' + (e && e.stack));
 }

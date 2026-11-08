@@ -1,13 +1,22 @@
 // Micatro Multiplayer (PvP) — the engine's rules for a 2-player match: the Balatro Multiplayer mod's "Vanilla" ruleset,
 // Attrition mode (re-implemented from its behaviour; see server/micatro_pvp.mjs for the referee).
 //
-//   newRun({..., pvp: {lives, pvpStart, deathOnLoss, comeback}})   -> a PvP run (session.js records `recipe.pvp`)
+//   newRun({..., pvp: {lives, pvpStart, deathOnLoss, comeback, mode, showdownStart, bossFx}})   -> a PvP run (session.js records
+//   `recipe.pvp`; the stage-6 keys only when they are not the default, so an Attrition recipe reads as before)
 //
 // An internal mod ('pvp', hidden, never in G.GAME.mods — like the 'challenge' one), active only in a PvP run, so a
 // solo run is untouched (no hook, no state, no RNG). What it does:
-//   * from ante `pvpStart` every Boss Blind is "Your Nemesis" (bl_mp_nemesis): no score target (its chips are 0), you
-//     play ALL your hands (HAND_PLAYED -> DRAW_TO_HAND, never "beaten"); out of hands -> the PVP_WAIT state until the
-//     referee's result. It pays $5, never the unused-hands money. Boss rerolls / disables never touch it.
+//   * the match's MODE (the lobby's, stage 6) decides which blinds are PvP rounds (pvpSlots):
+//       Attrition (default): from ante `pvpStart` every Boss Blind is "Your Nemesis" (bl_mp_nemesis);
+//       Showdown: from ante `showdownStart` (default 3) Small, Big AND Boss are all the Nemesis — a Nemesis in the Small /
+//         Big slot counts as that slot for progression (blind_slot hook: Defeated in its slot, no ante step, not a boss);
+//       Survival: no PvP blind at all, 1 life; the referee compares the furthest blind each player beat.
+//     A PvP round has no score target (the Nemesis' chips are 0), you play ALL your hands (HAND_PLAYED -> DRAW_TO_HAND,
+//     never "beaten"); out of hands -> the PVP_WAIT state until the referee's result. It pays its reward, never the
+//     unused-hands money, and can't be skipped. Boss rerolls / disables never touch it.
+//   * "Enable Boss Blind effects" (bossFx, the mod's normal_bosses): the PvP Boss is the ante's REAL boss, its effect on,
+//     flagged PvP ("Most chips wins") — the same boss for both players: the shared seed rolls it, and nothing that could
+//     re-roll it is allowed (boss rerolls are banned; Blind:disable / suspend are no-ops in a PvP round).
 //   * a failed normal blind never ends the run: it counts as passed (its reward is still paid, as in the mod), costs a
 //     life (deathOnLoss) and is logged for the referee (G.GAME.pvp.blinds); skipped and beaten blinds are logged too.
 //   * no win at ante 8 (win_ante 999): the run goes on until a player is out of lives.
@@ -21,6 +30,7 @@
 //   {type:'pvp_start_blind'}                     enter the Nemesis blind (after both pressed READY + the countdown)
 //   {type:'pvp_outcome', result, lives}          the round's result ('win' | 'lose' | 'tie') + this player's lives
 //   {type:'pvp_end', result}                     the match is over ('win' | 'lose' | 'draw')
+//   {type:'pvp_timer', n}                        the Hurry timer ran out on this player: a life (n = the run's nth such loss)
 import { G, emit } from './core.js';
 import { registerMod } from '../mods/registry.js';
 
@@ -56,29 +66,59 @@ export const PVP_MOD_BANS = {
 };
 /** Mod options a PvP run forces (whatever the host chose): Bunco's gameplay reworks turn Luchador / Boss Tag into boss tools. */
 export const PVP_FORCED_OPTIONS = { bunco: { gameplay_reworks: false } };
-/** Every banned key (for the lobby screen's list and the tests). */
-export const pvpBannedKeys = () => [...ATTRITION_BANS, ...Object.values(PVP_MOD_BANS).flat()];
+/**
+ * Survival's own bans. The mod bans its PvP-specific cards there (Survival has no opponent to hit) — Micatro has none yet, so
+ * this list is where they go when they arrive. It also keeps the ante-lowering vouchers out: Survival is decided on the
+ * furthest ante + blind each player reached, and an ante step back would replay blinds that already count (the mods' ante
+ * changers are in PVP_MOD_BANS for the same reason). Attrition's other bans don't apply (no Nemesis to protect).
+ */
+export const SURVIVAL_BANS = ['v_hieroglyph', 'v_petroglyph'];
+export const MODES = ['attrition', 'showdown', 'survival'];
+/** Every banned key of a mode (for the lobby screen's list and the tests). */
+export const pvpBannedKeys = (mode = 'attrition') => [...(mode === 'survival' ? SURVIVAL_BANS : ATTRITION_BANS), ...Object.values(PVP_MOD_BANS).flat()];
 
 /** A PvP config, validated (the lobby's options; anything else in it is dropped so the recipe stays canonical). */
 export function pvpConfig(c) {
   if (!c || typeof c !== 'object') return null;
   const int = (v, lo, hi, d) => (Number.isInteger(v) && v >= lo && v <= hi ? v : d);
-  return { v: PVP_RULES, lives: int(c.lives, 1, 9, 4), pvpStart: int(c.pvpStart, 1, 8, 2), deathOnLoss: c.deathOnLoss !== false, comeback: c.comeback !== false };
+  const mode = MODES.includes(c.mode) ? c.mode : 'attrition';
+  const out = {
+    v: PVP_RULES, lives: int(c.lives, 1, 9, 4), pvpStart: int(c.pvpStart, 1, 8, 2), deathOnLoss: c.deathOnLoss !== false, comeback: c.comeback !== false,
+    mode, showdownStart: int(c.showdownStart, 1, 20, 3), bossFx: c.bossFx === true,
+  };
+  // Survival: one life, and a failed blind is what ends it (no PvP round, so no boss option)
+  if (mode === 'survival') { out.lives = 1; out.deathOnLoss = true; out.bossFx = false; }
+  return out;
+}
+/** The config a recipe records (the stage-6 keys only when not the default: an Attrition recipe is as it was). */
+export function pvpRecipeConfig(P) {
+  const r = { v: P.v, lives: P.max, pvpStart: P.pvpStart, deathOnLoss: P.deathOnLoss, comeback: P.comeback };
+  if (P.mode && P.mode !== 'attrition') r.mode = P.mode;
+  if (P.showdownStart != null && P.showdownStart !== 3) r.showdownStart = P.showdownStart;
+  if (P.bossFx) r.bossFx = true;
+  return r;
+}
+/** Which blind slots of `ante` are PvP rounds under a config: {Small, Big, Boss} (server/micatro_pvp.mjs has the same table). */
+export function pvpSlots(cfg, ante) {
+  const mode = (cfg && cfg.mode) || 'attrition';
+  if (mode === 'survival') return { Small: false, Big: false, Boss: false };
+  if (mode === 'showdown') { const on = ante >= (cfg.showdownStart || 3); return { Small: on, Big: on, Boss: on }; }
+  return { Small: false, Big: false, Boss: ante >= ((cfg && cfg.pvpStart) || 2) };
 }
 
 /** Is this run a PvP run? */
 export const isPvp = () => !!(G.GAME && G.GAME.pvp);
 /** Is the blind being played the Nemesis? */
 export const inNemesis = () => !!(G.GAME && G.GAME.pvp && G.GAME.pvp_blind);
-/** The ante's Boss is the Nemesis (from pvpStart). */
-const nemesisAnte = (ante) => isPvp() && ante >= G.GAME.pvp.pvpStart;
+/** Is this slot of the current ante a PvP round? */
+export const pvpSlot = (slot) => isPvp() && !!slot && !!pvpSlots(G.GAME.pvp, G.GAME.round_resets.ante)[slot];
 
 /** newRun: the run's PvP state, its bans and win_ante (after init_game_object + the mods' hooks, before the boss roll). */
 export function setupPvp(cfg) {
-  const P = { ...cfg, lives: cfg.lives, max: cfg.lives, comeback_due: 0, blinds: [], rounds: [], result: null };
+  const P = { ...cfg, lives: cfg.lives, max: cfg.lives, comeback_due: 0, blinds: [], rounds: [], result: null, tlost: 0 };
   G.GAME.pvp = P;
   G.GAME.win_ante = 999;
-  for (const k of pvpBannedKeys()) G.GAME.banned_keys[k] = true;
+  for (const k of pvpBannedKeys(P.mode)) G.GAME.banned_keys[k] = true;
 }
 /** newRun: the mods a PvP run activates (+ the internal one) and its forced options. */
 export function pvpMods(ids, options) {
@@ -101,7 +141,8 @@ function loseLife(n = 1) {
  */
 export function pvpRoundLost(slot) {
   const P = G.GAME.pvp;
-  if (G.GAME.pvp_blind) return true;
+  // (a PvP round under its target — a real boss with Boss Blind effects on — still counts as played: its reward is paid)
+  if (G.GAME.pvp_blind) { G.GAME.pvp_failed = true; return true; }
   P.blinds.push({ ante: G.GAME.round_resets.ante, slot, r: 'fail' });
   G.GAME.pvp_failed = true;
   if (P.deathOnLoss) loseLife(1);
@@ -135,11 +176,13 @@ export function pvpActionError(a, S, STATES) {
   if (!isPvp()) return 'not a multiplayer run';
   const P = G.GAME.pvp;
   if (a.type === 'pvp_end') return ['win', 'lose', 'draw'].includes(a.result) ? null : 'bad result';
+  // (the Hurry timer's life: the referee's count, applied in order — whatever the run is doing)
+  if (a.type === 'pvp_timer') return a.n === (P.tlost || 0) + 1 ? null : 'not the next timer loss';
   if (P.lives <= 0) return 'out of lives';
   if (a.type === 'pvp_start_blind') {
     if (S !== STATES.BLIND_SELECT) return 'not choosing a blind';
     const on = G.GAME.blind_on_deck;
-    if (on !== 'Boss' || G.GAME.round_resets.blind_choices.Boss !== NEMESIS || G.GAME.round_resets.blind_states.Boss !== 'Select') return 'the Nemesis is not up';
+    if (!pvpSlot(on) || G.GAME.round_resets.blind_states[on] !== 'Select') return 'the Nemesis is not up';
     return null;
   }
   if (a.type === 'pvp_outcome') {
@@ -156,8 +199,14 @@ export function pvpApply(a, STATES, selectBlind) {
   const P = G.GAME.pvp;
   if (a.type === 'pvp_start_blind') {
     G.GAME.pvp_blind = true;
-    emit('pvp_start', { ante: G.GAME.round_resets.ante });
-    selectBlind('Boss');
+    emit('pvp_start', { ante: G.GAME.round_resets.ante, slot: G.GAME.blind_on_deck });
+    selectBlind(G.GAME.blind_on_deck);
+    return;
+  }
+  if (a.type === 'pvp_timer') {
+    P.tlost = (P.tlost || 0) + 1;
+    if (P.lives > 0) loseLife(1);
+    emit('pvp_timer', { n: P.tlost, lives: P.lives });
     return;
   }
   if (a.type === 'pvp_outcome') {
@@ -185,24 +234,41 @@ export function pvpView(v) {
   if (!P) return;
   v.pvp = {
     lives: P.lives, max: P.max, pvpStart: P.pvpStart, deathOnLoss: P.deathOnLoss, comeback: P.comeback,
+    mode: P.mode || 'attrition', showdownStart: P.showdownStart || 3, bossFx: !!P.bossFx, tlost: P.tlost || 0,
+    // (this ante's PvP slots — the blind select's READY columns — and the slot being played)
+    slots: pvpSlots(P, G.GAME.round_resets.ante), slot: G.GAME.pvp_blind ? G.GAME.blind_on_deck : null,
     nemesis: !!G.GAME.pvp_blind, blinds: P.blinds.slice(), rounds: P.rounds.slice(), result: P.result,
     hands_played: G.GAME.pvp_blind ? G.GAME.current_round.hands_played : 0,
   };
 }
 
 const HOOKS = {
-  // the ante's Boss is the Nemesis from pvpStart (rolled after the normal boss, so every RNG stream is as in solo)
+  // the ante's PvP slots become the Nemesis (rolled after the normal boss, so every RNG stream is as in solo); with Boss
+  // Blind effects on, a PvP Boss keeps the boss the shared seed rolled (pvpSlots says it is a PvP round)
   new_boss_choice() {
-    if (nemesisAnte(G.GAME.round_resets.ante)) G.GAME.round_resets.blind_choices.Boss = NEMESIS;
+    const rr = G.GAME.round_resets, sl = pvpSlots(G.GAME.pvp, rr.ante);
+    if (sl.Boss && !G.GAME.pvp.bossFx) rr.blind_choices.Boss = NEMESIS;
+    if (G.GAME.pvp.mode === 'showdown') { rr.blind_choices.Small = sl.Small ? NEMESIS : 'bl_small'; rr.blind_choices.Big = sl.Big ? NEMESIS : 'bl_big'; }
   },
   boss_eligible(ok, blind) { return blind && blind.key === NEMESIS ? false : undefined; },
-  // the Nemesis pays its reward, never the unused hands
+  // (Showdown) a Nemesis in the Small / Big slot IS that slot: Defeated there, no ante step, not a boss
+  blind_slot() { return G.GAME.pvp_blind && G.GAME.blind_on_deck !== 'Boss' ? G.GAME.blind_on_deck : undefined; },
+  new_round() {
+    const on = G.GAME.blind_on_deck;
+    if (!G.GAME.pvp_blind || on === 'Boss') return;
+    const rr = G.GAME.round_resets;
+    rr.blind_states.Boss = 'Upcoming'; rr.blind_states[on] = 'Current';
+    G.GAME.blind.boss = false; G.GAME.current_boss_streak = 0;
+    G.GAME.subhash = rr.ante + (on === 'Small' ? 'S' : 'B');
+  },
+  // a PvP round is never skipped (both players play it together)
+  can_skip_blind() { return pvpSlot(G.GAME.blind_on_deck) ? false : undefined; },
+  // a PvP round pays its reward, never the unused hands (end_round sets pvp_eval for this cash-out)
   evaluate_round_pre() {
-    const b = G.GAME.blind && G.GAME.blind.config && G.GAME.blind.config.blind;
-    if (!b || b.key !== NEMESIS) return undefined;
+    if (!G.GAME.pvp_eval) return undefined;
     const was = G.GAME.modifiers.no_extra_hand_money;
     G.GAME.modifiers.no_extra_hand_money = true;
-    return () => { G.GAME.modifiers.no_extra_hand_money = was; };
+    return () => { G.GAME.modifiers.no_extra_hand_money = was; G.GAME.pvp_eval = undefined; };
   },
   evaluate_round() { return evaluateRows(); },
   view(v) { pvpView(v); },

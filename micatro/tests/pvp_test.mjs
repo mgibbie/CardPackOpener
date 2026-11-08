@@ -5,6 +5,7 @@
 //   Pages never on the Nemesis, reroll_boss keeps it, recipe resume + replay re-simulate exactly, and a solo run is untouched.
 //   node micatro/tests/pvp_test.mjs
 import { G, P_BLINDS } from '../js/engine/core.js';
+import * as B from '../js/engine/bignum.js';
 import { newRun, act, STATE_NAMES } from '../js/engine/run.js';
 import { toView } from '../js/engine/view.js';
 import { Session, PVP_SAVE_KEY, viewChecksum, ReplayStepper } from '../js/engine/session.js';
@@ -164,6 +165,122 @@ ok(!(end.events || []).some((e) => e.type === 'win'), 'no solo "win" event (no s
   ok(pm.ids.includes('pvp') && pm.options.bunco.gameplay_reworks === false && pm.options.bunco.other === 1, "Bunco's gameplay reworks are forced off; the host's other options kept");
   ok(pvpBannedKeys().length > 60, 'the ban list covers Attrition + the mods (' + pvpBannedKeys().length + ' keys)');
 }
+
+// ======== stage 6: Showdown, Boss Blind effects, Survival, the Hurry timer's recorded life ========
+const at = (ante) => { // play (fail, quickly) every normal blind until the first PvP round of `ante` is on deck
+  for (let i = 0; i < 40 && !(G.GAME.round_resets.ante === ante && pvpSlotOnDeck()); i++) {
+    if (st() === 'BLIND_SELECT') {
+      if (pvpSlotOnDeck()) { ok(act({ type: 'pvp_start_blind' }).ok, 'start'); weak(); ok(act({ type: 'pvp_outcome', result: 'tie', lives: G.GAME.pvp.lives }).ok, 'tie'); shopToNext(); continue; }
+      ok(act({ type: 'select_blind' }).ok, 'select'); win(); shopToNext();
+    } else break;
+  }
+};
+const pvpSlotOnDeck = () => !!toView().pvp.slots[G.GAME.blind_on_deck];
+
+// ---- Showdown: Small, Big AND Boss are Nemesis rounds from the starting ante; Small / Big count as Small / Big
+{
+  newRun({ seed: 'PVPSHOW1', pvp: { ...CFG, mode: 'showdown', showdownStart: 2 } });
+  ok(G.GAME.pvp.mode === 'showdown' && G.GAME.round_resets.blind_choices.Small === 'bl_small' && G.GAME.round_resets.blind_choices.Boss !== NEMESIS, 'showdown: ante 1 is all normal blinds');
+  beat(); beat(); beat();
+  const rr = G.GAME.round_resets;
+  ok(rr.ante === 2 && rr.blind_choices.Small === NEMESIS && rr.blind_choices.Big === NEMESIS && rr.blind_choices.Boss === NEMESIS, 'showdown: from the starting ante Small, Big and Boss are all Your Nemesis', JSON.stringify(rr.blind_choices));
+  ok(JSON.stringify(toView().pvp.slots) === '{"Small":true,"Big":true,"Boss":true}', 'showdown: the view lists the PvP slots');
+  const sel = act({ type: 'select_blind' });
+  ok(!sel.ok && /READY/.test(sel.error), 'showdown: Select is refused on a Small-blind Nemesis (READY only)');
+  ok(!act({ type: 'skip_blind' }).ok && !toView().legal.can_skip_blind, 'showdown: a Nemesis round cannot be skipped');
+  ok(act({ type: 'pvp_start_blind' }).ok && G.GAME.blind.config.blind.key === NEMESIS && toView().pvp.slot === 'Small', 'showdown: pvp_start_blind enters the Small-blind Nemesis');
+  ok(rr.blind_states.Small === 'Current' && rr.blind_states.Boss === 'Upcoming' && G.GAME.blind.boss === false, 'showdown: it is the Small blind (not a boss) while played', JSON.stringify(rr.blind_states));
+  weak();
+  ok(act({ type: 'pvp_outcome', result: 'win', lives: 4 }).ok && st() === 'ROUND_EVAL', 'showdown: the referee ends the Small round');
+  ok(rr.ante === 2 && rr.blind_states.Small === 'Defeated' && rr.blind_states.Boss !== 'Defeated', 'showdown: a Small-slot Nemesis counts as the Small blind (no ante step)', JSON.stringify([rr.ante, rr.blind_states]));
+  ok(!G.GAME.round_eval.rows.some((r) => r.name === 'hands') && G.GAME.round_eval.rows.find((r) => r.name === 'blind1').dollars === 5, 'showdown: no unused-hands money; the Nemesis pays $5');
+  shopToNext();
+  ok(G.GAME.blind_on_deck === 'Big' && act({ type: 'pvp_start_blind' }).ok && toView().pvp.slot === 'Big', 'showdown: then the Big-blind Nemesis');
+  weak(); act({ type: 'pvp_outcome', result: 'lose', lives: 3 }); shopToNext();
+  ok(rr.ante === 2 && G.GAME.blind_on_deck === 'Boss' && act({ type: 'pvp_start_blind' }).ok, 'showdown: then the Boss Nemesis');
+  weak(); act({ type: 'pvp_outcome', result: 'tie', lives: 3 }); shopToNext();
+  ok(rr.ante === 3 && G.GAME.pvp.rounds.length === 3, 'showdown: three rounds an ante; the Boss one steps the ante', JSON.stringify(G.GAME.pvp.rounds));
+}
+
+// ---- Boss Blind effects (normal_bosses): the PvP round is played on a real boss, its effect on; both players get the same one
+{
+  const bossAt = (seed, skip) => {
+    newRun({ seed, pvp: { ...CFG, bossFx: true } });
+    const out = [];
+    for (let a = 1; a <= 3; a++) {
+      for (const s of ['Small', 'Big']) {
+        void s;
+        if (skip && G.GAME.blind_on_deck !== 'Boss') { act({ type: 'skip_blind' }); for (let k = 0; k < 3 && /PACK/.test(st()); k++) act({ type: 'skip_booster' }); } else beat();
+      }
+      out.push(G.GAME.round_resets.blind_choices.Boss);
+      if (pvpSlotOnDeck()) { act({ type: 'pvp_start_blind' }); weak(); act({ type: 'pvp_outcome', result: 'tie', lives: 4 }); shopToNext(); } else beat();
+    }
+    return out;
+  };
+  const a = bossAt('PVPBOSS1', false), b = bossAt('PVPBOSS1', true);
+  ok(JSON.stringify(a) === JSON.stringify(b) && a.every((k) => k && k !== NEMESIS && P_BLINDS[k]), 'boss effects: both players get the same real boss each ante (seeded), however they played', JSON.stringify([a, b]));
+  newRun({ seed: 'PVPBOSS2', pvp: { ...CFG, bossFx: true } });
+  G.FORCE_BOSS = 'bl_club'; // (the boss ante 2 rolls)
+  beat(); beat(); beat(); beat(); beat();
+  ok(G.GAME.round_resets.blind_choices.Boss === 'bl_club' && toView().pvp.slots.Boss, 'boss effects: ante 2\'s Boss is the real boss (The Club), flagged PvP', JSON.stringify([G.GAME.round_resets.ante, G.GAME.blind_on_deck, st(), G.GAME.round_resets.blind_choices]));
+  ok(!act({ type: 'select_blind' }).ok, 'boss effects: READY only (no Select)');
+  ok(act({ type: 'pvp_start_blind' }).ok && G.GAME.blind.config.blind.key === 'bl_club' && G.GAME.pvp_blind && +G.GAME.blind.chips > 0, 'boss effects: the round is played on The Club');
+  const clubs = G.playing_cards.filter((c) => c.base.suit === 'Clubs');
+  ok(clubs.length && clubs.every((c) => c.debuff), 'boss effects: its effect is active (every Club debuffed)');
+  G.GAME.blind.disable();
+  ok(!G.GAME.blind.disabled && clubs.every((c) => c.debuff), 'boss effects: a PvP boss cannot be disabled (Blind:disable is a no-op)');
+  for (let i = 0; i < 6 && st() === 'SELECTING_HAND'; i++) weak();
+  ok(B.beats(G.GAME.blind.chips, G.GAME.chips) && st() === 'PVP_WAIT' && act({ type: 'pvp_outcome', result: 'lose', lives: 3 }).ok, 'boss effects: under its target, out of hands -> waiting -> the referee');
+  const rows = G.GAME.round_eval.rows;
+  ok(rows.find((r) => r.name === 'blind1').dollars === P_BLINDS.bl_club.dollars && !rows.some((r) => r.name === 'hands'), 'boss effects: its reward is paid even under the target (a PvP round counts as played), no unused-hands money', JSON.stringify(rows));
+  shopToNext();
+  ok(G.GAME.round_resets.ante === 3, 'boss effects: the ante goes on');
+  beat(); beat();
+  ok(act({ type: 'pvp_start_blind' }).ok && G.GAME.blind.config.blind.key === 'bl_club', 'boss effects: ante 3, The Club again (forced)');
+  win();
+  ok(st() === 'SELECTING_HAND', 'boss effects: passing its target does not end a PvP round');
+  G.FORCE_BOSS = null;
+}
+
+// ---- Survival: no PvP blinds, 1 life; out of it, the run waits for the referee
+{
+  newRun({ seed: 'PVPSURV1', pvp: { ...CFG, lives: 4, deathOnLoss: false, mode: 'survival' } });
+  ok(G.GAME.pvp.lives === 1 && G.GAME.pvp.deathOnLoss === true, 'survival: 1 life, a failed blind costs it (whatever the options)');
+  ok(G.GAME.banned_keys.v_hieroglyph && !G.GAME.banned_keys.j_mr_bones && PVP_MOD_BANS.pokermon.every((k) => G.GAME.banned_keys[k]), 'survival: its bans (ante changers + the mods\' PvP bans), not Attrition\'s');
+  for (let i = 0; i < 6; i++) beat();
+  ok(G.GAME.round_resets.ante === 3 && G.GAME.round_resets.blind_choices.Boss !== NEMESIS && !Object.values(toView().pvp.slots).some(Boolean), 'survival: never a Nemesis');
+  ok(act({ type: 'select_blind' }).ok, 'survival: a normal blind');
+  for (let i = 0; i < 6 && st() === 'SELECTING_HAND'; i++) weak();
+  ok(G.GAME.pvp.lives === 0 && !G.GAME.over && JSON.stringify(G.GAME.pvp.blinds.at(-1)) === JSON.stringify({ ante: 3, slot: 'Small', r: 'fail' }), 'survival: a failed blind on the only life -> 0 lives, logged, not game over (the referee decides)');
+  ok(!act({ type: 'cash_out' }).ok && act({ type: 'pvp_end', result: 'win' }).ok && G.GAME.won, 'survival: it waits for the result (here: the opponent never got past it)');
+}
+
+// ---- the Hurry timer's life: a recorded action, in order, in any state; recipes (stage-6 keys) resume + replay exactly
+{
+  const s = new Session();
+  s.start({ seed: 'PVPTIME1', pvp: { ...CFG, mode: 'showdown', showdownStart: 4 }, engineRev: 1 });
+  ok(JSON.stringify(Object.keys(s.recipe.pvp)) === '["v","lives","pvpStart","deathOnLoss","comeback","mode","showdownStart"]', 'recipe: a non-default mode is recorded; default keys only otherwise', JSON.stringify(s.recipe.pvp));
+  const A = (a) => s.act(a);
+  ok(!A({ type: 'pvp_timer', n: 2 }).ok, 'timer: not the next loss -> refused');
+  ok(A({ type: 'pvp_timer', n: 1 }).ok && G.GAME.pvp.lives === 3 && G.GAME.pvp.tlost === 1 && st() === 'BLIND_SELECT', 'timer: -1 life while choosing a blind');
+  ok(!A({ type: 'pvp_timer', n: 1 }).ok, 'timer: a loss is applied once');
+  A({ type: 'select_blind' }); for (let i = 0; i < 9 && st() === 'SELECTING_HAND'; i++) weak(A);
+  ok(st() === 'ROUND_EVAL', 'the round over');
+  const rows = G.GAME.round_eval.rows;
+  ok((rows.find((r) => r.name === 'pvp_comeback') || {}).dollars === 4, 'timer: a life lost to it earns comeback money');
+  A({ type: 'cash_out' });
+  ok(A({ type: 'pvp_timer', n: 2 }).ok && st() === 'SHOP' && G.GAME.pvp.lives === 1 && toView().pvp.tlost === 2, 'timer: and in the shop (the failed blind took one too)');
+  A({ type: 'next_round' });
+  const cs = viewChecksum(toView());
+  const r = Session.fromRecipe(JSON.parse(JSON.stringify(s.recipe)));
+  ok(!r.stoppedAt && viewChecksum(toView()) === cs && G.GAME.pvp.tlost === 2 && G.GAME.pvp.mode === 'showdown', 'timer: resume rebuilds the run exactly (recorded losses + mode)');
+  const sc = new ReplayStepper(JSON.parse(JSON.stringify(s.recipe))).scan();
+  ok(!sc.end.error && sc.end.checksum === cs, 'timer: the replay re-simulates it exactly');
+  const s2 = new Session();
+  s2.start({ seed: 'PVPTIME2', pvp: CFG, engineRev: 1 });
+  ok(JSON.stringify(s2.recipe.pvp) === JSON.stringify({ v: 1, lives: 4, pvpStart: 2, deathOnLoss: true, comeback: true }), 'recipe: an Attrition match records exactly what it did before stage 6', JSON.stringify(s2.recipe.pvp));
+}
+void at;
 
 console.log(`${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

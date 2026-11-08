@@ -51,6 +51,7 @@ function stickerKeys(view, into = new Set()) {
 let Progress = null;    // ui/progress.js (the Nuzlocke / Monotype record + achievements), once loaded
 let RunSync = null;     // ui/runsync.js (the run in progress, saved on the account so it follows the player between devices)
 let Pvp = null;         // ui/pvp.js (Multiplayer: the lobby + the match loop), signed in only
+let pvpOverlaySig = ''; // (what the blind select's PvP column last showed: Pvp's redraw skips an unchanged one)
 /** Is the session a Multiplayer match's run? (its own save slot; no run sync, restart, stickers or board) */
 const pvpRun = () => !!(session && session.recipe && session.recipe.pvp);
 
@@ -910,22 +911,27 @@ async function boot() {
         net, UI, Engine, ensureMods, board, stage,
         withRequirements: (ids) => (Mods && Mods.withRequirements ? Mods.withRequirements(ids) : ids),
         currentPins: (ids) => Engine.pins.currentPins(ids), engineRev: Engine.pins.ENGINE_CONTENT_REV,
-        bannedKeys: () => Engine.PV.pvpBannedKeys(),
+        bannedKeys: (mode) => Engine.PV.pvpBannedKeys(mode),
         me: () => myName(), toast: (m) => board.toast(m), showMenu: () => showMenu(),
         newRunScreen: (o) => UI.newRunScreen({ ...menuOpts(), ...o }),
         startMatchRun, resumeMatchRun,
         act: (a) => onAction(a), idle: () => player.idle(),
         view: () => (session && pvpRun() ? decorateView(session.view()) : null), // (undecorated: oppInfo reads it)
-        redraw: () => {
+        redraw: (o) => {
           if (!pvpRun() || !board.view) return;
           currentView = viewOf();
           board.view.pvp_opp = currentView.pvp_opp;
           board.renderHud();
-          if (board.view.state === 'BLIND_SELECT' && !UI.modalOpen()) board.renderOverlay();
+          // the blind select only when what its PvP column shows changed: a redraw replays its columns' entry animation (the
+          // 1 s poll while READY and the Hurry clock's 4-a-second tick ({hud: true}) would otherwise keep them rising forever)
+          const po = currentView.pvp_opp || {};
+          const sig = [board.view.state, board.view.blind_on_deck, po.countdown, po.meReady, po.ready, po.name].join('|');
+          if (!(o && o.hud) && board.view.state === 'BLIND_SELECT' && !UI.modalOpen() && sig !== pvpOverlaySig) { pvpOverlaySig = sig; board.renderOverlay(); }
         },
         endPublishing: (won) => finishPublishing(won, null),
       });
       board.onPvpReady = () => Pvp.pressReady();
+      board.onPvpHurry = () => Pvp.pressHurry();
       window.__micatro.pvp = Pvp;
     } catch (e) { console.warn('micatro: multiplayer unavailable', e); }
   }
