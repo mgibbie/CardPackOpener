@@ -18,6 +18,11 @@
 // below are frozen; a v2 Page carries `v: 2` and only it reaches the v2 code), so Pages-v1 saves and replays re-simulate
 // exactly (fuzz_pages_v1_test.mjs pins them).
 //
+// Pages v2 "fair safe" (engine rules rev 4, PAGES_FAIR_REV; owner, 2026-11-08): every Pages screen offers at least one Page with
+// NO prize in the FAIR tier (difficulty 50 .. 79). The 3 Pages are rolled exactly as on rev 3; when none qualifies, ONE slot is
+// adjusted from its own seeded stream ('pages_fair' + ante + blind) — see ensureFairSafe. A rev-3 run never reaches that code
+// (G.GAME.pages_fair is only set from rev 4), so Pages-v2 saves and replays re-simulate exactly (fuzz_pages_v2_test.mjs pins them).
+//
 // Randomness: everything a Page rolls has its own seed keys ('pages' + ante + blind for the offer, 'page_tarot' for the
 // 1 in 4 Tarot, 'pag' as the created cards' key_append), so a Pages run's other streams (shop, packs, bosses) are the
 // same as they would be without them, and a seed always offers the same Pages.
@@ -36,6 +41,8 @@ import { playing_card_joker_effects } from './consumables.js';
 export const PAGES_REV = 2;
 /** The engine rules rev Pages v2 arrive with: a run recorded on PAGES_REV keeps the v1 tables. */
 export const PAGES_V2_REV = 3;
+/** The engine rules rev the "at least one no-prize Fair Page per screen" guarantee arrives with (rev-3 runs keep their offers). */
+export const PAGES_FAIR_REV = 4;
 
 // ------------------------------------------------------------------ the parts of a Page
 const oddId = (id) => (id >= 0 && id <= 10 && id % 2 === 1) || id === 14; // (Odd Todd: the Ace is odd)
@@ -96,6 +103,8 @@ export function decidePages(engineRev, challenge) {
   G.GAME.pages_on = Number.isInteger(engineRev) && engineRev >= PAGES_REV && !challenge && opt('jokertoggle', 'pages') !== false;
   // (v2 tables from rev 3; only set then, so a rev-2 run's game object is exactly what it was)
   if (G.GAME.pages_on && engineRev >= PAGES_V2_REV) G.GAME.pages_v2 = true;
+  // (the no-prize Fair guarantee from rev 4; only set then, so a rev-3 run's game object is exactly what it was)
+  if (G.GAME.pages_on && engineRev >= PAGES_FAIR_REV) G.GAME.pages_fair = true;
   return G.GAME.pages_on;
 }
 
@@ -365,10 +374,7 @@ function generatePagesV2(which) {
     const target = pick(r, TARGET_KEYS_V2), effect = pick(r, EFFECT_KEYS_V2);
     if (!comboOk(target, effect) || seen.has(target + '|' + effect)) continue;
     const page = { v: 2, target, effect };
-    if (target === 'rank') { page.rank = rollRank(r); if (page.rank == null) continue; }
-    if (target === 'single') page.rank = 2 + Math.floor(r() * 13);
-    if (target === 'nature') { const all = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]; page.ranks = []; for (let k = 0; k < 3; k++) page.ranks.push(all.splice(Math.floor(r() * all.length), 1)[0]); page.ranks.sort((a, b) => a - b); }
-    if (effect === 'become') { if (!enhs.length) continue; page.enh = pick(r, enhs); }
+    if (!rollExtras(r, page, enhs)) continue;
     seen.add(target + '|' + effect);
     // the Round rule: exactly a RULE_CHANCE roll per Page
     const hasRule = r() < RULE_CHANCE;
@@ -391,8 +397,88 @@ function generatePagesV2(which) {
     page.tier = tierOfV2(page.difficulty).tier;
     out.push(page);
   }
+  if (G.GAME.pages_fair) ensureFairSafe(out, which, enhs);
   return out;
 }
+/** A Page's target / effect extras (the round's rank, one rank, a Nature's 3 ranks, what "become" names), drawn in this order. -> false: re-roll */
+function rollExtras(r, page, enhs) {
+  const { target, effect } = page;
+  if (target === 'rank') { page.rank = rollRank(r); if (page.rank == null) return false; }
+  if (target === 'single') page.rank = 2 + Math.floor(r() * 13);
+  if (target === 'nature') { const all = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]; page.ranks = []; for (let k = 0; k < 3; k++) page.ranks.push(all.splice(Math.floor(r() * all.length), 1)[0]); page.ranks.sort((a, b) => a - b); }
+  if (effect === 'become') { if (!enhs.length) return false; page.enh = pick(r, enhs); }
+  return true;
+}
+// ---- "fair safe" (rev 4): at least one no-prize Fair Page on every Pages screen
+/** The Fair tier's difficulty range (TIER_LABEL_MAX: Easy <= 49, Fair <= 79). */
+export const FAIR_MIN = TIER_LABEL_MAX[0] + 1, FAIR_MAX = TIER_LABEL_MAX[1];
+/** Is this v2 Page the screen's "safe" Page: no prize, in the Fair tier? */
+export const isFairSafe = (p) => !!p && (!p.prize || p.prize.kind === 'none') && p.tier === 2 && p.difficulty >= FAIR_MIN && p.difficulty <= FAIR_MAX;
+/**
+ * The (roll, rule) pairs that put a no-prize Page with this target + effect in the Fair tier, under the offer's own rules: a v1 / v2
+ * modifier (never +40% / +50%: those are Legendary rolls), -15% / -20% only with a downside or a harder Round rule, an allowed rule.
+ */
+export function fairOptions(target, effect) {
+  const out = [], down = effectWeight(effect) > 0;
+  for (const rule of [null, ...RULE_KEYS]) {
+    if (rule && !comboOk(target, effect, rule)) continue;
+    const harder = rule && ROUND_RULES[rule].d > 0;
+    for (const pct of [...LOW_PCTS, ...PAGE_PCTS]) {
+      if (LOW_PCTS.includes(pct) && !(down || harder)) continue;
+      const d = difficultyOfV2(effect, pct, rule);
+      if (d >= FAIR_MIN && d <= FAIR_MAX) out.push({ pct, rule });
+    }
+  }
+  return out;
+}
+/** Make `page` a no-prize Page on this (roll, rule): value 0, total = the roll, its difficulty / tier label. */
+function setFairSafe(page, o) {
+  delete page.rule;
+  if (o.rule) page.rule = o.rule;
+  page.prize = { kind: 'none' };
+  page.roll = o.pct; page.value = 0; page.pct = o.pct;
+  page.difficulty = difficultyOfV2(page.effect, page.pct, page.rule);
+  page.tier = tierOfV2(page.difficulty).tier;
+}
+/**
+ * Rev 4: if none of the 3 Pages is a no-prize Fair Page, ONE slot becomes one, from its own seeded stream ('pages_fair' + ante + blind;
+ * the offer's stream is untouched, so the other two Pages are exactly what rev 3 rolled). First a RULE_CHANCE roll says whether the
+ * safe Page has a Round rule (as the offer's own roll would), honoured whenever some candidate allows it, so Round rules stay as
+ * close to 30% as the Fair band permits. Then:
+ *   1. a Page that already has no prize keeps its target + effect (+ rank / enhancement) and re-rolls only its roll + Round rule into
+ *      the Fair tier — the first such Page, in a seeded order, whose target + effect can (with or without a rule, as rolled);
+ *   2. otherwise a seeded slot (a no-prize one first, so the screen's prize count is unchanged whenever it has one) is re-rolled
+ *      whole: a fresh target + effect (allowed, not the pair of either other Page), no prize, a Fair roll + rule.
+ * The roll + rule are drawn uniformly from fairOptions (the offer's rules: no +40% / +50%, -15% / -20% only with a downside or a
+ * harder rule, an allowed rule).
+ */
+function ensureFairSafe(out, which, enhs) {
+  if (out.length === 0 || out.some(isFairSafe)) return;
+  const r = seeded(pseudoseed('pages_fair' + G.GAME.round_resets.ante + which));
+  const wantRule = r() < RULE_CHANCE;
+  const order = out.map((_, i) => i);
+  for (let i = order.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [order[i], order[j]] = [order[j], order[i]]; }
+  const matching = (opts) => opts.filter((o) => !!o.rule === wantRule);
+  // 1. adjust a no-prize Page in place, when its target + effect can honour the rule roll
+  const inPlace = order.filter((i) => out[i].prize.kind === 'none').map((i) => [i, matching(fairOptions(out[i].target, out[i].effect))]).find(([, o]) => o.length);
+  if (inPlace) { setFairSafe(out[inPlace[0]], pick(r, inPlace[1])); return; }
+  // 2. re-roll one slot whole
+  const slot = order.find((i) => out[i].prize.kind === 'none') ?? order[0];
+  const taken = new Set(out.filter((_, i) => i !== slot).map((p) => p.target + '|' + p.effect));
+  for (let guard = 0; guard < 400; guard++) {
+    const target = pick(r, TARGET_KEYS_V2), effect = pick(r, EFFECT_KEYS_V2);
+    if (!comboOk(target, effect) || taken.has(target + '|' + effect)) continue;
+    let opts = fairOptions(target, effect);
+    if (guard < 200) opts = matching(opts); // (the first tries honour the rule roll)
+    if (!opts.length) continue;
+    const page = { v: 2, target, effect };
+    if (!rollExtras(r, page, enhs)) continue;
+    setFairSafe(page, pick(r, opts));
+    out[slot] = page;
+    return;
+  }
+}
+
 function rollPrizeV2(r, tier) {
   const options = tier.prizes.filter((p) => (p.kind !== 'card' || (setAvailable(p.set) && (p.key ? eligible(P_CENTERS[p.key], p.set) : prizePoolV2(p.set).length))) && (p.kind !== 'poke' || pokeOn()) &&
     (p.kind !== 'tag' || PRIZE_TAGS.some(tagOk)) && (p.kind !== 'named_joker' || namedJokerPool(p).length));
