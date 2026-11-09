@@ -403,6 +403,14 @@
 	},
 	"entries": [
 		{
+			"sha": "b0a1205",
+			"date": "2026-11-09",
+			"kind": "micatro",
+			"title": "Micatro Multiplayer: the All Multiplayer Cards ruleset",
+			"body": "Micatro Multiplayer has a fourth ruleset: All Multiplayer Cards. It is Expanded with every Multiplayer card in play, including the three Expanded bans: SPEEDRUN (if you and your Nemesis both reach the Nemesis Blind within 30 seconds, each SPEEDRUN makes a Spectral card), Conjoined Joker (in a Nemesis round, X0.5 Mult for each hand your Nemesis has left, up to X3) and Defensive Joker (+125 Chips for each life you have fewer than your Nemesis). The Balanced and Expanded reworks are in too, Justice stays banned, and The Order and the PvP timer are on by default. Pick it in the lobby's Ruleset row. The Violet, Indigo and Orange Multiplayer decks also have new, fully original card backs.",
+			"cards": []
+		},
+		{
 			"sha": "1d262d6",
 			"date": "2026-11-09",
 			"kind": "micatro",
