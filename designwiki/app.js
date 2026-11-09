@@ -1962,13 +1962,29 @@ function mcArt(it, cls, scale = 1) {
 const mcPills = it => (it.pills || []).map(p => h('span', { class: 'mc-pill' + (p.cls ? ' mc-' + p.cls : '') + (p.off ? ' mc-off' : '') }, p.text));
 /** A mod badge on an item listed outside its mod's page (links to the mod page). */
 const mcModTag = m => m ? h('a', { class: 'mc-modtag', href: '#/micatro-mods/mod/' + m.id, 'data-mod': m.id, title: m.name + ' — the mod’s page', style: m.badge ? '--mod:' + m.badge : null }, m.name) : null;
+/** A joker's forms (tools/micatro/designwiki_forms.mjs: Deoxys's formes, Castform's weather, Vivillon's patterns...): each one's
+ *  art, name and text; the run's-state ones say so; cosmetic ones (same text) in one row of sprites. */
+function mcForms(it) {
+  const F = it.forms;
+  if (!F || F.length < 2) return null;
+  const real = F.filter(f => !f.cosmetic), cos = F.filter(f => f.cosmetic);
+  const spr = f => { const L = ((f.art && f.art.length) ? f.art : (it.art || [])).filter(l => l && MC_ATLAS[l[0]]); return L.length ? mcSprite(L, 'mc-form-spr', 0.4, f.name) : null; };
+  return h('details', { class: 'mc-forms', open: F.length <= 6 ? '' : null },
+    h('summary', null, 'Forms (' + F.length + ')' + (cos.length ? ' · ' + cos.length + ' cosmetic' : '')),
+    real.map(f => h('div', { class: 'mc-form', 'data-form': f.name }, spr(f),
+      h('div', null, h('b', null, f.name), f.base ? h('span', { class: 'muted' }, ' (the card above)') : null,
+        f.lines && f.lines.length && !f.covered ? h('div', { html: f.lines.map(l => mcMarkup(l)).join('<br>') }) : null,
+        f.covered ? h('div', { class: 'mc-form-st' }, 'Same text: the card’s own text describes this form' + (f.state ? ' (reached by the run’s state)' : '')) : null,
+        f.state && !f.covered ? h('div', { class: 'mc-form-st' }, f.lines ? 'Reached by the run’s state' : 'Reached by the run’s state — the card text above covers it') : null))),
+    cos.length ? h('div', { class: 'mc-form-cos' }, h('b', null, 'Cosmetic (same text, own art): '), cos.map(f => h('span', { class: 'mc-form-c', 'data-form': f.name, title: f.name }, spr(f), h('span', null, f.name)))) : null);
+}
 function mcModTile(it, mod) {
   return h('div', { class: 'mc-tile' + (it.edition ? ' mc-edtile' : ''), 'data-key': it.key, id: 'mc-' + it.key, 'data-mod': mod ? mod.id : null },
     h('div', { class: 'mc-art' }, mcArt(it)),
     h('div', { class: 'mc-nm' }, it.name),
     mod ? h('div', { class: 'mc-badges' }, mcModTag(mod)) : null,
     h('div', { class: 'mc-badges' }, (it.badges || []).map(b => mcBadge(b.label, b.colour)), mcCost(it.cost)),
-    mcDesc(it.lines, it.colours), mcInfo(it.info),
+    mcDesc(it.lines, it.colours), mcInfo(it.info), mcForms(it),
     it.note ? h('div', { class: 'mc-note' }, it.note) : null,
     it.pills && it.pills.length ? h('div', { class: 'mc-badges' }, mcPills(it)) : null);
 }

@@ -318,6 +318,13 @@ kbd { display: inline-block; min-width: 18px; padding: 0 5px; border: 1px solid 
 .mc-info { width: 100%; border: 1px dashed #d7dde8; border-radius: 7px; padding: 6px 9px; font-size: 12px; color: #5d6b84; line-height: 1.4; }
 .mc-info b { color: #2a3656; }
 .mc-info > div + div { margin-top: 5px; }
+.mc-forms { width: 100%; border: 1px dashed #d7dde8; border-radius: 7px; padding: 6px 9px; font-size: 12px; color: #5d6b84; line-height: 1.4; text-align: left; }
+.mc-forms summary { cursor: pointer; font-weight: 600; color: #2a3656; }
+.mc-form { display: flex; gap: 8px; align-items: flex-start; margin-top: 6px; }
+.mc-form b { color: #2a3656; }
+.mc-form-st { font-style: italic; color: #76819c; }
+.mc-form-cos { margin-top: 6px; display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: center; }
+.mc-form-c { display: inline-flex; flex-direction: column; align-items: center; font-size: 11px; }
 .mc-note { font-size: 12px; color: #76819c; text-align: center; }
 /* list rows (tags, blinds, stakes) */
 .mc-rows { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 8px; margin: 6px 0 18px; }

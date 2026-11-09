@@ -267,6 +267,11 @@ try {
 	A(late.key === lateKey && late.inView, `?item= a late joker (#${allJ.length}, ${lateKey}): drawn, scrolled to and highlighted`, JSON.stringify(late));
 	await open('micatro-mods/mod/pokermon?item=' + encodeURIComponent(files.pokermon.sections[0].items[440].key), '.mc-hl', 1);
 	A(await page.$eval('#content .mc-hl', e => e.dataset.key).catch(() => null) === files.pokermon.sections[0].items[440].key, 'mod page ?item= a late card (Pokermon joker #441): drawn and highlighted');
+	// a joker's forms (tools/micatro/designwiki_forms.mjs): Deoxys's tile lists its four formes, each with its art and text
+	await open('micatro-mods/mod/pokermon?item=j_poke_deoxys', '.mc-hl .mc-forms .mc-form', 4);
+	const dx = await page.$$eval('#content .mc-hl .mc-forms .mc-form', fs => fs.map(f => [f.dataset.form, !!f.querySelector('.mc-spr'), f.textContent])).catch(() => []);
+	A(dx.length === 4 && dx.map(f => f[0]).join() === 'Normal,Attack,Defense,Speed' && dx.every(f => f[1]) && /X0\.25/.test(dx[1][2]) && /\$2/.test(dx[2][2]) && /\+40/.test(dx[3][2]),
+		'Deoxys tile: a Forms box with Normal / Attack / Defense / Speed, each drawn with its art and its own text (designwiki_joker_forms_test checks the data)', JSON.stringify(dx));
 	await open('micatro-mods/jokers', '[data-key]', 50);
 	await page.select('#content .mm-modsel', 'bunco');
 	await showAll();
