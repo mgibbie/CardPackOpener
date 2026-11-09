@@ -21,15 +21,16 @@
 import { MODS } from './registry.js';
 
 /** Base-game behaviour counter. Bump it when an engine change makes old runs play out differently. */
-export const ENGINE_CONTENT_REV = 4;
+export const ENGINE_CONTENT_REV = 5;
 /**
  * Engine revs whose new rules are GATED on the run's own recorded rev (a run recorded before them never sees them), so a
  * recipe from an older rev still re-simulates exactly: no "versions changed" prompt / replay warning for those.
  *   2  Pages (engine/pages.js), 2026-11-07
  *   3  Pages v2 (engine/pages.js: new targets / effects / prizes, the Legendary tier, Round rules), 2026-11-07
  *   4  Pages "fair safe" (engine/pages.js: every Pages screen offers at least one no-prize Fair Page), 2026-11-08
+ *   5  Pages every ante (engine/pages.js: no Page on an ante's Small / Big Blind -> that ante's Boss is guaranteed one), 2026-11-09
  */
-export const GATED_ENGINE_REVS = Object.freeze([2, 3, 4]);
+export const GATED_ENGINE_REVS = Object.freeze([2, 3, 4, 5]);
 /** Is every engine rev after `from` up to the current one gated (so a run recorded on `from` plays exactly as it did)? */
 export function engineRevCompatible(from) {
   if (!Number.isInteger(from) || from > ENGINE_CONTENT_REV) return false;

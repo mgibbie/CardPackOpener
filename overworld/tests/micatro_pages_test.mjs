@@ -14,6 +14,8 @@
 //      line inside its card, the cards on screen), a Legendary Page its own colour, the round's badge the rule; the "remove a
 //      card" prize opens the deck after the cash-out (fits desktop + phone), a click raises a card, Remove takes it out, then
 //      the shop
+//   8. a Page every ante (engine rev 5): the Boss on the blind choice says "Page guaranteed this Boss" while the ante has had no Page
+//      (from the first Small Blind; Small + Big skipped too), the Boss then opens the Pages screen; after a Page the hint is gone
 // Screenshots: MICATRO_SHOTS=<dir>.
 //   node overworld/tests/micatro_pages_test.mjs
 import http from 'http';
@@ -66,7 +68,9 @@ if (RUN.recipe.actions[PAGE_AT[0]].type !== 'pick_page') throw new Error('a Page
 const firstOffer = (seed) => { const s = new Session(); s.start({ seed }); s.act({ type: 'select_blind' }); return s.view().pages ? s.view().pages.choices : null; };
 /** (Pages v2: 25% of Blinds) the first seed `prefix`N whose first Blind opens the Pages screen */
 const pagesSeed = (prefix) => { for (let i = 0; i < 400; i++) if (firstOffer(prefix + i)) return prefix + i; throw new Error('no Pages seed ' + prefix); };
-const SEEDS = { ui: pagesSeed('PAGESUI'), ph: pagesSeed('PAGESPH'), pad: pagesSeed('PAGESPAD'), res: pagesSeed('PAGESRES') };
+/** the first seed `prefix`N whose first Blind has NO Pages screen (rev 5: its Boss is owed one) */
+const quietSeed = (prefix) => { for (let i = 0; i < 400; i++) if (!firstOffer(prefix + i)) return prefix + i; throw new Error('no quiet seed ' + prefix); };
+const SEEDS = { ui: pagesSeed('PAGESUI'), quiet: quietSeed('PAGESANTE'), ante: pagesSeed('PAGESANTE'), ph: pagesSeed('PAGESPH'), pad: pagesSeed('PAGESPAD'), res: pagesSeed('PAGESRES') };
 let V2SEED = null, RMSEED = null;
 for (let i = 0; i < 3000 && !(V2SEED && RMSEED); i++) {
 	const ch = firstOffer('PGV2_' + i);
@@ -451,6 +455,44 @@ try {
 		const after = await V(page);
 		A(after.deck_list.length === 51, `${tag}: the card is gone from the deck`, after.deck_list.length);
 		A(errors.length === 0, `${tag}: no page errors`, errors.slice(0, 3).join(' | '));
+		await page.browserContext().close();
+	}
+
+	// ======================================================= 8. a Page every ante: the "Page guaranteed this Boss" hint
+	{
+		const { page, errors, go } = await newPage();
+		await go('/micatro/');
+		const pity = () => page.evaluate(() => { const e = document.querySelector('.overlay .blind-pity'); return e && e.offsetParent ? e.textContent : ''; });
+		const skipToBoss = async () => {
+			for (let k = 0; k < 2; k++) {
+				await page.evaluate(() => window.__micatro.act({ type: 'skip_blind' })); await idle(page);
+				for (let j = 0; j < 4 && /_PACK/.test((await V(page)).state); j++) { await page.evaluate(() => window.__micatro.act({ type: 'skip_booster' })); await idle(page); }
+			}
+		};
+		await newRun(page, SEEDS.quiet);
+		A((await V(page)).page_pity === true && await waitFor(async () => (await pity()) === 'Page guaranteed this Boss', 10000), 'ante: a fresh ante\'s Boss says "Page guaranteed this Boss"');
+		await shot(page, 'pages_ante_hint.png');
+		await skipToBoss();
+		const vb = await V(page);
+		A(vb.state === 'BLIND_SELECT' && vb.page_pity === true && await waitFor(async () => (await pity()) === 'Page guaranteed this Boss', 10000), 'ante: Small + Big skipped (no Page): still guaranteed', vb.state);
+		await page.evaluate(() => document.querySelector('.overlay .b-select').click());
+		A(await onPages(page), 'ante: the Boss opens the Pages screen');
+		await newRun(page, SEEDS.ante);
+		await page.evaluate(() => window.__micatro.act({ type: 'select_blind' }));
+		A(await onPages(page), 'ante: a Small Blind with Pages');
+		await page.evaluate(() => document.querySelector('.overlay .b-pick-page').click());
+		await waitFor(async () => (await V(page)).state === 'SELECTING_HAND', 10000); await idle(page);
+		await page.evaluate(async () => { const { G } = await import('/micatro/js/engine/core.js'); G.GAME.blind.chips = 1; });
+		await page.evaluate(() => { const v = window.__micatro.view(); window.__micatro.act({ type: 'highlight', ids: [v.areas.hand[0].id] }); return window.__micatro.act({ type: 'play' }); });
+		A(await waitFor(async () => (await V(page)).state === 'ROUND_EVAL', 20000), 'ante: the Small Blind is beaten');
+		await idle(page);
+		await waitFor(async () => (await page.evaluate(() => window.__micatro.act({ type: 'cash_out' }))).ok, 10000);
+		for (let j = 0; j < 40 && (await V(page)).state !== 'SHOP'; j++) { await sleep(300); await idle(page); const st = (await V(page)).state; if (/_PACK/.test(st)) await page.evaluate(() => window.__micatro.act({ type: 'skip_booster' })); if (st === 'PAGE_REMOVE') await page.evaluate(async () => { const { G } = await import('/micatro/js/engine/core.js'); return window.__micatro.act({ type: 'page_remove', id: G.playing_cards[0].sort_id }); }); }
+		await idle(page);
+		await waitFor(async () => (await page.evaluate(() => window.__micatro.act({ type: 'next_round' }))).ok, 10000); await idle(page);
+		const vn = await V(page);
+		A(vn.state === 'BLIND_SELECT' && vn.blind_on_deck !== 'Small' && !vn.page_pity && (await pity()) === '', 'ante: after a Page this ante, no hint on the Boss', JSON.stringify([vn.state, vn.page_pity]));
+		A(errors.length === 0, 'ante: no page errors', errors.slice(0, 3).join(' | '));
 		await page.browserContext().close();
 	}
 } catch (e) {
