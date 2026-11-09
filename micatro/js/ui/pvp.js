@@ -24,7 +24,7 @@ import { locText, blindText } from './pvphud.js';
 import { esc } from './markup.js';
 import { MODS } from '../mods/registry.js';
 
-export const PVP_PROTOCOL = 3;   // (server/micatro_pvp.mjs MTPVP_PROTOCOL: 2 = stage 6 — modes, the Hurry timer, hidden scores; 3 = stage 7 — rulesets, The Order, the PvP timer)
+export const PVP_PROTOCOL = 4;   // (server/micatro_pvp.mjs MTPVP_PROTOCOL: 2 = stage 6 — modes, the Hurry timer, hidden scores; 3 = stage 7 — rulesets, The Order, the PvP timer; 4 = All Multiplayer Cards)
 const META_KEY = 'micatro_pvp_meta_v1';   // {id, n}: the match this device's PvP save belongs to
 const LOBBY_MS = 2000, FAST_MS = 1000, SLOW_MS = 2500;
 const AWAY_MS = 8000, GRACE_S = 120;
@@ -34,7 +34,10 @@ const RULESETS = {
   vanilla: { name: 'Vanilla', desc: 'The original Balatro experience: no Multiplayer cards, no balance changes.' },
   balanced: { name: 'Balanced', desc: 'Near-vanilla with a few balance changes: Hanging Chad retriggers the first two scoring cards once each, Bloodstone\'s rolls are shared in a Nemesis round, Glass Cards are X1.5 and Justice is banned. The PvP timer is on.' },
   expanded: { name: 'Expanded', desc: 'Balanced plus the Multiplayer cards: Defensive Joker, Skip-Off, Let\'s Go Gambling, Penny Pincher, Taxes, Pizza, Pacifist and the Asteroid planet, and reworked Golden Ticket, Seltzer, Turtle Bean and Ouija. SPEEDRUN, Conjoined and Defensive Joker are banned. The PvP timer is on.' },
+  all: { name: 'All Multiplayer Cards', desc: 'Expanded with every Multiplayer card in play: SPEEDRUN, Conjoined Joker and Defensive Joker join Skip-Off, Let\'s Go Gambling, Penny Pincher, Taxes, Pizza, Pacifist and the Asteroid planet. The Balanced and Expanded reworks too; Justice is banned. The Order and the PvP timer are on.' },
 };
+// the rulesets that play the Multiplayer cards (engine/pvp_expanded.js EXPANDED_RULESETS)
+const isExpandedRuleset = (rs) => rs === 'expanded' || rs === 'all';
 const ANIM_CAP = 40, ANIM_REFILL = 2.5;
 // (stage 7c) the Multiplayer decks and stakes (engine/pvp_decks.js)
 const MP_BACKS = ['b_mp_violet', 'b_mp_indigo', 'b_mp_orange', 'b_mp_oracle', 'b_mp_gradient', 'b_mp_heidelberg', 'b_mp_echodeck', 'b_mp_cocktail'];
@@ -416,7 +419,7 @@ export function createPvp(ctx) {
       ante: v.ante, round: v.round, loc, blind: v.blind && v.blind.key && v.state !== 'BLIND_SELECT' && v.state !== 'SHOP' ? v.blind.key : null,
       dollars: v.dollars, lives: v.pvp.lives,
       // (Expanded: what the opponent's Multiplayer cards read of this player — skips, cards sold per ante, $ spent per shop)
-      ...(v.pvp.ruleset === 'expanded' ? { skips: v.pvp.skips | 0, sells: v.pvp.sells || {}, spent: (v.pvp.spent || []).slice(-60), hmax: v.hands_left } : {}),
+      ...(isExpandedRuleset(v.pvp.ruleset) ? { skips: v.pvp.skips | 0, sells: v.pvp.sells || {}, spent: (v.pvp.spent || []).slice(-60), hmax: v.hands_left } : {}),
       jokers: ((v.areas && v.areas.jokers) || []).slice(0, 30).map((c) => [c.center, c.edition || null]),
     };
   }
@@ -449,7 +452,7 @@ export function createPvp(ctx) {
     }
     // (0c) Expanded: the opponent's state (recorded pvp_opp, when it changed), the effects relayed to this player (recorded
     // pvp_fx, in order), and the effects this player's engine sent (posted from the index the server has)
-    if (v.pvp.ruleset === 'expanded' && !v.over && ctx.idle()) {
+    if (isExpandedRuleset(v.pvp.ruleset) && !v.over && ctx.idle()) {
       const fxTo = (m.fx && m.fx[me()]) || [];
       if (fxTo.length > (v.pvp.fxin | 0)) {
         const k = fxTo[v.pvp.fxin | 0];
@@ -623,7 +626,7 @@ export function createPvp(ctx) {
       canHurry: !!(L.opts.timer && mode !== 'survival' && !m.over && !m.pending && meReady && rd && !rd.startAt && !(rd.ready && rd.ready[name]) && !(t && t.by === me() && t.endAt)),
       ruleset: L.opts.ruleset || 'vanilla', order: !!L.opts.order,
       // (Expanded) the opponent's interactive Multiplayer jokers: display-only copies on the HUD
-      phantoms: (L.opts.ruleset === 'expanded' && Array.isArray(s.jokers) ? s.jokers.map((j) => j[0]).filter((k) => PHANTOMS.includes(k)) : []).slice(0, 6),
+      phantoms: (isExpandedRuleset(L.opts.ruleset) && Array.isArray(s.jokers) ? s.jokers.map((j) => j[0]).filter((k) => PHANTOMS.includes(k)) : []).slice(0, 6),
     };
     // the PvP timer (stage 7): in the round, whoever it runs on; the leader's button
     const pt = rd && rd.pt;
