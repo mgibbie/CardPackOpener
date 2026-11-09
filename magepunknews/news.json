@@ -403,6 +403,14 @@
 	},
 	"entries": [
 		{
+			"sha": "c648ddf",
+			"date": "2026-11-09",
+			"kind": "micatro",
+			"title": "Micatro Multiplayer: the Expanded ruleset and 9 Multiplayer jokers",
+			"body": "Micatro Multiplayer has a third ruleset, Expanded, now the default for new lobbies. It is Balanced plus the Multiplayer cards, each with brand-new art: Skip-Off (+1 hand and +1 discard per blind you skipped more than your Nemesis), Let's Go Gambling (1 in 4 for X4 Mult and $10, but in a Nemesis round it can misfire and hand your Nemesis $10), Penny Pincher (money back for what your Nemesis spent in last ante's shop), Taxes (+4 Mult for every card your Nemesis sold this ante, gained when you enter a Nemesis round), Pizza (eaten at the end of a Nemesis round: +2 discards for the rest of the ante, and +1 for your Nemesis), Pacifist (X10 Mult outside Nemesis rounds) and the Asteroid planet (your Nemesis' best poker hand loses a level at the next Nemesis round). Defensive Joker, Conjoined Joker and SPEEDRUN exist too but are banned in Expanded, as in the original mod. Expanded also reworks Golden Ticket (Uncommon, $6), Seltzer (8 hands), Turtle Bean (+4 hand size) and Ouija (destroys 3 cards, no hand size lost). Your HUD shows your Nemesis' Multiplayer jokers whose effects can reach you.",
+			"cards": []
+		},
+		{
 			"sha": "58e1bdc",
 			"date": "2026-11-09",
 			"kind": "micatro",
