@@ -18,6 +18,9 @@ import {
 import { registerMod } from '../mods/registry.js';
 
 export const EXPANDED_ID = 'pvp_expanded';
+/** The rulesets that play this content: Expanded, and All Multiplayer Cards (Expanded without its three bans). */
+export const EXPANDED_RULESETS = ['expanded', 'all'];
+export const isExpandedRuleset = (rs) => EXPANDED_RULESETS.includes(rs);
 export const FX_KINDS = ['lgg', 'pizza', 'asteroid', 'speedrun'];
 /** The Multiplayer jokers whose effects reach the other player (their "phantom" copies show on the opponent's HUD). */
 export const PHANTOM_KEYS = ['j_mp_lets_go_gambling', 'j_mp_pizza', 'j_mp_speedrun', 'j_mp_conjoined_joker'];
@@ -26,7 +29,7 @@ const NEMESIS = 'bl_mp_nemesis';
 const HAND_ORDER = ['Flush Five', 'Flush House', 'Five of a Kind', 'Straight Flush', 'Four of a Kind', 'Full House', 'Flush', 'Straight', 'Three of a Kind', 'Two Pair', 'Pair', 'High Card'];
 
 const P = () => G.GAME.pvp;
-const isExp = () => !!(G.GAME && G.GAME.pvp && G.GAME.pvp.ruleset === 'expanded');
+const isExp = () => !!(G.GAME && G.GAME.pvp && isExpandedRuleset(G.GAME.pvp.ruleset));
 const opp = () => (P() && P().opp) || {};
 const say = (card, message, colour) => card_eval_status_text(card, 'extra', null, null, null, { message, colour });
 const xm = (n) => localize({ type: 'variable', key: 'a_xmult', vars: [n] });

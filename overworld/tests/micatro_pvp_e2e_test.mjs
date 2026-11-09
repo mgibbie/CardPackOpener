@@ -15,6 +15,10 @@
 //   turns both off), the host's mod options shown to gina read-only (her own saved mod settings untouched); both engines run
 //   Gen 4 off, Balanced, The Order (recorded); no source offers either a Gen 4 Pokémon; in the Nemesis gina (ahead) starts the
 //   PvP timer on frank -> at 0 he loses ONE hand, as a recorded pvp_hand_lost
+//   All Multiplayer Cards: jack picks it (Expanded -> All Multiplayer Cards; kate sees it read-only) with a custom deck holding
+//   SPEEDRUN, Conjoined Joker and Defensive Joker: both engines play 'all' (recorded), the pools + the shop offer the three;
+//   both READY together -> SPEEDRUN's Spectral each; kate's hands left -> jack's Conjoined X2; jack a life down -> his
+//   Defensive Joker +125 Chips; jack reloads -> the same run
 // Screenshots go to $MTPVP_SHOTS when set.
 //   node overworld/tests/micatro_pvp_e2e_test.mjs
 import fs from 'fs';
@@ -33,7 +37,7 @@ process.env.MTPVP_PVPT_BASE_MS = '8000'; // (the PvP timer's 60 s, shortened for
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '../../');
 const CHROME = process.env.CHROME || (fs.existsSync('/opt/chrome/chrome') ? '/opt/chrome/chrome' : 'C:/Program Files/Google/Chrome/Application/chrome.exe');
-const PORT = 9787;
+const PORT = +process.env.MTPVP_E2E_PORT || 9787;   // (another port when two copies run on one machine)
 const SHOTS = process.env.MTPVP_SHOTS || '';
 let pass = 0, fail = 0;
 const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else { fail++; console.log('FAIL: ' + m + (extra != null ? '  ' + extra : '')); } };
@@ -88,7 +92,7 @@ const server = http.createServer(async (req, res) => {
 await new Promise(r => server.listen(PORT, r));
 
 const tokens = {};
-for (const n of ['alice', 'bob', 'carol', 'dave', 'erin', 'frank', 'gina', 'hank', 'ivy']) tokens[n] = (await call('register', { username: n, password: 'mtpvp-e2e-pass' })).token;
+for (const n of ['alice', 'bob', 'carol', 'dave', 'erin', 'frank', 'gina', 'hank', 'ivy', 'jack', 'kate']) tokens[n] = (await call('register', { username: n, password: 'mtpvp-e2e-pass' })).token;
 await call('add-friend', { username: 'alice' }, tokens.carol);
 A(tokens.alice && tokens.bob && tokens.carol, 'three accounts (carol is alice\'s friend; bob is not)');
 const stateOf = async (n) => (await call('state', {}, tokens[n])).state || { username: n };
@@ -458,6 +462,100 @@ try {
 	await shot(ivy.page, '26-mp-deck-match');
 	const errs4 = [...hank.errors, ...ivy.errors].filter((e) => !/favicon|net::/.test(e));
 	A(!errs4.length, 'stage 7c: no page errors', errs4.join(' | '));
+	// ======== All Multiplayer Cards: the picker; SPEEDRUN, Conjoined Joker and Defensive Joker obtainable and working ========
+	// jack hosts with a custom deck that starts with the three (the lobby's customDeck goes to both players) on a fixed seed
+	const ALLDECK = { v: 1, name: 'All MP test', back: 'b_red', params: {}, cards: null, jokers: [{ key: 'j_mp_defensive_joker', n: 1 }, { key: 'j_mp_conjoined_joker', n: 1 }, { key: 'j_mp_speedrun', n: 1 }], consumables: [], vouchers: [], tags: [], bans: {}, rules: {} };
+	const jack = await open('jack', '/micatro/');
+	await jack.page.evaluate((d) => localStorage.setItem('micatro_cdeck_sel', JSON.stringify({ id: null, def: d })), ALLDECK);
+	await jack.page.reload({ waitUntil: 'domcontentloaded' });
+	A(await ready(jack.page), 'jack: game ready (a custom deck selected)');
+	await waitFor(() => click(jack.page, '.b-multiplayer'), 10000);
+	await click(jack.page, '.b-pvp-create');
+	await waitFor(() => jack.page.evaluate(() => { const b = document.querySelector('.b-start'); return b && /Create lobby/.test(b.textContent); }), 8000);
+	await jack.page.evaluate(() => { const on = document.querySelector('.seed-on'), sin = document.querySelector('.seed-in'); on.checked = true; on.dispatchEvent(new Event('change')); sin.value = 'ALLMP001'; });
+	await click(jack.page, '.b-start');
+	A(await waitFor(() => jack.page.evaluate(() => /^[A-Z2-9]{5}$/.test((document.querySelector('.pvp-code-v') || {}).textContent || '')), 30000), "jack's lobby is up");
+	const rsTxt = (page) => page.evaluate(() => ({ rs: (document.querySelector('.pvp-ruleset') || {}).textContent, desc: (document.querySelector('.pvp-ruleset-desc') || {}).textContent || '', o: (document.querySelector('.b-pvp-tog-order') || {}).textContent, t: (document.querySelector('.b-pvp-tog-pvpTimer') || {}).textContent }));
+	A((await rsTxt(jack.page)).rs === 'Expanded', 'the lobby starts on Expanded');
+	await click(jack.page, '.b-pvp-inc-ruleset');
+	A(await waitFor(async () => (await rsTxt(jack.page)).rs === 'All Multiplayer Cards', 6000), 'the picker: Expanded -> All Multiplayer Cards');
+	let rsA = await rsTxt(jack.page);
+	A(/SPEEDRUN/.test(rsA.desc) && /Conjoined/.test(rsA.desc) && /Defensive/.test(rsA.desc) && !/are banned/.test(rsA.desc.replace('Justice is banned', '')) && rsA.o === 'On' && rsA.t === 'On', 'its description names the three (none banned); The Order and the PvP timer on', JSON.stringify(rsA));
+	await click(jack.page, '.b-pvp-inc-ruleset');
+	A(await waitFor(async () => (await rsTxt(jack.page)).rs === 'Vanilla', 6000), '... the picker wraps round to Vanilla');
+	await click(jack.page, '.b-pvp-dec-ruleset');
+	A(await waitFor(async () => (await rsTxt(jack.page)).rs === 'All Multiplayer Cards', 6000), '... and back to All Multiplayer Cards');
+	await click(jack.page, '.b-pvp-dec-pvpStart');
+	await waitFor(() => jack.page.evaluate(() => (document.querySelector('.pvp-pvpStart') || {}).textContent === '1'), 6000);
+	await shot(jack.page, '27-lobby-all-mp-host');
+	const code5 = await jack.page.evaluate(() => document.querySelector('.pvp-code-v').textContent);
+	const kate = await open('kate', '/micatro/?join=' + code5);
+	A(await ready(kate.page), 'kate: game ready');
+	A(await waitFor(() => kate.page.evaluate(() => !!document.querySelector('.b-pvp-ready-lobby')), 20000), 'kate joined');
+	rsA = await rsTxt(kate.page);
+	A(rsA.rs === 'All Multiplayer Cards' && /SPEEDRUN/.test(rsA.desc) && (await kate.page.evaluate(() => document.querySelectorAll('.b-pvp-dec-ruleset, .b-pvp-inc-ruleset').length)) === 0, 'kate sees All Multiplayer Cards, read-only', JSON.stringify(rsA));
+	await shot(kate.page, '28-lobby-all-mp-guest');
+	await click(kate.page, '.b-pvp-ready-lobby');
+	await waitFor(() => jack.page.evaluate(() => { const b = document.querySelector('.b-pvp-start'); return b && !b.disabled; }), 10000);
+	await click(jack.page, '.b-pvp-start');
+	A(await waitFor(async () => (await view(jack.page))?.pvp && (await view(kate.page))?.pvp, 30000), 'Start: both in the All Multiplayer Cards match');
+	await idle(jack.page); await idle(kate.page);
+	const THREE = ['j_mp_defensive_joker', 'j_mp_conjoined_joker', 'j_mp_speedrun'];
+	// obtainable: in both engines' pools, and the run's own shop stream offers each (rolled on a throwaway copy of the streams)
+	const allEng = (page, three) => page.evaluate(async (three) => {
+		const { G, get_current_pool, create_card } = await import('/micatro/js/engine/core.js');
+		const rec = window.__micatro.session.recipe;
+		// (held jokers leave the pools — no Showman — so the check sets the three's 'in use' marks aside, then puts them back)
+		const saved = JSON.stringify(G.GAME.pseudorandom), used = { ...G.GAME.used_jokers }, seen = new Set();
+		for (const k of three) delete G.GAME.used_jokers[k];
+		const pool = [...get_current_pool('Joker', 0)[0], ...get_current_pool('Joker', 0.8)[0]];
+		for (let i = 0; i < 1500; i++) { const c = create_card('Joker', G.shop_jokers, null, null, null, null, null, 'sho'); seen.add(c.config.center.key); c.remove(); }
+		G.GAME.pseudorandom = JSON.parse(saved); G.GAME.used_jokers = used;
+		return { rs: G.GAME.pvp.ruleset, rec: rec.pvp.ruleset, order: rec.pvp.order, inPool: three.filter((k) => pool.includes(k)), offered: three.filter((k) => seen.has(k)), banned: three.filter((k) => G.GAME.banned_keys[k]), held: G.jokers.cards.map((c) => c.config.center.key) };
+	}, three);
+	const aj = await allEng(jack.page, THREE), ak = await allEng(kate.page, THREE);
+	A(aj.rs === 'all' && ak.rs === 'all' && aj.rec === 'all' && ak.rec === 'all' && ak.order === true, 'both engines play All Multiplayer Cards, recorded in the recipe (resume / replay / spectate exact)', JSON.stringify([aj, ak]));
+	A([aj, ak].every((e) => e.inPool.length === 3 && e.offered.length === 3 && !e.banned.length), 'both: SPEEDRUN, Conjoined and Defensive Joker are in the pools and the shop offers each', JSON.stringify([aj, ak]));
+	A([aj, ak].every((e) => THREE.every((k) => e.held.includes(k))), "both start with the three (the host's custom deck)", JSON.stringify([aj.held, ak.held]));
+	// to the Nemesis (ante 1): skip Small + Big
+	for (const p of [jack.page, kate.page]) for (let k = 0; k < 2; k++) {
+		await act(p, { type: 'skip_blind' }); await idle(p);
+		if (/PACK/.test((await view(p)).state)) { await act(p, { type: 'skip_booster' }); await idle(p); }
+	}
+	A((await view(jack.page)).onDeck === 'Boss' && (await view(kate.page)).onDeck === 'Boss', 'both at the Nemesis');
+	const cons = (page) => page.evaluate(async () => { const { G } = await import('/micatro/js/engine/core.js'); return { n: G.consumeables.cards.length, sets: G.consumeables.cards.map((c) => c.ability.set), fx: window.__micatro.session.recipe.actions.filter((a) => a.type === 'pvp_fx').map((a) => a.k) }; });
+	const cj0 = await cons(jack.page), ck0 = await cons(kate.page);
+	// SPEEDRUN: both READY within 30 s -> the server relays 'speedrun' -> each SPEEDRUN makes a Spectral (recorded pvp_fx)
+	await click(jack.page, '.b-pvp-ready'); await click(kate.page, '.b-pvp-ready');
+	A(await waitFor(async () => (await view(jack.page)).blind === 'bl_mp_nemesis' && (await view(kate.page)).blind === 'bl_mp_nemesis', 15000), 'both in the Nemesis');
+	A(await waitFor(async () => (await cons(jack.page)).fx.includes('speedrun') && (await cons(kate.page)).fx.includes('speedrun'), 15000), 'SPEEDRUN: both READY within 30 s -> relayed to both as a recorded pvp_fx');
+	await idle(jack.page); await idle(kate.page);
+	const cj1 = await cons(jack.page), ck1 = await cons(kate.page);
+	A(cj1.n === cj0.n + 1 && ck1.n === ck0.n + 1 && cj1.sets.at(-1) === 'Spectral' && ck1.sets.at(-1) === 'Spectral', "SPEEDRUN: each player's SPEEDRUN made a Spectral", JSON.stringify([cj0, cj1, ck0, ck1]));
+	await shot(jack.page, '29-all-mp-speedrun');
+	// Conjoined Joker: X(1 + 0.5 per Nemesis hand left) in the Nemesis — kate plays 2 hands -> jack's is X2 (kate's hands, relayed)
+	const jcalc = (page, key) => page.evaluate(async (key) => { const { G } = await import('/micatro/js/engine/core.js'); const j = G.jokers.cards.find((c) => c.config.center.key === key); const r = j && j.calculate_joker({ joker_main: true, cardarea: G.jokers, full_hand: [], scoring_hand: [] }); return { r: r ? { x: r.Xmult_mod, c: r.chip_mod } : null, opp: G.GAME.pvp.opp, lives: G.GAME.pvp.lives }; }, key);
+	await playStrong(kate.page); await playStrong(kate.page);
+	A(await waitFor(async () => ((await jcalc(jack.page, 'j_mp_conjoined_joker')).opp || {}).hands === 2, 15000), "jack's engine knows kate has 2 hands left (recorded pvp_opp)");
+	const cjx = await jcalc(jack.page, 'j_mp_conjoined_joker');
+	A(cjx.r && cjx.r.x === 2, 'Conjoined Joker: X2 against a Nemesis with 2 hands left', JSON.stringify(cjx));
+	// Defensive Joker: jack loses the round (a life down) -> +125 Chips; kate (ahead) gets nothing
+	for (let i = 0; i < 6 && (await view(jack.page)).state === 'SELECTING_HAND'; i++) await playWeak(jack.page);
+	for (let i = 0; i < 6 && (await view(kate.page)).state === 'SELECTING_HAND'; i++) await playStrong(kate.page);
+	A(await waitFor(async () => (await view(jack.page)).state === 'ROUND_EVAL' && (await view(kate.page)).state === 'ROUND_EVAL', 25000), 'the round is decided -> both cash out');
+	A(await waitFor(async () => { const d = await jcalc(jack.page, 'j_mp_defensive_joker'); return d.lives === 3 && (d.opp || {}).lives === 4; }, 15000), "jack lost the round: 3 lives vs kate's 4 (recorded pvp_opp)");
+	const dj = await jcalc(jack.page, 'j_mp_defensive_joker'), dk2 = await jcalc(kate.page, 'j_mp_defensive_joker');
+	A(dj.r && dj.r.c === 125 && !dk2.r, 'Defensive Joker: +125 Chips a life behind; nothing when ahead', JSON.stringify([dj, dk2]));
+	await shot(jack.page, '30-all-mp-defensive');
+	// jack reloads: the match comes back exactly from its recipe (the ruleset, the relayed SPEEDRUN, the lost life)
+	const nAll = await jack.page.evaluate(() => window.__micatro.session.recipe.actions.length);
+	await jack.page.reload({ waitUntil: 'domcontentloaded' });
+	await ready(jack.page);
+	A(await waitFor(async () => { const v = await view(jack.page); return v && v.pvp && v.pvp.ruleset === 'all' && v.state === 'ROUND_EVAL' && v.pvp.lives === 3; }, 60000), 'jack reloads -> the same All Multiplayer Cards run, re-simulated from its recipe');
+	A(await jack.page.evaluate((n) => window.__micatro.session.recipe.actions.length === n, nAll), '... every move kept');
+	const errs5 = [...jack.errors, ...kate.errors].filter((e) => !/favicon|net::/.test(e));
+	A(!errs5.length, 'All Multiplayer Cards: no page errors', errs5.join(' | '));
+	await jack.ctx.close(); await kate.ctx.close();
 	const errs3 = [...frank.errors, ...gina.errors].filter((e) => !/favicon|net::/.test(e));
 	A(!errs3.length, 'stage 7: no page errors', errs3.join(' | '));
 } catch (e) {

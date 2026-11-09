@@ -656,6 +656,25 @@ try {
 		await done(lb3.id);
 	}
 
+	// ===== 10. All Multiplayer Cards: Expanded's relay + SPEEDRUN (the one ruleset where SPEEDRUN is in the pools) =====
+	{
+		A(R.RULESETS.includes('all') && R.MTPVP_PROTOCOL === 4, 'all: a ruleset (protocol 4: an older client is told to reload)');
+		const d = R.cleanOpts({ ruleset: 'all' });
+		A(d.ruleset === 'all' && d.order === true && d.pvpTimer === true, 'all: The Order and the PvP timer default on', JSON.stringify(d));
+		A((await as('alice').call('mtpvp-create', { pv: 3, opts: { ruleset: 'all' } })).status === 409, 'all: a protocol-3 client (no All Multiplayer Cards) cannot create');
+		const fx = (who, id, from, list) => as(who).call('mtpvp-fx', { id, from, list });
+		const lb = await newMatch('alice', 'bob', { ruleset: 'all' });
+		A(lb.opts.ruleset === 'all', 'all: the match carries it');
+		await fx('alice', lb.id, 0, ['lgg']);
+		A(JSON.stringify(lobbyOf(lb.id).m.fx.bob) === '["lgg"]', 'all: effects relay as in Expanded', JSON.stringify(lobbyOf(lb.id).m.fx));
+		await readyS('alice', lb.id, 2, 'Boss');
+		await pass(10_000, lb.id, 'alice', 'bob');
+		await readyS('bob', lb.id, 2, 'Boss');
+		const mm = lobbyOf(lb.id).m;
+		A(mm.fx.alice && mm.fx.alice.includes('speedrun') && mm.fx.bob.at(-1) === 'speedrun', 'all: SPEEDRUN — READY 10 s apart -> both get it', JSON.stringify(mm.fx));
+		await done(lb.id);
+	}
+
 	// registration
 	const src = fs.readFileSync(path.join(ROOT, 'server/mp.mjs'), 'utf8');
 	const gc = src.slice(src.indexOf('const GC_TABLE'), src.indexOf('];', src.indexOf('const GC_TABLE')));

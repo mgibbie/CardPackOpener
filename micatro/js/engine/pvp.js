@@ -33,7 +33,7 @@
 //   {type:'pvp_timer', n}                        the Hurry timer ran out on this player: a life (n = the run's nth such loss)
 //   {type:'pvp_hand_lost', n}                    the PvP timer ran out on this player in a Nemesis round: a hand (stage 7)
 //
-// Stage 7 — the RULESET (the lobby's; the mod's Vanilla / Balanced / Expanded) and THE ORDER:
+// Stage 7 — the RULESET (the lobby's; the mod's Vanilla / Balanced / Expanded, + our All Multiplayer Cards) and THE ORDER:
 //   * `order`: The Order (core.js theOrder): the run's random streams are keyed so both players get the same cards in the
 //     same order however differently they play. A lobby option: on by default in Balanced / Expanded, off in Vanilla.
 //   * Balanced: Hanging Chad retriggers the first AND second scoring cards once each; Bloodstone's rolls in a PvP round
@@ -46,7 +46,7 @@
 import { G, emit, P_CENTERS, localize, pseudorandom, probability_roll, probability_vars, order_round_based, ease_hands_played } from './core.js';
 import { registerMod } from '../mods/registry.js';
 import { DECKS_ID, MP_BACKS, MP_STAKES } from './pvp_decks.js';
-import { EXPANDED_ID, setupExpanded, expandedActionError, expandedApply, expandedStartBlind, expandedSkipped, expandedView } from './pvp_expanded.js';
+import { EXPANDED_ID, isExpandedRuleset, setupExpanded, expandedActionError, expandedApply, expandedStartBlind, expandedSkipped, expandedView } from './pvp_expanded.js';
 
 export const PVP_ID = 'pvp';
 export const NEMESIS = 'bl_mp_nemesis';
@@ -89,7 +89,7 @@ export const PVP_FORCED_OPTIONS = { bunco: { gameplay_reworks: false } };
 export const SURVIVAL_BANS = ['v_hieroglyph', 'v_petroglyph'];
 export const MODES = ['attrition', 'showdown', 'survival'];
 /** The rulesets (stage 7): the mod's names, in its order. */
-export const RULESETS = ['vanilla', 'balanced', 'expanded'];
+export const RULESETS = ['vanilla', 'balanced', 'expanded', 'all'];
 /**
  * A ruleset's bans: `loud` are listed in the lobby (Justice), `silent` are vanilla cards a reworked copy replaces (the mod's
  * banned_silent: the vanilla Hanging Chad / Bloodstone leave the pools, their Balanced versions take their place).
@@ -100,9 +100,12 @@ export const RULESET_BANS = {
   // Expanded (stage 7b): Balanced + its own reworks (Golden Ticket, Seltzer, Turtle Bean, Ouija replace the vanilla ones) and the
   // Multiplayer cards, less the three the mod's Expanded bans (SPEEDRUN, Conjoined Joker, Defensive Joker)
   expanded: { loud: ['c_justice', 'j_mp_speedrun', 'j_mp_conjoined_joker', 'j_mp_defensive_joker'], silent: ['j_hanging_chad', 'j_bloodstone', 'j_ticket', 'j_selzer', 'j_turtle_bean', 'c_ouija'] },
+  // All Multiplayer Cards (ours, not the mod's): Expanded with every Multiplayer card in the pools — SPEEDRUN, Conjoined Joker
+  // and Defensive Joker included (built in 7b, banned by Expanded); the same reworks; Justice still banned
+  all: { loud: ['c_justice'], silent: ['j_hanging_chad', 'j_bloodstone', 'j_ticket', 'j_selzer', 'j_turtle_bean', 'c_ouija'] },
 };
 /** The internal content mod each ruleset activates (on top of 'pvp'). */
-export const RULESET_MODS = { vanilla: [], balanced: ['pvp_balanced'], expanded: ['pvp_balanced', EXPANDED_ID] };
+export const RULESET_MODS = { vanilla: [], balanced: ['pvp_balanced'], expanded: ['pvp_balanced', EXPANDED_ID], all: ['pvp_balanced', EXPANDED_ID] };
 /** Every internal mod id (never listed in G.GAME.mods). */
 export const PVP_INTERNAL = [PVP_ID, 'pvp_balanced', EXPANDED_ID, DECKS_ID];
 /** Does this ruleset play The Order by default (the lobby's default: on except in Vanilla)? */
@@ -164,7 +167,7 @@ export function setupPvp(cfg) {
   const rb = RULESET_BANS[P.ruleset] || RULESET_BANS.vanilla;
   for (const k of [...pvpBannedKeys(P.mode, P.ruleset), ...rb.silent]) G.GAME.banned_keys[k] = true;
   if (P.ruleset !== 'vanilla') Object.assign(P_CENTERS.m_glass.config, GLASS_BALANCED);
-  if (P.ruleset === 'expanded') setupExpanded(P);
+  if (isExpandedRuleset(P.ruleset)) setupExpanded(P);
 }
 /** newRun: the mods a PvP run activates (+ the internal ones of its ruleset) and its forced options. */
 export function pvpMods(ids, options, cfg, run) {
@@ -206,7 +209,7 @@ export function pvpRoundWon(slot) {
 /** skip_blind: a skip counts as beaten for the referee. */
 export function pvpSkipped(slot) {
   G.GAME.pvp.blinds.push({ ante: G.GAME.round_resets.ante, slot, r: 'skip' });
-  if (G.GAME.pvp.ruleset === 'expanded') expandedSkipped();
+  if (isExpandedRuleset(G.GAME.pvp.ruleset)) expandedSkipped();
 }
 
 /** The cash-out's PvP rows: the comeback money (once, after a life was lost). */
@@ -252,7 +255,7 @@ export function pvpApply(a, STATES, selectBlind) {
   const P = G.GAME.pvp;
   if (a.type === 'pvp_start_blind') {
     G.GAME.pvp_blind = true;
-    if (P.ruleset === 'expanded') expandedStartBlind();
+    if (isExpandedRuleset(P.ruleset)) expandedStartBlind();
     emit('pvp_start', { ante: G.GAME.round_resets.ante, slot: G.GAME.blind_on_deck });
     selectBlind(G.GAME.blind_on_deck);
     return;
@@ -305,7 +308,7 @@ export function pvpView(v) {
     nemesis: !!G.GAME.pvp_blind, blinds: P.blinds.slice(), rounds: P.rounds.slice(), result: P.result,
     hands_played: G.GAME.pvp_blind ? G.GAME.current_round.hands_played : 0,
   };
-  if (P.ruleset === 'expanded') expandedView(v.pvp);
+  if (isExpandedRuleset(P.ruleset)) expandedView(v.pvp);
 }
 
 const HOOKS = {

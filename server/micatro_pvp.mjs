@@ -57,7 +57,7 @@
 // when its host goes quiet (PP.LOBBY_IDLE_MS); a guest who goes quiet is dropped; in a match a player quiet for
 // PP.GRACE_MS (120 s, owner D7) forfeits — checked lazily by whoever polls (D1 has no clock).
 
-export const MTPVP_PROTOCOL = 3;   // (2: stage 6 — rounds keyed by blind, modes, the Hurry timer, hidden scores; 3: stage 7 — rulesets, The Order, the PvP timer)
+export const MTPVP_PROTOCOL = 4;   // (2: stage 6 — rounds keyed by blind, modes, the Hurry timer, hidden scores; 3: stage 7 — rulesets, The Order, the PvP timer; 4: the All Multiplayer Cards ruleset)
 export const PP = {
 	BEAT_MS: 10_000,                 // a player row is rewritten at least this often while polling (liveness; <= GRACE_MS / 4, below)
 	MIN_WRITE_MS: 900,               // ...and at most this often (a summary that changes on every click)
@@ -81,7 +81,9 @@ export const PP = {
 	ANIM_MAX_MS: 40_000,             // the animation credit one report may carry (the client's budget's capacity)
 };
 export const MODES = ['attrition', 'showdown', 'survival'];
-export const RULESETS = ['vanilla', 'balanced', 'expanded'];
+export const RULESETS = ['vanilla', 'balanced', 'expanded', 'all'];
+/** The rulesets that play the Multiplayer cards (their relayed effects, SPEEDRUN): engine/pvp_expanded.js EXPANDED_RULESETS. */
+export const EXPANDED_RULESETS = ['expanded', 'all'];
 export const FX_KINDS = ['lgg', 'pizza', 'asteroid'];   // (what a client may send its opponent; 'speedrun' is the server's own)
 export const SPEEDRUN_MS = 30_000;
 // (a short grace period — a test's — keeps the heartbeat well inside it)
@@ -677,7 +679,7 @@ export async function handleMtpvp(ctx) {
 				m.timer = null; m.sk = {};
 				// (Expanded) SPEEDRUN: both reached the Nemesis within 30 s of each other
 				const rts = m.players.map((p) => (rd.rt || {})[p]);
-				if (lb.opts.ruleset === 'expanded' && rts.every(Number.isFinite) && Math.abs(rts[0] - rts[1]) <= SPEEDRUN_MS) for (const p of m.players) ((m.fx = m.fx || {})[p] = m.fx[p] || []).push('speedrun');
+				if (EXPANDED_RULESETS.includes(lb.opts.ruleset) && rts.every(Number.isFinite) && Math.abs(rts[0] - rts[1]) <= SPEEDRUN_MS) for (const p of m.players) ((m.fx = m.fx || {})[p] = m.fx[p] || []).push('speedrun');
 			}
 		});
 		if (r.error) return fail(r);
@@ -712,7 +714,7 @@ export async function handleMtpvp(ctx) {
 		const r = await mutate((lb) => {
 			const e = inMatch(lb); if (e) return e;
 			const m = lb.m;
-			if (m.over || lb.opts.ruleset !== 'expanded') return false;
+			if (m.over || !EXPANDED_RULESETS.includes(lb.opts.ruleset)) return false;
 			const got = ((m.fxs = m.fxs || {})[username]) || 0;
 			const fresh = list.slice(Math.max(0, got - from));
 			if (from > got || !fresh.length) return false;
