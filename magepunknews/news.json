@@ -403,6 +403,22 @@
 	},
 	"entries": [
 		{
+			"sha": "b453d99",
+			"date": "2026-11-09",
+			"kind": "micatro",
+			"title": "Micatro: a Page every ante",
+			"body": "You now get at least one Page every ante. The Small and Big Blinds still get a Pages screen 25% of the time each; if neither did (a skipped Blind counts as no Page), that ante's Boss Blind is guaranteed one, and the blind choice says “Page guaranteed this Boss”. A Boss after a Page earlier in the ante still has the usual 25% chance. Before, a Boss was only guaranteed a Page after a whole ante went by without one. In Multiplayer the Nemesis never has Pages, so there's no guarantee when the Boss is your Nemesis, and nothing carries over to the next ante (Showdown too). Controllers: left and right now step along the Pages in order, even while they're still sliding in. Runs started before this update keep the old rule.",
+			"cards": [],
+			"micatroFeatures": [
+				{
+					"id": "pages",
+					"title": "Pages",
+					"blurb": "Before some Blinds, pick one of 3 Pages: a twist for the round, a Round rule, and maybe a prize that raises the stakes.",
+					"wiki": "/designwiki/#/micatro/pages"
+				}
+			]
+		},
+		{
 			"sha": "b0a1205",
 			"date": "2026-11-09",
 			"kind": "micatro",
