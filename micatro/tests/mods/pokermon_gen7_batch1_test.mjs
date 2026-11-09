@@ -45,6 +45,9 @@ const key = (c) => c.config.center.key;
 const near = (a, b) => Math.abs(a - b) < 1e-6;
 const flush = () => G.E_MANAGER.flush();
 const sec = async (name, fn) => { try { await fn(); } catch (e) { ok(false, name + ' threw: ' + String(e && e.stack).slice(0, 900)); } };
+/** The rules of a run recorded before r111 (the owner's simplified weather trio, SIMPLE_TRIO_REV: Kyogre / Groudon made rain / sun, locked
+ *  Castform and clashed; Rayquaza calmed them), as a resume / replay of an old move runs them. The r111 rules: pokermon_simple_trio_test. */
+const r110 = (fn) => { PINS.RULES.pins = { pokermon: '3.9.1+r110' }; try { return fn(); } finally { PINS.RULES.pins = null; } };
 const ex = (j) => j.ability.extra;
 const C = (n) => P_CENTERS['j_poke_' + n];
 const plain = (j) => describe(j).lines.join(' | ').replace(/\{[^}]*\}/g, '').replace(/\s+/g, ' ');
@@ -465,12 +468,18 @@ await sec('water bubble', () => {
   [d] = deal('DEW3', REDS, ['araquanid']);
   t = play(['C_K', 'C_9']);
   ok(t.chips === 5 + 10 + 15 && near(t.mult, 1.25), 'Araquanid, dry: +15 Chips and X1.25', t.total);
-  [d] = deal('DEW4', REDS, ['araquanid', 'kyogre']);
+  r110(() => {
+    [d] = deal('DEW4', REDS, ['araquanid', 'kyogre']);
+    t = play(['C_K', 'C_9']);
+    ok(t.chips === 5 + 2 * (10 + 30) && near(t.mult, 1.5 * 1.5) && /Raining!/.test(plain(d)), 'r110: with Kyogre it rains: +30 Chips and X1.5, twice (Kyogre retriggers the Club)', t.total);
+    // (Kyogre's own rule retriggers the Club too)
+    t = play(['C_2', 'C_9', 'C_7', 'C_5', 'C_K']);
+    ok(Number.isFinite(t.mult), 'a Club Flush in the rain plays', t.total);
+  });
+  // r111: Kyogre makes no rain; a red first deal stays dry (Araquanid's dry +15 / X1.25, twice: Kyogre's retrigger and its X1.25)
+  [d] = deal('DEW4b', REDS, ['araquanid', 'kyogre']);
   t = play(['C_K', 'C_9']);
-  ok(t.chips === 5 + 2 * (10 + 30) && near(t.mult, 1.5 * 1.5) && /Raining!/.test(plain(d)), 'with Kyogre it rains: +30 Chips and X1.5, twice (Kyogre retriggers the Club)', t.total);
-  // (Kyogre's own rule retriggers the Club too)
-  t = play(['C_2', 'C_9', 'C_7', 'C_5', 'C_K']);
-  ok(Number.isFinite(t.mult), 'a Club Flush in the rain plays', t.total);
+  ok(t.chips === 5 + 2 * (10 + 15) && near(t.mult, Math.pow(1.25 * 1.25, 2)) && !/Raining!/.test(plain(d)), 'r111: with Kyogre a red deal stays dry: +15 and X1.25 twice, Kyogre\'s X1.25 twice', t.total);
   [d] = deal('DEW5', CLUBS, ['araquanid']);
   t = play(['C_K', 'C_9']);
   ok(t.chips === 5 + 10 + 30 && near(t.mult, 1.5), 'rain: +30 and X1.5 (the X\'s bonus doubles)', t.total);

@@ -10,6 +10,9 @@
 //   Planet / per Tarot (half from the other kind; before r59: both held, either grew both — still checked on the r58 rules).
 //   Energy: Groudon X1.25 -> X1.3125 / X1.375 / X1.4375; Rayquaza's gain 0.2 -> 0.24 / 0.28 / 0.32; Latias / Latios 0.15 -> 0.18 / 0.21
 //     / 0.24; Kyogre Energy-inert (poke_no_energy_field).
+//   contentRev 111 (the owner's simplification, SIMPLE_TRIO_REV): Kyogre / Groudon / Rayquaza are plain (no clash, no calm, no weather,
+//     no Castform lock; Kyogre's Clubs also give X1.25): pokermon_simple_trio_test.mjs. The sections below that pin the OLD rules run them
+//     on r110 (r110(), as a replay of an old move does).
 // Every ability is FIRED through real rounds (act: select_blind deals the first hand) with exact numbers.
 //   node micatro/tests/mods/pokermon_gen3_legendaries_test.mjs
 import fs from 'fs';
@@ -35,6 +38,9 @@ const NEW = ['latias', 'latios', 'kyogre', 'groudon', 'rayquaza'];
 const cr = () => G.GAME.current_round;
 function debuff(j) { j.ability.debuff_sources = { test: true }; j.set_debuff(); return j; }
 const castform = () => G.jokers.cards.find((c) => key(c) === 'j_poke_castform');
+/** Run fn on the rules of a run recorded before r111 (the owner's simplified weather trio: SIMPLE_TRIO_REV), as a resume / replay of an
+ *  old move does: the Primal Clash, Rayquaza's calm, Kyogre / Groudon's weather and Castform lock. The r111 rules: pokermon_simple_trio_test. */
+const r110 = (fn) => { PINS.RULES.pins = { pokermon: '3.9.1+r110' }; try { return fn(); } finally { PINS.RULES.pins = null; } };
 
 /** Spec of a card: 'H_K', or {k: 'C_2', wild: true} / {k, stone: true} / {k, debuff: true}. */
 function mk(spec, area) {
@@ -96,7 +102,7 @@ sec('static', () => {
     ok(c.atlas === 'poke_AtlasJokersBasicNatdex391' && c.pos.x === want[n][1] && c.pos.y === 25 && c.soul_pos && c.soul_pos.x === want[n][1] + 1 && c.soul_pos.y === 25,
       n + ': upstream 3.9.1 cell + its floating soul (Natdex ' + want[n][1] + ',25)', [c.atlas, c.pos, c.soul_pos]);
   }
-  ok(P_CENTERS.j_poke_kyogre.poke_no_energy_field === true && !P_CENTERS.j_poke_groudon.poke_no_energy_field, 'Kyogre is Energy-inert by design (poke_no_energy_field); the others have energy fields');
+  ok(!P_CENTERS.j_poke_kyogre.poke_no_energy_field && P_CENTERS.j_poke_kyogre.config.extra.Xmult_multi === 1.25 && !P_CENTERS.j_poke_groudon.poke_no_energy_field, 'r111: Kyogre has an energy field (its Clubs\' X1.25), as the others');
   ok(energy_values.Xmult_multi === 0.05 && energy_values.Xmult_mod === 0.2 && !('hands' in energy_values) && !('retriggers' in energy_values) && !('d_size' in energy_values), 'energy fields: Xmult_multi +5%, Xmult_mod +20%; hands / retriggers / d_size none');
   // (Mega batch D's Megas sit after their bases: pokermon_megas_classic_test.mjs checks them; skipped here)
   const keys = MODS.pokermon.content.centers.filter((x) => x.set === 'Joker' && x.poke_file !== 'micatro/pokejokers_megas').map((x) => x.key);
@@ -111,7 +117,7 @@ sec('static', () => {
 });
 
 // ------------------------------------------------------------------- Kyogre: +1 hand, Clubs retrigger
-sec('kyogre', () => {
+sec('kyogre', () => r110(() => {
   start('G3L1');
   const h0 = cr().hands_left, rr = G.GAME.round_resets.hands;
   const k = add('j_poke_kyogre'); flush();
@@ -127,13 +133,13 @@ sec('kyogre', () => {
   const before = cr().hands_left;
   k.remove(); flush();
   ok(cr().hands_left === before - 1 && G.GAME.round_resets.hands === rr, 'sold: the hand goes (this round and the next)', [cr().hands_left, G.GAME.round_resets.hands]);
-  // Kyogre's Energy changes nothing (Energy-inert)
+  // Kyogre's Energy changes nothing (Energy-inert before r111: the card made on r110 has no Xmult_multi)
   start('G3L1b');
   const k2 = add('j_poke_kyogre');
   for (let n = 0; n < 3; n++) increment_energy(k2, 'Water');
-  ok(ex(k2).hands === 1 && ex(k2).retriggers === 1, 'three Water Energy: still +1 hand, 1 retrigger', ex(k2));
-  ok(/\{C:chips\}\+1\{\} hand/.test(lines(k2)) && /no Groudon/.test(lines(k2)), 'tooltip: +1 hand, Primal Clash "no Groudon"', lines(k2));
-});
+  ok(ex(k2).hands === 1 && ex(k2).retriggers === 1 && ex(k2).Xmult_multi === undefined, 'r110: three Water Energy: still +1 hand, 1 retrigger, no X field', ex(k2));
+  ok(/\{C:chips\}\+1\{\} hand/.test(lines(k2)), 'tooltip: +1 hand', lines(k2));
+}));
 
 // ------------------------------------------------------------------- Groudon: +1 discard, Hearts / Diamonds X1.25
 sec('groudon', () => {
@@ -160,7 +166,7 @@ sec('groudon', () => {
 });
 
 // ------------------------------------------------------------------- Primal Clash
-sec('clash', () => {
+sec('clash', () => r110(() => {
   // the red deck: 4 hands, 4 discards (+1 each with Kyogre / Groudon)
   let js = deal('G3L3a', CLUBS, ['j_poke_kyogre', 'j_poke_groudon']);
   const base = { h: G.GAME.round_resets.hands - 1, d: G.GAME.round_resets.discards - 1 };
@@ -170,7 +176,6 @@ sec('clash', () => {
   ok(t.chips === 27 && near(t.mult, 1), 'a Club retriggers (27)', t);
   t = play2(['H_K']);
   ok(near(t.mult, 1), 'a Heart gets no X1.25 (Groudon sits out)', t);
-  ok(/Kyogre's round/.test(lines(js[1])) && /4 Clubs, 1 red/.test(lines(js[0])), 'the tooltips say it', [lines(js[0]), lines(js[1])]);
   // the round's decision holds; the next deal re-reads
   nextDeal(REDS);
   ok(G.GAME.poke_primal.winner === 'groudon' && cr().hands_left === base.h && cr().discards_left === base.d + 1, 'next round, 4 red vs 1 Club: Groudon\'s round — +1 discard, no +1 hand', [G.GAME.poke_primal, cr().hands_left, cr().discards_left]);
@@ -206,21 +211,20 @@ sec('clash', () => {
   deal('G3L3g', REDS, ['j_poke_kyogre', 'j_poke_groudon'], (j) => debuff(j[1]));
   ok(G.GAME.poke_primal.winner === null && cr().hands_left === base.h + 1, 'a debuffed Groudon: no clash, Kyogre works (+1 hand)', [G.GAME.poke_primal, cr().hands_left]);
   ok(play2(['C_A']).chips === 27, '... its Clubs retrigger on a red deal');
-});
+}));
 
 // ------------------------------------------------------------------- Rayquaza: Delta Stream, Dragon Ascent
-sec('rayquaza calm', () => {
+sec('rayquaza calm', () => r110(() => {
   deal('G3L4a', CLUBS, ['j_poke_kyogre', 'j_poke_groudon', 'j_poke_rayquaza']);
   const rr = G.GAME.round_resets;
   ok(G.GAME.poke_primal.winner === null && G.GAME.poke_primal.rayquaza && cr().hands_left === rr.hands && cr().discards_left === rr.discards, 'with Rayquaza: no clash, +1 hand AND +1 discard', [G.GAME.poke_primal, cr().hands_left, cr().discards_left]);
   const t = play2(['C_A', 'S_A']);
   ok(t.chips === 10 + 11 + 11 + 11 && near(t.mult, 2), 'both work: the Club retriggers', t);
   ok(near(play2(['H_K', 'D_K']).mult, 3.125), '... and the Hearts / Diamonds X1.25 each');
-  ok(/calmed by Rayquaza/.test(lines(G.jokers.cards[0])), 'Kyogre\'s tooltip: calmed by Rayquaza', lines(G.jokers.cards[0]));
   // a debuffed Rayquaza calms nothing
   deal('G3L4b', CLUBS, ['j_poke_kyogre', 'j_poke_groudon', 'j_poke_rayquaza'], (j) => debuff(j[2]));
   ok(G.GAME.poke_primal.winner === 'kyogre', 'a debuffed Rayquaza: the clash is back', G.GAME.poke_primal);
-});
+}));
 sec('dragon ascent', () => {
   start('G3L5');
   const r = add('j_poke_rayquaza');
@@ -301,8 +305,8 @@ sec('eon duo', () => {
   ok(near(ex(la4).eon_Xmult, 1.15), '... and Latias alone gets nothing from a Planet', ex(la4).eon_Xmult);
 });
 
-// ------------------------------------------------------------------- Castform locked by Kyogre / Groudon
-sec('castform', () => {
+// ------------------------------------------------------------------- Castform locked by Kyogre / Groudon (before r111)
+sec('castform', () => r110(() => {
   // Kyogre: Rainy even on a Spade / red deal; Castform's Rainy effect fires
   deal('G3L7a', ['S_2', 'S_3', 'S_4', 'S_5', 'H_6', 'H_7'], ['j_poke_castform', 'j_poke_kyogre']);
   ok(ex(castform()).form === 'rainy' && ex(castform()).ptype === 'Water', 'Kyogre held (Castform to its LEFT, reading first): a Spade deal is Rainy anyway (Water)', [ex(castform()).form]);
@@ -337,6 +341,6 @@ sec('castform', () => {
   // no legend: Castform unchanged
   deal('G3L7i', REDS, ['j_poke_castform']);
   ok(ex(castform()).form === 'sunny' && G.GAME.poke_primal.winner === null, 'no Kyogre / Groudon: the usual forecast (red: Sunny)', ex(castform()).form);
-});
+}));
 
 done();

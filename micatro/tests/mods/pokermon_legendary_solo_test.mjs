@@ -1,6 +1,6 @@
 // The owner's legendary solo rule (contentRev 59; jokers/pokejokers_designs.js solo59; PORTING.md "The legendary solo rule"): "legendaries
 // must be complete alone". Every partner clause of the Gen 3-5 Legendaries became a solo trigger of the same flavour; the numbers stayed.
-//   Rayquaza       Delta Stream: +1 hand AND +1 discard each round (still calms Kyogre / Groudon's Primal Clash).
+//   Rayquaza       Delta Stream: +1 hand AND +1 discard each round (it calmed Kyogre / Groudon's Primal Clash until r111, which has none).
 //   Latias/Latios  Soul Dew: also X0.075 from the OTHER consumable (Latias per Planet, Latios per Tarot), half the gain, alone.
 //   Lake trio      Lake Guardians: +X0.25 for each OTHER Psychic Joker (Arceus / a Tera count, debuffed don't), at most 2.
 //   Regis          Regi Trio: 1 card per Blind, 1 more on a Boss Blind.
@@ -113,7 +113,7 @@ await sec('rayquaza', () => {
   ok(cr().hands_left === h0 + 1 && cr().discards_left === d0 + 1, 'the round: 5 hands, 4 discards', COUNTS.rayHands);
   const t = play(['C_2', 'C_3', 'D_4', 'H_5', 'S_6']);
   ok(near(ex(r).ascent_Xmult, 1.2) && near(t.mult, 4 * 1.2), 'Dragon Ascent unchanged: a Straight +X0.2, X1.2', [ex(r).ascent_Xmult, t.total]);
-  ok(/Delta Stream: \+1 hand and \| \+1 discard each round/.test(plain(r)) && /Also calms Kyogre and Groudon/.test(plain(r)), 'text: Delta Stream +1 hand and +1 discard; calms the clash', plain(r));
+  ok(/\+1 hand and \+1 discard \| each round/.test(plain(r)) && !/Kyogre|Groudon/.test(plain(r)), 'text (r111): +1 hand and +1 discard each round; no Kyogre / Groudon', plain(r));
   round();
   ok(cr().hands_left === h0 + 1 && cr().discards_left === d0 + 1, 'and the next round', [cr().hands_left, cr().discards_left]);
   for (let i = 0; i < 3; i++) increment_energy(r, 'Dragon');

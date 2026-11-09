@@ -1022,9 +1022,9 @@ defineJokers({
     loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.eon_Xmult), r3(ex.Xmult_mod), r3(ex.Xmult_mod / 2)] }; },
     calculate(self, card, context) { return mega_eon(card, context, 'Planet'); },
   },
-  // Mega Rayquaza 384-1 (Dragon), Delta Stream: +2 hands and +2 discards each round (fixed) and Kyogre and Groudon never clash (it is Delta
-  // Stream's own Pokémon: pokejokers_designs.js delta_calm); Dragon Ascent: Rayquaza's bank (`ascent_Xmult`, CARRY) grows X0.4 (`Xmult_mod`
-  // +20%: 0.48 / 0.56 / 0.64) for each played hand containing a Straight or a Flush.
+  // Mega Rayquaza 384-1 (Dragon), Delta Stream: +2 hands and +2 discards each round (fixed); before contentRev 111 it also kept Kyogre and
+  // Groudon from clashing (pokejokers_designs.js delta_calm; from r111 there is no clash: SIMPLE_TRIO_REV); Dragon Ascent: Rayquaza's bank
+  // (`ascent_Xmult`, CARRY) grows X0.4 (`Xmult_mod` +20%: 0.48 / 0.56 / 0.64) for each played hand containing a Straight or a Flush.
   mega_rayquaza: {
     name: 'mega_rayquaza', poke_sprite391: sprite('Gen03', 6, 7, [7, 7]),
     config: { extra: { ascent_Xmult: 1, Xmult_mod: 0.4, hands: 2, d_size: 2 } },
@@ -1194,8 +1194,8 @@ export const MEGA_D_LOC = {
       '{C:attention}Luster Purge:{} gains {X:mult,C:white} X#2# {} Mult', 'each time you use a {C:planet}Planet{} card', '{C:inactive}(Currently {X:mult,C:white} X#1# {C:inactive} Mult)',
       BR, '{C:attention}Soul Dew:{} also gains', '{X:mult,C:white} X#3# {} Mult each time', 'you use a {C:tarot}Tarot{} card'] },
     j_poke_mega_rayquaza: { name: 'Mega Rayquaza', text: [
-      '{C:attention}Delta Stream:{} {C:chips}+#3#{} hands and', '{C:red}+#4#{} discards each round', '{C:inactive,s:0.8}(Also calms Kyogre and Groudon:', '{C:inactive,s:0.8}no Primal Clash)',
-      BR, '{C:attention}Dragon Ascent:{} gains {X:mult,C:white} X#2# {} Mult', 'when a played hand contains', 'a {C:attention}Straight{} or a {C:attention}Flush{}', '{C:inactive}(Currently {X:mult,C:white} X#1# {C:inactive} Mult)'] },
+      // (contentRev 111: plain text, no Kyogre / Groudon)
+      '{C:chips}+#3#{} hands and {C:red}+#4#{} discards', 'each round', 'Gains {X:mult,C:white} X#2# {} Mult per', '{C:attention}Straight{} or {C:attention}Flush{}', '{C:inactive}(Currently {X:mult,C:white} X#1# {C:inactive} Mult)'] },
     j_poke_mega_garchomp: { name: 'Mega Garchomp', text: [
       '{C:mult}+#1#{} Mult {C:inactive}(banked by Bite)', BR, '{C:attention}Sand Force:{} {X:mult,C:white} X1 {} Mult, plus', '{X:mult,C:white} X#2# {} for each {C:attention}Gold{} card',
       'held in hand', '{C:inactive}(Currently {C:attention}#3#{C:inactive}: {X:mult,C:white} X#4# {C:inactive} Mult)'] },

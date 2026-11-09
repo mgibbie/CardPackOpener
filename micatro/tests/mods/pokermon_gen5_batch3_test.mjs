@@ -49,6 +49,9 @@ const key = (c) => c.config.center.key;
 const near = (a, b) => Math.abs(a - b) < 1e-6;
 const flush = () => G.E_MANAGER.flush();
 const sec = async (name, fn) => { try { await fn(); } catch (e) { ok(false, name + ' threw: ' + String(e && e.stack).slice(0, 900)); } };
+/** The rules of a run recorded before r111 (the owner's simplified weather trio, SIMPLE_TRIO_REV: Kyogre / Groudon made rain / sun, locked
+ *  Castform and clashed; Rayquaza calmed them), as a resume / replay of an old move runs them. The r111 rules: pokermon_simple_trio_test. */
+const r110 = (fn) => { PINS.RULES.pins = { pokermon: '3.9.1+r110' }; try { return fn(); } finally { PINS.RULES.pins = null; } };
 const ex = (j) => j.ability.extra;
 const C = (n) => P_CENTERS['j_poke_' + n];
 const plain = (j) => describe(j).lines.join(' | ').replace(/\{[^}]*\}/g, '').replace(/\s+/g, ' ');
@@ -902,9 +905,11 @@ await sec('sun', () => {
   sell(v);
   ok(!DES.cherrim_sunny(l2), 'Volcarona sold: no sun (live)');
   // Kyogre: Volcarona doesn't override its rain
-  const [, , cf2, ty] = dealWith('VOLC2', ['j_poke_kyogre', 'j_poke_volcarona', 'j_poke_castform', 'j_poke_tympole'], ['H_2', 'H_3', 'H_4', 'H_5', 'H_6', 'H_7', 'H_8']);
-  ok(ex(cf2).form === 'rainy', 'Kyogre + Volcarona: Castform stays Rainy (Kyogre\'s lock wins)', ex(cf2).form);
-  ok(DES.swift_swim_raining(ty) && DES.cherrim_sunny(ty), 'and it is both raining (Tympole) and sunny (the shared check)');
+  r110(() => {
+    const [, , cf2, ty] = dealWith('VOLC2', ['j_poke_kyogre', 'j_poke_volcarona', 'j_poke_castform', 'j_poke_tympole'], ['H_2', 'H_3', 'H_4', 'H_5', 'H_6', 'H_7', 'H_8']);
+    ok(ex(cf2).form === 'rainy', 'r110: Kyogre + Volcarona: Castform stays Rainy (Kyogre\'s lock wins)', ex(cf2).form);
+    ok(DES.swift_swim_raining(ty) && DES.cherrim_sunny(ty), 'r110: and it is both raining (Tympole) and sunny (the shared check)');
+  });
   // Volcarona's X for each Fire Joker, itself included; a Fire Tera counts
   start('VOLC3');
   add('j_poke_volcarona');
