@@ -18,7 +18,7 @@ function ok(cond, msg, extra) {
 const state = () => STATE_NAMES[G.STATE];
 P.PAGE_ODDS.chance = 1; // (every Blind gets its Pages screen here)
 
-ok(P.PAGES_FAIR_REV === 4 && PINS.ENGINE_CONTENT_REV === 4 && PINS.GATED_ENGINE_REVS.includes(4) && PINS.engineRevCompatible(3) && PINS.engineRevCompatible(2), 'engine rev 4, gated (rev 2 / 3 recipes replay without a prompt)');
+ok(P.PAGES_FAIR_REV === 4 && PINS.ENGINE_CONTENT_REV >= 4 && PINS.GATED_ENGINE_REVS.includes(4) && PINS.engineRevCompatible(3) && PINS.engineRevCompatible(2), 'engine rev 4, gated (rev 2 / 3 recipes replay without a prompt)');
 ok(P.FAIR_MIN === 50 && P.FAIR_MAX === 79 && P.tierOfV2(50).tier === 2 && P.tierOfV2(79).tier === 2, 'Fair = difficulty 50 .. 79');
 
 function offer(seed, which, rev, mods) {

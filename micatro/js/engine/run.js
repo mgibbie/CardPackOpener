@@ -2183,7 +2183,7 @@ function applyAction(a) {
       // (Multiplayer: the Nemesis starts for both players together — READY, then pvp_start_blind)
       can(!(G.GAME.pvp && pvpSlot(which)),'press READY: the Nemesis starts for both players together');
       // Pages: the Blind is chosen, but the round waits for the player's Page (no going back to the blind choice)
-      // (Pages v2: only on 25% of Blinds, seeded, + the pity timer — engine/pages.js pageRolls)
+      // (Pages v2: only on 25% of Blinds, seeded, + the guaranteed Boss Page — engine/pages.js pageRolls)
       if (G.GAME.pages_on && (!G.GAME.pages_v2 || pageRolls(which))) {
         if (G.GAME.pages_v2) pageSeen();
         G.GAME.pages = { blind: which, choices: generatePages(which) };

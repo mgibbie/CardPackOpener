@@ -53,10 +53,13 @@ function walk(recipe) {
 	while (!st.done) { const r = st.step(); if (!r || !r.ok) break; const v = st.view(); states.push(v.state); views.push(v); steps.push(r.events); }
 	return { states, steps, views };
 }
-const VAN = packRun({ seed: 'PACKS8', back: 'b_red', stake: 1, customDeck: RICH_DECK }); // (Pages v2: a seed that still opens every vanilla kind)
-const vanKinds = new Set(VAN.opened.map(o => o.kind));
-if (!['Arcana', 'Celestial', 'Spectral', 'Standard', 'Buffoon'].every(k => vanKinds.has(k)) || !VAN.opened.some(o => o.via === 'skip_blind'))
-	throw new Error('the vanilla pack fixture must open every vanilla pack kind and a skip-tag pack: ' + JSON.stringify(VAN.opened));
+// the vanilla fixture: the first seed PACKS<n> whose bot run opens every vanilla pack kind (an Arcana + a Celestial bought) and a
+// skip-tag pack (searched, so a rules change that moves the packs — Pages v2, a Page every ante — just picks another seed)
+const vanGood = (r) => { const k = new Set(r.opened.map(o => o.kind)); return ['Arcana', 'Celestial', 'Spectral', 'Standard', 'Buffoon'].every(x => k.has(x)) && r.opened.some(o => o.via === 'skip_blind') && r.opened.some(o => o.kind === 'Arcana' && o.via === 'buy') && r.opened.some(o => o.kind === 'Celestial' && o.via === 'buy'); };
+let VAN = null, VAN_SEED = null;
+for (let i = 0; i < 200 && !VAN; i++) { const r = packRun({ seed: 'PACKS' + i, back: 'b_red', stake: 1, customDeck: RICH_DECK }); if (vanGood(r)) { VAN = r; VAN_SEED = 'PACKS' + i; } }
+if (!VAN)
+	throw new Error('the vanilla pack fixture must open every vanilla pack kind and a skip-tag pack: ' + 'none of PACKS0..199');
 const vanWalk = walk(VAN.recipe);
 const { loadMods } = await import(pathToFileURL(path.join(ROOT, 'micatro/js/mods/index.js')).href);
 await loadMods(['pokermon']);
@@ -237,7 +240,7 @@ try {
 		const { page, errors, go } = await newPage(1);
 		await go('/micatro/');
 		const o = VAN.opened.find(x => x.kind === 'Arcana' && x.via === 'buy') || VAN.opened[0];
-		await page.evaluate((deck) => window.__micatro.newRun({ seed: 'PACKS8', back: 'b_red', stake: 1, customDeck: deck }), RICH_DECK);
+		await page.evaluate((deck, seed) => window.__micatro.newRun({ seed, back: 'b_red', stake: 1, customDeck: deck }), RICH_DECK, VAN_SEED);
 		await idle(page);
 		let okRun = true;
 		for (let i = 0; i < o.index - 1; i++) {
@@ -348,7 +351,7 @@ try {
 			const o = VAN.opened.find((x) => x.kind === 'Arcana' && x.via === 'buy');
 			const { page, errors, go } = await touchPage();
 			await go('/micatro/');
-			await page.evaluate((deck) => window.__micatro.newRun({ seed: 'PACKS8', back: 'b_red', stake: 1, customDeck: deck }), RICH_DECK);
+			await page.evaluate((deck, seed) => window.__micatro.newRun({ seed, back: 'b_red', stake: 1, customDeck: deck }), RICH_DECK, VAN_SEED);
 			await idle(page);
 			let okRun = true;
 			for (let i = 0; i < o.index - 1; i++) {

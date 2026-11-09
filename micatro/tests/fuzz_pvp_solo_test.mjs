@@ -2,7 +2,7 @@
 // (fuzz_runs_test.mjs) prints a hash of every run's actions + end state; the expected hashes were recorded by the same bot
 // on origin/main before stage 7 (2026-11-08, c69b1ba2): solo runs (vanilla and Pokermon) and Vanilla Attrition matches
 // (MICATRO_FUZZ_PVP=1: the bot READYs into each Nemesis and applies a random referee result). If any of stage 7's branches
-// leaks into those runs, a hash changes.
+// leaks into those runs, a hash changes. (They play engine rules rev 4, the rev they were recorded on: rev 5 changed when Pages appear.)
 //   node micatro/tests/fuzz_pvp_solo_test.mjs
 import { spawnSync } from 'child_process';
 import path from 'path';
@@ -20,6 +20,7 @@ for (const c of CASES) {
   const env = { ...process.env, MICATRO_FUZZ_DIGEST: '1' };
   delete env.MICATRO_FUZZ_PVP; delete env.MICATRO_FUZZ_REV; delete env.MICATRO_FUZZ_PAGES;
   if (c.pvp) env.MICATRO_FUZZ_PVP = c.pvp;
+  env.MICATRO_FUZZ_REV = '4'; // (the hashes are of engine rev 4's rules; rev 5's Page-every-ante is pinned apart: fuzz_pages_fair_test.mjs)
   const r = spawnSync(process.execPath, [path.join(DIR, 'fuzz_runs_test.mjs'), ...c.args], { encoding: 'utf8', timeout: 900000, env });
   const m = /digest ([0-9a-f]{64})/.exec(r.stdout || '');
   const good = r.status === 0 && m && m[1] === c.digest;

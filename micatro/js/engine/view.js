@@ -186,7 +186,7 @@ export function toView() {
     if (G.STATE === G.STATES.PAGE_REMOVE) view.page_remove = { n: GM.page_remove || 0, cards: G.playing_cards.map((c) => ({ id: c.sort_id, front: c.config.card.key, center: c.config.center.key, edition: c.edition ? c.edition.type : 0, seal: c.seal || 0 })) };
     if (GM.page_interest) view.interest_cap = GM.interest_cap + GM.page_interest; // (a Page's +$5 interest cap, this cash-out)
     if (GM.page_next_hs) view.page_next_hs = GM.page_next_hs;
-    // (Pages v2's pity timer: the Boss on deck is guaranteed a Page)
+    // (the Boss on deck is guaranteed a Page — rev 5: none yet this ante; rev 3-4: the pity timer. engine/pages.js pageGuaranteed)
     if (GM.pages_v2 && G.STATE === G.STATES.BLIND_SELECT && pageGuaranteed('Boss')) view.page_pity = true;
   }
   // Mods add their own fields / areas (Pokermon: view.areas.scry).

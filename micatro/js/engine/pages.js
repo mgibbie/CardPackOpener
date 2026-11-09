@@ -23,6 +23,12 @@
 // adjusted from its own seeded stream ('pages_fair' + ante + blind) — see ensureFairSafe. A rev-3 run never reaches that code
 // (G.GAME.pages_fair is only set from rev 4), so Pages-v2 saves and replays re-simulate exactly (fuzz_pages_v2_test.mjs pins them).
 //
+// Pages every ante (engine rules rev 5, PAGES_ANTE_REV; owner, 2026-11-09): the pity timer is per ante. Small / Big still roll 25%;
+// when neither had a Page (a SKIPPED Small / Big counts as no Page), that same ante's Boss Blind is guaranteed one; a Boss after a
+// Page earlier in the ante still rolls 25%. A Nemesis Boss (Multiplayer) never has Pages, so it is never guaranteed one and nothing
+// carries over to the next ante (Showdown: the same). Rev 2..4 runs keep the old cross-ante pity timer (G.GAME.pages_ante is only
+// set from rev 5), so their saves and replays re-simulate exactly (fuzz_pages_fair_test.mjs pins rev 4).
+//
 // Randomness: everything a Page rolls has its own seed keys ('pages' + ante + blind for the offer, 'page_tarot' for the
 // 1 in 4 Tarot, 'pag' as the created cards' key_append), so a Pages run's other streams (shop, packs, bosses) are the
 // same as they would be without them, and a seed always offers the same Pages.
@@ -36,6 +42,7 @@ import * as B from './bignum.js';
 import { opt, centerActive, activeConsumableTypes, contentDisabled, callHook } from '../mods/registry.js';
 import { Tag, add_tag } from './tag.js';
 import { playing_card_joker_effects } from './consumables.js';
+import { pvpSlot } from './pvp.js';
 
 /** The engine rules rev Pages arrive with (mods/pins.js ENGINE_CONTENT_REV). */
 export const PAGES_REV = 2;
@@ -43,6 +50,8 @@ export const PAGES_REV = 2;
 export const PAGES_V2_REV = 3;
 /** The engine rules rev the "at least one no-prize Fair Page per screen" guarantee arrives with (rev-3 runs keep their offers). */
 export const PAGES_FAIR_REV = 4;
+/** The engine rules rev the per-ante guarantee arrives with: no Page on the Small / Big Blind -> that ante's Boss gets one. */
+export const PAGES_ANTE_REV = 5;
 
 // ------------------------------------------------------------------ the parts of a Page
 const oddId = (id) => (id >= 0 && id <= 10 && id % 2 === 1) || id === 14; // (Odd Todd: the Ace is odd)
@@ -105,6 +114,8 @@ export function decidePages(engineRev, challenge) {
   if (G.GAME.pages_on && engineRev >= PAGES_V2_REV) G.GAME.pages_v2 = true;
   // (the no-prize Fair guarantee from rev 4; only set then, so a rev-3 run's game object is exactly what it was)
   if (G.GAME.pages_on && engineRev >= PAGES_FAIR_REV) G.GAME.pages_fair = true;
+  // (the per-ante guarantee from rev 5; only set then, so a rev-4 run's game object is exactly what it was)
+  if (G.GAME.pages_on && engineRev >= PAGES_ANTE_REV) G.GAME.pages_ante = true;
   return G.GAME.pages_on;
 }
 
@@ -339,20 +350,26 @@ export function prizeValue(z) {
   return Math.min(V.max, Math.max(V.min, v == null ? 50 : v));
 }
 
-// ---- how often a Blind gets Pages (v2): 25% a Blind, seeded; a Boss after a whole ante without one always does
+// ---- how often a Blind gets Pages (v2): 25% a Blind, seeded; + a guaranteed Boss (rev 5: every ante; rev 3-4: after a whole ante without one)
 /** The chance a selected Blind gets a Pages screen (owner, 2026-11-08: 25%). A test may raise it. */
 export const PAGE_ODDS = { chance: 0.25 };
-/** Pity: no Page during the whole previous ante (and none yet this ante) -> this ante's Boss Blind gets one. */
+/**
+ * Is this ante's Boss Blind guaranteed a Page? Rev 5 (pages_ante): no Page yet this ante (its Small / Big had none, or were skipped)
+ * and the Boss is not a Nemesis (Multiplayer: never Pages). Rev 3-4 (the pity timer): no Page during the whole previous ante and none
+ * yet this ante.
+ */
 export function pageGuaranteed(which) {
   const ante = G.GAME.round_resets.ante, seen = G.GAME.pages_seen || {};
-  return which === 'Boss' && ante > 1 && !seen[ante - 1] && !seen[ante];
+  if (which !== 'Boss') return false;
+  if (G.GAME.pages_ante) return !seen[ante] && !pvpSlot('Boss');
+  return ante > 1 && !seen[ante - 1] && !seen[ante];
 }
 /** select_blind (run.js): does this Blind get a Pages screen? (the roll is made every time: seeded 'page_chance' + ante + blind) */
 export function pageRolls(which) {
   const roll = seeded(pseudoseed('page_chance' + G.GAME.round_resets.ante + which))();
   return pageGuaranteed(which) || roll < PAGE_ODDS.chance;
 }
-/** A Pages screen opened this ante (for the pity timer). */
+/** A Pages screen opened this ante (for the guarantee). */
 export function pageSeen() { (G.GAME.pages_seen = G.GAME.pages_seen || {})[G.GAME.round_resets.ante] = true; }
 /** The Tags a Tag prize may name (granted like a skip's). */
 export const PRIZE_TAGS = ['tag_double', 'tag_investment', 'tag_juggle', 'tag_coupon', 'tag_d_six', 'tag_top_up'];
