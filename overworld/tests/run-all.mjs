@@ -161,7 +161,13 @@ function runOne(f) {
 			const secs = Math.round((Date.now() - started) / 1000);
 			const tail = out.trim().split('\n').pop() || '(no output)';
 			// the assertions that failed, so a red line says WHAT broke, not just a count
-			const fails = out.split('\n').filter(l => /^FAIL[: ]/.test(l)).slice(0, 5).map(l => '        ' + l.slice(0, 300));
+			// (+ its detail when a suite prints that on the next, indented line: a flake on CI is only diagnosable from this log)
+			const lines = out.split('\n'), fails = [];
+			lines.forEach((l, i) => {
+				if (!/^FAIL[: ]/.test(l) || fails.length >= 5) return;
+				const nx = lines[i + 1] || '';
+				fails.push('        ' + l.slice(0, 300) + (/^\s+\S/.test(nx) && !/^\s*(ok|FAIL)\b/.test(nx) ? '\n          ' + nx.trim().slice(0, 600) : ''));
+			});
 			resolve({ f, ok: code === 0 && !timedOut, secs, tail: timedOut ? 'TIMED OUT / SIGTERM' : tail, err, fails });
 		});
 	});
