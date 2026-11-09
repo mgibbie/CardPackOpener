@@ -293,7 +293,12 @@ G.Tower = (() => {
         // escolta: del piso 11 en adelante (main.gd 3369-3375)
         if (f > 10) {
           const n = Math.min(G.Spawner.CAP, 3 + Math.floor((f - 10) / 2)), a0 = Math.random() * Math.PI * 2;
-          for (let i = 0; i < n; i++) if (G.EnemyMgr.count < cap()) G.Spawner.spawnOne(anchor(), dt(), a0 + i * 0.5);
+          // (each escort on its own spoke a0 + i*0.5; when that side of you is all wall or water, spawnOne finds no free
+          //  point there: try the spoke turned a sixth of a turn at a time, so a boss by a wall still brings its full escort)
+          for (let i = 0; i < n; i++) {
+            if (G.EnemyMgr.count >= cap()) break;
+            for (let k = 0; k < 6 && !G.Spawner.spawnOne(anchor(), dt(), a0 + i * 0.5 + k * Math.PI / 3); k++);
+          }
         }
       }
     }
