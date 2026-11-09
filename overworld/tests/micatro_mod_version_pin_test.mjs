@@ -65,7 +65,7 @@ const strip = (r) => { const o = J(r); delete o.modVersions; delete o.engineRev;
 // (the fixtures stand for saves / replays made before Pages: they play on the engine's rev 1; a new run below is on the current rev)
 const poke = playRun({ seed: 'PINPOKE', back: 'b_red', stake: 1, mods: ['pokermon'], engineRev: 1 }, { seed: 7, maxSteps: 260, weak: true });
 const van = playRun({ seed: 'PINVAN', back: 'b_blue', stake: 1, engineRev: 1 }, { seed: 2, maxSteps: 260, weak: true });
-const ENGINE_REV = 4; // (mods/pins.js ENGINE_CONTENT_REV: 2 since Pages, 3 since Pages v2, 4 since the no-prize Fair Page guarantee)
+const ENGINE_REV = 5; // (mods/pins.js ENGINE_CONTENT_REV: 2 since Pages, 3 since Pages v2, 4 since the no-prize Fair Page guarantee, 5 since a Page every ante)
 if (!poke.session.over || !van.session.over) throw new Error('the fixture runs must end');
 const OLD = { pokermon: '3.2.1' };                    // recorded on Pokermon 3.2.1 before contentRev 1 (the 2026-10-18/19 house rules)
 const CUR = '3.9.1+r110'; // Pokermon: a Mega Stone used from a pack keeps its Mega
