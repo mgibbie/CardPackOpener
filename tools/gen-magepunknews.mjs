@@ -7,6 +7,9 @@
 //
 //   node tools/gen-magepunknews.mjs && git add magepunknews/news.json
 //
+// It MERGES into the existing news.json: hand-curated entries are never changed or dropped; only
+// commits the feed does not cover yet are added (see the bottom). `--rebuild` = from scratch.
+//
 // Card entries carry id/name/class/rarity/type/cost so the news page can link
 // each card to its designwiki page (/designwiki/#/cards/<id>).
 //
@@ -263,5 +266,50 @@ for (const name of usedModAtlases) {
 }
 const mReleases = entries.filter(e => e.kind === 'micatro');
 const modReleases = entries.reduce((n, e) => n + (e.micatroMods || []).length, 0);
-writeFileSync('magepunknews/news.json', JSON.stringify({ generated: git('log', '-1', '--format=%cs').trim(), micatroAtlas, entries }, null, '\t'));
-console.log(`magepunknews/news.json: ${entries.length} entries (${releases.length} card releases, ${totalNew} new cards, ${mReleases.length} Micatro releases, ${modReleases} mod releases${micasurvivorLaunchSha ? ', MicaSurvivor launch' : ''})`);
+// MERGE, never rebuild: news.json is curated by hand (card lists, titles, bodies, order, and whole
+// entries written for work the generator can't see — e.g. mod cards when the CI runner can't load the
+// gitignored mod assets). Every entry already in the file is kept exactly as it is, in its place; the
+// generator only ADDS entries for commits the file doesn't cover yet, slotted in by history order.
+// A generated entry is already covered when an existing entry has its sha, the sha of a commit its PR
+// merged, or the same title within 3 days. `--rebuild` writes the raw history instead (old behaviour).
+const OUT = 'magepunknews/news.json';
+let existing = null;
+if (!process.argv.includes('--rebuild')) { try { existing = JSON.parse(readFileSync(OUT, 'utf8')); } catch { existing = null; } }
+let feed;
+if (existing && Array.isArray(existing.entries)) {
+	const old = existing.entries;
+	const push = (m, k, v) => (m.get(k) || m.set(k, []).get(k)).push(v);
+	const bySha = new Map(), byTitle = new Map();
+	old.forEach((e, i) => { if (e.sha) push(bySha, String(e.sha).slice(0, 7), i); if (e.title) push(byTitle, e.title, i); });
+	const fullSha = new Map(log.map(c => [c.sha.slice(0, 7), c.sha]));
+	const days = (a, b) => Math.abs(Date.parse(a) - Date.parse(b)) / 864e5;
+	const matchOf = e => {
+		if (bySha.has(e.sha)) return bySha.get(e.sha)[0];
+		const full = fullSha.get(e.sha);
+		let prShas = [];
+		try { prShas = git('rev-list', `${full}^1..${full}`).split('\n').filter(Boolean); } catch { }
+		for (const s of prShas) if (bySha.has(s.slice(0, 7))) return bySha.get(s.slice(0, 7))[0];
+		for (const i of byTitle.get(e.title) || []) if (!e.date || !old[i].date || days(e.date, old[i].date) <= 3) return i;
+		return -1;
+	};
+	const match = entries.map(matchOf);
+	const before = new Map(); // existing index (old.length = the end) -> new entries that go just before it
+	for (let i = 0; i < entries.length; i++) {
+		if (match[i] >= 0) continue;
+		let anchor = old.length;
+		for (let j = i + 1; j < entries.length; j++) if (match[j] >= 0) { anchor = match[j]; break; }
+		push(before, anchor, entries[i]);
+	}
+	const merged = [];
+	for (let i = 0; i <= old.length; i++) { merged.push(...(before.get(i) || [])); if (i < old.length) merged.push(old[i]); }
+	const added = merged.length - old.length;
+	const atlas = { ...(existing.micatroAtlas || {}) };
+	for (const [k, v] of Object.entries(micatroAtlas)) if (!(k in atlas)) atlas[k] = v;
+	feed = { ...existing, generated: added ? git('log', '-1', '--format=%cs').trim() : existing.generated, micatroAtlas: atlas, entries: merged };
+	console.log(`merged: kept all ${old.length} existing entries as they are, added ${added}`);
+} else feed = { generated: git('log', '-1', '--format=%cs').trim(), micatroAtlas, entries };
+const text = JSON.stringify(feed, null, '\t');
+let prevText = null;
+try { prevText = readFileSync(OUT, 'utf8'); } catch { }
+if (prevText === null || JSON.stringify(JSON.parse(prevText), null, '\t') !== text) writeFileSync(OUT, text);
+console.log(`magepunknews/news.json: ${feed.entries.length} entries; history has ${entries.length} (${releases.length} card releases, ${totalNew} new cards, ${mReleases.length} Micatro releases, ${modReleases} mod releases${micasurvivorLaunchSha ? ', MicaSurvivor launch' : ''})`);
