@@ -65,8 +65,9 @@ const TIMEOUT = 5 * 60_000;
 // suites that legitimately run longer: micatro_engine_test runs every Micatro mod suite + the all-mods fuzz (~2 min alone,
 // 7 min under load by 2026-10-22, when it started hitting the 5 min cap; 11-12 min on CI by 2026-11-04 with the regional forms, and over 15
 // with Mega batch D's 19 Megas, which every mod suite now loads)
-// micatro_pvp_e2e_test plays six two-player matches in real browsers (~150 s on CI by stage 7c, 226 s with All Multiplayer Cards);
-// micatro_replay_pack_test steps every pack of a vanilla + a Pokermon run in replays (298-315 s on CI by 2026-11-09: it hit the cap)
+// micatro_pvp_e2e_test plays six two-player matches in real browsers (~150 s on CI by stage 7c, 226 s with All Multiplayer Cards)
+// (micatro_replay_pack_test: 288 assertions replaying real runs; since Pages (2026-11-08) it takes 230-299 s on a CI shard and
+//  timed out at 300 s in 7 of the last 13 main gates, the SIGTERM showing as a puppeteer 'detached Frame' error)
 const SLOW = { 'micatro_engine_test.mjs': 22 * 60_000, 'micatro_pvp_e2e_test.mjs': 10 * 60_000, 'micatro_replay_pack_test.mjs': 10 * 60_000 };
 // ~4 GB of RAM per worker. Each suite is a node process plus a headless Chrome,
 // and on a 5.8 GB machine two workers ran each suite ~1.9x slower (145/145 in
@@ -163,7 +164,13 @@ function runOne(f) {
 			const secs = Math.round((Date.now() - started) / 1000);
 			const tail = out.trim().split('\n').pop() || '(no output)';
 			// the assertions that failed, so a red line says WHAT broke, not just a count
-			const fails = out.split('\n').filter(l => /^FAIL[: ]/.test(l)).slice(0, 5).map(l => '        ' + l.slice(0, 300));
+			// (+ its detail when a suite prints that on the next, indented line: a flake on CI is only diagnosable from this log)
+			const lines = out.split('\n'), fails = [];
+			lines.forEach((l, i) => {
+				if (!/^FAIL[: ]/.test(l) || fails.length >= 5) return;
+				const nx = lines[i + 1] || '';
+				fails.push('        ' + l.slice(0, 300) + (/^\s+\S/.test(nx) && !/^\s*(ok|FAIL)\b/.test(nx) ? '\n          ' + nx.trim().slice(0, 600) : ''));
+			});
 			resolve({ f, ok: code === 0 && !timedOut, secs, tail: timedOut ? 'TIMED OUT / SIGTERM' : tail, err, fails });
 		});
 	});

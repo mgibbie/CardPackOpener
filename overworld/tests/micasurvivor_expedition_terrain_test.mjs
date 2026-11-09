@@ -322,7 +322,8 @@ try {
 		const keep = G.Exp.enterZone(1), z = G.World.zone;
 		const lum = c => 0.299 * c[0] + 0.587 * c[1] + 0.114 * c[2];
 		const acc = [[0, 0], [0, 0], [0, 0], [0, 0]];
-		let face = null, faceN = null, sample = null;
+		let face = null, faceN = null;
+		const top = [];   // every level-3 tile: (one tile was a coin toss: a white flower pixel is already full green, the shading can't add to it)
 		const ramps = [];
 		for (let y = z.y0 + 1; y < z.y0 + z.h - 1; y++) for (let x = z.x0 + 1; x < z.x0 + z.w - 1; x++) {
 			if (z.terr(x, y) !== 0) continue;
@@ -332,7 +333,7 @@ try {
 			// (the mean over every cliff face: one face tile can be a bright flower pixel, ×0.55 still above the low ground)
 			if (south) { if (!face) face = { c: [0, 0, 0], n: 0 }; c.forEach((v, i) => { face.c[i] += v; }); face.n++; continue; }
 			acc[h][0] += lum(c); acc[h][1]++;
-			if (!sample && h === 3) sample = { x, y, c };
+			if (h === 3) top.push({ x, y, c });
 		}
 		const mean = acc.map(([s, n]) => n ? Math.round(s / n) : null);
 		G.World.setZone(null);
@@ -346,15 +347,18 @@ try {
 			if (ok) rs.sandier++; else if (!rs.worst) rs.worst = { c: t.c, base: b };
 			rs.r += t.c[0]; rs.baseR += b[0]; rs.rb += t.c[0] - t.c[2]; rs.baseRb += b[0] - b[2];
 		}
-		const baseSample = sample && G.Minimap.colorAt(sample.x, sample.y);
+		// the same tiles with no zone: their mean colour, against the shaded mean (+ how many tiles changed at all)
+		const avg = l => l.length ? [0, 1, 2].map(i => l.reduce((a, c) => a + c[i], 0) / l.length) : null;
+		const bases = top.map(t => G.Minimap.colorAt(t.x, t.y));
+		const sample = avg(top.map(t => t.c)), baseSample = avg(bases), changed = top.filter((t, k) => t.c.some((v, i) => v !== bases[k][i])).length;
 		G.World.setZone(keep);
-		return { mean, rs, face: face && face.c.map(v => Math.round(v / face.n)), sample: sample && sample.c, baseSample };
+		return { mean, rs, face: face && face.c.map(v => Math.round(v / face.n)), sample, baseSample, top: top.length, changed };
 	});
 	const incr = mm.mean && mm.mean.every((v, i) => i === 0 || (v != null && v > mm.mean[i - 1]));
 	A(incr, `minimap shading by height: mean luminance rises with each level (${mm.mean && mm.mean.join(' < ')})`, JSON.stringify(mm));
 	A(mm.rs && mm.rs.n > 3 && mm.rs.r > mm.rs.baseR && mm.rs.rb > mm.rs.baseRb && mm.rs.sandier >= 0.9 * mm.rs.n, `ramps are drawn sandy on the minimap (${mm.rs && mm.rs.sandier} of ${mm.rs && mm.rs.n} ramp tiles redder than their base colour, and on average)`, JSON.stringify(mm.rs));
 	A(mm.face && mm.mean && 0.299 * mm.face[0] + 0.587 * mm.face[1] + 0.114 * mm.face[2] < mm.mean[0], 'cliff faces (tiles above lower ground) are darker than any level (their mean)', JSON.stringify(mm.face));
-	A(mm.sample && mm.baseSample && mm.sample.some((v, i) => v !== mm.baseSample[i]) && mm.sample[1] > mm.baseSample[1], 'without a zone the same tile is the base colour (the shading is only the zone\'s)', JSON.stringify([mm.sample, mm.baseSample]));
+	A(mm.sample && mm.baseSample && mm.changed >= 0.9 * mm.top && mm.sample[1] > mm.baseSample[1], 'without a zone the same tile is the base colour (the shading is only the zone\'s)', JSON.stringify([mm.sample, mm.baseSample, mm.changed, mm.top]));
 
 	// 7. the x block on the snapshot and the host frame; the run's replay
 	const xb = await E(page, async () => {

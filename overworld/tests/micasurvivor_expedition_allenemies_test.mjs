@@ -148,19 +148,24 @@ const errors = [];
 let browser;
 try {
 	browser = await puppeteer.launch({ executablePath: CHROME, headless: 'new', protocolTimeout: 600000, args: ['--no-sandbox', '--autoplay-policy=no-user-gesture-required', '--mute-audio'] });
-	const bctx = await browser.createBrowserContext();
-	const page = await bctx.newPage();
-	await page.setViewport({ width: 1280, height: 720, deviceScaleFactor: 1 });
-	await page.evaluateOnNewDocument(BEFORE);
-	page.on('pageerror', e => errors.push('pageerr: ' + e.message));
-	page.on('console', m => { if (m.type() === 'error' && !/Failed to load resource|status of (400|404|409|429)/.test(m.text())) errors.push('console: ' + m.text().slice(0, 200)); });
-	await page.goto(`http://localhost:${PORT}/micasurvivor/`, { waitUntil: 'domcontentloaded' });
-	const visible = id => page.evaluate(id => { const el = document.getElementById(id); return !!el && !el.classList.contains('hidden') && el.getClientRects().length > 0; }, id);
-	await waitFor(() => page.evaluate(() => typeof G === 'object' && G.Game && document.getElementById('boot').classList.contains('hidden')), 30000);
-	if (await visible('tap-start')) await page.click('#tap-start');
-	await waitFor(() => visible('scr-menu'), 15000);
-	const E = async (fn, ...args) => { try { return await page.evaluate(fn, ...args); } catch (e) { return { error: String(e && e.message || e).slice(0, 400) }; } };
-	await E(() => { G.Audio.sfx = () => {}; G.Audio.music = () => {}; });
+	/** a fresh browser context booted to the menu (the guest profile) -> {ctx, E} */
+	const boot = async () => {
+		const ctx = await browser.createBrowserContext();
+		const page = await ctx.newPage();
+		await page.setViewport({ width: 1280, height: 720, deviceScaleFactor: 1 });
+		await page.evaluateOnNewDocument(BEFORE);
+		page.on('pageerror', e => errors.push('pageerr: ' + e.message));
+		page.on('console', m => { if (m.type() === 'error' && !/Failed to load resource|status of (400|404|409|429)/.test(m.text())) errors.push('console: ' + m.text().slice(0, 200)); });
+		await page.goto(`http://localhost:${PORT}/micasurvivor/`, { waitUntil: 'domcontentloaded' });
+		const visible = id => page.evaluate(id => { const el = document.getElementById(id); return !!el && !el.classList.contains('hidden') && el.getClientRects().length > 0; }, id);
+		await waitFor(() => page.evaluate(() => typeof G === 'object' && G.Game && document.getElementById('boot').classList.contains('hidden')), 30000);
+		if (await visible('tap-start')) await page.click('#tap-start');
+		await waitFor(() => visible('scr-menu'), 15000);
+		const E = async (fn, ...args) => { try { return await page.evaluate(fn, ...args); } catch (e) { return { error: String(e && e.message || e).slice(0, 400) }; } };
+		await E(() => { G.Audio.sfx = () => {}; G.Audio.music = () => {}; });
+		return { ctx, E };
+	};
+	const { ctx: bctx, E } = await boot();
 
 	// the trickle: wanderers as a minority share
 	const w = await E(async () => {
@@ -196,17 +201,19 @@ try {
 		return { ev: ev && ev.dex, s, ok: s.length > 0 && s.every(d => r5.includes(d)) };
 	});
 	A(e3.ok && e3.s.length >= 2, 'zone 3\'s rarity-5 elite pack spawns (' + (e3.s || []).map(d => '#' + d).join(', ') + ')', JSON.stringify(e3));
-	// base: a Water horde with Wishiwashi spawns it
-	const b = await E(async () => {
-		const H = window.__t, wait = ms => new Promise(r => setTimeout(r, ms));
-		H.thaw(); await wait(300);
-		if (G.UI.isOpen('scr-over')) G.UI.show('scr-menu', true);
-		G.Flow.goMenu(); await wait(200);
+	await bctx.close();
+	// base: a Water horde with Wishiwashi spawns it. On a page of its own where the Expedition never loaded: the Expedition freezes the
+	// base tables (G.Enemies included), so on the page above the Water-only hordeTypes stub below was silently dropped and the
+	// horde's type stayed random (1 try in ~200 drew Water + Wishiwashi: 400 tries missed it in about 1 run in 6 on CI)
+	const base = await boot();
+	const b = await base.E(async () => {
+		const H = window.__t;
 		const ok = await G.Flow.play('normal');
 		H.freeze(); H.sturdy();
 		H.log();
 		const ht = G.Enemies.hordeTypes;
 		G.Enemies.hordeTypes = () => ['water'];   // (the horde's type; its four Pokémon are the game's own draw)
+		const stub = G.Enemies.hordeTypes !== ht;   // (the stub took: G.Enemies is not frozen on this page)
 		let tries = 0;
 		while (tries++ < 400) { G.Events.debugStart('horde'); const b = G.Events.bag(); if (b && b.some(d => d.dex === 746)) break; }
 		G.Enemies.hordeTypes = ht;
@@ -215,10 +222,10 @@ try {
 		const got = H.spawned.slice(n0).filter(s => s.dex === 746).length;
 		const mode = G.Game.mode;
 		G.Game.quit();
-		return { ok, mode, tries, inHorde, got };
+		return { ok, mode, stub, tries, inHorde, got };
 	});
-	A(b.mode === 'normal' && b.inHorde && b.got > 0, 'base: a Normal run\'s Water horde with Wishiwashi spawns Wishiwashi', JSON.stringify(b));
-	await bctx.close();
+	A(b.mode === 'normal' && b.stub && b.inHorde && b.got > 0, 'base: a Normal run\'s Water horde with Wishiwashi spawns Wishiwashi', JSON.stringify(b));
+	await base.ctx.close();
 } catch (e) {
 	fail++;
 	console.log('FAIL: the test crashed: ' + (e && e.stack || e));
