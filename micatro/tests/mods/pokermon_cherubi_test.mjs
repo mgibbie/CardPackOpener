@@ -31,6 +31,9 @@ const key = (c) => c.config.center.key;
 const near = (a, b) => Math.abs(a - b) < 1e-9;
 const flush = () => G.E_MANAGER.flush();
 const sec = (name, fn) => { try { fn(); } catch (e) { ok(false, name + ' threw: ' + String(e && e.stack).slice(0, 700)); } };
+/** The rules of a run recorded before r111 (the owner's simplified weather trio, SIMPLE_TRIO_REV: Kyogre / Groudon made rain / sun, locked
+ *  Castform and clashed; Rayquaza calmed them), as a resume / replay of an old move runs them. The r111 rules: pokermon_simple_trio_test. */
+const r110 = (fn) => { PINS.RULES.pins = { pokermon: '3.9.1+r110' }; try { return fn(); } finally { PINS.RULES.pins = null; } };
 const ex = (j) => j.ability.extra;
 const lines = (j) => JSON.stringify(describe(j));
 const enh = (k) => (G.playing_cards || []).filter((c) => c.config.center.key === k).length;
@@ -265,8 +268,8 @@ sec('sunshine', () => {
   ok(near(t.mult, 4 * 3.5), 'with Shaymin, the next hand: X2.5 + 1 = X3.5 (14 Mult)', t);
 });
 
-// ------------------------------------------------------------------- Groudon (Desolate Land) makes it sunny
-sec('groudon', () => {
+// ------------------------------------------------------------------- Groudon (Desolate Land) makes it sunny (before r111: r110)
+sec('groudon', () => r110(() => {
   ok(!!P_CENTERS.j_poke_groudon, 'Groudon is in the game (tested against the real joker)');
   // a Clubs deal, Groudon held: sunny. The Straight has one red card (the Diamond Flower): Groudon's own X1.25 on it too.
   deal('CHGR1', CLUBS, ['j_poke_cherrim']);
@@ -306,7 +309,7 @@ sec('groudon', () => {
   deal('CHGR6', CLUBS, ['j_poke_cherrim', 'j_poke_kyogre', 'j_poke_groudon', 'j_poke_rayquaza']);
   t = flowerStraight(S3);
   ok(near(t.mult, 12.5 * 1.2), 'Rayquaza calms the clash; Groudon still works, so still sunny (12.5; x Rayquaza\'s Dragon Ascent X1.2 on the Straight: 15)', t);
-});
+}));
 
 // ------------------------------------------------------------------- Energy: the Sunshine X at the per-card rate
 sec('energy', () => {

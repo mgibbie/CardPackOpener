@@ -37,6 +37,9 @@ const key = (c) => c.config.center.key;
 const near = (a, b) => Math.abs(a - b) < 1e-6;
 const flush = () => G.E_MANAGER.flush();
 const sec = async (name, fn) => { try { await fn(); } catch (e) { ok(false, name + ' threw: ' + String(e && e.stack).slice(0, 900)); } };
+/** The rules of a run recorded before r111 (the owner's simplified weather trio, SIMPLE_TRIO_REV: Kyogre / Groudon made rain / sun, locked
+ *  Castform and clashed; Rayquaza calmed them), as a resume / replay of an old move runs them. The r111 rules: pokermon_simple_trio_test. */
+const r110 = (fn) => { PINS.RULES.pins = { pokermon: '3.9.1+r110' }; try { return fn(); } finally { PINS.RULES.pins = null; } };
 const ex = (j) => j.ability.extra;
 const C = (n) => P_CENTERS['j_poke_' + n];
 const plain = (j) => describe(j).lines.join(' ').replace(/\{[^}]*\}/g, '').replace(/\s+/g, ' ');
@@ -293,17 +296,22 @@ await sec('snow', () => {
   ok(near(t.chips, 10 + 20), 'not snowy: nothing', t.total);
   ok(/Not snowy/.test(plain(s)), 'its text says so', plain(s));
   // a Kyogre locks the forecast to rain: no snow from the Spades — but an Alolan Ninetales still brings it (snow ADDS)
-  [s] = fresh('ASNOW3', ['alolan_sandshrew', 'kyogre'], SPADES);
-  ok(!is_snowy(s), 'Kyogre held: Castform\'s forecast is Rainy, so Spades bring no snow');
-  const nt = add('j_poke_alolan_ninetales');
-  ok(is_snowy(s), 'an Alolan Ninetales gained mid-round: snowy at once (live)');
-  t = play(['S_K', 'H_K']);
-  ok(near(t.chips, 10 + 20 + 30) && near(t.mult, 2 * 1.2), 'with Kyogre and Ninetales: +30 Chips (the snow), the Spade X1.2', t.total);
-  debuff(nt);
-  ok(!is_snowy(s), 'Ninetales debuffed: no snow');
-  undebuff(nt);
-  nt.remove(); flush();
-  ok(!is_snowy(s), 'Ninetales sold: no snow');
+  r110(() => {
+    [s] = fresh('ASNOW3', ['alolan_sandshrew', 'kyogre'], SPADES);
+    ok(!is_snowy(s), 'r110: Kyogre held: Castform\'s forecast is Rainy, so Spades bring no snow');
+    const nt = add('j_poke_alolan_ninetales');
+    ok(is_snowy(s), 'an Alolan Ninetales gained mid-round: snowy at once (live)');
+    t = play(['S_K', 'H_K']);
+    ok(near(t.chips, 10 + 20 + 30) && near(t.mult, 2 * 1.2), 'with Kyogre and Ninetales: +30 Chips (the snow), the Spade X1.2', t.total);
+    debuff(nt);
+    ok(!is_snowy(s), 'Ninetales debuffed: no snow');
+    undebuff(nt);
+    nt.remove(); flush();
+    ok(!is_snowy(s), 'Ninetales sold: no snow');
+  });
+  // r111: Kyogre locks nothing, so the Spades held most are Snowy again
+  [s] = fresh('ASNOW3b', ['alolan_sandshrew', 'kyogre'], SPADES);
+  ok(is_snowy(s), 'r111: Kyogre held, Spades held most: snowy (Kyogre has no weather)');
   // the shop: only Snow Warning counts
   const sw = add('j_poke_alolan_ninetales');
   endRound(); act({ type: 'cash_out' }); flush();
