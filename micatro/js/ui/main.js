@@ -911,7 +911,7 @@ async function boot() {
         net, UI, Engine, ensureMods, board, stage,
         withRequirements: (ids) => (Mods && Mods.withRequirements ? Mods.withRequirements(ids) : ids),
         currentPins: (ids) => Engine.pins.currentPins(ids), engineRev: Engine.pins.ENGINE_CONTENT_REV,
-        bannedKeys: (mode) => Engine.PV.pvpBannedKeys(mode),
+        bannedKeys: (mode, ruleset) => Engine.PV.pvpBannedKeys(mode, ruleset),
         me: () => myName(), toast: (m) => board.toast(m), showMenu: () => showMenu(),
         newRunScreen: (o) => UI.newRunScreen({ ...menuOpts(), ...o }),
         startMatchRun, resumeMatchRun,
@@ -932,6 +932,7 @@ async function boot() {
       });
       board.onPvpReady = () => Pvp.pressReady();
       board.onPvpHurry = () => Pvp.pressHurry();
+      board.onPvpTimer = () => Pvp.pressPvpTimer();
       window.__micatro.pvp = Pvp;
     } catch (e) { console.warn('micatro: multiplayer unavailable', e); }
   }

@@ -15,20 +15,57 @@
 //   rest (Showdown's starting ante, Boss Blind effects, hidden scores, the Hurry timer's length + skip time; read-only for
 //   the guest). A round is the blind on deck (any slot in Showdown). READY at a Nemesis the opponent hasn't readied for
 //   offers Hurry!: the server's timer on them; each expiry the referee counts arrives here as a recorded pvp_timer action.
+//   Stage 7: the RULESET (Vanilla / Balanced) with The Order and the PvP timer (host options; both default on in Balanced),
+//   passed to both engines and recorded. In a Nemesis round the player ahead may start the PvP timer on the one behind
+//   (server time); each hand it takes arrives as a recorded pvp_hand_lost. The timed client adds back the time its
+//   animations take, from a 40 s budget refilling 2.5 s a second (the mod's), sent with its syncs as a running total.
+//   The lobby also shows the host's mod options (Pokermon's generations, content switches): the match's, for both players.
 import { locText, blindText } from './pvphud.js';
 import { esc } from './markup.js';
+import { MODS } from '../mods/registry.js';
 
-export const PVP_PROTOCOL = 2;   // (server/micatro_pvp.mjs MTPVP_PROTOCOL: 2 = stage 6 — modes, the Hurry timer, hidden scores)
+export const PVP_PROTOCOL = 3;   // (server/micatro_pvp.mjs MTPVP_PROTOCOL: 2 = stage 6 — modes, the Hurry timer, hidden scores; 3 = stage 7 — rulesets, The Order, the PvP timer)
 const META_KEY = 'micatro_pvp_meta_v1';   // {id, n}: the match this device's PvP save belongs to
 const LOBBY_MS = 2000, FAST_MS = 1000, SLOW_MS = 2500;
 const AWAY_MS = 8000, GRACE_S = 120;
-const DEFAULT_OPTS = { lives: 4, pvpStart: 2, deathOnLoss: true, comeback: true, mode: 'attrition', showdownStart: 3, bossFx: false, hideScore: false, timer: true, timerBase: 150, timerInc: 60 };
+const DEFAULT_OPTS = { lives: 4, pvpStart: 2, deathOnLoss: true, comeback: true, mode: 'attrition', showdownStart: 3, bossFx: false, hideScore: false, timer: true, timerBase: 150, timerInc: 60, ruleset: 'balanced', order: true, pvpTimer: true };
+// the rulesets (the mod's names and descriptions, re-worded)
+const RULESETS = {
+  vanilla: { name: 'Vanilla', desc: 'The original Balatro experience: no Multiplayer cards, no balance changes.' },
+  balanced: { name: 'Balanced', desc: 'Near-vanilla with a few balance changes: Hanging Chad retriggers the first two scoring cards once each, Bloodstone\'s rolls are shared in a Nemesis round, Glass Cards are X1.5 and Justice is banned. The PvP timer is on.' },
+};
+const ANIM_CAP = 40, ANIM_REFILL = 2.5;   // the PvP timer's animation budget (s) and its refill (s per s)
+/** The host's mod options that differ from a mod's defaults, in words ('Pokermon: Gen 4 off'); content switches counted. */
+function modOptionsText(mods) {
+  const out = [];
+  for (const id of (mods && mods.ids) || []) {
+    const o = (mods.options || {})[id] || {}, def = (MODS[id] && MODS[id].options) || {};
+    const parts = [];
+    let off = 0;
+    for (const [k, v] of Object.entries(o)) {
+      if (k.startsWith('content:')) { if (v === false) off++; continue; }
+      const d = def[k];
+      if (!d || d.cosmetic || v === d.default) continue;
+      parts.push(esc(d.label || k) + ' ' + (v === true ? 'on' : v === false ? 'off' : esc(String(v))));
+    }
+    if (off) parts.push(off + ' card' + (off === 1 ? '' : 's') + ' switched off');
+    if (parts.length) out.push('<b>' + esc((MODS[id] && MODS[id].name) || id) + '</b>: ' + parts.join(', '));
+  }
+  return out;
+}
 const MODES = {
   attrition: { name: 'Attrition', desc: 'From ante 2 every Boss Blind is <b>Your Nemesis</b>: both play all their hands, the lower score loses a life. Last one with lives wins.' },
   showdown: { name: 'Showdown', desc: 'Time to prepare: from ante 3 the Small, Big AND Boss blinds are all <b>Your Nemesis</b>.' },
   survival: { name: 'Survival', desc: 'No Nemesis, one life each: whoever beats the furthest blind wins.' },
 };
 const SLOT_N = { Small: 1, Big: 2, Boss: 3 };
+/** Two reported scores compared (> 0: a is ahead) — plain numbers exactly, big ones by exponent + mantissa. */
+function cmpScore(a, b) {
+  const k = (s) => { const n = Number(s); if (Number.isFinite(n)) return [n <= 0 ? -Infinity : Math.floor(Math.log10(n)), n]; const m = /^(\d(?:\.\d+)?)e\+?(\d+)$/i.exec(String(s)); return m ? [Number(m[2]), Number(m[1])] : [Infinity, 1]; };
+  const ka = k(a), kb = k(b);
+  if (Number.isFinite(Number(a)) && Number.isFinite(Number(b))) return Number(a) === Number(b) ? 0 : Number(a) > Number(b) ? 1 : -1;
+  return ka[0] !== kb[0] ? (ka[0] > kb[0] ? 1 : -1) : ka[1] === kb[1] ? 0 : ka[1] > kb[1] ? 1 : -1;
+}
 const blindNum = (ante, slot) => ante * 10 + (SLOT_N[slot] || 3);
 
 const h = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
@@ -56,6 +93,8 @@ export function createPvp(ctx) {
   let outcomeApplied = 0, endApplied = false, endShown = false, endData = null;
   let countdownTimer = null, countdown = 0;
   let clockTimer = null;   // (redraws the Hurry timer's countdown while one runs)
+  // the PvP timer's animation budget (s) and the credit counted this round (ms, a running total the server applies once)
+  let animBudget = ANIM_CAP, animTotal = 0, animRound = 0, animLast = 0, animTimer = null;
   let lobbyEl = null;
   const me = () => ctx.me();
 
@@ -195,6 +234,16 @@ export function createPvp(ctx) {
       opt.appendChild(r);
     };
     const mode = o.mode || 'attrition';
+    // the ruleset (stage 7): a change also resets The Order and the PvP timer to the ruleset's defaults
+    const rs = o.ruleset || 'vanilla', rk = Object.keys(RULESETS), ri = Math.max(0, rk.indexOf(rs));
+    const rrow = h('div', 'pvp-opt', '<span>Ruleset</span>');
+    const setRs = (k) => update({ opts: { ...lobby.opts, ruleset: k, order: k !== 'vanilla', pvpTimer: k !== 'vanilla' } });
+    if (isHost) rrow.appendChild(btn('‹', 'arrow red b-pvp-dec-ruleset', () => setRs(rk[(ri + rk.length - 1) % rk.length])));
+    rrow.appendChild(h('b', 'pvp-opt-v pvp-ruleset', esc((RULESETS[rs] || RULESETS.vanilla).name)));
+    if (isHost) rrow.appendChild(btn('›', 'arrow red b-pvp-inc-ruleset', () => setRs(rk[(ri + 1) % rk.length])));
+    opt.appendChild(rrow);
+    opt.appendChild(h('div', 'pvp-mode-desc muted pvp-ruleset-desc', (RULESETS[rs] || RULESETS.vanilla).desc));
+    tog('The Order (same cards for both)', 'order');
     cyc('Mode', 'mode', Object.keys(MODES), (m) => (MODES[m] || MODES.attrition).name);
     opt.appendChild(h('div', 'pvp-mode-desc muted', MODES[mode] ? MODES[mode].desc.replace('ante 2', 'ante ' + o.pvpStart).replace('ante 3', 'ante ' + o.showdownStart) : ''));
     if (mode !== 'survival') num('Lives', 'lives', 1, 9);
@@ -205,6 +254,7 @@ export function createPvp(ctx) {
       tog('Comeback money ($4)', 'comeback');
       tog('Enable Boss Blind effects', 'bossFx');
       tog('Hide enemy score until you play', 'hideScore');
+      tog('PvP timer (in a Nemesis round)', 'pvpTimer');
       tog('Hurry timer', 'timer');
       if (o.timer) {
         cyc('Timer length', 'timerBase', [30, 60, 90, 120, 150, 180, 210, 240], (s) => s + ' s');
@@ -214,9 +264,11 @@ export function createPvp(ctx) {
     if (!isHost) opt.appendChild(h('div', 'muted pvp-host-only', 'Only the host can change these options.'));
     el.appendChild(opt);
     const mods = (L.mods && L.mods.ids) || [];
-    el.appendChild(h('div', 'pvp-setup', `Deck <b>${esc(o.back)}</b> · Stake <b>${esc(o.stake)}</b>${o.seed ? ' · Seed <b>' + esc(o.seed) + '</b>' : ''}${o.sleeve ? ' · Sleeve <b>' + esc(o.sleeve) + '</b>' : ''}<br>Mods: ${mods.length ? mods.map(esc).join(', ') : 'none (vanilla)'} <span class="muted">— everyone plays the host's set</span>`));
-    el.appendChild(h('div', 'pvp-bans muted', mode === 'survival' ? `Banned in Survival: ${ctx.bannedKeys(mode).length} cards (ante changers and the mods' PvP-breaking cards).`
-      : `Banned in Multiplayer: ${ctx.bannedKeys(mode).length} cards (Mr. Bones, Chicot, Luchador, Matador, boss rerolls, ante changers and the mods' equivalents).`));
+    const mo = modOptionsText(L.mods);
+    el.appendChild(h('div', 'pvp-setup', `Deck <b>${esc(o.back)}</b> · Stake <b>${esc(o.stake)}</b>${o.seed ? ' · Seed <b>' + esc(o.seed) + '</b>' : ''}${o.sleeve ? ' · Sleeve <b>' + esc(o.sleeve) + '</b>' : ''}<br>Mods: ${mods.length ? mods.map(esc).join(', ') : 'none (vanilla)'} <span class="muted">— everyone plays the host's set</span>`
+      + (mo.length ? `<div class="pvp-modopts">Mod options (the host's, for both): ${mo.join(' · ')}</div>` : '')));
+    el.appendChild(h('div', 'pvp-bans muted', mode === 'survival' ? `Banned in Survival: ${ctx.bannedKeys(mode, rs).length} cards (ante changers and the mods' PvP-breaking cards${rs !== 'vanilla' ? ', Justice' : ''}).`
+      : `Banned in Multiplayer: ${ctx.bannedKeys(mode, rs).length} cards (Mr. Bones, Chicot, Luchador, Matador, boss rerolls, ante changers and the mods' equivalents${rs !== 'vanilla' ? ', Justice' : ''}).`));
     const bar = h('div', 'pvp-bar');
     if (isHost) {
       const st = btn('Start', 'blue big b-pvp-start', () => update({ start: true }));
@@ -247,7 +299,7 @@ export function createPvp(ctx) {
   }
 
   // ---------------------------------------------------------------- the poll
-  function stop() { stopped = true; clearTimeout(timer); timer = null; clearInterval(countdownTimer); countdownTimer = null; clearInterval(clockTimer); clockTimer = null; }
+  function stop() { stopped = true; clearTimeout(timer); timer = null; clearInterval(countdownTimer); countdownTimer = null; clearInterval(clockTimer); clockTimer = null; clearInterval(animTimer); animTimer = null; }
   function schedule(ms) { clearTimeout(timer); if (!stopped) timer = setTimeout(tick, ms); }
   const cadence = () => {
     const v = ctx.view();
@@ -265,6 +317,7 @@ export function createPvp(ctx) {
   }
   async function syncOnce() {
     const body = { id: lobby.id, v: lobby.v, oseq };
+    if (inMatch && animTotal > 0) body.anim = Math.round(animTotal);
     if (inMatch) {
       const sum = summary();
       if (sum) { const j = JSON.stringify(sum); if (j !== mySum) { mySum = j; mySeq++; } body.sum = sum; body.seq = mySeq; }
@@ -307,7 +360,9 @@ export function createPvp(ctx) {
       await ctx.startMatchRun({
         seed: m.seed, back: L.opts.back, stake: L.opts.stake, sleeve: L.opts.sleeve || null,
         mods: (L.mods && L.mods.ids) || [], modOptions: (L.mods && L.mods.options) || {},
-        pvp: { lives: L.opts.lives, pvpStart: L.opts.pvpStart, deathOnLoss: L.opts.deathOnLoss, comeback: L.opts.comeback, mode: L.opts.mode || 'attrition', showdownStart: L.opts.showdownStart || 3, bossFx: !!L.opts.bossFx },
+        pvp: { lives: L.opts.lives, pvpStart: L.opts.pvpStart, deathOnLoss: L.opts.deathOnLoss, comeback: L.opts.comeback, mode: L.opts.mode || 'attrition', showdownStart: L.opts.showdownStart || 3, bossFx: !!L.opts.bossFx,
+          // (stage 7; a lobby from before it has no ruleset: a Vanilla match)
+          ruleset: L.opts.ruleset || 'vanilla', order: !!L.opts.order },
         lobbyId: L.id,
       });
     } else { matchN = m.n; resetRound(); }
@@ -316,7 +371,7 @@ export function createPvp(ctx) {
     decorate();
     schedule(0);
   }
-  function stopTimersOnly() { clearTimeout(timer); clearInterval(countdownTimer); countdownTimer = null; clearInterval(clockTimer); clockTimer = null; }
+  function stopTimersOnly() { clearTimeout(timer); clearInterval(countdownTimer); countdownTimer = null; clearInterval(clockTimer); clockTimer = null; clearInterval(animTimer); animTimer = null; }
   function resetRound() { meReady = false; readyAnte = 0; handN = 0; handSent = ''; nemesisAnte = 0; outcomeApplied = 0; endApplied = false; endShown = false; endData = null; countdown = 0; mySeq = 0; mySum = ''; oseq = null; }
 
   /** What the opponent's HUD shows of this player (small; changes only on meaningful moves). */
@@ -352,9 +407,30 @@ export function createPvp(ctx) {
       const r = ctx.act({ type: 'pvp_timer', n: (v.pvp.tlost | 0) + 1 });
       if (r && r.ok) { ctx.toast('Out of time: -1 life'); schedule(60); }
     }
-    // the countdown on screen while a timer runs
-    if (m.timer && m.timer.endAt && !m.over) { if (!clockTimer) clockTimer = setInterval(() => ctx.redraw({ hud: true }), 250); }
+    // (0b) the PvP timer's hands (stage 7): each a recorded action, in order — before the round's outcome
+    const hlDue = Math.max(0, ((m.hl && m.hl[me()]) | 0) - (v.pvp.hlost | 0));
+    if (hlDue > 0 && !v.over && ctx.idle()) {
+      const r = ctx.act({ type: 'pvp_hand_lost', n: (v.pvp.hlost | 0) + 1 });
+      if (r && r.ok) { ctx.toast('Out of time: -1 hand'); schedule(60); }
+    }
+    const pt = m.round && m.round.pt;
+    // the countdown on screen while a timer runs (the Hurry timer, the PvP timer)
+    if (((m.timer && m.timer.endAt) || (pt && pt.endAt)) && !m.over) { if (!clockTimer) clockTimer = setInterval(() => ctx.redraw({ hud: true }), 250); }
     else if (clockTimer) { clearInterval(clockTimer); clockTimer = null; }
+    // the animation budget while the PvP timer runs on this player: the time animations take is credited back
+    const rb = m.round ? m.round.b || 0 : 0;
+    if (rb !== animRound) { animRound = rb; animTotal = 0; animBudget = ANIM_CAP; }
+    if (pt && pt.endAt && pt.on === me() && !m.over) {
+      if (!animTimer) {
+        animLast = Date.now();
+        animTimer = setInterval(() => {
+          const now = Date.now(), dt = Math.min(1, (now - animLast) / 1000);
+          animLast = now;
+          if (!ctx.idle()) { const use = Math.min(dt, animBudget); animBudget -= use; animTotal += use * 1000; }
+          else animBudget = Math.min(ANIM_CAP, animBudget + dt * ANIM_REFILL);
+        }, 100);
+      }
+    } else if (animTimer) { clearInterval(animTimer); animTimer = null; }
     // (1) the match is over: end the run (recorded), then the end screen
     if (m.over) {
       if (!v.over && !endApplied && !tlDue && ctx.idle()) {
@@ -404,12 +480,13 @@ export function createPvp(ctx) {
       if (rd && rdB === nemesisAnte && rd.startAt && !rd.res && (sig !== handSent || !mine || mine.n == null)) {
         handN = Math.max(handN + 1, mine && mine.n != null ? mine.n + 1 : 0);
         const slot = ['', 'Small', 'Big', 'Boss'][nemesisAnte % 10] || 'Boss';
-        const d = await call('mtpvp-hand', { id: L.id, ante: Math.floor(nemesisAnte / 10), slot, score: sc, hands, n: handN, hp: v2.pvp.hands_played | 0 });
+        const d = await call('mtpvp-hand', { id: L.id, ante: Math.floor(nemesisAnte / 10), slot, score: sc, hands, n: handN, hp: v2.pvp.hands_played | 0, hl: v2.pvp.hlost | 0 });
         if (d && d.lobby) { handSent = sig; lobby = d.lobby; }
       }
       // (5) the round's result -> the recorded outcome (lives from the referee)
       const r2 = lobby.m.round;
-      if (r2 && (r2.b || blindNum(r2.ante, 'Boss')) === nemesisAnte && r2.res && outcomeApplied !== nemesisAnte && ctx.idle()) {
+      const hlOwed = Math.max(0, ((lobby.m.hl && lobby.m.hl[me()]) | 0) - (v2.pvp.hlost | 0));
+      if (r2 && (r2.b || blindNum(r2.ante, 'Boss')) === nemesisAnte && r2.res && outcomeApplied !== nemesisAnte && !hlOwed && ctx.idle()) {
         const result = r2.res.loser === '' ? 'tie' : r2.res.loser === me() ? 'lose' : 'win';
         const r = ctx.act({ type: 'pvp_outcome', result, lives: Math.max(0, lobby.m.lives[me()] | 0) });
         if (r && r.ok) { outcomeApplied = nemesisAnte; nemesisAnte = 0; ctx.toast(result === 'win' ? 'You won the round!' : result === 'lose' ? 'You lost the round: -1 life' : 'A tie: no lives lost'); }
@@ -442,6 +519,19 @@ export function createPvp(ctx) {
     schedule(0);
   }
 
+  /** The PvP timer (a Nemesis round, the player ahead): start it on the opponent, or stop the one this player started. */
+  async function pressPvpTimer() {
+    const m = lobby && lobby.m, pt = m && m.round && m.round.pt;
+    if (!m) return;
+    const on = !(pt && pt.by === me() && pt.endAt);
+    const d = await call('mtpvp-ptimer', { id: lobby.id, on });
+    if (!d || d.error) { ctx.toast((d && d.error) || 'Offline — try again'); return; }
+    lobby = d.lobby;
+    if (Number.isFinite(d.now)) skew = d.now - Date.now();
+    await referee();
+    schedule(0);
+  }
+
   /** The view's pvp_opp (the HUD's opponent + banners): the player's live view, then published to spectators. */
   function oppInfo() {
     const L = lobby, m = L && L.m;
@@ -462,7 +552,17 @@ export function createPvp(ctx) {
       score: inRound && sc ? sc.s : null, hidden: !!(inRound && sc && sc.hid), hands: inRound && sc ? sc.h : null,
       timer: t && !m.over ? { onMe: t.on === me(), mine: t.by === me(), paused: !t.endAt, left: Math.max(0, (t.endAt ? t.endAt - serverNow() : t.left || 0) / 1000) } : null,
       canHurry: !!(L.opts.timer && mode !== 'survival' && !m.over && !m.pending && meReady && rd && !rd.startAt && !(rd.ready && rd.ready[name]) && !(t && t.by === me() && t.endAt)),
+      ruleset: L.opts.ruleset || 'vanilla', order: !!L.opts.order,
     };
+    // the PvP timer (stage 7): in the round, whoever it runs on; the leader's button
+    const pt = rd && rd.pt;
+    if (inRound && rd && rd.startAt && !rd.res && L.opts.pvpTimer) {
+      const mine = rd.scores && rd.scores[me()];
+      const ahead = !!(sc && mine && sc.s != null && cmpScore(mine.s, sc.s) > 0);
+      o.pvpt = pt ? { onMe: pt.on === me(), mine: pt.by === me(), left: Math.max(0, (pt.endAt - serverNow()) / 1000) } : null;
+      o.canPvpTimer = !pt && ahead && !(L.opts.hideScore && !(mine && mine.hp > 0)) && !(Number.isInteger(sc && sc.h) && sc.h < 1);
+      o.myClock = Math.max(0, (((rd.clk && rd.clk[me()]) != null ? rd.clk[me()] : 60000)) / 1000);
+    }
     // banners: the opponent away (the forfeit clock), a pending death
     const banners = [];
     if (opp && opp.age != null && opp.age > AWAY_MS && !m.over) banners.push(`${esc(name)} disconnected — waiting for them to come back (${Math.max(0, GRACE_S - Math.floor(opp.age / 1000))} s)`);
@@ -556,7 +656,7 @@ export function createPvp(ctx) {
   }
 
   return {
-    open, joinFlow, resume, leave, forfeitConfirm, pressReady, pressHurry,
+    open, joinFlow, resume, leave, forfeitConfirm, pressReady, pressHurry, pressPvpTimer,
     get active() { return inMatch && !!lobby; },
     get lobbyId() { return lobby && lobby.id; },
     oppInfo,

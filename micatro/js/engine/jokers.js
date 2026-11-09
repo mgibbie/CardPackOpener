@@ -16,6 +16,7 @@ import {
   ease_dollars, ease_discard, ease_hands_played, draw_card, level_up_hand, update_hand_text, delay,
   create_card, create_playing_card, copy_card, probability_roll, quantum_enhancements, has_quantum_enhancement, mod_context_effect,
   set_actor, with_actor, can_be_destroyed_by_joker,
+  ante_based, order_round_based,
 } from './core.js';
 import * as B from './bignum.js';
 import { get_poker_hand_info, calculate_context } from './run.js';
@@ -232,7 +233,7 @@ Card.prototype.calculate_joker = function (context) {
     }
     if (context.open_booster) {
       if (this.ability.name === 'Hallucination' && G.consumeables.cards.length + G.GAME.consumeable_buffer < G.consumeables.config.card_limit) {
-        if (probability_roll(this, 'halu' + G.GAME.round_resets.ante, 1, this.ability.extra, 'halu')) {
+        if (probability_roll(this, 'halu' + ante_based(), 1, this.ability.extra, 'halu')) {
           G.GAME.consumeable_buffer = G.GAME.consumeable_buffer + 1;
           G.E_MANAGER.add_event(() => {
             const card = create_card('Tarot', G.consumeables, null, null, null, null, null, 'hal');

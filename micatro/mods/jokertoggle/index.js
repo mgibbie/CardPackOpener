@@ -5,7 +5,7 @@ import DATA from '../../data/balatro_data.js';
 import { registerMod, opt } from '../../js/mods/registry.js';
 
 export const BASE_JOKERS = Object.entries(DATA.centers)
-  .filter(([, c]) => c.set === 'Joker')
+  .filter(([, c]) => c.set === 'Joker' && !c.mod) // (DATA.centers is P_CENTERS: a mod registered first — Multiplayer's reworks — is not an original)
   .sort((a, b) => (a[1].order || 0) - (b[1].order || 0));
 
 export const JOKER_TOGGLE = registerMod({

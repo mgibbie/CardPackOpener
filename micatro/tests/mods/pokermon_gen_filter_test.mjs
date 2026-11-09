@@ -14,6 +14,7 @@ import { T, G, P_CENTERS, act, STATES, add, clearHand, hand } from './poke_helpe
 import { newRun } from '../../js/engine/run.js';
 import { get_current_pool, create_card } from '../../js/engine/core.js';
 import { poll_object } from '../../js/engine/smods.js';
+import { eligiblePrizes } from '../../js/engine/pages.js';
 import { Session } from '../../js/engine/session.js';
 import * as PINS from '../../js/mods/pins.js';
 import { MODS } from '../../js/mods/registry.js';
@@ -76,8 +77,13 @@ sec('inventory', () => {
 
 /** A drawn key breaks the filter when it is a Pokémon of a generation that is off. */
 const offGen = (k, on) => { const c = P_CENTERS[k]; return isPoke(c) && !(c.gen && on.includes(c.gen)); };
+// MICATRO_GENFILTER_PVP=1 (pokermon_gen_filter_pvp_test.mjs): the same sweep in a Multiplayer match — the host's Pokermon options
+// (the generations) are the match's, under the Balanced ruleset and The Order (re-keyed streams). (A custom deck's Starter
+// Tag runs stay solo: a custom deck plays no match.)
+const PVP = process.env.MICATRO_GENFILTER_PVP ? { lives: 4, pvpStart: 2, ruleset: 'balanced', order: true } : null;
 const start = (seed, on, extra = {}) => {
-  newRun({ seed, back: 'b_red', mods: MODS3, modOptions: { pokermon: gens(on) }, ...extra });
+  newRun({ seed, back: 'b_red', mods: MODS3, modOptions: { pokermon: gens(on) }, ...extra, ...(PVP && !extra.customDeck ? { pvp: PVP } : {}) });
+  if (PVP && !extra.customDeck && !(G.GAME.pvp && G.GAME.pvp.order)) ok(false, 'MICATRO_GENFILTER_PVP: not a match with The Order');
   G.FORCE_BOSS = 'bl_wall'; G.GAME.round_resets.blind_choices.Boss = 'bl_wall';
   flush();
 };
@@ -131,6 +137,8 @@ function sweep(seed, on) {
   for (let i = 0; i < 40; i++) { G.GAME.dollars = 1000; act({ type: 'reroll_shop' }); flush(); note('shop', G.shop_jokers.cards.map(key)); }
   for (let i = 0; i < 6; i++) { note('buffoon', openPack('p_buffoon_mega_1')); note('nacho ancient pack', openPack('p_nacho_ancient_pack')); }
   for (const r of [1, 2, 3]) note('pool rarity ' + r, get_current_pool('Joker', r)[0].filter((k) => k !== 'UNAVAILABLE'));
+  // a Page's "named Joker" prizes (engine/pages.js: Common / Uncommon / Pokermon Basic)
+  note('pages named joker', eligiblePrizes().filter((p) => p.kind === 'named_joker').map((p) => p.key));
   note('pool legendary', get_current_pool('Joker', null, true)[0].filter((k) => k !== 'UNAVAILABLE'));
   // the attribute pools (the Mystery Egg's hatch: poll_object over stage_baby / stage_basic; Tall Grass: 'pokemon')
   for (let i = 0; i < 60; i++) {
@@ -152,7 +160,7 @@ function openPackLater() { start('GFPX', [9]); toShop(); return [...openPack('p_
 sec('gen 4 off', () => {
   const { bad, made } = sweep('GF4', ALL_BUT_4);
   ok(Object.keys(bad).length === 0, 'Gen 4 off: no source makes a Gen 4 Pokémon', bad);
-  ok(made.tag_poke_starter_tag >= 48 && made.shop >= 60 && made.c_poke_pokeball >= 8 && made.c_soul >= 1, 'each source made cards', made);
+  ok(made.tag_poke_starter_tag >= 48 && made.shop >= 60 && made.c_poke_pokeball >= 8 && made.c_soul >= 1 && made['pages named joker'] >= 20, 'each source made cards', made);
 });
 // the reported case: Nacho's Turtwig / Chimchar / Piplup never in a Starter Pack with Gen 4 off (many seeds)
 sec('sinnoh starters', () => {

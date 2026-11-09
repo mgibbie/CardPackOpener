@@ -19,6 +19,7 @@ import {
   G, P_CENTERS, P_TAGS, P_BLINDS, P_SEALS, P_STAKES, P_CARDS, pseudorandom, pseudoseed, localize,
   card_eval_status_text, get_current_pool, has_quantum_enhancement, level_up_hand, mod_effect_tail, find_joker,
   mod_card_calculate, set_poll_allow_duplicates, quantum_enhancements,
+  ante_based, order_round_based,
 } from './core.js';
 import { ACTIVE as ACTIVE_MODS, MODS, RARITIES, CONSUMABLE_TYPES, ATTRIBUTES, centerActive, feature, registryVersion, callHook, firstHook } from '../mods/registry.js';
 
@@ -529,7 +530,7 @@ export const POLL_KEYS = { Edition: { str: 'edition_generic', block_infill: true
 /** SMODS.get_poll_key(type, infill). */
 export function get_poll_key(type, infill) {
   const t = POLL_KEYS[type] || { str: 'std_smods_poll', ante: true };
-  return t.str + (t.block_infill ? '' : lor(infill, '')) + (t.ante ? G.GAME.round_resets.ante : '');
+  return t.str + (t.block_infill ? '' : lor(infill, '')) + (t.ante ? ante_based() : '');
 }
 // Steamodded's take_ownership weights for the vanilla editions (the only vanilla objects with get_weight).
 const VANILLA_EDITION_WEIGHTS = {

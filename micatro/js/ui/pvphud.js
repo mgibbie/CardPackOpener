@@ -32,7 +32,7 @@ export function renderPvpHud(board, v) {
     el = document.createElement('div');
     el.id = 'pvp-hud';
     el.className = 'pvp-hud';
-    el.innerHTML = '<div class="ph-row"><div class="ph-me"></div><div class="ph-vs">vs</div><div class="ph-opp"></div></div><div class="ph-loc"></div><div class="ph-timer" style="display:none"></div><div class="ph-banner" hidden></div>';
+    el.innerHTML = '<div class="ph-row"><div class="ph-me"></div><div class="ph-vs">vs</div><div class="ph-opp"></div></div><div class="ph-loc"></div><div class="ph-timer" style="display:none"></div><div class="ph-timer ph-ptimer" style="display:none"></div><div class="ph-banner" hidden></div>';
     (board && board.stage ? board.stage : document.body).appendChild(el);
   }
   el.hidden = false;
@@ -70,6 +70,29 @@ export function renderPvpHud(board, v) {
     const cls = 'btn ' + (running ? 'grey' : 'red') + ' b-pvp-hurry', label = running ? 'Pause timer' : 'Hurry!';
     if (b.className !== cls) b.className = cls;
     if (b.textContent !== label) b.textContent = label;
+  }
+  // the PvP timer (stage 7, a Nemesis round): the clock on whoever it runs on; the leader's start / stop button
+  const pm = el.querySelector('.ph-ptimer');
+  const pt = v.pvp.nemesis ? o.pvpt : null;
+  const pBtn = !board.readOnly && v.pvp.nemesis && (o.canPvpTimer || (pt && pt.mine));
+  pm.style.display = !pt && !pBtn ? 'none' : '';
+  pm.classList.toggle('on-me', !!(pt && pt.onMe));
+  let pspan = pm.querySelector('.ph-clock'), pb = pm.querySelector('.b-pvp-ptimer');
+  if (!pspan) { pspan = document.createElement('span'); pspan.className = 'ph-clock'; pm.appendChild(pspan); }
+  pspan.style.display = pt ? '' : 'none';
+  pspan.textContent = !pt ? '' : pt.onMe ? `PvP timer ${clockText(pt.left)} — play, or lose a hand` : `${o.name || 'Your Nemesis'}'s PvP timer ${clockText(pt.left)}`;
+  if (pBtn && !pb) {
+    pb = document.createElement('button');
+    pb.type = 'button';
+    pb.title = 'You are ahead: start a clock on your opponent — at 0 they lose a hand';
+    pb.addEventListener('click', () => board.onPvpTimer && board.onPvpTimer());
+    pm.appendChild(pb);
+  }
+  if (pb) {
+    pb.style.display = pBtn ? '' : 'none';
+    const cls = 'btn ' + (pt && pt.mine ? 'grey' : 'red') + ' b-pvp-ptimer', label = pt && pt.mine ? 'Stop timer' : 'Start timer';
+    if (pb.className !== cls) pb.className = cls;
+    if (pb.textContent !== label) pb.textContent = label;
   }
   const bn = el.querySelector('.ph-banner');
   bn.hidden = !o.banner;

@@ -943,6 +943,10 @@ body.has-replay-bar.rb-tucked #pad-hints { bottom: 40px; }
 .pvp-modal .pvp-lobby .pvp-opts > .pvp-opt:first-child, .pvp-modal .pvp-lobby .pvp-opts > .pvp-mode-desc, .pvp-modal .pvp-lobby .pvp-opts > .pvp-host-only { grid-column: 1 / -1; }
 .pvp-modal .pvp-lobby .pvp-opt .btn { font-size: 18px; padding: 2px 10px 4px; min-height: 0; }
 .portrait .pvp-modal .pvp-lobby .pvp-opts { grid-template-columns: 1fr; }
+/* (stage 7: more options — the descriptions are smaller and Start / Leave stay in view at the bottom of the scrolling lobby) */
+.pvp-modal .pvp-lobby .pvp-mode-desc { font-size: 14px; margin: 0 auto 4px; }
+.pvp-modal .pvp-lobby .pvp-bar { position: sticky; bottom: -18px; margin: 6px -18px -18px; padding: 10px 0 14px; background: var(--panel); box-shadow: 0 -6px 10px rgba(0,0,0,.25); z-index: 2; }
+.pvp-modal .pvp-modopts { font-size: 16px; color: #f2be48; }
 .pvp-end .pvp-end-title { font-size: 44px; text-align: center; }
 .pvp-end .pvp-end-title.won { color: #4bc292; } .pvp-end .pvp-end-title.lost { color: #fe5f55; } .pvp-end .pvp-end-title.draw { color: #f2be48; }
 .pvp-end .pvp-end-why, .pvp-end .pvp-end-lives, .pvp-end .pvp-end-hist { text-align: center; margin: 4px 0; }
