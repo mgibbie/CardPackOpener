@@ -98,7 +98,7 @@ try {
 				else localStorage.removeItem('micatro_mods');
 			} catch { }
 		}, token, token ? stateOf(ACCTS[token].user) : null, mods);
-		await page.goto(`http://localhost:${PORT}/micatro/`, { waitUntil: 'domcontentloaded' });
+		await page.goto(`http://localhost:${PORT}/micatro/`, { waitUntil: 'domcontentloaded', timeout: 90000 });
 		await waitFor(() => page.evaluate(() => !!(window.__micatro && window.__micatro.ready && document.querySelector('.b-achievements'))), 40000);
 		await waitFor(() => page.evaluate(async () => { const s = (await import('/micatro/js/ui/stickers.js')).stickerSyncState(); return !s || s.synced; }), 10000);
 		const tap = async (b) => { await page.evaluate(b => window.__padTap(b, 70), b); await sleep(200); };
@@ -108,8 +108,23 @@ try {
 		await page.evaluate(() => document.querySelector('.b-achievements').click());
 		await waitFor(() => page.evaluate(() => !!document.querySelector('.b-ach-deck')), 5000);
 		await page.evaluate(() => document.querySelector('.b-ach-deck').click());
-		await waitFor(() => page.evaluate((m) => !!document.querySelector('.dk-tile') && (!m || !!document.querySelector('.dk-tile[data-mod]') || [...document.querySelectorAll('.dk-page-ind')].some((e) => /\/ [2-9]/.test(e.textContent))), wantMod), 15000);
-		await sleep(400);   // (the mod's decks arrive, the page re-fits)
+		await waitFor(() => page.evaluate(() => !!document.querySelector('.dk-tile')), 15000);
+		// With mods on, wait until the panel has actually taken the mod's decks in. (Not "a 2nd page exists": the 15 vanilla decks
+		// alone already fill more than one page, so that passed before the Pokermon module had loaded on a slow CI runner.) The
+		// panel lists 15 vanilla + the mods' decks; a full first page gives the page size, so its page count must cover them all.
+		if (wantMod) {
+			await waitFor(() => page.evaluate(async () => {
+				const mi = await import('/micatro/js/mods/index.js');
+				const sel = JSON.parse(localStorage.getItem('micatro_mods') || '{}').ids || [];
+				const ids = mi.withRequirements(sel);
+				if (!ids.length || !ids.every((id) => mi.MODS[id])) return false;
+				const total = 15 + mi.modBacks(sel, {}).length;
+				const per = document.querySelectorAll('.dk-tile:not([hidden])').length;
+				const m = /\/ (\d+)/.exec((document.querySelector('.dk-page-ind') || {}).textContent || '');
+				return per > 0 && !!m && +m[1] === Math.ceil(total / per);
+			}), 60000);
+		}
+		await sleep(400);   // (the page re-fits)
 	};
 	/** The current page: [{back, stake, best, off, mod, name, small, ring, sticker, filter}] + the pager + the header. */
 	const state = (page) => page.evaluate(() => {
