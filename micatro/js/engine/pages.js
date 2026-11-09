@@ -415,6 +415,25 @@ export const FAIR_MIN = TIER_LABEL_MAX[0] + 1, FAIR_MAX = TIER_LABEL_MAX[1];
 /** Is this v2 Page the screen's "safe" Page: no prize, in the Fair tier? */
 export const isFairSafe = (p) => !!p && (!p.prize || p.prize.kind === 'none') && p.tier === 2 && p.difficulty >= FAIR_MIN && p.difficulty <= FAIR_MAX;
 /**
+ * The QUIETEST Page of an offer (engine Pages or their views) -> its index: what a test / bot that isn't about Pages takes
+ * (ui/main.js __micatro.selectBlind 'plain'). No Round rule and no downside first; then, by prize: none, money, a consumable card,
+ * a next-shop perk, a pack (skipped after the cash-out). Any other prize — a joker (new, named, an edition, a slot), a Tag (Top-up
+ * makes jokers), a deck change, Remove a card (its own PAGE_REMOVE screen after the cash-out), hand size, interest — changes the run
+ * outside the test's control, so it is taken only when nothing else is offered (from rev 4 a no-prize Fair Page always is). Ties: the
+ * first. (The pick before rev 4 ranked "no prize" with those, so a random seed could hand a Nuzlocke test a 2nd joker.)
+ */
+export function quietPageIndex(choices) {
+  const KIND = ['none', 'money', 'card', 'shop', 'pack'];
+  const cost = (p) => {
+    const kind = (p.prize && p.prize.kind) || 'none';
+    const down = p.down != null ? !!p.down : effectWeight(p.effect) > 0;
+    return (p.rule || down ? 10 : 0) + (KIND.includes(kind) ? KIND.indexOf(kind) : 20);
+  };
+  let i = 0;
+  choices.forEach((p, j) => { if (cost(p) < cost(choices[i])) i = j; });
+  return i;
+}
+/**
  * The (roll, rule) pairs that put a no-prize Page with this target + effect in the Fair tier, under the offer's own rules: a v1 / v2
  * modifier (never +40% / +50%: those are Legendary rolls), -15% / -20% only with a downside or a harder Round rule, an allowed rule.
  */
