@@ -32,7 +32,7 @@ export function renderPvpHud(board, v) {
     el = document.createElement('div');
     el.id = 'pvp-hud';
     el.className = 'pvp-hud';
-    el.innerHTML = '<div class="ph-row"><div class="ph-me"></div><div class="ph-vs">vs</div><div class="ph-opp"></div></div><div class="ph-loc"></div><div class="ph-timer" style="display:none"></div><div class="ph-timer ph-ptimer" style="display:none"></div><div class="ph-banner" hidden></div>';
+    el.innerHTML = '<div class="ph-row"><div class="ph-me"></div><div class="ph-vs">vs</div><div class="ph-opp"></div></div><div class="ph-loc"></div><div class="ph-timer" style="display:none"></div><div class="ph-timer ph-ptimer" style="display:none"></div><div class="ph-phantoms" style="display:none"></div><div class="ph-banner" hidden></div>';
     (board && board.stage ? board.stage : document.body).appendChild(el);
   }
   el.hidden = false;
@@ -94,6 +94,17 @@ export function renderPvpHud(board, v) {
     if (pb.className !== cls) pb.className = cls;
     if (pb.textContent !== label) pb.textContent = label;
   }
+  // (Expanded) the opponent's interactive Multiplayer jokers ("phantoms"): display-only copies, redrawn only when they change
+  const ph = el.querySelector('.ph-phantoms'), keys = (o.phantoms || []).join(',');
+  if (ph.dataset.keys !== keys) {
+    ph.dataset.keys = keys;
+    ph.innerHTML = '';
+    if (keys && board.pvpCardCanvas) {
+      ph.appendChild(Object.assign(document.createElement('span'), { className: 'ph-ph-l', textContent: (o.name || 'Nemesis') + ':' }));
+      for (const k of o.phantoms) { const c = board.pvpCardCanvas({ center: k }, 'ph-phantom'); c.title = 'Your Nemesis has this card'; ph.appendChild(c); }
+    }
+  }
+  ph.style.display = keys ? '' : 'none';
   const bn = el.querySelector('.ph-banner');
   bn.hidden = !o.banner;
   bn.innerHTML = o.banner ? o.banner : '';

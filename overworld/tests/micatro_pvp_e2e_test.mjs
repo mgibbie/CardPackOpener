@@ -163,7 +163,9 @@ try {
 	A(await alice.page.evaluate(() => !!localStorage.getItem('micatro_pvp_run_v1') && !localStorage.getItem('micatro_run_v1')), 'the match is saved in its own slot (never the solo run\'s)');
 
 	// ---- both skip to the Nemesis
-	for (const p of [alice.page, bob.page]) { await act(p, { type: 'skip_blind' }); await idle(p); await act(p, { type: 'skip_blind' }); await idle(p); }
+	// (a skip's Tag may open a pack — the seed is the server's pick: skip it)
+	const skipTwo = async (p) => { for (let k = 0; k < 2; k++) { await act(p, { type: 'skip_blind' }); await idle(p); if (/PACK/.test((await view(p)).state)) { await act(p, { type: 'skip_booster' }); await idle(p); } } };
+	for (const p of [alice.page, bob.page]) await skipTwo(p);
 	const na = await view(alice.page);
 	A(na.onDeck === 'Boss' && na.state === 'BLIND_SELECT', 'both at the Boss: Your Nemesis');
 	A(await alice.page.evaluate(() => !!document.querySelector('.b-pvp-ready')), 'the Nemesis column has a READY button (not Select)');
@@ -314,14 +316,18 @@ try {
 	const code3 = await frank.page.evaluate(() => document.querySelector('.pvp-code-v').textContent);
 	const lobbyTxt = (page) => page.evaluate(() => ({ rs: (document.querySelector('.pvp-ruleset') || {}).textContent, order: (document.querySelector('.b-pvp-tog-order') || document.querySelector('.pvp-opts') || {}).textContent, mo: (document.querySelector('.pvp-modopts') || {}).textContent || '' }));
 	let lt = await lobbyTxt(frank.page);
-	A(lt.rs === 'Balanced' && /On/.test(lt.order) && /Gen 4 off/.test(lt.mo), 'the lobby: Balanced by default, The Order on, the host\'s mod options listed (Gen 4 off)', JSON.stringify(lt));
+	A(lt.rs === 'Expanded' && /On/.test(lt.order) && /Gen 4 off/.test(lt.mo), 'the lobby: Expanded by default (as the mod), The Order on, the host\'s mod options listed (Gen 4 off)', JSON.stringify(lt));
+	await click(frank.page, '.b-pvp-dec-ruleset');
+	A(await waitFor(async () => (await lobbyTxt(frank.page)).rs === 'Balanced', 6000), 'the host picks Balanced');
 	await click(frank.page, '.b-pvp-dec-ruleset');
 	A(await waitFor(async () => (await lobbyTxt(frank.page)).rs === 'Vanilla', 6000), 'the host picks Vanilla');
 	const vo = await frank.page.evaluate(() => ({ o: (document.querySelector('.b-pvp-tog-order') || {}).textContent, t: (document.querySelector('.b-pvp-tog-pvpTimer') || {}).textContent }));
 	A(vo.o === 'Off' && vo.t === 'Off', 'Vanilla: The Order and the PvP timer default off', JSON.stringify(vo));
 	await shot(frank.page, '18-lobby-vanilla');
 	await click(frank.page, '.b-pvp-inc-ruleset');
-	A(await waitFor(async () => (await lobbyTxt(frank.page)).rs === 'Balanced', 6000), '... and back to Balanced');
+	await waitFor(async () => (await lobbyTxt(frank.page)).rs === 'Balanced', 6000);
+	await click(frank.page, '.b-pvp-inc-ruleset');
+	A(await waitFor(async () => (await lobbyTxt(frank.page)).rs === 'Expanded', 6000), '... and back to Expanded');
 	await click(frank.page, '.b-pvp-dec-pvpStart');
 	await waitFor(() => frank.page.evaluate(() => (document.querySelector('.pvp-pvpStart') || {}).textContent === '1'), 6000);
 	await shot(frank.page, '19-lobby-balanced-host');
@@ -331,12 +337,12 @@ try {
 	A(await waitFor(() => gina.page.evaluate(() => !!document.querySelector('.b-pvp-ready-lobby')), 60000), 'gina joined (the host\'s Pokermon loaded for her)');
 	lt = await lobbyTxt(gina.page);
 	const gArrows = await gina.page.evaluate(() => document.querySelectorAll('.b-pvp-dec-ruleset, .b-pvp-tog-order, .b-pvp-tog-pvpTimer').length);
-	A(lt.rs === 'Balanced' && /Gen 4 off/.test(lt.mo) && gArrows === 0, 'gina sees the ruleset and the host\'s Gen 4 filter, read-only', JSON.stringify({ lt, gArrows }));
+	A(lt.rs === 'Expanded' && /Gen 4 off/.test(lt.mo) && gArrows === 0, 'gina sees the ruleset and the host\'s Gen 4 filter, read-only', JSON.stringify({ lt, gArrows }));
 	await shot(gina.page, '20-lobby-balanced-guest');
 	await click(gina.page, '.b-pvp-ready-lobby');
 	await waitFor(() => frank.page.evaluate(() => { const b = document.querySelector('.b-pvp-start'); return b && !b.disabled; }), 10000);
 	await click(frank.page, '.b-pvp-start');
-	A(await waitFor(async () => (await view(frank.page))?.pvp && (await view(gina.page))?.pvp, 60000), 'Start: both in the Balanced match');
+	A(await waitFor(async () => (await view(frank.page))?.pvp && (await view(gina.page))?.pvp, 60000), 'Start: both in the Expanded match');
 	await idle(frank.page); await idle(gina.page);
 	const eng = (page) => page.evaluate(async () => {
 		const core = await import('/micatro/js/engine/core.js');
@@ -344,8 +350,8 @@ try {
 		return { gen4: G.GAME.mod_options.pokermon && G.GAME.mod_options.pokermon.gen_four, order: core.theOrder(), rs: G.GAME.pvp.ruleset, rec: { rs: rec.pvp.ruleset, order: rec.pvp.order, gen4: rec.modOptions && rec.modOptions.pokermon && rec.modOptions.pokermon.gen_four }, prefs: localStorage.getItem('micatro_mods') };
 	});
 	const ef = await eng(frank.page), eg = await eng(gina.page);
-	A(ef.gen4 === false && eg.gen4 === false && ef.order && eg.order && ef.rs === 'balanced' && eg.rs === 'balanced', 'both engines: Gen 4 off, Balanced, The Order', JSON.stringify([ef, eg]));
-	A(eg.rec.rs === 'balanced' && eg.rec.order === true && eg.rec.gen4 === false, 'gina\'s recipe records it all (resume / replay / spectate play the same)', JSON.stringify(eg.rec));
+	A(ef.gen4 === false && eg.gen4 === false && ef.order && eg.order && ef.rs === 'expanded' && eg.rs === 'expanded', 'both engines: Gen 4 off, Expanded, The Order', JSON.stringify([ef, eg]));
+	A(eg.rec.rs === 'expanded' && eg.rec.order === true && eg.rec.gen4 === false, 'gina\'s recipe records it all (resume / replay / spectate play the same)', JSON.stringify(eg.rec));
 	A(eg.prefs === null, 'gina\'s own saved mod settings are untouched', String(eg.prefs));
 	// no source offers a Gen 4 Pokémon (each player's engine: the pools, then 150 shop / pack / Judgement-style rolls on a throwaway
 	// copy of the streams — the live run's recipe isn't touched: a reload afterwards replays the same run)
@@ -400,6 +406,28 @@ try {
 	await ready(frank.page);
 	A(await waitFor(async () => { const v = await view(frank.page); return v && v.pvp && v.state === 'ROUND_EVAL' && v.pvp.hlost === 1 && v.pvp.order; }, 60000), 'frank reloads -> the same run (the lost hand, The Order) re-simulated from its recipe');
 	A(await frank.page.evaluate((n) => window.__micatro.session.recipe.actions.length === n, n7), '... every move kept');
+	// the Multiplayer cards' art, drawn in the game (our own: micatro/assets/textures/pvp, tools/micatro/gen_mp_art.py)
+	const art = await gina.page.evaluate(async () => {
+		const { cardCanvas } = await import('/micatro/js/ui/screens.js');
+		const box = document.createElement('div');
+		box.id = 'mp-art-check';
+		box.style.cssText = 'position:fixed;left:10px;top:10px;z-index:99999;background:#223;padding:10px;display:flex;flex-wrap:wrap;gap:8px;width:860px';
+		const keys = ['j_mp_defensive_joker', 'j_mp_skip_off', 'j_mp_lets_go_gambling', 'j_mp_speedrun', 'j_mp_conjoined_joker', 'j_mp_penny_pincher', 'j_mp_taxes', 'j_mp_pizza', 'j_mp_pacifist', 'c_mp_asteroid', 'j_mp_ticket', 'c_mp_ouija'];
+		const draw = () => { box.innerHTML = ''; for (const k of keys) { const c = cardCanvas({ center: k }, 'mp-art'); c.style.width = '130px'; box.appendChild(c); } };
+		document.body.appendChild(box);
+		draw(); await new Promise((r) => setTimeout(r, 2500)); draw();
+		// (the art is OUR sheet, not the base Jokers / Tarots sheets: the mod atlas is what the card names)
+		const { CENTERS } = await import('/micatro/js/ui/assets.js');
+		if (keys.slice(0, 10).some((k) => !/^mtpvp_(jokers|planets)$/.test(CENTERS[k].atlas))) return ['wrong atlas'];
+		// each card's face has drawn pixels (not a blank / placeholder): the canvas centre is opaque and not one flat colour
+		return [...box.querySelectorAll('canvas')].map((c) => { const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; const cols = new Set(); let opaque = 0; for (let i = 0; i < d.length; i += 16) { if (d[i + 3] > 200) { opaque++; cols.add(d[i] + ',' + d[i + 1] + ',' + d[i + 2]); } } return opaque > d.length / 32 && cols.size > 8; });
+	});
+	A(art.length === 12 && art.slice(0, 10).every(Boolean), 'the Multiplayer cards draw their art in the game (our sheets; the reworks on the base sheets)', JSON.stringify(art));
+	await shot(gina.page, '24-mp-card-art');
+	await gina.page.evaluate(() => document.getElementById('mp-art-check').remove());
+	// Expanded: what each engine knows of the opponent arrives as recorded pvp_opp actions (the opponent's lives at least)
+	const po = await gina.page.evaluate(() => window.__micatro.session.recipe.actions.filter((a) => a.type === 'pvp_opp'));
+	A(po.length >= 1 && po.some((a) => a.o && a.o.lives === 4), "Expanded: the opponent's state is recorded (pvp_opp)", JSON.stringify(po).slice(0, 300));
 	const errs3 = [...frank.errors, ...gina.errors].filter((e) => !/favicon|net::/.test(e));
 	A(!errs3.length, 'stage 7: no page errors', errs3.join(' | '));
 } catch (e) {

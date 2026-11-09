@@ -28,13 +28,18 @@ export const PVP_PROTOCOL = 3;   // (server/micatro_pvp.mjs MTPVP_PROTOCOL: 2 = 
 const META_KEY = 'micatro_pvp_meta_v1';   // {id, n}: the match this device's PvP save belongs to
 const LOBBY_MS = 2000, FAST_MS = 1000, SLOW_MS = 2500;
 const AWAY_MS = 8000, GRACE_S = 120;
-const DEFAULT_OPTS = { lives: 4, pvpStart: 2, deathOnLoss: true, comeback: true, mode: 'attrition', showdownStart: 3, bossFx: false, hideScore: false, timer: true, timerBase: 150, timerInc: 60, ruleset: 'balanced', order: true, pvpTimer: true };
+const DEFAULT_OPTS = { lives: 4, pvpStart: 2, deathOnLoss: true, comeback: true, mode: 'attrition', showdownStart: 3, bossFx: false, hideScore: false, timer: true, timerBase: 150, timerInc: 60, ruleset: 'expanded', order: true, pvpTimer: true };
 // the rulesets (the mod's names and descriptions, re-worded)
 const RULESETS = {
   vanilla: { name: 'Vanilla', desc: 'The original Balatro experience: no Multiplayer cards, no balance changes.' },
   balanced: { name: 'Balanced', desc: 'Near-vanilla with a few balance changes: Hanging Chad retriggers the first two scoring cards once each, Bloodstone\'s rolls are shared in a Nemesis round, Glass Cards are X1.5 and Justice is banned. The PvP timer is on.' },
+  expanded: { name: 'Expanded', desc: 'Balanced plus the Multiplayer cards: Defensive Joker, Skip-Off, Let\'s Go Gambling, Penny Pincher, Taxes, Pizza, Pacifist and the Asteroid planet, and reworked Golden Ticket, Seltzer, Turtle Bean and Ouija. SPEEDRUN, Conjoined and Defensive Joker are banned. The PvP timer is on.' },
 };
-const ANIM_CAP = 40, ANIM_REFILL = 2.5;   // the PvP timer's animation budget (s) and its refill (s per s)
+const ANIM_CAP = 40, ANIM_REFILL = 2.5;
+// (Expanded) the effects the opponent's cards have on this player, in words
+const FX_TEXT = { lgg: 'Your Nemesis\'s Let\'s Go Gambling misfired: +$10', pizza: 'Your Nemesis ate a Pizza: +1 discard this ante', asteroid: 'An Asteroid hit your best hand: -1 level', speedrun: 'SPEEDRUN! You both reached the Nemesis within 30 s' };
+// (Expanded) the opponent's Multiplayer jokers whose effects reach this player: shown on the HUD ("phantoms")
+const PHANTOMS = ['j_mp_lets_go_gambling', 'j_mp_pizza', 'j_mp_speedrun', 'j_mp_conjoined_joker'];   // the PvP timer's animation budget (s) and its refill (s per s)
 /** The host's mod options that differ from a mod's defaults, in words ('Pokermon: Gen 4 off'); content switches counted. */
 function modOptionsText(mods) {
   const out = [];
@@ -94,6 +99,7 @@ export function createPvp(ctx) {
   let countdownTimer = null, countdown = 0;
   let clockTimer = null;   // (redraws the Hurry timer's countdown while one runs)
   // the PvP timer's animation budget (s) and the credit counted this round (ms, a running total the server applies once)
+  let fxBusy = false;      // (Expanded: an mtpvp-fx post in flight)
   let animBudget = ANIM_CAP, animTotal = 0, animRound = 0, animLast = 0, animTimer = null;
   let lobbyEl = null;
   const me = () => ctx.me();
@@ -383,6 +389,8 @@ export function createPvp(ctx) {
     return {
       ante: v.ante, round: v.round, loc, blind: v.blind && v.blind.key && v.state !== 'BLIND_SELECT' && v.state !== 'SHOP' ? v.blind.key : null,
       dollars: v.dollars, lives: v.pvp.lives,
+      // (Expanded: what the opponent's Multiplayer cards read of this player — skips, cards sold per ante, $ spent per shop)
+      ...(v.pvp.ruleset === 'expanded' ? { skips: v.pvp.skips | 0, sells: v.pvp.sells || {}, spent: (v.pvp.spent || []).slice(-60), hmax: v.hands_left } : {}),
       jokers: ((v.areas && v.areas.jokers) || []).slice(0, 30).map((c) => [c.center, c.edition || null]),
     };
   }
@@ -412,6 +420,23 @@ export function createPvp(ctx) {
     if (hlDue > 0 && !v.over && ctx.idle()) {
       const r = ctx.act({ type: 'pvp_hand_lost', n: (v.pvp.hlost | 0) + 1 });
       if (r && r.ok) { ctx.toast('Out of time: -1 hand'); schedule(60); }
+    }
+    // (0c) Expanded: the opponent's state (recorded pvp_opp, when it changed), the effects relayed to this player (recorded
+    // pvp_fx, in order), and the effects this player's engine sent (posted from the index the server has)
+    if (v.pvp.ruleset === 'expanded' && !v.over && ctx.idle()) {
+      const fxTo = (m.fx && m.fx[me()]) || [];
+      if (fxTo.length > (v.pvp.fxin | 0)) {
+        const k = fxTo[v.pvp.fxin | 0];
+        const r = ctx.act({ type: 'pvp_fx', n: (v.pvp.fxin | 0) + 1, k });
+        if (r && r.ok) { ctx.toast(FX_TEXT[k] || k); schedule(60); }
+      }
+      const od = oppData(v);
+      if (od) { const r = ctx.act({ type: 'pvp_opp', o: od }); if (r && r.ok) schedule(60); }
+      const sent = v.pvp.sent || [], got = (m.fxs && m.fxs[me()]) | 0;
+      if (sent.length > got && !fxBusy) {
+        fxBusy = true;
+        call('mtpvp-fx', { id: L.id, from: got, list: sent.slice(got, got + 20) }).then((d) => { fxBusy = false; if (d && d.lobby) { lobby = d.lobby; schedule(30); } });
+      }
     }
     const pt = m.round && m.round.pt;
     // the countdown on screen while a timer runs (the Hurry timer, the PvP timer)
@@ -519,6 +544,24 @@ export function createPvp(ctx) {
     schedule(0);
   }
 
+  /** (Expanded) What this player's engine knows of the opponent, if it differs from what the engine has: -> the pvp_opp payload or null. */
+  function oppData(v) {
+    const m = lobby && lobby.m;
+    if (!m) return null;
+    const name = m.players.find((p) => p !== me());
+    const s = (opp && opp.sum) || {}, rd = m.round, cur = v.pvp.opp || {};
+    const inRound = !!(v.pvp.nemesis && rd && rd.startAt && !rd.res);
+    const sc = inRound && rd.scores && rd.scores[name];
+    const want = {
+      lives: m.lives[name] | 0, skips: s.skips | 0,
+      hands: inRound ? (sc && Number.isInteger(sc.h) ? sc.h : (Number.isInteger(s.hmax) ? s.hmax : null)) : null,
+      sells: s.sells && typeof s.sells === 'object' ? s.sells : {}, spent: Array.isArray(s.spent) ? s.spent : [],
+    };
+    const diff = {};
+    for (const k of Object.keys(want)) if (JSON.stringify(want[k]) !== JSON.stringify(k in cur ? cur[k] : (k === 'sells' ? {} : k === 'spent' ? [] : k === 'hands' ? null : 0))) diff[k] = want[k];
+    return Object.keys(diff).length ? diff : null;
+  }
+
   /** The PvP timer (a Nemesis round, the player ahead): start it on the opponent, or stop the one this player started. */
   async function pressPvpTimer() {
     const m = lobby && lobby.m, pt = m && m.round && m.round.pt;
@@ -553,6 +596,8 @@ export function createPvp(ctx) {
       timer: t && !m.over ? { onMe: t.on === me(), mine: t.by === me(), paused: !t.endAt, left: Math.max(0, (t.endAt ? t.endAt - serverNow() : t.left || 0) / 1000) } : null,
       canHurry: !!(L.opts.timer && mode !== 'survival' && !m.over && !m.pending && meReady && rd && !rd.startAt && !(rd.ready && rd.ready[name]) && !(t && t.by === me() && t.endAt)),
       ruleset: L.opts.ruleset || 'vanilla', order: !!L.opts.order,
+      // (Expanded) the opponent's interactive Multiplayer jokers: display-only copies on the HUD
+      phantoms: (L.opts.ruleset === 'expanded' && Array.isArray(s.jokers) ? s.jokers.map((j) => j[0]).filter((k) => PHANTOMS.includes(k)) : []).slice(0, 6),
     };
     // the PvP timer (stage 7): in the round, whoever it runs on; the leader's button
     const pt = rd && rd.pt;

@@ -187,6 +187,9 @@ export function liveCard(d, cls, backKey) {
 }
 
 export function cardCanvas(d, cls, backKey) {
+  // (a card given only by its key — the Multiplayer end screen / HUD: a mod card's art is on its mod's atlas, as the view says)
+  const ctr = d && d.center && !d.mod ? CENTERS[d.center] : null;
+  if (ctr && ctr.mod && ctr.atlas) d = { ...d, mod: ctr.mod, atlas: ctr.atlas, pos: ctr.pos, ...(ctr.soul_pos ? { soul_pos: ctr.soul_pos } : {}), ...(ctr.soul_atlas ? { soul_atlas: ctr.soul_atlas } : {}) };
   const c = document.createElement('canvas');
   c.width = FACE_W; c.height = FACE_H;
   c.className = 'mini-card ' + (cls || '');

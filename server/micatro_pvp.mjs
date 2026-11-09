@@ -35,6 +35,11 @@
 //     it. At 0 the timed player loses ONE HAND (m.hl[name], applied by the client as the recorded pvp_hand_lost — its
 //     reports carry how many it has applied, so a hand in flight is never counted twice), gets 10 s back, and the clock
 //     stops until the leader starts it again. round = {..., pt: {on, by, endAt} | null, clk: {name: ms}, at: {name: ms}}
+// Stage 7b (Expanded): the Multiplayer cards' effects on the other player are RELAYED: a client posts what its engine sent
+//   (mtpvp-fx: its engine's list, from the index the server has) -> m.fx[opponent] (the effects TO each player, in order),
+//   m.fxs[sender] (how many received from them); the receiver applies each as the recorded pvp_fx. SPEEDRUN is the server's:
+//   when a Nemesis round starts and the two players' first READY presses were within 30 s, 'speedrun' goes to both.
+//   round.rt = {name: first READY ms}.
 //
 // Rows (every write is an exact key; the shared lobby row is a compare-and-set on `rev`):
 //   mtpvp:<id>             {id, code, rev, at, ts, host, guest, gready, opts, mods, pv, m: null | match}
@@ -67,7 +72,7 @@ export const PP = {
 	DEFAULTS: {
 		lives: 4, pvpStart: 2, deathOnLoss: true, comeback: true, seed: '', back: 'b_red', stake: 1, sleeve: '',
 		mode: 'attrition', showdownStart: 3, bossFx: false, hideScore: false, timer: true, timerBase: 150, timerInc: 60,
-		ruleset: 'balanced',             // (order / pvpTimer default to on in Balanced, off in Vanilla — cleanOpts)
+		ruleset: 'expanded',             // (the mod's default; order / pvpTimer default to on except in Vanilla — cleanOpts)
 	},
 	TIMER_FLOOR_MS: 10_000,          // a skip taken back never leaves less than this on the Hurry timer
 	PVPT_BASE_MS: +(globalThis.process && process.env && process.env.MTPVP_PVPT_BASE_MS) || 60_000, // the PvP timer: each player's clock at a round's start
@@ -75,7 +80,9 @@ export const PP = {
 	ANIM_MAX_MS: 40_000,             // the animation credit one report may carry (the client's budget's capacity)
 };
 export const MODES = ['attrition', 'showdown', 'survival'];
-export const RULESETS = ['vanilla', 'balanced'];
+export const RULESETS = ['vanilla', 'balanced', 'expanded'];
+export const FX_KINDS = ['lgg', 'pizza', 'asteroid'];   // (what a client may send its opponent; 'speedrun' is the server's own)
+export const SPEEDRUN_MS = 30_000;
 // (a short grace period — a test's — keeps the heartbeat well inside it)
 PP.BEAT_MS = Math.min(PP.BEAT_MS, Math.floor(PP.GRACE_MS / 4));
 const CODE_ABC = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';   // no I, O, 0, 1
@@ -657,6 +664,7 @@ export async function handleMtpvp(ctx) {
 			const rd = m.round;
 			if (rd.startAt) return changed ? undefined : false;  // (already counting down / playing)
 			rd.ready[username] = !!body.ready;
+			if (body.ready) (rd.rt = rd.rt || {})[username] = rd.rt[username] || now;
 			// un-READY pauses a Hurry timer this player started; READY by the timed player: they reached the Nemesis
 			if (!body.ready && m.timer && m.timer.by === username) timerPause(m, now);
 			if (m.players.every((p) => rd.ready[p])) {
@@ -664,6 +672,9 @@ export async function handleMtpvp(ctx) {
 				for (const p of m.players) { rd.scores[p] = { s: '0', h: null }; (rd.clk = rd.clk || {})[p] = PP.PVPT_BASE_MS; }
 				// (the round starts: no timer in a Nemesis round; skips count again from here)
 				m.timer = null; m.sk = {};
+				// (Expanded) SPEEDRUN: both reached the Nemesis within 30 s of each other
+				const rts = m.players.map((p) => (rd.rt || {})[p]);
+				if (lb.opts.ruleset === 'expanded' && rts.every(Number.isFinite) && Math.abs(rts[0] - rts[1]) <= SPEEDRUN_MS) for (const p of m.players) ((m.fx = m.fx || {})[p] = m.fx[p] || []).push('speedrun');
 			}
 		});
 		if (r.error) return fail(r);
@@ -685,6 +696,28 @@ export async function handleMtpvp(ctx) {
 				if (rd.ready[opp]) return { error: 'your opponent is ready', status: 409 };
 				if (!timerStart(m, lb.opts, now, username, opp, rd.b || blindNum(rd.ante, 'Boss')) && !changed) return false;
 			} else if (!(m.timer && m.timer.by === username && timerPause(m, now)) && !changed) return false;
+		});
+		if (r.error) return fail(r);
+		return json({ lobby: view(r.lb, r.rows), now });
+	}
+
+	// (Expanded) the effects this player's engine sent its opponent: body.from = the index of list[0] in the engine's list
+	if (action === 'mtpvp-fx') {
+		const list = Array.isArray(body.list) ? body.list.slice(0, 20).map(String) : [];
+		const from = Math.floor(+body.from);
+		if (!(from >= 0 && from <= 10_000) || !list.length || list.some((k) => !FX_KINDS.includes(k))) return json({ error: 'bad effects' }, 400);
+		const r = await mutate((lb) => {
+			const e = inMatch(lb); if (e) return e;
+			const m = lb.m;
+			if (m.over || lb.opts.ruleset !== 'expanded') return false;
+			const got = ((m.fxs = m.fxs || {})[username]) || 0;
+			const fresh = list.slice(Math.max(0, got - from));
+			if (from > got || !fresh.length) return false;
+			const opp = other(lb, username);
+			const q = ((m.fx = m.fx || {})[opp] = m.fx[opp] || []);
+			if (q.length + fresh.length > 400) return { error: 'too many effects', status: 409 };
+			q.push(...fresh);
+			m.fxs[username] = got + fresh.length;
 		});
 		if (r.error) return fail(r);
 		return json({ lobby: view(r.lb, r.rows), now });

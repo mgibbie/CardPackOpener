@@ -2381,7 +2381,9 @@ function applyAction(a) {
     case 'pvp_outcome':
     case 'pvp_end':
     case 'pvp_timer':
-    case 'pvp_hand_lost': {
+    case 'pvp_hand_lost':
+    case 'pvp_opp':
+    case 'pvp_fx': {
       const why = pvpActionError(a, S, STATES);
       can(!why, why);
       pvpApply(a, STATES, select_blind);
