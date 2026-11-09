@@ -309,7 +309,9 @@ try {
 		const H = window.__t, S = G.ExpSurv;
 		H.jump(3000, 10); H.step(1);
 		const n0 = S.nightDrawn;
-		window.__t.thaw(); await new Promise(r => setTimeout(r, 300)); window.__t.freeze();
+		window.__t.thaw(); await new Promise(r => setTimeout(r, 300));
+		for (let i = 0; i < 100 && S.nightDrawn === n0; i++) await new Promise(r => setTimeout(r, 50));   // (frames come slowly on a busy runner)
+		window.__t.freeze();
 		return { drawn: S.nightDrawn - n0, line: G.ExpClassic.hudLine(G.Game.player, G.Game.st) };
 	});
 	A(nt.drawn > 0 && /SURVIVAL/.test(nt.line) && /PHASE 3/.test(nt.line) && /NIGHT ×1\.6/.test(nt.line), 'the night darkens the screen; the HUD says "SURVIVAL · PHASE 3 · ... · NIGHT ×1.6"', JSON.stringify(nt));
@@ -340,8 +342,10 @@ try {
 		for (let i = 0; i < 25 * 30; i++) H.step(1);   // 25 s still, before 5:00: no siege
 		out.before = S.run.siege.on;
 		H.jump(400, 1); S.run.siege.ax = pl.x; S.run.siege.ay = pl.y; S.run.siege.t = 0;
-		for (let i = 0; i < 21 * 30; i++) H.step(1);
+		const x0 = pl.x, y0 = pl.y, states = {};
+		for (let i = 0; i < 21 * 30; i++) { H.step(1); states[G.Game.state] = (states[G.Game.state] || 0) + 1; }
 		out.on = S.run.siege.on; out.k = S.run.siege.k; out.row = S.row();
+		out.why = { states, moved: Math.round(Math.hypot(pl.x - x0, pl.y - y0)), t: +S.run.siege.t.toFixed(2), clock: Math.round(G.Game.st.time), lv: pl.level };   // (the detail if it ever fails again: CI saw it ~1 in 10 runs)
 		for (let i = 0; i < 10 * 30; i++) H.step(1);
 		out.k2 = Math.round(S.run.siege.k * 100) / 100;
 		out.fliers = G.EnemyMgr.all().filter(e => e.xsiege && !e.dead).length;
@@ -515,6 +519,7 @@ try {
 		G.ModesUI.open(); await wait(200);
 		document.getElementById('modes-surv-tier').click(); await wait(900);
 		const el = document.getElementById('modes-xtier');
+		for (let i = 0; i < 150 && !el.querySelector('#xt-list .rk-row'); i++) await wait(100);   // (the board's fetch: slow under load)
 		return { view: G.ExpTier.ui.view, tabs: [...el.querySelectorAll('[data-view]')].map(b => b.innerText.trim()), on: (el.querySelector('[data-view].on') || {}).innerText, rows: el.querySelectorAll('#xt-list .rk-row').length, first: (el.querySelector('#xt-list .rk-row') || {}).innerText };
 	});
 	A(tb.view === 'survival' && tb.tabs.includes('Survival') && tb.on === 'Survival' && tb.rows === 1 && /alice/.test(tb.first || '') && /3 milestone bosses/.test(tb.first || ''), 'Survival\'s "Difficulty · leaderboards" opens on the Survival board: alice, 3 milestone bosses', JSON.stringify(tb));
