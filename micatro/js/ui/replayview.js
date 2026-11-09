@@ -201,6 +201,7 @@ export async function startReplay(ctx) {
     note.classList.toggle('warn', !!st.error || (!!meta.checksum && Engine.viewChecksum(v) !== meta.checksum));
     ctrl.mismatch = !!st.error || (!!meta.checksum && Engine.viewChecksum(v) !== meta.checksum);
     update();
+    poke();
   }
   function idle() { return new Promise((res) => { const t = () => (player.idle() ? res() : setTimeout(t, 40)); t(); }); }
   async function loop() {
@@ -228,7 +229,9 @@ export async function startReplay(ctx) {
     update();
     loop();
   }
-  function pause() { playing = false; token++; update(); }
+  // (the bar tucks away only while it plays: a stop that is not a touch on it, the controller's Play/Pause or the run
+  // running out, brings it back, or the end notice and the buttons stay hidden under the handle)
+  function pause() { playing = false; token++; update(); poke(); }
   function toggle() { if (playing) pause(); else play(); }
   function seekTo(i, { keepPlaying = true } = {}) {
     const was = playing && keepPlaying;
