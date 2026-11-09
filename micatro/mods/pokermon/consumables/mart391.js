@@ -93,6 +93,32 @@ function find_selected_or_first(key) {
   }
   return undefined;
 }
+/**
+ * The deck cards a Meteorite destroys now: 3.9.1's pick (the deck sorted, pseudoshuffled on 'meteor', the first `n`).
+ * `peek`: the tooltip's "Will destroy" preview — the same pick with the run's RNG put back exactly as it was (the 'meteor'
+ * stream, and any key The Order's shuffle touches), so hovering never changes a run, its replay or its resume.
+ */
+function meteor_pick(n, peek) {
+  if (peek && (!G.deck || !G.deck.cards.length)) return [];
+  const pr = G.GAME.pseudorandom;
+  const snap = peek ? { ...pr } : null;
+  try {
+    const temp_deck = G.deck.cards.slice();
+    temp_deck.sort((a, b) => (!a.playing_card || !b.playing_card ? 0 : a.playing_card - b.playing_card));
+    pseudoshuffle(temp_deck, pseudoseed('meteor'));
+    return temp_deck.slice(0, n);
+  } finally {
+    if (snap) { for (const k of Object.keys(pr)) if (!(k in snap)) delete pr[k]; Object.assign(pr, snap); }
+  }
+}
+/** "7 of Hearts", "Ace of Spades (Glass Card)", "Stone Card". */
+function meteor_card_name(c) {
+  const center = c.config && c.config.center;
+  const enh = center && center.key !== 'c_base' ? (center.name || center.key) : '';
+  if (center && center.key === 'm_stone') return 'Stone Card';
+  const base = c.base && c.base.value && c.base.suit ? c.base.value + ' of ' + c.base.suit : 'a card';
+  return enh ? base + ' (' + enh + ')' : base;
+}
 defineConsumables({
   meteorite: {
     key: 'meteorite',
@@ -113,15 +139,21 @@ defineConsumables({
     no_collection: true,
     loc_vars(self, info_queue, center) {
       info_queue.push({ set: 'Other', key: 'endless' });
-      const forme = (center && center.ability && center.ability.extra && center.ability.extra.forme) || self.config.extra.forme;
-      return { vars: [localize('poke_' + forme.toLowerCase() + '_forme')] };
+      const extra = (center && center.ability && center.ability.extra) || self.config.extra;
+      const forme = extra.forme || self.config.extra.forme;
+      // (once per round: "Ready" / "Used this round" — index.js appends the line; text only, no rules change)
+      const ready = extra.usable !== false;
+      const r = { vars: [localize('poke_' + forme.toLowerCase() + '_forme'), ready ? 'Ready' : 'Used this round'], colours: [ready ? 'green' : 'red'] };
+      // A held / offered Meteorite in a run names the deck card it would destroy now (the seeded pick, peeked: no RNG used)
+      if (center && center.area && G.GAME && G.deck && G.deck.cards.length) {
+        const next = meteor_pick(extra.destroy || 1, true);
+        if (next.length) r.main_end = ['{C:inactive}Will destroy: {C:attention}' + next.map(meteor_card_name).join(', ') + '{}'];
+      }
+      return r;
     },
     use(self, card) {
       card.ability.extra.usable = false;
-      const temp_deck = G.deck.cards.slice();
-      temp_deck.sort((a, b) => (!a.playing_card || !b.playing_card ? 0 : a.playing_card - b.playing_card));
-      pseudoshuffle(temp_deck, pseudoseed('meteor'));
-      const destroyed_cards = temp_deck.slice(0, card.ability.extra.destroy);
+      const destroyed_cards = meteor_pick(card.ability.extra.destroy, false);
       G.E_MANAGER.add_event(() => { play_sound('tarot1'); card.juice_up(0.3, 0.5); });
       // (SMODS.destroy_cards on playing cards: marked, dissolved, remove_playing_cards)
       for (const c of destroyed_cards) poke_remove_card(c, card);

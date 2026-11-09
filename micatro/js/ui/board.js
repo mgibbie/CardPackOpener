@@ -1706,6 +1706,23 @@ export class Board {
         return ev.instant ? 0.1 : 0.7;
       }
       case 'dissolve': {
+        // A card destroyed straight from the deck (Pokermon's Meteorite): it rises out of the deck face up, then burns,
+        // so the player sees what was lost (engine core.js start_dissolve sends its view).
+        if (!this.sprites.has(ev.card) && ev.from === 'deck' && ev.view) {
+          const d = { ...ev.view, facing: undefined, hl: false };
+          const s = new CardSprite(ev.card, d, this);
+          s.area = 'deck_out'; s.leaving = true; s.z = 50;
+          this.sprites.set(ev.card, s); this.layer.appendChild(s.el);
+          const p = this.deckPos(); s.place(p.x, p.y, 0, 1);
+          s.tgt.x = p.x - this.cw * 1.2; s.tgt.y = p.y - this.ch * 0.8; s.tgt.r = -0.08; s.tgt.s = 1.1;
+          sound.play('card1', 1, 0.6);
+          const sp1 = Math.max(1, sp * 0.6);
+          setTimeout(() => {
+            sound.play('whoosh2', 1, 0.5); sound.play('crumple' + (1 + Math.floor(Math.random() * 5)), 1, 0.5);
+            s.startDissolve(0.8 / sp1, () => this.destroySprite(ev.card));
+          }, 450 / sp1);
+          return 0.9 / sp1;
+        }
         const s = this.sprites.get(ev.card);
         this.removeFromAreas(ev.card);
         if (s && !s.leaving) {
