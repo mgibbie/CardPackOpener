@@ -282,8 +282,10 @@ try {
 	A(await waitFor(async () => (await view(dave.page)).opp.lives === 3, 8000), 'dave sees erin at 3 lives');
 	await shot(erin.page, '15-timer-life-lost');
 	// erin reaches the Nemesis: both enter the SMALL-blind Nemesis together; the timer is gone
-	await click(erin.page, '.b-pvp-ready');
-	A(await waitFor(async () => (await view(dave.page)).blind === 'bl_mp_nemesis' && (await view(erin.page)).blind === 'bl_mp_nemesis', 15000), 'both READY -> both in the Small-blind Nemesis');
+	const erinReady = await waitFor(() => click(erin.page, '.b-pvp-ready'), 8000);
+	const inSmall = await waitFor(async () => (await view(dave.page)).blind === 'bl_mp_nemesis' && (await view(erin.page)).blind === 'bl_mp_nemesis', 15000);
+	const diag6 = async () => { const vd = await view(dave.page), ve = await view(erin.page), m = (row('mtpvp:' + lid2) || {}).m || {}; return JSON.stringify({ erinReady, dave: vd && [vd.state, vd.onDeck, vd.blind, vd.pvp && vd.pvp.lives], erin: ve && [ve.state, ve.onDeck, ve.blind, ve.pvp && ve.pvp.lives], over: m.over, why: m.why, round: m.round && { b: m.round.b, ready: m.round.ready, startAt: m.round.startAt }, errs: [...dave.errors, ...erin.errors].slice(0, 4) }); };
+	A(inSmall, 'both READY -> both in the Small-blind Nemesis', inSmall ? null : await diag6());
 	A(!row('mtpvp:' + lid2).m.timer, 'no timer in a Nemesis round');
 	await idle(dave.page); await idle(erin.page);
 	A((await view(erin.page)).pvp.slot === 'Small', 'the round is the Small blind');
