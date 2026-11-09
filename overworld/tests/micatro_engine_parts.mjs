@@ -106,7 +106,7 @@ export function runPart(i, k = PARTS) {
 // the gate wrappers, one per part: the header (shared) names what they cover, so `run-all.mjs --changed` selects them
 // (micatro_engine_test.mjs's header, up to its usage lines)
 function header() {
-	const lines = fs.readFileSync(path.join(here, 'micatro_engine_test.mjs'), 'utf8').split('\n');
+	const lines = fs.readFileSync(path.join(here, 'micatro_engine_test.mjs'), 'utf8').split(/\r?\n/);   // (a CRLF checkout too)
 	const end = lines.findIndex((l) => /^\/\/ +node overworld\/tests\//.test(l));
 	return lines.slice(0, end).filter((l) => l.startsWith('//')).map((l, j) => (j ? l : l.replace(/^\/\/ micatro_engine_test\.mjs — runs/, '// They run')));
 }
