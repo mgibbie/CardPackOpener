@@ -1075,7 +1075,12 @@ export class Card {
   }
   start_dissolve() {
     if (ACTIVE_MODS.length) callHook('start_dissolve', this);
-    emit('dissolve', { card: this.sort_id }); this.remove();
+    // (a card destroyed straight from the deck — Pokermon's Meteorite — has no sprite on the table: the event carries its
+    //  view, so the board shows it leave the deck face up before it burns)
+    const fromDeck = !!G.deck && this.area === G.deck && !!eventCardView;
+    let view;
+    if (fromDeck) { try { view = eventCardView(this); } catch (e) { view = undefined; } }
+    emit('dissolve', view ? { card: this.sort_id, from: 'deck', view } : { card: this.sort_id }); this.remove();
   }
   shatter() {
     // A mod may keep a breaking card in play (BETMMA's Bulletproof Glass Cards).
