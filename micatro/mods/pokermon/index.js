@@ -586,6 +586,10 @@ for (const [set, d] of Object.entries(GALARIAN_LOC)) Object.assign(DATA.loc.desc
 // ... and Mega batch D's (jokers/pokejokers_megas.js)
 for (const [set, d] of Object.entries(MEGA_D_LOC)) Object.assign(DATA.loc.descriptions[set] = DATA.loc.descriptions[set] || {}, d);
 DATA.loc.descriptions.Spectral.c_poke_megastone.text.push('{C:inactive}(Select a Pokémon when more than one qualifies)');
+// The Meteorite is usable once per round (3.9.1: use() clears `usable`, end_of_round restores it) but 3.9.1's text only says
+// "Reusable" — a tester (2026-11-09) used it from a Planet Pack in the shop, then got "Can't use that right now" all next round.
+// Say so, like the Mega Stone, and show whether it is ready now (consumables/mart391.js loc_vars #2# / {V:1}).
+DATA.loc.descriptions.Spectral.c_poke_meteorite.text.push('{C:inactive}(Usable once per round)', '{C:inactive}Currently {V:1}#2#{}');
 // Selected-card Items use Tarot-style one-to-maximum selection (r107).
 for (const k of ['c_poke_firestone', 'c_poke_sunstone', 'c_poke_icestone', 'c_poke_upgrade']) {
   const e = DATA.loc.descriptions.Item[k];

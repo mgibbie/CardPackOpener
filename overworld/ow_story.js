@@ -844,7 +844,12 @@ export const STORY_SEED = {
 			VAR_SCENE_RadioTower5F: 2,
 			VAR_SCENE_GoldenrodMagnetTrainStation: 1,
 		},
-		flags: ['FLAG_ADVENTURE_STARTED'],
+		// EVENT_ECRUTEAK_GYM_GRAMPS: pokecrystal shows the gym's GRAMPS only in its
+		// FORCED_TO_LEAVE scene (EcruteakGymClosed walks you back out until the Burned
+		// Tower beasts are released, which sets this flag). The gym is open here and that
+		// scene never plays, so he stood mute (script ObjectEvent) on (4,14) — the square
+		// every invisible-floor pit drops you on (bug report 2026-11-08).
+		flags: ['FLAG_ADVENTURE_STARTED', 'EVENT_ECRUTEAK_GYM_GRAMPS'],
 	},
 };
 // Arm any seed var this save has NEVER set. Idempotent and non-destructive: a
