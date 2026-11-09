@@ -229,6 +229,8 @@ try {
 		out.itemsAtFaint = G.Pickups.all().filter(p => p.kind === 'item').length - items0;
 		// left alone (you stay away): after 8 s the window closes and it drops its prize
 		const f = Cp.run.faint[0];
+		// (no trickle meanwhile: a foe spawned and KO'd by the fainted alpha drops its own berry / item inside the 60 px counted below)
+		H.quiet();
 		const n3 = H.said.length;
 		H.go(f.x + 420, f.y); H.step(Math.ceil(7.2 * 30));
 		out.at7 = Cp.run.faint.length;
