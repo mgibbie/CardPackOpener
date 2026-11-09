@@ -12,6 +12,9 @@ and never placeholders. Each card is drawn here at Balatro's 1x size (71 x 95), 
 
   python tools/micatro/gen_mp_art.py      -> micatro/assets/textures/pvp/MPJokers.png (5 x 2 cells, 142 x 190 each)
                                              micatro/assets/textures/pvp/MPPlanets.png (1 cell)
+                                             micatro/assets/textures/pvp/MPDecks.png (4 x 2 deck backs; stage 7c: the Red Deck's
+                                               pattern recoloured, as Balatro's own coloured decks are, or a drawn back)
+                                             micatro/assets/textures/pvp/MPStakes.png (3 stake chips, Balatro's chip recoloured)
                                              + a 3x preview sheet in $MP_ART_PREVIEW (optional)
 """
 import os
@@ -594,6 +597,219 @@ def x2(img):
     return img.resize((img.width * 2, img.height * 2), Image.NEAREST)
 
 
+# ------------------------------------------------------------------ stage 7c: the decks and stakes
+def back_template():
+    """Balatro's Red Deck back at 1x (its ornate pattern), to recolour like the game's own Blue / Yellow / Green / Black decks."""
+    return cell(Image.open(os.path.join(TEX, 'Enhancers.png')).convert('RGBA'), 0, 0)
+
+
+def recolour_back(main, dark=None, light='#ffffff'):
+    """The Red Deck's pattern in another ink: its red becomes `main`, its dark red `dark`, the white stays `light`."""
+    b = back_template()
+    px = b.load()
+    mc, dc, lc = rgb(main), rgb(dark) if dark else None, rgb(light)
+    reds = {}
+    for y in range(H):
+        for x in range(W):
+            p = px[x, y]
+            if not p[3]:
+                continue
+            r, g, bb = p[:3]
+            if r > 200 and g > 200 and bb > 200:
+                px[x, y] = lc
+            elif r > g + 40:   # the red ink (two shades)
+                lum = (r + g + bb) / 3
+                px[x, y] = (dc if (dc and lum < 110) else mc)
+            else:
+                px[x, y] = p
+    return b
+
+
+def plain_back(bg, border=None, pattern=None):
+    """A deck back's card: rounded border, a field (+ pattern)."""
+    base = back_template()
+    px = base.load()
+    bc, fc = rgb(border) if border else tuple(max(0, int(c * 0.7)) for c in rgb(bg)[:3]) + (255,), rgb(bg)
+    out = Image.new('RGBA', (W, H), T)
+    o = out.load()
+    for y in range(H):
+        for x in range(W):
+            p = px[x, y]
+            if not p[3]:
+                continue
+            edge = x <= 1 or y <= 1 or x >= W - 2 or y >= H - 2 or not (px[x - 1, y][3] and px[x + 1, y][3] and px[x, y - 1][3] and px[x, y + 1][3])
+            o[x, y] = bc if edge else fc
+    if pattern:
+        pattern(out)
+    return out
+
+
+def emblem_badge(L, cx, cy, r, fill):
+    L.ell((cx - r, cy - r, cx + r, cy + r), fill)
+
+
+def deck_violet():
+    """Violet Deck (+1 voucher slot, vouchers on sale early): the pattern in violet, a voucher ticket in the middle."""
+    b = recolour_back('#8a5cd6', '#5e3aa0')
+    L = Layer()
+    L.rect((24, 38, 46, 56), '#ffffff')
+    L.rect((26, 40, 44, 54), '#c9b3ff')
+    L.px([(24, 44), (24, 45), (24, 46), (46, 44), (46, 45), (46, 46)], (0, 0, 0, 0))
+    L.art(31, 43, ['a...a', 'a...a', '.a.a.', '.a.a.', '..a..', '..a..'], {'a': '#5e3aa0'})
+    L.px([(28, 51), (29, 51), (30, 51), (40, 51), (41, 51), (42, 51)], '#8a5cd6')
+    return stack(b, L.outlined())
+
+
+def deck_indigo():
+    """Indigo Deck (+1 pick from every pack, packs can't be skipped): the pattern in indigo, an open pack with a +1."""
+    b = recolour_back('#3f4fb8', '#28327a')
+    L = Layer()
+    L.poly([(22, 42), (49, 42), (47, 60), (24, 60)], '#ffd25a')
+    L.poly([(22, 42), (35, 34), (49, 42)], '#f2bd3c')
+    L.rect((27, 36, 33, 46), '#ffffff'); L.rect((36, 35, 42, 45), '#ffffff')
+    L.art(28, 49, ['.a....aa.', 'aaa....a.', '.a.....a.', '......aaa'], {'a': '#28327a'})
+    return stack(b, L.outlined())
+
+
+def deck_orange():
+    """Orange Deck (2 Hanged Men, a free Standard pack at the start): the pattern in orange, two hanging cards."""
+    b = recolour_back('#f08a24', '#b85f10')
+    L = Layer()
+    for x0, dy in ((24, 0), (37, 4)):
+        L.line([(x0 + 4, 30), (x0 + 4, 38 + dy)], '#4f6367')
+        L.rect((x0, 38 + dy, x0 + 9, 52 + dy), '#ffffff')
+        L.px([(x0 + 2, 40 + dy), (x0 + 7, 50 + dy)], '#e0282e')
+    return stack(b, L.outlined())
+
+
+def deck_oracle():
+    """Oracle Deck (Medium + Clearance Sale, money capped): a crystal ball on a starry violet field."""
+    b = plain_back('#2b2550', '#191431', pattern=pat_dots('#2b2550', '#3d3570', 7))
+    L = Layer()
+    shade_ellipse(L, (18, 28, 52, 62), '#8fd3ff', '#d9f3ff', '#4f8fd6', '#ffffff')
+    L.ell((26, 38, 34, 46), '#c9b3ff')
+    L.poly([(22, 60), (48, 60), (51, 70), (19, 70)], '#c97f00')
+    L.rect((19, 68, 51, 71), '#a86a00')
+    st = Layer()
+    for (x, y) in [(12, 14), (58, 20), (14, 80), (56, 78), (35, 12), (8, 46), (62, 50)]:
+        st.px([(x, y), (x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)], '#ffe28a')
+    return stack(b, st.img, L.outlined())
+
+
+def deck_gradient():
+    """Gradient Deck (cards also count one rank up or down): a field shading from red to blue, ranks stepping both ways."""
+    def pat(img):
+        d = img.load()
+        for y in range(H):
+            for x in range(W):
+                if inside_card(img, x, y):
+                    t = y / H
+                    band = int(t * 8) / 8
+                    c1, c2 = (253, 95, 85), (0, 156, 253)
+                    d[x, y] = tuple(int(c1[i] + (c2[i] - c1[i]) * band) for i in range(3)) + (255,)
+    b = plain_back('#ffffff', '#7d8a96', pattern=pat)
+    L = Layer()
+    L.rect((23, 33, 47, 63), '#ffffff')
+    L.art(31, 40, ['.aaa.', 'a...a', 'a...a', '.aaa.', 'a...a', 'a...a', 'a...a', '.aaa.'], {'a': '#4f6367'})  # an 8: also a 7 and a 9
+    L.poly([(35, 22), (42, 30), (28, 30)], '#ffffff')
+    L.poly([(35, 74), (42, 66), (28, 66)], '#ffffff')
+    return stack(b, L.outlined())
+
+
+def deck_heidelberg():
+    """Heidelberg Deck (a consumable copied as Negative after each shop): a card and its inverted twin."""
+    b = plain_back('#1f6b6b', '#124545', pattern=pat_stripes('#1f6b6b', '#237878', 4))
+    L = Layer()
+    L.rect((17, 26, 37, 56), '#ffffff')
+    L.ell((21, 33, 33, 45), '#c9b3ff'); L.px([(27, 38), (26, 39), (28, 39)], '#5e3aa0')
+    L.rect((33, 40, 53, 70), '#2b2550')
+    L.ell((37, 47, 49, 59), '#4a6f2a'); L.px([(43, 52), (42, 53), (44, 53)], '#b8e08a')
+    return stack(b, L.outlined())
+
+
+def deck_echo():
+    """Echo Deck (every scoring card retriggers; bigger blinds): rings echoing out from the centre."""
+    b = plain_back('#3a2a5a', '#22183a')
+    L = Layer()
+    for r, c in ((26, '#5a3f8a'), (20, '#7a56b8'), (14, '#9a72e0'), (8, '#c3a6ff')):
+        L.ell((35 - r, 47 - r, 35 + r, 47 + r), c)
+        L.ell((35 - r + 2, 47 - r + 2, 35 + r - 2, 47 + r - 2), (0, 0, 0, 0)) if r > 8 else None
+    L.ell((31, 43, 39, 51), '#ffffff')
+    return stack(b, L.img)
+
+
+def deck_cocktail():
+    """Cocktail Deck (three other decks' effects at once): a cocktail glass, three coloured layers, a cherry."""
+    b = plain_back('#f6e7c8', '#c8b48c', pattern=pat_stripes('#f6e7c8', '#f0dcb4', 5))
+    L = Layer()
+    L.poly([(16, 26), (54, 26), (35, 50)], '#ffffff')
+    L.poly([(18, 28), (52, 28), (46.5, 35), (23.5, 35)], '#fd5f55')
+    L.poly([(23.5, 35), (46.5, 35), (41, 42), (29, 42)], '#ffd25a')
+    L.poly([(29, 42), (41, 42), (35, 49)], '#3d6fd8')
+    L.rect((34, 50, 36, 66), '#ffffff')
+    L.ell((25, 65, 45, 71), '#ffffff')
+    L.ell((44, 18, 50, 24), '#d8423a'); L.line([(47, 18), (50, 12)], '#3c9a43')
+    return stack(b, L.outlined())
+
+
+DECKS = [
+    ('b_mp_violet', deck_violet), ('b_mp_indigo', deck_indigo), ('b_mp_orange', deck_orange), ('b_mp_oracle', deck_oracle),
+    ('b_mp_gradient', deck_gradient), ('b_mp_heidelberg', deck_heidelberg), ('b_mp_echodeck', deck_echo), ('b_mp_cocktail', deck_cocktail),
+]
+
+
+def stake_chip(main, dark, light, mark, mark_c):
+    """A stake chip (29 x 29 at 1x), Balatro's chip shape — the White Stake's chip, recoloured — with a mark in the middle."""
+    ch = Image.open(os.path.join(TEX, 'chips.png')).convert('RGBA').crop((0, 0, 58, 58)).resize((29, 29), Image.NEAREST)
+    px = ch.load()
+    m, d, l = rgb(main), rgb(dark), rgb(light)
+    for y in range(29):
+        for x in range(29):
+            p = px[x, y]
+            if not p[3]:
+                continue
+            r, g, b = p[:3]
+            lum = (r + g + b) / 3
+            if lum > 225:
+                px[x, y] = m
+            elif lum > 170:
+                px[x, y] = l
+            elif lum > 110:
+                px[x, y] = d
+    for (x, y) in mark:
+        px[x, y] = rgb(mark_c)
+    return ch
+
+
+RING = [(10, 14), (11, 13), (12, 13), (13, 12), (14, 12), (15, 12), (16, 13), (17, 13), (18, 14), (17, 15), (16, 15), (15, 16), (14, 16), (13, 16), (12, 15), (11, 15)]
+GHOST = [(13, 10), (14, 10), (15, 10), (12, 11), (16, 11), (12, 12), (13, 12), (15, 12), (16, 12), (12, 13), (16, 13), (12, 14), (16, 14), (12, 15), (13, 16), (14, 15), (15, 16), (16, 15)]
+STAKES = [
+    ('stake_mp_planet', lambda: stake_chip('#5fb8c8', '#2f6f86', '#a8e2ec', RING, '#ffe28a')),
+    ('stake_mp_spectral', lambda: stake_chip('#3a3f5a', '#1d2033', '#6c7396', GHOST, '#bfe8ff')),
+    ('stake_mp_spectralplus', lambda: stake_chip('#2b2550', '#15122a', '#8a72d6', GHOST + [(9, 9), (19, 9), (9, 19), (19, 19)], '#ffd84a')),
+]
+
+
+def write_decks_stakes(out_dir, preview=None):
+    sheet = Image.new('RGBA', (142 * 4, 190 * 2), T)
+    cards = []
+    for i, (key, fn) in enumerate(DECKS):
+        c = fn(); cards.append(c)
+        sheet.alpha_composite(x2(c), ((i % 4) * 142, (i // 4) * 190))
+    sheet.save(os.path.join(out_dir, 'MPDecks.png'))
+    chips = Image.new('RGBA', (58 * 3, 58), T)
+    for i, (key, fn) in enumerate(STAKES):
+        chips.alpha_composite(x2(fn()), (i * 58, 0))
+    chips.save(os.path.join(out_dir, 'MPStakes.png'))
+    if preview:
+        p = Image.new('RGBA', (W * 4 + 20 + 3 * 33, H * 2 + 12), (40, 44, 52, 255))
+        for i, c in enumerate(cards):
+            p.alpha_composite(c, (4 + (i % 4) * (W + 4), 4 + (i // 4) * (H + 4)))
+        for i, (_, fn) in enumerate(STAKES):
+            p.alpha_composite(fn(), (W * 4 + 20 + i * 33, 10))
+        p.resize((p.width * 3, p.height * 3), Image.NEAREST).save(preview)
+
+
 def main():
     os.makedirs(OUT, exist_ok=True)
     sheet = Image.new('RGBA', (142 * 5, 190 * 2), T)
@@ -603,6 +819,7 @@ def main():
     planets = Image.new('RGBA', (142, 190), T)
     planets.alpha_composite(x2(asteroid()), (0, 0))
     planets.save(os.path.join(OUT, 'MPPlanets.png'))
+    write_decks_stakes(OUT, os.environ.get('MP_ART_DECKS_PREVIEW'))
     prev = os.environ.get('MP_ART_PREVIEW')
     if prev:
         cards = [fn() for _, fn in JOKERS] + [asteroid()]

@@ -622,6 +622,8 @@ try {
 
 	// ===== 9. stage 7b: Expanded — the effects relay, SPEEDRUN =====
 	{
+		A(R.cleanOpts({ back: 'b_mp_cocktail', stake: 'stake_mp_planet' }).back === 'b_mp_cocktail' && R.cleanOpts({ stake: 'stake_mp_planet' }).stake === 'stake_mp_planet', 'stage 7c: a Multiplayer deck / stake is a lobby option');
+		A(R.cleanOpts({ customDeck: { name: 'x', rules: { hands: 5 } } }).customDeck.name === 'x' && !('customDeck' in R.cleanOpts({ customDeck: { name: 'y'.repeat(20000) } })) && !('customDeck' in R.cleanOpts({ customDeck: [1] })), "stage 7c: the host's custom deck rides in the options (bounded)");
 		A(R.cleanOpts({}).ruleset === 'expanded', "stage 7b: a new lobby is Expanded (the mod's default)");
 		const fx = (who, id, from, list) => as(who).call('mtpvp-fx', { id, from, list });
 		const lb = await newMatch('alice', 'bob');

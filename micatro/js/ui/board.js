@@ -251,8 +251,18 @@ export class Board {
     const st = this.deckEl.querySelector('.deck-stack');
     st.innerHTML = '';
     const back = CENTERS[this.backKey] || CENTERS.b_red;
+    // (a mod deck — Multiplayer's, a mod's — draws its own atlas cell; redrawn when that art arrives)
+    const modCell = () => {
+      const c = document.createElement('canvas');
+      c.width = 142; c.height = 190; c.className = 'deck-card';
+      if (!drawModCell(c.getContext('2d'), back.atlas, back.pos, 0, 0, 142, 190)) {
+        drawCell(c.getContext('2d'), 'centers', CENTERS.b_red.pos, 0, 0, 142, 190);
+        if (!this._deckArtWait) { this._deckArtWait = true; const off = onModAtlas((n) => { if (n === back.atlas) { off(); this._deckArtWait = false; this.renderDeckStack(); } }); }
+      }
+      return c;
+    };
     for (let i = 0; i < 4; i++) {
-      const c = cellEl('centers', back.pos, 'deck-card');
+      const c = back.mod && back.atlas ? modCell() : cellEl('centers', back.pos, 'deck-card');
       c.style.transform = `translate(${-i * 3}px,${-i * 3}px)`;
       st.appendChild(c);
     }

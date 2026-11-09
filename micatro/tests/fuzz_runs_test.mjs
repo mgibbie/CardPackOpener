@@ -36,7 +36,9 @@ const isModCard = (c) => !!(c && c.config.center.mod && MODS.includes(c.config.c
 let fail = 0;
 const ok = (c, m) => { if (!c) { fail++; console.log('FAIL', m); } };
 
-const BACKS = Object.values(P_CENTERS).filter((v) => v.set === 'Back' && v.key !== 'b_challenge' && !v.mod).map((v) => v.key);
+// (MICATRO_FUZZ_BACKS / MICATRO_FUZZ_STAKES: comma lists the runs cycle through instead — Multiplayer's decks / stakes)
+const BACKS = process.env.MICATRO_FUZZ_BACKS ? process.env.MICATRO_FUZZ_BACKS.split(',') : Object.values(P_CENTERS).filter((v) => v.set === 'Back' && v.key !== 'b_challenge' && !v.mod).map((v) => v.key);
+const FUZZ_STAKES = process.env.MICATRO_FUZZ_STAKES ? process.env.MICATRO_FUZZ_STAKES.split(',') : null;
 
 // Small deterministic PRNG for the bot (independent of the engine's).
 function botRng(seed) { let s = seed >>> 0; return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296); }
@@ -173,7 +175,7 @@ for (let i = 0; i < RUNS; i++) {
   const back = modBacks.length && i % 3 === 2 ? modBacks[(i / 3 | 0) % modBacks.length] : BACKS[i % BACKS.length];
   // (mod runs: every fourth run on one of the mods' stakes)
   const modStakes = MODS.length ? Object.values(P_STAKES).filter((v) => v.mod && MODS.includes(v.mod)).map((v) => v.key) : [];
-  const stake = modStakes.length && i % 4 === 3 ? modStakes[(i / 4 | 0) % modStakes.length] : 1 + (i % 8);
+  const stake = FUZZ_STAKES ? FUZZ_STAKES[i % FUZZ_STAKES.length] : modStakes.length && i % 4 === 3 ? modStakes[(i / 4 | 0) % modStakes.length] : 1 + (i % 8);
   if (MODS.length) {
     if (P_CENTERS[back].mod) modStats.mod_deck_runs = (modStats.mod_deck_runs || 0) + 1;
     if (typeof stake === 'string') modStats.mod_stake_runs = (modStats.mod_stake_runs || 0) + 1;

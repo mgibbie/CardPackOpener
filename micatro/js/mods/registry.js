@@ -136,6 +136,7 @@ export const HOOKS = [
   'hand_scored',        // (hand_chips, mult, ctx) end of evaluate_play (also for a debuffed hand: 0, 0)
   'is_suit',            // (card, suit, bypass_debuff, flush_calc) -> true: the card also counts as `suit` (after the debuff/Stone/Wild checks, before Smeared)
   'poll_edition',       // (key, mod, no_neg, guaranteed) -> edition table or null: replaces poll_edition (undefined = no opinion)
+  'deck_repetitions',   // (card, reps, 'play' | 'hand') a scoring card's repetitions list: push {seals: {repetitions, message, card}} for more (Multiplayer's Echo Deck)
   'calculate_joker',    // (card, context) -> an effect (or null = none) that REPLACES card:calculate_joker (runs before the debuff check, like a Lua wrap); undefined = no opinion
   'copy_card',          // (new_card, other) copy_card just built new_card from other
   'emplace',            // (area, card, location, stay_flipped) CardArea:emplace just placed the card

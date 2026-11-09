@@ -143,7 +143,8 @@ export function modAtlasesOf(d) {
 /** A deck back: vanilla from the Enhancers atlas, a mod deck from its own atlas. */
 export function drawBack(ctx, backKey) {
   const key = backKey || 'b_red';
-  if (CENTERS[key]) { drawCell(ctx, 'centers', CENTERS[key].pos, 0, 0, FACE_W, FACE_H); return; }
+  // (CENTERS is the live registry: a mod deck registered with the engine — Multiplayer's — draws from its own atlas below)
+  if (CENTERS[key] && !CENTERS[key].mod) { drawCell(ctx, 'centers', CENTERS[key].pos, 0, 0, FACE_W, FACE_H); return; }
   const mc = MODREG.center(key);
   if (mc && mc.atlas && drawModCell(ctx, mc.atlas, mc.pos, 0, 0, FACE_W, FACE_H)) return;
   drawCell(ctx, 'centers', CENTERS.b_red.pos, 0, 0, FACE_W, FACE_H);
