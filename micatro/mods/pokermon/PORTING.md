@@ -4304,6 +4304,28 @@ base species' (Sneasler and Clodsire are their own species: 8 / 9). The region p
   art types). Re-pinned: `modpin_test`, `pokermon_391_data_test`, `pokermon_new_jokers_test`, `micatro_mod_version_pin`; Nacho's counts in
   `nacho_test` / `nacho_179_test`.
 
+### The simple weather trio (r111, 2026-11-09, branch `feat/pokermon-simple-weather-trio`)
+Pinned **`3.9.1+r111`** (`contentRev: 111`, `SIMPLE_TRIO_REV` in `jokers/pokejokers_designs.js`; `LEGACY_MOD_VERSIONS` untouched). The owner: "Kyogre's
+tooltip (Primordial Sea + Primal Clash + Castform) is unreadable". Six plain Legendaries, no weather, no Castform, no reference to each other:
+- **Kyogre**: +1 hand each round; scored Clubs retrigger once and give **X1.25** (`Xmult_multi`, Energy +5%: 1.3125 / 1.375 / 1.4375; it was
+  Energy-inert). **Groudon**: +1 discard; scored Hearts / Diamonds X1.25 (unchanged). **Rayquaza**: +1 hand and +1 discard; Dragon Ascent X0.2 per
+  Straight / Flush (its bank, unchanged).
+- **Primal Kyogre**: +2 hands; Clubs retrigger twice and give **X1.5** (`Xmult_multi`, +5%: 1.575 / 1.65 / 1.725). **Primal Groudon**: +2 discards;
+  Hearts / Diamonds **X1.75** (a new field `Xmult_multi2`, +5%: 1.8375 / 1.925 / 2.0125; `Xmult_multi` X1.5 is the r110 number). **Mega Rayquaza**:
+  +2 hands / +2 discards, X0.4 per Straight / Flush (Rayquaza's bank). The Orbs keep their pool gate.
+- **Removed** (live): the Primal Clash (`primal_read` is no longer called), Rayquaza's / Mega Rayquaza's calm, Kyogre / Groudon / the Primals'
+  rain (`swift_swim_raining`) and sun (`cherrim_sunny`), Castform's lock (`castform_lock` returns null: Castform and Eiscue's `round_forecast` read the
+  forecast). Volcarona / Koraidon sun, Miraidon terrain, Alolan Ninetales snow and Sandaconda sand are untouched. The notes that named Kyogre /
+  Groudon (Castform's Forecast, Cherrim's Sunshine, `SUN_NOTE` for Larvesta / Lurantis / the Ancient Paradoxes, `RAIN_NOTE` for the Tympole line /
+  Dewpider / Araquanid, Volcarona / Koraidon) no longer mention them.
+- **Old runs**: every old rule stays behind `trio111()` (rulesRev), so a run recorded before r111 replays exactly (fixture
+  `micatro/tests/fixtures/pokermon_weathertrio_r110_recipe.json`, recorded on main). The new X fields are in the config and dropped at
+  `set_ability` on an old rev (`trio_set`: an r110 Kyogre stays Energy-inert, so the old Energy targets hold; Primal Groudon keeps X1.5); a card
+  made on an old rev but played on r111 gets its field on the next calculate, scaled by its Energy (`trio_fields`).
+- **Tests**: `micatro/tests/mods/pokermon_simple_trio_test.mjs` (all six in real hands, Energy, Castform free, no clash / rain / sun, the r110 recipe;
+  37 of 56 fail on main). The old-rule sections of `pokermon_gen3_legendaries`, `pokermon_primal`, `pokermon_cherubi`, `pokermon_gen5_batch1`,
+  `pokermon_gen5_batch3`, `pokermon_alolan`, `pokermon_gen7_batch1`, `pokermon_gen9_legendaries` now run on r110; texts re-recorded there and in
+  `pokermon_legendary_solo`; `micatro_mod_version_pin` (rev 111).
 ### Pending from the 3.9.1 joker rework (after batch 10b)
 Every existing joker is on 3.9.1: `rework_hold` (still on 3.2.1) is empty. What waits, by the batch it waits on (`rework_deferred` =
 on 3.9.1 but one part):

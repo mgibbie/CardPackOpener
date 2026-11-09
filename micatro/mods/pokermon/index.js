@@ -1187,7 +1187,10 @@ export const POKERMON = registerMod({
   // 107: selected-card Items accept one through their maximum, with single-card effects for paired Items.
   // 108: approved Mega Dimension forms.
   // 110: a Mega Stone used straight from a pack keeps its Mega (selling it reverts it) and stays spent (systems/items.js MEGASTONE_PACK_REV).
-  contentRev: 110,
+  // 111: the owner's simplified weather trio (jokers/pokejokers_designs.js SIMPLE_TRIO_REV): Kyogre / Groudon / Rayquaza and their Primal /
+  // Mega forms are plain Legendaries (no weather, no Castform lock, no Primal Clash, no calm); Kyogre's Clubs give X1.25, Primal Kyogre's X1.5,
+  // Primal Groudon's X1.75. Runs recorded before r111 replay on the old rules.
+  contentRev: 111,
   // Pokermon 3.9.1 pokermon.lua: SMODS.current_mod.optional_features = {quantum_enhancements = true, object_weights = true}.
   // object_weights sends create_card's key, the shop roll, tags, packs, bosses and vouchers through SMODS.poll_object
   // (js/engine/smods.js; batch 17). quantum_enhancements is the engine's check_enhancement, always on.

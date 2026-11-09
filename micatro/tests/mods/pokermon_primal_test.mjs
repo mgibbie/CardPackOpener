@@ -7,6 +7,8 @@
 //   - the Primal Clash: a Primal always beats the other's normal form; Primal vs Primal the first deal decides; Rayquaza calms both;
 //   - where the Orbs turn up: Items (the Pocket Packs) and the Ancient (Red) / Future (Blue) Packs' first card, only while you hold the
 //     Legendary, only on PRIMAL_REV (a run recorded before it replays as recorded); never a Primal in a pool; the art.
+//   - contentRev 111 (the owner's simplification, SIMPLE_TRIO_REV): no clash, no rain / sun, no Castform lock; Primal Kyogre's Clubs give
+//     X1.5, Primal Groudon X1.75 (pokermon_simple_trio_test.mjs). The sections pinning the OLD rules run them on r110 (r110()).
 //   node micatro/tests/mods/pokermon_primal_test.mjs
 import fs from 'fs';
 // (Session runs here start with engineRev: 1 = the rules before Pages: these suites measure the mod alone)
@@ -37,6 +39,8 @@ const castform = () => J('j_poke_castform');
 function debuff(j) { j.ability.debuff_sources = { test: true }; j.set_debuff(); return j; }
 const OLD = { pokermon: '3.9.1+r' + (PRIMAL_REV - 1) };
 const oldRules = (fn) => { PINS.RULES.pins = OLD; try { return fn(); } finally { PINS.RULES.pins = null; } };
+/** The rules of a run recorded before r111 (the weather trio's clash / weather / Castform lock; SIMPLE_TRIO_REV). */
+const r110 = (fn) => { PINS.RULES.pins = { pokermon: '3.9.1+r110' }; try { return fn(); } finally { PINS.RULES.pins = null; } };
 
 function mk(s, area) { return create_playing_card({ front: P_CARDS[s], center: P_CENTERS.c_base }, area); }
 function stackDeck(specs) { for (const c of G.deck.cards.slice()) { G.deck.remove_card(c); G.discard.emplace(c); } return specs.map((s) => mk(s, G.deck)); }
@@ -127,14 +131,14 @@ sec('orb use', () => {
   useOrb('c_poke_blueorb');
   ok(/mega_charizard/.test(key(ch)) && ex(st).used_on === used_on && ex(st).usable === usable && J('j_poke_primal_kyogre'), 'an Orb leaves a Mega Stone and its Mega as they were', [key(ch), ex(st).used_on, used_on]);
   // no evolution context: an Everstone-free evolution counter ... (Primal Reversion is not an evolution)
-  ok(/Primal Kyogre/.test(plain(J('j_poke_primal_kyogre'))) || /Primordial Sea/.test(plain(J('j_poke_primal_kyogre'))), 'its tooltip reads', plain(J('j_poke_primal_kyogre')));
+  ok(/\+2 hands each round Scored Clubs retrigger twice and give X1\.5 Mult/.test(plain(J('j_poke_primal_kyogre'))), 'its tooltip reads', plain(J('j_poke_primal_kyogre')));
   // tooltips
   const bo = add('c_poke_blueorb');
   ok(/The selected or leftmost Kyogre becomes Primal Kyogre for good/.test(plain(bo)), 'Blue Orb text', plain(bo));
 });
 
 // ------------------------------------------------------------------- Energy carries
-sec('energy', () => {
+sec('energy', () => r110(() => {
   start('PRM2');
   const g = add('j_poke_groudon');
   increment_energy(g, 'Earth'); increment_energy(g, 'Earth');
@@ -147,12 +151,12 @@ sec('energy', () => {
   const k = add('j_poke_kyogre');
   increment_energy(k, 'Water');
   useOrb('c_poke_blueorb');
-  ok(key(k) === 'j_poke_primal_kyogre' && ex(k).energy_count === 1 && ex(k).hands === 2 && ex(k).retriggers === 2 && P_CENTERS.j_poke_primal_kyogre.poke_no_energy_field,
+  ok(key(k) === 'j_poke_primal_kyogre' && ex(k).energy_count === 1 && ex(k).hands === 2 && ex(k).retriggers === 2 && ex(k).Xmult_multi === undefined,
     'Primal Kyogre keeps the Energy; its numbers are fixed (Energy-inert, as Kyogre)', ex(k));
-});
+}));
 
 // ------------------------------------------------------------------- Primal effects in real hands
-sec('primal kyogre', () => {
+sec('primal kyogre', () => r110(() => {
   start('PRM3');
   const rr = G.GAME.round_resets.hands, h0 = cr().hands_left;
   const k = add('j_poke_kyogre'); flush();
@@ -164,12 +168,12 @@ sec('primal kyogre', () => {
   t = play2(['H_A']);
   ok(t.chips === 5 + 11, 'a Heart does not: 16', t);
   ok(swift_swim_raining({ ability: { extra: {} } }), 'it\'s raining (Swift Swim\'s rain check)');
-  ok(/\+2\{\} hands/.test(lines(k)) && /retriggers \{C:attention\}twice/.test(lines(k)) && /no Groudon/.test(lines(k)), 'tooltip: +2 hands, twice, no Groudon', lines(k));
+  ok(/\+2\{\} hands/.test(lines(k)) && /retrigger \| twice/.test(lines(k)), 'tooltip: +2 hands, twice', lines(k));
   const before = cr().hands_left;
   k.remove(); flush();
   ok(cr().hands_left === before - 2 && G.GAME.round_resets.hands === rr, 'sold: both hands go', [cr().hands_left, G.GAME.round_resets.hands]);
-});
-sec('primal groudon', () => {
+}));
+sec('primal groudon', () => r110(() => {
   start('PRM4');
   const rr = G.GAME.round_resets.discards, d0 = cr().discards_left;
   const g = add('j_poke_groudon'); flush();
@@ -178,17 +182,17 @@ sec('primal groudon', () => {
   ok(near(play2(['H_K', 'D_K']).mult, 2 * 1.5 * 1.5), 'a Heart + Diamond Pair: 2 x 1.5 x 1.5 = 4.5');
   ok(near(play2(['C_K', 'S_K']).mult, 2), 'black cards: nothing');
   ok(cherrim_sunny({ ability: { extra: {} } }), 'it\'s sunny (Cherrim\'s sun check)');
-  ok(/X1\.5 \{\} Mult/.test(lines(g)) && /\+2\{\} discards/.test(lines(g)), 'tooltip', lines(g));
-});
-sec('castform', () => {
+  ok(/X1\.5 \{\} Mult/.test(lines(g)) && /\+2\{\} discards/.test(lines(g)), 'tooltip (r110: X1.5)', lines(g));
+}));
+sec('castform', () => r110(() => {
   deal('PRM5a', SPADES.concat(['S_6', 'S_7']), ['j_poke_castform', 'j_poke_kyogre'], () => { useOrb('c_poke_blueorb'); });
   ok(J('j_poke_primal_kyogre') && ex(castform()).form === 'rainy', 'Primal Kyogre held: a Spade deal is Rainy', ex(castform()).form);
   deal('PRM5b', CLUBS.concat(['C_6', 'C_7']), ['j_poke_groudon', 'j_poke_castform'], () => { useOrb('c_poke_redorb'); });
   ok(J('j_poke_primal_groudon') && ex(castform()).form === 'sunny', 'Primal Groudon held: a Club deal is Sunny', ex(castform()).form);
-});
+}));
 
 // ------------------------------------------------------------------- the Primal Clash
-sec('clash', () => {
+sec('clash', () => r110(() => {
   // Primal Kyogre vs a normal Groudon, on a RED deal (normally Groudon's round): the Primal wins anyway
   deal('PRM6a', REDS, ['j_poke_castform', 'j_poke_kyogre', 'j_poke_groudon'], () => { useOrb('c_poke_blueorb'); });
   const base = { h: G.GAME.round_resets.hands - 2, d: G.GAME.round_resets.discards - 1 };
@@ -196,7 +200,6 @@ sec('clash', () => {
   ok(cr().hands_left === base.h + 2 && cr().discards_left === base.d, 'its +2 hands apply; Groudon\'s +1 discard does not', [cr().hands_left, cr().discards_left, base]);
   ok(play2(['C_A']).chips === 5 + (11 + 30) * 4 && near(play2(['H_K']).mult, 1), "a Club: Primal Kyogre's two retriggers + Rainy Castform's one, +30 Chips each (5 + 41 x 4 = 169); Hearts get nothing (Groudon sits out)");
   ok(ex(castform()).form === 'rainy' && swift_swim_raining({ ability: { extra: {} } }) && !cherrim_sunny({ ability: { extra: {} } }), 'raining, not sunny; Castform Rainy');
-  ok(/Primal Kyogre's round \(every round\)/.test(lines(J('j_poke_groudon'))), 'Groudon\'s tooltip says it', lines(J('j_poke_groudon')));
   nextDeal(REDS);
   ok(G.GAME.poke_primal.winner === 'kyogre' && cr().discards_left === base.d, 'next round, red again: still Primal Kyogre\'s (every round)', G.GAME.poke_primal);
   // the reverse: Primal Groudon vs Kyogre on a Club deal
@@ -218,7 +221,6 @@ sec('clash', () => {
   deal('PRM6f', REDS, ['j_poke_kyogre', 'j_poke_groudon', 'j_poke_rayquaza'], () => { useOrb('c_poke_blueorb'); });
   ok(G.GAME.poke_primal.winner === null && G.GAME.poke_primal.rayquaza, 'with Rayquaza: no clash', G.GAME.poke_primal);
   ok(play2(['C_A']).chips === 38 && near(play2(['H_K']).mult, 1.25), 'both work: Clubs twice, Hearts X1.25');
-  ok(/calmed by Rayquaza/.test(lines(J('j_poke_primal_kyogre'))), 'tooltip: calmed by Rayquaza');
   // ... and so does a Mega Rayquaza (Mega batch D: Delta Stream is its own ability)
   if (P_CENTERS.j_poke_mega_rayquaza) {
     deal('PRM6f2', REDS, ['j_poke_kyogre', 'j_poke_groudon', 'j_poke_mega_rayquaza'], () => { useOrb('c_poke_blueorb'); });
@@ -232,7 +234,7 @@ sec('clash', () => {
   ok(key(G.jokers.cards[0]) === 'j_poke_primal_kyogre' && cr().hands_left === h1 && play2(['C_A']).chips === 16, 'the Orb used mid-round: Primal Kyogre gives nothing this round (the decision holds)', [cr().hands_left, h1]);
   nextDeal(REDS);
   ok(G.GAME.poke_primal.winner === 'kyogre' && G.GAME.poke_primal.primal === 'kyogre', 'next round: Primal Kyogre wins', G.GAME.poke_primal);
-});
+}));
 
 // ------------------------------------------------------------------- where the Orbs turn up
 sec('pools', () => {
