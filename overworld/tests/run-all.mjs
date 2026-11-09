@@ -65,8 +65,9 @@ const TIMEOUT = 5 * 60_000;
 // suites that legitimately run longer: micatro_engine_test runs every Micatro mod suite + the all-mods fuzz (~2 min alone,
 // 7 min under load by 2026-10-22, when it started hitting the 5 min cap; 11-12 min on CI by 2026-11-04 with the regional forms, and over 15
 // with Mega batch D's 19 Megas, which every mod suite now loads)
-// micatro_pvp_e2e_test plays six two-player matches in real browsers (~150 s on CI by stage 7c, more with All Multiplayer Cards)
-const SLOW = { 'micatro_engine_test.mjs': 22 * 60_000, 'micatro_pvp_e2e_test.mjs': 10 * 60_000 };
+// micatro_pvp_e2e_test plays six two-player matches in real browsers (~150 s on CI by stage 7c, 226 s with All Multiplayer Cards);
+// micatro_replay_pack_test steps every pack of a vanilla + a Pokermon run in replays (298-315 s on CI by 2026-11-09: it hit the cap)
+const SLOW = { 'micatro_engine_test.mjs': 22 * 60_000, 'micatro_pvp_e2e_test.mjs': 10 * 60_000, 'micatro_replay_pack_test.mjs': 10 * 60_000 };
 // ~4 GB of RAM per worker. Each suite is a node process plus a headless Chrome,
 // and on a 5.8 GB machine two workers ran each suite ~1.9x slower (145/145 in
 // 1579s vs 1761s serial). Parallelism only pays with memory to spare.
