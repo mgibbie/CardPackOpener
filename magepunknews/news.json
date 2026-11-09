@@ -403,6 +403,14 @@
 	},
 	"entries": [
 		{
+			"sha": "513504b",
+			"date": "2026-11-09",
+			"kind": "micatro",
+			"title": "Pokermon: Kyogre, Groudon and Rayquaza made simple",
+			"body": "The weather trio and its Primal / Mega forms are now plain Legendaries with short tooltips: no weather, no Castform lock, no Primal Clash, no references to each other. Kyogre: +1 hand, scored Clubs retrigger once and give X1.25. Groudon: +1 discard, scored Hearts and Diamonds give X1.25. Rayquaza: +1 hand and +1 discard, gains X0.2 per Straight or Flush. Primal Kyogre: +2 hands, Clubs retrigger twice and give X1.5. Primal Groudon: +2 discards, Hearts and Diamonds give X1.75. Mega Rayquaza: +2 hands and +2 discards, gains X0.4 per Straight or Flush. Castform reads its own forecast again. Runs started before this replay exactly as they were played.",
+			"cards": []
+		},
+		{
 			"sha": "b453d99",
 			"date": "2026-11-09",
 			"kind": "micatro",
