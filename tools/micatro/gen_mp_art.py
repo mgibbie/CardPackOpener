@@ -12,8 +12,8 @@ and never placeholders. Each card is drawn here at Balatro's 1x size (71 x 95), 
 
   python tools/micatro/gen_mp_art.py      -> micatro/assets/textures/pvp/MPJokers.png (5 x 2 cells, 142 x 190 each)
                                              micatro/assets/textures/pvp/MPPlanets.png (1 cell)
-                                             micatro/assets/textures/pvp/MPDecks.png (4 x 2 deck backs; stage 7c: the Red Deck's
-                                               pattern recoloured, as Balatro's own coloured decks are, or a drawn back)
+                                             micatro/assets/textures/pvp/MPDecks.png (4 x 2 deck backs: two-tone ornate backs
+                                               drawn here in the style of Balatro's coloured decks, or a drawn back)
                                              micatro/assets/textures/pvp/MPStakes.png (3 stake chips, Balatro's chip recoloured)
                                              + a 3x preview sheet in $MP_ART_PREVIEW (optional)
 """
@@ -648,38 +648,148 @@ def emblem_badge(L, cx, cy, r, fill):
     L.ell((cx - r, cy - r, cx + r, cy + r), fill)
 
 
+# Balatro's coloured decks (Red / Blue / Yellow / Green / Black) are two-tone: a white rim, one ink field and white
+# line-art, mirrored left/right and top/bottom. Violet / Indigo / Orange are drawn the same way, each with its OWN
+# pattern: only the card's silhouette and white rim come from the base sheet, no line of the Red Deck's ornament is reused.
+CX, CY = 35, 47                  # the field's centre: the field is x 4..66, y 4..90
+FX0, FY0, FX1, FY1 = 4, 4, 66, 90
+
+
+def ornate_back(ink, quadrant):
+    """A two-tone back: the card's silhouette + white rim, an `ink` field, and white line-art drawn by quadrant(put)
+    in the upper-left quarter (x <= CX, y <= CY), mirrored into the other three."""
+    tpl = back_template().load()
+    q = set()
+
+    def put(pts):
+        for (x, y) in pts:
+            x, y = int(round(x)), int(round(y))
+            if FX0 <= x <= CX and FY0 <= y <= CY:
+                q.add((x, y))
+    quadrant(put)
+    out = Image.new('RGBA', (W, H), T)
+    o = out.load()
+    ic = rgb(ink)
+    for y in range(H):
+        for x in range(W):
+            if not tpl[x, y][3]:
+                continue
+            if not (FX0 <= x <= FX1 and FY0 <= y <= FY1) or (x in (FX0, FX1) and y in (FY0, FY1)):
+                o[x, y] = WHITE
+                continue
+            sx, sy = (x if x <= CX else 2 * CX - x), (y if y <= CY else 2 * CY - y)
+            o[x, y] = WHITE if (sx, sy) in q else ic
+    return out
+
+
+def hline(x0, x1, y):
+    return [(x, y) for x in range(x0, x1 + 1)]
+
+
+def vline(x, y0, y1):
+    return [(x, y) for y in range(y0, y1 + 1)]
+
+
+def ring(cx, cy, r, w=1.0):
+    return [(x, y) for y in range(int(cy - r - 2), int(cy + r + 3)) for x in range(int(cx - r - 2), int(cx + r + 3))
+            if r - w / 2 <= ((x - cx) ** 2 + (y - cy) ** 2) ** 0.5 < r + w / 2]
+
+
+def diamond(cx, cy, r, solid=False):
+    return [(x, y) for y in range(cy - r, cy + r + 1) for x in range(cx - r, cx + r + 1)
+            if (abs(x - cx) + abs(y - cy) <= r if solid else abs(x - cx) + abs(y - cy) == r)]
+
+
 def deck_violet():
-    """Violet Deck (+1 voucher slot, vouchers on sale early): the pattern in violet, a voucher ticket in the middle."""
-    b = recolour_back('#8a5cd6', '#5e3aa0')
-    L = Layer()
-    L.rect((24, 38, 46, 56), '#ffffff')
-    L.rect((26, 40, 44, 54), '#c9b3ff')
-    L.px([(24, 44), (24, 45), (24, 46), (46, 44), (46, 45), (46, 46)], (0, 0, 0, 0))
-    L.art(31, 43, ['a...a', 'a...a', '.a.a.', '.a.a.', '..a..', '..a..'], {'a': '#5e3aa0'})
-    L.px([(28, 51), (29, 51), (30, 51), (40, 51), (41, 51), (42, 51)], '#8a5cd6')
-    return stack(b, L.outlined())
+    """Violet Deck (+1 voucher slot, vouchers on sale early): a trellis of voucher tickets round a big diamond
+    medallion, a ticket stub across the middle with a sale tag at its heart."""
+    def quad(put):
+        # the frame: a double rule with studs at the corners
+        put(hline(6, CX, 6) + vline(6, 6, CY))
+        put(hline(9, CX, 9) + vline(9, 9, CY))
+        put(diamond(9, 9, 2, solid=True))
+        # the trellis: diagonals every 8 pixels outside the medallion
+        for y in range(11, CY + 1):
+            for x in range(11, CX + 1):
+                d = abs(x - CX) + abs(y - CY)
+                if d > 27 and ((x + y) % 8 == 2 or (x - y) % 8 == 0):
+                    put([(x, y)])
+        # little tickets at the trellis crossings: a 5x3 box with notched ends, its centre cleared to ink
+        for (x, y) in [(13, 21), (21, 13), (13, 37), (29, 13), (21, 29), (13, 29), (29, 21)]:
+            if abs(x - CX) + abs(y - CY) > 30:
+                put(hline(x - 2, x + 2, y - 2) + hline(x - 2, x + 2, y + 2) + [(x - 3, y - 1), (x - 3, y + 1), (x + 3, y - 1), (x + 3, y + 1), (x, y)])
+        # the medallion: a double diamond outline, dots between
+        put([(x, y) for y in range(FY0, CY + 1) for x in range(FX0, CX + 1) if abs(x - CX) + abs(y - CY) in (25, 22)])
+        put([(x, y) for y in range(FY0, CY + 1) for x in range(FX0, CX + 1)
+             if abs(x - CX) + abs(y - CY) == 19 and (x + y) % 3 == 0])
+        # the ticket stub: 27 x 13, notched at the sides, a perforated tear line near each end
+        tx0, ty0 = CX - 13, CY - 6
+        put(hline(tx0, CX, ty0) + vline(tx0, ty0, CY - 3) + [(tx0 + 1, CY - 2), (tx0 + 2, CY - 1), (tx0 + 2, CY)])
+        put([(tx0 + 5, y) for y in range(ty0 + 2, CY + 1, 2)])
+        # the sale tag at the heart: a solid diamond with a punched hole
+        put([p for p in diamond(CX, CY, 4, solid=True) if p != (CX, CY - 2)])
+    return ornate_back('#8a5cd6', quad)
 
 
 def deck_indigo():
-    """Indigo Deck (+1 pick from every pack, packs can't be skipped): the pattern in indigo, an open pack with a +1."""
-    b = recolour_back('#3f4fb8', '#28327a')
-    L = Layer()
-    L.poly([(22, 42), (49, 42), (47, 60), (24, 60)], '#ffd25a')
-    L.poly([(22, 42), (35, 34), (49, 42)], '#f2bd3c')
-    L.rect((27, 36, 33, 46), '#ffffff'); L.rect((36, 35, 42, 45), '#ffffff')
-    L.art(28, 49, ['.a....aa.', 'aaa....a.', '.a.....a.', '......aaa'], {'a': '#28327a'})
-    return stack(b, L.outlined())
+    """Indigo Deck (+1 pick from every pack, packs can't be skipped): booster packs nested inside each other with
+    crimped seals, picks fanning out between them from a plus in the middle."""
+    PACKS = [(25, 38), (18, 29), (11, 20)]
+
+    def quad(put):
+        # the frame: a single rule with a stitched row inside it
+        put(hline(6, CX, 6) + vline(6, 6, CY))
+        put([(x, 8) for x in range(8, CX + 1) if (CX - x) % 2 == 0] + [(8, y) for y in range(8, CY + 1) if (CY - y) % 2 == 0])
+        on_pack = set()
+        for (hx, hy) in PACKS:
+            x0, y0 = CX - hx, CY - hy
+            pts = vline(x0, y0 + 2, CY) + vline(x0 + 2, y0 + 5, CY)                     # a double side
+            pts += [(x, y0 + (0 if (x - x0) % 4 < 2 else 1)) for x in range(x0, CX + 1)]  # the crimped seal
+            pts += hline(x0 + 2, CX, y0 + 5)                                              # the seal's lower edge
+            pts += [(x, y0 + 3) for x in range(x0 + 1, CX + 1) if (x - x0) % 2 == 1]      # its stitches
+            put(pts)
+            on_pack |= {(x, y) for x in range(x0 - 1, CX + 1) for y in range(y0 - 1, y0 + 7)}
+            on_pack |= {(x, y) for x in range(x0 - 1, x0 + 4) for y in range(y0, CY + 1)}
+        # picks fanning from the centre: solid rays in the bands between the packs
+        for (dx, dy) in [(0, 1), (1, 2), (1, 1), (2, 1), (1, 0)]:
+            m = max(dx, dy)
+            for t in range(10, 60):
+                xi, yi = int(round(CX - dx * t / m)), int(round(CY - dy * t / m))
+                if CX - xi <= 25 and CY - yi <= 38 and (xi, yi) not in on_pack:
+                    put([(xi, yi)])
+        # the outermost band: a field of little plus signs
+        for y in range(11, CY + 1, 4):
+            for x in range(11, CX + 1, 4):
+                if CX - x > 26 or CY - y > 39:
+                    put([(x, y), (x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)] if (x + y) % 8 == 6 else [(x, y)])
+        # the plus on a ring in the middle
+        put(ring(CX, CY, 6.5, 1.2))
+        put(vline(CX, CY - 4, CY) + hline(CX - 4, CX, CY) + vline(CX - 1, CY - 1, CY) + hline(CX - 1, CX, CY - 1))
+    return ornate_back('#3f4fb8', quad)
 
 
 def deck_orange():
-    """Orange Deck (2 Hanged Men, a free Standard pack at the start): the pattern in orange, two hanging cards."""
-    b = recolour_back('#f08a24', '#b85f10')
-    L = Layer()
-    for x0, dy in ((24, 0), (37, 4)):
-        L.line([(x0 + 4, 30), (x0 + 4, 38 + dy)], '#4f6367')
-        L.rect((x0, 38 + dy, x0 + 9, 52 + dy), '#ffffff')
-        L.px([(x0 + 2, 40 + dy), (x0 + 7, 50 + dy)], '#e0282e')
-    return stack(b, L.outlined())
+    """Orange Deck (2 Hanged Men, a free Standard pack at the start): it hangs both ways, as the Hanged Man does --
+    a beam at each end, knotted ropes dropping to pendant pips, a rope ring knotted in the middle."""
+    def quad(put):
+        # a twisted cord round the field: two rails with the strands' slashes between them
+        put(hline(6, CX, 6) + hline(9, CX, 9) + vline(6, 6, CY) + vline(9, 9, CY))
+        put([(x, 7) for x in range(7, CX + 1) if x % 3 == 0] + [(x, 8) for x in range(7, CX + 1) if x % 3 == 2])
+        put([(7, y) for y in range(7, CY + 1) if y % 3 == 0] + [(8, y) for y in range(7, CY + 1) if y % 3 == 2])
+        # the beam: two rails with pegs between
+        put(hline(12, CX, 12) + hline(12, CX, 15) + vline(12, 12, 15))
+        put([(x, y) for x in range(15, CX + 1, 4) for y in (13, 14)])
+        # ropes from the beam, a knot every 5 rows, each ending in a diamond pip
+        for (rx, ln) in [(14, 22), (18, 12), (22, 17), (26, 8), (30, 13)]:
+            put(vline(rx, 16, 16 + ln))
+            put([(rx - 1, y) for y in range(19, 16 + ln, 5)] + [(rx + 1, y) for y in range(19, 16 + ln, 5)])
+            put(diamond(rx, 16 + ln + 3, 2, solid=True))
+        # the centre: a rope ring (double) hung on the middle rope, a knot on its top
+        put(ring(CX, CY, 9.5, 1.2) + ring(CX, CY, 7, 1.2))
+        put(vline(CX, 16, CY - 10))
+        put(diamond(CX, CY - 10, 1, solid=True))
+        put([p for p in diamond(CX, CY, 3, solid=True)])
+    return ornate_back('#f08a24', quad)
 
 
 def deck_oracle():
