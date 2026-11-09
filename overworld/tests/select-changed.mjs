@@ -14,9 +14,11 @@
 // The full gate still runs before big batches / overnight; this is the
 // per-merge check.
 import { execSync } from 'child_process';
-import { readdirSync, readFileSync, existsSync } from 'fs';
+import { readFileSync, existsSync } from 'fs';
 import { dirname, join, basename } from 'path';
 import { fileURLToPath } from 'url';
+import { gateSuites } from './gate-shard.mjs';
+import { PARTS, partSuiteName, partsOfTestFile } from './micatro_engine_parts.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(here, '../..');
@@ -168,7 +170,7 @@ export function selectSuites({ base, files: filesIn, diffFor, contentFor, suiteF
 	const content = contentFor || ((f, which) => {
 		try { return which === 'old' ? (mb ? git(`show ${mb}:${f}`) : '') : readFileSync(join(ROOT, f), 'utf8'); } catch (e) { return ''; }
 	});
-	const allSuites = suiteFiles || [...readdirSync(here).filter(f => f.endsWith('_test.mjs')), 'boot_smoke.mjs', 'quest_reach.mjs'].sort();
+	const allSuites = suiteFiles || gateSuites(here);
 	const src = suiteSource || (f => { try { return readFileSync(join(here, f), 'utf8'); } catch (e) { return ''; } });
 	const getDiff = diffFor || (f => diffOf(f, mb));
 	const suites = new Map(), broad = new Set();
@@ -187,6 +189,11 @@ export function selectSuites({ base, files: filesIn, diffFor, contentFor, suiteF
 	for (const f of relevant) {
 		const m = f.match(/^overworld\/tests\/([^/]+\.mjs)$/);
 		if (m && allSuites.includes(m[1])) { pick(m[1], 'the suite itself changed'); continue; }
+		if (m && m[1] === 'micatro_engine_test.mjs') {   // not a gate suite: the gate runs it as its parts (whose header it is)
+			for (let i = 1; i <= PARTS; i++) pick(partSuiteName(i), 'micatro_engine_test.mjs changed');
+			pick('micatro_engine_parts_test.mjs', 'micatro_engine_test.mjs changed');
+			continue;
+		}
 		if (m) {   // a shared test helper: the suites that import it
 			// a real import (static or dynamic), not a mention in a comment
 			const name = m[1].replace(/\.mjs$/, '').replace(/[.*+?^${}()|[\]\\-]/g, '\\$&');
@@ -195,6 +202,11 @@ export function selectSuites({ base, files: filesIn, diffFor, contentFor, suiteF
 			continue;
 		}
 		for (const r of BY_PATH) if (r.re.test(f) && (!r.diff || r.diff.test(getDiff(f)))) for (const s of r.suites) pick(s, r.why);
+		// a Micatro node suite (or a helper/fixture of them) runs in the micatro_engine_<i>_test.mjs part(s) that own it
+		if (/^micatro\/tests\//.test(f) && !/\.(md|txt)$/.test(f)) {
+			const parts = partsOfTestFile(f);
+			for (const i of parts || Array.from({ length: PARTS }, (_, j) => j + 1)) pick(partSuiteName(i), parts ? `runs ${basename(f)}` : `a Micatro test helper changed: ${basename(f)}`);
+		}
 		const toks = /(^|\/)cards\.json$/.test(f) ? changedCardIds(content(f, 'old'), content(f, 'new')) : tokensOf(getDiff(f), f);
 		for (const tok of toks) {
 			const re = new RegExp(`(^|[^\\w$-])${tok.replace(/[$]/g, '\\$')}([^\\w$-]|$)`);

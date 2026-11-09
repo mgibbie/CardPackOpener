@@ -10,31 +10,15 @@
 // boosters/), micatro/mods/pokermonplus (index.js data.js data120.js sprites120.js sleeves.js src/), micatro/mods/nacho (index.js data179.js sprites179.js dip.js items.js systems.js pokemon/), micatro/js/mods/superseded.js + tools/micatro/gen_superseded.mjs
 // micatro/js/refusedlog.js (the refused-actions log: micatro/tests/refusedlog_test.mjs),
 // (the add-on dedupe's sticker merge: micatro/tests/mods/addon_sticker_merge_test.mjs) — named here so `run-all.mjs --changed` selects this suite when any of them change.
-//   node overworld/tests/micatro_engine_test.mjs
-import { spawnSync } from 'child_process';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
+//   node overworld/tests/micatro_engine_test.mjs            (every suite: what a developer runs)
+//   node overworld/tests/micatro_engine_test.mjs --part 3/8 (one part; the gate runs micatro_engine_<i>_test.mjs instead,
+//                                                            see micatro_engine_parts.mjs — run-all.mjs skips THIS file)
+import { engineSuites, partSuites, runSuites, PARTS } from './micatro_engine_parts.mjs';
 
-const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../');
-const DIR = path.join(ROOT, 'micatro/tests');
-const suites = fs.readdirSync(DIR).filter((f) => f.endsWith('_test.mjs')).sort()
-  .map((f) => [f, [path.join(DIR, f), ...(f === 'fuzz_runs_test.mjs' ? ['40'] : [])]]);
-const MODDIR = path.join(DIR, 'mods');
-if (fs.existsSync(MODDIR)) {
-  for (const f of fs.readdirSync(MODDIR).filter((x) => x.endsWith('_test.mjs')).sort()) suites.push(['mods/' + f, [path.join(MODDIR, f)]]);
+const pi = process.argv.indexOf('--part');
+if (pi >= 0) {
+  const m = String(process.argv[pi + 1] || '').match(/^(\d+)\/(\d+)$/);
+  if (!m || +m[1] < 1 || +m[1] > +m[2]) { console.log(`--part wants i/k with 1 <= i <= k (the gate uses k = ${PARTS})`); process.exit(2); }
+  process.exit(runSuites(partSuites(+m[1], +m[2]), ` (part ${m[1]}/${m[2]})`));
 }
-suites.push(['fuzz_runs_test.mjs 24 pokermon', [path.join(DIR, 'fuzz_runs_test.mjs'), '24', 'pokermon']]);
-// ... and every mod on at once (mod decks / stakes / jokers favoured by the bot)
-suites.push(['fuzz_runs_test.mjs 16 all', [path.join(DIR, 'fuzz_runs_test.mjs'), '16', 'all']]);
-let fail = 0;
-for (const [f, args] of suites) {
-  const r = spawnSync(process.execPath, args, { encoding: 'utf8', timeout: 600000 });
-  const last = (r.stdout || '').trim().split('\n').pop();
-  const ok = r.status === 0;
-  if (!ok) fail++;
-  console.log(`${ok ? 'ok  ' : 'FAIL'} - micatro/tests/${f}: ${last}`);
-  if (!ok) console.log((r.stdout || '').split('\n').filter((l) => /FAIL/.test(l)).slice(0, 15).join('\n') + (r.stderr || '').slice(0, 2000));
-}
-console.log(`${suites.length - fail} passed, ${fail} failed`);
-process.exit(fail ? 1 : 0);
+process.exit(runSuites(engineSuites()));
