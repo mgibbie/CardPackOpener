@@ -163,7 +163,9 @@ try {
 	A(await alice.page.evaluate(() => !!localStorage.getItem('micatro_pvp_run_v1') && !localStorage.getItem('micatro_run_v1')), 'the match is saved in its own slot (never the solo run\'s)');
 
 	// ---- both skip to the Nemesis
-	for (const p of [alice.page, bob.page]) { await act(p, { type: 'skip_blind' }); await idle(p); await act(p, { type: 'skip_blind' }); await idle(p); }
+	// (a skip's Tag may open a pack — the seed is the server's pick: skip it)
+	const skipTwo = async (p) => { for (let k = 0; k < 2; k++) { await act(p, { type: 'skip_blind' }); await idle(p); if (/PACK/.test((await view(p)).state)) { await act(p, { type: 'skip_booster' }); await idle(p); } } };
+	for (const p of [alice.page, bob.page]) await skipTwo(p);
 	const na = await view(alice.page);
 	A(na.onDeck === 'Boss' && na.state === 'BLIND_SELECT', 'both at the Boss: Your Nemesis');
 	A(await alice.page.evaluate(() => !!document.querySelector('.b-pvp-ready')), 'the Nemesis column has a READY button (not Select)');
