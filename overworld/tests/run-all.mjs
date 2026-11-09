@@ -65,7 +65,9 @@ const TIMEOUT = 5 * 60_000;
 // suites that legitimately run longer: micatro_engine_test runs every Micatro mod suite + the all-mods fuzz (~2 min alone,
 // 7 min under load by 2026-10-22, when it started hitting the 5 min cap; 11-12 min on CI by 2026-11-04 with the regional forms, and over 15
 // with Mega batch D's 19 Megas, which every mod suite now loads)
-const SLOW = { 'micatro_engine_test.mjs': 22 * 60_000 };
+// (micatro_replay_pack_test: 288 assertions replaying real runs; since Pages (2026-11-08) it takes 230-299 s on a CI shard and
+//  timed out at 300 s in 7 of the last 13 main gates, the SIGTERM showing as a puppeteer 'detached Frame' error)
+const SLOW = { 'micatro_engine_test.mjs': 22 * 60_000, 'micatro_replay_pack_test.mjs': 10 * 60_000 };
 // ~4 GB of RAM per worker. Each suite is a node process plus a headless Chrome,
 // and on a 5.8 GB machine two workers ran each suite ~1.9x slower (145/145 in
 // 1579s vs 1761s serial). Parallelism only pays with memory to spare.
