@@ -539,18 +539,18 @@ try {
 	{
 		const { cleanOpts, pvpTimerCan } = R;
 		const d = cleanOpts({});
-		A(d.ruleset === 'balanced' && d.order === true && d.pvpTimer === true, 'stage 7: a new lobby is Balanced with The Order and the PvP timer on', JSON.stringify(d));
+		A(d.ruleset === 'expanded' && d.order === true && d.pvpTimer === true, 'stage 7: a new lobby is Expanded (7b; Balanced in 7a) with The Order and the PvP timer on', JSON.stringify(d));
 		const v = cleanOpts({ ruleset: 'vanilla' });
 		A(v.order === false && v.pvpTimer === false, 'stage 7: Vanilla defaults The Order and the PvP timer off');
 		A(cleanOpts({ ruleset: 'vanilla', order: true, pvpTimer: true }).order === true && cleanOpts({ ruleset: 'balanced', order: false }).order === false, 'stage 7: the host can turn either way');
-		A(cleanOpts({ ruleset: 'chaos' }).ruleset === 'balanced', 'stage 7: an unknown ruleset falls back to the default');
+		A(cleanOpts({ ruleset: 'chaos' }).ruleset === 'expanded', 'stage 7: an unknown ruleset falls back to the default');
 		A(pvpTimerCan({ pvpTimer: false }, null, 'a', 'b', 0) === 'the PvP timer is off in this lobby', 'pvpTimerCan: off');
 	}
 	{
 		const ptimer = (who, id, on) => as(who).call('mtpvp-ptimer', { id, on });
 		const rep = (who, id, score, hands, n, hp, hl = 0) => as(who).call('mtpvp-hand', { id, ante: 2, slot: 'Boss', score: String(score), hands, n, hp, hl });
 		const lb = await newMatch('alice', 'bob');
-		A(lb.opts.ruleset === 'balanced' && lb.opts.order === true && lb.opts.pvpTimer === true, 'stage 7: the match carries the ruleset options');
+		A(lb.opts.ruleset === 'expanded' && lb.opts.order === true && lb.opts.pvpTimer === true, 'stage 7: the match carries the ruleset options');
 		A((await ptimer('alice', lb.id, true)).status === 409, 'PvP timer: not in a Nemesis round -> refused');
 		await readyS('alice', lb.id, 2, 'Boss'); await readyS('bob', lb.id, 2, 'Boss');
 		await pass(3_000, lb.id, 'alice', 'bob');
@@ -620,12 +620,46 @@ try {
 		await done(lb3.id);
 	}
 
+	// ===== 9. stage 7b: Expanded — the effects relay, SPEEDRUN =====
+	{
+		A(R.cleanOpts({}).ruleset === 'expanded', "stage 7b: a new lobby is Expanded (the mod's default)");
+		const fx = (who, id, from, list) => as(who).call('mtpvp-fx', { id, from, list });
+		const lb = await newMatch('alice', 'bob');
+		A((await fx('alice', lb.id, 0, ['nuke'])).status === 400, 'fx: an unknown effect is refused');
+		await fx('alice', lb.id, 0, ['lgg', 'asteroid']);
+		let mm = lobbyOf(lb.id).m;
+		A(JSON.stringify(mm.fx.bob) === '["lgg","asteroid"]' && mm.fxs.alice === 2, "fx: alice's effects queue for bob, in order", JSON.stringify(mm.fx));
+		await fx('alice', lb.id, 0, ['lgg', 'asteroid', 'pizza']);
+		await fx('alice', lb.id, 2, ['pizza']);
+		mm = lobbyOf(lb.id).m;
+		A(JSON.stringify(mm.fx.bob) === '["lgg","asteroid","pizza"]' && mm.fxs.alice === 3, 'fx: a re-sent list is applied once (idempotent by index)', JSON.stringify(mm.fx));
+		A((await fx('alice', lb.id, 9, ['lgg'])).status === 200 && lobbyOf(lb.id).m.fxs.alice === 3, "fx: a gap is ignored (the client re-posts from the server's index)");
+		// SPEEDRUN: both READY within 30 s -> 'speedrun' to both
+		await readyS('alice', lb.id, 2, 'Boss');
+		await pass(20_000, lb.id, 'alice', 'bob');
+		await readyS('bob', lb.id, 2, 'Boss');
+		mm = lobbyOf(lb.id).m;
+		A(mm.fx.alice && mm.fx.alice.includes('speedrun') && mm.fx.bob.at(-1) === 'speedrun', 'SPEEDRUN: READY 20 s apart -> both get it', JSON.stringify(mm.fx));
+		await done(lb.id);
+		const lb2 = await newMatch('carol', 'dave');
+		await readyS('carol', lb2.id, 2, 'Boss');
+		await pass(40_000, lb2.id, 'carol', 'dave');
+		await readyS('dave', lb2.id, 2, 'Boss');
+		A(!(lobbyOf(lb2.id).m.fx || {}).dave, 'SPEEDRUN: 40 s apart -> nothing');
+		await done(lb2.id);
+		const lb3 = await newMatch('erin', 'fred', { ruleset: 'balanced' });
+		await fx('erin', lb3.id, 0, ['lgg']);
+		await readyS('erin', lb3.id, 2, 'Boss'); await readyS('fred', lb3.id, 2, 'Boss');
+		A(!lobbyOf(lb3.id).m.fx, 'Balanced: no relay, no SPEEDRUN');
+		await done(lb3.id);
+	}
+
 	// registration
 	const src = fs.readFileSync(path.join(ROOT, 'server/mp.mjs'), 'utf8');
 	const gc = src.slice(src.indexOf('const GC_TABLE'), src.indexOf('];', src.indexOf('const GC_TABLE')));
 	for (const p of ['mtpvp:', 'mtpvpcode:', 'mtpvpcur:', 'mtpvpp:']) A(gc.includes("['" + p + "'"), 'GC_TABLE sweeps ' + p);
 	const rl = src.slice(src.indexOf('const RATE_LIMITS'), src.indexOf('const HIT_LIMIT'));
-	for (const a of ['create', 'peek', 'join', 'leave', 'mine', 'update', 'sync', 'ready', 'hand', 'blind', 'forfeit', 'rematch', 'timer', 'ptimer']) A(new RegExp("'mtpvp-" + a + "': \\[\\d+, [\\d_]+\\]").test(rl), 'mtpvp-' + a + ' is rate-limited');
+	for (const a of ['create', 'peek', 'join', 'leave', 'mine', 'update', 'sync', 'ready', 'hand', 'blind', 'forfeit', 'rematch', 'timer', 'ptimer', 'fx']) A(new RegExp("'mtpvp-" + a + "': \\[\\d+, [\\d_]+\\]").test(rl), 'mtpvp-' + a + ' is rate-limited');
 } catch (e) {
 	fail++; console.log('FAIL: threw ' + (e && e.stack));
 }

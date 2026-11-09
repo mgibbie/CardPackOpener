@@ -933,6 +933,7 @@ async function boot() {
       board.onPvpReady = () => Pvp.pressReady();
       board.onPvpHurry = () => Pvp.pressHurry();
       board.onPvpTimer = () => Pvp.pressPvpTimer();
+      board.pvpCardCanvas = (d, cls) => UI.cardCanvas(d, cls);
       window.__micatro.pvp = Pvp;
     } catch (e) { console.warn('micatro: multiplayer unavailable', e); }
   }

@@ -947,6 +947,9 @@ body.has-replay-bar.rb-tucked #pad-hints { bottom: 40px; }
 .pvp-modal .pvp-lobby .pvp-mode-desc { font-size: 14px; margin: 0 auto 4px; }
 .pvp-modal .pvp-lobby .pvp-bar { position: sticky; bottom: -18px; margin: 6px -18px -18px; padding: 10px 0 14px; background: var(--panel); box-shadow: 0 -6px 10px rgba(0,0,0,.25); z-index: 2; }
 .pvp-modal .pvp-modopts { font-size: 16px; color: #f2be48; }
+.pvp-hud .ph-phantoms { display: flex; gap: 4px; align-items: center; justify-content: center; margin-top: 4px; }
+.pvp-hud .ph-phantoms .ph-phantom { width: 36px; height: auto; opacity: .85; filter: saturate(.8); }
+.pvp-hud .ph-ph-l { font-size: 14px; opacity: .8; }
 .pvp-end .pvp-end-title { font-size: 44px; text-align: center; }
 .pvp-end .pvp-end-title.won { color: #4bc292; } .pvp-end .pvp-end-title.lost { color: #fe5f55; } .pvp-end .pvp-end-title.draw { color: #f2be48; }
 .pvp-end .pvp-end-why, .pvp-end .pvp-end-lives, .pvp-end .pvp-end-hist { text-align: center; margin: 4px 0; }

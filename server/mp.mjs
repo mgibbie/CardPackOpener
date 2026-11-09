@@ -777,7 +777,7 @@ const RATE_LIMITS = {
 	// and reports a hand / a blind / a ready press on each such move — these brake a runaway client, not play
 	'mtpvp-create': [10, 60_000], 'mtpvp-peek': [30, 60_000], 'mtpvp-join': [20, 60_000], 'mtpvp-leave': [20, 60_000],
 	'mtpvp-mine': [30, 60_000], 'mtpvp-update': [60, 60_000], 'mtpvp-sync': [40, 10_000], 'mtpvp-ready': [30, 10_000],
-	'mtpvp-hand': [40, 10_000], 'mtpvp-blind': [30, 10_000], 'mtpvp-forfeit': [10, 60_000], 'mtpvp-rematch': [20, 60_000], 'mtpvp-timer': [30, 10_000], 'mtpvp-ptimer': [30, 10_000],
+	'mtpvp-hand': [40, 10_000], 'mtpvp-blind': [30, 10_000], 'mtpvp-forfeit': [10, 60_000], 'mtpvp-rematch': [20, 60_000], 'mtpvp-timer': [30, 10_000], 'mtpvp-ptimer': [30, 10_000], 'mtpvp-fx': [30, 10_000],
 	'micatro-decks-put': [20, 60_000], // saving custom decks (the deck editor) — deliberate edits, never hot
 	// win stickers: a load per page boot + a debounced push per won run (and its retries) — never hot
 	'micatro-stickers-get': [30, 60_000], 'micatro-stickers-put': [30, 60_000],
