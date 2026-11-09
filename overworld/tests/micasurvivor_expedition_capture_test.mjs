@@ -22,7 +22,8 @@
 //  10. the phone (844 x 390, touch) and desktop: the chips, the swap choice, the banner fit and overlap nothing; screenshots
 //   node overworld/tests/micasurvivor_expedition_capture_test.mjs
 // (In a git worktree add MAGEPUNK_ASSET_ROOT=<main checkout> for the gitignored sprites. MICASURVIVOR_ROOT=<dir> serves
-//  micasurvivor/ from another tree: how the "fails before D8" count was taken. SHOTS=<dir> saves the screenshots.)
+//  micasurvivor/ from another tree: how the "fails before D8" count was taken. SHOTS=<dir> saves the screenshots.
+//  MICASURVIVOR_SEED / MICASURVIVOR_CPU_THROTTLE: below.)
 import http from 'http';
 import fs from 'fs';
 import os from 'os';
@@ -43,6 +44,12 @@ const CHROME = process.env.CHROME || [
 	'/opt/chrome/chrome',
 ].find(p => fs.existsSync(p));
 const PORT = 8862;
+// The world seed of each Classic run, in order: fixed, so the terrain round every check is the same on every run (the world
+// is generated from it: a tree in the Support Alpha's line of fire or a cliff by the shiny's spawn used to fail 1 run in ~10).
+// MICASURVIVOR_SEED=<n>[,<n>...] other seeds (0: random), each run prints its own; MICASURVIVOR_SEED=random: a sweep
+const SEED_ENV = process.env.MICASURVIVOR_SEED || '';
+const THROTTLE = +process.env.MICASURVIVOR_CPU_THROTTLE || 0;   // e.g. 4: every page runs 4x slower (to shake out timing races)
+const SEEDS = SEED_ENV === 'random' ? [] : SEED_ENV ? SEED_ENV.split(',').filter(Boolean).map(n => Math.max(0, n | 0)) : [769583, 810464, 605478, 783928, 643755, 90484];
 let pass = 0, fail = 0;
 const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else { fail++; console.log('FAIL: ' + m + (extra != null ? '\n      ' + String(extra).slice(0, 900) : '')); } };
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.json': 'application/json', '.css': 'text/css', '.png': 'image/png', '.ico': 'image/x-icon', '.ttf': 'font/ttf', '.woff2': 'font/woff2', '.md': 'text/markdown; charset=utf-8', '.txt': 'text/plain', '.svg': 'image/svg+xml' };
@@ -129,6 +136,10 @@ const BEFORE = (save) => {
 	H.alpha = (dex, dx = 160) => { const pl = G.Game.player, K = G.ExpClassic.K.ALPHA; return H.foe(dex, pl.x + dx, pl.y, { ti: 1, hp: K.hp, dmg: K.dmg, xp: K.xp, scale: K.scale, spd: 0.9, kind: 'alpha' }); };
 	/** a big hit: a capture target stops at 1 HP */
 	H.weaken = e => { e.hurt(e.maxHp * 10); return e.hp; };
+	/** nothing that stops a shot (a wall, a tree / rock prop) on the line (x0, y0) -> (x1, y1) */
+	H.lineOfFire = (x0, y0, x1, y1, r = 8) => { const n = Math.ceil(Math.hypot(x1 - x0, y1 - y0) / 6); for (let k = 0; k <= n; k++) if (G.World.projectileBlock(x0 + (x1 - x0) * k / n, y0 + (y1 - y0) * k / n, r)) return false; return true; };
+	/** a free spot d px from (x, y) in a clear line of fire (the run's world is seeded: trees and walls fall anywhere); east first */
+	H.clearSpot = (x, y, d) => { for (let k = 0; k < 48; k++) { const a = (k % 2 ? -1 : 1) * Math.ceil(k / 2) * Math.PI / 24, px = x + Math.cos(a) * d, py = y + Math.sin(a) * d; if (G.World.isFree(px, py, 16) && H.lineOfFire(x, y, px, py)) return [px, py]; } return [x + d, y]; };
 	/** stand by fainted Pokémon f until the throw (and, with run, until the cinematic is over) */
 	H.throwAt = (f, run) => { H.go(f.x + 6, f.y + 4); H.step(14); if (run) H.step(Math.ceil((G.ExpCap.CINE_T + 0.2) * 30)); };
 	H.faints = () => G.ExpCap.run.faint.map(f => ({ kind: f.kind, dex: f.dex, x: f.x, y: f.y, win: +(f.end - f.t0).toFixed(2), eid: f.eid }));
@@ -139,6 +150,9 @@ const BEFORE = (save) => {
 	H.said = [];
 	H.hookSay = () => { const Sp = G.Spawner; if (!Sp || Sp.__said) return; const say = Sp.say; Sp.say = function (t, ...a) { H.said.push(String(t)); return say.call(this, t, ...a); }; Sp.__said = true; };
 	H.heard = (re, n0) => H.said.slice(n0).reverse().find(t => re.test(t)) || H.banner();
+	/** the zone's interactables held (economy.js: its seeded Poké Balls, altars, cages...: all GONE after every step): the player
+	 *  is teleported round a seeded world, and standing still by one opens its choice screen ("Poké Ball") and holds the world */
+	H.holdEco = () => { const Ec = G.ExpEco; if (!Ec || Ec.__held) return; const tick = Ec.tick; Ec.tick = function (...a) { const r = tick.apply(this, a), Z = Ec.zone; if (Z) Z.st.fill(Ec.GONE); return r; }; Ec.__held = true; };
 	/** fn() with your own moves held (G.Combat.tick: the player's attacks): a foe's own behaviour is measured, not your Sleep
 	 *  Powder's (an asleep / frozen shiny stands still) or your KO of the Support Alpha's only target */
 	H.passive = fn => { const tick = G.Combat.tick; G.Combat.tick = () => {}; try { return fn(); } finally { G.Combat.tick = tick; } };
@@ -153,6 +167,7 @@ try {
 		const ctx = ctx0 || await browser.createBrowserContext();
 		const page = await ctx.newPage();
 		await page.setViewport(view || { width: 1280, height: 720, deviceScaleFactor: 1 });
+		if (THROTTLE > 1) await page.emulateCPUThrottling(THROTTLE);
 		await page.evaluateOnNewDocument(BEFORE, SAVE);
 		page.on('pageerror', e => errors.push('pageerr: ' + e.message));
 		page.on('console', m => { if (m.type() === 'error' && !/Failed to load resource/.test(m.text())) errors.push('console: ' + m.text().slice(0, 200)); });
@@ -177,7 +192,7 @@ try {
 		return f;
 	};
 	/** start Classic (the League pick), freeze the frames, a sturdy player, no foes */
-	const startClassic = page => E(page, async () => {
+	const startClassic = (page, seed = SEEDS.shift()) => E(page, async seed => {
 		const wait = ms => new Promise(r => setTimeout(r, ms));
 		window.__t.thaw();
 		const ok0 = await G.Expedition.load().catch(e => String(e));
@@ -185,14 +200,17 @@ try {
 		await G.ExpSave.open();
 		if (G.Game.state === 'playing' || G.Game.state === 'levelup' || G.Game.state === 'choice') { G.Game.quit(); await wait(300); }
 		if (G.Game.state === 'over') { document.getElementById('btn-again').click(); await wait(300); }
+		// (this run's world seed: the next G.World.reset only)
+		if (seed) { const W = G.World, reset = W.reset; W.reset = function () { W.reset = reset; return reset.call(this, seed); }; }
 		const ok = await G.Flow.play('exp-classic');
 		window.__t.freeze();
 		window.__t.sturdy();
 		window.__t.wipe();
 		window.__t.hookSay();
+		window.__t.holdEco();
 		const Cp = G.ExpCap;
 		return { ok, state: G.Game.state, mode: G.Game.mode, dv: G.Modes.run.dv, on: !!(Cp && Cp.run), rx: !!(G.ExpRx && G.ExpRx.run), xv: G.Exp && G.Exp.XV, seed: G.World.seed, dex: G.Game.player.dex };
-	});
+	}, seed || 0).then(r => { console.log('     (world seed ' + (r && r.seed) + ')'); return r; });
 	/** end the run (quit), the run-over screen's text */
 	const endRun = page => E(page, async () => {
 		const wait = ms => new Promise(r => setTimeout(r, ms));
@@ -277,7 +295,9 @@ try {
 		// it shoots the nearest foe (its type, your attack, the "Partner / team" row), and follows you
 		H.step(1);
 		H.quiet(); H.wipe(); H.step(1);
-		const foe2 = H.foe(19, pl.x + 150, pl.y, { hp: 20 }), hp0 = foe2.hp, ally0 = (G.DmgLog.raw.dmg || {}).ally || 0;
+		// (150 px off in a clear line of fire: the world is seeded per run, and a tree between them stops every shot)
+		const s0 = Cp.run.sa[0], [fx, fy] = H.clearSpot(s0.x, s0.y, 150);
+		const foe2 = H.foe(19, fx, fy, { hp: 20 }), hp0 = foe2.hp, ally0 = (G.DmgLog.raw.dmg || {}).ally || 0;
 		foe2.xmove = function () { return true; };
 		const spawn0 = G.Projectiles.spawn, types = [];
 		G.Projectiles.spawn = o => { if (o && o.mid === 'xsa') types.push(o.mtype); return spawn0(o); };
@@ -446,6 +466,15 @@ try {
 		H.hurts = 0;
 		H.passive(() => { for (let i = 0; i < 60; i++) { H.go(e.x, e.y); H.step(1); } });
 		out.roam = { moved: Math.round(Math.hypot(e.x - x0, e.y - y0)), hurts: H.hurts, alive: !e.dead };
+		// its target past a wall (for it, the only terrain: a wall at x > here): it turns within 0.5 s and walks on, not 2.4-4.6 s
+		// on the spot against it (a shiny on a cliff / wall / tree stood still till its next pick: ~3 % of seeded worlds' shinies)
+		const col = G.World.collide, wx = e.x, wy = e.y, rm = e.xroam;
+		Object.assign(rm, { tx: wx + 400, ty: wy, t: 4, ct: 0, cx: wx, cy: wy });
+		G.World.collide = function (o) { if (o !== e) return col.call(this, o); const h = o.x > wx; if (h) o.x = wx; return h; };
+		let turn = 0, far = 0;
+		// (you stand on the open side, 400 px off: its next targets round you lie this side of the wall)
+		try { H.passive(() => { for (let i = 1; i <= 60; i++) { H.go(wx - 400, wy); H.step(1); if (!turn && rm.tx !== wx + 400) turn = i; far = Math.max(far, Math.hypot(e.x - wx, e.y - wy)); } }); } finally { G.World.collide = col; }
+		out.wall = { turn: +(turn / 30).toFixed(2), far: Math.round(far) };
 		// it flees at 120 s
 		const nF = H.said.length;
 		g.t0 -= g.flee - 0.5; H.step(30);
@@ -466,6 +495,7 @@ try {
 	A(s4.enc && s4.enc.sheet && s4.enc.has && s4.enc.xk === 'shiny' && s4.enc.cards && s4.enc.flee === 120 && s4.enc.seen === 1 && /A shiny .+ is nearby!/.test(s4.banner),
 		'a shiny encounter: one of the zone\'s Pokémon on its shiny sheet ("A shiny X is nearby!"), fleeing after 120 s', JSON.stringify({ enc: s4.enc, b: s4.banner }));
 	A(s4.roam && s4.roam.moved > 20 && s4.roam.hurts === 0 && s4.roam.alive, 'it roams round you and never hurts you (no contact damage, no shots)', JSON.stringify(s4.roam));
+	A(s4.wall && s4.wall.turn > 0 && s4.wall.turn <= 0.5 && s4.wall.far > 20, '... and, its way blocked (a cliff, a wall, a tree), it turns within 0.5 s and walks on (not seconds on the spot)', JSON.stringify(s4.wall));
 	A(s4.fled && s4.fled.gone && /The shiny .+ got away!/.test(s4.fled.banner), 'left alone, it flees after 120 s', JSON.stringify(s4.fled));
 	A(s4.faint && s4.faint.length === 1 && s4.faint[0].kind === 'shiny' && s4.faint[0].win === 10 && s4.caught && s4.caught.has && s4.caught.cap === 1 && (!s4.caught.fam || s4.caught.famShiny) && /Gotcha! The shiny .+ was caught!/.test(s4.caught.banner) && s4.caught.onShiny === 0,
 		'weakened, it faints (10 s); caught: shiny.caught (and league.shiny for a League family) in the Expedition save, never the base save', JSON.stringify({ f: s4.faint, c: s4.caught }));
