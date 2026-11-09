@@ -4,7 +4,8 @@
 //   1. live, desktop: Select -> the Pages screen (3 Pages + Choose, no Select / Skip / Skip Blind); Esc doesn't leave it;
 //      keys 1-3 raise a Page, Enter takes it; the round's Page shows as a badge under the blind with its text on hover / tap
 //   2. phone portrait + landscape (touch): the 3 Pages fit the screen side by side, a tap raises, a second tap takes
-//   3. controller: the reticle homes on a Page, the d-pad moves, confirm raises / takes, RB takes the raised one
+//   3. controller: the reticle homes on a Page, the d-pad moves (along the Pages even while they fly in), confirm raises / takes,
+//      RB takes the raised one
 //   4. save / resume mid-Pages: a reload + Continue lands on the same 3 Pages (frame-exact), and the pick works
 //   5. the REPLAY viewer: a Blind's select shows the Pages screen with the run's 3 Pages; stepping onto the pick animates it
 //      (the chosen Page rises, the others fade) before the round; step back returns to the Pages; a seek and the scrubber
@@ -259,6 +260,14 @@ try {
 		await tap(B.right); await sleep(200);
 		let f = await page.evaluate(() => { const x = window.__micatroPad.focus; return x && x.el ? x.el.dataset.page || x.cls : null; });
 		A(f === '0' || f === '1', 'pad: the reticle is on a Page', String(f));
+		// while the Pages fly in (pagein, replayed on every overlay render), right still steps to the next Page, not to Choose:
+		// back on the first Page, the other two held at the start of their flight
+		for (let i = 0; i < 3 && f !== '0'; i++) { await tap(B.left); f = await page.evaluate(() => { const x = window.__micatroPad.focus; return x && x.el ? x.el.dataset.page : null; }); }
+		await page.evaluate(() => { for (const el of document.querySelectorAll('.overlay .page-card:not([data-page="0"])')) { el.style.animation = 'none'; void el.offsetWidth; el.style.animation = ''; el.getAnimations().forEach((a) => { a.pause(); a.currentTime = 0; }); } });
+		await tap(B.right);
+		f = await page.evaluate(() => { const x = window.__micatroPad.focus; return x && x.el ? x.el.dataset.page || x.el.className : null; });
+		await page.evaluate(() => document.querySelectorAll('.overlay .page-card').forEach((el) => el.getAnimations().forEach((a) => a.finish())));
+		A(f === '1', 'pad: right steps to the next Page while the Pages fly in', String(f));
 		// walk right to the third Page
 		for (let i = 0; i < 4; i++) { f = await page.evaluate(() => { const x = window.__micatroPad.focus; return x && x.el ? x.el.dataset.page : null; }); if (f === '2') break; await tap(B.right); }
 		A(f === '2', 'pad: the d-pad moves along the Pages', String(f));
