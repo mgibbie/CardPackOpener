@@ -863,21 +863,16 @@ async function boot() {
     loadMods: (ids) => ensureMods(ids),
     act: (a) => onAction(a),
     // (tests / bots: select the blind on deck and, in a run with Pages, take a Page once the screen is up -> the pick's result.
-    //  `page`: an index, or 'plain' (default) = the quietest prize for a test that isn't about Pages: money, else a card, else a
-    //  next-shop perk, else a pack — so the cash-out goes straight to the shop whenever it can)
+    //  `page`: an index, or 'plain' (default) = the quietest Page for a test that isn't about Pages: no prize, else money, a card,
+    //  a next-shop perk, a pack — never a joker / Tag / deck-change prize while a quieter one is offered — so the cash-out goes
+    //  straight to the shop and the run gains nothing the test didn't put there)
     selectBlind: async (page = 'plain') => {
       const r = onAction({ type: 'select_blind' });
       if (!r.ok || !session || !session.view().pages) return r;
       await new Promise((res) => { const t = () => (player.idle() ? res() : setTimeout(t, 30)); t(); });
       let i = page;
-      if (!Number.isInteger(i)) {
-        // (and, Pages v2, one without a Round rule or a downside: the quietest round)
-        const ch = session.view().pages.choices;
-        const KIND = ['money', 'card', 'shop', 'pack'];
-        const cost = (p) => (p.rule || p.down ? 10 : 0) + (p.prize && KIND.includes(p.prize.kind) ? KIND.indexOf(p.prize.kind) : 5);
-        i = 0;
-        ch.forEach((p, j) => { if (cost(p) < cost(ch[i])) i = j; });
-      }
+      // (Pages v2: no prize first, and one without a Round rule or a downside — engine/pages.js quietPageIndex)
+      if (!Number.isInteger(i)) i = (await import('../engine/pages.js')).quietPageIndex(session.view().pages.choices);
       return onAction({ type: 'pick_page', index: i });
     },
     events: allEvents,

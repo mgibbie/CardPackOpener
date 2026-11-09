@@ -129,5 +129,53 @@ for (const t of P.TARGET_KEYS_V2) for (const e of P.EFFECT_KEYS_V2) {
   }
 }
 
+// ---- the quiet Page (P.quietPageIndex: ui/main.js __micatro.selectBlind 'plain', what every browser suite that isn't about Pages
+// takes). Before it ranked "no prize" with the joker / Tag / Remove-a-card prizes, so a random seed could hand micatro_nuzlocke_test
+// a joker in the shop window (a "2nd new joker this shop" break, an off-type joker breaking Monotype) or a PAGE_REMOVE screen after
+// the cash-out (next_round refused, the next Blind never dealt). Every rev-4 screen has a no-prize Page, so the pick never needs one.
+{
+  await import('../mods/pokermon/index.js');
+  const QUIET = ['none', 'money', 'card', 'shop', 'pack'];
+  const calm = (p) => !p.rule && !(P.effectWeight(p.effect) > 0);
+  let screens = 0, loud = 0, skippedCalm = 0;
+  for (let i = 0; i < 150; i++) {
+    const o = offer('QUIET' + i, ['Small', 'Big', 'Boss'][i % 3], 4, i % 2 ? ['pokermon'] : undefined);
+    const p = o[P.quietPageIndex(o)];
+    screens++;
+    if (!QUIET.includes(p.prize.kind)) loud++;
+    if (o.some((q) => q.prize.kind === 'none' && calm(q)) && !(p.prize.kind === 'none' && calm(p))) skippedCalm++;
+  }
+  ok(loud === 0, `the quiet Page never has a joker / Tag / deck-change / Remove-a-card prize (${screens} screens)`, loud);
+  ok(skippedCalm === 0, 'offered a no-prize Page without a Round rule or a downside, the quiet pick is that one', skippedCalm);
+  // the view's Pages (what the browser hook reads) pick the same
+  newRun({ seed: 'QUIETVIEW', engineRev: 4 });
+  act({ type: 'select_blind' });
+  const { toView } = await import('../js/engine/view.js');
+  const v = toView();
+  ok(v.pages && P.quietPageIndex(v.pages.choices) === P.quietPageIndex(G.GAME.pages.choices), 'the view\'s Pages give the same quiet pick');
+  // the nuzlocke suite's own flows, on many Pokermon seeds: win a Blind on the quiet Page -> the shop gains no joker; win the last
+  // ante's 3 Blinds -> every Blind is dealt (no Remove-a-card screen in the way)
+  const settle = () => { while (/_PACK/.test(state())) act({ type: 'skip_booster' }); };
+  const pickQuiet = () => { act({ type: 'select_blind' }); if (state() === 'PAGES') act({ type: 'pick_page', index: P.quietPageIndex(G.GAME.pages.choices) }); };
+  const win = () => { G.GAME.chips = G.GAME.blind.chips; act({ type: 'highlight', ids: [G.hand.cards[0].sort_id] }); act({ type: 'play' }); };
+  let gained = 0, notShop = 0, undealt = 0;
+  for (let i = 0; i < 30; i++) {
+    newRun({ seed: 'QUIETNUZ' + i, seeded: false, back: 'b_red', mods: ['pokermon'], engineRev: 4 });
+    pickQuiet(); win(); act({ type: 'cash_out' }); settle();
+    if (state() !== 'SHOP') notShop++;
+    if (G.GAME.run_badges.window_gains !== 0) gained++;
+    newRun({ seed: 'QUIETWIN' + i, seeded: false, back: 'b_red', mods: ['pokermon'], engineRev: 4 });
+    G.GAME.round_resets.ante = G.GAME.win_ante;
+    for (let b = 0; b < 3; b++) {
+      pickQuiet();
+      if (!G.hand.cards.length) { undealt++; break; }
+      win();
+      if (b < 2) { act({ type: 'cash_out' }); settle(); if (state() !== 'SHOP') { undealt++; break; } act({ type: 'next_round' }); }
+    }
+  }
+  ok(gained === 0, 'a Blind won on the quiet Page gains no joker before the shop (30 Pokermon seeds)', gained);
+  ok(notShop === 0 && undealt === 0, 'its cash-out goes to the shop, and the last ante\'s 3 Blinds are each dealt (30 seeds)', { notShop, undealt });
+}
+
 console.log(`pages fair: ${passes} passed, ${fails} failed`);
 process.exit(fails ? 1 : 0);

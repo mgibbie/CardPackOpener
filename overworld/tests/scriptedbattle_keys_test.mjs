@@ -76,18 +76,24 @@ async function waitFor(fn, ms) { const t0 = Date.now(); while (Date.now() - t0 <
 			const key = k => window.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true }));
 			document.activeElement?.blur?.(); // headless parks focus in the chat input
 			ow.startWildBattle({ id: 'pidgey', level: 4 });
+			// (the intro plays on GAME time — the loop's dt is capped at 50 ms a frame — so a starved runner's few frames a second
+			//  stretch it far past its ~4 s: wait for the menu itself, generously bounded; an 8 s wall clock flaked on CI)
 			const t0 = Date.now();
-			while (Date.now() - t0 < 8000 && !(ow.battle.active && ow.battle.active.phase === 'menu')) await sleep(100);
-			const a = ow.battle.active, res = { phase0: a?.phase };
+			while (Date.now() - t0 < 45000 && !(ow.battle.active && ow.battle.active.phase === 'menu')) await sleep(100);
+			const a = ow.battle.active, res = { phase0: a?.phase, waitedMs: Date.now() - t0 };
 			key('z'); await sleep(150); res.afterZ = a?.phase;
 			key('ArrowRight'); await sleep(150); res.idx = a?.moveIdx;
 			key('x'); await sleep(150); res.afterX = a?.phase;
 			ow.battle.finish('fled');
-			await sleep(1800);
+			// (the fled battle tears down on a later frame: wait for it to be gone, not a fixed 1.8 s)
+			const t1 = Date.now();
+			while (Date.now() - t1 < 30000 && ow.battle.blocking) await sleep(100);
+			res.tornDown = !ow.battle.blocking;
 			return res;
 		});
 		A(wild.phase0 === 'menu' && wild.afterZ === 'moves' && wild.idx === 1 && wild.afterX === 'menu',
 			'wild battle: z opens moves, arrow moves the cursor, x backs out', JSON.stringify(wild));
+		A(wild.tornDown, 'the fled wild battle is torn down before the scripted one starts', JSON.stringify(wild));
 
 		// --- SCRIPTED battle (Brock via his EventScript) under the paused cutscene
 		const scripted = await page.evaluate(async () => {
@@ -99,7 +105,7 @@ async function waitFor(fn, ms) { const t0 = Date.now(); while (Date.now() - t0 <
 			document.activeElement?.blur?.();
 			ow.runScriptLabel('PewterCity_Gym_EventScript_Brock');
 			const t0 = Date.now();
-			while (Date.now() - t0 < 15000 && !(ow.battle.active && ow.battle.active.phase === 'menu' && ow.battle.blocking)) {
+			while (Date.now() - t0 < 45000 && !(ow.battle.active && ow.battle.active.phase === 'menu' && ow.battle.blocking)) {
 				if (ow.dialog.blocking) { ow.dialog.revealed = 1e9; key('z'); }
 				await sleep(120);
 			}
