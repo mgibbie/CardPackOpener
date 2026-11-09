@@ -403,6 +403,14 @@
 	},
 	"entries": [
 		{
+			"sha": "1d262d6",
+			"date": "2026-11-09",
+			"kind": "micatro",
+			"title": "Micatro Multiplayer: 8 Multiplayer decks, 3 new stakes, custom decks in matches",
+			"body": "Micatro Multiplayer lobbies can now be played on 8 new decks, each with its own new art: Violet (+1 Voucher slot, Vouchers half price in ante 1 and 30% off in ante 2), Indigo (choose 1 more card from every Booster Pack, but no skipping a pack while you could take a card), Orange (two The Hanged Man and a free Mega Standard Pack to start), Oracle (Clearance Sale and Medium, but your money is capped at $50 plus your interest cap), Gradient (cards also count as one rank higher or lower for Jokers; 10s and Aces count as face cards), Heidelberg (leave a shop holding a consumable and you get a Negative copy of one), Echo (every scoring card is retriggered, but Blinds are 20% bigger and grow after each Boss) and Cocktail (three other decks' effects at once, picked by the seed). There are three new stakes above Gold, too: Planet, Spectral and Spectral+. The host picks them in the lobby; they're for Multiplayer only. The host can also bring one of their own custom decks into a match: both players play it.",
+			"cards": []
+		},
+		{
 			"sha": "c648ddf",
 			"date": "2026-11-09",
 			"kind": "micatro",
