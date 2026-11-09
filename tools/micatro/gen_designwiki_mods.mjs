@@ -31,6 +31,7 @@ const RP = await imp('micatro/js/replays.js');
 const PG = await imp('micatro/js/engine/pages.js');
 const SLV = await imp('micatro/js/engine/sleeve.js');
 const { challengeItem } = await import('./gen_designwiki_challenges.mjs');
+const { makeFormsOf } = await import('./designwiki_forms.mjs');
 const { G, P_CENTERS, P_TAGS, P_BLINDS, P_SEALS, P_STAKES } = core;
 
 // ------------------------------------------------------------------ load every mod
@@ -47,6 +48,8 @@ G.E_MANAGER = core.E_MANAGER;
 G.handlist = HANDLIST;
 G.GAME = init_game_object();
 G.GAME.current_round.most_played_poker_hand = DATA.loc.misc.dictionary.ph_most_played || '(most played hand)';
+// every form / forme / mode of a joker, resolved by the engine (tools/micatro/designwiki_forms.mjs)
+const formsOf = await makeFormsOf({ ROOT, G, P_CENTERS, MOD_LOC: REG.MOD_LOC, describe: (await imp('micatro/js/engine/describe.js')).describe });
 
 // ------------------------------------------------------------------ text helpers
 const LOC = DATA.loc;
@@ -166,9 +169,17 @@ function jokerItem(c, mod) {
   const rar = REG.RARITIES[c.rarity];
   const rarity = rar ? [rar.name || rar.key, css(rar.badge_colour) || '#6b7793'] : RARITY[c.rarity] || RARITY[1];
   const extraBadges = badgeList(d, ['common', 'uncommon', 'rare', 'legendary', rar && rar.key]).filter((b) => b.label !== rarity[0]);
+  // its forms (Deoxys's formes, Castform's weather, Vivillon's patterns...): each one's name, art and text (or cosmetic / the run's state)
+  const F = formsOf(c);
+  const forms = F && F.forms.map((f) => ({
+    name: f.name, ...(f.base ? { base: true } : {}), ...(f.key !== c.key ? { key: f.key } : {}),
+    ...(f.art && !f.base ? { art: [f.art.soul_pos && layer(f.art.atlas, f.art.soul_pos), layer(f.art.atlas, f.art.pos)].filter(Boolean) } : {}),
+    ...(f.cosmetic ? { cosmetic: true } : {}), ...(f.covered ? { covered: true } : {}), ...(f.state ? { state: true } : {}), ...(f.lines && !f.cosmetic ? { lines: f.lines } : {}),
+  }));
   return centerItem(c, mod, {
     badges: [{ label: rarity[0], colour: rarity[1] }, ...extraBadges], rarity: rarity[0],
     ...(c.blueprint_compat === false ? { note: 'Not copyable by Blueprint / Brainstorm' } : {}),
+    ...(forms ? { forms } : {}),
   });
 }
 

@@ -584,6 +584,8 @@ defineJokers({
   // 1 Attack, 2 Defense, 3 Speed, 4 Normal) is set by the Meteorite (consumables/mart391.js): the DNA Seal's copies get a
   // permanent X Mult / $ / Chips bonus. The forme's floating sprite: ui.js face() (systems/anim.js DEOXYS_SOULS).
   deoxys: {
+    // (its forme's name, as the Meteorite says it — consumables/mart391.js FORMES order: the design wiki's Formes list, tools/micatro/designwiki_forms.mjs)
+    poke_form_name(self, card) { const f = card.ability.extra.form; return localize('poke_' + (['attack', 'defense', 'speed', 'normal'][f - 1] || 'normal') + '_forme'); },
     loc_vars(self, info_queue, center) {
       type_tooltip(self, info_queue, center);
       info_queue.push(P_CENTERS.c_poke_meteorite);
