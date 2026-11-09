@@ -403,6 +403,14 @@
 	},
 	"entries": [
 		{
+			"sha": "58e1bdc",
+			"date": "2026-11-09",
+			"kind": "micatro",
+			"title": "Micatro Multiplayer: rulesets, The Order and the PvP timer",
+			"body": "Micatro Multiplayer lobbies now pick a ruleset. Vanilla is the original game. Balanced (the new default) makes a few balance changes: Hanging Chad retriggers the first two scoring cards once each, Bloodstone's rolls are the same for both players in a Nemesis round, Glass Cards are X1.5 (still 1 in 4 to break), and Justice is banned. The Order (on by default in Balanced) keeps both players' cards in step: the shops, packs, Bosses and deck shuffles come in the same order however differently you play, so a skip or a reroll never shifts what your opponent sees next. The PvP timer: in a Nemesis round the player ahead can start a 60-second clock on the one behind (+10 seconds for every hand they play, and the time animations take is given back); if it runs out they lose one hand. The lobby also shows the host's mod options, like Pokermon's generation filter, which both players play with. Solo runs are unchanged.",
+			"cards": []
+		},
+		{
 			"sha": "c69b1ba",
 			"date": "2026-11-08",
 			"kind": "micatro",
