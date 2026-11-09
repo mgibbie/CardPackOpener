@@ -352,7 +352,7 @@ try {
 		await sleep(300);
 		// the boss at 50 s
 		await E(() => { G.Tower.debugT(49.99); G.Game.player.invuln = 1e9; });
-		await waitFor(() => E(() => !!G.Tower.boss), 3000);
+		await waitFor(() => E(() => !!G.Tower.boss), 15000);
 		const b = await E(() => {
 			const T = G.Tower, e = T.boss, d = T.def(1, G.Game.player.level);
 			return { dex: e.dex, want: d.dex, hp: e.maxHp, def: d.hp, sc: 1 + 15 / 600, k: T.K.bossHp * Math.min(T.adaptHp, T.ADAPT.maxBoss), adapt: T.adaptHp, line: T.hudLine(), banner: G.I18n.t((G.Spawner.banner() || {}).text || ''), name: G.I18n.t(d.name) };
@@ -421,7 +421,7 @@ try {
 		await safe();
 		// floor 2: Training by pad confirm, then a pact by confirm
 		await killBoss();
-		await waitFor(() => E(() => !!G.Tower.boss), 3000);
+		await waitFor(() => E(() => !!G.Tower.boss), 15000);
 		await E(() => { G.Tower.boss.hurt(1e9); });
 		await waitFor(() => visible('scr-tower'), 4000);
 		await sleep(500);
@@ -542,7 +542,7 @@ try {
 		await E(() => { G.Tower.apply(G.Game.player, 'contract'); });
 		const pre = await E(() => G.DB.save.coins);
 		await killBoss();
-		await waitFor(() => E(() => !!G.Tower.boss), 3000);
+		await waitFor(() => E(() => !!G.Tower.boss), 15000);
 		const bossHp = await E(() => ({ hp: G.Tower.boss.maxHp, def: G.Tower.def(1, G.Game.player.level).hp, k: G.Tower.K.bossHp * Math.min(G.Tower.adaptHp, 1.5) * 1.25 }));
 		A(near(bossHp.hp, Math.round(Math.round(bossHp.def * (1 + 15 / 600)) * bossHp.k), 1.5), 'Boss contract: the boss has x1.25 HP', JSON.stringify(bossHp));
 		await E(() => G.Tower.boss.hurt(1e9));
@@ -579,7 +579,7 @@ try {
 		await startTower();
 		const bd = await E(() => { const T = G.Tower; T.debugFloor(10); return G.Game.player.bonds; });
 		await killBoss();
-		await waitFor(() => E(() => !!G.Tower.boss), 3000);
+		await waitFor(() => E(() => !!G.Tower.boss), 15000);
 		await E(() => G.Tower.boss.hurt(1e9));
 		await waitFor(() => visible('scr-tower'), 4000);
 		const b10 = await E(() => ({ bonds: G.Game.player.bonds, floor: G.Tower.floor, banner: window.__says[window.__says.length - 1] }));
@@ -589,11 +589,34 @@ try {
 		await E(() => { if (G.UI.isOpen('scr-tower')) document.getElementById('tower-skip').click(); G.Game.player.bonds = 0; });
 		await waitFor(() => E(() => G.Game.state === 'playing'), 3000);
 		await safe();
-		// floor 11: the boss brings 3 escorts
-		const esc = await E(() => { G.EnemyMgr.clear(); G.Tower.debugT(49.99); return true; });
-		await waitFor(() => E(() => !!G.Tower.boss), 3000);
-		const ec = await E(() => G.EnemyMgr.all().filter(e => !e.boss).length);
-		A(ec >= 3, 'from floor 11 the boss arrives with escorts (3 + (f-10)/2: 3 on floor 11)', ec);
+		// floor 11: the boss brings 3 escorts. Counted in the frame the boss arrives (stepped here, not by the page's own frames:
+		// on a slow CI runner the next poll came seconds later, and your attacks had already KO'd escorts: 1 or 2 left)
+		const esc = await E(() => {
+			G.EnemyMgr.clear(); G.Tower.debugT(49.99);
+			for (let i = 0; i < 30 && !G.Tower.boss; i++) G.Game.debugStep(1, 1 / 60);
+			return { boss: !!G.Tower.boss, ec: G.EnemyMgr.all().filter(e => !e.boss).length };
+		});
+		A(esc.boss && esc.ec >= 3, 'from floor 11 the boss arrives with escorts (3 + (f-10)/2: 3 on floor 11)', JSON.stringify(esc));
+		await E(() => G.Game.quit());
+		await toMenu();
+		// ...and a boss by a wall still brings them all: the escorts' side of you blocked (each escort turns its spoke to a free side)
+		await startTower();
+		await E(() => { G.Tower.debugFloor(11); });
+		await waitFor(() => E(() => G.Game.state === 'playing'), 3000);
+		await safe();
+		const walled = await E(() => {
+			const T = G.Tower, pl = G.Game.player, W = G.World, isFree = W.isFree, rnd = Math.random;
+			G.EnemyMgr.clear(); T.debugT(49.99);
+			// Math.random 0.5: the escorts' first spoke is at a turn of pi and spawnOne's retries jitter by 0 -> the spokes pi, pi+0.5, pi+1;
+			// wall off [pi-0.2, pi+1.2] round you (so the trickle can't spawn there either)
+			const blocked = (x, y) => { let a = Math.atan2((y - pl.y) / 0.9, x - pl.x); if (a < 0) a += 2 * Math.PI; return a > Math.PI - 0.2 && a < Math.PI + 1.2; };
+			Math.random = () => 0.5;
+			W.isFree = function (x, y, ...r) { return blocked(x, y) ? false : isFree.call(this, x, y, ...r); };
+			let n = 0;
+			try { for (let i = 0; i < 30 && !T.boss; i++) G.Game.debugStep(1, 1 / 60); n = G.EnemyMgr.all().filter(e => !e.boss).length; } finally { Math.random = rnd; W.isFree = isFree; }
+			return { boss: !!T.boss, ec: n, floor: T.floor, state: G.Game.state, foes: G.EnemyMgr.all().map(e => [e.boss ? 1 : 0, e.dex, +Math.atan2((e.y - pl.y) / 0.9, e.x - pl.x).toFixed(2)]) };
+		});
+		A(walled.boss && walled.floor === 11 && walled.ec >= 3, 'a boss by a wall: the escorts whose side is blocked spawn on a free side (all 3 still come)', JSON.stringify(walled));
 		await E(() => G.Game.quit());
 		await toMenu();
 		// floor 30: Arceus, last breath, the clear
@@ -601,7 +624,7 @@ try {
 		await startTower();
 		await E(() => { G.Tower.debugFloor(30); });
 		await killBoss();
-		await waitFor(() => E(() => !!G.Tower.boss), 3000);
+		await waitFor(() => E(() => !!G.Tower.boss), 15000);
 		await E(() => { const e = G.Tower.boss; e.hp = e.maxHp * 0.45; });   // (its fury at 50 % first, as every boss)
 		await sleep(400);
 		const ar = await E(() => { const e = G.Tower.boss; const spd = e.spd; const n0 = G.EnemyMgr.count; window.__says = []; e.hp = e.maxHp * 0.24; return new Promise(res => setTimeout(() => res({ dex: e.dex, final: !!e.def.final, last: !!e.lastBreath, spd: e.spd / spd, n: G.EnemyMgr.count - n0, banner: window.__says[window.__says.length - 1] }), 300)); });
@@ -656,7 +679,7 @@ try {
 		// clear floors 11 and 12, then fall on 13
 		for (let f = 0; f < 2; f++) {
 			await killBoss();
-			await waitFor(() => E(() => !!G.Tower.boss), 3000);
+			await waitFor(() => E(() => !!G.Tower.boss), 15000);
 			await E(() => G.Tower.boss.hurt(1e9));
 			await waitFor(() => visible('scr-tower'), 4000);
 			await E(() => document.querySelector('#tower-cards .card[data-id="heal"]').click());
