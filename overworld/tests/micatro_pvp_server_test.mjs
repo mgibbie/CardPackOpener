@@ -535,12 +535,97 @@ try {
 		}, { w: 'dave', d: false, why: 'forfeit' });
 	}
 
+	// ===== 8. stage 7: the ruleset options, the PvP timer =====
+	{
+		const { cleanOpts, pvpTimerCan } = R;
+		const d = cleanOpts({});
+		A(d.ruleset === 'balanced' && d.order === true && d.pvpTimer === true, 'stage 7: a new lobby is Balanced with The Order and the PvP timer on', JSON.stringify(d));
+		const v = cleanOpts({ ruleset: 'vanilla' });
+		A(v.order === false && v.pvpTimer === false, 'stage 7: Vanilla defaults The Order and the PvP timer off');
+		A(cleanOpts({ ruleset: 'vanilla', order: true, pvpTimer: true }).order === true && cleanOpts({ ruleset: 'balanced', order: false }).order === false, 'stage 7: the host can turn either way');
+		A(cleanOpts({ ruleset: 'chaos' }).ruleset === 'balanced', 'stage 7: an unknown ruleset falls back to the default');
+		A(pvpTimerCan({ pvpTimer: false }, null, 'a', 'b', 0) === 'the PvP timer is off in this lobby', 'pvpTimerCan: off');
+	}
+	{
+		const ptimer = (who, id, on) => as(who).call('mtpvp-ptimer', { id, on });
+		const rep = (who, id, score, hands, n, hp, hl = 0) => as(who).call('mtpvp-hand', { id, ante: 2, slot: 'Boss', score: String(score), hands, n, hp, hl });
+		const lb = await newMatch('alice', 'bob');
+		A(lb.opts.ruleset === 'balanced' && lb.opts.order === true && lb.opts.pvpTimer === true, 'stage 7: the match carries the ruleset options');
+		A((await ptimer('alice', lb.id, true)).status === 409, 'PvP timer: not in a Nemesis round -> refused');
+		await readyS('alice', lb.id, 2, 'Boss'); await readyS('bob', lb.id, 2, 'Boss');
+		await pass(3_000, lb.id, 'alice', 'bob');
+		const t0 = await ptimer('alice', lb.id, true);
+		A(t0.status === 409 && /ahead/.test(t0.body.error), 'PvP timer: level at 0-0 -> only the player ahead can start it', JSON.stringify(t0.body));
+		await rep('alice', lb.id, 500, 3, 1, 1);
+		let mm = lobbyOf(lb.id).m;
+		A(mm.round.clk.alice === 70_000 && mm.round.clk.bob === 60_000, 'PvP timer: each clock starts at 60 s; a hand played adds 10 s', JSON.stringify(mm.round.clk));
+		A((await ptimer('bob', lb.id, true)).status === 409, 'PvP timer: the player behind cannot start it');
+		const t1 = await ptimer('alice', lb.id, true);
+		mm = lobbyOf(lb.id).m;
+		A(t1.status === 200 && mm.round.pt.on === 'bob' && mm.round.pt.by === 'alice' && mm.round.pt.endAt === clock + 60_000, 'PvP timer: the leader starts it on the trailer (60 s, server time)', JSON.stringify(mm.round.pt));
+		// bob plays a hand (still behind): +10 s; his animations: credited (once) from the sync
+		await pass(20_000, lb.id, 'alice', 'bob');
+		await rep('bob', lb.id, 100, 3, 1, 1);
+		mm = lobbyOf(lb.id).m;
+		A(mm.round.pt && mm.round.pt.endAt === clock + 50_000, 'PvP timer: a hand by the timed player adds 10 s to the running clock', mm.round.pt && mm.round.pt.endAt - clock);
+		await as('bob').call('mtpvp-sync', { id: lb.id, anim: 4_000 });
+		await as('bob').call('mtpvp-sync', { id: lb.id, anim: 4_000 });
+		mm = lobbyOf(lb.id).m;
+		A(mm.round.pt.endAt === clock + 54_000 && mm.round.at.bob === 4_000, 'PvP timer: the animation credit moves the end back, once (a running total)', mm.round.pt.endAt - clock);
+		await as('bob').call('mtpvp-sync', { id: lb.id, anim: 999_000 });
+		mm = lobbyOf(lb.id).m;
+		A(mm.round.pt.endAt === clock + 94_000, 'PvP timer: one report credits at most the 40 s budget', mm.round.pt.endAt - clock);
+		// it runs out: bob loses ONE hand, gets 10 s back, the timer stops
+		await pass(93_000, lb.id, 'alice', 'bob');
+		A(lobbyOf(lb.id).m.round.pt && !lobbyOf(lb.id).m.hl.bob, 'PvP timer: 1 s left -> no hand lost yet');
+		await pass(1_000, lb.id, 'alice', 'bob');
+		mm = lobbyOf(lb.id).m;
+		A(mm.hl.bob === 1 && mm.round.scores.bob.h === 2 && !mm.round.pt && mm.round.clk.bob === 10_000 && mm.lives.bob === 4 && !mm.round.res, 'PvP timer: at 0 the timed player loses one hand (not a life, not the round), 10 s back, the timer stops', JSON.stringify({ hl: mm.hl, sc: mm.round.scores.bob, pt: mm.round.pt, clk: mm.round.clk }));
+		// bob's next report, before his client applied the hand: the owed hand still counts
+		await rep('bob', lb.id, 150, 2, 2, 2, 0);
+		mm = lobbyOf(lb.id).m;
+		A(mm.round.scores.bob.h === 1, 'PvP timer: a report that hasn\'t applied the lost hand yet still counts it', JSON.stringify(mm.round.scores.bob));
+		await rep('bob', lb.id, 150, 1, 3, 2, 1);
+		A(lobbyOf(lb.id).m.round.scores.bob.h === 1, '... and once applied, it is not counted twice');
+		// bob draws level: the leader's timer can't run; bob goes ahead -> a running timer on him stops
+		await ptimer('alice', lb.id, true);
+		A(lobbyOf(lb.id).m.round.pt && lobbyOf(lb.id).m.round.pt.on === 'bob', 'PvP timer: started again');
+		await rep('bob', lb.id, 900, 0, 4, 3, 1);
+		mm = lobbyOf(lb.id).m;
+		A(!mm.round.pt, 'PvP timer: the timed player goes ahead -> it stops', JSON.stringify(mm.round.pt));
+		// the last hand lost to the timer can end the round
+		const t3 = await ptimer('bob', lb.id, true);
+		mm = lobbyOf(lb.id).m;
+		A(t3.status === 200 && mm.round.pt.on === 'alice', 'PvP timer: the new leader times the other way', JSON.stringify(t3.body));
+		await rep('alice', lb.id, 600, 1, 2, 2);
+		await pass(200_000, lb.id, 'alice', 'bob');
+		mm = lobbyOf(lb.id).m;
+		A(mm.hl.alice === 1 && mm.round.res && mm.round.res.loser === 'alice' && mm.lives.alice === 3, 'PvP timer: alice behind loses her last hand to it -> out of hands, the round is decided', JSON.stringify({ res: mm.round.res, sc: mm.round.scores, hl: mm.hl }));
+		await done(lb.id);
+		// off in the lobby
+		const lb2 = await newMatch('carol', 'dave', { ruleset: 'vanilla' });
+		await readyS('carol', lb2.id, 2, 'Boss'); await readyS('dave', lb2.id, 2, 'Boss');
+		await pass(3_000, lb2.id, 'carol', 'dave');
+		await as('carol').call('mtpvp-hand', { id: lb2.id, ante: 2, slot: 'Boss', score: '500', hands: 3, n: 1, hp: 1 });
+		const off = await ptimer('carol', lb2.id, true);
+		A(off.status === 409 && /off/.test(off.body.error), 'PvP timer: Vanilla (off by default) -> refused', JSON.stringify(off.body));
+		await done(lb2.id);
+		// hidden scores: only once the leader has played a hand
+		const lb3 = await newMatch('erin', 'fred', { hideScore: true });
+		await readyS('erin', lb3.id, 2, 'Boss'); await readyS('fred', lb3.id, 2, 'Boss');
+		await pass(3_000, lb3.id, 'erin', 'fred');
+		await as('erin').call('mtpvp-hand', { id: lb3.id, ante: 2, slot: 'Boss', score: '50', hands: 4, n: 1, hp: 0 });
+		const hs = await ptimer('erin', lb3.id, true);
+		A(hs.status === 409 && /play a hand/.test(hs.body.error), 'PvP timer: hidden scores -> not before playing a hand', JSON.stringify(hs.body));
+		await done(lb3.id);
+	}
+
 	// registration
 	const src = fs.readFileSync(path.join(ROOT, 'server/mp.mjs'), 'utf8');
 	const gc = src.slice(src.indexOf('const GC_TABLE'), src.indexOf('];', src.indexOf('const GC_TABLE')));
 	for (const p of ['mtpvp:', 'mtpvpcode:', 'mtpvpcur:', 'mtpvpp:']) A(gc.includes("['" + p + "'"), 'GC_TABLE sweeps ' + p);
 	const rl = src.slice(src.indexOf('const RATE_LIMITS'), src.indexOf('const HIT_LIMIT'));
-	for (const a of ['create', 'peek', 'join', 'leave', 'mine', 'update', 'sync', 'ready', 'hand', 'blind', 'forfeit', 'rematch', 'timer']) A(new RegExp("'mtpvp-" + a + "': \\[\\d+, [\\d_]+\\]").test(rl), 'mtpvp-' + a + ' is rate-limited');
+	for (const a of ['create', 'peek', 'join', 'leave', 'mine', 'update', 'sync', 'ready', 'hand', 'blind', 'forfeit', 'rematch', 'timer', 'ptimer']) A(new RegExp("'mtpvp-" + a + "': \\[\\d+, [\\d_]+\\]").test(rl), 'mtpvp-' + a + ' is rate-limited');
 } catch (e) {
 	fail++; console.log('FAIL: threw ' + (e && e.stack));
 }

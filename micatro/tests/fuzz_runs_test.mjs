@@ -11,6 +11,7 @@ import { newRun, act, STATES, get_poker_hand_info } from '../js/engine/run.js';
 import { toView } from '../js/engine/view.js';
 import { Session } from '../js/engine/session.js';
 import { stampRecipe, ENGINE_CONTENT_REV } from '../js/mods/pins.js';
+import { pvpSlot, pvpRecipeConfig } from '../js/engine/pvp.js';
 
 const RUNS = Number(process.argv[2] || 60);
 // Pages (engine/pages.js, engine rules rev 2): the bot plays the CURRENT rules — it picks a Page after every Blind it
@@ -26,6 +27,9 @@ if (MODS.length) {
   if (MODS.includes('all')) MODS = AVAILABLE.map((m) => m.id);
   MODS = await loadMods(MODS); // (+ their requirements)
 }
+// MICATRO_FUZZ_PVP=<json> plays Multiplayer runs (engine/pvp.js) with that match config ('1' = the stage-6 Vanilla Attrition
+// defaults): the bot READYs into each Nemesis round, plays it out and applies a random referee result, as the client would.
+const PVP = process.env.MICATRO_FUZZ_PVP ? (process.env.MICATRO_FUZZ_PVP === '1' ? { lives: 4, pvpStart: 2, deathOnLoss: true, comeback: true } : JSON.parse(process.env.MICATRO_FUZZ_PVP)) : null;
 const OVERFILL = new Set(['j_betmma_friends_of_jimbo']);
 let overfilled = false;
 const isModCard = (c) => !!(c && c.config.center.mod && MODS.includes(c.config.center.mod));
@@ -59,6 +63,12 @@ function invariants0(tag) {
 
 function pickAction(r) {
   const S = G.STATE;
+  if (PVP && G.GAME.pvp) {
+    // (the referee's word, as ui/pvp.js applies it: a round's result, then the match's end at 0 lives)
+    if (G.GAME.pvp.lives <= 0) return { type: 'pvp_end', result: 'lose' };
+    if (S === STATES.PVP_WAIT) { const res = r() < 0.5 ? 'win' : 'lose'; return { type: 'pvp_outcome', result: res, lives: G.GAME.pvp.lives - (res === 'lose' ? 1 : 0) }; }
+    if (S === STATES.BLIND_SELECT && G.GAME.round_resets.blind_states[G.GAME.blind_on_deck] === 'Select' && pvpSlot(G.GAME.blind_on_deck)) return { type: 'pvp_start_blind' };
+  }
   if (S === STATES.BLIND_SELECT) {
     if (G.GAME.blind_on_deck !== 'Boss' && r() < 0.15) return { type: 'skip_blind' };
     return { type: 'select_blind' };
@@ -175,7 +185,7 @@ for (let i = 0; i < RUNS; i++) {
   const shopFunded = new Set();
   try {
     overfilled = false;
-    newRun({ seed, back, stake, mods: MODS, engineRev: RUN_REV });
+    newRun({ seed, back, stake, mods: MODS, engineRev: RUN_REV, ...(PVP ? { pvp: PVP, seeded: false } : {}) });
     if (PAGES !== !!G.GAME.pages_on) ok(false, `${seed}: Pages ${PAGES ? 'off' : 'on'} on engine rev ${RUN_REV}`);
     let steps = 0, stuck = 0;
     while (!G.GAME.over && steps < 600) {
@@ -226,7 +236,7 @@ for (let i = 0; i < RUNS; i++) {
     const before = JSON.stringify({ d: G.GAME.dollars, a: G.GAME.round_resets.ante, r: G.GAME.round, c: G.GAME.chips, j: G.jokers.cards.map((c) => c.config.center.key), h: G.hand.cards.map((c) => c.config.card.key), s: G.STATE });
     // (stamped with the current pins, as a real save is: an unstamped recipe reads as the legacy 2026-10-19 versions, whose
     //  rulesRev-gated rules differ — Pokermon r79's generation filter)
-    Session.fromRecipe({ ...stampRecipe({ seed, back, stake, mods: G.GAME.mods.slice(), actions: log }), engineRev: RUN_REV });
+    Session.fromRecipe({ ...stampRecipe({ seed, back, stake, mods: G.GAME.mods.slice(), actions: log }), engineRev: RUN_REV, ...(G.GAME.pvp ? { pvp: pvpRecipeConfig(G.GAME.pvp) } : {}) });
     const after = JSON.stringify({ d: G.GAME.dollars, a: G.GAME.round_resets.ante, r: G.GAME.round, c: G.GAME.chips, j: G.jokers.cards.map((c) => c.config.center.key), h: G.hand.cards.map((c) => c.config.card.key), s: G.STATE });
     if (!assisted) ok(before === after, `${seed}: replay deterministic\n  ${before}\n  ${after}`);
     digest.push(seed + ':' + log.length + ':' + before + ':' + JSON.stringify(log));

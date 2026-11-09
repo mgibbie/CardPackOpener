@@ -25,6 +25,16 @@
 //     taken back when the opponent catches up (never below 10 s left). The client applies each loss as a RECORDED action.
 //   * `hideScore`: the opponent's live score is "???" (null in this player's view) until they've played a hand this round.
 //   * `bossFx`: the PvP Boss is the ante's real boss, its effect on (the engine's; the referee just sees a PvP round).
+// Stage 7 (protocol 3):
+//   * `ruleset` (vanilla | balanced) and `order` (The Order) go to both engines (engine/pvp.js; the referee plays no part).
+//   * the PvP TIMER (`pvpTimer`, the mod's pvp_timer layer: on by default in Balanced): in a Nemesis round the player AHEAD
+//     (strictly; with hidden scores only once they've played a hand) may start a clock on the one behind: 60 s, +10 s for
+//     every hand that player plays (counted whether it runs or not). It runs on server time; the timed client adds back
+//     the time its animations took, from a 40 s budget that refills 2.5 s a second (round.at: the credit applied so far).
+//     It stops when the timed player draws level or goes ahead, runs out of hands, or the round ends; the starter may stop
+//     it. At 0 the timed player loses ONE HAND (m.hl[name], applied by the client as the recorded pvp_hand_lost — its
+//     reports carry how many it has applied, so a hand in flight is never counted twice), gets 10 s back, and the clock
+//     stops until the leader starts it again. round = {..., pt: {on, by, endAt} | null, clk: {name: ms}, at: {name: ms}}
 //
 // Rows (every write is an exact key; the shared lobby row is a compare-and-set on `rev`):
 //   mtpvp:<id>             {id, code, rev, at, ts, host, guest, gready, opts, mods, pv, m: null | match}
@@ -42,7 +52,7 @@
 // when its host goes quiet (PP.LOBBY_IDLE_MS); a guest who goes quiet is dropped; in a match a player quiet for
 // PP.GRACE_MS (120 s, owner D7) forfeits — checked lazily by whoever polls (D1 has no clock).
 
-export const MTPVP_PROTOCOL = 2;   // (2: stage 6 — rounds keyed by blind, modes, the Hurry timer, hidden scores)
+export const MTPVP_PROTOCOL = 3;   // (2: stage 6 — rounds keyed by blind, modes, the Hurry timer, hidden scores; 3: stage 7 — rulesets, The Order, the PvP timer)
 export const PP = {
 	BEAT_MS: 10_000,                 // a player row is rewritten at least this often while polling (liveness; <= GRACE_MS / 4, below)
 	MIN_WRITE_MS: 900,               // ...and at most this often (a summary that changes on every click)
@@ -57,10 +67,15 @@ export const PP = {
 	DEFAULTS: {
 		lives: 4, pvpStart: 2, deathOnLoss: true, comeback: true, seed: '', back: 'b_red', stake: 1, sleeve: '',
 		mode: 'attrition', showdownStart: 3, bossFx: false, hideScore: false, timer: true, timerBase: 150, timerInc: 60,
+		ruleset: 'balanced',             // (order / pvpTimer default to on in Balanced, off in Vanilla — cleanOpts)
 	},
 	TIMER_FLOOR_MS: 10_000,          // a skip taken back never leaves less than this on the Hurry timer
+	PVPT_BASE_MS: +(globalThis.process && process.env && process.env.MTPVP_PVPT_BASE_MS) || 60_000, // the PvP timer: each player's clock at a round's start
+	PVPT_HAND_MS: 10_000,            // ...+ this for every hand they play (and given back when it runs out)
+	ANIM_MAX_MS: 40_000,             // the animation credit one report may carry (the client's budget's capacity)
 };
 export const MODES = ['attrition', 'showdown', 'survival'];
+export const RULESETS = ['vanilla', 'balanced'];
 // (a short grace period — a test's — keeps the heartbeat well inside it)
 PP.BEAT_MS = Math.min(PP.BEAT_MS, Math.floor(PP.GRACE_MS / 4));
 const CODE_ABC = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';   // no I, O, 0, 1
@@ -200,6 +215,67 @@ export function timerSkip(m, o, now, who) {
 	else t.left = floor(t.left, PP.TIMER_FLOOR_MS);
 }
 
+// ---- the PvP timer (pure: m = the match, rd = its round, now = server ms)
+/** May `by` start the PvP timer on `on` now? -> null or why not. */
+export function pvpTimerCan(o, rd, by, on, now) {
+	if (!o.pvpTimer) return 'the PvP timer is off in this lobby';
+	if (!rd || !rd.startAt || now < rd.startAt || rd.res) return 'not in a Nemesis round';
+	if (rd.pt && rd.pt.endAt) return 'the timer is already running';
+	const a = rd.scores && rd.scores[by], b = rd.scores && rd.scores[on];
+	if (!a || !b) return 'not in a Nemesis round';
+	if (o.hideScore && !(a.hp > 0)) return 'play a hand first';
+	if (!(scoreCmp(a.s, b.s) > 0)) return 'only the player ahead can start the timer';
+	if (Number.isInteger(b.h) && b.h < 1) return 'your opponent is out of hands';
+	return null;
+}
+/** Start it: the timed player's clock runs from what it has left. */
+export function pvpTimerStart(rd, by, on, now) {
+	const clk = (rd.clk = rd.clk || {});
+	if (clk[on] == null) clk[on] = PP.PVPT_BASE_MS;
+	rd.pt = { on, by, endAt: now + Math.max(1, clk[on]) };
+}
+/** Stop it (the clock keeps what is left). */
+export function pvpTimerStop(rd, now) {
+	const t = rd.pt;
+	if (!t) return false;
+	(rd.clk = rd.clk || {})[t.on] = Math.max(0, t.endAt - now);
+	rd.pt = null;
+	return true;
+}
+/** A hand `who` played: +10 s on their clock (running or not). */
+export function pvpTimerHand(rd, who) {
+	const clk = (rd.clk = rd.clk || {});
+	if (rd.pt && rd.pt.on === who && rd.pt.endAt) rd.pt.endAt += PP.PVPT_HAND_MS;
+	else clk[who] = (clk[who] == null ? PP.PVPT_BASE_MS : clk[who]) + PP.PVPT_HAND_MS;
+}
+/**
+ * The timed player's animation credit: `total` = all the credit their client has counted this round; what is new since
+ * the last report (at most ANIM_MAX_MS) moves the running clock's end back. -> ms added.
+ */
+export function pvpTimerCredit(rd, who, total) {
+	const at = (rd.at = rd.at || {});
+	const add = Math.max(0, Math.min(PP.ANIM_MAX_MS, Math.floor(+total || 0) - (at[who] || 0)));
+	if (!add) return 0;
+	at[who] = (at[who] || 0) + add;
+	if (rd.pt && rd.pt.on === who && rd.pt.endAt) { rd.pt.endAt += add; return add; }
+	return 0;
+}
+/**
+ * The PvP timer running out by `now`: the timed player loses a hand (m.hl), 10 s back on their clock, the timer stops.
+ * -> true when it ran out.
+ */
+export function pvpTimerAdvance(m, now) {
+	const rd = m.round, t = rd && rd.pt;
+	if (!t || !t.endAt || rd.res || t.endAt > now) return false;
+	const T = t.on;
+	(m.hl = m.hl || {})[T] = (m.hl[T] || 0) + 1;
+	const sc = rd.scores && rd.scores[T];
+	if (sc) sc.h = Math.max(0, (Number.isInteger(sc.h) ? sc.h : 1) - 1);
+	(rd.clk = rd.clk || {})[T] = PP.PVPT_HAND_MS;
+	rd.pt = null;
+	return true;
+}
+
 /** The lobby's options, validated against the defaults (host input). */
 export function cleanOpts(o) {
 	o = o && typeof o === 'object' && !Array.isArray(o) ? o : {};
@@ -207,6 +283,7 @@ export function cleanOpts(o) {
 	const step = (v, lo, hi, st, d) => { const n = int(v, lo, hi, d); return n % st === 0 ? n : d; };
 	const bool = (v, d) => (v === undefined ? d : !!v);
 	const seed = typeof o.seed === 'string' ? o.seed.trim().toUpperCase() : '';
+	const ruleset = RULESETS.includes(o.ruleset) ? o.ruleset : D.ruleset;
 	return {
 		lives: int(o.lives, 1, 9, D.lives),
 		pvpStart: int(o.pvpStart, 1, 8, D.pvpStart),
@@ -223,6 +300,8 @@ export function cleanOpts(o) {
 		timer: bool(o.timer, D.timer),
 		timerBase: step(o.timerBase, 30, 240, 30, D.timerBase),
 		timerInc: step(o.timerInc, 0, 180, 30, D.timerInc),
+		// (stage 7: The Order and the PvP timer default on in Balanced, off in Vanilla — the host can turn either way)
+		ruleset, order: bool(o.order, ruleset !== 'vanilla'), pvpTimer: bool(o.pvpTimer, ruleset !== 'vanilla'),
 	};
 }
 /** The host's mod set: {ids, options, pins: {engineRev, modVersions}} -> a clean copy + its signature, or {error}. */
@@ -323,7 +402,7 @@ export async function handleMtpvp(ctx) {
 		const players = [lb.host, lb.guest];
 		const lives = {}, lost = {}, res = {}, guard = {}, far = {}, sk = {}, tl = {};
 		for (const p of players) { lives[p] = startLives(lb.opts); lost[p] = 0; res[p] = {}; guard[p] = {}; far[p] = 0; sk[p] = 0; tl[p] = 0; }
-		return { n, seed, at: now, mode: lb.opts.mode, players, lives, lost, round: null, hist: [], res, far, sk, tl, timer: null, guard, pending: null, over: null, rematch: {} };
+		return { n, seed, at: now, mode: lb.opts.mode, players, lives, lost, round: null, hist: [], res, far, sk, tl, hl: {}, timer: null, guard, pending: null, over: null, rematch: {} };
 	};
 	const end = (m, winner, why, draw = false) => { if (!m.over) m.over = { winner: winner || '', draw: !!draw, why, at: now }; };
 	// a life lost (at most once per key: a Nemesis round 'pvp:<ante>', a blind '<ante>:<slot>')
@@ -354,7 +433,23 @@ export async function handleMtpvp(ctx) {
 		if (!m || m.over) return false;
 		if (checkStale(m, rows)) return true;
 		if (m.pending) { settlePending(m, rows); if (m.over) return true; }
+		// (the PvP timer taking a hand may end the round: the timed player out of hands and behind)
+		if (pvpTimerAdvance(m, now)) { resolveRound(m); return true; }
 		return timerAdvance(m, lb.opts, now) > 0;
+	};
+	// a Nemesis round's result, once its scores / hands decide it (a hand report, a hand lost to the PvP timer)
+	const resolveRound = (m) => {
+		const rd = m.round;
+		if (!rd || rd.res || !rd.startAt) return;
+		const [a, b] = m.players;
+		const res = resolve2p(rd.scores[a], rd.scores[b]);
+		if (!res) return;
+		const loser = res.tie ? '' : (res.loser === 'a' ? a : b);
+		rd.res = { loser, at: now };
+		rd.pt = null;
+		m.hist.push({ ante: rd.ante, slot: rd.slot || 'Boss', s: { [a]: rd.scores[a].s, [b]: rd.scores[b].s }, loser });
+		if (m.hist.length > 40) m.hist.splice(0, m.hist.length - 40);
+		if (loser && loseLife(m, loser, 'pvp:' + (rd.b || blindNum(rd.ante, 'Boss'))) && m.lives[loser] <= 0) end(m, m.players.find((x) => x !== loser), 'lives');
 	};
 	// the forfeit clock: a player quiet past the grace period loses (not the dead player of a pending death: leaving
 	// then is not a forfeit — the opponent's result for the blind decides)
@@ -514,11 +609,13 @@ export async function handleMtpvp(ctx) {
 		if (!prev || (changed && ageOf(prev) >= PP.MIN_WRITE_MS) || ageOf(prev) >= PP.BEAT_MS || (endData && !prev.end)) {
 			rows[username] = await touchPlayer(id, prev, { ...(changed && sum ? { sum, seq } : {}), ...(endData ? { end: endData } : {}) });
 		}
-		// the forfeit clock and the pending death's "opponent left", evaluated by whoever polls
+		// the forfeit clock and the pending death's "opponent left", evaluated by whoever polls; the PvP timer's animation
+		// credit (the timed player's client: the time its animations took, `anim` = this round's running total)
 		if (lb.m && !lb.m.over) {
 			const probe = { ...lb, m: JSON.parse(JSON.stringify(lb.m)) };
-			if (housekeep(probe, rows)) {
-				const r = await mutate((l, rr) => { rr[username] = rows[username]; if (!housekeep(l, rr)) return false; });
+			const credit = (m) => (body.anim > 0 && m.round && m.round.pt && m.round.pt.on === username && pvpTimerCredit(m.round, username, body.anim) > 0);
+			if (credit(probe.m) | housekeep(probe, rows)) {
+				const r = await mutate((l, rr) => { rr[username] = rows[username]; const c = credit(l.m); if (!(housekeep(l, rr) || c)) return false; });
 				if (!r.error) { lb = r.lb; rows = { ...r.rows, [username]: rows[username] }; }
 			}
 		}
@@ -554,7 +651,7 @@ export async function handleMtpvp(ctx) {
 			if (m.round && (m.round.b || blindNum(m.round.ante, 'Boss')) > bnum) return { error: 'that round is over', status: 409 };
 			if (!m.round || (m.round.b || blindNum(m.round.ante, 'Boss')) < bnum) {
 				if (m.round && !m.round.res && m.round.startAt) return { error: 'the last round is still being played', status: 409 };
-				m.round = { ante, slot, b: bnum, ready: {}, startAt: 0, scores: {}, res: null };
+				m.round = { ante, slot, b: bnum, ready: {}, startAt: 0, scores: {}, res: null, pt: null, clk: {}, at: {} };
 				if (m.timer && m.timer.b !== bnum) m.timer = null;
 			}
 			const rd = m.round;
@@ -564,7 +661,7 @@ export async function handleMtpvp(ctx) {
 			if (!body.ready && m.timer && m.timer.by === username) timerPause(m, now);
 			if (m.players.every((p) => rd.ready[p])) {
 				rd.startAt = now + PP.COUNTDOWN_MS;
-				for (const p of m.players) rd.scores[p] = { s: '0', h: null };
+				for (const p of m.players) { rd.scores[p] = { s: '0', h: null }; (rd.clk = rd.clk || {})[p] = PP.PVPT_BASE_MS; }
 				// (the round starts: no timer in a Nemesis round; skips count again from here)
 				m.timer = null; m.sk = {};
 			}
@@ -593,32 +690,57 @@ export async function handleMtpvp(ctx) {
 		return json({ lobby: view(r.lb, r.rows), now });
 	}
 
+	// the PvP timer (stage 7): {on: true} the player ahead starts it on the one behind; {on: false} its starter stops it
+	if (action === 'mtpvp-ptimer') {
+		const r = await mutate((lb, rows) => {
+			const e = inMatch(lb); if (e) return e;
+			const m = lb.m, rd = m.round;
+			const changed = housekeep(lb, rows);
+			if (m.over) return changed ? undefined : false;
+			if (!rd && body.on) return changed ? undefined : { error: 'not in a Nemesis round', status: 409 };
+			if (!rd) return changed ? undefined : false;
+			const opp = other(lb, username);
+			if (body.on) {
+				const why = pvpTimerCan(lb.opts, rd, username, opp, now);
+				if (why) return changed ? undefined : { error: why, status: 409 };
+				pvpTimerStart(rd, username, opp, now);
+			} else if (!(rd.pt && rd.pt.by === username && pvpTimerStop(rd, now)) && !changed) return false;
+		});
+		if (r.error) return fail(r);
+		return json({ lobby: view(r.lb, r.rows), now });
+	}
+
 	if (action === 'mtpvp-hand') {
 		const score = String(body.score == null ? '' : body.score);
 		const hands = Math.floor(+body.hands);
 		const n = Math.floor(+body.n);   // (the report's number within the round: a retried older one arriving late is dropped)
 		const hp = Math.max(0, Math.min(1000, Math.floor(+body.hp) || 0));   // (hands played this round: "hide score until you play")
+		const hl = Math.max(0, Math.min(1000, Math.floor(+body.hl) || 0));   // (hands lost to the PvP timer this client has applied, all match)
 		if (!bnum) return json({ error: 'bad blind' }, 400);
 		if (!scoreKey(score)) return json({ error: 'bad score' }, 400);
 		if (!(n >= 0 && n <= 1e6)) return json({ error: 'bad report number' }, 400);
 		if (!(hands >= 0 && hands <= 1000)) return json({ error: 'bad hands' }, 400);
-		const r = await mutate((lb) => {
+		const r = await mutate((lb, rows) => {
 			const e = inMatch(lb); if (e) return e;
 			const m = lb.m, rd = m.round;
-			if (m.over) return false;
+			// (the clocks first: a PvP timer that ran out before this report took its hand)
+			const changed = housekeep(lb, rows);
+			if (m.over) return changed ? undefined : false;
 			if (!rd || (rd.b || blindNum(rd.ante, 'Boss')) !== bnum || !rd.startAt) return { error: 'no round to report to', status: 409 };
-			if (rd.res) return false;                           // (decided: later hands change nothing)
+			if (rd.res) return changed ? undefined : false;                           // (decided: later hands change nothing)
 			const cur = rd.scores[username] || {};
-			if (cur.n != null && n <= cur.n) return false;
-			rd.scores[username] = { s: score, h: hands, n, hp: Math.max(hp, cur.hp || 0) };
-			const [a, b] = m.players;
-			const res = resolve2p(rd.scores[a], rd.scores[b]);
-			if (!res) return;
-			const loser = res.tie ? '' : (res.loser === 'a' ? a : b);
-			rd.res = { loser, at: now };
-			m.hist.push({ ante, slot: rd.slot || 'Boss', s: { [a]: rd.scores[a].s, [b]: rd.scores[b].s }, loser });
-			if (m.hist.length > 40) m.hist.splice(0, m.hist.length - 40);
-			if (loser && loseLife(m, loser, 'pvp:' + bnum) && m.lives[loser] <= 0) end(m, m.players.find((x) => x !== loser), 'lives');
+			if (cur.n != null && n <= cur.n) return changed ? undefined : false;
+			// (a hand the PvP timer took that this client hasn't applied yet still counts)
+			const owed = Math.max(0, ((m.hl && m.hl[username]) || 0) - hl);
+			const played = Math.max(hp, cur.hp || 0) > (cur.hp || 0);
+			rd.scores[username] = { s: score, h: Math.max(0, hands - owed), n, hp: Math.max(hp, cur.hp || 0) };
+			if (lb.opts.pvpTimer) {
+				if (played) pvpTimerHand(rd, username);
+				// the timer stops once the timed player is level or ahead (or out of hands)
+				const t = rd.pt;
+				if (t && (!(scoreCmp(rd.scores[t.by] && rd.scores[t.by].s, rd.scores[t.on] && rd.scores[t.on].s) > 0) || (rd.scores[t.on] && rd.scores[t.on].h < 1))) pvpTimerStop(rd, now);
+			}
+			resolveRound(m);
 		});
 		if (r.error) return fail(r);
 		return json({ lobby: view(r.lb, r.rows), now });

@@ -18,6 +18,7 @@ import {
   calculate_reroll_cost, reset_idol_card, reset_mail_rank, reset_ancient_card, reset_castle_card,
   reset_blinds, get_new_boss, get_next_voucher_key, get_next_tag_key, get_blind_amount,
   mod_chips, mod_mult, set_hand_usage, number_format, probability_roll, mod_context_effect, mod_effect_tail,
+  ante_based, order_round_based,
 } from './core.js';
 import { Blind } from './blind.js';
 import * as B from './bignum.js';
@@ -31,7 +32,7 @@ import './consumables.js';
 import { CUSTOM_DECK_ID, CUSTOM_DECK_BACK, validateDeck } from './customdeck.js';
 import { CHALLENGE_ID, findChallenge, prepareChallenge, apply_challenge, challenge_protos, challengeBack, challengeMods } from './challenge.js';
 import { SLEEVE_ID, findSleeve, sleeveFor, prepareSleeve, apply_sleeve } from './sleeve.js';
-import { PVP_ID, pvpConfig, setupPvp, pvpMods, pvpRoundLost, pvpRoundWon, pvpSkipped, pvpActionError, pvpApply, pvpSlot } from './pvp.js';
+import { PVP_INTERNAL, pvpConfig, setupPvp, pvpMods, pvpReset, pvpRoundLost, pvpRoundWon, pvpSkipped, pvpActionError, pvpApply, pvpSlot } from './pvp.js';
 import { decidePages, generatePages, applyPageChips, pageIndividual, pageDiscard, pagePrizeRow, openPagePack, shopOpening, shopStocked, shopClosing, pageRepetitions, pageDestroys, pageRoundStart, pageScoreAdded, pageRemovePending, pageRemoveCard, pageRolls, pageSeen } from './pages.js';
 // (Steamodded seams for Pokermon 3.9.1: opt-in contexts, Blind:calculate, the object_weights shop roll — no-ops unless a mod uses them)
 import { wanted, calculate_seam, modify_scoring_hand, blind_calculate, SEAM_STATE, object_weights, poll_object, poll_object_type, merge_defaults, mod_calculate, seam_mod, quantum_mod_calculate, held_card_limit,
@@ -263,7 +264,8 @@ export function newRun(args = {}) {
   const runMods = (ids) => (chal ? [...ids, ...challengeMods(chal), CHALLENGE_ID] : sleeve0 ? [...ids, sleeve0.mod, SLEEVE_ID] : ids);
   // A Multiplayer match (engine/pvp.js): its internal rules mod (+ the options it forces). Not with a challenge / custom deck.
   const pvp = !cdeck && !chal ? pvpConfig(args.pvp) : null;
-  const pm = pvp ? pvpMods(args.mods || [], args.modOptions || {}) : null;
+  const pm = pvp ? pvpMods(args.mods || [], args.modOptions || {}, pvp) : null;
+  pvpReset(); // (a ruleset's reworked vanilla centers: back to vanilla before any run)
   // Mods first: they decide what the pools contain and may adjust the game object.
   activateMods(runMods(pm ? pm.ids : cdeck ? [...(args.mods || []), ...cdeck.mods, CUSTOM_DECK_ID] : (args.mods || [])), pm ? pm.options : (args.modOptions || {}));
   rebuild_handlist(); // (mod poker hands join the hand list; the base list otherwise)
@@ -272,7 +274,7 @@ export function newRun(args = {}) {
   G.GAME.mod_options = allOptions();
   if (cdeck) { delete G.GAME.mod_options[CUSTOM_DECK_ID]; G.GAME.custom_deck = cdeck; }
   if (chal || sleeve0) { G.GAME.mods = G.GAME.mods.filter((id) => id !== CHALLENGE_ID && id !== SLEEVE_ID); delete G.GAME.mod_options[CHALLENGE_ID]; delete G.GAME.mod_options[SLEEVE_ID]; }
-  if (pvp) { G.GAME.mods = G.GAME.mods.filter((id) => id !== PVP_ID); delete G.GAME.mod_options[PVP_ID]; setupPvp(pvp); }
+  if (pvp) { G.GAME.mods = G.GAME.mods.filter((id) => !PVP_INTERNAL.includes(id)); for (const id of PVP_INTERNAL) delete G.GAME.mod_options[id]; setupPvp(pvp); }
   for (const t of activeConsumableTypes()) G.GAME[t.rate_key] = t.shop_rate || 0;
   // Pages (engine/pages.js): from engine rules rev 2 — `engineRev` is the run's (session.js passes the recipe's; omitted =
   // the legacy rules, which the engine unit tests play on) — unless a challenge or the Joker Toggle switch says no.
@@ -519,7 +521,7 @@ function new_round() {
     if (ACTIVE_MODS.length) blind_calculate({ setting_blind: true, blind: rr.blind });
     G.E_MANAGER.add_event(() => {
       G.STATE = STATES.DRAW_TO_HAND;
-      G.deck.shuffle('nr' + rr.ante);
+      G.deck.shuffle('nr' + order_round_based(true)); // (The Order: one shuffle key per blind — core.js)
       G.STATE_COMPLETE = false;
     });
   });
@@ -1590,7 +1592,7 @@ export function create_card_for_shop(area) {
   const mod_types = ACTIVE_MODS.length ? [].concat(...callHook('shop_card_types')) : [];
   const total_rate = G.GAME.joker_rate + G.GAME.tarot_rate + G.GAME.planet_rate + G.GAME.playing_card_rate + G.GAME.spectral_rate +
     activeConsumableTypes().reduce((n, t) => n + (G.GAME[t.rate_key] || 0), 0) + mod_types.reduce((n, t) => n + (t.val || 0), 0);
-  const polled = pseudorandom(pseudoseed('cdt' + G.GAME.round_resets.ante)) * total_rate;
+  const polled = pseudorandom(pseudoseed('cdt' + ante_based())) * total_rate;
   let check = 0;
   const opts = [
     { type: 'Joker', val: G.GAME.joker_rate },
@@ -1628,7 +1630,7 @@ export function create_card_for_shop(area) {
  */
 function create_shop_card(area) {
   const ante = G.GAME.round_resets.ante;
-  const card_args = { type: poll_object_type({ seed: 'cdt' + ante }), area };
+  const card_args = { type: poll_object_type({ seed: 'cdt' + ante_based() }), area };
   card_args.key = poll_object({ type: card_args.type, append: 'sho', guaranteed: card_args.type === 'Enhanced' });
   if (card_args.key === 'INTERNAL_PLAYING_CARD') { card_args.key = undefined; card_args.set = 'Base'; }
   const flags = calculate_seam({ create_shop_card: true, set: card_args.type, key: card_args.key, cardarea: area }, 'create_shop_card');
@@ -2013,7 +2015,7 @@ function toggle_shop() {
 }
 
 function cash_out() {
-  G.deck.shuffle('cashout' + G.GAME.round_resets.ante);
+  G.deck.shuffle('cashout' + order_round_based(true));
   G.E_MANAGER.add_event(() => {
     G.GAME.round_eval = null;
     G.GAME.current_round.jokers_purchased = 0;
@@ -2378,7 +2380,8 @@ function applyAction(a) {
     case 'pvp_start_blind':
     case 'pvp_outcome':
     case 'pvp_end':
-    case 'pvp_timer': {
+    case 'pvp_timer':
+    case 'pvp_hand_lost': {
       const why = pvpActionError(a, S, STATES);
       can(!why, why);
       pvpApply(a, STATES, select_blind);

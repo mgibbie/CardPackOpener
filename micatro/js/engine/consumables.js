@@ -22,6 +22,7 @@ import {
   create_card, create_playing_card, copy_card, poll_edition, all_cards, next,
   set_consumeable_usage, check_for_unlock, inc_career_stat, probability_roll, has_quantum_enhancement, mod_context_effect,
   with_actor,
+  ante_based, order_round_based,
 } from './core.js';
 import { callHook, reduceHook, firstHook, contentDisabled, ACTIVE as ACTIVE_MODS } from '../mods/registry.js';
 import { change_shop_size } from './run.js';
@@ -659,16 +660,16 @@ Card.prototype.open = function () {
           } else if (this.ability.name.includes('Spectral')) {
             card = create_card('Spectral', G.pack_cards, null, null, true, true, null, 'spe');
           } else if (this.ability.name.includes('Standard')) {
-            card = create_card(pseudorandom(pseudoseed('stdset' + G.GAME.round_resets.ante)) > 0.6 ? 'Enhanced' : 'Base', G.pack_cards, null, null, null, true, null, 'sta');
+            card = create_card(pseudorandom(pseudoseed('stdset' + ante_based())) > 0.6 ? 'Enhanced' : 'Base', G.pack_cards, null, null, null, true, null, 'sta');
             const edition_rate = 2;
-            const edition = poll_edition('standard_edition' + G.GAME.round_resets.ante, edition_rate, true);
+            const edition = poll_edition('standard_edition' + ante_based(), edition_rate, true);
             card.set_edition(edition);
             const seal_rate = 10;
             // (Steamodded: SMODS.poll_seal({mod = 10}) over the whole Seal pool when a mod's seal is in it — Pokermon's Pink / Silver)
             const smods_seal = ACTIVE_MODS.length ? base_seal_roll({ mod: seal_rate }) : undefined;
             if (smods_seal) { if (smods_seal.seal) card.set_seal(smods_seal.seal); }
-            else if (pseudorandom(pseudoseed('stdseal' + G.GAME.round_resets.ante)) > 1 - 0.02 * seal_rate) {
-              const seal_type = pseudorandom(pseudoseed('stdsealtype' + G.GAME.round_resets.ante));
+            else if (pseudorandom(pseudoseed('stdseal' + ante_based())) > 1 - 0.02 * seal_rate) {
+              const seal_type = pseudorandom(pseudoseed('stdsealtype' + ante_based()));
               if (seal_type > 0.75) card.set_seal('Red');
               else if (seal_type > 0.5) card.set_seal('Blue');
               else if (seal_type > 0.25) card.set_seal('Gold');

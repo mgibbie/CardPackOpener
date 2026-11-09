@@ -31,7 +31,19 @@
 //   {type:'pvp_outcome', result, lives}          the round's result ('win' | 'lose' | 'tie') + this player's lives
 //   {type:'pvp_end', result}                     the match is over ('win' | 'lose' | 'draw')
 //   {type:'pvp_timer', n}                        the Hurry timer ran out on this player: a life (n = the run's nth such loss)
-import { G, emit } from './core.js';
+//   {type:'pvp_hand_lost', n}                    the PvP timer ran out on this player in a Nemesis round: a hand (stage 7)
+//
+// Stage 7 — the RULESET (the lobby's; the mod's Vanilla / Balanced / Expanded) and THE ORDER:
+//   * `order`: The Order (core.js theOrder): the run's random streams are keyed so both players get the same cards in the
+//     same order however differently they play. A lobby option: on by default in Balanced / Expanded, off in Vanilla.
+//   * Balanced: Hanging Chad retriggers the first AND second scoring cards once each; Bloodstone's rolls in a PvP round
+//     come from a per-round queue both players share; Glass Cards are X1.5 (1 in 4 to break); Justice is banned. The two
+//     reworked jokers replace the vanilla ones (silently banned) — the internal 'pvp_balanced' content mod, active only
+//     in a Balanced / Expanded match (a Vanilla match's pools are exactly as before stage 7).
+//   * the PvP timer (Balanced / Expanded; server/micatro_pvp.mjs): in a Nemesis round the player ahead may start a clock on
+//     the one behind; it running out costs them ONE HAND — the recorded pvp_hand_lost.
+// A recipe records `ruleset` / `order` only when not Vanilla / off, so a stage-6 recipe reads as a Vanilla match.
+import { G, emit, P_CENTERS, localize, pseudorandom, probability_roll, probability_vars, order_round_based, ease_hands_played } from './core.js';
 import { registerMod } from '../mods/registry.js';
 
 export const PVP_ID = 'pvp';
@@ -74,8 +86,24 @@ export const PVP_FORCED_OPTIONS = { bunco: { gameplay_reworks: false } };
  */
 export const SURVIVAL_BANS = ['v_hieroglyph', 'v_petroglyph'];
 export const MODES = ['attrition', 'showdown', 'survival'];
-/** Every banned key of a mode (for the lobby screen's list and the tests). */
-export const pvpBannedKeys = (mode = 'attrition') => [...(mode === 'survival' ? SURVIVAL_BANS : ATTRITION_BANS), ...Object.values(PVP_MOD_BANS).flat()];
+/** The rulesets (stage 7): the mod's names, in its order. */
+export const RULESETS = ['vanilla', 'balanced'];
+/**
+ * A ruleset's bans: `loud` are listed in the lobby (Justice), `silent` are vanilla cards a reworked copy replaces (the mod's
+ * banned_silent: the vanilla Hanging Chad / Bloodstone leave the pools, their Balanced versions take their place).
+ */
+export const RULESET_BANS = {
+  vanilla: { loud: [], silent: [] },
+  balanced: { loud: ['c_justice'], silent: ['j_hanging_chad', 'j_bloodstone'] },
+};
+/** The internal content mod each ruleset activates (on top of 'pvp'). */
+export const RULESET_MODS = { vanilla: [], balanced: ['pvp_balanced'] };
+/** Every internal mod id (never listed in G.GAME.mods). */
+export const PVP_INTERNAL = [PVP_ID, 'pvp_balanced'];
+/** Does this ruleset play The Order by default (the lobby's default: on except in Vanilla)? */
+export const orderDefault = (ruleset) => ruleset !== 'vanilla';
+/** Every banned key of a mode + ruleset the lobby lists (for the lobby screen's count and the tests). */
+export const pvpBannedKeys = (mode = 'attrition', ruleset = 'vanilla') => [...(mode === 'survival' ? SURVIVAL_BANS : ATTRITION_BANS), ...Object.values(PVP_MOD_BANS).flat(), ...((RULESET_BANS[ruleset] || RULESET_BANS.vanilla).loud)];
 
 /** A PvP config, validated (the lobby's options; anything else in it is dropped so the recipe stays canonical). */
 export function pvpConfig(c) {
@@ -85,6 +113,8 @@ export function pvpConfig(c) {
   const out = {
     v: PVP_RULES, lives: int(c.lives, 1, 9, 4), pvpStart: int(c.pvpStart, 1, 8, 2), deathOnLoss: c.deathOnLoss !== false, comeback: c.comeback !== false,
     mode, showdownStart: int(c.showdownStart, 1, 20, 3), bossFx: c.bossFx === true,
+    // (stage 7: absent = a Vanilla match without The Order — every recipe recorded before stage 7)
+    ruleset: RULESETS.includes(c.ruleset) ? c.ruleset : 'vanilla', order: c.order === true,
   };
   // Survival: one life, and a failed blind is what ends it (no PvP round, so no boss option)
   if (mode === 'survival') { out.lives = 1; out.deathOnLoss = true; out.bossFx = false; }
@@ -96,6 +126,8 @@ export function pvpRecipeConfig(P) {
   if (P.mode && P.mode !== 'attrition') r.mode = P.mode;
   if (P.showdownStart != null && P.showdownStart !== 3) r.showdownStart = P.showdownStart;
   if (P.bossFx) r.bossFx = true;
+  if (P.ruleset && P.ruleset !== 'vanilla') r.ruleset = P.ruleset;
+  if (P.order) r.order = true;
   return r;
 }
 /** Which blind slots of `ante` are PvP rounds under a config: {Small, Big, Boss} (server/micatro_pvp.mjs has the same table). */
@@ -113,18 +145,26 @@ export const inNemesis = () => !!(G.GAME && G.GAME.pvp && G.GAME.pvp_blind);
 /** Is this slot of the current ante a PvP round? */
 export const pvpSlot = (slot) => isPvp() && !!slot && !!pvpSlots(G.GAME.pvp, G.GAME.round_resets.ante)[slot];
 
+// Balanced's Glass Card: X1.5 (the vanilla center is changed for the match only; every newRun puts it back first)
+const GLASS_VANILLA = { ...P_CENTERS.m_glass.config };
+const GLASS_BALANCED = { Xmult: 1.5, extra: 4 };
+/** newRun, before anything else: the vanilla centers a ruleset reworks, as they were (a solo run after a match). */
+export function pvpReset() { Object.assign(P_CENTERS.m_glass.config, GLASS_VANILLA); }
+
 /** newRun: the run's PvP state, its bans and win_ante (after init_game_object + the mods' hooks, before the boss roll). */
 export function setupPvp(cfg) {
-  const P = { ...cfg, lives: cfg.lives, max: cfg.lives, comeback_due: 0, blinds: [], rounds: [], result: null, tlost: 0 };
+  const P = { ...cfg, lives: cfg.lives, max: cfg.lives, comeback_due: 0, blinds: [], rounds: [], result: null, tlost: 0, hlost: 0 };
   G.GAME.pvp = P;
   G.GAME.win_ante = 999;
-  for (const k of pvpBannedKeys(P.mode)) G.GAME.banned_keys[k] = true;
+  const rb = RULESET_BANS[P.ruleset] || RULESET_BANS.vanilla;
+  for (const k of [...pvpBannedKeys(P.mode, P.ruleset), ...rb.silent]) G.GAME.banned_keys[k] = true;
+  if (P.ruleset !== 'vanilla') Object.assign(P_CENTERS.m_glass.config, GLASS_BALANCED);
 }
-/** newRun: the mods a PvP run activates (+ the internal one) and its forced options. */
-export function pvpMods(ids, options) {
+/** newRun: the mods a PvP run activates (+ the internal ones of its ruleset) and its forced options. */
+export function pvpMods(ids, options, cfg) {
   const opts = { ...(options || {}) };
   for (const [m, o] of Object.entries(PVP_FORCED_OPTIONS)) if ((ids || []).includes(m)) opts[m] = { ...(opts[m] || {}), ...o };
-  return { ids: [...(ids || []), PVP_ID], options: opts };
+  return { ids: [...(ids || []), PVP_ID, ...(RULESET_MODS[(cfg && cfg.ruleset) || 'vanilla'] || [])], options: opts };
 }
 
 /** A life lost (a failed blind, a lost Nemesis round): comeback money is due at the next cash-out. */
@@ -178,6 +218,8 @@ export function pvpActionError(a, S, STATES) {
   if (a.type === 'pvp_end') return ['win', 'lose', 'draw'].includes(a.result) ? null : 'bad result';
   // (the Hurry timer's life: the referee's count, applied in order — whatever the run is doing)
   if (a.type === 'pvp_timer') return a.n === (P.tlost || 0) + 1 ? null : 'not the next timer loss';
+  // (the PvP timer's hand: the referee's count, applied in order; it only takes a hand inside a Nemesis round)
+  if (a.type === 'pvp_hand_lost') return a.n === (P.hlost || 0) + 1 ? null : 'not the next hand lost';
   if (P.lives <= 0) return 'out of lives';
   if (a.type === 'pvp_start_blind') {
     if (S !== STATES.BLIND_SELECT) return 'not choosing a blind';
@@ -201,6 +243,15 @@ export function pvpApply(a, STATES, selectBlind) {
     G.GAME.pvp_blind = true;
     emit('pvp_start', { ante: G.GAME.round_resets.ante, slot: G.GAME.blind_on_deck });
     selectBlind(G.GAME.blind_on_deck);
+    return;
+  }
+  if (a.type === 'pvp_hand_lost') {
+    P.hlost = (P.hlost || 0) + 1;
+    if (G.GAME.pvp_blind && G.GAME.current_round.hands_left > 0) {
+      ease_hands_played(-1, true);
+      emit('pvp_hand_lost', { n: P.hlost, hands: G.GAME.current_round.hands_left });
+      if (G.GAME.current_round.hands_left < 1 && G.STATE === STATES.SELECTING_HAND) { G.hand.unhighlight_all(); G.STATE = STATES.PVP_WAIT; G.STATE_COMPLETE = false; }
+    }
     return;
   }
   if (a.type === 'pvp_timer') {
@@ -235,6 +286,7 @@ export function pvpView(v) {
   v.pvp = {
     lives: P.lives, max: P.max, pvpStart: P.pvpStart, deathOnLoss: P.deathOnLoss, comeback: P.comeback,
     mode: P.mode || 'attrition', showdownStart: P.showdownStart || 3, bossFx: !!P.bossFx, tlost: P.tlost || 0,
+    ruleset: P.ruleset || 'vanilla', order: !!P.order, hlost: P.hlost || 0,
     // (this ante's PvP slots — the blind select's READY columns — and the slot being played)
     slots: pvpSlots(P, G.GAME.round_resets.ante), slot: G.GAME.pvp_blind ? G.GAME.blind_on_deck : null,
     nemesis: !!G.GAME.pvp_blind, blinds: P.blinds.slice(), rounds: P.rounds.slice(), result: P.result,
@@ -287,6 +339,72 @@ registerMod({
       in_pool: () => false,
     }],
     loc: { descriptions: { Blind: { [NEMESIS]: { name: 'Your Nemesis', text: ['Face your opponent:', 'most chips wins'] } } } },
+  },
+});
+
+// ------------------------------------------------------------------ Balanced (stage 7): the reworked jokers
+// Both keep the vanilla art (the base Jokers sheet) and replace the vanilla card in the pools (RULESET_BANS.silent).
+const BAL_BADGE = { text: 'Balanced', colour: '#ac3232' };
+registerMod({
+  id: 'pvp_balanced',
+  name: 'Multiplayer: Balanced',
+  hidden: true,
+  content: {
+    atlases: { mtpvp_vjokers: { src: '/micatro/assets/textures/Jokers.png', px: 71, py: 95 } },
+    centers: [
+      {
+        // Hanging Chad (Balanced): the first AND second scoring cards retrigger once each (vanilla: the first, twice)
+        key: 'j_mp_hanging_chad', set: 'Joker', name: 'MP Hanging Chad', rarity: 1, cost: 4, order: 115.5,
+        blueprint_compat: true, eternal_compat: true, perishable_compat: true,
+        config: { extra: 1 }, atlas: 'mtpvp_vjokers', pos: { ...P_CENTERS.j_hanging_chad.pos },
+        loc_vars: (center, iq, card) => ({ vars: [card ? card.ability.extra : 1] }),
+        calculate(center, card, ctx) {
+          if (ctx.repetition && ctx.cardarea === G.play && ctx.scoring_hand && (ctx.other_card === ctx.scoring_hand[0] || ctx.other_card === ctx.scoring_hand[1])) {
+            return { message: localize('k_again_ex'), repetitions: card.ability.extra, card };
+          }
+          return undefined;
+        },
+      },
+      {
+        // Bloodstone (Balanced): the same odds and X1.5 — but in a PvP round its rolls come from a queue kept per round:
+        // the nth scored Heart of every hand reads the round's nth roll, so both players (same seed) get the same rolls
+        key: 'j_mp_bloodstone', set: 'Joker', name: 'MP Bloodstone', rarity: 2, cost: 7, order: 117.5,
+        blueprint_compat: true, eternal_compat: true, perishable_compat: true,
+        config: { extra: { odds: 2, Xmult: 1.5 } }, atlas: 'mtpvp_vjokers', pos: { ...P_CENTERS.j_bloodstone.pos },
+        loc_vars: (center, iq, card) => {
+          const e = card ? card.ability.extra : center.config.extra;
+          const [n, d] = card ? probability_vars(card, 1, e.odds, 'bloodstone') : [(G.GAME && G.GAME.probabilities ? G.GAME.probabilities.normal : 1), e.odds];
+          return { vars: [n, d, e.Xmult] };
+        },
+        calculate(center, card, ctx) {
+          const e = card.ability.extra;
+          if (ctx.before && !ctx.blueprint) card.ability.mp_bsindex = 0;
+          if (!(ctx.individual && ctx.cardarea === G.play && ctx.other_card && ctx.other_card.is_suit('Hearts'))) return undefined;
+          let hit;
+          if (G.GAME.pvp_blind) {
+            const key = String(order_round_based(true));
+            const rr = G.GAME.round_resets;
+            const q = ((rr.mp_bloodstone = rr.mp_bloodstone || {})[key] = rr.mp_bloodstone[key] || []);
+            const i = card.ability.mp_bsindex = (card.ability.mp_bsindex || 0) + 1;
+            if (q[i - 1] === undefined) q[i - 1] = pseudorandom('bloodstone' + key);
+            const [n, d] = probability_vars(card, 1, e.odds, 'bloodstone', true);
+            hit = q[i - 1] < n / d;
+          } else hit = probability_roll(card, 'bloodstone', 1, e.odds);
+          return hit ? { x_mult: e.Xmult, card } : undefined;
+        },
+      },
+    ],
+    loc: { descriptions: { Joker: {
+      j_mp_hanging_chad: { name: 'Hanging Chad', text: ['Retrigger {C:attention}first{} and {C:attention}second{}', 'played cards used in scoring', '{C:attention}#1#{} additional time'] },
+      j_mp_bloodstone: { name: 'Bloodstone', text: ['{C:green}#1# in #2#{} chance for', 'played cards with', '{C:hearts}Heart{} suit to give', '{X:mult,C:white} X#3# {} Mult when scored'] },
+    } } },
+  },
+  hooks: {
+    // (the reworked cards wear the mod's "Balanced" badge)
+    describe(card, desc) {
+      const k = card && card.config && card.config.center && card.config.center.key;
+      if (desc && Array.isArray(desc.badges) && (k === 'j_mp_hanging_chad' || k === 'j_mp_bloodstone' || k === 'm_glass')) desc.badges.push(BAL_BADGE);
+    },
   },
 });
 

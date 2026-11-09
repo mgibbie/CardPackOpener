@@ -11,6 +11,10 @@
 //   bob's browser goes away -> after the grace period alice wins by forfeit
 //   stage 6: dave picks Showdown + host options (erin sees them read-only); dave READY + Hurry! -> erin's timer runs out
 //   (a life, as a recorded action) -> erin READY -> both play the Small-blind Nemesis -> next is the Big (same ante)
+//   stage 7: frank hosts a Pokermon lobby with Gen 4 off: the ruleset picker (Balanced: The Order + the PvP timer on; Vanilla
+//   turns both off), the host's mod options shown to gina read-only (her own saved mod settings untouched); both engines run
+//   Gen 4 off, Balanced, The Order (recorded); no source offers either a Gen 4 Pokémon; in the Nemesis gina (ahead) starts the
+//   PvP timer on frank -> at 0 he loses ONE hand, as a recorded pvp_hand_lost
 // Screenshots go to $MTPVP_SHOTS when set.
 //   node overworld/tests/micatro_pvp_e2e_test.mjs
 import fs from 'fs';
@@ -24,6 +28,7 @@ import puppeteer from 'puppeteer-core';
 
 process.env.MP_GC_RATE = '0';
 process.env.MTPVP_GRACE_MS = '20000';   // (the 120 s forfeit clock, shortened for the test)
+process.env.MTPVP_PVPT_BASE_MS = '8000'; // (the PvP timer's 60 s, shortened for the test)
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '../../');
@@ -83,7 +88,7 @@ const server = http.createServer(async (req, res) => {
 await new Promise(r => server.listen(PORT, r));
 
 const tokens = {};
-for (const n of ['alice', 'bob', 'carol', 'dave', 'erin']) tokens[n] = (await call('register', { username: n, password: 'mtpvp-e2e-pass' })).token;
+for (const n of ['alice', 'bob', 'carol', 'dave', 'erin', 'frank', 'gina']) tokens[n] = (await call('register', { username: n, password: 'mtpvp-e2e-pass' })).token;
 await call('add-friend', { username: 'alice' }, tokens.carol);
 A(tokens.alice && tokens.bob && tokens.carol, 'three accounts (carol is alice\'s friend; bob is not)');
 const stateOf = async (n) => (await call('state', {}, tokens[n])).state || { username: n };
@@ -293,6 +298,110 @@ try {
 	await shot(dave.page, '17-showdown-next-big');
 	const errs2 = [...dave.errors, ...erin.errors].filter((e) => !/favicon|net::/.test(e));
 	A(!errs2.length, 'stage 6: no page errors', errs2.join(' | '));
+	await dave.ctx.close(); await erin.ctx.close();
+
+	// ======== stage 7: the ruleset, The Order, the host's Pokermon generations, the PvP timer ========
+	const GEN_OFF = { ids: ['pokermon'], options: { pokermon: { gen_four: false } } };
+	const frank = await open('frank', '/micatro/');
+	await frank.page.evaluate((p) => localStorage.setItem('micatro_mods', JSON.stringify(p)), GEN_OFF);
+	await frank.page.reload({ waitUntil: 'domcontentloaded' });
+	A(await ready(frank.page), 'frank: game ready (Pokermon on, Gen 4 off in his mod settings)');
+	await waitFor(() => click(frank.page, '.b-multiplayer'), 10000);
+	await click(frank.page, '.b-pvp-create');
+	await waitFor(() => frank.page.evaluate(() => { const b = document.querySelector('.b-start'); return b && /Create lobby/.test(b.textContent); }), 8000);
+	await click(frank.page, '.b-start');
+	A(await waitFor(() => frank.page.evaluate(() => /^[A-Z2-9]{5}$/.test((document.querySelector('.pvp-code-v') || {}).textContent || '')), 60000), 'frank\'s Pokermon lobby is up');
+	const code3 = await frank.page.evaluate(() => document.querySelector('.pvp-code-v').textContent);
+	const lobbyTxt = (page) => page.evaluate(() => ({ rs: (document.querySelector('.pvp-ruleset') || {}).textContent, order: (document.querySelector('.b-pvp-tog-order') || document.querySelector('.pvp-opts') || {}).textContent, mo: (document.querySelector('.pvp-modopts') || {}).textContent || '' }));
+	let lt = await lobbyTxt(frank.page);
+	A(lt.rs === 'Balanced' && /On/.test(lt.order) && /Gen 4 off/.test(lt.mo), 'the lobby: Balanced by default, The Order on, the host\'s mod options listed (Gen 4 off)', JSON.stringify(lt));
+	await click(frank.page, '.b-pvp-dec-ruleset');
+	A(await waitFor(async () => (await lobbyTxt(frank.page)).rs === 'Vanilla', 6000), 'the host picks Vanilla');
+	const vo = await frank.page.evaluate(() => ({ o: (document.querySelector('.b-pvp-tog-order') || {}).textContent, t: (document.querySelector('.b-pvp-tog-pvpTimer') || {}).textContent }));
+	A(vo.o === 'Off' && vo.t === 'Off', 'Vanilla: The Order and the PvP timer default off', JSON.stringify(vo));
+	await shot(frank.page, '18-lobby-vanilla');
+	await click(frank.page, '.b-pvp-inc-ruleset');
+	A(await waitFor(async () => (await lobbyTxt(frank.page)).rs === 'Balanced', 6000), '... and back to Balanced');
+	await click(frank.page, '.b-pvp-dec-pvpStart');
+	await waitFor(() => frank.page.evaluate(() => (document.querySelector('.pvp-pvpStart') || {}).textContent === '1'), 6000);
+	await shot(frank.page, '19-lobby-balanced-host');
+	// gina: her own mod settings (no mods at all) are never touched; she sees the host's options read-only
+	const gina = await open('gina', '/micatro/?join=' + code3);
+	A(await ready(gina.page), 'gina: game ready');
+	A(await waitFor(() => gina.page.evaluate(() => !!document.querySelector('.b-pvp-ready-lobby')), 60000), 'gina joined (the host\'s Pokermon loaded for her)');
+	lt = await lobbyTxt(gina.page);
+	const gArrows = await gina.page.evaluate(() => document.querySelectorAll('.b-pvp-dec-ruleset, .b-pvp-tog-order, .b-pvp-tog-pvpTimer').length);
+	A(lt.rs === 'Balanced' && /Gen 4 off/.test(lt.mo) && gArrows === 0, 'gina sees the ruleset and the host\'s Gen 4 filter, read-only', JSON.stringify({ lt, gArrows }));
+	await shot(gina.page, '20-lobby-balanced-guest');
+	await click(gina.page, '.b-pvp-ready-lobby');
+	await waitFor(() => frank.page.evaluate(() => { const b = document.querySelector('.b-pvp-start'); return b && !b.disabled; }), 10000);
+	await click(frank.page, '.b-pvp-start');
+	A(await waitFor(async () => (await view(frank.page))?.pvp && (await view(gina.page))?.pvp, 60000), 'Start: both in the Balanced match');
+	await idle(frank.page); await idle(gina.page);
+	const eng = (page) => page.evaluate(async () => {
+		const core = await import('/micatro/js/engine/core.js');
+		const G = core.G, rec = window.__micatro.session.recipe;
+		return { gen4: G.GAME.mod_options.pokermon && G.GAME.mod_options.pokermon.gen_four, order: core.theOrder(), rs: G.GAME.pvp.ruleset, rec: { rs: rec.pvp.ruleset, order: rec.pvp.order, gen4: rec.modOptions && rec.modOptions.pokermon && rec.modOptions.pokermon.gen_four }, prefs: localStorage.getItem('micatro_mods') };
+	});
+	const ef = await eng(frank.page), eg = await eng(gina.page);
+	A(ef.gen4 === false && eg.gen4 === false && ef.order && eg.order && ef.rs === 'balanced' && eg.rs === 'balanced', 'both engines: Gen 4 off, Balanced, The Order', JSON.stringify([ef, eg]));
+	A(eg.rec.rs === 'balanced' && eg.rec.order === true && eg.rec.gen4 === false, 'gina\'s recipe records it all (resume / replay / spectate play the same)', JSON.stringify(eg.rec));
+	A(eg.prefs === null, 'gina\'s own saved mod settings are untouched', String(eg.prefs));
+	// no source offers a Gen 4 Pokémon (each player's engine: the pools, then 150 shop / pack / Judgement-style rolls on a throwaway
+	// copy of the streams — the live run's recipe isn't touched: a reload afterwards replays the same run)
+	const sweep = (page) => page.evaluate(async () => {
+		const core = await import('/micatro/js/engine/core.js');
+		const { G, P_CENTERS, get_current_pool, create_card } = core;
+		const bad = new Set(); let made = 0;
+		const gen4 = (k) => { const c = P_CENTERS[k]; return !!(c && c.stage && c.stage !== 'Other' && c.gen === 4); };
+		for (const r of [1, 2, 3]) for (const k of get_current_pool('Joker', r)[0]) if (k !== 'UNAVAILABLE' && gen4(k)) bad.add(k);
+		const saved = JSON.stringify(G.GAME.pseudorandom), used = { ...G.GAME.used_jokers };
+		for (let i = 0; i < 150; i++) {
+			const area = [G.shop_jokers, G.pack_cards, G.jokers][i % 3];
+			const c = create_card('Joker', area, null, null, null, null, null, ['sho', 'buf', 'jud'][i % 3]);
+			made++; if (gen4(c.config.center.key)) bad.add(c.config.center.key);
+			c.remove();
+		}
+		G.GAME.pseudorandom = JSON.parse(saved); G.GAME.used_jokers = used;
+		const seenGen4 = Object.values(P_CENTERS).filter((c) => c.stage && c.gen === 4).length;
+		return { bad: [...bad], made, seenGen4 };
+	});
+	const sf = await sweep(frank.page), sg = await sweep(gina.page);
+	A(!sf.bad.length && !sg.bad.length && sf.made === 150 && sf.seenGen4 > 50, 'no Gen 4 Pokémon offered to either player (pools + 150 rolls each)', JSON.stringify([sf, sg]));
+	// to the Nemesis (from ante 1): skip Small + Big (a pack from a skip tag is skipped)
+	for (const p of [frank.page, gina.page]) for (let k = 0; k < 2; k++) {
+		await act(p, { type: 'skip_blind' }); await idle(p);
+		if (/PACK/.test((await view(p)).state)) { await act(p, { type: 'skip_booster' }); await idle(p); }
+	}
+	A((await view(frank.page)).onDeck === 'Boss' && (await view(gina.page)).onDeck === 'Boss', 'both at the Nemesis');
+	await click(frank.page, '.b-pvp-ready'); await click(gina.page, '.b-pvp-ready');
+	A(await waitFor(async () => (await view(frank.page)).blind === 'bl_mp_nemesis' && (await view(gina.page)).blind === 'bl_mp_nemesis', 15000), 'both in the Nemesis');
+	await idle(frank.page); await idle(gina.page);
+	A(await frank.page.evaluate(() => { const b = document.querySelector('.b-pvp-ptimer'); return !b || b.style.display === 'none'; }), 'level at 0-0: no PvP timer button');
+	await playStrong(gina.page);
+	A(await waitFor(() => gina.page.evaluate(() => { const b = document.querySelector('.b-pvp-ptimer'); return !!b && b.style.display !== 'none' && /Start timer/.test(b.textContent); }), 10000), 'gina ahead: her HUD offers the PvP timer');
+	A(await frank.page.evaluate(() => { const b = document.querySelector('.b-pvp-ptimer'); return !b || b.style.display === 'none'; }), 'frank (behind) has no PvP timer button');
+	const h0 = (await view(frank.page)).hands;
+	await click(gina.page, '.b-pvp-ptimer');
+	A(await waitFor(() => frank.page.evaluate(() => { const t = document.querySelector('.pvp-hud .ph-ptimer.on-me'); return t && t.style.display !== 'none' && /PvP timer/.test(t.textContent); }), 8000), 'frank sees the PvP timer on him');
+	await shot(frank.page, '21-pvp-timer-on-me');
+	await shot(gina.page, '22-pvp-timer-started');
+	A(await waitFor(async () => (await view(frank.page)).hands === h0 - 1, 25000), 'the PvP timer runs out: frank loses ONE hand (not a life)', JSON.stringify([h0, (await view(frank.page)).hands]));
+	const rec7 = await frank.page.evaluate(() => window.__micatro.session.recipe.actions.filter((a) => a.type === 'pvp_hand_lost'));
+	const lid3 = await frank.page.evaluate(() => window.__micatro.pvp.lobbyId);
+	A(rec7.length === 1 && rec7[0].n === 1 && row('mtpvp:' + lid3).m.hl.frank === 1 && (await view(frank.page)).pvp.lives === 4, 'the hand arrives as a RECORDED action (pvp_hand_lost n 1), matching the referee; no life lost', JSON.stringify(rec7));
+	await shot(frank.page, '23-pvp-timer-hand-lost');
+	for (let i = 0; i < 6 && (await view(frank.page)).state === 'SELECTING_HAND'; i++) await playWeak(frank.page);
+	for (let i = 0; i < 6 && (await view(gina.page)).state === 'SELECTING_HAND'; i++) await playStrong(gina.page);
+	A(await waitFor(async () => (await view(frank.page)).state === 'ROUND_EVAL' && (await view(gina.page)).state === 'ROUND_EVAL', 25000), 'the round is decided -> both cash out');
+	// frank reloads: his run (the lost hand included) comes back exactly
+	const n7 = await frank.page.evaluate(() => window.__micatro.session.recipe.actions.length);
+	await frank.page.reload({ waitUntil: 'domcontentloaded' });
+	await ready(frank.page);
+	A(await waitFor(async () => { const v = await view(frank.page); return v && v.pvp && v.state === 'ROUND_EVAL' && v.pvp.hlost === 1 && v.pvp.order; }, 60000), 'frank reloads -> the same run (the lost hand, The Order) re-simulated from its recipe');
+	A(await frank.page.evaluate((n) => window.__micatro.session.recipe.actions.length === n, n7), '... every move kept');
+	const errs3 = [...frank.errors, ...gina.errors].filter((e) => !/favicon|net::/.test(e));
+	A(!errs3.length, 'stage 7: no page errors', errs3.join(' | '));
 } catch (e) {
 	fail++; console.log('FAIL: threw ' + (e && e.stack));
 } finally {
