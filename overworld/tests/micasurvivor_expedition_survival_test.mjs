@@ -338,6 +338,8 @@ try {
 	await startSurv(page);
 	const sg = await E(page, () => {
 		const H = window.__t, S = G.ExpSurv, pl = G.Game.player, out = {};
+		// (no XP: a level-up card screen paused the run for the whole 21 s on a slow runner: siege clock 0, states {levelup: 630})
+		pl.gainXp = () => 0;
 		H.jump(200, 0);
 		for (let i = 0; i < 25 * 30; i++) H.step(1);   // 25 s still, before 5:00: no siege
 		out.before = S.run.siege.on;
