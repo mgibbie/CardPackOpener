@@ -60,7 +60,9 @@ try {
 	const snap = await page.evaluate(async () => {
 		window.__ow.startFacility('factory');
 		const d = window.__ow.dialog;
-		for (let i = 0; i < 40; i++) { if (window.__ow.battle.blocking) break; if (d.blocking) d.key('x'); await new Promise(r => setTimeout(r, 60)); }
+		// (up to 15 s for the battle to have both mons on the field: 2.4 s was too short under load, ~1 run in 3 locally;
+		// the snapshot was then { waiting: true })
+		for (let i = 0; i < 250; i++) { const a = window.__ow.battle.active; if (window.__ow.battle.blocking && a && a.me && a.foe) break; if (d.blocking) d.key('x'); await new Promise(r => setTimeout(r, 60)); }
 		return window.__ow.factorySnapshot();
 	});
 	A(!!(snap && snap.me && snap.foe), 'a live Factory battle produces a board snapshot with both active mons', JSON.stringify(!!snap));
