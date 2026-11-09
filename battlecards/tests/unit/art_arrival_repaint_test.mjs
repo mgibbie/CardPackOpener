@@ -58,14 +58,56 @@ function fnSrc(src, name) {
 	if (artFor && onIdx) {
 		const loads = [];
 		class FakeImage { set src(v) { loads.push(v); this._src = v; } get src() { return this._src; } }
-		const make = new Function('Image', 'artUrl', 'withArtFallback', 'artListeners',
+		const make = new Function('Image', 'artUrl', 'newArtImg', 'artListeners',
 			'let artIndex = null; const artImgs = new Map(); const artAskedEarly = new Set();' + artFor + onIdx +
 			'; return { artFor, onArtIndex };');
-		const api = make(FakeImage, id => 'cdn/' + id + '.jpg', img => img, new Set());
+		const api = make(FakeImage, id => 'cdn/' + id + '.jpg', id => { const i = new FakeImage(); i.src = 'cdn/' + id + '.jpg'; return i; }, new Set());
 		ok('before the index: no art yet', api.artFor('emrakul_aeon_torn') === null);
 		api.onArtIndex(['emrakul_aeon_torn', 'sleepy_dragon']);
 		ok('the index arrival starts the early-asked load', loads.includes('cdn/emrakul_aeon_torn.jpg'), JSON.stringify(loads));
 		ok('and only for asked ids', !loads.includes('cdn/sleepy_dragon.jpg'), JSON.stringify(loads));
+	}
+}
+
+// ---- 3) an image whose load FAILED is retried, and its arrival repaints the face ----
+// bug:1794239112655 — Bolg's Reanimate stayed procedural on the Middle-earth spoils while its
+// neighbours loaded. A failed load (direct host + redirect fallback both erroring) left the
+// broken Image cached in artImgs for the life of the page: artFor answered "not ready"
+// forever and no request was ever made again, so no arrival could repaint it.
+{
+	const art = read('../../cardart.js');
+	const artFor = fnSrc(art, 'artFor');
+	const newArtImg = fnSrc(art, 'newArtImg');
+	ok('found newArtImg (a failed art load is retried)', !!newArtImg);
+	if (artFor && newArtImg) {
+		const imgs = [];
+		class FakeImage {
+			constructor() { this.l = { error: [], load: [] }; this.complete = false; this.naturalWidth = 0; imgs.push(this); }
+			addEventListener(t, fn) { this.l[t].push(fn); }
+			set src(v) { this._src = v; this.complete = false; }
+			get src() { return this._src; }
+			fail() { this.complete = true; for (const fn of this.l.error) fn(); }
+			succeed() { this.complete = true; this.naturalWidth = 626; this.onload && this.onload(); for (const fn of this.l.load) fn(); }
+		}
+		const timers = [];
+		const listeners = new Set();
+		const make = new Function('Image', 'artUrl', 'artListeners', 'setTimeout', 'ART_BASE', 'ART_DIR',
+			'let artIndex = new Set(["me_bo_reanimate"]); const artImgs = new Map(); const artAskedEarly = new Set(); const ART_RETRY_MS = [1500, 5000, 15000];'
+			+ newArtImg + artFor + '; return { artFor };');
+		const api = make(FakeImage, id => 'https://cdn/' + id + '.jpg', listeners, (fn, ms) => timers.push({ fn, ms }), 'https://cdn/', '/art/');
+		const arrived = [];
+		listeners.add(id => arrived.push(id));
+		ok('first paint: no art yet', api.artFor('me_bo_reanimate') === null);
+		imgs[0].fail();                                   // the direct host drops the request...
+		ok('the redirect path is tried next', imgs[0].src.startsWith('/art/me_bo_reanimate.jpg'), imgs[0].src);
+		imgs[0].fail();                                   // ...and so does the fallback
+		ok('still procedural after both failed', api.artFor('me_bo_reanimate') === null);
+		ok('a retry is scheduled', timers.length === 1, timers.length);
+		for (const t of timers.splice(0)) t.fn();
+		ok('the retry makes a fresh, cache-busted request', imgs.length === 2 && /r=1/.test(imgs[1].src), imgs[1] && imgs[1].src);
+		imgs[1].succeed();
+		ok('its arrival is broadcast (miniFace repaints only this card)', arrived.join() === 'me_bo_reanimate', JSON.stringify(arrived));
+		ok('the card now paints its real art', api.artFor('me_bo_reanimate') === imgs[1]);
 	}
 }
 

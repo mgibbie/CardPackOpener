@@ -19,7 +19,7 @@ import * as SFX from './sfx.js';
 import { checkToasts as achCheck } from '../site/achievements.js';
 import { safeLoad, safeSave, safeSaveRetry } from './safestore.js';
 import { PARTIAL_DISCARD_KEY, makePartial, matchPartial } from './partialchoice.js';
-import { pickCanonicalRun, useLocalAsyncTurn, serverEndedRun, serverSupersededRun, maySaveSnapshot, snapshotForCurrentFight, runProgress } from './runsync.js';
+import { pickCanonicalRun, useLocalAsyncTurn, serverEndedRun, serverSupersededRun, maySaveSnapshot, snapshotForCurrentFight, runProgress, stashRunConflict, listConflictStashes } from './runsync.js';
 import { packString } from './codec.js';
 import { winLossLabel, plural } from './runlabel.js';
 import { runSummary } from './runlabel.js';
@@ -175,11 +175,22 @@ function runSaveFailed(key) {
 	try { window.reportErr?.('run save failed after eviction (' + key + ')', 'game.js runSaveFailed'); } catch (e) { /* ignore */ }
 }
 // A run that loses reconciliation but still holds progress is never dropped — it is
-// stashed under a sibling key so it stays recoverable.
+// stashed under a sibling key so it stays recoverable. Each run has its own slot
+// (runsync.planConflictStash): a later conflict never replaces an earlier, different
+// run's stash (the single fixed slot lost a held run at boot, instinctgauntlet 2026-11-08).
 function preserveRunConflict(key, run, reason) {
 	if (!run) return;
-	try { safeSave(key + '__conflict_v1', { run, reason, at: Date.now() }); } catch (e) { /* best effort */ }
+	try {
+		const plan = stashRunConflict(localStorage, key, run, reason);
+		console.info('[run-stash]', key, 'run', run.runId, 'rev', run.rev, 'reason', reason, '->', plan.why, plan.write || '(no write)', plan.evict ? 'evicted ' + plan.evict : '');
+		if (plan.evict) { try { window.reportErr?.('run stash list full: evicted the oldest (' + key + ')', 'game.js preserveRunConflict'); } catch (e) { /* ignore */ } }
+	} catch (e) { /* best effort */ }
 }
+// maintainer recovery: every stashed run of every mode, labelled (console: __bcRunStashes())
+try {
+	window.__bcRunStashes = () => [RUN_KEY, HEIST_KEY, TOMBS_KEY, DUELS_KEY, ARENA_KEY, LOREQUEST_KEY, MIDDLEEARTH_KEY, SWORDCOAST_KEY, FINALFANTASY_KEY, MULTIVERSE_KEY]
+		.flatMap(key => Object.entries(listConflictStashes(localStorage, key)).filter(([, s]) => s && s.run).map(([slot, s]) => ({ key, slot, runId: s.run.runId, rev: s.run.rev, who: s.run.characterId || s.run.heroId || s.run.explorerId || null, wins: s.run.wins, losses: s.run.losses, reason: s.reason, at: s.at })));
+} catch (e) { /* non-browser */ }
 const loadRun = () => safeLoad(RUN_KEY, null);
 const saveRun = saverFor(RUN_KEY);
 const clearRun = () => endRunKey(RUN_KEY);
