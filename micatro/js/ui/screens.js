@@ -375,8 +375,7 @@ export function newRunScreen(o) {
   refreshSleeves(msel);
   // decks of saved-on mods appear once those mods have loaded
   if (modsApi && msel.ids.length) Promise.resolve(modsApi.load(modsApi.withRequirements(msel.ids))).then(() => { refreshBacks(msel); refreshStakes(msel); refreshSleeves(msel); if (el.isConnected) draw(); }).catch(() => {});
-  // (Multiplayer's lobby setup: the same choices become the lobby's; no custom decks in a match yet)
-  if (o.pvpHost) { crow.style.display = 'none'; csel = null; drawC(); }
+  // (Multiplayer's lobby setup: the same choices become the lobby's — a custom deck too, stage 7c: its definition goes to both players)
   const play = btn(o.pvpHost ? 'Create lobby' : 'Play', 'blue big wide b-start', () => {
     if (!stakeIsOpen(si)) { draw(); return; }   // (a locked stake can't be started: the button is disabled anyway)
     const back = backs[bi].key;

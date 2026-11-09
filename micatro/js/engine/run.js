@@ -263,11 +263,12 @@ export function newRun(args = {}) {
   if (chal || sleeve0) { prepareChallenge(chal); prepareSleeve(sleeveFor(sleeve0, args.back)); }
   const runMods = (ids) => (chal ? [...ids, ...challengeMods(chal), CHALLENGE_ID] : sleeve0 ? [...ids, sleeve0.mod, SLEEVE_ID] : ids);
   // A Multiplayer match (engine/pvp.js): its internal rules mod (+ the options it forces). Not with a challenge / custom deck.
-  const pvp = !cdeck && !chal ? pvpConfig(args.pvp) : null;
-  const pm = pvp ? pvpMods(args.mods || [], args.modOptions || {}, pvp) : null;
+  // (stage 7c: a match may play the host's custom deck — its definition is in the lobby, validated here on both engines)
+  const pvp = !chal ? pvpConfig(args.pvp) : null;
+  const pm = pvp ? pvpMods(args.mods || [], args.modOptions || {}, pvp, args) : null;
   pvpReset(); // (a ruleset's reworked vanilla centers: back to vanilla before any run)
   // Mods first: they decide what the pools contain and may adjust the game object.
-  activateMods(runMods(pm ? pm.ids : cdeck ? [...(args.mods || []), ...cdeck.mods, CUSTOM_DECK_ID] : (args.mods || [])), pm ? pm.options : (args.modOptions || {}));
+  activateMods(runMods(pm ? (cdeck ? [...pm.ids, ...cdeck.mods.filter((id) => !pm.ids.includes(id)), CUSTOM_DECK_ID] : pm.ids) : cdeck ? [...(args.mods || []), ...cdeck.mods, CUSTOM_DECK_ID] : (args.mods || [])), pm ? pm.options : (args.modOptions || {}));
   rebuild_handlist(); // (mod poker hands join the hand list; the base list otherwise)
   G.GAME = init_game_object();
   G.GAME.mods = cdeck ? ACTIVE_MODS.filter((id) => id !== CUSTOM_DECK_ID) : ACTIVE_MODS.slice();
@@ -280,6 +281,7 @@ export function newRun(args = {}) {
   // the legacy rules, which the engine unit tests play on) — unless a challenge or the Joker Toggle switch says no.
   decidePages(args.engineRev, chal);
   callHook('init_game_object', G.GAME);
+  if (pvp && cdeck) G.GAME.win_ante = 999; // (a custom deck's own winning ante never ends a match)
   // Mod stakes (SMODS.Stake): `stake` may be an active mod stake's key (see mod_stake_chain);
   // it plays at the level of the stakes it applies, then runs its modifiers() below.
   const modStakes = mod_stake_chain(args.stake);
@@ -1169,6 +1171,7 @@ function evaluate_play() {
         }
       }
       if (G.GAME.page) pageRepetitions(sc, reps, { scoring_hand }); // (a "retrigger" Page: its 1 in 4, after the jokers')
+      if (ACTIVE_MODS.length) callHook('deck_repetitions', sc, reps, 'play'); // (a deck retriggering cards: Multiplayer's Echo Deck)
       for (let r = 0; r < reps.length; r++) {
         if (reps[r] !== 1) card_eval_status_text((reps[r].jokers || reps[r].seals).card, 'jokers', null, null, null, reps[r].jokers || reps[r].seals);
         sc.lucky_procs = undefined;
@@ -1290,6 +1293,8 @@ function evaluate_play() {
               }
             }
           }
+          // (a deck retriggering held cards that have an effect: Multiplayer's Echo Deck)
+          if (ACTIVE_MODS.length && (next(effects[0]) || effects.length > 1)) callHook('deck_repetitions', hc, reps, 'hand');
         }
         for (const ef of effects) {
           if (ef.card) juice_card(ef.card);

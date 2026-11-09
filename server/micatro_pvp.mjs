@@ -69,6 +69,7 @@ export const PP = {
 	SUM_MAX: 6_000,                  // one player summary (JSON chars)
 	END_MAX: 40_000,                 // the end-of-match jokers + deck
 	MODS_MAX: 24_000,                // the host's mod set + options + pins
+	DECK_MAX: 16_000,                // a custom deck's definition (lobby option)
 	DEFAULTS: {
 		lives: 4, pvpStart: 2, deathOnLoss: true, comeback: true, seed: '', back: 'b_red', stake: 1, sleeve: '',
 		mode: 'attrition', showdownStart: 3, bossFx: false, hideScore: false, timer: true, timerBase: 150, timerInc: 60,
@@ -309,6 +310,8 @@ export function cleanOpts(o) {
 		timerInc: step(o.timerInc, 0, 180, 30, D.timerInc),
 		// (stage 7: The Order and the PvP timer default on in Balanced, off in Vanilla — the host can turn either way)
 		ruleset, order: bool(o.order, ruleset !== 'vanilla'), pvpTimer: bool(o.pvpTimer, ruleset !== 'vanilla'),
+		// (stage 7c: the host's custom deck — its definition, which both engines validate)
+		...(o.customDeck && typeof o.customDeck === 'object' && !Array.isArray(o.customDeck) && JSON.stringify(o.customDeck).length <= PP.DECK_MAX ? { customDeck: o.customDeck } : {}),
 	};
 }
 /** The host's mod set: {ids, options, pins: {engineRev, modVersions}} -> a clean copy + its signature, or {error}. */

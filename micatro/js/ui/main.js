@@ -339,14 +339,14 @@ function restartRun() {
 }
 // Multiplayer (ui/pvp.js): a match's run — the lobby's seed, deck, stake and the HOST's mods + options (passed straight to the
 // engine: this player's own saved mod settings are never changed), in its own save slot.
-async function startMatchRun({ seed, back, stake, sleeve, mods = [], modOptions = {}, pvp }) {
+async function startMatchRun({ seed, back, stake, sleeve, mods = [], modOptions = {}, pvp, customDeck = null }) {
   stopPublishing();
   if (mods.length) {
     const r = await ensureMods(mods);
     if (!r.ok || r.missing.length) { board.toast('A mod of this match failed to load'); return false; }
   }
   session = new Engine.Session({ saveKey: Engine.PVP_SAVE_KEY });
-  const evs = session.start({ seed, back, stake, mods, modOptions, pvp, ...(sleeve ? { sleeve } : {}) });
+  const evs = session.start({ seed, back, stake, mods, modOptions, pvp, ...(sleeve ? { sleeve } : {}), ...(customDeck ? { customDeck } : {}) });
   beginRun(evs, { fresh: true });
   return true;
 }

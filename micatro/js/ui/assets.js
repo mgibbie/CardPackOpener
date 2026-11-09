@@ -99,8 +99,9 @@ export const LOC = DATA.loc;
 export const SEAL_POS = { Gold: { x: 2, y: 0 }, Purple: { x: 4, y: 4 }, Red: { x: 5, y: 4 }, Blue: { x: 6, y: 4 } };
 export const STICKER_POS = { eternal: { x: 0, y: 0 }, perishable: { x: 0, y: 2 }, rental: { x: 1, y: 2 } };
 export const SOUL_POS = CENTERS.soul && CENTERS.soul.pos || { x: 0, y: 1 };
-export const STAKE_LIST = Object.entries(DATA.stakes).map(([k, v]) => ({ key: k, ...v })).sort((a, b) => a.stake_level - b.stake_level);
-export const BACK_LIST = Object.entries(DATA.centers).filter(([k, v]) => v.set === 'Back' && k !== 'b_challenge').map(([k, v]) => ({ key: k, ...v })).sort((a, b) => a.order - b.order);
+// (base game only: DATA.* are the live registries — an engine-internal mod registered first, Multiplayer's decks / stakes, is not)
+export const STAKE_LIST = Object.entries(DATA.stakes).filter(([, v]) => !v.mod).map(([k, v]) => ({ key: k, ...v })).sort((a, b) => a.stake_level - b.stake_level);
+export const BACK_LIST = Object.entries(DATA.centers).filter(([k, v]) => v.set === 'Back' && k !== 'b_challenge' && !v.mod).map(([k, v]) => ({ key: k, ...v })).sort((a, b) => a.order - b.order);
 
 // ------------------------------------------------------------- mod art
 // Mod atlases live in the mods registry (ATLASES: name -> {src, px, py, frames?, mod};

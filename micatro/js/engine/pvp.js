@@ -45,6 +45,7 @@
 // A recipe records `ruleset` / `order` only when not Vanilla / off, so a stage-6 recipe reads as a Vanilla match.
 import { G, emit, P_CENTERS, localize, pseudorandom, probability_roll, probability_vars, order_round_based, ease_hands_played } from './core.js';
 import { registerMod } from '../mods/registry.js';
+import { DECKS_ID, MP_BACKS, MP_STAKES } from './pvp_decks.js';
 import { EXPANDED_ID, setupExpanded, expandedActionError, expandedApply, expandedStartBlind, expandedSkipped, expandedView } from './pvp_expanded.js';
 
 export const PVP_ID = 'pvp';
@@ -103,7 +104,7 @@ export const RULESET_BANS = {
 /** The internal content mod each ruleset activates (on top of 'pvp'). */
 export const RULESET_MODS = { vanilla: [], balanced: ['pvp_balanced'], expanded: ['pvp_balanced', EXPANDED_ID] };
 /** Every internal mod id (never listed in G.GAME.mods). */
-export const PVP_INTERNAL = [PVP_ID, 'pvp_balanced', EXPANDED_ID];
+export const PVP_INTERNAL = [PVP_ID, 'pvp_balanced', EXPANDED_ID, DECKS_ID];
 /** Does this ruleset play The Order by default (the lobby's default: on except in Vanilla)? */
 export const orderDefault = (ruleset) => ruleset !== 'vanilla';
 /** Every banned key of a mode + ruleset the lobby lists (for the lobby screen's count and the tests). */
@@ -166,10 +167,12 @@ export function setupPvp(cfg) {
   if (P.ruleset === 'expanded') setupExpanded(P);
 }
 /** newRun: the mods a PvP run activates (+ the internal ones of its ruleset) and its forced options. */
-export function pvpMods(ids, options, cfg) {
+export function pvpMods(ids, options, cfg, run) {
   const opts = { ...(options || {}) };
   for (const [m, o] of Object.entries(PVP_FORCED_OPTIONS)) if ((ids || []).includes(m)) opts[m] = { ...(opts[m] || {}), ...o };
-  return { ids: [...(ids || []), PVP_ID, ...(RULESET_MODS[(cfg && cfg.ruleset) || 'vanilla'] || [])], options: opts };
+  // (stage 7c: the Multiplayer decks / stakes' mod only when the match plays one — every other match is as before)
+  const mpDeck = !!(run && (MP_BACKS.includes(run.back) || MP_STAKES.includes(run.stake)));
+  return { ids: [...(ids || []), PVP_ID, ...(RULESET_MODS[(cfg && cfg.ruleset) || 'vanilla'] || []), ...(mpDeck ? [DECKS_ID] : [])], options: opts };
 }
 
 /** A life lost (a failed blind, a lost Nemesis round): comeback money is due at the next cash-out. */

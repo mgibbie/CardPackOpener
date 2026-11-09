@@ -88,7 +88,7 @@ const server = http.createServer(async (req, res) => {
 await new Promise(r => server.listen(PORT, r));
 
 const tokens = {};
-for (const n of ['alice', 'bob', 'carol', 'dave', 'erin', 'frank', 'gina']) tokens[n] = (await call('register', { username: n, password: 'mtpvp-e2e-pass' })).token;
+for (const n of ['alice', 'bob', 'carol', 'dave', 'erin', 'frank', 'gina', 'hank', 'ivy']) tokens[n] = (await call('register', { username: n, password: 'mtpvp-e2e-pass' })).token;
 await call('add-friend', { username: 'alice' }, tokens.carol);
 A(tokens.alice && tokens.bob && tokens.carol, 'three accounts (carol is alice\'s friend; bob is not)');
 const stateOf = async (n) => (await call('state', {}, tokens[n])).state || { username: n };
@@ -428,6 +428,36 @@ try {
 	// Expanded: what each engine knows of the opponent arrives as recorded pvp_opp actions (the opponent's lives at least)
 	const po = await gina.page.evaluate(() => window.__micatro.session.recipe.actions.filter((a) => a.type === 'pvp_opp'));
 	A(po.length >= 1 && po.some((a) => a.o && a.o.lives === 4), "Expanded: the opponent's state is recorded (pvp_opp)", JSON.stringify(po).slice(0, 300));
+	await frank.ctx.close(); await gina.ctx.close();
+	// ======== stage 7c: a Multiplayer deck + stake from the lobby ========
+	const hank = await open('hank', '/micatro/');
+	A(await ready(hank.page), 'hank: game ready');
+	await waitFor(() => click(hank.page, '.b-multiplayer'), 10000);
+	await click(hank.page, '.b-pvp-create');
+	await waitFor(() => hank.page.evaluate(() => { const b = document.querySelector('.b-start'); return b && /Create lobby/.test(b.textContent); }), 8000);
+	await click(hank.page, '.b-start');
+	A(await waitFor(() => hank.page.evaluate(() => !!document.querySelector('.b-pvp-inc-back')), 10000), 'the lobby offers the Multiplayer decks');
+	await click(hank.page, '.b-pvp-inc-back');
+	await waitFor(async () => (await optV(hank.page, 'back')) === 'Violet Deck', 6000);
+	await click(hank.page, '.b-pvp-inc-stake');
+	A(await waitFor(async () => (await optV(hank.page, 'back')) === 'Violet Deck' && (await optV(hank.page, 'stake')) === 'Planet Stake', 6000), 'the host picks the Violet Deck and the Planet Stake');
+	await shot(hank.page, '25-lobby-mp-deck');
+	const code4 = await hank.page.evaluate(() => document.querySelector('.pvp-code-v').textContent);
+	const ivy = await open('ivy', '/micatro/?join=' + code4);
+	A(await ready(ivy.page), 'ivy: game ready');
+	A(await waitFor(() => ivy.page.evaluate(() => !!document.querySelector('.b-pvp-ready-lobby')), 20000), 'ivy joined');
+	A((await optV(ivy.page, 'back')) === 'Violet Deck' && (await optV(ivy.page, 'stake')) === 'Planet Stake', 'ivy sees them (read-only)');
+	await click(ivy.page, '.b-pvp-ready-lobby');
+	await waitFor(() => hank.page.evaluate(() => { const b = document.querySelector('.b-pvp-start'); return b && !b.disabled; }), 10000);
+	await click(hank.page, '.b-pvp-start');
+	A(await waitFor(async () => (await view(hank.page))?.pvp && (await view(ivy.page))?.pvp, 30000), 'Start: both on the Violet Deck match');
+	await idle(hank.page); await idle(ivy.page);
+	const dk = (page) => page.evaluate(async () => { const { G } = await import('/micatro/js/engine/core.js'); return { back: G.GAME.selected_back_key, stake: G.GAME.stake, ev: G.GAME.modifiers.extra_vouchers, rec: window.__micatro.session.recipe.back + '|' + window.__micatro.session.recipe.stake }; });
+	const dh = await dk(hank.page), di = await dk(ivy.page);
+	A(dh.back === 'b_mp_violet' && di.back === 'b_mp_violet' && dh.stake === 9 && di.stake === 9 && di.ev === 1 && di.rec === 'b_mp_violet|stake_mp_planet', 'both engines play the Violet Deck at the Planet Stake (recorded)', JSON.stringify([dh, di]));
+	await shot(ivy.page, '26-mp-deck-match');
+	const errs4 = [...hank.errors, ...ivy.errors].filter((e) => !/favicon|net::/.test(e));
+	A(!errs4.length, 'stage 7c: no page errors', errs4.join(' | '));
 	const errs3 = [...frank.errors, ...gina.errors].filter((e) => !/favicon|net::/.test(e));
 	A(!errs3.length, 'stage 7: no page errors', errs3.join(' | '));
 } catch (e) {

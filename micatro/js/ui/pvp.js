@@ -36,6 +36,21 @@ const RULESETS = {
   expanded: { name: 'Expanded', desc: 'Balanced plus the Multiplayer cards: Defensive Joker, Skip-Off, Let\'s Go Gambling, Penny Pincher, Taxes, Pizza, Pacifist and the Asteroid planet, and reworked Golden Ticket, Seltzer, Turtle Bean and Ouija. SPEEDRUN, Conjoined and Defensive Joker are banned. The PvP timer is on.' },
 };
 const ANIM_CAP = 40, ANIM_REFILL = 2.5;
+// (stage 7c) the Multiplayer decks and stakes (engine/pvp_decks.js)
+const MP_BACKS = ['b_mp_violet', 'b_mp_indigo', 'b_mp_orange', 'b_mp_oracle', 'b_mp_gradient', 'b_mp_heidelberg', 'b_mp_echodeck', 'b_mp_cocktail'];
+const MP_STAKES = ['stake_mp_planet', 'stake_mp_spectral', 'stake_mp_spectralplus'];
+const MP_DECK_NAMES = { b_mp_violet: 'Violet Deck', b_mp_indigo: 'Indigo Deck', b_mp_orange: 'Orange Deck', b_mp_oracle: 'Oracle Deck', b_mp_gradient: 'Gradient Deck', b_mp_heidelberg: 'Heidelberg Deck', b_mp_echodeck: 'Echo Deck', b_mp_cocktail: 'Cocktail Deck' };
+const MP_DECK_DESC = {
+  b_mp_violet: '+1 Voucher slot in the shop; Vouchers 50% off in ante 1, 30% off in ante 2.',
+  b_mp_indigo: 'Choose +1 card from every Booster Pack; packs can\'t be skipped while a card can be taken.',
+  b_mp_orange: 'Start with 2 The Hanged Man and a free Mega Standard Pack.',
+  b_mp_oracle: 'Start with Clearance Sale and Medium; money is capped at $50 + your interest cap.',
+  b_mp_gradient: 'Cards also count as one rank higher or lower for Joker effects.',
+  b_mp_heidelberg: 'Leaving a shop, a random consumable you hold is copied as Negative.',
+  b_mp_echodeck: 'Every scoring card is retriggered once; Blinds X1.2, +X0.2 after each Boss.',
+  b_mp_cocktail: 'Copies the effects of 3 other decks, picked from the seed.',
+};
+const MP_STAKE_NAMES = { stake_mp_planet: 'Planet Stake', stake_mp_spectral: 'Spectral Stake', stake_mp_spectralplus: 'Spectral+ Stake' };
 // (Expanded) the effects the opponent's cards have on this player, in words
 const FX_TEXT = { lgg: 'Your Nemesis\'s Let\'s Go Gambling misfired: +$10', pizza: 'Your Nemesis ate a Pizza: +1 discard this ante', asteroid: 'An Asteroid hit your best hand: -1 level', speedrun: 'SPEEDRUN! You both reached the Nemesis within 30 s' };
 // (Expanded) the opponent's Multiplayer jokers whose effects reach this player: shown on the HUD ("phantoms")
@@ -102,6 +117,7 @@ export function createPvp(ctx) {
   let fxBusy = false;      // (Expanded: an mtpvp-fx post in flight)
   let animBudget = ANIM_CAP, animTotal = 0, animRound = 0, animLast = 0, animTimer = null;
   let lobbyEl = null;
+  let hostBase = null;      // (the host's own deck / stake from the New Run screen: the Multiplayer deck / stake pickers' first choice)
   const me = () => ctx.me();
 
   // ---------------------------------------------------------------- the Multiplayer screen
@@ -150,10 +166,12 @@ export function createPvp(ctx) {
     ctx.newRunScreen({ pvpHost: true, onNew: async (o) => {
       const banned = ctx.bannedKeys();
       if (banned.includes(String(o.stake)) || (o.sleeve && banned.includes(o.sleeve)) || banned.includes(o.back)) { ctx.toast('That deck / stake / sleeve is banned in Multiplayer'); return open(); }
-      const ids = ctx.withRequirements(o.mods || []);
+      // (a custom deck's mods join the lobby's: both players load them)
+      const ids = ctx.withRequirements([...(o.mods || []), ...((o.customDeck && o.customDeck.mods) || []).filter((m) => !(o.mods || []).includes(m))]);
+      hostBase = { back: o.back || 'b_red', stake: o.stake || 1 };
       if (ids.length) { const r = await ctx.ensureMods(ids); if (!r.ok || r.missing.length) { ctx.toast('A mod failed to load'); return; } }
       const mods = { ids, options: o.modOptions || {}, pins: { engineRev: ctx.engineRev, modVersions: ctx.currentPins(ids) } };
-      const opts = { ...DEFAULT_OPTS, mode, back: o.back || 'b_red', stake: o.stake || 1, seed: o.seed || '', sleeve: o.sleeve || '' };
+      const opts = { ...DEFAULT_OPTS, mode, back: o.back || 'b_red', stake: o.stake || 1, seed: o.seed || '', sleeve: o.sleeve || '', ...(o.customDeck ? { customDeck: o.customDeck } : {}) };
       const d = await call('mtpvp-create', { pv: PVP_PROTOCOL, opts, mods });
       if (!d || d.error) { ctx.toast((d && d.error) || 'Offline — try again'); if (d && d.id) rejoinById(d.id, d.code); return; }
       enterLobby(d.lobby);
@@ -250,6 +268,13 @@ export function createPvp(ctx) {
     opt.appendChild(rrow);
     opt.appendChild(h('div', 'pvp-mode-desc muted pvp-ruleset-desc', (RULESETS[rs] || RULESETS.vanilla).desc));
     tog('The Order (same cards for both)', 'order');
+    // the Multiplayer decks / stakes (stage 7c; any ruleset): the host's own deck / stake, or one of the mod's
+    if (!o.customDeck) {
+      const base = hostBase || { back: MP_BACKS.includes(o.back) ? 'b_red' : o.back, stake: MP_STAKES.includes(o.stake) ? 1 : o.stake };
+      cyc('Multiplayer deck', 'back', [base.back, ...MP_BACKS], (k) => (MP_DECK_NAMES[k] || (k === base.back ? 'Your deck (' + String(k).replace(/^b_/, '') + ')' : k)));
+      cyc('Multiplayer stake', 'stake', [base.stake, ...MP_STAKES], (k) => (MP_STAKE_NAMES[k] || 'Your stake (' + k + ')'));
+      if (MP_DECK_NAMES[o.back]) opt.appendChild(h('div', 'pvp-mode-desc muted', esc(MP_DECK_DESC[o.back])));
+    }
     cyc('Mode', 'mode', Object.keys(MODES), (m) => (MODES[m] || MODES.attrition).name);
     opt.appendChild(h('div', 'pvp-mode-desc muted', MODES[mode] ? MODES[mode].desc.replace('ante 2', 'ante ' + o.pvpStart).replace('ante 3', 'ante ' + o.showdownStart) : ''));
     if (mode !== 'survival') num('Lives', 'lives', 1, 9);
@@ -271,7 +296,7 @@ export function createPvp(ctx) {
     el.appendChild(opt);
     const mods = (L.mods && L.mods.ids) || [];
     const mo = modOptionsText(L.mods);
-    el.appendChild(h('div', 'pvp-setup', `Deck <b>${esc(o.back)}</b> · Stake <b>${esc(o.stake)}</b>${o.seed ? ' · Seed <b>' + esc(o.seed) + '</b>' : ''}${o.sleeve ? ' · Sleeve <b>' + esc(o.sleeve) + '</b>' : ''}<br>Mods: ${mods.length ? mods.map(esc).join(', ') : 'none (vanilla)'} <span class="muted">— everyone plays the host's set</span>`
+    el.appendChild(h('div', 'pvp-setup', `Deck <b>${o.customDeck ? 'custom: ' + esc(o.customDeck.name || 'Custom deck') : esc(MP_DECK_NAMES[o.back] || o.back)}</b> · Stake <b>${esc(o.stake)}</b>${o.seed ? ' · Seed <b>' + esc(o.seed) + '</b>' : ''}${o.sleeve ? ' · Sleeve <b>' + esc(o.sleeve) + '</b>' : ''}<br>Mods: ${mods.length ? mods.map(esc).join(', ') : 'none (vanilla)'} <span class="muted">— everyone plays the host's set</span>`
       + (mo.length ? `<div class="pvp-modopts">Mod options (the host's, for both): ${mo.join(' · ')}</div>` : '')));
     el.appendChild(h('div', 'pvp-bans muted', mode === 'survival' ? `Banned in Survival: ${ctx.bannedKeys(mode, rs).length} cards (ante changers and the mods' PvP-breaking cards${rs !== 'vanilla' ? ', Justice' : ''}).`
       : `Banned in Multiplayer: ${ctx.bannedKeys(mode, rs).length} cards (Mr. Bones, Chicot, Luchador, Matador, boss rerolls, ante changers and the mods' equivalents${rs !== 'vanilla' ? ', Justice' : ''}).`));
@@ -369,6 +394,7 @@ export function createPvp(ctx) {
         pvp: { lives: L.opts.lives, pvpStart: L.opts.pvpStart, deathOnLoss: L.opts.deathOnLoss, comeback: L.opts.comeback, mode: L.opts.mode || 'attrition', showdownStart: L.opts.showdownStart || 3, bossFx: !!L.opts.bossFx,
           // (stage 7; a lobby from before it has no ruleset: a Vanilla match)
           ruleset: L.opts.ruleset || 'vanilla', order: !!L.opts.order },
+        customDeck: L.opts.customDeck || null,
         lobbyId: L.id,
       });
     } else { matchN = m.n; resetRound(); }
