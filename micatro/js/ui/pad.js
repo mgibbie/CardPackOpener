@@ -139,6 +139,14 @@ export function initPad({ board, stage, UI, readOnly, onMenu, mainMenu, replay =
     if (!ok || !focus) return;
     const r0 = rectOf(focus);
     if (!r0) return;
+    // the Pages row: left / right step along the Pages in their order. (Their rects can't be trusted for this while they fly
+    // in — the pagein animation, replayed on every overlay render — a press then measured the next Page far below and
+    // landed on Choose.)
+    if (focus.el && focus.el.classList.contains('page-card') && (dir === 'left' || dir === 'right')) {
+      const i = +focus.el.dataset.page + (dir === 'right' ? 1 : -1);
+      const el = i >= 0 ? focus.el.parentElement && focus.el.parentElement.querySelector(`.page-card[data-page="${i}"]`) : null;
+      if (el) { setFocus({ el }); return; }
+    }
     const [dx, dy] = DIRS[dir], c0 = center(r0);
     let best = null, bestScore = Infinity;
     for (const s of list) {
