@@ -116,6 +116,20 @@ export function controllerKind(id) {
 	return 'generic';
 }
 
+// ---------- pause (controls sweep B1) ----------
+// An overlay (the Games switcher) takes the controller exclusively: while any
+// owner holds the pause, every poller lets go of what it holds (a FORCED release,
+// so the button must be let go before it acts again) and reports nothing. A
+// poller made with { exclusive: true } (the overlay's own) keeps running. The
+// flag lives on globalThis so copies of this module under different URLs agree.
+const PAUSE = globalThis.__mpPadPause || (globalThis.__mpPadPause = { owners: new Set() });
+export function pausePads(owner = {}) {
+	PAUSE.owners.add(owner);
+	let done = false;
+	return () => { if (done) return; done = true; PAUSE.owners.delete(owner); };
+}
+export const padsPaused = () => PAUSE.owners.size > 0;
+
 const pressed = b => !!b && (typeof b === 'object' ? (b.pressed || b.value > 0.5) : b > 0.5);
 
 // the left stick as one direction (or null), dominant axis wins, radial deadzone
@@ -171,6 +185,14 @@ export function createGamepad(opts = {}) {
 
 	const api = {
 		poll(t) {
+			if (!o.exclusive && padsPaused()) {
+				// paused: let go of everything, and latch whatever is down (a button
+				// pressed in the overlay must be let go before the game hears it)
+				api.releaseAll();
+				for (const a of sample().now) latched.add(a);
+				rawHeld = new Set();
+				return;
+			}
 			const { now, seen, raw } = sample();
 			if (onButton) for (const i of raw) if (!rawHeld.has(i)) onButton(i);
 			rawHeld = raw;
