@@ -403,6 +403,14 @@
 	},
 	"entries": [
 		{
+			"sha": "1c2ca81",
+			"date": "2026-11-10",
+			"kind": "patch",
+			"title": "Play every game by keyboard, controller or touch",
+			"body": "Every game — Micatro, MicaSurvivor, Battlecards, the overworld, Scoundrel, Pair of Pears and PokéChess — and the info pages can now be played three ways: keyboard only, with a controller, or by touch on your phone. There is one key scheme everywhere: arrows or WASD move, Z is A (confirm), X is B (back), C and V are the X and Y buttons for game actions, Q and E change page, Enter opens the menu and Backspace is Select. The new Games menu works from any page: press `, hold Esc, press Start and Select together, or tap ⚙️ to go Home or switch games, and it asks first if leaving would cost you a match or a run. Some old letter hotkeys have changed: Micatro's S, D, C and V; in the overworld C is now the bag and V the bike, and you hold X to run; and W no longer fights in Scoundrel. Also fixed: restoring an overworld save now asks with an in-game Yes/No, Battlecards' in-match pop-ups work with Enter or Z, Esc in the card zoom no longer leaves the page, and /collection/ fits on phones. The full key list is on the wiki's Controls page.",
+			"cards": []
+		},
+		{
 			"sha": "441da23",
 			"date": "2026-11-10",
 			"kind": "patch",
