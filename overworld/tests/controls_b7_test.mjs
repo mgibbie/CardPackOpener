@@ -64,7 +64,13 @@ async function open(url, vp, { seed = {} } = {}) {
 	const t = { ctx, page, errors };
 	t.key = async (k, ms = 90) => { await page.keyboard.press(k); await sleep(ms); };
 	t.hold = (b, on) => page.evaluate((b, on) => { window.__pad.buttons[b] = { pressed: on, value: on ? 1 : 0, touched: on }; window.__pad.timestamp++; }, b, on);
-	t.tap = async (b) => { await t.hold(b, true); await sleep(90); await t.hold(b, false); await sleep(140); };
+	// two frames (capped at 1 s): the games poll the pad from requestAnimationFrame, the switcher
+	// from a 20 ms timer. A tap waits for a game poll while down and after its release: on a slow CI runner
+	// (PR #1041's gate, twice in a row) the B that closed the switcher left the PokéChess poller
+	// unpolled until the NEXT tap was down, and its first poll after the pause latched that Select
+	// as "held through the switcher" (site/gamepad.js), so Select alone never left.
+	t.frames = () => page.evaluate(() => Promise.race([new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))), new Promise((r) => setTimeout(r, 1000))])).catch(() => {});   // (a tap that navigates away)
+	t.tap = async (b) => { await t.hold(b, true); await sleep(90); await t.frames(); await t.hold(b, false); await t.frames(); await sleep(140); };
 	t.touch = async (sel) => { const r = await page.evaluate((s) => { const e = document.querySelector(s); if (!e) return null; e.scrollIntoView({ block: 'nearest' }); const b = e.getBoundingClientRect(); return [b.x + b.width / 2, b.y + b.height / 2]; }, sel); if (!r) return false; await page.touchscreen.tap(r[0], r[1]); await sleep(150); return true; };
 	t.mouse = () => page.evaluate(() => window.__mouse);
 	t.shot = async (n) => { if (SHOTS) { fs.mkdirSync(SHOTS, { recursive: true }); await page.screenshot({ path: path.join(SHOTS, n + '.png') }); } };
@@ -277,7 +283,10 @@ async function pearsToShop(t, p) {
 	for (let g = 0; g < 8 && (await p.view()).phase === 'play'; g++) {
 		await waitFor(async () => !(await p.view()).busy, 3000);
 		const cs = (await p.cards()).filter((c) => !c.faceUp && !c.matched);
-		const a = cs.find((c) => c.fruit !== 'pear') || cs[0], b = cs.find((c) => c !== a && c.fruit === a.fruit);
+		// a pair that is still face down: the card the pad flipped stays up, and when its partner
+		// was picked here the pair had no b (the deal is random — a crash 1 run in ~3)
+		const paired = (c) => cs.some((d) => d !== c && d.fruit === c.fruit);
+		const a = cs.find((c) => c.fruit !== 'pear' && paired(c)) || cs.find(paired), b = cs.find((c) => c !== a && c.fruit === a.fruit);
 		await t.page.evaluate((a, b) => { window.__pears.act('reveal', a); window.__pears.act('reveal', b); }, a.id, b.id);
 		await sleep(250);
 	}
