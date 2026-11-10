@@ -188,7 +188,8 @@ try {
 		}
 		A(await waitFor(async () => { const x = await view(); return !x.held && !x.charms.some(Boolean) && x.berries === 3; }, 3000), `${name}: Sell: the charm goes for its sell value (+3 Berries)`, JSON.stringify(await view()));
 		await clickSel('.b-nextlevel');
-		A(await waitFor(async () => (await view()).level === 2 && (await view()).cards.length === 8, 4000), `${name}: Next Level: level 2 deals 8 cards`);
+		// (8 = level 2's four pairs; a charm bought in the shop can add cards for good — selling it keeps them — so: at least 8)
+		A(await waitFor(async () => (await view()).level === 2 && (await view()).cards.length >= 8, 4000), `${name}: Next Level: level 2 deals its cards (8, plus any a charm added)`, JSON.stringify((await view()).cards.length));
 		await idle();
 		await shot('level2');
 

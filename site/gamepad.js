@@ -209,6 +209,9 @@ export function createGamepad(opts = {}) {
 				if (latched.has(a)) continue;
 				if (!held.has(a)) {
 					held.add(a); since.set(a, t);
+					// Start + Select together is the site's Games switcher (site/switcher.js):
+					// the SECOND of the pair never reaches a game (PokéChess leaves on Select)
+					if (!o.exclusive && ((a === 'select' && held.has('menu')) || (a === 'menu' && held.has('select')))) continue;
 					onPress(a, { repeat: false });
 				} else if (DIRECTIONS.includes(a)) {
 					const down = since.get(a), last = lastRepeat.get(a);

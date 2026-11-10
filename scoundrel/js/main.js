@@ -596,7 +596,6 @@ function mainMenu() {
   m.appendChild(bar);
   const foot = h('div', 'menu-foot');
   const back = h('a', 'back-link', '← Magepunk'); back.href = '/'; foot.appendChild(back);
-  const cl = h('a', 'back-link', 'The original (LÖVE) build'); cl.href = '/scoundrel/classic/'; foot.appendChild(cl);
   if (!(net && net.isLoggedIn())) { const a = h('a', 'login-link', 'Log in to let friends watch &amp; post high scores'); a.href = '/login/?next=' + encodeURIComponent('/scoundrel/' + location.search); foot.appendChild(a); }
   m.appendChild(foot);
   modal(m, { cls: 'menu-modal', noClose: true });

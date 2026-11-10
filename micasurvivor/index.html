@@ -27,7 +27,7 @@
 
 <canvas id="game"></canvas>
 <!-- En móvil se juega en horizontal -->
-<div id="rotate" class="hidden"><div class="box center"><div id="rotate-ico"></div><h2>Gira el móvil</h2><p class="sub">MicaSurvivor se juega en horizontal.</p></div></div>
+<div id="rotate" class="hidden"><div class="box center"><div id="rotate-ico"></div><h2>Gira el móvil</h2><p class="sub">MicaSurvivor se juega en horizontal.</p><p><button class="btn small ghost" type="button" data-mp-switcher>⚙️ Juegos</button></p></div></div>
 
 <!-- ====== Inicio: login / registro / invitado ====== -->
 <section id="scr-login" class="scr hidden">
@@ -66,7 +66,7 @@
       <button id="btn-mp-login" class="btn grow hidden" type="button">Entrar con Magepunk</button>
     </div>
     <p class="note center" id="login-mode"></p>
-    <p class="note center"><a href="#" class="legal-link" data-legal>Créditos y licencias</a> · <a href="/" class="mica-back">Volver a Magepunk</a></p>
+    <p class="note center"><a href="#" class="legal-link" data-legal>Créditos y licencias</a> · <a href="/" class="mica-back">Volver a Magepunk</a> · <a href="/" data-mp-switcher>⚙️ Juegos</a></p>
   </div>
 </section>
 
@@ -170,6 +170,7 @@
   <button id="btn-sound" class="btn small ghost" title="Sonido"></button>
   <button id="btn-full" class="btn small ghost hidden" title="Pantalla completa"></button>
   <button id="btn-settings" class="btn small ghost" title="Ajustes"></button>
+  <button id="btn-games" class="btn small ghost" title="Juegos" aria-label="Juegos" data-mp-switcher>⚙️</button> <!-- the site's Games switcher (controls sweep B2) -->
   <button id="btn-logout" class="btn small ghost hidden">Salir</button> <!-- MicaSurvivor: no log out until M3 accounts (it wipes a guest's progress) -->
 </div>
 <div id="sound-panel" class="box sound-panel hidden"></div>
@@ -602,6 +603,7 @@
       <button id="btn-resume" class="btn gold">Continuar</button>
       <button id="btn-pause-settings" class="btn">Ajustes</button>
       <button id="btn-quit" class="btn">Abandonar run</button>
+      <button id="btn-pause-games" class="btn" data-mp-switcher>⚙️ Juegos</button>
     </div>
   </div>
 </section>
@@ -737,5 +739,6 @@
 <script defer src="js/game.js"></script>
 <script defer src="js/main.js"></script>
 <!-- scripts:end -->
+<script type="module" src="/site/switcher.js"></script> <!-- the site's Games switcher (` / hold Esc / Start+Select / the ⚙️ Games buttons); MicaSurvivor keeps its own top bar -->
 </body>
 </html>

@@ -657,6 +657,14 @@ function onMenu(what) {
   }
 }
 
+// The site's Games switcher (site/switcher.js, controls sweep B2): a run saves after every action, so
+// leaving is safe — except a live Multiplayer match, where leaving is a forfeit (the same words as
+// Options -> Main Menu), sent to the server before the page goes.
+window.mpLeaveGuard = () => {
+  if (!(pvpRun() && Pvp && Pvp.active && !(board.view && board.view.over))) return { state: 'safe' };
+  return { state: 'confirm', message: 'Leave the match? Leaving counts as a forfeit: your opponent wins.', beforeLeave: () => Pvp.forfeitNow() };
+};
+
 // ---------------------------------------------------------------- keyboard
 // R is a tap AND a hold (Balatro): a quick tap sorts the hand by rank / rerolls the shop; held ~1 s it restarts
 // the run (a "Restarting…" bar fills; let go early to cancel). The tap's action waits for the key-up, and runs

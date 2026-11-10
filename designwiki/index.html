@@ -5,6 +5,7 @@
 <script src="/site/account_silo.js"></script>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="mp-topbar" content="none"> <!-- the header has its own ⚙️ (it opens the Games switcher) -->
   <title>Magepunk Wiki</title>
   <link rel="stylesheet" href="style.css?v=20261109fm">
   <!-- authentic MTG mana symbols (Andrew Gioia's Mana font, OFL) — same one the card faces use -->
@@ -18,7 +19,7 @@
 <body>
   <header>
     <button id="navToggle" type="button" aria-label="Open menu" aria-controls="sidebar">☰</button>
-    <a class="site-home" href="/" title="Back to michaelgibalerio.com">⚙️</a>
+    <a class="site-home" href="/" title="Games (`)" aria-label="Games" data-mp-switcher>⚙️</a>
     <a class="brand" href="#/">Magepunk Wiki</a>
     <input id="search" type="search" placeholder="Search Pokémon, moves, cards, Micatro…" autocomplete="off">
     <span id="status"></span>
@@ -126,6 +127,7 @@
   </div>
   <!-- bump ?v=… on a release to push fresh code+data to all clients (app.js
        reads this version and appends it to every sub-resource it loads) -->
-  <script src="app.js?v=20261109fm"></script>
+  <script src="app.js?v=20261110ctl"></script>
+  <script type="module" src="/site/topbar.js"></script> <!-- the shared top bar + the Games switcher (` / hold Esc / Start+Select / ⚙️) -->
 </body>
 </html>

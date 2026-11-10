@@ -146,5 +146,21 @@ function rig(opts = {}) {
 	A(log.slice(-1)[0] === 'press:confirm', '...a fresh press works');
 }
 
+// ---------- Start + Select (the Games switcher's chord) ----------
+{
+	const pad = { id: 'Pro Controller 057e', index: 0, connected: true, buttons: Array.from({ length: 17 }, () => ({ pressed: false, value: 0 })), axes: [0, 0, 0, 0] };
+	const set = (i, on) => { pad.buttons[i] = { pressed: on, value: on ? 1 : 0 }; };
+	const log = [], xlog = [];
+	const game = createGamepad({ readPads: () => [pad], onPress: a => log.push(a) });
+	const sw = createGamepad({ readPads: () => [pad], exclusive: true, onPress: a => xlog.push(a) });
+	set(9, true); game.poll(0); sw.poll(0);
+	set(8, true); game.poll(16); sw.poll(16);
+	A(log.join() === 'menu', 'Start then Select: the game hears Start only (Select, the 2nd of the chord, never reaches it: PokéChess leaves on Select)', log.join());
+	A(xlog.join() === 'menu,select', "...the switcher's exclusive poller hears both");
+	set(9, false); set(8, false); game.poll(32); sw.poll(32);
+	set(8, true); game.poll(48);
+	A(log.slice(-1)[0] === 'select', 'Select alone still reaches the game');
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
