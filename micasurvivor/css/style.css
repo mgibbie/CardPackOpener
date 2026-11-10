@@ -408,6 +408,8 @@ kbd {
   display: inline-block; padding: 0 6px; border: 2px solid rgba(244,248,255,.4); border-bottom-width: 3px;
   border-radius: 5px; font: inherit; font-size: 13px; text-shadow: none;
 }
+/* (controls sweep B4) key caps in Arial: in Pixelify the Z reads as a 2 and the C as an O (as the canvas key badges) */
+kbd { font-family: Arial, Helvetica, sans-serif; font-weight: 700; }
 
 .toast {
   position: fixed; left: 50%; bottom: 30px; transform: translateX(-50%); z-index: 60;
