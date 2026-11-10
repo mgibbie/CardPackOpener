@@ -441,7 +441,7 @@ player.canFall = () => !!holeWarpFor(world.current?.name);
 // stopped by it (rotating_gates.js; asked only once nothing else blocks the step)
 player.gateBlocks = (dir, x, y) => checkGateCollision(Story, world.current?.name, dir, x, y,
 	(cx, cy) => { const v = world.gridAt(cx, cy); return v == null ? 1 : (v >> 10) & 3; }, { fast: !!player.biking });
-player.onBlockedCracked = () => { hud.textContent = 'The floor here is cracked and unstable — a bike could carry you across (press C).'; };
+player.onBlockedCracked = () => { hud.textContent = 'The floor here is cracked and unstable — a bike could carry you across (press V, or BIKE in the START menu).'; };
 player.onHop = () => sfx('ledge');
 // ONE bump handler: the wall thud (throttled — tryMove fires every held frame)
 // plus the authentic blocker line (guard / SNORLAX / grunt) when one is there

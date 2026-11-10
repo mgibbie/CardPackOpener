@@ -36,6 +36,7 @@ import {
 	MP_ON, noteRejectedMove, scriptIsDisplayOnly, signTexts,
 } from './main.js';
 import { oskOpen } from '../site/osk.js';
+import { actionForKey, isTyping } from '../site/input.js';
 
 const MB_COUNTER = 0x80;   // metatile behavior: a shop/desk counter you talk across
 const MB_PC = 0x83;        // metatile behavior: the storage PC (FRLG + Emerald)
@@ -53,10 +54,19 @@ export function owlog(...a) { if (INPUT_TRACE) console.log('[owinput]', ...a); }
 export const tickStats = { frames: 0, playerUpdates: 0, reachedMoveBlock: 0, lastError: null, errors: 0 };
 addEventListener('error', e => { tickStats.errors++; tickStats.lastError = String(e.message || e.error); });
 addEventListener('unhandledrejection', e => { tickStats.errors++; tickStats.lastError = 'unhandled rejection: ' + String(e.reason && e.reason.message || e.reason); });
+// Movement by PHYSICAL key (KeyboardEvent.code, through site/input.js): Shift and
+// Caps Lock never change what W/A/S/D mean. The old map was keyed on e.key, so
+// Shift+W ('W') never walked (Shift+WASD couldn't run) and a W pressed before
+// Shift came up as 'W', missed the map and left the player walking.
 export const KEYMAP = {
 	ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right',
 	w: 'up', s: 'down', a: 'left', d: 'right',
 };
+const DIRS = new Set(['up', 'down', 'left', 'right']);
+// the direction a key event means, or null (modifier chords: none on keydown)
+export const dirOfKey = e => { const a = actionForKey(e); return DIRS.has(a) ? a : null; };
+// keyup: a modifier pressed meanwhile must still let go
+const dirOfKeyUp = e => dirOfKey({ code: e.code, key: e.key });
 export const heldKeys = [];
 // A TAP THAT NEVER REACHES A FRAME. Movement reads heldKeys once per tick, so a
 // key pressed AND released between two ticks was never seen at all: no turn, no
@@ -71,20 +81,26 @@ export const heldKeys = [];
 export function latchTap(dir) { S.tapDir = dir; }
 S.tapDir = null;
 S.wasInBattle = false; // when a battle ends, flush held keys so we don't take a stray step out of it
-S.runHeld = false; // Shift on keyboard, holding B on touch
-// while typing in the chat box, keys belong to the input, not the game
-// (and while the on-screen keyboard is up, it owns every key and button)
-export const typingInChat = () => oskOpen() || (document.activeElement && document.activeElement.tagName === 'INPUT');
+S.runHeld = false; // Shift or X held on the keyboard, holding B on touch / a controller
+// The keyboard's two run keys: Shift, and X (the B button, held — as on a pad
+// and the touch B). Either one keeps running; letting go of one doesn't stop the other.
+const runKeys = new Set();
+const isShift = e => e.key === 'Shift' || e.code === 'ShiftLeft' || e.code === 'ShiftRight';
+const isRunX = e => !e.ctrlKey && !e.metaKey && !e.altKey && actionForKey(e) === 'cancel';
+// while typing in the chat box (or any text field, textarea or dropdown), keys
+// belong to the field, not the game; a focused checkbox or button is NOT typing
+// (it used to freeze the game). While the on-screen keyboard is up, it owns every key.
+export const typingInChat = () => oskOpen() || isTyping();
 addEventListener('keydown', e => {
-	if (typingInChat()) { if (KEYMAP[e.key]) owlog('keydown IGNORED', e.key, 'reason=typingInChat'); return; }
+	if (typingInChat()) { if (dirOfKey(e)) owlog('keydown IGNORED', e.key, 'reason=typingInChat'); return; }
+	if (isShift(e) || isRunX(e)) { runKeys.add(isShift(e) ? 'shift' : 'x'); S.runHeld = true; }
 	// while a menu/dialog/battle is open, arrows navigate options — don't also
 	// queue overworld movement (that made the player walk while browsing menus)
+	const dir = dirOfKey(e);
 	if (menuBlocking()) {
-		if (KEYMAP[e.key]) { e.preventDefault(); noteRejectedMove(); if (INPUT_TRACE) owlog('keydown IGNORED', e.key, 'reason=' + gateReport().blockedBy); }
+		if (dir) { e.preventDefault(); noteRejectedMove(); if (INPUT_TRACE) owlog('keydown IGNORED', e.key, 'reason=' + gateReport().blockedBy); }
 		return;
 	}
-	if (e.key === 'Shift') S.runHeld = true;
-	const dir = KEYMAP[e.key];
 	if (dir) {
 		e.preventDefault();
 		if (!heldKeys.includes(dir)) heldKeys.unshift(dir);
@@ -93,8 +109,11 @@ addEventListener('keydown', e => {
 	}
 });
 addEventListener('keyup', e => {
-	if (e.key === 'Shift') S.runHeld = false;
-	const dir = KEYMAP[e.key];
+	if (isShift(e) || actionForKey({ code: e.code, key: e.key }) === 'cancel') {
+		runKeys.delete(isShift(e) ? 'shift' : 'x');
+		if (!runKeys.size) S.runHeld = false;
+	}
+	const dir = dirOfKeyUp(e);
 	if (dir) {
 		const i = heldKeys.indexOf(dir);
 		if (i >= 0) heldKeys.splice(i, 1);
@@ -104,7 +123,7 @@ addEventListener('keyup', e => {
 // Leaving the tab mid-walk used to leave the arrow HELD: its keyup never
 // arrives, so the player kept walking on return. Blur / a hidden tab let go of
 // every held direction and the run key (the gamepad core does the same).
-const letGoOfKeys = () => { heldKeys.length = 0; S.tapDir = null; S.runHeld = false; };
+const letGoOfKeys = () => { heldKeys.length = 0; S.tapDir = null; S.runHeld = false; runKeys.clear(); };
 addEventListener('blur', letGoOfKeys);
 document.addEventListener('visibilitychange', () => { if (document.hidden) letGoOfKeys(); });
 owlog('listeners attached: keydown/keyup (movement)');

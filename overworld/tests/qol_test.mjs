@@ -120,11 +120,11 @@ async function waitFor(fn, ms) {
 			// sort: dex ascending puts the lowest |num| first; shiny mode floats the shiny
 			key('Tab'); // back onto the box side
 			pc.sort = 'name'; // so the next cycle lands on 'dex'
-			key('s');
+			key('v'); // V = the Y button = sort (controls sweep B6; S moves down now)
 			out.sortedDex = pc.sort === 'dex' && Math.abs(box()[0].num) <= Math.abs(box()[1].num);
-			key('s'); // -> level
+			key('v'); // -> level
 			out.sortedLevel = pc.sort === 'level' && box()[0].level >= box()[1].level;
-			key('s'); // -> shiny first
+			key('v'); // -> shiny first
 			out.sortedShiny = pc.sort === 'shiny' && box()[0].shiny === true;
 			pc.open = false;
 
@@ -150,7 +150,7 @@ async function waitFor(fn, ms) {
 		A(out.confirmKept, 'X keeps the mon');
 		A(out.released, 'R then Z releases it');
 		A(out.depositToViewed, 'deposits land in the viewed box');
-		A(out.sortedDex, 'S sorts by dex number');
+		A(out.sortedDex, 'V sorts by dex number (the Y button; S moves down now)');
 		A(out.sortedLevel, 'S again sorts by level');
 		A(out.sortedShiny, 'S again floats shinies first');
 		A(out.mintItem, 'nature mints exist with their nature');

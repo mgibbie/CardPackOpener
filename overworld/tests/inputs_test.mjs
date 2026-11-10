@@ -117,15 +117,15 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 			ow.optionsMenu.open = true; ow.optionsMenu.mode = 'controls'; ow.optionsMenu.idx = 5; // BIKE
 			ow.optionsKey('z'); // arm the capture
 		});
-		await page.keyboard.press('q');
+		await page.keyboard.press('k');
 		await new Promise(r => setTimeout(r, 250));
 		const captured = await page.evaluate(() => ({
 			bike: window.__ow.keyBinds.bike,
 			flash: window.__ow.optionsMenu.flash,
 			capture: window.__ow.optionsMenu.capture,
 		}));
-		A(captured.bike === 'q' && captured.capture === null, 'the CONTROLS screen captures a pressed key', JSON.stringify(captured));
-		A(/Bound to Q/.test(captured.flash || ''), 'and says so', captured.flash);
+		A(captured.bike === 'k' && captured.capture === null, 'the CONTROLS screen captures a pressed key', JSON.stringify(captured));
+		A(/Bound to K/.test(captured.flash || ''), 'and says so', captured.flash);
 
 		const reset = await page.evaluate(() => {
 			const ow = window.__ow;

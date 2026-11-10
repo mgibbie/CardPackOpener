@@ -571,6 +571,7 @@ export function drawBerryBlender(ctx, SW, SH) {
 	// scale the GBA screen up
 	const k = Math.min(SW / 240, SH / 160), w = Math.floor(240 * k), h = Math.floor(160 * k);
 	const ox = Math.floor((SW - w) / 2), oy = Math.floor((SH - h) / 2);
+	lastView = { ox, oy, k };
 	ctx.save(); ctx.imageSmoothingEnabled = false; ctx.drawImage(screen, ox, oy, w, h); ctx.restore();
 	const X = x => ox + x * k, Y = y => oy + y * k;
 	const font = px => `${Math.round(px * k)}px m6x11plus, monospace`;
@@ -641,6 +642,33 @@ export function drawBerryBlender(ctx, SW, SH) {
 		['YES', 'NO'].forEach((t, i) => ctx.fillText(`${b.yesNo.idx === i ? '▶' : ' '}${t}`, X(174), Y(78 + i * 16)));
 	}
 	ctx.textBaseline = 'alphabetic';
+}
+// TOUCH: a tap is the A button (the blend itself: tap as the arrow passes your
+// spot), except on the berry list (a row picks that berry; outside the list
+// closes the bag and leaves, as B does) and the YES / NO box (picks that answer).
+// (x, y) are canvas pixels; true when the tap was used.
+let lastView = null;
+// tests: where the last frame put the screen (canvas px = o + gb px * k)
+export const blenderTapView = () => lastView;
+export function blenderTap(x, y) {
+	const b = blender;
+	if (!b.open || !lastView) return false;
+	const gx = (x - lastView.ox) / lastView.k, gy = (y - lastView.oy) / lastView.k;
+	if (b.yesNo) {
+		if (gx >= 168 && gx < 208 && gy >= 72 && gy < 112) { b.yesNo.idx = gy < 92 ? 0 : 1; keyQueue.push('A'); }
+		return true;
+	}
+	if (b.list && !b.text && b.phase === 'pick') {
+		const L = b.list;
+		if (gx >= 120 && gx < 232 && gy >= 8 && gy < 112) {
+			const first = Math.max(0, Math.min(L.idx - 3, L.items.length - 6));
+			const row = Math.floor((gy - 12) / 16), i = first + row;
+			if (row >= 0 && row < 6 && i < L.items.length) { L.idx = i; keyQueue.push('A'); }
+		} else keyQueue.push('B');
+		return true;
+	}
+	keyQueue.push('A');
+	return true;
 }
 // test hooks
 export const blenderTest = { arrowProximity, step, blendableBerries, sprites: () => sprites.length };
