@@ -358,6 +358,28 @@ export function contestKey(k) {
 	w.res(b);
 }
 
+// TOUCH: on the move select a tap on a move picks it (the cursor + A); anywhere
+// else a tap is A (turns the MC's page). (x, y) are canvas pixels.
+let lastView = null;
+// tests: where the last frame put the screen (canvas px = o + gb px * k)
+export const contestTapView = () => lastView;
+export function contestTap(x, y) {
+	if (!contestMenu.open || !keyWaiter || !lastView) return false;
+	const gx = (x - lastView.ox) / lastView.k, gy = (y - lastView.oy) / lastView.k;
+	if (view.phase === 'select' && contestMenu.st) {
+		const moves = contestMenu.st.mons[contestMenu.st.playerIndex].moves;
+		const row = Math.floor((gy - 87) / 16);
+		if (gx >= 0 && gx < 88 && row >= 0 && row < moves.length && moves[row]) {
+			view.choice = row;
+			contestKey('z');
+			return true;
+		}
+		return false;
+	}
+	contestKey('z');
+	return true;
+}
+
 // ---------- draw ----------
 let screen = null, sx = null;
 function spr(name, x, y) {
@@ -400,6 +422,7 @@ export function drawContest(sctx, SW, SH) {
 	sctx.save();
 	sctx.imageSmoothingEnabled = false;
 	const ox = Math.floor((SW - w) / 2), oy = Math.floor((SH - h) / 2);
+	lastView = { ox, oy, k };
 	sctx.drawImage(screen, ox, oy, w, h);
 	sctx.textBaseline = 'top';
 	for (const [s, x, y, color, size, maxW] of labels) {

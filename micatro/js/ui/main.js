@@ -12,6 +12,7 @@ import { Player } from './player.js';
 import { sound } from './sound.js';
 import * as UI from './screens.js';
 import { initPad } from './pad.js';
+import { actionForKey } from '/site/input.js';
 import { first as modFirst } from './modui.js';
 import { installZoomGuard } from './zoomguard.js';
 import { describeRefusal, createRefusedLog, rulesOf } from '../refusedlog.js';
@@ -649,19 +650,25 @@ function onMenu(what) {
     UI.options({
       speed: player.speed, onSpeed: (s) => player.setSpeed(s), direct: DIRECT,
       // (Multiplayer: leaving a match is a forfeit — asked first)
-      onNewRun: MODE === 'normal' ? () => (pvpRun() && Pvp && Pvp.active && !(board.view && board.view.over) ? Pvp.forfeitConfirm() : UI.newRunScreen(menuOpts())) : null,
-      onMainMenu: MODE === 'normal' ? () => (pvpRun() && Pvp && Pvp.active && !(board.view && board.view.over) ? Pvp.forfeitConfirm() : showMenu()) : null,
+      onNewRun: MODE === 'normal' ? () => (pvpLive() ? Pvp.forfeitConfirm() : UI.newRunScreen(menuOpts())) : null,
+      onMainMenu: MODE === 'normal' ? () => leaveToMenu() : null,
       mods: v && v.mods && v.mods.length ? v.mods : null,
       modOptions: (session && session.recipe && session.recipe.modOptions) || {},
     });
   }
 }
 
+/** A live Multiplayer match (not over yet): leaving it is a forfeit. */
+function pvpLive() { return !!(pvpRun() && Pvp && Pvp.active && !(board.view && board.view.over)); }
+/** Main Menu, from Options or the pause menu (Start / Enter): in a live match, the forfeit confirmation first (as the Games
+ *  switcher asks) — the pause menu used to call showMenu() straight away and skip it. */
+function leaveToMenu() { if (pvpLive()) Pvp.forfeitConfirm(); else showMenu(); }
+
 // The site's Games switcher (site/switcher.js, controls sweep B2): a run saves after every action, so
 // leaving is safe — except a live Multiplayer match, where leaving is a forfeit (the same words as
 // Options -> Main Menu), sent to the server before the page goes.
 window.mpLeaveGuard = () => {
-  if (!(pvpRun() && Pvp && Pvp.active && !(board.view && board.view.over))) return { state: 'safe' };
+  if (!pvpLive()) return { state: 'safe' };
   return { state: 'confirm', message: 'Leave the match? Leaving counts as a forfeit: your opponent wins.', beforeLeave: () => Pvp.forfeitNow() };
 };
 
@@ -709,11 +716,17 @@ function onKeyUp(e) {
   if (h && !h.done && performance.now() - h.t0 < R_TAP_MS) stateKey('r');
 }
 function onKey(e) {
-  if (e.target && /INPUT|TEXTAREA/.test(e.target.tagName)) return;
+  if (e.target && /INPUT|TEXTAREA/.test(e.target.tagName)) {
+    // (Esc leaves a text field, so the arrows / Z / X drive the cursor again)
+    if (e.key === 'Escape' && e.target.blur) e.target.blur();
+    return;
+  }
   if (e.key === 'Escape') { if (UI.modalOpen()) { if (!document.querySelector('.menu-modal, .go-modal')) UI.closeModal(); } else onMenu('options'); return; }
+  // the arrows / WASD / Z X C V / Q E / Enter / Backspace are the cursor's (ui/pad.js on site/input.js — the controller's
+  // actions): never also a hotkey here
+  if (actionForKey(e)) return;
   if (UI.modalOpen() || MODE !== 'normal' || !board.view) return;
   const k = e.key.toLowerCase();
-  if (k === 'v') return onMenu('deck');
   // P: a mod's card view for the selected joker (Pokermon's Pokédex: its SMODS.Keybind "openPokedex")
   if (k === 'p' && board.sel != null) { const d = board.data.get(board.sel); if (d && modFirst('cardContext', d, UI.modApi())) return; }
   if (k === 'i') return onMenu('runinfo');
@@ -724,9 +737,10 @@ function onKey(e) {
     return;
   }
   stateKey(k);
-  if (k === ' ' || k === 'enter') e.preventDefault();
+  if (k === ' ') e.preventDefault();
 }
-/** The keys that act on what's on the table now. */
+/** The hotkeys that act on what's on the table now (the letters the cursor's keys don't take: digits, P, Delete, R, N, Space).
+ *  (Controls sweep B5: S / D / C / V / Enter / Backspace moved to the cursor — Q / E play / discard, skip, reroll …) */
 function stateKey(k) {
   const v = board.view;
   if (!v || MODE !== 'normal' || UI.modalOpen()) return;
@@ -735,28 +749,22 @@ function stateKey(k) {
   // hand packs), else a pack's own cards; again on a picked card lets it go
   if (/^[0-9]$/.test(k)) { if (player.idle()) { if (v.state === 'PAGES') board.keyPage(+k - 1); else board.keyPick(k === '0' ? 9 : +k - 1); } return; }
   if (v.state === 'SELECTING_HAND') {
-    if (k === 'enter' || k === 'p') click('.b-play');
-    else if (k === 'd' || k === 'delete' || k === 'backspace') click('.b-discard');
+    if (k === 'p') click('.b-play');
+    else if (k === 'delete') click('.b-discard');
     else if (k === 'r') click('.b-rank');
-    else if (k === 's') click('.b-suit');
-    else if (k === 'escape' || k === 'c') onAction({ type: 'highlight', ids: [] });
   } else if (v.state === 'BLIND_SELECT') {
-    if (k === 'enter' || k === ' ') click('.b-select');
-    else if (k === 's') click('.b-skip:not([disabled])');
+    if (k === ' ') click('.b-select');
   } else if (v.state === 'PAGE_REMOVE') {
-    // (a Page's "remove a card" prize: click / tap / pad raises a card, Enter / Space removes the raised one; no Skip)
-    if (k === 'enter' || k === ' ') click('.b-page-remove');
+    // (a Page's "remove a card" prize: click / tap / pad raises a card, Space removes the raised one; no Skip)
+    if (k === ' ') click('.b-page-remove');
   } else if (v.state === 'PAGES') {
-    // (Pages: 1-3 raise a Page, Enter / Space takes the raised one; no Back, no Skip)
-    if (k === 'enter' || k === ' ') click('.b-pick-page');
+    // (Pages: 1-3 raise a Page, Space takes the raised one; no Back, no Skip)
+    if (k === ' ') click('.b-pick-page');
   } else if (v.state === 'ROUND_EVAL') {
-    if (k === 'enter' || k === ' ') click('.b-cashout');
+    if (k === ' ') click('.b-cashout');
   } else if (v.state === 'SHOP') {
-    if (k === 'n' || k === 'enter') click('.b-next');
+    if (k === 'n') click('.b-next');
     else if (k === 'r') click('.b-reroll');
-  } else if (/_PACK(_HAND)?$/.test(v.state)) {
-    if (k === 's' || k === 'escape') click('.b-skip-pack');
-    else if (k === 'c' && board.handSelectable()) onAction({ type: 'highlight', ids: [] });
   }
 }
 
@@ -864,7 +872,7 @@ async function boot() {
   addEventListener('blur', () => endRHold()); // (the key-up may never come: no tap, no restart)
   // (replay: LB/RB step, secondary plays/pauses — the controller drives the viewer)
   const padReplay = MODE === 'replay' ? { toggle: () => replayCtrl && replayCtrl.toggle && replayCtrl.toggle(), step: (d) => replayCtrl && replayCtrl.ready && (d < 0 ? replayCtrl.stepBack() : replayCtrl.stepForward()) } : null;
-  try { pad = initPad({ board, stage, UI, readOnly: MODE !== 'normal', onMenu, mainMenu: () => showMenu(), replay: padReplay }); } catch (e) { console.warn('micatro: controller support unavailable', e); }
+  try { pad = initPad({ board, stage, UI, readOnly: MODE !== 'normal', onMenu, mainMenu: () => leaveToMenu(), replay: padReplay }); } catch (e) { console.warn('micatro: controller support unavailable', e); }
   window.__micatro = {
     get session() { return session; },
     view: () => (session ? viewOf() : board.view),

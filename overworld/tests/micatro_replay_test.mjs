@@ -24,6 +24,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
 import puppeteer from 'puppeteer-core';
+import { keyWalk } from './micatro_keys_lib.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '../../');
@@ -256,14 +257,21 @@ try {
 		const held = r.index;
 		await sleep(900);
 		A(!r.playing && (await R(page)).index === held, 'Space pauses (the position holds)', JSON.stringify({ held, now: (await R(page)).index }));
-		await page.keyboard.press('ArrowRight'); await idle(page);
-		A(await waitFor(async () => (await R(page)).index > held, 5000), '→ steps forward', JSON.stringify({ held, now: (await R(page)).index }));
-		await page.keyboard.press('ArrowLeft'); await sleep(300);
-		A((await R(page)).index <= held, '← steps back');
+		// (the arrows move the reticle since controls sweep B5; Q / E step — the controller's LB / RB)
+		await page.keyboard.press('KeyE'); await idle(page);
+		A(await waitFor(async () => (await R(page)).index > held, 5000), 'E steps forward', JSON.stringify({ held, now: (await R(page)).index }));
+		await page.keyboard.press('KeyQ'); await sleep(300);
+		A((await R(page)).index <= held, 'Q steps back');
 		await page.click('.rb-play');
 		A(await waitFor(async () => (await R(page)).playing, 2000), 'the ▶ button plays');
 		await page.click('.rb-play');
 		A(await waitFor(async () => { const r = await R(page); return !r.playing && !r.ended; }, 3000), 'and pauses', JSON.stringify(await R(page)));   // (paused, not run off the end)
+		// the keyboard alone (controls sweep B5): the arrows walk the reticle onto the bar's ▶ and Z presses it; C plays / pauses
+		A(await keyWalk(page, '.rb-play'), 'the arrows walk the reticle onto the replay bar ▶');
+		await page.keyboard.press('KeyZ');
+		A(await waitFor(async () => (await R(page)).playing, 2000), 'Z presses it: the replay plays');
+		await page.keyboard.press('KeyC');
+		A(await waitFor(async () => { const r = await R(page); return !r.playing; }, 3000), 'C pauses it');
 
 		// 5b. the main menu's Replays list (same browser: the local copy is there)
 		await go('/micatro/');

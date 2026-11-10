@@ -20,7 +20,14 @@
 // Replay viewer (?replay=): LB / RB step back / forward, secondary plays / pauses, and the replay
 // bar's buttons (#replay-bar, outside the stage) are stops like any other button.
 // The reticle hides when the mouse moves or the pad disconnects.
-import { startGamepad, buttonLabel, loadPadSettings, rumble } from '/site/gamepad.js';
+//
+// KEYBOARD (controls sweep B5): the same reticle and the same actions, from site/input.js (by physical key):
+//   arrows / WASD move · Z confirm (hold Z + ←/→ moves a card) · X cancel · C secondary · V context (info) ·
+//   Q / E = LB / RB · Enter = Start (pause) · Backspace = Select (deck). A text field the reticle presses takes the
+//   keyboard's focus (type, then Esc to leave it); the hint bar shows the keys while the keyboard drives.
+//   Input never changes WHAT is recorded: every press ends in the same board.act / onAction call a click or a tap makes.
+import { buttonLabel, loadPadSettings, rumble } from '/site/gamepad.js';
+import { startInput, keyLabel } from '/site/input.js';
 import { isConsumableSet } from './assets.js';
 
 const CARD_AREAS = ['hand', 'jokers', 'consumeables', 'shop_jokers', 'shop_vouchers', 'shop_booster', 'pack_cards'];
@@ -35,6 +42,7 @@ const onScreen = (r) => r.bottom > 0 && r.right > 0 && r.top < innerHeight && r.
 export function initPad({ board, stage, UI, readOnly, onMenu, mainMenu, replay = null }) {
   let focus = null;            // {card:id} | {el}
   let ringOn = false, tipsOn = false, hold = null, lastState = null, lastModal = null, kind = 'generic';
+  let src = 'pad';             // what drove the last press: 'pad' | 'key' (the hint bar's labels; a text field's activation)
 
   const reticle = document.createElement('div'); reticle.className = 'pad-reticle'; reticle.style.display = 'none';
   stage.appendChild(reticle);
@@ -132,9 +140,23 @@ export function initPad({ board, stage, UI, readOnly, onMenu, mainMenu, replay =
     if (again) { setFocus(again); return { list, ok: true }; }
     const h = list.length ? home(list) : null;
     setFocus(h);
+    homedAt = h ? performance.now() : 0;
     return { list, ok: false };
   }
+  // (the screen's natural stop may not be there yet when the reticle re-homes — the blind select's columns rise in after a
+  //  skip: for a moment after homing, each frame moves it on to the natural stop once that shows, until the player acts)
+  let homedAt = 0;
+  const HOME_SETTLE_MS = 1500;
+  function settleHome() {
+    if (!homedAt || hold) return;
+    if (performance.now() - homedAt > HOME_SETTLE_MS) { homedAt = 0; return; }
+    const list = stops();
+    const h = list.length ? home(list) : null;
+    // (only onto a stop that is really there — home() may name one still sliding in, which a press would not find)
+    if (h && !same(h, focus) && list.some((x) => same(x, h)) && (!board.locked || !focus)) setFocus(h);
+  }
   function move(dir) {
+    homedAt = 0;
     const { list, ok } = ensure();
     if (!ok || !focus) return;
     const r0 = rectOf(focus);
@@ -169,13 +191,17 @@ export function initPad({ board, stage, UI, readOnly, onMenu, mainMenu, replay =
     el.dispatchEvent(new PointerEvent('pointerup', { ...init, buttons: 0 }));
     el.dispatchEvent(new MouseEvent('click', { ...init, buttons: 0 }));
   }
-  const sprite = () => (focus && focus.card != null ? board.sprites.get(focus.card) : null);
+  const focusedSprite = () => (focus && focus.card != null ? board.sprites.get(focus.card) : null);
+  const sprite = () => (ringOn && focus && focus.card != null ? board.sprites.get(focus.card) : null);
   async function activate() {
+    homedAt = 0;
     const { ok } = ensure();
     if (!ok || !focus) return;                       // first press only shows where you are
     if (focus.el) {
       const el = focus.el;
       if (el.tagName === 'INPUT' && el.type !== 'checkbox') {
+        // the keyboard types straight into it (site/input.js leaves a focused text field alone; Esc leaves it: ui/main.js onKey)
+        if (src === 'key') { el.focus(); if (el.select && /^(text|search)$/.test(el.type)) try { el.select(); } catch (e) { /* ignore */ } return; }
         try {
           const { askText } = await import('/site/osk.js');
           const v = await askText({ title: el.placeholder || 'Enter text', initial: el.value, maxLength: el.maxLength > 0 ? el.maxLength : 40 });
@@ -270,7 +296,14 @@ export function initPad({ board, stage, UI, readOnly, onMenu, mainMenu, replay =
   // --------------------------------------------------------------- input
   function onPress(action) {
     if (document.getElementById('osk')) return;            // the on-screen keyboard runs its own pad
-    if (!ringOn && focus) { ringOn = true; place(); if (action !== 'menu' && action !== 'select') return; }
+    if (!ringOn && focus) {
+      // the reticle is hidden (the mouse took over): a controller's first press only shows it (Start / Select still act);
+      // a key that MOVES or PRESSES it only shows it too, but a hotkey-like key (Q / E / C / V / X / Enter / Backspace)
+      // acts at once — on no card (sprite() is null while hidden), so C sorts and never sells a card the player can't see
+      const showOnly = src === 'key' ? (!!DIRS[action] || action === 'confirm') : (action !== 'menu' && action !== 'select');
+      if (showOnly || src !== 'key') { ringOn = true; place(); }
+      if (showOnly) return;
+    }
     if (hold && DIRS[action]) { reorderStep(action); return; }
     if (DIRS[action]) { move(action); return; }
     switch (action) {
@@ -301,6 +334,19 @@ export function initPad({ board, stage, UI, readOnly, onMenu, mainMenu, replay =
       default:
     }
   }
+  // one handler for both sources (site/input.js: keyboard + the site/gamepad.js poller). true = the key was used.
+  function onAction(action, info) {
+    const source = (info && info.source) || 'pad';
+    if (source === 'key') {
+      // a button / link the player Tabbed to keeps the browser's own Enter
+      const ae = document.activeElement;
+      if (action === 'menu' && ae && ae !== document.body && /^(BUTTON|A)$/.test(ae.tagName) && ae.matches(':focus-visible')) return false;
+      src = 'key';
+    } else src = 'pad';
+    onPress(action, info);
+    if (source === 'key') renderHints();
+    return true;
+  }
   function onRelease(action, info) {
     if (action !== 'confirm' || !hold) return;
     const h = hold; hold = null;
@@ -329,11 +375,15 @@ export function initPad({ board, stage, UI, readOnly, onMenu, mainMenu, replay =
     reticle.classList.toggle('in-modal', !!topModal());
   }
   let lastHints = '';
+  // the bar shows while a controller is connected, or while the keyboard drives the reticle (gone with the mouse)
+  const keysOn = () => src === 'key' && ringOn;
+  const hintsOn = () => keysOn() || !!(pad && pad.connected());
   function renderHints() {
-    if (!pad || !pad.connected()) { hints.style.display = 'none'; return; }
+    if (!hintsOn()) { hints.style.display = 'none'; return; }
     hints.style.display = '';
-    const st = loadPadSettings();
-    const L = (a) => `<span class="pk">${buttonLabel(a, kind, { layout: st.layout, remap: st.remap })}</span>`;
+    const st = keysOn() ? null : loadPadSettings();
+    hints.classList.toggle('keys', !st);
+    const L = (a) => `<span class="pk">${st ? buttonLabel(a, kind, { layout: st.layout, remap: st.remap }) : keyLabel(a)}</span>`;
     const v = view(), s = sprite(), modal = topModal();
     const parts = [];
     if (modal) { parts.push(`${L('confirm')} Choose`, `${L('cancel')} Back`); }
@@ -353,37 +403,43 @@ export function initPad({ board, stage, UI, readOnly, onMenu, mainMenu, replay =
       const [p, n] = pairFor(v);
       if (p) parts.push(`${L('prev')} ${names[p]}`);
       if (n) parts.push(`${L('next')} ${names[n]}`);
-      parts.push(`${L('context')} Info${tipsOn ? ' ✓' : ''}`, `${L('menu')} Menu`);
+      parts.push(`${L('context')} Info${tipsOn ? ' ✓' : ''}`, `${L('select')} Deck`, `${L('menu')} Menu`);
     }
     const html = parts.join('<span class="sep"></span>');
     if (html !== lastHints) { hints.innerHTML = html; lastHints = html; }
   }
 
   // ------------------------------------------------------------- wiring
-  const pad = startGamepad({
-    readPads: window.__owFakePads ? () => window.__owFakePads : undefined,
-    onPress, onRelease,
-    onConnect: (e) => { kind = e.kind || 'generic'; renderHints(); },
-    onDisconnect: () => { setTimeout(() => { if (!pad.connected()) { ringOn = false; hold = null; place(); renderHints(); const s = sprite(); if (s) s.hover = false; } }, 0); },
+  // (site/input.js: the keyboard listener + one site/gamepad.js poller, both into onAction)
+  const input = startInput({
+    pad: true,
+    onAction, onRelease,
+    padOptions: {
+      onConnect: (e) => { kind = e.kind || 'generic'; src = 'pad'; renderHints(); },
+      onDisconnect: () => { setTimeout(() => { if (!pad.connected() && src !== 'key') { ringOn = false; hold = null; place(); renderHints(); const s = focusedSprite(); if (s) s.hover = false; } }, 0); },
+    },
     onFrame: () => {
-      if (!pad.connected()) { if (hints.style.display !== 'none') hints.style.display = 'none'; return; }
+      if (!hintsOn()) { if (hints.style.display !== 'none') hints.style.display = 'none'; return; }
       if (ringOn) {
         // the table changed under the reticle (new state, card gone): re-home without acting
         const v = view();
         if (((v && v.state) !== lastState && !board.locked) || topModal() !== lastModal || (focus && !rectOf(focus))) ensure();
+        else settleHome();
         place();
       }
       renderHints();
     },
   });
+  const pad = input.pad;
   addEventListener('pointermove', (e) => {
     if (!ringOn || !e.isTrusted) return;
-    ringOn = false; place();
-    const s = sprite(); if (s) s.hover = false;
+    ringOn = false; hold = null; place(); renderHints();
+    const s = focusedSprite(); if (s) s.hover = false;
   }, { passive: true });
 
   const api = {
-    pad,
+    pad, input,
+    get source() { return src; },
     get focus() { return focus ? (focus.card != null ? { card: focus.card, area: (board.sprites.get(focus.card) || {}).area } : { el: focus.el, cls: focus.el.className }) : null; },
     get tipsOn() { return tipsOn; },
     focusCard(id) { const s = board.sprites.get(id); if (s) setFocus({ card: id }); },

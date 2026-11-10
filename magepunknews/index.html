@@ -400,6 +400,8 @@ feed.addEventListener('mouseout', ev => {
 addEventListener('scroll', () => { hoverId = null; tip.style.display = 'none'; }, { passive: true });
 </script>
 
+	<!-- no mouse needed: arrows / WASD / d-pad move, Z / Enter / A picks, X / B backs out (site/focusnav.js) -->
+	<script type="module">import { initFocusNav } from '/site/focusnav.js'; initFocusNav({ hover: true });</script>
 	<script type="module" src="/site/topbar.js"></script>
 </body>
 </html>

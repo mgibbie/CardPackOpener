@@ -282,14 +282,13 @@ export async function startReplay(ctx) {
     if (was && !st.done) play();
   });
 
-  // keys
+  // keys (Space / Home / End here; the arrows / WASD move the reticle and Q / E step, C plays / pauses: ui/pad.js — the
+  // controller's LB / RB / X, controls sweep B5)
   addEventListener('keydown', (e) => {
     if (e.target && /INPUT|TEXTAREA/.test(e.target.tagName) && e.target !== range) return;
     if (ctx.UI.modalOpen()) return;
     const k = e.key;
     if (k === ' ' || k === 'Spacebar') { e.preventDefault(); poke(); toggle(); }
-    else if (k === 'ArrowRight') { e.preventDefault(); poke(); stepForward(); }
-    else if (k === 'ArrowLeft') { e.preventDefault(); poke(); stepBack(); }
     else if (k === 'Home') { poke(); seekTo(0, { keepPlaying: false }); }
     else if (k === 'End') { poke(); seekTo(total, { keepPlaying: false }); }
   });

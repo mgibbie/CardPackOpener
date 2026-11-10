@@ -265,12 +265,12 @@ try {
 		H.wipe(); H.unsturdy(); pl.hp = pl.maxHp; pl.invuln = 0;
 		const foes = H.ring(8, 130, 1e6);
 		const hp0 = foes.reduce((a, e) => a + e.hp, 0);
-		// not ready: Z does nothing
-		U.debugCharge(0.5); H.key('KeyZ'); H.step(1); out.early = !!S.cast;
+		// not ready: C (controls sweep B4: was Z) does nothing
+		U.debugCharge(0.5); G.Pad.keyPress('secondary'); H.step(1); out.early = !!S.cast;
 		U.debugCharge(1);
 		const t0 = G.Game.time != null ? G.Game.time : null;
 		const clk = () => G.Game.runTime ? G.Game.runTime() : (G.Replay && null);
-		H.key('KeyZ'); H.step(1);
+		G.Pad.keyPress('secondary'); H.step(1);
 		out.cast = !!S.cast; out.code = S.cast && S.cast.head; out.c = S.c; out.zBase = G.ZMoves.busy;
 		// the hit-stop: the world holds (the timeline clock doesn't move, foes don't move) for 0.32 s
 		const e0 = foes.map(e => [e.x, e.y]);
@@ -302,7 +302,7 @@ try {
 		H.wipe();
 		return out;
 	});
-	A(cs.early === false && cs.cast && cs.c === 0 && cs.code === 1 && cs.zBase === false, 'not full: Z does nothing; full: Z casts the Ultimate (the meter spent; the base Z-move stays off in a zone)', JSON.stringify(cs));
+	A(cs.early === false && cs.cast && cs.c === 0 && cs.code === 1 && cs.zBase === false, 'not full: C does nothing; full: C (was Z, controls sweep B4) casts the Ultimate (the meter spent; the base Z-move stays off in a zone)', JSON.stringify(cs));
 	A(cs.holdLeft > 0 && !cs.fxDuringHold && cs.heldTime && cs.fxAfterHold && cs.n >= 1, 'a 0.32 s hit-stop: the run (its clock, kills, XP) holds, then the choreography starts', JSON.stringify(cs));
 	A(cs.ended && cs.castT > 2.5 && cs.dmgDuring === 0, `i-frames for the whole cast (${cs.castT && cs.castT.toFixed(2)} s): no hit lands, even right after something zeroes invuln (as lava does)`, JSON.stringify(cs));
 	A(cs.after05 === 0 && cs.after07 > 0, 'and for 0.6 s after it ends: a hit at 0.5 s takes nothing, one at 0.63 s lands', JSON.stringify({ a5: cs.after05, a7: cs.after07 }));
@@ -368,7 +368,7 @@ try {
 	const tc = await E(page, async () => {
 		const H = window.__t, U = G.ExpUlt, S = U.run, pl = G.Game.player;
 		H.wipe(); H.ring(12, 170, 1e6);
-		U.debugCharge(1); H.key('KeyZ'); H.step(1);
+		U.debugCharge(1); G.Pad.keyPress('secondary'); H.step(1);
 		const out = { head: S.cast && S.cast.head, name: S.cast && U.nameOf(S.cast.head, S.cast.tier) };
 		H.step(30, 1 / 30);
 		out.fxType = S.cast && S.cast.fx && S.cast.fx.type;
@@ -491,7 +491,7 @@ try {
 		H.thaw(); await new Promise(r => setTimeout(r, 300)); H.freeze();
 		out.rects = G.HUD.rects().map(r => r.name);
 		out.zCan = G.ZMoves.can(pl);
-		H.key('KeyZ'); H.step(1); out.zBusy = G.ZMoves.busy; out.ultAfter = !!G.ExpUlt.run;
+		G.Pad.keyPress('secondary'); H.step(1); out.zBusy = G.ZMoves.busy; out.ultAfter = !!G.ExpUlt.run;
 		out.snapW = !!(G.Spectate.snap() || {}).x;
 		G.Game.quit(); await new Promise(r => setTimeout(r, 200));
 		return out;

@@ -16,6 +16,7 @@ import { frontier } from './ow_frontier.js';
 import { getBox, setBox } from './ow_menukeys.js';
 import { mailMenu, openDeckSelect } from './ow_screens.js';
 import { POS_KEY } from './ow_input.js';
+import { saveBeforeLeave } from './ow_leaveguard.js';
 import { TRADE_CATS, deckSelect, emptyOffer, trade } from './ow_menustate.js';
 import { moveToMap } from './ow_transitions.js';
 import { GATE_TEXT, blocksEntry } from './johkanto_gate.js';
@@ -53,7 +54,10 @@ async function cardParty() {
 	const pick = valid.find(d => d.classId === saved) || valid[0];
 	return { deck: pick.cards, classId: pick.classId };
 }
-const goCardDuel = id => { location.href = '/battlecards/?cardpvp=' + encodeURIComponent(id) + '&mp=1'; };
+// leaving for Battlecards: save where you stand first (savePos otherwise writes only
+// on a map change, so the return trip put you back at the last door — the CARDS
+// menu's CHALLENGE FRIEND went this way)
+export const goCardDuel = id => { saveBeforeLeave(); location.href = '/battlecards/?cardpvp=' + encodeURIComponent(id) + '&mp=1'; };
 
 // on boot, offer to rejoin a battle left in progress (e.g. after a refresh).
 // Declining forfeits so the opponent isn't left waiting out the abandon timer.

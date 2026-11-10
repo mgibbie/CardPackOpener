@@ -20,6 +20,8 @@ import { dexMenu, optionsMenu, partyMenu, trainerCard } from './ow_menustate.js'
 import { battle, hud } from './ow_core.js';
 import { S } from './ow_state.js';
 import { bgmKick } from './sound.js';
+import { actionForKey, KEY_LABELS } from '../site/input.js';
+import { translateKey } from './ow_keybinds.js';
 
 const ARROW = { up: 'ArrowUp', down: 'ArrowDown', left: 'ArrowLeft', right: 'ArrowRight' };
 const BASE = { confirm: 'z', cancel: 'x', menu: 'Enter' };
@@ -46,6 +48,32 @@ export function contextKey(action) {
 	if (menuBlocking()) return { prev: 'ArrowLeft', next: 'ArrowRight' }[action] || null;
 	// roaming: bike, bag, party
 	return { context: 'c', secondary: 'b', select: 'p' }[action] || null;
+}
+
+// ---------- the KEYBOARD side of the same map (controls sweep B6) ----------
+// A key event -> the key name pressKey takes, by PHYSICAL key (site/input.js), so
+// a key and its controller button do the same thing on every screen:
+//   arrows / W A S D   d-pad: walk, or move the cursor in any menu / battle / game
+//   Z  A (confirm)     X  B (back; held = run)     Enter  Start (the start menu)
+//   C  X button: bag roaming (per-screen otherwise, contextKey 'secondary')
+//   V  Y button: bike roaming (per-screen otherwise, contextKey 'context')
+//   Q / E  L / R (page left / right)   Backspace  Select (party roaming)
+//   Esc  back (a quick tap; held, site/switcher.js opens the Games switcher)
+// Other keys (digits, Space, Tab, and the letters the scheme doesn't take: P, B,
+// F, R, M, T, G, L) pass through as themselves. A key the player rebound on the
+// CONTROLS screen wins. null = the key does nothing here.
+export function keyForEvent(e) {
+	if (e.ctrlKey || e.metaKey || e.altKey) return null;   // Ctrl+C copies, Alt+← goes back
+	const custom = translateKey(e.key);
+	if (custom !== e.key) return custom;
+	if (e.key === 'Escape') return 'x';
+	const a = actionForKey(e);
+	if (!a) return e.key && e.key.length === 1 ? e.key.toLowerCase() : e.key;   // Caps Lock / Shift: still P, B...
+	if (ARROW[a]) return ARROW[a];
+	if (BASE[a]) return BASE[a];
+	const k = contextKey(a);
+	if (k) return k;
+	return a === 'select' ? 'Backspace' : null;   // the GB / GBA minigames read Backspace as B
 }
 
 // the pad's own slot in heldKeys (mirrors main.js's dpadDir)
@@ -149,12 +177,12 @@ function onPadButton(i) {
 }
 
 // ---------- the hint bar: what the buttons do HERE, on this pad ----------
-let hintEl = null, keyboardHints = null, lastHint = '';
-export function padHints() {
-	const L = a => `[${padLabel(a)}]`;
+let hintEl = null, lastHint = '';
+// what the buttons do HERE, labelled by L(action) and the word for the stick
+function hintsFor(L, stick) {
 	if (battle.blocking) {
 		const moves = battle.active?.phase === 'moves';
-		return `D-pad choose · ${L('confirm')} select · ${L('cancel')} back · ${L('context')} ${moves ? 'swap moves' : 'throw last ball'}${moves ? ` · ${L('secondary')} mega` : ''}`;
+		return `${stick} choose · ${L('confirm')} select · ${L('cancel')} back · ${L('context')} ${moves ? 'swap moves' : 'throw last ball'}${moves ? ` · ${L('secondary')} mega` : ''}`;
 	}
 	if (pcMenu.open) return `${L('confirm')} pick · ${L('cancel')} back · ${L('context')} sort · ${L('secondary')} switch side · ${L('select')} release · ${L('prev')}${L('next')} box`;
 	if (dexMenu.open) return `${L('confirm')} open · ${L('cancel')} back · ${L('context')} type · ${L('secondary')} caught · ${L('select')} grid · ${L('prev')}${L('next')} region`;
@@ -162,14 +190,20 @@ export function padHints() {
 		? `◄► moves · ${L('confirm')} swap · ${L('context')} make lead · ${L('cancel')} back`
 		: `${L('confirm')} choose · ${L('context')} take item · ${L('cancel')} back`;
 	if (shopMenu.open) return `${L('confirm')} buy/sell · ${L('secondary')} buy ↔ sell · ${L('cancel')} leave`;
-	if (menuBlocking()) return `D-pad choose · ${L('confirm')} OK · ${L('cancel')} back · ${L('prev')}${L('next')} page`;
-	return `Stick move · ${L('confirm')} talk · hold ${L('cancel')} run · ${L('menu')} menu · ${L('select')} party · ${L('secondary')} bag · ${L('context')} bike`;
+	if (menuBlocking()) return `${stick} choose · ${L('confirm')} OK · ${L('cancel')} back · ${L('prev')}${L('next')} page`;
+	return `${stick} move · ${L('confirm')} talk · hold ${L('cancel')} run · ${L('menu')} menu · ${L('select')} party · ${L('secondary')} bag · ${L('context')} bike`;
+}
+export const padHints = () => hintsFor(a => `[${padLabel(a)}]`, 'Stick');
+// the keyboard's own line (site/input.js KEY_LABELS: Z X C V Q E Enter Backspace)
+export function keyHints() {
+	const L = a => `[${KEY_LABELS[a]}]`;
+	if (!battle.blocking && !menuBlocking()) return `Arrows/WASD move · ${L('confirm')} talk · hold ${L('cancel')}/Shift run · ${L('menu')} menu · ${L('select')} party · ${L('secondary')} bag · ${L('context')} bike · hold Esc: games`;
+	return hintsFor(L, 'Arrows/WASD');
 }
 function syncHints(connected) {
 	hintEl ||= document.getElementById('keyhints');
 	if (!hintEl) return;
-	if (keyboardHints == null) keyboardHints = hintEl.textContent;
-	const text = connected ? padHints() : keyboardHints;
+	const text = connected ? padHints() : keyHints();
 	if (text !== lastHint) { hintEl.textContent = text; lastHint = text; }
 }
 

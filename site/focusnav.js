@@ -36,7 +36,7 @@
 import { startInput, isTyping } from './input.js';
 import { askText, oskOpen } from './osk.js';
 
-export const STOP_SELECTOR = 'button, a[href], input:not([type=hidden]), select, textarea, [tabindex]:not([tabindex="-1"]), [data-padnav], [data-focusnav]';
+export const STOP_SELECTOR = 'button, a[href], summary, input:not([type=hidden]), select, textarea, [tabindex]:not([tabindex="-1"]), [data-padnav], [data-focusnav]';
 const TEXTY = /^(text|search|email|url|number|tel|password)?$/i;
 const BASE_MODALS = ['[aria-modal="true"]', 'dialog[open]'];
 
@@ -55,15 +55,24 @@ function onTop(el, r) {
 	const hit = document.elementFromPoint(Math.min(innerWidth - 1, Math.max(0, c.x)), Math.min(innerHeight - 1, Math.max(0, c.y)));
 	return !!hit && (hit === el || el.contains(hit) || hit.contains(el));
 }
-// the fixed-position layer an element lives in, if that layer is a real overlay
-function overlayOf(el) {
-	for (let n = el; n && n !== document.body; n = n.parentElement) {
+// the fixed-position layer an element lives in, if that layer is a real overlay.
+// Memoized per lookup pass over each ancestor: a long page (the news feed, ~9,000 links)
+// shares a few parents, and walking every link's ancestors with getComputedStyle made
+// one key press take ~0.4 s there.
+function overlayFinder() {
+	const memo = new Map();
+	const of = n => {
+		if (!n || n === document.body || n === document.documentElement) return null;
+		if (memo.has(n)) return memo.get(n);
+		let r = null;
 		if (getComputedStyle(n).position === 'fixed') {
-			const r = n.getBoundingClientRect();
-			if (r.width * r.height > innerWidth * innerHeight * 0.12) return n;
-		}
-	}
-	return null;
+			const b = n.getBoundingClientRect();
+			r = b.width * b.height > innerWidth * innerHeight * 0.12 ? n : of(n.parentElement);
+		} else r = of(n.parentElement);
+		memo.set(n, r);
+		return r;
+	};
+	return of;
 }
 const isTextField = el => (el.tagName === 'INPUT' && TEXTY.test(el.type)) || el.tagName === 'TEXTAREA';
 
@@ -78,6 +87,7 @@ function injectStyle(cls) {
 }
 
 const DIRS = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
+const WINDOW_MIN = 400;
 
 export function createFocusNav(opts = {}) {
 	const o = { ringClass: 'focusnav-focus', pointer: false, hover: false, domFocus: true, scrollFallback: true, modals: [], ...opts };
@@ -95,13 +105,23 @@ export function createFocusNav(opts = {}) {
 		return best;
 	}
 
-	function candidates() {
+	// `wide`: the whole page. Otherwise a long page (more than WINDOW_MIN stops: the news feed
+	// has ~9,000 links) only looks at the stops within a few screens of the view (plus the
+	// focused one) — checking every one's style made a key press take ~0.4 s; move() widens
+	// the search when nothing is found that way.
+	function candidates(wide) {
 		const scope = o.scope ? o.scope() : null;
 		if (o.scope && !scope) return [];
-		const all = [...(scope || document).querySelectorAll(STOP_SELECTOR)].filter(el => shown(el) && !el.closest('#osk'));
+		let raw = [...(scope || document).querySelectorAll(STOP_SELECTOR)];
+		const modal = scope ? null : openModal();
+		if (!scope && !modal && !wide && raw.length > WINDOW_MIN) {
+			const lo = -2 * innerHeight, hi = 3 * innerHeight;
+			raw = raw.filter(el => { if (el === focused) return true; const r = el.getBoundingClientRect(); return r.bottom > lo && r.top < hi; });
+		}
+		const all = raw.filter(el => shown(el) && !el.closest('#osk'));
 		if (scope) return all;
-		const modal = openModal();
 		if (modal) return all.filter(el => modal.contains(el));
+		const overlayOf = overlayFinder();
 		const live = all.filter(el => { const r = el.getBoundingClientRect(); return onScreen(r) && onTop(el, r); });
 		// an open overlay/modal scopes focus to itself (incl. its scrolled-away rows)
 		const layers = [...new Set(live.map(overlayOf).filter(Boolean))];
@@ -173,16 +193,21 @@ export function createFocusNav(opts = {}) {
 		if (st !== 'same') return !!st;       // first press (or a changed page): just show focus
 		const [dx, dy] = DIRS[dir];
 		const c0 = center(focused.getBoundingClientRect());
-		let best = null, bestScore = Infinity;
-		for (const el of list) {
-			if (el === focused) continue;
-			const c = center(el.getBoundingClientRect());
-			const along = (c.x - c0.x) * dx + (c.y - c0.y) * dy;       // distance in the pressed direction
-			if (along <= 2) continue;
-			const across = Math.abs((c.x - c0.x) * dy) + Math.abs((c.y - c0.y) * dx);
-			const score = along + across * 2.2;
-			if (score < bestScore) { bestScore = score; best = el; }
-		}
+		const pick = stops => {
+			let best = null, bestScore = Infinity;
+			for (const el of stops) {
+				if (el === focused) continue;
+				const c = center(el.getBoundingClientRect());
+				const along = (c.x - c0.x) * dx + (c.y - c0.y) * dy;       // distance in the pressed direction
+				if (along <= 2) continue;
+				const across = Math.abs((c.x - c0.x) * dy) + Math.abs((c.y - c0.y) * dx);
+				const score = along + across * 2.2;
+				if (score < bestScore) { bestScore = score; best = el; }
+			}
+			return best;
+		};
+		let best = pick(list);
+		if (!best) { const all = candidates(true); if (all.length !== list.length) best = pick(all); }   // a long page: look further
 		if (best) { setFocus(best); return true; }
 		return false;
 	}

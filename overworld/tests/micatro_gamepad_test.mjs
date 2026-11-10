@@ -72,8 +72,10 @@ try {
 			window.__owFakePads = [pad]; window.__pad = pad;
 			// (a poll of site/gamepad.js reads p.connected once: count them, so a press is held until the game has SEEN it — a fixed
 			// 70 ms press fell between two slow CI frames and was never read — and released only once a poll has seen that too)
+			// Only MICATRO's polls count: the site's Games switcher (site/switcher.js, loaded by the top bar) polls the same pad on its
+			// own 20 ms timer, and counting its reads released a press before the game's (slower, per-frame) poll had seen it.
 			let polls = 0;
-			Object.defineProperty(pad, 'connected', { get() { polls++; return true; }, enumerable: true });
+			Object.defineProperty(pad, 'connected', { get() { if (!/\/site\/switcher\.js/.test(new Error().stack || '')) polls++; return true; }, enumerable: true });
 			const until = (f, ms = 10000) => new Promise((r) => { const t0 = performance.now(); const k = () => (f() || performance.now() - t0 > ms ? r() : setTimeout(k, 4)); k(); });
 			const set = (b, on) => { pad.buttons[b] = on ? { pressed: true, value: 1 } : { pressed: false, value: 0 }; };
 			window.__padSet = async (b, on) => { set(b, on); const n = polls; await until(() => polls > n); };

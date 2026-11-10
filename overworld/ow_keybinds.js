@@ -10,22 +10,28 @@ import { safeLoad, safeSave } from './safestore.js';
 // TRANSLATES to the action's default at the input door, so the defaults keep
 // working alongside (forgiving, not exclusive). Device preference, like the
 // volume sliders — spared by the owner reset.
+// `def` is the key name pressKey takes (internal, never changes); `keys` is what
+// the player presses for it under the site-wide map (controls sweep B6: C = bag,
+// V = bike, V swaps moves in a battle's move list; S, C and V no longer have
+// their old letter meanings — S moves down, see ow_gamepad.js keyForEvent).
 export const KEYBIND_KEY = 'magepunk_keys_v1';
 export const KEY_ACTIONS = [
-	{ id: 'confirm', label: 'CONFIRM / INTERACT', def: 'z' },
-	{ id: 'cancel', label: 'CANCEL / BACK', def: 'x' },
-	{ id: 'menu', label: 'MAIN MENU', def: 'Enter' },
-	{ id: 'party', label: 'PARTY', def: 'p' },
-	{ id: 'bag', label: 'BAG', def: 'b' },
-	{ id: 'bike', label: 'BIKE ON/OFF', def: 'c' },
-	{ id: 'find', label: 'FIND (PC BOX SEARCH)', def: 'f' },
-	{ id: 'swap', label: 'SWAP MOVE SLOTS (BATTLE)', def: 's' },
-	{ id: 'rethrow', label: 'RE-THROW BALL (BATTLE)', def: 'r' },
+	{ id: 'confirm', label: 'CONFIRM / INTERACT', def: 'z', keys: 'Z' },
+	{ id: 'cancel', label: 'CANCEL / BACK (HOLD: RUN)', def: 'x', keys: 'X / ESC' },
+	{ id: 'menu', label: 'MAIN MENU', def: 'Enter', keys: 'ENTER' },
+	{ id: 'party', label: 'PARTY', def: 'p', keys: 'BACKSPACE / P' },
+	{ id: 'bag', label: 'BAG', def: 'b', keys: 'C / B' },
+	{ id: 'bike', label: 'BIKE ON/OFF', def: 'c', keys: 'V' },
+	{ id: 'find', label: 'FIND (PC BOX SEARCH)', def: 'f', keys: 'F' },
+	{ id: 'swap', label: 'SWAP MOVE SLOTS (BATTLE)', def: 's', keys: 'V' },
+	{ id: 'rethrow', label: 'RE-THROW BALL (BATTLE)', def: 'r', keys: 'R / V' },
 ];
 S.keyBinds = safeLoad(KEYBIND_KEY, {}); // action id -> custom key
-// keys that may never be rebound over: movement, the defaults, system keys
+// keys that may never be rebound over: movement, the site-wide buttons
+// (Z X C V Q E Enter Backspace, site/input.js), the defaults, system keys, and `
+// (the Games switcher)
 const KEY_RESERVED = new Set(['arrowup', 'arrowdown', 'arrowleft', 'arrowright', 'w', 'a', 's', 'd',
-	'z', 'x', 'enter', 'p', 'b', 'c', 'f', 'r', 'escape', 'm', ' ']);
+	'z', 'x', 'c', 'v', 'q', 'e', 'enter', 'backspace', 'p', 'b', 'f', 'r', 'escape', 'm', ' ', '`', 'shift', 'tab']);
 export const normKey = k => (k && k.length === 1 ? k.toLowerCase() : k);
 export function translateKey(k) {
 	const kk = normKey(k);
