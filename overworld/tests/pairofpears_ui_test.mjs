@@ -58,14 +58,24 @@ try {
 		const tapAt = async (r) => { if (vp.hasTouch) await page.touchscreen.tap(r.x, r.y); else await page.mouse.click(r.x, r.y); };
 		const centerOf = (sel) => page.evaluate((s) => { const e = document.querySelector(s); if (!e) return null; const b = e.getBoundingClientRect(); return { x: b.left + b.width / 2, y: b.top + b.height / 2 }; }, sel);
 		const clickSel = async (sel) => { await idle(); const r = await centerOf(sel); if (!r) return false; await tapAt(r); return true; };
-		// tap a card until it is face up (on a slow CI runner a tap can land while the deal is still settling and miss)
+		// tap a card once it has stopped moving (on a slow CI runner the deal can still be flying: a tap at
+		// a moving card's centre lands on its neighbour — a pear instead of the kiwi, then a mismatch); if
+		// the tap still missed (nothing turned up), tap again
 		const cardUp = (id) => view().then((v) => { const c = v && v.cards.find((x) => x.id === id); return !!c && (c.up || c.m); });
+		const upCount = () => view().then((v) => (v ? v.cards.filter((x) => x.up && !x.m).length : 0));
+		const stillAt = async (sel) => {
+			let prev = await centerOf(sel);
+			for (let i = 0; i < 30; i++) { await sleep(120); const r = await centerOf(sel); if (r && prev && Math.abs(r.x - prev.x) < 0.5 && Math.abs(r.y - prev.y) < 0.5) return r; prev = r; }
+			return prev;
+		};
 		const clickCard = async (id) => {
 			for (let i = 0; i < 4; i++) {
 				await idle();
-				const r = await centerOf(`.cards-layer .card[data-id="${id}"]`);
+				const before = await upCount();
+				const r = await stillAt(`.cards-layer .card[data-id="${id}"]`);
 				if (r) await tapAt(r);
 				if (await waitFor(() => cardUp(id), 1500)) return;
+				if ((await upCount()) !== before) return;   // something else turned up: don't tap blindly again
 			}
 		};
 		const pad = async (i) => { await page.evaluate((i) => { window.__fakePad.buttons[i].pressed = true; window.__fakePad.buttons[i].value = 1; }, i); await sleep(120); await page.evaluate((i) => { window.__fakePad.buttons[i].pressed = false; window.__fakePad.buttons[i].value = 0; }, i); await sleep(120); };
