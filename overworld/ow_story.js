@@ -779,8 +779,9 @@ export const STORY_SEED = {
 			// OLDALE re-fires a permanent west-exit block; PETALBURG re-fires a control-
 			// seizing gym escort; METEOR_FALLS & MT_PYRE flip cross-map hide-flags
 			// (deleting content elsewhere) + MT_PYRE gives a key item; SEAFLOOR_CAVERN
-			// WARPS the player to Route 128; SKY_PILLAR hides the Rayquaza object the
-			// player came to catch. The legendaries are still catchable via
+			// WARPS the player to Route 128. SKY_PILLAR's cry var rests at 1 until Wallace
+			// opens the pillar (city state 4): awakening_sync.js arms it then, so the
+			// native awakening runs. The legendaries are still catchable via
 			// LEGENDARY_ENCOUNTERS (a real battle on their tile), decoupled from these
 			// awakening scenes.
 			// ARMED (the Kanto pass's discovery applied here): Emerald also ships a
