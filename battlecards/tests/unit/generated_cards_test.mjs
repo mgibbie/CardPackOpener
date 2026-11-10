@@ -141,7 +141,7 @@ ok('a cost condition naming a card is not generation', !gen('karazhan_the_sanctu
 	ok('the reported pair specifically matches', bodyColorOf(byId.me_aragorn_rally_ii) === bodyColorOf(byId.me_aragorn_rally),
 		bodyColorOf(byId.me_aragorn_rally_ii) + ' vs ' + bodyColorOf(byId.me_aragorn_rally));
 	// artIdOf is what the renderer actually calls
-	const artIdOf = new Function(line('artIdOf').replace('export const', 'const') + '; return artIdOf;')();
+	const artIdOf = new Function('ART_ALIASES', line('artIdOf').replace('export const', 'const') + '; return artIdOf;')({}); // token aliases: lorequest_token_art_test
 	ok('artIdOf resolves a copy to its creator\'s art id', artIdOf(byId.me_aragorn_rally_ii) === 'me_aragorn_rally');
 	ok('artIdOf leaves an ordinary card on its own id', artIdOf(byId.me_aragorn_rally) === 'me_aragorn_rally');
 	ok('artIdOf is safe on junk', artIdOf(null) === '' && artIdOf({}) === '');
