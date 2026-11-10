@@ -411,6 +411,19 @@ try {
 		A(await page.evaluate(() => document.querySelector('.controls').classList.contains('readonly') && document.querySelector('.b-play').disabled), 'spectators can\'t act (controls are read-only)');
 		const r = await page.evaluate(() => window.__micatro.act({ type: 'play' }));
 		A(r && r.ok === false, 'the act hook refuses actions in spectate mode');
+		// the keyboard (controls sweep B5): the arrows walk the reticle over the runner's cards, Z / V show card info, Backspace the
+		// deck, X closes it — and nothing acts
+		await page.keyboard.press('ArrowRight'); await sleep(150);
+		await page.keyboard.press('ArrowRight'); await sleep(150);
+		const kf = await page.evaluate(() => { const f = window.__micatroPad.focus; return { f: f && (f.area || String(f.cls)), ring: document.querySelector('.pad-reticle').style.display !== 'none', hints: getComputedStyle(document.getElementById('pad-hints')).display !== 'none' && /Z/.test(document.getElementById('pad-hints').textContent) }; });
+		A(kf.f && kf.ring && kf.hints, 'spectating: the arrows show the reticle and the key hints', JSON.stringify(kf));
+		await page.keyboard.press('KeyV'); await sleep(200);
+		A(await page.evaluate(() => window.__micatroPad.tipsOn), 'spectating: V turns card info on');
+		await page.keyboard.press('KeyV'); await sleep(100);
+		await page.keyboard.press('Backspace'); await sleep(300);
+		A(await page.evaluate(() => !!document.querySelector('.dv-modal')), 'spectating: Backspace opens the deck view');
+		await page.keyboard.press('KeyX'); await sleep(300);
+		A(await page.evaluate(() => !document.querySelector('.dv-modal') && window.__micatro.board.view.discards_left !== undefined), 'spectating: X closes it');
 		const fatal = errors.filter(e => !/Failed to load resource|favicon/i.test(e));
 		A(fatal.length === 0, 'no console errors while spectating', fatal.slice(0, 4).join(' | '));
 		await ctx.close();
