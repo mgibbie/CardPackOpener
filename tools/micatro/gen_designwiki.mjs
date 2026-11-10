@@ -29,7 +29,10 @@ G.GAME.current_round.most_played_poker_hand = MISC.dictionary.ph_most_played || 
 
 const C = DATA.centers;
 const byOrder = (a, b) => (a.order || 0) - (b.order || 0);
-const centersOf = (set) => Object.entries(C).filter(([, v]) => v.set === set).map(([key, v]) => ({ key, ...v })).sort(byOrder);
+// (base game only: importing the engine registers Multiplayer's engine-internal mod into the same registries —
+// its j_mp_* jokers, decks, stakes, blinds carry `mod` — and those belong to the mods' pages, not this one)
+const base = ([, v]) => !(v && v.mod);
+const centersOf = (set) => Object.entries(C).filter(([, v]) => v.set === set).filter(base).map(([key, v]) => ({ key, ...v })).sort(byOrder);
 const RARITY = [null, 'Common', 'Uncommon', 'Rare', 'Legendary'];
 const clean = (lines) => (lines || []).filter((l) => l !== '');
 const infoOf = (d) => (d.info || []).filter((i) => i && i.name).map((i) => ({ name: i.name, lines: clean(i.lines) }));
@@ -63,7 +66,7 @@ const boosters = centersOf('Booster').map((c) => centerEntry(c, {
   kind: c.kind, choose: c.config.choose, size: c.config.extra, weight: c.weight,
 }));
 
-const tags = Object.entries(DATA.tags).map(([key, t]) => ({ key, ...t })).sort(byOrder).map((t) => {
+const tags = Object.entries(DATA.tags).filter(base).map(([key, t]) => ({ key, ...t })).sort(byOrder).map((t) => {
   const d = describeTag(t.key);
   return {
     key: t.key, name: d.name || t.name, pos: t.pos, lines: clean(d.lines),
@@ -72,7 +75,7 @@ const tags = Object.entries(DATA.tags).map(([key, t]) => ({ key, ...t })).sort(b
   };
 });
 
-const blinds = Object.entries(DATA.blinds).map(([key, b]) => ({ key, ...b })).sort(byOrder).map((b) => {
+const blinds = Object.entries(DATA.blinds).filter(base).map(([key, b]) => ({ key, ...b })).sort(byOrder).map((b) => {
   const d = describeBlind(b.key);
   return {
     key: b.key, name: d.name, pos: b.pos, mult: b.mult, dollars: b.dollars, lines: clean(d.lines),
@@ -93,7 +96,7 @@ const decks = centersOf('Back').filter((b) => b.key !== 'b_challenge').map((b) =
   return { key: b.key, name: d.name, pos: b.pos, lines: clean(d.lines) };
 });
 
-const stakes = Object.entries(DATA.stakes).map(([key, s]) => ({ key, ...s })).sort((a, b) => a.stake_level - b.stake_level).map((s) => {
+const stakes = Object.entries(DATA.stakes).filter(base).map(([key, s]) => ({ key, ...s })).sort((a, b) => a.stake_level - b.stake_level).map((s) => {
   const d = (DATA.loc.descriptions.Stake || {})[s.key] || {};
   return { key: s.key, name: d.name || s.name, chip: s.name, level: s.stake_level, pos: s.pos, lines: clean(d.text) };
 });
