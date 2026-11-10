@@ -102,6 +102,8 @@ $('form').addEventListener('submit', async (e) => {
 });
 render();
 </script>
+<!-- no mouse needed: arrows / WASD / d-pad move, Z / Enter / A picks, X / B backs out (site/focusnav.js) -->
+<script type="module">import { initFocusNav } from '/site/focusnav.js'; initFocusNav();</script>
 <script type="module" src="/site/topbar.js"></script> <!-- the shared top bar + the Games switcher (` / hold Esc / Start+Select / ⚙️) -->
 </body>
 </html>

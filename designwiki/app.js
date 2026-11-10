@@ -3604,6 +3604,18 @@ function controlsView() {
         ['Touch / mouse', 'The ⚙️ button (top corner; in MicaSurvivor also in the pause menu)'],
       ]),
       h('p', { class: 'muted' }, 'Inside it: arrows / WASD / d-pad move, Z / Enter / A open, X / Esc / B close, or tap. Leaving something that can’t be saved asks first: a live PvP match (it counts as a loss), a Micatro Multiplayer match (a forfeit), a MicaSurvivor run (the run is lost), a Battle Frontier streak, coins already bet. It won’t open during an overworld cutscene. The overworld saves your position before you go.')),
+    section('Scoundrel, Pair of Pears and PokéChess', 'Keyboard and controller give the same actions; a gold reticle (a cursor in PokéChess) shows the focus, and the hint bar shows the keys or buttons you are using.',
+      table(['Key', 'Button', 'Scoundrel', 'Pair of Pears', 'PokéChess'], [
+        ['Arrows / W A S D', 'D-pad', 'Move the reticle', 'Move the reticle', 'Move the cursor'],
+        ['Z', 'A', 'Pick (in a fight: Weapon)', 'Flip / pick (Enter, Space too)', 'Pick a piece / square (Enter too)'],
+        ['X / Esc', 'B', 'Back, cancel the fight choice', 'Back, put a held charm down', 'Let go of the piece'],
+        ['C', 'X', 'Fight bare-handed (B too)', 'Sell the held charm', '—'],
+        ['V', 'Y', 'Run! (Space too)', 'Continue / next level (N too)', '—'],
+        ['Enter', 'Start', 'Pick / descend (Start: Options)', 'Pick (Start: Options; O too)', 'Pick'],
+        ['Backspace', 'Select', '—', '—', 'Leave to the overworld'],
+        ['1–4, R', '—', 'Pick a room card, new run', '—', '—'],
+      ])),
+    section('Pages', 'The main page, the wiki, News, Learn, Report a bug, Log in, Profile, your Bag and Monsters: arrows / WASD / d-pad move a gold ring over the links and buttons, Z / Enter / A opens, X / Esc / B goes back; Z on a text box puts the cursor there (Esc leaves it), on a controller it opens the on-screen keyboard.'),
     section('Overworld and Pokémon battles', 'Buttons by position; the hint bar at the bottom shows the names for the pad you are holding.',
       table(['Button', 'Roaming', 'Menus and battles'], [
         ['Stick / D-pad', 'Walk', 'Move the cursor (held = scroll)'],

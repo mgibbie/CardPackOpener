@@ -17,7 +17,8 @@ import { Background, C as BGC, hex } from '../../micatro/js/ui/gl.js';
 import { CardSprite, drawBack, FACE_W, FACE_H } from '../../micatro/js/ui/cardsprite.js';
 import { sound } from '../../micatro/js/ui/sound.js';
 import { esc } from '../../micatro/js/ui/markup.js';
-import { startGamepad, buttonLabel } from '/site/gamepad.js';
+import { buttonLabel } from '/site/gamepad.js';
+import { startInput, keyLabel, isTyping } from '/site/input.js';
 
 const params = new URLSearchParams(location.search);
 const SPECTATE = (params.get('spectate') || '').trim().toLowerCase();
@@ -381,7 +382,7 @@ function renderTable(v) {
   const live = v.state === E.STATE.CHOOSING;
   el.ctrl.style.display = v.state === E.STATE.CLEARED || v.over ? 'none' : '';
   el.run.disabled = !v.canRun || MODE !== 'normal';
-  el.hint.textContent = v.canRun ? (MODE === 'normal' && !portrait ? '[Space] — the room goes under the deck' : '') : v.ranLastRoom ? 'You ran from the last room' : v.state === E.STATE.FIGHT_CHOICE ? '' : live ? '' : '';
+  el.hint.textContent = v.canRun ? (MODE === 'normal' && !portrait ? '[V] — the room goes under the deck' : '') : v.ranLastRoom ? 'You ran from the last room' : v.state === E.STATE.FIGHT_CHOICE ? '' : live ? '' : '';
   if (v.potionUsed && live) el.hint.textContent = (el.hint.textContent ? el.hint.textContent + ' · ' : '') + 'Potion used this room';
   // type icons over the room cards (sprites.lua getCardTypeIcon)
   const want = v.room.map((c) => c.id).join(',');
@@ -618,7 +619,7 @@ function howTo() {
   <p>Empty the deck to clear the dungeon. At 0 HP the run is over.</p>
   <p><b>The run:</b> every dungeon you clear starts the next one with <b>1 less max HP</b> (20, 19, 18 …), at full health. How deep can you go?
   Your score is the number of dungeons cleared, then the last dungeon's Scoundrel score (HP left, or minus the monsters left when you died).</p>
-  <p class="muted">Keys: 1–4 pick a card · W weapon · B bare-handed · Esc cancel · Space run · Enter descend · R new run. Controllers and touch work too (long-press a card for its details).</p>`;
+  <p class="muted">Keys: arrows / WASD move · Z pick (in a fight: Weapon) · C or B bare-handed · X or Esc back · V or Space run · 1–4 pick a card · Enter pick / descend · R new run. Controllers and touch work too (long-press a card for its details).</p>`;
   modal(b, { title: 'How to play', cls: 'sc-modal' });
 }
 
@@ -806,9 +807,13 @@ function makePad() {
     }
     if (best) { setFocus(best); sound.play('cardSlide2', 1.2, 0.5); }
   }
+  // the focus is on a live stop and the player can see it (the ring is showing)
+  const seen = () => ringOn && focus && focus.isConnected && stops().includes(focus);
   function confirm() {
-    ringOn = true;
-    if (!focus || !focus.isConnected) { ensure(true); return; }
+    // a fight choice: Z is the Weapon, unless the ring shows another button (Unarmed, Options)
+    if (!topModal() && V && MODE === 'normal' && V.state === E.STATE.FIGHT_CHOICE && (!seen() || focus === el.fightW)) { act('w'); return; }
+    // the first press (or after the mouse) only shows where the focus is
+    if (!seen()) { ringOn = true; ensure(true); return; }
     if (focus.classList.contains('card')) { const s = sprites.get(+focus.dataset.id); if (s) clickCard(s); }
     else focus.click();
   }
@@ -816,44 +821,72 @@ function makePad() {
     if (topModal()) { if (topModal().querySelector('.b-back')) closeModal(); return; }
     if (V && V.state === E.STATE.FIGHT_CHOICE) act('c');
   }
+  // Start opens Options. Enter (a DOM game: Enter stays "pick") picks what the ring shows, in a
+  // menu or a fight choice too; with no ring it descends from a cleared dungeon, else Options.
+  function menu(source) {
+    const fight = V && V.state === E.STATE.FIGHT_CHOICE;
+    if (source === 'key' && (topModal() || seen() || fight)) { confirm(); return; }
+    if (topModal() || MODE !== 'normal') return;
+    if (source === 'key' && V && V.state === E.STATE.CLEARED) { act('d'); return; }
+    optionsMenu();
+  }
+  let src = 'pad';
+  const lbl = (a) => (src === 'key' ? keyLabel(a) : buttonLabel(a, kind));
   const showHints = () => {
     hints.style.display = '';
-    const k = (a) => `<span class="pk">${esc(buttonLabel(a, kind))}</span>`;
-    hints.innerHTML = `${k('confirm')}Select<span class="sep"></span>${k('cancel')}Back<span class="sep"></span>${k('context')}Run!<span class="sep"></span>${k('menu')}Options`;
+    const k = (a) => `<span class="pk">${esc(lbl(a))}</span>`;
+    const fight = V && V.state === E.STATE.FIGHT_CHOICE;
+    hints.innerHTML = `${k('confirm')}${fight ? 'Weapon' : 'Select'}<span class="sep"></span>${k('cancel')}Back<span class="sep"></span>` +
+      `${fight ? k('secondary') + 'Unarmed<span class="sep"></span>' : ''}${k('context')}Run!${src === 'pad' ? '<span class="sep"></span>' + k('menu') + 'Options' : ''}`;
+  };
+  // one handler for the keyboard (site/input.js: arrows / WASD, Z X C V, Enter) and a controller
+  const onAction = (a, info) => {
+    src = info.source === 'key' ? 'key' : 'pad';
+    if (['up', 'down', 'left', 'right'].includes(a)) { move(a); showHints(); return true; }
+    if (a === 'confirm') confirm();
+    else if (a === 'cancel') cancel();
+    else if (a === 'secondary') { if (!topModal() && V && V.state === E.STATE.FIGHT_CHOICE) act('b'); }
+    else if (a === 'context') { if (!topModal()) act('r'); }
+    else if (a === 'menu') {
+      // a controller's Start acts on its RELEASE, and only alone: Start + Select together
+      // open the Games switcher (site/switcher.js), and Options must not open under it
+      if (src === 'pad') { startAlone = !(inp && inp.held('select')); return true; }
+      menu(src);
+    } else if (a === 'select') { startAlone = false; return true; }
+    else return false;
+    showHints();
+    return true;
+  };
+  let startAlone = false, inp = null;
+  const onRelease = (a, info) => {
+    if (a !== 'menu' || info.source !== 'pad') return;
+    const go = startAlone && !info.forced; startAlone = false;
+    if (go) { src = 'pad'; menu('pad'); showHints(); }
   };
   try {
-    startGamepad({
-      onPress: (a) => {
-        showHints();
-        if (['up', 'down', 'left', 'right'].includes(a)) move(a);
-        else if (a === 'confirm') confirm();
-        else if (a === 'cancel') cancel();
-        else if (a === 'context') act('r');
-        else if (a === 'menu') { if (!topModal() && MODE === 'normal') optionsMenu(); }
-      },
-      onConnect: (info) => { kind = (info && info.kind) || 'generic'; },
+    inp = window.__scoundrelInput = startInput({
+      onAction,
+      onRelease,
+      pad: true,
+      padOptions: { onConnect: (info) => { kind = (info && info.kind) || 'generic'; } },
     });
-  } catch (e) { /* no gamepad support */ }
+  } catch (e) { /* no input support */ }
+  // the keys the scheme leaves to the game: Esc (a quick tap; a held Esc opens the Games
+  // switcher), 1-4, B / U bare-handed, Space run, R new run
   addEventListener('keydown', (ev) => {
-    if (ev.target && /^(INPUT|TEXTAREA)$/.test(ev.target.tagName)) return;
+    if (ev.ctrlKey || ev.metaKey || ev.altKey || isTyping(ev.target && ev.target.tagName ? ev.target : undefined)) return;
     const k = ev.key;
-    if (k.startsWith('Arrow')) { ev.preventDefault(); move(k.slice(5).toLowerCase()); return; }
     if (k === 'Escape') { cancel(); return; }
-    if (k === 'Enter') {
-      if (ringOn && focus) { ev.preventDefault(); confirm(); return; }
-      if (!topModal() && V && V.state === E.STATE.CLEARED) act('d');
-      return;
-    }
     if (topModal() || MODE !== 'normal' || !V) return;
     if (/^[1-4]$/.test(k)) act(String(+k - 1));
-    else if (k === 'w' || k === 'W') act('w');
     else if (k === 'b' || k === 'B' || k === 'u' || k === 'U') act('b');
     else if (k === ' ') { ev.preventDefault(); act('r'); }
     else if (k === 'r' || k === 'R') confirmRestart();
   });
-  addEventListener('pointerdown', () => { ringOn = false; draw(); }, true);
+  addEventListener('pointerdown', () => { ringOn = false; draw(); hints.style.display = 'none'; }, true);
   addEventListener('resize', () => draw());
-  return { refresh(reset) { if (ringOn) requestAnimationFrame(() => ensure(reset)); }, draw };
+  let lastScreen = null;
+  return { refresh(reset) { const scr = (V && V.state) || null; if (scr !== lastScreen) { lastScreen = scr; reset = true; } if (ringOn) requestAnimationFrame(() => { ensure(reset); if (hints.style.display !== 'none') showHints(); }); }, draw, get focus() { return focus; }, get ringOn() { return ringOn; } };
 }
 
 // ------------------------------------------------------------------ frame loop
@@ -893,6 +926,7 @@ window.__scoundrel = {
   act: (a) => act(String(a)),
   newRun: (o = {}) => newRun(o.seed),
   idle: () => settled(),
+  focus: () => (pad && pad.ringOn ? pad.focus : null),   // (tests: what the ring shows)
   recipe: () => (S ? { seed: S.seed, actions: S.actions } : null),
   engine: E,
 };

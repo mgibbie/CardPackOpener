@@ -126,7 +126,9 @@
   </div>
   <!-- bump ?v=… on a release to push fresh code+data to all clients (app.js
        reads this version and appends it to every sub-resource it loads) -->
-  <script src="app.js?v=20261110ctl"></script>
+  <script src="app.js?v=20261110b78"></script>
+  <!-- no mouse needed: arrows / WASD / d-pad move, Z / Enter / A picks, X / B backs out (site/focusnav.js) -->
+  <script type="module">import { initFocusNav } from '/site/focusnav.js'; initFocusNav();</script>
   <script type="module" src="/site/switcher.js"></script> <!-- the site's Games switcher (` / hold Esc / Start+Select / the header ⚙️); the wiki keeps its own header and never calls the account API -->
 </body>
 </html>
