@@ -58,7 +58,16 @@ try {
 		const tapAt = async (r) => { if (vp.hasTouch) await page.touchscreen.tap(r.x, r.y); else await page.mouse.click(r.x, r.y); };
 		const centerOf = (sel) => page.evaluate((s) => { const e = document.querySelector(s); if (!e) return null; const b = e.getBoundingClientRect(); return { x: b.left + b.width / 2, y: b.top + b.height / 2 }; }, sel);
 		const clickSel = async (sel) => { await idle(); const r = await centerOf(sel); if (!r) return false; await tapAt(r); return true; };
-		const clickCard = async (id) => { await idle(); await tapAt(await centerOf(`.cards-layer .card[data-id="${id}"]`)); };
+		// tap a card until it is face up (on a slow CI runner a tap can land while the deal is still settling and miss)
+		const cardUp = (id) => view().then((v) => { const c = v && v.cards.find((x) => x.id === id); return !!c && (c.up || c.m); });
+		const clickCard = async (id) => {
+			for (let i = 0; i < 4; i++) {
+				await idle();
+				const r = await centerOf(`.cards-layer .card[data-id="${id}"]`);
+				if (r) await tapAt(r);
+				if (await waitFor(() => cardUp(id), 1500)) return;
+			}
+		};
 		const pad = async (i) => { await page.evaluate((i) => { window.__fakePad.buttons[i].pressed = true; window.__fakePad.buttons[i].value = 1; }, i); await sleep(120); await page.evaluate((i) => { window.__fakePad.buttons[i].pressed = false; window.__fakePad.buttons[i].value = 0; }, i); await sleep(120); };
 		const settled = () => waitFor(async () => !(await view()).busy, 3000);
 
