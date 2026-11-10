@@ -17,19 +17,26 @@
 //     targets and the red arrow follows it; confirm commits, cancel backs out.
 // Menus that open along the way (choose-one, discover, …) belong to padnav.js.
 //
-// Buttons (Nintendo layout, site/gamepad.js):
-//   d-pad / stick  move focus (spatially)     confirm (right)  play / attack / pick
-//   cancel (bottom) back out (clearModes)      LB / RB   hand ← → your side ← → enemy ← → buttons
-//   left face      read the focused card (the centered focus view; also confirm on a card you can't act on)
-//   Start          the match menu (log, auto-pass, sound, concede)
+// Keys and buttons (the owner's map, 2026-11-10; Nintendo-layout pad):
+//   arrows / WASD, d-pad / stick   move focus (spatially)
+//   Z / A        play / attack / pick        X / B     back out (clearModes)
+//   Q E / L R    hand <-> your side <-> enemy <-> buttons
+//   V / Y        read the focused card (the centered focus view; also Z/A on a card you can't act on)
+//   C / X        the game log
+//   Enter / Start  the match menu (log, auto-pass, sound, concede, Leave -> Games);
+//                  while placing or targeting, Enter confirms like Z
 // END TURN, the HERO POWER orb and the LOG are places on the board you move to
 // and confirm (owner, 2026-10-01: no dedicated hero-power button, no end turn on
 // Start, and the selector must be able to reach End Turn).
-import { startGamepad, buttonLabel, loadPadSettings } from '../site/gamepad.js';
+// One input feeds both this and padnav.js (padnav routes each action here while
+// the board is active, to its DOM navigator otherwise).
+import { buttonLabel, loadPadSettings } from '../site/gamepad.js';
+import { keyLabel } from '../site/input.js';
 import { oskOpen } from '../site/osk.js';
-import { openModal, setBoardGuard } from './padnav.js';
+import { openSwitcher } from '../site/switcher.js';
+import { openModal, setBoard, getInput } from './padnav.js';
 
-let api = null, pad = null;
+let api = null, pad = null, source = null;   // pad = the shared input's controller poller; source = 'key' | 'pad'
 let focusKey = null;        // 'u:<uid>' | 'h:<playerIndex>'
 let slot = null;            // { card, i } while placing a creature
 let visible = false;        // hidden once the mouse moves
@@ -203,7 +210,14 @@ function openFocus(card) {
 }
 function cancel() {
 	if (slot) { slot = null; api.setPlacing(null); return; }
-	if (api.pending || api.attacker) { api.clearModes(); return; }
+	if (api.pending || api.attacker) {
+		// back out, and put focus back on the card that started it (targeting had moved it onto a target)
+		const uid = api.pending ? api.pending.card && api.pending.card.uid : api.attacker !== 'HERO' ? api.attacker : null;
+		api.clearModes();
+		const s = uid && stops().find(x => x.uid === uid);
+		if (s) setFocus(s);
+		return;
+	}
 	api.hideInspect();
 }
 function move(dir) {
@@ -232,26 +246,34 @@ function jumpZone(step) {
 	}
 }
 
-function onPress(action) {
-	if (!boardActive()) return;
-	if (!visible && action !== 'menu') {             // first press after the mouse: just show focus
+// one action while the board is active (padnav routes it here); true = used
+function onAction(action, info = {}) {
+	if (!boardActive()) return false;
+	if (info.source) source = info.source;
+	if (action === 'select') return false;
+	// Enter on a keyboard while placing / targeting: the same as Z (it has no menu meaning there)
+	if (action === 'menu' && info.source === 'key' && mode() !== 'browse') action = 'confirm';
+	if (!visible && action !== 'menu' && action !== 'secondary') {   // first press after the mouse: just show focus
 		const list = mode() === 'target' ? targetStops() || [] : stops();
 		visible = true;
-		return setFocus(current(list) || (mode() === 'target' ? list[0] : pickDefault(list)));
+		setFocus(current(list) || (mode() === 'target' ? list[0] : pickDefault(list)));
+		return true;
 	}
-	if (DIRS[action]) return move(action);
-	if (action === 'confirm') return confirm();
-	if (action === 'cancel') return cancel();
-	if (action === 'prev') return jumpZone(-1);
-	if (action === 'next') return jumpZone(1);
-	if (action === 'context') {
+	if (DIRS[action]) move(action);
+	else if (action === 'confirm') confirm();
+	else if (action === 'cancel') cancel();
+	else if (action === 'prev') jumpZone(-1);
+	else if (action === 'next') jumpZone(1);
+	else if (action === 'context') {
 		const s = current(stops());
 		if (s?.card) openFocus(s.card);
 		else if (s?.kind === 'orb') { const hp = api.heroPowerCard(); if (hp) openFocus(hp); }
-		return;
 	}
-	if (action === 'menu') { if (mode() === 'browse') openMatchMenu(); return; }
+	else if (action === 'secondary') { if (mode() === 'browse') openLog(); }
+	else if (action === 'menu') { if (mode() === 'browse') openMatchMenu(); }
+	return true;
 }
+const openLog = () => { api.openLog ? api.openLog() : document.getElementById('log-btn')?.click(); };
 
 // ---------- the Start menu ----------
 // A small DOM modal (aria-modal, so padnav drives it); cancel / Esc / Back close it.
@@ -287,7 +309,7 @@ function openMatchMenu() {
 	};
 	const click = id => document.getElementById(id)?.click();
 	const shownBtn = id => { const el = document.getElementById(id); return !!el && getComputedStyle(el).display !== 'none'; };
-	item('📜 Game log', () => { closeMatchMenu(); api.openLog ? api.openLog() : click('log-btn'); });
+	item('📜 Game log', () => { closeMatchMenu(); openLog(); });
 	if (shownBtn('autopass-btn')) {
 		const ap = () => document.getElementById('autopass-btn').textContent;
 		item(ap(), b => { click('autopass-btn'); b.textContent = ap(); });
@@ -295,6 +317,9 @@ function openMatchMenu() {
 	const sfx = () => (document.getElementById('sfx-btn')?.classList.contains('muted') ? '🔇 Sound: OFF' : '🔊 Sound: ON');
 	item(sfx(), b => { click('sfx-btn'); b.textContent = sfx(); });
 	if (shownBtn('concede')) item('🏳 Concede', () => { closeMatchMenu(); click('concede'); });
+	// leave the match: the site's Games switcher (Home, the Battlecards hub, every game).
+	// It asks first when leaving costs something (window.mpLeaveGuard in game.js).
+	item('🚪 Leave', () => { closeMatchMenu(); openSwitcher(); });
 	item('Back', () => closeMatchMenu());
 	document.body.appendChild(menuEl);
 	addEventListener('keydown', menuKey, true);
@@ -315,12 +340,19 @@ function ensureDom() {
 		font: '600 13px "Segoe UI", sans-serif', whiteSpace: 'nowrap', display: 'none' });
 	document.body.append(reticle, hints);
 }
-// what the buttons do in this mode, named for the pad in your hands (Phase 5)
+// what the buttons do in this mode, named for what's in your hands (Phase 5):
+// the pad's own glyphs, or the keyboard's keys (site/input.js KEY_LABELS)
 function hintText(m) {
+	if (source === 'key') {
+		const K = a => `[${keyLabel(a)}]`;
+		if (m === 'slot') return `←/→ choose a slot · ${K('confirm')} place · ${K('cancel')} cancel`;
+		if (m === 'target') return `Arrows pick a target · ${K('confirm')} confirm · ${K('cancel')} cancel`;
+		return `Arrows/WASD move · ${K('confirm')} play / attack / use · [Q][E] zones · ${K('context')} inspect · ${K('secondary')} log · ${K('menu')} menu`;
+	}
 	const L = a => `[${buttonLabel(a, (pad && pad.kind()) || 'switch', loadPadSettings())}]`;
 	if (m === 'slot') return `◄► choose a slot · ${L('confirm')} place · ${L('cancel')} cancel`;
 	if (m === 'target') return `D-pad pick a target · ${L('confirm')} confirm · ${L('cancel')} cancel`;
-	return `D-pad move · ${L('confirm')} play / attack / use · ${L('prev')}${L('next')} zones · ${L('context')} inspect · ${L('menu')} menu`;
+	return `D-pad move · ${L('confirm')} play / attack / use · ${L('prev')}${L('next')} zones · ${L('context')} inspect · ${L('secondary')} log · ${L('menu')} menu`;
 }
 function onFrame() {
 	if (!api) return;
@@ -328,7 +360,7 @@ function onFrame() {
 	// UNPLUGGED (the last pad gone — checked here, not in onDisconnect, so a second
 	// pad still in use keeps everything): hide the reticle, the hints, the end-turn
 	// and the card's hover lift. Focus is remembered; the next press shows it.
-	if (visible && pad && !pad.connected()) {
+	if (visible && source === 'pad' && pad && !pad.connected()) {
 		visible = false;
 		reticle.style.display = 'none'; hints.style.display = 'none';
 		api.setHover(null);
@@ -356,23 +388,22 @@ function onFrame() {
 			marginLeft: '-43px', marginTop: '-43px', borderRadius: '50%', borderColor: m === 'target' ? '#ff6b6b' : '#ffd27a' });
 	}
 	else reticle.style.display = 'none';
-	const showHints = active && visible && pad && pad.connected();
+	const showHints = active && visible && (source === 'key' || (pad && pad.connected()));
 	if (showHints) { const t = hintText(m); if (t !== lastHints) { hints.textContent = t; lastHints = t; } hints.style.display = 'block'; }
 	else hints.style.display = 'none';
 }
 
 export function initPadboard(gameApi) {
-	if (pad || typeof window === 'undefined') return null;
+	if (api || typeof window === 'undefined') return null;
 	api = gameApi;
-	setBoardGuard(boardActive);
-	pad = startGamepad({
-		readPads: window.__owFakePads ? () => window.__owFakePads : undefined,
-		onPress, onFrame,
-	});
-	// the mouse takes over: hide the reticle until the next pad press
-	addEventListener('pointermove', e => { if (e.isTrusted && visible) { visible = false; if (reticle) reticle.style.display = 'none'; } }, { passive: true });
+	const input = getInput();
+	pad = input && input.pad;
+	setBoard({ active: boardActive, onAction, onFrame });
+	// the mouse takes over: hide the reticle until the next key / pad press
+	addEventListener('pointermove', e => { if (e.isTrusted && visible) { visible = false; if (reticle) reticle.style.display = 'none'; if (hints) hints.style.display = 'none'; } }, { passive: true });
 	window.__padboard = { get focus() { return focusKey; }, get menuOpen() { return !!menuEl; }, openMatchMenu, closeMatchMenu,
 		focusKey(k) { const s = stops().find(x => keyOf(x) === k); if (s) setFocus(s); return !!s; }, get slot() { return slot && { uid: slot.card.uid, i: slot.i }; }, get mode() { return api ? mode() : 'off'; }, stops, targetStops, active: boardActive,
+		get hints() { return hints && hints.style.display !== 'none' ? hints.textContent : ''; },
 		// tests: put focus on a card directly (walking there depends on layout)
 		focusUid(uid) { const s = stops().find(x => x.uid === uid); if (s) setFocus(s); return !!s; } };
 	return pad;

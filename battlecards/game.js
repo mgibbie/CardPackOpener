@@ -5683,6 +5683,17 @@ window.mpLeaveGuard = () => {
 };
 
 addEventListener('keydown', ev => { if (ev.key === 'Escape') clearModes(); wake(); });
+// The decision modals' buttons listen on pointerdown (so the page-wide pointerdown
+// can't close a menu first). A keyboard's native Space on a Tab-focused button
+// sends only a click (detail 0): hand it the pointerdown it is waiting for. (Z and
+// Enter go through padnav.js, which replays the whole mouse click.)
+addEventListener('click', ev => {
+	if (!ev.isTrusted || ev.detail !== 0) return;
+	const b = ev.target && ev.target.closest && ev.target.closest('button');
+	if (!b || !b.closest('#scry-modal, #walker-menu, #inspect, #card-focus')) return;
+	const r = b.getBoundingClientRect();
+	b.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true, clientX: r.left + r.width / 2, clientY: r.top + r.height / 2, button: 0, buttons: 1, pointerType: 'mouse', isPrimary: true }));
+}, true);
 // mobile browsers fire resize in bursts (rotation, keyboard, URL-bar); each
 // setSize reallocates the whole drawbuffer, so coalesce to one per frame and
 // skip no-op sizes entirely
@@ -7578,6 +7589,7 @@ function hideMiniTip() { if (miniTip) miniTip.style.display = 'none'; }
 // rules; `el._tipFired` records that a long-press showed the tip, so a
 // tappable element can suppress its click when the gesture was a hold
 function attachTip(el, def) {
+	el.dataset.tip = '1';   // V / the pad's Y shows this tip for the focused choice (padnav.js)
 	// Mouse/pen: hovering shows the tip. Gated on the event's pointerType (not the
 	// global TOUCH flag) so a mouse still gets hover tips on hybrid / touch-primary
 	// devices where (pointer: coarse) matches (e.g. touchscreen laptops).
@@ -10240,6 +10252,9 @@ function buildReplayBar() {
 	$('rb-scrub').addEventListener('pointerdown', () => { rbScrubbing = true; });
 	addEventListener('pointerup', () => { rbScrubbing = false; });
 	rbHideT = setTimeout(rbTuck, 2500); // an opening peek at the controls, then tuck
+	// ← / → step the replay (Q / E too: padnav turns them into ← / →), so the
+	// keyboard navigator leaves the real arrows to it here
+	if (replayMode && window.__padnav) window.__padnav.own(['ArrowLeft', 'ArrowRight']);
 	addEventListener('keydown', e => {
 		if (!replayMode) return;
 		if (e.key === 'ArrowRight') { e.preventDefault(); replayStep(1); }

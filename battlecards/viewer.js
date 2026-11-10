@@ -1,8 +1,8 @@
 // viewer.js — the collection browser: a paginated, filterable card book.
 // Card faces come from the shared procedural renderer; rules text appears in
 // a hover tooltip, and rules-cards carry a CSS-animated iridescent gem.
-import { drawCardFace, classNameOf, canonClass, artListeners, preloadArt, showsRarity } from './cardart.js?v=20260913e';
-import { keywordsFor, richHtml } from './keywords.js?v=20260913e';
+import { drawCardFace, classNameOf, canonClass, artListeners, preloadArt, showsRarity } from './cardart.js?v=20261110a';
+import { keywordsFor, richHtml } from './keywords.js?v=20261110a';
 
 // cards.json is fetched PLAIN (no ?v=): game.js/deck.js/packs.js and index.html's
 // preload all use the bare URL, so the gallery shares their cache entry instead of
@@ -22,6 +22,7 @@ artListeners.add(() => {
 });
 import * as Col from './collection.js';
 import * as MPX from './mpmode.js';
+import { isTyping } from '../site/input.js';
 
 // test-realm mode: the gallery is your account's collection, nothing more
 const MP_ON = MPX.mpMode();
@@ -115,9 +116,15 @@ $('owned-only').addEventListener('change', ev => { filters.ownedOnly = ev.target
 $('show-uncollectible').addEventListener('change', ev => { filters.showUncollectible = ev.target.checked; page = 0; applyFilters(); });
 $('prev').addEventListener('click', () => flip(-1));
 $('next').addEventListener('click', () => flip(1));
+// Page flips: Q / E (a pad's L / R) — padnav turns them into ← / → keydowns — and
+// PageUp / PageDown. The real arrow keys move the focus ring over the cards
+// (padnav), so they never flip; and nothing flips while typing in the search or
+// page box, or behind an open zoom.
 addEventListener('keydown', ev => {
-	if (ev.key === 'ArrowLeft') flip(-1);
-	if (ev.key === 'ArrowRight') flip(1);
+	if (isTyping(document.activeElement) || $('zoom').classList.contains('open')) return;
+	const d = ev.key === 'PageUp' || (!ev.isTrusted && ev.key === 'ArrowLeft') ? -1
+		: ev.key === 'PageDown' || (!ev.isTrusted && ev.key === 'ArrowRight') ? 1 : 0;
+	if (d) { ev.preventDefault(); flip(d); }
 });
 
 function flip(d) {
@@ -174,6 +181,7 @@ function tileFor(card) {
 	}
 	tile.addEventListener('click', () => openZoom(card));
 	tile.addEventListener('keydown', ev => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); openZoom(card); } });
+	tile.addEventListener('bc-inspect', ev => { ev.preventDefault(); openZoom(card); });   // V / the pad's Y (padnav.js)
 	// account mode: craft a missing card straight from its tile on hover — the
 	// affordance the collection page already has (the zoom keeps its button;
 	// touch users reach crafting through the zoom)
@@ -259,7 +267,11 @@ function openZoom(card) {
 }
 $('zoom-close').addEventListener('click', () => $('zoom').classList.remove('open'));
 $('zoom').addEventListener('click', ev => { if (ev.target.id === 'zoom') $('zoom').classList.remove('open'); });
-addEventListener('keydown', ev => { if (ev.key === 'Escape') $('zoom').classList.remove('open'); });
+// Esc (or X / a pad's B, via padnav) closes the zoom, and ONLY that:
+// preventDefault tells nav.js not to also leave the page
+addEventListener('keydown', ev => {
+	if (ev.key === 'Escape' && $('zoom').classList.contains('open')) { ev.preventDefault(); $('zoom').classList.remove('open'); }
+});
 
 let renderToken = 0;
 async function renderPage() {

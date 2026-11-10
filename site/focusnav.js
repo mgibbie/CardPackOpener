@@ -31,6 +31,7 @@
 //   guard       () => true while something else owns the input (ignore actions)
 //   onMenu      (info) => void, replaces the default 'menu' = activate
 //   onCancel    (info) => void, replaces the default Escape keydown
+//   onExtra     (action, info) => true if used: secondary / context / select (C / V / Backspace)
 //   scrollFallback  up/down with no stop that way scrolls the page (default true)
 import { startInput, isTyping } from './input.js';
 import { askText, oskOpen } from './osk.js';
@@ -245,6 +246,8 @@ export function createFocusNav(opts = {}) {
 		if (action === 'prev') { key('ArrowLeft'); return true; }
 		if (action === 'next') { key('ArrowRight'); return true; }
 		if (action === 'menu') { if (o.onMenu) o.onMenu(info); else activate(info); return true; }
+		// secondary / context / select: the page's own (V = read a card on /collection/)
+		if (o.onExtra) return o.onExtra(action, info) === true;
 		return false;
 	}
 

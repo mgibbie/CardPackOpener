@@ -6,6 +6,8 @@ import * as Col from './collection.js';
 import * as MPX from './mpmode.js';
 import { keywordsFor, richHtml } from './keywords.js';
 import * as SFX from './sfx.js';
+import { setPageHandler } from './padnav.js';
+import { isTyping } from '../site/input.js';
 import { checkToasts as achCheck } from '../site/achievements.js';
 
 // test-realm mode: packs are earned from dungeon runs and rolled server-side
@@ -312,14 +314,14 @@ function updateHud() {
 	} else if (phase === 'revealing') {
 		const left = cardMeshes.filter(c => !c.flipped).length;
 		hud.hint.textContent = left
-			? `Tap a card or press Space to reveal (${left} left)`
-			: 'Hover a card to see what it does — Space opens another pack';
+			? `Tap a card or press Z / Space to reveal (${left} left)`
+			: 'Hover a card (or press V) to see what it does — Z / Space opens another pack';
 	} else if (phase === 'done') {
 		// linger on the pulls — only the button (or Z, or clicking the pack
 		// itself) opens the next one, never a stray click
 		const canOpen = MP_ON ? mpPacks > 0 : Col.getGold() >= Col.PACK_PRICE;
 		hud.hint.textContent = canOpen
-			? 'Take your time — hover a card, or drag the next pack in'
+			? 'Take your time — hover a card (or press V), or drag the next pack in'
 			: MP_ON ? 'That was your last pack — finish a dungeon run (win or lose) to earn more!'
 				: 'Out of gold — win matches to earn more!';
 		hud.nextBtn.hidden = !canOpen;
@@ -576,9 +578,28 @@ function advance() {
 	}
 	if (phase === 'idle' || phase === 'done') startOpen();
 }
+// Space always advances. Z / Enter / a pad's A do too (padnav.js hands them to
+// this page first) unless the player has moved the focus ring onto the page's
+// links with the arrows; then they act on the ring, and X / B puts it away again.
 addEventListener('keydown', e => {
-	if (e.key === 'z' || e.key === 'Enter') { advance(); return; }
-	if (e.key === ' ' || e.code === 'Space') { e.preventDefault(); advance(); }
+	if (e.key === ' ' || e.code === 'Space') { if (isTyping(document.activeElement)) return; e.preventDefault(); advance(); }
+});
+// V / a pad's Y: read a revealed card (each press steps to the next; the mouse's hover tip)
+let readIdx = -1;
+function readNext() {
+	const up = cardMeshes.filter(c => c.flipped);
+	if (!up.length) { hideTip(); return; }
+	readIdx = (readIdx + 1) % (up.length + 1);
+	if (readIdx === up.length) { hideTip(); return; }   // past the last: put the tip away
+	const c = up[readIdx], v = c.mesh.position.clone().project(camera);
+	showTip(c.def, (v.x + 1) / 2 * innerWidth, (1 - v.y) / 2 * innerHeight);
+}
+setPageHandler((action, info, nav) => {
+	const ring = nav.ringOn && nav.focused && nav.focused.isConnected;
+	if (action === 'context') { readNext(); return true; }
+	if ((action === 'confirm' || action === 'menu') && !ring) { readIdx = -1; hideTip(); advance(); return true; }
+	if (action === 'cancel' && ring) { nav.hideRing(); return true; }
+	return false;
 });
 addEventListener('resize', () => {
 	camera.aspect = innerWidth / innerHeight;
