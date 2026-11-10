@@ -139,8 +139,8 @@ try {
 	await ctxLog();
 
 	// ---- 5. a quick R still sorts by rank — on the key-up
-	await key('s');
-	A(JSON.stringify(await lastAct()) === JSON.stringify({ type: 'sort_hand', by: 'suit' }), 'S sorts by suit');
+	await key('c');
+	A(JSON.stringify(await lastAct()) === JSON.stringify({ type: 'sort_hand', by: 'suit' }), 'C sorts by suit (S is the cursor’s down now: controls sweep B5)');
 	await page.keyboard.down('r'); await sleep(60);
 	A(JSON.stringify(await lastAct()) === JSON.stringify({ type: 'sort_hand', by: 'suit' }), 'R held down: nothing yet (the tap waits for the key-up)');
 	await page.keyboard.up('r'); await sleep(150); await idle();
@@ -182,7 +182,7 @@ try {
 	A(await page.evaluate(() => window.__micatro.board.sel) === p0[1], 'in a Buffoon pack 2 picks the 2nd pack card');
 	await key('2');
 	A(await page.evaluate(() => window.__micatro.board.sel) == null, '... and 2 again lets it go');
-	await key('s');
+	await key('e');
 	await page.waitForFunction(() => window.__micatro.view().state === 'SHOP', { timeout: 30000 });
 	await idle();
 	A(await openPack('p_arcana_normal_1'), 'an Arcana pack opens');
@@ -197,7 +197,7 @@ try {
 	await rightClick({ x: 640, y: 120 });
 	A((await hl()).length === 0, '... and a right-click lets go of the hand picks there too');
 	await ctxLog();
-	await key('s');
+	await key('e');
 	await page.waitForFunction(() => window.__micatro.view().state === 'SHOP', { timeout: 30000 });
 	await idle();
 
@@ -243,7 +243,9 @@ try {
 	// ---- 10. Options lists the shortcuts
 	await page.keyboard.press('Escape'); await sleep(300);
 	const opt = await page.evaluate(() => { const e = document.querySelector('.opt-modal .opt-keys'); return e ? e.textContent : ''; });
-	A(/Keyboard/.test(opt) && /Hold R/.test(opt) && /Right-click/.test(opt) && /1–9, 0/.test(opt), 'Options has a Keyboard section', opt.slice(0, 120));
+	A(/Keyboard/.test(opt) && /Hold R/.test(opt) && /Right-click/.test(opt) && /1–9, 0/.test(opt) && /Arrows \/ WASD/.test(opt) && /Backspace/.test(opt), 'Options has a Keyboard section (with the cursor keys)', opt.slice(0, 160));
+	const keyNames = await page.evaluate(async () => (await import('/micatro/js/ui/screens.js')).KEYS.map(([k]) => k));
+	A(!keyNames.some((k) => /(^|[ /])(S|D|V|Enter \/ P|C)( |$|\/)/.test(k) && !/^(C|V)$/.test(k)) && keyNames.includes('C') && keyNames.includes('V') && !keyNames.some((k) => /^(S|D|R \/ S)$/.test(k)), 'the dropped hotkeys (S, D) are gone from it; C and V are the cursor keys', JSON.stringify(keyNames));
 } finally {
 	await browser.close();
 	server.close();

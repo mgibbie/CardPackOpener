@@ -506,7 +506,7 @@ export function howTo() {
     <p><b class="red">Discard</b> unwanted cards to draw new ones (limited per round).</p>
     <p>Beat a blind to earn <b class="money">$</b> — plus $1 per unused hand and interest on your savings — then spend it in the <b class="attn">Shop</b> on <b class="attn">Jokers</b>, <b style="color:#a782d1">Tarot</b>, <b style="color:#13afce">Planet</b> and <b style="color:#4584fa">Spectral</b> cards, Vouchers and booster packs.</p>
     <p>Each <b class="attn">Ante</b> is a Small Blind, a Big Blind and a <b class="red">Boss Blind</b> with a nasty twist. Skip a blind to take its <b class="attn">Tag</b> instead. Beat the Ante 8 boss to win.</p>
-    <p class="muted">Tap a card to select it · drag to reorder · long-press (or hover) for details.<br>Keys: Enter play · D discard · R/S sort · 1–9, 0 pick cards · right-click let go of picks · hold R restart · V deck · I run info · Esc options</p>`;
+    <p class="muted">Tap a card to select it · drag to reorder · long-press (or hover) for details.<br>Keys: arrows / WASD move the cursor · Z choose · X back · C sell / sort · V card info · Q / E play / discard (and the screen’s two buttons) · Enter pause · Backspace deck · 1–9, 0 pick cards · P play · Delete discard · R sort (hold: restart) · I run info · Esc options</p>`;
   modal(el, { title: 'How to play', cls: 'howto-modal' });
 }
 
@@ -648,7 +648,7 @@ export function pauseMenu(o) {
   el.appendChild(btn('Deck', 'orange big wide', () => { closeModal(); o.onMenu('deck'); }));
   el.appendChild(btn('Options', 'orange big wide', () => { closeModal(); o.onMenu('options'); }));
   if (o.readOnly && o.chat) el.appendChild(btn('Chat', 'green big wide', () => { closeModal(); o.chat(); }));
-  if (!o.readOnly && o.mainMenu) el.appendChild(btn('Main Menu', 'red big wide', () => { closeAll(); o.mainMenu(); }));
+  if (!o.readOnly && o.mainMenu) el.appendChild(btn('Main Menu', 'red big wide b-pause-main', () => { closeAll(); o.mainMenu(); }));
   modal(el, { title: 'Paused', cls: 'pause-modal', noClose: true });
 }
 
@@ -686,14 +686,19 @@ export function options(o) {
   modal(el, { title: 'Options', cls: 'opt-modal' });
 }
 
-/** Options > Keyboard: the desktop shortcuts (ui/main.js onKey; right-click: ui/board.js). Hidden on touch screens. */
+/** Options > Keyboard: the keys (the cursor's: ui/pad.js on site/input.js — the controller's buttons; the hotkeys: ui/main.js
+ *  onKey; right-click: ui/board.js). Hidden on touch screens. */
 export const KEYS = [
+  ['Arrows / WASD', 'Move the cursor'], ['Z', 'Choose · buy · press (hold Z + ←/→ to move a card)'], ['X', 'Back · let go of the chosen cards'],
+  ['C', 'Sell · buy & use · sort the hand'], ['V', 'Card info on / off'],
+  ['Q / E', 'Play / Discard · Select / Skip blind · Next round / Reroll · Cash out · Skip pack'],
+  ['Enter', 'Pause menu'], ['Backspace', 'Deck'],
   ['1–9, 0', 'Pick the 1st–10th card in hand (again to let go); in a pack, its cards'],
   ['Right-click', 'Let go of all chosen cards'],
-  ['Enter / P', 'Play hand'], ['D', 'Discard'], ['C', 'Clear the selection'],
-  ['R / S', 'Sort the hand by rank / suit'], ['R', 'Reroll (in the shop)'], ['Hold R', 'Restart the run (same deck and stake)'],
-  ['Enter / Space', 'Select the blind · cash out · next round'], ['S', 'Skip the blind / the pack'],
-  ['V', 'Deck'], ['I', 'Run info'], ['Esc', 'Options'],
+  ['P', 'Play hand'], ['Delete', 'Discard'],
+  ['R', 'Sort the hand by rank · reroll (in the shop)'], ['Hold R', 'Restart the run (same deck and stake)'],
+  ['Space', 'Select the blind · cash out · take the Page'], ['N', 'Next round'],
+  ['I', 'Run info'], ['Esc', 'Options'], ['` or hold Esc', 'Games'],
 ];
 function keysBox() {
   const box = h('div', 'opt-keys');
