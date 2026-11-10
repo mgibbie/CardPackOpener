@@ -238,7 +238,9 @@ try {
 		}, STATE);
 		await page.goto(`http://localhost:${PORT}/overworld/pokechess.html`, { waitUntil: 'domcontentloaded' });
 		await sleep(2500);
-		await page.evaluate(() => { window.__pad.buttons[8] = { pressed: true, value: 1 }; });   // View = leave
+		await page.evaluate(() => { window.__pad.buttons[8] = { pressed: true, value: 1 }; });   // View = leave (on its release:
+		await sleep(120);                                                                     // Start + Select is the Games switcher)
+		await page.evaluate(() => { window.__pad.buttons[8] = { pressed: false, value: 0 }; });
 		await sleep(1500);
 		A(!/pokechess/.test(page.url()), 'PokéChess: View leaves back to the overworld on a signed-in pad', page.url());
 		await ctx.close();
