@@ -75,6 +75,8 @@ export const LANES = [
 	{ name: 'designwiki', paths: /^designwiki\//, suites: /^designwiki_/, smoke: [] },
 	// Scoundrel (/scoundrel/, the web-native dungeon solitaire on Micatro's UI): the rules engine + the page in a browser
 	{ name: 'scoundrel', paths: /^scoundrel\//, suites: /^scoundrel_/, smoke: ['scoundrel_engine_test.mjs', 'scoundrel_ui_test.mjs'] },
+	// Pair of Pears (/pairofpears/, the memory card game on Micatro's UI): the rules engine + save, and the page in a browser
+	{ name: 'pairofpears', paths: /^pairofpears\//, suites: /^pairofpears_/, smoke: ['pairofpears_engine_test.mjs', 'pairofpears_ui_test.mjs'] },
 	// (Battlecards' engine has its own node suite, battlecards/tests/run-all.mjs, with its own CI job;
 	// its pages are exercised by the suites that load battlecards/index.html, see selectSuites)
 	{ name: 'overworld', paths: /^overworld\//, suites: null, smoke: [] },   // null: every suite the other lanes don't claim; SMOKE is its smoke

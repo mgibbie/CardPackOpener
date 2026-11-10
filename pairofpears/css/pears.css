@@ -1,0 +1,158 @@
+/* Pair of Pears' table on top of Micatro's look (../micatro/css/micatro.css: the palette, .btn, .hud,
+   .stat, .tip, .popup, .attention, .toast, .modal, .menu-bar, .shop-panel, .pad-reticle). Design px, like
+   Micatro: landscape 1360-2100 x 900, portrait 720 x 1100-1600; the stage is scaled to the visible viewport. */
+.pp-px { image-rendering: pixelated; }
+
+/* ---------------------------------------------------------------- HUD (left in landscape, top in portrait) */
+.pp-hud { gap: 14px; }
+.pp-lvl { --bcol: #4bc292; }
+.pp-lvl .hb-title { font-size: 40px; }
+.pp-lbody { display: flex; align-items: center; gap: 12px; padding: 10px; background: color-mix(in srgb, var(--bcol) 40%, #1f2a2c); }
+.pp-licon { width: 84px; height: 84px; image-rendering: pixelated; flex: 0 0 84px; filter: drop-shadow(0 4px 0 rgba(0,0,0,.3)); animation: pp-bob 2.4s ease-in-out infinite; }
+.pp-linfo { flex: 1; background: var(--panel-dd); border-radius: 10px; padding: 8px; text-align: center; }
+.pp-pairs { font-size: 50px; color: var(--green); text-shadow: 0 3px 0 rgba(0,0,0,.35); margin: 2px 0; }
+.pp-next { font-size: 20px; }
+.pp-hearts { background: var(--panel-d); border-radius: 14px; padding: 10px 12px 12px; }
+.pp-hearts-l { font-size: 24px; text-align: center; margin-bottom: 6px; color: #dfe7e8; display: flex; justify-content: space-between; }
+.pp-hearts-l b { color: var(--red); }
+.pp-hrow { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; background: var(--panel-dd); border-radius: 10px; padding: 8px; min-height: 60px; justify-items: center; align-items: center; }
+.pp-heart { position: relative; width: 44px; height: 44px; }
+.pp-heart img { width: 44px; height: 44px; image-rendering: pixelated; filter: drop-shadow(0 3px 0 rgba(0,0,0,.35)); display: block; }
+.pp-heart.empty img { filter: grayscale(1) brightness(.45); opacity: .45; }
+.pp-heart.half .pp-hfill { position: absolute; left: 0; top: 0; width: 50%; height: 100%; overflow: hidden; }
+.pp-heart.half .pp-hfill img { width: 44px; max-width: none; }
+.pp-hud .stat-v .pp-ico { width: 30px; height: 30px; vertical-align: -3px; margin-right: 4px; image-rendering: pixelated; }
+.pp-boosts { margin-top: auto; background: var(--panel-d); border-radius: 12px; padding: 8px 10px; font-size: 20px; color: #dfe7e8; line-height: 1.25; }
+.pp-boosts:empty { display: none; }
+.pp-boosts .pp-bt { display: inline-flex; align-items: center; gap: 4px; margin: 2px 8px 2px 0; }
+.pp-boosts img { width: 24px; height: 24px; image-rendering: pixelated; }
+.pp-hud > * { min-width: 0; }
+.portrait .pp-hud { top: 96px; grid-template-columns: 290px 1fr; grid-template-areas: "lvl hearts" "stats stats"; }
+.portrait .pp-lvl { grid-area: lvl; }
+.portrait .pp-hearts { grid-area: hearts; display: flex; flex-direction: column; justify-content: center; }
+.portrait .pp-heart, .portrait .pp-heart img, .portrait .pp-heart.half .pp-hfill img { width: 32px; height: 32px; }
+.portrait .pp-hrow { gap: 2px; padding: 6px; min-height: 0; }
+.portrait .pp-hearts { padding: 8px 10px; }
+.portrait .pp-hud .hud-stats { grid-area: stats; }
+.portrait .pp-hud .hs-btns { flex-direction: column; width: 120px; }
+.portrait .pp-hud .hs-btns .btn { font-size: 22px; padding: 6px; }
+.portrait .pp-hud .hs-grid { grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.portrait .pp-hud .stat-l { font-size: 18px; }
+.portrait .pp-hud .stat-v { font-size: 30px; margin-top: 4px; }
+.portrait .pp-boosts { display: none; }
+.portrait .pp-licon { width: 60px; height: 60px; flex-basis: 60px; }
+.portrait .pp-pairs { font-size: 40px; }
+
+/* ---------------------------------------------------------------- the table */
+.pp-charmlbl, .pp-cardlbl, .pp-hint { transform: translateX(-50%); }
+.pp-slots { position: absolute; z-index: 22; display: flex; gap: 16px; }
+.pp-slot { position: relative; width: 110px; height: 110px; border-radius: 14px; border: 3px dashed rgba(255,255,255,.25); background: rgba(0,0,0,.15);
+	display: flex; align-items: center; justify-content: center; font-size: 22px; color: rgba(255,255,255,.4); touch-action: none; }
+.pp-slot.full { border: 0; background: #e8ecee; box-shadow: 0 6px 0 #9aa6a9, inset 0 0 0 4px #bfc7d5; color: var(--text-dark); cursor: pointer; transition: transform .12s; }
+.pp-slot.full:hover { transform: translateY(-4px) rotate(-1.5deg); }
+.pp-slot img { width: 76px; height: 76px; image-rendering: pixelated; filter: drop-shadow(0 4px 0 rgba(0,0,0,.25)); pointer-events: none; animation: pp-bob 2.4s ease-in-out infinite; }
+.pp-slot .pp-sv { position: absolute; right: -8px; bottom: -10px; background: var(--money); color: #4f3b12; font-size: 20px; padding: 3px 7px 1px; border-radius: 8px; box-shadow: 0 3px 0 #b8862f; }
+.pp-slot.holding { border: 3px dashed var(--attn); background: rgba(255,154,0,.12); }
+.pp-slot.target { border-color: #fff; background: rgba(255,255,255,.18); }
+.pp-slot.lifted { transform: translateY(-14px) scale(1.06); box-shadow: 0 16px 0 rgba(0,0,0,.25), inset 0 0 0 4px var(--attn); }
+.portrait .pp-slots { gap: 14px; }
+.portrait .pp-slot { width: 100px; height: 100px; }
+.portrait .pp-slot img { width: 68px; height: 68px; }
+.pp-ghost { position: absolute; z-index: 70; width: 96px; height: 96px; pointer-events: none; image-rendering: pixelated; transform: translate(-50%, -50%) rotate(-6deg); filter: drop-shadow(6px 10px 0 rgba(0,0,0,.35)); }
+.pp-hint { font-size: 22px; color: #dfe7e8; text-shadow: 0 2px 0 rgba(0,0,0,.4); text-align: center; white-space: nowrap; position: absolute; z-index: 3; pointer-events: none; }
+.pp-hint:empty { display: none; }
+#stage.readonly .pp-slot, #stage.readonly .pp-offer .btn, #stage.readonly .pp-clear .btn, #stage.readonly .pp-shop .btn { pointer-events: none; }
+#stage.no-run .pp-hud, #stage.no-run .area-labels, #stage.no-run .pp-slots, #stage.no-run .pp-clear, #stage.no-run .pp-shop, #stage.no-run .pp-hint { display: none; }
+
+/* the "level complete" panel (a Micatro cash-out) */
+.pp-clear { width: 660px; z-index: 35; }
+.pp-cl-box { background: var(--panel); border-radius: 20px; padding: 16px 18px 12px; box-shadow: 0 10px 0 var(--panel-dd), inset 0 0 0 4px var(--green); display: flex; flex-direction: column; gap: 12px; animation: risein .45s cubic-bezier(.2, 1.3, .4, 1); }
+.pp-cl-title { font-size: 52px; text-align: center; color: var(--green); text-shadow: 0 4px 0 rgba(0,0,0,.35); }
+.pp-cl-sub { text-align: center; font-size: 26px; color: #dfe7e8; }
+.pp-cl-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.pp-cl-new { display: flex; align-items: center; justify-content: center; gap: 12px; font-size: 28px; }
+.pp-cl-new img { width: 52px; height: 52px; image-rendering: pixelated; }
+.pp-cl-wait { text-align: center; font-size: 24px; }
+.portrait .pp-clear { width: 660px; }
+
+/* the level shop (Micatro's shop panel) */
+.pp-shop { z-index: 30; }
+.pp-shop .shop-panel { display: flex; flex-direction: column; gap: 14px; padding: 22px 22px 16px; }
+.pp-sh-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.pp-sh-title { font-size: 50px; color: #fff; text-shadow: 0 4px 0 rgba(0,0,0,.35); }
+.pp-sh-wallet { display: flex; gap: 10px; }
+.pp-sh-wallet .stat { min-width: 120px; padding: 4px 10px; }
+.pp-sh-wallet .stat-v { font-size: 34px; }
+.pp-sh-wallet img { width: 28px; height: 28px; vertical-align: -3px; image-rendering: pixelated; margin-right: 4px; }
+.pp-sh-help { font-size: 20px; color: #f7d9a5; text-align: center; }
+.pp-offers { flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; min-height: 0; }
+.portrait .pp-offers { grid-template-columns: 1fr 1fr; }
+.pp-offer { position: relative; background: var(--panel-d); border-radius: 16px; box-shadow: 0 6px 0 var(--panel-dd); padding: 12px 12px 8px; display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; min-height: 0; }
+.pp-of-card { width: 120px; height: 120px; border-radius: 14px; background: #e8ecee; box-shadow: 0 6px 0 #9aa6a9, inset 0 0 0 4px #bfc7d5; display: flex; align-items: center; justify-content: center; position: relative; flex: 0 0 auto; }
+.pp-of-card img { width: 84px; height: 84px; image-rendering: pixelated; animation: pp-bob 2.4s ease-in-out infinite; }
+.pp-of-card .pp-of-on { position: absolute; right: -14px; top: -10px; width: 52px; height: 52px; background: #fff; border-radius: 50%; box-shadow: 0 3px 0 #9aa6a9; display: flex; align-items: center; justify-content: center; }
+.pp-of-card .pp-of-on img { width: 36px; height: 36px; animation: none; }
+.pp-of-name { font-size: 28px; color: #fff; text-shadow: 0 3px 0 rgba(0,0,0,.35); }
+.pp-of-desc { font-size: 20px; color: var(--text-dark); background: #fff; border-radius: 10px; padding: 6px 8px 4px; line-height: 1.1; flex: 1; width: 100%; overflow: hidden; }
+.pp-offer .btn { width: 100%; font-size: 28px; }
+.pp-offer .btn img { width: 26px; height: 26px; vertical-align: -4px; image-rendering: pixelated; margin-right: 4px; }
+.pp-offer.sold { opacity: .55; }
+.pp-offer.sold .pp-of-card { background: rgba(255,255,255,.15); box-shadow: none; }
+.pp-offer.pp-sell { --sc: var(--money); border: 4px dashed rgba(243,185,88,.6); background: color-mix(in srgb, var(--money) 14%, var(--panel-d)); }
+.pp-offer.pp-sell.target { border-color: #fff; background: color-mix(in srgb, var(--money) 32%, var(--panel-d)); }
+.pp-sell .pp-sell-big { font-size: 46px; color: var(--money); text-shadow: 0 3px 0 rgba(0,0,0,.35); margin-top: 10px; }
+.pp-sh-foot { display: flex; justify-content: center; gap: 16px; }
+.pp-sh-foot .btn { width: 320px; }
+.portrait .pp-of-card { width: 96px; height: 96px; }
+.portrait .pp-of-card img { width: 66px; height: 66px; }
+.portrait .pp-of-desc { font-size: 19px; }
+
+/* banner (spectating / watchers): landscape keeps it under the table (the charm row is at the top) */
+.pp-banner .pp-watch b { color: var(--attn); }
+.landscape .pp-banner { top: auto; bottom: 8px; left: var(--tcx, 50%); }
+#stage.has-banner .pp-hint { display: none; }
+#stage .toast { left: var(--tcx, 50%); }
+#stage.portrait .toast { left: 50%; }
+
+/* ---------------------------------------------------------------- menus */
+.pp-logo { font-size: 128px; line-height: .9; text-align: center; text-shadow: 4px 6px 0 #4bc292, 8px 12px 0 #4f6367, 10px 18px 0 rgba(0,0,0,.3); }
+.pp-logo .l0 { display: block; font-size: 60px; letter-spacing: 6px; color: #f7e8b0; }
+.portrait .pp-logo { font-size: 92px; margin-top: 110px; }
+.pp-menu-mid { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.pp-menu-pears { display: flex; gap: 26px; }
+.pp-menu-pears img { width: 150px; height: 150px; image-rendering: pixelated; filter: drop-shadow(8px 12px 0 rgba(0,0,0,.35)); animation: pp-bob 2.6s ease-in-out infinite; }
+.pp-menu-pears img + img { animation-delay: -1.3s; transform: scaleX(-1); }
+.pp-menu-sub { font-size: 30px; color: #dfe7e8; text-shadow: 0 3px 0 rgba(0,0,0,.35); text-align: center; }
+.pp-menu-fruit { display: flex; gap: 18px; flex-wrap: wrap; justify-content: center; max-width: 900px; }
+.pp-menu-fruit img { width: 44px; height: 44px; image-rendering: pixelated; animation: pp-bob 1.8s ease-in-out infinite; opacity: .9; }
+.pp-menu-stats { font-size: 24px; text-align: center; }
+.pp-menu .menu-bar .btn small { display: block; font-size: 20px; margin-top: 6px; opacity: .95; }
+@keyframes pp-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
+.pp-menu-pears img + img { animation-name: pp-bob-flip; }
+@keyframes pp-bob-flip { 0%, 100% { transform: scaleX(-1) translateY(0); } 50% { transform: scaleX(-1) translateY(-7px); } }
+.portrait .pp-menu-pears img { width: 120px; height: 120px; }
+.portrait .pp-menu .menu-bar .btn { width: 300px; }
+.pp-modal .modal-box { width: 880px; max-width: 96%; }
+.pp-howto { font-size: 25px; line-height: 1.25; }
+.pp-howto p, .pp-howto ul { margin: 0 0 10px; }
+.pp-howto li { margin-bottom: 6px; }
+.pp-howto img { width: 28px; height: 28px; vertical-align: -6px; image-rendering: pixelated; }
+.pp-conds { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 14px; font-size: 21px; }
+.portrait .pp-conds { grid-template-columns: 1fr; }
+.pp-conds div { display: flex; gap: 8px; align-items: flex-start; }
+.pp-confirm { font-size: 26px; text-align: center; margin: 0 0 6px; }
+.pp-over { display: flex; flex-direction: column; gap: 14px; align-items: center; }
+.pp-over-t { font-size: 84px; text-shadow: 0 6px 0 rgba(0,0,0,.35); text-align: center; }
+.pp-over-s { font-size: 28px; color: #dfe7e8; text-align: center; }
+.pp-over-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; width: 100%; }
+.pp-over-grid .stat-v { font-size: 38px; }
+.portrait .pp-over-grid { grid-template-columns: repeat(2, 1fr); }
+.pp-over-acts { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; }
+.pp-over-acts .btn { width: 220px; font-size: 28px; }
+.portrait .pp-over-acts .btn { width: 46%; }
+.pp-tipcond { display: flex; gap: 6px; align-items: flex-start; text-align: left; margin-top: 4px; }
+.pp-tipcond img { width: 24px; height: 24px; image-rendering: pixelated; flex: 0 0 24px; }
+
+/* the action call-out sits above the cards */
+#stage .attention { top: 430px; left: var(--tcx, 50%); font-size: 76px; }
+#stage.portrait .attention { top: 860px; left: 50%; font-size: 60px; }

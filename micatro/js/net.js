@@ -31,7 +31,7 @@ export const watchUrl = (user) => '/micatro/?spectate=' + encodeURIComponent(Str
 //   getLabel():    a short progress string, e.g. "Ante 3 · Big Blind" (≤48 chars shown)
 // onWatchers(cb) calls cb(count, names) whenever the server's watcher list changes.
 // opts.pvp: a Multiplayer match's lobby id (the presence says "Micatro PvP", Watch works the same)
-// opts.action: the publish action (default 'publish-micatro'; Scoundrel passes 'publish-scoundrel')
+// opts.action: the publish action (default 'publish-micatro'; Scoundrel passes 'publish-scoundrel', Pair of Pears 'publish-pears')
 export function startPublisher(getSnapshot, getLabel, opts = {}) {
 	const cbs = new Set();
 	let watchers = 0, watcherNames = [];
@@ -106,7 +106,7 @@ export function startPublisher(getSnapshot, getLabel, opts = {}) {
 //         | 'full' (info.max; retries every 5s) | 'over' (final; polling stops)
 //         | 'forbidden' (not your friend; polling stops) | 'login' (no account) | 'offline' (network; retries)
 // onStatus fires on every status change, and again on 'live' when the watcher list changes.
-// action: the read action (default 'micatro-state'; Scoundrel passes 'scoundrel-state')
+// action: the read action (default 'micatro-state'; Scoundrel passes 'scoundrel-state', Pair of Pears 'pears-state')
 export function startSpectate(username, { onSnapshot = () => {}, onStatus = () => {}, action = 'micatro-state' } = {}) {
 	const who = String(username || '').trim().toLowerCase();
 	let stopped = false, timer = null, seq = null, status = null, delay = POLL_FAST_MS, lastWatchSig = '';
