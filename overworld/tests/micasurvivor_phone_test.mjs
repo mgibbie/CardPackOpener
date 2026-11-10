@@ -1,8 +1,9 @@
-// micasurvivor_phone_test.mjs — MicaSurvivor on a phone (390px): touch controls appear.
+// micasurvivor_phone_test.mjs — MicaSurvivor on a phone (390px): touch controls appear. (Owner: landscape only, with the rotate prompt.)
 // Portrait shows upstream's "rotate your phone" prompt; in landscape (844x390, touch) the
 // game runs with body.touch, the floating joystick moves the partner, the on-canvas pause
 // button pauses (with the touch hint), and a level-up card is taken with a tap. No console
-// errors, no request to any non-localhost origin.
+// errors, no request to any non-localhost origin. Controls sweep B4: in landscape the pause ⚙️ Games opens the site switcher
+// (its leave guard warns the run is lost; Stay keeps it), Quit run -> results -> menu, and every menu screen open / close by tap.
 // Screenshots (portrait prompt, title, menu, mid-run, level-up) go to MICASURVIVOR_SHOTS=<dir>.
 // Covers micasurvivor/index.html, micasurvivor/css/style.css, micasurvivor/js/core/touch.js,
 // micasurvivor/js/ui/hud.js, micasurvivor/js/game.js (orientation + touch wiring).
@@ -137,6 +138,38 @@ try {
 	const lv = await page.evaluate(() => G.Game.player.level);
 	await tapEl('#cards > *');
 	A(await waitFor(async () => !await visible('scr-levelup'), 4000), `tapping a card takes it (level ${lv})`);
+
+	// (controls sweep B4: landscape touch reaches everything) the pause's ⚙️ Games opens the site switcher, which warns that the
+	// run will be lost; closing it leaves the run paused; Quit run -> the results -> Back to menu; every menu screen by tap
+	await page.touchscreen.tap(844 - 52 + 20, 12 + 20);
+	A(await waitFor(() => visible('scr-pause'), 4000), 'pause again (the HUD button)');
+	await sleep(500);   // (the pause box animates in: tap once it has settled)
+	await tapEl('#btn-pause-games');
+	A(await waitFor(() => page.evaluate(() => { const s = document.getElementById('mpsw'); return !!s && getComputedStyle(s).display !== 'none'; }), 4000), 'pause: tapping ⚙️ Games opens the Games switcher');
+	A(await page.evaluate(() => window.mpLeaveGuard().state === 'confirm'), 'the switcher\'s leave guard asks first (the run would be lost)');
+	await tapEl('#mpsw [data-entry="home"]');
+	await sleep(300);
+	const conf = await page.evaluate(() => { const c = document.querySelector('#mpsw .mpsw-confirm'); return c ? c.innerText : ''; });
+	A(/run/i.test(conf) && /lost/i.test(conf), 'tapping Home asks "Leave?" with the run warning', conf);
+	await tapEl('#mpsw [data-entry=stay]');
+	await sleep(300);
+	await tapEl('#mpsw [data-entry=close]');
+	A(await waitFor(() => page.evaluate(() => { const s = document.getElementById('mpsw'); return !s || getComputedStyle(s).display === 'none'; }), 3000) && await visible('scr-pause') && await page.evaluate(() => G.Game.state === 'paused'),
+		'staying closes the switcher; the run is still there, paused');
+	await tapEl('#btn-quit');
+	A(await waitFor(() => visible('scr-over'), 6000), 'tap Quit run: the results');
+	await shot('phone_results.png');
+	await tapEl('#btn-again');
+	A(await waitFor(() => visible('scr-menu'), 6000), 'tap Back to menu: the menu');
+	for (const [go, id, back] of [['upgrades', 'scr-upgrades', '#scr-upgrades [data-back]'], ['gacha', 'scr-gacha', '#scr-gacha [data-back]'], ['goals', 'scr-goals', '#scr-goals [data-back]'], ['dex', 'scr-dex', '#scr-dex [data-back]'], ['settings', 'scr-settings', '#set-close']]) {
+		await sleep(300);
+		await tapEl(`#scr-menu [data-go=${go}]`);
+		A(await waitFor(() => visible(id), 4000), `${go}: opens with a tap (landscape)`);
+		const fit = await page.evaluate(id => { const b = document.querySelector('#' + id + ' .box') || document.getElementById(id); const r = b.getBoundingClientRect(); return document.documentElement.scrollWidth <= innerWidth + 1 && r.left >= -1 && r.right <= innerWidth + 1; }, id);
+		A(fit, `${go}: fits the width, no sideways scroll`);
+		await tapEl(back);
+		A(await waitFor(() => visible('scr-menu'), 4000), `${go}: its Back / Close button returns to the menu`);
+	}
 
 	A(errors.length === 0, 'no console errors', errors.slice(0, 5).join(' | '));
 	A(external.length === 0, 'no request to any non-localhost origin', external.slice(0, 5).join(' | '));
