@@ -72,10 +72,19 @@ const MICATRO_SNAPSHOT_MAX = 200_000; // one serialized run view — far under M
 const MICATRO_STALE_MS = 45_000;    // no publish in this long → the run is not watchable
 const MICATRO_REFRESH_MS = 20_000;  // an unchanged keep-alive rewrites the state row only past this age
 const MICATRO_PRESENCE_MS = 30_000; // ...and the presence row only past this age (ONLINE_MS is 90s)
-const SPEC_BEAT_MS = 4_000;
+const SPEC_BEAT_MS = 4_000;         // a micatro spectator's heartbeat row is rewritten at most this often (< SPEC_WINDOW_MS)
 // SCOUNDREL's board (run-score mode 'scoundrel'): a run is at most 20 dungeons (max HP 20 -> 1); a death's
 // final score is at worst minus every monster in the 44-card deck (2..14, clubs + spades = 208)
-const SCOUNDREL_MAX_DUNGEONS = 20, SCOUNDREL_MONSTER_SUM = 208;         // a micatro spectator's heartbeat row is rewritten at most this often (< SPEC_WINDOW_MS)
+const SCOUNDREL_MAX_DUNGEONS = 20, SCOUNDREL_MONSTER_SUM = 208;
+// The solo card games that broadcast a run like Micatro does (publish-<game> / <game>-state): each has its own
+// state row '<game>state:<user>' and presence status '<game>:<label>'. (Micatro itself: 'micatrostate:', 'micatro:'.)
+const SOLO_LIVE = { scoundrel: 'scoundrelstate:', pears: 'pearsstate:' };
+/** The SOLO_LIVE game an action names: soloGameOf('publish-pears', 'publish-', '') -> 'pears' (else null). */
+function soloGameOf(action, pre, suf) {
+	if (typeof action !== 'string' || !action.startsWith(pre) || !action.endsWith(suf)) return null;
+	const g = action.slice(pre.length, action.length - suf.length);
+	return Object.prototype.hasOwnProperty.call(SOLO_LIVE, g) ? g : null;
+}
 // MICATRO custom decks (the deck editor): one row `micatrodecks:<user>` = {rev, decks: [{id, def, updated}]}.
 const MICATRO_PROGRESS_BYTES = 4000;      // the Nuzlocke / Monotype record + achievements (a few hundred bytes in practice)
 const MICATRO_DECKS_MAX = 30;           // decks per player
@@ -778,6 +787,8 @@ const RATE_LIMITS = {
 	'publish-micatro': [120, 10_000], 'micatro-state': [40, 10_000],
 	// Scoundrel (/scoundrel/) broadcasts its run through the same handlers (publish-scoundrel / scoundrel-state)
 	'publish-scoundrel': [120, 10_000], 'scoundrel-state': [40, 10_000],
+	// Pair of Pears (/pairofpears/) the same way (publish-pears / pears-state)
+	'publish-pears': [120, 10_000], 'pears-state': [40, 10_000],
 	// Micatro Multiplayer (PvP, server/micatro_pvp.mjs): the client syncs ~1/s in a Nemesis round, ~1/2-3 s elsewhere,
 	// and reports a hand / a blind / a ready press on each such move — these brake a runaway client, not play
 	'mtpvp-create': [10, 60_000], 'mtpvp-peek': [30, 60_000], 'mtpvp-join': [20, 60_000], 'mtpvp-leave': [20, 60_000],
@@ -2907,10 +2918,12 @@ export default async function handler(req, env) {
 	// view changed and otherwise sends a snapshot-less keep-alive every ~10s; an
 	// unchanged keep-alive skips the state-row write until the row nears staleness,
 	// and the presence row is only rewritten when its status changed or it is aging.
-	// SCOUNDREL (/scoundrel/, the dungeon solitaire) broadcasts its run the same way: publish-scoundrel writes
-	// 'scoundrelstate:<user>' and sets the presence status 'scoundrel:<label>' (no PvP).
-	if (action === 'publish-micatro' || action === 'publish-scoundrel') {
-		const scd = action === 'publish-scoundrel', ROW = scd ? 'scoundrelstate:' : 'micatrostate:';
+	// SCOUNDREL (/scoundrel/, the dungeon solitaire) and PAIR OF PEARS (/pairofpears/, the memory card game) broadcast
+	// their run the same way (SOLO_LIVE): publish-scoundrel writes 'scoundrelstate:<user>' and sets the presence status
+	// 'scoundrel:<label>'; publish-pears writes 'pearsstate:<user>' and 'pears:<label>' (no PvP).
+	if (action === 'publish-micatro' || soloGameOf(action, 'publish-', '')) {
+		const solo = soloGameOf(action, 'publish-', '');
+		const scd = !!solo, ROW = solo ? SOLO_LIVE[solo] : 'micatrostate:';
 		const now = Date.now();
 		const seq = Number.isFinite(+body.seq) ? Math.max(0, Math.floor(+body.seq)) : 0;
 		const label = String(body.label || '').replace(/[\u0000-\u001f]/g, ' ').slice(0, 48).trim();
@@ -2937,7 +2950,7 @@ export default async function handler(req, env) {
 		// presence: "playing Micatro" while live; a finished run goes back to plain online. A Multiplayer match
 		// (body.pvp = its lobby id) says so: friends see "Micatro PvP" and Watch it the same way.
 		const pvpId = !scd && /^[0-9a-f]{12}$/.test(String(body.pvp || '')) ? String(body.pvp) : '';
-		const status = over ? '' : (scd ? 'scoundrel:' + label : pvpId ? 'micatropvp:match:' + pvpId + ':' + label : 'micatro:' + label).slice(0, 96);
+		const status = over ? '' : (solo ? solo + ':' + label : pvpId ? 'micatropvp:match:' + pvpId + ':' + label : 'micatro:' + label).slice(0, 96);
 		const pres = await store.get('presence:' + username);
 		if (!pres || pres.status !== status || pres.region !== label || now - (pres.lastSeen || 0) >= MICATRO_PRESENCE_MS) {
 			await store.setJSON('presence:' + username, {
@@ -3664,11 +3677,11 @@ export default async function handler(req, env) {
 	}
 
 	// a friend reads a MICATRO run's latest view (read-only spectating)
-	// (a friend's SCOUNDREL run: scoundrel-state, the same rules over 'scoundrelstate:<who>')
-	if (action === 'micatro-state' || action === 'scoundrel-state') {
+	// (a friend's SCOUNDREL / PAIR OF PEARS run: scoundrel-state / pears-state, the same rules over SOLO_LIVE's row)
+	if (action === 'micatro-state' || soloGameOf(action, '', '-state')) {
 		const who = String(body.username || '').trim().toLowerCase();
 		if (!who || !user.friends.includes(who)) return json({ error: 'not your friend' }, 403);
-		const ms = await store.get((action === 'scoundrel-state' ? 'scoundrelstate:' : 'micatrostate:') + who);
+		const ms = await store.get((action === 'micatro-state' ? 'micatrostate:' : SOLO_LIVE[soloGameOf(action, '', '-state')]) + who);
 		const now = Date.now();
 		if (!ms || now - ms.ts > MICATRO_STALE_MS) return json({ snapshot: null, live: false });
 		// the same cap as card spectating; a viewer with a fresh heartbeat always gets back in
@@ -3934,10 +3947,13 @@ export default async function handler(req, env) {
 				const ms = await store.get('micatrostate:' + f);
 				if (!ms || ms.over || now - ms.ts >= MICATRO_STALE_MS) continue; // finished / stopped publishing
 				live.push({ username: f, kind: 'micatro', mode: 'micatro', label: ms.label || p.region || st.slice('micatro:'.length), watchers: ms.watchers || 0, full: (ms.watchers || 0) >= SPEC_CAP });
-			} else if (st.startsWith('scoundrel:')) {
-				const ss = await store.get('scoundrelstate:' + f);
+			} else {
+				// a solo card game's run (SOLO_LIVE: 'scoundrel:<label>', 'pears:<label>')
+				const game = Object.keys(SOLO_LIVE).find((g) => st.startsWith(g + ':'));
+				if (!game) continue;
+				const ss = await store.get(SOLO_LIVE[game] + f);
 				if (!ss || ss.over || now - ss.ts >= MICATRO_STALE_MS) continue; // finished / stopped publishing
-				live.push({ username: f, kind: 'scoundrel', mode: 'scoundrel', label: ss.label || p.region || st.slice('scoundrel:'.length), watchers: ss.watchers || 0, full: (ss.watchers || 0) >= SPEC_CAP });
+				live.push({ username: f, kind: game, mode: game, label: ss.label || p.region || st.slice(game.length + 1), watchers: ss.watchers || 0, full: (ss.watchers || 0) >= SPEC_CAP });
 			}
 		}
 		return json({ live });

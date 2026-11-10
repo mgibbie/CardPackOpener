@@ -27,7 +27,7 @@ function extractFn(name) {
 const stubOnline = f => !!f._online; // test-controlled online bit
 // the shared routing/label helpers (site/livewatch.js) are a pure module — import them for real
 const LW = await import(new URL('../../../site/livewatch.js', import.meta.url).href);
-const friendActivity = new Function('isOnline', 'CARD_MODE_LABEL', 'micatroActivityLabel', 'scoundrelActivityLabel', extractFn('friendActivity') + '; return friendActivity;')(stubOnline, CARD_MODE_LABEL, LW.micatroActivityLabel, LW.scoundrelActivityLabel);
+const friendActivity = new Function('isOnline', 'CARD_MODE_LABEL', 'micatroActivityLabel', 'scoundrelActivityLabel', 'pearsActivityLabel', extractFn('friendActivity') + '; return friendActivity;')(stubOnline, CARD_MODE_LABEL, LW.micatroActivityLabel, LW.scoundrelActivityLabel, LW.pearsActivityLabel);
 
 // --- every card mode maps to a human label + is spectatable ---
 const A = friendActivity({ status: 'card:dungeon', region: 'Volcano · Lv 3', _online: true });
@@ -54,6 +54,10 @@ ok('a MICATRO run is live and reads "Playing Micatro — Ante 3"', M.live && M.k
 const SC = friendActivity({ status: 'scoundrel:Dungeon 3 · 14/18 HP', region: 'Dungeon 3 · 14/18 HP', _online: true });
 ok('a SCOUNDREL run is live and reads "Playing Scoundrel — Dungeon 3 · 14/18 HP"', SC.live && SC.kind === 'scoundrel' && SC.label === 'Playing Scoundrel — Dungeon 3 · 14/18 HP', JSON.stringify(SC));
 ok('Watch on a Scoundrel run opens /scoundrel/?spectate=<user>', LW.watchHref({ username: 'al ice', kind: SC.kind }) === '/scoundrel/?spectate=al%20ice' && LW.watchHref({ username: 'bob', status: 'scoundrel:Dungeon 1' }) === '/scoundrel/?spectate=bob');
+const PP = friendActivity({ status: 'pears:Pair of Pears · Level 5', region: 'Pair of Pears · Level 5', _online: true });
+ok('a PAIR OF PEARS run is live and reads "Playing Pair of Pears — Level 5"', PP.live && PP.kind === 'pears' && PP.label === 'Playing Pair of Pears — Level 5', JSON.stringify(PP));
+ok('Watch on a Pair of Pears run opens /pairofpears/?spectate=<user>', LW.watchHref({ username: 'al ice', kind: PP.kind }) === '/pairofpears/?spectate=al%20ice' && LW.watchHref({ username: 'bob', status: 'pears:Pair of Pears · Level 1' }) === '/pairofpears/?spectate=bob');
+ok('the shared activityFromStatus agrees (pears:<label> is live, kind pears)', (() => { const a = LW.activityFromStatus('pears:Pair of Pears · Level 2', ''); return a.live && a.kind === 'pears' && a.label === 'Playing Pair of Pears — Level 2'; })());
 // MicaSurvivor (M5 batch 12c): the server's `friends` marks a friend in a run (its beacon) as micasurvivor:run
 const MS = friendActivity({ status: 'micasurvivor:run', region: 'Pikachu · Boss Rush', _online: true });
 ok('a MICASURVIVOR run is live (kind micasurvivor) with its label', MS.live && MS.kind === 'micasurvivor' && MS.label === 'in a MicaSurvivor run · Pikachu · Boss Rush', JSON.stringify(MS));

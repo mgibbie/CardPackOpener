@@ -30,7 +30,7 @@ import {
 	MP_ON,
 } from './main.js';
 import { askText } from '../site/osk.js';
-import { watchHref, micatroActivityLabel, micasurvivorActivityLabel, scoundrelActivityLabel } from '../site/livewatch.js';
+import { watchHref, micatroActivityLabel, micasurvivorActivityLabel, scoundrelActivityLabel, pearsActivityLabel } from '../site/livewatch.js';
 
 // ---------- in-game NPC trades ----------
 // One flow for both dialects (see trades.js for why they broke differently).
@@ -619,6 +619,17 @@ export function friendAction(f) {
 	if ((f.status || '').startsWith('scoundrel:')) {
 		const href = watchHref({ username: f.username, kind: 'scoundrel' });
 		const act = scoundrelActivityLabel(f.region || f.status.slice('scoundrel:'.length)).toUpperCase();
+		dialog.open(`${f.username}: ${act}!
+
+Z = Watch   X = Cancel`, (declined) => {
+			if (declined !== 'x') { saveParty(S.party); savePos(); location.href = href; }
+		});
+		return;
+	}
+	// friend is playing PAIR OF PEARS (/pairofpears/) → offer to watch it
+	if ((f.status || '').startsWith('pears:')) {
+		const href = watchHref({ username: f.username, kind: 'pears' });
+		const act = pearsActivityLabel(f.region || f.status.slice('pears:'.length)).toUpperCase();
 		dialog.open(`${f.username}: ${act}!
 
 Z = Watch   X = Cancel`, (declined) => {
