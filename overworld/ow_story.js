@@ -14,6 +14,7 @@ import { choiceMenu, startChoice } from './choice.js';
 import { scrollOptions } from './scroll_multichoice.js';
 import * as GymPuzzles from './gym_puzzles.js';
 import { LOCKED_WARPS } from './locked_warps_data.js';
+import { dueEntryScene } from './crystal_entry_scenes.js';
 import { reconcileAwakeningResolution } from './awakening_sync.js';
 import { Journal } from './journal.js';
 import { battle, cutscene, dialog, hud, npcs, player, trainers, world } from './ow_core.js';
@@ -612,8 +613,10 @@ export const ZERO_IS_START_VARS = new Set(['VAR_MAP_SCENE_POKEMON_LEAGUE']);
 export const ZERO_IS_START_LABELS = new Set(['PokemonLeague_ChampionsRoom_EventScript_EnterRoom',
 	'PokemonLeague_HallOfFame_EventScript_EnterRoom', 'EverGrandeCity_HallOfFame_EventScript_EnterHallOfFame']);
 export function checkOnFrame() {
+	if (cutscene.blocking) return;
+	if (runCrystalEntryScene()) return;
 	const meta = S.mapScripts.__map__;
-	if (!meta || !meta.onFrame || cutscene.blocking) return;
+	if (!meta || !meta.onFrame) return;
 	for (const e of meta.onFrame) {
 		if (e.value === 0 && !Story.hasVar(e.var) && !ZERO_IS_START_VARS.has(e.var) && !ZERO_IS_START_LABELS.has(e.label)) continue;
 		if (plotBlocked(e.label)) continue; // never runs here (see plotBlocked)
@@ -622,6 +625,19 @@ export function checkOnFrame() {
 			return;
 		}
 	}
+}
+// Crystal's scene-0 entry scenes (crystal_entry_scenes.js): the transpiled
+// onFrame tables leave scene 0 out, so the few the port plays run from here.
+function runCrystalEntryScene() {
+	const name = world.current?.name;
+	const due = name && dueEntryScene(name, S.mapScripts);
+	if (!due) return false;
+	// a reload mid-scene: start again from the doorway the walk-in assumes
+	if (due.from && !due.from.some(([x, y]) => x === player.tx && y === player.ty)) {
+		player.setTile(due.from[0][0], due.from[0][1]);
+		player.facing = 'up';
+	}
+	return runScriptLabel(due.label);
 }
 // coord_event trigger: stepping on a tile whose gating var matches its value
 // fires the tile's ported script (Oak stopping you at the town edge, etc.)
