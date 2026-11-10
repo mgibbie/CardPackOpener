@@ -312,6 +312,9 @@ async function render() {
 			const canvas = CardArt.drawCardFace(card, { count });
 			const img = document.createElement('img');
 			img.className = 'wiki-face'; img.loading = 'lazy'; img.alt = card.name;
+			// its size up front: an unsized lazy image is 0px tall until it decodes, so the grid
+			// reflowed under a finger (a long-press read the card that slid in, not the one pressed)
+			img.width = canvas.width; img.height = canvas.height;
 			img.src = canvas.toDataURL();
 			const a = document.createElement('div');
 			a.className = 'wiki-card' + (count === 0 ? ' unowned' : ''); // dim the ones you don't own

@@ -171,9 +171,12 @@ try {
 		}
 		{
 			const t = await open('/collection/', { pad: false, vp: touchVp });
+			if (process.env.SLOW) { const c = await t.page.createCDPSession(); await c.send('Emulation.setCPUThrottlingRate', { rate: 6 }); await c.send('Network.setCacheDisabled', { cacheDisabled: true }); }
 			await t.page.waitForFunction(() => document.querySelectorAll('#grid .wiki-card').length > 0, { timeout: 25000 }).catch(() => {});
 			await sleep(500);
-			const p = await t.page.evaluate(() => { window.scrollTo(0, 0); const e = document.querySelector('#grid .wiki-link'); e.scrollIntoView({ block: 'center' }); const b = e.getBoundingClientRect(); return { x: b.left + b.width / 2, y: b.top + b.height / 2, name: e.querySelector('img').alt }; });
+			// regression: the faces carry their size, so the grid can't reflow under a finger while they decode
+			A(await t.page.evaluate(() => [...document.querySelectorAll('#grid .wiki-face')].every(i => i.getAttribute('width') && i.getAttribute('height'))), `touch ${label} / collection: every card face is sized before it loads (no reflow under a press)`);
+			const p = await t.page.evaluate(() => { window.scrollTo(0, 0); const e = document.querySelector('#grid .wiki-link'); e.scrollIntoView({ block: 'center' }); const b = e.getBoundingClientRect(); return { x: b.left + b.width / 2, y: b.top + b.height / 2, name: e.querySelector('img').alt, first: e.querySelector('img').alt }; });
 			const url0 = t.page.url();
 			await sleep(400);   // let the lazy faces settle, then name the card that is under the finger NOW
 			p.name = await t.page.evaluate((x, y) => document.elementFromPoint(x, y)?.closest('.wiki-card')?.querySelector('img')?.alt || '', p.x, p.y);
@@ -184,7 +187,7 @@ try {
 			await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
 			await sleep(500);
 			const tipText = await t.page.evaluate(() => { const e = document.getElementById('tip'); return e.style.display === 'block' ? e.textContent : ''; });
-			A(!!p.name && tipText.includes(p.name), `touch ${label} / collection: a long-press shows the card's text (hover-only before)`, tipText.slice(0, 60));
+			A(!!p.name && tipText.includes(p.name), `touch ${label} / collection: a long-press shows the card's text (hover-only before)`, JSON.stringify({ pressed: p.name, at: [p.x, p.y], first: p.first, tip: tipText.slice(0, 40), cards: await t.page.evaluate(() => document.querySelectorAll('#grid .wiki-card').length) }));
 			A(t.page.url() === url0, `touch ${label} / collection: ...and does not follow the link`, t.page.url());
 			await t.ctx.close();
 		}
