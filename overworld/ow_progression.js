@@ -460,6 +460,50 @@ export function catchUpPostBattleScripts() {
 	}
 }
 
+// a gym badge earned: the ledger, the journal, the shared tier and its reward,
+// the level cap, VAR_BADGES, the 8th leader's KEY STONE, and (unless the
+// script's own speech announces it) the toast
+function awardGymBadge(info, silent) {
+	const slice = badgeSliceFor(info.region);
+	const beforeTier = Quest.globalTier();
+	const earned = Badges.earn(slice, info.id);
+	if (earned) { Journal.add(`Earned the ${info.name}`); sfx('fanfare_badge'); }
+	// did this badge push the SHARED tier up (i.e. was this the last region to clear it)?
+	const tierUp = (earned && Quest.globalTier() > beforeTier) ? Quest.globalTier() : 0;
+	refreshLevelCap(); // the cap is a function of the badges; keep the engine in step
+	syncStoryVars();   // ...and so is VAR_BADGES, which the Victory Road gate reads
+	// the 8th badge's leader also hands over the KEY STONE (Mega Evolution)
+	const keyStone = earned ? grantKeyStone(slice, info.id) : null;
+	if (keyStone && silent) hud.textContent = keyStone.slice(0, keyStone.indexOf('!') + 1);
+	if (earned && !silent) {
+		const n = Badges.count(slice);
+		dialog.open(slice === 'JOHKANTO'
+			? `You earned the ${info.name}!\n\nKANTO badges: ${n}/8`
+				+ (n >= 8 ? '\n\nAll 16 badges! They say the strongest\ntrainer waits atop MT SILVER...' : '')
+			: `You earned the ${info.name}!\n\nBadges: ${n}/8`
+				+ (n >= 8 ? '\n\nWith all 8 badges, the POKeMON LEAGUE\nnow awaits beyond Victory Road!' : ''),
+			() => {
+				const tier = tierUp ? () => showTierRewardDialog(tierUp) : undefined; // chain the tier reward after the badge toast
+				if (keyStone) dialog.open(keyStone, tier); else tier?.();
+			});
+	} else if (tierUp) {
+		// scripted (silent) win: grant quietly with a HUD line
+		const lbl = grantTierReward(tierUp);
+		if (lbl) hud.textContent = `TIER ${tierUp} cleared in every region!  ${lbl}`;
+	}
+}
+
+// ...and the badge a CEREMONY hands over: the script's own `setflag` (Clair's
+// RISING BADGE at the Dragon Shrine). Silent: the script announces it. A save that
+// already holds the badge (it used to come with her win) earns nothing twice.
+Story.setScriptSetFlagHook(flag => {
+	const info = Badges.scriptInfo(Badges.ceremonyScriptFor(flag));
+	if (!info || info.kind !== 'gym') return;
+	awardGymBadge(info, true);
+	refreshObjective();
+	syncOverworldAchievements();
+});
+
 export function onTrainerDefeated(script, opts) {
 	// RED at Mt Silver. He keeps his own silence rather than a synthetic toast, but
 	// he is JOHKANTO's CHAMPION and no longer returns early — the league path below
@@ -487,33 +531,10 @@ export function onTrainerDefeated(script, opts) {
 	// announces the badge), so record it silently and skip the synthetic toast
 	const silent = !!(opts && opts.silent);
 	if (info.kind === 'gym') {
-		const slice = badgeSliceFor(info.region);
-		const beforeTier = Quest.globalTier();
-		const earned = Badges.earn(slice, info.id);
-		if (earned) { Journal.add(`Earned the ${info.name}`); sfx('fanfare_badge'); }
-		// did this badge push the SHARED tier up (i.e. was this the last region to clear it)?
-		const tierUp = (earned && Quest.globalTier() > beforeTier) ? Quest.globalTier() : 0;
-		refreshLevelCap(); // the cap is a function of the badges; keep the engine in step
-		syncStoryVars();   // ...and so is VAR_BADGES, which the Victory Road gate reads
-		// the 8th badge's leader also hands over the KEY STONE (Mega Evolution)
-		const keyStone = earned ? grantKeyStone(slice, info.id) : null;
-		if (keyStone && silent) hud.textContent = keyStone.slice(0, keyStone.indexOf('!') + 1);
-		if (earned && !silent) {
-			const n = Badges.count(slice);
-			dialog.open(slice === 'JOHKANTO'
-				? `You earned the ${info.name}!\n\nKANTO badges: ${n}/8`
-					+ (n >= 8 ? '\n\nAll 16 badges! They say the strongest\ntrainer waits atop MT SILVER...' : '')
-				: `You earned the ${info.name}!\n\nBadges: ${n}/8`
-					+ (n >= 8 ? '\n\nWith all 8 badges, the POKeMON LEAGUE\nnow awaits beyond Victory Road!' : ''),
-				() => {
-					const tier = tierUp ? () => showTierRewardDialog(tierUp) : undefined; // chain the tier reward after the badge toast
-					if (keyStone) dialog.open(keyStone, tier); else tier?.();
-				});
-		} else if (tierUp) {
-			// scripted (silent) win: grant quietly with a HUD line
-			const lbl = grantTierReward(tierUp);
-			if (lbl) hud.textContent = `TIER ${tierUp} cleared in every region!  ${lbl}`;
-		}
+		// CLAIR: the badge waits for the Dragon Shrine ceremony (badges.js
+		// BADGE_BY_CEREMONY) — her win only sends you to Dragon's Den
+		if (Badges.BADGE_BY_CEREMONY[script]) { refreshObjective(); return; }
+		awardGymBadge(info, silent);
 	} else if (info.kind === 'champion') {
 		const fresh = Badges.crown(info.region);
 		if (fresh) Journal.add(`Became the ${info.region} Champion!`);

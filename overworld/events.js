@@ -96,6 +96,12 @@ export function setGameClearResolver(fn) { gameClearResolver = typeof fn === 'fu
 // VAR_PETALBURG_GYM_STATE is the one (ow_story.js petalburgAddVar).
 let addVarResolver = null;
 export function setAddVarResolver(fn) { addVarResolver = typeof fn === 'function' ? fn : null; }
+// A script's `setflag` that MEANS something beyond the flag: Crystal's Dragon
+// Shrine ceremony awards the RISING BADGE with `setflag ENGINE_RISINGBADGE`
+// (badges.js BADGE_BY_CEREMONY; ow_progression.js installs the hook). Script ops
+// only — a save import or repair writing the flag awards nothing by itself.
+let scriptSetFlagHook = null;
+export function setScriptSetFlagHook(fn) { scriptSetFlagHook = typeof fn === 'function' ? fn : null; }
 export function getFlag(f) {
 	if (f === 'FLAG_SYS_GAME_CLEAR' && gameClearResolver) {
 		try { const r = gameClearResolver(); if (r != null) return !!r; } catch (e) { /* fall back to the store */ }
@@ -536,7 +542,7 @@ export class Cutscene {
 				case 'closemsg': case 'waitstate': case 'fade': break;
 				case 'faceplayer': if (ctx.talker && ctx.player) ctx.talker.facing = opposite(ctx.player.facing); break;
 				case 'face': { const a = this._actor(op.who); if (a && DIRS[op.dir]) a.facing = op.dir; break; }
-				case 'setflag': setFlag(op.flag); break;
+				case 'setflag': setFlag(op.flag); if (scriptSetFlagHook) { try { scriptSetFlagHook(op.flag); } catch (e) { console.warn('[story] setflag hook failed', op.flag, e); } } break;
 				case 'clearflag': clearFlag(op.flag); break;
 				case 'setvar': setVar(op.var, resolveValue(op.value)); break;
 				case 'addvar': {

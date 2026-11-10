@@ -31,7 +31,11 @@ export const GYMS = {
 		{ leader: 'CHUCK', town: 'CIANWOOD CITY', townMap: 'CianwoodCity', map: 'CianwoodGym' },
 		{ leader: 'JASMINE', town: 'OLIVINE CITY', townMap: 'OlivineCity', map: 'OlivineGym' },
 		{ leader: 'PRYCE', town: 'MAHOGANY TOWN', townMap: 'MahoganyTown', map: 'MahoganyGym' },
-		{ leader: 'CLAIR', town: 'BLACKTHORN CITY', townMap: 'BlackthornCity', map: 'BlackthornGym1F' },
+		// her win is not the badge: the elders' test at the DRAGON SHRINE is
+		// (badges.js BADGE_BY_CEREMONY) — so once she's beaten, point there
+		{ leader: 'CLAIR', town: 'BLACKTHORN CITY', townMap: 'BlackthornCity', map: 'BlackthornGym1F',
+			ceremony: { beaten: 'EVENT_BEAT_CLAIR', short: 'DRAGON SHRINE',
+				objective: "CLAIR won't hand over the RISING BADGE yet: pass the elders' test at the DRAGON SHRINE in DRAGON'S DEN, behind her gym." } },
 	],
 	HOENN: [
 		{ leader: 'ROXANNE', town: 'RUSTBORO CITY', townMap: 'RustboroCity', map: 'RustboroCity_Gym' },
@@ -349,6 +353,7 @@ export function objective(region) {
 	const g = nextGym(rk) || GYMS[rk][s];
 	const gb = gateBeat(rk, g.map);
 	if (gb) return gb.objective;
+	if (ceremonyDue(g)) return g.ceremony.objective;
 	// badge-thirds, made visible: the next tier needs its BADGE SHARD from every
 	// region, earned in ANY order — so name the local gym AND the two abroad
 	// instead of railroading the player to the current region's leader
@@ -356,6 +361,9 @@ export function objective(region) {
 	if (need.length) return `Collect all three ${ordinal(s + 1)}-badge SHARDS, any order: ${g.leader} in ${g.town}, or PORTAL to ${need.join(' / ')}.`;
 	return `Defeat ${g.leader} in ${g.town} for the last ${ordinal(s + 1)}-badge SHARD.`;
 }
+
+// the leader is beaten but the badge still waits on its ceremony
+function ceremonyDue(g) { return !!(g && g.ceremony && Story.getFlag(g.ceremony.beaten)); }
 
 function ordinal(n) { return { 1: '1st', 2: '2nd', 3: '3rd', 4: '4th', 5: '5th', 6: '6th', 7: '7th', 8: '8th' }[n] || n + 'th'; }
 
@@ -369,7 +377,7 @@ export function shortObjective(region) {
 	if (s === LEAGUE) { const lb = gateBeat(rk, LEAGUE_MAP[rk]); return lb ? `Stop ${lb.boss}` : 'POKeMON LEAGUE'; }
 	const ng = nextGym(rk) || GYMS[rk][s];
 	const gb = gateBeat(rk, ng.map);
-	return gb ? `Stop ${gb.boss}` : ng.town;
+	return gb ? `Stop ${gb.boss}` : ceremonyDue(ng) ? ng.ceremony.short : ng.town;
 }
 
 // ordered quest-log rows for the QUEST menu (done / current / locked), with the
