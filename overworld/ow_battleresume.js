@@ -3,7 +3,7 @@
 import * as Story from './events.js';
 import { battle, cutscene, evolution, hud, pvp, trainers, world } from './ow_core.js';
 import { roamerEnd } from './ow_features.js';
-import { dexMilestoneCheck } from './ow_follower.js';
+import { dexMilestoneCheck, legendFaintedNotice } from './ow_follower.js';
 import { frontier } from './ow_frontier.js';
 import { safari, safariZoneOf, whiteOut, wildBattleEnd } from './ow_places.js';
 import { onTrainerDefeated, runPostBattleScript } from './ow_progression.js';
@@ -124,6 +124,7 @@ function resumeEndHandler(end, savedMap) {
 			syncOverworldAchievements();
 		} else if (result === 'victory') {
 			Story.setFlag(end.flag);
+			legendFaintedNotice(end);
 			evolution.check(S.party, battle.data);
 		} else if (result === 'defeat') {
 			whiteOut();
