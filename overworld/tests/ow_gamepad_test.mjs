@@ -210,6 +210,31 @@ try {
 		A(await t.page.evaluate(() => !window.__ow.battle.active), 'the battle is won and closed with confirm presses alone');
 	}
 
+	// minigames on the pad (controls sweep B6): the Unown puzzle and card flip take
+	// the d-pad + A / B like the menus; the START menu's GAMES row opens the switcher
+	{
+		await t.page.evaluate(async () => { const m = await import('./unown_puzzle.js'); window.__uz = null; m.openUnownPuzzle(0, s => { window.__uz = s; }); });
+		await sleep(200);
+		await t.tap(BTN.right_d); await t.tap(BTN.down);
+		A(await t.page.evaluate(async () => (await import('./unown_puzzle.js')).unownPuzzle.cursor) === 7, 'Unown puzzle: the d-pad moves its cursor');
+		await t.tap(BTN.start);
+		A(await t.page.evaluate(async () => (await import('./unown_puzzle.js')).unownPuzzle.open), 'Unown puzzle: Start no longer throws the puzzle away');
+		await t.tap(BTN.bottom);
+		A(await t.page.evaluate(() => window.__uz) === false, '...B quits it');
+		await t.page.evaluate(async () => { window.__ow.Bag.addCoins(30); const m = await import('./minigames/cardflip/cardflip.js'); window.__cfDone = false; m.startCardFlip(() => { window.__cfDone = true; }); });
+		for (let i = 0; i < 40 && await t.page.evaluate(async () => (await import('./minigames/cardflip/cardflip.js')).cardFlip.phase) !== 'AskPlayWithThree'; i++) await sleep(100);
+		await sleep(400);
+		await t.tap(BTN.down); await t.tap(BTN.right); await sleep(500);
+		A(await t.page.evaluate(() => window.__cfDone), 'card flip: d-pad to NO and A leaves the table');
+		const items = await t.page.evaluate(() => window.__ow.startItems());
+		await t.tap(BTN.start);
+		for (let i = 0; i < items.indexOf('GAMES'); i++) await t.tap(BTN.down);
+		await t.tap(BTN.right); await sleep(250);
+		A(await t.page.evaluate(() => !!window.__mpSwitcher?.isOpen()), 'START -> GAMES opens the Games switcher on the pad');
+		await t.tap(BTN.bottom); await sleep(250);
+		A(!(await t.page.evaluate(() => !!window.__mpSwitcher?.isOpen())), '...B closes it');
+	}
+
 	// the touch HUD steps aside while a pad is in use, and returns without one
 	{
 		await t.page.evaluate(() => { window.__owFakePads.length = 0; document.body.classList.add('touch'); });

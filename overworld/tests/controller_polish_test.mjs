@@ -126,7 +126,7 @@ try {
 		// unplugging brings the keyboard hints back
 		await t.page.evaluate(() => { window.__owFakePads.length = 0; });
 		await sleep(250);
-		A(/Z interact/.test(await hints()), 'with the pad unplugged, the keyboard hints come back', await hints());
+		A(/\[Z\] talk .*\[C\] bag .*\[V\] bike/.test(await hints()), 'with the pad unplugged, the keyboard hints come back (the keys: Z talk, C bag, V bike)', await hints());
 		// Steam Deck-sized screen: nothing spills sideways
 		A(await t.page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), 'at 1280×800 the overworld has no horizontal overflow');
 		A(t.errors.length === 0, 'no uncaught page error in the overworld', JSON.stringify(t.errors.slice(0, 2)));

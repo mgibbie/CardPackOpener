@@ -22,6 +22,7 @@ import { cry } from './sound.js';
 import * as Trades from './trades.js';
 // main.js's own declarations (a safe cycle: only used inside functions)
 import { savePos } from './ow_input.js';
+import { saveBeforeLeave } from './ow_leaveguard.js';
 import { levelCapNow, playerRegion } from './ow_progression.js';
 import { dexMilestoneCheck } from './ow_follower.js';
 import { daycareMenu, daycareOptions, moveShop, nameRater, openTownMap, tradeMenu } from './ow_music.js';
@@ -299,7 +300,9 @@ export function startItems() {
 	if (Story.getFlag('ENGINE_RADIO_CARD')) items.push('RADIO');
 	items.push('TOWN MAP', 'PC');
 	if (!player.surfing) items.push(player.biking ? 'ON FOOT' : 'BIKE');
-	items.push('CARD', 'QUEST', 'SAVE', 'OPTION', 'EXIT');
+	// GAMES: the site's Games switcher (Home and every game), reachable with the
+	// buttons alone — a hold of Esc / Start+Select / the ⚙️ open it too
+	items.push('CARD', 'QUEST', 'SAVE', 'OPTION', 'GAMES', 'EXIT');
 	return items;
 }
 export const cardsItems = () => MP_ON
@@ -312,11 +315,21 @@ const CARD_URLS = {
 	'OG DUNGEON RUN': '?dungeon=1', 'DALARAN HEIST': '?heist=1', 'TOMBS OF TERROR': '?tombs=1', 'DUELS': '?duels=1',
 };
 function openCardPage(label) {
+	saveBeforeLeave();   // whoever opens a card page, the position is saved first
 	const q = MP_ON ? (label === 'DUNGEON RUN' ? '&mp=1' : '?mp=1') : '';
 	const path = CARD_URLS[label];
 	location.href = '/battlecards/' + (path.startsWith('?') ? path + (MP_ON ? '&mp=1' : '') : path + (MP_ON ? '?mp=1' : ''));
 }
 
+// the site's Games switcher (site/switcher.js) from the START menu. A TAP picks the
+// row on pointerdown, so the same tap's click would land on whatever switcher tile
+// is now under the finger and leave the page: that one click is swallowed.
+function openGamesSwitcher() {
+	const eat = e => { e.preventDefault(); e.stopImmediatePropagation(); };
+	addEventListener('click', eat, { capture: true, once: true });
+	setTimeout(() => removeEventListener('click', eat, { capture: true }), 700);
+	window.__mpSwitcher?.open();
+}
 export function startKey(k) {
 	const items = startItems();
 	if (k === 'ArrowUp') startMenu.idx = (startMenu.idx + items.length - 1) % items.length;
@@ -342,6 +355,7 @@ export function startKey(k) {
 		else if (it === 'PC') { pcMenu.open = true; }
 		else if (it === 'SAVE') { saveParty(S.party); savePos(); dialog.open('Your journey has been saved.'); }
 		else if (it === 'OPTION') { optionsMenu.open = true; optionsMenu.idx = 0; optionsMenu.mode = 'main'; optionsMenu.flash = null; optionsMenu.busy = false; }
+		else if (it === 'GAMES') openGamesSwitcher();
 		else if (it === 'EXIT' && S.visiting) { leaveVisit(); }
 		// EXIT just closes
 	}
@@ -595,14 +609,14 @@ export function friendAction(f) {
 		const mode = f.status.slice('card:'.length);
 		const what = mode === 'dungeon' ? 'dungeon run' : 'card battle';
 		dialog.open(`${f.username} is in a ${what}!  Z=Watch  X=Cancel`, (declined) => {
-			if (declined !== 'x') location.href = '/battlecards/?spectate=' + encodeURIComponent(f.username) + '&mp=1';
+			if (declined !== 'x') { saveBeforeLeave(); location.href = '/battlecards/?spectate=' + encodeURIComponent(f.username) + '&mp=1'; }
 		});
 		return;
 	}
 	if ((f.status || '').startsWith('factory:')) {
 		const label = f.status.slice('factory:'.length) || 'BATTLE FRONTIER';
 		dialog.open(`${f.username} is in the ${label}!\n\nZ = Watch   X = Cancel`, (declined) => {
-			if (declined !== 'x') location.href = '/overworld/?watchfactory=' + encodeURIComponent(f.username) + '&mp=1';
+			if (declined !== 'x') { saveBeforeLeave(); location.href = '/overworld/?watchfactory=' + encodeURIComponent(f.username) + '&mp=1'; }
 		});
 		return;
 	}

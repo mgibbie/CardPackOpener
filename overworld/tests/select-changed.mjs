@@ -93,6 +93,9 @@ export const BY_PATH = [
 	{ re: /^micasurvivor\/js\/(expedition\/|world\/world\.js|entities\/player\.js|systems\/combat\.js|core\/pad\.js|ui\/hud\.js|ui\/watch-ui\.js|net\/coop\.js|mica\/replay\.js)/, suites: ['micasurvivor_expedition_terrain_test.mjs', 'micasurvivor_expedition_movement_test.mjs'], why: 'the Expedition code (or a base file it hooks into) changed: its terrain layers and movement verbs' },
 	// (DLC D3: Expedition · Classic, and the base files it hooks into, select its suite)
 	{ re: /^micasurvivor\/js\/(expedition\/|systems\/expedition\.js|systems\/spawner\.js|entities\/enemy\.js|game\.js|ui\/hud\.js|ui\/run-ui\.js|ui\/modes-ui\.js|ui\/watch-ui\.js|net\/coop\.js|mica\/replay\.js|mica\/spectate\.js)/, suites: ['micasurvivor_expedition_classic_test.mjs'], why: 'the Expedition code (or a base file it hooks into) changed: Expedition · Classic (zones, timeline, guardian, portal, shrine, victory, viewers)' },
+	// (controls sweep B6: the overworld's input door, its menus' key router and the minigames' tap / key handlers
+	// select the three ways to play it: keyboard alone, the controller, and touch)
+	{ re: /^overworld\/(main|ow_input|ow_gamepad|ow_keybinds|ow_menukeys|ow_menus|ow_screens|ow_loop|ow_minigames|ow_gamecorner|ow_crystalslots|unown_puzzle|contest_ui|ow_leaveguard|ow_saves|choice)\.js$|^overworld\/minigames\/|^site\/(input|gamepad|switcher)\.js$/, suites: ['ow_keyboard_scheme_test.mjs', 'ow_touch_controls_test.mjs', 'ow_gamepad_test.mjs', 'ow_save_prompt_test.mjs'], why: 'the overworld controls changed: keyboard, controller and touch play' },
 	{ re: /^(server|functions)\//, diff: /micasurvivor|msurv/i, suites: ['micasurvivor_dlc_base_unchanged_test.mjs', 'micasurvivor_expedition_plumbing_test.mjs', 'micasurvivor_server_test.mjs'], why: 'the MicaSurvivor server actions changed: the DLC base-unchanged golden runs, the Expedition plumbing and the server actions' },
 ];
 // never affects a suite

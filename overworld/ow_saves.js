@@ -15,6 +15,7 @@ import * as Savefile from './savefile.js';
 // main.js's own declarations (a safe cycle: only used inside functions)
 import { LEGENDARY_ENCOUNTERS, awState } from './ow_legendaries.js';
 import { optionsMenu } from './ow_menustate.js';
+import { choiceMenu, startChoice } from './choice.js';
 import {
 	MP_ON,
 } from './main.js';
@@ -575,6 +576,16 @@ export function runSaveAction(id) {
 		return;
 	}
 }
+// The game's own YES / NO (choice.js, the menu the move tutor uses), drawn over the
+// OPTIONS screen. The browser's confirm() couldn't be answered with a controller.
+// NO is the default; X / Esc / B / CLOSE answer NO. Resolves true only for YES.
+export function askYesNo(prompt) {
+	return new Promise(res => {
+		startChoice({ options: ['YES', 'NO'], default: 1, ignoreB: false, promptText: prompt, list: 'saves',
+			onPick: v => { choiceMenu.overMenu = false; res(v === 0); } });
+		choiceMenu.overMenu = true;   // ow_loop.js draws it above the OPTIONS screen
+	});
+}
 async function doImportSave() {
 	const om = optionsMenu;
 	const picked = await Savefile.pickSaveFile();
@@ -583,11 +594,12 @@ async function doImportSave() {
 	const v = Savefile.validateSave(picked.text);
 	if (!v.ok) { om.flash = 'Import refused: ' + v.errors[0] + (v.errors.length > 1 ? ` (+${v.errors.length - 1} more)` : ''); return; }
 	const when = v.exported_at ? v.exported_at.slice(0, 10) : 'an unknown date';
-	if (!confirm(`Replace your CURRENT game with the save from ${when}?\n(${picked.name})\n\nEverything you have now will be overwritten (a backup is kept on this device).`)) return;
+	if (!(await askYesNo(`Replace your CURRENT game with the save from ${when}?\n(${picked.name})\nEverything you have now will be overwritten\n(a backup is kept on this device).`))) return;
 	om.busy = true;
 	const r = await importSave(v, { source: 'chooser', reload: false });
 	if (!r.ok && r.stage !== 'push' && r.stage !== 'readback') { om.busy = false; om.flash = 'Import failed: ' + r.error; return; }
-	if (!r.ok) alert('The save was restored locally, but the SERVER copy could not be confirmed:\n' + r.error + '\nIf you are online next load, the old game may come back; try importing again then.');
+	// (an in-game message, not alert(): a controller can close it too)
+	if (!r.ok) { dialog.open('The save was restored here, but the SERVER copy could not be confirmed: ' + r.error + '\nIf you are online next load, the old game may come back; try importing again then.', () => location.reload()); return; }
 	location.reload();
 }
 
@@ -773,7 +785,8 @@ export async function restoreBackup(b) {
 	const om = optionsMenu;
 	if (!b || om.busy) return;
 	const label = b.slot === 'undo' ? 'the UNDO slot (your game before the last restore)' : `the automatic backup from ${b.slot}`;
-	if (!confirm(`Restore ${label}?\n\nYour current game is stashed in the UNDO slot first, so this can be reversed.`)) return;
+	if (!(await askYesNo(`Restore ${label}?\nYour current game is stashed in the UNDO slot first,\nso this can be reversed.`))) return;
+	if (om.busy) return;   // (another restore started while the question was up)
 	om.busy = true;
 	let r = null;
 	try { r = await MP.call('ow-restore', { slot: b.slot }); } catch (e) {}
