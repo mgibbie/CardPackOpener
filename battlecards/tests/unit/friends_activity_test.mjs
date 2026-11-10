@@ -27,7 +27,7 @@ function extractFn(name) {
 const stubOnline = f => !!f._online; // test-controlled online bit
 // the shared routing/label helpers (site/livewatch.js) are a pure module — import them for real
 const LW = await import(new URL('../../../site/livewatch.js', import.meta.url).href);
-const friendActivity = new Function('isOnline', 'CARD_MODE_LABEL', 'micatroActivityLabel', extractFn('friendActivity') + '; return friendActivity;')(stubOnline, CARD_MODE_LABEL, LW.micatroActivityLabel);
+const friendActivity = new Function('isOnline', 'CARD_MODE_LABEL', 'micatroActivityLabel', 'scoundrelActivityLabel', extractFn('friendActivity') + '; return friendActivity;')(stubOnline, CARD_MODE_LABEL, LW.micatroActivityLabel, LW.scoundrelActivityLabel);
 
 // --- every card mode maps to a human label + is spectatable ---
 const A = friendActivity({ status: 'card:dungeon', region: 'Volcano · Lv 3', _online: true });
@@ -51,6 +51,9 @@ ok('an idle online friend reads "online", not live', (() => { const a = friendAc
 ok('an offline friend reads "offline"', friendActivity({ status: '' }).label === 'offline');
 const M = friendActivity({ status: 'micatro:Ante 3', region: 'Ante 3', _online: true });
 ok('a MICATRO run is live and reads "Playing Micatro — Ante 3"', M.live && M.kind === 'micatro' && M.label === 'Playing Micatro — Ante 3', JSON.stringify(M));
+const SC = friendActivity({ status: 'scoundrel:Dungeon 3 · 14/18 HP', region: 'Dungeon 3 · 14/18 HP', _online: true });
+ok('a SCOUNDREL run is live and reads "Playing Scoundrel — Dungeon 3 · 14/18 HP"', SC.live && SC.kind === 'scoundrel' && SC.label === 'Playing Scoundrel — Dungeon 3 · 14/18 HP', JSON.stringify(SC));
+ok('Watch on a Scoundrel run opens /scoundrel/?spectate=<user>', LW.watchHref({ username: 'al ice', kind: SC.kind }) === '/scoundrel/?spectate=al%20ice' && LW.watchHref({ username: 'bob', status: 'scoundrel:Dungeon 1' }) === '/scoundrel/?spectate=bob');
 // MicaSurvivor (M5 batch 12c): the server's `friends` marks a friend in a run (its beacon) as micasurvivor:run
 const MS = friendActivity({ status: 'micasurvivor:run', region: 'Pikachu · Boss Rush', _online: true });
 ok('a MICASURVIVOR run is live (kind micasurvivor) with its label', MS.live && MS.kind === 'micasurvivor' && MS.label === 'in a MicaSurvivor run · Pikachu · Boss Rush', JSON.stringify(MS));

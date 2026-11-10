@@ -14,7 +14,7 @@
 // All server calls go through the existing /api/mp backend via mpmode.js, using
 // the same action signatures the Overworld already uses, so the flow is proven.
 import * as MP from '/battlecards/mpmode.js';
-import { watchHref, joinHref, micatroActivityLabel } from '/site/livewatch.js';
+import { watchHref, joinHref, micatroActivityLabel, scoundrelActivityLabel } from '/site/livewatch.js';
 
 const CARD_DUEL = id => '/battlecards/?cardpvp=' + encodeURIComponent(id) + '&mp=1';
 const SEEN_KEY = 'mp_inbox_seen_v1';
@@ -637,6 +637,7 @@ async function addFriend(raw) {
 //   card:<mode>        → in a card duel / run (spectate on the Battlecards page)
 //   factory:<label>    → a Battle Frontier run (spectate in the Overworld)
 //   micatro:<label>    → a Micatro run (spectate on /micatro/); routing: site/livewatch.js
+//   scoundrel:<label>  → a Scoundrel run (spectate on /scoundrel/?spectate=)
 //   micasurvivor:run   → a MicaSurvivor run (watch on /micasurvivor/?watch=; the server's `friends` sets it from the run beacon)
 const CARD_MODE_LABEL = { dungeon: 'a Dungeon run', pvp: 'a card duel', battle: 'a card battle', heist: 'a Heist run', tombs: 'a Tombs run', duels: 'a Duels run', arena: 'an Arena run', lorequest: 'a Lorequest run', middleearth: 'a Middle-earth run', swordcoast: 'a Sword Coast run', finalfantasy: 'a Final Fantasy run', multiverse: 'a Multiverse run' };
 function friendActivity(f) {
@@ -656,6 +657,7 @@ function friendActivity(f) {
 	if (/^micatropvp:lobby:[A-Z0-9]{5}$/.test(st)) return { live: false, kind: 'micatro-lobby', joinable: true, label: 'In a Micatro lobby' };
 	if (st.startsWith('micatropvp:full:')) return { live: false, kind: null, label: 'In a Micatro lobby' };
 	if (st === 'micasurvivor:run') return { live: true, kind: 'micasurvivor', label: 'in a MicaSurvivor run' + (f.region && !/^micasurvivor$/i.test(f.region) ? ' · ' + f.region : '') };
+	if (st.startsWith('scoundrel:')) return { live: true, kind: 'scoundrel', label: scoundrelActivityLabel(f.region || st.slice('scoundrel:'.length)) };
 	if (st.startsWith('visiting:')) return { live: false, kind: null, label: 'exploring' };
 	return { live: false, kind: null, label: isOnline(f) ? 'online' : 'offline' };
 }
@@ -965,6 +967,7 @@ function analyticsLabel() {
 	}
 	if (p.includes('/overworld')) return q.has('battle') ? 'ow:battle' : q.has('watch') ? 'ow:spectate' : 'overworld';
 	if (p.includes('/micatro')) return q.has('spectate') ? 'micatro:spectate' : 'micatro';
+	if (p.includes('/scoundrel')) return q.has('spectate') ? 'scoundrel:spectate' : 'scoundrel';
 	if (p.includes('/collection')) return 'collection';
 	if (p.includes('/designwiki')) return 'wiki';
 	if (p.includes('/learn')) return 'learn';

@@ -31,6 +31,7 @@ export const watchUrl = (user) => '/micatro/?spectate=' + encodeURIComponent(Str
 //   getLabel():    a short progress string, e.g. "Ante 3 · Big Blind" (≤48 chars shown)
 // onWatchers(cb) calls cb(count, names) whenever the server's watcher list changes.
 // opts.pvp: a Multiplayer match's lobby id (the presence says "Micatro PvP", Watch works the same)
+// opts.action: the publish action (default 'publish-micatro'; Scoundrel passes 'publish-scoundrel')
 export function startPublisher(getSnapshot, getLabel, opts = {}) {
 	const cbs = new Set();
 	let watchers = 0, watcherNames = [];
@@ -70,7 +71,7 @@ export function startPublisher(getSnapshot, getLabel, opts = {}) {
 		if (needSnap) body.snapshot = snap;
 		lastSentAt = now;
 		try {
-			const res = await MP.call('publish-micatro', body, over && json.length < 60_000 ? { keepalive: true } : {});
+			const res = await MP.call(opts.action || 'publish-micatro', body, over && json.length < 60_000 ? { keepalive: true } : {});
 			if (res && res.ok) { if (needSnap) ackedJson = json; setWatchers(res); }
 		} catch { /* offline / timeout: the next tick retries (ackedJson unchanged) */ }
 	}
@@ -105,7 +106,8 @@ export function startPublisher(getSnapshot, getLabel, opts = {}) {
 //         | 'full' (info.max; retries every 5s) | 'over' (final; polling stops)
 //         | 'forbidden' (not your friend; polling stops) | 'login' (no account) | 'offline' (network; retries)
 // onStatus fires on every status change, and again on 'live' when the watcher list changes.
-export function startSpectate(username, { onSnapshot = () => {}, onStatus = () => {} } = {}) {
+// action: the read action (default 'micatro-state'; Scoundrel passes 'scoundrel-state')
+export function startSpectate(username, { onSnapshot = () => {}, onStatus = () => {}, action = 'micatro-state' } = {}) {
 	const who = String(username || '').trim().toLowerCase();
 	let stopped = false, timer = null, seq = null, status = null, delay = POLL_FAST_MS, lastWatchSig = '';
 	const meta = { seq: null, label: '', over: false, won: false, watchers: 0, watcherNames: [], room: 'u:' + who, replay: null };
@@ -122,7 +124,7 @@ export function startSpectate(username, { onSnapshot = () => {}, onStatus = () =
 	const tick = async () => {
 		if (stopped) return;
 		let d;
-		try { d = await MP.call('micatro-state', { username: who, seq }); }
+		try { d = await MP.call(action, { username: who, seq }); }
 		catch { d = null; }
 		if (stopped) return;
 		if (!d) { setStatus('offline', {}); delay = POLL_SLOW_MS; }

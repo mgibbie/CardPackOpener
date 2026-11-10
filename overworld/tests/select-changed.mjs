@@ -73,6 +73,8 @@ export const LANES = [
 	{ name: 'micatro', paths: /^micatro\//, suites: /^micatro_|^(designwiki|magepunknews)_micatro/, smoke: ['micatro_ui_test.mjs', 'micatro_server_test.mjs'] },
 	{ name: 'micasurvivor', paths: /^micasurvivor\//, suites: /micasurvivor/, smoke: ['micasurvivor_boot_test.mjs'] },
 	{ name: 'designwiki', paths: /^designwiki\//, suites: /^designwiki_/, smoke: [] },
+	// Scoundrel (/scoundrel/, the web-native dungeon solitaire on Micatro's UI): the rules engine + the page in a browser
+	{ name: 'scoundrel', paths: /^scoundrel\//, suites: /^scoundrel_/, smoke: ['scoundrel_engine_test.mjs', 'scoundrel_ui_test.mjs'] },
 	// (Battlecards' engine has its own node suite, battlecards/tests/run-all.mjs, with its own CI job;
 	// its pages are exercised by the suites that load battlecards/index.html, see selectSuites)
 	{ name: 'overworld', paths: /^overworld\//, suites: null, smoke: [] },   // null: every suite the other lanes don't claim; SMOKE is its smoke

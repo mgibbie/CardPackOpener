@@ -30,7 +30,7 @@ import {
 	MP_ON,
 } from './main.js';
 import { askText } from '../site/osk.js';
-import { watchHref, micatroActivityLabel, micasurvivorActivityLabel } from '../site/livewatch.js';
+import { watchHref, micatroActivityLabel, micasurvivorActivityLabel, scoundrelActivityLabel } from '../site/livewatch.js';
 
 // ---------- in-game NPC trades ----------
 // One flow for both dialects (see trades.js for why they broke differently).
@@ -611,6 +611,17 @@ export function friendAction(f) {
 		const href = watchHref({ username: f.username, kind: 'micatro' });
 		const act = micatroActivityLabel(f.region || f.status.slice('micatro:'.length)).toUpperCase();
 		dialog.open(`${f.username}: ${act}!\n\nZ = Watch   X = Cancel`, (declined) => {
+			if (declined !== 'x') { saveParty(S.party); savePos(); location.href = href; }
+		});
+		return;
+	}
+	// friend is playing SCOUNDREL (/scoundrel/) → offer to watch it
+	if ((f.status || '').startsWith('scoundrel:')) {
+		const href = watchHref({ username: f.username, kind: 'scoundrel' });
+		const act = scoundrelActivityLabel(f.region || f.status.slice('scoundrel:'.length)).toUpperCase();
+		dialog.open(`${f.username}: ${act}!
+
+Z = Watch   X = Cancel`, (declined) => {
 			if (declined !== 'x') { saveParty(S.party); savePos(); location.href = href; }
 		});
 		return;
