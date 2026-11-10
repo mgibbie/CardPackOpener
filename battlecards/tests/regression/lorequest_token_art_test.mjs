@@ -1,4 +1,4 @@
-// Lorequest-generated cards and tokens resolve to REAL art (bug:1794267812239,
+// Generated cards and tokens resolve to REAL art: Lorequest (bug:1794267812239,
 // bug:1794272972983, bug:1794273394890 — instinctgauntlet, Middle-earth, ME revision 82).
 //
 // DIAGNOSIS: Lorequest cards and hero powers summon inline tokens
@@ -14,6 +14,8 @@
 // tools/data/lorequest_token_art.json); 9 whose creature an existing card already pictures
 // wear that card's art via cardart.js ART_ALIASES — and every art listener in game.js now
 // matches the ART id a face painted (artIdOf), so an aliased token repaints when that art lands.
+//
+// Sections 4-6 extend the sweep to the WHOLE card pool (bug:1794331480267).
 //
 // Needs the art index: battlecards/art/index.json locally, else the CDN's copy.
 import fs from 'fs';
@@ -108,6 +110,117 @@ const resolves = card => has.has(artIdOf(card));
 	ok('every alias in the spec is in ART_ALIASES', aliasIds.every(([id, t]) => ART_ALIASES[id] === t.alias), aliasIds.filter(([id, t]) => ART_ALIASES[id] !== t.alias).map(([id]) => id).join());
 	const srcMissing = Object.entries(spec).filter(([id, t]) => t.src && !has.has(id)).map(([id]) => id);
 	ok('every composed token is in the art index (deployed)', srcMissing.length === 0, srcMissing.join(' '));
+}
+
+// ==== bug:1794331480267 (instinctgauntlet, Final Fantasy): the SAME class outside Lorequest ====
+// Bubba's Bloodhounds (token_bloodhound, an engine-made Duels token) and Rattlegore's -1/-1
+// resummon (token_rattlegore, a stat-changed copy under a new id) kept the spiral placeholder.
+// Root causes: (a) ~200 token ids the engine and the cards make had no art at all; (b) every
+// path that copies a real card under a token_ id (Rattlegore, random transforms, random
+// weapons, Lukka, ...) dropped the link to the card's art. Fixed: those tokens got composed
+// art (tools/data/token_art.json) or an ART_ALIASES entry; copies carry `artFrom`
+// (instantiate keeps it; core.js tokenArtFrom stamps it on any token_<real card id>);
+// emblems, Shadows, Slimed and timed enchantments wear the card that made them.
+const resolvesInst = c => has.has(artIdOf(c));
+const quiet = fn => { const l = console.log, w = console.warn; console.log = console.warn = () => {}; try { return fn(); } finally { console.log = l; console.warn = w; } };
+
+// ---- 4) the two reported cases, as the engine really makes them ----
+{
+	const r = quiet(() => new Scenario(byId).players(2).mana(0, 10).hand(0, ['duels_bubba'])
+		.board(1, [{ id: 'rattlegore', attack: 0, health: 99 }]).play(0, 'duels_bubba', { targetBoard: [1, 0] }).run());
+	const hounds = r.state.players[0].board.filter(c => c.id === 'token_bloodhound');
+	ok('Bubba summons Bloodhounds (token_bloodhound)', hounds.length === 6, r.state.players[0].board.map(c => c.id).join());
+	ok('...and they resolve to art', hounds.length > 0 && hounds.every(resolvesInst), hounds.map(artIdOf).join());
+
+	// Rattlegore dies again and again: each resummon is a fresh token_rattlegore copy, -1/-1 each time
+	const s = quiet(() => E.createGame(byId, () => 0.4, null, 2));
+	for (const p of s.players) { p.hand = []; p.deck = []; p.board = []; }
+	const rg = E.instantiate(byId.rattlegore, 0); rg.zone = 'board'; s.players[0].board.push(rg);
+	const seen = [];
+	for (let i = 0; i < 10; i++) {
+		const cur = s.players[0].board.find(c => c.name === 'Rattlegore' && !E.isDead(c));
+		if (!cur) break;
+		seen.push({ id: cur.id, at: cur.attack, art: artIdOf(cur) });
+		cur.damage = 999; quiet(() => E.sweepDeaths(s));
+	}
+	ok('Rattlegore resummons itself down to 1/1 (9 bodies)', seen.length === 9 && seen[8].at === 1, seen.map(x => x.at).join());
+	ok('every resummoned Rattlegore wears Rattlegore\'s art', seen.length > 1 && seen.every(x => x.art === 'rattlegore'), seen.map(x => x.id + '>' + x.art).join(' '));
+	// a resumed game: the copy's link to its art survives a snapshot round trip
+	const s2 = quiet(() => E.createGame(byId, () => 0.4, null, 2));
+	for (const p of s2.players) { p.hand = []; p.deck = []; p.board = []; }
+	const r2 = E.instantiate(byId.rattlegore, 0); r2.zone = 'board'; s2.players[0].board.push(r2);
+	r2.damage = 999; quiet(() => E.sweepDeaths(s2));
+	const back = quiet(() => E.fromSnapshot(JSON.parse(JSON.stringify(E.toSnapshot(s2))), byId));
+	const copy = back.players[0].board.find(c => c.id === 'token_rattlegore');
+	ok('...and after a save/resume the resummoned copy still wears it', !!copy && artIdOf(copy) === 'rattlegore', copy && artIdOf(copy));
+}
+
+// ---- 5) whole pool: every token / id ANY card, run-mode module or engine path creates ----
+{
+	const slug = n => 'token_' + n.toLowerCase().replace(/[^a-z0-9]+/g, '_');
+	quiet(() => E.createGame(byId, () => 0.4, null, 2)); // the engine's card DB (tokenArtFrom reads it)
+	// what the engine wears for an id it makes (artFrom stamped when the id names a real card)
+	const resolveId = id => has.has(artIdOf(E.instantiate({ id, name: id, type: 'creature' }, 0)));
+	const tokens = new Map();
+	const walkTok = (v, from) => {
+		if (Array.isArray(v)) { for (const x of v) walkTok(x, from); return; }
+		if (!v || typeof v !== 'object') return;
+		// a run mode's boss / hero / explorer is a hero, not a token (it has a power, hsId or level)
+		const heroLike = v.hsId || v.power || v.heroPower || v.theme || v.level != null || v.type === 'buff'; // (a buff's name is a label)
+		if (typeof v.name === 'string' && (typeof v.attack === 'number' || typeof v.health === 'number') && !v.id && !v.summonId && !heroLike) {
+			const id = slug(v.name); if (!tokens.has(id)) tokens.set(id, from);
+		}
+		for (const x of Object.values(v)) walkTok(x, from);
+	};
+	for (const c of cards) for (const [k, v] of Object.entries(c)) if (k !== 'id') walkTok(v, c.id);
+	for (const m of ['heist', 'tombs', 'duels', 'dungeon', 'lorequest', 'middleearth', 'swordcoast', 'finalfantasy', 'multiverse']) {
+		const mod = await import(new URL('../../' + m + '.js', import.meta.url).href);
+		for (const [k, v] of Object.entries(mod)) if (/^[A-Z_]+$/.test(k) && v && typeof v === 'object') walkTok(v, m + '.' + k);
+	}
+	ok(`found the inline tokens of the whole pool (${tokens.size})`, tokens.size >= 480);
+	const missing = [...tokens].filter(([id]) => !resolveId(id)).map(([id, from]) => `${id} <- ${from}`);
+	ok('every inline token in the whole pool resolves to art', missing.length === 0, `${missing.length}: ` + missing.slice(0, 15).join(', '));
+
+	// ids the ENGINE names itself: id: 'token_x' literals in engine/ (Bloodhound, Risen Ghoul, ...)
+	const engineDir = here('../../engine/');
+	const files = [...fs.readdirSync(engineDir).filter(f => f.endsWith('.js')).map(f => new URL(f, engineDir)),
+		...fs.readdirSync(new URL('effects/', engineDir)).filter(f => f.endsWith('.js')).map(f => new URL('effects/' + f, engineDir))];
+	const lits = new Map();
+	for (const f of files) for (const m of fs.readFileSync(f, 'utf8').matchAll(/id: '(token_[a-z0-9_]+)'/g)) lits.set(m[1], f.pathname.split('/').pop());
+	ok(`found the engine's own token ids (${lits.size})`, lits.size >= 25);
+	ok('Bubba\'s token_bloodhound is among them', lits.has('token_bloodhound'));
+	const badLits = [...lits].filter(([id]) => !resolveId(id)).map(([id, f]) => `${id} <- ${f}`);
+	ok('every token id the engine names resolves to art', badLits.length === 0, badLits.join(', '));
+
+	// ids any card creates by reference (summonId, cardId, ...)
+	const refs = new Set();
+	const walkIds = (v, key) => {
+		if (Array.isArray(v)) { for (const x of v) walkIds(x, key); return; }
+		if (v && typeof v === 'object') { for (const [k, x] of Object.entries(v)) walkIds(x, k); return; }
+		if (typeof v === 'string' && ['summonId', 'cardId', 'tokenId', 'intoId', 'ids'].includes(key)) refs.add(v);
+	};
+	for (const c of cards) for (const [k, v] of Object.entries(c)) if (k !== 'id') walkIds(v, k);
+	const badRefs = [...refs].filter(id => byId[id] && !resolves(byId[id]));
+	ok(`every card a card creates by id resolves to art (${refs.size} ids)`, badRefs.length === 0, badRefs.slice(0, 20).join(' '));
+
+	// a copy of ANY real card made under a token_ id wears that card's art
+	const sample = cards.filter(c => c.type === 'creature' && has.has(c.id));
+	const badCopies = sample.filter(c => !resolveId('token_' + c.id)).map(c => c.id);
+	ok(`a token_<card id> copy of a real card wears that card's art (${sample.length})`, badCopies.length === 0, badCopies.slice(0, 10).join(' '));
+	// emblems wear the card that granted them
+	const st = quiet(() => E.createGame(byId, () => 0.4, null, 2));
+	const src = E.instantiate(byId.chandra_sig, 0);
+	quiet(() => E.execEffects(st, 0, [{ type: 'emblem', name: 'Pyromaster', description: 'x' }], null, src));
+	const em = st.players[0].emblems.at(-1);
+	ok('an emblem wears the card that granted it', !!em && resolvesInst(em) && artIdOf(em) === 'chandra_sig', em && artIdOf(em));
+}
+
+// ---- 6) the whole-pool spec and ART_ALIASES agree; every composed token is deployed ----
+{
+	const spec = JSON.parse(read('../../../tools/data/token_art.json')).tokens;
+	const bad = Object.entries(spec).filter(([id, t]) => t.alias ? ART_ALIASES[id] !== t.alias || !has.has(t.alias) : !has.has(id)).map(([id]) => id);
+	ok(`every token in tools/data/token_art.json resolves (${Object.keys(spec).length})`, bad.length === 0, bad.join(' '));
+	ok('the spec has the Bloodhound', !!(spec.token_bloodhound && spec.token_bloodhound.hs));
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);
