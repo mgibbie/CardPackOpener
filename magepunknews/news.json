@@ -403,6 +403,14 @@
 	},
 	"entries": [
 		{
+			"sha": "b671a9d",
+			"date": "2026-11-10",
+			"kind": "patch",
+			"title": "Scoundrel is back, rebuilt for the web",
+			"body": "Scoundrel, the solo dungeon card game, is now a native web game with the Micatro look: Balatro-style cards, the swirling table, the same buttons and fonts, and touch, keyboard and controller play on desktop and phone. The rules are the original game's: rooms of four, play three, monsters, weapons that dull with every kill, one potion per room, and Run! to send a room to the bottom of the deck. New: a run is a chain of dungeons. Clear one and the next starts with 1 less max HP (20, 19, 18 ...), at full health, down to dungeon 20. Your score is how many dungeons you cleared (then the last dungeon's Scoundrel score), with a leaderboard. Runs save after every move, finished runs can be replayed and shared as a link, and friends can watch you play live from their Friends list. The original build is still at /scoundrel/classic/.",
+			"cards": []
+		},
+		{
 			"sha": "513504b",
 			"date": "2026-11-09",
 			"kind": "micatro",
