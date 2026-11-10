@@ -10,7 +10,7 @@ import { S } from './ow_state.js';
 import { leadMon } from './party.js';
 // main.js's own declarations (a safe cycle: only used inside functions)
 import { startCutscene } from './ow_scaling.js';
-import { RAYQUAZA_SLEEPING_HIDE, reconcileAwakeningResolution } from './awakening_sync.js';
+import { RAYQUAZA_CRY_DONE, RAYQUAZA_SLEEPING_HIDE, nativeAwakeningEngaged, reconcileAwakeningResolution } from './awakening_sync.js';
 import { playerRegion } from './ow_progression.js';
 import { legendariesHere } from './ow_follower.js';
 import {
@@ -28,7 +28,12 @@ import {
 // catch itself, decoupled from them.
 const HAND_PLACED_LEGENDS = {
 	// Hoenn weather trio (decoupled from the awakening plot)
-	MAP_SKY_PILLAR_TOP:  { species: 'rayquaza', dex: 384, level: 70, x: 14, y: 6,  flag: 'legend_caught_rayquaza', intro: 'A colossal POKeMON coils in the air above you...' },
+	// RAYQUAZA only once it is back at the summit, as in pokeemerald: SkyPillar_Top's
+	// ON_TRANSITION shows the still RAYQUAZA here at VAR_SKY_PILLAR_STATE >= 2 (Sootopolis
+	// calmed). Before that the SLEEPING one (14,7) is the summit's Rayquaza, and this
+	// stood beside it — two at once (bug:1794338908364). See awakening_sync.js.
+	MAP_SKY_PILLAR_TOP:  { species: 'rayquaza', dex: 384, level: 70, x: 14, y: 6,  flag: 'legend_caught_rayquaza',
+		requires: () => (Story.getVar('VAR_SKY_PILLAR_STATE') || 0) >= 2, intro: 'A colossal POKeMON coils in the air above you...' },
 	// (10,26): beside Emerald's own trigger square (9,26), which this port's dive exit
 	// now holds; KYOGRE's object lies in the rock at (9,22), where no one can step
 	MAP_MARINE_CAVE_END: { species: 'kyogre',   dex: 382, level: 70, x: 10, y: 26, flag: 'legend_caught_kyogre',   intro: 'The water heaves — something immense stirs in the depths...' },
@@ -160,7 +165,7 @@ export function drawLegendary(ctx, camX, camY) {
 // stays a real battle on each legendary's lair tile via LEGENDARY_ENCOUNTERS.
 const AW_VAR = 'VAR_HOENN_AWAKENING'; // 0 ready -> 6 resolved
 export function awState() { return Story.getVar(AW_VAR); }
-function awActive() { return Story.getFlag('villain_hoenn_climax') && awState() < 6; }
+function awActive() { return Story.getFlag('villain_hoenn_climax') && awState() < 6 && !nativeAwakeningEngaged(); }
 // a scripted actor's real decomp position, read live from the map's object_events
 function awObjPos(re) {
 	const o = (world.current.map.object_events || []).find(e => re.test(e.graphics_id || ''));
@@ -202,6 +207,7 @@ export const AWAKENING_SCENES = [
 export function checkAwakeningTrigger() {
 	if (!S.party || !leadMon(S.party) || cutscene.blocking || battle.blocking || starterMenu.open) return;
 	if (!Story.getFlag('villain_hoenn_climax') || playerRegion() !== 'HOENN') return;
+	if (nativeAwakeningEngaged()) return;   // the decomp's own scenes have it from here (awakening_sync.js)
 	const aw = awState();
 	const scene = AWAKENING_SCENES.find(s => s.map === world.current.name && s.when(aw));
 	if (!scene) return;
@@ -216,6 +222,7 @@ export function checkAwakeningTrigger() {
 		// (AwakenRayquaza's removeobject), or it walls off the catch at (14,6)
 		if (scene.map === 'SkyPillar_Top') {
 			Story.setFlag(RAYQUAZA_SLEEPING_HIDE);
+			Story.setVar(RAYQUAZA_CRY_DONE, 1);   // ...and the native cry scene at (14,9) has nothing left to wake
 			npcs.list = npcs.list.filter(n => !(n.ev && n.ev.flag === RAYQUAZA_SLEEPING_HIDE));
 		}
 		if (scene.resolve) { Story.clearFlag('FLAG_SYS_WEATHER_CTRL'); Story.clearFlag('FLAG_LEGENDARIES_IN_SOOTOPOLIS'); reconcileAwakeningResolution(); }
@@ -226,6 +233,8 @@ export function drawAwakening(ctx, camX, camY) {
 	if (world.current.name !== 'SootopolisCity' || !awActive()) return;
 	const put = (species, pos) => {
 		if (!pos) return;
+		// the map's own object already stands there (its hide flag unset): one is enough
+		if (npcs.list.some(n => n.ev && !n.hidden && +n.ev.x === pos.x && +n.ev.y === pos.y && (n.ev.graphics_id || '').includes(species.toUpperCase()))) return;
 		const img = owMonSprite(species);
 		if (!img) return;
 		const cx = pos.x * META + META / 2, by = pos.y * META + META;

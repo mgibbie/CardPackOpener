@@ -159,7 +159,10 @@ const state = page => page.evaluate(() => {
 		map: O.world.current.name,
 		caughtFlag: !!fl.legend_caught_suicune, hideFlag: !!fl.EVENT_TIN_TOWER_1F_SUICUNE,
 		here: O.legendariesHere().map(e => e.species),
-		sprite: O.npcs.list.some(n => /SUICUNE/.test(n.ev?.graphics_id || '')),
+		// a SUICUNE on screen: the native encounter's (drawn on its square) or the map's
+		// own object — while it is catchable the encounter is its one body
+		// (skypillar_phases_test), so the object is left out then
+		sprite: O.legendariesHere().some(e => e.species === 'suicune') || O.npcs.list.some(n => !n.hidden && /SUICUNE/.test(n.ev?.graphics_id || '')),
 		hud: (window.__hud || []).join(' | '),
 		party: (JSON.parse(localStorage.getItem('magepunk_party_v1') || '[]') || []).map(m => m.speciesId),
 		msgs: window.__msgs || [],
