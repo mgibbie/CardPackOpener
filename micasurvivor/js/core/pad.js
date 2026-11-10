@@ -58,6 +58,8 @@ G.Pad = (() => {
   const NAV_DZ = 0.5;           // menus: the stick must really mean it
   const P2_DZ = 0.22;           // player 2's stick in Co-op Mode (main.gd 1676)
   const CORE_URL = new URL('../../../site/gamepad.js', document.currentScript ? document.currentScript.src : location.href).href;
+  // (controls sweep B4: the site's keyboard layer, /site/input.js, feeds the same actions as the pad)
+  const INPUT_URL = new URL('../../../site/input.js', document.currentScript ? document.currentScript.src : location.href).href;
 
   // ---------------------------------------------------------------- settings
   function siteLayout() {
@@ -246,8 +248,11 @@ G.Pad = (() => {
     if (im.complete && im.naturalWidth) ctx.drawImage(im, x, y, size, size);
   }
 
-  // ---------------------------------------------------------------- input mode (keys / pad)
-  let mode = 'keys';
+  // ---------------------------------------------------------------- input mode (keys / pad) + the focus ring
+  // `mode` says which PROMPTS show (keys or the pad's glyphs). `ring` says whether the focus ring shows
+  // (body.nav-ring): on with keyboard or pad navigation, off only with the mouse or a finger. A key press
+  // never hides it (controls sweep B4: before, the ring was the pad's alone and any key hid it).
+  let mode = 'keys', ring = false;
   function setMode(m) {
     if (m === mode) return;
     mode = m;
@@ -255,15 +260,61 @@ G.Pad = (() => {
     if (m === 'pad') ensure();
     syncHint();
   }
-  let mdx = 0;
+  function setRing(on) {
+    if (on === ring) return;
+    ring = on;
+    if (document.body) document.body.classList.toggle('nav-ring', on);
+    if (on) ensure();
+    syncHint();
+  }
+  // a text field, a dropdown or a slider takes its own keys (the site's typing rule, /site/input.js isTyping)
+  const TEXTY = /^(text|search|email|url|number|tel|password)$/i;
+  function typingEl(el) {
+    if (!el || !el.tagName) return false;
+    const t = el.tagName;
+    return t === 'TEXTAREA' || t === 'SELECT' || (t === 'INPUT' && TEXTY.test(el.type || 'text')) || !!el.isContentEditable;
+  }
+  let mdx = 0, tabbed = 0;
   addEventListener('keydown', e => {
     if (listening && e.key === 'Escape') { e.preventDefault(); e.stopImmediatePropagation(); stopListening(); return; }
+    // Esc leaves a text field (then the arrows / WASD navigate again); it does nothing else
+    if (e.key === 'Escape' && typingEl(e.target) && e.target.tagName !== 'SELECT') { e.preventDefault(); e.stopImmediatePropagation(); e.target.blur(); setRing(true); return; }
+    if (e.key === 'Tab') tabbed = performance.now();
     if (!['Shift', 'Control', 'Alt', 'Meta'].includes(e.key)) setMode('keys');
   }, true);
-  addEventListener('mousedown', () => setMode('keys'), true);
+  // Tab moves the real DOM focus: the ring follows it (a mouse click's focus does not show the ring)
+  addEventListener('focusin', e => {
+    if (performance.now() - tabbed > 400) return;
+    const el = e.target, scope = topScope();
+    if (!scope || !el || !el.matches || !el.matches(SEL) || !(scope.contains(el) || (scope.id === 'scr-menu' && el.closest('#topbar')))) return;
+    setRing(true);
+    if (focus !== el) setFocus(el, scope, false, true);
+  });
+  const pointer = () => { setMode('keys'); setRing(false); };
+  addEventListener('mousedown', pointer, true);
   addEventListener('wheel', () => setMode('keys'), { passive: true });
-  addEventListener('mousemove', e => { if (mode !== 'pad') return; mdx += Math.abs(e.movementX || 0) + Math.abs(e.movementY || 0); if (mdx > 24) { mdx = 0; setMode('keys'); } });
-  addEventListener('touchstart', () => setMode('keys'), { passive: true, capture: true });
+  addEventListener('mousemove', e => { if (mode !== 'pad') return; mdx += Math.abs(e.movementX || 0) + Math.abs(e.movementY || 0); if (mdx > 24) { mdx = 0; pointer(); } });
+  addEventListener('touchstart', pointer, { passive: true, capture: true });
+
+  // ---------------------------------------------------------------- the keyboard (controls sweep B4)
+  // The site's map (/site/input.js, by physical key; typing in a field never counts) onto this file's actions, so
+  // the keyboard drives every menu exactly as the pad does, and in a run fires what the pad's same-placed button does:
+  //   arrows / WASD  move the focus (in a run G.Input moves the partner)      Z  confirm (A)        X  back (B)
+  //   C  the top face button: reroll the cards / the Z-move (the Ultimate in an Expedition, special 2 in a Dive)
+  //   V  the left face button: ban a card / Dynamax (special 1 in a Dive)
+  //   Q / E  prev / next: tabs, cards (the Ultimate in a Dive)      Enter  Start: pause in a run, "choose" in a menu
+  //   Backspace  Select: Dynamax (as the pad's -)
+  // Esc / P (pause, back), 1-4, R, B, U, Tab (team swap), Space / Shift (hop / slide) stay G.Input's (game.js handleKeys).
+  const KEY_ACTION = { up: 'up', down: 'down', left: 'left', right: 'right', confirm: 'confirm', cancel: 'cancel',
+    secondary: 'reroll', context: 'ban', prev: 'prev', next: 'next', menu: 'start', select: 'dynamax' };
+  const keyQ = [];
+  let kbd = null;
+  import(INPUT_URL).then(m => {
+    kbd = m.startInput({
+      // queued, then routed at the top of the next frame's poll (before G.Input), the way the pad's presses are
+      onAction: (a, info) => { const x = KEY_ACTION[a]; if (!x) return false; keyQ.push([x, !!(info && info.repeat)]); return true; },
+    });
+  }).catch(e => console.warn('[Pad] keyboard core did not load:', e && e.message));
 
   // ---------------------------------------------------------------- the pad itself
   let core = null, activeIdx = null, cur = null, guardRaw = new Set(), modeAtPoll = 'keys';
@@ -298,6 +349,12 @@ G.Pad = (() => {
   }
 
   function poll(ts) {
+    // the keyboard's presses since the last frame (controls sweep B4)
+    if (keyQ.length) for (const [a, rep] of keyQ.splice(0)) route(a, rep, 'key');
+    pollPad(ts);
+    if (ring) ensure();
+  }
+  function pollPad(ts) {
     const pads = readAll();
     cur = activeIdx != null ? pads.find(p => p.index === activeIdx) || null : null;
     if (activeIdx != null && !cur) {
@@ -305,6 +362,7 @@ G.Pad = (() => {
       if (core) core.releaseAll();
       G.UI && G.UI.toast(G.T('Mando desconectado'));
       setMode('keys');
+      setRing(false);   // (the next press, from either, shows it again first)
     }
     if (!cur) {
       // (M5 batch 12a: in a co-op run player 2's pad never takes over player 1's menus and moves)
@@ -444,16 +502,26 @@ G.Pad = (() => {
     for (const el of list) { const c = center(el.getBoundingClientRect()), d = Math.hypot(c.x - c0.x, c.y - c0.y); if (d < bd) { bd = d; best = el; } }
     return best;
   }
-  function setFocus(el, scope, sound) {
+  function setFocus(el, scope, sound, fromDom) {
     if (focus && focus !== el) focus.classList.remove('pad-focus');
     focus = el;
     if (!el) { focusKey = ''; return; }
     el.classList.add('pad-focus');
     focusKey = keyOf(el);
+    // (controls sweep B4) the real DOM focus follows the ring, so Tab goes on from here; a text field, dropdown or
+    // slider is not focused (it would take the arrows): the old focus lets go instead
+    if (!fromDom && ring) syncDomFocus(el);
     try { el.scrollIntoView({ block: 'nearest', inline: 'nearest' }); } catch (e) { /* old browsers */ }
     focusRect = el.getBoundingClientRect();
     if (scope) remembered.set(scope.id || scope, el);
     if (sound && G.Audio) G.Audio.sfx('hover');
+  }
+  function syncDomFocus(el) {
+    const ae = document.activeElement;
+    if (ae === el) return;
+    if (el.tagName !== 'INPUT' && el.tagName !== 'SELECT' && el.tagName !== 'TEXTAREA' && (el.tabIndex >= 0 || el.tagName === 'BUTTON' || el.tagName === 'A')) {
+      try { el.focus({ preventScroll: true }); } catch (e) { /* not focusable */ }
+    } else if (ae && ae !== document.body && ae.blur) ae.blur();
   }
   /** Keep the focus on a live stop of the top screen; returns { scope, list, fresh }. */
   function ensure() {
@@ -586,24 +654,27 @@ G.Pad = (() => {
   }
 
   // ---------------------------------------------------------------- routing
-  function route(a, repeat) {
-    if (guardRaw.size) { const t = table(); for (const i of guardRaw) if (t[i] === a) return; }
+  function route(a, repeat, src = 'pad') {
+    if (src === 'pad' && guardRaw.size) { const t = table(); for (const i of guardRaw) if (t[i] === a) return; }
     if (listening) return;                     // the next press is being captured
-    const wasPad = modeAtPoll === 'pad';
-    modeAtPoll = 'pad';
-    setMode('pad');
+    // (controls sweep B4) the first press after mouse / touch use only shows the ring; the pad's and the keyboard's alike
+    const wasNav = src === 'pad' ? modeAtPoll === 'pad' || ring : ring;
+    if (src === 'pad') { modeAtPoll = 'pad'; setMode('pad'); }
+    setRing(true);
     const tap = $('tap-start');
     if (tap && shown(tap)) { if (!repeat) tap.click(); return; }
     const game = G.Game;
     if (game && game.state === 'playing' && G.Judgment && G.Judgment.cinematic) {
-      if (!repeat && ['confirm', 'cancel', 'pause', 'back'].includes(a)) G.Judgment.skip();
+      if (!repeat && ['confirm', 'cancel', 'pause', 'back', 'start'].includes(a)) G.Judgment.skip();
       return;
     }
     // MicaSurvivor U4: watching a replay of several players, LB / RB switch whose view is followed (MP polish: live too)
     if (game && game.state === 'watch' && G.WatchUI && (G.WatchUI.mode === 'replay' || G.WatchUI.mode === 'live') && (a === 'prev' || a === 'next')) { if (!repeat) G.WatchUI.cycleFollow(a === 'prev' ? -1 : 1); return; }
     const { scope } = ensure();
-    if (!scope) { if (!repeat) gameplay(a); return; }
-    if (!wasPad) return;                       // coming from keyboard / mouse: this press only shows the ring
+    if (!scope) { if (!repeat) gameplay(a === 'start' ? 'pause' : a); return; }
+    // coming from the mouse / a finger: this press only shows the ring (a keyboard shortcut that names its action, C / V / Q / E /
+    // X, still acts: only a move or a "choose" needs to see the ring first)
+    if (!wasNav && (src === 'pad' || ['up', 'down', 'left', 'right', 'confirm', 'start'].includes(a))) return;
     const dir = ['up', 'down', 'left', 'right'].includes(a);
     if (dir) {
       if ((a === 'left' || a === 'right') && isAdjustable(focus)) adjust(focus, a === 'left' ? -1 : 1);
@@ -621,6 +692,11 @@ G.Pad = (() => {
       case 'pause':
         if (scope.id === 'scr-pause') clickIf('#btn-resume');
         else if (scope.id === 'scr-settings' && game && game.state !== 'ui') clickIf('#set-close');
+        break;
+      case 'start':   // (controls sweep B4) Enter: Start in a run (resume from the pause, close Settings), else "choose"
+        if (scope.id === 'scr-pause') clickIf('#btn-resume');
+        else if (scope.id === 'scr-settings' && game && game.state !== 'ui') clickIf('#set-close');
+        else activate(scope);
         break;
       case 'reroll':
         if (scope.id === 'scr-levelup') G.RunUI.reroll();
@@ -665,16 +741,22 @@ G.Pad = (() => {
     if (!document.body) return;
     if (!hintEl) { hintEl = document.createElement('div'); hintEl.id = 'pad-hint'; hintEl.className = 'pad-hint-bar hidden'; document.body.appendChild(hintEl); }
     const scope = lastScope;
-    const on = mode === 'pad' && !!scope && scope.id !== 'tap-start';
+    // (controls sweep B4) the keyboard gets the same bar, with its keys
+    const on = (mode === 'pad' || ring) && !!scope && scope.id !== 'tap-start';
     hintEl.classList.toggle('hidden', !on);
     if (!on) return;
     const tabs = !!scope.querySelector('.tabs:not(.hidden) .tab, .gen-tabs .gen-tab, .tabs .gen-tab');
-    const k = [layout(), JSON.stringify(map()), tabs, G.I18n && G.I18n.lang].join('|');
+    const k = [mode, layout(), JSON.stringify(map()), tabs, G.I18n && G.I18n.lang].join('|');
     if (k === hintKey) return;
     hintKey = k;
     const T = s => G.T(s);
-    hintEl.innerHTML = `<span>${glyphHTML('confirm', 24)} ${T('Aceptar')}</span><span>${glyphHTML('cancel', 24)} ${T('Atrás')}</span>`
-      + (tabs ? `<span>${glyphHTML('prev', 24)}${glyphHTML('next', 24)} ${T('Pestañas')}</span>` : '');
+    const kb = s => `<kbd translate="no">${s}</kbd>`;
+    hintEl.classList.toggle('kbd', mode !== 'pad');
+    hintEl.innerHTML = mode === 'pad'
+      ? `<span>${glyphHTML('confirm', 24)} ${T('Aceptar')}</span><span>${glyphHTML('cancel', 24)} ${T('Atrás')}</span>`
+        + (tabs ? `<span>${glyphHTML('prev', 24)}${glyphHTML('next', 24)} ${T('Pestañas')}</span>` : '')
+      : `<span>${kb('Z')} ${T('Aceptar')}</span><span>${kb('X')} ${T('Atrás')}</span>`
+        + (tabs ? `<span>${kb('Q')}${kb('E')} ${T('Pestañas')}</span>` : '');
   }
 
   // ---------------------------------------------------------------- Settings > Controls
@@ -719,7 +801,12 @@ G.Pad = (() => {
   if (document.readyState === 'loading') addEventListener('DOMContentLoaded', () => fillStatic()); else fillStatic();
 
   /** MicaSurvivor (DLC D2): is the button of `action` held on the active pad now? (hold confirm to glide) */
-  function held(action) { return !!cur && isDown((cur.buttons || [])[btn(action)]); }
+  // (controls sweep B4: or its key, Z for confirm: hold Z to glide as Space does)
+  function held(action) {
+    if (!!cur && isDown((cur.buttons || [])[btn(action)])) return true;
+    const k = kbd && Object.keys(KEY_ACTION).find(x => KEY_ACTION[x] === action);
+    return !!(k && kbd.held(k));
+  }
 
   /** MicaSurvivor (U1): a screen that re-renders in place (js/ui/play-ui.js steps) puts the focus on its current choice. */
   function focusOn(el) {
@@ -734,6 +821,10 @@ G.Pad = (() => {
     layout, map, defaults, setBtn, reset, buttonName, ACTIONS, LAYOUTS, table,   // (MP polish: table: a local partner's pad reads its buttons as player 1's do)
     get mode() { return mode; }, get listening() { return listening ? listening.action : null; },
     get active() { return !!cur; }, get ready() { return !!core; },
-    get focus() { return focus; }, topScope, focusOn
+    get focus() { return focus; }, topScope, focusOn,
+    get ring() { return ring; }, get keyboard() { return !!kbd; }, typingEl, KEY_ACTION,
+    /** A keyboard action (site/input.js name: 'secondary' = C...) routed now, as a key press is at the next frame (tests that
+     *  step the game frame by frame without the real loop: a synthetic key event never counts, site/input.js ignores it). */
+    keyPress(a) { const x = KEY_ACTION[a]; if (x) route(x, false, 'key'); }
   };
 })();

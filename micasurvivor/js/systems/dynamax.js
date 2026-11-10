@@ -25,7 +25,7 @@
  *   con 2400 + 8 × t de vida, que a veces lanza su Movimiento Max. Premio: 12 orbes de experiencia
  *   (380 + t en total), 2 objetos, 2 tickets, 120 monedas y una curación.
  *
- *   G.Dynamax.tryStart(pl)   tecla C, botón MAX del HUD (también táctil) y la acción `dynamax` del mando
+ *   G.Dynamax.tryStart(pl)   tecla V, botón MAX del HUD (también táctil) y la acción `dynamax` del mando
  */
 G.Dynamax = (() => {
   const COOLDOWN = 240;          // 4 minutos desde que acaba
@@ -257,7 +257,7 @@ G.Dynamax = (() => {
     used = false;
     cd = 0;
     G.Audio.sfx('bossDown');
-    if (first) G.Spawner.say('¡Has desbloqueado el Dynamax! Botón MAX, tecla C o gatillo izquierdo (desde el nivel ' + MIN_LEVEL + ')', 4.2, true);
+    if (first) G.Spawner.say('¡Has desbloqueado el Dynamax! Botón MAX, tecla V o gatillo izquierdo (desde el nivel ' + MIN_LEVEL + ')', 4.2, true);
     else G.Spawner.say('¡Guarida superada! Caramelo Dynamax: puedes usar el Dynamax otra vez', 3.6, true);
     const pl = G.Game && G.Game.player;
     if (pl) {
@@ -496,7 +496,7 @@ G.Dynamax = (() => {
   /**
    * Botón MAX (main.gd draw_dyn): late cuando está listo; gris con "Nv. 20", la cuenta atrás del
    * enfriamiento o "Aquí no" (Sentencia). Oculto sin desbloquear, en la Torre y mientras dura.
-   * Se pulsa con el dedo o el ratón; con mando, el icono del botón de `dynamax`; con teclado, la C.
+   * Se pulsa con el dedo o el ratón; con mando, el icono del botón de `dynamax`; con teclado, la V (controls sweep B4).
    */
   function drawButton(ctx, w, h, pl) {
     if (!unlocked() || active || BLOCKED_MODES.includes(G.Game.mode)) return null;
@@ -522,12 +522,12 @@ G.Dynamax = (() => {
       ctx.font = F(700, 11); ctx.fillStyle = 'rgb(191,199,217)';
       ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0,0,0,.7)'; ctx.strokeText(label, c.x, r.y + r.s + 12); ctx.fillText(label, c.x, r.y + r.s + 12);
     }
-    // lo que se pulsa: el botón del mando o la tecla C
+    // lo que se pulsa: el botón del mando o la tecla V
     if (G.Pad && G.Pad.mode === 'pad') G.Pad.drawGlyph(ctx, 'dynamax', r.x - 4, r.y - 4, 22);
     else if (!G.Touch.active) {
       ctx.fillStyle = 'rgba(10,16,28,.9)'; ctx.fillRect(r.x - 2, r.y - 2, 17, 17);
       ctx.strokeStyle = 'rgba(244,248,255,.7)'; ctx.lineWidth = 1; ctx.strokeRect(r.x - 1.5, r.y - 1.5, 16, 16);
-      ctx.font = '700 11px Arial,Helvetica,sans-serif'; ctx.fillStyle = '#f4f8ff'; ctx.fillText(raw('C'), r.x + 6.5, r.y + 10);
+      ctx.font = '700 11px Arial,Helvetica,sans-serif'; ctx.fillStyle = '#f4f8ff'; ctx.fillText(raw('V'), r.x + 6.5, r.y + 10);   // (controls sweep B4: la tecla V, antes C)
     }
     ctx.restore();
     G.Touch.addButton(r.x, r.y, r.s, r.s, () => { if (!tryStart(pl)) G.Audio.sfx('error'); }, 6);
