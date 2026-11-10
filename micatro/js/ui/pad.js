@@ -145,7 +145,7 @@ export function initPad({ board, stage, UI, readOnly, onMenu, mainMenu, replay =
   }
   // (the screen's natural stop may not be there yet when the reticle re-homes — the blind select's columns rise in after a
   //  skip: for a moment after homing, each frame moves it on to the natural stop once that shows, until the player acts)
-  let homedAt = 0, wantRing = 0;   // wantRing: a move found no stop yet (a dialog still opening): show the reticle once one is there
+  let homedAt = 0;
   const HOME_SETTLE_MS = 1500;
   function settleHome() {
     if (!homedAt || hold) return;
@@ -305,7 +305,7 @@ export function initPad({ board, stage, UI, readOnly, onMenu, mainMenu, replay =
       if (showOnly) return;
     }
     if (hold && DIRS[action]) { reorderStep(action); return; }
-    if (DIRS[action]) { move(action); if (!focus) wantRing = performance.now(); return; }
+    if (DIRS[action]) { move(action); return; }
     switch (action) {
       case 'confirm': {
         const { ok } = ensure();
@@ -419,7 +419,6 @@ export function initPad({ board, stage, UI, readOnly, onMenu, mainMenu, replay =
       onDisconnect: () => { setTimeout(() => { if (!pad.connected() && src !== 'key') { ringOn = false; hold = null; place(); renderHints(); const s = focusedSprite(); if (s) s.hover = false; } }, 0); },
     },
     onFrame: () => {
-      if (!focus && wantRing) { if (performance.now() - wantRing > HOME_SETTLE_MS) wantRing = 0; else { ensure(); if (focus) wantRing = 0; } }
       if (!hintsOn()) { if (hints.style.display !== 'none') hints.style.display = 'none'; return; }
       if (ringOn) {
         // the table changed under the reticle (new state, card gone): re-home without acting
