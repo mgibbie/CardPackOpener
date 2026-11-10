@@ -90,7 +90,7 @@ Dive's loot is at stake until secured: alpha and guardian victories bank rewards
 
 **Meandering Meadow** is the surrounding experience for [Pair of Pears](../pairofpears/index.html). Pair of Pears itself is a memory-matching card run with charms and a shop; the overworld arcade can launch it directly. See [main.js](../pairofpears/js/main.js) and [pear.js](../pairofpears/js/pear.js).
 
-**Scoundrel** is a separately packaged game at [scoundrel/](../scoundrel/index.html). Its gameplay is bundled in LÖVE/Emscripten assets rather than ordinary readable game modules here, so this guide does not infer its internal modes from the web wrapper.
+**Scoundrel** ([scoundrel/](../scoundrel/index.html)) is the owner's solo dungeon card game, rebuilt web-native on Micatro's UI. The rules are a port of the owner's Love2D game in [engine.js](../scoundrel/js/engine.js) (deterministic: a run is its seed + action string, so save/resume and replays are the recipe). A **run** is a chain of dungeons: each cleared dungeon starts the next with 1 less max HP (20, 19, ... 1), and the run ends at death or after dungeon 20. Score = dungeons cleared, then the last dungeon's standard Scoundrel score (leaderboard mode `scoundrel`). Friends watch a live run at `/scoundrel/?spectate=<user>` (presence `scoundrel:<label>`); `?replay=<seed>.<actions>` replays a finished run. The original love.js build stays at [scoundrel/classic/](../scoundrel/classic/index.html).
 
 ## Verification and maintenance
 
