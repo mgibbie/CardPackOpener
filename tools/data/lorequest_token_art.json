@@ -1,0 +1,769 @@
+{
+	"_about": "Art for Lorequest-generated tokens (Middle-earth, Sword Coast, Final Fantasy, Multiverse, Lorequest) that had none. src = Scryfall set/collector[#face] art crop, composed by tools/lorequest_token_art.py into battlecards/art/<id>.jpg; alias = an existing card whose art already shows this creature (ART_ALIASES in battlecards/cardart.js). Picked by eye, 2026-11-10.",
+	"tokens": {
+		"token_construct": {
+			"name": "Construct",
+			"src": "tbro/4",
+			"source": "Construct",
+			"artist": "Deruchenko Alexander",
+			"scryfallId": "087ab398-474f-4455-bef4-ea42c6913486"
+		},
+		"token_angel": {
+			"name": "Angel",
+			"src": "tm19/1",
+			"source": "Angel",
+			"artist": "Winona Nelson",
+			"scryfallId": "dc31e017-81e6-43bf-bf8e-ea0faca5d9b7"
+		},
+		"token_illusion": {
+			"name": "Illusion",
+			"alias": "illusion_token"
+		},
+		"token_vampire": {
+			"name": "Vampire",
+			"src": "tvow/16",
+			"source": "Vampire",
+			"artist": "Zoltan Boros",
+			"scryfallId": "7eee78d3-c65f-4454-bd3c-1c55388422f5"
+		},
+		"token_thopter": {
+			"name": "Thopter",
+			"src": "tkld/7",
+			"source": "Thopter",
+			"artist": "Adam Paquette",
+			"scryfallId": "fd03a2b9-bfd7-4e1d-b660-e9f945699b78"
+		},
+		"token_servo": {
+			"name": "Servo",
+			"src": "tkld/4",
+			"source": "Servo",
+			"artist": "Igor Kieryluk",
+			"scryfallId": "60842b1a-6ae7-4b3b-a23f-0d94a3d89884"
+		},
+		"token_phyrexian": {
+			"name": "Phyrexian",
+			"src": "tone/3",
+			"source": "Phyrexian Goblin",
+			"artist": "Jokubas Uogintas",
+			"scryfallId": "3663e79b-2bf9-44af-a638-c0ad9067d8d4"
+		},
+		"token_eldrazi_spawn": {
+			"name": "Eldrazi Spawn",
+			"src": "troe/1a",
+			"source": "Eldrazi Spawn",
+			"artist": "Aleksi Briclot",
+			"scryfallId": "e0e3826c-3c85-4910-bd6c-04894ea328d0"
+		},
+		"token_eldrazi_scion": {
+			"name": "Eldrazi Scion",
+			"src": "tbfz/3",
+			"source": "Eldrazi Scion",
+			"artist": "Winona Nelson",
+			"scryfallId": "abcdf03d-d237-4ceb-91fa-8f95341af369"
+		},
+		"token_eldrazi": {
+			"name": "Eldrazi",
+			"src": "tbfz/1",
+			"source": "Eldrazi",
+			"artist": "Jack Wang",
+			"scryfallId": "30ff04d5-ecaf-4be2-94f4-d5409f1c1e4e"
+		},
+		"token_mite": {
+			"name": "Mite",
+			"src": "tone/12",
+			"source": "Phyrexian Mite",
+			"artist": "Dave Kendall",
+			"scryfallId": "a0b4b9cc-b0a4-4383-881b-e843e5d8a8c1"
+		},
+		"token_soldier_of_gondor": {
+			"name": "Soldier of Gondor",
+			"src": "ltr/25",
+			"source": "Protector of Gondor",
+			"artist": "Ilker Yildiz",
+			"scryfallId": "85708748-40ca-4066-a287-7a6a189ff3df"
+		},
+		"token_citadel_guard": {
+			"name": "Citadel Guard",
+			"src": "tltr/2",
+			"source": "Human Soldier",
+			"artist": "Axel Sauerwald",
+			"scryfallId": "f6df0025-8f6a-43e1-8f07-36f18da3a485"
+		},
+		"token_goblin_of_moria": {
+			"name": "Goblin of Moria",
+			"src": "ltr/138",
+			"source": "Moria Marauder",
+			"artist": "Andrea Piparo",
+			"scryfallId": "f33d5394-2248-4654-bec5-33b144752586"
+		},
+		"token_rider_of_rohan": {
+			"name": "Rider of Rohan",
+			"src": "ltr/37",
+			"source": "Westfold Rider",
+			"artist": "Anastasia Balakchina",
+			"scryfallId": "71ed2e4b-c732-472a-a589-f1f53086d9ee"
+		},
+		"token_galadhrim_warrior": {
+			"name": "Galadhrim Warrior",
+			"src": "tltc/11",
+			"source": "Elf Warrior",
+			"artist": "Daniel Correia",
+			"scryfallId": "023f668a-a8e6-4fcb-98d1-30adf343f050"
+		},
+		"token_galadhrim_guide": {
+			"name": "Galadhrim Guide",
+			"src": "ltr/168",
+			"source": "Galadhrim Guide",
+			"artist": "Inka Schulz",
+			"scryfallId": "f4603f59-f899-4caf-a874-bf234d2045fb"
+		},
+		"token_rider_of_the_mark": {
+			"name": "Rider of the Mark",
+			"src": "ltr/827",
+			"source": "Riders of the Mark",
+			"artist": "Antonio José Manzanedo",
+			"scryfallId": "de77686e-c4c1-4d38-a05c-03eb7363fc0b"
+		},
+		"token_rohirrim_soldier": {
+			"name": "Rohirrim Soldier",
+			"src": "ltc/67",
+			"source": "Riders of Rohan",
+			"artist": "Stanislav Sherbakov",
+			"scryfallId": "e76a2b11-a087-42cf-8356-ef9edbac244a"
+		},
+		"token__ored_rider": {
+			"name": "Éored Rider",
+			"src": "ltr/146",
+			"source": "Rohirrim Lancer",
+			"artist": "Anastasia Balakchina",
+			"scryfallId": "2f506f9f-4c0d-44e8-9f81-8403d808d0e4"
+		},
+		"token_rohirrim_recruit": {
+			"name": "Rohirrim Recruit",
+			"src": "tltc/9",
+			"source": "Human Knight",
+			"artist": "Inka Schulz",
+			"scryfallId": "491fc1c3-a46e-4cfd-a749-57f4c96f6aea"
+		},
+		"token_shire_ruffian": {
+			"name": "Shire Ruffian",
+			"src": "tltc/3",
+			"source": "Halfling",
+			"artist": "Wangjie Li",
+			"scryfallId": "bbd9ff58-4d38-4d34-9dfc-6f788830297e"
+		},
+		"token_orc_raider": {
+			"name": "Orc Raider",
+			"src": "ltc/204",
+			"source": "Merciless Executioner",
+			"artist": "Anton Solovianchyk",
+			"scryfallId": "a034d73b-a511-4c02-946f-ea520f93a2a4"
+		},
+		"token_mordor_orc": {
+			"name": "Mordor Orc",
+			"src": "tltr/6",
+			"source": "Orc Army",
+			"artist": "Veli Nyström",
+			"scryfallId": "db598f33-2ff9-4e0b-a067-05fecc03435f"
+		},
+		"token_awakened_tree": {
+			"name": "Awakened Tree",
+			"src": "tltc/13",
+			"source": "Treefolk",
+			"artist": "Audrey Benjaminsen",
+			"scryfallId": "bf661b43-53eb-4e51-8152-420f6d8c925f"
+		},
+		"token_warg": {
+			"name": "Warg",
+			"src": "tclb/43",
+			"source": "Wolf",
+			"artist": "Andrea Radeck",
+			"scryfallId": "81605b8d-cf1d-49dc-aebb-a857d6796a77"
+		},
+		"token_uruk_hai": {
+			"name": "Uruk-hai",
+			"alias": "me_gr_berserker"
+		},
+		"token_uruk_grunt": {
+			"name": "Uruk Grunt",
+			"src": "ltc/33",
+			"source": "Orcish Siegemaster",
+			"artist": "Anton Solovianchyk",
+			"scryfallId": "1e9f9869-0f43-4eac-892f-26cd8a614330"
+		},
+		"token_uruk_reinforcement": {
+			"name": "Uruk Reinforcement",
+			"src": "tltr/5",
+			"source": "Orc Army",
+			"artist": "Veli Nyström",
+			"scryfallId": "2f8b43e8-dd89-452e-b572-8559e19fdea2"
+		},
+		"token_morgul_orc": {
+			"name": "Morgul Orc",
+			"src": "ltr/80",
+			"source": "Cirith Ungol Patrol",
+			"artist": "Bruno Biazotto",
+			"scryfallId": "7cd03837-37cc-4f6c-8e22-e3b0ff635462"
+		},
+		"token_risen_horror": {
+			"name": "Risen Horror",
+			"src": "ltc/165",
+			"source": "Dearly Departed",
+			"artist": "Arthur Yuan",
+			"scryfallId": "900a6221-9222-4645-94e7-1a0fcaf73aae"
+		},
+		"token_oathbreaker_shade": {
+			"name": "Oathbreaker Shade",
+			"src": "tltr/3",
+			"source": "Spirit",
+			"artist": "Nino Is",
+			"scryfallId": "57b674ef-f541-4ee8-9727-1c5b3c0c8f4e"
+		},
+		"token_dead_man_of_dunharrow": {
+			"name": "Dead Man of Dunharrow",
+			"src": "ltr/32",
+			"source": "Soldier of the Grey Host",
+			"artist": "Chris Cold",
+			"scryfallId": "b79999df-af8c-4724-9631-20eee5a00e49"
+		},
+		"token_risen_oathbreaker": {
+			"name": "Risen Oathbreaker",
+			"src": "ltc/14",
+			"source": "Grey Host Reinforcements",
+			"artist": "Patrik Hell",
+			"scryfallId": "7d72498c-7ac0-41f7-8f8a-47fda31d99e5"
+		},
+		"token_brood_spider": {
+			"name": "Brood Spider",
+			"src": "tclb/42",
+			"source": "Spider",
+			"artist": "Slawomir Maniak",
+			"scryfallId": "1dab34a7-0d18-4a6c-ac40-3b9901ff841b"
+		},
+		"token_goblin_town_goblin": {
+			"name": "Goblin-town Goblin",
+			"src": "tltc/8",
+			"source": "Goblin",
+			"artist": "Zoltan Boros",
+			"scryfallId": "98ce0500-d9b4-4218-bcc6-dd6194068958"
+		},
+		"token_gundabad_goblin": {
+			"name": "Gundabad Goblin",
+			"src": "ltr/295",
+			"source": "Goblin Assailant",
+			"artist": "Anton Solovianchyk",
+			"scryfallId": "b4bda198-7ab4-4c6b-9fb1-93ac54c06a85"
+		},
+		"token_gundabad_brute": {
+			"name": "Gundabad Brute",
+			"src": "ltc/219",
+			"source": "Goblin Dark-Dwellers",
+			"artist": "Yuriy Chemezov",
+			"scryfallId": "cb2091cb-4c20-4210-9917-6632c1d39dc1"
+		},
+		"token_battle_troll": {
+			"name": "Battle-Troll",
+			"src": "ltr/140",
+			"source": "Olog-hai Crusher",
+			"artist": "Andrea Piparo",
+			"scryfallId": "c33bf593-62e0-491a-a31a-328bce6d8735"
+		},
+		"token_nazg_l": {
+			"name": "Nazgûl",
+			"alias": "me_go_nazgul"
+		},
+		"token_dol_guldur_wraith": {
+			"name": "Dol Guldur Wraith",
+			"src": "tltc/7",
+			"source": "Wraith",
+			"artist": "Wonchun Choi",
+			"scryfallId": "9afb58e8-f5a7-49f9-8287-77757bd3268c"
+		},
+		"token_risen_terror": {
+			"name": "Risen Terror",
+			"src": "clb/721",
+			"source": "Forgotten Creation",
+			"artist": "Izzy",
+			"scryfallId": "1d314354-1fb1-498c-8342-ecafac9ff37a"
+		},
+		"token_gundabad_orc": {
+			"name": "Gundabad Orc",
+			"src": "ltc/63",
+			"source": "Moria Scavenger",
+			"artist": "Igor Krstic",
+			"scryfallId": "ea926187-ac8e-4197-8fd4-ac6b8d818d83"
+		},
+		"token_guenhwyvar": {
+			"name": "Guenhwyvar",
+			"src": "tafr/13",
+			"source": "Guenhwyvar",
+			"artist": "Brian Valeza",
+			"scryfallId": "6b2c8f52-1580-42d5-8434-c4c70e31e31b"
+		},
+		"token_cloakwood_spider": {
+			"name": "Cloakwood Spider",
+			"src": "tafr/7",
+			"source": "Spider",
+			"artist": "Joe Slucher",
+			"scryfallId": "124e0b03-d9fb-44f1-9e3c-3462aabdd42e"
+		},
+		"token_conjured_beast": {
+			"name": "Conjured Beast",
+			"src": "tclb/38",
+			"source": "Beast",
+			"artist": "Jesper Ejsing",
+			"scryfallId": "01e095bd-091c-442f-aa21-0826c40acb6c"
+		},
+		"token_mithral_hall_soldier": {
+			"name": "Mithral Hall Soldier",
+			"src": "afr/14",
+			"source": "Dwarfhold Champion",
+			"artist": "Miguel Mercado",
+			"scryfallId": "2404a028-05f5-469b-80e0-e820721ff266"
+		},
+		"token_boo": {
+			"name": "Boo",
+			"src": "tafr/10",
+			"source": "Boo",
+			"artist": "Zoltan Boros",
+			"scryfallId": "c49e8e79-8673-41c2-a1ad-273c37e27aca"
+		},
+		"token_saproling": {
+			"name": "Saproling",
+			"src": "tclb/14",
+			"source": "Saproling",
+			"artist": "David Szabo",
+			"scryfallId": "f7cbc9fc-42d2-4d1a-b6c0-29a35cfd1588"
+		},
+		"token_hydra": {
+			"name": "Hydra",
+			"src": "clb/828",
+			"source": "Managorger Hydra",
+			"artist": "Lucas Graciano",
+			"scryfallId": "330aefb9-629f-4d07-94d4-7252f17f85ba"
+		},
+		"token_wild_shape_bear": {
+			"name": "Wild Shape Bear",
+			"src": "afr/198",
+			"source": "Owlbear",
+			"artist": "Ilse Gort",
+			"scryfallId": "30e8a00f-8131-470d-8072-4c23b812281a"
+		},
+		"token_summoned_beast": {
+			"name": "Summoned Beast",
+			"src": "afr/173",
+			"source": "Bulette",
+			"artist": "Jason Kang",
+			"scryfallId": "206a9e7b-45c1-4213-8fc4-27d90e2ab0e9"
+		},
+		"token_catalogued_monster": {
+			"name": "Catalogued Monster",
+			"src": "afr/54",
+			"source": "Displacer Beast",
+			"artist": "Bryan Sola",
+			"scryfallId": "95d5c36c-bcc8-459c-9f4b-b265ccdb1f06"
+		},
+		"token_truesword_recruit": {
+			"name": "Truesword Recruit",
+			"src": "clb/51",
+			"source": "Wyrm's Crossing Patrol",
+			"artist": "Edgar Sánchez Hidalgo",
+			"scryfallId": "f00a57fc-b4a6-48fa-a20c-864c10099e4b"
+		},
+		"token_revived_spirit": {
+			"name": "Revived Spirit",
+			"src": "clb/689",
+			"source": "Bygone Bishop",
+			"artist": "Jason A. Engle",
+			"scryfallId": "cf879fc7-9f84-40a7-a7be-9cc98a720af5"
+		},
+		"token_bhaal_cultist": {
+			"name": "Bhaal Cultist",
+			"src": "clb/163",
+			"source": "Bhaal's Invoker",
+			"artist": "Deruchenko Alexander",
+			"scryfallId": "3fd3e535-8412-4f79-a2b1-dfda9db1c496"
+		},
+		"token_raised_skeleton": {
+			"name": "Raised Skeleton",
+			"src": "tafr/6",
+			"source": "Skeleton",
+			"artist": "Svetlin Velinov",
+			"scryfallId": "fa6fdb57-82f3-4695-b1fa-1f301ea4ef83"
+		},
+		"token_keep_guard": {
+			"name": "Keep Guard",
+			"src": "afr/22",
+			"source": "Keen-Eared Sentry",
+			"artist": "Viko Menezes",
+			"scryfallId": "de169d64-8242-4f57-980e-47f901fd57ab"
+		},
+		"token_hornet": {
+			"name": "Hornet",
+			"src": "tclb/40",
+			"source": "Insect",
+			"artist": "Martina Pilcerova",
+			"scryfallId": "3ca5cf3c-18f8-430a-a20f-2226d9cac387"
+		},
+		"token_gnoll_pack_runner": {
+			"name": "Gnoll Pack-Runner",
+			"src": "afr/185",
+			"source": "Gnoll Hunter",
+			"artist": "Jesper Ejsing",
+			"scryfallId": "1d0634cb-e973-4f05-965e-d39b09fe57a9"
+		},
+		"token_cliff_ogre": {
+			"name": "Cliff Ogre",
+			"src": "tclb/36",
+			"source": "Ogre",
+			"artist": "Paul Bonner",
+			"scryfallId": "e3d725a8-daff-4458-aab0-06803ae33be3"
+		},
+		"token_crawling_hut": {
+			"name": "Crawling Hut",
+			"src": "clb/266",
+			"source": "Baba Lysaga, Night Witch",
+			"artist": "Slawomir Maniak",
+			"scryfallId": "2ef42c3f-f22e-4e99-adb0-9e8f8d442347"
+		},
+		"token_bone_tyrant": {
+			"name": "Bone Tyrant",
+			"src": "clb/127",
+			"source": "Ghastly Death Tyrant",
+			"artist": "Peter Polach",
+			"scryfallId": "564728ed-dbf0-471c-a34a-5bd3b486b7e5"
+		},
+		"token_myrkul_skeleton": {
+			"name": "Myrkul Skeleton",
+			"src": "afr/93",
+			"source": "Clattering Skeletons",
+			"artist": "Aleksi Briclot",
+			"scryfallId": "09ac0b2b-d4d3-4977-b241-7788239362de"
+		},
+		"token_undead_legion": {
+			"name": "Undead Legion",
+			"src": "tafr/9",
+			"source": "Zombie",
+			"artist": "Artur Treffner",
+			"scryfallId": "0b08d210-01cb-46c5-9150-4dfb47f50ae7"
+		},
+		"token_tomb_zombie": {
+			"name": "Tomb Zombie",
+			"src": "afr/99",
+			"source": "Dungeon Crawler",
+			"artist": "Svetlin Velinov",
+			"scryfallId": "4138b66d-cf18-42a5-8522-241bd3969624"
+		},
+		"token_ifrit": {
+			"name": "Ifrit",
+			"src": "fin/369",
+			"source": "Summon: G.F. Ifrit",
+			"artist": "Ono Tako",
+			"scryfallId": "25c3ce9a-39e5-4273-ba67-224a837b75e7"
+		},
+		"token_shiva": {
+			"name": "Shiva",
+			"src": "fin/362",
+			"source": "Summon: Shiva",
+			"artist": "Taku Haruno",
+			"scryfallId": "340b2b03-1b20-411c-ba30-2be77655290a"
+		},
+		"token_ramuh": {
+			"name": "Ramuh",
+			"src": "fin/367",
+			"source": "Summon: Esper Ramuh",
+			"artist": "Hagiya Kaoru",
+			"scryfallId": "a6edb808-9753-4029-81ed-60a91ebc1d77"
+		},
+		"token_titan": {
+			"name": "Titan",
+			"src": "fin/373",
+			"source": "Summon: Titan",
+			"artist": "Ezoi",
+			"scryfallId": "e5881485-7935-427e-911e-843f198d94dc"
+		},
+		"token_bahamut": {
+			"name": "Bahamut",
+			"src": "fin/356",
+			"source": "Summon: Bahamut",
+			"artist": "Kota Nakatsubo",
+			"scryfallId": "fd5cb1fc-71b2-4b05-abd3-c90e95c53ad1"
+		},
+		"token_phoenix": {
+			"name": "Phoenix",
+			"src": "fin/397#1",
+			"source": "Phoenix, Warden of Fire",
+			"artist": "Susumu Kuroi",
+			"scryfallId": "04dd9ad9-eab2-447c-b065-078a0b184519"
+		},
+		"token_odin": {
+			"name": "Odin",
+			"src": "fin/365",
+			"source": "Summon: Primal Odin",
+			"artist": "Tomohito",
+			"scryfallId": "d8117e64-6e43-4aa8-90df-c5b21fbb9182"
+		},
+		"token_wandering_spirit": {
+			"name": "Wandering Spirit",
+			"src": "tfin/21",
+			"source": "Elemental",
+			"artist": "Anna Podedworna",
+			"scryfallId": "fe592a5c-5e6e-40ed-8818-f4651bcf2fe8"
+		},
+		"token_psicom_trooper": {
+			"name": "PSICOM Trooper",
+			"src": "fin/25",
+			"source": "Magitek Infantry",
+			"artist": "John Tyler Christopher",
+			"scryfallId": "b64dc6d7-dd01-4e66-9099-4c90865448df"
+		},
+		"token_besaid_aurochs": {
+			"name": "Besaid Aurochs",
+			"src": "fin/176",
+			"source": "Blitzball Shot",
+			"artist": "JUGEMT",
+			"scryfallId": "ec8ab637-3d7d-4712-9f83-8920f808f715"
+		},
+		"token_aurochs_rookie": {
+			"name": "Aurochs Rookie",
+			"src": "tfin/5",
+			"source": "Hero",
+			"artist": "Kevin Glint",
+			"scryfallId": "5619d240-3832-477b-ad30-8d310c90f555"
+		},
+		"token_shinra_trooper": {
+			"name": "Shinra Trooper",
+			"src": "fin/118",
+			"source": "Shinra Reinforcements",
+			"artist": "Airi Yoshihisa",
+			"scryfallId": "7367b257-1a8c-4593-a307-7116e36e0342"
+		},
+		"token_shinra_guard": {
+			"name": "Shinra Guard",
+			"src": "tfin/12",
+			"source": "Robot Warrior",
+			"artist": "Kevin Sidharta",
+			"scryfallId": "c2b4e93b-6b27-4dd3-a6dd-a75d6fab14dc"
+		},
+		"token_mako_specimen": {
+			"name": "Mako Specimen",
+			"src": "fin/117",
+			"source": "Shambling Cie'th",
+			"artist": "Nottsuo",
+			"scryfallId": "f02ce338-4fe2-44b0-a896-3ed7e6c874a3"
+		},
+		"token_squid": {
+			"name": "Squid",
+			"src": "tclb/29",
+			"source": "Squid",
+			"artist": "Jack Wang",
+			"scryfallId": "743688fa-ca30-4a4b-92ec-6708af8692db"
+		},
+		"token_anima": {
+			"name": "Anima",
+			"src": "fin/364",
+			"source": "Summon: Anima",
+			"artist": "Kota Nakatsubo",
+			"scryfallId": "d4aa9f4e-cba9-41fa-8c65-3e263988f90d"
+		},
+		"token_daemon": {
+			"name": "Daemon",
+			"src": "fin/112",
+			"source": "Qutrub Forayer",
+			"artist": "Lordigan",
+			"scryfallId": "7475ecf6-23f5-45af-9ef0-ac7923bbc9cb"
+		},
+		"token_duplicate": {
+			"name": "Duplicate",
+			"src": "tclb/28",
+			"source": "Shapeshifter",
+			"artist": "Filip Burburan",
+			"scryfallId": "ce94fb42-cde4-4637-b938-13f17793bf1f"
+		},
+		"token_risen_undead": {
+			"name": "Risen Undead",
+			"src": "afr/119",
+			"source": "Shambling Ghast",
+			"artist": "Dave Kendall",
+			"scryfallId": "d96198a7-dd19-4940-bf8f-23135011fc84"
+		},
+		"token_vile_undead": {
+			"name": "Vile Undead",
+			"src": "afr/118",
+			"source": "Sepulcher Ghoul",
+			"artist": "Jason A. Engle",
+			"scryfallId": "5b302bc8-683f-4a26-ab86-87eaa19dce4d"
+		},
+		"token_immovable_barrier": {
+			"name": "Immovable Barrier",
+			"src": "afr/71",
+			"source": "Secret Door",
+			"artist": "Francisco Miyara",
+			"scryfallId": "3191e400-aa4e-4955-aca0-ecbe63ea240f"
+		},
+		"token_marsh_wight": {
+			"name": "Marsh Wight",
+			"src": "ltr/90",
+			"source": "Haunt of the Dead Marshes",
+			"artist": "Miklós Ligeti",
+			"scryfallId": "673c6c12-2513-4d1b-acf0-6a1f741d49dd"
+		},
+		"token_wild_warg": {
+			"name": "Wild Warg",
+			"alias": "me_cw_snarling"
+		},
+		"token_mirkwood_spider": {
+			"name": "Mirkwood Spider",
+			"alias": "me_sl_mirkwood"
+		},
+		"token_lunar_whale": {
+			"name": "Lunar Whale",
+			"alias": "ff_treasure_lunar_whale"
+		},
+		"token_phantom_train": {
+			"name": "Phantom Train",
+			"alias": "ff_treasure_phantom_train"
+		},
+		"token_s_h_i_e_l_d_agent": {
+			"name": "S.H.I.E.L.D. Agent",
+			"src": "msh/5",
+			"source": "Agents of S.H.I.E.L.D.",
+			"artist": "Borja Pindado",
+			"scryfallId": "d9b5e156-0764-44e0-b0c7-de2561ea9e04"
+		},
+		"token_savage_beast": {
+			"name": "Savage Beast",
+			"src": "tmsc/11",
+			"source": "Beast",
+			"artist": "Thomas Chamberlain-Keen",
+			"scryfallId": "4296d26c-3ba6-49e8-986c-76f875a0498c"
+		},
+		"token_symbiote_spawn": {
+			"name": "Symbiote Spawn",
+			"src": "spm/72",
+			"source": "Venomized Cat",
+			"artist": "Jessica Fong",
+			"scryfallId": "6330f3e9-e031-4d55-b5d8-536c16bba063"
+		},
+		"token_sinister_henchman": {
+			"name": "Sinister Henchman",
+			"src": "spm/30",
+			"source": "Doc Ock's Henchmen",
+			"artist": "Nathaniel Himawan",
+			"scryfallId": "a383c442-3f4a-4115-97e4-23f0eb88465b"
+		},
+		"token_phantasm": {
+			"name": "Phantasm",
+			"src": "om1/39",
+			"source": "Mysterio's Phantasm",
+			"artist": "Igor Krstic",
+			"scryfallId": "42b7c039-97c5-4a46-9d0a-43205da77d86"
+		},
+		"token_lizard_spawn": {
+			"name": "Lizard Spawn",
+			"src": "spm/107",
+			"source": "Lurking Lizards",
+			"artist": "Rafater",
+			"scryfallId": "58b5b49c-ddd6-4d1b-9b61-6e02d8fc55ad"
+		},
+		"token_enforcer": {
+			"name": "Enforcer",
+			"src": "msh/102",
+			"source": "Kingpin's Enforcers",
+			"artist": "Kevin Sidharta",
+			"scryfallId": "64056edb-6de2-4694-b771-f35542c25771"
+		},
+		"token_doombot": {
+			"name": "Doombot",
+			"src": "tmsh/18",
+			"source": "Doombot",
+			"artist": "L J Koh",
+			"scryfallId": "452680b5-5032-413a-bb5a-3fc8cfe88be9"
+		},
+		"token_loki_s_illusion": {
+			"name": "Loki's Illusion",
+			"src": "msc/627",
+			"source": "Living Lies of Loki",
+			"artist": "Alex Horley-Orlandelli",
+			"scryfallId": "07e81366-e42d-4a94-9ea2-598c4b4b63ca"
+		},
+		"token_undead_servant": {
+			"name": "Undead Servant",
+			"src": "msc/670",
+			"source": "Undead Hand Ninja",
+			"artist": "Myles Wohl",
+			"scryfallId": "059bffc0-d509-4c3c-8af3-bd44959f2d82"
+		},
+		"token_herald_of_galactus": {
+			"name": "Herald of Galactus",
+			"src": "msc/10",
+			"source": "Silver Surfer, Galactus's Herald",
+			"artist": "Irvin Rodriguez",
+			"scryfallId": "b463462f-8044-4e57-b96e-408a9f4e0974"
+		},
+		"token_fantastic_four": {
+			"name": "Fantastic Four",
+			"src": "msc/741",
+			"source": "The Fantastic Four",
+			"artist": "Yasmine Putri",
+			"scryfallId": "d78cb67a-ed8a-4e76-8506-04c274318b56"
+		},
+		"token_annihilation_wave": {
+			"name": "Annihilation Wave",
+			"src": "tmsh/11",
+			"source": "Alien",
+			"artist": "Michele Giorgi",
+			"scryfallId": "eca87cbb-5958-4775-93ce-b1d4c7ef3a99"
+		},
+		"token_recruit": {
+			"name": "Recruit",
+			"alias": "recruit"
+		},
+		"token_elf_of_l_rien": {
+			"name": "Elf of Lórien",
+			"src": "ltr/175",
+			"source": "Lothlórien Lookout",
+			"artist": "Daniel Correia",
+			"scryfallId": "4e3639c1-ebc3-4a0b-ab93-549e45aff0f7"
+		},
+		"token_hunting_spider": {
+			"name": "Hunting Spider",
+			"alias": "me_legolas_spider"
+		},
+		"token_wild_shape": {
+			"name": "Wild Shape",
+			"src": "clb/246",
+			"source": "Owlbear Cub",
+			"artist": "Ernanda Souza",
+			"scryfallId": "be177b66-dab3-47ef-bcdf-8d99eb57e19f"
+		},
+		"token_dracolich_wraith": {
+			"name": "Dracolich Wraith",
+			"src": "afr/100",
+			"source": "Ebondeath, Dracolich",
+			"artist": "Lars Grant-West",
+			"scryfallId": "e6b3f460-92ba-4af0-aad9-cf86615d4177"
+		},
+		"token_shadow_dragon": {
+			"name": "Shadow Dragon",
+			"src": "fin/119#1",
+			"source": "Yiazmat, Ultimate Mark",
+			"artist": "Joshua Raphael",
+			"scryfallId": "c3eb2ae5-10de-4c3d-91c8-8734befc80b2"
+		},
+		"token_jenova_cell": {
+			"name": "Jenova Cell",
+			"src": "fin/103",
+			"source": "Hecteyes",
+			"artist": "SHOSUKE",
+			"scryfallId": "8680d052-c07b-4d9b-bda9-b5f69f44f424"
+		},
+		"token_sand_wall": {
+			"name": "Sand Wall",
+			"src": "spm/63",
+			"source": "Sandman's Quicksand",
+			"artist": "Michele Giorgi",
+			"scryfallId": "b7795e17-6717-464c-9ae3-20da52ba005a"
+		}
+	}
+}

@@ -33,8 +33,8 @@ function fnSrc(src, name) {
 	const fakeCanvas = () => ({ width: 512, height: 716, style: {}, dataset: {}, isConnected: true, getContext: () => ({ clearRect() {}, drawImage() {} }) });
 	const drawCardFace = () => { draws++; return fakeCanvas(); };
 	const timers = [];
-	const make = new Function('drawCardFace', 'attachTip', 'artListeners', 'setTimeout', body + '; return miniFace;');
-	const miniFace = make(drawCardFace, () => {}, artListeners, (fn, ms) => timers.push({ fn, ms }));
+	const make = new Function('drawCardFace', 'attachTip', 'artListeners', 'setTimeout', 'artIdOf', body + '; return miniFace;');
+	const miniFace = make(drawCardFace, () => {}, artListeners, (fn, ms) => timers.push({ fn, ms }), c => c.artFrom || c.id);
 	const c = miniFace({ id: 'sleepy_dragon', name: 'Sleepy Dragon' });
 	const d0 = draws;
 	for (const t of timers) t.fn(); // all the fixed timers elapse first...
