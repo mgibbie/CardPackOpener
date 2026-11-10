@@ -105,6 +105,9 @@ async function boot({ map, x, y, region = 'hoenn', party = [LEAD()], flags = {},
 		localStorage.setItem('magepunk_badges_v1', JSON.stringify(badges));
 		localStorage.setItem('magepunk_story', JSON.stringify({ flags: { intro_done: true, story_seeded: true, intro_started: true, intro_greeted: true, ...flags }, vars }));
 		localStorage.setItem('magepunk_settings', JSON.stringify({ textSpeed: 'instant' }));
+		// a REPEL (the L60 lead outranks every wild here): a random encounter mid-walk (Icefall Cave, rate 7;
+		// Route 111's sand) swallowed the next step's key — main gate 2026-11-10, x stuck one tile short
+		localStorage.setItem('magepunk_repel_v1', '99999');
 		if (misc) localStorage.setItem('magepunk_events_v1', JSON.stringify(misc));
 	}, STATE, party, region, flags, vars, BADGES, misc, random);
 	await page.goto(`http://localhost:${PORT}/overworld/index.html?map=${map}&x=${x}&y=${y}`, { waitUntil: 'domcontentloaded' });

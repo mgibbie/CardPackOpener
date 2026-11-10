@@ -568,8 +568,14 @@ try {
 	await shot(jack.page, '29-all-mp-speedrun');
 	// Conjoined Joker: X(1 + 0.5 per Nemesis hand left) in the Nemesis — kate plays 2 hands -> jack's is X2 (kate's hands, relayed)
 	const jcalc = (page, key) => page.evaluate(async (key) => { const { G } = await import('/micatro/js/engine/core.js'); const j = G.jokers.cards.find((c) => c.config.center.key === key); const r = j && j.calculate_joker({ joker_main: true, cardarea: G.jokers, full_hand: [], scoring_hand: [] }); return { r: r ? { x: r.Xmult_mod, c: r.chip_mod } : null, opp: G.GAME.pvp.opp, lives: G.GAME.pvp.lives }; }, key);
-	await playStrong(kate.page); await playStrong(kate.page);
-	A(await waitFor(async () => ((await jcalc(jack.page, 'j_mp_conjoined_joker')).opp || {}).hands === 2, 15000), "jack's engine knows kate has 2 hands left (recorded pvp_opp)");
+	// (by her own count, not two blind plays: CI 2026-11-10 saw jack's view stuck at 3 — a second play that went in before
+	// kate's hand was back to SELECTING_HAND is refused, and nothing retried it)
+	const kh0 = (await view(kate.page)).hands;
+	for (let i = 0; i < 6 && (await view(kate.page)).hands > kh0 - 2; i++) {
+		await waitFor(async () => (await view(kate.page)).state === 'SELECTING_HAND', 8000);
+		await playStrong(kate.page);
+	}
+	A(await waitFor(async () => ((await jcalc(jack.page, 'j_mp_conjoined_joker')).opp || {}).hands === 2, 15000), "jack's engine knows kate has 2 hands left (recorded pvp_opp)", JSON.stringify({ kate: [kh0, (await view(kate.page)).hands], jackSees: (await jcalc(jack.page, 'j_mp_conjoined_joker')).opp }));
 	const cjx = await jcalc(jack.page, 'j_mp_conjoined_joker');
 	A(cjx.r && cjx.r.x === 2, 'Conjoined Joker: X2 against a Nemesis with 2 hands left', JSON.stringify(cjx));
 	// Defensive Joker: jack loses the round (a life down) -> +125 Chips; kate (ahead) gets nothing

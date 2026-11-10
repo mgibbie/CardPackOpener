@@ -185,7 +185,13 @@ try {
 		await G.ExpSave.open();
 		if (G.Game.state === 'playing' || G.Game.state === 'levelup' || G.Game.state === 'choice') { G.Game.quit(); await wait(300); }
 		if (G.Game.state === 'over') { document.getElementById('btn-again').click(); await wait(300); }
-		const ok = await G.Flow.play('exp-classic');
+		// a fixed world seed (game.js picks it with Math.random): the scenery's solid props are seeded by it, and a rock
+		// between the Support Alpha and its target ate both shots ~1 run in 4 ({"shots":2,"hurt":0}), as one could box in
+		// the roaming shiny ({"moved":11}) — CI 2026-11-10 and locally
+		const rnd = Math.random; let sd = 12345;
+		Math.random = () => (sd = (sd * 16807) % 2147483647) / 2147483647;
+		let ok;
+		try { ok = await G.Flow.play('exp-classic'); } finally { Math.random = rnd; }
 		window.__t.freeze();
 		window.__t.sturdy();
 		window.__t.wipe();

@@ -103,7 +103,10 @@ export async function runViewport(vpName, { shots } = {}) {
 			await sleep(s.settle || 300);
 			return ok;
 		};
-		t.hold = (b, on) => page.evaluate((b, on) => { window.__pad.buttons[b] = { pressed: on, value: on ? 1 : 0 }; }, b, on);
+		// (a press that launches a game navigates mid-tap: its release then has no page to land on, and
+		// the old page's context is gone — CI 2026-11-10, "Execution context was destroyed" after
+		// "pad: back on Home" in all three viewports. The new page starts with every button up.)
+		t.hold = (b, on) => page.evaluate((b, on) => { window.__pad.buttons[b] = { pressed: on, value: on ? 1 : 0 }; }, b, on).catch(e => { if (!/context was destroyed|navigation|Target closed/i.test(e.message)) throw e; });
 		t.tap = async b => { await t.hold(b, true); await sleep(80); await t.hold(b, false); await sleep(130); };
 		t.combo = async () => { await t.hold(BTN.start, true); await sleep(60); await t.hold(BTN.select, true); await sleep(140); await t.hold(BTN.start, false); await t.hold(BTN.select, false); await sleep(160); };
 		t.press = async k => { await page.keyboard.press(k); await sleep(70); };
@@ -115,7 +118,7 @@ export async function runViewport(vpName, { shots } = {}) {
 			const nav = page.waitForNavigation({ waitUntil: 'domcontentloaded', timeout: 30000 }).catch(() => null);
 			await confirmKey();
 			await sleep(250);
-			if (await page.evaluate(() => !!document.querySelector('#mpsw .mpsw-confirm'))) { await rightKey(); await confirmKey(); }
+			if (await page.evaluate(() => !!document.querySelector('#mpsw .mpsw-confirm')).catch(() => false)) { await rightKey(); await confirmKey(); }
 			await nav;
 			await sleep(200);
 		};
