@@ -23,11 +23,15 @@ export function makeAsserter() {
 }
 
 const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.json': 'application/json', '.css': 'text/css', '.png': 'image/png', '.jpg': 'image/jpeg', '.webp': 'image/webp', '.ttf': 'font/ttf', '.wav': 'audio/wav', '.mp3': 'audio/mpeg', '.ogg': 'audio/ogg', '.svg': 'image/svg+xml' };
-export async function startServer() {
+// onApi(body) may answer an /api/mp action itself (return an object), else the stub answers
+export async function startServer({ onApi } = {}) {
 	const server = http.createServer(async (req, res) => {
 		const u = decodeURIComponent(req.url.split('?')[0]);
 		if (u === '/api/mp') {
-			for await (const _ of req) { }
+			let raw = ''; for await (const c of req) raw += c;
+			let body = {}; try { body = JSON.parse(raw || '{}'); } catch { }
+			const mine = onApi && onApi(body);
+			if (mine) { res.writeHead(200, { 'content-type': 'application/json' }); return res.end(JSON.stringify(mine)); }
 			res.writeHead(200, { 'content-type': 'application/json' });
 			return res.end(JSON.stringify({ ok: true, state: null, friends: [], challenges: [], trades: [], match: null, presence: null, gifts: [], messages: [], rows: [], decks: [], ow: null }));
 		}

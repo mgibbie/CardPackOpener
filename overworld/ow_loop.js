@@ -389,7 +389,8 @@ export function tick(now) {
 		// the tap targets are rebuilt by whichever screen draws below: a screen that
 		// lays out none (a Game Boy minigame) must not inherit the last menu's
 		S.menuUi = [];
-		if (cardFlip.open) drawCardFlip(sctx, SW, SH); // full screen, the GB frame scaled up
+		if (choiceMenu.open && choiceMenu.overMenu) drawChoiceMenu(SW, MH);   // a YES / NO asked over another screen (ow_saves.js askYesNo)
+		else if (cardFlip.open) drawCardFlip(sctx, SW, SH); // full screen, the GB frame scaled up
 		else if (contestMenu.open) drawContest(sctx, SW, SH); // full screen, the GBA contest screen scaled up
 		else if (blender.open) drawBerryBlender(sctx, SW, SH); // the GBA screen scaled up
 		else if (crystalSlots.open) drawCrystalSlots(SW, MH);

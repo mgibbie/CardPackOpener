@@ -206,6 +206,10 @@ try {
 		A(!!input, 'OPTIONS > IMPORT SAVE puts its file input in the DOM (#ow-save-file)');
 		if (input) {
 			await input.uploadFile(tmp);
+			// the question is the game's own YES / NO now (not confirm()): answer YES
+			for (let i = 0; i < 50 && !(await page.evaluate(async () => (await import('./choice.js')).choiceMenu.open).catch(() => false)); i++) await sleep(100);
+			A(await page.evaluate(async () => { const c = (await import('./choice.js')).choiceMenu; return c.open && c.options.join('/') === 'YES/NO'; }), 'the import asks with the in-game YES / NO');
+			await page.evaluate(async () => { const m = await import('./choice.js'); m.choiceMenu.idx = 0; m.choiceKey('z'); });
 			await sleep(2500); await boot();
 			const ch = await page.evaluate(() => ({ money: localStorage.getItem('magepunk_money'), last: window.__ow.lastImportResult() }));
 			A(ch.money === '777' && ch.last && ch.last.source === 'chooser' && ch.last.ok, 'the chooser flow imports through the same pipeline (confirm accepted)', JSON.stringify({ money: ch.money, src: ch.last && ch.last.source, ok: ch.last && ch.last.ok }));
