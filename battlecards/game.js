@@ -64,7 +64,7 @@ function modifierLinesHtml(card) {
 // account-shaped (runs, packs, PvP) stays behind the login.
 if (!/[?&](rshare|replay|rrun)=/.test(location.search)) MPX.requireLogin();
 const MP_ON = MPX.mpMode();
-import { CARD_W, CARD_H, CARD_D, makeFaceTexture, makeBackTexture, classNameOf, classColorOf, drawCardFace, makeTokenTexture, TOKEN_W, TOKEN_H, drawHeroPortrait, drawPowerOrb, artListeners, generatedCardIds } from './cardart.js';
+import { CARD_W, CARD_H, CARD_D, makeFaceTexture, makeBackTexture, classNameOf, classColorOf, drawCardFace, makeTokenTexture, TOKEN_W, TOKEN_H, drawHeroPortrait, drawPowerOrb, artListeners, artIdOf, generatedCardIds } from './cardart.js';
 import * as Rec from './replayrec.js';
 import * as RunRep from './runreplay.js';
 import { openProfile } from './profile.js';
@@ -912,7 +912,7 @@ const backMat = new THREE.MeshStandardMaterial({ map: backTex, roughness: 0.5 })
 // last user releases it. Before this, every entity painted its own 512-wide
 // canvas — a full 4-player table held ~180 of them (~120MB). Duplicate
 // summons (tokens especially: Wisps, recruits, treants) now cost one texture.
-const faceTexCache = new Map(); // key -> { tex, refs, key }
+const faceTexCache = new Map(); // key -> { tex, refs, key, artId }
 const faceTexEntries = new WeakMap(); // tex -> its entry (survives cache eviction)
 function faceTexKey(card) {
 	const shownId = card.disguised ? 'disguised' : card.id;
@@ -925,7 +925,7 @@ function acquireFaceTex(card) {
 	const key = faceTexKey(card);
 	let e = faceTexCache.get(key);
 	if (!e) {
-		e = { tex: paintFaceTex(card), refs: 0, key };
+		e = { tex: paintFaceTex(card), refs: 0, key, artId: card.disguised ? 'disguised' : artIdOf(card) };
 		faceTexCache.set(key, e);
 		faceTexEntries.set(e.tex, e);
 	}
@@ -948,8 +948,10 @@ const disposeFaceMap = map => {
 // affected keys so the next acquire repaints — live references keep their
 // texture until their own queued repaint releases it
 function invalidateFaceTexFor(id) {
-	for (const key of faceTexCache.keys()) {
-		if (id === '*' || key.startsWith(id + '|')) faceTexCache.delete(key);
+	// match on the ART id the face painted, not the card id: a token wearing another card's
+	// art (ART_ALIASES, artFrom) hears that card's id when the image lands
+	for (const [key, e] of faceTexCache) {
+		if (id === '*' || e.artId === id || key.startsWith(id + '|')) faceTexCache.delete(key);
 	}
 }
 const cardGeo = new THREE.BoxGeometry(CARD_W, CARD_H, CARD_D);
@@ -1112,7 +1114,7 @@ const artRefreshQueue = new Set();
 artListeners.add(id => {
 	invalidateFaceTexFor(id); // stale pixels: force the queued repaints below to actually repaint
 	for (const ent of entities.values()) {
-		if ((id === '*' || ent.card.id === id) && !ent.card.disguised) artRefreshQueue.add(ent);
+		if ((id === '*' || artIdOf(ent.card) === id) && !ent.card.disguised) artRefreshQueue.add(ent);
 	}
 	wake();
 });
@@ -4714,7 +4716,7 @@ function wireModalArt(entries) {
 	clearModalArt();
 	modalArtFn = id => {
 		for (const en of entries) {
-			if (id !== '*' && id !== en.def.id) continue;
+			if (id !== '*' && id !== artIdOf(en.def)) continue;
 			const fresh = drawCardFace(en.def);
 			if (en.width) fresh.style.width = en.width;
 			// The repaint throws away the element attachTip bound its listeners to, so
@@ -4763,7 +4765,7 @@ function showInspect(card) {
 	// the face is drawn with a procedural fallback until its art image and the mana
 	// font load; repaint in place when they arrive (same as the 3D cards' refreshFace)
 	if (inspectArtFn) artListeners.delete(inspectArtFn);
-	inspectArtFn = id => { if (inspectUid === card.uid && (id === '*' || id === card.id)) renderInspectFace(card); };
+	inspectArtFn = id => { if (inspectUid === card.uid && (id === '*' || id === artIdOf(card))) renderInspectFace(card); };
 	artListeners.add(inspectArtFn);
 }
 // everything under a card's face in a reader: keyword/modifier lines, the cards it
@@ -4911,7 +4913,7 @@ function showCardFocus(card, opts = {}) {
 	root.style.display = 'block';
 	if (focusArtFn) artListeners.delete(focusArtFn);
 	focusArtFn = id => {
-		if (focusCard !== card || !(id === '*' || id === card.id)) return;
+		if (focusCard !== card || !(id === '*' || id === artIdOf(card))) return;
 		const fresh = drawCardFace({ ...card, health: card.maxHealth }, inspectFaceOpts(card));
 		fresh.className = 'cf-face';
 		const old = panel.querySelector('canvas.cf-face');
@@ -5876,6 +5878,8 @@ window.__game = {
 	applyGuestIntent,                      // relay-fuzz harness feeds this adversarial guest intents
 	E, AI,
 	pump,
+	// which real art the entity's 3D face currently wears (null = the procedural fallback)
+	faceArtOf(uid) { const ent = entities.get(uid); return ent ? (ent.faceMat.map?.image?.artPainted ?? null) : undefined; },
 	screenPosOf(uid) {
 		const ent = entities.get(uid);
 		if (!ent) return null;
@@ -7601,7 +7605,7 @@ function miniFace(def, width = 96) {
 		ctx.clearRect(0, 0, c.width, c.height);
 		ctx.drawImage(f, 0, 0);
 	};
-	const artId = def.artFrom || def.id;
+	const artId = artIdOf(def);
 	const onArt = id => {
 		if (!c.isConnected) { artListeners.delete(onArt); return; } // the screen closed
 		if (id === '*' || id === artId) redraw();
