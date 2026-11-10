@@ -2053,7 +2053,7 @@ function closeLogFull() {
 	logFull.removeAttribute('aria-modal');
 }
 addEventListener('keydown', ev => {
-	if (ev.key === 'Escape' && logFull && logFull.classList.contains('open') && !cardFocusOpen()) { ev.stopPropagation(); closeLogFull(); }
+	if (ev.key === 'Escape' && logFull && logFull.classList.contains('open') && !cardFocusOpen()) { ev.stopPropagation(); ev.preventDefault(); closeLogFull(); }   // (preventDefault: the Games switcher's hold-Esc leaves a used Esc alone)
 }, true);
 if (logFull) {
 	{ // sfx mute toggle (persisted in sfx.js)
@@ -5670,6 +5670,17 @@ $('concede').addEventListener('click', () => {
 	}));
 	el.appendChild(overlayButton(ffa ? 'Keep playing' : 'Keep fighting', () => hideDungeonOverlay()));
 });
+
+// The site's Games switcher (site/switcher.js, controls sweep B2): what leaving mid-match costs.
+// Run modes save on pagehide and offer a resume, correspondence games keep their turn, a
+// replay or a spectated match is nothing to lose. A live duel / free-for-all counts as a
+// loss; a quick match or an AI game isn't saved at all.
+window.mpLeaveGuard = () => {
+	if (!state || state.over || spectateMode || replayMode || asyncGame.on) return { state: 'safe' };
+	if (dungeonRunMode || heistRunMode || tombsRunMode || duelsRunMode || arenaRunMode || lorequestRunMode || middleearthRunMode || swordcoastRunMode || finalfantasyRunMode || multiverseRunMode) return { state: 'safe' };
+	if (duel.on) return { state: 'confirm', message: (duel.size || 2) > 2 ? "You're in a live free-for-all. Leaving counts as a loss (the AI takes your seat)." : "You're in a live match. Leaving counts as a loss." };
+	return { state: 'confirm', message: "This match isn't saved: leaving ends it." };
+};
 
 addEventListener('keydown', ev => { if (ev.key === 'Escape') clearModes(); wake(); });
 // mobile browsers fire resize in bursts (rotation, keyboard, URL-bar); each

@@ -729,7 +729,13 @@ export function createPvp(ctx) {
     ctx.UI.modal(el, { title: 'Forfeit?' });
   }
 
+  /** The site's Games switcher, after its own "Leave?": forfeit on the server, then the page goes. */
+  async function forfeitNow() {
+    if (lobby && inMatch) await call('mtpvp-forfeit', { id: lobby.id });
+  }
+
   return {
+    forfeitNow,
     open, joinFlow, resume, leave, forfeitConfirm, pressReady, pressHurry, pressPvpTimer,
     get active() { return inMatch && !!lobby; },
     get lobbyId() { return lobby && lobby.id; },

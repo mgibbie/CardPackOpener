@@ -244,6 +244,7 @@ import { Pvp } from './pvp.js';
 import { FactorySpec } from './factoryspec.js';
 import * as Chat from '../battlecards/chat.js';
 import { initGamepad } from './ow_gamepad.js';
+import { installLeaveGuard } from './ow_leaveguard.js';   // the site's Games switcher: what leaving costs (controls sweep B2)
 
 // Test Realm mode: ?mp=1 with a login token. The account backend owns the
 // cards; friends, presence, and world-visiting all run through it.
@@ -929,6 +930,7 @@ initTouchHud();   // the touch HUD's observer, installed here where it always ra
 		else if (directBattle) enterMatch(directBattle, false);
 		else checkRejoin();
 	}
+	installLeaveGuard();   // the Games switcher asks / saves position before leaving (ow_leaveguard.js)
 	// CONTROLLER PLAY: everyone, guests included (the owner dropped the old
 	// signed-in-only rule on 2026-10-18).
 	{

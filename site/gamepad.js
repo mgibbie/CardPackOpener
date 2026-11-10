@@ -122,11 +122,12 @@ export function controllerKind(id) {
 // so the button must be let go before it acts again) and reports nothing. A
 // poller made with { exclusive: true } (the overlay's own) keeps running. The
 // flag lives on globalThis so copies of this module under different URLs agree.
-const PAUSE = globalThis.__mpPadPause || (globalThis.__mpPadPause = { owners: new Set() });
+const PAUSE = globalThis.__mpPadPause || (globalThis.__mpPadPause = { owners: new Set(), gen: 0 });
 export function pausePads(owner = {}) {
 	PAUSE.owners.add(owner);
 	let done = false;
-	return () => { if (done) return; done = true; PAUSE.owners.delete(owner); };
+	// (gen: a poller that never polled DURING the pause still latches what is down at its end)
+	return () => { if (done) return; done = true; PAUSE.owners.delete(owner); PAUSE.gen = (PAUSE.gen || 0) + 1; };
 }
 export const padsPaused = () => PAUSE.owners.size > 0;
 
@@ -148,6 +149,7 @@ export function createGamepad(opts = {}) {
 	const onDisconnect = o.onDisconnect || (() => {});
 	const onButton = o.onButton || null;   // raw index presses (remap capture)
 	let rawHeld = new Set();
+	let pauseGen = PAUSE.gen || 0;   // the last pause this poller has latched for
 
 	const held = new Set();          // logical actions currently down
 	const latched = new Set();       // released by force; wait for a physical release
@@ -191,7 +193,13 @@ export function createGamepad(opts = {}) {
 				api.releaseAll();
 				for (const a of sample().now) latched.add(a);
 				rawHeld = new Set();
+				pauseGen = PAUSE.gen || 0;
 				return;
+			}
+			if (!o.exclusive && (PAUSE.gen || 0) !== pauseGen) {
+				// a pause began and ended between two polls: same rule, latch what is down
+				pauseGen = PAUSE.gen || 0;
+				for (const a of sample().now) latched.add(a);
 			}
 			const { now, seen, raw } = sample();
 			if (onButton) for (const i of raw) if (!rawHeld.has(i)) onButton(i);
@@ -209,6 +217,9 @@ export function createGamepad(opts = {}) {
 				if (latched.has(a)) continue;
 				if (!held.has(a)) {
 					held.add(a); since.set(a, t);
+					// Start + Select together is the site's Games switcher (site/switcher.js):
+					// the SECOND of the pair never reaches a game (PokéChess leaves on Select)
+					if (!o.exclusive && ((a === 'select' && held.has('menu')) || (a === 'menu' && held.has('select')))) continue;
 					onPress(a, { repeat: false });
 				} else if (DIRECTIONS.includes(a)) {
 					const down = since.get(a), last = lastRepeat.get(a);

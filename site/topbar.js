@@ -15,12 +15,19 @@
 // the same action signatures the Overworld already uses, so the flow is proven.
 import * as MP from '/battlecards/mpmode.js';
 import { watchHref, joinHref, micatroActivityLabel, scoundrelActivityLabel, pearsActivityLabel } from '/site/livewatch.js';
+// the Games switcher (controls sweep B2): ` / hold Esc / Start+Select, and the ⚙️ below
+// ([data-mp-switcher]) open it on every page that loads this bar
+import '/site/switcher.js';
 
 const CARD_DUEL = id => '/battlecards/?cardpvp=' + encodeURIComponent(id) + '&mp=1';
 const SEEN_KEY = 'mp_inbox_seen_v1';
 // full-screen apps (the game, the Overworld) opt into a small floating widget
-// via <meta name="mp-topbar" content="compact"> instead of the full bar
-const COMPACT = document.querySelector('meta[name="mp-topbar"]')?.content === 'compact';
+// via <meta name="mp-topbar" content="compact"> instead of the full bar; a page
+// with a ⚙️ of its own (marked data-mp-switcher) asks for content="none": no bar
+// at all, just the Games switcher, the page-view count and the error beacon
+const TB_MODE = document.querySelector('meta[name="mp-topbar"]')?.content;
+const COMPACT = TB_MODE === 'compact';
+const NO_BAR = TB_MODE === 'none';
 const PACK_TIMER_MS = 12 * 60 * 60 * 1000; // client mirror of the backend cadence
 const fmtDur = ms => { ms = Math.max(0, ms); const s = Math.floor(ms / 1000); const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), ss = s % 60; return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(ss).padStart(2, '0')}`; };
 const $ = (sel, root = document) => root.querySelector(sel);
@@ -214,12 +221,12 @@ function buildBar() {
 		// a small floating cluster (home + inbox) that never covers gameplay
 		bar.classList.add('tb-compact');
 		bar.innerHTML = `<div class="tb-right">
-			<a class="tb-mini" href="/" title="Magepunk home">⚙️</a>
+			<a class="tb-mini" href="/" title="Games (\`)" aria-label="Games" data-mp-switcher>⚙️</a>
 			${loggedIn ? `<button class="tb-mini" id="tb-bell" title="Inbox" aria-label="Open inbox" aria-haspopup="dialog">🔔<span class="tb-badge" id="tb-badge" aria-hidden="true">0</span></button>` : ''}
 		</div>`;
 	} else {
 		bar.innerHTML = `
-			<a class="tb-brand" href="/"><span class="cog">⚙️</span> Magepunk</a>
+			<a class="tb-brand" href="/" title="Games (\`)" data-mp-switcher><span class="cog">⚙️</span> Magepunk</a>
 			<div class="tb-right">
 				${loggedIn
 					? `<button class="tb-bell" id="tb-bell" title="Inbox" aria-label="Open inbox" aria-haspopup="dialog">🔔<span class="tb-badge" id="tb-badge" aria-hidden="true">0</span></button>
@@ -1010,6 +1017,7 @@ addEventListener('unhandledrejection', e => { const r = e && e.reason; const w =
 
 // ---------- boot ----------
 function start() {
+	if (NO_BAR) { sendHit(); return; }
 	buildBar();
 	sendHit(); // count this page open (fires for logged-out visitors too)
 	if (!MP.hasToken()) return;

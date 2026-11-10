@@ -203,7 +203,9 @@ try {
 	A(await waitFor(() => visible('pull-fx'), 3000), 'confirm pulls: the slot machine opens');
 	f = await focus();
 	A(f && f.scope === 'pull-fx', 'the ring moves into the slot machine overlay', JSON.stringify(f));
-	for (let i = 0; i < 30 && !(await visible('pull-close')); i++) await press(B.confirm);
+	// (after each press give the hurried reels a moment to land: pressing again the instant the result
+	// shows would press its Continue too and close it — a race on a busy runner)
+	for (let i = 0; i < 30 && !(await visible('pull-close')); i++) { await press(B.confirm); if (await waitFor(() => visible('pull-close'), 1000)) break; }
 	A(await visible('pull-close'), 'confirm hurries the reels; the result shows');
 	await sleep(150);
 	await press(B.confirm);

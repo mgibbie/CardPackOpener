@@ -292,7 +292,7 @@ G.I18n.add({
   'Jugar': 'Play', 'Entra en la mazmorra': 'Enter the dungeon', 'Pokémon': 'Pokémon', 'Tu colección': 'Your collection',
   'Mejoras': 'Upgrades', 'Haz más fuerte cada run': 'Make every run stronger', '9 regiones · Pokémon y shinies': '9 regions · Pokémon and shinies',
   'Misiones': 'Missions', 'Misiones, logros y perfil': 'Missions, achievements and profile', 'Amigos': 'Friends', 'Juega en grupo, hasta 4': 'Play in a group, up to 4',
-  'Ranking': 'Leaderboard', 'Quién aguanta más': 'Who survives longest', 'Ajustes': 'Settings', 'Sonido, gráficos, controles y cuenta': 'Sound, graphics, controls and account',
+  'Ranking': 'Leaderboard', 'Quién aguanta más': 'Who survives longest', 'Ajustes': 'Settings', 'Juegos': 'Games', 'Tu run se perderá: no se puede guardar a mitad.': "Your run will be lost: it can't be saved mid-way.", '⚙️ Juegos': '⚙️ Games', 'Sonido, gráficos, controles y cuenta': 'Sound, graphics, controls and account',
   '{x} premio por recoger': '{x} reward to claim', '{x} premios por recoger': '{x} rewards to claim', 'premio por recoger': 'reward to claim', 'premios por recoger': 'rewards to claim',
   'Volver a tu sala ({x})': 'Back to your lobby ({x})', '{x} en línea': '{x} online', 'en línea': 'online',
   '{x} solicitud': '{x} request', '{x} solicitudes': '{x} requests',

@@ -214,12 +214,17 @@ try {
 	A(await waitFor(async () => { const v = await view(bob.page); return v && v.pvp && v.state === 'ROUND_EVAL'; }, 20000), 'bob reloads mid-match -> rejoins the same run (his saved match run)');
 	A(await bob.page.evaluate((n) => window.__micatro.session.recipe.actions.length === n && window.__micatro.pvp.active, before), 'the rejoined run is exactly where he left it');
 
+	// ---- the site's Games switcher (controls sweep B2): leaving a live match asks first, as a forfeit
+	const guards = await Promise.all([alice, bob].map(p => p.page.evaluate(() => { const g = window.mpLeaveGuard(); return { state: g.state, message: g.message, fn: typeof g.beforeLeave }; })));
+	A(guards.every(g => g.state === 'confirm' && /forfeit/.test(g.message) && g.fn === 'function'), 'mid-match, the Games switcher asks first: leaving is a forfeit (then sent to the server)', JSON.stringify(guards));
+
 	// ---- bob forfeits: both get the end screen; then a rematch
 	await bob.page.evaluate(() => window.__micatro.pvp.forfeitConfirm());
 	await click(bob.page, '.b-pvp-forfeit');
 	A(await waitFor(() => alice.page.evaluate(() => !!document.querySelector('.pvp-end-title.won')), 15000), 'bob forfeits -> alice: "You win!"');
 	A(await waitFor(() => bob.page.evaluate(() => !!document.querySelector('.pvp-end-title.lost')), 15000), 'bob: "You lose"');
 	A((await view(alice.page)).over && (await view(alice.page)).pvp.result === 'win', "alice's run ends on the recorded pvp_end (win)");
+	A(await alice.page.evaluate(() => window.mpLeaveGuard().state === 'safe'), 'the match over: leaving through the Games switcher is safe');
 	A(await waitFor(() => alice.page.evaluate(() => document.querySelectorAll('.pvp-end-joker').length >= 0 && !/Waiting/.test(document.querySelector('.pvp-end-cards').textContent)), 12000), "the end screen shows the opponent's cards");
 	await shot(alice.page, '08-end-screen');
 	await click(alice.page, '.b-pvp-rematch');

@@ -1163,6 +1163,18 @@ G.Game = (() => {
   };
 })();
 
+/*
+ * The site's Games switcher (site/switcher.js, controls sweep B2): a run can't be saved mid-way, so leaving asks
+ * first and then ends the run the way "Abandonar run" does (what was earned is banked). The switcher opening
+ * pauses a solo run (a co-op run goes on, as the pause menu says).
+ */
+window.mpLeaveGuard = () => {
+  const st = G.Game && G.Game.state;
+  if (!st || st === 'ui' || st === 'over' || st === 'watch') return { state: 'safe' };
+  return { state: 'confirm', message: G.T('Tu run se perderá: no se puede guardar a mitad.'), beforeLeave: () => { try { G.Game.quit(); } catch (e) { console.warn(e); } } };
+};
+addEventListener('mp-switcher-open', () => { if (G.Game && G.Game.state === 'playing' && !G.Coop.active) G.Game.togglePause(); });
+
 /* ============ Flow — transiciones entre pantallas ============ */
 G.Flow = {
   boot() {
