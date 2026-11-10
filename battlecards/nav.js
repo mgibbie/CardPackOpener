@@ -1,17 +1,18 @@
 // nav.js — a clear, consistent "Back" affordance for every card mode. Returns to
-// the overworld in Test-Realm (mp) mode, or the battle menu in free play. Also
+// the overworld in Test-Realm (mp) mode, or the Battlecards hub (start.html) in free play. Also
 // keeps cross-page links in mp mode so hopping between card modes doesn't drop you.
 import * as MPX from './mpmode.js';
-import './padnav.js';   // controller navigation (everyone; Plans/CONTROLLER_SUPPORT_PLAN.md phase 3)
+import './padnav.js';   // keyboard + controller navigation (everyone; Plans/CONTROLLER_SUPPORT_PLAN.md phase 3, controls sweep B3)
+import { isTyping } from '../site/input.js';
 
 const MP = MPX.wantsMp() && MPX.hasToken();
-const backHref = MP ? '/overworld/?mp=1' : 'index.html';
+const backHref = MP ? '/overworld/?mp=1' : 'start.html';
 const goBack = () => { location.href = backHref; };
 
 const btn = document.createElement('button');
 btn.id = 'mp-back';
 btn.textContent = '← Back';
-btn.title = (MP ? 'Back to the overworld' : 'Back to the menu') + ' (Esc)';
+btn.title = (MP ? 'Back to the overworld' : 'Back to Battlecards') + ' (Esc / X)';
 Object.assign(btn.style, {
 	position: 'fixed', top: '10px', left: '10px', zIndex: '10000',
 	background: 'rgba(30,22,48,0.92)', color: '#e8e2f4',
@@ -28,11 +29,18 @@ document.body.appendChild(btn);
 const header = document.getElementById('title') || document.querySelector('h1');
 if (header) header.style.paddingLeft = '96px';
 
-// Esc = back, unless a page opts out (the live game uses Esc for its own menus)
+// Esc = back, unless a page opts out (the live game uses Esc for its own menus).
+// Never while something on the page is open (the deck builder's / gallery's card
+// zoom, a picker, a dialog: Esc closes THAT), when a handler already used this
+// Esc (defaultPrevented), or while typing in a field. (X / a pad's B send this
+// same Escape through padnav.js.)
+const OPEN_LAYER = '#zoom.open, #lopick.open, [aria-modal="true"], dialog[open], #osk';
+const somethingOpen = () => [...document.querySelectorAll(OPEN_LAYER)].some(el => el.id !== 'mp-back' && el.getClientRects().length > 0);
 if (!window.__noEscBack) {
 	addEventListener('keydown', e => {
-		if (e.key !== 'Escape') return;
-		if (document.activeElement && document.activeElement.tagName === 'INPUT') return;
+		if (e.key !== 'Escape' || e.defaultPrevented) return;
+		if (isTyping(document.activeElement)) return;
+		if (somethingOpen()) return;
 		goBack();
 	});
 }

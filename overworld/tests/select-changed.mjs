@@ -78,7 +78,9 @@ export const LANES = [
 	// Pair of Pears (/pairofpears/, the memory card game on Micatro's UI): the rules engine + save, and the page in a browser
 	{ name: 'pairofpears', paths: /^pairofpears\//, suites: /^pairofpears_/, smoke: ['pairofpears_engine_test.mjs', 'pairofpears_ui_test.mjs'] },
 	// (Battlecards' engine has its own node suite, battlecards/tests/run-all.mjs, with its own CI job;
-	// its pages are exercised by the suites that load battlecards/index.html, see selectSuites)
+	// its pages are exercised by the suites that load battlecards/index.html, see selectSuites.)
+	// Battlecards' controls (keyboard / controller / touch, controls sweep B3): its pages + /collection/
+	{ name: 'battlecards', paths: /^(battlecards|collection)\//, suites: /^(bc_|padnav_|padboard_)/, smoke: ['bc_keyboard_match_test.mjs'] },
 	{ name: 'overworld', paths: /^overworld\//, suites: null, smoke: [] },   // null: every suite the other lanes don't claim; SMOKE is its smoke
 ];
 export const laneOfSuite = s => (LANES.find(l => l.suites && l.suites.test(s)) || LANES.find(l => !l.suites)).name;

@@ -70,6 +70,7 @@
 	</div>
 	<script type="module">
 	import * as MP from './mpmode.js';
+	import { initFocusNav, isTyping } from '/site/focusnav.js';
 	const $ = id => document.getElementById(id);
 	const esc = s => { const d = document.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML; };
 
@@ -131,6 +132,20 @@
 		catch (e) { $('board').innerHTML = `<div class="empty">Couldn't load this board — ${esc(e.message || 'network error')}</div>`; }
 	}
 
+	// keyboard + controller (controls sweep B3): arrows / WASD / d-pad move a focus
+	// ring over the tabs and links, Z / Enter / A pick, Q / E / L / R switch tabs
+	// (focusnav sends them as ← / → keydowns), X / Esc / B go back to Battlecards
+	const nav = initFocusNav();
+	const keys = Object.keys(TABS);
+	addEventListener('keydown', e => {
+		if (isTyping(document.activeElement)) return;
+		if (e.key === 'Escape' && !e.defaultPrevented) { location.href = 'start.html'; return; }
+		if (e.isTrusted || (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight')) return;
+		const i = (keys.indexOf(current) + (e.key === 'ArrowLeft' ? -1 : 1) + keys.length) % keys.length;
+		const b = tabsEl.children[i];
+		b.click();
+		if (nav && nav.nav.ringOn) nav.nav.focusTo(b);
+	});
 	window.__boards = { render, get current() { return current; } }; // headless smoke hook
 	paint();
 	if (!MP.hasToken()) {
