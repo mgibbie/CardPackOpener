@@ -115,7 +115,7 @@ try {
 			const pad = { id: 'Pro Controller 057e', index: 0, connected: true, mapping: 'standard', buttons: Array.from({ length: 17 }, () => ({ pressed: false, value: 0 })), axes: [0, 0, 0, 0] };
 			window.__owFakePads = [pad];
 			let polls = 0;
-			Object.defineProperty(pad, 'connected', { get() { polls++; return true; }, enumerable: true });
+			Object.defineProperty(pad, 'connected', { get() { if (!/\/site\/switcher\.js/.test(new Error().stack || '')) polls++; return true; }, enumerable: true });   // (only Micatro's polls: micatro_gamepad_test)
 			const until = (f, ms = 10000) => new Promise((r) => { const t0 = performance.now(); const k = () => (f() || performance.now() - t0 > ms ? r() : setTimeout(k, 4)); k(); });
 			const set = (b, on) => { pad.buttons[b] = on ? { pressed: true, value: 1 } : { pressed: false, value: 0 }; };
 			window.__padTap = async (b, hold = 70) => { const t0 = performance.now(); set(b, true); const n = polls; await until(() => polls > n && performance.now() - t0 >= hold); set(b, false); const m = polls; await until(() => polls > m + 1); };
