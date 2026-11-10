@@ -231,6 +231,15 @@ export function hideResolvedLegendaryObjects() {
 	}
 	if (hidden.length) npcs.list = npcs.list.filter(n => !hidden.includes(n.ev));
 }
+// A placed legendary that FAINTS is gone for the save, as in the decomps (Crystal's
+// Tin Tower SUICUNE leaves after its one battle). Say so: a KO the player did not
+// mean, LEECH SEED or poison taking the last HP in the turn that a ball which broke
+// free (or a failed RUN) spent, read as "I fled and it never came back"
+// (bug:1794281768146). Running never removes it; only a KO or a catch does.
+export function legendFaintedNotice(e) {
+	const name = battle.lastFoe?.name || String(e?.species || 'It').toUpperCase();
+	hud.textContent = `${name} fainted... it will not be seen here again.`;
+}
 export function startLegendaryBattle(e) {
 	if (!S.party || !leadMon(S.party) || battle.blocking) return;
 	Dex.markSeen(e.species);
@@ -248,6 +257,7 @@ export function startLegendaryBattle(e) {
 				syncOverworldAchievements(); // a legendary was CAUGHT (only catches count toward the sets)
 			} else if (result === 'victory') {
 				Story.setFlag(e.flag); // fainted it — it won't reappear (matches the games)
+				legendFaintedNotice(e);
 				hideResolvedLegendaryObjects();
 				evolution.check(S.party, battle.data);
 			} else if (result === 'defeat') {
