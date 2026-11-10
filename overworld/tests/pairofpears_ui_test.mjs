@@ -203,6 +203,7 @@ try {
 		}
 		A(await waitFor(async () => (await view()).phase === 'over', 4000), `${name}: mismatches empty the Hearts: the run is over`);
 		A(await waitFor(() => page.evaluate(() => /OUT OF HEARTS/.test(document.body.innerText) && !!document.querySelector('.pp-over-modal .b-again')), 4000), `${name}: the "Out of Hearts" panel, with New Run`);
+		await sleep(600);   // (the panel rises: Micatro's risein)
 		await shot('over');
 		await clickSel('.pp-over-modal .b-tomenu');
 		A(await waitFor(() => page.evaluate(() => !!document.querySelector('.menu-modal') && !document.querySelector('.b-continue') && /Best: Level 2/.test(document.body.innerText)), 3000), `${name}: back at the menu: no run to continue, the best level is recorded`);
