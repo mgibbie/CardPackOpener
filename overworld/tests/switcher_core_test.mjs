@@ -40,6 +40,8 @@ const FIXTURE = `<!doctype html><html><head><meta charset="utf-8"><title>fake ga
 import { startInput } from '/site/input.js';
 window.__keys = []; window.__acts = [];
 addEventListener('keydown', e => window.__keys.push((e.isTrusted ? '' : '~') + e.key));
+// a game's own capture-phase Esc handler that runs BEFORE the switcher's (Battlecards' card reader)
+addEventListener('keydown', e => { if (e.key === 'Escape' && window.__eat) { e.preventDefault(); window.__eaten = (window.__eaten || 0) + 1; } }, true);
 startInput({ pad: true, onAction: (a, i) => { window.__acts.push(i.source + ':' + a); return true; } });
 window.__guard = { state: 'safe', message: '' };
 window.mpLeaveGuard = () => ({ ...window.__guard, beforeLeave: () => new Promise(r => setTimeout(() => { sessionStorage.setItem('saved', 'yes'); r(); }, 150)) });
@@ -131,6 +133,12 @@ try {
 		await t.press('Escape');
 		A(!(await t.isOpen()), 'the next Esc closes it');
 
+		// a game's earlier capture handler used the Esc (preventDefault): it is theirs, once, never replayed
+		await t.page.evaluate(() => { window.__eat = true; }); await t.take();
+		await t.press('Escape'); await sleep(80);
+		g = await t.take();
+		A(await t.page.evaluate(() => window.__eaten === 1) && g.keys.filter(k => /Escape/.test(k)).join() === 'Escape' && !(await t.isOpen()), 'an Esc a game already used in an earlier capture handler is left alone (no hold, no second replayed Esc)', JSON.stringify(g));
+		await t.page.evaluate(() => { window.__eat = false; });
 		// Tab (closed) keeps its meaning: native focus moves
 		await t.page.evaluate(() => document.getElementById('chat').focus());
 		await t.press('Tab');

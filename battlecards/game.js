@@ -2053,7 +2053,7 @@ function closeLogFull() {
 	logFull.removeAttribute('aria-modal');
 }
 addEventListener('keydown', ev => {
-	if (ev.key === 'Escape' && logFull && logFull.classList.contains('open') && !cardFocusOpen()) { ev.stopPropagation(); closeLogFull(); }
+	if (ev.key === 'Escape' && logFull && logFull.classList.contains('open') && !cardFocusOpen()) { ev.stopPropagation(); ev.preventDefault(); closeLogFull(); }   // (preventDefault: the Games switcher's hold-Esc leaves a used Esc alone)
 }, true);
 if (logFull) {
 	{ // sfx mute toggle (persisted in sfx.js)

@@ -26,7 +26,7 @@
 // is picked. The page also gets window events 'mp-switcher-open' and
 // 'mp-switcher-close' (pause a real-time game while the overlay is up).
 import { actionForKey, isTyping, suspendInput } from './input.js';
-import { startGamepad } from './gamepad.js';
+import { createGamepad, loadPadSettings } from './gamepad.js';
 import { createFocusNav } from './focusnav.js';
 
 export const HOLD_ESC_MS = 600;
@@ -270,6 +270,9 @@ function install() {
 		if (isTyping(e.target && e.target.tagName ? e.target : undefined)) return;
 		if (e.code === 'Backquote' || (!e.code && e.key === '`')) { swallow(e); if (!e.repeat) openSwitcher(); return; }
 		if (e.key === 'Escape') {
+			// a capture-phase handler that ran before this one already used the Esc (it
+			// prevented the default: Battlecards' card reader / log drawer): the tap is theirs
+			if (e.defaultPrevented) return;
 			swallow(e);
 			if (e.repeat || escDown) return;             // held: the timer is already running
 			escDown = { target: e.target };
@@ -300,14 +303,21 @@ function install() {
 
 	// the controller: Start + Select together opens; while open, it drives the overlay
 	// (exclusive: it runs while every game poller is paused)
-	const pad = startGamepad({
-		readPads: window.__owFakePads ? () => window.__owFakePads : undefined,
+	// (a TIMER, not requestAnimationFrame: the games own the frame loop — some tests freeze
+	// rAF and hold a single pending frame, and a second rAF loop would steal it)
+	const nav0 = typeof navigator !== 'undefined' ? navigator : null;
+	const readPads = window.__owFakePads ? () => window.__owFakePads : () => (nav0 && nav0.getGamepads ? [...nav0.getGamepads()] : []);
+	const pad = createGamepad({
+		readPads,
 		exclusive: true,
+		...(() => { const v = loadPadSettings(); return { layout: v.layout, remap: v.remap }; })(),
 		onPress: (a, info) => {
 			if (root) { if ((a === 'menu' || a === 'select') && pad.held('menu') && pad.held('select')) return; act(a, { ...info, source: 'pad' }); return; }
 			if ((a === 'menu' && pad.held('select')) || (a === 'select' && pad.held('menu'))) openSwitcher();
 		},
 	});
+	setInterval(() => { if (!document.hidden) pad.poll(performance.now()); }, 20);
+	addEventListener('blur', () => pad.releaseAll());
 	window.__mpSwitcher = { open: openSwitcher, close: closeSwitcher, toggle: toggleSwitcher, isOpen: isSwitcherOpen, get nav() { return nav; }, ENTRIES, currentEntry };
 }
 if (typeof window !== 'undefined' && typeof document !== 'undefined') install();

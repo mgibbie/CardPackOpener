@@ -146,6 +146,24 @@ function rig(opts = {}) {
 	A(log.slice(-1)[0] === 'press:confirm', '...a fresh press works');
 }
 
+// ---------- a pause that begins and ends between two of a game's polls ----------
+{
+	// the overlay polls on a timer, the game on its frames: B can open-and-close the
+	// overlay before the game ever polls; the game must still not hear that B
+	const pad = { id: 'Pro Controller 057e', index: 0, connected: true, buttons: Array.from({ length: 17 }, () => ({ pressed: false, value: 0 })), axes: [0, 0, 0, 0] };
+	const set = (i, on) => { pad.buttons[i] = { pressed: on, value: on ? 1 : 0 }; };
+	const log = [];
+	const game = createGamepad({ readPads: () => [pad], onPress: a => log.push(a) });
+	game.poll(0);
+	const resume = pausePads('switcher');
+	set(0, true);           // B (bottom face, Nintendo layout: cancel) closes the overlay...
+	resume();               // ...which resumes the game before its next frame
+	game.poll(16);
+	A(log.length === 0, 'a button pressed during a pause the game never polled through is still latched', log.join());
+	set(0, false); game.poll(32); set(0, true); game.poll(48);
+	A(log.join() === 'cancel', '...and a fresh press works');
+}
+
 // ---------- Start + Select (the Games switcher's chord) ----------
 {
 	const pad = { id: 'Pro Controller 057e', index: 0, connected: true, buttons: Array.from({ length: 17 }, () => ({ pressed: false, value: 0 })), axes: [0, 0, 0, 0] };
