@@ -226,7 +226,7 @@ try {
 		A(await page.evaluate(() => /Level 3/.test((document.querySelector('.b-continue') || {}).textContent || '')), `${name}: an old save with meadow data offers its run (Level 3)`);
 		await clickSel('.b-continue'); await waitFor(async () => !!(await view()), 3000); await idle();
 		await clickCard(1); await clickCard(2);
-		A(await waitFor(async () => (await view()).pairs === 1 && (await view()).berries === 13, 3000), `${name}: ...and plays on (a Kiwi pair: 11 -> 13 Berries)`);
+		A(await waitFor(async () => (await view()).pairs === 1 && (await view()).berries === 13, 3000), `${name}: ...and plays on (a Kiwi pair: 11 -> 13 Berries)`, JSON.stringify(await view()).slice(0, 1500));
 		const kept = await page.evaluate(() => JSON.parse(localStorage.getItem('magepunk_pears_v1')));
 		A(kept.meadow && kept.meadow.starCount === 120 && kept.meadow.bugnetUnlocked && kept.run.level === 3, `${name}: the meadow data is kept untouched in the save`);
 		A(await page.evaluate(() => !!localStorage.getItem('magepunk_pears_prev_v1')), `${name}: the save as found was backed up first (rollback point)`);
