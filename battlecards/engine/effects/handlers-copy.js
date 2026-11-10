@@ -578,7 +578,7 @@ register('become-copy-of-random-hand-minion', ({ state, pi, target, source, enem
 			// Shapeless Constellation: transform into a set-stat copy of a random minion in your hand
 			const p = state.players[pi];
 			const pool = p.hand.filter(c => c.type === 'creature');
-			if (pool.length && source && source.zone === 'board' && !isDead(source)) { const pick = pool[Math.floor(state.rng() * pool.length)]; const base = state.cardsById[pick.id]; if (base) { const def = JSON.parse(JSON.stringify(base)); if (e.stats != null) { def.attack = e.stats; def.health = e.stats; } def.token = true; def.id = 'token_' + base.id; const tok = instantiate(def, pi); tok.zone = 'board'; tok.sick = source.sick; const board = p.board; board[board.indexOf(source)] = tok; source.zone = 'gone'; emit(state, { type: 'transformed', uid: source.uid, player: pi, from: source.name, card: tok }); recomputeAuras(state); } }
+			if (pool.length && source && source.zone === 'board' && !isDead(source)) { const pick = pool[Math.floor(state.rng() * pool.length)]; const base = state.cardsById[pick.id]; if (base) { const def = JSON.parse(JSON.stringify(base)); if (e.stats != null) { def.attack = e.stats; def.health = e.stats; } def.token = true; def.artFrom = base.artFrom || base.id; def.id = 'token_' + base.id; const tok = instantiate(def, pi); tok.zone = 'board'; tok.sick = source.sick; const board = p.board; board[board.indexOf(source)] = tok; source.zone = 'gone'; emit(state, { type: 'transformed', uid: source.uid, player: pi, from: source.name, card: tok }); recomputeAuras(state); } }
 } });
 
 
@@ -601,7 +601,7 @@ register('hand-pick', ({ state, pi, target, source, enemies, scaled, hm, pickEne
 register('become-copy-of-random-minion', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
 			// Cover Artist: transform into a set-stat copy of a random minion
 			const pool = Object.values(state.cardsById).filter(d => d.type === 'creature' && !d.token && d.collectible !== false && !d.companion && !d.commander && !(d.colors && d.colors.length) && d.id !== (source && source.id));
-			if (pool.length && source && source.zone === 'board' && !isDead(source)) { const base = pool[Math.floor(state.rng() * pool.length)]; const def = JSON.parse(JSON.stringify(base)); def.attack = e.stats ?? 3; def.health = e.stats ?? 3; def.token = true; def.id = 'token_' + base.id; const tok = instantiate(def, pi); tok.zone = 'board'; tok.sick = source.sick; const board = state.players[pi].board; board[board.indexOf(source)] = tok; source.zone = 'gone'; emit(state, { type: 'transformed', uid: source.uid, player: pi, from: source.name, card: tok }); recomputeAuras(state); }
+			if (pool.length && source && source.zone === 'board' && !isDead(source)) { const base = pool[Math.floor(state.rng() * pool.length)]; const def = JSON.parse(JSON.stringify(base)); def.attack = e.stats ?? 3; def.health = e.stats ?? 3; def.token = true; def.artFrom = base.artFrom || base.id; def.id = 'token_' + base.id; const tok = instantiate(def, pi); tok.zone = 'board'; tok.sick = source.sick; const board = state.players[pi].board; board[board.indexOf(source)] = tok; source.zone = 'gone'; emit(state, { type: 'transformed', uid: source.uid, player: pi, from: source.name, card: tok }); recomputeAuras(state); }
 } });
 
 
@@ -636,7 +636,7 @@ register('become-copy-of-target', ({ state, pi, target, source, enemies, scaled,
 				if (base) {
 					const def = JSON.parse(JSON.stringify(base));
 					if (!e.fullCopy) { def.attack = e.stats ?? 4; def.health = e.stats ?? 4; } // Imp-oster: fullCopy keeps stats
-					def.token = true; def.id = 'token_' + base.id;
+					def.token = true; def.artFrom = base.artFrom || base.id; def.id = 'token_' + base.id;
 					const tok = instantiate(def, pi); tok.zone = 'board'; tok.sick = source.sick;
 					const board = state.players[pi].board; board[board.indexOf(source)] = tok; source.zone = 'gone';
 					emit(state, { type: 'transformed', uid: source.uid, player: pi, from: source.name, card: tok });
@@ -657,7 +657,7 @@ register('become-copy-of-hand', ({ state, pi, target, source, enemies, scaled, h
 					const base = state.cardsById[pick.id] || pick;
 					const def = JSON.parse(JSON.stringify(base));
 					const st = e.setStats ?? 3;
-					def.attack = st; def.health = st; def.cost = st; def.token = true; def.id = 'token_' + base.id;
+					def.attack = st; def.health = st; def.cost = st; def.token = true; def.artFrom = base.artFrom || base.id; def.id = 'token_' + base.id;
 					const tok = instantiate(def, source.controller);
 					tok.zone = 'board'; tok.sick = source.sick;
 					const board = p.board;
@@ -709,7 +709,7 @@ register('transform-friendly-costplus', ({ state, pi, target, source, enemies, s
 					&& !d.token && d.collectible !== false && !d.companion && !d.commander && !(d.colors && d.colors.length) && d.id !== t.id);
 				if (!pool.length) continue;
 				const rd = pool[Math.floor(state.rng() * pool.length)];
-				const tok = instantiate({ id: 'token_' + rd.name.toLowerCase().replace(/[^a-z0-9]+/g, '_'), name: rd.name, type: 'creature', cost: 0, rarity: 'common', token: true, description: `A ${rd.attack}/${rd.health} ${rd.name}.`, attack: rd.attack, health: rd.health, keywords: rd.keywords || [] }, pi);
+				const tok = instantiate({ id: 'token_' + rd.name.toLowerCase().replace(/[^a-z0-9]+/g, '_'), artFrom: rd.artFrom || rd.id, name: rd.name, type: 'creature', cost: 0, rarity: 'common', token: true, description: `A ${rd.attack}/${rd.health} ${rd.name}.`, attack: rd.attack, health: rd.health, keywords: rd.keywords || [] }, pi);
 				tok.zone = 'board'; tok.sick = t.sick;
 				const idx = board.indexOf(t); if (idx >= 0) board[idx] = tok; t.zone = 'gone';
 				emit(state, { type: 'transformed', uid: t.uid, player: pi, from: t.name, card: tok });
@@ -729,7 +729,7 @@ register('transform-all-enemies-costplus', ({ state, pi, target, source, enemies
 						&& !d.token && d.collectible !== false && !d.companion && !d.commander && !(d.colors && d.colors.length) && d.id !== t.id);
 					if (!pool.length) continue;
 					const rd = pool[Math.floor(state.rng() * pool.length)];
-					const tok = instantiate({ id: 'token_' + rd.name.toLowerCase().replace(/[^a-z0-9]+/g, '_'), name: rd.name, type: 'creature', cost: rd.cost || 0, rarity: 'common', token: true, description: `A ${rd.attack}/${rd.health} ${rd.name}.`, attack: rd.attack, health: rd.health, keywords: rd.keywords || [], tribe: rd.tribe }, o);
+					const tok = instantiate({ id: 'token_' + rd.name.toLowerCase().replace(/[^a-z0-9]+/g, '_'), artFrom: rd.artFrom || rd.id, name: rd.name, type: 'creature', cost: rd.cost || 0, rarity: 'common', token: true, description: `A ${rd.attack}/${rd.health} ${rd.name}.`, attack: rd.attack, health: rd.health, keywords: rd.keywords || [], tribe: rd.tribe }, o);
 					tok.zone = 'board'; tok.sick = t.sick;
 					const idx = board.indexOf(t); if (idx >= 0) board[idx] = tok; t.zone = 'gone';
 					emit(state, { type: 'transformed', uid: t.uid, player: o, from: t.name, card: tok });
@@ -748,7 +748,7 @@ register('transform-all-into-random-tribe', ({ state, pi }, e) => { {
 				for (const t of [...board]) {
 					if (isDead(t) || t.type === 'location') continue;
 					const rd = pool0[Math.floor(state.rng() * pool0.length)];
-					const tok = instantiate({ id: 'token_' + rd.name.toLowerCase().replace(/[^a-z0-9]+/g, '_'), name: rd.name, type: 'creature', cost: 0, rarity: 'common', token: true, description: `A ${rd.attack}/${rd.health} ${rd.name}.`, attack: rd.attack, health: rd.health, keywords: rd.keywords || [], tribe: rd.tribe }, oi);
+					const tok = instantiate({ id: 'token_' + rd.name.toLowerCase().replace(/[^a-z0-9]+/g, '_'), artFrom: rd.artFrom || rd.id, name: rd.name, type: 'creature', cost: 0, rarity: 'common', token: true, description: `A ${rd.attack}/${rd.health} ${rd.name}.`, attack: rd.attack, health: rd.health, keywords: rd.keywords || [], tribe: rd.tribe }, oi);
 					tok.zone = 'board'; tok.sick = t.sick;
 					const idx = board.indexOf(t); if (idx >= 0) board[idx] = tok; t.zone = 'gone';
 					emit(state, { type: 'transformed', uid: t.uid, player: oi, from: t.name, card: tok });
@@ -845,12 +845,12 @@ register('transform', ({ state, pi, target, source, enemies, scaled, hm, pickEne
 						&& !d.companion && !d.commander && !(d.colors && d.colors.length) && d.id !== t.id);
 					if (pool.length) {
 						const rd = pool[Math.floor(state.rng() * pool.length)];
-						opt = { name: rd.name, attack: rd.attack, health: rd.health, keywords: rd.keywords || [] };
+						opt = { name: rd.name, attack: rd.attack, health: rd.health, keywords: rd.keywords || [], artFrom: rd.artFrom || rd.id };
 					} else opt = null; // nothing of the wanted Cost exists (e.g. Evolution off the top): fizzle
 				}
 				if (opt && opt.name != null) {
 				const tok = instantiate({
-					id: 'token_' + opt.name.toLowerCase().replace(/[^a-z0-9]+/g, '_'),
+					id: 'token_' + opt.name.toLowerCase().replace(/[^a-z0-9]+/g, '_'), artFrom: opt.artFrom,
 					name: opt.name, type: 'creature', cost: 0, rarity: 'common', token: true,
 					description: `A ${opt.attack}/${opt.health} ${opt.name}.`,
 					attack: opt.attack, health: opt.health,
@@ -881,7 +881,7 @@ register('transform-all', ({ state, pi, target, source, enemies, scaled, hm, pic
 				if (!pool.length) continue; // nothing of the wanted Cost exists: this one fizzles
 				const rd = pool[Math.floor(state.rng() * pool.length)];
 				const tok = instantiate({
-					id: 'token_' + rd.name.toLowerCase().replace(/[^a-z0-9]+/g, '_'),
+					id: 'token_' + rd.name.toLowerCase().replace(/[^a-z0-9]+/g, '_'), artFrom: rd.artFrom || rd.id,
 					name: rd.name, type: 'creature', cost: 0, rarity: 'common', token: true,
 					description: `A ${rd.attack}/${rd.health} ${rd.name}.`,
 					attack: rd.attack, health: rd.health, keywords: rd.keywords || [],
@@ -984,6 +984,9 @@ register('discover', ({ state, pi, target, source, enemies, scaled, hm, pickEnem
 				if (!e.match && d.colors && d.colors.length) return false;
 				if (e.cardType === 'spell' ? !isSpellType(d) : (e.cardType && e.cardType !== 'any' && d.type !== e.cardType)) return false;
 				if (e.tribe && !(d.tribe || '').includes(e.tribe)) return false;
+				if (e.tribes && !e.tribes.some(t => (d.tribe || '').includes(t))) return false; // Azsharan Scroll: a Fire, Frost or Nature spell
+				if (e.requireRune && !(d.runes && d.runes[e.requireRune] > 0)) return false; // Crypt Map: a Frost Rune card
+				if (e.dualClass && !(d.cardClass || '').includes('__')) return false; // Keywarden Ivory: a Dual Class spell
 				if (discoverCost != null && (d.cost || 0) !== discoverCost) return false;
 				if (e.maxCost != null && (d.cost || 0) > e.maxCost) return false;
 				if (e.minCost != null && (d.cost || 0) < e.minCost) return false;

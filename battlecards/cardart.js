@@ -342,6 +342,19 @@ export const ART_ALIASES = {
 	token_uruk_hai: 'me_gr_berserker', token_nazg_l: 'me_go_nazgul',
 	token_wild_warg: 'me_cw_snarling', token_mirkwood_spider: 'me_sl_mirkwood', token_hunting_spider: 'me_legolas_spider',
 	token_lunar_whale: 'ff_treasure_lunar_whale', token_phantom_train: 'ff_treasure_phantom_train',
+	// the rest of the pool (tools/data/token_art.json; bug:1794331480267). A token named after a
+	// real card (token_<its id>) needs no entry: the engine stamps artFrom on it (core.js tokenArtFrom).
+	feast_raptor: 'ung_raptor', token_abyssal_enforcer: 'abyssal_enforcer', token_amara_warden_of_hope: 'ungoro_amara', token_ancient: 'ttn_ancient_55',
+	token_attack_bone: 'dissolving_ooze', token_axe: 'fiery_war_axe', token_barbarian: 'barbarian_horde', token_crabatoa_s_claw: 'token_crabatoas_claw',
+	token_crewmate: 'gdb_crewmate', token_delayed: 'sentient_hourglass', token_disarmed_undead: 'lingering_zombie',
+	token_dragon_5_5: 'emberscale_drake', token_duelist: 'dmf_duelist', token_flame_elemental: 'flame_elemental', token_flame_imp: 'flame_imp',
+	token_foundry_blade: 'ymid_foundry_beetle', token_golden_revolver: 'bounty_board', token_grove_treant: 'dmf_treant',
+	token_health_bone: 'dissolving_ooze', token_hero_s_blade: 'fic_heros_blade', token_kobold: 'lackey_kobold', token_lackey: 'lackey_goblin',
+	token_living_paradoxes: 'living_paradox', token_lizard: 'bellows_lizard', token_mace_of_disruption: 'hbg_mace_of_disruption',
+	token_megafin: 'ungoro_megafin', token_mirrored_image: 'mirror_images', token_monkey: 'barrel_of_monkeys', token_pistol: 'gunsmith',
+	token_queen_carnassa: 'ungoro_queen_carnassa', token_reffuh: 'duels_reffuh', token_risen_groom: 'poa_risen_groom',
+	token_servant_of_khadgar: 'kirin_tor_mage', token_soul_dragon: 'emberscale_drake', token_spectral_ninja: 'ninja_ambush',
+	token_spellbender: 'spellbender', token_timed_aura: 'lifesaving_aura',
 };
 export const artIdOf = card => (card && card.artFrom) || (card && ART_ALIASES[card.id]) || (card && card.id) || '';
 function artFor(id) {

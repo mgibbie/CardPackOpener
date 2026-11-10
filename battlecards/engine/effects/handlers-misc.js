@@ -1236,6 +1236,8 @@ register('emblem', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy,
 			if (!p.eliminated) {
 				const em = instantiate({
 					id: 'emblem_' + e.name.toLowerCase().replace(/[^a-z0-9]+/g, '_'),
+					// the emblem has no art of its own: it wears the card that granted it (bug:1794331480267 sweep)
+					artFrom: source ? (source.artFrom || source.id) : undefined,
 					name: e.name, type: 'emblem', cost: 0, rarity: 'special',
 					description: e.description || '', ongoing: e.ongoing || null,
 					static: e.static || null, aura: e.aura || null,
@@ -3336,7 +3338,7 @@ register('slime-board', ({ state, pi }, e) => {
 		state._slimeSeq = (state._slimeSeq || 0) + 1;
 		const tokenId = `slime_resummon_${idx}_${state._slimeSeq}`;
 		state.cardsById[tokenId] = {
-			id: tokenId, name: 'Slimed', type: 'sorcery', cost: e.cost || 3, rarity: 'common',
+			id: tokenId, artFrom: 'slime_em', name: 'Slimed', type: 'sorcery', cost: e.cost || 3, rarity: 'common',
 			token: true, collectible: false,
 			description: `Resummon the creatures ${idx === pi ? 'you' : 'that player'} lost to Slime 'em!.`,
 			effects: ids.map(id => ({ type: 'summon', summonId: id })),

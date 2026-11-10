@@ -664,7 +664,7 @@ register('transform-self-random-cost', ({ state, pi, target, source, enemies, sc
 					&& !d.token && d.collectible !== false && !d.companion && !d.commander && !(d.colors && d.colors.length) && d.id !== source.id);
 				if (pool.length) {
 					const rd = pool[Math.floor(state.rng() * pool.length)];
-					const tok = instantiate({ id: 'token_' + rd.id, name: rd.name, type: 'creature', cost: 0, rarity: 'common', token: true,
+					const tok = instantiate({ id: 'token_' + rd.id, artFrom: rd.artFrom || rd.id, name: rd.name, type: 'creature', cost: 0, rarity: 'common', token: true,
 						tribe: rd.tribe, description: rd.description, attack: rd.attack, health: rd.health, keywords: rd.keywords || [] }, source.controller);
 					tok.zone = 'board'; tok.sick = source.sick;
 					const board = state.players[source.controller].board;
@@ -760,7 +760,7 @@ register('set-next-summon-stats', ({ state, pi }, e) => {
 register('summon-scaled-cards-played', ({ state, pi }, e) => {
 	// Sinstone Graveyard: a Ghost with +1/+1 for each other card played this turn
 	const s = (e.base || 1) + (state.players[pi].cardsPlayedThisTurn || 0);
-	summon(state, pi, { id: 'token_' + (e.name || 'ghost').toLowerCase(), name: e.name || 'Ghost', type: 'creature', cost: 0, token: true, rarity: 'common', attack: s, health: s, keywords: e.keywords || [], description: `A ${s}/${s} token.` });
+	summon(state, pi, { id: 'token_' + (e.name || 'ghost').toLowerCase().replace(/[^a-z0-9]+/g, '_'), name: e.name || 'Ghost', type: 'creature', cost: 0, token: true, rarity: 'common', attack: s, health: s, keywords: e.keywords || [], description: `A ${s}/${s} token.` });
 });
 
 register('lose-durability', ({ state, pi }, e) => {

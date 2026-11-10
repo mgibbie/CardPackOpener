@@ -1513,7 +1513,7 @@ register('become-copy-of-random-damaged', ({ state, pi, target, source, enemies,
 			// Battleworn Faceless: transform into a full copy of a random damaged minion in play
 			const pool = [];
 			for (const pl of state.players) for (const c of pl.board) if (c !== source && !isDead(c) && c.type !== 'location' && c.damage > 0) pool.push(c);
-			if (pool.length && source && source.zone === 'board' && !isDead(source)) { const victim = pool[Math.floor(state.rng() * pool.length)]; const base = state.cardsById[victim.id]; if (base) { const def = JSON.parse(JSON.stringify(base)); def.token = true; def.id = 'token_' + base.id; const tok = instantiate(def, pi); tok.zone = 'board'; tok.sick = source.sick; const board = state.players[pi].board; board[board.indexOf(source)] = tok; source.zone = 'gone'; emit(state, { type: 'transformed', uid: source.uid, player: pi, from: source.name, card: tok }); recomputeAuras(state); } }
+			if (pool.length && source && source.zone === 'board' && !isDead(source)) { const victim = pool[Math.floor(state.rng() * pool.length)]; const base = state.cardsById[victim.id]; if (base) { const def = JSON.parse(JSON.stringify(base)); def.token = true; def.artFrom = base.artFrom || base.id; def.id = 'token_' + base.id; const tok = instantiate(def, pi); tok.zone = 'board'; tok.sick = source.sick; const board = state.players[pi].board; board[board.indexOf(source)] = tok; source.zone = 'gone'; emit(state, { type: 'transformed', uid: source.uid, player: pi, from: source.name, card: tok }); recomputeAuras(state); } }
 } });
 
 

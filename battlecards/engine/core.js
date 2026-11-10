@@ -246,10 +246,25 @@ const LEGACY_SCRIPTED = new Set([
 let nextUid = 1;
 
 // ---------- card instances ----------
+// A token named after a real card (token_<that card's id>: Tirion's Ashbringer, a random
+// weapon Blingtron equips, Lukka's Talent picks ...) wears that card's art: the engine
+// names inline tokens token_<slug of name>, so they have no art of their own
+// (bug:1794331480267 sweep). The card DB is the one the current game was built from.
+let artCardDb = null;
+export function noteCardDb(cardsById) { artCardDb = cardsById || artCardDb; }
+function tokenArtFrom(id) {
+	if (!artCardDb || typeof id !== 'string' || !id.startsWith('token_') || artCardDb[id]) return undefined;
+	const base = artCardDb[id.slice(6)];
+	return base ? (base.artFrom || base.id) : undefined;
+}
 export function instantiate(def, controller) {
 	const card = {
 		uid: nextUid++,
 		id: def.id,
+		// which card's ART this wears when it has none of its own: a stat-changed copy of a real
+		// card (Rattlegore's -1/-1 resummon, token_<id> copies) points back at that card
+		// (bug:1794331480267). Undefined on every ordinary card.
+		artFrom: def.artFrom || tokenArtFrom(def.id),
 		name: def.name,
 		type: def.type,
 		cardClass: def.cardClass || 'neutral',
@@ -569,6 +584,7 @@ export function opponentsOf(state, pi) {
 // `classPicks` (optional): one class object per player from classes.json —
 // { id, name, power: { name, cost, effects|choices, text } | null, passive? }
 export function createGame(cardsById, rng = Math.random, playerDeckIds = null, playerCount = 2, classPicks = null, loadouts = null, opponentDeckIds = null) {
+	noteCardDb(cardsById);
 	// never in decks: companions/commanders (own zones), lands (bought from the
 	// slot menu), and colored cards (conjured by lands during play)
 	const playable = Object.values(cardsById).filter(d =>
