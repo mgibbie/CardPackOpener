@@ -29,6 +29,7 @@ import { fileURLToPath, pathToFileURL } from 'url';
 import { DatabaseSync } from 'node:sqlite';
 import { buildSync } from 'esbuild';
 import puppeteer from 'puppeteer-core';
+import { keyWalk } from './micatro_keys_lib.mjs';
 
 process.env.MP_GC_RATE = '0';
 process.env.MTPVP_GRACE_MS = '20000';   // (the 120 s forfeit clock, shortened for the test)
@@ -101,13 +102,24 @@ let browser;
 const shot = async (page, name) => { if (!SHOTS) return; fs.mkdirSync(SHOTS, { recursive: true }); await page.screenshot({ path: path.join(SHOTS, name + '.png') }).catch(() => {}); };
 try {
 	browser = await puppeteer.launch({ executablePath: CHROME, headless: 'new', protocolTimeout: 240000, args: ['--no-sandbox', '--use-gl=angle', '--use-angle=swiftshader', '--enable-webgl', '--ignore-gpu-blocklist', '--enable-unsafe-swiftshader', '--autoplay-policy=no-user-gesture-required'] });
-	const open = async (who, url, ctx0) => {
+	// fakePad: a controller rides in window.__owFakePads (headless Chrome has none); page.__padTap(button) presses one until the
+	// game's poller has seen it (micatro_gamepad_test.mjs's harness)
+	const open = async (who, url, ctx0, { fakePad = false } = {}) => {
 		const ctx = ctx0 || await browser.createBrowserContext();
 		const page = await ctx.newPage();
 		await page.setViewport({ width: 1400, height: 860, deviceScaleFactor: 1 });
 		const errors = [];
 		page.on('pageerror', e => errors.push('pageerr: ' + e.message));
 		const st = await stateOf(who);
+		if (fakePad) await page.evaluateOnNewDocument(() => {
+			const pad = { id: 'Pro Controller 057e', index: 0, connected: true, mapping: 'standard', buttons: Array.from({ length: 17 }, () => ({ pressed: false, value: 0 })), axes: [0, 0, 0, 0] };
+			window.__owFakePads = [pad];
+			let polls = 0;
+			Object.defineProperty(pad, 'connected', { get() { if (!/\/site\/switcher\.js/.test(new Error().stack || '')) polls++; return true; }, enumerable: true });   // (only Micatro's polls: micatro_gamepad_test)
+			const until = (f, ms = 10000) => new Promise((r) => { const t0 = performance.now(); const k = () => (f() || performance.now() - t0 > ms ? r() : setTimeout(k, 4)); k(); });
+			const set = (b, on) => { pad.buttons[b] = on ? { pressed: true, value: 1 } : { pressed: false, value: 0 }; };
+			window.__padTap = async (b, hold = 70) => { const t0 = performance.now(); set(b, true); const n = polls; await until(() => polls > n && performance.now() - t0 >= hold); set(b, false); const m = polls; await until(() => polls > m + 1); };
+		});
 		await page.evaluateOnNewDocument((tok, st) => {
 			try {
 				localStorage.setItem('micatro_speed', '4'); localStorage.setItem('micatro_sfx', '0'); localStorage.setItem('micatro_music', '0');
@@ -124,7 +136,7 @@ try {
 	const act = (page, a) => page.evaluate((a) => window.__micatro.act(a), a);
 
 	// ---- alice creates a lobby from the main menu
-	const alice = await open('alice', '/micatro/');
+	const alice = await open('alice', '/micatro/', null, { fakePad: true });
 	A(await ready(alice.page), 'alice: game ready');
 	A(await waitFor(() => click(alice.page, '.b-multiplayer'), 10000), 'the main menu has a Multiplayer button (signed in)');
 	await shot(alice.page, '01-multiplayer-menu');
@@ -152,10 +164,16 @@ try {
 	const bob = await open('bob', '/micatro/?join=' + code);
 	A(await ready(bob.page), 'bob: game ready');
 	A(await waitFor(() => bob.page.evaluate(() => !!document.querySelector('.b-pvp-ready-lobby')), 15000), 'bob opened the join link and is in the lobby (anyone with the code may join)');
-	await click(bob.page, '.b-pvp-ready-lobby');
-	A(await waitFor(() => alice.page.evaluate(() => { const b = document.querySelector('.b-pvp-start'); return b && !b.disabled; }), 10000), 'alice sees bob ready: Start is enabled');
+	// (controls sweep B5: the lobby by keyboard and by controller) bob readies with the keyboard alone: arrows + Z
+	A(await keyWalk(bob.page, '.b-pvp-ready-lobby'), 'bob (keyboard): the arrows walk the reticle onto Ready');
+	await bob.page.keyboard.press('KeyZ');
+	A(await waitFor(() => alice.page.evaluate(() => { const b = document.querySelector('.b-pvp-start'); return b && !b.disabled; }), 10000), 'bob’s Z readies him: alice sees Start enabled');
 	await shot(alice.page, '03-lobby-ready');
-	await click(alice.page, '.b-pvp-start');
+	// alice starts the match with the controller: the d-pad walks the reticle onto Start, A (the right face) presses it
+	const PADB = { confirm: 1, up: 12, down: 13, left: 14, right: 15 };
+	const padArrow = (k) => alice.page.evaluate((b) => window.__padTap(b), PADB[{ ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right' }[k]]);
+	A(await keyWalk(alice.page, '.b-pvp-start', { press: padArrow, pause: 140 }), 'alice (controller): the d-pad walks the reticle onto Start');
+	await alice.page.evaluate((b) => window.__padTap(b), PADB.confirm);
 	const started = await waitFor(async () => (await view(alice.page))?.pvp && (await view(bob.page))?.pvp, 20000);
 	A(started, 'Start: both players are in a match run');
 	await idle(alice.page); await idle(bob.page);
@@ -219,7 +237,15 @@ try {
 	A(guards.every(g => g.state === 'confirm' && /forfeit/.test(g.message) && g.fn === 'function'), 'mid-match, the Games switcher asks first: leaving is a forfeit (then sent to the server)', JSON.stringify(guards));
 
 	// ---- bob forfeits: both get the end screen; then a rematch
-	await bob.page.evaluate(() => window.__micatro.pvp.forfeitConfirm());
+	// (regression, controls sweep B5: the pause menu's Main Menu — Start / Enter — went straight to the main menu, skipping the
+	//  forfeit confirmation Options -> Main Menu and the Games switcher ask first; ui/main.js leaveToMenu)
+	await bob.page.keyboard.press('Enter');
+	A(await waitFor(() => bob.page.evaluate(() => !!document.querySelector('.pause-modal')), 4000), 'bob: Enter opens the pause menu mid-match');
+	A(await keyWalk(bob.page, '.b-pause-main'), 'bob: the reticle reaches its Main Menu');
+	await bob.page.keyboard.press('KeyZ');
+	await sleep(500);
+	const pm = await bob.page.evaluate(() => ({ confirm: !!document.querySelector('.b-pvp-forfeit'), menu: !!document.querySelector('.menu-modal'), active: window.__micatro.pvp.active }));
+	A(pm.confirm && !pm.menu && pm.active, 'the pause menu’s Main Menu asks first ("Leaving counts as a forfeit"), still in the match', JSON.stringify(pm));
 	await click(bob.page, '.b-pvp-forfeit');
 	A(await waitFor(() => alice.page.evaluate(() => !!document.querySelector('.pvp-end-title.won')), 15000), 'bob forfeits -> alice: "You win!"');
 	A(await waitFor(() => bob.page.evaluate(() => !!document.querySelector('.pvp-end-title.lost')), 15000), 'bob: "You lose"');

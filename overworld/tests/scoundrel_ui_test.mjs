@@ -98,7 +98,9 @@ try {
 		};
 		const clickSel = async (sel) => { await idle(); await page.evaluate((s) => document.querySelector(s).click(), sel); };
 		const key = (k) => page.keyboard.press(k);
-		const KEY = { r: 'Space', w: 'w', b: 'b', c: 'Escape', d: 'Enter' };
+		// the owner's scheme (controls sweep B7): Z = the Weapon in a fight, C (or B) bare-handed, V (or Space) run
+		let alt = 0;
+		const KEY = { r: () => (alt++ % 2 ? 'KeyV' : 'Space'), w: () => 'KeyZ', b: () => (alt++ % 2 ? 'KeyC' : 'b'), c: () => 'Escape', d: () => 'Enter' };
 		async function play(a, how) {
 			const before = await nActs();
 			if (how === 'ui') {
@@ -108,7 +110,7 @@ try {
 				else if (a === 'b') await clickSel('.b-unarmed');
 				else if (a === 'd') await clickSel('.b-descend');
 			} else if (/[0-3]/.test(a)) await key(String(+a + 1));
-			else await key(KEY[a]);
+			else await key(KEY[a]());
 			return waitFor(async () => (await nActs()) === before + 1, 4000);
 		}
 		let okAll = true;

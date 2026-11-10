@@ -18,7 +18,8 @@ import { Background, C as BGC, hex } from '../../micatro/js/ui/gl.js';
 import { sound } from '../../micatro/js/ui/sound.js';
 import { SOUNDS } from '../../micatro/js/mods/registry.js';
 import { esc } from '../../micatro/js/ui/markup.js';
-import { startGamepad, buttonLabel } from '/site/gamepad.js';
+import { buttonLabel } from '/site/gamepad.js';
+import { startInput, keyLabel, isTyping } from '/site/input.js';
 
 const params = new URLSearchParams(location.search);
 const SPECTATE = (params.get('spectate') || '').trim().toLowerCase();
@@ -800,7 +801,7 @@ function howTo() {
   that stick to a fruit in your deck. Drag a charm onto <b>Sell</b> to get Berries back.</li>
   </ul>
   <div class="pp-conds">${P.COND_ORDER.map((k) => `<div>${ico(P.COND_INFO[k].icon)}<span><b>${P.COND_INFO[k].name}</b> — ${esc(P.COND_INFO[k].desc)}</span></div>`).join('')}</div>
-  <p class="muted">Keys: arrows + Enter pick a card or button · Esc backs out · N continues / next level. Controllers and touch work too (long-press a card or charm for its details).</p>`;
+  <p class="muted">Keys: arrows / WASD move · Z (or Enter / Space) picks a card, charm or button · X or Esc backs out · C sells the charm you hold · V (or N) continues / next level · O options. Controllers and touch work too (long-press a card or charm for its details).</p>`;
   modal(b, { title: 'How to play', cls: 'pp-modal' });
 }
 
@@ -927,9 +928,11 @@ function makePad() {
     }
     if (best) { setFocus(best); sound.play('cardSlide2', 1.2, 0.5); }
   }
+  // the focus is on a live stop and the player can see it (the ring is showing)
+  const seen = () => ringOn && focus && focus.isConnected && stops().includes(focus);
   function confirm() {
-    ringOn = true;
-    if (!focus || !focus.isConnected) { ensure(true); return; }
+    // the first press (or after the mouse) only shows where the focus is
+    if (!seen()) { ringOn = true; ensure(true); return; }
     if (focus.classList.contains('card')) { const s = sprites.get(+focus.dataset.id); if (s) clickCard(s); requestAnimationFrame(() => ensure()); }
     else if (focus.classList.contains('pp-slot')) { const i = +focus.dataset.i; if (V && V.held) act('drop', i); else if (V && V.charms[i]) act('pick', i); }
     else focus.click();
@@ -943,36 +946,72 @@ function makePad() {
     if (V.phase === 'clear') act('continue');
     else if (V.phase === 'shop') act('next');
   }
+  // C / the X button: sell the charm you are holding (the shop's Sell)
+  function secondary() {
+    if (topModal() || MODE !== 'normal' || !V || V.phase !== 'shop') return;
+    if (V.held) act('sell'); else toast('Pick up a charm to sell first');
+  }
+  // Start opens Options. Enter (a DOM game: Enter stays "pick") picks what the ring shows;
+  // with no ring it opens Options too.
+  function menu(source) {
+    if (source === 'key' && (topModal() || seen())) { confirm(); return; }
+    if (!topModal()) optionsMenu();
+  }
+  let src = 'pad';
+  const lbl = (a) => (src === 'key' ? keyLabel(a) : buttonLabel(a, kind));
   const showHints = () => {
     hints.style.display = '';
-    const k = (a) => `<span class="pk">${esc(buttonLabel(a, kind))}</span>`;
-    hints.innerHTML = `${k('confirm')}Select<span class="sep"></span>${k('cancel')}Back<span class="sep"></span>${k('context')}Continue<span class="sep"></span>${k('menu')}Options`;
+    const k = (a) => `<span class="pk">${esc(lbl(a))}</span>`;
+    const shop = V && V.phase === 'shop' && !topModal();
+    hints.innerHTML = `${k('confirm')}Select<span class="sep"></span>${k('cancel')}Back<span class="sep"></span>` +
+      `${shop ? k('secondary') + 'Sell<span class="sep"></span>' : ''}${k('context')}Continue<span class="sep"></span>${src === 'key' ? '<span class="pk">O</span>' : k('menu')}Options`;
+  };
+  // one handler for the keyboard (site/input.js: arrows / WASD, Z X C V, Enter) and a controller
+  const onAction = (a, info) => {
+    src = info.source === 'key' ? 'key' : 'pad';
+    if (['up', 'down', 'left', 'right'].includes(a)) { move(a); showHints(); return true; }
+    if (a === 'confirm') confirm();
+    else if (a === 'cancel') cancel();
+    else if (a === 'secondary') secondary();
+    else if (a === 'context') context();
+    else if (a === 'menu') {
+      // a controller's Start acts on its RELEASE, and only alone: Start + Select together
+      // open the Games switcher (site/switcher.js), and Options must not open under it
+      if (src === 'pad') { startAlone = !(inp && inp.held('select')); return true; }
+      menu(src);
+    } else if (a === 'select') { startAlone = false; return true; }
+    else return false;
+    showHints();
+    return true;
+  };
+  let startAlone = false, inp = null;
+  const onRelease = (a, info) => {
+    if (a !== 'menu' || info.source !== 'pad') return;
+    const go = startAlone && !info.forced; startAlone = false;
+    if (go) { src = 'pad'; menu('pad'); showHints(); }
   };
   try {
-    startGamepad({
-      onPress: (a) => {
-        showHints();
-        if (['up', 'down', 'left', 'right'].includes(a)) move(a);
-        else if (a === 'confirm') confirm();
-        else if (a === 'cancel') cancel();
-        else if (a === 'context') context();
-        else if (a === 'menu') { if (!topModal()) optionsMenu(); }
-      },
-      onConnect: (info) => { kind = (info && info.kind) || 'generic'; },
+    inp = window.__pearsInput = startInput({
+      onAction,
+      onRelease,
+      pad: true,
+      padOptions: { onConnect: (info) => { kind = (info && info.kind) || 'generic'; } },
     });
-  } catch (e) { /* no gamepad support */ }
+  } catch (e) { /* no input support */ }
+  // the keys the scheme leaves to the game: Esc (a quick tap; a held Esc opens the Games
+  // switcher), Space pick, N continue, O options
   addEventListener('keydown', (ev) => {
-    if (ev.target && /^(INPUT|TEXTAREA)$/.test(ev.target.tagName)) return;
+    if (ev.ctrlKey || ev.metaKey || ev.altKey || isTyping(ev.target && ev.target.tagName ? ev.target : undefined)) return;
     const k = ev.key;
-    if (k.startsWith('Arrow')) { ev.preventDefault(); move(k.slice(5).toLowerCase()); return; }
     if (k === 'Escape') { cancel(); return; }
-    if (k === 'Enter' || k === ' ') { ev.preventDefault(); confirm(); return; }
+    if (k === ' ') { ev.preventDefault(); src = 'key'; confirm(); showHints(); return; }
     if (k === 'n' || k === 'N') { context(); return; }
     if ((k === 'o' || k === 'O') && !topModal()) optionsMenu();
   });
   addEventListener('pointerdown', () => { ringOn = false; draw(); hints.style.display = 'none'; }, true);
   addEventListener('resize', () => draw());
-  return { refresh(reset) { if (ringOn) requestAnimationFrame(() => ensure(reset)); }, draw, get focus() { return focus; } };
+  let lastScreen = null;
+  return { refresh(reset) { const scr = (V && V.phase) || null; if (scr !== lastScreen) { lastScreen = scr; reset = true; } if (ringOn) requestAnimationFrame(() => { ensure(reset); if (hints.style.display !== 'none') showHints(); }); }, draw, get focus() { return focus; }, get ringOn() { return ringOn; } };
 }
 
 // ------------------------------------------------------------------ frame loop
@@ -1007,6 +1046,7 @@ window.__pears = {
   newRun: () => newRun(),
   mainMenu: () => mainMenu(),
   idle: () => settled(),
+  focus: () => (pad && pad.ringOn ? pad.focus : null),   // (tests: what the ring shows)
   engine: P, save: SV,
 };
 async function boot() {

@@ -204,13 +204,13 @@ try {
 		A((await look(page)).sel === 1, 'live: key 2 raises the second');
 		const want = (await V(page)).pages.choices[1];
 		await startSampling(page);
-		await page.keyboard.press('Enter');
+		await page.keyboard.press('Space');   // (Enter is the pause menu since controls sweep B5)
 		await waitFor(async () => (await V(page)).state === 'SELECTING_HAND', 10000);
 		await idle(page); await sleep(200);
 		const smp = await stopSampling(page);
 		A(smp.some(x => x.picked === 1 && x.passed === 2), 'live: the pick animates (the chosen Page rises, the others fade)');
 		const after = await V(page);
-		A(after.state === 'SELECTING_HAND' && after.page && JSON.stringify(after.page.desc) === JSON.stringify(want.desc), 'live: Enter takes it — the round starts with that Page', JSON.stringify(after.page && after.page.desc));
+		A(after.state === 'SELECTING_HAND' && after.page && JSON.stringify(after.page.desc) === JSON.stringify(want.desc), 'live: Space takes it — the round starts with that Page', JSON.stringify(after.page && after.page.desc));
 		s = await look(page);
 		A(s.badge && /Page/.test(s.badgeText) && s.n === 0, 'live: the round shows its Page under the blind', s.badgeText);
 		const req = await page.evaluate(() => document.querySelector('.hb-target').textContent);
