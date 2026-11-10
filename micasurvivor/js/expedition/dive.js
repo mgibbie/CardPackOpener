@@ -25,7 +25,7 @@
  *              fires on its own; slots 2 and 3 are SPECIALS that fire only when pressed (m.xman: js/systems/combat.js waits
  *              for the press, m.xreq): keys 1 / 2 (J / K), left / right click, the pad's X / Y, the SPECIAL buttons. Auto-aimed
  *              (the player's target); a press up to BUFFER s before the cool-down ends is kept. Specials hit x SPECIAL_K.
- *              3 move slots (pl.maxMoves), + the held item. The Ultimate: 3 / Z / R, the pad's LB / LT / RT / L3.
+ *              3 move slots (pl.maxMoves), + the held item. The Ultimate: 3 / L / Q / R (controls sweep B4: Q, the pad's LB; C / V the specials as the pad's X / Y), the pad's LB / LT / RT / L3.
  *   dodge      (V4) Expedition's slide, PokéDive's way (js/expedition/verbs.js DODGE_*): 0.2 s, invulnerable, 1.2 s cool-down;
  *              Space / Shift, the pad's A (and B), the DODGE button. No hop in a Dive run.
  *   combo      (V5) PokéDive's "Racha": KOs within 3 s chain; +2 % XP a step (to +30 %), loot every 10; hit-stops on an

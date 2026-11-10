@@ -447,13 +447,13 @@ try {
 		A(r.after, 'back to normal afterwards');
 	}
 
-	// ---------- c. the timeline in real time: Z key, cinematic freeze, invulnerability, cooldown after the end
+	// ---------- c. the timeline in real time: C key (was Z), cinematic freeze, invulnerability, cooldown after the end
 	{
 		await E(() => { T.reset(); const pl = G.Game.player; pl.level = 20; pl.dex = 4; pl.hp = pl.maxHp; T.ring(10); G.Game.togglePause(); G.UI.hideAll(); });
-		await page.keyboard.press('z');
+		await page.keyboard.press('KeyC');   // (controls sweep B4: the Z-move moved from Z to C)
 		await sleep(50);
 		const c0 = await E(() => ({ st: G.ZMoves.state, time: G.Game.st.time, type: G.ZMoves.type, used: G.ZMoves.used }));
-		A(c0.st === 'cine' && c0.type === 'fire' && c0.used, 'the Z key starts it: the cinematic (fire)', JSON.stringify(c0));
+		A(c0.st === 'cine' && c0.type === 'fire' && c0.used, 'the C key (was Z) starts it: the cinematic (fire)', JSON.stringify(c0));
 		await sleep(700);
 		await shot('zmove_cinematic.png');
 		const c1 = await E(() => { const pl = G.Game.player, hp = pl.hp; pl.invuln = 0; pl.hurt(99999); return { st: G.ZMoves.state, time: G.Game.st.time, hp0: hp, hp1: pl.hp, dead: pl.dead }; });
