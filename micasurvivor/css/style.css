@@ -885,19 +885,22 @@ body.pad-input .pad-hint { display: block; }
 body.pad-input .card .key { display: none !important; }
 body.pad-input .card.pad-focus .key { display: block !important; border: 0; padding: 0; }
 body.pad-input .card.pad-focus .key .pad-glyph { display: inline-flex; }
-body.pad-input .pad-focus {
+/* (controls sweep B4) the ring shows for keyboard AND pad navigation (body.nav-ring, js/core/pad.js setRing):
+   only the mouse or a finger hides it, never a key press */
+body.nav-ring .pad-focus {
   outline: 3px solid #ffd23f !important; outline-offset: 2px;
   box-shadow: 0 0 0 6px rgba(255,210,63,.22), 0 0 18px rgba(255,210,63,.5) !important;
 }
-body.pad-input .card.pad-focus { background: rgba(255,255,255,.1); transform: translateX(4px); }
-body.pad-input .menu-item.pad-focus { background: rgba(255,255,255,.08); }
-body.pad-input .menu-item.pad-focus::before { opacity: 1; transform: none; }
+body.nav-ring .card.pad-focus { background: rgba(255,255,255,.1); transform: translateX(4px); }
+body.nav-ring .menu-item.pad-focus { background: rgba(255,255,255,.08); }
+body.nav-ring .menu-item.pad-focus::before { opacity: 1; transform: none; }
 .pad-hint-bar {
   position: fixed; right: 16px; bottom: 10px; z-index: 85; display: flex; gap: 14px; align-items: center;
   padding: 5px 12px; background: rgba(10,16,28,.85); border: 1px solid rgba(140,170,210,.3); border-radius: 10px;
   font-size: 14px; color: #c8d6ee; pointer-events: none;
 }
 .pad-hint-bar span { display: inline-flex; align-items: center; gap: 5px; }
+.pad-hint-bar kbd { min-width: 18px; text-align: center; }
 .pad-bind { min-width: 150px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
 .pad-row > span { display: inline-flex; gap: 6px; }
 

@@ -449,6 +449,12 @@ G.I18n.add({
   'En móvil o tablet': 'On mobile or tablet', 'En PC': 'On PC', 'Tamaño del joystick': 'Joystick size', 'Cuánto hay que arrastrar el dedo.': 'How far you need to drag your finger.',
   'Pequeño': 'Small', 'Normal': 'Normal', 'Grande': 'Large', 'o flechas': 'or arrow keys', 'moverse': 'move', 'o clic en el icono': 'or click its icon', 'elegir ataque': 'choose move',
   'ataque anterior / siguiente': 'previous / next move', 'elegir carta al subir de nivel': 'choose a card when leveling up',
+  // (controls sweep B4: the keyboard's menu keys and the moved run keys)
+  'moverse (en los menús, elegir botón)': 'move (in menus, pick a button)', 'aceptar': 'accept',
+  'atrás (subiendo de nivel en una Expedición, saltar)': 'back (on an Expedition level-up, skip)', 'pestañas y cartas': 'tabs and cards',
+  'Intro': 'Enter', 'elegir; en una run, pausa': 'choose; in a run, pause',
+  'Movimiento Z o Definitivo (subiendo de nivel, cambiar las cartas)': 'Z-Move or Ultimate (on a level-up, reroll the cards)',
+  'Dynamax (subiendo de nivel, vetar carta)': 'Dynamax (on a level-up, ban a card)', 'cambiar de Pokémon (Modo Equipo)': 'switch Pokémon (Team Mode)',
   'Pon el dedo en cualquier parte y arrastra para moverte: el joystick aparece donde tocas. Toca un ataque de abajo para cambiarlo y el botón de arriba a la derecha para pausar. Se juega en horizontal.': 'Put your finger anywhere and drag to move: the joystick appears where you touch. Tap a move at the bottom to switch to it and the top-right button to pause. Play in landscape.',
   'Pon el dedo en cualquier parte y arrastra para moverte: el joystick aparece donde tocas. Tus movimientos atacan solos, cada uno con su recarga; el botón de arriba a la derecha pausa. Se juega en horizontal.': 'Put your finger anywhere and drag to move: the joystick appears where you touch. Your moves attack on their own, each on its own cooldown; the top-right button pauses. Play in landscape.',
   'Apodo': 'Nickname', 'Es único y no se puede cambiar.': 'It\'s unique and can\'t be changed.', 'Tipo de cuenta': 'Account type', 'Partida': 'Save',
@@ -839,7 +845,7 @@ G.I18n.add({
   'Aguanta 8 minutos en Modo Equipo.': 'Survive 8 minutes in Team Mode.',
   // ---------------- MicaSurvivor M5 lote 5: Dynamax y guaridas Dynamax (port de Android, lang_en.json) ----------------
   '¡Dynamax listo!': 'Dynamax ready!',
-  '¡Has desbloqueado el Dynamax! Botón MAX, tecla C o gatillo izquierdo (desde el nivel {x})': 'You unlocked Dynamax! MAX button, C key or left trigger (from level {x})',
+  '¡Has desbloqueado el Dynamax! Botón MAX, tecla V o gatillo izquierdo (desde el nivel {x})': 'You unlocked Dynamax! MAX button, V key or left trigger (from level {x})',
   '¡Guarida superada! Caramelo Dynamax: puedes usar el Dynamax otra vez': 'Den cleared! Dynamax Candy: you can use Dynamax again',
   '¡SE HA ABIERTO UNA GUARIDA DYNAMAX!': 'A DYNAMAX DEN HAS OPENED!',
   'Sigue la flecha roja: dentro te espera un Pokémon gigante': 'Follow the red arrow: a giant Pokémon awaits inside',

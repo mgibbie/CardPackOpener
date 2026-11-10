@@ -8,7 +8,7 @@
  *            (so a swarm can't fill it at once). Elite / summoner +0.03, alpha / totem +0.08, guardian / legendary / any
  *            boss +0.2 (outside the bucket). Damage taken: +0.35 x the damage / max HP. Nothing charges while casting.
  *            pl.xultCharge multiplies every source (1; the study's Soul Dew / Lunar Blessing are for a later item batch).
- *   cast     Z or R / the pad's Z-move, Y or RT buttons (the base game's Z-move buttons, in a zone only) / the HUD button
+ *   cast     C or R (controls sweep B4: was Z) / the pad's Z-move, Y or RT buttons (the base game's Z-move buttons, in a zone only) / the HUD button
  *            (touch or mouse). A 0.32 s hit-stop (the world holds: the run.hold seam), the cut-in (1.1 s: the caster's
  *            sprite, the Ultimate's name, its tier), then the choreography. I-frames for the whole cast + 0.6 s (pl.invuln
  *            and the player.hurt seam, before the items' shield).
@@ -264,7 +264,7 @@ G.ExpUlt = (() => {
     gain(pl, dt / K.PASSIVE_T, 'passive');
     S.bucket = Math.min(K.BUCKET, S.bucket + K.BUCKET_RATE * dt);
     if (G.Input.tap('keyu')) setAuto(!auto());
-    const want = queued.cast || G.Input.tap('keyz') || G.Input.tap('keyr');
+    const want = queued.cast || G.Input.tap('keyr');   // (controls sweep B4: and C, through js/core/pad.js; Z is confirm now)
     queued.cast = false;
     if (ready() && !S.ready) {
       S.ready = true;
@@ -555,7 +555,7 @@ G.ExpUlt = (() => {
       else if (!G.Touch.active) {
         ctx.fillStyle = 'rgba(10,16,28,.9)'; ctx.fillRect(r.x - 2, r.y - 2, 17, 17);
         ctx.strokeStyle = 'rgba(244,248,255,.7)'; ctx.lineWidth = 1; ctx.strokeRect(r.x - 1.5, r.y - 1.5, 16, 16);
-        ctx.font = '700 11px Arial,Helvetica,sans-serif'; ctx.fillStyle = '#f4f8ff'; ctx.fillText(raw('Z'), r.x + 6.5, r.y + 10);
+        ctx.font = '700 11px Arial,Helvetica,sans-serif'; ctx.fillStyle = '#f4f8ff'; ctx.fillText(raw('C'), r.x + 6.5, r.y + 10);   // (controls sweep B4: was Z)
       }
     }
     ctx.restore();
