@@ -403,6 +403,14 @@
 	},
 	"entries": [
 		{
+			"sha": "441da23",
+			"date": "2026-11-10",
+			"kind": "patch",
+			"title": "Pair of Pears, rebuilt on the Micatro look",
+			"body": "Pair of Pears is now just the card game, rebuilt as a native web game with the Micatro look: Balatro-style cards that flip, shimmer and dissolve, the swirling table, the same buttons, panels and fonts, and touch, keyboard and controller play on desktop and phone. The Meandering Meadow creature-catching part has been removed; its Meadows Theme stays on as the music. The rules are the same: flip two cards to find a pair, a mismatch costs half a Heart, matching the Pears wins the level on the spot, and the Level Shop between levels sells charms and fruit conditions for your Berries. Selling a charm now works (drag it onto Sell), the Egg Charm's sell value grows every level, and Flutter cards briefly reveal another card. Berries and Stars now belong to each run. Runs save after every move and pick up where you left off, and friends can watch you play live from their Friends list.",
+			"cards": []
+		},
+		{
 			"sha": "b671a9d",
 			"date": "2026-11-10",
 			"kind": "patch",
