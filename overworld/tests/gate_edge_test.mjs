@@ -112,7 +112,9 @@ try {
 		const at = await g.pos();
 		const said = await g.said();
 		A(at.map === 'Route42' && at.x === 59 && at.y === 9, '1. walking east into the guard stops you on Route 42\'s edge (59,9), not on his tile in Mahogany', JSON.stringify(at));
-		A(/6 badges/.test(said), '1. ...and it is the GYM GUIDE who stops you', said.slice(0, 120));
+		// (the save holds Johto's 6 but the shared tier is behind, so since #1050 he names the region: "You hold 6 JOHTO badges — but ...";
+		// with no badges at all it is still "...6 badges...")
+		A(/GYM GUIDE/.test(said) && /6 (JOHTO )?badges/.test(said), '1. ...and it is the GYM GUIDE who stops you', said.slice(0, 120));
 		await g.closeDialog();
 		await g.walk('ArrowLeft', 600);
 		await g.settle();
