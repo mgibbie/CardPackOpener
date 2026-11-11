@@ -331,6 +331,11 @@ try {
 		A(ev.moves.length === 4 && ev.kinds.join() === 'lob,smite,vortex,wave' && ev.hits > 8, `Expedition's moves run on the page: a lob, a smite, a vortex and a wave (${ev.hits} hits in 4 s)`, JSON.stringify(ev));
 		await shot(fe.page, 'm3d_fight_exp.png');
 		await fe.page.close();
+		// weather on the page
+		const fw = await open({ width: 900, height: 600, deviceScaleFactor: 1 }, '?gen=7&fight=1&moves=rain-dance&cast=19&cap=2');
+		const wv = await fw.page.evaluate(async () => { const m = window.__m3d, w = m.world, wait = (ms) => new Promise(r => setTimeout(r, ms)); w.pl.invuln = 1e9; await wait(1200); return { wx: w.weather && w.weather.kind, hud: document.getElementById('hud').textContent, tint: document.getElementById('wx').style.background }; });
+		A(wv.wx === 'rain' && /weather: rain \(\d+ s\)/.test(wv.hud) && /rgba/.test(wv.tint), 'Rain Dance: it rains, the readout says for how long, and the screen takes the rain\'s tint', JSON.stringify(wv));
+		await fw.page.close();
 		// without &fight=1 a generated level has no fight
 		const nf = await open({ width: 900, height: 600, deviceScaleFactor: 1 }, '?gen=7&n=5');
 		const nv = await nf.page.evaluate(() => ({ world: window.__m3d.world, hud: document.getElementById('hud').textContent }));

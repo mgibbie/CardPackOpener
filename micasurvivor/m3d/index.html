@@ -30,6 +30,7 @@
 </head>
 <body>
 	<canvas id="c"></canvas>
+	<div id="wx" style="position:fixed;inset:0;pointer-events:none;transition:background 3s"></div>
 	<canvas id="nums" style="position:fixed;inset:0;width:100%;height:100%;pointer-events:none"></canvas>
 	<div id="hud"></div>
 	<div id="cards"></div>
@@ -50,6 +51,7 @@
 	<script src="../js/data/moves.js"></script>
 	<script src="../js/data/types.js"></script>
 	<script src="../js/data/enemies.js"></script>
+	<script src="../js/systems/weather.js"></script>
 	<!-- (P3) Expedition's own moves (its 8 extra kinds). It registers its English texts with the game's translation
 	     table: a stand-in is enough here (the real one rewrites the page's text as it is drawn) -->
 	<script>G.I18n = G.I18n || { lang: 'en', add() {}, t: (s) => s, f: (s) => s };</script>

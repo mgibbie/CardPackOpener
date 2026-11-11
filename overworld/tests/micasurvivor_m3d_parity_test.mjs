@@ -9,6 +9,7 @@
 //   * the type chart and piercing: one Ember volley line through a Grass, a Water and a Fire target
 //   * damage over time: Ember's burn and Poison Sting's poison tick for the same totals
 //   * Expedition's own kinds: a lob, homing shots, a barrage, a smite, a vortex (and its pull), a wave, a spin
+//   * weather: rain on a Water move (the fade-in included), a sandstorm on a Rattata, a Geodude and you, Rain Dance
 //   * the kinds that lie on the ground or are placed at random: a boomerang, meteors, a trail, a turret, cones, mines
 //     (where the 2D game rolls dice for a position or a speed the totals are compared within a margin), and a buff
 //   * the control states, set by hand on both sides: asleep (+30 % and it wakes), frozen (+25 %, it stands still),
@@ -96,6 +97,7 @@ try {
 			try {
 				G.EnemyMgr.clear(); G.Projectiles.clear(); G.Projectiles.clearOrbs(pl); G.Combat.clearFields(); G.Hazards.clear(); G.EnemyMgr.rebuildGrid();
 				if (G.ExpMoves.clear) G.ExpMoves.clear();
+				G.Weather.reset(); if (sc.wx) G.Weather.force(sc.wx, sc.wxDur || 60);
 				const ms = sc.moves.map(([id, lvl]) => (G.ExpMoves.isExpMove(id) ? G.ExpMoves.instance(id) : G.Moves.instance(id, lvl || 1)));
 				pl.moves = ms; pl.slots = ms.map((m) => [m]); pl.active = 0; pl.statsTaken = {}; pl.dmgDealt = 0; pl.meleeT = 0;
 				pl.hp = pl.maxHp; pl.invuln = sc.hurtable ? 0 : 1e9; pl.dead = false; pl.lastPatch = null;
@@ -133,6 +135,7 @@ try {
 					G.Combat.resolve(DT, pl, t);
 					G.Combat.updateFields(DT);
 					G.ExpMoves.tick(DT);   // (the game's run.tick, for Expedition's timed effects)
+					G.Weather.update(DT, 0, pl);   // (the clock held at 0: no weather starts by itself)
 					G.Hazards.update(DT);
 					for (const e of foes) far = Math.max(far, Math.hypot(e.x - x0, e.y - y0));
 					if (!first && taken > 0) first = t;
@@ -142,13 +145,14 @@ try {
 				return { count: all.length, minions: mins.length, minion: mins[0] ? { hp: mins[0].maxHp, dmg: mins[0].dmg, spd: mins[0].spd, xp: mins[0].xp } : null, left: foes.map((e) => Math.round(e.hp)), shields: foes.map((e) => Math.round(e.shield || 0)),
 					first, firstDmg, scale: foes[0] ? foes[0].scale : 1, fr: foes[0] ? foes[0].r : 0, dealt: pl.dmgDealt, removed, taken, touches, hp: pl.hp, maxHp: pl.maxHp, far, foes: foes.map((e) => ({ hp: e.maxHp - e.hp, d: Math.hypot(e.x - x0, e.y - y0), dead: e.dead })),
 					atkK, afDmg: pl.afDmg, dex: pl.mon.dex, crit: pl.critChance, r: pl.r, reduction: pl.reduction, takenK: G.Abilities.inK(pl, 'normal', null) };
-			} finally { for (const k in keep) Wd[k] = keep[k]; Math.random = R; G.EnemyMgr.clear(); G.Projectiles.clear(); G.Projectiles.clearOrbs(G.Game.player); G.Combat.clearFields(); G.EnemyMgr.rebuildGrid(); G.Game.player.invuln = 1e9; }
+			} finally { G.Weather.reset(); for (const k in keep) Wd[k] = keep[k]; Math.random = R; G.EnemyMgr.clear(); G.Projectiles.clear(); G.Projectiles.clearOrbs(G.Game.player); G.Combat.clearFields(); G.EnemyMgr.rebuildGrid(); G.Game.player.invuln = 1e9; }
 		}
 		/** The same fight by the 3D rules, on a flat room. `ref`: the 2D result (who you are, your ability's factors). */
 		function play3d(sc, ref) {
 			const room = S.makeRoom(80, 80, 0); room.spawn = [80, 0, 80];
-			const w = C.newWorld(room, data, { dex: ref.dex, moves: sc.moves, seed: sc.seed ? sc.seed * 7 + 1 : 777, afDmg: ref.afDmg, atkK: ref.atkK, takenK: ref.takenK, crit: 0, orbitSquash: 0.7 });
+			const w = C.newWorld(room, data, { dex: ref.dex, moves: sc.moves, seed: sc.seed ? sc.seed * 7 + 1 : 777, weather: false, afDmg: ref.afDmg, atkK: ref.atkK, takenK: ref.takenK, crit: 0, orbitSquash: 0.7 });
 			w.pl.baseReduce = ref.reduction; w.pl.invuln = sc.hurtable ? 0 : 1e9;
+			if (sc.wx) C.setWeather(w, sc.wx, sc.wxDur || 60);
 			if (sc.noProc) for (const m of w.pl.moves) m.ccp = 0;
 			const foes = sc.foes.map((f) => {
 				if (f.boss) { const b = C.addBoss(w, f.dex, 80 + f.dx * U, 80, { t: 0, def: { dex: f.dex, hp: f.hp || 1e6, spd: f.spd || 56, dmg: f.dmg || 10, xp: 1, behavior: 'chase', ...(f.def || {}) } }); Object.assign(b.ai, { melee: [f.boss], ranged: [f.boss], mode: 'close', modeT: 99, cd: 0.5 }); b.a.y = 0; b.a.hover = 0; return b; }   // (flat ground: it stands on the floor as the 2D one does)
@@ -199,7 +203,7 @@ try {
 		A(r.a.removed > 0 && same(r.a.removed, r.b.removed, one * 1.01 + 2), `${id} (${what}), 10 s on a still Rattata ${dist} units away: ${cmp(r)}`, r);
 	}
 	// ---------- Expedition's own kinds
-	A(ready.exp === 18 && ready.later.join() === 'weather', `Expedition's 18 moves are loaded (seven kinds are compared; its eighth, weather, is not in the 3D rules yet)`, ready);
+	A(ready.exp === 18 && ready.later.length === 0, `Expedition's 18 moves are loaded, and all eight of its kinds are in the 3D rules`, ready);
 	for (const [id, dist, what] of [['mud-bomb', 150, 'a lob: a bomb in an arc, and it slows'], ['sludge-bomb', 150, 'a lob that poisons'], ['swift', 150, 'homing shots'], ['bullet-seed', 150, 'a barrage: four quick shots'], ['sky-attack', 150, 'a smite: a strike from the sky'], ['thunder', 150, 'a smite'], ['whirlpool', 150, 'a vortex on the target'], ['surf', 120, 'a wave spreading from you'], ['rapid-spin', 40, 'a spin']]) {
 		const r = await E((id, dist) => P.both({ moves: [[id, 1]], foes: [{ dex: 19, dx: dist, still: true, hp: 20000 }], secs: 10, noProc: true }), id, dist);
 		const one = r.b.hits ? r.b.removed / r.b.hits : 1;
@@ -208,6 +212,16 @@ try {
 	{   // a vortex drags the others in
 		const r = await E(() => P.both({ moves: [['twister', 1]], foes: [{ dex: 19, dx: 150, still: true, hp: 20000 }, { dex: 19, dx: 150, dy: 90, still: true, hp: 20000 }], secs: 6, noProc: true }));
 		A(r.a.foes[1].hp > 0 && r.a.foes[1].hp === r.b.foes[1].hp && Math.abs(r.a.foes[1].d - r.b.foes[1].d) < 1.5, `a vortex pulls a second enemy 90 units off into itself and grinds it too (it loses ${r.a.foes[1].hp} / ${r.b.foes[1].hp} HP)`, r);
+	}
+	// ---------- weather
+	{
+		const rain = await E(() => P.both({ moves: [['water-gun', 1]], foes: [{ dex: 19, dx: 150, still: true, hp: 20000 }], secs: 10, wx: 'rain' }));
+		const dry = await E(() => P.both({ moves: [['water-gun', 1]], foes: [{ dex: 19, dx: 150, still: true, hp: 20000 }], secs: 10 }));
+		A(rain.a.removed === rain.b.removed && rain.a.removed > dry.a.removed * 1.3, `Water Gun in the rain, the 3 s fade-in included: ${cmp(rain)} (dry: ${dry.a.removed})`, rain);
+		const sand = await E(() => P.both({ moves: [], foes: [{ dex: 19, dx: 150, still: true, hp: 2000 }, { dex: 74, dx: 150, dy: 60, still: true, hp: 2000 }], secs: 12, wx: 'sand', hurtable: true }));
+		A(sand.a.left[0] === sand.b.left[0] && sand.a.left[0] < 2000 && sand.a.left[1] === 2000 && sand.b.left[1] === 2000 && Math.abs(sand.a.hp - sand.b.hp) < 0.02 && sand.a.hp < sand.a.maxHp, `12 s of sandstorm: a Rattata is worn down to ${sand.a.left[0]} / ${sand.b.left[0]} of 2000, a Geodude not at all, and you to ${sand.a.hp.toFixed(2)} / ${sand.b.hp.toFixed(2)} HP`, sand);
+		const dance = await E(() => P.both({ moves: [['rain-dance', 1], ['water-gun', 1]], foes: [{ dex: 19, dx: 150, still: true, hp: 20000 }], secs: 12 }));
+		A(dance.a.removed === dance.b.removed && dance.a.removed > dry.a.removed * 1.3, `Rain Dance, then Water Gun under it: ${cmp(dance)}`, dance);
 	}
 	// ---------- the other kinds: what lies on the ground, what comes back, what is placed at random
 	const near = (a, b, pct, abs = 3) => Math.abs(a - b) <= Math.max(abs, Math.max(a, b) * pct);

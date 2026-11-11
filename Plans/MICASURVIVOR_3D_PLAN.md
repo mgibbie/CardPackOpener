@@ -482,6 +482,23 @@ Expedition's move levels 1 to 8 with their rolled stats, which belong with P5's 
 
 Tests: parity 75 checks, combat 114 checks, the page test 67.
 
+## 5.11 P3, eighth part: built (2026-11-11)
+
+- **Weather** (sun, rain, sand, snow, fog) with the 2D game's numbers: it fades in and out over 3 s, strengthens
+  and weakens types (rain: Water × 1.5, Fire × 0.5 …), snow slows whoever is not Ice by a tenth, and sand and snow
+  wear down whoever is not of a safe type every 2 s: 2 % + 1 of an enemy's HP (never a boss), 1.2 % of yours (never
+  to nothing). From 2:00 a check every minute has an 18 % chance to start one for 55-75 s, weighted by biome.
+- **Expedition's eighth kind**, weather moves (Rain Dance, Sunny Day, Sandstorm, Snowscape): all eight are in now.
+- **The comparison with 2D** (78 checks): Water Gun in the rain with the fade-in, a sandstorm on a Rattata, a
+  Geodude and you, Rain Dance.
+- **On the page:** the weather's tint over the screen and its time left on the readout (`&weather=0`: none).
+
+Not carried over: weather particles (rain streaks, snow), and the abilities that make you immune to sand or snow.
+
+**Still to do in P3:** abilities and held items.
+
+Tests: parity 78 checks, combat 124 checks, the page test 68.
+
 ## 6. Dive in 2D: built
 
 **D0 — find the stairs (small; can ship first, on its own).** *Built 2026-11-11 (`overworld/tests/micasurvivor_dive_stairs_test.mjs`). As built: the stairs took their own orange mark, so the rocks and Meowth keep their gold; the HUD arrow comes up after 25 s on a floor, or at once when its boss falls.*

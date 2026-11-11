@@ -32,7 +32,11 @@ export const CK = {
 	UNPORTED: [],   // base move kinds still to come
 	// Expedition's own kinds (the 2D game's expedition/moves.js): lob, homing, barrage, smite, vortex, wave, spin. Its
 	// eighth, weather, waits for a weather system here.
-	EXP: { lobDur: 0.55, lobStep: 0.05, lobKnock: 60, lobHigh: 90, barStep: 0.07, smiteDur: 0.28, smiteKnock: 40, pull: 110, pullR: 1.6, vortexTick: 0.25, waveBand: 40, waveKnock: 90 }, EXP_LATER: ['weather'],
+	// weather (the 2D game's systems/weather.js): it fades in and out over 3 s; sand and snow wear down whoever is not
+	// of a safe type every 2 s; from 2:00 a check every minute has an 18 % chance to start one for 55-75 s
+	WX: { fade: 3, chip: 2, you: 0.012, foe: 0.02, from: 120, check: 60, chance: 0.18, dur: [55, 75], slow: 0.1,
+		biome: { meadow: { rain: 3, fog: 2, sun: 1.5, snow: 0.5, sand: 0.5 }, marsh: { rain: 3, fog: 2, sun: 1.5, snow: 0.5, sand: 0.5 }, peaks: { fog: 3, snow: 2.5, rain: 1, sand: 1 } } },
+	EXP: { lobDur: 0.55, lobStep: 0.05, lobKnock: 60, lobHigh: 90, barStep: 0.07, smiteDur: 0.28, smiteKnock: 40, pull: 110, pullR: 1.6, vortexTick: 0.25, waveBand: 40, waveKnock: 90 }, EXP_LATER: [],
 	// bosses (the 2D game's entities/enemy.js bossMove / bossStart): four attacks each, all marked on the ground first;
 	// under half HP a boss is enraged: faster, shorter waits, and it sometimes chains two attacks
 	BOSS: { hp: 1.35, dmg: 1.2, shot: 0.55, shotCd: 1.1, range: 260, cc: { freeze: 0.35, sleep: 0.35, para: 0.5, conf: 0.5 }, immune: 4, orbs: 14, fury: 1.25, furySpd: 1.15, furyWind: 0.8, chain: 0.35 },
@@ -55,6 +59,7 @@ const reach = (m) => (m.xreach ? m.xreach : m.kind === 'melee' ? m.radius + 30 :
 export function dataFrom(G) {
 	return {
 		move: (id, lvl = 1) => { if (G.ExpMoves && G.ExpMoves.isExpMove(id)) return G.ExpMoves.instance(id); const m = G.Moves.instance(id, lvl); m.knock = G.Moves.knockOf(m); return m; },
+		weatherKinds: (G.Weather && G.Weather.KINDS) || {},
 		expMoves: () => (G.ExpMoves ? Object.keys(G.ExpMoves.MOVES) : []),   // (a move's knockback is worked out from its level, as the 2D game does)
 		typeMult: (t, types) => G.Types.mult(t, types), mon: (dex) => G.DEX_BY[dex],
 		radius: (dex, scale = 1) => G.Sprites.bodyRadius(dex, scale) * U, hovers: (dex) => G.Sprites.hovers(dex),
@@ -69,6 +74,7 @@ export function dataFrom(G) {
 /** A fight. o: { dex (who you play), moves: [id | [id, lvl]], seed, tune (sim tuning), afDmg (the all-moves factor: 1.1 in
  *  Expedition), atkK / takenK (the ability's factors, 1 if none), crit, cast: [dex] (who spawns; none: nothing spawns),
  *  bosses: [dex] (one arrives at each of the 2D game's boss times: 3:00, 6:00, …),
+ *  weather (false: none starts by itself),
  *  orbitSquash (0.7: the 2D game's flattened orbit; 1: a circle), autoPick (a level-up's card is chosen at once: 0-2, or
  *  a function (world, cards) -> index; without it the fight WAITS at a level-up until choose() is called) } */
 export function newWorld(room, data, o = {}) {
@@ -78,12 +84,37 @@ export function newWorld(room, data, o = {}) {
 		pl: { s, mon, r: data.radius(mon.dex), maxHp: mon.hp, hp: mon.hp, baseAtk: mon.atk, atkMul: 1, atkK: o.atkK || 1, takenK: o.takenK || 1, cdMul: 1, crit: o.crit || 0, reduction: 0, regen: 0,
 			invuln: 0, meleeT: 0, level: 1, xp: 0, xpNext: xpFor(1), xpMul: 1, spdMul: 1, magnet: CK.MAGNET * U, statsTaken: {}, pending: 0, choices: null, baseReduce: 0, baseRegen: 0, buffs: { atk: { n: 0, t: 0, amount: 0 }, spd: { n: 0, t: 0, amount: 0 }, def: { n: 0, t: 0, amount: 0 }, regen: { n: 0, t: 0, amount: 0 } }, afDmg: o.afDmg === undefined ? 1.1 : o.afDmg, target: null, aim: 0, dead: false,
 			moves: (o.moves || []).map((m) => (Array.isArray(m) ? data.move(m[0], m[1]) : data.move(m))) },
-		enemies: [], shots: [], orbs: [], fields: [], effects: [], eshots: [], hazards: [], pickups: [], lastPatch: null, autoPick: o.autoPick, bosses: o.bosses || null, bossIdx: 0, field: null, fieldCell: -2,
+		enemies: [], shots: [], orbs: [], fields: [], effects: [], eshots: [], hazards: [], pickups: [], lastPatch: null, autoPick: o.autoPick, bosses: o.bosses || null, bossIdx: 0, weather: null, wxAuto: o.weather !== false, wxCheck: CK.WX.check, wxChip: 0, field: null, fieldCell: -2,
 		cast: o.cast || null, spawnAcc: 0, cap: o.cap || CK.CAP, orbitSquash: o.orbitSquash || 1,
 		stats: { gained: 0, collected: 0, levels: 0, dealt: 0, removed: 0, hits: 0, crits: 0, taken: 0, touched: 0, kills: 0, xp: 0, fired: 0, spawned: 0, fell: 0, blocked: 0 },
 		events: [],   // this tick's: { k: 'hit' | 'kill' | 'hurt' | 'shot' | 'melee' | 'beam' | 'aura' | 'chain', … } for the page to draw
 	};
 	return w;
+}
+// ---- weather
+/** How strong the weather is right now: 0 to 1 (it fades in and out). */
+export const wxLevel = (w) => (w.weather ? Math.max(0, Math.min(1, w.weather.t / CK.WX.fade, (w.weather.dur - w.weather.t) / CK.WX.fade)) : 0);
+const wxDef = (w) => (w.weather ? w.data.weatherKinds[w.weather.kind] : null);
+/** What the weather does to an attack of a type (rain: Water × 1.5, Fire × 0.5 …). */
+const wxMult = (w, type) => { const d = wxDef(w); return d && d.mult[type] ? 1 + (d.mult[type] - 1) * wxLevel(w) : 1; };
+const wxHurts = (w, types) => { const d = wxDef(w); return !!(d && d.safe && !types.some((t) => d.safe.includes(t))); };
+const wxSpeed = (w, types) => { const d = wxDef(w); return d && d.slow && !types.includes('ice') ? 1 - CK.WX.slow * wxLevel(w) : 1; };
+/** Start a weather: 'sun' | 'rain' | 'sand' | 'snow' | 'fog', for `dur` seconds. */
+export function setWeather(w, kind, dur) { if (!w.data.weatherKinds[kind]) return false; w.weather = { kind, t: 0, dur }; w.events.push({ k: 'weather', kind, dur }); return true; }
+function updateWeather(w, dt) {
+	const X = CK.WX, pl = w.pl;
+	if (w.weather) { w.weather.t += dt; if (w.weather.t >= w.weather.dur) { w.weather = null; w.events.push({ k: 'weather', kind: null }); } }
+	else if (w.wxAuto && w.t > X.from) {
+		w.wxCheck -= dt;
+		if (w.wxCheck <= 0) { w.wxCheck = X.check; if (w.rand() < X.chance) { const tab = X.biome[w.room.biome] || X.biome.meadow, ks = Object.keys(tab).filter((k) => w.data.weatherKinds[k]); let r = w.rand() * ks.reduce((a, k) => a + tab[k], 0), kind = ks[0]; for (const k of ks) { r -= tab[k]; if (r <= 0) { kind = k; break; } } setWeather(w, kind, Math.round(rnd(w, X.dur[0], X.dur[1]))); } }
+	}
+	w.wxChip -= dt;
+	if (w.wxChip <= 0) {   // sand and snow wear you down a little (never to nothing), and every enemy that is not safe from them
+		w.wxChip = X.chip;
+		if (!w.weather || wxLevel(w) <= 0.5 || !wxDef(w).safe) return;
+		if (!pl.dead && wxHurts(w, pl.mon.types)) { const d = Math.max(1, pl.maxHp * X.you); if (pl.hp > d + 1) { pl.hp -= d; w.stats.taken += d; w.events.push({ k: 'chip', d }); } }
+		for (const e of [...w.enemies]) { if (e.dead || e.boss || !wxHurts(w, e.types)) continue; e.hp -= e.maxHp * X.foe + 1; e.flash = 0.05; if (e.hp <= 0) kill(w, e); }
+	}
 }
 /** The XP a level needs (the 2D game's curve). */
 export const xpFor = (level) => Math.floor((8 + level * 6 + Math.pow(level, 1.75) * 1.6) * 4);
@@ -171,6 +202,7 @@ function land(w, e, dmg, kx, kz, knockU, src) {
 	const pl = w.pl, type = src.mtype || src.type;
 	const asleep = e.sleepT > 0 && src.cc !== 'sleep';
 	let k = type ? w.data.typeMult(type, e.types) : 1;
+	if (type) k *= wxMult(w, type);
 	if (asleep) k *= CK.SLEEP_BONUS;
 	if (type === 'electric' && e.paraT > 0) k *= CK.PARA_ELECTRIC;
 	const c = pl.crit + (src.xcrit || 0), crit = c > 0 && w.rand() < c;
@@ -205,7 +237,7 @@ function hurtPlayer(w, amount, type, through = false) {
 	const pl = w.pl;
 	if (through && pl.invuln < 1e8) pl.invuln = 0;   // (a telegraphed attack: the moment of grace after a hit does not save you)
 	if (pl.invuln > 0 || pl.dead) return 0;
-	if (type) amount *= w.data.typeMult(type, pl.mon.types);
+	if (type) amount *= w.data.typeMult(type, pl.mon.types) * wxMult(w, type);
 	amount *= pl.takenK;
 	const d = Math.max(1, amount * (1 - pl.reduction) * (pl.meleeT > 0 ? CK.MELEE_TAKEN : 1));
 	pl.hp -= d; pl.invuln = CK.INVULN; w.stats.taken += d;
@@ -375,6 +407,7 @@ const KINDS = {
 		const mine = w.fields.filter((o) => o.kind === 'patch' && !o.gone); for (const o of mine.slice(0, Math.max(0, mine.length - 18))) o.gone = true;
 	},
 	// ---- Expedition's kinds
+	weather(w, m) { if (m.wx) setWeather(w, m.wx, Math.round(m.dur || 14)); },
 	lob(w, m) {   // a bomb thrown in an arc at each of the nearest: it comes down OVER whatever is in the way
 		const pl = w.pl, s = pl.s, n = Math.max(1, m.count | 0), foes = nearestN(w, s.x, s.y, s.z, m.xreach * U, n), tg = pl.target;
 		for (let i = 0; i < n; i++) { const e = foes[i % Math.max(1, foes.length)] || tg;
@@ -745,7 +778,7 @@ function updateEnemies(w, dt) {
 				if (f >= 1) { e.jump = null; const g = groundAt(w.room, e.a.x, e.a.z); e.a.y = e.fly ? g + e.a.hover : g; e.a.grounded = !e.fly; e.a.vy = 0; } }
 			continue;
 		}
-		let k = 1 - e.slow;
+		let k = (1 - e.slow) * wxSpeed(w, e.types);
 		if (e.dummy || e.frozenT > 0 || e.sleepT > 0) WISH[0] = WISH[1] = 0;   // (only a shove moves it)
 		else if (e.confT > 0) { k *= 0.9; confused(w, e, dt); }
 		else if (e.boss) { k *= bossMove(w, e, dt) * (e.paraT > 0 ? CK.PARA_SLOW : 1); if (e.jump) continue; }
@@ -882,7 +915,7 @@ export function tick(w, input, dt = K.TICK) {
 		const B = pl.buffs;
 		for (const k in B) if (B[k].n > 0) { B[k].t -= dt; if (B[k].t <= 0) B[k].n = 0; }
 		pl.reduction = Math.min(0.8, pl.baseReduce + B.def.n * B.def.amount); pl.regen = pl.baseRegen + B.regen.n * B.regen.amount;
-		const fast = (1 + B.spd.n * B.spd.amount) * pl.spdMul;   // a speed buff or the Sprint upgrade: you run that much faster
+		const fast = (1 + B.spd.n * B.spd.amount) * pl.spdMul * wxSpeed(w, pl.mon.types);   // a speed buff or the Sprint upgrade: you run that much faster
 		if (fast !== w.fastK) { w.fastK = fast; w.fastTune = fast === 1 ? w.tune : { ...w.tune, RUN: w.tune.RUN * fast }; }
 		step(s, input || noInput(), w.room, dt, w.fastTune || w.tune);
 		if (pl.invuln > 0) pl.invuln -= dt;
@@ -892,6 +925,7 @@ export function tick(w, input, dt = K.TICK) {
 		if (t) pl.aim = Math.atan2(t.a.z - s.z, t.a.x - s.x); else if (Math.hypot(s.vx, s.vz) > 0.5) pl.aim = Math.atan2(s.vz, s.vx);
 	}
 	if (!w.field) { w.field = flowField(w.room, s.x, s.z); w.fieldCell = Math.floor(s.z / CELL) * w.room.w + Math.floor(s.x / CELL); }
+	updateWeather(w, dt);
 	spawnTick(w, dt);
 	updateEnemies(w, dt);
 	if (!pl.dead) fireMoves(w, dt);

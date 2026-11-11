@@ -30,6 +30,8 @@
 //   * Expedition's own move kinds (seven of its eight): each does its work; a lob and a smite reach a target behind
 //     a wall that a straight shot cannot; a wave and a spin stay on your level; a vortex cannot drag a body through a
 //     wall
+//   * weather: it fades in and out, strengthens and weakens types, slows in snow, wears down whoever is not safe
+//     from sand and snow (never a boss, never you to nothing), and from 2:00 can start by itself
 //   * arrivals: enemies appear 16-32 m away on floor they can walk to you from, never past the cap
 //   * the fight is deterministic (same seed: the same fight to the last digit), stays in the world through 3 minutes
 //     of random play on generated levels, and a tick with 110 enemies is cheap
@@ -37,7 +39,7 @@
 import { K, CELL, makeRoom, setCell, groundAt, waterAt } from '../../micasurvivor/m3d/sim.js';
 import { generate, rng } from '../../micasurvivor/m3d/gen.js';
 import { newActor, stepActor, flowField, steer, knock } from '../../micasurvivor/m3d/actors.js';
-import { newWorld, addEnemy, addBoss, bossDef, tick, dataFrom, hashWorld, clearLine, applyState, drop, offer, choose, xpFor, STATS, U, CK } from '../../micasurvivor/m3d/combat.js';
+import { newWorld, addEnemy, addBoss, bossDef, tick, dataFrom, hashWorld, clearLine, applyState, drop, offer, choose, xpFor, setWeather, wxLevel, STATS, U, CK } from '../../micasurvivor/m3d/combat.js';
 import { loadG } from './m3d_data.mjs';
 
 let pass = 0, fail = 0;
@@ -431,8 +433,8 @@ const at = (cx, cz) => [(cx + 0.5) * CELL, (cz + 0.5) * CELL];
 {
 	const ids = data.expMoves(), byKind = {}; for (const id of ids) (byKind[data.moveDef(id).kind] = byKind[data.moveDef(id).kind] || []).push(id);
 	const flat = () => { const q = makeRoom(40, 40, 0); q.spawn = [40, 0, 40]; return q; };
-	const each = Object.keys(byKind).filter((k) => !CK.EXP_LATER.includes(k)).map((k) => { const w = newWorld(flat(), data, { dex: 25, moves: [byKind[k][0]], seed: 4 }); w.pl.invuln = 1e9; addEnemy(w, RAT, 43.5, 40, { dummy: true, hp: 1e5 }); run(w, 600); return [k, w.stats.hits]; });
-	A(ids.length === 18 && each.length === 7 && each.every(([, h]) => h > 0), `seven of Expedition's eight kinds do their work here (${each.map((e) => e[0]).join(', ')}); weather is still to come`, each);
+	const each = Object.keys(byKind).filter((k) => !CK.EXP_LATER.includes(k)).map((k) => { const w = newWorld(flat(), data, { dex: 25, moves: [byKind[k][0]], seed: 4 }); w.pl.invuln = 1e9; addEnemy(w, RAT, 43.5, 40, { dummy: true, hp: 1e5 }); run(w, 600); return [k, w.stats.hits, w.weather ? w.weather.kind : '']; });
+	A(ids.length === 18 && each.length === 8 && each.every(([k, h, wx]) => (k === 'weather' ? !!wx : h > 0)), `all eight of Expedition's kinds do their work here (${each.map((e) => e[0]).join(', ')})`, each);
 	const r = yard(), behind = (id) => { const w = newWorld(r, data, { dex: 25, moves: [id], seed: 4 }); w.pl.s.x = 11 * CELL; w.pl.s.z = 15 * CELL; w.pl.invuln = 1e9; const e = addEnemy(w, RAT, 6 * CELL, 15 * CELL, { dummy: true, hp: 1e5 }); run(w, 480); return { hits: w.stats.hits, blocked: w.stats.blocked, lost: e.maxHp - e.hp }; };
 	const lob = behind('mud-bomb'), smite = behind('sky-attack'), straight = behind('ember');
 	A(lob.hits >= 3 && smite.hits >= 3 && straight.hits === 0 && straight.blocked > 5, `a target behind the 4 m wall: a lob comes down on it (${lob.hits} hits) and a smite falls on it (${smite.hits}); Ember only hits the wall`, [lob, smite, straight]);
@@ -447,6 +449,36 @@ const at = (cx, cz) => [(cx + 0.5) * CELL, (cz + 0.5) * CELL];
 	// a lob's own arc is what the page draws: it is in the air for its 0.55 s, then gone
 	const lw = newWorld(flat(), data, { dex: 25, moves: ['mud-bomb'], seed: 4 }); lw.pl.invuln = 1e9; addEnemy(lw, RAT, 48, 40, { dummy: true, hp: 1e5 }); let flying = 0; for (let i = 0; i < 60; i++) { tick(lw, null); if (lw.effects.some((q) => q.k === 'lob')) flying++; }
 	A(flying >= 30 && flying <= 36 && lw.stats.hits === 1, `a bomb is in the air ${(flying / 60).toFixed(2)} s before it lands`, [flying, lw.stats.hits]);
+}
+
+// ---------------------------------------------------------------- weather
+{
+	const flat = () => { const q = makeRoom(40, 40, 0); q.spawn = [40, 0, 40]; return q; };
+	const dealt = (wx, move, foe = RAT) => { const w = newWorld(flat(), data, { dex: 25, moves: [move], seed: 4 }); w.pl.invuln = 1e9; if (wx) { setWeather(w, wx, 60); run(w, 200); w.stats.dealt = 0; w.stats.hits = 0; } addEnemy(w, foe, 46, 40, { dummy: true, hp: 1e6 }); run(w, 300); return w.stats.dealt / w.stats.hits; };
+	const dry = dealt(null, 'water-gun'), wet = dealt('rain', 'water-gun'), sunny = dealt('sun', 'water-gun'), fireRain = dealt('rain', 'ember'), fireDry = dealt(null, 'ember');
+	A(near(wet / dry, 1.5, 1e-9) && near(sunny / dry, 0.5, 1e-9) && fireRain < fireDry, `rain makes a Water hit half as strong again (${dry.toFixed(1)} to ${wet.toFixed(1)}), sun halves it, and rain weakens Fire`, [dry, wet, sunny, fireRain, fireDry]);
+	const w = newWorld(flat(), data, { dex: 25, moves: [], seed: 4 }); setWeather(w, 'rain', 10); const lv = []; for (let i = 0; i < 600; i++) { tick(w, null); if (i % 60 === 59) lv.push(+wxLevel(w).toFixed(2)); }
+	A(lv[0] > 0.3 && lv[0] < 0.4 && lv[4] === 1 && lv[8] < 0.4 && w.weather === null, `weather fades in over 3 s, holds, fades out and ends (its strength each second of a 10 s rain: ${lv.join(' ')})`, lv);
+	// sand: wears down what is not Rock, Ground or Steel; never a boss; never you to nothing
+	const s = newWorld(flat(), data, { dex: 25, moves: [], seed: 4 }); s.pl.invuln = 1e9; setWeather(s, 'sand', 40);
+	const rat = addEnemy(s, RAT, 60, 40, { dummy: true, hp: 5 }), geo = addEnemy(s, 74, 60, 44, { dummy: true, hp: 5 }), boss = addBoss(s, 143, 62, 50, { slot: 0 }); boss.ai.cd = 1e9; boss.a.speed = 0; geo.behavior = 'chase';
+	run(s, 60 * 10);
+	A(rat.hp < rat.maxHp && near((rat.maxHp - rat.hp) / 4, rat.maxHp * 0.02 + 1, 0.51) && geo.hp === geo.maxHp && boss.hp === boss.maxHp, `a sandstorm takes 2 % + 1 of a Rattata's HP every 2 s once it is up (${rat.maxHp - rat.hp} in 10 s), nothing from a Geodude (Rock / Ground) or a boss`, [rat.hp, rat.maxHp, geo.hp, boss.hp]);
+	A(s.stats.taken > 0 && near(s.stats.taken / 4, s.pl.maxHp * 0.012, 1e-6), `...and ${(s.pl.maxHp * 0.012).toFixed(2)} of your own HP each time (you are Electric)`, s.stats.taken);
+	s.pl.hp = 1.5; run(s, 60 * 6); A(s.pl.hp === 1.5 && !s.pl.dead, 'it never finishes you: at 1.5 HP the sand leaves you be');
+	rat.hp = 4; run(s, 60 * 6); A(rat.dead && s.stats.kills >= 1 && s.pickups.length >= 1, 'it can finish an enemy, which leaves its XP like any other', [rat.dead, s.stats.kills]);
+	// snow slows whoever is not Ice
+	const sn = newWorld(flat(), data, { dex: 25, moves: [], seed: 4 }), cl = newWorld(flat(), data, { dex: 25, moves: [], seed: 4 }); setWeather(sn, 'snow', 60);
+	for (const q of [sn, cl]) { q.pl.invuln = 1e9; run(q, 200); q.e = addEnemy(q, RAT, 60, 40); q.x0 = q.e.a.x; run(q, 120, { mx: 0, mz: 1, jump: false, crouch: false }); }
+	A(near((sn.x0 - sn.e.a.x) / (cl.x0 - cl.e.a.x), 0.9, 0.02) && near(sn.pl.s.vz / cl.pl.s.vz, 0.9, 0.005), 'snow slows enemies and you by a tenth', [sn.x0 - sn.e.a.x, cl.x0 - cl.e.a.x, sn.pl.s.vz, cl.pl.s.vz]);
+	// by itself: not before 2:00; after it, sooner or later
+	const kinds = new Set(); let early = 0, started = 0;
+	for (let seed = 1; seed <= 12; seed++) { const q = newWorld(generate(seed, seed % 2 ? 'meadow' : 'peaks'), data, { dex: 25, moves: [], seed }); q.pl.invuln = 1e9; for (let i = 0; i < 60 * 600; i++) { tick(q, null); const ev = q.events.find((e) => e.k === 'weather' && e.kind); if (ev) { started++; kinds.add(ev.kind); if (q.t < 180) early += q.t < 120 ? 100 : 0; } } }
+	A(early === 0 && started >= 6 && kinds.size >= 3, `left alone, weather starts by itself from 2:00 on (${started} times in twelve 10-minute runs: ${[...kinds].join(', ')}), never before`, [early, started, [...kinds]]);
+	const none = newWorld(generate(3, 'meadow'), data, { dex: 25, moves: [], seed: 3, weather: false }); none.pl.invuln = 1e9; let any = 0; for (let i = 0; i < 60 * 900; i++) { tick(none, null); if (none.weather) any++; }
+	A(any === 0, 'a fight told to have no weather has none');
+	const rd = newWorld(flat(), data, { dex: 25, moves: ['rain-dance'], seed: 4 }); run(rd, 30);
+	A(rd.weather && rd.weather.kind === 'rain' && rd.weather.dur === 14, 'Rain Dance starts 14 s of rain');
 }
 
 // ---------------------------------------------------------------- arrivals
