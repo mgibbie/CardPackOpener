@@ -538,6 +538,49 @@ what belongs to later phases: move evolutions and Expedition's move levels (P5),
 
 Tests: parity 108 checks, combat 168 checks, the page test 69.
 
+## 5.14 P3n, first part: built (2026-11-11). Watching and replays.
+
+What a fight looks like to someone who is not running it (`micasurvivor/m3d/net.js`), and a test room to prove it:
+one tab hosts (`?gen=7&fight=1&host=me`), another watches (`?watch=me`), a third plays a tape.
+
+- **The frame.** The fight at one instant as whole numbers: you (place in centimetres, speed, a world facing, what
+  you are doing, HP, level), every enemy (id, species, place WITH height, facing, HP, in the air or not, size),
+  everything drawn as a ball (shots, orbs, pickups, mines, turrets, bombs), the weather, and the fight's own events
+  since the last frame (a swing's arc, a beam, a blast, a warning mark, a damage number). The camera is not in
+  it: each screen has its own. Frames go out ten a second, a whole one each second and differences between.
+- **Watching.** The watcher draws the fight a moment in the past (about 0.2 s), between two frames. You are drawn
+  from where you were AND how fast you were going at both frames, so a jump is your own arc; an enemy in the air
+  at either frame is drawn on the arc gravity gives it. Measured against the truth at every tick: you within 15 cm
+  through a jump and a fall off a ledge (the worst is the tenth of a second you take off or land in), an enemy
+  shoved off a ledge within 25 cm.
+- **A tape (v3).** A header that rebuilds the level (seed, biome, size, who played) and five frames a second, a
+  whole one every five seconds. A 2D tape (v2) is refused by its version. A page plays it with a free camera.
+- **The watcher** simulates nothing, learns the level from the host's first whole frame and loads it, and loads
+  the sprites of whatever species walks into view.
+
+**Sizes, measured** (node, the cap's 110 enemies on screen):
+
+| What | Size | Against |
+|---|---|---|
+| one whole frame | about 4,000 characters | the relay's 16,000 a message |
+| a second live (10 frames) | about 34,000 characters (33 KB/s) | peer-to-peer: no cap; fine |
+| one relay message a second (you in all 10 frames, the enemies in 2) | about 9,500 characters | under 16,000 |
+| a ten-minute tape, gzipped | about 2.8 MB (27 KB for its quiet first minute) | 3 segments of the server's 1.2 MB |
+
+**What that says about the transport.** A jump that happens between two frames a second apart is simply missing
+(measured: seen 0 m, really 1.58 m). So the relay, which carries one message a second, cannot send one frame a
+message; but it CAN carry a second's worth in one message, with you ten times and the enemies twice, and a
+watcher fed that sees the jump whole. Spectating over the existing relay is therefore possible, a second or so
+behind. That is fine for watching. It is not fine for playing together: a co-op guest needs the host's enemies
+within a few hundred milliseconds, which is peer-to-peer or a new backend (decision 8 stands, now with numbers).
+
+**Still to do in P3n:** co-op itself (a fight with more than one player in it, each moving their own body); the
+real carriers (peer-to-peer and the relay through `/api/mp`) in place of the test room's; joining the site's
+spectate and replay screens; the local-co-op camera (decision 7).
+
+Tests: `micasurvivor_m3d_net_test.mjs` (node, 21 checks), `micasurvivor_m3d_watch_test.mjs` (Chrome, three windows,
+21 checks).
+
 ## 6. Dive in 2D: built
 
 **D0 — find the stairs (small; can ship first, on its own).** *Built 2026-11-11 (`overworld/tests/micasurvivor_dive_stairs_test.mjs`). As built: the stairs took their own orange mark, so the rocks and Meowth keep their gold; the HUD arrow comes up after 25 s on a floor, or at once when its boss falls.*

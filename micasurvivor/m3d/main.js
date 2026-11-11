@@ -10,12 +10,16 @@ import { K, CELL, step, newState, noInput, groundAt, stateName, facingRow, tuneF
 import { buildRoom, SPOTS } from './room.js';
 import { makeRenderer, buildTerrain, buildWater, buildScatter, buildExit, drawMap, SpriteBatch, Shadows, Shots, Flashes, loadSheet, frameAt, spriteQuad, footLift, placeCamera } from './render.js';
 import { newWorld, addEnemy, addBoss, tick, dataFrom, choose, drop, CK } from './combat.js';
+import { frame as netFrame, keepEvents, diff as netDiff, Viewer, Tape, ballColour, typeName, NK } from './net.js';
 import { generate, BIOMES } from './gen.js';
 
 const Q = new URLSearchParams(location.search);
 // P3: ?gen=<seed>&fight=1 is a FIGHT on that level (combat.js): enemies arrive and come for you, your moves fire by
 // themselves at what you can see. ?moves=ember:3,tackle picks them (id:level); R starts the level again.
-const FIGHT = Q.has('gen') && Q.get('fight') === '1';
+// P3n: &host=<name> shows this fight to other tabs of this browser (a BroadcastChannel: the test room's transport);
+// ?watch=<name> watches it, with a camera of its own; &tape=1 records it (window.__m3d.tape).
+const WATCH = Q.get('watch') || null, HOST = Q.get('host') || null;
+const FIGHT = !WATCH && Q.has('gen') && Q.get('fight') === '1';
 const N = Math.max(0, Math.min(2000, +(Q.get('n') ?? (FIGHT ? 0 : 100)) || 0));
 const DEX = +(Q.get('dex') ?? 25) || 25;
 const META = (window.G && window.G.SPRITE_META) || {};
@@ -138,9 +142,9 @@ async function sheet(dex, anim, max) {
 	sheets.set(key, o);
 	return o;
 }
-const shadows = new Shadows(N + 4 + (world ? world.cap : 0));
+const shadows = new Shadows(N + 4 + (world ? world.cap : WATCH ? CK.CAP + 20 : 0));
 scene.add(shadows.mesh);
-const shots = world ? new Shots(600) : null, flashes = world ? new Flashes(scene) : null;
+const shots = world || WATCH ? new Shots(600) : null, flashes = world || WATCH ? new Flashes(scene) : null;
 if (shots) scene.add(shots.mesh);
 
 // ---------------------------------------------------------------- the loop
@@ -170,31 +174,36 @@ function draw(t) {
 		shadows.add(room, e.x, e.z, y, s.shadow);
 	}
 	// (P3) the fight: enemies (brighter for a moment when hit), shots and orbs
-	if (world) {
-		for (const e of world.enemies) {
-			const s = sheets.get(e.dex + '/Walk'); if (!s) continue;
+	const E = world ? world.enemies : view ? view.enemies : null;
+	if (E) {
+		for (const e of E) {
+			const s = sheets.get(e.dex + '/Walk'); if (!s) { wantSheet(e.dex); continue; }
 			const q = spriteQuad(s.meta, s.img, frameAt(s.meta, t + e.id * 0.37), facingRow(e.a.facing, cam.yaw), e.scale || 1, s.lift);
 			s.batch.add(e.a.x, e.a.y, e.a.z, q.rect, q.uv, e.flash > 0 ? 1.7 : 1);
 			shadows.add(room, e.a.x, e.a.z, e.a.y, s.shadow * (e.scale || 1));
 		}
 		shots.begin();
-		for (const p of world.shots) shots.add(p.x, p.y, p.z, Math.max(0.14, p.r), TYPE_COLOR[p.mtype]);
-		for (const p of world.orbs) shots.add(p.x, p.y, p.z, Math.max(0.16, p.r), TYPE_COLOR[p.mtype]);
+		if (!world) {   // watching: everything that is a ball comes ready-made in the frame
+			for (const b of view.balls) shots.add(b[0], b[1], b[2], b[3], ballColour(b[4], TYPE_COLOR, PICK_COLOR));
+			for (const e of E) if (e.shield > 0) shots.add(e.a.x, e.a.y + 1.6 * (e.scale || 1), e.a.z, 0.16, '#7fc8ff');
+		}
+		for (const p of world ? world.shots : []) shots.add(p.x, p.y, p.z, Math.max(0.14, p.r), TYPE_COLOR[p.mtype]);
+		if (world) for (const p of world.orbs) shots.add(p.x, p.y, p.z, Math.max(0.16, p.r), TYPE_COLOR[p.mtype]);
 		// what lies in the world: mines (a small ball on the floor), turrets (a ball that hangs and bobs), meteors (a ball
 		// coming down on its mark), patches (a disc on the floor, drawn once, fading over its life)
 		// pickups: beads that bob over the floor (XP blue, a big one for a big orb; a berry green, a magnet pink, a bomb orange)
-		for (const p of world.pickups) shots.add(p.x, p.y + 0.3 + Math.abs(Math.sin(p.t * 0.8)) * 0.18, p.z, p.kind === 'xpBig' ? 0.24 : p.kind === 'xp' ? 0.15 : 0.26, PICK_COLOR[p.kind]);
-		for (const e of world.enemies) if (e.shield > 0) shots.add(e.a.x, e.a.y + Math.max(1.2, e.cr * 2) + 0.35, e.a.z, 0.16, '#7fc8ff');   // a shield: a blue bead over its head
-		for (const p of world.eshots) shots.add(p.x, p.y, p.z, Math.max(0.2, p.r), '#ff5f8f');   // an enemy's shot: always the same angry pink
+		if (world) for (const p of world.pickups) shots.add(p.x, p.y + 0.3 + Math.abs(Math.sin(p.t * 0.8)) * 0.18, p.z, p.kind === 'xpBig' ? 0.24 : p.kind === 'xp' ? 0.15 : 0.26, PICK_COLOR[p.kind]);
+		if (world) for (const e of world.enemies) if (e.shield > 0) shots.add(e.a.x, e.a.y + Math.max(1.2, e.cr * 2) + 0.35, e.a.z, 0.16, '#7fc8ff');   // a shield: a blue bead over its head
+		if (world) for (const p of world.eshots) shots.add(p.x, p.y, p.z, Math.max(0.2, p.r), '#ff5f8f');   // an enemy's shot: always the same angry pink
 		// Expedition's effects: a bomb on its arc, a whirl on the floor, a wave's ring spreading
-		for (const f of world.effects) {
+		for (const f of world ? world.effects : []) {
 			const c = TYPE_COLOR[f.m.type];
 			if (f.k === 'lob') { const k = Math.min(1, f.t / f.dur); shots.add(f.x0 + (f.x - f.x0) * k, f.y0 + (f.y - f.y0) * k + Math.sin(k * Math.PI) * CK.EXP.lobHigh * 0.0625, f.z0 + (f.z - f.z0) * k, 0.3, c); if (!f.seen) { f.seen = true; flashes.arc(f.x, f.y, f.z, f.r, 0, 6.2832, c, f.dur, 0.9); } }
 			else if (f.k === 'smite' && !f.seen) { f.seen = true; flashes.arc(f.x, f.y, f.z, f.r, 0, 6.2832, c, f.dur, 0.85); }
 			else if (f.k === 'vortex' && !f.seen) { f.seen = true; flashes.arc(f.x, f.y, f.z, f.r, 0, 6.2832, c, f.dur, 0.25); }
 			else if (f.k === 'wave' && (simTicks & 3) === 0) flashes.arc(f.x, f.y, f.z, f.r, 0, 6.2832, c, 0.12, 0.93);
 		}
-		for (const f of world.fields) {
+		for (const f of world ? world.fields : []) {
 			const c = TYPE_COLOR[f.m.type];
 			if (f.kind === 'mine') shots.add(f.x, f.y + 0.18, f.z, 0.2, c);
 			else if (f.kind === 'turret') shots.add(f.x, f.y + 1 + Math.sin(t * 4 + f.id) * 0.12, f.z, 0.34, c);
@@ -225,17 +234,19 @@ function frame(now) {
 	const input = readInput(dt);
 	followCam(dt);
 	while (perf.acc >= K.TICK) {
-		if (world) { tick(world, input, K.TICK); fightEvents(); } else step(state, input, room, K.TICK, TUNE);
+		if (WATCH) { perf.acc -= K.TICK; simTicks++; continue; }   // (watching: nothing is simulated here)
+		if (world) { tick(world, input, K.TICK); fightEvents(world.events); share(); } else step(state, input, room, K.TICK, TUNE);
 		perf.acc -= K.TICK; simTicks++;
 		if (state.landed > 9) bob = Math.min(0.5, state.landed * 0.02);
 		if (state.hard) note('hard landing: hold SLIDE as you land to break a fall', 2200); else if (state.broke) note('fall broken (' + state.broke + ')', 1400);
 	}
 	perf.sim.push(performance.now() - t0); if (perf.sim.length > 240) perf.sim.shift();
+	if (WATCH) watchStep(dt);
 	if (flashes) flashes.update(dt);
 	draw(now / 1000);
-	if (world) drawNumbers(dt);
+	if (world || WATCH) drawNumbers(dt);
 	if ((simTicks & 15) === 0) showHud();
-	if (GEN !== null) { showMap(); if (!leaving && state.grounded && exitDist() < 1.5) { leaving = true; note('exit reached: next level…', 4000); nextLevel(); } }
+	if (GEN !== null) { showMap(); if (!WATCH && !leaving && state.grounded && exitDist() < 1.5) { leaving = true; note('exit reached: next level…', 4000); nextLevel(); } }
 }
 // ---------------------------------------------------------------- (P2) a generated level: the exit and the minimap
 let leaving = false, mapBase = null;
@@ -250,15 +261,16 @@ function showMap() {
 	// the exit: a ring that beats; the spawn: a small dot
 	g.lineWidth = 2; g.strokeStyle = '#fff2a0'; g.beginPath(); g.arc(room.exit[0] * k, room.exit[2] * k, 5 + 2 * Math.sin(performance.now() / 260), 0, 6.2832); g.stroke();
 	g.fillStyle = '#fff'; g.fillRect(room.spawn[0] * k - 1.5, room.spawn[2] * k - 1.5, 3, 3);
-	if (world) { g.fillStyle = '#5b1630'; for (const e of world.enemies) g.fillRect(e.a.x * k - 1, e.a.z * k - 1, 3, 3); }   // (P3) enemies: dark dots
+	if (world || view) { g.fillStyle = '#5b1630'; for (const e of world ? world.enemies : view.enemies) g.fillRect(e.a.x * k - 1, e.a.z * k - 1, 3, 3); }   // (P3) enemies: dark dots
 	// you: an arrow the way you face (map: +x right, +z down)
 	const fx = Math.sin(state.facing), fz = Math.cos(state.facing), x = state.x * k, z = state.z * k;
 	g.fillStyle = '#ff3b3b'; g.strokeStyle = '#fff'; g.lineWidth = 1; g.beginPath(); g.moveTo(x + fx * 7, z + fz * 7); g.lineTo(x - fx * 4 - fz * 4, z - fz * 4 + fx * 4); g.lineTo(x - fx * 4 + fz * 4, z - fz * 4 - fx * 4); g.closePath(); g.fill(); g.stroke();
 }
 /** (P3) What this tick of the fight did, as things to see. */
-function fightEvents() {
+function fightEvents(events) {
 	const col = (id) => TYPE_COLOR[(GG.Moves.BY_ID[id] || (GG.ExpMoves && GG.ExpMoves.MOVES[id]) || {}).type];
-	for (const ev of world.events) {
+	for (const ev of events) {
+		if (ev.k === 'mark') { flashes.arc(ev.x, ev.y, ev.z, ev.r, 0, 6.2832, TYPE_COLOR[typeName(ev.type)], ev.life, ev.inner); continue; }   // (watching: something was put down)
 		if (ev.k === 'melee') flashes.arc(state.x, state.y, state.z, ev.r, ev.aim, Math.min(ev.arc, 6.2832), col(ev.id));
 		else if (ev.k === 'aura') flashes.arc(state.x, state.y, state.z, ev.r, 0, 6.2832, col(ev.id));
 		else if (ev.k === 'beam') flashes.bar(ev.from, ev.dir, ev.len, ev.w, col(ev.id));
@@ -272,18 +284,59 @@ function fightEvents() {
 		}
 		else if (ev.k === 'smite') { flashes.bar([ev.x, ev.y + 14, ev.z], [0, -1, 0], 14, 0.3, col(ev.id), 0.2); flashes.arc(ev.x, ev.y, ev.z, ev.r, 0, 6.2832, col(ev.id), 0.3, 0.3); }
 		else if (ev.k === 'bomb') flashes.arc(ev.x, ev.y, ev.z, ev.r, 0, 6.2832, '#ff7b3d', 0.5, 0.92);
-		else if (ev.k === 'levelup') showCards();
+		else if (ev.k === 'levelup') { if (world) showCards(); }
 		else if (ev.k === 'weather') { const d = ev.kind && GG.Weather.KINDS[ev.kind], el = document.getElementById('wx'); if (el) { el.style.background = d ? `rgba(${d.tint[0]}, ${d.tint[1]}, ${d.tint[2]}, ${Math.min(0.3, d.tint[3] * 2.2)})` : 'transparent'; } if (ev.kind) note('the weather turns: ' + ev.kind, 3000); }
 		else if (ev.k === 'boss') note(`a wild ${(GG.DEX_BY[ev.dex] || {}).name || 'boss'} appeared!`, 3200);
 		else if (ev.k === 'enrage') note('it is enraged!', 2400);
 		else if (ev.k === 'heal') flashes.arc(ev.x, ev.y, ev.z, ev.r, 0, 6.2832, '#5fe08a', 0.5, 0.9);
 		else if (ev.k === 'shield') flashes.arc(ev.x, ev.y, ev.z, ev.r, 0, 6.2832, '#7fc8ff', 0.5, 0.9);
 		else if (ev.k === 'summon') flashes.arc(ev.x, ev.y, ev.z, 3, 0, 6.2832, '#c47bff', 0.4, 0.5);
-		else if (ev.k === 'hit') numbers.push({ x: ev.x, y: ev.y + 0.6, z: ev.z, text: String(Math.max(1, Math.round(ev.d))), css: ev.crit ? '#ffe14d' : ev.eff > 1.2 ? '#ffffff' : ev.eff < 0.9 ? '#9aa6b5' : '#f2ede2', big: ev.crit || ev.eff > 1.2, t: 0 });
-		else if (ev.k === 'hurt') { bob = 0.35; note(`hit for ${ev.d.toFixed(0)}`, 700); }
+		else if (ev.k === 'hit') numbers.push({ x: ev.x, y: ev.y + 0.6, z: ev.z, text: String(Math.max(1, Math.round(ev.d))), css: ev.crit ? '#ffe14d' : (WATCH ? ev.eff === 2 : ev.eff > 1.2) ? '#ffffff' : (WATCH ? ev.eff === 0 : ev.eff < 0.9) ? '#9aa6b5' : '#f2ede2', big: ev.crit || ev.eff > 1.2, t: 0 });
+		else if (ev.k === 'hurt') { bob = 0.35; note(`hit for ${(+ev.d).toFixed(0)}`, 700); }
 	}
-	if (world.pl.dead) note('you are down: R to start the level again', 60000);
+	if (world && world.pl.dead) note('you are down: R to start the level again', 60000);
 }
+// ---------------------------------------------------------------- (P3n) showing a fight to others, and watching one
+const chan = (HOST || WATCH) && typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('m3d:' + (HOST || WATCH)) : null;
+const HEAD = { gen: GEN, biome: BIOME, size: SIZE, dex: DEX };
+const tape = FIGHT && Q.get('tape') === '1' ? new Tape({ ...HEAD, at: 0 }) : null;
+const net = { sent: 0, chars: 0, got: 0, evLive: [], evTape: [], prev: null, n: 0 };
+/** The host's side, once a tick: a frame every 6 ticks to whoever is watching (a whole one every second, the rest as
+ *  differences), and one every 12 onto the tape. */
+function share() {
+	if (!chan && !tape) return;
+	keepEvents(net.evLive, world.events); if (tape) keepEvents(net.evTape, world.events);
+	if (chan && world.tick % Math.round(60 / NK.HZ) === 0) {
+		const f = netFrame(world, net.evLive), whole = net.n % NK.HZ === 0 || !net.prev, msg = JSON.stringify(whole ? { h: HEAD, f } : { f: netDiff(net.prev, f) });
+		chan.postMessage(msg); net.prev = f; net.n++; net.sent++; net.chars += msg.length; net.evLive = [];
+	}
+	if (tape && world.tick % Math.round(60 / NK.TAPE_HZ) === 0) { tape.add(netFrame(world, net.evTape)); net.evTape = []; }
+}
+/** The watcher's side. Frames come in; the fight is drawn a moment in the past, so there is always a frame on each
+ *  side of what is on screen. The camera is this screen's own. */
+let viewer = WATCH ? new Viewer() : null, view = null, watchT = -1, watchSrc = WATCH ? 'live' : null, tapeEnd = 0;
+if (chan && WATCH) chan.onmessage = (m) => {
+	const o = JSON.parse(m.data); net.got++; net.chars += m.data.length;
+	// the level being played is not the one this page built: load it (once), keeping the watch
+	if (o.h && (o.h.gen !== GEN || o.h.biome !== BIOME || (o.h.size || null) !== (SIZE || null) || o.h.dex !== DEX)) { if (!net.moving) { net.moving = true; const q = new URLSearchParams(); q.set('watch', WATCH); q.set('gen', o.h.gen); q.set('biome', o.h.biome); if (o.h.size) q.set('size', o.h.size); q.set('dex', o.h.dex); location.search = q.toString(); } return; }
+	if (watchSrc === 'live') viewer.push(o.f);
+};
+const sheetAsked = new Set();
+/** A species walks into view that this page has no sheet for yet (a watcher does not know the cast beforehand). */
+function wantSheet(dex) { if (sheetAsked.has(dex) || !META[dex] || !META[dex].a || !META[dex].a.Walk) return; sheetAsked.add(dex); sheet(dex, 'Walk', 130).catch((e) => console.warn(e.message)); }
+function watchStep(dt) {
+	if (!viewer.frames.length) return;
+	const newest = viewer.newest;
+	if (watchSrc === 'tape') watchT = Math.min(tapeEnd, watchT + dt);
+	else { const want = newest - NK.DELAY; watchT = watchT < 0 || Math.abs(want - watchT) > 0.6 ? want : Math.min(newest, watchT + dt * (want - watchT > 0.05 ? 1.08 : want - watchT < -0.05 ? 0.92 : 1)); }
+	view = viewer.sample(watchT);
+	if (!view) return;
+	Object.assign(state, view.pl.s);
+	fightEvents(view.events);
+	if (view.pl.dead) note('down', 2000);
+}
+/** Play a tape (its text) on this page instead of a live fight. */
+function playTape(text) { const t = Tape.unpack(text), p = t.play(); viewer = p.viewer; watchSrc = 'tape'; watchT = p.from; tapeEnd = p.to; return { header: t.h, from: p.from, to: p.to, frames: p.viewer.frames.length }; }
 /** (P3) Damage numbers: text that rises from where a hit landed, drawn on a flat canvas over the scene (each is placed
  *  by projecting its point in the world through the camera). */
 const numbers = [], V3 = new THREE.Vector3();
@@ -332,6 +385,7 @@ function showHud() {
 		+ `${stateName(state)} · ${sp.toFixed(1)} m/s · height ${state.y.toFixed(2)} m · air jumps ${state.airJumps}\n`
 		+ `${SPECIES.name} (${TYPES.join(' / ') || 'no type'})${TRAITS.length ? ' · traits: ' + TRAITS.join(', ') : ''}`
 		+ (GEN === null ? '' : `\nlevel ${GEN} · ${BIOME} · ${room.size} × ${room.size} tiles · exit ${Math.round(exitDist())} m`)
+		+ (!WATCH ? '' : `\n${watchSrc === 'tape' ? 'replay' : 'watching ' + WATCH}` + (!view ? ' · waiting for the fight…' : ` · ${Math.floor(view.t / 60)}:${String(Math.floor(view.t % 60)).padStart(2, '0')}\nLv ${view.pl.level} · HP ${view.pl.hp} / ${view.pl.maxHp} · ${view.enemies.length} enemies · ${view.kills} KOs` + (view.weather ? ` · ${view.weather[0]}` : '')))
 		+ (!world || !world.enemies.some((e) => e.boss) ? '' : world.enemies.filter((e) => e.boss).map((e) => `\nBOSS ${(GG.DEX_BY[e.dex] || {}).name}: ${Math.max(0, e.hp)} / ${e.maxHp}${e.ai.fury ? ' · enraged' : ''}`).join(''))
 		+ (!world || !world.weather ? '' : `\nweather: ${world.weather.kind} (${Math.ceil(world.weather.dur - world.weather.t)} s)`)
 		+ (!world || !world.pl.ability ? '' : `\nability: ${world.pl.ability}${world.pl.items.length ? ' · holding: ' + world.pl.items.join(', ') : ''}`)
@@ -357,7 +411,7 @@ function showHud() {
 
 // what a test (and a curious owner in the console) can reach
 window.__m3d = {
-	get ready() { return ready; }, state, room, K, TUNE, TYPES, TRAITS, cam, crowd, sheets, stats, gen: GEN, biome: BIOME, world, numbers, addBoss: (dex, x, z, o) => addBoss(world, dex, x, z, o), drop: (kind, x, z, v) => drop(world, kind, x, groundAt(room, x, z), z, v), pickCard, addEnemy: (dex, x, z, o) => addEnemy(world, dex, x, z, o), holdExit: false, get leaving() { return leaving; },
+	get ready() { return ready; }, state, room, K, TUNE, TYPES, TRAITS, cam, crowd, sheets, stats, gen: GEN, biome: BIOME, world, numbers, net, tape, playTape, get view() { return view; }, get viewer() { return viewer; }, get watchT() { return watchT; }, addBoss: (dex, x, z, o) => addBoss(world, dex, x, z, o), drop: (kind, x, z, v) => drop(world, kind, x, groundAt(room, x, z), z, v), pickCard, addEnemy: (dex, x, z, o) => addEnemy(world, dex, x, z, o), holdExit: false, get leaving() { return leaving; },
 	setInput(o) { override = o ? { ...noInput(), ...o } : null; },
 	rowOf: (facing, yaw) => facingRow(facing, yaw === undefined ? cam.yaw : yaw),
 	quadOf: (key, frame, row) => { const s = sheets.get(key); return spriteQuad(s.meta, s.img, frame, row, 1, s.lift); },
