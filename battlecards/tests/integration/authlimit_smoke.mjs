@@ -40,7 +40,7 @@ const waitUp = async () => {
 		let normal = 0, braked = null;
 		for (let i = 0; i < 31; i++) {
 			const r = await api('login', { username: 'ghost_account', password: 'wrong' });
-			if (r.error === 'no such account') normal++;
+			if (r.error === 'wrong username or password') normal++;
 			else if (i === 30) braked = r;
 		}
 		A(normal === 30, '30 login attempts reach the handler', normal);
