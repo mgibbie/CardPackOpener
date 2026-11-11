@@ -21,6 +21,15 @@ A(results.length >= 40, `linted every overworld module (${results.length})`);
 const problems = results.flatMap(r => r.messages.map(m => `${path.basename(r.filePath)}:${m.line} ${m.message}`));
 A(!problems.length, 'no module uses an undeclared, un-imported name', problems.slice(0, 10).join(' | '));
 
+// ---------- Battlecards: the same net, ahead of splitting battlecards/game.js ----------
+// (its import/export LINKS are checked by battlecards/tests/unit/battlecards_imports_test.mjs)
+{
+	const bc = await eslint.lintFiles(['battlecards/*.js', 'battlecards/engine/**/*.js']);
+	A(bc.length >= 60 && bc.some(r => path.basename(r.filePath) === 'game.js'), `linted every Battlecards module (${bc.length}), game.js among them`);
+	const bcProblems = bc.flatMap(r => r.messages.map(m => `${path.basename(r.filePath)}:${m.line} ${m.message}`));
+	A(!bcProblems.length, 'no Battlecards module uses an undeclared, un-imported name', bcProblems.slice(0, 10).join(' | '));
+}
+
 // ---------- every relative import names something its module exports ----------
 // no-undef can't see this: `import { x } from './ow_pvp.js'` when ow_pvp.js has no
 // `export x` is a LINK error that only shows up when the page loads (and takes the
