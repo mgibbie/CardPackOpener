@@ -6,7 +6,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Magepunk Wiki</title>
-  <link rel="stylesheet" href="style.css?v=20261028pt">
+  <link rel="stylesheet" href="style.css?v=20261109fm">
   <!-- authentic MTG mana symbols (Andrew Gioia's Mana font, OFL) — same one the card faces use -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/mana-font@1.18.0/css/mana.min.css">
   <!-- the Card Gallery renders real in-game card faces via battlecards/cardart.js,
@@ -18,7 +18,7 @@
 <body>
   <header>
     <button id="navToggle" type="button" aria-label="Open menu" aria-controls="sidebar">☰</button>
-    <a class="site-home" href="/" title="Back to michaelgibalerio.com">⚙️</a>
+    <a class="site-home" href="/" title="Games (`)" aria-label="Games" data-mp-switcher>⚙️</a>
     <a class="brand" href="#/">Magepunk Wiki</a>
     <input id="search" type="search" placeholder="Search Pokémon, moves, cards, Micatro…" autocomplete="off">
     <span id="status"></span>
@@ -95,6 +95,7 @@
       <a href="#/pokermon-jokers" class="sub">Pokermon jokers not in the game yet</a>
       <details class="nav-mods" id="navMods">
         <summary class="sub">By mod (19)</summary>
+        <a href="#/micatro-mods/mod/jokertoggle" class="sub sub2" data-mod="jokertoggle">Joker Toggle</a>
         <a href="#/micatro-mods/mod/pokermon" class="sub sub2" data-mod="pokermon">Pokermon</a>
         <a href="#/micatro-mods/mod/nacho" class="sub sub2" data-mod="nacho">Nacho&#39;s Pokermon Dip</a>
         <a href="#/micatro-mods/mod/pokermonplus" class="sub sub2" data-mod="pokermonplus">Sonfive&#39;s Pokermon+</a>
@@ -125,6 +126,9 @@
   </div>
   <!-- bump ?v=… on a release to push fresh code+data to all clients (app.js
        reads this version and appends it to every sub-resource it loads) -->
-  <script src="app.js?v=20261028pt"></script>
+  <script src="app.js?v=20261110b78"></script>
+  <!-- no mouse needed: arrows / WASD / d-pad move, Z / Enter / A picks, X / B backs out (site/focusnav.js) -->
+  <script type="module">import { initFocusNav } from '/site/focusnav.js'; initFocusNav();</script>
+  <script type="module" src="/site/switcher.js"></script> <!-- the site's Games switcher (` / hold Esc / Start+Select / the header ⚙️); the wiki keeps its own header and never calls the account API -->
 </body>
 </html>

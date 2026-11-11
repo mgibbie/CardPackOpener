@@ -12,10 +12,11 @@
 // instead of being assumed.
 //
 //   node battlecards/tests/unit/person_agreement_test.mjs
+import { gameSource } from '../helpers/gamesource.mjs';   // game.js + the modules split out of it
 import fs from 'fs';
 import { plural, winLossLabel } from '../../runlabel.js';
 
-const src = fs.readFileSync(new URL('../../game.js', import.meta.url), 'utf8');
+const src = gameSource();
 let pass = 0, fail = 0;
 const ok = (l, c, x) => { if (c) { pass++; console.log('ok  - ' + l); } else { fail++; console.log('FAIL: ' + l + (x != null ? '  ' + x : '')); } };
 

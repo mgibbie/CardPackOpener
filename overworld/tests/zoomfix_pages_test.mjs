@@ -2,7 +2,7 @@
 // (a tester got stuck zoomed into Micatro; the same pattern was on these pages).
 // Covers site/zoomfix.js + site/zoomguard.js and the pages that load it:
 // overworld/index.html, overworld/pokechess.html, battlecards/viewer.html,
-// pairofpears/index.html, scoundrel/index.html (Micatro: micatro_zoom_test.mjs).
+// pairofpears/index.html (the Micatro-UI card game), scoundrel/index.html + scoundrel/classic/ (Micatro: micatro_zoom_test.mjs).
 //   node overworld/tests/zoomfix_pages_test.mjs
 import http from 'http';
 import fs from 'fs';
@@ -29,6 +29,7 @@ const PAGES = [
 	['/battlecards/viewer.html', true],
 	['/pairofpears/index.html', true],
 	['/scoundrel/index.html', true],
+	['/scoundrel/classic/index.html', true],   // (the original love.js build, kept reachable)
 	['/overworld/pokechess.html', false],
 ];
 

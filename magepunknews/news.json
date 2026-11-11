@@ -1,5 +1,5 @@
 {
-	"generated": "2026-11-03",
+	"generated": "2026-11-05",
 	"micatroAtlas": {
 		"@poke_primal_orbs": {
 			"src": "/micatro/mods/pokermon/assets/2x/primal_orbs.png",
@@ -392,9 +392,736 @@
 			"ch": 190,
 			"w": 1704,
 			"h": 2850
+		},
+		"@poke_AtlasJokersBasicGen08391": {
+			"src": "/micatro/mods/pokermon/assets/2x/Basic%20Series/AtlasJokersBasicGen08-391.png",
+			"cw": 142,
+			"ch": 190,
+			"w": 2272,
+			"h": 2850
 		}
 	},
 	"entries": [
+		{
+			"sha": "1c2ca81",
+			"date": "2026-11-10",
+			"kind": "patch",
+			"title": "Play every game by keyboard, controller or touch",
+			"body": "Every game — Micatro, MicaSurvivor, Battlecards, the overworld, Scoundrel, Pair of Pears and PokéChess — and the info pages can now be played three ways: keyboard only, with a controller, or by touch on your phone. There is one key scheme everywhere: arrows or WASD move, Z is A (confirm), X is B (back), C and V are the X and Y buttons for game actions, Q and E change page, Enter opens the menu and Backspace is Select. The new Games menu works from any page: press `, hold Esc, press Start and Select together, or tap ⚙️ to go Home or switch games, and it asks first if leaving would cost you a match or a run. Some old letter hotkeys have changed: Micatro's S, D, C and V; in the overworld C is now the bag and V the bike, and you hold X to run; and W no longer fights in Scoundrel. Also fixed: restoring an overworld save now asks with an in-game Yes/No, Battlecards' in-match pop-ups work with Enter or Z, Esc in the card zoom no longer leaves the page, and /collection/ fits on phones. The full key list is on the wiki's Controls page.",
+			"cards": []
+		},
+		{
+			"sha": "441da23",
+			"date": "2026-11-10",
+			"kind": "patch",
+			"title": "Pair of Pears, rebuilt on the Micatro look",
+			"body": "Pair of Pears is now just the card game, rebuilt as a native web game with the Micatro look: Balatro-style cards that flip, shimmer and dissolve, the swirling table, the same buttons, panels and fonts, and touch, keyboard and controller play on desktop and phone. The Meandering Meadow creature-catching part has been removed; its Meadows Theme stays on as the music. The rules are the same: flip two cards to find a pair, a mismatch costs half a Heart, matching the Pears wins the level on the spot, and the Level Shop between levels sells charms and fruit conditions for your Berries. Selling a charm now works (drag it onto Sell), the Egg Charm's sell value grows every level, and Flutter cards briefly reveal another card. Berries and Stars now belong to each run. Runs save after every move and pick up where you left off, and friends can watch you play live from their Friends list.",
+			"cards": []
+		},
+		{
+			"sha": "b671a9d",
+			"date": "2026-11-10",
+			"kind": "patch",
+			"title": "Scoundrel is back, rebuilt for the web",
+			"body": "Scoundrel, the solo dungeon card game, is now a native web game with the Micatro look: Balatro-style cards, the swirling table, the same buttons and fonts, and touch, keyboard and controller play on desktop and phone. The rules are the original game's: rooms of four, play three, monsters, weapons that dull with every kill, one potion per room, and Run! to send a room to the bottom of the deck. New: a run is a chain of dungeons. Clear one and the next starts with 1 less max HP (20, 19, 18 ...), at full health, down to dungeon 20. Your score is how many dungeons you cleared (then the last dungeon's Scoundrel score), with a leaderboard. Runs save after every move, finished runs can be replayed and shared as a link, and friends can watch you play live from their Friends list. The original build is still at /scoundrel/classic/.",
+			"cards": []
+		},
+		{
+			"sha": "513504b",
+			"date": "2026-11-09",
+			"kind": "micatro",
+			"title": "Pokermon: Kyogre, Groudon and Rayquaza made simple",
+			"body": "The weather trio and its Primal / Mega forms are now plain Legendaries with short tooltips: no weather, no Castform lock, no Primal Clash, no references to each other. Kyogre: +1 hand, scored Clubs retrigger once and give X1.25. Groudon: +1 discard, scored Hearts and Diamonds give X1.25. Rayquaza: +1 hand and +1 discard, gains X0.2 per Straight or Flush. Primal Kyogre: +2 hands, Clubs retrigger twice and give X1.5. Primal Groudon: +2 discards, Hearts and Diamonds give X1.75. Mega Rayquaza: +2 hands and +2 discards, gains X0.4 per Straight or Flush. Castform reads its own forecast again. Runs started before this replay exactly as they were played.",
+			"cards": []
+		},
+		{
+			"sha": "b453d99",
+			"date": "2026-11-09",
+			"kind": "micatro",
+			"title": "Micatro: a Page every ante",
+			"body": "You now get at least one Page every ante. The Small and Big Blinds still get a Pages screen 25% of the time each; if neither did (a skipped Blind counts as no Page), that ante's Boss Blind is guaranteed one, and the blind choice says “Page guaranteed this Boss”. A Boss after a Page earlier in the ante still has the usual 25% chance. Before, a Boss was only guaranteed a Page after a whole ante went by without one. In Multiplayer the Nemesis never has Pages, so there's no guarantee when the Boss is your Nemesis, and nothing carries over to the next ante (Showdown too). Controllers: left and right now step along the Pages in order, even while they're still sliding in. Runs started before this update keep the old rule.",
+			"cards": [],
+			"micatroFeatures": [
+				{
+					"id": "pages",
+					"title": "Pages",
+					"blurb": "Before some Blinds, pick one of 3 Pages: a twist for the round, a Round rule, and maybe a prize that raises the stakes.",
+					"wiki": "/designwiki/#/micatro/pages"
+				}
+			]
+		},
+		{
+			"sha": "b0a1205",
+			"date": "2026-11-09",
+			"kind": "micatro",
+			"title": "Micatro Multiplayer: the All Multiplayer Cards ruleset",
+			"body": "Micatro Multiplayer has a fourth ruleset: All Multiplayer Cards. It is Expanded with every Multiplayer card in play, including the three Expanded bans: SPEEDRUN (if you and your Nemesis both reach the Nemesis Blind within 30 seconds, each SPEEDRUN makes a Spectral card), Conjoined Joker (in a Nemesis round, X0.5 Mult for each hand your Nemesis has left, up to X3) and Defensive Joker (+125 Chips for each life you have fewer than your Nemesis). The Balanced and Expanded reworks are in too, Justice stays banned, and The Order and the PvP timer are on by default. Pick it in the lobby's Ruleset row. The Violet, Indigo and Orange Multiplayer decks also have new, fully original card backs.",
+			"cards": []
+		},
+		{
+			"sha": "1d262d6",
+			"date": "2026-11-09",
+			"kind": "micatro",
+			"title": "Micatro Multiplayer: 8 Multiplayer decks, 3 new stakes, custom decks in matches",
+			"body": "Micatro Multiplayer lobbies can now be played on 8 new decks, each with its own new art: Violet (+1 Voucher slot, Vouchers half price in ante 1 and 30% off in ante 2), Indigo (choose 1 more card from every Booster Pack, but no skipping a pack while you could take a card), Orange (two The Hanged Man and a free Mega Standard Pack to start), Oracle (Clearance Sale and Medium, but your money is capped at $50 plus your interest cap), Gradient (cards also count as one rank higher or lower for Jokers; 10s and Aces count as face cards), Heidelberg (leave a shop holding a consumable and you get a Negative copy of one), Echo (every scoring card is retriggered, but Blinds are 20% bigger and grow after each Boss) and Cocktail (three other decks' effects at once, picked by the seed). There are three new stakes above Gold, too: Planet, Spectral and Spectral+. The host picks them in the lobby; they're for Multiplayer only. The host can also bring one of their own custom decks into a match: both players play it.",
+			"cards": []
+		},
+		{
+			"sha": "c648ddf",
+			"date": "2026-11-09",
+			"kind": "micatro",
+			"title": "Micatro Multiplayer: the Expanded ruleset and 9 Multiplayer jokers",
+			"body": "Micatro Multiplayer has a third ruleset, Expanded, now the default for new lobbies. It is Balanced plus the Multiplayer cards, each with brand-new art: Skip-Off (+1 hand and +1 discard per blind you skipped more than your Nemesis), Let's Go Gambling (1 in 4 for X4 Mult and $10, but in a Nemesis round it can misfire and hand your Nemesis $10), Penny Pincher (money back for what your Nemesis spent in last ante's shop), Taxes (+4 Mult for every card your Nemesis sold this ante, gained when you enter a Nemesis round), Pizza (eaten at the end of a Nemesis round: +2 discards for the rest of the ante, and +1 for your Nemesis), Pacifist (X10 Mult outside Nemesis rounds) and the Asteroid planet (your Nemesis' best poker hand loses a level at the next Nemesis round). Defensive Joker, Conjoined Joker and SPEEDRUN exist too but are banned in Expanded, as in the original mod. Expanded also reworks Golden Ticket (Uncommon, $6), Seltzer (8 hands), Turtle Bean (+4 hand size) and Ouija (destroys 3 cards, no hand size lost). Your HUD shows your Nemesis' Multiplayer jokers whose effects can reach you.",
+			"cards": []
+		},
+		{
+			"sha": "58e1bdc",
+			"date": "2026-11-09",
+			"kind": "micatro",
+			"title": "Micatro Multiplayer: rulesets, The Order and the PvP timer",
+			"body": "Micatro Multiplayer lobbies now pick a ruleset. Vanilla is the original game. Balanced (the new default) makes a few balance changes: Hanging Chad retriggers the first two scoring cards once each, Bloodstone's rolls are the same for both players in a Nemesis round, Glass Cards are X1.5 (still 1 in 4 to break), and Justice is banned. The Order (on by default in Balanced) keeps both players' cards in step: the shops, packs, Bosses and deck shuffles come in the same order however differently you play, so a skip or a reroll never shifts what your opponent sees next. The PvP timer: in a Nemesis round the player ahead can start a 60-second clock on the one behind (+10 seconds for every hand they play, and the time animations take is given back); if it runs out they lose one hand. The lobby also shows the host's mod options, like Pokermon's generation filter, which both players play with. Solo runs are unchanged.",
+			"cards": []
+		},
+		{
+			"sha": "c69b1ba",
+			"date": "2026-11-08",
+			"kind": "micatro",
+			"title": "Micatro Multiplayer: Showdown, Survival, the Hurry timer and more",
+			"body": "Micatro Multiplayer lobbies have new options. Pick a mode when you create a lobby: Attrition (as before), Showdown (from ante 3 the Small, Big and Boss blinds are all Your Nemesis, so there is more time to prepare, then three duels an ante) or Survival (no Nemesis and one life each: whoever beats the furthest blind wins; if you fail first, you wait to see whether your opponent gets past you). The host can also turn on the Hurry timer (on by default: once you are READY at the Nemesis, press Hurry! to give a slower opponent 150 seconds to get there, or they lose a life, and again every 150 seconds until they arrive; skipping ahead earns extra time), hide the enemy score until you have played a hand, and play the Nemesis on a real Boss Blind with its effect on (the same boss for both players, most chips wins). The timer length, the time per skip and the Showdown starting ante are options too; your opponent sees every option before readying.",
+			"cards": []
+		},
+		{
+			"sha": "4e1fce9",
+			"date": "2026-11-08",
+			"kind": "micatro",
+			"title": "Micatro: every Pages screen has a safe pick",
+			"body": "Every Pages screen now offers at least one Fair Page with no prize: a middle-difficulty pick with no prize value added to the Blind's score target. When the 3 Pages you're offered have no such Page, one of them is re-rolled into one (from the seed, so a seed still always offers the same Pages); the other two stay as they were. Runs started before this update keep the Pages they were offered.",
+			"cards": [],
+			"micatroFeatures": [
+				{
+					"id": "pages",
+					"title": "Pages",
+					"blurb": "Before some Blinds, pick one of 3 Pages: a twist for the round, a Round rule, and maybe a prize that raises the stakes.",
+					"wiki": "/designwiki/#/micatro/pages"
+				}
+			]
+		},
+		{
+			"sha": "74ff657",
+			"date": "2026-11-08",
+			"kind": "micatro",
+			"title": "Micatro: Multiplayer — play a friend on the same seed",
+			"body": "Micatro now has Multiplayer (signed in). Create a lobby from the main menu — pick the deck, stake, seed and mods like a new run — and share its 5-letter code or link; friends see you waiting in a lobby on their friends list and can Join from there. Both players play the same seed, deck, stake and the host's mods. From ante 2 every Boss Blind is Your Nemesis: both press READY, a 3-2-1 countdown, and you enter together. There is no score target — you play all your hands while your opponent's score shows live, and when the one behind runs out of hands, the lower score loses a life (a tie costs nobody). Failing a normal blind costs a life too but never ends your run, and you get $4 of comeback money after losing one. Everyone starts with 4 lives; the last player with lives wins. The host can change the lives, the ante the Nemesis starts at, and more. Cards that would break the duel (Mr. Bones, Chicot, boss rerolls, ante changers and the mods' equivalents) are banned. Reloading rejoins your match; a player away for 2 minutes forfeits. At the end you see each other's Jokers and can Rematch. Friends can Watch a match.",
+			"cards": []
+		},
+		{
+			"sha": "7ee9b7e",
+			"date": "2026-11-08",
+			"kind": "micatro",
+			"title": "Micatro: Pages v2 — new targets, effects and prizes, Round rules, a Legendary tier",
+			"body": "Pages got a big update. A Pages screen now comes up on 25% of Blinds, and a Boss is guaranteed one if the whole ante before it had none. New targets: red or black cards, low / high / numbered cards, enhanced, unenhanced or sealed cards, the first or last scored card, one rank, the round's rank, or a Nature of three ranks. New effects: X1.1 Mult, +3 Mult in 5-card hands, retriggers, seals, turning into Glass / Steel / Gold, hand level-ups and Spectral cards, plus new downsides (-10 Chips, X0.9 Mult, cards destroyed, or debuffed for the round). 30% of Pages carry a Round rule: -1 hand, +1 discard, -1 hand size, no discards, or a doubled first hand. Half of all Pages have a prize, which can now be any specific Tarot, Planet, Spectral, Common or Uncommon Joker (or Basic Pokermon Joker), a Tag, Joker slots and more. Each prize raises the Blind's score target by 40% to 100% depending on how good it is, and the Page shows the total. The rarest Pages are Legendary, with Legendary Jokers, The Soul or an extra Joker slot as prizes. Runs started before this update keep the old Pages.",
+			"cards": [],
+			"micatroFeatures": [
+				{
+					"id": "pages",
+					"title": "Pages",
+					"blurb": "Before some Blinds, pick one of 3 Pages: a twist for the round, a Round rule, and maybe a prize that raises the stakes.",
+					"wiki": "/designwiki/#/micatro/pages"
+				}
+			]
+		},
+		{
+			"sha": "adbd151",
+			"date": "2026-11-07",
+			"kind": "micatro",
+			"title": "Micatro: Pages — pick one of 3 Pages before every Blind",
+			"body": "Before every Blind you now pick one of 3 Pages: a target (a suit, odd or even cards, face cards or Aces), what those cards do when they score (Chips, Mult, money, a chance at a Tarot or Planet, or a chance to turn Lucky / Bonus when discarded), a change to the Blind's score target (-10% to +30%), and a prize for beating it that grows with the risk: money, a named Tarot or Spectral, a free booster pack, or a next-shop perk (half off, 3 free rerolls, a Negative Joker). Pages come from the seed, so replays and spectators see the same ones. On in every run except challenges; switch them off in the Joker Toggle mod.",
+			"cards": [],
+			"micatroFeatures": [
+				{
+					"id": "pages",
+					"title": "Pages",
+					"blurb": "Before every Blind, pick one of 3 Pages: a twist for the round and a prize for beating it.",
+					"wiki": "/designwiki/#/micatro/pages"
+				}
+			]
+		},
+		{
+			"sha": "e7fbe5c",
+			"date": "2026-11-05",
+			"kind": "micatro",
+			"title": "Pokermon: final eight Mega forms and variants",
+			"body": "",
+			"cards": [],
+			"micatroMods": [
+				{
+					"id": "pokermon",
+					"name": "Pokermon",
+					"added": [
+						{
+							"key": "j_poke_mega_absol_z",
+							"name": "Mega Absol Z",
+							"set": "Joker",
+							"rarity": "mega",
+							"cost": 12,
+							"atlas": "@poke_AtlasJokersBasicGen03391",
+							"pos": {
+								"x": 2,
+								"y": 8
+							},
+							"soul": {
+								"x": 3,
+								"y": 8
+							}
+						},
+						{
+							"key": "j_poke_mega_garchomp_z",
+							"name": "Mega Garchomp Z",
+							"set": "Joker",
+							"rarity": "mega",
+							"cost": 12,
+							"atlas": "@poke_AtlasJokersBasicGen04391",
+							"pos": {
+								"x": 6,
+								"y": 7
+							},
+							"soul": {
+								"x": 7,
+								"y": 7
+							}
+						},
+						{
+							"key": "j_poke_mega_lucario_z",
+							"name": "Mega Lucario Z",
+							"set": "Joker",
+							"rarity": "mega",
+							"cost": 12,
+							"atlas": "@poke_AtlasJokersBasicGen04391",
+							"pos": {
+								"x": 8,
+								"y": 7
+							},
+							"soul": {
+								"x": 9,
+								"y": 7
+							}
+						},
+						{
+							"key": "j_poke_mega_heatran",
+							"name": "Mega Heatran",
+							"set": "Joker",
+							"rarity": "mega",
+							"cost": 12,
+							"atlas": "@poke_AtlasJokersBasicGen04391",
+							"pos": {
+								"x": 0,
+								"y": 8
+							},
+							"soul": {
+								"x": 1,
+								"y": 8
+							}
+						},
+						{
+							"key": "j_poke_mega_golurk",
+							"name": "Mega Golurk",
+							"set": "Joker",
+							"rarity": "mega",
+							"cost": 12,
+							"atlas": "@poke_AtlasJokersBasicGen05391",
+							"pos": {
+								"x": 6,
+								"y": 10
+							},
+							"soul": {
+								"x": 7,
+								"y": 10
+							}
+						},
+						{
+							"key": "j_poke_mega_magearna",
+							"name": "Mega Magearna",
+							"set": "Joker",
+							"rarity": "mega",
+							"cost": 12,
+							"atlas": "@poke_AtlasJokersBasicGen07391",
+							"pos": {
+								"x": 4,
+								"y": 6
+							},
+							"soul": {
+								"x": 5,
+								"y": 6
+							}
+						},
+						{
+							"key": "j_poke_mega_golisopod",
+							"name": "Mega Golisopod",
+							"set": "Joker",
+							"rarity": "mega",
+							"cost": 12,
+							"atlas": "@poke_AtlasJokersBasicGen07391",
+							"pos": {
+								"x": 0,
+								"y": 6
+							},
+							"soul": {
+								"x": 1,
+								"y": 6
+							}
+						},
+						{
+							"key": "j_poke_mega_zeraora",
+							"name": "Mega Zeraora",
+							"set": "Joker",
+							"rarity": "mega",
+							"cost": 12,
+							"atlas": "@poke_AtlasJokersBasicGen07391",
+							"pos": {
+								"x": 8,
+								"y": 6
+							},
+							"soul": {
+								"x": 9,
+								"y": 6
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"sha": "3b49f25",
+			"date": "2026-11-05",
+			"kind": "micatro",
+			"title": "Pokermon: seven Mega Dimension forms",
+			"body": "",
+			"cards": [],
+			"micatroMods": [
+				{
+					"id": "pokermon",
+					"name": "Pokermon",
+					"added": [
+						{
+							"key": "j_poke_mega_chimecho",
+							"name": "Mega Chimecho",
+							"set": "Joker",
+							"rarity": "mega",
+							"cost": 12,
+							"atlas": "@poke_AtlasJokersBasicGen03391",
+							"pos": {
+								"x": 0,
+								"y": 8
+							},
+							"soul": {
+								"x": 1,
+								"y": 8
+							}
+						},
+						{
+							"key": "j_poke_mega_staraptor",
+							"name": "Mega Staraptor",
+							"set": "Joker",
+							"rarity": "mega",
+							"cost": 12,
+							"atlas": "@poke_AtlasJokersBasicGen04391",
+							"pos": {
+								"x": 4,
+								"y": 7
+							},
+							"soul": {
+								"x": 5,
+								"y": 7
+							}
+						},
+						{
+							"key": "j_poke_mega_meowstic",
+							"name": "Mega Meowstic",
+							"set": "Joker",
+							"rarity": "mega",
+							"cost": 12,
+							"atlas": "@poke_AtlasJokersBasicGen06391",
+							"pos": {
+								"x": 6,
+								"y": 13
+							},
+							"soul": {
+								"x": 7,
+								"y": 13
+							}
+						},
+						{
+							"key": "j_poke_mega_crabominable",
+							"name": "Mega Crabominable",
+							"set": "Joker",
+							"rarity": "mega",
+							"cost": 12,
+							"atlas": "@poke_AtlasJokersBasicGen07391",
+							"pos": {
+								"x": 10,
+								"y": 5
+							},
+							"soul": {
+								"x": 11,
+								"y": 5
+							}
+						},
+						{
+							"key": "j_poke_mega_scovillain",
+							"name": "Mega Scovillain",
+							"set": "Joker",
+							"rarity": "mega",
+							"cost": 12,
+							"atlas": "@poke_AtlasJokersBasicGen09391",
+							"pos": {
+								"x": 8,
+								"y": 6
+							},
+							"soul": {
+								"x": 9,
+								"y": 6
+							}
+						},
+						{
+							"key": "j_poke_mega_glimmora",
+							"name": "Mega Glimmora",
+							"set": "Joker",
+							"rarity": "mega",
+							"cost": 12,
+							"atlas": "@poke_AtlasJokersBasicGen09391",
+							"pos": {
+								"x": 0,
+								"y": 7
+							},
+							"soul": {
+								"x": 1,
+								"y": 7
+							}
+						},
+						{
+							"key": "j_poke_mega_tatsugiri",
+							"name": "Mega Tatsugiri",
+							"set": "Joker",
+							"rarity": "mega",
+							"cost": 12,
+							"atlas": "@poke_AtlasJokersBasicGen09391",
+							"pos": {
+								"x": 2,
+								"y": 7
+							},
+							"soul": {
+								"x": 3,
+								"y": 7
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"sha": "dbd7496",
+			"date": "2026-11-04",
+			"kind": "micatro",
+			"title": "Pokermon: Mega batch F and safer Mega Stones",
+			"body": "",
+			"cards": [],
+			"micatroMods": [
+				{
+					"id": "pokermon",
+					"name": "Pokermon",
+					"added": [
+						{
+							"key": "j_poke_mega_froslass",
+							"name": "Mega Froslass",
+							"set": "Joker",
+							"rarity": "mega",
+							"cost": 12,
+							"atlas": "@poke_AtlasJokersBasicGen04391",
+							"pos": {
+								"x": 10,
+								"y": 7
+							},
+							"soul": {
+								"x": 11,
+								"y": 7
+							}
+						},
+						{
+							"key": "j_poke_mega_emboar",
+							"name": "Mega Emboar",
+							"set": "Joker",
+							"rarity": "mega",
+							"cost": 12,
+							"atlas": "@poke_AtlasJokersBasicGen05391",
+							"pos": {
+								"x": 6,
+								"y": 9
+							},
+							"soul": {
+								"x": 7,
+								"y": 9
+							}
+						},
+						{
+							"key": "j_poke_mega_excadrill",
+							"name": "Mega Excadrill",
+							"set": "Joker",
+							"rarity": "mega",
+							"cost": 12,
+							"atlas": "@poke_AtlasJokersBasicGen05391",
+							"pos": {
+								"x": 8,
+								"y": 9
+							},
+							"soul": {
+								"x": 9,
+								"y": 9
+							}
+						},
+						{
+							"key": "j_poke_mega_scolipede",
+							"name": "Mega Scolipede",
+							"set": "Joker",
+							"rarity": "mega",
+							"cost": 12,
+							"atlas": "@poke_AtlasJokersBasicGen05391",
+							"pos": {
+								"x": 10,
+								"y": 9
+							},
+							"soul": {
+								"x": 11,
+								"y": 9
+							}
+						},
+						{
+							"key": "j_poke_mega_scrafty",
+							"name": "Mega Scrafty",
+							"set": "Joker",
+							"rarity": "mega",
+							"cost": 12,
+							"atlas": "@poke_AtlasJokersBasicGen05391",
+							"pos": {
+								"x": 0,
+								"y": 10
+							},
+							"soul": {
+								"x": 1,
+								"y": 10
+							}
+						},
+						{
+							"key": "j_poke_mega_eelektross",
+							"name": "Mega Eelektross",
+							"set": "Joker",
+							"rarity": "mega",
+							"cost": 12,
+							"atlas": "@poke_AtlasJokersBasicGen05391",
+							"pos": {
+								"x": 2,
+								"y": 10
+							},
+							"soul": {
+								"x": 3,
+								"y": 10
+							}
+						},
+						{
+							"key": "j_poke_mega_chandelure",
+							"name": "Mega Chandelure",
+							"set": "Joker",
+							"rarity": "mega",
+							"cost": 12,
+							"atlas": "@poke_AtlasJokersBasicGen05391",
+							"pos": {
+								"x": 4,
+								"y": 10
+							},
+							"soul": {
+								"x": 5,
+								"y": 10
+							}
+						},
+						{
+							"key": "j_poke_mega_chesnaught",
+							"name": "Mega Chesnaught",
+							"set": "Joker",
+							"rarity": "mega",
+							"cost": 12,
+							"atlas": "@poke_AtlasJokersBasicGen06391",
+							"pos": {
+								"x": 8,
+								"y": 12
+							},
+							"soul": {
+								"x": 9,
+								"y": 12
+							}
+						},
+						{
+							"key": "j_poke_mega_delphox",
+							"name": "Mega Delphox",
+							"set": "Joker",
+							"rarity": "mega",
+							"cost": 12,
+							"atlas": "@poke_AtlasJokersBasicGen06391",
+							"pos": {
+								"x": 10,
+								"y": 12
+							},
+							"soul": {
+								"x": 11,
+								"y": 12
+							}
+						},
+						{
+							"key": "j_poke_mega_greninja",
+							"name": "Mega Greninja",
+							"set": "Joker",
+							"rarity": "mega",
+							"cost": 12,
+							"atlas": "@poke_AtlasJokersBasicGen06391",
+							"pos": {
+								"x": 0,
+								"y": 13
+							},
+							"soul": {
+								"x": 1,
+								"y": 13
+							}
+						},
+						{
+							"key": "j_poke_mega_pyroar",
+							"name": "Mega Pyroar",
+							"set": "Joker",
+							"rarity": "mega",
+							"cost": 12,
+							"atlas": "@poke_AtlasJokersBasicGen06391",
+							"pos": {
+								"x": 2,
+								"y": 13
+							},
+							"soul": {
+								"x": 3,
+								"y": 13
+							}
+						},
+						{
+							"key": "j_poke_mega_floette",
+							"name": "Mega Floette",
+							"set": "Joker",
+							"rarity": "mega",
+							"cost": 12,
+							"atlas": "@poke_AtlasJokersBasicGen06391",
+							"pos": {
+								"x": 4,
+								"y": 13
+							},
+							"soul": {
+								"x": 5,
+								"y": 13
+							}
+						},
+						{
+							"key": "j_poke_mega_malamar",
+							"name": "Mega Malamar",
+							"set": "Joker",
+							"rarity": "mega",
+							"cost": 12,
+							"atlas": "@poke_AtlasJokersBasicGen06391",
+							"pos": {
+								"x": 8,
+								"y": 13
+							},
+							"soul": {
+								"x": 9,
+								"y": 13
+							}
+						},
+						{
+							"key": "j_poke_mega_barbaracle",
+							"name": "Mega Barbaracle",
+							"set": "Joker",
+							"rarity": "mega",
+							"cost": 12,
+							"atlas": "@poke_AtlasJokersBasicGen06391",
+							"pos": {
+								"x": 10,
+								"y": 13
+							},
+							"soul": {
+								"x": 11,
+								"y": 13
+							}
+						},
+						{
+							"key": "j_poke_mega_dragalge",
+							"name": "Mega Dragalge",
+							"set": "Joker",
+							"rarity": "mega",
+							"cost": 12,
+							"atlas": "@poke_AtlasJokersBasicGen06391",
+							"pos": {
+								"x": 0,
+								"y": 14
+							},
+							"soul": {
+								"x": 1,
+								"y": 14
+							}
+						},
+						{
+							"key": "j_poke_mega_hawlucha",
+							"name": "Mega Hawlucha",
+							"set": "Joker",
+							"rarity": "mega",
+							"cost": 12,
+							"atlas": "@poke_AtlasJokersBasicGen06391",
+							"pos": {
+								"x": 2,
+								"y": 14
+							},
+							"soul": {
+								"x": 3,
+								"y": 14
+							}
+						},
+						{
+							"key": "j_poke_mega_zygarde",
+							"name": "Mega Zygarde",
+							"set": "Joker",
+							"rarity": "mega",
+							"cost": 12,
+							"atlas": "@poke_AtlasJokersBasicGen06391",
+							"pos": {
+								"x": 4,
+								"y": 14
+							},
+							"soul": {
+								"x": 5,
+								"y": 14
+							}
+						},
+						{
+							"key": "j_poke_mega_falinks",
+							"name": "Mega Falinks",
+							"set": "Joker",
+							"rarity": "mega",
+							"cost": 12,
+							"atlas": "@poke_AtlasJokersBasicGen08391",
+							"pos": {
+								"x": 0,
+								"y": 14
+							},
+							"soul": {
+								"x": 1,
+								"y": 14
+							}
+						}
+					]
+				}
+			]
+		},
 		{
 			"sha": "56ba07d",
 			"date": "2026-11-04",

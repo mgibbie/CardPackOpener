@@ -18,6 +18,7 @@ import {
   calculate_reroll_cost, reset_idol_card, reset_mail_rank, reset_ancient_card, reset_castle_card,
   reset_blinds, get_new_boss, get_next_voucher_key, get_next_tag_key, get_blind_amount,
   mod_chips, mod_mult, set_hand_usage, number_format, probability_roll, mod_context_effect, mod_effect_tail,
+  ante_based, order_round_based,
 } from './core.js';
 import { Blind } from './blind.js';
 import * as B from './bignum.js';
@@ -31,6 +32,8 @@ import './consumables.js';
 import { CUSTOM_DECK_ID, CUSTOM_DECK_BACK, validateDeck } from './customdeck.js';
 import { CHALLENGE_ID, findChallenge, prepareChallenge, apply_challenge, challenge_protos, challengeBack, challengeMods } from './challenge.js';
 import { SLEEVE_ID, findSleeve, sleeveFor, prepareSleeve, apply_sleeve } from './sleeve.js';
+import { PVP_INTERNAL, pvpConfig, setupPvp, pvpMods, pvpReset, pvpRoundLost, pvpRoundWon, pvpSkipped, pvpActionError, pvpApply, pvpSlot } from './pvp.js';
+import { decidePages, generatePages, applyPageChips, pageIndividual, pageDiscard, pagePrizeRow, openPagePack, shopOpening, shopStocked, shopClosing, pageRepetitions, pageDestroys, pageRoundStart, pageScoreAdded, pageRemovePending, pageRemoveCard, pageRolls, pageSeen } from './pages.js';
 // (Steamodded seams for Pokermon 3.9.1: opt-in contexts, Blind:calculate, the object_weights shop roll — no-ops unless a mod uses them)
 import { wanted, calculate_seam, modify_scoring_hand, blind_calculate, SEAM_STATE, object_weights, poll_object, poll_object_type, merge_defaults, mod_calculate, seam_mod, quantum_mod_calculate, held_card_limit,
   eor_retrigger_seam, eor_seam_center, not_eor_seam_center, eor_calculated } from './smods.js';
@@ -41,6 +44,12 @@ export const STATES = {
   STANDARD_PACK: 17, BUFFOON_PACK: 18, NEW_ROUND: 19,
   // Mod boosters (SMODS_BOOSTER_OPENED in Steamodded): with / without the hand drawn.
   MOD_PACK: 20, MOD_PACK_HAND: 21,
+  // Micatro's Pages (engine/pages.js): a Blind was selected, the player picks one of 3 Pages before the round starts.
+  PAGES: 22,
+  // Pages v2's "remove a card of your choice" prize: after the cash-out, before the shop, the player picks a deck card to remove.
+  PAGE_REMOVE: 23,
+  // Multiplayer (engine/pvp.js): out of hands in the Nemesis blind, waiting for the referee's result
+  PVP_WAIT: 24,
 };
 export const STATE_NAMES = Object.fromEntries(Object.entries(STATES).map(([k, v]) => [v, k]));
 SEAM_STATE.STATES = STATES;
@@ -139,12 +148,16 @@ export function pump() {
 
 const STATE_HANDLERS = {
   [STATES.SELECTING_HAND]() {
-    if (G.hand.cards.length < 1 && G.deck.cards.length < 1) end_round();
+    // (Multiplayer: out of cards in the Nemesis blind -> out of hands, waiting for the result — the mod's deck-out)
+    if (G.hand.cards.length < 1 && G.deck.cards.length < 1 && G.GAME.pvp_blind) { G.GAME.current_round.hands_left = 0; G.STATE = STATES.PVP_WAIT; G.STATE_COMPLETE = false; }
+    else if (G.hand.cards.length < 1 && G.deck.cards.length < 1) end_round();
     else check_hand_lock();
   },
   [STATES.HAND_PLAYED]() {
     G.E_MANAGER.add_event(() => {
-      if (B.beats(G.GAME.chips, G.GAME.blind.chips) || G.GAME.current_round.hands_left < 1) G.STATE = STATES.NEW_ROUND;
+      // (Multiplayer's Nemesis: no target — every hand is played; out of hands, wait for the referee)
+      if (G.GAME.pvp_blind) G.STATE = G.GAME.current_round.hands_left < 1 ? STATES.PVP_WAIT : STATES.DRAW_TO_HAND;
+      else if (B.beats(G.GAME.chips, G.GAME.blind.chips) || G.GAME.current_round.hands_left < 1) G.STATE = STATES.NEW_ROUND;
       else G.STATE = STATES.DRAW_TO_HAND;
       G.STATE_COMPLETE = false;
     });
@@ -195,11 +208,16 @@ const STATE_HANDLERS = {
       G.GAME.blind_on_deck = !gone(bs.Small) ? 'Small' : !gone(bs.Big) ? 'Big' : 'Boss';
       bs[G.GAME.blind_on_deck] = 'Select';
       emit('blind_select', { on_deck: G.GAME.blind_on_deck });
+      // (a Page's prize pack waiting for a shop a mod skipped — Bunco's The Miser: it opens here, like a tag's)
+      if (G.GAME.page_pack && openPagePack(use_card)) return;
       if (ACTIVE_MODS.length) callHook('blind_on_deck', G.GAME.blind_on_deck); // (a custom deck's skip-disable rolls)
       for (const t of G.GAME.tags.slice()) t.apply_to_run({ type: 'immediate' });
       for (const t of G.GAME.tags.slice()) if (t.apply_to_run({ type: 'new_blind_choice' })) break;
     });
   },
+  [STATES.PAGES]() { emit('pages_open', { blind: G.GAME.pages && G.GAME.pages.blind }); },
+  [STATES.PAGE_REMOVE]() { emit('page_remove_open', {}); },
+  [STATES.PVP_WAIT]() { emit('pvp_wait', { chips: G.GAME.chips }); },
   [STATES.TAROT_PACK]() { G.E_MANAGER.add_event(() => draw_from_deck_to_hand()); },
   [STATES.SPECTRAL_PACK]() { G.E_MANAGER.add_event(() => draw_from_deck_to_hand()); },
   [STATES.PLANET_PACK]() {},
@@ -244,16 +262,26 @@ export function newRun(args = {}) {
   if (chal && chal.daily_seed && typeof args.daily === 'string' && /^\d{8}$/.test(args.daily)) args = { ...args, seed: chal.daily_seed(args.daily), seeded: false };
   if (chal || sleeve0) { prepareChallenge(chal); prepareSleeve(sleeveFor(sleeve0, args.back)); }
   const runMods = (ids) => (chal ? [...ids, ...challengeMods(chal), CHALLENGE_ID] : sleeve0 ? [...ids, sleeve0.mod, SLEEVE_ID] : ids);
+  // A Multiplayer match (engine/pvp.js): its internal rules mod (+ the options it forces). Not with a challenge / custom deck.
+  // (stage 7c: a match may play the host's custom deck — its definition is in the lobby, validated here on both engines)
+  const pvp = !chal ? pvpConfig(args.pvp) : null;
+  const pm = pvp ? pvpMods(args.mods || [], args.modOptions || {}, pvp, args) : null;
+  pvpReset(); // (a ruleset's reworked vanilla centers: back to vanilla before any run)
   // Mods first: they decide what the pools contain and may adjust the game object.
-  activateMods(runMods(cdeck ? [...(args.mods || []), ...cdeck.mods, CUSTOM_DECK_ID] : (args.mods || [])), args.modOptions || {});
+  activateMods(runMods(pm ? (cdeck ? [...pm.ids, ...cdeck.mods.filter((id) => !pm.ids.includes(id)), CUSTOM_DECK_ID] : pm.ids) : cdeck ? [...(args.mods || []), ...cdeck.mods, CUSTOM_DECK_ID] : (args.mods || [])), pm ? pm.options : (args.modOptions || {}));
   rebuild_handlist(); // (mod poker hands join the hand list; the base list otherwise)
   G.GAME = init_game_object();
   G.GAME.mods = cdeck ? ACTIVE_MODS.filter((id) => id !== CUSTOM_DECK_ID) : ACTIVE_MODS.slice();
   G.GAME.mod_options = allOptions();
   if (cdeck) { delete G.GAME.mod_options[CUSTOM_DECK_ID]; G.GAME.custom_deck = cdeck; }
   if (chal || sleeve0) { G.GAME.mods = G.GAME.mods.filter((id) => id !== CHALLENGE_ID && id !== SLEEVE_ID); delete G.GAME.mod_options[CHALLENGE_ID]; delete G.GAME.mod_options[SLEEVE_ID]; }
+  if (pvp) { G.GAME.mods = G.GAME.mods.filter((id) => !PVP_INTERNAL.includes(id)); for (const id of PVP_INTERNAL) delete G.GAME.mod_options[id]; setupPvp(pvp); }
   for (const t of activeConsumableTypes()) G.GAME[t.rate_key] = t.shop_rate || 0;
+  // Pages (engine/pages.js): from engine rules rev 2 — `engineRev` is the run's (session.js passes the recipe's; omitted =
+  // the legacy rules, which the engine unit tests play on) — unless a challenge or the Joker Toggle switch says no.
+  decidePages(args.engineRev, chal);
   callHook('init_game_object', G.GAME);
+  if (pvp && cdeck) G.GAME.win_ante = 999; // (a custom deck's own winning ante never ends a match)
   // Mod stakes (SMODS.Stake): `stake` may be an active mod stake's key (see mod_stake_chain);
   // it plays at the level of the stakes it applies, then runs its modifiers() below.
   const modStakes = mod_stake_chain(args.stake);
@@ -479,6 +507,11 @@ function new_round() {
     else { rr.blind_states.Boss = 'Current'; blhash = 'L'; }
     G.GAME.subhash = rr.ante + blhash;
     G.GAME.blind.set_blind(rr.blind);
+    // the round's Page: its required-score percent on the Blind's own size (The Wall / Violet Vessel included), before the
+    // jokers' setting_blind (Chicot's disable halves the result; Pokermon's Wo-Chien's -15% applies on top)
+    if (G.GAME.page) applyPageChips();
+    // (Pages v2: the Page's Round rule, and a "+1 hand size next round" prize)
+    if (G.GAME.page || G.GAME.page_next_hs) pageRoundStart();
     callHook('new_round');
     for (const j of G.jokers.cards.slice()) {
       const sctx = { setting_blind: true, blind: rr.blind };
@@ -490,7 +523,7 @@ function new_round() {
     if (ACTIVE_MODS.length) blind_calculate({ setting_blind: true, blind: rr.blind });
     G.E_MANAGER.add_event(() => {
       G.STATE = STATES.DRAW_TO_HAND;
-      G.deck.shuffle('nr' + rr.ante);
+      G.deck.shuffle('nr' + order_round_based(true)); // (The Order: one shuffle key per blind — core.js)
       G.STATE_COMPLETE = false;
     });
   });
@@ -502,6 +535,13 @@ function end_round() {
   G.E_MANAGER.add_event(() => {
     let game_over = true, game_won = false;
     if (B.beats(G.GAME.chips, G.GAME.blind.chips)) game_over = false;
+    // Multiplayer: a failed blind never ends the run (a normal one costs a life; the Nemesis has no target)
+    if (G.GAME.pvp) {
+      if (G.GAME.pvp_blind) G.GAME.pvp_eval = true; // (a PvP round: its cash-out pays no unused-hands money — pvp.js)
+      const rr0 =G.GAME.round_resets, pslot = rr0.blind === P_BLINDS.bl_small ? 'Small' : rr0.blind === P_BLINDS.bl_big ? 'Big' : 'Boss';
+      if (game_over && pvpRoundLost(pslot)) game_over = false;
+      else pvpRoundWon(pslot);
+    }
     // (smods.js eor_retrigger_seam: an opted-in mod's held-card centers are evaluated per pass in the loop below)
     const eor = eor_retrigger_seam();
     let pceor;
@@ -633,6 +673,7 @@ function end_round() {
       reset_castle_card();
       callHook('reset_game_globals', false);
       for (const v of G.playing_cards) { v.ability.discarded = undefined; v.ability.forced_selection = undefined; }
+      if (G.GAME.pvp) G.GAME.pvp_blind = undefined;
     });
   });
 }
@@ -1129,6 +1170,8 @@ function evaluate_play() {
           }
         }
       }
+      if (G.GAME.page) pageRepetitions(sc, reps, { scoring_hand }); // (a "retrigger" Page: its 1 in 4, after the jokers')
+      if (ACTIVE_MODS.length) callHook('deck_repetitions', sc, reps, 'play'); // (a deck retriggering cards: Multiplayer's Echo Deck)
       for (let r = 0; r < reps.length; r++) {
         if (reps[r] !== 1) card_eval_status_text((reps[r].jokers || reps[r].seals).card, 'jokers', null, null, null, reps[r].jokers || reps[r].seals);
         sc.lucky_procs = undefined;
@@ -1181,6 +1224,8 @@ function evaluate_play() {
           // Mod effects on the card itself after its seal (SMODS trigger order: AMM Aspects), each a full SMODS effect.
           if (ef.post_effects) for (const pe of ef.post_effects) [hand_chips, mult] = smods_effect(pe, sc, hand_chips, mult);
         }
+        // the round's Page (engine/pages.js): on every scoring trigger of a card it targets, after the jokers
+        if (G.GAME.page) [hand_chips, mult] = pageIndividual(sc, hand_chips, mult, { scoring_hand, text });
       }
     };
     // SMODS optional feature 'unscored' (a mod turns it on): the played cards that don't score get their own
@@ -1248,6 +1293,8 @@ function evaluate_play() {
               }
             }
           }
+          // (a deck retriggering held cards that have an effect: Multiplayer's Echo Deck)
+          if (ACTIVE_MODS.length && (next(effects[0]) || effects.length > 1)) callHook('deck_repetitions', hc, reps, 'hand');
         }
         for (const ef of effects) {
           if (ef.card) juice_card(ef.card);
@@ -1400,6 +1447,8 @@ function evaluate_play() {
       // rolls the Glass break too (SMODS runs m_glass's destroy_card on the quantum ability).
       const q_glass = ACTIVE_MODS.length > 0 && sc.ability.name !== 'Glass Card' && !sc.debuff && quantum_enhancements(sc).includes('m_glass');
       if (q_glass && probability_roll(sc, 'glass', 1, P_CENTERS.m_glass.config.extra)) destroyed = true;
+      // (a "destroyed after scoring" Page: its 1 in 8 for a scored target card)
+      if (!destroyed && G.GAME.page && pageDestroys(sc, { scoring_hand })) destroyed = true;
       if (destroyed) {
         if (sc.ability.name === 'Glass Card' || q_glass) sc.shattered = true; else sc.destroyed = true;
         cards_destroyed.push(sc);
@@ -1446,7 +1495,8 @@ function evaluate_play() {
   if (B.lt(G.GAME.round_scores.hand.amt, total)) G.GAME.round_scores.hand.amt = total;
   G.GAME.last_hand_total = total;
   // (a mod may change what the hand adds to the round score — Bunco's Magenta Dagger subtracts it)
-  const added = ACTIVE_MODS.length ? reduceHook('chips_scored', total, { full_hand: G.play.cards, scoring_hand, scoring_name: text }) : total;
+  let added = ACTIVE_MODS.length ? reduceHook('chips_scored', total, { full_hand: G.play.cards, scoring_hand, scoring_name: text }) : total;
+  if (G.GAME.page) added = pageScoreAdded(added); // (a Page's "the first hand's score counts double")
   G.E_MANAGER.add_event(() => {
     G.GAME.chips = B.add(G.GAME.chips, added);
     emit('chips', { total: G.GAME.chips, add: added });
@@ -1475,7 +1525,8 @@ function evaluate_round() {
   const rows = [];
   let dollars = 0;
   const row = (r) => { rows.push(r); };
-  if (B.beats(G.GAME.chips, G.GAME.blind.chips)) {
+  // (Multiplayer: a failed normal blind counts as passed — its reward is paid, as in the mod)
+  if (B.beats(G.GAME.chips, G.GAME.blind.chips) || G.GAME.pvp_failed) {
     row({ name: 'blind1', dollars: G.GAME.blind.dollars, blind: G.GAME.blind.config.blind && G.GAME.blind.config.blind.key });
     dollars += G.GAME.blind.dollars;
   } else {
@@ -1503,10 +1554,12 @@ function evaluate_round() {
   });
   // (a mod may stop the interest while one of its cards is held: Pokermon+ 1.2.0's Lechonk / Oinkologne, its lovely patch on this row)
   if (G.GAME.dollars >= 5 && !G.GAME.modifiers.no_interest && !(ACTIVE_MODS.length && callHook('no_interest').includes(true))) {
-    const d = G.GAME.interest_amount * Math.min(Math.floor(G.GAME.dollars / 5), G.GAME.interest_cap / 5);
-    row({ name: 'interest', dollars: d, bonus: true, disp: G.GAME.interest_amount });
+    // (+ a Page's "interest cap +$5 at the next cash-out" prize)
+    const d = G.GAME.interest_amount * Math.min(Math.floor(G.GAME.dollars / 5), (G.GAME.interest_cap + (G.GAME.page_interest || 0)) / 5);
+    row({ name: 'interest', dollars: d, bonus: true, disp: G.GAME.interest_amount, ...(G.GAME.page_interest ? { page_cap: G.GAME.interest_cap + G.GAME.page_interest } : {}) });
     dollars += d;
   }
+  if (G.GAME.page_interest) G.GAME.page_interest = undefined; // (that cash-out only — a prize won below waits for the next)
   // Steamodded's modify_final_cashout context {amount}: a listener's {modify = n} adds n (its own bonus row).
   if (ACTIVE_MODS.length && wanted('modify_final_cashout')) {
     const ctx = { modify_final_cashout: true, amount: dollars };
@@ -1515,11 +1568,14 @@ function evaluate_round() {
     dollars = ctx.amount;
   }
   for (const r of callHook('evaluate_round', rows)) for (const row of [].concat(r)) { rows.push(row); dollars += row.dollars || 0; }
+  // the round's Page: its prize when the Blind was beaten (not when Mr. Bones saved the run); the Page ends here
+  if (G.GAME.page) dollars += pagePrizeRow(row, B.beats(G.GAME.chips, G.GAME.blind.chips));
   G.GAME.current_round.dollars = dollars;
   const pb = G.GAME.blind.config && G.GAME.blind.config.blind;
   // The blind is cleared on defeat (as in Lua); keep what the cash-out screen shows.
   const blind = pb ? { key: pb.key, name: G.GAME.blind.name, chips: G.GAME.blind.chips, dollars: G.GAME.blind.dollars, boss: !!G.GAME.blind.boss, colour: pb.boss_colour, pos: pb.pos, defeated: true } : null;
   G.GAME.round_eval = { rows, total: dollars, blind };
+  if (G.GAME.pvp_failed) G.GAME.pvp_failed = undefined;
   emit('round_eval', { rows, total: dollars });
   if (undo) for (const f of undo) f();
 }
@@ -1541,7 +1597,7 @@ export function create_card_for_shop(area) {
   const mod_types = ACTIVE_MODS.length ? [].concat(...callHook('shop_card_types')) : [];
   const total_rate = G.GAME.joker_rate + G.GAME.tarot_rate + G.GAME.planet_rate + G.GAME.playing_card_rate + G.GAME.spectral_rate +
     activeConsumableTypes().reduce((n, t) => n + (G.GAME[t.rate_key] || 0), 0) + mod_types.reduce((n, t) => n + (t.val || 0), 0);
-  const polled = pseudorandom(pseudoseed('cdt' + G.GAME.round_resets.ante)) * total_rate;
+  const polled = pseudorandom(pseudoseed('cdt' + ante_based())) * total_rate;
   let check = 0;
   const opts = [
     { type: 'Joker', val: G.GAME.joker_rate },
@@ -1579,7 +1635,7 @@ export function create_card_for_shop(area) {
  */
 function create_shop_card(area) {
   const ante = G.GAME.round_resets.ante;
-  const card_args = { type: poll_object_type({ seed: 'cdt' + ante }), area };
+  const card_args = { type: poll_object_type({ seed: 'cdt' + ante_based() }), area };
   card_args.key = poll_object({ type: card_args.type, append: 'sho', guaranteed: card_args.type === 'Enhanced' });
   if (card_args.key === 'INTERNAL_PLAYING_CARD') { card_args.key = undefined; card_args.set = 'Base'; }
   const flags = calculate_seam({ create_shop_card: true, set: card_args.type, key: card_args.key, cardarea: area }, 'create_shop_card');
@@ -1609,6 +1665,7 @@ function create_shop_card(area) {
 function update_shop() {
   G.shop_open = true;
   G.E_MANAGER.add_event(() => {
+    if (G.GAME.page_shop && !G.shop_populated) shopOpening(); // (a Page's next-shop prize: Half off, free rerolls)
     for (const t of G.GAME.tags.slice()) t.apply_to_run({ type: 'shop_start' });
     callHook('shop_start');
     if (!G.shop_populated) {
@@ -1639,7 +1696,9 @@ function update_shop() {
       if (ACTIVE_MODS.length) callHook('voucher_add', 'after_tags');
       for (const t of G.GAME.tags.slice()) t.apply_to_run({ type: 'shop_final_pass' });
       if (ACTIVE_MODS.length) callHook('shop_stocked'); // (BETMMA's Bargain / Clearance Aisle)
+      if (G.GAME.page_shop_now) shopStocked(); // (a Page's Negative Joker; Half off re-prices the stock)
     }
+    if (G.GAME.page_pack) openPagePack(use_card); // (a Page's prize pack, opened as the shop opens)
   });
 }
 /**
@@ -1848,6 +1907,7 @@ function skip_blind() {
   if (!tagKey) return;
   add_tag(new Tag(tagKey, false, skipped));
   const skip_to = skipped === 'Small' ? 'Big' : 'Boss';
+  if (G.GAME.pvp) pvpSkipped(skipped); // (Multiplayer: a skip counts as beaten for the referee)
   rr.blind_states[skipped] = 'Skipped';
   rr.blind_states[skip_to] = 'Select';
   G.GAME.blind_on_deck = skip_to;
@@ -1951,6 +2011,7 @@ function toggle_shop() {
     clear_area(G.shop_vouchers);
     clear_area(G.shop_booster);
     if (ACTIVE_MODS.length) callHook('shop_end'); // (a Lua G.FUNCS.toggle_shop wrap: Reverie ends its Cine shop)
+    if (G.GAME.page_half_off) shopClosing();
     G.shop_open = false;
     G.shop_populated = false;
     G.STATE_COMPLETE = false;
@@ -1959,7 +2020,7 @@ function toggle_shop() {
 }
 
 function cash_out() {
-  G.deck.shuffle('cashout' + G.GAME.round_resets.ante);
+  G.deck.shuffle('cashout' + order_round_based(true));
   G.E_MANAGER.add_event(() => {
     G.GAME.round_eval = null;
     G.GAME.current_round.jokers_purchased = 0;
@@ -1969,6 +2030,8 @@ function cash_out() {
     if (ACTIVE_MODS.length) callHook('round_counts', 'after', 'cash_out');
     // (a mod may skip the shop: Bunco's The Miser)
     G.STATE = (ACTIVE_MODS.length && callHook('skip_shop').includes(true)) ? STATES.BLIND_SELECT : STATES.SHOP;
+    // (a Page's "remove a card" prize: its screen first, then on to the shop / blind choice)
+    if (pageRemovePending()) { G.GAME.page_remove_then = G.STATE; G.STATE = STATES.PAGE_REMOVE; }
     G.GAME.shop_free = null;
     G.GAME.shop_d6ed = null;
     G.STATE_COMPLETE = false;
@@ -2009,7 +2072,9 @@ export function play_cards_from_highlighted() {
   }
   G.GAME.blind.press_play();
   G.E_MANAGER.add_event(() => {
-    G.E_MANAGER.add_event(() => evaluate_play());
+    // (nothing left to score — every played card was taken away before scoring, e.g. a mod's free play of a destroyed card:
+    //  Balatro's evaluate_play would crash on the 'NULL' hand, so no recorded run ever got past this)
+    G.E_MANAGER.add_event(() => { if (G.play.cards.length) evaluate_play(); });
     G.E_MANAGER.add_event(() => {
       draw_from_play_to_discard();
       G.GAME.hands_played += 1;
@@ -2038,6 +2103,7 @@ export function discard_cards_from_highlighted(hook) {
     const c = hl[i];
     c.calculate_seal({ discard: true });
     if (ACTIVE_MODS.length) callHook('discard_card', c, { full_hand: hl, hook }); // (BETMMA's Echo Wall)
+    if (G.GAME.page && !hook) pageDiscard(c); // (a "become Lucky / Bonus" Page: the player's discards only)
     let removed = false;
     for (const j of G.jokers.cards.slice()) {
       const dctx = { discard: true, other_card: c, full_hand: hl };
@@ -2091,6 +2157,8 @@ export function act(a) {
   try {
     can(!G.GAME.over, 'run is over');
     can(G.STATE_COMPLETE, 'busy');
+    // (Multiplayer: out of lives, the run waits for the match result — only the referee's actions)
+    if (G.GAME.pvp && G.GAME.pvp.lives <= 0) can(a && /^pvp_/.test(a.type), 'out of lives: waiting for the result');
     applyAction(a);
     pump();
     // Mods' per-frame checks (Lua Card:update / Game:update), after every action (BETMMA: Stow / Stash debuffs).
@@ -2112,7 +2180,43 @@ function applyAction(a) {
       can(S === STATES.BLIND_SELECT, 'not choosing a blind');
       const which = G.GAME.blind_on_deck;
       can(which && G.GAME.round_resets.blind_states[which] === 'Select', 'no blind to select');
+      // (Multiplayer: the Nemesis starts for both players together — READY, then pvp_start_blind)
+      can(!(G.GAME.pvp && pvpSlot(which)),'press READY: the Nemesis starts for both players together');
+      // Pages: the Blind is chosen, but the round waits for the player's Page (no going back to the blind choice)
+      // (Pages v2: only on 25% of Blinds, seeded, + the guaranteed Boss Page — engine/pages.js pageRolls)
+      if (G.GAME.pages_on && (!G.GAME.pages_v2 || pageRolls(which))) {
+        if (G.GAME.pages_v2) pageSeen();
+        G.GAME.pages = { blind: which, choices: generatePages(which) };
+        G.STATE = STATES.PAGES;
+        G.STATE_COMPLETE = false;
+        break;
+      }
       select_blind(which);
+      break;
+    }
+    case 'pick_page': {
+      can(S === STATES.PAGES && G.GAME.pages, 'no Pages to pick from');
+      const i = a.index;
+      can(Number.isInteger(i) && i >= 0 && i < G.GAME.pages.choices.length, 'no such Page');
+      G.GAME.page = G.GAME.pages.choices[i];
+      G.GAME.pages = null;
+      emit('page_picked', { index: i });
+      select_blind(G.GAME.blind_on_deck);
+      break;
+    }
+    case 'page_remove': {
+      // (Pages v2's prize: remove one card of your deck — the prize must be used, there is no Skip)
+      can(S === STATES.PAGE_REMOVE && G.GAME.page_remove > 0, 'no card to remove');
+      const card = G.playing_cards.find((c) => c.sort_id === a.id);
+      can(card, 'no such card in your deck');
+      emit('page_removed', { card: card.sort_id });
+      pageRemoveCard(card);
+      if (!pageRemovePending()) {
+        G.STATE = G.GAME.page_remove_then || STATES.SHOP;
+        G.GAME.page_remove_then = undefined;
+        G.GAME.page_remove = undefined;
+        G.STATE_COMPLETE = false;
+      }
       break;
     }
     case 'skip_blind': {
@@ -2278,8 +2382,21 @@ function applyAction(a) {
       cash_out();
       break;
     }
+    case 'pvp_start_blind':
+    case 'pvp_outcome':
+    case 'pvp_end':
+    case 'pvp_timer':
+    case 'pvp_hand_lost':
+    case 'pvp_opp':
+    case 'pvp_fx': {
+      const why = pvpActionError(a, S, STATES);
+      can(!why, why);
+      pvpApply(a, STATES, select_blind);
+      break;
+    }
     case 'endless': {
       can(G.GAME.won && S === STATES.ROUND_EVAL || S === STATES.SHOP, 'not won yet');
+      can(!G.GAME.pvp, 'a multiplayer run has no Endless');
       G.GAME.endless = true;
       break;
     }
@@ -2302,6 +2419,9 @@ export function legal() {
     can_reroll: S === STATES.SHOP && !(G.GAME.dollars - G.GAME.bankrupt_at - G.GAME.current_round.reroll_cost < 0 && G.GAME.current_round.reroll_cost !== 0),
     can_skip_blind: S === STATES.BLIND_SELECT && G.GAME.blind_on_deck !== 'Boss' && !(ACTIVE_MODS.length && callHook('can_skip_blind').includes(false)),
     can_reroll_boss: S === STATES.BLIND_SELECT && G.GAME.dollars - G.GAME.bankrupt_at - 10 >= 0 && !!(G.GAME.used_vouchers.v_retcon || (G.GAME.used_vouchers.v_directors_cut && !G.GAME.round_resets.boss_rerolled)),
+    // (only on the Pages screen: a view without Pages is the same as before them)
+    ...(S === STATES.PAGES ? { can_pick_page: true } : {}),
+    ...(S === STATES.PAGE_REMOVE ? { can_remove_card: true } : {}),
   };
 }
 

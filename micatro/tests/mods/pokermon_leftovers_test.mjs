@@ -11,6 +11,7 @@
 //      the gameplay and the checksum are the same with it on.
 //   node micatro/tests/mods/pokermon_leftovers_test.mjs   (art checks: the gitignored art, or MICATRO_MAIN=<main checkout>)
 import fs from 'fs';
+// (Session runs here start with engineRev: 1 = the rules before Pages: these suites measure the mod alone)
 import path from 'path';
 import { T, start, add, G, P_CENTERS, act, STATES, clearHand, hand } from './poke_helpers.mjs';
 import { MODS } from '../../js/mods/registry.js';
@@ -49,6 +50,43 @@ function peek(f) {
   try { return f(); } finally { G.GAME.pseudorandom = rng; G.GAME.used_jokers = used; }
 }
 const { pseudorandom, pseudoseed } = await import('../../js/engine/core.js');
+
+await sec(() => {
+  start('MEGAPOCKET', {}, { noBlind: true });
+  G.GAME.round_resets.ante = 5;
+  for (const k of POCKETS) {
+    const { center, pack } = pocketCard(k);
+    let hits = 0;
+    for (let n = 0; n < 80; n++) {
+      const c = slot(center, pack, 2);
+      if (key(c) === 'c_poke_megastone') hits++;
+      c.remove();
+    }
+    ok(hits > 0, `${k}: ordinary Pocket Packs can offer a Mega Stone at ante 5`, hits);
+  }
+  const { center, pack } = pocketCard();
+  const countStones = () => {
+    let hits = 0;
+    for (let n = 0; n < 100; n++) {
+      const c = slot(center, pack, 2);
+      if (key(c) === 'c_poke_megastone') hits++;
+      c.remove();
+    }
+    return hits;
+  };
+  G.GAME.round_resets.ante = 4;
+  ok(countStones() === 0, 'ordinary packs do not get the special stone before ante 5');
+  G.GAME.round_resets.ante = 5;
+  const stone = add('c_poke_megastone');
+  ok(countStones() === 0, 'ordinary packs do not offer another stone when one is held');
+  stone.remove();
+  PINS.RULES.pins = { pokermon: '3.9.1+r85' };
+  try {
+    ok(countStones() === 0, 'older replays retain the tag-only rule');
+    pack.from_tag = true;
+    ok(countStones() > 0, 'older replays still allow the Pocket Tag chance');
+  } finally { PINS.RULES.pins = null; }
+});
 
 await sec(() => {
   start('PKT1', {}, { noBlind: true });
@@ -156,7 +194,7 @@ const HZ = () => P_CENTERS.m_poke_hazard;
 /** Debris deck (+ the Debris sleeve), blind selected. */
 function debris(sleeve, seed = 'DEBALT') {
   const s = new Session();
-  s.start({ seed, back: 'b_poke_diceydeck', sleeve: sleeve ? 'sleeve_poke_diceysleeve' : null, mods: ['pokermon'] });
+  s.start({ engineRev: 1, seed, back: 'b_poke_diceydeck', sleeve: sleeve ? 'sleeve_poke_diceysleeve' : null, mods: ['pokermon'] });
   G.E_MANAGER.flush();
   G.FORCE_BOSS = 'bl_wall'; G.GAME.round_resets.blind_choices.Boss = 'bl_wall';
   return s;
@@ -211,7 +249,7 @@ await sec(() => {
   act({ type: 'play' });
   ok(G.hand.cards.length === 9 && top.every((c) => G.hand.cards.includes(c)) && toView().hand_limit === 9, 'Debris Deck alone: the draw stops at 9 (3 of them Hazards)', [G.hand.cards.length, toView().hand_limit]);
   // another sleeve's deck: the Debris Sleeve plays its own effect
-  const s = new Session(); s.start({ seed: 'DEBRED', back: 'b_red', sleeve: 'sleeve_poke_diceysleeve', mods: ['pokermon'] }); G.E_MANAGER.flush();
+  const s = new Session(); s.start({ engineRev: 1, seed: 'DEBRED', back: 'b_red', sleeve: 'sleeve_poke_diceysleeve', mods: ['pokermon'] }); G.E_MANAGER.flush();
   ok(!G.GAME.modifiers.poke_negative_hazards && G.GAME.poke_hazard_level === 1 && G.hand.config.card_limit === 9, 'Debris Sleeve on the Red Deck: its own effect (layer +1, hand size +1), no alt');
 });
 await sec(() => {
@@ -379,7 +417,7 @@ await sec(() => {
   // cosmetic: the option never reaches the engine — not in the run's options, not in the recipe; gameplay and checksum unchanged
   const runWith = (opts) => {
     const s = new Session();
-    s.start({ seed: 'SERCHK', back: 'b_red', mods: ['pokermon'], modOptions: { pokermon: opts } });
+    s.start({ engineRev: 1, seed: 'SERCHK', back: 'b_red', mods: ['pokermon'], modOptions: { pokermon: opts } });
     G.E_MANAGER.flush();
     s.act({ type: 'select_blind' });
     for (let i = 0; i < 3 && G.STATE === STATES.SELECTING_HAND; i++) {

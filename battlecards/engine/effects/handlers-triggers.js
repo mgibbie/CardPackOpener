@@ -239,7 +239,7 @@ registerTrigger('become-copy-of-enemy-played', (state, pi, e, ctx, triggering) =
 					if (e.attack != null) def.attack = e.attack;
 					if (e.health != null) def.health = e.health;
 					if (e.stats != null) { def.attack = e.stats; def.health = e.stats; }
-					def.token = true; def.id = 'token_' + base.id;
+					def.token = true; def.artFrom = base.artFrom || base.id; def.id = 'token_' + base.id;
 					const tok = instantiate(def, pi); tok.zone = 'board'; tok.sick = self.sick; tok.uid = self.uid;
 					const board = state.players[pi].board; const i = board.indexOf(self);
 					if (i >= 0) { board[i] = tok; self.zone = 'gone'; emit(state, { type: 'transformed', uid: self.uid, player: pi, from: self.name, card: tok }); recomputeAuras(state); }
@@ -569,7 +569,7 @@ registerTrigger('summon-on-friendly-heal', (state, pi, e, ctx, triggering) => {
 	do { {
 					// Nightscale Matriarch: a friendly creature was healed -> summon a token
 					if (ctx.healedCreature && ctx.healedCreature.controller === pi) {
-						summon(state, pi, { id: 'token_' + (e.name || 'whelp').toLowerCase(), name: e.name || 'Whelp', type: 'creature', cost: 0, token: true, tribe: e.tribe || null, rarity: 'common', attack: e.attack || 3, health: e.health || 3, description: `A ${e.attack || 3}/${e.health || 3} token.` });
+						summon(state, pi, { id: 'token_' + (e.name || 'whelp').toLowerCase().replace(/[^a-z0-9]+/g, '_'), name: e.name || 'Whelp', type: 'creature', cost: 0, token: true, tribe: e.tribe || null, rarity: 'common', attack: e.attack || 3, health: e.health || 3, description: `A ${e.attack || 3}/${e.health || 3} token.` });
 					}
 					break;
 				}
@@ -787,7 +787,7 @@ registerTrigger('summon-of-spell-cost', (state, pi, e, ctx, triggering) => {
 					// Summoning Stone / Atiesh / Jailhouse Manastorm (no e.name): summon a RANDOM minion of that Cost.
 					// (These were two duplicate switch cases — the token variant shadowed the random one.)
 					const sp = ctx.spell || ctx.played;
-					if (sp && e.name) { const n = sp.cost || 0; summon(state, pi, { id: 'token_' + e.name.toLowerCase(), name: e.name, type: 'creature', cost: 0, token: true, tribe: e.tribe || null, rarity: 'common', attack: n, health: n, keywords: e.keywords || [], description: `A ${n}/${n} token.` }); } // Ceremonial Maul: a Student with Taunt
+					if (sp && e.name) { const n = sp.cost || 0; summon(state, pi, { id: 'token_' + e.name.toLowerCase().replace(/[^a-z0-9]+/g, '_'), name: e.name, type: 'creature', cost: 0, token: true, tribe: e.tribe || null, rarity: 'common', attack: n, health: n, keywords: e.keywords || [], description: `A ${n}/${n} token.` }); } // Ceremonial Maul: a Student with Taunt
 					else if (sp) execEffects(state, pi, [{ type: 'summon-random', cost: sp.cost || 0, ...(e.legendary ? { rarity: 'legendary' } : {}) }], null, ctx.self); // The Fist of Ra-den: a Legendary of that Cost
 					break;
 				}
@@ -824,7 +824,7 @@ registerTrigger('hatch-self-into', (state, pi, e, ctx, triggering) => {
 					// Nithogg's Egg: at your turn start, become a fixed-stat token
 					const self = ctx.self;
 					if (self && self.zone === 'board' && !isDead(self)) {
-						const tok = instantiate({ id: 'token_' + (e.name || 'drake').toLowerCase(), name: e.name || 'Drake', type: 'creature', cost: 0, token: true, tribe: e.tribe || null, rarity: 'common', attack: e.attack || 4, health: e.health || 4, keywords: e.keywords || [], description: `A ${e.attack || 4}/${e.health || 4} token.` }, self.controller);
+						const tok = instantiate({ id: 'token_' + (e.name || 'drake').toLowerCase().replace(/[^a-z0-9]+/g, '_'), name: e.name || 'Drake', type: 'creature', cost: 0, token: true, tribe: e.tribe || null, rarity: 'common', attack: e.attack || 4, health: e.health || 4, keywords: e.keywords || [], description: `A ${e.attack || 4}/${e.health || 4} token.` }, self.controller);
 						tok.zone = 'board'; tok.sick = false;
 						const board = state.players[self.controller].board;
 						board[board.indexOf(self)] = tok; self.zone = 'gone';
@@ -1817,7 +1817,7 @@ registerTrigger('become-2-2-copy-rush', (state, pi, e, ctx, triggering) => {
 				// Forsaken Lieutenant: become a 2/2 copy of the played Deathrattle minion, with Rush
 				const m2 = ctx.minion; const self = ctx.self; const base2 = m2 && state.cardsById[m2.id];
 				if (base2 && self && self.zone === 'board' && !isDead(self)) {
-					const def = JSON.parse(JSON.stringify(base2)); def.attack = 2; def.health = 2; def.token = true; def.id = 'token_' + base2.id; def.keywords = [...new Set([...(def.keywords || []), 'rush'])];
+					const def = JSON.parse(JSON.stringify(base2)); def.attack = 2; def.health = 2; def.token = true; def.artFrom = base2.artFrom || base2.id; def.id = 'token_' + base2.id; def.keywords = [...new Set([...(def.keywords || []), 'rush'])];
 					const tok = instantiate(def, pi); tok.zone = 'board'; tok.sick = self.sick;
 					const board = state.players[pi].board; board[board.indexOf(self)] = tok; self.zone = 'gone';
 					emit(state, { type: 'transformed', uid: self.uid, player: pi, from: self.name, card: tok }); recomputeAuras(state);

@@ -3,7 +3,7 @@
 import * as Story from './events.js';
 import { battle, cutscene, evolution, hud, pvp, trainers, world } from './ow_core.js';
 import { roamerEnd } from './ow_features.js';
-import { dexMilestoneCheck } from './ow_follower.js';
+import { dexMilestoneCheck, legendFaintedNotice } from './ow_follower.js';
 import { frontier } from './ow_frontier.js';
 import { safari, safariZoneOf, whiteOut, wildBattleEnd } from './ow_places.js';
 import { onTrainerDefeated, runPostBattleScript } from './ow_progression.js';
@@ -124,6 +124,7 @@ function resumeEndHandler(end, savedMap) {
 			syncOverworldAchievements();
 		} else if (result === 'victory') {
 			Story.setFlag(end.flag);
+			legendFaintedNotice(end);
 			evolution.check(S.party, battle.data);
 		} else if (result === 'defeat') {
 			whiteOut();
@@ -158,13 +159,17 @@ function resumeEndHandler(end, savedMap) {
 		}
 	};
 	if (kind === 'strainer') return result => {
-		// the blocking cutscene is gone after a reload; land the flags, skip the speech
+		// the blocking cutscene is gone after a reload: land the flags, then run the
+		// rest of the script from just past the battle (the defeat line and the
+		// post-battle label — a gym leader's badge ceremony, defeat flag and TM)
 		if (result === 'victory') {
 			Story.setVar('VAR_RESULT', 1);
+			S.lastBattleOutcome = B_OUTCOME_WON;
 			const t = trainers.list.find(x => x.ev?.script === end.script);
 			if (t) trainers.markDefeated(t);
 			saveParty(S.party);
 			if (end.script) onTrainerDefeated(end.script, { silent: true });
+			resumeScriptAfterBattle(end, t);
 		} else {
 			Story.setVar('VAR_RESULT', 0);
 			if (result === 'defeat') whiteOut();
@@ -203,6 +208,16 @@ function resumeEndHandler(end, savedMap) {
 	return result => wildBattleEnd(result, !!(safari.on && safariZoneOf(world.current?.map?.id)));
 }
 
+// run a scripted battle's remaining script (strainerContinuation, ow_story.js) —
+// only on the map it started on, and only when nothing else is running
+export function resumeScriptAfterBattle(end, talker) {
+	if (!end || !Array.isArray(end.rest) || !Array.isArray(end.frames) || !end.frames.length) return false;
+	if (cutscene.blocking || end.map !== world.current?.name) return false;
+	const program = { ...S.mapScripts, __tbresume__: end.rest };
+	const ok = cutscene.runFrom(program, end.frames, cutsceneCtx(talker || null, end.frames[0].label), () => { saveParty(S.party); });
+	if (!ok) console.warn('[battle-resume] the script after the battle could not be resumed', end.frames.map(f => f.label).join(' > '));
+	return ok;
+}
 export function resumeSavedBattle() {
 	const saved = safeLoad(BATTLE_SAVE_KEY, null);
 	if (!saved || !S.party) return false;

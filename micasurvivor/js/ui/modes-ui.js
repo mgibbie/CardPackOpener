@@ -59,7 +59,7 @@ G.ModesUI = (() => {
     $('modes-list').innerHTML = [
       card('normal', M.ICON.normal, M.NAME.normal, ['La experiencia de siempre, igual que el juego original.']),
       card('daily', M.ICON.daily, M.NAME.daily, [
-        `Hoy: ${esc(nameOf(M.dailyDex(sd)))} con la regla «${M.MOD[M.dailyMod(sd)].name}» (misma para todos). +25% de monedas.`,
+        `Hoy: ${esc(nameOf(M.dailyDex(sd)))} con la regla «${M.MOD[M.dailyMod(sd)].name}» (misma para todos; reinicio a las 00:00 UTC). +25% de monedas.`,
         best > 0 ? 'Tu mejor tiempo de hoy: ' + G.U.mmss(best) : 'Aún no lo has jugado hoy.']),
       // M5 lote 8: Rush de Jefes (menu.gd 1571-1572)
       card('rush', M.ICON.rush, M.NAME.rush, ['Solo jefes y legendarios, uno tras otro, cada vez más fuertes. Récord: ' + G.BossRush.best(s) + ' jefes.']),

@@ -10,9 +10,16 @@ import { G, P_CENTERS, P_STAKES } from '../js/engine/core.js';
 import { newRun, act, STATES, get_poker_hand_info } from '../js/engine/run.js';
 import { toView } from '../js/engine/view.js';
 import { Session } from '../js/engine/session.js';
-import { stampRecipe } from '../js/mods/pins.js';
+import { stampRecipe, ENGINE_CONTENT_REV } from '../js/mods/pins.js';
+import { pvpSlot, pvpRecipeConfig } from '../js/engine/pvp.js';
 
 const RUNS = Number(process.argv[2] || 60);
+// Pages (engine/pages.js, engine rules rev 2): the bot plays the CURRENT rules — it picks a Page after every Blind it
+// selects. MICATRO_FUZZ_PAGES=0 plays the legacy (pre-Pages) rules instead: the vanilla path is then byte-identical to
+// the bot's runs before Pages (fuzz_pages_off_test.mjs checks that the two never mix).
+const PAGES = process.env.MICATRO_FUZZ_PAGES !== '0';
+// MICATRO_FUZZ_REV=<n> plays engine rules rev n instead (2 = Pages v1: fuzz_pages_v1_test.mjs pins those runs byte for byte).
+const RUN_REV = process.env.MICATRO_FUZZ_REV ? Number(process.env.MICATRO_FUZZ_REV) : PAGES ? ENGINE_CONTENT_REV : 1;
 // Optional mod set: the runs (and their replays) play with these mods on.
 let MODS = (process.argv[3] || '').split(',').filter(Boolean);
 if (MODS.length) {
@@ -20,13 +27,18 @@ if (MODS.length) {
   if (MODS.includes('all')) MODS = AVAILABLE.map((m) => m.id);
   MODS = await loadMods(MODS); // (+ their requirements)
 }
+// MICATRO_FUZZ_PVP=<json> plays Multiplayer runs (engine/pvp.js) with that match config ('1' = the stage-6 Vanilla Attrition
+// defaults): the bot READYs into each Nemesis round, plays it out and applies a random referee result, as the client would.
+const PVP = process.env.MICATRO_FUZZ_PVP ? (process.env.MICATRO_FUZZ_PVP === '1' ? { lives: 4, pvpStart: 2, deathOnLoss: true, comeback: true } : JSON.parse(process.env.MICATRO_FUZZ_PVP)) : null;
 const OVERFILL = new Set(['j_betmma_friends_of_jimbo']);
 let overfilled = false;
 const isModCard = (c) => !!(c && c.config.center.mod && MODS.includes(c.config.center.mod));
 let fail = 0;
 const ok = (c, m) => { if (!c) { fail++; console.log('FAIL', m); } };
 
-const BACKS = Object.values(P_CENTERS).filter((v) => v.set === 'Back' && v.key !== 'b_challenge' && !v.mod).map((v) => v.key);
+// (MICATRO_FUZZ_BACKS / MICATRO_FUZZ_STAKES: comma lists the runs cycle through instead — Multiplayer's decks / stakes)
+const BACKS = process.env.MICATRO_FUZZ_BACKS ? process.env.MICATRO_FUZZ_BACKS.split(',') : Object.values(P_CENTERS).filter((v) => v.set === 'Back' && v.key !== 'b_challenge' && !v.mod).map((v) => v.key);
+const FUZZ_STAKES = process.env.MICATRO_FUZZ_STAKES ? process.env.MICATRO_FUZZ_STAKES.split(',') : null;
 
 // Small deterministic PRNG for the bot (independent of the engine's).
 function botRng(seed) { let s = seed >>> 0; return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296); }
@@ -53,10 +65,18 @@ function invariants0(tag) {
 
 function pickAction(r) {
   const S = G.STATE;
+  if (PVP && G.GAME.pvp) {
+    // (the referee's word, as ui/pvp.js applies it: a round's result, then the match's end at 0 lives)
+    if (G.GAME.pvp.lives <= 0) return { type: 'pvp_end', result: 'lose' };
+    if (S === STATES.PVP_WAIT) { const res = r() < 0.5 ? 'win' : 'lose'; return { type: 'pvp_outcome', result: res, lives: G.GAME.pvp.lives - (res === 'lose' ? 1 : 0) }; }
+    if (S === STATES.BLIND_SELECT && G.GAME.round_resets.blind_states[G.GAME.blind_on_deck] === 'Select' && pvpSlot(G.GAME.blind_on_deck)) return { type: 'pvp_start_blind' };
+  }
   if (S === STATES.BLIND_SELECT) {
     if (G.GAME.blind_on_deck !== 'Boss' && r() < 0.15) return { type: 'skip_blind' };
     return { type: 'select_blind' };
   }
+  if (S === STATES.PAGES) return { type: 'pick_page', index: Math.floor(r() * G.GAME.pages.choices.length) };
+  if (S === STATES.PAGE_REMOVE) return { type: 'page_remove', id: G.playing_cards[Math.floor(r() * G.playing_cards.length)].sort_id }; // (Pages v2's prize)
   if (S === STATES.SELECTING_HAND) {
     // Use a consumable sometimes (with random targets)
     if (G.consumeables.cards.length && r() < 0.3) {
@@ -144,6 +164,8 @@ function bestHand() {
 }
 
 let lastEvents = [];
+let pagesPicked = 0;
+const digest = []; // (every run's actions + end state: MICATRO_FUZZ_DIGEST=1 prints its hash — fuzz_pages_off_test.mjs)
 const modStats = {};
 const modJokersSeen = new Set();
 let totalActions = 0, wins = 0, maxAnte = 0;
@@ -153,7 +175,7 @@ for (let i = 0; i < RUNS; i++) {
   const back = modBacks.length && i % 3 === 2 ? modBacks[(i / 3 | 0) % modBacks.length] : BACKS[i % BACKS.length];
   // (mod runs: every fourth run on one of the mods' stakes)
   const modStakes = MODS.length ? Object.values(P_STAKES).filter((v) => v.mod && MODS.includes(v.mod)).map((v) => v.key) : [];
-  const stake = modStakes.length && i % 4 === 3 ? modStakes[(i / 4 | 0) % modStakes.length] : 1 + (i % 8);
+  const stake = FUZZ_STAKES ? FUZZ_STAKES[i % FUZZ_STAKES.length] : modStakes.length && i % 4 === 3 ? modStakes[(i / 4 | 0) % modStakes.length] : 1 + (i % 8);
   if (MODS.length) {
     if (P_CENTERS[back].mod) modStats.mod_deck_runs = (modStats.mod_deck_runs || 0) + 1;
     if (typeof stake === 'string') modStats.mod_stake_runs = (modStats.mod_stake_runs || 0) + 1;
@@ -165,7 +187,8 @@ for (let i = 0; i < RUNS; i++) {
   const shopFunded = new Set();
   try {
     overfilled = false;
-    newRun({ seed, back, stake, mods: MODS });
+    newRun({ seed, back, stake, mods: MODS, engineRev: RUN_REV, ...(PVP ? { pvp: PVP, seeded: false } : {}) });
+    if (PAGES !== !!G.GAME.pages_on) ok(false, `${seed}: Pages ${PAGES ? 'off' : 'on'} on engine rev ${RUN_REV}`);
     let steps = 0, stuck = 0;
     while (!G.GAME.over && steps < 600) {
       // Assisted runs (odd index): guarantee the blind on the last hand and fund the shop,
@@ -180,6 +203,7 @@ for (let i = 0; i < RUNS; i++) {
       let anyOk = false;
       for (const x of acts) {
         const res = act(x);
+        if (res.ok && x.type === 'pick_page') pagesPicked++;
         if (res.ok) { anyOk = true; log.push(x); }
         if (MODS.length) for (const e of res.events) if (e.type === 'poke_evolve' || e.type === 'reserved' || (e.type === 'use' && P_CENTERS[e.center] && P_CENTERS[e.center].mod)) modStats[e.type] = (modStats[e.type] || 0) + 1;
         if (MODS.length && res.ok && x.type === 'buy') { const bought = G.jokers.cards.find((j) => j.sort_id === x.id); if (bought && isModCard(bought)) modStats.mod_jokers_bought = (modStats.mod_jokers_bought || 0) + 1; }
@@ -190,7 +214,7 @@ for (let i = 0; i < RUNS; i++) {
       if (!anyOk) {
         if (++stuck > 40) {
           // escape hatches
-          const esc = [{ type: 'skip_booster' }, { type: 'next_round' }, { type: 'cash_out' }, { type: 'select_blind' }, { type: 'highlight', ids: G.hand.cards.slice(0, 1).map((c) => c.sort_id) }, { type: 'play' }];
+          const esc = [{ type: 'pick_page', index: 0 }, { type: 'skip_booster' }, { type: 'next_round' }, { type: 'cash_out' }, { type: 'select_blind' }, { type: 'highlight', ids: G.hand.cards.slice(0, 1).map((c) => c.sort_id) }, { type: 'play' }];
           let escaped = false;
           for (const e of esc) { const res = act(e); if (res.ok) { log.push(e); escaped = true; } }
           if (!escaped) { ok(false, `${seed}: stuck in state ${G.STATE}`); break; }
@@ -214,14 +238,20 @@ for (let i = 0; i < RUNS; i++) {
     const before = JSON.stringify({ d: G.GAME.dollars, a: G.GAME.round_resets.ante, r: G.GAME.round, c: G.GAME.chips, j: G.jokers.cards.map((c) => c.config.center.key), h: G.hand.cards.map((c) => c.config.card.key), s: G.STATE });
     // (stamped with the current pins, as a real save is: an unstamped recipe reads as the legacy 2026-10-19 versions, whose
     //  rulesRev-gated rules differ — Pokermon r79's generation filter)
-    Session.fromRecipe(stampRecipe({ seed, back, stake, mods: G.GAME.mods.slice(), actions: log }));
+    Session.fromRecipe({ ...stampRecipe({ seed, back, stake, mods: G.GAME.mods.slice(), actions: log }), engineRev: RUN_REV, ...(G.GAME.pvp ? { pvp: pvpRecipeConfig(G.GAME.pvp) } : {}) });
     const after = JSON.stringify({ d: G.GAME.dollars, a: G.GAME.round_resets.ante, r: G.GAME.round, c: G.GAME.chips, j: G.jokers.cards.map((c) => c.config.center.key), h: G.hand.cards.map((c) => c.config.card.key), s: G.STATE });
     if (!assisted) ok(before === after, `${seed}: replay deterministic\n  ${before}\n  ${after}`);
+    digest.push(seed + ':' + log.length + ':' + before + ':' + JSON.stringify(log));
   } catch (e) {
     fail++;
     console.log('FAIL', seed, back, 'stake', stake, 'state', G.STATE, 'after', log.length, 'actions:', e && e.stack ? e.stack.split('\n').slice(0, 6).join('\n') : e);
   }
 }
 if (MODS.length) console.log('mod activity:', JSON.stringify({ ...modStats, distinct_mod_jokers_held: modJokersSeen.size }));
-console.log(`fuzz${MODS.length ? ' [' + (process.argv[3] === 'all' ? 'all mods' : MODS.join(',')) + ']' : ''}: ${RUNS} runs, ${totalActions} actions, max ante ${maxAnte}, wins ${wins}, ${fail ? fail + ' FAIL' : 'all ok'}`);
+if (process.env.MICATRO_FUZZ_DIGEST === '1') {
+  const { createHash } = await import('node:crypto');
+  console.log('digest ' + createHash('sha256').update(digest.join(String.fromCharCode(10))).digest('hex'));
+}
+if (PAGES) ok(pagesPicked > 0 || RUNS < 2, 'the bot picked Pages');
+console.log(`fuzz${PAGES ? '' : ' [no Pages]'}${MODS.length ? ' [' + (process.argv[3] === 'all' ? 'all mods' : MODS.join(',')) + ']' : ''}: ${RUNS} runs, ${totalActions} actions, max ante ${maxAnte}, wins ${wins}, ${fail ? fail + ' FAIL' : 'all ok'}`);
 process.exit(fail ? 1 : 0);

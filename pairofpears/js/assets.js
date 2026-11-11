@@ -1,27 +1,20 @@
-// assets.js — loads all Pair of Pears sprites + audio for the native (no-love.js)
-// build. IMG.<name> is an HTMLImageElement; SFX/MUSIC are HTMLAudioElement.
+// assets.js — the game's own art (fruit, charms, condition icons, hearts, berries, stars).
+// Everything else on the page — the card base and back, the font, the sounds, the swirling
+// background — is Micatro's (../../micatro/js/ui/*). IMG.<name> is an HTMLImageElement.
+import { FRUITS, CHARM_ORDER, COND_INFO } from './pear.js';
+
 export const IMG = {};
-export const SFX = {};
-
-const NAMES = ['8ball', 'apple', 'autoclickbutton', 'avocado', 'background', 'bag', 'banana', 'berry', 'blueberry', 'bluejay', 'bomb', 'boom', 'broccoli', 'bugnet', 'buybutton', 'cactus', 'camera', 'camera2', 'cardinal', 'carrot', 'cd', 'cherry', 'clock', 'clover', 'club', 'coconut', 'crabapple', 'diamond', 'dice', 'dna', 'droplet', 'egg', 'eggplant', 'farmersmarket', 'feather', 'flamingo', 'flowercursor', 'flutter', 'flyswatter', 'gem', 'globe', 'grape', 'hamsa', 'heart', 'hut', 'juicebox', 'key', 'kiwi', 'lemon', 'lessergoldfinch', 'lime', 'mango', 'mantis', 'manzana', 'moresizebutton', 'morestarsbutton', 'notebook', 'olive', 'onion', 'orange', 'owl', 'parrot', 'pawn', 'peach', 'peacock', 'pear', 'pepper', 'persimmon', 'phone', 'pin', 'pineapple', 'plum', 'pot', 'potato', 'pumpkin', 'puzzlepiece', 'rhubarb', 'robin', 'save', 'settingsgear', 'skull', 'skunk', 'slotmachine', 'spade', 'sparkles', 'sparrow', 'spottedlanternfly', 'star', 'strawberry', 'swan', 'temple', 'ticket', 'tomato', 'turkey', 'watermelon', 'wrentit'];
-
-// a fruit's sprite key is just its name; a few aliases the game logic uses
-export const ALIAS = { lanternfly: 'spottedlanternfly' };
+export const ICONS = ['heart', 'berry', 'star'];
+export const NAMES = [...new Set([...FRUITS, ...CHARM_ORDER, ...Object.values(COND_INFO).map((c) => c.icon), ...ICONS])];
+export const src = (name) => new URL('../assets/' + name + '.png', import.meta.url).href;
 
 export function loadAll() {
-	const jobs = NAMES.map(name => new Promise(res => {
+	return Promise.all(NAMES.map((name) => new Promise((res) => {
 		const im = new Image();
 		im.onload = () => res();
-		im.onerror = () => res(); // tolerate a missing sprite; game guards on .complete
-		im.src = 'assets/' + name + '.png';
+		im.onerror = () => { console.warn('pairofpears: missing sprite ' + name); res(); };
+		im.src = src(name);
 		IMG[name] = im;
-	}));
-	// audio (best-effort; browsers gate autoplay until first input)
-	SFX.squish = new Audio('assets/audio/squish.wav');
-	SFX.music = new Audio('assets/audio/meadows_theme.ogg');
-	SFX.music.loop = true;
-	SFX.music.volume = 0.5;
-	return Promise.all(jobs);
+	})));
 }
-
-export const img = key => IMG[ALIAS[key] || key] || null;
+export const img = (key) => IMG[key] || null;

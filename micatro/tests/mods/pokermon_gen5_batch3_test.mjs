@@ -24,6 +24,7 @@
 // Every ability is FIRED through real hands / discards / rounds / shops with exact numbers.
 //   node micatro/tests/mods/pokermon_gen5_batch3_test.mjs
 import fs from 'fs';
+// (Session runs here start with engineRev: 1 = the rules before Pages: these suites measure the mod alone)
 import path from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
 import { T, start, hand, add, clearHand, G, P_CENTERS, act, state, STATES } from './poke_helpers.mjs';
@@ -48,6 +49,9 @@ const key = (c) => c.config.center.key;
 const near = (a, b) => Math.abs(a - b) < 1e-6;
 const flush = () => G.E_MANAGER.flush();
 const sec = async (name, fn) => { try { await fn(); } catch (e) { ok(false, name + ' threw: ' + String(e && e.stack).slice(0, 900)); } };
+/** The rules of a run recorded before r111 (the owner's simplified weather trio, SIMPLE_TRIO_REV: Kyogre / Groudon made rain / sun, locked
+ *  Castform and clashed; Rayquaza calmed them), as a resume / replay of an old move runs them. The r111 rules: pokermon_simple_trio_test. */
+const r110 = (fn) => { PINS.RULES.pins = { pokermon: '3.9.1+r110' }; try { return fn(); } finally { PINS.RULES.pins = null; } };
 const ex = (j) => j.ability.extra;
 const C = (n) => P_CENTERS['j_poke_' + n];
 const plain = (j) => describe(j).lines.join(' | ').replace(/\{[^}]*\}/g, '').replace(/\s+/g, ' ');
@@ -171,7 +175,7 @@ await sec('static', () => {
     ok(c.atlas === 'poke_AtlasJokersBasic' + sheet + '391' && c.pos.x === x && c.pos.y === y && !c.soul_pos, `${n}: upstream 3.9.1 cell ${sheet} {${x},${y}} (nothing to deploy)`, [c.atlas, c.pos]);
   }
   // (the regional forms sit after their original lines: skipped here)
-  const keys = MODS.pokermon.content.centers.filter((c) => c.set === 'Joker' && !/^j_poke_(alolan|galarian|hisuian|paldean)_/.test(c.key)).map((c) => c.key);
+  const keys = MODS.pokermon.content.centers.filter((c) => c.set === 'Joker' && !/^j_poke_(alolan|galarian|hisuian|paldean|mega)_/.test(c.key)).map((c) => c.key);
   const run = (from, list, to) => { const i = keys.indexOf('j_poke_' + list[0]); return i > 0 && [from, ...list, to].every((k, n) => keys[i - 1 + n] === 'j_poke_' + k) ? true : keys.slice(i - 1, i + list.length + 1); };
   const RUNS = [
     ['gothitelle', ['ducklett', 'swanna'], 'vanillite'], ['vanilluxe', ['deerling', 'sawsbuck', 'emolga', 'karrablast', 'escavalier', 'foongus', 'amoonguss'], 'frillish'],
@@ -183,7 +187,7 @@ await sec('static', () => {
     const r = to ? run(from, list, to) : run(from, list, keys[keys.indexOf('j_poke_' + list[list.length - 1]) + 1].slice(7));
     ok(r === true, `Pokédex order: ${from}, ${list.join(', ')}${to ? ', ' + to : ''}`, r);
   }
-  const fam = (n) => poke_get_family_list(n).map((x) => (typeof x === 'string' ? x : x.key || x.name)).filter((k) => !/^(j_poke_)?(alolan|galarian|hisuian|paldean)_/.test(k)).join(); // (regional batch C: the Hisuian / Paldean forms sit after their lines and join their families — pokermon_hisuian_paldean_test checks them)
+  const fam = (n) => poke_get_family_list(n).map((x) => (typeof x === 'string' ? x : x.key || x.name)).filter((k) => !/^(j_poke_)?(alolan|galarian|hisuian|paldean|mega)_/.test(k)).join();
   for (const line of Object.values(LINES)) if (line.length > 1) ok(fam(line[0]) === line.join(), 'one family: ' + line.join(' -> '), fam(line[0]));
   const inert = ['foongus', 'amoonguss', 'alomomola', 'stunfisk', 'mienfoo', 'mienshao'];
   ok(inert.every((n) => C(n).poke_no_energy_field === true) && NAMES.filter((n) => !inert.includes(n)).every((n) => !C(n).poke_no_energy_field),
@@ -735,7 +739,7 @@ await sec('freeze resume', () => {
   let done1 = false;
   for (let i = 0; i < 20 && !done1; i++) {
     const s = new Session();
-    s.start({ seed: 'FRZRES' + i, customDeck: { name: 'Ice', mods: ['pokermon'], params: { blind_scaling: 0.05 }, jokers: [{ key: 'j_poke_beartic' }] } });
+    s.start({ engineRev: 1, seed: 'FRZRES' + i, customDeck: { name: 'Ice', mods: ['pokermon'], params: { blind_scaling: 0.05 }, jokers: [{ key: 'j_poke_beartic' }] } });
     s.act({ type: 'select_blind' }); flush();
     const hc = G.hand.cards.slice();
     const play5 = hc.slice(1, 6);
@@ -901,9 +905,11 @@ await sec('sun', () => {
   sell(v);
   ok(!DES.cherrim_sunny(l2), 'Volcarona sold: no sun (live)');
   // Kyogre: Volcarona doesn't override its rain
-  const [, , cf2, ty] = dealWith('VOLC2', ['j_poke_kyogre', 'j_poke_volcarona', 'j_poke_castform', 'j_poke_tympole'], ['H_2', 'H_3', 'H_4', 'H_5', 'H_6', 'H_7', 'H_8']);
-  ok(ex(cf2).form === 'rainy', 'Kyogre + Volcarona: Castform stays Rainy (Kyogre\'s lock wins)', ex(cf2).form);
-  ok(DES.swift_swim_raining(ty) && DES.cherrim_sunny(ty), 'and it is both raining (Tympole) and sunny (the shared check)');
+  r110(() => {
+    const [, , cf2, ty] = dealWith('VOLC2', ['j_poke_kyogre', 'j_poke_volcarona', 'j_poke_castform', 'j_poke_tympole'], ['H_2', 'H_3', 'H_4', 'H_5', 'H_6', 'H_7', 'H_8']);
+    ok(ex(cf2).form === 'rainy', 'r110: Kyogre + Volcarona: Castform stays Rainy (Kyogre\'s lock wins)', ex(cf2).form);
+    ok(DES.swift_swim_raining(ty) && DES.cherrim_sunny(ty), 'r110: and it is both raining (Tympole) and sunny (the shared check)');
+  });
   // Volcarona's X for each Fire Joker, itself included; a Fire Tera counts
   start('VOLC3');
   add('j_poke_volcarona');

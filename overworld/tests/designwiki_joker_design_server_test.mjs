@@ -134,7 +134,7 @@ try {
 	A((await call('joker-design-list', { dex: 1 }, owner)).designs.length === 0, 'a species with none: []');
 
 	// ---------- appends never clobber ----------
-	const N = 12;
+	const N = 10; // leave rate-limit slots for the Fakemon and capacity submissions below
 	const results = await Promise.all(Array.from({ length: N }, (_, i) => call('joker-design-add', design({ dex: 400 + i, ability: 'race ' + i }), owner)));
 	A(results.every((r) => r.ok), `${N} concurrent submissions all succeed`, JSON.stringify(results.filter((r) => !r.ok)));
 	const after = row();
@@ -159,12 +159,17 @@ try {
 		'an append racing a clear: the append survives and the cleared design is gone', JSON.stringify({ addR, doneR, n: mixed.length }).slice(0, 200));
 	const last = await call('joker-design-done', { tsList: row().map((e) => e.ts) }, owner);
 	A(last.ok && last.count === 0 && row() === null, 'clearing every named design deletes the row');
+	const fake = await call('joker-design-add', design({ dex: -655, name: 'Future Fakemon' }), owner);
+	A(fake.ok && (await call('joker-design-list', { dex: -655 }, owner)).designs[0]?.name === 'Future Fakemon', 'future negative Fakemon IDs can be filed and retrieved separately');
+	await call('joker-design-done', { ts: fake.design.ts }, owner);
 
 	// ---------- bounded ----------
-	const full = Array.from({ length: 500 }, (_, i) => ({ ts: 1000 + i, dex: 1 + (i % 1025), name: 'x', ability: 'seed', rarity: '', cost: null, notes: '' }));
+	const full = Array.from({ length: 999 }, (_, i) => ({ ts: 1000 + i, dex: 1 + (i % 1025), name: 'x', ability: 'seed', rarity: '', cost: null, notes: '' }));
 	sqlite.prepare('INSERT INTO mp_store (key, value, updated_at) VALUES (?, ?, 0)').run(KEY, JSON.stringify(full));
+	const thousandth = await call('joker-design-add', design(), owner);
+	A(thousandth.ok && row().length === 1000, 'the inbox accepts a 1000th design, beyond the old 500-entry limit');
 	const over = await raw('joker-design-add', design(), owner);
-	A(over.status === 400 && /full/.test(over.body.error || '') && row().length === 500, 'the 501st design is refused and the row is untouched', JSON.stringify(over));
+	A(over.status === 400 && /full/.test(over.body.error || '') && row().length === 1000, 'the 1001st design is refused and the row is untouched', JSON.stringify(over));
 	sqlite.prepare('DELETE FROM mp_store WHERE key = ?').run(KEY);
 
 	// ---------- the key can't be an account; the add is rate-limited ----------

@@ -168,3 +168,95 @@ export function useLocalAsyncTurn(local, serverSnap, matchId, mySeat) {
 	// same turn number on the same match = the exact unsubmitted turn the local copy extends
 	return local.snap.turnNumber === serverSnap.turnNumber;
 }
+
+// ---------- which fight does a run's mid-fight snapshot belong to? ----------
+// A run carries ONE snapshot field, written by whatever tab is playing. Every fight
+// boot mints a `fightId` onto the run; each snapshot write records the fight it came
+// from (`snapshotFight`) and the run's progress at that moment (`snapshotProgress`),
+// and a finished fight's result clears `fightId`. A tab whose fight is not the run's
+// current one (another tab moved the run on, or this fight already ended) must not
+// write its board into the run: instinctgauntlet's Middle-earth run (2026-11-07) kept
+// a stale fight-1 snapshot through two later fights — some tab's frozen F1 board was
+// written back over the run on visibilitychange/pagehide — and "Continue the run"
+// restored F1 against Shagrat while the run said 0W/2L, next foe Tom, Bert & William.
+//
+// May this tab (playing fight `tabFightId`) write its board into `run`?
+export function maySaveSnapshot(run, tabFightId) {
+	if (!run || typeof run !== 'object' || !run.active) return false;
+	if (!tabFightId) return true;                  // a tab that never bound a fight (legacy flow) — unchanged behaviour
+	return run.fightId === tabFightId;
+}
+// Is `run.snapshot` a board of the run's CURRENT fight? Returns { ok, reason }.
+// Snapshots written before fight tags existed are checked by their content: in the
+// character run modes (Lorequest, Middle-earth, Sword Coast, Final Fantasy, Multiverse)
+// seat 0 is the run's character and seat 1 is named after the run's enemy, so a
+// board against a different foe is a different fight.
+export function snapshotForCurrentFight(run) {
+	if (!run || typeof run !== 'object' || !run.snapshot || typeof run.snapshot !== 'object') return { ok: false, reason: 'no-snapshot' };
+	if (run.snapshotFight != null && run.fightId != null && run.snapshotFight !== run.fightId) return { ok: false, reason: 'other-fight' };
+	if (run.snapshotProgress != null && run.snapshotProgress !== runProgress(run)) return { ok: false, reason: 'other-progress' };
+	const picks = run.snapshot.classPicks;
+	const me = picks && picks[0] && picks[0].name, foe = picks && picks[1] && picks[1].name;
+	const want = run.enemy && typeof run.enemy === 'object' ? run.enemy.name : null;
+	if (run.characterId && me === run.characterId && foe && want && foe !== want) return { ok: false, reason: 'other-enemy' };
+	return { ok: true, reason: 'current' };
+}
+
+// ---------- conflict stashes: where a losing copy goes ----------
+// A copy that loses reconciliation is stashed, never dropped. The stash used to be ONE
+// fixed slot (`<key>__conflict_v1`), so the next conflict silently replaced whatever it
+// held: a held Gandalf run was overwritten at boot by a stale Samwise copy a restored
+// browser profile brought back (instinctgauntlet, 2026-11-08). Now every run gets its own
+// slot; an occupied slot is only ever replaced by a NEWER copy of the SAME run.
+//   existing — { [storageKey]: stash } for every stash slot of this run key
+//   run      — the copy to stash
+// Returns { write: storageKey|null, evict: storageKey|null, why }. `evict` is set only
+// when the bounded list is full (the oldest stash makes room).
+export const CONFLICT_STASH_MAX = 12;
+export const conflictStashPrefix = key => key + '__conflict_v1';
+export function planConflictStash(key, existing, run, now = Date.now()) {
+	if (!run || typeof run !== 'object') return { write: null, evict: null, why: 'nothing-to-stash' };
+	const base = conflictStashPrefix(key);
+	const slots = Object.entries(existing || {}).filter(([, s]) => s && typeof s === 'object');
+	const id = runIdentity(run);
+	if (id) {
+		const same = slots.find(([, s]) => runIdentity(s.run) === id);
+		if (same) {
+			const old = same[1].run || {};
+			const newer = runRev(run) > runRev(old) || (runRev(run) === runRev(old) && runStamp(run) > runStamp(old));
+			return newer ? { write: same[0], evict: null, why: 'same-run-newer-copy' } : { write: null, evict: null, why: 'same-run-already-stashed' };
+		}
+	}
+	const taken = new Set(Object.keys(existing || {}));
+	let slot = base;
+	if (taken.has(base)) {
+		const tag = String(id ? id : 't' + now).replace(/[^A-Za-z0-9_-]/g, '_').slice(0, 60);
+		slot = base + '__' + tag;
+		for (let n = 2; taken.has(slot); n++) slot = base + '__' + tag + '_' + n;
+	}
+	let evict = null;
+	if (slots.length >= CONFLICT_STASH_MAX) {
+		evict = slots.slice().sort((a, b) => ((a[1].at || 0) - (b[1].at || 0)))[0][0];
+		if (evict === base) slot = base;   // reuse the legacy slot it frees
+	}
+	return { write: slot, evict, why: evict ? 'new-slot-evicting-oldest' : 'new-slot' };
+}
+// Every stash slot of a run key in a Storage-like object (localStorage, or a fake in tests).
+export function listConflictStashes(storage, key) {
+	const out = {};
+	const pre = conflictStashPrefix(key);
+	for (let i = 0; i < storage.length; i++) {
+		const k = storage.key(i);
+		if (k !== pre && !(k && k.startsWith(pre + '__'))) continue;
+		try { out[k] = JSON.parse(storage.getItem(k)); } catch (e) { out[k] = null; }
+	}
+	return out;
+}
+// Stash a losing copy into `storage` per planConflictStash. Returns the plan.
+export function stashRunConflict(storage, key, run, reason, now = Date.now()) {
+	const plan = planConflictStash(key, listConflictStashes(storage, key), run, now);
+	if (!plan.write) return plan;
+	if (plan.evict && plan.evict !== plan.write) storage.removeItem(plan.evict);
+	storage.setItem(plan.write, JSON.stringify({ run, reason, at: now }));
+	return plan;
+}

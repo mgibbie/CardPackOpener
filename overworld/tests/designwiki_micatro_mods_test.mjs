@@ -179,6 +179,7 @@ const F = W.features || {};
 A(F.bignum && F.bignum.maxExp === 1000 && F.bignum.examples.some(x => x.shown === 'naneinf') && F.bignum.examples.some(x => /e450$/.test(x.shown)), 'feature data: big numbers (formatter examples)');
 A(F.deckeditor && F.deckeditor.params.length >= 3 && F.deckeditor.rules.length >= 1 && F.deckeditor.examples.some(x => x.name === 'Goth Deck') && F.deckeditor.fixes.length >= 3, 'feature data: deck editor (settings, rules, Goth Deck, fixes)');
 A(F.replays && F.replays.localMax > 0 && F.replays.actionsMax > 0, 'feature data: replays');
+A(F.pages && F.pages.tiers.length === 5 && F.pages.effects.length >= 22 && F.pages.rules.length === 5 && F.pages.ruleChance === 0.3 && F.pages.pageChance === 0.25 && F.pages.values.length > 40 && F.pages.targets.length === 21 && F.pages.tiers.every((t) => t.prizes.length > 0) && F.pages.tiers[4].legendary, 'feature data: Pages v2 (targets, effects, Round rules, the five prize tiers)');
 
 // ---------- 2. the pages
 const server = http.createServer((req, res) => {
@@ -212,7 +213,9 @@ try {
 	// big lists draw 60 at a time: press every "Show all" (category / mod pages)
 	const showAll = () => page.$$eval('#content .mm-pager:not([hidden]) .mm-all', b => b.forEach(x => x.click()));
 	// the overview: hero, one tile per category (with its count), the By-mod grid
-	A(await open('micatro-mods', '.mc-modcard', W.mods.length) && await page.$$eval('#content .mc-modcard', e => e.length) === W.mods.length, `#/micatro-mods: the By-mod grid lists all ${W.mods.length} mods`);
+	const overviewReady = await open('micatro-mods', '.mc-modcard', W.mods.length);
+	const overviewMods = await page.$$eval('#content .mc-modcard', e => e.map(x => x.dataset.mod));
+	A(overviewReady && overviewMods.length === W.mods.length, `#/micatro-mods: the By-mod grid lists all ${W.mods.length} mods`, JSON.stringify(overviewMods));
 	const tiles = await page.$$eval('#content .mc-idx[data-cat]', e => e.map(x => [x.dataset.cat, x.getAttribute('href'), x.textContent]));
 	A(tiles.length === W.categories.length && W.categories.every((c, i) => tiles[i][0] === c.id && tiles[i][1] === '#/micatro-mods/' + c.id && tiles[i][2].includes(c.count.toLocaleString('en-US') + ' entries')), `#/micatro-mods: a tile per category (${W.categories.length}) with its count`, JSON.stringify(tiles.slice(0, 3)));
 	A(await page.$eval('#content .mc-hero h1', e => e.textContent) === 'Micatro Mods', 'overview: its own hero');
@@ -264,6 +267,11 @@ try {
 	A(late.key === lateKey && late.inView, `?item= a late joker (#${allJ.length}, ${lateKey}): drawn, scrolled to and highlighted`, JSON.stringify(late));
 	await open('micatro-mods/mod/pokermon?item=' + encodeURIComponent(files.pokermon.sections[0].items[440].key), '.mc-hl', 1);
 	A(await page.$eval('#content .mc-hl', e => e.dataset.key).catch(() => null) === files.pokermon.sections[0].items[440].key, 'mod page ?item= a late card (Pokermon joker #441): drawn and highlighted');
+	// a joker's forms (tools/micatro/designwiki_forms.mjs): Deoxys's tile lists its four formes, each with its art and text
+	await open('micatro-mods/mod/pokermon?item=j_poke_deoxys', '.mc-hl .mc-forms .mc-form', 4);
+	const dx = await page.$$eval('#content .mc-hl .mc-forms .mc-form', fs => fs.map(f => [f.dataset.form, !!f.querySelector('.mc-spr'), f.textContent])).catch(() => []);
+	A(dx.length === 4 && dx.map(f => f[0]).join() === 'Normal,Attack,Defense,Speed' && dx.every(f => f[1]) && /X0\.25/.test(dx[1][2]) && /\$2/.test(dx[2][2]) && /\+40/.test(dx[3][2]),
+		'Deoxys tile: a Forms box with Normal / Attack / Defense / Speed, each drawn with its art and its own text (designwiki_joker_forms_test checks the data)', JSON.stringify(dx));
 	await open('micatro-mods/jokers', '[data-key]', 50);
 	await page.select('#content .mm-modsel', 'bunco');
 	await showAll();
@@ -355,7 +363,8 @@ try {
 	A(await open('micatro/deck-editor', 'table', de.params.length + de.rules.length + 1) && await page.$eval('#content', el => /Goth Deck/.test(el.textContent) && /Deck Creator/.test(el.textContent) && !/object HTML/.test(el.textContent)), 'deck editor page: settings, rules, examples');
 	A(await open('micatro/big-numbers', 'table', 1) && await page.$eval('#content', el => /9\.99e999/.test(el.textContent) && /naneinf/.test(el.textContent)), 'big-number page');
 	A(await open('micatro/replays', 'table', 1) && await page.$eval('#content', el => /\/mr\/<id>/.test(el.textContent) && /whole run/.test(el.textContent)), 'replays page');
-	A(await open('micatro', '.mc-featlink', 3) && await page.$$eval('#content .mc-featlink', e => e.length) === 3 && await page.$$eval('#content .mc-idx', e => e.length) === 11, 'vanilla overview: its 11 categories + the 3 built-in feature pages');
+	A(await open('micatro/pages', 'table', 2) && await page.$eval('#content', el => /Prize pools/.test(el.textContent) && /Brutal/.test(el.textContent) && /Legendary/.test(el.textContent) && /Round rules/.test(el.textContent) && /Prize value/.test(el.textContent) && /A Page every ante/.test(el.textContent) && /The round.s rank/.test(el.textContent) && /Joker Toggle/.test(el.textContent)), 'Pages page (v2: Legendary, Round rules, the new targets)');
+	A(await open('micatro', '.mc-featlink', 4) && await page.$$eval('#content .mc-featlink', e => e.length) === 4 && await page.$$eval('#content .mc-idx', e => e.length) === 11, 'vanilla overview: its 11 categories + the 4 built-in feature pages (Pages too)');
 	// phone
 	await page.setViewport({ width: 390, height: 844 });
 	for (const r of ['micatro-mods', 'micatro-mods/jokers', 'micatro-mods/jokers?mod=bunco', 'micatro-mods/new-consumables', 'micatro-mods/blinds', 'micatro-mods/modifiers', 'micatro-mods/challenges', 'micatro-mods/skins', 'micatro-mods/mod/bunco', 'micatro-mods/mod/pokermon', 'micatro/deck-editor', 'micatro/replays', 'search?q=joker']) {

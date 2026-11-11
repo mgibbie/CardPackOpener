@@ -2,7 +2,7 @@
 // News automatically, like new Micatro cards do (tools/gen-magepunknews.mjs + micatro/dump_mod_items.mjs).
 //   1. a throwaway git repo: commit 1 is unrelated; commit 2 adds micatro/ (engine, data, and two
 //      mods: Milatro + Tag Team) — a launch entry with a release block per mod (per-set counts) and
-//      the three built-in features (big numbers, deck editor, replays); commit 3 gives Tag Team a
+//      the four built-in features (big numbers, deck editor, Pages, replays); commit 3 gives Tag Team a
 //      brand-new joker — a 'micatro' entry listing exactly that card (name, set, rarity, cost, atlas,
 //      pos); commit 4 only touches a mod's comments — no entry
 //   2. renders magepunknews/index.html against that feed: badges, mod blocks, the feature cards,
@@ -22,6 +22,34 @@ const CHROME = process.env.CHROME || ['C:/Program Files/Google/Chrome/Applicatio
 const PORT = 8747;
 let pass = 0, fail = 0;
 const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else { fail++; console.log('FAIL: ' + m + (extra != null ? '  ' + extra : '')); } };
+
+// The shipped Batch F release must carry real card records, not a text-only feature.
+const shipped = JSON.parse(fs.readFileSync(process.env.NEWS_TEST_FEED || path.join(ROOT, 'magepunknews/news.json'), 'utf8'));
+const wiki = JSON.parse(fs.readFileSync(path.join(ROOT, 'designwiki/data/micatro_mods/pokermon.json'), 'utf8'));
+const expected = 'froslass emboar excadrill scolipede scrafty eelektross chandelure chesnaught delphox greninja pyroar floette malamar barbaracle dragalge hawlucha zygarde falinks'.split(' ').map(n => 'j_poke_mega_' + n).sort();
+const batch = shipped.entries.filter(e => /Pokermon.*Mega batch F/i.test(e.title));
+const cards = batch[0]?.micatroMods?.find(m => m.id === 'pokermon')?.added || [];
+const items = new Map(wiki.sections.flatMap(s => s.items || []).map(i => [i.key, i]));
+A(batch.length === 1 && JSON.stringify(cards.map(c => c.key).sort()) === JSON.stringify(expected), 'Batch F appears once with all 18 linked Mega cards');
+A(cards.length === 18 && cards.every(c => {
+	const item = items.get(c.key), atlas = shipped.micatroAtlas[c.atlas];
+	const hasArt = pos => item?.art?.some(([a, p]) => a === c.atlas && p.x === pos?.x && p.y === pos?.y);
+	return item && item.name === c.name && item.lines?.length && c.set === 'Joker' && c.rarity === 'mega' && atlas?.src && atlas.cw && atlas.ch && hasArt(c.pos) && hasArt(c.soul);
+}), 'Batch F cards have wiki descriptions and matching base and soul artwork');
+const dimension = shipped.entries.filter(e => /Pokermon.*Mega Dimension/i.test(e.title));
+const dimensionExpected = 'staraptor glimmora tatsugiri chimecho meowstic crabominable scovillain'.split(' ').map(n => 'j_poke_mega_' + n).sort();
+const dimensionCards = dimension[0]?.micatroMods?.find(m => m.id === 'pokermon')?.added || [];
+A(dimension.length === 1 && JSON.stringify(dimensionCards.map(c => c.key).sort()) === JSON.stringify(dimensionExpected), 'Mega Dimension appears once with all seven individual cards');
+A(dimensionCards.length === 7 && dimensionCards.every(c => {
+	const item = items.get(c.key), atlas = shipped.micatroAtlas[c.atlas];
+	const hasArt = pos => item?.art?.some(([a, p]) => a === c.atlas && p.x === pos?.x && p.y === pos?.y);
+	return item && item.name === c.name && item.lines?.length && atlas?.src && atlas.cw && atlas.ch && hasArt(c.pos) && hasArt(c.soul);
+}), 'Mega Dimension cards match their wiki descriptions and artwork');
+const finalMega = shipped.entries.filter(e => /Pokermon.*final eight Mega/i.test(e.title));
+const finalExpected = 'absol_z garchomp_z lucario_z heatran golurk golisopod magearna zeraora'.split(' ').map(n => 'j_poke_mega_' + n).sort();
+const finalCards = finalMega[0]?.micatroMods?.find(m => m.id === 'pokermon')?.added || [];
+A(finalMega.length === 1 && JSON.stringify(finalCards.map(c => c.key).sort()) === JSON.stringify(finalExpected), 'Final Mega release lists all eight individual cards');
+A(finalCards.length === 8 && finalCards.every(c => items.get(c.key)?.lines?.length && shipped.micatroAtlas[c.atlas]?.src), 'Final Mega cards have wiki descriptions and artwork');
 
 // ---------- 1. generator over a synthetic history
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'mpnews-mods-'));
@@ -62,7 +90,7 @@ A(mil && mil.launch && mil.launch.Joker === 30 && mil.total === 30 && mil.name =
 A(tt && tt.launch && tt.launch.Joker === 1, 'Tag Team release: 1 Joker', JSON.stringify(tt));
 A(mods.length === 2, 'only the mods in the tree are released (the rest of the manifest is absent there)', mods.map(m => m.id).join(','));
 const feats = (launch && launch.micatroFeatures || []).map(f => f.id).sort().join();
-A(feats === 'big-numbers,deck-editor,replays', 'the built-in features are announced with the files that add them', feats);
+A(feats === 'big-numbers,deck-editor,pages,replays', 'the built-in features are announced with the files that add them', feats);
 const rel = byTitle('Tag Team: a new joker');
 const added = rel && rel.micatroMods && rel.micatroMods.length === 1 && rel.micatroMods[0].added;
 const probe = added && added[0];
@@ -72,7 +100,7 @@ A(!byTitle('Tag Team: comment only') || byTitle('Tag Team: comment only').kind =
 A(!rel || !rel.micatroFeatures, 'features are announced once');
 
 // ---------- 2. the page
-const feedJson = JSON.stringify({ ...news, micatroAtlas: { ...news.micatroAtlas, [probe ? probe.atlas : '@x']: { src: '/micatro/assets/textures/Jokers.png', cw: 142, ch: 190, w: 1420, h: 3040 } } });
+let feedJson = JSON.stringify({ ...news, micatroAtlas: { ...news.micatroAtlas, [probe ? probe.atlas : '@x']: { src: '/micatro/assets/textures/Jokers.png', cw: 142, ch: 190, w: 1420, h: 3040 } } });
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.json': 'application/json', '.css': 'text/css', '.png': 'image/png' };
 const modJson = JSON.stringify({ id: 'tagteam', sections: [{ id: 'jokers', items: [{ key: 'j_newsprobe_mod', name: 'Mod News Probe', lines: ['Probe text {C:mult}+4{} Mult'] }] }] });
 const server = http.createServer((req, res) => {
@@ -103,12 +131,32 @@ try {
 	A(s.badges.some(b => /1 new Micatro mod card/.test(b)), 'badge: "1 new Micatro mod card"', JSON.stringify(s.badges));
 	A(s.blocks.some(b => /^Milatro$/.test(b)) && s.blocks.some(b => /^Tag Team: 1 new card$/.test(b)), 'a block per mod: the release and the new card', JSON.stringify(s.blocks));
 	A(/30\s*Jokers/.test(s.launchText), 'mod release shows its per-set counts', s.launchText);
-	A(s.feats.length === 3 && s.feats.every(f => /\|\/designwiki\/#\/micatro\/(big-numbers|deck-editor|replays)$/.test(f)), 'the three feature cards link to their wiki pages', JSON.stringify(s.feats));
+	A(s.feats.length === 4 && s.feats.every(f => /\|\/designwiki\/#\/micatro\/(big-numbers|deck-editor|pages|replays)$/.test(f)), 'the four feature cards link to their wiki pages', JSON.stringify(s.feats));
 	A(s.chip && s.chip.href === '/designwiki/#/micatro/mod/tagteam?item=j_newsprobe_mod' && /Jokers\.png/.test(s.chip.bg) && /Mod News Probe/.test(s.chip.text), 'new mod card chip: atlas thumbnail + link to its card on the mod page', JSON.stringify(s.chip));
 	await page.hover('a.mc-chip[data-mc="j_newsprobe_mod"]');
 	await page.waitForFunction(() => /Probe text/.test(document.getElementById('mc-tip').textContent), { timeout: 5000 }).catch(() => { });
 	const tip = await page.evaluate(() => { const t = document.getElementById('mc-tip'); return { shown: getComputedStyle(t).display === 'block', text: t.textContent, big: (t.querySelector('.big') || {}).offsetWidth }; });
 	A(tip.shown && /Mod News Probe/.test(tip.text) && /Probe text \+4 Mult/.test(tip.text) && tip.big === 142, 'hover: the card text from the mod’s wiki file + the big sprite', JSON.stringify(tip));
+	// Render the actual release, not just a synthetic card: every Mega must have its own wiki link and sprite.
+	feedJson = JSON.stringify({ ...shipped, entries: batch });
+	await page.reload({ waitUntil: 'networkidle0' });
+	await page.click('button[data-f="micatro"]');
+	const chips = await page.evaluate(() => [...document.querySelectorAll('a.mc-chip[data-mc]')].map(c => ({ key: c.dataset.mc, href: c.getAttribute('href'), bg: c.querySelector('.mc-thumb')?.style.backgroundImage })));
+	A(chips.length === 18 && chips.every(c => c.href === '/designwiki/#/micatro/mod/pokermon?item=' + c.key && /AtlasJokersBasicGen/.test(c.bg || '')) && expected.every(k => chips.some(c => c.key === k)), 'Batch F renders all 18 individual wiki links and atlas thumbnails', JSON.stringify(chips));
+	await page.hover('a.mc-chip[data-mc="j_poke_mega_froslass"]');
+	await page.waitForFunction(() => /Mega Froslass/.test(document.getElementById('mc-tip').textContent), { timeout: 5000 });
+	const realTip = await page.evaluate(() => document.getElementById('mc-tip').textContent);
+	A(/Mega Froslass/.test(realTip) && /debt/i.test(realTip), 'Batch F card hover loads its actual wiki description', realTip);
+	feedJson = JSON.stringify({ ...shipped, entries: dimension });
+	await page.reload({ waitUntil: 'networkidle0' });
+	await page.click('button[data-f="micatro"]');
+	const megaChips = await page.evaluate(() => [...document.querySelectorAll('a.mc-chip[data-mc]')].map(c => ({ key: c.dataset.mc, href: c.getAttribute('href'), bg: c.querySelector('.mc-thumb')?.style.backgroundImage })));
+	A(megaChips.length === 7 && megaChips.every(c => c.href === '/designwiki/#/micatro/mod/pokermon?item=' + c.key && /AtlasJokersBasicGen/.test(c.bg || '')) && dimensionExpected.every(k => megaChips.some(c => c.key === k)), 'Mega Dimension renders all seven individual wiki links and atlas thumbnails', JSON.stringify(megaChips));
+	feedJson = JSON.stringify({ ...shipped, entries: finalMega });
+	await page.reload({ waitUntil: 'networkidle0' });
+	await page.click('button[data-f="micatro"]');
+	const finalChips = await page.evaluate(() => [...document.querySelectorAll('a.mc-chip[data-mc]')].map(c => ({ key: c.dataset.mc, href: c.getAttribute('href'), bg: c.querySelector('.mc-thumb')?.style.backgroundImage })));
+	A(finalChips.length === 8 && finalChips.every(c => c.href === '/designwiki/#/micatro/mod/pokermon?item=' + c.key && /AtlasJokersBasicGen/.test(c.bg || '')) && finalExpected.every(k => finalChips.some(c => c.key === k)), 'Final Mega release renders all eight individual wiki links and thumbnails', JSON.stringify(finalChips));
 	A(errors.length === 0, 'no page errors', errors.join(' | '));
 } catch (e) {
 	fail++; console.log('FAIL: exception', e && e.stack);

@@ -13,6 +13,7 @@ import { supersededFrom } from '../mods/superseded.js';
 import { stakeLadder, deckBest, stakeOpen, fallbackIndex, lockText } from './stakeunlocks.js';
 import { stickDeckCanvas, stickDeckCanvasCentred } from './decksticker.js';
 import { getProgress, badgePills, ACHIEVEMENTS, TYPES, typeStyle, typesBeaten, monoWins, typeRecord, totalLevels } from './progress.js';
+import { jokerUsage, usageUser } from './jokerusage.js';
 
 const h = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
 const btn = (label, cls, fn) => { const b = h('button', 'btn ' + cls, label); b.type = 'button'; b.addEventListener('click', (e) => { sound.play('button'); fn(e); }); return b; };
@@ -55,12 +56,15 @@ export function mainMenu(o) {
   el.appendChild(card);
   const bar = h('div', 'menu-bar');
   bar.appendChild(btn('Play', 'blue big b-menu-play', () => newRunScreen(o)));
+  // Multiplayer (signed in: lobbies + friends need an account)
+  if (o.loggedIn && o.multiplayer) bar.appendChild(btn('Multi&shy;player', 'red big b-multiplayer', () => o.multiplayer()));
   if (o.saved) bar.appendChild(btn('Continue', 'orange big b-continue', () => o.onContinue()));
   bar.appendChild(btn('Leader<br>board', 'green big b-leaders', () => leaderboard(o.net)));
   bar.appendChild(btn('How to<br>play', 'red big b-howto', () => howTo()));
   if (o.replays) bar.appendChild(btn('Replays', 'orange big b-replays', () => replaysList(o.replays)));
   if (o.challenges) bar.appendChild(btn('Chal&shy;lenges', 'red big b-challenges', () => challengesScreen(o)));
   bar.appendChild(btn('Achieve&shy;ments', 'green big b-achievements', () => achievementsScreen()));
+  bar.appendChild(btn('Joker<br>collection', 'blue big b-joker-collection', () => jokerCollection()));
   el.appendChild(bar);
   // the run on offer came from the account (ui/runsync.js): say where it came from
   const cl = o.cloud;
@@ -89,6 +93,80 @@ export function mainMenu(o) {
   requestAnimationFrame(spin);
 }
 
+/** Base-game jokers and their earned win stickers, independent of the table sticker setting. */
+export function jokerCollection() {
+  const jokers = Object.entries(CENTERS).filter(([, c]) => c.set === 'Joker' && !c.mod)
+    .sort((a, b) => (a[1].order || 0) - (b[1].order || 0));
+  const body = h('div', 'joker-collection');
+  const summary = h('div', 'joker-collection-summary');
+  const search = document.createElement('input');
+  search.type = 'search';
+  search.className = 'joker-collection-search';
+  search.placeholder = 'Search jokers';
+  search.setAttribute('aria-label', 'Search jokers');
+  const grid = h('div', 'joker-collection-grid');
+  const pages = h('div', 'joker-collection-pages');
+  let page = 0;
+  const nameOf = ([key, center]) => ((center.mod ? (MODREG.loc.descriptions.Joker || {}) : LOC.descriptions.Joker)[key] || {}).name || center.name || key;
+  body.append(summary, h('div', 'joker-collection-record', 'Usage is recorded on this device from this update onward. Mod Jokers shown are from enabled mods.'), search, pages, grid);
+  function draw() {
+    grid.replaceChildren();
+    pages.replaceChildren();
+    const usage = jokerUsage(usageUser());
+    const won = jokers.filter(([key]) => Object.keys(winRecord(key)).length).length;
+    summary.textContent = `${won} / ${jokers.length} jokers with a win sticker`;
+    const matches = jokers.filter((item) => nameOf(item).toLowerCase().includes(search.value.trim().toLowerCase()));
+    const count = Math.max(1, Math.ceil(matches.length / 150));
+    page = Math.min(page, count - 1);
+    if (count > 1) {
+      const prev = btn('Previous', 'grey small', () => { page--; draw(); }); prev.disabled = page === 0;
+      const next = btn('Next', 'grey small', () => { page++; draw(); }); next.disabled = page === count - 1;
+      pages.append(prev, h('span', '', `Page ${page + 1} / ${count}`), next);
+    }
+    for (const [key, center] of matches.slice(page * 150, (page + 1) * 150)) {
+      const record = winRecord(key);
+      const categoryNames = { win: 'Win', poke: 'Pokermon', nuz: 'Nuzlocke', mono: 'Monotype', both: 'Nuzlocke + Monotype' };
+      const details = Object.entries(record).map(([category, level]) => `${categoryNames[category] || category}: ${stickerName(level)} Stake`).join(', ');
+      const item = h('button', 'joker-collection-item');
+      item.type = 'button';
+      const name = nameOf([key, center]);
+      item.title = `${name} — ${details || 'No win sticker yet'}`;
+      const stats = usage[key] || { runs: 0, wins: 0 };
+      const face = center.mod ? liveCard({ center: key, set: 'Joker', mod: center.mod, atlas: center.atlas, pos: center.pos, soul_pos: center.soul_pos }) : cardCanvas({ center: key, set: 'Joker' });
+      item.append(face, h('div', 'joker-collection-name', esc(name)), h('div', 'joker-collection-record', esc(details || 'No sticker')), h('div', 'joker-collection-record', `Runs: ${stats.runs} · Wins: ${stats.wins}`));
+      item.addEventListener('click', async () => {
+        let description;
+        try { description = (await import('../engine/describe.js')).describeCenter(key); } catch (_) { /* use the printed description */ }
+        if (!body.isConnected) return;
+        if (!description) {
+          const raw = center.mod ? (MODREG.loc.descriptions.Joker || {})[key] : (LOC.descriptions.Joker || {})[key];
+          const values = Object.values(center.config || {}).flatMap((v) => typeof v === 'number' || typeof v === 'string' ? [v] : v && typeof v === 'object' ? Object.values(v).filter((x) => typeof x === 'number' || typeof x === 'string') : []);
+          description = { name, lines: ((raw && raw.text) || []).map((line) => String(line).replace(/#(\d+)#/g, (_, i) => values[+i - 1] == null ? '?' : String(values[+i - 1]))) };
+        }
+        const detail = h('div', 'joker-collection-detail');
+        detail.append(center.mod ? liveCard({ center: key, set: 'Joker', mod: center.mod, atlas: center.atlas, pos: center.pos, soul_pos: center.soul_pos }) : cardCanvas({ center: key, set: 'Joker' }));
+        detail.appendChild(h('div', 'joker-collection-description', (description.lines || []).map((line) => markup(line)).join('<br>')));
+        detail.appendChild(h('div', 'joker-collection-record', esc(details || 'No win sticker yet')));
+        detail.appendChild(h('div', 'joker-collection-record', `Runs: ${stats.runs} · Wins: ${stats.wins}`));
+        modal(detail, { title: description.name || name, cls: 'joker-detail-modal' });
+      });
+      grid.appendChild(item);
+    }
+  }
+  search.addEventListener('input', () => { page = 0; draw(); });
+  draw();
+  const off = onWinStickers(() => { if (body.isConnected) draw(); });
+  modal(body, { title: 'Joker Collection', cls: 'joker-collection-modal', onClose: off });
+  const selected = loadModPrefs().ids;
+  if (modsApi && selected.length) modsApi.load(selected).then(() => {
+    if (!body.isConnected) return;
+    for (const id of selected) for (const c of ((MODREG.mods[id] || {}).content || {}).centers || []) {
+      if (c.set === 'Joker' && !c.legacy && !c.unported && !jokers.some(([key]) => key === c.key)) jokers.push([c.key, c]);
+    }
+    draw();
+  }).catch((e) => console.warn('micatro: collection mods failed to load', e));
+}
+
 /** What a mod UI module gets to draw its screens with (ui/modui.js: Pokermon's Pokédex). */
 export function modApi() {
   return { modal, closeModal, cardCanvas: liveCard, markup, esc, fmt, btn };
@@ -109,6 +187,9 @@ export function liveCard(d, cls, backKey) {
 }
 
 export function cardCanvas(d, cls, backKey) {
+  // (a card given only by its key — the Multiplayer end screen / HUD: a mod card's art is on its mod's atlas, as the view says)
+  const ctr = d && d.center && !d.mod ? CENTERS[d.center] : null;
+  if (ctr && ctr.mod && ctr.atlas) d = { ...d, mod: ctr.mod, atlas: ctr.atlas, pos: ctr.pos, ...(ctr.soul_pos ? { soul_pos: ctr.soul_pos } : {}), ...(ctr.soul_atlas ? { soul_atlas: ctr.soul_atlas } : {}) };
   const c = document.createElement('canvas');
   c.width = FACE_W; c.height = FACE_H;
   c.className = 'mini-card ' + (cls || '');
@@ -174,7 +255,7 @@ export function newRunScreen(o) {
   const stakeId = (s) => (s ? s.level || s.key : null);
   const refreshStakes = (sel) => {
     const cur = stakeId(stakes[si]);
-    const extra = modsApi && modsApi.stakes ? modsApi.stakes(sel.ids.filter((id) => modsApi.isLoaded(id))) : [];
+    const extra = modsApi && modsApi.stakes ? modsApi.stakes(sel.ids.filter((id) => modsApi.isLoaded(id)), sel.options) : [];
     stakes = STAKE_LIST.map((s, i) => ({ ...s, level: i + 1 })).concat(extra);
     ladder = stakeLadder(stakes);
     si = Math.max(0, stakes.findIndex((s) => stakeId(s) === cur));
@@ -294,7 +375,8 @@ export function newRunScreen(o) {
   refreshSleeves(msel);
   // decks of saved-on mods appear once those mods have loaded
   if (modsApi && msel.ids.length) Promise.resolve(modsApi.load(modsApi.withRequirements(msel.ids))).then(() => { refreshBacks(msel); refreshStakes(msel); refreshSleeves(msel); if (el.isConnected) draw(); }).catch(() => {});
-  const play = btn('Play', 'blue big wide b-start', () => {
+  // (Multiplayer's lobby setup: the same choices become the lobby's — a custom deck too, stage 7c: its definition goes to both players)
+  const play = btn(o.pvpHost ? 'Create lobby' : 'Play', 'blue big wide b-start', () => {
     if (!stakeIsOpen(si)) { draw(); return; }   // (a locked stake can't be started: the button is disabled anyway)
     const back = backs[bi].key;
     const st = stakes[si] || stakes[0];
@@ -361,7 +443,7 @@ export function newRunScreen(o) {
     play.title = open ? '' : 'Locked: ' + why;
   }
   draw();
-  modal(el, { title: 'New Run', cls: 'nr-modal' });
+  modal(el, { title: o.pvpHost ? 'Multiplayer lobby' : 'New Run', cls: 'nr-modal' });
 }
 
 // ------------------------------------------------------- leaderboard
@@ -397,11 +479,13 @@ export async function leaderboard(net, highlight, opts = {}) {
           const back = x.back && CENTERS[x.back] ? CENTERS[x.back].name.replace(' Deck', '') : mc ? String(mc.name || '').replace(' Deck', '') : '';
           const mods = (Array.isArray(x.mods) && x.mods.length ? `<span class="lb-mods">${modBadges(x.mods)}</span>` : '') +
             (x.customDeck ? `<span class="lb-cdeck">Custom deck: ${esc(x.customDeck)}</span>` : '');
+          // (a run played with Pages: noted, as its best hand could lean on a Page)
+          const pg = x.pages === true ? ' <span class="lb-pages" title="Played with Pages">Pages</span>' : '';
           // the row's run replay (a whole run, re-simulated in the viewer) — a ▶ beside the name
           const rp = typeof x.replay === 'string' && /^[a-f0-9]{8,20}$/.test(x.replay) ? `<a class="lb-replay b-lb-replay" href="/micatro/?replay=${x.replay}" title="Watch this run" aria-label="Watch ${esc(user)}'s run">▶</a>` : '';
           // a won Pokermon run's Nuzlocke / Monotype tag (client-reported, like the score)
           const rbs = lbBadges(x.badges);
-          return `<div class="lb-row${hl && hl === user ? ' me' : ''}${mods ? ' modded' : ''}"><span>${x.rank || i + 1}</span><span>${rp}${esc(user)}${x.won ? ' <span class="won">★</span>' : ''}${rbs}${mods}</span><span class="chips">${lbScore(x)}</span><span>${x.ante || ''}</span><span>${esc(back)}${x.stake > 1 ? ' · ' + x.stake : ''}</span></div>`;
+          return `<div class="lb-row${hl && hl === user ? ' me' : ''}${mods ? ' modded' : ''}"><span>${x.rank || i + 1}</span><span>${rp}${esc(user)}${x.won ? ' <span class="won">★</span>' : ''}${rbs}${pg}${mods}</span><span class="chips">${lbScore(x)}</span><span>${x.ante || ''}</span><span>${esc(back)}${x.stake > 1 ? ' · ' + x.stake : ''}</span></div>`;
         }).join('');
       body.innerHTML = '';
       body.appendChild(tbl);
@@ -422,7 +506,7 @@ export function howTo() {
     <p><b class="red">Discard</b> unwanted cards to draw new ones (limited per round).</p>
     <p>Beat a blind to earn <b class="money">$</b> — plus $1 per unused hand and interest on your savings — then spend it in the <b class="attn">Shop</b> on <b class="attn">Jokers</b>, <b style="color:#a782d1">Tarot</b>, <b style="color:#13afce">Planet</b> and <b style="color:#4584fa">Spectral</b> cards, Vouchers and booster packs.</p>
     <p>Each <b class="attn">Ante</b> is a Small Blind, a Big Blind and a <b class="red">Boss Blind</b> with a nasty twist. Skip a blind to take its <b class="attn">Tag</b> instead. Beat the Ante 8 boss to win.</p>
-    <p class="muted">Tap a card to select it · drag to reorder · long-press (or hover) for details.<br>Keys: Enter play · D discard · R/S sort · 1–9, 0 pick cards · right-click let go of picks · hold R restart · V deck · I run info · Esc options</p>`;
+    <p class="muted">Tap a card to select it · drag to reorder · long-press (or hover) for details.<br>Keys: arrows / WASD move the cursor · Z choose · X back · C sell / sort · V card info · Q / E play / discard (and the screen’s two buttons) · Enter pause · Backspace deck · 1–9, 0 pick cards · P play · Delete discard · R sort (hold: restart) · I run info · Esc options</p>`;
   modal(el, { title: 'How to play', cls: 'howto-modal' });
 }
 
@@ -564,7 +648,7 @@ export function pauseMenu(o) {
   el.appendChild(btn('Deck', 'orange big wide', () => { closeModal(); o.onMenu('deck'); }));
   el.appendChild(btn('Options', 'orange big wide', () => { closeModal(); o.onMenu('options'); }));
   if (o.readOnly && o.chat) el.appendChild(btn('Chat', 'green big wide', () => { closeModal(); o.chat(); }));
-  if (!o.readOnly && o.mainMenu) el.appendChild(btn('Main Menu', 'red big wide', () => { closeAll(); o.mainMenu(); }));
+  if (!o.readOnly && o.mainMenu) el.appendChild(btn('Main Menu', 'red big wide b-pause-main', () => { closeAll(); o.mainMenu(); }));
   modal(el, { title: 'Paused', cls: 'pause-modal', noClose: true });
 }
 
@@ -602,14 +686,19 @@ export function options(o) {
   modal(el, { title: 'Options', cls: 'opt-modal' });
 }
 
-/** Options > Keyboard: the desktop shortcuts (ui/main.js onKey; right-click: ui/board.js). Hidden on touch screens. */
+/** Options > Keyboard: the keys (the cursor's: ui/pad.js on site/input.js — the controller's buttons; the hotkeys: ui/main.js
+ *  onKey; right-click: ui/board.js). Hidden on touch screens. */
 export const KEYS = [
+  ['Arrows / WASD', 'Move the cursor'], ['Z', 'Choose · buy · press (hold Z + ←/→ to move a card)'], ['X', 'Back · let go of the chosen cards'],
+  ['C', 'Sell · buy & use · sort the hand'], ['V', 'Card info on / off'],
+  ['Q / E', 'Play / Discard · Select / Skip blind · Next round / Reroll · Cash out · Skip pack'],
+  ['Enter', 'Pause menu'], ['Backspace', 'Deck'],
   ['1–9, 0', 'Pick the 1st–10th card in hand (again to let go); in a pack, its cards'],
   ['Right-click', 'Let go of all chosen cards'],
-  ['Enter / P', 'Play hand'], ['D', 'Discard'], ['C', 'Clear the selection'],
-  ['R / S', 'Sort the hand by rank / suit'], ['R', 'Reroll (in the shop)'], ['Hold R', 'Restart the run (same deck and stake)'],
-  ['Enter / Space', 'Select the blind · cash out · next round'], ['S', 'Skip the blind / the pack'],
-  ['V', 'Deck'], ['I', 'Run info'], ['Esc', 'Options'],
+  ['P', 'Play hand'], ['Delete', 'Discard'],
+  ['R', 'Sort the hand by rank · reroll (in the shop)'], ['Hold R', 'Restart the run (same deck and stake)'],
+  ['Space', 'Select the blind · cash out · take the Page'], ['N', 'Next round'],
+  ['I', 'Run info'], ['Esc', 'Options'], ['` or hold Esc', 'Games'],
 ];
 function keysBox() {
   const box = h('div', 'opt-keys');
@@ -1293,8 +1382,8 @@ function activeModsBox(ids, modOptions) {
   for (const id of ids) {
     const r = h('div', 'am-row');
     r.innerHTML = modBadges([id]);
-    const list = modsApi ? modsApi.optionList(id).filter((op) => !op.cosmetic) : []; // (a cosmetic option isn't the run's)
     const vals = modOptions[id] || {};
+    const list = modsApi ? modsApi.optionList(id).filter((op) => !op.cosmetic && (!(op.key.startsWith('content:') || id === 'jokertoggle') || vals[op.key] === false)) : []; // only list item overrides, not hundreds of defaults
     const parts = list.map((op) => `${esc(op.label)}: <b>${esc(fmtOpt(vals[op.key] !== undefined ? vals[op.key] : op.default))}</b>`);
     if (parts.length) r.appendChild(h('span', 'am-opts', parts.join(' · ')));
     box.appendChild(r);
@@ -1310,6 +1399,7 @@ export function modsPanel(sel, onChange) {
   el.append(list, note);
   const loading = new Set(), failed = new Set();
   const expanded = new Set(); // mods whose long option lists are open (collapsed by default)
+  const searches = new Map();
   const changed = () => { saveModPrefs(sel); if (onChange) onChange(sel); };
   const say = (t) => { note.textContent = t || ''; note.style.display = t ? '' : 'none'; };
   say('');
@@ -1348,6 +1438,24 @@ export function modsPanel(sel, onChange) {
     draw();
   }
   function setOpt(id, key, v) {
+    if (id === 'jokertoggle' && v === false && key !== 'pages') {
+      const options = modsApi.optionList(id).filter((op) => op.key !== 'pages'); // (the Pages switch is not a Joker)
+      if (options.every((op) => op.key === key || (sel.options[id] && sel.options[id][op.key] === false))) {
+        say('Keep at least one original Joker enabled so a run can generate Jokers.');
+        return;
+      }
+    }
+    if (key.startsWith('content:') && v === false && modsApi.customType) {
+      const current = modsApi.optionList(id).find((op) => op.key === key);
+      const type = current && current.label.split(':', 1)[0];
+      if (type && modsApi.customType(type)) {
+        const others = sel.ids.flatMap((mod) => modsApi.isLoaded(mod) ? modsApi.optionList(mod).filter((op) => op.key.startsWith('content:') && op.label.startsWith(type + ':')).map((op) => ({ mod, op })) : []);
+        if (others.length && others.every(({ mod, op }) => (mod === id && op.key === key) || (sel.options[mod] && sel.options[mod][op.key] === false))) {
+          say(`Keep at least one ${type} card enabled while its mod is on.`);
+          return;
+        }
+      }
+    }
     sel.options[id] = { ...(sel.options[id] || {}), [key]: v };
     changed();
     draw();
@@ -1389,7 +1497,17 @@ export function modsPanel(sel, onChange) {
             tg.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
             opts.appendChild(tg);
           }
-          for (const op of (collapsed ? [] : optList)) {
+          if (!collapsed && optList.length > LONG) {
+            const search = document.createElement('input');
+            search.type = 'search'; search.className = 'mod-options-search';
+            search.placeholder = 'Search options'; search.value = searches.get(m.id) || '';
+            search.setAttribute('aria-label', `Search ${m.name || m.id} options`);
+            search.dataset.k = 'search:' + m.id;
+            search.addEventListener('input', () => { const end = search.selectionStart; searches.set(m.id, search.value); draw(); const next = list.querySelector(`[data-k="search:${m.id}"]`); if (next) { next.focus(); try { next.setSelectionRange(end, end); } catch (_) {} } });
+            opts.appendChild(search);
+          }
+          const query = (searches.get(m.id) || '').trim().toLowerCase();
+          for (const op of (collapsed ? [] : optList.filter((op) => !query || (op.label + ' ' + op.key).toLowerCase().includes(query)))) {
             const cur = sel.options[m.id] && sel.options[m.id][op.key] !== undefined ? sel.options[m.id][op.key] : op.default;
             const r = h('div', 'mod-opt');
             r.appendChild(h('div', 'mod-opt-l', esc(op.label)));

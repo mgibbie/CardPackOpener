@@ -11,7 +11,7 @@ G.MenuUI = (() => {
       b.dataset.sfx = b.dataset.go === 'play' ? 'confirm' : 'click';
       b.onclick = () => {
         const go = b.dataset.go;
-        if (go === 'play') { if (G.Social.room) G.LobbyUI.open(); else G.PlayUI.open(); }   // (MicaSurvivor U1: Pokémon -> mode -> variant -> players -> setup)
+        if (go === 'play') { if (G.Social.room) G.LobbyUI.open(); else G.PlayUI.open({ usePartner: true }); }
         else if (go === 'modes') G.ModesUI.open();   // MicaSurvivor (M5 lote 6)
         else if (go === 'dex') openDex();
         else if (go === 'upgrades') openUpgrades();

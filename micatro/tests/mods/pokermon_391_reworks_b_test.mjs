@@ -260,7 +260,7 @@ ok(['rotomh', 'rotomw', 'rotomf', 'rotomfan', 'rotomm'].every((n) => C(n).in_poo
 }
 
 // ---------------------------------------------------------------- deferred parts + house rules
-ok(JSON.stringify(C('lucario').megas) === '["mega_lucario"]' && P_CENTERS.j_poke_mega_lucario, 'Lucario\'s 3.9.1 Mega (Mega Lucario) landed in batch 16 (pokermon_391_megas_test.mjs fires it)', C('lucario').megas);
+ok(C('lucario').megas.includes('mega_lucario') && P_CENTERS.j_poke_mega_lucario, 'Lucario\'s 3.9.1 Mega (Mega Lucario) landed in batch 16 (pokermon_391_megas_test.mjs fires it)', C('lucario').megas);
 ok(P_CENTERS.m_poke_flower && P_CENTERS.m_poke_flower.config.Xmult_flower === 2, 'the Flower enhancement is on its 3.9.1 X2 (X3 with Shaymin) since batch 10', P_CENTERS.m_poke_flower && P_CENTERS.m_poke_flower.config);
 ok(/contains/.test(JOKER_LOC.j_poke_deino.text[1]), 'house rule: Deino "contains a Three of a Kind" (pokejokers_21, untouched)');
 ok(!!C('jirachi_copy') && !!C('jirachi_negging'), 'kept: the two written-but-unregistered Jirachi forms stay defined (intended-design fix)');

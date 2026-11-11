@@ -10,6 +10,7 @@
 // Then Energy (the standard shares; the fixed numbers stay), the art (form cells and their types) and save / resume.
 //   node micatro/tests/mods/pokermon_gen6_legendaries_test.mjs
 import path from 'path';
+// (Session runs here start with engineRev: 1 = the rules before Pages: these suites measure the mod alone)
 import { fileURLToPath, pathToFileURL } from 'url';
 import { T, start, hand, add, clearHand, G, P_CENTERS, act, STATES } from './poke_helpers.mjs';
 import { Session } from '../../js/engine/session.js';
@@ -323,7 +324,7 @@ await sec('energy', () => {
 // ------------------------------------------------------------------- save / resume (a run is its recipe)
 await sec('resume', () => {
   const s = new Session();
-  s.start({ seed: 'G6RESUME', customDeck: { name: 'Gen6', mods: ['pokermon'], params: { joker_slots: 8, consumable_slots: 8, blind_scaling: 0.05 },
+  s.start({ engineRev: 1, seed: 'G6RESUME', customDeck: { name: 'Gen6', mods: ['pokermon'], params: { joker_slots: 8, consumable_slots: 8, blind_scaling: 0.05 },
     jokers: [{ key: 'j_poke_yveltal' }, { key: 'j_poke_zygarde' }, { key: 'j_poke_diancie' }, { key: 'j_poke_hoopa' }, { key: 'j_poke_volcanion' }],
     consumables: [{ key: 'c_pluto' }, { key: 'c_pluto' }] } });
   flush();
@@ -351,7 +352,7 @@ await sec('resume', () => {
   ok(!st.error && JSON.stringify(snap()) === JSON.stringify(live), 'the replay stepper too', snap());
   // a Complete Zygarde and an Unbound Hoopa come back with their form, art and hand size
   const s2 = new Session();
-  s2.start({ seed: 'G6RESUME2', customDeck: { name: 'Gen6b', mods: ['pokermon'], params: { joker_slots: 8, consumable_slots: 20, blind_scaling: 0.05 },
+  s2.start({ engineRev: 1, seed: 'G6RESUME2', customDeck: { name: 'Gen6b', mods: ['pokermon'], params: { joker_slots: 8, consumable_slots: 20, blind_scaling: 0.05 },
     cards: ['2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K', 'A'].map((r) => ['H_' + r, 0, 0, 0, 4]),
     jokers: [{ key: 'j_poke_zygarde' }, { key: 'j_poke_hoopa' }], consumables: Array.from({ length: 15 }, () => ({ key: 'c_pluto' })) } });
   flush();

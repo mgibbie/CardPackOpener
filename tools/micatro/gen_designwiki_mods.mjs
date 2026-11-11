@@ -28,8 +28,10 @@ const REG = await imp('micatro/js/mods/registry.js');
 const B = await imp('micatro/js/engine/bignum.js');
 const CD = await imp('micatro/js/engine/customdeck.js');
 const RP = await imp('micatro/js/replays.js');
+const PG = await imp('micatro/js/engine/pages.js');
 const SLV = await imp('micatro/js/engine/sleeve.js');
 const { challengeItem } = await import('./gen_designwiki_challenges.mjs');
+const { makeFormsOf } = await import('./designwiki_forms.mjs');
 const { G, P_CENTERS, P_TAGS, P_BLINDS, P_SEALS, P_STAKES } = core;
 
 // ------------------------------------------------------------------ load every mod
@@ -46,6 +48,8 @@ G.E_MANAGER = core.E_MANAGER;
 G.handlist = HANDLIST;
 G.GAME = init_game_object();
 G.GAME.current_round.most_played_poker_hand = DATA.loc.misc.dictionary.ph_most_played || '(most played hand)';
+// every form / forme / mode of a joker, resolved by the engine (tools/micatro/designwiki_forms.mjs)
+const formsOf = await makeFormsOf({ ROOT, G, P_CENTERS, MOD_LOC: REG.MOD_LOC, describe: (await imp('micatro/js/engine/describe.js')).describe });
 
 // ------------------------------------------------------------------ text helpers
 const LOC = DATA.loc;
@@ -165,9 +169,17 @@ function jokerItem(c, mod) {
   const rar = REG.RARITIES[c.rarity];
   const rarity = rar ? [rar.name || rar.key, css(rar.badge_colour) || '#6b7793'] : RARITY[c.rarity] || RARITY[1];
   const extraBadges = badgeList(d, ['common', 'uncommon', 'rare', 'legendary', rar && rar.key]).filter((b) => b.label !== rarity[0]);
+  // its forms (Deoxys's formes, Castform's weather, Vivillon's patterns...): each one's name, art and text (or cosmetic / the run's state)
+  const F = formsOf(c);
+  const forms = F && F.forms.map((f) => ({
+    name: f.name, ...(f.base ? { base: true } : {}), ...(f.key !== c.key ? { key: f.key } : {}),
+    ...(f.art && !f.base ? { art: [f.art.soul_pos && layer(f.art.atlas, f.art.soul_pos), layer(f.art.atlas, f.art.pos)].filter(Boolean) } : {}),
+    ...(f.cosmetic ? { cosmetic: true } : {}), ...(f.covered ? { covered: true } : {}), ...(f.state ? { state: true } : {}), ...(f.lines && !f.cosmetic ? { lines: f.lines } : {}),
+  }));
   return centerItem(c, mod, {
     badges: [{ label: rarity[0], colour: rarity[1] }, ...extraBadges], rarity: rarity[0],
     ...(c.blueprint_compat === false ? { note: 'Not copyable by Blueprint / Brainstorm' } : {}),
+    ...(forms ? { forms } : {}),
   });
 }
 
@@ -527,6 +539,36 @@ const features = {
     })(),
   },
   replays: { localMax: RP.LOCAL_MAX, actionsMax: RP.ACTIONS_MAX, packedMax: RP.PACKED_MAX },
+  // Pages (micatro/js/engine/pages.js): the parts of a Page and the prize-tier table, straight from the engine
+  // (Pages v2, engine rev 3: the current tables — targets, effects, modifiers, Round rules and the five prize tiers)
+  pages: {
+    rev: PG.PAGES_REV, v2rev: PG.PAGES_V2_REV, downsideBonus: PG.DOWNSIDE_BONUS, pcts: PG.PAGE_PCTS_V2, lowPcts: PG.LOW_PCTS, legendaryPcts: PG.LEGENDARY_PCTS,
+    lowChance: PG.LOW_CHANCE, legendaryChance: PG.LEGENDARY_CHANCE, ruleChance: PG.RULE_CHANCE, pageChance: PG.PAGE_ODDS.chance, prizeChance: PG.PRIZE_CHANCE,
+    tierLabels: PG.PRIZE_TIERS_V2.map((t, i) => ({ name: t.name, from: i ? PG.TIER_LABEL_MAX[i - 1] + 1 : null, to: Number.isFinite(PG.TIER_LABEL_MAX[i]) ? PG.TIER_LABEL_MAX[i] : null })),
+    // (the prize-value table: what each prize adds to the required score, %)
+    values: (() => {
+      const V = PG.PRIZE_VALUE, nm = (k) => PG.prizeText({ kind: 'card', set: 'Tarot', key: k }).replace(/ \(.*\)$/, '');
+      return [
+        ['Money', '+' + V.money_base + '% + ' + V.per_dollar + '% per $'],
+        ...Object.entries(V.set).map(([s, v]) => ['Any other ' + s + ' card', '+' + v + '%']),
+        ...Object.entries(V.card).map(([k, v]) => [nm(k), '+' + v + '%']),
+        ...Object.entries(V.pack).map(([k, v]) => [PG.prizeText({ kind: 'pack', key: k }).replace(/^a /, ''), '+' + v + '%']),
+        ...Object.entries(V.shop).map(([k, v]) => [PG.prizeText({ kind: 'shop', perk: k }), '+' + v + '%']),
+        ...Object.entries(V.tag).map(([k, v]) => [PG.prizeText({ kind: 'tag', key: k }).replace(/^a /, ''), '+' + v + '%']),
+        ...Object.entries(V.joker).map(([r, v]) => [PG.prizeText({ kind: 'joker', rarity: +r }).replace(/^a /, 'A '), '+' + v + '%']),
+        ['A named Joker (Common / Uncommon / a Basic Pokermon Joker)', '+' + V.joker_base + '% + ' + V.joker_per_cost + '% per $ of its shop cost'],
+        ...Object.entries(V.kind).map(([k, v]) => [PG.prizeText({ kind: k }), '+' + v + '%']),
+      ];
+    })(),
+    targets: PG.TARGET_KEYS_V2.map((k) => ({ key: k, name: (PG.PAGE_TARGETS[k] || PG.PAGE_TARGETS_V2[k]).name, v2: !PG.PAGE_TARGETS[k] })),
+    effects: PG.EFFECT_KEYS_V2.map((k) => { const e = PG.PAGE_EFFECTS[k] || PG.PAGE_EFFECTS_V2[k]; return { key: k, text: e.text.replace('#1#', '1').replace('#2#', 'Glass, Steel or Gold'), down: !!e.down, weight: PG.effectWeight(k), v2: !PG.PAGE_EFFECTS[k] }; }),
+    rules: PG.RULE_KEYS.map((k) => ({ key: k, text: PG.ROUND_RULES[k].text, d: PG.ROUND_RULES[k].d })),
+    tags: PG.PRIZE_TAGS.map((k) => PG.prizeText({ kind: 'tag', key: k }).replace(/^a /, '')),
+    tiers: PG.PRIZE_TIERS_V2.map((t, i) => ({ tier: t.tier, name: t.name, from: t.tier === 5 ? null : i ? PG.PRIZE_TIERS_V2[i - 1].max + 5 : null, to: t.tier < 5 && Number.isFinite(t.max) ? t.max : null, legendary: t.tier === 5,
+      prizes: t.prizes.map((z) => (z.kind === 'card' && z.key ? PG.prizeText(z) : z.kind === 'card' ? (z.set === 'Item' || z.set === 'Oddity' ? `an ${z.set} card (with ${z.set === 'Item' ? 'Pokermon' : 'AutumnMood'})` : `a named ${z.set} card`)
+        : z.kind === 'tag' ? 'a Tag (' + PG.PRIZE_TAGS.map((k) => PG.prizeText({ kind: 'tag', key: k }).replace(/^a /, '')).join(', ') + ')'
+          : z.kind === 'poke' ? 'a Poke Ball or a random Energy card (with Pokermon)' : PG.prizeText(z))) })),
+  },
 };
 
 const out = { generated: 'tools/micatro/gen_designwiki_mods.mjs', mods: index, categories, atlases: ATLASES, features };

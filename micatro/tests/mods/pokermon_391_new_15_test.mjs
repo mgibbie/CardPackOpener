@@ -77,7 +77,7 @@ sec(() => {
 });
 sec(() => {
   // Their place in the joker list: 3.9.1's file order.
-  const keys = MODS.pokermon.content.centers.filter((c) => c.set === 'Joker').map((c) => c.key);
+  const keys = MODS.pokermon.content.centers.filter((c) => c.set === 'Joker' && !c.key.startsWith('j_poke_mega_')).map((c) => c.key);
   // (b follows a, past any joker from upstream main between them: sub-batch 15b's sit in main's order among 3.9.1's)
   const fromMain = new Set(Object.entries(D391.new_jokers || {}).filter(([, v]) => v.upstream === 'main').map(([n]) => 'j_poke_' + n));
   // (and past the owner's designs, jokers/pokejokers_designs.js: Gen 5 batch 3 put Tynamo after Klinklang, Cubchoo ... Druddigon after Haxorus)

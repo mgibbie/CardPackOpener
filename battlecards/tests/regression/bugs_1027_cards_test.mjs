@@ -8,6 +8,7 @@
 //   5 Ring of Courage       "Repeat for each enemy creature" never repeated (+ Blazing Power, Chum Bucket,
 //                           Petting Zoo, Roaring Applause, Dark Skies, Bouncing Blade, Fly Off the Shelves)
 //   6 Vanquish the Horde    already fixed by #826 (merged 11:02Z; the report was filed 09:06Z) — pinned here
+import { gameSource } from '../helpers/gamesource.mjs';   // game.js + the modules split out of it
 import fs from 'fs';
 import * as E from '../../engine.js';
 import { seededRng } from '../../engine/rng.js';
@@ -56,9 +57,14 @@ const frozenNow = (st, c) => c.frozen === st.turnNumber;
 		ok('no recorded final foe: a generic clear line, no boss claim', !/TIAMAT|ASMODEUS/.test(head(null)), head(null));
 	}
 	ok('both rung-D bosses can close a run (so the boss is not fixed)', JSON.stringify(Swordcoast.enemyRosterFor(11).sort()) === JSON.stringify(['Asmodeus the Archfiend', 'Tiamat']), Swordcoast.enemyRosterFor(11));
-	const src = fs.readFileSync(new URL('../../game.js', import.meta.url), 'utf8');
-	const fn = src.slice(src.indexOf('function swordCoastRunComplete'), src.indexOf('function swordCoastRunOver'));
-	ok('swordCoastRunComplete builds its headline from run.enemy (no hard-coded Tiamat)', !fn.includes("'12 WINS - TIAMAT IS SLAIN!'") && /clearHeadline\(run\.enemy/.test(fn));
+	const src = gameSource();
+	// the Sword Coast's win screen is the rung runs' shared one (game_lorequest.js rungRunFlow runComplete), which
+	// shows its config's clearHeadline(run); the Sword Coast's config builds that from the foe just beaten
+	const i = src.indexOf("mode: 'swordcoast', tag: 'sc'");
+	const cfg = i < 0 ? '' : src.slice(i, src.indexOf('});', i));
+	ok('the Sword Coast win screen builds its headline from run.enemy (no hard-coded Tiamat)',
+		!src.includes("'12 WINS - TIAMAT IS SLAIN!'") && /clearHeadline: run => Swordcoast\.clearHeadline\(run\.enemy/.test(cfg)
+		&& /dungeonOverlay\(cfg\.clearHeadline\(run\), cfg\.clearBody\(run\)\)/.test(src));
 }
 
 // ---------- 2) "your OTHER creatures" Battlecries skip the source ----------
@@ -100,7 +106,7 @@ const frozenNow = (st, c) => c.frozen === st.turnNumber;
 	E.execEffects(s2, 0, [{ type: 'damage-all-minions-mill-per-kill', value: 5 }], null, null);
 	const m2 = s2.events.filter(ev => ev.type === 'mill');
 	ok('Soul Rend-style mill: one named event per destroyed card', m2.length === 2 && m2.every(ev => ev.card && ev.card.name), JSON.stringify(m2));
-	const src = fs.readFileSync(new URL('../../game.js', import.meta.url), 'utf8');
+	const src = gameSource();
 	const i0 = src.indexOf('function nextEvent()'); const body = src.slice(i0, src.indexOf('\nfunction ', i0 + 10));
 	ok('nextEvent wraps the renderer in try/catch so one bad event cannot strand the queue', /try \{\s*switch \(ev\.type\)/.test(body) && /\} catch \(err\) \{[\s\S]*setTimeout\(nextEvent, delay\)/.test(body));
 	ok("the 'mill' log line tolerates an event with no card", /milled \$\{ev\.card\?\.name/.test(body));

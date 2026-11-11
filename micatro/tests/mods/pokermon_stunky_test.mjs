@@ -11,6 +11,7 @@
 // Every ability is FIRED through real hands with exact numbers.
 //   node micatro/tests/mods/pokermon_stunky_test.mjs
 import fs from 'fs';
+// (Session runs here start with engineRev: 1 = the rules before Pages: these suites measure the mod alone)
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { T, start, hand, add, clearHand, G, P_CENTERS, act, STATES, state } from './poke_helpers.mjs';
@@ -213,7 +214,7 @@ await sec('boss', () => {
 await sec('hud', () => {
   fresh('STKH', ['skuntank']);
   const s = new Session();
-  s.start({ seed: 'STKHUD', customDeck: { name: 'Skunk', mods: ['pokermon'], jokers: [{ key: 'j_poke_skuntank' }] } });
+  s.start({ engineRev: 1, seed: 'STKHUD', customDeck: { name: 'Skunk', mods: ['pokermon'], jokers: [{ key: 'j_poke_skuntank' }] } });
   s.act({ type: 'select_blind' }); flush();
   ok(s.view().blind && +s.view().blind.chips === 300, 'the HUD asks 300', s.view().blind);
   const ids = G.hand.cards.slice(0, 1).map((c) => c.sort_id);
@@ -229,7 +230,7 @@ await sec('hud', () => {
 // ------------------------------------------------------------------- resume / replay: the lowered requirement is rebuilt exactly
 await sec('resume', () => {
   const s = new Session();
-  s.start({ seed: 'STKRES', customDeck: { name: 'Skunk', mods: ['pokermon'], jokers: [{ key: 'j_poke_skuntank' }, { key: 'j_poke_stunky' }] } });
+  s.start({ engineRev: 1, seed: 'STKRES', customDeck: { name: 'Skunk', mods: ['pokermon'], jokers: [{ key: 'j_poke_skuntank' }, { key: 'j_poke_stunky' }] } });
   s.act({ type: 'select_blind' }); flush();
   for (let h = 0; h < 2; h++) { s.act({ type: 'highlight', ids: G.hand.cards.slice(0, 1).map((c) => c.sort_id) }); s.act({ type: 'play' }); flush(); }
   const was = { req: req(), chips: +G.GAME.chips, cut: +G.GAME.poke_poison.cut, base: +G.GAME.poke_poison.base, hp: G.GAME.current_round.hands_played };

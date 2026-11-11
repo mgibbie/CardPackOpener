@@ -6,6 +6,7 @@
 //   3. an override reaches the fight (a trial nerf changes the outcome)
 //   4. bad input is refused
 //   5. game.js's boot<Mode>Encounter still does what fight() mirrors, for all three modes
+import { gameSource } from '../helpers/gamesource.mjs';   // game.js + the modules split out of it
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
@@ -41,15 +42,20 @@ const who = spawnSync(process.execPath, [TOOL, '--mode=middleearth', '--enemies=
 ok('an unknown enemy is refused', who.status === 2 && /unknown enemies/.test(who.stderr), who.stderr);
 
 // ===== 5 =====
-const game = fs.readFileSync(path.join(ROOT, 'battlecards/game.js'), 'utf8');
+const game = gameSource();
 for (const [fn, basics] of [['bootMiddleEarthEncounter', "allowedBasicsFor(cardsById, 'meDeck'"], ['bootSwordCoastEncounter', "allowedBasicsFor(cardsById, 'scDeck'"],
 	['bootFinalFantasyEncounter', "allowedBasicsFor(cardsById, 'ffDeck'"], ['bootMultiverseEncounter', "allowedBasicsFor(cardsById, 'mvDeck'"],
 	['bootLorequestEncounter', 'Lorequest.allowedBasics(cardsById,']]) {
-	const i = game.indexOf(`function ${fn}(`);
-	const body = i < 0 ? '' : game.slice(i, game.indexOf('\n}\n', i));
+	// Middle-earth / Sword Coast / Final Fantasy share ONE boot (game_lorequest.js rungRunFlow's `boot`,
+	// exported as `boot: <fn>`), which locks basics by `DECK` = the run's tag + 'Deck'
+	const tagM = /'(\w\w)Deck'/.exec(basics);
+	const shared = new RegExp(`boot: ${fn},[\\s\\S]{0,400}?rungRunFlow\\(\\{\\s*mode: '\\w+', tag: '${tagM ? tagM[1] : '-'}',`).test(game);
+	const i = shared ? game.indexOf('\tfunction boot(') : game.indexOf(`function ${fn}(`);
+	const body = i < 0 ? '' : game.slice(i, game.indexOf(shared ? '\n\t}\n' : '\n}\n', i));
 	ok(`${fn} exists`, i >= 0);
-	const mirrored = ['E.createGame(', 'E.resetDeckAndHand(state, 1,', 'E.drawCards(state, 1, 4)', 'E.addCoin(state, 1)', 'E.stripLoadouts(state)',
-		'setRunLife((run.wins || 0) + (run.losses || 0) + 1)', basics];
+	if (shared) ok(`${fn}: the shared flow's DECK is the run's tag`, /const DECK = cfg\.tag \+ 'Deck';/.test(game));
+	const mirrored = ['E.createGame(', 'E.resetDeckAndHand(GS.state, 1,', 'E.drawCards(GS.state, 1, 4)', 'E.addCoin(GS.state, 1)', 'E.stripLoadouts(GS.state)',
+		'setRunLife((run.wins || 0) + (run.losses || 0) + 1)', shared ? 'allowedBasicsFor(cardsById, DECK,' : basics];
 	const missing = mirrored.filter(s => !body.includes(s));
 	ok(`${fn} still does what the simulator mirrors`, missing.length === 0, missing);
 	const extra = ['applyRunAnomaly'].filter(s => body.includes(s));
@@ -76,7 +82,7 @@ for (const f of ['lq.json', 'mv.json']) { try { fs.unlinkSync(tmp(f)); } catch {
 // do the same, or a land's tap ability strands priority on the inactive seat and the fight sits
 // still until turn 60 (2026-10-14: half of all Lidless Eye fights "stalled" that way).
 const sim = fs.readFileSync(TOOL, 'utf8');
-ok('game.js answers AI priority with AI.chooseResponse', /E\.resolveResponse\(state, pi, AI\.chooseResponse\(state, pi\)\)/.test(game));
+ok('game.js answers AI priority with AI.chooseResponse', /E\.resolveResponse\(GS\.state, pi, AI\.chooseResponse\(GS\.state, pi\)\)/.test(game));
 ok('the sim answers priority the same way before the active seat acts', /E\.resolveResponse\(st, st\.priority, AI\.chooseResponse\(st, st\.priority\)\)/.test(sim) && /const s = st\.current;/.test(sim));
 {
 	const E = await import(path.join(ROOT, 'battlecards/engine.js').replace(/\\/g, '/').replace(/^/, 'file:///'));

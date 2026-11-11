@@ -23,7 +23,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
-      - name: Rebuild Magepunk News from Battlecards history
+      # merges: existing (hand-curated) entries are kept as they are; only new commits are added
+      - name: Add new Magepunk News entries from history
         run: node tools/gen-magepunknews.mjs
       - name: Commit refreshed news feed
         run: |

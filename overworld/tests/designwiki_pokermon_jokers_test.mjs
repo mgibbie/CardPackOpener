@@ -204,14 +204,25 @@ try {
 	const fallback = ['Koraidon', 'Ting-Lu'].map(n => ctx.M.missing.find(s => s.name === n)).filter(Boolean).map(s => [s.name, MJ.composeSpecies(ctx, s)]);
 	A(fallback.length === 2 && fallback.every(([, r]) => r.normalPainted >= 100 && r.shinyPainted >= 100 && r.recipe.frame), 'the composer (the fallback) still composes a real card (Koraidon, Ting-Lu; the Jangmo-o, Blipbug, Hatenna, Toxel, Pawmi and Varoom lines, Tapu Koko and Zacian are in the game now)', fallback.map(([n, r]) => n + ' ' + r.normalPainted).join(', '));
 	const realArt = path.join(ROOT, 'designwiki/sprites/pokermon_jokers');
-	const extra = (fs.existsSync(realArt) ? fs.readdirSync(realArt) : []).filter(f => !D.species.some(s => s.art.normal.endsWith('/' + f) || s.art.shiny.endsWith('/' + f)));
+	const fake = D.fakemon || [];
+	A(fake.length === 622 && new Set(fake.map(s => s.dex)).size === fake.length && fake.every(s => s.dex < 0 && s.line.length && ['cap', 'uranium', 'ransei'].includes(s.source)), 'all 622 missing overworld Fakemon have unique negative IDs and source metadata');
+	A(fake.every(s => fs.existsSync(path.join(realArt, path.basename(s.art.normal))) && fs.existsSync(path.join(realArt, path.basename(s.art.shiny)))), 'every Fakemon has normal and Shiny card art');
+	A(['dekoi', 'imitacean'].every(k => fake.find(s => s.key === k)?.ptype === 'Water' && fake.find(s => s.key === k)?.type_source === 'override'), 'Dekoi and Imitacean use the owner-selected Water card type');
+	A(fake.find(s => s.key === 'terribeem')?.ptype === 'Colorless', 'Terribeem uses the owner-selected Colorless card type');
+	A(fake.find(s => s.key === 'kuranpu')?.ptype === 'Dark' && fake.find(s => s.key === 'kuranpu')?.stage === 'Legendary' && fake.find(s => s.key === 'kuranpu')?.rarityLabel === 'Legendary', 'Kuranpu is a Dark Legendary card');
+	A(fake.find(s => s.key === 'garlikid')?.stage === 'Legendary' && fake.find(s => s.key === 'garlikid')?.rarityLabel === 'Legendary', 'Garlikid is a Legendary card');
+	const protoIndex = fake.findIndex(s => s.key === 'protowatt');
+	A(protoIndex >= 0 && fake[protoIndex + 1]?.key === 'krilowatt' && fake[protoIndex].line.some(s => s.name === 'Krilowatt'), 'Protowatt appears immediately before its actual evolution Krilowatt');
+	const protoSprite = C.decode(path.join(ROOT, 'overworld/data/pokemon/s536872992.png'));
+	A(protoSprite.rgba[3] === 0 && [...Array(protoSprite.w * protoSprite.h).keys()].some(i => protoSprite.rgba[i * 4 + 3] === 255), 'RGB PNG transparent-key pixels remain transparent in Protowatt artwork');
+	const extra = (fs.existsSync(realArt) ? fs.readdirSync(realArt) : []).filter(f => ![...D.species, ...(D.fakemon || [])].some(s => s.art.normal.endsWith('/' + f) || s.art.shiny.endsWith('/' + f)));
 	A(!extra.length, 'no stale card art for species that now have jokers (none is left: every species has a joker)', extra.join(', '));
 	// re-running the generator (into a scratch folder) gives the committed JSON and art, byte for byte
 	const tmpArt = fs.mkdtempSync(path.join(os.tmpdir(), 'pj-art-'));
 	const regen = JSON.stringify(await GEN.buildData({ art: true, out: tmpArt })) + '\n';
 	const genFiles = fs.readdirSync(tmpArt).sort(), artDir = path.join(ROOT, 'designwiki/sprites/pokermon_jokers');
 	const genDiff = genFiles.filter(f => !fs.existsSync(path.join(artDir, f)) || !fs.readFileSync(path.join(tmpArt, f)).equals(fs.readFileSync(path.join(artDir, f))));
-	A(regen === fs.readFileSync(GEN.OUT_JSON, 'utf8').replace(/\r\n/g, '\n') && genFiles.length === listed.length * 2 && !genDiff.length,
+	A(regen === fs.readFileSync(GEN.OUT_JSON, 'utf8').replace(/\r\n/g, '\n') && genFiles.length === (listed.length + (D.fakemon || []).length) * 2 && !genDiff.length,
 		`re-running the generator is byte-identical (data/pokermon_jokers.json + ${genFiles.length} PNGs)`, genDiff.slice(0, 5).join(','));
 	fs.rmSync(tmpArt, { recursive: true, force: true });
 
@@ -378,11 +389,19 @@ try {
 	const rp = await open(null, null, 1280, 900, { real: true });
 	await go(rp.page, '#/pokermon-jokers');
 	const rt = await rp.page.evaluate(() => document.getElementById('content').textContent);
-	A(await tiles(rp.page) === 0 && !(await rp.page.$('#pjGen')) && /All 1025 canonical Pokémon have a joker/.test(rt) && /Nothing is left to design here/.test(rt) && /(0)/.test(rt),
-		'the real page: "All 1025 canonical Pokémon have a joker ... Nothing is left to design here." (0; no grid, no filters)', rt.slice(0, 300));
+	A(await tiles(rp.page) === REAL_D.fakemon.length && /Overworld Fakemon/.test(rt) && /All canonical species are covered/.test(rt),
+		'the real page shows the missing overworld Fakemon while keeping canonical coverage separate', rt.slice(0, 300));
+	await go(rp.page, '#/pokermon-jokers/-1');
+	A(/Syclar/.test(await rp.page.evaluate(() => document.getElementById('content').textContent)) && !!(await rp.page.$('.pj-art-big')), 'negative-ID Fakemon detail displays its card');
 	A(REAL_D.species.length === 0 && !rp.errors.length, 'the real page: no console errors', rp.errors.slice(0, 3).join(' | '));
 	await shot(rp.page, 'desktop_index_all_done');
 	await rp.ctx.close();
+	const fp = await open(owner, 'mgibbie', 1280, 900, { real: true });
+	await go(fp.page, '#/pokermon-jokers/-1');
+	await fp.page.type('#pjAbility', 'Fakemon design test');
+	await fp.page.click('#pjSubmit');
+	A(await waitFor(() => fp.page.$eval('.pj-msg', e => /filed/.test(e.textContent)), 5000) && (await api('joker-design-list', { dex: -1 }, owner)).designs.some(d => d.ability === 'Fakemon design test'), 'owner can file a Fakemon design from its detail page');
+	await fp.ctx.close();
 	}
 } catch (e) {
 	fail++;

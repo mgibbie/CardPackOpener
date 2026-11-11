@@ -57,6 +57,9 @@ export function damageCreature(state, target, amount, source) {
 		if (target._shieldHits < need) { emit(state, { type: 'shieldAbsorb', uid: target.uid, hits: target._shieldHits, need }); return 0; }
 		target.shield = false;
 		target._shieldHits = 0;
+		// the badge reads the keywords array: drop it with the shield (bug:1793981762330 — the
+		// ring stayed after the pop, and a stale keyword also blocked re-granting a new shield)
+		if (target.keywords) target.keywords = target.keywords.filter(k => k !== 'divine_shield');
 		if (target.shieldLossRecruits) { const sp2 = state.players[target.controller]; sp2.recruitHealthBonus = (sp2.recruitHealthBonus || 0) + 1; for (const rc of sp2.board) if (rc.name === 'Silver Hand Recruit' && !isDead(rc)) { rc.maxHealth += 1; } } // Resilient Savior
 		emit(state, { type: 'shieldPop', uid: target.uid });
 		fireOngoing(state, target.controller, 'friendly-divine-shield-lost', {}); // Bolvar, Fireblood

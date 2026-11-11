@@ -22,6 +22,7 @@
 // Every ability is FIRED through real hands / Tarots / rounds / shops with exact numbers.
 //   node micatro/tests/mods/pokermon_gen6_batch2_test.mjs
 import fs from 'fs';
+// (Session runs here start with engineRev: 1 = the rules before Pages: these suites measure the mod alone)
 import path from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
 import { T, start, hand, add, clearHand, G, P_CENTERS, act, STATES } from './poke_helpers.mjs';
@@ -143,7 +144,7 @@ await sec('static', () => {
     ok(c.atlas === 'poke_AtlasJokersBasicNatdex391' && c.pos.x === x && c.pos.y === y && !c.soul_pos, `${n}: upstream 3.9.1 cell Natdex {${x},${y}} (nothing to deploy)`, [c.atlas, c.pos]);
   }
   ok(C('tyrunt').config.evo_rqmt === 5 && C('amaura').config.evo_rqmt === 5, 'the fossils evolve after their 3+ tier fires 5 times (evo_rqmt 5)');
-  const keys = MODS.pokermon.content.centers.filter((c) => c.set === 'Joker').map((c) => c.key).filter((k) => !/^(j_poke_)?(alolan|galarian|hisuian|paldean)_/.test(k)); // (regional batch C: the Hisuian / Paldean forms sit after their lines and join their families — pokermon_hisuian_paldean_test checks them)
+  const keys = MODS.pokermon.content.centers.filter((c) => c.set === 'Joker').map((c) => c.key).filter((k) => !/^(j_poke_)?(alolan|galarian|hisuian|paldean|mega)_/.test(k)); // Regional forms and Megas are checked in their own suites.
   const run = (from, list, to) => { const i = keys.indexOf('j_poke_' + list[0]); return i > 0 && [from, ...list, to].every((k, n) => keys[i - 1 + n] === 'j_poke_' + k) ? true : keys.slice(i - 1, i + list.length + 1); };
   const RUNS = [
     ['aegislash', ['spritzee', 'aromatisse', 'swirlix', 'slurpuff', 'inkay', 'malamar', 'binacle', 'barbaracle', 'skrelp', 'dragalge', 'tyrunt', 'tyrantrum', 'amaura', 'aurorus'], 'sylveon'],
@@ -151,7 +152,7 @@ await sec('static', () => {
     ['gourgeist', ['bergmite', 'avalugg', 'noibat', 'noivern'], 'xerneas'],
   ];
   for (const [from, list, to] of RUNS) ok(run(from, list, to) === true, `Pokédex order: ${from} (${from === 'aegislash' ? 681 : from === 'sylveon' ? 700 : 711}), ${list.join(', ')}, ${to}`, run(from, list, to));
-  const fam = (n) => poke_get_family_list(n).map((x) => (typeof x === 'string' ? x : x.key || x.name)).filter((k) => !/^(j_poke_)?(alolan|galarian|hisuian|paldean)_/.test(k)).join(); // (regional batch C: the Hisuian / Paldean forms sit after their lines and join their families — pokermon_hisuian_paldean_test checks them)
+  const fam = (n) => poke_get_family_list(n).map((x) => (typeof x === 'string' ? x : x.key || x.name)).filter((k) => !/^(j_poke_)?(alolan|galarian|hisuian|paldean|mega)_/.test(k)).join();
   for (const line of Object.values(LINES)) if (line.length > 1) ok(fam(line[0]) === line.join(), 'one family: ' + line.join(' -> '), fam(line[0]));
   const inert = ['spritzee', 'aromatisse', 'hawlucha'];
   ok(inert.every((n) => C(n).poke_no_energy_field === true) && NAMES.filter((n) => !inert.includes(n)).every((n) => !C(n).poke_no_energy_field),
@@ -364,7 +365,7 @@ await sec('malamar old-rev replay', () => {
     const s = new Session();
     PINS.RULES.pins = pins;
     try {
-      s.start({ seed: 'MAL73REC', customDeck: deck });
+      s.start({ engineRev: 1, seed: 'MAL73REC', customDeck: deck });
       s.act({ type: 'select_blind' }); flush();
       for (const c of G.consumeables.cards.slice()) { s.act({ type: 'use', id: c.sort_id, targets: [] }); flush(); }
       s.act({ type: 'highlight', ids: G.hand.cards.slice(0, 5).map((c) => c.sort_id) }); s.act({ type: 'play' }); flush();
@@ -756,7 +757,7 @@ await sec('energy', () => {
 // ------------------------------------------------------------------- save / resume: the banks, the counts, the converted cards
 await sec('resume', () => {
   const s = new Session();
-  s.start({ seed: 'G6B2RES', customDeck: { name: 'Gen 6', mods: ['pokermon'], params: { blind_scaling: 0.05 },
+  s.start({ engineRev: 1, seed: 'G6B2RES', customDeck: { name: 'Gen 6', mods: ['pokermon'], params: { blind_scaling: 0.05 },
     cards: [['S_K', 0, 0, 0, 12], ['H_9', 'm_glass', 0, 0, 20], ['D_5', 0, 0, 0, 20]],
     jokers: [{ key: 'j_poke_noibat' }, { key: 'j_poke_swirlix' }, { key: 'j_poke_skrelp' }, { key: 'j_poke_tyrunt' }, { key: 'j_poke_malamar' }],
     consumables: [{ key: 'c_hermit', n: 2 }], vouchers: ['v_grabber'] } });

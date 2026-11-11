@@ -250,6 +250,11 @@ try {
 	const lbV3 = await call('run-leaderboard', { mode: 'micatro' }, tokens.alice);
 	A(lbV3.top.every(e => !e.big) && lbV3.you && lbV3.you.score === 125000, 'the vanilla board is untouched by big scores');
 
+	// PAGES (micatro/js/engine/pages.js): a run played with Pages is noted on its row (pages: true); anything but true is dropped
+	const pg1 = await raw('run-score', { mode: 'micatro', score: 3e6, ante: 4, back: 'b_red', stake: 1, pages: true }, tokens.viewer9);
+	A(pg1.status === 200 && pg1.body.best.pages === true && row('runboard:micatro').some(e => e.name === 'viewer9' && e.pages === true), 'a Pages run’s row says so', JSON.stringify(pg1.body));
+	const pg2 = await raw('run-score', { mode: 'micatro', score: 4e6, ante: 4, back: 'b_red', stake: 1, pages: 'yes' }, tokens.viewer9);
+	A(pg2.status === 200 && !('pages' in pg2.body.best), 'pages must be exactly true', JSON.stringify(pg2.body));
 	// CUSTOM DECKS (the deck editor): a custom-deck run is modded — the vanilla board stays pure and the
 	// Modded board's row carries the deck's name
 	const cd1 = await raw('run-score', { mode: 'micatro', score: 4242, ante: 3, back: 'b_red', stake: 1, customDeck: 'Goth\u0001 Deck' }, tokens.carl);

@@ -7,7 +7,8 @@
 import { G } from './core.js';
 import { newRun, act } from './run.js';
 import { toView } from './view.js';
-import { stampRecipe, recordLegacyAssumption, pinDiff, repin, RULES, pinsAt } from '../mods/pins.js';
+import { pvpRecipeConfig } from './pvp.js';
+import { stampRecipe, recordLegacyAssumption, pinDiff, repin, RULES, pinsAt, ENGINE_CONTENT_REV, startEngineRev } from '../mods/pins.js';
 
 // The recipe FORMAT version (a saved run with another `v` is not offered). Not the rules: those are pinned per
 // run in recipe.modVersions / recipe.engineRev (mods/pins.js ENGINE_CONTENT_REV) — bumping this would drop saves.
@@ -23,13 +24,23 @@ const BACKUP_KEY = 'micatro_run_backup_v1';
  */
 export const recipeSeeded = (recipe) => !!(recipe && recipe.seeded === true);
 
-export class Session {
-  constructor() { this.recipe = null; this.events = []; }
+/** A Multiplayer match's run is saved apart from the solo run (a PvP run must never resume as a solo one). */
+export const PVP_SAVE_KEY = 'micatro_pvp_run_v1';
+/** newRun's `pvp` / `seeded` arguments from a recipe (a PvP recipe carries its match config; never a typed seed). */
+const pvpArgs = (recipe) => (recipe && recipe.pvp ? { pvp: recipe.pvp } : {});
 
-  start({ seed, back = 'b_red', stake = 1, mods = [], modOptions = {}, customDeck = null, challenge = null, sleeve = null, daily = null } = {}) {
+export class Session {
+  constructor({ saveKey = SAVE_KEY } = {}) { this.recipe = null; this.events = []; this.saveKey = saveKey; }
+
+  start({ seed, back = 'b_red', stake = 1, mods = [], modOptions = {}, customDeck = null, challenge = null, sleeve = null, daily = null, engineRev = ENGINE_CONTENT_REV, pvp = null } = {}) {
+    // (`engineRev`: the base-game rules this run plays on — always the current ones in the game; a test may ask for an
+    //  older rev, e.g. 1 = before Pages, and the recipe records it, so its resume / replay plays those rules too)
+    if (!(Number.isInteger(engineRev) && engineRev >= 1 && engineRev <= ENGINE_CONTENT_REV)) engineRev = ENGINE_CONTENT_REV;
     // (`daily`: today's date for a daily challenge — Pokermon's Mystery Dungeon — passed by the UI; it becomes the recorded seed)
-    newRun({ seed, back, stake, mods, modOptions, customDeck, challenge, sleeve, daily });
+    // (`pvp`: a Multiplayer match's config — engine/pvp.js; its seed is the lobby's, which is never a "typed" one)
+    newRun({ seed, back, stake, mods, modOptions, customDeck, challenge, sleeve, daily, engineRev, ...(pvp ? { pvp, seeded: false } : {}) });
     this.recipe = { v: ENGINE_VERSION, seed: G.GAME.pseudorandom.seed, back, stake, mods: G.GAME.mods.slice(), modOptions: G.GAME.mod_options, actions: [], started: Date.now() };
+    if (G.GAME.pvp) this.recipe.pvp = pvpRecipeConfig(G.GAME.pvp);
     // (every recipe carries a seed — the random one too — so whether the PLAYER chose it is recorded: a resumed or
     //  replayed run must not turn into a seeded one, which earns no win stickers / Nuzlocke / Monotype)
     if (G.GAME.seeded) this.recipe.seeded = true;
@@ -41,6 +52,7 @@ export class Session {
     if (G.GAME.selected_sleeve) this.recipe.sleeve = G.GAME.selected_sleeve;
     // the versions this run plays on: each active mod's version + contentRev, and the engine's (mods/pins.js)
     stampRecipe(this.recipe);
+    if (engineRev !== ENGINE_CONTENT_REV) this.recipe.engineRev = engineRev;
     this.events = G.ui_events.splice(0);
     this.save();
     return this.events;
@@ -66,11 +78,11 @@ export class Session {
    * player chose "Continue anyway" on a version mismatch — the recipe is re-pinned to the current versions
    * (the old pins are kept in recipe.repinned).
    */
-  static fromRecipe(recipe, { repin: doRepin = false } = {}) {
-    const s = new Session();
+  static fromRecipe(recipe, { repin: doRepin = false, saveKey } = {}) {
+    const s = new Session({ saveKey: saveKey || (recipe && recipe.pvp ? PVP_SAVE_KEY : SAVE_KEY) });
     // (the run's start too: a starting Joker's add_to_deck runs on the rules of the run's first move — Pokermon r59's Rayquaza)
     RULES.pins = pinsAt(recipe, 0);
-    try { newRun({ seed: recipe.seed, seeded: recipeSeeded(recipe), back: recipe.back, stake: recipe.stake, mods: recipe.mods || [], modOptions: recipe.modOptions || {}, customDeck: recipe.customDeck || null, challenge: recipe.challenge || null, sleeve: recipe.sleeve || null }); } finally { RULES.pins = null; }
+    try { newRun({ seed: recipe.seed, seeded: recipeSeeded(recipe), back: recipe.back, stake: recipe.stake, mods: recipe.mods || [], modOptions: recipe.modOptions || {}, customDeck: recipe.customDeck || null, challenge: recipe.challenge || null, sleeve: recipe.sleeve || null, engineRev: startEngineRev(recipe), ...pvpArgs(recipe) }); } finally { RULES.pins = null; }
     s.recipe = { ...recipe, actions: [] };
     recordLegacyAssumption(s.recipe);
     const all = recipe.actions || [];
@@ -97,8 +109,8 @@ export class Session {
   save() {
     try {
       if (!this.recipe) return;
-      if (this.over) localStorage.removeItem(SAVE_KEY);
-      else localStorage.setItem(SAVE_KEY, JSON.stringify(this.recipe));
+      if (this.over) localStorage.removeItem(this.saveKey);
+      else localStorage.setItem(this.saveKey, JSON.stringify(this.recipe));
     } catch (e) { /* storage full / private mode — the run just isn't resumable */ }
   }
 
@@ -109,6 +121,12 @@ export class Session {
     } catch (e) { /* ignore */ }
     return null;
   }
+  /** The Multiplayer match's run on this device (PVP_SAVE_KEY), or null. */
+  static savedPvp() {
+    try { const r = JSON.parse(localStorage.getItem(PVP_SAVE_KEY) || 'null'); if (r && r.v === ENGINE_VERSION && r.seed && r.pvp) return r; } catch (e) { /* ignore */ }
+    return null;
+  }
+  static clearSavedPvp() { try { localStorage.removeItem(PVP_SAVE_KEY); } catch (e) { /* ignore */ } }
   static clearSaved() { try { localStorage.removeItem(SAVE_KEY); } catch (e) { /* ignore */ } }
   /**
    * Keep a copy of the saved run before it is abandoned or re-pinned (owner rule: never wipe a save
@@ -176,7 +194,7 @@ export class ReplayStepper {
   reset() {
     const r = this.recipe;
     RULES.pins = pinsAt(r, 0); // (the start on the first move's rules, as fromRecipe)
-    try { newRun({ seed: r.seed, seeded: recipeSeeded(r), back: r.back || 'b_red', stake: r.stake == null ? 1 : r.stake, mods: r.mods || [], modOptions: r.modOptions || {}, customDeck: r.customDeck || null, challenge: r.challenge || null, sleeve: r.sleeve || null }); } finally { RULES.pins = null; }
+    try { newRun({ seed: r.seed, seeded: recipeSeeded(r), back: r.back || 'b_red', stake: r.stake == null ? 1 : r.stake, mods: r.mods || [], modOptions: r.modOptions || {}, customDeck: r.customDeck || null, challenge: r.challenge || null, sleeve: r.sleeve || null, engineRev: startEngineRev(r), ...pvpArgs(r) }); } finally { RULES.pins = null; }
     this.index = 0;
     this.error = null;
     this.startEvents = G.ui_events.splice(0);

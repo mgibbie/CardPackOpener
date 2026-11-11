@@ -156,12 +156,54 @@ export function runSecretEffects(state, pi, effects, ctx) {
 		const m = ctx.minion || (ctx.attackerType === 'creature' ? ctx.attacker : null);
 		return m && !isDead(m) ? m : null;
 	};
-	for (const e of effects || []) {
+	const list = effects || [];
+	for (let i = 0; i < list.length; i++) {
+		const e = list[i];
+		// "At the start of your turn, Scry 1, then draw a card" (Elven Chorus) on the TRIGGER
+		// path: each effect used to run as its own execEffects([e]) call, so execEffects'
+		// scry deferral never saw the draw and it pulled the card BENEATH the one being
+		// scried (bug:1794007175555 / 1794008211404). Defer the rest onto the pending scry
+		// exactly like execEffects does; resolveScry replays it through this function.
+		const qBefore = state.scryQueue ? state.scryQueue.length : 0;
 		const th = getTriggerHandler(e.type);
-		if (th) { th(state, pi, e, ctx, triggering); continue; }
+		if (th) th(state, pi, e, ctx, triggering);
 		// unmatched trigger types delegate to execEffects with the firing
 		// permanent as `source` so self-scoped effects still work (the old
 		// switch default)
-		execEffects(state, pi, [e], null, ctx.self || null);
+		else execEffects(state, pi, [e], autoTriggerTarget(state, pi, e, ctx), ctx.self || null);
+		if ((e.type === 'scry' || e.type === 'gaze') && state.scryQueue && state.scryQueue.length > qBefore) {
+			const rest = list.slice(i + 1);
+			if (rest.length) state.scryQueue[state.scryQueue.length - 1].then = { pi, effects: rest, target: null, source: ctx.self || null, trigger: true };
+			return;
+		}
 	}
+}
+
+// A trigger never prompts, so a SINGLE-creature target on the trigger path
+// ("Swing: Freeze an enemy creature", "At the end of your turn, target creature
+// gains +1 Health") used to reach the handler with no chosen creature and
+// silently no-op (bug:1793963479981 Elrond's Barrow-Blade never froze anything).
+// Resolve it here instead: the creature the event is about when it qualifies
+// (the creature the hero just swung at), otherwise a random legal one —
+// hostile effects pick an enemy creature, helpful ones a friendly creature.
+const TRIG_HOSTILE = new Set(['damage', 'freeze', 'destroy', 'exile', 'bounce', 'weaken', 'silence', 'transform', 'set-attack', 'set-health']);
+const TRIG_FRIENDLY = new Set(['buff', 'grant', 'heal', 'boost', 'add-counters', 'temp-buff']);
+function autoTriggerTarget(state, pi, e, ctx) {
+	const t = e.target;
+	const hostile = t === 'enemy-creature' || (t === 'creature' && TRIG_HOSTILE.has(e.type));
+	const friendly = t === 'friendly-creature' || (t === 'creature' && TRIG_FRIENDLY.has(e.type));
+	if (!hostile && !friendly) return null;
+	const ok = c => c && c.zone === 'board' && !isDead(c) && c.type !== 'location';
+	const pref = ctx.swingTarget || ctx.target;
+	if (ok(pref) && (hostile ? pref.controller !== pi : pref.controller === pi)) return { type: 'creature', uid: pref.uid, player: pref.controller };
+	let pool;
+	if (hostile) pool = opponentsOf(state, pi).flatMap(o => state.players[o].board.filter(ok));
+	else {
+		pool = state.players[pi].board.filter(ok);
+		const others = pool.filter(c => c !== ctx.self);
+		if (others.length) pool = others; // "target creature" from a creature means another one when there is one
+	}
+	if (!pool.length) return null;
+	const c = pool[Math.floor(state.rng() * pool.length)];
+	return { type: 'creature', uid: c.uid, player: c.controller };
 }

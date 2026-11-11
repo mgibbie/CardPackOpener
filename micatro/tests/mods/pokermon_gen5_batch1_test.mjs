@@ -39,6 +39,9 @@ const key = (c) => c.config.center.key;
 const near = (a, b) => Math.abs(a - b) < 1e-9;
 const flush = () => G.E_MANAGER.flush();
 const sec = async (name, fn) => { try { await fn(); } catch (e) { ok(false, name + ' threw: ' + String(e && e.stack).slice(0, 600)); } };
+/** The rules of a run recorded before r111 (the owner's simplified weather trio, SIMPLE_TRIO_REV: Kyogre / Groudon made rain / sun, locked
+ *  Castform and clashed; Rayquaza calmed them), as a resume / replay of an old move runs them. The r111 rules: pokermon_simple_trio_test. */
+const r110 = (fn) => { PINS.RULES.pins = { pokermon: '3.9.1+r110' }; try { return fn(); } finally { PINS.RULES.pins = null; } };
 const ex = (j) => j.ability.extra;
 const flat = (j) => describe(j).lines.join(' ').replace(/\{[^}]*\}/g, '').replace(/\s+/g, ' ');
 const C = (n) => P_CENTERS['j_poke_' + n];
@@ -150,7 +153,7 @@ await sec('static', () => {
     conkeldurr: [16, 35], tympole: [18, 35], palpitoad: [20, 35], seismitoad: [22, 35], throh: [24, 35], sawk: [26, 35] };
   for (const [n, [x, y]] of Object.entries(cell)) ok(C(n).atlas === 'poke_AtlasJokersBasicNatdex391' && C(n).pos.x === x && C(n).pos.y === y && !C(n).soul_pos, n + ': upstream 3.9.1 cell Natdex {' + x + ',' + y + '}', [C(n).atlas, C(n).pos]);
   ok(C('unfezant').atlas === 'poke_AtlasJokersBasicGen05391' && C('unfezant').pos.x === 0 && C('unfezant').pos.y === 0, 'unfezant: upstream 3.9.1 cell Gen05 {0,0} (its first of 2)', [C('unfezant').atlas, C('unfezant').pos]);
-  const keys = MODS.pokermon.content.centers.filter((x) => x.set === 'Joker').map((x) => x.key.replace('j_poke_', '')).filter((k) => !/^(j_poke_)?(alolan|galarian|hisuian|paldean)_/.test(k)); // (regional batch C: the Hisuian / Paldean forms sit after their lines and join their families — pokermon_hisuian_paldean_test checks them)
+  const keys = MODS.pokermon.content.centers.filter((x) => x.set === 'Joker').map((x) => x.key.replace('j_poke_', '')).filter((k) => !/^(j_poke_)?(alolan|galarian|hisuian|paldean|mega)_/.test(k));
   const run = (after, names, next) => { const i = keys.indexOf(after); return i >= 0 && names.every((n, k) => keys[i + 1 + k] === n) && keys[i + 1 + names.length] === next; };
   ok(run('samurott', ['patrat', 'watchog', 'lillipup', 'herdier', 'stoutland', 'purrloin', 'liepard'], 'pansage'), 'Pokédex order: Samurott (503), Patrat ... Liepard (504-510), Pansage (511)', keys.slice(keys.indexOf('samurott'), keys.indexOf('samurott') + 9));
   ok(run('musharna', ['pidove', 'tranquill', 'unfezant', 'blitzle', 'zebstrika'], 'roggenrola'), 'Musharna (518), Pidove ... Zebstrika (519-523), Roggenrola (524)');
@@ -523,7 +526,7 @@ await sec('rain: forecast', () => {
   const [tc, cf] = deal('G5RA7', CLUBS, ['tympole', 'castform']);
   ok(ex(cf).form === 'rainy' && /Raining!/.test(flat(tc)), 'Castform reads the same deal Rainy', [ex(cf).form]);
 });
-await sec('rain: kyogre', () => {
+await sec('rain: kyogre', () => r110(() => {
   // Kyogre alone: raining whatever is held
   let [t] = deal('G5KY1', REDS, ['tympole', 'kyogre']);
   let r = play(['S_2']);
@@ -565,7 +568,7 @@ await sec('rain: kyogre', () => {
   [t] = deal('G5KY9', CLUBS, ['tympole', 'groudon']);
   r = play(['S_2']);
   ok(r.chips === 7 + 60, 'Groudon alone + a Clubs first deal: still raining', r.total);
-});
+}));
 await sec('seismitoad', () => {
   let [s] = deal('G5SE1', CLUBS, ['seismitoad']);
   let r = play(['C_2']);
@@ -577,9 +580,11 @@ await sec('seismitoad', () => {
   [s] = deal('G5SE2', REDS, ['seismitoad']);
   r = play(['C_2']);
   ok(r.chips === 7 + 50, 'no rain: +50, no retrigger', r.total);
-  [s] = deal('G5SE3', REDS, ['seismitoad', 'kyogre']);
-  r = play(['C_2']);
-  ok(r.chips === 5 + 2 * 3 + 100, 'with Kyogre (rain from Kyogre): the Club retriggers twice (Kyogre + Seismitoad)', r.total);
+  r110(() => {
+    [s] = deal('G5SE3', REDS, ['seismitoad', 'kyogre']);
+    r = play(['C_2']);
+    ok(r.chips === 5 + 2 * 3 + 100, 'r110: with Kyogre (rain from Kyogre): the Club retriggers twice (Kyogre + Seismitoad)', r.total);
+  });
   ok(/While it's raining, every scored Club retriggers/.test(flat(s)), 'tooltip', flat(s));
 });
 
@@ -724,7 +729,7 @@ await sec('texts', () => {
   ok(/Motor Drive: X1.5 Mult if you haven't discarded this round/.test(X.zebstrika), 'Zebstrika text', X.zebstrika);
   ok(/Heart Stamp: each scored Heart card earns \$1 and gives X1.1 Mult/.test(X.swoobat), 'Swoobat text', X.swoobat);
   ok(/Scored Stone cards each give \+8 Mult and X1.5/.test(X.conkeldurr), 'Conkeldurr text', X.conkeldurr);
-  ok(/Swift Swim: \+30 Chips, doubled while it's raining/.test(X.tympole) && /Rain: a working Kyogre, or Clubs held most/.test(X.tympole), 'Tympole text', X.tympole);
+  ok(/Swift Swim: \+30 Chips, doubled while it's raining/.test(X.tympole) && /Rain: Clubs held most on the round's first deal/.test(X.tympole) && !/Kyogre/.test(X.tympole), 'Tympole text', X.tympole);
   ok(/Seismic Toss: the lowest ranked scored card gives X2 Mult/.test(X.throh) && /Karate Chop: the highest ranked scored card gives \+30 Mult/.test(X.sawk), 'Throh / Sawk text', [X.throh, X.sawk]);
   ok(!Object.values(X).some((s) => /ERROR|#\d#|undefined|NaN/.test(s)), 'no unfilled variables');
 });

@@ -169,7 +169,7 @@ try {
 	};
 
 	// ---------------------------------------------------------------- in a round
-	await page.evaluate(() => window.__micatro.act({ type: 'select_blind' }));
+	await page.evaluate(() => window.__micatro.selectBlind());
 	await idle();
 	const vkeyProbe = await page.evaluate(() => { const B = window.__micatro.board; const s = [...B.sprites.values()].find((x) => x.d && x.d.front); return s ? [s.vkey, s.d.center, s.d.front] : []; });
 	A(vkeyProbe[0] && vkeyProbe[0].split('|')[2] === vkeyProbe[1] && vkeyProbe[0].split('|')[3] === vkeyProbe[2], 'probe: a card sprite\'s visKey carries its center and front where the recorder reads them', JSON.stringify(vkeyProbe));

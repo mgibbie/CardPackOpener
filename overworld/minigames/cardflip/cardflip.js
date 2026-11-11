@@ -246,6 +246,7 @@ async function yesNo() {
 	textbox(14, 7, 3, 4);
 	placeString(16, 8, 'YES'); placeString(16, 10, 'NO');
 	let idx = 0;
+	askingYesNo = true;
 	try {
 		for (;;) {
 			put(15, 8, idx === 0 ? 0xed : 0x7f); put(15, 10, idx === 1 ? 0xed : 0x7f);
@@ -256,7 +257,7 @@ async function yesNo() {
 			else if (k === 'B') { sfx('ui_cancel'); await frames(15); return false; }
 			await frames(1);
 		}
-	} finally { tilemap.set(saved); }
+	} finally { tilemap.set(saved); askingYesNo = false; }
 }
 const chosenCoords = () => (cardFlip.which ? { x: 2, y: 6, px: 16, py: 48 } : { x: 2, y: 0, px: 16, py: 0 });
 function placeCardBorder() {
@@ -449,6 +450,48 @@ export function closeCardFlip() {
 	cb?.();
 }
 
+// ---------- touch ----------
+// A tap does what the buttons would: YES / NO in the yes-no box; on the bet board
+// it moves the cursor to the square / row / column tapped, and a second tap on
+// the same one places the bet (A); anywhere else (a message, the flashing cards)
+// it is A. (x, y) are canvas pixels; true when the tap was used.
+let lastView = null, askingYesNo = false;
+// tests: where the last frame put the screen (canvas px = o + gb px * k)
+export const cardFlipTapView = () => lastView;
+// each reachable cursor position's box on the GB screen (its OAM shape's extent)
+const cursorBoxes = () => CURSOR.map(([tx, ty, ox, oy, shape], i) => {
+	if (shape === 'Impossible') return null;
+	const bx = tx * 8 + ox - 8, by = ty * 8 + oy - 16;
+	let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+	for (const [sx, sy, px, py] of SHAPES[shape]) {
+		const X = bx + sx * 8 + px, Y = by + sy * 8 + py;
+		x0 = Math.min(x0, X); y0 = Math.min(y0, Y); x1 = Math.max(x1, X + 8); y1 = Math.max(y1, Y + 8);
+	}
+	return { i, x0, y0, x1, y1, area: (x1 - x0) * (y1 - y0) };
+}).filter(Boolean);
+export function cardFlipTap(x, y) {
+	if (!cardFlip.open || !lastView) return false;
+	const gx = (x - lastView.ox) / lastView.k, gy = (y - lastView.oy) / lastView.k;
+	if (askingYesNo) {
+		if (gx >= 104 && gy >= 56 && gy < 96) { keyQueue.push(gy < 76 ? 'UP' : 'DOWN', 'A'); return true; }
+		return false;
+	}
+	if (cardFlip.phase === 'PlaceYourBet') {
+		const boxes = cursorBoxes();
+		let best = null;
+		for (const b of boxes) if (gx >= b.x0 && gx < b.x1 && gy >= b.y0 && gy < b.y1 && (!best || b.area < best.area)) best = b;
+		if (!best) return false;
+		// the pair rows / columns share one box (the &= ~1 in ChooseCard_HandleJoypad)
+		const cur = boxes.find(b => b.i === cardFlip.cursorY * 6 + cardFlip.cursorX);
+		const same = cur && cur.x0 === best.x0 && cur.y0 === best.y0 && cur.x1 === best.x1 && cur.y1 === best.y1;
+		if (same) keyQueue.push('A');
+		else { cardFlip.cursorX = best.i % 6; cardFlip.cursorY = Math.floor(best.i / 6); sfx('ui_move'); }
+		return true;
+	}
+	keyQueue.push('A');
+	return true;
+}
+
 // ---------- draw: compose the 160x144 screen and scale it onto the canvas ----------
 let screenCanvas = null, screenImg = null;
 const bgIdx = new Uint8Array(160 * 144);
@@ -487,6 +530,7 @@ export function drawCardFlip(sctx, SW, SH) {
 	screenCanvas.getContext('2d').putImageData(screenImg, 0, 0);
 	const k = Math.min(SW / 160, SH / 144);
 	const w = Math.floor(160 * k), h = Math.floor(144 * k);
+	lastView = { ox: Math.floor((SW - w) / 2), oy: Math.floor((SH - h) / 2), k };
 	sctx.save();
 	sctx.imageSmoothingEnabled = false;
 	sctx.drawImage(screenCanvas, Math.floor((SW - w) / 2), Math.floor((SH - h) / 2), w, h);

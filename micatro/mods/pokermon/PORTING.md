@@ -1639,6 +1639,11 @@ Deck / Sleeve changes. The plan's "12 Megas" counted Mega Steelix, which the por
   - **`used_on` is the Mega's card**: its `unique_val`, not its center key. So two Mega Clefables are told apart, and selling a stone reverts
     its own Mega, never the twin.
   - **A used stone targets only its own Mega** (3.9.1 `get_mega_target`), to revert it. Before, it could Mega Evolve a second joker.
+  - **r88 targeting safety:** when more than one Joker qualifies, select one explicitly; with only one eligible target the stone still selects it automatically. Older replays retain the leftmost fallback. A normal used stone still finds its own Mega automatically.
+  - **r110 pack fix:** a stone used straight from a pack then moves to the consumable slots (engine `use_card`: `add_to_deck` + emplace);
+    its `add_to_deck` (a NEW stone forgets any Mega and is usable) used to wipe the `used_on` it had just set, so selling it reverted
+    nothing (a tester's Mega Charizard Y, 2026-11-08). From r110 (`MEGASTONE_PACK_REV`) that move keeps `used_on` and `usable = false`;
+    runs recorded before r110 replay as recorded (test: micatro/tests/mods/pokermon_megastone_pack_test.mjs).
   - **At every end of round a stone whose Mega is gone forgets it** (sold, destroyed, reverted another way) and is free again.
   - Reverting says "Reverted" (3.9.1 `pokermon.devolve`). The tooltip names the Mega the stone made.
   - Kept: the house rule "the highlighted joker if it qualifies, else the leftmost that does" (3.9.1 stops at a highlighted joker that
@@ -1898,7 +1903,7 @@ the 3.9.1 Lua (upstream main af0b656 has the same packs1.lua / sleeve.lua / poke
     can be a hidden (soul) Item.
   - 3.2.1's per-pack `c_keys` list is gone (its configs too: 3.9.1's `{extra, choose}`), and the text counts Steamodded's
     `booster_choice_mod` / `booster_size_mod`.
-  - The Mega Stone slot (tag packs, ante 5+) and Safety First's Item-for-Energy slot are as before.
+  - The Mega Stone slot was originally tag packs only (ante 5+); from r86 all Pocket Packs have the same 25% chance in slot 2 when no Mega Stone is held. Older replays keep the tag-only rule. Safety First's Item-for-Energy slot is as before.
   - Not changed: `generate_pickup_item_key` (Pickup / Treasure jokers) keeps its own evo-item roll; 3.9.1 sends it through
     poll_evo_item too, which would also skip items in play — a separate behaviour change, left for a later batch.
 - **The Debris Sleeve's alt on the Debris Deck** (sleeves.js `alt`; 3.9.1 sleeve.lua diceysleeve + pokermon.lua Card:set_ability
@@ -4299,6 +4304,28 @@ base species' (Sneasler and Clodsire are their own species: 8 / 9). The region p
   art types). Re-pinned: `modpin_test`, `pokermon_391_data_test`, `pokermon_new_jokers_test`, `micatro_mod_version_pin`; Nacho's counts in
   `nacho_test` / `nacho_179_test`.
 
+### The simple weather trio (r111, 2026-11-09, branch `feat/pokermon-simple-weather-trio`)
+Pinned **`3.9.1+r111`** (`contentRev: 111`, `SIMPLE_TRIO_REV` in `jokers/pokejokers_designs.js`; `LEGACY_MOD_VERSIONS` untouched). The owner: "Kyogre's
+tooltip (Primordial Sea + Primal Clash + Castform) is unreadable". Six plain Legendaries, no weather, no Castform, no reference to each other:
+- **Kyogre**: +1 hand each round; scored Clubs retrigger once and give **X1.25** (`Xmult_multi`, Energy +5%: 1.3125 / 1.375 / 1.4375; it was
+  Energy-inert). **Groudon**: +1 discard; scored Hearts / Diamonds X1.25 (unchanged). **Rayquaza**: +1 hand and +1 discard; Dragon Ascent X0.2 per
+  Straight / Flush (its bank, unchanged).
+- **Primal Kyogre**: +2 hands; Clubs retrigger twice and give **X1.5** (`Xmult_multi`, +5%: 1.575 / 1.65 / 1.725). **Primal Groudon**: +2 discards;
+  Hearts / Diamonds **X1.75** (a new field `Xmult_multi2`, +5%: 1.8375 / 1.925 / 2.0125; `Xmult_multi` X1.5 is the r110 number). **Mega Rayquaza**:
+  +2 hands / +2 discards, X0.4 per Straight / Flush (Rayquaza's bank). The Orbs keep their pool gate.
+- **Removed** (live): the Primal Clash (`primal_read` is no longer called), Rayquaza's / Mega Rayquaza's calm, Kyogre / Groudon / the Primals'
+  rain (`swift_swim_raining`) and sun (`cherrim_sunny`), Castform's lock (`castform_lock` returns null: Castform and Eiscue's `round_forecast` read the
+  forecast). Volcarona / Koraidon sun, Miraidon terrain, Alolan Ninetales snow and Sandaconda sand are untouched. The notes that named Kyogre /
+  Groudon (Castform's Forecast, Cherrim's Sunshine, `SUN_NOTE` for Larvesta / Lurantis / the Ancient Paradoxes, `RAIN_NOTE` for the Tympole line /
+  Dewpider / Araquanid, Volcarona / Koraidon) no longer mention them.
+- **Old runs**: every old rule stays behind `trio111()` (rulesRev), so a run recorded before r111 replays exactly (fixture
+  `micatro/tests/fixtures/pokermon_weathertrio_r110_recipe.json`, recorded on main). The new X fields are in the config and dropped at
+  `set_ability` on an old rev (`trio_set`: an r110 Kyogre stays Energy-inert, so the old Energy targets hold; Primal Groudon keeps X1.5); a card
+  made on an old rev but played on r111 gets its field on the next calculate, scaled by its Energy (`trio_fields`).
+- **Tests**: `micatro/tests/mods/pokermon_simple_trio_test.mjs` (all six in real hands, Energy, Castform free, no clash / rain / sun, the r110 recipe;
+  37 of 56 fail on main). The old-rule sections of `pokermon_gen3_legendaries`, `pokermon_primal`, `pokermon_cherubi`, `pokermon_gen5_batch1`,
+  `pokermon_gen5_batch3`, `pokermon_alolan`, `pokermon_gen7_batch1`, `pokermon_gen9_legendaries` now run on r110; texts re-recorded there and in
+  `pokermon_legendary_solo`; `micatro_mod_version_pin` (rev 111).
 ### Pending from the 3.9.1 joker rework (after batch 10b)
 Every existing joker is on 3.9.1: `rework_hold` (still on 3.2.1) is empty. What waits, by the batch it waits on (`rework_deferred` =
 on 3.9.1 but one part):

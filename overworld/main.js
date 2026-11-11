@@ -16,6 +16,7 @@ import { World, Player, VIEW_W, VIEW_H, setViewSize, META } from './engine.js';
 import { syncRegionToMap } from './region_sync.js';
 import { doorBlocked } from './johkanto_gate.js';
 import { startTabLock } from './tab_lock.js';
+import { STALE_BUILD_TEXT, checkBuild, buildWatchState, startBuildWatch } from './build_watch.js';
 import { applySailFix } from './sail_fix.js';
 import * as GymPuzzles from './gym_puzzles.js';
 // the shared singletons (see ow_core.js)
@@ -92,7 +93,7 @@ import {
 } from './ow_scaling.js';
 // ow_input.js: ow_input.js — keyboard input: held-key tracking, the movement gates, the run button, and the item/repel helpers bound to input.
 import {
-	INPUT_TRACE, KEYMAP, POS_KEY, heldKeys, interact, latchTap, owlog, repelWoreOff, savePos, setRepel,
+	INPUT_TRACE, POS_KEY, heldKeys, interact, latchTap, owlog, repelWoreOff, savePos, setRepel,
 	tickStats, typingInChat, useGadget,
 } from './ow_input.js';
 // ow_keybinds.js: ow_keybinds.js — remappable key bindings (load/save and the action lookup the input layer uses).
@@ -228,7 +229,10 @@ import { getImage, drawOwMon } from './engine.js';
 import { loadItemIcons, itemIconFile, drawCategoryIcon } from './itemicon.js';
 import * as PB from './pokeblock.js';
 import { initPokeblockData } from './pokeblock.js';
-import { blender, blenderKey, blenderTest, drawBerryBlender, startBerryBlender } from './minigames/blender/blender.js';
+import { blender, blenderKey, blenderTap, blenderTest, drawBerryBlender, startBerryBlender } from './minigames/blender/blender.js';
+import { cardFlip, cardFlipTap } from './minigames/cardflip/cardflip.js';
+import { unownPuzzle, unownPuzzleTap } from './unown_puzzle.js';
+import { contestTap } from './contest_ui.js';
 import { drawPokeblockCase, openPokeblockCase, pbCase, pokeblockCaseKey } from './pokeblock_case.js';
 import * as BUI from './battleui.js';
 import * as MP from '../battlecards/mpmode.js';
@@ -243,7 +247,9 @@ import { OW_RESET_KEYS } from '../site/owreset.js';
 import { Pvp } from './pvp.js';
 import { FactorySpec } from './factoryspec.js';
 import * as Chat from '../battlecards/chat.js';
-import { initGamepad } from './ow_gamepad.js';
+import { initGamepad, keyForEvent } from './ow_gamepad.js';
+import { actionForKey } from '../site/input.js';
+import { installLeaveGuard } from './ow_leaveguard.js';   // the site's Games switcher: what leaving costs (controls sweep B2)
 
 // Test Realm mode: ?mp=1 with a login token. The account backend owns the
 // cards; friends, presence, and world-visiting all run through it.
@@ -545,16 +551,21 @@ addEventListener('keydown', e => {
 		sfx(r === 'bound' ? 'ui_select' : 'ui_denied');
 		return;
 	}
-	const k = translateKey(e.key);
-	if (menuBlocking() || ['z', 'x', 'Enter', 'p', 'b', 'Escape'].includes(k) || KEYMAP[k] || k !== e.key) {
+	// the site-wide map, by PHYSICAL key (ow_gamepad.js keyForEvent): WASD moves the
+	// cursor in every menu, battle and minigame; C / V / Q / E / Backspace are the
+	// controller's X / Y / L / R / Select on whatever screen is up; Esc is back
+	const k = keyForEvent(e);
+	const mapped = !!actionForKey(e) || e.key === 'Escape';
+	if (k == null) { if (mapped) e.preventDefault(); return; }
+	if (menuBlocking() || mapped || ['z', 'x', 'Enter', 'p', 'b'].includes(k) || k !== e.key) {
 		if (e.key !== 'F5' && e.key !== 'F12') e.preventDefault();
 	}
-	// Auto-repeat must never stand in for a SECOND press on a confirm/cancel key.
-	// Holding A through battle text fired one keydown to advance the message and the
-	// very next repeat landed on the menu that had just opened — selecting BAG with
-	// no new press (reported repeatedly against Abe and Falkner). Arrows are left
-	// repeating on purpose, so holding a direction still scrolls a long list.
-	if (e.repeat && (k === 'z' || k === 'Enter' || k === 'x')) return;
+	// Auto-repeat must never stand in for a SECOND press. Holding A through battle
+	// text fired one keydown to advance the message and the very next repeat landed
+	// on the menu that had just opened — selecting BAG with no new press (reported
+	// repeatedly against Abe and Falkner); a held V would flip the bike on and off.
+	// Only directions repeat, so holding one still scrolls a long list.
+	if (e.repeat && !/^Arrow/.test(k)) return;
 	pressKey(k);
 });
 
@@ -621,7 +632,7 @@ screen.addEventListener('pointermove', e => {
 	if (factorySpec.blocking) { factorySpec.hover(...screenPos(e)); return; }
 	if (pvp.blocking) { pvp.hover(...screenPos(e)); return; }
 	if (battle.blocking) { battle.hover(...screenPos(e)); return; }
-	if (anyMenuOpen()) {
+	if (canvasMenuOpen()) {
 		const [x, y] = screenPos(e);
 		S.menuHover = null;
 		for (const b of S.menuUi) if (x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h) S.menuHover = b.id;
@@ -644,8 +655,21 @@ screen.addEventListener('pointerdown', e => {
 	if (battle.blocking) { battle.tap(...screenPos(e)); return; }
 	if (dialog.blocking || evolution.blocking) { pressKey('z'); return; }
 	// the touch HUD's objective strip: a tap shows the whole sentence / folds it back
-	if (!anyMenuOpen() && touchHudTap(...screenPos(e))) return;
-	if (anyMenuOpen()) {
+	if (!canvasMenuOpen() && touchHudTap(...screenPos(e))) return;
+	// the Game Boy / GBA minigames draw their own screens: a tap means what it
+	// would on that screen (a puzzle slot, a bet square, a move, a berry, A)
+	if (cardFlip.open || unownPuzzle.open || blender.open || contestMenu.open) {
+		const [x, y] = screenPos(e);
+		if (cardFlip.open) cardFlipTap(x, y);
+		else if (unownPuzzle.open) unownPuzzleTap(x, y);
+		else if (blender.open) blenderTap(x, y);
+		else contestTap(x, y);
+		return;
+	}
+	// every canvas menu, the Game Corner's and the secret base's included (they
+	// all lay out S.menuUi; ow_loop.js clears it each frame so a closed menu's
+	// buttons never linger)
+	if (canvasMenuOpen()) {
 		const [x, y] = screenPos(e);
 		// topmost first: a button drawn later sits ON TOP of an earlier one (the
 		// party menu's action list overlaps the POKeMON rows under it — first-hit
@@ -929,6 +953,7 @@ initTouchHud();   // the touch HUD's observer, installed here where it always ra
 		else if (directBattle) enterMatch(directBattle, false);
 		else checkRejoin();
 	}
+	installLeaveGuard();   // the Games switcher asks / saves position before leaving (ow_leaveguard.js)
 	// CONTROLLER PLAY: everyone, guests included (the owner dropped the old
 	// signed-in-only rule on 2026-10-18).
 	{
@@ -1017,6 +1042,16 @@ initTouchHud();   // the touch HUD's observer, installed here where it always ra
 		openUnownDex, unownDexKey, drawUnownDex, get unownDex() { return unownDex; }, rollUnownLetter, unownIdFor, allRuinsSolved, UNOWN_ORDER,
 		refreshFollower, setFollowerSpecies, get follower() { return follower; }, followSheet, followMini, followCache, drawFollower };
 	requestAnimationFrame(tick);
+	// a tab older than the live deploy plays old code until it reloads: say so (build_watch.js)
+	window.__ow.buildWatch = { check: checkBuild, state: buildWatchState };
+	startBuildWatch({ onStale: () => {
+		const say = () => {
+			if (dialog.blocking || cutscene.blocking || battle.blocking || battle.active) { setTimeout(say, 3000); return; }
+			dialog.open(STALE_BUILD_TEXT);
+		};
+		hud.textContent = 'A newer version of the game is live: reload the page to play it.';
+		say();
+	} });
 	// owner tooling: ?spritetune=1 mounts the battle-sprite tuning overlay for
 	// the mgibbie account only — the username is verified SERVER-side (the
 	// 'state' action derives it from the token), so a spoofed localStorage

@@ -216,14 +216,15 @@ register('fill-board-self', ({ state, pi, target, source, enemies, scaled, hm, p
 			// Hir'eek, the Bat: fill your board with copies of this creature
 			const p = state.players[pi];
 			const def = source && (state.cardsById[source.id] || source);
-			if (def) while (p.board.filter(c => !isDead(c)).length < 7) { const c = summon(state, pi, def); if (!c) break; }
+			// bounded: a copy that dies on entry (Spiked Arms) is a used attempt, never a reason to spin
+			if (def) for (let tries = 7; tries > 0 && p.board.filter(c => !isDead(c)).length < 7; tries--) { const c = summon(state, pi, def); if (!c) break; }
 });
 
 register('fill-board-token', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
 			// Onyxia / Shu'ma: fill your board with 1/1 tokens (up to 7 minions total)
 			const p = state.players[pi];
 			const def = { id: 'token_' + (e.name || 'token').toLowerCase().replace(/[^a-z0-9]+/g, '_'), name: e.name || 'Token', type: 'creature', cost: e.cost || 1, token: true, rarity: 'common', attack: e.attack ?? 1, health: e.health ?? 1, tribe: e.tribe || null, keywords: e.keywords || [], description: `A ${e.attack ?? 1}/${e.health ?? 1} token.` };
-			while (p.board.filter(c => !isDead(c) && c.type !== 'location').length < 7) { const c = summon(state, pi, def); if (!c) break; }
+			for (let tries = 7; tries > 0 && p.board.filter(c => !isDead(c) && c.type !== 'location').length < 7; tries--) { const c = summon(state, pi, def); if (!c) break; } // bounded (see fill-board-each)
 });
 
 
@@ -648,7 +649,7 @@ register('void-soul', ({ state, pi, target, source, enemies, scaled, hm, pickEne
 register('summon-hand-size-stats', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
 			// Abyssal Summoner: summon a token with stats equal to your hand size
 			const n = state.players[pi].hand.length;
-			const tok = summon(state, pi, { id: 'token_' + (e.name || 'imp').toLowerCase(), name: e.name || 'Abyssal Enforcer', type: 'creature', cost: 0, token: true, tribe: e.tribe || null, rarity: 'common', attack: n, health: n, keywords: e.keywords || [], description: `A ${n}/${n} token.` });
+			const tok = summon(state, pi, { id: 'token_' + (e.name || 'imp').toLowerCase().replace(/[^a-z0-9]+/g, '_'), name: e.name || 'Abyssal Enforcer', type: 'creature', cost: 0, token: true, tribe: e.tribe || null, rarity: 'common', attack: n, health: n, keywords: e.keywords || [], description: `A ${n}/${n} token.` });
 			// Spire of Solitude: the summoned Demon immediately attacks a random enemy minion
 			if (tok && e.attackRandomEnemyMinion) {
 				tok.sick = false;
@@ -824,7 +825,7 @@ register('fill-board-random-cost', ({ state, pi, target, source, enemies, scaled
 			const p = state.players[pi];
 			const cost = e.cost != null ? e.cost : 0;
 			const pool = Object.values(state.cardsById).filter(d => d.type === 'creature' && (d.cost || 0) === cost && !d.token && d.collectible !== false && !d.companion && !d.commander && !(d.colors && d.colors.length));
-			while (pool.length && p.board.filter(c => !isDead(c)).length < 7) summon(state, pi, pool[Math.floor(state.rng() * pool.length)]);
+			for (let tries = 7; tries > 0 && pool.length && p.board.filter(c => !isDead(c)).length < 7; tries--) { if (!summon(state, pi, pool[Math.floor(state.rng() * pool.length)])) break; } // bounded (see fill-board-each)
 } });
 
 
@@ -924,7 +925,7 @@ register('summon-deck-minions-setstats', ({ state, pi, target, source, enemies, 
 			const p = state.players[pi];
 			const pool = [...new Set(p.deck)].map(id => state.cardsById[id]).filter(d => d && d.type === 'creature' && !d.token);
 			// e.each (Zerek's Cloning Gallery): one copy of EVERY distinct deck creature
-			for (let n = 0; n < (e.each ? pool.length : (e.count || 4)) && pool.length; n++) { if (p.board.filter(c => !isDead(c)).length >= 7) break; const def = JSON.parse(JSON.stringify(e.each ? pool[n] : pool[Math.floor(state.rng() * pool.length)])); if (e.stats != null) { def.attack = e.stats; def.health = e.stats; } def.token = true; def.id = 'token_' + def.id; summon(state, pi, def); }
+			for (let n = 0; n < (e.each ? pool.length : (e.count || 4)) && pool.length; n++) { if (p.board.filter(c => !isDead(c)).length >= 7) break; const def = JSON.parse(JSON.stringify(e.each ? pool[n] : pool[Math.floor(state.rng() * pool.length)])); if (e.stats != null) { def.attack = e.stats; def.health = e.stats; } def.token = true; def.artFrom = def.artFrom || def.id; def.id = 'token_' + def.id; summon(state, pi, def); }
 } });
 
 
@@ -1045,7 +1046,7 @@ register('resummon-self-diminished', ({ state, pi, target, source, enemies, scal
 				const na = (source.attack || 0) - 1, nh = (source.maxHealth || 0) - 1;
 				if (na > 0 && nh > 0) {
 					const base = state.cardsById[source.id] || {};
-					const def = { id: 'token_' + source.id, name: source.name, type: 'creature', cost: source.cost || 0, token: true, rarity: base.rarity || 'legendary', tribe: source.tribe || null, attack: na, health: nh, keywords: [...(base.keywords || [])].filter(k => k !== 'deathrattle'), description: source.name, deathrattle: [{ type: 'resummon-self-diminished' }] };
+					const def = { id: 'token_' + source.id, artFrom: source.artFrom || source.id, name: source.name, type: 'creature', cost: source.cost || 0, token: true, rarity: base.rarity || 'legendary', tribe: source.tribe || null, attack: na, health: nh, keywords: [...(base.keywords || [])].filter(k => k !== 'deathrattle'), description: source.name, deathrattle: [{ type: 'resummon-self-diminished' }] };
 					if (!def.keywords.includes('deathrattle')) def.keywords.push('deathrattle');
 					summon(state, pi, def);
 				}
@@ -1480,15 +1481,20 @@ register('summon-random', ({ state, pi, target, source, enemies, scaled, hm, pic
 				: e.costFromSelfCost ? (source ? (source.cost || 0) : 0) // Ulfar's granted Deathrattle: Cost = this minion's Cost
 				: e.cost;
 			if (exactCost != null && e.costDelta) exactCost += e.costDelta; // Big Bad Voodoo: self Cost + 1
-			const pool = e.ids ? e.ids.map(id => state.cardsById[id]).filter(Boolean) : Object.values(state.cardsById).filter(d =>
+			const poolOf = requireKeyword => e.ids ? e.ids.map(id => state.cardsById[id]).filter(Boolean) : Object.values(state.cardsById).filter(d =>
 				d.type === 'creature' && (e.maxCost == null || (d.cost || 0) <= e.maxCost)
 				&& (e.minCost == null || (d.cost || 0) >= e.minCost)
 				&& (exactCost == null || (d.cost || 0) === exactCost)
 				&& (e.rarity == null || (d.rarity || 'common') === e.rarity) // Canopic Jars: a random Legendary
 				&& (e.tribe == null || (d.tribe || '').includes(e.tribe))
 				&& (e.rarity == null || d.rarity === e.rarity)
-				&& (e.requireKeyword == null || (d.keywords || []).includes(e.requireKeyword)) // Obsidian Revenant: Deathrattle minions
+				&& (requireKeyword == null || (d.keywords || []).includes(requireKeyword)) // Obsidian Revenant: Deathrattle minions / Guard Duty: Taunt minions
 				&& !d.companion && !d.commander && !d.token && d.collectible !== false && !(d.colors && d.colors.length));
+			let pool = poolOf(e.requireKeyword);
+			// no creature of that Cost has the keyword (Guard Duty: "a random 6-Cost Taunt creature"):
+			// summon any creature of that Cost and GIVE it the keyword, so the card still does what it says
+			let grantKw = null;
+			if (!pool.length && e.requireKeyword && !e.ids) { pool = poolOf(null); grantKw = e.requireKeyword; }
 			let howMany = e.count || 1;
 			if (e.countPer === 'schools-cast-game') howMany = (e.count || 1) + Object.keys(state.players[pi].schoolsCastGame || {}).length; // Razzle-Dazzler
 			if (e.countPer === 'self-deaths') howMany = source ? Math.max(1, (state.players[pi].diedCountById?.[source.id] || 0)) : 1; // Ysondre: one Dragon per time it has died
@@ -1499,6 +1505,7 @@ register('summon-random', ({ state, pi, target, source, enemies, scaled, hm, pic
 				const c = summon(state, owner, def);
 				if (c && e.disguise) disguiseCreature(state, c);
 				// "...and give it Taunt": grant a keyword to the summoned creature
+				if (c && grantKw && !c.keywords.includes(grantKw)) { c.keywords.push(grantKw); if (grantKw === KW.DIVINE_SHIELD) c.shield = true; if (grantKw === KW.STEALTH) c.stealthed = true; }
 				if (c && e.grant) { for (const gk of (Array.isArray(e.grant) ? e.grant : [e.grant])) if (!c.keywords.includes(gk)) { c.keywords.push(gk); if (gk === KW.DIVINE_SHIELD) c.shield = true; if (gk === KW.STEALTH) c.stealthed = true; } } // grant may be a single keyword or an array (Aman'Thul: Taunt + Lifesteal)
 				if (c && (e.buffAttack || e.buffHealth)) { c.attack += e.buffAttack || 0; c.maxHealth += e.buffHealth || 0; emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) }); } // Harmonic Disco: summon it with +1/+1
 				if (c && e.dormantTurns) { c.dormantLeft = e.dormantTurns; emit(state, { type: 'dormant', player: owner, uid: c.uid, turns: e.dormantTurns }); } // Paltry Flutterwing / Dreadsoul
@@ -1599,8 +1606,11 @@ register('fill-board-each', ({ state, pi, target, source, enemies, scaled, hm, p
 			// Mad Summoner: fill every player's board with tokens
 			for (let s2 = 0; s2 < state.players.length; s2++) {
 				if (state.players[s2].eliminated) continue;
-				while (state.players[s2].board.filter(c => !isDead(c)).length < 7) {
-					const c = summon(state, s2, { id: 'token_' + (e.name || 'imp').toLowerCase(), name: e.name || 'Imp', type: 'creature', cost: 1, token: true, tribe: e.tribe || null, rarity: 'common', attack: e.attack || 1, health: e.health || 1, description: `A ${e.attack || 1}/${e.health || 1} token.` });
+				// at most 7 summon attempts per board: a token killed on entry (Spiked Arms deals 1 to
+				// each summon) stays in the row as a dead entry that the alive count skips, so an
+				// unbounded "while alive < 7" loop never ended and froze the tab (Lorequest Jace, 2026-11-05)
+				for (let tries = 7; tries > 0 && state.players[s2].board.filter(c => !isDead(c)).length < 7; tries--) {
+					const c = summon(state, s2, { id: 'token_' + (e.name || 'imp').toLowerCase().replace(/[^a-z0-9]+/g, '_'), name: e.name || 'Imp', type: 'creature', cost: 1, token: true, tribe: e.tribe || null, rarity: 'common', attack: e.attack || 1, health: e.health || 1, description: `A ${e.attack || 1}/${e.health || 1} token.` });
 					if (!c) break;
 				}
 			}

@@ -346,18 +346,20 @@ try {
 				G.Flow.play('normal');
 				const out = [];
 				for (let k = 0; k < 4; k++) { const t0 = performance.now(); G.Game.debugStep(600, 1 / 60); out.push(performance.now() - t0); if (G.Game.state === 'over') break; }
-				const reads = (() => { const t0 = performance.now(); let s = 0; const ids = Object.keys(G.Moves.BY_ID); for (let i = 0; i < 2e6; i++) { const m = G.Moves.BY_ID[ids[i % ids.length]]; s += (m.dmg || 0) + G.DEX[i % 1000].dex; } return [performance.now() - t0, s]; })();
+				const read1 = () => { const t0 = performance.now(); let s = 0; const ids = Object.keys(G.Moves.BY_ID); for (let i = 0; i < 2e6; i++) { const m = G.Moves.BY_ID[ids[i % ids.length]]; s += (m.dmg || 0) + G.DEX[i % 1000].dex; } return [performance.now() - t0, s]; };
+				const reads = [read1(), read1(), read1()].sort((a, b) => a[0] - b[0])[0];   // (the best of 3: a GC pause or a busy CI core is noise, not the freeze)
 				return { steps: out, total: out.reduce((a, b) => a + b, 0), n: out.length * 600, reads: reads[0], frozenNow: Object.isFrozen(G.Moves) };
 			});
 			await d.ctx.close();
 			return r;
 		};
-		const u1 = await measure(false), f1 = await measure(true), u2 = await measure(false), f2 = await measure(true);
+		// (three pairs, the best of each: two jobs share a CI runner, and one slow sample is that, not the freeze: x1.5-1.9 flakes)
+		const u1 = await measure(false), f1 = await measure(true), u2 = await measure(false), f2 = await measure(true), u3 = await measure(false), f3 = await measure(true);
 		const per = r => r.total / r.n * 1000;
-		const U = Math.min(per(u1), per(u2)), F = Math.min(per(f1), per(f2));
-		const RU = Math.min(u1.reads, u2.reads), RF = Math.min(f1.reads, f2.reads);
+		const U = Math.min(per(u1), per(u2), per(u3)), F = Math.min(per(f1), per(f2), per(f3));
+		const RU = Math.min(u1.reads, u2.reads, u3.reads), RF = Math.min(f1.reads, f2.reads, f3.reads);
 		console.log(`     sim cost: ${U.toFixed(1)} ms / 1000 steps unfrozen vs ${F.toFixed(1)} frozen (x${(F / U).toFixed(2)}); 2M table reads ${RU.toFixed(1)} vs ${RF.toFixed(1)} ms (x${(RF / RU).toFixed(2)})`);
-		A(!u1.frozenNow && !u2.frozenNow && f1.frozenNow && f2.frozenNow, 'perf: the same seeded run, unfrozen (a base page) and frozen (the Expedition loaded)', JSON.stringify([u1.n, f1.n]));
+		A(!u1.frozenNow && !u2.frozenNow && !u3.frozenNow && f1.frozenNow && f2.frozenNow && f3.frozenNow, 'perf: the same seeded run, unfrozen (a base page) and frozen (the Expedition loaded)', JSON.stringify([u1.n, f1.n]));
 		A(F / U < 1.5 && RF / RU < 1.5, `perf: frozen tables cost no measurable sim time (x${(F / U).toFixed(2)} per step, x${(RF / RU).toFixed(2)} per read; noise allowed to 1.5)`);
 	}
 

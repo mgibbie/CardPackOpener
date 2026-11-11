@@ -16,6 +16,7 @@
 // Every ability is FIRED through real hands / rounds with exact numbers.
 //   node micatro/tests/mods/pokermon_gen9_batch2_test.mjs
 import fs from 'fs';
+// (Session runs here start with engineRev: 1 = the rules before Pages: these suites measure the mod alone)
 import path from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
 import { T, start, hand, add, clearHand, G, P_CENTERS, act, STATES } from './poke_helpers.mjs';
@@ -130,11 +131,11 @@ await sec('static', () => {
   }
   const keys = MODS.pokermon.content.centers.filter((c) => c.set === 'Joker').map((c) => c.key);
   const run = (list) => { const i = keys.indexOf('j_poke_' + list[0]); return i > 0 && list.every((k, n) => keys[i + n] === 'j_poke_' + k) ? true : keys.slice(i - 1, i + list.length + 1); };
-  for (const ch of [['capsakid', 'scovillain', 'rellor'], ['rabsca', 'flittle', 'espathra', 'tinkatink'], ['wugtrio', 'bombirdier', 'varoom', 'revavroom', 'cyclizar', 'orthworm', 'glimmet', 'glimmora', 'greavard'],
-    ['houndstone', 'flamigo', 'veluza', 'dondozo', 'tatsugiri', 'annihilape', 'clodsire', 'farigiraf'], ['iron_leaves', 'poltchageist', 'sinistcha']]) {
+  for (const ch of [['capsakid', 'scovillain', 'mega_scovillain', 'rellor'], ['rabsca', 'flittle', 'espathra', 'tinkatink'], ['wugtrio', 'bombirdier', 'varoom', 'revavroom', 'cyclizar', 'orthworm', 'glimmet', 'glimmora', 'mega_glimmora', 'greavard'],
+    ['houndstone', 'flamigo', 'veluza', 'dondozo', 'tatsugiri', 'mega_tatsugiri', 'annihilape', 'clodsire', 'farigiraf'], ['iron_leaves', 'poltchageist', 'sinistcha']]) {
     ok(run(ch) === true, 'Pokédex order: ' + ch.join(' > '), run(ch));
   }
-  const FAM = { wooper: 'wooper,quagsire,clodsire', capsakid: 'capsakid,scovillain', flittle: 'flittle,espathra', varoom: 'varoom,revavroom', glimmet: 'glimmet,glimmora', poltchageist: 'poltchageist,sinistcha' };
+  const FAM = { wooper: 'wooper,quagsire,clodsire', capsakid: 'capsakid,scovillain,mega_scovillain', flittle: 'flittle,espathra', varoom: 'varoom,revavroom', glimmet: 'glimmet,glimmora,mega_glimmora', poltchageist: 'poltchageist,sinistcha' };
   for (const [n, f] of Object.entries(FAM)) ok(fam(n) === f, 'family: ' + f, fam(n));
   ok(['bombirdier', 'cyclizar', 'orthworm', 'flamigo', 'veluza', 'dondozo'].every((n) => fam(n) === '' || fam(n) === n), 'the single-stage ones have no line');
   ok(NEW.filter((n) => C(n).poke_no_energy_field).sort().join() === 'bombirdier,cyclizar', 'Energy-inert: Bombirdier (odds) and Cyclizar (hand, hand size); every other one has a main number');
@@ -554,7 +555,7 @@ await sec('old-rev replay', () => {
     const s = new Session();
     PINS.RULES.pins = pins;
     try {
-      s.start({ seed, mods: ['pokermon'], customDeck: deck });
+      s.start({ engineRev: 1, seed, mods: ['pokermon'], customDeck: deck });
       s.act({ type: 'select_blind' }); flush();
       const tr = G.consumeables.cards.find((c) => key(c) === 'c_poke_transformation');
       s.act({ type: 'use', id: tr.sort_id, targets: [] }); flush();
@@ -589,7 +590,7 @@ await sec('old-rev replay', () => {
 // ------------------------------------------------------------------- save / resume
 await sec('resume', () => {
   const s = new Session();
-  s.start({ seed: 'G9B2RES', customDeck: { name: 'Gen 9', mods: ['pokermon'], params: { blind_scaling: 0.05 },
+  s.start({ engineRev: 1, seed: 'G9B2RES', customDeck: { name: 'Gen 9', mods: ['pokermon'], params: { blind_scaling: 0.05 },
     cards: [['S_J', 0, 0, 0, 12], ['H_9', 'm_stone', 0, 0, 14], ['D_5', 'm_steel', 0, 0, 6], ['C_7', 0, 0, 0, 20]],
     consumables: [{ key: 'c_poke_darkness_energy' }],
     jokers: [{ key: 'j_poke_wooper' }, { key: 'j_poke_flittle' }, { key: 'j_poke_varoom' }, { key: 'j_poke_veluza' }, { key: 'j_poke_poltchageist' }, { key: 'j_poke_glimmora' }, { key: 'j_poke_bombirdier' }] } });

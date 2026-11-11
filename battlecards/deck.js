@@ -9,6 +9,7 @@ import * as MPX from './mpmode.js';
 import { encodeDeck, decodeDeck } from './codec.js';
 import { correspondenceOffenders } from './format.js';
 import { askText } from '../site/osk.js';
+import { isTyping } from '../site/input.js';
 
 const MP_ON = MPX.mpMode();
 const TOUCH = matchMedia('(pointer: coarse)').matches;
@@ -138,6 +139,7 @@ function tileFor(card) {
 	tile.tabIndex = 0;
 	tile.setAttribute('aria-label', card.name + ' — view card');
 	tile.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openCard(card); } });
+	tile.addEventListener('bc-inspect', e => { e.preventDefault(); openCard(card); });   // V / the pad's Y (padnav.js)
 	const face = drawCardFace(card);
 	face.style.width = '100%';
 	tile.appendChild(face);
@@ -383,6 +385,12 @@ function renderDeckList() {
 		const cc = def.cardClass && def.cardClass !== 'neutral' ? classColorOf(def.cardClass) : null;
 		row.innerHTML = `<span class="gem"${cc ? ` style="background:${cc}"` : ''}>${def.cost ?? 0}</span><span class="dn">${def.name}</span><span class="dx">×${counts[id]}</span>`;
 		row.onclick = () => { hideTip(); removeCard(id); };
+		// a stop for Tab, the arrows and a pad: Z / Enter / A removes it, V / Y opens its card page
+		row.tabIndex = 0;
+		row.setAttribute('role', 'button');
+		row.setAttribute('aria-label', `Remove ${def.name} from the deck`);
+		row.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); row.onclick(); } });
+		row.addEventListener('bc-inspect', e => { e.preventDefault(); hideTip(); openCard(def); });
 		if (!TOUCH) attachTip(row, def); // name-only rows benefit the most from the inspect tip
 		dl.appendChild(row);
 	}
@@ -655,6 +663,14 @@ $('owned-toggle').addEventListener('click', () => {
 });
 $('prev').addEventListener('click', () => flip(-1));
 $('next').addEventListener('click', () => flip(1));
+// Q / E (a pad's L / R; padnav turns them into ← / → keydowns) and PageUp / PageDown
+// turn the page; the real arrows move the focus ring. Never while typing or behind the card page.
+addEventListener('keydown', e => {
+	if (isTyping(document.activeElement) || $('zoom').classList.contains('open') || $('lopick').classList.contains('open')) return;
+	const d = e.key === 'PageUp' || (!e.isTrusted && e.key === 'ArrowLeft') ? -1
+		: e.key === 'PageDown' || (!e.isTrusted && e.key === 'ArrowRight') ? 1 : 0;
+	if (d) { e.preventDefault(); flip(d); }
+});
 // type a page number to jump — hundreds of pages is a long way by arrow alone
 $('page-jump').addEventListener('change', () => {
 	const pages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
@@ -672,7 +688,14 @@ $('zoom-close').addEventListener('click', () => $('zoom').classList.remove('open
 $('zoom-craft').addEventListener('click', craftZoomCard);
 $('dust-extras').addEventListener('click', dustExtras);
 $('zoom').addEventListener('click', e => { if (e.target.id === 'zoom') $('zoom').classList.remove('open'); });
-addEventListener('keydown', e => { if (e.key === 'Escape') $('zoom').classList.remove('open'); });
+// Esc (or X / a pad's B, via padnav) closes the open card page / picker, and
+// ONLY that: preventDefault tells nav.js not to also leave the page
+addEventListener('keydown', e => {
+	if (e.key !== 'Escape') return;
+	if ($('zoom').classList.contains('open')) { e.preventDefault(); $('zoom').classList.remove('open'); }
+	else if ($('lopick').classList.contains('open')) { e.preventDefault(); closeLoadoutPicker(); }
+	else if (MOBILE.matches && $('deck-panel').classList.contains('open')) { e.preventDefault(); $('deck-panel').classList.remove('open'); }
+});
 
 // ---------- drag a card onto the deck to add it ----------
 function dropAdd(id) { if (!id) return; addCard(id); showEdit(); }
@@ -786,7 +809,7 @@ async function openFromLink(code) {
 	const loaded = await loadDeckFromCode(code);
 	if (!loaded) newDeck(); // bad/stale link → fall back to a fresh blank deck
 	// tidy the URL so a refresh (or re-copying the page URL) isn't stuck on this import
-	try { history.replaceState(null, '', location.pathname); } catch { /* ignore */ }
+	try { window.history.replaceState(null, '', location.pathname); } catch { /* ignore */ }
 }
 
 fetch('classes.json').then(r => r.json()).then(({ classes }) => {

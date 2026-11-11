@@ -13,7 +13,7 @@ import { getImage, META, drawOwMon } from './engine.js';
 import * as Badges from './badges.js';
 import * as Bag from './bag.js';
 import * as Story from './events.js';
-import { globalTier } from './quest.js';
+import { globalTier, laggingRegions, nextGym } from './quest.js';
 
 // The region you are STANDING in. `magepunk_region` is only ever KANTO/JOHTO/
 // HOENN, so an HM-gated blocker in Gen-2 Kanto was reading another region's
@@ -270,7 +270,7 @@ export class Blockers {
 		return this.list.find(b => tilesOf(b).some(([x, y]) => x === tx && y === ty)) || this.farBlocker(tx, ty);
 	}
 
-	messageAt(tx, ty) { const b = this.kindAt(tx, ty); return b ? b.msg : null; }
+	messageAt(tx, ty) { const b = this.kindAt(tx, ty); return b ? refusal(b) : null; }
 
 	giverAt(tx, ty) { return this.givers.some(g => g.tx === tx && g.ty === ty); }
 
@@ -306,6 +306,35 @@ export class Blockers {
 			ctx.drawImage(img, 0, 0, 16, 32, g.tx * META - camX, g.ty * META - 16 - camY, 16, 32);
 		}
 	}
+}
+
+// THE REFUSAL A GUARD SPEAKS. A `badge: N` guard waits on the shared TIER (gym N
+// cleared in all three regions, condMet above) — that is the design. But each line
+// names its own region's badges ("Only trainers with all 8 KANTO badges may pass"),
+// so a player who HOLDS them and is held back by another region was told something
+// false and could not tell why (bug:1794357919392: Kanto 8, Johto 8, Hoenn 7 at the
+// Route 22 officer). When the guard's own region is already there and only the
+// other regions lag, the guard says what is really required, in his own voice.
+// The guard's region is the table's (k_/j_/h_), never `magepunk_region`.
+const REGION_OF_ID = { k: 'KANTO', j: 'JOHTO', h: 'HOENN' };
+export function blockerRegion(b) { return REGION_OF_ID[String(b && b.id || '').split('_')[0]] || null; }
+// the tier a cond waits on (0 = none), and whether everything else in it already holds
+function tierNeed(cond) {
+	if (!cond) return 0;
+	if (cond.badge != null) return cond.badge;
+	if (cond.all) return Math.max(0, ...cond.all.map(tierNeed));
+	return 0;
+}
+function restMet(cond) { return !cond.all || cond.all.every(c => c.badge != null || condMet(c)); }
+export function refusal(b) {
+	if (!b) return null;
+	const need = tierNeed(b.cond), rk = blockerRegion(b);
+	if (!need || !rk || globalTier() >= need || Badges.count(rk) < need || !restMet(b.cond)) return b.msg;
+	const towns = laggingRegions().filter(r => r !== rk).map(r => nextGym(r)?.town).filter(Boolean);
+	const who = /^([A-Z][A-Z .’']*):/.exec(b.msg || '');
+	const held = need >= 8 ? `all 8 ${rk} badges` : `${need} ${rk} badge${need > 1 ? 's' : ''}`;
+	return `${who ? who[1] + ': ' : ''}You hold ${held} — but this way opens only once EVERY region has cleared GYM ${need}.`
+		+ `\nClear GYM ${need} in ${towns.length ? towns.join(' and ') : 'the other regions'} first!`;
 }
 
 // exported for the strand-safety test (blockers_test.mjs)

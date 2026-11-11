@@ -2,12 +2,13 @@
 // The local player renders toView() of the live engine; a spectator renders
 // the same object received over the network — so both see the same screen.
 
-import { G, P_BLINDS, P_TAGS, P_CENTERS, P_SEALS, get_blind_amount, setEventCardView } from './core.js';
+import { G, P_BLINDS, P_TAGS, P_CENTERS, P_SEALS, P_STAKES, get_blind_amount, setEventCardView } from './core.js';
 import { STATE_NAMES, HANDLIST, legal, get_poker_hand_info } from './run.js';
 import { describe, describeBlind, describeTag, enh_live_vars } from './describe.js';
 import { callHook, MOD_LOC } from '../mods/registry.js';
 import { mul, toJSONValue as J } from './bignum.js';
 import { held_card_limit } from './smods.js';
+import { pageView, pageGuaranteed } from './pages.js';
 
 export const VIEW_VERSION = 1;
 
@@ -118,6 +119,7 @@ export function toView() {
     seed: GM.pseudorandom.seed,
     back: GM.selected_back_key,
     stake: GM.stake,
+    stake_chip: GM.stake_key && P_STAKES[GM.stake_key]?.atlas ? { atlas: P_STAKES[GM.stake_key].atlas, pos: P_STAKES[GM.stake_key].pos } : undefined,
     state: STATE_NAMES[G.STATE],
     ante: rr.ante,
     round: GM.round,
@@ -174,6 +176,19 @@ export function toView() {
     mods: GM.mods || [],
     interest_cap: GM.interest_cap,
   };
+  // Pages (engine/pages.js): the offer while choosing (state PAGES), the round's Page while it plays (only in a run with Pages,
+  // so a vanilla view is unchanged)
+  if (GM.pages_on) {
+    view.pages_on = true;
+    if (GM.pages) view.pages = { blind: GM.pages.blind, choices: GM.pages.choices.map(pageView) };
+    if (GM.page) view.page = pageView(GM.page);
+    // (Pages v2's "remove a card" prize, after the cash-out: every deck card, with its id, to pick one)
+    if (G.STATE === G.STATES.PAGE_REMOVE) view.page_remove = { n: GM.page_remove || 0, cards: G.playing_cards.map((c) => ({ id: c.sort_id, front: c.config.card.key, center: c.config.center.key, edition: c.edition ? c.edition.type : 0, seal: c.seal || 0 })) };
+    if (GM.page_interest) view.interest_cap = GM.interest_cap + GM.page_interest; // (a Page's +$5 interest cap, this cash-out)
+    if (GM.page_next_hs) view.page_next_hs = GM.page_next_hs;
+    // (the Boss on deck is guaranteed a Page — rev 5: none yet this ante; rev 3-4: the pity timer. engine/pages.js pageGuaranteed)
+    if (GM.pages_v2 && G.STATE === G.STATES.BLIND_SELECT && pageGuaranteed('Boss')) view.page_pity = true;
+  }
   // Mods add their own fields / areas (Pokermon: view.areas.scry).
   callHook('view', view, cardView);
   return view;

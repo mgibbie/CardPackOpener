@@ -83,6 +83,12 @@ const ALLOW = [
 	// all eight policemen were mute, VAR_MAP_SCENE_ROUTE23 never advanced, and the
 	// trigger tiles never fired (Instinct, 2026-10-19: Thunder Badge guard at (8,140)).
 	/^Route2[23](_NorthEntrance)?_EventScript_BadgeGuard(Trigger)?$/,
+	// FireRed's out-of-centre heal (event_scripts.s: fade, special HealPlayerParty,
+	// fade back). Emerald's Common_EventScript_ twin was in shared_scripts, this one
+	// was not, so the S.S. Anne Room 6 rest, Mom's heal at home, the Sevault Canyon
+	// house and the Silph Co 9F bed all said "refreshed" and healed nothing
+	// (Instinct, 2026-11-03: Scyther stayed at 76/94).
+	/^EventScript_OutOfCenterPartyHeal$/,
 ];
 const SHOW = process.argv.includes('--show');
 const readJ = (p, d) => { try { return JSON.parse(fs.readFileSync(p, 'utf8')); } catch (e) { return d; } };

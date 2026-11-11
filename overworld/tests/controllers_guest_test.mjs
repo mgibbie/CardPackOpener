@@ -146,7 +146,7 @@ try {
 	{
 		const t = await open('/overworld/pokechess.html');
 		await sleep(2500);
-		await t.hold(BTN.select, true);   // View = leave, back to the overworld
+		await t.tap(BTN.select);   // View = leave, back to the overworld (on its release: Start + Select is the Games switcher)
 		await sleep(1500);
 		A(!/pokechess/.test(t.page.url()), 'PokéChess (guest): View leaves back to the overworld', t.page.url());
 		await t.ctx.close();

@@ -17,7 +17,8 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { computeMissing, MODS, MOD_NAMES, TYPE_TO_PTYPE, STAGE_LABEL, RARITY_LABEL, GENS, ROOT } from './pokermon_missing_jokers.mjs';
+import { computeMissing, MODS, MOD_NAMES, TYPE_TO_PTYPE, STAGE_LABEL, RARITY_LABEL, GENS, ROOT, ptypeOf } from './pokermon_missing_jokers.mjs';
+import { listFakemon } from './fakemon_jokers.mjs';
 
 export const OUT_JSON = path.join(ROOT, 'designwiki/data/pokermon_jokers.json');
 export const ART_DIR = 'sprites/pokermon_jokers/';
@@ -27,6 +28,22 @@ export const DEPLOY = 'npx wrangler pages deploy designwiki/sprites --project-na
 export async function buildData({ art = true, out, pretend } = {}) {
   // (pretend: dex numbers listed as missing anyway: designwiki_pokermon_jokers_test's fixture now that every species has a joker)
   const M = await computeMissing(pretend ? { pretend, fresh: true } : {});
+  const fakemon = pretend ? [] : listFakemon(M);
+  if (art && fakemon.length) {
+    const { loadContext, composeSpecies } = await import('./compose_missing_pokermon_jokers.mjs');
+    const C = await import('./compose_pokermon_joker_art.mjs');
+    const ctx = await loadContext(), dest = out || path.join(ROOT, 'designwiki/sprites/pokermon_jokers');
+    fs.mkdirSync(dest, { recursive: true });
+    for (const s of fakemon) {
+      const fullName = s.name;
+      let artName = fullName, length = fullName.length, result;
+      for (;;) {
+        try { result = composeSpecies(ctx, { ...s, name: artName }); break; }
+        catch (e) { if (!/too wide/.test(e.message) || length < 4) throw e; artName = fullName.slice(0, --length).trimEnd() + '...'; }
+      }
+      for (const variant of ['normal', 'shiny']) fs.writeFileSync(path.join(dest, `fakemon_${s.key}${variant === 'shiny' ? '_shiny' : ''}.png`), C.encode(C.CELL_W, C.CELL_H, result[variant]));
+    }
+  }
   let made = new Map(); // dex -> {source, recipe}
   if (art) {
     const { composeAll } = await import('./compose_missing_pokermon_jokers.mjs');
@@ -73,6 +90,8 @@ export async function buildData({ art = true, out, pretend } = {}) {
       rarity: s.rarity, rarityLabel: s.rarityLabel, cost: s.cost, line: s.line,
       art: { source: (made.get(s.dex) || {}).source || null, normal: fileOf(s.dex, false), shiny: fileOf(s.dex, true), recipe: (made.get(s.dex) || {}).recipe || null },
     })),
+    fakemon: fakemon.map(({ sprite, ...s }) => ({ ...s, mapped_ptype: ptypeOf(s.types),
+      art: { source: 'composed', normal: ART_DIR + 'fakemon_' + s.key + '.png', shiny: ART_DIR + 'fakemon_' + s.key + '_shiny.png' } })),
   };
 }
 

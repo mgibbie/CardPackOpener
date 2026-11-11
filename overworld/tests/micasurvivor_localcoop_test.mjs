@@ -398,8 +398,18 @@ try {
 			const run = (n, dt = 1 / 60) => { for (let i = 0; i < n; i++) C.update(dt, pl); };
 			const place = (dx, dy) => { o.x = pl.x + dx; o.y = pl.y + dy; };
 			const free = (x, y) => G.World.isFree(x, y, 20);
-			// find a clear stretch to the right of the player
-			out.free = free(pl.x + 300, pl.y) && free(pl.x + 150, pl.y) && free(pl.x + 100, pl.y);
+			// find a clear stretch to the right of the player. The map is random: a rock or a
+			// tree in the partner's path slows the walk below the bound (CI 2026-11-07: free:false,
+			// follow 78). So stand the player where the whole lane is open before measuring.
+			const lane = (x, y) => { for (let d = -20; d <= 320; d += 10) if (!free(x + d, y)) return false; return true; };
+			if (!lane(pl.x, pl.y)) {
+				const x0 = pl.x, y0 = pl.y;
+				search: for (let r = 40; r <= 3000; r += 40) for (let k = 0; k < 16; k++) {
+					const x = x0 + Math.cos(k * Math.PI / 8) * r, y = y0 + Math.sin(k * Math.PI / 8) * r;
+					if (lane(x, y)) { pl.x = x; pl.y = y; break search; }
+				}
+			}
+			out.free = lane(pl.x, pl.y);
 			G.EnemyMgr.clear();
 			place(300, 0); run(1); const d0 = o.x - pl.x; run(59); out.follow = d0 - (o.x - pl.x);
 			place(100, 0); run(120); const s0 = o.x; run(60); out.still = Math.abs(o.x - s0);
@@ -420,6 +430,7 @@ try {
 			place(80, 0);
 			return out;
 		});
+		A(mv.free, 'movement: setup, a clear 300px lane beside the player (the map is random)', JSON.stringify(mv));
 		A(mv.follow > 85 && mv.follow <= 118 / 60 * 59 + 1, 'past 150 from you it walks to you (steering eases in; at most 118/s)', JSON.stringify(mv));
 		A(mv.still < 2, 'close to you with no enemy around it stays put', JSON.stringify(mv));
 		A(mv.engage > 15 && mv.engage <= 59.5 && mv.dirMax > 0.4 && mv.dirMax <= 0.5 + 1e-9 && mv.stopAt > 120 && mv.stopAt < 140 && mv.dirEnd < 0.2,

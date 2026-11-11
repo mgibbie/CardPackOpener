@@ -12,6 +12,7 @@
 // Then Energy (the standard shares; the fixed numbers stay), save / resume + replay and the art (every cell's type, Ogerpon's mask cells).
 //   node micatro/tests/mods/pokermon_gen9_legendaries_test.mjs
 import path from 'path';
+// (Session runs here start with engineRev: 1 = the rules before Pages: these suites measure the mod alone)
 import { fileURLToPath, pathToFileURL } from 'url';
 import { T, start, hand, add, clearHand, G, P_CENTERS, act, STATES } from './poke_helpers.mjs';
 import { Session } from '../../js/engine/session.js';
@@ -35,6 +36,9 @@ const key = (c) => c.config.center.key;
 const near = (a, b) => Math.abs(a - b) < 1e-9;
 const flush = () => G.E_MANAGER.flush();
 const sec = async (name, fn) => { if (process.env.G9_TRACE) console.log('--', name); try { await fn(); } catch (e) { ok(false, name + ' threw: ' + String(e && e.stack).slice(0, 700)); } };
+/** The rules of a run recorded before r111 (the owner's simplified weather trio, SIMPLE_TRIO_REV: Kyogre / Groudon made rain / sun, locked
+ *  Castform and clashed; Rayquaza calmed them), as a resume / replay of an old move runs them. The r111 rules: pokermon_simple_trio_test. */
+const r110 = (fn) => { PINS.RULES.pins = { pokermon: '3.9.1+r110' }; try { return fn(); } finally { PINS.RULES.pins = null; } };
 const ex = (j) => j.ability.extra;
 /** The card's text, every line and box joined by one space. */
 const plain = (j) => describe(j).lines.join(' ').replace(/\{[^}]*\}/g, '').replace(/\s+/g, ' ').trim();
@@ -253,17 +257,23 @@ await sec('koraidon', () => {
   ok(!cherrim_sunny(lv), 'control: not sunny (a Spades first deal is not red)');
   const k = add('j_poke_koraidon');
   ok(cherrim_sunny(lv), 'Koraidon held: it is sunny (live)');
-  ok(/Orichalcum Pulse: while you have this Joker it's always sunny \(Castform Sunny unless Kyogre; rain still falls\) X2 Mult, plus X0\.5 for each Ancient Paradox Joker \(Currently 0: X2 Mult\)/.test(plain(k)), 'text', plain(k));
+  ok(/Orichalcum Pulse: while you have this Joker it's always sunny \(Castform turns Sunny; rain still falls\) X2 Mult, plus X0\.5 for each Ancient Paradox Joker \(Currently 0: X2 Mult\)/.test(plain(k)), 'text', plain(k));
   let r = play(['S_5']);
   ok(near(r.mult, (1 + 10) * 2), 'Larvesta +5 Mult doubled in the sun, then Koraidon X2: (1 + 10) x 2', r.total);
   // Castform turns Sunny on its first deal
   const cf = add('j_poke_castform');
   round();
   ok(ex(cf).form === 'sunny' && is_type(cf, 'Fire'), 'Castform: Sunny (Fire) on the round\'s first deal', [ex(cf).form, ex(cf).ptype]);
-  // Kyogre's rain coexists: Castform Rainy (Kyogre's lock wins), Larvesta still in the sun
-  add('j_poke_kyogre');
+  // before r111 Kyogre's rain coexisted: Castform Rainy (Kyogre's lock won), Larvesta still in the sun
+  const ky = add('j_poke_kyogre');
+  r110(() => {
+    round();
+    ok(castform_lock() === 'rainy' && ex(cf).form === 'rainy' && cherrim_sunny(lv), 'r110: with Kyogre: Castform Rainy (its lock), and still sunny for Larvesta: both', [castform_lock(), ex(cf).form, cherrim_sunny(lv)]);
+  });
+  // r111: Kyogre locks nothing: Castform Sunny (Koraidon)
   round();
-  ok(castform_lock() === 'rainy' && ex(cf).form === 'rainy' && cherrim_sunny(lv), 'with Kyogre: Castform Rainy (its lock), and still sunny for Larvesta: both', [castform_lock(), ex(cf).form, cherrim_sunny(lv)]);
+  ok(castform_lock() === null && ex(cf).form === 'sunny' && cherrim_sunny(lv), 'r111: with Kyogre: no lock, Castform Sunny (Koraidon)', [castform_lock(), ex(cf).form]);
+  sell(ky);
   // debuffed / sold: no sun from it
   debuff(k);
   ok(!cherrim_sunny(lv) || ex(lv).sun_round === G.GAME.round, 'debuffed: no sun from it');
@@ -406,7 +416,7 @@ await sec('energy', () => {
 // ------------------------------------------------------------------- save / resume (a run is its recipe) and the replay stepper
 await sec('resume', () => {
   const s = new Session();
-  s.start({ seed: 'G9RESUME', customDeck: { name: 'Gen9L', mods: ['pokermon'], params: { joker_slots: 12, consumable_slots: 10, blind_scaling: 0.05 },
+  s.start({ engineRev: 1, seed: 'G9RESUME', customDeck: { name: 'Gen9L', mods: ['pokermon'], params: { joker_slots: 12, consumable_slots: 10, blind_scaling: 0.05 },
     jokers: [{ key: 'j_poke_wochien' }, { key: 'j_poke_chienpao' }, { key: 'j_poke_tinglu' }, { key: 'j_poke_chiyu' }, { key: 'j_poke_koraidon' }, { key: 'j_poke_miraidon' },
       { key: 'j_poke_ogerpon' }, { key: 'j_poke_cherrim' }, { key: 'j_cavendish' }],
     consumables: [{ key: 'c_black_hole' }, { key: 'c_black_hole' }, { key: 'c_poke_water_energy' }] } });

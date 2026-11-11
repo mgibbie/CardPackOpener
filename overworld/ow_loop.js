@@ -32,6 +32,7 @@ import { drawFollower, follower, updateFollower } from './ow_follower.js';
 import { bgmTick, daycareMenu, halfParty, moveShop, nameRater, tradeMenu } from './ow_music.js';
 import { cardsMenu, deckSelect, dexMenu, drawWaterAnim, optionsMenu, partyMenu, playerMenu, questMenu, runMenu, startMenu, townMap, trade, trainerCard } from './ow_menustate.js';
 import { persistBattle } from './ow_battleresume.js';
+import { syncFlaggedObjects } from './ow_objsync.js';
 import { findLanding } from './ow_transitions.js';
 import { FADE_SPEED, fade } from './ow_fade.js';
 import { drawUnownPuzzle, unownPuzzle } from './unown_puzzle.js';
@@ -312,6 +313,9 @@ export function tick(now) {
 				else hud.textContent = 'Movement is blocked by: ' + (g.blockedBy || 'something invisible') + '. Reloading recovers it.';
 			}
 		} else S.rejectStarveT = 0;
+		// a hide flag set (or cleared) while you're on the map reaches its objects
+		// the way the GBA camera does (ow_objsync.js)
+		syncFlaggedObjects();
 		npcs.update(dt);
 		updateFollower(dt);
 	}
@@ -382,7 +386,11 @@ export function tick(now) {
 			sctx.fillStyle = 'rgba(10,8,18,0.82)';
 			sctx.fillRect(0, MH, SW, SH - MH);
 		}
-		if (cardFlip.open) drawCardFlip(sctx, SW, SH); // full screen, the GB frame scaled up
+		// the tap targets are rebuilt by whichever screen draws below: a screen that
+		// lays out none (a Game Boy minigame) must not inherit the last menu's
+		S.menuUi = [];
+		if (choiceMenu.open && choiceMenu.overMenu) drawChoiceMenu(SW, MH);   // a YES / NO asked over another screen (ow_saves.js askYesNo)
+		else if (cardFlip.open) drawCardFlip(sctx, SW, SH); // full screen, the GB frame scaled up
 		else if (contestMenu.open) drawContest(sctx, SW, SH); // full screen, the GBA contest screen scaled up
 		else if (blender.open) drawBerryBlender(sctx, SW, SH); // the GBA screen scaled up
 		else if (crystalSlots.open) drawCrystalSlots(SW, MH);

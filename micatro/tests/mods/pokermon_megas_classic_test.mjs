@@ -10,6 +10,7 @@
 // MEGA_D_REV replays unchanged (its Mega Stone still picks the joker it picked).
 //   node micatro/tests/mods/pokermon_megas_classic_test.mjs
 import path from 'path';
+// (Session runs here start with engineRev: 1 = the rules before Pages: these suites measure the mod alone)
 import { fileURLToPath, pathToFileURL } from 'url';
 import { T, start, hand, add, clearHand, G, P_CENTERS, P_CARDS, act, STATES } from './poke_helpers.mjs';
 import { create_playing_card, probability_vars, get_current_pool } from '../../js/engine/core.js';
@@ -95,7 +96,7 @@ await sec('registry', () => {
   for (const b of BASES) {
     const m = C('mega_' + b);
     ok(m && m.rarity === 'poke_mega' && m.stage === 'Mega' && m.cost === 12 && m.ptype === C(b).ptype && m.gen === C(b).gen, `mega_${b}: Mega rarity / stage / $12, ${C(b).ptype}, Gen ${C(b).gen} (its base's)`, m && [m.rarity, m.stage, m.cost, m.ptype, m.gen]);
-    ok(JSON.stringify(C(b).megas) === JSON.stringify(['mega_' + b]), `${b} lists mega_${b} (the Mega Stone's target)`, C(b).megas);
+    ok(C(b).megas.includes('mega_' + b), `${b} lists mega_${b} (the Mega Stone's target)`, C(b).megas);
     ok(keys.indexOf('j_poke_mega_' + b) === keys.indexOf('j_poke_' + b) + 1, `mega_${b} follows ${b} (Pokédex order)`);
     const e = L['j_poke_mega_' + b];
     start('MDT' + b);
@@ -312,6 +313,18 @@ await sec('mega salamence reachable', () => {
   G.GAME.hands.Straight.played = 3;
   const r = play(['S_5']);
   ok(near(r.mult, 1 + 30), 'Mega Salamence, Aerilate: +10 Mult per Straight played this run (3 -> +30)', r.total);
+  G.GAME.hands.Straight.played = 10;
+  const before = G.hand.config.card_limit;
+  round();
+  ok(G.hand.config.card_limit === before + 2 && G.GAME.round_resets.temp_handsize === 2, 'Mega Salamence retains +1 temporary hand size per 5 Straights at blind select', [before, G.hand.config.card_limit, G.GAME.round_resets.temp_handsize]);
+  ok(/hand size/i.test(plain(s)) && /5/.test(plain(s)), 'Mega Salamence tooltip describes the hand-size bonus', plain(s));
+  G.GAME.hands.Straight.played = 4;
+  round();
+  ok(G.hand.config.card_limit === before, 'the temporary hand size expires and fewer than 5 Straights grants nothing', G.hand.config.card_limit);
+  G.GAME.hands.Straight.played = 10;
+  PINS.RULES.pins = { pokermon: '3.9.1+r105' };
+  try { round(); ok(G.hand.config.card_limit === before, 'r105 replays retain the old Mega Salamence behavior', G.hand.config.card_limit); }
+  finally { PINS.RULES.pins = null; }
   revert(s, st);
   ok(key(s) === 'j_poke_salamence', '... and back to Salamence');
 });
@@ -404,7 +417,7 @@ await sec('energy', () => {
 // ------------------------------------------------------------------- save / resume, the replay stepper
 await sec('resume', () => {
   const s = new Session();
-  s.start({ seed: 'MDRESUME', customDeck: { name: 'MegaD', mods: ['pokermon'], params: { joker_slots: 10, consumable_slots: 8 },
+  s.start({ engineRev: 1, seed: 'MDRESUME', customDeck: { name: 'MegaD', mods: ['pokermon'], params: { joker_slots: 10, consumable_slots: 8 },
     jokers: [{ key: 'j_poke_latias' }, { key: 'j_poke_aggron' }, { key: 'j_poke_glalie' }],
     consumables: [{ key: 'c_hermit' }, { key: 'c_poke_megastone' }, { key: 'c_poke_megastone' }] } });
   flush();
@@ -431,12 +444,14 @@ await sec('resume', () => {
 // ------------------------------------------------------------------- a run recorded before MEGA_D_REV replays unchanged
 await sec('old rev', () => {
   const s = new Session();
-  s.start({ seed: 'MDOLD', customDeck: { name: 'MegaOld', mods: ['pokermon'], params: { joker_slots: 6, consumable_slots: 4 },
+  s.start({ engineRev: 1, seed: 'MDOLD', customDeck: { name: 'MegaOld', mods: ['pokermon'], params: { joker_slots: 6, consumable_slots: 4 },
     jokers: [{ key: 'j_poke_absol' }, { key: 'j_poke_venusaur' }], consumables: [{ key: 'c_poke_megastone' }] } });
   flush();
   s.act({ type: 'select_blind' }); flush();
   const st = G.consumeables.cards.find((c) => key(c) === 'c_poke_megastone');
-  s.act({ type: 'use', id: st.sort_id, targets: [] }); flush();
+  PINS.RULES.pins = { pokermon: '3.9.1+r' + REV };
+  try { s.act({ type: 'use', id: st.sort_id, targets: [] }); flush(); }
+  finally { PINS.RULES.pins = null; }
   ok(G.jokers.cards.map(key).join() === 'j_poke_mega_absol,j_poke_venusaur', `on r${REV}: the leftmost Mega-capable joker is Absol -> Mega Absol`, G.jokers.cards.map(key));
   const old = JSON.parse(JSON.stringify(s.recipe));
   old.modVersions = { ...old.modVersions, pokermon: '3.9.1+r' + (REV - 1) };

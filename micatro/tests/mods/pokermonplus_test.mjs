@@ -11,7 +11,8 @@ import { centerActive } from '../../js/mods/registry.js';
 import '../../mods/pokermonplus/index.js';
 import * as P from '../../mods/pokermon/api.js';
 import * as F from '../../mods/pokermonplus/src/functions.js';
-import { STATUS } from '../../mods/pokermonplus/index.js';
+import { STATUS, LOC } from '../../mods/pokermonplus/index.js';
+import { RULES } from '../../js/mods/pins.js';
 
 const { ok, done } = T();
 const near = (a, b) => Math.abs(a - b) < 1e-9;
@@ -362,6 +363,16 @@ const flush = () => G.E_MANAGER.flush();
   ok(G.hand.config.card_limit === 7 && G.GAME.scry_amount === 3, 'Prophetic (legacy: 1.2.0 dropped it): -1 hand size, 3 Foresight');
   start('ROGUE', { back: 'b_sonfive_roguedeck', noBlind: true });
   ok(G.GAME.win_ante === 12 && G.consumeables.cards.some((c) => key(c) === 'c_poke_megastone'), 'Rogue: +4 win Ante, a Megastone');
+  start('ROGUESLEEVE', { sleeve: 'sleeve_sonfive_roguesleeve', noBlind: true });
+  ok(G.GAME.win_ante === 9 && G.consumeables.cards.some((c) => key(c) === 'c_poke_megastone'), 'Rogue Sleeve: +1 win Ante, a Megastone', G.GAME.win_ante);
+  start('ROGUEBOTH', { back: 'b_sonfive_roguedeck', sleeve: 'sleeve_sonfive_roguesleeve', noBlind: true });
+  ok(G.GAME.win_ante === 13, 'Rogue Deck and Sleeve: +4 and +1 win Ante', G.GAME.win_ante);
+  ok(LOC.descriptions.Sleeve.sleeve_sonfive_roguesleeve.text[1].includes('+1'), 'Rogue Sleeve description shows +1');
+  RULES.pins = { pokermon: '3.9.1+r85', pokermonplus: '1.2.0-261018a+r2' };
+  try {
+    start('OLDROGUE', { sleeve: 'sleeve_sonfive_roguesleeve', noBlind: true });
+    ok(G.GAME.win_ante === 12, 'old Rogue Sleeve replays retain +4', G.GAME.win_ante);
+  } finally { RULES.pins = null; }
   // The shiny x100 is the Shiny SLEEVE's (1.2.0 reworked the Shiny deck: pokermonplus_120_test.mjs).
   start('SHINY', { sleeve: 'sleeve_sonfive_shinysleeve', noBlind: true });
   const w = P_CENTERS.e_poke_shiny.weight;

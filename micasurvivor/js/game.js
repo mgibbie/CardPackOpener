@@ -663,8 +663,8 @@ G.Game = (() => {
       for (let i = 0; i < 3; i++) {
         if (G.Input.tap('digit' + (i + 1)) || G.Input.tap('numpad' + (i + 1))) G.RunUI.pick(i);
       }
-      if (G.Input.tap('keyr')) G.RunUI.reroll();
-      if (G.Input.tap('keyb')) G.RunUI.toggleBan();   // MicaSurvivor (M5 lote 6): vetar una carta (port: tecla B)
+      if (G.Input.tap('keyr')) G.RunUI.reroll();      // (controls sweep B4: also C, the pad's reroll button, through js/core/pad.js)
+      if (G.Input.tap('keyb')) G.RunUI.toggleBan();   // MicaSurvivor (M5 lote 6): vetar una carta (port: tecla B; controls sweep B4: also V)
       return;
     }
     if (G.UI.isOpen('scr-bond')) {
@@ -700,8 +700,8 @@ G.Game = (() => {
     if (state !== 'playing' || !pl) return;
     // MicaSurvivor (DLC D16, owner 2026-10-26: "i do not want to have to switch between moves"): every move fires on its own
     // cooldown, so 1-4 / Q / E (and Tab outside Team mode) do nothing in a run any more (owner decision #14: unbound).
-    if (G.Input.tap('keyz')) G.ZMoves.tryStart(pl);   // MicaSurvivor (M5 lote 4): Movimiento Z
-    if (G.Input.tap('keyc')) G.Dynamax.tryStart(pl);  // MicaSurvivor (M5 lote 5): Dynamax
+    // (controls sweep B4: the Z-move is C and Dynamax V / Backspace, the pad's same-placed buttons, routed by js/core/pad.js;
+    //  Z and X are confirm / back now, which hop / slide in an Expedition zone)
     // MicaSurvivor (M5 lote 7, main.gd 642): en el Modo Equipo, Tab cambia de Pokémon
     if (G.Input.tap('tab') && G.Team.on) G.Team.request(pl);
   }
@@ -1173,6 +1173,18 @@ G.Game = (() => {
     get state() { return state; }, get player() { return pl; }, st
   };
 })();
+
+/*
+ * The site's Games switcher (site/switcher.js, controls sweep B2): a run can't be saved mid-way, so leaving asks
+ * first and then ends the run the way "Abandonar run" does (what was earned is banked). The switcher opening
+ * pauses a solo run (a co-op run goes on, as the pause menu says).
+ */
+window.mpLeaveGuard = () => {
+  const st = G.Game && G.Game.state;
+  if (!st || st === 'ui' || st === 'over' || st === 'watch') return { state: 'safe' };
+  return { state: 'confirm', message: G.T('Tu run se perderá: no se puede guardar a mitad.'), beforeLeave: () => { try { G.Game.quit(); } catch (e) { console.warn(e); } } };
+};
+addEventListener('mp-switcher-open', () => { if (G.Game && G.Game.state === 'playing' && !G.Coop.active) G.Game.togglePause(); });
 
 /* ============ Flow — transiciones entre pantallas ============ */
 G.Flow = {

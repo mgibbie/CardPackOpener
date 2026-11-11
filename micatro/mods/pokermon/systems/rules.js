@@ -164,7 +164,7 @@ export function set_cost(card) {
       if (r || rd) { card.cost = Math.max(0, card.cost - r); card.cost = Math.max(0, card.cost - (G.GAME.rotom_discount || 0) * rd); changed = true; }
     }
     // Pokermon 3.9.1 (the same patch): Vouchers are free with Chimecho.
-    if (a.set === 'Voucher' && find_joker('chimecho').length) { card.cost = 0; changed = true; }
+    if (a.set === 'Voucher' && (find_joker('chimecho').length || find_joker('mega_chimecho').length)) { card.cost = 0; changed = true; }
     if (a.set === 'Planet' || (a.set === 'Booster' && String(a.name).includes('Celestial'))) {
       const g1 = find_joker('gothita').length, g2 = find_joker('gothorita').length, g3 = find_joker('gothitelle').length;
       if (g1) { card.cost = Math.max(0, card.cost - 2 * g1); changed = true; }

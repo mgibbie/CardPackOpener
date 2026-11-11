@@ -1,0 +1,15 @@
+import assert from 'node:assert/strict';
+import { recordJokerUsage, jokerUsage, usageUser } from '../js/ui/jokerusage.js';
+const values = new Map();
+globalThis.localStorage = { getItem: (key) => values.get(key) || null, setItem: (key, value) => values.set(key, value) };
+recordJokerUsage('alice', 'run1', ['j_joker']);
+recordJokerUsage('alice', 'run1', ['j_joker', 'j_mime']);
+recordJokerUsage('alice', 'run1', ['j_mime'], true);
+recordJokerUsage('alice', 'run2', ['j_joker']);
+assert.deepEqual(jokerUsage('alice'), { j_joker: { runs: 2, wins: 0 }, j_mime: { runs: 1, wins: 1 } });
+assert.deepEqual(jokerUsage('bob'), {});
+localStorage.setItem('magepunk_mp_state_v1', JSON.stringify({ username: 'alice' }));
+assert.equal(usageUser(), 'guest');
+localStorage.setItem('magepunk_mp_token_v1', 'token');
+assert.equal(usageUser(), 'alice');
+console.log('Joker usage: per-run deduplication, wins and player isolation passed');

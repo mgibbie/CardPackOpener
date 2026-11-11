@@ -174,13 +174,16 @@ export class NPCs {
 	async loadForMap() {
 		const gen = this._loadGen = (this._loadGen || 0) + 1;
 		this.list = [];
+		// the objects this load left out only because their hide flag was set: a
+		// flag that clears while you're here brings them on (ow_objsync.js)
+		this.flagSkipped = [];
 		const evs = this.world.current.map.object_events || [];
 		const crystal = !!this.world.current.map._crystal_tileset;
 		await Promise.all(evs.map(async ev => {
 			if (ev.type != null && ev.type !== 'object') return; // Emerald maps omit `type` — treat missing as object (else no Hoenn NPCs)
 			// Crystal hides a story NPC only while its flag is SET; everything else
 			// keeps the old blanket rule. See objectHiddenByFlag.
-			if (objectHiddenByFlag(ev, crystal)) return;
+			if (objectHiddenByFlag(ev, crystal)) { if (gen === this._loadGen && !isTrainerEvent(ev)) this.flagSkipped.push(ev); return; }
 			if (isTrainerEvent(ev)) return;                // trainers.js renders these
 			// Asked through items.js's OWN predicate rather than a copy of its list.
 			// The copy had drifted: it matched CUTTABLE_TREE and BREAKABLE_ROCK but not

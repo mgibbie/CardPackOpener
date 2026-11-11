@@ -14,6 +14,7 @@
 // Then Energy (the standard shares; the fixed numbers stay), save / resume, and the art (each cell's type).
 //   node micatro/tests/mods/pokermon_gen7_ultrabeasts_test.mjs
 import path from 'path';
+// (Session runs here start with engineRev: 1 = the rules before Pages: these suites measure the mod alone)
 import { fileURLToPath, pathToFileURL } from 'url';
 import { T, start, hand, add, clearHand, G, P_CENTERS, act, STATES } from './poke_helpers.mjs';
 import { Session } from '../../js/engine/session.js';
@@ -86,7 +87,7 @@ await sec('pin', () => {
   }
   ok(['beast_boosts', 'h_size', 'val_gain', 'retriggers', 'gluttony_Xmult', 'recoil', 'rounds'].every((f) => !(f in energy_values)), 'the Beast Boost count, the hand size, the $1, the retriggers, the bank and the $2 are no energy fields');
   ok(P_CENTERS.j_poke_nihilego.poke_no_energy_field === true && !P_CENTERS.j_poke_nihilego.poke_beast_boost, 'Nihilego: no number (Energy-inert, no Beast Boost)');
-  const keys = MODS.pokermon.content.centers.filter((c) => c.set === 'Joker').map((c) => c.key);
+  const keys = MODS.pokermon.content.centers.filter((c) => c.set === 'Joker' && !['j_poke_mega_magearna', 'j_poke_mega_golisopod', 'j_poke_mega_zeraora'].includes(c.key)).map((c) => c.key);
   const chain = ['nihilego', 'buzzwole', 'pheromosa', 'xurkitree', 'celesteela', 'kartana', 'guzzlord', 'necrozma', 'magearna', 'marshadow', 'poipole', 'naganadel', 'stakataka', 'blacephalon', 'zeraora', 'grookey']; // (with Gen 7 batch 4's Necrozma, Magearna, Marshadow 800-802 and Zeraora 807)
   const i = keys.indexOf('j_poke_nihilego');
   ok(i > 0 && chain.every((n, k) => keys[i + k] === 'j_poke_' + n), 'Pokédex order: Nihilego (793) ... Guzzlord (799), Necrozma ... Marshadow, Poipole (803) ... Blacephalon (806), Zeraora, then Grookey (810)', keys.slice(i - 1, i + 17));
@@ -386,7 +387,7 @@ await sec('energy', () => {
 // ------------------------------------------------------------------- save / resume (a run is its recipe)
 await sec('resume', () => {
   const s = new Session();
-  s.start({ seed: 'UBRESUME', customDeck: { name: 'UB', mods: ['pokermon'], params: { joker_slots: 9, consumable_slots: 8, blind_scaling: 5 },
+  s.start({ engineRev: 1, seed: 'UBRESUME', customDeck: { name: 'UB', mods: ['pokermon'], params: { joker_slots: 9, consumable_slots: 8, blind_scaling: 5 },
     jokers: [{ key: 'j_poke_pheromosa' }, { key: 'j_poke_celesteela' }, { key: 'j_poke_guzzlord' }, { key: 'j_poke_buzzwole' }, { key: 'j_poke_poipole' }, { key: 'j_poke_blacephalon' }],
     consumables: [{ key: 'c_pluto' }, { key: 'c_pluto' }, { key: 'c_pluto' }, { key: 'c_pluto' }] } });
   flush();

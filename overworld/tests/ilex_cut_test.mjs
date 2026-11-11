@@ -86,7 +86,7 @@ try {
 	}, STATE, PARTY);
 	const W = f => page.evaluate(f);
 	const mapName = () => W(() => window.__ow.world.current && window.__ow.world.current.name);
-	const pos = () => W(() => ({ map: window.__ow.world.current.name, x: window.__ow.player.tx, y: window.__ow.player.ty }));
+	const pos = () => W(() => ({ map: window.__ow.world.current.name, x: window.__ow.player.tx, y: window.__ow.player.ty, last: window.__ow.player.moveOutcome }));
 	const boot = async map => {
 		for (let i = 0; i < 300 && !(await page.evaluate(m => !!(window.__ow && window.__ow.battle && window.__ow.battle.data && window.__ow.world.current && window.__ow.world.current.name === m), map).catch(() => false)); i++) await sleep(100);
 		await sleep(900);
@@ -97,7 +97,32 @@ try {
 		return !O.dialog.blocking;
 	});
 	const place = (x, y, facing) => page.evaluate((x, y, f) => { const P = window.__ow.player; P.tx = x; P.ty = y; P.x = x * 16; P.y = y * 16; P.facing = f; }, x, y, facing);
-	const walk = async k => { await page.keyboard.down(k); await sleep(260); await page.keyboard.up(k); await sleep(400); };
+	// one step, by condition not by clock: a fixed 260 ms press + 400 ms pause raced a slow CI runner
+	// (main gate 2026-11-09, f685b518: the first step through the cut tree was still under way when the
+	// second press came and went, so the player stopped at (8,25)). Settle first, hold the key until
+	// the step starts (or a bump is certain), then wait for the step to finish.
+	// still = no step under way AND nothing gating input (gateReport().blockedBy: a fade, a cutscene, a
+	// battle...): a keydown that lands while menuBlocking() is dropped by ow_input.js for good. Main gate
+	// 2026-11-10 (PR #1040, shard 5, twice in a row): the second press got no moveOutcome at all — never
+	// delivered — so a press that draws no answer is now released and made again (3 tries), and the
+	// gate report at that moment rides in the failure message.
+	const still = () => W(() => !window.__ow.player.moving && !window.__ow.gateReport().blockedBy);
+	const settle = async () => { for (let i = 0; i < 160 && !(await still()); i++) await sleep(25); };
+	let unanswered = null;
+	const walk = async k => {
+		for (let tries = 0; tries < 3; tries++) {
+			await settle();
+			await W(() => { window.__ow.player.moveOutcome = null; });
+			await page.keyboard.down(k);
+			let got = false;
+			for (let i = 0; i < 80 && !(got = await W(() => window.__ow.player.moving || !!window.__ow.player.moveOutcome)); i++) await sleep(25);
+			await page.keyboard.up(k);
+			if (got) break;
+			unanswered = await W(() => { const g = window.__ow.gateReport(); return { blockedBy: g.blockedBy, held: g.heldKeys, fade: g.fade, tick: g.tick, rejected: g.rejectedMoves }; });
+		}
+		await settle();
+		await sleep(100);
+	};
 	const cut = () => page.evaluate(async () => { const F = await import('./ow_fieldmoves.js'); F.useFieldMove('cut', window.__ow.party[0]); });
 	const tile = () => W(() => ({ v: window.__ow.world.gridAt(8, 25), pass: window.__ow.world.isPassable(8, 25), obj: !!window.__ow.items.fieldObjAt(8, 25) }));
 
@@ -117,7 +142,7 @@ try {
 	await walk('ArrowUp');
 	await walk('ArrowUp');
 	const p = await pos();
-	A(p.map === 'IlexForest' && p.x === 8 && p.y <= 24, '2. the player walks through (8,25) and on north', JSON.stringify(p));
+	A(p.map === 'IlexForest' && p.x === 8 && p.y <= 24, '2. the player walks through (8,25) and on north', JSON.stringify({ ...p, unanswered }));
 
 	// 3. leave and come back: the tree has grown back, and CUT works again
 	await page.evaluate(() => window.__ow.moveToMap('Route34IlexForestGate', 4, 4));

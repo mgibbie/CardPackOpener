@@ -14,6 +14,7 @@ import * as B from './bignum.js';
 import { draw_from_deck_to_hand, discard_cards_from_highlighted, get_poker_hand_info } from './run.js';
 import { firstHook, callHook, ACTIVE as ACTIVE_MODS } from '../mods/registry.js';
 import { wanted, calculate_seam, modify_scoring_hand, SEAM_STATE } from './smods.js';
+import { pageDebuffs } from './pages.js';
 
 /** Lua's `vars = {}` survives the data export as `{}` — normalise to an array. */
 const as_list = (v) => (Array.isArray(v) ? v : []);
@@ -45,6 +46,7 @@ export class Blind {
    */
   suspend(on) {
     if (!!this.suspended === !!on) return;
+    if (on && G.GAME.pvp_blind) return; // (Multiplayer: a PvP round's blind is never switched off — engine/pvp.js)
     this.suspended = on ? true : undefined;
     if (!on && !this.disabled) {
       if (this.name === 'Crimson Heart' && G.jokers.cards[0]) this.prepped = true;
@@ -224,6 +226,8 @@ export class Blind {
 
   // ------------------------------------------------------------- disable
   disable() {
+    // (Multiplayer: Blind:disable is a no-op on a PvP round's blind — the mod's rule; a real boss there keeps its effect)
+    if (G.GAME.pvp_blind && this.name !== 'Verdant Leaf') return;
     this.disabled = true;
     this.suspended = undefined; // (for good now: a suspension ending later must not bring it back)
     for (const v of G.jokers.cards) {
@@ -497,6 +501,8 @@ export class Blind {
     }
     if (this.name === 'Crimson Heart' && !this.off && card.area === G.jokers) return;
     if (this.name === 'Verdant Leaf' && !this.off && card.area !== G.jokers) { card.set_debuff(true); return; }
+    // (a Pages v2 "debuffed this round" Page: its target cards, while the Page lasts — the Blind disabled or not)
+    if (G.GAME.page && pageDebuffs(card)) { card.set_debuff(true); return; }
     card.set_debuff(false);
   }
 

@@ -30,7 +30,9 @@ export const watchUrl = (user) => '/micatro/?spectate=' + encodeURIComponent(Str
 //   getSnapshot(): a JSON-able view of the run (what a spectator renders)
 //   getLabel():    a short progress string, e.g. "Ante 3 · Big Blind" (≤48 chars shown)
 // onWatchers(cb) calls cb(count, names) whenever the server's watcher list changes.
-export function startPublisher(getSnapshot, getLabel) {
+// opts.pvp: a Multiplayer match's lobby id (the presence says "Micatro PvP", Watch works the same)
+// opts.action: the publish action (default 'publish-micatro'; Scoundrel passes 'publish-scoundrel', Pair of Pears 'publish-pears')
+export function startPublisher(getSnapshot, getLabel, opts = {}) {
 	const cbs = new Set();
 	let watchers = 0, watcherNames = [];
 	const noop = { stop() {}, finish: async () => {}, onWatchers(cb) { cbs.add(cb); return () => cbs.delete(cb); }, get watchers() { return watchers; }, get watcherNames() { return watcherNames; } };
@@ -64,12 +66,12 @@ export function startPublisher(getSnapshot, getLabel) {
 		const now = Date.now();
 		if (!needSnap && !over && now - lastSentAt < KEEPALIVE_MS) return; // nothing new, keep-alive not due
 		if (needSnap && json !== seqJson) { seq++; seqJson = json; }
-		const body = { seq, label, over, won: !!won };
+		const body = { seq, label, over, won: !!won, ...(opts.pvp ? { pvp: opts.pvp } : {}) };
 		if (over && replay) body.replay = String(replay); // spectators of the finished run can watch its replay
 		if (needSnap) body.snapshot = snap;
 		lastSentAt = now;
 		try {
-			const res = await MP.call('publish-micatro', body, over && json.length < 60_000 ? { keepalive: true } : {});
+			const res = await MP.call(opts.action || 'publish-micatro', body, over && json.length < 60_000 ? { keepalive: true } : {});
 			if (res && res.ok) { if (needSnap) ackedJson = json; setWatchers(res); }
 		} catch { /* offline / timeout: the next tick retries (ackedJson unchanged) */ }
 	}
@@ -104,7 +106,8 @@ export function startPublisher(getSnapshot, getLabel) {
 //         | 'full' (info.max; retries every 5s) | 'over' (final; polling stops)
 //         | 'forbidden' (not your friend; polling stops) | 'login' (no account) | 'offline' (network; retries)
 // onStatus fires on every status change, and again on 'live' when the watcher list changes.
-export function startSpectate(username, { onSnapshot = () => {}, onStatus = () => {} } = {}) {
+// action: the read action (default 'micatro-state'; Scoundrel passes 'scoundrel-state', Pair of Pears 'pears-state')
+export function startSpectate(username, { onSnapshot = () => {}, onStatus = () => {}, action = 'micatro-state' } = {}) {
 	const who = String(username || '').trim().toLowerCase();
 	let stopped = false, timer = null, seq = null, status = null, delay = POLL_FAST_MS, lastWatchSig = '';
 	const meta = { seq: null, label: '', over: false, won: false, watchers: 0, watcherNames: [], room: 'u:' + who, replay: null };
@@ -121,7 +124,7 @@ export function startSpectate(username, { onSnapshot = () => {}, onStatus = () =
 	const tick = async () => {
 		if (stopped) return;
 		let d;
-		try { d = await MP.call('micatro-state', { username: who, seq }); }
+		try { d = await MP.call(action, { username: who, seq }); }
 		catch { d = null; }
 		if (stopped) return;
 		if (!d) { setStatus('offline', {}); delay = POLL_SLOW_MS; }
@@ -191,7 +194,8 @@ export function modList(mods) {
 // A run with mods posts to the separate Modded board (mode 'micatro_modded') with its mod list.
 // A run with a CUSTOM DECK (the deck editor) is modded too: customDeck = the deck's name.
 // badges: a won Pokermon run's {nuz:true, mono:'fire'} (ui/progress.js wireBadges) — client-reported, shape-checked by the server.
-export async function submitScore({ score, ante = 0, seed = '', back = '', stake = 0, won = false, mods = [], customDeck = '', replay = null, badges = null } = {}) {
+// pages: the run played with Pages (engine/pages.js; base game from engine rev 2): its board row says so.
+export async function submitScore({ score, ante = 0, seed = '', back = '', stake = 0, won = false, mods = [], customDeck = '', replay = null, badges = null, pages = false } = {}) {
 	if (!isLoggedIn()) return { error: 'not logged in' };
 	const s = wireScore(score);
 	if (s == null) return { error: 'bad score' };
@@ -200,6 +204,7 @@ export async function submitScore({ score, ante = 0, seed = '', back = '', stake
 	const body = { mode: ml.length || cd ? 'micatro_modded' : 'micatro', score: s, ante, seed: String(seed || ''), back: String(back || ''), stake, won: !!won };
 	if (ml.length) body.mods = ml;
 	if (cd) body.customDeck = cd;
+	if (pages === true) body.pages = true;
 	if (replay && /^[a-f0-9]{8,20}$/.test(String(replay))) body.replay = String(replay); // the run's replay: the board row links to it
 	if (won && badges && typeof badges === 'object' && (badges.nuz || badges.mono)) body.badges = { ...(badges.nuz ? { nuz: true } : {}), ...(badges.mono ? { mono: String(badges.mono) } : {}) };
 	try { return await MP.call('run-score', body); }
@@ -334,4 +339,11 @@ export async function sendRefused(entries, { keepalive = false } = {}) {
 	if (!isLoggedIn() || !Array.isArray(entries) || !entries.length) return { error: 'skip' };
 	try { return (await MP.call('micatro-refused', { entries }, keepalive ? { keepalive: true } : {})) || { error: 'bad response' }; }
 	catch { return { error: 'offline' }; }
+}
+
+// ---------------------------------------------------------------- multiplayer (PvP)
+// The lobby + match referee (server/micatro_pvp.mjs): mtpvp-create / peek / join / leave / mine / update / sync / ready /
+// hand / blind / forfeit / rematch. Returns the server's JSON ({error} on a refusal); null when offline.
+export async function pvpCall(action, body = {}) {
+	try { return await MP.call(action, body); } catch (e) { return null; }
 }

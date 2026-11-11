@@ -19,6 +19,7 @@
 // separate PR (docs/09 PR 7).
 
 import { restoreRng } from './rng.js';
+import { noteCardDb } from './core.js';
 
 export const SCHEMA_VERSION = 1;
 
@@ -65,6 +66,10 @@ const FIELD_DEFAULTS = {
 	drawTrigLock: false,
 	enemyDrawLock: false,
 	emergeLock: false,
+	// set by the client (game.js recordRunResult) once a finished fight's result
+	// is recorded: ONE fight, ONE result. Kept in the snapshot so a finished state
+	// that is ever re-serialized and restored can't record a second result.
+	resultRecorded: false,
 };
 
 const defaultFor = key => {
@@ -168,6 +173,7 @@ export function fromSnapshot(snap, cardsById, rng) {
 	delete state.digest;        // the host's wire fingerprint; not engine state (would else leak into re-serialization)
 	delete state.rng;           // the {seed,calls} carry (below) is not a live rng
 	state.cardsById = cardsById;
+	noteCardDb(cardsById); // token art lookups (core.js tokenArtFrom)
 	// An explicit rng arg always wins (tests pass their own). Otherwise, if the
 	// snapshot carried a seeded-rng position, rebuild that exact stream so a guest
 	// or spectator's rolls track the host's; an unseeded snapshot → Math.random.

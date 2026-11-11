@@ -117,7 +117,7 @@ ok(B.isBig(get_blind_amount(infAnte - 1)) && get_blind_amount(infAnte - 1).e <= 
 
 // ---------------------------------------------------------------- a modded run to 1e800 (X1e200 then ^4)
 const s1 = new Session();
-s1.start({ seed: 'BIGRUN1', back: 'b_red', stake: 1, mods: ['bntest'] });
+s1.start({ seed: 'BIGRUN1', back: 'b_red', stake: 1, mods: ['bntest'], engineRev: 1 }); // (the rules before Pages: the jokers' score alone)
 ok(G.jokers.cards.map((c) => c.config.center.key).join() === 'j_bn_xbig,j_bn_emult', 'the test jokers are in play');
 s1.act({ type: 'select_blind' });
 const need = G.GAME.blind.chips;

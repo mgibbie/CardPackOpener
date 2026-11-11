@@ -155,7 +155,7 @@ function fight(hero, enemy, round, seed) {
 		const enemyDeck = MODE.parity ? M.generateEnemy(byId, enemy, w, rng).deck : M.deckOf(byId, enemy);   // win-parity enemies
 		E.resetDeckAndHand(st, 1, enemyDeck); E.drawCards(st, 1, 4); E.addCoin(st, 1);
 		E.stripLoadouts(st);
-		for (const p of st.players) p.life = runLife(round);
+		for (const p of st.players) { p.life = runLife(round); p.maxLife = p.life; } // game.js setRunLife: the fight starts at full
 		st.players[0].allowedBasics = Duels.allowedBasicsFor(byId, TAG, hero);
 		st.players[1].allowedBasics = Duels.allowedBasicsFor(byId, TAG, enemy);
 		let actions = 0, stall = 0;

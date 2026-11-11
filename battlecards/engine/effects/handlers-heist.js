@@ -60,7 +60,7 @@ register('transform-board-random-legendaries', ({ state, pi, target, source, ene
 		const tok = instantiate(d, pi);
 		tok.zone = 'board'; tok.sick = c.sick;
 		p.board[i] = tok;
-		emit(state, { type: 'transformed', uid: c.uid, player: pi, name: tok.name, card: tok });
+		emit(state, { type: 'transformed', uid: c.uid, player: pi, from: c.name, name: tok.name, card: tok });
 	}
 	recomputeAuras(state);
 } });

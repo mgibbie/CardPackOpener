@@ -158,6 +158,7 @@ class Trainer {
 	}
 
 	draw(ctx, camX, camY) {
+		if (this.hidden) return;   // removeobject / set_invisible / its hide flag (ow_objsync)
 		const stills = { down: 0, up: 1, left: 2, right: 2 };
 		let frame = stills[this.facing];
 		if (frame >= this.frames) frame = 0;
@@ -330,7 +331,9 @@ export class Trainers {
 			const { img, late } = await entrySprite([file ? `data/people/${file}` : null, spritePath(ev.graphics_id, true)]);
 			if (gen !== this._loadGen) return;   // a newer load owns the list now
 			if (img && !this.list.some(o => o.ev === ev)) {
-				const t = new Trainer(ev, img); if (claimedByBeat) t.villain = true; this.list.push(t);
+				const t = new Trainer(ev, img); if (claimedByBeat) t.villain = true;
+				if (hidden) t.forceShown = true;   // spawned in spite of its flag: ow_objsync leaves it be
+				this.list.push(t);
 				adoptLateSprite(t, late, o => { this.list = this.list.filter(x => x !== o); });
 			}
 		}));
@@ -356,13 +359,13 @@ export class Trainers {
 	occupied(tx, ty, elev = 0) {
 		// a defeated trainer no longer blocks its tile — so a beaten grunt can't wall
 		// a dungeon corridor (checkSight already skips defeated, so no re-battle)
-		return this.list.some(t => t.tx === tx && t.ty === ty && !this.isDefeated(t) && elevCompatible(elev, Number(t.ev?.elevation) || 0));
+		return this.list.some(t => !t.hidden && t.tx === tx && t.ty === ty && !this.isDefeated(t) && elevCompatible(elev, Number(t.ev?.elevation) || 0));
 	}
 
 	get engaging() { return this.engagement != null; }
 
 	trainerAt(tx, ty, elev = 0) {
-		return this.list.find(t => t.tx === tx && t.ty === ty && elevCompatible(elev, Number(t.ev?.elevation) || 0)) || null;
+		return this.list.find(t => !t.hidden && t.tx === tx && t.ty === ty && elevCompatible(elev, Number(t.ev?.elevation) || 0)) || null;
 	}
 
 	// talk-to engagement (Z in front of any trainer, incl. sight range 0)
@@ -376,7 +379,7 @@ export class Trainers {
 	checkSight(ptx, pty, elev = 0) {
 		if (this.engagement) return true;
 		for (const t of this.list) {
-			if (t.range <= 0) continue; // talk-to trainers don't spot you
+			if (t.range <= 0 || t.hidden) continue; // talk-to trainers don't spot you; a removed one sees nothing
 			if (!elevCompatible(elev, Number(t.ev?.elevation) || 0)) continue; // below/above the bridge you're on
 			if (this.isDefeated(t)) continue;
 			const dirs = t.seeAll ? ['down', 'up', 'left', 'right'] : [t.facing];

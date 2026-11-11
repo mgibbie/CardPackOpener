@@ -19,6 +19,14 @@ import { fileURLToPath } from 'url';
 const here = dirname(fileURLToPath(import.meta.url));
 export const TIMINGS = join(here, 'gate-timings.json');
 export const DEFAULT_SECS = 30;
+// *_test.mjs files that are NOT gate suites: micatro_engine_test.mjs runs every Micatro engine suite in one process
+// (for developers); the gate runs the same suites as micatro_engine_<i>_test.mjs parts instead (micatro_engine_parts.mjs)
+export const NOT_SUITES = new Set(['micatro_engine_test.mjs']);
+// every gate suite in this folder: each *_test.mjs (but NOT_SUITES), plus the two runnables that predate the naming
+// convention (quest_graph.mjs is a shared helper, not a test). run-all.mjs, select-changed.mjs and the timings use this.
+export function gateSuites(dir = here) {
+	return [...readdirSync(dir).filter(f => f.endsWith('_test.mjs') && !NOT_SUITES.has(f)), 'boot_smoke.mjs', 'quest_reach.mjs'].sort();
+}
 
 export function loadTimings(file = TIMINGS) {
 	try { return JSON.parse(readFileSync(file, 'utf8')); } catch (e) { return {}; }
@@ -56,13 +64,13 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
 	const args = process.argv.slice(2);
 	if (args[0] === '--update') {
 		const t = { ...loadTimings(), ...timingsFromLogs(args.slice(1).map(f => readFileSync(f, 'utf8'))) };
-		const suites = new Set([...readdirSync(here).filter(f => f.endsWith('_test.mjs')), 'boot_smoke.mjs', 'quest_reach.mjs']);
+		const suites = new Set(gateSuites());
 		const sorted = Object.fromEntries(Object.keys(t).filter(k => suites.has(k)).sort().map(k => [k, t[k]]));   // drop deleted suites
 		writeFileSync(TIMINGS, JSON.stringify(sorted, null, 1) + '\n');
 		console.log(`gate-timings.json: ${Object.keys(sorted).length} suites, ${Object.values(sorted).reduce((a, b) => a + b, 0)}s serial`);
 	} else if (args[0] === '--plan') {
 		const n = +args[1] || 16, timings = loadTimings();
-		const all = [...readdirSync(here).filter(f => f.endsWith('_test.mjs')), 'boot_smoke.mjs', 'quest_reach.mjs'].sort();
+		const all = gateSuites();
 		assignShards(all, n, timings).forEach((b, k) => console.log(`shard ${k + 1}/${n}: ${b.suites.length} suites, ~${b.secs}s serial (longest ${b.suites[0]})`));
 	} else console.log('usage: gate-shard.mjs --update <gate.log>... | --plan <n>');
 }

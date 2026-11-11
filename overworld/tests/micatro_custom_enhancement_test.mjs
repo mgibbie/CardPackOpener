@@ -115,7 +115,7 @@ try {
 		await page.evaluate(async (mods) => { await window.__micatro.loadMods(mods); await window.__micatro.newRun({ seed: 'FLOWERQ', back: 'b_red', mods }); }, MODS);
 		const idle = async () => { await page.waitForFunction(() => window.__micatro.idle(), { timeout: 30000 }); await sleep(900); };
 		await idle();
-		await page.evaluate(() => window.__micatro.act({ type: 'select_blind' }));
+		await page.evaluate(() => window.__micatro.selectBlind());
 		await idle();
 		const keys = await page.evaluate(async () => {
 			const C = await import('/micatro/js/engine/core.js');

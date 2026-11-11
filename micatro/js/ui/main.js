@@ -12,9 +12,11 @@ import { Player } from './player.js';
 import { sound } from './sound.js';
 import * as UI from './screens.js';
 import { initPad } from './pad.js';
+import { actionForKey } from '/site/input.js';
 import { first as modFirst } from './modui.js';
 import { installZoomGuard } from './zoomguard.js';
 import { describeRefusal, createRefusedLog, rulesOf } from '../refusedlog.js';
+import { recordJokerUsage, usageUser } from './jokerusage.js';
 
 const params = new URLSearchParams(location.search);
 const SPECTATE = (params.get('spectate') || '').trim();
@@ -49,6 +51,10 @@ function stickerKeys(view, into = new Set()) {
 }
 let Progress = null;    // ui/progress.js (the Nuzlocke / Monotype record + achievements), once loaded
 let RunSync = null;     // ui/runsync.js (the run in progress, saved on the account so it follows the player between devices)
+let Pvp = null;         // ui/pvp.js (Multiplayer: the lobby + the match loop), signed in only
+let pvpOverlaySig = ''; // (what the blind select's PvP column last showed: Pvp's redraw skips an unchanged one)
+/** Is the session a Multiplayer match's run? (its own save slot; no run sync, restart, stickers or board) */
+const pvpRun = () => !!(session && session.recipe && session.recipe.pvp);
 
 const stage = document.getElementById('stage');
 
@@ -62,7 +68,9 @@ async function loadEngine() {
   try { CH = { ...(await import('../engine/challenge.js')), ...(await import('../engine/sleeve.js')) }; } catch (e) { console.warn('micatro: challenges unavailable', e); }
   // mod version pins (resume prompt, replay banner)
   const PN = await import('../mods/pins.js');
-  return { Session: S.Session, pokerInfo: R.pokerInfo, G: R.G, describeBack, RP, CH, INSTANT_ACTIONS: S.INSTANT_ACTIONS, viewChecksum: S.viewChecksum, ENGINE_VERSION: S.ENGINE_VERSION, pins: PN };
+  // Multiplayer's engine rules (the banned list for the lobby screen; the PvP save slot)
+  const PV = await import('../engine/pvp.js');
+  return { PV, PVP_SAVE_KEY: S.PVP_SAVE_KEY, Session: S.Session, pokerInfo: R.pokerInfo, G: R.G, describeBack, RP, CH, INSTANT_ACTIONS: S.INSTANT_ACTIONS, viewChecksum: S.viewChecksum, ENGINE_VERSION: S.ENGINE_VERSION, pins: PN };
 }
 // ------------------------------------------------------------------- mods
 /** The mods manifest + loader (micatro/js/mods/index.js). Imported once; never throws. */
@@ -95,11 +103,12 @@ function modsApi() {
     load: (ids) => M.loadMods(ids),
     isLoaded: (id) => !!M.MODS[id],
     optionList: (id) => M.modOptionList(id),
+    customType: (name) => !!M.CONSUMABLE_TYPES[name],
     withRequirements: (ids) => M.withRequirements(ids),
     dependentsOf: (id, ids) => M.dependentsOf(id, ids),
     modName: (id) => M.modName(id),
     backs: (ids, options) => (M.modBacks ? M.modBacks(ids, options) : []),
-    stakes: (ids) => (M.modStakes ? M.modStakes(ids) : []),
+    stakes: (ids, options) => (M.modStakes ? M.modStakes(ids, options) : []),
   };
 }
 
@@ -113,7 +122,11 @@ const myName = () => {
 };
 
 /** The session's view (+ the mod pack's kind, which view.js only reports for vanilla packs). */
-function viewOf() { return decorateView(session.view()); }
+function viewOf() {
+  const v = decorateView(session.view());
+  if (v && v.pvp && Pvp) v.pvp_opp = Pvp.oppInfo(); // (Multiplayer: the opponent on the HUD — and to spectators)
+  return v;
+}
 /** (the engine's live view — the session's, or the replay stepper's) */
 function decorateView(v) {
   if (v && !v.pack_kind && /^MOD_PACK/.test(v.state || '') && Engine && Engine.G && Engine.G.GAME) v.pack_kind = Engine.G.GAME.pack_kind || null;
@@ -148,8 +161,10 @@ function onAction(a) {
   currentView = view;
   player.push(view, r.events);
   stickerKeys(view, seenJokers);
-  if (RunSync) RunSync.track(session.recipe, view); // (pushed to the account when due: round checkpoints, idle, hide)
+  recordJokerUsage(usageUser(), runIdOf(), ((view.areas || {}).jokers || []).map((c) => c.center), (r.events || []).some((e) => e.type === 'win'));
+  if (RunSync && !pvpRun()) RunSync.track(session.recipe, view); // (pushed to the account when due: round checkpoints, idle, hide)
   afterAct(view, r.events);
+  if (pvpRun() && Pvp) Pvp.afterAct();
   return r;
 }
 // Refused actions (micatro/js/refusedlog.js): quietly logged on the account for testing (refused:<user>:<YYYYMMDD>).
@@ -174,6 +189,8 @@ function record(events) {
   if (pendingPublish.length > PUBLISH_CAP) pendingPublish.splice(0, pendingPublish.length - PUBLISH_CAP);
 }
 function afterAct(view, events) {
+  // (a Multiplayer match ends on the referee's word: ui/pvp.js shows its end screen; no stickers / records / board)
+  if (pvpRun()) { if (view.over) overHandled = true; return; }
   const won = (events || []).some((e) => e.type === 'win');
   // Balatro's set_joker_win: the run's jokers (+ a mod's extra keys) earn this stake's sticker — not in a
   // seeded or a challenge run (win_game skips it). Only the player's own live run records (never a replay).
@@ -321,6 +338,29 @@ function restartRun() {
   abandonSaved('restart (hold R)');
   return startRun(o);
 }
+// Multiplayer (ui/pvp.js): a match's run — the lobby's seed, deck, stake and the HOST's mods + options (passed straight to the
+// engine: this player's own saved mod settings are never changed), in its own save slot.
+async function startMatchRun({ seed, back, stake, sleeve, mods = [], modOptions = {}, pvp, customDeck = null }) {
+  stopPublishing();
+  if (mods.length) {
+    const r = await ensureMods(mods);
+    if (!r.ok || r.missing.length) { board.toast('A mod of this match failed to load'); return false; }
+  }
+  session = new Engine.Session({ saveKey: Engine.PVP_SAVE_KEY });
+  const evs = session.start({ seed, back, stake, mods, modOptions, pvp, ...(sleeve ? { sleeve } : {}), ...(customDeck ? { customDeck } : {}) });
+  beginRun(evs, { fresh: true });
+  return true;
+}
+/** Rejoin: this device's saved match run (its recipe re-simulates, the referee's actions included). */
+async function resumeMatchRun() {
+  const rec = Engine.Session.savedPvp();
+  if (!rec) return false;
+  stopPublishing();
+  if (rec.mods && rec.mods.length) await ensureMods(rec.mods);
+  try { session = Engine.Session.fromRecipe(rec); } catch (e) { console.error(e); return false; }
+  beginRun([]);
+  return true;
+}
 function beginRun(events, { fresh = false } = {}) {
   UI.closeAll();
   overHandled = false; winShown = !!(session.view().won);
@@ -328,13 +368,15 @@ function beginRun(events, { fresh = false } = {}) {
   record(events);
   currentView = viewOf();
   seenJokers.clear(); stickerKeys(currentView, seenJokers);
+  recordJokerUsage(usageUser(), runIdOf(), ((currentView.areas || {}).jokers || []).map((c) => c.center));
   player.lastSeq = 0;
   player.push(currentView, [], { jump: true });
   sound.play('whoosh', 1, 0.6);
   startPublishing();
   // the account's copy: a new run replaces it (the old one backed up), a resumed one is pushed if it moved on
-  if (RunSync) { if (fresh) RunSync.startedRun(session.recipe, currentView); else RunSync.track(session.recipe, currentView, { now: true }); }
-  if (currentView.over) { overHandled = true; if (RunSync) RunSync.endedRun('lost', session.recipe); whenIdle(() => showGameOver(currentView)); }
+  if (RunSync && !pvpRun()) { if (fresh) RunSync.startedRun(session.recipe, currentView); else RunSync.track(session.recipe, currentView, { now: true }); }
+  if (currentView.over && pvpRun()) overHandled = true;
+  else if (currentView.over) { overHandled = true; if (RunSync) RunSync.endedRun('lost', session.recipe); whenIdle(() => showGameOver(currentView)); }
 }
 
 /**
@@ -393,7 +435,9 @@ function startPublishing() {
       pendingPublish = [];
       return snap;
     },
-    () => (currentView ? `Ante ${currentView.ante} · Round ${currentView.round} · $${currentView.dollars}` : 'Micatro'),
+    () => (currentView && currentView.pvp_opp ? `PvP vs ${currentView.pvp_opp.name} · Ante ${currentView.ante} · ♥${currentView.pvp_opp.myLives ?? currentView.pvp.lives}`
+      : currentView ? `Ante ${currentView.ante} · Round ${currentView.round} · $${currentView.dollars}` : 'Micatro'),
+    pvpRun() && Pvp ? { pvp: Pvp.lobbyId } : {},
   );
   if (publisher.onWatchers) publisher.onWatchers((n, names) => setWatchers(n, names));
   if (!chat && net.mountChat) {
@@ -438,7 +482,7 @@ function submit(view, won, replay) {
   if (!loggedIn() || !net.submitScore) return null;
   if (view.challenge) return null; // (Balatro: challenge runs post no high scores — the replay is still kept)
   const badges = won && Progress && view.run_badges ? Progress.wireBadges(view.run_badges.earned) : null; // (Pokermon: the row's Nuzlocke / Monotype tag)
-  return net.submitScore({ score: (view.stats && view.stats.best_hand) || 0, ante: view.ante, seed: view.seed, back: view.back, stake: view.stake, won: !!won, mods: view.mods || [], customDeck: view.custom_deck ? view.custom_deck.name : '', ...(replay ? { replay } : {}), ...(badges ? { badges } : {}) });
+  return net.submitScore({ score: (view.stats && view.stats.best_hand) || 0, ante: view.ante, seed: view.seed, back: view.back, stake: view.stake, won: !!won, mods: view.mods || [], customDeck: view.custom_deck ? view.custom_deck.name : '', ...(view.pages_on ? { pages: true } : {}), ...(replay ? { replay } : {}), ...(badges ? { badges } : {}) });
 }
 /** Put the player's win stickers for `keys` on `o` (a published view / a replay recipe): win_stickers, and
  * win_stickers_revoked only when a Pokermon twin among them has a revocation (stickers.js "Superseded add-on jokers"). */
@@ -542,6 +586,7 @@ function menuOpts() {
     replays: replaysApi(), me: myName(),
     challenges: challengesApi(), sleeves: sleevesApi(),
     progress: Progress,
+    multiplayer: Pvp ? () => Pvp.open() : null,
   };
 }
 /** The Challenges screen: Balatro's 20 + the enabled mods' (their modules load first). */
@@ -604,13 +649,28 @@ function onMenu(what) {
   else if (what === 'options') {
     UI.options({
       speed: player.speed, onSpeed: (s) => player.setSpeed(s), direct: DIRECT,
-      onNewRun: MODE === 'normal' ? () => UI.newRunScreen(menuOpts()) : null,
-      onMainMenu: MODE === 'normal' ? () => showMenu() : null,
+      // (Multiplayer: leaving a match is a forfeit — asked first)
+      onNewRun: MODE === 'normal' ? () => (pvpLive() ? Pvp.forfeitConfirm() : UI.newRunScreen(menuOpts())) : null,
+      onMainMenu: MODE === 'normal' ? () => leaveToMenu() : null,
       mods: v && v.mods && v.mods.length ? v.mods : null,
       modOptions: (session && session.recipe && session.recipe.modOptions) || {},
     });
   }
 }
+
+/** A live Multiplayer match (not over yet): leaving it is a forfeit. */
+function pvpLive() { return !!(pvpRun() && Pvp && Pvp.active && !(board.view && board.view.over)); }
+/** Main Menu, from Options or the pause menu (Start / Enter): in a live match, the forfeit confirmation first (as the Games
+ *  switcher asks) — the pause menu used to call showMenu() straight away and skip it. */
+function leaveToMenu() { if (pvpLive()) Pvp.forfeitConfirm(); else showMenu(); }
+
+// The site's Games switcher (site/switcher.js, controls sweep B2): a run saves after every action, so
+// leaving is safe — except a live Multiplayer match, where leaving is a forfeit (the same words as
+// Options -> Main Menu), sent to the server before the page goes.
+window.mpLeaveGuard = () => {
+  if (!pvpLive()) return { state: 'safe' };
+  return { state: 'confirm', message: 'Leave the match? Leaving counts as a forfeit: your opponent wins.', beforeLeave: () => Pvp.forfeitNow() };
+};
 
 // ---------------------------------------------------------------- keyboard
 // R is a tap AND a hold (Balatro): a quick tap sorts the hand by rank / rerolls the shop; held ~1 s it restarts
@@ -619,7 +679,7 @@ function onMenu(what) {
 const R_TAP_MS = 250, R_HOLD_MS = 1000, R_BAR_MS = 150;
 let rHold = null; // {t0, raf, el, done}
 /** Can R restart now: a live run of the player's own, nothing open over the table. */
-const canRestart = () => MODE === 'normal' && !!(session && session.recipe && !session.over && board.view && !board.view.over) && !UI.modalOpen();
+const canRestart = () => MODE === 'normal' && !pvpRun() && !!(session && session.recipe && !session.over && board.view && !board.view.over) && !UI.modalOpen();
 function rBar(frac) {
   let el = rHold.el;
   if (!el) {
@@ -656,11 +716,17 @@ function onKeyUp(e) {
   if (h && !h.done && performance.now() - h.t0 < R_TAP_MS) stateKey('r');
 }
 function onKey(e) {
-  if (e.target && /INPUT|TEXTAREA/.test(e.target.tagName)) return;
+  if (e.target && /INPUT|TEXTAREA/.test(e.target.tagName)) {
+    // (Esc leaves a text field, so the arrows / Z / X drive the cursor again)
+    if (e.key === 'Escape' && e.target.blur) e.target.blur();
+    return;
+  }
   if (e.key === 'Escape') { if (UI.modalOpen()) { if (!document.querySelector('.menu-modal, .go-modal')) UI.closeModal(); } else onMenu('options'); return; }
+  // the arrows / WASD / Z X C V / Q E / Enter / Backspace are the cursor's (ui/pad.js on site/input.js — the controller's
+  // actions): never also a hotkey here
+  if (actionForKey(e)) return;
   if (UI.modalOpen() || MODE !== 'normal' || !board.view) return;
   const k = e.key.toLowerCase();
-  if (k === 'v') return onMenu('deck');
   // P: a mod's card view for the selected joker (Pokermon's Pokédex: its SMODS.Keybind "openPokedex")
   if (k === 'p' && board.sel != null) { const d = board.data.get(board.sel); if (d && modFirst('cardContext', d, UI.modApi())) return; }
   if (k === 'i') return onMenu('runinfo');
@@ -671,33 +737,34 @@ function onKey(e) {
     return;
   }
   stateKey(k);
-  if (k === ' ' || k === 'enter') e.preventDefault();
+  if (k === ' ') e.preventDefault();
 }
-/** The keys that act on what's on the table now. */
+/** The hotkeys that act on what's on the table now (the letters the cursor's keys don't take: digits, P, Delete, R, N, Space).
+ *  (Controls sweep B5: S / D / C / V / Enter / Backspace moved to the cursor — Q / E play / discard, skip, reroll …) */
 function stateKey(k) {
   const v = board.view;
   if (!v || MODE !== 'normal' || UI.modalOpen()) return;
   const click = (sel) => { const b = stage.querySelector(sel); if (b && !b.disabled && b.offsetParent) { b.click(); return true; } return false; };
   // 1–9, 0: the nth card (0 = the 10th) — the hand's while it can be picked (also in Arcana / Spectral / a mod's
   // hand packs), else a pack's own cards; again on a picked card lets it go
-  if (/^[0-9]$/.test(k)) { if (player.idle()) board.keyPick(k === '0' ? 9 : +k - 1); return; }
+  if (/^[0-9]$/.test(k)) { if (player.idle()) { if (v.state === 'PAGES') board.keyPage(+k - 1); else board.keyPick(k === '0' ? 9 : +k - 1); } return; }
   if (v.state === 'SELECTING_HAND') {
-    if (k === 'enter' || k === 'p') click('.b-play');
-    else if (k === 'd' || k === 'delete' || k === 'backspace') click('.b-discard');
+    if (k === 'p') click('.b-play');
+    else if (k === 'delete') click('.b-discard');
     else if (k === 'r') click('.b-rank');
-    else if (k === 's') click('.b-suit');
-    else if (k === 'escape' || k === 'c') onAction({ type: 'highlight', ids: [] });
   } else if (v.state === 'BLIND_SELECT') {
-    if (k === 'enter' || k === ' ') click('.b-select');
-    else if (k === 's') click('.b-skip:not([disabled])');
+    if (k === ' ') click('.b-select');
+  } else if (v.state === 'PAGE_REMOVE') {
+    // (a Page's "remove a card" prize: click / tap / pad raises a card, Space removes the raised one; no Skip)
+    if (k === ' ') click('.b-page-remove');
+  } else if (v.state === 'PAGES') {
+    // (Pages: 1-3 raise a Page, Space takes the raised one; no Back, no Skip)
+    if (k === ' ') click('.b-pick-page');
   } else if (v.state === 'ROUND_EVAL') {
-    if (k === 'enter' || k === ' ') click('.b-cashout');
+    if (k === ' ') click('.b-cashout');
   } else if (v.state === 'SHOP') {
-    if (k === 'n' || k === 'enter') click('.b-next');
+    if (k === 'n') click('.b-next');
     else if (k === 'r') click('.b-reroll');
-  } else if (/_PACK(_HAND)?$/.test(v.state)) {
-    if (k === 's' || k === 'escape') click('.b-skip-pack');
-    else if (k === 'c' && board.handSelectable()) onAction({ type: 'highlight', ids: [] });
   }
 }
 
@@ -805,12 +872,25 @@ async function boot() {
   addEventListener('blur', () => endRHold()); // (the key-up may never come: no tap, no restart)
   // (replay: LB/RB step, secondary plays/pauses — the controller drives the viewer)
   const padReplay = MODE === 'replay' ? { toggle: () => replayCtrl && replayCtrl.toggle && replayCtrl.toggle(), step: (d) => replayCtrl && replayCtrl.ready && (d < 0 ? replayCtrl.stepBack() : replayCtrl.stepForward()) } : null;
-  try { pad = initPad({ board, stage, UI, readOnly: MODE !== 'normal', onMenu, mainMenu: () => showMenu(), replay: padReplay }); } catch (e) { console.warn('micatro: controller support unavailable', e); }
+  try { pad = initPad({ board, stage, UI, readOnly: MODE !== 'normal', onMenu, mainMenu: () => leaveToMenu(), replay: padReplay }); } catch (e) { console.warn('micatro: controller support unavailable', e); }
   window.__micatro = {
     get session() { return session; },
     view: () => (session ? viewOf() : board.view),
     loadMods: (ids) => ensureMods(ids),
     act: (a) => onAction(a),
+    // (tests / bots: select the blind on deck and, in a run with Pages, take a Page once the screen is up -> the pick's result.
+    //  `page`: an index, or 'plain' (default) = the quietest Page for a test that isn't about Pages: no prize, else money, a card,
+    //  a next-shop perk, a pack — never a joker / Tag / deck-change prize while a quieter one is offered — so the cash-out goes
+    //  straight to the shop and the run gains nothing the test didn't put there)
+    selectBlind: async (page = 'plain') => {
+      const r = onAction({ type: 'select_blind' });
+      if (!r.ok || !session || !session.view().pages) return r;
+      await new Promise((res) => { const t = () => (player.idle() ? res() : setTimeout(t, 30)); t(); });
+      let i = page;
+      // (Pages v2: no prize first, and one without a Round rule or a downside — engine/pages.js quietPageIndex)
+      if (!Number.isInteger(i)) i = (await import('../engine/pages.js')).quietPageIndex(session.view().pages.choices);
+      return onAction({ type: 'pick_page', index: i });
+    },
     events: allEvents,
     mode: MODE,
     idle: () => player.idle(),
@@ -834,7 +914,45 @@ async function boot() {
     const first = await Promise.race([ready.then(() => true), new Promise((r) => setTimeout(() => r(false), 3000))]);
     if (!first) ready.then(() => redrawMenu()).catch(() => {});
   }
+  // Multiplayer (signed in): the lobby / match this player is in comes back after a reload; ?join=CODE joins a lobby
+  if (loggedIn()) {
+    try {
+      const PM = await import('./pvp.js');
+      Pvp = PM.createPvp({
+        net, UI, Engine, ensureMods, board, stage,
+        withRequirements: (ids) => (Mods && Mods.withRequirements ? Mods.withRequirements(ids) : ids),
+        currentPins: (ids) => Engine.pins.currentPins(ids), engineRev: Engine.pins.ENGINE_CONTENT_REV,
+        bannedKeys: (mode, ruleset) => Engine.PV.pvpBannedKeys(mode, ruleset),
+        me: () => myName(), toast: (m) => board.toast(m), showMenu: () => showMenu(),
+        newRunScreen: (o) => UI.newRunScreen({ ...menuOpts(), ...o }),
+        startMatchRun, resumeMatchRun,
+        act: (a) => onAction(a), idle: () => player.idle(),
+        view: () => (session && pvpRun() ? decorateView(session.view()) : null), // (undecorated: oppInfo reads it)
+        redraw: (o) => {
+          if (!pvpRun() || !board.view) return;
+          currentView = viewOf();
+          board.view.pvp_opp = currentView.pvp_opp;
+          board.renderHud();
+          // the blind select only when what its PvP column shows changed: a redraw replays its columns' entry animation (the
+          // 1 s poll while READY and the Hurry clock's 4-a-second tick ({hud: true}) would otherwise keep them rising forever)
+          const po = currentView.pvp_opp || {};
+          const sig = [board.view.state, board.view.blind_on_deck, po.countdown, po.meReady, po.ready, po.name].join('|');
+          if (!(o && o.hud) && board.view.state === 'BLIND_SELECT' && !UI.modalOpen() && sig !== pvpOverlaySig) { pvpOverlaySig = sig; board.renderOverlay(); }
+        },
+        endPublishing: (won) => finishPublishing(won, null),
+      });
+      board.onPvpReady = () => Pvp.pressReady();
+      board.onPvpHurry = () => Pvp.pressHurry();
+      board.onPvpTimer = () => Pvp.pressPvpTimer();
+      board.pvpCardCanvas = (d, cls) => UI.cardCanvas(d, cls);
+      window.__micatro.pvp = Pvp;
+    } catch (e) { console.warn('micatro: multiplayer unavailable', e); }
+  }
   UI.mainMenu(menuOpts());
   window.__micatro.ready = true;
+  if (Pvp) {
+    const code = (params.get('join') || '').trim().toUpperCase();
+    Pvp.resume(code ? { code } : {}).catch((e) => console.warn('micatro: multiplayer resume failed', e));
+  }
 }
 boot().catch((e) => { console.error('micatro boot failed', e); });

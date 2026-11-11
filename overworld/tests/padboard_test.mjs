@@ -182,7 +182,11 @@ try {
 		await tap(BTN.top);
 		await sleep(400);
 		const afterTop = await used();
-		A(JSON.stringify(before) === JSON.stringify(afterTop) && (await pb()).mode === 'browse', 'the top face button does nothing (no hero-power shortcut)', JSON.stringify({ before, afterTop }));
+		const logOpen = () => page.evaluate(() => document.getElementById('log-full').classList.contains('open'));
+		A(before.cur === afterTop.cur && before.uses === afterTop.uses && await logOpen(), 'the top face button opens the game log, not the hero power (controls sweep B3)', JSON.stringify({ before, afterTop }));
+		await tap(BTN.bottom);
+		await sleep(200);
+		A(!(await logOpen()) && (await pb()).mode === 'browse', '...and cancel closes the log again');
 		const hasOrb = await page.evaluate(() => window.__padboard.stops().some(s => s.kind === 'orb'));
 		A(hasOrb, 'the hero-power orb is a stop on the board');
 		if (hasOrb) {
@@ -208,7 +212,7 @@ try {
 		A(await mine(), 'holding Start does NOT end the turn any more');
 		A(await page.evaluate(() => window.__padboard.menuOpen && !!document.getElementById('pad-match-menu')), 'Start opens the match menu');
 		const items = await page.evaluate(() => [...document.querySelectorAll('#pad-match-menu button')].map(b => b.textContent));
-		A(items.some(t => /log/i.test(t)) && items.some(t => /sound/i.test(t)) && items.some(t => /back/i.test(t)), '...with Game log, Sound and Back', JSON.stringify(items));
+		A(items.some(t => /log/i.test(t)) && items.some(t => /sound/i.test(t)) && items.some(t => /leave/i.test(t)) && items.some(t => /back/i.test(t)), '...with Game log, Sound, Leave and Back', JSON.stringify(items));
 		A(await page.evaluate(() => window.__padboard.active() === false && !!window.__padnav), '...and padnav drives it (the board stands aside)');
 		// Sound toggles in place
 		const m0 = await page.evaluate(() => document.getElementById('sfx-btn').classList.contains('muted'));

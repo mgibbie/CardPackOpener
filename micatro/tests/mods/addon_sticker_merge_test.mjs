@@ -137,10 +137,12 @@ await sec('source', () => {
 
 // ===================================================================== Pokermon+'s Nincada-line option: hidden, value kept
 await sec('nincada option', () => {
-  const list = MODS.modOptionList('pokermonplus').map((o) => o.key);
+  const all = MODS.modOptionList('pokermonplus').map((o) => o.key);
+  const list = all.filter((k) => !k.startsWith('content:'));   // (the shared content:<key> switches are counted elsewhere)
   ok(!list.includes('nincada'), "Pokermon+'s options list no 'Nincada line' (base Pokermon supersedes the whole line)", list);
   // (Pokermon+ 1.2.0, batch 20: 14 line / item options; the dropped Croagunk / Vullaby lines are legacy, their options hidden too)
   ok(list.includes('heatran') && list.includes('timerball') && !list.includes('croagunk') && !list.includes('vullaby') && list.length === 14, 'the other 14 options still listed', list);
+  ok(all.length > list.length && all.filter((k) => k.startsWith('content:')).length > 0, 'its shared content switches are listed alongside (content:<center key>)', all);
   ok(typeof MODS.optionHidden === 'function' && MODS.optionHidden(MODS.MODS.pokermonplus.options.nincada) && MODS.optionHidden(MODS.MODS.pokermonplus.options.croagunk) && !MODS.optionHidden(MODS.MODS.pokermonplus.options.darkrai), 'optionHidden: nincada yes (and the legacy croagunk), darkrai no');
   ok('nincada' in MODS.MODS.pokermonplus.options && MODS.MODS.pokermonplus.options.nincada.default === true, 'the option itself is still declared (default on)');
   newRun({ seed: 'SMNIN', back: 'b_red', mods: ['pokermon', 'pokermonplus'] });

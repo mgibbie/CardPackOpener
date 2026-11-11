@@ -3,7 +3,7 @@
 // (engine/view.js toView()) plus the UI event stream fed by the Player — never
 // from the engine's G — so a spectator draws exactly what the runner sees.
 import { CardSprite, modAtlasesOf } from './cardsprite.js';
-import { cellEl, drawCell, drawModCell, CENTERS, CARDS, BLINDS, TAGS, LOC, onModAtlas, MODREG, modType, cssColour, isConsumableSet } from './assets.js';
+import { cellEl, drawCell, drawModCell, CENTERS, CARDS, BLINDS, TAGS, STAKES, LOC, onModAtlas, MODREG, modType, cssColour, isConsumableSet } from './assets.js';
 import { backgroundFor } from './gl.js';
 import { markup, fmt, esc, titleHtml, isPlayingDesc, describePlaying, describeCenterFallback, BADGE_COL } from './markup.js';
 import { isNumeric, isBig } from '../engine/bignum.js';
@@ -12,6 +12,8 @@ import { first as modFirst, all as modAll, hasModUI } from './modui.js';
 import { onSkins } from './skins.js';
 import { onWinStickers, winStickerInfo, STICKER_TEXT } from './stickers.js';
 import { stickDeckCanvas } from './decksticker.js';
+import { liveCard } from './screens.js';
+import { renderPvpHud, nemesisPanel, nemesisChoice } from './pvphud.js';
 
 // 'scry': Pokermon's scry view (view.areas.scry, the next cards to be drawn), shown face up above the deck.
 const VISIBLE = ['hand', 'play', 'jokers', 'consumeables', 'shop_jokers', 'shop_vouchers', 'shop_booster', 'pack_cards', 'scry'];
@@ -60,6 +62,7 @@ export function visibleBox() {
   const s = safeInsets();
   return { x: s.l, y: s.t, w: Math.max(100, w - s.l - s.r), h: Math.max(100, h - s.t - s.b) };
 }
+const plainText = (l) => String(l || '').replace(/\{[^}]*\}/g, '');
 const h = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
 const STATUS_COL = { chips: '#009dff', mult: '#fe5f55', h_mult: '#fe5f55', x_mult: '#fe5f55', h_x_mult: '#fe5f55', dollars: '#f3b958', debuff: '#fe5f55', swap: '#8867a5' };
 const NAMED_COL = { red: '#fe5f55', mult: '#fe5f55', blue: '#009dff', chips: '#009dff', green: '#4bc292', money: '#f3b958', gold: '#eac058', attention: '#ff9a00', filter: '#ff9a00', purple: '#8867a5', tarot: '#a782d1', planet: '#13afce', spectral: '#4584fa', secondary_set: '#4f6367', black: '#374244', white: '#ffffff', edition: '#4ca893', dark_edition: '#5a4fcf' };
@@ -126,6 +129,7 @@ export class Board {
           </div>
         </div>
         <div class="hb-desc"></div>
+        <button type="button" class="hb-page" data-pad hidden></button>
       </div>
       <div class="hud-score"><div class="hs-l">Round<br>score</div><div class="hs-v"><span class="chip-ico"></span><span class="hs-num">0</span></div></div>
       <div class="hud-hand">
@@ -148,10 +152,14 @@ export class Board {
     const $ = (s) => this.hudEl.querySelector(s);
     this.H = {
       blind: $('.hud-blind'), bName: $('.hb-name'), bChip: $('.hb-chip'), bTarget: $('.hb-target'), bReward: $('.hb-reward .money'),
-      bDesc: $('.hb-desc'), bInfo: $('.hb-info'), score: $('.hs-num'), hand: $('.hh-hand'), lvl: $('.hh-lvl'), chips: $('.hh-chips'), mult: $('.hh-mult'),
+      bDesc: $('.hb-desc'), bInfo: $('.hb-info'), bReqL: $('.hb-req-l'), score: $('.hs-num'), scoreChip: $('.hud-score .chip-ico'), hand: $('.hh-hand'), lvl: $('.hh-lvl'), chips: $('.hh-chips'), mult: $('.hh-mult'),
       hands: $('.s-hands .stat-v'), discards: $('.s-discards .stat-v'), dollars: $('.s-dollars .stat-v'), ante: $('.ante-n'), anteW: $('.ante-w'),
-      round: $('.s-round .stat-v'), tags: $('.hud-tags'), handBox: $('.hud-hand'), rbadges: $('.hud-rbadges'),
+      round: $('.s-round .stat-v'), tags: $('.hud-tags'), handBox: $('.hud-hand'), rbadges: $('.hud-rbadges'), page: $('.hb-page'),
     };
+    // the round's Page (Pages): a badge under the blind; hover / tap / pad confirm shows its text
+    this.H.page.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse' && this.view && this.view.page) this.showPageTip(this.view.page, this.H.page); });
+    this.H.page.addEventListener('pointerleave', () => this.hideTip());
+    this.H.page.addEventListener('click', (e) => { e.stopPropagation(); if (this.view && this.view.page) { if (this.tipFor === 'page') this.hideTip(); else this.showPageTip(this.view.page, this.H.page); } });
     $('.b-runinfo').addEventListener('click', () => { sound.play('button'); this.opts.onMenu && this.opts.onMenu('runinfo'); });
     $('.b-options').addEventListener('click', () => { sound.play('button'); this.opts.onMenu && this.opts.onMenu('options'); });
     this.H.blind.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse' && this.view && this.view.blind) this.showBlindTip(this.view.blind, this.H.blind); });
@@ -243,8 +251,18 @@ export class Board {
     const st = this.deckEl.querySelector('.deck-stack');
     st.innerHTML = '';
     const back = CENTERS[this.backKey] || CENTERS.b_red;
+    // (a mod deck — Multiplayer's, a mod's — draws its own atlas cell; redrawn when that art arrives)
+    const modCell = () => {
+      const c = document.createElement('canvas');
+      c.width = 142; c.height = 190; c.className = 'deck-card';
+      if (!drawModCell(c.getContext('2d'), back.atlas, back.pos, 0, 0, 142, 190)) {
+        drawCell(c.getContext('2d'), 'centers', CENTERS.b_red.pos, 0, 0, 142, 190);
+        if (!this._deckArtWait) { this._deckArtWait = true; const off = onModAtlas((n) => { if (n === back.atlas) { off(); this._deckArtWait = false; this.renderDeckStack(); } }); }
+      }
+      return c;
+    };
     for (let i = 0; i < 4; i++) {
-      const c = cellEl('centers', back.pos, 'deck-card');
+      const c = back.mod && back.atlas ? modCell() : cellEl('centers', back.pos, 'deck-card');
       c.style.transform = `translate(${-i * 3}px,${-i * 3}px)`;
       st.appendChild(c);
     }
@@ -369,7 +387,7 @@ export class Board {
       // view itself holds in hand) waits there: the deal after Select (or a pack's hand) moves cards in while the view still says
       // BLIND_SELECT / SHOP, and those fly straight to the hand row (a kept one rises with them), never below the screen.
       const kept = new Set(((this.view && this.view.areas && this.view.areas.hand) || []).map((c) => c.id));
-      const away = (state === 'SHOP' || state === 'ROUND_EVAL' || state === 'BLIND_SELECT') && handIds.every((id) => kept.has(id));
+      const away = (state === 'SHOP' || state === 'ROUND_EVAL' || state === 'BLIND_SELECT' || state === 'PAGES' || state === 'PAGE_REMOVE') && handIds.every((id) => kept.has(id));
       this.rowTargets(handIds, handRect, { fan: FAN[this.mode], z: 100, gap: 1.02 }).forEach((t, i) => {
         if (away) t.y = this.SH + this.ch;
         if (hl(handIds[i])) t.y -= this.ch * 0.3;
@@ -419,6 +437,7 @@ export class Board {
     }
     if (!atlas && this.view) { this.renderOverlay(); this.layout(); this.setBackground(this.view); }
     this._tagsKey = null; // (mod tag icons are drawn from mod atlases)
+    if (this.view && (!atlas || atlas === this.view.stake_chip?.atlas)) this.renderScoreChip();
     if (this.view) this.renderTagsEtc(this.view);
   }
   /** The visible areas: the base ones plus the view's mod areas. */
@@ -604,29 +623,60 @@ export class Board {
     H.hands.textContent = hud.hands;
     H.discards.textContent = hud.discards;
     H.ante.textContent = hud.ante;
-    H.anteW.textContent = v.win_ante || 8;
+    this.renderScoreChip();
+    H.anteW.textContent = v.pvp ? '∞' : v.win_ante || 8; // (Multiplayer: no ante-8 win)
     H.round.textContent = hud.round;
     H.score.textContent = fmt(this.shownScore);
     this.renderHandBox();
     this.renderBlindPanel(v.blind, v.state);
+    renderPvpHud(this, v); // (Multiplayer: lives, the opponent; hidden in a solo run)
+    this.renderPageBadge(v);
     this.renderTagsEtc(v);
+  }
+  /** Use the run's stake chip, whose atlas positions are not in stake-level order. */
+  renderScoreChip() {
+    const chip = this.view?.stake_chip;
+    if (chip?.atlas && chip.pos) {
+      const canvas = document.createElement('canvas');
+      canvas.width = canvas.height = 60;
+      if (drawModCell(canvas.getContext('2d'), chip.atlas, chip.pos, 0, 0, 60, 60)) {
+        this.H.scoreChip.style.backgroundImage = `url(${canvas.toDataURL()})`;
+        this.H.scoreChip.style.backgroundSize = '30px 30px';
+        this.H.scoreChip.style.backgroundPosition = '0px 0px';
+        return;
+      }
+    }
+    this.H.scoreChip.style.backgroundImage = '';
+    this.H.scoreChip.style.backgroundSize = '';
+    const stake = Number(this.view?.stake);
+    const level = Math.max(1, Math.min(8, Number.isFinite(stake) ? Math.floor(stake) : 1));
+    const pos = Object.values(STAKES).find(s => s.stake_level === level)?.pos || { x: 0, y: 0 };
+    this.H.scoreChip.style.backgroundPosition = `${-30 * pos.x}px ${-30 * pos.y}px`;
   }
   renderBlindPanel(b, state) {
     const H = this.H;
-    const selecting = state === 'BLIND_SELECT' || state === 'SHOP' || !b || !b.key || b.key === 'bl_none';
+    const selecting = state === 'BLIND_SELECT' || state === 'SHOP' || state === 'PAGES' || state === 'PAGE_REMOVE' || !b || !b.key || b.key === 'bl_none';
     const col = b && b.key && !selecting ? (b.boss ? (b.colour || '#b44430') : '#50846e') : '#3f5154';
     H.blind.style.setProperty('--bcol', col);
     H.blind.classList.toggle('selecting', selecting);
     if (selecting) {
-      H.bName.textContent = state === 'SHOP' ? 'Shop' : 'Choose your next Blind';
+      H.bName.textContent = state === 'SHOP' ? 'Shop' : state === 'PAGES' ? 'Choose a Page' : state === 'PAGE_REMOVE' ? 'Remove a card' : 'Choose your next Blind';
       H.bChip.innerHTML = ''; H.bInfo.style.visibility = 'hidden'; H.bDesc.innerHTML = '';
       this.chipAnim = null;
     } else {
       H.bName.textContent = (b.desc && b.desc.name && b.atlas ? b.desc.name : b.name); // (a mod blind: its loc name, not its key)
       H.bInfo.style.visibility = '';
       H.bTarget.textContent = fmt(b.chips);
+      // (Multiplayer: the Nemesis has no target — the opponent's live score instead)
+      const np = nemesisPanel(b, this.view);
+      if (this.H.bReqL) this.H.bReqL.textContent = np ? np.label : 'Score at least';
+      if (np) { if (np.name) H.bName.textContent = np.name; H.bTarget.textContent = np.target; }
       H.bReward.textContent = b.dollars > 0 ? '$'.repeat(Math.min(b.dollars, 8)) + '+' : '';
       if (b.dollars > 0) H.bReward.textContent = '$'.repeat(Math.min(b.dollars, 10));
+      // (the reward row's label: "Hands left:" in the Nemesis — the node before the money span)
+      const rl = H.bReward.previousSibling || (H.bReward.parentNode && H.bReward.parentNode.firstChild);
+      if (rl && rl.nodeType === 3) rl.textContent = np ? np.rewardLabel : 'Reward: ';
+      if (np) H.bReward.textContent = np.reward;
       if (!this.chipAnim || this.chipAnim.key !== b.key) {
         H.bChip.innerHTML = '';
         const c = document.createElement('canvas'); c.width = 68; c.height = 68; c.className = 'blind-chip';
@@ -636,6 +686,26 @@ export class Board {
       const desc = b.desc;
       H.bDesc.innerHTML = b.boss && desc ? (desc.lines || []).map((l) => markup(l)).join('<br>') + (b.disabled ? '<br><span style="color:#4bc292">Disabled</span>' : '') : '';
     }
+  }
+  /** The round's Page (view.page): a small badge under the blind with its effect; all its text on hover / tap. */
+  renderPageBadge(v) {
+    const el = this.H.page, p = v && v.page;
+    const show = !!(p && p.desc && v.state !== 'PAGES');
+    el.hidden = !show;
+    if (!show) { this._pageKey = null; if (this.tipFor === 'page') this.hideTip(); return; }
+    const key = JSON.stringify(p);
+    if (key === this._pageKey) return;
+    this._pageKey = key;
+    el.className = 'hb-page tier-' + (p.tier || 1);
+    // (Pages v2: the Page's Round rule under its effect)
+    el.innerHTML = `<span class="hp-l">Page</span> ${markup(p.desc.lines[0])}` + (p.desc.lines[3] ? `<span class="hp-rule">${markup(p.desc.lines[3])}</span>` : '');
+    el.setAttribute('aria-label', 'Page: ' + p.desc.lines.map(plainText).join('. '));
+  }
+  showPageTip(p, el) {
+    this.renderTip({ name: p.desc.name, lines: p.desc.lines }, null);
+    const c = this.elCenter(el);
+    this.tipFor = 'page';
+    this.placeTipAt(c.x, c.y, c.h);
   }
   /** Pokermon's live Nuzlocke / Monotype badges (view.run_badges: only a Pokermon run's view has it; hidden when
    *  the run isn't eligible — seeded / challenge). A broken badge disappears (its toast says why). */
@@ -751,6 +821,8 @@ export class Board {
       else if (v.state === 'ROUND_EVAL' && v.round_eval) this.renderCashOut(ov, v);
       else if (v.state === 'SHOP') this.renderShop(ov, v);
       else if (PACK_STATES.includes(v.state)) this.renderPack(ov, v);
+      else if (v.state === 'PAGES' && v.pages) this.renderPages(ov, v);
+      else if (v.state === 'PAGE_REMOVE' && v.page_remove) this.renderPageRemove(ov, v);
     }
     // the hand counter follows the hand row (a pack that shows the hand may lower it: renderPack)
     const lbl = this.packHand ? this.packHand.lbl : this.R && this.R.handLbl;
@@ -767,7 +839,14 @@ export class Board {
       const col = h('div', `blind-col st-${stateCls} ${k === 'Boss' ? 'boss' : ''}`);
       col.style.setProperty('--bcol', k === 'Boss' ? (c.colour || '#b44430') : (k === 'Small' ? '#3b7fa8' : '#d68f28'));
       const head = h('div', 'blind-head');
-      if (c.state === 'Select') {
+      const nc = nemesisChoice(c, v, k); // (Multiplayer: READY for a PvP round — both players start together; any slot in Showdown)
+      if (nc && c.state === 'Select') {
+        const b = h('button', 'btn orange b-select b-pvp-ready' + (nc.active ? ' on' : ''), nc.label);
+        b.type = 'button';
+        b.disabled = this.readOnly || !this.onPvpReady;
+        b.addEventListener('click', () => this.onPvpReady && this.onPvpReady());
+        head.appendChild(b);
+      } else if (c.state === 'Select') {
         const b = h('button', 'btn orange b-select', 'Select');
         b.type = 'button';
         b.disabled = this.readOnly || this.locked;
@@ -782,10 +861,14 @@ export class Board {
       chip._atlas = c.atlas;
       body.appendChild(chip);
       if (k === 'Boss' && c.desc) body.appendChild(h('div', 'blind-desc', (c.desc.lines || []).map(markup).join('<br>')));
-      body.appendChild(h('div', 'blind-req', `<div class="req-l">Score at least</div><div class="req-v"><span class="chip-ico"></span>${fmt(c.chips)}</div>`));
-      body.appendChild(h('div', 'blind-rew', c.dollars ? `Reward: <span class="money">${'$'.repeat(Math.min(10, c.dollars))}+</span>` : '<span class="muted">No reward money</span>'));
+      // (no Page yet this ante -> this Boss gets one; engine/pages.js pageGuaranteed)
+      if (k === 'Boss' && v.page_pity) body.appendChild(h('div', 'blind-pity', 'Page guaranteed this Boss'));
+      if (nc) body.appendChild(h('div', 'blind-req', `<div class="req-l">${nc.req}</div><div class="req-v">${nc.value}</div>`));
+      else body.appendChild(h('div', 'blind-req', `<div class="req-l">Score at least</div><div class="req-v"><span class="chip-ico"></span>${fmt(c.chips)}</div>`));
+      if (nc && nc.reward) body.appendChild(h('div', 'blind-rew pvp-vs', nc.reward));
+      else body.appendChild(h('div', 'blind-rew', c.dollars ? `Reward: <span class="money">${'$'.repeat(Math.min(10, c.dollars))}+</span>` : '<span class="muted">No reward money</span>'));
       col.appendChild(body);
-      if (k !== 'Boss' && c.tag) {
+      if (k !== 'Boss' && c.tag && !nc) { // (a PvP round is never skipped)
         const sk = h('div', 'blind-skip');
         sk.innerHTML = '<div class="or">or</div>';
         const line = h('div', 'skip-line');
@@ -815,6 +898,127 @@ export class Board {
     ov.appendChild(row);
   }
 
+  /**
+   * The Pages screen (Micatro's Pages: a Blind was selected; pick one of 3 Pages, no Back, no Skip). Laid out like a pack's
+   * screen: the three Pages where a pack's cards deal, its bar (name / Choose) under them. A tap / click / pad confirm raises a
+   * Page, again (or Choose, Enter, RB) takes it; keys 1-3 raise one. The pick animates from the engine's page_picked event,
+   * so a spectator and a replay see it too.
+   */
+  renderPages(ov, v) {
+    ov.classList.add('ov-pages');
+    const R = this.R;
+    const n = v.pages.choices.length;
+    const sig = JSON.stringify(v.pages);
+    if (this._pagesFor !== sig) { this.pageSel = this.readOnly ? -1 : 0; this._pagesFor = sig; }
+    const wrap = h('div', 'pages-wrap');
+    wrap.style.left = (R.play.x - R.overlay.x) + 'px';
+    wrap.style.width = R.play.w + 'px';
+    wrap.style.top = Math.max(0, R.play.y - R.overlay.y - (this.mode === 'portrait' ? 40 : 70)) + 'px';
+    const row = h('div', 'pages-row');
+    v.pages.choices.forEach((p, i) => {
+      const card = h('button', `page-card tier-${p.tier || 1}${i === this.pageSel ? ' sel' : ''}${p.down ? ' down' : ''}`);
+      card.type = 'button';
+      card.dataset.page = String(i);
+      const d = p.desc || { name: 'Page', lines: [] };
+      card.innerHTML = `<div class="pg-name">${esc(d.name)}</div><div class="pg-eff"><span>${markup(d.lines[0] || '')}</span></div>` +
+        `<div class="pg-req">${markup(d.lines[1] || '')}</div><div class="pg-prize">${markup(d.lines[2] || '')}</div>` +
+        (d.lines[3] ? `<div class="pg-rule">${markup(d.lines[3])}</div>` : ''); // (Pages v2: the Round rule)
+      card.setAttribute('aria-label', `Page ${i + 1}: ` + d.lines.map(plainText).join('. '));
+      if (d.lines[3]) card.classList.add('has-rule');
+      card.addEventListener('click', () => {
+        if (this.readOnly || this.locked) return;
+        if (this.pageSel === i) { this.pickPage(); return; }
+        this.pageSel = i; sound.play('cardSlide1', 1.1, 0.6);
+        for (const c of row.children) c.classList.toggle('sel', +c.dataset.page === i);
+      });
+      row.appendChild(card);
+    });
+    wrap.appendChild(row);
+    const bar = h('div', 'pack-head pages-head', `<div class="pack-name">Choose a Page</div><div class="pack-choose">${esc(v.pages.blind || '')} Blind</div>`);
+    const go = h('button', 'btn green b-pick-page', 'Choose'); go.type = 'button';
+    go.disabled = this.readOnly || this.locked;
+    go.addEventListener('click', () => this.pickPage());
+    bar.appendChild(go);
+    wrap.appendChild(bar);
+    ov.appendChild(wrap);
+  }
+  /** Take the raised Page. */
+  pickPage() {
+    if (this.readOnly || this.locked || !this.view || this.view.state !== 'PAGES' || !(this.pageSel >= 0)) return false;
+    this.act({ type: 'pick_page', index: this.pageSel }, 'button');
+    return true;
+  }
+  /**
+   * Pages v2's "remove a card" prize (state PAGE_REMOVE, after the cash-out): the whole deck by suit; a tap / click / pad
+   * confirm raises a card, again (or Remove, Enter, RB) removes it. The prize must be used: no Skip.
+   */
+  renderPageRemove(ov, v) {
+    ov.classList.add('ov-pages', 'ov-premove');
+    const R = this.R, list = v.page_remove.cards || [];
+    const sig = list.map((c) => c.id).join();
+    if (this._premoveFor !== sig) { this.removeSel = -1; this._premoveFor = sig; }
+    const SUITS = ['S', 'H', 'C', 'D'];
+    const RANKS = ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2'];
+    const suitOf = (k) => (k || '').split('_')[0];
+    const rankOf = (k) => (k || '').split('_')[1] || '';
+    const rows = [...SUITS, ''].map((s) => list.filter((c) => (s ? suitOf(c.front) === s : !SUITS.includes(suitOf(c.front))))
+      .sort((a, b) => RANKS.indexOf(rankOf(a.front)) - RANKS.indexOf(rankOf(b.front)) || a.id - b.id)).filter((r) => r.length);
+    const cols = Math.max(1, ...rows.map((r) => r.length));
+    const ovW = R.overlay.w || this.W, ovH = R.overlay.h || this.SH;
+    const top = Math.max(0, R.play.y - R.overlay.y - (this.mode === 'portrait' ? 40 : 70));
+    const availW = Math.max(200, Math.min(R.play.w + 120, ovW - 24));
+    const availH = Math.max(160, ovH - top - 90);
+    // (card width from the room: 13 overlapping cards a row, 4 rows, the bar under them)
+    const cw = Math.max(24, Math.min(66, (availW - 8) / (cols * 0.72 + 0.28), (availH - 60) / (rows.length * 0.86 + 0.5) / 1.34));
+    const wrap = h('div', 'pages-wrap premove-wrap');
+    wrap.style.left = Math.max(12, (ovW - availW) / 2) + 'px';
+    wrap.style.width = availW + 'px';
+    wrap.style.top = top + 'px';
+    wrap.style.setProperty('--prw', cw.toFixed(1) + 'px');
+    const grid = h('div', 'premove-grid');
+    for (const r of rows) {
+      const row = h('div', 'premove-row');
+      for (const c of r) {
+        const b = h('button', 'premove-card' + (c.id === this.removeSel ? ' sel' : ''));
+        b.type = 'button';
+        b.dataset.card = String(c.id);
+        b.appendChild(liveCard({ front: c.front, center: c.center, edition: c.edition || undefined, seal: c.seal || undefined }, '', v.back));
+        b.setAttribute('aria-label', 'Remove ' + ((CARDS[c.front] && CARDS[c.front].name) || c.front));
+        b.addEventListener('click', () => {
+          if (this.readOnly || this.locked) return;
+          if (this.removeSel === c.id) { this.removePageCard(); return; }
+          this.removeSel = c.id; sound.play('cardSlide1', 1.1, 0.6);
+          for (const x of grid.querySelectorAll('.premove-card')) x.classList.toggle('sel', +x.dataset.card === c.id);
+          const go = wrap.querySelector('.b-page-remove'); if (go) go.disabled = false;
+        });
+        row.appendChild(b);
+      }
+      grid.appendChild(row);
+    }
+    wrap.appendChild(grid);
+    const left = (v.page_remove.n || 1) > 1 ? ` (${v.page_remove.n})` : '';
+    const bar = h('div', 'pack-head pages-head', `<div class="pack-name">Remove a card${left}</div><div class="pack-choose">Page prize: choose one to remove from your deck</div>`);
+    const go = h('button', 'btn red b-page-remove', 'Remove'); go.type = 'button';
+    go.disabled = this.readOnly || this.locked || !(this.removeSel >= 0);
+    go.addEventListener('click', () => this.removePageCard());
+    bar.appendChild(go);
+    wrap.appendChild(bar);
+    ov.appendChild(wrap);
+  }
+  /** Remove the raised card (the "remove a card" prize). */
+  removePageCard() {
+    if (this.readOnly || this.locked || !this.view || this.view.state !== 'PAGE_REMOVE' || !(this.removeSel >= 0)) return false;
+    this.act({ type: 'page_remove', id: this.removeSel }, 'button');
+    return true;
+  }
+  /** Keys 1-3 on the Pages screen: raise that Page (again: take it). */
+  keyPage(i) {
+    if (this.readOnly || !this.view || this.view.state !== 'PAGES' || !this.view.pages || !this.view.pages.choices[i]) return false;
+    const el = this.overlay.querySelector(`.page-card[data-page="${i}"]`);
+    if (el) el.click();
+    return true;
+  }
+
   renderCashOut(ov, v) {
     ov.classList.add('ov-eval');
     const panel = h('div', 'eval-panel');
@@ -833,9 +1037,10 @@ export class Board {
         label = `<span class="ev-blind">${esc(name)}</span><span class="ev-sub">Score at least ${fmt(chips)}</span>`;
       } else if (r.name === 'hands') label = `<b class="blue">${r.disp}</b> Remaining Hands <span class="ev-sub">($1 each)</span>`;
       else if (r.name === 'discards') label = `<b class="red">${r.disp}</b> Remaining Discards`;
-      else if (r.name === 'interest') label = `<b class="money">${r.disp}</b> interest per <b class="money">$5</b> <span class="ev-sub">(${(v.interest_cap || 25) / 5} max)</span>`;
+      else if (r.name === 'interest') label = `<b class="money">${r.disp}</b> interest per <b class="money">$5</b> <span class="ev-sub">(${(r.page_cap || v.interest_cap || 25) / 5} max)</span>`;
       else if (/^joker/.test(r.name)) label = esc((CENTERS[r.center] && CENTERS[r.center].name) || 'Joker');
       else if (/^tag/.test(r.name)) label = esc((TAGS[r.tag] && TAGS[r.tag].name) || 'Tag');
+      else if (r.name === 'page') label = `Page prize <span class="ev-sub">${esc(r.prize || '')}</span>`;
       else label = esc(r.name);
       const amt = r.dollars <= 0 ? '<span class="muted">-</span>' : (r.dollars <= 9 ? '$'.repeat(r.dollars) : '$' + fmt(r.dollars));
       const row = h('div', 'eval-row' + (r.name === 'blind1' ? ' first' : ''), `<div class="ev-l">${label}</div><div class="ev-r money">${amt}</div>`);
@@ -1501,6 +1706,23 @@ export class Board {
         return ev.instant ? 0.1 : 0.7;
       }
       case 'dissolve': {
+        // A card destroyed straight from the deck (Pokermon's Meteorite): it rises out of the deck face up, then burns,
+        // so the player sees what was lost (engine core.js start_dissolve sends its view).
+        if (!this.sprites.has(ev.card) && ev.from === 'deck' && ev.view) {
+          const d = { ...ev.view, facing: undefined, hl: false };
+          const s = new CardSprite(ev.card, d, this);
+          s.area = 'deck_out'; s.leaving = true; s.z = 50;
+          this.sprites.set(ev.card, s); this.layer.appendChild(s.el);
+          const p = this.deckPos(); s.place(p.x, p.y, 0, 1);
+          s.tgt.x = p.x - this.cw * 1.2; s.tgt.y = p.y - this.ch * 0.8; s.tgt.r = -0.08; s.tgt.s = 1.1;
+          sound.play('card1', 1, 0.6);
+          const sp1 = Math.max(1, sp * 0.6);
+          setTimeout(() => {
+            sound.play('whoosh2', 1, 0.5); sound.play('crumple' + (1 + Math.floor(Math.random() * 5)), 1, 0.5);
+            s.startDissolve(0.8 / sp1, () => this.destroySprite(ev.card));
+          }, 450 / sp1);
+          return 0.9 / sp1;
+        }
         const s = this.sprites.get(ev.card);
         this.removeFromAreas(ev.card);
         if (s && !s.leaving) {
@@ -1599,6 +1821,23 @@ export class Board {
       case 'balanced': this.hud.hand.chips = ev.chips; this.hud.hand.mult = ev.mult; this.renderHandBox(); this.bump(this.H.handBox); return 0.6;
       case 'redeemed': return 0.2;
       case 'pack_opened': return 0.2;
+      case 'pages_open': sound.play('cardSlide1', 0.9, 0.7); return 0.1;
+      case 'page_picked': {
+        // the pick, for the player, a spectator and a replay alike: the chosen Page rises and glows, the others fade
+        const cards = this.overlay.querySelectorAll('.page-card');
+        cards.forEach((c) => { c.classList.toggle('picked', +c.dataset.page === ev.index); c.classList.toggle('passed', +c.dataset.page !== ev.index); c.classList.remove('sel'); });
+        sound.play('card1', 1, 0.8);
+        return cards.length ? 0.7 : 0;
+      }
+      case 'page_removed': {
+        // (the "remove a card" prize: the chosen card burns away)
+        const el = this.overlay.querySelector(`.premove-card[data-card="${ev.card}"]`);
+        if (el) el.classList.add('gone');
+        sound.play('tarot1', 1, 0.7);
+        return el ? 0.6 : 0;
+      }
+      case 'page_remove_open': sound.play('cardSlide1', 0.9, 0.7); return 0.1;
+      case 'page_rule': return 0;
       case 'boss_rerolled': sound.play('whoosh2'); return 0.35;
       case 'attention': this.attn(ev.text); return 0.6;
       case 'blind_juice': this.bump(this.H.blind); return 0;

@@ -9,7 +9,7 @@
 // own `screen` (the canvas); moved without its import it would silently become
 // window.screen. Removing these makes every bare use resolve to a real binding.
 //
-//   npx eslint -c tools/eslint.undef.config.mjs "overworld/*.js"
+//   npx eslint -c tools/eslint.undef.config.mjs "overworld/*.js" "battlecards/*.js" "battlecards/engine/**/*.js"
 import globals from 'globals';
 
 const CONFUSABLE = ['screen', 'name', 'status', 'event', 'top', 'parent', 'length', 'origin',
@@ -18,7 +18,8 @@ const browser = { ...globals.browser };
 for (const k of CONFUSABLE) delete browser[k];
 
 export default [{
-	files: ['overworld/*.js'],
+	// Battlecards too (2026-11): the same net under the game.js split.
+	files: ['overworld/*.js', 'battlecards/*.js', 'battlecards/engine/**/*.js'],
 	languageOptions: { ecmaVersion: 'latest', sourceType: 'module', globals: browser },
 	linterOptions: { reportUnusedDisableDirectives: 'off' },
 	rules: { 'no-undef': 'error' },

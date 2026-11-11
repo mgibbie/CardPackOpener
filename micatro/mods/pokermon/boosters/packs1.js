@@ -7,6 +7,7 @@ import {
   matching_energy, find_card, any, smods_create_card, poke_family_present, poll_evo_item,
   get_gen_allowed, gen_filter_fixed, fallback_poke_key,
 } from '../api.js';
+import { rulesRev } from '../../../js/mods/pins.js';
 
 const FILE = 'boosters/packs1.lua';
 
@@ -45,7 +46,8 @@ function create_item(seed) {
 function create_pocket_card(self, card, i) {
   // (3.9.1, batch 17: Safety First's poke_no_energy makes the Energy slot an Item)
   if (i === 1) return G.GAME.modifiers.poke_no_energy ? create_item('pocket') : create_energy(self, card);
-  if (i === 2 && card.from_tag && G.GAME.round_resets.ante >= 5 && !any(find_card('c_poke_megastone'))) {
+  // r86 extends the Pocket Tag's chance to shop packs; old replays keep their original rolls.
+  if (i === 2 && (card.from_tag || rulesRev('pokermon') >= 86) && G.GAME.round_resets.ante >= 5 && !any(find_card('c_poke_megastone'))) {
     if (pseudorandom(pseudoseed('pocket')) > 0.75) return create_card('Item', G.pack_cards, null, null, true, true, 'c_poke_megastone', null);
     return create_item('pocket');
   }
@@ -131,7 +133,7 @@ defineBoosters({
       else if (i === 4 && L.pika_eevee.length > 0) pack_key = pseudorandom_element(L.pika_eevee, pseudoseed('pikaeevee'))[0];
       else if (i === 5 && L.pseudo.length > 0) pack_key = pseudorandom_element(L.pseudo, pseudoseed('pseudo'))[0];
       else pack_key = fallback_poke_key('starter' + i); // (Caterpie; r79: an allowed Basic while Gen 1 is off)
-      return smods_create_card({ set: 'Joker', area: G.pack_cards, key: pack_key, no_edition: true, skip_materialize: true });
+      return smods_create_card({ set: 'Joker', area: G.pack_cards, key: pack_key || 'j_joker', no_edition: true, skip_materialize: true });
     },
     loc_vars(self, info_queue, card) { return { vars: [card.config.center.config.choose, card.ability.extra] }; },
     in_pool() { return false; },
@@ -163,7 +165,7 @@ defineBoosters({
       else if (i === 4 && L.bidoof_yamper.length > 0) pack_key = pseudorandom_element(L.bidoof_yamper, pseudoseed('pikaeevee'))[0];
       else if (i === 5 && L.pseudo.length > 0) pack_key = pseudorandom_element(L.pseudo, pseudoseed('pseudo'))[0];
       else pack_key = fallback_poke_key('starter' + i); // (Caterpie; r79: an allowed Basic while Gen 1 is off)
-      return smods_create_card({ set: 'Joker', area: G.pack_cards, key: pack_key, no_edition: true, skip_materialize: true });
+      return smods_create_card({ set: 'Joker', area: G.pack_cards, key: pack_key || 'j_joker', no_edition: true, skip_materialize: true });
     },
     loc_vars(self, info_queue, card) { return { vars: [card.config.center.config.choose, card.ability.extra] }; },
     in_pool() { return false; },

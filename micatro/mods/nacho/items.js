@@ -14,12 +14,14 @@ import {
   poll_object, smods_create_card,
 } from './api.js';
 import { use_card } from '../../js/engine/run.js';
+import { rulesRev } from '../../js/mods/pins.js';
 
 /** Hand index stands in for screen x (the Lua compares card.T.x). */
 const hand_x = (c) => G.hand.cards.indexOf(c);
 /** The Lua's pick of the two highlighted cards: `target` the left one, `rightmost` the right one. */
 function left_right() {
   const h = G.hand.highlighted;
+  if (h.length === 1) return [h[0], undefined];
   let target = h[1], rightmost = h[0];
   for (const c of h) { if (hand_x(c) > hand_x(rightmost)) rightmost = c; else target = c; }
   return [target, rightmost];
@@ -30,18 +32,19 @@ const apple_in_pool = () => {
   return !!(G.jokers && G.jokers.cards.some((joker) => applemons.includes(joker.config.center.name)));
 };
 const eitem = (info_queue) => info_queue.push({ set: 'Other', key: 'eitem' });
+const apple_selection = self => { const n = G.hand?.highlighted?.length || 0; return n >= (rulesRev('pokermon') >= 107 ? 1 : 2) && n <= self.config.max_highlighted; };
 
 export const APPLES = {
   // Tart Apple: of two held cards, the left gains +1 perma Mult (+2 if Wild) and the right is destroyed
   tartapple: {
     loc_vars(self, info_queue) { eitem(info_queue); return { vars: [self.config.max_highlighted] }; },
-    can_use(self) { return joker_target_ok(self) || !!(G.hand.highlighted && G.hand.highlighted.length === 2); },
+    can_use(self) { return joker_target_ok(self) || apple_selection(self); },
     use(self, card, area, copier) {
       set_spoon_item(card);
-      if (G.hand.highlighted && G.hand.highlighted.length === 2) {
+      if (apple_selection(self)) {
         const [target, rightmost] = left_right();
         target.ability.perma_mult = (target.ability.perma_mult || 0) + self.config.mult_mod * (has_enhancement(target, 'm_wild') ? 2 : 1);
-        poke_remove_card(rightmost, card);
+        if (rightmost) poke_remove_card(rightmost, card);
         evo_item_use_total(self, card, area, copier);
       } else highlighted_evo_item(self, card, area, copier);
     },
@@ -50,13 +53,13 @@ export const APPLES = {
   // Sweet Apple: of two held cards, the left earns $2 ($4 if Wild) and the right is destroyed
   sweetapple: {
     loc_vars(self, info_queue) { eitem(info_queue); return { vars: [self.config.max_highlighted] }; },
-    can_use(self) { return joker_target_ok(self) || !!(G.hand.highlighted && G.hand.highlighted.length === 2); },
+    can_use(self) { return joker_target_ok(self) || apple_selection(self); },
     use(self, card, area, copier) {
       set_spoon_item(card);
-      if (G.hand.highlighted && G.hand.highlighted.length === 2) {
+      if (apple_selection(self)) {
         const [target, rightmost] = left_right();
         ease_poke_dollars(target, 'sweetapple', self.config.money * (has_enhancement(target, 'm_wild') ? 2 : 1));
-        poke_remove_card(rightmost, card);
+        if (rightmost) poke_remove_card(rightmost, card);
         evo_item_use_total(self, card, area, copier);
       } else highlighted_evo_item(self, card, area, copier);
     },

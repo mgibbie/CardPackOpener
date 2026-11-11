@@ -23,7 +23,7 @@
  *   Arreglo respecto al port: el tipo se lee del Pokémon ACTIVO al usarlo (el port lo fijaba al
  *   empezar la partida); así el modo Equipo (lote 7) no tiene que hacer nada.
  *
- *   G.ZMoves.tryStart(pl)   tecla Z, botón del HUD (también táctil) y la acción `zmove` del mando
+ *   G.ZMoves.tryStart(pl)   tecla C, botón del HUD (también táctil) y la acción `zmove` del mando
  *   G.ZMoves.cineTick / update / updateWorld / drawWorld / drawDim / drawCine / drawButton
  *   (los llama game.js / hud.js)
  */
@@ -1179,7 +1179,7 @@ G.ZMoves = (() => {
   /**
    * El botón del Movimiento Z (main.gd draw_z): late cuando está listo; gris con "Nv. 15", la cuenta
    * atrás del enfriamiento o "Aquí no" (grieta, Sentencia). Se pulsa con el dedo o el ratón; con
-   * mando, el icono del botón asignado a `zmove`; con teclado, la tecla Z.
+   * mando, el icono del botón asignado a `zmove`; con teclado, la tecla C (controls sweep B4).
    */
   function drawButton(ctx, w, h, pl) {
     const zt = activeType(pl);
@@ -1204,12 +1204,12 @@ G.ZMoves = (() => {
     ctx.fillStyle = 'rgb(191,199,217)';
     const label = used && cd > 0 ? G.U.mmss(cd) : !lvlOk ? 'Nv. ' + MIN_LEVEL : !here ? 'Aquí no' : '';
     if (label) { ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0,0,0,.7)'; ctx.strokeText(label, c.x, r.y + r.s + 12); ctx.fillText(label, c.x, r.y + r.s + 12); }
-    // lo que se pulsa: el botón del mando o la tecla Z
+    // lo que se pulsa: el botón del mando o la tecla C
     if (G.Pad && G.Pad.mode === 'pad') G.Pad.drawGlyph(ctx, 'zmove', r.x - 4, r.y - 4, 22);
     else if (!G.Touch.active) {
       ctx.fillStyle = 'rgba(10,16,28,.9)'; ctx.fillRect(r.x - 2, r.y - 2, 17, 17);
       ctx.strokeStyle = 'rgba(244,248,255,.7)'; ctx.lineWidth = 1; ctx.strokeRect(r.x - 1.5, r.y - 1.5, 16, 16);
-      ctx.font = '700 11px Arial,Helvetica,sans-serif'; ctx.fillStyle = '#f4f8ff'; ctx.fillText(raw('Z'), r.x + 6.5, r.y + 10);   // (en Pixelify la Z parece un 2)
+      ctx.font = '700 11px Arial,Helvetica,sans-serif'; ctx.fillStyle = '#f4f8ff'; ctx.fillText(raw('C'), r.x + 6.5, r.y + 10);   // (controls sweep B4: la tecla C, antes Z)
     }
     ctx.restore();
     G.Touch.addButton(r.x, r.y, r.s, r.s, () => { if (!tryStart(pl)) G.Audio.sfx('error'); }, 6);

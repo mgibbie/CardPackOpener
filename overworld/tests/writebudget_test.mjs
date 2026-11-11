@@ -12,6 +12,7 @@
 //   publishDuel republished an unchanged board at a flat 1Hz
 //
 //   node overworld/tests/writebudget_test.mjs
+import { gameSource } from '../../battlecards/tests/helpers/gamesource.mjs';   // game.js + the modules split out of it
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -36,9 +37,9 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 	A(/coLocated\(\) && player\.moving/.test(mn), 'the fast presence cadence needs co-located AND moving');
 	A(/const watched = coLocated\(\)/.test(mn) && /watched \? payload/.test(mn),
 		'position is only part of the presence signature when someone can see it');
-	const gm = fs.readFileSync(path.join(ROOT, 'battlecards/game.js'), 'utf8');
+	const gm = gameSource();
 	A(/_lastDuelSig/.test(gm) && /DUEL_PUB_FLOOR_MS/.test(gm), 'an unchanged duel board is not republished');
-	A(/publishDuel\(state\.over\)/.test(gm), 'a finished duel always publishes, never deduped away');
+	A(/publishDuel\(GS\.state\.over\)/.test(gm), 'a finished duel always publishes, never deduped away');
 }
 
 // ---------- live: count the writes a real client causes ----------

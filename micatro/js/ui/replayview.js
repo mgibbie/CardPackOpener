@@ -17,7 +17,9 @@ import { setStickerSource } from './stickers.js';
 const STEP_PAUSE = { instant: 0.22, move: 0.38, pack: 1.3 };   // seconds (at 1×) after an action before the next
 // An open booster pack (shop, skip tag, a tag / joker / mod's pack): live play sits on the pack screen while the
 // player chooses, so the replay holds it too (STEP_PAUSE.pack) — the pick never follows the opening at once.
-const PACK_STATE = /^(TAROT|PLANET|SPECTRAL|STANDARD|BUFFOON)_PACK$|^MOD_PACK/;
+// The Pages screen (Micatro's Pages) holds the same way: the 3 Pages show for a moment before the pick animates.
+// (and a Page's "remove a card" screen: the deck shows a moment before the removal)
+const PACK_STATE = /^(TAROT|PLANET|SPECTRAL|STANDARD|BUFFOON)_PACK$|^MOD_PACK|^PAGES$|^PAGE_REMOVE$/;
 
 const h = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -112,19 +114,33 @@ export async function startReplay(ctx) {
   if (scan.end.error) { const m = h('span', 'rb-mark stop'); m.style.left = pct(scan.end.error.index) + '%'; m.title = 'The replay stops here'; marks.appendChild(m); }
   scrubWrap.append(marks, range);
   // ante chips
+  const anteRow = h('div', 'rb-ante-row');
   const chips = h('div', 'rb-antes');
+  chips.id = 'rb-ante-list';
+  const more = B('…', 'rb-ante-more', 'Show all antes', () => setAnteExpanded(!anteRow.classList.contains('expanded')));
+  more.setAttribute('aria-controls', chips.id);
+  more.setAttribute('aria-expanded', 'false');
+  function setAnteExpanded(open) {
+    anteRow.classList.toggle('expanded', open);
+    more.setAttribute('aria-expanded', String(open));
+    more.setAttribute('aria-label', open ? 'Collapse ante list' : 'Show all antes');
+    more.title = open ? 'Collapse ante list' : 'Show all antes';
+  }
+  const portrait = matchMedia('(orientation: portrait)');
+  portrait.addEventListener('change', () => { if (!portrait.matches) setAnteExpanded(false); });
   for (const a of scan.antes) {
-    const c = B('Ante ' + a.ante, 'rb-ante', `Skip to Ante ${a.ante}`, () => seekTo(a.index));
+    const c = B('Ante ' + a.ante, 'rb-ante', `Skip to Ante ${a.ante}`, () => { setAnteExpanded(false); seekTo(a.index); });
     c.dataset.index = a.index; c.dataset.ante = a.ante;
     chips.appendChild(c);
   }
-  if (scan.winIndex != null) { const c = B('★ Win', 'rb-ante rb-win', 'Skip to the win', () => seekTo(scan.winIndex)); c.dataset.index = scan.winIndex; chips.appendChild(c); }
+  if (scan.winIndex != null) { const c = B('★ Win', 'rb-ante rb-win', 'Skip to the win', () => { setAnteExpanded(false); seekTo(scan.winIndex); }); c.dataset.index = scan.winIndex; chips.appendChild(c); }
+  anteRow.append(chips, more);
   const note = h('div', 'rb-note');
   note.style.display = 'none';
   const tuck = h('button', 'rb-handle', '▴ Replay');
   tuck.type = 'button';
   tuck.addEventListener('click', (e) => { e.stopPropagation(); poke(); });
-  bar.append(tuck, note, row1, scrubWrap, chips);
+  bar.append(tuck, note, row1, scrubWrap, anteRow);
   document.body.appendChild(bar);
   document.body.classList.add('has-replay-bar');
   // the controller's hint strip sits just above the bar (--rb-h)
@@ -185,6 +201,7 @@ export async function startReplay(ctx) {
     note.classList.toggle('warn', !!st.error || (!!meta.checksum && Engine.viewChecksum(v) !== meta.checksum));
     ctrl.mismatch = !!st.error || (!!meta.checksum && Engine.viewChecksum(v) !== meta.checksum);
     update();
+    poke();
   }
   function idle() { return new Promise((res) => { const t = () => (player.idle() ? res() : setTimeout(t, 40)); t(); }); }
   async function loop() {
@@ -212,7 +229,9 @@ export async function startReplay(ctx) {
     update();
     loop();
   }
-  function pause() { playing = false; token++; update(); }
+  // (the bar tucks away only while it plays: a stop that is not a touch on it, the controller's Play/Pause or the run
+  // running out, brings it back, or the end notice and the buttons stay hidden under the handle)
+  function pause() { playing = false; token++; update(); poke(); }
   function toggle() { if (playing) pause(); else play(); }
   function seekTo(i, { keepPlaying = true } = {}) {
     const was = playing && keepPlaying;
@@ -263,14 +282,13 @@ export async function startReplay(ctx) {
     if (was && !st.done) play();
   });
 
-  // keys
+  // keys (Space / Home / End here; the arrows / WASD move the reticle and Q / E step, C plays / pauses: ui/pad.js — the
+  // controller's LB / RB / X, controls sweep B5)
   addEventListener('keydown', (e) => {
     if (e.target && /INPUT|TEXTAREA/.test(e.target.tagName) && e.target !== range) return;
     if (ctx.UI.modalOpen()) return;
     const k = e.key;
     if (k === ' ' || k === 'Spacebar') { e.preventDefault(); poke(); toggle(); }
-    else if (k === 'ArrowRight') { e.preventDefault(); poke(); stepForward(); }
-    else if (k === 'ArrowLeft') { e.preventDefault(); poke(); stepBack(); }
     else if (k === 'Home') { poke(); seekTo(0, { keepPlaying: false }); }
     else if (k === 'End') { poke(); seekTo(total, { keepPlaying: false }); }
   });
@@ -282,7 +300,7 @@ export async function startReplay(ctx) {
   function poke() {
     bar.classList.remove('tucked'); document.body.classList.remove('rb-tucked');
     clearTimeout(tuckTimer);
-    tuckTimer = setTimeout(() => { if (playing && !scrubbing && !mouseIn) { bar.classList.add('tucked'); document.body.classList.add('rb-tucked'); } else if (playing) poke(); }, 4000);
+    tuckTimer = setTimeout(() => { if (playing && !scrubbing && !mouseIn && !anteRow.classList.contains('expanded')) { bar.classList.add('tucked'); document.body.classList.add('rb-tucked'); } else if (playing) poke(); }, 4000);
   }
   addEventListener('pointermove', (e) => { if (e.pointerType === 'mouse' && e.clientY > innerHeight - 220) poke(); }, { passive: true });
   // a tap on the TUCKED bar only brings it back: the click that follows lands on whatever slid up

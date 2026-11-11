@@ -150,7 +150,9 @@ export function unownPuzzleSpecial(resume) {
 export function unownPuzzleKey(k) {
 	const u = unownPuzzle;
 	if (u.solved) { if (['z', 'x', 'Enter', 'Escape'].includes(k)) close(true); return; }   // SimpleWaitPressAorB
-	if (k === 'Enter' || k === 'x' || k === 'Escape') { close(false); return; }   // UnownPuzzle_Quit
+	// UnownPuzzle_Quit. Crystal quits on START too, but here Enter is the start-menu
+	// key, pressed out of habit to "confirm" — it threw a half-done puzzle away
+	if (k === 'x' || k === 'Escape' || k === 'Backspace') { close(false); return; }
 	const dir = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right' }[k];
 	if (dir) {
 		const n = moveCursor(u.cursor, dir);
@@ -167,6 +169,32 @@ export function unownPuzzleKey(k) {
 	if (here) { sfx('ui_denied'); return; }
 	u.pieces[u.cursor] = u.held; u.held = 0; sfx('ui_select');   // SFX_PLACE_PUZZLE_PIECE_DOWN
 	if (isSolved(u.pieces)) { u.solved = true; sfx('fanfare_badge'); }   // SFX_1ST_PLACE
+}
+
+// TOUCH: a tap on a slot moves the cursor there and picks the piece up / puts it
+// down (one tap = the cursor walk + A); a tap on the START / CANCEL box quits;
+// once solved, any tap continues. (x, y) are canvas pixels; the last draw's
+// placement maps them onto the 160x144 GB screen. True when the tap was used.
+let lastView = null;
+// tests: where the last frame put the screen (canvas px = o + gb px * k)
+export const unownPuzzleTapView = () => lastView;
+export function unownPuzzleTap(x, y) {
+	const u = unownPuzzle;
+	if (!u.open || !lastView) return false;
+	if (u.solved) { unownPuzzleKey('z'); return true; }
+	const gx = (x - lastView.ox) / lastView.k, gy = (y - lastView.oy) / lastView.k;
+	if (gx < 0 || gy < 0 || gx >= 160 || gy >= 144) return false;
+	if (gx >= 32 && gx < 128 && gy >= 120) { unownPuzzleKey('x'); return true; }   // the START > CANCEL box (tiles 4-15, 15-17)
+	for (let s = 0; s < 36; s++) {
+		if (Math.floor(s / 6) === 5 && s % 6 > 0 && s % 6 < 5) continue;   // the bottom row's middle: the box, not slots
+		const [sx, sy] = slotXY(s);
+		if (gx >= sx && gx < sx + 24 && gy >= sy && gy < sy + 24) {
+			if (u.cursor !== s) { u.cursor = s; sfx('ui_move'); }
+			unownPuzzleKey('z');
+			return true;
+		}
+	}
+	return false;
 }
 
 // ---- drawing: the GB screen into a 160x144 buffer, scaled up into the menu band ----
@@ -216,12 +244,13 @@ export function drawUnownPuzzle(W, H) {
 	sctx.fillStyle = '#0b0a12'; sctx.fillRect(0, 0, W, H);
 	const k = Math.max(1, Math.floor(Math.min(W / 160, (H * 0.9) / 144)));
 	const sw = 160 * k, sh = 144 * k, ox = Math.floor((W - sw) / 2), oy = Math.floor((H - sh) / 2);
+	lastView = { ox, oy, k };
 	sctx.imageSmoothingEnabled = false;
 	sctx.drawImage(screen, ox, oy, sw, sh);
 	sctx.fillStyle = 'rgba(255,255,255,0.6)';
 	sctx.font = `${Math.max(11, Math.round(H / 40))}px m6x11plus, monospace`;
 	sctx.textAlign = 'center';
-	sctx.fillText(u.solved ? 'Z: continue' : 'Z: pick up / put down   ENTER or X: quit', W / 2, Math.min(H - 6, oy + sh + Math.max(14, H / 30)));
+	sctx.fillText(u.solved ? 'Z or tap: continue' : 'Z or tap: pick up / put down   X: quit', W / 2, Math.min(H - 6, oy + sh + Math.max(14, H / 30)));
 	sctx.textAlign = 'left';
 }
 

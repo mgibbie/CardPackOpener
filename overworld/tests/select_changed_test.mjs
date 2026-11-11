@@ -154,6 +154,10 @@ const quick = (file, diff) => run([file], { [file]: diff });
 		&& laneOfSuite('designwiki_sync_test.mjs') === 'designwiki' && laneOfSuite('doubles_test.mjs') === 'overworld', 'suites map to their lane (overworld is the default)');
 	A(laneOfPath('overworld/pokechess/engine.js') === 'overworld' && laneOfPath('server/mp.mjs') === null, 'paths map to a lane (server/ is shared: no lane)');
 	A(LANES.every(l => l.smoke.every(x => laneOfSuite(x) === l.name)), "each lane's smoke suites belong to that lane");
+	A(laneOfPath('scoundrel/js/engine.js') === 'scoundrel' && laneOfSuite('scoundrel_spectate_e2e_test.mjs') === 'scoundrel', 'Scoundrel has its own lane (scoundrel/** -> its engine + UI smoke)');
+	A(laneOfPath('battlecards/padnav.js') === 'battlecards' && laneOfPath('collection/index.html') === 'battlecards' && laneOfSuite('bc_keyboard_pages_test.mjs') === 'battlecards' && laneOfSuite('padboard_test.mjs') === 'battlecards',
+		'Battlecards has its own lane (battlecards/** + /collection/ -> its keyboard match smoke)');
+	A(laneOfPath('pairofpears/js/pear.js') === 'pairofpears' && laneOfSuite('pairofpears_spectate_e2e_test.mjs') === 'pairofpears', 'Pair of Pears has its own lane (pairofpears/** -> its engine + UI smoke)');
 }
 // sharding: every suite in exactly one shard, deterministic, balanced on the committed timings
 {

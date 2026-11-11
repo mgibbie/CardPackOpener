@@ -100,8 +100,9 @@ try {
 	// beat 5 — Sky Pillar Top: Rayquaza wakes and flies off
 	await enter(page, 'SkyPillar_Top');
 	A(await page.evaluate(() => window.__ow.awState()) === 5, 'waking RAYQUAZA advances the chain to 5');
-	// the catch is untouched: Rayquaza is still a real encounter on its tile
-	A(await page.evaluate(() => window.__ow.legendaryHere()?.species) === 'rayquaza', 'RAYQUAZA is still catchable at the summit (encounter decoupled from the plot)');
+	// it has flown to Sootopolis: no catch at the summit yet (pokeemerald shows the
+	// still RAYQUAZA only at VAR_SKY_PILLAR_STATE >= 2; bug:1794338908364)
+	A(await page.evaluate(() => window.__ow.legendaryHere()) === null, 'RAYQUAZA is not at the summit while it is away calming Sootopolis');
 
 	// beat 6 — Sootopolis: Rayquaza calms them; the crisis ends and weather clears
 	await enter(page, 'SootopolisCity');
@@ -111,6 +112,10 @@ try {
 	// re-entering a resolved map replays nothing
 	await enter(page, 'SootopolisCity');
 	A(await page.evaluate(() => window.__ow.awState()) === 6 && await page.evaluate(() => !window.__ow.cutscene.blocking), 'a resolved chain never replays');
+
+	// ...and once the crisis is over it waits at the summit to be caught
+	await enter(page, 'SkyPillar_Top');
+	A(await page.evaluate(() => window.__ow.legendaryHere()?.species) === 'rayquaza', 'RAYQUAZA is catchable at the summit once the crisis resolves');
 
 	const fatal = errors.filter(e => !/Failed to load resource/i.test(e));
 	A(fatal.length === 0, 'no uncaught client errors during the run', fatal.slice(0, 4).join(' | '));

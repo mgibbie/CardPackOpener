@@ -440,6 +440,9 @@ try {
 		const d = await E(() => {
 			const pl = G.Game.player, T = G.Team, out = {};
 			pl.level = 25; G.Dynamax.reset(); T.tick(5);
+			// the HP bonus the team carries going in: its own +20, plus whatever the level-up card
+			// clicked above gave (it is random; a max-HP card makes it +40 — CI 2026-11-07)
+			out.own = pl.maxHp - T.members[T.cur].base;
 			out.started = G.Dynamax.tryStart(pl) !== false && G.Dynamax.active;
 			out.dynMax = pl.maxHp; out.preBonus = T.bonus; out.base0 = T.members[0].base;
 			pl.hp = pl.maxHp;
@@ -450,7 +453,7 @@ try {
 			return out;
 		});
 		A(d.started && d.swapped && !d.active && !d.dyn && d.cd === 240, 'Dynamax ends on a swap (G.Dynamax.stop: its 240 s cooldown starts)', JSON.stringify(d));
-		A(d.bonus === 20 && d.maxHp === d.base1 + 20 && d.saved0 === d.base0 + 20, 'the Dynamax HP bonus is removed first: the team keeps only its own +20 and the old one\'s HP is back in proportion', JSON.stringify(d));
+		A(d.own >= 20 && d.bonus === d.own && d.maxHp === d.base1 + d.own && d.saved0 === d.base0 + d.own, 'the Dynamax HP bonus is removed first: the team keeps only its own bonus (+20, plus any max-HP card) and the old one\'s HP is back in proportion', JSON.stringify(d));
 
 		// ================= 6. the HUD card (click), the swap button, the pad, the canvas text =================
 		await E(() => { G.Team.tick(5); });

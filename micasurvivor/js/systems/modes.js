@@ -64,8 +64,8 @@ G.Modes = (() => {
   const save = () => G.DB && G.DB.save;
 
   // ======================= Desafío diario (save_data.gd 556-572) =======================
-  /** La semilla del día: AAAAMMDD con la fecha del aparato. */
-  function dailySeed(d = new Date()) { return d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate(); }
+  /** La semilla del día: AAAAMMDD UTC, igual para todas las zonas horarias. */
+  function dailySeed(d = new Date()) { return d.getUTCFullYear() * 10000 + (d.getUTCMonth() + 1) * 100 + d.getUTCDate(); }
   /** El Pokémon del día: uno no legendario con sprites, el mismo para todos. */
   function dailyDex(sd) {
     const pool = G.DEX.filter(p => !p.leg && G.SPRITE_META[p.dex]).map(p => p.dex);

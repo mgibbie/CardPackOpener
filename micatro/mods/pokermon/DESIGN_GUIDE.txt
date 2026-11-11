@@ -268,8 +268,8 @@ never needs another Legendary (or any named partner) held: a partner clause is w
 condition, a count on the card, a resource the run produces). Group flavour stays (the Regis still convert, the Swords still share a
 rider), but each member's rider reads only things one card can reach. A form that used to need a partner is reached solo, by a count on
 the card or a live board / deck read (Giratina's Origin after 10 destroyed, Keldeo's Resolute after 25 Hearts, the Therian formes after
-4 rounds held, Kyurem's White / Black by your Fire vs Lightning Jokers). The one kept pair rule is Kyogre / Groudon's Primal Clash: it is
-a downside that only exists while both are held (each is complete alone). Changing a shipped Legendary this way: gate on rulesRev
+4 rounds held, Kyurem's White / Black by your Fire vs Lightning Jokers). The one kept pair rule was Kyogre / Groudon's Primal Clash (a
+downside that only existed while both were held); the owner removed it too (contentRev 111, the weather trio below). Changing a shipped Legendary this way: gate on rulesRev
 (contentRev 59, solo59) so a run recorded before re-plays exactly; keep any progress counter under both rules.
 
 House pattern: a TRIO (the owner's Regirock / Regice / Registeel, jokers/pokejokers_designs.js regi_converts):
@@ -287,6 +287,26 @@ House pattern: a TRIO (the owner's Regirock / Regice / Registeel, jokers/pokejok
     The card's OWN tooltip must say the new number: answer the pure engine hook enh_loc_vars (describe.js enh_live_vars) with the
     same function the scoring hook uses (regi_enh_vars), so the Stone card reads +100 (+ its bank) and the Steel card X2, energized too.
 
+OWNER SIMPLIFICATION (2026-11-09, contentRev 111, SIMPLE_TRIO_REV; jokers/pokejokers_designs.js): "Kyogre's tooltip (Primordial Sea +
+Primal Clash + Castform) is unreadable". The six cards are now plain, separate Legendaries: NO weather, NO Castform, NO reference to each other.
+  - Kyogre (Water, L $20): +1 hand each round; scored Clubs retrigger once and give X1.25 (Xmult_multi, +5%: 1.3125 / 1.375 / 1.4375).
+  - Groudon (Earth, L $20): +1 discard each round; scored Hearts and Diamonds give X1.25 (Xmult_multi, unchanged).
+  - Rayquaza (Dragon, L $20): +1 hand and +1 discard each round; gains X0.2 whenever a played hand contains a Straight or a Flush (its
+    Dragon Ascent bank, unchanged).
+  - Primal Kyogre (Blue Orb): +2 hands; scored Clubs retrigger twice and give X1.5 (Xmult_multi, +5%: 1.575 / 1.65 / 1.725).
+  - Primal Groudon (Red Orb): +2 discards; scored Hearts and Diamonds give X1.75 (Xmult_multi2, +5%: 1.8375 / 1.925 / 2.0125; a new field,
+    since Xmult_multi X1.5 is the r110 number).
+  - Mega Rayquaza: +2 hands and +2 discards; gains X0.4 per Straight or Flush (Rayquaza's bank, CARRY).
+  Gone: the Primal Clash, Rayquaza's calm, Kyogre / Groudon / the Primals making rain or sun, and Castform's lock (Castform reads its own
+  forecast). The other weather sources stand (Volcarona / Koraidon sun, Miraidon terrain, Alolan Ninetales snow, Sandaconda sand). Hands /
+  discards / retriggers fixed; banks never retroactive. The Orbs keep their pool gate (only while you hold the Legendary).
+  Lesson for a new design: a Legendary's tooltip should read on its own. A rule that names other cards (a clash, a calm, a lock on a
+  third card) makes every one of them unreadable; prefer the solo payoff.
+  Rev mechanics: everything below stays behind the rules-rev check (trio111) so an r110 run replays exactly. A NEW number on a card that
+  had none is a config field dropped on an old rev at set_ability (trio_set: an Energy-inert card stays inert there, which keeps the old
+  Energy targets), and a changed number gets its OWN field (Primal Groudon's Xmult_multi2) rather than a new value in the old one; a card
+  made on an old rev but played on the new one gets the field on its next calculate, scaled by its Energy (trio_fields).
+(The pattern below is the r33-r110 design, kept for old runs.)
 House pattern: a WEATHER TRIO, clash and calm (the owner's Kyogre / Groudon / Rayquaza, jokers/pokejokers_designs.js primal_read):
   - Two rivals, each a full Legendary alone (Kyogre: +1 hand, scored Clubs retrigger; Groudon: +1 discard, scored Hearts / Diamonds
     X1.25), and each LOCKS Castform's weather (Rainy / Sunny) on its Forecast read.
@@ -531,7 +551,7 @@ House pattern: a LEGENDARY THAT HATCHES ANOTHER JOKER (the owner's Manaphy, Egg 
 
 House pattern: a CREATION TRIO, two rule-benders and an earned form (the owner's Dialga / Palkia / Giratina, jokers/pokejokers_designs.js
 roar_on / spacial_rend / origin_forme):
-  - Each is a Legendary rule-bender with NO number of its own, so it is Energy-inert (poke_no_energy_field, Kyogre's way): Dialga's
+  - Each is a Legendary rule-bender with NO number of its own, so it is Energy-inert (poke_no_energy_field; Kyogre was too, before r111): Dialga's
     retrigger and Palkia's slot and hand size never grow.
   - Dialga, Roar of Time: the round's first hand is "scored twice" as a WHOLE-HAND RETRIGGER, not a second evaluation: a repetition of
     every card of G.play while current_round.hands_played === 0 (Whiscash's Earthquake without its team gate; a discard first doesn't use
@@ -763,8 +783,8 @@ House pattern: a BOSS DISABLER beside Chicot (the Gen 9 Chi-Yu, Beads of Ruin; b
   setting_blind never checks: vanilla two-Chicot behaviour is left alone). Energy-inert, not Blueprint.
 House pattern: a WEATHER SOURCE (the Gen 9 Koraidon / Miraidon): a Legendary that makes the weather adds itself to the ONE shared check every reader
   uses (volcarona_sun for the sun: Cherrim / Larvesta / Lurantis / Castform / Protosynthesis; is_electric_terrain for the terrain), never a copy of it,
-  so every present and future reader agrees. It ADDS weather, never removes another's: Kyogre's lock still keeps Castform Rainy and Swift Swim's rain
-  still falls. Live (bought / sold / debuffed changes it at once). Pair it with a number (X2 + X0.5 per Paradox of its era) so Energy has a target.
+  so every present and future reader agrees. It ADDS weather, never removes another's: Swift Swim's rain still falls (before r111 Kyogre's lock
+  also kept Castform Rainy). Live (bought / sold / debuffed changes it at once). Pair it with a number (X2 + X0.5 per Paradox of its era) so Energy has a target.
 House pattern: a FORM PER ANTE with its own type (the Gen 9 Ogerpon's masks; OGERPON_MASKS / mask_now / ogerpon_sync): Deerling's derived cycle
   (mask_of_ante: nothing rolled or stored) + Greninja's protean_set for the type, run from the center's `update` hook (it runs before every calculate,
   so other jokers' type counts see the new mask at once), on add_to_deck and in the tooltip; Monotype-exempt (it changes on its own). One energy field
@@ -822,17 +842,18 @@ House pattern: PROTEAN, a joker that adopts the team's type (the Gen 6 Greninja;
     still overrides; set_debuff + Kecleon re-sync on a change). Its CURRENT type's Energy matches. Monotype-exempt (poke_mono_exempt), as
     Castform: its type moves on its own.
   - Pay off the team it joined: X(1.5 + 0.5 per OTHER undebuffed joker of its current type), `Xmult` and `Xmult_mod` both +20%.
-House pattern: RAIN, a weather condition shared with the weather trio (the Gen 5 Tympole line, Swift Swim; swift_swim_raining):
+House pattern: RAIN, a weather condition (the Gen 5 Tympole line, Swift Swim; swift_swim_raining):
   - "Raining" = (a) the round's FIRST deal read Rainy by Castform's own forecast() (Clubs held more than Hearts + Diamonds and more than
-    Spades; a tie is not), remembered for the round on the joker (`rain_round`, read at Castform's first_deal moment), OR (b) a WORKING
-    Kyogre: held, undebuffed and not the loser of this round's Primal Clash (primal_on), which is live (bought or sold mid-round, it
+    Spades; a tie is not), remembered for the round on the joker (`rain_round`, read at Castform's first_deal moment). From contentRev 111
+    that is all (Kyogre makes no rain). Before r111, OR (b) a WORKING Kyogre: held, undebuffed and not the loser of this round's Primal Clash (primal_on), which is live (bought or sold mid-round, it
     changes at once). Out of a round (the shop) only (b) counts; a joker bought after the first deal has no forecast that round.
-  - It is Cherrim's sun (2.6) the other way round, so the two read the same weather the same way: Groudon's clash win means no rain (and
+  - (Before r111.) It is Cherrim's sun (2.6) the other way round, so the two read the same weather the same way: Groudon's clash win means no rain (and
     its win needs at least as many red cards as Clubs, so the forecast can't be Rainy then either); Rayquaza's calm keeps Kyogre working,
     so it rains; Groudon ALONE does not stop a Clubs forecast (as Kyogre alone doesn't stop Cherrim's red one). Castform's LOCK (Kyogre ->
     Rainy, Groudon -> Sunny) is Castform's own form rule; don't reuse it for a weather condition.
   - The payoff doubles a number in an energy field (Tympole +30 / Palpitoad +50 / Seismitoad +50 Chips, `chips` +30%: Energy first, then
     the doubling); a fixed rider (Seismitoad's Club retrigger in rain) stacks with Kyogre's own Club retrigger (two retriggers).
+  - The tooltip note names only what makes the rain now: "(Rain: Clubs held most on the round's first deal)".
 House pattern: a LUCKY-ONLY odds boost (the Gen 5 Pidove line, Super Luck; super_luck):
   - The mod_probability pass Venonat uses, filtered on the roll's identifier: a Lucky card's two rolls are 'lucky_mult' (1 in 5) and
     'lucky_money' (1 in 15), so +1 there and nowhere else (Glass, Wheel of Fortune, every joker's chance untouched). It is added BEFORE Oops!
@@ -848,7 +869,7 @@ House pattern: a RIGHT-NEIGHBOUR theft with a payout (the Gen 5 Purrloin line, P
     through Pokermon's Drain, one way (poke_drain(card, target, 1, true): nothing goes to the thief), which never takes a Joker below $1 (one
     at $1 loses nothing). Nothing on its right (the right end, alone): no loss. A debuffed neighbour still loses it (sell value is no ability).
   - The money is earned either way, a fixed calc_dollar_bonus row (Purrloin $2, Liepard $4; Pachirisu's shape: Blueprint never copies it, a
-    debuffed thief pays nothing). With nothing to energize, the line is Energy-inert (poke_no_energy_field), as Kyogre.
+    debuffed thief pays nothing). With nothing to energize, the line is Energy-inert (poke_no_energy_field), as Dialga.
 House pattern: HANDS BEFORE THE FIRST DISCARD (the Gen 5 Blitzle line, Motor Drive; motor_count):
   - "+N for each hand played this round before any discard, this one included": current_round.discards_used === 0 ? hands_played + 1 : 0
     while scoring (hands_played is the pre-hand count: the 1st hand counts 1). After a player discard it is 0 for the rest of the round;
@@ -1035,6 +1056,8 @@ House pattern: a FLIPPED-RANK chip rule, card level (the Gen 6 Malamar, Topsy-Tu
 House pattern: the ENDS of the scoring hand retrigger (the Gen 6 Hawlucha, Flying Press; flying_press):
   - scoring_hand[0] and scoring_hand[last] by POSITION (Cinccino's / Shellos's rule: a debuffed card there gets nothing, the ends never shift
     inward); one scored card is both ends and retriggers ONCE, not twice (say it on the card). A single-stage Rare's whole ability.
+House pattern: a RANK FORMATION (Mega Barbaracle, batch F): scored 7s give Chips and X Mult; if at least two undebuffed 7s are
+  in the scoring hand, each also retriggers once. Count the scoring hand, not the full played hand, and never count retriggers as new cards.
 House pattern: a RUN RECORD read live (the Gen 6 Klefki, Key Ring; vouchers_redeemed):
   - X1 + X0.25 per Voucher on G.GAME.used_vouchers (the run's own record: a deck's / challenge's starting Voucher is on it too). READ, not
     banked: a Klefki bought late sees every Voucher before it, and Energy (`Xmult_mod` +20%) raises every Voucher's share at once.
@@ -1152,8 +1175,8 @@ House pattern: a HAND-TYPE BANK and a RUN COUNT (the Gen 7 Jangmo-o line, Clango
     X1 + X0.15 per Full House played this RUN, read live from G.GAME.hands['Full House'].played (Chatot's record: a late Kommo-o counts
     every one; the hand being played already counts).
 House pattern: SANDSTORM, the house sandstorm (the Gen 8 Sandaconda; jokers/pokejokers_designs.js is_sandstorm, exported):
-  - The THIRD shared weather, beside the sun (cherrim_sunny: a red first deal, a working Groudon, Volcarona) and the rain
-    (swift_swim_raining: a Clubs first deal, a working Kyogre). is_sandstorm() is true while an UNDEBUFFED Sandaconda is held: every round
+  - The THIRD shared weather, beside the sun (cherrim_sunny: a red first deal, Volcarona / Koraidon; before r111 a working Groudon too) and
+    the rain (swift_swim_raining: a Clubs first deal; before r111 a working Kyogre too). is_sandstorm() is true while an UNDEBUFFED Sandaconda is held: every round
     is a sandstorm, live (bought, sold or debuffed, it changes at once) and in the shop too (Volcarona's way). No forecast reads it yet: a
     future sand source (a Sand Stream ability, a sand-raising Legendary) adds itself THERE, and every sand reader follows.
   - A sand READER reads is_sandstorm() at the moment it pays (no per-round memory needed, since it has no first-deal part).
@@ -1169,7 +1192,7 @@ House pattern: ELECTRIC TERRAIN, the house terrain (the Gen 9 Future Paradox Pok
   - A Diamonds-heavy first deal is red, so it is sunny too: an Ancient and a Future are both boosted on an all-Diamonds deal.
 House pattern: PARADOX BOOSTS, Protosynthesis / Quark Drive (the Gen 9 Paradox Pokemon): "boosted" = 50% stronger. A +Mult / +Chips
   number x1.5; an X number's BONUS part x1.5 (X2 -> X2.5, X1.2 -> X1.3; boost_add / boost_x). Ancient: while it's sunny
-  (cherrim_sunny: the red first deal, a working Groudon, Volcarona — read from its own first deal, Larvesta's fields); Future: on Electric
+  (cherrim_sunny: the red first deal, Volcarona, Koraidon (before r111 a working Groudon) — read from its own first deal, Larvesta's fields); Future: on Electric
   Terrain. Energy raises the base number at the usual share; the boost multiplies the energized value. Blueprint copies the boosted value
   (it never reads the weather itself). A creation (Iron Bundle's Tarot / Planet) is never boosted.
   - Sandaconda's own payoff is weather-free (scored Stone +20 Chips and X1.2: Stone "extra" rules on the joker, Sand Stream's shape).
@@ -1263,8 +1286,8 @@ House pattern: a RUN COUNTER the mod keeps from the run's start (a late buy coun
   sell_card + start_dissolve hooks: a Joker sold from your row, or one of yours destroyed; an evolution never: Basculegion).
 House pattern: a FACE THAT BREAKS AND RE-FORMS (the Gen 8 Eiscue, Ice Face; ice_face): X2.5 while intact; in `after` of the round's FIRST
   hand, if the round's chips plus that hand's total are still below the Blind, it breaks (form 'noice', X1.25; its own card); it re-forms on
-  the first deal of a round whose forecast is Snowy (round_forecast: Castform's read — Kyogre / Groudon locks, Volcarona's sun, else the
-  suit held most). The first weather READER outside Castform; Snowy has no other source yet.
+  the first deal of a round whose forecast is Snowy (round_forecast: Castform's read — Volcarona's sun, else the suit held most; before
+  r111 Kyogre / Groudon's locks too). The first weather READER outside Castform; Snowy has no other source yet.
 House pattern: an ALTERNATING FORM (the Gen 8 Morpeko, Hunger Switch): two numbers, the form flipping in `after` of every hand played (a
   debuffed hand too), carried across rounds; each form its own card (ability.extra.form). Both numbers are energy fields.
 House pattern: a SELF-DESTRUCT COUNTDOWN (the Gen 8 Cursola, Perish Body): `perish_rounds` (fixed) down by 1 at each main end_of_round
@@ -1284,7 +1307,7 @@ House pattern: REGIONAL FORMS (the owner's regional batch A, the 18 Alolan forms
   - The REGIONAL PILL (systems/types.js region_badge): every regional form shows "Alolan" / "Galarian" / "Hisuian" / "Paldean" between its
     rarity and type pills, read from `poke_region` or the key (`j_<prefix>_<region>_<name>`), so a new form needs nothing more. Display only.
 House pattern: SNOW, the house snow (Alolan Sandshrew / Sandslash / Ninetales; pokejokers_designs.js is_snowy / snow_read, exported): the FOURTH
-  weather. Snowy = the round's first-deal forecast is Snowy (round_forecast: Castform's read with the Kyogre / Groudon locks and Volcarona's sun),
+  weather. Snowy = the round's first-deal forecast is Snowy (round_forecast: Castform's read with Volcarona's sun; before r111 the Kyogre / Groudon locks),
   read once a round on the card, OR an undebuffed Alolan Ninetales held (Snow Warning: live, the shop too). Snow adds, never removes; Castform's
   form never changes for Ninetales; Eiscue's ice re-forms on a snowy round (Ninetales included, from the batch's rev). A future snow source
   (Snow Warning on another joker) adds itself to snow_warning.
@@ -1746,14 +1769,14 @@ Seeds and Flowers (3.9.1)
       (Roserade's 3 is one more minimum, so Roserade + Cherrim is still 3, never 2) and the BEST X instead of the card's X2
       ("instead" never stacks between two boosters). Shaymin's +1 stays on top (X2.5 -> X3.5).
     - The weather: "sunny" = Castform's forecast() on the round's first deal reads Sunny (Hearts + Diamonds held most, a tie
-      isn't), remembered for the round; OR a working Groudon (Desolate Land: held, undebuffed, not this round's Primal Clash
-      loser; live). Rayquaza's calm keeps Groudon working, so Groudon still means sun. Overcast otherwise.
+      isn't), remembered for the round; before contentRev 111 OR a working Groudon (Desolate Land: held, undebuffed, not this round's
+      Primal Clash loser; live; Rayquaza's calm kept Groudon working). Overcast otherwise.
       Gen 5 batch 3: an undebuffed VOLCARONA is a third sun source (always sunny, live, in the shop too): it ADDS sun (Cherrim, Larvesta;
-      Castform turns Sunny on its first deal) and never stops rain: Kyogre's lock or clash win keeps Castform Rainy, Swift Swim still
-      reads Kyogre, so with both it is raining AND sunny. A new sun reader reads the forecast on its own first deal (`sun_round`, sun_read).
+      Castform turns Sunny on its first deal) and never stops rain (a Clubs first deal still rains; before r111 Kyogre's lock or clash
+      win kept Castform Rainy and Swift Swim read Kyogre, so with both it was raining AND sunny). A new sun reader reads the forecast on its own first deal (`sun_round`, sun_read).
     - Energy on the boosted X as a per-card X (Xmult_multi +5%: X2.5 -> X2.625 / X2.75 / X2.875); the Basic carries the same
       field (unused by it) so Energy spent before evolving is kept. Form art: the Sunshine cell beside the card on the 3.9.1
-      sheet, drawn from a LIVE view form (the center's poke_view_form hook), so a Groudon bought or sold redraws it at once.
+      sheet, drawn from a LIVE view form (the center's poke_view_form hook), so a Volcarona bought or sold redraws it at once.
   - Seed makers: the Hoppip line (discards become Seeds, then the joker self-destructs on
     discard), Bellossom, Roselia, Nuzleaf/Shiftry (drawn Flowers become Seeds), Bramblin
     (second Queen scored each round), Budew (a Negative Miracle Seed), the owner's Cherubi /
@@ -1824,6 +1847,17 @@ How Megas work:
   - Mega batch D (contentRev 84, jokers/pokejokers_megas.js) adds the 18 classic X/Y + ORAS Megas and
     Mega Salamence (Pokermon's): 53 Pokermon Megas. A new Mega on an EXISTING base: give the base `megas` behind
     the rules rev (attach_classic_megas' getter) so old runs re-play their Mega Stone onto the same joker.
+    Mega Salamence retains Salamence's +1 temporary hand size per 5 Straights at blind select (r106).
+  - Mega Dimension (r108): Staraptor, Glimmora, Tatsugiri, Chimecho, Meowstic, Crabominable and
+    Scovillain. Mega Stone targets are revision-gated; Tatsugiri's form, Meowstic's gender and its
+    male bank, Chimecho's restored-Glass count, and Glimmora's per-hand conversion count survive
+    their Mega swaps. Staraptor's Mega art is Fighting, so it counts only actual Colorless Jokers.
+  - Final Megas (r109): Absol Z, Garchomp Z, Lucario Z, Heatran, Golurk, Golisopod, Magearna and
+    Zeraora. Leftmost / rightmost select original / Z for the three Z branches. Heatran requires
+    Pokermon+ and Golisopod requires Nacho; their Mega Stones return them to their add-on bases.
+    Golisopod carries its accumulated hand-size gain through both swaps and loses it on fainting.
+    Mega Tatsugiri's Droopy / Stretchy and Mega Magearna's Original Color use the credited variant
+    atlas; Magearna's Mega appearance and Soul-Heart bank persist through reversion.
   - BANKS ACROSS A MEGA (house, batch D CARRY): a bank both forms use crosses as is (Garchomp's Bite Mult, the Eon
     duo's X); a bank only one form uses rides along in ability.extra.poke_kept and comes back on the revert
     (Aggron's eaten X, Banette's Mult, Mega Banette's own X). Say on the card when a bank waits ("Aggron's X2.2 is
@@ -1888,7 +1922,7 @@ Type and keyword colours (pokesprites.lua pokermon.colours; Micatro TYPE_COLOURS
   {C:poke_bird}    Missingno
   {C:poke_pocket}  Pocket Packs
   poke_sun, poke_rain, poke_sand, poke_snow: defined in 3.9.1 for weather designs (Castform,
-    Kyogre/Groudon, Hippowdon). All four are now used (Kyogre / Groudon too: "always {C:poke_rain}Rainy{}"): poke_sand by the owner's Flygon
+    Kyogre/Groudon, Hippowdon). All four are now used (Kyogre / Groudon's texts used them until r111, which dropped their weather): poke_sand by the owner's Flygon
     ("{C:poke_sand}Sandstorm:") and Hippopotas / Hippowdon ("{C:poke_sand}Sand Stream:"), poke_sun / poke_rain / poke_snow by the owner's Castform
     ("{C:poke_sun}Sunny Form:", "{C:poke_rain}Rainy Form:", "{C:poke_snow}Snowy Form:").
     Gen 8 batch 1: poke_sand for the house sandstorm (Sandaconda, "{C:poke_sand}Sandstorm:"; is_sandstorm, 2.1).
@@ -2092,9 +2126,9 @@ Pitfalls:
     copies it like Remoraid: a second retrigger. The tooltip says Active! / Used this round / Inactive: k/2 others.
     House: an UNGATED first-hand whole-hand retrigger on a Legendary (the owner's Dialga, Roar of Time, Metal; 2.1 creation trio): the
     first-hand gate alone, paid for with a Legendary slot and no number (Energy-inert).
-    House: a SUIT-gated retrigger on a Legendary (the owner's Kyogre, Primordial Sea): every scored Club retriggers once, plus
-    +1 hand each round; it shares the round with Groudon under Primal Clash (the weather trio, 2.1), so it is off on Groudon's
-    rounds. Energy-inert (poke_no_energy_field): the retrigger and the hand are fixed.
+    House: a SUIT-gated retrigger on a Legendary (the owner's Kyogre): every scored Club retriggers once and gives X1.25, plus
+    +1 hand each round (contentRev 111; the X is its Energy target, Xmult_multi +5%; the retrigger and the hand are fixed). Before r111
+    it shared the round with Groudon under Primal Clash and was Energy-inert.
   - Close to vanilla: Krabby is a smaller Scary Face (+20 instead of +30 Chips); Slowpoke is a
     weaker Acrobat (X2 instead of X3 on the final hand); Carvanha/Sharpedo use Card Sharp's
     condition; Remoraid is a one-hand Seltzer; Lapras resembles Throwback; Staryu resembles
@@ -2515,7 +2549,7 @@ Under-explored:
     (Jangmo-o line, Reshiram, Zekrom, Kyurem, Zygarde, Regidrago; the Gible line is now the owner's, below). The owner's
     Rayquaza (L $20) is the type's hand-condition growth on a Legendary: Dragon Ascent X0.2 per played
     hand containing a Straight or a Flush (once for a Straight Flush; Energy +20% on the gain), plus
-    Delta Stream, +1 hand and +1 discard, which also calms Kyogre / Groudon's Primal Clash (2.1). The Lati twins draw as Psychic.
+    +1 hand and +1 discard each round (before contentRev 111 it also calmed Kyogre / Groudon's Primal Clash, 2.1). The Lati twins draw as Psychic.
 Pitfalls:
   - "Base Chips and Mult doubled" (Axew) multiplies hand levels. With Planet stacking this is
     exponential, so keep it to Nature hands or once per round.
@@ -2548,7 +2582,8 @@ Identity: Chips, Stone (and Glass), Ancient fossils, Hazards, retriggers.
     - Sand (the owner's Hippopotas line, C $5 -> S $8): scored Stone cards +30 / +60 EXTRA Chips (stacks with Regirock),
       and Hippowdon turns 1 unenhanced card in hand Stone on each round's first deal (the Sand Stream pattern, 2.1).
     - Weather (the owner's Groudon, L $20, Desolate Land): +1 discard each round, scored Hearts / Diamonds X1.25 each
-      (Xmult_multi: X1.3125 / X1.375 / X1.4375 energized), Castform locked Sunny; Primal Clash with Kyogre (2.1).
+      (Xmult_multi: X1.3125 / X1.375 / X1.4375 energized); plain since contentRev 111 (before it: Castform locked Sunny, Primal Clash
+      with Kyogre; 2.1).
 Hooks: individual 33, end_of_round 29, joker_main 26, before 14, repetition 13, add_to_deck 10,
   after 9, setting_blind 8
 Examples:

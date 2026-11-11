@@ -43,7 +43,7 @@ globalThis.localStorage = { getItem() { return null; }, setItem() { }, removeIte
 const { Session } = await import(pathToFileURL(path.join(ROOT, 'micatro/js/engine/session.js')).href);
 const sess = new Session();
 sess.start({ seed: 'DECKSPEC', customDeck: { name: 'Spec Deck', back: 'b_green', jokers: [{ key: 'j_joker' }] } });
-sess.act({ type: 'select_blind' });
+sess.act({ type: 'select_blind' }); sess.act({ type: 'pick_page', index: 0 }); // (Pages)
 const SNAP = { view: sess.view(), events: [] };
 
 // ---- server: static files + an /api/mp stub (the deck row behaves like server/mp.mjs: rev-guarded)
@@ -212,7 +212,7 @@ try {
 		A(v.custom_deck && v.custom_deck.name === 'Test Deck' && v.back === 'b_blue' && rec.customDeck && rec.customDeck.name === 'Test Deck', 'the run starts with the custom deck (view + recipe)', JSON.stringify(v.custom_deck));
 		A(v.dollars === 20 && v.deck_total === 41 && v.areas.jokers.length === 1 && v.areas.jokers[0].center === 'j_joker' && v.areas.jokers[0].eternal, '$20, 41 cards, an Eternal Joker', JSON.stringify({ d: v.dollars, n: v.deck_total, j: v.areas.jokers }));
 		A(v.deck_list.filter(x => x[0] === 'H_A' && x[1] === 'm_glass').length === 2, 'two Glass Aces of Hearts in the deck');
-		await page.evaluate(() => window.__micatro.act({ type: 'select_blind' }));
+		await page.evaluate(() => window.__micatro.selectBlind());
 		await idle(page);
 		A(await page.evaluate(() => { const G = window.__micatro.session && window.__micatro.view(); return G.hands_left === 5; }), 'Hands: 5');
 		A(await page.evaluate(async () => { const { G } = await import('/micatro/js/engine/core.js'); const ace = G.playing_cards.find(c => c.base.value === 'Ace'); return !!ace && ace.is_face(); }), 'the rule plays: Aces are face cards');

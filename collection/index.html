@@ -27,6 +27,11 @@
 	a { color: var(--blue); }
 	header { background: var(--panel); border-bottom: 1px solid var(--border); }
 	.wiki-card:hover .wiki-face { box-shadow: 0 5px 16px rgba(166,136,255,.4); }
+	/* a card = a div holding its wiki link and (for a missing card) the craft button:
+	   a <button> may not sit inside an <a> */
+	.wiki-card { position: relative; }
+	.wiki-card .wiki-link { display: block; border-radius: 10px; -webkit-touch-callout: none; }
+	.wiki-card .wiki-link img { -webkit-user-select: none; user-select: none; }
 	/* the page keeps its own single header; the floating compact topbar cluster
 	   (site/topbar.js) sits top-right, so clear room for it */
 	header { padding-right: 104px; }
@@ -35,7 +40,7 @@
 	#content { max-width: 1180px; margin: 0 auto; }
 	.toolbar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin: 14px 0 4px; }
 	.toolbar input[type=search] { flex: 1; min-width: 160px; max-width: 300px; padding: 7px 10px; border: 1px solid var(--border); border-radius: 6px; font: inherit; background: var(--panel); color: var(--text); }
-	.toolbar select { padding: 6px 8px; border: 1px solid var(--border); border-radius: 6px; font: inherit; background: var(--panel); color: var(--text); }
+	.toolbar select { max-width: 100%; min-width: 0; padding: 6px 8px; border: 1px solid var(--border); border-radius: 6px; font: inherit; background: var(--panel); color: var(--text); }
 	.own-summary { color: var(--muted); margin: 6px 0 0; }
 	.dust-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 8px 0 0; }
 	.dust-chip { background: var(--panel); border: 1px solid var(--border); border-radius: 999px; padding: 5px 14px; color: var(--text); font-weight: 600; }
@@ -144,6 +149,7 @@
 <script type="module">
 import * as MP from '../battlecards/mpmode.js';
 import { keywordsFor, richHtml } from '../battlecards/keywords.js';
+import { initFocusNav } from '/site/focusnav.js';
 if (!MP.hasToken()) location.replace('/login/?next=' + encodeURIComponent('/collection/'));
 
 const $ = id => document.getElementById(id);
@@ -306,12 +312,19 @@ async function render() {
 			const canvas = CardArt.drawCardFace(card, { count });
 			const img = document.createElement('img');
 			img.className = 'wiki-face'; img.loading = 'lazy'; img.alt = card.name;
+			// its size up front: an unsized lazy image is 0px tall until it decodes, so the grid
+			// reflowed under a finger (a long-press read the card that slid in, not the one pressed)
+			img.width = canvas.width; img.height = canvas.height;
 			img.src = canvas.toDataURL();
-			const a = document.createElement('a');
+			const a = document.createElement('div');
 			a.className = 'wiki-card' + (count === 0 ? ' unowned' : ''); // dim the ones you don't own
 			a.dataset.cid = card.id; a.dataset.count = count;
-			a.href = '/designwiki/#/cards/' + card.id;
-			a.appendChild(img);
+			const link = document.createElement('a');
+			link.className = 'wiki-link';
+			link.href = '/designwiki/#/cards/' + card.id;
+			link.setAttribute('aria-label', `${card.name} — open its wiki page`);
+			link.appendChild(img);
+			a.appendChild(link);
 			// craft a missing pool card in place (server validates cost + caps)
 			const cost = count === 0 && poolData?.[card.id] && CRAFT_COST[poolData[card.id][0]];
 			if (cost) {
@@ -375,6 +388,53 @@ grid.addEventListener('mouseover', e => {
 });
 grid.addEventListener('mousemove', placeTip);
 grid.addEventListener('mouseleave', () => { tipEl.style.display = 'none'; });
+
+// The card text is not hover-only (controls sweep B3):
+//  * keyboard / controller: focusing a card (Tab, arrows / WASD, the d-pad) shows
+//    its text beside it; V / the pad's Y toggles it; X / Esc / B hides it;
+//  * touch: a long-press shows it (and doesn't follow the link); a tap elsewhere hides it.
+function showTipFor(card, x, y) {
+	const def = card && byId[card.dataset.cid];
+	if (!def) return false;
+	tipEl.innerHTML = tipHtml(def, +card.dataset.count || 0);
+	tipEl.style.display = 'block';
+	placeTip({ clientX: x, clientY: y });
+	return true;
+}
+const tipBeside = card => { const r = card.getBoundingClientRect(); return showTipFor(card, r.right - 12, r.top + 8); };
+const hideTip = () => { tipEl.style.display = 'none'; };
+grid.addEventListener('focusin', e => { const c = e.target.closest('.wiki-card'); if (c) tipBeside(c); });
+grid.addEventListener('focusout', e => { if (!grid.contains(e.relatedTarget)) hideTip(); });
+let lp = null, lpFired = false, lpAt = null;
+grid.addEventListener('pointerdown', e => {
+	if (e.pointerType !== 'touch') { lpAt = null; return; }
+	const c = e.target.closest('.wiki-card');
+	if (!c || e.target.closest('.craft-btn')) return;
+	clearTimeout(lp); lpFired = false;
+	const x = e.clientX, y = e.clientY;
+	lpAt = { x, y };
+	lp = setTimeout(() => { lpFired = true; showTipFor(c, x, y); }, 450);
+});
+const lpCancel = () => clearTimeout(lp);
+grid.addEventListener('pointerup', lpCancel);
+grid.addEventListener('pointercancel', lpCancel);
+grid.addEventListener('pointermove', e => { if (e.pointerType === 'touch' && lpAt && Math.hypot(e.clientX - lpAt.x, e.clientY - lpAt.y) > 12) lpCancel(); });
+// the hold was a read, not a tap: don't open the wiki page (or the phone's link menu)
+grid.addEventListener('click', e => { if (lpFired && e.target.closest('.wiki-link')) { e.preventDefault(); lpFired = false; } }, true);
+grid.addEventListener('contextmenu', e => { if (lpAt && e.target.closest('.wiki-link')) e.preventDefault(); });
+addEventListener('pointerdown', e => { if (e.pointerType === 'touch' && !e.target.closest('.wiki-card')) hideTip(); });
+addEventListener('keydown', e => { if (e.key === 'Escape' && tipEl.style.display === 'block') { e.preventDefault(); hideTip(); } });
+// keyboard + controller: arrows / WASD / d-pad move a focus ring, Z / Enter / A open
+// (a card's wiki page, a filter, Craft), V / Y toggles the focused card's text
+initFocusNav({
+	onExtra(action) {
+		if (action !== 'context') return false;
+		const c = document.activeElement && document.activeElement.closest && document.activeElement.closest('.wiki-card');
+		if (!c) return false;
+		if (tipEl.style.display === 'block') hideTip(); else tipBeside(c);
+		return true;
+	},
+});
 </script>
 	<script type="module" src="/site/topbar.js"></script>
 </body>

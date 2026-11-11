@@ -217,7 +217,7 @@ sec('megas', () => {
 // ===================================================================== legacy keys still load
 sec('recipe', () => {
   const s = new Session();
-  s.start({ seed: 'DDRECIPE', mods: MODS3, customDeck: { name: 'Legacy', jokers: [{ key: 'j_nacho_ralts' }, { key: 'j_sonfive_shedinja' }] } });
+  s.start({ seed: 'DDRECIPE', mods: MODS3, customDeck: { name: 'Legacy', jokers: [{ key: 'j_nacho_ralts' }, { key: 'j_sonfive_shedinja' }] }, engineRev: 1 }); // (engine rev 1: no Pages, the jokers' Mult alone)
   const rec = JSON.parse(JSON.stringify(s.recipe));
   ok(rec.customDeck.jokers.some((j) => j.key === 'j_nacho_ralts'), 'a recipe holding j_nacho_ralts');
   const s2 = Session.fromRecipe(rec);
@@ -258,7 +258,7 @@ sec('dex / pins', () => {
     const g = familyOf({ center: 'j_nacho_ralts' });
     ok(g[0] === 'j_nacho_ralts' && g.includes('j_poke_kirlia') && !g.includes('j_nacho_kirlia'), 'Pokédex on a legacy card: itself, then Pokermon\'s line', g);
   }
-  ok(PINS.modPin('nacho') === '1.7.9-5+r3' && PINS.modPin('pokermonplus') === '1.2.0-261018a+r2', 'pins: Nacho 1.7.9-5+r3 (batch 18; r3 regional batch C), Pokermon+ 1.2.0-261018a+r2 (batch 20)', [PINS.modPin('nacho'), PINS.modPin('pokermonplus')]);
+  ok(PINS.modPin('nacho') === '1.7.9-5+r3' && PINS.modPin('pokermonplus') === '1.2.0-261018a+r3', 'pins: Nacho r3, Pokermon+ r3', [PINS.modPin('nacho'), PINS.modPin('pokermonplus')]);
   ok(PINS.LEGACY_MOD_VERSIONS.nacho === '1.6.4' && PINS.LEGACY_MOD_VERSIONS.pokermonplus === '1.0.3-251101e', 'LEGACY_MOD_VERSIONS untouched');
   const d = PINS.pinDiff({ mods: ['pokermon', 'nacho'], modVersions: { pokermon: PINS.modPin('pokermon'), nacho: '1.6.4' } });
   ok(d.length === 1 && d[0].id === 'nacho', 'a run recorded on Nacho 1.6.4 (rev 0) warns on resume', d);

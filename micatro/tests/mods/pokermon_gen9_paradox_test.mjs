@@ -10,6 +10,7 @@
 //   - Energy (the standard shares; the boost on top), save / resume + the replay stepper, and the art (every cell's type, the composed art).
 //   node micatro/tests/mods/pokermon_gen9_paradox_test.mjs
 import fs from 'fs';
+// (Session runs here start with engineRev: 1 = the rules before Pages: these suites measure the mod alone)
 import path from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
 import { T, start, hand, add, clearHand, G, P_CENTERS, act, STATES } from './poke_helpers.mjs';
@@ -393,7 +394,7 @@ await sec('energy', () => {
 // ------------------------------------------------------------------- save / resume (a run is its recipe)
 await sec('resume', () => {
   const s = new Session();
-  s.start({ seed: 'PXRESUME', customDeck: { name: 'Paradox', mods: ['pokermon'], params: { joker_slots: 12, consumable_slots: 10, blind_scaling: 0.05 },
+  s.start({ engineRev: 1, seed: 'PXRESUME', customDeck: { name: 'Paradox', mods: ['pokermon'], params: { joker_slots: 12, consumable_slots: 10, blind_scaling: 0.05 },
     jokers: [{ key: 'j_poke_great_tusk' }, { key: 'j_poke_iron_treads' }, { key: 'j_poke_roaring_moon' }, { key: 'j_poke_gouging_fire' }, { key: 'j_poke_raging_bolt' }, { key: 'j_poke_iron_bundle' }],
     consumables: [{ key: 'c_poke_paradoxball' }, { key: 'c_poke_paradoxball' }, { key: 'c_poke_metal_energy' }] } });
   flush();

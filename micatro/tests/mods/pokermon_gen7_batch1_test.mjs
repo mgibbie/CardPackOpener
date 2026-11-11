@@ -18,6 +18,7 @@
 // Every ability is FIRED through real hands / rounds with exact numbers.
 //   node micatro/tests/mods/pokermon_gen7_batch1_test.mjs
 import fs from 'fs';
+// (Session runs here start with engineRev: 1 = the rules before Pages: these suites measure the mod alone)
 import path from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
 import { T, start, hand, add, clearHand, G, P_CENTERS, act, STATES } from './poke_helpers.mjs';
@@ -44,15 +45,18 @@ const key = (c) => c.config.center.key;
 const near = (a, b) => Math.abs(a - b) < 1e-6;
 const flush = () => G.E_MANAGER.flush();
 const sec = async (name, fn) => { try { await fn(); } catch (e) { ok(false, name + ' threw: ' + String(e && e.stack).slice(0, 900)); } };
+/** The rules of a run recorded before r111 (the owner's simplified weather trio, SIMPLE_TRIO_REV: Kyogre / Groudon made rain / sun, locked
+ *  Castform and clashed; Rayquaza calmed them), as a resume / replay of an old move runs them. The r111 rules: pokermon_simple_trio_test. */
+const r110 = (fn) => { PINS.RULES.pins = { pokermon: '3.9.1+r110' }; try { return fn(); } finally { PINS.RULES.pins = null; } };
 const ex = (j) => j.ability.extra;
 const C = (n) => P_CENTERS['j_poke_' + n];
 const plain = (j) => describe(j).lines.join(' | ').replace(/\{[^}]*\}/g, '').replace(/\s+/g, ' ');
 const LINES = {
-  pikipek: ['pikipek', 'trumbeak', 'toucannon'], yungoos: ['yungoos', 'gumshoos'], crabrawler: ['crabrawler', 'crabominable'], oricorio: ['oricorio'],
+  pikipek: ['pikipek', 'trumbeak', 'toucannon'], yungoos: ['yungoos', 'gumshoos'], crabrawler: ['crabrawler', 'crabominable', 'mega_crabominable'], oricorio: ['oricorio'],
   cutiefly: ['cutiefly', 'ribombee'], wishiwashi: ['wishiwashi'], mareanie: ['mareanie', 'toxapex'], dewpider: ['dewpider', 'araquanid'],
   fomantis: ['fomantis', 'lurantis'], morelull: ['morelull', 'shiinotic'],
 };
-const NAMES = Object.values(LINES).flat();
+const NAMES = Object.values(LINES).flat().filter(n => !n.startsWith('mega_'));
 function debuff(c) { c.ability.debuff_sources = { test: true }; c.set_debuff(); flush(); return c; }
 function undebuff(c) { c.ability.debuff_sources = {}; c.set_debuff(); flush(); return c; }
 function mk(spec, area) {
@@ -174,7 +178,7 @@ await sec('static', () => {
   const run = (from, list, to) => { const i = keys.indexOf('j_poke_' + list[0]); return i > 0 && [from, ...list, to].every((k, n) => keys[i - 1 + n] === 'j_poke_' + k) ? true : keys.slice(i - 1, i + list.length + 1); };
   const RUNS = [
     ['primarina', ['pikipek', 'trumbeak', 'toucannon', 'yungoos', 'gumshoos'], 'grubbin'],
-    ['vikavolt', ['crabrawler', 'crabominable', 'oricorio', 'cutiefly', 'ribombee'], 'rockruff'],
+    ['vikavolt', ['crabrawler', 'crabominable', 'mega_crabominable', 'oricorio', 'cutiefly', 'ribombee'], 'rockruff'],
     ['lycanroc_dusk', ['wishiwashi', 'mareanie', 'toxapex'], 'mudbray'],
     ['mudsdale', ['dewpider', 'araquanid', 'fomantis', 'lurantis', 'morelull', 'shiinotic'], 'salandit'],
   ];
@@ -464,12 +468,18 @@ await sec('water bubble', () => {
   [d] = deal('DEW3', REDS, ['araquanid']);
   t = play(['C_K', 'C_9']);
   ok(t.chips === 5 + 10 + 15 && near(t.mult, 1.25), 'Araquanid, dry: +15 Chips and X1.25', t.total);
-  [d] = deal('DEW4', REDS, ['araquanid', 'kyogre']);
+  r110(() => {
+    [d] = deal('DEW4', REDS, ['araquanid', 'kyogre']);
+    t = play(['C_K', 'C_9']);
+    ok(t.chips === 5 + 2 * (10 + 30) && near(t.mult, 1.5 * 1.5) && /Raining!/.test(plain(d)), 'r110: with Kyogre it rains: +30 Chips and X1.5, twice (Kyogre retriggers the Club)', t.total);
+    // (Kyogre's own rule retriggers the Club too)
+    t = play(['C_2', 'C_9', 'C_7', 'C_5', 'C_K']);
+    ok(Number.isFinite(t.mult), 'a Club Flush in the rain plays', t.total);
+  });
+  // r111: Kyogre makes no rain; a red first deal stays dry (Araquanid's dry +15 / X1.25, twice: Kyogre's retrigger and its X1.25)
+  [d] = deal('DEW4b', REDS, ['araquanid', 'kyogre']);
   t = play(['C_K', 'C_9']);
-  ok(t.chips === 5 + 2 * (10 + 30) && near(t.mult, 1.5 * 1.5) && /Raining!/.test(plain(d)), 'with Kyogre it rains: +30 Chips and X1.5, twice (Kyogre retriggers the Club)', t.total);
-  // (Kyogre's own rule retriggers the Club too)
-  t = play(['C_2', 'C_9', 'C_7', 'C_5', 'C_K']);
-  ok(Number.isFinite(t.mult), 'a Club Flush in the rain plays', t.total);
+  ok(t.chips === 5 + 2 * (10 + 15) && near(t.mult, Math.pow(1.25 * 1.25, 2)) && !/Raining!/.test(plain(d)), 'r111: with Kyogre a red deal stays dry: +15 and X1.25 twice, Kyogre\'s X1.25 twice', t.total);
   [d] = deal('DEW5', CLUBS, ['araquanid']);
   t = play(['C_K', 'C_9']);
   ok(t.chips === 5 + 10 + 30 && near(t.mult, 1.5), 'rain: +30 and X1.5 (the X\'s bonus doubles)', t.total);
@@ -593,7 +603,7 @@ await sec('energy', () => {
 // ------------------------------------------------------------------- save / resume
 await sec('resume', () => {
   const s = new Session();
-  s.start({ seed: 'G7B1RES', customDeck: { name: 'Gen 7', mods: ['pokermon'], params: { blind_scaling: 0.05 },
+  s.start({ engineRev: 1, seed: 'G7B1RES', customDeck: { name: 'Gen 7', mods: ['pokermon'], params: { blind_scaling: 0.05 },
     cards: [['S_K', 0, 0, 0, 12], ['H_9', 'm_lucky', 0, 0, 20], ['D_5', 0, 0, 0, 20]],
     jokers: [{ key: 'j_poke_pikipek' }, { key: 'j_poke_crabrawler' }, { key: 'j_poke_oricorio' }, { key: 'j_poke_yungoos' }, { key: 'j_poke_shiinotic' }] } });
   s.act({ type: 'select_blind' }); flush();

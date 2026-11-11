@@ -21,6 +21,7 @@ import { find_card, any, add_card } from './utils.js';
 import { poke_evolve, get_previous_evo } from './evolution.js';
 import { ease_poke_dollars } from './energy.js';
 import { addon_megas } from './precedence.js';
+import { rulesRev } from '../../../js/mods/pins.js';
 
 const isTable = (x) => x !== null && typeof x === 'object';
 
@@ -173,6 +174,7 @@ export function poke_create_treasure(card, seed, megastone) {
 //     Mega of that key. Nothing rewrites it (saves are replays and keep their recorded actions).
 // (+ add-on dedupe: a Pokermon joker that replaced an add-on duplicate has that joker's Megas: precedence.js addon_megas.)
 const hasMegas = (c) => !!(c.megas || addon_megas(c).length);
+const eligibleMega = (j) => hasMegas(j.config.center) && (j.config.center.key !== 'j_poke_zygarde' || (j.ability.extra.cells || 0) >= 100);
 const isMega = (joker) => joker.config.center.rarity === 'poke_mega';
 const infinite = () => !!(G.GAME && G.GAME.modifiers && G.GAME.modifiers.poke_infinite_megastone);
 const unset = (u) => u === undefined || u === null || u === false;
@@ -192,15 +194,19 @@ export function megastone_mega(stone) {
 /** 3.9.1 get_mega_target's test: a free stone takes a joker with a Mega; a used one only its own Mega back. */
 function megaTarget(stone, joker) {
   const free = !stone || unset(stone.ability.extra.used_on);
-  return (free && hasMegas(joker.config.center) && !joker.debuff)
+  return (free && eligibleMega(joker) && !joker.debuff)
     || megastone_made(stone, joker)
-    || (infinite() && ((hasMegas(joker.config.center) && !joker.debuff) || isMega(joker)));
+    || (infinite() && ((eligibleMega(joker) && !joker.debuff) || isMega(joker)));
 }
 
-/** The stone's target: the highlighted joker if it qualifies, else the leftmost that does (house rule; 3.9.1's
- *  find_leftmost_or_highlighted stops at a highlighted joker that doesn't). `stone` undefined = a free stone. */
+/** The stone's target: an eligible highlighted joker, or the sole eligible joker.
+ *  Before r88 (and for callers without a stone), fall back to the leftmost as before. */
 export function megastone_target(stone) {
   if (G.jokers.highlighted && G.jokers.highlighted.length === 1 && megaTarget(stone, G.jokers.highlighted[0])) return G.jokers.highlighted[0];
+  if (stone && rulesRev('pokermon') >= 88) {
+    const eligible = G.jokers.cards.filter((poke) => megaTarget(stone, poke));
+    return eligible.length === 1 ? eligible[0] : undefined;
+  }
   for (const poke of G.jokers.cards) if (megaTarget(stone, poke)) return poke;
   return undefined;
 }
@@ -239,8 +245,17 @@ export function getMega_by_position(self, card) {
  */
 export const MEGASTONE_RESET = [];
 
-/** Megastone.use: mega-evolve (or revert) the target. */
-export function megastone_use(stone) {
+/**
+ * rulesRev 110 (a tester, 2026-11-08: a Mega Stone used straight from a pack "forgot" its Mega, so selling it reverted nothing):
+ * a kept consumable used from a pack then moves to the consumable slots (run.js use_card: add_to_deck + emplace), and the stone's
+ * add_to_deck, meant for a NEW stone, cleared the used_on just set (and made it usable again). From r110 that move is not a new stone:
+ * the stone keeps its Mega and stays spent until the end of the round, as a stone used from the consumable slots does. Gated, so a run
+ * recorded before r110 replays as recorded.
+ */
+export const MEGASTONE_PACK_REV = 110;
+
+/** Megastone.use: mega-evolve (or revert) the target. `area`: where it was used from (the pack: see MEGASTONE_PACK_REV). */
+export function megastone_use(stone, area) {
   const target = megastone_target(stone);
   if (!target) return;
   if (hasMegas(target.config.center)) {
@@ -254,6 +269,15 @@ export function megastone_use(stone) {
     poke_evolve(target, forced_key, undefined, localize('poke_devolve_success')); // (pokermon.devolve: "Reverted")
   }
   stone.ability.extra.usable = false;
+  // (a transient card field, not ability: a copy of the stone is a new stone; megastone_add_to_deck clears it in the same move)
+  if (area && area === G.pack_cards && rulesRev('pokermon') >= MEGASTONE_PACK_REV) stone.poke_megastone_from_pack = true;
+}
+
+/** Megastone add_to_deck: a new stone remembers no Mega and is usable; the post-use move out of a pack (r110) is not a new stone. */
+export function megastone_add_to_deck(stone, from_debuff) {
+  if (stone.poke_megastone_from_pack) { stone.poke_megastone_from_pack = undefined; return; }
+  if (!from_debuff) stone.ability.extra.used_on = undefined;
+  stone.ability.extra.usable = true;
 }
 
 export function megastone_can_use(stone) {
@@ -282,13 +306,13 @@ export function megastone_remove_from_deck(stone) {
 }
 
 export function megastone_in_pool() {
-  if (G.jokers && G.jokers.cards) for (const poke of G.jokers.cards) if (hasMegas(poke.config.center)) return true;
+  if (G.jokers && G.jokers.cards) for (const poke of G.jokers.cards) if (eligibleMega(poke)) return true;
   return false;
 }
 
 /** Mega Berry Juice (3.9.1 06_mart_berry.lua): a joker with a Mega (highlighted, else the leftmost; not debuffed). */
 export function mega_juice_target() {
-  const ok = (joker) => hasMegas(joker.config.center) && !joker.debuff;
+  const ok = (joker) => eligibleMega(joker) && !joker.debuff;
   if (G.jokers.highlighted && G.jokers.highlighted.length === 1 && ok(G.jokers.highlighted[0])) return G.jokers.highlighted[0];
   return G.jokers.cards.find(ok);
 }

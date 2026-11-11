@@ -373,7 +373,7 @@ register('shuffle-shadows-of-target', ({ state, pi, chosenCreature }, e) => {
 			if (!t) return;
 			const p = state.players[pi];
 			const tokenId = 'shadow_of_' + t.id;
-			if (!state.cardsById[tokenId]) state.cardsById[tokenId] = { id: tokenId, name: 'Shadow', type: 'sorcery', cost: 0, rarity: 'common', token: true, collectible: false, drawTrigger: true, onDraw: [{ type: 'summon', options: [{ summonId: t.id }] }], description: `When drawn, summon a copy of ${t.name}.` };
+			if (!state.cardsById[tokenId]) state.cardsById[tokenId] = { id: tokenId, artFrom: 'shadow_of_death', name: 'Shadow', type: 'sorcery', cost: 0, rarity: 'common', token: true, collectible: false, drawTrigger: true, onDraw: [{ type: 'summon', options: [{ summonId: t.id }] }], description: `When drawn, summon a copy of ${t.name}.` };
 			for (let k = 0; k < (e.count || 3); k++) p.deck.push(tokenId);
 			for (let i = p.deck.length - 1; i > 0; i--) { const j = Math.floor(state.rng() * (i + 1)); [p.deck[i], p.deck[j]] = [p.deck[j], p.deck[i]]; }
 			emit(state, { type: 'shuffle', player: pi });
@@ -1380,7 +1380,7 @@ register('transform-self-into-deck-tribe', ({ state, pi, target, source, enemies
 			const ids = p.deck.filter(id => { const d = state.cardsById[id]; return d && d.type === 'creature' && (d.tribe || '').includes(e.tribe); });
 			if (ids.length && source && source.zone === 'board' && !isDead(source)) {
 				const base = state.cardsById[ids[Math.floor(state.rng() * ids.length)]];
-				const def = JSON.parse(JSON.stringify(base)); if (e.stats != null) { def.attack = e.stats; def.health = e.stats; } def.token = true; def.id = 'token_' + base.id;
+				const def = JSON.parse(JSON.stringify(base)); if (e.stats != null) { def.attack = e.stats; def.health = e.stats; } def.token = true; def.artFrom = base.artFrom || base.id; def.id = 'token_' + base.id;
 				const tok = instantiate(def, pi); tok.zone = 'board'; tok.sick = source.sick;
 				const board = state.players[pi].board; board[board.indexOf(source)] = tok; source.zone = 'gone';
 				emit(state, { type: 'transformed', uid: source.uid, player: pi, from: source.name, card: tok }); recomputeAuras(state);

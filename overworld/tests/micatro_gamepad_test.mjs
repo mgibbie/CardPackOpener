@@ -72,8 +72,10 @@ try {
 			window.__owFakePads = [pad]; window.__pad = pad;
 			// (a poll of site/gamepad.js reads p.connected once: count them, so a press is held until the game has SEEN it — a fixed
 			// 70 ms press fell between two slow CI frames and was never read — and released only once a poll has seen that too)
+			// Only MICATRO's polls count: the site's Games switcher (site/switcher.js, loaded by the top bar) polls the same pad on its
+			// own 20 ms timer, and counting its reads released a press before the game's (slower, per-frame) poll had seen it.
 			let polls = 0;
-			Object.defineProperty(pad, 'connected', { get() { polls++; return true; }, enumerable: true });
+			Object.defineProperty(pad, 'connected', { get() { if (!/\/site\/switcher\.js/.test(new Error().stack || '')) polls++; return true; }, enumerable: true });
 			const until = (f, ms = 10000) => new Promise((r) => { const t0 = performance.now(); const k = () => (f() || performance.now() - t0 > ms ? r() : setTimeout(k, 4)); k(); });
 			const set = (b, on) => { pad.buttons[b] = on ? { pressed: true, value: 1 } : { pressed: false, value: 0 }; };
 			window.__padSet = async (b, on) => { set(b, on); const n = polls; await until(() => polls > n); };
@@ -145,7 +147,18 @@ try {
 		await tap(B.confirm);
 		await idle(); await sleep(300);
 		v = await V();
-		A(v.state === 'SELECTING_HAND', 'confirm selects the blind', v.state);
+		A(v.state === 'PAGES' || v.state === 'SELECTING_HAND', 'confirm selects the blind (Pages v2: the Pages screen on 25% of Blinds)', v.state);
+		if (v.state === 'PAGES') {
+			f = await focus();
+			A(f && /page-card/.test(f.cls), 'the reticle homes on a Page', JSON.stringify(f));
+			// (raise the quietest Page — no Round rule, no downside — so the round plays as this suite expects; confirm on the raised
+			//  Page takes it, RB when another one has the reticle)
+			const quiet = await page.evaluate(() => { const ch = window.__micatro.view().pages.choices; const K = ['money', 'card', 'shop', 'pack']; const cost = (p) => (p.rule || p.down ? 10 : 0) + (K.includes(p.prize.kind) ? K.indexOf(p.prize.kind) : 5); let i = 0; ch.forEach((p, j) => { if (cost(p) < cost(ch[i])) i = j; }); window.__micatro.board.keyPage(i); return i; }); await sleep(150);
+			await tap(quiet === 0 ? B.confirm : B.R);
+			await idle(); await sleep(300);
+			v = await V();
+		}
+		A(v.state === 'SELECTING_HAND', 'the round starts', v.state);
 		f = await focus();
 		A(f && f.area === 'hand', 'focus moves onto the hand', JSON.stringify(f));
 
@@ -253,6 +266,10 @@ try {
 		// into the next round, then a phone in portrait: the hint bar must not cover Play / Discard
 		await sleep(250);
 		await tap(B.confirm); await idle(); await sleep(300);
+		if ((await V()).state === 'PAGES') { // (Pages, 25% of Blinds: RB takes the raised Page — the quietest)
+			await page.evaluate(() => { const ch = window.__micatro.view().pages.choices; const K = ['money', 'card', 'shop', 'pack']; const cost = (p) => (p.rule || p.down ? 10 : 0) + (K.includes(p.prize.kind) ? K.indexOf(p.prize.kind) : 5); let i = 0; ch.forEach((p, j) => { if (cost(p) < cost(ch[i])) i = j; }); window.__micatro.board.keyPage(i); return i; }); await sleep(150);
+			await tap(B.R); await idle(); await sleep(300);
+		}
 		await page.setViewport({ width: 390, height: 844 }); await sleep(900);
 		const hb = await page.evaluate(() => {
 			const R = (el) => el.getBoundingClientRect();

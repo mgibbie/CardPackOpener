@@ -203,7 +203,9 @@ try {
 	A(await waitFor(() => visible('pull-fx'), 3000), 'confirm pulls: the slot machine opens');
 	f = await focus();
 	A(f && f.scope === 'pull-fx', 'the ring moves into the slot machine overlay', JSON.stringify(f));
-	for (let i = 0; i < 30 && !(await visible('pull-close')); i++) await press(B.confirm);
+	// (after each press give the hurried reels a moment to land: pressing again the instant the result
+	// shows would press its Continue too and close it — a race on a busy runner)
+	for (let i = 0; i < 30 && !(await visible('pull-close')); i++) { await press(B.confirm); if (await waitFor(() => visible('pull-close'), 1000)) break; }
 	A(await visible('pull-close'), 'confirm hurries the reels; the result shows');
 	await sleep(150);
 	await press(B.confirm);
@@ -347,7 +349,8 @@ try {
 	// keyboard use: prompts back to keys; pad use: back to glyphs
 	await page.keyboard.press('KeyK');
 	const kb = await ev(() => ({ cls: document.body.classList.contains('pad-input'), keys: getComputedStyle(document.querySelector('#scr-levelup .sub .key-k')).display, pad: getComputedStyle(document.querySelector('#scr-levelup .sub .key-p')).display, ring: getComputedStyle(document.querySelector('.pad-focus') || document.body).outlineStyle }));
-	A(!kb.cls && kb.keys !== 'none' && kb.pad === 'none' && kb.ring !== 'solid', 'keyboard use: the prompts switch back to keys and the ring hides', JSON.stringify(kb));
+	// (controls sweep B4: the ring is for keyboard navigation too, so a key press keeps it; only the mouse / a finger hide it)
+	A(!kb.cls && kb.keys !== 'none' && kb.pad === 'none' && kb.ring === 'solid', 'keyboard use: the prompts switch back to keys; the ring STAYS (keyboard navigation uses it too)', JSON.stringify(kb));
 	await press(B.right);
 	const pd = await ev(() => ({ cls: document.body.classList.contains('pad-input'), keys: getComputedStyle(document.querySelector('#scr-levelup .sub .key-k')).display }));
 	A(pd.cls && pd.keys === 'none', 'pad use: back to glyphs', JSON.stringify(pd));

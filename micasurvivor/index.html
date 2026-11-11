@@ -27,7 +27,7 @@
 
 <canvas id="game"></canvas>
 <!-- En móvil se juega en horizontal -->
-<div id="rotate" class="hidden"><div class="box center"><div id="rotate-ico"></div><h2>Gira el móvil</h2><p class="sub">MicaSurvivor se juega en horizontal.</p></div></div>
+<div id="rotate" class="hidden"><div class="box center"><div id="rotate-ico"></div><h2>Gira el móvil</h2><p class="sub">MicaSurvivor se juega en horizontal.</p><p><button class="btn small ghost" type="button" data-mp-switcher>⚙️ Juegos</button></p></div></div>
 
 <!-- ====== Inicio: login / registro / invitado ====== -->
 <section id="scr-login" class="scr hidden">
@@ -66,7 +66,7 @@
       <button id="btn-mp-login" class="btn grow hidden" type="button">Entrar con Magepunk</button>
     </div>
     <p class="note center" id="login-mode"></p>
-    <p class="note center"><a href="#" class="legal-link" data-legal>Créditos y licencias</a> · <a href="/" class="mica-back">Volver a Magepunk</a></p>
+    <p class="note center"><a href="#" class="legal-link" data-legal>Créditos y licencias</a> · <a href="/" class="mica-back">Volver a Magepunk</a> · <a href="/" data-mp-switcher>⚙️ Juegos</a></p>
   </div>
 </section>
 
@@ -170,6 +170,7 @@
   <button id="btn-sound" class="btn small ghost" title="Sonido"></button>
   <button id="btn-full" class="btn small ghost hidden" title="Pantalla completa"></button>
   <button id="btn-settings" class="btn small ghost" title="Ajustes"></button>
+  <button id="btn-games" class="btn small ghost" title="Juegos" aria-label="Juegos" data-mp-switcher>⚙️</button> <!-- the site's Games switcher (controls sweep B2) -->
   <button id="btn-logout" class="btn small ghost hidden">Salir</button> <!-- MicaSurvivor: no log out until M3 accounts (it wipes a guest's progress) -->
 </div>
 <div id="sound-panel" class="box sound-panel hidden"></div>
@@ -550,9 +551,9 @@
     <p class="sub">Elige una recompensa · <span class="key-k"><kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd></span><span class="key-p" data-glyphs="dpad_lr confirm"></span></p>
     <div id="cards" class="cards"></div>
     <div class="lvl-extras">
-      <button id="lvl-reroll" class="btn small ghost hidden" data-sfx="none">Cambiar opciones (<span id="lvl-rr-n">1</span>) · <span class="key-k"><kbd>R</kbd></span><span class="key-p" data-glyphs="reroll"></span></button>
+      <button id="lvl-reroll" class="btn small ghost hidden" data-sfx="none">Cambiar opciones (<span id="lvl-rr-n">1</span>) · <span class="key-k"><kbd>C</kbd></span><span class="key-p" data-glyphs="reroll"></span></button>
       <!-- MicaSurvivor (M5 lote 6): vetar una carta (la mejora Veto; port main.gd Cards "Vetar (%d) [B]") -->
-      <button id="lvl-ban" class="btn small ghost ban-btn hidden" data-sfx="none">Vetar (<span id="lvl-ban-n">0</span>) · <span class="key-k"><kbd>B</kbd></span><span class="key-p" data-glyphs="ban"></span></button>
+      <button id="lvl-ban" class="btn small ghost ban-btn hidden" data-sfx="none">Vetar (<span id="lvl-ban-n">0</span>) · <span class="key-k"><kbd>V</kbd></span><span class="key-p" data-glyphs="ban"></span></button>
     </div>
     <p id="lvl-banhint" class="note ban-hint hidden">Elige un movimiento nuevo para vetarlo</p>
     <p id="lvl-wait" class="note hidden"></p>
@@ -589,7 +590,7 @@
 <section id="scr-pause" class="scr dim hidden">
   <div class="box center" style="width:min(460px,100%)">
     <h2>Pausa</h2>
-    <p class="sub kbd-hint"><kbd>WASD</kbd> moverse · tus movimientos atacan solos · <kbd>Esc</kbd> pausa</p>
+    <p class="sub kbd-hint"><kbd>WASD</kbd> moverse · tus movimientos atacan solos · <kbd>C</kbd> Movimiento Z · <kbd>V</kbd> Dynamax · <kbd>Esc</kbd> pausa</p>
     <p class="sub touch-hint">Arrastra el dedo para moverte · tus movimientos atacan solos</p>
     <!-- MicaSurvivor (M2): the controller's version of the hints (js/core/pad.js fills the glyphs) -->
     <p class="sub pad-hint"><span class="key-p" data-glyphs="lstick"></span> moverse · tus movimientos atacan solos · <span class="key-p" data-glyphs="pause"></span> pausa</p>
@@ -602,6 +603,7 @@
       <button id="btn-resume" class="btn gold">Continuar</button>
       <button id="btn-pause-settings" class="btn">Ajustes</button>
       <button id="btn-quit" class="btn">Abandonar run</button>
+      <button id="btn-pause-games" class="btn" data-mp-switcher>⚙️ Juegos</button>
     </div>
   </div>
 </section>
@@ -737,5 +739,6 @@
 <script defer src="js/game.js"></script>
 <script defer src="js/main.js"></script>
 <!-- scripts:end -->
+<script type="module" src="/site/switcher.js"></script> <!-- the site's Games switcher (` / hold Esc / Start+Select / the ⚙️ Games buttons); MicaSurvivor keeps its own top bar -->
 </body>
 </html>

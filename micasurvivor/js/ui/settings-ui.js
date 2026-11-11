@@ -111,10 +111,17 @@ G.SettingsUI = (() => {
              <button class="btn small" id="set-layout">Colocar</button></div>`
         + section('En PC')
         + `<div class="keys">
-             <div><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> o flechas</div><span>moverse</span>
+             <div><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> o flechas</div><span>moverse (en los menús, elegir botón)</span>
+             <div><kbd>Z</kbd></div><span>aceptar</span>
+             <div><kbd>X</kbd></div><span>atrás (subiendo de nivel en una Expedición, saltar)</span>
+             <div><kbd>Q</kbd> <kbd>E</kbd></div><span>pestañas y cartas</span>
+             <div><kbd>Intro</kbd></div><span>elegir; en una run, pausa</span>
              <div><kbd>Esc</kbd> o <kbd>P</kbd></div><span>pausa</span>
+             <div><kbd>C</kbd></div><span>Movimiento Z o Definitivo (subiendo de nivel, cambiar las cartas)</span>
+             <div><kbd>V</kbd></div><span>Dynamax (subiendo de nivel, vetar carta)</span>
              <div><kbd>1</kbd>–<kbd>3</kbd></div><span>elegir carta al subir de nivel</span>
              <div><kbd>R</kbd></div><span>cambiar las cartas</span>
+             <div><kbd>Tab</kbd></div><span>cambiar de Pokémon (Modo Equipo)</span>
            </div>`
         + G.Pad.settingsHTML();   // MicaSurvivor (M2): controller layout, remap, rumble
     } else if (tab === 'acc') {

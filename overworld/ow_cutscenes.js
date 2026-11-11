@@ -181,14 +181,15 @@ export function cutsceneCtx(talker, scriptLabel) {
 			// objects when a flag changes their visibility.
 			const n = npcById(who);
 			const ev = n ? n.ev : ((world.current?.map?.object_events || []).find(o => o.local_id === who) || crystalObjectEvent(world.current?.map, who));
-			if (n) n.hidden = false;
+			// shown by the script whatever its flag says: ow_objsync must not take it back
+			if (n) { n.hidden = false; n.flagHidden = false; n.forceShown = true; }
 			const f = ev && ev.flag;
 			if (f && /^EVENT_/.test(f)) Story.clearFlag(f);
 			// FR/E `addobject` spawns the object even while its hide flag is set (the
 			// flag is read on map load only) — the scene-only actors new_game_flags.js
 			// keeps hidden: spawn it for this visit and hold the script until it stands
 			if (!n && ev && !world.current?.map?._crystal_tileset && f && /^FLAG_/.test(f)) {
-				npcs.spawn(ev).catch(() => null).then(() => cutscene.resume());
+				npcs.spawn(ev).catch(() => null).then(sp => { if (sp) sp.forceShown = true; cutscene.resume(); });
 				return 'wait';
 			}
 		},

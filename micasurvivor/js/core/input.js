@@ -11,12 +11,17 @@ G.Input = (() => {
 
   function code(e) { return (e.code || e.key).toLowerCase(); }
 
+  // (controls sweep B4) typing in a field (a nickname, a friend's name, the search) never moves or presses anything
+  const TEXTY = /^(text|search|email|url|number|tel|password)$/i;
+  const typing = el => !!el && !!el.tagName && (el.tagName === 'TEXTAREA' || el.tagName === 'SELECT' || (el.tagName === 'INPUT' && TEXTY.test(el.type || 'text')) || !!el.isContentEditable);
   addEventListener('keydown', e => {
+    if (typing(e.target)) return;
     const c = code(e);
     if (!down.has(c)) pressed.add(c);
     down.add(c);
     // Evita que el navegador haga scroll con flechas/espacio durante el juego.
-    if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', 'space', 'tab'].includes(c)) e.preventDefault();
+    // (controls sweep B4: Tab only while playing, where it swaps Pokémon in Team mode; in the menus it moves the focus again)
+    if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', 'space'].includes(c) || (c === 'tab' && G.Game && G.Game.state === 'playing')) e.preventDefault();
   });
   addEventListener('keyup', e => down.delete(code(e)));
   addEventListener('blur', () => { down.clear(); });

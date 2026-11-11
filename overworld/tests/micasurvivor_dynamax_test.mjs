@@ -17,7 +17,7 @@
 //     never in Rift Time Attack), 30 s open, the den boss (a normal Pokémon of the current tier,
 //     HP 2400 + 8t, XP 380 + t, drawn x1.5 with the red aura, its Max Move), the rewards (12 XP orbs,
 //     2 items, 2 tickets, 120 coins, a heal), not a legendary / rift win / bond
-//   - input: the C key, the HUD MAX button (a real click), the pad's dynamax action (View / Back by
+//   - input: the V key (controls sweep B4; was C), the HUD MAX button (a real click), the pad's dynamax action (View / Back by
 //     default on every layout), the in-run extras (left trigger, X / Square), remap with
 //     swap-on-conflict, an old saved map gaining dynamax, the glyph prompt; the Dynamax card on the
 //     missions screen (English, reachable with the pad)
@@ -143,7 +143,7 @@ try {
 				k: [D.DUR, D.MIN_LEVEL, D.GROW, D.STAT_K, D.HP_BONUS, D.DMG_K, D.TAKEN, D.PULSE, D.FIRST_PULSE, D.PULSE_R, D.BIG_R, D.BIG_K, D.COOLDOWN],
 				den: [D.DEN_RATE, D.DEN_TTL, D.DEN_FROM, D.DEN_SCALE, D.DEN_MAXMOVE, D.DEN_REWARD.orbs, D.DEN_REWARD.items, D.DEN_REWARD.tickets, D.DEN_REWARD.coins * D.DEN_REWARD.coinValue, D.DEN_REWARD.heal],
 				status: D.STATUS, modes: [D.BLOCKED_MODES, D.NO_DEN_MODES],
-				ui: ['¡Dynamax listo!', '¡Has desbloqueado el Dynamax! Botón MAX, tecla C o gatillo izquierdo (desde el nivel 20)', '¡Guarida superada! Caramelo Dynamax: puedes usar el Dynamax otra vez',
+				ui: ['¡Dynamax listo!', '¡Has desbloqueado el Dynamax! Botón MAX, tecla V o gatillo izquierdo (desde el nivel 20)', '¡Guarida superada! Caramelo Dynamax: puedes usar el Dynamax otra vez',
 					'¡SE HA ABIERTO UNA GUARIDA DYNAMAX!', 'Sigue la flecha roja: dentro te espera un Pokémon gigante', 'GUARIDA · 12 m · 30 s', 'GUARIDA · 1:40', '¡Rattata Dynamax te desafía!',
 					'Has entrado en la guarida…', 'Vence una guarida Dynamax: 0/1', 'Guaridas Dynamax vencidas: 3', 'Desbloqueado', 'Nv. 20', 'Aquí no',
 					'Cada 4 minutos (desde el nivel 20): tu Pokémon se vuelve gigante 60 s con +30% a todos sus atributos y lanza ondas Max de su tipo. Cada guarida Dynamax vencida lo recarga al instante.'].map(s => [s, G.I18n.t(s)]),
@@ -161,7 +161,7 @@ try {
 
 	// ================= 2. the run =================
 	await page.click('#scr-menu [data-go=play]');
-	await page.evaluate(() => { for (const s of ['#mx-next', '[data-cat=survival]', '[data-var=normal]', '[data-players=solo]', '#mx-start']) document.querySelector('#scr-play ' + s).click(); });   // (U1: Play opens the flow: Pokémon -> Survival -> Normal -> Solo -> Start)
+	await page.evaluate(() => { for (const s of ['[data-cat=survival]', '[data-var=normal]', '[data-players=solo]', '#mx-start']) document.querySelector('#scr-play ' + s).click(); });
 	A(await waitFor(() => E(() => G.Game.state === 'playing'), 15000), 'run starts');
 	await sleep(400);
 	await E(() => {
@@ -240,7 +240,7 @@ try {
 			'the reward: 12 big XP orbs, 2 items, 2 tickets, 120 coins (12 x 10), a heal, all pulled to you, nothing else', JSON.stringify(r.kinds) + ' coins ' + r.coins + ' n ' + r.n);
 		A(r.xpTotal >= 380 + 300 && r.xpTotal < 380 + 300 + 12, `the 12 orbs carry 380 + t XP (${r.xpTotal})`);
 		A(r.dens === 1 && r.dynFlag === 1 && r.unl, 'the first den clear unlocks Dynamax (stats.dens = 1, stats.dynamax = 1)', JSON.stringify(r));
-		A(r.banner === 'You unlocked Dynamax! MAX button, C key or left trigger (from level 20)', 'the first time says "You unlocked Dynamax! MAX button, C key or left trigger (from level 20)"', r.banner);
+		A(r.banner === 'You unlocked Dynamax! MAX button, V key or left trigger (from level 20)', 'the first time says "You unlocked Dynamax! MAX button, V key or left trigger (from level 20)"', r.banner);
 		A(r.legendsSame && r.rw === 0 && r.bonds === 0, 'a den is not a legendary, a rift win or a bond (main.gd _den_down / 4499)', JSON.stringify(r));
 		A(r.back, 'and 5 s later you are back on the map');
 		await E(() => G.DB.commit(true));
@@ -518,13 +518,13 @@ try {
 		A(r.plainMax === 0, 'ordinary bosses never use it');
 	}
 
-	// ---------- j. input: C key, the HUD button (real click), pad action + extras, remap, migration, glyph
+	// ---------- j. input: V key (was C), the HUD button (real click), pad action + extras, remap, migration, glyph
 	{
 		const goPlay = () => E(() => { T.reset(); const pl = G.Game.player; pl.level = 25; pl.dex = 4; if (G.Game.state !== 'playing') { G.Game.togglePause(); G.UI.hideAll(); } });
 		await goPlay();
-		await page.keyboard.press('c');
+		await page.keyboard.press('KeyV');   // (controls sweep B4: Dynamax moved from C to V)
 		await sleep(60);
-		A(await E(() => G.Dynamax.active), 'the C key starts it');
+		A(await E(() => G.Dynamax.active), 'the V key (was C) starts it');
 		await sleep(900);
 		await E(() => { for (const [dx, dy] of [[140, 40], [-120, 90], [60, -150], [-200, -60], [220, 120], [-60, 200]]) T.mk(19, dx, dy, { hp: 1e7 }); });
 		await sleep(1300);

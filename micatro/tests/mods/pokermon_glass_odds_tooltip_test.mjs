@@ -8,6 +8,7 @@
 // Pokermon r69 never retroactive: a run recorded on r68 (two Noibats: still 1 in 2) replays as recorded.
 //   node micatro/tests/mods/pokermon_glass_odds_tooltip_test.mjs
 import { T, start, hand, add, clearHand, G, STATES } from './poke_helpers.mjs';
+// (Session runs here start with engineRev: 1 = the rules before Pages: these suites measure the mod alone)
 import { describe } from '../../js/engine/describe.js';
 import { toView, cardView } from '../../js/engine/view.js';
 import { Session } from '../../js/engine/session.js';
@@ -86,7 +87,7 @@ await sec('r68 replay', () => {
     const s = new Session();
     PINS.RULES.pins = pins;
     try {
-      s.start({ seed: 'NOIBREC', mods: ['pokermon'], customDeck: deck });
+      s.start({ engineRev: 1, seed: 'NOIBREC', mods: ['pokermon'], customDeck: deck });
       s.act({ type: 'select_blind' }); flush();
       for (let i = 0; i < 3 && G.STATE === STATES.SELECTING_HAND; i++) {
         const glass = G.hand.cards.filter((c) => c.ability.name === 'Glass Card').slice(0, 1);

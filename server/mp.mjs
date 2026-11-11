@@ -18,6 +18,7 @@ import { createMatch, submitAction, replaceFainted, sideOf } from '../battlecard
 import POOL from './pool-rarity.json';
 import LOADOUTS from './loadout-cards.json'; // { id: { kind:'commander'|'companion', cls } }
 import CORR_BANS from './correspondence-bans.json'; // countering is banned in play-by-mail (gen-correspondence-bans.mjs)
+import { handleMtpvp, PP as MTPVP } from './micatro_pvp.mjs'; // Micatro Multiplayer (PvP): the lobby + the match referee
 
 const SECRET = process.env.MP_SECRET || 'magepunk-dev-secret-set-MP_SECRET';
 const TOKEN_DAYS = 30;
@@ -72,6 +73,18 @@ const MICATRO_STALE_MS = 45_000;    // no publish in this long → the run is no
 const MICATRO_REFRESH_MS = 20_000;  // an unchanged keep-alive rewrites the state row only past this age
 const MICATRO_PRESENCE_MS = 30_000; // ...and the presence row only past this age (ONLINE_MS is 90s)
 const SPEC_BEAT_MS = 4_000;         // a micatro spectator's heartbeat row is rewritten at most this often (< SPEC_WINDOW_MS)
+// SCOUNDREL's board (run-score mode 'scoundrel'): a run is at most 20 dungeons (max HP 20 -> 1); a death's
+// final score is at worst minus every monster in the 44-card deck (2..14, clubs + spades = 208)
+const SCOUNDREL_MAX_DUNGEONS = 20, SCOUNDREL_MONSTER_SUM = 208;
+// The solo card games that broadcast a run like Micatro does (publish-<game> / <game>-state): each has its own
+// state row '<game>state:<user>' and presence status '<game>:<label>'. (Micatro itself: 'micatrostate:', 'micatro:'.)
+const SOLO_LIVE = { scoundrel: 'scoundrelstate:', pears: 'pearsstate:' };
+/** The SOLO_LIVE game an action names: soloGameOf('publish-pears', 'publish-', '') -> 'pears' (else null). */
+function soloGameOf(action, pre, suf) {
+	if (typeof action !== 'string' || !action.startsWith(pre) || !action.endsWith(suf)) return null;
+	const g = action.slice(pre.length, action.length - suf.length);
+	return Object.prototype.hasOwnProperty.call(SOLO_LIVE, g) ? g : null;
+}
 // MICATRO custom decks (the deck editor): one row `micatrodecks:<user>` = {rev, decks: [{id, def, updated}]}.
 const MICATRO_PROGRESS_BYTES = 4000;      // the Nuzlocke / Monotype record + achievements (a few hundred bytes in practice)
 const MICATRO_DECKS_MAX = 30;           // decks per player
@@ -772,6 +785,15 @@ const RATE_LIMITS = {
 	'cardstate': [40, 10_000], 'card-poll': [80, 10_000],
 	// Micatro: the runner publishes at most ~1/1.2s, spectators poll ~1/s
 	'publish-micatro': [120, 10_000], 'micatro-state': [40, 10_000],
+	// Scoundrel (/scoundrel/) broadcasts its run through the same handlers (publish-scoundrel / scoundrel-state)
+	'publish-scoundrel': [120, 10_000], 'scoundrel-state': [40, 10_000],
+	// Pair of Pears (/pairofpears/) the same way (publish-pears / pears-state)
+	'publish-pears': [120, 10_000], 'pears-state': [40, 10_000],
+	// Micatro Multiplayer (PvP, server/micatro_pvp.mjs): the client syncs ~1/s in a Nemesis round, ~1/2-3 s elsewhere,
+	// and reports a hand / a blind / a ready press on each such move — these brake a runaway client, not play
+	'mtpvp-create': [10, 60_000], 'mtpvp-peek': [30, 60_000], 'mtpvp-join': [20, 60_000], 'mtpvp-leave': [20, 60_000],
+	'mtpvp-mine': [30, 60_000], 'mtpvp-update': [60, 60_000], 'mtpvp-sync': [40, 10_000], 'mtpvp-ready': [30, 10_000],
+	'mtpvp-hand': [40, 10_000], 'mtpvp-blind': [30, 10_000], 'mtpvp-forfeit': [10, 60_000], 'mtpvp-rematch': [20, 60_000], 'mtpvp-timer': [30, 10_000], 'mtpvp-ptimer': [30, 10_000], 'mtpvp-fx': [30, 10_000],
 	'micatro-decks-put': [20, 60_000], // saving custom decks (the deck editor) — deliberate edits, never hot
 	// win stickers: a load per page boot + a debounced push per won run (and its retries) — never hot
 	'micatro-stickers-get': [30, 60_000], 'micatro-stickers-put': [30, 60_000],
@@ -811,6 +833,8 @@ const RATE_LIMITS = {
 const HIT_LIMIT = [240, 60_000];    // per-IP analytics beacon
 const ERR_LIMIT = [120, 60_000];    // per-IP error beacon
 const LOGIN_LIMIT = [30, 60_000];   // per-IP login attempts — humans retry a handful; this stops scrypt-grinding brute force
+const LOGIN_REFUSED = 'wrong username or password'; // the ONE login refusal: never says whether the account exists
+const LOGIN_DUMMY_SALT = '00000000000000000000000000000000'; // not a secret: an unknown username still costs one scrypt, so timing doesn't tell either
 const REG_LIMIT = [20, 3600_000];   // per-IP account creation — a LAN party fits; a squatting flood does not
 const RGET_LIMIT = [120, 60_000];   // per-IP public replay fetch
 const TGET_LIMIT = [60, 60_000];    // per-IP public tuning fetch (2 per game boot)
@@ -819,7 +843,7 @@ const ART_OVERRIDE_MAX = 500_000;   // one re-encoded 768px jpeg as a data URL
 const ART_OVERRIDE_SLOTS = 20;      // bounded: fold into the repo before saving more
 // the owner's joker-design inbox (owner_todo:jokers): field caps (characters) and how many designs it holds before it
 // must be applied (500 x ~4 KB stays well under D1's row limit)
-const JOKER_DESIGN_MAX = { ability: 2000, notes: 2000, name: 60, rarity: 40, entries: 500 };
+const JOKER_DESIGN_MAX = { ability: 2000, notes: 2000, name: 60, rarity: 40, entries: 1000 };
 const BUG_TEXT_MAX = 60_000;        // a bug report: up to ~60KB of markdown (testers write long ones)
 const BUG_OPEN_MAX = 60;            // per reporter, open (un-reviewed) reports
 const REPAIR_MAX_BYTES = 600_000;   // one queued save repair (a full save export)
@@ -880,6 +904,10 @@ const GC_TABLE = [
 	['msurvreplays:', 60 * 24 * HR], // the per-player replay index (self-heals against swept replays on read)
 	['msurvsess:', 30 * 24 * HR], ['msurvseg:', 30 * 24 * HR], // U4: a replay session's index and its segments — a month too
 	['msurvseason:', 42 * 24 * HR], // MicaSurvivor Expedition weekly season boards (DLC D9): 4 past seasons stay readable
+	// Micatro Multiplayer (PvP): a lobby / match, its join code, each player's "my lobby" pointer and each player's own row.
+	// Their LOGICAL lives are far shorter (a waiting lobby closes when its host goes quiet, a quiet player forfeits after
+	// 120 s); these sweeps only reclaim rows nobody closed
+	['mtpvp:', 12 * HR], ['mtpvpcode:', 12 * HR], ['mtpvpcur:', 12 * HR], ['mtpvpp:', 12 * HR],
 ];
 
 // ---------- authoritative single-player state (durable, server-owned) ----------
@@ -893,6 +921,7 @@ const GC_TABLE = [
 // saved). run_keys_test keeps this in step with game.js.
 const RUN_KEYS = new Set(['magepunk_dungeon_v1', 'magepunk_heist_v1', 'magepunk_tombs_v1', 'magepunk_duels_v1', 'magepunk_arena_v1', 'magepunk_lorequest_v1', 'magepunk_middleearth_v1', 'magepunk_swordcoast_v1', 'magepunk_finalfantasy_v1', 'magepunk_multiverse_v1']);
 const RUN_MAX_BYTES = 700_000; // a run may carry a mid-fight snapshot (both hands/board/deck order)
+const RUN_PACKED_MAX = 300_000; // a packed (gzip, base64url) run from the unload hand-off
 // The overworld blob now carries the WHOLE canonical save (story flags, badges,
 // bag, dex, collected items — not just party/boxes), so the ceiling moved up.
 const OW_MAX_BYTES = 1_000_000;
@@ -1108,16 +1137,23 @@ function userStore(db) {
 		// then wrote the finished run back over it, and the next boot resumed (or
 		// rebuilt) a fight from a run that had already ended (Muse's Final Fantasy
 		// runs, 2026-10: 36 fights played past a third loss). Refused, as one guard:
-		// a run its client has ENDED (the `ended` marker run-clear leaves), and an
-		// older revision of the stored run. Returns true when the entry was written.
-		setRunEntry: async (k, mode, entry, runId, rev) => {
+		// a run its client has ENDED (the `ended` marker run-clear leaves), an older
+		// revision of the stored run, and an OLDER, DIFFERENT run over a newer active one
+		// (by the runs' own updatedAt stamps): a browser that came back with a stale
+		// profile (and missed the boot reconciliation) used to overwrite the server's newer
+		// run with its old one -- instinctgauntlet, 2026-11-05: a day-old Lukka run replaced
+		// the Ob Nixilis run being played. A run started after the stored one (a new run
+		// after an abandon whose clear was lost) still saves. Returns true when written.
+		setRunEntry: async (k, mode, entry, runId, rev, updatedAt = 0) => {
 			const p = '$.' + mode;
 			const r = await db.prepare(
 				'INSERT INTO mp_store (key, value, updated_at) VALUES (?, json_object(?, json(?)), unixepoch()) ' +
 				'ON CONFLICT(key) DO UPDATE SET value = json_set(mp_store.value, ?, json(?)), updated_at = unixepoch() ' +
 				'WHERE ? IS NULL OR (COALESCE(json_extract(mp_store.value, ?), \'\') <> ? ' +
-				'AND NOT (COALESCE(json_extract(mp_store.value, ?), \'\') = ? AND COALESCE(json_extract(mp_store.value, ?), 0) > ?))'
-			).bind(k, mode, entry, p, entry, runId, p + '.ended', runId, p + '.run.runId', runId, p + '.run.rev', rev).run();
+				'AND NOT (COALESCE(json_extract(mp_store.value, ?), \'\') = ? AND COALESCE(json_extract(mp_store.value, ?), 0) > ?) ' +
+				'AND NOT (COALESCE(json_extract(mp_store.value, ?), ?) <> ? AND COALESCE(json_extract(mp_store.value, ?), 0) > ?))'
+			).bind(k, mode, entry, p, entry, runId, p + '.ended', runId, p + '.run.runId', runId, p + '.run.rev', rev,
+				p + '.run.runId', runId, runId, p + '.run.updatedAt', updatedAt).run();
 			const changes = r && r.meta ? r.meta.changes : r && r.changes;
 			return Number(changes) > 0;
 		},
@@ -1595,11 +1631,14 @@ export default async function handler(req, env) {
 		// password brute-force lane and a CPU amplifier (one scrypt per attempt)
 		if (!(await rateLimit(store, 'login:' + clientIp(req), LOGIN_LIMIT[0], LOGIN_LIMIT[1]))) return json({ error: 'too many attempts — wait a minute' }, 429);
 		const username = String(body.username || '').trim().toLowerCase();
-		const user = await store.get(username);
-		if (!user) return json({ error: 'no such account' }, 401);
-		const hash = (await scrypt(String(body.password || ''), user.salt)).toString('hex');
-		const a = Buffer.from(hash), b = Buffer.from(user.hash);
-		if (a.length !== b.length || !timingSafeEqual(a, b)) return json({ error: 'wrong password' }, 401);
+		const row = await store.get(username);
+		// One answer for "no such account" and "wrong password", and one scrypt either way: the
+		// reply (and its timing) must not say which usernames exist. A row that isn't an account
+		// (an unprefixed system key that happens to fit the username rule) counts as no account.
+		const user = row && typeof row.salt === 'string' && typeof row.hash === 'string' ? row : null;
+		const hash = (await scrypt(String(body.password || ''), user ? user.salt : LOGIN_DUMMY_SALT)).toString('hex');
+		const a = Buffer.from(hash), b = Buffer.from(user ? user.hash : '');
+		if (!user || a.length !== b.length || !timingSafeEqual(a, b)) return json({ error: LOGIN_REFUSED }, 401);
 		return json({ token: makeToken(username), state: publicState(user, username) });
 	}
 
@@ -1871,7 +1910,7 @@ export default async function handler(req, env) {
 		let entry = null, drop = null;
 		if (action === 'joker-design-add') {
 			const dex = Number(body.dex);
-			if (!Number.isInteger(dex) || dex < 1 || dex > 1025) return json({ error: 'bad dex number' }, 400);
+			if (!Number.isSafeInteger(dex) || dex === 0 || dex > 1025) return json({ error: 'bad dex number' }, 400);
 			const ability = String(body.ability || '').trim();
 			if (!ability) return json({ error: 'write the ability first' }, 400);
 			const name = String(body.name || '').trim(), rarity = String(body.rarity || '').trim(), notes = String(body.notes || '').trim();
@@ -2254,7 +2293,7 @@ export default async function handler(req, env) {
 	// previously invisible — cleared once and forgotten.
 	if (action === 'run-score' || action === 'run-leaderboard') {
 		let mode = String(body.mode || '');
-		if (!['duels', 'lorequest', 'middleearth', 'swordcoast', 'finalfantasy', 'multiverse', 'micatro', 'micatro_modded', 'micasurvivor', 'micasurvivor_expedition'].includes(mode)) {
+		if (!['duels', 'lorequest', 'middleearth', 'swordcoast', 'finalfantasy', 'multiverse', 'micatro', 'micatro_modded', 'micasurvivor', 'micasurvivor_expedition', 'scoundrel'].includes(mode)) {
 			return json({ error: 'no board for that mode' }, 400);
 		}
 		// MICATRO mods: a run with mods ranks on its own board ('micatro_modded'), each
@@ -2489,6 +2528,8 @@ export default async function handler(req, env) {
 			};
 			if (mode === 'micatro_modded') run.mods = modList;
 			if (customDeck) run.customDeck = customDeck;
+			// a run played with Micatro's Pages (base game since engine rev 2; off with Joker Toggle's switch, never in a challenge): noted on its row
+			if (body.pages === true) run.pages = true;
 			// Pokermon run badges ({nuz:true, mono:'fire'}): CLIENT-REPORTED like the score itself — the server can't
 			// re-check a run, so only the shape is validated. Only a won run carries them; a bad shape is refused.
 			if (body.badges != null) {
@@ -2514,6 +2555,27 @@ export default async function handler(req, env) {
 		// MICASURVIVOR ranks a solo run by SURVIVAL TIME (seconds, higher is better), then
 		// kills, then the earliest. A time past MICASURVIVOR_MAX_TIME (or not a number) is
 		// refused rather than clamped, so a bogus run can't sit at the top of the board.
+		// SCOUNDREL ranks a run by DUNGEONS CLEARED (each one starts with 1 less max HP: 20 at most), then the final
+		// dungeon's standard Scoundrel score (HP left, or minus the monsters left when you died there), then the earliest.
+		if (mode === 'scoundrel' && action === 'run-score') {
+			const int = (v) => (typeof v === 'number' && Number.isFinite(v) ? Math.floor(v) : NaN);
+			const dungeons = int(body.dungeons), final = int(body.final);
+			if (!(dungeons >= 0 && dungeons <= SCOUNDREL_MAX_DUNGEONS)) return json({ error: 'bad dungeons', max: SCOUNDREL_MAX_DUNGEONS }, 400);
+			if (!(final >= -SCOUNDREL_MONSTER_SUM && final <= 40)) return json({ error: 'bad final score' }, 400);
+			const run = { dungeons, final, seed: String(body.seed ?? '').replace(/[^A-Za-z0-9_-]/g, '').slice(0, 24) };
+			const cmp = (a, b) => (a.dungeons - b.dungeons) || (a.final - b.final);
+			const prev = user.runBest[mode];
+			const better = !prev || typeof prev.dungeons !== 'number' || cmp(run, prev) > 0;
+			if (better) { user.runBest[mode] = { ...run, when: Date.now() }; await store.setJSON(username, user); }
+			const best = user.runBest[mode] || null;
+			const board = ((await store.get(key)) || []).filter(e => e.name !== username);
+			if (best) board.push({ name: username, ...best });
+			board.sort((a, b) => cmp(b, a) || a.when - b.when);
+			const capped = board.slice(0, 100);
+			if (better) await store.setJSON(key, capped);
+			const rank = capped.findIndex(e => e.name === username) + 1;
+			return json({ ok: true, better, best, rank: rank || null });
+		}
 		if (mode === 'micasurvivor' && action === 'run-score') {
 			const int = (v) => (typeof v === 'number' && Number.isFinite(v) ? Math.floor(v) : NaN);
 			const time = int(body.time);
@@ -2861,7 +2923,12 @@ export default async function handler(req, env) {
 	// view changed and otherwise sends a snapshot-less keep-alive every ~10s; an
 	// unchanged keep-alive skips the state-row write until the row nears staleness,
 	// and the presence row is only rewritten when its status changed or it is aging.
-	if (action === 'publish-micatro') {
+	// SCOUNDREL (/scoundrel/, the dungeon solitaire) and PAIR OF PEARS (/pairofpears/, the memory card game) broadcast
+	// their run the same way (SOLO_LIVE): publish-scoundrel writes 'scoundrelstate:<user>' and sets the presence status
+	// 'scoundrel:<label>'; publish-pears writes 'pearsstate:<user>' and 'pears:<label>' (no PvP).
+	if (action === 'publish-micatro' || soloGameOf(action, 'publish-', '')) {
+		const solo = soloGameOf(action, 'publish-', '');
+		const scd = !!solo, ROW = solo ? SOLO_LIVE[solo] : 'micatrostate:';
 		const now = Date.now();
 		const seq = Number.isFinite(+body.seq) ? Math.max(0, Math.floor(+body.seq)) : 0;
 		const label = String(body.label || '').replace(/[\u0000-\u001f]/g, ' ').slice(0, 48).trim();
@@ -2871,12 +2938,12 @@ export default async function handler(req, env) {
 		if (hasSnap && JSON.stringify(body.snapshot).length > MICATRO_SNAPSHOT_MAX) return json({ error: 'snapshot too large', max: MICATRO_SNAPSHOT_MAX }, 413);
 		const watcherNames = (await listWatchers(store, username, now)).slice(0, SPEC_CAP);
 		const watchers = watcherNames.length;
-		const prev = await store.get('micatrostate:' + username);
+		const prev = await store.get(ROW + username);
 		const sameSeq = !!prev && prev.seq === seq;
 		const unchanged = sameSeq && !hasSnap && !!prev.over === over && !!prev.won === won && prev.label === label && (prev.replay || null) === replay
 			&& (prev.watcherNames || []).join(',') === watcherNames.join(',') && now - prev.ts < MICATRO_REFRESH_MS;
 		if (!unchanged) {
-			await store.setJSON('micatrostate:' + username, {
+			await store.setJSON(ROW + username, {
 				snapshot: hasSnap ? body.snapshot : (sameSeq ? prev.snapshot : null),
 				label,
 				room: 'u:' + username, // spectators read the runner's chat room
@@ -2885,8 +2952,10 @@ export default async function handler(req, env) {
 				...(replay ? { replay } : {}),
 			});
 		}
-		// presence: "playing Micatro" while live; a finished run goes back to plain online
-		const status = over ? '' : ('micatro:' + label).slice(0, 64);
+		// presence: "playing Micatro" while live; a finished run goes back to plain online. A Multiplayer match
+		// (body.pvp = its lobby id) says so: friends see "Micatro PvP" and Watch it the same way.
+		const pvpId = !scd && /^[0-9a-f]{12}$/.test(String(body.pvp || '')) ? String(body.pvp) : '';
+		const status = over ? '' : (solo ? solo + ':' + label : pvpId ? 'micatropvp:match:' + pvpId + ':' + label : 'micatro:' + label).slice(0, 96);
 		const pres = await store.get('presence:' + username);
 		if (!pres || pres.status !== status || pres.region !== label || now - (pres.lastSeen || 0) >= MICATRO_PRESENCE_MS) {
 			await store.setJSON('presence:' + username, {
@@ -3245,6 +3314,19 @@ export default async function handler(req, env) {
 		return json({ error: 'stale', rev: (now && now.rev) || 0, save: (now && now.save) || null }, 409);
 	}
 
+	// MICATRO MULTIPLAYER (PvP): lobbies by join code + the match referee (server/micatro_pvp.mjs, its header has the
+	// rows). Anyone signed in may join with the code (owner D1); friends see a waiting lobby on their list (presence).
+	if (action.startsWith('mtpvp-')) {
+		// (globalThis.__msurvClock: the tests' injectable clock, shared with MicaSurvivor's lobby; never set live)
+		const now = msurvNow();
+		const presence = async (status, label) => {
+			const pres = await store.get('presence:' + username);
+			if (pres && pres.status === status && now - (pres.lastSeen || 0) < MTPVP.PRESENCE_MS) return;
+			await store.setJSON('presence:' + username, { name: username, map: '', x: 0, y: 0, facing: 'down', status: status.slice(0, 64), region: label, lastSeen: now });
+		};
+		return handleMtpvp({ action, body, store, user, username, json, now, presence, randomHex: (n) => randomBytes(n).toString('hex'), rnd: () => randomBytes(4).readUInt32BE(0) / 4294967296 });
+	}
+
 	// MICASURVIVOR online co-op (M5 batch 12b): friends-only lobbies, WebRTC signalling and the
 	// relay fallback (see the MSURV_* constants for the rows and their lives). Every row written
 	// here is an EXACT key derived from the token's user and a lobby it belongs to.
@@ -3600,10 +3682,11 @@ export default async function handler(req, env) {
 	}
 
 	// a friend reads a MICATRO run's latest view (read-only spectating)
-	if (action === 'micatro-state') {
+	// (a friend's SCOUNDREL / PAIR OF PEARS run: scoundrel-state / pears-state, the same rules over SOLO_LIVE's row)
+	if (action === 'micatro-state' || soloGameOf(action, '', '-state')) {
 		const who = String(body.username || '').trim().toLowerCase();
 		if (!who || !user.friends.includes(who)) return json({ error: 'not your friend' }, 403);
-		const ms = await store.get('micatrostate:' + who);
+		const ms = await store.get((action === 'micatro-state' ? 'micatrostate:' : SOLO_LIVE[soloGameOf(action, '', '-state')]) + who);
 		const now = Date.now();
 		if (!ms || now - ms.ts > MICATRO_STALE_MS) return json({ snapshot: null, live: false });
 		// the same cap as card spectating; a viewer with a fresh heartbeat always gets back in
@@ -3865,10 +3948,17 @@ export default async function handler(req, env) {
 				const fs = await store.get('factorystate:' + f);
 				if (!fs || now - fs.ts >= CARDSTATE_MS) continue; // publishing stopped → not watchable
 				live.push({ username: f, kind: 'factory', mode: 'factory', label: p.region || st.slice('factory:'.length), watchers: fs.watchers || 0, full: (fs.watchers || 0) >= SPEC_CAP });
-			} else if (st.startsWith('micatro:')) {
+			} else if (st.startsWith('micatro:') || st.startsWith('micatropvp:match:')) {
 				const ms = await store.get('micatrostate:' + f);
 				if (!ms || ms.over || now - ms.ts >= MICATRO_STALE_MS) continue; // finished / stopped publishing
 				live.push({ username: f, kind: 'micatro', mode: 'micatro', label: ms.label || p.region || st.slice('micatro:'.length), watchers: ms.watchers || 0, full: (ms.watchers || 0) >= SPEC_CAP });
+			} else {
+				// a solo card game's run (SOLO_LIVE: 'scoundrel:<label>', 'pears:<label>')
+				const game = Object.keys(SOLO_LIVE).find((g) => st.startsWith(g + ':'));
+				if (!game) continue;
+				const ss = await store.get(SOLO_LIVE[game] + f);
+				if (!ss || ss.over || now - ss.ts >= MICATRO_STALE_MS) continue; // finished / stopped publishing
+				live.push({ username: f, kind: game, mode: game, label: ss.label || p.region || st.slice(game.length + 1), watchers: ss.watchers || 0, full: (ss.watchers || 0) >= SPEC_CAP });
 			}
 		}
 		return json({ live });
@@ -4896,19 +4986,28 @@ export default async function handler(req, env) {
 	if (action === 'run-save') {
 		const key = String(body.key || '');
 		if (!RUN_KEYS.has(key)) return json({ error: 'bad run key' }, 400);
-		const run = body.run;
+		let run = body.run;
+		// the unload hand-off sends the run gzip-packed ('G1.' base64url, like replay tapes):
+		// a keepalive request body is capped at ~64KB and a mid-fight run is ~150KB of JSON
+		if (run == null && typeof body.packed === 'string') {
+			if (body.packed.length > RUN_PACKED_MAX) return json({ error: 'run too large' }, 413);
+			const text = await unpackCapped(body.packed, RUN_MAX_BYTES);
+			if (text == null) return json({ error: 'bad run' }, 400);
+			try { run = JSON.parse(text); } catch { return json({ error: 'bad run' }, 400); }
+		}
 		if (!run || typeof run !== 'object' || Array.isArray(run)) return json({ error: 'bad run' }, 400);
 		if (JSON.stringify(run).length > RUN_MAX_BYTES) return json({ error: 'run too large' }, 413);
 		const entry = JSON.stringify({ run, updated_at: Date.now() });
 		const runId = run.runId ? String(run.runId) : null;   // legacy runs (no id) write unguarded, as before
-		const written = await store.setRunEntry('run:' + username, key, entry, runId, Number(run.rev) || 0);
+		const written = await store.setRunEntry('run:' + username, key, entry, runId, Number(run.rev) || 0, Number(run.updatedAt) || 0);
 		if (written) return json({ ok: true });
 		// Refused: say WHY, so the client can act instead of playing on unsaved. `ended`:
 		// this run is over (its slot holds the run-clear marker) — a local copy is a zombie
 		// whose removal the browser lost. Otherwise the server holds a newer revision
 		// (`rev`), i.e. another tab or device moved the run on. (Read only on refusal.)
 		const cur = ((await store.get('run:' + username)) || {})[key] || null;
-		return json({ ok: false, stale: true, ended: !!(cur && cur.ended && runId && String(cur.ended) === runId), rev: cur && cur.run ? (Number(cur.run.rev) || 0) : null });
+		const otherRun = !!(cur && cur.run && cur.run.runId && runId && String(cur.run.runId) !== runId);   // a newer, different run holds the slot
+		return json({ ok: false, stale: true, ended: !!(cur && cur.ended && runId && String(cur.ended) === runId), otherRun, rev: cur && cur.run ? (Number(cur.run.rev) || 0) : null });
 	}
 	if (action === 'run-load') {
 		return json({ runs: (await store.get('run:' + username)) || {} });

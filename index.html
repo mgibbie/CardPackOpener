@@ -149,7 +149,7 @@
 		</header>
 
 		<div class="section-label">Featured</div>
-		<a class="featured" href="battlecards/start.html">
+		<a class="featured" href="battlecards/start.html" data-focusnav-first>
 			<div class="body">
 				<span class="badge">Flagship</span>
 				<h2>Battlecards</h2>
@@ -181,7 +181,7 @@
 			</a>
 			<a class="tile" href="pairofpears/">
 				<div class="glyph">🍐</div>
-				<div><h3>Pair of Pears <span class="arrow">→</span></h3><p>A cozy co-op puzzle game about two pears working together.</p></div>
+				<div><h3>Pair of Pears <span class="arrow">→</span></h3><p>A memory card game — find the fruit pairs, mind your hearts, and buy charms between levels. Friends can watch live.</p></div>
 			</a>
 			<a class="tile" href="micatro/">
 				<div class="glyph">🃏</div>
@@ -193,7 +193,7 @@
 			</a>
 			<a class="tile" href="scoundrel/">
 				<div class="glyph">🗡️</div>
-				<div><h3>Scoundrel <span class="arrow">→</span></h3><p>A single-deck dungeon crawler — press your luck through a hall of cards.</p></div>
+				<div><h3>Scoundrel <span class="arrow">→</span></h3><p>A single-deck dungeon crawler — clear dungeon after dungeon with 1 less max HP each time. Friends can watch live.</p></div>
 			</a>
 		</div>
 
@@ -266,6 +266,8 @@
 
 	<!-- the shared top bar (⚙️ Magepunk wordmark + account + inbox) -->
 	<script type="module" src="/site/topbar.js"></script>
+	<!-- no mouse needed: arrows / WASD / d-pad move over the tiles, Z / Enter / A opens one (site/focusnav.js) -->
+	<script type="module">import { initFocusNav } from '/site/focusnav.js'; initFocusNav();</script>
 	<!-- the Collection tile is logged-in only; Monsters shows once you have a party;
 	     the owner tools (To-Do, Art Tuner, Sprite Tuner, Map Editor) are revealed
 	     from the cached username, which is only a convenience — each tool

@@ -562,7 +562,7 @@ export function drawTrainerCard(W, H) {
 		});
 		return;
 	}
-	menuChrome(W, H, u, 'TRAINER CARD', 'Your journey so far.   ◄ ► journal   ·   S share');
+	menuChrome(W, H, u, 'TRAINER CARD', 'Your journey so far.   ◄ ► journal   ·   V share');
 	const c = Dex.counts();
 	const name = localStorage.getItem('magepunk_name') || 'PLAYER';
 	const region = localStorage.getItem('magepunk_region') || '—';
@@ -755,7 +755,8 @@ export function drawOptions(W, H) {
 	if (optionsMenu.mode === 'controls') {
 		const rows = KEY_ACTIONS.map(a => {
 			const cur = S.keyBinds[a.id];
-			const shown = (cur || a.def) === ' ' ? 'SPACE' : (cur || a.def).toUpperCase();
+			// a custom key works ALONGSIDE the stock ones (translateKey), so both show
+			const shown = cur ? `${cur === ' ' ? 'SPACE' : cur.toUpperCase()}  + ${a.keys || a.def.toUpperCase()}` : (a.keys || a.def.toUpperCase());
 			return optionsMenu.capture === a.id ? `${a.label}   >>> PRESS A KEY (Esc cancels)` : `${a.label}   —   ${shown}${cur ? '' : '  (default)'}`;
 		}).concat(['RESET ALL TO DEFAULTS'], padSettingRows(), ['Back']);
 		optionList(W, H, u, 'CONTROLS', 'Keys and controller, rebindable. Arrows / WASD / the stick always move.', rows, optionsMenu.idx, 'ctl:', optionsMenu.flash);
@@ -1031,7 +1032,7 @@ export function drawPcMenu(W, H) {
 	menuChrome(W, H, u, 'POKEMON STORAGE',
 		pcMenu.confirm != null ? `Release ${box[pcMenu.confirm]?.name}? Z releases — X keeps it.`
 			: pcMenu.releaseMode ? 'RELEASE MODE: tap a boxed Pokémon to let it go.'
-			: pcMenu.flash || 'Z moves · ←/→ change box · R release · S sort · F search.');
+			: pcMenu.flash || 'Z moves · ←/→ change box · C switch side · R release · V sort · F search.');
 	sctx.font = `${Math.round(15 * u)}px m6x11plus, monospace`;
 	sctx.fillStyle = pcMenu.side === 0 ? BUI.C.accent : BUI.C.dim;
 	sctx.fillText('PARTY', 24 * u, 78 * u);
@@ -1140,10 +1141,17 @@ export function drawPortalMenu(W, H) {
 // a compact vertical list menu (Start / Cards); returns tappable rows
 export function drawVertical(W, H, u, title, sub, items, idx, idPrefix) {
 	menuChrome(W, H, u, title, sub, title !== 'MENU');
-	const bw = Math.min(W - 48 * u, 360 * u);
+	// a long list (the START menu signed in: 17 rows) ran off the bottom of the
+	// band, out of reach of a tap: past one column's worth it splits into two
+	// (top to bottom, then the next column — the ▲▼ order) and the rows tighten
+	const avail = H / u - 84, n = items.length;
+	const cols = n * 46 > avail ? 2 : 1, rows = Math.ceil(n / cols);
+	const pitch = Math.min(46, avail / rows);
+	const bw = cols === 1 ? Math.min(W - 48 * u, 360 * u) : Math.min((W - 60 * u) / 2, 330 * u);
 	items.forEach((lab, i) => {
 		const bid = idPrefix + ':' + i;
-		const b = { id: bid, x: W - bw - 24 * u, y: (80 + i * 46) * u, w: bw, h: 40 * u,
+		const c = Math.floor(i / rows), r = i % rows;
+		const b = { id: bid, x: W - 24 * u - (cols - c) * bw - (cols - 1 - c) * 12 * u, y: (80 + r * pitch) * u, w: bw, h: (pitch - 6) * u,
 			label: lab, center: true, kbSel: idx === i };
 		S.menuUi.push(b);
 		BUI.button(sctx, b, S.menuHover === bid || idx === i, u);
@@ -1250,7 +1258,10 @@ export function summaryMovePick(i) {
 // taps route into the same state + key logic the keyboard uses
 export function menuTap(id) {
 	const [kind, a, b2] = id.split(':');
-	if (kind === 'close') { pressKey('Escape'); pressKey('x'); return; }
+	// one back press: every screen reads x as back. Sending Escape AND x closed two
+	// layers at once (the Game Corner's SLOTS → its menu → gone)
+	if (kind === 'close') { pressKey('x'); return; }
+	if (kind === 'gslot') { pressKey(a === 'minus' ? 'ArrowLeft' : a === 'plus' ? 'ArrowRight' : 'z'); return; }
 	if (kind === 'slkey') { pressKey(a); return; }   // the Crystal slot machine's A / B / cursor pads
 	if (kind === 'party') { if (!partyMenu.action) { partyMenu.idx = +a; pressKey('z'); } return; }
 	if (kind === 'pact') { if (partyMenu.action) { partyMenu.action.idx = +a; pressKey('z'); } return; }

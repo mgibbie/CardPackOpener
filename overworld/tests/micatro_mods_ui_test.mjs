@@ -46,7 +46,7 @@ await import(pathToFileURL(path.join(ROOT, 'micatro/tests/fixtures/testmod/index
 const { Session } = await import(pathToFileURL(path.join(ROOT, 'micatro/js/engine/session.js')).href);
 const sess = new Session();
 sess.start({ seed: 'MODSPEC', back: 'b_red', stake: 1, mods: ['tmui'] });
-sess.act({ type: 'select_blind' });
+sess.act({ type: 'select_blind' }); sess.act({ type: 'pick_page', index: 0 }); // (Pages)
 const specView = sess.view();
 specView.mods = [...specView.mods, 'nosuchmod'];   // a mod this site doesn't ship: skipped gracefully
 const SNAP = { view: specView, events: [] };
@@ -144,6 +144,22 @@ try {
 		A(await page.evaluate(() => !!document.querySelector('.nr-mods .b-mods') && /vanilla/i.test(document.querySelector('.nr-mods-sum').textContent)), 'New Run has a Mods row (none on = vanilla)');
 		await clickSel(page, '.b-mods');
 		await page.waitForSelector('.mods-panel', { visible: true });
+		await tap(page, '.mod-row[data-mod="jokertoggle"] .mod-toggle');
+		await waitFor(() => page.evaluate(() => !!document.querySelector('.mod-row[data-mod="jokertoggle"] .mod-opts-toggle')), 8000);
+		await tap(page, '.mod-row[data-mod="jokertoggle"] .mod-opts-toggle');
+		A(await page.evaluate(() => document.querySelectorAll('.mod-row[data-mod="jokertoggle"] .mod-opt').length === 151), 'Joker Toggle exposes all 150 original Jokers (+ the Pages switch)');
+		A(await page.evaluate(() => { const b = document.querySelector('.mod-row[data-mod="jokertoggle"] [data-opt="pages"]'); return !!b && b.classList.contains('on') && /Pages/.test(b.closest('.mod-opt').textContent); }), 'its first option is the Pages switch, on by default');
+		await page.type('.mod-row[data-mod="jokertoggle"] .mod-options-search', 'greedy joker');
+		A(await page.evaluate(() => document.querySelectorAll('.mod-row[data-mod="jokertoggle"] .mod-opt').length === 1), 'long content lists can be searched');
+		await page.$eval('.mod-row[data-mod="jokertoggle"] .mod-options-search', e => { e.value = ''; e.dispatchEvent(new Event('input', { bubbles: true })); });
+		await tap(page, '.mod-row[data-mod="jokertoggle"] [data-opt="j_joker"]');
+		A(await page.evaluate(() => JSON.parse(localStorage.getItem('micatro_mods')).options.jokertoggle.j_joker === false), 'Joker Toggle saves an individual choice');
+		await tap(page, '.mod-row[data-mod="jokertoggle"] .mod-toggle');
+		await tap(page, '.mod-row[data-mod="tagteam"] .mod-toggle');
+		await waitFor(() => page.evaluate(() => !!document.querySelector('.mod-row[data-mod="tagteam"] [data-opt="content:j_snoresville_tag_team"]')), 8000);
+		await tap(page, '.mod-row[data-mod="tagteam"] [data-opt="content:j_snoresville_tag_team"]');
+		A(await page.evaluate(() => JSON.parse(localStorage.getItem('micatro_mods')).options.tagteam['content:j_snoresville_tag_team'] === false), 'an individual mod Joker switch is saved');
+		await tap(page, '.mod-row[data-mod="tagteam"] .mod-toggle');
 		const rows = await page.evaluate(() => [...document.querySelectorAll('.mod-row')].map(r => ({ id: r.dataset.mod, text: r.textContent })));
 		// rows are found by id: the site's real mods (e.g. Pokermon) are listed too
 		const rUi = rows.find((r) => r.id === 'tmui'), rAdd = rows.find((r) => r.id === 'tmaddon');
@@ -171,8 +187,9 @@ try {
 		A(st.on.length === 0 && /Also turned off Test Add-on/.test(st.note), 'turning off a requirement turns off its dependents, with a note', JSON.stringify(st));
 		// on again (just tmui) -> its options render
 		await tap(page, '.mod-row[data-mod="tmui"] .mod-toggle');
-		await waitFor(() => page.evaluate(() => document.querySelectorAll('.mod-row[data-mod="tmui"] .mod-opt').length === 3), 8000);
-		const opts = await page.evaluate(() => [...document.querySelectorAll('.mod-row[data-mod="tmui"] .mod-opt')].map(r => r.textContent));
+		await waitFor(() => page.evaluate(() => !!document.querySelector('.mod-row[data-mod="tmui"] .mod-opt, .mod-row[data-mod="tmui"] .mod-opts-toggle')), 8000);
+		if (await page.$('.mod-row[data-mod="tmui"] .mod-opts-toggle')) await tap(page, '.mod-row[data-mod="tmui"] .mod-opts-toggle');
+		const opts = await page.evaluate(() => [...document.querySelectorAll('.mod-row[data-mod="tmui"] .mod-opt')].map(r => r.textContent).filter(t => /Start with Adder|Flavor|Look|Hidden Legacy/.test(t)));
 		A(opts.length === 3 && /Start with Adder\s*On/.test(opts[0]) && /Flavor\s*mild\s*hot/.test(opts[1]) && /Look\s*plain\s*fancy/.test(opts[2]), 'the mod\'s options render (bool as a toggle, choice as buttons)', JSON.stringify(opts));
 		A(!opts.some(t => /Hidden Legacy/.test(t)), 'a hidden option is not listed (like Pokermon+\'s superseded "Nincada line")', JSON.stringify(opts));
 		await tap(page, '.mod-row[data-mod="tmui"] .mod-opt-c[data-val="hot"]');
@@ -226,7 +243,7 @@ try {
 		await tap(page, '.ri-modal .b-back');
 
 		// select the blind, then reload and Continue: the mods come back
-		await page.evaluate(() => window.__micatro.act({ type: 'select_blind' }));
+		await page.evaluate(() => window.__micatro.selectBlind());
 		await idle(page);
 		await page.reload({ waitUntil: 'domcontentloaded' });
 		await waitFor(() => page.evaluate(() => !!(window.__micatro && window.__micatro.ready)), 30000);
@@ -245,6 +262,8 @@ try {
 		await waitFor(() => page.evaluate(() => window.__micatro.view().state === 'ROUND_EVAL'), 15000);
 		await page.evaluate(() => window.__micatro.act({ type: 'cash_out' }));
 		await idle(page);
+		// (a Page's prize pack opens after the cash-out: skip it to reach the shop)
+		if (/_PACK/.test((await V(page)).state)) { await page.evaluate(() => window.__micatro.act({ type: 'skip_booster' })); await idle(page); }
 		v = await V(page);
 		const box = v.areas.shop_booster.find(c => c.center === 'p_tmui_box');
 		A(v.state === 'SHOP' && !!box, 'the mod pack is in the shop', JSON.stringify(v.areas.shop_booster.map(c => c.center)));
@@ -292,6 +311,26 @@ try {
 		A(lb.on === 'Modded' && lb.badges.join() === 'UI Test Mod' && seen.lb.includes('micatro_modded'), 'the Modded tab reads micatro_modded and shows mod badges on rows', JSON.stringify(lb));
 
 		A(errors.length === 0, 'no console errors (player)', errors.join(' | '));
+	}
+
+	// A real menu choice is carried into the run recipe and survives Continue.
+	{
+		const { page, ctx } = await open({ url: '/micatro/' });
+		await clickSel(page, '.b-menu-play');
+		await clickSel(page, '.b-mods');
+		await tap(page, '.mod-row[data-mod="jokertoggle"] .mod-toggle');
+		await waitFor(() => page.evaluate(() => !!document.querySelector('.mod-row[data-mod="jokertoggle"] .mod-opts-toggle')), 8000);
+		await tap(page, '.mod-row[data-mod="jokertoggle"] .mod-opts-toggle');
+		await tap(page, '.mod-row[data-mod="jokertoggle"] [data-opt="j_joker"]');
+		await tap(page, '.mods-modal .b-back');
+		await tap(page, '.b-start');
+		A(await waitFor(() => page.evaluate(async () => !!window.__micatro.session && (await import('/micatro/js/engine/core.js')).G.GAME.banned_keys.j_joker === true), 15000), 'a Joker switch selected in the menu is enforced in the run');
+		A(await page.evaluate(() => window.__micatro.session.recipe.modOptions.jokertoggle.j_joker === false), 'the run recipe records the Joker switch');
+		await page.reload({ waitUntil: 'domcontentloaded' });
+		await waitFor(() => page.evaluate(() => !!(window.__micatro && window.__micatro.ready)), 30000);
+		await clickSel(page, '.b-continue');
+		A(await waitFor(() => page.evaluate(async () => !!window.__micatro.session && (await import('/micatro/js/engine/core.js')).G.GAME.banned_keys.j_joker === true), 15000), 'Continue restores the disabled Joker');
+		await ctx.close();
 	}
 
 	// ================================================================ spectator

@@ -205,31 +205,58 @@ function foughtFlagsFor(hide) {
 		if (o && o.op === 'branch' && o.cond && o.cond.flag && o.cond.state === false && shows.has(o.label)) out.push(o.cond.flag);
 	return out;
 }
+// The map's own objects that ARE this legendary: OBJ_EVENT_GFX_<SPECIES> and its
+// poses (_FRONT / _SIDE / _ASLEEP / _STILL), on any tile. Marine Cave's KYOGRE_FRONT
+// and Navel Rock's HO-OH sit in the rock, Tin Tower's beasts behind a wall, a few
+// tiles from the square the native encounter fires on — so matching by tile alone
+// left a second one standing beside it (bug:1794338908364). DEOXYS_TRIANGLE is the
+// puzzle, not the POKeMON.
+function nativeLegendObjects(e, evs) {
+	const core = String(e.species).toUpperCase().replace(/[^A-Z0-9]/g, '');
+	return evs.filter(o => {
+		const m = /^OBJ_EVENT_GFX_(.+?)(?:_(?:FRONT|SIDE|ASLEEP|STILL))?$/.exec(o.graphics_id || '');
+		return (m && m[1].replace(/[^A-Z0-9]/g, '') === core) || (+o.x === e.x && +o.y === e.y && (o.graphics_id || '').toUpperCase().includes(core));
+	});
+}
 export function hideResolvedLegendaryObjects() {
 	const v = LEGENDARY_ENCOUNTERS[world.current?.map?.id];
 	if (!v) return;
 	const evs = world.current.map.object_events || [];
+	const avail = legendariesHere();
 	const hidden = [];
 	for (const e of (Array.isArray(v) ? v : [v])) {
-		// not caught yet: a decomp object standing ON the native encounter tile (Sky
-		// Pillar's RAYQUAZA_STILL at 14,6, shown once VAR_SKY_PILLAR_STATE >= 2) would
-		// block the step-on trigger, and its own script calls the unported
-		// StartLegendaryBattle — which "wins" with no battle. Leave it out of the object
-		// list (no flags touched) so the native encounter is the way in.
+		const mine = nativeLegendObjects(e, evs);
 		if (!Story.getFlag(e.flag)) {
-			for (const o of evs) if (+o.x === e.x && +o.y === e.y && (o.graphics_id || '').toUpperCase().includes(e.species.toUpperCase())) hidden.push(o);
+			// available now: the native encounter is this legendary's one body on the
+			// map. The decomp's own object (Sky Pillar's RAYQUAZA_STILL, shown once
+			// VAR_SKY_PILLAR_STATE >= 2) would stand beside it or on its square, and its
+			// script calls the unported StartLegendaryBattle — which "wins" with no
+			// battle. Leave it out of the object list (no flags touched).
+			// NOT available (its story phase hasn't come): an object elsewhere is the
+			// phase's own — the SLEEPING RAYQUAZA before the awakening — so it stays.
+			// One ON its square is the catch's own (the still RAYQUAZA): out either way.
+			if (avail.includes(e)) hidden.push(...mine);
+			else hidden.push(...mine.filter(o => +o.x === e.x && +o.y === e.y));
 			continue;
 		}
-		const gfx = e.species.toUpperCase();
-		for (const o of evs) {
+		// caught or beaten: also whatever flagged object stands on its square
+		for (const o of evs.filter(o => mine.includes(o) || (+o.x === e.x && +o.y === e.y))) {
 			if (!o.flag || o.flag === '0' || !/^(FLAG|EVENT)_/.test(o.flag)) continue;
-			if (!((+o.x === e.x && +o.y === e.y) || (o.graphics_id || '').toUpperCase().endsWith('_' + gfx))) continue;
 			for (const f of foughtFlagsFor(o.flag)) if (!Story.getFlag(f)) Story.setFlag(f);
 			if (!Story.getFlag(o.flag)) Story.setFlag(o.flag);
 			hidden.push(o);
 		}
 	}
 	if (hidden.length) npcs.list = npcs.list.filter(n => !hidden.includes(n.ev));
+}
+// A placed legendary that FAINTS is gone for the save, as in the decomps (Crystal's
+// Tin Tower SUICUNE leaves after its one battle). Say so: a KO the player did not
+// mean, LEECH SEED or poison taking the last HP in the turn that a ball which broke
+// free (or a failed RUN) spent, read as "I fled and it never came back"
+// (bug:1794281768146). Running never removes it; only a KO or a catch does.
+export function legendFaintedNotice(e) {
+	const name = battle.lastFoe?.name || String(e?.species || 'It').toUpperCase();
+	hud.textContent = `${name} fainted... it will not be seen here again.`;
 }
 export function startLegendaryBattle(e) {
 	if (!S.party || !leadMon(S.party) || battle.blocking) return;
@@ -248,6 +275,7 @@ export function startLegendaryBattle(e) {
 				syncOverworldAchievements(); // a legendary was CAUGHT (only catches count toward the sets)
 			} else if (result === 'victory') {
 				Story.setFlag(e.flag); // fainted it — it won't reappear (matches the games)
+				legendFaintedNotice(e);
 				hideResolvedLegendaryObjects();
 				evolution.check(S.party, battle.data);
 			} else if (result === 'defeat') {

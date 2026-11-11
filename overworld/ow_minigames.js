@@ -219,6 +219,16 @@ export function drawSlots(W, H) {
 			sctx.textAlign = 'left';
 		});
 	}
+	// TOUCH: the reels are the big SPIN / STOP button; − / + set the bet
+	const spinning = s.game && !s.game.done;
+	S.menuUi.push({ id: 'gslot:spin', x: gx, y: gy, w: cw * 3 + 24 * u, h: ch * 3 });
+	if (!spinning) {
+		for (const [id, label, x] of [['gslot:minus', '−', W / 2 + 70 * u], ['gslot:plus', '+', W / 2 + 130 * u]]) {
+			const b = { id, x, y: 72 * u, w: 50 * u, h: 34 * u, label, center: true };
+			S.menuUi.push(b);
+			BUI.button(sctx, b, S.menuHover === id, u);
+		}
+	}
 	// reel state pips
 	if (s.game) {
 		s.game.stopped.forEach((st, i) => {

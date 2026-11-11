@@ -6,7 +6,7 @@
 import { ChessBoard, WHITE, BLACK, PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING } from './board.js';
 import { getBestMove } from './ai.js';
 import { Battle, buildMon } from '../battle.js';
-import { startGamepad } from '../../site/gamepad.js';
+import { startInput, actionForKey, isTyping } from '../../site/input.js';
 
 const battle = new Battle();
 
@@ -284,7 +284,7 @@ function drawPanel() {
 		ctx.fillText(`Rival captured: ${board.capturedPieces[BLACK].length}`, px + (PANEL - PAD) / 2, PAD + BOARD - 42);
 	}
 	ctx.fillStyle = '#8f88b0'; ctx.font = '11px system-ui, sans-serif';
-	ctx.fillText('Esc / back — leave', px + (PANEL - PAD) / 2, PAD + BOARD - 20);
+	ctx.fillText('Backspace / Select — leave', px + (PANEL - PAD) / 2, PAD + BOARD - 20);
 }
 
 
@@ -296,7 +296,7 @@ function drawGameOver() {
 	ctx.font = 'bold 40px system-ui, sans-serif';
 	ctx.fillText(won ? 'Checkmate — you win!' : board.result === 'draw' ? 'Stalemate — draw.' : 'Checkmate — you lose.', W / 2, H / 2 - 20);
 	ctx.fillStyle = '#e8e0d0'; ctx.font = '18px system-ui, sans-serif';
-	ctx.fillText('Press Z / Enter to play again · Esc to leave', W / 2, H / 2 + 30);
+	ctx.fillText('Press Z / Enter to play again · Backspace to leave', W / 2, H / 2 + 30);
 }
 
 function wrapText(text, x, y, maxW, lh) {
@@ -326,32 +326,49 @@ canvas.addEventListener('click', e => {
 	const [r, c] = pxToCell(mx, my);
 	if (r) { cursorR = r; cursorC = c; trySelect(r, c); }
 });
+// every input arrives as one of these key names: the keyboard and a controller both go
+// through site/input.js (arrows / WASD move, Z pick, X deselect, Enter = Start, Backspace =
+// Select = leave), and a capture battle owns them while it runs
 function chessKey(k) {
 	if (phase === 'battle') { battle.key(k); return; } // the battle owns input during a clash
-	if (k === 'Escape') { leave(); return; }
 	if (phase === 'gameover') { if (k === 'z' || k === 'Enter') boot(); return; }
 	if (phase !== 'player') return;
-	if (k === 'ArrowUp' || k === 'w') cursorR = Math.min(8, cursorR + 1);
-	else if (k === 'ArrowDown' || k === 's') cursorR = Math.max(1, cursorR - 1);
-	else if (k === 'ArrowLeft' || k === 'a') cursorC = Math.max(1, cursorC - 1);
-	else if (k === 'ArrowRight' || k === 'd') cursorC = Math.min(8, cursorC + 1);
+	if (k === 'ArrowUp') cursorR = Math.min(8, cursorR + 1);
+	else if (k === 'ArrowDown') cursorR = Math.max(1, cursorR - 1);
+	else if (k === 'ArrowLeft') cursorC = Math.max(1, cursorC - 1);
+	else if (k === 'ArrowRight') cursorC = Math.min(8, cursorC + 1);
 	else if (k === 'z' || k === 'Enter') trySelect(cursorR, cursorC);
 	else if (k === 'x') { selR = selC = null; validMoves = null; }
 }
-addEventListener('keydown', e => {
-	// stop the browser from scrolling the page on the keys the game uses
-	if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' ', 'z', 'x', 'Enter'].includes(e.key)) e.preventDefault();
-	chessKey(e.key);
-});
-// CONTROLLER (everyone, guests included, like the overworld): the same keys,
-// from the shared core — Nintendo layout, View leaves back to the arcade
-{
-	const PAD = { confirm: 'z', cancel: 'x', menu: 'Enter', select: 'Escape', up: 'ArrowUp', down: 'ArrowDown', left: 'ArrowLeft', right: 'ArrowRight' };
-	startGamepad({
-		readPads: window.__owFakePads ? () => window.__owFakePads : undefined,
-		onPress: a => { if (PAD[a]) chessKey(PAD[a]); },
-	});
+const ACTION_KEY = { up: 'ArrowUp', down: 'ArrowDown', left: 'ArrowLeft', right: 'ArrowRight', confirm: 'z', cancel: 'x' };
+// Select leaves and Start picks, but only on their RELEASE, and only when pressed alone:
+// Start + Select together opens the Games switcher (site/switcher.js), and the game must not
+// have left (or moved) by then
+let selectAlone = false, startAlone = false, input = null;
+function onAction(a, info) {
+	if (ACTION_KEY[a]) { chessKey(ACTION_KEY[a]); return true; }
+	if (a === 'select') { selectAlone = !(input && input.held('menu')); startAlone = false; return true; }
+	if (a === 'menu') {
+		if (info.source === 'key') { chessKey('Enter'); return true; }   // the keyboard has no Start + Select chord
+		startAlone = !(input && input.held('select')); if (!startAlone) selectAlone = false;
+		return true;
+	}
+	return false;
 }
+function onRelease(a, info) {
+	if (a === 'select') { const go = selectAlone && !info.forced; selectAlone = false; if (go && phase !== 'battle') leave(); }
+	if (a === 'menu') { const go = startAlone && !info.forced; startAlone = false; if (go) chessKey('Enter'); }
+}
+input = startInput({ onAction, onRelease, pad: true });
+window.__pokechessInput = input;
+// the keys the scheme leaves to the game: Esc (a quick tap = back, like X; a held Esc opens the
+// Games switcher), and any other letter a capture battle uses (its own shortcuts)
+addEventListener('keydown', e => {
+	if (e.ctrlKey || e.metaKey || e.altKey || isTyping(e.target && e.target.tagName ? e.target : undefined)) return;
+	if (e.key === 'Escape') { chessKey('x'); return; }
+	if (e.key === ' ') { e.preventDefault(); return; }   // (no page scroll)
+	if (phase === 'battle' && e.isTrusted && !actionForKey(e) && /^[a-z]$/i.test(e.key)) battle.key(e.key.toLowerCase());
+});
 function leave() {
 	// return to the overworld where the arcade box sits
 	const mp = new URLSearchParams(location.search).get('mp');
@@ -360,7 +377,7 @@ function leave() {
 document.getElementById('leave')?.addEventListener('click', leave);
 
 // expose a tiny debug hook for headless testing
-window.__pokechess = { get phase() { return phase; }, get board() { return board; }, get battle() { return battle; }, boot, trySelect, doMove, getState: () => ({ phase, turn: board && board.turn, over: board && board.gameOver }) };
+window.__pokechess = { get phase() { return phase; }, get cursor() { return [cursorR, cursorC]; }, get sel() { return selR == null ? null : [selR, selC]; }, get validMoves() { return validMoves; }, get board() { return board; }, get battle() { return battle; }, boot, trySelect, doMove, getState: () => ({ phase, turn: board && board.turn, over: board && board.gameOver }) };
 
 boot();
 requestAnimationFrame(loop);

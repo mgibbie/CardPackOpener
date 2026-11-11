@@ -5,6 +5,7 @@
 <script src="/site/account_silo.js"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="mp-topbar" content="compact">
 <title>Magepunk — Sign in</title>
 <meta name="description" content="Sign in to Magepunk to save your Battlecards collection, decks, and progress across devices.">
 <meta name="robots" content="noindex">
@@ -101,5 +102,8 @@ $('form').addEventListener('submit', async (e) => {
 });
 render();
 </script>
+<!-- no mouse needed: arrows / WASD / d-pad move, Z / Enter / A picks, X / B backs out (site/focusnav.js) -->
+<script type="module">import { initFocusNav } from '/site/focusnav.js'; initFocusNav();</script>
+<script type="module" src="/site/topbar.js"></script> <!-- the shared top bar + the Games switcher (` / hold Esc / Start+Select / ⚙️) -->
 </body>
 </html>

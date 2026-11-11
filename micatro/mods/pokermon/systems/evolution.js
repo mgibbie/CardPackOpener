@@ -19,6 +19,7 @@
  */
 import { G, P_CENTERS, emit, card_eval_status_text, localize, play_sound, pseudorandom_element, pseudoseed, find_joker } from '../../../js/engine/core.js';
 import { juice_card_until } from '../../../js/engine/jokers.js';
+import { contentDisabled } from '../../../js/mods/registry.js';
 import { calculate_context } from '../../../js/engine/run.js';
 import DATA from '../data.js';
 import { find_card, any, cfg } from './utils.js';
@@ -198,8 +199,10 @@ export function copy_scaled_values(card) {
 export function poke_evolve(card, to_key, immediate, evolve_message, transformation, energize_amount) {
   // (3.9.1 renamed the Randomizer challenge's rule poke_apply_randomizer; a 3.2.1 run's apply_randomizer still counts)
   if ((G.GAME.modifiers.poke_apply_randomizer || G.GAME.modifiers.apply_randomizer) && !transformation) to_key = get_random_poke_key('randomizer');
+  if (!to_key) return undefined;
   // Add-on dedupe (precedence.js): an evolution into an add-on duplicate of a Pokermon joker gives Pokermon's.
   to_key = precedence_key(to_key);
+  if (contentDisabled(P_CENTERS[to_key])) return undefined;
   for (const f of EVOLVE_INTERCEPTS) if (f.immediate && f.immediate(card, to_key)) immediate = true;
   if (immediate) { poke_backend_evolve(card, to_key, energize_amount); return undefined; }
   G.E_MANAGER.add_event(() => {
@@ -239,6 +242,7 @@ export const EVOLVE_INTERCEPTS = [];
 
 export function poke_backend_evolve(card, to_key, energize_amount) {
   to_key = precedence_key(to_key); // (add-on dedupe, as poke_evolve)
+  if (contentDisabled(P_CENTERS[to_key])) return;
   for (const f of EVOLVE_INTERCEPTS) if (f.backend && f.backend(card, to_key)) return;
   const custom_values_to_keep = {};
   let has_custom = false;
@@ -374,7 +378,7 @@ function highest_evo_options(card) {
 
 export function get_previous_from_mega(name, prefix, full_key) {
   let prev = name.slice(5);
-  if (prev.slice(-2) === '_x' || prev.slice(-2) === '_y') prev = prev.slice(0, -2);
+  if (prev.slice(-2) === '_x' || prev.slice(-2) === '_y' || prev.slice(-2) === '_z') prev = prev.slice(0, -2);
   const k = 'j_' + prefix + '_' + prev;
   if (full_key) return P_CENTERS[k] ? k : undefined;
   return P_CENTERS[k] ? prev : undefined;
@@ -385,6 +389,7 @@ const STAGES = ['Baby', 'Basic', 'One', 'Two', 'Legendary', 'Mega'];
 export function get_previous_evo(card, full_key) {
   const prefix = card.config.center.poke_custom_prefix || 'poke';
   const name = nameOf(card);
+  if (card.config.center.poke_mega_base && P_CENTERS[card.config.center.poke_mega_base]) return full_key ? card.config.center.poke_mega_base : P_CENTERS[card.config.center.poke_mega_base].name;
   let prev;
   if (name.slice(0, 5) === 'mega_') { const mega = get_previous_from_mega(name, prefix, full_key); if (mega) return mega; }
   const ovp = evo_overrides(name).previous_evo;

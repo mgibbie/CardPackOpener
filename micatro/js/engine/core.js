@@ -15,7 +15,7 @@
 
 import DATA from '../../data/balatro_data.js';
 import * as B from './bignum.js';
-import { callHook, reduceHook, firstHook, activeConsumableTypes, CONSUMABLE_TYPES, MOD_LOC, ACTIVE as ACTIVE_MODS, centerActive, activeModEditions, MOD_SUITS, activeModSuits, RARITIES, resolve_set, SET_ALIASES } from '../mods/registry.js';
+import { callHook, reduceHook, firstHook, activeConsumableTypes, CONSUMABLE_TYPES, MOD_LOC, STICKERS, ACTIVE as ACTIVE_MODS, centerActive, contentDisabled, activeModEditions, MOD_SUITS, activeModSuits, RARITIES, resolve_set, SET_ALIASES } from '../mods/registry.js';
 // (Steamodded seams for Pokermon 3.9.1 — opt-in contexts and the object_weights routes; all no-ops unless a mod uses them)
 import { wanted, calculate_seam, object_weights, poll_object, SEAM_STATE } from './smods.js';
 
@@ -186,6 +186,17 @@ export function math_random(min, max) {
  * Lua; objects sort keys as strings; card lists sort by sort_id.
  */
 export function pseudorandom_element(t, seed) {
+  // (The Order: a pick among playing cards or jokers depends only on what they are — see order_values)
+  if (seed !== undefined && theOrder()) {
+    const vs = Array.isArray(t) ? t.map((v, i) => ({ k: i + 1, v })) : Object.keys(t).map((k) => ({ k, v: t[k] }));
+    const joker = vs.length > 0 && vs.every((x) => x.v && x.v.ability && x.v.ability.set === 'Joker');
+    if (vs.length && (joker || vs.every((x) => isPlayingCard(x.v)))) {
+      const val = order_values(vs.map((x) => x.v), seed, joker);
+      let best = vs[0];
+      for (const x of vs) if (val.get(x.v) > val.get(best.v)) best = x;
+      return [best.v, best.k];
+    }
+  }
   const r = seed === undefined ? seeded(pseudoseed('__elem')) : seeded(seed);
   let keys;
   if (Array.isArray(t)) keys = t.map((v, i) => ({ k: i + 1, v }));
@@ -200,6 +211,12 @@ export function pseudorandom_element(t, seed) {
   return [pick.v, pick.k];
 }
 export function pseudoshuffle(list, seed) {
+  // (The Order: a shuffle of playing cards is decided by the cards themselves, not by their order or sort_ids)
+  if (seed !== undefined && theOrder() && list.length && list.every(isPlayingCard)) {
+    const val = order_values(list, seed, false);
+    list.sort((a, b) => val.get(b) - val.get(a));
+    return;
+  }
   const r = seeded(seed);
   if (list[0] && list[0].sort_id !== undefined) list.sort((a, b) => (a.sort_id ?? 1) - (b.sort_id ?? 2));
   for (let i = list.length; i >= 2; i--) {
@@ -207,6 +224,60 @@ export function pseudoshuffle(list, seed) {
     const tmp = list[i - 1]; list[i - 1] = list[j - 1]; list[j - 1] = tmp;
   }
 }
+// ---------------------------------------------------------------- The Order
+// Micatro Multiplayer's "The Order" (the Balatro Multiplayer mod's lobby option, default on in its Balanced / Expanded
+// rulesets; engine/pvp.js): the random streams are keyed so two players on the same seed get the same cards in the same
+// order however differently they play — one continuous queue per card type (shop and pack streams apart, one joker
+// queue per rarity whatever made the joker), the Boss of ante N rolled from 'boss'..N, a deck shuffle keyed by the blind
+// (ante + blind + slot: a skip shifts nothing), and shuffles / picks over playing cards or jokers decided by WHAT the
+// cards are, not their order or sort_ids. Only ever on in a Multiplayer run whose lobby turned it on: a solo run (and a
+// Vanilla match) never takes any of these branches, so its rolls are exactly as before (fuzz_pvp_solo_test.mjs).
+/** Is The Order on? */
+export const theOrder = () => !!(G.GAME && G.GAME.pvp && G.GAME.pvp.order);
+/** A queue's ante suffix (MPAPI.ante_based): 0 under The Order — one queue for the whole run. */
+export const ante_based = () => (theOrder() ? 0 : G.GAME.round_resets.ante);
+/** A per-blind key (MPAPI.order_round_based): ante + blind + slot under The Order; else the ante (`ab`) or ''. */
+export function order_round_based(ab) {
+  if (theOrder()) {
+    const b = G.GAME.blind && G.GAME.blind.config && G.GAME.blind.config.blind;
+    return String(G.GAME.round_resets.ante) + ((b && b.key) || '') + (G.GAME.blind_on_deck || '');
+  }
+  return ab ? ante_based() : '';
+}
+const isPlayingCard = (v) => !!(v && typeof v === 'object' && v.ability && (v.ability.set === 'Default' || v.ability.set === 'Enhanced'));
+// a playing card's standing within its rank + suit (enhancement + seal + edition), so identical cards line up the same way
+const ORDER_STD = {
+  center: { c_base: 0, m_stone: 106, m_bonus: 107, m_mult: 108, m_wild: 109, m_gold: 110, m_lucky: 111, m_steel: 112, m_glass: 113 },
+  seal: { Gold: 122, Blue: 131, Purple: 140, Red: 149 },
+  edition: { foil: 157, holo: 192, polychrome: 227 },
+};
+const order_std = (c) => (ORDER_STD.center[c.config.center.key] || 0) + (ORDER_STD.seal[c.seal] || 0) + (ORDER_STD.edition[c.edition && c.edition.type] || 0);
+/**
+ * Each card's place in a shuffle / pick: the cards are grouped by identity (a joker's key; a playing card's suit + rank, or
+ * Stone), each group draws its values from a stream named after the group and the seed, in a fixed order (jokers by
+ * sort_id, playing cards by their standing). -> Map(card -> value); the higher value comes first. The group streams are
+ * scratch (deleted after), so the run's saved state is untouched.
+ */
+function order_values(list, seed, joker) {
+  const groups = new Map();
+  for (const c of list) {
+    const k = joker ? c.config.center.key : (c.config.center.key === 'm_stone' ? 'Stone' : c.base.suit + c.base.id);
+    if (!groups.has(k)) groups.set(k, []);
+    groups.get(k).push(c);
+  }
+  if (typeof seed === 'string') seed = pseudoseed(seed);
+  const true_seed = pseudorandom(seed);
+  const out = new Map();
+  for (const [k, g] of groups) {
+    if (joker) g.sort((a, b) => a.sort_id - b.sort_id);
+    else g.sort((a, b) => order_std(b) - order_std(a));
+    const mega = k + true_seed;
+    for (const c of g) out.set(c, pseudorandom(mega));
+    delete G.GAME.pseudorandom[mega];
+  }
+  return out;
+}
+
 export function random_string(length, seed) {
   const r = seeded(seed);
   let ret = '';
@@ -326,6 +397,7 @@ export class CardArea {
     this.config = Object.assign({ card_limit: 52, type: 'hand', highlighted_limit: 5 }, config || {});
   }
   emplace(card, location, stay_flipped) {
+    if (card && contentDisabled(card.config && card.config.center)) return;
     if (location === 'front' || this.config.type === 'deck') this.cards.unshift(card);
     // Pokermon's lovely patch (cardarea.lua): a numeric location inserts at that 1-based slot.
     else if (typeof location === 'number') this.cards.splice(Math.max(0, location - 1), 0, card);
@@ -468,6 +540,7 @@ export class Card {
   /** Card(front, center, params) — positions/sizes from the Lua signature are dropped. */
   constructor(card, center, params) {
     this.params = (params && typeof params === 'object') ? params : {};
+    if ('playing_card' in this.params && center && center.set === 'Enhanced' && contentDisabled(center)) center = P_CENTERS.c_base;
     this.config = { card: card || {}, center };
     this.playing_card = this.params.playing_card;
     G.sort_id = (G.sort_id || 0) + 1;
@@ -506,6 +579,9 @@ export class Card {
   }
 
   set_ability(center, initial, delay_sprites) {
+    // A disabled mod center must not be introduced by a transformation.
+    // Leave the existing card unchanged rather than substituting another effect.
+    if (this.ability && contentDisabled(center)) return;
     const old_center = this.config.center;
     // Steamodded (lovely/fixes.toml): with mods installed a card already in the deck takes
     // its old center's remove_from_deck / new center's add_to_deck effects across the swap,
@@ -551,6 +627,15 @@ export class Card {
     }
     // SMODS center.toml: a mod center's whole config is copied onto the ability.
     if (center.mod) for (const [k, v] of Object.entries(c)) if (k !== 'bonus' && k !== 'extra') this.ability[k] = copy_table(v);
+    // A disabled mod sticker cannot be attached through direct ability writes.
+    // Use the proxy only in runs with an explicit sticker override.
+    if (ACTIVE_MODS.length && Object.values(STICKERS).some(contentDisabled)) {
+      for (const key of Object.keys(this.ability)) if (contentDisabled(STICKERS[key])) delete this.ability[key];
+      this.ability = new Proxy(this.ability, { set(target, key, value) {
+        if (typeof key === 'string' && contentDisabled(STICKERS[key]) && value) return true;
+        target[key] = value; return true;
+      } });
+    }
     if (this.ability.name === 'Invisible Joker') this.ability.invis_rounds = 0;
     if (this.ability.name === 'To Do List') {
       const ph = Object.keys(G.GAME.hands).filter((k) => G.GAME.hands[k].visible);
@@ -567,12 +652,12 @@ export class Card {
     if (this.ability.name === 'Loyalty Card') { this.ability.burnt_hand = 0; this.ability.loyalty_remaining = this.ability.extra.every; }
     this.base_cost = center.cost || 1;
     this.ability.hands_played_at_create = (G.GAME && G.GAME.hands_played) || 0;
-    if (G.GAME && G.GAME.used_jokers) {
+    if (G.GAME && G.GAME.used_jokers && !contentDisabled(center)) {
       for (const [k, v] of Object.entries(P_CENTERS)) if (v.name === this.ability.name) G.GAME.used_jokers[k] = true;
     }
-    if (center.set_ability) center.set_ability(center, this, initial, delay_sprites);
+    if (!contentDisabled(center) && center.set_ability) center.set_ability(center, this, initial, delay_sprites);
     // Mods acting on any set_ability (a Lua Card:set_ability wrap; BETMMA's Chaos / Real Random).
-    if (smods) callHook('set_ability', this, center, old_center, initial);
+    if (smods && !contentDisabled(center)) callHook('set_ability', this, center, old_center, initial);
     if (was_added_to_deck && !this.debuff) this.add_to_deck();
     if (!initial && G.GAME.blind) G.GAME.blind.debuff_card(this);
     if (!initial) emit('card_changed', { card: this.sort_id });
@@ -588,13 +673,14 @@ export class Card {
       this.extra_cost += (this.edition.holo ? 3 : 0) + (this.edition.foil ? 2 : 0) + (this.edition.polychrome ? 5 : 0) + (this.edition.negative ? 5 : 0);
       if (this.edition.key && P_CENTERS[this.edition.key] && P_CENTERS[this.edition.key].mod) this.extra_cost += P_CENTERS[this.edition.key].extra_cost || 0;
     }
-    this.cost = Math.max(1, Math.floor((this.base_cost + this.extra_cost + 0.5) * (100 - G.GAME.discount_percent) / 100));
+    // (a Page's "half off" prize: the next shop's prices halve on top of Clearance Sale / Liquidation, same rounding)
+    this.cost = Math.max(1, Math.floor((this.base_cost + this.extra_cost + 0.5) * (100 - G.GAME.discount_percent) / (G.GAME.page_half_off ? 200 : 100)));
     if (this.ability.set === 'Booster' && G.GAME.modifiers.booster_ante_scaling) this.cost += G.GAME.round_resets.ante - 1;
     if ((this.ability.set === 'Planet' || (this.ability.set === 'Booster' && this.ability.name.includes('Celestial'))) && find_joker('Astronomer').length > 0) this.cost = 0;
     if (this.ability.rental) this.cost = 1;
     this.sell_cost = Math.max(1, Math.floor(this.cost / 2)) + (this.ability.extra_value || 0);
     if (this.area && this.ability.couponed && (this.area === G.shop_jokers || this.area === G.shop_booster)) this.cost = 0;
-    callHook('set_cost', this);
+    if (!contentDisabled(this.config.center)) callHook('set_cost', this);
   }
 
   set_edition(edition, immediate, silent) {
@@ -602,6 +688,7 @@ export class Card {
     // ('e_poke_shiny') or {poke_shiny: true}. Mods may refuse an edition (set_edition hook);
     // the old mod edition's on_remove / the new one's on_apply run like SMODS's set_edition.
     const ek = edition_key_of(edition);
+    if (contentDisabled(P_CENTERS[ek])) return;
     if (ek && callHook('set_edition', this, ek).includes(false)) return;
     const old = this.edition;
     if (old && old.key && P_CENTERS[old.key] && P_CENTERS[old.key].mod && P_CENTERS[old.key].on_remove) P_CENTERS[old.key].on_remove(this);
@@ -642,6 +729,7 @@ export class Card {
   }
 
   set_seal(_seal, silent) {
+    if (_seal && contentDisabled(P_SEALS[_seal])) return;
     const prev = this.seal;
     this.seal = _seal || null;
     // (SMODS seal / AMM Stamp apply-unapply: e.g. Jimbo's Stamp's +1 hand size while it's on an owned joker)
@@ -702,6 +790,7 @@ export class Card {
   }
 
   change_suit(new_suit) {
+    if (contentDisabled(MOD_SUITS[new_suit])) return;
     const code = { Diamonds: 'D_', Spades: 'S_', Clubs: 'C_', Hearts: 'H_' }[new_suit] || (MOD_SUITS[new_suit] && MOD_SUITS[new_suit].card_key + '_');
     const v = this.base.value;
     const val = v === 'Ace' ? 'A' : v === 'King' ? 'K' : v === 'Queen' ? 'Q' : v === 'Jack' ? 'J' : v === '10' ? 'T' : v;
@@ -710,6 +799,7 @@ export class Card {
   }
 
   add_to_deck(from_debuff) {
+    if (contentDisabled(this.config.center)) return;
     if (this.added_to_deck) return;
     this.added_to_deck = true;
     callHook('add_to_deck', this, from_debuff);
@@ -985,7 +1075,12 @@ export class Card {
   }
   start_dissolve() {
     if (ACTIVE_MODS.length) callHook('start_dissolve', this);
-    emit('dissolve', { card: this.sort_id }); this.remove();
+    // (a card destroyed straight from the deck — Pokermon's Meteorite — has no sprite on the table: the event carries its
+    //  view, so the board shows it leave the deck face up before it burns)
+    const fromDeck = !!G.deck && this.area === G.deck && !!eventCardView;
+    let view;
+    if (fromDeck) { try { view = eventCardView(this); } catch (e) { view = undefined; } }
+    emit('dissolve', view ? { card: this.sort_id, from: 'deck', view } : { card: this.sort_id }); this.remove();
   }
   shatter() {
     // A mod may keep a breaking card in play (BETMMA's Bulletproof Glass Cards).
@@ -1142,6 +1237,9 @@ export function add_joker(joker, edition, silent, eternal) {
 /** draw_card(from, to, percent, dir, sort, card, ...) — queued, like Lua. */
 export function draw_card(from, to, percent, dir, sort, card, _delay, mute, stay_flipped, vol, discarded_only) {
   G.E_MANAGER.add_event(() => {
+    // (a card destroyed after this move was queued stays gone: e.g. a Beartic-kept hand's cards are listed up front and Anorith
+    //  dissolves one of them first — moving it would put a card that's no longer in the deck back into an area)
+    if (card && card.removed) return;
     if (card) {
       if (from) card = from.remove_card(card);
       if (card) {
@@ -1394,7 +1492,7 @@ export function get_current_pool(_type, _rarity, _legendary, _append) {
     _starting_pool = (P_CENTER_POOLS[_type] || []).filter((v) => v.rarity === rarity);
     _pool_key = _pool_key + (_append || '');
   } else {
-    _starting_pool = P_CENTER_POOLS[_type];
+    _starting_pool = P_CENTER_POOLS[_type] || [];
     _pool_key = _type + (_append || '');
   }
   // (a custom deck may allow duplicates: Deck Creator's allow_duplicate_jokers)
@@ -1444,6 +1542,18 @@ export function get_current_pool(_type, _rarity, _legendary, _append) {
     else if (_type === 'Edition') _pool.push('e_foil');
     else if (CONSUMABLE_TYPES[_type] && CONSUMABLE_TYPES[_type].default) _pool.push(CONSUMABLE_TYPES[_type].default);
     else _pool.push(reduceHook('empty_pool_default', 'j_joker', _type));
+    // A fallback must not resurrect explicitly banned content. For an empty
+    // Joker rarity, use another eligible rarity instead of a disabled Joker.
+    if ((_type === 'Joker' && ACTIVE_MODS.includes('jokertoggle') && G.GAME.banned_keys[_pool[0]]) || contentDisabled(P_CENTERS[_pool[0]])) {
+      const candidates = (_type === 'Joker' ? P_CENTER_POOLS.Joker : _starting_pool || [])
+        .filter((v) => !G.GAME.banned_keys[v.key] && !(G.GAME.used_jokers[v.key] && !showman)
+          && !contentDisabled(v)
+          && !v.hidden && !(v.no_pool_flag && G.GAME.pool_flags[v.no_pool_flag]) && !(v.yes_pool_flag && !G.GAME.pool_flags[v.yes_pool_flag])
+          && (v.unlocked !== false || v.rarity === 4) && (!v.in_pool || v.in_pool(v, { type: _type, append: _append }))
+          && !callHook('pool_filter', v, _type, _append).includes(false));
+      if (!candidates.length) throw new Error(`No available ${_type} remains after content bans`);
+      _pool.splice(0, 1, ...candidates.map((v) => v.key));
+    }
   }
   return [_pool, _pool_key + (!_legendary ? G.GAME.round_resets.ante : '')];
 }
@@ -1547,7 +1657,24 @@ function poll_edition_weighted(_key, _mod, _no_neg, _guaranteed, modEds) {
   return null;
 }
 
+/**
+ * create_card. Under The Order (above): the queues are not ante-keyed (the ante reads 0 for the call), Tarot / Planet /
+ * Spectral cards come from one shop stream and one pack stream ('<Type>' / '<Type>_pack'), every other card type from one
+ * stream whatever made it (no key_append: a joker from a shop, a pack, Judgement or Riff-raff is the next of its rarity).
+ */
 export function create_card(_type, area, legendary, _rarity, skip_materialize, soulable, forced_key, key_append) {
+  if (!theOrder()) return create_card0(_type, area, legendary, _rarity, skip_materialize, soulable, forced_key, key_append);
+  const rr = G.GAME.round_resets, ante = rr.ante;
+  if (_type === 'Tarot' || _type === 'Planet' || _type === 'Spectral') key_append = (area || G.jokers) === G.pack_cards ? _type + '_pack' : _type;
+  else if (_type !== 'Base' && _type !== 'Enhanced') {
+    // (Judgement at a stake with Eternals: its own rarity stream)
+    if (key_append === 'jud' && G.GAME.modifiers.enable_eternals_in_shop) _rarity = pseudorandom('order_jud_rarity');
+    key_append = undefined;
+  }
+  rr.ante = 0;
+  try { return create_card0(_type, area, legendary, _rarity, skip_materialize, soulable, forced_key, key_append); } finally { rr.ante = ante; }
+}
+function create_card0(_type, area, legendary, _rarity, skip_materialize, soulable, forced_key, key_append) {
   area = area || G.jokers;
   if (SET_ALIASES[_type]) _type = resolve_set(_type); // (Pokermon 3.9.1's poke_energy / poke_item)
   // A mod may change what is made before anything rolls (AutumnCircus' Collector's Deck: every consumable is an Oddity).
@@ -1580,7 +1707,28 @@ export function create_card(_type, area, legendary, _rarity, skip_materialize, s
   if (_type === 'Base') forced_key = 'c_base';
   // Steamodded object_weights: the key comes from SMODS.poll_object (weighted, modify_weights)
   if (!forced_key && object_weights()) forced_key = poll_object({ type: _type, guaranteed: true, rarities: legendary ? ['Legendary'] : (_rarity !== undefined && _rarity !== null && _rarity !== false) ? [_rarity] : undefined, append: key_append });
-  if (forced_key && !G.GAME.banned_keys[forced_key]) {
+  // The Order's stable jokers: the rarity, then the stickers (their own streams), then the joker from the plain or the
+  // stickered queue of that rarity, then its edition from the matching edition stream (advanced on a resample too)
+  let order_j = null;
+  if (_type === 'Joker' && !forced_key && theOrder()) {
+    if (ACTIVE_MODS.length) _rarity = reduceHook('create_card_rarity', _rarity, _type, area, key_append);
+    const [_pool, _pool_key] = get_current_pool('Joker', _rarity, legendary, key_append);
+    forced_key = 'UNAVAILABLE';
+    for (let it = 0; forced_key === 'UNAVAILABLE'; it++) {
+      order_j = {};
+      if (area === G.pack_cards || area === G.shop_jokers) {
+        const ep = pseudorandom('_etper' + _pool_key);
+        if (G.GAME.modifiers.enable_eternals_in_shop && ep > 0.7) order_j.et = true;
+        else if (G.GAME.modifiers.enable_perishables_in_shop && ep > 0.4 && ep <= 0.7) order_j.per = true;
+        if (G.GAME.modifiers.enable_rentals_in_shop && pseudorandom('_rent' + _pool_key) > 0.7) order_j.rent = true;
+      }
+      const s = order_j.et || order_j.per || order_j.rent ? '_sticker' : '';
+      [forced_key] = pseudorandom_element(_pool, pseudoseed(_pool_key + s + (it > 1000 ? '_resample' + it : '')));
+      if (forced_key !== 'UNAVAILABLE') order_j.ed = poll_edition('edi' + _pool_key + s);
+      else pseudorandom(pseudoseed('edi' + _pool_key + s));
+    }
+  }
+  if (forced_key && !G.GAME.banned_keys[forced_key] && !contentDisabled(P_CENTERS[forced_key])) {
     center = P_CENTERS[forced_key];
     _type = center.set !== 'Default' ? center.set : _type;
   } else {
@@ -1589,7 +1737,8 @@ export function create_card(_type, area, legendary, _rarity, skip_materialize, s
     const [_pool, _pool_key] = get_current_pool(_type, _rarity, legendary, key_append);
     let [c] = pseudorandom_element(_pool, pseudoseed(_pool_key));
     let it = 1;
-    while (c === 'UNAVAILABLE') { it++; [c] = pseudorandom_element(_pool, pseudoseed(_pool_key + '_resample' + it)); }
+    // (The Order: a resample advances the same queue)
+    while (c === 'UNAVAILABLE') { it++; [c] = pseudorandom_element(_pool, pseudoseed(_pool_key + (theOrder() && it <= 1000 ? '' : '_resample' + it))); }
     center = P_CENTERS[c];
   }
   const front = (_type === 'Base' || _type === 'Enhanced') ? (SEAM_STATE.create_front || pseudorandom_element(P_CARDS_LIST(), pseudoseed('front' + (key_append || '') + G.GAME.round_resets.ante))[0]) : undefined;
@@ -1598,6 +1747,16 @@ export function create_card(_type, area, legendary, _rarity, skip_materialize, s
     // (Bunco: a joker with one of its stickers never gets Eternal here — block_eternal)
     const eternal_ok = () => !(ACTIVE_MODS.length && callHook('block_eternal', card).includes(true));
     if (G.GAME.modifiers.all_eternal && eternal_ok()) card.set_eternal(true);
+    if (order_j) {
+      // (The Order: the stickers and the edition rolled with the joker above)
+      if ((area === G.shop_jokers || area === G.pack_cards) && ACTIVE_MODS.length) callHook('shop_joker_stickers', card, area);
+      if (order_j.et && eternal_ok()) card.set_eternal(true);
+      if (order_j.per) card.set_perishable(true);
+      if (order_j.rent) card.set_rental(true);
+      if (!card.edition) card.set_edition(order_j.ed, true, true);
+      callHook('create_card', card, _type, area, key_append);
+      return card;
+    }
     if (area === G.shop_jokers || area === G.pack_cards) {
       // Mod shop stickers roll first (Bunco's Cyan / Pink / Magenta stakes).
       if (ACTIVE_MODS.length) callHook('shop_joker_stickers', card, area);
@@ -1634,6 +1793,7 @@ export function create_playing_card(card_init, area) {
   card_init = card_init || {};
   card_init.front = card_init.front || pseudorandom_element(P_CARDS_LIST(), pseudoseed('front'))[0];
   card_init.center = card_init.center || P_CENTERS.c_base;
+  if (contentDisabled(card_init.center)) card_init.center = P_CENTERS.c_base;
   G.playing_card = (G.playing_card || 0) + 1;
   const card = new Card(card_init.front, card_init.center, { playing_card: G.playing_card });
   G.playing_cards.push(card);
@@ -1672,11 +1832,33 @@ export function calculate_reroll_cost(skip_increment) {
   if (ACTIVE_MODS.length) cr.reroll_cost = reduceHook('reroll_cost', cr.reroll_cost);
 }
 
+/**
+ * The Order's Idol / Mail-In Rebate pick: a weighted roll over the deck's (rank + suit) or rank groups, each weighted by
+ * its copies, in a fixed order (most copies first, then the higher rank, then the suit) — the same deck gives the same
+ * card for both players, whatever order their cards are in. -> a card of the picked group, or null.
+ */
+function order_weighted_pick(valid, keyOf, seed) {
+  const SUIT_I = { Spades: 4, Hearts: 3, Clubs: 2, Diamonds: 1 };
+  const groups = new Map();
+  for (const c of valid) { const k = keyOf(c); if (!groups.has(k)) groups.set(k, { card: c, n: 0 }); groups.get(k).n++; }
+  const sk = (s) => SUIT_I[s] || 0;
+  const list = [...groups.values()].sort((a, b) => b.n - a.n || b.card.base.id - a.card.base.id || sk(b.card.base.suit) - sk(a.card.base.suit)
+    || (a.card.base.suit < b.card.base.suit ? -1 : a.card.base.suit > b.card.base.suit ? 1 : 0));
+  const total = list.reduce((n, g) => n + g.n, 0);
+  if (!total) return null;
+  const roll = pseudorandom(seed);
+  let t = 0;
+  for (const g of list) { t += g.n / total; if (roll < t) return g.card; }
+  return list[list.length - 1].card;
+}
 export function reset_idol_card() {
   const ic = G.GAME.current_round.idol_card;
   ic.rank = 'Ace'; ic.suit = 'Spades';
   const valid = G.playing_cards.filter((v) => v.ability.effect !== 'Stone Card');
-  if (valid[0]) {
+  if (valid[0] && theOrder()) {
+    const c = order_weighted_pick(valid, (v) => v.base.value + '_' + v.base.suit, 'idol' + G.GAME.round_resets.ante);
+    if (c) { ic.rank = c.base.value; ic.suit = c.base.suit; ic.id = c.base.id; }
+  } else if (valid[0]) {
     const [c] = pseudorandom_element(valid, pseudoseed('idol' + G.GAME.round_resets.ante));
     ic.rank = c.base.value; ic.suit = c.base.suit; ic.id = c.base.id;
   }
@@ -1685,7 +1867,10 @@ export function reset_mail_rank() {
   const mc = G.GAME.current_round.mail_card;
   mc.rank = 'Ace';
   const valid = G.playing_cards.filter((v) => v.ability.effect !== 'Stone Card');
-  if (valid[0]) {
+  if (valid[0] && theOrder()) {
+    const c = order_weighted_pick(valid, (v) => v.base.value, 'mail' + G.GAME.round_resets.ante);
+    if (c) { mc.rank = c.base.value; mc.id = c.base.id; }
+  } else if (valid[0]) {
     const [c] = pseudorandom_element(valid, pseudoseed('mail' + G.GAME.round_resets.ante));
     mc.rank = c.base.value; mc.id = c.base.id;
   }
@@ -1719,12 +1904,14 @@ export function get_new_boss() {
   if (G.GAME.perscribed_bosses[ante]) {
     const b = G.GAME.perscribed_bosses[ante];
     delete G.GAME.perscribed_bosses[ante];
-    G.GAME.bosses_used[b] += 1;
-    return b;
+    if (!contentDisabled(P_BLINDS[b])) {
+      G.GAME.bosses_used[b] += 1;
+      return b;
+    }
   }
-  if (G.FORCE_BOSS) return G.FORCE_BOSS;
+  if (G.FORCE_BOSS && !contentDisabled(P_BLINDS[G.FORCE_BOSS])) return G.FORCE_BOSS;
   if (object_weights()) { // (Steamodded object_weights: SMODS.poll_object over SMODS.create_blind_pool)
-    const b = poll_object({ type: 'Blind', blind_type: 'boss', seed: 'boss' });
+    const b = poll_object({ type: 'Blind', blind_type: 'boss', seed: theOrder() ? 'boss' + ante : 'boss' });
     G.GAME.bosses_used[b] = (G.GAME.bosses_used[b] || 0) + 1;
     return b;
   }
@@ -1746,7 +1933,8 @@ export function get_new_boss() {
     if (eligible[k]) { eligible[k] = v; if (v <= min_use) min_use = v; }
   }
   for (const k of Object.keys(eligible)) if (eligible[k] > min_use) delete eligible[k];
-  const [, boss] = pseudorandom_element(eligible, pseudoseed('boss'));
+  // (The Order: the Boss of ante N is rolled from its own stream)
+  const [, boss] = pseudorandom_element(eligible, pseudoseed(theOrder() ? 'boss' + ante : 'boss'));
   G.GAME.bosses_used[boss] += 1;
   return boss;
 }
@@ -1754,12 +1942,30 @@ export function get_next_voucher_key(_from_tag) {
   // A mod may pick the voucher itself (BETMMA: voucher rarity + weighted fusions, voucher packs' pools).
   if (ACTIVE_MODS.length) { const k = firstHook('next_voucher_key', _from_tag); if (k !== undefined) return k; }
   if (object_weights()) return poll_object({ type: 'Voucher' });
+  if (theOrder()) return order_voucher_key();
   let [_pool, _pool_key] = get_current_pool('Voucher');
   if (_from_tag) _pool_key = 'Voucher_fromtag';
   let [center] = pseudorandom_element(_pool, pseudoseed(_pool_key));
   let it = 1;
   while (center === 'UNAVAILABLE') { it++; [center] = pseudorandom_element(_pool, pseudoseed(_pool_key + '_resample' + it)); }
   return center;
+}
+/**
+ * The Order's voucher: one stream ('Voucher0') over a pool where each base / upgrade pair holds one slot (the pair's
+ * available voucher), so buying a voucher doesn't shift which slot the next roll lands on.
+ */
+function order_voucher_key() {
+  const [_pool] = get_current_pool('Voucher');
+  const culled = [];
+  for (let i = 0; i < _pool.length; i += 2) {
+    const a = _pool[i], b = _pool[i + 1];
+    if (b === undefined) culled.push(a);
+    else if (a !== 'UNAVAILABLE' && b !== 'UNAVAILABLE') culled.push(a, b);
+    else culled.push(a !== 'UNAVAILABLE' ? a : b);
+  }
+  let it = 0, center;
+  do { [center] = pseudorandom_element(culled, pseudoseed('Voucher0' + (it > 1000 ? it : ''))); it++; } while (center === 'UNAVAILABLE' && it < 2000);
+  return center === 'UNAVAILABLE' ? (culled.find((k) => k !== 'UNAVAILABLE') || 'v_blank') : center;
 }
 export function get_next_tag_key(append) {
   if (G.FORCE_TAG) return G.FORCE_TAG;
@@ -1777,7 +1983,7 @@ export function get_pack(_key, _type) {
   }
   if (object_weights()) { // (Steamodded object_weights: SMODS.poll_object over the Booster pool, `kind` filtered)
     const k = poll_object({
-      type: 'Booster', seed: (_key || 'pack_generic') + G.GAME.round_resets.ante,
+      type: 'Booster', seed: (_key || 'pack_generic') + ante_based(),
       filter: _type ? (pool) => {
         let all_unavailable = true;
         for (const v of pool) { if (!P_CENTERS[v.key] || P_CENTERS[v.key].kind !== _type) v.key = 'UNAVAILABLE'; else all_unavailable = false; }
@@ -1794,7 +2000,7 @@ export function get_pack(_key, _type) {
   // (SMODS: a mod pack's get_weight() — Bunco's Arcade Machine makes Virtual Packs 4X likelier)
   const wt = (v) => ((v.mod && v.get_weight) ? v.get_weight(v) : (v.weight ?? 1));
   for (const v of P_CENTER_POOLS.Booster) if ((!_type || _type === v.kind) && ok(v)) cume += wt(v);
-  const poll = pseudorandom(pseudoseed((_key || 'pack_generic') + G.GAME.round_resets.ante)) * cume;
+  const poll = pseudorandom(pseudoseed((_key || 'pack_generic') + ante_based())) * cume;
   for (const v of P_CENTER_POOLS.Booster) {
     if (ok(v)) {
       if (!_type || _type === v.kind) it += wt(v);

@@ -38,7 +38,7 @@
 // FLAKES ARE REPORTED, NOT HIDDEN. A suite that fails is rerun once, alone, after
 // everything else. If it passes then, it is listed as FLAKY (and counted in the
 // history file) rather than silently passed. A suite that fails twice fails the gate.
-import { existsSync, readdirSync, readFileSync, writeFileSync } from 'fs';
+import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { spawn, execSync } from 'child_process';
 import { createHash } from 'crypto';
 import { fileURLToPath } from 'url';
@@ -62,10 +62,13 @@ const baseRef = flag('--base');
 const changedOnly = args.includes('--changed') && args.splice(args.indexOf('--changed'), 1);
 const filter = (args[0] || '').toLowerCase(); // substring match on the filename
 const TIMEOUT = 5 * 60_000;
-// suites that legitimately run longer: micatro_engine_test runs every Micatro mod suite + the all-mods fuzz (~2 min alone,
-// 7 min under load by 2026-10-22, when it started hitting the 5 min cap; 11-12 min on CI by 2026-11-04 with the regional forms, and over 15
-// with Mega batch D's 19 Megas, which every mod suite now loads)
-const SLOW = { 'micatro_engine_test.mjs': 22 * 60_000 };
+// suites that legitimately run longer: micatro_engine_test ran every Micatro mod suite + the all-mods fuzz in ONE suite (~2 min alone,
+// 7 min under load by 2026-10-22; 11-12 min on CI by 2026-11-04 with the regional forms, ~21 min by 2026-11-09 against a 22 min cap),
+// so the gate now runs it as micatro_engine_<i>_test.mjs parts on different shards (micatro_engine_parts.mjs); each part gets 10 min
+// micatro_pvp_e2e_test plays six two-player matches in real browsers (~150 s on CI by stage 7c, 226 s with All Multiplayer Cards)
+// (micatro_replay_pack_test: 288 assertions replaying real runs; since Pages (2026-11-08) it takes 230-299 s on a CI shard and
+//  timed out at 300 s in 7 of the last 13 main gates, the SIGTERM showing as a puppeteer 'detached Frame' error)
+const SLOW = { 'micatro_pvp_e2e_test.mjs': 10 * 60_000, 'micatro_replay_pack_test.mjs': 10 * 60_000 };
 // ~4 GB of RAM per worker. Each suite is a node process plus a headless Chrome,
 // and on a 5.8 GB machine two workers ran each suite ~1.9x slower (145/145 in
 // 1579s vs 1761s serial). Parallelism only pays with memory to spare.
@@ -94,11 +97,9 @@ const notePass = f => {
 };
 
 // every *_test.mjs, plus the two runnables that predate the naming convention
-// (quest_graph.mjs is a shared helper, not a test)
-const files = [
-	...readdirSync(here).filter(f => f.endsWith('_test.mjs')),
-	'boot_smoke.mjs', 'quest_reach.mjs',
-].sort().filter(f => !filter || f.toLowerCase().includes(filter));
+// (quest_graph.mjs is a shared helper, not a test; micatro_engine_test.mjs runs as its parts: gate-shard.mjs NOT_SUITES)
+const { gateSuites } = await import('./gate-shard.mjs');
+const files = gateSuites().filter(f => !filter || f.toLowerCase().includes(filter));
 // QUICK gate: narrow to what the change can affect
 let selection = null;
 if (changedOnly) {
@@ -155,13 +156,19 @@ function runOne(f) {
 		let out = '', err = '', timedOut = false;
 		child.stdout.on('data', d => { out += d; });
 		child.stderr.on('data', d => { err += d; });
-		const timer = setTimeout(() => { timedOut = true; child.kill('SIGTERM'); }, SLOW[f] || TIMEOUT);
+		const timer = setTimeout(() => { timedOut = true; child.kill('SIGTERM'); }, SLOW[f] || (/^micatro_engine_\d+_test\.mjs$/.test(f) ? 10 * 60_000 : TIMEOUT));
 		child.on('close', code => {
 			clearTimeout(timer);
 			const secs = Math.round((Date.now() - started) / 1000);
 			const tail = out.trim().split('\n').pop() || '(no output)';
 			// the assertions that failed, so a red line says WHAT broke, not just a count
-			const fails = out.split('\n').filter(l => /^FAIL[: ]/.test(l)).slice(0, 5).map(l => '        ' + l.slice(0, 300));
+			// (+ its detail when a suite prints that on the next, indented line: a flake on CI is only diagnosable from this log)
+			const lines = out.split('\n'), fails = [];
+			lines.forEach((l, i) => {
+				if (!/^FAIL[: ]/.test(l) || fails.length >= 5) return;
+				const nx = lines[i + 1] || '';
+				fails.push('        ' + l.slice(0, 300) + (/^\s+\S/.test(nx) && !/^\s*(ok|FAIL)\b/.test(nx) ? '\n          ' + nx.trim().slice(0, 600) : ''));
+			});
 			resolve({ f, ok: code === 0 && !timedOut, secs, tail: timedOut ? 'TIMED OUT / SIGTERM' : tail, err, fails });
 		});
 	});

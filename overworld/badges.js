@@ -104,6 +104,19 @@ export const GYM_SCRIPT = {
 	'SootopolisCity_Gym_EventScript_Wallace': ['HOENN', 'rain'],
 };
 
+// A badge the leader does NOT hand over after the battle. CLAIR refuses to
+// (BlackthornGym1F.asm sets only EVENT_BEAT_CLAIR and sends you to Dragon's Den);
+// the RISING BADGE comes at the end of the Dragon Shrine elders' test
+// (DragonShrine.asm .PassedTheTest: `setflag ENGINE_RISINGBADGE`). Awarding it on
+// her win skipped the test in spirit and contradicted her own lines (bug
+// 1794346972336). gym script -> the flag whose setting awards it.
+export const BADGE_BY_CEREMONY = { BlackthornGymClairScript: 'ENGINE_RISINGBADGE' };
+// the gym script whose badge `flag` awards, or null
+export function ceremonyScriptFor(flag) {
+	for (const [script, f] of Object.entries(BADGE_BY_CEREMONY)) if (f === flag) return script;
+	return null;
+}
+
 // Elite Four / Champion battle script -> [region, role]. role: 'elite' (a League
 // member — gated but awards nothing on its own) or 'champion' (beating them wins
 // the region). All entries are gated behind that region's 8 badges.

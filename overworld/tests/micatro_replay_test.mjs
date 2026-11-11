@@ -24,6 +24,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
 import puppeteer from 'puppeteer-core';
+import { keyWalk } from './micatro_keys_lib.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '../../');
@@ -34,6 +35,8 @@ const CHROME = process.env.CHROME || [
 ].find(p => fs.existsSync(p));
 const PORT = 8752;
 const SHOTS = process.env.MICATRO_SHOTS || '';   // a folder: save screenshots there
+const THROTTLE = +process.env.MICATRO_CPU_THROTTLE || 0;   // e.g. 4: every page runs 4x slower (to shake out timing races)
+const FPS = +process.env.MICATRO_FPS || 0;                  // e.g. 10: hold every page to 10 animation frames a second (a slow device)
 let pass = 0, fail = 0;
 const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else { fail++; console.log('FAIL: ' + m + (extra != null ? '  ' + extra : '')); } };
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.json': 'application/json', '.css': 'text/css', '.png': 'image/png', '.jpg': 'image/jpeg', '.ogg': 'audio/ogg', '.ttf': 'font/ttf', '.svg': 'image/svg+xml' };
@@ -100,6 +103,16 @@ try {
 		const ctx = await browser.createBrowserContext();
 		const page = await ctx.newPage();
 		await page.setViewport({ width: w, height: h, deviceScaleFactor: 1, isMobile: mobile, hasTouch: mobile });
+		if (THROTTLE > 1) await page.emulateCPUThrottling(THROTTLE);
+		if (FPS > 0) await page.evaluateOnNewDocument((fps) => {
+			const raf = window.requestAnimationFrame.bind(window); let next = 0, id = 0, q = new Map();
+			window.requestAnimationFrame = (cb) => {
+				q.set(++id, cb);
+				if (q.size === 1) setTimeout(() => raf((t) => { next = t + 1000 / fps; const run = [...q.values()]; q = new Map(); for (const f of run) f(t); }), Math.max(0, next - performance.now()));
+				return id;
+			};
+			window.cancelAnimationFrame = (i) => { q.delete(i); };
+		}, FPS);
 		const errors = [];
 		page.on('pageerror', e => errors.push('pageerr: ' + e.message));
 		page.on('console', m => { if (m.type() === 'error') errors.push('console: ' + m.text().slice(0, 200)); });
@@ -120,18 +133,32 @@ try {
 			await page.goto(`http://localhost:${PORT}${url}`, { waitUntil: 'domcontentloaded' });
 			await waitFor(() => page.evaluate(() => !!(window.__micatro && window.__micatro.ready)), 30000);
 		};
-		const tap = async (b, hold = 70) => { await page.evaluate(b => { window.__pad.buttons[b] = { pressed: true, value: 1 }; }, b); await sleep(hold); await page.evaluate(b => { window.__pad.buttons[b] = { pressed: false, value: 0 }; }, b); await sleep(160); };
+		// (the pad is polled once per animation frame: hold the button until two frames have seen it, and release the same way —
+		// a fixed 70 ms hold is missed, or read late, when the page drops to a few frames a second)
+		const frames = (n) => page.evaluate((n) => new Promise((r) => { const f = () => (--n <= 0 ? r() : requestAnimationFrame(f)); requestAnimationFrame(f); }), n);
+		const tap = async (b, hold = 70) => { await page.evaluate(b => { window.__pad.buttons[b] = { pressed: true, value: 1 }; }, b); await sleep(hold); await frames(2); await page.evaluate(b => { window.__pad.buttons[b] = { pressed: false, value: 0 }; }, b); await frames(2); await sleep(160); };
 		return { ctx, page, errors, go, tap };
 	};
 	const idle = (page) => waitFor(() => page.evaluate(() => window.__micatro.idle()), 30000);
 	const shot = async (page, name) => { if (SHOTS) { await sleep(700); await page.screenshot({ path: path.join(SHOTS, name) }); } };   // (modals fade + rise in)
 	const R = (page) => page.evaluate(() => { const r = window.__micatro.replay; return r && r.ready ? { index: r.index, playing: r.playing, speed: r.speed, ended: r.ended, notice: r.notice, total: r.total, mismatch: !!r.mismatch } : null; });
+	/** Wait until `sel` is on screen and done moving (no finite animation / transition still running on it or an ancestor): a
+	 *  modal rises in for .4 s, and a click aimed at a rising button lands under it (on the backdrop: nothing, or for most modals a close). */
+	const settled = (page, sel) => waitFor(() => page.evaluate((sel) => {
+		const el = document.querySelector(sel);
+		if (!el) return false;
+		const r = el.getBoundingClientRect();
+		if (!r.width || !r.height) return false;
+		return !document.getAnimations().some((a) => a.playState === 'running' && a.effect && a.effect.target instanceof Element && a.effect.target.contains(el) && a.effect.getComputedTiming().iterations !== Infinity);
+	}, sel), 10000);
+	const click = async (page, sel) => { await settled(page, sel); await page.click(sel); };
+	const tapEl = async (page, sel) => { await settled(page, sel); await page.tap(sel); };
 	const replayReady = (page) => waitFor(() => page.evaluate(() => !!(window.__micatro.replay && window.__micatro.replay.ready)), 30000);
 	/** a quick game over: select the blind, play one card four times */
 	const loseRun = async (page, seed) => {
 		await page.evaluate((seed) => window.__micatro.newRun({ seed }), seed);
 		await idle(page);
-		await page.evaluate(() => window.__micatro.act({ type: 'select_blind' }));
+		await page.evaluate(() => window.__micatro.selectBlind());
 		await idle(page);
 		for (let i = 0; i < 6; i++) {
 			const v = await page.evaluate(() => window.__micatro.view());
@@ -163,10 +190,10 @@ try {
 		A(local.length === 1 && local[0].serverId === 'abcd0001' && local[0].recipe.actions.length === recipe.actions.length && local[0].meta.username === 'replayer', 'the run is kept in the local list with its server id', JSON.stringify(local.map(e => [e.id, e.serverId])));
 		A(await page.evaluate(() => localStorage.getItem('micatro_run_v1') === null), 'the live run save is gone (the run is over)');
 		await shot(page, 'gameover_replay_desktop.png');
-		await page.click('.b-copy-replay');
+		await click(page, '.b-copy-replay');
 		A(await waitFor(() => page.evaluate(() => /\/mr\/abcd0001$/.test(document.querySelector('.b-copy-replay').dataset.url || '')), 5000), 'Copy replay link gives the /mr/<id> short link', await page.evaluate(() => document.querySelector('.b-copy-replay').textContent));
 		// watch it
-		await page.click('.b-watch-replay');
+		await click(page, '.b-watch-replay');
 		await waitFor(() => page.evaluate(() => /replay=local%3A|replay=local:/.test(location.search)), 8000);
 		A(/replay=local:L/.test(decodeURIComponent(await page.evaluate(() => location.search))), 'Watch replay opens the local copy (?replay=local:<id>)', await page.evaluate(() => location.search));
 		await waitFor(() => page.evaluate(() => !!(window.__micatro && window.__micatro.ready)), 30000);
@@ -184,14 +211,34 @@ try {
 		const bv = await page.evaluate(() => ({ over: window.__micatro.board.view.over, state: window.__micatro.board.view.state }));
 		A(r.index === total && !r.mismatch && /End of the run/.test(r.notice) && bv.over, 'the end matches the recording (no "older version" notice) and the table shows the game over', JSON.stringify({ r, bv }));
 		A(await page.evaluate(() => !document.querySelector('.go-modal')), 'no game-over modal (and no score posted) in the viewer');
+		// a replay that runs out while its bar is tucked away (it tucks after 4 s of untouched play; a slow device gets there before the
+		// end) brings the bar back: the end notice is on it, and its buttons were hidden under the handle
+		const tuckEnd = await page.evaluate(async () => {
+			const rp = window.__micatro.replay;
+			const tucked = () => rp.bar.classList.contains('tucked') || document.body.classList.contains('rb-tucked');
+			// (a pause that is not a touch on the bar, e.g. the controller's Play/Pause, also brings it back: its buttons are pad stops)
+			rp.seekTo(2, { keepPlaying: false }); rp.play();
+			rp.bar.classList.add('tucked'); document.body.classList.add('rb-tucked');
+			rp.pause();
+			const paused = { playing: rp.playing, tucked: tucked() };
+			rp.seekTo(rp.total - 2, { keepPlaying: false }); rp.play();
+			rp.bar.classList.add('tucked'); document.body.classList.add('rb-tucked');   // (what the 4 s tuck timer does)
+			const t0 = performance.now();
+			while (!rp.ended && performance.now() - t0 < 30000) await new Promise((r) => setTimeout(r, 50));
+			return { paused, ended: rp.ended, tucked: tucked(), notice: rp.notice };
+		});
+		A(!tuckEnd.paused.playing && !tuckEnd.paused.tucked, 'pausing while the bar is tucked brings the bar back', JSON.stringify(tuckEnd));
+		A(tuckEnd.ended && !tuckEnd.tucked && /End of the run/.test(tuckEnd.notice), 'a replay that ends while its bar is tucked brings the bar back (with the end notice)', JSON.stringify(tuckEnd));
 		// controls
 		await page.click('.rb-first'); await sleep(300);
 		r = await R(page);
 		A(r.index === 0 && !r.playing, '⏮ goes back to the start (paused)', JSON.stringify(r));
 		await page.click('.rb-next'); await idle(page);
+		await waitFor(async () => (await R(page)).index >= 1, 5000);   // (the step first waits for the table to be idle)
 		const i1 = (await R(page)).index;
 		A(i1 >= 1 && !(await R(page)).playing, '▶| steps one move forward', i1);
 		await page.click('.rb-next'); await idle(page);
+		await waitFor(async () => (await R(page)).index > i1, 5000);
 		const i2 = (await R(page)).index;
 		A(i2 > i1, '▶| again: the next move (selections run with it)', JSON.stringify({ i1, i2 }));
 		await page.click('.rb-prev'); await sleep(300); await idle(page);
@@ -210,28 +257,35 @@ try {
 		const held = r.index;
 		await sleep(900);
 		A(!r.playing && (await R(page)).index === held, 'Space pauses (the position holds)', JSON.stringify({ held, now: (await R(page)).index }));
-		await page.keyboard.press('ArrowRight'); await idle(page);
-		A((await R(page)).index > held, '→ steps forward');
-		await page.keyboard.press('ArrowLeft'); await sleep(300);
-		A((await R(page)).index <= held, '← steps back');
+		// (the arrows move the reticle since controls sweep B5; Q / E step — the controller's LB / RB)
+		await page.keyboard.press('KeyE'); await idle(page);
+		A(await waitFor(async () => (await R(page)).index > held, 5000), 'E steps forward', JSON.stringify({ held, now: (await R(page)).index }));
+		await page.keyboard.press('KeyQ'); await sleep(300);
+		A((await R(page)).index <= held, 'Q steps back');
 		await page.click('.rb-play');
 		A(await waitFor(async () => (await R(page)).playing, 2000), 'the ▶ button plays');
 		await page.click('.rb-play');
-		A(!(await R(page)).playing, 'and pauses');
+		A(await waitFor(async () => { const r = await R(page); return !r.playing && !r.ended; }, 3000), 'and pauses', JSON.stringify(await R(page)));   // (paused, not run off the end)
+		// the keyboard alone (controls sweep B5): the arrows walk the reticle onto the bar's ▶ and Z presses it; C plays / pauses
+		A(await keyWalk(page, '.rb-play'), 'the arrows walk the reticle onto the replay bar ▶');
+		await page.keyboard.press('KeyZ');
+		A(await waitFor(async () => (await R(page)).playing, 2000), 'Z presses it: the replay plays');
+		await page.keyboard.press('KeyC');
+		A(await waitFor(async () => { const r = await R(page); return !r.playing; }, 3000), 'C pauses it');
 
 		// 5b. the main menu's Replays list (same browser: the local copy is there)
 		await go('/micatro/');
 		await page.waitForSelector('.main-menu .b-replays', { visible: true, timeout: 8000 });
-		await page.click('.b-replays');
+		await click(page, '.b-replays');
 		await page.waitForSelector('.rp-modal .rp-row', { visible: true, timeout: 8000 });
 		const rows = await page.evaluate(() => [...document.querySelectorAll('.rp-row')].map(r => ({ id: r.dataset.id, text: r.textContent, watch: !!r.querySelector('.b-rp-watch'), link: !!r.querySelector('.b-rp-link'), del: !!r.querySelector('.b-rp-del') })));
 		A(rows.length === 1 && rows[0].watch && rows[0].link && rows[0].del && /Game over/.test(rows[0].text) && /Ante/.test(rows[0].text), 'the Replays menu lists the finished run with Watch / Copy link / Delete', JSON.stringify(rows));
 		await shot(page, 'replays_menu_desktop.png');
-		await page.click('.b-rp-link');
+		await click(page, '.b-rp-link');
 		A(await waitFor(() => page.evaluate(() => /\/mr\/abcd0001$/.test(document.querySelector('.b-rp-link').dataset.url || '')), 5000), "the list's link button gives the run's share link");
-		await page.click('.b-rp-del');
+		await click(page, '.b-rp-del');
 		A(await page.evaluate(() => document.querySelectorAll('.rp-row').length === 1 && /Delete\?/.test(document.querySelector('.b-rp-del').textContent)), 'Delete asks first');
-		await page.click('.b-rp-del');
+		await click(page, '.b-rp-del');
 		A(await page.evaluate(() => document.querySelectorAll('.rp-row').length === 0 && !!document.querySelector('.rp-empty') && JSON.parse(localStorage.getItem('micatro_replays_v1') || '[]').length === 0), 'a second press deletes it');
 		const fatal = errors.filter(e => !/Failed to load resource|favicon/i.test(e));
 		A(fatal.length === 0, 'no uncaught errors (run, game over, replay, menu)', fatal.slice(0, 4).join(' | '));
@@ -262,7 +316,7 @@ try {
 		const winId = winScore && winScore.replay;
 		A(winPut && !winPut.id && winPut.meta.won && !winPut.meta.endless && /^abcd\d{4}$/.test(winId || ''), 'at the win the run so far is uploaded and the score links it', JSON.stringify({ id: winId, meta: winPut && winPut.meta }));
 		await sleep(800);
-		await page.click('.go-modal .b-endless');
+		await click(page, '.go-modal .b-endless');
 		await sleep(300); await idle(page);
 		const bad2 = await feed(winRun.recipe.actions.slice(endlessAt + 1));
 		A(!bad2 && await waitFor(() => page.evaluate(() => !!document.querySelector('.go-modal .b-watch-replay') && !document.querySelector('.go-modal .b-endless')), 15000), 'Endless plays on to a game over', JSON.stringify(bad2));
@@ -274,7 +328,7 @@ try {
 		A(full && full.actions.length === winRun.recipe.actions.length && full.actions.some(a => a.type === 'endless'), 'the stored replay covers the whole run, Endless included');
 		const local = await page.evaluate(() => JSON.parse(localStorage.getItem('micatro_replays_v1') || '[]'));
 		A(local.length === 1 && local[0].serverId === winId && local[0].recipe.actions.length === winRun.recipe.actions.length && local[0].meta.endless, 'one local entry for the run (extended, not duplicated)', JSON.stringify(local.map(e => [e.id, e.serverId, e.recipe.actions.length])));
-		await page.click('.go-modal .b-watch-replay');
+		await click(page, '.go-modal .b-watch-replay');
 		await waitFor(() => page.evaluate(() => /replay=local/.test(location.search)), 8000);
 		await waitFor(() => page.evaluate(() => !!(window.__micatro && window.__micatro.ready)), 30000);
 		A(await replayReady(page), 'the whole-run replay opens');
@@ -312,15 +366,16 @@ try {
 		A(await page.evaluate((m) => /<b>\d+<\/b> \/ \d+/.test(document.querySelector('.rb-count').innerHTML) && document.querySelector('.rb-count b').textContent === String(m), mid), 'the counter shows the action index');
 		// controller: RB steps, Y plays/pauses, LB steps back
 		await tap(PADB.R); await idle(page);
+		await waitFor(async () => (await R(page)).index > mid, 5000);
 		const afterR = (await R(page)).index;
 		A(afterR > mid, 'controller RB steps forward', JSON.stringify({ mid, afterR }));
 		await tap(PADB.L); await sleep(300);
-		A((await R(page)).index < afterR, 'controller LB steps back');
+		A(await waitFor(async () => (await R(page)).index < afterR, 5000), 'controller LB steps back', JSON.stringify({ afterR, now: (await R(page)).index }));
 		await tap(PADB.secondary);
 		A(await waitFor(async () => (await R(page)).playing, 2000), 'controller Y (secondary) plays');
 		await shot(page, 'replay_midplay_ante_desktop.png');
 		await tap(PADB.secondary);
-		A(!(await R(page)).playing, 'and pauses');
+		A(await waitFor(async () => { const r = await R(page); return !r.playing && !r.ended; }, 3000), 'and pauses', JSON.stringify(await R(page)));   // (paused, not run off the end)
 		// a bar button is a pad stop: move the reticle onto ⏮ and press confirm
 		const reach = await page.evaluate(() => { const P = window.__micatroPad; const b = document.querySelector('#replay-bar .rb-first'); P.ensure(); return !!b; });
 		await page.evaluate(() => { const P = window.__micatroPad; const el = document.querySelector('#replay-bar .rb-play'); P.ensure(); });
@@ -331,7 +386,8 @@ try {
 		// the deal after a blind is chosen: the cards fly from the deck straight into the hand row. (#888's Beartic Freeze parks a KEPT
 		// card below the screen between rounds — a card being dealt is not kept: it must never aim below the screen while the board's
 		// view still says BLIND_SELECT, or the hand rises late from under the replay bar and the d-pad lands on it there.)
-		const sel = long.recipe.actions.findIndex((a, i) => a.type === 'select_blind' && JSON.parse(long.frames[i].view).state === 'BLIND_SELECT');
+		// (with Pages the deal follows the Page's pick, on the Pages screen)
+		const sel = long.recipe.actions.findIndex((a, i) => a.type === 'pick_page' && JSON.parse(long.frames[i].view).state === 'PAGES');
 		await page.evaluate((i) => window.__micatro.replay.seekTo(i, { keepPlaying: false }), sel);
 		await sleep(300); await idle(page);
 		const deal = await page.evaluate(async () => {
@@ -382,12 +438,12 @@ try {
 		const { ctx, page, errors, go } = await newCtx();
 		await go('/micatro/');
 		await page.waitForSelector('.main-menu .b-leaders', { visible: true, timeout: 8000 });
-		await page.click('.b-leaders');
+		await click(page, '.b-leaders');
 		await page.waitForSelector('.lb-row:not(.lb-h)', { visible: true, timeout: 8000 });
 		const lb = await page.evaluate(() => [...document.querySelectorAll('.lb-row:not(.lb-h)')].map(r => { const a = r.querySelector('.b-lb-replay'); return a ? a.getAttribute('href') : null; }));
 		A(lb[0] === '/micatro/?replay=feed0001' && lb[1] === null, 'a leaderboard row with a replay gets a ▶ (rows without one do not)', JSON.stringify(lb));
 		await shot(page, 'leaderboard_replay_desktop.png');
-		await page.click('.b-lb-replay');
+		await click(page, '.b-lb-replay');
 		await waitFor(() => page.evaluate(() => location.search === '?replay=feed0001'), 8000);
 		await waitFor(() => page.evaluate(() => !!(window.__micatro && window.__micatro.ready)), 30000);
 		A(await replayReady(page), 'the ▶ opens that run in the viewer');
@@ -408,7 +464,7 @@ try {
 		const goLay = await page.evaluate(() => { const b = document.querySelector('.b-watch-replay').getBoundingClientRect(); return { l: b.left, r: b.right, t: b.top, b: b.bottom, sw: document.documentElement.scrollWidth }; });
 		A(goLay.l >= 0 && goLay.r <= 390 && goLay.b <= 844 && goLay.sw <= 390, 'the Watch replay button fits the phone screen', JSON.stringify(goLay));
 		await shot(page, 'gameover_replay_phone.png');
-		await page.tap('.b-watch-replay');
+		await tapEl(page, '.b-watch-replay');
 		await waitFor(() => page.evaluate(() => /replay=local/.test(location.search)), 8000);
 		await waitFor(() => page.evaluate(() => !!(window.__micatro && window.__micatro.ready)), 30000);
 		A(await replayReady(page), 'the guest watches the local copy', await page.evaluate(() => location.search + ' | ' + (document.querySelector('.banner') || {}).textContent));
@@ -428,7 +484,7 @@ try {
 		A(lay.inside && lay.minW >= 30 && lay.minH >= 36 && lay.playHit && lay.exitHit, 'its buttons are on screen, tappable and not covered', JSON.stringify(lay));
 		await shot(page, 'replay_midplay_phone.png');
 		await page.tap('.rb-play');
-		A((await R(page)).playing, 'tapping ▶ plays on touch');
+		A(await waitFor(async () => (await R(page)).playing, 3000), 'tapping ▶ plays on touch', JSON.stringify(await R(page)));
 		// the bar tucks away while it plays untouched, and comes back on a tap
 		A(await waitFor(() => page.evaluate(() => document.getElementById('replay-bar').classList.contains('tucked')), 8000), 'while it plays untouched the bar tucks away');
 		await sleep(600);   // (let it finish sliding down)
@@ -436,11 +492,11 @@ try {
 		A(await page.evaluate(() => !document.getElementById('replay-bar').classList.contains('tucked')) && (await R(page)).playing, 'a tap brings it back (without pressing what slides up under the finger)', JSON.stringify(await R(page)));
 		await sleep(500);
 		await page.tap('.rb-play');
-		A(!(await R(page)).playing, 'tapping ❚❚ pauses on touch', JSON.stringify({ r: await R(page), cls: await page.evaluate(() => document.getElementById('replay-bar').className + ' ' + document.querySelector('.rb-play').textContent) }));
+		A(await waitFor(async () => !(await R(page)).playing, 3000), 'tapping ❚❚ pauses on touch', JSON.stringify({ r: await R(page), cls: await page.evaluate(() => document.getElementById('replay-bar').className + ' ' + document.querySelector('.rb-play').textContent) }));
 		await page.evaluate(() => window.__micatro.replay.pause());
 		await go('/micatro/');
 		await page.waitForSelector('.main-menu .b-replays', { visible: true, timeout: 8000 });
-		await page.tap('.b-replays');
+		await tapEl(page, '.b-replays');
 		await page.waitForSelector('.rp-modal .rp-row', { visible: true, timeout: 8000 });
 		const rl = await page.evaluate(() => { const r = document.querySelector('.rp-row').getBoundingClientRect(); return { l: r.left, r: r.right, link: !!document.querySelector('.b-rp-link'), sw: document.documentElement.scrollWidth }; });
 		A(rl.l >= 0 && rl.r <= 390 && rl.sw <= 390 && !rl.link, 'the Replays list fits the phone; a guest gets no link button', JSON.stringify(rl));

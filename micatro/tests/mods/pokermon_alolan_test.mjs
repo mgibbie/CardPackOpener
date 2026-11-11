@@ -15,6 +15,7 @@
 // overworld/tests/micatro_pokermon_regional_ui_test.mjs checks them drawn.
 //   node micatro/tests/mods/pokermon_alolan_test.mjs
 import path from 'path';
+// (Session runs here start with engineRev: 1 = the rules before Pages: these suites measure the mod alone)
 import { fileURLToPath, pathToFileURL } from 'url';
 import { T, start, hand, add, clearHand, G, P_CENTERS, act, STATES } from './poke_helpers.mjs';
 import { P_CARDS, create_playing_card, get_current_pool } from '../../js/engine/core.js';
@@ -36,6 +37,9 @@ const key = (c) => c.config.center.key;
 const near = (a, b) => Math.abs(a - b) < 1e-6;
 const flush = () => G.E_MANAGER.flush();
 const sec = async (name, fn) => { try { await fn(); } catch (e) { ok(false, name + ' threw: ' + String(e && e.stack).slice(0, 900)); } };
+/** The rules of a run recorded before r111 (the owner's simplified weather trio, SIMPLE_TRIO_REV: Kyogre / Groudon made rain / sun, locked
+ *  Castform and clashed; Rayquaza calmed them), as a resume / replay of an old move runs them. The r111 rules: pokermon_simple_trio_test. */
+const r110 = (fn) => { PINS.RULES.pins = { pokermon: '3.9.1+r110' }; try { return fn(); } finally { PINS.RULES.pins = null; } };
 const ex = (j) => j.ability.extra;
 const C = (n) => P_CENTERS['j_poke_' + n];
 const plain = (j) => describe(j).lines.join(' ').replace(/\{[^}]*\}/g, '').replace(/\s+/g, ' ');
@@ -292,17 +296,22 @@ await sec('snow', () => {
   ok(near(t.chips, 10 + 20), 'not snowy: nothing', t.total);
   ok(/Not snowy/.test(plain(s)), 'its text says so', plain(s));
   // a Kyogre locks the forecast to rain: no snow from the Spades — but an Alolan Ninetales still brings it (snow ADDS)
-  [s] = fresh('ASNOW3', ['alolan_sandshrew', 'kyogre'], SPADES);
-  ok(!is_snowy(s), 'Kyogre held: Castform\'s forecast is Rainy, so Spades bring no snow');
-  const nt = add('j_poke_alolan_ninetales');
-  ok(is_snowy(s), 'an Alolan Ninetales gained mid-round: snowy at once (live)');
-  t = play(['S_K', 'H_K']);
-  ok(near(t.chips, 10 + 20 + 30) && near(t.mult, 2 * 1.2), 'with Kyogre and Ninetales: +30 Chips (the snow), the Spade X1.2', t.total);
-  debuff(nt);
-  ok(!is_snowy(s), 'Ninetales debuffed: no snow');
-  undebuff(nt);
-  nt.remove(); flush();
-  ok(!is_snowy(s), 'Ninetales sold: no snow');
+  r110(() => {
+    [s] = fresh('ASNOW3', ['alolan_sandshrew', 'kyogre'], SPADES);
+    ok(!is_snowy(s), 'r110: Kyogre held: Castform\'s forecast is Rainy, so Spades bring no snow');
+    const nt = add('j_poke_alolan_ninetales');
+    ok(is_snowy(s), 'an Alolan Ninetales gained mid-round: snowy at once (live)');
+    t = play(['S_K', 'H_K']);
+    ok(near(t.chips, 10 + 20 + 30) && near(t.mult, 2 * 1.2), 'with Kyogre and Ninetales: +30 Chips (the snow), the Spade X1.2', t.total);
+    debuff(nt);
+    ok(!is_snowy(s), 'Ninetales debuffed: no snow');
+    undebuff(nt);
+    nt.remove(); flush();
+    ok(!is_snowy(s), 'Ninetales sold: no snow');
+  });
+  // r111: Kyogre locks nothing, so the Spades held most are Snowy again
+  [s] = fresh('ASNOW3b', ['alolan_sandshrew', 'kyogre'], SPADES);
+  ok(is_snowy(s), 'r111: Kyogre held, Spades held most: snowy (Kyogre has no weather)');
   // the shop: only Snow Warning counts
   const sw = add('j_poke_alolan_ninetales');
   endRound(); act({ type: 'cash_out' }); flush();
@@ -621,7 +630,7 @@ await sec('old-rev replay', () => {
     const s = new Session();
     PINS.RULES.pins = pins;
     try {
-      s.start({ seed, mods: ['pokermon'], customDeck: deck });
+      s.start({ engineRev: 1, seed, mods: ['pokermon'], customDeck: deck });
       s.act({ type: 'select_blind' }); flush();
       const en = G.consumeables.cards.find((c) => key(c) === 'c_poke_psychic_energy');
       s.act({ type: 'use', id: en.sort_id, targets: [], joker_targets: [G.jokers.cards[0].sort_id] }); flush();
@@ -655,7 +664,7 @@ await sec('old-rev replay', () => {
 // ------------------------------------------------------------------- save / resume
 await sec('resume', () => {
   const s = new Session();
-  s.start({ seed: 'ALOLARES', customDeck: { name: 'Alola', mods: ['pokermon'], params: { blind_scaling: 0.05 },
+  s.start({ engineRev: 1, seed: 'ALOLARES', customDeck: { name: 'Alola', mods: ['pokermon'], params: { blind_scaling: 0.05 },
     cards: [['S_J', 0, 0, 0, 12], ['H_9', 'm_stone', 0, 0, 10], ['D_5', 'm_gold', 0, 0, 6], ['C_2', 0, 0, 0, 12], ['S_7', 0, 0, 0, 12]],
     consumables: [{ key: 'c_poke_fire_energy' }, { key: 'c_pluto' }],
     jokers: [{ key: 'j_poke_cubone' }, { key: 'j_poke_alolan_raichu' }, { key: 'j_poke_alolan_grimer' }, { key: 'j_poke_alolan_sandshrew' }, { key: 'j_poke_alolan_golem' }] } });

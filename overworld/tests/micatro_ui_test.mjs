@@ -23,7 +23,7 @@ const CHROME = process.env.CHROME || [
 	'/opt/chrome/chrome',
 ].find(p => fs.existsSync(p));
 const PORT = 8742;
-const SEED = 'DEMO2';
+const SEED = 'DEMO4'; // (Pages v2: a seed whose first shop still has an affordable booster after the Joker)
 let pass = 0, fail = 0;
 const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else { fail++; console.log('FAIL: ' + m + (extra != null ? '  ' + extra : '')); } };
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.json': 'application/json', '.css': 'text/css', '.png': 'image/png', '.jpg': 'image/jpeg', '.ogg': 'audio/ogg', '.ttf': 'font/ttf', '.svg': 'image/svg+xml' };
@@ -37,7 +37,7 @@ const eng = (p) => import(pathToFileURL(path.join(ROOT, 'micatro/js/engine', p))
 const { Session } = await eng('session.js');
 const sess = new Session();
 sess.start({ seed: 'SPECT1', back: 'b_blue', stake: 1 });
-sess.act({ type: 'select_blind' });
+sess.act({ type: 'select_blind' }); sess.act({ type: 'pick_page', index: 0 }); // (Pages)
 const v0 = sess.view();
 sess.act({ type: 'highlight', ids: v0.areas.hand.slice(0, 2).map(c => c.id) });
 const snapA = { view: sess.view(), events: [] };
@@ -52,6 +52,10 @@ const vB = sess.view();
 sess.act({ type: 'highlight', ids: vB.areas.hand.slice(0, 2).map(c => c.id) });
 const r3 = sess.act({ type: 'discard' });
 const snapC = { view: sess.view(), events: r3.events.slice(-3) };
+const goldSession = new Session();
+goldSession.start({ seed: 'GOLDCHIP', back: 'b_red', stake: 8 });
+goldSession.act({ type: 'select_blind' }); goldSession.act({ type: 'pick_page', index: 0 }); // (Pages)
+const goldView = goldSession.view();
 
 // ---- server: static files + /api/mp stub (records what the client sent)
 const seen = { publish: [], score: [], spec: 0 };
@@ -195,9 +199,36 @@ try {
 
 		await clickSel(page, '.b-select');
 		await idle(page); await sleep(400);
+		// (Pages v2: a Pages screen on 25% of Blinds — micatro_pages_test covers it; here, when it opens, the quietest Page: no Round
+		//  rule, no downside, a plain prize, so the round plays as this suite expects)
+		const st0 = (await V(page)).state;
+		A(st0 === 'SELECTING_HAND' || (st0 === 'PAGES' && await page.evaluate(() => document.querySelectorAll('.overlay .page-card').length === 3)), 'Select starts the round (or opens the Pages screen)', st0);
+		if (st0 === 'PAGES') {
+			await page.evaluate(() => { const ch = window.__micatro.view().pages.choices; const K = ['money', 'card', 'shop', 'pack']; const cost = (p) => (p.rule || p.down ? 10 : 0) + (K.includes(p.prize.kind) ? K.indexOf(p.prize.kind) : 5); let i = 0; ch.forEach((p, j) => { if (cost(p) < cost(ch[i])) i = j; }); window.__micatro.board.keyPage(i); return i; }); await sleep(150);
+			await clickSel(page, '.b-pick-page');
+			await idle(page); await sleep(400);
+		}
 		v = await V(page);
 		A(v.state === 'SELECTING_HAND' && v.areas.hand.length === 8, 'selecting the blind deals a hand of 8', v.state);
 		A(await page.evaluate(() => document.querySelectorAll('.cards-layer .card').length) >= 8, 'the hand is drawn as card sprites');
+		const scoreChip = await page.$('.hud-score .chip-ico');
+		await page.evaluate(() => { const b = window.__micatro.board; b.view.stake = 1; b.renderScoreChip(); });
+		const chipOne = await scoreChip.screenshot();
+		await page.evaluate(stake => { const b = window.__micatro.board; b.view.stake = stake; b.renderScoreChip(); }, goldView.stake);
+		const chipTwo = await scoreChip.screenshot();
+		const chipState = await page.evaluate(() => {
+			const b = window.__micatro.board, c = document.querySelector('.hud-score .chip-ico');
+			const gold = getComputedStyle(c).backgroundPosition;
+			b.applyEvent({ type: 'ante', total: 6 });
+			const laterAnte = getComputedStyle(c).backgroundPosition;
+			b.view.stake = 4; b.renderScoreChip(); const black = getComputedStyle(c).backgroundPosition;
+			b.view.stake = 5; b.renderScoreChip(); const blue = getComputedStyle(c).backgroundPosition;
+			b.view.stake = 1; b.hud.ante = b.view.ante; b.renderHud();
+			return { gold, laterAnte, black, blue, restored: getComputedStyle(c).backgroundPosition };
+		});
+		A(chipState.gold === '-60px -30px' && chipState.laterAnte === chipState.gold && chipState.black === '-120px 0px' && chipState.blue === '-90px 0px' && chipState.restored === '0px 0px', 'round-score chip matches the stake, including Gold, Black and Blue, independently of ante', JSON.stringify(chipState));
+		A(goldView.stake === 8, 'the Gold Stake test uses a real Gold Stake run');
+		A(!Buffer.from(chipOne).equals(Buffer.from(chipTwo)), 'round-score chip screenshots differ for White and Gold Stakes');
 
 		// canvases aren't blank: the WebGL background and a card face
 		const px = await page.evaluate(() => {
@@ -342,7 +373,7 @@ try {
 		const { page, errors, ctx } = await open({ url: '/micatro/', signedIn: false });
 		await page.evaluate(() => window.__micatro.newRun({ seed: 'LAYOUT1' }));
 		await idle(page);
-		await page.evaluate(() => window.__micatro.act({ type: 'select_blind' }));
+		await page.evaluate(() => window.__micatro.selectBlind());
 		await idle(page); await sleep(900);
 		let g = await handGeom(page);
 		A(g.n === 8 && g.overButtons === 0 && g.offscreen === 0 && g.underCounter === 0, '1600×900, 8 cards: the hand clears Play/Discard and the counter', JSON.stringify(g));
@@ -380,6 +411,19 @@ try {
 		A(await page.evaluate(() => document.querySelector('.controls').classList.contains('readonly') && document.querySelector('.b-play').disabled), 'spectators can\'t act (controls are read-only)');
 		const r = await page.evaluate(() => window.__micatro.act({ type: 'play' }));
 		A(r && r.ok === false, 'the act hook refuses actions in spectate mode');
+		// the keyboard (controls sweep B5): the arrows walk the reticle over the runner's cards, Z / V show card info, Backspace the
+		// deck, X closes it — and nothing acts
+		await page.keyboard.press('ArrowRight'); await sleep(150);
+		await page.keyboard.press('ArrowRight'); await sleep(150);
+		const kf = await page.evaluate(() => { const f = window.__micatroPad.focus; return { f: f && (f.area || String(f.cls)), ring: document.querySelector('.pad-reticle').style.display !== 'none', hints: getComputedStyle(document.getElementById('pad-hints')).display !== 'none' && /Z/.test(document.getElementById('pad-hints').textContent) }; });
+		A(kf.f && kf.ring && kf.hints, 'spectating: the arrows show the reticle and the key hints', JSON.stringify(kf));
+		await page.keyboard.press('KeyV'); await sleep(200);
+		A(await page.evaluate(() => window.__micatroPad.tipsOn), 'spectating: V turns card info on');
+		await page.keyboard.press('KeyV'); await sleep(100);
+		await page.keyboard.press('Backspace'); await sleep(300);
+		A(await page.evaluate(() => !!document.querySelector('.dv-modal')), 'spectating: Backspace opens the deck view');
+		await page.keyboard.press('KeyX'); await sleep(300);
+		A(await page.evaluate(() => !document.querySelector('.dv-modal') && window.__micatro.board.view.discards_left !== undefined), 'spectating: X closes it');
 		const fatal = errors.filter(e => !/Failed to load resource|favicon/i.test(e));
 		A(fatal.length === 0, 'no console errors while spectating', fatal.slice(0, 4).join(' | '));
 		await ctx.close();
@@ -394,7 +438,7 @@ try {
 		A(await page.evaluate(() => { const a = document.querySelector('.main-menu .back-link'); return !!a && a.getAttribute('href') === '/overworld/' && /overworld/i.test(a.textContent); }), '?direct=1 (the arcade cabinet) offers "Back to the overworld"');
 		await page.evaluate(() => window.__micatro.newRun({ seed: 'PHONE1' }));
 		await idle(page);
-		await page.evaluate(() => window.__micatro.act({ type: 'select_blind' }));
+		await page.evaluate(() => window.__micatro.selectBlind());
 		await idle(page); await sleep(500); await settle(page);
 		const lay = await page.evaluate(() => {
 			const st = document.getElementById('stage').getBoundingClientRect();

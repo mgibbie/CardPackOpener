@@ -5,6 +5,7 @@
 // store is a 10-deep ring buffer and a 12-win Lorequest run is ~14 fights, so the
 // opening fights would already be evicted by the time the run is cleared.
 //   node battlecards/tests/unit/runreplay_test.mjs
+import { gameSource } from '../helpers/gamesource.mjs';   // game.js + the modules split out of it
 import fs from 'fs';
 import { appendFightReplay, playlistFights, canBuildPlaylist, playlistMeta, fightLabel, MAX_RUN_FIGHTS } from '../../runreplay.js';
 
@@ -73,8 +74,13 @@ const ok = (l, c, x) => { if (c) { pass++; } else { fail++; console.log('FAIL:',
 // (a new mode added to activeRunIO must wire addRunReplayButtons into its win
 // screen too, or its cleared runs quietly lose the feature)
 {
-	const src = fs.readFileSync(new URL('../../game.js', import.meta.url), 'utf8');
+	const src = gameSource();
 	const wired = new Set([...src.matchAll(/addRunReplayButtons\(el, run, '([a-z]+)'/g)].map(m => m[1]));
+	// Middle-earth / Sword Coast / Final Fantasy share one win screen (game_lorequest.js rungRunFlow), which
+	// passes its config's `mode`: every rungRunFlow({ mode: '…' }) is wired when that shared screen is
+	const sharedWin = /addRunReplayButtons\(el, run, mode\);[\s\S]{0,200}?cfg\.clear\(\)/.test(src);
+	const sharedModes = [...src.matchAll(/rungRunFlow\(\{\s*mode: '([a-z]+)'/g)].map(m => m[1]);
+	if (sharedWin) for (const m of sharedModes) wired.add(m);
 	// the run modes the save layer knows about: `if (<mode>RunMode) return { load: ... }`
 	const ioBlock = src.slice(src.indexOf('function activeRunIO'), src.indexOf('function activeRunIO') + 1400);
 	const modes = new Set([...ioBlock.matchAll(/if \((\w+?)RunMode\) return \{/g)].map(m => m[1].toLowerCase()));
@@ -83,7 +89,7 @@ const ok = (l, c, x) => { if (c) { pass++; } else { fail++; console.log('FAIL:',
 	ok('every run mode in activeRunIO wires the full-run replay', missing.length === 0, 'missing: ' + missing.join(','));
 	ok('all ten run modes are covered', wired.size >= 10, [...wired].sort().join(','));
 	ok('the buttons are added BEFORE the run is cleared (the ids live on the run)',
-		[...src.matchAll(/addRunReplayButtons\(el, run, '(\w+)'\);[\s\S]{0,400}?clear(\w+)\(\)/g)].length >= 8);
+		[...src.matchAll(/addRunReplayButtons\(el, run, '(\w+)'\);[\s\S]{0,400}?clear(\w+)\(\)/g)].length + (sharedWin ? sharedModes.length : 0) >= 8);
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);

@@ -140,7 +140,7 @@
 		#zoom-info .tt-kw b { color: #9fd0ff; }
 		#zoom-info .z-owned { margin-top: 14px; font-size: 13px; color: #57e389; }
 		#zoom-close {
-			position: absolute; top: 14px; right: 18px; width: 44px; height: 44px;
+			position: absolute; top: 64px; right: 18px; width: 44px; height: 44px; /* below the top bar, which covers the corner */
 			border-radius: 50%; border: 1px solid #6a5f8a; background: #2a2440;
 			color: #e8e2f4; font-size: 20px; cursor: pointer;
 		}
@@ -216,15 +216,15 @@
 	</div>
 	<div id="pageinfo"></div>
 	<div id="tip"></div>
-	<div id="zoom">
+	<div id="zoom" role="dialog" aria-modal="true" aria-label="Card">
 		<button id="zoom-close" aria-label="Close">✕</button>
 		<div id="zoom-card"></div>
 		<div id="zoom-info"></div>
 	</div>
 	<!-- bump ?v=… (here and on the ./cardart.js / ./keywords.js imports in
 	     viewer.js) on a release to push fresh gallery code+data to all clients -->
-	<script type="module" src="viewer.js?v=20260913e"></script>
+	<script type="module" src="viewer.js?v=20261110a"></script>
 	<script type="module" src="/site/topbar.js"></script>
-	<script type="module" src="nav.js?v=20260913e"></script>
+	<script type="module" src="nav.js?v=20261110a"></script>
 </body>
 </html>

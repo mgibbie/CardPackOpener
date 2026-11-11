@@ -167,6 +167,57 @@ export function pickTarget(state, pi, card) {
 		}
 	}
 }
+// ---- self-preservation (bug:1793655195054 Zenos/Xande cast Night's Whisper at 2 HP;
+// bug:1794010089247 Lotho cast Feed the Swarm "Take 2 damage" at 2 life) ----
+// Walks the effects an action resolves NOW (not deathrattles/ongoings/onDraw) and adds
+// up what it does to our own hero: damage to 'own-hero' / 'all-heroes' (Night's Whisper,
+// Hellfire), 'self-damage'. Branches (conditional/luck/choices) count at their worst.
+const DEFERRED_KEYS = new Set(['deathrattle', 'ongoing', 'ongoings', 'onDraw', 'departure', 'arrival', 'chaos', 'secret', 'overheal', 'aura', 'goal', 'reward', 'tapAbility', 'activated', 'adventure', 'emerge']);
+const SELF_HERO_TARGETS = new Set(['own-hero', 'all-heroes', 'self-hero']);
+const ENEMY_FACE_TARGETS = new Set(['enemy-hero', 'enemy-heroes', 'all-heroes', 'enemies']);
+function lifeImpact(effects) {
+	// returns { self, pierceSelf, faceBeforeSelf }: our hero's damage (armor-soaked / pierced)
+	// and the face damage to every opponent that lands BEFORE the first self-hit
+	let self = 0, pierceSelf = 0, face = 0, faceBeforeSelf = null;
+	(function rec(v) {
+		if (!v || typeof v !== 'object') return;
+		if (Array.isArray(v)) { v.forEach(rec); return; }
+		const n = typeof v.value === 'number' ? v.value : 0;
+		if ((v.type === 'damage' || v.type === 'self-damage') && n > 0) {
+			const hitsSelf = v.type === 'self-damage' || SELF_HERO_TARGETS.has(v.target);
+			if (v.type === 'damage' && ENEMY_FACE_TARGETS.has(v.target)) face += n;
+			if (hitsSelf) {
+				if (faceBeforeSelf == null) faceBeforeSelf = v.target === 'all-heroes' ? face - n : face; // a mutual hit is not a win
+				if (v.pierce) pierceSelf += n; else self += n;
+			}
+		}
+		for (const k in v) if (!DEFERRED_KEYS.has(k) && typeof v[k] === 'object') rec(v[k]);
+	})(effects);
+	return { self, pierceSelf, faceBeforeSelf: faceBeforeSelf ?? face };
+}
+// true when resolving `effects` would kill (or eliminate) our own hero — unless the same
+// effects take every opponent's face to 0 first (a genuine winning trade)
+export function selfLethal(state, pi, effects) {
+	const p = state.players[pi];
+	if (!effects) return false;
+	const { self, pierceSelf, faceBeforeSelf } = lifeImpact(effects);
+	if (!self && !pierceSelf) return false;
+	const armor = p.armor || 0;
+	const lifeLost = pierceSelf + Math.max(0, self - armor);
+	if (lifeLost < p.life) return false;
+	const opps = E.opponentsOf(state, pi);
+	if (faceBeforeSelf > 0 && opps.every(o => state.players[o].life + (state.players[o].armor || 0) <= faceBeforeSelf)) return false;
+	return true;
+}
+// the parts of a hand card that resolve when it is played (spell/battlecry effects, its
+// combo line when combo is live, every choice branch at its worst)
+function playEffects(p, c) {
+	const out = [];
+	if (c.effects) out.push(c.effects);
+	if (c.battlecry) out.push(c.battlecry);
+	if (c.combo && (p.cardsPlayedThisTurn || 0) > 0) out.push(c.combo);
+	return out;
+}
 const FRIENDLY_TYPES = new Set(['buff', 'boost', 'grant', 'temp-buff', 'heal-full', 'attack-equals-health', 'double-health', 'double-attack', 'grant-ongoing', 'temp-immune', 'shadowflame', 'grant-deathrattle', 'copy-deathrattle', 'attach', 'add-counters', 'grow', 'silent-strike', 'fill-board-copies-of-target', 'mask-of-mimicry', 'grant-random-keyword']);
 const HOSTILE_TYPES = new Set(['damage', 'destroy', 'exile', 'set-health', 'set-attack', 'bounce', 'mind-control', 'transform', 'transform-copy', 'damage-then', 'conditional', 'draw-damage', 'swap-stats', 'swipe', 'damage-adjacent', 'betrayal', 'corrupt', 'mind-control-temp', 'attach-curse', 'tricks-of-the-trade', 'steal-stats-random-friendly', 'destroy-target-hero-gains', 'contagion-infect', 'acquired-allies', 'wyrm-bolt', 'no-guts-no-glory', 'bubba-hounds']);
 const CHOSEN_TYPES = new Set([...FRIENDLY_TYPES, ...HOSTILE_TYPES, 'heal', 'set-hero-health']);
@@ -184,6 +235,8 @@ function playableCards(state, pi) {
 		if (c.type === 'weapon' && p.weapon && p.weapon.durability > 1) return false;
 		// weapon buffs are dead cards without a weapon
 		if (c.effects?.some(e => e.type === 'buff-weapon') && !p.weapon) return false;
+		// never pay Life / take self-damage we can't survive (Night's Whisper at 2 HP)
+		if (selfLethal(state, pi, playEffects(p, c))) return false;
 		return true;
 	});
 }
@@ -339,6 +392,7 @@ export function step(state, pi = 1) {
 		for (let i = 0; i < abs.length; i++) {
 			const ab = abs[i];
 			if (!E.canTapArtifact(state, pi, a.uid, i)) continue;
+			if (selfLethal(state, pi, ab.effects)) continue;
 			const spec = E.tapArtifactSpec(state, pi, a.uid, i);
 			let target = null;
 			if (spec && spec.required) {
@@ -370,6 +424,7 @@ export function step(state, pi = 1) {
 		if (idx < 0 && p.hand.length < 4) idx = taps.findIndex(t => t.effects.some(e => e.type === 'conjure'));
 		if (idx < 0 && p.board.length) idx = taps.findIndex(t => t.effects.some(e => e.type === 'boost'));
 		if (idx < 0) continue;
+		if (selfLethal(state, pi, taps[idx].effects)) continue;
 		const spec = E.tapSpec(state, pi, l, idx);
 		let target = null;
 		if (spec) {
@@ -387,6 +442,7 @@ export function step(state, pi = 1) {
 		if (!E.canTapLand(state, pi, l)) continue;
 		const taps = E.landTaps(l);
 		if (!taps.length) continue;
+		if (selfLethal(state, pi, taps[0].effects)) continue;
 		const spec = E.tapSpec(state, pi, l, 0);
 		let target = null;
 		if (spec) {
@@ -453,6 +509,7 @@ export function step(state, pi = 1) {
 	// 1a'. companion and commander come off their zones like extra hand cards
 	for (const c of [p.companion, ...p.command].filter(Boolean)) {
 		if (!E.canPlay(state, pi, c)) continue;
+		if (selfLethal(state, pi, playEffects(p, c))) continue;
 		const spec = E.targetSpec(state, pi, c);
 		let target = null;
 		if (spec) {
@@ -485,6 +542,7 @@ export function step(state, pi = 1) {
 		}
 		// don't waste pure healing at high life
 		if (fx.every(e => e.type === 'heal') && p.life > 30) continue;
+		if (selfLethal(state, pi, fx)) continue; // Life Tap at 2 HP
 		const spec = E.heroPowerSpec(state, pi, hpw, choice);
 		let target = null;
 		if (spec) {
@@ -631,6 +689,7 @@ export function step(state, pi = 1) {
 			const a = c.activated[i];
 			if (a.sacrifice) continue; // the AI doesn't eat its own board
 			if (!E.canActivate(state, pi, c, i)) continue;
+			if (selfLethal(state, pi, a.effects)) continue;
 			const spec = E.abilitySpec(state, pi, c, i);
 			let target = null;
 			if (spec) {
@@ -679,8 +738,8 @@ export function chooseResponse(state, pi) {
 
 	// gather my instant-speed damage sources (instants + creature abilities), cheapest first
 	const sources = [];
-	for (const c of E.responseOptions(state, pi)) { const d = c.counterSpell ? 0 : dmgOf(c.effects); if (d > 0) sources.push({ act: { kind: 'spell', uid: c.uid }, dmg: d, cost: E.effectiveCost(state, pi, c) }); }
-	for (const c of [...p.board, ...p.enchantments]) if (c.activated) c.activated.forEach((a, i) => { if (E.canActivate(state, pi, c, i)) { const d = dmgOf(a.effects); if (d > 0) sources.push({ act: { kind: 'ability', uid: c.uid, index: i }, dmg: d, cost: a.cost || 0 }); } });
+	for (const c of E.responseOptions(state, pi)) { if (selfLethal(state, pi, playEffects(p, c))) continue; const d = c.counterSpell ? 0 : dmgOf(c.effects); if (d > 0) sources.push({ act: { kind: 'spell', uid: c.uid }, dmg: d, cost: E.effectiveCost(state, pi, c) }); }
+	for (const c of [...p.board, ...p.enchantments]) if (c.activated) c.activated.forEach((a, i) => { if (E.canActivate(state, pi, c, i) && !selfLethal(state, pi, a.effects)) { const d = dmgOf(a.effects); if (d > 0) sources.push({ act: { kind: 'ability', uid: c.uid, index: i }, dmg: d, cost: a.cost || 0 }); } });
 	sources.sort((a, b) => a.cost - b.cost || a.dmg - b.dmg);
 	const killer = need => sources.find(s => s.dmg >= need);
 

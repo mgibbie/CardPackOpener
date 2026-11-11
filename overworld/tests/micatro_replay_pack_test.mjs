@@ -53,10 +53,13 @@ function walk(recipe) {
 	while (!st.done) { const r = st.step(); if (!r || !r.ok) break; const v = st.view(); states.push(v.state); views.push(v); steps.push(r.events); }
 	return { states, steps, views };
 }
-const VAN = packRun({ seed: 'PACKS2', back: 'b_red', stake: 1, customDeck: RICH_DECK });
-const vanKinds = new Set(VAN.opened.map(o => o.kind));
-if (!['Arcana', 'Celestial', 'Spectral', 'Standard', 'Buffoon'].every(k => vanKinds.has(k)) || !VAN.opened.some(o => o.via === 'skip_blind'))
-	throw new Error('the vanilla pack fixture must open every vanilla pack kind and a skip-tag pack: ' + JSON.stringify(VAN.opened));
+// the vanilla fixture: the first seed PACKS<n> whose bot run opens every vanilla pack kind (an Arcana + a Celestial bought) and a
+// skip-tag pack (searched, so a rules change that moves the packs — Pages v2, a Page every ante — just picks another seed)
+const vanGood = (r) => { const k = new Set(r.opened.map(o => o.kind)); return ['Arcana', 'Celestial', 'Spectral', 'Standard', 'Buffoon'].every(x => k.has(x)) && r.opened.some(o => o.via === 'skip_blind') && r.opened.some(o => o.kind === 'Arcana' && o.via === 'buy') && r.opened.some(o => o.kind === 'Celestial' && o.via === 'buy'); };
+let VAN = null, VAN_SEED = null;
+for (let i = 0; i < 200 && !VAN; i++) { const r = packRun({ seed: 'PACKS' + i, back: 'b_red', stake: 1, customDeck: RICH_DECK }); if (vanGood(r)) { VAN = r; VAN_SEED = 'PACKS' + i; } }
+if (!VAN)
+	throw new Error('the vanilla pack fixture must open every vanilla pack kind and a skip-tag pack: ' + 'none of PACKS0..199');
 const vanWalk = walk(VAN.recipe);
 const { loadMods } = await import(pathToFileURL(path.join(ROOT, 'micatro/js/mods/index.js')).href);
 await loadMods(['pokermon']);
@@ -101,7 +104,7 @@ const SAMPLER = () => {
 	const shopSprites = ['shop_jokers', 'shop_vouchers', 'shop_booster'].flatMap(k => B.areas[k] || []).map(id => B.sprites.get(id)).filter(Boolean);
 	return {
 		state: B.view && B.view.state, ov: cls, pack: (B.areas.pack_cards || []).length, hand: (B.areas.hand || []).length,
-		shopPanel: !!document.querySelector('.overlay .shop-panel'), blindRow: !!document.querySelector('.overlay .blind-row'),
+		shopPanel: !!document.querySelector('.overlay .shop-panel'), blindRow: !!document.querySelector('.overlay .blind-row'), evalPanel: !!document.querySelector('.overlay .eval-panel'),
 		packName: (document.querySelector('.overlay .pack-name') || {}).textContent || '',
 		shopOnScreen: shopSprites.filter(s => s.tgt.y < B.SH).length,
 		idle: M.idle(), index: M.replay && M.replay.ready ? M.replay.index : null, t: performance.now(),
@@ -118,7 +121,10 @@ const look = (page) => page.evaluate((src) => eval('(' + src + ')')(), SAMPLER.t
 const KIND_NAME = { Arcana: 'Arcana Pack', Celestial: 'Celestial Pack', Spectral: 'Spectral Pack', Standard: 'Standard Pack', Buffoon: 'Buffoon Pack' };
 const HAND_PACK = (o) => o.state === 'MOD_PACK_HAND' || o.kind === 'Arcana' || o.kind === 'Spectral';
 /** pack cards drawn over the shop / blind choice: the bug */
-const overShop = (samples) => samples.filter(s => s.pack > 0 && (!/ov-pack/.test(s.ov) || s.shopPanel || s.blindRow));
+const overShop = (samples) => samples.filter(s => s.pack > 0 && (!/ov-pack/.test(s.ov) || s.shopPanel || s.blindRow || s.evalPanel));
+// where a pack opened from: the shop (bought), the blind choice (a skip tag), or the cash-out (a Page's prize pack — Pages)
+const FROM = { SHOP: 'shop', BLIND_SELECT: 'blind choice', ROUND_EVAL: 'cash-out' };
+const onFrom = (s, from) => (from === 'SHOP' ? s.shopPanel : from === 'ROUND_EVAL' ? s.evalPanel : s.blindRow);
 
 let browser;
 try {
@@ -155,11 +161,11 @@ try {
 		A(await replayReady(page), `${label}: the replay loads`, JSON.stringify(await page.evaluate(() => window.__micatro.replay && window.__micatro.replay.error)));
 		let shotMid = false;
 		for (const o of run.opened) {
-			const tag = `${label}: ${o.kind} pack (${o.via === 'buy' ? 'from the shop' : 'from a tag, at the blind choice'}, move ${o.index})`;
+			const tag = `${label}: ${o.kind} pack (${o.via === 'buy' ? 'from the shop' : o.via === 'cash_out' ? 'a Page prize, after the cash-out' : 'from a tag, at the blind choice'}, move ${o.index})`;
 			// --- step forward onto the open, animated: the cards deal into the pack screen, never over the shop
 			await seek(page, o.index - 1);
 			const before = await look(page);
-			A(before.state === o.from && (o.from === 'SHOP' ? before.shopPanel : before.blindRow), `${tag}: before the open the table is on ${o.from}`, JSON.stringify(before));
+			A(before.state === o.from && onFrom(before, o.from), `${tag}: before the open the table is on ${o.from}`, JSON.stringify(before));
 			await startSampling(page);
 			await page.evaluate(() => window.__micatro.replay.stepForward());
 			let midShot = null;
@@ -167,7 +173,7 @@ try {
 			await idle(page); await sleep(120);
 			const samples = await stopSampling(page);
 			const bad = overShop(samples);
-			A(samples.some(s => s.pack > 0) && bad.length === 0, `${tag}: no frame of the opening draws the pack's cards over the ${o.from === 'SHOP' ? 'shop' : 'blind choice'}`, bad.length ? `${bad.length}/${samples.length} frames, e.g. ${JSON.stringify(bad[0])}` : `${samples.length} frames`);
+			A(samples.some(s => s.pack > 0) && bad.length === 0, `${tag}: no frame of the opening draws the pack's cards over the ${FROM[o.from] || o.from}`, bad.length ? `${bad.length}/${samples.length} frames, e.g. ${JSON.stringify(bad[0])}` : `${samples.length} frames`);
 			const at = await look(page);
 			const name = KIND_NAME[o.kind] || '';
 			A(at.index === o.index && at.state === o.state && /ov-pack/.test(at.ov) && !at.shopPanel && !at.blindRow && at.pack > 0 && at.shopOnScreen === 0 && (!name || at.packName === name),
@@ -234,7 +240,7 @@ try {
 		const { page, errors, go } = await newPage(1);
 		await go('/micatro/');
 		const o = VAN.opened.find(x => x.kind === 'Arcana' && x.via === 'buy') || VAN.opened[0];
-		await page.evaluate((deck) => window.__micatro.newRun({ seed: 'PACKS2', back: 'b_red', stake: 1, customDeck: deck }), RICH_DECK);
+		await page.evaluate((deck, seed) => window.__micatro.newRun({ seed, back: 'b_red', stake: 1, customDeck: deck }), RICH_DECK, VAN_SEED);
 		await idle(page);
 		let okRun = true;
 		for (let i = 0; i < o.index - 1; i++) {
@@ -345,7 +351,7 @@ try {
 			const o = VAN.opened.find((x) => x.kind === 'Arcana' && x.via === 'buy');
 			const { page, errors, go } = await touchPage();
 			await go('/micatro/');
-			await page.evaluate((deck) => window.__micatro.newRun({ seed: 'PACKS2', back: 'b_red', stake: 1, customDeck: deck }), RICH_DECK);
+			await page.evaluate((deck, seed) => window.__micatro.newRun({ seed, back: 'b_red', stake: 1, customDeck: deck }), RICH_DECK, VAN_SEED);
 			await idle(page);
 			let okRun = true;
 			for (let i = 0; i < o.index - 1; i++) {

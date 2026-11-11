@@ -14,6 +14,7 @@ import path from 'path';
 import http from 'http';
 import { fileURLToPath } from 'url';
 import puppeteer from 'puppeteer-core';
+import { gameSource } from '../../battlecards/tests/helpers/gamesource.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '../../');
@@ -30,11 +31,16 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 
 // ---------- source: every run mode's boss deal re-adds the Coin ----------
 {
-	const src = fs.readFileSync(path.join(ROOT, 'battlecards/game.js'), 'utf8');
+	const src = gameSource();
 	// (game.js may be checked out with CRLF line endings)
-	const deals = [...src.matchAll(/\r?\n\tE\.resetDeckAndHand\(state, 1, [^\r\n]*\);\r?\n\tE\.drawCards\(state, 1, 4\);\r?\n([^\r\n]*)\r?\n/g)];
-	A(deals.length === 10, 'all ten run modes deal the boss a fresh hand', String(deals.length));
-	const missing = deals.filter(m => !/E\.addCoin\(state, 1\)/.test(m[1])).length;
+	// Middle-earth / Sword Coast / Final Fantasy share ONE boot (game_lorequest.js rungRunFlow), so the ten modes
+	// are eight deals in the source: seven functions of their own (one tab deep) + the shared flow's (inside rungRunFlow)
+	const f0 = src.indexOf('function rungRunFlow('), f1 = src.indexOf('return { resume, pickHero', f0);
+	const deals = [...src.matchAll(/\r?\n(\t+)E\.resetDeckAndHand\(GS\.state, 1, [^\r\n]*\);\r?\n\t+E\.drawCards\(GS\.state, 1, 4\);\r?\n([^\r\n]*)\r?\n/g)]
+		.filter(m => m[1] === '	' || (m.index > f0 && m.index < f1)).map(m => [m[0], m[2]]);
+	const sharedModes = [...src.matchAll(/rungRunFlow\(\{\s*mode: '([a-z]+)'/g)].length;
+	A(f0 > 0 && sharedModes === 3 && deals.length - 1 + sharedModes === 10, 'all ten run modes deal the boss a fresh hand', `${deals.length} deals, ${sharedModes} modes on the shared one`);
+	const missing = deals.filter(m => !/E\.addCoin\(GS\.state, 1\)/.test(m[1])).length;
 	A(deals.length && missing === 0, '...and every one deals the boss its Coin right after', `${missing} missing`);
 }
 

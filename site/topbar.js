@@ -14,13 +14,20 @@
 // All server calls go through the existing /api/mp backend via mpmode.js, using
 // the same action signatures the Overworld already uses, so the flow is proven.
 import * as MP from '/battlecards/mpmode.js';
-import { watchHref, micatroActivityLabel } from '/site/livewatch.js';
+import { watchHref, joinHref, micatroActivityLabel, scoundrelActivityLabel, pearsActivityLabel } from '/site/livewatch.js';
+// the Games switcher (controls sweep B2): ` / hold Esc / Start+Select, and the ⚙️ below
+// ([data-mp-switcher]) open it on every page that loads this bar
+import '/site/switcher.js';
 
 const CARD_DUEL = id => '/battlecards/?cardpvp=' + encodeURIComponent(id) + '&mp=1';
 const SEEN_KEY = 'mp_inbox_seen_v1';
 // full-screen apps (the game, the Overworld) opt into a small floating widget
-// via <meta name="mp-topbar" content="compact"> instead of the full bar
-const COMPACT = document.querySelector('meta[name="mp-topbar"]')?.content === 'compact';
+// via <meta name="mp-topbar" content="compact"> instead of the full bar; a page
+// with a ⚙️ of its own (marked data-mp-switcher) asks for content="none": no bar
+// at all, just the Games switcher, the page-view count and the error beacon
+const TB_MODE = document.querySelector('meta[name="mp-topbar"]')?.content;
+const COMPACT = TB_MODE === 'compact';
+const NO_BAR = TB_MODE === 'none';
 const PACK_TIMER_MS = 12 * 60 * 60 * 1000; // client mirror of the backend cadence
 const fmtDur = ms => { ms = Math.max(0, ms); const s = Math.floor(ms / 1000); const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), ss = s % 60; return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(ss).padStart(2, '0')}`; };
 const $ = (sel, root = document) => root.querySelector(sel);
@@ -214,12 +221,12 @@ function buildBar() {
 		// a small floating cluster (home + inbox) that never covers gameplay
 		bar.classList.add('tb-compact');
 		bar.innerHTML = `<div class="tb-right">
-			<a class="tb-mini" href="/" title="Magepunk home">⚙️</a>
+			<a class="tb-mini" href="/" title="Games (\`)" aria-label="Games" data-mp-switcher>⚙️</a>
 			${loggedIn ? `<button class="tb-mini" id="tb-bell" title="Inbox" aria-label="Open inbox" aria-haspopup="dialog">🔔<span class="tb-badge" id="tb-badge" aria-hidden="true">0</span></button>` : ''}
 		</div>`;
 	} else {
 		bar.innerHTML = `
-			<a class="tb-brand" href="/"><span class="cog">⚙️</span> Magepunk</a>
+			<a class="tb-brand" href="/" title="Games (\`)" data-mp-switcher><span class="cog">⚙️</span> Magepunk</a>
 			<div class="tb-right">
 				${loggedIn
 					? `<button class="tb-bell" id="tb-bell" title="Inbox" aria-label="Open inbox" aria-haspopup="dialog">🔔<span class="tb-badge" id="tb-badge" aria-hidden="true">0</span></button>
@@ -637,6 +644,8 @@ async function addFriend(raw) {
 //   card:<mode>        → in a card duel / run (spectate on the Battlecards page)
 //   factory:<label>    → a Battle Frontier run (spectate in the Overworld)
 //   micatro:<label>    → a Micatro run (spectate on /micatro/); routing: site/livewatch.js
+//   scoundrel:<label>  → a Scoundrel run (spectate on /scoundrel/?spectate=)
+//   pears:<label>      → a Pair of Pears run (spectate on /pairofpears/?spectate=)
 //   micasurvivor:run   → a MicaSurvivor run (watch on /micasurvivor/?watch=; the server's `friends` sets it from the run beacon)
 const CARD_MODE_LABEL = { dungeon: 'a Dungeon run', pvp: 'a card duel', battle: 'a card battle', heist: 'a Heist run', tombs: 'a Tombs run', duels: 'a Duels run', arena: 'an Arena run', lorequest: 'a Lorequest run', middleearth: 'a Middle-earth run', swordcoast: 'a Sword Coast run', finalfantasy: 'a Final Fantasy run', multiverse: 'a Multiverse run' };
 function friendActivity(f) {
@@ -651,7 +660,13 @@ function friendActivity(f) {
 	}
 	if (st.startsWith('factory:')) return { live: true, kind: 'factory', label: 'in the ' + (f.region || st.slice('factory:'.length) || 'Battle Frontier') };
 	if (st.startsWith('micatro:')) return { live: true, kind: 'micatro', label: micatroActivityLabel(f.region || st.slice('micatro:'.length)) };
+	// Micatro Multiplayer: a match is watched like a run; a lobby with a free seat gets JOIN (site/livewatch.js joinHref)
+	if (st.startsWith('micatropvp:match:')) return { live: true, kind: 'micatro', label: 'in a Micatro PvP match' + (f.region ? ' · ' + f.region : '') };
+	if (/^micatropvp:lobby:[A-Z0-9]{5}$/.test(st)) return { live: false, kind: 'micatro-lobby', joinable: true, label: 'In a Micatro lobby' };
+	if (st.startsWith('micatropvp:full:')) return { live: false, kind: null, label: 'In a Micatro lobby' };
 	if (st === 'micasurvivor:run') return { live: true, kind: 'micasurvivor', label: 'in a MicaSurvivor run' + (f.region && !/^micasurvivor$/i.test(f.region) ? ' · ' + f.region : '') };
+	if (st.startsWith('scoundrel:')) return { live: true, kind: 'scoundrel', label: scoundrelActivityLabel(f.region || st.slice('scoundrel:'.length)) };
+	if (st.startsWith('pears:')) return { live: true, kind: 'pears', label: pearsActivityLabel(f.region || st.slice('pears:'.length)) };
 	if (st.startsWith('visiting:')) return { live: false, kind: null, label: 'exploring' };
 	return { live: false, kind: null, label: isOnline(f) ? 'online' : 'offline' };
 }
@@ -715,7 +730,11 @@ function renderFriends(body) {
 			<div class="meta"><div class="name">${esc(f.username)}${act.live ? ' <span class="live">● LIVE</span>' : ''}</div><div class="sub">${esc(act.label)}</div></div>
 			<div class="acts"></div>`;
 		const acts = $('.acts', row);
-		if (act.live) {
+		if (act.joinable) {
+			// waiting in a Micatro Multiplayer lobby: join their match
+			const join = el('button', 'mini primary', '🃏 Join'); join.title = 'Join their Micatro lobby';
+			join.addEventListener('click', () => { const href = joinHref(f); if (href) location.href = href; }); acts.appendChild(join);
+		} else if (act.live) {
 			// mid-match: you can't challenge them, but you can watch
 			const watch = el('button', 'mini primary', '👁 Watch'); watch.title = 'Spectate'; watch.addEventListener('click', () => watchFriend(f)); acts.appendChild(watch);
 		} else {
@@ -957,6 +976,8 @@ function analyticsLabel() {
 	}
 	if (p.includes('/overworld')) return q.has('battle') ? 'ow:battle' : q.has('watch') ? 'ow:spectate' : 'overworld';
 	if (p.includes('/micatro')) return q.has('spectate') ? 'micatro:spectate' : 'micatro';
+	if (p.includes('/scoundrel')) return q.has('spectate') ? 'scoundrel:spectate' : 'scoundrel';
+	if (p.includes('/pairofpears')) return q.has('spectate') ? 'pears:spectate' : 'pears';
 	if (p.includes('/collection')) return 'collection';
 	if (p.includes('/designwiki')) return 'wiki';
 	if (p.includes('/learn')) return 'learn';
@@ -996,6 +1017,7 @@ addEventListener('unhandledrejection', e => { const r = e && e.reason; const w =
 
 // ---------- boot ----------
 function start() {
+	if (NO_BAR) { sendHit(); return; }
 	buildBar();
 	sendHit(); // count this page open (fires for logged-out visitors too)
 	if (!MP.hasToken()) return;

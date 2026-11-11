@@ -29,16 +29,17 @@ defineNacho({
         if (!a.ante_debuffed && !a.raised) {
           G.hand.change_size(a.h_size);
           a.raised = true;
+          if (a.golisopod_bonus !== undefined) a.golisopod_bonus = a.h_size;
         }
         a.ante_debuffed = undefined;
       }
       return undefined;
     },
-    add_to_deck(self, card, from_debuff) { if (card.ability.extra.raised && from_debuff) G.hand.change_size(card.ability.extra.h_size); },
+    add_to_deck(self, card, from_debuff) { if (card.ability.extra.raised && from_debuff) G.hand.change_size(card.ability.extra.golisopod_bonus ?? card.ability.extra.h_size); },
     remove_from_deck(self, card) {
       const a = card.ability.extra;
-      G.hand.change_size(a.raised ? -a.h_size : 0);
-      if (a.ante_debuffed) a.raised = undefined;
+      G.hand.change_size(a.raised ? -(a.golisopod_bonus ?? a.h_size) : 0);
+      if (a.ante_debuffed) { a.raised = undefined; if (a.golisopod_bonus !== undefined) a.golisopod_bonus = 0; }
     },
   },
 }, FILE);

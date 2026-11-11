@@ -1,13 +1,14 @@
-// padnav.js — controller navigation for Battlecards' DOM screens
-// (Plans/CONTROLLER_SUPPORT_PLAN.md, Phase 3). Everyone, guests included
-// (the owner dropped the signed-in-only rule on 2026-10-18).
+// padnav.js — keyboard + controller navigation for Battlecards' DOM screens
+// (Plans/CONTROLLER_SUPPORT_PLAN.md, Phase 3; the keyboard joined in controls
+// sweep B3). Everyone, guests included (the owner dropped the signed-in-only
+// rule on 2026-10-18).
 //
-// A spatial navigator: every visible, clickable thing on the TOP layer is a
-// stop, and the d-pad moves to the nearest one in that direction. "Top layer"
-// is decided the way a mouse would: an element counts only if it is not
-// covered at its centre, so an open modal/overlay automatically scopes focus to
-// itself. It covers the lobby, the ~115 run-mode overlay screens, every
-// in-match modal (#scry-modal / #walker-menu / #inspect), game over, the deck
+// Runs on the site-wide navigator, site/focusnav.js, fed by site/input.js (one
+// keyboard listener + one controller poller, the same logical actions from
+// both): every visible, clickable thing on the TOP layer is a stop and the
+// arrows / WASD / d-pad move to the nearest one in that direction. It covers the
+// hub, the lobby, the ~115 run-mode overlay screens, every in-match modal
+// (#scry-modal / #walker-menu / #inspect / #card-focus), game over, the deck
 // builder, gallery, packs and replays.
 //
 // ACTIVATING an element replays exactly what a mouse click sends (pointerdown,
@@ -17,202 +18,137 @@
 // pointerdown handler close a menu before its button ran. Replaying the real
 // sequence keeps every existing handler exactly as it is for mouse and touch.
 //
-// Buttons (Nintendo layout, site/gamepad.js):
-//   d-pad / stick  move focus            confirm (right face)  activate
-//   cancel (bottom) Esc (back / close)   LB / RB  ← / → (pages, replay steps)
-//   Start           Space (open a pack, play/pause)
-// Focus shows a hover (tooltips, card zoom) and a gold ring; moving the mouse
-// hides the ring so mouse players never see it.
-import { startGamepad } from '../site/gamepad.js';
-import { askText, oskOpen } from '../site/osk.js';
+// The owner's map (keyboard / Nintendo-layout pad):
+//   arrows, WASD / d-pad, stick   move focus
+//   Z / A                         activate            Enter / Start   activate (keyboard) / Space (pad: open a pack, play/pause)
+//   X / B                         Esc (back / close)  Q E / L R       ← / → (pages, replay steps, tabs)
+//   V / Y                         read the focused card (its rules tip; a page can answer 'bc-inspect')
+// Tab still works: Z / Enter act on whatever Tab reached. Focus shows a hover
+// (tooltips, card zoom) and a gold ring; moving the mouse hides the ring.
+//
+// On the match page the BOARD (padboard.js) takes the actions whenever no modal
+// is open; this file routes them (one input, one rAF loop for both).
+import { startInput, isTyping } from '../site/input.js';
+import { createFocusNav, STOP_SELECTOR } from '../site/focusnav.js';
 
-const SEL = 'button, a[href], input:not([type=hidden]), select, textarea, [tabindex]:not([tabindex="-1"]), [data-padnav]';
-const TEXTY = /^(text|search|email|url|number|tel|password)?$/i;
+// padboard.js registers { active(), onAction(action, info), onFrame(pad) }
+let board = null;
+export const setBoard = b => { board = b; };
+// a page (packs.js) may take an action first: return true when it did
+let pageHandler = null;
+export const setPageHandler = fn => { pageHandler = fn; };
 
-let focused = null, lastRect = null, ringOn = false;
-
-function injectStyle() {
-	if (document.getElementById('padnav-style')) return;
-	const st = document.createElement('style');
-	st.id = 'padnav-style';
-	st.textContent = `.padnav-focus { outline: 3px solid #ffd27a !important; outline-offset: 2px !important;
-		box-shadow: 0 0 0 6px rgba(255, 210, 122, .28) !important; }`;
-	document.head.appendChild(st);
-}
-
-const center = r => ({ x: r.left + r.width / 2, y: r.top + r.height / 2 });
-function shown(el) {
-	if (el.disabled || el.closest('[hidden],[aria-hidden="true"]')) return false;
-	const r = el.getBoundingClientRect();
-	if (r.width < 4 || r.height < 4) return false;
-	const cs = getComputedStyle(el);
-	return cs.visibility !== 'hidden' && cs.display !== 'none' && +cs.opacity !== 0 && cs.pointerEvents !== 'none';
-}
-const onScreen = r => r.bottom > 0 && r.right > 0 && r.top < innerHeight && r.left < innerWidth;
-// not covered at its centre by something else (the way a click would land)
-function onTop(el, r) {
-	const c = center(r);
-	const hit = document.elementFromPoint(Math.min(innerWidth - 1, Math.max(0, c.x)), Math.min(innerHeight - 1, Math.max(0, c.y)));
-	return !!hit && (hit === el || el.contains(hit) || hit.contains(el));
-}
-// the fixed-position layer an element lives in, if that layer is a real overlay
-function overlayOf(el) {
-	for (let n = el; n && n !== document.body; n = n.parentElement) {
-		if (getComputedStyle(n).position === 'fixed') {
-			const r = n.getBoundingClientRect();
-			if (r.width * r.height > innerWidth * innerHeight * 0.12) return n;
-		}
-	}
-	return null;
-}
+const spaceKey = () => { const t = document.activeElement && document.activeElement !== document.body ? document.activeElement : window;
+	t.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', code: 'Space', bubbles: true, cancelable: true })); };
 
 // The game's modal containers. A decision modal is a small box over a separate
 // veil, so "a big fixed layer" alone can't find it; the page chrome (top bar,
 // Back) stays clickable above the veil but must not steal a modal's focus.
-const MODALS = ['#scry-modal', '#walker-menu', '#inspect', '#dungeon-overlay', '[aria-modal="true"]'];
-export function openModal() {
-	let best = null, bestZ = -Infinity;
-	for (const sel of MODALS) for (const m of document.querySelectorAll(sel)) {
-		if (m.closest('#osk') || !shown(m)) continue;
-		if (!m.querySelector(SEL) && !m.matches(SEL)) continue;
-		const z = +getComputedStyle(m).zIndex || 0;
-		if (z >= bestZ) { bestZ = z; best = m; }
-	}
-	return best;
+const nav = typeof document === 'undefined' ? null : createFocusNav({
+	modals: ['#scry-modal', '#walker-menu', '#inspect', '#dungeon-overlay'],
+	ringClass: 'padnav-focus',
+	pointer: true, hover: true, domFocus: false, scrollFallback: false,
+	guard: () => !!(board && board.active()),
+	// Enter on a keyboard acts (a DOM page has no "Start"); a pad's Start is Space
+	onMenu: info => { if (info.source === 'key') nav.activate(info); else spaceKey(); },
+});
+
+export const openModal = () => nav.openModal();
+export const candidates = () => nav.candidates();
+export const move = dir => { nav.move(dir); };
+export const activate = () => nav.activate({ source: 'pad' });
+
+// ---------- Tab and the keyboard ----------
+// padnav never moves the real DOM focus (domFocus:false), so a Tab press would
+// leave the ring behind. When the DOM focus moved since the last action, the
+// next key press starts from where it went: Tab + Z acts on what Tab reached.
+let domMoved = false;
+function syncFromDom() {
+	if (!domMoved) return;
+	domMoved = false;
+	const el = document.activeElement;
+	if (!el || el === document.body || el === nav.focused || !el.matches || !el.matches(STOP_SELECTOR) || isTyping(el)) return;
+	if (nav.candidates().includes(el)) nav.focusTo(el);
 }
 
-export function candidates() {
-	const all = [...document.querySelectorAll(SEL)].filter(el => shown(el) && !el.closest('#osk'));
-	const modal = openModal();
-	if (modal) return all.filter(el => modal.contains(el));
-	const live = all.filter(el => { const r = el.getBoundingClientRect(); return onScreen(r) && onTop(el, r); });
-	// an open overlay/modal scopes focus to itself (incl. its scrolled-away rows)
-	const layers = [...new Set(live.map(overlayOf).filter(Boolean))];
-	if (layers.length) {
-		const top = layers[layers.length - 1];
-		return all.filter(el => top.contains(el) && (onTop(el, el.getBoundingClientRect()) || !onScreen(el.getBoundingClientRect())));
+// ---------- V: read the focused card ----------
+// A page may answer a 'bc-inspect' event on the focused element (the deck
+// builder's and gallery's card page; preventDefault = handled). Otherwise the
+// card face nearest the focus that carries a rules tip ([data-tip], game.js
+// attachTip) shows it, as a mouse hover would; V again (or moving) hides it.
+let tipOn = null;
+function tipFor(el) {
+	for (let n = el, d = 0; n && n !== document.body && d < 4; n = n.parentElement, d++) {
+		if (n.matches('[data-tip]')) return n;
+		const all = n.querySelectorAll('[data-tip]');
+		if (all.length === 1) return all[0];
+		if (all.length > 1) return null;
 	}
-	// the page itself: on-screen stops that aren't covered, plus scrolled-away ones
-	return all.filter(el => { const r = el.getBoundingClientRect(); return onScreen(r) ? onTop(el, r) : !overlayOf(el); });
+	return null;
+}
+function tipEvent(el, type) {
+	const r = el.getBoundingClientRect();
+	el.dispatchEvent(new PointerEvent(type, { bubbles: false, clientX: r.left + r.width * 0.6, clientY: r.top + r.height * 0.3, pointerType: 'mouse' }));
+}
+function hideTip() { if (tipOn) { if (tipOn.isConnected) tipEvent(tipOn, 'pointerleave'); tipOn = null; } }
+function inspect(info) {
+	if (tipOn) { hideTip(); return true; }
+	const list = nav.candidates();
+	if (nav.ensureFocus(list) !== 'same') return true;   // first press only shows where you are
+	const f = nav.focused;
+	const ev = new CustomEvent('bc-inspect', { bubbles: true, cancelable: true, detail: { source: info.source } });
+	f.dispatchEvent(ev);
+	if (ev.defaultPrevented) return true;
+	const t = tipFor(f);
+	if (t) { tipEvent(t, 'pointerenter'); tipOn = t; }
+	return true;
 }
 
-function hover(el, on) {
-	if (!el) return;
-	const r = el.getBoundingClientRect(), c = center(r);
-	const init = { bubbles: true, clientX: c.x, clientY: c.y, pointerType: 'mouse' };
-	const names = on ? ['pointerover', 'pointerenter', 'mouseover', 'mouseenter', 'pointermove', 'mousemove'] : ['pointerout', 'pointerleave', 'mouseout', 'mouseleave'];
-	for (const n of names) {
-		const bubbles = !/enter|leave/.test(n);
-		el.dispatchEvent(n.startsWith('pointer') ? new PointerEvent(n, { ...init, bubbles }) : new MouseEvent(n, { ...init, bubbles }));
-	}
-}
-function setFocus(el) {
-	if (el === focused) return;
-	if (focused) { focused.classList.remove('padnav-focus'); hover(focused, false); }
-	focused = el;
-	if (!el) return;
-	injectStyle();
-	el.classList.add('padnav-focus');
-	ringOn = true;
-	try { el.scrollIntoView({ block: 'nearest', inline: 'nearest' }); } catch (e) {}
-	lastRect = el.getBoundingClientRect();
-	hover(el, true);
-}
-// Is focus still on a live stop? 'same' = yes. Otherwise the page changed under
-// it (a new modal, a re-render): land on whatever took its place and return
-// 'moved' — the caller then only SHOWS the new focus, so a press never acts on
-// an element the player hasn't seen highlighted.
-function ensureFocus(list) {
-	if (focused && focused.isConnected && list.includes(focused)) { lastRect = focused.getBoundingClientRect(); return 'same'; }
-	if (focused) focused.classList.remove('padnav-focus');
-	focused = null;
-	if (!list.length) return false;
-	if (lastRect) {
-		const c0 = center(lastRect);
-		const near = list.map(el => ({ el, d: Math.hypot(center(el.getBoundingClientRect()).x - c0.x, center(el.getBoundingClientRect()).y - c0.y) })).sort((a, b) => a.d - b.d)[0];
-		if (near && near.d < 160) { setFocus(near.el); return 'moved'; }
-	}
-	const f = initial(list);
-	if (f) setFocus(f);
-	return f ? 'moved' : false;
-}
-// the first stop: the page's primary action if it marks one, else top-left
-function initial(list) {
-	return list.find(el => el.autofocus || el.classList.contains('primary')) ||
-		list.slice().sort((a, b) => { const ra = a.getBoundingClientRect(), rb = b.getBoundingClientRect(); return (ra.top - rb.top) || (ra.left - rb.left); })[0];
+// ---------- back where you were ----------
+// Z on a card opens its page / zoom (the ring follows into it); when that layer
+// closes again (X, Esc, its ✕), the ring goes back to the card that opened it,
+// so the next press acts there instead of only re-showing the focus.
+let opener = null;
+function reconcile() {
+	const check = () => {
+		if (!nav.ringOn && !engaged) return;
+		const list = nav.candidates();
+		if (nav.focused && nav.focused.isConnected && list.includes(nav.focused)) return;
+		if (opener && opener.isConnected && list.includes(opener)) { nav.focusTo(opener); opener = null; }
+		else if (nav.ringOn) nav.ensureFocus(list);
+	};
+	// next frame, and again once a closing layer's fade-out has finished
+	requestAnimationFrame(check);
+	setTimeout(check, 320);
 }
 
-const DIRS = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
-export function move(dir) {
-	const list = candidates();
-	if (ensureFocus(list) !== 'same') return;       // first press (or a changed page): just show focus
-	const [dx, dy] = DIRS[dir];
-	const c0 = center(focused.getBoundingClientRect());
-	let best = null, bestScore = Infinity;
-	for (const el of list) {
-		if (el === focused) continue;
-		const c = center(el.getBoundingClientRect());
-		const along = (c.x - c0.x) * dx + (c.y - c0.y) * dy;       // distance in the pressed direction
-		if (along <= 2) continue;
-		const across = Math.abs((c.x - c0.x) * dy) + Math.abs((c.y - c0.y) * dx);
-		const score = along + across * 2.2;
-		if (score < bestScore) { bestScore = score; best = el; }
+// one action for the DOM screens; true = used
+function domAction(action, info) {
+	if (pageHandler && pageHandler(action, info, nav) === true) return true;
+	if (action !== 'context') hideTip();
+	if (action === 'confirm' || action === 'menu' || action === 'context') {
+		const f = nav.focused;
+		if (f && f.isConnected && !nav.openModal()) opener = f;   // a page-level stop opening something
 	}
-	if (best) setFocus(best);
+	if (action === 'context') { const r = inspect(info); reconcile(); return r; }
+	if (action === 'secondary' || action === 'select') return false;
+	const used = nav.onAction(action, info);
+	if (action === 'cancel') reconcile();
+	return used;
 }
 
-function clickLike(el) {
-	const r = el.getBoundingClientRect(), c = center(r);
-	const init = { bubbles: true, cancelable: true, clientX: c.x, clientY: c.y, button: 0, buttons: 1, pointerType: 'mouse', pointerId: 1, isPrimary: true };
-	el.dispatchEvent(new PointerEvent('pointerdown', init));
-	el.dispatchEvent(new MouseEvent('mousedown', init));
-	el.dispatchEvent(new PointerEvent('pointerup', { ...init, buttons: 0 }));
-	el.dispatchEvent(new MouseEvent('mouseup', { ...init, buttons: 0 }));
-	el.dispatchEvent(new MouseEvent('click', { ...init, buttons: 0 }));
+// what the player last used: once they're on the keyboard / a pad, a modal that
+// opens shows its focus straight away, so the first Z / A acts on it
+let engaged = false, lastModal = null;
+function onAction(action, info = {}) {
+	if (info.event && info.event.defaultPrevented) return false;   // the focused element already handled it (a deck tile's Enter)
+	engaged = true;
+	if (info.source === 'key') syncFromDom();
+	if (board && board.active()) { hideTip(); return board.onAction(action, info) !== false; }
+	return domAction(action, info);
 }
-export async function activate() {
-	const list = candidates();
-	if (ensureFocus(list) !== 'same') return;       // first press only shows where you are
-	const el = focused;
-	const tag = el.tagName;
-	if ((tag === 'INPUT' && TEXTY.test(el.type)) || tag === 'TEXTAREA') {
-		// text fields: the on-screen keyboard (Phase 2), then the events a typist fires
-		const v = await askText({ title: el.getAttribute('aria-label') || el.placeholder || el.title || 'Enter text', initial: el.value,
-			maxLength: el.maxLength > 0 ? el.maxLength : 200 });
-		if (v != null) { el.value = v; el.dispatchEvent(new Event('input', { bubbles: true })); el.dispatchEvent(new Event('change', { bubbles: true })); }
-		return;
-	}
-	if (tag === 'SELECT') {
-		el.selectedIndex = (el.selectedIndex + 1) % Math.max(1, el.options.length);
-		el.dispatchEvent(new Event('input', { bubbles: true })); el.dispatchEvent(new Event('change', { bubbles: true }));
-		return;
-	}
-	if (tag === 'INPUT') { el.click(); return; }   // checkbox / radio / file
-	clickLike(el);
-	// the click may have re-rendered or closed things: re-home focus next frame, so
-	// the player sees where it went (and the next press acts on what they see)
-	requestAnimationFrame(() => ensureFocus(candidates()));
-}
-const key = k => { const t = document.activeElement && document.activeElement !== document.body ? document.activeElement : window;
-	t.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true })); };
-
-// On the match page the BOARD owns the pad whenever no modal is open
-// (padboard.js registers this); padnav then handles only the DOM modals.
-let boardGuard = null;
-export const setBoardGuard = fn => { boardGuard = fn; };
-
-export function onPress(action) {
-	if (oskOpen()) return;                         // the on-screen keyboard runs its own pad
-	if (boardGuard && boardGuard()) return;        // the match board has it (padboard.js)
-	// back from the mouse: show the ring again where focus was
-	if (!ringOn && focused && focused.isConnected) { focused.classList.add('padnav-focus'); ringOn = true; }
-	if (DIRS[action]) return move(action);
-	if (action === 'confirm') return activate();
-	if (action === 'cancel') return key('Escape');
-	if (action === 'prev') return key('ArrowLeft');
-	if (action === 'next') return key('ArrowRight');
-	if (action === 'menu') return key(' ');
-}
+// (kept for callers that fed pad presses in by hand)
+export function onPress(action) { onAction(action, { source: 'pad' }); }
 
 // the RIGHT stick scrolls the open dialog (the game log drawer, a long Discover
 // list): its first scrollable box, a few px a frame in proportion to the tilt
@@ -221,34 +157,40 @@ function scrollWithRightStick() {
 	let y = 0;
 	for (const p of pads) { const v = p && p.connected !== false && p.axes ? +p.axes[3] || 0 : 0; if (Math.abs(v) > Math.abs(y)) y = v; }
 	if (Math.abs(y) < 0.3) return;
-	const m = openModal();
+	const m = nav.openModal();
 	if (!m) return;
 	const box = [m, ...m.querySelectorAll('*')].find(el => el.scrollHeight > el.clientHeight + 2 && /auto|scroll/.test(getComputedStyle(el).overflowY));
 	if (box) box.scrollTop += y * 16;
 }
 
-let pad = null;
+let input = null, lastSource = null;
+export const getInput = () => input;
+export const lastInputSource = () => lastSource;
 export function initPadnav() {
-	if (pad || typeof window === 'undefined') return null;
-	pad = startGamepad({
-		readPads: window.__owFakePads ? () => window.__owFakePads : undefined,
-		onPress,
-		// unplugged (the last pad gone): drop the ring and the hover it was showing;
-		// focus is kept, so the next press on a reconnected pad picks up there
+	if (input || typeof window === 'undefined') return input;
+	document.addEventListener('focusin', () => { domMoved = true; });
+	// a layer closed by a real Esc / its ✕ button: the ring goes back to its opener too
+	addEventListener('keydown', e => { if (e.key === 'Escape') reconcile(); });   // (the Games switcher replays a quick Esc tap as a synthetic one)
+	addEventListener('click', () => { if (nav.ringOn) reconcile(); });
+	addEventListener('pointermove', e => { if (e.isTrusted) { engaged = false; hideTip(); } }, { passive: true });
+	input = startInput({
+		pad: true,
+		onAction: (a, info) => { lastSource = info.source; return onAction(a, info); },
 		onFrame: p => {
 			scrollWithRightStick();
-			if (!ringOn || p.connected()) return;
-			ringOn = false;
-			if (focused) { focused.classList.remove('padnav-focus'); hover(focused, false); }
+			if (board && board.onFrame) board.onFrame(p);
+			// unplugged (the last pad gone, and it was the pad in use): drop the ring
+			// and the hover it was showing; focus is kept for the next press
+			if (lastSource === 'pad' && nav.ringOn && !p.connected()) { nav.dropRing(); engaged = false; }
+			// a modal just opened while the player is on the keyboard / a pad: show its focus now
+			if (engaged) {
+				const m = (!board || !board.active()) ? nav.openModal() : null;
+				if (m !== lastModal) { lastModal = m; if (m && !nav.candidates().includes(nav.focused)) nav.ensureFocus(nav.candidates()); }
+			} else lastModal = null;
 		},
 	});
-	// the mouse takes over: hide the ring (focus is kept for the next pad press)
-	addEventListener('pointermove', e => {
-		if (!ringOn || !e.isTrusted) return;
-		ringOn = false;
-		if (focused) focused.classList.remove('padnav-focus');
-	}, { passive: true });
-	window.__padnav = { get focused() { return focused; }, candidates, move, activate, focusTo: setFocus };
-	return pad;
+	window.__padnav = { get focused() { return nav.focused; }, candidates, move, activate, focusTo: nav.focusTo, nav,
+		own: list => input.own(list), get source() { return lastSource; } };
+	return input;
 }
 initPadnav();

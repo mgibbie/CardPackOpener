@@ -64,7 +64,8 @@ export default {
             G.E_MANAGER.add_event(() => {
               G.GAME.joker_buffer = 0;
               play_sound('timpani');
-              add_card({ set: 'Joker', key: get_random_poke_key('mystery_box', 'Basic', null, null, 'Metal'), ...(negative ? { edition: 'e_negative' } : {}) });
+              const key = get_random_poke_key('mystery_box', 'Basic', null, null, 'Metal');
+              if (key) add_card({ set: 'Joker', key, ...(negative ? { edition: 'e_negative' } : {}) });
             });
             return { message: localize('k_plus_joker'), colour: 'BLUE' };
           }

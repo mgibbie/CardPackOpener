@@ -694,7 +694,7 @@ register('timed-aura', ({ state, pi, target, source, enemies, scaled, hm, pickEn
 			// Beyond stat auras it can carry a trigger (ongoing — enchantments are
 			// fireOngoing sources) and timed flags: rattleDouble (Snowfall Graveyard),
 			// endTurnTwice (Sandfury Aura).
-			const ench = instantiate({ id: 'token_timed_aura', name: e.name || 'Aura', type: 'enchantment', cost: 0, token: true, description: e.description || null }, pi);
+			const ench = instantiate({ id: 'token_timed_aura', artFrom: source ? (source.artFrom || source.id) : undefined, name: e.name || 'Aura', type: 'enchantment', cost: 0, token: true, description: e.description || null }, pi);
 			ench.zone = 'enchantment';
 			ench.aura = e.aura;
 			if (e.ongoing) ench.ongoing = JSON.parse(JSON.stringify(e.ongoing)); // clone — trigCount/spent must not leak into the shared def
@@ -707,11 +707,11 @@ register('timed-aura', ({ state, pi, target, source, enemies, scaled, hm, pickEn
 } });
 
 
-register('delayed', ({ state, pi }, e) => {
+register('delayed', ({ state, pi, source }, e) => {
 	// generic time-bomb: an enchantment that counts down at your turn-ends and
 	// fires its effects when it expires (Wheel of DEATH!!!, Immolate,
 	// Rhythm and Roots). Rides the same turnsLeft loop as timed-aura.
-	const ench = instantiate({ id: 'token_delayed', name: e.name || 'Countdown', type: 'enchantment', cost: 0, token: true, description: e.description || null }, pi);
+	const ench = instantiate({ id: 'token_delayed', artFrom: source ? (source.artFrom || source.id) : undefined, name: e.name || 'Countdown', type: 'enchantment', cost: 0, token: true, description: e.description || null }, pi);
 	ench.zone = 'enchantment';
 	ench.turnsLeft = e.turns || 1;
 	ench.onExpire = JSON.parse(JSON.stringify(e.effects || []));

@@ -220,9 +220,31 @@ const ART_BASE = _artLocal ? ART_DIR : 'https://magepunk-cardart.pages.dev/';
 // replaced when their conflicting names were changed.
 const ART_REVS = { wastes_vulshok_morningstar: 2, wastes_phyrexian_metamorph: 2, wastes_grafted_wargear: 2, duelshp_summon_the_pack: 2, duelshp_rush_the_keep: 2, duels_choose_a_new_tactic: 2, duels_choose_a_new_command: 2, duelshp_gather_resources: 2, barbtooth_wurm: 2, cowl_prowler: 2, ferocious_zheng: 2, blanchwood_treefolk: 2, chrome_cat: 2, mv_cap_4: 2, mv_e_abomination_10: 2, mv_e_abomination_2: 2, mv_e_abomination_3: 2, mv_e_abomination_4: 2, mv_e_abomination_6: 2, mv_e_abomination_7: 2, mv_e_abomination_8: 2, mv_e_abomination_9: 2, mv_e_carnage_7: 2, mv_e_doom_4: 2, mv_e_doom_6: 2, mv_e_doom_7: 2, mv_e_electro_6: 2, mv_e_electro_7: 2, mv_e_electro_8: 2, mv_e_galactus_2: 2, mv_e_galactus_3: 2, mv_e_galactus_6: 2, mv_e_galactus_7: 2, mv_e_hobgoblin_10: 2, mv_e_hobgoblin_2: 2, mv_e_hobgoblin_3: 2, mv_e_hobgoblin_5: 2, mv_e_hobgoblin_7: 2, mv_e_hobgoblin_8: 2, mv_e_hobgoblin_9: 2, mv_e_kang_10: 2, mv_e_kang_2: 2, mv_e_kang_3: 2, mv_e_kang_5: 2, mv_e_kang_7: 2, mv_e_kingpin_3: 2, mv_e_kingpin_4: 2, mv_e_kingpin_6: 2, mv_e_kingpin_7: 2, mv_e_kingpin_9: 2, mv_e_kraven_10: 2, mv_e_kraven_3: 2, mv_e_kraven_5: 2, mv_e_kraven_6: 2, mv_e_kraven_7: 2, mv_e_kraven_9: 2, mv_e_lizard_10: 2, mv_e_lizard_4: 2, mv_e_lizard_5: 2, mv_e_lizard_7: 2, mv_e_lizard_8: 2, mv_e_loki_10: 2, mv_e_loki_2: 2, mv_e_loki_3: 2, mv_e_loki_7: 2, mv_e_loki_8: 2, mv_e_loki_9: 2, mv_e_mysterio_2: 2, mv_e_mysterio_3: 2, mv_e_mysterio_5: 2, mv_e_rhino_10: 2, mv_e_rhino_2: 2, mv_e_rhino_3: 2, mv_e_rhino_4: 2, mv_e_rhino_7: 2, mv_e_sandman_10: 2, mv_e_sandman_2: 2, mv_e_sandman_3: 2, mv_e_sandman_6: 2, mv_e_sandman_7: 2, mv_e_sandman_9: 2, mv_e_scorpion_2: 2, mv_e_scorpion_4: 2, mv_e_scorpion_6: 2, mv_e_scorpion_7: 2, mv_e_scorpion_8: 2, mv_e_scorpion_9: 2, mv_e_shocker_10: 2, mv_e_shocker_5: 2, mv_e_shocker_6: 2, mv_e_shocker_7: 2, mv_e_shocker_8: 2, mv_e_thanos_2: 2, mv_e_thanos_3: 2, mv_e_thanos_5: 2, mv_e_thanos_6: 2, mv_e_thanos_7: 2, mv_e_venom_10: 2, mv_e_vulture_10: 2, mv_e_vulture_3: 2, mv_e_vulture_4: 2, mv_e_vulture_5: 2, mv_e_vulture_6: 2, mv_marvel_3: 2, mv_marvel_5: 2, mv_storm_5: 2, mv_storm_6: 2, mv_thor_6: 2, sauron_lord_of_the_rings: 2 };
 const artUrl = id => ART_BASE + id + '.jpg' + (ART_REVS[id] ? '?v=' + ART_REVS[id] : '');
-function withArtFallback(img, id) {
-	if (ART_BASE === ART_DIR) return img; // already the relative fallback path
-	img.addEventListener('error', () => { img.src = ART_DIR + id + '.jpg'; }, { once: true });
+// One art image: the direct host first, then the redirect path once (withArtFallback's job).
+// When BOTH fail (a dropped request, a CDN hiccup), the broken image used to stay cached in
+// artImgs for the life of the page -- artFor kept answering "not ready", nothing ever asked
+// again, and that one card stayed procedural while its neighbours loaded (Bolg's Reanimate
+// on the Middle-earth spoils, bug:1794239112655). Now a failed load retries a few times with
+// backoff (a fresh, cache-busted request); its onload broadcasts like any other arrival, so
+// every face listening for the id (miniFace, modals, the board) repaints in place.
+const ART_RETRY_MS = [1500, 5000, 15000];
+const ART_FORGET_MS = 60000;
+function newArtImg(id, attempt = 0) {
+	const img = new Image();
+	img.crossOrigin = 'anonymous'; // art is served cross-origin (magepunk-cardart project) — keep the canvas untainted
+	img.onload = () => { for (const fn of artListeners) fn(id); };
+	const retryQ = attempt ? 'r=' + attempt : '';
+	let fellBack = ART_BASE === ART_DIR; // already the relative fallback path
+	img.addEventListener('error', () => {
+		if (!fellBack) { fellBack = true; img.src = ART_DIR + id + '.jpg' + (retryQ ? '?' + retryQ : ''); return; }
+		// out of retries: forget the broken image after a cool-down, so the NEXT paint that asks
+		// for this art (a later screen, a repaint) starts a fresh load instead of the failure
+		// staying cached for the life of the page
+		if (attempt >= ART_RETRY_MS.length) { setTimeout(() => { if (artImgs.get(id) === img) artImgs.delete(id); }, ART_FORGET_MS); return; }
+		setTimeout(() => { if (artImgs.get(id) === img) artImgs.set(id, newArtImg(id, attempt + 1)); }, ART_RETRY_MS[attempt]);
+	});
+	const url = artUrl(id);
+	img.src = retryQ ? url + (url.includes('?') ? '&' : '?') + retryQ : url;
 	return img;
 }
 let artIndex = null;
@@ -293,25 +315,53 @@ const _artCb = (() => { try { return new URL(import.meta.url).search; } catch (e
 const artIndexReady = fetch(ART_BASE + 'index.json' + _artCb, { cache: 'no-cache' })
 	.then(r => (r.ok ? r.json() : Promise.reject()))
 	.catch(() => fetch(ART_DIR + 'index.json', { cache: 'no-cache' }).then(r => (r.ok ? r.json() : []))) // fall back to the redirect path
-	.then(ids => { artIndex = new Set(ids); })
+	.then(ids => onArtIndex(ids))
 	.catch(() => { artIndex = new Set(); });
+// Faces painted before index.json arrived asked for art that artFor couldn't know about yet,
+// got the procedural fallback, and nothing ever asked again — so they stayed placeholders
+// (bug:1793824346933). Remember those asks and start their loads once the index lands; each
+// image's onload then broadcasts its id through artListeners like any other arrival.
+const artAskedEarly = new Set();
+function onArtIndex(ids) {
+	artIndex = new Set(ids);
+	for (const id of artAskedEarly) if (artIndex.has(id)) artFor(id);
+	artAskedEarly.clear();
+}
 
 // Which art a card wears. A card generated by another (a Twinspell's second cast,
 // an upgrade tier) has no illustration of its own — `artFrom` points at the card
 // that makes it, so the pair reads as one card instead of the copy dropping to the
 // procedural fallback. Falls back to the card's own id, which is the normal case.
-export const artIdOf = card => (card && card.artFrom) || (card && card.id) || '';
+// ART_ALIASES: a summoned token whose creature a card ALREADY pictures wears that card's art
+// (the engine names inline tokens token_<slug of name>, so they have no art of their own).
+// Tokens with no such card got their own crop instead (tools/lorequest_token_art.py, spec in
+// tools/data/lorequest_token_art.json). bug:1794267812239 — Lorequest tokens drew the
+// procedural placeholder forever.
+export const ART_ALIASES = {
+	token_illusion: 'illusion_token', token_recruit: 'recruit',
+	token_uruk_hai: 'me_gr_berserker', token_nazg_l: 'me_go_nazgul',
+	token_wild_warg: 'me_cw_snarling', token_mirkwood_spider: 'me_sl_mirkwood', token_hunting_spider: 'me_legolas_spider',
+	token_lunar_whale: 'ff_treasure_lunar_whale', token_phantom_train: 'ff_treasure_phantom_train',
+	// the rest of the pool (tools/data/token_art.json; bug:1794331480267). A token named after a
+	// real card (token_<its id>) needs no entry: the engine stamps artFrom on it (core.js tokenArtFrom).
+	feast_raptor: 'ung_raptor', token_abyssal_enforcer: 'abyssal_enforcer', token_amara_warden_of_hope: 'ungoro_amara', token_ancient: 'ttn_ancient_55',
+	token_attack_bone: 'dissolving_ooze', token_axe: 'fiery_war_axe', token_barbarian: 'barbarian_horde', token_crabatoa_s_claw: 'token_crabatoas_claw',
+	token_crewmate: 'gdb_crewmate', token_delayed: 'sentient_hourglass', token_disarmed_undead: 'lingering_zombie',
+	token_dragon_5_5: 'emberscale_drake', token_duelist: 'dmf_duelist', token_flame_elemental: 'flame_elemental', token_flame_imp: 'flame_imp',
+	token_foundry_blade: 'ymid_foundry_beetle', token_golden_revolver: 'bounty_board', token_grove_treant: 'dmf_treant',
+	token_health_bone: 'dissolving_ooze', token_hero_s_blade: 'fic_heros_blade', token_kobold: 'lackey_kobold', token_lackey: 'lackey_goblin',
+	token_living_paradoxes: 'living_paradox', token_lizard: 'bellows_lizard', token_mace_of_disruption: 'hbg_mace_of_disruption',
+	token_megafin: 'ungoro_megafin', token_mirrored_image: 'mirror_images', token_monkey: 'barrel_of_monkeys', token_pistol: 'gunsmith',
+	token_queen_carnassa: 'ungoro_queen_carnassa', token_reffuh: 'duels_reffuh', token_risen_groom: 'poa_risen_groom',
+	token_servant_of_khadgar: 'kirin_tor_mage', token_soul_dragon: 'emberscale_drake', token_spectral_ninja: 'ninja_ambush',
+	token_spellbender: 'spellbender', token_timed_aura: 'lifesaving_aura',
+};
+export const artIdOf = card => (card && card.artFrom) || (card && ART_ALIASES[card.id]) || (card && card.id) || '';
 function artFor(id) {
-	if (!artIndex || !artIndex.has(id)) return null;
+	if (!artIndex) { if (id) artAskedEarly.add(id); return null; }
+	if (!artIndex.has(id)) return null;
 	let img = artImgs.get(id);
-	if (!img) {
-		img = new Image();
-		img.crossOrigin = 'anonymous'; // art is served cross-origin (magepunk-cardart project) — keep the canvas untainted
-		img.onload = () => { for (const fn of artListeners) fn(id); };
-		withArtFallback(img, id);
-		img.src = artUrl(id);
-		artImgs.set(id, img);
-	}
+	if (!img) { img = newArtImg(id); artImgs.set(id, img); }
 	return img.complete && img.naturalWidth ? img : null;
 }
 
@@ -323,9 +373,9 @@ export async function preloadArt(ids) {
 	await Promise.all([...new Set(ids)].map(id => new Promise(res => {
 		if (!artIndex.has(id)) return res();
 		let img = artImgs.get(id);
-		if (!img) { img = new Image(); img.crossOrigin = 'anonymous'; withArtFallback(img, id); img.src = artUrl(id); artImgs.set(id, img); }
+		if (!img) { img = newArtImg(id); artImgs.set(id, img); }   // its onload broadcasts the arrival
 		if (img.complete) return res();
-		img.addEventListener('load', () => { for (const fn of artListeners) fn(id); res(); }, { once: true });
+		img.addEventListener('load', () => res(), { once: true });
 		img.addEventListener('error', () => res(), { once: true });
 	})));
 }
@@ -513,7 +563,7 @@ function paintArt(ctx, card, x, y, w, h, tuning) {
 		const dx = Math.min(x, Math.max(x + w - dw, x + w / 2 - fx * dw));
 		const dy = Math.min(y, Math.max(y + h - dh, y + h / 2 - fy * dh));
 		ctx.drawImage(img, dx, dy, dw, dh);
-		return;
+		return artId; // which real art this face now wears (tests read it as canvas.artPainted)
 	}
 	// The Coin: an original procedurally-drawn gold coin (no external art)
 	if (card.id === 'coin') { paintCoin(ctx, x, y, w, h); return; }
@@ -837,7 +887,7 @@ export function drawCardFace(card, opts = {}) {
 	ctx.beginPath();
 	ctx.ellipse(W / 2, 236, 204, 168, 0, 0, Math.PI * 2);
 	ctx.clip();
-	paintArt(ctx, card, W / 2 - 204, 236 - 168, 408, 336);
+	c.artPainted = paintArt(ctx, card, W / 2 - 204, 236 - 168, 408, 336) || null;
 	ctx.restore();
 	ctx.strokeStyle = metal;
 	ctx.lineWidth = 8;
@@ -1086,7 +1136,7 @@ export function drawBoardToken(card, opts = {}, scale = 1) {
 	// falls back to the card-face framing when no separate token tuning is set
 	ctx.save();
 	ctx.beginPath(); ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2); ctx.clip();
-	paintArt(ctx, card, cx - rx, cy - ry, rx * 2, ry * 2, ART_TUNING[card.id]?.token ?? ART_TUNING[card.id]);
+	c.artPainted = paintArt(ctx, card, cx - rx, cy - ry, rx * 2, ry * 2, ART_TUNING[card.id]?.token ?? ART_TUNING[card.id]) || null;
 	if (opts.stealthed) {
 		ctx.fillStyle = 'rgba(16,16,30,0.55)';
 		ctx.fillRect(cx - rx, cy - ry, rx * 2, ry * 2);

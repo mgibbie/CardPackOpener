@@ -8,6 +8,7 @@
 // serverSupersededRun: the slot's ended marker is NEWER than the local copy's last write
 // -> the local run is an older run's zombie; the boot stashes it (never deletes) and offers
 // a new run instead.
+import { gameSource } from '../helpers/gamesource.mjs';   // game.js + the modules split out of it
 import fs from 'fs';
 import { serverSupersededRun, serverEndedRun } from '../../runsync.js';
 
@@ -29,13 +30,13 @@ ok('an inactive local copy is not a live zombie', serverSupersededRun({ ...run11
 ok('no local copy: nothing to do', serverSupersededRun(null, run12Ended) === false);
 
 // the boot uses it: hydrateRunsFromServer puts the zombie away (stashed via endLocalRunCopy)
-const src = fs.readFileSync(new URL('../../game.js', import.meta.url), 'utf8');
+const src = gameSource();
 const hyd = /async function hydrateRunsFromServer\(\) \{[\s\S]*?\n\}/.exec(src);
 ok('hydrateRunsFromServer checks serverSupersededRun', !!hyd && /serverSupersededRun\(safeLoad\(key, null\), entry\)\) \{ endLocalRunCopy\(/.test(hyd[0]));
 
 // and run writes never fail silently: the run savers retry after evicting replays and say so
 ok('run saves go through safeSaveRetry + a visible warning', /const saverFor = key => run => \{ const ok = safeSaveRetry\(key, stampRun\(run\), freeSpaceForSnapshot\); if \(!ok\) runSaveFailed\(key\);/.test(src));
-ok('a failed mid-fight snapshot write warns too', /if \(!safeSaveRetry\(io\.key, run, freeSpaceForSnapshot\)\) runSaveFailed\(io\.key\);/.test(src));
+ok('a failed mid-fight snapshot write warns too', /if \(!safeSaveRetry\(io\.key, run, freeSpaceForSnapshot\)\) \{? ?runSaveFailed\(io\.key\);/.test(src));
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

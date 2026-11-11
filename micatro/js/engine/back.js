@@ -68,6 +68,12 @@ export class Back {
   /** Returns [chips, mult] for Plasma's final_scoring_step (Lua's two return values), else undefined. */
   trigger_effect(args) {
     if (!args) return undefined;
+    // (Multiplayer's Cocktail Deck: its three decks' effects, the first one that returns something wins)
+    if (this.effect.center.key === 'b_mp_cocktail' && G.GAME.cocktail) {
+      let out;
+      for (const k of G.GAME.cocktail) { const r = new Back(P_CENTERS[k]).trigger_effect(args); if (out === undefined && r !== undefined) out = r; }
+      return out;
+    }
     // Steamodded: a mod back's calculate(self, back, context) — the cash-out 'eval' is its round_eval.
     const mc = this.effect.center;
     if (mc && mc.mod && mc.calculate && args.context === 'eval') mc.calculate(mc, this, { round_eval: true });

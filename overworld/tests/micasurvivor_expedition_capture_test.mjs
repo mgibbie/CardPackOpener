@@ -133,6 +133,15 @@ const BEFORE = (save) => {
 	H.throwAt = (f, run) => { H.go(f.x + 6, f.y + 4); H.step(14); if (run) H.step(Math.ceil((G.ExpCap.CINE_T + 0.2) * 30)); };
 	H.faints = () => G.ExpCap.run.faint.map(f => ({ kind: f.kind, dex: f.dex, x: f.x, y: f.y, win: +(f.end - f.t0).toFixed(2), eid: f.eid }));
 	H.banner = () => { const b = G.Spawner.banner(); return b ? String(b.text) : ''; };
+	/** every banner said (G.Spawner.say, hooked once per page): H.heard(re, n0) = the latest said since H.said.length was n0 that
+	 *  matches re (else the banner up now). The zone's own timeline (Meowth's shop, a horde...) can say its banner in the same
+	 *  steps and cover the one under test: "it was announced", not "it is the last thing on screen" */
+	H.said = [];
+	H.hookSay = () => { const Sp = G.Spawner; if (!Sp || Sp.__said) return; const say = Sp.say; Sp.say = function (t, ...a) { H.said.push(String(t)); return say.call(this, t, ...a); }; Sp.__said = true; };
+	H.heard = (re, n0) => H.said.slice(n0).reverse().find(t => re.test(t)) || H.banner();
+	/** fn() with your own moves held (G.Combat.tick: the player's attacks): a foe's own behaviour is measured, not your Sleep
+	 *  Powder's (an asleep / frozen shiny stands still) or your KO of the Support Alpha's only target */
+	H.passive = fn => { const tick = G.Combat.tick; G.Combat.tick = () => {}; try { return fn(); } finally { G.Combat.tick = tick; } };
 };
 
 await new Promise(r => server.listen(PORT, r));
@@ -176,10 +185,17 @@ try {
 		await G.ExpSave.open();
 		if (G.Game.state === 'playing' || G.Game.state === 'levelup' || G.Game.state === 'choice') { G.Game.quit(); await wait(300); }
 		if (G.Game.state === 'over') { document.getElementById('btn-again').click(); await wait(300); }
-		const ok = await G.Flow.play('exp-classic');
+		// a fixed world seed (game.js picks it with Math.random): the scenery's solid props are seeded by it, and a rock
+		// between the Support Alpha and its target ate both shots ~1 run in 4 ({"shots":2,"hurt":0}), as one could box in
+		// the roaming shiny ({"moved":11}) — CI 2026-11-10 and locally
+		const rnd = Math.random; let sd = 12345;
+		Math.random = () => (sd = (sd * 16807) % 2147483647) / 2147483647;
+		let ok;
+		try { ok = await G.Flow.play('exp-classic'); } finally { Math.random = rnd; }
 		window.__t.freeze();
 		window.__t.sturdy();
 		window.__t.wipe();
+		window.__t.hookSay();
 		const Cp = G.ExpCap;
 		return { ok, state: G.Game.state, mode: G.Game.mode, dv: G.Modes.run.dv, on: !!(Cp && Cp.run), rx: !!(G.ExpRx && G.ExpRx.run), xv: G.Exp && G.Exp.XV, seed: G.World.seed, dex: G.Game.player.dex };
 	});
@@ -201,27 +217,32 @@ try {
 	const s1 = await E(page, () => {
 		const H = window.__t, Cp = G.ExpCap, pl = G.Game.player, out = {};
 		H.wipe(); H.go(0, 0); H.step(1);
+		const n1 = H.said.length;
 		G.ExpClassic.debugZoneTime(149.9); H.step(3);
 		const al = G.EnemyMgr.all().find(e => e.xk === 'alpha' && !e.dead);
-		out.banner = H.banner();
+		out.banner = H.heard(/An alpha .+ appears!/, n1);
 		out.spawn = al && { dex: al.dex, scale: al.scale, floor: al.hpFloor, kind: al.xcap, tracked: Cp.run.tg.has(al.id), hp: al.maxHp };
 		if (!al) return out;
 		const kills0 = pl.kills, items0 = G.Pickups.all().filter(p => p.kind === 'item').length;
+		const n2 = H.said.length;
 		out.hp1 = H.weaken(al);
 		out.alive = !al.dead;
 		H.step(1);
 		out.faint = H.faints();
-		out.fbanner = H.banner();
+		out.fbanner = H.heard(/faints! Stand by it/, n2);
 		H.step(2);
 		out.gone = !G.EnemyMgr.get(al.id); out.kos = pl.kills - kills0;
 		out.itemsAtFaint = G.Pickups.all().filter(p => p.kind === 'item').length - items0;
 		// left alone (you stay away): after 8 s the window closes and it drops its prize
 		const f = Cp.run.faint[0];
+		// (no trickle meanwhile: a foe spawned and KO'd by the fainted alpha drops its own berry / item inside the 60 px counted below)
+		H.quiet();
+		const n3 = H.said.length;
 		H.go(f.x + 420, f.y); H.step(Math.ceil(7.2 * 30));
 		out.at7 = Cp.run.faint.length;
 		H.step(30);
 		const pk = G.Pickups.all().filter(p => Math.hypot(p.x - f.x, p.y - f.y) < 60);
-		out.after = { faint: Cp.run.faint.length, item: pk.filter(p => p.kind === 'item').length, heal: pk.filter(p => p.kind === 'heal').length, prizes: Cp.run.log.prizes, banner: H.banner(), sa: Cp.run.sa.length };
+		out.after = { faint: Cp.run.faint.length, item: pk.filter(p => p.kind === 'item').length, heal: pk.filter(p => p.kind === 'heal').length, prizes: Cp.run.log.prizes, banner: H.heard(/recovers and leaves its prize/, n3), sa: Cp.run.sa.length };
 		return out;
 	});
 	A(s1.spawn && s1.spawn.scale === 1.6 && s1.spawn.floor === 1 && s1.spawn.kind === 'alpha' && s1.spawn.tracked && /An alpha .+ appears!/.test(s1.banner),
@@ -266,7 +287,7 @@ try {
 		foe2.xmove = function () { return true; };
 		const spawn0 = G.Projectiles.spawn, types = [];
 		G.Projectiles.spawn = o => { if (o && o.mid === 'xsa') types.push(o.mtype); return spawn0(o); };
-		try { H.step(75); } finally { G.Projectiles.spawn = spawn0; }
+		try { H.passive(() => H.step(75)); } finally { G.Projectiles.spawn = spawn0; }
 		const s = Cp.run.sa[0];
 		out.shots = s.shots; out.foeHurt = hp0 - (foe2.dead ? 0 : foe2.hp); out.ally = ((G.DmgLog.raw.dmg || {}).ally || 0) - ally0; out.types = types;
 		foe2.remote = true; G.EnemyMgr.removeRemote(foe2.id, false);
@@ -357,9 +378,10 @@ try {
 		H.go(0, 0);
 		G.ExpClassic.debugZoneTime(P.league.at - 0.5); H.step(1);
 		out.early = [...R.tg.values()].filter(g => g.kind === 'league').length;
+		const nW = H.said.length;
 		H.step(25);
 		const g = [...R.tg.values()].find(x => x.kind === 'league'), e = g && g.e;
-		out.banner = H.banner();
+		out.banner = H.heard(/A wild .+ appeared!/, nW);
 		if (!e) return out;
 		// its HP: an alpha's x9 x its rank (Kangaskhan: uncommon x1.2), against the same Pokémon spawned plain
 		const plain = H.foe(e.dex, e.x + 400, e.y, { ti: 1 }), rank = L.BY[member].rank;
@@ -368,19 +390,21 @@ try {
 		// weaken it: it faints (12 s); stand by it: a Poké Ball, the cinematic, it joins the League (saved at once)
 		H.weaken(e); H.step(2);
 		out.faint = H.faints();
+		const nC = H.said.length;
 		H.throwAt(R.faint[0], false);
 		out.cine = R.cine && { kind: R.cine.kind, member: R.cine.member, ball: 'poke' };
 		H.step(Math.ceil((Cp.CINE_T + 0.2) * 30));
 		const local = JSON.parse(localStorage.getItem('micasurvivorexp_save.guest') || 'null');
-		out.after = { own: S.has('league.own', member), play: L.playable(member), wild: L.wild(member), local: !!(local && local.sets && (local.sets['league.own'] || []).includes(String(member))), banner: H.banner(), n: R.n, cap: S.get('cap.league') };
+		out.after = { own: S.has('league.own', member), play: L.playable(member), wild: L.wild(member), local: !!(local && local.sets && (local.sets['league.own'] || []).includes(String(member))), banner: H.heard(/Gotcha! .+ joined the League!/, nC), n: R.n, cap: S.get('cap.league') };
 		// a second encounter left alone flees at 150 s and stays pending (for the next run)
 		const other = S.list('league.wild').map(Number).find(d => d !== member && L.BY[d] && !L.own(d));
 		out.other = other || null;
 		if (other) {
 			const e2 = Cp.spawnLeague(other, pl);
 			const g2 = R.tg.get(e2.id);
+			const nF = H.said.length;
 			g2.t0 -= g2.flee - 0.5; H.step(30);
-			out.fled = { gone: !G.EnemyMgr.get(e2.id), banner: H.banner(), own: L.own(other), wild: L.wild(other), log: R.log.fled };
+			out.fled = { gone: !G.EnemyMgr.get(e2.id), banner: H.heard(/got away! It will be back/, nF), own: L.own(other), wild: L.wild(other), log: R.log.fled };
 		}
 		return out;
 	});
@@ -417,19 +441,21 @@ try {
 		// the zone's shiny on its schedule (this zone rolled none: give it one at 0:40)
 		const R = Cp.run, zt = G.Game.st.time - G.ExpClassic.run.zs;
 		R.zplan.shiny = { at: zt + 0.5, pick: 0.2 }; R.shDone = false;
+		const nS = H.said.length;
 		H.step(25);
 		const g = [...R.tg.values()].find(x => x.kind === 'shiny'), e = g && g.e;
-		out.banner = H.banner();
+		out.banner = H.heard(/A shiny .+ is nearby!/, nS);
 		if (!e) return out;
 		out.enc = { dex: e.dex, sheet: e.anim.shiny, has: G.Sprites.hasShiny(e.dex), xk: e.xk, flee: g.flee, cards: G.ExpClassic.run.plan.cards.includes(e.dex), seen: R.log.seen };
 		// it roams and never hurts you: stand on it for 2 s
 		const x0 = e.x, y0 = e.y;
 		H.hurts = 0;
-		for (let i = 0; i < 60; i++) { H.go(e.x, e.y); H.step(1); }
+		H.passive(() => { for (let i = 0; i < 60; i++) { H.go(e.x, e.y); H.step(1); } });
 		out.roam = { moved: Math.round(Math.hypot(e.x - x0, e.y - y0)), hurts: H.hurts, alive: !e.dead };
 		// it flees at 120 s
+		const nF = H.said.length;
 		g.t0 -= g.flee - 0.5; H.step(30);
-		out.fled = { gone: !G.EnemyMgr.get(e.id), banner: H.banner() };
+		out.fled = { gone: !G.EnemyMgr.get(e.id), banner: H.heard(/The shiny .+ got away!/, nF) };
 		// another: weaken it, catch it
 		R.zplan.shiny = { at: G.Game.st.time - G.ExpClassic.run.zs + 0.2, pick: 0.6 }; R.shDone = false;
 		H.go(0, 0); H.step(12);
@@ -437,9 +463,10 @@ try {
 		if (!e2) return out;
 		H.weaken(e2); H.step(2);
 		out.faint = H.faints();
+		const nG = H.said.length;
 		H.throwAt(R.faint[0], true);
 		const fam = G.ExpLeague.FAM[e2.dex];
-		out.caught = { dex: e2.dex, has: S.has('shiny.caught', e2.dex), cap: S.get('cap.shiny'), fam: fam || 0, famShiny: fam ? S.has('league.shiny', fam) : null, banner: H.banner(), onShiny: (G.DB.save.stats.shinies || 0) };
+		out.caught = { dex: e2.dex, has: S.has('shiny.caught', e2.dex), cap: S.get('cap.shiny'), fam: fam || 0, famShiny: fam ? S.has('league.shiny', fam) : null, banner: H.heard(/Gotcha! The shiny .+ was caught!/, nG), onShiny: (G.DB.save.stats.shinies || 0) };
 		return out;
 	});
 	A(s4.enc && s4.enc.sheet && s4.enc.has && s4.enc.xk === 'shiny' && s4.enc.cards && s4.enc.flee === 120 && s4.enc.seen === 1 && /A shiny .+ is nearby!/.test(s4.banner),
@@ -583,14 +610,17 @@ try {
 		let hs = null;
 		G.Spectate.watch = (u, h) => { hs = h; h.snapshot(rec.idle, {}); };
 		G.WatchUI.watchLive('host');
-		for (let i = 0; i < 80 && !(G.WatchUI.player && G.World.zone && G.ExpCap); i++) await wait(50);
+		// (a fresh page lazy-loads the Expedition code on the first snapshot: allow a slow, shared CI runner 30 s, not 4)
+		for (let i = 0; i < 600 && !(hs && G.WatchUI.player && G.World.zone && G.ExpCap); i++) await wait(50);
 		hs.snapshot(rec.snap, {}); hs.snapshot(Object.assign({}, rec.snap, { t: rec.snap.t + 1 }), {});
 		await wait(350);
+		for (let i = 0; i < 200 && !(G.ExpCap.view && G.ExpCap.view.s); i++) await wait(50);   // (applied by the page's own frames: slow under load)
 		const V = G.ExpCap.view, sh = rec.shId && G.EnemyMgr.get(rec.shId);
 		const dr = G.ExpCap.drawables(G.Camera);
 		out.spec = V && { s: V.s, f: V.f.length, shiny: !!(sh && sh.anim && sh.anim.shiny), xk: sh && sh.xk, drawables: dr.length, run: !!G.ExpCap.run };
 		hs.snapshot(rec.snapK, {}); hs.snapshot(Object.assign({}, rec.snapK, { t: rec.snapK.t + 1 }), {});
 		await wait(350);
+		for (let i = 0; i < 200 && !G.ExpCap.vcine; i++) await wait(50);
 		out.spec.cine = !!G.ExpCap.vcine && G.ExpCap.vcine.dex === 21;
 		out.spec.over = G.ExpCap.overDrawn > 0;
 		G.WatchUI.leave(); await wait(200);
@@ -607,8 +637,9 @@ try {
 		for (let i = 0; i < rd.length; i++) { const s = rd.at(i); if (s.x && s.x.p) withP++; }
 		out.replay = { frames: rd.length, withP, xc: rd.ev.filter(e => e[1] === 'xc').map(e => e[2]) };
 		G.WatchUI.playReplay(rd, {});
-		for (let i = 0; i < 60 && !G.WatchUI.player; i++) await wait(50);
+		for (let i = 0; i < 400 && !G.WatchUI.player; i++) await wait(50);
 		G.WatchUI.seek(Math.max(0, rd.duration - 0.5)); await wait(400);
+		for (let i = 0; i < 200 && !(G.ExpCap.view && G.ExpCap.view.s); i++) await wait(50);
 		out.replay.sa = G.ExpCap.view && G.ExpCap.view.s;
 		G.WatchUI.leave(); await wait(200);
 		// a base run in the same page: no zone, no captures, nothing drawn
@@ -618,7 +649,7 @@ try {
 		return out;
 	}, { idle: sy.idle, snap: sy.snap, snapK: sy.snapK, code: sy.code, seed: sy.seed, shId: sy.shId });
 	A(vw.loadedBefore === false && vw.spec && JSON.stringify(vw.spec.s) === '[16]' && vw.spec.f === 5 && vw.spec.shiny && vw.spec.xk === 'shiny' && vw.spec.drawables >= 2 && !vw.spec.run,
-		'a live spectator (a fresh page): the Support Alpha drawn round the watched player, the fainted alpha, the shiny on its shiny sheet', JSON.stringify(vw.spec));
+		'a live spectator (a fresh page): the Support Alpha drawn round the watched player, the fainted alpha, the shiny on its shiny sheet', JSON.stringify(vw.spec || vw));
 	A(vw.spec && vw.spec.cine && vw.spec.over, '... and the capture cinematic when the host throws (its ball and its banner)', JSON.stringify(vw.spec));
 	A(vw.old && vw.old.view === null && vw.old.ok && !vw.old.notice && vw.old.dv === 20, 'a dv-6 / x v7 snapshot (no `p`) still loads with no notice: no capture shown; this build is dv 17 (D12)', JSON.stringify(vw.old));
 	A(vw.replay && vw.replay.withP > 0 && vw.replay.xc.length >= 2 && vw.replay.xc.includes(16) && vw.replay.xc.includes(21) && JSON.stringify(vw.replay.sa) === '[16,21]', 'a replay keeps `p` and an `xc` event per capture (Pidgey, Spearow); played back, the Support Alphas', JSON.stringify(vw.replay));

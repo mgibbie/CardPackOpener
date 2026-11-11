@@ -3,48 +3,36 @@
 <head>
 <!-- first, before any game code reads storage: per-account local data (site/account_silo.js) -->
 <script src="/site/account_silo.js"></script>
+	<title>Pair of Pears — Magepunk</title>
 	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-	<title>Pair of Pears — Meandering Meadow</title>
-	<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='14' font-size='14'>🍐</text></svg>">
-	<style>
-		html, body { margin: 0; height: 100%; background: #0e1410; color: #e8e0d0; font-family: system-ui, sans-serif; overflow: hidden; touch-action: none; -webkit-user-select: none; user-select: none; }
-		#wrap { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; }
-		#game { image-rendering: pixelated; background: #6bb04d; max-width: 100%; max-height: 100%; box-shadow: 0 6px 40px rgba(0,0,0,.6); border-radius: 6px; }
-		/* on-screen touch controls (usable by mouse too; keyboard also works) */
-		#pad { position: fixed; inset: 0; pointer-events: none; }
-		.ctl { position: absolute; pointer-events: auto; display: flex; align-items: center; justify-content: center;
-			background: rgba(30,26,45,.55); color: #f2ecdd; border: 1px solid rgba(255,255,255,.25); border-radius: 50%;
-			font-weight: 700; font-size: 22px; touch-action: none; }
-		.ctl.active { background: rgba(120,180,90,.75); }
-		.dpad .ctl { width: 56px; height: 56px; border-radius: 12px; }
-		.dpad { position: absolute; left: 18px; bottom: 22px; width: 180px; height: 180px; }
-		.dpad [data-btn="up"]    { left: 62px; top: 0; }
-		.dpad [data-btn="down"]  { left: 62px; top: 124px; }
-		.dpad [data-btn="left"]  { left: 0; top: 62px; }
-		.dpad [data-btn="right"] { left: 124px; top: 62px; }
-		.ab { position: absolute; right: 22px; bottom: 30px; width: 170px; height: 120px; }
-		.ab .ctl { width: 66px; height: 66px; font-size: 26px; }
-		.ab [data-btn="b"] { left: 0; top: 40px; }
-		.ab [data-btn="a"] { right: 0; top: 0; }
-		@media (min-width: 900px) and (pointer: fine) { #pad { opacity: .35; } }
-	</style>
-	<script type="module" src="/site/zoomfix.js"></script> <!-- iPhone: no stuck zoom -->
+	<!-- pinch-zoom stays off: the table is scaled to the screen (as Micatro's) -->
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+	<meta name="mp-topbar" content="compact">
+	<link rel="icon" href="assets/pear.png">
+	<meta name="description" content="A Pair of Pears — a memory card game: flip fruit cards to find the pairs, mind your hearts, and spend your berries on charms that bend the rules. Friends can watch your run live.">
+	<link rel="canonical" href="https://www.michaelgibalerio.com/pairofpears/">
+	<meta property="og:type" content="website">
+	<meta property="og:site_name" content="Magepunk">
+	<meta property="og:title" content="Pair of Pears — Magepunk">
+	<meta property="og:description" content="A memory card game with a roguelike shop: 13 levels of fruit pairs, charms and conditions — and the Pears win a level on the spot.">
+	<meta property="og:url" content="https://www.michaelgibalerio.com/pairofpears/">
+	<meta property="og:image" content="https://www.michaelgibalerio.com/og-image.png">
+	<meta name="twitter:card" content="summary_large_image">
+	<meta name="theme-color" content="#3d5a2a">
+	<link rel="preload" href="../micatro/assets/fonts/m6x11plus.ttf?v=2" as="font" type="font/ttf" crossorigin>
+	<!-- Micatro's look (palette, buttons, panels, tooltips, popups, modals), then the Pair of Pears table -->
+	<link rel="stylesheet" href="../micatro/css/micatro.css">
+	<link rel="stylesheet" href="css/pears.css">
 </head>
 <body>
-	<div id="wrap"><canvas id="game" width="800" height="600"></canvas></div>
-	<div id="pad">
-		<div class="dpad">
-			<div class="ctl" data-btn="up">▲</div>
-			<div class="ctl" data-btn="left">◀</div>
-			<div class="ctl" data-btn="right">▶</div>
-			<div class="ctl" data-btn="down">▼</div>
-		</div>
-		<div class="ab">
-			<div class="ctl" data-btn="b">B</div>
-			<div class="ctl" data-btn="a">A</div>
-		</div>
+	<canvas id="bg" aria-hidden="true"></canvas>
+	<div id="viewport">
+		<div id="stage" class="landscape no-run"></div>
 	</div>
-	<script type="module" src="./js/main.js"></script>
+	<div class="loading" id="boot-loading">Pair of Pears…</div>
+	<noscript><p style="color:#fff;padding:20px;font-family:sans-serif">Pair of Pears needs JavaScript.</p></noscript>
+	<script type="module" src="js/main.js"></script>
+	<script type="module" src="/site/topbar.js"></script>
+	<script type="module" src="/site/zoomfix.js"></script> <!-- iPhone: no stuck zoom -->
 </body>
 </html>

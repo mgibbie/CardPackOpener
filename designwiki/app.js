@@ -1684,6 +1684,7 @@ async function micatroView() {
         ['deck-editor', 'Deck editor', 'Build, share and play your own decks.'],
         ['replays', 'Replays', 'Watch any finished run again, start to finish.'],
         ['big-numbers', 'Big-number scoring', 'Scores past naneinf, up to 9.99e999.'],
+        ['pages', 'Pages', 'Pick one of 3 Pages before every Blind: a twist, a target and a prize.'],
       ].map(([k, label, blurb]) => h('a', { class: 'lp-tile mc-featlink', href: '#/micatro/' + k }, h('span', { class: 'lp-name' }, label), h('span', { class: 'lp-count mc-wrap' }, blurb)))),
       h('p', { class: 'mc-crosslink' }, 'Looking for mod content? Pokermon, Bunco, More Fluff and the other rebuilt mods have their own section: ', h('a', { href: '#/micatro-mods' }, 'Micatro Mods →'))),
     mcSection('Getting there', null,
@@ -1709,21 +1710,26 @@ async function micatroView() {
         ['Play Hand / Discard, Sort Hand: Rank / Suit', 'The on-table buttons'],
       ]),
       h('h3', { class: 'mc-h3' }, 'Keyboard'),
+      h('p', { class: 'muted' }, 'The keyboard drives the same gold reticle as a controller, so everything a mouse can do works from the keys: arrows / WASD move it, Z = confirm, X = cancel, C = secondary, V = context, Q / E = LB / RB, Enter = Start, Backspace = Select (see the Controller table). While it drives, the hint bar shows the keys. The hotkeys below work too.'),
       table(['Key', 'When', 'Action'], [
-        [kbd('Enter', 'P'), 'Choosing cards', 'Play hand'],
-        [kbd('D', 'Delete', 'Backspace'), 'Choosing cards', 'Discard'],
-        [kbd('1', '…', '9'), 'Choosing cards', 'Select / deselect the Nth card in hand'],
-        [kbd('R', 'S'), 'Choosing cards', 'Sort hand by rank / suit'],
-        [kbd('C'), 'Choosing cards', 'Clear the selection'],
-        [kbd('Enter', 'Space'), 'Blind select', 'Select the blind'],
-        [kbd('S'), 'Blind select', 'Skip the blind (take its tag)'],
-        [kbd('Enter', 'Space'), 'Round won', 'Cash out'],
-        [kbd('N', 'Enter'), 'Shop', 'Next round'],
+        [kbd('Arrows', 'WASD'), 'Any time', 'Move the reticle'],
+        [kbd('Z'), 'Any time', 'Choose / buy / take / press (hold Z + ← → moves a card)'],
+        [kbd('X'), 'Any time', 'Close a dialog · deselect'],
+        [kbd('C'), 'Any time', 'Sell · buy & use · sort the hand (rank ⇄ suit)'],
+        [kbd('V'), 'Any time', 'Card info on / off'],
+        [kbd('Q', 'E'), 'Any time', 'The screen’s two main buttons: Play / Discard · Select / Skip blind · Next Round / Reroll · Cash Out · Skip pack'],
+        [kbd('Enter'), 'In a run', 'Pause menu'],
+        [kbd('Backspace'), 'In a run', 'Deck view'],
+        [kbd('P'), 'Choosing cards', 'Play hand'],
+        [kbd('Delete'), 'Choosing cards', 'Discard'],
+        [kbd('1', '…', '9', '0'), 'Choosing cards', 'Select / deselect the Nth card in hand'],
+        [kbd('R'), 'Choosing cards', 'Sort hand by rank (hold R: restart the run)'],
+        [kbd('Space'), 'Blind select · round won · Pages', 'Select the blind · cash out · take the raised Page'],
+        [kbd('N'), 'Shop', 'Next round'],
         [kbd('R'), 'Shop', 'Reroll'],
-        [kbd('S'), 'Opening a pack', 'Skip the pack'],
-        [kbd('V'), 'Any time in a run', 'Deck view'],
         [kbd('I'), 'Any time in a run', 'Run info (hand levels, blinds, vouchers)'],
         [kbd('Esc'), 'Any time', 'Close a dialog, else open Options'],
+        [kbd('Q', 'E', 'C', 'Space'), 'Watching a replay', 'Step back / forward · play / pause'],
       ]),
       h('h3', { class: 'mc-h3' }, 'Controller'),
       h('p', { class: 'muted' }, 'Everyone, guests included. Nintendo layout like the rest of the site — right face confirms, bottom face cancels; remap in the overworld’s OPTIONS → CONTROLS (see ', h('a', { href: '#/controls' }, 'Controls'), '). A gold reticle marks the focus; the hint bar shows the live button names.'),
@@ -1961,13 +1967,29 @@ function mcArt(it, cls, scale = 1) {
 const mcPills = it => (it.pills || []).map(p => h('span', { class: 'mc-pill' + (p.cls ? ' mc-' + p.cls : '') + (p.off ? ' mc-off' : '') }, p.text));
 /** A mod badge on an item listed outside its mod's page (links to the mod page). */
 const mcModTag = m => m ? h('a', { class: 'mc-modtag', href: '#/micatro-mods/mod/' + m.id, 'data-mod': m.id, title: m.name + ' — the mod’s page', style: m.badge ? '--mod:' + m.badge : null }, m.name) : null;
+/** A joker's forms (tools/micatro/designwiki_forms.mjs: Deoxys's formes, Castform's weather, Vivillon's patterns...): each one's
+ *  art, name and text; the run's-state ones say so; cosmetic ones (same text) in one row of sprites. */
+function mcForms(it) {
+  const F = it.forms;
+  if (!F || F.length < 2) return null;
+  const real = F.filter(f => !f.cosmetic), cos = F.filter(f => f.cosmetic);
+  const spr = f => { const L = ((f.art && f.art.length) ? f.art : (it.art || [])).filter(l => l && MC_ATLAS[l[0]]); return L.length ? mcSprite(L, 'mc-form-spr', 0.4, f.name) : null; };
+  return h('details', { class: 'mc-forms', open: F.length <= 6 ? '' : null },
+    h('summary', null, 'Forms (' + F.length + ')' + (cos.length ? ' · ' + cos.length + ' cosmetic' : '')),
+    real.map(f => h('div', { class: 'mc-form', 'data-form': f.name }, spr(f),
+      h('div', null, h('b', null, f.name), f.base ? h('span', { class: 'muted' }, ' (the card above)') : null,
+        f.lines && f.lines.length && !f.covered ? h('div', { html: f.lines.map(l => mcMarkup(l)).join('<br>') }) : null,
+        f.covered ? h('div', { class: 'mc-form-st' }, 'Same text: the card’s own text describes this form' + (f.state ? ' (reached by the run’s state)' : '')) : null,
+        f.state && !f.covered ? h('div', { class: 'mc-form-st' }, f.lines ? 'Reached by the run’s state' : 'Reached by the run’s state — the card text above covers it') : null))),
+    cos.length ? h('div', { class: 'mc-form-cos' }, h('b', null, 'Cosmetic (same text, own art): '), cos.map(f => h('span', { class: 'mc-form-c', 'data-form': f.name, title: f.name }, spr(f), h('span', null, f.name)))) : null);
+}
 function mcModTile(it, mod) {
   return h('div', { class: 'mc-tile' + (it.edition ? ' mc-edtile' : ''), 'data-key': it.key, id: 'mc-' + it.key, 'data-mod': mod ? mod.id : null },
     h('div', { class: 'mc-art' }, mcArt(it)),
     h('div', { class: 'mc-nm' }, it.name),
     mod ? h('div', { class: 'mc-badges' }, mcModTag(mod)) : null,
     h('div', { class: 'mc-badges' }, (it.badges || []).map(b => mcBadge(b.label, b.colour)), mcCost(it.cost)),
-    mcDesc(it.lines, it.colours), mcInfo(it.info),
+    mcDesc(it.lines, it.colours), mcInfo(it.info), mcForms(it),
     it.note ? h('div', { class: 'mc-note' }, it.note) : null,
     it.pills && it.pills.length ? h('div', { class: 'mc-badges' }, mcPills(it)) : null);
 }
@@ -2422,6 +2444,41 @@ async function micatroDeckEditorView() {
     mcSection('Limits', null, h('p', { class: 'muted' }, 'Name ' + E.limits.name + ' characters · description ' + E.limits.desc + ' · ' + E.limits.cards + ' cards · ' + E.limits.jokers + ' Jokers · ' + E.limits.consumables + ' consumables · ' + E.limits.vouchers + ' Vouchers · ' + E.limits.tags + ' Tags · ' + E.limits.bans + ' bans · ' + E.limits.mods + ' mods.')));
 }
 
+async function micatroPagesView() {
+  const F = await mcFeatureData('Pages', 'pages'); if (!F) return;
+  const P = F.pages;
+  const mk = (t) => t.replace(/\{[^}]*\}/g, '');
+  const range = (t) => (t.from == null ? 'up to ' + t.to : t.to == null ? t.from + ' and up' : t.from + ' to ' + t.to);
+  mcPut(mcBack(),
+    mcHead('Pages', null, null, 'Micatro’s own rule (not Balatro’s): before every Blind you pick one of 3 Pages — a twist for that round and a prize for beating it.'),
+    mcSection('How it works', null, h('ul', { class: 'mc-list' },
+      h('li', null, 'When you ', h('b', null, 'select a Blind'), ' (Small, Big or Boss) the Pages screen opens ', h('b', null, Math.round((P.pageChance || 1) * 100) + '% of the time'), ' (seeded), with ', h('b', null, '3 Pages'), '. There is no Back and no Skip: take one to start the round. ', h('b', null, 'A Page every ante:'), ' if neither the Small nor the Big Blind had a Page (a skipped Blind counts as no Page), that ante’s Boss Blind always gets one; the blind choice says “Page guaranteed this Boss”. A Boss after a Page earlier in the ante still rolls the usual chance. In Multiplayer the Nemesis never has Pages, so a Nemesis Boss is never guaranteed one and nothing carries over to the next ante (Showdown too). Since engine rev 5: runs started before keep the old rule (a whole ante without a Page guaranteed the next ante’s Boss one).'),
+      h('li', null, 'A Page names a ', h('b', null, 'target'), ' (a suit, odd or even cards, face cards or Aces), an ', h('b', null, 'effect'), ' each target card has when it scores (every trigger, retriggers included — or, for Lucky / Bonus Pages, when you discard it), a change to the Blind’s ', h('b', null, 'required score'), ' and a ', h('b', null, 'prize'), '.'),
+      h('li', null, 'The effect lasts for that round. The prize comes when you ', h('b', null, 'beat the Blind'), ' (on the cash-out); none if the run ends on it, or if Mr. Bones saved you. A pack opens after the cash-out; a next-shop prize applies to the next shop.'),
+      h('li', null, 'The required-score change applies to the Blind’s own size (The Wall and Violet Vessel included), before Jokers act on it: Chicot halves The Wall after it, Wo-Chien’s −15% comes on top.'),
+      h('li', null, h('b', null, 'Every Pages screen has a safe pick'), ': at least one of the 3 Pages has ', h('b', null, 'no prize'), ' and is ', h('b', null, 'Fair'), ' (difficulty 50 to 79). When the 3 rolled Pages have none, one of them is re-rolled into one (seeded; the other two are untouched). Since engine rev 4: runs started before keep the Pages they were offered.'),
+      h('li', null, 'Pages come from the run’s seed, so a seed always offers the same Pages; resuming (even on the Pages screen), replays and spectators show exactly the same ones.'),
+      h('li', null, h('b', null, 'On in every run'), ' since engine rev ' + P.rev + ', except challenges (and the daily challenge). Turn them off with the ', h('a', { href: '#/micatro-mods/mod/jokertoggle' }, 'Joker Toggle'), ' mod’s ', h('b', null, 'Pages'), ' switch. Runs recorded before Pages replay exactly as they were. Leaderboard rows of runs played with Pages say so.'))),
+    mcSection('Targets', null, h('p', null, P.targets.map((t) => t.name).join(' · '), '. Wild cards count as every suit (and as red and black); Stone cards have no suit or rank. The first / last scored card is by position in the scoring hand, skipping debuffed cards. The round’s rank is one rank drawn from your deck when the Page is made (like The Idol) and named on the Page.')),
+    mcSection('Effects', 'Per scoring trigger of a target card (Lucky / Bonus: per discarded target card; retrigger and destroyed: once per scored card; debuffed: the whole round).', mcTable(['Effect', ''], P.effects.map((e) => ['Target cards ' + mk(e.text), e.down ? h('span', { class: 'mc-pill' }, 'downside +' + e.weight) : '']))),
+    mcSection('Required score', null, h('p', null, P.pcts.map((p) => (p > 0 ? '+' : '') + p + '%').join(' · '), ' of the Blind’s requirement. ',
+      P.lowPcts.map((p) => p + '%').join(' and '), ' only come with a downside effect or a harder Round rule (about ' + Math.round(P.lowChance * 100) + '% of those Pages); ',
+      P.legendaryPcts.map((p) => '+' + p + '%').join(' and '), ' (about ' + Math.round(P.legendaryChance * 100) + '% of all Pages) make a ', h('b', null, 'Legendary Page'), '.')),
+    mcSection('Round rules', Math.round(P.ruleChance * 100) + '% of Pages also carry a Round rule: round-wide, for that round only (restored after), shown on the Page and on the round’s Page badge.',
+      mcTable(['Round rule', 'Difficulty'], P.rules.map((r) => [mk(r.text), (r.d > 0 ? '+' : '') + r.d]))),
+    mcSection('Prize pools', 'The Page’s rolled difficulty (the rolled required-score change + the effect’s downside weight, +' + P.downsideBonus + ' / debuffed +45, + the Round rule’s) picks the pool its prize is drawn from; a +40% / +50% roll draws from the Legendary pool (and never has an easier Round rule).',
+      mcTable(['Pool', 'Rolled difficulty', 'Prizes (one, at random)'], P.tiers.map((t) => [t.name, t.legendary ? '+40% / +50% roll' : range(t), t.prizes.join(' · ')]))),
+    mcSection('Prize value', Math.round((P.prizeChance || 1) * 100) + '% of Pages have a prize (the others say “No prize” and add nothing). Every prize ADDS its value to the required score: required score = the Blind × (1 + the roll + the prize’s value). Every value is between +40% and +100%. The Page shows the total (“Required score +95%”: Temperance on a +10% roll). Its label (Easy … Legendary) comes from the total: the total % + the effect’s and the Round rule’s weights.',
+      mcTable(['Prize', 'Adds'], P.values), h('p', null, 'Labels: ', P.tierLabels.map((t) => t.name + ' ' + range(t)).join(' · '), '.')),
+    mcSection('Details', null, h('ul', { class: 'mc-list' },
+      h('li', null, '−1 Mult never takes Mult below 1. Lose $1 only spends what the run lets you (Credit Card’s debt included).'),
+      h('li', null, 'Tarot / Planet chances and Lucky / Bonus chances are listed odds: Oops! All 6s raises them. A card prize needs a free consumable slot, else you get its price in $.'),
+      h('li', null, 'Lucky / Bonus Pages only change unenhanced cards. Half off halves every price in the next shop (on top of Clearance Sale / Liquidation; rerolls are not halved). The free rerolls stack with Chaos the Clown’s. The Negative Joker prize makes one of the next shop’s Jokers Negative (seeded).'),
+      h('li', null, '−10 Chips never takes Chips below 0. Become Glass / Steel / Gold only changes unenhanced cards (the new enhancement counts from the card’s next trigger); gain a seal only cards without one (Red, Blue, Gold or Purple). Destroyed cards go after scoring, like a broken Glass card (Canio and the other destroy effects see them).'),
+      h('li', null, 'A Joker prize needs a free Joker slot, else you get what it would sell for. The Tag prize is granted like a skip’s Tag. Most played poker hand: ties go to the stronger hand. The edition prize goes to your leftmost Joker without an edition ($5 if none). Remove a card opens your deck after the cash-out: you must remove one (no Skip). The interest cap and hand size prizes last for the next cash-out / round only; +1 Joker slot lasts the run.'),
+      h('li', null, 'Runs recorded on Pages v1 (engine rev ' + P.rev + ') keep the v1 tables, so they resume and replay exactly; new runs play these (rev ' + P.v2rev + ').'))));
+}
+
 async function micatroReplaysView() {
   const F = await mcFeatureData('Replays', 'replays'); if (!F) return;
   const R = F.replays;
@@ -2476,6 +2533,7 @@ function micatroVanillaRoute(sub) {
     case 'big-numbers': return micatroBigNumbersView();
     case 'deck-editor': return micatroDeckEditorView();
     case 'replays': return micatroReplaysView();
+    case 'pages': return micatroPagesView();
     case '': return micatroView();
     case 'jokers': return micatroJokersView();
     case 'consumables': return micatroConsumablesView();
@@ -2559,16 +2617,18 @@ async function micasurvivorView() {
         h('li', null, h('b', null, 'Watching: '), 'a friend in a run shows as live (“Watch”) in MicaSurvivor’s Friends screen, the Battlecards “Live now” hub, the site’s top bar and the overworld friends menu; it opens ', h('code', null, '/micasurvivor/?watch=<username>'), '. A shared replay opens from its link for anyone, account or not (see Watching and replays below).'))),
     mcSection('Controls', 'Keyboard, mouse, touch and controller all work.',
       h('h3', { class: 'mc-h3' }, 'Keyboard'),
+      // (controls sweep B4: the site's keyboard map drives every menu; Z / C moved off the run's specials)
+      h('p', { class: 'muted' }, 'The whole game plays from the keyboard, menus included: a gold ring shows what is selected (the mouse or a finger hides it; a key never does).'),
       msTable(['Key', 'Action'], [
-        [kbd('W', 'A', 'S', 'D'), 'Move (or the arrow keys)'],
-        [kbd('1', '…', '4'), 'Choose the active move'],
-        [kbd('Q', 'E'), 'Previous / next move'],
+        [kbd('W', 'A', 'S', 'D'), 'Move (or the arrow keys); in menus, move the ring'],
+        [kbd('Z'), 'Confirm the selected button / card (in an Expedition zone: hop, hold to glide)'],
+        [kbd('X'), 'Back (an Expedition level-up: skip; in a zone: slide)'],
+        [kbd('Q', 'E'), 'Tabs, and walk the level-up cards'],
+        [kbd('Enter'), 'Choose in menus; pause / resume in a run'],
         [kbd('1', '2', '3'), 'Pick a level-up card'],
-        [kbd('R'), 'Reroll the level-up cards'],
-        [kbd('B'), 'Ban a level-up card (with the Ban upgrade), then pick the new move to ban'],
-        [kbd('Z'), 'Z-move (from level 15, once unlocked)'],
-        [kbd('C'), 'Dynamax (from level 20, once a raid den is cleared)'],
-        [kbd('Tab'), 'Team Mode: switch to the next Pokémon (otherwise: next move)'],
+        [kbd('C'), 'Z-move (from level 15, once unlocked) — the Ultimate in an Expedition; on the cards: reroll (R too)'],
+        [kbd('V'), 'Dynamax (from level 20, once a raid den is cleared; Backspace too); on the cards: ban (B too)'],
+        [kbd('Tab'), 'Team Mode: switch to the next Pokémon (in menus Tab moves the focus as usual)'],
         [kbd('Esc', 'P'), 'Pause'],
       ]),
       h('h3', { class: 'mc-h3' }, 'Touch'),
@@ -2577,7 +2637,7 @@ async function micasurvivorView() {
       h('p', { class: 'muted' }, 'For everyone, guests included (no Magepunk sign-in needed). A second controller moves the partner in Co-op Mode. Design from the Android port by JayElDragon. Xbox, PlayStation and Nintendo layouts (Nintendo is the default, like the rest of the site: the right face button confirms); remap any action in Settings → Controls — binding a button another action used swaps the two.'),
       msTable(['Action', 'Xbox', 'PlayStation', 'Nintendo'], [
         ['Move', 'Left stick / D-pad', 'Left stick / D-pad', 'Left stick / D-pad'],
-        ['Previous / next move, tabs, walk the cards', 'LB / RB', 'L1 / R1', 'L / R'],
+        ['Tabs, walk the cards', 'LB / RB', 'L1 / R1', 'L / R'],
         ['Pause / resume', 'Menu', 'Options', '+'],
         ['Confirm (the focused button / card)', 'A', '✕', 'A (right)'],
         ['Back / cancel', 'B', '○', 'B (bottom)'],
@@ -3531,34 +3591,69 @@ function controlsView() {
     h('p', { class: 'muted' }, 'Every mode plays with a keyboard, a mouse or touch, or a game controller. ',
       h('b', null, 'Controller play is for everyone, signed in or not.'),
       ' The standard layout is Nintendo-style: the RIGHT face button confirms and the BOTTOM one cancels. On a Switch pad that reads A / B; on Xbox, B / A; on PlayStation, ○ / ✕. Switch to the Xbox layout, remap any button, or turn rumble on in the overworld under OPTIONS → CONTROLS (the setting applies everywhere).'),
-    section('Overworld and Pokémon battles', 'Buttons by position; the hint bar at the bottom shows the names for the pad you are holding.',
-      table(['Button', 'Roaming', 'Menus and battles'], [
-        ['Stick / D-pad', 'Walk', 'Move the cursor (held = scroll)'],
-        ['Right face (confirm)', 'Talk / interact', 'Select'],
-        ['Bottom face (cancel)', 'Hold to run', 'Back'],
-        ['Start', 'Start menu', '—'],
-        ['Select', 'Party', 'PC: release · Pokédex: grid view'],
-        ['Top face', 'Bag', 'PC: switch side · Pokédex: caught filter · Shop: buy ↔ sell'],
-        ['Left face (context)', 'Bike', 'Battle: throw last ball / swap moves · PC: sort · Party: take item · Summary: make lead · Pokédex: type filter'],
-        ['LB / RB', '—', 'Page left / right (PC boxes, Pokédex regions, town map)'],
+    section('Keyboard', 'The site-wide keyboard map (site/input.js): every key is a controller button, matched by its position on the keyboard, so Shift and Caps Lock never change it. Being rolled out game by game; the main page, the Games switcher and Battlecards use it now.',
+      table(['Key', 'Controller button', 'Usual meaning'], [
+        ['Arrows / W A S D', 'D-pad / left stick', 'Move the character or the cursor'],
+        ['Z', 'A (confirm)', 'Talk, select, play'],
+        ['X', 'B (cancel)', 'Back, close'],
+        ['C', 'X (top face)', 'Game-specific (bag, sell, sort…)'],
+        ['V', 'Y (left face)', 'Game-specific (bike, inspect…)'],
+        ['Q / E', 'L / R', 'Previous / next tab or page'],
+        ['Enter', 'Start', 'Menu (on a plain page: open the focused link)'],
+        ['Backspace', 'Select', 'Party, deck view, map'],
+        ['` (backquote), or hold Esc', 'Start + Select together', 'Open the Games switcher'],
+      ]),
+      h('p', { class: 'muted' }, 'Typing never moves anything: while a text box, a dropdown or the on-screen keyboard has focus, the keys are just keys. A quick tap of Esc keeps each game’s own meaning (back, pause, options); Tab still moves between buttons.')),
+    section('Games switcher', 'One overlay on every page: Home and every game, with no mouse needed.',
+      table(['How', 'Opens it'], [
+        ['Keyboard', '` (the key left of 1), or hold Esc for about half a second'],
+        ['Controller', 'Start and Select together (each on its own keeps its in-game meaning)'],
+        ['Touch / mouse', 'The ⚙️ button (top corner; in MicaSurvivor also in the pause menu)'],
+      ]),
+      h('p', { class: 'muted' }, 'Inside it: arrows / WASD / d-pad move, Z / Enter / A open, X / Esc / B close, or tap. Leaving something that can’t be saved asks first: a live PvP match (it counts as a loss), a Micatro Multiplayer match (a forfeit), a MicaSurvivor run (the run is lost), a Battle Frontier streak, coins already bet. It won’t open during an overworld cutscene. The overworld saves your position before you go.')),
+    section('Scoundrel, Pair of Pears and PokéChess', 'Keyboard and controller give the same actions; a gold reticle (a cursor in PokéChess) shows the focus, and the hint bar shows the keys or buttons you are using.',
+      table(['Key', 'Button', 'Scoundrel', 'Pair of Pears', 'PokéChess'], [
+        ['Arrows / W A S D', 'D-pad', 'Move the reticle', 'Move the reticle', 'Move the cursor'],
+        ['Z', 'A', 'Pick (in a fight: Weapon)', 'Flip / pick (Enter, Space too)', 'Pick a piece / square (Enter too)'],
+        ['X / Esc', 'B', 'Back, cancel the fight choice', 'Back, put a held charm down', 'Let go of the piece'],
+        ['C', 'X', 'Fight bare-handed (B too)', 'Sell the held charm', '—'],
+        ['V', 'Y', 'Run! (Space too)', 'Continue / next level (N too)', '—'],
+        ['Enter', 'Start', 'Pick / descend (Start: Options)', 'Pick (Start: Options; O too)', 'Pick'],
+        ['Backspace', 'Select', '—', '—', 'Leave to the overworld'],
+        ['1–4, R', '—', 'Pick a room card, new run', '—', '—'],
       ])),
-    section('Battlecards menus and screens', 'The lobby, run-mode screens, pop-ups (mulligan, discover, discard, choose-one), the deck builder, gallery, packs and replays.',
-      table(['Button', 'Action'], [
-        ['Stick / D-pad', 'Move focus to the nearest button, card or field'],
-        ['Right face (confirm)', 'Activate. A text field opens the on-screen keyboard; a dropdown cycles its options'],
-        ['Bottom face (cancel)', 'Back / close'],
-        ['LB / RB', 'Page left / right, replay steps'],
-        ['Start', 'Open a pack, play / pause a replay'],
+    section('Pages', 'The main page, the wiki, News, Learn, Report a bug, Log in, Profile, your Bag and Monsters: arrows / WASD / d-pad move a gold ring over the links and buttons, Z / Enter / A opens, X / Esc / B goes back; Z on a text box puts the cursor there (Esc leaves it), on a controller it opens the on-screen keyboard.'),
+    section('Overworld and Pokémon battles', 'A key and its button do the same thing on every screen: walking, menus, battles, the PC, dialogs and the minigames. The hint bar at the bottom names the keys, or the buttons of the pad you are holding.',
+      table(['Key', 'Button', 'Roaming', 'Menus and battles'], [
+        ['Arrows / W A S D', 'Stick / D-pad', 'Walk', 'Move the cursor (held = scroll)'],
+        ['Z', 'Right face (confirm)', 'Talk / interact', 'Select'],
+        ['X (or a tap of Esc)', 'Bottom face (cancel)', 'Hold to run (Shift runs too)', 'Back; “no” in a yes/no question'],
+        ['Enter', 'Start', 'Start menu (its GAMES row opens the Games switcher)', '—'],
+        ['Backspace', 'Select', 'Party', 'PC: release · Pokédex: grid view'],
+        ['C', 'Top face', 'Bag', 'PC: switch side · Pokédex: caught filter · Shop: buy ↔ sell · Battle move list: Mega Evolve'],
+        ['V', 'Left face (context)', 'Bike', 'Battle: throw last ball / swap moves · PC: sort · Party: take item · Summary: make lead · Pokédex: type filter · Trainer card: share'],
+        ['Q / E', 'LB / RB', '—', 'Page left / right (PC boxes, Pokédex regions, town map)'],
+      ]),
+      h('p', { class: 'muted' }, 'Still there as shortcuts: P party, B bag, F PC search, R re-throw a ball, M Mega Evolve, T / G Pokédex filters and grid; OPTIONS → CONTROLS rebinds them. S, C and V lost their old letter meanings (S moves down now). Minigames (card flip, slots, the Unown puzzle, the berry blender, contests, Voltorb Flip) take the same keys and buttons, and on a phone you tap the screen itself: a puzzle slot, a bet square, a move, a berry, or anywhere for A.')),
+    section('Battlecards menus and screens', 'The hub, lobbies, run-mode screens and maps, pop-ups (mulligan, discover, discard, choose-one, venture), the deck builder, gallery, packs, replays, the boards and /collection/.',
+      table(['Key', 'Button', 'Action'], [
+        ['Arrows / W A S D', 'Stick / D-pad', 'Move focus to the nearest button, card or field'],
+        ['Z (or Enter)', 'Right face (confirm)', 'Activate. A text field: type into it (a controller opens the on-screen keyboard); a dropdown cycles its options'],
+        ['X (or Esc)', 'Bottom face (cancel)', 'Close what is open (a card page, a picker); with nothing open, back'],
+        ['V', 'Left face (context)', 'Read the focused card: its rules text (deck builder / gallery: its card page; packs: the revealed cards in turn; collection: show / hide)'],
+        ['Q / E (PageUp / PageDown)', 'LB / RB', 'Page left / right, the next board, replay steps'],
+        ['Z / Space', 'Start', 'Open a pack and turn its cards; play / pause a replay'],
       ])),
-    section('Battlecards match board', 'A gold reticle marks the focused card; while targeting it turns red and the arrow follows it.',
-      table(['Button', 'Action'], [
-        ['Stick / D-pad', 'Move between cards in your hand, both boards, the heroes, your hero power, and the End Turn / Log buttons'],
-        ['LB / RB', 'Jump between your hand, your side, the enemy side, and the buttons (starting on End Turn)'],
-        ['Right face (confirm)', 'Play a hand card (creatures then pick a board slot with ◄ ►), arm an attack, pick the target, use your hero power, or press the focused button (End Turn, Log)'],
-        ['Bottom face (cancel)', 'Back out of placing or targeting'],
-        ['Left face', 'Read the focused card in the large focus view (◄ ► / LB RB step through the cards beside it; cancel closes). Confirm on a card you cannot act on opens it too'],
-        ['Start', 'Menu: game log, auto-pass, sound, concede'],
-        ['Game log', 'Card names are links: confirm on one to read the card. Right stick scrolls; cancel closes'],
+    section('Battlecards match board', 'A gold reticle marks the focused card; while targeting it turns red and the arrow follows it. The hint bar names the keys or the buttons of what you are using.',
+      table(['Key', 'Button', 'Action'], [
+        ['Arrows / W A S D', 'Stick / D-pad', 'Move between cards in your hand, both boards, the heroes, your hero power, and the End Turn / Log buttons'],
+        ['Q / E', 'LB / RB', 'Jump between your hand, your side, the enemy side, and the buttons (starting on End Turn)'],
+        ['Z', 'Right face (confirm)', 'Play a hand card (creatures then pick a board slot with ← →), arm an attack, pick the target, use your hero power, or press the focused button (End Turn, Log)'],
+        ['X', 'Bottom face (cancel)', 'Back out of placing or targeting (focus returns to the card)'],
+        ['V', 'Left face (context)', 'Read the focused card in the large focus view (← → / Q E step through the cards beside it; X closes). Z on a card you cannot act on opens it too'],
+        ['C', 'Top face (secondary)', 'The game log'],
+        ['Enter', 'Start', 'Menu: game log, auto-pass, sound, concede, Leave (opens the Games switcher). While placing or targeting, Enter confirms like Z'],
+        ['—', 'Game log', 'Card names are links: confirm on one to read the card. Right stick scrolls; cancel closes'],
       ])),
     section('Typing on a controller', 'Nicknames, friend codes, searches and pasted deck or replay codes use the on-screen keyboard.',
       table(['Button', 'Action'], [
@@ -3593,7 +3688,7 @@ const pjIsOwner = () => {
   try { cached = JSON.parse(localStorage.getItem('magepunk_mp_state_v1') || 'null'); } catch (e) { /* no login */ }
   return cached?.username === 'mgibbie';
 };
-const pjDexLabel = n => '#' + String(n).padStart(4, '0');
+const pjDexLabel = n => n < 0 ? 'Fakemon ' + n : '#' + String(n).padStart(4, '0');
 const pjBadge = t => h('span', { class: 'pj-ptype', style: 'background:' + (PJ_COLOURS[t] || '#888') + ';color:' + (PJ_DARK_TEXT.has(t) ? '#1c2230' : '#fff') }, t);
 /** The card page's art-source label (art.source: 'upstream' = Pokermon 3.9.1's own card, 'composed' = ours). */
 const PJ_ART_LABEL = { upstream: 'Art: Pokermon upstream', composed: 'Art: composed (no upstream card yet)' };
@@ -3613,14 +3708,16 @@ async function pokermonJokersView() {
   try { D = await loadPokermonJokers(); }
   catch (e) { return content.replaceChildren(h('h1', null, 'Pokermon jokers not in the game yet'), h('p', { class: 'muted' }, 'Could not load the list.')); }
   if (!pjOn()) return;
+  const species = [...D.species, ...(D.fakemon || [])];
   const P = new URLSearchParams(location.hash.split('?')[1] || '');
   const st = { gen: P.get('gen') || '', type: P.get('type') || '', q: P.get('q') || '' };
   const c = D.counts;
   const typeCount = {};
-  for (const s of D.species) typeCount[s.ptype] = (typeCount[s.ptype] || 0) + 1;
+  for (const s of species) typeCount[s.ptype] = (typeCount[s.ptype] || 0) + 1;
   const genSel = h('select', { class: 'pj-sel', id: 'pjGen', 'aria-label': 'Generation' },
     h('option', { value: '' }, 'All generations'),
-    Object.entries(c.byGen).filter(([, n]) => n).map(([g, n]) => h('option', { value: g }, 'Generation ' + g + ' (' + n + ')')));
+    Object.entries(c.byGen).filter(([, n]) => n).map(([g, n]) => h('option', { value: g }, 'Generation ' + g + ' (' + n + ')')),
+    D.fakemon?.length ? h('option', { value: '0' }, 'Fakemon (' + D.fakemon.length + ')') : null);
   const typeSel = h('select', { class: 'pj-sel', id: 'pjType', 'aria-label': 'Pokermon type' },
     h('option', { value: '' }, 'All types'),
     Object.keys(PJ_COLOURS).filter(t => typeCount[t]).map(t => h('option', { value: t }, t + ' (' + typeCount[t] + ')')));
@@ -3636,14 +3733,14 @@ async function pokermonJokersView() {
     if (st.q) qs.set('q', st.q);
     const target = PJ + (qs.toString() ? '?' + qs : '');
     if (location.hash !== target) history.replaceState(null, '', target);
-    const nq = norm(st.q), qDex = /^#?\d+$/.test(st.q.trim()) ? +st.q.trim().replace('#', '') : null;
-    const list = D.species.filter(s => (!st.gen || String(s.gen) === st.gen) && (!st.type || s.ptype === st.type)
+    const nq = norm(st.q), qDex = /^#?-?\d+$/.test(st.q.trim()) ? +st.q.trim().replace('#', '') : null;
+    const list = species.filter(s => (!st.gen || String(s.gen) === st.gen) && (!st.type || s.ptype === st.type)
       && (!nq || (qDex != null ? s.dex === qDex : norm(s.name).includes(nq))));
-    shown.textContent = list.length === D.species.length ? '' : list.length + ' shown';
+    shown.textContent = list.length === species.length ? '' : list.length + ' shown';
     const byGen = new Map();
     for (const s of list) { if (!byGen.has(s.gen)) byGen.set(s.gen, []); byGen.get(s.gen).push(s); }
     body.replaceChildren(...(list.length ? [...byGen.entries()].map(([g, ss]) => h('section', { class: 'pj-gen', 'data-gen': g },
-      h('h2', null, 'Generation ' + g, ' ', h('span', { class: 'num' }, '(' + ss.length + ')')),
+      h('h2', null, g === 0 ? 'Overworld Fakemon' : 'Generation ' + g, ' ', h('span', { class: 'num' }, '(' + ss.length + ')')),
       h('div', { class: 'pj-grid' }, ss.map(s => h('a', { class: 'pj-tile', href: PJ + '/' + s.dex, 'data-dex': s.dex, 'data-ptype': s.ptype },
         pjImg(s.art.normal + CB, s.name),
         h('span', { class: 'pj-name' }, s.name),
@@ -3658,7 +3755,7 @@ async function pokermonJokersView() {
   qIn.oninput = () => { clearTimeout(qt); qt = setTimeout(() => { st.q = qIn.value.trim(); render(); }, 120); };
   const bm = c.byMod;
   // (Gen 9 batch 4, 2026-11-03: every canonical species has a joker — the list is empty, so the page says so instead of an empty grid)
-  if (!c.missing) {
+  if (!c.missing && !(D.fakemon || []).length) {
     return content.replaceChildren(h('div', { class: 'pj-head pj-done' },
       h('h1', null, 'Pokermon jokers not in the game yet ', h('span', { class: 'num' }, '(0)')),
       h('p', null, 'All ' + c.dex + ' canonical Pokémon have a joker in ', h('a', { href: '#/micatro-mods/mod/pokermon' }, 'Pokermon'),
@@ -3667,13 +3764,14 @@ async function pokermonJokersView() {
   }
   content.replaceChildren(
     h('div', { class: 'pj-head' },
-      h('h1', null, 'Pokermon jokers not in the game yet ', h('span', { class: 'num' }, '(' + c.missing + ')')),
+      h('h1', null, 'Pokermon jokers not in the game yet ', h('span', { class: 'num' }, '(' + species.length + ')')),
       h('p', null, c.missing + ' of the ' + c.dex + ' canonical Pokémon have no joker in ', h('a', { href: '#/micatro-mods/mod/pokermon' }, 'Pokermon'),
         ' (' + bm.pokermon.species + ' species), ', h('a', { href: '#/micatro-mods/mod/nacho' }, 'Nacho’s Pokermon Dip'), ' (' + bm.nacho.species + ') or ',
         h('a', { href: '#/micatro-mods/mod/pokermonplus' }, 'Sonfive’s Pokermon+'), ' (' + bm.pokermonplus.species + ') yet — ' + c.covered + ' are covered. ',
-        (c.art && !c.art.composed ? 'Every card below is Pokermon’s own: upstream already draws all of them (' + c.art.upstream + '), it just has no joker for them yet. '
+        (!c.missing ? 'All canonical species are covered. Fakemon cards use the overworld battle sprites on composed Pokermon frames. '
+          : c.art && !c.art.composed ? 'Every canonical card below is Pokermon’s own: upstream already draws all of them (' + c.art.upstream + '), it just has no joker for them yet. '
           : 'Each card below is Pokermon’s own where upstream already draws it (' + ((c.art && c.art.upstream) || 0) + '); the rest (' + ((c.art && c.art.composed) || 0) + ') are composed the way Pokermon draws its own: the frame for its Pokermon type and stage, a scene from its family or type, and its battle sprite. '),
-        'Type, stage and a rarity guess follow Pokermon’s conventions; the ability is still to be designed. Megas and regional forms are left out (only base species), and so are fakemon.'),
+        'Type, stage and a rarity guess follow Pokermon’s conventions; the ability is still to be designed. The list also includes ' + (D.fakemon || []).length + ' overworld Fakemon; their negative IDs are internal identifiers, not National Dex numbers.'),
       pjIsOwner() ? h('p', { class: 'pj-ownernote' }, 'Owner: open a card to submit a design for it. Designs go to the joker design list.') : null),
     h('div', { class: 'pj-filters' }, genSel, typeSel, qIn, shown),
     body);
@@ -3693,14 +3791,14 @@ async function pokermonJokerDetail(id) {
   try { D = await loadPokermonJokers(); }
   catch (e) { return content.replaceChildren(h('h1', null, 'Pokermon joker'), h('p', { class: 'muted' }, 'Could not load the list.')); }
   if (!pjOn(id)) return;
-  const s = D.species.find(x => String(x.dex) === String(id));
+  const s = [...D.species, ...(D.fakemon || [])].find(x => String(x.dex) === String(id));
   const back = h('p', { class: 'lp-back' }, h('a', { href: PJ }, '← Pokermon jokers not in the game yet'));
   if (!s) return content.replaceChildren(back, h('h1', null, 'Not on the list'), h('p', { class: 'muted' }, 'That Pokémon already has a joker, or is not a canonical species.'));
   let shiny = false;
   const art = pjImg(s.art.normal + CB, s.name, 'pj-art pj-art-big');
   const flip = h('button', { type: 'button', class: 'pj-flip' }, 'Show Shiny');
   flip.onclick = () => { shiny = !shiny; art.src = (shiny ? s.art.shiny : s.art.normal) + CB; flip.textContent = shiny ? 'Show normal' : 'Show Shiny'; };
-  const missing = new Set(D.species.map(x => x.dex));
+  const missing = new Set([...D.species, ...(D.fakemon || [])].map(x => x.dex));
   const lineEl = h('ol', { class: 'pj-line' }, s.line.map(l => h('li', { class: l.dex === s.dex ? 'cur' : null },
     l.dex === s.dex ? h('b', null, l.name)
       : missing.has(l.dex) ? h('a', { href: PJ + '/' + l.dex }, l.name)
@@ -3716,12 +3814,12 @@ async function pokermonJokerDetail(id) {
         h('h1', null, s.name, ' ', h('span', { class: 'num' }, pjDexLabel(s.dex))),
         h('table', { class: 'pj-facts' },
           row('Pokermon type', pjBadge(s.ptype), h('span', { class: 'muted pj-typesrc', 'data-source': s.type_source || 'mapping' },
-            (s.type_source === 'art' ? ' as its card shows (' : ' from the mapping (') + s.types.join(' / ') + ')')),
+            (s.type_source === 'art' ? ' as its card shows (' : s.type_source === 'override' ? ' selected for this card; overworld type (' : ' from the mapping (') + s.types.join(' / ') + ')')),
           row('Stage', s.stageLabel),
           row('Evolution line', s.line.length > 1 ? lineEl : h('span', { class: 'muted' }, 'Does not evolve')),
           row('Rarity (guess)', s.rarityLabel),
           row('Cost (guess)', s.cost != null ? '$' + s.cost : '—'),
-          row('Generation', String(s.gen)),
+          row(s.dex < 0 ? 'Source' : 'Generation', s.dex < 0 ? ({ cap: 'Create-A-Pokémon', uranium: 'Pokémon Uranium', ransei: 'Radical Ransei' }[s.source] || 'Overworld Fakemon') : String(s.gen)),
           row('Pokédex', pk ? h('a', { href: '#/pokemon/' + s.key }, s.name + '’s Pokédex page') : h('span', { class: 'muted' }, '—'))),
         h('h2', null, 'Ability'),
         h('p', { class: 'pj-ability muted' }, 'Not designed yet.'),
