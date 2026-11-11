@@ -188,7 +188,7 @@ function standAt(room, cx, cz, x, z) {
  *  they meet (down any distance: a drop). No jumping. You are not a point: the floor is compared from a body's radius
  *  back in a to a body's radius on into b, whichever is worse, so a lip that leads straight onto a rising ramp counts
  *  as the climb it is. -> { can(a) -> [b…] } over cell indices. */
-function footGraph(room) {
+export function footGraph(room) {
 	const W = room.w, H = room.h;
 	const out = new Array(W * H);
 	for (let cz = 0; cz < H; cz++) for (let cx = 0; cx < W; cx++) {

@@ -332,6 +332,39 @@ Tests: `micasurvivor_m3d_gen_test.mjs` (node, 35 checks: 50 pinned fingerprints,
 real controller walking 60 levels spawn to exit without a jump), and the page test covers `?gen=`, the minimap and
 the exit.
 
+## 5.4 P3, first part: built (2026-11-11)
+
+Enemies and combat on the height field (`micasurvivor/m3d/actors.js`, `combat.js`), playable at
+`/micasurvivor/m3d/?gen=<seed>&fight=1` (`&moves=ember:3,tackle` picks moves as id:level; R restarts the level).
+Pure and seeded like the rest; it reads the 2D game's own data (moves, type chart, enemy tiers, species, sprite sizes),
+so there is one set of numbers.
+
+- **The proof the plan asked for.** `micasurvivor_m3d_parity_test.mjs` plays the same fight twice in one page: by the
+  2D game's own combat code and by the 3D rules on flat ground. Hits, damage and HP lost match to the point for a
+  shot, a swing (shove included), a beam, an aura, a chain, a ring of shots, orbs, piercing through three types,
+  poison, and an enemy's touch.
+- **Enemy bodies.** Walkers cannot climb what you cannot walk up, go round by ramps, drop off ledges to reach you,
+  float across ponds. Flyers (the 2D game's own list of who hovers) go straight over everything but the rim.
+  Finding the way is one flow field from your cell, shared by every walker.
+- **What height changes.** A shot is a ball at chest height, aimed up or down at its target, stopped by terrain. A
+  swing, an aura and an enemy's touch reach about 1 m up or down: jump over a ground enemy and it cannot touch you;
+  the ledge above is out of a Tackle's reach. A beam is cut where it meets the ground. The auto-aim takes the nearest
+  enemy you can see before a nearer one behind a wall. Knockback is a real shove: off a ledge, the body falls.
+- **Arrivals.** The 2D rate and cap (110), but placed 16-32 m from you on floor an enemy can walk to you from: the
+  rules no longer read the camera.
+- **Cost.** A tick with 110 enemies is about 0.1 ms in node.
+
+Departures from 2D, on purpose: orbs circle in a true circle (2D flattens the orbit to 70 %; the parity test sets the
+2D shape); your run speed is the 3D controller's, not the species' 2D speed.
+
+**Still to do in P3** (second part): the eight move kinds not ported (buff, boomerang, mine, meteor, turret, dash,
+trail, cone) and Expedition's eight (lob, homing, barrage, smite, vortex, wave, spin, weather); the control states
+(sleep, paralysis, freeze, confusion); abilities and held items; enemy behaviours other than chase (chargers, ranged,
+bombers, healers …) and enemy shots; bosses; XP and level-ups; damage numbers and hit effects.
+
+Tests: `micasurvivor_m3d_parity_test.mjs` (Chrome, 22 checks), `micasurvivor_m3d_combat_test.mjs` (node, 35 checks),
+and the page test covers `&fight=1`.
+
 ## 6. Dive in 2D: built
 
 **D0 — find the stairs (small; can ship first, on its own).** *Built 2026-11-11 (`overworld/tests/micasurvivor_dive_stairs_test.mjs`). As built: the stairs took their own orange mark, so the rocks and Meowth keep their gold; the HUD arrow comes up after 25 s on a floor, or at once when its boss falls.*

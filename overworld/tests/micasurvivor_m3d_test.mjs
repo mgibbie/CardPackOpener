@@ -14,6 +14,9 @@
 //   * P2: ?gen=<seed> plays a generated level (gen.js; its rules are tested in node: micasurvivor_m3d_gen_test.mjs): it
 //     boots and is drawn; the minimap is drawn FROM the level (rim, water, height) with you as an arrow and the exit as
 //     a ring; standing in the exit ends the level and loads the next seed in the same biome; the test room is unchanged
+//   * P3: ?gen=<seed>&fight=1 is a fight on the level (combat.js; its rules are tested in node and against the 2D game:
+//     micasurvivor_m3d_combat_test.mjs, micasurvivor_m3d_parity_test.mjs): your moves fire by themselves at a target,
+//     enemies arrive and close in, a touch hurts, the minimap shows them, at 0 HP you are down
 //   node overworld/tests/micasurvivor_m3d_test.mjs      (SHOTS=<dir> for screenshots)
 import http from 'http';
 import fs from 'fs';
@@ -222,6 +225,51 @@ try {
 		const tv = await tr.page.evaluate(() => ({ map: getComputedStyle(document.getElementById('map')).display, gen: window.__m3d.gen, hud: document.getElementById('hud').textContent, w: window.__m3d.room.w }));
 		A(tv.map === 'none' && tv.gen === null && !/level/.test(tv.hud) && tv.w === 24, 'without ?gen the test room is as it was: no minimap, no level', JSON.stringify(tv));
 		await tr.page.close();
+	}
+
+	// ======================== P3: a fight on a generated level (?gen=<seed>&fight=1)
+	{
+		const f = await open({ width: 1280, height: 720, deviceScaleFactor: 1 }, '?gen=7&fight=1&moves=ember:3,tackle:2,bug-buzz');
+		A(f.ok, '?gen=7&fight=1 boots: the level, the 2D game\'s data, the fight');
+		const f0 = await f.page.evaluate(() => { const m = window.__m3d, w = m.world; return { world: !!w, moves: w.pl.moves.map(q => q.id + ':' + q.lvl), hp: w.pl.hp, max: w.pl.maxHp, cast: w.cast, crowd: m.crowd.length, sheets: [...m.sheets.keys()].filter(k => /Walk/.test(k)).length, same: w.pl.s === m.state, g: !!(window.G.Moves && window.G.Types && window.G.Enemies.defFor) }; });
+		A(f0.world && f0.g && f0.same && f0.moves.join() === 'ember:3,tackle:2,bug-buzz:1' && f0.hp === f0.max && f0.crowd === 0, 'the fight is on: your moves are the ones asked for, you are at full HP, the idle crowd is gone', JSON.stringify(f0));
+		A(f0.cast.length >= 6 && f0.sheets >= f0.cast.length, `the enemies' walk sheets are loaded (${f0.cast.length} species)`, JSON.stringify(f0));
+		// a target 6 m in front of you: your moves find it by themselves
+		const hit = await f.page.evaluate(async () => { const m = window.__m3d, w = m.world, wait = (ms) => new Promise(r => setTimeout(r, ms)); w.pl.invuln = 1e9;
+			const e = m.addEnemy(19, m.state.x + 6, m.state.z, { dummy: true, hp: 50 }); const max = e.maxHp; let shots = 0, flashes = 0;
+			for (let i = 0; i < 25; i++) { await wait(60); shots = Math.max(shots, w.shots.length); }
+			return { max, hp: e.hp, dead: e.dead, fired: w.stats.fired, hits: w.stats.hits, shots, dealt: w.stats.dealt, target: !!w.pl.target, calls: m.stats().calls, hud: document.getElementById('hud').textContent }; });
+		A(hit.fired >= 2 && hit.hits >= 2 && (hit.dead || hit.hp < hit.max), `a Rattata 6 m away: your moves fire at it by themselves (${hit.fired} shots, ${hit.hits} hits, ${hit.dealt.toFixed(0)} damage)`, JSON.stringify(hit));
+		A(hit.shots >= 1, 'shots are in the air between you (drawn as balls in the move\'s colour)', JSON.stringify(hit));
+		A(/HP \d+ \/ \d+ · \d+ enemies · \d+ KOs · \d:\d\d · .*Lv3/.test(hit.hud), 'the readout shows your HP, the enemies, the KOs, the clock and your moves', hit.hud);
+		// they arrive by themselves and come for you; one that reaches you hurts
+		const arr = await f.page.evaluate(async () => { const m = window.__m3d, w = m.world, wait = (ms) => new Promise(r => setTimeout(r, ms));
+			w.pl.moves.length = 0; w.shots.length = 0;            // (no moves: let them come)
+			const t0 = w.t; for (let i = 0; i < 80 && w.stats.spawned < 6; i++) await wait(100);
+			const near0 = Math.min(...w.enemies.map(e => Math.hypot(e.a.x - m.state.x, e.a.z - m.state.z)));
+			await wait(1500);
+			const near1 = Math.min(...w.enemies.map(e => Math.hypot(e.a.x - m.state.x, e.a.z - m.state.z)));
+			w.pl.invuln = 0; const e = m.addEnemy(19, m.state.x + 0.5, m.state.z); await wait(700);
+			return { spawned: w.stats.spawned, secs: w.t - t0, near0, near1, touched: w.stats.touched, hp: w.pl.hp, max: w.pl.maxHp, enemies: w.enemies.length, calls: m.stats().calls, hud: document.getElementById('hud').textContent }; });
+		A(arr.spawned >= 6 && arr.near1 < arr.near0 - 1, `enemies arrive by themselves (${arr.spawned} so far) and close in on you (the nearest from ${arr.near0.toFixed(0)} m to ${arr.near1.toFixed(0)} m in 1.5 s)`, JSON.stringify(arr));
+		A(arr.touched >= 1 && arr.hp < arr.max, `one that reaches you hurts: HP ${Math.ceil(arr.hp)} of ${arr.max}`, JSON.stringify(arr));
+		A(arr.calls <= 26, `the level, ${arr.enemies} enemies, shots and shadows in ${arr.calls} draw calls`, JSON.stringify(arr));
+		const cf = await colours(f.page);
+		A(cf.distinct > 40, 'the fight is drawn', JSON.stringify(cf));
+		await shot(f.page, 'm3d_fight.png');
+		// the minimap shows them
+		const dots = await f.page.evaluate(() => new Promise((res) => requestAnimationFrame(() => requestAnimationFrame(() => { const m = window.__m3d, map = document.getElementById('map'), c = map.getContext('2d'); let n = 0;
+			for (const e of m.world.enemies) { const p = c.getImageData(Math.round(e.a.x * 2), Math.round(e.a.z * 2), 1, 1).data; if (p[0] > 60 && p[0] < 130 && p[1] < 60 && p[2] < 90) n++; } res({ n, of: m.world.enemies.length }); }))));
+		A(dots.n >= Math.max(1, dots.of - 2), `the minimap shows the enemies as dots (${dots.n} of ${dots.of} found)`, JSON.stringify(dots));
+		// down
+		const dn = await f.page.evaluate(async () => { const m = window.__m3d, w = m.world, wait = (ms) => new Promise(r => setTimeout(r, ms)); w.pl.hp = 1; w.pl.invuln = 0; m.addEnemy(19, m.state.x + 0.4, m.state.z); await wait(900); const x = m.state.x; m.setInput({ mx: 1, mz: 0 }); await wait(400); m.setInput(null); return { dead: w.pl.dead, hp: w.pl.hp, moved: Math.abs(m.state.x - x), hud: document.getElementById('hud').textContent }; });
+		A(dn.dead && dn.hp === 0 && dn.moved < 0.01 && /you are down/.test(dn.hud), 'at 0 HP you are down: you stop, and the readout says how to start again', JSON.stringify(dn));
+		await f.page.close();
+		// without &fight=1 a generated level has no fight
+		const nf = await open({ width: 900, height: 600, deviceScaleFactor: 1 }, '?gen=7&n=5');
+		const nv = await nf.page.evaluate(() => ({ world: window.__m3d.world, hud: document.getElementById('hud').textContent }));
+		A(nv.world === null && !/HP \d/.test(nv.hud), 'without &fight=1 the level is as it was: no enemies, no HP', JSON.stringify(nv));
+		await nf.page.close();
 	}
 
 	// ======================== phone
