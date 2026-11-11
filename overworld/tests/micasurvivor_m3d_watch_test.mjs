@@ -8,6 +8,8 @@
 //   * enemies are where the host has them; hits show as damage numbers; the readout follows
 //   * a recorded fight (tape v3) plays back on a page of its own to the same end
 //   * the sizes of what was sent are within the caps
+//   * sent as the site's relay would carry it (one message a second), a watcher still sees a jump whole, a second or
+//     two behind
 //   node overworld/tests/micasurvivor_m3d_watch_test.mjs      (SHOTS=<dir> for screenshots)
 import http from 'http';
 import fs from 'fs';
@@ -134,6 +136,25 @@ try {
 	const end = await R.page.evaluate((to) => { const m = window.__m3d; const v = m.viewer.sample(to); return { kills: v.kills, level: v.pl.level, enemies: v.enemies.length }; }, played.to);
 	A(Math.abs(end.kills - rec.kills) <= 1 && end.level === rec.level, `at its end the tape has the fight where the host had it: ${end.kills} KOs, level ${end.level}`, JSON.stringify([end, rec.kills, rec.level]));
 	await shot(R.page, 'm3d_replay.png');
+	// ======================== as the site's relay would carry it: ONE message a second
+	{
+		const H2 = await open('?gen=7&fight=1&host=room9&relay=1&moves=ember:3&cast=19,41&cap=14&weather=0&ability=0', 'relay host');
+		await H2.page.evaluate(() => { window.__m3d.world.pl.invuln = 1e9; });
+		const W2 = await open('?watch=room9', 'relay watcher');
+		const up = await waitFor(() => W2.page.evaluate(() => /gen=7/.test(location.search) && !!(window.__m3d && window.__m3d.ready && window.__m3d.view)), 25000);
+		A(H2.ok && W2.ok && up, 'a host sending as the relay would, and a watcher of it');
+		await sleep(1500);
+		const seen = [];
+		const hostP = H2.page.evaluate(async () => { const m = window.__m3d, wait = (ms) => new Promise(r => setTimeout(r, ms)); await wait(300); m.setInput({ mx: 0, mz: 0, jump: true }); await wait(350); m.setInput(null); });
+		const t0 = Date.now();
+		while (Date.now() - t0 < 3800) { const [h, w] = await Promise.all([H2.page.evaluate(() => window.__m3d.state.y - window.__m3d.room.spawn[1]), W2.page.evaluate(() => window.__m3d.state.y - window.__m3d.room.spawn[1])]); seen.push({ h, w }); await sleep(40); }
+		await hostP;
+		const tH = Math.max(...seen.map(s => s.h)), tW = Math.max(...seen.map(s => s.w));
+		const rs = await Promise.all([H2.page.evaluate(() => ({ sent: window.__m3d.net.sent, biggest: window.__m3d.net.biggest, t: window.__m3d.world.t })), W2.page.evaluate(() => ({ got: window.__m3d.net.got, relay: window.__m3d.net.relay, behind: 0, frames: window.__m3d.viewer.frames.length, t: window.__m3d.watchT }))]);
+		A(rs[1].relay && Math.abs(rs[0].sent - rs[0].t) < 2.5 && rs[0].biggest < 16000, `the host sent ${rs[0].sent} messages in ${rs[0].t.toFixed(0)} s (one a second), the biggest ${rs[0].biggest} characters (the relay's cap is 16,000)`, JSON.stringify(rs));
+		A(tH > 1.4 && Math.abs(tW - tH) < 0.25, `a jump inside one of those messages is seen whole by the watcher: ${tW.toFixed(2)} m of ${tH.toFixed(2)} m`, JSON.stringify([tH, tW]));
+		A(rs[0].t - rs[1].t > 0.9 && rs[0].t - rs[1].t < 2.6, `the watcher runs ${(rs[0].t - rs[1].t).toFixed(1)} s behind: the price of one message a second`, JSON.stringify([rs[0].t, rs[1].t]));
+	}
 	A(errors.length === 0, 'no page errors on the host, the watcher or the replay', errors.slice(0, 5).join(' | '));
 } catch (e) {
 	fail++; console.log('FAIL: crashed: ' + (e && e.stack || e));

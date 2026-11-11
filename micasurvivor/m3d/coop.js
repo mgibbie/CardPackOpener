@@ -18,6 +18,7 @@ import { newWorld, applyState, CK, U } from './combat.js';
 import { frame, Viewer, NK } from './net.js';
 
 const P = NK.POS, V = NK.VEL;
+export const CO = { AWAY: 3, STALL: 2.5 };   // s: a guest unheard this long is away; a host unheard this long, and the guest's fight stands still
 const TYPES = ['normal', 'fire', 'water', 'grass', 'electric', 'ice', 'fighting', 'poison', 'ground', 'flying', 'psychic', 'bug', 'rock', 'ghost', 'dragon', 'dark', 'steel', 'fairy'];
 const ang = (b) => b * 6.2832 / 256;
 /** A body from a player's row ([x, y, z, vx, vy, vz, facing, bits, hp, maxHp, …], whole numbers). */
@@ -44,7 +45,10 @@ export function hostStep(w, dt = K.TICK) {
 		m.heard += dt;
 		if (m.heard < 0.5 && !m.dead) { const s = m.s; s.x += s.vx * dt; s.z += s.vz * dt; s.t += dt; if (!s.grounded && !s.swimming) { s.vy -= K.FALL_GRAVITY * dt; s.y = Math.max(groundAt(w.room, s.x, s.z), s.y + s.vy * dt); } }
 	}
-	w.waiting = w.mates.some((m) => m.lv < w.pl.level);
+	// a guest not heard from for 3 s is AWAY: enemies stop going for it, and nobody waits for it to choose a card
+	for (const m of w.mates) m.away = m.heard > CO.AWAY;
+	w.waiting = w.mates.some((m) => !m.away && m.lv < w.pl.level);
+	w.allDown = w.pl.dead && w.mates.every((m) => m.dead || m.away);
 }
 /** The host's frame for its guests: the fight (net.js), and what a guest needs beyond what a watcher does: what each
  *  enemy's touch does, every other player, enemy shots with their damage, and whether the fight is waiting. */
@@ -54,7 +58,7 @@ export function hostFrame(w, events) {
 	f.m = w.mates.map((m) => { const s = m.s; return [m.id, m.dex, Math.round(s.x * P), Math.round(s.y * P), Math.round(s.z * P), Math.round(((s.facing % 6.2832) + 6.2832) % 6.2832 * 256 / 6.2832) & 255,
 		(s.grounded ? 1 : 0) | (s.sliding ? 2 : 0) | (s.swimming ? 4 : 0) | (m.dead ? 32 : 0), Math.ceil(m.hp), m.maxHp]; });
 	f.x = w.eshots.map((p) => [p.id, Math.round(p.x * P), Math.round(p.y * P), Math.round(p.z * P), Math.round(p.vx * V), Math.round(p.vy * V), Math.round(p.vz * V), Math.round(p.dmg * 10), Math.max(0, TYPES.indexOf(p.mtype)), Math.round((p.life - p.t) * 100)]);
-	f.c = { wait: w.waiting || w.pl.pending > 0 ? 1 : 0, host: w.pl.mon.dex };
+	f.c = { wait: w.waiting || w.pl.pending > 0 ? 1 : 0, host: w.pl.mon.dex }; if (w.allDown) f.c.over = 1;
 	const gifts = {}; for (const m of w.mates) if (m.gifts.length) gifts[m.id] = m.gifts.splice(0); if (Object.keys(gifts).length) f.c.gifts = gifts;
 	return f;
 }
@@ -89,12 +93,14 @@ export function hostApply(w, id, msg) {
  *  the party (the host is 0). */
 export function guestWorld(room, data, o = {}) {
 	const w = newWorld(room, data, { ...o, guest: true, weather: false, cast: null, bosses: null });
-	w.co = { id: o.id || 1, viewer: new Viewer(), hostT: -1, known: new Map(), shots: new Set(), queue: [], mates: [], hostDex: 0, seenEv: -1 };
+	w.co = { id: o.id || 1, viewer: new Viewer(), hostT: -1, known: new Map(), shots: new Set(), queue: [], mates: [], hostDex: 0, seenEv: -1, silent: 0, stalled: false, over: false };
+	w.partners = () => w.co.mates;
 	return w;
 }
 /** The host's frame arrives. */
 export function guestApply(w, f) {
 	const co = w.co, whole = co.viewer.push(f); if (!whole) return false;
+	co.silent = 0; co.stalled = false; co.over = !!(whole.c && whole.c.over);
 	const at = whole.t * K.TICK, pl = w.pl;
 	// the team's level is the host's: a level you have not chosen a card for yet is yours to choose
 	while (pl.level < whole.p[10]) { pl.level++; pl.pending++; w.stats.levels++; }
@@ -111,6 +117,8 @@ export function guestApply(w, f) {
  *  shots and marks whose moment has come. -> the view (net.js), for the page to draw the rest from. */
 export function guestSync(w, dt = K.TICK) {
 	const co = w.co, v = co.viewer; if (!v.frames.length) return null;
+	// the host has gone quiet (its tab is hidden, its line is down): the fight stands still here until it is heard again
+	co.silent += dt; if (co.silent > CO.STALL) { co.stalled = true; w.waiting = true; }
 	const newest = v.newest, want = newest - NK.DELAY;
 	if (!w.waiting && !(w.pl.pending > 0)) co.hostT = co.hostT < 0 || Math.abs(want - co.hostT) > 0.6 ? want : Math.min(newest, co.hostT + dt * (want - co.hostT > 0.05 ? 1.08 : want - co.hostT < -0.05 ? 0.92 : 1));
 	const view = v.sample(co.hostT); if (!view) return null;

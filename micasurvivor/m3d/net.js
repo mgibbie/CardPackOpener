@@ -26,6 +26,7 @@ export const NK = {
 	KEY_EVERY: 25,       // a tape holds a whole frame every this many (5 s); the rest are differences
 	POS: 100, VEL: 10,   // 1 cm; 0.1 m/s
 	DELAY: 0.15,         // s: a watcher shows the fight this far in the past, so it always has a frame on each side
+	RELAY_DELAY: 1.15,   // …and this far when frames come a second's worth at a time
 	RELAY_CAP: 16000,    // characters in one relay message (the server's)
 	RELAY_ENEMY_EVERY: 5,   // in a bundle of ten frames the enemies are in every fifth: two a second
 	EVENTS: ['melee', 'aura', 'beam', 'chain', 'blast', 'smite', 'bomb', 'heal', 'shield', 'summon', 'hazard', 'boom', 'hit', 'kill', 'hurt', 'dash', 'weather', 'boss', 'enrage', 'level', 'pickup'],
