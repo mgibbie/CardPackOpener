@@ -10,7 +10,7 @@
 //   * a hit's knockback is a real shove: off a ledge, if that is where it sends the body (actors.js).
 // Lengths in the data are the 2D game's world units (32 to a tile); here a tile is a 2 m cell, so 1 unit = 1/16 m.
 import { CELL, K, step, newState, noInput, groundAt } from './sim.js';
-import { newActor, stepActor, knock, flowField, steer, moveActor } from './actors.js';
+import { newActor, stepActor, knock, flowField, steer, moveActor, clearRun } from './actors.js';
 import { rng as makeRng } from './gen.js';
 
 export const U = CELL / 32;   // metres in one 2D world unit
@@ -30,6 +30,10 @@ export const CK = {
 	CC: { freeze: 1.8, para: 3, sleep: 4, conf: 3 }, SLEEP_BONUS: 1.3, PARA_ELECTRIC: 1.35, FROZEN_TAKEN: 1.25, PARA_SLOW: 0.4,
 	CONF_REACH: 380, CONF_CD: 0.6, CONF_KNOCK: 140,
 	UNPORTED: [],   // base move kinds still to come (Expedition's eight are their own step)
+	// enemy behaviours (the 2D game's entities/enemy.js): the ones here; the rest chase until they are ported
+	BEHAVIOURS: ['chase', 'tank', 'runner', 'charger', 'ranged', 'fan', 'beamer', 'zoner', 'bomber'], LATER: ['healer', 'shielder', 'summoner', 'jumper'],
+	CHARGE: { near: 200, aim: 0.55, dash: 0.42, rest: 1.1, speed: 3.4 }, ESHOT: { speed: 190, r: 7, life: 2.4 },
+	FUSE: { reach: 26, r: 62, delay: 1, dmg: 1.4 }, EBEAM: { len: 360, w: 22, delay: 1, dmg: 1.05 }, EZONE: { r: 44, delay: 1.2, dmg: 0.95 }, HAZARD_END: 0.3,
 };
 const TARGETED = ['melee', 'beam', 'projectile', 'boomerang', 'chain', 'meteor', 'dash', 'cone'];
 const reach = (m) => (m.xreach ? m.xreach : m.kind === 'melee' ? m.radius + 30 : m.kind === 'beam' ? m.radius + 20 : m.kind === 'boomerang' ? m.radius + 40 : m.kind === 'chain' ? 280
@@ -57,7 +61,7 @@ export function newWorld(room, data, o = {}) {
 		pl: { s, mon, r: data.radius(mon.dex), maxHp: mon.hp, hp: mon.hp, baseAtk: mon.atk, atkMul: 1, atkK: o.atkK || 1, takenK: o.takenK || 1, cdMul: 1, crit: o.crit || 0, reduction: 0, regen: 0,
 			invuln: 0, meleeT: 0, level: 1, baseReduce: 0, baseRegen: 0, buffs: { atk: { n: 0, t: 0, amount: 0 }, spd: { n: 0, t: 0, amount: 0 }, def: { n: 0, t: 0, amount: 0 }, regen: { n: 0, t: 0, amount: 0 } }, afDmg: o.afDmg === undefined ? 1.1 : o.afDmg, target: null, aim: 0, dead: false,
 			moves: (o.moves || []).map((m) => (Array.isArray(m) ? data.move(m[0], m[1]) : data.move(m))) },
-		enemies: [], shots: [], orbs: [], fields: [], lastPatch: null, field: null, fieldCell: -2,
+		enemies: [], shots: [], orbs: [], fields: [], eshots: [], hazards: [], lastPatch: null, field: null, fieldCell: -2,
 		cast: o.cast || null, spawnAcc: 0, cap: o.cap || CK.CAP, orbitSquash: o.orbitSquash || 1,
 		stats: { dealt: 0, removed: 0, hits: 0, crits: 0, taken: 0, touched: 0, kills: 0, xp: 0, fired: 0, spawned: 0, fell: 0, blocked: 0 },
 		events: [],   // this tick's: { k: 'hit' | 'kill' | 'hurt' | 'shot' | 'melee' | 'beam' | 'aura' | 'chain', … } for the page to draw
@@ -68,7 +72,7 @@ const atk = (pl) => pl.baseAtk * pl.atkMul * (1 + pl.buffs.atk.n * pl.buffs.atk.
 const rnd = (w, a, b) => a + w.rand() * (b - a);
 
 /** Put an enemy in. o: { t (the run time its stats are scaled for; default now), ti (tier), hp, dmg, spd (factors),
- *  dummy (it does not chase and never touches; a shove still moves it), y } */
+ *  dummy (it does not chase and never touches; a shove still moves it), behavior (instead of the species' own), y } */
 export function addEnemy(w, dex, x, z, o = {}) {
 	const d = w.data, t = o.t === undefined ? w.t : o.t, ti = o.ti === undefined ? d.tierAt(t) : o.ti, def = d.defFor(dex, ti), mon = d.mon(dex);
 	const fly = !!d.hovers(dex), cr = d.radius(dex);
@@ -76,12 +80,15 @@ export function addEnemy(w, dex, x, z, o = {}) {
 	const a = newActor(w.room, { x, z, y: o.y, r: Math.min(0.45, cr), speed: def.spd * (1 + Math.min(0.35, t / 1400)) * (o.spd === undefined ? 1 : o.spd) * U, fly, hover: CK.FLY_HOVER });
 	const e = { id: w.nextId++, a, dex, def, types: mon.types && mon.types.length ? mon.types : ['normal'], cr, fly, maxHp, hp: maxHp,
 		dmg: def.dmg * (1 + t / 420) * CK.DMG_K * (o.dmg || 1), xp: Math.round(def.xp * CK.XP_K), touchCd: 0, frozenT: 0, paraT: 0, sleepT: 0, confT: 0, confCd: 0, zig: 0, slow: 0, slowT: 0, burn: 0, burnT: 0, burnTick: 0, poison: 0, poisonT: 0, poisonTick: 0,
-		dead: false, dummy: !!o.dummy, flash: 0 };
+		dead: false, dummy: !!o.dummy, flash: 0, phase: 'walk', pt: 0, dx: 0, dz: 0, shotCd: 0 };
 	e.atkType = e.types[0];
+	e.behavior = o.behavior || (CK.BEHAVIOURS.includes(def.behavior) ? def.behavior : 'chase');
+	if (KEEPS.includes(e.behavior) && def.shotCd) e.shotCd = rnd(w, 0.3, def.shotCd);
 	w.enemies.push(e); w.stats.spawned++;
 	return e;
 }
 const bodyH = (e) => Math.max(CK.BODY_MIN, e.cr * 2);
+const KEEPS = ['ranged', 'fan', 'beamer', 'zoner'];   // they hold their distance and attack from it
 
 // ---------------------------------------------------------------- damage
 function hurtEnemy(w, e, amount, kx, kz, knockU) {
@@ -127,8 +134,9 @@ export function applyState(w, e, kind) {
 	if (kind === 'freeze') { e.sleepT = 0; e.confT = 0; } else if (kind === 'sleep') e.confT = 0;
 	return dur;
 }
-function hurtPlayer(w, amount, type) {
+function hurtPlayer(w, amount, type, through = false) {
 	const pl = w.pl;
+	if (through && pl.invuln < 1e8) pl.invuln = 0;   // (a telegraphed attack: the moment of grace after a hit does not save you)
 	if (pl.invuln > 0 || pl.dead) return 0;
 	if (type) amount *= w.data.typeMult(type, pl.mon.types);
 	amount *= pl.takenK;
@@ -422,6 +430,83 @@ function resolve(w) {
 
 // ---------------------------------------------------------------- enemies
 const WISH = [0, 0];
+const shotDmg = (e) => (e.def.shotDmg || 10) * (e.dmg / e.def.dmg);
+/** An enemy's shot (or a fan of them): a ball aimed at your chest, up or down. */
+function enemyShoot(w, e, spread = 0, n = 1, k = 1) {
+	const s = w.pl.s, oy = e.a.y + CK.MUZZLE, dx = s.x - e.a.x, dz = s.z - e.a.z, h = Math.hypot(dx, dz) || 1, pitch = Math.atan2(s.y + CK.MUZZLE - oy, h), base = Math.atan2(dz, dx), sp = CK.ESHOT.speed * U, c = Math.cos(pitch);
+	for (let i = 0; i < n; i++) { const a = base + (n === 1 ? 0 : (i / (n - 1) - 0.5) * spread);
+		w.eshots.push({ id: w.nextId++, x: e.a.x, y: oy, z: e.a.z, vx: Math.cos(a) * c * sp, vy: Math.sin(pitch) * sp, vz: Math.sin(a) * c * sp, dmg: shotDmg(e) * k, r: CK.ESHOT.r * U, life: CK.ESHOT.life, t: 0, mtype: e.atkType }); }
+	w.events.push({ k: 'eshot', id: e.id, n });
+}
+/** A telegraphed attack: a mark on the ground that goes off after `delay`. kind 'zone' (a circle) or 'beam' (a bar). */
+function hazard(w, h) { const o = Object.assign({ id: w.nextId++, t: 0, hit: false }, h); w.hazards.push(o); w.events.push({ k: 'hazard', h: o }); return o; }
+function special(w, e) {
+	const s = w.pl.s, d = e.def;
+	if (e.behavior === 'fan') { const n = d.fanN || 5; enemyShoot(w, e, n === 3 ? 0.6 : 0.9, n, 0.65); }
+	else if (e.behavior === 'beamer') hazard(w, { kind: 'beam', x: e.a.x, y: e.a.y, z: e.a.z, angle: Math.atan2(s.z - e.a.z, s.x - e.a.x), len: CK.EBEAM.len * U, w: CK.EBEAM.w * U, delay: CK.EBEAM.delay, dmg: shotDmg(e) * CK.EBEAM.dmg, type: e.atkType });
+	else if (e.behavior === 'zoner') { const n = Math.floor(1 + w.rand() * (d.zones || 3));
+		for (let i = 0; i < n; i++) { const x = s.x + (i ? rnd(w, -70, 70) * U : 0), z = s.z + (i ? rnd(w, -55, 55) * U : 0); hazard(w, { kind: 'zone', x, z, y: i ? groundAt(w.room, x, z) : s.grounded ? s.y : groundAt(w.room, x, z), r: CK.EZONE.r * U, delay: CK.EZONE.delay, dmg: shotDmg(e) * CK.EZONE.dmg, type: e.atkType }); } }
+	else enemyShoot(w, e);
+}
+/** What an enemy that is free to act does this tick: where it wants to go (WISH) and at what speed factor. */
+function behave(w, e, dt) {
+	const pl = w.pl, s = pl.s, dx = s.x - e.a.x, dz = s.z - e.a.z, dist = Math.hypot(dx, dz) || 1e-9, ux = dx / dist, uz = dz / dist, level = Math.abs(s.y - e.a.y) <= CK.REACH_UP || e.fly;
+	steer(w.room, w.field, e.a, WISH);
+	const b = e.behavior;
+	if (b === 'runner') {   // it goes where you are GOING
+		const lead = Math.max(0, Math.min(1.4, dist / Math.max(60 * U, e.a.speed))), tx = s.x + s.vx * lead, tz = s.z + s.vz * lead;
+		if (e.fly || clearRun(w.room, e.a.x, e.a.z, e.a.y, tx, tz)) { const l = Math.hypot(tx - e.a.x, tz - e.a.z) || 1; WISH[0] = (tx - e.a.x) / l; WISH[1] = (tz - e.a.z) / l; }
+		return 1;
+	}
+	if (b === 'bomber') {
+		if (e.phase === 'fuse') { WISH[0] = WISH[1] = 0; e.pt -= dt; e.flash = Math.floor(e.pt * 10) % 2 ? 0.05 : 0; if (e.pt <= 0) { e.hp = 0; e.dead = true; w.stats.kills++; w.stats.xp += e.xp; w.events.push({ k: 'kill', id: e.id, x: e.a.x, y: e.a.y, z: e.a.z, xp: e.xp }); } return 1; }
+		if (dist < e.cr + pl.r + CK.FUSE.reach * U && level) { e.phase = 'fuse'; e.pt = CK.FUSE.delay; WISH[0] = WISH[1] = 0; hazard(w, { kind: 'zone', x: e.a.x, y: e.a.y, z: e.a.z, r: CK.FUSE.r * U, delay: CK.FUSE.delay, dmg: e.dmg * CK.FUSE.dmg, type: e.atkType }); }
+		return 1;
+	}
+	if (b === 'charger') {   // it stops, takes aim, and comes straight through where you were
+		e.pt -= dt;
+		if (e.phase === 'walk') { if (dist < CK.CHARGE.near * U && e.pt <= 0 && level) { e.phase = 'aim'; e.pt = CK.CHARGE.aim; w.events.push({ k: 'aim', id: e.id }); } return 1; }
+		if (e.phase === 'aim') { WISH[0] = WISH[1] = 0; if (e.pt <= 0) { e.phase = 'dash'; e.pt = CK.CHARGE.dash; e.dx = ux; e.dz = uz; } return 1; }
+		WISH[0] = e.dx; WISH[1] = e.dz; if (e.pt <= 0) { e.phase = 'walk'; e.pt = CK.CHARGE.rest; }
+		return CK.CHARGE.speed;
+	}
+	if (KEEPS.includes(b)) {
+		const range = (e.def.range || 200) * U, keep = range * 0.82;
+		// (3D: it must SEE you to hold its ground and attack; with a wall between you it comes round like anyone else)
+		const sees = dist < range && clearLine(w.room, e.a.x, e.a.y + CK.MUZZLE, e.a.z, s.x, s.y + CK.MUZZLE, s.z);
+		e.shotCd -= dt * (e.paraT > 0 ? CK.PARA_SLOW : 1);
+		if (!sees) return 1;
+		let k = 1;
+		if (dist < keep * 0.75) { WISH[0] = -ux; WISH[1] = -uz; k = 0.8; } else if (dist < keep) { WISH[0] = ux; WISH[1] = uz; k = 0.1; }
+		if (e.shotCd <= 0) { e.shotCd = e.def.shotCd || 2; special(w, e); }
+		return k;
+	}
+	return 1;
+}
+/** Enemy shots fly and hit; marks on the ground go off. */
+function enemyAttacks(w, dt) {
+	const pl = w.pl, s = pl.s, high = Math.max(CK.BODY_MIN, pl.r * 2);
+	for (let i = w.eshots.length - 1; i >= 0; i--) {
+		const p = w.eshots[i];
+		p.t += dt; if (p.t >= p.life) { w.eshots.splice(i, 1); continue; }
+		p.x += p.vx * dt; p.y += p.vy * dt; p.z += p.vz * dt;
+		if (groundAt(w.room, p.x, p.z) > p.y) { w.eshots.splice(i, 1); continue; }   // cover: terrain stops it
+		const dx = p.x - s.x, dz = p.z - s.z, rr = p.r + pl.r;
+		if (dx * dx + dz * dz < rr * rr && p.y > s.y - p.r && p.y < s.y + high + p.r) { if (!pl.dead) hurtPlayer(w, p.dmg, p.mtype); w.eshots.splice(i, 1); }   // (it is spent even if it did not hurt)
+	}
+	for (let i = w.hazards.length - 1; i >= 0; i--) {
+		const h = w.hazards[i];
+		h.t += dt;
+		if (!h.hit && h.t >= h.delay) {
+			h.hit = true; w.events.push({ k: 'boom', h });
+			let inside = !pl.dead && Math.abs(s.y - h.y) <= CK.REACH_UP;   // (3D: a mark on the ground reaches about a metre up: jump clear of it)
+			if (inside && h.kind === 'zone') { const rr = h.r + pl.r * 0.6; inside = (s.x - h.x) ** 2 + (s.z - h.z) ** 2 < rr * rr; }
+			else if (inside) { const ca = Math.cos(h.angle), sa = Math.sin(h.angle), px = s.x - h.x, pz = s.z - h.z, along = px * ca + pz * sa; inside = along >= -pl.r && along <= h.len + pl.r && Math.abs(-px * sa + pz * ca) <= h.w / 2 + pl.r * 0.6; }
+			if (inside) hurtPlayer(w, h.dmg, h.type, true);
+		}
+		if (h.hit && h.t >= h.delay + CK.HAZARD_END) w.hazards.splice(i, 1);
+	}
+}
 /** A confused enemy: it weaves toward the nearest other enemy and hits it (1.8 × its damage + 3 % of the other's HP). */
 function confused(w, e, dt) {
 	let tgt = null, best = CK.CONF_REACH * U;
@@ -455,7 +540,7 @@ function updateEnemies(w, dt) {
 		let k = 1 - e.slow;
 		if (e.dummy || e.frozenT > 0 || e.sleepT > 0) WISH[0] = WISH[1] = 0;   // (only a shove moves it)
 		else if (e.confT > 0) { k *= 0.9; confused(w, e, dt); }
-		else { steer(w.room, w.field, e.a, WISH); if (e.paraT > 0) k *= CK.PARA_SLOW; }
+		else { k *= behave(w, e, dt); if (e.dead) continue; if (e.paraT > 0) k *= CK.PARA_SLOW; }
 		stepActor(e.a, w.room, WISH[0], WISH[1], dt, k);
 		if (e.a.fell > 1) { w.stats.fell++; w.events.push({ k: 'fell', id: e.id, h: e.a.fell }); }
 		if (e.a.gone) { e.dead = true; }
@@ -525,6 +610,7 @@ export function tick(w, input, dt = K.TICK) {
 	moveShots(w, dt);
 	resolve(w);
 	if (!pl.dead) updateFields(w, dt);
+	enemyAttacks(w, dt);
 	return w;
 }
 
@@ -536,5 +622,7 @@ export function hashWorld(w) {
 	for (const e of w.enemies) { add(e.id); add(e.a.x); add(e.a.y); add(e.a.z); add(e.hp); }
 	for (const p of w.shots) { add(p.x); add(p.y); add(p.z); }
 	for (const f of w.fields) { add(f.x); add(f.z); add(f.t); }
+	for (const p of w.eshots) { add(p.x); add(p.y); add(p.z); }
+	for (const h of w.hazards) { add(h.x); add(h.z); add(h.t); }
 	return h.toString(16).padStart(8, '0');
 }

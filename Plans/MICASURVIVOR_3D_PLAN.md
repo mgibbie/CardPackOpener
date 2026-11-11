@@ -383,6 +383,30 @@ bosses; XP and level-ups; damage numbers and hit effects. Move names on the test
 
 Tests: parity 37 checks, combat 52 checks, the page test 57.
 
+## 5.6 P3, third part: built (2026-11-11)
+
+- **Enemy behaviours** from the 2D game's own table of who does what: chargers (stop 200 units out, aim 0.55 s,
+  come through at 3.4 × speed), ranged enemies (walk into range, hold their distance, back off when you close in,
+  shoot), fans of shots, beamers and zoners (a mark on the ground that goes off after a delay, through your moment
+  of grace), bombers (a fuse, and they go with the blast), runners (they go where you are going). Healers,
+  shielders, summoners and jumpers chase until they are ported.
+- **What height changes.** A ranged enemy must see you to hold its ground and shoot; with a wall between you it
+  comes round instead. Its shot stops at terrain and passes under you when you are high in a jump. A mark on the
+  ground reaches about 1.2 m up: jump clear of it, or stand on the ledge above it. A charger only takes aim at you
+  on its own level, and its charge can carry it off a ledge. A bomber on the ledge above does not light.
+- **The comparison with 2D** covers them (46 checks): time to the first hit, HP lost and where the enemy ends up
+  match for a charger, a ranged enemy, a fan, a beamer, a zoner and a bomber.
+- **On the page:** enemy shots, warning marks that flash when they go off, and damage numbers over each hit
+  (`&cast=58,43,32,63` picks who arrives).
+
+One limit found: a 3D walker follows the level's cells beyond 14 m and only runs straight at you inside that, so
+on open ground it arrives a little later than a 2D enemy from far away.
+
+**Still to do in P3:** Expedition's eight move kinds; abilities and held items; healers, shielders, summoners,
+jumpers; bosses; XP and level-ups (with P5's upgrade cards).
+
+Tests: parity 46 checks, combat 64 checks, the page test 59.
+
 ## 6. Dive in 2D: built
 
 **D0 — find the stairs (small; can ship first, on its own).** *Built 2026-11-11 (`overworld/tests/micasurvivor_dive_stairs_test.mjs`). As built: the stairs took their own orange mark, so the rocks and Meowth keep their gold; the HUD arrow comes up after 25 s on a floor, or at once when its boss falls.*

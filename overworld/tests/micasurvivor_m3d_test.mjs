@@ -274,6 +274,18 @@ try {
 		A(fv.moves === 6 && fv.kinds.join() === 'meteor,mine,patch,turret' && fv.hits > 10 && fv.buffs >= 2, `a turret, mines, a trail, meteors, a dash and a buff all run on the page (${fv.hits} hits in 4 s, Swords Dance × ${fv.buffs})`, JSON.stringify(fv));
 		await shot(fk.page, 'm3d_fight_kinds.png');
 		await fk.page.close();
+		// enemies that do more than walk at you: their shots, their marks on the ground, and damage numbers
+		const fb = await open({ width: 1000, height: 640, deviceScaleFactor: 1 }, '?gen=7&fight=1&moves=ember:3&cast=58,43,32,63&cap=8');
+		const bv = await fb.page.evaluate(async () => { const m = window.__m3d, w = m.world, wait = (ms) => new Promise(r => setTimeout(r, ms)); w.pl.invuln = 1e9;
+			for (const [d, dx, dz] of [[58, 7, 0], [43, -7, 0], [32, 0, 7], [63, 0, -7]]) { const e = m.addEnemy(d, m.state.x + dx, m.state.z + dz, { hp: 30 }); e.shotCd = 0.3; }
+			let eshots = 0, marks = 0, nums = 0, lit = 0;
+			for (let i = 0; i < 30; i++) { await wait(100); eshots = Math.max(eshots, w.eshots.length); marks = Math.max(marks, w.hazards.length); nums = Math.max(nums, m.numbers.length);
+				const el = document.getElementById('nums'), d = el.getContext('2d').getImageData(0, 0, el.width, el.height).data; let n = 0; for (let k = 3; k < d.length; k += 16) if (d[k] > 60) n++; lit = Math.max(lit, n); }
+			return { eshots, marks, nums, lit, behaviours: [...new Set(w.cast.map(d => window.G.Enemies.behaviorOf(window.G.DEX_BY[d])))].sort(), sheets: w.cast.every(d => m.sheets.has(d + '/Walk')) }; });
+		A(bv.sheets && bv.behaviours.join() === 'beamer,fan,ranged,zoner' && bv.eshots >= 3 && bv.marks >= 1, `a ranged enemy, a fan, a zoner and a beamer round you: their shots are in the air (${bv.eshots} at once) and their marks on the ground (${bv.marks})`, JSON.stringify(bv));
+		A(bv.nums >= 1 && bv.lit > 20, `your hits show as damage numbers over the scene (${bv.nums} at once)`, JSON.stringify(bv));
+		await shot(fb.page, 'm3d_fight_behaviours.png');
+		await fb.page.close();
 		// without &fight=1 a generated level has no fight
 		const nf = await open({ width: 900, height: 600, deviceScaleFactor: 1 }, '?gen=7&n=5');
 		const nv = await nf.page.evaluate(() => ({ world: window.__m3d.world, hud: document.getElementById('hud').textContent }));

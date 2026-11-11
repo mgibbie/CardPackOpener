@@ -30,7 +30,7 @@ const TYPES = Q.get('types') ? Q.get('types').split(',') : SPECIES.types;
 const TUNE = tuneFor(TYPES);
 const TRAITS = TYPES.filter((t) => TYPE_TRAITS[t]);
 const GG = window.G || {};
-const FIGHT_CAST = [19, 16, 43, 74, 133, 41, 92, 1, 4, 7].filter((d) => d !== DEX && META[d] && META[d].a && META[d].a.Walk && !META[d].src);
+const FIGHT_CAST = (Q.get('cast') ? Q.get('cast').split(',').map(Number) : [19, 16, 43, 74, 133, 41, 92, 1, 58, 63, 32]).filter((d) => d !== DEX && META[d] && META[d].a && META[d].a.Walk && !META[d].src);
 const MOVES = !FIGHT ? [] : Q.get('moves') ? Q.get('moves').split(',').map((m) => { const [id, lv] = m.split(':'); return [id, +lv || 1]; }).filter((m) => GG.Moves.BY_ID[m[0]])
 	: [[GG.Moves.startFor(SPECIES), 3], ['tackle', 2]].filter((m, i, a) => a.findIndex((q) => q[0] === m[0]) === i);
 const world = FIGHT ? newWorld(room, dataFrom(GG), { dex: DEX, moves: MOVES, seed: (GEN + 1) * 7919, tune: TUNE, cast: FIGHT_CAST, cap: Q.has('cap') ? +Q.get('cap') | 0 : undefined }) : null;
@@ -179,6 +179,7 @@ function draw(t) {
 		for (const p of world.orbs) shots.add(p.x, p.y, p.z, Math.max(0.16, p.r), TYPE_COLOR[p.mtype]);
 		// what lies in the world: mines (a small ball on the floor), turrets (a ball that hangs and bobs), meteors (a ball
 		// coming down on its mark), patches (a disc on the floor, drawn once, fading over its life)
+		for (const p of world.eshots) shots.add(p.x, p.y, p.z, Math.max(0.2, p.r), '#ff5f8f');   // an enemy's shot: always the same angry pink
 		for (const f of world.fields) {
 			const c = TYPE_COLOR[f.m.type];
 			if (f.kind === 'mine') shots.add(f.x, f.y + 0.18, f.z, 0.2, c);
@@ -218,6 +219,7 @@ function frame(now) {
 	perf.sim.push(performance.now() - t0); if (perf.sim.length > 240) perf.sim.shift();
 	if (flashes) flashes.update(dt);
 	draw(now / 1000);
+	if (world) drawNumbers(dt);
 	if ((simTicks & 15) === 0) showHud();
 	if (GEN !== null) { showMap(); if (!leaving && state.grounded && exitDist() < 1.5) { leaving = true; note('exit reached: next level…', 4000); nextLevel(); } }
 }
@@ -249,9 +251,33 @@ function fightEvents() {
 		else if (ev.k === 'chain') { let a = [state.x, state.y + CK.MUZZLE, state.z]; for (const b of ev.links) { const d = [b[0] - a[0], b[1] - a[1], b[2] - a[2]], l = Math.hypot(d[0], d[1], d[2]) || 1; flashes.bar(a, [d[0] / l, d[1] / l, d[2] / l], l, 0.18, col(ev.id), 0.16); a = b; } }
 		else if (ev.k === 'blast') flashes.arc(ev.x, ev.y, ev.z, ev.r, 0, 6.2832, col(ev.id), 0.3, 0.4);
 		else if (ev.k === 'dash') flashes.bar(ev.from, ev.dir, Math.max(0.1, ev.len), ev.w * 0.5, col(ev.id), 0.25);
+		else if (ev.k === 'hazard' || ev.k === 'boom') {   // a mark on the ground fills in as a warning, then flashes when it goes off
+			const h = ev.h, c = ev.k === 'boom' ? '#ffffff' : TYPE_COLOR[h.type] || '#ff7b3d', life = ev.k === 'boom' ? 0.3 : h.delay;
+			if (h.kind === 'zone') flashes.arc(h.x, h.y, h.z, h.r, 0, 6.2832, c, life, ev.k === 'boom' ? 0 : 0.86);
+			else flashes.bar([h.x, h.y + (ev.k === 'boom' ? 0.6 : 0.1), h.z], [Math.cos(h.angle), 0, Math.sin(h.angle)], h.len, ev.k === 'boom' ? h.w : h.w * 0.5, c, life);
+		}
+		else if (ev.k === 'hit') numbers.push({ x: ev.x, y: ev.y + 0.6, z: ev.z, text: String(Math.max(1, Math.round(ev.d))), css: ev.crit ? '#ffe14d' : ev.eff > 1.2 ? '#ffffff' : ev.eff < 0.9 ? '#9aa6b5' : '#f2ede2', big: ev.crit || ev.eff > 1.2, t: 0 });
 		else if (ev.k === 'hurt') { bob = 0.35; note(`hit for ${ev.d.toFixed(0)}`, 700); }
 	}
 	if (world.pl.dead) note('you are down: R to start the level again', 60000);
+}
+/** (P3) Damage numbers: text that rises from where a hit landed, drawn on a flat canvas over the scene (each is placed
+ *  by projecting its point in the world through the camera). */
+const numbers = [], V3 = new THREE.Vector3();
+function drawNumbers(dt) {
+	const el = document.getElementById('nums'); if (!el) return;
+	if (el.width !== innerWidth || el.height !== innerHeight) { el.width = innerWidth; el.height = innerHeight; }
+	const g = el.getContext('2d'); g.clearRect(0, 0, el.width, el.height);
+	if (numbers.length > 80) numbers.splice(0, numbers.length - 80);
+	g.textAlign = 'center'; g.lineJoin = 'round';
+	for (let i = numbers.length - 1; i >= 0; i--) {
+		const n = numbers[i]; n.t += dt; if (n.t > 0.7) { numbers.splice(i, 1); continue; }
+		V3.set(n.x, n.y + n.t * 1.6, n.z).project(camera); if (V3.z > 1 || V3.z < -1) continue;
+		const x = (V3.x * 0.5 + 0.5) * el.width, y = (-V3.y * 0.5 + 0.5) * el.height;
+		g.globalAlpha = Math.min(1, (0.7 - n.t) * 4); g.font = `700 ${n.big ? 20 : 15}px ui-sans-serif, system-ui, sans-serif`;
+		g.lineWidth = 3; g.strokeStyle = 'rgba(12, 18, 30, .85)'; g.strokeText(n.text, x, y); g.fillStyle = n.css; g.fillText(n.text, x, y);
+	}
+	g.globalAlpha = 1;
 }
 let noteText = '', noteUntil = 0;
 function note(t, ms) { noteText = t; noteUntil = performance.now() + ms; }
@@ -288,7 +314,7 @@ function showHud() {
 
 // what a test (and a curious owner in the console) can reach
 window.__m3d = {
-	get ready() { return ready; }, state, room, K, TUNE, TYPES, TRAITS, cam, crowd, sheets, stats, gen: GEN, biome: BIOME, world, addEnemy: (dex, x, z, o) => addEnemy(world, dex, x, z, o), holdExit: false, get leaving() { return leaving; },
+	get ready() { return ready; }, state, room, K, TUNE, TYPES, TRAITS, cam, crowd, sheets, stats, gen: GEN, biome: BIOME, world, numbers, addEnemy: (dex, x, z, o) => addEnemy(world, dex, x, z, o), holdExit: false, get leaving() { return leaving; },
 	setInput(o) { override = o ? { ...noInput(), ...o } : null; },
 	rowOf: (facing, yaw) => facingRow(facing, yaw === undefined ? cam.yaw : yaw),
 	quadOf: (key, frame, row) => { const s = sheets.get(key); return spriteQuad(s.meta, s.img, frame, row, 1, s.lift); },

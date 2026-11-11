@@ -13,6 +13,9 @@
 //     wall and flies off a ledge, a mine or a patch only catches bodies on its own level, a turret shoots up at a
 //     target above it, a boomerang comes back to you wherever you have gone, a homing shot curves
 //   * buffs stack and run out; the four control states do what the 2D game's do
+//   * enemy behaviours and height: a ranged enemy must see you to shoot (behind a wall it comes round instead), its
+//     shot stops at terrain and passes under you when you jump; a mark on the ground can be jumped clear of, and goes
+//     through your moment of grace; a charger charges off a ledge; a bomber on the ledge above does not light
 //   * arrivals: enemies appear 16-32 m away on floor they can walk to you from, never past the cap
 //   * the fight is deterministic (same seed: the same fight to the last digit), stays in the world through 3 minutes
 //     of random play on generated levels, and a tick with 110 enemies is cheap
@@ -223,6 +226,52 @@ const at = (cx, cz) => [(cx + 0.5) * CELL, (cz + 0.5) * CELL];
 	let states = 0; for (let i = 0; i < 60 * 120; i++) { tick(d, null); states += d.events.filter((q) => q.k === 'state').length; }
 	const fresh = states / d.stats.hits;
 	A(d.stats.hits > 150 && fresh > 0.04 && fresh < ts.ccp, `Thunder Shock's ${ts.ccp * 100} % chance to paralyse really rolls (${states} fresh paralyses in ${d.stats.hits} hits; hits on an already paralysed target do not count as fresh)`, [states, d.stats.hits]);
+}
+
+// ---------------------------------------------------------------- enemy behaviours and height
+{
+	const r = yard(), RANGED = 58, FAN = 43, BOMB = 74, CHARGE = 133, BEAM = 63, ZONE = 32;
+	const beh = (d) => G.Enemies.behaviorOf(G.DEX_BY[d]);
+	A(beh(RANGED) === 'ranged' && beh(FAN) === 'fan' && beh(BOMB) === 'bomber' && beh(CHARGE) === 'charger' && beh(BEAM) === 'beamer' && beh(ZONE) === 'zoner', 'the species used here: Growlithe shoots, Oddish fans, Geodude explodes, Eevee charges, Abra beams, Nidoran marks the ground (the 2D game\'s own table)', [RANGED, FAN, BOMB, CHARGE, BEAM, ZONE].map(beh));
+	const mk = (dex, ex, ez, px, pz) => { const w = newWorld(r, data, { dex: 25, moves: [], seed: 6 }); w.pl.s.x = px; w.pl.s.z = pz; w.pl.s.y = groundAt(r, px, pz); const e = addEnemy(w, dex, ex, ez); e.shotCd = 0.2; return { w, e }; };
+	// in the open, 8 m away: it shoots and hits
+	const open = mk(RANGED, 13 * CELL, 22 * CELL, 13 * CELL, 26 * CELL); let fired = 0; for (let i = 0; i < 240; i++) { tick(open.w, null); fired += open.w.events.filter((q) => q.k === 'eshot').length; }
+	A(fired >= 2 && open.w.stats.taken > 0 && open.w.stats.touched === 0, `a ranged enemy with a clear view shoots (${fired} shots in 4 s) and they hit, without it ever touching you`, open.w.stats);
+	// the 4 m wall between you: no shot; it walks round the wall's end instead of standing off
+	const wall = mk(RANGED, 6 * CELL, 15 * CELL, 11 * CELL, 15 * CELL); let f2 = 0, moved = 0; const x0 = wall.e.a.x, z0 = wall.e.a.z;
+	for (let i = 0; i < 240; i++) { tick(wall.w, null); f2 += wall.w.events.filter((q) => q.k === 'eshot').length; moved = Math.max(moved, Math.hypot(wall.e.a.x - x0, wall.e.a.z - z0)); }
+	A(f2 === 0 && wall.w.stats.taken === 0 && moved > 8, `with a wall between you it does not shoot: it comes round (${moved.toFixed(0)} m in 4 s)`, [f2, moved]);
+	// a shot in the air when you step behind cover stops at the cover; one aimed at your chest passes under a jump
+	const cov = newWorld(r, data, { dex: 25, moves: [], seed: 6 }); cov.pl.s.x = 16 * CELL + 3; cov.pl.s.z = 15 * CELL; cov.pl.s.y = 1.5;
+	cov.eshots.push({ id: 1, x: 10 * CELL, y: 0.8, z: 15 * CELL, vx: 190 * U, vy: 0, vz: 0, dmg: 9, r: 7 * U, life: 2.4, t: 0, mtype: 'fire' }); run(cov, 120);
+	A(cov.eshots.length === 0 && cov.stats.taken === 0, 'a shot fired along the floor at you up on the plateau stops at the plateau\'s side');
+	const flat = makeRoom(30, 30, 0); flat.spawn = [30, 0, 30];
+	const shotAt = (y) => { const w = newWorld(flat, data, { dex: 25, moves: [], seed: 6 }); w.pl.s.y = y; w.pl.s.grounded = y === 0; w.pl.s.vy = y ? 5.5 : 0; w.eshots.push({ id: 1, x: 30 - 190 * U * 0.2, y: 0.8, z: 30, vx: 190 * U, vy: 0, vz: 0, dmg: 9, r: 7 * U, life: 2.4, t: 0, mtype: 'normal' }); run(w, 30); return w.stats.taken; };
+	A(shotAt(0) > 0 && shotAt(1.45) === 0, 'the same shot hits you standing and passes under you while you are high in a jump');
+	// a mark on the ground: through the moment of grace; clear of it in the air
+	const zone = (y, invuln) => { const w = newWorld(flat, data, { dex: 25, moves: [], seed: 6 }); const e = addEnemy(w, ZONE, 36, 30); e.shotCd = 0; e.a.speed = 0; tick(w, null); const made = w.hazards.length; let i = 0; for (; i < 200 && !w.events.some((q) => q.k === 'boom'); i++) { if (i === 60) { w.pl.s.y = y; w.pl.s.grounded = y === 0; w.pl.s.vy = y ? 7 : 0; w.pl.invuln = invuln; } tick(w, null); } return { made, at: i / 60, taken: w.stats.taken }; };
+	const stood = zone(0, 0.4), grace = zone(0, 0.4), jumped = zone(1.3, 0);
+	A(stood.made >= 1 && stood.taken > 0 && grace.taken > 0 && Math.abs(stood.at - 1.2) < 0.1, `a zoner's mark goes off after ${stood.at.toFixed(2)} s and hurts you even in the moment of grace after another hit`, [stood, grace]);
+	A(jumped.made >= 1 && jumped.taken === 0, 'in the air above it (more than 1.2 m up) when it goes off, you are clear', jumped);
+	// a beam's mark along the floor does not reach the plateau
+	const bw = newWorld(r, data, { dex: 25, moves: [], seed: 6 }); bw.pl.s.x = 16 * CELL + 2; bw.pl.s.z = 15 * CELL; bw.pl.s.y = 1.5; const be = addEnemy(bw, BEAM, 12 * CELL, 15 * CELL); be.shotCd = 0; be.a.speed = 0; be.fly = false; be.a.fly = false; be.a.y = 0; be.a.grounded = true;
+	let booms = 0; for (let i = 0; i < 150; i++) { tick(bw, null); booms += bw.events.filter((q) => q.k === 'boom').length; }
+	A(booms >= 1 && bw.stats.taken === 0, 'a beamer on the floor below sees you up on the plateau and fires its line along the floor, under you', [booms, bw.stats.taken]);
+	// a charger on the plateau, you on the floor below within its 200 units: it will not aim (you are not on its level); on a level, it charges and overshoots off the edge
+	const cw = newWorld(r, data, { dex: 25, moves: [], seed: 6 }); cw.pl.s.x = 16 * CELL + 0.9; cw.pl.s.z = 15 * CELL; cw.pl.s.y = 1.5; cw.pl.invuln = 1e9;
+	const ce = addEnemy(cw, CHARGE, 16 * CELL + 4.4, 15 * CELL); let aimed = 0, fell = 0; for (let i = 0; i < 200; i++) { tick(cw, null); aimed += cw.events.filter((q) => q.k === 'aim').length; const ev = cw.events.find((q) => q.k === 'fell'); if (ev) fell = ev.h; }
+	A(aimed >= 1 && near(fell, 1.5, 0.01) && ce.a.y === 0 && ce.a.x < 16 * CELL, `a charger takes aim across the plateau, comes through you and goes off the edge behind you (a ${fell.toFixed(1)} m fall)`, [aimed, fell, ce.a]);
+	const lw = newWorld(r, data, { dex: 25, moves: [], seed: 6 }); lw.pl.s.x = 16 * CELL - 4; lw.pl.s.z = 15 * CELL; const le = addEnemy(lw, CHARGE, 16 * CELL + 3, 15 * CELL); le.a.speed = 0; let a2 = 0; for (let i = 0; i < 120; i++) { tick(lw, null); a2 += lw.events.filter((q) => q.k === 'aim').length; }
+	A(a2 === 0, 'with you on the floor below its ledge it does not take aim (it has to come down to you first)', a2);
+	// a bomber on the ledge above you does not light; next to you on your level it does, and it goes with the blast
+	const bb = newWorld(r, data, { dex: 25, moves: [], seed: 6 }); bb.pl.s.x = 16 * CELL - 0.8; bb.pl.s.z = 15 * CELL; const up = addEnemy(bb, BOMB, 16 * CELL + 0.8, 15 * CELL); up.a.speed = 0; run(bb, 120);
+	const lit0 = up.phase; const dn = addEnemy(bb, BOMB, 16 * CELL - 2.6, 15 * CELL); dn.a.speed = 0; run(bb, 80);
+	A(lit0 === 'walk' && !up.dead && dn.dead && bb.stats.taken > 0, 'a bomber on the ledge above does not light its fuse; one beside you does, hurts you and is gone', [lit0, up.dead, dn.dead, bb.stats.taken]);
+	// all of them at once on a generated level: nothing breaks
+	const room = generate(12, 'meadow'), w = newWorld(room, data, { dex: 25, moves: ['ember', 'tackle'], seed: 21, cast: [RANGED, FAN, BOMB, CHARGE, BEAM, ZONE, RAT] }); w.pl.invuln = 1e9;
+	const seen = { eshot: 0, hazard: 0, boom: 0, aim: 0 }; let bad = '';
+	for (let i = 0; i < 60 * 150; i++) { tick(w, { mx: Math.sin(i / 90), mz: Math.cos(i / 130), jump: i % 300 < 8, crouch: false }); for (const ev of w.events) if (seen[ev.k] !== undefined) seen[ev.k]++; if (i % 60 === 0) for (const p of w.eshots) if (!Number.isFinite(p.x + p.y + p.z)) bad = 'shot'; }
+	A(!bad && seen.eshot > 10 && seen.hazard > 5 && seen.boom > 5 && seen.aim > 2 && w.eshots.length < 80, `150 s against all of them on a generated level: ${seen.eshot} volleys, ${seen.hazard} marks, ${seen.aim} charges, and the fight goes on`, [seen, w.stats]);
 }
 
 // ---------------------------------------------------------------- arrivals

@@ -12,6 +12,9 @@
 //     (where the 2D game rolls dice for a position or a speed the totals are compared within a margin), and a buff
 //   * the control states, set by hand on both sides: asleep (+30 % and it wakes), frozen (+25 %, it stands still),
 //     paralysed (40 % speed, slower to touch), confused (it hits its neighbour)
+//   * enemy behaviours: a charger (aim, then through you at 3.4 × speed), a ranged enemy (walks into range, holds
+//     its distance, backs off when you are close, shoots), a fan of shots, a beamer and a zoner (a mark on the ground
+//     that goes off after a delay, through your moment of grace), a bomber (a fuse, and it takes itself with it)
 //   * an enemy's touch: a chaser walks up and hits you — the same number of touches, the same HP lost, and it is
 //     knocked back the same distance
 // Lengths: the 2D game's unit is 1/16 m here (32 units = one 2 m cell).
@@ -84,7 +87,7 @@ try {
 			const Wd = G.World, keep = {}, bare = { projectileBlock: () => null, propsInCircle: () => [], isWall: () => false, isFree: () => true, isLiquid: () => false, nearestBreakable: () => null, collide: () => { } };
 			for (const k in bare) if (typeof Wd[k] === 'function') { keep[k] = Wd[k]; Wd[k] = bare[k]; }
 			try {
-				G.EnemyMgr.clear(); G.Projectiles.clear(); G.Projectiles.clearOrbs(pl); G.Combat.clearFields(); G.EnemyMgr.rebuildGrid();
+				G.EnemyMgr.clear(); G.Projectiles.clear(); G.Projectiles.clearOrbs(pl); G.Combat.clearFields(); G.Hazards.clear(); G.EnemyMgr.rebuildGrid();
 				const ms = sc.moves.map(([id, lvl]) => G.Moves.instance(id, lvl || 1));
 				pl.moves = ms; pl.slots = ms.map((m) => [m]); pl.active = 0; pl.statsTaken = {}; pl.dmgDealt = 0; pl.meleeT = 0;
 				pl.hp = pl.maxHp; pl.invuln = sc.hurtable ? 0 : 1e9; pl.dead = false; pl.lastPatch = null;
@@ -93,15 +96,16 @@ try {
 				if (sc.noProc) for (const m of ms) m.ccp = 0;   // (a state's dice are not the same dice on the two sides)
 				let hits = 0, touches = 0, removed = 0, taken = 0;
 				const foes = sc.foes.map((f) => {
-					const def = { dex: f.dex, name: 'T' + f.dex, hp: f.hp || 1e6, spd: f.still ? 0 : f.spd || 56, dmg: f.dmg || 10, xp: 1, behavior: 'chase' };
+					const def = { dex: f.dex, name: 'T' + f.dex, hp: f.hp || 1e6, spd: f.still ? 0 : f.spd || 56, dmg: f.dmg || 10, xp: 1, behavior: f.b || 'chase', ...(f.def || {}) };
 					const e = new G.Enemy(def, pl.x + f.dx, pl.y + (f.dy || 0), { hp: 1, spd: 1, dmg: 1 }, false);
 					e.flying = true;   // (straight lines: no walls or pathing between you)
 					const hurt = e.hurt.bind(e); e.hurt = (...a) => { const h0 = e.hp; const r = hurt(...a); removed += h0 - e.hp; if (a[4] !== undefined || a.length > 2) hits++; return r; };
+					if (f.shotCd !== undefined) e.shotCd = f.shotCd;
 					G.EnemyMgr.add(e); if (f.state) G.Status.apply(e, f.state); return e;
 				});
 				G.EnemyMgr.rebuildGrid();
 				const plHurt = pl.hurt.bind(pl); pl.hurt = (...a) => { const h0 = pl.hp, was = pl.invuln > 0; const r = plHurt(...a); touches++; taken += h0 - pl.hp; return r; };
-				const x0 = pl.x, y0 = pl.y; let t = 0, far = 0, landed = 0;
+				const x0 = pl.x, y0 = pl.y; let t = 0, far = 0, landed = 0, first = 0;
 				const land = G.Combat.land; let count = 0;
 				for (let i = 0, n = Math.round(sc.secs / DT); i < n; i++) {
 					t += DT;
@@ -118,10 +122,12 @@ try {
 					G.Projectiles.update(DT, pl, G.EnemyMgr.all());
 					G.Combat.resolve(DT, pl, t);
 					G.Combat.updateFields(DT);
+					G.Hazards.update(DT);
 					for (const e of foes) far = Math.max(far, Math.hypot(e.x - x0, e.y - y0));
+					if (!first && taken > 0) first = t;
 				}
 				pl.hurt = plHurt;
-				return { dealt: pl.dmgDealt, removed, taken, touches, hp: pl.hp, maxHp: pl.maxHp, far, foes: foes.map((e) => ({ hp: e.maxHp - e.hp, d: Math.hypot(e.x - x0, e.y - y0), dead: e.dead })),
+				return { first, dealt: pl.dmgDealt, removed, taken, touches, hp: pl.hp, maxHp: pl.maxHp, far, foes: foes.map((e) => ({ hp: e.maxHp - e.hp, d: Math.hypot(e.x - x0, e.y - y0), dead: e.dead })),
 					atkK, afDmg: pl.afDmg, dex: pl.mon.dex, crit: pl.critChance, r: pl.r, reduction: pl.reduction, takenK: G.Abilities.inK(pl, 'normal', null) };
 			} finally { for (const k in keep) Wd[k] = keep[k]; Math.random = R; G.EnemyMgr.clear(); G.Projectiles.clear(); G.Projectiles.clearOrbs(G.Game.player); G.Combat.clearFields(); G.EnemyMgr.rebuildGrid(); G.Game.player.invuln = 1e9; }
 		}
@@ -132,15 +138,16 @@ try {
 			w.pl.baseReduce = ref.reduction; w.pl.invuln = sc.hurtable ? 0 : 1e9;
 			if (sc.noProc) for (const m of w.pl.moves) m.ccp = 0;
 			const foes = sc.foes.map((f) => {
-				const e = C.addEnemy(w, f.dex, 80 + f.dx * U, 80 + (f.dy || 0) * U, { t: 0, ti: 0 });   // (a target that stands still is an enemy with no speed: it still touches, as in 2D)
+				const e = C.addEnemy(w, f.dex, 80 + f.dx * U, 80 + (f.dy || 0) * U, { t: 0, ti: 0, behavior: f.b || 'chase' });   // (a target that stands still is an enemy with no speed: it still touches, as in 2D)
+				if (f.def) Object.assign(e.def = { ...e.def }, f.def); if (f.shotCd !== undefined) e.shotCd = f.shotCd;
 				e.maxHp = e.hp = f.hp || 1e6; e.dmg = f.dmg || 10; e.a.speed = (f.still ? 0 : f.spd || 56) * U;
 				e.fly = false; e.a.fly = false; e.a.y = 0; e.a.grounded = true;   // (flat ground: everyone walks)
 				if (f.state) C.applyState(w, e, f.state);
 				return e;
 			});
-			let far = 0;
-			for (let i = 0, n = Math.round(sc.secs / DT); i < n; i++) { C.tick(w, null, DT); for (const e of foes) far = Math.max(far, Math.hypot(e.a.x - 80, e.a.z - 80) / U); }
-			return { dealt: w.stats.dealt, removed: w.stats.removed, hits: w.stats.hits, taken: w.stats.taken, touches: w.stats.touched, hp: w.pl.hp, maxHp: w.pl.maxHp, far, r: w.pl.r / U,
+			let far = 0, first = 0;
+			for (let i = 0, n = Math.round(sc.secs / DT); i < n; i++) { C.tick(w, null, DT); for (const e of foes) far = Math.max(far, Math.hypot(e.a.x - 80, e.a.z - 80) / U); if (!first && w.stats.taken > 0) first = w.t; }
+			return { first, dealt: w.stats.dealt, removed: w.stats.removed, hits: w.stats.hits, taken: w.stats.taken, touches: w.stats.touched, hp: w.pl.hp, maxHp: w.pl.maxHp, far, r: w.pl.r / U,
 				foes: foes.map((e) => ({ hp: e.maxHp - e.hp, d: Math.hypot(e.a.x - 80, e.a.z - 80) / U, dead: e.dead })) };
 		}
 		window.P = { both(sc) { const a = play2d(sc); return { a, b: play3d(sc, a) }; } };
@@ -213,6 +220,29 @@ try {
 		A(same(r.a.taken, r.b.taken, 0.02), `...for the same HP: ${r.a.taken.toFixed(2)} in 2D, ${r.b.taken.toFixed(2)} in 3D`, r);
 		A(same(r.a.foes[0].d, r.b.foes[0].d, 6), `...and ends the same distance away after its last knock-back (${r.a.foes[0].d.toFixed(1)} / ${r.b.foes[0].d.toFixed(1)} units)`, r);
 		A(same(r.a.r, r.b.r, 1e-6), `your body is the same size (radius ${r.a.r} units)`, [r.a.r, r.b.r]);
+	}
+	// ---------- enemy behaviours: who does more than walk at you
+	{
+		const big = (b, o = {}) => ({ moves: [], foes: [{ dex: 19, dx: o.dx || 150, spd: 56, dmg: 6, hp: 1e6, b, def: o.def, shotCd: o.shotCd }], secs: o.secs || 12, hurtable: true, seed: o.seed });
+		// (they start within 14 m: beyond that a 3D walker follows the level's cells, not a straight line)
+		const hpOf = (r) => `${r.a.taken.toFixed(2)} HP in 2D, ${r.b.taken.toFixed(2)} in 3D`;
+		const ch = await E((sc) => P.both(sc), big('charger', { dx: 220 }));
+		A(ch.a.taken > 0 && Math.abs(ch.a.taken - ch.b.taken) < 0.02 && Math.abs(ch.a.first - ch.b.first) < 0.05, `a charger stops 200 units out, aims 0.55 s and comes through at 3.4 × speed: first hit after ${ch.a.first.toFixed(2)} s / ${ch.b.first.toFixed(2)} s, ${hpOf(ch)} in 12 s`, ch);
+		A(Math.abs(ch.a.foes[0].d - ch.b.foes[0].d) < 3, `...and after 12 s it is in the same place (${ch.a.foes[0].d.toFixed(1)} / ${ch.b.foes[0].d.toFixed(1)} units away)`, ch);
+		const rdef = { shotDmg: 5, shotCd: 2.2, range: 190 };
+		const rg = await E((sc) => P.both(sc), big('ranged', { dx: 220, def: rdef, shotCd: 1 }));
+		A(rg.a.taken > 0 && Math.abs(rg.a.taken - rg.b.taken) < 0.02 && Math.abs(rg.a.first - rg.b.first) < 0.05, `a ranged enemy walks into range, holds its distance and shoots every 2.2 s: first hit after ${rg.a.first.toFixed(2)} s / ${rg.b.first.toFixed(2)} s, ${hpOf(rg)}`, rg);
+		A(Math.abs(rg.a.foes[0].d - rg.b.foes[0].d) < 2 && rg.a.foes[0].d > 100, `...and it stands off at the same distance (${rg.a.foes[0].d.toFixed(1)} / ${rg.b.foes[0].d.toFixed(1)} units)`, rg);
+		const close = await E((sc) => P.both(sc), big('ranged', { dx: 60, def: rdef, shotCd: 1, secs: 6 }));
+		A(Math.abs(close.a.foes[0].d - close.b.foes[0].d) < 2 && close.a.foes[0].d > 100, `too close, it backs away to its distance (from 60 to ${close.a.foes[0].d.toFixed(1)} / ${close.b.foes[0].d.toFixed(1)} units)`, close);
+		const fan = await E((sc) => P.both(sc), big('fan', { dx: 220, def: { shotDmg: 5, shotCd: 3.2, range: 190, fanN: 5 }, shotCd: 1 }));
+		A(fan.a.taken > 0 && Math.abs(fan.a.taken - fan.b.taken) < 0.02 && Math.abs(fan.a.first - fan.b.first) < 0.05, `a fan of five shots: the one down the middle hits (${hpOf(fan)})`, fan);
+		const bm = await E((sc) => P.both(sc), big('beamer', { dx: 220, def: { shotDmg: 5, shotCd: 4.4, range: 260 }, shotCd: 1 }));
+		A(bm.a.taken > 0 && Math.abs(bm.a.taken - bm.b.taken) < 0.02 && Math.abs(bm.a.first - bm.b.first) < 0.05, `a beamer marks a line and fires it a second later: first hit after ${bm.a.first.toFixed(2)} s / ${bm.b.first.toFixed(2)} s, ${hpOf(bm)}`, bm);
+		const zn = await E((sc) => P.both(sc), big('zoner', { dx: 220, def: { shotDmg: 5, shotCd: 4.6, range: 190, zones: 1 }, shotCd: 1 }));
+		A(zn.a.taken > 0 && Math.abs(zn.a.taken - zn.b.taken) < 0.02 && Math.abs(zn.a.first - zn.b.first) < 0.05, `a zoner marks the ground under you and it goes off 1.2 s later: first hit after ${zn.a.first.toFixed(2)} s / ${zn.b.first.toFixed(2)} s, ${hpOf(zn)}`, zn);
+		const bo = await E((sc) => P.both(sc), big('bomber', { dx: 200, secs: 8 }));
+		A(bo.a.taken > 0 && Math.abs(bo.a.taken - bo.b.taken) < 0.02 && Math.abs(bo.a.first - bo.b.first) < 0.05 && bo.a.foes[0].dead && bo.b.foes[0].dead, `a bomber walks up, lights its fuse and goes off a second later, taking itself with it: after ${bo.a.first.toFixed(2)} s / ${bo.b.first.toFixed(2)} s, ${hpOf(bo)}`, bo);
 	}
 	// ---------- a kill
 	{
