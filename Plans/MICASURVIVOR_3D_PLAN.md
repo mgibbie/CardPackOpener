@@ -128,7 +128,7 @@ Three seams have to be cut first, all in 2D, all behaviour-neutral:
 
 ## 5. Dive: phases
 
-**D0 — find the stairs (small; can ship first, on its own).**
+**D0 — find the stairs (small; can ship first, on its own).** *Built 2026-11-11 (`overworld/tests/micasurvivor_dive_stairs_test.mjs`). As built: the stairs took their own orange mark, so the rocks and Meowth keep their gold; the HUD arrow comes up after 25 s on a floor, or at once when its boss falls.*
 - The stairs get their own marker: a distinct shape and colour used by nothing else, larger, pulsing, drawn last so
   nothing covers it, with a rim arrow when off the minimap.
 - Gold rocks and Meowth stop sharing the stairs' colour.
