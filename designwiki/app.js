@@ -2880,6 +2880,118 @@ async function micasurvivorItemsView() {
       msTable(['Upgrade', 'Per level', 'Max level', 'Cost per level'], D.upgrades.map(u => [h('b', null, u.name), u.unit, String(u.max), (u.costs || []).join(' · ')]))));
 }
 
+// ---------------------------------------------------------------- Pair of Pears (#/pair-of-pears)
+// How the game works, every condition and every charm. The tables are built from the game's own rules module
+// (pairofpears/js/pear.js: LEVEL_DECKS, COND_INFO, CHARMS, …), so names, costs and texts can't drift from the game;
+// the "Exactly" notes beside them are written from that module's code.
+let pearsPromise = null;
+function loadPears() {
+  if (!pearsPromise) pearsPromise = import('../pairofpears/js/pear.js' + CB);
+  return pearsPromise;
+}
+const PEARS_COND_EXACT = {
+  special: 'Every Pear has it, always; it is never sold. Matching the two Pears ends the level on the spot: the pairs still on the table count as cleared but pay nothing.',
+  juicy: 'Triples everything that card earns: its Berries (base, Fresh, Tart), its Hearts (Tart, Manzana Charm) and its Stars (Golden).',
+  golden: '+50 Stars for each Golden card in the pair. A fruit that carries Golden has it on both cards, so its pair is worth +100 Stars.',
+  fresh: '+10 Berries for each Fresh card: +20 for the pair.',
+  tart: 'Only if the pair is one of the first 3 pairs matched this level: +10 Berries and +½ Heart for each Tart card (+20 Berries and +1 Heart for the pair). From the 4th pair on it gives nothing.',
+  sticky: 'After a mismatch the card does not turn back. Any two face-up cards of the same fruit pair up by themselves, so the next time you flip its partner the pair is made without spending a guess.',
+  rotten: 'The pair pays nothing at all (no Berries, Hearts or Stars, whatever else is on the cards) and those two cards are gone for the rest of the run: every later level deals one pair fewer of that fruit.',
+  flutter: 'After the pair is matched, one random face-down card is shown for 1 second. It is a peek, not a flip: it does not count as face up.',
+};
+const PEARS_CHARM_EXACT = {
+  coconut: 'Counted per level. Checked first: while it still has a free mismatch left, Lime and Rhubarb are not used.',
+  grape: 'Base Berries become +2 per card (+4 per pair) instead of +1 per card. Juicy triples it.',
+  manzana: '+¾ Heart per card, so +1½ for the pair. Juicy triples it. Hearts never go above 15.',
+  rhubarb: 'Only while you hold more than 15 Berries, and only if Coconut and Lime did not already cover the mismatch.',
+  crabapple: 'No Apple may be flipped at all that level, so it pays when the level ends early: match the Pears before touching an Apple.',
+  eggplant: 'Four extra Kiwi cards (two more pairs), each Tart, in every level from the next one on. They stay even if the charm is sold. Only the first Eggplant you buy adds them.',
+  pumpkin: 'On top of the +2 Hearts every cleared level gives.',
+  lime: 'Counted per level. You need at least 1 Berry. Used only when Coconut has no free mismatch left.',
+  pineapple: 'One of the seven shop conditions (never Special), on a random fruit from the level just cleared. It is a deck boost: every card of that fruit has it from the next level on.',
+  olive: 'Checked after the level\'s +2 Hearts (and Pumpkin\'s +1) have been added, so as the rules stand you can never be at 1 Heart or less when it looks: it does not trigger.',
+  egg: 'It is bought at sell value 3, then 8, 13, 18 … Its only use is to be sold.',
+  plum: 'Each of the two cards gains every condition the other has, for the rest of that level only. It triggers on every match and every mismatch, and each trigger has a 1 in 4 chance to destroy the charm.',
+  mango: 'A deck boost on a random fruit from the level just cleared: every card of that fruit is Juicy from the next level on.',
+  onion: '+4 Berries per ½ Heart actually lost. A mismatch that Coconut, Lime or Rhubarb covered loses no Heart and pays nothing.',
+  persimmon: 'Triggers when a mismatch takes you to 0 Hearts: you are set to 1 Heart, your Berries go to 0 and the charm is gone. It is the only charm that costs 20.',
+};
+async function pairOfPearsView() {
+  content.replaceChildren(h('h1', null, 'Pair of Pears'), h('p', { class: 'muted' }, 'Loading…'));
+  let P;
+  try { P = await loadPears(); } catch (e) { return content.replaceChildren(h('h1', null, 'Pair of Pears'), h('p', null, 'Could not load the game\'s rules: ' + e.message)); }
+  const icon = (name, alt) => h('img', { class: 'pp-wiki-ico', src: '../pairofpears/assets/' + name + '.png', alt: alt || '' });
+  const table = (head, rows, cls) => h('table', cls ? { class: cls } : null,
+    h('thead', null, h('tr', null, ...head.map(c => h('th', null, c)))),
+    h('tbody', null, ...rows.map(r => h('tr', r.attrs || null, ...(r.cells || r).map(c => h('td', null, c))))));
+  const section = (id, title, sub, ...kids) => h('section', { class: 'lp-tier', id: 'pp-' + id },
+    h('div', { class: 'lp-tier-head' }, h('h2', null, title), sub ? h('p', { class: 'muted' }, sub) : null), ...kids);
+  const list = (...items) => h('ul', null, ...items.map(i => h('li', null, ...(Array.isArray(i) ? i : [i]))));
+  const b = t => h('b', null, t);
+  const sell = cost => Math.max(1, Math.floor(cost * 0.5 + 0.5));
+  const levels = P.LEVEL_DECKS.map((fruits, i) => {
+    const cards = fruits.length * 2, [cols, rows] = P.gridFor(cards);
+    return [String(i + 1), i ? h('span', null, icon(fruits[fruits.length - 1]), ' ', P.cap(fruits[fruits.length - 1])) : h('span', null, ...fruits.flatMap(f => [icon(f), ' ', P.cap(f), '  '])),
+      String(fruits.length), String(cards), cols + ' × ' + rows];
+  });
+  const condRows = P.COND_ORDER.map(k => {
+    const c = P.COND_INFO[k];
+    return { attrs: { 'data-cond': k }, cells: [h('span', { class: 'pp-wiki-name' }, icon(c.icon), ' ', b(c.name)), c.desc, PEARS_COND_EXACT[k] || '', k === 'special' ? 'Every Pear' : 'Shop · Pineapple' + (k === 'juicy' ? ' · Mango' : '') + (k === 'tart' ? ' · Eggplant' : '')] };
+  });
+  const charmRows = P.CHARM_ORDER.map(id => {
+    const c = P.CHARMS[id];
+    return { attrs: { 'data-charm': id }, cells: [h('span', { class: 'pp-wiki-name' }, icon(id), ' ', b(c.name)), String(c.cost), String(sell(c.cost)), c.desc, PEARS_CHARM_EXACT[id] || ''] };
+  });
+  content.replaceChildren(
+    h('h1', null, 'Pair of Pears'),
+    h('p', null, 'A memory game with a shop between levels. Flip cards two at a time to find the pairs, keep your Hearts above zero, and spend Berries on ',
+      h('a', { href: '#pp-charms', onclick: ppJump }, 'charms'), ' and ', h('a', { href: '#pp-conditions', onclick: ppJump }, 'conditions'),
+      ' that bend the rules. A run is ' + P.MAX_LEVEL + ' levels. ', h('a', { href: '../pairofpears/' }, 'Play it →')),
+    section('run', 'A run', null,
+      list(
+        [b('Start: '), '3 Hearts, 0 Berries, 0 Stars, no charms. Level 1 is 6 cards.'],
+        [b('Clear a level: '), 'match every pair, or match the two ', b('Pears'), ', which ends the level at once (the pairs left on the table pay nothing).'],
+        [b('After a level: '), '+2 Hearts, then the Level Shop, then the next level with one more fruit. After level ' + P.MAX_LEVEL + ' there is no shop: the run is won.'],
+        [b('The run ends '), 'when a mismatch takes you to 0 Hearts.'],
+        [b('Saving: '), 'the run is saved after every action; Continue on the menu resumes it on the same frame. Friends can watch a run live.'])),
+    section('turn', 'A turn', 'Flip one card, then another.',
+      list(
+        [b('Same fruit: '), 'a pair. Both cards leave the table and each pays +1 Berry (+2 for the pair), plus whatever its conditions and your charms add.'],
+        [b('Different fruit: '), 'a mismatch. You lose ½ Heart, and after ¾ of a second both cards turn face down again. You cannot flip while they are turning back.'],
+        [b('Face-up cards pair by themselves. '), 'Whenever two unmatched cards of the same fruit are face up at once, they are matched without a guess. This is what a ', b('Sticky'), ' card is for.'],
+        [b('A peek is not a flip. '), 'A card shown by ', b('Flutter'), ' is only visible for a second; it is still face down.'])),
+    section('numbers', 'Hearts, Berries and Stars', null,
+      table(['', 'Start', 'Limit', 'You gain it from', 'You lose it to'], [
+        [h('span', null, icon('heart'), ' ', b('Hearts')), '3', String(P.MAX_HEARTS), '+2 for clearing a level · Tart pairs · Manzana, Pumpkin and Persimmon Charms', '½ per mismatch. At 0 the run is over.'],
+        [h('span', null, icon('berry'), ' ', b('Berries')), '0', 'none', '+1 per matched card · Fresh and Tart pairs · Grape, Crabapple and Onion Charms · selling a charm', 'The shop · a mismatch covered by Lime (1) or Rhubarb (5) · Persimmon takes them all'],
+        [h('span', null, icon('star'), ' ', b('Stars')), '0', 'none', 'Golden pairs only', 'Nothing. Stars are the run\'s score.'],
+      ])),
+    section('levels', 'The ' + P.MAX_LEVEL + ' levels', 'Each level deals two of every fruit so far and adds one new fruit. Charms and conditions can add cards (Eggplant) or remove them (Rotten).',
+      table(['Level', 'New fruit', 'Fruits', 'Cards', 'Grid'], levels, 'pp-wiki-levels')),
+    section('conditions', 'Conditions', 'A condition is a mark on a card that changes what matching its pair does. Look closely at a face-up card (hover it, or hold it on a phone) to read its conditions.',
+      list(
+        [b('A condition belongs to a fruit. '), 'Buying "Tart Apple" makes every Apple card Tart from the next level on, for the rest of the run. The game lists them as ', b('Deck boosts'), ' beside the cards.'],
+        [b('Where they come from: '), 'the Level Shop (' + P.CONDITION_COST + ' Berries each), the Pineapple Charm (a random one), the Mango Charm (Juicy), the Eggplant Charm (its Tart Kiwis), and the Plum Charm (which copies conditions between two cards for one level).'],
+        [b('Each card is paid separately. '), 'A pair is two cards, so a per-card bonus counts twice. Juicy triples its own card\'s total. Rotten cancels the whole pair.'],
+        [b('A second copy does nothing. '), 'Giving a fruit the same condition twice (shown as ×2) has no extra effect.']),
+      table(['Condition', 'In the game', 'Exactly', 'From'], condRows, 'pp-wiki-conds')),
+    section('shop', 'The Level Shop', 'After every level but the last. What is on offer is fixed when the shop opens.',
+      list(
+        [b('Up to two charms '), 'you do not own, picked from the ones you can afford. If you can afford none, two you cannot afford are shown instead.'],
+        [b('One condition '), 'for a fruit from the level you just cleared: ' + P.CONDITION_COST + ' Berries. It is one of Juicy, Golden, Fresh, Tart, Sticky, Rotten or Flutter, picked at random.'],
+        [b('Sell: '), 'drag a charm onto the Sell tile (on a phone: tap the charm, then Sell). A charm sells for half its price, rounded up.'],
+        [b('Four charm slots. '), 'With all four full you must sell one before you can buy another.'])),
+    section('charms', 'Charms', 'Up to four at a time. Each works for as long as you hold it.',
+      list(
+        [b('When a mismatch is covered: '), 'only one charm pays for it. Coconut is used first, then Lime, then Rhubarb.'],
+        [b('When a level is cleared, in this order: '), '+2 Hearts, Pumpkin, Olive, Crabapple, Egg, Pineapple, Mango.']),
+      table(['Charm', 'Cost', 'Sells for', 'In the game', 'Exactly'], charmRows, 'pp-wiki-charms')),
+    section('controls', 'Controls', null,
+      h('p', null, 'Mouse, touch, keyboard and controller all work. The full key and button list is on the ', h('a', { href: '#/controls' }, 'Controls'), ' page.')));
+}
+// in-page jumps: the wiki routes on the hash, so a plain #anchor would be read as a route
+function ppJump(ev) { ev.preventDefault(); const t = document.getElementById(ev.currentTarget.getAttribute('href').slice(1)); if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+
 function micasurvivorRoute(sub) {
   if (sub === 'pokemon') return micasurvivorPokemonView();
   if (sub === 'moves') return micasurvivorMovesView();
@@ -3943,6 +4055,7 @@ function route() {
   if (section === 'micatro') return micatroRoute(id, parts[2]);
   if (section === 'micatro-mods') return micatroModsRoute(id, parts[2]);
   if (section === 'micasurvivor') return micasurvivorRoute(id);
+  if (section === 'pair-of-pears') return pairOfPearsView();
   if (section === 'pokermon-jokers') return id ? pokermonJokerDetail(id) : pokermonJokersView();
   if (section === 'search') return globalSearchView();
   notFound();
