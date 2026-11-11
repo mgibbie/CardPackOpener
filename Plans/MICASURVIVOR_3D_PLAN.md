@@ -270,6 +270,34 @@ that check is the owner's — open the page on the iPhone and read the frame tim
 Not in P0: the object-in-the-way fade (the camera pulls in instead), outlines, rails, wall-running, surf, enemies that
 move, combat, generation.
 
+## 5.2 P1: built (2026-11-11)
+
+The full controller, in the same test room (`/micasurvivor/m3d/`; `?dex=` picks who you play, `?types=` tries any types).
+
+- **Surfaces.** Ice: slow to start, slow to stop, slow to turn. Mud: 60 % top speed, stops you quickly.
+- **Bounce pads.** 4.8 m up, higher with jump held; they give your air jumps back.
+- **Water.** Wade in the shallows (80 % speed); swim where the bottom is out of reach (55 %, floating at the surface);
+  slide dives, jump rises, a jump at the surface leaps out; the shallows walk you back out.
+- **Slopes.** A slide feels them: it runs away downhill and bleeds uphill. A fast slide up a ramp launches off its
+  crest; a run does not; steps never do.
+- **Landings.** A fall of about 3.4 m or more staggers you for 0.35 s (slowed, no jump) unless you break it: hold slide
+  as you land (you come out sliding, faster), land on a slope (it carries you downhill), or land in water.
+- **Type traits** (`TYPE_TRAITS` in `sim.js`, first guesses): Flying two air jumps and a glide · Dragon two air jumps ·
+  Fairy a glide · Water swims at a run · Ice ignores ice · Ground ignores mud and never staggers · Rock and Steel never
+  stagger, jump a little lower · Ghost floats down and never staggers · Electric runs faster · Fighting jumps higher ·
+  Fire a bigger slide kick · Psychic steers more in the air · Bug and Grass climb a higher lip. A dual type gets both.
+- **Camera.** Left alone for a moment it swings round behind the way you run, so one thumb can play; any camera input
+  takes it back; `?follow=0` turns it off.
+
+Found by the tests while building it: mud's first numbers gave a third of the intended top speed; a rounding error in
+the height grid stopped you stepping out of the pool (heights are stored exactly now); a slide's own friction cancelled
+the slope's pull, so sliding downhill gained nothing.
+
+Not in P1 (decision 3, later): rails, wall-running, surfing a steep slope under control. Ceilings do not exist in a
+height field, so there are no roofs to bump.
+
+Tests: `micasurvivor_m3d_moves_test.mjs` (node, 53 checks), and the page test covers traits, the follow camera and the pool.
+
 ## 6. Dive in 2D: built
 
 **D0 — find the stairs (small; can ship first, on its own).** *Built 2026-11-11 (`overworld/tests/micasurvivor_dive_stairs_test.mjs`). As built: the stairs took their own orange mark, so the rocks and Meowth keep their gold; the HUD arrow comes up after 25 s on a floor, or at once when its boss falls.*

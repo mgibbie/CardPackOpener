@@ -29,6 +29,8 @@ export function makeRenderer(canvas) {
 // (no lamps: the terrain is unlit, each face a flat colour with its shade baked in by which way it faces — the retro
 // look, and the cheapest thing a phone can draw)
 const TOP = [0x7fbf6a, 0x74b45f], SLOPE = [0xd2b877, 0xc6ab69], SIDE = 0xa5855c, RIM = 0x8497ab;
+const MAT = { ice: [0xcfeeff, 0xbfe4fa], mud: [0x7a5a3c, 0x705236], bounce: [0xff7ab8, 0xff5fa6] };   // (P1: a cell's surface)
+const BED = [0xcdbb86, 0xc2af7b];   // (a pool's floor)
 function cornerHeights(room, cx, cz) {
 	const i = cz * room.w + cx, base = room.cells[i], s = room.slopes.get(i);
 	// [nw, ne, sw, se]: x grows east, z grows south
@@ -43,7 +45,8 @@ export function buildTerrain(room) {
 	for (let cz = 0; cz < room.h; cz++) for (let cx = 0; cx < room.w; cx++) {
 		const [nw, ne, sw, se] = cornerHeights(room, cx, cz), x0 = cx * CELL, x1 = x0 + CELL, z0 = cz * CELL, z1 = z0 + CELL;
 		const rim = nw >= 8 && !room.slopes.has(cz * room.w + cx), sl = room.slopes.has(cz * room.w + cx), k = (cx + cz) & 1;
-		quad([x0, nw, z0], [x0, sw, z1], [x1, se, z1], [x1, ne, z0], rim ? RIM : (sl ? SLOPE : TOP)[k], 1);
+		const ci = cz * room.w + cx, m = room.mats && room.mats.get(ci), wet = room.water && room.water.has(ci);
+		quad([x0, nw, z0], [x0, sw, z1], [x1, se, z1], [x1, ne, z0], rim ? RIM : (m ? MAT[m] : wet ? BED : sl ? SLOPE : TOP)[k], 1);
 		// a wall on each side where this cell's edge stands above the neighbour's
 		const side = (ax, az, bx, bz, ha, hb, nx, nz, shade) => {
 			if (!inside(nx, nz)) return;
@@ -64,6 +67,20 @@ export function buildTerrain(room) {
 	g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
 	const mesh = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide }));
 	mesh.matrixAutoUpdate = false;
+	return mesh;
+}
+
+/** The water: a flat sheet at each wet cell's surface, see-through, drawn after everything solid. */
+export function buildWater(room) {
+	const pos = [];
+	for (const [i, level] of room.water || []) {
+		const cx = i % room.w, cz = Math.floor(i / room.w), x0 = cx * CELL, x1 = x0 + CELL, z0 = cz * CELL, z1 = z0 + CELL;
+		pos.push(x0, level, z0, x0, level, z1, x1, level, z1, x0, level, z0, x1, level, z1, x1, level, z0);
+	}
+	const g = new THREE.BufferGeometry();
+	g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+	const mesh = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ color: 0x3f8fe0, transparent: true, opacity: 0.55, depthWrite: false, side: THREE.DoubleSide }));
+	mesh.matrixAutoUpdate = false; mesh.renderOrder = 2;
 	return mesh;
 }
 
@@ -134,11 +151,30 @@ export function frameAt(meta, t) {
 	for (let i = 0; i < meta.d.length; i++) { if (k < meta.d[i]) return i; k -= meta.d[i]; }
 	return 0;
 }
+/** How far below its anchor each facing row of a sheet draws, in art px: the lowest opaque pixel of any of the row's
+ *  frames, measured from (ax, ay). The sheets' anchor is the middle of the body's FOOTPRINT (where the 2D game puts the
+ *  shadow), not its lowest pixel: front feet, a tail, a rump are drawn below it. Top-down that is right; on an upright
+ *  billboard everything below the anchor would be under the floor. So a sprite is stood on its lowest pixel instead:
+ *  lifted by this much. One number per row (not per frame), so a walk cycle's bob stays a bob. */
+export function footLift(meta, img) {
+	const c = document.createElement('canvas'); c.width = img.width; c.height = img.height;
+	const g = c.getContext('2d', { willReadFrequently: true }); g.drawImage(img, 0, 0);
+	const rows = Math.min(meta.r, Math.floor(img.height / meta.h)), frames = Math.min(meta.n, Math.floor(img.width / meta.w)), out = [];
+	for (let r = 0; r < rows; r++) {
+		const d = g.getImageData(0, r * meta.h, frames * meta.w, meta.h).data, w = frames * meta.w;
+		let low = -1;
+		for (let y = meta.h - 1; y >= 0 && low < 0; y--) for (let x = 0; x < w; x++) if (d[(y * w + x) * 4 + 3] > 127) { low = y; break; }
+		out.push(low < 0 ? 0 : Math.max(0, low + 1 - meta.ay));
+	}
+	return out;
+}
 /** A sprite's quad and texture window: a sheet's frame `frame` of row `row`. meta: {w, h, n, r, ax, ay} (art px; (ax, ay)
- *  is the pixel that stands on the ground). img: the sheet (its real width / height). */
-export function spriteQuad(meta, img, frame, row, scale = 1) {
+ *  is the middle of the footprint). img: the sheet (its real width / height). lift: footLift(meta, img) — the sprite
+ *  is raised so its lowest pixel, not its anchor, is on the ground. */
+export function spriteQuad(meta, img, frame, row, scale = 1, lift = null) {
 	const s = PX * scale, W = img.width, H = img.height;
-	const rect = [-meta.ax * s, -(meta.h - meta.ay) * s, (meta.w - meta.ax) * s, meta.ay * s];
+	const up = lift ? (lift[Math.min(row, lift.length - 1)] || 0) * s : 0;
+	const rect = [-meta.ax * s, -(meta.h - meta.ay) * s + up, (meta.w - meta.ax) * s, meta.ay * s + up];
 	const r = Math.min(row, meta.r - 1);
 	const uv = [frame * meta.w / W, r * meta.h / H, (frame + 1) * meta.w / W, (r + 1) * meta.h / H];
 	return { rect, uv };

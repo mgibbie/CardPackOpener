@@ -25,7 +25,7 @@
 <body>
 	<canvas id="c"></canvas>
 	<div id="hud"></div>
-	<div id="help">Move WASD / arrows · Jump Space (again in the air) · Slide Shift while running · Camera: drag, or Q / E · R: back to the start</div>
+	<div id="help">Move WASD / arrows · Jump Space (again in the air) · Slide Shift while running (hold it as you land to break a fall) · Camera: drag, or Q / E · R: back to the start · ?dex=6 plays another species</div>
 	<button class="btn" id="b-slide">SLIDE</button>
 	<button class="btn" id="b-jump">JUMP</button>
 	<div id="boot">MicaSurvivor 3D test room…</div>
@@ -33,6 +33,8 @@
 	<!-- the sprites' geometry, as the 2D game reads it (a plain script that fills G.SPRITE_META) -->
 	<script>window.G = {};</script>
 	<script src="../js/data/sprites-meta.js"></script>
+	<!-- the species' types (a plain script that fills G.DEX): how the one you play moves -->
+	<script src="../js/data/pokedex.js"></script>
 	<script type="module" src="main.js"></script>
 </body>
 </html>
