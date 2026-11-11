@@ -32,6 +32,9 @@
 //     wall
 //   * weather: it fades in and out, strengthens and weakens types, slows in snow, wears down whoever is not safe
 //     from sand and snow (never a boss, never you to nothing), and from 2:00 can start by itself
+//   * abilities: one for each species, from the 2D game's table; every one of its effects does what it says (damage
+//     by type, kind, pinch, own type; damage taken; speed; cooldown; reach; XP; crit; regeneration; Sturdy; the first
+//     hit halved; thorns; a state on whoever touches you; Moxie; Defiant; weather speed and immunity)
 //   * arrivals: enemies appear 16-32 m away on floor they can walk to you from, never past the cap
 //   * the fight is deterministic (same seed: the same fight to the last digit), stays in the world through 3 minutes
 //     of random play on generated levels, and a tick with 110 enemies is cheap
@@ -479,6 +482,62 @@ const at = (cx, cz) => [(cx + 0.5) * CELL, (cz + 0.5) * CELL];
 	A(any === 0, 'a fight told to have no weather has none');
 	const rd = newWorld(flat(), data, { dex: 25, moves: ['rain-dance'], seed: 4 }); run(rd, 30);
 	A(rd.weather && rd.weather.kind === 'rain' && rd.weather.dur === 14, 'Rain Dance starts 14 s of rain');
+}
+
+// ---------------------------------------------------------------- abilities
+{
+	const flat = () => { const q = makeRoom(40, 40, 0); q.spawn = [40, 0, 40]; return q; };
+	const FX = G.Abilities.FX, mk = (ability, o = {}) => { const w = newWorld(flat(), data, { dex: o.dex || 25, moves: o.moves || ['ember'], seed: 4, ability }); if (!o.hurt) w.pl.invuln = 1e9; return w; };
+	A(data.abilityOf(25) === 'static' && data.abilityOf(4) === 'blaze' && data.abilityOf(143) && mk('auto').pl.ability === 'static' && mk().pl.ability === null, 'each species has its own ability (Pikachu: Static, Charmander: Blaze); a fight uses it when told to');
+	const dps = (ability, o = {}) => { const w = mk(ability, o); if (o.hp) w.pl.hp = w.pl.maxHp * o.hp; const e = o.boss ? addBoss(w, 143, 46, 40, { slot: 0 }) : addEnemy(w, o.foe || RAT, o.x || 46, 40, { dummy: true, hp: 1e6 }); if (o.boss) { e.ai.cd = 1e9; e.a.speed = 0; e.hp = e.maxHp = 1e7; } run(w, 600); return w.stats.dealt / w.stats.hits; };
+	const base = dps(null), r = (v) => v / base;
+	A(near(r(dps('hugepower')), 1.25, 1e-9) && near(r(dps('technician')), 1.1, 1e-9), 'Huge Power: + 25 % damage; Technician: + 10 %');
+	A(near(r(dps('megalauncher')), 1.2, 1e-9) && near(r(dps('ironfist')), 1, 1e-9) && near(dps('ironfist', { moves: ['tackle'], x: 42 }) / dps(null, { moves: ['tackle'], x: 42 }), 1.2, 1e-9), 'Mega Launcher: + 20 % with shots, nothing with a swing; Iron Fist the other way round');
+	A(near(r(dps('drought')), 1.15, 1e-9) && near(r(dps('drizzle')), 1, 1e-9), 'Drought: + 15 % with Fire moves, Drizzle nothing for them');
+	A(near(dps('adaptability', { dex: 4 }) / dps(null, { dex: 4 }), 1.2, 1e-9) && near(r(dps('adaptability')), 1, 1e-9), 'Adaptability: + 20 % with moves of your own type (a Charmander\'s Ember, not a Pikachu\'s)');
+	A(near(dps('blaze', { dex: 4, hp: 0.3 }) / dps(null, { dex: 4, hp: 0.3 }), 1.35, 1e-9) && near(dps('blaze', { dex: 4 }) / dps(null, { dex: 4 }), 1, 1e-9), 'Blaze: + 35 % with Fire moves under 40 % HP, nothing above');
+	A(near(dps('tintedlens', { foe: 7 }) / dps(null, { foe: 7 }), 1.4, 1e-9) && near(r(dps('tintedlens')), 1, 1e-9), 'Tinted Lens: + 40 % on a resisted hit (Ember on a Squirtle), nothing otherwise');
+	A(near(dps('moldbreaker', { boss: true }) / dps(null, { boss: true }), 1.06 * 1.1, 1e-9) && near(r(dps('moldbreaker')), 1.06, 1e-9), 'Mold Breaker: + 6 %, and a further 10 % on a boss');
+	// what you take
+	const hit = (ability, foe = RAT, o = {}) => { const w = mk(ability, { hurt: true, moves: [], dex: o.dex }); if (o.hp) w.pl.hp = o.hp; run(w, 2); const e = addEnemy(w, foe, 40.5, 40); if (o.dmg) e.dmg = o.dmg; run(w, 20); return w; };
+	const plain = hit(null).stats.taken;
+	A(near(hit('intimidate').stats.taken / plain, 0.9, 1e-9) && near(hit('wonderguard').stats.taken / plain, 0.65, 1e-9), 'Intimidate: 10 % less from a touch; Wonder Guard: 35 % less');
+	A(near(hit('thickfat', 4).stats.taken / hit(null, 4).stats.taken, 0.5, 1e-9) && near(hit('thickfat').stats.taken / plain, 1, 1e-9), 'Thick Fat: half from a Fire enemy\'s touch, nothing off a Normal one');
+	A(near(hit('solidrock', 7, { dex: 4 }).stats.taken / hit(null, 7, { dex: 4 }).stats.taken, 0.75, 1e-9), 'Solid Rock: a quarter off a super-effective hit (a Squirtle touching a Charmander)');
+	const ms = mk('multiscale', { hurt: true, moves: [] }); run(ms, 2); addEnemy(ms, RAT, 40.5, 40); run(ms, 20); const first = ms.stats.taken; run(ms, 30); const second = ms.stats.taken - first;
+	A(near(first / plain, 0.5, 1e-9) && near(second / plain, 1, 1e-9), 'Multiscale: the first hit is halved, the next one is whole', [first, second, plain]);
+	const st = hit('sturdy', RAT, { hp: 3 }), no = hit(null, RAT, { hp: 3 });
+	A(st.pl.hp === 1 && !st.pl.dead && no.pl.dead, 'Sturdy: the hit that would finish you leaves you on 1 HP');
+	run(st, 120); A(st.pl.dead, '...once: the next one does (it comes back after 90 s)');
+	// what touching you costs
+	const th = hit('roughskin'), te = th.enemies[0];
+	A(te.maxHp - te.hp === 12 + 3 && th.stats.touched === 1, `Rough Skin: whoever touches you takes 12 + 3 a level (${te.maxHp - te.hp})`, te.hp);
+	const procs = (ability, read) => { let n = 0, touches = 0; for (let seed = 1; seed <= 60; seed++) { const w = newWorld(flat(), data, { dex: 25, moves: [], seed, ability }); run(w, 2); const e = addEnemy(w, RAT, 40.5, 40); run(w, 3); touches += w.stats.touched; if (read(e)) n++; } return [n, touches]; };
+	const para = procs('static', (e) => e.paraT > 0), burn = procs('flamebody', (e) => e.burn > 0), pois = procs('poisonpoint', (e) => e.poison > 0), slp = procs('effectspore', (e) => e.sleepT > 0), none = procs(null, (e) => e.paraT > 0 || e.burn > 0);
+	A(para[1] === 60 && para[0] >= 8 && para[0] <= 24 && burn[0] >= 8 && burn[0] <= 24 && pois[0] >= 8 && pois[0] <= 24 && slp[0] >= 5 && slp[0] <= 20 && none[0] === 0, `Static, Flame Body, Poison Point (25 %) and Effect Spore (20 %): of 60 first touches, ${para[0]} paralysed, ${burn[0]} burned, ${pois[0]} poisoned, ${slp[0]} put to sleep; none without`, [para, burn, pois, slp]);
+	// speed, cooldown, reach, XP, crit, regeneration
+	const speed = (ability, wx) => { const w = mk(ability, { moves: [] }); if (wx) setWeather(w, wx, 60); run(w, 240, { mx: 1, mz: 0, jump: false, crouch: false }); return Math.hypot(w.pl.s.vx, w.pl.s.vz); };
+	const v0 = speed(null);
+	A(near(speed('speedboost') / v0, 1.12, 0.005) && near(speed('swiftswim', 'rain') / speed(null, 'rain'), 1.3, 0.005) && near(speed('swiftswim') / v0, 1, 0.005), 'Speed Boost: 12 % faster; Swift Swim: 30 % faster in the rain, not out of it');
+	const pr = mk('prankster'), me = mk('magnetpull'), eb = mk('earlybird'), ce = mk('compoundeyes'), rg = mk('regenerator', { moves: [] });
+	rg.pl.hp = 10; run(rg, 600);
+	A(near(pr.pl.cdMul, 0.9) && near(me.pl.magnet, CK.MAGNET * U * 1.4) && near(eb.pl.xpMul, 1.12) && near(ce.pl.crit, 0.1) && near(rg.pl.hp, 10 + rg.pl.maxHp * 0.01 * 10, 0.05), 'Prankster: 10 % off cooldowns; Magnet Pull: 40 % more reach; Early Bird: 12 % more XP; Compound Eyes: 10 % crit; Regenerator: 1 % of your HP a second');
+	const cr = mk('compoundeyes'); addEnemy(cr, RAT, 46, 40, { dummy: true, hp: 1e6 }); run(cr, 60 * 120);
+	A(cr.stats.crits / cr.stats.hits > 0.05 && cr.stats.crits / cr.stats.hits < 0.16, `...and that crit really rolls (${cr.stats.crits} of ${cr.stats.hits} hits)`, [cr.stats.crits, cr.stats.hits]);
+	// Moxie and Defiant
+	const mx = mk('moxie'); mx.stats.kills = 85; const mxd = (() => { addEnemy(mx, RAT, 46, 40, { dummy: true, hp: 1e6 }); run(mx, 300); return mx.stats.dealt / mx.stats.hits; })();
+	const big = mk('moxie'); big.stats.kills = 4000; addEnemy(big, RAT, 46, 40, { dummy: true, hp: 1e6 }); run(big, 300);
+	A(near(mxd / base, 1.04, 1e-9) && near(big.stats.dealt / big.stats.hits / base, 1.2, 1e-9), 'Moxie: + 2 % for every 40 KOs (85 KOs: + 4 %), up to + 20 %');
+	const df = mk('defiant', { hurt: true }); const target = addEnemy(df, RAT, 46, 40, { dummy: true, hp: 1e6 }); run(df, 120); const calm = df.stats.dealt / df.stats.hits; const toucher = addEnemy(df, RAT, 40.5, 40.3, { hp: 1e6 }); toucher.dmg = 0.5; const d0 = df.stats.dealt, h0 = df.stats.hits; run(df, 150); const d1 = df.stats.dealt - d0, h1 = df.stats.hits - h0;
+	A(df.stats.touched >= 1 && d1 / h1 > calm * 1.02, `Defiant: for 4 s after you are hit your moves do more (an average hit ${calm.toFixed(1)} before, ${(d1 / h1).toFixed(1)} while it is touching you)`, [calm, d1 / h1]);
+	// weather immunity
+	const sv = mk('sandveil', { moves: [] }), ex = mk(null, { moves: [] }); for (const q of [sv, ex]) { q.pl.invuln = 1e9; setWeather(q, 'sand', 30); run(q, 600); }
+	A(sv.stats.taken === 0 && ex.stats.taken > 0, 'Sand Veil: the sandstorm does not wear you down');
+	// every effect in the 2D table is one the 3D rules read, or one that has nothing to act on here yet
+	const READ = ['pinch', 'pinch_k', 'dmg', 'moxie', 'moxie_cap', 'defiant', 'owntype', 'typedmg', 'kind_dmg', 'kind_k', 'boss_dmg', 'tinted', 'crit', 'spd', 'wspd', 'wspd_k', 'cd', 'magnet', 'xp', 'regen', 'taken', 'resist', 'resist_k', 'se_taken', 'first_hit', 'sturdy', 'contact', 'contact_p', 'thorns', 'wximm'], NOT_YET = ['coin', 'trapimm', 'stimm'];
+	const keys = new Set(); for (const id in FX) for (const k in FX[id].fx) keys.add(k);
+	const unknown = [...keys].filter((k) => !READ.includes(k) && !NOT_YET.includes(k));
+	A(unknown.length === 0 && Object.keys(FX).length >= 50, `all ${Object.keys(FX).length} abilities' effects are covered: ${READ.length} kinds are in the 3D rules; coins and trap / state immunities have nothing to act on here yet`, unknown);
 }
 
 // ---------------------------------------------------------------- arrivals

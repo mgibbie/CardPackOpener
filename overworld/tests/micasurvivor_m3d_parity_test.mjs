@@ -21,6 +21,8 @@
 //     kind at a time and keeps at most eight; and a jumper leaps to where you were
 //   * a boss: each of its seven attacks (stomp, charge, leap, rain, beams, volley, ring) lands at the same moment for
 //     the same damage; it is the same size; a hit does not shove it
+//   * abilities, the same one set on both sides: seven that change your damage or cooldown, six that change what a
+//     touch does to you or to the toucher, and Sturdy
 //   * experience: what each level costs, how far your reach is and how fast an orb comes, what a heap of XP makes
 //   * an enemy's touch: a chaser walks up and hits you — the same number of touches, the same HP lost, and it is
 //     knocked back the same distance
@@ -102,7 +104,9 @@ try {
 				pl.moves = ms; pl.slots = ms.map((m) => [m]); pl.active = 0; pl.statsTaken = {}; pl.dmgDealt = 0; pl.meleeT = 0;
 				pl.hp = pl.maxHp; pl.invuln = sc.hurtable ? 0 : 1e9; pl.dead = false; pl.lastPatch = null;
 				for (const k in pl.buffs) { pl.buffs[k].n = 0; pl.buffs[k].t = 0; }
-				const atkK = pl.atk / pl.baseAtk;   // (the ability's factor, before any buff)
+				const ab0 = pl.ability, crit0 = pl.critChance; if (sc.ability) { G.Abilities.set(pl, sc.ability); pl.abT = 0; pl.abFirstT = -999; pl.abSturdyT = -999; pl.defiantT = 0; }
+				if (sc.plHp) pl.hp = pl.maxHp * sc.plHp;
+				const atkK = sc.ability ? 1 : pl.atk / pl.baseAtk;   // (the ability's factor, before any buff)
 				if (sc.noProc) for (const m of ms) m.ccp = 0;   // (a state's dice are not the same dice on the two sides)
 				let hits = 0, touches = 0, removed = 0, taken = 0;
 				const foes = sc.foes.map((f) => {
@@ -126,6 +130,7 @@ try {
 					if (pl.invuln > 0 && pl.invuln < 1e8) pl.invuln -= DT;
 					if (pl.meleeT > 0) pl.meleeT -= DT;
 					for (const k in pl.buffs) { const b = pl.buffs[k]; if (b.n > 0) { b.t -= DT; if (b.t <= 0) b.n = 0; } }   // (player.update's buff clocks)
+					G.Abilities.tick(pl, DT); if (sc.ability && pl.regen > 0) pl.hp = Math.min(pl.maxHp, pl.hp + pl.regen * DT);   // (…its ability clocks and regeneration)
 					const tg = G.Projectiles.nearest(G.EnemyMgr.all(), pl.x, pl.y, 520);
 					pl.target = tg; if (tg) pl.aim = Math.atan2(tg.y - pl.y, tg.x - pl.x);
 					G.EnemyMgr.update(DT, [pl]); G.EnemyMgr.rebuildGrid();
@@ -141,17 +146,18 @@ try {
 					if (!first && taken > 0) first = t;
 				}
 				pl.hurt = plHurt;
+				const hpEnd = pl.hp, cdMulWas = pl.cdMul; if (sc.ability) G.Abilities.set(pl, ab0);
 				const all = G.EnemyMgr.all().filter((e) => !e.dead), mins = all.filter((e) => e.isMinion);
 				return { count: all.length, minions: mins.length, minion: mins[0] ? { hp: mins[0].maxHp, dmg: mins[0].dmg, spd: mins[0].spd, xp: mins[0].xp } : null, left: foes.map((e) => Math.round(e.hp)), shields: foes.map((e) => Math.round(e.shield || 0)),
-					first, firstDmg, scale: foes[0] ? foes[0].scale : 1, fr: foes[0] ? foes[0].r : 0, dealt: pl.dmgDealt, removed, taken, touches, hp: pl.hp, maxHp: pl.maxHp, far, foes: foes.map((e) => ({ hp: e.maxHp - e.hp, d: Math.hypot(e.x - x0, e.y - y0), dead: e.dead })),
+					first, firstDmg, scale: foes[0] ? foes[0].scale : 1, fr: foes[0] ? foes[0].r : 0, dealt: pl.dmgDealt, removed, taken, touches, hp: hpEnd, maxHp: pl.maxHp, far, foes: foes.map((e) => ({ hp: e.maxHp - e.hp, d: Math.hypot(e.x - x0, e.y - y0), dead: e.dead })),
 					atkK, afDmg: pl.afDmg, dex: pl.mon.dex, crit: pl.critChance, r: pl.r, reduction: pl.reduction, takenK: G.Abilities.inK(pl, 'normal', null) };
 			} finally { G.Weather.reset(); for (const k in keep) Wd[k] = keep[k]; Math.random = R; G.EnemyMgr.clear(); G.Projectiles.clear(); G.Projectiles.clearOrbs(G.Game.player); G.Combat.clearFields(); G.EnemyMgr.rebuildGrid(); G.Game.player.invuln = 1e9; }
 		}
 		/** The same fight by the 3D rules, on a flat room. `ref`: the 2D result (who you are, your ability's factors). */
 		function play3d(sc, ref) {
 			const room = S.makeRoom(80, 80, 0); room.spawn = [80, 0, 80];
-			const w = C.newWorld(room, data, { dex: ref.dex, moves: sc.moves, seed: sc.seed ? sc.seed * 7 + 1 : 777, weather: false, afDmg: ref.afDmg, atkK: ref.atkK, takenK: ref.takenK, crit: 0, orbitSquash: 0.7 });
-			w.pl.baseReduce = ref.reduction; w.pl.invuln = sc.hurtable ? 0 : 1e9;
+			const w = C.newWorld(room, data, { dex: ref.dex, moves: sc.moves, seed: sc.seed ? sc.seed * 7 + 1 : 777, weather: false, ability: sc.ability || null, afDmg: ref.afDmg, atkK: ref.atkK, takenK: sc.ability ? 1 : ref.takenK, crit: 0, orbitSquash: 0.7 });
+			w.pl.baseReduce = sc.ability ? 0 : ref.reduction; w.pl.invuln = sc.hurtable ? 0 : 1e9; if (sc.plHp) w.pl.hp = w.pl.maxHp * sc.plHp;
 			if (sc.wx) C.setWeather(w, sc.wx, sc.wxDur || 60);
 			if (sc.noProc) for (const m of w.pl.moves) m.ccp = 0;
 			const foes = sc.foes.map((f) => {
@@ -329,6 +335,22 @@ try {
 		}
 		const kb = await E(() => P.both({ moves: [['body-slam', 3]], secs: 4, foes: [{ dex: 143, dx: 40, spd: 0.0001, dmg: 1, hp: 5000, boss: 'none' }] }));
 		A(kb.a.removed > 0 && kb.a.removed === kb.b.removed && kb.a.foes[0].d < 60 && kb.b.foes[0].d < 60, `a hit does not shove a boss: 4 s of Body Slam and it has not been driven off (${kb.a.foes[0].d.toFixed(0)} / ${kb.b.foes[0].d.toFixed(0)} units away; ${kb.a.removed} / ${kb.b.removed} HP)`, kb);
+	}
+	// ---------- abilities: the same one set on both sides (you are a Scorbunny: Fire)
+	{
+		const fire = (ability, o = {}) => E((ability, o) => P.both({ moves: [[o.move || 'ember', 1]], foes: [{ dex: o.foe || 19, dx: o.dx || 120, still: true, hp: 20000 }], secs: 8, ability, plHp: o.plHp, noProc: true }), ability, o);
+		const plain = await fire('battlearmor');   // (an ability that changes nothing about your damage: the yardstick)
+		for (const [ab, o, what, want] of [['hugepower', {}, '+ 25 % damage', 1.25], ['megalauncher', {}, '+ 20 % with shots', 1.2], ['drought', {}, '+ 15 % with Fire moves', 1.15], ['adaptability', {}, '+ 20 % with your own type', 1.2], ['blaze', { plHp: 0.3 }, '+ 35 % with Fire under 40 % HP', 1.35], ['tintedlens', { foe: 7 }, '+ 40 % on a resisted hit', null], ['prankster', {}, '10 % off cooldowns', null]]) {
+			const r = await fire(ab, o);
+			A(r.a.removed > 0 && Math.abs(r.a.removed - r.b.removed) <= 2 && (want === null || Math.abs(r.a.dealt / plain.a.dealt - want) < 0.005), `${ab} (${what}): 8 s of Ember: ${cmp(r)}`, r);
+		}
+		const touch = (ability, foe, o = {}) => E((ability, foe, o) => P.both({ moves: [], foes: [{ dex: foe, dx: 60, spd: 56, dmg: 3 }], secs: o.secs || 6, hurtable: true, ability, plHp: o.plHp }), ability, foe, o);
+		for (const [ab, foe, what] of [['intimidate', 19, '10 % less from a touch'], ['thickfat', 4, 'half from a Fire enemy'], ['solidrock', 7, 'a quarter off a super-effective hit'], ['multiscale', 19, 'the first hit halved'], ['roughskin', 19, 'whoever touches you is hurt'], ['regenerator', 19, '1 % of your HP a second']]) {
+			const r = await touch(ab, foe);
+			A(r.a.taken > 0 && Math.abs(r.a.taken - r.b.taken) < 0.02 && r.a.touches === r.b.touches && Math.abs(r.a.hp - r.b.hp) < 0.05 && r.a.left[0] === r.b.left[0], `${ab} (${what}): 6 s with a chaser: you lose ${r.a.taken.toFixed(2)} / ${r.b.taken.toFixed(2)} HP and end on ${r.a.hp.toFixed(2)} / ${r.b.hp.toFixed(2)}; it is left with ${r.a.left[0]} / ${r.b.left[0]}`, r);
+		}
+		const st = await touch('sturdy', 19, { plHp: 0.05, secs: 2 });
+		A(st.a.hp === 1 && st.b.hp === 1, `sturdy: on 5 % HP, the touch that would finish you leaves 1 HP (${st.a.hp} / ${st.b.hp})`, st);
 	}
 	// ---------- experience
 	{

@@ -499,6 +499,24 @@ Not carried over: weather particles (rain streaks, snow), and the abilities that
 
 Tests: parity 78 checks, combat 124 checks, the page test 68.
 
+## 5.12 P3, ninth part: built (2026-11-11)
+
+- **Abilities.** One passive for each species, read from the 2D game's table (57 abilities). 30 kinds of effect are
+  in the 3D rules: damage (flat, by type, by kind of move, with your own type, under 40 % HP, on a boss, on a
+  resisted hit, Moxie's steps, Defiant's 4 s), damage taken (flat, by type, super-effective, the first hit every
+  25 s halved, Sturdy), what touching you costs (Rough Skin; a chance to burn, poison, paralyse, confuse, put to
+  sleep), speed (flat, and in your weather), cooldown, reach, XP, crit, regeneration, immunity to sand and snow.
+- **The comparison with 2D** (92 checks): fourteen abilities set on both sides, by damage dealt, HP lost and what
+  is left of the enemy.
+- **On the page** a fight uses your species' own ability (`&ability=0`: none; `&ability=hugepower`: that one).
+
+Not carried over: coin bonuses, trap immunity and immunity to states (nothing in the 3D rules puts a state on you
+or sets a trap yet).
+
+**Still to do in P3:** held items.
+
+Tests: parity 92 checks, combat 147 checks, the page test 68.
+
 ## 6. Dive in 2D: built
 
 **D0 — find the stairs (small; can ship first, on its own).** *Built 2026-11-11 (`overworld/tests/micasurvivor_dive_stairs_test.mjs`). As built: the stairs took their own orange mark, so the rocks and Meowth keep their gold; the HUD arrow comes up after 25 s on a floor, or at once when its boss falls.*

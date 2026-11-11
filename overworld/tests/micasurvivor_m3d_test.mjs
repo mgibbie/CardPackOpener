@@ -216,7 +216,8 @@ try {
 		const mv = await g.page.evaluate(async () => { const m = window.__m3d, wait = (ms) => new Promise(r => setTimeout(r, ms)); const x = m.state.x, z = m.state.z; m.setInput({ mx: 0, mz: -1 }); await wait(500); m.setInput(null); return Math.hypot(m.state.x - x, m.state.z - z); });
 		A(mv > 1, 'you can run about in it', String(mv));
 		// the exit: standing in the column of light ends the level (held here, so the page stays to be read)
-		const ex = await g.page.evaluate(async () => { const m = window.__m3d, wait = (ms) => new Promise(r => setTimeout(r, ms)); m.holdExit = true; const before = m.leaving; m.put(m.room.exit[0] + 6, m.room.exit[2]); await wait(300); const far = m.leaving; m.put(m.room.exit[0] + 0.5, m.room.exit[2]); await wait(400); return { before, far, at: m.leaving, hud: document.getElementById('hud').textContent, url: location.search }; });
+		const ex = await g.page.evaluate(async () => { const m = window.__m3d, wait = (ms) => new Promise(r => setTimeout(r, ms)); m.holdExit = true; const before = m.leaving; m.put(m.room.exit[0] + 6, m.room.exit[2]); await wait(300); const far = m.leaving; m.put(m.room.exit[0] + 0.5, m.room.exit[2]); for (let i = 0; i < 40 && !/exit reached/.test(document.getElementById('hud').textContent); i++) await wait(100);   // (the readout is redrawn every 16 ticks: wait for it, not for a fixed time)
+			return { before, far, at: m.leaving, hud: document.getElementById('hud').textContent, url: location.search }; });
 		A(!ex.before && !ex.far && ex.at && /exit reached/.test(ex.hud) && /gen=7/.test(ex.url), 'the exit: 6 m away nothing happens; standing in it, the level is over', JSON.stringify(ex));
 		await g.page.close();
 		// ...and not held: the next seed loads
