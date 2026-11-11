@@ -10,6 +10,7 @@
 // Hero powers are UNIQUE per character (not class defaults) — installed at createGame via each seat's
 // `power` object (see HERO_POWERS). Class is retained only to pick which loot BUCKETS a hero drafts.
 import * as Duels from './duels.js';
+import { rungRun, WINS_TO_CLEAR, LOSSES_TO_END } from './rungrun.js';
 
 // ── rosters ──
 export const HEROES = ['Aragorn', 'Gandalf', 'Legolas', 'Gimli', 'Frodo', 'Samwise', 'Éowyn', 'Galadriel', 'Théoden', 'Elrond'];
@@ -43,9 +44,6 @@ export const CLASS_OF = {
 	// Hobbit-set additions
 	'The Master of Lake-town': 'warlock', 'Chief of the Wilds': 'hunter',
 };
-export const classOf = ch => CLASS_OF[ch] || 'neutral';
-export const isEnemy = ch => ENEMIES.includes(ch);
-export const isHero = ch => HEROES.includes(ch) || SECRET_HEROES.includes(ch);
 
 // each character's MTG colour identity (from the source Scryfall cards) — the DECK cards are colourless
 // class cards, so this drives the wiki's mana-symbol badges (parallel to Lorequest's per-deck colours).
@@ -66,7 +64,6 @@ export const COLOR_IDENTITY = {
 	// Hobbit-set additions
 	'The Master of Lake-town': ['B'], 'Chief of the Wilds': ['B', 'G'],
 };
-export const colorsOf = ch => COLOR_IDENTITY[ch] || [];
 
 // ── 38 unique hero powers ({ name, cost, text, effects }) — installed via each seat's `power` ──
 // Effects use the standard engine DSL; targeted powers (enemy-creature/friendly-creature/any) are
@@ -120,73 +117,7 @@ export const HERO_POWERS = {
 	'The Master of Lake-town': P('Hoard the Gold', 2, 'Gain a Coin.', [{ type: 'gain-coin', value: 1 }]),
 	'Chief of the Wilds': P('Hunt as One', 2, 'Summon a 2/2 Spider with Deathtouch.', [{ type: 'summon', count: 1, attack: 2, health: 2, name: 'Hunting Spider', tribe: 'Spider', keywords: ['deathtouch'] }]),
 };
-export const powerOf = ch => HERO_POWERS[ch] || null;
 
-// a seat def for createGame's classPicks: class id (for buckets), the character's display name,
-// and its UNIQUE hero power (installed by the engine at createGame).
-export function seatOf(character) {
-	return { id: classOf(character), name: character, power: powerOf(character) };
-}
-
-// ── run constants ──
-export const WINS_TO_CLEAR = 12;
-export const LOSSES_TO_END = 3;
-
-// ── decks ──
-// hero deck = 10 singleton cards; enemy deck = 2 copies of each of its 15 cards (= 30).
-export function deckOf(cardsById, character) {
-	const ids = Object.values(cardsById).filter(d => d.meDeck === character && !d.token).map(d => d.id).sort();
-	if (isEnemy(character)) { const deck = []; for (const id of ids) deck.push(id, id); return deck; }
-	return ids; // heroes: 1 copy each
-}
-
-// which enemies the next fight (at the current WIN count) may draw from.
-// Rung windows: A wins 0–2 (★ first-only enemies appear ONLY at win 0), B 3–6, C 7–10, D at win 11
-// (the 12th and final fight). 3 A + 4 B + 4 C + 1 D = 12 fights.
-export function enemyRosterFor(wins) {
-	const w = Math.max(0, wins | 0);
-	if (w <= 2) return w === 0 ? ENEMY_RUNGS.A.slice() : ENEMY_RUNGS.A.filter(e => !FIRST_ONLY.has(e));
-	if (w <= 6) return ENEMY_RUNGS.B.slice();
-	if (w <= 10) return ENEMY_RUNGS.C.slice();
-	return ENEMY_RUNGS.D.slice();
-}
-export const rungFor = wins => (wins <= 2 ? 'A' : wins <= 6 ? 'B' : wins <= 10 ? 'C' : 'D');
-export const rungLabel = wins => ({ A: 'Mook', B: 'Lieutenant', C: 'Commander', D: 'The Dark Lord' }[rungFor(wins)]);
-
-// pick the next enemy from the rung for `wins`, avoiding an immediate repeat.
-// `faced` = every enemy already met this run: one is never offered again while the rung
-// still has someone new (The Balrog at F10 and again at F12 — instinctgauntlet, 2026-10-25).
-export function randomEnemy(wins, rng, avoidId, faced) {
-	const seen = new Set(Array.isArray(faced) ? faced : []);
-	let roster = enemyRosterFor(wins).filter(c => c !== avoidId && !seen.has(c));
-	if (!roster.length) roster = enemyRosterFor(wins).filter(c => c !== avoidId);
-	if (!roster.length) roster = enemyRosterFor(wins);
-	return roster[Math.floor(rng() * roster.length)];
-}
-
-// build a STATIC enemy (no win-parity loot — the whole point of Middle-earth's departure from Duels).
-export function generateEnemy(cardsById, character) {
-	return { id: character, name: character, cls: classOf(character), deck: deckOf(cardsById, character), rung: null };
-}
-
-// ── loot ──
-// every win: (1) a spoils draft (pick 1 of 3 from the vanquished foe's deck, or none), then
-// (2) an alternating aid — a treasure on odd wins, a class bucket on even wins (win 1 = treasure).
-export const rewardForWin = wins => (wins % 2 === 1 ? 'treasure' : 'bucket');
-
-// three distinct spoils cards drawn from the vanquished enemy's own card pool (its 15 uniques).
-export function spoilsChoices(cardsById, defeatedEnemyName, rng, count = 3) {
-	const pool = Object.values(cardsById).filter(d => d.meDeck === defeatedEnemyName && d.meSide === 'enemy' && !d.token).map(d => d.id);
-	const out = [];
-	for (let i = 0; i < count && pool.length; i++) out.push(pool.splice(Math.floor(rng() * pool.length), 1)[0]);
-	return out;
-}
-
-// the treasure pool for the alternating treasure reward — the DUELS treasures plus any
-// Middle-earth-specific treasures (The One Ring, tagged meTreasure).
-export function treasurePool(cardsById) {
-	return Object.values(cardsById).filter(d => (d.treasure && d.set === 'DUELS') || d.duelsTreasure || d.meTreasure);
-}
 
 // ---------- character progression ----------
 // 3 starters; one more core hero unlocks per COMPLETED run (win or lose).
@@ -227,18 +158,15 @@ export const ENEMY_UNLOCKS = {
 	"The Master of Lake-town": ["Elrond", 2],
 	"The Mouth of Sauron": ["Elrond", 2],
 };
-// which characters this account may play; stats = the server user.stats.
-// null (free play, no account) = the full roster.
-export function unlockedCharacters(stats) {
-	if (!stats) return [...HEROES, ...ENEMIES];
-	const runs = stats.modes?.middleearth?.runs || 0;
-	const cores = [...STARTERS, ...CORE_UNLOCK_ORDER.slice(0, Math.max(0, runs))];
-	const out = [...cores];
-	if (cores.length >= HEROES.length) {
-		const chars = stats.chars || {};
-		for (const [en, [hero, need]] of Object.entries(ENEMY_UNLOCKS)) {
-			if ((chars['middleearth|' + hero]?.best || 0) >= need) out.push(en);
-		}
-	}
-	return out;
-}
+
+// ── the run rules ── shared with the other rung runs (rungrun.js); this file supplies the tables above.
+export { WINS_TO_CLEAR, LOSSES_TO_END };
+export const {
+	classOf, isEnemy, isHero, colorsOf, powerOf, seatOf, deckOf, enemyRosterFor, rungFor, rungLabel,
+	randomEnemy, generateEnemy, rewardForWin, spoilsChoices, treasurePool, unlockedCharacters,
+} = rungRun({
+	mode: 'middleearth', tag: 'me',
+	HEROES, SECRET_HEROES, ENEMY_RUNGS, FIRST_ONLY, CLASS_OF, COLOR_IDENTITY, HERO_POWERS,
+	RUNG_LABELS: { A: 'Mook', B: 'Lieutenant', C: 'Commander', D: 'The Dark Lord' },
+	STARTERS, CORE_UNLOCK_ORDER, ENEMY_UNLOCKS,
+});
