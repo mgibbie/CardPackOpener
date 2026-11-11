@@ -809,7 +809,7 @@ async function openFromLink(code) {
 	const loaded = await loadDeckFromCode(code);
 	if (!loaded) newDeck(); // bad/stale link → fall back to a fresh blank deck
 	// tidy the URL so a refresh (or re-copying the page URL) isn't stuck on this import
-	try { history.replaceState(null, '', location.pathname); } catch { /* ignore */ }
+	try { window.history.replaceState(null, '', location.pathname); } catch { /* ignore */ }
 }
 
 fetch('classes.json').then(r => r.json()).then(({ classes }) => {
