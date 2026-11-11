@@ -55,7 +55,7 @@ export const CONDITIONS = ['juicy', 'golden', 'fresh', 'tart', 'sticky', 'rotten
 export const COND_INFO = {
 	special: { name: 'Special', icon: 'feather', desc: 'Matching this pair instantly wins the round.' },
 	juicy: { name: 'Juicy', icon: 'juicebox', desc: 'Matching this pair grants triple rewards.' },
-	golden: { name: 'Golden', icon: 'sparkles', desc: 'Matching this pair grants +50 Stars.' },
+	golden: { name: 'Golden', icon: 'sparkles', desc: 'Matching this pair grants +50 Stars per card.' },
 	fresh: { name: 'Fresh', icon: 'droplet', desc: 'Matching this pair grants +10 Berries per card.' },
 	tart: { name: 'Tart', icon: 'clock', desc: 'Match it within the first 3 pairs for +1 Heart and +20 Berries.' },
 	sticky: { name: 'Sticky', icon: 'pin', desc: 'Stays face up once flipped.' },
@@ -241,15 +241,18 @@ function persimmonSave() {
 
 // ---------- level flow ----------
 function beginLevelClear(byPear) {
+	// (the Hearts the level was FINISHED with: the Olive Charm reads these. It used to read them after the +2 below,
+	// when nobody can be at 1 Heart or less, so it never triggered)
+	const finishedWith = S.hearts;
 	S.hearts = Math.min(MAX_HEARTS, S.hearts + 2);
 	S.levelClearing = true; S.levelShopOpen = false;
 	for (const c of S.cards) c.matched = true;
-	processEndCharms();
+	processEndCharms(finishedWith);
 	bump('clear', { pear: !!byPear });
 }
-function processEndCharms() {
+function processEndCharms(finishedWith) {
 	if (ownsCharm('pumpkin')) S.hearts = Math.min(MAX_HEARTS, S.hearts + 1);
-	if (ownsCharm('olive') && S.hearts <= 1) { S.hearts = Math.min(MAX_HEARTS, S.hearts + 3); S.berries += 15; }
+	if (ownsCharm('olive') && finishedWith <= 1) { S.hearts = Math.min(MAX_HEARTS, S.hearts + 3); S.berries += 15; }
 	if (ownsCharm('crabapple') && !S.round.fruitsRevealed.apple) S.berries += 10;
 	// Egg (pear_game.lua): the Egg charm's own sell value grows by 5
 	for (const c of S.charm.inventory) if (c && c.id === 'egg') c.sellValue = (c.sellValue || 0) + 5;

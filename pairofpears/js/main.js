@@ -356,7 +356,7 @@ function showBoostTip(chip) {
   tipFor = 'boost' + chip.dataset.f + '|' + chip.dataset.c;
   const n = +chip.dataset.n || 1, fruit = esc(P.cap(chip.dataset.f));
   showTipAtEl('<div class="tip-main"><div class="tip-name">' + esc(c.name) + ' ' + fruit + (n > 1 ? ' ×' + n : '') + '</div><div class="tip-body">' + condLines([chip.dataset.c])
-    + '<div class="tip-gap"></div>Every ' + fruit + ' in your deck has it' + (n > 1 ? ', ' + n + ' times over' : '') + '.</div></div>', chip);
+    + '<div class="tip-gap"></div>Every ' + fruit + ' in your deck has it.' + (n > 1 ? ' A second copy adds nothing.' : '') + '</div></div>', chip);
 }
 const tipIs = (prefix) => typeof tipFor === 'string' && tipFor.startsWith(prefix);
 function hideTip() { tipFor = null; el.tip.style.display = 'none'; }

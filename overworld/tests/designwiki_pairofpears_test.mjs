@@ -6,7 +6,7 @@
 //        Golden +100 Stars a pair · Fresh +20 Berries · Tart +20 Berries +1 Heart for the first 3 pairs, nothing after
 //        Juicy triples · Rotten pays nothing and removes the pair for good · a second copy of a condition adds nothing
 //        Sticky stays up and pairs by itself · charms sell for half (6 -> 3, 20 -> 10) · the Egg grows by 5
-//        a covered mismatch uses Coconut, then Lime, then Rhubarb · the Olive Charm cannot trigger as the rules stand
+//        a covered mismatch uses Coconut, then Lime, then Rhubarb · the Olive Charm reads the Hearts the level was finished with
 //        Eggplant's 4 Tart Kiwis stay after it is sold · Persimmon saves the run once
 //   2. The page in headless Chrome: every condition and every charm of the engine is listed with the game's own
 //      name, text, cost and sell value; the 13 levels; the sidebar link; in-page jumps; no console errors; and the
@@ -59,7 +59,8 @@ const filler = [C('orange'), C('orange'), C('kiwi'), C('kiwi')];   // keeps a le
 { const v = run({ cards: [C('pear', { special: 1 }), C('pear', { special: 1 }), C('apple', { fresh: 1 }), C('apple', { fresh: 1 })] }); flip(1, 2);
 	A(v().phase === 'clear' && v().berries === 2, 'matching the Pears ends the level at once; the pairs left on the table pay nothing', JSON.stringify([v().phase, v().berries])); }
 { const v = run({ cards: [C('apple', { golden: 1 }), C('apple', { golden: 1 }), ...filler] }); flip(1, 2);
-	A(v().stars === 100, 'a Golden pair (both cards Golden) is worth +100 Stars: +50 a card', String(v().stars)); }
+	A(v().stars === 100, 'a Golden pair (both cards Golden) is worth +100 Stars: +50 a card', String(v().stars));
+	A(P.COND_INFO.golden.desc === 'Matching this pair grants +50 Stars per card.', '...and its text says per card, as Fresh\'s does', P.COND_INFO.golden.desc); }
 { const v = run({ cards: [C('apple', { fresh: 1 }), C('apple', { fresh: 1 }), ...filler] }); flip(1, 2);
 	A(v().berries === 22, 'a Fresh pair pays +20 Berries on top of the +2', String(v().berries)); }
 { const v = run({ cards: [C('apple', { fresh: 2 }), C('apple', { fresh: 2 }), ...filler] }); flip(1, 2);
@@ -100,8 +101,12 @@ const filler = [C('orange'), C('orange'), C('kiwi'), C('kiwi')];   // keeps a le
 	A(v().hearts === 6, 'Pumpkin: +1 Heart on top of the +2', String(v().hearts));
 	A(v().charms[1].sell === 8, 'Egg: bought at sell value 3, +5 a cleared level', String(v().charms[1].sell));
 	A(v().berries === 12, 'Crabapple: +10 Berries when no Apple was flipped', String(v().berries)); }
-{ const v = run({ cards: [C('orange'), C('orange')], charms: ['olive'], hearts: 0.5 }); flip(1, 2);
-	A(v().hearts === 2.5 && v().berries === 2, 'Olive: the +2 Hearts for clearing come first, so it does not trigger (as the page says). If this fails, Olive was fixed: update the page\'s note', JSON.stringify([v().hearts, v().berries])); }
+// Olive reads the Hearts the level was FINISHED with (it used to look after the +2 for clearing, and never triggered)
+for (const [h0, on] of [[0.5, true], [1, true], [1.5, false], [3, false]]) {
+	const v = run({ cards: [C('orange'), C('orange')], charms: ['olive'], hearts: h0 }); flip(1, 2);
+	A(v().hearts === h0 + 2 + (on ? 3 : 0) && v().berries === 2 + (on ? 15 : 0), `Olive: finishing a level on ${h0} Heart${h0 === 1 ? '' : 's'} ${on ? 'gives +3 Hearts and +15 Berries on top of the +2' : 'does not trigger it'}`, JSON.stringify([v().hearts, v().berries])); }
+{ const v = run({ cards: [C('orange'), C('orange')], charms: ['olive', 'pumpkin'], hearts: 1 }); flip(1, 2);
+	A(v().hearts === 1 + 2 + 1 + 3, 'Olive is not put off by Pumpkin\'s Heart either', String(v().hearts)); }
 { const v = run({ cards: [C('apple'), C('orange'), C('apple'), C('orange')], charms: ['persimmon'], hearts: 0.5, berries: 9 }); flip(1, 2);
 	A(v().hearts === 1 && v().berries === 0 && !v().charms.some(Boolean), 'Persimmon: at 0 Hearts you are set to 1 Heart, lose your Berries, and the charm is gone', JSON.stringify([v().hearts, v().berries]));
 	settle(); flip(1, 2); flip(1); settle(); flip(1, 2); settle();
@@ -163,7 +168,7 @@ try {
 		A(got.charms.length === P.CHARM_ORDER.length && charmOk, `${name}: all ${P.CHARM_ORDER.length} charms, each with the game's own name, cost, sell value and text and an exact note`, JSON.stringify(got.charms.map(r => r.cells.slice(0, 3))));
 		A(await waitFor(() => page.evaluate(() => [...document.querySelectorAll('#pp-conditions tbody img, #pp-charms tbody img')].every(i => i.complete && i.naturalWidth > 0)), 8000), `${name}: every condition and charm shows the game's own icon`);
 		A(got.levels.length === P.MAX_LEVEL && got.levels[0][3] === '6' && got.levels[0][4] === '3 × 2' && got.levels[12][1] === 'Potato' && got.levels[12][3] === '30', `${name}: the ${P.MAX_LEVEL} levels (level 1: 6 cards on 3 × 2; level 13 adds Potato: 30 cards)`, JSON.stringify([got.levels[0], got.levels[12]]));
-		A(/Golden has it on both cards, so its pair is worth \+100 Stars/.test(got.text) && /A second copy does nothing/.test(got.text) && /Coconut is used first, then Lime, then Rhubarb/.test(got.text) && /it does not trigger/.test(got.text), `${name}: the notes the engine checks above are on the page (Golden +100, no stacking, the mismatch order, Olive)`);
+		A(/Golden has it on both cards, so its pair is worth \+100 Stars/.test(got.text) && /A second copy does nothing/.test(got.text) && /Coconut is used first, then Lime, then Rhubarb/.test(got.text) && /It reads the Hearts you finished the level with, before the \+2 for clearing/.test(got.text), `${name}: the notes the engine checks above are on the page (Golden +100, no stacking, the mismatch order, Olive)`);
 		A(got.nav.length === 1 && got.nav[0].active, `${name}: the sidebar has its link, lit up`, JSON.stringify(got.nav));
 		A(got.overflow <= 1, `${name}: no horizontal overflow`, String(got.overflow));
 		if (name === 'desktop') {

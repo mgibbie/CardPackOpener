@@ -6,7 +6,8 @@
 //   * a charm that only says "condition" (Pineapple) -> one "Conditions" side box saying what a condition is
 //   * a condition on offer ("Tart Apple") -> what Tart does, that every Apple gets it, and the "Conditions" box
 //   * an owned charm in its slot (Eggplant: "4 Tart Kiwi cards") -> the "Tart" side box
-//   * a deck-boost chip ("Juicy Apple ×2") -> a real tip with the rule, not a bare browser title
+//   * a deck-boost chip ("Juicy Apple ×2") -> a real tip with the rule, not a bare browser title; it says a second copy
+//     adds nothing (the rules read a condition as on / off)
 //   * the tip leaves when the pointer does, stays on the table, and a tap on Buy buys (no tip in the way)
 //   * the keyboard / controller ring on a Buy button shows that offer's tip
 //   node overworld/tests/pairofpears_tooltips_test.mjs      (screenshots: PEARS_SHOTS=<dir>)
@@ -120,7 +121,7 @@ try {
 			const chip = await page.evaluate(() => { const c = document.querySelector('.pp-boosts .pp-bt'); return c ? { title: c.getAttribute('title'), label: c.getAttribute('aria-label'), shown: c.getBoundingClientRect().width > 0 } : null; });
 			A(chip && chip.shown && chip.title === null && /Juicy Apple: Matching this pair grants triple rewards/.test(chip.label || ''), `${name}: the deck-boost chip carries no bare browser title (a label for screen readers instead)`, JSON.stringify(chip));
 			t = await hover('.pp-boosts .pp-bt');
-			A(t && /^boost/.test(t.for) && /Juicy Apple ×2/.test(t.text) && /triple rewards/.test(t.text) && /Every Apple in your deck has it, 2 times over/.test(t.text), `${name}: hovering the Juicy Apple ×2 boost says what it does`, JSON.stringify(t));
+			A(t && /^boost/.test(t.for) && /Juicy Apple ×2/.test(t.text) && /triple rewards/.test(t.text) && /Every Apple in your deck has it\. A second copy adds nothing\./.test(t.text) && !/times over/.test(t.text), `${name}: hovering the Juicy Apple ×2 boost says what it does`, JSON.stringify(t));
 			A(await tipFits(), `${name}: the boost tip is on the table`);
 			await shot('boost');
 			A((await away()) === null, `${name}: ...and leaves with the pointer`);
