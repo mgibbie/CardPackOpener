@@ -26,6 +26,10 @@
 .pp-boosts:empty { display: none; }
 .pp-boosts .pp-bt { display: inline-flex; align-items: center; gap: 4px; margin: 2px 8px 2px 0; }
 .pp-boosts img { width: 24px; height: 24px; image-rendering: pixelated; }
+/* a boost chip and a shop offer can be read closely (hover / tap: the Micatro tip) */
+.pp-boosts .pp-bt, .pp-offer:not(.sold):not(.pp-sell) .pp-of-card, .pp-offer:not(.sold):not(.pp-sell) .pp-of-name { cursor: help; }
+.pp-boosts .pp-bt { touch-action: manipulation; }
+.tip .ti-name img { width: 22px; height: 22px; image-rendering: pixelated; vertical-align: -3px; }
 .pp-hud > * { min-width: 0; }
 .portrait .pp-hud { top: 96px; grid-template-columns: 290px 1fr; grid-template-areas: "lvl hearts" "stats stats"; }
 .portrait .pp-lvl { grid-area: lvl; }
