@@ -2892,7 +2892,7 @@ function loadPears() {
 const PEARS_COND_EXACT = {
   special: 'Every Pear has it, always; it is never sold. Matching the two Pears ends the level on the spot: the pairs still on the table count as cleared but pay nothing.',
   juicy: 'Triples everything that card earns: its Berries (base, Fresh, Tart), its Hearts (Tart, Manzana Charm) and its Stars (Golden).',
-  golden: '+50 Stars for each Golden card in the pair. A fruit that carries Golden has it on both cards, so its pair is worth +100 Stars.',
+  golden: 'A fruit that carries Golden has it on both cards, so its pair is worth +100 Stars.',
   fresh: '+10 Berries for each Fresh card: +20 for the pair.',
   tart: 'Only if the pair is one of the first 3 pairs matched this level: +10 Berries and +½ Heart for each Tart card (+20 Berries and +1 Heart for the pair). From the 4th pair on it gives nothing.',
   sticky: 'After a mismatch the card does not turn back. Any two face-up cards of the same fruit pair up by themselves, so the next time you flip its partner the pair is made without spending a guess.',
@@ -2909,7 +2909,7 @@ const PEARS_CHARM_EXACT = {
   pumpkin: 'On top of the +2 Hearts every cleared level gives.',
   lime: 'Counted per level. You need at least 1 Berry. Used only when Coconut has no free mismatch left.',
   pineapple: 'One of the seven shop conditions (never Special), on a random fruit from the level just cleared. It is a deck boost: every card of that fruit has it from the next level on.',
-  olive: 'Checked after the level\'s +2 Hearts (and Pumpkin\'s +1) have been added, so as the rules stand you can never be at 1 Heart or less when it looks: it does not trigger.',
+  olive: 'It reads the Hearts you finished the level with, before the +2 for clearing. Finish on ½ or 1 Heart and you get 3 more Hearts on top of that +2, and +15 Berries.',
   egg: 'It is bought at sell value 3, then 8, 13, 18 … Its only use is to be sold.',
   plum: 'Each of the two cards gains every condition the other has, for the rest of that level only. It triggers on every match and every mismatch, and each trigger has a 1 in 4 chance to destroy the charm.',
   mango: 'A deck boost on a random fruit from the level just cleared: every card of that fruit is Juicy from the next level on.',
@@ -2962,8 +2962,8 @@ async function pairOfPearsView() {
         [b('A peek is not a flip. '), 'A card shown by ', b('Flutter'), ' is only visible for a second; it is still face down.'])),
     section('numbers', 'Hearts, Berries and Stars', null,
       table(['', 'Start', 'Limit', 'You gain it from', 'You lose it to'], [
-        [h('span', null, icon('heart'), ' ', b('Hearts')), '3', String(P.MAX_HEARTS), '+2 for clearing a level · Tart pairs · Manzana, Pumpkin and Persimmon Charms', '½ per mismatch. At 0 the run is over.'],
-        [h('span', null, icon('berry'), ' ', b('Berries')), '0', 'none', '+1 per matched card · Fresh and Tart pairs · Grape, Crabapple and Onion Charms · selling a charm', 'The shop · a mismatch covered by Lime (1) or Rhubarb (5) · Persimmon takes them all'],
+        [h('span', null, icon('heart'), ' ', b('Hearts')), '3', String(P.MAX_HEARTS), '+2 for clearing a level · Tart pairs · Manzana, Pumpkin, Olive and Persimmon Charms', '½ per mismatch. At 0 the run is over.'],
+        [h('span', null, icon('berry'), ' ', b('Berries')), '0', 'none', '+1 per matched card · Fresh and Tart pairs · Grape, Crabapple, Onion and Olive Charms · selling a charm', 'The shop · a mismatch covered by Lime (1) or Rhubarb (5) · Persimmon takes them all'],
         [h('span', null, icon('star'), ' ', b('Stars')), '0', 'none', 'Golden pairs only', 'Nothing. Stars are the run\'s score.'],
       ])),
     section('levels', 'The ' + P.MAX_LEVEL + ' levels', 'Each level deals two of every fruit so far and adds one new fruit. Charms and conditions can add cards (Eggplant) or remove them (Rotten).',
