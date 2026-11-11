@@ -21,9 +21,18 @@ import * as eslintScope from 'eslint-scope';
 
 const args = process.argv.slice(2);
 const WRITE = args.includes('--write');
-const [a, b, outName, header] = args.filter(x => x !== '--write');
+const [a, b, outName, header] = args.filter(x => !x.startsWith('--'));
 const lo = +a, hi = +b;
-const FILE = 'overworld/main.js';
+// Another file (the battlecards/game.js split, 2026-11): `--file=battlecards/game.js`. "main.js" in the
+// comments here then means that file; its earlier split modules are its `game_*.js` siblings, and the new
+// import goes after its `import { GS } from './game_state.js';` line.
+const FILE = (args.find(x => x.startsWith('--file=')) || '--file=overworld/main.js').slice(7);
+const DIR = FILE.slice(0, FILE.lastIndexOf('/'));     // 'overworld'
+const MAIN = FILE.slice(FILE.lastIndexOf('/') + 1);   // 'main.js'
+const IS_OW = FILE === 'overworld/main.js';
+const SIBLING = IS_OW ? /^ow_.*\.js$/ : new RegExp('^' + MAIN.replace(/\.js$/, '') + '_.*\\.js$');
+const STATE_IMPORT = IS_OW ? "import { S } from './ow_state.js';\n" : "import { GS } from './game_state.js';\n";
+const local = p => (p.startsWith(DIR + '/') ? p.slice(DIR.length + 1) : p);
 const src = fs.readFileSync(FILE, 'utf8');
 const EOL = src.includes('\r\n') ? '\r\n' : '\n';   // generated text matches the file's line endings
 const eol = t => t.replace(/\r?\n/g, EOL);
@@ -102,7 +111,7 @@ for (const [source, e] of [...bySource].sort()) {
 	if (e.named.length) parts.push(`{ ${e.named.sort().join(', ')} }`);
 	if (parts.length) importLines.push(`import ${parts.join(', ')} from '${source}';`);
 }
-if (fromMain.length) importLines.push(`// main.js's own declarations (a safe cycle: only used inside functions)\nimport {\n${wrap(fromMain.map(x => x.name).sort())}\n} from './main.js';`);
+if (fromMain.length) importLines.push(`// ${MAIN}'s own declarations (a safe cycle: only used inside functions)\nimport {\n${wrap(fromMain.map(x => x.name).sort())}\n} from './${MAIN}';`);
 
 function wrap(names) {
 	const lines = []; let cur = '\t';
@@ -141,32 +150,32 @@ ops.push({ at: start, del: end - start, text: '' });
 ops.sort((x, y) => y.at - x.at);
 for (const op of ops) main = main.slice(0, op.at) + op.text + main.slice(op.at + op.del);
 const giveList = [...give].sort();
-const modPath = `./${outName.replace(/^overworld\//, '')}`;
+const modPath = `./${local(outName)}`;
 let importIntoMain = giveList.length ? `import {\n${wrap(giveList)}\n} from '${modPath}';\n` : '';
 // earlier split modules import some moved names from main.js: point those imports at
 // the new module instead. (Not a re-export from main.js: the overworld keeps a plain
 // ESM subset with no re-exports, which battlecards' overworld_imports_test relies on.)
 const redirected = [];
 if (reexport.length) {
-	for (const f of fs.readdirSync('overworld').filter(x => /^ow_.*\.js$/.test(x) && `overworld/${x}` !== outName)) {
-		const p = `overworld/${f}`;
+	for (const f of fs.readdirSync(DIR).filter(x => SIBLING.test(x) && `${DIR}/${x}` !== outName)) {
+		const p = `${DIR}/${f}`;
 		let text = fs.readFileSync(p, 'utf8');
-		const m = text.match(/import \{([^}]*)\} from '\.\/main\.js';/);
+		const m = text.match(new RegExp("import \\{([^}]*)\\} from '\\./" + MAIN.replace('.', '\\.') + "';"));
 		if (!m) continue;
 		const names = m[1].split(',').map(x => x.trim()).filter(Boolean);
 		const moved = names.filter(n => reexport.includes(n));
 		if (!moved.length) continue;
 		const rest = names.filter(n => !reexport.includes(n));
 		const direct = `import { ${moved.sort().join(', ')} } from '${modPath}';${EOL}`;
-		const fromMain = rest.length ? eol(`import {\n${wrap(rest)}\n} from './main.js';`) : '';
+		const fromMain = rest.length ? eol(`import {\n${wrap(rest)}\n} from './${MAIN}';`) : '';
 		text = text.replace(m[0], direct + fromMain);
 		redirected.push({ p, text, moved });
 	}
 }
-// place it after the ow_state import
-const anchor = eol("import { S } from './ow_state.js';\n");
+// place it after the state-object import
+const anchor = eol(STATE_IMPORT);
 if (!main.includes(anchor)) throw new Error('anchor import missing');
-main = main.replace(anchor, anchor + eol(`// ${outName.replace(/^overworld\//, '')}: ${header.split('\n')[0].replace(/^\/\/\s*/, '')}\n` + importIntoMain));
+main = main.replace(anchor, anchor + eol(`// ${local(outName)}: ${header.split('\n')[0].replace(/^\/\/\s*/, '')}\n` + importIntoMain));
 
 const moduleSrc = eol(`${header.split('\n').map(l => l.startsWith('//') ? l : '// ' + l).join('\n')}\n${importLines.join('\n')}\n\n`) + block;
 console.log(`moved lines ${lo}-${hi}: ${need.size} imports (${fromMain.length} from main.js), ${give.size} exports back to main.js`);
