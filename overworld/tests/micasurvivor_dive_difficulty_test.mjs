@@ -212,7 +212,8 @@ try {
 		// what a KO pays: a reinforcement nothing, a plain foe the floor's KO loot
 		const stake = () => S.stake;
 		const s0 = stake(); const re = rein()[0]; if (!re) { out.noRein = true; G.Spawner.say = say0; return out; } re.frozenT = 0; re.hurt(re.maxHp * 3); G.Game.debugStep(2, 1 / 30); out.reinPay = +(stake() - s0).toFixed(4);
-		const s1 = stake(); const pf = G.EnemyMgr.all().find(e => !e.dead && !e.xrein && !e.xk); pf.frozenT = 0; pf.hurt(pf.maxHp * 3); G.Game.debugStep(2, 1 / 30); out.plainPay = +(stake() - s1).toFixed(4);
+		const s1 = stake(); // (a floor can be left with no plain foe alive by now: then there is no one to knock out, and that half is not judged)
+		const pf = G.EnemyMgr.all().find(e => !e.dead && !e.xrein && !e.xk); if (pf) { pf.frozenT = 0; pf.hurt(pf.maxHp * 3); G.Game.debugStep(2, 1 / 30); out.plainPay = +(stake() - s1).toFixed(4); } else out.plainPay = null;
 		out.kills = S.kills;
 		G.Spawner.say = say0;
 		return out;
@@ -222,7 +223,7 @@ try {
 	A(rein.say.some(t => /reinforcements are coming/.test(t)) && rein.say.filter(t => /reinforcements/.test(t)).length === 1, 'the first pack is announced, once', JSON.stringify(rein.say));
 	A(rein.t2 === 4 && rein.t3 === 6, 'another comes 14 s later, the next 12.5 s after that (faster each time)', JSON.stringify([rein.first, rein.t2, rein.t3]));
 	A(rein.xp[0] < rein.xp[1] * 0.6, 'a reinforcement is worth well under a plain foe\'s XP (x0.3)', JSON.stringify(rein.xp));
-	A(rein.reinPay === 0 && rein.plainPay > 0, 'knocking one out pays no loot; a plain foe still does — lingering costs, it does not pay', JSON.stringify([rein.reinPay, rein.plainPay]));
+	A(rein.reinPay === 0 && (rein.plainPay === null || rein.plainPay > 0), 'knocking one out pays no loot; a plain foe still does — lingering costs, it does not pay', JSON.stringify([rein.reinPay, rein.plainPay]));
 
 	// ---- 5. healing: a berry bush gives a quarter, a shrine half
 	const heal = await E(page, () => {
@@ -255,7 +256,10 @@ try {
 				const base = new G.Enemy(C.defOf(e.dex, ti), 0, 0, { hp: sc.hp, dmg: sc.dmg, spd: sc.spd }, false);
 				const hpK = e.maxHp / (base.maxHp * fac), dmgK = e.dmg / (base.dmg * k.DMG_K), spdK = e.spd / base.spd;
 				const want = { swift: [1, 1, k.ELITE.swift], tough: [k.ELITE.tough, 1, 1], rage: [1, k.ELITE.rage, 1] }[e.xaff];
-				const ok = want && Math.abs(hpK - want[0]) < 0.03 && Math.abs(dmgK - want[1]) < 0.03 && Math.abs(spdK - want[2]) < 0.03 && e.scale === k.ELITE.scale && typeof e.xmove === 'function';
+				// (HP is a whole number: a 9 HP foe made tough is 22, not 21.6, which is x2.44. So HP is compared as HP, to within the
+				// rounding, not as a ratio: the ratio check failed about one run in six, whenever a floor rolled a low-HP elite.)
+				const hpWant = base.maxHp * fac * (want ? want[0] : 1), hpOk = Math.abs(e.maxHp - hpWant) <= Math.max(1, hpWant * 0.03);
+				const ok = want && hpOk && Math.abs(dmgK - want[1]) < 0.03 && Math.abs(spdK - want[2]) < 0.03 && e.scale === k.ELITE.scale && typeof e.xmove === 'function';
 				out.seen.push(e.xaff);
 				if (!ok) out.bad.push({ f, aff: e.xaff, hpK: +hpK.toFixed(2), dmgK: +dmgK.toFixed(2), spdK: +spdK.toFixed(2), scale: e.scale });
 			}
