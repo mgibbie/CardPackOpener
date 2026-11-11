@@ -376,7 +376,7 @@ G.Enemies = (() => {
 
   return {
     TIERS, BOSS_SLOTS, rollRun, scale, bossScale, bagAt, upcomingDex, candidates, hordeTypes, hordeDefs,
-    behaviorOf, baseSpd,   // (M5 lote 8: los jefes del Rush de Jefes y de la Torre)
+    behaviorOf, baseSpd, defFor,   // (M5 lote 8: los jefes del Rush de Jefes y de la Torre)
     // (M5 lote 9: biomas y apoyos)
     BIOME_TYPES, BIOME_DEX, BIOME_EXTRA, BIOME_W_MUL, BASE_BIOMES, PLAIN, SUPPORT, SUPPORT_CAPS, biomeKey, biomeTypes, fitsBiome, biomeNow, bioExtra,
     get BOSSES() { if (!bosses) rollRun(); return bosses; },

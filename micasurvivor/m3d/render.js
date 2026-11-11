@@ -248,6 +248,39 @@ export class Shadows {
 	end() { this.mesh.count = this.n; this.mesh.instanceMatrix.needsUpdate = true; }
 }
 
+// ---------------------------------------------------------------- (P3) a fight's shots and flashes
+/** Shots and orbs: one instanced ball each, in the move's type colour. One draw call for all of them. */
+export class Shots {
+	constructor(max) {
+		this.mesh = new THREE.InstancedMesh(new THREE.SphereGeometry(1, 8, 6), new THREE.MeshBasicMaterial({ fog: false }), max);
+		this.mesh.frustumCulled = false; this.m = new THREE.Matrix4(); this.c = new THREE.Color(); this.n = 0; this.max = max;
+		this.mesh.setColorAt(0, this.c.setHex(0xffffff));
+	}
+	begin() { this.n = 0; }
+	add(x, y, z, r, css) { if (this.n >= this.max) return; this.m.makeScale(r, r, r).setPosition(x, y, z); this.mesh.setMatrixAt(this.n, this.m); this.mesh.setColorAt(this.n++, this.c.set(css || '#ffffff')); }
+	end() { this.mesh.count = this.n; this.mesh.instanceMatrix.needsUpdate = true; if (this.mesh.instanceColor) this.mesh.instanceColor.needsUpdate = true; }
+}
+/** Short-lived shapes for what has no ball: a swing's arc and an aura's ring on the floor, a beam, a chain's links. */
+export class Flashes {
+	constructor(scene) { this.scene = scene; this.list = []; }
+	push(mesh, life) { mesh.renderOrder = 4; this.scene.add(mesh); this.list.push({ mesh, t: 0, life, o: mesh.material.opacity }); }
+	mat(css, opacity) { return new THREE.MeshBasicMaterial({ color: new THREE.Color(css || '#ffffff'), transparent: true, opacity, depthWrite: false, side: THREE.DoubleSide, fog: false }); }
+	/** An arc (or a full ring) lying on the floor. aim: the ground-plane angle ((cos, sin) on (x, z)). */
+	arc(x, y, z, r, aim, arc, css) {
+		const full = arc >= 6.2, g = new THREE.RingGeometry(full ? r * 0.82 : r * 0.35, r, 28, 1, full ? 0 : -aim - arc / 2, full ? 6.2832 : arc); g.rotateX(-Math.PI / 2);
+		const m = new THREE.Mesh(g, this.mat(css, 0.55)); m.position.set(x, y + 0.12, z); this.push(m, 0.22);
+	}
+	/** A straight bar from a point along a unit direction. */
+	bar(from, dir, len, width, css, life = 0.2) {
+		const g = new THREE.BoxGeometry(width, width * 0.5, len), m = new THREE.Mesh(g, this.mat(css, 0.75));
+		m.position.set(from[0] + dir[0] * len / 2, from[1] + dir[1] * len / 2, from[2] + dir[2] * len / 2); m.lookAt(from[0] + dir[0] * len, from[1] + dir[1] * len, from[2] + dir[2] * len); this.push(m, life);
+	}
+	update(dt) {
+		for (let i = this.list.length - 1; i >= 0; i--) { const f = this.list[i]; f.t += dt; f.mesh.material.opacity = f.o * Math.max(0, 1 - f.t / f.life);
+			if (f.t >= f.life) { this.scene.remove(f.mesh); f.mesh.geometry.dispose(); f.mesh.material.dispose(); this.list.splice(i, 1); } }
+	}
+}
+
 // ---------------------------------------------------------------- the camera
 /** A third-person camera behind and above a point. yaw: where it looks on the ground plane ([sin, cos]). */
 export function placeCamera(camera, room, target, yaw, pitch, dist) {
