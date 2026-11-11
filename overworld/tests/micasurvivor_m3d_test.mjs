@@ -265,6 +265,15 @@ try {
 		const dn = await f.page.evaluate(async () => { const m = window.__m3d, w = m.world, wait = (ms) => new Promise(r => setTimeout(r, ms)); w.pl.hp = 1; w.pl.invuln = 0; m.addEnemy(19, m.state.x + 0.4, m.state.z); await wait(900); const x = m.state.x; m.setInput({ mx: 1, mz: 0 }); await wait(400); m.setInput(null); return { dead: w.pl.dead, hp: w.pl.hp, moved: Math.abs(m.state.x - x), hud: document.getElementById('hud').textContent }; });
 		A(dn.dead && dn.hp === 0 && dn.moved < 0.01 && /you are down/.test(dn.hud), 'at 0 HP you are down: you stop, and the readout says how to start again', JSON.stringify(dn));
 		await f.page.close();
+		// the kinds that are placed in the world are drawn too: a turret, mines, a trail, meteors (no page errors, more balls and flashes)
+		const fk = await open({ width: 1000, height: 640, deviceScaleFactor: 1 }, '?gen=7&fight=1&moves=will-o-wisp,spikes,flame-wheel,rock-slide,quick-attack,swords-dance&cap=6');
+		const fv = await fk.page.evaluate(async () => { const m = window.__m3d, w = m.world, wait = (ms) => new Promise(r => setTimeout(r, ms)); w.pl.invuln = 1e9; m.addEnemy(19, m.state.x + 5, m.state.z, { dummy: true, hp: 1e5 });
+			const kinds = new Set(); let blasts = 0, buffs = 0;
+			for (let i = 0; i < 40; i++) { await wait(100); for (const f of w.fields) kinds.add(f.kind); buffs = Math.max(buffs, w.pl.buffs.atk.n); }
+			return { kinds: [...kinds].sort(), hits: w.stats.hits, buffs, calls: m.stats().calls, moves: w.pl.moves.length }; });
+		A(fv.moves === 6 && fv.kinds.join() === 'meteor,mine,patch,turret' && fv.hits > 10 && fv.buffs >= 2, `a turret, mines, a trail, meteors, a dash and a buff all run on the page (${fv.hits} hits in 4 s, Swords Dance × ${fv.buffs})`, JSON.stringify(fv));
+		await shot(fk.page, 'm3d_fight_kinds.png');
+		await fk.page.close();
 		// without &fight=1 a generated level has no fight
 		const nf = await open({ width: 900, height: 600, deviceScaleFactor: 1 }, '?gen=7&n=5');
 		const nv = await nf.page.evaluate(() => ({ world: window.__m3d.world, hud: document.getElementById('hud').textContent }));

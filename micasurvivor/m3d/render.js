@@ -266,9 +266,9 @@ export class Flashes {
 	push(mesh, life) { mesh.renderOrder = 4; this.scene.add(mesh); this.list.push({ mesh, t: 0, life, o: mesh.material.opacity }); }
 	mat(css, opacity) { return new THREE.MeshBasicMaterial({ color: new THREE.Color(css || '#ffffff'), transparent: true, opacity, depthWrite: false, side: THREE.DoubleSide, fog: false }); }
 	/** An arc (or a full ring) lying on the floor. aim: the ground-plane angle ((cos, sin) on (x, z)). */
-	arc(x, y, z, r, aim, arc, css) {
-		const full = arc >= 6.2, g = new THREE.RingGeometry(full ? r * 0.82 : r * 0.35, r, 28, 1, full ? 0 : -aim - arc / 2, full ? 6.2832 : arc); g.rotateX(-Math.PI / 2);
-		const m = new THREE.Mesh(g, this.mat(css, 0.55)); m.position.set(x, y + 0.12, z); this.push(m, 0.22);
+	arc(x, y, z, r, aim, arc, css, life = 0.22, inner = null) {
+		const full = arc >= 6.2, g = new THREE.RingGeometry(inner !== null ? r * inner : full ? r * 0.82 : r * 0.35, r, 28, 1, full ? 0 : -aim - arc / 2, full ? 6.2832 : arc); g.rotateX(-Math.PI / 2);
+		const m = new THREE.Mesh(g, this.mat(css, life > 1 ? 0.35 : 0.55)); m.position.set(x, y + 0.12, z); this.push(m, life);
 	}
 	/** A straight bar from a point along a unit direction. */
 	bar(from, dir, len, width, css, life = 0.2) {
