@@ -298,6 +298,40 @@ height field, so there are no roofs to bump.
 
 Tests: `micasurvivor_m3d_moves_test.mjs` (node, 53 checks), and the page test covers traits, the follow camera and the pool.
 
+## 5.3 P2: built (2026-11-11)
+
+Level generation (`micasurvivor/m3d/gen.js`), playable at `/micasurvivor/m3d/?gen=<seed>` (`&biome=meadow|peaks|marsh`,
+`&size=3..8`). Seeded and pure: a seed and a biome always build the same level, so a replay, a co-op guest or a
+spectator needs only those two values.
+
+- **The plan.** A square of tiles (5 × 5 by default, 14 m each). A spanning tree from the start tile makes every tile
+  reachable; a few extra links make loops. Walking out from the start, each tile keeps its parent's height level or
+  moves one (1.5 m), pulled toward a target shape (a hill, or a cone).
+- **Joins.** Linked tiles at one level are open floor; a level apart, a ramp three cells wide (20.6°). Unlinked tiles
+  meet at a cliff (drop off it, do not climb it) or, at the same level, sometimes a ridge.
+- **Set pieces**, one a tile: blocks one jump high (and some too tall to jump: double-jump or bounce), a pond with a
+  deep middle, ice, mud, a bounce pad, a mound. Small decorations are scattered on plain floor.
+- **Spawn and exit.** The exit is the tile farthest from the start along the links, never fewer than two tiles away.
+  It is a column of light, and a ring on the minimap. Reaching it loads the next seed.
+- **The check** (`validate`). Every level is checked before it is returned: every tile and the exit reachable on foot
+  with no jump, nothing you can walk into that you cannot walk out of, no holes, no slope too steep to stand on. A
+  level that fails loses its ridges, then its set pieces, until it passes. No level in 600 has needed that.
+- **Biomes** (first guesses): meadow (three levels, a bit of everything), peaks (five levels, ice, bounce pads),
+  marsh (two levels, ponds and mud).
+- **The minimap** is drawn from the level's own cells, so it cannot disagree with it.
+
+Found by the tests while building it: the farthest tile along a winding route could be right beside the start (the
+exit must now be two tiles away as the crow flies); a pond's bank beside a ramp could not be climbed, because stepping
+out of water onto a rising ramp is more than a step for a body with a radius (the check now measures a body, not a
+point, and banks beside ramps stay dry).
+
+Not in P2: enemies and pickups placed in a level (P3), art for the biomes beyond flat colours, levels bigger than
+8 × 8 tiles, Dive's rooms-and-corridors layout (P5).
+
+Tests: `micasurvivor_m3d_gen_test.mjs` (node, 35 checks: 50 pinned fingerprints, the invariants over 150 levels, the
+real controller walking 60 levels spawn to exit without a jump), and the page test covers `?gen=`, the minimap and
+the exit.
+
 ## 6. Dive in 2D: built
 
 **D0 — find the stairs (small; can ship first, on its own).** *Built 2026-11-11 (`overworld/tests/micasurvivor_dive_stairs_test.mjs`). As built: the stairs took their own orange mark, so the rocks and Meowth keep their gold; the HUD arrow comes up after 25 s on a floor, or at once when its boss falls.*

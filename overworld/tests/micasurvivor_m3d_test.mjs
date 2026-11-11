@@ -11,6 +11,9 @@
 //   * P1: who you play decides how it moves (?dex=6: Charizard is Fire / Flying — the readout names its traits and it has
 //     two air jumps); the camera, left alone, swings round behind the way you run, and any camera input takes it back;
 //     ?follow=0 turns that off; the pool is drawn and you can swim in it through the page's own loop
+//   * P2: ?gen=<seed> plays a generated level (gen.js; its rules are tested in node: micasurvivor_m3d_gen_test.mjs): it
+//     boots and is drawn; the minimap is drawn FROM the level (rim, water, height) with you as an arrow and the exit as
+//     a ring; standing in the exit ends the level and loads the next seed in the same biome; the test room is unchanged
 //   node overworld/tests/micasurvivor_m3d_test.mjs      (SHOTS=<dir> for screenshots)
 import http from 'http';
 import fs from 'fs';
@@ -161,6 +164,64 @@ try {
 		const off = await nf.page.evaluate(async () => { const m = window.__m3d, wait = (ms) => new Promise(r => setTimeout(r, ms)); m.cam.yaw = Math.PI; m.cam.manual = 0; m.setInput({ mx: -1, mz: 0 }); await wait(1500); return { yaw: m.cam.yaw, follow: m.cam.follow }; });
 		A(off.follow === false && Math.abs(off.yaw - Math.PI) < 1e-6, '?follow=0: the camera never moves by itself', JSON.stringify(off));
 		await nf.page.close();
+	}
+
+	// ======================== P2: a generated level (?gen=<seed>)
+	{
+		const g = await open({ width: 1280, height: 720, deviceScaleFactor: 1 }, '?gen=7&n=60');
+		A(g.ok, '?gen=7 boots: a generated level instead of the test room');
+		await sleep(900);
+		const gi = await g.page.evaluate(() => { const m = window.__m3d, r = m.room, map = document.getElementById('map');
+			return { gen: m.gen, biome: m.biome, w: r.w, tiles: r.tiles.length, ok: r.check.ok, spawn: r.spawn, exit: r.exit, at: [m.state.x, m.state.y, m.state.z], crowd: m.crowd.length, calls: m.stats().calls, tris: m.stats().triangles,
+				hud: document.getElementById('hud').textContent, map: { shown: getComputedStyle(map).display !== 'none', w: map.width, h: map.height, right: map.getBoundingClientRect().right <= innerWidth, top: map.getBoundingClientRect().top >= 0 } }; });
+		A(gi.gen === 7 && gi.biome === 'meadow' && gi.w === 37 && gi.tiles === 25 && gi.ok, 'it is level 7 of the meadow: 5 × 5 tiles, 37 × 37 cells, and it passed its own check', JSON.stringify(gi));
+		A(Math.hypot(gi.at[0] - gi.spawn[0], gi.at[2] - gi.spawn[2]) < 0.5 && Math.abs(gi.at[1] - gi.spawn[1]) < 0.05, 'you start on the spawn tile, standing on its floor', JSON.stringify([gi.at, gi.spawn]));
+		A(gi.crowd === 60 && gi.calls < 22 && gi.tris > 4000, `the level, its scatter, the exit and 60 sprites in ${gi.calls} draw calls`, JSON.stringify(gi));
+		A(/level 7 · meadow · 5 × 5 tiles · exit \d+ m/.test(gi.hud), 'the readout names the level and how far the exit is', gi.hud);
+		// the minimap is drawn from the level: sample it against the level's own cells
+		A(gi.map.shown && gi.map.w === 37 * 4 && gi.map.h === 37 * 4 && gi.map.right && gi.map.top, 'the minimap is on screen: 4 px a cell', JSON.stringify(gi.map));
+		const mm = await g.page.evaluate(() => new Promise((res) => requestAnimationFrame(() => requestAnimationFrame(() => { const m = window.__m3d, r = m.room, map = document.getElementById('map'), c = map.getContext('2d'), k = 4 / 2;
+			const px = (x, y) => [...c.getImageData(x, y, 1, 1).data.slice(0, 3)];
+			let water = 0, waterOk = 0, rimOk = 0, rim = 0, lo = null, hi = null;
+			for (let cz = 0; cz < r.h; cz++) for (let cx = 0; cx < r.w; cx++) { const i = cz * r.w + cx, p = px(cx * 4 + 1, cz * 4 + 1);
+				if (Math.hypot((cx + .5) * 2 - m.state.x, (cz + .5) * 2 - m.state.z) < 8 || Math.hypot((cx + .5) * 2 - r.exit[0], (cz + .5) * 2 - r.exit[2]) < 6 || Math.hypot((cx + .5) * 2 - r.spawn[0], (cz + .5) * 2 - r.spawn[2]) < 3) continue;   // (under the arrow / the ring / the spawn dot)
+				if (r.cells[i] >= r.rimH) { rim++; if (p[0] < 40 && p[1] < 50) rimOk++; }
+				else if (r.water.has(i)) { water++; if (p[2] > p[0] + 60 && p[2] > 200) waterOk++; }
+				else if (!r.slopes.has(i) && !r.mats.has(i)) { if (r.cells[i] === 0) lo = p; if (r.cells[i] === 3) hi = p; } }
+			// the arrow: red pixels where you are, and nowhere far from you
+			let red = 0, redFar = 0; const d = c.getImageData(0, 0, map.width, map.height).data;
+			for (let y = 0; y < map.height; y++) for (let x = 0; x < map.width; x++) { const o = (y * map.width + x) * 4; if (d[o] > 230 && d[o + 1] < 90 && d[o + 2] < 90) { red++; if (Math.hypot(x - m.state.x * k, y - m.state.z * k) > 9) redFar++; } }
+			// the exit ring: pale yellow pixels 3-8 px from the exit's place
+			let ring = 0; for (let a = 0; a < 6.28; a += 0.2) for (let rr = 3; rr <= 8; rr++) { const p = px(Math.round(r.exit[0] * k + Math.cos(a) * rr), Math.round(r.exit[2] * k + Math.sin(a) * rr)); if (p[0] > 230 && p[1] > 220 && p[2] > 120 && p[2] < 200) ring++; }
+			res({ water, waterOk, rim, rimOk, lo, hi, red, redFar, ring }); }))));
+		A(mm.rim > 100 && mm.rimOk === mm.rim && mm.water > 5 && mm.waterOk === mm.water, `the minimap agrees with the level: every rim cell dark (${mm.rim}), every water cell blue (${mm.water})`, JSON.stringify(mm));
+		A(mm.lo && mm.hi && mm.hi[1] > mm.lo[1] + 40, '...and higher floor is drawn lighter', JSON.stringify([mm.lo, mm.hi]));
+		A(mm.red > 15 && mm.redFar === 0 && mm.ring > 8, 'you are an arrow on it, and the exit a ring', JSON.stringify(mm));
+		const cg = await colours(g.page);
+		A(cg.distinct > 40 && cg.green > cg.total * 0.08, 'the level is really drawn', JSON.stringify(cg));
+		await shot(g.page, 'm3d_gen.png');
+		// the page's own loop walks it: a direction moves you
+		const mv = await g.page.evaluate(async () => { const m = window.__m3d, wait = (ms) => new Promise(r => setTimeout(r, ms)); const x = m.state.x, z = m.state.z; m.setInput({ mx: 0, mz: -1 }); await wait(500); m.setInput(null); return Math.hypot(m.state.x - x, m.state.z - z); });
+		A(mv > 1, 'you can run about in it', String(mv));
+		// the exit: standing in the column of light ends the level (held here, so the page stays to be read)
+		const ex = await g.page.evaluate(async () => { const m = window.__m3d, wait = (ms) => new Promise(r => setTimeout(r, ms)); m.holdExit = true; const before = m.leaving; m.put(m.room.exit[0] + 6, m.room.exit[2]); await wait(300); const far = m.leaving; m.put(m.room.exit[0] + 0.5, m.room.exit[2]); await wait(400); return { before, far, at: m.leaving, hud: document.getElementById('hud').textContent, url: location.search }; });
+		A(!ex.before && !ex.far && ex.at && /exit reached/.test(ex.hud) && /gen=7/.test(ex.url), 'the exit: 6 m away nothing happens; standing in it, the level is over', JSON.stringify(ex));
+		await g.page.close();
+		// ...and not held: the next seed loads
+		const g2 = await open({ width: 900, height: 600, deviceScaleFactor: 1 }, '?gen=7&n=5&biome=peaks');
+		await g2.page.evaluate(() => { const m = window.__m3d; m.put(m.room.exit[0], m.room.exit[2]); });
+		const nxt = await waitFor(() => g2.page.evaluate(() => /gen=8/.test(location.search) && !!(window.__m3d && window.__m3d.ready) && window.__m3d.gen === 8 && window.__m3d.biome === 'peaks'), 15000);
+		A(nxt, 'reaching the exit loads the next level: seed 8, the same biome (peaks)', await g2.page.evaluate(() => location.search));
+		const pk = await g2.page.evaluate(() => { const r = window.__m3d.room; return { ok: r.check.ok, top: Math.max(...r.tiles.map(t => t.level)) }; });
+		A(pk.ok && pk.top >= 3, 'peaks: a level with four or five height levels, checked', JSON.stringify(pk));
+		await sleep(500);
+		await shot(g2.page, 'm3d_gen_peaks.png');
+		await g2.page.close();
+		// the test room is unchanged: no minimap, no level line
+		const tr = await open({ width: 900, height: 600, deviceScaleFactor: 1 }, '?n=5');
+		const tv = await tr.page.evaluate(() => ({ map: getComputedStyle(document.getElementById('map')).display, gen: window.__m3d.gen, hud: document.getElementById('hud').textContent, w: window.__m3d.room.w }));
+		A(tv.map === 'none' && tv.gen === null && !/level/.test(tv.hud) && tv.w === 24, 'without ?gen the test room is as it was: no minimap, no level', JSON.stringify(tv));
+		await tr.page.close();
 	}
 
 	// ======================== phone
