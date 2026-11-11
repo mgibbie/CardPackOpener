@@ -581,6 +581,38 @@ spectate and replay screens; the local-co-op camera (decision 7).
 Tests: `micasurvivor_m3d_net_test.mjs` (node, 21 checks), `micasurvivor_m3d_watch_test.mjs` (Chrome, three windows,
 21 checks).
 
+## 5.15 P3n, second part: built (2026-11-11). Playing together.
+
+Co-op in the rules (`micasurvivor/m3d/coop.js`) and in the test room: one tab hosts (`?gen=7&fight=1&host=me`),
+another joins (`?join=me&dex=4`) and plays in it.
+
+- **Who decides what** is the 2D game's rule, kept. The host: the enemies (arriving, moving, their HP, their going
+  down), what lies on the floor, the team's experience and level, the weather, the clock. Each player: their own
+  Pokémon — where it is, its HP, its moves, and what hits it. A guest's hits on enemies are sent to the host,
+  which applies them.
+- **A guest** fights copies of the host's enemies, drawn a moment in the past between the host's frames, with its
+  own body and moves real and immediate. Enemy shots and marks on the ground are made on the host and fly / go
+  off on the guest's side. **The host** has a puppet of each guest: a body its enemies can go for, moved by the
+  guest's reports ten times a second and carried on by its speed between them.
+- An enemy goes for the nearest player standing. Pickups go to whoever is nearest; the experience is the team's.
+  A level-up puts three cards up for every player (each their own), and the fight waits until all have chosen.
+- With two players 75 % more enemies arrive and each has 30 % more HP (the 2D game's numbers), per extra player.
+- A guest only needs the room's name: it learns the level from the host and loads it as its own Pokémon.
+
+**Measured** (two players, a full fight): the host's messages average about 1,800 characters, a guest's about 65;
+18 KB a second both ways. It still plays with 300 ms of delay each way (a guest still finishes what it shoots at
+and is still hurt by what reaches it).
+
+Not carried over yet: a downed player being revived, three and four players on the page (the rules take them),
+the 2D game's "the host is away: everything stops" rule, and telling a guest it has lost the host.
+
+**Still to do in P3n:** the real carriers (peer-to-peer and the relay through `/api/mp`) in place of the test
+room's; joining the site's lobby, spectate and replay screens; the local-co-op camera (decision 7); and the
+transport decision (decision 8).
+
+Tests: `micasurvivor_m3d_coop_test.mjs` (node, 26 checks: a host and a guest through a delayed line),
+`micasurvivor_m3d_coopplay_test.mjs` (Chrome, two windows, 15 checks).
+
 ## 6. Dive in 2D: built
 
 **D0 — find the stairs (small; can ship first, on its own).** *Built 2026-11-11 (`overworld/tests/micasurvivor_dive_stairs_test.mjs`). As built: the stairs took their own orange mark, so the rocks and Meowth keep their gold; the HUD arrow comes up after 25 s on a floor, or at once when its boss falls.*

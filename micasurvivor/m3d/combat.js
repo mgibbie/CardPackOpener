@@ -45,6 +45,8 @@ export const CK = {
 	// bosses (the 2D game's entities/enemy.js bossMove / bossStart): four attacks each, all marked on the ground first;
 	// under half HP a boss is enraged: faster, shorter waits, and it sometimes chains two attacks
 	BOSS: { hp: 1.35, dmg: 1.2, shot: 0.55, shotCd: 1.1, range: 260, cc: { freeze: 0.35, sleep: 0.35, para: 0.5, conf: 0.5 }, immune: 4, orbs: 14, fury: 1.25, furySpd: 1.15, furyWind: 0.8, chain: 0.35 },
+	// co-op (the 2D game's net/coop.js): each player beyond the first brings 75 % more arrivals and 30 % more enemy HP
+	COOP: { rate: 0.75, hp: 0.3 },
 	// experience (the 2D game's entities/pickup.js, player.js, systems/levelup.js)
 	MAGNET: 78, COLLECT: 15, PULL: [240, 1400], BIG_XP: 20, DROP: { heal: 0.012, magnet: 0.020, bomb: 0.026 }, HEAL_ORB: 0.3, BOMB: { base: 60, level: 14, knock: 160, r: 480 }, MAX_MOVES: 4,
 	// enemy behaviours (the 2D game's entities/enemy.js): the ones here; the rest chase until they are ported
@@ -83,6 +85,8 @@ export function dataFrom(G) {
  *  bosses: [dex] (one arrives at each of the 2D game's boss times: 3:00, 6:00, …),
  *  ability ('auto': your species' own; an ability's id; none by default), items: [id] (held items: one in the 2D
  *  game, any number here),
+ *  guest (true: this is a co-op GUEST's side of a fight: its own body and moves are real, the enemies are copies of the
+ *  host's and are not simulated here; see coop.js),
  *  weather (false: none starts by itself),
  *  orbitSquash (0.7: the 2D game's flattened orbit; 1: a circle), autoPick (a level-up's card is chosen at once: 0-2, or
  *  a function (world, cards) -> index; without it the fight WAITS at a level-up until choose() is called) } */
@@ -93,12 +97,13 @@ export function newWorld(room, data, o = {}) {
 		pl: { s, mon, r: data.radius(mon.dex), maxHp: mon.hp, hp: mon.hp, baseAtk: mon.atk, atkMul: 1, atkK: o.atkK || 1, takenK: o.takenK || 1, cdMul: 1, crit: o.crit || 0, reduction: 0, regen: 0,
 			invuln: 0, meleeT: 0, level: 1, xp: 0, xpNext: xpFor(1), xpMul: 1, spdMul: 1, magnet: CK.MAGNET * U, statsTaken: {}, pending: 0, choices: null, items: [], wpT: 0, itemClock: 0, sitrusT: -999, sashT: -1e9, bellHeal: 0, ability: null, ab: null, abT: 0, abFirstT: -999, abSturdyT: -999, defiantT: 0, baseReduce: 0, baseRegen: 0, buffs: { atk: { n: 0, t: 0, amount: 0 }, spd: { n: 0, t: 0, amount: 0 }, def: { n: 0, t: 0, amount: 0 }, regen: { n: 0, t: 0, amount: 0 } }, afDmg: o.afDmg === undefined ? 1.1 : o.afDmg, target: null, aim: 0, dead: false,
 			moves: (o.moves || []).map((m) => (Array.isArray(m) ? data.move(m[0], m[1]) : data.move(m))) },
-		enemies: [], shots: [], orbs: [], fields: [], effects: [], eshots: [], hazards: [], pickups: [], lastPatch: null, autoPick: o.autoPick, bosses: o.bosses || null, bossIdx: 0, weather: null, wxAuto: o.weather !== false, wxCheck: CK.WX.check, wxChip: 0, field: null, fieldCell: -2,
+		enemies: [], shots: [], orbs: [], fields: [], effects: [], eshots: [], hazards: [], pickups: [], lastPatch: null, autoPick: o.autoPick, bosses: o.bosses || null, bossIdx: 0, mates: [], guest: !!o.guest, out: [], touches: [], waiting: false, hit: null, weather: null, wxAuto: o.weather !== false, wxCheck: CK.WX.check, wxChip: 0, field: null, fieldCell: -2,
 		cast: o.cast || null, spawnAcc: 0, cap: o.cap || CK.CAP, orbitSquash: o.orbitSquash || 1,
 		stats: { gained: 0, collected: 0, levels: 0, dealt: 0, removed: 0, hits: 0, crits: 0, taken: 0, touched: 0, kills: 0, xp: 0, fired: 0, spawned: 0, fell: 0, blocked: 0 },
 		events: [],   // this tick's: { k: 'hit' | 'kill' | 'hurt' | 'shot' | 'melee' | 'beam' | 'aura' | 'chain', … } for the page to draw
 	};
 	for (const id of o.items || []) equip(w, id);
+	w.hit = (e, amount, kx, kz, knockU) => hurtEnemy(w, e, amount, kx, kz, knockU);   // (for coop.js: a guest's hit, applied by the host)
 	const abId = o.ability === 'auto' ? data.abilityOf(mon.dex) : o.ability, fx = abId ? data.abilityFx(abId) : null;
 	if (fx) {   // what an ability changes for good: cooldowns, reach, XP, crit
 		const pl = w.pl; pl.ability = abId; pl.ab = fx;
@@ -251,6 +256,7 @@ const SUPPORT = ['healer', 'summoner'];   // …and these two do not need to see
 // ---------------------------------------------------------------- damage
 function hurtEnemy(w, e, amount, kx, kz, knockU) {
 	if (e.dead) return 0;
+	if (w.guest) { e.flash = 0.12; w.out.push({ id: e.id, d: Math.round(amount * 100) / 100, kx: Math.round(kx * 100) / 100, kz: Math.round(kz * 100) / 100, kn: knockU }); w.stats.removed += Math.max(1, Math.round(amount)); return amount; }
 	if (e.frozenT > 0) amount *= CK.FROZEN_TAKEN;
 	let d = Math.max(1, Math.round(amount));
 	if (e.shield > 0) { const a = Math.min(e.shield, d); e.shield -= a; if (a >= d) { e.flash = 0.06; w.events.push({ k: 'absorbed', id: e.id }); return 0; } d = Math.max(1, Math.round(d - a)); }   // a shielder's shield takes it first
@@ -296,6 +302,11 @@ function land(w, e, dmg, kx, kz, knockU, src) {
 	if (has(pl, 'shellbell')) pl.bellHeal = Math.min(CK.IT.bellMax, pl.bellHeal + d * CK.IT.bell);
 	w.stats.dealt += d; w.stats.hits++;
 	w.events.push({ k: 'hit', id: e.id, x: e.a.x, y: e.a.y + bodyH(e) * 0.5, z: e.a.z, d, crit, type, eff: type ? w.data.typeMult(type, e.types) : 1 });
+	if (w.guest) {   // (…and what the hit carries rides with it)
+		const o = w.out[w.out.length - 1];
+		if (o && o.id === e.id) { if (src.burn) o.burn = src.burn; if (src.poison) o.poison = src.poison; if (src.slow) o.slow = src.slow; if (asleep) o.wake = 1; if (src.cc && src.ccp > 0 && w.rand() < src.ccp) o.cc = src.cc; }
+		return d;
+	}
 	if (!e.dead) { if (asleep) e.sleepT = 0; if (src.cc && src.ccp > 0 && w.rand() < src.ccp) applyState(w, e, src.cc); }
 	if (src.burn) { e.burn = Math.min(8, e.burn + src.burn); e.burnT = 3; }
 	if (src.poison) { e.poison = Math.min(8, e.poison + src.poison); e.poisonT = 4; }
@@ -674,6 +685,7 @@ function resolve(w) {
 		if (dx * dx + dz * dz > rr * rr) continue;
 		if (Math.abs((e.fly ? e.a.y - e.a.hover : e.a.y) - s.y) > CK.TOUCH_UP) continue;   // (jump over it; it is on the ledge above; …)
 		e.touchCd = CK.TOUCH_CD; w.stats.touched++;
+		if (w.guest) w.touches.push(e.id);
 		hurtPlayer(w, e.dmg, e.atkType);
 		if (has(pl, 'rockyhelmet')) hurtEnemy(w, e, CK.IT.helmet[0] + pl.level * CK.IT.helmet[1], dx, dz, CK.IT.helmetKnock);
 		if (has(pl, 'eternalice') && !e.dead) { e.slow = Math.max(e.slow, w.data.IT.ICE.slow); e.slowT = Math.max(e.slowT, w.data.IT.ICE.dur); }
@@ -829,7 +841,7 @@ function enemyAttacks(w, dt) {
 		const h = w.hazards[i];
 		h.t += dt;
 		if (!h.hit && h.t >= h.delay) {
-			h.hit = true; w.events.push({ k: 'boom', h });
+			h.hit = true; if (!h.quiet) w.events.push({ k: 'boom', h });
 			let inside = !pl.dead && Math.abs(s.y - h.y) <= CK.REACH_UP;   // (3D: a mark on the ground reaches about a metre up: jump clear of it)
 			if (inside && h.kind === 'zone') { const rr = h.r + pl.r * 0.6; inside = (s.x - h.x) ** 2 + (s.z - h.z) ** 2 < rr * rr; }
 			else if (inside) { const ca = Math.cos(h.angle), sa = Math.sin(h.angle), px = s.x - h.x, pz = s.z - h.z, along = px * ca + pz * sa; inside = along >= -pl.r && along <= h.len + pl.r && Math.abs(-px * sa + pz * ca) <= h.w / 2 + pl.r * 0.6; }
@@ -852,12 +864,21 @@ function confused(w, e, dt) {
 		w.events.push({ k: 'confhit', id: e.id, on: tgt.id });
 	}
 }
+/** The way to a player: rebuilt when its cell changes (and only while it stands on something walkable). `holder` keeps it:
+ *  the fight for you, the puppet for a co-op mate. */
+function wayTo(w, holder, s) {
+	const cell = Math.floor(s.z / CELL) * w.room.w + Math.floor(s.x / CELL);
+	if (!holder.field || (cell !== holder.fieldCell && (s.grounded || s.swimming))) { holder.field = flowField(w.room, s.x, s.z, holder.field); holder.fieldCell = cell; }
+	holder.field.x = s.x; holder.field.z = s.z;
+}
 function updateEnemies(w, dt) {
 	const pl = w.pl, s = pl.s;
-	// the way to the player: rebuilt when the player's cell changes (and only while standing on something walkable)
-	const cell = Math.floor(s.z / CELL) * w.room.w + Math.floor(s.x / CELL);
-	if (!w.field || (cell !== w.fieldCell && (s.grounded || s.swimming))) { w.field = flowField(w.room, s.x, s.z, w.field); w.fieldCell = cell; }
-	w.field.x = s.x; w.field.z = s.z;
+	wayTo(w, w, s);
+	const mine = w.field;
+	// co-op: an enemy goes for the NEAREST player standing. For its turn the fight's `pl` is that player (a mate's
+	// puppet has the body an enemy needs to know about), and its way is the way to them.
+	const others = w.mates.filter((m) => !m.dead); for (const m of others) wayTo(w, m, m.s);
+	const aimAt = (e) => { let best = pl.dead && others.length ? null : pl, bd = best ? Math.hypot(e.a.x - s.x, e.a.y - s.y, e.a.z - s.z) : Infinity; for (const m of others) { const d = Math.hypot(e.a.x - m.s.x, e.a.y - m.s.y, e.a.z - m.s.z); if (d < bd) { bd = d; best = m; } } return best || pl; };
 	for (const e of w.enemies) {
 		if (e.dead) continue;
 		if (e.flash > 0) e.flash -= dt;
@@ -880,8 +901,15 @@ function updateEnemies(w, dt) {
 		let k = (1 - e.slow) * wxSpeed(w, e.types);
 		if (e.dummy || e.frozenT > 0 || e.sleepT > 0) WISH[0] = WISH[1] = 0;   // (only a shove moves it)
 		else if (e.confT > 0) { k *= 0.9; confused(w, e, dt); }
-		else if (e.boss) { k *= bossMove(w, e, dt) * (e.paraT > 0 ? CK.PARA_SLOW : 1); if (e.jump) continue; }
-		else { k *= behave(w, e, dt); if (e.dead) continue; if (e.paraT > 0) k *= CK.PARA_SLOW; }
+		else {
+			const tg = others.length ? aimAt(e) : pl; e.tg = tg === pl ? 0 : tg.id;
+			if (tg !== pl) { w.pl = tg; w.field = tg.field; }
+			let skip = false;
+			if (e.boss) { k *= bossMove(w, e, dt) * (e.paraT > 0 ? CK.PARA_SLOW : 1); skip = !!e.jump; }
+			else { k *= behave(w, e, dt); skip = e.dead; if (e.paraT > 0) k *= CK.PARA_SLOW; }
+			if (tg !== pl) { w.pl = pl; w.field = mine; }
+			if (skip) continue;
+		}
 		stepActor(e.a, w.room, WISH[0], WISH[1], dt, k);
 		if (e.a.fell > 1) { w.stats.fell++; w.events.push({ k: 'fell', id: e.id, h: e.a.fell }); }
 		if (e.a.gone) { e.dead = true; }
@@ -914,8 +942,8 @@ function spawnTick(w, dt) {
 	}
 	if (!w.cast || !w.cast.length) return;
 	if (w.enemies.length >= w.cap) return;
-	const incense = has(w.pl, 'pureincense') ? w.data.IT.INCENSE : null;   // Pure Incense: a quarter fewer arrive, tougher and worth more
-	w.spawnAcc = Math.min(8, w.spawnAcc + spawnRate(w.t) * (w.enemies.some((e) => e.boss && !e.dead) ? 0.25 : 1) * (incense ? incense.rate : 1) * dt);
+	const party = 1 + w.mates.length, incense = has(w.pl, 'pureincense') ? w.data.IT.INCENSE : null;   // Pure Incense: a quarter fewer arrive, tougher and worth more
+	w.spawnAcc = Math.min(8, w.spawnAcc + spawnRate(w.t) * (w.enemies.some((e) => e.boss && !e.dead) ? 0.25 : 1) * (incense ? incense.rate : 1) * (1 + CK.COOP.rate * (party - 1)) * dt);
 	while (w.spawnAcc >= 1 && w.enemies.length < w.cap) {
 		w.spawnAcc -= 1;
 		const dex = w.cast[Math.floor(w.rand() * w.cast.length)], fly = !!w.data.hovers(dex), s = w.pl.s, room = w.room;
@@ -926,7 +954,7 @@ function spawnTick(w, dt) {
 			const i = cz * room.w + cx;
 			if (room.cells[i] >= (room.rimH || 8)) continue;
 			if (!fly && (w.field.dist[i] < 0 || room.water.has(i))) continue;   // a walker arrives where it can walk to you from
-			const ne = addEnemy(w, dex, x, z);
+			const ne = addEnemy(w, dex, x, z, party > 1 ? { hp: 1 + CK.COOP.hp * (party - 1) } : undefined);
 			if (incense) { ne.maxHp = ne.hp = Math.round(ne.maxHp * incense.hp); ne.xp = Math.round(ne.xp * incense.xp); }
 			break;
 		}
@@ -940,9 +968,12 @@ function gainXp(w, amount) {
 }
 /** Pickups: inside your reach (or once a magnet has called them) they fly to you, in space; touched, they are yours. */
 function updatePickups(w, dt) {
-	const pl = w.pl, s = pl.s, cy = s.y + 0.5;
+	const me = w.pl, others = w.mates.filter((m) => !m.dead);
 	for (let i = w.pickups.length - 1; i >= 0; i--) {
 		const p = w.pickups[i]; p.t += dt * 4;
+		// (co-op: it goes to whoever is nearest)
+		let pl = me, bd = me.dead ? Infinity : Math.hypot(me.s.x - p.x, me.s.y + 0.5 - p.y, me.s.z - p.z); for (const m of others) { const q = Math.hypot(m.s.x - p.x, m.s.y + 0.5 - p.y, m.s.z - p.z); if (q < bd) { bd = q; pl = m; } }
+		const s = pl.s, cy = s.y + 0.5;
 		const dx = s.x - p.x, dy = cy - p.y, dz = s.z - p.z, d = Math.hypot(dx, dy, dz) || 1e-6;
 		if (p.pulled || d < pl.magnet) {
 			p.pulled = true;
@@ -951,14 +982,14 @@ function updatePickups(w, dt) {
 		} else { const f = Math.pow(0.02, dt); p.vx *= f; p.vz *= f; p.vy = 0; }
 		p.x += p.vx * dt; p.y += p.vy * dt; p.z += p.vz * dt;
 		if (!p.pulled) { const g = groundAt(w.room, p.x, p.z); if (g > p.y + K.STEP) { p.x -= p.vx * dt; p.z -= p.vz * dt; p.vx = p.vz = 0; } else p.y = g; }   // it rolls on the floor, and stops at a wall
-		if (d < CK.COLLECT * U) { w.pickups.splice(i, 1); collect(w, p); }
+		if (d < CK.COLLECT * U) { w.pickups.splice(i, 1); collect(w, p, pl); }
 	}
 }
-function collect(w, p) {
-	const pl = w.pl, s = pl.s; w.stats.collected++;
+function collect(w, p, who = w.pl) {
+	const pl = w.pl, s = who.s; w.stats.collected++;
 	w.events.push({ k: 'pickup', kind: p.kind, value: p.value });
 	if (p.kind === 'xp' || p.kind === 'xpBig') gainXp(w, p.value);
-	else if (p.kind === 'heal') pl.hp = Math.min(pl.maxHp, pl.hp + pl.maxHp * CK.HEAL_ORB);
+	else if (p.kind === 'heal') { if (who === pl) pl.hp = Math.min(pl.maxHp, pl.hp + pl.maxHp * CK.HEAL_ORB); else who.gifts.push({ k: 'heal', v: CK.HEAL_ORB }); }   // (a mate's berry: they are told)
 	else if (p.kind === 'magnet') for (const o of w.pickups) o.pulled = true;
 	else if (p.kind === 'bomb') { const B = CK.BOMB; for (const e of [...w.enemies]) { if (e.dead || Math.hypot(e.a.x - s.x, e.a.y - s.y, e.a.z - s.z) > B.r * U) continue; hurtEnemy(w, e, B.base + pl.level * B.level, e.a.x - s.x, e.a.z - s.z, B.knock); } w.events.push({ k: 'bomb', x: s.x, y: s.y, z: s.z, r: B.r * U }); }
 }
@@ -1012,6 +1043,7 @@ export function tick(w, input, dt = K.TICK) {
 		if (w.autoPick === undefined || w.autoPick === null) return w;
 		choose(w, Math.min(pl.choices.length - 1, typeof w.autoPick === 'function' ? w.autoPick(w, pl.choices) | 0 : w.autoPick | 0));
 	}
+	if (w.waiting) return w;   // (co-op: someone is choosing a card: the fight waits for everyone)
 	w.t += dt; w.tick++;
 	if (!pl.dead) {
 		const B = pl.buffs;
@@ -1028,6 +1060,14 @@ export function tick(w, input, dt = K.TICK) {
 		if (pl.regen > 0) pl.hp = Math.min(pl.maxHp, pl.hp + pl.regen * dt);
 		const t = pl.target = pickTarget(w);
 		if (t) pl.aim = Math.atan2(t.a.z - s.z, t.a.x - s.x); else if (Math.hypot(s.vx, s.vz) > 0.5) pl.aim = Math.atan2(s.vz, s.vx);
+	}
+	if (w.guest) {   // a guest: your body and your moves, against copies of the host's enemies (coop.js keeps them)
+		for (const e of w.enemies) { if (e.flash > 0) e.flash -= dt; if (e.touchCd > 0) e.touchCd -= dt; }
+		if (!pl.dead) fireMoves(w, dt);
+		moveShots(w, dt); resolve(w);
+		if (!pl.dead) { updateFields(w, dt); updateEffects(w, dt); }
+		enemyAttacks(w, dt);
+		return w;
 	}
 	if (!w.field) { w.field = flowField(w.room, s.x, s.z); w.fieldCell = Math.floor(s.z / CELL) * w.room.w + Math.floor(s.x / CELL); }
 	updateWeather(w, dt);
