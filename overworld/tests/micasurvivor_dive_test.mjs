@@ -90,6 +90,7 @@ const BEFORE = (save) => {
 	H.downTo = f => {
 		let n = 0;
 		while (G.ExpDive.run && G.ExpDive.run.floor < f && n++ < 400) {
+			{ const pl = G.Game.player; if (pl && !pl.dead) pl.hp = pl.maxHp; }   // (the way down is plumbing here, not a fight: D1 made the foes hit hard)
 			H.thin();
 			const S = G.ExpDive.run;
 			if (S.boss && !S.boss.dead) { S.boss.hurt(S.boss.maxHp * 2); H.step(2); }
@@ -373,7 +374,7 @@ try {
 		out.used = S.lmUsed; out.k = +G.ExpDive.out(1, pl, null, null).toFixed(3); out.block = (G.ExpDive.dBlock().q & 48) === 48;
 		S.obeliskT = 0;
 		S.L.landmark = { kind: 'shrine', at: S.L.spawn.slice() }; S.lmUsed = false; pl.hp = 1; H.step(40);
-		out.healed = pl.hp === pl.maxHp;
+		out.healed = Math.abs(pl.hp - (1 + pl.maxHp * 0.5)) < 1.5;   // (D1: half your HP, was all of it; regen ticks a little on top)
 		S.L.landmark = null;
 		// the interactables of Dive floors (pure from the floor): chests = free balls, a shop on ~1 in 4 plain floors
 		const kinds = { freeball: 0, meowth: 0, berry: 0, rock: 0 }, arenaShop = [];
@@ -389,7 +390,7 @@ try {
 		return out;
 	});
 	A(v6.used && Math.abs(v6.k - 1.3) < 1e-9 && v6.block, 'an obelisk: stand on it 1 s, +30 % damage (in the viewers\' block too)', JSON.stringify(v6));
-	A(v6.healed, 'a shrine heals you fully', JSON.stringify(v6));
+	A(v6.healed, 'a shrine heals half your HP (D1)', JSON.stringify(v6));
 	A(v6.kinds.freeball === v6.chests && v6.kinds.meowth >= 3 && v6.kinds.meowth <= 20 && v6.kinds.berry > 40 && v6.kinds.rock > 60 && !v6.arenaShop.length && !v6.offFloor,
 		'40 floors\' interactables: every chest a free Poké Ball, the Kecleon shop on ~1 in 4 plain floors (never an arena), berries and gold, all on floor tiles', JSON.stringify(v6));
 
@@ -816,7 +817,7 @@ try {
 		});
 		A(bal.f25 >= bal.base15 * 0.75 && bal.f25 <= bal.base15 * 1.25, `an escaped floor-25 dive pays about a 15-minute base run (${bal.f25} vs ${bal.base15} Pokémonedas)`, JSON.stringify(bal));
 		const tune = await E(d.page, () => { const K = G.ExpDive.K, T = G.ExpDive.TELE; return [K.HP_K, K.DMG_K, K.T_PER_FLOOR, K.TIER_BST, K.ALPHA.hp, K.ALPHA.dmg, K.GUARD.hp, K.GUARD.dmg, T.SLAM_DMG, T.CHARGE_DMG]; });
-		A(JSON.stringify(tune) === '[2.8,1.68,13,80,7,1.2,50,1.4,1.35,1.6]', 'the difficulty tuning (tools/micasurvivor/dive_sim.mjs, 2026-11-02: fresh ~floor 11, half-upgraded ~18, maxed ~27) is what ships', JSON.stringify(tune));
+		A(JSON.stringify(tune) === '[3.3,2.4,13,80,7,1.2,50,1.4,1.35,1.6]', 'the difficulty tuning (D1, tools/micasurvivor/dive_sim.mjs 2026-11-11: fresh ~floor 7, half-upgraded ~15, maxed ~20; was 2.8 / 1.68: ~9 / ~19 / ~20-25) is what ships', JSON.stringify(tune));
 		A(bal.f10 < bal.f25 * 0.5 && bal.f50 > bal.f25 * 2, 'deeper pays more than in proportion (floor 10 < half, floor 50 > twice)', JSON.stringify(bal));
 		// the step cost on a deep floor, every group awake (a phone is ~4x slower: the 16 ms frame keeps room for drawing)
 		const perf = await E(d.page, async () => {

@@ -48,7 +48,8 @@ G.I18n.add({
   '¡Guardián derrotado! Etapa guardada': 'Guardian defeated! Stage saved',
   '{x} rescatado': '{x} rescued', '¡{x} te sigue! Llévalo a las escaleras': '{x} follows you! Take it to the stairs',
   'Santuario': 'Shrine', 'Obelisco': 'Obelisk', 'Altar': 'Altar', 'Pecio': 'Shipwreck', 'Aguja de hielo': 'Frost spire', 'Tótem': 'Totem', 'Monolito': 'Monolith', 'Corro de hadas': 'Fairy ring',
-  'el grupo se cura del todo': 'the party is fully healed', '+30 % de daño durante 60 s': '+30% damage for 60 s', 'pagas vida por botín': 'you pay life for loot',
+  'el grupo se cura del todo': 'the party is fully healed', 'el grupo recupera media vida': 'the party heals half its HP',
+  'Algo se agita: llegan refuerzos': 'Something stirs: reinforcements are coming', '+30 % de daño durante 60 s': '+30% damage for 60 s', 'pagas vida por botín': 'you pay life for loot',
   'botín del naufragio': 'loot from the wreck', 'congela a los enemigos cercanos': 'freezes the foes nearby', 'experiencia para el grupo': 'experience for the party',
   'mucha experiencia': 'a lot of experience', 'revive y cura': 'revives and heals', 'Racha x{x}': 'Combo x{x}', 'x{x} RACHA': 'x{x} COMBO', 'Mejor racha: {x}': 'Best combo: {x}',
   'Cuerda Huida: quédate quieto…': 'Escape Rope: hold still…',
@@ -85,14 +86,26 @@ G.ExpDive = (() => {
     STAIRS_R: 0.9, STAIRS_T: 0.5,      // tiles / s on the stairs to go down
     STAIRS_HINT_T: 25,                 // s on a floor before the HUD points at the stairs (D0: no more hunting for them)
     ROPE_R: 1.6, ROPE_T: 3,            // the rope circle (tiles), s standing still in it
-    WAKE_R: 7,                         // tiles: a sleeping group wakes when you come this close (or one of it is hit)
+    // (D1, Plans/MICASURVIVOR_3D_PLAN.md: "it is too easy and the enemies aren't strong enough")
+    WAKE_R: 11, WAKE_CHAIN: 9,         // tiles: a sleeping group wakes when you come this close (or one of it is hit); a waking
+                                       // group also wakes the groups within WAKE_CHAIN of it (one hop), so a pull is a fight (was 7, alone)
     RESCUE_R: 1.2,                     // tiles: reach the lost Pokémon
     GROUP: [2, 6], GUARD_PLUS: 1,      // foes a group (grows with depth), a guard group +1
     SIGMA: 45, TYPE_BIAS: 2,           // the species curve
     T_PER_FLOOR: 13,                   // s of "run time" a floor is worth for the base stat curves (G.Enemies.scale)
     // (balance 2026-11-02, tools/micasurvivor/dive_sim.mjs: Classic's 3.3 / 2.4 walled the bot near floor 10-20; x0.85 HP, x0.7 damage
     //  -> a fresh partner ~floor 10, half the shop upgrades ~18-20, a maxed one at the floor-25 guardian and past it)
-    HP_K: 2.8, DMG_K: 1.68, XP_K: 5.6, TIER_BST: 80,
+    // (D1 2026-11-11: back up to Classic's 3.3 / 2.4 — the x0.85 / x0.7 above was tuned so a bot that RUNS PAST every fight got
+    //  deep; a player who fights found nothing that could hurt them. The bot's new depths are in the plan, D1.)
+    HP_K: 3.3, DMG_K: 2.4, XP_K: 5.6, TIER_BST: 80,
+    DEEP: { from: 25, hp: 0.03, dmg: 0.015, tierAt: 40 },   // past floor 25: +3 % HP and +1.5 % damage a floor; from floor 40 the stats tier is one higher (it stopped at 4)
+    // elites: from floor ELITE.from a plain foe is an elite ELITE.p0 (+ ELITE.per a floor, up to ELITE.max) of the time, with one
+    // affix: swift (speed), tough (HP) or rage (damage). Bigger, ringed in its affix's colour, worth ELITE.xp times the XP.
+    ELITE: { from: 6, p0: 0.08, per: 0.008, max: 0.3, scale: 1.22, xp: 2.5, swift: 1.4, tough: 2.4, rage: 1.55 },
+    // pressure: REIN.grace s after you arrive on a floor, a pack arrives REIN.near..REIN.far tiles away, out of sight, awake, every REIN.every s (faster
+    // each time, down to REIN.min). They give little XP and no loot: lingering costs, it does not pay. Not on a guardian's floor.
+    REIN: { grace: 45, every: 14, faster: 1.5, min: 6, n: 2, perFloors: 12, max: 4, cap: 40, xp: 0.3, near: 11, far: 20 },
+    BERRY: 0.25,                       // a berry bush heals a quarter of your HP here (Classic's: half)
     ALPHA: { scale: 1.45, hp: 7, dmg: 1.2, xp: 8 },
     GUARD: { scale: 1.9, hp: 50, dmg: 1.4, xp: 30 },
     // V9 (owner default #8: an escaped floor-25 dive pays about a 15-minute base run, ~1,500 Pokémonedas): the loot in the
@@ -197,18 +210,18 @@ G.ExpDive = (() => {
   /** The floor's foes, the lost Pokémon, the alpha / guardian (the zone is already set: core.js enterZone). */
   function startFloor(f, t) {
     const L = G.World.zone && G.World.zone.dive;
-    Object.assign(S, { floor: f, ft: t, L, groups: [], boss: null, stairsT: 0, ropeT: 0, lost: null, sealed: false, bossFell: false, tg: [], lmUsed: false, lmT: 0, plugsOpen: 0 });
+    Object.assign(S, { floor: f, ft: t, L, groups: [], boss: null, stairsT: 0, ropeT: 0, lost: null, sealed: false, bossFell: false, reinT: null, reinN: 0, tg: [], lmUsed: false, lmT: 0, plugsOpen: 0 });
     S.deepest = Math.max(S.deepest, f);
     if (!L) return;
     const r = rng(S.route, f, 0xD1), P = pool(S.route, f);
     const n = Math.min(K.GROUP[1], K.GROUP[0] + Math.floor(f / 8)) + (S.weekly && S.weekly.mod === 'horde' ? 2 : 0);   // (V8: Horde)
-    const pre = [];
+    const pre = [], er = rng(S.route, f, 0xE17E);   // (D1: the floor's elite stream)
     for (const [gi, g] of L.groups.entries()) {
       const k = Math.max(1, n + (g.guard ? K.GUARD_PLUS : 0) + Math.floor(r() * 3) - 1), [x, y] = wpos(g.at), list = [];
       for (let i = 0; i < k; i++) {
         const a = r() * 6.2832, d = (i ? 18 + r() * 22 : 0), dex = draw(P, r);
         pre.push(dex);
-        const e = spawn(dex, x + Math.cos(a) * d, y + Math.sin(a) * d, t, {});
+        const e = spawn(dex, x + Math.cos(a) * d, y + Math.sin(a) * d, t, { er });
         if (e) { e.xdive = gi; list.push(e); }
       }
       S.groups.push({ awake: false, list, at: [x, y] });
@@ -263,13 +276,14 @@ G.ExpDive = (() => {
   /** A foe of this floor. o: {alpha, boss, legend (U3)} -> the enemy */
   function spawn(dex, x, y, t, o) {
     const C = G.ExpClassic, f = S.floor, teff = f * K.T_PER_FLOOR;
-    const ti = G.U.clamp(Math.floor((target(f) - 260) / K.TIER_BST), 0, 5);   // (a stats tier every TIER_BST of the target)
+    const ti = G.U.clamp(Math.floor((target(f) - 260) / K.TIER_BST) + (f >= K.DEEP.tierAt ? 1 : 0), 0, 5);   // (a stats tier every TIER_BST of the target; D1: one more from floor 40)
+    const deep = Math.max(0, f - K.DEEP.from);   // (D1: the floors past 25 keep growing)
     const def = C.defOf(dex, ti);
     const sc = G.Enemies.scale(teff), n = Math.max(1, G.Game.everyone ? G.Game.everyone().length : 1);
     const X = o.boss ? K.GUARD : o.legend ? K.LEGEND : o.alpha ? K.ALPHA : null;
-    const hp = sc.hp * G.Coop.scaleHp(n) * (K.HP_K + Math.min(1.7, teff / 210)) * (X ? X.hp : 1);
+    const hp = sc.hp * G.Coop.scaleHp(n) * (K.HP_K + Math.min(1.7, teff / 210)) * (X ? X.hp : 1) * (1 + K.DEEP.hp * deep);
     const e = new G.Enemy(def, x, y, { hp, dmg: sc.dmg, spd: sc.spd }, !!o.boss);
-    e.dmg *= K.DMG_K * (X ? X.dmg : 1);
+    e.dmg *= K.DMG_K * (X ? X.dmg : 1) * (1 + K.DEEP.dmg * deep);
     if (S.weekly && S.weekly.mod === 'iron') e.maxHp = e.hp = Math.round(e.maxHp * WEEKLY.IRON);   // (V8: the Weekly Dive's modifiers)
     if (S.weekly && S.weekly.mod === 'swift') e.spd *= WEEKLY.SWIFT;
     e.xp = Math.round(e.xp * K.XP_K * (X ? X.xp : 1));
@@ -278,7 +292,17 @@ G.ExpDive = (() => {
       e.r = G.Sprites.bodyRadius(e.dex, X.scale); e.bodyH = G.Sprites.bodyHeight(e.dex, X.scale);
       e.xk = o.boss ? 'guardian' : 'alpha';   // (not G.ExpCap.mark: a Dive alpha FALLS, it doesn't faint at 1 HP for the Friend Ball)
     }
-    if (!o.boss && !o.alpha && !o.legend) e.xmove = sleeper;
+    // (D1) an elite: one affix, rolled from the floor's own elite stream (o.er: the same floor, the same elites)
+    if (!X && o.er && f >= K.ELITE.from && o.er() < Math.min(K.ELITE.max, K.ELITE.p0 + K.ELITE.per * (f - K.ELITE.from))) {
+      const aff = ['swift', 'tough', 'rage'][Math.floor(o.er() * 3)];
+      e.xaff = aff;
+      if (aff === 'swift') e.spd *= K.ELITE.swift; else if (aff === 'tough') e.maxHp = e.hp = Math.round(e.maxHp * K.ELITE.tough); else e.dmg *= K.ELITE.rage;
+      e.xp = Math.round(e.xp * K.ELITE.xp);
+      e.scale = K.ELITE.scale; e.anim = new G.Sprites.Animator(e.dex, K.ELITE.scale, e.shiny);
+      e.r = G.Sprites.bodyRadius(e.dex, K.ELITE.scale); e.bodyH = G.Sprites.bodyHeight(e.dex, K.ELITE.scale);
+    }
+    if (o.rein) { e.xrein = true; e.xp = Math.max(1, Math.round(e.xp * K.REIN.xp)); }   // (D1: a reinforcement — little XP, no loot)
+    if (!o.boss && !o.alpha && !o.legend && !o.rein) e.xmove = sleeper;
     G.EnemyMgr.add(e);
     return e;
   }
@@ -291,7 +315,34 @@ G.ExpDive = (() => {
     this.anim.loop('Idle', 0.05);
     return true;
   }
-  function wake(g) { if (g.awake) return; g.awake = true; for (const e of g.list) if (e && !e.dead) e.xmove = null; }
+  function wake(g, hop = true) {
+    if (g.awake) return;
+    g.awake = true; for (const e of g.list) if (e && !e.dead) e.xmove = null;
+    // (D1) the groups nearby hear it: one hop, so a pull is a fight but not the whole floor
+    if (hop && S) { const r2 = (K.WAKE_CHAIN * TS()) ** 2; for (const o of S.groups) if (!o.awake && G.U.dist2(o.at[0], o.at[1], g.at[0], g.at[1]) < r2) wake(o, false); }
+  }
+  /** (D1) Pressure: a pack arrives nearby, out of sight, awake, and comes for you. -> how many */
+  function reinforce(t, alive) {
+    const L = S.L, f = S.floor;
+    if (!L || G.EnemyMgr.all().filter(e => !e.dead).length >= K.REIN.cap) return 0;
+    // where: a spot of the floor REIN.near..REIN.far tiles from the nearest player and off everyone's screen (the floor's
+    // path, its entrance, its groups' spots: all walkable), the closest such to REIN.near. Not farther: the base game
+    // recycles a foe more than 1400 px from the players (js/entities/enemy.js), so a pack at a far entrance never arrived.
+    const R = TS(), dOf = p => Math.sqrt(Math.min(...alive.map(q => G.U.dist2(q.x, q.y, p[0], p[1])))) / R;
+    const cands = [L.spawn, ...(L.path || []), ...(L.groups || []).map(g => g.at)].map(wpos);
+    let at = null, best = Infinity, fallback = null, fb = -1;
+    for (const c of cands) {
+      const d = dOf(c);
+      if (d >= K.REIN.near && d <= K.REIN.far && !G.Camera.sees(c[0], c[1], 40) && d < best) { best = d; at = c; }
+      if (d <= K.REIN.far && d > fb) { fb = d; fallback = c; }
+    }
+    at = at || fallback || wpos(L.spawn);   // (a tiny floor: as far as it gets within reach)
+    const rr = rng(S.route, f, 0x8E1F + S.reinN), P = pool(S.route, f), n = Math.min(K.REIN.max, K.REIN.n + Math.floor(f / K.REIN.perFloors));
+    let made = 0;
+    for (let i = 0; i < n; i++) { const a = rr() * 6.2832, d = 10 + rr() * 22, e = spawn(draw(P, rr), at[0] + Math.cos(a) * d, at[1] + Math.sin(a) * d, t, { rein: true }); if (e) made++; }
+    if (made && !S.reinN) say(T().t('Algo se agita: llegan refuerzos'), 3);
+    return made;
+  }
 
   /** Every step of a Dive run on the host (js/systems/spawner.js -> classic.js update). */
   function update(dt, players, t) {
@@ -302,6 +353,11 @@ G.ExpDive = (() => {
     S.now = t;   // (the run clock, for the HUD's stairs pointer: time on this floor = S.now - S.ft)
     // the groups wake when someone comes close
     for (const g of S.groups) if (!g.awake && alive.some(p => G.U.dist2(p.x, p.y, g.at[0], g.at[1]) < wr)) wake(g);
+    // (D1) pressure: after the grace, packs keep arriving, faster each time
+    if (S.L && !S.L.cadence.guardian && t - S.ft >= K.REIN.grace) {
+      S.reinT = (S.reinT == null ? 0 : S.reinT) - dt;
+      if (S.reinT <= 0) { reinforce(t, alive); S.reinT = Math.max(K.REIN.min, K.REIN.every - K.REIN.faster * S.reinN); S.reinN++; }
+    }
     teleTick(dt, alive);   // (V4: the red ground)
     // the lost Pokémon
     if (S.lost && !S.lost.done && !S.lost.follow && alive.some(p => G.U.dist2(p.x, p.y, S.lost.x, S.lost.y) < (K.RESCUE_R * R) ** 2)) rescue();
@@ -395,7 +451,7 @@ G.ExpDive = (() => {
   function onKill(e) {
     if (!on() || !e) return;
     S.kills++;
-    loot(K.LOOT.ko + K.LOOT.koPer * S.floor);
+    if (!e.xrein) loot(K.LOOT.ko + K.LOOT.koPer * S.floor);   // (D1: a reinforcement pays nothing)
     if (e.xu3) loot((e.xu3 === 'legend' ? K.LEGEND.loot : K.LOOT.alpha) + (e.xu3 === 'legend' ? K.LEGEND.lootPer : K.LOOT.alphaPer) * S.floor);   // (U3: a Mega elite pays an alpha's, a legendary more)
     comboKo(e);   // (V5)
   }
@@ -831,7 +887,7 @@ G.ExpDive = (() => {
   //   shrine full heal · obelisk +30 % damage for 60 s · altar pay 30 % HP for loot · shipwreck loot · spire freezes the foes
   //   near it · totem a burst of XP for the party · monolith XP · fairy ring revives the downed and heals.
   const ESCORT = { R: 4, SPEED: 1.15 };
-  const LM = { T: 1, R: 1.4, OBELISK: 0.3, OBELISK_T: 60, ALTAR_HP: 0.3, SPIRE_R: 6, SPIRE_T: 4 };
+  const LM = { T: 1, R: 1.4, SHRINE_HP: 0.5, OBELISK: 0.3, OBELISK_T: 60, ALTAR_HP: 0.3, SPIRE_R: 6, SPIRE_T: 4 };
   function escortTick(dt, alive) {
     const lo = S.lost;
     if (!lo || !lo.follow || lo.done) return;
@@ -857,7 +913,7 @@ G.ExpDive = (() => {
     if (S.lmT < LM.T) return;
     S.lmUsed = true;
     const k = lm.kind, f = S.floor;
-    if (k === 'shrine') for (const p of alive) p.hp = p.maxHp;
+    if (k === 'shrine') for (const p of alive) p.hp = Math.min(p.maxHp, p.hp + p.maxHp * LM.SHRINE_HP);   // (D1: half, was all of it)
     else if (k === 'obelisk') S.obeliskT = LM.OBELISK_T;
     else if (k === 'altar') { for (const p of alive) p.hp = Math.max(1, p.hp - p.maxHp * LM.ALTAR_HP); loot(20 + 3 * f); }
     else if (k === 'shipwreck') loot(15 + 2 * f);
@@ -868,7 +924,7 @@ G.ExpDive = (() => {
     say(T().t(LMNAME[k]) + ' · ' + T().t(LMTXT[k]), 3);
   }
   const LMNAME = { shrine: 'Santuario', obelisk: 'Obelisco', altar: 'Altar', shipwreck: 'Pecio', spire: 'Aguja de hielo', totem: 'Tótem', monolith: 'Monolito', fairy: 'Corro de hadas' };
-  const LMTXT = { shrine: 'el grupo se cura del todo', obelisk: '+30 % de daño durante 60 s', altar: 'pagas vida por botín', shipwreck: 'botín del naufragio',
+  const LMTXT = { shrine: 'el grupo recupera media vida', obelisk: '+30 % de daño durante 60 s', altar: 'pagas vida por botín', shipwreck: 'botín del naufragio',
                   spire: 'congela a los enemigos cercanos', totem: 'experiencia para el grupo', monolith: 'mucha experiencia', fairy: 'revive y cura' };
   const LMCOL = { shrine: '#9fffc8', obelisk: '#ffb347', altar: '#ff6b7a', shipwreck: '#ffd23f', spire: '#9fe8ff', totem: '#c9a6ff', monolith: '#e0e0ff', fairy: '#ff9ed8' };
   /** combat.out: the obelisk's +30 %. */
@@ -1073,12 +1129,19 @@ G.ExpDive = (() => {
   }
 
   // ---------------- drawing ----------------
+  const AFF_COL = { swift: '#5fd8ff', tough: '#8dff7a', rage: '#ff5d5d' };   // (D1: an elite's affix)
   function drawGround(ctx) {
     const S = cur();
     if (!S || !G.World.zone || !G.World.zone.dive) return;
     const L = G.World.zone.dive, now = performance.now() / 1000, cam = G.Camera, R = TS();
     drawTele(ctx, S, now);
     drawPlugs(ctx, L, cam);
+    // (D1) elites: a ring in the affix's colour under them
+    for (const e of G.EnemyMgr.all()) {
+      if (!e.xaff || e.dead || !cam.sees(e.x, e.y, 40)) continue;
+      ctx.save(); ctx.strokeStyle = AFF_COL[e.xaff]; ctx.lineWidth = 2.5; ctx.globalAlpha = 0.65 + Math.sin(now * 5) * 0.2;
+      ctx.beginPath(); ctx.ellipse(e.x, e.y, (e.r || 14) * 1.25, (e.r || 14) * 0.6, 0, 0, 6.2832); ctx.stroke(); ctx.restore();
+    }
     const [sx, sy] = wpos(L.stairs);
     if (cam.sees(sx, sy, 60)) {
       ctx.save();
@@ -1473,6 +1536,6 @@ G.ExpDive = (() => {
            submit, board, guestFollow, WEEKLY, MOD_NAME, expectedPay, openPlug, canOpen, PLUG,
            openPicker, closePicker, back, starts, startOf, stageOf, bestOf, sealOf, seals, routeOpen, hurtK, SEAL, MAIN,
            live, shown, dBlock, applyD, TELE, COMBO, HITSTOP, hold, ecoLayout, LM, ESCORT, get view() { return view; }, cur,   // (cur: what is drawn: the host run, or a viewer's copy)
-           drawGround, drawHud, drawMini, stairsIcon, stairsAt, stairsHint, STAIRS_COL, hudLine, hudColor, on, bands, drawBand, drawSilhouettes, lightSpec, drawLight, drawAmbience,
+           drawGround, drawHud, drawMini, reinforce, AFF_COL, stairsIcon, stairsAt, stairsHint, STAIRS_COL, hudLine, hudColor, on, bands, drawBand, drawSilhouettes, lightSpec, drawLight, drawAmbience,
            get hintAt() { return hintAt; }, get lightCv() { return lcv; }, get run() { return S; } };
 })();
