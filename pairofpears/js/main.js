@@ -312,8 +312,53 @@ function showCharmTip(i, ch) {
   if (!def) return;
   tipFor = 'slot' + i;
   const r = slotCenter(i);
-  showTipAt(`<div class="tip-main"><div class="tip-name">${esc(def.name)}</div><div class="tip-body">${esc(def.desc)}<div class="tip-gap"></div><span class="money">Sell value: ${ch.sell} berries</span></div></div>`, r.x, r.y, 110, 110);
+  showTipAt(`<div class="tip-main"><div class="tip-name">${esc(def.name)}</div><div class="tip-body">${esc(def.desc)}<div class="tip-gap"></div><span class="money">Sell value: ${ch.sell} berries</span></div></div>` + infoBoxes(def.desc), r.x, r.y, 110, 110);
 }
+// Micatro's side boxes (its info_queue): every condition a text NAMES gets its own explanation beside the tip, so
+// "grant Juicy to a random fruit" or "4 Tart Kiwi cards" reads on its own. A text that only says "condition" gets
+// one box saying what a condition is. (At most two boxes: the tip must fit the table.)
+const COND_PRIMER = 'A mark on every card of one fruit. It changes what matching that pair does. Look closely at a face-up card to read its conditions.';
+function infoBox(name, icon, desc) {
+  return `<div class="tip-info"><div class="ti-name">${icon ? ico(icon, '') + ' ' : ''}${esc(name)}</div><div class="tip-body">${esc(desc)}</div></div>`;
+}
+function infoBoxes(text, skip) {
+  const named = P.COND_ORDER.filter((k) => k !== skip && new RegExp('\\b' + P.COND_INFO[k].name + '\\b').test(text || '')).slice(0, 2);
+  if (named.length) return named.map((k) => infoBox(P.COND_INFO[k].name, P.COND_INFO[k].icon, P.COND_INFO[k].desc)).join('');
+  return /\bconditions?\b/i.test(text || '') ? infoBox('Conditions', '', COND_PRIMER) : '';
+}
+// a tip beside any element of the table (a shop offer, a deck-boost chip): its rect, in design px
+function showTipAtEl(html, e) {
+  const r = e.getBoundingClientRect(), sr = stage.getBoundingClientRect();
+  showTipAt(html, (r.left + r.width / 2 - sr.left) / scale, (r.top + r.height / 2 - sr.top) / scale, r.width / scale, r.height / scale);
+}
+// a shop offer, read closely (hover; tap the tile; the pad's ring on its Buy button)
+function showOfferTip(i) {
+  const o = V && V.offers && V.offers[i], tile = el.shop.querySelector('.pp-offer[data-i="' + i + '"]');
+  if (!o || !tile || o.kind === 'sell') return;
+  tipFor = 'offer' + i;
+  const cost = '<div class="tip-gap"></div><span class="money">Costs ' + o.cost + ' berries</span>';
+  if (o.kind === 'charm') {
+    const d = P.CHARMS[o.id];
+    if (!d) return hideTip();
+    showTipAtEl('<div class="tip-main"><div class="tip-name">' + esc(d.name) + '</div><div class="tip-body">' + esc(d.desc) + cost + '</div></div>' + infoBoxes(d.desc), tile);
+  } else {
+    const c = P.COND_INFO[o.cond];
+    if (!c) return hideTip();
+    const fruit = esc(P.cap(o.fruit));
+    showTipAtEl('<div class="tip-main"><div class="tip-name">' + esc(c.name) + ' ' + fruit + '</div><div class="tip-body">' + condLines([o.cond])
+      + '<div class="tip-gap"></div>Every ' + fruit + ' in your deck gets it, for the rest of the run.' + cost + '</div></div>' + infoBox('Conditions', '', COND_PRIMER), tile);
+  }
+}
+// a deck boost (a condition the whole deck carries for one fruit): what it does
+function showBoostTip(chip) {
+  const c = P.COND_INFO[chip.dataset.c];
+  if (!c) return;
+  tipFor = 'boost' + chip.dataset.f + '|' + chip.dataset.c;
+  const n = +chip.dataset.n || 1, fruit = esc(P.cap(chip.dataset.f));
+  showTipAtEl('<div class="tip-main"><div class="tip-name">' + esc(c.name) + ' ' + fruit + (n > 1 ? ' ×' + n : '') + '</div><div class="tip-body">' + condLines([chip.dataset.c])
+    + '<div class="tip-gap"></div>Every ' + fruit + ' in your deck has it' + (n > 1 ? ', ' + n + ' times over' : '') + '.</div></div>', chip);
+}
+const tipIs = (prefix) => typeof tipFor === 'string' && tipFor.startsWith(prefix);
 function hideTip() { tipFor = null; el.tip.style.display = 'none'; }
 
 // ------------------------------------------------------------------ charm slots (drag, or pick + drop)
@@ -440,8 +485,15 @@ function renderHud(v, prev, instant) {
   if (boosts.dataset.k !== bk) {
     boosts.dataset.k = bk;
     const parts = [];
-    for (const [fruit, cs] of Object.entries(v.deckConds || {})) for (const [cond, n] of Object.entries(cs)) if (P.COND_INFO[cond]) parts.push(`<span class="pp-bt" title="${esc(P.COND_INFO[cond].name + ' ' + P.cap(fruit))}">${ico(fruit, '')}${ico(P.COND_INFO[cond].icon, '')}${n > 1 ? '×' + n : ''}</span>`);
+    for (const [fruit, cs] of Object.entries(v.deckConds || {})) for (const [cond, n] of Object.entries(cs)) if (P.COND_INFO[cond]) parts.push(`<span class="pp-bt" data-f="${esc(fruit)}" data-c="${esc(cond)}" data-n="${n}" aria-label="${esc(P.COND_INFO[cond].name + ' ' + P.cap(fruit) + ': ' + P.COND_INFO[cond].desc)}">${ico(fruit, '')}${ico(P.COND_INFO[cond].icon, '')}${n > 1 ? '×' + n : ''}</span>`);
+    if (tipIs('boost')) hideTip();
     boosts.innerHTML = parts.length ? '<div class="muted">Deck boosts</div>' + parts.join('') : '';
+    boosts.querySelectorAll('.pp-bt').forEach((chip) => {
+      const key = 'boost' + chip.dataset.f + '|' + chip.dataset.c;
+      chip.addEventListener('pointerenter', (ev) => { if (ev.pointerType === 'mouse') showBoostTip(chip); });
+      chip.addEventListener('pointerleave', (ev) => { if (ev.pointerType === 'mouse' && tipFor === key) hideTip(); });
+      chip.addEventListener('pointerup', (ev) => { if (ev.pointerType !== 'mouse') { if (tipFor === key) hideTip(); else showBoostTip(chip); } });
+    });
   }
   if (!instant && prev && prev.level === v.level) {
     if (v.hearts !== prev.hearts) { const b = q('.pp-hearts'); floatAt(b, (v.hearts > prev.hearts ? '+' : '') + heartsText(v.hearts - prev.hearts) + ' ♥', v.hearts > prev.hearts ? '' : 'red'); bumpEl(b); }
@@ -499,7 +551,7 @@ function offerHtml(o, i, v) {
 function renderShop(v) {
   const on = v.phase === 'shop';
   el.shop.style.display = on ? '' : 'none';
-  if (!on) { el.shop.innerHTML = ''; el.shop.dataset.k = ''; el.shop.dataset.lv = ''; return; }
+  if (!on) { if (tipIs('offer')) hideTip(); el.shop.innerHTML = ''; el.shop.dataset.k = ''; el.shop.dataset.lv = ''; return; }
   const k = JSON.stringify([v.offers, v.berries, v.held, v.charms.filter(Boolean).length]);
   if (el.shop.dataset.k === k && el.shop.dataset.lv === String(v.level)) return;
   el.shop.dataset.k = k;
@@ -517,10 +569,16 @@ function renderShop(v) {
   }
   el.shop.querySelector('.pp-sh-b').textContent = v.berries;
   const grid = el.shop.querySelector('.pp-offers');
+  if (tipIs('offer')) hideTip();
   grid.innerHTML = [0, 1, 2, 3].map((i) => offerHtml(v.offers[i], i, v)).join('');
   grid.querySelectorAll('.pp-offer').forEach((tile) => {
     const i = +tile.dataset.i, o = v.offers[i];
     if (!o) return;
+    if (o.kind !== 'sell') {   // read an offer closely: hover it, or tap the tile (not its Buy button)
+      tile.addEventListener('pointerenter', (ev) => { if (ev.pointerType === 'mouse' && !drag) showOfferTip(i); });
+      tile.addEventListener('pointerleave', (ev) => { if (ev.pointerType === 'mouse' && tipFor === 'offer' + i) hideTip(); });
+      tile.addEventListener('pointerup', (ev) => { if (ev.pointerType !== 'mouse' && !ev.target.closest('.btn')) { if (tipFor === 'offer' + i) hideTip(); else showOfferTip(i); } });
+    }
     if (o.kind === 'sell') {
       const b = btn('Sell', 'orange b-sell', () => act('sell'));
       b.disabled = !v.held || MODE !== 'normal';
@@ -895,9 +953,11 @@ function makePad() {
   function setFocus(e) {
     if (focus && focus.classList.contains('card')) { const s = sprites.get(+focus.dataset.id); if (s) { s.hover = false; if (tipFor === s) hideTip(); } }
     if (focus && focus.classList.contains('pp-slot') && tipFor === 'slot' + focus.dataset.i) hideTip();
+    if (focus && focus.classList.contains('b-buy') && tipFor === 'offer' + focus.dataset.i) hideTip();
     focus = e || null;
     if (focus && focus.classList.contains('card')) { const s = sprites.get(+focus.dataset.id); if (s) s.hover = true; }
     if (focus && focus.classList.contains('pp-slot') && V && V.charms[+focus.dataset.i]) showCharmTip(+focus.dataset.i, V.charms[+focus.dataset.i]);
+    if (focus && focus.classList.contains('b-buy') && ringOn) showOfferTip(+focus.dataset.i);   // (only while the ring is steering: a mouse / touch player isn't shown a tip unasked)
     draw();
   }
   function draw() {
@@ -1047,6 +1107,7 @@ window.__pears = {
   mainMenu: () => mainMenu(),
   idle: () => settled(),
   focus: () => (pad && pad.ringOn ? pad.focus : null),   // (tests: what the ring shows)
+  tip: () => (el.tip && el.tip.style.display !== 'none' ? { for: typeof tipFor === 'string' ? tipFor : 'card', text: el.tip.textContent, boxes: el.tip.querySelectorAll('.tip-info').length } : null),   // (tests: the tip on screen)
   engine: P, save: SV,
 };
 async function boot() {
