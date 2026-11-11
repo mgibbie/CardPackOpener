@@ -54,7 +54,7 @@ G.I18n.add({
   'Cuerda Huida: quédate quieto…': 'Escape Rope: hold still…',
   '¡Escapas con todo!': 'You escape with everything!',
   'Escaleras selladas': 'The stairs are sealed',
-  'ESCALERAS': 'STAIRS', 'CUERDA': 'ROPE',
+  'ESCALERAS': 'STAIRS', 'CUERDA': 'ROPE', 'Escaleras': 'Stairs', 'Escaleras (selladas)': 'Stairs (sealed)',
   'Inmersión · {x}: piso {x}': 'Dive · {x}: floor {x}',
   'Botín asegurado: {x} · en juego: {x}': 'Loot secured: {x} · at stake: {x}',
   'Escapaste: te llevas todo el botín': 'You escaped: you keep all the loot',
@@ -83,6 +83,7 @@ G.I18n.add({
 G.ExpDive = (() => {
   const K = {
     STAIRS_R: 0.9, STAIRS_T: 0.5,      // tiles / s on the stairs to go down
+    STAIRS_HINT_T: 25,                 // s on a floor before the HUD points at the stairs (D0: no more hunting for them)
     ROPE_R: 1.6, ROPE_T: 3,            // the rope circle (tiles), s standing still in it
     WAKE_R: 7,                         // tiles: a sleeping group wakes when you come this close (or one of it is hit)
     RESCUE_R: 1.2,                     // tiles: reach the lost Pokémon
@@ -196,7 +197,7 @@ G.ExpDive = (() => {
   /** The floor's foes, the lost Pokémon, the alpha / guardian (the zone is already set: core.js enterZone). */
   function startFloor(f, t) {
     const L = G.World.zone && G.World.zone.dive;
-    Object.assign(S, { floor: f, ft: t, L, groups: [], boss: null, stairsT: 0, ropeT: 0, lost: null, sealed: false, tg: [], lmUsed: false, lmT: 0, plugsOpen: 0 });
+    Object.assign(S, { floor: f, ft: t, L, groups: [], boss: null, stairsT: 0, ropeT: 0, lost: null, sealed: false, bossFell: false, tg: [], lmUsed: false, lmT: 0, plugsOpen: 0 });
     S.deepest = Math.max(S.deepest, f);
     if (!L) return;
     const r = rng(S.route, f, 0xD1), P = pool(S.route, f);
@@ -298,6 +299,7 @@ G.ExpDive = (() => {
     const alive = players.filter(p => !p.dead && !p.coopDown);
     if (!alive.length) return;
     const R = TS(), wr = (K.WAKE_R * R) ** 2;
+    S.now = t;   // (the run clock, for the HUD's stairs pointer: time on this floor = S.now - S.ft)
     // the groups wake when someone comes close
     for (const g of S.groups) if (!g.awake && alive.some(p => G.U.dist2(p.x, p.y, g.at[0], g.at[1]) < wr)) wake(g);
     teleTick(dt, alive);   // (V4: the red ground)
@@ -347,7 +349,7 @@ G.ExpDive = (() => {
   }
   function bossDown() {
     const e = S.boss, guard = e.xk === 'guardian';
-    S.boss = null; S.sealed = false;
+    S.boss = null; S.sealed = false; S.bossFell = true;   // (bossFell: the HUD points at the stairs at once, D0)
     if (guard) {
       S.guardians++;
       loot(K.LOOT.guard + K.LOOT.guardPer * S.floor);
@@ -1147,6 +1149,7 @@ G.ExpDive = (() => {
     ctx.restore();
     if (mark) mark('floor', px0, py0, pw, ph);
     drawCombo(ctx, w, S, F);   // (V5)
+    drawStairsHint(ctx, w, h, pl);   // (D0)
     // the route's 25 pips (every 5th: alpha, the 25th: the guardian)
     const pos = ((S.floor - 1) % 25) + 1, x0 = w / 2 - 25 * 5, y = 74;
     ctx.save();
@@ -1162,13 +1165,90 @@ G.ExpDive = (() => {
   function drawMini(ctx, pl, api) {
     const S = cur();
     if (!S || !G.World.zone || !G.World.zone.dive) return;
-    const L = G.World.zone.dive, pts = [[wpos(L.stairs), S.sealed ? '#ff6b7a' : '#ffd23f']];
-    if (S.lost && !S.lost.done) pts.push([[S.lost.x, S.lost.y], '#7fe0ff']);
-    for (const [[x, y], col] of pts) {
-      const q = api.edge(api.pt(x, y));
-      ctx.save(); ctx.fillStyle = col; ctx.strokeStyle = 'rgba(0,0,0,.85)'; ctx.lineWidth = 1.5;
+    const L = G.World.zone.dive;
+    if (S.lost && !S.lost.done) {
+      const q = api.edge(api.pt(S.lost.x, S.lost.y));
+      ctx.save(); ctx.fillStyle = '#7fe0ff'; ctx.strokeStyle = 'rgba(0,0,0,.85)'; ctx.lineWidth = 1.5;
       ctx.beginPath(); ctx.rect(q.x - 3, q.y - 3, 6, 6); ctx.fill(); ctx.stroke(); ctx.restore();
     }
+    // THE STAIRS (D0, Plans/MICASURVIVOR_3D_PLAN.md): always shown, fog or not. They used to be a 6 px gold square — the
+    // gold rocks', Meowth's and your own colour — usually pinned to the rim with every other far-off mark, so nobody
+    // could tell which one to walk to. Now: their own icon (stairsIcon), bigger, pulsing, drawn after every other
+    // mark (core.js calls this last), with a pointer on the rim when they are off the minimap.
+    const [sx, sy] = wpos(L.stairs), raw = api.pt(sx, sy), q = api.edge(raw);
+    const off = Math.hypot(raw.x - q.x, raw.y - q.y) > 0.5;
+    if (off) {
+      const d = Math.hypot(raw.x - q.x, raw.y - q.y), ax = (raw.x - q.x) / d, ay = (raw.y - q.y) / d, qx = -ay, qy = ax;
+      ctx.save(); ctx.fillStyle = S.sealed ? '#ff5468' : STAIRS_COL; ctx.strokeStyle = 'rgba(0,0,0,.85)'; ctx.lineWidth = 1.2;
+      ctx.beginPath(); ctx.moveTo(q.x + ax * 15, q.y + ay * 15); ctx.lineTo(q.x + ax * 8 + qx * 5, q.y + ay * 8 + qy * 5); ctx.lineTo(q.x + ax * 8 - qx * 5, q.y + ay * 8 - qy * 5); ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.restore();
+    }
+    stairsIcon(ctx, q.x, q.y, 1, S.sealed, api.pul);
+    api.rec(S.sealed ? 'stairs-sealed' : 'stairs', q);
+    if (off) api.rec('stairs-arrow', q);
+  }
+  /** The stairs' own mark (the minimap, the zone map and its legend): a white-ringed orange disc with a flight of
+   *  steps going down — a shape and a colour nothing else on the map has. Sealed (an alpha / guardian is alive): red, barred. */
+  const STAIRS_COL = '#ff8a1f';
+  function stairsIcon(ctx, x, y, s = 1, sealed = false, pul = 0) {
+    ctx.save();
+    ctx.translate(x, y); ctx.scale(s, s);
+    const col = sealed ? '#ff5468' : STAIRS_COL;
+    if (pul) { ctx.globalAlpha = 0.28 + 0.22 * pul; ctx.fillStyle = col; ctx.beginPath(); ctx.arc(0, 0, 9.5 + 2.5 * pul, 0, 6.2832); ctx.fill(); ctx.globalAlpha = 1; }
+    ctx.fillStyle = 'rgba(0,0,0,.85)'; ctx.beginPath(); ctx.arc(0, 0, 8.2, 0, 6.2832); ctx.fill();
+    ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(0, 0, 7.2, 0, 6.2832); ctx.fill();
+    ctx.fillStyle = col; ctx.beginPath(); ctx.arc(0, 0, 5.8, 0, 6.2832); ctx.fill();
+    // three steps going down to the right
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(-3.6, -3, 2.6, 1.6); ctx.fillRect(-1.2, -0.8, 2.6, 1.6); ctx.fillRect(1.2, 1.4, 2.6, 1.6);
+    ctx.fillRect(-3.6, -3, 1.2, 6); ctx.fillRect(-1.2, -0.8, 1.2, 3.8);
+    if (sealed) { ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1.8; ctx.beginPath(); ctx.moveTo(-4.2, 4.2); ctx.lineTo(4.2, -4.2); ctx.stroke(); }
+    ctx.restore();
+  }
+  /** Where the stairs are, for the zone map (economy.js renderMap): world px + whether they are sealed. */
+  function stairsAt() {
+    const S = cur();
+    if (!S || !G.World.zone || !G.World.zone.dive) return null;
+    const [x, y] = wpos(G.World.zone.dive.stairs);
+    return { x, y, sealed: !!S.sealed };
+  }
+  /** The HUD's pointer to the stairs: once you have been on a floor STAIRS_HINT_T seconds (or its boss just fell)
+   *  and the stairs are open but off screen, an arrow on the screen's edge points the way. It ends the wandering
+   *  without replacing the exploring: the first stretch of every floor is still yours to find things in. */
+  let hintSeen = { floor: 0, t0: 0 };
+  function stairsHint(pl) {
+    const S = cur();
+    if (!S || S.ended || S.sealed || !pl || !G.World.zone || !G.World.zone.dive || G.World.zone.zone !== S.floor) return null;
+    // time on this floor: the run clock on the host; a guest's / viewer's copy carries no clock, so it counts from when
+    // this screen first saw the floor
+    if (hintSeen.floor !== S.floor) hintSeen = { floor: S.floor, t0: performance.now() / 1000 };
+    const onFloor = S.ft !== undefined && S.now !== undefined ? S.now - S.ft : performance.now() / 1000 - hintSeen.t0;
+    if (!(onFloor >= K.STAIRS_HINT_T || S.bossFell)) return null;
+    const [sx, sy] = wpos(G.World.zone.dive.stairs);
+    if (G.Camera.sees(sx, sy, 0)) return null;
+    return { a: Math.atan2(sy - pl.y, sx - pl.x), tiles: Math.round(Math.hypot(sx - pl.x, sy - pl.y) / TS()) };
+  }
+  let hintAt = null;   // where the pointer was last drawn (HUD px), or null — NOT a HUD mark: those place the minimap
+  function drawStairsHint(ctx, w, h, pl) {
+    const hint = stairsHint(pl);
+    hintAt = null;
+    if (!hint) return;
+    const ca = Math.cos(hint.a), sa = Math.sin(hint.a);
+    // on an ellipse inside the screen's edge (clear of the HUD's top rows and the touch controls' corners)
+    const rx = w / 2 - 74, ry = h / 2 - 104, k = 1 / Math.hypot(ca / rx, sa / ry);
+    const x = w / 2 + ca * k, y = h / 2 + 12 + sa * k, pul = 0.6 + 0.4 * Math.sin(performance.now() / 1000 * 6);
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.save(); ctx.rotate(hint.a);
+    ctx.fillStyle = STAIRS_COL; ctx.strokeStyle = 'rgba(0,0,0,.85)'; ctx.lineWidth = 2; ctx.globalAlpha = 0.75 + 0.25 * pul;
+    ctx.beginPath(); ctx.moveTo(30 + 3 * pul, 0); ctx.lineTo(15, -10); ctx.lineTo(15, 10); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.restore();
+    stairsIcon(ctx, 0, 0, 1.5, false, pul);
+    ctx.font = '700 12px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    const label = T().t('ESCALERAS') + ' · ' + hint.tiles;
+    ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0,0,0,.8)'; ctx.strokeText(label, 0, 16); ctx.fillStyle = '#ffffff'; ctx.fillText(label, 0, 16);
+    ctx.restore();
+    hintAt = { x, y, a: hint.a, tiles: hint.tiles };
   }
 
   // ---------------- the canopy: bands in the y-sort, silhouettes behind them (DV3) ----------------
@@ -1393,6 +1473,6 @@ G.ExpDive = (() => {
            submit, board, guestFollow, WEEKLY, MOD_NAME, expectedPay, openPlug, canOpen, PLUG,
            openPicker, closePicker, back, starts, startOf, stageOf, bestOf, sealOf, seals, routeOpen, hurtK, SEAL, MAIN,
            live, shown, dBlock, applyD, TELE, COMBO, HITSTOP, hold, ecoLayout, LM, ESCORT, get view() { return view; }, cur,   // (cur: what is drawn: the host run, or a viewer's copy)
-           drawGround, drawHud, drawMini, hudLine, hudColor, on, bands, drawBand, drawSilhouettes, lightSpec, drawLight, drawAmbience,
-           get lightCv() { return lcv; }, get run() { return S; } };
+           drawGround, drawHud, drawMini, stairsIcon, stairsAt, stairsHint, STAIRS_COL, hudLine, hudColor, on, bands, drawBand, drawSilhouettes, lightSpec, drawLight, drawAmbience,
+           get hintAt() { return hintAt; }, get lightCv() { return lcv; }, get run() { return S; } };
 })();

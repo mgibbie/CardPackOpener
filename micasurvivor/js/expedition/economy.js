@@ -1283,18 +1283,22 @@ G.ExpEco = (() => {
     }
     const si = C() && C().sitesOf(z), cl = C() && C().cur();
     if (si && explored(si.altar[0], si.altar[1])) { const [ax, ay] = at(...C().siteXY(si.altar)); mini(g, cl && cl.ph === 2 ? 'portal' : 'altar', ax, ay, 1.8); counts[cl && cl.ph === 2 ? 'portal' : 'altar'] = { n: 1, used: 0 }; }
+    // (D0) a Dive floor's stairs: always on the map, explored or not, in their own mark (dive.js stairsIcon)
+    const st = z.dive && G.ExpDive && G.ExpDive.stairsAt ? G.ExpDive.stairsAt() : null;
+    if (st) { const [tx, ty] = at(st.x, st.y); G.ExpDive.stairsIcon(g, tx, ty, 1.7, st.sealed); counts[st.sealed ? 'stairs-sealed' : 'stairs'] = { n: 1, used: 0 }; }
     if (p) { const [px, py] = at(p.x, p.y); mini(g, 'you', px, py, 1.8); }
     g.strokeStyle = 'rgba(244,248,255,.6)'; g.lineWidth = 2; g.strokeRect(1, 1, W - 2, H - 2);
     // the legend: what's on this map
-    const LBL = Object.assign({ you: 'Tú', altar: 'Altar del guardián', portal: 'Portal' }, NAME);
-    const order = ['you', 'altar', 'portal'].concat(KINDS.slice(), ['great']);
+    const LBL = Object.assign({ you: 'Tú', altar: 'Altar del guardián', portal: 'Portal', stairs: 'Escaleras', 'stairs-sealed': 'Escaleras (selladas)' }, NAME);
+    const order = ['you', 'stairs', 'stairs-sealed', 'altar', 'portal'].concat(KINDS.slice(), ['great']);
+    const single = new Set(['you', 'altar', 'portal', 'stairs', 'stairs-sealed']);   // (one of each: no count beside it)
     const rows = order.filter(kd => kd === 'you' || counts[kd]).map(kd => {
       const e = counts[kd] || { n: 1, used: 0 };
-      return `<div class="xl-row" data-kind="${kd}"><canvas width="22" height="22" data-ico="${kd}"></canvas><span>${esc(T.t(LBL[kd]))}</span><b>${kd === 'you' || kd === 'altar' || kd === 'portal' ? '' : (e.n - e.used) + (e.used ? ` <i>(${e.used} ${esc(T.t('Usado'))})</i>` : '')}</b></div>`;
+      return `<div class="xl-row" data-kind="${kd}"><canvas width="22" height="22" data-ico="${kd}"></canvas><span>${esc(T.t(LBL[kd]))}</span><b>${single.has(kd) ? '' : (e.n - e.used) + (e.used ? ` <i>(${e.used} ${esc(T.t('Usado'))})</i>` : '')}</b></div>`;
     }).join('');
     const pct = Math.round(f.n / (z.w * z.h) * 100);
     mapEl.querySelector('#xmap-legend').innerHTML = `<h4>${esc(T.t('Leyenda'))}</h4>${rows}<p class="xl-ex">${esc(F('Explorado: {x} %', pct))}</p>`;
-    for (const k2 of mapEl.querySelectorAll('canvas[data-ico]')) { const g2 = k2.getContext('2d'); g2.clearRect(0, 0, 22, 22); mini(g2, k2.dataset.ico, 11, 11, 1.4); }
+    for (const k2 of mapEl.querySelectorAll('canvas[data-ico]')) { const g2 = k2.getContext('2d'); g2.clearRect(0, 0, 22, 22); if (/^stairs/.test(k2.dataset.ico)) G.ExpDive.stairsIcon(g2, 11, 11, 1.25, k2.dataset.ico === 'stairs-sealed'); else mini(g2, k2.dataset.ico, 11, 11, 1.4); }
     mapEl.querySelector('#xmap-h').textContent = T.t('Mapa de la zona');
     mapInfo = { counts, pct, explored: f.n, rows: order.filter(kd => kd === 'you' || counts[kd]) };
   }
