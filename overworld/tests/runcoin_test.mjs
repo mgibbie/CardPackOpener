@@ -32,9 +32,9 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 {
 	const src = fs.readFileSync(path.join(ROOT, 'battlecards/game.js'), 'utf8');
 	// (game.js may be checked out with CRLF line endings)
-	const deals = [...src.matchAll(/\r?\n\tE\.resetDeckAndHand\(state, 1, [^\r\n]*\);\r?\n\tE\.drawCards\(state, 1, 4\);\r?\n([^\r\n]*)\r?\n/g)];
+	const deals = [...src.matchAll(/\r?\n\tE\.resetDeckAndHand\(GS\.state, 1, [^\r\n]*\);\r?\n\tE\.drawCards\(GS\.state, 1, 4\);\r?\n([^\r\n]*)\r?\n/g)];
 	A(deals.length === 10, 'all ten run modes deal the boss a fresh hand', String(deals.length));
-	const missing = deals.filter(m => !/E\.addCoin\(state, 1\)/.test(m[1])).length;
+	const missing = deals.filter(m => !/E\.addCoin\(GS\.state, 1\)/.test(m[1])).length;
 	A(deals.length && missing === 0, '...and every one deals the boss its Coin right after', `${missing} missing`);
 }
 

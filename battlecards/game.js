@@ -35,12 +35,12 @@ function keywordLinesHtml(card) {
 // "Modifiers": keywords / stat changes the creature has now but didn't start with
 // (gained from buffs, auras, grants). Reads against the printed card definition.
 function modifierLinesHtml(card) {
-	if (!state || (card.type !== 'creature' && card.type !== 'weapon')) return '';
+	if (!GS.state || (card.type !== 'creature' && card.type !== 'weapon')) return '';
 	// An inline summoned token (Thopter / Construct / Servo …) has NO entry in
 	// cardsById — its def is built at summon time. Falling back to {} made the
 	// token's printed body read as a modifier ("Modifiers — +5/+5" on a freshly
 	// summoned 5/5). Use the printed body the instance carries instead.
-	const def = state.cardsById?.[card.id]
+	const def = GS.state.cardsById?.[card.id]
 		|| { attack: card.printedAttack ?? card.attack, health: card.printedHealth ?? card.maxHealth, keywords: card.keywords || [] };
 	const base = new Set(def.keywords || []);
 	const gainedKw = [...new Set((card.keywords || []).filter(k => !base.has(k)))];
@@ -70,15 +70,16 @@ import * as RunRep from './runreplay.js';
 import { openProfile } from './profile.js';
 import { initPadboard } from './padboard.js';
 import { rumble } from '../site/gamepad.js';
+import { GS } from './game_state.js';
 
 // the player index this client controls. Solo/host = 0; a live-duel guest = 1.
 // The board reorients so HUMAN always sits at the bottom facing the camera.
-let HUMAN = 0;
+GS.HUMAN = 0;
 const TAU = Math.PI * 2;
 const UP = new THREE.Vector3(0, 1, 0);
 
 // player count comes from ?players=N (2-8): a URL setting only (tests, deep links)
-let playerCount = Math.max(2, Math.min(E.MAX_PLAYERS,
+GS.playerCount = Math.max(2, Math.min(E.MAX_PLAYERS,
 	parseInt(new URLSearchParams(location.search).get('players'), 10) || 2));
 
 // ?boss=<id> = a one-off encounter vs that boss; ?dungeon=1 = the full run
@@ -87,7 +88,7 @@ const RUN_KEY = 'magepunk_dungeon_v1';
 const dungeonRunMode = new URLSearchParams(location.search).has('dungeon');
 const HEIST_KEY = 'magepunk_heist_v1';
 const heistRunMode = !dungeonRunMode && new URLSearchParams(location.search).has('heist');
-let heistBossName = null; // the current heist/tombs boss display name
+GS.heistBossName = null; // the current heist/tombs boss display name
 const TOMBS_KEY = 'magepunk_tombs_v1';
 const tombsRunMode = !dungeonRunMode && !heistRunMode && new URLSearchParams(location.search).has('tombs');
 const DUELS_KEY = 'magepunk_duels_v1';
@@ -108,9 +109,9 @@ const finalfantasyRunMode = !dungeonRunMode && !heistRunMode && !tombsRunMode &&
 const MULTIVERSE_KEY = 'magepunk_multiverse_v1';
 const MULTIVERSE_UNLOCK_KEY = 'magepunk_multiverse_surfer_unlocked'; // Silver Surfer secret hero
 const multiverseRunMode = !dungeonRunMode && !heistRunMode && !tombsRunMode && !duelsRunMode && !arenaRunMode && !lorequestRunMode && !middleearthRunMode && !swordcoastRunMode && !finalfantasyRunMode && new URLSearchParams(location.search).has('multiverse');
-let dungeonBossId = (id => Dungeon.BOSSES[id] ? id : null)(
+GS.dungeonBossId = (id => Dungeon.BOSSES[id] ? id : null)(
 	new URLSearchParams(location.search).get('boss'));
-if (dungeonBossId || dungeonRunMode || heistRunMode || tombsRunMode || duelsRunMode || arenaRunMode || lorequestRunMode || middleearthRunMode || swordcoastRunMode || finalfantasyRunMode || multiverseRunMode) playerCount = 2;
+if (GS.dungeonBossId || dungeonRunMode || heistRunMode || tombsRunMode || duelsRunMode || arenaRunMode || lorequestRunMode || middleearthRunMode || swordcoastRunMode || finalfantasyRunMode || multiverseRunMode) GS.playerCount = 2;
 
 // ?spectate=<friend> (MP only): render a friend's live dungeon-run/battle board
 // read-only from the snapshots they publish — no input, no AI.
@@ -266,8 +267,8 @@ function freeSpaceForSnapshot() {
 }
 function saveRunSnapshot() {
 	const io = activeRunIO();
-	if (!io || !state || (typeof isGuest === 'function' && isGuest())) return;
-	if (state.over) { recordRunResult(); return; }
+	if (!io || !GS.state || (typeof isGuest === 'function' && isGuest())) return;
+	if (GS.state.over) { recordRunResult(); return; }
 	const run = io.load();
 	if (!run || !run.active) return;
 	// only the tab playing the run's CURRENT fight may write its board into the run:
@@ -276,7 +277,7 @@ function saveRunSnapshot() {
 	// a board from a different fight, and "Continue the run" would restore it
 	if (!maySaveSnapshot(run, _fightId)) { staleFightTab(io.key, run); return; }
 	try {
-		const json = JSON.stringify(E.toSnapshot(state));
+		const json = JSON.stringify(E.toSnapshot(GS.state));
 		// nothing changed since this tab's last write (a hide/pagehide right after a
 		// settled frame): don't re-stamp the same board -- a new rev for an identical
 		// snapshot only makes the packed hand-off copy look out of date
@@ -311,7 +312,7 @@ const newFightId = () => 'f' + Date.now().toString(36) + Math.random().toString(
 function bindRunFight() {
 	_fightId = null;
 	const io = activeRunIO();
-	if (!io || !state || state.over || replayMode || spectateMode || (typeof isGuest === 'function' && isGuest())) return;
+	if (!io || !GS.state || GS.state.over || replayMode || spectateMode || (typeof isGuest === 'function' && isGuest())) return;
 	const run = io.load();
 	if (!run || !run.active) return;
 	_fightId = (_resumedFight && run.snapshot && (run.snapshotFight || run.fightId)) || newFightId();
@@ -371,14 +372,14 @@ function clearRunSnapshot() {
 // useLocalAsyncTurn (same match + same unsubmitted turn), else discarded.
 const asyncSnapKey = id => 'magepunk_async_snap_v1:' + id;
 function saveAsyncSnapshot() {
-	if (!asyncGame.on || !asyncGame.live || !asyncGame.id || !state || state.over) return;
-	if (state.current !== HUMAN || !asyncGame.myTurnStarted) return; // only during MY live turn
+	if (!asyncGame.on || !asyncGame.live || !asyncGame.id || !GS.state || GS.state.over) return;
+	if (GS.state.current !== GS.HUMAN || !asyncGame.myTurnStarted) return; // only during MY live turn
 	try {
-		const json = JSON.stringify(E.toSnapshot(state));
+		const json = JSON.stringify(E.toSnapshot(GS.state));
 		// same contract as saveRunSnapshot: this must land or the player's live turn
 		// rewinds on reopen — evict expendable replays rather than skip the write
 		if (json.length > RUN_SNAP_MAX) console.warn('async snapshot is very large (' + json.length + 'B) — saving anyway');
-		safeSaveRetry(asyncSnapKey(asyncGame.id), { id: asyncGame.id, turnNumber: state.turnNumber, at: Date.now(), snap: JSON.parse(json) }, freeSpaceForSnapshot);
+		safeSaveRetry(asyncSnapKey(asyncGame.id), { id: asyncGame.id, turnNumber: GS.state.turnNumber, at: Date.now(), snap: JSON.parse(json) }, freeSpaceForSnapshot);
 	} catch (e) { /* never let a save break play */ }
 }
 function clearAsyncSnapshot() { if (asyncGame.id) { try { safeSave(asyncSnapKey(asyncGame.id), null); } catch (e) { /* ignore */ } } }
@@ -404,9 +405,9 @@ function resumeRunSnapshot(run, byId) {
 	try {
 		const snap = run.snapshot;
 		if ((snap.schemaVersion || 0) !== E.SCHEMA_VERSION) return false; // version guard -> fresh boot
-		state = E.fromSnapshot(snap, byId);
+		GS.state = E.fromSnapshot(snap, byId);
 		E.ensureUidsAbove(E.maxSnapshotUid(snap));
-		heistBossName = state.classPicks?.[1]?.name || heistBossName; // enemy name for nameOf()
+		GS.heistBossName = GS.state.classPicks?.[1]?.name || GS.heistBossName; // enemy name for nameOf()
 		_resumedFight = true;
 		return true;
 	} catch (e) { console.warn('resume: snapshot restore failed, booting fresh', e); return false; }
@@ -573,7 +574,7 @@ function runEndedOnServer(key, local) {
 	const io = activeRunIO();
 	if (!io || io.key !== key || _endedOnServerShown) return;
 	_endedOnServerShown = true;
-	if (state && !state.over) state.over = true; // freeze the zombie fight: its result is already on the server
+	if (GS.state && !GS.state.over) GS.state.over = true; // freeze the zombie fight: its result is already on the server
 	const el = dungeonOverlay('RUN ALREADY ENDED', `This run (${runSummary(local)}) had already ended — its result is saved on the server. This fight was a stale copy and can't change it.`);
 	el.appendChild(overlayButton('New Run', () => location.reload()));
 	updateHud();
@@ -591,23 +592,23 @@ function runEndedOnServer(key, local) {
 // the result is banked. A finished run clears the whole run.
 const RESULT_RUN_KEYS = new Set([RUN_KEY, HEIST_KEY, TOMBS_KEY, ARENA_KEY, DUELS_KEY, LOREQUEST_KEY, MIDDLEEARTH_KEY, SWORDCOAST_KEY, FINALFANTASY_KEY, MULTIVERSE_KEY]);
 function recordRunResult() {
-	if (!state || !state.over || replayMode || spectateMode || (typeof isGuest === 'function' && isGuest())) return;
+	if (!GS.state || !GS.state.over || replayMode || spectateMode || (typeof isGuest === 'function' && isGuest())) return;
 	// ONE fight, ONE result. The finished state lingers after its mode has applied
 	// the result and moved on ("NEXT: ... Fight!" clears postGame and the pending
 	// marker), until the next fight boots. Fight! reloads the page, and this
 	// pagehide save then stamped the OLD result onto the NEXT fight: a phantom loss
 	// (or win), settled at boot, with "NEXT ... Fight!" shown again instead of the
 	// fight (Muse's Final Fantasy runs, 2026-10-07). A state records at most once.
-	if (state.resultRecorded) return;
+	if (GS.state.resultRecorded) return;
 	const io = activeRunIO();
 	if (!io || !RESULT_RUN_KEYS.has(io.key)) return;
 	const run = io.load();
 	if (!run || !run.active) return;
 	// a stale tab's finished fight is not the run's current fight: never record it
 	if (!maySaveSnapshot(run, _fightId)) { staleFightTab(io.key, run); return; }
-	state.resultRecorded = true;   // whether recorded now or already accounted for (a pending result / reward)
+	GS.state.resultRecorded = true;   // whether recorded now or already accounted for (a pending result / reward)
 	if (run.postGame || run.pendingResult) return;
-	run.pendingResult = { won: state.winner === HUMAN, at: Date.now(), seed: (Math.random() * 2 ** 31) >>> 0 };
+	run.pendingResult = { won: GS.state.winner === GS.HUMAN, at: Date.now(), seed: (Math.random() * 2 ** 31) >>> 0 };
 	delete run.snapshot; delete run.snapshotAt;   // the fight is over: never resume it
 	delete run.fightId; delete run.snapshotFight; delete run.snapshotProgress;   // ...and no tab still on it may write it back
 	io.save(run);
@@ -622,7 +623,7 @@ function settlePendingResult(run, victory, defeat, stages) {
 }
 // the card defs for a result settled at boot, before any game state exists
 let runBootCardsById = null;
-const runDefs = () => (state && state.cardsById) || runBootCardsById || {};
+const runDefs = () => (GS.state && GS.state.cardsById) || runBootCardsById || {};
 // a reward screen's offers roll from the pending result's seed: a reload shows the same choices
 function rewardRng(run, salt) {
 	const seed = run && run.pendingResult && run.pendingResult.seed;
@@ -714,11 +715,11 @@ try {
 	setInterval(() => pushActiveRun(false), 5000); // coarse metadata heartbeat to the server
 } catch (e) { /* non-browser (headless test) — listeners are best-effort */ }
 
-const nameOf = pi => pi === HUMAN ? 'You'
+const nameOf = pi => pi === GS.HUMAN ? 'You'
 	: asyncGame.on ? (asyncGame.opp || 'Opponent')
 	: duel.on ? (pi === 0 ? (duel.config?.host || 'Host') : (duel.config?.guest || 'Guest'))
-	: (dungeonBossId && pi === 1 ? Dungeon.BOSSES[dungeonBossId].name
-	: heistBossName && pi === 1 ? heistBossName : `AI ${pi}`);
+	: (GS.dungeonBossId && pi === 1 ? Dungeon.BOSSES[GS.dungeonBossId].name
+	: GS.heistBossName && pi === 1 ? GS.heistBossName : `AI ${pi}`);
 // why a Coin arrived (coinGiven.cause), as a log suffix
 function coinCauseText(cause) {
 	if (!cause || cause.kind !== 'land' || cause.by == null) return '';
@@ -733,14 +734,14 @@ let coinPlayBy = null;
 //   vbOf(pi, 'rolls', 'roll')  ->  "rolls" for an opponent, "roll" for you
 //   possOf(pi)                 ->  "AI 1's" / "Your"   (capitalised: clause start)
 //   possOf(pi, false)          ->  "AI 1's" / "your"   (mid-sentence)
-const vbOf = (pi, third, second) => (pi === HUMAN ? second : third);
-const possOf = (pi, cap = true) => (pi === HUMAN ? (cap ? 'Your' : 'your') : `${nameOf(pi)}'s`);
+const vbOf = (pi, third, second) => (pi === GS.HUMAN ? second : third);
+const possOf = (pi, cap = true) => (pi === GS.HUMAN ? (cap ? 'Your' : 'your') : `${nameOf(pi)}'s`);
 // each player's board is a pizza slice: rotate their zone layout around the
 // table center; the local (HUMAN) slice always faces the camera (angle 0 =
 // bottom). Angles are relative to HUMAN so a duel guest sees themselves up front.
-const angleOf = pi => (((pi - HUMAN + playerCount) % playerCount) / playerCount) * TAU;
+const angleOf = pi => (((pi - GS.HUMAN + GS.playerCount) % GS.playerCount) / GS.playerCount) * TAU;
 // radial push so 3+ slices don't overlap at the center
-const sliceOff = () => playerCount <= 2 ? 0 : (playerCount - 2) * 0.9;
+const sliceOff = () => GS.playerCount <= 2 ? 0 : (GS.playerCount - 2) * 0.9;
 // both take an optional `out` — layoutTargets runs per entity per FRAME, and
 // allocating a fresh Vector3 + two Quaternions (+ an Euler) per card per frame
 // churned the GC on phones; with `out` the targets mutate in place
@@ -772,7 +773,7 @@ container.appendChild(renderer.domElement);
 renderer.domElement.addEventListener('webglcontextlost', e => {
 	e.preventDefault();   // lets the browser restore the context
 	console.warn('battlecards: the WebGL context was lost — the board cannot draw until it is restored');
-	try { window.reportErr?.('webgl context lost (' + (state ? (state.over ? 'over' : 'turn ' + state.turnNumber) : 'no game') + ')', 'game.js webglcontextlost'); } catch (e2) { /* ignore */ }
+	try { window.reportErr?.('webgl context lost (' + (GS.state ? (GS.state.over ? 'over' : 'turn ' + GS.state.turnNumber) : 'no game') + ')', 'game.js webglcontextlost'); } catch (e2) { /* ignore */ }
 	try { banner('⚠ The board\'s graphics stopped (the browser dropped them). Your fight is saved — reload the page to continue.', 0, 'warn'); } catch (e2) { /* no DOM yet */ }
 }, false);
 renderer.domElement.addEventListener('webglcontextrestored', () => {
@@ -856,9 +857,9 @@ function buildTable() {
 	// slice dividers, halfway between adjacent players (brass, fading short of center)
 	tc.strokeStyle = 'rgba(200,170,110,0.14)';
 	tc.lineWidth = 3;
-	for (let i = 0; i < playerCount; i++) {
+	for (let i = 0; i < GS.playerCount; i++) {
 		// canvas +y is world +z; player 0 sits at the bottom (world +z)
-		const a = angleOf(i) + TAU / (playerCount * 2) + Math.PI / 2;
+		const a = angleOf(i) + TAU / (GS.playerCount * 2) + Math.PI / 2;
 		tc.beginPath();
 		tc.moveTo(S / 2 + Math.cos(a) * S * 0.15, S / 2 + Math.sin(a) * S * 0.15);
 		tc.lineTo(S / 2 + Math.cos(a) * (S / 2 - 34), S / 2 + Math.sin(a) * (S / 2 - 34));
@@ -921,7 +922,7 @@ function faceTexKey(card) {
 	return `${shownId}|${card.name}|${card.description || ''}|${faceSig(card)}`;
 }
 function acquireFaceTex(card) {
-	if (card.zone === 'hand' && card.controller !== HUMAN) return backTex; // hidden info: shared back
+	if (card.zone === 'hand' && card.controller !== GS.HUMAN) return backTex; // hidden info: shared back
 	const key = faceTexKey(card);
 	let e = faceTexCache.get(key);
 	if (!e) {
@@ -1004,7 +1005,7 @@ function paintFaceTex(card) {
 		? { ...card, id: 'disguised', name: 'Disguised', description: '', cardClass: 'neutral' }
 		: card;
 	if (formFor(card) === 'token') {
-		const def = state?.cardsById?.[card.id];
+		const def = GS.state?.cardsById?.[card.id];
 		return makeTokenTexture(shown, {
 			attack: card.attack, hp: E.hp(card), maxHealth: card.maxHealth,
 			// inline tokens have no cardsById def — fall back to the instance's printed body
@@ -1048,7 +1049,7 @@ function faceSig(card) {
 		: '';
 	// name + description are part of what the face shows too — rename/text-change
 	// effects otherwise leave guests (snapshot-only sync) on the stale face
-	return `${formFor(card)}|${card.cost}|${s}|${card.name}|${card.description || ''}|${card.zone === 'hand' && card.controller !== HUMAN ? 'HID' : ''}`;
+	return `${formFor(card)}|${card.cost}|${s}|${card.name}|${card.description || ''}|${card.zone === 'hand' && card.controller !== GS.HUMAN ? 'HID' : ''}`;
 }
 
 function buildBody(card, form, faceMat) {
@@ -1081,7 +1082,7 @@ function entityFor(card) {
 	if (!ent) {
 		const faceMat = faceMaterialFor(card);
 		const mesh = buildBody(card, form, faceMat);
-		mesh.position.set(card.controller === HUMAN ? 9 : -9, 0.3, card.controller === HUMAN ? 6.5 : -6.5);
+		mesh.position.set(card.controller === GS.HUMAN ? 9 : -9, 0.3, card.controller === GS.HUMAN ? 6.5 : -6.5);
 		scene.add(mesh);
 		ent = { card, mesh, faceMat, form, faceSig: faceSig(card), target: { pos: new THREE.Vector3(), quat: new THREE.Quaternion(), scale: 1 }, ring: makeRing('#57e389') };
 		entities.set(card.uid, ent);
@@ -1168,11 +1169,11 @@ const slotGeo = new THREE.PlaneGeometry(1.12, 1.5);
 function buildSlotMarkers() {
 	for (const m of slotMarkers) scene.remove(m.mesh);
 	slotMarkers = [];
-	if (!state) return;
+	if (!GS.state) return;
 	const off = sliceOff();
-	for (let pi = 0; pi < state.players.length; pi++) {
+	for (let pi = 0; pi < GS.state.players.length; pi++) {
 		for (let i = 0; i < E.MAX_LANDS; i++) {
-			const mesh = new THREE.Mesh(slotGeo, pi === HUMAN ? slotMat : slotMatFoe);
+			const mesh = new THREE.Mesh(slotGeo, pi === GS.HUMAN ? slotMat : slotMatFoe);
 			mesh.userData.landSlotPi = pi;
 			mesh.position.copy(toWorld((i - 2) * LAND_SPREAD, 0.01, off + LAND_Z, pi));
 			mesh.quaternion.copy(sliceQuat(FLAT, pi));
@@ -1197,12 +1198,12 @@ function openLandShop(ev) {
 	menu.style.maxHeight = '70vh';
 	menu.style.overflowY = 'auto';
 	// basics always; advanced lands unlock as your basics build a color identity
-	for (const def of E.availableLands(state, HUMAN)) {
+	for (const def of E.availableLands(GS.state, GS.HUMAN)) {
 		const btn = document.createElement('button');
 		const firstTap = (def.taps?.[0]?.text) || (def.mana ? `Gain ${def.mana} mana.` : '');
 		btn.innerHTML = `<span class="wm-cost">${E.LAND_COST}</span><b>${def.name}</b> — ${firstTap}`;
 		btn.title = def.description || '';
-		btn.disabled = !E.canBuyLand(state, HUMAN);
+		btn.disabled = !E.canBuyLand(GS.state, GS.HUMAN);
 		btn.addEventListener('pointerdown', e => {
 			e.stopPropagation();
 			hideWalkerMenu();
@@ -1218,10 +1219,10 @@ function openLandShop(ev) {
 // Choose One cards pick their branch before targeting
 // after modes are chosen, target if any chosen mode needs one (e.g. Cryptic's bounce), then play
 function continueModalPlay(card, modes, position) {
-	const spec = E.targetSpec(state, HUMAN, card, modes);
+	const spec = E.targetSpec(GS.state, GS.HUMAN, card, modes);
 	if (spec) {
-		const targets = E.legalTargets(state, HUMAN, spec);
-		if (targets.length) { pending = { card, spec, targets, mode: 'play', position, choice: modes }; updateHud(); return; }
+		const targets = E.legalTargets(GS.state, GS.HUMAN, spec);
+		if (targets.length) { GS.pending = { card, spec, targets, mode: 'play', position, choice: modes }; updateHud(); return; }
 		if (spec.required) return;
 	}
 	actPlay(card.uid, null, modes, position);
@@ -1229,10 +1230,10 @@ function continueModalPlay(card, modes, position) {
 
 // modal instant cast IN RESPONSE (Cryptic): after modes, target if needed, then submit the response
 function continueModalRespond(card, modes) {
-	const spec = E.targetSpec(state, HUMAN, card, modes);
+	const spec = E.targetSpec(GS.state, GS.HUMAN, card, modes);
 	if (spec) {
-		const targets = E.legalTargets(state, HUMAN, spec);
-		if (targets.length) { pending = { card, spec, targets, mode: 'respond', action: { kind: 'spell', uid: card.uid, choice: modes } }; updateHud(); return; }
+		const targets = E.legalTargets(GS.state, GS.HUMAN, spec);
+		if (targets.length) { GS.pending = { card, spec, targets, mode: 'respond', action: { kind: 'spell', uid: card.uid, choice: modes } }; updateHud(); return; }
 		if (spec.required) return;
 	}
 	submitRespond({ kind: 'spell', uid: card.uid, choice: modes, target: null });
@@ -1286,10 +1287,10 @@ function openChoiceMenu(card, ev, position) {
 		btn.addEventListener('pointerdown', e => {
 			e.stopPropagation();
 			hideWalkerMenu();
-			const spec = E.targetSpec(state, HUMAN, card, i);
+			const spec = E.targetSpec(GS.state, GS.HUMAN, card, i);
 			if (spec) {
-				const targets = E.legalTargets(state, HUMAN, spec);
-				if (targets.length) { pending = { card, spec, targets, mode: 'play', choice: i, position }; updateHud(); return; }
+				const targets = E.legalTargets(GS.state, GS.HUMAN, spec);
+				if (targets.length) { GS.pending = { card, spec, targets, mode: 'play', choice: i, position }; updateHud(); return; }
 				if (spec.required) return;
 			}
 			actPlay(card.uid, null, i, position);
@@ -1304,8 +1305,8 @@ function openTradeMenu(card, ev) {
 	const menu = $('walker-menu');
 	menu.innerHTML = `<div class="wm-title">${card.name}</div>`;
 	const play = document.createElement('button');
-	play.innerHTML = `<span class="wm-cost">${E.effectiveCost(state, HUMAN, card)}</span>Play`;
-	play.disabled = !E.canPlay(state, HUMAN, card);
+	play.innerHTML = `<span class="wm-cost">${E.effectiveCost(GS.state, GS.HUMAN, card)}</span>Play`;
+	play.disabled = !E.canPlay(GS.state, GS.HUMAN, card);
 	play.addEventListener('pointerdown', e => {
 		e.stopPropagation();
 		hideWalkerMenu();
@@ -1315,7 +1316,7 @@ function openTradeMenu(card, ev) {
 	if (card.tradeable) {
 		const trade = document.createElement('button');
 		trade.innerHTML = `<span class="wm-cost">1</span>Trade — shuffle into your deck, draw a card`;
-		trade.disabled = !E.canTrade(state, HUMAN, card);
+		trade.disabled = !E.canTrade(GS.state, GS.HUMAN, card);
 		trade.addEventListener('pointerdown', e => {
 			e.stopPropagation();
 			hideWalkerMenu();
@@ -1325,9 +1326,9 @@ function openTradeMenu(card, ev) {
 	}
 	if (card.prepare) {
 		const prep = document.createElement('button');
-		const spend = Math.max(0, Math.min(E.availableMana(state.players[HUMAN]), (card.cost || 0) - 1));
+		const spend = Math.max(0, Math.min(E.availableMana(GS.state.players[GS.HUMAN]), (card.cost || 0) - 1));
 		prep.innerHTML = `<span class="wm-cost">${spend}</span>Prepare — costs (${spend + 1}) less, can't be played this turn`;
-		prep.disabled = !E.canPrepare(state, HUMAN, card);
+		prep.disabled = !E.canPrepare(GS.state, GS.HUMAN, card);
 		prep.addEventListener('pointerdown', e => {
 			e.stopPropagation();
 			hideWalkerMenu();
@@ -1339,7 +1340,7 @@ function openTradeMenu(card, ev) {
 		const forge = document.createElement('button');
 		const fcost = card.forge.cost != null ? card.forge.cost : 2;
 		forge.innerHTML = `<span class="wm-cost">${fcost}</span>Forge — upgrade this card`;
-		forge.disabled = !E.canForge(state, HUMAN, card);
+		forge.disabled = !E.canForge(GS.state, GS.HUMAN, card);
 		forge.addEventListener('pointerdown', e => {
 			e.stopPropagation();
 			hideWalkerMenu();
@@ -1360,7 +1361,7 @@ function openAltMenu(card, ev, position) {
 		btn.addEventListener('pointerdown', e => { e.stopPropagation(); hideWalkerMenu(); continuePlay(card, position, useAlt); });
 		menu.appendChild(btn);
 	};
-	mk('Pay normally', E.effectiveCost(state, HUMAN, card), false);
+	mk('Pay normally', E.effectiveCost(GS.state, GS.HUMAN, card), false);
 	mk(card.altCost.label || 'Alternative cost', null, true);
 	showDecisionMenu();
 }
@@ -1369,7 +1370,7 @@ function openAltMenu(card, ev, position) {
 function openKickerMenu(card, ev, position) {
 	const menu = $('walker-menu');
 	menu.innerHTML = `<div class="wm-title">${card.name} — kicker?</div>`;
-	const base = E.effectiveCost(state, HUMAN, card);
+	const base = E.effectiveCost(GS.state, GS.HUMAN, card);
 	const mk = (label, cost, kicked) => {
 		const btn = document.createElement('button');
 		btn.innerHTML = `<span class="wm-cost">${cost}</span>${label}`;
@@ -1383,22 +1384,22 @@ function openKickerMenu(card, ev, position) {
 
 // having settled the cost, pick a target (if any) then play
 function continuePlay(card, position, useAlt, kicked, ev) {
-	const spec = E.targetSpec(state, HUMAN, card);
+	const spec = E.targetSpec(GS.state, GS.HUMAN, card);
 	if (spec) {
-		const targets = E.legalTargets(state, HUMAN, spec);
-		if (targets.length) { pending = { card, spec, targets, mode: 'play', position, useAlt, kicked, dropX: ev?.clientX, dropY: ev?.clientY }; updateHud(); return; }
+		const targets = E.legalTargets(GS.state, GS.HUMAN, spec);
+		if (targets.length) { GS.pending = { card, spec, targets, mode: 'play', position, useAlt, kicked, dropX: ev?.clientX, dropY: ev?.clientY }; updateHud(); return; }
 		if (spec.required) return;
 	}
 	actPlay(card.uid, null, undefined, position, useAlt, kicked);
 }
 
 function playFromHand(card, ev, position) {
-	if (!E.canPlay(state, HUMAN, card)) return;
+	if (!E.canPlay(GS.state, GS.HUMAN, card)) return;
 	if (card.choices) { openChoiceMenu(card, ev, position); return; }
-	if (card.altCost && E.canPayAlt(state, HUMAN, card) && E.canPayMana(state, HUMAN, card)) { openAltMenu(card, ev, position); return; }
-	if (card.kicker && E.canKick(state, HUMAN, card)) { openKickerMenu(card, ev, position); return; }
+	if (card.altCost && E.canPayAlt(GS.state, GS.HUMAN, card) && E.canPayMana(GS.state, GS.HUMAN, card)) { openAltMenu(card, ev, position); return; }
+	if (card.kicker && E.canKick(GS.state, GS.HUMAN, card)) { openKickerMenu(card, ev, position); return; }
 	// only one payment option available: pick it automatically
-	const useAlt = !!(card.altCost && !E.canPayMana(state, HUMAN, card) && E.canPayAlt(state, HUMAN, card));
+	const useAlt = !!(card.altCost && !E.canPayMana(GS.state, GS.HUMAN, card) && E.canPayAlt(GS.state, GS.HUMAN, card));
 	continuePlay(card, position, useAlt, false, ev);
 }
 
@@ -1415,34 +1416,34 @@ function resolveDropTarget(ev, targets, excludeUid) {
 // gap; a targeted spell casts on whatever it's dropped on, else arms the arrow.
 function releasePlay(c, ev) {
 	if (c.adventure && !c.adventureSpent
-		&& (E.canPlay(state, HUMAN, c) || E.canPlayAdventure(state, HUMAN, c))) { openAdventureMenu(c, ev); return; }
-	if (!E.canPlay(state, HUMAN, c)) {
-		if ((c.tradeable && E.canTrade(state, HUMAN, c)) || (c.prepare && E.canPrepare(state, HUMAN, c)) || (c.forge && E.canForge(state, HUMAN, c))) openTradeMenu(c, ev);
+		&& (E.canPlay(GS.state, GS.HUMAN, c) || E.canPlayAdventure(GS.state, GS.HUMAN, c))) { openAdventureMenu(c, ev); return; }
+	if (!E.canPlay(GS.state, GS.HUMAN, c)) {
+		if ((c.tradeable && E.canTrade(GS.state, GS.HUMAN, c)) || (c.prepare && E.canPrepare(GS.state, GS.HUMAN, c)) || (c.forge && E.canForge(GS.state, GS.HUMAN, c))) openTradeMenu(c, ev);
 		return;
 	}
-	if ((c.tradeable && E.canTrade(state, HUMAN, c)) || (c.prepare && E.canPrepare(state, HUMAN, c)) || (c.forge && E.canForge(state, HUMAN, c))) { openTradeMenu(c, ev); return; }
+	if ((c.tradeable && E.canTrade(GS.state, GS.HUMAN, c)) || (c.prepare && E.canPrepare(GS.state, GS.HUMAN, c)) || (c.forge && E.canForge(GS.state, GS.HUMAN, c))) { openTradeMenu(c, ev); return; }
 	if (c.type === 'creature' || c.type === 'location') {
 		const pos = placementIndexAt(ev.clientX);
 		if (c.choices) { openChoiceMenu(c, ev, pos); return; }
 		const over = cardOf(pick(ev, c.uid));
 		const magTribes = c.magnetizeTribes?.length ? c.magnetizeTribes : ['Mech'];
-		if (c.magnetic && over && over.zone === 'board' && over.controller === HUMAN && magTribes.some(tr => (over.tribe || '').includes(tr))) {
-			actPlay(c.uid, { type: 'creature', uid: over.uid, player: HUMAN });
+		if (c.magnetic && over && over.zone === 'board' && over.controller === GS.HUMAN && magTribes.some(tr => (over.tribe || '').includes(tr))) {
+			actPlay(c.uid, { type: 'creature', uid: over.uid, player: GS.HUMAN });
 		} else {
 			playFromHand(c, ev, pos);
 		}
 		return;
 	}
 	if (c.choices) { openChoiceMenu(c, ev); return; }
-	if (c.altCost && E.canPayAlt(state, HUMAN, c) && E.canPayMana(state, HUMAN, c)) { openAltMenu(c, ev); return; }
-	if (c.kicker && E.canKick(state, HUMAN, c)) { openKickerMenu(c, ev); return; }
-	const ua = !!(c.altCost && !E.canPayMana(state, HUMAN, c) && E.canPayAlt(state, HUMAN, c));
-	const spec = E.targetSpec(state, HUMAN, c);
+	if (c.altCost && E.canPayAlt(GS.state, GS.HUMAN, c) && E.canPayMana(GS.state, GS.HUMAN, c)) { openAltMenu(c, ev); return; }
+	if (c.kicker && E.canKick(GS.state, GS.HUMAN, c)) { openKickerMenu(c, ev); return; }
+	const ua = !!(c.altCost && !E.canPayMana(GS.state, GS.HUMAN, c) && E.canPayAlt(GS.state, GS.HUMAN, c));
+	const spec = E.targetSpec(GS.state, GS.HUMAN, c);
 	if (spec) {
-		const targets = E.legalTargets(state, HUMAN, spec);
+		const targets = E.legalTargets(GS.state, GS.HUMAN, spec);
 		const t = resolveDropTarget(ev, targets, c.uid);
 		if (t && !c.fight) { actPlay(c.uid, t, undefined, undefined, ua); return; } // dropped right on a legal target
-		if (targets.length) { pending = { card: c, spec, targets, mode: 'play', useAlt: ua, dropX: ev.clientX, dropY: ev.clientY }; updateHud(); return; } // fight cards always take the two-step path
+		if (targets.length) { GS.pending = { card: c, spec, targets, mode: 'play', useAlt: ua, dropX: ev.clientX, dropY: ev.clientY }; updateHud(); return; } // fight cards always take the two-step path
 		if (spec.required) return;
 	}
 	actPlay(c.uid, null, undefined, undefined, ua);
@@ -1455,14 +1456,14 @@ function openPowerChoiceMenu(card, ev) {
 	card.power.choices.forEach((ch, i) => {
 		const btn = document.createElement('button');
 		btn.textContent = ch.text;
-		btn.disabled = !E.canUseHeroPower(state, HUMAN, card, i);
+		btn.disabled = !E.canUseHeroPower(GS.state, GS.HUMAN, card, i);
 		btn.addEventListener('pointerdown', e => {
 			e.stopPropagation();
 			hideWalkerMenu();
-			const spec = E.heroPowerSpec(state, HUMAN, card, i);
+			const spec = E.heroPowerSpec(GS.state, GS.HUMAN, card, i);
 			if (spec) {
-				const targets = E.legalTargets(state, HUMAN, spec);
-				if (targets.length) { pending = { card, spec, targets, mode: 'power', choice: i }; updateHud(); return; }
+				const targets = E.legalTargets(GS.state, GS.HUMAN, spec);
+				if (targets.length) { GS.pending = { card, spec, targets, mode: 'power', choice: i }; updateHud(); return; }
 				if (spec.required) return;
 			}
 			actPower(card.uid, null, i);
@@ -1486,7 +1487,7 @@ function openUnmaskMenu(card, ev) {
 		actUnmask(card.uid);
 	});
 	menu.appendChild(un);
-	if (E.canAttackWith(state, HUMAN, card)) {
+	if (E.canAttackWith(GS.state, GS.HUMAN, card)) {
 		const atk = document.createElement('button');
 		atk.textContent = 'Attack as the 2/2';
 		atk.addEventListener('pointerdown', e => {
@@ -1503,16 +1504,16 @@ function openUnmaskMenu(card, ev) {
 
 // scry / gaze: the modal shows the peeked cards; each goes top or bottom
 function openScryModal() {
-	const pend = state.scryQueue[0];
-	if (!pend || pend.chooser !== HUMAN) return;
+	const pend = GS.state.scryQueue[0];
+	if (!pend || pend.chooser !== GS.HUMAN) return;
 	const modal = $('scry-modal');
 	const who = `${possOf(pend.deckOwner, false)} deck`;
-	modal.innerHTML = `<div class="wm-title">${pend.deckOwner === HUMAN ? 'Scry' : 'Gaze'} — top of ${who} (first card is drawn first)</div><div class="scry-row"></div>`;
+	modal.innerHTML = `<div class="wm-title">${pend.deckOwner === GS.HUMAN ? 'Scry' : 'Gaze'} — top of ${who} (first card is drawn first)</div><div class="scry-row"></div>`;
 	const row = modal.querySelector('.scry-row');
 	const picks = pend.ids.map(id => ({ id, bottom: false }));
 	const artEntries = [];
 	pend.ids.forEach((id, i) => {
-		const def = state.cardsById[id];
+		const def = GS.state.cardsById[id];
 		const cell = document.createElement('div');
 		cell.className = 'scry-cell';
 		const face = drawCardFace(def);
@@ -1538,8 +1539,8 @@ function openScryModal() {
 		e.stopPropagation();
 		modal.style.display = 'none';
 		clearModalArt();
-		if (isGuest()) { guestApply(() => E.resolveScry(state, picks), { k: 'scry', picks }); return; }
-		E.resolveScry(state, picks);
+		if (isGuest()) { guestApply(() => E.resolveScry(GS.state, picks), { k: 'scry', picks }); return; }
+		E.resolveScry(GS.state, picks);
 		pump();
 		if (duel.on) publishDuel();
 	});
@@ -1555,14 +1556,14 @@ function openTapMenu(card, ev) {
 	E.landTaps(card).forEach((t, i) => {
 		const btn = document.createElement('button');
 		btn.innerHTML = `<span class="wm-cost">⟳</span>${t.text}`;
-		btn.disabled = !E.canTapLand(state, HUMAN, card, i);
+		btn.disabled = !E.canTapLand(GS.state, GS.HUMAN, card, i);
 		btn.addEventListener('pointerdown', e => {
 			e.stopPropagation();
 			hideWalkerMenu();
-			const spec = E.tapSpec(state, HUMAN, card, i);
+			const spec = E.tapSpec(GS.state, GS.HUMAN, card, i);
 			if (spec) {
-				const targets = E.legalTargets(state, HUMAN, spec);
-				if (targets.length) { pending = { card, spec, targets, mode: 'tap', tapIndex: i }; updateHud(); return; }
+				const targets = E.legalTargets(GS.state, GS.HUMAN, spec);
+				if (targets.length) { GS.pending = { card, spec, targets, mode: 'tap', tapIndex: i }; updateHud(); return; }
 				if (spec.required) return;
 			}
 			actTapLand(card.uid, i, null); // relays the intent in a duel (guest)
@@ -1572,8 +1573,8 @@ function openTapMenu(card, ev) {
 	if (card.zone === 'land') {
 		// upgrade this slot into an advanced land that shares one of its current
 		// colors and fits your color identity — 3 mana, each opponent gets a coin
-		const canAfford = !state.over && state.current === HUMAN && E.availableMana(state.players[HUMAN]) >= E.LAND_COST;
-		for (const def of E.availableUpgrades(state, HUMAN, card.uid)) {
+		const canAfford = !GS.state.over && GS.state.current === GS.HUMAN && E.availableMana(GS.state.players[GS.HUMAN]) >= E.LAND_COST;
+		for (const def of E.availableUpgrades(GS.state, GS.HUMAN, card.uid)) {
 			const up = document.createElement('button');
 			up.innerHTML = `<span class="wm-cost">${E.LAND_COST}</span>Upgrade → <b>${def.name}</b>`;
 			up.title = def.description || '';
@@ -1604,10 +1605,10 @@ function openTapMenu(card, ev) {
 
 // an artifact {T} ability: targeted ones pick a target, others fire at once
 function armArtifactTap(card, idx) {
-	const spec = E.tapArtifactSpec(state, HUMAN, card.uid, idx);
+	const spec = E.tapArtifactSpec(GS.state, GS.HUMAN, card.uid, idx);
 	if (spec && spec.required) {
-		const targets = E.legalTargets(state, HUMAN, spec);
-		if (targets.length) { pending = { card, spec, targets, mode: 'tapart', tapIndex: idx }; updateHud(); }
+		const targets = E.legalTargets(GS.state, GS.HUMAN, spec);
+		if (targets.length) { GS.pending = { card, spec, targets, mode: 'tapart', tapIndex: idx }; updateHud(); }
 	} else actTapArtifact(card.uid, null, idx); // relays in a duel (guest)
 }
 // an artifact with several {T} abilities (Mirkwood Darkflame Arrow): pick one
@@ -1617,7 +1618,7 @@ function openArtifactTapMenu(card, ev) {
 	E.artifactTaps(card).forEach((t, i) => {
 		const btn = document.createElement('button');
 		btn.innerHTML = `<span class="wm-cost">⟳</span>${t.text}`;
-		btn.disabled = !E.canTapArtifact(state, HUMAN, card.uid, i);
+		btn.disabled = !E.canTapArtifact(GS.state, GS.HUMAN, card.uid, i);
 		btn.addEventListener('pointerdown', e => {
 			e.stopPropagation();
 			hideWalkerMenu();
@@ -1646,7 +1647,7 @@ function tuckLiftZ(off) {
 	const limit = innerHeight - TUCK_MARGIN;
 	let dz = 0;
 	for (let k = 0; k < 40; k++) {
-		toWorld(0, 1.32, off + 7.5 - dz, HUMAN, _tuckV).project(camera);
+		toWorld(0, 1.32, off + 7.5 - dz, GS.HUMAN, _tuckV).project(camera);
 		if ((1 - _tuckV.y) / 2 * innerHeight <= limit) break;
 		dz += 0.05;
 	}
@@ -1654,23 +1655,23 @@ function tuckLiftZ(off) {
 	return dz;
 }
 function layoutTargets() {
-	if (!state) return;
+	if (!GS.state) return;
 	const off = sliceOff();
 	const seen = new Set();
 	if (sprocketRing) sprocketRing.visible = false; // shown again below only if the human's sprocket is live
-	for (let pi = 0; pi < state.players.length; pi++) {
-		const p = state.players[pi];
+	for (let pi = 0; pi < GS.state.players.length; pi++) {
+		const p = GS.state.players[pi];
 		// hand
 		const n = p.hand.length;
 		p.hand.forEach((card, i) => {
 			const ent = entityFor(card);
 			seen.add(card.uid);
-			if (pi === HUMAN) {
+			if (pi === GS.HUMAN) {
 				// a card being dragged out of the hand floats under the cursor
-				if (placing && placing.dragging && card.uid === placing.card.uid) {
-					const wp = screenToGround(mouseX, mouseY, 1.35);
+				if (GS.placing && GS.placing.dragging && card.uid === GS.placing.card.uid) {
+					const wp = screenToGround(GS.mouseX, GS.mouseY, 1.35);
 					ent.target.pos.set(wp.x, 1.35, wp.z);
-					sliceQuat(_layoutEuler.set(-0.62, 0, 0), HUMAN, ent.target.quat);
+					sliceQuat(_layoutEuler.set(-0.62, 0, 0), GS.HUMAN, ent.target.quat);
 					ent.target.scale = 0.9;
 					return;
 				}
@@ -1678,28 +1679,28 @@ function layoutTargets() {
 				// dropped — snapping it back into the hand parked the targeting
 				// arrow's tail behind the hero panel, which read as the red line
 				// "coming from my hero" instead of from the card being aimed
-				if (pending && pending.card.uid === card.uid) {
-					const wp = pending.dropX != null ? screenToGround(pending.dropX, pending.dropY, 1.35) : null;
+				if (GS.pending && GS.pending.card.uid === card.uid) {
+					const wp = GS.pending.dropX != null ? screenToGround(GS.pending.dropX, GS.pending.dropY, 1.35) : null;
 					if (wp) ent.target.pos.set(wp.x, 1.35, wp.z);
 					else ent.target.pos.set(0, 1.35, off + 3.6);
-					sliceQuat(_layoutEuler.set(-0.62, 0, 0), HUMAN, ent.target.quat);
+					sliceQuat(_layoutEuler.set(-0.62, 0, 0), GS.HUMAN, ent.target.quat);
 					ent.target.scale = 0.9;
 					return;
 				}
 				const spread = Math.min(1.55, 10.5 / Math.max(n, 1));
 				const x = (i - (n - 1) / 2) * spread;
-				const hovered = hoverUid === card.uid || (pending?.card.uid === card.uid);
-				if (handMini && !hovered) {
+				const hovered = GS.hoverUid === card.uid || (GS.pending?.card.uid === card.uid);
+				if (GS.handMini && !hovered) {
 					// tucked down below the hero panel so the panel reads clearly
 					ent.target.pos.set(x, 1.32 + i * 0.012, off + 7.5 - Math.abs(x) * 0.03 - tuckLiftZ(off));
-					sliceQuat(_layoutEuler.set(-0.5, 0, -(i - (n - 1) / 2) * 0.03), HUMAN, ent.target.quat);
+					sliceQuat(_layoutEuler.set(-0.5, 0, -(i - (n - 1) / 2) * 0.03), GS.HUMAN, ent.target.quat);
 					ent.target.scale = 0.5;
 				} else {
 					// a hovered card lifts up AND pulls toward the camera (+z) so it sits
 					// in FRONT of its neighbors — pushing it back (-z) let siblings, whose
 					// forward-tilted bottom edges are nearer the camera, cover its lower half
 					ent.target.pos.set(x, 1.7 + (hovered ? 0.9 : 0) + i * 0.012, off + 6.9 - Math.abs(x) * 0.04 + (hovered ? 0.45 : 0));
-					sliceQuat(_layoutEuler.set(-0.5, 0, -(i - (n - 1) / 2) * 0.03), HUMAN, ent.target.quat);
+					sliceQuat(_layoutEuler.set(-0.5, 0, -(i - (n - 1) / 2) * 0.03), GS.HUMAN, ent.target.quat);
 					ent.target.scale = hovered ? 1.0 : 0.68;
 					if (hovered) fitCardOnScreen(ent.target);   // its stats sit at the bottom corners
 				}
@@ -1732,7 +1733,7 @@ function layoutTargets() {
 				sliceQuat(FLAT, pi, ent.target.quat);
 				ent.target.scale = 0.32;
 			});
-			if (pi === HUMAN) {
+			if (pi === GS.HUMAN) {
 				if (!sprocketRing) sprocketRing = makeRing('#ffd25f');
 				toWorld(3.7 + (p.sprocketPointer || 0) * 0.85, 0.03, off + LAND_Z, pi, sprocketRing.position);
 				sprocketRing.scale.setScalar(0.34);
@@ -1743,7 +1744,7 @@ function layoutTargets() {
 			const ent = entityFor(card);
 			seen.add(card.uid);
 			toWorld(TRAP_X + (i - 1) * TRAP_SPREAD, 0.05, off + TRAP_Z, pi, ent.target.pos);
-			sliceQuat(pi === HUMAN ? FLAT : FACEDOWN, pi, ent.target.quat);
+			sliceQuat(pi === GS.HUMAN ? FLAT : FACEDOWN, pi, ent.target.quat);
 			ent.target.scale = 0.42;
 		});
 		// hero powers mirror the trap row on the left; quests sit outside them.
@@ -1818,7 +1819,7 @@ function layoutTargets() {
 		// creature row (unlimited: compress spacing inside the slice arc).
 		// Tokens always face the HUMAN so enemy stats read right-side-up.
 		const bn = p.board.length;
-		const rowWidth = playerCount <= 2 ? 10.5 : TAU * (off + CREATURE_Z) / playerCount * 0.9;
+		const rowWidth = GS.playerCount <= 2 ? 10.5 : TAU * (off + CREATURE_Z) / GS.playerCount * 0.9;
 		p.board.forEach((card, i) => {
 			const ent = entityFor(card);
 			seen.add(card.uid);
@@ -1827,7 +1828,7 @@ function layoutTargets() {
 			toWorld(x, 0.06 + i * 0.002, off + CREATURE_Z, pi, ent.target.pos);
 			// tapped locations turn sideways like tapped lands
 			sliceQuat(card.type === 'location' && card.tapped
-				? _layoutEuler.set(-Math.PI / 2, 0, -Math.PI / 2) : FLAT, HUMAN, ent.target.quat);
+				? _layoutEuler.set(-Math.PI / 2, 0, -Math.PI / 2) : FLAT, GS.HUMAN, ent.target.quat);
 			// tokens shrink to their spacing so neighbors never overlap
 			ent.target.scale = Math.min(0.8, (spread * 0.97) / (CARD_W * TOKEN_SCALE));
 		});
@@ -1926,20 +1927,20 @@ function logSnap(c) {
 }
 function logNameIndex() {
 	const out = new Map();
-	if (!state) return out;
+	if (!GS.state) return out;
 	const add = (c, pub) => {
 		if (!c || !c.name || typeof c !== 'object') return;
 		const e = out.get(c.name) || { id: c.id, uid: null };
-		if (pub && e.uid == null && !(c.disguised && c.controller !== HUMAN)) e.uid = c.uid;
+		if (pub && e.uid == null && !(c.disguised && c.controller !== GS.HUMAN)) e.uid = c.uid;
 		if (!e.id) e.id = c.id;
-		if (pub && !e.snap && !state.cardsById[c.id]) e.snap = logSnap(c);   // a token: no definition to fall back on once it's gone
+		if (pub && !e.snap && !GS.state.cardsById[c.id]) e.snap = logSnap(c);   // a token: no definition to fall back on once it's gone
 		out.set(c.name, e);
 	};
-	state.players.forEach((p, pi) => {
+	GS.state.players.forEach((p, pi) => {
 		for (const z of ['board', 'lands', 'artifacts', 'enchantments', 'planeswalkers', 'emblems', 'graveyard', 'exile', 'quests', 'heroPowers', 'command'])
 			for (const c of p[z] || []) add(c, true);
 		add(p.weapon, true); add(p.companion, true);
-		for (const c of p.hand || []) add(c, pi === HUMAN);
+		for (const c of p.hand || []) add(c, pi === GS.HUMAN);
 		for (const z of ['deck', 'secrets', 'traps']) for (const c of p[z] || []) add(c, false);
 		const hp = classPowerOf(pi); if (hp) add(hp, true);
 	});
@@ -1947,7 +1948,7 @@ function logNameIndex() {
 }
 function findLogLinks(msg, refs) {
 	const links = [];
-	if (!msg || !state) return links;
+	if (!msg || !GS.state) return links;
 	const taken = (s0, e0) => links.some(l => s0 < l.e && e0 > l.s);
 	const wordAt = (s0, e0) => !/[\w']/.test(msg[s0 - 1] || ' ') && !/[\w]/.test(msg[e0] || ' ');
 	// explicit refs first (two copies of one name resolve to the right one)
@@ -1957,10 +1958,10 @@ function findLogLinks(msg, refs) {
 		const i = msg.indexOf(name);
 		if (i < 0 || taken(i, i + name.length)) continue;
 		const live = r.uid != null ? cardOf(r.uid) : null;
-		const hidden = live && live.controller !== HUMAN && (live.zone === 'hand' || live.zone === 'deck' || live.disguised);
+		const hidden = live && live.controller !== GS.HUMAN && (live.zone === 'hand' || live.zone === 'deck' || live.disguised);
 		// a dead card's event carries only its name: find its id by name
-		const id = r.id || live?.id || logNameIndex().get(name)?.id || Object.values(state.cardsById).find(d => d && d.name === name)?.id || null;
-		const snap = !hidden && live && !state.cardsById[live.id] ? logSnap(live) : (logNameIndex().get(name)?.snap || null);
+		const id = r.id || live?.id || logNameIndex().get(name)?.id || Object.values(GS.state.cardsById).find(d => d && d.name === name)?.id || null;
+		const snap = !hidden && live && !GS.state.cardsById[live.id] ? logSnap(live) : (logNameIndex().get(name)?.snap || null);
 		links.push({ s: i, e: i + name.length, id, uid: hidden ? null : (r.uid ?? null), ...(snap ? { snap } : {}) });
 	}
 	// then every other card name the line printed, longest first
@@ -2000,8 +2001,8 @@ function logLineEl(msg, links) {
 function openLogCard(l) {
 	let c = l.uid != null ? cardOf(l.uid) : null;
 	if (c && !canFocusCard(c)) c = null;
-	if (!c && state) {
-		const def = state.cardsById[l.id] || (l.id && Object.values(state.cardsById).find(d => d && d.id === l.id));
+	if (!c && GS.state) {
+		const def = GS.state.cardsById[l.id] || (l.id && Object.values(GS.state.cardsById).find(d => d && d.id === l.id));
 		if (def) c = { ...def, uid: 'preview_' + def.id, zone: 'preview', controller: null, maxHealth: def.health, keywords: def.keywords || [], damage: 0 };
 		else if (l.snap) c = { ...l.snap, uid: 'preview_' + (l.snap.uid ?? l.snap.name), zone: 'preview', controller: null };   // a token that's gone
 	}
@@ -2069,22 +2070,22 @@ if (logFull) {
 
 // one small projected panel per opponent, rebuilt on new game
 const foePanelEls = new Map(); // pi -> element
-function panelEl(pi) { return pi === HUMAN ? $('my-panel') : foePanelEls.get(pi); }
+function panelEl(pi) { return pi === GS.HUMAN ? $('my-panel') : foePanelEls.get(pi); }
 
 // clicking a power orb activates that player's CLASS hero power
 function classPowerOf(pi) {
-	const p = state.players[pi];
+	const p = GS.state.players[pi];
 	return p.heroPowers.find(c => c.id === (p.heroClass || '') + '_power')
 		|| ((heistRunMode || tombsRunMode || duelsRunMode || arenaRunMode || lorequestRunMode || middleearthRunMode || swordcoastRunMode || finalfantasyRunMode || multiverseRunMode) ? p.heroPowers[0] : null) || null; // heist/tombs/duels/arena/lorequest/middleearth/swordcoast/finalfantasy/multiverse alt powers live in slot 0 (for EVERY player — opponents included, so their orb renders instead of leaking onto the table)
 }
 
 function activateHeroPower(card, ev) {
-	if (!E.canUseHeroPower(state, HUMAN, card)) return;
+	if (!E.canUseHeroPower(GS.state, GS.HUMAN, card)) return;
 	if (card.power.choices) { openPowerChoiceMenu(card, ev); return; }
-	const spec = E.heroPowerSpec(state, HUMAN, card);
+	const spec = E.heroPowerSpec(GS.state, GS.HUMAN, card);
 	if (spec) {
-		const targets = E.legalTargets(state, HUMAN, spec);
-		if (targets.length) { pending = { card, spec, targets, mode: 'power' }; updateHud(); return; }
+		const targets = E.legalTargets(GS.state, GS.HUMAN, spec);
+		if (targets.length) { GS.pending = { card, spec, targets, mode: 'power' }; updateHud(); return; }
 		if (spec.required) return;
 	}
 	actPower(card.uid, null);
@@ -2094,7 +2095,7 @@ function activateHeroPower(card, ev) {
 // (Sneaky Scout's Honorable Kill: "your next Hero Power costs (0)") took effect
 // but the orb still read (2), and it looked like the kill did nothing.
 function powerCostNow(pi, power) {
-	try { return E.heroPowerCost(state, pi, power); } catch { return power.power.cost; }
+	try { return E.heroPowerCost(GS.state, pi, power); } catch { return power.power.cost; }
 }
 // the side-panel orb is built once; redraw it when the live cost moves
 function repaintPowerOrb(orb, pi) {
@@ -2113,7 +2114,7 @@ function repaintPowerOrb(orb, pi) {
 function portraitBlock(pi, big) {
 	const wrap = document.createElement('div');
 	wrap.className = 'hero-id';
-	const p = state.players[pi];
+	const p = GS.state.players[pi];
 	const portrait = drawHeroPortrait(p.heroClass, big ? 128 : 84);
 	portrait.className = 'portrait';
 	portrait.style.width = portrait.style.height = big ? '64px' : '42px';
@@ -2130,19 +2131,19 @@ function portraitBlock(pi, big) {
 		// hover (PC) / long-press (mobile) reveals what the power does
 		orb._tip = { name: power.name, type: 'heropower', cost: live, description: power.description };
 		attachTip(orb, orb._tip);
-		if (pi === HUMAN) {
+		if (pi === GS.HUMAN) {
 			if (TOUCH) {
 				// a quick tap activates; a hold shows the tooltip instead
 				orb.addEventListener('pointerup', ev => {
 					ev.stopPropagation();
 					if (orb._tipFired) return;
-					const card = classPowerOf(HUMAN);
+					const card = classPowerOf(GS.HUMAN);
 					if (card) activateHeroPower(card, ev);
 				});
 			} else {
 				orb.addEventListener('pointerdown', ev => {
 					ev.stopPropagation();
-					const card = classPowerOf(HUMAN);
+					const card = classPowerOf(GS.HUMAN);
 					if (card) activateHeroPower(card, ev);
 				});
 			}
@@ -2156,12 +2157,12 @@ function buildPanels() {
 	const cont = $('foe-panels');
 	cont.innerHTML = '';
 	foePanelEls.clear();
-	if (!state) return;
-	for (let pi = 0; pi < state.players.length; pi++) {
-		if (pi === HUMAN) continue; // HUMAN uses the fixed bottom panel
+	if (!GS.state) return;
+	for (let pi = 0; pi < GS.state.players.length; pi++) {
+		if (pi === GS.HUMAN) continue; // HUMAN uses the fixed bottom panel
 		const el = document.createElement('div');
 		el.className = 'panel foe-sm';
-		const cls = state?.classPicks?.[pi]?.name;
+		const cls = GS.state?.classPicks?.[pi]?.name;
 		// the class name (.cls), its separator (.clsdot), and the mana readout
 		// (.mrow) sit in their own spans so short screens can restack them —
 		// name / class / mana as separate narrow lines (CSS in index.html)
@@ -2174,8 +2175,8 @@ function buildPanels() {
 	// my panel: swap in a fresh portrait + orb for this game's class
 	const mine = $('my-panel');
 	mine.querySelector('.hero-id')?.remove();
-	mine.prepend(portraitBlock(HUMAN, true));
-	const myCls = classNameOf(state.players[HUMAN].heroClass);
+	mine.prepend(portraitBlock(GS.HUMAN, true));
+	const myCls = classNameOf(GS.state.players[GS.HUMAN].heroClass);
 	$('my-title').textContent = myCls ? `You — ${myCls}` : 'Your Hero';
 	// normal play uses the 3D hero panel; spectators keep the DOM one
 	// (#my-panel ships display:none — only spectate ever reveals it)
@@ -2207,7 +2208,7 @@ let heroOrbUV = null; // { x0, x1, y0, y1 } orb rect in 0..1 UV (y from the bott
 // the next roll cost more mana than you had. The orb stays put (dimmed when you
 // can't roll), shows the next roll's cost, and explains itself on hover.
 let dieOrbUV = null;
-const planarDieOn = pl => !!pl && !state.over && (pl.sparked || pl.planeswalkers.length > 0);
+const planarDieOn = pl => !!pl && !GS.state.over && (pl.sparked || pl.planeswalkers.length > 0);
 function drawPlanarDie(ctx, x, y, S, cost, usable) {
 	ctx.save();
 	if (usable) { ctx.shadowColor = 'rgba(80,210,230,0.95)'; ctx.shadowBlur = 16; }
@@ -2246,23 +2247,23 @@ function hpRoundRect(ctx, x, y, w, h, r) {
 
 // is your own hero a legal target for the spell/attack currently being aimed?
 function heroSelfTargetable() {
-	if (!state) return false;
-	if (pending) return pending.targets.some(t => t.type === 'hero' && t.player === HUMAN);
-	if (selectedAttacker === 'HERO') return E.heroAttackTargets(state, HUMAN).some(t => t.type === 'hero' && t.player === HUMAN);
-	if (selectedAttacker) { const a = cardOf(selectedAttacker); return !!a && E.attackTargets(state, HUMAN, a).some(t => t.type === 'hero' && t.player === HUMAN); }
+	if (!GS.state) return false;
+	if (GS.pending) return GS.pending.targets.some(t => t.type === 'hero' && t.player === GS.HUMAN);
+	if (GS.selectedAttacker === 'HERO') return E.heroAttackTargets(GS.state, GS.HUMAN).some(t => t.type === 'hero' && t.player === GS.HUMAN);
+	if (GS.selectedAttacker) { const a = cardOf(GS.selectedAttacker); return !!a && E.attackTargets(GS.state, GS.HUMAN, a).some(t => t.type === 'hero' && t.player === GS.HUMAN); }
 	return false;
 }
 
 function drawHeroPanel() {
-	if (!state) return;
-	const me = state.players[HUMAN];
+	if (!GS.state) return;
+	const me = GS.state.players[GS.HUMAN];
 	const ctx = heroPanelCanvas.getContext('2d');
 	ctx.clearRect(0, 0, HP_W, HP_H);
 	ctx.globalAlpha = me.eliminated ? 0.4 : 1;
 	// frame + state-coloured border (red targetable > green armed > gold your-turn)
-	const armed = state.current === HUMAN && !state.over && !pending && E.canHeroAttack(state, HUMAN);
+	const armed = GS.state.current === GS.HUMAN && !GS.state.over && !GS.pending && E.canHeroAttack(GS.state, GS.HUMAN);
 	const border = heroSelfTargetable() ? '#ff5f4f' : armed ? '#57e389'
-		: (state.current === HUMAN && !state.over) ? '#ffd25f' : (classColorOf(me.heroClass) || '#4a3f6b');
+		: (GS.state.current === GS.HUMAN && !GS.state.over) ? '#ffd25f' : (classColorOf(me.heroClass) || '#4a3f6b');
 	hpRoundRect(ctx, 6, 6, HP_W - 12, HP_H - 12, 20);
 	ctx.fillStyle = 'rgba(30,22,48,0.97)';
 	ctx.fill();
@@ -2278,7 +2279,7 @@ function drawHeroPanel() {
 	const port = drawHeroPortrait(me.heroClass, 128);
 	const pS = 74;
 	ctx.drawImage(port, HP_W - pS - 14, 12, pS, pS);
-	const power = classPowerOf(HUMAN);
+	const power = classPowerOf(GS.HUMAN);
 	heroOrbUV = null;
 	dieOrbUV = null;
 	const oS = 58, ox = HP_W - pS - 14 - oS - 8, oy = 16;
@@ -2286,16 +2287,16 @@ function drawHeroPanel() {
 	const dS = 46, ddx = (power ? ox : HP_W - pS - 14) - dS - 8, ddy = 22;
 	const dieOn = planarDieOn(me);
 	if (dieOn) {
-		const usable = E.canPlaneswalk(state, HUMAN);
+		const usable = E.canPlaneswalk(GS.state, GS.HUMAN);
 		ctx.save(); ctx.globalAlpha = me.eliminated ? 0.4 : 1;
-		drawPlanarDie(ctx, ddx, ddy, dS, E.planarRollCost(state, HUMAN), usable);
+		drawPlanarDie(ctx, ddx, ddy, dS, E.planarRollCost(GS.state, GS.HUMAN), usable);
 		ctx.restore();
 		dieOrbUV = { x0: ddx / HP_W, x1: (ddx + dS) / HP_W, y0: 1 - (ddy + dS) / HP_H, y1: 1 - ddy / HP_H };
 	}
 	if (power) {
-		heroOrbCost = powerCostNow(HUMAN, power);
+		heroOrbCost = powerCostNow(GS.HUMAN, power);
 		const orb = drawPowerOrb(heroOrbCost, 96, power.power.cost);
-		const usable = state.current === HUMAN && !state.over && E.canUseHeroPower(state, HUMAN, power);
+		const usable = GS.state.current === GS.HUMAN && !GS.state.over && E.canUseHeroPower(GS.state, GS.HUMAN, power);
 		ctx.save();
 		if (usable) { ctx.shadowColor = 'rgba(87,227,137,0.95)'; ctx.shadowBlur = 18; }
 		ctx.globalAlpha = (me.eliminated ? 0.4 : 1) * (usable ? 1 : 0.5);
@@ -2375,7 +2376,7 @@ function drawHeroPanel() {
 }
 
 // keep the panel in sync with async hero-portrait art loads
-artListeners.add(() => { if (state && !spectateMode && heroPanelMesh.visible) drawHeroPanel(); });
+artListeners.add(() => { if (GS.state && !spectateMode && heroPanelMesh.visible) drawHeroPanel(); });
 
 // raycast just the hero panel; returns the UV hit (for orb vs body) or null
 function pickHeroPanelUV(ev) {
@@ -2405,11 +2406,11 @@ function heroPanelOrbHit(uv) {
 // read as null ("null wins!" on every replay's last frame). Replays name each seat from
 // the tape ("You" there means the recorder, so the hero's own name is used instead).
 function watchSeatName(pi) {
-	if (spectateMode && pi === HUMAN) return spectateName;
+	if (spectateMode && pi === GS.HUMAN) return spectateName;
 	const taped = replayMode ? replayTape?.meta?.heroes?.[pi]?.name : null;
-	return (taped && taped !== 'You' ? taped : null) || state?.classPicks?.[pi]?.name || (replayMode ? `Player ${pi + 1}` : `Opponent ${pi}`);
+	return (taped && taped !== 'You' ? taped : null) || GS.state?.classPicks?.[pi]?.name || (replayMode ? `Player ${pi + 1}` : `Opponent ${pi}`);
 }
-const watchResultLine = () => (state.winner == null ? 'The game ended in a draw.' : `${watchSeatName(state.winner)} wins!`);
+const watchResultLine = () => (GS.state.winner == null ? 'The game ended in a draw.' : `${watchSeatName(GS.state.winner)} wins!`);
 function updateHudSpectate() {
 	const label = watchSeatName;
 	const gearOf = p => {
@@ -2421,31 +2422,31 @@ function updateHudSpectate() {
 		if (p.corpses && p.heroClass === 'death_knight') g.push(`⚰ ${p.corpses}`);
 		return g;
 	};
-	const me = state.players[HUMAN];
+	const me = GS.state.players[GS.HUMAN];
 	$('my-life').textContent = me.life + (me.armor ? `+${me.armor}` : '');
 	$('my-mana').textContent = `${E.availableMana(me)}/${me.mana.max}`;
 	$('my-deck').textContent = me.deck.length;
 	updateManaHud(me);
 	$('my-gear').innerHTML = gearOf(me).join('<br>');
-	$('my-panel').classList.toggle('turn', state.current === HUMAN && !state.over);
+	$('my-panel').classList.toggle('turn', GS.state.current === GS.HUMAN && !GS.state.over);
 	$('my-panel').classList.toggle('dead', me.eliminated);
-	$('my-title').textContent = label(HUMAN);
+	$('my-title').textContent = label(GS.HUMAN);
 	for (const [pi, el] of foePanelEls) {
-		const p = state.players[pi];
+		const p = GS.state.players[pi];
 		el.querySelector('.life').textContent = p.life + (p.armor ? `+${p.armor}` : '');
 		el.querySelector('.mana').textContent = `${E.availableMana(p)}/${p.mana.max}`;
 		el.querySelector('.hand').textContent = p.hand.length;
 		el.querySelector('.deck').textContent = p.deck.length;
 		el.querySelector('.gear').innerHTML = gearOf(p).join(' · ');
 		el.classList.toggle('dead', p.eliminated);
-		el.classList.toggle('turn', state.current === pi && !state.over);
+		el.classList.toggle('turn', GS.state.current === pi && !GS.state.over);
 	}
 	$('end-turn').style.display = 'none';
 	$('concede').style.display = 'none';
 	$('coin-btn').style.display = 'none';
-	$('hint').textContent = state.over
+	$('hint').textContent = GS.state.over
 		? watchResultLine()
-		: `${label(state.current)} is playing…`;
+		: `${label(GS.state.current)} is playing…`;
 }
 
 // bottom-left mana readout — always in the clear, unlike the 3D hero panel's
@@ -2453,7 +2454,7 @@ function updateHudSpectate() {
 // lands can produce, per E.colorIdentity — basics anchor a color, advanced lands carry theirs)
 const COLOR_HEX = { W: '#f4ecc9', U: '#3b82d9', B: '#5b4a70', R: '#d9534f', G: '#4caf50' };
 function identityPipsHtml(pi) {
-	const id = E.colorIdentity(state, pi);
+	const id = E.colorIdentity(GS.state, pi);
 	return ['W', 'U', 'B', 'R', 'G'].filter(c => id.has(c)).map(c =>
 		`<span title="${c} in your color identity" style="display:inline-block;width:12px;height:12px;border-radius:50%;background:${COLOR_HEX[c]};border:1px solid rgba(255,255,255,0.5);"></span>`).join('');
 }
@@ -2475,20 +2476,20 @@ function updateManaHud(me) {
 	el.style.display = 'flex';
 	el.classList.toggle('empty', cur === 0);
 	el.classList.toggle('tapped', cur > 0 && cur < max);
-	const idEl = $('mana-hud-identity'); if (idEl) idEl.innerHTML = identityPipsHtml(HUMAN);
+	const idEl = $('mana-hud-identity'); if (idEl) idEl.innerHTML = identityPipsHtml(GS.HUMAN);
 }
 
 // while you're venturing, show your dungeon's flowchart with a "you are here" marker
 let dungeonPanelKey = null;
 function updateDungeonPanel() {
 	const panel = $('dungeon-panel'); if (!panel) return;
-	const dg = state && !spectateMode ? state.players[HUMAN].dungeon : null;
+	const dg = GS.state && !spectateMode ? GS.state.players[GS.HUMAN].dungeon : null;
 	if (!dg) { panel.style.display = 'none'; dungeonPanelKey = null; return; }
 	panel.style.display = 'block';
 	const key = dg.id + ':' + dg.room;
 	if (key === dungeonPanelKey) return; // only redraw when the room changes
 	dungeonPanelKey = key;
-	const card = state.cardsById[dg.id];
+	const card = GS.state.cardsById[dg.id];
 	if (!card) { panel.style.display = 'none'; return; }
 	panel.querySelector('.dp-title').textContent = 'VENTURING';
 	panel.querySelector('.dp-card').replaceChildren(drawCardFace(card, { currentRoom: dg.room }));
@@ -2500,14 +2501,14 @@ function updateHud() {
 	wake(); // any HUD refresh means on-screen state changed — resume rendering
 	// mid-match the site nav + setup dropdowns tuck behind ☰ (see index.html);
 	// they come back when the game ends
-	const inMatch = !!state && !state.over;
+	const inMatch = !!GS.state && !GS.state.over;
 	document.body.classList.toggle('in-match', inMatch);
 	if (!inMatch) document.body.classList.remove('nav-open');
-	if (!state) return;
+	if (!GS.state) return;
 	if (spectateMode || replayMode) { updateHudSpectate(); return; }
 	// the pinned inspect closes itself once its card leaves play entirely
 	if (inspectUid != null && typeof inspectUid !== 'string' && !cardOf(inspectUid)) hideInspect(); // string uids = generated-card previews, not board cards
-	const me = state.players[HUMAN];
+	const me = GS.state.players[GS.HUMAN];
 	$('my-life').textContent = me.life + (me.armor ? `+${me.armor}` : '');
 	$('my-mana').textContent = `${E.availableMana(me)}/${me.mana.max}`;
 	$('my-deck').textContent = me.deck.length;
@@ -2523,19 +2524,19 @@ function updateHud() {
 	if (me.heroTempAttack) myGear.push(`⚔ +${me.heroTempAttack} this turn`);
 	$('my-gear').innerHTML = myGear.join('<br>');
 	$('my-panel').classList.toggle('armed',
-		state.current === HUMAN && !state.over && !pending && E.canHeroAttack(state, HUMAN));
+		GS.state.current === GS.HUMAN && !GS.state.over && !GS.pending && E.canHeroAttack(GS.state, GS.HUMAN));
 	$('my-panel').classList.toggle('dead', me.eliminated);
 	// class power orb: glow when usable, grey out when spent/unaffordable
 	const myOrb = $('my-panel').querySelector('.power-orb');
 	if (myOrb) {
-		const power = classPowerOf(HUMAN);
-		const usable = power && state.current === HUMAN && !state.over && E.canUseHeroPower(state, HUMAN, power);
+		const power = classPowerOf(GS.HUMAN);
+		const usable = power && GS.state.current === GS.HUMAN && !GS.state.over && E.canUseHeroPower(GS.state, GS.HUMAN, power);
 		myOrb.classList.toggle('usable', !!usable);
 		myOrb.classList.toggle('spent', !usable);
-		repaintPowerOrb(myOrb, HUMAN);
+		repaintPowerOrb(myOrb, GS.HUMAN);
 	}
 	for (const [pi, el] of foePanelEls) {
-		const p = state.players[pi];
+		const p = GS.state.players[pi];
 		repaintPowerOrb(el.querySelector('.power-orb'), pi);
 		el.querySelector('.life').textContent = p.life + (p.armor ? `+${p.armor}` : '');
 		el.querySelector('.mana').textContent = `${E.availableMana(p)}/${p.mana.max}`;
@@ -2551,14 +2552,14 @@ function updateHud() {
 		el.querySelector('.gear').innerHTML = gear.join(' · ');
 		const idEl = el.querySelector('.identity'); if (idEl) idEl.innerHTML = identityPipsHtml(pi);
 		el.classList.toggle('dead', p.eliminated);
-		el.classList.toggle('turn', state.current === pi && !state.over);
+		el.classList.toggle('turn', GS.state.current === pi && !GS.state.over);
 	}
-	$('coin-btn').style.display = (me.coins > 0 && state.current === HUMAN) ? '' : 'none';
+	$('coin-btn').style.display = (me.coins > 0 && GS.state.current === GS.HUMAN) ? '' : 'none';
 	$('planeswalk-btn').style.display = 'none';   // retired: the planar die is an orb on your hero panel now
 	// concede is available in any active game you're playing (runs, Quick Match, AI,
 	// duels) — but not while merely spectating someone else's match
-	$('concede').style.display = state && !state.over && !spectateMode ? '' : 'none';
-	const myTurn = state.current === HUMAN && !state.over;
+	$('concede').style.display = GS.state && !GS.state.over && !spectateMode ? '' : 'none';
+	const myTurn = GS.state.current === GS.HUMAN && !GS.state.over;
 	$('end-turn').disabled = !myTurn;
 	// the Hearthstone "job's done" cue: End Turn lights green once nothing is
 	// left to play or attack with this turn
@@ -2566,26 +2567,26 @@ function updateHud() {
 	if (myTurn) {
 		try {
 			allSpent = !me.coins
-				&& !me.hand.some(c => E.canPlay(state, HUMAN, c))
-				&& !me.board.some(c => E.canAttackWith(state, HUMAN, c))
-				&& !E.heroAttackTargets(state, HUMAN).length;
+				&& !me.hand.some(c => E.canPlay(GS.state, GS.HUMAN, c))
+				&& !me.board.some(c => E.canAttackWith(GS.state, GS.HUMAN, c))
+				&& !E.heroAttackTargets(GS.state, GS.HUMAN).length;
 		} catch (e) { allSpent = false; }
 	}
 	$('end-turn').classList.toggle('done-glow', myTurn && allSpent);
-	$('end-turn').textContent = state.over ? 'Game Over'
+	$('end-turn').textContent = GS.state.over ? 'Game Over'
 		: myTurn ? 'End Turn'
-		: `${possOf(state.current)} Turn…`;
-	$('hint').textContent = pending
-		? `Choose ${pending.spec.why} for ${pending.card.name} (right-click to cancel)`
-		: (selectedAttacker === 'HERO' ? 'Choose a target for your hero attack (right-click to cancel)'
-			: selectedAttacker ? 'Choose an attack target (right-click to cancel)' : '');
+		: `${possOf(GS.state.current)} Turn…`;
+	$('hint').textContent = GS.pending
+		? `Choose ${GS.pending.spec.why} for ${GS.pending.card.name} (right-click to cancel)`
+		: (GS.selectedAttacker === 'HERO' ? 'Choose a target for your hero attack (right-click to cancel)'
+			: GS.selectedAttacker ? 'Choose an attack target (right-click to cancel)' : '');
 	if (!spectateMode) drawHeroPanel(); // repaint the in-scene hero panel texture
 	maybePublishAsync(); // correspondence: my turn just ended → hand the match over
 }
 
 // projected screen positions + hero-target highlighting, refreshed per frame
 function positionPanels() {
-	if (!state) return;
+	if (!GS.state) return;
 	// batch the size reads before any style writes (interleaving them forces a
 	// reflow per panel), then clamp every panel fully on-screen — slices at the
 	// table's left/right edges used to project half their panel off a portrait
@@ -2606,24 +2607,24 @@ function positionPanels() {
 	// your own hero panel is a 3D object in the scene (billboarded to the camera),
 	// sitting between your land row and hand so the hand cards depth-sort in front
 	if (!spectateMode) {
-		if (state.current === HUMAN && lastCurrent !== HUMAN) handMini = false; // a fresh turn raises your hand
-		lastCurrent = state.current;
+		if (GS.state.current === GS.HUMAN && lastCurrent !== GS.HUMAN) GS.handMini = false; // a fresh turn raises your hand
+		lastCurrent = GS.state.current;
 		heroPanelMesh.visible = true;
-		toWorld(0, 0.92, sliceOff() + 5.15, HUMAN, heroPanelMesh.position);
+		toWorld(0, 0.92, sliceOff() + 5.15, GS.HUMAN, heroPanelMesh.position);
 		heroPanelMesh.quaternion.copy(camera.quaternion);
 	}
 	const heroTargets = new Set();
-	if (pending) {
-		for (const t of pending.targets) if (t.type === 'hero') heroTargets.add(t.player);
-	} else if (selectedAttacker === 'HERO') {
-		for (const t of E.heroAttackTargets(state, HUMAN)) if (t.type === 'hero') heroTargets.add(t.player);
-	} else if (selectedAttacker) {
-		const a = cardOf(selectedAttacker);
-		if (a) for (const t of E.attackTargets(state, HUMAN, a)) if (t.type === 'hero') heroTargets.add(t.player);
+	if (GS.pending) {
+		for (const t of GS.pending.targets) if (t.type === 'hero') heroTargets.add(t.player);
+	} else if (GS.selectedAttacker === 'HERO') {
+		for (const t of E.heroAttackTargets(GS.state, GS.HUMAN)) if (t.type === 'hero') heroTargets.add(t.player);
+	} else if (GS.selectedAttacker) {
+		const a = cardOf(GS.selectedAttacker);
+		if (a) for (const t of E.attackTargets(GS.state, GS.HUMAN, a)) if (t.type === 'hero') heroTargets.add(t.player);
 	}
 	for (const [pi, el] of foePanelEls) el.classList.toggle('targetable', heroTargets.has(pi));
 	// eliminated slices lose their land-slot furniture too
-	for (const m of slotMarkers) m.mesh.visible = !state.players[m.pi].eliminated;
+	for (const m of slotMarkers) m.mesh.visible = !GS.state.players[m.pi].eliminated;
 }
 
 function banner(text, ms = 1400, cls = '') {
@@ -2644,7 +2645,7 @@ function banner(text, ms = 1400, cls = '') {
 const arrowCanvas = document.createElement('canvas');
 arrowCanvas.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:45;';
 document.body.appendChild(arrowCanvas);
-let mouseX = innerWidth / 2, mouseY = innerHeight / 2;
+GS.mouseX = innerWidth / 2; GS.mouseY = innerHeight / 2;
 let arrowDrawn = false;
 
 // ---------- stale-build watchdog ----------
@@ -2664,7 +2665,7 @@ async function checkBuild() {
 		if (_buildTag == null) { _buildTag = tag; return; }
 		if (tag === _buildTag || _staleWarned) return;
 		_staleWarned = true;
-		if (!state || state.over) { location.reload(); return; }
+		if (!GS.state || GS.state.over) { location.reload(); return; }
 		banner('A new Battlecards build is live — finish this fight, then hard-refresh (Ctrl+Shift+R)', 0, 'warn');
 	} catch { /* offline blips are fine — try again next check */ }
 }
@@ -2676,19 +2677,19 @@ document.addEventListener('visibilitychange', () => { if (!document.hidden) chec
 // including a targeted spell with no legal target (an all-Elusive enemy board
 // made a 3-cost Arrest at 3 mana read as a mana bug). Diagnose the real reason.
 function whyCantPlay(c) {
-	const p = state.players[HUMAN];
-	const cost = E.effectiveCost(state, HUMAN, c);
+	const p = GS.state.players[GS.HUMAN];
+	const cost = E.effectiveCost(GS.state, GS.HUMAN, c);
 	if (E.availableMana(p) < cost) {
 		return cost > (c.cost || 0)
 			? `not enough mana — ${c.name} costs (${cost}) right now`
 			: `not enough mana for ${c.name}`;
 	}
-	const spec = E.targetSpec(state, HUMAN, c);
-	if (spec && spec.required && E.legalTargets(state, HUMAN, spec).length === 0) {
-		const enemyHasCreatures = state.players.some((pl, i) => i !== HUMAN && !pl.eliminated && pl.board.some(x => x.type === 'creature' && !E.isDead(x)));
+	const spec = E.targetSpec(GS.state, GS.HUMAN, c);
+	if (spec && spec.required && E.legalTargets(GS.state, GS.HUMAN, spec).length === 0) {
+		const enemyHasCreatures = GS.state.players.some((pl, i) => i !== GS.HUMAN && !pl.eliminated && pl.board.some(x => x.type === 'creature' && !E.isDead(x)));
 		return `no legal target for ${c.name}` + (enemyHasCreatures ? ' (Elusive/Stealth creatures can’t be targeted)' : '');
 	}
-	if (state.priority != null || state.stack.length) return `${c.name} must wait for the stack to clear`;
+	if (GS.state.priority != null || GS.state.stack.length) return `${c.name} must wait for the stack to clear`;
 	return `${c.name} can’t be played right now`;
 }
 
@@ -2696,9 +2697,9 @@ function whyCantPlay(c) {
 // with zero legal targets was a silent trap (armed ring + arrow, nothing
 // clickable, no explanation)
 function tryArmAttack(card) {
-	const targets = E.attackTargets(state, HUMAN, card);
+	const targets = E.attackTargets(GS.state, GS.HUMAN, card);
 	if (!targets.length) { banner(`${card.name} has no legal attack targets right now`); return false; }
-	selectedAttacker = card.uid;
+	GS.selectedAttacker = card.uid;
 	updateHud();
 	return true;
 }
@@ -2706,23 +2707,23 @@ function tryArmAttack(card) {
 // "why can't I hit their hero?" — the answer is almost always a Taunt wall,
 // and until now the click just silently cancelled the attack
 function explainHeroMiss(attacker, defenderPi) {
-	const targets = attacker === 'HERO' ? E.heroAttackTargets(state, HUMAN) : E.attackTargets(state, HUMAN, attacker);
+	const targets = attacker === 'HERO' ? E.heroAttackTargets(GS.state, GS.HUMAN) : E.attackTargets(GS.state, GS.HUMAN, attacker);
 	if (targets.some(t => t.type === 'hero' && t.player === defenderPi)) return false; // hero IS legal; not a miss
-	const taunts = state.players[defenderPi].board.filter(c => E.has(c, 'taunt') && !E.isDead(c) && !c.stealthed);
+	const taunts = GS.state.players[defenderPi].board.filter(c => E.has(c, 'taunt') && !E.isDead(c) && !c.stealthed);
 	banner(taunts.length ? `${taunts[0].name} has Taunt — deal with it first` : 'Their hero can’t be attacked right now');
 	return true;
 }
 
 function targetSourcePos() {
-	if (selectedAttacker === 'HERO') return heroPos(HUMAN);
-	if (selectedAttacker) return entities.has(selectedAttacker) ? creaturePos(selectedAttacker) : null;
-	if (pending) {
+	if (GS.selectedAttacker === 'HERO') return heroPos(GS.HUMAN);
+	if (GS.selectedAttacker) return entities.has(GS.selectedAttacker) ? creaturePos(GS.selectedAttacker) : null;
+	if (GS.pending) {
 		// two-step fight (Prey Upon): once the fighter is picked, the line comes
 		// from the fighter on the board, not from the spell sitting in the hand
-		if (pending.fighter && entities.has(pending.fighter.uid)) return creaturePos(pending.fighter.uid);
+		if (GS.pending.fighter && entities.has(GS.pending.fighter.uid)) return creaturePos(GS.pending.fighter.uid);
 		// hand cards / table cards have entities; the class power lives in the panel
-		if (entities.has(pending.card.uid)) return creaturePos(pending.card.uid);
-		return heroPos(HUMAN);
+		if (entities.has(GS.pending.card.uid)) return creaturePos(GS.pending.card.uid);
+		return heroPos(GS.HUMAN);
 	}
 	return null;
 }
@@ -2730,7 +2731,7 @@ function targetSourcePos() {
 // Telegraphs: brief forecast arrows (attacker → target) shown BEFORE an enemy
 // attack resolves visually, and between replay frames — so watchers can follow
 // what is about to happen instead of reconstructing it from the aftermath.
-let telegraphs = []; // { from: {uid?, hero?}, to: {uid?, hero?}, until, friendly }
+GS.telegraphs = []; // { from: {uid?, hero?}, to: {uid?, hero?}, until, friendly }
 function telegraphPos(ref) {
 	// a ref can carry BOTH uid and hero: the uid wins while its entity lives
 	// (e.g. the played card in the enemy hand), the hero is the fallback anchor
@@ -2747,17 +2748,17 @@ const TG_GREEN = { chev: '#2f9e4f', head: '#3bcf63', sock: 'rgba(46,158,79,0.85)
 function pushTelegraph(fromRef, target, actorPi, ms = 520) {
 	if (!target) return 0;
 	const to = target.type === 'hero' ? { hero: target.player } : { uid: target.uid };
-	telegraphs.push({ from: fromRef, to, until: performance.now() + ms, friendly: target.player === actorPi });
+	GS.telegraphs.push({ from: fromRef, to, until: performance.now() + ms, friendly: target.player === actorPi });
 	wake();
 	return ms;
 }
 
 function drawTargetArrow() {
 	const nowT = performance.now();
-	if (telegraphs.length) telegraphs = telegraphs.filter(t => t.until > nowT);
+	if (GS.telegraphs.length) GS.telegraphs = GS.telegraphs.filter(t => t.until > nowT);
 	const src = targetSourcePos();
 	const ctx = arrowCanvas.getContext('2d');
-	if (!src && !telegraphs.length) {
+	if (!src && !GS.telegraphs.length) {
 		if (arrowDrawn) { ctx.clearRect(0, 0, arrowCanvas.width, arrowCanvas.height); arrowDrawn = false; }
 		return;
 	}
@@ -2781,9 +2782,9 @@ function drawTargetArrow() {
 	arrowDrawn = true;
 	if (src) {
 		const v = src.project(camera);
-		paintArrow(ctx, (v.x + 1) / 2 * innerWidth, (1 - v.y) / 2 * innerHeight, mouseX, mouseY);
+		paintArrow(ctx, (v.x + 1) / 2 * innerWidth, (1 - v.y) / 2 * innerHeight, GS.mouseX, GS.mouseY);
 	}
-	for (const t of telegraphs) {
+	for (const t of GS.telegraphs) {
 		const a = telegraphPos(t.from), b = telegraphPos(t.to);
 		if (a && b) paintArrow(ctx, a.x, a.y, b.x, b.y, t.friendly ? TG_GREEN : TG_RED);
 	}
@@ -2891,19 +2892,19 @@ function paintArrow(ctx, sx, sy, tx, ty, pal = TG_RED) {
 
 // ---------- event animation queue ----------
 const queue = [];
-let queueBusy = false;
+GS.queueBusy = false;
 
 // AI-owned scry/gaze decisions resolve immediately (Morbid can queue them
 // off-turn); only human decisions wait for the modal
 function resolveAIScries() {
-	while (state.scryQueue.length && isAiSeat(state.scryQueue[0].chooser)) {
-		const pend = state.scryQueue[0];
+	while (GS.state.scryQueue.length && isAiSeat(GS.state.scryQueue[0].chooser)) {
+		const pend = GS.state.scryQueue[0];
 		const picks = pend.ids.map(id => {
-			const cost = state.cardsById[id]?.cost || 0;
+			const cost = GS.state.cardsById[id]?.cost || 0;
 			const own = pend.deckOwner === pend.chooser;
-			return { id, bottom: own ? cost > state.players[pend.chooser].mana.max + 2 : cost >= 4 };
+			return { id, bottom: own ? cost > GS.state.players[pend.chooser].mana.max + 2 : cost >= 4 };
 		});
-		E.resolveScry(state, picks);
+		E.resolveScry(GS.state, picks);
 	}
 }
 
@@ -2923,28 +2924,28 @@ let _boardWas = new Map();          // uid -> name
 const boardVanishLog = [];          // readable via __game.boardVanishLog
 function snapshotBoard() {
 	const m = new Map();
-	if (!state) return m;
-	for (const p of state.players) for (const c of (p.board || [])) m.set(c.uid, c.name);
+	if (!GS.state) return m;
+	for (const p of GS.state.players) for (const c of (p.board || [])) m.set(c.uid, c.name);
 	return m;
 }
 function checkBoardDepartures(sawEvents) {
-	if (!state) return;
+	if (!GS.state) return;
 	const now = snapshotBoard();
 	for (const [uid, name] of _boardWas) {
 		if (now.has(uid)) continue;
 		if (sawEvents.has(uid)) continue;                       // accounted for
-		const rec = { name, uid, turn: state.turnNumber, at: new Date().toISOString() };
+		const rec = { name, uid, turn: GS.state.turnNumber, at: new Date().toISOString() };
 		boardVanishLog.push(rec);
 		if (boardVanishLog.length > 40) boardVanishLog.shift();
 		console.warn('[board-vanish] a creature left the board with no event:', name,
-			'turn', state.turnNumber, '— see __game.boardVanishLog');
+			'turn', GS.state.turnNumber, '— see __game.boardVanishLog');
 	}
 	_boardWas = now;
 }
 
 function pump() {
 	wake();
-	if (!state) return;
+	if (!GS.state) return;
 	resolveAIScries();
 	resolveAIDiscards();
 	resolveAIPicks();
@@ -2955,9 +2956,9 @@ function pump() {
 	// FFA: if the just-applied action — or any AI queue-resolution above — left the
 	// active player eliminated, hand the turn on now (before events flush / the AI
 	// driver re-arms). A no-op in 1v1/solo, where a self-elimination ends the game.
-	E.settleTurn(state);
-	const fresh = E.takeEvents(state);
-	if (state.over) recordRunResult();
+	E.settleTurn(GS.state);
+	const fresh = E.takeEvents(GS.state);
+	if (GS.state.over) recordRunResult();
 	// which creatures had a REASON to leave this batch?
 	const accounted = new Set();
 	for (const ev of fresh) {
@@ -2967,7 +2968,7 @@ function pump() {
 	}
 	checkBoardDepartures(accounted);
 	queue.push(...fresh);
-	if (!queueBusy) nextEvent();
+	if (!GS.queueBusy) nextEvent();
 }
 
 // After a snapshot RESUME the engine's event queue is empty, so the reactive
@@ -2979,19 +2980,19 @@ function pump() {
 // toSnapshot, so they survive the close; this just reconnects them to the UI.
 // A no-op when nothing is pending (e.g. a fresh boot — the queues are empty).
 function resumePendingChoices() {
-	if (!state) return;
+	if (!GS.state) return;
 	// the resumed board is up now — drop the "Shuffling the card library…" load
 	// banner if it's still showing, so it never lingers behind a restored choice
 	{ const b = $('banner'); if (b && /Shuffling the card library/.test(b.textContent)) b.style.opacity = 0; }
 	resolveAIScries(); resolveAIDiscards(); resolveAIPicks(); resolveAIAsks(); resolveAISacs(); resolveAIDredges(); resolveAIResponds();
-	const s = state;
-	if (s.scryQueue.length && s.scryQueue[0].chooser === HUMAN) return openScryModal();
-	if (s.pickQueue.length && s.pickQueue[0].player === HUMAN) return openPickModal();
-	if (s.discardQueue.length && s.discardQueue[0].player === HUMAN) return openDiscardModal();
-	if (s.askQueue.length && s.askQueue[0].player === HUMAN) return openAskModal();
-	if (s.sacQueue.length && s.sacQueue[0].player === HUMAN) return openSacModal();
-	if (s.dredgeQueue.length && s.dredgeQueue[0].player === HUMAN) return openDredgeModal();
-	if (s.priority === HUMAN) return openRespondModal();
+	const s = GS.state;
+	if (s.scryQueue.length && s.scryQueue[0].chooser === GS.HUMAN) return openScryModal();
+	if (s.pickQueue.length && s.pickQueue[0].player === GS.HUMAN) return openPickModal();
+	if (s.discardQueue.length && s.discardQueue[0].player === GS.HUMAN) return openDiscardModal();
+	if (s.askQueue.length && s.askQueue[0].player === GS.HUMAN) return openAskModal();
+	if (s.sacQueue.length && s.sacQueue[0].player === GS.HUMAN) return openSacModal();
+	if (s.dredgeQueue.length && s.dredgeQueue[0].player === GS.HUMAN) return openDredgeModal();
+	if (s.priority === GS.HUMAN) return openRespondModal();
 }
 
 // Live-play backstop (twin of resumePendingChoices, for the running game): a
@@ -3015,48 +3016,48 @@ function wireModalVeil() {
 }
 
 function surfacePendingChoice() {
-	if (!state || state.over) return;
-	if (mulliganModalOpen || pending) return; // mid-mulligan / mid-targeting: leave it
+	if (!GS.state || GS.state.over) return;
+	if (mulliganModalOpen || GS.pending) return; // mid-mulligan / mid-targeting: leave it
 	const m = $('scry-modal');
 	if (m && getComputedStyle(m).display !== 'none') return; // a choice modal is already open
-	const s = state;
-	if (s.scryQueue.length && s.scryQueue[0].chooser === HUMAN) return openScryModal();
-	if (s.pickQueue.length && s.pickQueue[0].player === HUMAN) return openPickModal();
-	if (s.discardQueue.length && s.discardQueue[0].player === HUMAN) return openDiscardModal();
-	if (s.askQueue.length && s.askQueue[0].player === HUMAN) return openAskModal();
-	if (s.sacQueue.length && s.sacQueue[0].player === HUMAN) return openSacModal();
-	if (s.dredgeQueue.length && s.dredgeQueue[0].player === HUMAN) return openDredgeModal();
+	const s = GS.state;
+	if (s.scryQueue.length && s.scryQueue[0].chooser === GS.HUMAN) return openScryModal();
+	if (s.pickQueue.length && s.pickQueue[0].player === GS.HUMAN) return openPickModal();
+	if (s.discardQueue.length && s.discardQueue[0].player === GS.HUMAN) return openDiscardModal();
+	if (s.askQueue.length && s.askQueue[0].player === GS.HUMAN) return openAskModal();
+	if (s.sacQueue.length && s.sacQueue[0].player === GS.HUMAN) return openSacModal();
+	if (s.dredgeQueue.length && s.dredgeQueue[0].player === GS.HUMAN) return openDredgeModal();
 }
 
 // AI discards: end-of-turn cleanup keeps the bombs and sheds chaff (AI.cleanupDiscardUids);
 // loot/other discards dump the most expensive (least castable) card.
 function resolveAIDiscards() {
-	while (state.discardQueue.length && isAiSeat(state.discardQueue[0].player)) {
-		const pend = state.discardQueue[0];
-		const p = state.players[pend.player];
+	while (GS.state.discardQueue.length && isAiSeat(GS.state.discardQueue[0].player)) {
+		const pend = GS.state.discardQueue[0];
+		const p = GS.state.players[pend.player];
 		const picks = pend.cleanup
 			? AI.cleanupDiscardUids(p, pend.count)
 			: [...p.hand].sort((a, b) => b.cost - a.cost).slice(0, pend.count).map(c => c.uid);
-		E.resolveDiscard(state, picks);
+		E.resolveDiscard(GS.state, picks);
 	}
 }
 
 function resolveAISacs() {
-	while (state.sacQueue.length && isAiSeat(state.sacQueue[0].player)) {
-		const pend = state.sacQueue[0];
-		const p = state.players[pend.player];
+	while (GS.state.sacQueue.length && isAiSeat(GS.state.sacQueue[0].player)) {
+		const pend = GS.state.sacQueue[0];
+		const p = GS.state.players[pend.player];
 		// sacrifice the cheapest eligible permanent (prefer tokens/Treasures)
 		const pool = pend.uids.map(u => p.board.find(c => c.uid === u) || p.artifacts.find(c => c.uid === u)).filter(Boolean);
 		const pick = pool.sort((a, b) => (a.token ? -1 : 0) - (b.token ? -1 : 0) || (a.cost || 0) - (b.cost || 0))[0];
-		E.resolveSac(state, pick ? pick.uid : (pend.uids[0]));
+		E.resolveSac(GS.state, pick ? pick.uid : (pend.uids[0]));
 	}
 }
 
 // AI counters an impactful pending spell (cost >= 3) if it holds a Counter
 function resolveAIResponds() {
-	while (state.priority != null && isAiSeat(state.priority) && !state.players[state.priority].eliminated) {
-		const pi = state.priority;
-		E.resolveResponse(state, pi, AI.chooseResponse(state, pi));
+	while (GS.state.priority != null && isAiSeat(GS.state.priority) && !GS.state.players[GS.state.priority].eliminated) {
+		const pi = GS.state.priority;
+		E.resolveResponse(GS.state, pi, AI.chooseResponse(GS.state, pi));
 	}
 }
 
@@ -3070,49 +3071,49 @@ function doRespondPass() {
 	clearRespondTimer();
 	respondSig = null;
 	$('scry-modal').style.display = 'none';
-	if (state.priority !== HUMAN) return;
-	if (isGuest()) { guestApply(() => E.resolveResponse(state, HUMAN, null), { k: 'respond', action: null }); return; }
-	E.resolveResponse(state, HUMAN, null); pump(); if (duel.on) publishDuel();
+	if (GS.state.priority !== GS.HUMAN) return;
+	if (isGuest()) { guestApply(() => E.resolveResponse(GS.state, GS.HUMAN, null), { k: 'respond', action: null }); return; }
+	E.resolveResponse(GS.state, GS.HUMAN, null); pump(); if (duel.on) publishDuel();
 }
 
 function submitRespond(action) {
 	clearRespondTimer();
 	respondSig = null;
 	$('scry-modal').style.display = 'none';
-	if (isGuest()) { guestApply(() => E.resolveResponse(state, HUMAN, action), { k: 'respond', action }); return; }
-	E.resolveResponse(state, HUMAN, action); pump(); if (duel.on) publishDuel();
+	if (isGuest()) { guestApply(() => E.resolveResponse(GS.state, GS.HUMAN, action), { k: 'respond', action }); return; }
+	E.resolveResponse(GS.state, GS.HUMAN, action); pump(); if (duel.on) publishDuel();
 }
 
 // the instant-speed responses the human could take right now
 function respondOptions() {
-	const me = state.players[HUMAN];
+	const me = GS.state.players[GS.HUMAN];
 	const out = [];
-	for (const c of E.responseOptions(state, HUMAN)) {
+	for (const c of E.responseOptions(GS.state, GS.HUMAN)) {
 		const verb = c.counterSpell ? 'Counter' : 'Cast';
-		if (c.altCost && E.canPayAlt(state, HUMAN, c)) {
-			if (E.canPayMana(state, HUMAN, c)) out.push({ kind: 'spell', card: c, useAlt: false, label: `${verb} ${c.name} (${E.effectiveCost(state, HUMAN, c)})` });
+		if (c.altCost && E.canPayAlt(GS.state, GS.HUMAN, c)) {
+			if (E.canPayMana(GS.state, GS.HUMAN, c)) out.push({ kind: 'spell', card: c, useAlt: false, label: `${verb} ${c.name} (${E.effectiveCost(GS.state, GS.HUMAN, c)})` });
 			out.push({ kind: 'spell', card: c, useAlt: true, label: `${verb} ${c.name} — ${c.altCost.label}` });
-		} else if (c.kicker && E.canKick(state, HUMAN, c)) {
-			out.push({ kind: 'spell', card: c, kicked: false, label: `${verb} ${c.name} (${E.effectiveCost(state, HUMAN, c)})` });
-			out.push({ kind: 'spell', card: c, kicked: true, label: `${verb} ${c.name} + kicker (${E.effectiveCost(state, HUMAN, c) + c.kicker.cost})` });
+		} else if (c.kicker && E.canKick(GS.state, GS.HUMAN, c)) {
+			out.push({ kind: 'spell', card: c, kicked: false, label: `${verb} ${c.name} (${E.effectiveCost(GS.state, GS.HUMAN, c)})` });
+			out.push({ kind: 'spell', card: c, kicked: true, label: `${verb} ${c.name} + kicker (${E.effectiveCost(GS.state, GS.HUMAN, c) + c.kicker.cost})` });
 		} else {
-			out.push({ kind: 'spell', card: c, useAlt: false, label: `${verb} ${c.name} (${E.effectiveCost(state, HUMAN, c)})` });
+			out.push({ kind: 'spell', card: c, useAlt: false, label: `${verb} ${c.name} (${E.effectiveCost(GS.state, GS.HUMAN, c)})` });
 		}
 	}
-	for (const c of [...me.board, ...me.enchantments]) if (c.activated) c.activated.forEach((a, i) => { if (E.canActivate(state, HUMAN, c, i)) out.push({ kind: 'ability', card: c, index: i, label: `${c.name}: ${a.text || 'ability'}` }); });
-	for (const l of [...me.lands, ...me.board.filter(x => x.type === 'location')]) E.landTaps(l).forEach((t, i) => { if (t.effects.some(e => e.type !== 'gain-mana') && E.canTapLand(state, HUMAN, l, i)) out.push({ kind: 'landtap', card: l, index: i, label: `${l.name}: ${t.text}` }); });
+	for (const c of [...me.board, ...me.enchantments]) if (c.activated) c.activated.forEach((a, i) => { if (E.canActivate(GS.state, GS.HUMAN, c, i)) out.push({ kind: 'ability', card: c, index: i, label: `${c.name}: ${a.text || 'ability'}` }); });
+	for (const l of [...me.lands, ...me.board.filter(x => x.type === 'location')]) E.landTaps(l).forEach((t, i) => { if (t.effects.some(e => e.type !== 'gain-mana') && E.canTapLand(GS.state, GS.HUMAN, l, i)) out.push({ kind: 'landtap', card: l, index: i, label: `${l.name}: ${t.text}` }); });
 	return out;
 }
 
 function openRespondModal() {
-	if (!state || state.priority !== HUMAN) return;
+	if (!GS.state || GS.state.priority !== GS.HUMAN) return;
 	const opts = respondOptions();
 	if (autoPass || !opts.length) { doRespondPass(); return; }
-	const top = state.stack[state.stack.length - 1];
+	const top = GS.state.stack[GS.state.stack.length - 1];
 	const sig = top ? top.uid + ':' + opts.length : null;
 	if (sig === respondSig) return; // already showing this window
 	respondSig = sig;
-	const pend = E.pendingSpellFor(state, HUMAN);
+	const pend = E.pendingSpellFor(GS.state, GS.HUMAN);
 	const modal = $('scry-modal');
 	let secs = 4;
 	const titleText = () => `${pend ? nameOf(pend.caster) + ' acts — respond?' : 'Respond?'} (${secs}s)`;
@@ -3126,12 +3127,12 @@ function openRespondModal() {
 			return;
 		}
 		const spec = o.kind === 'spell'
-			? (o.card.counterSpell ? null : E.targetSpec(state, HUMAN, o.card))
-			: o.kind === 'ability' ? E.abilitySpec(state, HUMAN, o.card, o.index)
-			: E.tapSpec(state, HUMAN, o.card, o.index);
+			? (o.card.counterSpell ? null : E.targetSpec(GS.state, GS.HUMAN, o.card))
+			: o.kind === 'ability' ? E.abilitySpec(GS.state, GS.HUMAN, o.card, o.index)
+			: E.tapSpec(GS.state, GS.HUMAN, o.card, o.index);
 		if (spec) {
-			const targets = E.legalTargets(state, HUMAN, spec);
-			if (targets.length) { clearRespondTimer(); respondSig = null; modal.style.display = 'none'; pending = { card: o.card, spec, targets, mode: 'respond', action: { kind: o.kind, uid: o.card.uid, index: o.index, useAlt: o.useAlt, kicked: o.kicked } }; updateHud(); return; }
+			const targets = E.legalTargets(GS.state, GS.HUMAN, spec);
+			if (targets.length) { clearRespondTimer(); respondSig = null; modal.style.display = 'none'; GS.pending = { card: o.card, spec, targets, mode: 'respond', action: { kind: o.kind, uid: o.card.uid, index: o.index, useAlt: o.useAlt, kicked: o.kicked } }; updateHud(); return; }
 			if (spec.required) return;
 		}
 		submitRespond({ kind: o.kind, uid: o.card.uid, index: o.index, target: null, useAlt: o.useAlt, kicked: o.kicked });
@@ -3151,12 +3152,12 @@ function openRespondModal() {
 
 // AI Discover/Draft picks: take the biggest card
 function resolveAIPicks() {
-	while (state.pickQueue.length && isAiSeat(state.pickQueue[0].player)) {
-		const pend = state.pickQueue[0];
-		if (pend.mode === 'adapt') { E.resolvePick(state, bestAdaptId(pend)); continue; }
-		if (pend.mode === 'harvest') { E.resolvePick(state, bestHarvestId(state, pend)); continue; }
-		const best = [...pend.ids].sort((a, b) => (state.cardsById[b]?.cost || 0) - (state.cardsById[a]?.cost || 0))[0];
-		E.resolvePick(state, best);
+	while (GS.state.pickQueue.length && isAiSeat(GS.state.pickQueue[0].player)) {
+		const pend = GS.state.pickQueue[0];
+		if (pend.mode === 'adapt') { E.resolvePick(GS.state, bestAdaptId(pend)); continue; }
+		if (pend.mode === 'harvest') { E.resolvePick(GS.state, bestHarvestId(GS.state, pend)); continue; }
+		const best = [...pend.ids].sort((a, b) => (GS.state.cardsById[b]?.cost || 0) - (GS.state.cardsById[a]?.cost || 0))[0];
+		E.resolvePick(GS.state, best);
 	}
 }
 
@@ -3175,28 +3176,28 @@ function bestHarvestId(state, pend) {
 
 // AI optional "you may …" prompts: the AI takes the beneficial option (yes)
 function resolveAIAsks() {
-	while (state.askQueue.length && isAiSeat(state.askQueue[0].player)) {
-		E.resolveAsk(state, true);
+	while (GS.state.askQueue.length && isAiSeat(GS.state.askQueue[0].player)) {
+		E.resolveAsk(GS.state, true);
 	}
 }
 
 // AI Dredge: put the biggest card from the bottom three onto the deck
 function resolveAIDredges() {
-	while (state.dredgeQueue.length && isAiSeat(state.dredgeQueue[0].player)) {
-		const pend = state.dredgeQueue[0];
-		const best = [...pend.ids].sort((a, b) => (state.cardsById[b]?.cost || 0) - (state.cardsById[a]?.cost || 0))[0];
-		E.resolveDredge(state, best);
+	while (GS.state.dredgeQueue.length && isAiSeat(GS.state.dredgeQueue[0].player)) {
+		const pend = GS.state.dredgeQueue[0];
+		const best = [...pend.ids].sort((a, b) => (GS.state.cardsById[b]?.cost || 0) - (GS.state.cardsById[a]?.cost || 0))[0];
+		E.resolveDredge(GS.state, best);
 	}
 }
 
 function openDredgeModal() {
-	const pend = state.dredgeQueue[0];
-	if (!pend || pend.player !== HUMAN) return;
+	const pend = GS.state.dredgeQueue[0];
+	if (!pend || pend.player !== GS.HUMAN) return;
 	const modal = $('scry-modal'); // reuse the scry chrome
 	modal.innerHTML = `<div class="wm-title">Dredge — put one on top of your deck</div><div class="scry-row"></div>`;
 	const row = modal.querySelector('.scry-row');
 	pend.ids.forEach(id => {
-		const def = state.cardsById[id];
+		const def = GS.state.cardsById[id];
 		const cell = document.createElement('div');
 		cell.className = 'scry-cell';
 		const face = drawCardFace(def);
@@ -3208,8 +3209,8 @@ function openDredgeModal() {
 		btn.addEventListener('pointerdown', e => {
 			e.stopPropagation();
 			modal.style.display = 'none';
-			if (isGuest()) { guestApply(() => E.resolveDredge(state, id), { k: 'dredge', id }); return; }
-			E.resolveDredge(state, id);
+			if (isGuest()) { guestApply(() => E.resolveDredge(GS.state, id), { k: 'dredge', id }); return; }
+			E.resolveDredge(GS.state, id);
 			pump();
 			if (duel.on) publishDuel();
 		});
@@ -3220,8 +3221,8 @@ function openDredgeModal() {
 }
 
 function openPickModal() {
-	const pend = state.pickQueue[0];
-	if (!pend || pend.player !== HUMAN) return;
+	const pend = GS.state.pickQueue[0];
+	if (!pend || pend.player !== GS.HUMAN) return;
 	const modal = $('scry-modal'); // reuse the scry chrome
 	if (pend.mode === 'advance') {
 		// Advance (Venture into the Dungeon): choose a dungeon to enter, or which branch room to take
@@ -3240,8 +3241,8 @@ function openPickModal() {
 			btn.addEventListener('pointerdown', e => {
 				e.stopPropagation();
 				modal.style.display = 'none';
-				if (isGuest()) { guestApply(() => E.resolvePick(state, id), { k: 'pick', id }); return; }
-				E.resolvePick(state, id);
+				if (isGuest()) { guestApply(() => E.resolvePick(GS.state, id), { k: 'pick', id }); return; }
+				E.resolvePick(GS.state, id);
 				pump();
 				if (duel.on) publishDuel();
 			});
@@ -3253,13 +3254,13 @@ function openPickModal() {
 	}
 	if (pend.mode === 'tempt') {
 		// The Ring tempts you: choose which of your creatures bears the Ring
-		const board = state.players[HUMAN].board;
-		const lvl = state.players[HUMAN].ring || 1;
+		const board = GS.state.players[GS.HUMAN].board;
+		const lvl = GS.state.players[GS.HUMAN].ring || 1;
 		modal.innerHTML = `<div class="wm-title">The Ring tempts you (level ${lvl}) — choose your Ring-bearer</div><div class="scry-row"></div>`;
 		const row = modal.querySelector('.scry-row');
 		pend.ids.forEach(id => {
 			const cr = board.find(x => x.uid === id);
-			const current = cr && cr.uid === state.players[HUMAN].ringBearer ? ' · current' : '';
+			const current = cr && cr.uid === GS.state.players[GS.HUMAN].ringBearer ? ' · current' : '';
 			const cell = document.createElement('div');
 			cell.className = 'scry-cell';
 			cell.innerHTML = `<div class="adapt-opt"><b>${(cr && cr.name) || '?'}</b>${cr ? `<br><span style="font-size:.85em">${cr.attack}/${E.hp(cr)}${current}</span>` : ''}</div>`;
@@ -3268,8 +3269,8 @@ function openPickModal() {
 			btn.addEventListener('pointerdown', e => {
 				e.stopPropagation();
 				modal.style.display = 'none';
-				if (isGuest()) { guestApply(() => E.resolvePick(state, id), { k: 'pick', id }); return; }
-				E.resolvePick(state, id);
+				if (isGuest()) { guestApply(() => E.resolvePick(GS.state, id), { k: 'pick', id }); return; }
+				E.resolvePick(GS.state, id);
 				pump();
 				if (duel.on) publishDuel();
 			});
@@ -3292,8 +3293,8 @@ function openPickModal() {
 			btn.addEventListener('pointerdown', e => {
 				e.stopPropagation();
 				modal.style.display = 'none';
-				if (isGuest()) { guestApply(() => E.resolvePick(state, String(i)), { k: 'pick', id: String(i) }); return; }
-				E.resolvePick(state, String(i));
+				if (isGuest()) { guestApply(() => E.resolvePick(GS.state, String(i)), { k: 'pick', id: String(i) }); return; }
+				E.resolvePick(GS.state, String(i));
 				pump();
 				if (duel.on) publishDuel();
 			});
@@ -3316,8 +3317,8 @@ function openPickModal() {
 			btn.addEventListener('pointerdown', e => {
 				e.stopPropagation();
 				modal.style.display = 'none';
-				if (isGuest()) { guestApply(() => E.resolvePick(state, String(i)), { k: 'pick', id: String(i) }); return; }
-				E.resolvePick(state, String(i));
+				if (isGuest()) { guestApply(() => E.resolvePick(GS.state, String(i)), { k: 'pick', id: String(i) }); return; }
+				E.resolvePick(GS.state, String(i));
 				pump();
 				if (duel.on) publishDuel();
 			});
@@ -3340,8 +3341,8 @@ function openPickModal() {
 			btn.addEventListener('pointerdown', e => {
 				e.stopPropagation();
 				modal.style.display = 'none';
-				if (isGuest()) { guestApply(() => E.resolvePick(state, String(i)), { k: 'pick', id: String(i) }); return; }
-				E.resolvePick(state, String(i));
+				if (isGuest()) { guestApply(() => E.resolvePick(GS.state, String(i)), { k: 'pick', id: String(i) }); return; }
+				E.resolvePick(GS.state, String(i));
 				pump();
 				if (duel.on) publishDuel();
 			});
@@ -3365,8 +3366,8 @@ function openPickModal() {
 			btn.addEventListener('pointerdown', e => {
 				e.stopPropagation();
 				modal.style.display = 'none';
-				if (isGuest()) { guestApply(() => E.resolvePick(state, id), { k: 'pick', id }); return; }
-				E.resolvePick(state, id);
+				if (isGuest()) { guestApply(() => E.resolvePick(GS.state, id), { k: 'pick', id }); return; }
+				E.resolvePick(GS.state, id);
 				pump();
 				if (duel.on) publishDuel();
 			});
@@ -3378,7 +3379,7 @@ function openPickModal() {
 	}
 	if (pend.mode === 'buff-target') {
 		// a Contraption (Inflation Station) buffs a creature YOU choose
-		const board = state.players[HUMAN].board;
+		const board = GS.state.players[GS.HUMAN].board;
 		modal.innerHTML = `<div class="wm-title">Give +${pend.attack}/+${pend.health} — choose a creature</div><div class="scry-row"></div>`;
 		const row = modal.querySelector('.scry-row');
 		pend.ids.forEach(id => {
@@ -3391,8 +3392,8 @@ function openPickModal() {
 			btn.addEventListener('pointerdown', e => {
 				e.stopPropagation();
 				modal.style.display = 'none';
-				if (isGuest()) { guestApply(() => E.resolvePick(state, id), { k: 'pick', id }); return; }
-				E.resolvePick(state, id);
+				if (isGuest()) { guestApply(() => E.resolvePick(GS.state, id), { k: 'pick', id }); return; }
+				E.resolvePick(GS.state, id);
 				pump();
 				if (duel.on) publishDuel();
 			});
@@ -3404,7 +3405,7 @@ function openPickModal() {
 	}
 	if (pend.mode === 'transform-into') {
 		// Tribute Dance: pick the DIFFERENT creature the chosen one turns into (any board)
-		const find = id => state.players.map(p => p.board.find(x => x.uid === id)).find(Boolean);
+		const find = id => GS.state.players.map(p => p.board.find(x => x.uid === id)).find(Boolean);
 		const src = find(pend.targetUid);
 		modal.innerHTML = `<div class="wm-title">Transform ${(src && src.name) || 'it'} into — choose a creature</div><div class="scry-row"></div>`;
 		const row = modal.querySelector('.scry-row');
@@ -3418,8 +3419,8 @@ function openPickModal() {
 			btn.addEventListener('pointerdown', e => {
 				e.stopPropagation();
 				modal.style.display = 'none';
-				if (isGuest()) { guestApply(() => E.resolvePick(state, id), { k: 'pick', id }); return; }
-				E.resolvePick(state, id);
+				if (isGuest()) { guestApply(() => E.resolvePick(GS.state, id), { k: 'pick', id }); return; }
+				E.resolvePick(GS.state, id);
 				pump();
 				if (duel.on) publishDuel();
 			});
@@ -3431,7 +3432,7 @@ function openPickModal() {
 	}
 	if (pend.mode === 'grant-target') {
 		// a Contraption (Turbo-Thwacking) grants a keyword to a creature YOU choose
-		const board = state.players[HUMAN].board;
+		const board = GS.state.players[GS.HUMAN].board;
 		const kw = pend.keyword.charAt(0).toUpperCase() + pend.keyword.slice(1);
 		modal.innerHTML = `<div class="wm-title">Grant ${kw} — choose a creature</div><div class="scry-row"></div>`;
 		const row = modal.querySelector('.scry-row');
@@ -3445,8 +3446,8 @@ function openPickModal() {
 			btn.addEventListener('pointerdown', e => {
 				e.stopPropagation();
 				modal.style.display = 'none';
-				if (isGuest()) { guestApply(() => E.resolvePick(state, id), { k: 'pick', id }); return; }
-				E.resolvePick(state, id);
+				if (isGuest()) { guestApply(() => E.resolvePick(GS.state, id), { k: 'pick', id }); return; }
+				E.resolvePick(GS.state, id);
 				pump();
 				if (duel.on) publishDuel();
 			});
@@ -3458,8 +3459,8 @@ function openPickModal() {
 	}
 	if (pend.mode === 'assemble') {
 		// Assemble: you got a random Contraption — choose which Sprocket slot it goes in
-		const def = state.cardsById[pend.contraptionId];
-		const me = state.players[HUMAN];
+		const def = GS.state.cardsById[pend.contraptionId];
+		const me = GS.state.players[GS.HUMAN];
 		const spr = me.sprocket || [null, null, null];
 		modal.innerHTML = `<div class="wm-title">Assembled <b>${(def && def.name) || 'a Contraption'}</b> — choose a slot</div><div class="scry-row"></div>`;
 		const row = modal.querySelector('.scry-row');
@@ -3475,8 +3476,8 @@ function openPickModal() {
 			btn.addEventListener('pointerdown', e => {
 				e.stopPropagation();
 				modal.style.display = 'none';
-				if (isGuest()) { guestApply(() => E.resolvePick(state, id), { k: 'pick', id }); return; }
-				E.resolvePick(state, id);
+				if (isGuest()) { guestApply(() => E.resolvePick(GS.state, id), { k: 'pick', id }); return; }
+				E.resolvePick(GS.state, id);
 				pump();
 				if (duel.on) publishDuel();
 			});
@@ -3502,7 +3503,7 @@ function openPickModal() {
 			labelFor = id => `<b>${COLORS[id] || id}</b>`;
 		} else {
 			title = 'Treasure — boost which creature?';
-			labelFor = id => { const c = state.players[HUMAN].board.find(x => x.uid === id); return `<b>${(c && c.name) || '?'}</b>`; };
+			labelFor = id => { const c = GS.state.players[GS.HUMAN].board.find(x => x.uid === id); return `<b>${(c && c.name) || '?'}</b>`; };
 		}
 		modal.innerHTML = `<div class="wm-title">${title}</div><div class="scry-row"></div>`;
 		const row = modal.querySelector('.scry-row');
@@ -3515,8 +3516,8 @@ function openPickModal() {
 			btn.addEventListener('pointerdown', e => {
 				e.stopPropagation();
 				modal.style.display = 'none';
-				if (isGuest()) { guestApply(() => E.resolvePick(state, id), { k: 'pick', id }); return; }
-				E.resolvePick(state, id);
+				if (isGuest()) { guestApply(() => E.resolvePick(GS.state, id), { k: 'pick', id }); return; }
+				E.resolvePick(GS.state, id);
 				pump();
 				if (duel.on) publishDuel();
 			});
@@ -3540,8 +3541,8 @@ function openPickModal() {
 			btn.addEventListener('pointerdown', e => {
 				e.stopPropagation();
 				modal.style.display = 'none';
-				if (isGuest()) { guestApply(() => E.resolvePick(state, id), { k: 'pick', id }); return; }
-				E.resolvePick(state, id);
+				if (isGuest()) { guestApply(() => E.resolvePick(GS.state, id), { k: 'pick', id }); return; }
+				E.resolvePick(GS.state, id);
 				pump();
 				if (duel.on) publishDuel();
 			});
@@ -3556,7 +3557,7 @@ function openPickModal() {
 	const artEntries = [];
 	const faceW = pend.ids.length > 3 ? '105px' : '130px';
 	pend.ids.forEach(id => {
-		const def = state.cardsById[id];
+		const def = GS.state.cardsById[id];
 		const cell = document.createElement('div');
 		cell.className = 'scry-cell';
 		const face = drawCardFace(def);
@@ -3570,8 +3571,8 @@ function openPickModal() {
 			e.stopPropagation();
 			modal.style.display = 'none';
 			clearModalArt();
-			if (isGuest()) { guestApply(() => E.resolvePick(state, id), { k: 'pick', id }); return; }
-			E.resolvePick(state, id);
+			if (isGuest()) { guestApply(() => E.resolvePick(GS.state, id), { k: 'pick', id }); return; }
+			E.resolvePick(GS.state, id);
 			pump();
 			if (duel.on) publishDuel();
 		});
@@ -3592,21 +3593,21 @@ let mulliganPicks = null;
 // tuned openings (boss decks, treasures) untouched.
 const mulliganEnabled = () => !asyncGame.on && !dungeonRunMode && !heistRunMode && !tombsRunMode && !duelsRunMode && !arenaRunMode && !lorequestRunMode && !middleearthRunMode && !swordcoastRunMode && !finalfantasyRunMode && !multiverseRunMode;
 function maybeOfferMulligan() {
-	if (!state || state.over || spectateMode || !mulliganEnabled()) return;
+	if (!GS.state || GS.state.over || spectateMode || !mulliganEnabled()) return;
 	if (duel.on && duel.role === 'guest') return;  // the guest surfaces it via openDuelModals
 	if (mulliganModalOpen) return;
-	if (queue.length || queueBusy) return;         // wait for the opening animation to settle
-	const me = state.players[HUMAN];
+	if (queue.length || GS.queueBusy) return;         // wait for the opening animation to settle
+	const me = GS.state.players[GS.HUMAN];
 	if (!me || me.mulliganed || me.eliminated) return;
-	if (state.current !== HUMAN) return;           // only on your own turn (its start)
-	if (pending) return;                            // not mid-targeting
+	if (GS.state.current !== GS.HUMAN) return;           // only on your own turn (its start)
+	if (GS.pending) return;                            // not mid-targeting
 	// resolve any pending decision (scry/loot/discover/counter) first
-	if (state.scryQueue.length || state.pickQueue.length || state.discardQueue.length
-		|| state.askQueue.length || state.sacQueue.length || state.dredgeQueue.length || state.priority != null) return;
+	if (GS.state.scryQueue.length || GS.state.pickQueue.length || GS.state.discardQueue.length
+		|| GS.state.askQueue.length || GS.state.sacQueue.length || GS.state.dredgeQueue.length || GS.state.priority != null) return;
 	openMulliganModal();
 }
 function openMulliganModal() {
-	const me = state.players[HUMAN];
+	const me = GS.state.players[GS.HUMAN];
 	const cards = me.hand.filter(c => c.id !== 'coin'); // the Coin can't be mulliganed
 	if (!cards.length) { doMulligan([]); return; } // nothing to swap — auto-keep (relays if guest)
 	mulliganModalOpen = true;
@@ -3616,7 +3617,7 @@ function openMulliganModal() {
 		modal.innerHTML = `<div class="wm-title">CHOOSE YOUR OPENING HAND — tap a card to replace it</div><div class="scry-row mull-row"></div><div class="mull-actions"></div>`;
 		const row = modal.querySelector('.scry-row');
 		cards.forEach(c => {
-			const def = state.cardsById[c.id] || c;
+			const def = GS.state.cardsById[c.id] || c;
 			const swap = mulliganPicks.has(c.uid);
 			const cell = document.createElement('div');
 			cell.className = 'scry-cell' + (swap ? ' mull-swap' : '');
@@ -3644,19 +3645,19 @@ function openMulliganModal() {
 function doMulligan(uids) {
 	$('scry-modal').style.display = 'none';
 	mulliganModalOpen = false;
-	if (isGuest()) return guestApply(() => E.mulligan(state, HUMAN, uids), { k: 'mulligan', uids });
-	E.mulligan(state, HUMAN, uids); pump(); if (duel.on) publishDuel();
+	if (isGuest()) return guestApply(() => E.mulligan(GS.state, GS.HUMAN, uids), { k: 'mulligan', uids });
+	E.mulligan(GS.state, GS.HUMAN, uids); pump(); if (duel.on) publishDuel();
 }
 // AI mulligan: the shared heuristic in ai.js (toss the clunky top of the
 // curve, and dig harder when the hand has no early game at all)
 function aiMulliganUids(pi) {
-	return AI.mulliganTossUids(state.players[pi].hand);
+	return AI.mulliganTossUids(GS.state.players[pi].hand);
 }
 
 // optional "you may …" prompt: a centered yes/no using the decision popup
 function openAskModal() {
-	const pend = state.askQueue[0];
-	if (!pend || pend.player !== HUMAN) return;
+	const pend = GS.state.askQueue[0];
+	if (!pend || pend.player !== GS.HUMAN) return;
 	const menu = $('walker-menu');
 	menu.innerHTML = `<div class="wm-title">${pend.prompt || 'Choose:'}</div>`;
 	const mk = (label, yes) => {
@@ -3665,8 +3666,8 @@ function openAskModal() {
 		btn.addEventListener('pointerdown', e => {
 			e.stopPropagation();
 			hideWalkerMenu();
-			if (isGuest()) { guestApply(() => E.resolveAsk(state, yes), { k: 'ask', yes }); return; }
-			E.resolveAsk(state, yes);
+			if (isGuest()) { guestApply(() => E.resolveAsk(GS.state, yes), { k: 'ask', yes }); return; }
+			E.resolveAsk(GS.state, yes);
 			pump();
 			if (duel.on) publishDuel();
 		});
@@ -3678,9 +3679,9 @@ function openAskModal() {
 }
 
 function openDiscardModal() {
-	const pend = state.discardQueue[0];
-	if (!pend || pend.player !== HUMAN) return;
-	const me = state.players[HUMAN];
+	const pend = GS.state.discardQueue[0];
+	if (!pend || pend.player !== GS.HUMAN) return;
+	const me = GS.state.players[GS.HUMAN];
 	const need = Math.min(pend.count, me.hand.length);
 	const modal = $('scry-modal'); // reuse the scry chrome
 	modal.innerHTML = `<div class="wm-title">Loot — choose ${need} card${need > 1 ? 's' : ''} to discard</div><div class="scry-row"></div>`;
@@ -3722,8 +3723,8 @@ function openDiscardModal() {
 		if (chosen.size !== need) return;
 		modal.style.display = 'none';
 		safeSave(PARTIAL_DISCARD_KEY, null); // the choice is made — drop the half-made copy
-		if (isGuest()) { const picks = [...chosen]; guestApply(() => E.resolveDiscard(state, picks), { k: 'discard', picks }); return; }
-		E.resolveDiscard(state, [...chosen]);
+		if (isGuest()) { const picks = [...chosen]; guestApply(() => E.resolveDiscard(GS.state, picks), { k: 'discard', picks }); return; }
+		E.resolveDiscard(GS.state, [...chosen]);
 		pump();
 		if (duel.on) publishDuel();
 	});
@@ -3734,19 +3735,19 @@ function openDiscardModal() {
 
 // sacrifice-as-cost: pick one of your permanents to sacrifice (Reckless Abandon, Deadly Dispute)
 function openSacModal() {
-	const pend = state.sacQueue[0];
-	if (!pend || pend.player !== HUMAN) return;
-	const me = state.players[HUMAN];
+	const pend = GS.state.sacQueue[0];
+	if (!pend || pend.player !== GS.HUMAN) return;
+	const me = GS.state.players[GS.HUMAN];
 	const pool = pend.uids.map(u => me.board.find(c => c.uid === u) || me.artifacts.find(c => c.uid === u)).filter(Boolean);
-	if (!pool.length) { E.resolveSac(state, pend.uids[0]); pump(); if (duel.on) publishDuel(); return; }
+	if (!pool.length) { E.resolveSac(GS.state, pend.uids[0]); pump(); if (duel.on) publishDuel(); return; }
 	const label = pend.kind === 'artifact-or-creature' ? 'a permanent' : (pend.kind === 'artifact' ? 'an artifact' : 'a creature');
 	const modal = $('scry-modal');
 	modal.innerHTML = `<div class="wm-title">Sacrifice ${label}</div><div class="scry-row"></div>`;
 	const row = modal.querySelector('.scry-row');
 	const commit = uid => {
 		modal.style.display = 'none';
-		if (isGuest()) { guestApply(() => E.resolveSac(state, uid), { k: 'sac', uid }); return; }
-		E.resolveSac(state, uid); pump(); if (duel.on) publishDuel();
+		if (isGuest()) { guestApply(() => E.resolveSac(GS.state, uid), { k: 'sac', uid }); return; }
+		E.resolveSac(GS.state, uid); pump(); if (duel.on) publishDuel();
 	};
 	pool.forEach(card => {
 		const cell = document.createElement('div');
@@ -3771,8 +3772,8 @@ let pendingFx = [];
 
 function nextEvent() {
 	const ev = queue.shift();
-	if (!ev) { queueBusy = false; updateHud(); if (!isGuest()) maybeRecordFrame(); if (state && state.priority === HUMAN) openRespondModal(); surfacePendingChoice(); maybeOfferMulligan(); maybeRunAI(); return; } // a duel guest records authoritative snapshots on ingest, not its optimistic pumps
-	queueBusy = true;
+	if (!ev) { GS.queueBusy = false; updateHud(); if (!isGuest()) maybeRecordFrame(); if (GS.state && GS.state.priority === GS.HUMAN) openRespondModal(); surfacePendingChoice(); maybeOfferMulligan(); maybeRunAI(); return; } // a duel guest records authoritative snapshots on ingest, not its optimistic pumps
+	GS.queueBusy = true;
 	let delay = 120;
 	// A renderer fault on one event must not strand the queue: queueBusy would stay true, the HUD
 	// would freeze behind the engine and maybeRunAI would never run again (bug 1793087158441 — a
@@ -3782,14 +3783,14 @@ function nextEvent() {
 		case 'turnStart':
 			if (ev.turnNumber === 1 || !matchStats) resetMatchStats(); // new match → fresh tally
 			matchStats.turns = Math.max(matchStats.turns, ev.turnNumber || 0);
-			if (ev.player === HUMAN) SFX.play('turn');
+			if (ev.player === GS.HUMAN) SFX.play('turn');
 			banner(`${possOf(ev.player)} Turn`,
-				1400, ev.player === HUMAN ? 'turn' : 'turn foe');
+				1400, ev.player === GS.HUMAN ? 'turn' : 'turn foe');
 			log(`— Turn ${ev.turnNumber}: ${nameOf(ev.player)} —`);
 			delay = 500;
 			break;
 		case 'draw':
-			delay = ev.player === HUMAN ? 180 : 90;
+			delay = ev.player === GS.HUMAN ? 180 : 90;
 			break;
 		case 'joust': {
 			const mine = ev.myName ? `${ev.myName} (${ev.myCost})` : 'nothing';
@@ -3807,7 +3808,7 @@ function nextEvent() {
 			delay = 420;
 			if (ev.target) {
 				pendingFx.push({ c: ev.card.uid, p: ev.player, t: ev.target, fr: ev.target.player === ev.player ? 1 : 0 });
-				if (ev.player !== HUMAN) delay += pushTelegraph({ uid: ev.card.uid, hero: ev.player }, ev.target, ev.player);
+				if (ev.player !== GS.HUMAN) delay += pushTelegraph({ uid: ev.card.uid, hero: ev.player }, ev.target, ev.player);
 			}
 			break;
 		case 'summon':
@@ -3821,11 +3822,11 @@ function nextEvent() {
 			const toRef = ev.target.type === 'hero' ? { hero: ev.target.player } : { uid: ev.target.uid };
 			// an ENEMY attack telegraphs first: half a beat of the red line from
 			// attacker to target, so the watcher sees what's coming before it lands
-			const tele = ent && ent.card && ent.card.controller !== HUMAN ? 520 : 0;
+			const tele = ent && ent.card && ent.card.controller !== GS.HUMAN ? 520 : 0;
 			if (ent) {
 				const to = ev.target.type === 'hero' ? heroPos(ev.target.player) : creaturePos(ev.target.uid);
 				ent.lunge = { from: ent.mesh.position.clone(), to, start: performance.now() + tele };
-				if (tele) { telegraphs.push({ from: { uid: ev.attackerUid }, to: toRef, until: performance.now() + tele, friendly: false }); wake(); }
+				if (tele) { GS.telegraphs.push({ from: { uid: ev.attackerUid }, to: toRef, until: performance.now() + tele, friendly: false }); wake(); }
 			}
 			pendingFx.push({ a: ev.attackerUid, t: ev.target }); // replays telegraph BOTH sides' attacks
 			SFX.play('attack');
@@ -3904,7 +3905,7 @@ function nextEvent() {
 			if (ev.target) {
 				const toRef = ev.target.type === 'hero' ? { hero: ev.target.player } : { uid: ev.target.uid };
 				pendingFx.push({ h: ev.player, t: ev.target });
-				if (ev.player !== HUMAN) { telegraphs.push({ from: { hero: ev.player }, to: toRef, until: performance.now() + 520, friendly: false }); wake(); delay = 420 + 520; break; }
+				if (ev.player !== GS.HUMAN) { GS.telegraphs.push({ from: { hero: ev.player }, to: toRef, until: performance.now() + 520, friendly: false }); wake(); delay = 420 + 520; break; }
 			}
 			const panel = panelEl(ev.player);
 			if (panel) {
@@ -3937,12 +3938,12 @@ function nextEvent() {
 			break;
 		case 'secretPlayed':
 			SFX.play('secret');
-			log(ev.player === HUMAN ? `You set a Secret: ${ev.card.name}` : `${nameOf(ev.player)} set a Secret`);
+			log(ev.player === GS.HUMAN ? `You set a Secret: ${ev.card.name}` : `${nameOf(ev.player)} set a Secret`);
 			floatText('❓', '#c9b8ff', heroPos(ev.player));
 			delay = 350;
 			break;
 		case 'trapSet':
-			log(ev.player === HUMAN ? `You set a Trap: ${ev.card.name}` : `${nameOf(ev.player)} set a Trap`);
+			log(ev.player === GS.HUMAN ? `You set a Trap: ${ev.card.name}` : `${nameOf(ev.player)} set a Trap`);
 			delay = 350;
 			break;
 		case 'trapSprung':
@@ -3966,7 +3967,7 @@ function nextEvent() {
 			delay = 300;
 			if (ev.target) {
 				pendingFx.push({ c: ev.card.uid, p: ev.player, t: ev.target, fr: ev.target.player === ev.player ? 1 : 0 });
-				if (ev.player !== HUMAN) delay += pushTelegraph({ uid: ev.card.uid, hero: ev.player }, ev.target, ev.player);
+				if (ev.player !== GS.HUMAN) delay += pushTelegraph({ uid: ev.card.uid, hero: ev.player }, ev.target, ev.player);
 			}
 			break;
 		case 'artifactTapped':
@@ -3974,7 +3975,7 @@ function nextEvent() {
 			delay = 300;
 			if (ev.target) {
 				pendingFx.push({ c: ev.card.uid, p: ev.player, t: ev.target, fr: ev.target.player === ev.player ? 1 : 0 });
-				if (ev.player !== HUMAN) delay += pushTelegraph({ uid: ev.card.uid, hero: ev.player }, ev.target, ev.player);
+				if (ev.player !== GS.HUMAN) delay += pushTelegraph({ uid: ev.card.uid, hero: ev.player }, ev.target, ev.player);
 			}
 			break;
 		case 'locationPlayed':
@@ -3986,7 +3987,7 @@ function nextEvent() {
 		// the Coin reads as a stray grant on the other player's turn (instinctgauntlet, 2026-10-23..25)
 		case 'coinGiven': SFX.play('coin'); log(`${nameOf(ev.player)} got The Coin${coinCauseText(ev.cause)}`); delay = 120; break;
 		case 'conjure':
-			log(ev.player === HUMAN ? `You conjured ${ev.card.name}` : `${nameOf(ev.player)} conjured a card`);
+			log(ev.player === GS.HUMAN ? `You conjured ${ev.card.name}` : `${nameOf(ev.player)} conjured a card`);
 			delay = 350;
 			break;
 		case 'boosted': {
@@ -4049,7 +4050,7 @@ function nextEvent() {
 		}
 		case 'scryStart':
 			log(`${nameOf(ev.chooser)} ${ev.chooser === ev.deckOwner ? vbOf(ev.chooser, 'scries', 'scry') : `${vbOf(ev.chooser, 'gazes', 'gaze')} at ${possOf(ev.deckOwner, false)} deck`} (${ev.count})`);
-			if (ev.chooser === HUMAN) openScryModal();
+			if (ev.chooser === GS.HUMAN) openScryModal();
 			delay = 400;
 			break;
 		case 'scryDone':
@@ -4069,8 +4070,8 @@ function nextEvent() {
 		case 'planarRoll': {
 			const face = ev.roll === 6 ? 'Planeswalker — new plane!' : ev.roll === 5 ? 'Chaos!' : 'nothing';
 			log(`${nameOf(ev.player)} ${vbOf(ev.player, 'rolls', 'roll')} the planar die: ${ev.roll} (${face})`);
-			if (ev.player === HUMAN) banner(`🎲 Planar die: ${ev.roll} — ${ev.roll === 6 ? 'a new plane!' : ev.roll === 5 ? 'Chaos!' : 'nothing happens (5 = Chaos, 6 = new plane)'}`
-				+ `  ·  next roll ${E.planarRollCost(state, HUMAN)} mana`, 2200);
+			if (ev.player === GS.HUMAN) banner(`🎲 Planar die: ${ev.roll} — ${ev.roll === 6 ? 'a new plane!' : ev.roll === 5 ? 'Chaos!' : 'nothing happens (5 = Chaos, 6 = new plane)'}`
+				+ `  ·  next roll ${E.planarRollCost(GS.state, GS.HUMAN)} mana`, 2200);
 			delay = 550;
 			break;
 		}
@@ -4086,11 +4087,11 @@ function nextEvent() {
 			log(ev.cleanup
 				? `${nameOf(ev.player)} ${vbOf(ev.player, 'discards', 'discard')} down to hand size (${ev.count})`
 				: `${nameOf(ev.player)} ${vbOf(ev.player, 'loots', 'loot')} (${ev.count})`);
-			if (ev.player === HUMAN) openDiscardModal();
+			if (ev.player === GS.HUMAN) openDiscardModal();
 			delay = 300;
 			break;
 		case 'traded':
-			log(`${nameOf(ev.player)} traded ${ev.player === HUMAN ? ev.card.name : 'a card'} back into their deck`);
+			log(`${nameOf(ev.player)} traded ${ev.player === GS.HUMAN ? ev.card.name : 'a card'} back into their deck`);
 			delay = 300;
 			break;
 		case 'abilityUsed':
@@ -4099,39 +4100,39 @@ function nextEvent() {
 			break;
 		case 'pickStart':
 			log(`${nameOf(ev.player)} ${ev.count > 3 ? 'drafts' : 'discovers'} (${ev.count} options)`);
-			if (ev.player === HUMAN) openPickModal();
+			if (ev.player === GS.HUMAN) openPickModal();
 			delay = 300;
 			break;
 		case 'adaptOffer':
 			log(`${nameOf(ev.player)} Adapts (3 options)`);
-			if (ev.player === HUMAN) openPickModal();
+			if (ev.player === GS.HUMAN) openPickModal();
 			delay = 300;
 			break;
 		case 'harvestOffer':
 			log(`${nameOf(ev.player)} Harvests (3 options)`);
-			if (ev.player === HUMAN) openPickModal();
+			if (ev.player === GS.HUMAN) openPickModal();
 			delay = 300;
 			break;
 		case 'gyVoteOffer':
 			log(`${nameOf(ev.player)} ${vbOf(ev.player, 'votes', 'vote')} on a graveyard card (${ev.options.length} options)`);
-			if (ev.player === HUMAN) openPickModal();
+			if (ev.player === GS.HUMAN) openPickModal();
 			delay = 300;
 			break;
 		case 'askStart':
-			if (ev.player === HUMAN) openAskModal();
+			if (ev.player === GS.HUMAN) openAskModal();
 			delay = 200;
 			break;
 		case 'sacStart':
-			if (ev.player === HUMAN) openSacModal();
+			if (ev.player === GS.HUMAN) openSacModal();
 			delay = 200;
 			break;
 		case 'dredgeStart':
 			log(`${nameOf(ev.player)} ${vbOf(ev.player, 'dredges', 'dredge')} (${ev.count})`);
-			if (ev.player === HUMAN) openDredgeModal();
+			if (ev.player === GS.HUMAN) openDredgeModal();
 			delay = 300;
 			break;
 		case 'dredgeDone':
-			if (ev.player === HUMAN) log(`You put ${state.cardsById[ev.id]?.name || 'a card'} on top of your deck`);
+			if (ev.player === GS.HUMAN) log(`You put ${GS.state.cardsById[ev.id]?.name || 'a card'} on top of your deck`);
 			delay = 250;
 			break;
 		case 'tokenGained':
@@ -4151,7 +4152,7 @@ function nextEvent() {
 			delay = 420;
 			if (ev.target) {
 				pendingFx.push({ c: ev.card.uid, p: ev.player, t: ev.target, fr: ev.target.player === ev.player ? 1 : 0 });
-				if (ev.player !== HUMAN) delay += pushTelegraph({ uid: ev.card.uid, hero: ev.player }, ev.target, ev.player);
+				if (ev.player !== GS.HUMAN) delay += pushTelegraph({ uid: ev.card.uid, hero: ev.player }, ev.target, ev.player);
 			}
 			break;
 		case 'questProgress': {
@@ -4177,7 +4178,7 @@ function nextEvent() {
 			delay = 480;
 			if (ev.target) {
 				pendingFx.push({ c: ev.card.uid, p: ev.player, t: ev.target, fr: ev.target.player === ev.player ? 1 : 0 });
-				if (ev.player !== HUMAN) delay += pushTelegraph({ uid: ev.card.uid, hero: ev.player }, ev.target, ev.player);
+				if (ev.player !== GS.HUMAN) delay += pushTelegraph({ uid: ev.card.uid, hero: ev.player }, ev.target, ev.player);
 			}
 			break;
 		}
@@ -4197,7 +4198,7 @@ function nextEvent() {
 		}
 		case 'fatigue':
 			floatText(`-${ev.amount}`, '#b46cff', heroPos(ev.player));
-			log(`${nameOf(ev.player)} ${ev.player === HUMAN ? 'are' : 'is'} out of cards: ${ev.amount} fatigue`);
+			log(`${nameOf(ev.player)} ${ev.player === GS.HUMAN ? 'are' : 'is'} out of cards: ${ev.amount} fatigue`);
 			delay = 300;
 			break;
 		case 'commanderReturned':
@@ -4254,27 +4255,27 @@ function nextEvent() {
 				: ev.kind === 'landtap' ? `${nameOf(ev.player)} ${vbOf(ev.player, 'taps', 'tap')} ${ev.card ? ev.card.name : 'a land'} — on the stack`
 				: ev.kind === 'heropower' ? `${nameOf(ev.player)} ${vbOf(ev.player, 'uses', 'use')} a Hero Power — on the stack`
 				: `${nameOf(ev.player)} ${vbOf(ev.player, 'casts', 'cast')} ${ev.card ? ev.card.name : 'a spell'} — on the stack`);
-			if (state.priority === HUMAN) openRespondModal();
+			if (GS.state.priority === GS.HUMAN) openRespondModal();
 			delay = 300;
 			break;
 		case 'countered': log(`${ev.name} was countered!`); delay = 400; break;
 		case 'overload': log(`${nameOf(ev.player)} overloaded: ${ev.amount} mana locked next turn`); delay = 250; break;
-		case 'overloaded': log(`${nameOf(ev.player)} ${ev.player === HUMAN ? 'have' : 'has'} ${ev.amount} mana locked (overload)`); delay = 300; break;
+		case 'overloaded': log(`${nameOf(ev.player)} ${ev.player === GS.HUMAN ? 'have' : 'has'} ${ev.amount} mana locked (overload)`); delay = 300; break;
 		case 'armor': floatText(`+${ev.amount}`, '#c9c2da', heroPos(ev.player)); delay = 260; break;
 		case 'bounce': log(`${ev.name} was returned to hand`); delay = 300; break;
 		case 'coin': log(coinPlayBy === ev.player ? `${nameOf(ev.player)} played The Coin (+1 mana)` : `${nameOf(ev.player)} gained 1 Mana`); coinPlayBy = null; delay = 250; break;
 		case 'reshuffle': log(`${possOf(ev.player)} graveyard was shuffled back in`); break;
 		case 'discard': log(`${nameOf(ev.player)} discarded ${ev.card.name}`); break;
-		case 'concede': log(`${ev.player === HUMAN ? 'You' : nameOf(ev.player)} conceded`); delay = 300; break;
-		case 'mulligan': log(ev.count ? `${ev.player === HUMAN ? 'You' : nameOf(ev.player)} mulliganed ${ev.count} card${ev.count === 1 ? '' : 's'}` : `${ev.player === HUMAN ? 'You' : nameOf(ev.player)} kept the opening hand`); delay = 200; break;
+		case 'concede': log(`${ev.player === GS.HUMAN ? 'You' : nameOf(ev.player)} conceded`); delay = 300; break;
+		case 'mulligan': log(ev.count ? `${ev.player === GS.HUMAN ? 'You' : nameOf(ev.player)} mulliganed ${ev.count} card${ev.count === 1 ? '' : 's'}` : `${ev.player === GS.HUMAN ? 'You' : nameOf(ev.player)} kept the opening hand`); delay = 200; break;
 		case 'eliminated':
 			if (matchStats && !matchStats.elim.some(e => e.seat === ev.player)) matchStats.elim.push({ seat: ev.player, turn: matchStats.turns }); // elimination order → FFA placement
-			banner(`${nameOf(ev.player)} ${ev.player === HUMAN ? 'are' : 'is'} eliminated!`, 1800);
+			banner(`${nameOf(ev.player)} ${ev.player === GS.HUMAN ? 'are' : 'is'} eliminated!`, 1800);
 			log(`${nameOf(ev.player)} eliminated`);
 			delay = 900;
 			break;
 		case 'gameOver': {
-			const won = ev.winner === HUMAN;
+			const won = ev.winner === GS.HUMAN;
 			if (won) questReport({ kind: 'win' }); // advance any "Win N matches" daily quest
 			// a won LIVE duel pays a pack server-side (run modes reward via their
 			// own overlays; the old Col.earnGold below is the offline wallet only)
@@ -4371,8 +4372,8 @@ function nextEvent() {
 // was converted — duel.aiSeats). Guests never simulate. This single predicate
 // replaces the old "=== HUMAN / !== HUMAN" binary everywhere the AI drives play.
 function isAiSeat(seat) {
-	if (!duel.on) return seat !== HUMAN;
-	if (HUMAN !== 0) return false;              // a guest never runs the engine
+	if (!duel.on) return seat !== GS.HUMAN;
+	if (GS.HUMAN !== 0) return false;              // a guest never runs the engine
 	return !!(duel.aiSeats && duel.aiSeats.has(seat));
 }
 let aiTimer = null;
@@ -4385,16 +4386,16 @@ let aiStall = 0;
 // always advance, even if a future queue type ships without an AI handler.
 function forceResolveFor(seat) {
 	try {
-		if (state.scryQueue.length && state.scryQueue[0].chooser === seat) { E.resolveScry(state, []); return true; }
-		if (state.discardQueue.length && state.discardQueue[0].player === seat) {
-			const pend = state.discardQueue[0], hand = state.players[seat].hand;
-			E.resolveDiscard(state, hand.slice(0, pend.count).map(c => c.uid));
+		if (GS.state.scryQueue.length && GS.state.scryQueue[0].chooser === seat) { E.resolveScry(GS.state, []); return true; }
+		if (GS.state.discardQueue.length && GS.state.discardQueue[0].player === seat) {
+			const pend = GS.state.discardQueue[0], hand = GS.state.players[seat].hand;
+			E.resolveDiscard(GS.state, hand.slice(0, pend.count).map(c => c.uid));
 			return true;
 		}
-		if (state.pickQueue.length && state.pickQueue[0].player === seat) { E.resolvePick(state, state.pickQueue[0].ids[0]); return true; }
-		if (state.dredgeQueue.length && state.dredgeQueue[0].player === seat) { E.resolveDredge(state, []); return true; }
-		if (state.sacQueue.length && state.sacQueue[0].player === seat) { E.resolveSac(state, (state.sacQueue[0].uids || [])[0]); return true; }
-		if (state.askQueue.length && state.askQueue[0].player === seat) { E.resolveAsk(state, false); return true; }
+		if (GS.state.pickQueue.length && GS.state.pickQueue[0].player === seat) { E.resolvePick(GS.state, GS.state.pickQueue[0].ids[0]); return true; }
+		if (GS.state.dredgeQueue.length && GS.state.dredgeQueue[0].player === seat) { E.resolveDredge(GS.state, []); return true; }
+		if (GS.state.sacQueue.length && GS.state.sacQueue[0].player === seat) { E.resolveSac(GS.state, (GS.state.sacQueue[0].uids || [])[0]); return true; }
+		if (GS.state.askQueue.length && GS.state.askQueue[0].player === seat) { E.resolveAsk(GS.state, false); return true; }
 	} catch (e) { console.error('[ai-watchdog] forced resolve threw', e); }
 	return false;
 }
@@ -4403,25 +4404,25 @@ function maybeRunAI() {
 	// correspondence: both seats are human — the absent player's TURN is never
 	// AI-played here (pump's resolveAI* still answer their forced decisions)
 	if (asyncGame.on) return;
-	if (!state || state.over || queue.length || queueBusy) return;
-	if (!isAiSeat(state.current)) return; // it's a human's turn (yours or a guest's) — wait
+	if (!GS.state || GS.state.over || queue.length || GS.queueBusy) return;
+	if (!isAiSeat(GS.state.current)) return; // it's a human's turn (yours or a guest's) — wait
 	// a human with a pending decision (any seat) must resolve it before the AI proceeds
-	if (state.scryQueue.length && !isAiSeat(state.scryQueue[0].chooser)) return;
-	if (state.discardQueue.length && !isAiSeat(state.discardQueue[0].player)) return;
-	if (state.pickQueue.length && !isAiSeat(state.pickQueue[0].player)) return;
-	if (state.dredgeQueue.length && !isAiSeat(state.dredgeQueue[0].player)) return;
-	if (state.askQueue.length && !isAiSeat(state.askQueue[0].player)) return;
-	if (state.sacQueue.length && !isAiSeat(state.sacQueue[0].player)) return;
-	if (state.priority != null && !isAiSeat(state.priority)) return; // a human's counter window first
+	if (GS.state.scryQueue.length && !isAiSeat(GS.state.scryQueue[0].chooser)) return;
+	if (GS.state.discardQueue.length && !isAiSeat(GS.state.discardQueue[0].player)) return;
+	if (GS.state.pickQueue.length && !isAiSeat(GS.state.pickQueue[0].player)) return;
+	if (GS.state.dredgeQueue.length && !isAiSeat(GS.state.dredgeQueue[0].player)) return;
+	if (GS.state.askQueue.length && !isAiSeat(GS.state.askQueue[0].player)) return;
+	if (GS.state.sacQueue.length && !isAiSeat(GS.state.sacQueue[0].player)) return;
+	if (GS.state.priority != null && !isAiSeat(GS.state.priority)) return; // a human's counter window first
 	clearTimeout(aiTimer);
 	aiTimer = setTimeout(() => {
-		if (!state || state.over || !isAiSeat(state.current)) return;
-		const seat = state.current;
+		if (!GS.state || GS.state.over || !isAiSeat(GS.state.current)) return;
+		const seat = GS.state.current;
 		// mulligan the AI's opening hand on its first turn, then act on the next tick
-		if (mulliganEnabled() && !state.players[seat].mulliganed) { E.mulligan(state, seat, aiMulliganUids(seat)); pump(); if (duel.on) publishDuel(); return; }
-		const before = state.turnNumber + ':' + state.current;
-		const acted = AI.step(state, seat);
-		if (!acted) E.endTurn(state);
+		if (mulliganEnabled() && !GS.state.players[seat].mulliganed) { E.mulligan(GS.state, seat, aiMulliganUids(seat)); pump(); if (duel.on) publishDuel(); return; }
+		const before = GS.state.turnNumber + ':' + GS.state.current;
+		const acted = AI.step(GS.state, seat);
+		if (!acted) E.endTurn(GS.state);
 		// AI-TURN WATCHDOG. endTurn refuses while the active seat owes a forced
 		// decision, and AI.step can only answer the queues it knows about — so a
 		// queue with no AI handler means step() does nothing, endTurn does nothing,
@@ -4429,7 +4430,7 @@ function maybeRunAI() {
 		// the same pending decision and deadlocks again, stranding the whole run.
 		// (Reported from a 6-2 Lorequest run: Kozilek, turn 22, 16 cards in hand.)
 		// Detect no-progress and force the decision rather than leave a run dead.
-		if (!acted && before === state.turnNumber + ':' + state.current && E.hasPendingDecision(state, seat)) {
+		if (!acted && before === GS.state.turnNumber + ':' + GS.state.current && E.hasPendingDecision(GS.state, seat)) {
 			if (++aiStall >= AI_STALL_LIMIT) {
 				aiStall = 0;
 				console.warn('[ai-watchdog] AI seat', seat, 'stalled on a decision it cannot answer — forcing it');
@@ -4442,13 +4443,13 @@ function maybeRunAI() {
 }
 
 // ---------- interaction ----------
-let state = null;
-let hoverUid = null;
-let pending = null;          // { card, spec, targets } — spell/battlecry targeting
-let selectedAttacker = null; // uid
+GS.state = null;
+GS.hoverUid = null;
+GS.pending = null;          // { card, spec, targets } — spell/battlecry targeting
+GS.selectedAttacker = null; // uid
 let menuDragCandidate = null; // uid — creature whose press opened a menu; a real drag attacks with it instead
 let heroPress = null;        // { power } — orb pressed; a quick release uses it, a hold previews
-let handMini = false;        // true = hand tucked down so the hero panel reads clearly
+GS.handMini = false;        // true = hand tucked down so the hero panel reads clearly
 let lastCurrent = -1;        // tracks turn changes to auto-raise the hand each turn
 
 const raycaster = new THREE.Raycaster();
@@ -4471,7 +4472,7 @@ function pick(ev, excludeUid = null) {
 	// up and covered the planeswalker again (Bryan's bug, back whenever a hand card's column
 	// lined up with the planeswalker). Only where nothing but the hand (or the hero panel,
 	// which the hand has always sat over) is under the pointer does the tucked hand answer.
-	if (handMini) {
+	if (GS.handMini) {
 		for (const h of hits) {
 			const uid = h.object.userData.uid;
 			if (isTuckedHandCard(uid)) continue;
@@ -4482,9 +4483,9 @@ function pick(ev, excludeUid = null) {
 	return hits[0].object.userData.uid;
 }
 function isTuckedHandCard(uid) {
-	if (!handMini || uid == null || uid === hoverUid || pending?.card.uid === uid) return false;
+	if (!GS.handMini || uid == null || uid === GS.hoverUid || GS.pending?.card.uid === uid) return false;
 	const c = cardOf(uid);
-	return !!c && c.zone === 'hand' && c.controller === HUMAN;
+	return !!c && c.zone === 'hand' && c.controller === GS.HUMAN;
 }
 
 // screen-space distance from a point to a mesh's projected rect (0 = inside).
@@ -4505,10 +4506,10 @@ function meshScreenDist(m, x, y) {
 // a panel-body press as a hero click, check whether an attack-ready creature's
 // on-screen token sits within a thumb's reach of the press and prefer that.
 function pickAttackReadyCreatureNear(ev, slop) {
-	if (!state) return null;
+	if (!GS.state) return null;
 	let best = null, bestD = Infinity;
-	for (const c of state.players[HUMAN].board) {
-		if (!E.canAttackWith(state, HUMAN, c)) continue;
+	for (const c of GS.state.players[GS.HUMAN].board) {
+		if (!E.canAttackWith(GS.state, GS.HUMAN, c)) continue;
 		const ent = entities.get(c.uid);
 		if (!ent) continue;
 		const d = meshScreenDist(ent.mesh, ev.clientX, ev.clientY);
@@ -4527,7 +4528,7 @@ function nearestTargetAt(ev, targets, slop) {
 		if (t.uid != null && entities.has(t.uid)) {
 			consider(meshScreenDist(entities.get(t.uid).mesh, ev.clientX, ev.clientY), t);
 		} else if (t.type === 'hero') {
-			if (t.player === HUMAN && heroPanelMesh.visible) {
+			if (t.player === GS.HUMAN && heroPanelMesh.visible) {
 				consider(meshScreenDist(heroPanelMesh, ev.clientX, ev.clientY), t);
 			} else {
 				const pel = foePanelEls.get(t.player);
@@ -4555,8 +4556,8 @@ function screenToGround(clientX, clientY, planeY) {
 }
 
 function cardOf(uid) {
-	if (!state || uid == null) return null;
-	for (const p of state.players) {
+	if (!GS.state || uid == null) return null;
+	for (const p of GS.state.players) {
 		const zones = [p.hand, p.board, p.heroPowers, p.planeswalkers, p.traps, p.lands, p.quests,
 			p.enchantments, p.artifacts, p.command, p.emblems, p.companion ? [p.companion] : []];
 		for (const zone of zones) {
@@ -4572,8 +4573,8 @@ function updateTooltip(ev) {
 	const tip = $('tooltip');
 	// the class-power orb on your own 3D panel has no card uid of its own —
 	// resolve it to the power card so hovering the orb reads the power
-	if (hoverUid === 'heropanel' && state && heroPanelDieHit(pickHeroPanelUV(ev))) {
-		const cost = E.planarRollCost(state, HUMAN);
+	if (GS.hoverUid === 'heropanel' && GS.state && heroPanelDieHit(pickHeroPanelUV(ev))) {
+		const cost = E.planarRollCost(GS.state, GS.HUMAN);
 		tip.innerHTML = `<div class="tt-name">🎲 Planar Die</div><div class="tt-type">ROLL · ${cost ? `COSTS (${cost})` : 'FREE'} · PLANECHASE</div>`
 			+ `<div class="tt-desc">Roll a six-sided die. <b>6</b>: planeswalk to a new plane. <b>5</b>: the current plane's Chaos happens. Anything else: nothing.</div>`
 			+ `<div class="tt-sub">The first roll each turn is free; each more costs 1 more mana. It's yours while you control a planeswalker (or are Sparked). It doesn't use a hero power slot.</div>`;
@@ -4582,14 +4583,14 @@ function updateTooltip(ev) {
 		tip.style.top = `${Math.min(ev.clientY + 14, innerHeight - tip.offsetHeight - 12)}px`;
 		return;
 	}
-	const card = cardOf(hoverUid)
-		|| (hoverUid === 'heropanel' && state && heroPanelOrbHit(pickHeroPanelUV(ev)) ? classPowerOf(HUMAN) : null);
+	const card = cardOf(GS.hoverUid)
+		|| (GS.hoverUid === 'heropanel' && GS.state && heroPanelOrbHit(pickHeroPanelUV(ev)) ? classPowerOf(GS.HUMAN) : null);
 	// never reveal hidden information: enemy hands and face-down traps stay secret
-	const hidden = card && card.controller !== HUMAN && (card.zone === 'hand' || card.zone === 'trap');
+	const hidden = card && card.controller !== GS.HUMAN && (card.zone === 'hand' || card.zone === 'trap');
 	if (!card || hidden) { tip.style.display = 'none'; return; }
 	// disguised creatures reveal nothing to opponents, everything to their owner
 	if (card.disguised) {
-		const mine = card.controller === HUMAN;
+		const mine = card.controller === GS.HUMAN;
 		tip.innerHTML = `<div class="tt-name">Disguised Creature</div><div class="tt-type">FACE-DOWN · 2/2</div>`
 			+ (mine ? `<div class="tt-desc">Actually: <b>${card.disguised.name}</b> (${card.disguised.attack}/${card.disguised.maxHealth})</div>`
 				+ `<div class="tt-sub">Click to unmask for ${card.cost} mana</div>`
@@ -4627,8 +4628,8 @@ function updateTooltip(ev) {
 
 let lastHoverPickT = 0;
 addEventListener('pointermove', ev => {
-	mouseX = ev.clientX;
-	mouseY = ev.clientY;
+	GS.mouseX = ev.clientX;
+	GS.mouseY = ev.clientY;
 	wake();
 	// ANY press that travels past the click threshold is a DRAG, never a
 	// press-and-hold preview — cancel the long-press so its 380ms timer can't fire
@@ -4647,16 +4648,16 @@ addEventListener('pointermove', ev => {
 	// Preview is not lost: a hold IS "pressed without moving", so the two gestures
 	// are separated by the same threshold that defines a drag. Moving past it means
 	// you are dragging, by definition.
-	if (Math.hypot(mouseX - lastDownX, mouseY - lastDownY) > DRAG_PX) {
+	if (Math.hypot(GS.mouseX - lastDownX, GS.mouseY - lastDownY) > DRAG_PX) {
 		clearTimeout(longPressT);
 		longPressFired = false;
 	}
-	if (placing) placing.dragging = Math.hypot(mouseX - lastDownX, mouseY - lastDownY) > DRAG_PX;
+	if (GS.placing) GS.placing.dragging = Math.hypot(GS.mouseX - lastDownX, GS.mouseY - lastDownY) > DRAG_PX;
 	// a real drag off a menu-opening creature closes its menu and arms the attack
-	if (menuDragCandidate != null && Math.hypot(mouseX - lastDownX, mouseY - lastDownY) > 14) {
+	if (menuDragCandidate != null && Math.hypot(GS.mouseX - lastDownX, GS.mouseY - lastDownY) > 14) {
 		const c = cardOf(menuDragCandidate);
 		menuDragCandidate = null;
-		if (c && state && E.canAttackWith(state, HUMAN, c)) {
+		if (c && GS.state && E.canAttackWith(GS.state, GS.HUMAN, c)) {
 			hideWalkerMenu();
 			tryArmAttack(c);
 		}
@@ -4665,39 +4666,39 @@ addEventListener('pointermove', ev => {
 	// (ProMotion) would otherwise raycast the whole scene per input event
 	if (ev.timeStamp - lastHoverPickT < 25) return;
 	lastHoverPickT = ev.timeStamp;
-	const prevHover = hoverUid;
-	hoverUid = pick(ev, placing && placing.dragging ? placing.card.uid : null);
+	const prevHover = GS.hoverUid;
+	GS.hoverUid = pick(ev, GS.placing && GS.placing.dragging ? GS.placing.card.uid : null);
 	// a hovered hand card lifts clear of the cursor (fitCardOnScreen); keep it
 	// hovered while the pointer stays in its column below it, or it would drop back
 	// under the cursor and flicker
-	if (hoverUid == null && prevHover != null && !(placing && placing.dragging)) {
+	if (GS.hoverUid == null && prevHover != null && !(GS.placing && GS.placing.dragging)) {
 		const pc = cardOf(prevHover);
-		if (pc && pc.zone === 'hand' && pc.controller === HUMAN && entities.has(prevHover)) {
+		if (pc && pc.zone === 'hand' && pc.controller === GS.HUMAN && entities.has(prevHover)) {
 			const m = entities.get(prevHover).mesh;
 			const c = m.position.clone().project(camera);
 			const cx = (c.x + 1) / 2 * innerWidth, cy = (1 - c.y) / 2 * innerHeight;
 			const halfW = Math.abs(m.position.clone().add(new THREE.Vector3(CARD_W * m.scale.x / 2, 0, 0)).project(camera).x - c.x) / 2 * innerWidth;
-			if (Math.abs(ev.clientX - cx) < halfW && ev.clientY > cy) hoverUid = prevHover;
+			if (Math.abs(ev.clientX - cx) < halfW && ev.clientY > cy) GS.hoverUid = prevHover;
 		}
 	}
 	// reaching down toward your hand pops it back up — but NOT when the pointer is
 	// already on something else down there (a planeswalker, your hero panel): the
 	// risen hand covered it the moment you reached for it (Bryan's planeswalker)
-	const under = hoverUid != null ? cardOf(hoverUid) : null;
-	const reachingForHand = hoverUid == null || (under && under.zone === 'hand' && under.controller === HUMAN);
-	if (handMini && mouseY > innerHeight * 0.82 && reachingForHand) handMini = false;
-	if (placing && placing.dragging) $('tooltip').style.display = 'none';
+	const under = GS.hoverUid != null ? cardOf(GS.hoverUid) : null;
+	const reachingForHand = GS.hoverUid == null || (under && under.zone === 'hand' && under.controller === GS.HUMAN);
+	if (GS.handMini && GS.mouseY > innerHeight * 0.82 && reachingForHand) GS.handMini = false;
+	if (GS.placing && GS.placing.dragging) $('tooltip').style.display = 'none';
 	else if (!TOUCH) updateTooltip(ev); // phones use long-press instead of hover
-	const cursor = (placing && placing.dragging) ? 'grabbing'
-		: (hoverUid != null && cardOf(hoverUid)?.zone === 'hand' && cardOf(hoverUid)?.controller === HUMAN) ? 'grab' : '';
+	const cursor = (GS.placing && GS.placing.dragging) ? 'grabbing'
+		: (GS.hoverUid != null && cardOf(GS.hoverUid)?.zone === 'hand' && cardOf(GS.hoverUid)?.controller === GS.HUMAN) ? 'grab' : '';
 	if (renderer.domElement.style.cursor !== cursor) renderer.domElement.style.cursor = cursor;
 });
 
 function clearModes() {
-	pending = null;
-	selectedAttacker = null;
+	GS.pending = null;
+	GS.selectedAttacker = null;
 	menuDragCandidate = null;
-	placing = null;
+	GS.placing = null;
 	heroPress = null;
 	placeMarker.visible = false;
 	hideWalkerMenu();
@@ -4753,7 +4754,7 @@ function renderInspectFace(card) {
 
 function showInspect(card) {
 	if (!card) return;
-	if (card.disguised && card.controller !== HUMAN) return; // don't reveal a face-down enemy
+	if (card.disguised && card.controller !== GS.HUMAN) return; // don't reveal a face-down enemy
 	inspectUid = card.uid;
 	const box = $('inspect');
 	box.innerHTML = '';
@@ -4777,13 +4778,13 @@ function fillCardDetail(box, card, { close, open }) {
 	if (kw) { const d = document.createElement('div'); d.className = 'ins-kw'; d.innerHTML = kw; box.appendChild(d); }
 	// every specific card this one generates (tokens, corrupted forms, equips,
 	// shuffled cards, ...) — tap one to inspect it
-	const gen = state ? generatedCardIds(card, state.cardsById) : [];
+	const gen = GS.state ? generatedCardIds(card, GS.state.cardsById) : [];
 	if (gen.length) {
 		const d = document.createElement('div');
 		d.className = 'ins-kw';
 		const head = document.createElement('div'); head.className = 'tt-kw'; head.innerHTML = '<b>Creates</b>'; d.appendChild(head);
 		for (const gid of gen) {
-			const def = state.cardsById[gid];
+			const def = GS.state.cardsById[gid];
 			const line = document.createElement('div');
 			line.className = 'tt-kw';
 			const statBits = def.type === 'creature' ? ` ${def.attack ?? '?'}/${def.health ?? '?'}` : def.type === 'weapon' ? ` ${def.attack ?? '?'}/${def.durability ?? '?'}` : '';
@@ -4799,9 +4800,9 @@ function fillCardDetail(box, card, { close, open }) {
 	}
 	// action buttons — a choose-one / adventure / tradeable card can't be resolved by
 	// dragging alone, so offer the decision here (drag still works for everything)
-	const yourTurn = state && state.current === HUMAN && !state.over;
-	const playable = yourTurn && E.canPlay(state, HUMAN, card);
-	const inHand = card.zone === 'hand' && card.controller === HUMAN;
+	const yourTurn = GS.state && GS.state.current === GS.HUMAN && !GS.state.over;
+	const playable = yourTurn && E.canPlay(GS.state, GS.HUMAN, card);
+	const inHand = card.zone === 'hand' && card.controller === GS.HUMAN;
 	const actions = document.createElement('div');
 	actions.className = 'ins-actions';
 	const mkBtn = (label, fn, cls) => {
@@ -4813,24 +4814,24 @@ function fillCardDetail(box, card, { close, open }) {
 	};
 	if (inHand && yourTurn) {
 		if (card.adventure && !card.adventureSpent) {
-			if (E.canPlay(state, HUMAN, card)) mkBtn(`Summon ${card.name}`, e => playFromHand(card, e));
-			if (E.canPlayAdventure(state, HUMAN, card)) mkBtn(`Cast “${card.adventure.name}”`, e => openAdventureMenu(card, e));
+			if (E.canPlay(GS.state, GS.HUMAN, card)) mkBtn(`Summon ${card.name}`, e => playFromHand(card, e));
+			if (E.canPlayAdventure(GS.state, GS.HUMAN, card)) mkBtn(`Cast “${card.adventure.name}”`, e => openAdventureMenu(card, e));
 		} else if (card.choices && playable) {
 			if (card.chooseCount > 1 || card.chooseMax) mkBtn('Choose modes…', e => { hideInspect(); openMultiChoiceMenu(card, e); });
 			else card.choices.forEach((ch, i) => mkBtn(ch.text, e => playChoiceFromInspect(card, i, e)));
 		} else if (playable) {
 			mkBtn('Play', e => playFromHand(card, e));
-			if (card.tradeable && E.canTrade(state, HUMAN, card)) mkBtn('Trade (pay 1)', () => actTrade(card.uid), 'trade');
-			if (card.prepare && E.canPrepare(state, HUMAN, card)) mkBtn('Prepare (bank your mana)', () => actPrepare(card.uid), 'trade');
-			if (card.forge && E.canForge(state, HUMAN, card)) mkBtn(`Forge (pay ${card.forge.cost != null ? card.forge.cost : 2})`, () => actForge(card.uid), 'trade');
+			if (card.tradeable && E.canTrade(GS.state, GS.HUMAN, card)) mkBtn('Trade (pay 1)', () => actTrade(card.uid), 'trade');
+			if (card.prepare && E.canPrepare(GS.state, GS.HUMAN, card)) mkBtn('Prepare (bank your mana)', () => actPrepare(card.uid), 'trade');
+			if (card.forge && E.canForge(GS.state, GS.HUMAN, card)) mkBtn(`Forge (pay ${card.forge.cost != null ? card.forge.cost : 2})`, () => actForge(card.uid), 'trade');
 		} else {
-			if (card.tradeable && E.canTrade(state, HUMAN, card)) mkBtn('Trade (pay 1)', () => actTrade(card.uid), 'trade');
-			if (card.prepare && E.canPrepare(state, HUMAN, card)) mkBtn('Prepare (bank your mana)', () => actPrepare(card.uid), 'trade');
-			if (card.forge && E.canForge(state, HUMAN, card)) mkBtn(`Forge (pay ${card.forge.cost != null ? card.forge.cost : 2})`, () => actForge(card.uid), 'trade');
+			if (card.tradeable && E.canTrade(GS.state, GS.HUMAN, card)) mkBtn('Trade (pay 1)', () => actTrade(card.uid), 'trade');
+			if (card.prepare && E.canPrepare(GS.state, GS.HUMAN, card)) mkBtn('Prepare (bank your mana)', () => actPrepare(card.uid), 'trade');
+			if (card.forge && E.canForge(GS.state, GS.HUMAN, card)) mkBtn(`Forge (pay ${card.forge.cost != null ? card.forge.cost : 2})`, () => actForge(card.uid), 'trade');
 		}
 	}
 	// a held hero power gets a deliberate "Use" button, mirroring a hand card's Play
-	if (card.zone === 'heropower' && card.controller === HUMAN && yourTurn && E.canUseHeroPower(state, HUMAN, card)) {
+	if (card.zone === 'heropower' && card.controller === GS.HUMAN && yourTurn && E.canUseHeroPower(GS.state, GS.HUMAN, card)) {
 		mkBtn(`Use ${card.name}`, e => activateHeroPower(card, e));
 	}
 	if (actions.children.length) box.appendChild(actions);
@@ -4842,7 +4843,7 @@ function fillCardDetail(box, card, { close, open }) {
 		// the INSPECTOR never used it — it hardcoded the mana excuse for every refusal.
 		// Reported as "Gideon's Reproach showed 'not enough mana yet' with enough mana
 		// and an active Arcane discount"; the real reason was no legal target.
-		hint.textContent = state && state.current !== HUMAN ? 'wait for your turn to play'
+		hint.textContent = GS.state && GS.state.current !== GS.HUMAN ? 'wait for your turn to play'
 			: (() => { try { return whyCantPlay(card); } catch (e) { return 'can’t be played right now'; } })();
 		box.appendChild(hint);
 	}
@@ -4857,18 +4858,18 @@ function fillCardDetail(box, card, { close, open }) {
 let focusCard = null, focusArtFn = null, focusOnClose = null;
 const cardFocusOpen = () => !!focusCard;
 function focusSiblings(card) {
-	if (!state || !card || card.zone === 'preview') return [card];
-	const p = state.players[card.controller];
+	if (!GS.state || !card || card.zone === 'preview') return [card];
+	const p = GS.state.players[card.controller];
 	if (!p) return [card];
 	const z = card.zone;
 	const list = z === 'hand' ? p.hand : z === 'board' ? p.board : z === 'land' ? p.lands : z === 'artifact' ? p.artifacts : z === 'enchantment' ? p.enchantments : [card];
-	const ok = list.filter(c => c && !(c.disguised && c.controller !== HUMAN));
+	const ok = list.filter(c => c && !(c.disguised && c.controller !== GS.HUMAN));
 	return ok.includes(card) ? ok : [card];
 }
 function canFocusCard(card) {
 	if (!card) return false;
-	if (card.disguised && card.controller !== HUMAN) return false;
-	if (card.controller != null && card.controller !== HUMAN && (card.zone === 'hand' || card.zone === 'deck' || card.zone === 'trap')) return false;
+	if (card.disguised && card.controller !== GS.HUMAN) return false;
+	if (card.controller != null && card.controller !== GS.HUMAN && (card.zone === 'hand' || card.zone === 'deck' || card.zone === 'trap')) return false;
 	return true;
 }
 function showCardFocus(card, opts = {}) {
@@ -4947,11 +4948,11 @@ addEventListener('keydown', ev => {
 }, true);
 // resolve a Choose-One from the inspect panel (mirrors openChoiceMenu's per-branch logic)
 function playChoiceFromInspect(card, i) {
-	if (!E.canPlay(state, HUMAN, card)) return;
-	const spec = E.targetSpec(state, HUMAN, card, i);
+	if (!E.canPlay(GS.state, GS.HUMAN, card)) return;
+	const spec = E.targetSpec(GS.state, GS.HUMAN, card, i);
 	if (spec) {
-		const targets = E.legalTargets(state, HUMAN, spec);
-		if (targets.length) { pending = { card, spec, targets, mode: 'play', choice: i }; updateHud(); return; }
+		const targets = E.legalTargets(GS.state, GS.HUMAN, spec);
+		if (targets.length) { GS.pending = { card, spec, targets, mode: 'play', choice: i }; updateHud(); return; }
 		if (spec.required) return;
 	}
 	actPlay(card.uid, null, i);
@@ -4992,7 +4993,7 @@ function openAbilityMenu(card, ev) {
 	// Titan: present the abilities as a Discover-style pick — already-used (and
 	// this-turn-locked) abilities are removed from the list, not just disabled.
 	menu.innerHTML = `<div class="wm-title">${card.name}${card.titan ? ' — choose a Titan ability' : ''}</div>`;
-	if (E.canAttackWith(state, HUMAN, card)) {
+	if (E.canAttackWith(GS.state, GS.HUMAN, card)) {
 		const atk = document.createElement('button');
 		atk.innerHTML = `<span class="wm-cost">⚔</span>Attack`;
 		atk.addEventListener('pointerdown', e => {
@@ -5003,17 +5004,17 @@ function openAbilityMenu(card, ev) {
 		menu.appendChild(atk);
 	}
 	card.activated.forEach((a, i) => {
-		if (card.titan && !E.canActivate(state, HUMAN, card, i)) return; // Titan pick: drop used / this-turn-locked abilities
+		if (card.titan && !E.canActivate(GS.state, GS.HUMAN, card, i)) return; // Titan pick: drop used / this-turn-locked abilities
 		const btn = document.createElement('button');
 		btn.innerHTML = `<span class="wm-cost">${card.titan ? '✦' : (a.cost || 0)}${a.sacrifice ? ' 💀' : ''}</span>${a.name ? `<b>${a.name}</b> — ` : ''}${a.text}`;
-		btn.disabled = !E.canActivate(state, HUMAN, card, i);
+		btn.disabled = !E.canActivate(GS.state, GS.HUMAN, card, i);
 		btn.addEventListener('pointerdown', e => {
 			e.stopPropagation();
 			hideWalkerMenu();
-			const spec = E.abilitySpec(state, HUMAN, card, i);
+			const spec = E.abilitySpec(GS.state, GS.HUMAN, card, i);
 			if (spec) {
-				const targets = E.legalTargets(state, HUMAN, spec);
-				if (targets.length) { pending = { card, spec, targets, mode: 'activate', ability: i }; updateHud(); return; }
+				const targets = E.legalTargets(GS.state, GS.HUMAN, spec);
+				if (targets.length) { GS.pending = { card, spec, targets, mode: 'activate', ability: i }; updateHud(); return; }
 				if (spec.required) return;
 			}
 			actActivate(card.uid, i, null); // relays in a duel (guest)
@@ -5033,14 +5034,14 @@ function openAdventureMenu(card, ev) {
 	// summon the creature
 	const cbtn = document.createElement('button');
 	cbtn.innerHTML = `<span class="wm-cost">${card.cost}</span>Summon ${card.name} (${card.attack}/${card.maxHealth ?? card.health})`; // an in-hand instance carries maxHealth, not health (bug:1793635342471 "3/undefined")
-	cbtn.disabled = !E.canPlay(state, HUMAN, card);
+	cbtn.disabled = !E.canPlay(GS.state, GS.HUMAN, card);
 	cbtn.addEventListener('pointerdown', e => {
 		e.stopPropagation();
 		hideWalkerMenu();
-		const spec = E.targetSpec(state, HUMAN, card);
+		const spec = E.targetSpec(GS.state, GS.HUMAN, card);
 		if (spec) {
-			const targets = E.legalTargets(state, HUMAN, spec);
-			if (targets.length) { pending = { card, spec, targets, mode: 'play' }; updateHud(); return; }
+			const targets = E.legalTargets(GS.state, GS.HUMAN, spec);
+			if (targets.length) { GS.pending = { card, spec, targets, mode: 'play' }; updateHud(); return; }
 			if (spec.required) return;
 		}
 		actPlay(card.uid, null);
@@ -5049,14 +5050,14 @@ function openAdventureMenu(card, ev) {
 	// cast the adventure spell (creature returns to hand afterward)
 	const abtn = document.createElement('button');
 	abtn.innerHTML = `<span class="wm-cost">${adv.cost}</span>Cast &ldquo;${adv.name}&rdquo;`;
-	abtn.disabled = !E.canPlayAdventure(state, HUMAN, card);
+	abtn.disabled = !E.canPlayAdventure(GS.state, GS.HUMAN, card);
 	abtn.addEventListener('pointerdown', e => {
 		e.stopPropagation();
 		hideWalkerMenu();
-		const spec = E.adventureSpec(state, HUMAN, card);
+		const spec = E.adventureSpec(GS.state, GS.HUMAN, card);
 		if (spec) {
-			const targets = E.legalTargets(state, HUMAN, spec);
-			if (targets.length) { pending = { card, spec, targets, mode: 'adventure' }; updateHud(); return; }
+			const targets = E.legalTargets(GS.state, GS.HUMAN, spec);
+			if (targets.length) { GS.pending = { card, spec, targets, mode: 'adventure' }; updateHud(); return; }
 			if (spec.required) return;
 		}
 		actAdventure(card.uid, null);
@@ -5071,14 +5072,14 @@ function openWalkerMenu(card, ev) {
 	card.abilities.forEach((a, i) => {
 		const btn = document.createElement('button');
 		btn.innerHTML = `<span class="wm-cost">${a.cost >= 0 ? '+' : ''}${a.cost}</span>${a.text}`;
-		btn.disabled = !E.canUseWalker(state, HUMAN, card, i);
+		btn.disabled = !E.canUseWalker(GS.state, GS.HUMAN, card, i);
 		btn.addEventListener('pointerdown', e => {
 			e.stopPropagation();
 			hideWalkerMenu();
-			const spec = E.walkerSpec(state, HUMAN, card, i);
+			const spec = E.walkerSpec(GS.state, GS.HUMAN, card, i);
 			if (spec) {
-				const targets = E.legalTargets(state, HUMAN, spec);
-				if (targets.length) { pending = { card, spec, targets, mode: 'walker', ability: i }; updateHud(); return; }
+				const targets = E.legalTargets(GS.state, GS.HUMAN, spec);
+				if (targets.length) { GS.pending = { card, spec, targets, mode: 'walker', ability: i }; updateHud(); return; }
 				if (spec.required) return;
 			}
 			actWalker(card.uid, i, null); // relays in a duel (guest)
@@ -5092,11 +5093,11 @@ function openWalkerMenu(card, ev) {
 
 addEventListener('contextmenu', ev => {
 	ev.preventDefault();
-	if (pending || selectedAttacker || placing) { clearModes(); return; }
+	if (GS.pending || GS.selectedAttacker || GS.placing) { clearModes(); return; }
 	// right-click a card: the card focus view (Plans/CONTROLLER_V2_PLAN.md C)
-	if (ev.target !== renderer.domElement || !state) return;
-	const uid = pick(ev) ?? hoverUid;
-	const c = cardOf(uid) || (uid === 'heropanel' && heroPanelOrbHit(pickHeroPanelUV(ev)) ? classPowerOf(HUMAN) : null);
+	if (ev.target !== renderer.domElement || !GS.state) return;
+	const uid = pick(ev) ?? GS.hoverUid;
+	const c = cardOf(uid) || (uid === 'heropanel' && heroPanelOrbHit(pickHeroPanelUV(ev)) ? classPowerOf(GS.HUMAN) : null);
 	if (c) showCardFocus(c);
 });
 
@@ -5104,13 +5105,13 @@ renderer.domElement.addEventListener('pointerdown', ev => {
 	hideWalkerMenu();
 	menuDragCandidate = null; // each press starts a fresh gesture
 	if (spectateMode || replayMode || duel.busy) return;
-	if (ev.button !== 0 || !state || state.over) return;
+	if (ev.button !== 0 || !GS.state || GS.state.over) return;
 	let uid = pick(ev);
 	// a hovered hand card lifts clear of the cursor (fitCardOnScreen); a press
 	// still under it in its column is aimed at that card, so grab it
-	if (uid == null && hoverUid != null && !pending && !selectedAttacker) {
-		const hc = cardOf(hoverUid);
-		if (hc && hc.zone === 'hand' && hc.controller === HUMAN) uid = hoverUid;
+	if (uid == null && GS.hoverUid != null && !GS.pending && !GS.selectedAttacker) {
+		const hc = cardOf(GS.hoverUid);
+		if (hc && hc.zone === 'hand' && hc.controller === GS.HUMAN) uid = GS.hoverUid;
 	}
 	const card = cardOf(uid);
 	if (TOUCH) $('tooltip').style.display = 'none';
@@ -5125,9 +5126,9 @@ renderer.domElement.addEventListener('pointerdown', ev => {
 	// hero (arm an attack, or pick yourself as a spell/attack target via panelClick)
 	if (uid === 'heropanel') {
 		// the planar die orb: armed on press, rolled on a quick release
-		if (heroPanelDieHit(pickHeroPanelUV(ev)) && !pending && !selectedAttacker) { heroPress = { die: true }; return; }
-		const power = classPowerOf(HUMAN);
-		if (heroPanelOrbHit(pickHeroPanelUV(ev)) && !pending && !selectedAttacker && power) {
+		if (heroPanelDieHit(pickHeroPanelUV(ev)) && !GS.pending && !GS.selectedAttacker) { heroPress = { die: true }; return; }
+		const power = classPowerOf(GS.HUMAN);
+		if (heroPanelOrbHit(pickHeroPanelUV(ev)) && !GS.pending && !GS.selectedAttacker && power) {
 			// don't fire on press — arm it: a quick release uses the power (or, when
 			// it can't be used right now, opens its reader so the orb is always
 			// inspectable); a press-and-hold previews it instead (see startLongPress)
@@ -5137,117 +5138,117 @@ renderer.domElement.addEventListener('pointerdown', ev => {
 		// fat-finger guard: a press on the panel's top band that lands within a
 		// thumb's reach of an attack-ready creature was aimed at the creature —
 		// arm it instead of arming a hero weapon swing from the panel
-		const near = (!pending && !selectedAttacker && state && state.current === HUMAN && !state.over)
+		const near = (!GS.pending && !GS.selectedAttacker && GS.state && GS.state.current === GS.HUMAN && !GS.state.over)
 			? pickAttackReadyCreatureNear(ev, TOUCH ? 44 : 14) : null;
 		if (near) {
 			showInspect(near);
 			tryArmAttack(near);
 		} else {
-			panelClick(HUMAN);
+			panelClick(GS.HUMAN);
 		}
 		return;
 	}
 
 	// off your turn you can still read a card: pick up a hand card, or inspect a
 	// card in play (yours or the opponent's)
-	if (state.current !== HUMAN) {
-		if (card && card.zone === 'hand' && card.controller === HUMAN) placing = { card, dragging: false };
+	if (GS.state.current !== GS.HUMAN) {
+		if (card && card.zone === 'hand' && card.controller === GS.HUMAN) GS.placing = { card, dragging: false };
 		else if (card && (card.zone === 'board' || card.zone === 'planeswalker')) showInspect(card);
 		return;
 	}
 
 	// targeting mode: click any legal permanent (hero clicks handled on the panels)
-	if (pending) {
+	if (GS.pending) {
 		if (card && card.uid != null) {
-			const t = pending.targets.find(t => t.uid === card.uid);
+			const t = GS.pending.targets.find(t => t.uid === card.uid);
 			if (t) { commitPending(t); return; }
 		}
 		clearModes();
 		return;
 	}
-	if (selectedAttacker === 'HERO') {
-		if (card && (card.zone === 'board' || card.zone === 'planeswalker') && card.controller !== HUMAN) {
+	if (GS.selectedAttacker === 'HERO') {
+		if (card && (card.zone === 'board' || card.zone === 'planeswalker') && card.controller !== GS.HUMAN) {
 			const kind = card.zone === 'board' ? 'creature' : 'walker';
-			const t = E.heroAttackTargets(state, HUMAN).find(t => t.type === kind && t.uid === card.uid);
+			const t = E.heroAttackTargets(GS.state, GS.HUMAN).find(t => t.type === kind && t.uid === card.uid);
 			if (t) { actHeroAttack(t); return; } // relays in a duel (guest)
 		}
 		clearModes();
-		if (!card || card.controller !== HUMAN) return; // fall through to reselect own creature
+		if (!card || card.controller !== GS.HUMAN) return; // fall through to reselect own creature
 	}
-	if (selectedAttacker) {
-		const attacker = cardOf(selectedAttacker);
-		if (card && (card.zone === 'board' || card.zone === 'planeswalker') && card.controller !== HUMAN && attacker) {
+	if (GS.selectedAttacker) {
+		const attacker = cardOf(GS.selectedAttacker);
+		if (card && (card.zone === 'board' || card.zone === 'planeswalker') && card.controller !== GS.HUMAN && attacker) {
 			const kind = card.zone === 'board' ? 'creature' : 'walker';
-			const t = E.attackTargets(state, HUMAN, attacker).find(t => t.type === kind && t.uid === card.uid);
-			if (t) { actAttack(selectedAttacker, t); return; }
+			const t = E.attackTargets(GS.state, GS.HUMAN, attacker).find(t => t.type === kind && t.uid === card.uid);
+			if (t) { actAttack(GS.selectedAttacker, t); return; }
 		}
 		clearModes();
-		if (!card || card.controller !== HUMAN) return; // fall through to reselect own creature
+		if (!card || card.controller !== GS.HUMAN) return; // fall through to reselect own creature
 	}
 
 	// pressing anywhere on the field (not your hand) tucks the hand down so the
 	// hero panel is unobstructed; pressing a hand card keeps the hand up
-	handMini = !(card && card.zone === 'hand' && card.controller === HUMAN);
+	GS.handMini = !(card && card.zone === 'hand' && card.controller === GS.HUMAN);
 
 	if (!card) {
 		// nothing card-like was hit: maybe an empty land slot of yours
 		const slotPi = pickLandSlot(ev);
-		if (slotPi === HUMAN && state.players[HUMAN].lands.length < E.MAX_LANDS) openLandShop(ev);
+		if (slotPi === GS.HUMAN && GS.state.players[GS.HUMAN].lands.length < E.MAX_LANDS) openLandShop(ev);
 		return;
 	}
-	if (card.zone === 'hand' && card.controller === HUMAN) {
+	if (card.zone === 'hand' && card.controller === GS.HUMAN) {
 		// arm a drag; release decides — a click inspects, a drag up onto the field plays
-		placing = { card, dragging: false };
+		GS.placing = { card, dragging: false };
 		return;
-	} else if (card.zone === 'board' && card.controller === HUMAN) {
+	} else if (card.zone === 'board' && card.controller === GS.HUMAN) {
 		showInspect(card); // read it on the left; the click also does its normal action
 		// menu-opening creatures still honor drag-to-attack: remember the pressed
 		// creature; a real drag (see pointermove) closes the menu and arms it
-		const dragArm = E.canAttackWith(state, HUMAN, card) ? card.uid : null;
-		if (card.type === 'location') { if (E.canTapLand(state, HUMAN, card)) openTapMenu(card, ev); return; }
-		if (card.disguised && E.canUnmask(state, HUMAN, card)) { menuDragCandidate = dragArm; openUnmaskMenu(card, ev); return; }
+		const dragArm = E.canAttackWith(GS.state, GS.HUMAN, card) ? card.uid : null;
+		if (card.type === 'location') { if (E.canTapLand(GS.state, GS.HUMAN, card)) openTapMenu(card, ev); return; }
+		if (card.disguised && E.canUnmask(GS.state, GS.HUMAN, card)) { menuDragCandidate = dragArm; openUnmaskMenu(card, ev); return; }
 		// A Titan whose abilities are all spent (or all locked this turn) skips the
 		// pick and falls through to attacking; other activated minions always show the menu.
-		if (card.activated?.length && !(card.titan && !card.activated.some((a, i) => E.canActivate(state, HUMAN, card, i)))) { menuDragCandidate = dragArm; openAbilityMenu(card, ev); return; }
-		if (E.canAttackWith(state, HUMAN, card)) tryArmAttack(card);
-	} else if (card.zone === 'enchantment' && card.controller === HUMAN) {
+		if (card.activated?.length && !(card.titan && !card.activated.some((a, i) => E.canActivate(GS.state, GS.HUMAN, card, i)))) { menuDragCandidate = dragArm; openAbilityMenu(card, ev); return; }
+		if (E.canAttackWith(GS.state, GS.HUMAN, card)) tryArmAttack(card);
+	} else if (card.zone === 'enchantment' && card.controller === GS.HUMAN) {
 		// enchantments can carry activated abilities too (Garruk's Uprising:
 		// "Pay 3 Life: Create a 2/2 Beast") — same menu the board uses
 		showInspect(card);
 		if (card.activated?.length) { openAbilityMenu(card, ev); return; }
-	} else if (card.zone === 'heropower' && card.controller === HUMAN) {
+	} else if (card.zone === 'heropower' && card.controller === GS.HUMAN) {
 		// click an installed hero power to activate it
 		activateHeroPower(card, ev);
-	} else if (card.zone === 'artifact' && card.controller === HUMAN && card.equip && E.canEquip(state, HUMAN, card.uid)) {
+	} else if (card.zone === 'artifact' && card.controller === GS.HUMAN && card.equip && E.canEquip(GS.state, GS.HUMAN, card.uid)) {
 		// click an Equipment to attach/move it — then pick one of your creatures
-		const targets = E.equipTargets(state, HUMAN, card.uid);
-		if (targets.length) { pending = { card, targets, mode: 'equip' }; updateHud(); }
-	} else if (card.zone === 'artifact' && card.controller === HUMAN && card.sac) {
+		const targets = E.equipTargets(GS.state, GS.HUMAN, card.uid);
+		if (targets.length) { GS.pending = { card, targets, mode: 'equip' }; updateHud(); }
+	} else if (card.zone === 'artifact' && card.controller === GS.HUMAN && card.sac) {
 		// click a field token (Blood/Treasure/Food) to sacrifice it
-		if (E.canSacrifice(state, HUMAN, card)) {
+		if (E.canSacrifice(GS.state, GS.HUMAN, card)) {
 			actSacToken(card.uid); // relays in a duel (guest)
 		}
-	} else if (card.zone === 'artifact' && card.controller === HUMAN && card.tapAbility) {
+	} else if (card.zone === 'artifact' && card.controller === GS.HUMAN && card.tapAbility) {
 		// click an artifact with a {T} ability to tap it (targeted ones pick a target);
 		// one with several {T} abilities asks which first
 		if (E.artifactTaps(card).length > 1) { if (!card.tapped) openArtifactTapMenu(card, ev); }
-		else if (E.canTapArtifact(state, HUMAN, card.uid)) armArtifactTap(card, 0);
-	} else if (card.zone === 'planeswalker' && card.controller === HUMAN) {
+		else if (E.canTapArtifact(GS.state, GS.HUMAN, card.uid)) armArtifactTap(card, 0);
+	} else if (card.zone === 'planeswalker' && card.controller === GS.HUMAN) {
 		// click your planeswalker to pick an ability
-		if (E.canUseWalker(state, HUMAN, card)) openWalkerMenu(card, ev);
-	} else if ((card.zone === 'companion' || card.zone === 'command') && card.controller === HUMAN) {
+		if (E.canUseWalker(GS.state, GS.HUMAN, card)) openWalkerMenu(card, ev);
+	} else if ((card.zone === 'companion' || card.zone === 'command') && card.controller === GS.HUMAN) {
 		// companion / commander play straight from their zones
-		if (!E.canPlay(state, HUMAN, card)) return;
-		const spec = E.targetSpec(state, HUMAN, card);
+		if (!E.canPlay(GS.state, GS.HUMAN, card)) return;
+		const spec = E.targetSpec(GS.state, GS.HUMAN, card);
 		if (spec) {
-			const targets = E.legalTargets(state, HUMAN, spec);
-			if (targets.length) { pending = { card, spec, targets, mode: 'play' }; updateHud(); return; }
+			const targets = E.legalTargets(GS.state, GS.HUMAN, spec);
+			if (targets.length) { GS.pending = { card, spec, targets, mode: 'play' }; updateHud(); return; }
 			if (spec.required) return;
 		}
 		actPlay(card.uid, null);
-	} else if (card.zone === 'land' && card.controller === HUMAN) {
+	} else if (card.zone === 'land' && card.controller === GS.HUMAN) {
 		// tap your land for one of its abilities
-		if (E.canTapLand(state, HUMAN, card)) openTapMenu(card, ev);
+		if (E.canTapLand(GS.state, GS.HUMAN, card)) openTapMenu(card, ev);
 	} else if (card.zone === 'board' || card.zone === 'planeswalker') {
 		// any other in-play card (an opponent's creature/walker): just inspect it
 		showInspect(card);
@@ -5257,45 +5258,45 @@ renderer.domElement.addEventListener('pointerdown', ev => {
 // resolve a pending targeted action (play, hero power, walker, or land tap)
 function commitPending(t) {
 	// two-target fight (Prey Upon): first pick your fighter, then pick the creature it fights
-	if (pending && pending.card && pending.card.fight && pending.mode === 'play') {
-		if (pending.fightStep !== 2) {
-			pending.fighter = t;
-			pending.fightStep = 2;
-			const spec2 = { targets: pending.card.fightTarget || 'enemy-creature', required: true, why: 'a creature to fight' };
-			const targets = E.legalTargets(state, HUMAN, spec2);
+	if (GS.pending && GS.pending.card && GS.pending.card.fight && GS.pending.mode === 'play') {
+		if (GS.pending.fightStep !== 2) {
+			GS.pending.fighter = t;
+			GS.pending.fightStep = 2;
+			const spec2 = { targets: GS.pending.card.fightTarget || 'enemy-creature', required: true, why: 'a creature to fight' };
+			const targets = E.legalTargets(GS.state, GS.HUMAN, spec2);
 			if (!targets.length) { clearModes(); return; }
-			pending.spec = spec2; pending.targets = targets;
+			GS.pending.spec = spec2; GS.pending.targets = targets;
 			updateHud();
 			return;
 		}
 		// second pick made: fuse both into one target the fight effect reads
-		t = { type: 'creature', uid: pending.fighter.uid, player: pending.fighter.player, fightTarget: t.uid, fightTargetPlayer: t.player };
+		t = { type: 'creature', uid: GS.pending.fighter.uid, player: GS.pending.fighter.player, fightTarget: t.uid, fightTargetPlayer: t.player };
 	}
 	if (isGuest()) {
-		const p = pending;
+		const p = GS.pending;
 		let localFn, intent;
-		if (p.mode === 'power') { localFn = () => E.useHeroPower(state, HUMAN, p.card.uid, t, p.choice); intent = { k: 'power', uid: p.card.uid, target: t || null, choice: p.choice }; }
-		else if (p.mode === 'activate') { localFn = () => E.activateAbility(state, HUMAN, p.card.uid, p.ability, t); intent = { k: 'activate', uid: p.card.uid, ability: p.ability, target: t || null }; }
-		else if (p.mode === 'equip') { localFn = () => E.equip(state, HUMAN, p.card.uid, t.uid); intent = { k: 'equip', uid: p.card.uid, target: t.uid }; }
-		else if (p.mode === 'walker') { localFn = () => E.useWalker(state, HUMAN, p.card.uid, p.ability, t); intent = { k: 'walker', uid: p.card.uid, ability: p.ability, target: t || null }; }
-		else if (p.mode === 'tap') { localFn = () => E.tapLand(state, HUMAN, p.card.uid, p.tapIndex, t); intent = { k: 'tap', uid: p.card.uid, tapIndex: p.tapIndex, target: t || null }; }
-		else if (p.mode === 'tapart') { localFn = () => E.tapArtifact(state, HUMAN, p.card.uid, t, p.tapIndex || 0); intent = { k: 'tapart', uid: p.card.uid, target: t || null, tapIndex: p.tapIndex || 0 }; }
-		else if (p.mode === 'respond') { const a = { ...p.action, target: t || null }; localFn = () => E.resolveResponse(state, HUMAN, a); intent = { k: 'respond', action: a }; }
-		else if (p.mode === 'adventure') { localFn = () => E.playAdventure(state, HUMAN, p.card.uid, t, p.choice); intent = { k: 'adventure', uid: p.card.uid, target: t || null, choice: p.choice }; }
-		else { localFn = () => E.playCard(state, HUMAN, p.card.uid, t, p.choice, p.position, p.useAlt, p.kicked); intent = { k: 'play', uid: p.card.uid, target: t || null, choice: p.choice, position: p.position, useAlt: p.useAlt, kicked: p.kicked }; }
+		if (p.mode === 'power') { localFn = () => E.useHeroPower(GS.state, GS.HUMAN, p.card.uid, t, p.choice); intent = { k: 'power', uid: p.card.uid, target: t || null, choice: p.choice }; }
+		else if (p.mode === 'activate') { localFn = () => E.activateAbility(GS.state, GS.HUMAN, p.card.uid, p.ability, t); intent = { k: 'activate', uid: p.card.uid, ability: p.ability, target: t || null }; }
+		else if (p.mode === 'equip') { localFn = () => E.equip(GS.state, GS.HUMAN, p.card.uid, t.uid); intent = { k: 'equip', uid: p.card.uid, target: t.uid }; }
+		else if (p.mode === 'walker') { localFn = () => E.useWalker(GS.state, GS.HUMAN, p.card.uid, p.ability, t); intent = { k: 'walker', uid: p.card.uid, ability: p.ability, target: t || null }; }
+		else if (p.mode === 'tap') { localFn = () => E.tapLand(GS.state, GS.HUMAN, p.card.uid, p.tapIndex, t); intent = { k: 'tap', uid: p.card.uid, tapIndex: p.tapIndex, target: t || null }; }
+		else if (p.mode === 'tapart') { localFn = () => E.tapArtifact(GS.state, GS.HUMAN, p.card.uid, t, p.tapIndex || 0); intent = { k: 'tapart', uid: p.card.uid, target: t || null, tapIndex: p.tapIndex || 0 }; }
+		else if (p.mode === 'respond') { const a = { ...p.action, target: t || null }; localFn = () => E.resolveResponse(GS.state, GS.HUMAN, a); intent = { k: 'respond', action: a }; }
+		else if (p.mode === 'adventure') { localFn = () => E.playAdventure(GS.state, GS.HUMAN, p.card.uid, t, p.choice); intent = { k: 'adventure', uid: p.card.uid, target: t || null, choice: p.choice }; }
+		else { localFn = () => E.playCard(GS.state, GS.HUMAN, p.card.uid, t, p.choice, p.position, p.useAlt, p.kicked); intent = { k: 'play', uid: p.card.uid, target: t || null, choice: p.choice, position: p.position, useAlt: p.useAlt, kicked: p.kicked }; }
 		clearModes();
 		guestApply(localFn, intent);
 		return;
 	}
-	if (pending.mode === 'power') E.useHeroPower(state, HUMAN, pending.card.uid, t, pending.choice);
-	else if (pending.mode === 'activate') E.activateAbility(state, HUMAN, pending.card.uid, pending.ability, t);
-	else if (pending.mode === 'equip') E.equip(state, HUMAN, pending.card.uid, t.uid);
-	else if (pending.mode === 'walker') E.useWalker(state, HUMAN, pending.card.uid, pending.ability, t);
-	else if (pending.mode === 'tap') E.tapLand(state, HUMAN, pending.card.uid, pending.tapIndex, t);
-	else if (pending.mode === 'tapart') E.tapArtifact(state, HUMAN, pending.card.uid, t, pending.tapIndex || 0);
-	else if (pending.mode === 'respond') { E.resolveResponse(state, HUMAN, { ...pending.action, target: t || null }); }
-	else if (pending.mode === 'adventure') E.playAdventure(state, HUMAN, pending.card.uid, t, pending.choice);
-	else E.playCard(state, HUMAN, pending.card.uid, t, pending.choice, pending.position, pending.useAlt, pending.kicked);
+	if (GS.pending.mode === 'power') E.useHeroPower(GS.state, GS.HUMAN, GS.pending.card.uid, t, GS.pending.choice);
+	else if (GS.pending.mode === 'activate') E.activateAbility(GS.state, GS.HUMAN, GS.pending.card.uid, GS.pending.ability, t);
+	else if (GS.pending.mode === 'equip') E.equip(GS.state, GS.HUMAN, GS.pending.card.uid, t.uid);
+	else if (GS.pending.mode === 'walker') E.useWalker(GS.state, GS.HUMAN, GS.pending.card.uid, GS.pending.ability, t);
+	else if (GS.pending.mode === 'tap') E.tapLand(GS.state, GS.HUMAN, GS.pending.card.uid, GS.pending.tapIndex, t);
+	else if (GS.pending.mode === 'tapart') E.tapArtifact(GS.state, GS.HUMAN, GS.pending.card.uid, t, GS.pending.tapIndex || 0);
+	else if (GS.pending.mode === 'respond') { E.resolveResponse(GS.state, GS.HUMAN, { ...GS.pending.action, target: t || null }); }
+	else if (GS.pending.mode === 'adventure') E.playAdventure(GS.state, GS.HUMAN, GS.pending.card.uid, t, GS.pending.choice);
+	else E.playCard(GS.state, GS.HUMAN, GS.pending.card.uid, t, GS.pending.choice, GS.pending.position, GS.pending.useAlt, GS.pending.kicked);
 	clearModes();
 	pump();
 	if (duel.on) publishDuel();
@@ -5310,8 +5311,8 @@ function commitPending(t) {
 const DRAG_PX = 14;
 let lastDownX = 0, lastDownY = 0;
 addEventListener('pointerdown', ev => {
-	lastDownX = mouseX = ev.clientX;
-	lastDownY = mouseY = ev.clientY;
+	lastDownX = GS.mouseX = ev.clientX;
+	lastDownY = GS.mouseY = ev.clientY;
 }, true);
 
 // ---------- touch input ----------
@@ -5321,7 +5322,7 @@ const TOUCH = matchMedia('(pointer: coarse)').matches;
 let longPressT = null, longPressFired = false, touchHandCard = null;
 
 // ---------- creature placement (drag out of hand to pick a board gap) ----------
-let placing = null; // { card } — pressed creature; slot chosen on release
+GS.placing = null; // { card } — pressed creature; slot chosen on release
 const placeMarker = new THREE.Mesh(
 	new THREE.BoxGeometry(0.14, 0.04, 1.9),
 	new THREE.MeshBasicMaterial({ color: 0x57e389, transparent: true, opacity: 0.9 }));
@@ -5342,7 +5343,7 @@ function fitCardOnScreen(target) {
 }
 
 function boardScreenXs() {
-	return state.players[HUMAN].board
+	return GS.state.players[GS.HUMAN].board
 		.filter(c => entities.has(c.uid))
 		.map(c => {
 			const m = entities.get(c.uid).mesh;
@@ -5359,47 +5360,47 @@ function placementIndexAt(x) {
 function updatePlaceMarker() {
 	// one raycast per frame, shared by the hand-cancel check and the Magnetic
 	// merge check below (each used to run its own full-scene pick)
-	const overCard = placing && placing.dragging
-		? cardOf(pick({ clientX: mouseX, clientY: mouseY }, placing.card.uid)) : null;
+	const overCard = GS.placing && GS.placing.dragging
+		? cardOf(pick({ clientX: GS.mouseX, clientY: GS.mouseY }, GS.placing.card.uid)) : null;
 	// releasing anywhere but back on your own hand counts as a play, so the drag
 	// hint/marker follow the same rule instead of a fixed height cutoff
-	const overOwnHand = !!overCard && overCard.zone === 'hand' && overCard.controller === HUMAN;
+	const overOwnHand = !!overCard && overCard.zone === 'hand' && overCard.controller === GS.HUMAN;
 	// dragging a Magnetic creature over a valid friendly target? it will MERGE onto that
 	// creature instead of taking a board slot — surface that so the play is discoverable
-	const magTarget = (placing && placing.dragging && !longPressFired && state && state.current === HUMAN && (() => {
-		const c = placing.card;
-		if (!c.magnetic || c.type !== 'creature' || !E.canPlay(state, HUMAN, c)) return null;
-		if (!overCard || overCard.zone !== 'board' || overCard.controller !== HUMAN) return null;
+	const magTarget = (GS.placing && GS.placing.dragging && !longPressFired && GS.state && GS.state.current === GS.HUMAN && (() => {
+		const c = GS.placing.card;
+		if (!c.magnetic || c.type !== 'creature' || !E.canPlay(GS.state, GS.HUMAN, c)) return null;
+		if (!overCard || overCard.zone !== 'board' || overCard.controller !== GS.HUMAN) return null;
 		const magTribes = c.magnetizeTribes?.length ? c.magnetizeTribes : ['Mech'];
 		return magTribes.some(tr => (overCard.tribe || '').includes(tr)) ? overCard : null;
 	})()) || null;
 	// live hint while dragging a card out of the hand (suppressed once a press-and-
 	// hold turns the gesture into a preview)
-	if (placing && placing.dragging && !longPressFired && state) {
-		const c = placing.card;
-		const yours = state.current === HUMAN;
-		const inPlay = !overOwnHand && mouseY < innerHeight * 0.94;
+	if (GS.placing && GS.placing.dragging && !longPressFired && GS.state) {
+		const c = GS.placing.card;
+		const yours = GS.state.current === GS.HUMAN;
+		const inPlay = !overOwnHand && GS.mouseY < innerHeight * 0.94;
 		const hint = !inPlay ? 'drag onto the field to play · release on your hand to cancel'
 			: !yours ? "can't play on your opponent's turn"
 			: magTarget ? `release to Magnetize ${c.name} onto ${magTarget.name}`
-			: E.canPlay(state, HUMAN, c) ? `release to play ${c.name}`
-			: (c.tradeable && E.canTrade(state, HUMAN, c)) ? `release to trade ${c.name}`
+			: E.canPlay(GS.state, GS.HUMAN, c) ? `release to play ${c.name}`
+			: (c.tradeable && E.canTrade(GS.state, GS.HUMAN, c)) ? `release to trade ${c.name}`
 			: whyCantPlay(c);
 		const hintEl = $('hint');
 		if (hintEl.textContent !== hint) hintEl.textContent = hint; // unguarded writes force a style recalc every frame
 	}
-	const isCreature = placing && (placing.card.type === 'creature' || placing.card.type === 'location');
+	const isCreature = GS.placing && (GS.placing.card.type === 'creature' || GS.placing.card.type === 'location');
 	// a Magnetic merge doesn't take a slot, so hide the between-minions gap marker for it
-	const active = isCreature && placing.dragging && !longPressFired && state && state.current === HUMAN
-		&& state.players[HUMAN].board.length
-		&& E.canPlay(state, HUMAN, placing.card)
+	const active = isCreature && GS.placing.dragging && !longPressFired && GS.state && GS.state.current === GS.HUMAN
+		&& GS.state.players[GS.HUMAN].board.length
+		&& E.canPlay(GS.state, GS.HUMAN, GS.placing.card)
 		&& !magTarget
-		&& !overOwnHand && mouseY < innerHeight * 0.94;
+		&& !overOwnHand && GS.mouseY < innerHeight * 0.94;
 	placeMarker.visible = !!active;
 	if (!active) return;
 	const xs = boardScreenXs();
 	if (!xs.length) { placeMarker.visible = false; return; }
-	const i = xs.filter(e => e.x < mouseX).length;
+	const i = xs.filter(e => e.x < GS.mouseX).length;
 	const gap = xs.length > 1 ? (xs[xs.length - 1].wx - xs[0].wx) / (xs.length - 1) : 1.4;
 	let wx;
 	if (i === 0) wx = xs[0].wx - Math.max(0.7, gap / 2);
@@ -5414,10 +5415,10 @@ function startLongPress(uid, x, y) {
 	longPressFired = false;
 	if (!uid) return;
 	longPressT = setTimeout(() => {
-		if (Math.hypot(mouseX - x, mouseY - y) > DRAG_PX) return; // moved: it's a drag, not a hold
+		if (Math.hypot(GS.mouseX - x, GS.mouseY - y) > DRAG_PX) return; // moved: it's a drag, not a hold
 		longPressFired = true;
 		// hold the hero-power orb to read it (it has no card uid of its own)
-		const c = cardOf(uid) || (uid === 'heropanel' ? classPowerOf(HUMAN) : null);
+		const c = cardOf(uid) || (uid === 'heropanel' ? classPowerOf(GS.HUMAN) : null);
 		if (c) {
 			// full card reader (with a Play / Use button when it's a legal action), so
 			// a held card/power is previewed, never triggered — release is suppressed below
@@ -5425,7 +5426,7 @@ function startLongPress(uid, x, y) {
 			hideInspect();
 			if (!showCardFocus(c)) showInspect(c);
 		} else {
-			hoverUid = uid;
+			GS.hoverUid = uid;
 			updateTooltip({ clientX: x, clientY: y });
 		}
 	}, 380);
@@ -5433,7 +5434,7 @@ function startLongPress(uid, x, y) {
 
 function heroPanelAt(x, y) {
 	// your own hero is the 3D panel mesh; opponents are DOM panels
-	if (pickHeroPanelUV({ clientX: x, clientY: y })) return HUMAN;
+	if (pickHeroPanelUV({ clientX: x, clientY: y })) return GS.HUMAN;
 	const el = document.elementFromPoint(x, y);
 	if (!el) return null;
 	for (const [pi, pel] of foePanelEls) if (pel.contains(el)) return pi;
@@ -5445,53 +5446,53 @@ function tryCommitTargetAt(ev) {
 	const card = cardOf(uid);
 	const heroPi = heroPanelAt(ev.clientX, ev.clientY);
 	const slop = TOUCH ? 44 : 14; // release-side fat-finger reach (see nearestTargetAt)
-	if (pending) {
+	if (GS.pending) {
 		if (card && card.uid != null) {
-			const t = pending.targets.find(t => t.uid === card.uid);
+			const t = GS.pending.targets.find(t => t.uid === card.uid);
 			if (t) { commitPending(t); return true; }
 		}
 		if (heroPi != null) {
-			const t = pending.targets.find(t => t.type === 'hero' && t.player === heroPi);
+			const t = GS.pending.targets.find(t => t.type === 'hero' && t.player === heroPi);
 			if (t) { commitPending(t); return true; }
 		}
 		// near-miss rescue — but never slop-commit onto your OWN hero (a heal you
 		// meant is still one direct panel-tap away; a misfired Fireball isn't)
-		const near = nearestTargetAt(ev, pending.targets.filter(t => !(t.type === 'hero' && t.player === HUMAN)), slop);
+		const near = nearestTargetAt(ev, GS.pending.targets.filter(t => !(t.type === 'hero' && t.player === GS.HUMAN)), slop);
 		if (near) { commitPending(near); return true; }
 		return false;
 	}
-	if (selectedAttacker === 'HERO') {
-		const targets = E.heroAttackTargets(state, HUMAN);
-		if (card && (card.zone === 'board' || card.zone === 'planeswalker') && card.controller !== HUMAN) {
+	if (GS.selectedAttacker === 'HERO') {
+		const targets = E.heroAttackTargets(GS.state, GS.HUMAN);
+		if (card && (card.zone === 'board' || card.zone === 'planeswalker') && card.controller !== GS.HUMAN) {
 			const kind = card.zone === 'board' ? 'creature' : 'walker';
 			const t = targets.find(t => t.type === kind && t.uid === card.uid);
 			if (t) { actHeroAttack(t); return true; } // relays in a duel (guest)
 		}
-		if (heroPi != null && heroPi !== HUMAN) {
+		if (heroPi != null && heroPi !== GS.HUMAN) {
 			const t = targets.find(t => t.type === 'hero' && t.player === heroPi);
 			if (t) { actHeroAttack(t); return true; } // relays in a duel (guest)
 		}
-		const near = nearestTargetAt(ev, targets.filter(t => !(t.type === 'hero' && t.player === HUMAN)), slop);
+		const near = nearestTargetAt(ev, targets.filter(t => !(t.type === 'hero' && t.player === GS.HUMAN)), slop);
 		if (near) { actHeroAttack(near); return true; }
-		if (heroPi != null && heroPi !== HUMAN) explainHeroMiss('HERO', heroPi); // dropped on their hero: say WHY it didn't land
+		if (heroPi != null && heroPi !== GS.HUMAN) explainHeroMiss('HERO', heroPi); // dropped on their hero: say WHY it didn't land
 		return false;
 	}
-	if (selectedAttacker) {
-		const attacker = cardOf(selectedAttacker);
+	if (GS.selectedAttacker) {
+		const attacker = cardOf(GS.selectedAttacker);
 		if (!attacker) return false;
-		const targets = E.attackTargets(state, HUMAN, attacker);
-		if (card && (card.zone === 'board' || card.zone === 'planeswalker') && card.controller !== HUMAN) {
+		const targets = E.attackTargets(GS.state, GS.HUMAN, attacker);
+		if (card && (card.zone === 'board' || card.zone === 'planeswalker') && card.controller !== GS.HUMAN) {
 			const kind = card.zone === 'board' ? 'creature' : 'walker';
 			const t = targets.find(t => t.type === kind && t.uid === card.uid);
-			if (t) { actAttack(selectedAttacker, t); return true; }
+			if (t) { actAttack(GS.selectedAttacker, t); return true; }
 		}
-		if (heroPi != null && heroPi !== HUMAN) {
+		if (heroPi != null && heroPi !== GS.HUMAN) {
 			const t = targets.find(t => t.type === 'hero' && t.player === heroPi);
-			if (t) { actAttack(selectedAttacker, t); return true; }
+			if (t) { actAttack(GS.selectedAttacker, t); return true; }
 		}
-		const near = nearestTargetAt(ev, targets.filter(t => !(t.type === 'hero' && t.player === HUMAN)), slop);
-		if (near) { actAttack(selectedAttacker, near); return true; }
-		if (heroPi != null && heroPi !== HUMAN) explainHeroMiss(attacker, heroPi); // dropped on their hero: say WHY it didn't land
+		const near = nearestTargetAt(ev, targets.filter(t => !(t.type === 'hero' && t.player === GS.HUMAN)), slop);
+		if (near) { actAttack(GS.selectedAttacker, near); return true; }
+		if (heroPi != null && heroPi !== GS.HUMAN) explainHeroMiss(attacker, heroPi); // dropped on their hero: say WHY it didn't land
 		return false;
 	}
 	return false;
@@ -5504,52 +5505,52 @@ addEventListener('pointerup', ev => {
 	// hero-power orb released: a quick click uses it; a press-and-hold only previewed
 	if (heroPress && heroPress.die) {
 		heroPress = null;
-		if (ev.button === 0 && !longPressFired && state && Math.hypot(ev.clientX - lastDownX, ev.clientY - lastDownY) < 14) {
-			if (E.canPlaneswalk(state, HUMAN)) actPlaneswalk();
-			else banner(state.current !== HUMAN ? 'The planar die rolls on your turn'
-				: `The next planar roll costs ${E.planarRollCost(state, HUMAN)} mana`);
+		if (ev.button === 0 && !longPressFired && GS.state && Math.hypot(ev.clientX - lastDownX, ev.clientY - lastDownY) < 14) {
+			if (E.canPlaneswalk(GS.state, GS.HUMAN)) actPlaneswalk();
+			else banner(GS.state.current !== GS.HUMAN ? 'The planar die rolls on your turn'
+				: `The next planar roll costs ${E.planarRollCost(GS.state, GS.HUMAN)} mana`);
 		}
 		return;
 	}
 	if (heroPress) {
 		const power = heroPress.power;
 		heroPress = null;
-		if (ev.button === 0 && !longPressFired && state) {
+		if (ev.button === 0 && !longPressFired && GS.state) {
 			const dist = Math.hypot(ev.clientX - lastDownX, ev.clientY - lastDownY);
 			// deliberate tap → use; when it can't be used (off turn, no mana, spent)
 			// the tap reads it instead; hold/drag → no-op (the hold already previewed)
 			if (dist < 14) {
-				if (!state.over && state.current === HUMAN && E.canUseHeroPower(state, HUMAN, power)) activateHeroPower(power, ev);
+				if (!GS.state.over && GS.state.current === GS.HUMAN && E.canUseHeroPower(GS.state, GS.HUMAN, power)) activateHeroPower(power, ev);
 				else showInspect(power);
 			}
 		}
 		return;
 	}
 	// hand card released: a click (in place) inspects; a drag up onto the field plays
-	if (placing) {
-		const c = placing.card;
-		const dragged = placing.dragging;
-		placing = null;
+	if (GS.placing) {
+		const c = GS.placing.card;
+		const dragged = GS.placing.dragging;
+		GS.placing = null;
 		touchHandCard = null;
 		placeMarker.visible = false;
 		renderer.domElement.style.cursor = '';
-		if (ev.button === 0 && state && !state.over) {
+		if (ev.button === 0 && GS.state && !GS.state.over) {
 			const dist = Math.hypot(ev.clientX - lastDownX, ev.clientY - lastDownY);
 			// a drag plays wherever it lands EXCEPT back on your own hand — a fixed
 			// height cutoff wrongly cancelled drops onto the hero panel between them
-			const onHand = (() => { const cc = cardOf(pick(ev, c.uid)); return !!cc && cc.zone === 'hand' && cc.controller === HUMAN; })();
-			if (dragged && dist >= 14 && !longPressFired && state.current === HUMAN && !onHand && ev.clientY < innerHeight * 0.94) {
+			const onHand = (() => { const cc = cardOf(pick(ev, c.uid)); return !!cc && cc.zone === 'hand' && cc.controller === GS.HUMAN; })();
+			if (dragged && dist >= 14 && !longPressFired && GS.state.current === GS.HUMAN && !onHand && ev.clientY < innerHeight * 0.94) {
 				releasePlay(c, ev);                        // dragged onto the field: play it
 			} else if (!dragged && !longPressFired) {
 				toggleInspect(c);                          // a click/tap: look closely, never play
 			}
 			// else: long-pressed (previewing) or dropped back onto the hand → no-op, never casts
 		}
-		if (state) updateHud();                        // clear the drag hint
+		if (GS.state) updateHud();                        // clear the drag hint
 		return;
 	}
-	if (ev.button !== 0 || !state || state.over || state.current !== HUMAN) return;
-	if (!pending && !selectedAttacker) return;
+	if (ev.button !== 0 || !GS.state || GS.state.over || GS.state.current !== GS.HUMAN) return;
+	if (!GS.pending && !GS.selectedAttacker) return;
 	// a release right where the press happened is a click, not a drag
 	if (Math.hypot(ev.clientX - lastDownX, ev.clientY - lastDownY) < 14) return;
 	if (longPressFired) return; // inspecting an armed creature shouldn't cancel it
@@ -5558,15 +5559,15 @@ addEventListener('pointerup', ev => {
 
 // hero panels as click targets (attacks + targeted spells at heroes)
 function panelClick(pi) {
-	if (spectateMode || duel.busy || !state || state.over || state.current !== HUMAN) return;
-	if (pending) {
-		const t = pending.targets.find(t => t.type === 'hero' && t.player === pi);
+	if (spectateMode || duel.busy || !GS.state || GS.state.over || GS.state.current !== GS.HUMAN) return;
+	if (GS.pending) {
+		const t = GS.pending.targets.find(t => t.type === 'hero' && t.player === pi);
 		if (t) commitPending(t);
 		return;
 	}
-	if (selectedAttacker === 'HERO') {
-		if (pi !== HUMAN) {
-			const t = E.heroAttackTargets(state, HUMAN).find(t => t.type === 'hero' && t.player === pi);
+	if (GS.selectedAttacker === 'HERO') {
+		if (pi !== GS.HUMAN) {
+			const t = E.heroAttackTargets(GS.state, GS.HUMAN).find(t => t.type === 'hero' && t.player === pi);
 			if (t) { actHeroAttack(t); } // relays in a duel (guest)
 			else explainHeroMiss('HERO', pi);
 		} else {
@@ -5574,49 +5575,49 @@ function panelClick(pi) {
 		}
 		return;
 	}
-	if (selectedAttacker && pi !== HUMAN) {
-		const attacker = cardOf(selectedAttacker);
+	if (GS.selectedAttacker && pi !== GS.HUMAN) {
+		const attacker = cardOf(GS.selectedAttacker);
 		if (!attacker) { clearModes(); return; }
-		const t = E.attackTargets(state, HUMAN, attacker).find(t => t.type === 'hero' && t.player === pi);
-		if (t) { actAttack(selectedAttacker, t); }
+		const t = E.attackTargets(GS.state, GS.HUMAN, attacker).find(t => t.type === 'hero' && t.player === pi);
+		if (t) { actAttack(GS.selectedAttacker, t); }
 		else explainHeroMiss(attacker, pi);
 		return;
 	}
 	// clicking your own panel arms a hero attack when you hold a weapon
-	if (pi === HUMAN && !selectedAttacker && E.canHeroAttack(state, HUMAN)) {
-		selectedAttacker = 'HERO';
+	if (pi === GS.HUMAN && !GS.selectedAttacker && E.canHeroAttack(GS.state, GS.HUMAN)) {
+		GS.selectedAttacker = 'HERO';
 		updateHud();
 	}
 }
-$('my-panel').addEventListener('pointerdown', () => panelClick(HUMAN));
+$('my-panel').addEventListener('pointerdown', () => panelClick(GS.HUMAN));
 
 $('end-turn').addEventListener('click', () => {
-	if (!state || state.over || state.current !== HUMAN || duel.busy) return;
+	if (!GS.state || GS.state.over || GS.state.current !== GS.HUMAN || duel.busy) return;
 	clearModes();
 	actEndTurn();
 });
 $('coin-btn').addEventListener('click', () => {
-	if (!state || duel.busy) return;
+	if (!GS.state || duel.busy) return;
 	actCoin();
 });
 function updateAutopassBtn() { const b = $('autopass-btn'); if (!b) return; b.textContent = 'Auto-pass: ' + (autoPass ? 'ON' : 'OFF'); b.classList.toggle('holding', !autoPass); }
-$('autopass-btn').addEventListener('click', () => { autoPass = !autoPass; updateAutopassBtn(); if (!autoPass && state && state.priority === HUMAN) openRespondModal(); });
+$('autopass-btn').addEventListener('click', () => { autoPass = !autoPass; updateAutopassBtn(); if (!autoPass && GS.state && GS.state.priority === GS.HUMAN) openRespondModal(); });
 updateAutopassBtn();
 $('planeswalk-btn').addEventListener('click', () => {
-	if (!state || duel.busy) return;
+	if (!GS.state || duel.busy) return;
 	actPlaneswalk();
 });
 $('restart').addEventListener('click', () => start());
 
 // conceding forfeits the run outright: no defeat payout, no pack
 $('concede').addEventListener('click', () => {
-	if (!state || state.over) return;
+	if (!GS.state || GS.state.over) return;
 	// correspondence: resigning ends the match on the server for both sides
 	if (asyncGame.on) {
 		const el = dungeonOverlay('RESIGN?', `Resigning hands the match to ${asyncGame.opp || 'your opponent'}.`);
 		el.appendChild(overlayButton('Resign the match', async () => {
 			try { await MPX.call('async-resign', { id: asyncGame.id }); } catch (e) {}
-			state.over = true;
+			GS.state.over = true;
 			asyncGame.overSent = true;
 			clearAsyncSnapshot(); // match's done — drop any local mid-turn copy
 			const done = dungeonOverlay('MATCH RESIGNED', `${asyncGame.opp || 'Your opponent'} takes it.`);
@@ -5633,7 +5634,7 @@ $('concede').addEventListener('click', () => {
 		el.appendChild(overlayButton('Concede the run', () => {
 			mpRunWalkaway(runModeName(), run);
 			if (multiverseRunMode) clearMultiverse(); else if (finalfantasyRunMode) clearFinalfantasy(); else if (swordcoastRunMode) clearSwordcoast(); else if (middleearthRunMode) clearMiddleearth(); else if (lorequestRunMode) clearLorequest(); else if (arenaRunMode) clearArena(); else if (duelsRunMode) clearDuels(); else if (tombsRunMode) clearTombs(); else if (heistRunMode) clearHeist(); else clearRun();
-			state.over = true; // freezes play without firing the defeat payout path
+			GS.state.over = true; // freezes play without firing the defeat payout path
 			const done = dungeonOverlay('RUN CONCEDED', `You walked away at level ${run?.level ?? 1}. No pack this time.`);
 			done.appendChild(overlayButton('New Run', () => location.reload()));
 			updateHud();
@@ -5648,7 +5649,7 @@ $('concede').addEventListener('click', () => {
 		hideDungeonOverlay();
 		if (isGuest()) {
 			// online guest: relay the forfeit — the host is authoritative
-			guestApply(() => E.concede(state, HUMAN), { k: 'concede' });
+			guestApply(() => E.concede(GS.state, GS.HUMAN), { k: 'concede' });
 			const o = dungeonOverlay('YOU CONCEDED', ffa ? "You've dropped out of the free-for-all." : 'You forfeited the match.');
 			o.id = 'duel-over';
 			finalizeReplay(null, 'loss'); // save the conceding guest's recorded view
@@ -5656,13 +5657,13 @@ $('concede').addEventListener('click', () => {
 			o.appendChild(overlayButton('Back to your world', () => { location.href = '/overworld/?mp=1'; }));
 			return;
 		}
-		E.concede(state, HUMAN); // if you were the active player, pump()'s settleTurn hands the turn on
-		if (!state.over && !duel.on) { // local FFA vs bots — end it rather than watch the bots
-			state.over = true;
+		E.concede(GS.state, GS.HUMAN); // if you were the active player, pump()'s settleTurn hands the turn on
+		if (!GS.state.over && !duel.on) { // local FFA vs bots — end it rather than watch the bots
+			GS.state.over = true;
 			const o = dungeonOverlay('YOU CONCEDED', 'You dropped out of the free-for-all.');
 			o.appendChild(overlayButton('Play again', () => location.reload()));
 			o.appendChild(overlayButton('Mode picker', () => { location.href = 'start.html'; }));
-		} else if (duel.on && !state.over) {
+		} else if (duel.on && !GS.state.over) {
 			banner('You conceded — still hosting the table for the others.', 3000);
 		}
 		pump();
@@ -5676,7 +5677,7 @@ $('concede').addEventListener('click', () => {
 // replay or a spectated match is nothing to lose. A live duel / free-for-all counts as a
 // loss; a quick match or an AI game isn't saved at all.
 window.mpLeaveGuard = () => {
-	if (!state || state.over || spectateMode || replayMode || asyncGame.on) return { state: 'safe' };
+	if (!GS.state || GS.state.over || spectateMode || replayMode || asyncGame.on) return { state: 'safe' };
 	if (dungeonRunMode || heistRunMode || tombsRunMode || duelsRunMode || arenaRunMode || lorequestRunMode || middleearthRunMode || swordcoastRunMode || finalfantasyRunMode || multiverseRunMode) return { state: 'safe' };
 	if (duel.on) return { state: 'confirm', message: (duel.size || 2) > 2 ? "You're in a live free-for-all. Leaving counts as a loss (the AI takes your seat)." : "You're in a live match. Leaving counts as a loss." };
 	return { state: 'confirm', message: "This match isn't saved: leaving ends it." };
@@ -5715,30 +5716,30 @@ addEventListener('resize', () => {
 
 // ---------- ring highlighting (computed per frame) ----------
 function updateRings() {
-	if (!state) return;
+	if (!GS.state) return;
 	const validCreatureTargets = new Set();
 	const attackable = t => t.type === 'creature' || t.type === 'walker';
 	// a pending spell can target ANY legal permanent (creature/artifact/enchantment/walker/location)
-	if (pending) for (const t of pending.targets) if (t.uid != null) validCreatureTargets.add(t.uid);
-	if (selectedAttacker === 'HERO') {
-		for (const t of E.heroAttackTargets(state, HUMAN)) if (attackable(t)) validCreatureTargets.add(t.uid);
-	} else if (selectedAttacker) {
-		const attacker = cardOf(selectedAttacker);
-		if (attacker) for (const t of E.attackTargets(state, HUMAN, attacker)) if (attackable(t)) validCreatureTargets.add(t.uid);
+	if (GS.pending) for (const t of GS.pending.targets) if (t.uid != null) validCreatureTargets.add(t.uid);
+	if (GS.selectedAttacker === 'HERO') {
+		for (const t of E.heroAttackTargets(GS.state, GS.HUMAN)) if (attackable(t)) validCreatureTargets.add(t.uid);
+	} else if (GS.selectedAttacker) {
+		const attacker = cardOf(GS.selectedAttacker);
+		if (attacker) for (const t of E.attackTargets(GS.state, GS.HUMAN, attacker)) if (attackable(t)) validCreatureTargets.add(t.uid);
 	}
 	for (const ent of entities.values()) {
 		const c = ent.card;
 		let color = null;
 		if (validCreatureTargets.has(c.uid)) color = '#ff5f4f';
-		else if (selectedAttacker === c.uid || pending?.card.uid === c.uid) color = '#ffd25f';
-		else if (!pending && !selectedAttacker && state.current === HUMAN && !state.over) {
-			if (c.zone === 'board' && c.controller === HUMAN && E.canAttackWith(state, HUMAN, c)) color = '#57e389';
-			else if (c.zone === 'hand' && c.controller === HUMAN && E.canPlay(state, HUMAN, c)) color = '#57e389';
-			else if (c.zone === 'heropower' && c.controller === HUMAN && E.canUseHeroPower(state, HUMAN, c)) color = '#57e389';
-			else if (c.zone === 'planeswalker' && c.controller === HUMAN && E.canUseWalker(state, HUMAN, c)) color = '#57e389';
-			else if ((c.zone === 'companion' || c.zone === 'command') && c.controller === HUMAN && E.canPlay(state, HUMAN, c)) color = '#57e389';
-			else if (c.zone === 'land' && c.controller === HUMAN && E.canTapLand(state, HUMAN, c)) color = '#57e389';
-			else if (c.zone === 'artifact' && c.controller === HUMAN && c.tapAbility && E.artifactTaps(c).some((_, i) => E.canTapArtifact(state, HUMAN, c.uid, i))) color = '#57e389';
+		else if (GS.selectedAttacker === c.uid || GS.pending?.card.uid === c.uid) color = '#ffd25f';
+		else if (!GS.pending && !GS.selectedAttacker && GS.state.current === GS.HUMAN && !GS.state.over) {
+			if (c.zone === 'board' && c.controller === GS.HUMAN && E.canAttackWith(GS.state, GS.HUMAN, c)) color = '#57e389';
+			else if (c.zone === 'hand' && c.controller === GS.HUMAN && E.canPlay(GS.state, GS.HUMAN, c)) color = '#57e389';
+			else if (c.zone === 'heropower' && c.controller === GS.HUMAN && E.canUseHeroPower(GS.state, GS.HUMAN, c)) color = '#57e389';
+			else if (c.zone === 'planeswalker' && c.controller === GS.HUMAN && E.canUseWalker(GS.state, GS.HUMAN, c)) color = '#57e389';
+			else if ((c.zone === 'companion' || c.zone === 'command') && c.controller === GS.HUMAN && E.canPlay(GS.state, GS.HUMAN, c)) color = '#57e389';
+			else if (c.zone === 'land' && c.controller === GS.HUMAN && E.canTapLand(GS.state, GS.HUMAN, c)) color = '#57e389';
+			else if (c.zone === 'artifact' && c.controller === GS.HUMAN && c.tapAbility && E.artifactTaps(c).some((_, i) => E.canTapArtifact(GS.state, GS.HUMAN, c.uid, i))) color = '#57e389';
 		}
 		if (color && (c.zone === 'board' || c.zone === 'heropower' || c.zone === 'planeswalker' || c.zone === 'companion' || c.zone === 'command' || c.zone === 'land' || c.zone === 'artifact')) {
 			ent.ring.visible = true;
@@ -5784,7 +5785,7 @@ function animate() {
 	// interactive is live (drag, targeting arrow, floaters), stop re-rendering —
 	// a waiting turn is mostly a still image, and redrawing it at 60fps just
 	// burns phone battery. Pointer input, pumps, resizes and art all wake() us.
-	let busy = !!(placing || pending || selectedAttacker || floaters.length || telegraphs.length);
+	let busy = !!(GS.placing || GS.pending || GS.selectedAttacker || floaters.length || GS.telegraphs.length);
 	if (!busy) {
 		for (const ent of entities.values()) {
 			if (ent.dying || ent.lunge || ent.hitT
@@ -5887,8 +5888,8 @@ window.__game = {
 	get logLinks() { return logLinks.map(a => a.map(l => ({ ...l }))); }, get logLines() { return logHistory.slice(); }, openLogFull, closeLogFull,
 	get cardFocus() { return focusCard ? { uid: focusCard.uid, id: focusCard.id, zone: focusCard.zone } : null; }, showCardFocus, hideCardFocus,
 	get boardVanishLog() { return boardVanishLog; },
-	get state() { return state; },
-	get HUMAN() { return HUMAN; }, // spectate smoke: the view-switch flips this
+	get state() { return GS.state; },
+	get HUMAN() { return GS.HUMAN; }, // spectate smoke: the view-switch flips this
 	showArenaLeaderboard, // arena smoke: open the leaderboard overlay
 	get foePanels() { return [...foePanelEls.keys()]; }, // spectate smoke: the foe-panel set must exclude HUMAN after a flip
 	get recording() { return Rec.isRecording(); }, // replay smoke: recording fires during live play
@@ -5909,10 +5910,10 @@ window.__game = {
 		return { x: (v.x + 1) / 2 * innerWidth, y: (1 - v.y) / 2 * innerHeight };
 	},
 	// test hooks for the targeting arrow
-	armAttack(uid) { selectedAttacker = uid; updateHud(); },
-	get telegraphs() { return telegraphs.map(t => ({ ...t })); }, // attack-forecast arrows (enemy turns + replays)
+	armAttack(uid) { GS.selectedAttacker = uid; updateHud(); },
+	get telegraphs() { return GS.telegraphs.map(t => ({ ...t })); }, // attack-forecast arrows (enemy turns + replays)
 	// 3D hero-panel test hooks: screen positions of the orb and the panel body
-	get hoverUid() { return hoverUid; }, get handMini() { return handMini; }, get heroOrbCost() { return heroOrbCost; }, get weaponBadgeUV() { return weaponBadgeUV && { ...weaponBadgeUV }; },
+	get hoverUid() { return GS.hoverUid; }, get handMini() { return GS.handMini; }, get heroOrbCost() { return heroOrbCost; }, get weaponBadgeUV() { return weaponBadgeUV && { ...weaponBadgeUV }; },
 	// the screen y of a card's bottom edge (where attack/health sit)
 	cardBottomY(uid) {
 		const ent = entities.get(uid); if (!ent) return null;
@@ -5942,10 +5943,10 @@ window.__game = {
 		const v = heroPanelMesh.localToWorld(new THREE.Vector3(-g.width * 0.32, g.height * 0.28, 0)).project(camera);
 		return { x: (v.x + 1) / 2 * innerWidth, y: (1 - v.y) / 2 * innerHeight };
 	},
-	get targeting() { return { pending: !!pending, attacker: selectedAttacker, drawn: arrowDrawn }; },
+	get targeting() { return { pending: !!GS.pending, attacker: GS.selectedAttacker, drawn: arrowDrawn }; },
 	// live-duel test hooks
 	duel,
-	get HUMAN() { return HUMAN; },
+	get HUMAN() { return GS.HUMAN; },
 	actPlay: (...a) => actPlay(...a),
 	actEndTurn: () => actEndTurn(),
 	actAttack: (...a) => actAttack(...a),
@@ -5956,17 +5957,17 @@ window.__game = {
 // same functions a mouse ends in — releasePlay for a hand card, a replayed quick
 // click for anything on the board, commitPending / panelClick for targets.
 initPadboard({
-	get state() { return state; }, get HUMAN() { return HUMAN; }, E,
+	get state() { return GS.state; }, get HUMAN() { return GS.HUMAN; }, E,
 	busy: () => spectateMode || replayMode || duel.busy,
 	cardOf, entityUids: () => [...entities.keys()],
 	screenPos: uid => window.__game.screenPosOf(uid),
 	panelPos: () => window.__game.panelScreenPos(), orbPos: () => window.__game.orbScreenPos(), diePos: () => window.__game.dieScreenPos(),
 	foePanels: () => [...foePanelEls.entries()],
-	get pending() { return pending; }, get attacker() { return selectedAttacker; },
+	get pending() { return GS.pending; }, get attacker() { return GS.selectedAttacker; },
 	clearModes, commitPending, panelClick, releasePlay, toggleInspect, hideInspect,
 	// the card focus view: onClose hands focus back to the board on the card you read
 	openCardFocus: (card, onClose) => showCardFocus(card, { onClose }), cardFocusOpen, hideCardFocus,
-	heroPowerCard: () => classPowerOf(HUMAN),
+	heroPowerCard: () => classPowerOf(GS.HUMAN),
 	// opened from the pad: start the selector on the newest card name
 	openLog: () => {
 		openLogFull();
@@ -5976,21 +5977,21 @@ initPadboard({
 		});
 	},
 	canvas: renderer.domElement,
-	setHover: (uid, x, y) => { hoverUid = uid; if (x != null) updateTooltip({ clientX: x, clientY: y }); else $('tooltip').style.display = 'none'; },
-	setMouse: (x, y) => { mouseX = x; mouseY = y; },
-	setPlacing: card => { placing = card ? { card, dragging: true } : null; if (!card) placeMarker.visible = false; },
+	setHover: (uid, x, y) => { GS.hoverUid = uid; if (x != null) updateTooltip({ clientX: x, clientY: y }); else $('tooltip').style.display = 'none'; },
+	setMouse: (x, y) => { GS.mouseX = x; GS.mouseY = y; },
+	setPlacing: card => { GS.placing = card ? { card, dragging: true } : null; if (!card) placeMarker.visible = false; },
 	boardScreenXs, banner, whyCantPlay,
 });
 
-let classRegistry = [];
+GS.classRegistry = [];
 
 function pickClasses() {
 	const savedId = localStorage.getItem('magepunk_class_v1');
 	const picks = [];
-	const playable = classRegistry.filter(c => c.power);
-	for (let i = 0; i < playerCount; i++) {
-		if (i === HUMAN) {
-			picks.push(classRegistry.find(c => c.id === savedId) || null);
+	const playable = GS.classRegistry.filter(c => c.power);
+	for (let i = 0; i < GS.playerCount; i++) {
+		if (i === GS.HUMAN) {
+			picks.push(GS.classRegistry.find(c => c.id === savedId) || null);
 		} else {
 			picks.push(playable.length ? playable[Math.floor(Math.random() * playable.length)] : null);
 		}
@@ -6007,8 +6008,8 @@ function pickClasses() {
 // previously-dropped lazily-created state (forcedTurns, expanseEvents, dealt, …),
 // so old ingesters keep working and resumed/spectated games stop losing state.
 function snapshotState() {
-	const s = E.toSnapshot(state);
-	if (s) s.digest = E.stateDigest(state); // guests verify the wire round-trip against this
+	const s = E.toSnapshot(GS.state);
+	if (s) s.digest = E.stateDigest(GS.state); // guests verify the wire round-trip against this
 	return s;
 }
 
@@ -6058,7 +6059,7 @@ function startPublishLoop() {
 			: duelsRunMode ? 'duels' : arenaRunMode ? 'arena' : lorequestRunMode ? 'lorequest' : middleearthRunMode ? 'middleearth' : swordcoastRunMode ? 'swordcoast' : finalfantasyRunMode ? 'finalfantasy' : multiverseRunMode ? 'multiverse' : 'battle';
 	const label = () => {
 		if (duel.on) return 'Card Duel';
-		if (dungeonBossId) return `${Dungeon.BOSSES[dungeonBossId].name}${loadRun()?.level ? ' · Lv ' + loadRun().level : ''}`;
+		if (GS.dungeonBossId) return `${Dungeon.BOSSES[GS.dungeonBossId].name}${loadRun()?.level ? ' · Lv ' + loadRun().level : ''}`;
 		if (heistRunMode) { const r = loadHeist(); return r ? `Fight ${r.level}/8` : 'Heist'; }
 		if (tombsRunMode) { const r = loadTombs(); return r ? `Fight ${r.level}/8` : 'Tombs'; }
 		if (duelsRunMode) { const r = loadDuels(); return r ? `${r.wins || 0}W / ${r.losses || 0}L` : 'Duels'; }
@@ -6075,12 +6076,12 @@ function startPublishLoop() {
 		// once the game is over: publish the final board ONCE, then stop republishing so
 		// cardstate goes stale (~20s) and spectators get their GAME OVER overlay. Keep the
 		// interval alive (don't clearInterval) so a restart/rematch resumes broadcasting.
-		if (state && state.over) { if (publishedOver) return; publishedOver = true; }
+		if (GS.state && GS.state.over) { if (publishedOver) return; publishedOver = true; }
 		else publishedOver = false;
 		try {
 			const r = await MPX.call('publish-cardstate', {
 				snapshot: snapshotState(), mode, label: label(), seq: ++publishSeq,
-				over: !!(state && state.over), winner: (state && state.winner) ?? null, // spectators see the result instantly
+				over: !!(GS.state && GS.state.over), winner: (GS.state && GS.state.winner) ?? null, // spectators see the result instantly
 			});
 			if (!duel.on) updateWatcherBadge(r && r.watchers, r && r.watcherNames); // in a duel the badge comes from publishDuel (host) / card-poll (guest)
 		} catch (e) {}
@@ -6100,9 +6101,9 @@ function mountSpectateViewButton() {
 		+ 'background:#2a2440;color:#e8e0d0;border:1px solid #6a5f8a;border-radius:999px;'
 		+ 'padding:8px 16px;font:600 13px/1 inherit;cursor:pointer;';
 	b.addEventListener('click', () => {
-		const n = state?.players?.length || playerCount;
+		const n = GS.state?.players?.length || GS.playerCount;
 		spectateView = (spectateView + 1) % Math.max(1, n);
-		HUMAN = Math.min(spectateView, n - 1);
+		GS.HUMAN = Math.min(spectateView, n - 1);
 		// the foe-panel set + 3D slot geometry are built RELATIVE to HUMAN (buildPanels
 		// skips HUMAN, angleOf is HUMAN-relative), so a flip must rebuild them — not just
 		// re-run updateHud, which would leave the old seat's panels/portraits in place
@@ -6115,9 +6116,9 @@ function mountSpectateViewButton() {
 }
 function updateSpectateViewButton() {
 	const b = $('spec-view'); if (!b) return;
-	const n = state?.players?.length || playerCount;
+	const n = GS.state?.players?.length || GS.playerCount;
 	b.style.display = n > 1 ? 'block' : 'none';
-	b.textContent = n > 2 ? `🔄 Viewing player ${HUMAN + 1} of ${n}` : '🔄 Flip view';
+	b.textContent = n > 2 ? `🔄 Viewing player ${GS.HUMAN + 1} of ${n}` : '🔄 Flip view';
 }
 function startSpectate(cardsById) {
 	banner(`Spectating ${spectateName}`);
@@ -6135,8 +6136,8 @@ function startSpectate(cardsById) {
 		let msg;
 		if (winner == null) msg = `${spectateName}'s game ended in a draw.`;
 		else {
-			const p = state && state.players && state.players[winner];
-			const who = (state && state.classPicks && state.classPicks[winner] && state.classPicks[winner].name)
+			const p = GS.state && GS.state.players && GS.state.players[winner];
+			const who = (GS.state && GS.state.classPicks && GS.state.classPicks[winner] && GS.state.classPicks[winner].name)
 				|| (p && p.heroClass ? classNameOf(p.heroClass) : null) || `Player ${winner + 1}`;
 			msg = `${spectateName}'s game is over — ${who} wins.`;
 		}
@@ -6176,17 +6177,17 @@ function startSpectate(cardsById) {
 		const snap = data.snapshot;
 		// migrate (v0 publishers still supported) + re-attach card DB/rng; unlike
 		// the old spread-rebuild, this keeps every engine field the host sent
-		state = E.fromSnapshot(snap, cardsById);
+		GS.state = E.fromSnapshot(snap, cardsById);
 		E.ensureUidsAbove(E.maxSnapshotUid(snap)); // never mint uids that collide with ingested ones
 		if (snap.playerCount !== spectatePanelsFor) {
-			playerCount = snap.playerCount;
+			GS.playerCount = snap.playerCount;
 			frameCamera();
 			buildPanels();
 			buildSlotMarkers();
 			spectatePanelsFor = snap.playerCount;
 		}
 		if (!Chat.active()) Chat.mount({ room: data.room || ('u:' + spectateName), canPost: false, specRoom: 'spec:' + spectateName });
-		HUMAN = Math.min(spectateView, state.players.length - 1); // keep the chosen view across updates
+		GS.HUMAN = Math.min(spectateView, GS.state.players.length - 1); // keep the chosen view across updates
 		banner(`${spectateName}${data.label ? ' — ' + data.label : ''}`);
 		updateHud();
 		updateWatcherBadge(Math.max(1, +data.watchers || 0), data.watcherNames); // spectator counts self (>=1); badge shows self as "you" + clickable profiles
@@ -6202,8 +6203,8 @@ function startSpectate(cardsById) {
 // sees the options before the player commits. No buttons — a spectator can't act.
 let specChoiceSig = null;
 function renderSpectatorChoice() {
-	if (!spectateMode || !state) return;
-	const pq = state.pickQueue?.[0], sq = state.scryQueue?.[0], dq = state.discardQueue?.[0], dr = state.dredgeQueue?.[0];
+	if (!spectateMode || !GS.state) return;
+	const pq = GS.state.pickQueue?.[0], sq = GS.state.scryQueue?.[0], dq = GS.state.discardQueue?.[0], dr = GS.state.dredgeQueue?.[0];
 	let sig = null, ids = null, whoIdx = null, kind = '';
 	if (pq) { sig = 'pick:' + pq.player + ':' + pq.ids.join(','); ids = pq.ids; whoIdx = pq.player; kind = pq.title || (pq.ids.length > 3 ? 'Draft' : 'Discover'); }
 	else if (sq) { sig = 'scry:' + sq.chooser + ':' + sq.ids.join(','); ids = sq.ids; whoIdx = sq.chooser; kind = sq.deckOwner === sq.chooser ? 'Scry' : 'Gaze'; }
@@ -6214,12 +6215,12 @@ function renderSpectatorChoice() {
 	const modal = $('scry-modal');
 	if (!modal) return;
 	if (!sig) { modal.style.display = 'none'; return; }
-	const who = whoIdx === HUMAN ? spectateName : (state.classPicks?.[whoIdx]?.name || 'Opponent');
+	const who = whoIdx === GS.HUMAN ? spectateName : (GS.state.classPicks?.[whoIdx]?.name || 'Opponent');
 	if (ids) {
 		modal.innerHTML = `<div class="wm-title">${who} is choosing — ${kind} (watching)</div><div class="scry-row"></div>`;
 		const row = modal.querySelector('.scry-row');
 		ids.forEach(id => {
-			const def = state.cardsById[id];
+			const def = GS.state.cardsById[id];
 			if (!def) return;
 			const cell = document.createElement('div');
 			cell.className = 'scry-cell';
@@ -6244,7 +6245,7 @@ function shuffleIds(ids) {
 	return ids;
 }
 function classPickFor(clsId) {
-	return classRegistry.find(c => c.id === clsId) || (clsId ? { id: clsId, name: clsId, power: null } : null);
+	return GS.classRegistry.find(c => c.id === clsId) || (clsId ? { id: clsId, name: clsId, power: null } : null);
 }
 
 // matchmaking AI game: a local match where player 1 (the AI) plays a specific
@@ -6254,18 +6255,18 @@ async function startAiMatch(cardsById) {
 	try { const r = await MPX.call('ai-match', { id: aiMatchId }); cfg = r && r.match; } catch (e) {}
 	if (!cfg) { // config expired — fall back to a normal quick match
 		const picks = pickClasses();
-		state = E.createGame(cardsById, Math.random, null, playerCount, picks);
-		state.classPicks = picks;
+		GS.state = E.createGame(cardsById, Math.random, null, GS.playerCount, picks);
+		GS.state.classPicks = picks;
 	} else {
 		const picks = [classPickFor(cfg.humanClass), classPickFor(cfg.aiClass)];
 		const loadouts = [
 			{ commander: cfg.humanCommander || null, companion: cfg.humanCompanion || null },
 			{ commander: cfg.aiCommander || null, companion: cfg.aiCompanion || null },
 		];
-		state = E.createGame(cardsById, Math.random,
+		GS.state = E.createGame(cardsById, Math.random,
 			cfg.humanDeck?.length ? [...cfg.humanDeck] : null, 2, picks, loadouts,
 			cfg.aiDeck?.length ? [...cfg.aiDeck] : null); // player 1 gets the AI decklist
-		state.classPicks = picks;
+		GS.state.classPicks = picks;
 		log(`Matchmaking: playing ${cfg.aiName || 'a Challenger'} (AI).`);
 		banner(`Matched vs ${cfg.aiName || 'a Challenger'}`, 1600);
 	}
@@ -6327,7 +6328,7 @@ function seatLabel(cm, seat) {
 
 // the host owns the engine: seat 0 = host; seats 1..N-1 are human guests or AI
 async function startDuelHost(cardsById) {
-	HUMAN = 0;
+	GS.HUMAN = 0;
 	const cm = duel.config;
 	const seats = duelSeats(cm);
 	const N = seats.length;
@@ -6348,7 +6349,7 @@ async function startDuelHost(cardsById) {
 			// migrate + reattach: the resumed host gets back every engine field it
 			// published (the old spread-rebuild silently defaulted the lazily-created
 			// ones — forcedTurns, expanseEvents, dealt, …)
-			state = E.fromSnapshot(prev.snapshot, cardsById);
+			GS.state = E.fromSnapshot(prev.snapshot, cardsById);
 			E.ensureUidsAbove(E.maxSnapshotUid(prev.snapshot)); // resumed instances must not collide with new deals
 			duelPubSeq = prev.seq || 0; // continue the sequence so the guest sees fresh
 			resumed = true;
@@ -6357,16 +6358,16 @@ async function startDuelHost(cardsById) {
 	if (!resumed) {
 		const picks = seats.map(s => classPickFor(s.classId));
 		const loadouts = seats.map(s => ({ commander: s.commander || null, companion: s.companion || null }));
-		state = E.createGame(cardsById, E.seededRng(duelSeed(duel.id)), seats[0].deck ? [...seats[0].deck] : null, N, picks, loadouts);
-		state.classPicks = picks;
+		GS.state = E.createGame(cardsById, E.seededRng(duelSeed(duel.id)), seats[0].deck ? [...seats[0].deck] : null, N, picks, loadouts);
+		GS.state.classPicks = picks;
 		// createGame only deals seat 0 the host deck; give every other seat its own
 		// deck + a fresh opening hand and the coin (resetDeckAndHand clears the hand,
 		// so the later addCoin leaves exactly one coin card)
 		for (let s = 1; s < N; s++) {
 			if (seats[s].deck?.length) {
-				E.resetDeckAndHand(state, s, seats[s].deck);
-				E.drawCards(state, s, 4);
-				E.addCoin(state, s);
+				E.resetDeckAndHand(GS.state, s, seats[s].deck);
+				E.drawCards(GS.state, s, 4);
+				E.addCoin(GS.state, s);
 			}
 		}
 	}
@@ -6382,7 +6383,7 @@ async function startDuelHost(cardsById) {
 	// drain the guests' queued intents and apply them, then republish. A silent
 	// human seat is converted to AI (FFA) or ends the duel (1v1 abandonment).
 	const drainTick = async () => {
-		if (state?.over) return;
+		if (GS.state?.over) return;
 		try {
 			const d = await MPX.call('card-drain', { id: duel.id });
 			for (const it of (d.intents || [])) { applyGuestIntent(it); }
@@ -6393,13 +6394,13 @@ async function startDuelHost(cardsById) {
 					maybeRunAI();
 				}
 			}
-			if (d.oppGone && state && !state.over) endDuelByAbandon(seatLabel(cm, 1)); // 1v1 guest left
+			if (d.oppGone && GS.state && !GS.state.over) endDuelByAbandon(seatLabel(cm, 1)); // 1v1 guest left
 		} catch (e) {}
 	};
 	// adaptive: drain fast while a human guest is acting (intents incoming), relax otherwise
 	const drainLoop = () => drainTick().finally(() => {
-		if (state?.over) return;
-		const humanGuestTurn = state && state.current !== 0 && duel.aiSeats && !duel.aiSeats.has(state.current);
+		if (GS.state?.over) return;
+		const humanGuestTurn = GS.state && GS.state.current !== 0 && duel.aiSeats && !duel.aiSeats.has(GS.state.current);
 		setTimeout(drainLoop, humanGuestTurn ? 300 : 850);
 	});
 	drainLoop();
@@ -6409,9 +6410,9 @@ async function startDuelHost(cardsById) {
 // the host ends the duel when the guest is gone: freeze the engine, tell
 // spectators, and show the result
 function endDuelByAbandon(whoLeft) {
-	if (!state || state.over) return;
-	state.over = true;
-	state.winner = HUMAN;
+	if (!GS.state || GS.state.over) return;
+	GS.state.over = true;
+	GS.state.winner = GS.HUMAN;
 	publishDuel();
 	if (!$('duel-over')) {
 		const el = dungeonOverlay('YOU WIN!', `${whoLeft} left the duel.`);
@@ -6424,47 +6425,47 @@ function endDuelByAbandon(whoLeft) {
 // by the server from the sender's identity (see card-act); each guest owns one
 // seat 1..N-1. A seat converted to AI (dropped guest) ignores late relays.
 function applyGuestIntent(it) {
-	if (!state || state.over) return;
+	if (!GS.state || GS.state.over) return;
 	const P = it.seat;
-	if (P == null || P === 0 || !state.players[P]) return;   // seat 0 is the host; ignore junk
+	if (P == null || P === 0 || !GS.state.players[P]) return;   // seat 0 is the host; ignore junk
 	if (duel.aiSeats && duel.aiSeats.has(P)) return;         // seat auto-piloted now — drop stale intents
 	// queue/priority resolutions (scry, loot, discover, sac-cost, dredge, counter
 	// response) can land on ANY player's turn; each self-guards inside the switch by
 	// checking the front of its queue, so they bypass the turn gate below.
 	const isResolve = it.k === 'scry' || it.k === 'discard' || it.k === 'pick' || it.k === 'ask' || it.k === 'sac' || it.k === 'dredge' || it.k === 'respond' || it.k === 'concede' || it.k === 'mulligan';
-	if (!isResolve && state.current !== P) return; // turn actions apply only on that seat's turn
+	if (!isResolve && GS.state.current !== P) return; // turn actions apply only on that seat's turn
 	try {
 		switch (it.k) {
-			case 'play': E.playCard(state, P, it.uid, it.target || null, it.choice, it.position, it.useAlt, it.kicked); break;
-				case 'adventure': E.playAdventure(state, P, it.uid, it.target || null, it.choice); break;
-			case 'power': E.useHeroPower(state, P, it.uid, it.target || null, it.choice); break;
-			case 'planeswalk': E.planeswalk(state, P); break;
-			case 'activate': E.activateAbility(state, P, it.uid, it.ability, it.target || null); break;
-			case 'equip': E.equip(state, P, it.uid, it.target); break;
-			case 'walker': E.useWalker(state, P, it.uid, it.ability, it.target || null); break;
-			case 'tap': E.tapLand(state, P, it.uid, it.tapIndex, it.target || null); break;
-				case 'sacland': E.sacrificeLand(state, P, it.uid); break;
-				case 'tapart': E.tapArtifact(state, P, it.uid, it.target || null, it.tapIndex || 0); break;
-				case 'sactoken': E.sacrificeToken(state, P, it.uid); break;
-				case 'heroattack': E.heroAttack(state, P, it.target); break;
-			case 'attack': E.attack(state, P, it.attacker, it.target); break;
-			case 'land': E.buyLand(state, P, it.defId); break;
-				case 'upgrade': E.upgradeLand(state, P, it.uid, it.defId); break;
-			case 'trade': E.tradeCard(state, P, it.uid); break;
-			case 'prepare': E.prepareCard(state, P, it.uid); break;
-			case 'forge': E.forgeCard(state, P, it.uid); break;
-			case 'unmask': E.unmask(state, P, it.uid); break;
-			case 'coin': E.useCoin(state, P); break;
-			case 'endTurn': E.endTurn(state); break;
-			case 'concede': E.concede(state, P); break; // pump()'s settleTurn hands the turn on if P was active
-			case 'mulligan': E.mulligan(state, P, it.uids || []); break;
-			case 'scry': if (state.scryQueue[0]?.chooser === P) E.resolveScry(state, it.picks || []); else return; break;
-			case 'discard': if (state.discardQueue[0]?.player === P) E.resolveDiscard(state, it.picks || []); else return; break;
-			case 'pick': if (state.pickQueue[0]?.player === P) E.resolvePick(state, it.id); else return; break;
-			case 'ask': if (state.askQueue[0]?.player === P) E.resolveAsk(state, it.yes); else return; break;
-			case 'sac': if (state.sacQueue[0]?.player === P) E.resolveSac(state, it.uid); else return; break;
-			case 'dredge': if (state.dredgeQueue[0]?.player === P) E.resolveDredge(state, it.id); else return; break;
-			case 'respond': if (state.priority === P) E.resolveResponse(state, P, it.action ?? null); else return; break;
+			case 'play': E.playCard(GS.state, P, it.uid, it.target || null, it.choice, it.position, it.useAlt, it.kicked); break;
+				case 'adventure': E.playAdventure(GS.state, P, it.uid, it.target || null, it.choice); break;
+			case 'power': E.useHeroPower(GS.state, P, it.uid, it.target || null, it.choice); break;
+			case 'planeswalk': E.planeswalk(GS.state, P); break;
+			case 'activate': E.activateAbility(GS.state, P, it.uid, it.ability, it.target || null); break;
+			case 'equip': E.equip(GS.state, P, it.uid, it.target); break;
+			case 'walker': E.useWalker(GS.state, P, it.uid, it.ability, it.target || null); break;
+			case 'tap': E.tapLand(GS.state, P, it.uid, it.tapIndex, it.target || null); break;
+				case 'sacland': E.sacrificeLand(GS.state, P, it.uid); break;
+				case 'tapart': E.tapArtifact(GS.state, P, it.uid, it.target || null, it.tapIndex || 0); break;
+				case 'sactoken': E.sacrificeToken(GS.state, P, it.uid); break;
+				case 'heroattack': E.heroAttack(GS.state, P, it.target); break;
+			case 'attack': E.attack(GS.state, P, it.attacker, it.target); break;
+			case 'land': E.buyLand(GS.state, P, it.defId); break;
+				case 'upgrade': E.upgradeLand(GS.state, P, it.uid, it.defId); break;
+			case 'trade': E.tradeCard(GS.state, P, it.uid); break;
+			case 'prepare': E.prepareCard(GS.state, P, it.uid); break;
+			case 'forge': E.forgeCard(GS.state, P, it.uid); break;
+			case 'unmask': E.unmask(GS.state, P, it.uid); break;
+			case 'coin': E.useCoin(GS.state, P); break;
+			case 'endTurn': E.endTurn(GS.state); break;
+			case 'concede': E.concede(GS.state, P); break; // pump()'s settleTurn hands the turn on if P was active
+			case 'mulligan': E.mulligan(GS.state, P, it.uids || []); break;
+			case 'scry': if (GS.state.scryQueue[0]?.chooser === P) E.resolveScry(GS.state, it.picks || []); else return; break;
+			case 'discard': if (GS.state.discardQueue[0]?.player === P) E.resolveDiscard(GS.state, it.picks || []); else return; break;
+			case 'pick': if (GS.state.pickQueue[0]?.player === P) E.resolvePick(GS.state, it.id); else return; break;
+			case 'ask': if (GS.state.askQueue[0]?.player === P) E.resolveAsk(GS.state, it.yes); else return; break;
+			case 'sac': if (GS.state.sacQueue[0]?.player === P) E.resolveSac(GS.state, it.uid); else return; break;
+			case 'dredge': if (GS.state.dredgeQueue[0]?.player === P) E.resolveDredge(GS.state, it.id); else return; break;
+			case 'respond': if (GS.state.priority === P) E.resolveResponse(GS.state, P, it.action ?? null); else return; break;
 			default: return;
 		}
 	} catch (e) { log('(guest action ignored)'); return; }
@@ -6475,7 +6476,7 @@ function applyGuestIntent(it) {
 // the guest renders the host's published board and relays intents; it never
 // mutates its own copy — the next authoritative snapshot is the truth
 function startDuelGuest(cardsById) {
-	HUMAN = duel.seat; // my seat index in the FFA (was hardcoded 1 for 1v1)
+	GS.HUMAN = duel.seat; // my seat index in the FFA (was hardcoded 1 for 1v1)
 	const cm = duel.config;
 	const ffa = (duel.size || 2) > 2;
 	banner(ffa ? `Free-for-all — ${duel.size} players` : `Duel vs ${cm.host}`);
@@ -6498,7 +6499,7 @@ function startDuelGuest(cardsById) {
 		duelDebug.lastPollAt = performance.now();
 		// still waiting for the first board? tell the tester what's happening
 		// instead of an eternal silent "Waiting…" (the bug report we can't act on)
-		if (!state && performance.now() - t0 > 10000) {
+		if (!GS.state && performance.now() - t0 > 10000) {
 			const secs = Math.round((performance.now() - t0) / 1000);
 			$('hint').textContent = `Waiting for ${cm.host}'s board… ${secs}s (last poll: ${lastPollNote})`;
 		}
@@ -6512,25 +6513,25 @@ function startDuelGuest(cardsById) {
 				// migrate + reattach: the guest's optimistic engine now simulates on the
 				// COMPLETE host state (the old spread-rebuild dropped the lazily-created
 				// fields, so guest-side predictions ran on a subtly different game)
-				state = E.fromSnapshot(snap, cardsById);
+				GS.state = E.fromSnapshot(snap, cardsById);
 				// Desync self-heal: fromSnapshot IS the authoritative rebuild, so play is
 				// already corrected — but verify the wire round-trip actually reproduced the
 				// host's state. A digest mismatch means a gameplay field silently dropped or
 				// mangled in transit (the exact bug that used to desync guests unseen); report
 				// it through the throttled beacon so it surfaces on /errors.html instead of
 				// two clients quietly diverging.
-				if (snap.digest && E.stateDigest(state) !== snap.digest) {
+				if (snap.digest && E.stateDigest(GS.state) !== snap.digest) {
 					duelDebug.desyncs++;
-					window.reportErr?.(`duel desync: snapshot round-trip mismatch (v${snap.schemaVersion ?? 0}, ${state.players.length}p)`, 'game.js duel ingest');
+					window.reportErr?.(`duel desync: snapshot round-trip mismatch (v${snap.schemaVersion ?? 0}, ${GS.state.players.length}p)`, 'game.js duel ingest');
 					console.warn('duel desync: rebuilt state digest != host digest', snap.digest);
 				}
 				// the guest's own instantiate calls (optimistic plays) must never mint
 				// uids that collide with host-minted ones on the ingested board
 				E.ensureUidsAbove(E.maxSnapshotUid(snap));
-				if (state.players.length !== panelsFor) {
-					playerCount = state.players.length;
+				if (GS.state.players.length !== panelsFor) {
+					GS.playerCount = GS.state.players.length;
 					frameCamera(); buildPanels(); buildSlotMarkers();
-					panelsFor = state.players.length;
+					panelsFor = GS.state.players.length;
 				}
 				updateHud();
 				maybeRecordFrame(); // record the guest's view of each authoritative board (deduped by digest)
@@ -6544,7 +6545,7 @@ function startDuelGuest(cardsById) {
 			}
 		}
 		if (data.over && !$('duel-over')) {
-			const won = data.winner === HUMAN;
+			const won = data.winner === GS.HUMAN;
 			finalizeReplay(data.winner); // save the guest's recorded view of the duel
 			let title, msg;
 			if (data.abandoned && data.winner == null) {
@@ -6574,7 +6575,7 @@ function startDuelGuest(cardsById) {
 	// relax while it's your turn to decide
 	const loop = () => tick().finally(() => {
 		if ($('duel-over')) return;
-		setTimeout(loop, state && state.current !== HUMAN ? 300 : 850);
+		setTimeout(loop, GS.state && GS.state.current !== GS.HUMAN ? 300 : 850);
 	});
 	loop();
 }
@@ -6584,19 +6585,19 @@ function startDuelGuest(cardsById) {
 // would apply to the host's entry instead. A signature avoids reopening the same
 // prompt on every poll.
 function openDuelModals() {
-	if (!isGuest() || !state) return;
-	const sq = state.scryQueue[0], dq = state.discardQueue[0], pq = state.pickQueue[0], dr = state.dredgeQueue[0], aq = state.askQueue[0], scq = state.sacQueue[0];
+	if (!isGuest() || !GS.state) return;
+	const sq = GS.state.scryQueue[0], dq = GS.state.discardQueue[0], pq = GS.state.pickQueue[0], dr = GS.state.dredgeQueue[0], aq = GS.state.askQueue[0], scq = GS.state.sacQueue[0];
 
 	let sig = null, open = null;
-	if (sq && sq.chooser === HUMAN) { sig = 'scry:' + sq.ids.join(','); open = openScryModal; }
-	else if (dq && dq.player === HUMAN) { sig = 'discard:' + dq.count + ':' + state.players[HUMAN].hand.map(c => c.uid).join(','); open = openDiscardModal; }
-	else if (pq && pq.player === HUMAN) { sig = 'pick:' + pq.ids.join(','); open = openPickModal; }
-	else if (dr && dr.player === HUMAN) { sig = 'dredge:' + dr.ids.join(','); open = openDredgeModal; }
-	else if (aq && aq.player === HUMAN) { sig = 'ask:' + (aq.prompt || '') + ':' + (aq.counterPay?.targetUid ?? aq.payOr?.amount ?? ''); open = openAskModal; }
-	else if (scq && scq.player === HUMAN) { sig = 'sac:' + scq.uids.join(','); open = openSacModal; }
-	else if (state.priority === HUMAN) { sig = 'respond:' + (state.stack[state.stack.length - 1] || {}).uid; open = openRespondModal; }
+	if (sq && sq.chooser === GS.HUMAN) { sig = 'scry:' + sq.ids.join(','); open = openScryModal; }
+	else if (dq && dq.player === GS.HUMAN) { sig = 'discard:' + dq.count + ':' + GS.state.players[GS.HUMAN].hand.map(c => c.uid).join(','); open = openDiscardModal; }
+	else if (pq && pq.player === GS.HUMAN) { sig = 'pick:' + pq.ids.join(','); open = openPickModal; }
+	else if (dr && dr.player === GS.HUMAN) { sig = 'dredge:' + dr.ids.join(','); open = openDredgeModal; }
+	else if (aq && aq.player === GS.HUMAN) { sig = 'ask:' + (aq.prompt || '') + ':' + (aq.counterPay?.targetUid ?? aq.payOr?.amount ?? ''); open = openAskModal; }
+	else if (scq && scq.player === GS.HUMAN) { sig = 'sac:' + scq.uids.join(','); open = openSacModal; }
+	else if (GS.state.priority === GS.HUMAN) { sig = 'respond:' + (GS.state.stack[GS.state.stack.length - 1] || {}).uid; open = openRespondModal; }
 	// lowest priority: the once-per-game opening mulligan, at the start of your turn
-	else if (state.current === HUMAN && state.players[HUMAN] && !state.players[HUMAN].mulliganed && !state.players[HUMAN].eliminated) { sig = 'mulligan'; open = openMulliganModal; }
+	else if (GS.state.current === GS.HUMAN && GS.state.players[GS.HUMAN] && !GS.state.players[GS.HUMAN].mulliganed && !GS.state.players[GS.HUMAN].eliminated) { sig = 'mulligan'; open = openMulliganModal; }
 	if (sig === duel.modalSig) return; // already showing (or already submitted) this one
 	duel.modalSig = sig;
 	const modal = $('scry-modal');
@@ -6619,7 +6620,7 @@ function startDebugOverlay() {
 			+ (duel.role === 'host'
 				? `publish ok=${duelDebug.pubOk} fail=${duelDebug.pubFails} last=${age(duelDebug.lastPubAt)}`
 				: `poll last=${age(duelDebug.lastPollAt)} errs=${duelDebug.pollErrors} ingestErrs=${duelDebug.ingestErrors}`)
-			+ `\nturn=${state?.current ?? '-'} over=${state?.over ?? '-'}`
+			+ `\nturn=${GS.state?.current ?? '-'} over=${GS.state?.over ?? '-'}`
 			+ (duelDebug.lastError ? `\nlastError: ${duelDebug.lastError.slice(0, 60)}` : '');
 	}, 1000);
 }
@@ -6628,8 +6629,8 @@ let duelPubSeq = 0, duelPubStarted = false;
 // Same authoritative snapshot as spectate (see snapshotState) — the two
 // hand-maintained allow-lists this replaced had already drifted by construction.
 function snapshotForDuel() {
-	const s = E.toSnapshot(state);
-	if (s) s.digest = E.stateDigest(state); // guests verify the wire round-trip against this
+	const s = E.toSnapshot(GS.state);
+	if (s) s.digest = E.stateDigest(GS.state); // guests verify the wire round-trip against this
 	return s;
 }
 // seat-indexed match stats for the guest's post-game summary. Duration is baked
@@ -6650,14 +6651,14 @@ const DUEL_PUB_FLOOR_MS = 10_000;
 function publishDuel(force) {
 	const cm = duel.config;
 	const snapshot = snapshotForDuel();
-	const sig = JSON.stringify({ snapshot, over: !!state?.over, winner: state?.winner ?? null });
+	const sig = JSON.stringify({ snapshot, over: !!GS.state?.over, winner: GS.state?.winner ?? null });
 	const now = performance.now();
 	if (!force && sig === _lastDuelSig && now - _lastDuelPubAt < DUEL_PUB_FLOOR_MS) return;
 	_lastDuelSig = sig; _lastDuelPubAt = now;
 	MPX.call('card-publish', {
 		id: duel.id, snapshot, seq: ++duelPubSeq,
 		label: `${cm.host} vs ${cm.guest}`,
-		over: !!state?.over, winner: state?.winner ?? null,
+		over: !!GS.state?.over, winner: GS.state?.winner ?? null,
 		stats: duelStatsPayload(),
 	}).then(r => {
 		if (r?.error) throw new Error(r.error);
@@ -6679,7 +6680,7 @@ function startDuelPublish() {
 	if (duelPubStarted) return;
 	duelPubStarted = true;
 	publishDuel();
-	setInterval(() => { if (state) publishDuel(state.over); }, 1000);   // a finished duel always publishes
+	setInterval(() => { if (GS.state) publishDuel(GS.state.over); }, 1000);   // a finished duel always publishes
 }
 
 // action wrappers. On the guest they apply the action OPTIMISTICALLY to the
@@ -6689,7 +6690,7 @@ function startDuelPublish() {
 const isGuest = () => duel.on && duel.role === 'guest';
 // apply locally (no event animations — the guest never animates), relay, and hold
 function guestApply(localFn, intent) {
-	try { localFn(); E.takeEvents(state); } catch (e) { log('(move rejected)'); return; }
+	try { localFn(); E.takeEvents(GS.state); } catch (e) { log('(move rejected)'); return; }
 	duel.hold = performance.now() + 1300; // don't ingest a stale echo before the host catches up
 	updateHud();
 	// a monotonic per-guest seq so the host applies our moves in order even if the
@@ -6717,36 +6718,36 @@ function questReport(ev) {
 addEventListener('pagehide', questFlush); // don't lose a partial batch on exit
 
 function actPlay(uid, target, choice, position, useAlt, kicked) {
-	if (isGuest()) return guestApply(() => E.playCard(state, HUMAN, uid, target, choice, position, useAlt, kicked), { k: 'play', uid, target: target || null, choice, position, useAlt, kicked });
-	const c = state.players[HUMAN]?.hand.find(x => x.uid === uid); // capture before it leaves hand
-	E.playCard(state, HUMAN, uid, target, choice, position, useAlt, kicked); pump();
-	if (c && !state.players[HUMAN].hand.some(x => x.uid === uid)) // it really got played
+	if (isGuest()) return guestApply(() => E.playCard(GS.state, GS.HUMAN, uid, target, choice, position, useAlt, kicked), { k: 'play', uid, target: target || null, choice, position, useAlt, kicked });
+	const c = GS.state.players[GS.HUMAN]?.hand.find(x => x.uid === uid); // capture before it leaves hand
+	E.playCard(GS.state, GS.HUMAN, uid, target, choice, position, useAlt, kicked); pump();
+	if (c && !GS.state.players[GS.HUMAN].hand.some(x => x.uid === uid)) // it really got played
 		questReport({ kind: 'play', cardClass: c.cardClass, cardType: c.type, cost: c.cost, keywords: c.keywords || [] });
 	if (duel.on) publishDuel();
 }
 function actAdventure(uid, target, choice) {
-	if (isGuest()) return guestApply(() => E.playAdventure(state, HUMAN, uid, target, choice), { k: 'adventure', uid, target: target || null, choice });
-	E.playAdventure(state, HUMAN, uid, target, choice); pump();
+	if (isGuest()) return guestApply(() => E.playAdventure(GS.state, GS.HUMAN, uid, target, choice), { k: 'adventure', uid, target: target || null, choice });
+	E.playAdventure(GS.state, GS.HUMAN, uid, target, choice); pump();
 	if (duel.on) publishDuel();
 }
 function actPower(uid, target, choice) {
-	if (isGuest()) return guestApply(() => E.useHeroPower(state, HUMAN, uid, target, choice), { k: 'power', uid, target: target || null, choice });
-	E.useHeroPower(state, HUMAN, uid, target, choice); pump();
+	if (isGuest()) return guestApply(() => E.useHeroPower(GS.state, GS.HUMAN, uid, target, choice), { k: 'power', uid, target: target || null, choice });
+	E.useHeroPower(GS.state, GS.HUMAN, uid, target, choice); pump();
 	if (duel.on) publishDuel();
 }
 function actAttack(attacker, target) {
-	if (isGuest()) return guestApply(() => { E.attack(state, HUMAN, attacker, target); clearModes(); }, { k: 'attack', attacker, target });
-	E.attack(state, HUMAN, attacker, target); clearModes(); pump();
+	if (isGuest()) return guestApply(() => { E.attack(GS.state, GS.HUMAN, attacker, target); clearModes(); }, { k: 'attack', attacker, target });
+	E.attack(GS.state, GS.HUMAN, attacker, target); clearModes(); pump();
 	if (duel.on) publishDuel();
 }
 function actLand(defId) {
-	if (isGuest()) return guestApply(() => E.buyLand(state, HUMAN, defId), { k: 'land', defId });
-	E.buyLand(state, HUMAN, defId); pump();
+	if (isGuest()) return guestApply(() => E.buyLand(GS.state, GS.HUMAN, defId), { k: 'land', defId });
+	E.buyLand(GS.state, GS.HUMAN, defId); pump();
 	if (duel.on) publishDuel();
 }
 function actUpgrade(uid, defId) {
-	if (isGuest()) return guestApply(() => E.upgradeLand(state, HUMAN, uid, defId), { k: 'upgrade', uid, defId });
-	E.upgradeLand(state, HUMAN, uid, defId); pump();
+	if (isGuest()) return guestApply(() => E.upgradeLand(GS.state, GS.HUMAN, uid, defId), { k: 'upgrade', uid, defId });
+	E.upgradeLand(GS.state, GS.HUMAN, uid, defId); pump();
 	if (duel.on) publishDuel();
 }
 // tapping a land for one of its abilities (e.g. Swamp → conjure a black card).
@@ -6754,84 +6755,84 @@ function actUpgrade(uid, defId) {
 // previously ran the engine locally on the guest without relaying — so the host
 // never tapped/conjured and its next snapshot reverted the optimistic result.
 function actTapLand(uid, tapIndex, target) {
-	if (isGuest()) return guestApply(() => E.tapLand(state, HUMAN, uid, tapIndex, target || null), { k: 'tap', uid, tapIndex, target: target || null });
-	E.tapLand(state, HUMAN, uid, tapIndex, target || null); pump();
+	if (isGuest()) return guestApply(() => E.tapLand(GS.state, GS.HUMAN, uid, tapIndex, target || null), { k: 'tap', uid, tapIndex, target: target || null });
+	E.tapLand(GS.state, GS.HUMAN, uid, tapIndex, target || null); pump();
 	if (duel.on) publishDuel();
 }
 // cashing a land in for a card (Sacrifice: draw). Same relay gap as the tap above.
 function actSacLand(uid) {
-	if (isGuest()) return guestApply(() => E.sacrificeLand(state, HUMAN, uid), { k: 'sacland', uid });
-	E.sacrificeLand(state, HUMAN, uid); pump();
+	if (isGuest()) return guestApply(() => E.sacrificeLand(GS.state, GS.HUMAN, uid), { k: 'sacland', uid });
+	E.sacrificeLand(GS.state, GS.HUMAN, uid); pump();
 	if (duel.on) publishDuel();
 }
 // The following mirror the tap fix: the TARGETED forms already relay via
 // commitPending, but the no-target menu paths ran the engine locally without
 // relaying, so a duel guest's action was reverted by the host's next snapshot.
 function actActivate(uid, ability, target) { // creature activated ability, no target
-	if (isGuest()) return guestApply(() => E.activateAbility(state, HUMAN, uid, ability, target || null), { k: 'activate', uid, ability, target: target || null });
-	E.activateAbility(state, HUMAN, uid, ability, target || null); pump();
+	if (isGuest()) return guestApply(() => E.activateAbility(GS.state, GS.HUMAN, uid, ability, target || null), { k: 'activate', uid, ability, target: target || null });
+	E.activateAbility(GS.state, GS.HUMAN, uid, ability, target || null); pump();
 	if (duel.on) publishDuel();
 }
 function actWalker(uid, ability, target) { // planeswalker loyalty ability, no target
-	if (isGuest()) return guestApply(() => E.useWalker(state, HUMAN, uid, ability, target || null), { k: 'walker', uid, ability, target: target || null });
-	E.useWalker(state, HUMAN, uid, ability, target || null); pump();
+	if (isGuest()) return guestApply(() => E.useWalker(GS.state, GS.HUMAN, uid, ability, target || null), { k: 'walker', uid, ability, target: target || null });
+	E.useWalker(GS.state, GS.HUMAN, uid, ability, target || null); pump();
 	if (duel.on) publishDuel();
 }
 function actTapArtifact(uid, target, idx = 0) { // {T} artifact ability (mana rocks etc.)
-	if (isGuest()) return guestApply(() => E.tapArtifact(state, HUMAN, uid, target || null, idx), { k: 'tapart', uid, target: target || null, tapIndex: idx });
-	E.tapArtifact(state, HUMAN, uid, target || null, idx); pump();
+	if (isGuest()) return guestApply(() => E.tapArtifact(GS.state, GS.HUMAN, uid, target || null, idx), { k: 'tapart', uid, target: target || null, tapIndex: idx });
+	E.tapArtifact(GS.state, GS.HUMAN, uid, target || null, idx); pump();
 	if (duel.on) publishDuel();
 }
 function actSacToken(uid) { // cash in a Treasure/Blood/Food token
-	if (isGuest()) return guestApply(() => E.sacrificeToken(state, HUMAN, uid), { k: 'sactoken', uid });
-	E.sacrificeToken(state, HUMAN, uid); pump();
+	if (isGuest()) return guestApply(() => E.sacrificeToken(GS.state, GS.HUMAN, uid), { k: 'sactoken', uid });
+	E.sacrificeToken(GS.state, GS.HUMAN, uid); pump();
 	if (duel.on) publishDuel();
 }
 function actHeroAttack(target) { // your hero swings at a creature/walker/hero
-	if (isGuest()) return guestApply(() => { E.heroAttack(state, HUMAN, target); clearModes(); }, { k: 'heroattack', target });
-	E.heroAttack(state, HUMAN, target); clearModes(); pump();
+	if (isGuest()) return guestApply(() => { E.heroAttack(GS.state, GS.HUMAN, target); clearModes(); }, { k: 'heroattack', target });
+	E.heroAttack(GS.state, GS.HUMAN, target); clearModes(); pump();
 	if (duel.on) publishDuel();
 }
 function actTrade(uid) {
-	if (isGuest()) return guestApply(() => E.tradeCard(state, HUMAN, uid), { k: 'trade', uid });
-	E.tradeCard(state, HUMAN, uid); pump();
+	if (isGuest()) return guestApply(() => E.tradeCard(GS.state, GS.HUMAN, uid), { k: 'trade', uid });
+	E.tradeCard(GS.state, GS.HUMAN, uid); pump();
 	if (duel.on) publishDuel();
 }
 function actForge(uid) {
-	if (isGuest()) return guestApply(() => E.forgeCard(state, HUMAN, uid), { k: 'forge', uid });
-	E.forgeCard(state, HUMAN, uid); pump();
+	if (isGuest()) return guestApply(() => E.forgeCard(GS.state, GS.HUMAN, uid), { k: 'forge', uid });
+	E.forgeCard(GS.state, GS.HUMAN, uid); pump();
 }
 function actPrepare(uid) {
-	if (isGuest()) return guestApply(() => E.prepareCard(state, HUMAN, uid), { k: 'prepare', uid });
-	E.prepareCard(state, HUMAN, uid); pump();
+	if (isGuest()) return guestApply(() => E.prepareCard(GS.state, GS.HUMAN, uid), { k: 'prepare', uid });
+	E.prepareCard(GS.state, GS.HUMAN, uid); pump();
 	if (duel.on) publishDuel();
 }
 function actUnmask(uid) {
-	if (isGuest()) return guestApply(() => E.unmask(state, HUMAN, uid), { k: 'unmask', uid });
-	E.unmask(state, HUMAN, uid); pump();
+	if (isGuest()) return guestApply(() => E.unmask(GS.state, GS.HUMAN, uid), { k: 'unmask', uid });
+	E.unmask(GS.state, GS.HUMAN, uid); pump();
 	if (duel.on) publishDuel();
 }
 function actEndTurn() {
-	if (isGuest()) return guestApply(() => E.endTurn(state), { k: 'endTurn' });
+	if (isGuest()) return guestApply(() => E.endTurn(GS.state), { k: 'endTurn' });
 	// endTurn is a silent no-op while you owe a forced decision, which reads as
 	// "End Turn is broken". Name it, and put the choice back in front of you in
 	// case its modal was missed or dismissed.
-	if (state && E.hasPendingDecision(state, HUMAN)) {
+	if (GS.state && E.hasPendingDecision(GS.state, GS.HUMAN)) {
 		banner('Finish your choice first', 1100);
 		surfacePendingChoice();
 		return;
 	}
-	E.endTurn(state); pump();
+	E.endTurn(GS.state); pump();
 	if (duel.on) publishDuel();
 }
 function actCoin() {
-	if (isGuest()) { guestApply(() => E.useCoin(state, HUMAN), { k: 'coin' }); return true; }
-	const ok = E.useCoin(state, HUMAN); if (ok) { pump(); if (duel.on) publishDuel(); } return ok;
+	if (isGuest()) { guestApply(() => E.useCoin(GS.state, GS.HUMAN), { k: 'coin' }); return true; }
+	const ok = E.useCoin(GS.state, GS.HUMAN); if (ok) { pump(); if (duel.on) publishDuel(); } return ok;
 }
 
 function actPlaneswalk() {
-	if (isGuest()) { guestApply(() => E.planeswalk(state, HUMAN), { k: 'planeswalk' }); return true; }
-	const ok = E.planeswalk(state, HUMAN); if (ok) { pump(); if (duel.on) publishDuel(); } return ok;
+	if (isGuest()) { guestApply(() => E.planeswalk(GS.state, GS.HUMAN), { k: 'planeswalk' }); return true; }
+	const ok = E.planeswalk(GS.state, GS.HUMAN); if (ok) { pump(); if (duel.on) publishDuel(); } return ok;
 }
 
 // cards.json is ~4.2MB raw / ~580KB gzipped — fetch and parse it ONCE per page
@@ -6869,7 +6870,7 @@ async function startAsync(cardsById) {
 	const mySeat = d.you;
 	asyncGame.me = m.players[mySeat];
 	asyncGame.opp = m.players[1 - mySeat];
-	HUMAN = mySeat;
+	GS.HUMAN = mySeat;
 
 	// the invitee's first visit: accept with the deck they picked in the lobby
 	if (m.status === 'invited' && mySeat === 1 && asyncGame.deckId) {
@@ -6933,12 +6934,12 @@ async function startAsync(cardsById) {
 	if (asyncGame.needDeal) {
 		const picks = [classPickFor(m.decks?.[0]?.classId), classPickFor(m.decks?.[1]?.classId)];
 		const loadouts = [0, 1].map(s => ({ commander: m.decks?.[s]?.commander || null, companion: m.decks?.[s]?.companion || null }));
-		state = E.createGame(cardsById, E.seededRng(duelSeed(m.id)), m.decks?.[0]?.deck ? [...m.decks[0].deck] : null, 2, picks, loadouts);
-		state.classPicks = picks;
+		GS.state = E.createGame(cardsById, E.seededRng(duelSeed(m.id)), m.decks?.[0]?.deck ? [...m.decks[0].deck] : null, 2, picks, loadouts);
+		GS.state.classPicks = picks;
 		if (m.decks?.[1]?.deck?.length) {
-			E.resetDeckAndHand(state, 1, m.decks[1].deck);
-			E.drawCards(state, 1, 4);
-			E.addCoin(state, 1);
+			E.resetDeckAndHand(GS.state, 1, m.decks[1].deck);
+			E.drawCards(GS.state, 1, 4);
+			E.addCoin(GS.state, 1);
 		}
 	} else if (m.snap) {
 		// prefer a fresher LOCAL mid-turn snapshot (same match, same unsubmitted turn) —
@@ -6946,17 +6947,17 @@ async function startAsync(cardsById) {
 		const localMid = safeLoad(asyncSnapKey(asyncGame.id), null);
 		if (useLocalAsyncTurn(localMid, m.snap, asyncGame.id, mySeat)) {
 			try {
-				state = E.fromSnapshot(localMid.snap, cardsById);
+				GS.state = E.fromSnapshot(localMid.snap, cardsById);
 				E.ensureUidsAbove(E.maxSnapshotUid(localMid.snap));
 				_resumedFight = true; // re-open any pending scry/Discover the turn was frozen on
 				log('Resumed your in-progress turn.');
 			} catch (e) {
-				state = E.fromSnapshot(m.snap, cardsById);
+				GS.state = E.fromSnapshot(m.snap, cardsById);
 				E.ensureUidsAbove(E.maxSnapshotUid(m.snap));
 				clearAsyncSnapshot();
 			}
 		} else {
-			state = E.fromSnapshot(m.snap, cardsById);
+			GS.state = E.fromSnapshot(m.snap, cardsById);
 			E.ensureUidsAbove(E.maxSnapshotUid(m.snap));
 			if (localMid) clearAsyncSnapshot(); // stale — the match moved on
 		}
@@ -6970,10 +6971,10 @@ async function startAsync(cardsById) {
 	// correspondence has NO response windows: nothing ever ghost-plays the absent
 	// player's instants — casts and attacks resolve immediately. (Their secrets,
 	// traps and forced decisions still resolve as before.)
-	state.noInstantResponses = true;
+	GS.state.noInstantResponses = true;
 
 	asyncGame.live = true;
-	asyncGame.myTurnStarted = state.current === HUMAN && !state.over;
+	asyncGame.myTurnStarted = GS.state.current === GS.HUMAN && !GS.state.over;
 	frameCamera();
 	buildPanels();
 	buildSlotMarkers();
@@ -6991,7 +6992,7 @@ async function startAsync(cardsById) {
 		for (const ln of m.lines) { const r = document.createElement('div'); r.textContent = ln; list.appendChild(r); }
 		el.appendChild(list);
 		el.appendChild(overlayButton('Take your turn', () => hideDungeonOverlay()));
-	} else if (!asyncGame.myTurnStarted && !state.over) {
+	} else if (!asyncGame.myTurnStarted && !GS.state.over) {
 		asyncWaitOverlay();
 	}
 }
@@ -7028,23 +7029,23 @@ function asyncReportElo(m) {
 // called from updateHud after every settle: my turn just ended (or the game
 // did) → publish the snapshot and hand the match over
 async function maybePublishAsync() {
-	if (!asyncGame.on || !asyncGame.live || !state || asyncGame.sending) return;
-	const over = state.over;
-	const turnEnded = asyncGame.myTurnStarted && state.current !== HUMAN;
+	if (!asyncGame.on || !asyncGame.live || !GS.state || asyncGame.sending) return;
+	const over = GS.state.over;
+	const turnEnded = asyncGame.myTurnStarted && GS.state.current !== GS.HUMAN;
 	const openingDeal = asyncGame.needDeal;
 	if (!over && !turnEnded && !openingDeal) return;
 	if (over && asyncGame.overSent) return;
 	// wait for the event queue to drain so the published snapshot is settled
-	if (queue.length || queueBusy) return;
+	if (queue.length || GS.queueBusy) return;
 	asyncGame.sending = true;
-	const winnerSeat = over ? (state.winner ?? null) : null;
+	const winnerSeat = over ? (GS.state.winner ?? null) : null;
 	const payload = {
 		id: asyncGame.id,
-		snap: E.toSnapshot(state),
-		turnTo: state.players[state.current] ? (state.current === HUMAN ? asyncGame.me : asyncGame.opp) : asyncGame.opp,
+		snap: E.toSnapshot(GS.state),
+		turnTo: GS.state.players[GS.state.current] ? (GS.state.current === GS.HUMAN ? asyncGame.me : asyncGame.opp) : asyncGame.opp,
 		lines: logHistory.slice(-20),
 		over: !!over,
-		winner: winnerSeat == null ? null : (winnerSeat === HUMAN ? asyncGame.me : asyncGame.opp),
+		winner: winnerSeat == null ? null : (winnerSeat === GS.HUMAN ? asyncGame.me : asyncGame.opp),
 	};
 	try {
 		const r = await MPX.call('async-move', payload);
@@ -7059,7 +7060,7 @@ async function maybePublishAsync() {
 			const el = dungeonOverlay(won ? 'VICTORY!' : 'DEFEAT',
 				won ? `You beat ${asyncGame.opp}.` : `${asyncGame.opp} takes it.`);
 			el.appendChild(overlayButton('Back to Battlecards', () => { location.href = 'start.html'; }));
-		} else if (!openingDeal || state.current !== HUMAN) {
+		} else if (!openingDeal || GS.state.current !== GS.HUMAN) {
 			banner('Turn sent ✉', 1800);
 			asyncWaitOverlay();
 		} else {
@@ -7075,7 +7076,7 @@ async function maybePublishAsync() {
 async function start() {
 	for (const uid of [...entities.keys()]) removeEntity(uid);
 	queue.length = 0;
-	queueBusy = false;
+	GS.queueBusy = false;
 	clearModes();
 	Chat.clear(); // fresh game → fresh chat log (no-op if chat isn't mounted)
 	$('restart').style.display = 'none';
@@ -7092,12 +7093,12 @@ async function start() {
 	Rec.cancel(); // a new game (or restart) discards any half-recorded tape
 	if (replayMode) { await startReplay(cardsById); return; }
 	if (spectateMode) { startSpectate(cardsById); return; }
-	if (!classRegistry.length) {
+	if (!GS.classRegistry.length) {
 		try {
 			// your class comes from your deck (the deck builder writes magepunk_class_v1);
 			// the in-match class / player-count test bar is gone (owner, 2026-10-01)
-			classRegistry = (await (await fetch('classes.json')).json()).classes;
-		} catch (e) { classRegistry = []; }
+			GS.classRegistry = (await (await fetch('classes.json')).json()).classes;
+		} catch (e) { GS.classRegistry = []; }
 	}
 	if (asyncGame.on) { await startAsync(cardsById); return; }
 	if (duel.on) { await startDuel(cardsById); return; }
@@ -7139,7 +7140,7 @@ async function start() {
 		}
 		runBootCardsById = cardsById;
 		if (run.pendingResult) settlePendingResult(run, dungeonVictory, dungeonDefeat, { 2: r => afterBucket(r, r.level + 1) });
-		else if (resumeRunSnapshot(run, cardsById)) { dungeonBossId = run.bossId; log('Resumed your paused dungeon fight.'); }
+		else if (resumeRunSnapshot(run, cardsById)) { GS.dungeonBossId = run.bossId; log('Resumed your paused dungeon fight.'); }
 		else bootEncounter(cardsById, run.bossId, run.classId, run.deck, run.passives, run.level, run.anomaly);
 	} else if (heistRunMode) {
 		heistCardsById = cardsById; // pre-state overlays need the card defs
@@ -7287,25 +7288,25 @@ async function start() {
 		runBootCardsById = cardsById;
 		if (run.pendingResult) settlePendingResult(run, arenaVictory, arenaDefeat);
 		else if (resumeRunSnapshot(run, cardsById)) log('Resumed your paused Arena fight.'); else bootArenaEncounter(cardsById, run);
-	} else if (dungeonBossId) {
+	} else if (GS.dungeonBossId) {
 		// one-off encounter: ?class= if it has a starter deck, else saved, else mage
 		const wanted = new URLSearchParams(location.search).get('class');
 		const clsId = Dungeon.STARTER_DECKS[wanted] ? wanted
 			: (Dungeon.STARTER_DECKS[localStorage.getItem('magepunk_class_v1')]
 				? localStorage.getItem('magepunk_class_v1') : 'mage');
-		bootEncounter(cardsById, dungeonBossId, clsId, Dungeon.STARTER_DECKS[clsId], [], null, null);
+		bootEncounter(cardsById, GS.dungeonBossId, clsId, Dungeon.STARTER_DECKS[clsId], [], null, null);
 	} else {
 		const picks = pickClasses();
 		// use the saved deck when it's complete and valid; otherwise the demo deck
 		const collection = Col.getCollection(data.cards);
 		const saved = Col.loadDeck();
 		const deckOk = saved.length === Col.DECK_SIZE
-			&& !Col.validateDeck(saved, cardsById, collection, picks[HUMAN]?.id);
-		state = E.createGame(cardsById, Math.random, deckOk ? saved : null, playerCount, picks);
-		state.classPicks = picks;
+			&& !Col.validateDeck(saved, cardsById, collection, picks[GS.HUMAN]?.id);
+		GS.state = E.createGame(cardsById, Math.random, deckOk ? saved : null, GS.playerCount, picks);
+		GS.state.classPicks = picks;
 		log(deckOk ? 'Using your custom deck.' : 'Using the demo deck — build one in the deck builder!');
-		if (picks[HUMAN]) log(`You are a ${picks[HUMAN].name}.`);
-		if (playerCount > 2) log(`Free-for-all: ${playerCount} players, last hero standing wins.`);
+		if (picks[GS.HUMAN]) log(`You are a ${picks[GS.HUMAN].name}.`);
+		if (GS.playerCount > 2) log(`Free-for-all: ${GS.playerCount} players, last hero standing wins.`);
 	}
 	bindRunFight();   // this tab now plays the run's current fight (fresh boot or resume)
 	buildPanels();
@@ -7321,28 +7322,28 @@ async function start() {
 let publishStarted = false;
 
 function bootEncounter(cardsById, bossId, clsId, deckIds, passives, level, anomalyId) {
-	dungeonBossId = bossId;
+	GS.dungeonBossId = bossId;
 	const boss = Dungeon.BOSSES[bossId];
-	const clsPick = classRegistry.find(c => c.id === clsId)
+	const clsPick = GS.classRegistry.find(c => c.id === clsId)
 		|| { id: clsId, name: clsId, power: null };
 	const bossPick = { id: bossId, name: boss.name, power: boss.power || null };
 	const picks = [clsPick, bossPick];
-	state = E.createGame(cardsById, seededGame(), [...deckIds], 2, picks); // seeded -> snapshot-able for resume
-	state.classPicks = picks;
+	GS.state = E.createGame(cardsById, seededGame(), [...deckIds], 2, picks); // seeded -> snapshot-able for resume
+	GS.state.classPicks = picks;
 	// boss surgery: its recorded deck, no western corner zones. In a dungeon
 	// run both heroes share a scaling life total (15 at level 1, +5 each level);
 	// a one-off ?boss= fight keeps the boss's designed health.
-	const bp = state.players[1];
+	const bp = GS.state.players[1];
 	const runHP = level ? runLifeFor(level) : null;
 	const bossHP = runHP ?? boss.health;
-	E.applyHeroMods(state, 1, { life: bossHP, maxLife: bossHP });
-	if (runHP != null) E.applyHeroMods(state, HUMAN, { life: runHP, maxLife: runHP });
-	E.resetDeckAndHand(state, 1, boss.deck);
-	E.drawCards(state, 1, 4);
-	E.addCoin(state, 1);   // the boss goes second: re-deal its opening Coin (resetDeckAndHand wiped createGame's)
-	if (boss.passive === 'battlecries-twice' || boss.passive === 'both-twice') E.applyHeroMods(state, 1, { battlecriesTwice: true });
-	if (boss.passive === 'deathrattles-twice' || boss.passive === 'both-twice') E.applyHeroMods(state, 1, { deathrattlesTwice: true });
-	E.stripLoadouts(state);
+	E.applyHeroMods(GS.state, 1, { life: bossHP, maxLife: bossHP });
+	if (runHP != null) E.applyHeroMods(GS.state, GS.HUMAN, { life: runHP, maxLife: runHP });
+	E.resetDeckAndHand(GS.state, 1, boss.deck);
+	E.drawCards(GS.state, 1, 4);
+	E.addCoin(GS.state, 1);   // the boss goes second: re-deal its opening Coin (resetDeckAndHand wiped createGame's)
+	if (boss.passive === 'battlecries-twice' || boss.passive === 'both-twice') E.applyHeroMods(GS.state, 1, { battlecriesTwice: true });
+	if (boss.passive === 'deathrattles-twice' || boss.passive === 'both-twice') E.applyHeroMods(GS.state, 1, { deathrattlesTwice: true });
+	E.stripLoadouts(GS.state);
 	applyRunAnomaly(anomalyId);
 	setRunLife(level, { full: true });
 	applyTreasures(passives || []);
@@ -7355,16 +7356,16 @@ function bootEncounter(cardsById, bossId, clsId, deckIds, passives, level, anoma
 
 // run passives, applied at the start of every fight
 function applyTreasures(ids) {
-	const p = state.players[HUMAN]; // read-only here — writes go through E.* setup APIs
-	const emblem = (id, fields) => E.grantEmblem(state, HUMAN, {
+	const p = GS.state.players[GS.HUMAN]; // read-only here — writes go through E.* setup APIs
+	const emblem = (id, fields) => E.grantEmblem(GS.state, GS.HUMAN, {
 		id, name: Dungeon.TREASURES[id].name,
 		description: Dungeon.TREASURES[id].text, ...fields,
 	});
 	for (const t of ids) {
 		switch (t) {
-			case 'potion_of_vitality': E.applyHeroMods(state, HUMAN, { life: p.life * 2, maxLife: p.life * 2 }); break;
-			case 'crystal_gem': E.addManaCrystal(state, HUMAN); break;
-			case 'small_backpacks': E.drawCards(state, HUMAN, 2); break;
+			case 'potion_of_vitality': E.applyHeroMods(GS.state, GS.HUMAN, { life: p.life * 2, maxLife: p.life * 2 }); break;
+			case 'crystal_gem': E.addManaCrystal(GS.state, GS.HUMAN); break;
+			case 'small_backpacks': E.drawCards(GS.state, GS.HUMAN, 2); break;
 			case 'captured_flag': emblem(t, { aura: { attack: 1, health: 1 } }); break;
 			case 'khadgars_scrying_orb': emblem(t, { costMod: { cardType: 'spell', amount: -1, scope: 'own' } }); break;
 			case 'grommashs_armguards': emblem(t, { costMod: { cardType: 'weapon', amount: -99, floor: 1, scope: 'own' } }); break;
@@ -7373,18 +7374,18 @@ function applyTreasures(ids) {
 			case 'glyph_of_warding': emblem(t, { costMod: { cardType: 'creature', amount: 1, scope: 'enemies' } }); break;
 			case 'cloak_of_invisibility': emblem(t, { aura: { keywords: ['stealth'] } }); break;
 			case 'mysterious_tome': {
-				const secrets = Object.values(state.cardsById).filter(d => d.secret && !d.token);
+				const secrets = Object.values(GS.state.cardsById).filter(d => d.secret && !d.token);
 				for (let i = 0; i < 3 && secrets.length; i++) {
 					const d = secrets.splice(Math.floor(Math.random() * secrets.length), 1)[0];
-					E.installSecret(state, HUMAN, d.id);
+					E.installSecret(GS.state, GS.HUMAN, d.id);
 				}
 				break;
 			}
-			case 'totem_of_the_dead': E.applyHeroMods(state, HUMAN, { deathrattlesTwice: true }); break;
-			case 'battle_totem': E.applyHeroMods(state, HUMAN, { battlecriesTwice: true }); break;
+			case 'totem_of_the_dead': E.applyHeroMods(GS.state, GS.HUMAN, { deathrattlesTwice: true }); break;
+			case 'battle_totem': E.applyHeroMods(GS.state, GS.HUMAN, { battlecriesTwice: true }); break;
 			// caps every hero-power slot; at dungeon boot the human's only slot IS
 			// the class power the old classPowerOf() targeted
-			case 'justicars_ring': E.capHeroPowerCost(state, HUMAN, 1); break;
+			case 'justicars_ring': E.capHeroPowerCost(GS.state, GS.HUMAN, 1); break;
 		}
 	}
 }
@@ -7395,8 +7396,8 @@ function applyTreasures(ids) {
 // and (in a 2-player game) a You-vs-opponent table. Damage-to-hero is credited
 // to the other seat, so "damage to enemy hero" reads from the opponent's taken.
 function appendMatchSummary(el) {
-	if (!matchStats || !state || !state.players) return;
-	const ms = matchStats, pc = state.players.length;
+	if (!matchStats || !GS.state || !GS.state.players) return;
+	const ms = matchStats, pc = GS.state.players.length;
 	// the guest renders from the host's published stats (durS baked in); the host
 	// has a live `start` timestamp to measure against
 	const durS = ms.durS != null ? ms.durS : Math.max(1, Math.round((performance.now() - ms.start) / 1000));
@@ -7404,9 +7405,9 @@ function appendMatchSummary(el) {
 	const box = document.createElement('div');
 	box.style.cssText = 'margin:2px 0 14px;min-width:280px;max-width:520px;width:100%;font-size:14px;';
 	if (pc === 2) {
-		const opp = 1 - HUMAN;
-		const life = p => Math.max(0, state.players[p]?.life ?? 0);
-		const my = k => ms[k][HUMAN] || 0, op = k => ms[k][opp] || 0;
+		const opp = 1 - GS.HUMAN;
+		const life = p => Math.max(0, GS.state.players[p]?.life ?? 0);
+		const my = k => ms[k][GS.HUMAN] || 0, op = k => ms[k][opp] || 0;
 		const row = (lbl, a, b) => {
 			const hiA = a > b ? 'color:#ffd25f;' : '', hiB = b > a ? 'color:#ffd25f;' : '';
 			return `<tr><td style="text-align:left;padding:5px 10px;opacity:.85">${lbl}</td>`
@@ -7420,23 +7421,23 @@ function appendMatchSummary(el) {
 			+ `<td style="text-align:right;padding:4px 10px">${esc2(nameOf(opp))}</td></tr>`
 			+ row('Cards played', my('cards'), op('cards'))
 			+ row('Creatures summoned', my('summons'), op('summons'))
-			+ row('Damage to enemy hero', ms.heroDmgTaken[opp] || 0, ms.heroDmgTaken[HUMAN] || 0)
-			+ row('Life remaining', life(HUMAN), life(opp))
+			+ row('Damage to enemy hero', ms.heroDmgTaken[opp] || 0, ms.heroDmgTaken[GS.HUMAN] || 0)
+			+ row('Life remaining', life(GS.HUMAN), life(opp))
 			+ `</table>`;
 	} else {
 		// FFA (3–8 players): a standings table — 1st = the survivor, then the rest in
 		// REVERSE elimination order (the last player knocked out places higher)
 		const elim = ms.elim || [];
 		const order = [];
-		if (state.winner != null) order.push(state.winner);
+		if (GS.state.winner != null) order.push(GS.state.winner);
 		for (let i = elim.length - 1; i >= 0; i--) if (!order.includes(elim[i].seat)) order.push(elim[i].seat);
 		for (let s = 0; s < pc; s++) if (!order.includes(s)) order.push(s); // safety: place anyone left (draw / missing data)
 		const ordinal = n => { const t = n % 100, o = n % 10; return n + (t >= 11 && t <= 13 ? 'th' : o === 1 ? 'st' : o === 2 ? 'nd' : o === 3 ? 'rd' : 'th'); };
 		const elimTurn = seat => { const e = elim.find(x => x.seat === seat); return e ? e.turn : null; };
 		const rows = order.map((seat, i) => {
-			const you = seat === HUMAN;
+			const you = seat === GS.HUMAN;
 			const t = elimTurn(seat);
-			const result = seat === state.winner ? 'Survived' : (t ? `KO’d · turn ${t}` : 'Eliminated');
+			const result = seat === GS.state.winner ? 'Survived' : (t ? `KO’d · turn ${t}` : 'Eliminated');
 			return `<tr style="${you ? 'background:rgba(143,111,255,.15);' : ''}">`
 				+ `<td style="text-align:center;padding:5px 8px;font-weight:800;${i === 0 ? 'color:#ffd25f;' : ''}">${ordinal(i + 1)}</td>`
 				+ `<td style="text-align:left;padding:5px 8px;font-weight:700;">${you ? 'You' : esc2(nameOf(seat))}</td>`
@@ -7458,7 +7459,7 @@ function appendMatchSummary(el) {
 function esc2(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
 // full end screen for Quick Match / AI matches: result + stats + next-step buttons
 function showPostGameSummary(winner) {
-	const won = winner === HUMAN, drew = winner == null;
+	const won = winner === GS.HUMAN, drew = winner == null;
 	const el = dungeonOverlay(won ? 'VICTORY!' : drew ? 'DRAW' : 'DEFEAT',
 		drew ? "It's a draw." : won ? 'You won the match!' : `${esc2(nameOf(winner))} wins.`);
 	el.id = 'postgame';
@@ -7480,7 +7481,7 @@ function mountDuelRematch(el) {
 	const cm = duel.config;
 	const seatsArr = duelSeats(cm);
 	const humans = cm.humans || seatsArr.filter(s => s.name).map(s => s.name);
-	const me = (seatsArr[HUMAN] && seatsArr[HUMAN].name) || (HUMAN === 0 ? cm.host : cm.guest);
+	const me = (seatsArr[GS.HUMAN] && seatsArr[GS.HUMAN].name) || (GS.HUMAN === 0 ? cm.host : cm.guest);
 	const ffa = humans.length > 2;
 	const opp = () => humans.find(n => n !== me) || 'your opponent';
 	const btn = overlayButton('Rematch', () => sendOffer());
@@ -7683,7 +7684,7 @@ function mainMenu() {
 // returning mid-run: resolve true to resume the saved run, false to abandon
 function resumeRunOverlay(run) {
 	return new Promise(resolve => {
-		const cls = classRegistry.find(c => c.id === run.classId);
+		const cls = GS.classRegistry.find(c => c.id === run.classId);
 		const el = dungeonOverlay('RUN IN PROGRESS',
 			`You have a level ${run.level} run going as ${cls ? cls.name : run.classId} (${run.deck.length} cards).`);
 		el.appendChild(overlayButton(`Continue level ${run.level}`, () => { hideDungeonOverlay(); resolve(true); }));
@@ -7701,7 +7702,7 @@ async function dungeonStarterDeck(clsId) {
 // a WON run pays out one pack; losses record stats only
 // which run mode is this? (drives the per-mode achievement counters server-side)
 const runModeName = () => multiverseRunMode ? 'multiverse' : finalfantasyRunMode ? 'finalfantasy' : swordcoastRunMode ? 'swordcoast' : middleearthRunMode ? 'middleearth' : lorequestRunMode ? 'lorequest' : arenaRunMode ? 'arena' : duelsRunMode ? 'duels' : tombsRunMode ? 'tombs'
-	: heistRunMode ? 'heist' : (dungeonRunMode || dungeonBossId) ? 'dungeon' : 'other';
+	: heistRunMode ? 'heist' : (dungeonRunMode || GS.dungeonBossId) ? 'dungeon' : 'other';
 // Anomaly of the Week: one shared weekly rule twist, rotating deterministically
 // through Heist's ANOMALIES — the same for everyone all week. Strictly OPT-IN:
 // every run mode offers it at run start (Heist and Duels keep their own full
@@ -7741,8 +7742,8 @@ function runLifeFor(round) { return 10 + 5 * (round - 1); }
 function setRunLife(round, opts = {}) {
 	if (!round || round < 1) return;
 	const life = runLifeFor(round);
-	state.players.forEach((p, i) => {
-		p.life = life + (i === HUMAN ? (opts.humanBonus || 0) : 0);
+	GS.state.players.forEach((p, i) => {
+		p.life = life + (i === GS.HUMAN ? (opts.humanBonus || 0) : 0);
 		p.maxLife = p.life;
 	});
 	log(`❤️ Round ${round}: both sides start at ${life} life.`);
@@ -7750,7 +7751,7 @@ function setRunLife(round, opts = {}) {
 
 function applyRunAnomaly(id) {
 	const a = id && Heist.ANOMALIES[id];
-	if (!a || !Heist.applyAnomaly(state, id)) return;
+	if (!a || !Heist.applyAnomaly(GS.state, id)) return;
 	log(`🌀 Anomaly: ${a.name} — ${a.text}`);
 }
 
@@ -7792,7 +7793,7 @@ function pickClassOverlay() {
 		const row = document.createElement('div');
 		row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;max-width:720px;';
 		for (const clsId of Object.keys(Dungeon.STARTER_DECKS)) {
-			const cls = classRegistry.find(c => c.id === clsId);
+			const cls = GS.classRegistry.find(c => c.id === clsId);
 			row.appendChild(overlayButton(cls ? cls.name : clsId, () => {
 				hideDungeonOverlay();
 				resolve(clsId);
@@ -7935,7 +7936,7 @@ function pickHeroOverlay() {
 		const row = document.createElement('div');
 		row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:12px;max-width:820px;';
 		for (const h of Heist.HEROES) {
-			const cls = classRegistry.find(c => c.id === h.heroClass);
+			const cls = GS.classRegistry.find(c => c.id === h.heroClass);
 			const box = document.createElement('div');
 			box.style.cssText = 'background:#1c1830;border:1px solid #4a4066;border-radius:10px;padding:12px;max-width:180px;';
 			box.innerHTML = `<div style="font-weight:bold;">${h.name}</div>`
@@ -7954,7 +7955,7 @@ function pickPowerOverlay(hero) {
 		const el = dungeonOverlay('CHOOSE YOUR HERO POWER', `${hero.name} has three tricks available.`);
 		const row = document.createElement('div');
 		row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:14px;';
-		const cls = classRegistry.find(c => c.id === hero.heroClass);
+		const cls = GS.classRegistry.find(c => c.id === hero.heroClass);
 		const options = [];
 		if (cls?.power) options.push({ id: null, name: cls.power.name, cost: cls.power.cost, text: cls.power.text });
 		for (const d of heistAltPowers(hero.heroClass)) options.push({ id: d.id, name: d.name, cost: d.power.cost, text: d.description.replace(/^Hero Power \(\d+\): /, '') });
@@ -8013,32 +8014,32 @@ function bootHeistEncounter(cardsById, run) {
 	heistCardsById = cardsById;
 	const hero = Heist.HEROES.find(h => h.id === run.heroId);
 	const boss = Heist.BOSSES[run.bossId];
-	heistBossName = boss.name;
-	const clsPick = classRegistry.find(c => c.id === hero.heroClass)
+	GS.heistBossName = boss.name;
+	const clsPick = GS.classRegistry.find(c => c.id === hero.heroClass)
 		|| { id: hero.heroClass, name: hero.name, power: null };
 	const bossPick = { id: run.bossId, name: boss.name, power: boss.power };
 	const picks = [clsPick, bossPick];
-	state = E.createGame(cardsById, seededGame(), [...run.deck], 2, picks); // seeded -> snapshot-able for resume
-	state.classPicks = picks;
+	GS.state = E.createGame(cardsById, seededGame(), [...run.deck], 2, picks); // seeded -> snapshot-able for resume
+	GS.state.classPicks = picks;
 	// chosen alternate hero power replaces the class slot
 	if (run.powerId && cardsById[run.powerId]) {
-		const pw = E.instantiate(cardsById[run.powerId], HUMAN);
+		const pw = E.instantiate(cardsById[run.powerId], GS.HUMAN);
 		pw.zone = 'heropower'; pw.usedThisTurn = false;
-		state.players[HUMAN].heroPowers = [pw];
+		GS.state.players[GS.HUMAN].heroPowers = [pw];
 	}
 	// boss surgery: themed deck, boss HP; the player's life scales with depth
 	// (+5 per Good Food tavern boon banked this run)
-	const bp = state.players[1];
+	const bp = GS.state.players[1];
 	const runHP = runLifeFor(run.level) + (run.bonusHealth || 0);
-	E.applyHeroMods(state, 1, { life: boss.health, maxLife: boss.health });
-	E.applyHeroMods(state, HUMAN, { life: runHP, maxLife: runHP });
-	E.resetDeckAndHand(state, 1, Heist.buildBossDeck(cardsById, boss.theme));
-	E.drawCards(state, 1, 4);
-	E.addCoin(state, 1);   // the boss goes second: re-deal its opening Coin (resetDeckAndHand wiped createGame's)
-	E.stripLoadouts(state);
-	for (const id of run.passives) Heist.applyPassive(state, HUMAN, id);
-	Heist.applyRunMods(state, HUMAN, run); // tavern deck edits (buffs, opening hand)
-	if (run.anomaly && Heist.ANOMALIES[run.anomaly]) { Heist.applyAnomaly(state, run.anomaly); log(`Anomaly — ${Heist.ANOMALIES[run.anomaly].name}: ${Heist.ANOMALIES[run.anomaly].text}`); }
+	E.applyHeroMods(GS.state, 1, { life: boss.health, maxLife: boss.health });
+	E.applyHeroMods(GS.state, GS.HUMAN, { life: runHP, maxLife: runHP });
+	E.resetDeckAndHand(GS.state, 1, Heist.buildBossDeck(cardsById, boss.theme));
+	E.drawCards(GS.state, 1, 4);
+	E.addCoin(GS.state, 1);   // the boss goes second: re-deal its opening Coin (resetDeckAndHand wiped createGame's)
+	E.stripLoadouts(GS.state);
+	for (const id of run.passives) Heist.applyPassive(GS.state, GS.HUMAN, id);
+	Heist.applyRunMods(GS.state, GS.HUMAN, run); // tavern deck edits (buffs, opening hand)
+	if (run.anomaly && Heist.ANOMALIES[run.anomaly]) { Heist.applyAnomaly(GS.state, run.anomaly); log(`Anomaly — ${Heist.ANOMALIES[run.anomaly].name}: ${Heist.ANOMALIES[run.anomaly].text}`); }
 	setRunLife(run.level, { full: true, humanBonus: run.bonusHealth || 0 });
 	log(`Heist fight ${run.level}/8 — ${boss.name} (${bp.life} HP).`);
 	log(`Boss power — ${boss.power.name} (${boss.power.cost}): ${boss.power.text}`);
@@ -8268,7 +8269,7 @@ function pickExplorerOverlay() {
 		const row = document.createElement('div');
 		row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:12px;max-width:820px;';
 		for (const h of Tombs.EXPLORERS) {
-			const cls = classRegistry.find(c => c.id === h.heroClass);
+			const cls = GS.classRegistry.find(c => c.id === h.heroClass);
 			const box = document.createElement('div');
 			box.style.cssText = 'background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:12px;max-width:180px;';
 			box.innerHTML = `<div style="font-weight:bold;">${h.name}</div>`
@@ -8287,7 +8288,7 @@ function pickTombsPowerOverlay(explorer) {
 		const el = dungeonOverlay('CHOOSE YOUR HERO POWER', `${explorer.name} has three tricks available.`);
 		const row = document.createElement('div');
 		row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:14px;';
-		const cls = classRegistry.find(c => c.id === explorer.heroClass);
+		const cls = GS.classRegistry.find(c => c.id === explorer.heroClass);
 		const options = [];
 		if (cls?.power) options.push({ id: null, name: cls.power.name, cost: cls.power.cost, text: cls.power.text });
 		for (const id of Tombs.EXPLORER_POWERS[explorer.heroClass] || []) {
@@ -8322,32 +8323,32 @@ function bootTombsEncounter(cardsById, run) {
 	tombsCardsById = cardsById;
 	const explorer = Tombs.EXPLORERS.find(h => h.id === run.explorerId);
 	const boss = Tombs.BOSSES[run.bossId];
-	heistBossName = boss.name; // shared boss-name slot for nameOf()
-	const clsPick = classRegistry.find(c => c.id === explorer.heroClass)
+	GS.heistBossName = boss.name; // shared boss-name slot for nameOf()
+	const clsPick = GS.classRegistry.find(c => c.id === explorer.heroClass)
 		|| { id: explorer.heroClass, name: explorer.name, power: null };
 	const bossPick = { id: run.bossId, name: boss.name, power: boss.power };
 	const picks = [clsPick, bossPick];
-	state = E.createGame(cardsById, seededGame(), [...run.deck], 2, picks); // seeded -> snapshot-able for resume
-	state.classPicks = picks;
+	GS.state = E.createGame(cardsById, seededGame(), [...run.deck], 2, picks); // seeded -> snapshot-able for resume
+	GS.state.classPicks = picks;
 	// chosen alternate hero power replaces the class slot
 	if (run.powerId && cardsById[run.powerId]) {
-		const pw = E.instantiate(cardsById[run.powerId], HUMAN);
+		const pw = E.instantiate(cardsById[run.powerId], GS.HUMAN);
 		pw.zone = 'heropower'; pw.usedThisTurn = false;
-		state.players[HUMAN].heroPowers = [pw];
+		GS.state.players[GS.HUMAN].heroPowers = [pw];
 	}
 	// boss surgery: themed deck & the boss's designed HP; the player's life
 	// scales with depth (15 at fight 1, +5 per fight)
-	const bp = state.players[1];
+	const bp = GS.state.players[1];
 	const runHP = runLifeFor(run.level);
-	E.applyHeroMods(state, 1, { life: boss.health, maxLife: boss.health });
-	E.applyHeroMods(state, HUMAN, { life: runHP, maxLife: runHP });
-	E.resetDeckAndHand(state, 1, Tombs.buildBossDeck(cardsById, boss.theme));
-	E.drawCards(state, 1, 4);
-	E.addCoin(state, 1);   // the boss goes second: re-deal its opening Coin (resetDeckAndHand wiped createGame's)
-	E.stripLoadouts(state);
+	E.applyHeroMods(GS.state, 1, { life: boss.health, maxLife: boss.health });
+	E.applyHeroMods(GS.state, GS.HUMAN, { life: runHP, maxLife: runHP });
+	E.resetDeckAndHand(GS.state, 1, Tombs.buildBossDeck(cardsById, boss.theme));
+	E.drawCards(GS.state, 1, 4);
+	E.addCoin(GS.state, 1);   // the boss goes second: re-deal its opening Coin (resetDeckAndHand wiped createGame's)
+	E.stripLoadouts(GS.state);
 	applyRunAnomaly(run.anomaly);
 	setRunLife(run.level, { full: true });
-	for (const id of run.passives) Tombs.applyPassive(state, HUMAN, id);
+	for (const id of run.passives) Tombs.applyPassive(GS.state, GS.HUMAN, id);
 	log(`Tombs fight ${run.level}/8 — ${boss.name} (${bp.life} HP).`);
 	log(`Boss power — ${boss.power.name} (${boss.power.cost}): ${boss.power.text}`);
 	log(`You are ${explorer.name} with a ${run.deck.length}-card expedition deck.`);
@@ -8482,7 +8483,7 @@ let duelsCardsById = null; // set at boot so overlays can read card defs pre-sta
 function resumeDuelsOverlay(run) {
 	return new Promise(resolve => {
 		const hero = duelsEffectiveHero(run);
-		const clsLabel = run.classChoice ? ` (${(classRegistry.find(x => x.id === run.classChoice) || {}).name || run.classChoice})` : '';
+		const clsLabel = run.classChoice ? ` (${(GS.classRegistry.find(x => x.id === run.classChoice) || {}).name || run.classChoice})` : '';
 		const anom = run.anomaly && Heist.ANOMALIES[run.anomaly] ? ` · Anomaly: ${Heist.ANOMALIES[run.anomaly].name}` : '';
 		const el = dungeonOverlay('DUEL IN PROGRESS',
 			`${hero?.name || run.heroId}${clsLabel} - ${winLossLabel(run)}, ${run.deck.length} cards${anom}. Reach 12 wins before 3 losses.`);
@@ -8507,7 +8508,7 @@ function pickDuelsClassOverlay(hero) {
 		const row = document.createElement('div');
 		row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:12px;max-width:720px;';
 		for (const cl of Duels.classChoicesOf(hero)) {
-			const c = classRegistry.find(x => x.id === cl);
+			const c = GS.classRegistry.find(x => x.id === cl);
 			const box = document.createElement('div');
 			box.style.cssText = 'background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:12px;max-width:150px;text-align:center;';
 			box.innerHTML = `<div style="font-weight:bold;margin-bottom:6px;">${(c && c.name) || cl}</div>`;
@@ -8524,7 +8525,7 @@ function pickDuelsHeroOverlay() {
 		const row = document.createElement('div');
 		row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:12px;max-width:840px;';
 		for (const h of Duels.HEROES) {
-			const clsLabel = Duels.classesOf(h).map(c => (classRegistry.find(x => x.id === c)?.name) || c).join(' / ');
+			const clsLabel = Duels.classesOf(h).map(c => (GS.classRegistry.find(x => x.id === c)?.name) || c).join(' / ');
 			const box = document.createElement('div');
 			box.style.cssText = 'background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:12px;max-width:180px;';
 			box.innerHTML = `<div style="font-weight:bold;">${h.name}</div>`
@@ -8553,7 +8554,7 @@ function pickDuelsPowerOverlay(hero) {
 				if (d && d.power && !powSeen.has(id)) { powSeen.add(id); options.push({ id, name: d.name, cost: d.power.cost, text: (d.description || '').replace(/^Hero Power \(\d+\): /, '') }); }
 			}
 		} else {
-			const primaryCls = classRegistry.find(c => c.id === heroClasses[0]);
+			const primaryCls = GS.classRegistry.find(c => c.id === heroClasses[0]);
 			if (primaryCls?.power) options.push({ id: null, name: primaryCls.power.name, cost: primaryCls.power.cost, text: primaryCls.power.text });
 			for (const cl of [...heroClasses, 'neutral']) for (const id of Duels.HERO_POWERS[cl] || []) {
 				const d = duelsCardsById[id];
@@ -8616,37 +8617,37 @@ function bootDuelsEncounter(cardsById, run) {
 	duelsCardsById = cardsById;
 	const hero = duelsEffectiveHero(run);
 	const enemy = run.enemy || (run.enemy = genDuelsEnemy(cardsById, (run.wins || 0) + (run.losses || 0)));
-	heistBossName = enemy.name; // shared enemy-name slot for nameOf()
-	const playerCls = classRegistry.find(c => c.id === hero.heroClass) || { id: hero.heroClass, name: hero.name, power: null };
-	const enemyCls = classRegistry.find(c => c.id === enemy.heroClass) || { id: enemy.heroClass, name: enemy.name, power: null };
+	GS.heistBossName = enemy.name; // shared enemy-name slot for nameOf()
+	const playerCls = GS.classRegistry.find(c => c.id === hero.heroClass) || { id: hero.heroClass, name: hero.name, power: null };
+	const enemyCls = GS.classRegistry.find(c => c.id === enemy.heroClass) || { id: enemy.heroClass, name: enemy.name, power: null };
 	const picks = [playerCls, enemyCls];
-	state = E.createGame(cardsById, seededGame(), Duels.applyImproves(cardsById, [...run.deck], run.wins || 0), 2, picks); // seeded -> snapshot-able for resume; treasures arrive at their earned tier
-	state.classPicks = picks;
-	state.runWins = run.wins || 0; // Loyal Sidekick reads opponents defeated this run
+	GS.state = E.createGame(cardsById, seededGame(), Duels.applyImproves(cardsById, [...run.deck], run.wins || 0), 2, picks); // seeded -> snapshot-able for resume; treasures arrive at their earned tier
+	GS.state.classPicks = picks;
+	GS.state.runWins = run.wins || 0; // Loyal Sidekick reads opponents defeated this run
 	// chosen alternate hero power replaces the class slot
 	if (run.powerId && cardsById[run.powerId]) {
-		const pw = E.instantiate(cardsById[run.powerId], HUMAN);
+		const pw = E.instantiate(cardsById[run.powerId], GS.HUMAN);
 		pw.zone = 'heropower'; pw.usedThisTurn = false;
-		state.players[HUMAN].heroPowers = [pw];
+		GS.state.players[GS.HUMAN].heroPowers = [pw];
 	}
 	// parity: the enemy fires its own hero power too - default class power, or a rolled alt
 	if (enemy.powerId && cardsById[enemy.powerId]) {
 		const epw = E.instantiate(cardsById[enemy.powerId], 1);
 		epw.zone = 'heropower'; epw.usedThisTurn = false;
-		state.players[1].heroPowers = [epw];
+		GS.state.players[1].heroPowers = [epw];
 	}
 	// both sides share the same generated-deck / loot budget - equal footing (no HP scaling)
-	E.resetDeckAndHand(state, 1, Duels.applyImproves(cardsById, [...enemy.deck], run.wins || 0));
-	E.drawCards(state, 1, 4);
-	E.addCoin(state, 1);   // the boss goes second: re-deal its opening Coin (resetDeckAndHand wiped createGame's)
-	E.stripLoadouts(state);
+	E.resetDeckAndHand(GS.state, 1, Duels.applyImproves(cardsById, [...enemy.deck], run.wins || 0));
+	E.drawCards(GS.state, 1, 4);
+	E.addCoin(GS.state, 1);   // the boss goes second: re-deal its opening Coin (resetDeckAndHand wiped createGame's)
+	E.stripLoadouts(GS.state);
 	// Darius Crowley: whichever side he is, the battle opens with his Cannons in place
-	for (const sid of hero.startSummon || []) if (cardsById[sid]) E.execEffects(state, HUMAN, [{ type: 'summon', summonId: sid }], null, null);
-	for (const sid of enemy.startSummon || []) if (cardsById[sid]) E.execEffects(state, 1, [{ type: 'summon', summonId: sid }], null, null);
-	for (const id of run.passives) Duels.applyPassive(state, HUMAN, id);
-	for (const id of enemy.passives || []) Duels.applyPassive(state, 1, id);
+	for (const sid of hero.startSummon || []) if (cardsById[sid]) E.execEffects(GS.state, GS.HUMAN, [{ type: 'summon', summonId: sid }], null, null);
+	for (const sid of enemy.startSummon || []) if (cardsById[sid]) E.execEffects(GS.state, 1, [{ type: 'summon', summonId: sid }], null, null);
+	for (const id of run.passives) Duels.applyPassive(GS.state, GS.HUMAN, id);
+	for (const id of enemy.passives || []) Duels.applyPassive(GS.state, 1, id);
 	// optional run modifier: a symmetric anomaly warps every game (shared with Heist)
-	if (run.anomaly && Heist.ANOMALIES[run.anomaly]) { Heist.applyAnomaly(state, run.anomaly); log(`Anomaly - ${Heist.ANOMALIES[run.anomaly].name}: ${Heist.ANOMALIES[run.anomaly].text}`); }
+	if (run.anomaly && Heist.ANOMALIES[run.anomaly]) { Heist.applyAnomaly(GS.state, run.anomaly); log(`Anomaly - ${Heist.ANOMALIES[run.anomaly].name}: ${Heist.ANOMALIES[run.anomaly].text}`); }
 	setRunLife((run.wins || 0) + (run.losses || 0) + 1);
 	log(`Duels - ${winLossLabel(run)}. Facing ${enemy.name} (${enemyCls.name || enemy.heroClass}).`);
 	log(`You are ${hero.name} with a ${run.deck.length}-card deck; ${enemy.name} drafted ${enemy.deck.length}.`);
@@ -8867,7 +8868,7 @@ async function pickLorequestDeckOverlay(cardsById) {
 		for (const ch of choices) {
 			const cls = Lorequest.classOf(ch);
 			const stk = stats?.chars?.['lorequest|' + ch]?.streak || 0;
-			const clsName = (classRegistry.find(c => c.id === cls)?.name) || cls;
+			const clsName = (GS.classRegistry.find(c => c.id === cls)?.name) || cls;
 			const sig = Object.values(cardsById).find(d => d.loreDeck === ch && d.rarity === 'legendary');
 			const box = document.createElement('div');
 			box.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:6px;background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:12px;max-width:200px;';
@@ -8896,7 +8897,7 @@ function genLorequestEnemy(cardsById, games, wins, avoidId, selfId, faced) {
 // the class def used to seat a Lorequest character — its class power, but displayed under the character's name
 function lorequestSeat(character) {
 	const cls = Lorequest.classOf(character);
-	const def = classRegistry.find(c => c.id === cls) || { id: cls, power: null };
+	const def = GS.classRegistry.find(c => c.id === cls) || { id: cls, power: null };
 	return { ...def, id: cls, name: character };
 }
 
@@ -8904,21 +8905,21 @@ function bootLorequestEncounter(cardsById, run) {
 	lorequestCardsById = cardsById;
 	const games = (run.wins || 0) + (run.losses || 0);
 	const enemy = run.enemy || (run.enemy = genLorequestEnemy(cardsById, games, run.wins || 0, null, run.characterId));
-	heistBossName = enemy.name; // shared enemy-name slot for nameOf()
+	GS.heistBossName = enemy.name; // shared enemy-name slot for nameOf()
 	const picks = [lorequestSeat(run.characterId), lorequestSeat(enemy.name)];
-	state = E.createGame(cardsById, seededGame(), [...run.deck], 2, picks); // seeded -> snapshot-able for resume
-	state.classPicks = picks;
+	GS.state = E.createGame(cardsById, seededGame(), [...run.deck], 2, picks); // seeded -> snapshot-able for resume
+	GS.state.classPicks = picks;
 	// both sides use their class default hero power (seated above) — no HP scaling, equal footing
-	E.resetDeckAndHand(state, 1, [...enemy.deck]);
-	E.drawCards(state, 1, 4);
-	E.addCoin(state, 1);   // the boss goes second: re-deal its opening Coin (resetDeckAndHand wiped createGame's)
-	E.stripLoadouts(state);
+	E.resetDeckAndHand(GS.state, 1, [...enemy.deck]);
+	E.drawCards(GS.state, 1, 4);
+	E.addCoin(GS.state, 1);   // the boss goes second: re-deal its opening Coin (resetDeckAndHand wiped createGame's)
+	E.stripLoadouts(GS.state);
 	applyRunAnomaly(run.anomaly);
 	setRunLife((run.wins || 0) + (run.losses || 0) + 1);
 	// basics are color-locked to each character's identity (Karn -> Wastes only,
 	// Chandra -> Mountain + Wastes) — applies to you AND the AI enemy
-	state.players[0].allowedBasics = Lorequest.allowedBasics(cardsById, run.characterId);
-	state.players[1].allowedBasics = Lorequest.allowedBasics(cardsById, enemy.name);
+	GS.state.players[0].allowedBasics = Lorequest.allowedBasics(cardsById, run.characterId);
+	GS.state.players[1].allowedBasics = Lorequest.allowedBasics(cardsById, enemy.name);
 	const tier = games < Lorequest.PW_BATTLES ? 'Planeswalker' : 'Boss';
 	log(`Lorequest - ${winLossLabel(run)}. Facing ${enemy.name} (${tier}).`);
 	log(`You are ${run.characterId} with a ${run.deck.length}-card deck; ${enemy.name} fields ${enemy.deck.length}.`);
@@ -9069,7 +9070,7 @@ async function pickMiddleEarthHeroOverlay(cardsById) {
 		for (const ch of heroes) {
 			const cls = Middleearth.classOf(ch);
 			const stk = stats?.chars?.['middleearth|' + ch]?.streak || 0;
-			const clsName = (classRegistry.find(c => c.id === cls)?.name) || cls;
+			const clsName = (GS.classRegistry.find(c => c.id === cls)?.name) || cls;
 			const sig = Object.values(cardsById).find(d => d.meDeck === ch && d.rarity === 'legendary');
 			const pw = Middleearth.powerOf(ch);
 			const box = document.createElement('div');
@@ -9101,26 +9102,26 @@ function genMiddleEarthEnemy(cardsById, wins, avoidId, faced) {
 // seat a Middle-earth character: its class (for buckets/color) but its OWN unique hero power
 function middleEarthSeat(character) {
 	const cls = Middleearth.classOf(character);
-	const def = classRegistry.find(c => c.id === cls) || { id: cls, power: null };
+	const def = GS.classRegistry.find(c => c.id === cls) || { id: cls, power: null };
 	return { ...def, id: cls, name: character, power: Middleearth.powerOf(character) };
 }
 
 function bootMiddleEarthEncounter(cardsById, run) {
 	middleearthCardsById = cardsById;
 	const enemy = run.enemy || (run.enemy = genMiddleEarthEnemy(cardsById, run.wins || 0, null));
-	heistBossName = enemy.name; // shared enemy-name slot for nameOf()
+	GS.heistBossName = enemy.name; // shared enemy-name slot for nameOf()
 	const picks = [middleEarthSeat(run.characterId), middleEarthSeat(enemy.name)];
-	state = E.createGame(cardsById, seededGame(), [...run.deck], 2, picks); // seeded -> snapshot-able for resume
-	state.classPicks = picks;
-	E.resetDeckAndHand(state, 1, [...enemy.deck]);
-	E.drawCards(state, 1, 4);
-	E.addCoin(state, 1);   // the boss goes second: re-deal its opening Coin (resetDeckAndHand wiped createGame's)
-	E.stripLoadouts(state);
+	GS.state = E.createGame(cardsById, seededGame(), [...run.deck], 2, picks); // seeded -> snapshot-able for resume
+	GS.state.classPicks = picks;
+	E.resetDeckAndHand(GS.state, 1, [...enemy.deck]);
+	E.drawCards(GS.state, 1, 4);
+	E.addCoin(GS.state, 1);   // the boss goes second: re-deal its opening Coin (resetDeckAndHand wiped createGame's)
+	E.stripLoadouts(GS.state);
 	applyRunAnomaly(run.anomaly);
 	setRunLife((run.wins || 0) + (run.losses || 0) + 1);
 	// basics are color-locked to each character's identity (see PR #85)
-	state.players[0].allowedBasics = Duels.allowedBasicsFor(cardsById, 'meDeck', run.characterId);
-	state.players[1].allowedBasics = Duels.allowedBasicsFor(cardsById, 'meDeck', enemy.name);
+	GS.state.players[0].allowedBasics = Duels.allowedBasicsFor(cardsById, 'meDeck', run.characterId);
+	GS.state.players[1].allowedBasics = Duels.allowedBasicsFor(cardsById, 'meDeck', enemy.name);
 	log(`Lorequest: Middle-earth - ${winLossLabel(run)}. Facing ${enemy.name} (${Middleearth.rungLabel(run.wins || 0)}).`);
 	log(`You are ${run.characterId} with a ${run.deck.length}-card deck; ${enemy.name} fields ${enemy.deck.length}.`);
 }
@@ -9257,7 +9258,7 @@ async function pickSwordCoastHeroOverlay(cardsById) {
 		for (const ch of heroes) {
 			const cls = Swordcoast.classOf(ch);
 			const stk = stats?.chars?.['swordcoast|' + ch]?.streak || 0;
-			const clsName = (classRegistry.find(c => c.id === cls)?.name) || cls;
+			const clsName = (GS.classRegistry.find(c => c.id === cls)?.name) || cls;
 			const sig = Object.values(cardsById).find(d => d.scDeck === ch && d.rarity === 'legendary');
 			const pw = Swordcoast.powerOf(ch);
 			const box = document.createElement('div');
@@ -9289,26 +9290,26 @@ function genSwordCoastEnemy(cardsById, wins, avoidId, faced) {
 // seat a Sword Coast character: its class (for buckets/color) but its OWN unique hero power
 function swordCoastSeat(character) {
 	const cls = Swordcoast.classOf(character);
-	const def = classRegistry.find(c => c.id === cls) || { id: cls, power: null };
+	const def = GS.classRegistry.find(c => c.id === cls) || { id: cls, power: null };
 	return { ...def, id: cls, name: character, power: Swordcoast.powerOf(character) };
 }
 
 function bootSwordCoastEncounter(cardsById, run) {
 	swordcoastCardsById = cardsById;
 	const enemy = run.enemy || (run.enemy = genSwordCoastEnemy(cardsById, run.wins || 0, null));
-	heistBossName = enemy.name; // shared enemy-name slot for nameOf()
+	GS.heistBossName = enemy.name; // shared enemy-name slot for nameOf()
 	const picks = [swordCoastSeat(run.characterId), swordCoastSeat(enemy.name)];
-	state = E.createGame(cardsById, seededGame(), [...run.deck], 2, picks); // seeded -> snapshot-able for resume
-	state.classPicks = picks;
-	E.resetDeckAndHand(state, 1, [...enemy.deck]);
-	E.drawCards(state, 1, 4);
-	E.addCoin(state, 1);   // the boss goes second: re-deal its opening Coin (resetDeckAndHand wiped createGame's)
-	E.stripLoadouts(state);
+	GS.state = E.createGame(cardsById, seededGame(), [...run.deck], 2, picks); // seeded -> snapshot-able for resume
+	GS.state.classPicks = picks;
+	E.resetDeckAndHand(GS.state, 1, [...enemy.deck]);
+	E.drawCards(GS.state, 1, 4);
+	E.addCoin(GS.state, 1);   // the boss goes second: re-deal its opening Coin (resetDeckAndHand wiped createGame's)
+	E.stripLoadouts(GS.state);
 	applyRunAnomaly(run.anomaly);
 	setRunLife((run.wins || 0) + (run.losses || 0) + 1);
 	// basics are color-locked to each character's identity (see PR #85)
-	state.players[0].allowedBasics = Duels.allowedBasicsFor(cardsById, 'scDeck', run.characterId);
-	state.players[1].allowedBasics = Duels.allowedBasicsFor(cardsById, 'scDeck', enemy.name);
+	GS.state.players[0].allowedBasics = Duels.allowedBasicsFor(cardsById, 'scDeck', run.characterId);
+	GS.state.players[1].allowedBasics = Duels.allowedBasicsFor(cardsById, 'scDeck', enemy.name);
 	log(`Lorequest: Sword Coast - ${winLossLabel(run)}. Facing ${enemy.name} (${Swordcoast.rungLabel(run.wins || 0)}).`);
 	log(`You are ${run.characterId} with a ${run.deck.length}-card deck; ${enemy.name} fields ${enemy.deck.length}.`);
 }
@@ -9445,7 +9446,7 @@ async function pickFinalFantasyHeroOverlay(cardsById) {
 		for (const ch of heroes) {
 			const cls = Finalfantasy.classOf(ch);
 			const stk = stats?.chars?.['finalfantasy|' + ch]?.streak || 0;
-			const clsName = (classRegistry.find(c => c.id === cls)?.name) || cls;
+			const clsName = (GS.classRegistry.find(c => c.id === cls)?.name) || cls;
 			const sig = Object.values(cardsById).find(d => d.ffDeck === ch && d.rarity === 'legendary');
 			const pw = Finalfantasy.powerOf(ch);
 			const box = document.createElement('div');
@@ -9475,26 +9476,26 @@ function genFinalFantasyEnemy(cardsById, wins, avoidId, faced) {
 
 function finalFantasySeat(character) {
 	const cls = Finalfantasy.classOf(character);
-	const def = classRegistry.find(c => c.id === cls) || { id: cls, power: null };
+	const def = GS.classRegistry.find(c => c.id === cls) || { id: cls, power: null };
 	return { ...def, id: cls, name: character, power: Finalfantasy.powerOf(character) };
 }
 
 function bootFinalFantasyEncounter(cardsById, run) {
 	finalfantasyCardsById = cardsById;
 	const enemy = run.enemy || (run.enemy = genFinalFantasyEnemy(cardsById, run.wins || 0, null));
-	heistBossName = enemy.name; // shared enemy-name slot for nameOf()
+	GS.heistBossName = enemy.name; // shared enemy-name slot for nameOf()
 	const picks = [finalFantasySeat(run.characterId), finalFantasySeat(enemy.name)];
-	state = E.createGame(cardsById, seededGame(), [...run.deck], 2, picks); // seeded -> snapshot-able for resume
-	state.classPicks = picks;
-	E.resetDeckAndHand(state, 1, [...enemy.deck]);
-	E.drawCards(state, 1, 4);
-	E.addCoin(state, 1);   // the boss goes second: re-deal its opening Coin (resetDeckAndHand wiped createGame's)
-	E.stripLoadouts(state);
+	GS.state = E.createGame(cardsById, seededGame(), [...run.deck], 2, picks); // seeded -> snapshot-able for resume
+	GS.state.classPicks = picks;
+	E.resetDeckAndHand(GS.state, 1, [...enemy.deck]);
+	E.drawCards(GS.state, 1, 4);
+	E.addCoin(GS.state, 1);   // the boss goes second: re-deal its opening Coin (resetDeckAndHand wiped createGame's)
+	E.stripLoadouts(GS.state);
 	applyRunAnomaly(run.anomaly);
 	setRunLife((run.wins || 0) + (run.losses || 0) + 1);
 	// basics are color-locked to each character's identity (see PR #85)
-	state.players[0].allowedBasics = Duels.allowedBasicsFor(cardsById, 'ffDeck', run.characterId);
-	state.players[1].allowedBasics = Duels.allowedBasicsFor(cardsById, 'ffDeck', enemy.name);
+	GS.state.players[0].allowedBasics = Duels.allowedBasicsFor(cardsById, 'ffDeck', run.characterId);
+	GS.state.players[1].allowedBasics = Duels.allowedBasicsFor(cardsById, 'ffDeck', enemy.name);
 	log(`Lorequest: Final Fantasy - ${winLossLabel(run)}. Facing ${enemy.name} (${Finalfantasy.rungLabel(run.wins || 0)}).`);
 	log(`You are ${run.characterId} with a ${run.deck.length}-card deck; ${enemy.name} fields ${enemy.deck.length}.`);
 }
@@ -9630,7 +9631,7 @@ async function pickMultiverseHeroOverlay(cardsById) {
 		for (const ch of heroes) {
 			const cls = Multiverse.classOf(ch);
 			const stk = stats?.chars?.['multiverse|' + ch]?.streak || 0;
-			const clsName = (classRegistry.find(c => c.id === cls)?.name) || cls;
+			const clsName = (GS.classRegistry.find(c => c.id === cls)?.name) || cls;
 			const sig = Object.values(cardsById).find(d => d.mvDeck === ch && d.rarity === 'legendary');
 			const pw = Multiverse.powerOf(ch);
 			const box = document.createElement('div');
@@ -9662,26 +9663,26 @@ function genMultiverseEnemy(cardsById, wins, avoidId, faced) {
 // seat a Multiverse character: its class (for buckets/color) but its OWN unique hero power
 function multiverseSeat(character) {
 	const cls = Multiverse.classOf(character);
-	const def = classRegistry.find(c => c.id === cls) || { id: cls, power: null };
+	const def = GS.classRegistry.find(c => c.id === cls) || { id: cls, power: null };
 	return { ...def, id: cls, name: character, power: Multiverse.powerOf(character) };
 }
 
 function bootMultiverseEncounter(cardsById, run) {
 	multiverseCardsById = cardsById;
 	const enemy = run.enemy || (run.enemy = genMultiverseEnemy(cardsById, run.wins || 0, null));
-	heistBossName = enemy.name; // shared enemy-name slot for nameOf()
+	GS.heistBossName = enemy.name; // shared enemy-name slot for nameOf()
 	const picks = [multiverseSeat(run.characterId), multiverseSeat(enemy.name)];
-	state = E.createGame(cardsById, seededGame(), [...run.deck], 2, picks); // seeded -> snapshot-able for resume
-	state.classPicks = picks;
-	E.resetDeckAndHand(state, 1, [...enemy.deck]);
-	E.drawCards(state, 1, 4);
-	E.addCoin(state, 1);   // the boss goes second: re-deal its opening Coin (resetDeckAndHand wiped createGame's)
-	E.stripLoadouts(state);
+	GS.state = E.createGame(cardsById, seededGame(), [...run.deck], 2, picks); // seeded -> snapshot-able for resume
+	GS.state.classPicks = picks;
+	E.resetDeckAndHand(GS.state, 1, [...enemy.deck]);
+	E.drawCards(GS.state, 1, 4);
+	E.addCoin(GS.state, 1);   // the boss goes second: re-deal its opening Coin (resetDeckAndHand wiped createGame's)
+	E.stripLoadouts(GS.state);
 	applyRunAnomaly(run.anomaly);
 	setRunLife((run.wins || 0) + (run.losses || 0) + 1);
 	// basics are color-locked to each character's identity (see PR #85)
-	state.players[0].allowedBasics = Duels.allowedBasicsFor(cardsById, 'mvDeck', run.characterId);
-	state.players[1].allowedBasics = Duels.allowedBasicsFor(cardsById, 'mvDeck', enemy.name);
+	GS.state.players[0].allowedBasics = Duels.allowedBasicsFor(cardsById, 'mvDeck', run.characterId);
+	GS.state.players[1].allowedBasics = Duels.allowedBasicsFor(cardsById, 'mvDeck', enemy.name);
 	log(`Lorequest: Multiverse - ${winLossLabel(run)}. Facing ${enemy.name} (${Multiverse.rungLabel(run.wins || 0)}).`);
 	log(`You are ${run.characterId} with a ${run.deck.length}-card deck; ${enemy.name} fields ${enemy.deck.length} at win-parity.`);
 }
@@ -9798,21 +9799,21 @@ function bootArenaEncounter(cardsById, run) {
 	duelsCardsById = cardsById;
 	const hero = duelsEffectiveHero(run);
 	const enemy = run.enemy || (run.enemy = genArenaEnemy(cardsById));
-	heistBossName = enemy.name; // shared enemy-name slot for nameOf()
-	const playerCls = classRegistry.find(c => c.id === hero.heroClass) || { id: hero.heroClass, name: hero.name, power: null };
-	const enemyCls = classRegistry.find(c => c.id === enemy.heroClass) || { id: enemy.heroClass, name: enemy.name, power: null };
+	GS.heistBossName = enemy.name; // shared enemy-name slot for nameOf()
+	const playerCls = GS.classRegistry.find(c => c.id === hero.heroClass) || { id: hero.heroClass, name: hero.name, power: null };
+	const enemyCls = GS.classRegistry.find(c => c.id === enemy.heroClass) || { id: enemy.heroClass, name: enemy.name, power: null };
 	const picks = [playerCls, enemyCls];
-	state = E.createGame(cardsById, seededGame(), [...run.deck], 2, picks); // seeded -> snapshot-able for resume
-	state.classPicks = picks;
-	state.runWins = run.wins || 0; // Loyal Sidekick reads opponents defeated this run
-	if (run.powerId && cardsById[run.powerId]) { const pw = E.instantiate(cardsById[run.powerId], HUMAN); pw.zone = 'heropower'; pw.usedThisTurn = false; state.players[HUMAN].heroPowers = [pw]; }
-	if (enemy.powerId && cardsById[enemy.powerId]) { const epw = E.instantiate(cardsById[enemy.powerId], 1); epw.zone = 'heropower'; epw.usedThisTurn = false; state.players[1].heroPowers = [epw]; }
-	E.resetDeckAndHand(state, 1, [...enemy.deck]);
-	E.drawCards(state, 1, 4);
-	E.addCoin(state, 1);   // the boss goes second: re-deal its opening Coin (resetDeckAndHand wiped createGame's)
-	E.stripLoadouts(state);
-	for (const sid of hero.startSummon || []) if (cardsById[sid]) E.execEffects(state, HUMAN, [{ type: 'summon', summonId: sid }], null, null);
-	for (const sid of enemy.startSummon || []) if (cardsById[sid]) E.execEffects(state, 1, [{ type: 'summon', summonId: sid }], null, null);
+	GS.state = E.createGame(cardsById, seededGame(), [...run.deck], 2, picks); // seeded -> snapshot-able for resume
+	GS.state.classPicks = picks;
+	GS.state.runWins = run.wins || 0; // Loyal Sidekick reads opponents defeated this run
+	if (run.powerId && cardsById[run.powerId]) { const pw = E.instantiate(cardsById[run.powerId], GS.HUMAN); pw.zone = 'heropower'; pw.usedThisTurn = false; GS.state.players[GS.HUMAN].heroPowers = [pw]; }
+	if (enemy.powerId && cardsById[enemy.powerId]) { const epw = E.instantiate(cardsById[enemy.powerId], 1); epw.zone = 'heropower'; epw.usedThisTurn = false; GS.state.players[1].heroPowers = [epw]; }
+	E.resetDeckAndHand(GS.state, 1, [...enemy.deck]);
+	E.drawCards(GS.state, 1, 4);
+	E.addCoin(GS.state, 1);   // the boss goes second: re-deal its opening Coin (resetDeckAndHand wiped createGame's)
+	E.stripLoadouts(GS.state);
+	for (const sid of hero.startSummon || []) if (cardsById[sid]) E.execEffects(GS.state, GS.HUMAN, [{ type: 'summon', summonId: sid }], null, null);
+	for (const sid of enemy.startSummon || []) if (cardsById[sid]) E.execEffects(GS.state, 1, [{ type: 'summon', summonId: sid }], null, null);
 	applyRunAnomaly(run.anomaly);
 	setRunLife((run.wins || 0) + (run.losses || 0) + 1);
 	log(`Arena - ${winLossLabel(run)}. Facing ${enemy.name} (${enemyCls.name || enemy.heroClass}).`);
@@ -9926,17 +9927,17 @@ let replayTimer = null, replaySpeed = 1, replayPanelsFor = 0, lastReplayId = nul
 function deriveReplayMeta() {
 	const mode = dungeonRunMode ? 'dungeon' : heistRunMode ? 'heist' : tombsRunMode ? 'tombs'
 		: duelsRunMode ? 'duels' : arenaRunMode ? 'arena' : lorequestRunMode ? 'lorequest' : middleearthRunMode ? 'middleearth' : swordcoastRunMode ? 'swordcoast' : finalfantasyRunMode ? 'finalfantasy' : multiverseRunMode ? 'multiverse' : duel.on ? 'multiplayer' : aiMatchId ? 'ai' : 'solo';
-	const heroes = (state && state.players || []).map((p, i) => ({
-		classId: (state.classPicks && state.classPicks[i] && state.classPicks[i].id) || p.heroClass || null,
+	const heroes = (GS.state && GS.state.players || []).map((p, i) => ({
+		classId: (GS.state.classPicks && GS.state.classPicks[i] && GS.state.classPicks[i].id) || p.heroClass || null,
 		name: nameOf(i),
 	}));
-	return { mode, players: (state && state.players || []).length, heroes };
+	return { mode, players: (GS.state && GS.state.players || []).length, heroes };
 }
 // called from the settled-render tail — captures one frame per stable board state
 function maybeRecordFrame() {
-	if (replayMode || spectateMode || !state || !Array.isArray(state.players)) return;
+	if (replayMode || spectateMode || !GS.state || !Array.isArray(GS.state.players)) return;
 	if (!Rec.isRecording()) Rec.startRecording(deriveReplayMeta());
-	Rec.capture(state, (logHistory[logHistory.length - 1] || '').replace(/^[—\-\s]+|[—\-\s]+$/g, '').trim(), pendingFx.splice(0));
+	Rec.capture(GS.state, (logHistory[logHistory.length - 1] || '').replace(/^[—\-\s]+|[—\-\s]+$/g, '').trim(), pendingFx.splice(0));
 	saveRunSnapshot(); // persist the live fight into the active run so resume restores this exact board
 	saveAsyncSnapshot(); // and the async mid-turn so a correspondence match resumes exactly too
 }
@@ -9944,7 +9945,7 @@ function finalizeReplay(winner, resultOverride) {
 	if (replayMode || spectateMode || !Rec.isRecording()) return;
 	maybeRecordFrame(); // capture the final board
 	// resultOverride lets a conceder record a 'loss' before the eventual winner is known
-	const result = resultOverride || (winner == null ? 'draw' : winner === HUMAN ? 'win' : 'loss');
+	const result = resultOverride || (winner == null ? 'draw' : winner === GS.HUMAN ? 'win' : 'loss');
 	// keep the promise so the post-game buttons can await the saved id (the overlay
 	// is built synchronously in the same gameOver tick, before finish() resolves)
 	lastReplayPromise = Rec.finish({ winner: winner == null ? null : winner, result }).then(id => { lastReplayId = id; return id; }).catch(() => null);
@@ -10114,18 +10115,18 @@ async function startReplay(cardsById) {
 }
 function renderReplayFrame(i) {
 	if (!replayTape) return;
-	telegraphs.length = 0; // a rendered frame consumes its telegraph beat (and scrubbing clears strays)
+	GS.telegraphs.length = 0; // a rendered frame consumes its telegraph beat (and scrubbing clears strays)
 	replayTeleShown = false;
 	const frames = replayTape.frames;
 	replayIdx = Math.max(0, Math.min(frames.length - 1, i));
 	const f = frames[replayIdx];
-	HUMAN = Math.min(replayView, ((f.snap.players && f.snap.players.length) || 1) - 1);
-	state = E.fromSnapshot(f.snap, replayCards);
+	GS.HUMAN = Math.min(replayView, ((f.snap.players && f.snap.players.length) || 1) - 1);
+	GS.state = E.fromSnapshot(f.snap, replayCards);
 	E.ensureUidsAbove(E.maxSnapshotUid(f.snap)); // process-global uid safety
-	if (state.players.length !== replayPanelsFor) {
-		playerCount = state.players.length;
+	if (GS.state.players.length !== replayPanelsFor) {
+		GS.playerCount = GS.state.players.length;
 		frameCamera(); buildPanels(); buildSlotMarkers();
-		replayPanelsFor = state.players.length;
+		replayPanelsFor = GS.state.players.length;
 	}
 	updateHud();
 	updateReplayBar();
@@ -10143,7 +10144,7 @@ function syncReplayLog() {
 		if (cap && cap !== prev) { logHistory.push(cap); logLinks.push([]); }
 		prev = cap;
 	}
-	if (state && state.over) { logHistory.push(watchResultLine()); logLinks.push([]); }
+	if (GS.state && GS.state.over) { logHistory.push(watchResultLine()); logLinks.push([]); }
 	if (logFull && logFull.classList.contains('open')) renderLogFull();
 }
 function replayGoto(i) { replayPause(); renderReplayFrame(i); }
@@ -10175,7 +10176,7 @@ function replayPlay() {
 				// play / power / tap / walker ability (hero fallback if the card left)
 				const from = f.a != null ? { uid: f.a } : f.h != null ? { hero: f.h } : { uid: f.c, hero: f.p };
 				const to = f.t.type === 'hero' ? { hero: f.t.player } : { uid: f.t.uid };
-				telegraphs.push({ from, to, until, friendly: !!f.fr });
+				GS.telegraphs.push({ from, to, until, friendly: !!f.fr });
 			}
 			SFX.play('attack');
 			wake();
