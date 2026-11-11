@@ -6,7 +6,7 @@
 import * as THREE from 'three';
 import { K, CELL, step, newState, noInput, groundAt, stateName, facingRow, tuneFor, TYPE_TRAITS } from './sim.js';
 import { buildRoom, SPOTS, ROOM_W, ROOM_H } from './room.js';
-import { makeRenderer, buildTerrain, buildWater, SpriteBatch, Shadows, loadSheet, frameAt, spriteQuad, placeCamera } from './render.js';
+import { makeRenderer, buildTerrain, buildWater, SpriteBatch, Shadows, loadSheet, frameAt, spriteQuad, footLift, placeCamera } from './render.js';
 
 const Q = new URLSearchParams(location.search);
 const N = Math.max(0, Math.min(2000, +(Q.get('n') ?? 100) || 0));
@@ -113,7 +113,7 @@ async function sheet(dex, anim, max) {
 	const tex = await loadSheet(`../assets/pokemon/${dex}/${anim}.png`);
 	const batch = new SpriteBatch(tex, max);
 	scene.add(batch.mesh);
-	const o = { batch, meta, img: tex.image, shadow: 0.35 + 0.18 * ((META[dex].s | 0) + 1) };
+	const o = { batch, meta, img: tex.image, lift: footLift(meta, tex.image), shadow: 0.35 + 0.18 * ((META[dex].s | 0) + 1) };
 	sheets.set(key, o);
 	return o;
 }
@@ -142,14 +142,14 @@ function draw(t) {
 	// the crowd
 	for (const e of crowd) {
 		const s = sheets.get(e.dex + '/Idle'); if (!s) continue;
-		const y = groundAt(room, e.x, e.z), q = spriteQuad(s.meta, s.img, frameAt(s.meta, t + e.t0), facingRow(e.facing + e.turn * t, cam.yaw));
+		const y = groundAt(room, e.x, e.z), q = spriteQuad(s.meta, s.img, frameAt(s.meta, t + e.t0), facingRow(e.facing + e.turn * t, cam.yaw), 1, s.lift);
 		s.batch.add(e.x, y, e.z, q.rect, q.uv, 1);
 		shadows.add(room, e.x, e.z, y, s.shadow);
 	}
 	// the lead
 	const name = stateName(state), anim = name === 'idle' || name === 'staggered' ? 'Idle' : 'Walk', ps = sheets.get(DEX + '/' + anim) || sheets.get(DEX + '/Idle');
 	if (ps) {
-		const q = spriteQuad(ps.meta, ps.img, name === 'sliding' ? 0 : frameAt(ps.meta, state.t * (name === 'running' ? 1.25 : 1)), facingRow(state.facing, cam.yaw), 1.15);
+		const q = spriteQuad(ps.meta, ps.img, name === 'sliding' ? 0 : frameAt(ps.meta, state.t * (name === 'running' ? 1.25 : 1)), facingRow(state.facing, cam.yaw), 1.15, ps.lift);
 		ps.batch.add(state.x, state.y, state.z, q.rect, q.uv, 1);
 		shadows.add(room, state.x, state.z, state.y, ps.shadow * 1.15);
 	}
@@ -211,6 +211,7 @@ window.__m3d = {
 	get ready() { return ready; }, state, room, K, TUNE, TYPES, TRAITS, cam, crowd, sheets, stats,
 	setInput(o) { override = o ? { ...noInput(), ...o } : null; },
 	rowOf: (facing, yaw) => facingRow(facing, yaw === undefined ? cam.yaw : yaw),
+	quadOf: (key, frame, row) => { const s = sheets.get(key); return spriteQuad(s.meta, s.img, frame, row, 1, s.lift); },
 	respawn() { Object.assign(state, newState(room, TUNE)); state.facing = cam.yaw; },
 	put(x, z, y) { Object.assign(state, newState(room, TUNE)); state.x = x; state.z = z; state.y = y === undefined ? groundAt(room, x, z) : y; state.grounded = y === undefined; },
 };

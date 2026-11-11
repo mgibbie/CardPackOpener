@@ -103,6 +103,32 @@ try {
 	const rows = await page.evaluate(() => { const m = window.__m3d, e = m.crowd[0], out = []; for (let i = 0; i < 8; i++) out.push(m.rowOf(e.facing, i * Math.PI / 4)); return out; });
 	A(new Set(rows).size === 8, 'orbiting the camera round a still sprite shows all 8 of its facing rows', rows.join(''));
 
+	// ---- feet on the floor: a sheet's anchor is the middle of the footprint, and the feet / tail are drawn BELOW it.
+	// (the owner, on the live page: "my pikachu has its feet/butt sinking through the floor")
+	const feet = await page.evaluate(() => {
+		const m = window.__m3d, out = [];
+		for (const [key, s] of m.sheets) {
+			// independently: the lowest opaque pixel of each row, by reading the sheet
+			const c = document.createElement('canvas'); c.width = s.img.width; c.height = s.img.height; const g = c.getContext('2d'); g.drawImage(s.img, 0, 0);
+			const d = g.getImageData(0, 0, c.width, c.height).data; let worstBelow = 0, sunk = 0;
+			for (let r = 0; r < s.meta.r; r++) {
+				let low = -1;
+				for (let y = s.meta.h - 1; y >= 0 && low < 0; y--) for (let x = 0; x < s.meta.n * s.meta.w; x++) if (d[((r * s.meta.h + y) * c.width + x) * 4 + 3] > 127) { low = y; break; }
+				const below = Math.max(0, low + 1 - s.meta.ay);          // px drawn under the anchor
+				worstBelow = Math.max(worstBelow, below);
+				// the quad as the page builds it: where is that lowest pixel's bottom edge, relative to the feet?
+				const q = m.quadOf(key, 0, r), px = (q.rect[3] - q.rect[1]) / s.meta.h, bottomOfLowest = q.rect[3] - (low + 1) * px;
+				// never under the floor; and exactly on it when the art went below the anchor (a row whose lowest pixel is above
+				// the anchor is a hovering sprite — Gastly — and is left hovering)
+				if (bottomOfLowest < -1e-6 || (below > 0 && bottomOfLowest > 1e-6)) sunk++;
+			}
+			out.push({ key, worstBelow, sunk });
+		}
+		return out;
+	});
+	A(feet.length >= 8 && feet.some(f => f.worstBelow >= 3), 'the sheets really do draw below their anchor (some by 3 px or more: feet, tails)', JSON.stringify(feet.map(f => f.key + ':' + f.worstBelow)));
+	A(feet.every(f => f.sunk === 0), 'every sprite stands on its lowest pixel: in each of its 8 facings nothing is drawn under the floor (and one that hovers still hovers)', JSON.stringify(feet.filter(f => f.sunk)));
+
 	// ---- cost
 	await sleep(1500);
 	const p = await page.evaluate(() => window.__m3d.stats());

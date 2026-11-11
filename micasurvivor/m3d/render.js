@@ -151,11 +151,30 @@ export function frameAt(meta, t) {
 	for (let i = 0; i < meta.d.length; i++) { if (k < meta.d[i]) return i; k -= meta.d[i]; }
 	return 0;
 }
+/** How far below its anchor each facing row of a sheet draws, in art px: the lowest opaque pixel of any of the row's
+ *  frames, measured from (ax, ay). The sheets' anchor is the middle of the body's FOOTPRINT (where the 2D game puts the
+ *  shadow), not its lowest pixel: front feet, a tail, a rump are drawn below it. Top-down that is right; on an upright
+ *  billboard everything below the anchor would be under the floor. So a sprite is stood on its lowest pixel instead:
+ *  lifted by this much. One number per row (not per frame), so a walk cycle's bob stays a bob. */
+export function footLift(meta, img) {
+	const c = document.createElement('canvas'); c.width = img.width; c.height = img.height;
+	const g = c.getContext('2d', { willReadFrequently: true }); g.drawImage(img, 0, 0);
+	const rows = Math.min(meta.r, Math.floor(img.height / meta.h)), frames = Math.min(meta.n, Math.floor(img.width / meta.w)), out = [];
+	for (let r = 0; r < rows; r++) {
+		const d = g.getImageData(0, r * meta.h, frames * meta.w, meta.h).data, w = frames * meta.w;
+		let low = -1;
+		for (let y = meta.h - 1; y >= 0 && low < 0; y--) for (let x = 0; x < w; x++) if (d[(y * w + x) * 4 + 3] > 127) { low = y; break; }
+		out.push(low < 0 ? 0 : Math.max(0, low + 1 - meta.ay));
+	}
+	return out;
+}
 /** A sprite's quad and texture window: a sheet's frame `frame` of row `row`. meta: {w, h, n, r, ax, ay} (art px; (ax, ay)
- *  is the pixel that stands on the ground). img: the sheet (its real width / height). */
-export function spriteQuad(meta, img, frame, row, scale = 1) {
+ *  is the middle of the footprint). img: the sheet (its real width / height). lift: footLift(meta, img) — the sprite
+ *  is raised so its lowest pixel, not its anchor, is on the ground. */
+export function spriteQuad(meta, img, frame, row, scale = 1, lift = null) {
 	const s = PX * scale, W = img.width, H = img.height;
-	const rect = [-meta.ax * s, -(meta.h - meta.ay) * s, (meta.w - meta.ax) * s, meta.ay * s];
+	const up = lift ? (lift[Math.min(row, lift.length - 1)] || 0) * s : 0;
+	const rect = [-meta.ax * s, -(meta.h - meta.ay) * s + up, (meta.w - meta.ax) * s, meta.ay * s + up];
 	const r = Math.min(row, meta.r - 1);
 	const uv = [frame * meta.w / W, r * meta.h / H, (frame + 1) * meta.w / W, (r + 1) * meta.h / H];
 	return { rect, uv };
