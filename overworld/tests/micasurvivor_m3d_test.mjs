@@ -295,6 +295,24 @@ try {
 		A(bv.nums >= 1 && bv.lit > 20, `your hits show as damage numbers over the scene (${bv.nums} at once)`, JSON.stringify(bv));
 		await shot(fb.page, 'm3d_fight_behaviours.png');
 		await fb.page.close();
+		// experience and a level-up, on the page
+		const fx = await open({ width: 1000, height: 640, deviceScaleFactor: 1 }, '?gen=7&fight=1&moves=ember&cast=19&cap=4');
+		const xv = await fx.page.evaluate(async () => { const m = window.__m3d, w = m.world, wait = (ms) => new Promise(r => setTimeout(r, ms)); w.pl.invuln = 1e9;
+			const o = m.drop('xp', m.state.x + 2, m.state.z, 70); o.vx = o.vz = 0; await wait(900);
+			const cards = document.getElementById('cards'), shown = getComputedStyle(cards).display !== 'none', n = cards.querySelectorAll('button').length, t0 = w.t; await wait(400);
+			const waiting = w.t === t0, texts = [...cards.querySelectorAll('button')].map(b => b.textContent.slice(0, 40)), hud = document.getElementById('hud').textContent;
+			return { level: w.pl.level, pending: w.pl.pending, shown, n, waiting, texts, hud, moves: w.pl.moves.length, taken: JSON.stringify(w.pl.statsTaken) }; });
+		A(xv.level === 2 && xv.shown && xv.n === 3 && xv.waiting && /Lv 2 · XP \d+ \/ \d+/.test(xv.hud), 'an orb worth a level: you are Lv 2, three cards are up, and the fight waits for you', JSON.stringify(xv));
+		await shot(fx.page, 'm3d_levelup.png');
+		await fx.page.keyboard.press('Digit2');
+		const xa = await fx.page.evaluate(async () => { const m = window.__m3d, w = m.world, wait = (ms) => new Promise(r => setTimeout(r, ms)); const t0 = w.t; await wait(400); return { hidden: getComputedStyle(document.getElementById('cards')).display === 'none', going: w.t > t0, pending: w.pl.pending, moves: w.pl.moves.map(q => q.id + ':' + q.lvl).join(), taken: JSON.stringify(w.pl.statsTaken) }; });
+		A(xa.hidden && xa.going && xa.pending === 0 && (xa.moves !== 'ember:1' || xa.taken !== xv.taken), `pressing 2 takes the second card (now: ${xa.moves} ${xa.taken}) and the fight goes on`, JSON.stringify(xa));
+		await fx.page.evaluate(() => { const m = window.__m3d; const o = m.drop('xp', m.state.x + 2, m.state.z, 110); o.vx = o.vz = 0; });
+		await waitFor(() => fx.page.evaluate(() => getComputedStyle(document.getElementById('cards')).display !== 'none'), 5000);
+		await fx.page.click('#cards button[data-i="0"]');
+		const xb = await fx.page.evaluate(() => ({ hidden: getComputedStyle(document.getElementById('cards')).display === 'none', level: window.__m3d.world.pl.level, pending: window.__m3d.world.pl.pending }));
+		A(xb.hidden && xb.level === 3 && xb.pending === 0, 'the next level: clicking a card takes it', JSON.stringify(xb));
+		await fx.page.close();
 		// without &fight=1 a generated level has no fight
 		const nf = await open({ width: 900, height: 600, deviceScaleFactor: 1 }, '?gen=7&n=5');
 		const nv = await nf.page.evaluate(() => ({ world: window.__m3d.world, hud: document.getElementById('hud').textContent }));

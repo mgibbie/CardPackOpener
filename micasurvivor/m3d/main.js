@@ -9,7 +9,7 @@ import * as THREE from 'three';
 import { K, CELL, step, newState, noInput, groundAt, stateName, facingRow, tuneFor, TYPE_TRAITS } from './sim.js';
 import { buildRoom, SPOTS } from './room.js';
 import { makeRenderer, buildTerrain, buildWater, buildScatter, buildExit, drawMap, SpriteBatch, Shadows, Shots, Flashes, loadSheet, frameAt, spriteQuad, footLift, placeCamera } from './render.js';
-import { newWorld, addEnemy, tick, dataFrom, CK } from './combat.js';
+import { newWorld, addEnemy, tick, dataFrom, choose, drop, CK } from './combat.js';
 import { generate, BIOMES } from './gen.js';
 
 const Q = new URLSearchParams(location.search);
@@ -33,9 +33,10 @@ const GG = window.G || {};
 const FIGHT_CAST = (Q.get('cast') ? Q.get('cast').split(',').map(Number) : [19, 16, 43, 74, 133, 41, 92, 1, 58, 63, 32, 39, 35, 95, 10]).filter((d) => d !== DEX && META[d] && META[d].a && META[d].a.Walk && !META[d].src);
 const MOVES = !FIGHT ? [] : Q.get('moves') ? Q.get('moves').split(',').map((m) => { const [id, lv] = m.split(':'); return [id, +lv || 1]; }).filter((m) => GG.Moves.BY_ID[m[0]])
 	: [[GG.Moves.startFor(SPECIES), 3], ['tackle', 2]].filter((m, i, a) => a.findIndex((q) => q[0] === m[0]) === i);
-const world = FIGHT ? newWorld(room, dataFrom(GG), { dex: DEX, moves: MOVES, seed: (GEN + 1) * 7919, tune: TUNE, cast: FIGHT_CAST, cap: Q.has('cap') ? +Q.get('cap') | 0 : undefined }) : null;
+const world = FIGHT ? newWorld(room, dataFrom(GG), { dex: DEX, moves: MOVES, seed: (GEN + 1) * 7919, tune: TUNE, cast: FIGHT_CAST, cap: Q.has('cap') ? +Q.get('cap') | 0 : undefined, autoPick: Q.has('auto') ? +Q.get('auto') | 0 : undefined }) : null;
 const state = world ? world.pl.s : newState(room, TUNE);
 const TYPE_COLOR = (GG.U && GG.U.TYPE_COLOR) || {};
+const PICK_COLOR = { xp: '#6fd3ff', xpBig: '#3da8ff', heal: '#5fe08a', magnet: '#ff9ed8', bomb: '#ff7b3d' };
 const { renderer, scene, camera } = makeRenderer(canvas);
 scene.add(buildTerrain(room));
 scene.add(buildWater(room));
@@ -179,6 +180,8 @@ function draw(t) {
 		for (const p of world.orbs) shots.add(p.x, p.y, p.z, Math.max(0.16, p.r), TYPE_COLOR[p.mtype]);
 		// what lies in the world: mines (a small ball on the floor), turrets (a ball that hangs and bobs), meteors (a ball
 		// coming down on its mark), patches (a disc on the floor, drawn once, fading over its life)
+		// pickups: beads that bob over the floor (XP blue, a big one for a big orb; a berry green, a magnet pink, a bomb orange)
+		for (const p of world.pickups) shots.add(p.x, p.y + 0.3 + Math.abs(Math.sin(p.t * 0.8)) * 0.18, p.z, p.kind === 'xpBig' ? 0.24 : p.kind === 'xp' ? 0.15 : 0.26, PICK_COLOR[p.kind]);
 		for (const e of world.enemies) if (e.shield > 0) shots.add(e.a.x, e.a.y + Math.max(1.2, e.cr * 2) + 0.35, e.a.z, 0.16, '#7fc8ff');   // a shield: a blue bead over its head
 		for (const p of world.eshots) shots.add(p.x, p.y, p.z, Math.max(0.2, p.r), '#ff5f8f');   // an enemy's shot: always the same angry pink
 		for (const f of world.fields) {
@@ -257,6 +260,8 @@ function fightEvents() {
 			if (h.kind === 'zone') flashes.arc(h.x, h.y, h.z, h.r, 0, 6.2832, c, life, ev.k === 'boom' ? 0 : 0.86);
 			else flashes.bar([h.x, h.y + (ev.k === 'boom' ? 0.6 : 0.1), h.z], [Math.cos(h.angle), 0, Math.sin(h.angle)], h.len, ev.k === 'boom' ? h.w : h.w * 0.5, c, life);
 		}
+		else if (ev.k === 'bomb') flashes.arc(ev.x, ev.y, ev.z, ev.r, 0, 6.2832, '#ff7b3d', 0.5, 0.92);
+		else if (ev.k === 'levelup') showCards();
 		else if (ev.k === 'heal') flashes.arc(ev.x, ev.y, ev.z, ev.r, 0, 6.2832, '#5fe08a', 0.5, 0.9);
 		else if (ev.k === 'shield') flashes.arc(ev.x, ev.y, ev.z, ev.r, 0, 6.2832, '#7fc8ff', 0.5, 0.9);
 		else if (ev.k === 'summon') flashes.arc(ev.x, ev.y, ev.z, 3, 0, 6.2832, '#c47bff', 0.4, 0.5);
@@ -283,6 +288,21 @@ function drawNumbers(dt) {
 	}
 	g.globalAlpha = 1;
 }
+/** (P3) A level-up: the fight is waiting; three cards to choose from (click or tap one, or press 1 / 2 / 3). */
+function showCards() {
+	const el = document.getElementById('cards'), cs = world.pl.choices; if (!el || !cs) return;
+	el.innerHTML = `<h2>Level ${world.pl.level}</h2>` + cs.map((c, i) => `<button data-i="${i}" style="border-color:${TYPE_COLOR[c.mtype] || '#8fa3c4'}"><b>${i + 1} · ${c.title}</b><i>${c.tag || ''}</i><span>${c.desc || (GG.Moves.BY_ID[c.id] ? GG.Moves.BY_ID[c.id].kind : '')}</span></button>`).join('');
+	el.style.display = 'grid';
+}
+function pickCard(i) {
+	if (!world || !world.pl.choices || !choose(world, i)) return;
+	const el = document.getElementById('cards'); el.style.display = 'none'; el.innerHTML = '';
+	if (world.pl.pending > 0) { tick(world, null, K.TICK); fightEvents(); }   // (another level waiting: its cards come up at once)
+}
+if (FIGHT) {
+	document.getElementById('cards').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) pickCard(+b.dataset.i); });
+	addEventListener('keydown', (e) => { const i = ['Digit1', 'Digit2', 'Digit3'].indexOf(e.code); if (i >= 0) pickCard(i); });
+}
 let noteText = '', noteUntil = 0;
 function note(t, ms) { noteText = t; noteUntil = performance.now() + ms; }
 const pct = (a, p) => { if (!a.length) return 0; const s = a.slice().sort((x, y) => x - y); return s[Math.min(s.length - 1, Math.floor(s.length * p))]; };
@@ -298,7 +318,7 @@ function showHud() {
 		+ `${stateName(state)} · ${sp.toFixed(1)} m/s · height ${state.y.toFixed(2)} m · air jumps ${state.airJumps}\n`
 		+ `${SPECIES.name} (${TYPES.join(' / ') || 'no type'})${TRAITS.length ? ' · traits: ' + TRAITS.join(', ') : ''}`
 		+ (GEN === null ? '' : `\nlevel ${GEN} · ${BIOME} · ${room.size} × ${room.size} tiles · exit ${Math.round(exitDist())} m`)
-		+ (!world ? '' : `\nHP ${Math.ceil(world.pl.hp)} / ${world.pl.maxHp} · ${world.enemies.length} enemies · ${world.stats.kills} KOs · ${Math.floor(world.t / 60)}:${String(Math.floor(world.t % 60)).padStart(2, '0')} · ${world.pl.moves.map((m) => m.id + ' Lv' + m.lvl).join(', ')}`) + (noteText && performance.now() < noteUntil ? `\n» ${noteText}` : '');
+		+ (!world ? '' : `\nLv ${world.pl.level} · XP ${Math.floor(world.pl.xp)} / ${world.pl.xpNext}\nHP ${Math.ceil(world.pl.hp)} / ${world.pl.maxHp} · ${world.enemies.length} enemies · ${world.stats.kills} KOs · ${Math.floor(world.t / 60)}:${String(Math.floor(world.t % 60)).padStart(2, '0')} · ${world.pl.moves.map((m) => m.id + ' Lv' + m.lvl).join(', ')}`) + (noteText && performance.now() < noteUntil ? `\n» ${noteText}` : '');
 }
 
 // ---------------------------------------------------------------- boot
@@ -318,7 +338,7 @@ function showHud() {
 
 // what a test (and a curious owner in the console) can reach
 window.__m3d = {
-	get ready() { return ready; }, state, room, K, TUNE, TYPES, TRAITS, cam, crowd, sheets, stats, gen: GEN, biome: BIOME, world, numbers, addEnemy: (dex, x, z, o) => addEnemy(world, dex, x, z, o), holdExit: false, get leaving() { return leaving; },
+	get ready() { return ready; }, state, room, K, TUNE, TYPES, TRAITS, cam, crowd, sheets, stats, gen: GEN, biome: BIOME, world, numbers, drop: (kind, x, z, v) => drop(world, kind, x, groundAt(room, x, z), z, v), pickCard, addEnemy: (dex, x, z, o) => addEnemy(world, dex, x, z, o), holdExit: false, get leaving() { return leaving; },
 	setInput(o) { override = o ? { ...noInput(), ...o } : null; },
 	rowOf: (facing, yaw) => facingRow(facing, yaw === undefined ? cam.yaw : yaw),
 	quadOf: (key, frame, row) => { const s = sheets.get(key); return spriteQuad(s.meta, s.img, frame, row, 1, s.lift); },

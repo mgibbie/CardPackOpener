@@ -30,6 +30,8 @@ export const CK = {
 	CC: { freeze: 1.8, para: 3, sleep: 4, conf: 3 }, SLEEP_BONUS: 1.3, PARA_ELECTRIC: 1.35, FROZEN_TAKEN: 1.25, PARA_SLOW: 0.4,
 	CONF_REACH: 380, CONF_CD: 0.6, CONF_KNOCK: 140,
 	UNPORTED: [],   // base move kinds still to come (Expedition's eight are their own step)
+	// experience (the 2D game's entities/pickup.js, player.js, systems/levelup.js)
+	MAGNET: 78, COLLECT: 15, PULL: [240, 1400], BIG_XP: 20, DROP: { heal: 0.012, magnet: 0.020, bomb: 0.026 }, HEAL_ORB: 0.3, BOMB: { base: 60, level: 14, knock: 160, r: 480 }, MAX_MOVES: 4,
 	// enemy behaviours (the 2D game's entities/enemy.js): the ones here; the rest chase until they are ported
 	BEHAVIOURS: ['chase', 'tank', 'runner', 'charger', 'ranged', 'fan', 'beamer', 'zoner', 'bomber', 'healer', 'shielder', 'summoner', 'jumper'], LATER: [],
 	// the supports (the 2D game's SUPPORT_CAPS) and the jumper
@@ -49,6 +51,7 @@ export function dataFrom(G) {
 		move: (id, lvl = 1) => { const m = G.Moves.instance(id, lvl); m.knock = G.Moves.knockOf(m); return m; },   // (a move's knockback is worked out from its level, as the 2D game does)
 		typeMult: (t, types) => G.Types.mult(t, types), mon: (dex) => G.DEX_BY[dex],
 		radius: (dex, scale = 1) => G.Sprites.bodyRadius(dex, scale) * U, hovers: (dex) => G.Sprites.hovers(dex),
+		poolFor: (mon) => G.Moves.poolFor(mon), levelUp: (m) => { const ok = G.Moves.levelUp(m); m.knock = G.Moves.knockOf(m); return ok; }, nextUp: (m) => G.Moves.nextUpText(m), moveDef: (id) => G.Moves.BY_ID[id],
 		tiers: G.Enemies.TIERS, defFor: (dex, ti) => G.Enemies.defFor(G.DEX_BY[dex], G.Enemies.TIERS[ti], ti),
 		tierAt: (t) => { let ti = 0; G.Enemies.TIERS.forEach((tr, i) => { if (t >= tr.from) ti = i; }); return ti; },
 	};
@@ -56,21 +59,24 @@ export function dataFrom(G) {
 
 /** A fight. o: { dex (who you play), moves: [id | [id, lvl]], seed, tune (sim tuning), afDmg (the all-moves factor: 1.1 in
  *  Expedition), atkK / takenK (the ability's factors, 1 if none), crit, cast: [dex] (who spawns; none: nothing spawns),
- *  orbitSquash (0.7: the 2D game's flattened orbit; 1: a circle) } */
+ *  orbitSquash (0.7: the 2D game's flattened orbit; 1: a circle), autoPick (a level-up's card is chosen at once: 0-2, or
+ *  a function (world, cards) -> index; without it the fight WAITS at a level-up until choose() is called) } */
 export function newWorld(room, data, o = {}) {
 	const mon = data.mon(o.dex || 25), s = newState(room, o.tune || K);
 	const w = {
 		room, data, t: 0, tick: 0, rand: makeRng((o.seed >>> 0) || 1), tune: o.tune || K, nextId: 1,
 		pl: { s, mon, r: data.radius(mon.dex), maxHp: mon.hp, hp: mon.hp, baseAtk: mon.atk, atkMul: 1, atkK: o.atkK || 1, takenK: o.takenK || 1, cdMul: 1, crit: o.crit || 0, reduction: 0, regen: 0,
-			invuln: 0, meleeT: 0, level: 1, baseReduce: 0, baseRegen: 0, buffs: { atk: { n: 0, t: 0, amount: 0 }, spd: { n: 0, t: 0, amount: 0 }, def: { n: 0, t: 0, amount: 0 }, regen: { n: 0, t: 0, amount: 0 } }, afDmg: o.afDmg === undefined ? 1.1 : o.afDmg, target: null, aim: 0, dead: false,
+			invuln: 0, meleeT: 0, level: 1, xp: 0, xpNext: xpFor(1), xpMul: 1, spdMul: 1, magnet: CK.MAGNET * U, statsTaken: {}, pending: 0, choices: null, baseReduce: 0, baseRegen: 0, buffs: { atk: { n: 0, t: 0, amount: 0 }, spd: { n: 0, t: 0, amount: 0 }, def: { n: 0, t: 0, amount: 0 }, regen: { n: 0, t: 0, amount: 0 } }, afDmg: o.afDmg === undefined ? 1.1 : o.afDmg, target: null, aim: 0, dead: false,
 			moves: (o.moves || []).map((m) => (Array.isArray(m) ? data.move(m[0], m[1]) : data.move(m))) },
-		enemies: [], shots: [], orbs: [], fields: [], eshots: [], hazards: [], lastPatch: null, field: null, fieldCell: -2,
+		enemies: [], shots: [], orbs: [], fields: [], eshots: [], hazards: [], pickups: [], lastPatch: null, autoPick: o.autoPick, field: null, fieldCell: -2,
 		cast: o.cast || null, spawnAcc: 0, cap: o.cap || CK.CAP, orbitSquash: o.orbitSquash || 1,
-		stats: { dealt: 0, removed: 0, hits: 0, crits: 0, taken: 0, touched: 0, kills: 0, xp: 0, fired: 0, spawned: 0, fell: 0, blocked: 0 },
+		stats: { gained: 0, collected: 0, levels: 0, dealt: 0, removed: 0, hits: 0, crits: 0, taken: 0, touched: 0, kills: 0, xp: 0, fired: 0, spawned: 0, fell: 0, blocked: 0 },
 		events: [],   // this tick's: { k: 'hit' | 'kill' | 'hurt' | 'shot' | 'melee' | 'beam' | 'aura' | 'chain', … } for the page to draw
 	};
 	return w;
 }
+/** The XP a level needs (the 2D game's curve). */
+export const xpFor = (level) => Math.floor((8 + level * 6 + Math.pow(level, 1.75) * 1.6) * 4);
 const atk = (pl) => pl.baseAtk * pl.atkMul * (1 + pl.buffs.atk.n * pl.buffs.atk.amount) * pl.atkK;
 const rnd = (w, a, b) => a + w.rand() * (b - a);
 
@@ -105,8 +111,23 @@ function hurtEnemy(w, e, amount, kx, kz, knockU) {
 	if (e.shield > 0) { const a = Math.min(e.shield, d); e.shield -= a; if (a >= d) { e.flash = 0.06; w.events.push({ k: 'absorbed', id: e.id }); return 0; } d = Math.max(1, Math.round(d - a)); }   // a shielder's shield takes it first
 	e.hp -= d; e.flash = 0.12; w.stats.removed += d;
 	if (knockU > 0) { const l = Math.hypot(kx, kz) || 1; knock(e.a, kx / l * knockU * U, kz / l * knockU * U); }
-	if (e.hp <= 0) { e.dead = true; w.stats.kills++; w.stats.xp += e.xp; w.events.push({ k: 'kill', id: e.id, x: e.a.x, y: e.a.y, z: e.a.z, xp: e.xp }); }
+	if (e.hp <= 0) kill(w, e);
 	return d;
+}
+/** An enemy is down: it leaves its experience where it stood (and now and then a berry, a magnet or a bomb). */
+function kill(w, e) {
+	if (e.dead) return;
+	e.dead = true; e.hp = Math.min(e.hp, 0); w.stats.kills++; w.stats.xp += e.xp;
+	w.events.push({ k: 'kill', id: e.id, x: e.a.x, y: e.a.y, z: e.a.z, xp: e.xp });
+	const y = groundAt(w.room, e.a.x, e.a.z);
+	drop(w, e.xp >= CK.BIG_XP ? 'xpBig' : 'xp', e.a.x, y, e.a.z, e.xp);
+	const r = w.rand();
+	if (r < CK.DROP.heal) drop(w, 'heal', e.a.x + rnd(w, -8, 8) * U, y, e.a.z, 0); else if (r < CK.DROP.magnet) drop(w, 'magnet', e.a.x, y, e.a.z, 0); else if (r < CK.DROP.bomb) drop(w, 'bomb', e.a.x, y, e.a.z, 0);
+}
+/** Put a pickup in the world: 'xp' | 'xpBig' | 'heal' | 'magnet' | 'bomb'. It rolls a little way and stops. */
+export function drop(w, kind, x, y, z, value = 0) {
+	const a = w.rand() * 6.2832, p = { id: w.nextId++, kind, x, y, z, value, vx: Math.cos(a) * rnd(w, 10, 46) * U, vy: 0, vz: Math.sin(a) * rnd(w, 10, 46) * U, t: 0, pulled: false };
+	w.pickups.push(p); return p;
 }
 /** A move's hit lands (the 2D game's `land`): type chart, crit, the all-moves factor. src: the move or the shot. */
 function land(w, e, dmg, kx, kz, knockU, src) {
@@ -503,7 +524,7 @@ function behave(w, e, dt) {
 		return 1;
 	}
 	if (b === 'bomber') {
-		if (e.phase === 'fuse') { WISH[0] = WISH[1] = 0; e.pt -= dt; e.flash = Math.floor(e.pt * 10) % 2 ? 0.05 : 0; if (e.pt <= 0) { e.hp = 0; e.dead = true; w.stats.kills++; w.stats.xp += e.xp; w.events.push({ k: 'kill', id: e.id, x: e.a.x, y: e.a.y, z: e.a.z, xp: e.xp }); } return 1; }
+		if (e.phase === 'fuse') { WISH[0] = WISH[1] = 0; e.pt -= dt; e.flash = Math.floor(e.pt * 10) % 2 ? 0.05 : 0; if (e.pt <= 0) { e.hp = 0; kill(w, e); } return 1; }
 		if (dist < e.cr + pl.r + CK.FUSE.reach * U && level) { e.phase = 'fuse'; e.pt = CK.FUSE.delay; WISH[0] = WISH[1] = 0; hazard(w, { kind: 'zone', x: e.a.x, y: e.a.y, z: e.a.z, r: CK.FUSE.r * U, delay: CK.FUSE.delay, dmg: e.dmg * CK.FUSE.dmg, type: e.atkType }); }
 		return 1;
 	}
@@ -636,18 +657,90 @@ function spawnTick(w, dt) {
 	}
 }
 
+// ---------------------------------------------------------------- experience and level-ups
+function gainXp(w, amount) {
+	const pl = w.pl; pl.xp += amount * pl.xpMul; w.stats.gained += amount * pl.xpMul;
+	while (pl.xp >= pl.xpNext) { pl.xp -= pl.xpNext; pl.level++; pl.xpNext = xpFor(pl.level); pl.pending++; w.stats.levels++; w.events.push({ k: 'level', level: pl.level }); }
+}
+/** Pickups: inside your reach (or once a magnet has called them) they fly to you, in space; touched, they are yours. */
+function updatePickups(w, dt) {
+	const pl = w.pl, s = pl.s, cy = s.y + 0.5;
+	for (let i = w.pickups.length - 1; i >= 0; i--) {
+		const p = w.pickups[i]; p.t += dt * 4;
+		const dx = s.x - p.x, dy = cy - p.y, dz = s.z - p.z, d = Math.hypot(dx, dy, dz) || 1e-6;
+		if (p.pulled || d < pl.magnet) {
+			p.pulled = true;
+			const pull = (CK.PULL[0] + CK.PULL[1] / (d / U)) * U, f = Math.exp(-7 * dt);
+			p.vx = dx / d * pull + (p.vx - dx / d * pull) * f; p.vy = dy / d * pull + (p.vy - dy / d * pull) * f; p.vz = dz / d * pull + (p.vz - dz / d * pull) * f;
+		} else { const f = Math.pow(0.02, dt); p.vx *= f; p.vz *= f; p.vy = 0; }
+		p.x += p.vx * dt; p.y += p.vy * dt; p.z += p.vz * dt;
+		if (!p.pulled) { const g = groundAt(w.room, p.x, p.z); if (g > p.y + K.STEP) { p.x -= p.vx * dt; p.z -= p.vz * dt; p.vx = p.vz = 0; } else p.y = g; }   // it rolls on the floor, and stops at a wall
+		if (d < CK.COLLECT * U) { w.pickups.splice(i, 1); collect(w, p); }
+	}
+}
+function collect(w, p) {
+	const pl = w.pl, s = pl.s; w.stats.collected++;
+	w.events.push({ k: 'pickup', kind: p.kind, value: p.value });
+	if (p.kind === 'xp' || p.kind === 'xpBig') gainXp(w, p.value);
+	else if (p.kind === 'heal') pl.hp = Math.min(pl.maxHp, pl.hp + pl.maxHp * CK.HEAL_ORB);
+	else if (p.kind === 'magnet') for (const o of w.pickups) o.pulled = true;
+	else if (p.kind === 'bomb') { const B = CK.BOMB; for (const e of [...w.enemies]) { if (e.dead || Math.hypot(e.a.x - s.x, e.a.y - s.y, e.a.z - s.z) > B.r * U) continue; hurtEnemy(w, e, B.base + pl.level * B.level, e.a.x - s.x, e.a.z - s.z, B.knock); } w.events.push({ k: 'bomb', x: s.x, y: s.y, z: s.z, r: B.r * U }); }
+}
+/** The permanent upgrades a level can offer (the 2D game's; `max`: how many times each can be taken). */
+export const STATS = [
+	{ id: 'hp', title: 'Vigor', desc: '+20 max HP (and heals it).', apply: (pl) => { pl.maxHp += 20; pl.hp += 20; } },
+	{ id: 'atk', title: 'Power', desc: '+10% damage with every move.', max: 40, apply: (pl) => { pl.atkMul *= 1.10; } },
+	{ id: 'spd', title: 'Sprint', desc: '+7% movement speed.', max: 8, apply: (pl) => { pl.spdMul *= 1.07; } },
+	{ id: 'cd', title: 'Reflexes', desc: '-8% cooldown on every move.', max: 10, apply: (pl) => { pl.cdMul *= 0.92; } },
+	{ id: 'def', title: 'Armour', desc: '+6% damage reduction.', max: 12, apply: (pl) => { pl.baseReduce = Math.min(0.7, pl.baseReduce + 0.06); } },
+	{ id: 'rgn', title: 'Synthesis', desc: '+0.9 HP regenerated a second.', apply: (pl) => { pl.baseRegen += 0.9; } },
+	{ id: 'mag', title: 'Magnet', desc: '+30% pickup radius.', max: 6, apply: (pl) => { pl.magnet *= 1.30; } },
+	{ id: 'xp', title: 'Learning', desc: '+12% experience gained.', max: 8, apply: (pl) => { pl.xpMul *= 1.12; } },
+	{ id: 'heal', title: 'Sitrus Berry', desc: 'Restores 45% of your HP now.', apply: (pl) => { pl.hp = Math.min(pl.maxHp, pl.hp + pl.maxHp * 0.45); } },
+];
+/** Three different cards for a level-up, drawn by weight from: a new move (while you have a free slot of the four), the
+ *  next level of a move you have, a permanent upgrade. (Move evolutions and the Calibre card are still to come.) */
+export function offer(w, n = 3) {
+	const pl = w.pl, d = w.data, pool = [];
+	const pickN = (arr, k) => { const c = arr.slice(), out = []; while (out.length < k && c.length) out.push(c.splice(Math.floor(w.rand() * c.length), 1)[0]); return out; };
+	const free = pl.moves.length < CK.MAX_MOVES;
+	if (free) {
+		const buffs = pl.moves.filter((m) => m.kind === 'buff').length;   // (two buffs at most: they do no damage)
+		const ids = d.poolFor(pl.mon).filter((id) => !pl.moves.some((m) => m.id === id) && !(buffs >= 2 && d.moveDef(id).kind === 'buff') && (KINDS[d.moveDef(id).kind] || d.moveDef(id).kind === 'orbit'));
+		for (const id of pickN(ids, 6)) { const md = d.moveDef(id); pool.push({ w: 10, type: 'new', key: 'new:' + id, id, title: id, tag: md.type + ' · ' + md.kind, mtype: md.type, apply: () => { pl.moves.push(d.move(id)); } }); }
+	}
+	for (const m of pl.moves) { const txt = d.nextUp(m); if (txt) pool.push({ w: 8, type: 'up', key: 'up:' + m.id, id: m.id, title: m.id, tag: 'Lv ' + m.lvl + ' > ' + (m.lvl + 1), desc: txt, mtype: m.type, apply: () => { d.levelUp(m); } }); }
+	for (const st of pickN(STATS.filter((q) => !q.max || (pl.statsTaken[q.id] || 0) < q.max), 5)) pool.push({ w: free ? 4 : 7, type: 'stat', key: 'stat:' + st.id, id: st.id, title: st.title, tag: 'Upgrade', desc: st.desc, apply: () => { st.apply(pl); pl.statsTaken[st.id] = (pl.statsTaken[st.id] || 0) + 1; } });
+	const picked = [];
+	while (picked.length < n && pool.length) { const total = pool.reduce((a, c) => a + c.w, 0); let r = w.rand() * total, idx = 0; for (let i = 0; i < pool.length; i++) { r -= pool[i].w; if (r <= 0) { idx = i; break; } } picked.push(pool.splice(idx, 1)[0]); }
+	return picked;
+}
+/** Take one of the cards on offer (pl.choices). The fight goes on when no level-up is left waiting. */
+export function choose(w, i) {
+	const pl = w.pl, c = pl.choices && pl.choices[i];
+	if (!c) return false;
+	c.apply(); pl.choices = null; pl.pending--; w.events.push({ k: 'chose', key: c.key });
+	return true;
+}
+
 // ---------------------------------------------------------------- one tick
 /** Advance the fight one tick. input: sim.js's ({ mx, mz, jump, crouch }). The order is the 2D game's: you, arrivals,
  *  enemies, your moves, shots, hits and touches. */
 export function tick(w, input, dt = K.TICK) {
 	const pl = w.pl, s = pl.s;
 	w.events.length = 0;
+	// a level-up: the fight waits for a card to be chosen (or takes one at once, if it was told how)
+	while (pl.pending > 0 && !pl.dead) {
+		if (!pl.choices) { pl.choices = offer(w); if (!pl.choices.length) { pl.choices = null; pl.pending--; continue; } w.events.push({ k: 'levelup', level: pl.level }); }
+		if (w.autoPick === undefined || w.autoPick === null) return w;
+		choose(w, Math.min(pl.choices.length - 1, typeof w.autoPick === 'function' ? w.autoPick(w, pl.choices) | 0 : w.autoPick | 0));
+	}
 	w.t += dt; w.tick++;
 	if (!pl.dead) {
 		const B = pl.buffs;
 		for (const k in B) if (B[k].n > 0) { B[k].t -= dt; if (B[k].t <= 0) B[k].n = 0; }
 		pl.reduction = Math.min(0.8, pl.baseReduce + B.def.n * B.def.amount); pl.regen = pl.baseRegen + B.regen.n * B.regen.amount;
-		const fast = 1 + B.spd.n * B.spd.amount;   // a speed buff: you run that much faster
+		const fast = (1 + B.spd.n * B.spd.amount) * pl.spdMul;   // a speed buff or the Sprint upgrade: you run that much faster
 		if (fast !== w.fastK) { w.fastK = fast; w.fastTune = fast === 1 ? w.tune : { ...w.tune, RUN: w.tune.RUN * fast }; }
 		step(s, input || noInput(), w.room, dt, w.fastTune || w.tune);
 		if (pl.invuln > 0) pl.invuln -= dt;
@@ -664,6 +757,7 @@ export function tick(w, input, dt = K.TICK) {
 	resolve(w);
 	if (!pl.dead) updateFields(w, dt);
 	enemyAttacks(w, dt);
+	if (!pl.dead) updatePickups(w, dt);
 	return w;
 }
 
@@ -677,5 +771,7 @@ export function hashWorld(w) {
 	for (const f of w.fields) { add(f.x); add(f.z); add(f.t); }
 	for (const p of w.eshots) { add(p.x); add(p.y); add(p.z); }
 	for (const h of w.hazards) { add(h.x); add(h.z); add(h.t); }
+	for (const p of w.pickups) { add(p.x); add(p.y); add(p.z); }
+	add(w.pl.level); add(w.pl.xp);
 	return h.toString(16).padStart(8, '0');
 }

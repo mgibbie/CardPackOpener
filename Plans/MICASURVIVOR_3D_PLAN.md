@@ -425,6 +425,26 @@ upgrade cards).
 
 Tests: parity 51 checks, combat 74 checks, the page test 62.
 
+## 5.8 P3, fifth part: built (2026-11-11)
+
+- **Experience.** A fallen enemy leaves an orb where it stood (a big one for 20 XP or more), and now and then a
+  berry (30 % of your HP), a magnet (calls every pickup to you) or a bomb (60 + 14 a level to everything within
+  30 m). An orb within your reach (78 units, 4.9 m) flies to you. Reach is measured in space: an orb on top of a
+  4 m wall is out of it from the floor beside the wall. The level curve is the 2D game's.
+- **Level-ups.** The fight waits while three cards are on offer: a new move from your species' pool (while one of
+  your four slots is free), the next level of a move you have, or a permanent upgrade (the 2D game's nine: Vigor,
+  Power, Sprint, Reflexes, Armour, Synthesis, Magnet, Learning, Sitrus Berry, with their limits). Offers are drawn
+  from the fight's seed. On the page: click or tap a card, or press 1 / 2 / 3; `&auto=0` takes the first one.
+- **The comparison with 2D** (55 checks): the cost of each of the first 60 levels, your reach, how long an orb
+  takes to reach you, what 2,000 XP makes of a level-1 player.
+
+Not carried over yet: move evolutions, the Calibre (size) upgrade, tickets and coins, Expedition's own XP curve.
+P5 replaces these cards with rarity-rolled ones and adds refresh / skip / banish.
+
+**Still to do in P3:** Expedition's eight move kinds; abilities and held items; bosses.
+
+Tests: parity 55 checks, combat 98 checks, the page test 65.
+
 ## 6. Dive in 2D: built
 
 **D0 — find the stairs (small; can ship first, on its own).** *Built 2026-11-11 (`overworld/tests/micasurvivor_dive_stairs_test.mjs`). As built: the stairs took their own orange mark, so the rocks and Meowth keep their gold; the HUD arrow comes up after 25 s on a floor, or at once when its boss falls.*

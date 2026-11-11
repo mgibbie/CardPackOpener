@@ -17,6 +17,7 @@
 //     that goes off after a delay, through your moment of grace), a bomber (a fuse, and it takes itself with it)
 //   * the supports: a healer mends a hurt neighbour, a shielder's shield soaks up hits, a summoner calls four of its
 //     kind at a time and keeps at most eight; and a jumper leaps to where you were
+//   * experience: what each level costs, how far your reach is and how fast an orb comes, what a heap of XP makes
 //   * an enemy's touch: a chaser walks up and hits you — the same number of touches, the same HP lost, and it is
 //     knocked back the same distance
 // Lengths: the 2D game's unit is 1/16 m here (32 units = one 2 m cell).
@@ -157,7 +158,22 @@ try {
 				first, dealt: w.stats.dealt, removed: w.stats.removed, hits: w.stats.hits, taken: w.stats.taken, touches: w.stats.touched, hp: w.pl.hp, maxHp: w.pl.maxHp, far, r: w.pl.r / U,
 				foes: foes.map((e) => ({ hp: e.maxHp - e.hp, d: Math.hypot(e.a.x - 80, e.a.z - 80) / U, dead: e.dead })) };
 		}
-		window.P = { both(sc) { const a = play2d(sc); return { a, b: play3d(sc, a) }; } };
+		/** Experience, both ways: the curve; how long an orb at rest takes to reach you from `dist` units; what `xp` makes of a fresh level 1. */
+		function xp(dist, amount) {
+			const pl = G.Game.player, curve2 = [], curve3 = []; for (let l = 1; l <= 60; l++) { curve2.push(G.Player.xpFor(l)); curve3.push(C.xpFor(l)); }
+			const all = G.Pickups.all(), keep = all.splice(0, all.length);
+			G.Pickups.dropXp(pl.x + dist, pl.y, 7); const orb = all.find((p) => p.kind === 'xp'); all.length = 0; all.push(orb); orb.vx = orb.vy = 0; orb.x = pl.x + dist; orb.y = pl.y;
+			let n2 = 0, got = false; while (n2 < 600 && !got) { G.Pickups.update(DT, [pl], () => { got = true; }); n2++; }
+			all.length = 0; for (const p of keep) all.push(p);
+			const room = S.makeRoom(80, 80, 0); room.spawn = [80, 0, 80]; const w = C.newWorld(room, data, { dex: pl.mon.dex, moves: [], seed: 1 });
+			w.pl.s.y = 0; const o = C.drop(w, 'xp', 80 + dist * U, 0.5, 80, 7); o.vx = o.vz = 0;   // (level with your middle, as a 2D orb is level with you)
+			let n3 = 0; while (n3 < 600 && w.pickups.length) { C.tick(w, null, DT); n3++; }
+			// levels: the same XP into a fresh level-1 player
+			const p2 = { xp: 0, xpMul: 1, level: 1, xpNext: G.Player.xpFor(1) }; p2.xp += amount; while (p2.xp >= p2.xpNext) { p2.xp -= p2.xpNext; p2.level++; p2.xpNext = G.Player.xpFor(p2.level); }
+			const w2 = C.newWorld(room, data, { dex: pl.mon.dex, moves: [], seed: 1, autoPick: 0 }); const big = C.drop(w2, 'xp', 80.1, 0.5, 80, amount); big.vx = big.vz = 0; for (let i = 0; i < 10; i++) C.tick(w2, null, DT);
+			return { same: JSON.stringify(curve2) === JSON.stringify(curve3), first: curve2[0], n2, n3, magnet2: pl.magnet, magnet3: w.pl.magnet / U, l2: [p2.level, p2.xp], l3: [w2.pl.level, w2.pl.xp] };
+		}
+		window.P = { xp, both(sc) { const a = play2d(sc); return { a, b: play3d(sc, a) }; } };
 		return { state: G.Game.state, unported: C.CK.UNPORTED };
 	});
 	A(ready.state === 'paused', 'the run is paused: both sides are stepped by hand, 60 ticks a second');
@@ -268,6 +284,14 @@ try {
 		A(su2.a.minions === 8 && su2.b.minions === 8, 'and never has more than eight of its own alive (after 30 s: 8 / 8)', [su2.a.minions, su2.b.minions]);
 		const jm = await E((d2) => P.both({ moves: [], secs: 4, hurtable: true, foes: [{ dex: 19, dx: 200, still: true, dmg: 6, hp: 1000, b: 'jumper', def2: d2, skillCd: 0.5 }] }), d2);
 		A(jm.a.taken > 0 && Math.abs(jm.a.taken - jm.b.taken) < 0.02 && Math.abs(jm.a.first - jm.b.first) < 0.05 && Math.abs(jm.a.foes[0].d - jm.b.foes[0].d) < 3, `a jumper crouches, leaps and lands where you were, hurting you if you are still there: hit after ${jm.a.first.toFixed(2)} s / ${jm.b.first.toFixed(2)} s for ${jm.a.taken.toFixed(2)} / ${jm.b.taken.toFixed(2)} HP`, jm);
+	}
+	// ---------- experience
+	{
+		const x = await E(() => P.xp(60, 2000)), far = await E(() => P.xp(90, 10));
+		A(x.same && x.first === 62, `the XP each of the first 60 levels costs is the same (${x.first} for the first)`, x);
+		A(x.magnet2 === x.magnet3 && Math.abs(x.n2 - x.n3) <= 1 && x.n2 < 60, `your reach is the same (${x.magnet2} units) and an orb 60 units away takes as long to reach you (${x.n2} / ${x.n3} ticks)`, x);
+		A(far.n2 === 600 && far.n3 === 600, 'an orb 90 units away is out of reach on both sides', far);
+		A(JSON.stringify(x.l2) === JSON.stringify(x.l3) && x.l2[0] > 8, `2,000 XP at once makes you level ${x.l2[0]} with ${x.l2[1]} left over, on both sides`, x);
 	}
 	// ---------- a kill
 	{
