@@ -23,6 +23,8 @@
 //     the same damage; it is the same size; a hit does not shove it
 //   * abilities, the same one set on both sides: seven that change your damage or cooldown, six that change what a
 //     touch does to you or to the toucher, and Sturdy
+//   * held items, the same one on both sides: sixteen of them, by damage dealt, HP lost and gained, and what is left
+//     of the enemy
 //   * experience: what each level costs, how far your reach is and how fast an orb comes, what a heap of XP makes
 //   * an enemy's touch: a chaser walks up and hits you — the same number of touches, the same HP lost, and it is
 //     knocked back the same distance
@@ -105,8 +107,9 @@ try {
 				pl.hp = pl.maxHp; pl.invuln = sc.hurtable ? 0 : 1e9; pl.dead = false; pl.lastPatch = null;
 				for (const k in pl.buffs) { pl.buffs[k].n = 0; pl.buffs[k].t = 0; }
 				const ab0 = pl.ability, crit0 = pl.critChance; if (sc.ability) { G.Abilities.set(pl, sc.ability); pl.abT = 0; pl.abFirstT = -999; pl.abSturdyT = -999; pl.defiantT = 0; }
+				const item0 = pl.item; if (sc.item !== undefined) { pl.equip(sc.item); pl.wpT = 0; pl.itemClock = 0; pl.sitrusT = -999; pl.sashT = -Infinity; pl.bellHeal = 0; }
 				if (sc.plHp) pl.hp = pl.maxHp * sc.plHp;
-				const atkK = sc.ability ? 1 : pl.atk / pl.baseAtk;   // (the ability's factor, before any buff)
+				const atkK = sc.ability ? 1 : pl.atk / pl.baseAtk / (sc.item === 'lifeorb' ? 1.3 : 1), base2d = { cdMul: pl.cdMul, reduce: pl.dmgReduce };   // (the ability's factor, before any buff)
 				if (sc.noProc) for (const m of ms) m.ccp = 0;   // (a state's dice are not the same dice on the two sides)
 				let hits = 0, touches = 0, removed = 0, taken = 0;
 				const foes = sc.foes.map((f) => {
@@ -130,7 +133,8 @@ try {
 					if (pl.invuln > 0 && pl.invuln < 1e8) pl.invuln -= DT;
 					if (pl.meleeT > 0) pl.meleeT -= DT;
 					for (const k in pl.buffs) { const b = pl.buffs[k]; if (b.n > 0) { b.t -= DT; if (b.t <= 0) b.n = 0; } }   // (player.update's buff clocks)
-					G.Abilities.tick(pl, DT); if (sc.ability && pl.regen > 0) pl.hp = Math.min(pl.maxHp, pl.hp + pl.regen * DT);   // (…its ability clocks and regeneration)
+					G.Abilities.tick(pl, DT); if ((sc.ability || sc.item) && pl.regen > 0) pl.hp = Math.min(pl.maxHp, pl.hp + pl.regen * DT);   // (…its ability clocks and regeneration)
+					pl.itemClock += DT; if (pl.wpT > 0) pl.wpT = Math.max(0, pl.wpT - DT); if (pl.bellHeal > 0) { const h = Math.min(pl.bellHeal, 4 * DT); pl.hp = Math.min(pl.maxHp, pl.hp + h); pl.bellHeal -= h; }   // (…and its item clocks)
 					const tg = G.Projectiles.nearest(G.EnemyMgr.all(), pl.x, pl.y, 520);
 					pl.target = tg; if (tg) pl.aim = Math.atan2(tg.y - pl.y, tg.x - pl.x);
 					G.EnemyMgr.update(DT, [pl]); G.EnemyMgr.rebuildGrid();
@@ -146,7 +150,7 @@ try {
 					if (!first && taken > 0) first = t;
 				}
 				pl.hurt = plHurt;
-				const hpEnd = pl.hp, cdMulWas = pl.cdMul; if (sc.ability) G.Abilities.set(pl, ab0);
+				const hpEnd = pl.hp, cdMulWas = pl.cdMul; if (sc.ability) G.Abilities.set(pl, ab0); if (sc.item !== undefined) pl.equip(item0 || null);
 				const all = G.EnemyMgr.all().filter((e) => !e.dead), mins = all.filter((e) => e.isMinion);
 				return { count: all.length, minions: mins.length, minion: mins[0] ? { hp: mins[0].maxHp, dmg: mins[0].dmg, spd: mins[0].spd, xp: mins[0].xp } : null, left: foes.map((e) => Math.round(e.hp)), shields: foes.map((e) => Math.round(e.shield || 0)),
 					first, firstDmg, scale: foes[0] ? foes[0].scale : 1, fr: foes[0] ? foes[0].r : 0, dealt: pl.dmgDealt, removed, taken, touches, hp: hpEnd, maxHp: pl.maxHp, far, foes: foes.map((e) => ({ hp: e.maxHp - e.hp, d: Math.hypot(e.x - x0, e.y - y0), dead: e.dead })),
@@ -156,8 +160,8 @@ try {
 		/** The same fight by the 3D rules, on a flat room. `ref`: the 2D result (who you are, your ability's factors). */
 		function play3d(sc, ref) {
 			const room = S.makeRoom(80, 80, 0); room.spawn = [80, 0, 80];
-			const w = C.newWorld(room, data, { dex: ref.dex, moves: sc.moves, seed: sc.seed ? sc.seed * 7 + 1 : 777, weather: false, ability: sc.ability || null, afDmg: ref.afDmg, atkK: ref.atkK, takenK: sc.ability ? 1 : ref.takenK, crit: 0, orbitSquash: 0.7 });
-			w.pl.baseReduce = sc.ability ? 0 : ref.reduction; w.pl.invuln = sc.hurtable ? 0 : 1e9; if (sc.plHp) w.pl.hp = w.pl.maxHp * sc.plHp;
+			const w = C.newWorld(room, data, { dex: ref.dex, moves: sc.moves, seed: sc.seed ? sc.seed * 7 + 1 : 777, weather: false, items: sc.item ? [sc.item] : [], ability: sc.ability || null, afDmg: ref.afDmg, atkK: ref.atkK, takenK: sc.ability ? 1 : ref.takenK, crit: 0, orbitSquash: 0.7 });
+			w.pl.baseReduce = sc.ability ? 0 : sc.item === 'assaultvest' ? 0.2 : ref.reduction; w.pl.invuln = sc.hurtable ? 0 : 1e9; if (sc.plHp) w.pl.hp = w.pl.maxHp * sc.plHp;
 			if (sc.wx) C.setWeather(w, sc.wx, sc.wxDur || 60);
 			if (sc.noProc) for (const m of w.pl.moves) m.ccp = 0;
 			const foes = sc.foes.map((f) => {
@@ -351,6 +355,24 @@ try {
 		}
 		const st = await touch('sturdy', 19, { plHp: 0.05, secs: 2 });
 		A(st.a.hp === 1 && st.b.hp === 1, `sturdy: on 5 % HP, the touch that would finish you leaves 1 HP (${st.a.hp} / ${st.b.hp})`, st);
+	}
+	// ---------- held items: the same one held on both sides
+	{
+		const fire = (item, o = {}) => E((item, o) => P.both({ moves: o.moves || [['ember', 1]], foes: [{ dex: o.foe || 19, dx: o.dx || 120, still: true, hp: 20000 }], secs: 8, item, plHp: o.plHp, ability: o.ability, noProc: true }), item, o);
+		for (const [item, o, what] of [['lifeorb', {}, '+ 30 % damage, 1 % of your HP an attack'], ['quickclaw', {}, '20 % off cooldowns'], ['expertbelt', { foe: 1 }, '+ 25 % on a super-effective hit'], ['typegem', {}, '+ 20 % with your own type'], ['silverpowder', { moves: [['bug-buzz', 1]], dx: 50 }, '+ 20 % with Bug moves'], ['bigorb', { moves: [['bug-buzz', 1]], dx: 95 }, 'an aura 30 % wider: a target at 95 units is inside it'], ['widelens', { moves: [['bug-buzz', 1]], dx: 88 }, 'an aura 20 % wider: a target at 88 units is inside it'], ['shellbell', { plHp: 0.2, ability: 'battlearmor' }, 'HP back for the damage you do'], ['leftovers', { plHp: 0.2, ability: 'battlearmor' }, '1.5 % of your HP a second']]) {
+			// (on low HP a neutral ability is set on both sides: your own, Blaze, would add to the 2D side's Fire damage)
+			const r = await fire(item, o);
+			A(r.a.removed > 0 && Math.abs(r.a.removed - r.b.removed) <= 2 && Math.abs(r.a.hp - r.b.hp) < 0.05, `${item} (${what}): 8 s: ${cmp(r)}; you end on ${r.a.hp.toFixed(2)} / ${r.b.hp.toFixed(2)} HP`, r);
+		}
+		const two = await E(() => P.both({ moves: [['ember', 1], ['water-gun', 1]], foes: [{ dex: 19, dx: 120, still: true, hp: 20000 }], secs: 8, item: 'choiceband' }));
+		A(two.a.removed === two.b.removed && two.a.removed > 0, `choiceband (your first move + 40 %, the other - 20 %): Ember and Water Gun together: ${cmp(two)}`, two);
+		const touch = (item, foe, o = {}) => E((item, foe, o) => P.both({ moves: [], foes: [{ dex: foe, dx: 60, spd: 56, dmg: 3 }], secs: o.secs || 6, hurtable: true, item, plHp: o.plHp }), item, foe, o);
+		for (const [item, foe, what, o] of [['assaultvest', 19, '20 % less from a touch', {}], ['rockyhelmet', 19, 'whoever touches you is hurt', {}], ['eternalice', 19, 'whoever touches you is slowed', {}], ['sitrusberry', 19, 'under half HP, 30 % back', { plHp: 0.52 }], ['focussash', 19, 'left on 1 HP', { plHp: 0.03, secs: 1.2 }]]) {
+			const r = await touch(item, foe, o);
+			A(r.a.touches > 0 && r.a.touches === r.b.touches && Math.abs(r.a.hp - r.b.hp) < 0.05 && r.a.left[0] === r.b.left[0] && Math.abs(r.a.foes[0].d - r.b.foes[0].d) < 2, `${item} (${what}): with a chaser: you end on ${r.a.hp.toFixed(2)} / ${r.b.hp.toFixed(2)} HP after ${r.a.touches} / ${r.b.touches} touches; it is left with ${r.a.left[0]} / ${r.b.left[0]}`, r);
+		}
+		const wp = await E(() => P.both({ moves: [['ember', 1]], foes: [{ dex: 19, dx: 120, still: true, hp: 20000 }, { dex: 7, dx: 40, spd: 56, dmg: 1, hp: 1e6 }], secs: 8, hurtable: true, item: 'weaknesspolicy' }));
+		A(wp.a.left[1] === wp.b.left[1] && wp.a.left[1] < 1e6 && wp.a.dealt > 0 && Math.abs(wp.a.dealt - wp.b.dealt) < 0.01 && Math.abs(wp.a.hp - wp.b.hp) < 0.05, `weaknesspolicy (+ 50 % for 8 s after a super-effective hit): a Squirtle on you while you fire at it: ${cmp(wp)}`, wp);
 	}
 	// ---------- experience
 	{
