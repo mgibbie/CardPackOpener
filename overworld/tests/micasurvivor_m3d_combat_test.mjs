@@ -23,6 +23,10 @@
 //     height) it flies to you; a magnet calls them all, a berry heals, a bomb clears the field; a level-up stops the
 //     fight until one of three cards is taken (a new move, a move's next level, a permanent upgrade), and each card
 //     does what it says
+//   * bosses: the 2D game's numbers for each of its five boss times; a boss hovers over the terrain (a wall does not
+//     stop it), uses its own four attacks, is enraged under half HP, shakes off a state sooner and is then immune,
+//     bursts into fourteen orbs with a berry and a magnet, arrives on time and thins the other arrivals; its stomp
+//     and its marks can be jumped clear of
 //   * arrivals: enemies appear 16-32 m away on floor they can walk to you from, never past the cap
 //   * the fight is deterministic (same seed: the same fight to the last digit), stays in the world through 3 minutes
 //     of random play on generated levels, and a tick with 110 enemies is cheap
@@ -30,7 +34,7 @@
 import { K, CELL, makeRoom, setCell, groundAt, waterAt } from '../../micasurvivor/m3d/sim.js';
 import { generate, rng } from '../../micasurvivor/m3d/gen.js';
 import { newActor, stepActor, flowField, steer, knock } from '../../micasurvivor/m3d/actors.js';
-import { newWorld, addEnemy, tick, dataFrom, hashWorld, clearLine, applyState, drop, offer, choose, xpFor, STATS, U, CK } from '../../micasurvivor/m3d/combat.js';
+import { newWorld, addEnemy, addBoss, bossDef, tick, dataFrom, hashWorld, clearLine, applyState, drop, offer, choose, xpFor, STATS, U, CK } from '../../micasurvivor/m3d/combat.js';
 import { loadG } from './m3d_data.mjs';
 
 let pass = 0, fail = 0;
@@ -376,6 +380,48 @@ const at = (cx, cz) => [(cx + 0.5) * CELL, (cz + 0.5) * CELL];
 	const room = generate(7, 'meadow'), runW = newWorld(room, data, { dex: 25, moves: ['ember'], seed: 31, cast: [RAT, ZUBAT, 1, 4, 7], autoPick: (w, cards) => Math.max(0, cards.findIndex((c) => c.type !== 'stat')) });
 	let ticks = 0; for (; ticks < 60 * 240 && !runW.pl.dead; ticks++) tick(runW, { mx: Math.sin(ticks / 140), mz: Math.cos(ticks / 190), jump: false, crouch: false });
 	A(runW.pl.level >= 5 && runW.pl.moves.length === 4 && runW.pl.moves.some((mv) => mv.lvl > 1) && runW.stats.collected > 30, `four minutes on a level, taking cards as they come: level ${runW.pl.level}, ${runW.pl.moves.map((mv) => mv.id + ' Lv' + mv.lvl).join(', ')}; ${runW.stats.kills} KOs${runW.pl.dead ? ' (and down at ' + (ticks / 60).toFixed(0) + ' s)' : ''}`, [runW.pl.level, runW.stats]);
+}
+
+// ---------------------------------------------------------------- bosses
+{
+	const SNOR = 143, r = yard();
+	const d0 = bossDef(data, SNOR, 0), d4 = bossDef(data, SNOR, 4), S = G.Enemies.BOSS_SLOTS;
+	A(d0.hp === Math.round(S[0].hp * 1.35) && d0.dmg === Math.round(S[0].dmg * 1.2) && d0.xp === S[0].xp && d4.hp === Math.round(S[4].hp * 1.35) && d0.at === 180 && d4.at === 900, `the 3:00 boss has ${d0.hp} HP and hits for ${d0.dmg}; the 15:00 one ${d4.hp} and ${d4.dmg} (the 2D game's slots × 1.35 HP, × 1.2 damage)`, [d0, d4]);
+	const w = newWorld(r, data, { dex: 25, moves: [], seed: 4 }); w.pl.s.x = 11 * CELL; w.pl.s.z = 15 * CELL; w.pl.invuln = 1e9;
+	const b = addBoss(w, SNOR, 5 * CELL, 15 * CELL, { slot: 0, t: 300 });
+	A(b.boss && b.maxHp === Math.round(d0.hp * 1.5) && near(b.dmg, d0.dmg * 1.5) && b.scale === 1.5 && near(b.cr, data.radius(SNOR, 1.5)) && b.fly && b.a.y < 0.1, 'put in five minutes into a run it is scaled by the clock (× 1.5 at 5:00), half as big again, and its feet are on the floor', [b.maxHp, b.dmg, b.scale]);
+	b.ai.cd = 99; let crossed = false, minX = 99; for (let i = 0; i < 240; i++) { tick(w, null); if (Math.abs(b.a.x - 8.5 * CELL) < 0.6 && b.a.y > 4) crossed = true; }
+	A(crossed && b.a.x > 9 * CELL, 'the 4 m wall between you does not stop it: it goes over the top', [b.a.x, b.a.y]);
+	// its attacks are its own four, all of them used over a long fight; under half HP it is enraged
+	const f = newWorld(makeRoom(60, 60, 0), data, { dex: 25, moves: [], seed: 9 }); f.room.spawn = [60, 0, 60]; f.pl.s.x = 60; f.pl.s.z = 60; f.pl.invuln = 1e9;
+	const fb = addBoss(f, SNOR, 70, 60, { slot: 0 }); const used = {}; let enraged = 0; const sp0 = fb.a.speed;
+	for (let i = 0; i < 60 * 120; i++) { tick(f, { mx: Math.sin(i / 200), mz: Math.cos(i / 260), jump: false, crouch: false }); for (const ev of f.events) { if (ev.k === 'bosscast') used[ev.attack] = (used[ev.attack] || 0) + 1; if (ev.k === 'enrage') enraged++; } if (i === 60 * 60) fb.hp = Math.round(fb.maxHp * 0.4); }
+	const own = [...fb.ai.melee, ...fb.ai.ranged];
+	A(Object.keys(used).length >= 3 && Object.keys(used).every((q) => own.includes(q)), `two minutes with Snorlax, keeping on the move: it uses its own attacks and no others — the stomp only when you are beside it (${Object.entries(used).map(([q, n]) => q + ' × ' + n).join(', ')})`, [used, own]);
+	A(enraged === 1 && fb.ai.fury && near(fb.a.speed, sp0 * 1.15), 'brought under half its HP it is enraged, once: 15 % faster');
+	// states: shorter, then immune
+	const st = newWorld(makeRoom(40, 40, 0), data, { dex: 25, moves: [], seed: 9 }); st.pl.invuln = 1e9; const sb = addBoss(st, SNOR, 30, 30, { slot: 0 });
+	const dur = applyState(st, sb, 'freeze'), again = applyState(st, sb, 'sleep');
+	A(near(dur, 1.8 * 0.35) && again === 0 && near(sb.ccImm, dur + 4), `a boss is frozen for ${dur.toFixed(2)} s, not 1.8, and nothing else takes hold for 4 s after`, [dur, again, sb.ccImm]);
+	run(st, 60 * 5); A(applyState(st, sb, 'para') > 0, '...then it can be caught again');
+	// down: fourteen orbs, a berry, a magnet
+	const kd = newWorld(makeRoom(40, 40, 0), data, { dex: 25, moves: [], seed: 9, autoPick: 0 }); kd.pl.invuln = 1e9; const kb = addBoss(kd, SNOR, 56, 40, { slot: 0 }); kb.ai.cd = 99; kb.a.speed = 0;
+	kd.shots.push({ id: 0, x: 53, y: 1, z: 40, vx: 12, vy: 0, vz: 0, dmg: 1e6, r: 0.3, life: 1, t: 0, pierce: 0, homing: 0, hits: new Set(), px: null, py: 0, pz: 0 }); run(kd, 20);
+	const orbs = kd.pickups.filter((p) => p.kind === 'xpBig');
+	A(kb.dead && orbs.length === 14 && orbs.reduce((a, p) => a + p.value, 0) >= kb.xp && kd.pickups.some((p) => p.kind === 'heal') && kd.pickups.some((p) => p.kind === 'magnet'), `down, it bursts into 14 big orbs (its ${kb.xp} XP between them), a berry and a magnet`, kd.pickups.map((p) => p.kind));
+	// on time, and fewer others while it lives
+	const room = generate(7, 'meadow'), tw = newWorld(room, data, { dex: 25, moves: [], seed: 5, cast: [RAT], bosses: [SNOR, 130], autoPick: 0 }); tw.pl.invuln = 1e9; tw.t = 170;
+	let at = 0; for (let i = 0; i < 60 * 20 && !at; i++) { tick(tw, null); if (tw.enemies.some((e) => e.boss)) at = tw.t; }
+	const boss = tw.enemies.find((e) => e.boss), dist = boss ? Math.hypot(boss.a.x - tw.pl.s.x, boss.a.z - tw.pl.s.z) : 0;
+	A(Math.abs(at - 180) < 0.05 && boss.dex === SNOR && dist >= CK.SPAWN_MIN - 0.5 && dist <= CK.SPAWN_MAX + 0.5 && tw.bossIdx === 1, `the first boss on the list arrives at 3:00 (${at.toFixed(2)} s), ${dist.toFixed(0)} m away`, [at, dist]);
+	const count = (alive) => { const q = newWorld(room, data, { dex: 25, moves: [], seed: 5, cast: [RAT], autoPick: 0 }); q.pl.invuln = 1e9; q.t = 181; if (alive) { const bb = addBoss(q, SNOR, q.pl.s.x + 20, q.pl.s.z, { slot: 0 }); bb.ai.cd = 1e9; bb.a.speed = 0; } const n0 = q.stats.spawned; run(q, 60 * 40); return q.stats.spawned - n0; };
+	const withBoss = count(true), without = count(false);
+	A(withBoss < without * 0.4 && withBoss > 0, `while a boss lives the others arrive at a quarter of the rate (${withBoss} in 40 s against ${without})`, [withBoss, without]);
+	// its stomp: standing beside it you are hit; in the air above the ring you are not
+	const stomp = (jump) => { const q = newWorld(makeRoom(40, 40, 0), data, { dex: 25, moves: [], seed: 9 }); q.room.spawn = [40, 0, 40]; q.pl.s.x = 40; q.pl.s.z = 40; const bb = addBoss(q, SNOR, 45, 40, { slot: 0 }); bb.a.speed = 0; Object.assign(bb.ai, { melee: ['slam'], ranged: ['slam'], mode: 'close', modeT: 99, cd: 0.1 }); bb.dmg = 5; let boomAt = 0;
+		for (let i = 0; i < 120; i++) { const tt = i / 60; tick(q, { mx: 0, mz: 0, jump: jump && tt > 0.62 && tt < 1.3, crouch: false }); if (q.events.some((ev) => ev.k === 'boom')) boomAt = q.t; } return { taken: q.stats.taken, boomAt, touched: q.stats.touched }; };
+	const stood = stomp(false), hopped = stomp(true);
+	A(stood.taken > 0 && stood.boomAt > 0.9 && hopped.taken === 0 && hopped.boomAt === stood.boomAt, `a boss's stomp goes off ${stood.boomAt.toFixed(2)} s after it starts: standing in the ring you are hit; time a jump and you are over it`, [stood, hopped]);
 }
 
 // ---------------------------------------------------------------- arrivals

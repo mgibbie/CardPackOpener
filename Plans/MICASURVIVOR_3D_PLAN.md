@@ -445,6 +445,27 @@ P5 replaces these cards with rarity-rolled ones and adds refresh / skip / banish
 
 Tests: parity 55 checks, combat 98 checks, the page test 65.
 
+## 5.9 P3, sixth part: built (2026-11-11)
+
+- **Bosses.** The 2D game's five boss times (3:00 to 15:00) with its numbers: HP, damage and XP per slot, scaled
+  by the clock, drawn up to twice as big with a body to match. Each boss has four attacks chosen from its species
+  and types: a stomp, a charge or a leap, and two of rain, beams, a volley, a ring of shots. All are marked on the
+  ground first. It alternates between closing in and fighting from a distance, and under half HP it is enraged:
+  15 % faster, shorter waits, sometimes two attacks in a row.
+- A hit does not shove a boss. A state wears off sooner on it (35-50 % of the time) and it is then immune for 4 s.
+  Down, it bursts into 14 big orbs with a berry and a magnet. While one lives, other enemies arrive at a quarter
+  of the rate.
+- **In 3D.** A boss goes over any terrain, as a 2D boss ignores walls: one that does not hover by nature keeps its
+  feet on whatever is under it. Its stomp and its marks reach about 1.2 m up, so a timed jump clears them.
+- **The comparison with 2D** (64 checks): each of the seven attacks lands at the same moment for the same damage.
+- **On the page:** `&boss=143` puts one in at the start; `&bosses=143,130` sets who arrives at 3:00, 6:00 …
+
+Not carried over: the Dynamax den's Max Move, a boss's coins, item and ticket drops, shiny bosses.
+
+**Still to do in P3:** Expedition's eight move kinds; abilities and held items.
+
+Tests: parity 64 checks, combat 109 checks, the page test 66.
+
 ## 6. Dive in 2D: built
 
 **D0 — find the stairs (small; can ship first, on its own).** *Built 2026-11-11 (`overworld/tests/micasurvivor_dive_stairs_test.mjs`). As built: the stairs took their own orange mark, so the rocks and Meowth keep their gold; the HUD arrow comes up after 25 s on a floor, or at once when its boss falls.*

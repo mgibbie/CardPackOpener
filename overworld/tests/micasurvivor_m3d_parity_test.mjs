@@ -17,6 +17,8 @@
 //     that goes off after a delay, through your moment of grace), a bomber (a fuse, and it takes itself with it)
 //   * the supports: a healer mends a hurt neighbour, a shielder's shield soaks up hits, a summoner calls four of its
 //     kind at a time and keeps at most eight; and a jumper leaps to where you were
+//   * a boss: each of its seven attacks (stomp, charge, leap, rain, beams, volley, ring) lands at the same moment for
+//     the same damage; it is the same size; a hit does not shove it
 //   * experience: what each level costs, how far your reach is and how fast an orb comes, what a heap of XP makes
 //   * an enemy's touch: a chaser walks up and hits you — the same number of touches, the same HP lost, and it is
 //     knocked back the same distance
@@ -100,14 +102,16 @@ try {
 				let hits = 0, touches = 0, removed = 0, taken = 0;
 				const foes = sc.foes.map((f) => {
 					const def = { dex: f.dex, name: 'T' + f.dex, hp: f.hp || 1e6, spd: f.still ? 0 : f.spd || 56, dmg: f.dmg || 10, xp: 1, behavior: f.b || 'chase', ...(f.def || {}) };
-					const e = new G.Enemy(def, pl.x + f.dx, pl.y + (f.dy || 0), { hp: 1, spd: 1, dmg: 1 }, false);
+					const e = new G.Enemy(def, pl.x + f.dx, pl.y + (f.dy || 0), { hp: 1, spd: 1, dmg: 1 }, !!f.boss);
+					if (f.boss) { e.bossInit(); Object.assign(e.ai, { melee: [f.boss], ranged: [f.boss], mode: 'close', modeT: 99, cd: 0.5 }); }
 					e.flying = true;   // (straight lines: no walls or pathing between you)
 					const hurt = e.hurt.bind(e); e.hurt = (...a) => { const h0 = e.hp; const r = hurt(...a); removed += h0 - e.hp; if (a[4] !== undefined || a.length > 2) hits++; return r; };
 					if (f.shotCd !== undefined) e.shotCd = f.shotCd; if (f.skillCd !== undefined) e.skillCd = f.skillCd; if (f.hurt) e.hp -= f.hurt;
 					G.EnemyMgr.add(e); if (f.state) G.Status.apply(e, f.state); return e;
 				});
 				G.EnemyMgr.rebuildGrid();
-				const plHurt = pl.hurt.bind(pl); pl.hurt = (...a) => { const h0 = pl.hp, was = pl.invuln > 0; const r = plHurt(...a); touches++; taken += h0 - pl.hp; return r; };
+				let firstDmg = 0;
+				const plHurt = pl.hurt.bind(pl); pl.hurt = (...a) => { const h0 = pl.hp, was = pl.invuln > 0; const r = plHurt(...a); touches++; taken += h0 - pl.hp; if (!firstDmg && h0 - pl.hp > 0) firstDmg = h0 - pl.hp; return r; };
 				const x0 = pl.x, y0 = pl.y; let t = 0, far = 0, landed = 0, first = 0;
 				const land = G.Combat.land; let count = 0;
 				for (let i = 0, n = Math.round(sc.secs / DT); i < n; i++) {
@@ -132,7 +136,7 @@ try {
 				pl.hurt = plHurt;
 				const all = G.EnemyMgr.all().filter((e) => !e.dead), mins = all.filter((e) => e.isMinion);
 				return { count: all.length, minions: mins.length, minion: mins[0] ? { hp: mins[0].maxHp, dmg: mins[0].dmg, spd: mins[0].spd, xp: mins[0].xp } : null, left: foes.map((e) => Math.round(e.hp)), shields: foes.map((e) => Math.round(e.shield || 0)),
-					first, dealt: pl.dmgDealt, removed, taken, touches, hp: pl.hp, maxHp: pl.maxHp, far, foes: foes.map((e) => ({ hp: e.maxHp - e.hp, d: Math.hypot(e.x - x0, e.y - y0), dead: e.dead })),
+					first, firstDmg, scale: foes[0] ? foes[0].scale : 1, fr: foes[0] ? foes[0].r : 0, dealt: pl.dmgDealt, removed, taken, touches, hp: pl.hp, maxHp: pl.maxHp, far, foes: foes.map((e) => ({ hp: e.maxHp - e.hp, d: Math.hypot(e.x - x0, e.y - y0), dead: e.dead })),
 					atkK, afDmg: pl.afDmg, dex: pl.mon.dex, crit: pl.critChance, r: pl.r, reduction: pl.reduction, takenK: G.Abilities.inK(pl, 'normal', null) };
 			} finally { for (const k in keep) Wd[k] = keep[k]; Math.random = R; G.EnemyMgr.clear(); G.Projectiles.clear(); G.Projectiles.clearOrbs(G.Game.player); G.Combat.clearFields(); G.EnemyMgr.rebuildGrid(); G.Game.player.invuln = 1e9; }
 		}
@@ -143,6 +147,7 @@ try {
 			w.pl.baseReduce = ref.reduction; w.pl.invuln = sc.hurtable ? 0 : 1e9;
 			if (sc.noProc) for (const m of w.pl.moves) m.ccp = 0;
 			const foes = sc.foes.map((f) => {
+				if (f.boss) { const b = C.addBoss(w, f.dex, 80 + f.dx * U, 80, { t: 0, def: { dex: f.dex, hp: f.hp || 1e6, spd: f.spd || 56, dmg: f.dmg || 10, xp: 1, behavior: 'chase', ...(f.def || {}) } }); Object.assign(b.ai, { melee: [f.boss], ranged: [f.boss], mode: 'close', modeT: 99, cd: 0.5 }); b.a.y = 0; b.a.hover = 0; return b; }   // (flat ground: it stands on the floor as the 2D one does)
 				const e = C.addEnemy(w, f.dex, 80 + f.dx * U, 80 + (f.dy || 0) * U, { t: 0, ti: 0, behavior: f.b || 'chase' });   // (a target that stands still is an enemy with no speed: it still touches, as in 2D)
 				if (f.def) Object.assign(e.def = { ...e.def }, f.def); if (f.shotCd !== undefined) e.shotCd = f.shotCd; if (f.skillCd !== undefined) e.skillCd = f.skillCd;
 				if (f.def2) { e.def = { ...e.def, hp: f.def2.hp, spd: f.def2.spd, dmg: f.def2.dmg, xp: f.def2.xp }; }
@@ -151,11 +156,11 @@ try {
 				if (f.state) C.applyState(w, e, f.state);
 				return e;
 			});
-			let far = 0, first = 0;
-			for (let i = 0, n = Math.round(sc.secs / DT); i < n; i++) { C.tick(w, null, DT); for (const e of foes) far = Math.max(far, Math.hypot(e.a.x - 80, e.a.z - 80) / U); if (!first && w.stats.taken > 0) first = w.t; }
+			let far = 0, first = 0, firstDmg = 0;
+			for (let i = 0, n = Math.round(sc.secs / DT); i < n; i++) { C.tick(w, null, DT); for (const e of foes) far = Math.max(far, Math.hypot(e.a.x - 80, e.a.z - 80) / U); if (!first && w.stats.taken > 0) { first = w.t; firstDmg = w.stats.taken; } }
 			const mins = w.enemies.filter((e) => e.minion && !e.dead);
 			return { count: w.enemies.length, minions: mins.length, minion: mins[0] ? { hp: mins[0].maxHp, dmg: mins[0].dmg, spd: mins[0].a.speed / U, xp: mins[0].xp } : null, left: foes.map((e) => Math.round(e.hp)), shields: foes.map((e) => Math.round(e.shield || 0)),
-				first, dealt: w.stats.dealt, removed: w.stats.removed, hits: w.stats.hits, taken: w.stats.taken, touches: w.stats.touched, hp: w.pl.hp, maxHp: w.pl.maxHp, far, r: w.pl.r / U,
+				first, firstDmg, scale: foes[0] ? foes[0].scale || 1 : 1, fr: foes[0] ? foes[0].cr / U : 0, dealt: w.stats.dealt, removed: w.stats.removed, hits: w.stats.hits, taken: w.stats.taken, touches: w.stats.touched, hp: w.pl.hp, maxHp: w.pl.maxHp, far, r: w.pl.r / U,
 				foes: foes.map((e) => ({ hp: e.maxHp - e.hp, d: Math.hypot(e.a.x - 80, e.a.z - 80) / U, dead: e.dead })) };
 		}
 		/** Experience, both ways: the curve; how long an orb at rest takes to reach you from `dist` units; what `xp` makes of a fresh level 1. */
@@ -284,6 +289,17 @@ try {
 		A(su2.a.minions === 8 && su2.b.minions === 8, 'and never has more than eight of its own alive (after 30 s: 8 / 8)', [su2.a.minions, su2.b.minions]);
 		const jm = await E((d2) => P.both({ moves: [], secs: 4, hurtable: true, foes: [{ dex: 19, dx: 200, still: true, dmg: 6, hp: 1000, b: 'jumper', def2: d2, skillCd: 0.5 }] }), d2);
 		A(jm.a.taken > 0 && Math.abs(jm.a.taken - jm.b.taken) < 0.02 && Math.abs(jm.a.first - jm.b.first) < 0.05 && Math.abs(jm.a.foes[0].d - jm.b.foes[0].d) < 3, `a jumper crouches, leaps and lands where you were, hurting you if you are still there: hit after ${jm.a.first.toFixed(2)} s / ${jm.b.first.toFixed(2)} s for ${jm.a.taken.toFixed(2)} / ${jm.b.taken.toFixed(2)} HP`, jm);
+	}
+	// ---------- a boss, one attack at a time (its choice pinned on both sides; the first one that lands is compared)
+	{
+		const bdef = { shotDmg: 12, shotCd: 1.1, range: 260 };
+		for (const [attack, dx, what] of [['slam', 100, 'a stomp: a ring round it'], ['dash', 220, 'a charge down a marked line'], ['leap', 220, 'a leap onto your spot'], ['rain', 220, 'zones falling round you'], ['beam', 220, 'a fan of marked lines'], ['volley', 200, 'a fan of shots'], ['nova', 80, 'a ring of shots']]) {
+			const r = await E((attack, dx, bdef) => P.both({ moves: [], secs: 3, hurtable: true, foes: [{ dex: 143, dx, spd: 50, dmg: 20, hp: 5000, boss: attack, def: bdef }] }), attack, dx, bdef);
+			A(r.a.firstDmg > 0 && Math.abs(r.a.firstDmg - r.b.firstDmg) < 0.02 && Math.abs(r.a.first - r.b.first) < 0.05, `a boss's ${attack} (${what}): it lands after ${r.a.first.toFixed(2)} s / ${r.b.first.toFixed(2)} s for ${r.a.firstDmg.toFixed(2)} / ${r.b.firstDmg.toFixed(2)} HP`, r);
+			if (attack === 'slam') A(r.a.scale === r.b.scale && r.a.scale > 1 && Math.abs(r.a.fr - r.b.fr) < 1e-6, `a boss is drawn bigger and its body is bigger with it (Snorlax × ${r.a.scale}: radius ${r.a.fr} units)`, [r.a.scale, r.b.scale, r.a.fr, r.b.fr]);
+		}
+		const kb = await E(() => P.both({ moves: [['body-slam', 3]], secs: 4, foes: [{ dex: 143, dx: 40, spd: 0.0001, dmg: 1, hp: 5000, boss: 'none' }] }));
+		A(kb.a.removed > 0 && kb.a.removed === kb.b.removed && kb.a.foes[0].d < 60 && kb.b.foes[0].d < 60, `a hit does not shove a boss: 4 s of Body Slam and it has not been driven off (${kb.a.foes[0].d.toFixed(0)} / ${kb.b.foes[0].d.toFixed(0)} units away; ${kb.a.removed} / ${kb.b.removed} HP)`, kb);
 	}
 	// ---------- experience
 	{

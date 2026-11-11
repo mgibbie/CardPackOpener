@@ -313,6 +313,16 @@ try {
 		const xb = await fx.page.evaluate(() => ({ hidden: getComputedStyle(document.getElementById('cards')).display === 'none', level: window.__m3d.world.pl.level, pending: window.__m3d.world.pl.pending }));
 		A(xb.hidden && xb.level === 3 && xb.pending === 0, 'the next level: clicking a card takes it', JSON.stringify(xb));
 		await fx.page.close();
+		// a boss on the page
+		const fbs = await open({ width: 1000, height: 640, deviceScaleFactor: 1 }, '?gen=7&fight=1&moves=ember:5&cast=19&cap=2&bosses=143&boss=143');
+		const bs = await fbs.page.evaluate(async () => { const m = window.__m3d, w = m.world, wait = (ms) => new Promise(r => setTimeout(r, ms)); w.pl.invuln = 1e9;
+			const b = w.enemies.find(e => e.boss); let casts = 0; const hud0 = document.getElementById('hud').textContent;
+			for (let i = 0; i < 40; i++) { await wait(100); casts += w.events.filter(ev => ev.k === 'bosscast').length; }
+			const q1 = m.quadOf('143/Walk', 0, 0);
+			return { boss: !!b, scale: b && b.scale, hp: b && b.hp, max: b && b.maxHp, marks: w.stats, hud0, hud: document.getElementById('hud').textContent, sheet: m.sheets.has('143/Walk'), ai: b && [...b.ai.melee, ...b.ai.ranged] }; });
+		A(bs.boss && bs.sheet && bs.scale === 1.5 && /BOSS Snorlax: \d+ \/ \d+/.test(bs.hud) && bs.hp < bs.max, `?boss=143: a Snorlax half as big again is in the fight, its HP is on the readout and your shots are bringing it down (${bs.hp} of ${bs.max})`, JSON.stringify(bs));
+		await shot(fbs.page, 'm3d_boss.png');
+		await fbs.page.close();
 		// without &fight=1 a generated level has no fight
 		const nf = await open({ width: 900, height: 600, deviceScaleFactor: 1 }, '?gen=7&n=5');
 		const nv = await nf.page.evaluate(() => ({ world: window.__m3d.world, hud: document.getElementById('hud').textContent }));

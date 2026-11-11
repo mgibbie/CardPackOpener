@@ -30,6 +30,9 @@ export const CK = {
 	CC: { freeze: 1.8, para: 3, sleep: 4, conf: 3 }, SLEEP_BONUS: 1.3, PARA_ELECTRIC: 1.35, FROZEN_TAKEN: 1.25, PARA_SLOW: 0.4,
 	CONF_REACH: 380, CONF_CD: 0.6, CONF_KNOCK: 140,
 	UNPORTED: [],   // base move kinds still to come (Expedition's eight are their own step)
+	// bosses (the 2D game's entities/enemy.js bossMove / bossStart): four attacks each, all marked on the ground first;
+	// under half HP a boss is enraged: faster, shorter waits, and it sometimes chains two attacks
+	BOSS: { hp: 1.35, dmg: 1.2, shot: 0.55, shotCd: 1.1, range: 260, cc: { freeze: 0.35, sleep: 0.35, para: 0.5, conf: 0.5 }, immune: 4, orbs: 14, fury: 1.25, furySpd: 1.15, furyWind: 0.8, chain: 0.35 },
 	// experience (the 2D game's entities/pickup.js, player.js, systems/levelup.js)
 	MAGNET: 78, COLLECT: 15, PULL: [240, 1400], BIG_XP: 20, DROP: { heal: 0.012, magnet: 0.020, bomb: 0.026 }, HEAL_ORB: 0.3, BOMB: { base: 60, level: 14, knock: 160, r: 480 }, MAX_MOVES: 4,
 	// enemy behaviours (the 2D game's entities/enemy.js): the ones here; the rest chase until they are ported
@@ -52,6 +55,8 @@ export function dataFrom(G) {
 		typeMult: (t, types) => G.Types.mult(t, types), mon: (dex) => G.DEX_BY[dex],
 		radius: (dex, scale = 1) => G.Sprites.bodyRadius(dex, scale) * U, hovers: (dex) => G.Sprites.hovers(dex),
 		poolFor: (mon) => G.Moves.poolFor(mon), levelUp: (m) => { const ok = G.Moves.levelUp(m); m.knock = G.Moves.knockOf(m); return ok; }, nextUp: (m) => G.Moves.nextUpText(m), moveDef: (id) => G.Moves.BY_ID[id],
+		hash: (a, b, c) => G.U.hash(a, b, c), bossSlots: G.Enemies.BOSS_SLOTS, baseSpd: (dex) => G.Enemies.baseSpd(G.DEX_BY[dex]), behaviorOf: (dex) => G.Enemies.behaviorOf(G.DEX_BY[dex]),
+		bossScale: (dex) => { const m = G.Sprites.animMeta(dex, 'Idle'), h = (m ? m.ay * G.Sprites.artScale(dex) : 30) * G.Sprites.PX; return Math.max(1, Math.min(2, Math.round(110 / h * 2) / 2)); },
 		tiers: G.Enemies.TIERS, defFor: (dex, ti) => G.Enemies.defFor(G.DEX_BY[dex], G.Enemies.TIERS[ti], ti),
 		tierAt: (t) => { let ti = 0; G.Enemies.TIERS.forEach((tr, i) => { if (t >= tr.from) ti = i; }); return ti; },
 	};
@@ -59,6 +64,7 @@ export function dataFrom(G) {
 
 /** A fight. o: { dex (who you play), moves: [id | [id, lvl]], seed, tune (sim tuning), afDmg (the all-moves factor: 1.1 in
  *  Expedition), atkK / takenK (the ability's factors, 1 if none), crit, cast: [dex] (who spawns; none: nothing spawns),
+ *  bosses: [dex] (one arrives at each of the 2D game's boss times: 3:00, 6:00, …),
  *  orbitSquash (0.7: the 2D game's flattened orbit; 1: a circle), autoPick (a level-up's card is chosen at once: 0-2, or
  *  a function (world, cards) -> index; without it the fight WAITS at a level-up until choose() is called) } */
 export function newWorld(room, data, o = {}) {
@@ -68,7 +74,7 @@ export function newWorld(room, data, o = {}) {
 		pl: { s, mon, r: data.radius(mon.dex), maxHp: mon.hp, hp: mon.hp, baseAtk: mon.atk, atkMul: 1, atkK: o.atkK || 1, takenK: o.takenK || 1, cdMul: 1, crit: o.crit || 0, reduction: 0, regen: 0,
 			invuln: 0, meleeT: 0, level: 1, xp: 0, xpNext: xpFor(1), xpMul: 1, spdMul: 1, magnet: CK.MAGNET * U, statsTaken: {}, pending: 0, choices: null, baseReduce: 0, baseRegen: 0, buffs: { atk: { n: 0, t: 0, amount: 0 }, spd: { n: 0, t: 0, amount: 0 }, def: { n: 0, t: 0, amount: 0 }, regen: { n: 0, t: 0, amount: 0 } }, afDmg: o.afDmg === undefined ? 1.1 : o.afDmg, target: null, aim: 0, dead: false,
 			moves: (o.moves || []).map((m) => (Array.isArray(m) ? data.move(m[0], m[1]) : data.move(m))) },
-		enemies: [], shots: [], orbs: [], fields: [], eshots: [], hazards: [], pickups: [], lastPatch: null, autoPick: o.autoPick, field: null, fieldCell: -2,
+		enemies: [], shots: [], orbs: [], fields: [], eshots: [], hazards: [], pickups: [], lastPatch: null, autoPick: o.autoPick, bosses: o.bosses || null, bossIdx: 0, field: null, fieldCell: -2,
 		cast: o.cast || null, spawnAcc: 0, cap: o.cap || CK.CAP, orbitSquash: o.orbitSquash || 1,
 		stats: { gained: 0, collected: 0, levels: 0, dealt: 0, removed: 0, hits: 0, crits: 0, taken: 0, touched: 0, kills: 0, xp: 0, fired: 0, spawned: 0, fell: 0, blocked: 0 },
 		events: [],   // this tick's: { k: 'hit' | 'kill' | 'hurt' | 'shot' | 'melee' | 'beam' | 'aura' | 'chain', … } for the page to draw
@@ -100,6 +106,28 @@ export function addEnemy(w, dex, x, z, o = {}) {
 	return e;
 }
 const bodyH = (e) => Math.max(CK.BODY_MIN, e.cr * 2);
+/** A boss's definition for one of the 2D game's boss slots (0: the 3:00 boss … 4: the 15:00 one). */
+export function bossDef(data, dex, slot = 0) {
+	const s = data.bossSlots[slot], B = CK.BOSS, sp = data.baseSpd(dex), b = data.behaviorOf(dex);
+	return { dex, boss: true, at: s.at, hp: Math.round(s.hp * B.hp), spd: Math.round(Math.max(40, Math.min(100, 40 + sp * 0.5))), dmg: Math.round(s.dmg * B.dmg), xp: s.xp,
+		behavior: b === 'ranged' ? 'ranged' : sp > 90 ? 'charger' : 'chase', shotDmg: Math.round(s.dmg * B.shot), shotCd: B.shotCd, range: B.range };
+}
+/** Put a boss in. o: { slot (which of the 2D game's five), t (the run time it is scaled for; default now), def }. It is
+ *  bigger, it goes over any terrain (as a 2D boss ignores walls), a hit does not shove it, and it fights by bossMove. */
+export function addBoss(w, dex, x, z, o = {}) {
+	const d = w.data, t = o.t === undefined ? w.t : o.t, def = o.def || bossDef(d, dex, o.slot || 0), mon = d.mon(dex), scale = d.bossScale(dex), cr = d.radius(dex, scale), k = 1 + t / 600;
+	const e = addEnemy(w, dex, x, z, { def, t: 0, ti: 0, minion: true, behavior: 'boss' });   // (built bare, then given a boss's numbers)
+	Object.assign(e, { boss: true, minion: false, scale, cr, fly: true, maxHp: Math.round(def.hp * k), dmg: def.dmg * k, xp: def.xp, ccImm: 0 });
+	// (it goes over any terrain, as a 2D boss ignores walls; one that does not hover by nature keeps its feet on whatever is under it)
+	const hov = d.hovers(dex) ? CK.FLY_HOVER : 0.04;
+	e.hp = e.maxHp; e.a.fly = true; e.a.hover = hov; e.a.grounded = false; e.a.y = groundAt(w.room, x, z) + hov; e.a.speed = def.spd * U; e.a.r = Math.min(0.45, cr);
+	const T = e.types, has = (...xs) => xs.some((q) => T.includes(q));
+	const pref = has('fire', 'ground', 'poison', 'rock', 'grass') ? 'rain' : has('electric', 'psychic', 'dragon', 'ice', 'steel') ? 'beam' : has('fairy', 'ghost', 'water', 'flying') ? 'nova' : 'volley';
+	const others = ['rain', 'beam', 'nova', 'volley'].filter((q) => q !== pref), far = def.behavior === 'ranged';
+	e.ai = { melee: ['slam', d.hash(dex, 3, 7) < 0.5 ? 'dash' : 'leap'], ranged: [pref, others[Math.floor(d.hash(dex, 5, 9) * 3) % 3]], farLike: far ? 0.65 : 0.35, mode: far ? 'far' : 'close', modeT: rnd(w, 6, 8), cd: 1.6, cast: null, fury: false, side: w.rand() < 0.5 ? -1 : 1 };
+	w.events.push({ k: 'boss', id: e.id, dex });
+	return e;
+}
 const KEEPS = ['ranged', 'fan', 'beamer', 'zoner', 'healer', 'summoner'];   // they hold their distance and act from it
 const SUPPORT = ['healer', 'summoner'];   // …and these two do not need to see you to do their work
 
@@ -110,7 +138,7 @@ function hurtEnemy(w, e, amount, kx, kz, knockU) {
 	let d = Math.max(1, Math.round(amount));
 	if (e.shield > 0) { const a = Math.min(e.shield, d); e.shield -= a; if (a >= d) { e.flash = 0.06; w.events.push({ k: 'absorbed', id: e.id }); return 0; } d = Math.max(1, Math.round(d - a)); }   // a shielder's shield takes it first
 	e.hp -= d; e.flash = 0.12; w.stats.removed += d;
-	if (knockU > 0) { const l = Math.hypot(kx, kz) || 1; knock(e.a, kx / l * knockU * U, kz / l * knockU * U); }
+	if (knockU > 0 && !e.boss) { const l = Math.hypot(kx, kz) || 1; knock(e.a, kx / l * knockU * U, kz / l * knockU * U); }
 	if (e.hp <= 0) kill(w, e);
 	return d;
 }
@@ -120,6 +148,11 @@ function kill(w, e) {
 	e.dead = true; e.hp = Math.min(e.hp, 0); w.stats.kills++; w.stats.xp += e.xp;
 	w.events.push({ k: 'kill', id: e.id, x: e.a.x, y: e.a.y, z: e.a.z, xp: e.xp });
 	const y = groundAt(w.room, e.a.x, e.a.z);
+	if (e.boss) {   // a boss bursts into a heap of big orbs, with a berry and a magnet
+		for (let i = 0; i < CK.BOSS.orbs; i++) { const a = w.rand() * 6.2832, dd = rnd(w, 10, 70) * U, x = e.a.x + Math.cos(a) * dd, z = e.a.z + Math.sin(a) * dd, g = groundAt(w.room, x, z); drop(w, 'xpBig', g >= (w.room.rimH || 8) ? e.a.x : x, g >= (w.room.rimH || 8) ? y : g, g >= (w.room.rimH || 8) ? e.a.z : z, Math.ceil(e.xp / CK.BOSS.orbs)); }
+		drop(w, 'heal', e.a.x + 24 * U, y, e.a.z, 0); drop(w, 'magnet', e.a.x - 24 * U, y, e.a.z, 0);
+		return;
+	}
 	drop(w, e.xp >= CK.BIG_XP ? 'xpBig' : 'xp', e.a.x, y, e.a.z, e.xp);
 	const r = w.rand();
 	if (r < CK.DROP.heal) drop(w, 'heal', e.a.x + rnd(w, -8, 8) * U, y, e.a.z, 0); else if (r < CK.DROP.magnet) drop(w, 'magnet', e.a.x, y, e.a.z, 0); else if (r < CK.DROP.bomb) drop(w, 'bomb', e.a.x, y, e.a.z, 0);
@@ -153,8 +186,9 @@ function land(w, e, dmg, kx, kz, knockU, src) {
  *  30 % more and wakes when hit; frozen it takes 25 % more; paralysed it is at 40 % speed and takes 35 % more from
  *  Electric; confused it wanders into other enemies and hits them. */
 export function applyState(w, e, kind) {
-	const dur = CK.CC[kind];
-	if (!e || e.dead || !dur) return 0;
+	let dur = CK.CC[kind];
+	if (!e || e.dead || !dur || e.ccImm > 0) return 0;
+	if (e.boss) { dur *= CK.BOSS.cc[kind]; e.ccImm = dur + CK.BOSS.immune; }   // a boss shakes it off sooner, and cannot be caught again for 4 s
 	const stunned = e.frozenT > 0 || e.sleepT > 0;
 	if (stunned && (kind === 'conf' || kind === 'para')) return 0;
 	const key = kind === 'freeze' ? 'frozenT' : kind + 'T';
@@ -450,7 +484,7 @@ function resolve(w) {
 		if (e.dead || e.dummy || e.touchCd > 0 || e.frozenT > 0 || e.sleepT > 0 || e.confT > 0) continue;
 		const dx = e.a.x - s.x, dz = e.a.z - s.z, rr = e.cr + pl.r;
 		if (dx * dx + dz * dz > rr * rr) continue;
-		if (Math.abs((e.fly ? e.a.y - CK.FLY_HOVER : e.a.y) - s.y) > CK.TOUCH_UP) continue;   // (jump over it; it is on the ledge above; …)
+		if (Math.abs((e.fly ? e.a.y - e.a.hover : e.a.y) - s.y) > CK.TOUCH_UP) continue;   // (jump over it; it is on the ledge above; …)
 		e.touchCd = CK.TOUCH_CD; w.stats.touched++;
 		hurtPlayer(w, e.dmg, e.atkType);
 		const l = Math.hypot(dx, dz) || 1; knock(e.a, dx / l * CK.TOUCH_KNOCK * U, dz / l * CK.TOUCH_KNOCK * U);
@@ -549,6 +583,43 @@ function behave(w, e, dt) {
 	}
 	return 1;
 }
+/** A boss's turn. It alternates between coming for you and fighting from a distance (longer in the one it likes),
+ *  and every 1.3-2 s starts one of its attacks. -> the speed factor for this tick (the way is in WISH). */
+function bossMove(w, e, dt) {
+	const pl = w.pl, s = pl.s, ai = e.ai, B = CK.BOSS, sp = e.a.speed || 1e-9;
+	const dx = s.x - e.a.x, dz = s.z - e.a.z, dist = (Math.hypot(dx, dz) || 1e-9), ux = dx / dist, uz = dz / dist, du = dist / U, gy = (x, z) => groundAt(w.room, x, z);
+	if (!ai.fury && e.hp < e.maxHp * 0.5) { ai.fury = true; e.a.speed *= B.furySpd; w.events.push({ k: 'enrage', id: e.id }); }
+	const k = ai.fury ? B.fury : 1, f = ai.fury ? B.furyWind : 1, type = e.atkType;
+	const end = () => { ai.cast = null; ai.cd = rnd(w, 1.3, 2.0); if (ai.fury && w.rand() < B.chain) ai.cd = 0.3; WISH[0] = WISH[1] = 0; return 0; };
+	if (ai.cast) {   // in the middle of an attack
+		const c = ai.cast; c.t += dt; WISH[0] = WISH[1] = 0;
+		if (c.id === 'dash' && c.t >= c.wind) { if (c.t >= c.wind + c.dur) return end(); WISH[0] = Math.cos(c.ang); WISH[1] = Math.sin(c.ang); return (c.len * U / c.dur) / sp; }
+		if (c.t >= c.wind && !c.fired) { c.fired = true; if (c.id === 'volley') enemyShoot(w, e, 1.1, ai.fury ? 9 : 7, 0.8); else if (c.id === 'nova') { const n = ai.fury ? 18 : 14; enemyShoot(w, e, 6.2832 * (n - 1) / n, n, 0.7); } }
+		if (c.t >= c.wind + c.after) return end();
+		return 0;
+	}
+	ai.modeT -= dt; ai.cd -= dt * k;
+	if (ai.modeT <= 0) { ai.mode = ai.mode === 'far' ? 'close' : 'far'; ai.modeT = (ai.mode === 'far') === (ai.farLike > 0.5) ? rnd(w, 7, 9) : rnd(w, 4, 5); ai.side = -ai.side; }
+	let vx = ux * k * 1.1, vz = uz * k * 1.1;   // (in units of its own speed)
+	if (ai.mode === 'far') { if (du < 170) { vx = -ux; vz = -uz; } else if (du < 300) { vx = -uz * 0.55 * ai.side; vz = ux * 0.55 * ai.side; } }   // it backs off, or circles you
+	if (ai.cd <= 0) {
+		const pick = (arr) => arr[Math.floor(w.rand() * arr.length)]; let id = null;
+		if (ai.mode === 'close') { const ok = ai.melee.filter((m) => (m === 'slam' ? du < 125 : du < 320)); id = ok.length && w.rand() < 0.8 ? pick(ok) : du < 480 ? pick(ai.ranged) : null; }
+		else id = du < 115 ? 'slam' : du < 430 ? pick(ai.ranged) : null;
+		if (id) {
+			const ang = Math.atan2(dz, dx), c = ai.cast = { id, t: 0, wind: 0.6 * f, after: 0.35, ang }, ey = gy(e.a.x, e.a.z), py = s.grounded ? s.y : gy(s.x, s.z);
+			w.events.push({ k: 'bosscast', id: e.id, attack: id });
+			if (id === 'slam') { c.wind = 0.85 * f; hazard(w, { kind: 'zone', x: e.a.x, y: ey, z: e.a.z, r: 96 * U + e.cr, delay: c.wind, dmg: e.dmg * 1.3, type }); }
+			else if (id === 'dash') { c.wind = 0.75 * f; c.len = 330; c.dur = 0.32; hazard(w, { kind: 'beam', x: e.a.x, y: ey, z: e.a.z, angle: ang, len: c.len * U + e.cr, w: e.cr * 2 + 16 * U, delay: c.wind + c.dur, dmg: e.dmg * 1.2, type }); }
+			else if (id === 'leap') { e.jump = { sx: e.a.x, sy: e.a.y, sz: e.a.z, tx: s.x, ty: py + e.a.hover, tz: s.z, t: -0.5 * f, dur: 0.65 }; hazard(w, { kind: 'zone', x: s.x, y: py, z: s.z, r: 82 * U, delay: 0.5 * f + 0.65, dmg: e.dmg * 1.25, type }); ai.cast = null; ai.cd = rnd(w, 1.4, 2) + 0.6; }
+			else if (id === 'rain') { const n = ai.fury ? 6 : 4; for (let i = 0; i < n; i++) { const a = i ? w.rand() * 6.2832 : 0, dd = i ? rnd(w, 40, 120) * U : 0, x = s.x + Math.cos(a) * dd, z = s.z + Math.sin(a) * dd * 0.8; hazard(w, { kind: 'zone', x, y: i ? gy(x, z) : py, z, r: 50 * U, delay: 1.05 + i * 0.12, dmg: shotDmg(e) * 1.15, type }); } c.wind = 0.5; }
+			else if (id === 'beam') { const n = ai.fury ? 5 : 3, spread = ai.fury ? 0.42 : 0.5; for (let i = 0; i < n; i++) hazard(w, { kind: 'beam', x: e.a.x, y: ey, z: e.a.z, angle: ang + (i - (n - 1) / 2) * spread, len: 400 * U, w: 26 * U, delay: 1.0, dmg: shotDmg(e) * 1.2, type }); c.wind = 1.0; c.after = 0.25; }
+			else c.wind = (id === 'nova' ? 0.7 : 0.5) * f;   // volley / nova: the shots leave at the end of the wind-up
+		}
+	}
+	const l = Math.hypot(vx, vz) || 1e-9; WISH[0] = vx / l; WISH[1] = vz / l;
+	return l;
+}
 /** Enemy shots fly and hit; marks on the ground go off. */
 function enemyAttacks(w, dt) {
 	const pl = w.pl, s = pl.s, high = Math.max(CK.BODY_MIN, pl.r * 2);
@@ -598,6 +669,7 @@ function updateEnemies(w, dt) {
 		if (e.flash > 0) e.flash -= dt;
 		if (e.touchCd > 0) e.touchCd -= dt * (e.paraT > 0 ? CK.PARA_SLOW : 1);
 		if (e.shieldLock > 0) e.shieldLock -= dt;
+		if (e.ccImm > 0) e.ccImm -= dt;
 		if (e.shieldT > 0 && (e.shieldT -= dt) <= 0) e.shield = 0;
 		if (e.frozenT > 0) e.frozenT = Math.max(0, e.frozenT - dt); if (e.sleepT > 0) e.sleepT = Math.max(0, e.sleepT - dt);
 		if (e.paraT > 0) e.paraT = Math.max(0, e.paraT - dt); if (e.confT > 0) e.confT = Math.max(0, e.confT - dt); if (e.confCd > 0) e.confCd -= dt;
@@ -607,13 +679,14 @@ function updateEnemies(w, dt) {
 		if (e.dead) continue;
 		if (e.jump) {   // in a leap nothing else happens to it: it is carried along its arc and lands
 			const j = e.jump, L = CK.LEAP; j.t += dt;
-			if (j.t >= 0) { const f = Math.min(1, j.t / L.dur); e.a.x = j.sx + (j.tx - j.sx) * f; e.a.z = j.sz + (j.tz - j.sz) * f; e.a.y = j.sy + (j.ty - j.sy) * f + Math.sin(f * Math.PI) * L.high * U; e.a.grounded = false; e.a.facing = Math.atan2(j.tx - j.sx, j.tz - j.sz);
+			if (j.t >= 0) { const f = Math.min(1, j.t / (j.dur || L.dur)); e.a.x = j.sx + (j.tx - j.sx) * f; e.a.z = j.sz + (j.tz - j.sz) * f; e.a.y = j.sy + (j.ty - j.sy) * f + Math.sin(f * Math.PI) * L.high * U; e.a.grounded = false; e.a.facing = Math.atan2(j.tx - j.sx, j.tz - j.sz);
 				if (f >= 1) { e.jump = null; const g = groundAt(w.room, e.a.x, e.a.z); e.a.y = e.fly ? g + e.a.hover : g; e.a.grounded = !e.fly; e.a.vy = 0; } }
 			continue;
 		}
 		let k = 1 - e.slow;
 		if (e.dummy || e.frozenT > 0 || e.sleepT > 0) WISH[0] = WISH[1] = 0;   // (only a shove moves it)
 		else if (e.confT > 0) { k *= 0.9; confused(w, e, dt); }
+		else if (e.boss) { k *= bossMove(w, e, dt) * (e.paraT > 0 ? CK.PARA_SLOW : 1); if (e.jump) continue; }
 		else { k *= behave(w, e, dt); if (e.dead) continue; if (e.paraT > 0) k *= CK.PARA_SLOW; }
 		stepActor(e.a, w.room, WISH[0], WISH[1], dt, k);
 		if (e.a.fell > 1) { w.stats.fell++; w.events.push({ k: 'fell', id: e.id, h: e.a.fell }); }
@@ -638,9 +711,16 @@ function updateEnemies(w, dt) {
 // ---------------------------------------------------------------- arrivals
 const spawnRate = (t) => (1.6 + t * 0.028 + Math.pow(t / 60, 1.6) * 0.5) * CK.DENSITY;
 function spawnTick(w, dt) {
+	// a boss at each of the 2D game's times, from the fight's own list
+	while (w.bosses && w.bossIdx < Math.min(w.bosses.length, w.data.bossSlots.length) && w.t >= w.data.bossSlots[w.bossIdx].at) {
+		const s = w.pl.s, room = w.room; let x = s.x, z = s.z;
+		for (let k = 0; k < 20; k++) { const a = w.rand() * 6.2832, d = rnd(w, CK.SPAWN_MIN, CK.SPAWN_MAX), tx = s.x + Math.cos(a) * d, tz = s.z + Math.sin(a) * d, cx = Math.floor(tx / CELL), cz = Math.floor(tz / CELL);
+			if (cx < 1 || cz < 1 || cx >= room.w - 1 || cz >= room.h - 1 || room.cells[cz * room.w + cx] >= (room.rimH || 8)) continue; x = tx; z = tz; break; }
+		addBoss(w, w.bosses[w.bossIdx], x, z, { slot: w.bossIdx }); w.bossIdx++;
+	}
 	if (!w.cast || !w.cast.length) return;
 	if (w.enemies.length >= w.cap) return;
-	w.spawnAcc = Math.min(8, w.spawnAcc + spawnRate(w.t) * dt);
+	w.spawnAcc = Math.min(8, w.spawnAcc + spawnRate(w.t) * (w.enemies.some((e) => e.boss && !e.dead) ? 0.25 : 1) * dt);
 	while (w.spawnAcc >= 1 && w.enemies.length < w.cap) {
 		w.spawnAcc -= 1;
 		const dex = w.cast[Math.floor(w.rand() * w.cast.length)], fly = !!w.data.hovers(dex), s = w.pl.s, room = w.room;
