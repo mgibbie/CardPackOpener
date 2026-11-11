@@ -511,3 +511,11 @@ a.mc-pill { text-decoration: none; }
   .pj-sel, .pj-q { flex: 1 1 100%; max-width: none; }
   .pj-art-big { width: 213px; }
 }
+
+/* Pair of Pears (#/pair-of-pears): the game's own pixel icons beside names; wide rule tables that scroll on a phone */
+.pp-wiki-ico { width: 20px; height: 20px; image-rendering: pixelated; vertical-align: -4px; }
+.pp-wiki-name { white-space: nowrap; }
+.pp-wiki-conds, .pp-wiki-charms, .pp-wiki-levels { display: block; overflow-x: auto; max-width: 100%; }
+.pp-wiki-conds td, .pp-wiki-charms td { vertical-align: top; }
+.pp-wiki-conds td:nth-child(3), .pp-wiki-charms td:nth-child(5) { min-width: 260px; }
+.pp-wiki-conds td:nth-child(2), .pp-wiki-charms td:nth-child(4) { min-width: 200px; }
