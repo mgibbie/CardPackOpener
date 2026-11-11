@@ -357,13 +357,31 @@ so there is one set of numbers.
 Departures from 2D, on purpose: orbs circle in a true circle (2D flattens the orbit to 70 %; the parity test sets the
 2D shape); your run speed is the 3D controller's, not the species' 2D speed.
 
-**Still to do in P3** (second part): the eight move kinds not ported (buff, boomerang, mine, meteor, turret, dash,
-trail, cone) and Expedition's eight (lob, homing, barrage, smite, vortex, wave, spin, weather); the control states
-(sleep, paralysis, freeze, confusion); abilities and held items; enemy behaviours other than chase (chargers, ranged,
-bombers, healers …) and enemy shots; bosses; XP and level-ups; damage numbers and hit effects.
+What was left after this part is listed under 5.5.
 
 Tests: `micasurvivor_m3d_parity_test.mjs` (Chrome, 22 checks), `micasurvivor_m3d_combat_test.mjs` (node, 35 checks),
 and the page test covers `&fight=1`.
+
+## 5.5 P3, second part: built (2026-11-11)
+
+- **All 15 of the base game's move kinds.** Added: buff, boomerang, cone, mine, meteor, turret, dash, trail (and
+  homing shots). In 3D: a dash stops a body's width short of a wall and carries you off a ledge; a mine, a patch and
+  a meteor's blast only catch bodies on their own level; a turret shoots up or down at its target; a boomerang
+  comes home to where you are now.
+- **The four control states.** Freeze (1.8 s, +25 % damage taken, it stands still), sleep (4 s, +30 % and the hit
+  wakes it), paralysis (3 s, 40 % speed, slower to touch, +35 % from Electric), confusion (3 s, it weaves into its
+  neighbour and hits it). A move's own chance to cause one is rolled from the fight's seed.
+- **Buffs.** Attack, speed (you run faster), defence and regeneration stack and run out as in 2D.
+- **The comparison with 2D** now covers these too (37 checks). Where the 2D game rolls dice for a position or a
+  speed (cones, a turret's spot, the spare meteor, mines) totals are compared within a margin; mines over thirty
+  runs a side. Building it showed the 2D map itself changes a fight: rocks and grass round the player stop shots,
+  differently every run. The comparison now empties the 2D world first.
+
+**Still to do in P3:** Expedition's eight move kinds (lob, homing, barrage, smite, vortex, wave, spin, weather);
+abilities and held items; enemy behaviours other than chase (chargers, ranged, bombers, healers …) and enemy shots;
+bosses; XP and level-ups; damage numbers and hit effects. Move names on the test page are the data's ids.
+
+Tests: parity 37 checks, combat 52 checks, the page test 57.
 
 ## 6. Dive in 2D: built
 

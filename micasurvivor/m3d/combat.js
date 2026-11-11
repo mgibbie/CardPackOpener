@@ -26,10 +26,14 @@ export const CK = {
 	KNOCK_DECAY: 0.0015,   // per second (the 2D game's): a shove is all but gone in a second
 	HP_K: (t) => 3.3 + Math.min(1.7, t / 210), DMG_K: 2.4, XP_K: 5.6,
 	CAP: 110, DENSITY: 0.24, SPAWN_MIN: 16, SPAWN_MAX: 32,   // m: enemies arrive this far from you (no camera in the rules)
-	UNPORTED: ['buff', 'boomerang', 'mine', 'meteor', 'turret', 'dash', 'trail', 'cone'],   // kinds still to come
+	// the control states (the 2D game's systems/status.js): how long each lasts, and what it does to damage
+	CC: { freeze: 1.8, para: 3, sleep: 4, conf: 3 }, SLEEP_BONUS: 1.3, PARA_ELECTRIC: 1.35, FROZEN_TAKEN: 1.25, PARA_SLOW: 0.4,
+	CONF_REACH: 380, CONF_CD: 0.6, CONF_KNOCK: 140,
+	UNPORTED: [],   // base move kinds still to come (Expedition's eight are their own step)
 };
 const TARGETED = ['melee', 'beam', 'projectile', 'boomerang', 'chain', 'meteor', 'dash', 'cone'];
-const reach = (m) => (m.xreach ? m.xreach : m.kind === 'melee' ? m.radius + 30 : m.kind === 'beam' ? m.radius + 20 : m.kind === 'chain' ? 280 : 520);
+const reach = (m) => (m.xreach ? m.xreach : m.kind === 'melee' ? m.radius + 30 : m.kind === 'beam' ? m.radius + 20 : m.kind === 'boomerang' ? m.radius + 40 : m.kind === 'chain' ? 280
+	: m.kind === 'meteor' ? 340 : m.kind === 'dash' ? m.radius + 60 : m.kind === 'cone' ? m.speed * m.life + 30 : 520);
 
 /** The 2D game's data, as this module reads it. G: the game's global, with util, pokedex, sprites-meta, sprites, moves,
  *  types and enemies loaded. */
@@ -51,16 +55,16 @@ export function newWorld(room, data, o = {}) {
 	const w = {
 		room, data, t: 0, tick: 0, rand: makeRng((o.seed >>> 0) || 1), tune: o.tune || K, nextId: 1,
 		pl: { s, mon, r: data.radius(mon.dex), maxHp: mon.hp, hp: mon.hp, baseAtk: mon.atk, atkMul: 1, atkK: o.atkK || 1, takenK: o.takenK || 1, cdMul: 1, crit: o.crit || 0, reduction: 0, regen: 0,
-			invuln: 0, meleeT: 0, level: 1, afDmg: o.afDmg === undefined ? 1.1 : o.afDmg, target: null, aim: 0, dead: false,
+			invuln: 0, meleeT: 0, level: 1, baseReduce: 0, baseRegen: 0, buffs: { atk: { n: 0, t: 0, amount: 0 }, spd: { n: 0, t: 0, amount: 0 }, def: { n: 0, t: 0, amount: 0 }, regen: { n: 0, t: 0, amount: 0 } }, afDmg: o.afDmg === undefined ? 1.1 : o.afDmg, target: null, aim: 0, dead: false,
 			moves: (o.moves || []).map((m) => (Array.isArray(m) ? data.move(m[0], m[1]) : data.move(m))) },
-		enemies: [], shots: [], orbs: [], field: null, fieldCell: -2,
+		enemies: [], shots: [], orbs: [], fields: [], lastPatch: null, field: null, fieldCell: -2,
 		cast: o.cast || null, spawnAcc: 0, cap: o.cap || CK.CAP, orbitSquash: o.orbitSquash || 1,
 		stats: { dealt: 0, removed: 0, hits: 0, crits: 0, taken: 0, touched: 0, kills: 0, xp: 0, fired: 0, spawned: 0, fell: 0, blocked: 0 },
 		events: [],   // this tick's: { k: 'hit' | 'kill' | 'hurt' | 'shot' | 'melee' | 'beam' | 'aura' | 'chain', … } for the page to draw
 	};
 	return w;
 }
-const atk = (pl) => pl.baseAtk * pl.atkMul * pl.atkK;
+const atk = (pl) => pl.baseAtk * pl.atkMul * (1 + pl.buffs.atk.n * pl.buffs.atk.amount) * pl.atkK;
 const rnd = (w, a, b) => a + w.rand() * (b - a);
 
 /** Put an enemy in. o: { t (the run time its stats are scaled for; default now), ti (tier), hp, dmg, spd (factors),
@@ -71,7 +75,7 @@ export function addEnemy(w, dex, x, z, o = {}) {
 	const maxHp = Math.round(def.hp * (1 + t / 95) * CK.HP_K(t) * (o.hp || 1));
 	const a = newActor(w.room, { x, z, y: o.y, r: Math.min(0.45, cr), speed: def.spd * (1 + Math.min(0.35, t / 1400)) * (o.spd === undefined ? 1 : o.spd) * U, fly, hover: CK.FLY_HOVER });
 	const e = { id: w.nextId++, a, dex, def, types: mon.types && mon.types.length ? mon.types : ['normal'], cr, fly, maxHp, hp: maxHp,
-		dmg: def.dmg * (1 + t / 420) * CK.DMG_K * (o.dmg || 1), xp: Math.round(def.xp * CK.XP_K), touchCd: 0, slow: 0, slowT: 0, burn: 0, burnT: 0, burnTick: 0, poison: 0, poisonT: 0, poisonTick: 0,
+		dmg: def.dmg * (1 + t / 420) * CK.DMG_K * (o.dmg || 1), xp: Math.round(def.xp * CK.XP_K), touchCd: 0, frozenT: 0, paraT: 0, sleepT: 0, confT: 0, confCd: 0, zig: 0, slow: 0, slowT: 0, burn: 0, burnT: 0, burnTick: 0, poison: 0, poisonT: 0, poisonTick: 0,
 		dead: false, dummy: !!o.dummy, flash: 0 };
 	e.atkType = e.types[0];
 	w.enemies.push(e); w.stats.spawned++;
@@ -82,6 +86,7 @@ const bodyH = (e) => Math.max(CK.BODY_MIN, e.cr * 2);
 // ---------------------------------------------------------------- damage
 function hurtEnemy(w, e, amount, kx, kz, knockU) {
 	if (e.dead) return 0;
+	if (e.frozenT > 0) amount *= CK.FROZEN_TAKEN;
 	const d = Math.max(1, Math.round(amount));
 	e.hp -= d; e.flash = 0.12; w.stats.removed += d;
 	if (knockU > 0) { const l = Math.hypot(kx, kz) || 1; knock(e.a, kx / l * knockU * U, kz / l * knockU * U); }
@@ -91,7 +96,10 @@ function hurtEnemy(w, e, amount, kx, kz, knockU) {
 /** A move's hit lands (the 2D game's `land`): type chart, crit, the all-moves factor. src: the move or the shot. */
 function land(w, e, dmg, kx, kz, knockU, src) {
 	const pl = w.pl, type = src.mtype || src.type;
+	const asleep = e.sleepT > 0 && src.cc !== 'sleep';
 	let k = type ? w.data.typeMult(type, e.types) : 1;
+	if (asleep) k *= CK.SLEEP_BONUS;
+	if (type === 'electric' && e.paraT > 0) k *= CK.PARA_ELECTRIC;
 	const c = pl.crit + (src.xcrit || 0), crit = c > 0 && w.rand() < c;
 	if (crit) { k *= CK.CRIT; w.stats.crits++; }
 	if (src.mid || src.id) k *= pl.afDmg;
@@ -99,10 +107,25 @@ function land(w, e, dmg, kx, kz, knockU, src) {
 	hurtEnemy(w, e, d, kx, kz, knockU);
 	w.stats.dealt += d; w.stats.hits++;
 	w.events.push({ k: 'hit', id: e.id, x: e.a.x, y: e.a.y + bodyH(e) * 0.5, z: e.a.z, d, crit, type, eff: type ? w.data.typeMult(type, e.types) : 1 });
+	if (!e.dead) { if (asleep) e.sleepT = 0; if (src.cc && src.ccp > 0 && w.rand() < src.ccp) applyState(w, e, src.cc); }
 	if (src.burn) { e.burn = Math.min(8, e.burn + src.burn); e.burnT = 3; }
 	if (src.poison) { e.poison = Math.min(8, e.poison + src.poison); e.poisonT = 4; }
 	if (src.slow) { e.slow = Math.max(e.slow, src.slow); e.slowT = Math.max(e.slowT, 1.2); }
 	return d;
+}
+/** Freeze, paralyse, put to sleep or confuse an enemy. Frozen and asleep it does not move or touch; asleep it takes
+ *  30 % more and wakes when hit; frozen it takes 25 % more; paralysed it is at 40 % speed and takes 35 % more from
+ *  Electric; confused it wanders into other enemies and hits them. */
+export function applyState(w, e, kind) {
+	const dur = CK.CC[kind];
+	if (!e || e.dead || !dur) return 0;
+	const stunned = e.frozenT > 0 || e.sleepT > 0;
+	if (stunned && (kind === 'conf' || kind === 'para')) return 0;
+	const key = kind === 'freeze' ? 'frozenT' : kind + 'T';
+	if (!(e[key] > 0)) w.events.push({ k: 'state', id: e.id, state: kind });
+	e[key] = Math.max(e[key] || 0, dur);
+	if (kind === 'freeze') { e.sleepT = 0; e.confT = 0; } else if (kind === 'sleep') e.confT = 0;
+	return dur;
 }
 function hurtPlayer(w, amount, type) {
 	const pl = w.pl;
@@ -146,12 +169,24 @@ function aimDir(w, a) {
 }
 
 // ---------------------------------------------------------------- the moves
-function payload(m) { return { burn: m.burn || 0, poison: m.poison || 0, slow: m.slow || 0, knock: m.knock || 0, mtype: m.type, mkind: m.kind, mid: m.id, xcrit: m.xcrit || 0 }; }
-function shoot(w, m, dir) {
-	const s = w.pl.s;
-	w.shots.push(Object.assign({ id: w.nextId++, x: s.x + dir[0] * 3 * U, y: s.y + CK.MUZZLE + dir[1] * 3 * U, z: s.z + dir[2] * 3 * U, vx: dir[0] * m.speed * U, vy: dir[1] * m.speed * U, vz: dir[2] * m.speed * U,
-		dmg: m.dmg * atk(w.pl), r: m.size * U, life: m.life, t: 0, pierce: m.pierce | 0, hits: new Set(), px: null, py: 0, pz: 0 }, payload(m)));
-	w.stats.fired++;
+function payload(m) { return { burn: m.burn || 0, poison: m.poison || 0, slow: m.slow || 0, knock: m.knock || 0, cc: m.cc || '', ccp: m.ccp || 0, mtype: m.type, mkind: m.kind, mid: m.id, xcrit: m.xcrit || 0 }; }
+/** A shot leaves. o: { off (how far in front it starts, units), speed, life, from: [x, y, z] (not the player: a turret), pierce, size, dmg, extra } */
+function shoot(w, m, dir, o = {}) {
+	const s = w.pl.s, off = (o.off === undefined ? 3 : o.off) * U, sp = (o.speed || m.speed) * U, f = o.from || [s.x, s.y + CK.MUZZLE, s.z];
+	const p = Object.assign({ id: w.nextId++, x: f[0] + dir[0] * off, y: f[1] + dir[1] * off, z: f[2] + dir[2] * off, vx: dir[0] * sp, vy: dir[1] * sp, vz: dir[2] * sp,
+		dmg: o.dmg === undefined ? m.dmg * atk(w.pl) : o.dmg, r: (o.size || m.size) * U, life: o.life || m.life, t: 0, pierce: o.pierce === undefined ? m.pierce | 0 : o.pierce, homing: m.homing || 0, hits: new Set(), px: null, py: 0, pz: 0 }, payload(m), o.extra || null);
+	w.shots.push(p); w.stats.fired++;
+	return p;
+}
+const floorAt = (w, x, z) => groundAt(w.room, x, z);
+/** Everything a field (a mine, a meteor, a patch) hits: bodies within its radius, about its own height. */
+function blast(w, f, k = 1) {
+	for (const e of w.enemies) {
+		if (e.dead || Math.abs(e.a.y - f.y) > CK.REACH_UP) continue;
+		const dx = e.a.x - f.x, dz = e.a.z - f.z, rr = f.r + e.cr;
+		if (dx * dx + dz * dz <= rr * rr) land(w, e, f.dmg * k, dx, dz, f.m.knock || 0, f.m);
+	}
+	w.events.push({ k: 'blast', id: f.m.id, x: f.x, y: f.y, z: f.z, r: f.r });
 }
 const KINDS = {
 	projectile(w, m) {
@@ -214,7 +249,82 @@ const KINDS = {
 		}
 		w.events.push({ k: 'chain', id: m.id, links });
 	},
+	buff(w, m) { const b = w.pl.buffs[m.stat]; if (!b) return; b.amount = m.amount; b.n = Math.min(m.stacks | 0, b.n + 1); b.t = m.dur; w.events.push({ k: 'buff', id: m.id, stat: m.stat, n: b.n }); },
+	boomerang(w, m) {
+		const n = Math.max(1, m.count | 0), spread = m.spread || 0.5, out = m.radius / m.speed;
+		for (let i = 0; i < n; i++) shoot(w, m, aimDir(w, w.pl.aim + (n === 1 ? 0 : (i / (n - 1) - 0.5) * spread * Math.min(n, 3))), { off: 0, life: out * 4 + 1.5, pierce: 999, extra: { boom: out, bsp: m.speed * 1.1 * U, back: false } });
+		w.events.push({ k: 'shot', id: m.id, n });
+	},
+	cone(w, m) {
+		const n = Math.max(2, m.count | 0), arc = m.arc || 0.9;
+		for (let i = 0; i < n; i++) { const a = w.pl.aim + (i / (n - 1) - 0.5) * arc + rnd(w, -0.05, 0.05), sp = m.speed * rnd(w, 0.85, 1.1); shoot(w, m, aimDir(w, a), { off: 4, speed: sp, life: m.life * rnd(w, 0.85, 1.05) }); }
+		w.events.push({ k: 'shot', id: m.id, n });
+	},
+	mine(w, m) {
+		const s = w.pl.s, n = Math.max(1, m.count | 0);
+		for (let i = 0; i < n; i++) { const a = w.rand() * 6.2832, d = n === 1 ? 0 : rnd(w, 18, 46) * U, x = s.x + Math.cos(a) * d, z = s.z + Math.sin(a) * d * 0.8;
+			w.fields.push({ kind: 'mine', id: w.nextId++, m, x, z, y: floorAt(w, x, z), t: 0, arm: 0.35, life: m.dur || 7, r: m.radius * U, dmg: m.dmg * atk(w.pl) }); }
+		const mine = w.fields.filter((f) => f.kind === 'mine'); for (const f of mine.slice(0, Math.max(0, mine.length - (4 + n * 2)))) f.gone = true;   // a few at most: the oldest go
+	},
+	meteor(w, m) {
+		const s = w.pl.s, n = Math.max(1, m.count | 0), R = reach(m) * U;
+		const nearby = w.enemies.filter((e) => !e.dead && Math.hypot(e.a.x - s.x, e.a.z - s.z) <= R + e.cr);
+		for (let i = nearby.length - 1; i > 0; i--) { const j = Math.floor(w.rand() * (i + 1)); const t = nearby[i]; nearby[i] = nearby[j]; nearby[j] = t; }
+		for (let i = 0; i < n; i++) { const e = nearby[i], x = e ? e.a.x + rnd(w, -8, 8) * U : s.x + rnd(w, -140, 140) * U, z = e ? e.a.z + rnd(w, -6, 6) * U : s.z + rnd(w, -110, 110) * U;
+			w.fields.push({ kind: 'meteor', id: w.nextId++, m, x, z, y: e ? e.a.y : floorAt(w, x, z), t: -i * 0.09, fall: 0.5, r: m.radius * U, dmg: m.dmg * atk(w.pl) }); }
+	},
+	turret(w, m) {
+		const s = w.pl.s, a = w.pl.aim + Math.PI + rnd(w, -0.6, 0.6), x = s.x + Math.cos(a) * 26 * U, z = s.z + Math.sin(a) * 20 * U;
+		w.fields.push({ kind: 'turret', id: w.nextId++, m, x, z, y: Math.max(s.y, floorAt(w, x, z)), t: 0, life: m.dur || 6, shotT: 0.3, dmg: m.dmg * atk(w.pl) });
+		const mine = w.fields.filter((f) => f.kind === 'turret' && !f.gone); for (const f of mine.slice(0, Math.max(0, mine.length - Math.max(1, m.count | 0)))) f.gone = true;
+	},
+	dash(w, m) {
+		const pl = w.pl, s = pl.s, ca = Math.cos(pl.aim), sa = Math.sin(pl.aim), sx = s.x, sz = s.z, y0 = s.y, W = (m.width || 34) * U, dmg = m.dmg * atk(pl);
+		// as far as the way is clear: nothing more than a step above where you are now (a ledge down is fine: you fly off it)
+		let len = 0, floor = y0;
+		for (let d = 0.5; d <= m.radius * U + 1e-9; d += 0.5) { const g = floorAt(w, sx + ca * d, sz + sa * d), ahead = floorAt(w, sx + ca * (d + K.RADIUS), sz + sa * (d + K.RADIUS));   // (your body has a width: stop that short of a wall)
+			if (Math.max(g, ahead) > Math.max(floor, y0) + K.STEP + 1e-6) break; floor = g; len = d; }
+		s.x = sx + ca * len; s.z = sz + sa * len; s.y = Math.max(y0, floorAt(w, s.x, s.z)); if (s.y > floorAt(w, s.x, s.z) + 1e-6) s.grounded = false;
+		s.facing = Math.atan2(ca, sa); pl.invuln = Math.max(pl.invuln, 0.3);
+		for (const e of w.enemies) {
+			if (e.dead || Math.abs(e.a.y - y0) > CK.REACH_UP) continue;
+			const rr = W / 2 + e.cr; if (segDist2(sx, sz, s.x, s.z, e.a.x, e.a.z)[0] <= rr * rr) land(w, e, dmg, ca, sa, m.knock || 0, m);
+		}
+		w.events.push({ k: 'dash', id: m.id, from: [sx, y0 + CK.MUZZLE, sz], dir: [ca, 0, sa], len, w: W });
+	},
+	trail(w, m) {
+		const s = w.pl.s, last = w.lastPatch, R = m.radius * U;
+		if (last && Math.hypot(last.x - s.x, last.z - s.z) < R * 0.9 && last.t < 1) return;   // standing still: not one on top of the last
+		const f = { kind: 'patch', id: w.nextId++, m, x: s.x, z: s.z, y: floorAt(w, s.x, s.z), t: 0, life: m.dur || 3, r: R, tick: 0, dmg: m.dmg * atk(w.pl) };
+		w.fields.push(f); w.lastPatch = f;
+		const mine = w.fields.filter((o) => o.kind === 'patch' && !o.gone); for (const o of mine.slice(0, Math.max(0, mine.length - 18))) o.gone = true;
+	},
 };
+/** Mines wait and go off, meteors land, turrets shoot, patches tick. */
+function updateFields(w, dt) {
+	for (let i = w.fields.length - 1; i >= 0; i--) {
+		const f = w.fields[i];
+		f.t += dt;
+		if (f.gone || (f.life && f.t >= f.life && f.kind !== 'mine')) { w.fields.splice(i, 1); continue; }
+		if (f.kind === 'mine') {
+			const trig = f.t >= f.arm && w.enemies.some((e) => !e.dead && Math.abs(e.a.y - f.y) <= CK.REACH_UP && Math.hypot(e.a.x - f.x, e.a.z - f.z) <= 14 * U + e.cr);
+			if (trig || f.t >= f.life) { blast(w, f, trig ? 1 : 0.5); w.fields.splice(i, 1); }
+		} else if (f.kind === 'meteor') {
+			if (f.t >= f.fall) { blast(w, f); w.fields.splice(i, 1); }
+		} else if (f.kind === 'turret') {
+			f.shotT -= dt;
+			if (f.shotT <= 0) {
+				const m = f.m, R = (m.range || 300) * U; let tg = null, bd = R;
+				for (const e of w.enemies) { if (e.dead) continue; const d = Math.hypot(e.a.x - f.x, e.a.y - f.y, e.a.z - f.z); if (d < bd) { bd = d; tg = e; } }
+				f.shotT = tg ? m.rate || 0.6 : 0.15;
+				if (tg) { const dx = tg.a.x - f.x, dy = tg.a.y - f.y, dz = tg.a.z - f.z, l = Math.hypot(dx, dy, dz) || 1; shoot(w, m, [dx / l, dy / l, dz / l], { from: [f.x, f.y + CK.MUZZLE, f.z], off: 0, speed: m.speed || 300, size: m.size || 6, life: 1.4, dmg: f.dmg }); }
+			}
+		} else if (f.kind === 'patch') {
+			f.tick -= dt;
+			if (f.tick <= 0) { f.tick = 0.5; blast(w, f); }
+		}
+	}
+}
 function orbit(w, m) {
 	const pl = w.pl, want = Math.max(1, m.count | 0), mine = w.orbs.filter((p) => p.mid === m.id);
 	const relayout = mine.length !== want, base = mine.length ? mine[0].oa : w.t * m.speed;
@@ -230,7 +340,7 @@ function fireMoves(w, dt) {
 		m.t -= dt;
 		if (m.t > 0) continue;
 		const run = KINDS[m.kind];
-		if (!run) { m.t = 1; continue; }   // (a kind not ported yet: CK.UNPORTED)
+		if (!run) { m.t = 1; continue; }   // (a kind this module does not know: Expedition's eight are still to come)
 		if (TARGETED.includes(m.kind) && !(pl.target && dist3(s, pl.target.a) <= reach(m) * U)) { m.t = 0.05; continue; }
 		m.t = Math.max(0.05, m.cd * pl.cdMul);
 		run(w, m);
@@ -251,6 +361,20 @@ function moveShots(w, dt) {
 		const p = w.shots[i];
 		p.t += dt;
 		if (p.t >= p.life) { w.shots.splice(i, 1); continue; }
+		if (p.boom) {   // a boomerang: after `boom` seconds it turns back (and can hit the same bodies again); home, it is gone
+			if (!p.back && p.t >= p.boom) { p.back = true; p.hits = new Set(); }
+			if (p.back) {
+				const dx = s.x - p.x, dy = s.y + CK.MUZZLE - p.y, dz = s.z - p.z, l = Math.hypot(dx, dy, dz) || 1, f = Math.exp(-7 * dt);
+				p.vx = dx / l * p.bsp + (p.vx - dx / l * p.bsp) * f; p.vy = dy / l * p.bsp + (p.vy - dy / l * p.bsp) * f; p.vz = dz / l * p.bsp + (p.vz - dz / l * p.bsp) * f;
+				if (l < pl.r + 8 * U) { w.shots.splice(i, 1); continue; }
+			}
+		}
+		if (p.homing > 0) {   // it curves toward the nearest enemy, keeping its speed
+			let tg = null, bd = 340 * U;
+			for (const e of w.enemies) { if (e.dead) continue; const d = Math.hypot(e.a.x - p.x, e.a.y + CK.MUZZLE - p.y, e.a.z - p.z); if (d < bd) { bd = d; tg = e; } }
+			if (tg) { const dx = tg.a.x - p.x, dy = tg.a.y + CK.MUZZLE - p.y, dz = tg.a.z - p.z, l = Math.hypot(dx, dy, dz) || 1, sp = Math.hypot(p.vx, p.vy, p.vz), f = Math.exp(-p.homing * dt);
+				p.vx = dx / l * sp + (p.vx - dx / l * sp) * f; p.vy = dy / l * sp + (p.vy - dy / l * sp) * f; p.vz = dz / l * sp + (p.vz - dz / l * sp) * f; }
+		}
 		p.px = p.x; p.py = p.y; p.pz = p.z;
 		p.x += p.vx * dt; p.y += p.vy * dt; p.z += p.vz * dt;
 	}
@@ -286,7 +410,7 @@ function resolve(w) {
 	// an enemy's touch
 	if (pl.dead) return;
 	for (const e of w.enemies) {
-		if (e.dead || e.dummy || e.touchCd > 0) continue;
+		if (e.dead || e.dummy || e.touchCd > 0 || e.frozenT > 0 || e.sleepT > 0 || e.confT > 0) continue;
 		const dx = e.a.x - s.x, dz = e.a.z - s.z, rr = e.cr + pl.r;
 		if (dx * dx + dz * dz > rr * rr) continue;
 		if (Math.abs((e.fly ? e.a.y - CK.FLY_HOVER : e.a.y) - s.y) > CK.TOUCH_UP) continue;   // (jump over it; it is on the ledge above; …)
@@ -298,6 +422,20 @@ function resolve(w) {
 
 // ---------------------------------------------------------------- enemies
 const WISH = [0, 0];
+/** A confused enemy: it weaves toward the nearest other enemy and hits it (1.8 × its damage + 3 % of the other's HP). */
+function confused(w, e, dt) {
+	let tgt = null, best = CK.CONF_REACH * U;
+	for (const o of w.enemies) { if (o === e || o.dead) continue; const d = Math.hypot(o.a.x - e.a.x, o.a.z - e.a.z); if (d < best + o.cr && d < best) { best = d; tgt = o; } }
+	e.zig += dt;
+	const ang = tgt ? Math.atan2(tgt.a.z - e.a.z, tgt.a.x - e.a.x) + Math.sin(e.zig * 5) * 0.5 : e.zig * 1.3 + e.id;
+	WISH[0] = Math.cos(ang); WISH[1] = Math.sin(ang);
+	if (tgt && e.confCd <= 0 && best <= e.cr + tgt.cr + 6 * U && Math.abs(tgt.a.y - e.a.y) <= CK.REACH_UP) {
+		e.confCd = CK.CONF_CD;
+		hurtEnemy(w, tgt, e.dmg * 1.8 + tgt.maxHp * 0.03, tgt.a.x - e.a.x, tgt.a.z - e.a.z, CK.CONF_KNOCK);
+		if (!tgt.dead) tgt.sleepT = 0;
+		w.events.push({ k: 'confhit', id: e.id, on: tgt.id });
+	}
+}
 function updateEnemies(w, dt) {
 	const pl = w.pl, s = pl.s;
 	// the way to the player: rebuilt when the player's cell changes (and only while standing on something walkable)
@@ -307,13 +445,18 @@ function updateEnemies(w, dt) {
 	for (const e of w.enemies) {
 		if (e.dead) continue;
 		if (e.flash > 0) e.flash -= dt;
-		if (e.touchCd > 0) e.touchCd -= dt;
+		if (e.touchCd > 0) e.touchCd -= dt * (e.paraT > 0 ? CK.PARA_SLOW : 1);
+		if (e.frozenT > 0) e.frozenT = Math.max(0, e.frozenT - dt); if (e.sleepT > 0) e.sleepT = Math.max(0, e.sleepT - dt);
+		if (e.paraT > 0) e.paraT = Math.max(0, e.paraT - dt); if (e.confT > 0) e.confT = Math.max(0, e.confT - dt); if (e.confCd > 0) e.confCd -= dt;
 		if (e.slowT > 0) { e.slowT -= dt; if (e.slowT <= 0) e.slow = 0; }
 		if (e.burn > 0) { e.burnT -= dt; e.burnTick -= dt; if (e.burnTick <= 0) { e.burnTick = 0.5; hurtEnemy(w, e, 1.6 * e.burn * (1 + pl.level * 0.06), 0, 0, 0); } if (e.burnT <= 0) e.burn = 0; }
 		if (e.poison > 0) { e.poisonT -= dt; e.poisonTick -= dt; if (e.poisonTick <= 0) { e.poisonTick = 0.6; hurtEnemy(w, e, e.maxHp * 0.012 * e.poison + 1, 0, 0, 0); } if (e.poisonT <= 0) e.poison = 0; }
 		if (e.dead) continue;
-		if (e.dummy) WISH[0] = WISH[1] = 0; else steer(w.room, w.field, e.a, WISH);
-		stepActor(e.a, w.room, WISH[0], WISH[1], dt, 1 - e.slow);
+		let k = 1 - e.slow;
+		if (e.dummy || e.frozenT > 0 || e.sleepT > 0) WISH[0] = WISH[1] = 0;   // (only a shove moves it)
+		else if (e.confT > 0) { k *= 0.9; confused(w, e, dt); }
+		else { steer(w.room, w.field, e.a, WISH); if (e.paraT > 0) k *= CK.PARA_SLOW; }
+		stepActor(e.a, w.room, WISH[0], WISH[1], dt, k);
 		if (e.a.fell > 1) { w.stats.fell++; w.events.push({ k: 'fell', id: e.id, h: e.a.fell }); }
 		if (e.a.gone) { e.dead = true; }
 	}
@@ -363,7 +506,12 @@ export function tick(w, input, dt = K.TICK) {
 	w.events.length = 0;
 	w.t += dt; w.tick++;
 	if (!pl.dead) {
-		step(s, input || noInput(), w.room, dt, w.tune);
+		const B = pl.buffs;
+		for (const k in B) if (B[k].n > 0) { B[k].t -= dt; if (B[k].t <= 0) B[k].n = 0; }
+		pl.reduction = Math.min(0.8, pl.baseReduce + B.def.n * B.def.amount); pl.regen = pl.baseRegen + B.regen.n * B.regen.amount;
+		const fast = 1 + B.spd.n * B.spd.amount;   // a speed buff: you run that much faster
+		if (fast !== w.fastK) { w.fastK = fast; w.fastTune = fast === 1 ? w.tune : { ...w.tune, RUN: w.tune.RUN * fast }; }
+		step(s, input || noInput(), w.room, dt, w.fastTune || w.tune);
 		if (pl.invuln > 0) pl.invuln -= dt;
 		if (pl.meleeT > 0) pl.meleeT -= dt;
 		if (pl.regen > 0) pl.hp = Math.min(pl.maxHp, pl.hp + pl.regen * dt);
@@ -376,6 +524,7 @@ export function tick(w, input, dt = K.TICK) {
 	if (!pl.dead) fireMoves(w, dt);
 	moveShots(w, dt);
 	resolve(w);
+	if (!pl.dead) updateFields(w, dt);
 	return w;
 }
 
@@ -386,5 +535,6 @@ export function hashWorld(w) {
 	const s = w.pl.s; for (const v of [s.x, s.y, s.z, w.pl.hp, w.t, w.stats.dealt, w.stats.taken, w.stats.kills, w.enemies.length, w.shots.length]) add(v);
 	for (const e of w.enemies) { add(e.id); add(e.a.x); add(e.a.y); add(e.a.z); add(e.hp); }
 	for (const p of w.shots) { add(p.x); add(p.y); add(p.z); }
+	for (const f of w.fields) { add(f.x); add(f.z); add(f.t); }
 	return h.toString(16).padStart(8, '0');
 }

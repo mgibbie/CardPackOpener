@@ -9,6 +9,10 @@
 //     beam is cut by the ground
 //   * the auto-aim takes the nearest enemy it can SEE before a nearer one behind a wall
 //   * knockback is a real shove: a Tackle knocks an enemy off a ledge, and it falls
+//   * every base move kind is in (15 of them), and the ones placed in the world respect height: a dash stops at a
+//     wall and flies off a ledge, a mine or a patch only catches bodies on its own level, a turret shoots up at a
+//     target above it, a boomerang comes back to you wherever you have gone, a homing shot curves
+//   * buffs stack and run out; the four control states do what the 2D game's do
 //   * arrivals: enemies appear 16-32 m away on floor they can walk to you from, never past the cap
 //   * the fight is deterministic (same seed: the same fight to the last digit), stays in the world through 3 minutes
 //     of random play on generated levels, and a tick with 110 enemies is cheap
@@ -16,7 +20,7 @@
 import { K, CELL, makeRoom, setCell, groundAt, waterAt } from '../../micasurvivor/m3d/sim.js';
 import { generate, rng } from '../../micasurvivor/m3d/gen.js';
 import { newActor, stepActor, flowField, steer, knock } from '../../micasurvivor/m3d/actors.js';
-import { newWorld, addEnemy, tick, dataFrom, hashWorld, clearLine, U, CK } from '../../micasurvivor/m3d/combat.js';
+import { newWorld, addEnemy, tick, dataFrom, hashWorld, clearLine, applyState, U, CK } from '../../micasurvivor/m3d/combat.js';
 import { loadG } from './m3d_data.mjs';
 
 let pass = 0, fail = 0;
@@ -144,6 +148,81 @@ const at = (cx, cz) => [(cx + 0.5) * CELL, (cz + 0.5) * CELL];
 	A(w.stats.hits >= 1 && near(fell, 1.5, 0.01) && e.a.y === 0 && e.a.x < 16 * CELL, `Tackle's shove sends a Rattata over the plateau's edge: it falls ${fell.toFixed(1)} m to the floor below`, [w.stats, e.a, fell]);
 	const a = newActor(r, { x: 20 * CELL, z: 15 * CELL }); knock(a, 0, 0, 8); let top = a.y; for (let i = 0; i < 60; i++) { stepActor(a, r, 0, 0); top = Math.max(top, a.y); }
 	A(top > 2.2 && near(a.y, 1.5) && a.grounded, 'a shove upward throws a body into the air and it comes back down', [top, a.y]);
+}
+
+// ---------------------------------------------------------------- the kinds placed in the world, and height
+{
+	const kinds = new Set(G.Moves.ALL.map((m) => m.kind)), flat = () => { const r = makeRoom(40, 40, 0); r.spawn = [40, 0, 40]; return r; };
+	const each = [...kinds].map((k) => { const m = G.Moves.ALL.find((q) => q.kind === k), w = newWorld(flat(), data, { dex: 25, moves: [m.id], seed: 4 }); addEnemy(w, RAT, 40 + (k === 'orbit' ? m.radius : 28) * U, 40, { dummy: true, hp: 1e5 }); run(w, 600); return [k, m.id, w.stats.hits, w.pl.buffs.atk.n + w.pl.buffs.spd.n + w.pl.buffs.def.n + w.pl.buffs.regen.n]; });
+	A(kinds.size === 15 && each.every(([k, , hits, buffs]) => (k === 'buff' ? buffs > 0 : hits > 0)) && CK.UNPORTED.length === 0, `all 15 of the base game's move kinds do their work here (${each.map((e) => e[0]).join(', ')})`, each);
+	const r = yard();
+	const mk = (moves, ex, ez, px, pz, o = {}) => { const w = newWorld(r, data, { dex: 25, moves, seed: 5 }); w.pl.s.x = px; w.pl.s.z = pz; w.pl.s.y = groundAt(r, px, pz); w.pl.invuln = 1e9; const e = addEnemy(w, RAT, ex, ez, { dummy: true, hp: 1e5, ...o }); return { w, e }; };
+	// a dash at a target behind the 4 m wall stops at the wall; on the plateau, a dash at a target below flies off the edge
+	const d1 = mk(['quick-attack'], 9 * CELL + 4, 15 * CELL, 9 * CELL + 6, 15 * CELL); const far = mk(['quick-attack'], 5 * CELL, 15.5 * CELL, 10 * CELL, 15.5 * CELL); run(far.w, 30);
+	A(far.w.pl.s.x >= 9 * CELL + 0.2 && far.w.pl.s.x < 10 * CELL - 0.5 && far.w.stats.hits === 0, `a dash at a target behind the wall stops at the wall (from x ${(10 * CELL).toFixed(0)} to ${far.w.pl.s.x.toFixed(1)}; the wall's face is at ${9 * CELL})`, [far.w.pl.s, far.w.stats]);
+	run(d1.w, 20); A(d1.w.stats.hits >= 1 && d1.w.pl.s.x < 9 * CELL + 5, 'in the open the dash carries you through its target and hits it', [d1.w.pl.s.x, d1.w.stats]);
+	const off = mk(['quick-attack'], 16 * CELL - 3, 15 * CELL, 16 * CELL + 1.5, 15 * CELL); off.e.a.y = 1.5; off.e.a.grounded = false;   // (a target hanging just off the edge, at your height)
+	let air = false, low = 9; for (let i = 0; i < 60; i++) { tick(off.w, null); if (!off.w.pl.s.grounded && off.w.pl.s.x < 16 * CELL) air = true; low = Math.min(low, off.w.pl.s.y); }
+	A(air && low === 0 && off.w.pl.s.x < 16 * CELL, 'a dash off the plateau\'s edge leaves you in the air past it, and you fall to the floor below', [air, low, off.w.pl.s]);
+	// a patch laid at the foot of the plateau does not burn a body on top of it; the same patch does on its own level
+	const up = mk(['flame-wheel'], 16 * CELL + 0.7, 15 * CELL, 16 * CELL - 0.7, 15 * CELL); up.e.a.y = 1.5; run(up.w, 120);
+	const lv = mk(['flame-wheel'], 14 * CELL + 1.4, 15 * CELL, 14 * CELL, 15 * CELL); run(lv.w, 120);
+	A(up.w.fields.length >= 1 && up.w.stats.hits === 0 && lv.w.stats.hits >= 3, `a patch on the floor burns what stands in it (${lv.w.stats.hits} ticks in 2 s), not a body on the ledge 1.5 m above it`, [up.w.stats, lv.w.stats]);
+	// a mine: set off by a body on its level only
+	const m0 = newWorld(r, data, { dex: 25, moves: [], seed: 5 }); m0.pl.invuln = 1e9;
+	const spikes = data.move('spikes'), fx = 16 * CELL - 0.5, fz = 15 * CELL;
+	m0.fields.push({ kind: 'mine', id: 9001, m: spikes, x: fx, z: fz, y: 0, t: 0, arm: 0.35, life: 60, r: spikes.radius * U, dmg: 10 });
+	const above = addEnemy(m0, RAT, 16 * CELL + 0.6, fz, { dummy: true, hp: 1e5 }); run(m0, 60);
+	const waiting = m0.fields.length === 1 && m0.stats.hits === 0;
+	const walker = addEnemy(m0, RAT, fx - 0.5, fz + 0.3, { dummy: true, hp: 1e5 }); run(m0, 5);
+	A(waiting && m0.fields.length === 0 && walker.hp < walker.maxHp && above.hp === above.maxHp, 'a mine at the foot of the ledge waits under a body up on the ledge, goes off under one that walks onto it, and the blast stays on its level', [waiting, m0.fields.length, walker.hp, above.hp]);
+	// a turret shoots up at a target on the plateau
+	const tu = mk(['will-o-wisp'], 16 * CELL + 2.5, 15 * CELL, 16 * CELL - 6, 15 * CELL); let climb = 0; for (let i = 0; i < 300; i++) { tick(tu.w, null); for (const p of tu.w.shots) climb = Math.max(climb, p.vy); }
+	A(tu.w.fields.some((f) => f.kind === 'turret') && climb > 0.5 && tu.w.stats.hits >= 3, `a turret on the floor shoots up at a target on the plateau and hits it (${tu.w.stats.hits} hits in 5 s)`, [climb, tu.w.stats]);
+	// a boomerang comes back to where you ARE: throw it, then jump up onto... run away east
+	const bo = newWorld(flat(), data, { dex: 25, moves: ['bonemerang'], seed: 5 }); bo.pl.invuln = 1e9; const be = addEnemy(bo, RAT, 40 + 60 * U, 40, { dummy: true, hp: 1e5 });
+	let thrown = 0, backHits = 0, home = 0; const seen = new Set();
+	for (let i = 0; i < 400; i++) { tick(bo, { mx: 0, mz: 1, jump: false, crouch: false }); for (const p of bo.shots) { if (!seen.has(p.id)) { seen.add(p.id); thrown++; } if (p.back) backHits = Math.max(backHits, p.hits.size); } }
+	for (const p of bo.shots) if (p.back) home++;
+	A(thrown >= 3 && bo.stats.hits >= thrown && bo.shots.length <= 3, `boomerangs go out, turn round and come home to you while you run (${thrown} thrown, ${bo.stats.hits} hits, ${bo.shots.length} still in the air)`, [thrown, bo.stats, bo.shots.length]);
+	// a homing shot curves: the target is 60° off the line of fire and it still arrives
+	const hm = G.Moves.ALL.find((q) => q.homing && q.kind === 'projectile');
+	if (hm) { const ho = newWorld(flat(), data, { dex: 25, moves: [], seed: 5 }); const t = addEnemy(ho, RAT, 40 + 6, 40 + 9, { dummy: true, hp: 1e5 }); const inst = data.move(hm.id); inst.ccp = 0;
+		ho.shots.push({ id: 1, x: 40, y: CK.MUZZLE, z: 40, vx: inst.speed * U, vy: 0, vz: 0, dmg: 10, r: inst.size * U, life: 3, t: 0, pierce: 0, homing: inst.homing, hits: new Set(), px: null, py: 0, pz: 0, mtype: inst.type, mid: inst.id });
+		const st = newWorld(flat(), data, { dex: 25, moves: [], seed: 5 }); addEnemy(st, RAT, 40 + 6, 40 + 9, { dummy: true, hp: 1e5 });
+		st.shots.push({ id: 1, x: 40, y: CK.MUZZLE, z: 40, vx: inst.speed * U, vy: 0, vz: 0, dmg: 10, r: inst.size * U, life: 3, t: 0, pierce: 0, homing: 0, hits: new Set(), px: null, py: 0, pz: 0, mtype: inst.type, mid: inst.id });
+		ho.pl.moves.length = 0; run(ho, 180); run(st, 180);
+		A(ho.stats.hits === 1 && st.stats.hits === 0, `a homing shot (${hm.id}) fired past a target curves into it; a plain one flies on by`, [ho.stats.hits, st.stats.hits]); }
+}
+
+// ---------------------------------------------------------------- buffs and states
+{
+	const flat = makeRoom(40, 40, 0); flat.spawn = [40, 0, 40];
+	const sd = G.Moves.BY_ID['swords-dance'], w = newWorld(flat, data, { dex: 25, moves: ['swords-dance'], seed: 2 });
+	run(w, Math.round(60 * (sd.cd * sd.stacks + 1)));
+	A(w.pl.buffs.atk.n === sd.stacks, `Swords Dance stacks to its limit (${sd.stacks} × ${sd.amount * 100} %)`, w.pl.buffs.atk);
+	w.pl.moves.length = 0; run(w, Math.round(60 * sd.dur) + 5);
+	A(w.pl.buffs.atk.n === 0, `...and is gone ${sd.dur} s after the last cast`, w.pl.buffs.atk);
+	const ag = newWorld(flat, data, { dex: 25, moves: ['agility'], seed: 2 }), base = newWorld(flat, data, { dex: 25, moves: [], seed: 2 });
+	run(ag, 240, { mx: 1, mz: 0, jump: false, crouch: false }); run(base, 240, { mx: 1, mz: 0, jump: false, crouch: false });
+	A(ag.pl.s.x > base.pl.s.x + 2 && Math.hypot(ag.pl.s.vx, ag.pl.s.vz) > K.RUN * 1.2, `Agility makes you run faster (${Math.hypot(ag.pl.s.vx, ag.pl.s.vz).toFixed(1)} m/s; ${K.RUN} without)`, [ag.pl.s.x, base.pl.s.x]);
+	const hd = newWorld(flat, data, { dex: 25, moves: ['harden'], seed: 2 }), soft = newWorld(flat, data, { dex: 25, moves: [], seed: 2 });
+	for (const q of [hd, soft]) { run(q, 300); addEnemy(q, RAT, 40.5, 40); run(q, 20); }
+	A(hd.stats.touched === 1 && soft.stats.touched === 1 && hd.stats.taken < soft.stats.taken * 0.85, `Harden: the same touch hurts less (${hd.stats.taken.toFixed(1)} against ${soft.stats.taken.toFixed(1)})`, [hd.stats, soft.stats]);
+	// the states
+	const s = newWorld(flat, data, { dex: 25, moves: [], seed: 2 }); s.pl.invuln = 1e9;
+	const fr = addEnemy(s, RAT, 46, 40), sl = addEnemy(s, RAT, 40, 46), pa = addEnemy(s, RAT, 34, 40), ok = addEnemy(s, RAT, 40, 34);
+	applyState(s, fr, 'freeze'); applyState(s, sl, 'sleep'); applyState(s, pa, 'para');
+	run(s, 60);
+	const moved = (e, x, z) => Math.hypot(e.a.x - x, e.a.z - z);
+	A(moved(fr, 46, 40) === 0 && moved(sl, 40, 46) === 0 && near(moved(pa, 34, 40) / moved(ok, 40, 34), 0.4, 0.02), 'frozen and asleep they do not move; paralysed they come at 40 % speed', [moved(fr, 46, 40), moved(sl, 40, 46), moved(pa, 34, 40), moved(ok, 40, 34)]);
+	A(applyState(s, fr, 'para') === 0 && applyState(s, sl, 'conf') === 0 && applyState(s, sl, 'freeze') > 0 && sl.sleepT === 0, 'a frozen or sleeping enemy cannot also be paralysed or confused; freezing a sleeper replaces the sleep');
+	run(s, 60 * 4); A(fr.frozenT === 0 && pa.paraT === 0 && moved(fr, 46, 40) > 1, 'the states wear off (freeze 1.8 s, paralysis 3 s) and they come for you again', [fr.frozenT, pa.paraT]);
+	// a move's own dice: Thunder Shock paralyses about 18 % of the time
+	const ts = G.Moves.BY_ID['thunder-shock'], d = newWorld(flat, data, { dex: 25, moves: ['thunder-shock'], seed: 8 }); const tgt = addEnemy(d, 7, 40 + 100 * U, 40, { dummy: true, hp: 1e6 });
+	let states = 0; for (let i = 0; i < 60 * 120; i++) { tick(d, null); states += d.events.filter((q) => q.k === 'state').length; }
+	const fresh = states / d.stats.hits;
+	A(d.stats.hits > 150 && fresh > 0.04 && fresh < ts.ccp, `Thunder Shock's ${ts.ccp * 100} % chance to paralyse really rolls (${states} fresh paralyses in ${d.stats.hits} hits; hits on an already paralysed target do not count as fresh)`, [states, d.stats.hits]);
 }
 
 // ---------------------------------------------------------------- arrivals
