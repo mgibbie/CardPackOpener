@@ -337,6 +337,11 @@ try {
 		const wv = await fw.page.evaluate(async () => { const m = window.__m3d, w = m.world, wait = (ms) => new Promise(r => setTimeout(r, ms)); w.pl.invuln = 1e9; await wait(1200); return { wx: w.weather && w.weather.kind, hud: document.getElementById('hud').textContent, tint: document.getElementById('wx').style.background }; });
 		A(wv.wx === 'rain' && /weather: rain \(\d+ s\)/.test(wv.hud) && /rgba/.test(wv.tint), 'Rain Dance: it rains, the readout says for how long, and the screen takes the rain\'s tint', JSON.stringify(wv));
 		await fw.page.close();
+		// an ability and a held item on the page
+		const fi = await open({ width: 900, height: 600, deviceScaleFactor: 1 }, '?gen=7&fight=1&moves=ember&cast=19&cap=2&items=lifeorb');
+		const iv = await fi.page.evaluate(() => { const w = window.__m3d.world; return { ability: w.pl.ability, items: w.pl.items, atkMul: w.pl.atkMul, hud: document.getElementById('hud').textContent }; });
+		A(iv.ability === 'static' && iv.items.join() === 'lifeorb' && Math.abs(iv.atkMul - 1.3) < 1e-9 && /ability: static · holding: lifeorb/.test(iv.hud), 'a fight on the page uses your species\' own ability (Pikachu: Static), and &items=lifeorb is held and on the readout', JSON.stringify(iv));
+		await fi.page.close();
 		// without &fight=1 a generated level has no fight
 		const nf = await open({ width: 900, height: 600, deviceScaleFactor: 1 }, '?gen=7&n=5');
 		const nv = await nf.page.evaluate(() => ({ world: window.__m3d.world, hud: document.getElementById('hud').textContent }));

@@ -32,6 +32,9 @@ export const CK = {
 	UNPORTED: [],   // base move kinds still to come
 	// Expedition's own kinds (the 2D game's expedition/moves.js): lob, homing, barrage, smite, vortex, wave, spin. Its
 	// eighth, weather, waits for a weather system here.
+	// held items (the 2D game's data/items.js, and what combat.js / player.js do with them)
+	IT: { cbMain: 1.4, cbRest: 0.8, lifeOrb: 0.01, bell: 0.04, bellMax: 4, helmet: [15, 4], helmetKnock: 80, sash: 60, sashInvuln: 1.2, calibre: 1.12, wide: 1.2, NOT_HERE: ['amuletcoin', 'heavyboots', 'rarecandy'] },
+	SIZE_AREA: ['aura', 'melee', 'mine', 'meteor', 'cone', 'chain', 'trail', 'beam', 'boomerang', 'dash'],
 	// abilities (the 2D game's systems/abilities.js: one passive for each species, read from its table)
 	AB: { pinch: 0.4, moxieEvery: 40, defiantT: 4, wx: 0.5, thorns: [12, 3], thornsKnock: 60, sturdyInvuln: 1.2 },
 	// weather (the 2D game's systems/weather.js): it fades in and out over 3 s; sand and snow wear down whoever is not
@@ -62,6 +65,7 @@ export function dataFrom(G) {
 	return {
 		move: (id, lvl = 1) => { if (G.ExpMoves && G.ExpMoves.isExpMove(id)) return G.ExpMoves.instance(id); const m = G.Moves.instance(id, lvl); m.knock = G.Moves.knockOf(m); return m; },
 		weatherKinds: (G.Weather && G.Weather.KINDS) || {},
+		item: (id) => (G.Items ? G.Items.BY[id] : null), itemOk: (id, dex) => !!(G.Items && G.Items.okFor(id, dex)), itemList: () => (G.Items ? G.Items.LIST.map((i) => i.id) : []), IT: G.Items || {},
 		abilityOf: (dex) => (G.Abilities ? G.Abilities.of(dex) : null), abilityFx: (id) => (G.Abilities && G.Abilities.FX[id] ? G.Abilities.FX[id].fx : null), typeLabel: (k) => G.Types.label(k),
 		expMoves: () => (G.ExpMoves ? Object.keys(G.ExpMoves.MOVES) : []),   // (a move's knockback is worked out from its level, as the 2D game does)
 		typeMult: (t, types) => G.Types.mult(t, types), mon: (dex) => G.DEX_BY[dex],
@@ -77,7 +81,8 @@ export function dataFrom(G) {
 /** A fight. o: { dex (who you play), moves: [id | [id, lvl]], seed, tune (sim tuning), afDmg (the all-moves factor: 1.1 in
  *  Expedition), atkK / takenK (the ability's factors, 1 if none), crit, cast: [dex] (who spawns; none: nothing spawns),
  *  bosses: [dex] (one arrives at each of the 2D game's boss times: 3:00, 6:00, …),
- *  ability ('auto': your species' own; an ability's id; none by default),
+ *  ability ('auto': your species' own; an ability's id; none by default), items: [id] (held items: one in the 2D
+ *  game, any number here),
  *  weather (false: none starts by itself),
  *  orbitSquash (0.7: the 2D game's flattened orbit; 1: a circle), autoPick (a level-up's card is chosen at once: 0-2, or
  *  a function (world, cards) -> index; without it the fight WAITS at a level-up until choose() is called) } */
@@ -86,13 +91,14 @@ export function newWorld(room, data, o = {}) {
 	const w = {
 		room, data, t: 0, tick: 0, rand: makeRng((o.seed >>> 0) || 1), tune: o.tune || K, nextId: 1,
 		pl: { s, mon, r: data.radius(mon.dex), maxHp: mon.hp, hp: mon.hp, baseAtk: mon.atk, atkMul: 1, atkK: o.atkK || 1, takenK: o.takenK || 1, cdMul: 1, crit: o.crit || 0, reduction: 0, regen: 0,
-			invuln: 0, meleeT: 0, level: 1, xp: 0, xpNext: xpFor(1), xpMul: 1, spdMul: 1, magnet: CK.MAGNET * U, statsTaken: {}, pending: 0, choices: null, ability: null, ab: null, abT: 0, abFirstT: -999, abSturdyT: -999, defiantT: 0, baseReduce: 0, baseRegen: 0, buffs: { atk: { n: 0, t: 0, amount: 0 }, spd: { n: 0, t: 0, amount: 0 }, def: { n: 0, t: 0, amount: 0 }, regen: { n: 0, t: 0, amount: 0 } }, afDmg: o.afDmg === undefined ? 1.1 : o.afDmg, target: null, aim: 0, dead: false,
+			invuln: 0, meleeT: 0, level: 1, xp: 0, xpNext: xpFor(1), xpMul: 1, spdMul: 1, magnet: CK.MAGNET * U, statsTaken: {}, pending: 0, choices: null, items: [], wpT: 0, itemClock: 0, sitrusT: -999, sashT: -1e9, bellHeal: 0, ability: null, ab: null, abT: 0, abFirstT: -999, abSturdyT: -999, defiantT: 0, baseReduce: 0, baseRegen: 0, buffs: { atk: { n: 0, t: 0, amount: 0 }, spd: { n: 0, t: 0, amount: 0 }, def: { n: 0, t: 0, amount: 0 }, regen: { n: 0, t: 0, amount: 0 } }, afDmg: o.afDmg === undefined ? 1.1 : o.afDmg, target: null, aim: 0, dead: false,
 			moves: (o.moves || []).map((m) => (Array.isArray(m) ? data.move(m[0], m[1]) : data.move(m))) },
 		enemies: [], shots: [], orbs: [], fields: [], effects: [], eshots: [], hazards: [], pickups: [], lastPatch: null, autoPick: o.autoPick, bosses: o.bosses || null, bossIdx: 0, weather: null, wxAuto: o.weather !== false, wxCheck: CK.WX.check, wxChip: 0, field: null, fieldCell: -2,
 		cast: o.cast || null, spawnAcc: 0, cap: o.cap || CK.CAP, orbitSquash: o.orbitSquash || 1,
 		stats: { gained: 0, collected: 0, levels: 0, dealt: 0, removed: 0, hits: 0, crits: 0, taken: 0, touched: 0, kills: 0, xp: 0, fired: 0, spawned: 0, fell: 0, blocked: 0 },
 		events: [],   // this tick's: { k: 'hit' | 'kill' | 'hurt' | 'shot' | 'melee' | 'beam' | 'aura' | 'chain', … } for the page to draw
 	};
+	for (const id of o.items || []) equip(w, id);
 	const abId = o.ability === 'auto' ? data.abilityOf(mon.dex) : o.ability, fx = abId ? data.abilityFx(abId) : null;
 	if (fx) {   // what an ability changes for good: cooldowns, reach, XP, crit
 		const pl = w.pl; pl.ability = abId; pl.ab = fx;
@@ -121,12 +127,52 @@ function updateWeather(w, dt) {
 	if (w.wxChip <= 0) {   // sand and snow wear you down a little (never to nothing), and every enemy that is not safe from them
 		w.wxChip = X.chip;
 		if (!w.weather || wxLevel(w) <= 0.5 || !wxDef(w).safe) return;
-		if (!pl.dead && wxHurts(w, pl.mon.types) && !abN(pl, 'wximm')) { const d = Math.max(1, pl.maxHp * X.you); if (pl.hp > d + 1) { pl.hp -= d; w.stats.taken += d; w.events.push({ k: 'chip', d }); } }
+		if (!pl.dead && wxHurts(w, pl.mon.types) && !abN(pl, 'wximm') && !has(pl, 'safetygoggles')) { const d = Math.max(1, pl.maxHp * X.you); if (pl.hp > d + 1) { pl.hp -= d; w.stats.taken += d; w.events.push({ k: 'chip', d }); } }
 		for (const e of [...w.enemies]) { if (e.dead || e.boss || !wxHurts(w, e.types)) continue; e.hp -= e.maxHp * X.foe + 1; e.flash = 0.05; if (e.hp <= 0) kill(w, e); }
 	}
 }
 /** The XP a level needs (the 2D game's curve). */
 export const xpFor = (level) => Math.floor((8 + level * 6 + Math.pow(level, 1.75) * 1.6) * 4);
+// ---- held items
+const has = (pl, id) => pl.items.includes(id);
+/** Hold an item. What it changes for good is done by the 2D game's own `on` (cooldowns, damage, speed, armour, crit,
+ *  XP, regeneration); the rest is read where it acts. -> whether it could be held (some are for certain species). */
+export function equip(w, id) {
+	const pl = w.pl, it = w.data.item(id);
+	if (!it || has(pl, id) || !w.data.itemOk(id, pl.mon.dex)) return false;
+	const p = { maxHp: pl.maxHp, regenFlat: pl.baseRegen, cdMul: pl.cdMul, coinMul: 1, xpMul: pl.xpMul, atkMul: pl.atkMul, spdMul: pl.spdMul, dmgReduce: pl.baseReduce, critChance: pl.crit };
+	it.on(p);
+	pl.baseRegen = p.regenFlat; pl.cdMul = p.cdMul; pl.xpMul = p.xpMul; pl.atkMul = p.atkMul; pl.spdMul = p.spdMul; pl.baseReduce = p.dmgReduce; pl.crit = p.critChance;
+	pl.items.push(id);
+	return true;
+}
+/** An item's part of one hit: Expert Belt, a type gem, Light Ball, Thick Club, Silver Powder. */
+function itemOut(w, e, type) {
+	const pl = w.pl, I = w.data.IT; if (!pl.items.length || !type) return 1;
+	let k = 1;
+	if (has(pl, 'expertbelt') && w.data.typeLabel(w.data.typeMult(type, e.types)) === 'super') k *= 1.25;
+	if (has(pl, 'typegem') && pl.mon.types.includes(type)) k *= 1.2;
+	if (type === 'electric' && has(pl, 'lightball') && I.LIGHTBALL.includes(pl.mon.dex)) k *= 2;
+	if (type === 'ground' && has(pl, 'thickclub') && I.THICKCLUB.includes(pl.mon.dex)) k *= 1.5;
+	if (type === 'bug' && has(pl, 'silverpowder')) k *= 1.2;
+	return k;
+}
+/** How big your moves are: the Calibre upgrade (12 % a step) and the Big Orb (30 %). */
+const sizeK = (pl) => Math.pow(CK.IT.calibre, pl.statsTaken.size || 0) * (has(pl, 'bigorb') ? 1.3 : 1);
+/** A move as it fires now: its areas, shots and beams sized by Calibre and the Big Orb, its radius by the Wide Lens.
+ *  (A view of the move: the move itself is not changed.) */
+function sized(pl, m) {
+	const k = sizeK(pl), wide = m.radius != null && has(pl, 'widelens') ? CK.IT.wide : 1;
+	if (k === 1 && wide === 1) return m;
+	const v = Object.create(m);
+	if (wide !== 1) v.radius = m.radius * wide;
+	if (k !== 1) {
+		if (m.radius != null) { if (CK.SIZE_AREA.includes(m.kind)) v.radius = m.radius * wide * k; else if (m.kind === 'orbit') v.radius = m.radius * wide * (1 + (k - 1) * 0.5); }
+		if (m.size != null) v.size = m.size * k;
+		if (m.width != null) v.width = m.width * k;
+	}
+	return v;
+}
 // ---- abilities
 const abN = (pl, k) => +((pl.ab && pl.ab[k]) || 0);
 /** The ability's part of your damage: flat, Moxie's steps (2 % every 40 KOs), Defiant's 4 s after a hit. */
@@ -154,7 +200,7 @@ function abIn(w, type, eff) {
 	return k;
 }
 const abSpd = (w) => { const pl = w.pl, fx = pl.ab; if (!fx) return 1; return 1 + abN(pl, 'spd') + (fx.wspd && w.weather && w.weather.kind === fx.wspd && wxLevel(w) > CK.AB.wx ? abN(pl, 'wspd_k') : 0); };
-const atk = (pl) => pl.baseAtk * pl.atkMul * (1 + pl.buffs.atk.n * pl.buffs.atk.amount) * pl.atkK * abAtk(pl);
+const atk = (pl) => pl.baseAtk * pl.atkMul * (1 + pl.buffs.atk.n * pl.buffs.atk.amount) * pl.atkK * abAtk(pl) * (pl.wpT > 0 ? 1.5 : 1);   // (… × 1.5 while a Weakness Policy is up)
 const rnd = (w, a, b) => a + w.rand() * (b - a);
 
 /** Put an enemy in. o: { t (the run time its stats are scaled for; default now), ti (tier), hp, dmg, spd (factors),
@@ -239,14 +285,15 @@ function land(w, e, dmg, kx, kz, knockU, src) {
 	const asleep = e.sleepT > 0 && src.cc !== 'sleep';
 	let k = type ? w.data.typeMult(type, e.types) : 1;
 	if (type) k *= wxMult(w, type);
-	k *= abOut(w, e, type, src.mkind || src.kind);
+	k *= abOut(w, e, type, src.mkind || src.kind) * itemOut(w, e, type);
 	if (asleep) k *= CK.SLEEP_BONUS;
 	if (type === 'electric' && e.paraT > 0) k *= CK.PARA_ELECTRIC;
 	const c = pl.crit + (src.xcrit || 0), crit = c > 0 && w.rand() < c;
 	if (crit) { k *= CK.CRIT; w.stats.crits++; }
-	if (src.mid || src.id) k *= pl.afDmg;
+	if (src.mid || src.id) k *= pl.afDmg * (has(pl, 'choiceband') ? (pl.moves[0] && pl.moves[0].id === (src.mid || src.id) ? CK.IT.cbMain : CK.IT.cbRest) : 1);   // Choice Band: your first move + 40 %, the others - 20 %
 	const d = dmg * k;
 	hurtEnemy(w, e, d, kx, kz, knockU);
+	if (has(pl, 'shellbell')) pl.bellHeal = Math.min(CK.IT.bellMax, pl.bellHeal + d * CK.IT.bell);
 	w.stats.dealt += d; w.stats.hits++;
 	w.events.push({ k: 'hit', id: e.id, x: e.a.x, y: e.a.y + bodyH(e) * 0.5, z: e.a.z, d, crit, type, eff: type ? w.data.typeMult(type, e.types) : 1 });
 	if (!e.dead) { if (asleep) e.sleepT = 0; if (src.cc && src.ccp > 0 && w.rand() < src.ccp) applyState(w, e, src.cc); }
@@ -280,6 +327,12 @@ function hurtPlayer(w, amount, type, through = false) {
 	const d = Math.max(1, amount * (1 - pl.reduction) * (pl.meleeT > 0 ? CK.MELEE_TAKEN : 1));
 	pl.hp -= d; pl.invuln = CK.INVULN; w.stats.taken += d;
 	w.events.push({ k: 'hurt', d, type });
+	if (pl.items.length) {   // Weakness Policy, Sitrus Berry, Focus Sash
+		const I = w.data.IT;
+		if (eff === 'super' && has(pl, 'weaknesspolicy') && pl.hp > 0) { pl.wpT = I.WPOLICY.dur; w.events.push({ k: 'item', id: 'weaknesspolicy' }); }
+		if (pl.hp > 0 && pl.hp < pl.maxHp * I.SITRUS.below && has(pl, 'sitrusberry') && pl.itemClock - pl.sitrusT > I.SITRUS.every) { pl.sitrusT = pl.itemClock; pl.hp = Math.min(pl.maxHp, pl.hp + pl.maxHp * I.SITRUS.heal); w.events.push({ k: 'item', id: 'sitrusberry' }); }
+		if (pl.hp <= 0 && has(pl, 'focussash') && pl.itemClock - pl.sashT > CK.IT.sash) { pl.sashT = pl.itemClock; pl.hp = 1; pl.invuln = CK.IT.sashInvuln; w.events.push({ k: 'item', id: 'focussash' }); }
+	}
 	if (pl.hp <= 0 && pl.ab && pl.ab.sturdy && pl.abT - pl.abSturdyT > pl.ab.sturdy) { pl.abSturdyT = pl.abT; pl.hp = 1; pl.invuln = CK.AB.sturdyInvuln; w.events.push({ k: 'sturdy' }); }   // Sturdy: the hit that would have finished you leaves 1 HP
 	if (pl.hp <= 0) { pl.hp = 0; pl.dead = true; }
 	return d;
@@ -541,14 +594,15 @@ function orbit(w, m) {
 function fireMoves(w, dt) {
 	const pl = w.pl, s = pl.s;
 	for (const m of pl.moves) {
-		if (m.kind === 'orbit') { orbit(w, m); continue; }
+		if (m.kind === 'orbit') { orbit(w, sized(pl, m)); continue; }
 		m.t -= dt;
 		if (m.t > 0) continue;
-		const run = KINDS[m.kind];
+		const run = KINDS[m.kind], v = sized(pl, m);
 		if (!run) { m.t = 1; continue; }   // (a kind this module does not know: Expedition's eight are still to come)
-		if ((TARGETED.includes(m.kind) || m.xtarget) && !(pl.target && dist3(s, pl.target.a) <= reach(m) * U)) { m.t = 0.05; continue; }
+		if ((TARGETED.includes(m.kind) || m.xtarget) && !(pl.target && dist3(s, pl.target.a) <= reach(v) * U)) { m.t = 0.05; continue; }
 		m.t = Math.max(0.05, m.cd * pl.cdMul);
-		run(w, m);
+		if (has(pl, 'lifeorb') && m.kind !== 'trail') pl.hp = Math.max(1, pl.hp - Math.max(1, pl.maxHp * CK.IT.lifeOrb));   // Life Orb: every attack costs a little (never your last HP)
+		run(w, v);
 	}
 }
 
@@ -621,6 +675,8 @@ function resolve(w) {
 		if (Math.abs((e.fly ? e.a.y - e.a.hover : e.a.y) - s.y) > CK.TOUCH_UP) continue;   // (jump over it; it is on the ledge above; …)
 		e.touchCd = CK.TOUCH_CD; w.stats.touched++;
 		hurtPlayer(w, e.dmg, e.atkType);
+		if (has(pl, 'rockyhelmet')) hurtEnemy(w, e, CK.IT.helmet[0] + pl.level * CK.IT.helmet[1], dx, dz, CK.IT.helmetKnock);
+		if (has(pl, 'eternalice') && !e.dead) { e.slow = Math.max(e.slow, w.data.IT.ICE.slow); e.slowT = Math.max(e.slowT, w.data.IT.ICE.dur); }
 		if (pl.ab) {   // what touching you costs it: Rough Skin's damage; a chance to be burned, poisoned, paralysed, confused, put to sleep
 			if (pl.ab.thorns) hurtEnemy(w, e, CK.AB.thorns[0] + pl.level * CK.AB.thorns[1], dx, dz, CK.AB.thornsKnock);
 			if (pl.ab.contact && !e.dead && w.rand() < abN(pl, 'contact_p')) { if (pl.ab.contact === 'burn') { e.burn = Math.min(8, e.burn + 1); e.burnT = 3; } else if (pl.ab.contact === 'poison') { e.poison = Math.min(8, e.poison + 1); e.poisonT = 4; } else applyState(w, e, pl.ab.contact); }
@@ -858,7 +914,8 @@ function spawnTick(w, dt) {
 	}
 	if (!w.cast || !w.cast.length) return;
 	if (w.enemies.length >= w.cap) return;
-	w.spawnAcc = Math.min(8, w.spawnAcc + spawnRate(w.t) * (w.enemies.some((e) => e.boss && !e.dead) ? 0.25 : 1) * dt);
+	const incense = has(w.pl, 'pureincense') ? w.data.IT.INCENSE : null;   // Pure Incense: a quarter fewer arrive, tougher and worth more
+	w.spawnAcc = Math.min(8, w.spawnAcc + spawnRate(w.t) * (w.enemies.some((e) => e.boss && !e.dead) ? 0.25 : 1) * (incense ? incense.rate : 1) * dt);
 	while (w.spawnAcc >= 1 && w.enemies.length < w.cap) {
 		w.spawnAcc -= 1;
 		const dex = w.cast[Math.floor(w.rand() * w.cast.length)], fly = !!w.data.hovers(dex), s = w.pl.s, room = w.room;
@@ -869,7 +926,8 @@ function spawnTick(w, dt) {
 			const i = cz * room.w + cx;
 			if (room.cells[i] >= (room.rimH || 8)) continue;
 			if (!fly && (w.field.dist[i] < 0 || room.water.has(i))) continue;   // a walker arrives where it can walk to you from
-			addEnemy(w, dex, x, z);
+			const ne = addEnemy(w, dex, x, z);
+			if (incense) { ne.maxHp = ne.hp = Math.round(ne.maxHp * incense.hp); ne.xp = Math.round(ne.xp * incense.xp); }
 			break;
 		}
 	}
@@ -914,6 +972,7 @@ export const STATS = [
 	{ id: 'rgn', title: 'Synthesis', desc: '+0.9 HP regenerated a second.', apply: (pl) => { pl.baseRegen += 0.9; } },
 	{ id: 'mag', title: 'Magnet', desc: '+30% pickup radius.', max: 6, apply: (pl) => { pl.magnet *= 1.30; } },
 	{ id: 'xp', title: 'Learning', desc: '+12% experience gained.', max: 8, apply: (pl) => { pl.xpMul *= 1.12; } },
+	{ id: 'size', title: 'Calibre', desc: '+12% size of your shots, orbs and areas.', max: 6, apply: () => { } },
 	{ id: 'heal', title: 'Sitrus Berry', desc: 'Restores 45% of your HP now.', apply: (pl) => { pl.hp = Math.min(pl.maxHp, pl.hp + pl.maxHp * 0.45); } },
 ];
 /** Three different cards for a level-up, drawn by weight from: a new move (while you have a free slot of the four), the
@@ -957,6 +1016,8 @@ export function tick(w, input, dt = K.TICK) {
 	if (!pl.dead) {
 		const B = pl.buffs;
 		for (const k in B) if (B[k].n > 0) { B[k].t -= dt; if (B[k].t <= 0) B[k].n = 0; }
+		pl.itemClock += dt; if (pl.wpT > 0) pl.wpT = Math.max(0, pl.wpT - dt);
+		if (pl.bellHeal > 0) { const h = Math.min(pl.bellHeal, CK.IT.bellMax * dt); pl.hp = Math.min(pl.maxHp, pl.hp + h); pl.bellHeal -= h; }   // Shell Bell: a little HP for the damage you do
 		pl.abT += dt; if (pl.defiantT > 0) pl.defiantT = Math.max(0, pl.defiantT - dt); pl.kills = w.stats.kills;
 		pl.reduction = Math.min(0.8, pl.baseReduce + B.def.n * B.def.amount + abN(pl, 'taken')); pl.regen = pl.baseRegen + B.regen.n * B.regen.amount + pl.maxHp * abN(pl, 'regen');
 		const fast = (1 + B.spd.n * B.spd.amount) * pl.spdMul * wxSpeed(w, pl.mon.types) * abSpd(w);   // a speed buff or the Sprint upgrade: you run that much faster

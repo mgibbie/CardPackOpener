@@ -35,6 +35,8 @@
 //   * abilities: one for each species, from the 2D game's table; every one of its effects does what it says (damage
 //     by type, kind, pinch, own type; damage taken; speed; cooldown; reach; XP; crit; regeneration; Sturdy; the first
 //     hit halved; thorns; a state on whoever touches you; Moxie; Defiant; weather speed and immunity)
+//   * held items: the 2D game's 26, each doing what it says (three have nothing to act on here yet), and the Calibre
+//     upgrade that sizes your moves
 //   * arrivals: enemies appear 16-32 m away on floor they can walk to you from, never past the cap
 //   * the fight is deterministic (same seed: the same fight to the last digit), stays in the world through 3 minutes
 //     of random play on generated levels, and a tick with 110 enemies is cheap
@@ -42,7 +44,7 @@
 import { K, CELL, makeRoom, setCell, groundAt, waterAt } from '../../micasurvivor/m3d/sim.js';
 import { generate, rng } from '../../micasurvivor/m3d/gen.js';
 import { newActor, stepActor, flowField, steer, knock } from '../../micasurvivor/m3d/actors.js';
-import { newWorld, addEnemy, addBoss, bossDef, tick, dataFrom, hashWorld, clearLine, applyState, drop, offer, choose, xpFor, setWeather, wxLevel, STATS, U, CK } from '../../micasurvivor/m3d/combat.js';
+import { newWorld, addEnemy, addBoss, bossDef, tick, dataFrom, hashWorld, clearLine, applyState, drop, offer, choose, xpFor, setWeather, wxLevel, equip, STATS, U, CK } from '../../micasurvivor/m3d/combat.js';
 import { loadG } from './m3d_data.mjs';
 
 let pass = 0, fail = 0;
@@ -538,6 +540,56 @@ const at = (cx, cz) => [(cx + 0.5) * CELL, (cz + 0.5) * CELL];
 	const keys = new Set(); for (const id in FX) for (const k in FX[id].fx) keys.add(k);
 	const unknown = [...keys].filter((k) => !READ.includes(k) && !NOT_YET.includes(k));
 	A(unknown.length === 0 && Object.keys(FX).length >= 50, `all ${Object.keys(FX).length} abilities' effects are covered: ${READ.length} kinds are in the 3D rules; coins and trap / state immunities have nothing to act on here yet`, unknown);
+}
+
+// ---------------------------------------------------------------- held items
+{
+	const flat = () => { const q = makeRoom(40, 40, 0); q.spawn = [40, 0, 40]; return q; };
+	const mk = (items, o = {}) => { const w = newWorld(flat(), data, { dex: o.dex || 25, moves: o.moves || ['ember'], seed: 4, items }); if (!o.hurt) w.pl.invuln = 1e9; return w; };
+	const dps = (items, o = {}) => { const w = mk(items, o); addEnemy(w, o.foe || RAT, o.x || 46, 40, { dummy: true, hp: 1e6 }); run(w, 600); return w.stats; };
+	const base = dps([]), per = (s) => s.dealt / s.hits, r = (s) => per(s) / per(base);
+	A(data.itemList().length === 26 && mk(['lifeorb', 'quickclaw']).pl.items.length === 2 && mk(['lightball'], { dex: 4 }).pl.items.length === 0 && mk(['lightball']).pl.items.length === 1, 'the 2D game\'s 26 held items are known; a Light Ball is Pikachu\'s, not Charmander\'s');
+	const orb = dps(['lifeorb']), claw = dps(['quickclaw']);
+	A(near(r(orb), 1.3, 1e-9) && near(claw.fired / base.fired, 1.25, 0.06), `Life Orb: + 30 % damage; Quick Claw: 20 % off cooldowns (${claw.fired} shots against ${base.fired})`, [r(orb), claw.fired, base.fired]);
+	const lo = mk(['lifeorb'], { moves: ['ember'] }); addEnemy(lo, RAT, 46, 40, { dummy: true, hp: 1e6 }); run(lo, 600);
+	const lo2 = mk(['lifeorb'], { moves: ['ember'] }); lo2.pl.hp = 3; addEnemy(lo2, RAT, 46, 40, { dummy: true, hp: 1e6 }); run(lo2, 600);
+	A(near(lo.pl.maxHp - lo.pl.hp, lo.stats.fired * Math.max(1, lo.pl.maxHp * 0.01), 0.01) && lo2.pl.hp === 1 && !lo2.pl.dead, `...and each attack costs 1 % of your HP (${(lo.pl.maxHp - lo.pl.hp).toFixed(1)} over ${lo.stats.fired} shots), never your last`, [lo.pl.hp, lo2.pl.hp]);
+	const cb = mk(['choiceband'], { moves: ['ember', 'water-gun'] }), nb = mk([], { moves: ['ember', 'water-gun'] });
+	for (const q of [cb, nb]) { q.byMove = {}; addEnemy(q, RAT, 46, 40, { dummy: true, hp: 1e6 }); for (let i = 0; i < 600; i++) { tick(q, null); for (const ev of q.events) if (ev.k === 'hit') q.byMove[ev.type] = Math.max(q.byMove[ev.type] || 0, ev.d); } }
+	A(near(cb.byMove.fire / nb.byMove.fire, 1.4, 1e-9) && near(cb.byMove.water / nb.byMove.water, 0.8, 1e-9), 'Choice Band: your first move + 40 %, the others - 20 %', [cb.byMove, nb.byMove]);
+	A(near(per(dps(['expertbelt'], { foe: 1 })) / per(dps([], { foe: 1 })), 1.25, 1e-9) && near(r(dps(['expertbelt'])), 1, 1e-9), 'Expert Belt: + 25 % on a super-effective hit (Ember on a Bulbasaur), nothing otherwise');
+	A(near(per(dps(['typegem'], { dex: 4 })) / per(dps([], { dex: 4 })), 1.2, 1e-9) && near(per(dps(['lightball'], { moves: ['thunder-shock'] })) / per(dps([], { moves: ['thunder-shock'] })), 2, 0.2) && near(per(dps(['silverpowder'], { moves: ['bug-buzz'], x: 42 })) / per(dps([], { moves: ['bug-buzz'], x: 42 })), 1.2, 1e-9), 'a type gem: + 20 % with your own type; Light Ball: a Pikachu\'s Electric moves × 2; Silver Powder: + 20 % with Bug moves');
+	// size: the Wide Lens, the Big Orb, Calibre
+	const bz = G.Moves.BY_ID['bug-buzz'].radius, edge = (items, calibre, dist) => { const w = mk(items, { moves: ['bug-buzz'] }); if (calibre) w.pl.statsTaken.size = calibre; const e = addEnemy(w, RAT, 40 + dist * U, 40, { dummy: true, hp: 1e6 }); run(w, 120); return w.stats.hits > 0; }, rr = G.Sprites.bodyRadius(RAT);
+	A(!edge([], 0, bz + rr + 6) && edge(['widelens'], 0, bz + rr + 6) && !edge(['widelens'], 0, bz * 1.2 + rr + 4) && edge(['bigorb'], 0, bz * 1.3 + rr - 4) && edge([], 2, bz * 1.12 * 1.12 + rr - 3) && !edge([], 2, bz * 1.12 * 1.12 + rr + 3), `an aura of ${bz} units reaches 20 % further with a Wide Lens, 30 % with a Big Orb, 12 % for each step of Calibre`);
+	const big = mk(['bigorb']), small = mk([]); for (const q of [big, small]) { addEnemy(q, RAT, 50, 40, { dummy: true, hp: 1e6 }); for (let i = 0; i < 20 && !q.shots.length; i++) tick(q, null); }
+	A(near(big.shots[0].r / small.shots[0].r, 1.3, 1e-9), 'a Big Orb makes a shot 30 % bigger too');
+	A(STATS.some((q) => q.id === 'size' && q.max === 6), 'Calibre is one of the upgrades a level can offer (six times at most)');
+	// what you take
+	const hit = (items, foe = RAT, o = {}) => { const w = mk(items, { hurt: true, moves: [], dex: o.dex }); if (o.hp) w.pl.hp = o.hp; run(w, 2); const e = addEnemy(w, foe, 40.5, 40); if (o.dmg) e.dmg = o.dmg; run(w, o.ticks || 20); return w; };
+	const plain = hit([]);
+	A(near(hit(['assaultvest']).stats.taken / plain.stats.taken, 0.8, 1e-9), 'Assault Vest: 20 % less from a touch');
+	const helm = hit(['rockyhelmet']), ice = hit(['eternalice']);
+	A(helm.enemies[0].maxHp - helm.enemies[0].hp === 15 + 4 && ice.enemies[0].slow === 0.3 && near(ice.enemies[0].slowT, 2, 0.4), 'Rocky Helmet: whoever touches you takes 15 + 4 a level; Eternal Ice: it is 30 % slower for 2 s');
+	const sash = hit(['focussash'], RAT, { hp: 3 }); A(sash.pl.hp === 1 && !sash.pl.dead, 'Focus Sash: the hit that would finish you leaves 1 HP'); run(sash, 120); A(sash.pl.dead, '...once a minute: the next one does');
+	const sit = hit(['sitrusberry'], RAT, { hp: 50 }), nos = hit([], RAT, { hp: 50 });
+	A(near(sit.pl.hp - nos.pl.hp, sit.pl.maxHp * 0.3, 1e-6), `Sitrus Berry: under half HP, 30 % of it back (${nos.pl.hp.toFixed(1)} without, ${sit.pl.hp.toFixed(1)} with)`, [sit.pl.hp, nos.pl.hp]);
+	run(sit, 60 * 5); const again = sit.pl.hp; A(sit.events.every((e) => e.k !== 'item') && sit.pl.sitrusT > 0, '...and not again for 90 s');
+	const wp = mk(['weaknesspolicy'], { dex: 4, hurt: true, moves: ['bug-buzz'] }); const wt = addEnemy(wp, RAT, 42, 40, { dummy: true, hp: 1e6 }); const onRat = (n) => { let best = 0; for (let i = 0; i < n; i++) { tick(wp, null); for (const ev of wp.events) if (ev.k === 'hit' && ev.id === wt.id) best = Math.max(best, ev.d); } return best; };
+	const calm = onRat(120); const sq = addEnemy(wp, 7, 40.5, 40.3, { hp: 1e6 }); sq.dmg = 0.5; const hot = onRat(200);
+	A(wp.pl.wpT > 0 && near(hot / calm, 1.5, 1e-9), 'Weakness Policy: hit by something super-effective (a Squirtle on a Charmander), your moves do + 50 % for 8 s', [calm, hot]);
+	// what heals you, what you gain
+	const lf = mk(['leftovers'], { moves: [] }); lf.pl.hp = 10; run(lf, 600);
+	const sb = mk(['shellbell']); sb.pl.hp = 10; addEnemy(sb, RAT, 46, 40, { dummy: true, hp: 1e6 }); run(sb, 600);
+	A(near(lf.pl.hp, 10 + lf.pl.maxHp * 0.015 * 10, 0.05) && sb.pl.hp > 12 && sb.pl.hp <= 10 + 4 * 10 + 0.01, `Leftovers: 1.5 % of your HP a second; Shell Bell: 4 % of the damage you do, 4 HP a second at most (10 to ${sb.pl.hp.toFixed(1)} in 10 s)`, [lf.pl.hp, sb.pl.hp]);
+	A(near(mk(['luckyegg']).pl.xpMul, 1.3) && near(mk(['scopelens']).pl.crit, 0.15) && near(mk(['choicescarf']).pl.spdMul, 1.35), 'Lucky Egg: 30 % more XP; Scope Lens: 15 % crit; Choice Scarf: 35 % faster');
+	const gg = mk(['safetygoggles'], { moves: [] }); setWeather(gg, 'sand', 30); run(gg, 600); A(gg.stats.taken === 0, 'Safety Goggles: the sandstorm does not wear you down');
+	const count = (items) => { const q = newWorld(generate(7, 'meadow'), data, { dex: 25, moves: [], seed: 5, cast: [RAT], items, weather: false }); q.pl.invuln = 1e9; run(q, 60 * 120); return [q.stats.spawned, q.enemies[0].maxHp, q.enemies[0].xp]; };
+	const inc = count(['pureincense']), noinc = count([]);
+	A(inc[0] < noinc[0] * 0.85 && inc[0] > noinc[0] * 0.65, `Pure Incense: a quarter fewer enemies arrive (${inc[0]} against ${noinc[0]} in two minutes), each tougher and worth more`, [inc, noinc]);
+	const acted = ['leftovers', 'choiceband', 'quickclaw', 'focussash', 'shellbell', 'luckyegg', 'lifeorb', 'choicescarf', 'rockyhelmet', 'eternalice', 'assaultvest', 'scopelens', 'expertbelt', 'widelens', 'bigorb', 'typegem', 'sitrusberry', 'safetygoggles', 'weaknesspolicy', 'pureincense', 'lightball', 'thickclub', 'silverpowder'];
+	const left = data.itemList().filter((id) => !acted.includes(id) && !CK.IT.NOT_HERE.includes(id));
+	A(left.length === 0 && data.itemList().length === acted.length + CK.IT.NOT_HERE.length, `every item is accounted for: ${acted.length} act in the 3D rules; coins, traps and Rare Candy (${CK.IT.NOT_HERE.join(', ')}) have nothing to act on here yet`, [left, data.itemList().filter((id) => !acted.includes(id))]);
 }
 
 // ---------------------------------------------------------------- arrivals

@@ -517,6 +517,27 @@ or sets a trap yet).
 
 Tests: parity 92 checks, combat 147 checks, the page test 68.
 
+## 5.13 P3, tenth part: built (2026-11-11). P3 is complete.
+
+- **Held items.** The 2D game's 26. What an item changes for good (damage, cooldown, speed, armour, crit, XP,
+  regeneration) is applied by the 2D game's own code for it. The rest act where they should: Choice Band (your
+  first move + 40 %, the others - 20 %), Life Orb's cost, Shell Bell, Expert Belt, a type gem, Light Ball, Thick
+  Club, Silver Powder, Wide Lens, Big Orb, Rocky Helmet, Eternal Ice, Sitrus Berry, Focus Sash, Weakness Policy,
+  Safety Goggles, Pure Incense.
+- **Calibre**, the upgrade that makes your shots, orbs and areas 12 % bigger a step, is in, with the level-up card.
+- **The comparison with 2D** (108 checks): sixteen items held on both sides, by damage dealt, HP lost and gained,
+  and what is left of the enemy.
+- **On the page:** `&items=lifeorb` (any number; the 2D game holds one).
+
+Not carried over: Amulet Coin (no coins here), Heavy Boots (no traps), Rare Candy (an instant pickup), and how an
+item is FOUND (a boss's drop, a chest): that is P4's.
+
+**P3 is done.** Everything the 2D game's combat does is in the 3D rules, checked against the 2D game itself, except
+what belongs to later phases: move evolutions and Expedition's move levels (P5), coins, tickets and item drops
+(P4), Megas, Z-moves, Dynamax and Ultimates (P4 / P6), co-op and replays (P3n).
+
+Tests: parity 108 checks, combat 168 checks, the page test 69.
+
 ## 6. Dive in 2D: built
 
 **D0 — find the stairs (small; can ship first, on its own).** *Built 2026-11-11 (`overworld/tests/micasurvivor_dive_stairs_test.mjs`). As built: the stairs took their own orange mark, so the rocks and Meowth keep their gold; the HUD arrow comes up after 25 s on a floor, or at once when its boss falls.*
