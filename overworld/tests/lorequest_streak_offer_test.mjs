@@ -99,8 +99,11 @@ const ci = game.indexOf("overlayButton('Concede the run'");
 ok('the run Concede button reports the walkaway', ci > 0 && /mpRunWalkaway\(runModeName\(\), run\)/.test(game.slice(ci, ci + 200)));
 for (const [fn, m] of [['resumeLorequestOverlay', 'lorequest'], ['resumeMiddleEarthOverlay', 'middleearth'], ['resumeSwordCoastOverlay', 'swordcoast'], ['resumeFinalFantasyOverlay', 'finalfantasy'], ['resumeMultiverseOverlay', 'multiverse']])
 	ok(`${m}: "Abandon - start a new run" reports the walkaway`, game.includes(`!(await ${fn}(run))) { mpRunWalkaway('${m}', run);`));
+// (Middle-earth / Sword Coast / Final Fantasy share one picker, game_lorequest.js rungRunFlow: it passes its
+// config's `mode`, so for those the check is the shared call + a rungRunFlow({ mode: '<m>' }) config)
 for (const m of ['lorequest', 'middleearth', 'swordcoast', 'finalfantasy', 'multiverse'])
-	ok(`${m}: the hero picker rotates equal streaks (passes an rng)`, new RegExp(`streakPins\\((pool|unlocked), stats, '${m}', Math\\.random\\)`).test(game));
+	ok(`${m}: the hero picker rotates equal streaks (passes an rng)`, new RegExp(`streakPins\\((pool|unlocked), stats, '${m}', Math\\.random\\)`).test(game)
+		|| (/streakPins\(pool, stats, mode, Math\.random\)/.test(game) && new RegExp(`rungRunFlow\\(\\{\\s*mode: '${m}'`).test(game)));
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

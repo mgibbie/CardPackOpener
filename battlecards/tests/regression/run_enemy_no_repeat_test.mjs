@@ -73,7 +73,10 @@ ok('no faced list: the old behaviour (in-rung, no immediate repeat)',
 // save's foes from its fight-replay labels ("Fight 10 — The Balrog (win)")
 const src = gameSource();
 for (const fn of ['genLorequestEnemy', 'genMiddleEarthEnemy', 'genSwordCoastEnemy', 'genFinalFantasyEnemy', 'genMultiverseEnemy']) {
-	const advances = src.split('\n').filter(l => l.includes(`run.enemy = ${fn}(`) && !l.includes('run.enemy ||'));
+	// Middle-earth / Sword Coast / Final Fantasy share one flow (rungRunFlow), whose enemy roll is exported
+	// as `genEnemy: <fn>`: for those, the advance to check is the shared flow's
+	const local = new RegExp(`genEnemy: ${fn},`).test(src) ? 'genEnemy' : fn;
+	const advances = src.split('\n').filter(l => l.includes(`run.enemy = ${local}(`) && !l.includes('run.enemy ||'));
 	ok(`${fn}: the between-fights advance passes the run's faced list`, advances.length === 1 && advances[0].includes('noteFaced(run)'), advances);
 }
 const m = /function noteFaced\(run\) \{[\s\S]*?\n\}/.exec(src);
