@@ -53,17 +53,69 @@ G.HUD = (() => {
     const watching = !!G.Game && G.Game.state === 'watch';
     const touch = G.Touch.active && !watching;
 
+    // MicaSurvivor (DV5, plan D4): a Dive wears the Dive's own card (white, portrait, HP + XP bars) and drops the
+    // classic full-width XP strip; the chips, the clock block and everything below stay exactly where they were.
+    const diveHud = !!(G.World && G.World.zone && G.World.zone.dive);
+
     // ---------- barra de experiencia (borde superior) ----------
     const xpF = pl.xp / pl.xpNext;
-    ctx.fillStyle = 'rgba(0,0,0,.5)';
-    ctx.fillRect(0, 0, w, 7);
-    const g = ctx.createLinearGradient(0, 0, w, 0);
-    g.addColorStop(0, '#4fd1ff'); g.addColorStop(1, '#a98bff');
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, w * G.U.clamp(xpF, 0, 1), 7);
+    if (!diveHud) {
+      ctx.fillStyle = 'rgba(0,0,0,.5)';
+      ctx.fillRect(0, 0, w, 7);
+      const g = ctx.createLinearGradient(0, 0, w, 0);
+      g.addColorStop(0, '#4fd1ff'); g.addColorStop(1, '#a98bff');
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, w * G.U.clamp(xpF, 0, 1), 7);
+    }
 
     // ---------- vida + nivel ----------
     const px = 16, py = 20;
+    if (diveHud) {
+      // the Dive card: a white card at the corner, the Pokémon portrait clipped in its 42 px left box, the name and
+      // level on the first line, HP and XP as bars; the Second-chance hearts hang right after the card.
+      const cx = 14, cy = 14, cw2 = 226, chh = 38;
+      roundRect(ctx, cx, cy, cw2, chh, 8);
+      ctx.fillStyle = 'rgba(250,252,255,.95)'; ctx.fill();
+      ctx.lineWidth = 1.5; ctx.strokeStyle = 'rgba(18,24,40,.5)'; ctx.stroke();
+      ctx.save();                       // the portrait: card corners rounded on the left, a straight cut at 42 px
+      roundRect(ctx, cx, cy, cw2, chh, 8); ctx.clip();
+      ctx.beginPath(); ctx.rect(cx, cy, 42, chh); ctx.clip();
+      const Sp = G.Sprites, m = Sp.animMeta(pl.dex, 'Idle', pl.shiny), sh = Sp.sheet(pl.dex, 'Idle', pl.shiny);
+      if (m && sh && sh.ready) {
+        const row = Sp.rowOf(pl.dex, 2, m), hh = 30, kk = hh / Math.max(8, m.ay);   // whole mon in the 30 px box
+        ctx.save();
+        ctx.imageSmoothingEnabled = false;
+        ctx.translate(cx + 24, cy + chh - 3);
+        if (Sp.flipOf(pl.dex, 2)) ctx.scale(-1, 1);
+        ctx.drawImage(sh.img, 0, row * m.h, m.w, m.h, -m.ax * kk, -m.ay * kk, m.w * kk, m.h * kk);
+        ctx.restore();
+      }
+      ctx.restore();
+      ctx.strokeStyle = 'rgba(18,24,40,.18)'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(cx + 43, cy + 5); ctx.lineTo(cx + 43, cy + chh - 5); ctx.stroke();
+      ctx.textAlign = 'left';
+      ctx.font = F(800, 13);
+      ctx.fillStyle = '#1b2233';
+      ctx.fillText(pl.mon.name, cx + 44, cy + 15);
+      ctx.font = F(700, 10);
+      ctx.textAlign = 'right';
+      ctx.fillStyle = '#a86a00';
+      ctx.fillText('Nv. ' + pl.level, cx + 44 + 160, cy + 15);
+      bar(ctx, cx + 44, cy + 20, 160, 9, pl.hp / pl.maxHp, '#ff5f6d');
+      const hpt = Math.ceil(pl.hp) + ' / ' + Math.round(pl.maxHp);
+      ctx.font = F(800, 9);
+      ctx.textAlign = 'center';
+      ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(24,10,14,.85)';
+      ctx.strokeText(hpt, cx + 44 + 80, cy + 27.5);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText(hpt, cx + 44 + 80, cy + 27.5);
+      ctx.lineWidth = 1;
+      const xg = ctx.createLinearGradient(cx + 44, 0, cx + 44 + 160, 0);
+      xg.addColorStop(0, '#4fd1ff'); xg.addColorStop(1, '#a98bff');
+      bar(ctx, cx + 44, cy + 31, 160, 5, xpF, xg);
+      for (let i = 0; i < (pl.revives || 0); i++) G.Icons.draw(ctx, 'revive', cx + cw2 + 6 + i * 22, cy + 9, 20);
+      mark('hp', cx, cy, cw2 + (pl.revives ? 6 + pl.revives * 22 : 0), chh);
+    } else {
     ctx.font = F(800, 13);
     ctx.fillStyle = '#eaf2ff';
     ctx.textAlign = 'left';
@@ -81,6 +133,7 @@ G.HUD = (() => {
     // MicaSurvivor (M5 lote 3, main.gd 8670): corazones de Segunda oportunidad que quedan.
     for (let i = 0; i < (pl.revives || 0); i++) G.Icons.draw(ctx, 'revive', px + 48 + 168 + 6 + i * 22, py + 12, 20);
     mark('hp', px, py, 48 + 168 + (pl.revives ? 6 + pl.revives * 22 : 0), 32);
+    }
 
     // buffs activos
     const COL = { atk: '#ff6b4d', spd: '#7fe0ff', def: '#b0b8c8', regen: '#5fe08a' };
@@ -207,7 +260,9 @@ G.HUD = (() => {
     // ---------- barra del jefe ----------
     const boss = G.EnemyMgr.all().find(e => e.boss && !e.dead);
     if (boss) {
-      const bw = Math.min(420, w - 80), by = adPct > 0 ? 80 : 70;   // (M5 lote 9: bajo el "Reto")
+      // MicaSurvivor (DV5): in a Dive the bar sits under the floor pill (63..85) and the combo (text 89..99, bar
+      // 104..108), at 114. The classic order (Reto at 72, bar at 70/80) is untouched.
+      const bw = Math.min(420, w - 80), by = diveHud ? 114 : (adPct > 0 ? 80 : 70);   // (M5 lote 9: bajo el "Reto")
       bar(ctx, (w - bw) / 2, by, bw, 12, boss.hp / boss.maxHp, '#ffcb3d');
       ctx.font = F(800, 10);
       ctx.fillStyle = '#20160a';

@@ -414,6 +414,7 @@ G.DiveGen = (() => {
     const z = T.custom({ seed: seed | 0, map: 'dive:' + L.route, zone: L.floor, w: L.w, h: L.h, x0: -L.spawn[0], y0: -L.spawn[1],
                          kind: L.kind, prop: L.prop });
     z.dive = L;
+    if (G.DiveArt) z.mini = (c, tx, ty) => G.DiveArt.mini(z, c, tx, ty);   // (DV2: the minimap in the route's own colours; visual only)
     return z;
   }
 

@@ -128,9 +128,18 @@ G.Minimap = (() => {
     const TS = G.World.TS;
     return { x: ((wx - pl.x) / TS + K.VIEW / 2) * K.PX + 4, y: ((wy - pl.y) / TS + K.VIEW / 2) * K.PX + 4 };
   }
-  const inside = (q, pad = 0) => Math.hypot(q.x - K.CT, q.y - K.CT) <= K.RAD - pad;
+  const inside = (q, pad = 0) => (dive() ? rrInside(q, pad) : Math.hypot(q.x - K.CT, q.y - K.CT) <= K.RAD - pad);
   /** Pegado al borde si queda fuera (main.gd _edge). */
   function edge(q) {
+    if (dive()) {   // (DV5) the Dive frame is a rounded square: stick to its border instead of the circle's
+      if (rrInside(q, K.edge)) return q;
+      let lo = 0, hi = 1;   // the centre is inside, q is out: the segment crosses the (convex) border once
+      for (let i = 0; i < 14; i++) {
+        const t = (lo + hi) / 2;
+        if (rrInside({ x: K.CT + (q.x - K.CT) * t, y: K.CT + (q.y - K.CT) * t }, K.edge)) lo = t; else hi = t;
+      }
+      return { x: K.CT + (q.x - K.CT) * lo, y: K.CT + (q.y - K.CT) * lo };
+    }
     const dx = q.x - K.CT, dy = q.y - K.CT, d = Math.hypot(dx, dy), lim = K.RAD - K.edge;
     return d > lim ? { x: K.CT + dx / d * lim, y: K.CT + dy / d * lim } : q;
   }
@@ -151,6 +160,19 @@ G.Minimap = (() => {
   const circle = (ctx, x, y, r, col) => { ctx.fillStyle = col; ctx.beginPath(); ctx.arc(x, y, r, 0, 6.2832); ctx.fill(); };
   const ring = (ctx, x, y, r, col, lw) => { ctx.strokeStyle = col; ctx.lineWidth = lw; ctx.beginPath(); ctx.arc(x, y, r, 0, 6.2832); ctx.stroke(); };
 
+  // ---------------- MicaSurvivor (DV5): a Dive's frame is a rounded square, not the circle ----------------
+  // Plans/MICASURVIVOR_DIVE_VISUALS_PLAN.md D4: PokéDive-like. The clip, the two rings and inside / edge all use it;
+  // every other mode keeps the port's circle untouched. The box stays 200 × 200 (place() and the marks don't move).
+  const dive = () => !!(G.World && G.World.zone && G.World.zone.dive);
+  const RR = { x: 3, y: 3, w: 194, h: 194, r: 28 };
+  /** Is q inside the rounded square, shrunk by pad? (clamp to the core rect, then one radius test). */
+  function rrInside(q, pad = 0) {
+    const r = RR.r;
+    const cx = G.U.clamp(q.x, RR.x + r, RR.x + RR.w - r), cy = G.U.clamp(q.y, RR.y + r, RR.y + RR.h - r);
+    return Math.hypot(q.x - cx, q.y - cy) <= r - pad;
+  }
+  const rring = (ctx, x, y, w, h, r, col, lw) => { G.HUD.roundRect(ctx, x, y, w, h, r); ctx.strokeStyle = col; ctx.lineWidth = lw; ctx.stroke(); };
+
   function draw(ctx, mm, pl) {
     if (!mm || !pl || !canvases()) return;
     const W = G.World, TS = W.TS, sc = mm.s / K.BOX;
@@ -167,8 +189,11 @@ G.Minimap = (() => {
     ctx.translate(mm.x, mm.y);
     ctx.scale(sc, sc);
     ctx.save();
-    ctx.beginPath(); ctx.arc(K.CT, K.CT, 97, 0, 6.2832); ctx.clip();
-    circle(ctx, K.CT, K.CT, 97, 'rgb(8,13,28)');
+    ctx.beginPath();
+    if (dive()) G.HUD.roundRect(ctx, RR.x, RR.y, RR.w, RR.h, RR.r); else ctx.arc(K.CT, K.CT, 97, 0, 6.2832);
+    ctx.clip();
+    if (dive()) { G.HUD.roundRect(ctx, RR.x, RR.y, RR.w, RR.h, RR.r); ctx.fillStyle = 'rgb(8,13,28)'; ctx.fill(); }
+    else circle(ctx, K.CT, K.CT, 97, 'rgb(8,13,28)');
     const prevSm = ctx.imageSmoothingEnabled;
     ctx.imageSmoothingEnabled = false;
     const px = pl.x / TS, py = pl.y / TS, fx = px - Math.floor(px), fy = py - Math.floor(py), half = K.N / 2;
@@ -283,9 +308,14 @@ G.Minimap = (() => {
     if (!mon(ctx, pl, 20, c)) circle(ctx, c.x, c.y, 3, '#ffd23f');
     rec('you', c);
     ctx.restore();
-    // el aro y la "N" (MiniRing)
-    ring(ctx, K.CT, K.CT, 97.5, 'rgba(5,10,26,.9)', 3);
-    ring(ctx, K.CT, K.CT, 96, '#f4f8ff', 2);
+    // el aro y la "N" (MiniRing) — MicaSurvivor (DV5): in a Dive the ring is the rounded square's double border
+    if (dive()) {
+      rring(ctx, 1.5, 1.5, 197, 197, 30, 'rgba(5,10,26,.9)', 3);
+      rring(ctx, 3, 3, 194, 194, 28, '#f4f8ff', 2);
+    } else {
+      ring(ctx, K.CT, K.CT, 97.5, 'rgba(5,10,26,.9)', 3);
+      ring(ctx, K.CT, K.CT, 96, '#f4f8ff', 2);
+    }
     ctx.font = '700 13px Pixelify,"Segoe UI",system-ui,sans-serif';
     ctx.textAlign = 'center';
     ctx.fillStyle = 'rgba(255,255,255,.8)';
