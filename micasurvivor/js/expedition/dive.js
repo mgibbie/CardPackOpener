@@ -939,7 +939,9 @@ G.ExpDive = (() => {
   function drawCombo(ctx, w, S, F) {
     const c = S.combo;
     if (!c || c.n < 2) return;
-    const x = w / 2, y = 92, col = c.n >= COMBO.FIRE ? '#ff7a3d' : c.n >= COMBO.HOT ? '#ffb347' : '#ffe9a0';
+    // MicaSurvivor (DV5): the Dive's floor pill owns 63..85, so the racha drops to a 99 baseline (its bar 104..108)
+    // and the boss bar follows at 114 (hud.js). Only this Dive combo moves; nothing else reads y here.
+    const x = w / 2, y = 99, col = c.n >= COMBO.FIRE ? '#ff7a3d' : c.n >= COMBO.HOT ? '#ffb347' : '#ffe9a0';
     const bump = 1 + Math.max(0, (c.t - (COMBO.WINDOW - 0.15)) / 0.15) * 0.25;
     ctx.save();
     ctx.translate(x, y); ctx.scale(bump, bump);
@@ -1132,9 +1134,18 @@ G.ExpDive = (() => {
     return T().f('PISO {x}', S.floor) + ' · ' + T().t(NAME[S.route]).toUpperCase() + ' · ' + T().f('{x} asegurado · {x} en juego', Math.floor(S.bank), Math.floor(S.stake));
   }
   const hudColor = () => { const S = cur(); return S && S.sealed ? '#ff9a6b' : S && S.ropeT > 0 ? '#b48aff' : '#9fd8ff'; };
-  function drawHud(ctx, w, h, pl, st, F) {
+  function drawHud(ctx, w, h, pl, st, F, mark) {
     const S = cur();
     if (!S) return;
+    // MicaSurvivor (DV5, plan D4): the floor pill — PokéDive's red pill holding the route's 25 pips, centred under
+    // the clock line (the classic HUD draws no pill; the pips used to float on the world).
+    const pw = 276, px0 = w / 2 - pw / 2, py0 = 63, ph = 22;
+    ctx.save();
+    G.HUD.roundRect(ctx, px0, py0, pw, ph, ph / 2);
+    ctx.fillStyle = 'rgba(190,34,50,.95)'; ctx.fill();
+    ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(255,255,255,.92)'; ctx.stroke();
+    ctx.restore();
+    if (mark) mark('floor', px0, py0, pw, ph);
     drawCombo(ctx, w, S, F);   // (V5)
     // the route's 25 pips (every 5th: alpha, the 25th: the guardian)
     const pos = ((S.floor - 1) % 25) + 1, x0 = w / 2 - 25 * 5, y = 74;
@@ -1160,10 +1171,228 @@ G.ExpDive = (() => {
     }
   }
 
+  // ---------------- the canopy: bands in the y-sort, silhouettes behind them (DV3) ----------------
+  // Plans/MICASURVIVOR_DIVE_VISUALS_PLAN.md §4. The lush floors' baked lip (dive-art.js) is depth-sorted with the
+  // entities: each strip sorts at the y of the wall px it hangs from, so it covers an actor standing behind the wall
+  // and never one in front of it. What it covers is redrawn over it as a tinted silhouette: you gold, the rest pale
+  // blue, a 0.5 (the sprite sheet tinted once, cached, like G.Sprites.white).
+  const SIL = ['#FFE27A', '#BFE6FF'];
+  const tints = new WeakMap();                 // a sprite sheet -> its tinted copies (one a colour, made once)
+  function tinted(img, color) {
+    let e = tints.get(img);
+    if (!e) { e = Object.create(null); tints.set(img, e); }
+    if (!e[color]) {
+      const c = document.createElement('canvas'); c.width = img.width; c.height = img.height;
+      const x = c.getContext('2d');
+      x.drawImage(img, 0, 0);
+      x.globalCompositeOperation = 'source-in'; x.fillStyle = color;
+      x.fillRect(0, 0, c.width, c.height);
+      e[color] = c;
+    }
+    return e[color];
+  }
+  const diveArt = () => { const z = G.World.zone; return z && z.dive && G.DiveArt ? G.DiveArt.forZone(z) : null; };
+  const NOBANDS = [];
+  /** The canopy strips on screen (world px; sy = the depth they sort at). game.drawScene pushes them into the y-sort. */
+  function bands(cam) {
+    const art = diveArt();
+    if (!art || !art.bands || !art.bands.length) return NOBANDS;
+    const PX = G.Sprites.PX, ox = art.ox * PX, oy = art.oy * PX;
+    const l = cam.left(), t = cam.top(), r = l + cam.w, b = t + cam.h, out = [];
+    for (const s of art.bands) {
+      const x = ox + s.x * PX, y = oy + s.y * PX, w = s.w * PX, h = s.h * PX;
+      if (x > r || x + w < l || y > b || y + h < t) continue;
+      out.push({ x, y, w, h, sy: oy + s.sy * PX, img: s.img });
+    }
+    return out;
+  }
+  const drawBand = (ctx, b) => { ctx.drawImage(b.img, b.x, b.y, b.w, b.h); };
+  /** (DV3) every actor the canopy hides, over it as a tinted silhouette. Called after the entities (game.drawScene). */
+  function drawSilhouettes(ctx, ents) {
+    const art = diveArt();
+    if (!art || !art.occ || !ents || !ents.length) return;
+    const PX = G.Sprites.PX, ox = art.ox, oy = art.oy, W = art.w, occ = art.occ;
+    const me = G.Game && G.Game.player;
+    for (const e of ents) {
+      const an = e && e.anim;
+      if (!an || !an.dex) continue;
+      let m = G.Sprites.animMeta(an.dex, an.cur, an.shiny), sh = G.Sprites.sheet(an.dex, an.cur, an.shiny);
+      let fr = an.frame | 0;
+      if ((!m || !sh || !sh.ready) && an.cur !== 'Idle') {       // as Animator.draw: Idle while a sheet loads
+        m = G.Sprites.animMeta(an.dex, 'Idle', an.shiny); sh = G.Sprites.sheet(an.dex, 'Idle', an.shiny); fr = 0;
+      }
+      if (!m || !sh || !sh.ready) continue;
+      const fx = Math.round(e.x / PX - ox), fy = Math.round(e.y / PX - oy);
+      if (fx < 0 || fx >= W || fy < 1) continue;
+      // the sprite from its feet up: is any of it under a lip whose band sorts over the actor? (occ holds that band's y)
+      const span = Math.min(fy, Math.ceil(m.ay * (an.scale || 1) * G.Sprites.artScale(an.dex)) + 2);
+      let hid = false;
+      for (let d = 0; d <= span && !hid; d++) hid = occ[(fy - d) * W + fx] > fy;
+      if (!hid) continue;
+      const k = PX * (an.scale || 1) * G.Sprites.artScale(an.dex);
+      const c = tinted(sh.img, e === me ? SIL[0] : SIL[1]);
+      const row = G.Sprites.rowOf(an.dex, an.dir, m);
+      fr = Math.min(Math.max(0, fr), m.n - 1);
+      const bob = m.n === 1 && an.cur === 'Walk' && !an.once ? Math.round(Math.abs(Math.sin((an.clock || 0) * 9)) * 2 * k) : 0;
+      let dx = Math.round(e.x - m.ax * k), dy = Math.round(e.y - m.ay * k) - bob;
+      const prev = ctx.globalAlpha;
+      ctx.globalAlpha = prev * 0.5;
+      if (G.Sprites.flipOf(an.dex, an.dir)) {
+        const ox0 = Math.round(e.x); ctx.save(); ctx.translate(ox0, 0); ctx.scale(-1, 1); dx -= ox0;
+        ctx.drawImage(c, fr * m.w, row * m.h, m.w, m.h, dx, dy, m.w * k, m.h * k);
+        ctx.restore();
+      } else ctx.drawImage(c, fr * m.w, row * m.h, m.w, m.h, dx, dy, m.w * k, m.h * k);
+      ctx.globalAlpha = prev;
+    }
+  }
+
+  // ---------------- (DV4) the light map, the biome vignette, the ambience ----------------
+  // PokéDive's style pass, drawn in screen space after the scene: game.render calls drawLight + drawAmbience instead of
+  // World.drawVignette while a Dive floor is up. drawLight puts the route's darkness (dive-art.js ROUTES' dim) on a
+  // ¼-res canvas, cuts a hole in it for your lamp, the landmark and the floor's baked lights (build's lights), then
+  // composites it with an additive glow; the vignette rides along, tinted with the same colour. Time-driven only, never
+  // rng: a replay and a viewer paint the same frame. G.Settings.fx 0 skips the light map and the shafts (the plan's
+  // mobile budget); calm stops the flicker and holds the ambience still.
+  const SHAFTS = ['forest', 'canyon', 'reef', 'ruins'];          // the routes with sun shafts (plan §5 DV4)
+  const SHADE = { forest: [214, 255, 190], canyon: [255, 232, 172], reef: [178, 240, 255], ruins: [240, 236, 255] };
+  const LAMP = [255, 228, 160];
+  let lcv = null, lcx = null, lW = 0, lH = 0, lT = -1e9;
+  const hexRGB = s => [parseInt(s.slice(1, 3), 16), parseInt(s.slice(3, 5), 16), parseInt(s.slice(5, 7), 16)];
+  /** Deterministic 0..1 from two integers: the ambience's layout, so replays match (no rng). */
+  const hsh = (a, b) => { let h = Math.imul(a | 0, 374761393) ^ Math.imul(b | 0, 668265263); h = Math.imul(h ^ (h >>> 13), 1274126177); h ^= h >>> 16; return (h >>> 0) / 4294967296; };
+
+  /** (DV4) the light map for a moment t: the route's fill and every hole to cut (world px). Pure in t, no rng. */
+  function lightSpec(t) {
+    const z = G.World.zone, L = z && z.dive;
+    if (!L) return null;
+    const art = diveArt(), calm = !!G.Settings.get('calm'), holes = [];
+    const pl = G.Game && G.Game.player;
+    if (pl) holes.push({ x: pl.x, y: pl.y, r: 90, a: 1, c: LAMP });              // your lamp (plan: r ~ 90)
+    const lm = L.landmark;
+    if (lm) { const p = wpos(lm.at); holes.push({ x: p[0], y: p[1], r: 74, a: .8, c: hexRGB(LMCOL[lm.kind] || '#ffe9a0') }); }
+    if (art && art.lights) for (const lt of art.lights)                          // lava sheets, glowing spots, embers
+      holes.push(calm ? { x: lt.x, y: lt.y, r: lt.r, a: .92, c: lt.c }
+                      : { x: lt.x, y: lt.y, r: lt.r * (0.86 + 0.14 * Math.sin(t * lt.f * 0.77 + lt.p * 1.7)),
+                          a: 0.72 + 0.28 * Math.sin(t * lt.f + lt.p), c: lt.c });
+    const R = art && G.DiveArt.ROUTES[art.route];
+    return { dim: (R && R.dim) || null, holes, calm };
+  }
+
+  /** The ¼-res light canvas, capped at 480 x 270 (the plan's per-frame budget). -> the divisor q. */
+  function ensureLightCv(w, h) {
+    const q = Math.max(4, Math.ceil(w / 480), Math.ceil(h / 270));
+    const lw = Math.max(1, Math.ceil(w / q)), lh = Math.max(1, Math.ceil(h / q));
+    if (!lcv || lW !== lw || lH !== lh) {
+      lcv = document.createElement('canvas'); lcv.width = lw; lcv.height = lh;
+      lcx = lcv.getContext('2d'); lW = lw; lH = lh; lT = -1e9;
+    }
+    return q;
+  }
+
+  /** Rebuild the light canvas: the route's fill, then every hole on screen punched out of it (destination-out). */
+  function paintLight(spec, q) {
+    const d = spec.dim, cam = G.Camera;
+    lcx.setTransform(1, 0, 0, 1, 0, 0);
+    lcx.globalCompositeOperation = 'source-over';
+    lcx.globalAlpha = 1;
+    lcx.clearRect(0, 0, lW, lH);
+    lcx.fillStyle = `rgba(${d[0]},${d[1]},${d[2]},${d[3]})`;
+    lcx.fillRect(0, 0, lW, lH);
+    lcx.globalCompositeOperation = 'destination-out';
+    let n = 0;
+    for (const hl of spec.holes) {
+      const sx = (hl.x - cam.left() + cam._sx) * cam.scale / q, sy = (hl.y - cam.top() + cam._sy) * cam.scale / q;
+      const r = hl.r * cam.scale / q;
+      if (sx + r < 0 || sy + r < 0 || sx - r > lW || sy - r > lH) continue;
+      const g = lcx.createRadialGradient(sx, sy, 0, sx, sy, r);
+      g.addColorStop(0, `rgba(0,0,0,${hl.a})`);
+      g.addColorStop(0.5, `rgba(0,0,0,${(hl.a * 0.8).toFixed(3)})`);
+      g.addColorStop(1, 'rgba(0,0,0,0)');
+      lcx.fillStyle = g;
+      lcx.beginPath(); lcx.arc(sx, sy, r, 0, 6.2832); lcx.fill();
+      n++;
+    }
+    return n;
+  }
+
+  /** (DV4) the biome vignette + the light map + its additive glow, in screen space (the camera's transform is off). */
+  function drawLight(ctx, w, h, t) {
+    const spec = lightSpec(t);
+    if (!spec) { G.World.drawVignette(ctx, w, h); return { light: false, holes: 0, why: 'nodive' }; }
+    const d = spec.dim;
+    // the biome vignette (this is what replaces World.drawVignette in Dive): tinted where the route has a darkness
+    const vg = ctx.createRadialGradient(w / 2, h / 2, Math.min(w, h) * 0.34, w / 2, h / 2, Math.max(w, h) * 0.78);
+    vg.addColorStop(0, 'rgba(0,0,0,0)');
+    vg.addColorStop(1, d ? `rgba(${d[0]},${d[1]},${d[2]},0.6)` : 'rgba(0,0,0,0.5)');
+    ctx.fillStyle = vg;
+    ctx.fillRect(0, 0, w, h);
+    // the light map: nothing to darken on this route, or fx 0 (low quality skips it: the mobile budget)
+    const fx = G.Settings.fx;
+    if (!d || fx < 1) return { light: false, holes: 0, why: !d ? 'nodim' : 'fx0' };
+    const cam = G.Camera, q = ensureLightCv(w, h), now = performance.now();
+    if (now - lT >= (fx > 1 ? 1000 / 30 : 1000 / 15)) { paintLight(spec, q); lT = now; }
+    ctx.save();
+    ctx.imageSmoothingEnabled = true;                        // the light map is soft: upscale it smoothly
+    ctx.drawImage(lcv, 0, 0, w, h);
+    // the additive glow over the holes (the plan's glow pass): warm at the lamp, each light in its own colour
+    ctx.globalCompositeOperation = 'lighter';
+    let n = 0;
+    for (const hl of spec.holes) {
+      if (!hl.c) continue;
+      const sx = (hl.x - cam.left() + cam._sx) * cam.scale, sy = (hl.y - cam.top() + cam._sy) * cam.scale;
+      const r = hl.r * cam.scale * 1.3;
+      if (sx + r < 0 || sy + r < 0 || sx - r > w || sy - r > h) continue;
+      const g = ctx.createRadialGradient(sx, sy, 0, sx, sy, r);
+      g.addColorStop(0, `rgba(${hl.c[0]},${hl.c[1]},${hl.c[2]},${(0.14 * hl.a).toFixed(3)})`);
+      g.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(sx, sy, r, 0, 6.2832); ctx.fill();
+      n++;
+    }
+    ctx.restore();
+    return { light: true, holes: n, fill: d.join(','), why: null };
+  }
+
+  /** (DV4) sun shafts + drifting motes on the 4 lit routes: screen space, time-driven, fx-gated. -> what it drew. */
+  function drawAmbience(ctx, w, h, t) {
+    const z = G.World.zone;
+    const art = z && z.dive && G.DiveArt ? G.DiveArt.forZone(z) : null;
+    const si = art ? SHAFTS.indexOf(art.route) : -1;
+    if (si < 0 || G.Settings.fx < 1) return { shafts: 0, motes: 0 };
+    const calm = !!G.Settings.get('calm'), tt = calm ? 0 : t;   // calm: a still, steady picture (no drift, no shimmer)
+    const col = SHADE[SHAFTS[si]], fx = G.Settings.fx;
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    for (let i = 0; i < 4; i++) {                                // the shafts: a slow sway, a slower shimmer
+      const a0 = hsh(si * 7919 + 1, i), a1 = hsh(si * 7919 + 2, i);
+      const x = (0.06 + a0 * 0.86) * w + Math.sin(tt * 0.11 + i * 2.1) * 26, wd = 24 + a1 * 66, slant = h * 0.34;
+      const al = calm ? 0.07 : 0.05 + 0.04 * (0.5 + 0.5 * Math.sin(tt * 0.23 + i * 1.7));
+      const g = ctx.createLinearGradient(x, 0, x + slant, h);
+      g.addColorStop(0, `rgba(${col[0]},${col[1]},${col[2]},${al.toFixed(3)})`);
+      g.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.moveTo(x, 0); ctx.lineTo(x + wd, 0); ctx.lineTo(x + wd + slant, h); ctx.lineTo(x + slant, h);
+      ctx.closePath(); ctx.fill();
+    }
+    const motes = fx > 1 ? 16 : 8;
+    for (let i = 0; i < motes; i++) {                            // dust / spores / marine snow, drifting up
+      const a0 = hsh(si * 7919 + 3, i), a1 = hsh(si * 7919 + 4, i);
+      const x = ((a0 * (w + 40) + tt * (6 + a1 * 10)) % (w + 40)) - 20;
+      const y = ((((a1 * (h + 40) - tt * (4 + a0 * 8)) % (h + 40)) + (h + 40)) % (h + 40)) - 20;
+      const al = calm ? 0.22 : 0.14 + 0.12 * (0.5 + 0.5 * Math.sin(tt * 1.7 + i));
+      ctx.fillStyle = `rgba(${col[0]},${col[1]},${col[2]},${al.toFixed(3)})`;
+      ctx.fillRect(x, y, 2, 2);
+    }
+    ctx.restore();
+    return { shafts: 4, motes };
+  }
+
   return { K, NAME, GUARDIANS, target, pool, guardianOf, legendPool, legendRoll, megaRoll, routeOf, begin, reset, update, hurt, onKill, pay, scoreParts, result, record,
            setup, roles, press, pad, tick, out, drawButtons, offerLearn, LEARN_AT, get rects() { return rects; },
            submit, board, guestFollow, WEEKLY, MOD_NAME, expectedPay, openPlug, canOpen, PLUG,
            openPicker, closePicker, back, starts, startOf, stageOf, bestOf, sealOf, seals, routeOpen, hurtK, SEAL, MAIN,
            live, shown, dBlock, applyD, TELE, COMBO, HITSTOP, hold, ecoLayout, LM, ESCORT, get view() { return view; }, cur,   // (cur: what is drawn: the host run, or a viewer's copy)
-           drawGround, drawHud, drawMini, hudLine, hudColor, on, get run() { return S; } };
+           drawGround, drawHud, drawMini, hudLine, hudColor, on, bands, drawBand, drawSilhouettes, lightSpec, drawLight, drawAmbience,
+           get lightCv() { return lcv; }, get run() { return S; } };
 })();

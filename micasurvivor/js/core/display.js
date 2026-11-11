@@ -29,6 +29,9 @@ G.Display = (() => {
   // fitH / fitW: the floors of style.css's height / width brackets (max-height 400 / 520 / 660 / 780, max-width 760)
   const UI = { min: 60, max: 140, step: 5, def: 100, touchMin: 85, fitH: [781, 661, 521, 401], fitHSmall: 360, fitW: 761, fitWSmall: 640 };
   const VIEW = { w: 768, h: 420 };   // la vista de la web, que es la del port al 165 %
+  // MicaSurvivor (DV5, plan D2): a Dive floor draws its PokéDive-like tight view — 5/6 of the classic 768×420 —
+  // so the corridor reads close and the HUD has room around it. Non-Dive modes keep VIEW untouched.
+  const DIVE = { w: 640, h: 350 };
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
   const get = k => (G.Settings ? G.Settings.get(k) : undefined);
   const snap = (v, o) => clamp(Math.round((v - o.min) / o.step) * o.step + o.min, o.min, o.max);
@@ -47,8 +50,11 @@ G.Display = (() => {
   const fovEff = (w = scrW(), h = scrH()) => Math.max(fovMin(w, h), fov());
   const zoom = (w, h) => fovEff(w, h) / 100;
   /** Ancho / alto mínimo de mundo visibles (camera.js). */
-  const viewW = (w, h) => VIEW.w * FOV.def / fovEff(w, h);
-  const viewH = (w, h) => VIEW.h * FOV.def / fovEff(w, h);
+  // MicaSurvivor (DV5): inside a Dive the view comes from DIVE (not the FOV slider): a fixed 640×350 of world
+  // at any window size, so the Dive always reads the same. G.World is read lazily: display.js loads first.
+  const dive = () => !!(typeof G !== 'undefined' && G.World && G.World.zone && G.World.zone.dive);
+  const viewW = (w, h) => (dive() ? DIVE.w : VIEW.w) * FOV.def / fovEff(w, h);
+  const viewH = (w, h) => (dive() ? DIVE.h : VIEW.h) * FOV.def / fovEff(w, h);
 
   // ---------------- tamaño de la interfaz ----------------
   const uiSet = () => snap(num(get('uiScale'), UI.def), UI);
@@ -148,7 +154,7 @@ G.Display = (() => {
   }
 
   return {
-    FOV, UI, VIEW, fov, fovMin, fovEff, zoom, viewW, viewH, uiSet, uiMax, uiMin, ui, minimapOn,
+    FOV, UI, VIEW, DIVE, dive, fov, fovMin, fovEff, zoom, viewW, viewH, uiSet, uiMax, uiMin, ui, minimapOn,
     init, apply, applyDom, setFov, setUi, setMinimap, settingsHTML, fovRow, wire, uiInfo
   };
 })();
