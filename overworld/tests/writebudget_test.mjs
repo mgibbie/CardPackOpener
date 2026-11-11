@@ -38,7 +38,7 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 		'position is only part of the presence signature when someone can see it');
 	const gm = fs.readFileSync(path.join(ROOT, 'battlecards/game.js'), 'utf8');
 	A(/_lastDuelSig/.test(gm) && /DUEL_PUB_FLOOR_MS/.test(gm), 'an unchanged duel board is not republished');
-	A(/publishDuel\(state\.over\)/.test(gm), 'a finished duel always publishes, never deduped away');
+	A(/publishDuel\(GS\.state\.over\)/.test(gm), 'a finished duel always publishes, never deduped away');
 }
 
 // ---------- live: count the writes a real client causes ----------

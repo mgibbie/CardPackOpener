@@ -48,7 +48,7 @@ for (const [fn, basics] of [['bootMiddleEarthEncounter', "allowedBasicsFor(cards
 	const i = game.indexOf(`function ${fn}(`);
 	const body = i < 0 ? '' : game.slice(i, game.indexOf('\n}\n', i));
 	ok(`${fn} exists`, i >= 0);
-	const mirrored = ['E.createGame(', 'E.resetDeckAndHand(state, 1,', 'E.drawCards(state, 1, 4)', 'E.addCoin(state, 1)', 'E.stripLoadouts(state)',
+	const mirrored = ['E.createGame(', 'E.resetDeckAndHand(GS.state, 1,', 'E.drawCards(GS.state, 1, 4)', 'E.addCoin(GS.state, 1)', 'E.stripLoadouts(GS.state)',
 		'setRunLife((run.wins || 0) + (run.losses || 0) + 1)', basics];
 	const missing = mirrored.filter(s => !body.includes(s));
 	ok(`${fn} still does what the simulator mirrors`, missing.length === 0, missing);
@@ -76,7 +76,7 @@ for (const f of ['lq.json', 'mv.json']) { try { fs.unlinkSync(tmp(f)); } catch {
 // do the same, or a land's tap ability strands priority on the inactive seat and the fight sits
 // still until turn 60 (2026-10-14: half of all Lidless Eye fights "stalled" that way).
 const sim = fs.readFileSync(TOOL, 'utf8');
-ok('game.js answers AI priority with AI.chooseResponse', /E\.resolveResponse\(state, pi, AI\.chooseResponse\(state, pi\)\)/.test(game));
+ok('game.js answers AI priority with AI.chooseResponse', /E\.resolveResponse\(GS\.state, pi, AI\.chooseResponse\(GS\.state, pi\)\)/.test(game));
 ok('the sim answers priority the same way before the active seat acts', /E\.resolveResponse\(st, st\.priority, AI\.chooseResponse\(st, st\.priority\)\)/.test(sim) && /const s = st\.current;/.test(sim));
 {
 	const E = await import(path.join(ROOT, 'battlecards/engine.js').replace(/\\/g, '/').replace(/^/, 'file:///'));

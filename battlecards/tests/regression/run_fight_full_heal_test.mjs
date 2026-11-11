@@ -19,8 +19,9 @@ const ok = (l, c, x) => { if (c) { pass++; console.log('ok  - ' + l); } else { f
 // run game.js's own runLifeFor + setRunLife against an engine state
 const src = fs.readFileSync(new URL('../../game.js', import.meta.url), 'utf8').replace(/\r\n/g, '\n');
 const grab = name => { const i = src.indexOf(`function ${name}(`); return src.slice(i, src.indexOf('\n}\n', i) + 3); };
-const make = new Function('HUMAN', 'log', grab('runLifeFor') + grab('setRunLife') + '; return (st, r, o) => { state = st; setRunLife(r, o); }; var state;');
-const setRunLife = make(0, () => {});
+// game.js keeps its shared state on GS (game_state.js), so the lifted functions get a GS of their own
+const make = new Function('GS', 'log', grab('runLifeFor') + grab('setRunLife') + '; return (st, r, o) => { GS.state = st; setRunLife(r, o); };');
+const setRunLife = make({ HUMAN: 0 }, () => {});
 
 function fight(round) {
 	const st = E.createGame(byId, seededRng(4), null, 2, [{ id: 'priest', name: 'Gandalf', power: null }, { id: 'warrior', name: 'Gollum', power: null }]);

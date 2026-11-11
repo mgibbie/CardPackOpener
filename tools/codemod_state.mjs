@@ -16,6 +16,10 @@
 //
 //   node tools/codemod_state.mjs party loading menuUi ...     (dry run: counts)
 //   node tools/codemod_state.mjs --write party loading ...
+//
+// Another file (the battlecards/game.js split, 2026-11): `--file=battlecards/game.js`. The object is still
+// called S (`--obj=` renames it); the tool refuses if the file binds that name anywhere, in any scope —
+// a local `S` would capture the rewritten `S.x`. The file must import the object itself.
 import fs from 'fs';
 import * as espree from 'espree';
 import * as eslintScope from 'eslint-scope';
@@ -23,12 +27,22 @@ import * as eslintScope from 'eslint-scope';
 const args = process.argv.slice(2);
 const WRITE = args.includes('--write');
 const NAMES = args.filter(a => !a.startsWith('--'));
-const FILE = 'overworld/main.js';
+const opt = (k, d) => { const a = args.find(x => x.startsWith('--' + k + '=')); return a ? a.slice(k.length + 3) : d; };
+const FILE = opt('file', 'overworld/main.js');
+const OBJ = opt('obj', 'S');
 
 const src = fs.readFileSync(FILE, 'utf8');
 const ast = espree.parse(src, { ecmaVersion: 'latest', sourceType: 'module', range: true, loc: true });
 const sm = eslintScope.analyze(ast, { ecmaVersion: 2022, sourceType: 'module' });
 const mod = sm.globalScope.childScopes.find(s => s.type === 'module');
+
+// the state object's name must mean the state object everywhere: an import of it at module level is the only
+// binding allowed (a parameter / local / catch variable named the same would capture the rewritten references)
+for (const sc of sm.scopes) for (const v of sc.variables) {
+	if (v.name !== OBJ) continue;
+	if (sc === mod && v.defs.every(d => d.type === 'ImportBinding')) continue;
+	throw new Error(`${FILE} binds '${OBJ}' itself (line ${v.defs[0]?.name?.loc?.start.line ?? '?'}); pick another --obj`);
+}
 
 // parent links, to see how each identifier is used
 const parentOf = new Map();
@@ -66,7 +80,7 @@ for (const name of NAMES) {
 		const keep = [], assigns = [];
 		for (const d of decl.declarations) {
 			if (d.id.type === 'Identifier' && NAMES.includes(d.id.name)) {
-				if (d.init) assigns.push(`S.${d.id.name} = ${src.slice(d.init.range[0], d.init.range[1])};`);
+				if (d.init) assigns.push(`${OBJ}.${d.id.name} = ${src.slice(d.init.range[0], d.init.range[1])};`);
 			} else keep.push(src.slice(d.range[0], d.range[1]));
 		}
 		const parts = [];
@@ -82,9 +96,9 @@ for (const name of NAMES) {
 		const p = parentOf.get(id);
 		if (p?.type === 'Property' && p.shorthand && p.value === id) {
 			if (parentOf.get(p)?.type === 'ObjectPattern') throw new Error(`${name}: shorthand in a destructuring pattern at line ${id.loc.start.line}`);
-			edits.push({ start: p.range[0], end: p.range[1], text: `${name}: S.${name}` });
+			edits.push({ start: p.range[0], end: p.range[1], text: `${name}: ${OBJ}.${name}` });
 		} else {
-			edits.push({ start: id.range[0], end: id.range[1], text: `S.${name}` });
+			edits.push({ start: id.range[0], end: id.range[1], text: `${OBJ}.${name}` });
 		}
 		n++;
 	}
@@ -103,6 +117,7 @@ console.log(`${edits.length} edits`);
 // scope-aware rules), drop the name from the `from './main.js'` import, and make
 // sure the module imports S.
 const importerOut = [];
+if (exported.size && FILE !== 'overworld/main.js') throw new Error('exported lets are only handled for overworld/main.js');
 if (exported.size) {
 	for (const f of fs.readdirSync('overworld').filter(x => /^ow_.*\.js$/.test(x))) {
 		const p = `overworld/${f}`;
