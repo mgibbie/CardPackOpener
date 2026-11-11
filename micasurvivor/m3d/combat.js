@@ -32,6 +32,8 @@ export const CK = {
 	UNPORTED: [],   // base move kinds still to come
 	// Expedition's own kinds (the 2D game's expedition/moves.js): lob, homing, barrage, smite, vortex, wave, spin. Its
 	// eighth, weather, waits for a weather system here.
+	// abilities (the 2D game's systems/abilities.js: one passive for each species, read from its table)
+	AB: { pinch: 0.4, moxieEvery: 40, defiantT: 4, wx: 0.5, thorns: [12, 3], thornsKnock: 60, sturdyInvuln: 1.2 },
 	// weather (the 2D game's systems/weather.js): it fades in and out over 3 s; sand and snow wear down whoever is not
 	// of a safe type every 2 s; from 2:00 a check every minute has an 18 % chance to start one for 55-75 s
 	WX: { fade: 3, chip: 2, you: 0.012, foe: 0.02, from: 120, check: 60, chance: 0.18, dur: [55, 75], slow: 0.1,
@@ -60,6 +62,7 @@ export function dataFrom(G) {
 	return {
 		move: (id, lvl = 1) => { if (G.ExpMoves && G.ExpMoves.isExpMove(id)) return G.ExpMoves.instance(id); const m = G.Moves.instance(id, lvl); m.knock = G.Moves.knockOf(m); return m; },
 		weatherKinds: (G.Weather && G.Weather.KINDS) || {},
+		abilityOf: (dex) => (G.Abilities ? G.Abilities.of(dex) : null), abilityFx: (id) => (G.Abilities && G.Abilities.FX[id] ? G.Abilities.FX[id].fx : null), typeLabel: (k) => G.Types.label(k),
 		expMoves: () => (G.ExpMoves ? Object.keys(G.ExpMoves.MOVES) : []),   // (a move's knockback is worked out from its level, as the 2D game does)
 		typeMult: (t, types) => G.Types.mult(t, types), mon: (dex) => G.DEX_BY[dex],
 		radius: (dex, scale = 1) => G.Sprites.bodyRadius(dex, scale) * U, hovers: (dex) => G.Sprites.hovers(dex),
@@ -74,6 +77,7 @@ export function dataFrom(G) {
 /** A fight. o: { dex (who you play), moves: [id | [id, lvl]], seed, tune (sim tuning), afDmg (the all-moves factor: 1.1 in
  *  Expedition), atkK / takenK (the ability's factors, 1 if none), crit, cast: [dex] (who spawns; none: nothing spawns),
  *  bosses: [dex] (one arrives at each of the 2D game's boss times: 3:00, 6:00, …),
+ *  ability ('auto': your species' own; an ability's id; none by default),
  *  weather (false: none starts by itself),
  *  orbitSquash (0.7: the 2D game's flattened orbit; 1: a circle), autoPick (a level-up's card is chosen at once: 0-2, or
  *  a function (world, cards) -> index; without it the fight WAITS at a level-up until choose() is called) } */
@@ -82,13 +86,18 @@ export function newWorld(room, data, o = {}) {
 	const w = {
 		room, data, t: 0, tick: 0, rand: makeRng((o.seed >>> 0) || 1), tune: o.tune || K, nextId: 1,
 		pl: { s, mon, r: data.radius(mon.dex), maxHp: mon.hp, hp: mon.hp, baseAtk: mon.atk, atkMul: 1, atkK: o.atkK || 1, takenK: o.takenK || 1, cdMul: 1, crit: o.crit || 0, reduction: 0, regen: 0,
-			invuln: 0, meleeT: 0, level: 1, xp: 0, xpNext: xpFor(1), xpMul: 1, spdMul: 1, magnet: CK.MAGNET * U, statsTaken: {}, pending: 0, choices: null, baseReduce: 0, baseRegen: 0, buffs: { atk: { n: 0, t: 0, amount: 0 }, spd: { n: 0, t: 0, amount: 0 }, def: { n: 0, t: 0, amount: 0 }, regen: { n: 0, t: 0, amount: 0 } }, afDmg: o.afDmg === undefined ? 1.1 : o.afDmg, target: null, aim: 0, dead: false,
+			invuln: 0, meleeT: 0, level: 1, xp: 0, xpNext: xpFor(1), xpMul: 1, spdMul: 1, magnet: CK.MAGNET * U, statsTaken: {}, pending: 0, choices: null, ability: null, ab: null, abT: 0, abFirstT: -999, abSturdyT: -999, defiantT: 0, baseReduce: 0, baseRegen: 0, buffs: { atk: { n: 0, t: 0, amount: 0 }, spd: { n: 0, t: 0, amount: 0 }, def: { n: 0, t: 0, amount: 0 }, regen: { n: 0, t: 0, amount: 0 } }, afDmg: o.afDmg === undefined ? 1.1 : o.afDmg, target: null, aim: 0, dead: false,
 			moves: (o.moves || []).map((m) => (Array.isArray(m) ? data.move(m[0], m[1]) : data.move(m))) },
 		enemies: [], shots: [], orbs: [], fields: [], effects: [], eshots: [], hazards: [], pickups: [], lastPatch: null, autoPick: o.autoPick, bosses: o.bosses || null, bossIdx: 0, weather: null, wxAuto: o.weather !== false, wxCheck: CK.WX.check, wxChip: 0, field: null, fieldCell: -2,
 		cast: o.cast || null, spawnAcc: 0, cap: o.cap || CK.CAP, orbitSquash: o.orbitSquash || 1,
 		stats: { gained: 0, collected: 0, levels: 0, dealt: 0, removed: 0, hits: 0, crits: 0, taken: 0, touched: 0, kills: 0, xp: 0, fired: 0, spawned: 0, fell: 0, blocked: 0 },
 		events: [],   // this tick's: { k: 'hit' | 'kill' | 'hurt' | 'shot' | 'melee' | 'beam' | 'aura' | 'chain', … } for the page to draw
 	};
+	const abId = o.ability === 'auto' ? data.abilityOf(mon.dex) : o.ability, fx = abId ? data.abilityFx(abId) : null;
+	if (fx) {   // what an ability changes for good: cooldowns, reach, XP, crit
+		const pl = w.pl; pl.ability = abId; pl.ab = fx;
+		if (fx.cd) pl.cdMul *= 1 - fx.cd; if (fx.magnet) pl.magnet *= 1 + fx.magnet; if (fx.xp) pl.xpMul *= 1 + fx.xp; if (fx.crit) pl.crit += fx.crit;
+	}
 	return w;
 }
 // ---- weather
@@ -112,13 +121,40 @@ function updateWeather(w, dt) {
 	if (w.wxChip <= 0) {   // sand and snow wear you down a little (never to nothing), and every enemy that is not safe from them
 		w.wxChip = X.chip;
 		if (!w.weather || wxLevel(w) <= 0.5 || !wxDef(w).safe) return;
-		if (!pl.dead && wxHurts(w, pl.mon.types)) { const d = Math.max(1, pl.maxHp * X.you); if (pl.hp > d + 1) { pl.hp -= d; w.stats.taken += d; w.events.push({ k: 'chip', d }); } }
+		if (!pl.dead && wxHurts(w, pl.mon.types) && !abN(pl, 'wximm')) { const d = Math.max(1, pl.maxHp * X.you); if (pl.hp > d + 1) { pl.hp -= d; w.stats.taken += d; w.events.push({ k: 'chip', d }); } }
 		for (const e of [...w.enemies]) { if (e.dead || e.boss || !wxHurts(w, e.types)) continue; e.hp -= e.maxHp * X.foe + 1; e.flash = 0.05; if (e.hp <= 0) kill(w, e); }
 	}
 }
 /** The XP a level needs (the 2D game's curve). */
 export const xpFor = (level) => Math.floor((8 + level * 6 + Math.pow(level, 1.75) * 1.6) * 4);
-const atk = (pl) => pl.baseAtk * pl.atkMul * (1 + pl.buffs.atk.n * pl.buffs.atk.amount) * pl.atkK;
+// ---- abilities
+const abN = (pl, k) => +((pl.ab && pl.ab[k]) || 0);
+/** The ability's part of your damage: flat, Moxie's steps (2 % every 40 KOs), Defiant's 4 s after a hit. */
+const abAtk = (pl) => (!pl.ab ? 1 : 1 + abN(pl, 'dmg') + (pl.ab.moxie ? Math.min(abN(pl, 'moxie_cap'), Math.floor((pl.kills || 0) / CK.AB.moxieEvery) * pl.ab.moxie) : 0) + (pl.defiantT > 0 ? abN(pl, 'defiant') : 0));
+/** …of one hit: pinch (your type's moves under 40 % HP), your own type, a type, a kind of move, a boss, a resisted hit. */
+function abOut(w, e, type, kind) {
+	const pl = w.pl, fx = pl.ab; if (!fx) return 1;
+	let k = 1;
+	if (fx.pinch && fx.pinch === type && pl.hp < pl.maxHp * CK.AB.pinch) k *= 1 + abN(pl, 'pinch_k');
+	if (type && pl.mon.types.includes(type)) k *= 1 + abN(pl, 'owntype');
+	if (fx.typedmg && type) k *= 1 + (fx.typedmg[type] || 0);
+	if (fx.kind_dmg && kind && fx.kind_dmg.includes(kind)) k *= 1 + abN(pl, 'kind_k');
+	if (e.boss) k *= 1 + abN(pl, 'boss_dmg');
+	if (fx.tinted && type && w.data.typeLabel(w.data.typeMult(type, e.types)) === 'weak') k *= 1 + fx.tinted;
+	return k;
+}
+/** …of a hit you take: a resisted type, a super-effective one softened, the first hit every 25 s halved. */
+function abIn(w, type, eff) {
+	const pl = w.pl, fx = pl.ab; if (!fx) return 1;
+	let k = 1;
+	if (type && fx.resist && fx.resist.includes(type)) k *= fx.resist_k != null ? fx.resist_k : 1;
+	if (eff === 'super') k *= 1 - abN(pl, 'se_taken');
+	if (fx.first_hit && pl.abT - pl.abFirstT > fx.first_hit) { pl.abFirstT = pl.abT; k *= 0.5; }
+	if (fx.defiant) pl.defiantT = CK.AB.defiantT;
+	return k;
+}
+const abSpd = (w) => { const pl = w.pl, fx = pl.ab; if (!fx) return 1; return 1 + abN(pl, 'spd') + (fx.wspd && w.weather && w.weather.kind === fx.wspd && wxLevel(w) > CK.AB.wx ? abN(pl, 'wspd_k') : 0); };
+const atk = (pl) => pl.baseAtk * pl.atkMul * (1 + pl.buffs.atk.n * pl.buffs.atk.amount) * pl.atkK * abAtk(pl);
 const rnd = (w, a, b) => a + w.rand() * (b - a);
 
 /** Put an enemy in. o: { t (the run time its stats are scaled for; default now), ti (tier), hp, dmg, spd (factors),
@@ -203,6 +239,7 @@ function land(w, e, dmg, kx, kz, knockU, src) {
 	const asleep = e.sleepT > 0 && src.cc !== 'sleep';
 	let k = type ? w.data.typeMult(type, e.types) : 1;
 	if (type) k *= wxMult(w, type);
+	k *= abOut(w, e, type, src.mkind || src.kind);
 	if (asleep) k *= CK.SLEEP_BONUS;
 	if (type === 'electric' && e.paraT > 0) k *= CK.PARA_ELECTRIC;
 	const c = pl.crit + (src.xcrit || 0), crit = c > 0 && w.rand() < c;
@@ -237,11 +274,13 @@ function hurtPlayer(w, amount, type, through = false) {
 	const pl = w.pl;
 	if (through && pl.invuln < 1e8) pl.invuln = 0;   // (a telegraphed attack: the moment of grace after a hit does not save you)
 	if (pl.invuln > 0 || pl.dead) return 0;
-	if (type) amount *= w.data.typeMult(type, pl.mon.types) * wxMult(w, type);
-	amount *= pl.takenK;
+	let eff = null;
+	if (type) { const tk = w.data.typeMult(type, pl.mon.types); eff = w.data.typeLabel(tk); amount *= tk * wxMult(w, type); }
+	amount *= pl.takenK * abIn(w, type, eff);
 	const d = Math.max(1, amount * (1 - pl.reduction) * (pl.meleeT > 0 ? CK.MELEE_TAKEN : 1));
 	pl.hp -= d; pl.invuln = CK.INVULN; w.stats.taken += d;
 	w.events.push({ k: 'hurt', d, type });
+	if (pl.hp <= 0 && pl.ab && pl.ab.sturdy && pl.abT - pl.abSturdyT > pl.ab.sturdy) { pl.abSturdyT = pl.abT; pl.hp = 1; pl.invuln = CK.AB.sturdyInvuln; w.events.push({ k: 'sturdy' }); }   // Sturdy: the hit that would have finished you leaves 1 HP
 	if (pl.hp <= 0) { pl.hp = 0; pl.dead = true; }
 	return d;
 }
@@ -582,6 +621,10 @@ function resolve(w) {
 		if (Math.abs((e.fly ? e.a.y - e.a.hover : e.a.y) - s.y) > CK.TOUCH_UP) continue;   // (jump over it; it is on the ledge above; …)
 		e.touchCd = CK.TOUCH_CD; w.stats.touched++;
 		hurtPlayer(w, e.dmg, e.atkType);
+		if (pl.ab) {   // what touching you costs it: Rough Skin's damage; a chance to be burned, poisoned, paralysed, confused, put to sleep
+			if (pl.ab.thorns) hurtEnemy(w, e, CK.AB.thorns[0] + pl.level * CK.AB.thorns[1], dx, dz, CK.AB.thornsKnock);
+			if (pl.ab.contact && !e.dead && w.rand() < abN(pl, 'contact_p')) { if (pl.ab.contact === 'burn') { e.burn = Math.min(8, e.burn + 1); e.burnT = 3; } else if (pl.ab.contact === 'poison') { e.poison = Math.min(8, e.poison + 1); e.poisonT = 4; } else applyState(w, e, pl.ab.contact); }
+		}
 		const l = Math.hypot(dx, dz) || 1; knock(e.a, dx / l * CK.TOUCH_KNOCK * U, dz / l * CK.TOUCH_KNOCK * U);
 	}
 }
@@ -914,8 +957,9 @@ export function tick(w, input, dt = K.TICK) {
 	if (!pl.dead) {
 		const B = pl.buffs;
 		for (const k in B) if (B[k].n > 0) { B[k].t -= dt; if (B[k].t <= 0) B[k].n = 0; }
-		pl.reduction = Math.min(0.8, pl.baseReduce + B.def.n * B.def.amount); pl.regen = pl.baseRegen + B.regen.n * B.regen.amount;
-		const fast = (1 + B.spd.n * B.spd.amount) * pl.spdMul * wxSpeed(w, pl.mon.types);   // a speed buff or the Sprint upgrade: you run that much faster
+		pl.abT += dt; if (pl.defiantT > 0) pl.defiantT = Math.max(0, pl.defiantT - dt); pl.kills = w.stats.kills;
+		pl.reduction = Math.min(0.8, pl.baseReduce + B.def.n * B.def.amount + abN(pl, 'taken')); pl.regen = pl.baseRegen + B.regen.n * B.regen.amount + pl.maxHp * abN(pl, 'regen');
+		const fast = (1 + B.spd.n * B.spd.amount) * pl.spdMul * wxSpeed(w, pl.mon.types) * abSpd(w);   // a speed buff or the Sprint upgrade: you run that much faster
 		if (fast !== w.fastK) { w.fastK = fast; w.fastTune = fast === 1 ? w.tune : { ...w.tune, RUN: w.tune.RUN * fast }; }
 		step(s, input || noInput(), w.room, dt, w.fastTune || w.tune);
 		if (pl.invuln > 0) pl.invuln -= dt;
