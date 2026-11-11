@@ -12,6 +12,7 @@
 //   • LIMIT BREAK — a payoff on the existing `self-damaged` trigger, plus named Limit Break spells.
 // Card data lives in cards.json (tagged `ffDeck:<Character>` + `ffSide` + ids `ff_*`). Hero powers
 // are UNIQUE per character, installed at createGame via each seat's `power`.
+import { rungRun, WINS_TO_CLEAR, LOSSES_TO_END } from './rungrun.js';
 
 // ── rosters ──
 export const HEROES = ['Cloud', 'Cecil', 'Tidus', 'Yuna', 'Terra', 'Vivi', 'Lightning', 'Zidane', 'Red XIII', 'Wakka'];
@@ -42,9 +43,6 @@ export const CLASS_OF = {
 	'Ardyn, the Usurper': 'death_knight', 'Emet-Selch, Unsundered': 'warlock', 'Cloud of Darkness': 'warlock',
 	'Jenova, Ancient Calamity': 'warlock', 'Sephiroth, One-Winged Angel': 'warlock', 'Chaos, the Endless': 'warlock',
 };
-export const classOf = ch => CLASS_OF[ch] || 'neutral';
-export const isEnemy = ch => ENEMIES.includes(ch);
-export const isHero = ch => HEROES.includes(ch) || SECRET_HEROES.includes(ch);
 
 // each character's MTG colour identity (from the source FINAL FANTASY cards) — deck cards are
 // colourless class cards, so this drives the wiki's mana-symbol badges.
@@ -63,7 +61,6 @@ export const COLOR_IDENTITY = {
 	'Ardyn, the Usurper': ['B'], 'Emet-Selch, Unsundered': ['B', 'U'], 'Cloud of Darkness': ['B', 'G'],
 	'Jenova, Ancient Calamity': ['B', 'G'], 'Sephiroth, One-Winged Angel': ['B'], 'Chaos, the Endless': ['B', 'R'],
 };
-export const colorsOf = ch => COLOR_IDENTITY[ch] || [];
 
 // ── the Spirit pool (SPIRITSUMMON — a random Spirit, via summon options) ──
 export const SPIRITS = [
@@ -124,61 +121,7 @@ export const HERO_POWERS = {
 	'Sephiroth, One-Winged Angel': P('Supernova', 2, 'Deal 4 damage to an enemy creature.', [{ type: 'damage', value: 4, target: 'enemy-creature' }]),
 	'Chaos, the Endless': P('Inferno', 2, 'Deal 3 damage to an enemy creature.', [{ type: 'damage', value: 3, target: 'enemy-creature' }]),
 };
-export const powerOf = ch => HERO_POWERS[ch] || null;
 
-export function seatOf(character) {
-	return { id: classOf(character), name: character, power: powerOf(character) };
-}
-
-// ── run constants ──
-export const WINS_TO_CLEAR = 12;
-export const LOSSES_TO_END = 3;
-
-// ── decks ──
-export function deckOf(cardsById, character) {
-	const ids = Object.values(cardsById).filter(d => d.ffDeck === character && !d.token).map(d => d.id).sort();
-	if (isEnemy(character)) { const deck = []; for (const id of ids) deck.push(id, id); return deck; }
-	return ids; // heroes: 1 copy each
-}
-
-// Rung windows: A wins 0–2 (★ first-only only at win 0), B 3–6, C 7–10, D at win 11.
-export function enemyRosterFor(wins) {
-	const w = Math.max(0, wins | 0);
-	if (w <= 2) return w === 0 ? ENEMY_RUNGS.A.slice() : ENEMY_RUNGS.A.filter(e => !FIRST_ONLY.has(e));
-	if (w <= 6) return ENEMY_RUNGS.B.slice();
-	if (w <= 10) return ENEMY_RUNGS.C.slice();
-	return ENEMY_RUNGS.D.slice();
-}
-export const rungFor = wins => (wins <= 2 ? 'A' : wins <= 6 ? 'B' : wins <= 10 ? 'C' : 'D');
-export const rungLabel = wins => ({ A: 'Henchman', B: 'Lieutenant', C: 'Archvillain', D: 'Final Boss' }[rungFor(wins)]);
-
-// `faced` = every enemy already met this run: one is never offered again while the rung
-// still has someone new (The Balrog at F10 and again at F12 — instinctgauntlet, 2026-10-25).
-export function randomEnemy(wins, rng, avoidId, faced) {
-	const seen = new Set(Array.isArray(faced) ? faced : []);
-	let roster = enemyRosterFor(wins).filter(c => c !== avoidId && !seen.has(c));
-	if (!roster.length) roster = enemyRosterFor(wins).filter(c => c !== avoidId);
-	if (!roster.length) roster = enemyRosterFor(wins);
-	return roster[Math.floor(rng() * roster.length)];
-}
-
-export function generateEnemy(cardsById, character) {
-	return { id: character, name: character, cls: classOf(character), deck: deckOf(cardsById, character), rung: null };
-}
-
-// ── loot ──
-export const rewardForWin = wins => (wins % 2 === 1 ? 'treasure' : 'bucket');
-
-export function spoilsChoices(cardsById, defeatedEnemyName, rng, count = 3) {
-	const pool = Object.values(cardsById).filter(d => d.ffDeck === defeatedEnemyName && d.ffSide === 'enemy' && !d.token).map(d => d.id);
-	const out = [];
-	for (let i = 0; i < count && pool.length; i++) out.push(pool.splice(Math.floor(rng() * pool.length), 1)[0]);
-	return out;
-}
-
-export function treasurePool(cardsById) {
-	return Object.values(cardsById).filter(d => (d.treasure && d.set === 'DUELS') || d.duelsTreasure || d.ffTreasure);
-}
 
 // ---------- character progression ----------
 // 3 starters; one more core hero unlocks per COMPLETED run (win or lose).
@@ -217,18 +160,15 @@ export const ENEMY_UNLOCKS = {
 	"Fandaniel, Telophoroi Ascian": ["Lightning", 3],
 	"Exdeath, Void Warlock": ["Lightning", 3],
 };
-// which characters this account may play; stats = the server user.stats.
-// null (free play, no account) = the full roster.
-export function unlockedCharacters(stats) {
-	if (!stats) return [...HEROES, ...ENEMIES];
-	const runs = stats.modes?.finalfantasy?.runs || 0;
-	const cores = [...STARTERS, ...CORE_UNLOCK_ORDER.slice(0, Math.max(0, runs))];
-	const out = [...cores];
-	if (cores.length >= HEROES.length) {
-		const chars = stats.chars || {};
-		for (const [en, [hero, need]] of Object.entries(ENEMY_UNLOCKS)) {
-			if ((chars['finalfantasy|' + hero]?.best || 0) >= need) out.push(en);
-		}
-	}
-	return out;
-}
+
+// ── the run rules ── shared with the other rung runs (rungrun.js); this file supplies the tables above.
+export { WINS_TO_CLEAR, LOSSES_TO_END };
+export const {
+	classOf, isEnemy, isHero, colorsOf, powerOf, seatOf, deckOf, enemyRosterFor, rungFor, rungLabel,
+	randomEnemy, generateEnemy, rewardForWin, spoilsChoices, treasurePool, unlockedCharacters,
+} = rungRun({
+	mode: 'finalfantasy', tag: 'ff',
+	HEROES, SECRET_HEROES, ENEMY_RUNGS, FIRST_ONLY, CLASS_OF, COLOR_IDENTITY, HERO_POWERS,
+	RUNG_LABELS: { A: 'Henchman', B: 'Lieutenant', C: 'Archvillain', D: 'Final Boss' },
+	STARTERS, CORE_UNLOCK_ORDER, ENEMY_UNLOCKS,
+});

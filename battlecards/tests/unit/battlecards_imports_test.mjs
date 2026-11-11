@@ -61,6 +61,9 @@ function exportsOf(absPath, seen = new Set()) {
 	while ((m = fn.exec(src))) set.add(m[1]);
 	const vars = /^\s*export\s+(?:const|let|var)\s+([^\n;]+)/gm;
 	while ((m = vars.exec(src))) { const nm = /(?:^|,)\s*([A-Za-z_$][A-Za-z0-9_$]*)\s*=/g; let x; while ((x = nm.exec(m[1]))) set.add(x[1]); }
+	// export const { a, b: c } = make(...)  — a flat object pattern, possibly over several lines (middleearth.js <- rungrun.js)
+	const destructured = /^\s*export\s+(?:const|let|var)\s+\{([^{}]*)\}\s*=/gm;
+	while ((m = destructured.exec(src))) for (const p of m[1].split(',')) { const t = p.trim().replace(/^\.\.\./, ''); if (!t) continue; const renamed = /:\s*([A-Za-z_$][A-Za-z0-9_$]*)/.exec(t); set.add(renamed ? renamed[1] : t.split(/[\s=]/)[0]); }
 	const localList = /^\s*export\s+\{([^}]*)\}(?!\s*from)/gm; // export { a, b as c }
 	while ((m = localList.exec(src))) for (const p of m[1].split(',')) { const t = p.trim(); if (!t) continue; const as = /\bas\s+([A-Za-z0-9_$]+)/.exec(t); set.add(as ? as[1] : t.split(/\s+/)[0]); }
 	const namedFrom = /^\s*export\s+\{([^}]*)\}\s*from\s+['"]([^'"]+)['"]/gm; // export { a } from './x'
@@ -129,6 +132,12 @@ ok('every battlecards module parses (node --check)', syntaxProblems.length === 0
 		['createGame', 'hp', 'toSnapshot', 'stateDigest', 'seededRng'].filter(n => !engineExp.has(n)).join(','));
 	ok('stateDigest specifically is on the aggregated surface (the regression this lint guards)', engineExp.has('stateDigest'));
 	ok('the export scan is exact — a non-exported name is rejected', !engineExp.has('__not_a_real_export__'));
+	// a destructured export (`export const { deckOf, … } = rungRun(…)`) and a local `export { A, B }` list both count
+	const meExp = exportsOf(join(BC, 'middleearth.js'));
+	ok('a destructured export is on the surface (middleearth.js deckOf / unlockedCharacters / WINS_TO_CLEAR)',
+		['deckOf', 'unlockedCharacters', 'classOf', 'WINS_TO_CLEAR', 'HEROES'].every(n => meExp.has(n)),
+		['deckOf', 'unlockedCharacters', 'classOf', 'WINS_TO_CLEAR', 'HEROES'].filter(n => !meExp.has(n)).join(','));
+	ok('…and only its names: the factory and its arguments are not exports', !meExp.has('rungRun') && !meExp.has('mode') && !meExp.has('RUNG_LABELS'));
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);
