@@ -542,7 +542,7 @@ export function interact() {
 	// (guard / SNORLAX / grunt) turns you back with its themed line
 	if (blockers.giverAt(fx, fy)) { const m = blockers.grantAt(fx, fy); if (m) dialog.open(m); return; }
 	const blk = blockers.kindAt(fx, fy);
-	if (blk) { dialog.open(blk.msg); return; }
+	if (blk) { dialog.open(blockers.messageAt(fx, fy)); return; }
 	// water's edge: SURF carries you across (used from the party menu)
 	if (!player.surfing && world.isSurfable(fx, fy)) {
 		dialog.open('The water is a deep blue...\n\nSURF would carry you across.');

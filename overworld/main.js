@@ -16,6 +16,7 @@ import { World, Player, VIEW_W, VIEW_H, setViewSize, META } from './engine.js';
 import { syncRegionToMap } from './region_sync.js';
 import { doorBlocked } from './johkanto_gate.js';
 import { startTabLock } from './tab_lock.js';
+import { STALE_BUILD_TEXT, checkBuild, buildWatchState, startBuildWatch } from './build_watch.js';
 import { applySailFix } from './sail_fix.js';
 import * as GymPuzzles from './gym_puzzles.js';
 // the shared singletons (see ow_core.js)
@@ -1041,6 +1042,16 @@ initTouchHud();   // the touch HUD's observer, installed here where it always ra
 		openUnownDex, unownDexKey, drawUnownDex, get unownDex() { return unownDex; }, rollUnownLetter, unownIdFor, allRuinsSolved, UNOWN_ORDER,
 		refreshFollower, setFollowerSpecies, get follower() { return follower; }, followSheet, followMini, followCache, drawFollower };
 	requestAnimationFrame(tick);
+	// a tab older than the live deploy plays old code until it reloads: say so (build_watch.js)
+	window.__ow.buildWatch = { check: checkBuild, state: buildWatchState };
+	startBuildWatch({ onStale: () => {
+		const say = () => {
+			if (dialog.blocking || cutscene.blocking || battle.blocking || battle.active) { setTimeout(say, 3000); return; }
+			dialog.open(STALE_BUILD_TEXT);
+		};
+		hud.textContent = 'A newer version of the game is live: reload the page to play it.';
+		say();
+	} });
 	// owner tooling: ?spritetune=1 mounts the battle-sprite tuning overlay for
 	// the mgibbie account only — the username is verified SERVER-side (the
 	// 'state' action derives it from the token), so a spoofed localStorage

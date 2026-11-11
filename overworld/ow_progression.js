@@ -481,7 +481,10 @@ function awardGymBadge(info, silent) {
 			? `You earned the ${info.name}!\n\nKANTO badges: ${n}/8`
 				+ (n >= 8 ? '\n\nAll 16 badges! They say the strongest\ntrainer waits atop MT SILVER...' : '')
 			: `You earned the ${info.name}!\n\nBadges: ${n}/8`
-				+ (n >= 8 ? '\n\nWith all 8 badges, the POKeMON LEAGUE\nnow awaits beyond Victory Road!' : ''),
+				// the League approach waits on the shared tier (Quest.blocked and the
+				// Route 22 / 26 / Ever Grande guards): promise it only once every region is there
+				+ (n >= 8 ? (Quest.globalTier() >= 8 ? '\n\nWith all 8 badges, the POKeMON LEAGUE\nnow awaits beyond Victory Road!'
+					: '\n\nThe POKeMON LEAGUE opens once EVERY\nregion has cleared GYM 8.') : ''),
 			() => {
 				const tier = tierUp ? () => showTierRewardDialog(tierUp) : undefined; // chain the tier reward after the badge toast
 				if (keyStone) dialog.open(keyStone, tier); else tier?.();
