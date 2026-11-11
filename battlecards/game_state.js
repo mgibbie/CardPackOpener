@@ -24,4 +24,10 @@ export const GS = {
 	mouseY: undefined,
 	telegraphs: undefined,       // [{ from, to, until, friendly }] — attack / effect lines being shown before they resolve
 	queueBusy: undefined,        // true while the event animation queue is playing a step
+	// the card defs each Lorequest run's pre-fight overlays read (set at boot, before a game exists); game_lorequest.js
+	lorequestCardsById: undefined,
+	middleearthCardsById: undefined,
+	swordcoastCardsById: undefined,
+	finalfantasyCardsById: undefined,
+	multiverseCardsById: undefined,
 };

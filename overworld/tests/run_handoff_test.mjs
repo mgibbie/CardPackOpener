@@ -18,6 +18,7 @@ import zlib from 'zlib';
 import { fileURLToPath } from 'url';
 import { DatabaseSync } from 'node:sqlite';
 import { buildSync } from 'esbuild';
+import { gameSource } from '../../battlecards/tests/helpers/gamesource.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '../../');
@@ -106,7 +107,7 @@ try {
 
 // ===== 3. the client =====
 {
-	const src = fs.readFileSync(path.join(ROOT, 'battlecards/game.js'), 'utf8');
+	const src = gameSource();
 	A(/packRunForHandoff\(io\.key, run\)/.test(src), '3. every snapshot write refreshes the packed hand-off copy');
 	A(/function handoffPayload/.test(src) && /payload: \{ key, packed: pk\.code \}/.test(src), '3. the unload push sends the packed copy when the run is over the keepalive cap');
 	A(/if \(d\.stale && d\.otherRun\)/.test(src), '3. the client acts on an otherRun refusal (takes the newer run, stashes its own)');

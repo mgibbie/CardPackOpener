@@ -5,6 +5,7 @@
 // Now every mode's randomEnemy takes the run's `faced` list and offers someone new while the
 // roster has anyone left; game.js keeps that list on the run (noteFaced), and older saves
 // recover it from their fight-replay labels.
+import { gameSource } from '../helpers/gamesource.mjs';   // game.js + the modules split out of it
 import fs from 'fs';
 import * as LQ from '../../lorequest.js';
 import * as ME from '../../middleearth.js';
@@ -70,7 +71,7 @@ ok('no faced list: the old behaviour (in-rung, no immediate repeat)',
 
 // game.js keeps the list: every advance passes noteFaced(run), and noteFaced recovers an older
 // save's foes from its fight-replay labels ("Fight 10 — The Balrog (win)")
-const src = fs.readFileSync(new URL('../../game.js', import.meta.url), 'utf8');
+const src = gameSource();
 for (const fn of ['genLorequestEnemy', 'genMiddleEarthEnemy', 'genSwordCoastEnemy', 'genFinalFantasyEnemy', 'genMultiverseEnemy']) {
 	const advances = src.split('\n').filter(l => l.includes(`run.enemy = ${fn}(`) && !l.includes('run.enemy ||'));
 	ok(`${fn}: the between-fights advance passes the run's faced list`, advances.length === 1 && advances[0].includes('noteFaced(run)'), advances);

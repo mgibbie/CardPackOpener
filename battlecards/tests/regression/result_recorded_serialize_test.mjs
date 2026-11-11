@@ -6,6 +6,7 @@
 // toSnapshot (replay frame / snapshot save) met a field engine/serialize.js didn't know. The value was
 // still copied (fail-safe), so results were never lost; the field is now a known one. It is kept
 // (not stripped): a finished state that is ever restored must not record a second result.
+import { gameSource } from '../helpers/gamesource.mjs';   // game.js + the modules split out of it
 import fs from 'fs';
 import * as E from '../../engine.js';
 import { seededRng } from '../../engine/rng.js';
@@ -16,7 +17,7 @@ const byId = {}; for (const c of raw.cards) byId[c.id] = c;
 let pass = 0, fail = 0;
 const ok = (l, c, x) => { if (c) pass++; else { fail++; console.log('FAIL:', l, x ?? ''); } };
 
-const gameJs = fs.readFileSync(new URL('../../game.js', import.meta.url), 'utf8');
+const gameJs = gameSource();
 ok('game.js still marks a recorded result on the state', /state\.resultRecorded = true/.test(gameJs));
 
 const warnings = [];

@@ -13,6 +13,7 @@
 //      wiped hand's queued events still played. resetDeckAndHand now drops them. Replays
 //      showed one line because a frame keeps only the LAST log line.
 //   (+ a Coin PLAY logged "played The Coin" AND "played The Coin (+1 mana)": now one line.)
+import { gameSource } from '../helpers/gamesource.mjs';   // game.js + the modules split out of it
 import fs from 'fs';
 import * as E from '../../engine.js';
 import { seededRng } from '../../engine/rng.js';
@@ -68,7 +69,7 @@ const coinsIn = (st, pi) => st.players[pi].hand.filter(c => c.id === 'coin').len
 }
 
 // ---- the game log wording (game.js) ----
-const src = fs.readFileSync(new URL('../../game.js', import.meta.url), 'utf8');
+const src = gameSource();
 const m = /function coinCauseText\(cause\) \{[\s\S]*?\n\}/.exec(src);
 ok('coinCauseText exists', !!m);
 if (m) {

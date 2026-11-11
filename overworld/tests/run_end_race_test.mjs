@@ -23,6 +23,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { DatabaseSync } from 'node:sqlite';
 import { buildSync } from 'esbuild';
+import { gameSource } from '../../battlecards/tests/helpers/gamesource.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '../../');
@@ -130,8 +131,9 @@ try {
 
 // ===== 5. the client =====
 {
-	const src = fs.readFileSync(path.join(ROOT, 'battlecards/game.js'), 'utf8');
-	const clears = src.match(/^const clear[A-Za-z]+ = .*$/gm) || [];
+	const src = gameSource();
+	// (a split-out module imports some of them, so those carry "export")
+	const clears = src.match(/^(?:export )?const clear[A-Za-z]+ = .*$/gm) || [];
 	A(clears.length === 10 && clears.every(l => /= \(\) => endRunKey\([A-Z_]+\);$/.test(l)), '5. all 10 run modes end their run through endRunKey', clears.filter(l => !/endRunKey/.test(l)).join(' | '));
 	const end = src.slice(src.indexOf('function endRunKey'), src.indexOf('function endRunKey') + 500);
 	A(end.indexOf('safeLoad(key') < end.indexOf('localStorage.removeItem(key)') && /serverClearRun\(key, runId\)/.test(end), '5. endRunKey reads the runId before clearing and sends it with run-clear');

@@ -21,6 +21,7 @@
 //
 // Standalone (headless Chrome + puppeteer-core); NOT in run-all.
 //   node battlecards/tests/integration/modal_tip_persist_smoke.mjs
+import { gameSource } from '../helpers/gamesource.mjs';   // game.js + the modules split out of it
 import http from 'http';
 import fs from 'fs';
 import path from 'path';
@@ -143,7 +144,7 @@ try {
 
 	// ---------- the invariant, at the source ----------
 	{
-		const src = fs.readFileSync(path.join(ROOT, 'battlecards/game.js'), 'utf8');
+		const src = gameSource();
 		const i = src.indexOf('function wireModalArt');
 		const body = src.slice(i, src.indexOf('\n}', i));
 		A(/attachTip\(fresh/.test(body), 'the repaint re-binds the tip to the element it just swapped in');

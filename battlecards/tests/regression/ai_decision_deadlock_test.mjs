@@ -23,6 +23,7 @@
 //      always advance even if a FUTURE queue type ships without an AI handler.
 //
 //   node battlecards/tests/regression/ai_decision_deadlock_test.mjs
+import { gameSource } from '../helpers/gamesource.mjs';   // game.js + the modules split out of it
 import fs from 'fs';
 import * as E from '../../engine.js';
 import * as AI from '../../ai.js';
@@ -64,7 +65,7 @@ function driveAI(st, ticks = 12) {
 
 // ---------- source: the watchdog exists and is wired ----------
 {
-	const gm = fs.readFileSync(new URL('../../game.js', import.meta.url), 'utf8');
+	const gm = gameSource();
 	ok('game.js carries an AI-turn watchdog', /\[ai-watchdog\]/.test(gm));
 	ok('the stall limit is a named constant', /const AI_STALL_LIMIT = \d+/.test(gm));
 	ok('the watchdog can answer every forced queue', /function forceResolveFor\(seat\)/.test(gm)

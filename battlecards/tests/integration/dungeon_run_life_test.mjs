@@ -7,6 +7,7 @@
 // level preview advertised 20. Now runLifeFor() is the one source: the fight starts
 // at full health (life = maxLife) and the previews show the same number.
 //   node battlecards/tests/integration/dungeon_run_life_test.mjs
+import { gameSource } from '../helpers/gamesource.mjs';   // game.js + the modules split out of it
 import http from 'http';
 import fs from 'fs';
 import path from 'path';
@@ -110,7 +111,7 @@ async function overlayHidden(page, sel) {
 		A(l2.every(p => p.life === 15 && p.max === 15), 'level 2: both heroes start at 15/15 — not 15 life with a 20 max (the report)', l2);
 
 		// ── the level previews show the life the fight starts at ──
-		const game = fs.readFileSync(path.join(ROOT, 'battlecards/game.js'), 'utf8');
+		const game = gameSource();
 		const previews = game.match(/Next: \$\{boss\.name\} \(\$\{[^}]+\} HP\)/g) || [];
 		A(previews.length === 3 && previews.every(p => p.includes('runLifeFor(nextLevel)')), 'the dungeon/heist/tombs previews read runLifeFor, the boot source', previews);
 		A(!/15 \+ \((run\.)?level - 1\) \* 5/.test(game), 'no boot keeps the old 15+5 formula');

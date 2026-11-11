@@ -11,6 +11,7 @@
 // the listener once the canvas leaves the page; artFor remembers early asks and onArtIndex
 // starts those loads when the index lands (their onload broadcasts as usual).
 // Both files import browser-only modules, so the functions are extracted and run on fakes.
+import { gameSource } from '../helpers/gamesource.mjs';   // game.js + the modules split out of it
 import fs from 'fs';
 
 let pass = 0, fail = 0;
@@ -20,12 +21,12 @@ function fnSrc(src, name) {
 	const i = src.search(new RegExp(`(^|\\n)(export )?function ${name}\\(`));
 	if (i < 0) return null;
 	const end = src.indexOf('\n}\n', i);
-	return src.slice(i, end + 3);
+	return src.slice(i, end + 3).replace(/^(\n?)export /, '$1');   // (`export` isn't valid inside new Function)
 }
 
 // ---- 1) miniFace repaints on art arrival, however late ----
 {
-	const game = read('../../game.js');
+	const game = gameSource().replace(/\r\n/g, '\n');
 	const body = fnSrc(game, 'miniFace');
 	ok('found miniFace', !!body);
 	let draws = 0;
