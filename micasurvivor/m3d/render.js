@@ -44,9 +44,11 @@ export function buildTerrain(room) {
 	const inside = (x, z) => x >= 0 && z >= 0 && x < room.w && z < room.h;
 	for (let cz = 0; cz < room.h; cz++) for (let cx = 0; cx < room.w; cx++) {
 		const [nw, ne, sw, se] = cornerHeights(room, cx, cz), x0 = cx * CELL, x1 = x0 + CELL, z0 = cz * CELL, z1 = z0 + CELL;
-		const rim = nw >= 8 && !room.slopes.has(cz * room.w + cx), sl = room.slopes.has(cz * room.w + cx), k = (cx + cz) & 1;
+		const rim = nw >= (room.rimH || 8) && !room.slopes.has(cz * room.w + cx), sl = room.slopes.has(cz * room.w + cx), k = (cx + cz) & 1;
 		const ci = cz * room.w + cx, m = room.mats && room.mats.get(ci), wet = room.water && room.water.has(ci);
-		quad([x0, nw, z0], [x0, sw, z1], [x1, se, z1], [x1, ne, z0], rim ? RIM : (m ? MAT[m] : wet ? BED : sl ? SLOPE : TOP)[k], 1);
+		// (P2) a generated level has height levels: higher floor is drawn lighter, so the lie of the land reads at a glance
+		const lit = rim || !room.maxH ? 1 : 0.84 + 0.2 * Math.max(0, Math.min(1.2, (nw + se) / 2 / room.maxH));
+		quad([x0, nw, z0], [x0, sw, z1], [x1, se, z1], [x1, ne, z0], rim ? RIM : (m ? MAT[m] : wet ? BED : sl ? SLOPE : TOP)[k], lit);
 		// a wall on each side where this cell's edge stands above the neighbour's
 		const side = (ax, az, bx, bz, ha, hb, nx, nz, shade) => {
 			if (!inside(nx, nz)) return;
@@ -68,6 +70,52 @@ export function buildTerrain(room) {
 	const mesh = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide }));
 	mesh.matrixAutoUpdate = false;
 	return mesh;
+}
+
+/** (P2) A level's scatter: tufts of grass, flowers and pebbles, as a few flat-coloured triangles each (one mesh, one
+ *  draw call; they block nothing). */
+export function buildScatter(room) {
+	const pos = [], col = [], c = new THREE.Color();
+	const tri = (a, b, d, hex) => { c.setHex(hex); for (const p of [a, b, d]) { pos.push(p[0], p[1], p[2]); col.push(c.r, c.g, c.b); } };
+	const PETAL = [0xffe36e, 0xff8fb3, 0xffffff, 0xb79cff];
+	(room.scatter || []).forEach((o, n) => {
+		const { x, y, z, s } = o;
+		if (o.kind === 'pebble') { const r = 0.22 * s, h = 0.14 * s, top = [x, y + h, z]; for (let k = 0; k < 4; k++) { const a = k * Math.PI / 2 + n, b = a + Math.PI / 2; tri([x + Math.cos(a) * r, y, z + Math.sin(a) * r], [x + Math.cos(b) * r, y, z + Math.sin(b) * r], top, k & 1 ? 0x9aa3ad : 0x868f99); } return; }
+		// blades: thin upright triangles, fanned
+		const blades = o.kind === 'grass' ? 4 : 2;
+		for (let k = 0; k < blades; k++) { const a = n * 1.7 + k * 1.9, dx = Math.cos(a) * 0.09 * s, dz = Math.sin(a) * 0.09 * s, h = (0.34 + 0.1 * (k & 1)) * s; tri([x - dx, y, z - dz], [x + dx, y, z + dz], [x + dz * 1.6, y + h, z - dx * 1.6], k & 1 ? 0x4f9a48 : 0x5fae55); }
+		if (o.kind === 'flower') { const h = 0.46 * s, r = 0.11 * s, hex = PETAL[n % PETAL.length]; for (const [ax, az] of [[1, 0], [0, 1]]) { tri([x - ax * r, y + h, z - az * r], [x + ax * r, y + h, z + az * r], [x, y + h + r, z], hex); tri([x - ax * r, y + h, z - az * r], [x + ax * r, y + h, z + az * r], [x, y + h - r, z], hex); } }
+	});
+	const g = new THREE.BufferGeometry();
+	g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+	g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+	const mesh = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide }));
+	mesh.matrixAutoUpdate = false;
+	return mesh;
+}
+/** (P2) The exit: a column of light you can see from across the level. */
+export function buildExit(at) {
+	const g = new THREE.CylinderGeometry(0.9, 0.9, 30, 10, 1, true);
+	const mesh = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ color: 0xfff2a0, transparent: true, opacity: 0.42, depthWrite: false, side: THREE.DoubleSide, fog: false }));
+	mesh.position.set(at[0], at[1] + 15, at[2]); mesh.renderOrder = 3;
+	return mesh;
+}
+/** (P2) The minimap, drawn FROM the level (so it cannot disagree with it): one pixel block per cell — higher floor
+ *  lighter, water blue, ice / mud / bounce in their colours, ramps sand, the rim dark. -> a canvas, `px` a cell. */
+export function drawMap(room, px = 4) {
+	const c = document.createElement('canvas'); c.width = room.w * px; c.height = room.h * px;
+	const g = c.getContext('2d'), top = room.maxH || 4, rim = room.rimH || 8;
+	for (let cz = 0; cz < room.h; cz++) for (let cx = 0; cx < room.w; cx++) {
+		const i = cz * room.w + cx, h = room.cells[i], m = room.mats.get(i);
+		let fill;
+		if (h >= rim) fill = '#1c2433';
+		else if (room.water.has(i)) fill = '#3f8fe0';
+		else if (m) fill = m === 'ice' ? '#cfeeff' : m === 'mud' ? '#7a5a3c' : '#ff5fa6';
+		else if (room.slopes.has(i)) fill = '#d2b877';
+		else { const t = Math.max(0, Math.min(1.25, h / top)); fill = `rgb(${Math.round(70 + 90 * t)},${Math.round(130 + 95 * t)},${Math.round(70 + 60 * t)})`; }
+		g.fillStyle = fill; g.fillRect(cx * px, cz * px, px, px);
+	}
+	return c;
 }
 
 /** The water: a flat sheet at each wet cell's surface, see-through, drawn after everything solid. */

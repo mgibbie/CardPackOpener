@@ -3,10 +3,13 @@
 //   1. does a phone hold 60 fps with a real 3D scene and 100 sprite billboards?
 //   2. does the jump feel right?
 // /micasurvivor/m3d/   ?n=100 the crowd · ?dex=25 who you play · ?still=1 a crowd that does not turn
+// P2: ?gen=<seed> plays a GENERATED level instead (gen.js); ?biome=meadow|peaks|marsh; ?size=4..8 tiles a side. Reach
+// the column of light (the exit; it is on the minimap) and the next seed loads.
 import * as THREE from 'three';
 import { K, CELL, step, newState, noInput, groundAt, stateName, facingRow, tuneFor, TYPE_TRAITS } from './sim.js';
-import { buildRoom, SPOTS, ROOM_W, ROOM_H } from './room.js';
-import { makeRenderer, buildTerrain, buildWater, SpriteBatch, Shadows, loadSheet, frameAt, spriteQuad, footLift, placeCamera } from './render.js';
+import { buildRoom, SPOTS } from './room.js';
+import { makeRenderer, buildTerrain, buildWater, buildScatter, buildExit, drawMap, SpriteBatch, Shadows, loadSheet, frameAt, spriteQuad, footLift, placeCamera } from './render.js';
+import { generate, BIOMES } from './gen.js';
 
 const Q = new URLSearchParams(location.search);
 const N = Math.max(0, Math.min(2000, +(Q.get('n') ?? 100) || 0));
@@ -14,7 +17,9 @@ const DEX = +(Q.get('dex') ?? 25) || 25;
 const META = (window.G && window.G.SPRITE_META) || {};
 const CROWD_DEX = [1, 4, 7, 16, 19, 25, 43, 74, 92, 133].filter((d) => META[d] && META[d].a && META[d].a.Idle && !META[d].src);
 const hud = document.getElementById('hud'), canvas = document.getElementById('c');
-const room = buildRoom();
+const GEN = Q.has('gen') ? (+Q.get('gen') >>> 0) : null, BIOME = BIOMES[Q.get('biome')] ? Q.get('biome') : 'meadow';
+const SIZE = Q.has('size') ? Math.max(3, Math.min(8, +Q.get('size') | 0 || 5)) : null;
+const room = GEN === null ? buildRoom() : generate(GEN, BIOME, SIZE ? { size: SIZE } : null);
 // (P1) who you play decides how it moves: its types' traits (sim.js TYPE_TRAITS). ?types=flying,water tries others.
 const SPECIES = ((window.G && window.G.DEX) || []).find((p) => p.dex === DEX) || { name: '#' + DEX, types: [] };
 const TYPES = Q.get('types') ? Q.get('types').split(',') : SPECIES.types;
@@ -24,6 +29,7 @@ const state = newState(room, TUNE);
 const { renderer, scene, camera } = makeRenderer(canvas);
 scene.add(buildTerrain(room));
 scene.add(buildWater(room));
+if (GEN !== null) { scene.add(buildScatter(room)); scene.add(buildExit(room.exit)); }
 
 // ---------------------------------------------------------------- the camera and the input
 const cam = { yaw: Math.PI, pitch: 0.5, dist: 10.5, manual: 0, follow: Q.get('follow') !== '0' };   // (looking north, up the room)
@@ -97,8 +103,10 @@ function readInput(dt) {
 const rnd = (() => { let a = 20261111; return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; })();
 const crowd = [];
 {
-	const flat = [];   // open floor cells (height 0, no slope), away from the spawn
-	for (let cz = 1; cz < ROOM_H - 1; cz++) for (let cx = 1; cx < ROOM_W - 1; cx++) { const i = cz * room.w + cx; if (room.cells[i] === 0 && !room.slopes.has(i) && Math.hypot((cx + 0.5) * CELL - SPOTS.start[0], (cz + 0.5) * CELL - SPOTS.start[1]) > 5) flat.push([cx, cz]); }
+	const flat = [];   // open floor cells (no slope; the test room: height 0; a level: dry floor below the rim), away from the spawn
+	const open = (i) => (GEN === null ? room.cells[i] === 0 : room.cells[i] < room.rimH && !room.water.has(i));
+	const sx = GEN === null ? SPOTS.start[0] : room.spawn[0], sz = GEN === null ? SPOTS.start[1] : room.spawn[2];
+	for (let cz = 1; cz < room.h - 1; cz++) for (let cx = 1; cx < room.w - 1; cx++) { const i = cz * room.w + cx; if (open(i) && !room.slopes.has(i) && Math.hypot((cx + 0.5) * CELL - sx, (cz + 0.5) * CELL - sz) > 5) flat.push([cx, cz]); }
 	for (let i = 0; i < N && CROWD_DEX.length && flat.length; i++) {
 		const [cx, cz] = flat[Math.floor(rnd() * flat.length)];
 		crowd.push({ dex: CROWD_DEX[i % CROWD_DEX.length], x: (cx + 0.15 + rnd() * 0.7) * CELL, z: (cz + 0.15 + rnd() * 0.7) * CELL, facing: rnd() * 6.2832, turn: Q.has('still') ? 0 : (rnd() - 0.5) * 1.2, t0: rnd() * 5 });
@@ -175,6 +183,24 @@ function frame(now) {
 	perf.sim.push(performance.now() - t0); if (perf.sim.length > 240) perf.sim.shift();
 	draw(now / 1000);
 	if ((simTicks & 15) === 0) showHud();
+	if (GEN !== null) { showMap(); if (!leaving && state.grounded && exitDist() < 1.5) { leaving = true; note('exit reached: next level…', 4000); nextLevel(); } }
+}
+// ---------------------------------------------------------------- (P2) a generated level: the exit and the minimap
+let leaving = false, mapBase = null;
+const exitDist = () => Math.hypot(state.x - room.exit[0], state.z - room.exit[2]);
+/** The next level: the next seed, same biome and options (a fresh page: nothing of this level is kept). */
+function nextLevel() { const q = new URLSearchParams(location.search); q.set('gen', String((GEN + 1) >>> 0)); if (!window.__m3d.holdExit) setTimeout(() => { location.search = q.toString(); }, 700); }
+function showMap() {
+	const el = document.getElementById('map'), px = 4;
+	if (!mapBase) { mapBase = drawMap(room, px); el.width = mapBase.width; el.height = mapBase.height; el.style.display = 'block'; }
+	const g = el.getContext('2d'), k = px / CELL;
+	g.drawImage(mapBase, 0, 0);
+	// the exit: a ring that beats; the spawn: a small dot
+	g.lineWidth = 2; g.strokeStyle = '#fff2a0'; g.beginPath(); g.arc(room.exit[0] * k, room.exit[2] * k, 5 + 2 * Math.sin(performance.now() / 260), 0, 6.2832); g.stroke();
+	g.fillStyle = '#fff'; g.fillRect(room.spawn[0] * k - 1.5, room.spawn[2] * k - 1.5, 3, 3);
+	// you: an arrow the way you face (map: +x right, +z down)
+	const fx = Math.sin(state.facing), fz = Math.cos(state.facing), x = state.x * k, z = state.z * k;
+	g.fillStyle = '#ff3b3b'; g.strokeStyle = '#fff'; g.lineWidth = 1; g.beginPath(); g.moveTo(x + fx * 7, z + fz * 7); g.lineTo(x - fx * 4 - fz * 4, z - fz * 4 + fx * 4); g.lineTo(x - fx * 4 + fz * 4, z - fz * 4 - fx * 4); g.closePath(); g.fill(); g.stroke();
 }
 let noteText = '', noteUntil = 0;
 function note(t, ms) { noteText = t; noteUntil = performance.now() + ms; }
@@ -189,7 +215,8 @@ function showHud() {
 	hud.textContent = `${s.p50 ? Math.round(1000 / s.p50) : 0} fps · frame ${s.p50} ms (p95 ${s.p95}) · rules ${s.simP95} ms\n`
 		+ `${s.crowd} sprites · ${s.calls} draw calls · ${s.triangles} triangles\n`
 		+ `${stateName(state)} · ${sp.toFixed(1)} m/s · height ${state.y.toFixed(2)} m · air jumps ${state.airJumps}\n`
-		+ `${SPECIES.name} (${TYPES.join(' / ') || 'no type'})${TRAITS.length ? ' · traits: ' + TRAITS.join(', ') : ''}` + (noteText && performance.now() < noteUntil ? `\n» ${noteText}` : '');
+		+ `${SPECIES.name} (${TYPES.join(' / ') || 'no type'})${TRAITS.length ? ' · traits: ' + TRAITS.join(', ') : ''}`
+		+ (GEN === null ? '' : `\nlevel ${GEN} · ${BIOME} · ${room.size} × ${room.size} tiles · exit ${Math.round(exitDist())} m`) + (noteText && performance.now() < noteUntil ? `\n» ${noteText}` : '');
 }
 
 // ---------------------------------------------------------------- boot
@@ -208,7 +235,7 @@ function showHud() {
 
 // what a test (and a curious owner in the console) can reach
 window.__m3d = {
-	get ready() { return ready; }, state, room, K, TUNE, TYPES, TRAITS, cam, crowd, sheets, stats,
+	get ready() { return ready; }, state, room, K, TUNE, TYPES, TRAITS, cam, crowd, sheets, stats, gen: GEN, biome: BIOME, holdExit: false, get leaving() { return leaving; },
 	setInput(o) { override = o ? { ...noInput(), ...o } : null; },
 	rowOf: (facing, yaw) => facingRow(facing, yaw === undefined ? cam.yaw : yaw),
 	quadOf: (key, frame, row) => { const s = sheets.get(key); return spriteQuad(s.meta, s.img, frame, row, 1, s.lift); },

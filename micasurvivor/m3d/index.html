@@ -12,6 +12,7 @@
 		#c { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
 		#hud { position: fixed; left: max(10px, env(safe-area-inset-left)); top: max(8px, env(safe-area-inset-top)); white-space: pre; background: rgba(12, 18, 30, .62); padding: 6px 9px; border-radius: 8px; pointer-events: none; }
 		#help { position: fixed; left: 50%; transform: translateX(-50%); bottom: max(8px, env(safe-area-inset-bottom)); background: rgba(12, 18, 30, .62); padding: 5px 10px; border-radius: 8px; pointer-events: none; text-align: center; max-width: 92vw; }
+		#map { position: fixed; right: max(10px, env(safe-area-inset-right)); top: max(8px, env(safe-area-inset-top)); width: min(30vmin, 190px); height: min(30vmin, 190px); border: 2px solid rgba(255, 255, 255, .8); border-radius: 8px; background: #1c2433; image-rendering: pixelated; pointer-events: none; display: none; }
 		#boot { position: fixed; inset: 0; display: grid; place-items: center; background: #9fc4e8; color: #17324d; font-size: 16px; }
 		.btn { position: fixed; right: max(16px, env(safe-area-inset-right)); width: 78px; height: 78px; border-radius: 50%; border: 3px solid rgba(255, 255, 255, .85); background: rgba(12, 18, 30, .45); color: #fff; font: 700 14px ui-sans-serif, system-ui, sans-serif; display: none; touch-action: none; }
 		#b-jump { bottom: max(26px, env(safe-area-inset-bottom)); }
@@ -25,7 +26,8 @@
 <body>
 	<canvas id="c"></canvas>
 	<div id="hud"></div>
-	<div id="help">Move WASD / arrows · Jump Space (again in the air) · Slide Shift while running (hold it as you land to break a fall) · Camera: drag, or Q / E · R: back to the start · ?dex=6 plays another species</div>
+	<canvas id="map" width="8" height="8"></canvas>
+	<div id="help">Move WASD / arrows · Jump Space (again in the air) · Slide Shift while running (hold it as you land to break a fall) · Camera: drag, or Q / E · R: back to the start · ?dex=6 plays another species · ?gen=1 a generated level (&amp;biome=peaks / marsh)</div>
 	<button class="btn" id="b-slide">SLIDE</button>
 	<button class="btn" id="b-jump">JUMP</button>
 	<div id="boot">MicaSurvivor 3D test room…</div>
