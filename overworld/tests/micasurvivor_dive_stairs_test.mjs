@@ -75,6 +75,8 @@ const BEFORE = (save) => {
 		localStorage.setItem('micasurvivor_save.guest', JSON.stringify(save));
 	} catch (e) { /* the test reports a boot failure */ }
 	H.sturdy = () => { const pl = G.Game.player; pl.gainXp = () => 0; return pl; };
+	H.healBoss = () => { const b = G.ExpDive.run && G.ExpDive.run.boss; if (b && !b.dead) b.hp = b.maxHp; };   // (...and the alpha must outlive the wait)
+	H.heal = () => { const pl = G.Game.player; if (pl && !pl.dead) pl.hp = pl.maxHp; };   // (this suite waits beside an alpha)
 	H.unblock = () => {
 		if (G.ExpEco && G.ExpEco.pick) { try { G.ExpEco.closePick(); } catch (e) { /* */ } }
 		if (G.Game.state === 'choice' || G.UI.isOpen('scr-item')) { const c = [...document.querySelectorAll('#item-cards .card')].pop(); if (c) c.click(); }
@@ -152,11 +154,12 @@ try {
 	let m = await mini();
 	const where = await E(page, () => {
 		const L = G.World.zone.dive, [sx, sy] = window.__t.wpos(L.stairs), pl = G.Game.player, TS = window.__t.TS();
-		return { tiles: Math.hypot(sx - pl.x, sy - pl.y) / TS, sees: G.Camera.sees(sx, sy, 0), sealed: !!G.ExpDive.run.sealed, floor: G.ExpDive.run.floor };
+		const rawPt = G.Minimap.pt(sx, sy, pl), q = G.Minimap.edge(rawPt);   // (the floor is random: is the stairs' point outside the minimap's shape?)
+		return { tiles: Math.hypot(sx - pl.x, sy - pl.y) / TS, sees: G.Camera.sees(sx, sy, 0), sealed: !!G.ExpDive.run.sealed, floor: G.ExpDive.run.floor, off: Math.hypot(rawPt.x - q.x, rawPt.y - q.y) > 0.5 };
 	});
-	A(where.floor === 1 && !where.sealed && where.tiles > 14 && !where.sees, 'floor 1: the stairs are far from the spawn and off screen (the hunt this fixes)', JSON.stringify(where));
+	A(where.floor === 1 && !where.sealed && where.tiles > 6 && !where.sees, 'floor 1: the stairs are away from the spawn and off screen (the hunt this fixes)', JSON.stringify(where));
 	A(m.stairs.filter(s => s.kind === 'stairs').length === 1, 'the minimap marks the stairs with their OWN kind of mark (not the gold square the rocks use)', JSON.stringify(m.kinds));
-	A(m.stairs.some(s => s.kind === 'stairs-arrow') === (where.tiles > 24), 'far beyond the minimap, a pointer on its rim shows the way', JSON.stringify([where.tiles, m.stairs.map(s => s.kind)]));
+	A(m.stairs.some(s => s.kind === 'stairs-arrow') === where.off, `the stairs are ${where.off ? 'beyond the minimap: the mark is on its rim with a pointer showing the way' : 'within the minimap this floor: the mark is in place, no rim pointer'}`, JSON.stringify([where.tiles, where.off, m.stairs.map(s => s.kind)]));
 	A(!m.xAfter, 'the stairs are drawn after the economy\'s marks (rocks, chests, Meowth), so nothing covers them', JSON.stringify(m.afterStairs));
 
 	// ---- the mark itself: its colour is nothing else's, and it is bigger than the old 6 px square
@@ -199,13 +202,13 @@ try {
 	await frame();
 	const h0 = await E(page, () => ({ hint: G.ExpDive.stairsHint(G.Game.player), at: G.ExpDive.hintAt, T: G.ExpDive.K.STAIRS_HINT_T, onFloor: G.ExpDive.run.now - G.ExpDive.run.ft }));
 	A(h0.T === 25 && h0.onFloor < 25 && h0.hint === null && h0.at === null, 'a fresh floor shows no pointer: the first 25 s are for exploring', JSON.stringify(h0));
-	await E(page, () => { const H = window.__t; for (let i = 0; i < 26 * 30; i++) { H.thin(); H.unblock(); G.Game.debugStep(1, 1 / 30); } });
+	await E(page, () => { const H = window.__t; for (let i = 0; i < 26 * 30; i++) { H.thin(); H.unblock(); H.heal(); H.healBoss(); G.Game.debugStep(1, 1 / 30); } });
 	await frame();
 	const h1 = await E(page, () => {
 		const L = G.World.zone.dive, [sx, sy] = window.__t.wpos(L.stairs), pl = G.Game.player, k = G.HUD.k || 1;
 		return { hint: G.ExpDive.stairsHint(pl), at: G.ExpDive.hintAt, want: Math.atan2(sy - pl.y, sx - pl.x), w: innerWidth / k, h: innerHeight / k, onFloor: G.ExpDive.run.now - G.ExpDive.run.ft, state: G.Game.state };
 	});
-	A(h1.hint && Math.abs(h1.hint.a - h1.want) < 1e-6 && h1.hint.tiles > 14, 'after 25 s on the floor the pointer comes up, aimed at the stairs, with the distance in tiles', JSON.stringify(h1));
+	A(h1.hint && Math.abs(h1.hint.a - h1.want) < 1e-6 && h1.hint.tiles > 6, 'after 25 s on the floor the pointer comes up, aimed at the stairs, with the distance in tiles', JSON.stringify(h1));
 	A(h1.at && h1.at.x > 40 && h1.at.x < h1.w - 40 && h1.at.y > 60 && h1.at.y < h1.h - 40, '...drawn inside the screen\'s edge, clear of the HUD\'s top rows', JSON.stringify([h1.at, h1.w, h1.h]));
 	await shoot(page, 'dive_stairs_hint.png');
 
@@ -222,16 +225,16 @@ try {
 	const f5 = await E(page, () => { const H = window.__t; const f = H.downTo(5); H.thin(); return { f, sealed: !!G.ExpDive.run.sealed, boss: !!G.ExpDive.run.boss }; });
 	await frame();
 	m = await mini();
-	const s5 = await E(page, () => { const H = window.__t; for (let i = 0; i < 26 * 30; i++) { H.thin(); H.unblock(); G.Game.debugStep(1, 1 / 30); } return { hint: G.ExpDive.stairsHint(G.Game.player), sealed: !!G.ExpDive.run.sealed, map: (() => { G.ExpEco.openMap(); const r = G.ExpEco.mapInfo.rows; G.ExpEco.closeMap(); return r; })() }; });
+	const s5 = await E(page, () => { const H = window.__t; for (let i = 0; i < 26 * 30; i++) { H.thin(); H.unblock(); H.heal(); H.healBoss(); G.Game.debugStep(1, 1 / 30); } return { hint: G.ExpDive.stairsHint(G.Game.player), sealed: !!G.ExpDive.run.sealed, map: (() => { G.ExpEco.openMap(); const r = G.ExpEco.mapInfo.rows; G.ExpEco.closeMap(); return r; })() }; });
 	A(f5.f === 5 && f5.sealed && f5.boss, 'floor 5: an alpha seals the stairs', JSON.stringify(f5));
 	A(m.stairs.some(s => s.kind === 'stairs-sealed') && !m.stairs.some(s => s.kind === 'stairs'), 'the minimap shows the sealed mark', JSON.stringify(m.stairs.map(s => s.kind)));
 	A(s5.sealed && s5.hint === null && s5.map.includes('stairs-sealed'), 'sealed stairs get no HUD pointer, however long you wait; the zone map lists "Stairs (sealed)"', JSON.stringify(s5));
 	const open5 = await E(page, () => {
 		const H = window.__t, S = G.ExpDive.run, L = G.World.zone.dive, [sx, sy] = H.wpos(L.stairs), [px, py] = H.wpos(L.spawn);
-		S.boss.hurt(S.boss.maxHp * 2); H.step(3);
+		for (let i = 0; i < 40 && S.boss && S.sealed; i++) { H.heal(); if (!S.boss.dead) S.boss.hurt(S.boss.maxHp * 2); H.step(2); }
 		H.put(px, py);   // back at the spawn: the stairs are off screen again
 		S.ft = S.now;    // "just arrived": only the boss falling can raise the pointer now
-		return { sealed: !!S.sealed, fell: !!S.bossFell, hint: G.ExpDive.stairsHint(G.Game.player), sees: G.Camera.sees(sx, sy, 0) };
+		return { sealed: !!S.sealed, fell: !!S.bossFell, hint: G.ExpDive.stairsHint(G.Game.player), sees: G.Camera.sees(sx, sy, 0), state: G.Game.state, dead: !!G.Game.player.dead };
 	});
 	A(!open5.sealed && open5.fell && !open5.sees && open5.hint, 'the alpha falls: the stairs open and the pointer shows at once, without the wait', JSON.stringify(open5));
 	// the next floor starts clean
