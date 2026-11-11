@@ -383,6 +383,122 @@ bosses; XP and level-ups; damage numbers and hit effects. Move names on the test
 
 Tests: parity 37 checks, combat 52 checks, the page test 57.
 
+## 5.6 P3, third part: built (2026-11-11)
+
+- **Enemy behaviours** from the 2D game's own table of who does what: chargers (stop 200 units out, aim 0.55 s,
+  come through at 3.4 × speed), ranged enemies (walk into range, hold their distance, back off when you close in,
+  shoot), fans of shots, beamers and zoners (a mark on the ground that goes off after a delay, through your moment
+  of grace), bombers (a fuse, and they go with the blast), runners (they go where you are going). Healers,
+  shielders, summoners and jumpers chase until they are ported.
+- **What height changes.** A ranged enemy must see you to hold its ground and shoot; with a wall between you it
+  comes round instead. Its shot stops at terrain and passes under you when you are high in a jump. A mark on the
+  ground reaches about 1.2 m up: jump clear of it, or stand on the ledge above it. A charger only takes aim at you
+  on its own level, and its charge can carry it off a ledge. A bomber on the ledge above does not light.
+- **The comparison with 2D** covers them (46 checks): time to the first hit, HP lost and where the enemy ends up
+  match for a charger, a ranged enemy, a fan, a beamer, a zoner and a bomber.
+- **On the page:** enemy shots, warning marks that flash when they go off, and damage numbers over each hit
+  (`&cast=58,43,32,63` picks who arrives).
+
+One limit found: a 3D walker follows the level's cells beyond 14 m and only runs straight at you inside that, so
+on open ground it arrives a little later than a 2D enemy from far away.
+
+**Still to do in P3:** Expedition's eight move kinds; abilities and held items; healers, shielders, summoners,
+jumpers; bosses; XP and level-ups (with P5's upgrade cards).
+
+Tests: parity 46 checks, combat 64 checks, the page test 59.
+
+## 5.7 P3, fourth part: built (2026-11-11)
+
+- **The last four enemy behaviours**, so every behaviour in the 2D game's table is in the 3D rules: healers (7 % of
+  a hurt neighbour's HP a cast), shielders (30 % of HP as a shield for the nearest five for 7 s, none again for
+  14 s), summoners (four minions a cast, eight of their own at most, twenty on the map), jumpers (a crouch, an arc,
+  and a marked landing where you were).
+- **What height changes.** A jumper leaps UP onto the ledge you are standing on: the first enemy that does not need
+  a ramp. Healers and summoners do their work without seeing you, but only stand off when they do. Minions never
+  appear inside a wall.
+- **The comparison with 2D** covers them (51 checks): the HP a healer restores, what a shield soaks up, a
+  summoner's minions and their numbers, a jumper's landing.
+- **Standing sprites** no longer float over their shadow (each standing frame is put on its own lowest pixel).
+
+**Still to do in P3:** Expedition's eight move kinds; abilities and held items; bosses; XP and level-ups (with P5's
+upgrade cards).
+
+Tests: parity 51 checks, combat 74 checks, the page test 62.
+
+## 5.8 P3, fifth part: built (2026-11-11)
+
+- **Experience.** A fallen enemy leaves an orb where it stood (a big one for 20 XP or more), and now and then a
+  berry (30 % of your HP), a magnet (calls every pickup to you) or a bomb (60 + 14 a level to everything within
+  30 m). An orb within your reach (78 units, 4.9 m) flies to you. Reach is measured in space: an orb on top of a
+  4 m wall is out of it from the floor beside the wall. The level curve is the 2D game's.
+- **Level-ups.** The fight waits while three cards are on offer: a new move from your species' pool (while one of
+  your four slots is free), the next level of a move you have, or a permanent upgrade (the 2D game's nine: Vigor,
+  Power, Sprint, Reflexes, Armour, Synthesis, Magnet, Learning, Sitrus Berry, with their limits). Offers are drawn
+  from the fight's seed. On the page: click or tap a card, or press 1 / 2 / 3; `&auto=0` takes the first one.
+- **The comparison with 2D** (55 checks): the cost of each of the first 60 levels, your reach, how long an orb
+  takes to reach you, what 2,000 XP makes of a level-1 player.
+
+Not carried over yet: move evolutions, the Calibre (size) upgrade, tickets and coins, Expedition's own XP curve.
+P5 replaces these cards with rarity-rolled ones and adds refresh / skip / banish.
+
+**Still to do in P3:** Expedition's eight move kinds; abilities and held items; bosses.
+
+Tests: parity 55 checks, combat 98 checks, the page test 65.
+
+## 5.9 P3, sixth part: built (2026-11-11)
+
+- **Bosses.** The 2D game's five boss times (3:00 to 15:00) with its numbers: HP, damage and XP per slot, scaled
+  by the clock, drawn up to twice as big with a body to match. Each boss has four attacks chosen from its species
+  and types: a stomp, a charge or a leap, and two of rain, beams, a volley, a ring of shots. All are marked on the
+  ground first. It alternates between closing in and fighting from a distance, and under half HP it is enraged:
+  15 % faster, shorter waits, sometimes two attacks in a row.
+- A hit does not shove a boss. A state wears off sooner on it (35-50 % of the time) and it is then immune for 4 s.
+  Down, it bursts into 14 big orbs with a berry and a magnet. While one lives, other enemies arrive at a quarter
+  of the rate.
+- **In 3D.** A boss goes over any terrain, as a 2D boss ignores walls: one that does not hover by nature keeps its
+  feet on whatever is under it. Its stomp and its marks reach about 1.2 m up, so a timed jump clears them.
+- **The comparison with 2D** (64 checks): each of the seven attacks lands at the same moment for the same damage.
+- **On the page:** `&boss=143` puts one in at the start; `&bosses=143,130` sets who arrives at 3:00, 6:00 …
+
+Not carried over: the Dynamax den's Max Move, a boss's coins, item and ticket drops, shiny bosses.
+
+**Still to do in P3:** Expedition's eight move kinds; abilities and held items.
+
+Tests: parity 64 checks, combat 109 checks, the page test 66.
+
+## 5.10 P3, seventh part: built (2026-11-11)
+
+- **Expedition's own move kinds**, seven of its eight: lob (a bomb in an arc), homing shots, barrage (quick shots in
+  a row), smite (a strike from the sky), vortex (a whirl that drags enemies in and grinds them), wave (a ring
+  spreading from you), spin. All 14 of the moves that use them work (`&moves=mud-bomb,sky-attack,whirlpool,surf`).
+- **In 3D.** A lob and a smite reach a target behind a wall, which no straight shot can: they are the answer to
+  cover. A wave and a spin stay on your level. A vortex cannot drag a body through a wall.
+- **The comparison with 2D** (75 checks): each kind's damage over 10 s matches, and a vortex's pull.
+
+Not carried over: the eighth kind, weather (rain, sun, sand, snow), which needs a weather system here; and
+Expedition's move levels 1 to 8 with their rolled stats, which belong with P5's upgrades.
+
+**Still to do in P3:** abilities and held items; weather.
+
+Tests: parity 75 checks, combat 114 checks, the page test 67.
+
+## 5.11 P3, eighth part: built (2026-11-11)
+
+- **Weather** (sun, rain, sand, snow, fog) with the 2D game's numbers: it fades in and out over 3 s, strengthens
+  and weakens types (rain: Water × 1.5, Fire × 0.5 …), snow slows whoever is not Ice by a tenth, and sand and snow
+  wear down whoever is not of a safe type every 2 s: 2 % + 1 of an enemy's HP (never a boss), 1.2 % of yours (never
+  to nothing). From 2:00 a check every minute has an 18 % chance to start one for 55-75 s, weighted by biome.
+- **Expedition's eighth kind**, weather moves (Rain Dance, Sunny Day, Sandstorm, Snowscape): all eight are in now.
+- **The comparison with 2D** (78 checks): Water Gun in the rain with the fade-in, a sandstorm on a Rattata, a
+  Geodude and you, Rain Dance.
+- **On the page:** the weather's tint over the screen and its time left on the readout (`&weather=0`: none).
+
+Not carried over: weather particles (rain streaks, snow), and the abilities that make you immune to sand or snow.
+
+**Still to do in P3:** abilities and held items.
+
+Tests: parity 78 checks, combat 124 checks, the page test 68.
+
 ## 6. Dive in 2D: built
 
 **D0 — find the stairs (small; can ship first, on its own).** *Built 2026-11-11 (`overworld/tests/micasurvivor_dive_stairs_test.mjs`). As built: the stairs took their own orange mark, so the rocks and Meowth keep their gold; the HUD arrow comes up after 25 s on a floor, or at once when its boss falls.*

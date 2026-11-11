@@ -6,7 +6,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 const JS = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../micasurvivor/js');
-export const DATA_SCRIPTS = ['core/util.js', 'data/pokedex.js', 'data/sprites-meta.js', 'core/sprites.js', 'data/moves.js', 'data/types.js', 'data/enemies.js'];
+export const DATA_SCRIPTS = ['core/util.js', 'data/pokedex.js', 'data/sprites-meta.js', 'core/sprites.js', 'data/moves.js', 'data/types.js', 'data/enemies.js', 'systems/weather.js', 'expedition/moves.js'];
 
 /** The game's global `G`, with the data scripts run. */
 export function loadG() {
@@ -16,6 +16,8 @@ export function loadG() {
 	ctx.localStorage = { getItem: () => null, setItem() { } }; ctx.navigator = { userAgent: 'node' }; ctx.addEventListener = () => { };
 	ctx.location = { search: '', hostname: 'localhost', href: '' };
 	vm.createContext(ctx);
+	// (expedition/moves.js registers its English texts with the game's translation table: a stand-in is enough here)
+	ctx.G.I18n = { lang: 'en', add() { }, t: (s) => s, f: (s) => s };
 	for (const f of DATA_SCRIPTS) vm.runInContext(fs.readFileSync(path.join(JS, f), 'utf8'), ctx, { filename: f });
 	return ctx.G;
 }

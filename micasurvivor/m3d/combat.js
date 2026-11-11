@@ -10,7 +10,7 @@
 //   * a hit's knockback is a real shove: off a ledge, if that is where it sends the body (actors.js).
 // Lengths in the data are the 2D game's world units (32 to a tile); here a tile is a 2 m cell, so 1 unit = 1/16 m.
 import { CELL, K, step, newState, noInput, groundAt } from './sim.js';
-import { newActor, stepActor, knock, flowField, steer, moveActor } from './actors.js';
+import { newActor, stepActor, knock, flowField, steer, moveActor, clearRun } from './actors.js';
 import { rng as makeRng } from './gen.js';
 
 export const U = CELL / 32;   // metres in one 2D world unit
@@ -29,7 +29,26 @@ export const CK = {
 	// the control states (the 2D game's systems/status.js): how long each lasts, and what it does to damage
 	CC: { freeze: 1.8, para: 3, sleep: 4, conf: 3 }, SLEEP_BONUS: 1.3, PARA_ELECTRIC: 1.35, FROZEN_TAKEN: 1.25, PARA_SLOW: 0.4,
 	CONF_REACH: 380, CONF_CD: 0.6, CONF_KNOCK: 140,
-	UNPORTED: [],   // base move kinds still to come (Expedition's eight are their own step)
+	UNPORTED: [],   // base move kinds still to come
+	// Expedition's own kinds (the 2D game's expedition/moves.js): lob, homing, barrage, smite, vortex, wave, spin. Its
+	// eighth, weather, waits for a weather system here.
+	// weather (the 2D game's systems/weather.js): it fades in and out over 3 s; sand and snow wear down whoever is not
+	// of a safe type every 2 s; from 2:00 a check every minute has an 18 % chance to start one for 55-75 s
+	WX: { fade: 3, chip: 2, you: 0.012, foe: 0.02, from: 120, check: 60, chance: 0.18, dur: [55, 75], slow: 0.1,
+		biome: { meadow: { rain: 3, fog: 2, sun: 1.5, snow: 0.5, sand: 0.5 }, marsh: { rain: 3, fog: 2, sun: 1.5, snow: 0.5, sand: 0.5 }, peaks: { fog: 3, snow: 2.5, rain: 1, sand: 1 } } },
+	EXP: { lobDur: 0.55, lobStep: 0.05, lobKnock: 60, lobHigh: 90, barStep: 0.07, smiteDur: 0.28, smiteKnock: 40, pull: 110, pullR: 1.6, vortexTick: 0.25, waveBand: 40, waveKnock: 90 }, EXP_LATER: [],
+	// bosses (the 2D game's entities/enemy.js bossMove / bossStart): four attacks each, all marked on the ground first;
+	// under half HP a boss is enraged: faster, shorter waits, and it sometimes chains two attacks
+	BOSS: { hp: 1.35, dmg: 1.2, shot: 0.55, shotCd: 1.1, range: 260, cc: { freeze: 0.35, sleep: 0.35, para: 0.5, conf: 0.5 }, immune: 4, orbs: 14, fury: 1.25, furySpd: 1.15, furyWind: 0.8, chain: 0.35 },
+	// experience (the 2D game's entities/pickup.js, player.js, systems/levelup.js)
+	MAGNET: 78, COLLECT: 15, PULL: [240, 1400], BIG_XP: 20, DROP: { heal: 0.012, magnet: 0.020, bomb: 0.026 }, HEAL_ORB: 0.3, BOMB: { base: 60, level: 14, knock: 160, r: 480 }, MAX_MOVES: 4,
+	// enemy behaviours (the 2D game's entities/enemy.js): the ones here; the rest chase until they are ported
+	BEHAVIOURS: ['chase', 'tank', 'runner', 'charger', 'ranged', 'fan', 'beamer', 'zoner', 'bomber', 'healer', 'shielder', 'summoner', 'jumper'], LATER: [],
+	// the supports (the 2D game's SUPPORT_CAPS) and the jumper
+	HEAL: { r: 150, k: 0.07, powMax: 2.5, powExp: 0.35, many: 4, manyK: 0.9 }, SHIELD: { r: 160, k: 0.3, t: 7, lock: 14, max: 5, cd: 8 },
+	SUMMON: { perCast: 4, perSummoner: 8, total: 20, capPad: 15, hp: 0.35, spd: 1.1, dmg: 0.6, xp: 0.25 }, LEAP: { near: 250, wait: 0.45, dur: 0.6, high: 46, r: 50, delay: 1.05, dmg: 1.2 },
+	CHARGE: { near: 200, aim: 0.55, dash: 0.42, rest: 1.1, speed: 3.4 }, ESHOT: { speed: 190, r: 7, life: 2.4 },
+	FUSE: { reach: 26, r: 62, delay: 1, dmg: 1.4 }, EBEAM: { len: 360, w: 22, delay: 1, dmg: 1.05 }, EZONE: { r: 44, delay: 1.2, dmg: 0.95 }, HAZARD_END: 0.3,
 };
 const TARGETED = ['melee', 'beam', 'projectile', 'boomerang', 'chain', 'meteor', 'dash', 'cone'];
 const reach = (m) => (m.xreach ? m.xreach : m.kind === 'melee' ? m.radius + 30 : m.kind === 'beam' ? m.radius + 20 : m.kind === 'boomerang' ? m.radius + 40 : m.kind === 'chain' ? 280
@@ -39,9 +58,14 @@ const reach = (m) => (m.xreach ? m.xreach : m.kind === 'melee' ? m.radius + 30 :
  *  types and enemies loaded. */
 export function dataFrom(G) {
 	return {
-		move: (id, lvl = 1) => { const m = G.Moves.instance(id, lvl); m.knock = G.Moves.knockOf(m); return m; },   // (a move's knockback is worked out from its level, as the 2D game does)
+		move: (id, lvl = 1) => { if (G.ExpMoves && G.ExpMoves.isExpMove(id)) return G.ExpMoves.instance(id); const m = G.Moves.instance(id, lvl); m.knock = G.Moves.knockOf(m); return m; },
+		weatherKinds: (G.Weather && G.Weather.KINDS) || {},
+		expMoves: () => (G.ExpMoves ? Object.keys(G.ExpMoves.MOVES) : []),   // (a move's knockback is worked out from its level, as the 2D game does)
 		typeMult: (t, types) => G.Types.mult(t, types), mon: (dex) => G.DEX_BY[dex],
 		radius: (dex, scale = 1) => G.Sprites.bodyRadius(dex, scale) * U, hovers: (dex) => G.Sprites.hovers(dex),
+		poolFor: (mon) => G.Moves.poolFor(mon), levelUp: (m) => { if (m.xexp) return false; const ok = G.Moves.levelUp(m); m.knock = G.Moves.knockOf(m); return ok; }, nextUp: (m) => (m.xexp ? null : G.Moves.nextUpText(m)), moveDef: (id) => G.Moves.BY_ID[id] || (G.ExpMoves && G.ExpMoves.MOVES[id]),
+		hash: (a, b, c) => G.U.hash(a, b, c), bossSlots: G.Enemies.BOSS_SLOTS, baseSpd: (dex) => G.Enemies.baseSpd(G.DEX_BY[dex]), behaviorOf: (dex) => G.Enemies.behaviorOf(G.DEX_BY[dex]),
+		bossScale: (dex) => { const m = G.Sprites.animMeta(dex, 'Idle'), h = (m ? m.ay * G.Sprites.artScale(dex) : 30) * G.Sprites.PX; return Math.max(1, Math.min(2, Math.round(110 / h * 2) / 2)); },
 		tiers: G.Enemies.TIERS, defFor: (dex, ti) => G.Enemies.defFor(G.DEX_BY[dex], G.Enemies.TIERS[ti], ti),
 		tierAt: (t) => { let ti = 0; G.Enemies.TIERS.forEach((tr, i) => { if (t >= tr.from) ti = i; }); return ti; },
 	};
@@ -49,55 +73,136 @@ export function dataFrom(G) {
 
 /** A fight. o: { dex (who you play), moves: [id | [id, lvl]], seed, tune (sim tuning), afDmg (the all-moves factor: 1.1 in
  *  Expedition), atkK / takenK (the ability's factors, 1 if none), crit, cast: [dex] (who spawns; none: nothing spawns),
- *  orbitSquash (0.7: the 2D game's flattened orbit; 1: a circle) } */
+ *  bosses: [dex] (one arrives at each of the 2D game's boss times: 3:00, 6:00, …),
+ *  weather (false: none starts by itself),
+ *  orbitSquash (0.7: the 2D game's flattened orbit; 1: a circle), autoPick (a level-up's card is chosen at once: 0-2, or
+ *  a function (world, cards) -> index; without it the fight WAITS at a level-up until choose() is called) } */
 export function newWorld(room, data, o = {}) {
 	const mon = data.mon(o.dex || 25), s = newState(room, o.tune || K);
 	const w = {
 		room, data, t: 0, tick: 0, rand: makeRng((o.seed >>> 0) || 1), tune: o.tune || K, nextId: 1,
 		pl: { s, mon, r: data.radius(mon.dex), maxHp: mon.hp, hp: mon.hp, baseAtk: mon.atk, atkMul: 1, atkK: o.atkK || 1, takenK: o.takenK || 1, cdMul: 1, crit: o.crit || 0, reduction: 0, regen: 0,
-			invuln: 0, meleeT: 0, level: 1, baseReduce: 0, baseRegen: 0, buffs: { atk: { n: 0, t: 0, amount: 0 }, spd: { n: 0, t: 0, amount: 0 }, def: { n: 0, t: 0, amount: 0 }, regen: { n: 0, t: 0, amount: 0 } }, afDmg: o.afDmg === undefined ? 1.1 : o.afDmg, target: null, aim: 0, dead: false,
+			invuln: 0, meleeT: 0, level: 1, xp: 0, xpNext: xpFor(1), xpMul: 1, spdMul: 1, magnet: CK.MAGNET * U, statsTaken: {}, pending: 0, choices: null, baseReduce: 0, baseRegen: 0, buffs: { atk: { n: 0, t: 0, amount: 0 }, spd: { n: 0, t: 0, amount: 0 }, def: { n: 0, t: 0, amount: 0 }, regen: { n: 0, t: 0, amount: 0 } }, afDmg: o.afDmg === undefined ? 1.1 : o.afDmg, target: null, aim: 0, dead: false,
 			moves: (o.moves || []).map((m) => (Array.isArray(m) ? data.move(m[0], m[1]) : data.move(m))) },
-		enemies: [], shots: [], orbs: [], fields: [], lastPatch: null, field: null, fieldCell: -2,
+		enemies: [], shots: [], orbs: [], fields: [], effects: [], eshots: [], hazards: [], pickups: [], lastPatch: null, autoPick: o.autoPick, bosses: o.bosses || null, bossIdx: 0, weather: null, wxAuto: o.weather !== false, wxCheck: CK.WX.check, wxChip: 0, field: null, fieldCell: -2,
 		cast: o.cast || null, spawnAcc: 0, cap: o.cap || CK.CAP, orbitSquash: o.orbitSquash || 1,
-		stats: { dealt: 0, removed: 0, hits: 0, crits: 0, taken: 0, touched: 0, kills: 0, xp: 0, fired: 0, spawned: 0, fell: 0, blocked: 0 },
+		stats: { gained: 0, collected: 0, levels: 0, dealt: 0, removed: 0, hits: 0, crits: 0, taken: 0, touched: 0, kills: 0, xp: 0, fired: 0, spawned: 0, fell: 0, blocked: 0 },
 		events: [],   // this tick's: { k: 'hit' | 'kill' | 'hurt' | 'shot' | 'melee' | 'beam' | 'aura' | 'chain', … } for the page to draw
 	};
 	return w;
 }
+// ---- weather
+/** How strong the weather is right now: 0 to 1 (it fades in and out). */
+export const wxLevel = (w) => (w.weather ? Math.max(0, Math.min(1, w.weather.t / CK.WX.fade, (w.weather.dur - w.weather.t) / CK.WX.fade)) : 0);
+const wxDef = (w) => (w.weather ? w.data.weatherKinds[w.weather.kind] : null);
+/** What the weather does to an attack of a type (rain: Water × 1.5, Fire × 0.5 …). */
+const wxMult = (w, type) => { const d = wxDef(w); return d && d.mult[type] ? 1 + (d.mult[type] - 1) * wxLevel(w) : 1; };
+const wxHurts = (w, types) => { const d = wxDef(w); return !!(d && d.safe && !types.some((t) => d.safe.includes(t))); };
+const wxSpeed = (w, types) => { const d = wxDef(w); return d && d.slow && !types.includes('ice') ? 1 - CK.WX.slow * wxLevel(w) : 1; };
+/** Start a weather: 'sun' | 'rain' | 'sand' | 'snow' | 'fog', for `dur` seconds. */
+export function setWeather(w, kind, dur) { if (!w.data.weatherKinds[kind]) return false; w.weather = { kind, t: 0, dur }; w.events.push({ k: 'weather', kind, dur }); return true; }
+function updateWeather(w, dt) {
+	const X = CK.WX, pl = w.pl;
+	if (w.weather) { w.weather.t += dt; if (w.weather.t >= w.weather.dur) { w.weather = null; w.events.push({ k: 'weather', kind: null }); } }
+	else if (w.wxAuto && w.t > X.from) {
+		w.wxCheck -= dt;
+		if (w.wxCheck <= 0) { w.wxCheck = X.check; if (w.rand() < X.chance) { const tab = X.biome[w.room.biome] || X.biome.meadow, ks = Object.keys(tab).filter((k) => w.data.weatherKinds[k]); let r = w.rand() * ks.reduce((a, k) => a + tab[k], 0), kind = ks[0]; for (const k of ks) { r -= tab[k]; if (r <= 0) { kind = k; break; } } setWeather(w, kind, Math.round(rnd(w, X.dur[0], X.dur[1]))); } }
+	}
+	w.wxChip -= dt;
+	if (w.wxChip <= 0) {   // sand and snow wear you down a little (never to nothing), and every enemy that is not safe from them
+		w.wxChip = X.chip;
+		if (!w.weather || wxLevel(w) <= 0.5 || !wxDef(w).safe) return;
+		if (!pl.dead && wxHurts(w, pl.mon.types)) { const d = Math.max(1, pl.maxHp * X.you); if (pl.hp > d + 1) { pl.hp -= d; w.stats.taken += d; w.events.push({ k: 'chip', d }); } }
+		for (const e of [...w.enemies]) { if (e.dead || e.boss || !wxHurts(w, e.types)) continue; e.hp -= e.maxHp * X.foe + 1; e.flash = 0.05; if (e.hp <= 0) kill(w, e); }
+	}
+}
+/** The XP a level needs (the 2D game's curve). */
+export const xpFor = (level) => Math.floor((8 + level * 6 + Math.pow(level, 1.75) * 1.6) * 4);
 const atk = (pl) => pl.baseAtk * pl.atkMul * (1 + pl.buffs.atk.n * pl.buffs.atk.amount) * pl.atkK;
 const rnd = (w, a, b) => a + w.rand() * (b - a);
 
 /** Put an enemy in. o: { t (the run time its stats are scaled for; default now), ti (tier), hp, dmg, spd (factors),
- *  dummy (it does not chase and never touches; a shove still moves it), y } */
+ *  dummy (it does not chase and never touches; a shove still moves it), behavior (instead of the species' own), y,
+ *  def (a ready definition instead of the species' own for the tier), minion (a summoner's: its damage and XP are
+ *  not multiplied up as an arrival's are) } */
 export function addEnemy(w, dex, x, z, o = {}) {
-	const d = w.data, t = o.t === undefined ? w.t : o.t, ti = o.ti === undefined ? d.tierAt(t) : o.ti, def = d.defFor(dex, ti), mon = d.mon(dex);
+	const d = w.data, t = o.t === undefined ? w.t : o.t, ti = o.ti === undefined ? d.tierAt(t) : o.ti, def = o.def || d.defFor(dex, ti), mon = d.mon(dex);
 	const fly = !!d.hovers(dex), cr = d.radius(dex);
 	const maxHp = Math.round(def.hp * (1 + t / 95) * CK.HP_K(t) * (o.hp || 1));
 	const a = newActor(w.room, { x, z, y: o.y, r: Math.min(0.45, cr), speed: def.spd * (1 + Math.min(0.35, t / 1400)) * (o.spd === undefined ? 1 : o.spd) * U, fly, hover: CK.FLY_HOVER });
 	const e = { id: w.nextId++, a, dex, def, types: mon.types && mon.types.length ? mon.types : ['normal'], cr, fly, maxHp, hp: maxHp,
-		dmg: def.dmg * (1 + t / 420) * CK.DMG_K * (o.dmg || 1), xp: Math.round(def.xp * CK.XP_K), touchCd: 0, frozenT: 0, paraT: 0, sleepT: 0, confT: 0, confCd: 0, zig: 0, slow: 0, slowT: 0, burn: 0, burnT: 0, burnTick: 0, poison: 0, poisonT: 0, poisonTick: 0,
-		dead: false, dummy: !!o.dummy, flash: 0 };
+		dmg: def.dmg * (1 + t / 420) * (o.minion ? 1 : CK.DMG_K) * (o.dmg || 1), xp: o.minion ? def.xp : Math.round(def.xp * CK.XP_K), t0: t, ti, minion: !!o.minion, minions: [], shield: 0, shieldT: 0, shieldLock: 0, skillCd: 0, jump: null, touchCd: 0, frozenT: 0, paraT: 0, sleepT: 0, confT: 0, confCd: 0, zig: 0, slow: 0, slowT: 0, burn: 0, burnT: 0, burnTick: 0, poison: 0, poisonT: 0, poisonTick: 0,
+		dead: false, dummy: !!o.dummy, flash: 0, phase: 'walk', pt: 0, dx: 0, dz: 0, shotCd: 0 };
 	e.atkType = e.types[0];
+	e.behavior = o.behavior || (CK.BEHAVIOURS.includes(def.behavior) ? def.behavior : 'chase');
+	if (KEEPS.includes(e.behavior) && def.shotCd) e.shotCd = rnd(w, 0.3, def.shotCd);
+	if (e.behavior === 'shielder' || e.behavior === 'jumper') e.skillCd = rnd(w, 1, 4);
 	w.enemies.push(e); w.stats.spawned++;
 	return e;
 }
 const bodyH = (e) => Math.max(CK.BODY_MIN, e.cr * 2);
+/** A boss's definition for one of the 2D game's boss slots (0: the 3:00 boss … 4: the 15:00 one). */
+export function bossDef(data, dex, slot = 0) {
+	const s = data.bossSlots[slot], B = CK.BOSS, sp = data.baseSpd(dex), b = data.behaviorOf(dex);
+	return { dex, boss: true, at: s.at, hp: Math.round(s.hp * B.hp), spd: Math.round(Math.max(40, Math.min(100, 40 + sp * 0.5))), dmg: Math.round(s.dmg * B.dmg), xp: s.xp,
+		behavior: b === 'ranged' ? 'ranged' : sp > 90 ? 'charger' : 'chase', shotDmg: Math.round(s.dmg * B.shot), shotCd: B.shotCd, range: B.range };
+}
+/** Put a boss in. o: { slot (which of the 2D game's five), t (the run time it is scaled for; default now), def }. It is
+ *  bigger, it goes over any terrain (as a 2D boss ignores walls), a hit does not shove it, and it fights by bossMove. */
+export function addBoss(w, dex, x, z, o = {}) {
+	const d = w.data, t = o.t === undefined ? w.t : o.t, def = o.def || bossDef(d, dex, o.slot || 0), mon = d.mon(dex), scale = d.bossScale(dex), cr = d.radius(dex, scale), k = 1 + t / 600;
+	const e = addEnemy(w, dex, x, z, { def, t: 0, ti: 0, minion: true, behavior: 'boss' });   // (built bare, then given a boss's numbers)
+	Object.assign(e, { boss: true, minion: false, scale, cr, fly: true, maxHp: Math.round(def.hp * k), dmg: def.dmg * k, xp: def.xp, ccImm: 0 });
+	// (it goes over any terrain, as a 2D boss ignores walls; one that does not hover by nature keeps its feet on whatever is under it)
+	const hov = d.hovers(dex) ? CK.FLY_HOVER : 0.04;
+	e.hp = e.maxHp; e.a.fly = true; e.a.hover = hov; e.a.grounded = false; e.a.y = groundAt(w.room, x, z) + hov; e.a.speed = def.spd * U; e.a.r = Math.min(0.45, cr);
+	const T = e.types, has = (...xs) => xs.some((q) => T.includes(q));
+	const pref = has('fire', 'ground', 'poison', 'rock', 'grass') ? 'rain' : has('electric', 'psychic', 'dragon', 'ice', 'steel') ? 'beam' : has('fairy', 'ghost', 'water', 'flying') ? 'nova' : 'volley';
+	const others = ['rain', 'beam', 'nova', 'volley'].filter((q) => q !== pref), far = def.behavior === 'ranged';
+	e.ai = { melee: ['slam', d.hash(dex, 3, 7) < 0.5 ? 'dash' : 'leap'], ranged: [pref, others[Math.floor(d.hash(dex, 5, 9) * 3) % 3]], farLike: far ? 0.65 : 0.35, mode: far ? 'far' : 'close', modeT: rnd(w, 6, 8), cd: 1.6, cast: null, fury: false, side: w.rand() < 0.5 ? -1 : 1 };
+	w.events.push({ k: 'boss', id: e.id, dex });
+	return e;
+}
+const KEEPS = ['ranged', 'fan', 'beamer', 'zoner', 'healer', 'summoner'];   // they hold their distance and act from it
+const SUPPORT = ['healer', 'summoner'];   // …and these two do not need to see you to do their work
 
 // ---------------------------------------------------------------- damage
 function hurtEnemy(w, e, amount, kx, kz, knockU) {
 	if (e.dead) return 0;
 	if (e.frozenT > 0) amount *= CK.FROZEN_TAKEN;
-	const d = Math.max(1, Math.round(amount));
+	let d = Math.max(1, Math.round(amount));
+	if (e.shield > 0) { const a = Math.min(e.shield, d); e.shield -= a; if (a >= d) { e.flash = 0.06; w.events.push({ k: 'absorbed', id: e.id }); return 0; } d = Math.max(1, Math.round(d - a)); }   // a shielder's shield takes it first
 	e.hp -= d; e.flash = 0.12; w.stats.removed += d;
-	if (knockU > 0) { const l = Math.hypot(kx, kz) || 1; knock(e.a, kx / l * knockU * U, kz / l * knockU * U); }
-	if (e.hp <= 0) { e.dead = true; w.stats.kills++; w.stats.xp += e.xp; w.events.push({ k: 'kill', id: e.id, x: e.a.x, y: e.a.y, z: e.a.z, xp: e.xp }); }
+	if (knockU > 0 && !e.boss) { const l = Math.hypot(kx, kz) || 1; knock(e.a, kx / l * knockU * U, kz / l * knockU * U); }
+	if (e.hp <= 0) kill(w, e);
 	return d;
+}
+/** An enemy is down: it leaves its experience where it stood (and now and then a berry, a magnet or a bomb). */
+function kill(w, e) {
+	if (e.dead) return;
+	e.dead = true; e.hp = Math.min(e.hp, 0); w.stats.kills++; w.stats.xp += e.xp;
+	w.events.push({ k: 'kill', id: e.id, x: e.a.x, y: e.a.y, z: e.a.z, xp: e.xp });
+	const y = groundAt(w.room, e.a.x, e.a.z);
+	if (e.boss) {   // a boss bursts into a heap of big orbs, with a berry and a magnet
+		for (let i = 0; i < CK.BOSS.orbs; i++) { const a = w.rand() * 6.2832, dd = rnd(w, 10, 70) * U, x = e.a.x + Math.cos(a) * dd, z = e.a.z + Math.sin(a) * dd, g = groundAt(w.room, x, z); drop(w, 'xpBig', g >= (w.room.rimH || 8) ? e.a.x : x, g >= (w.room.rimH || 8) ? y : g, g >= (w.room.rimH || 8) ? e.a.z : z, Math.ceil(e.xp / CK.BOSS.orbs)); }
+		drop(w, 'heal', e.a.x + 24 * U, y, e.a.z, 0); drop(w, 'magnet', e.a.x - 24 * U, y, e.a.z, 0);
+		return;
+	}
+	drop(w, e.xp >= CK.BIG_XP ? 'xpBig' : 'xp', e.a.x, y, e.a.z, e.xp);
+	const r = w.rand();
+	if (r < CK.DROP.heal) drop(w, 'heal', e.a.x + rnd(w, -8, 8) * U, y, e.a.z, 0); else if (r < CK.DROP.magnet) drop(w, 'magnet', e.a.x, y, e.a.z, 0); else if (r < CK.DROP.bomb) drop(w, 'bomb', e.a.x, y, e.a.z, 0);
+}
+/** Put a pickup in the world: 'xp' | 'xpBig' | 'heal' | 'magnet' | 'bomb'. It rolls a little way and stops. */
+export function drop(w, kind, x, y, z, value = 0) {
+	const a = w.rand() * 6.2832, p = { id: w.nextId++, kind, x, y, z, value, vx: Math.cos(a) * rnd(w, 10, 46) * U, vy: 0, vz: Math.sin(a) * rnd(w, 10, 46) * U, t: 0, pulled: false };
+	w.pickups.push(p); return p;
 }
 /** A move's hit lands (the 2D game's `land`): type chart, crit, the all-moves factor. src: the move or the shot. */
 function land(w, e, dmg, kx, kz, knockU, src) {
 	const pl = w.pl, type = src.mtype || src.type;
 	const asleep = e.sleepT > 0 && src.cc !== 'sleep';
 	let k = type ? w.data.typeMult(type, e.types) : 1;
+	if (type) k *= wxMult(w, type);
 	if (asleep) k *= CK.SLEEP_BONUS;
 	if (type === 'electric' && e.paraT > 0) k *= CK.PARA_ELECTRIC;
 	const c = pl.crit + (src.xcrit || 0), crit = c > 0 && w.rand() < c;
@@ -117,8 +222,9 @@ function land(w, e, dmg, kx, kz, knockU, src) {
  *  30 % more and wakes when hit; frozen it takes 25 % more; paralysed it is at 40 % speed and takes 35 % more from
  *  Electric; confused it wanders into other enemies and hits them. */
 export function applyState(w, e, kind) {
-	const dur = CK.CC[kind];
-	if (!e || e.dead || !dur) return 0;
+	let dur = CK.CC[kind];
+	if (!e || e.dead || !dur || e.ccImm > 0) return 0;
+	if (e.boss) { dur *= CK.BOSS.cc[kind]; e.ccImm = dur + CK.BOSS.immune; }   // a boss shakes it off sooner, and cannot be caught again for 4 s
 	const stunned = e.frozenT > 0 || e.sleepT > 0;
 	if (stunned && (kind === 'conf' || kind === 'para')) return 0;
 	const key = kind === 'freeze' ? 'frozenT' : kind + 'T';
@@ -127,10 +233,11 @@ export function applyState(w, e, kind) {
 	if (kind === 'freeze') { e.sleepT = 0; e.confT = 0; } else if (kind === 'sleep') e.confT = 0;
 	return dur;
 }
-function hurtPlayer(w, amount, type) {
+function hurtPlayer(w, amount, type, through = false) {
 	const pl = w.pl;
+	if (through && pl.invuln < 1e8) pl.invuln = 0;   // (a telegraphed attack: the moment of grace after a hit does not save you)
 	if (pl.invuln > 0 || pl.dead) return 0;
-	if (type) amount *= w.data.typeMult(type, pl.mon.types);
+	if (type) amount *= w.data.typeMult(type, pl.mon.types) * wxMult(w, type);
 	amount *= pl.takenK;
 	const d = Math.max(1, amount * (1 - pl.reduction) * (pl.meleeT > 0 ? CK.MELEE_TAKEN : 1));
 	pl.hp -= d; pl.invuln = CK.INVULN; w.stats.taken += d;
@@ -299,7 +406,66 @@ const KINDS = {
 		w.fields.push(f); w.lastPatch = f;
 		const mine = w.fields.filter((o) => o.kind === 'patch' && !o.gone); for (const o of mine.slice(0, Math.max(0, mine.length - 18))) o.gone = true;
 	},
+	// ---- Expedition's kinds
+	weather(w, m) { if (m.wx) setWeather(w, m.wx, Math.round(m.dur || 14)); },
+	lob(w, m) {   // a bomb thrown in an arc at each of the nearest: it comes down OVER whatever is in the way
+		const pl = w.pl, s = pl.s, n = Math.max(1, m.count | 0), foes = nearestN(w, s.x, s.y, s.z, m.xreach * U, n), tg = pl.target;
+		for (let i = 0; i < n; i++) { const e = foes[i % Math.max(1, foes.length)] || tg;
+			const x = e ? e.a.x + (i >= foes.length ? rnd(w, -30, 30) * U : 0) : s.x + Math.cos(pl.aim) * 200 * U, z = e ? e.a.z : s.z + Math.sin(pl.aim) * 200 * U;
+			w.effects.push({ k: 'lob', id: w.nextId++, m, x0: s.x, y0: s.y + CK.MUZZLE, z0: s.z, x, y: e ? (e.fly ? e.a.y - e.a.hover : e.a.y) : floorAt(w, x, z), z, t: 0, dur: CK.EXP.lobDur + i * CK.EXP.lobStep, dmg: m.dmg * atk(pl), r: m.radius * U }); }
+	},
+	homing(w, m) { const n = Math.max(1, m.count | 0); for (let i = 0; i < n; i++) shoot(w, m, aimDir(w, w.pl.aim + (i - (n - 1) / 2) * 0.5), { size: m.size || 5, life: m.life || 1 }); w.events.push({ k: 'shot', id: m.id, n }); },
+	barrage(w, m) {   // one shot now, the rest a fourteenth of a second apart, each a little off
+		const n = Math.max(1, m.count | 0); shoot(w, m, aimDir(w, w.pl.aim), { size: m.size || 5, life: m.life || 1 });
+		for (let i = 1; i < n; i++) w.effects.push({ k: 'bar', id: w.nextId++, m, t: -i * CK.EXP.barStep });
+		w.events.push({ k: 'shot', id: m.id, n });
+	},
+	smite(w, m) {   // a strike from the sky on each of the nearest: no wall is in its way
+		const pl = w.pl, s = pl.s, foes = nearestN(w, s.x, s.y, s.z, m.xreach * U, Math.max(1, m.count | 0)); if (!foes.length && pl.target) foes.push(pl.target);
+		for (const e of foes) w.effects.push({ k: 'smite', id: w.nextId++, m, x: e.a.x, y: e.fly ? e.a.y - e.a.hover : e.a.y, z: e.a.z, t: 0, dur: CK.EXP.smiteDur, dmg: m.dmg * atk(pl), r: m.radius * U });
+	},
+	vortex(w, m) {   // a whirl on your target: it drags everyone near into it and grinds them
+		const pl = w.pl, s = pl.s, e = pl.target || nearestN(w, s.x, s.y, s.z, m.xreach * U, 1)[0];
+		const x = e ? e.a.x : s.x + Math.cos(pl.aim) * 160 * U, z = e ? e.a.z : s.z + Math.sin(pl.aim) * 160 * U;
+		w.effects.push({ k: 'vortex', id: w.nextId++, m, x, y: e ? (e.fly ? e.a.y - e.a.hover : e.a.y) : floorAt(w, x, z), z, t: 0, dur: m.dur || 2, tick: 0, dmg: m.dmg * atk(pl), r: m.radius * U });
+	},
+	wave(w, m) { const s = w.pl.s; w.effects.push({ k: 'wave', id: w.nextId++, m, x: s.x, y: s.y, z: s.z, r: w.pl.r, max: m.radius * U, speed: (m.speed || 360) * U, hit: new Set(), dmg: m.dmg * atk(w.pl) }); },
+	spin(w, m) {
+		const pl = w.pl, s = pl.s, R = m.radius * U, dmg = m.dmg * atk(pl);
+		for (const e of w.enemies) { if (e.dead || Math.abs(e.a.y - s.y) > CK.REACH_UP) continue; const dx = e.a.x - s.x, dz = e.a.z - s.z, rr = R + e.cr; if (dx * dx + dz * dz <= rr * rr) land(w, e, dmg, dx, dz, m.knock || 0, m); }
+		w.events.push({ k: 'aura', id: m.id, r: R });
+	},
 };
+/** The n living enemies nearest a point (in space), within r. */
+function nearestN(w, x, y, z, r, n) {
+	const out = []; for (const e of w.enemies) { if (e.dead) continue; const d = Math.hypot(e.a.x - x, e.a.y - y, e.a.z - z); if (d <= r + e.cr) out.push([d, e]); }
+	out.sort((a, b) => a[0] - b[0]); return out.slice(0, n).map((o) => o[1]);
+}
+/** Everything within a radius of a point on the ground, about its height: hit once. */
+function burst(w, f, knockU, dirX, dirZ, k = 1) {
+	for (const e of w.enemies) { if (e.dead || Math.abs((e.fly ? e.a.y - e.a.hover : e.a.y) - f.y) > CK.REACH_UP) continue; const dx = e.a.x - f.x, dz = e.a.z - f.z, rr = f.r + e.cr; if (dx * dx + dz * dz <= rr * rr) land(w, e, f.dmg * k, dirX === undefined ? dx : dirX, dirZ === undefined ? dz : dirZ, knockU, f.m); }
+}
+/** Expedition's timed effects: bombs in the air, a barrage's later shots, strikes about to fall, whirls, waves. */
+function updateEffects(w, dt) {
+	const pl = w.pl, X = CK.EXP;
+	for (let i = w.effects.length - 1; i >= 0; i--) {
+		const f = w.effects[i], m = f.m; f.t += dt;
+		if (f.k === 'lob') { if (f.t < f.dur) continue; burst(w, f, X.lobKnock); w.events.push({ k: 'blast', id: m.id, x: f.x, y: f.y, z: f.z, r: f.r }); w.effects.splice(i, 1); }
+		else if (f.k === 'bar') { if (f.t < 0) continue; shoot(w, m, aimDir(w, pl.aim + rnd(w, -1, 1) * (m.spread || 0.06)), { size: m.size || 5, life: m.life || 1 }); w.effects.splice(i, 1); }
+		else if (f.k === 'smite') { if (f.t < f.dur) continue; burst(w, f, X.smiteKnock, 0, 1); w.events.push({ k: 'smite', id: m.id, x: f.x, y: f.y, z: f.z, r: f.r }); w.effects.splice(i, 1); }
+		else if (f.k === 'vortex') {
+			f.tick += dt;
+			for (const e of w.enemies) { if (e.dead || e.boss || Math.abs((e.fly ? e.a.y - e.a.hover : e.a.y) - f.y) > CK.REACH_UP) continue; const dx = f.x - e.a.x, dz = f.z - e.a.z, d = Math.hypot(dx, dz); if (d > f.r * X.pullR + e.cr || d < 1e-6) continue; moveActor(e.a, w.room, dx / d * X.pull * U * dt, dz / d * X.pull * U * dt); }
+			if (f.tick >= X.vortexTick) { f.tick -= X.vortexTick; burst(w, f, 0, undefined, undefined, X.vortexTick / (f.dur || 2)); }
+			if (f.t >= f.dur) w.effects.splice(i, 1);
+		} else if (f.k === 'wave') {
+			f.r += f.speed * dt;
+			for (const e of w.enemies) { if (e.dead || f.hit.has(e.id) || Math.abs(e.a.y - f.y) > CK.REACH_UP) continue; const dx = e.a.x - f.x, dz = e.a.z - f.z, d = Math.hypot(dx, dz); if (d > f.r + e.cr || d < f.r - X.waveBand * U) continue; f.hit.add(e.id); land(w, e, f.dmg, dx, dz, X.waveKnock, m); }
+			if (f.r >= f.max) w.effects.splice(i, 1);
+		}
+	}
+}
+const KINDS_END = 0;
 /** Mines wait and go off, meteors land, turrets shoot, patches tick. */
 function updateFields(w, dt) {
 	for (let i = w.fields.length - 1; i >= 0; i--) {
@@ -341,7 +507,7 @@ function fireMoves(w, dt) {
 		if (m.t > 0) continue;
 		const run = KINDS[m.kind];
 		if (!run) { m.t = 1; continue; }   // (a kind this module does not know: Expedition's eight are still to come)
-		if (TARGETED.includes(m.kind) && !(pl.target && dist3(s, pl.target.a) <= reach(m) * U)) { m.t = 0.05; continue; }
+		if ((TARGETED.includes(m.kind) || m.xtarget) && !(pl.target && dist3(s, pl.target.a) <= reach(m) * U)) { m.t = 0.05; continue; }
 		m.t = Math.max(0.05, m.cd * pl.cdMul);
 		run(w, m);
 	}
@@ -413,7 +579,7 @@ function resolve(w) {
 		if (e.dead || e.dummy || e.touchCd > 0 || e.frozenT > 0 || e.sleepT > 0 || e.confT > 0) continue;
 		const dx = e.a.x - s.x, dz = e.a.z - s.z, rr = e.cr + pl.r;
 		if (dx * dx + dz * dz > rr * rr) continue;
-		if (Math.abs((e.fly ? e.a.y - CK.FLY_HOVER : e.a.y) - s.y) > CK.TOUCH_UP) continue;   // (jump over it; it is on the ledge above; …)
+		if (Math.abs((e.fly ? e.a.y - e.a.hover : e.a.y) - s.y) > CK.TOUCH_UP) continue;   // (jump over it; it is on the ledge above; …)
 		e.touchCd = CK.TOUCH_CD; w.stats.touched++;
 		hurtPlayer(w, e.dmg, e.atkType);
 		const l = Math.hypot(dx, dz) || 1; knock(e.a, dx / l * CK.TOUCH_KNOCK * U, dz / l * CK.TOUCH_KNOCK * U);
@@ -422,6 +588,157 @@ function resolve(w) {
 
 // ---------------------------------------------------------------- enemies
 const WISH = [0, 0];
+const shotDmg = (e) => (e.def.shotDmg || 10) * (e.dmg / e.def.dmg);
+/** An enemy's shot (or a fan of them): a ball aimed at your chest, up or down. */
+function enemyShoot(w, e, spread = 0, n = 1, k = 1) {
+	const s = w.pl.s, oy = e.a.y + CK.MUZZLE, dx = s.x - e.a.x, dz = s.z - e.a.z, h = Math.hypot(dx, dz) || 1, pitch = Math.atan2(s.y + CK.MUZZLE - oy, h), base = Math.atan2(dz, dx), sp = CK.ESHOT.speed * U, c = Math.cos(pitch);
+	for (let i = 0; i < n; i++) { const a = base + (n === 1 ? 0 : (i / (n - 1) - 0.5) * spread);
+		w.eshots.push({ id: w.nextId++, x: e.a.x, y: oy, z: e.a.z, vx: Math.cos(a) * c * sp, vy: Math.sin(pitch) * sp, vz: Math.sin(a) * c * sp, dmg: shotDmg(e) * k, r: CK.ESHOT.r * U, life: CK.ESHOT.life, t: 0, mtype: e.atkType }); }
+	w.events.push({ k: 'eshot', id: e.id, n });
+}
+/** A telegraphed attack: a mark on the ground that goes off after `delay`. kind 'zone' (a circle) or 'beam' (a bar). */
+function hazard(w, h) { const o = Object.assign({ id: w.nextId++, t: 0, hit: false }, h); w.hazards.push(o); w.events.push({ k: 'hazard', h: o }); return o; }
+function special(w, e) {
+	const s = w.pl.s, d = e.def;
+	if (e.behavior === 'fan') { const n = d.fanN || 5; enemyShoot(w, e, n === 3 ? 0.6 : 0.9, n, 0.65); }
+	else if (e.behavior === 'beamer') hazard(w, { kind: 'beam', x: e.a.x, y: e.a.y, z: e.a.z, angle: Math.atan2(s.z - e.a.z, s.x - e.a.x), len: CK.EBEAM.len * U, w: CK.EBEAM.w * U, delay: CK.EBEAM.delay, dmg: shotDmg(e) * CK.EBEAM.dmg, type: e.atkType });
+	else if (e.behavior === 'zoner') { const n = Math.floor(1 + w.rand() * (d.zones || 3));
+		for (let i = 0; i < n; i++) { const x = s.x + (i ? rnd(w, -70, 70) * U : 0), z = s.z + (i ? rnd(w, -55, 55) * U : 0); hazard(w, { kind: 'zone', x, z, y: i ? groundAt(w.room, x, z) : s.grounded ? s.y : groundAt(w.room, x, z), r: CK.EZONE.r * U, delay: CK.EZONE.delay, dmg: shotDmg(e) * CK.EZONE.dmg, type: e.atkType }); } }
+	else if (e.behavior === 'healer') {   // 7 % of each hurt neighbour's HP (more against a strong attacker, less when there are many healers)
+		const H = CK.HEAL, pl = w.pl, pow = Math.max(1, atk(pl) / pl.baseAtk); let k = H.k * Math.min(H.powMax, Math.pow(pow, H.powExp)), healers = 0, n = 0;
+		for (const o of w.enemies) if (!o.dead && o.behavior === 'healer') healers++;
+		if (healers > H.many) k *= H.manyK;
+		for (const o of w.enemies) { if (o.dead || o.hp >= o.maxHp || Math.hypot(o.a.x - e.a.x, o.a.z - e.a.z) > H.r * U + o.cr) continue; o.hp = Math.min(o.maxHp, o.hp + o.maxHp * k); n++; }
+		w.events.push({ k: 'heal', id: e.id, x: e.a.x, y: e.a.y, z: e.a.z, r: H.r * U, n });
+	}
+	else if (e.behavior === 'summoner') {   // four of its kind at a time: at most 8 of its own alive, 20 on the map
+		const M = CK.SUMMON; e.minions = e.minions.filter((m) => !m.dead);
+		let total = 0; for (const o of w.enemies) if (o.minion && !o.dead) total++;
+		if (e.minions.length >= M.perSummoner || total >= M.total || w.enemies.length > w.cap + M.capPad) return;
+		const dex = d.minion || e.dex, def = { dex, name: '', hp: Math.round(d.hp * M.hp), spd: Math.round(d.spd * M.spd), dmg: Math.round(d.dmg * M.dmg), xp: Math.max(1, Math.round(d.xp * M.xp)), behavior: 'chase' };
+		for (let i = 0, n = Math.min(M.perCast, M.total - total); i < n; i++) {
+			const a = w.rand() * 6.2832; let x = e.a.x + Math.cos(a) * 30 * U, z = e.a.z + Math.sin(a) * 22 * U;
+			if (groundAt(w.room, x, z) > e.a.y + K.STEP) { x = e.a.x; z = e.a.z; }   // (not inside a wall: beside its summoner then)
+			const m = addEnemy(w, dex, x, z, { def, t: e.t0, ti: e.ti, minion: true, behavior: 'chase' }); e.minions.push(m);
+		}
+		w.events.push({ k: 'summon', id: e.id, x: e.a.x, y: e.a.y, z: e.a.z });
+	}
+	else enemyShoot(w, e);
+}
+/** What an enemy that is free to act does this tick: where it wants to go (WISH) and at what speed factor. */
+function behave(w, e, dt) {
+	const pl = w.pl, s = pl.s, dx = s.x - e.a.x, dz = s.z - e.a.z, dist = Math.hypot(dx, dz) || 1e-9, ux = dx / dist, uz = dz / dist, level = Math.abs(s.y - e.a.y) <= CK.REACH_UP || e.fly;
+	steer(w.room, w.field, e.a, WISH);
+	const b = e.behavior;
+	if (b === 'shielder' || b === 'jumper') {
+		e.skillCd -= dt;
+		if (e.skillCd <= 0) {
+			if (b === 'shielder') {   // a shield of 30 % of their HP for the nearest five (itself among them) for 7 s; none again for 14 s
+				const S = CK.SHIELD; e.skillCd = S.cd;
+				const nearby = w.enemies.filter((o) => !o.dead && Math.hypot(o.a.x - e.a.x, o.a.z - e.a.z) <= S.r * U + o.cr).sort((p, q) => Math.hypot(p.a.x - e.a.x, p.a.z - e.a.z) - Math.hypot(q.a.x - e.a.x, q.a.z - e.a.z));
+				let given = 0; for (const o of nearby) { if (given >= S.max) break; if (o.shield > 0 || o.shieldLock > 0) continue; o.shield = o.maxHp * S.k; o.shieldT = S.t; o.shieldLock = S.lock; given++; }
+				w.events.push({ k: 'shield', id: e.id, x: e.a.x, y: e.a.y, z: e.a.z, r: S.r * U, n: given });
+			} else if (dist < CK.LEAP.near * U) {   // a leap: it crouches, flies in an arc and lands where you WERE (the spot is marked)
+				const L = CK.LEAP, ty = s.grounded ? s.y : groundAt(w.room, s.x, s.z); e.skillCd = rnd(w, 5, 7);
+				e.jump = { sx: e.a.x, sy: e.a.y, sz: e.a.z, tx: s.x, ty, tz: s.z, t: -L.wait };
+				hazard(w, { kind: 'zone', x: s.x, y: ty, z: s.z, r: L.r * U, delay: L.delay, dmg: e.dmg * L.dmg, type: e.atkType });
+				w.events.push({ k: 'leap', id: e.id });
+			} else e.skillCd = 0.5;
+		}
+		return 1;
+	}
+	if (b === 'runner') {   // it goes where you are GOING
+		const lead = Math.max(0, Math.min(1.4, dist / Math.max(60 * U, e.a.speed))), tx = s.x + s.vx * lead, tz = s.z + s.vz * lead;
+		if (e.fly || clearRun(w.room, e.a.x, e.a.z, e.a.y, tx, tz)) { const l = Math.hypot(tx - e.a.x, tz - e.a.z) || 1; WISH[0] = (tx - e.a.x) / l; WISH[1] = (tz - e.a.z) / l; }
+		return 1;
+	}
+	if (b === 'bomber') {
+		if (e.phase === 'fuse') { WISH[0] = WISH[1] = 0; e.pt -= dt; e.flash = Math.floor(e.pt * 10) % 2 ? 0.05 : 0; if (e.pt <= 0) { e.hp = 0; kill(w, e); } return 1; }
+		if (dist < e.cr + pl.r + CK.FUSE.reach * U && level) { e.phase = 'fuse'; e.pt = CK.FUSE.delay; WISH[0] = WISH[1] = 0; hazard(w, { kind: 'zone', x: e.a.x, y: e.a.y, z: e.a.z, r: CK.FUSE.r * U, delay: CK.FUSE.delay, dmg: e.dmg * CK.FUSE.dmg, type: e.atkType }); }
+		return 1;
+	}
+	if (b === 'charger') {   // it stops, takes aim, and comes straight through where you were
+		e.pt -= dt;
+		if (e.phase === 'walk') { if (dist < CK.CHARGE.near * U && e.pt <= 0 && level) { e.phase = 'aim'; e.pt = CK.CHARGE.aim; w.events.push({ k: 'aim', id: e.id }); } return 1; }
+		if (e.phase === 'aim') { WISH[0] = WISH[1] = 0; if (e.pt <= 0) { e.phase = 'dash'; e.pt = CK.CHARGE.dash; e.dx = ux; e.dz = uz; } return 1; }
+		WISH[0] = e.dx; WISH[1] = e.dz; if (e.pt <= 0) { e.phase = 'walk'; e.pt = CK.CHARGE.rest; }
+		return CK.CHARGE.speed;
+	}
+	if (KEEPS.includes(b)) {
+		const range = (e.def.range || 200) * U, keep = range * 0.82;
+		// (3D: it must SEE you to hold its ground and attack; with a wall between you it comes round like anyone else)
+		const sees = dist < range && clearLine(w.room, e.a.x, e.a.y + CK.MUZZLE, e.a.z, s.x, s.y + CK.MUZZLE, s.z);
+		e.shotCd -= dt * (e.paraT > 0 ? CK.PARA_SLOW : 1);
+		if (SUPPORT.includes(b) && e.shotCd <= 0 && dist < range) { e.shotCd = e.def.shotCd || 2; special(w, e); }
+		if (!sees) return 1;
+		let k = 1;
+		if (dist < keep * 0.75) { WISH[0] = -ux; WISH[1] = -uz; k = 0.8; } else if (dist < keep) { WISH[0] = ux; WISH[1] = uz; k = 0.1; }
+		if (e.shotCd <= 0) { e.shotCd = e.def.shotCd || 2; special(w, e); }
+		return k;
+	}
+	return 1;
+}
+/** A boss's turn. It alternates between coming for you and fighting from a distance (longer in the one it likes),
+ *  and every 1.3-2 s starts one of its attacks. -> the speed factor for this tick (the way is in WISH). */
+function bossMove(w, e, dt) {
+	const pl = w.pl, s = pl.s, ai = e.ai, B = CK.BOSS, sp = e.a.speed || 1e-9;
+	const dx = s.x - e.a.x, dz = s.z - e.a.z, dist = (Math.hypot(dx, dz) || 1e-9), ux = dx / dist, uz = dz / dist, du = dist / U, gy = (x, z) => groundAt(w.room, x, z);
+	if (!ai.fury && e.hp < e.maxHp * 0.5) { ai.fury = true; e.a.speed *= B.furySpd; w.events.push({ k: 'enrage', id: e.id }); }
+	const k = ai.fury ? B.fury : 1, f = ai.fury ? B.furyWind : 1, type = e.atkType;
+	const end = () => { ai.cast = null; ai.cd = rnd(w, 1.3, 2.0); if (ai.fury && w.rand() < B.chain) ai.cd = 0.3; WISH[0] = WISH[1] = 0; return 0; };
+	if (ai.cast) {   // in the middle of an attack
+		const c = ai.cast; c.t += dt; WISH[0] = WISH[1] = 0;
+		if (c.id === 'dash' && c.t >= c.wind) { if (c.t >= c.wind + c.dur) return end(); WISH[0] = Math.cos(c.ang); WISH[1] = Math.sin(c.ang); return (c.len * U / c.dur) / sp; }
+		if (c.t >= c.wind && !c.fired) { c.fired = true; if (c.id === 'volley') enemyShoot(w, e, 1.1, ai.fury ? 9 : 7, 0.8); else if (c.id === 'nova') { const n = ai.fury ? 18 : 14; enemyShoot(w, e, 6.2832 * (n - 1) / n, n, 0.7); } }
+		if (c.t >= c.wind + c.after) return end();
+		return 0;
+	}
+	ai.modeT -= dt; ai.cd -= dt * k;
+	if (ai.modeT <= 0) { ai.mode = ai.mode === 'far' ? 'close' : 'far'; ai.modeT = (ai.mode === 'far') === (ai.farLike > 0.5) ? rnd(w, 7, 9) : rnd(w, 4, 5); ai.side = -ai.side; }
+	let vx = ux * k * 1.1, vz = uz * k * 1.1;   // (in units of its own speed)
+	if (ai.mode === 'far') { if (du < 170) { vx = -ux; vz = -uz; } else if (du < 300) { vx = -uz * 0.55 * ai.side; vz = ux * 0.55 * ai.side; } }   // it backs off, or circles you
+	if (ai.cd <= 0) {
+		const pick = (arr) => arr[Math.floor(w.rand() * arr.length)]; let id = null;
+		if (ai.mode === 'close') { const ok = ai.melee.filter((m) => (m === 'slam' ? du < 125 : du < 320)); id = ok.length && w.rand() < 0.8 ? pick(ok) : du < 480 ? pick(ai.ranged) : null; }
+		else id = du < 115 ? 'slam' : du < 430 ? pick(ai.ranged) : null;
+		if (id) {
+			const ang = Math.atan2(dz, dx), c = ai.cast = { id, t: 0, wind: 0.6 * f, after: 0.35, ang }, ey = gy(e.a.x, e.a.z), py = s.grounded ? s.y : gy(s.x, s.z);
+			w.events.push({ k: 'bosscast', id: e.id, attack: id });
+			if (id === 'slam') { c.wind = 0.85 * f; hazard(w, { kind: 'zone', x: e.a.x, y: ey, z: e.a.z, r: 96 * U + e.cr, delay: c.wind, dmg: e.dmg * 1.3, type }); }
+			else if (id === 'dash') { c.wind = 0.75 * f; c.len = 330; c.dur = 0.32; hazard(w, { kind: 'beam', x: e.a.x, y: ey, z: e.a.z, angle: ang, len: c.len * U + e.cr, w: e.cr * 2 + 16 * U, delay: c.wind + c.dur, dmg: e.dmg * 1.2, type }); }
+			else if (id === 'leap') { e.jump = { sx: e.a.x, sy: e.a.y, sz: e.a.z, tx: s.x, ty: py + e.a.hover, tz: s.z, t: -0.5 * f, dur: 0.65 }; hazard(w, { kind: 'zone', x: s.x, y: py, z: s.z, r: 82 * U, delay: 0.5 * f + 0.65, dmg: e.dmg * 1.25, type }); ai.cast = null; ai.cd = rnd(w, 1.4, 2) + 0.6; }
+			else if (id === 'rain') { const n = ai.fury ? 6 : 4; for (let i = 0; i < n; i++) { const a = i ? w.rand() * 6.2832 : 0, dd = i ? rnd(w, 40, 120) * U : 0, x = s.x + Math.cos(a) * dd, z = s.z + Math.sin(a) * dd * 0.8; hazard(w, { kind: 'zone', x, y: i ? gy(x, z) : py, z, r: 50 * U, delay: 1.05 + i * 0.12, dmg: shotDmg(e) * 1.15, type }); } c.wind = 0.5; }
+			else if (id === 'beam') { const n = ai.fury ? 5 : 3, spread = ai.fury ? 0.42 : 0.5; for (let i = 0; i < n; i++) hazard(w, { kind: 'beam', x: e.a.x, y: ey, z: e.a.z, angle: ang + (i - (n - 1) / 2) * spread, len: 400 * U, w: 26 * U, delay: 1.0, dmg: shotDmg(e) * 1.2, type }); c.wind = 1.0; c.after = 0.25; }
+			else c.wind = (id === 'nova' ? 0.7 : 0.5) * f;   // volley / nova: the shots leave at the end of the wind-up
+		}
+	}
+	const l = Math.hypot(vx, vz) || 1e-9; WISH[0] = vx / l; WISH[1] = vz / l;
+	return l;
+}
+/** Enemy shots fly and hit; marks on the ground go off. */
+function enemyAttacks(w, dt) {
+	const pl = w.pl, s = pl.s, high = Math.max(CK.BODY_MIN, pl.r * 2);
+	for (let i = w.eshots.length - 1; i >= 0; i--) {
+		const p = w.eshots[i];
+		p.t += dt; if (p.t >= p.life) { w.eshots.splice(i, 1); continue; }
+		p.x += p.vx * dt; p.y += p.vy * dt; p.z += p.vz * dt;
+		if (groundAt(w.room, p.x, p.z) > p.y) { w.eshots.splice(i, 1); continue; }   // cover: terrain stops it
+		const dx = p.x - s.x, dz = p.z - s.z, rr = p.r + pl.r;
+		if (dx * dx + dz * dz < rr * rr && p.y > s.y - p.r && p.y < s.y + high + p.r) { if (!pl.dead) hurtPlayer(w, p.dmg, p.mtype); w.eshots.splice(i, 1); }   // (it is spent even if it did not hurt)
+	}
+	for (let i = w.hazards.length - 1; i >= 0; i--) {
+		const h = w.hazards[i];
+		h.t += dt;
+		if (!h.hit && h.t >= h.delay) {
+			h.hit = true; w.events.push({ k: 'boom', h });
+			let inside = !pl.dead && Math.abs(s.y - h.y) <= CK.REACH_UP;   // (3D: a mark on the ground reaches about a metre up: jump clear of it)
+			if (inside && h.kind === 'zone') { const rr = h.r + pl.r * 0.6; inside = (s.x - h.x) ** 2 + (s.z - h.z) ** 2 < rr * rr; }
+			else if (inside) { const ca = Math.cos(h.angle), sa = Math.sin(h.angle), px = s.x - h.x, pz = s.z - h.z, along = px * ca + pz * sa; inside = along >= -pl.r && along <= h.len + pl.r && Math.abs(-px * sa + pz * ca) <= h.w / 2 + pl.r * 0.6; }
+			if (inside) hurtPlayer(w, h.dmg, h.type, true);
+		}
+		if (h.hit && h.t >= h.delay + CK.HAZARD_END) w.hazards.splice(i, 1);
+	}
+}
 /** A confused enemy: it weaves toward the nearest other enemy and hits it (1.8 × its damage + 3 % of the other's HP). */
 function confused(w, e, dt) {
 	let tgt = null, best = CK.CONF_REACH * U;
@@ -446,16 +763,26 @@ function updateEnemies(w, dt) {
 		if (e.dead) continue;
 		if (e.flash > 0) e.flash -= dt;
 		if (e.touchCd > 0) e.touchCd -= dt * (e.paraT > 0 ? CK.PARA_SLOW : 1);
+		if (e.shieldLock > 0) e.shieldLock -= dt;
+		if (e.ccImm > 0) e.ccImm -= dt;
+		if (e.shieldT > 0 && (e.shieldT -= dt) <= 0) e.shield = 0;
 		if (e.frozenT > 0) e.frozenT = Math.max(0, e.frozenT - dt); if (e.sleepT > 0) e.sleepT = Math.max(0, e.sleepT - dt);
 		if (e.paraT > 0) e.paraT = Math.max(0, e.paraT - dt); if (e.confT > 0) e.confT = Math.max(0, e.confT - dt); if (e.confCd > 0) e.confCd -= dt;
 		if (e.slowT > 0) { e.slowT -= dt; if (e.slowT <= 0) e.slow = 0; }
 		if (e.burn > 0) { e.burnT -= dt; e.burnTick -= dt; if (e.burnTick <= 0) { e.burnTick = 0.5; hurtEnemy(w, e, 1.6 * e.burn * (1 + pl.level * 0.06), 0, 0, 0); } if (e.burnT <= 0) e.burn = 0; }
 		if (e.poison > 0) { e.poisonT -= dt; e.poisonTick -= dt; if (e.poisonTick <= 0) { e.poisonTick = 0.6; hurtEnemy(w, e, e.maxHp * 0.012 * e.poison + 1, 0, 0, 0); } if (e.poisonT <= 0) e.poison = 0; }
 		if (e.dead) continue;
-		let k = 1 - e.slow;
+		if (e.jump) {   // in a leap nothing else happens to it: it is carried along its arc and lands
+			const j = e.jump, L = CK.LEAP; j.t += dt;
+			if (j.t >= 0) { const f = Math.min(1, j.t / (j.dur || L.dur)); e.a.x = j.sx + (j.tx - j.sx) * f; e.a.z = j.sz + (j.tz - j.sz) * f; e.a.y = j.sy + (j.ty - j.sy) * f + Math.sin(f * Math.PI) * L.high * U; e.a.grounded = false; e.a.facing = Math.atan2(j.tx - j.sx, j.tz - j.sz);
+				if (f >= 1) { e.jump = null; const g = groundAt(w.room, e.a.x, e.a.z); e.a.y = e.fly ? g + e.a.hover : g; e.a.grounded = !e.fly; e.a.vy = 0; } }
+			continue;
+		}
+		let k = (1 - e.slow) * wxSpeed(w, e.types);
 		if (e.dummy || e.frozenT > 0 || e.sleepT > 0) WISH[0] = WISH[1] = 0;   // (only a shove moves it)
 		else if (e.confT > 0) { k *= 0.9; confused(w, e, dt); }
-		else { steer(w.room, w.field, e.a, WISH); if (e.paraT > 0) k *= CK.PARA_SLOW; }
+		else if (e.boss) { k *= bossMove(w, e, dt) * (e.paraT > 0 ? CK.PARA_SLOW : 1); if (e.jump) continue; }
+		else { k *= behave(w, e, dt); if (e.dead) continue; if (e.paraT > 0) k *= CK.PARA_SLOW; }
 		stepActor(e.a, w.room, WISH[0], WISH[1], dt, k);
 		if (e.a.fell > 1) { w.stats.fell++; w.events.push({ k: 'fell', id: e.id, h: e.a.fell }); }
 		if (e.a.gone) { e.dead = true; }
@@ -479,9 +806,16 @@ function updateEnemies(w, dt) {
 // ---------------------------------------------------------------- arrivals
 const spawnRate = (t) => (1.6 + t * 0.028 + Math.pow(t / 60, 1.6) * 0.5) * CK.DENSITY;
 function spawnTick(w, dt) {
+	// a boss at each of the 2D game's times, from the fight's own list
+	while (w.bosses && w.bossIdx < Math.min(w.bosses.length, w.data.bossSlots.length) && w.t >= w.data.bossSlots[w.bossIdx].at) {
+		const s = w.pl.s, room = w.room; let x = s.x, z = s.z;
+		for (let k = 0; k < 20; k++) { const a = w.rand() * 6.2832, d = rnd(w, CK.SPAWN_MIN, CK.SPAWN_MAX), tx = s.x + Math.cos(a) * d, tz = s.z + Math.sin(a) * d, cx = Math.floor(tx / CELL), cz = Math.floor(tz / CELL);
+			if (cx < 1 || cz < 1 || cx >= room.w - 1 || cz >= room.h - 1 || room.cells[cz * room.w + cx] >= (room.rimH || 8)) continue; x = tx; z = tz; break; }
+		addBoss(w, w.bosses[w.bossIdx], x, z, { slot: w.bossIdx }); w.bossIdx++;
+	}
 	if (!w.cast || !w.cast.length) return;
 	if (w.enemies.length >= w.cap) return;
-	w.spawnAcc = Math.min(8, w.spawnAcc + spawnRate(w.t) * dt);
+	w.spawnAcc = Math.min(8, w.spawnAcc + spawnRate(w.t) * (w.enemies.some((e) => e.boss && !e.dead) ? 0.25 : 1) * dt);
 	while (w.spawnAcc >= 1 && w.enemies.length < w.cap) {
 		w.spawnAcc -= 1;
 		const dex = w.cast[Math.floor(w.rand() * w.cast.length)], fly = !!w.data.hovers(dex), s = w.pl.s, room = w.room;
@@ -498,18 +832,90 @@ function spawnTick(w, dt) {
 	}
 }
 
+// ---------------------------------------------------------------- experience and level-ups
+function gainXp(w, amount) {
+	const pl = w.pl; pl.xp += amount * pl.xpMul; w.stats.gained += amount * pl.xpMul;
+	while (pl.xp >= pl.xpNext) { pl.xp -= pl.xpNext; pl.level++; pl.xpNext = xpFor(pl.level); pl.pending++; w.stats.levels++; w.events.push({ k: 'level', level: pl.level }); }
+}
+/** Pickups: inside your reach (or once a magnet has called them) they fly to you, in space; touched, they are yours. */
+function updatePickups(w, dt) {
+	const pl = w.pl, s = pl.s, cy = s.y + 0.5;
+	for (let i = w.pickups.length - 1; i >= 0; i--) {
+		const p = w.pickups[i]; p.t += dt * 4;
+		const dx = s.x - p.x, dy = cy - p.y, dz = s.z - p.z, d = Math.hypot(dx, dy, dz) || 1e-6;
+		if (p.pulled || d < pl.magnet) {
+			p.pulled = true;
+			const pull = (CK.PULL[0] + CK.PULL[1] / (d / U)) * U, f = Math.exp(-7 * dt);
+			p.vx = dx / d * pull + (p.vx - dx / d * pull) * f; p.vy = dy / d * pull + (p.vy - dy / d * pull) * f; p.vz = dz / d * pull + (p.vz - dz / d * pull) * f;
+		} else { const f = Math.pow(0.02, dt); p.vx *= f; p.vz *= f; p.vy = 0; }
+		p.x += p.vx * dt; p.y += p.vy * dt; p.z += p.vz * dt;
+		if (!p.pulled) { const g = groundAt(w.room, p.x, p.z); if (g > p.y + K.STEP) { p.x -= p.vx * dt; p.z -= p.vz * dt; p.vx = p.vz = 0; } else p.y = g; }   // it rolls on the floor, and stops at a wall
+		if (d < CK.COLLECT * U) { w.pickups.splice(i, 1); collect(w, p); }
+	}
+}
+function collect(w, p) {
+	const pl = w.pl, s = pl.s; w.stats.collected++;
+	w.events.push({ k: 'pickup', kind: p.kind, value: p.value });
+	if (p.kind === 'xp' || p.kind === 'xpBig') gainXp(w, p.value);
+	else if (p.kind === 'heal') pl.hp = Math.min(pl.maxHp, pl.hp + pl.maxHp * CK.HEAL_ORB);
+	else if (p.kind === 'magnet') for (const o of w.pickups) o.pulled = true;
+	else if (p.kind === 'bomb') { const B = CK.BOMB; for (const e of [...w.enemies]) { if (e.dead || Math.hypot(e.a.x - s.x, e.a.y - s.y, e.a.z - s.z) > B.r * U) continue; hurtEnemy(w, e, B.base + pl.level * B.level, e.a.x - s.x, e.a.z - s.z, B.knock); } w.events.push({ k: 'bomb', x: s.x, y: s.y, z: s.z, r: B.r * U }); }
+}
+/** The permanent upgrades a level can offer (the 2D game's; `max`: how many times each can be taken). */
+export const STATS = [
+	{ id: 'hp', title: 'Vigor', desc: '+20 max HP (and heals it).', apply: (pl) => { pl.maxHp += 20; pl.hp += 20; } },
+	{ id: 'atk', title: 'Power', desc: '+10% damage with every move.', max: 40, apply: (pl) => { pl.atkMul *= 1.10; } },
+	{ id: 'spd', title: 'Sprint', desc: '+7% movement speed.', max: 8, apply: (pl) => { pl.spdMul *= 1.07; } },
+	{ id: 'cd', title: 'Reflexes', desc: '-8% cooldown on every move.', max: 10, apply: (pl) => { pl.cdMul *= 0.92; } },
+	{ id: 'def', title: 'Armour', desc: '+6% damage reduction.', max: 12, apply: (pl) => { pl.baseReduce = Math.min(0.7, pl.baseReduce + 0.06); } },
+	{ id: 'rgn', title: 'Synthesis', desc: '+0.9 HP regenerated a second.', apply: (pl) => { pl.baseRegen += 0.9; } },
+	{ id: 'mag', title: 'Magnet', desc: '+30% pickup radius.', max: 6, apply: (pl) => { pl.magnet *= 1.30; } },
+	{ id: 'xp', title: 'Learning', desc: '+12% experience gained.', max: 8, apply: (pl) => { pl.xpMul *= 1.12; } },
+	{ id: 'heal', title: 'Sitrus Berry', desc: 'Restores 45% of your HP now.', apply: (pl) => { pl.hp = Math.min(pl.maxHp, pl.hp + pl.maxHp * 0.45); } },
+];
+/** Three different cards for a level-up, drawn by weight from: a new move (while you have a free slot of the four), the
+ *  next level of a move you have, a permanent upgrade. (Move evolutions and the Calibre card are still to come.) */
+export function offer(w, n = 3) {
+	const pl = w.pl, d = w.data, pool = [];
+	const pickN = (arr, k) => { const c = arr.slice(), out = []; while (out.length < k && c.length) out.push(c.splice(Math.floor(w.rand() * c.length), 1)[0]); return out; };
+	const free = pl.moves.length < CK.MAX_MOVES;
+	if (free) {
+		const buffs = pl.moves.filter((m) => m.kind === 'buff').length;   // (two buffs at most: they do no damage)
+		const ids = d.poolFor(pl.mon).filter((id) => !pl.moves.some((m) => m.id === id) && !(buffs >= 2 && d.moveDef(id).kind === 'buff') && (KINDS[d.moveDef(id).kind] || d.moveDef(id).kind === 'orbit'));
+		for (const id of pickN(ids, 6)) { const md = d.moveDef(id); pool.push({ w: 10, type: 'new', key: 'new:' + id, id, title: id, tag: md.type + ' · ' + md.kind, mtype: md.type, apply: () => { pl.moves.push(d.move(id)); } }); }
+	}
+	for (const m of pl.moves) { const txt = d.nextUp(m); if (txt) pool.push({ w: 8, type: 'up', key: 'up:' + m.id, id: m.id, title: m.id, tag: 'Lv ' + m.lvl + ' > ' + (m.lvl + 1), desc: txt, mtype: m.type, apply: () => { d.levelUp(m); } }); }
+	for (const st of pickN(STATS.filter((q) => !q.max || (pl.statsTaken[q.id] || 0) < q.max), 5)) pool.push({ w: free ? 4 : 7, type: 'stat', key: 'stat:' + st.id, id: st.id, title: st.title, tag: 'Upgrade', desc: st.desc, apply: () => { st.apply(pl); pl.statsTaken[st.id] = (pl.statsTaken[st.id] || 0) + 1; } });
+	const picked = [];
+	while (picked.length < n && pool.length) { const total = pool.reduce((a, c) => a + c.w, 0); let r = w.rand() * total, idx = 0; for (let i = 0; i < pool.length; i++) { r -= pool[i].w; if (r <= 0) { idx = i; break; } } picked.push(pool.splice(idx, 1)[0]); }
+	return picked;
+}
+/** Take one of the cards on offer (pl.choices). The fight goes on when no level-up is left waiting. */
+export function choose(w, i) {
+	const pl = w.pl, c = pl.choices && pl.choices[i];
+	if (!c) return false;
+	c.apply(); pl.choices = null; pl.pending--; w.events.push({ k: 'chose', key: c.key });
+	return true;
+}
+
 // ---------------------------------------------------------------- one tick
 /** Advance the fight one tick. input: sim.js's ({ mx, mz, jump, crouch }). The order is the 2D game's: you, arrivals,
  *  enemies, your moves, shots, hits and touches. */
 export function tick(w, input, dt = K.TICK) {
 	const pl = w.pl, s = pl.s;
 	w.events.length = 0;
+	// a level-up: the fight waits for a card to be chosen (or takes one at once, if it was told how)
+	while (pl.pending > 0 && !pl.dead) {
+		if (!pl.choices) { pl.choices = offer(w); if (!pl.choices.length) { pl.choices = null; pl.pending--; continue; } w.events.push({ k: 'levelup', level: pl.level }); }
+		if (w.autoPick === undefined || w.autoPick === null) return w;
+		choose(w, Math.min(pl.choices.length - 1, typeof w.autoPick === 'function' ? w.autoPick(w, pl.choices) | 0 : w.autoPick | 0));
+	}
 	w.t += dt; w.tick++;
 	if (!pl.dead) {
 		const B = pl.buffs;
 		for (const k in B) if (B[k].n > 0) { B[k].t -= dt; if (B[k].t <= 0) B[k].n = 0; }
 		pl.reduction = Math.min(0.8, pl.baseReduce + B.def.n * B.def.amount); pl.regen = pl.baseRegen + B.regen.n * B.regen.amount;
-		const fast = 1 + B.spd.n * B.spd.amount;   // a speed buff: you run that much faster
+		const fast = (1 + B.spd.n * B.spd.amount) * pl.spdMul * wxSpeed(w, pl.mon.types);   // a speed buff or the Sprint upgrade: you run that much faster
 		if (fast !== w.fastK) { w.fastK = fast; w.fastTune = fast === 1 ? w.tune : { ...w.tune, RUN: w.tune.RUN * fast }; }
 		step(s, input || noInput(), w.room, dt, w.fastTune || w.tune);
 		if (pl.invuln > 0) pl.invuln -= dt;
@@ -519,12 +925,15 @@ export function tick(w, input, dt = K.TICK) {
 		if (t) pl.aim = Math.atan2(t.a.z - s.z, t.a.x - s.x); else if (Math.hypot(s.vx, s.vz) > 0.5) pl.aim = Math.atan2(s.vz, s.vx);
 	}
 	if (!w.field) { w.field = flowField(w.room, s.x, s.z); w.fieldCell = Math.floor(s.z / CELL) * w.room.w + Math.floor(s.x / CELL); }
+	updateWeather(w, dt);
 	spawnTick(w, dt);
 	updateEnemies(w, dt);
 	if (!pl.dead) fireMoves(w, dt);
 	moveShots(w, dt);
 	resolve(w);
-	if (!pl.dead) updateFields(w, dt);
+	if (!pl.dead) { updateFields(w, dt); updateEffects(w, dt); }
+	enemyAttacks(w, dt);
+	if (!pl.dead) updatePickups(w, dt);
 	return w;
 }
 
@@ -536,5 +945,10 @@ export function hashWorld(w) {
 	for (const e of w.enemies) { add(e.id); add(e.a.x); add(e.a.y); add(e.a.z); add(e.hp); }
 	for (const p of w.shots) { add(p.x); add(p.y); add(p.z); }
 	for (const f of w.fields) { add(f.x); add(f.z); add(f.t); }
+	for (const p of w.eshots) { add(p.x); add(p.y); add(p.z); }
+	for (const f of w.effects) { add(f.x || 0); add(f.z || 0); add(f.t); }
+	for (const h of w.hazards) { add(h.x); add(h.z); add(h.t); }
+	for (const p of w.pickups) { add(p.x); add(p.y); add(p.z); }
+	add(w.pl.level); add(w.pl.xp);
 	return h.toString(16).padStart(8, '0');
 }

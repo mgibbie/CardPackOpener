@@ -110,30 +110,39 @@ try {
 	A(new Set(rows).size === 8, 'orbiting the camera round a still sprite shows all 8 of its facing rows', rows.join(''));
 
 	// ---- feet on the floor: a sheet's anchor is the middle of the footprint, and the feet / tail are drawn BELOW it.
-	// (the owner, on the live page: "my pikachu has its feet/butt sinking through the floor")
+	// (the owner, on the live page: "my pikachu has its feet/butt sinking through the floor"; then, of the first fix:
+	// "fix the floating sprite" — a standing sheet's frames are different poses at different heights, and one lift
+	// for the whole row left most of them hanging over their shadow)
 	const feet = await page.evaluate(() => {
-		const m = window.__m3d, out = [];
+		const m = window.__m3d, out = [], META = window.G.SPRITE_META;
 		for (const [key, s] of m.sheets) {
-			// independently: the lowest opaque pixel of each row, by reading the sheet
+			const [dex, anim] = key.split('/'), hover = !!META[dex].hv;
 			const c = document.createElement('canvas'); c.width = s.img.width; c.height = s.img.height; const g = c.getContext('2d'); g.drawImage(s.img, 0, 0);
-			const d = g.getImageData(0, 0, c.width, c.height).data; let worstBelow = 0, sunk = 0;
+			const d = g.getImageData(0, 0, c.width, c.height).data; let worstBelow = 0, sunk = 0, floats = 0, worstFloat = 0, spread = 0;
 			for (let r = 0; r < s.meta.r; r++) {
-				let low = -1;
-				for (let y = s.meta.h - 1; y >= 0 && low < 0; y--) for (let x = 0; x < s.meta.n * s.meta.w; x++) if (d[((r * s.meta.h + y) * c.width + x) * 4 + 3] > 127) { low = y; break; }
-				const below = Math.max(0, low + 1 - s.meta.ay);          // px drawn under the anchor
-				worstBelow = Math.max(worstBelow, below);
-				// the quad as the page builds it: where is that lowest pixel's bottom edge, relative to the feet?
-				const q = m.quadOf(key, 0, r), px = (q.rect[3] - q.rect[1]) / s.meta.h, bottomOfLowest = q.rect[3] - (low + 1) * px;
-				// never under the floor; and exactly on it when the art went below the anchor (a row whose lowest pixel is above
-				// the anchor is a hovering sprite — Gastly — and is left hovering)
-				if (bottomOfLowest < -1e-6 || (below > 0 && bottomOfLowest > 1e-6)) sunk++;
+				const lows = [];
+				for (let f = 0; f < s.meta.n; f++) {
+					// independently: this frame's lowest opaque pixel, by reading the sheet
+					let low = -1;
+					for (let y = s.meta.h - 1; y >= 0 && low < 0; y--) for (let x = 0; x < s.meta.w; x++) if (d[((r * s.meta.h + y) * c.width + f * s.meta.w + x) * 4 + 3] > 127) { low = y; break; }
+					if (low < 0) continue;
+					lows.push(low); worstBelow = Math.max(worstBelow, low + 1 - s.meta.ay);
+					// the quad as the page builds it: where is that pixel's bottom edge, relative to the floor? (in art px)
+					const q = m.quadOf(key, f, r), px = (q.rect[3] - q.rect[1]) / s.meta.h, gap = (q.rect[3] - (low + 1) * px) / px;
+					if (gap < -1e-6) sunk++;                                  // drawn under the floor
+					if (!hover) { worstFloat = Math.max(worstFloat, gap); if (anim === 'Idle' ? gap > 1e-6 : gap > 3.01) floats++; }
+				}
+				spread = Math.max(spread, Math.max(...lows) - Math.min(...lows));
 			}
-			out.push({ key, worstBelow, sunk });
+			out.push({ key, hover, worstBelow, sunk, floats, worstFloat: +worstFloat.toFixed(2), spread });
 		}
 		return out;
 	});
 	A(feet.length >= 8 && feet.some(f => f.worstBelow >= 3), 'the sheets really do draw below their anchor (some by 3 px or more: feet, tails)', JSON.stringify(feet.map(f => f.key + ':' + f.worstBelow)));
-	A(feet.every(f => f.sunk === 0), 'every sprite stands on its lowest pixel: in each of its 8 facings nothing is drawn under the floor (and one that hovers still hovers)', JSON.stringify(feet.filter(f => f.sunk)));
+	A(feet.every(f => f.sunk === 0), 'no frame of any sprite, in any of its 8 facings, is drawn under the floor', JSON.stringify(feet.filter(f => f.sunk)));
+	A(feet.some(f => /Idle/.test(f.key) && !f.hover && f.spread >= 5), 'standing sheets really do hold poses at different heights (the frames of one row differ by 5 px or more)', JSON.stringify(feet.map(f => f.key + ':' + f.spread)));
+	A(feet.every(f => f.floats === 0), 'no frame floats: every frame of a standing sprite is exactly on the floor, and a walk cycle\'s frames are within its 3 px bob', JSON.stringify(feet.filter(f => f.floats)));
+	A(feet.some(f => f.hover) ? feet.filter(f => f.hover).every(f => f.sunk === 0) : true, 'a species that hovers is not pulled down to the floor');
 
 	// ---- cost
 	await sleep(1500);
@@ -229,7 +238,7 @@ try {
 
 	// ======================== P3: a fight on a generated level (?gen=<seed>&fight=1)
 	{
-		const f = await open({ width: 1280, height: 720, deviceScaleFactor: 1 }, '?gen=7&fight=1&moves=ember:3,tackle:2,bug-buzz');
+		const f = await open({ width: 1280, height: 720, deviceScaleFactor: 1 }, '?gen=7&fight=1&moves=ember:3,tackle:2,bug-buzz&cast=19,16,41,1,4,7');   // (a cast of plain chasers: they all come straight for you)
 		A(f.ok, '?gen=7&fight=1 boots: the level, the 2D game\'s data, the fight');
 		const f0 = await f.page.evaluate(() => { const m = window.__m3d, w = m.world; return { world: !!w, moves: w.pl.moves.map(q => q.id + ':' + q.lvl), hp: w.pl.hp, max: w.pl.maxHp, cast: w.cast, crowd: m.crowd.length, sheets: [...m.sheets.keys()].filter(k => /Walk/.test(k)).length, same: w.pl.s === m.state, g: !!(window.G.Moves && window.G.Types && window.G.Enemies.defFor) }; });
 		A(f0.world && f0.g && f0.same && f0.moves.join() === 'ember:3,tackle:2,bug-buzz:1' && f0.hp === f0.max && f0.crowd === 0, 'the fight is on: your moves are the ones asked for, you are at full HP, the idle crowd is gone', JSON.stringify(f0));
@@ -274,6 +283,59 @@ try {
 		A(fv.moves === 6 && fv.kinds.join() === 'meteor,mine,patch,turret' && fv.hits > 10 && fv.buffs >= 2, `a turret, mines, a trail, meteors, a dash and a buff all run on the page (${fv.hits} hits in 4 s, Swords Dance × ${fv.buffs})`, JSON.stringify(fv));
 		await shot(fk.page, 'm3d_fight_kinds.png');
 		await fk.page.close();
+		// enemies that do more than walk at you: their shots, their marks on the ground, and damage numbers
+		const fb = await open({ width: 1000, height: 640, deviceScaleFactor: 1 }, '?gen=7&fight=1&moves=ember:3&cast=58,43,32,63&cap=8');
+		const bv = await fb.page.evaluate(async () => { const m = window.__m3d, w = m.world, wait = (ms) => new Promise(r => setTimeout(r, ms)); w.pl.invuln = 1e9;
+			for (const [d, dx, dz] of [[58, 7, 0], [43, -7, 0], [32, 0, 7], [63, 0, -7]]) { const e = m.addEnemy(d, m.state.x + dx, m.state.z + dz, { hp: 30 }); e.shotCd = 0.3; }
+			let eshots = 0, marks = 0, nums = 0, lit = 0;
+			for (let i = 0; i < 30; i++) { await wait(100); eshots = Math.max(eshots, w.eshots.length); marks = Math.max(marks, w.hazards.length); nums = Math.max(nums, m.numbers.length);
+				const el = document.getElementById('nums'), d = el.getContext('2d').getImageData(0, 0, el.width, el.height).data; let n = 0; for (let k = 3; k < d.length; k += 16) if (d[k] > 60) n++; lit = Math.max(lit, n); }
+			return { eshots, marks, nums, lit, behaviours: [...new Set(w.cast.map(d => window.G.Enemies.behaviorOf(window.G.DEX_BY[d])))].sort(), sheets: w.cast.every(d => m.sheets.has(d + '/Walk')) }; });
+		A(bv.sheets && bv.behaviours.join() === 'beamer,fan,ranged,zoner' && bv.eshots >= 3 && bv.marks >= 1, `a ranged enemy, a fan, a zoner and a beamer round you: their shots are in the air (${bv.eshots} at once) and their marks on the ground (${bv.marks})`, JSON.stringify(bv));
+		A(bv.nums >= 1 && bv.lit > 20, `your hits show as damage numbers over the scene (${bv.nums} at once)`, JSON.stringify(bv));
+		await shot(fb.page, 'm3d_fight_behaviours.png');
+		await fb.page.close();
+		// experience and a level-up, on the page
+		const fx = await open({ width: 1000, height: 640, deviceScaleFactor: 1 }, '?gen=7&fight=1&moves=ember&cast=19&cap=4');
+		const xv = await fx.page.evaluate(async () => { const m = window.__m3d, w = m.world, wait = (ms) => new Promise(r => setTimeout(r, ms)); w.pl.invuln = 1e9;
+			const o = m.drop('xp', m.state.x + 2, m.state.z, 70); o.vx = o.vz = 0; await wait(900);
+			const cards = document.getElementById('cards'), shown = getComputedStyle(cards).display !== 'none', n = cards.querySelectorAll('button').length, t0 = w.t; await wait(400);
+			const waiting = w.t === t0, texts = [...cards.querySelectorAll('button')].map(b => b.textContent.slice(0, 40)), hud = document.getElementById('hud').textContent;
+			return { level: w.pl.level, pending: w.pl.pending, shown, n, waiting, texts, hud, moves: w.pl.moves.length, taken: JSON.stringify(w.pl.statsTaken) }; });
+		A(xv.level === 2 && xv.shown && xv.n === 3 && xv.waiting && /Lv 2 · XP \d+ \/ \d+/.test(xv.hud), 'an orb worth a level: you are Lv 2, three cards are up, and the fight waits for you', JSON.stringify(xv));
+		await shot(fx.page, 'm3d_levelup.png');
+		await fx.page.keyboard.press('Digit2');
+		const xa = await fx.page.evaluate(async () => { const m = window.__m3d, w = m.world, wait = (ms) => new Promise(r => setTimeout(r, ms)); const t0 = w.t; await wait(400); return { hidden: getComputedStyle(document.getElementById('cards')).display === 'none', going: w.t > t0, pending: w.pl.pending, moves: w.pl.moves.map(q => q.id + ':' + q.lvl).join(), taken: JSON.stringify(w.pl.statsTaken) }; });
+		A(xa.hidden && xa.going && xa.pending === 0 && (xa.moves !== 'ember:1' || xa.taken !== xv.taken), `pressing 2 takes the second card (now: ${xa.moves} ${xa.taken}) and the fight goes on`, JSON.stringify(xa));
+		await fx.page.evaluate(() => { const m = window.__m3d; const o = m.drop('xp', m.state.x + 2, m.state.z, 110); o.vx = o.vz = 0; });
+		await waitFor(() => fx.page.evaluate(() => getComputedStyle(document.getElementById('cards')).display !== 'none'), 5000);
+		await fx.page.click('#cards button[data-i="0"]');
+		const xb = await fx.page.evaluate(() => ({ hidden: getComputedStyle(document.getElementById('cards')).display === 'none', level: window.__m3d.world.pl.level, pending: window.__m3d.world.pl.pending }));
+		A(xb.hidden && xb.level === 3 && xb.pending === 0, 'the next level: clicking a card takes it', JSON.stringify(xb));
+		await fx.page.close();
+		// a boss on the page
+		const fbs = await open({ width: 1000, height: 640, deviceScaleFactor: 1 }, '?gen=7&fight=1&moves=ember:5&cast=19&cap=2&bosses=143&boss=143');
+		const bs = await fbs.page.evaluate(async () => { const m = window.__m3d, w = m.world, wait = (ms) => new Promise(r => setTimeout(r, ms)); w.pl.invuln = 1e9;
+			const b = w.enemies.find(e => e.boss); let casts = 0; const hud0 = document.getElementById('hud').textContent;
+			for (let i = 0; i < 40; i++) { await wait(100); casts += w.events.filter(ev => ev.k === 'bosscast').length; }
+			const q1 = m.quadOf('143/Walk', 0, 0);
+			return { boss: !!b, scale: b && b.scale, hp: b && b.hp, max: b && b.maxHp, marks: w.stats, hud0, hud: document.getElementById('hud').textContent, sheet: m.sheets.has('143/Walk'), ai: b && [...b.ai.melee, ...b.ai.ranged] }; });
+		A(bs.boss && bs.sheet && bs.scale === 1.5 && /BOSS Snorlax: \d+ \/ \d+/.test(bs.hud) && bs.hp < bs.max, `?boss=143: a Snorlax half as big again is in the fight, its HP is on the readout and your shots are bringing it down (${bs.hp} of ${bs.max})`, JSON.stringify(bs));
+		await shot(fbs.page, 'm3d_boss.png');
+		await fbs.page.close();
+		// Expedition's kinds on the page
+		const fe = await open({ width: 1000, height: 640, deviceScaleFactor: 1 }, '?gen=7&fight=1&moves=mud-bomb,sky-attack,whirlpool,surf&cast=19&cap=3');
+		const ev = await fe.page.evaluate(async () => { const m = window.__m3d, w = m.world, wait = (ms) => new Promise(r => setTimeout(r, ms)); w.pl.invuln = 1e9; m.addEnemy(19, m.state.x + 6, m.state.z, { dummy: true, hp: 1e5 });
+			const kinds = new Set(); for (let i = 0; i < 40; i++) { await wait(100); for (const f of w.effects) kinds.add(f.k); }
+			return { moves: w.pl.moves.map(q => q.id + ':' + q.kind), kinds: [...kinds].sort(), hits: w.stats.hits }; });
+		A(ev.moves.length === 4 && ev.kinds.join() === 'lob,smite,vortex,wave' && ev.hits > 8, `Expedition's moves run on the page: a lob, a smite, a vortex and a wave (${ev.hits} hits in 4 s)`, JSON.stringify(ev));
+		await shot(fe.page, 'm3d_fight_exp.png');
+		await fe.page.close();
+		// weather on the page
+		const fw = await open({ width: 900, height: 600, deviceScaleFactor: 1 }, '?gen=7&fight=1&moves=rain-dance&cast=19&cap=2');
+		const wv = await fw.page.evaluate(async () => { const m = window.__m3d, w = m.world, wait = (ms) => new Promise(r => setTimeout(r, ms)); w.pl.invuln = 1e9; await wait(1200); return { wx: w.weather && w.weather.kind, hud: document.getElementById('hud').textContent, tint: document.getElementById('wx').style.background }; });
+		A(wv.wx === 'rain' && /weather: rain \(\d+ s\)/.test(wv.hud) && /rgba/.test(wv.tint), 'Rain Dance: it rains, the readout says for how long, and the screen takes the rain\'s tint', JSON.stringify(wv));
+		await fw.page.close();
 		// without &fight=1 a generated level has no fight
 		const nf = await open({ width: 900, height: 600, deviceScaleFactor: 1 }, '?gen=7&n=5');
 		const nv = await nf.page.evaluate(() => ({ world: window.__m3d.world, hud: document.getElementById('hud').textContent }));

@@ -13,6 +13,25 @@
 //     wall and flies off a ledge, a mine or a patch only catches bodies on its own level, a turret shoots up at a
 //     target above it, a boomerang comes back to you wherever you have gone, a homing shot curves
 //   * buffs stack and run out; the four control states do what the 2D game's do
+//   * enemy behaviours and height: a ranged enemy must see you to shoot (behind a wall it comes round instead), its
+//     shot stops at terrain and passes under you when you jump; a mark on the ground can be jumped clear of, and goes
+//     through your moment of grace; a charger charges off a ledge; a bomber on the ledge above does not light
+//   * the supports and the jumper: a jumper leaps UP onto the ledge you are standing on and cannot touch you in the
+//     air; a shield soaks up hits, runs out, and cannot be renewed at once; a healer works through a wall; a
+//     summoner's minions never appear inside one
+//   * experience: a fallen enemy leaves an orb where it stood; within your reach (in space: not through 3.5 m of
+//     height) it flies to you; a magnet calls them all, a berry heals, a bomb clears the field; a level-up stops the
+//     fight until one of three cards is taken (a new move, a move's next level, a permanent upgrade), and each card
+//     does what it says
+//   * bosses: the 2D game's numbers for each of its five boss times; a boss hovers over the terrain (a wall does not
+//     stop it), uses its own four attacks, is enraged under half HP, shakes off a state sooner and is then immune,
+//     bursts into fourteen orbs with a berry and a magnet, arrives on time and thins the other arrivals; its stomp
+//     and its marks can be jumped clear of
+//   * Expedition's own move kinds (seven of its eight): each does its work; a lob and a smite reach a target behind
+//     a wall that a straight shot cannot; a wave and a spin stay on your level; a vortex cannot drag a body through a
+//     wall
+//   * weather: it fades in and out, strengthens and weakens types, slows in snow, wears down whoever is not safe
+//     from sand and snow (never a boss, never you to nothing), and from 2:00 can start by itself
 //   * arrivals: enemies appear 16-32 m away on floor they can walk to you from, never past the cap
 //   * the fight is deterministic (same seed: the same fight to the last digit), stays in the world through 3 minutes
 //     of random play on generated levels, and a tick with 110 enemies is cheap
@@ -20,7 +39,7 @@
 import { K, CELL, makeRoom, setCell, groundAt, waterAt } from '../../micasurvivor/m3d/sim.js';
 import { generate, rng } from '../../micasurvivor/m3d/gen.js';
 import { newActor, stepActor, flowField, steer, knock } from '../../micasurvivor/m3d/actors.js';
-import { newWorld, addEnemy, tick, dataFrom, hashWorld, clearLine, applyState, U, CK } from '../../micasurvivor/m3d/combat.js';
+import { newWorld, addEnemy, addBoss, bossDef, tick, dataFrom, hashWorld, clearLine, applyState, drop, offer, choose, xpFor, setWeather, wxLevel, STATS, U, CK } from '../../micasurvivor/m3d/combat.js';
 import { loadG } from './m3d_data.mjs';
 
 let pass = 0, fail = 0;
@@ -225,6 +244,243 @@ const at = (cx, cz) => [(cx + 0.5) * CELL, (cz + 0.5) * CELL];
 	A(d.stats.hits > 150 && fresh > 0.04 && fresh < ts.ccp, `Thunder Shock's ${ts.ccp * 100} % chance to paralyse really rolls (${states} fresh paralyses in ${d.stats.hits} hits; hits on an already paralysed target do not count as fresh)`, [states, d.stats.hits]);
 }
 
+// ---------------------------------------------------------------- enemy behaviours and height
+{
+	const r = yard(), RANGED = 58, FAN = 43, BOMB = 74, CHARGE = 133, BEAM = 63, ZONE = 32;
+	const beh = (d) => G.Enemies.behaviorOf(G.DEX_BY[d]);
+	A(beh(RANGED) === 'ranged' && beh(FAN) === 'fan' && beh(BOMB) === 'bomber' && beh(CHARGE) === 'charger' && beh(BEAM) === 'beamer' && beh(ZONE) === 'zoner', 'the species used here: Growlithe shoots, Oddish fans, Geodude explodes, Eevee charges, Abra beams, Nidoran marks the ground (the 2D game\'s own table)', [RANGED, FAN, BOMB, CHARGE, BEAM, ZONE].map(beh));
+	const mk = (dex, ex, ez, px, pz) => { const w = newWorld(r, data, { dex: 25, moves: [], seed: 6 }); w.pl.s.x = px; w.pl.s.z = pz; w.pl.s.y = groundAt(r, px, pz); const e = addEnemy(w, dex, ex, ez); e.shotCd = 0.2; return { w, e }; };
+	// in the open, 8 m away: it shoots and hits
+	const open = mk(RANGED, 13 * CELL, 22 * CELL, 13 * CELL, 26 * CELL); let fired = 0; for (let i = 0; i < 240; i++) { tick(open.w, null); fired += open.w.events.filter((q) => q.k === 'eshot').length; }
+	A(fired >= 2 && open.w.stats.taken > 0 && open.w.stats.touched === 0, `a ranged enemy with a clear view shoots (${fired} shots in 4 s) and they hit, without it ever touching you`, open.w.stats);
+	// the 4 m wall between you: no shot; it walks round the wall's end instead of standing off
+	const wall = mk(RANGED, 6 * CELL, 15 * CELL, 11 * CELL, 15 * CELL); let f2 = 0, moved = 0; const x0 = wall.e.a.x, z0 = wall.e.a.z;
+	for (let i = 0; i < 240; i++) { tick(wall.w, null); f2 += wall.w.events.filter((q) => q.k === 'eshot').length; moved = Math.max(moved, Math.hypot(wall.e.a.x - x0, wall.e.a.z - z0)); }
+	A(f2 === 0 && wall.w.stats.taken === 0 && moved > 8, `with a wall between you it does not shoot: it comes round (${moved.toFixed(0)} m in 4 s)`, [f2, moved]);
+	// a shot in the air when you step behind cover stops at the cover; one aimed at your chest passes under a jump
+	const cov = newWorld(r, data, { dex: 25, moves: [], seed: 6 }); cov.pl.s.x = 16 * CELL + 3; cov.pl.s.z = 15 * CELL; cov.pl.s.y = 1.5;
+	cov.eshots.push({ id: 1, x: 10 * CELL, y: 0.8, z: 15 * CELL, vx: 190 * U, vy: 0, vz: 0, dmg: 9, r: 7 * U, life: 2.4, t: 0, mtype: 'fire' }); run(cov, 120);
+	A(cov.eshots.length === 0 && cov.stats.taken === 0, 'a shot fired along the floor at you up on the plateau stops at the plateau\'s side');
+	const flat = makeRoom(30, 30, 0); flat.spawn = [30, 0, 30];
+	const shotAt = (y) => { const w = newWorld(flat, data, { dex: 25, moves: [], seed: 6 }); w.pl.s.y = y; w.pl.s.grounded = y === 0; w.pl.s.vy = y ? 5.5 : 0; w.eshots.push({ id: 1, x: 30 - 190 * U * 0.2, y: 0.8, z: 30, vx: 190 * U, vy: 0, vz: 0, dmg: 9, r: 7 * U, life: 2.4, t: 0, mtype: 'normal' }); run(w, 30); return w.stats.taken; };
+	A(shotAt(0) > 0 && shotAt(1.45) === 0, 'the same shot hits you standing and passes under you while you are high in a jump');
+	// a mark on the ground: through the moment of grace; clear of it in the air
+	const zone = (y, invuln) => { const w = newWorld(flat, data, { dex: 25, moves: [], seed: 6 }); const e = addEnemy(w, ZONE, 36, 30); e.shotCd = 0; e.a.speed = 0; tick(w, null); const made = w.hazards.length; let i = 0; for (; i < 200 && !w.events.some((q) => q.k === 'boom'); i++) { if (i === 60) { w.pl.s.y = y; w.pl.s.grounded = y === 0; w.pl.s.vy = y ? 7 : 0; w.pl.invuln = invuln; } tick(w, null); } return { made, at: i / 60, taken: w.stats.taken }; };
+	const stood = zone(0, 0.4), grace = zone(0, 0.4), jumped = zone(1.3, 0);
+	A(stood.made >= 1 && stood.taken > 0 && grace.taken > 0 && Math.abs(stood.at - 1.2) < 0.1, `a zoner's mark goes off after ${stood.at.toFixed(2)} s and hurts you even in the moment of grace after another hit`, [stood, grace]);
+	A(jumped.made >= 1 && jumped.taken === 0, 'in the air above it (more than 1.2 m up) when it goes off, you are clear', jumped);
+	// a beam's mark along the floor does not reach the plateau
+	const bw = newWorld(r, data, { dex: 25, moves: [], seed: 6 }); bw.pl.s.x = 16 * CELL + 2; bw.pl.s.z = 15 * CELL; bw.pl.s.y = 1.5; const be = addEnemy(bw, BEAM, 12 * CELL, 15 * CELL); be.shotCd = 0; be.a.speed = 0; be.fly = false; be.a.fly = false; be.a.y = 0; be.a.grounded = true;
+	let booms = 0; for (let i = 0; i < 150; i++) { tick(bw, null); booms += bw.events.filter((q) => q.k === 'boom').length; }
+	A(booms >= 1 && bw.stats.taken === 0, 'a beamer on the floor below sees you up on the plateau and fires its line along the floor, under you', [booms, bw.stats.taken]);
+	// a charger on the plateau, you on the floor below within its 200 units: it will not aim (you are not on its level); on a level, it charges and overshoots off the edge
+	const cw = newWorld(r, data, { dex: 25, moves: [], seed: 6 }); cw.pl.s.x = 16 * CELL + 0.9; cw.pl.s.z = 15 * CELL; cw.pl.s.y = 1.5; cw.pl.invuln = 1e9;
+	const ce = addEnemy(cw, CHARGE, 16 * CELL + 4.4, 15 * CELL); let aimed = 0, fell = 0; for (let i = 0; i < 200; i++) { tick(cw, null); aimed += cw.events.filter((q) => q.k === 'aim').length; const ev = cw.events.find((q) => q.k === 'fell'); if (ev) fell = ev.h; }
+	A(aimed >= 1 && near(fell, 1.5, 0.01) && ce.a.y === 0 && ce.a.x < 16 * CELL, `a charger takes aim across the plateau, comes through you and goes off the edge behind you (a ${fell.toFixed(1)} m fall)`, [aimed, fell, ce.a]);
+	const lw = newWorld(r, data, { dex: 25, moves: [], seed: 6 }); lw.pl.s.x = 16 * CELL - 4; lw.pl.s.z = 15 * CELL; const le = addEnemy(lw, CHARGE, 16 * CELL + 3, 15 * CELL); le.a.speed = 0; let a2 = 0; for (let i = 0; i < 120; i++) { tick(lw, null); a2 += lw.events.filter((q) => q.k === 'aim').length; }
+	A(a2 === 0, 'with you on the floor below its ledge it does not take aim (it has to come down to you first)', a2);
+	// a bomber on the ledge above you does not light; next to you on your level it does, and it goes with the blast
+	const bb = newWorld(r, data, { dex: 25, moves: [], seed: 6 }); bb.pl.s.x = 16 * CELL - 0.8; bb.pl.s.z = 15 * CELL; const up = addEnemy(bb, BOMB, 16 * CELL + 0.8, 15 * CELL); up.a.speed = 0; run(bb, 120);
+	const lit0 = up.phase; const dn = addEnemy(bb, BOMB, 16 * CELL - 2.6, 15 * CELL); dn.a.speed = 0; run(bb, 80);
+	A(lit0 === 'walk' && !up.dead && dn.dead && bb.stats.taken > 0, 'a bomber on the ledge above does not light its fuse; one beside you does, hurts you and is gone', [lit0, up.dead, dn.dead, bb.stats.taken]);
+	// all of them at once on a generated level: nothing breaks
+	const room = generate(12, 'meadow'), w = newWorld(room, data, { dex: 25, moves: ['ember', 'tackle'], seed: 21, cast: [RANGED, FAN, BOMB, CHARGE, BEAM, ZONE, RAT], autoPick: 0 }); w.pl.invuln = 1e9;
+	const seen = { eshot: 0, hazard: 0, boom: 0, aim: 0 }; let bad = '';
+	for (let i = 0; i < 60 * 150; i++) { tick(w, { mx: Math.sin(i / 90), mz: Math.cos(i / 130), jump: i % 300 < 8, crouch: false }); for (const ev of w.events) if (seen[ev.k] !== undefined) seen[ev.k]++; if (i % 60 === 0) for (const p of w.eshots) if (!Number.isFinite(p.x + p.y + p.z)) bad = 'shot'; }
+	A(!bad && seen.eshot > 10 && seen.hazard > 5 && seen.boom > 5 && seen.aim > 2 && w.eshots.length < 80, `150 s against all of them on a generated level: ${seen.eshot} volleys, ${seen.hazard} marks, ${seen.aim} charges, and the fight goes on`, [seen, w.stats]);
+}
+
+// ---------------------------------------------------------------- the supports and the jumper
+{
+	const r = yard(), JUMP = 39, HEALER = 35, SHIELDER = 95, SUMMONER = 10;
+	const beh = (d) => G.Enemies.behaviorOf(G.DEX_BY[d]);
+	A(beh(JUMP) === 'jumper' && beh(HEALER) === 'healer' && beh(SHIELDER) === 'shielder' && beh(SUMMONER) === 'summoner' && CK.LATER.length === 0, 'Jigglypuff jumps, Clefairy heals, Onix shields, Caterpie summons (the 2D game\'s table): every behaviour in it is in the 3D rules now', [JUMP, HEALER, SHIELDER, SUMMONER].map(beh));
+	// you on the plateau by its west edge, a jumper on the floor below: no ramp needed
+	const w = newWorld(r, data, { dex: 25, moves: [], seed: 3 }); w.pl.s.x = 16 * CELL + 1.5; w.pl.s.z = 15 * CELL; w.pl.s.y = 1.5; w.pl.invuln = 1e9;
+	const j = addEnemy(w, JUMP, 16 * CELL - 5, 15 * CELL); j.skillCd = 0.2; j.a.speed = 0;
+	let top = 0, touchedInAir = 0, marks = 0, t0 = w.stats.touched, landed = null, was = false; for (let i = 0; i < 120; i++) { tick(w, null); const high = j.a.y - w.pl.s.y > CK.TOUCH_UP; top = Math.max(top, j.a.y); marks += w.events.filter((q) => q.k === 'hazard').length; if (high && w.stats.touched > t0) touchedInAir++; t0 = w.stats.touched; if (was && !j.jump && !landed) landed = { x: j.a.x, y: j.a.y, z: j.a.z, grounded: j.a.grounded }; was = !!j.jump; }
+	A(marks === 1 && top > 2.5 && landed && landed.y === 1.5 && Math.hypot(landed.x - w.pl.s.x, landed.z - w.pl.s.z) < 0.5 && landed.grounded, `a jumper on the floor below leaps up onto the plateau where you stand (its arc tops out at ${top.toFixed(1)} m) and lands on your spot`, [marks, top, j.a]);
+	A(touchedInAir === 0, 'while it is more than a metre above you in its arc it cannot touch you');
+	// a shield: 30 % of its HP soaked up; gone after 7 s; not renewed for 14 s
+	const flat = makeRoom(40, 40, 0); flat.spawn = [40, 0, 40];
+	const s = newWorld(flat, data, { dex: 25, moves: [], seed: 3 }); s.pl.invuln = 1e9;
+	const sh = addEnemy(s, SHIELDER, 52, 40, { hp: 10 }); sh.skillCd = 0.1; sh.a.speed = 0; const friend = addEnemy(s, RAT, 53, 46, { dummy: true, hp: 50 }), far = addEnemy(s, RAT, 40 + 14, 40 + 14, { dummy: true });
+	run(s, 12);
+	A(near(sh.shield, sh.maxHp * 0.3) && near(friend.shield, friend.maxHp * 0.3) && far.shield === 0, `a shielder shields itself and those within 10 m for 30 % of their HP (${Math.round(friend.shield)} on a ${friend.maxHp} HP Rattata), not one 18 m away`, [sh.shield, friend.shield, far.shield]);
+	const big = Math.round(friend.shield) + 40, hp0 = friend.hp; s.shots.push({ id: 0, x: friend.a.x - 1.5, y: 0.8, z: friend.a.z, vx: 12, vy: 0, vz: 0, dmg: big, r: 0.3, life: 1, t: 0, pierce: 0, homing: 0, hits: new Set(), px: null, py: 0, pz: 0 }); run(s, 12);
+	A(friend.shield === 0 && hp0 - friend.hp === 40, `a hit of ${big} on it: the shield takes its ${big - 40} and 40 gets through`, [friend.shield, hp0 - friend.hp]);
+	run(s, 60 * 7.2); A(sh.shield === 0 && sh.shieldLock > 0, 'an unused shield is gone after 7 s'); run(s, 60 * 2);
+	A(sh.shield === 0 && friend.shield === 0, '...and the next cast (8 s after the first) cannot renew it: 14 s must pass', [sh.shield, sh.shieldLock]);
+	run(s, 60 * 8); A(sh.shield > 0, 'after that it is shielded again', sh.shield);
+	// a healer behind the wall still heals its neighbour; and it comes round rather than standing off
+	const hw = newWorld(r, data, { dex: 25, moves: [], seed: 3 }); hw.pl.s.x = 11 * CELL; hw.pl.s.z = 15 * CELL; hw.pl.invuln = 1e9;
+	const he = addEnemy(hw, HEALER, 6 * CELL, 15 * CELL); he.shotCd = 0.2; const hurt = addEnemy(hw, RAT, 5 * CELL, 15 * CELL, { dummy: true, hp: 10 }); hurt.hp = Math.round(hurt.maxHp * 0.5); const h0 = hurt.hp;
+	run(hw, 30); A(hurt.hp > h0 && near(hurt.hp - h0, hurt.maxHp * 0.07, 1), `a healer with a wall between you and it still heals its neighbour (+${hurt.hp - h0} of ${hurt.maxHp} HP)`, [h0, hurt.hp]);
+	// a summoner hard against the wall: its minions are never inside it
+	const sw = newWorld(r, data, { dex: 25, moves: [], seed: 3 }); sw.pl.s.x = 11 * CELL; sw.pl.s.z = 15 * CELL; sw.pl.invuln = 1e9;
+	const su = addEnemy(sw, SUMMONER, 9 * CELL + 0.5, 15 * CELL); su.shotCd = 0.1; su.a.speed = 0; let inWall = 0, made = 0; const known = new Set([su.id]);
+	for (let i = 0; i < 60 * 20; i++) { tick(sw, null); for (const e of sw.enemies) if (!known.has(e.id)) { known.add(e.id); made++; if (groundAt(r, e.a.x, e.a.z) > 1) inWall++; if (!e.minion) inWall += 100; } }
+	A(made === 8 && inWall === 0 && sw.enemies.filter((e) => e.minion).every((e) => e.xp < su.xp && e.dmg < su.dmg), `a summoner against the wall calls its ${made} minions onto the floor, never into the wall; they are weaker and worth less than it`, [made, inWall]);
+}
+
+// ---------------------------------------------------------------- experience and level-ups
+{
+	const flat = () => { const r = makeRoom(40, 40, 0); r.spawn = [40, 0, 40]; return r; };
+	A(xpFor(1) === 62 && xpFor(2) === 101 && xpFor(10) === 631 && xpFor(30) > xpFor(29), `levels cost what they do in 2D: ${xpFor(1)} XP for the first, ${xpFor(2)}, … ${xpFor(10)} for the tenth`, [xpFor(1), xpFor(2), xpFor(10)]);
+	// a kill leaves its XP where the enemy stood
+	const k = newWorld(flat(), data, { dex: 25, moves: [], seed: 3 }); const e = addEnemy(k, RAT, 60, 40, { dummy: true }); k.shots.push({ id: 0, x: 58.5, y: 0.8, z: 40, vx: 12, vy: 0, vz: 0, dmg: 1e5, r: 0.3, life: 1, t: 0, pierce: 0, homing: 0, hits: new Set(), px: null, py: 0, pz: 0 });
+	run(k, 12); const orb = k.pickups.find((p) => p.kind === 'xp' || p.kind === 'xpBig');
+	A(k.stats.kills === 1 && orb && orb.value === e.xp && Math.hypot(orb.x - 60, orb.z - 40) < 1 && orb.y === 0, `a fallen Rattata leaves an orb worth its ${e.xp} XP where it stood`, k.pickups);
+	run(k, 240); A(k.pickups.includes(orb) && Math.hypot(orb.vx, orb.vz) < 0.01 && k.pl.xp === 0, '20 m from you it rolls a little, stops, and waits');
+	// within reach it flies to you; just outside, it does not
+	const reach = (dist, dy = 0) => { const w = newWorld(flat(), data, { dex: 25, moves: [], seed: 3 }); const p = drop(w, 'xp', 40 + dist, dy, 40, 10); p.vx = p.vz = 0; let n = 0; while (n < 300 && w.pickups.length) { tick(w, null); n++; } return { got: w.pl.xp, secs: n / 60 }; };
+	const in4 = reach(4), out6 = reach(6);
+	A(in4.got === 10 && in4.secs < 1.2 && out6.got === 0, `an orb 4 m away flies to you (${in4.secs.toFixed(2)} s) and is yours; one 6 m away stays put (your reach is ${(CK.MAGNET * U).toFixed(1)} m)`, [in4, out6]);
+	const r = yard(), high = newWorld(r, data, { dex: 25, moves: [], seed: 3 }); high.pl.s.x = 9 * CELL + 3.5; high.pl.s.z = 15 * CELL; high.pl.s.y = 0; const top = drop(high, 'xp', 8.5 * CELL, 4, 15 * CELL, 10); top.vx = top.vz = 0;
+	const lowW = newWorld(r, data, { dex: 25, moves: [], seed: 3 }); lowW.pl.s.x = 9 * CELL + 3.5; lowW.pl.s.z = 20 * CELL; const side = drop(lowW, 'xp', 9 * CELL + 7.5, 0, 20 * CELL, 10); side.vx = side.vz = 0;
+	run(high, 120); run(lowW, 120);
+	A(high.pl.xp === 0 && high.pickups.length === 1 && lowW.pl.xp === 10, 'reach is measured in space: an orb on top of the 4 m wall, 4 m along the floor from you, is out of it; the same 4 m on the flat is not', [high.pl.xp, lowW.pl.xp]);
+	// a magnet, a berry, a bomb
+	const m = newWorld(flat(), data, { dex: 25, moves: [], seed: 3, autoPick: 0 }); for (let i = 0; i < 6; i++) { const p = drop(m, 'xp', 40 + 12 + i * 3, 0, 40 + (i % 2 ? 9 : -9), 5); p.vx = p.vz = 0; } const mg = drop(m, 'magnet', 41, 0, 40); mg.vx = mg.vz = 0;
+	run(m, 300); A(m.stats.collected === 7 && m.stats.gained === 30, 'a magnet calls every orb on the level to you (six of them, 12-30 m away)', m.stats);
+	const h = newWorld(flat(), data, { dex: 25, moves: [], seed: 3 }); h.pl.hp = 10; const b = drop(h, 'heal', 41, 0, 40); b.vx = b.vz = 0; run(h, 30);
+	A(near(h.pl.hp, 10 + h.pl.maxHp * 0.3), `a berry gives back 30 % of your HP (10 to ${h.pl.hp.toFixed(1)} of ${h.pl.maxHp})`, h.pl.hp);
+	const bw = newWorld(flat(), data, { dex: 25, moves: [], seed: 3 }); bw.pl.invuln = 1e9; const nearE = addEnemy(bw, RAT, 50, 40, { dummy: true, hp: 20 }), farE = addEnemy(bw, RAT, 40 + 34, 40, { dummy: true, hp: 20 }); const bomb = drop(bw, 'bomb', 41, 0, 40); bomb.vx = bomb.vz = 0; run(bw, 30);
+	A(nearE.maxHp - nearE.hp === 60 + 14 && farE.hp === farE.maxHp && nearE.a.x > 50.5, 'a bomb hits every enemy within 30 m for 60 + 14 a level and throws it back; one 34 m away is untouched', [nearE.hp, farE.hp, nearE.a.x]);
+	// a level-up: the fight waits
+	const lv = newWorld(flat(), data, { dex: 25, moves: ['ember'], seed: 9 }); const g1 = drop(lv, 'xp', 41, 0, 40, xpFor(1) + 5); g1.vx = g1.vz = 0; addEnemy(lv, RAT, 60, 40);
+	run(lv, 30); const t1 = lv.t, ex = lv.enemies[0].a.x; run(lv, 120);
+	A(lv.pl.level === 2 && lv.pl.xp === 5 && lv.pl.pending === 1 && lv.pl.choices && lv.pl.choices.length === 3 && new Set(lv.pl.choices.map((c) => c.key)).size === 3, `enough XP: you are level 2, and three different cards are on offer (${lv.pl.choices && lv.pl.choices.map((c) => c.key).join(', ')})`, lv.pl.choices);
+	A(lv.t === t1 && lv.enemies[0].a.x === ex, 'while they are on offer the fight stands still: the clock and the enemies wait');
+	const chosen = lv.pl.choices[1].key; A(choose(lv, 1) && lv.pl.pending === 0 && lv.pl.choices === null, `taking one (${chosen}) puts it in force…`); run(lv, 60);
+	A(lv.t > t1 + 0.9 && lv.enemies[0].a.x < ex, '…and the fight goes on');
+	// what is offered
+	const kinds = { new: 0, up: 0, stat: 0 }, ids = new Set(); const o1 = newWorld(flat(), data, { dex: 25, moves: ['ember'], seed: 5 });
+	for (let i = 0; i < 200; i++) for (const c of offer(o1)) { kinds[c.type]++; ids.add(c.key); }
+	A(kinds.new > 100 && kinds.up > 20 && kinds.stat > 100 && [...ids].filter((q) => q.startsWith('new:')).every((q) => data.poolFor(o1.pl.mon).includes(q.slice(4))), `with a free slot: new moves from your species' own pool (${[...ids].filter((q) => q.startsWith('new:')).length} different ones seen), your move's next level, and upgrades`, kinds);
+	const o4 = newWorld(flat(), data, { dex: 25, moves: ['ember', 'tackle', 'bug-buzz', 'fire-spin'], seed: 5 }); let new4 = 0, up4 = 0; for (let i = 0; i < 100; i++) for (const c of offer(o4)) { if (c.type === 'new') new4++; if (c.type === 'up') up4++; }
+	A(new4 === 0 && up4 > 80, 'with all four slots full no new move is offered: levels for the ones you have, and upgrades', [new4, up4]);
+	const sameA = newWorld(flat(), data, { dex: 25, moves: ['ember'], seed: 77 }), sameB = newWorld(flat(), data, { dex: 25, moves: ['ember'], seed: 77 });
+	A(JSON.stringify(offer(sameA).map((c) => c.key)) === JSON.stringify(offer(sameB).map((c) => c.key)), 'the same seed offers the same cards');
+	// what each card does
+	const base = () => newWorld(flat(), data, { dex: 25, moves: ['ember'], seed: 5 }); const stat = (id) => STATS.find((q) => q.id === id);
+	const dealt = (w) => { addEnemy(w, 1, 46, 40, { dummy: true, hp: 1e4 }); run(w, 600); return w.stats; };
+	const plain = dealt(base()), strong = base(); stat('atk').apply(strong.pl); const quick = base(); stat('cd').apply(quick.pl);
+	const ds = dealt(strong), dq = dealt(quick);
+	A(near(ds.dealt / plain.dealt, 1.1, 1e-9) && ds.hits === plain.hits, 'Power: every hit does 10 % more', [ds.dealt, plain.dealt]);
+	A(dq.fired > plain.fired && near(dq.fired / plain.fired, 1 / 0.92, 0.06), `Reflexes: 8 % less cooldown (${dq.fired} shots in 10 s against ${plain.fired})`, [dq.fired, plain.fired]);
+	const tough = base(), soft = base(); stat('def').apply(tough.pl); stat('hp').apply(tough.pl); for (const q of [tough, soft]) { run(q, 2); addEnemy(q, RAT, 40.5, 40); q.pl.moves.length = 0; run(q, 20); }
+	A(tough.pl.maxHp === soft.pl.maxHp + 20 && near(tough.stats.taken / soft.stats.taken, 0.94, 1e-9), 'Armour: 6 % less from the same touch; Vigor: 20 more HP', [tough.stats.taken, soft.stats.taken]);
+	const fastW = base(), slowW = base(); stat('spd').apply(fastW.pl); fastW.pl.moves.length = slowW.pl.moves.length = 0; run(fastW, 180, { mx: 1, mz: 0, jump: false, crouch: false }); run(slowW, 180, { mx: 1, mz: 0, jump: false, crouch: false });
+	A(near((fastW.pl.s.vx) / (slowW.pl.s.vx), 1.07, 0.005), 'Sprint: you run 7 % faster', [fastW.pl.s.vx, slowW.pl.s.vx]);
+	const mgW = base(); stat('mag').apply(mgW.pl); stat('xp').apply(mgW.pl); stat('rgn').apply(mgW.pl); mgW.pl.hp = 50; const far6 = drop(mgW, 'xp', 46, 0, 40, 10); far6.vx = far6.vz = 0; mgW.pl.moves.length = 0; run(mgW, 120);
+	A(near(mgW.pl.xp, 11.2) && near(mgW.pl.hp, 50 + 0.9 * 2, 0.02), 'Magnet reaches the orb 6 m away, Learning makes its 10 XP 11.2, Synthesis has given back 0.9 HP a second', [mgW.pl.xp, mgW.pl.hp]);
+	const upW = base(); const upCard = offer(upW, 50).find((c) => c.type === 'up'); upCard.apply(); const want = data.move('ember', 2);
+	A(upW.pl.moves[0].lvl === 2 && upW.pl.moves[0].count === want.count && upW.pl.moves[0].dmg === want.dmg && upW.pl.moves[0].spread === want.spread, 'a move\'s card raises it a level: Ember Lv2 is the data\'s own Lv2 (a second shot)', upW.pl.moves[0]);
+	const nw = base(); const newCard = offer(nw, 50).find((c) => c.type === 'new'); newCard.apply();
+	A(nw.pl.moves.length === 2 && nw.pl.moves[1].id === newCard.id && nw.pl.moves[1].lvl === 1, `a new move's card puts it in your next slot (${newCard.id})`);
+	const capW = base(); capW.pl.statsTaken.spd = 8; capW.pl.statsTaken.mag = 6; let over = 0; for (let i = 0; i < 100; i++) for (const c of offer(capW)) if (c.key === 'stat:spd' || c.key === 'stat:mag') over++;
+	A(over === 0, 'an upgrade taken as often as it allows (Sprint 8 times, Magnet 6) is not offered again');
+	// a whole run with the cards taken as they come
+	const room = generate(7, 'meadow'), runW = newWorld(room, data, { dex: 25, moves: ['ember'], seed: 31, cast: [RAT, ZUBAT, 1, 4, 7], autoPick: (w, cards) => Math.max(0, cards.findIndex((c) => c.type !== 'stat')) });
+	let ticks = 0; for (; ticks < 60 * 240 && !runW.pl.dead; ticks++) tick(runW, { mx: Math.sin(ticks / 140), mz: Math.cos(ticks / 190), jump: false, crouch: false });
+	A(runW.pl.level >= 5 && runW.pl.moves.length === 4 && runW.pl.moves.some((mv) => mv.lvl > 1) && runW.stats.collected > 30, `four minutes on a level, taking cards as they come: level ${runW.pl.level}, ${runW.pl.moves.map((mv) => mv.id + ' Lv' + mv.lvl).join(', ')}; ${runW.stats.kills} KOs${runW.pl.dead ? ' (and down at ' + (ticks / 60).toFixed(0) + ' s)' : ''}`, [runW.pl.level, runW.stats]);
+}
+
+// ---------------------------------------------------------------- bosses
+{
+	const SNOR = 143, r = yard();
+	const d0 = bossDef(data, SNOR, 0), d4 = bossDef(data, SNOR, 4), S = G.Enemies.BOSS_SLOTS;
+	A(d0.hp === Math.round(S[0].hp * 1.35) && d0.dmg === Math.round(S[0].dmg * 1.2) && d0.xp === S[0].xp && d4.hp === Math.round(S[4].hp * 1.35) && d0.at === 180 && d4.at === 900, `the 3:00 boss has ${d0.hp} HP and hits for ${d0.dmg}; the 15:00 one ${d4.hp} and ${d4.dmg} (the 2D game's slots × 1.35 HP, × 1.2 damage)`, [d0, d4]);
+	const w = newWorld(r, data, { dex: 25, moves: [], seed: 4 }); w.pl.s.x = 11 * CELL; w.pl.s.z = 15 * CELL; w.pl.invuln = 1e9;
+	const b = addBoss(w, SNOR, 5 * CELL, 15 * CELL, { slot: 0, t: 300 });
+	A(b.boss && b.maxHp === Math.round(d0.hp * 1.5) && near(b.dmg, d0.dmg * 1.5) && b.scale === 1.5 && near(b.cr, data.radius(SNOR, 1.5)) && b.fly && b.a.y < 0.1, 'put in five minutes into a run it is scaled by the clock (× 1.5 at 5:00), half as big again, and its feet are on the floor', [b.maxHp, b.dmg, b.scale]);
+	b.ai.cd = 99; let crossed = false, minX = 99; for (let i = 0; i < 240; i++) { tick(w, null); if (Math.abs(b.a.x - 8.5 * CELL) < 0.6 && b.a.y > 4) crossed = true; }
+	A(crossed && b.a.x > 9 * CELL, 'the 4 m wall between you does not stop it: it goes over the top', [b.a.x, b.a.y]);
+	// its attacks are its own four, all of them used over a long fight; under half HP it is enraged
+	const f = newWorld(makeRoom(60, 60, 0), data, { dex: 25, moves: [], seed: 9 }); f.room.spawn = [60, 0, 60]; f.pl.s.x = 60; f.pl.s.z = 60; f.pl.invuln = 1e9;
+	const fb = addBoss(f, SNOR, 70, 60, { slot: 0 }); const used = {}; let enraged = 0; const sp0 = fb.a.speed;
+	for (let i = 0; i < 60 * 120; i++) { tick(f, { mx: Math.sin(i / 200), mz: Math.cos(i / 260), jump: false, crouch: false }); for (const ev of f.events) { if (ev.k === 'bosscast') used[ev.attack] = (used[ev.attack] || 0) + 1; if (ev.k === 'enrage') enraged++; } if (i === 60 * 60) fb.hp = Math.round(fb.maxHp * 0.4); }
+	const own = [...fb.ai.melee, ...fb.ai.ranged];
+	A(Object.keys(used).length >= 3 && Object.keys(used).every((q) => own.includes(q)), `two minutes with Snorlax, keeping on the move: it uses its own attacks and no others — the stomp only when you are beside it (${Object.entries(used).map(([q, n]) => q + ' × ' + n).join(', ')})`, [used, own]);
+	A(enraged === 1 && fb.ai.fury && near(fb.a.speed, sp0 * 1.15), 'brought under half its HP it is enraged, once: 15 % faster');
+	// states: shorter, then immune
+	const st = newWorld(makeRoom(40, 40, 0), data, { dex: 25, moves: [], seed: 9 }); st.pl.invuln = 1e9; const sb = addBoss(st, SNOR, 30, 30, { slot: 0 });
+	const dur = applyState(st, sb, 'freeze'), again = applyState(st, sb, 'sleep');
+	A(near(dur, 1.8 * 0.35) && again === 0 && near(sb.ccImm, dur + 4), `a boss is frozen for ${dur.toFixed(2)} s, not 1.8, and nothing else takes hold for 4 s after`, [dur, again, sb.ccImm]);
+	run(st, 60 * 5); A(applyState(st, sb, 'para') > 0, '...then it can be caught again');
+	// down: fourteen orbs, a berry, a magnet
+	const kd = newWorld(makeRoom(40, 40, 0), data, { dex: 25, moves: [], seed: 9, autoPick: 0 }); kd.pl.invuln = 1e9; const kb = addBoss(kd, SNOR, 56, 40, { slot: 0 }); kb.ai.cd = 99; kb.a.speed = 0;
+	kd.shots.push({ id: 0, x: 53, y: 1, z: 40, vx: 12, vy: 0, vz: 0, dmg: 1e6, r: 0.3, life: 1, t: 0, pierce: 0, homing: 0, hits: new Set(), px: null, py: 0, pz: 0 }); run(kd, 20);
+	const orbs = kd.pickups.filter((p) => p.kind === 'xpBig');
+	A(kb.dead && orbs.length === 14 && orbs.reduce((a, p) => a + p.value, 0) >= kb.xp && kd.pickups.some((p) => p.kind === 'heal') && kd.pickups.some((p) => p.kind === 'magnet'), `down, it bursts into 14 big orbs (its ${kb.xp} XP between them), a berry and a magnet`, kd.pickups.map((p) => p.kind));
+	// on time, and fewer others while it lives
+	const room = generate(7, 'meadow'), tw = newWorld(room, data, { dex: 25, moves: [], seed: 5, cast: [RAT], bosses: [SNOR, 130], autoPick: 0 }); tw.pl.invuln = 1e9; tw.t = 170;
+	let at = 0; for (let i = 0; i < 60 * 20 && !at; i++) { tick(tw, null); if (tw.enemies.some((e) => e.boss)) at = tw.t; }
+	const boss = tw.enemies.find((e) => e.boss), dist = boss ? Math.hypot(boss.a.x - tw.pl.s.x, boss.a.z - tw.pl.s.z) : 0;
+	A(Math.abs(at - 180) < 0.05 && boss.dex === SNOR && dist >= CK.SPAWN_MIN - 0.5 && dist <= CK.SPAWN_MAX + 0.5 && tw.bossIdx === 1, `the first boss on the list arrives at 3:00 (${at.toFixed(2)} s), ${dist.toFixed(0)} m away`, [at, dist]);
+	const count = (alive) => { const q = newWorld(room, data, { dex: 25, moves: [], seed: 5, cast: [RAT], autoPick: 0 }); q.pl.invuln = 1e9; q.t = 181; if (alive) { const bb = addBoss(q, SNOR, q.pl.s.x + 20, q.pl.s.z, { slot: 0 }); bb.ai.cd = 1e9; bb.a.speed = 0; } const n0 = q.stats.spawned; run(q, 60 * 40); return q.stats.spawned - n0; };
+	const withBoss = count(true), without = count(false);
+	A(withBoss < without * 0.4 && withBoss > 0, `while a boss lives the others arrive at a quarter of the rate (${withBoss} in 40 s against ${without})`, [withBoss, without]);
+	// its stomp: standing beside it you are hit; in the air above the ring you are not
+	const stomp = (jump) => { const q = newWorld(makeRoom(40, 40, 0), data, { dex: 25, moves: [], seed: 9 }); q.room.spawn = [40, 0, 40]; q.pl.s.x = 40; q.pl.s.z = 40; const bb = addBoss(q, SNOR, 45, 40, { slot: 0 }); bb.a.speed = 0; Object.assign(bb.ai, { melee: ['slam'], ranged: ['slam'], mode: 'close', modeT: 99, cd: 0.1 }); bb.dmg = 5; let boomAt = 0;
+		for (let i = 0; i < 120; i++) { const tt = i / 60; tick(q, { mx: 0, mz: 0, jump: jump && tt > 0.62 && tt < 1.3, crouch: false }); if (q.events.some((ev) => ev.k === 'boom')) boomAt = q.t; } return { taken: q.stats.taken, boomAt, touched: q.stats.touched }; };
+	const stood = stomp(false), hopped = stomp(true);
+	A(stood.taken > 0 && stood.boomAt > 0.9 && hopped.taken === 0 && hopped.boomAt === stood.boomAt, `a boss's stomp goes off ${stood.boomAt.toFixed(2)} s after it starts: standing in the ring you are hit; time a jump and you are over it`, [stood, hopped]);
+}
+
+// ---------------------------------------------------------------- Expedition's kinds
+{
+	const ids = data.expMoves(), byKind = {}; for (const id of ids) (byKind[data.moveDef(id).kind] = byKind[data.moveDef(id).kind] || []).push(id);
+	const flat = () => { const q = makeRoom(40, 40, 0); q.spawn = [40, 0, 40]; return q; };
+	const each = Object.keys(byKind).filter((k) => !CK.EXP_LATER.includes(k)).map((k) => { const w = newWorld(flat(), data, { dex: 25, moves: [byKind[k][0]], seed: 4 }); w.pl.invuln = 1e9; addEnemy(w, RAT, 43.5, 40, { dummy: true, hp: 1e5 }); run(w, 600); return [k, w.stats.hits, w.weather ? w.weather.kind : '']; });
+	A(ids.length === 18 && each.length === 8 && each.every(([k, h, wx]) => (k === 'weather' ? !!wx : h > 0)), `all eight of Expedition's kinds do their work here (${each.map((e) => e[0]).join(', ')})`, each);
+	const r = yard(), behind = (id) => { const w = newWorld(r, data, { dex: 25, moves: [id], seed: 4 }); w.pl.s.x = 11 * CELL; w.pl.s.z = 15 * CELL; w.pl.invuln = 1e9; const e = addEnemy(w, RAT, 6 * CELL, 15 * CELL, { dummy: true, hp: 1e5 }); run(w, 480); return { hits: w.stats.hits, blocked: w.stats.blocked, lost: e.maxHp - e.hp }; };
+	const lob = behind('mud-bomb'), smite = behind('sky-attack'), straight = behind('ember');
+	A(lob.hits >= 3 && smite.hits >= 3 && straight.hits === 0 && straight.blocked > 5, `a target behind the 4 m wall: a lob comes down on it (${lob.hits} hits) and a smite falls on it (${smite.hits}); Ember only hits the wall`, [lob, smite, straight]);
+	const ledge = (id) => { const w = newWorld(r, data, { dex: 25, moves: [id], seed: 4 }); w.pl.s.x = 16 * CELL - 1; w.pl.s.z = 15 * CELL; w.pl.invuln = 1e9; const up = addEnemy(w, RAT, 16 * CELL + 0.8, 15 * CELL, { dummy: true, hp: 1e5 }), level = addEnemy(w, RAT, 16 * CELL - 3, 15 * CELL, { dummy: true, hp: 1e5 }); run(w, 300); return [up.maxHp - up.hp, level.maxHp - level.hp]; };
+	const wave = ledge('surf'), spin = ledge('rapid-spin');
+	A(wave[0] === 0 && wave[1] > 0 && spin[0] === 0 && spin[1] > 0, 'a wave and a spin hit what is on your level, not the enemy on the ledge 1.5 m above', [wave, spin]);
+	// a vortex west of the wall, an enemy east of it within its pull: it is dragged to the wall and no further
+	const vw = newWorld(r, data, { dex: 25, moves: [], seed: 4 }); vw.pl.invuln = 1e9; const wh = data.move('whirlpool');
+	vw.effects.push({ k: 'vortex', id: 1, m: wh, x: 8 * CELL - 1.5, y: 0, z: 15 * CELL, t: 0, dur: 6, tick: 0, dmg: 1, r: wh.radius * U });
+	const east = addEnemy(vw, RAT, 9 * CELL + 2, 15 * CELL, { dummy: true, hp: 1e5 }), west = addEnemy(vw, RAT, 8 * CELL - 5, 15 * CELL, { dummy: true, hp: 1e5 }); run(vw, 300);
+	A(east.a.x >= 9 * CELL + 0.3 && east.a.x < 9 * CELL + 1 && Math.abs(west.a.x - (8 * CELL - 1.5)) < 0.3, 'a vortex drags an enemy in the open to its middle; one on the far side of a wall is pulled up against the wall and held there', [east.a.x, west.a.x]);
+	// a lob's own arc is what the page draws: it is in the air for its 0.55 s, then gone
+	const lw = newWorld(flat(), data, { dex: 25, moves: ['mud-bomb'], seed: 4 }); lw.pl.invuln = 1e9; addEnemy(lw, RAT, 48, 40, { dummy: true, hp: 1e5 }); let flying = 0; for (let i = 0; i < 60; i++) { tick(lw, null); if (lw.effects.some((q) => q.k === 'lob')) flying++; }
+	A(flying >= 30 && flying <= 36 && lw.stats.hits === 1, `a bomb is in the air ${(flying / 60).toFixed(2)} s before it lands`, [flying, lw.stats.hits]);
+}
+
+// ---------------------------------------------------------------- weather
+{
+	const flat = () => { const q = makeRoom(40, 40, 0); q.spawn = [40, 0, 40]; return q; };
+	const dealt = (wx, move, foe = RAT) => { const w = newWorld(flat(), data, { dex: 25, moves: [move], seed: 4 }); w.pl.invuln = 1e9; if (wx) { setWeather(w, wx, 60); run(w, 200); w.stats.dealt = 0; w.stats.hits = 0; } addEnemy(w, foe, 46, 40, { dummy: true, hp: 1e6 }); run(w, 300); return w.stats.dealt / w.stats.hits; };
+	const dry = dealt(null, 'water-gun'), wet = dealt('rain', 'water-gun'), sunny = dealt('sun', 'water-gun'), fireRain = dealt('rain', 'ember'), fireDry = dealt(null, 'ember');
+	A(near(wet / dry, 1.5, 1e-9) && near(sunny / dry, 0.5, 1e-9) && fireRain < fireDry, `rain makes a Water hit half as strong again (${dry.toFixed(1)} to ${wet.toFixed(1)}), sun halves it, and rain weakens Fire`, [dry, wet, sunny, fireRain, fireDry]);
+	const w = newWorld(flat(), data, { dex: 25, moves: [], seed: 4 }); setWeather(w, 'rain', 10); const lv = []; for (let i = 0; i < 600; i++) { tick(w, null); if (i % 60 === 59) lv.push(+wxLevel(w).toFixed(2)); }
+	A(lv[0] > 0.3 && lv[0] < 0.4 && lv[4] === 1 && lv[8] < 0.4 && w.weather === null, `weather fades in over 3 s, holds, fades out and ends (its strength each second of a 10 s rain: ${lv.join(' ')})`, lv);
+	// sand: wears down what is not Rock, Ground or Steel; never a boss; never you to nothing
+	const s = newWorld(flat(), data, { dex: 25, moves: [], seed: 4 }); s.pl.invuln = 1e9; setWeather(s, 'sand', 40);
+	const rat = addEnemy(s, RAT, 60, 40, { dummy: true, hp: 5 }), geo = addEnemy(s, 74, 60, 44, { dummy: true, hp: 5 }), boss = addBoss(s, 143, 62, 50, { slot: 0 }); boss.ai.cd = 1e9; boss.a.speed = 0; geo.behavior = 'chase';
+	run(s, 60 * 10);
+	A(rat.hp < rat.maxHp && near((rat.maxHp - rat.hp) / 4, rat.maxHp * 0.02 + 1, 0.51) && geo.hp === geo.maxHp && boss.hp === boss.maxHp, `a sandstorm takes 2 % + 1 of a Rattata's HP every 2 s once it is up (${rat.maxHp - rat.hp} in 10 s), nothing from a Geodude (Rock / Ground) or a boss`, [rat.hp, rat.maxHp, geo.hp, boss.hp]);
+	A(s.stats.taken > 0 && near(s.stats.taken / 4, s.pl.maxHp * 0.012, 1e-6), `...and ${(s.pl.maxHp * 0.012).toFixed(2)} of your own HP each time (you are Electric)`, s.stats.taken);
+	s.pl.hp = 1.5; run(s, 60 * 6); A(s.pl.hp === 1.5 && !s.pl.dead, 'it never finishes you: at 1.5 HP the sand leaves you be');
+	rat.hp = 4; run(s, 60 * 6); A(rat.dead && s.stats.kills >= 1 && s.pickups.length >= 1, 'it can finish an enemy, which leaves its XP like any other', [rat.dead, s.stats.kills]);
+	// snow slows whoever is not Ice
+	const sn = newWorld(flat(), data, { dex: 25, moves: [], seed: 4 }), cl = newWorld(flat(), data, { dex: 25, moves: [], seed: 4 }); setWeather(sn, 'snow', 60);
+	for (const q of [sn, cl]) { q.pl.invuln = 1e9; run(q, 200); q.e = addEnemy(q, RAT, 60, 40); q.x0 = q.e.a.x; run(q, 120, { mx: 0, mz: 1, jump: false, crouch: false }); }
+	A(near((sn.x0 - sn.e.a.x) / (cl.x0 - cl.e.a.x), 0.9, 0.02) && near(sn.pl.s.vz / cl.pl.s.vz, 0.9, 0.005), 'snow slows enemies and you by a tenth', [sn.x0 - sn.e.a.x, cl.x0 - cl.e.a.x, sn.pl.s.vz, cl.pl.s.vz]);
+	// by itself: not before 2:00; after it, sooner or later
+	const kinds = new Set(); let early = 0, started = 0;
+	for (let seed = 1; seed <= 12; seed++) { const q = newWorld(generate(seed, seed % 2 ? 'meadow' : 'peaks'), data, { dex: 25, moves: [], seed }); q.pl.invuln = 1e9; for (let i = 0; i < 60 * 600; i++) { tick(q, null); const ev = q.events.find((e) => e.k === 'weather' && e.kind); if (ev) { started++; kinds.add(ev.kind); if (q.t < 180) early += q.t < 120 ? 100 : 0; } } }
+	A(early === 0 && started >= 6 && kinds.size >= 3, `left alone, weather starts by itself from 2:00 on (${started} times in twelve 10-minute runs: ${[...kinds].join(', ')}), never before`, [early, started, [...kinds]]);
+	const none = newWorld(generate(3, 'meadow'), data, { dex: 25, moves: [], seed: 3, weather: false }); none.pl.invuln = 1e9; let any = 0; for (let i = 0; i < 60 * 900; i++) { tick(none, null); if (none.weather) any++; }
+	A(any === 0, 'a fight told to have no weather has none');
+	const rd = newWorld(flat(), data, { dex: 25, moves: ['rain-dance'], seed: 4 }); run(rd, 30);
+	A(rd.weather && rd.weather.kind === 'rain' && rd.weather.dur === 14, 'Rain Dance starts 14 s of rain');
+}
+
 // ---------------------------------------------------------------- arrivals
 {
 	const room = generate(7, 'meadow'), w = newWorld(room, data, { dex: 25, seed: 11, cast: [RAT, ZUBAT, 10, 41] });
@@ -233,7 +489,7 @@ const at = (cx, cz) => [(cx + 0.5) * CELL, (cz + 0.5) * CELL];
 	const known = new Set();
 	for (let i = 0; i < 60 * 90; i++) {
 		tick(w, null);
-		for (const e of w.enemies) { if (known.has(e.id)) continue; known.add(e.id); seen++;
+		for (const e of w.enemies) { if (known.has(e.id)) continue; known.add(e.id); if (e.minion) continue; seen++;   // (a summoner's minions are not arrivals)
 			const d = Math.hypot(e.a.x - w.pl.s.x, e.a.z - w.pl.s.z), ci = Math.floor(e.a.z / CELL) * room.w + Math.floor(e.a.x / CELL);
 			if (d < CK.SPAWN_MIN - 0.5 || d > CK.SPAWN_MAX + 0.5) bad.push(['distance', d]);
 			if (room.cells[ci] >= room.rimH) bad.push(['in the rim']);
@@ -252,7 +508,7 @@ const at = (cx, cz) => [(cx + 0.5) * CELL, (cz + 0.5) * CELL];
 // ---------------------------------------------------------------- a whole fight: deterministic, safe, cheap
 {
 	const fight = (seed, levelSeed = 7, biome = 'meadow', secs = 60) => {
-		const room = generate(levelSeed, biome), w = newWorld(room, data, { dex: 25, moves: ['ember', 'tackle', 'bug-buzz', 'fire-spin'], seed, cast: [RAT, ZUBAT, 10, 41, 74] });
+		const room = generate(levelSeed, biome), w = newWorld(room, data, { dex: 25, moves: ['ember', 'tackle', 'bug-buzz', 'fire-spin'], seed, cast: [RAT, ZUBAT, 10, 41, 74], autoPick: 0 });
 		const r = rng(seed * 31 + 5); let inp = { mx: 0, mz: 0, jump: false, crouch: false }, bad = '';
 		for (let i = 0; i < secs * 60; i++) {
 			if (i % 20 === 0) inp = { mx: r() * 2 - 1, mz: r() * 2 - 1, jump: r() < 0.3, crouch: r() < 0.15 };

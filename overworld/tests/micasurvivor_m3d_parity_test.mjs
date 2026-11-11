@@ -8,10 +8,20 @@
 //     (Fire Spin)
 //   * the type chart and piercing: one Ember volley line through a Grass, a Water and a Fire target
 //   * damage over time: Ember's burn and Poison Sting's poison tick for the same totals
+//   * Expedition's own kinds: a lob, homing shots, a barrage, a smite, a vortex (and its pull), a wave, a spin
+//   * weather: rain on a Water move (the fade-in included), a sandstorm on a Rattata, a Geodude and you, Rain Dance
 //   * the kinds that lie on the ground or are placed at random: a boomerang, meteors, a trail, a turret, cones, mines
 //     (where the 2D game rolls dice for a position or a speed the totals are compared within a margin), and a buff
 //   * the control states, set by hand on both sides: asleep (+30 % and it wakes), frozen (+25 %, it stands still),
 //     paralysed (40 % speed, slower to touch), confused (it hits its neighbour)
+//   * enemy behaviours: a charger (aim, then through you at 3.4 × speed), a ranged enemy (walks into range, holds
+//     its distance, backs off when you are close, shoots), a fan of shots, a beamer and a zoner (a mark on the ground
+//     that goes off after a delay, through your moment of grace), a bomber (a fuse, and it takes itself with it)
+//   * the supports: a healer mends a hurt neighbour, a shielder's shield soaks up hits, a summoner calls four of its
+//     kind at a time and keeps at most eight; and a jumper leaps to where you were
+//   * a boss: each of its seven attacks (stomp, charge, leap, rain, beams, volley, ring) lands at the same moment for
+//     the same damage; it is the same size; a hit does not shove it
+//   * experience: what each level costs, how far your reach is and how fast an orb comes, what a heap of XP makes
 //   * an enemy's touch: a chaser walks up and hits you — the same number of touches, the same HP lost, and it is
 //     knocked back the same distance
 // Lengths: the 2D game's unit is 1/16 m here (32 units = one 2 m cell).
@@ -71,6 +81,7 @@ try {
 	// ---------- both sides of the comparison, as helpers in the page
 	const ready = await E(async () => {
 		G.Game.togglePause(); G.UI.hide('scr-pause');
+		await G.Expedition.load();   // (Expedition's own moves: the page loads them only when an Expedition run starts)
 		const C = await import('/micasurvivor/m3d/combat.js'), S = await import('/micasurvivor/m3d/sim.js');
 		const data = C.dataFrom(G), U = C.U;
 		// a seeded Math.random for the 2D side (its shots' aim wobbles; nothing here turns on it)
@@ -84,8 +95,10 @@ try {
 			const Wd = G.World, keep = {}, bare = { projectileBlock: () => null, propsInCircle: () => [], isWall: () => false, isFree: () => true, isLiquid: () => false, nearestBreakable: () => null, collide: () => { } };
 			for (const k in bare) if (typeof Wd[k] === 'function') { keep[k] = Wd[k]; Wd[k] = bare[k]; }
 			try {
-				G.EnemyMgr.clear(); G.Projectiles.clear(); G.Projectiles.clearOrbs(pl); G.Combat.clearFields(); G.EnemyMgr.rebuildGrid();
-				const ms = sc.moves.map(([id, lvl]) => G.Moves.instance(id, lvl || 1));
+				G.EnemyMgr.clear(); G.Projectiles.clear(); G.Projectiles.clearOrbs(pl); G.Combat.clearFields(); G.Hazards.clear(); G.EnemyMgr.rebuildGrid();
+				if (G.ExpMoves.clear) G.ExpMoves.clear();
+				G.Weather.reset(); if (sc.wx) G.Weather.force(sc.wx, sc.wxDur || 60);
+				const ms = sc.moves.map(([id, lvl]) => (G.ExpMoves.isExpMove(id) ? G.ExpMoves.instance(id) : G.Moves.instance(id, lvl || 1)));
 				pl.moves = ms; pl.slots = ms.map((m) => [m]); pl.active = 0; pl.statsTaken = {}; pl.dmgDealt = 0; pl.meleeT = 0;
 				pl.hp = pl.maxHp; pl.invuln = sc.hurtable ? 0 : 1e9; pl.dead = false; pl.lastPatch = null;
 				for (const k in pl.buffs) { pl.buffs[k].n = 0; pl.buffs[k].t = 0; }
@@ -93,15 +106,18 @@ try {
 				if (sc.noProc) for (const m of ms) m.ccp = 0;   // (a state's dice are not the same dice on the two sides)
 				let hits = 0, touches = 0, removed = 0, taken = 0;
 				const foes = sc.foes.map((f) => {
-					const def = { dex: f.dex, name: 'T' + f.dex, hp: f.hp || 1e6, spd: f.still ? 0 : f.spd || 56, dmg: f.dmg || 10, xp: 1, behavior: 'chase' };
-					const e = new G.Enemy(def, pl.x + f.dx, pl.y + (f.dy || 0), { hp: 1, spd: 1, dmg: 1 }, false);
+					const def = { dex: f.dex, name: 'T' + f.dex, hp: f.hp || 1e6, spd: f.still ? 0 : f.spd || 56, dmg: f.dmg || 10, xp: 1, behavior: f.b || 'chase', ...(f.def || {}) };
+					const e = new G.Enemy(def, pl.x + f.dx, pl.y + (f.dy || 0), { hp: 1, spd: 1, dmg: 1 }, !!f.boss);
+					if (f.boss) { e.bossInit(); Object.assign(e.ai, { melee: [f.boss], ranged: [f.boss], mode: 'close', modeT: 99, cd: 0.5 }); }
 					e.flying = true;   // (straight lines: no walls or pathing between you)
 					const hurt = e.hurt.bind(e); e.hurt = (...a) => { const h0 = e.hp; const r = hurt(...a); removed += h0 - e.hp; if (a[4] !== undefined || a.length > 2) hits++; return r; };
+					if (f.shotCd !== undefined) e.shotCd = f.shotCd; if (f.skillCd !== undefined) e.skillCd = f.skillCd; if (f.hurt) e.hp -= f.hurt;
 					G.EnemyMgr.add(e); if (f.state) G.Status.apply(e, f.state); return e;
 				});
 				G.EnemyMgr.rebuildGrid();
-				const plHurt = pl.hurt.bind(pl); pl.hurt = (...a) => { const h0 = pl.hp, was = pl.invuln > 0; const r = plHurt(...a); touches++; taken += h0 - pl.hp; return r; };
-				const x0 = pl.x, y0 = pl.y; let t = 0, far = 0, landed = 0;
+				let firstDmg = 0;
+				const plHurt = pl.hurt.bind(pl); pl.hurt = (...a) => { const h0 = pl.hp, was = pl.invuln > 0; const r = plHurt(...a); touches++; taken += h0 - pl.hp; if (!firstDmg && h0 - pl.hp > 0) firstDmg = h0 - pl.hp; return r; };
+				const x0 = pl.x, y0 = pl.y; let t = 0, far = 0, landed = 0, first = 0;
 				const land = G.Combat.land; let count = 0;
 				for (let i = 0, n = Math.round(sc.secs / DT); i < n; i++) {
 					t += DT;
@@ -118,33 +134,60 @@ try {
 					G.Projectiles.update(DT, pl, G.EnemyMgr.all());
 					G.Combat.resolve(DT, pl, t);
 					G.Combat.updateFields(DT);
+					G.ExpMoves.tick(DT);   // (the game's run.tick, for Expedition's timed effects)
+					G.Weather.update(DT, 0, pl);   // (the clock held at 0: no weather starts by itself)
+					G.Hazards.update(DT);
 					for (const e of foes) far = Math.max(far, Math.hypot(e.x - x0, e.y - y0));
+					if (!first && taken > 0) first = t;
 				}
 				pl.hurt = plHurt;
-				return { dealt: pl.dmgDealt, removed, taken, touches, hp: pl.hp, maxHp: pl.maxHp, far, foes: foes.map((e) => ({ hp: e.maxHp - e.hp, d: Math.hypot(e.x - x0, e.y - y0), dead: e.dead })),
+				const all = G.EnemyMgr.all().filter((e) => !e.dead), mins = all.filter((e) => e.isMinion);
+				return { count: all.length, minions: mins.length, minion: mins[0] ? { hp: mins[0].maxHp, dmg: mins[0].dmg, spd: mins[0].spd, xp: mins[0].xp } : null, left: foes.map((e) => Math.round(e.hp)), shields: foes.map((e) => Math.round(e.shield || 0)),
+					first, firstDmg, scale: foes[0] ? foes[0].scale : 1, fr: foes[0] ? foes[0].r : 0, dealt: pl.dmgDealt, removed, taken, touches, hp: pl.hp, maxHp: pl.maxHp, far, foes: foes.map((e) => ({ hp: e.maxHp - e.hp, d: Math.hypot(e.x - x0, e.y - y0), dead: e.dead })),
 					atkK, afDmg: pl.afDmg, dex: pl.mon.dex, crit: pl.critChance, r: pl.r, reduction: pl.reduction, takenK: G.Abilities.inK(pl, 'normal', null) };
-			} finally { for (const k in keep) Wd[k] = keep[k]; Math.random = R; G.EnemyMgr.clear(); G.Projectiles.clear(); G.Projectiles.clearOrbs(G.Game.player); G.Combat.clearFields(); G.EnemyMgr.rebuildGrid(); G.Game.player.invuln = 1e9; }
+			} finally { G.Weather.reset(); for (const k in keep) Wd[k] = keep[k]; Math.random = R; G.EnemyMgr.clear(); G.Projectiles.clear(); G.Projectiles.clearOrbs(G.Game.player); G.Combat.clearFields(); G.EnemyMgr.rebuildGrid(); G.Game.player.invuln = 1e9; }
 		}
 		/** The same fight by the 3D rules, on a flat room. `ref`: the 2D result (who you are, your ability's factors). */
 		function play3d(sc, ref) {
 			const room = S.makeRoom(80, 80, 0); room.spawn = [80, 0, 80];
-			const w = C.newWorld(room, data, { dex: ref.dex, moves: sc.moves, seed: sc.seed ? sc.seed * 7 + 1 : 777, afDmg: ref.afDmg, atkK: ref.atkK, takenK: ref.takenK, crit: 0, orbitSquash: 0.7 });
+			const w = C.newWorld(room, data, { dex: ref.dex, moves: sc.moves, seed: sc.seed ? sc.seed * 7 + 1 : 777, weather: false, afDmg: ref.afDmg, atkK: ref.atkK, takenK: ref.takenK, crit: 0, orbitSquash: 0.7 });
 			w.pl.baseReduce = ref.reduction; w.pl.invuln = sc.hurtable ? 0 : 1e9;
+			if (sc.wx) C.setWeather(w, sc.wx, sc.wxDur || 60);
 			if (sc.noProc) for (const m of w.pl.moves) m.ccp = 0;
 			const foes = sc.foes.map((f) => {
-				const e = C.addEnemy(w, f.dex, 80 + f.dx * U, 80 + (f.dy || 0) * U, { t: 0, ti: 0 });   // (a target that stands still is an enemy with no speed: it still touches, as in 2D)
-				e.maxHp = e.hp = f.hp || 1e6; e.dmg = f.dmg || 10; e.a.speed = (f.still ? 0 : f.spd || 56) * U;
+				if (f.boss) { const b = C.addBoss(w, f.dex, 80 + f.dx * U, 80, { t: 0, def: { dex: f.dex, hp: f.hp || 1e6, spd: f.spd || 56, dmg: f.dmg || 10, xp: 1, behavior: 'chase', ...(f.def || {}) } }); Object.assign(b.ai, { melee: [f.boss], ranged: [f.boss], mode: 'close', modeT: 99, cd: 0.5 }); b.a.y = 0; b.a.hover = 0; return b; }   // (flat ground: it stands on the floor as the 2D one does)
+				const e = C.addEnemy(w, f.dex, 80 + f.dx * U, 80 + (f.dy || 0) * U, { t: 0, ti: 0, behavior: f.b || 'chase' });   // (a target that stands still is an enemy with no speed: it still touches, as in 2D)
+				if (f.def) Object.assign(e.def = { ...e.def }, f.def); if (f.shotCd !== undefined) e.shotCd = f.shotCd; if (f.skillCd !== undefined) e.skillCd = f.skillCd;
+				if (f.def2) { e.def = { ...e.def, hp: f.def2.hp, spd: f.def2.spd, dmg: f.def2.dmg, xp: f.def2.xp }; }
+				e.maxHp = e.hp = f.hp || 1e6; e.dmg = f.dmg || 10; e.a.speed = (f.still ? 0 : f.spd || 56) * U; if (f.hurt) e.hp -= f.hurt;
 				e.fly = false; e.a.fly = false; e.a.y = 0; e.a.grounded = true;   // (flat ground: everyone walks)
 				if (f.state) C.applyState(w, e, f.state);
 				return e;
 			});
-			let far = 0;
-			for (let i = 0, n = Math.round(sc.secs / DT); i < n; i++) { C.tick(w, null, DT); for (const e of foes) far = Math.max(far, Math.hypot(e.a.x - 80, e.a.z - 80) / U); }
-			return { dealt: w.stats.dealt, removed: w.stats.removed, hits: w.stats.hits, taken: w.stats.taken, touches: w.stats.touched, hp: w.pl.hp, maxHp: w.pl.maxHp, far, r: w.pl.r / U,
+			let far = 0, first = 0, firstDmg = 0;
+			for (let i = 0, n = Math.round(sc.secs / DT); i < n; i++) { C.tick(w, null, DT); for (const e of foes) far = Math.max(far, Math.hypot(e.a.x - 80, e.a.z - 80) / U); if (!first && w.stats.taken > 0) { first = w.t; firstDmg = w.stats.taken; } }
+			const mins = w.enemies.filter((e) => e.minion && !e.dead);
+			return { count: w.enemies.length, minions: mins.length, minion: mins[0] ? { hp: mins[0].maxHp, dmg: mins[0].dmg, spd: mins[0].a.speed / U, xp: mins[0].xp } : null, left: foes.map((e) => Math.round(e.hp)), shields: foes.map((e) => Math.round(e.shield || 0)),
+				first, firstDmg, scale: foes[0] ? foes[0].scale || 1 : 1, fr: foes[0] ? foes[0].cr / U : 0, dealt: w.stats.dealt, removed: w.stats.removed, hits: w.stats.hits, taken: w.stats.taken, touches: w.stats.touched, hp: w.pl.hp, maxHp: w.pl.maxHp, far, r: w.pl.r / U,
 				foes: foes.map((e) => ({ hp: e.maxHp - e.hp, d: Math.hypot(e.a.x - 80, e.a.z - 80) / U, dead: e.dead })) };
 		}
-		window.P = { both(sc) { const a = play2d(sc); return { a, b: play3d(sc, a) }; } };
-		return { state: G.Game.state, unported: C.CK.UNPORTED };
+		/** Experience, both ways: the curve; how long an orb at rest takes to reach you from `dist` units; what `xp` makes of a fresh level 1. */
+		function xp(dist, amount) {
+			const pl = G.Game.player, curve2 = [], curve3 = []; for (let l = 1; l <= 60; l++) { curve2.push(G.Player.xpFor(l)); curve3.push(C.xpFor(l)); }
+			const all = G.Pickups.all(), keep = all.splice(0, all.length);
+			G.Pickups.dropXp(pl.x + dist, pl.y, 7); const orb = all.find((p) => p.kind === 'xp'); all.length = 0; all.push(orb); orb.vx = orb.vy = 0; orb.x = pl.x + dist; orb.y = pl.y;
+			let n2 = 0, got = false; while (n2 < 600 && !got) { G.Pickups.update(DT, [pl], () => { got = true; }); n2++; }
+			all.length = 0; for (const p of keep) all.push(p);
+			const room = S.makeRoom(80, 80, 0); room.spawn = [80, 0, 80]; const w = C.newWorld(room, data, { dex: pl.mon.dex, moves: [], seed: 1 });
+			w.pl.s.y = 0; const o = C.drop(w, 'xp', 80 + dist * U, 0.5, 80, 7); o.vx = o.vz = 0;   // (level with your middle, as a 2D orb is level with you)
+			let n3 = 0; while (n3 < 600 && w.pickups.length) { C.tick(w, null, DT); n3++; }
+			// levels: the same XP into a fresh level-1 player
+			const p2 = { xp: 0, xpMul: 1, level: 1, xpNext: G.Player.xpFor(1) }; p2.xp += amount; while (p2.xp >= p2.xpNext) { p2.xp -= p2.xpNext; p2.level++; p2.xpNext = G.Player.xpFor(p2.level); }
+			const w2 = C.newWorld(room, data, { dex: pl.mon.dex, moves: [], seed: 1, autoPick: 0 }); const big = C.drop(w2, 'xp', 80.1, 0.5, 80, amount); big.vx = big.vz = 0; for (let i = 0; i < 10; i++) C.tick(w2, null, DT);
+			return { same: JSON.stringify(curve2) === JSON.stringify(curve3), first: curve2[0], n2, n3, magnet2: pl.magnet, magnet3: w.pl.magnet / U, l2: [p2.level, p2.xp], l3: [w2.pl.level, w2.pl.xp] };
+		}
+		window.P = { xp, both(sc) { const a = play2d(sc); return { a, b: play3d(sc, a) }; } };
+		return { state: G.Game.state, unported: C.CK.UNPORTED, exp: !!G.ExpMoves && Object.keys(G.ExpMoves.MOVES).length, later: C.CK.EXP_LATER };
 	});
 	A(ready.state === 'paused', 'the run is paused: both sides are stepped by hand, 60 ticks a second');
 
@@ -158,6 +201,27 @@ try {
 		const r = await E((id, dist) => P.both({ moves: [[id, 1]], foes: [{ dex: 19, dx: dist, still: true }], secs: 10, noProc: true }), id, dist);
 		const one = r.b.hits ? r.b.removed / r.b.hits : 1;   // one hit's worth
 		A(r.a.removed > 0 && same(r.a.removed, r.b.removed, one * 1.01 + 2), `${id} (${what}), 10 s on a still Rattata ${dist} units away: ${cmp(r)}`, r);
+	}
+	// ---------- Expedition's own kinds
+	A(ready.exp === 18 && ready.later.length === 0, `Expedition's 18 moves are loaded, and all eight of its kinds are in the 3D rules`, ready);
+	for (const [id, dist, what] of [['mud-bomb', 150, 'a lob: a bomb in an arc, and it slows'], ['sludge-bomb', 150, 'a lob that poisons'], ['swift', 150, 'homing shots'], ['bullet-seed', 150, 'a barrage: four quick shots'], ['sky-attack', 150, 'a smite: a strike from the sky'], ['thunder', 150, 'a smite'], ['whirlpool', 150, 'a vortex on the target'], ['surf', 120, 'a wave spreading from you'], ['rapid-spin', 40, 'a spin']]) {
+		const r = await E((id, dist) => P.both({ moves: [[id, 1]], foes: [{ dex: 19, dx: dist, still: true, hp: 20000 }], secs: 10, noProc: true }), id, dist);
+		const one = r.b.hits ? r.b.removed / r.b.hits : 1;
+		A(r.a.removed > 0 && Math.abs(r.a.removed - r.b.removed) <= Math.max(2, one * 0.02), `${id} (${what}), 10 s: ${cmp(r)}`, r);
+	}
+	{   // a vortex drags the others in
+		const r = await E(() => P.both({ moves: [['twister', 1]], foes: [{ dex: 19, dx: 150, still: true, hp: 20000 }, { dex: 19, dx: 150, dy: 90, still: true, hp: 20000 }], secs: 6, noProc: true }));
+		A(r.a.foes[1].hp > 0 && r.a.foes[1].hp === r.b.foes[1].hp && Math.abs(r.a.foes[1].d - r.b.foes[1].d) < 1.5, `a vortex pulls a second enemy 90 units off into itself and grinds it too (it loses ${r.a.foes[1].hp} / ${r.b.foes[1].hp} HP)`, r);
+	}
+	// ---------- weather
+	{
+		const rain = await E(() => P.both({ moves: [['water-gun', 1]], foes: [{ dex: 19, dx: 150, still: true, hp: 20000 }], secs: 10, wx: 'rain' }));
+		const dry = await E(() => P.both({ moves: [['water-gun', 1]], foes: [{ dex: 19, dx: 150, still: true, hp: 20000 }], secs: 10 }));
+		A(rain.a.removed === rain.b.removed && rain.a.removed > dry.a.removed * 1.3, `Water Gun in the rain, the 3 s fade-in included: ${cmp(rain)} (dry: ${dry.a.removed})`, rain);
+		const sand = await E(() => P.both({ moves: [], foes: [{ dex: 19, dx: 150, still: true, hp: 2000 }, { dex: 74, dx: 150, dy: 60, still: true, hp: 2000 }], secs: 12, wx: 'sand', hurtable: true }));
+		A(sand.a.left[0] === sand.b.left[0] && sand.a.left[0] < 2000 && sand.a.left[1] === 2000 && sand.b.left[1] === 2000 && Math.abs(sand.a.hp - sand.b.hp) < 0.02 && sand.a.hp < sand.a.maxHp, `12 s of sandstorm: a Rattata is worn down to ${sand.a.left[0]} / ${sand.b.left[0]} of 2000, a Geodude not at all, and you to ${sand.a.hp.toFixed(2)} / ${sand.b.hp.toFixed(2)} HP`, sand);
+		const dance = await E(() => P.both({ moves: [['rain-dance', 1], ['water-gun', 1]], foes: [{ dex: 19, dx: 150, still: true, hp: 20000 }], secs: 12 }));
+		A(dance.a.removed === dance.b.removed && dance.a.removed > dry.a.removed * 1.3, `Rain Dance, then Water Gun under it: ${cmp(dance)}`, dance);
 	}
 	// ---------- the other kinds: what lies on the ground, what comes back, what is placed at random
 	const near = (a, b, pct, abs = 3) => Math.abs(a - b) <= Math.max(abs, Math.max(a, b) * pct);
@@ -213,6 +277,66 @@ try {
 		A(same(r.a.taken, r.b.taken, 0.02), `...for the same HP: ${r.a.taken.toFixed(2)} in 2D, ${r.b.taken.toFixed(2)} in 3D`, r);
 		A(same(r.a.foes[0].d, r.b.foes[0].d, 6), `...and ends the same distance away after its last knock-back (${r.a.foes[0].d.toFixed(1)} / ${r.b.foes[0].d.toFixed(1)} units)`, r);
 		A(same(r.a.r, r.b.r, 1e-6), `your body is the same size (radius ${r.a.r} units)`, [r.a.r, r.b.r]);
+	}
+	// ---------- enemy behaviours: who does more than walk at you
+	{
+		const big = (b, o = {}) => ({ moves: [], foes: [{ dex: 19, dx: o.dx || 150, spd: 56, dmg: 6, hp: 1e6, b, def: o.def, shotCd: o.shotCd }], secs: o.secs || 12, hurtable: true, seed: o.seed });
+		// (they start within 14 m: beyond that a 3D walker follows the level's cells, not a straight line)
+		const hpOf = (r) => `${r.a.taken.toFixed(2)} HP in 2D, ${r.b.taken.toFixed(2)} in 3D`;
+		const ch = await E((sc) => P.both(sc), big('charger', { dx: 220 }));
+		A(ch.a.taken > 0 && Math.abs(ch.a.taken - ch.b.taken) < 0.02 && Math.abs(ch.a.first - ch.b.first) < 0.05, `a charger stops 200 units out, aims 0.55 s and comes through at 3.4 × speed: first hit after ${ch.a.first.toFixed(2)} s / ${ch.b.first.toFixed(2)} s, ${hpOf(ch)} in 12 s`, ch);
+		A(Math.abs(ch.a.foes[0].d - ch.b.foes[0].d) < 3, `...and after 12 s it is in the same place (${ch.a.foes[0].d.toFixed(1)} / ${ch.b.foes[0].d.toFixed(1)} units away)`, ch);
+		const rdef = { shotDmg: 5, shotCd: 2.2, range: 190 };
+		const rg = await E((sc) => P.both(sc), big('ranged', { dx: 220, def: rdef, shotCd: 1 }));
+		A(rg.a.taken > 0 && Math.abs(rg.a.taken - rg.b.taken) < 0.02 && Math.abs(rg.a.first - rg.b.first) < 0.05, `a ranged enemy walks into range, holds its distance and shoots every 2.2 s: first hit after ${rg.a.first.toFixed(2)} s / ${rg.b.first.toFixed(2)} s, ${hpOf(rg)}`, rg);
+		A(Math.abs(rg.a.foes[0].d - rg.b.foes[0].d) < 2 && rg.a.foes[0].d > 100, `...and it stands off at the same distance (${rg.a.foes[0].d.toFixed(1)} / ${rg.b.foes[0].d.toFixed(1)} units)`, rg);
+		const close = await E((sc) => P.both(sc), big('ranged', { dx: 60, def: rdef, shotCd: 1, secs: 6 }));
+		A(Math.abs(close.a.foes[0].d - close.b.foes[0].d) < 2 && close.a.foes[0].d > 100, `too close, it backs away to its distance (from 60 to ${close.a.foes[0].d.toFixed(1)} / ${close.b.foes[0].d.toFixed(1)} units)`, close);
+		const fan = await E((sc) => P.both(sc), big('fan', { dx: 220, def: { shotDmg: 5, shotCd: 3.2, range: 190, fanN: 5 }, shotCd: 1 }));
+		A(fan.a.taken > 0 && Math.abs(fan.a.taken - fan.b.taken) < 0.02 && Math.abs(fan.a.first - fan.b.first) < 0.05, `a fan of five shots: the one down the middle hits (${hpOf(fan)})`, fan);
+		const bm = await E((sc) => P.both(sc), big('beamer', { dx: 220, def: { shotDmg: 5, shotCd: 4.4, range: 260 }, shotCd: 1 }));
+		A(bm.a.taken > 0 && Math.abs(bm.a.taken - bm.b.taken) < 0.02 && Math.abs(bm.a.first - bm.b.first) < 0.05, `a beamer marks a line and fires it a second later: first hit after ${bm.a.first.toFixed(2)} s / ${bm.b.first.toFixed(2)} s, ${hpOf(bm)}`, bm);
+		const zn = await E((sc) => P.both(sc), big('zoner', { dx: 220, def: { shotDmg: 5, shotCd: 4.6, range: 190, zones: 1 }, shotCd: 1 }));
+		A(zn.a.taken > 0 && Math.abs(zn.a.taken - zn.b.taken) < 0.02 && Math.abs(zn.a.first - zn.b.first) < 0.05, `a zoner marks the ground under you and it goes off 1.2 s later: first hit after ${zn.a.first.toFixed(2)} s / ${zn.b.first.toFixed(2)} s, ${hpOf(zn)}`, zn);
+		const bo = await E((sc) => P.both(sc), big('bomber', { dx: 200, secs: 8 }));
+		A(bo.a.taken > 0 && Math.abs(bo.a.taken - bo.b.taken) < 0.02 && Math.abs(bo.a.first - bo.b.first) < 0.05 && bo.a.foes[0].dead && bo.b.foes[0].dead, `a bomber walks up, lights its fuse and goes off a second later, taking itself with it: after ${bo.a.first.toFixed(2)} s / ${bo.b.first.toFixed(2)} s, ${hpOf(bo)}`, bo);
+	}
+	// ---------- the supports and the jumper
+	{
+		// (the 2D test enemy is built from a bare definition: hp / spd / dmg / xp as given, and the 3D one is given the same)
+		const d2 = { hp: 1000, spd: 56, dmg: 6, xp: 1 };
+		const heal = await E((d2) => P.both({ moves: [], secs: 5, foes: [{ dex: 19, dx: 200, spd: 56, dmg: 6, hp: 1000, b: 'healer', def: { shotCd: 3.5, range: 230 }, def2: d2, shotCd: 1 }, { dex: 1, dx: 240, still: true, hp: 1000, hurt: 400 }] }), d2);
+		A(heal.a.left[1] > 600 && heal.a.left[1] === heal.b.left[1], `a healer mends a hurt neighbour by 7 % of its HP each time (from 600 to ${heal.a.left[1]} / ${heal.b.left[1]} in 5 s)`, heal);
+		const sh = await E((d2) => P.both({ moves: [['ember', 1]], secs: 9, noProc: true, foes: [{ dex: 19, dx: 120, still: true, hp: 1000, b: 'shielder', def2: d2, skillCd: 1 }] }), d2);
+		const bare = await E((d2) => P.both({ moves: [['ember', 1]], secs: 9, noProc: true, foes: [{ dex: 19, dx: 120, still: true, hp: 1000, def2: d2 }] }), d2);
+		A(sh.a.left[0] === sh.b.left[0] && sh.a.left[0] > bare.a.left[0] + 200, `a shielder's shield soaks up 30 % of its HP before it is hurt (after 9 s of Ember it has ${sh.a.left[0]} / ${sh.b.left[0]} HP; unshielded ${bare.a.left[0]})`, [sh, bare]);
+		const su = await E((d2) => P.both({ moves: [], secs: 6, foes: [{ dex: 19, dx: 200, spd: 56, dmg: 6, hp: 1000, b: 'summoner', def: { shotCd: 7, range: 230 }, def2: d2, shotCd: 1 }] }), d2);
+		// (HP: the 2D test enemy carries no run scaling, a 3D enemy carries the run's × 3.3 at the start, and its minions with it)
+		A(su.a.minions === 4 && su.b.minions === 4 && su.a.minion.hp === 350 && su.b.minion.hp === Math.round(350 * 3.3) && su.a.minion.dmg === su.b.minion.dmg && su.a.minion.spd === su.b.minion.spd && su.a.minion.xp === su.b.minion.xp,
+			`a summoner calls four of its kind, each 35 % of its HP, 60 % of its damage, 10 % faster (2D ${JSON.stringify(su.a.minion)} · 3D ${JSON.stringify(su.b.minion)})`, su);
+		const su2 = await E((d2) => P.both({ moves: [], secs: 30, foes: [{ dex: 19, dx: 200, still: true, dmg: 6, hp: 1000, b: 'summoner', def: { shotCd: 7, range: 230 }, def2: d2, shotCd: 1 }] }), d2);
+		A(su2.a.minions === 8 && su2.b.minions === 8, 'and never has more than eight of its own alive (after 30 s: 8 / 8)', [su2.a.minions, su2.b.minions]);
+		const jm = await E((d2) => P.both({ moves: [], secs: 4, hurtable: true, foes: [{ dex: 19, dx: 200, still: true, dmg: 6, hp: 1000, b: 'jumper', def2: d2, skillCd: 0.5 }] }), d2);
+		A(jm.a.taken > 0 && Math.abs(jm.a.taken - jm.b.taken) < 0.02 && Math.abs(jm.a.first - jm.b.first) < 0.05 && Math.abs(jm.a.foes[0].d - jm.b.foes[0].d) < 3, `a jumper crouches, leaps and lands where you were, hurting you if you are still there: hit after ${jm.a.first.toFixed(2)} s / ${jm.b.first.toFixed(2)} s for ${jm.a.taken.toFixed(2)} / ${jm.b.taken.toFixed(2)} HP`, jm);
+	}
+	// ---------- a boss, one attack at a time (its choice pinned on both sides; the first one that lands is compared)
+	{
+		const bdef = { shotDmg: 12, shotCd: 1.1, range: 260 };
+		for (const [attack, dx, what] of [['slam', 100, 'a stomp: a ring round it'], ['dash', 220, 'a charge down a marked line'], ['leap', 220, 'a leap onto your spot'], ['rain', 220, 'zones falling round you'], ['beam', 220, 'a fan of marked lines'], ['volley', 200, 'a fan of shots'], ['nova', 80, 'a ring of shots']]) {
+			const r = await E((attack, dx, bdef) => P.both({ moves: [], secs: 3, hurtable: true, foes: [{ dex: 143, dx, spd: 50, dmg: 20, hp: 5000, boss: attack, def: bdef }] }), attack, dx, bdef);
+			A(r.a.firstDmg > 0 && Math.abs(r.a.firstDmg - r.b.firstDmg) < 0.02 && Math.abs(r.a.first - r.b.first) < 0.05, `a boss's ${attack} (${what}): it lands after ${r.a.first.toFixed(2)} s / ${r.b.first.toFixed(2)} s for ${r.a.firstDmg.toFixed(2)} / ${r.b.firstDmg.toFixed(2)} HP`, r);
+			if (attack === 'slam') A(r.a.scale === r.b.scale && r.a.scale > 1 && Math.abs(r.a.fr - r.b.fr) < 1e-6, `a boss is drawn bigger and its body is bigger with it (Snorlax × ${r.a.scale}: radius ${r.a.fr} units)`, [r.a.scale, r.b.scale, r.a.fr, r.b.fr]);
+		}
+		const kb = await E(() => P.both({ moves: [['body-slam', 3]], secs: 4, foes: [{ dex: 143, dx: 40, spd: 0.0001, dmg: 1, hp: 5000, boss: 'none' }] }));
+		A(kb.a.removed > 0 && kb.a.removed === kb.b.removed && kb.a.foes[0].d < 60 && kb.b.foes[0].d < 60, `a hit does not shove a boss: 4 s of Body Slam and it has not been driven off (${kb.a.foes[0].d.toFixed(0)} / ${kb.b.foes[0].d.toFixed(0)} units away; ${kb.a.removed} / ${kb.b.removed} HP)`, kb);
+	}
+	// ---------- experience
+	{
+		const x = await E(() => P.xp(60, 2000)), far = await E(() => P.xp(90, 10));
+		A(x.same && x.first === 62, `the XP each of the first 60 levels costs is the same (${x.first} for the first)`, x);
+		A(x.magnet2 === x.magnet3 && Math.abs(x.n2 - x.n3) <= 1 && x.n2 < 60, `your reach is the same (${x.magnet2} units) and an orb 60 units away takes as long to reach you (${x.n2} / ${x.n3} ticks)`, x);
+		A(far.n2 === 600 && far.n3 === 600, 'an orb 90 units away is out of reach on both sides', far);
+		A(JSON.stringify(x.l2) === JSON.stringify(x.l3) && x.l2[0] > 8, `2,000 XP at once makes you level ${x.l2[0]} with ${x.l2[1]} left over, on both sides`, x);
 	}
 	// ---------- a kill
 	{

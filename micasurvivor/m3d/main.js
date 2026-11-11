@@ -9,7 +9,7 @@ import * as THREE from 'three';
 import { K, CELL, step, newState, noInput, groundAt, stateName, facingRow, tuneFor, TYPE_TRAITS } from './sim.js';
 import { buildRoom, SPOTS } from './room.js';
 import { makeRenderer, buildTerrain, buildWater, buildScatter, buildExit, drawMap, SpriteBatch, Shadows, Shots, Flashes, loadSheet, frameAt, spriteQuad, footLift, placeCamera } from './render.js';
-import { newWorld, addEnemy, tick, dataFrom, CK } from './combat.js';
+import { newWorld, addEnemy, addBoss, tick, dataFrom, choose, drop, CK } from './combat.js';
 import { generate, BIOMES } from './gen.js';
 
 const Q = new URLSearchParams(location.search);
@@ -30,12 +30,15 @@ const TYPES = Q.get('types') ? Q.get('types').split(',') : SPECIES.types;
 const TUNE = tuneFor(TYPES);
 const TRAITS = TYPES.filter((t) => TYPE_TRAITS[t]);
 const GG = window.G || {};
-const FIGHT_CAST = [19, 16, 43, 74, 133, 41, 92, 1, 4, 7].filter((d) => d !== DEX && META[d] && META[d].a && META[d].a.Walk && !META[d].src);
-const MOVES = !FIGHT ? [] : Q.get('moves') ? Q.get('moves').split(',').map((m) => { const [id, lv] = m.split(':'); return [id, +lv || 1]; }).filter((m) => GG.Moves.BY_ID[m[0]])
+const FIGHT_CAST = (Q.get('cast') ? Q.get('cast').split(',').map(Number) : [19, 16, 43, 74, 133, 41, 92, 1, 58, 63, 32, 39, 35, 95, 10]).filter((d) => d !== DEX && META[d] && META[d].a && META[d].a.Walk && !META[d].src);
+const MOVES = !FIGHT ? [] : Q.get('moves') ? Q.get('moves').split(',').map((m) => { const [id, lv] = m.split(':'); return [id, +lv || 1]; }).filter((m) => GG.Moves.BY_ID[m[0]] || (GG.ExpMoves && GG.ExpMoves.isExpMove(m[0])))
 	: [[GG.Moves.startFor(SPECIES), 3], ['tackle', 2]].filter((m, i, a) => a.findIndex((q) => q[0] === m[0]) === i);
-const world = FIGHT ? newWorld(room, dataFrom(GG), { dex: DEX, moves: MOVES, seed: (GEN + 1) * 7919, tune: TUNE, cast: FIGHT_CAST, cap: Q.has('cap') ? +Q.get('cap') | 0 : undefined }) : null;
+// (P3) bosses arrive at the 2D game's times (3:00, 6:00, …): ?bosses=143,130; ?boss=143 puts one in at the start
+const BOSSES = (Q.get('bosses') ? Q.get('bosses').split(',').map(Number) : [143, 130, 149, 6, 150]).filter((d) => META[d] && META[d].a && META[d].a.Walk && !META[d].src);
+const world = FIGHT ? newWorld(room, dataFrom(GG), { bosses: BOSSES, dex: DEX, moves: MOVES, seed: (GEN + 1) * 7919, tune: TUNE, cast: FIGHT_CAST, cap: Q.has('cap') ? +Q.get('cap') | 0 : undefined, weather: Q.get('weather') === '0' ? false : undefined, autoPick: Q.has('auto') ? +Q.get('auto') | 0 : undefined }) : null;
 const state = world ? world.pl.s : newState(room, TUNE);
 const TYPE_COLOR = (GG.U && GG.U.TYPE_COLOR) || {};
+const PICK_COLOR = { xp: '#6fd3ff', xpBig: '#3da8ff', heal: '#5fe08a', magnet: '#ff9ed8', bomb: '#ff7b3d' };
 const { renderer, scene, camera } = makeRenderer(canvas);
 scene.add(buildTerrain(room));
 scene.add(buildWater(room));
@@ -131,7 +134,7 @@ async function sheet(dex, anim, max) {
 	const tex = await loadSheet(`../assets/pokemon/${dex}/${anim}.png`);
 	const batch = new SpriteBatch(tex, max);
 	scene.add(batch.mesh);
-	const o = { batch, meta, img: tex.image, lift: footLift(meta, tex.image), shadow: 0.35 + 0.18 * ((META[dex].s | 0) + 1) };
+	const o = { batch, meta, img: tex.image, lift: footLift(meta, tex.image, { perFrame: anim === 'Idle', hover: !!META[dex].hv }), shadow: 0.35 + 0.18 * ((META[dex].s | 0) + 1) };
 	sheets.set(key, o);
 	return o;
 }
@@ -170,15 +173,27 @@ function draw(t) {
 	if (world) {
 		for (const e of world.enemies) {
 			const s = sheets.get(e.dex + '/Walk'); if (!s) continue;
-			const q = spriteQuad(s.meta, s.img, frameAt(s.meta, t + e.id * 0.37), facingRow(e.a.facing, cam.yaw), 1, s.lift);
+			const q = spriteQuad(s.meta, s.img, frameAt(s.meta, t + e.id * 0.37), facingRow(e.a.facing, cam.yaw), e.scale || 1, s.lift);
 			s.batch.add(e.a.x, e.a.y, e.a.z, q.rect, q.uv, e.flash > 0 ? 1.7 : 1);
-			shadows.add(room, e.a.x, e.a.z, e.a.y, s.shadow);
+			shadows.add(room, e.a.x, e.a.z, e.a.y, s.shadow * (e.scale || 1));
 		}
 		shots.begin();
 		for (const p of world.shots) shots.add(p.x, p.y, p.z, Math.max(0.14, p.r), TYPE_COLOR[p.mtype]);
 		for (const p of world.orbs) shots.add(p.x, p.y, p.z, Math.max(0.16, p.r), TYPE_COLOR[p.mtype]);
 		// what lies in the world: mines (a small ball on the floor), turrets (a ball that hangs and bobs), meteors (a ball
 		// coming down on its mark), patches (a disc on the floor, drawn once, fading over its life)
+		// pickups: beads that bob over the floor (XP blue, a big one for a big orb; a berry green, a magnet pink, a bomb orange)
+		for (const p of world.pickups) shots.add(p.x, p.y + 0.3 + Math.abs(Math.sin(p.t * 0.8)) * 0.18, p.z, p.kind === 'xpBig' ? 0.24 : p.kind === 'xp' ? 0.15 : 0.26, PICK_COLOR[p.kind]);
+		for (const e of world.enemies) if (e.shield > 0) shots.add(e.a.x, e.a.y + Math.max(1.2, e.cr * 2) + 0.35, e.a.z, 0.16, '#7fc8ff');   // a shield: a blue bead over its head
+		for (const p of world.eshots) shots.add(p.x, p.y, p.z, Math.max(0.2, p.r), '#ff5f8f');   // an enemy's shot: always the same angry pink
+		// Expedition's effects: a bomb on its arc, a whirl on the floor, a wave's ring spreading
+		for (const f of world.effects) {
+			const c = TYPE_COLOR[f.m.type];
+			if (f.k === 'lob') { const k = Math.min(1, f.t / f.dur); shots.add(f.x0 + (f.x - f.x0) * k, f.y0 + (f.y - f.y0) * k + Math.sin(k * Math.PI) * CK.EXP.lobHigh * 0.0625, f.z0 + (f.z - f.z0) * k, 0.3, c); if (!f.seen) { f.seen = true; flashes.arc(f.x, f.y, f.z, f.r, 0, 6.2832, c, f.dur, 0.9); } }
+			else if (f.k === 'smite' && !f.seen) { f.seen = true; flashes.arc(f.x, f.y, f.z, f.r, 0, 6.2832, c, f.dur, 0.85); }
+			else if (f.k === 'vortex' && !f.seen) { f.seen = true; flashes.arc(f.x, f.y, f.z, f.r, 0, 6.2832, c, f.dur, 0.25); }
+			else if (f.k === 'wave' && (simTicks & 3) === 0) flashes.arc(f.x, f.y, f.z, f.r, 0, 6.2832, c, 0.12, 0.93);
+		}
 		for (const f of world.fields) {
 			const c = TYPE_COLOR[f.m.type];
 			if (f.kind === 'mine') shots.add(f.x, f.y + 0.18, f.z, 0.2, c);
@@ -218,6 +233,7 @@ function frame(now) {
 	perf.sim.push(performance.now() - t0); if (perf.sim.length > 240) perf.sim.shift();
 	if (flashes) flashes.update(dt);
 	draw(now / 1000);
+	if (world) drawNumbers(dt);
 	if ((simTicks & 15) === 0) showHud();
 	if (GEN !== null) { showMap(); if (!leaving && state.grounded && exitDist() < 1.5) { leaving = true; note('exit reached: next level…', 4000); nextLevel(); } }
 }
@@ -241,7 +257,7 @@ function showMap() {
 }
 /** (P3) What this tick of the fight did, as things to see. */
 function fightEvents() {
-	const col = (id) => TYPE_COLOR[(GG.Moves.BY_ID[id] || {}).type];
+	const col = (id) => TYPE_COLOR[(GG.Moves.BY_ID[id] || (GG.ExpMoves && GG.ExpMoves.MOVES[id]) || {}).type];
 	for (const ev of world.events) {
 		if (ev.k === 'melee') flashes.arc(state.x, state.y, state.z, ev.r, ev.aim, Math.min(ev.arc, 6.2832), col(ev.id));
 		else if (ev.k === 'aura') flashes.arc(state.x, state.y, state.z, ev.r, 0, 6.2832, col(ev.id));
@@ -249,9 +265,57 @@ function fightEvents() {
 		else if (ev.k === 'chain') { let a = [state.x, state.y + CK.MUZZLE, state.z]; for (const b of ev.links) { const d = [b[0] - a[0], b[1] - a[1], b[2] - a[2]], l = Math.hypot(d[0], d[1], d[2]) || 1; flashes.bar(a, [d[0] / l, d[1] / l, d[2] / l], l, 0.18, col(ev.id), 0.16); a = b; } }
 		else if (ev.k === 'blast') flashes.arc(ev.x, ev.y, ev.z, ev.r, 0, 6.2832, col(ev.id), 0.3, 0.4);
 		else if (ev.k === 'dash') flashes.bar(ev.from, ev.dir, Math.max(0.1, ev.len), ev.w * 0.5, col(ev.id), 0.25);
+		else if (ev.k === 'hazard' || ev.k === 'boom') {   // a mark on the ground fills in as a warning, then flashes when it goes off
+			const h = ev.h, c = ev.k === 'boom' ? '#ffffff' : TYPE_COLOR[h.type] || '#ff7b3d', life = ev.k === 'boom' ? 0.3 : h.delay;
+			if (h.kind === 'zone') flashes.arc(h.x, h.y, h.z, h.r, 0, 6.2832, c, life, ev.k === 'boom' ? 0 : 0.86);
+			else flashes.bar([h.x, h.y + (ev.k === 'boom' ? 0.6 : 0.1), h.z], [Math.cos(h.angle), 0, Math.sin(h.angle)], h.len, ev.k === 'boom' ? h.w : h.w * 0.5, c, life);
+		}
+		else if (ev.k === 'smite') { flashes.bar([ev.x, ev.y + 14, ev.z], [0, -1, 0], 14, 0.3, col(ev.id), 0.2); flashes.arc(ev.x, ev.y, ev.z, ev.r, 0, 6.2832, col(ev.id), 0.3, 0.3); }
+		else if (ev.k === 'bomb') flashes.arc(ev.x, ev.y, ev.z, ev.r, 0, 6.2832, '#ff7b3d', 0.5, 0.92);
+		else if (ev.k === 'levelup') showCards();
+		else if (ev.k === 'weather') { const d = ev.kind && GG.Weather.KINDS[ev.kind], el = document.getElementById('wx'); if (el) { el.style.background = d ? `rgba(${d.tint[0]}, ${d.tint[1]}, ${d.tint[2]}, ${Math.min(0.3, d.tint[3] * 2.2)})` : 'transparent'; } if (ev.kind) note('the weather turns: ' + ev.kind, 3000); }
+		else if (ev.k === 'boss') note(`a wild ${(GG.DEX_BY[ev.dex] || {}).name || 'boss'} appeared!`, 3200);
+		else if (ev.k === 'enrage') note('it is enraged!', 2400);
+		else if (ev.k === 'heal') flashes.arc(ev.x, ev.y, ev.z, ev.r, 0, 6.2832, '#5fe08a', 0.5, 0.9);
+		else if (ev.k === 'shield') flashes.arc(ev.x, ev.y, ev.z, ev.r, 0, 6.2832, '#7fc8ff', 0.5, 0.9);
+		else if (ev.k === 'summon') flashes.arc(ev.x, ev.y, ev.z, 3, 0, 6.2832, '#c47bff', 0.4, 0.5);
+		else if (ev.k === 'hit') numbers.push({ x: ev.x, y: ev.y + 0.6, z: ev.z, text: String(Math.max(1, Math.round(ev.d))), css: ev.crit ? '#ffe14d' : ev.eff > 1.2 ? '#ffffff' : ev.eff < 0.9 ? '#9aa6b5' : '#f2ede2', big: ev.crit || ev.eff > 1.2, t: 0 });
 		else if (ev.k === 'hurt') { bob = 0.35; note(`hit for ${ev.d.toFixed(0)}`, 700); }
 	}
 	if (world.pl.dead) note('you are down: R to start the level again', 60000);
+}
+/** (P3) Damage numbers: text that rises from where a hit landed, drawn on a flat canvas over the scene (each is placed
+ *  by projecting its point in the world through the camera). */
+const numbers = [], V3 = new THREE.Vector3();
+function drawNumbers(dt) {
+	const el = document.getElementById('nums'); if (!el) return;
+	if (el.width !== innerWidth || el.height !== innerHeight) { el.width = innerWidth; el.height = innerHeight; }
+	const g = el.getContext('2d'); g.clearRect(0, 0, el.width, el.height);
+	if (numbers.length > 80) numbers.splice(0, numbers.length - 80);
+	g.textAlign = 'center'; g.lineJoin = 'round';
+	for (let i = numbers.length - 1; i >= 0; i--) {
+		const n = numbers[i]; n.t += dt; if (n.t > 0.7) { numbers.splice(i, 1); continue; }
+		V3.set(n.x, n.y + n.t * 1.6, n.z).project(camera); if (V3.z > 1 || V3.z < -1) continue;
+		const x = (V3.x * 0.5 + 0.5) * el.width, y = (-V3.y * 0.5 + 0.5) * el.height;
+		g.globalAlpha = Math.min(1, (0.7 - n.t) * 4); g.font = `700 ${n.big ? 20 : 15}px ui-sans-serif, system-ui, sans-serif`;
+		g.lineWidth = 3; g.strokeStyle = 'rgba(12, 18, 30, .85)'; g.strokeText(n.text, x, y); g.fillStyle = n.css; g.fillText(n.text, x, y);
+	}
+	g.globalAlpha = 1;
+}
+/** (P3) A level-up: the fight is waiting; three cards to choose from (click or tap one, or press 1 / 2 / 3). */
+function showCards() {
+	const el = document.getElementById('cards'), cs = world.pl.choices; if (!el || !cs) return;
+	el.innerHTML = `<h2>Level ${world.pl.level}</h2>` + cs.map((c, i) => `<button data-i="${i}" style="border-color:${TYPE_COLOR[c.mtype] || '#8fa3c4'}"><b>${i + 1} · ${c.title}</b><i>${c.tag || ''}</i><span>${c.desc || (GG.Moves.BY_ID[c.id] ? GG.Moves.BY_ID[c.id].kind : '')}</span></button>`).join('');
+	el.style.display = 'grid';
+}
+function pickCard(i) {
+	if (!world || !world.pl.choices || !choose(world, i)) return;
+	const el = document.getElementById('cards'); el.style.display = 'none'; el.innerHTML = '';
+	if (world.pl.pending > 0) { tick(world, null, K.TICK); fightEvents(); }   // (another level waiting: its cards come up at once)
+}
+if (FIGHT) {
+	document.getElementById('cards').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) pickCard(+b.dataset.i); });
+	addEventListener('keydown', (e) => { const i = ['Digit1', 'Digit2', 'Digit3'].indexOf(e.code); if (i >= 0) pickCard(i); });
 }
 let noteText = '', noteUntil = 0;
 function note(t, ms) { noteText = t; noteUntil = performance.now() + ms; }
@@ -268,7 +332,9 @@ function showHud() {
 		+ `${stateName(state)} · ${sp.toFixed(1)} m/s · height ${state.y.toFixed(2)} m · air jumps ${state.airJumps}\n`
 		+ `${SPECIES.name} (${TYPES.join(' / ') || 'no type'})${TRAITS.length ? ' · traits: ' + TRAITS.join(', ') : ''}`
 		+ (GEN === null ? '' : `\nlevel ${GEN} · ${BIOME} · ${room.size} × ${room.size} tiles · exit ${Math.round(exitDist())} m`)
-		+ (!world ? '' : `\nHP ${Math.ceil(world.pl.hp)} / ${world.pl.maxHp} · ${world.enemies.length} enemies · ${world.stats.kills} KOs · ${Math.floor(world.t / 60)}:${String(Math.floor(world.t % 60)).padStart(2, '0')} · ${world.pl.moves.map((m) => m.id + ' Lv' + m.lvl).join(', ')}`) + (noteText && performance.now() < noteUntil ? `\n» ${noteText}` : '');
+		+ (!world || !world.enemies.some((e) => e.boss) ? '' : world.enemies.filter((e) => e.boss).map((e) => `\nBOSS ${(GG.DEX_BY[e.dex] || {}).name}: ${Math.max(0, e.hp)} / ${e.maxHp}${e.ai.fury ? ' · enraged' : ''}`).join(''))
+		+ (!world || !world.weather ? '' : `\nweather: ${world.weather.kind} (${Math.ceil(world.weather.dur - world.weather.t)} s)`)
+		+ (!world ? '' : `\nLv ${world.pl.level} · XP ${Math.floor(world.pl.xp)} / ${world.pl.xpNext}\nHP ${Math.ceil(world.pl.hp)} / ${world.pl.maxHp} · ${world.enemies.length} enemies · ${world.stats.kills} KOs · ${Math.floor(world.t / 60)}:${String(Math.floor(world.t % 60)).padStart(2, '0')} · ${world.pl.moves.map((m) => m.id + ' Lv' + m.lvl).join(', ')}`) + (noteText && performance.now() < noteUntil ? `\n» ${noteText}` : '');
 }
 
 // ---------------------------------------------------------------- boot
@@ -280,6 +346,8 @@ function showHud() {
 	want(DEX, 'Idle', 1); want(DEX, 'Walk', 1);
 	for (const e of crowd) want(e.dex, 'Idle', 1);
 	if (world) for (const d of FIGHT_CAST) want(d, 'Walk', world.cap);
+	if (world) for (const d of BOSSES) if (!FIGHT_CAST.includes(d)) want(d, 'Walk', 2);
+	if (world && Q.get('boss') && BOSSES.includes(+Q.get('boss'))) addBoss(world, +Q.get('boss'), state.x + 12, state.z, { slot: 0 });
 	await Promise.all([...need.values()].map(({ d, a, n }) => sheet(d, a, n).catch((e) => console.warn(e.message))));
 	ready = true;
 	document.getElementById('boot').remove();
@@ -288,7 +356,7 @@ function showHud() {
 
 // what a test (and a curious owner in the console) can reach
 window.__m3d = {
-	get ready() { return ready; }, state, room, K, TUNE, TYPES, TRAITS, cam, crowd, sheets, stats, gen: GEN, biome: BIOME, world, addEnemy: (dex, x, z, o) => addEnemy(world, dex, x, z, o), holdExit: false, get leaving() { return leaving; },
+	get ready() { return ready; }, state, room, K, TUNE, TYPES, TRAITS, cam, crowd, sheets, stats, gen: GEN, biome: BIOME, world, numbers, addBoss: (dex, x, z, o) => addBoss(world, dex, x, z, o), drop: (kind, x, z, v) => drop(world, kind, x, groundAt(room, x, z), z, v), pickCard, addEnemy: (dex, x, z, o) => addEnemy(world, dex, x, z, o), holdExit: false, get leaving() { return leaving; },
 	setInput(o) { override = o ? { ...noInput(), ...o } : null; },
 	rowOf: (facing, yaw) => facingRow(facing, yaw === undefined ? cam.yaw : yaw),
 	quadOf: (key, frame, row) => { const s = sheets.get(key); return spriteQuad(s.meta, s.img, frame, row, 1, s.lift); },
