@@ -107,7 +107,7 @@ Pokermon+ has a card at `designwiki/#/pokermon-jokers/<dex>` with an owner-only 
 2. Implement each as a joker in the Pokermon mod (`micatro/mods/pokermon/`, ported like its other jokers: ptype, stage,
    rarity, cost, the ability). Art: the species' `art` in designwiki/data/pokermon_jokers.json says whether Pokermon 3.9.1 already
    draws it (`source: 'upstream'`, the recipe names the sheet + cell from tools/micatro/specs/pokermon_391_sprite_table.json —
-   on 2026-10-27 all 409 listed species were upstream): then use that 3.9.1 cell (`poke_sprite391`, jokers/pokejokers_designs.js) and there is
+   on 2026-10-27 all 409 listed species were upstream): then use that 3.9.1 cell (`poke_sprite391`; the owner's jokers live by generation in jokers/designs/gen<N>.js — add the joker to that file's `JOKERS`, shared helpers to designs/common.js, its text to designs/text.js) and there is
    nothing to deploy. Only where upstream has none: the composed `designwiki/sprites/pokermon_jokers/<dex4>.png` + `_shiny.png`, copied
    into the gitignored `micatro/mods/pokermon/assets/2x/` and registered in `ATLAS_FILES` (as Rage Candy Bar), then
    `npm run deploy-micatro-mods` (+ `node tools/cloud/fetch-assets.mjs --write-manifest`). Add a micatro test that PLAYS

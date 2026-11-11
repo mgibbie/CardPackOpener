@@ -126,7 +126,9 @@ try {
 	const tblBad = Object.entries(D391.sprites).filter(([n, e]) => !e.extra && (!TABLE[n] || TABLE[n].atlas !== e.atlas || TABLE[n].pos.join() !== `${e.pos.x},${e.pos.y}`
 		|| (TABLE[n].soul || []).join() !== (e.soul_pos ? `${e.soul_pos.x},${e.soul_pos.y}` : '')));
 	A(Object.keys(D391.sprites).length > 500 && !tblBad.length, `the sprite table agrees with data391.js sprites for all ${Object.keys(D391.sprites).length} ported jokers`, tblBad.slice(0, 5).map(([n]) => n).join(','));
-	const designsSrc = fs.readFileSync(path.join(ROOT, 'micatro/mods/pokermon/jokers/pokejokers_designs.js'), 'utf8');
+	// (the owner's jokers are split by generation: jokers/designs/gen3.js … gen9.js, registered by pokejokers_designs.js)
+	const designsDir = path.join(ROOT, 'micatro/mods/pokermon/jokers/designs');
+	const designsSrc = fs.readdirSync(designsDir).filter(f => f.endsWith('.js')).sort().map(f => fs.readFileSync(path.join(designsDir, f), 'utf8')).join('\n');
 	const designCells = [...designsSrc.matchAll(/name: '(\w+)', poke_sprite391: sprite\('(\w+)', (\d+), (\d+)(?:, \[(\d+), (\d+)\])?\)/g)];
 	const PORT_NAME = { urshifu_single: 'urshifu_single_strike', urshifu_rapid: 'urshifu_rapid_strike', zygarde: 'zygarde_10' }; // (the port's keys for upstream's names; Zygarde's own card is its 10% Forme)
 	const dBad = designCells.map(([m, n, ...r]) => [m, PORT_NAME[n] || n, ...r]).filter(([, n, sh, x, y, sx, sy]) => !TABLE[n] || TABLE[n].atlas !== 'AtlasJokersBasic' + sh || TABLE[n].pos.join() !== `${x},${y}` || (TABLE[n].soul || []).join() !== (sx ? `${sx},${sy}` : ''));
