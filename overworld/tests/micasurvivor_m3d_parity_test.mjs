@@ -8,6 +8,7 @@
 //     (Fire Spin)
 //   * the type chart and piercing: one Ember volley line through a Grass, a Water and a Fire target
 //   * damage over time: Ember's burn and Poison Sting's poison tick for the same totals
+//   * Expedition's own kinds: a lob, homing shots, a barrage, a smite, a vortex (and its pull), a wave, a spin
 //   * the kinds that lie on the ground or are placed at random: a boomerang, meteors, a trail, a turret, cones, mines
 //     (where the 2D game rolls dice for a position or a speed the totals are compared within a margin), and a buff
 //   * the control states, set by hand on both sides: asleep (+30 % and it wakes), frozen (+25 %, it stands still),
@@ -79,6 +80,7 @@ try {
 	// ---------- both sides of the comparison, as helpers in the page
 	const ready = await E(async () => {
 		G.Game.togglePause(); G.UI.hide('scr-pause');
+		await G.Expedition.load();   // (Expedition's own moves: the page loads them only when an Expedition run starts)
 		const C = await import('/micasurvivor/m3d/combat.js'), S = await import('/micasurvivor/m3d/sim.js');
 		const data = C.dataFrom(G), U = C.U;
 		// a seeded Math.random for the 2D side (its shots' aim wobbles; nothing here turns on it)
@@ -93,7 +95,8 @@ try {
 			for (const k in bare) if (typeof Wd[k] === 'function') { keep[k] = Wd[k]; Wd[k] = bare[k]; }
 			try {
 				G.EnemyMgr.clear(); G.Projectiles.clear(); G.Projectiles.clearOrbs(pl); G.Combat.clearFields(); G.Hazards.clear(); G.EnemyMgr.rebuildGrid();
-				const ms = sc.moves.map(([id, lvl]) => G.Moves.instance(id, lvl || 1));
+				if (G.ExpMoves.clear) G.ExpMoves.clear();
+				const ms = sc.moves.map(([id, lvl]) => (G.ExpMoves.isExpMove(id) ? G.ExpMoves.instance(id) : G.Moves.instance(id, lvl || 1)));
 				pl.moves = ms; pl.slots = ms.map((m) => [m]); pl.active = 0; pl.statsTaken = {}; pl.dmgDealt = 0; pl.meleeT = 0;
 				pl.hp = pl.maxHp; pl.invuln = sc.hurtable ? 0 : 1e9; pl.dead = false; pl.lastPatch = null;
 				for (const k in pl.buffs) { pl.buffs[k].n = 0; pl.buffs[k].t = 0; }
@@ -129,6 +132,7 @@ try {
 					G.Projectiles.update(DT, pl, G.EnemyMgr.all());
 					G.Combat.resolve(DT, pl, t);
 					G.Combat.updateFields(DT);
+					G.ExpMoves.tick(DT);   // (the game's run.tick, for Expedition's timed effects)
 					G.Hazards.update(DT);
 					for (const e of foes) far = Math.max(far, Math.hypot(e.x - x0, e.y - y0));
 					if (!first && taken > 0) first = t;
@@ -179,7 +183,7 @@ try {
 			return { same: JSON.stringify(curve2) === JSON.stringify(curve3), first: curve2[0], n2, n3, magnet2: pl.magnet, magnet3: w.pl.magnet / U, l2: [p2.level, p2.xp], l3: [w2.pl.level, w2.pl.xp] };
 		}
 		window.P = { xp, both(sc) { const a = play2d(sc); return { a, b: play3d(sc, a) }; } };
-		return { state: G.Game.state, unported: C.CK.UNPORTED };
+		return { state: G.Game.state, unported: C.CK.UNPORTED, exp: !!G.ExpMoves && Object.keys(G.ExpMoves.MOVES).length, later: C.CK.EXP_LATER };
 	});
 	A(ready.state === 'paused', 'the run is paused: both sides are stepped by hand, 60 ticks a second');
 
@@ -193,6 +197,17 @@ try {
 		const r = await E((id, dist) => P.both({ moves: [[id, 1]], foes: [{ dex: 19, dx: dist, still: true }], secs: 10, noProc: true }), id, dist);
 		const one = r.b.hits ? r.b.removed / r.b.hits : 1;   // one hit's worth
 		A(r.a.removed > 0 && same(r.a.removed, r.b.removed, one * 1.01 + 2), `${id} (${what}), 10 s on a still Rattata ${dist} units away: ${cmp(r)}`, r);
+	}
+	// ---------- Expedition's own kinds
+	A(ready.exp === 18 && ready.later.join() === 'weather', `Expedition's 18 moves are loaded (seven kinds are compared; its eighth, weather, is not in the 3D rules yet)`, ready);
+	for (const [id, dist, what] of [['mud-bomb', 150, 'a lob: a bomb in an arc, and it slows'], ['sludge-bomb', 150, 'a lob that poisons'], ['swift', 150, 'homing shots'], ['bullet-seed', 150, 'a barrage: four quick shots'], ['sky-attack', 150, 'a smite: a strike from the sky'], ['thunder', 150, 'a smite'], ['whirlpool', 150, 'a vortex on the target'], ['surf', 120, 'a wave spreading from you'], ['rapid-spin', 40, 'a spin']]) {
+		const r = await E((id, dist) => P.both({ moves: [[id, 1]], foes: [{ dex: 19, dx: dist, still: true, hp: 20000 }], secs: 10, noProc: true }), id, dist);
+		const one = r.b.hits ? r.b.removed / r.b.hits : 1;
+		A(r.a.removed > 0 && Math.abs(r.a.removed - r.b.removed) <= Math.max(2, one * 0.02), `${id} (${what}), 10 s: ${cmp(r)}`, r);
+	}
+	{   // a vortex drags the others in
+		const r = await E(() => P.both({ moves: [['twister', 1]], foes: [{ dex: 19, dx: 150, still: true, hp: 20000 }, { dex: 19, dx: 150, dy: 90, still: true, hp: 20000 }], secs: 6, noProc: true }));
+		A(r.a.foes[1].hp > 0 && r.a.foes[1].hp === r.b.foes[1].hp && Math.abs(r.a.foes[1].d - r.b.foes[1].d) < 1.5, `a vortex pulls a second enemy 90 units off into itself and grinds it too (it loses ${r.a.foes[1].hp} / ${r.b.foes[1].hp} HP)`, r);
 	}
 	// ---------- the other kinds: what lies on the ground, what comes back, what is placed at random
 	const near = (a, b, pct, abs = 3) => Math.abs(a - b) <= Math.max(abs, Math.max(a, b) * pct);

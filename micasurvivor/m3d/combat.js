@@ -29,7 +29,10 @@ export const CK = {
 	// the control states (the 2D game's systems/status.js): how long each lasts, and what it does to damage
 	CC: { freeze: 1.8, para: 3, sleep: 4, conf: 3 }, SLEEP_BONUS: 1.3, PARA_ELECTRIC: 1.35, FROZEN_TAKEN: 1.25, PARA_SLOW: 0.4,
 	CONF_REACH: 380, CONF_CD: 0.6, CONF_KNOCK: 140,
-	UNPORTED: [],   // base move kinds still to come (Expedition's eight are their own step)
+	UNPORTED: [],   // base move kinds still to come
+	// Expedition's own kinds (the 2D game's expedition/moves.js): lob, homing, barrage, smite, vortex, wave, spin. Its
+	// eighth, weather, waits for a weather system here.
+	EXP: { lobDur: 0.55, lobStep: 0.05, lobKnock: 60, lobHigh: 90, barStep: 0.07, smiteDur: 0.28, smiteKnock: 40, pull: 110, pullR: 1.6, vortexTick: 0.25, waveBand: 40, waveKnock: 90 }, EXP_LATER: ['weather'],
 	// bosses (the 2D game's entities/enemy.js bossMove / bossStart): four attacks each, all marked on the ground first;
 	// under half HP a boss is enraged: faster, shorter waits, and it sometimes chains two attacks
 	BOSS: { hp: 1.35, dmg: 1.2, shot: 0.55, shotCd: 1.1, range: 260, cc: { freeze: 0.35, sleep: 0.35, para: 0.5, conf: 0.5 }, immune: 4, orbs: 14, fury: 1.25, furySpd: 1.15, furyWind: 0.8, chain: 0.35 },
@@ -51,10 +54,11 @@ const reach = (m) => (m.xreach ? m.xreach : m.kind === 'melee' ? m.radius + 30 :
  *  types and enemies loaded. */
 export function dataFrom(G) {
 	return {
-		move: (id, lvl = 1) => { const m = G.Moves.instance(id, lvl); m.knock = G.Moves.knockOf(m); return m; },   // (a move's knockback is worked out from its level, as the 2D game does)
+		move: (id, lvl = 1) => { if (G.ExpMoves && G.ExpMoves.isExpMove(id)) return G.ExpMoves.instance(id); const m = G.Moves.instance(id, lvl); m.knock = G.Moves.knockOf(m); return m; },
+		expMoves: () => (G.ExpMoves ? Object.keys(G.ExpMoves.MOVES) : []),   // (a move's knockback is worked out from its level, as the 2D game does)
 		typeMult: (t, types) => G.Types.mult(t, types), mon: (dex) => G.DEX_BY[dex],
 		radius: (dex, scale = 1) => G.Sprites.bodyRadius(dex, scale) * U, hovers: (dex) => G.Sprites.hovers(dex),
-		poolFor: (mon) => G.Moves.poolFor(mon), levelUp: (m) => { const ok = G.Moves.levelUp(m); m.knock = G.Moves.knockOf(m); return ok; }, nextUp: (m) => G.Moves.nextUpText(m), moveDef: (id) => G.Moves.BY_ID[id],
+		poolFor: (mon) => G.Moves.poolFor(mon), levelUp: (m) => { if (m.xexp) return false; const ok = G.Moves.levelUp(m); m.knock = G.Moves.knockOf(m); return ok; }, nextUp: (m) => (m.xexp ? null : G.Moves.nextUpText(m)), moveDef: (id) => G.Moves.BY_ID[id] || (G.ExpMoves && G.ExpMoves.MOVES[id]),
 		hash: (a, b, c) => G.U.hash(a, b, c), bossSlots: G.Enemies.BOSS_SLOTS, baseSpd: (dex) => G.Enemies.baseSpd(G.DEX_BY[dex]), behaviorOf: (dex) => G.Enemies.behaviorOf(G.DEX_BY[dex]),
 		bossScale: (dex) => { const m = G.Sprites.animMeta(dex, 'Idle'), h = (m ? m.ay * G.Sprites.artScale(dex) : 30) * G.Sprites.PX; return Math.max(1, Math.min(2, Math.round(110 / h * 2) / 2)); },
 		tiers: G.Enemies.TIERS, defFor: (dex, ti) => G.Enemies.defFor(G.DEX_BY[dex], G.Enemies.TIERS[ti], ti),
@@ -74,7 +78,7 @@ export function newWorld(room, data, o = {}) {
 		pl: { s, mon, r: data.radius(mon.dex), maxHp: mon.hp, hp: mon.hp, baseAtk: mon.atk, atkMul: 1, atkK: o.atkK || 1, takenK: o.takenK || 1, cdMul: 1, crit: o.crit || 0, reduction: 0, regen: 0,
 			invuln: 0, meleeT: 0, level: 1, xp: 0, xpNext: xpFor(1), xpMul: 1, spdMul: 1, magnet: CK.MAGNET * U, statsTaken: {}, pending: 0, choices: null, baseReduce: 0, baseRegen: 0, buffs: { atk: { n: 0, t: 0, amount: 0 }, spd: { n: 0, t: 0, amount: 0 }, def: { n: 0, t: 0, amount: 0 }, regen: { n: 0, t: 0, amount: 0 } }, afDmg: o.afDmg === undefined ? 1.1 : o.afDmg, target: null, aim: 0, dead: false,
 			moves: (o.moves || []).map((m) => (Array.isArray(m) ? data.move(m[0], m[1]) : data.move(m))) },
-		enemies: [], shots: [], orbs: [], fields: [], eshots: [], hazards: [], pickups: [], lastPatch: null, autoPick: o.autoPick, bosses: o.bosses || null, bossIdx: 0, field: null, fieldCell: -2,
+		enemies: [], shots: [], orbs: [], fields: [], effects: [], eshots: [], hazards: [], pickups: [], lastPatch: null, autoPick: o.autoPick, bosses: o.bosses || null, bossIdx: 0, field: null, fieldCell: -2,
 		cast: o.cast || null, spawnAcc: 0, cap: o.cap || CK.CAP, orbitSquash: o.orbitSquash || 1,
 		stats: { gained: 0, collected: 0, levels: 0, dealt: 0, removed: 0, hits: 0, crits: 0, taken: 0, touched: 0, kills: 0, xp: 0, fired: 0, spawned: 0, fell: 0, blocked: 0 },
 		events: [],   // this tick's: { k: 'hit' | 'kill' | 'hurt' | 'shot' | 'melee' | 'beam' | 'aura' | 'chain', … } for the page to draw
@@ -370,7 +374,65 @@ const KINDS = {
 		w.fields.push(f); w.lastPatch = f;
 		const mine = w.fields.filter((o) => o.kind === 'patch' && !o.gone); for (const o of mine.slice(0, Math.max(0, mine.length - 18))) o.gone = true;
 	},
+	// ---- Expedition's kinds
+	lob(w, m) {   // a bomb thrown in an arc at each of the nearest: it comes down OVER whatever is in the way
+		const pl = w.pl, s = pl.s, n = Math.max(1, m.count | 0), foes = nearestN(w, s.x, s.y, s.z, m.xreach * U, n), tg = pl.target;
+		for (let i = 0; i < n; i++) { const e = foes[i % Math.max(1, foes.length)] || tg;
+			const x = e ? e.a.x + (i >= foes.length ? rnd(w, -30, 30) * U : 0) : s.x + Math.cos(pl.aim) * 200 * U, z = e ? e.a.z : s.z + Math.sin(pl.aim) * 200 * U;
+			w.effects.push({ k: 'lob', id: w.nextId++, m, x0: s.x, y0: s.y + CK.MUZZLE, z0: s.z, x, y: e ? (e.fly ? e.a.y - e.a.hover : e.a.y) : floorAt(w, x, z), z, t: 0, dur: CK.EXP.lobDur + i * CK.EXP.lobStep, dmg: m.dmg * atk(pl), r: m.radius * U }); }
+	},
+	homing(w, m) { const n = Math.max(1, m.count | 0); for (let i = 0; i < n; i++) shoot(w, m, aimDir(w, w.pl.aim + (i - (n - 1) / 2) * 0.5), { size: m.size || 5, life: m.life || 1 }); w.events.push({ k: 'shot', id: m.id, n }); },
+	barrage(w, m) {   // one shot now, the rest a fourteenth of a second apart, each a little off
+		const n = Math.max(1, m.count | 0); shoot(w, m, aimDir(w, w.pl.aim), { size: m.size || 5, life: m.life || 1 });
+		for (let i = 1; i < n; i++) w.effects.push({ k: 'bar', id: w.nextId++, m, t: -i * CK.EXP.barStep });
+		w.events.push({ k: 'shot', id: m.id, n });
+	},
+	smite(w, m) {   // a strike from the sky on each of the nearest: no wall is in its way
+		const pl = w.pl, s = pl.s, foes = nearestN(w, s.x, s.y, s.z, m.xreach * U, Math.max(1, m.count | 0)); if (!foes.length && pl.target) foes.push(pl.target);
+		for (const e of foes) w.effects.push({ k: 'smite', id: w.nextId++, m, x: e.a.x, y: e.fly ? e.a.y - e.a.hover : e.a.y, z: e.a.z, t: 0, dur: CK.EXP.smiteDur, dmg: m.dmg * atk(pl), r: m.radius * U });
+	},
+	vortex(w, m) {   // a whirl on your target: it drags everyone near into it and grinds them
+		const pl = w.pl, s = pl.s, e = pl.target || nearestN(w, s.x, s.y, s.z, m.xreach * U, 1)[0];
+		const x = e ? e.a.x : s.x + Math.cos(pl.aim) * 160 * U, z = e ? e.a.z : s.z + Math.sin(pl.aim) * 160 * U;
+		w.effects.push({ k: 'vortex', id: w.nextId++, m, x, y: e ? (e.fly ? e.a.y - e.a.hover : e.a.y) : floorAt(w, x, z), z, t: 0, dur: m.dur || 2, tick: 0, dmg: m.dmg * atk(pl), r: m.radius * U });
+	},
+	wave(w, m) { const s = w.pl.s; w.effects.push({ k: 'wave', id: w.nextId++, m, x: s.x, y: s.y, z: s.z, r: w.pl.r, max: m.radius * U, speed: (m.speed || 360) * U, hit: new Set(), dmg: m.dmg * atk(w.pl) }); },
+	spin(w, m) {
+		const pl = w.pl, s = pl.s, R = m.radius * U, dmg = m.dmg * atk(pl);
+		for (const e of w.enemies) { if (e.dead || Math.abs(e.a.y - s.y) > CK.REACH_UP) continue; const dx = e.a.x - s.x, dz = e.a.z - s.z, rr = R + e.cr; if (dx * dx + dz * dz <= rr * rr) land(w, e, dmg, dx, dz, m.knock || 0, m); }
+		w.events.push({ k: 'aura', id: m.id, r: R });
+	},
 };
+/** The n living enemies nearest a point (in space), within r. */
+function nearestN(w, x, y, z, r, n) {
+	const out = []; for (const e of w.enemies) { if (e.dead) continue; const d = Math.hypot(e.a.x - x, e.a.y - y, e.a.z - z); if (d <= r + e.cr) out.push([d, e]); }
+	out.sort((a, b) => a[0] - b[0]); return out.slice(0, n).map((o) => o[1]);
+}
+/** Everything within a radius of a point on the ground, about its height: hit once. */
+function burst(w, f, knockU, dirX, dirZ, k = 1) {
+	for (const e of w.enemies) { if (e.dead || Math.abs((e.fly ? e.a.y - e.a.hover : e.a.y) - f.y) > CK.REACH_UP) continue; const dx = e.a.x - f.x, dz = e.a.z - f.z, rr = f.r + e.cr; if (dx * dx + dz * dz <= rr * rr) land(w, e, f.dmg * k, dirX === undefined ? dx : dirX, dirZ === undefined ? dz : dirZ, knockU, f.m); }
+}
+/** Expedition's timed effects: bombs in the air, a barrage's later shots, strikes about to fall, whirls, waves. */
+function updateEffects(w, dt) {
+	const pl = w.pl, X = CK.EXP;
+	for (let i = w.effects.length - 1; i >= 0; i--) {
+		const f = w.effects[i], m = f.m; f.t += dt;
+		if (f.k === 'lob') { if (f.t < f.dur) continue; burst(w, f, X.lobKnock); w.events.push({ k: 'blast', id: m.id, x: f.x, y: f.y, z: f.z, r: f.r }); w.effects.splice(i, 1); }
+		else if (f.k === 'bar') { if (f.t < 0) continue; shoot(w, m, aimDir(w, pl.aim + rnd(w, -1, 1) * (m.spread || 0.06)), { size: m.size || 5, life: m.life || 1 }); w.effects.splice(i, 1); }
+		else if (f.k === 'smite') { if (f.t < f.dur) continue; burst(w, f, X.smiteKnock, 0, 1); w.events.push({ k: 'smite', id: m.id, x: f.x, y: f.y, z: f.z, r: f.r }); w.effects.splice(i, 1); }
+		else if (f.k === 'vortex') {
+			f.tick += dt;
+			for (const e of w.enemies) { if (e.dead || e.boss || Math.abs((e.fly ? e.a.y - e.a.hover : e.a.y) - f.y) > CK.REACH_UP) continue; const dx = f.x - e.a.x, dz = f.z - e.a.z, d = Math.hypot(dx, dz); if (d > f.r * X.pullR + e.cr || d < 1e-6) continue; moveActor(e.a, w.room, dx / d * X.pull * U * dt, dz / d * X.pull * U * dt); }
+			if (f.tick >= X.vortexTick) { f.tick -= X.vortexTick; burst(w, f, 0, undefined, undefined, X.vortexTick / (f.dur || 2)); }
+			if (f.t >= f.dur) w.effects.splice(i, 1);
+		} else if (f.k === 'wave') {
+			f.r += f.speed * dt;
+			for (const e of w.enemies) { if (e.dead || f.hit.has(e.id) || Math.abs(e.a.y - f.y) > CK.REACH_UP) continue; const dx = e.a.x - f.x, dz = e.a.z - f.z, d = Math.hypot(dx, dz); if (d > f.r + e.cr || d < f.r - X.waveBand * U) continue; f.hit.add(e.id); land(w, e, f.dmg, dx, dz, X.waveKnock, m); }
+			if (f.r >= f.max) w.effects.splice(i, 1);
+		}
+	}
+}
+const KINDS_END = 0;
 /** Mines wait and go off, meteors land, turrets shoot, patches tick. */
 function updateFields(w, dt) {
 	for (let i = w.fields.length - 1; i >= 0; i--) {
@@ -412,7 +474,7 @@ function fireMoves(w, dt) {
 		if (m.t > 0) continue;
 		const run = KINDS[m.kind];
 		if (!run) { m.t = 1; continue; }   // (a kind this module does not know: Expedition's eight are still to come)
-		if (TARGETED.includes(m.kind) && !(pl.target && dist3(s, pl.target.a) <= reach(m) * U)) { m.t = 0.05; continue; }
+		if ((TARGETED.includes(m.kind) || m.xtarget) && !(pl.target && dist3(s, pl.target.a) <= reach(m) * U)) { m.t = 0.05; continue; }
 		m.t = Math.max(0.05, m.cd * pl.cdMul);
 		run(w, m);
 	}
@@ -835,7 +897,7 @@ export function tick(w, input, dt = K.TICK) {
 	if (!pl.dead) fireMoves(w, dt);
 	moveShots(w, dt);
 	resolve(w);
-	if (!pl.dead) updateFields(w, dt);
+	if (!pl.dead) { updateFields(w, dt); updateEffects(w, dt); }
 	enemyAttacks(w, dt);
 	if (!pl.dead) updatePickups(w, dt);
 	return w;
@@ -850,6 +912,7 @@ export function hashWorld(w) {
 	for (const p of w.shots) { add(p.x); add(p.y); add(p.z); }
 	for (const f of w.fields) { add(f.x); add(f.z); add(f.t); }
 	for (const p of w.eshots) { add(p.x); add(p.y); add(p.z); }
+	for (const f of w.effects) { add(f.x || 0); add(f.z || 0); add(f.t); }
 	for (const h of w.hazards) { add(h.x); add(h.z); add(h.t); }
 	for (const p of w.pickups) { add(p.x); add(p.y); add(p.z); }
 	add(w.pl.level); add(w.pl.xp);

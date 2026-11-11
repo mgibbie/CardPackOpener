@@ -323,6 +323,14 @@ try {
 		A(bs.boss && bs.sheet && bs.scale === 1.5 && /BOSS Snorlax: \d+ \/ \d+/.test(bs.hud) && bs.hp < bs.max, `?boss=143: a Snorlax half as big again is in the fight, its HP is on the readout and your shots are bringing it down (${bs.hp} of ${bs.max})`, JSON.stringify(bs));
 		await shot(fbs.page, 'm3d_boss.png');
 		await fbs.page.close();
+		// Expedition's kinds on the page
+		const fe = await open({ width: 1000, height: 640, deviceScaleFactor: 1 }, '?gen=7&fight=1&moves=mud-bomb,sky-attack,whirlpool,surf&cast=19&cap=3');
+		const ev = await fe.page.evaluate(async () => { const m = window.__m3d, w = m.world, wait = (ms) => new Promise(r => setTimeout(r, ms)); w.pl.invuln = 1e9; m.addEnemy(19, m.state.x + 6, m.state.z, { dummy: true, hp: 1e5 });
+			const kinds = new Set(); for (let i = 0; i < 40; i++) { await wait(100); for (const f of w.effects) kinds.add(f.k); }
+			return { moves: w.pl.moves.map(q => q.id + ':' + q.kind), kinds: [...kinds].sort(), hits: w.stats.hits }; });
+		A(ev.moves.length === 4 && ev.kinds.join() === 'lob,smite,vortex,wave' && ev.hits > 8, `Expedition's moves run on the page: a lob, a smite, a vortex and a wave (${ev.hits} hits in 4 s)`, JSON.stringify(ev));
+		await shot(fe.page, 'm3d_fight_exp.png');
+		await fe.page.close();
 		// without &fight=1 a generated level has no fight
 		const nf = await open({ width: 900, height: 600, deviceScaleFactor: 1 }, '?gen=7&n=5');
 		const nv = await nf.page.evaluate(() => ({ world: window.__m3d.world, hud: document.getElementById('hud').textContent }));

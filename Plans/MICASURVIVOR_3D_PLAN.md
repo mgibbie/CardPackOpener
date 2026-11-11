@@ -466,6 +466,22 @@ Not carried over: the Dynamax den's Max Move, a boss's coins, item and ticket dr
 
 Tests: parity 64 checks, combat 109 checks, the page test 66.
 
+## 5.10 P3, seventh part: built (2026-11-11)
+
+- **Expedition's own move kinds**, seven of its eight: lob (a bomb in an arc), homing shots, barrage (quick shots in
+  a row), smite (a strike from the sky), vortex (a whirl that drags enemies in and grinds them), wave (a ring
+  spreading from you), spin. All 14 of the moves that use them work (`&moves=mud-bomb,sky-attack,whirlpool,surf`).
+- **In 3D.** A lob and a smite reach a target behind a wall, which no straight shot can: they are the answer to
+  cover. A wave and a spin stay on your level. A vortex cannot drag a body through a wall.
+- **The comparison with 2D** (75 checks): each kind's damage over 10 s matches, and a vortex's pull.
+
+Not carried over: the eighth kind, weather (rain, sun, sand, snow), which needs a weather system here; and
+Expedition's move levels 1 to 8 with their rolled stats, which belong with P5's upgrades.
+
+**Still to do in P3:** abilities and held items; weather.
+
+Tests: parity 75 checks, combat 114 checks, the page test 67.
+
 ## 6. Dive in 2D: built
 
 **D0 — find the stairs (small; can ship first, on its own).** *Built 2026-11-11 (`overworld/tests/micasurvivor_dive_stairs_test.mjs`). As built: the stairs took their own orange mark, so the rocks and Meowth keep their gold; the HUD arrow comes up after 25 s on a floor, or at once when its boss falls.*

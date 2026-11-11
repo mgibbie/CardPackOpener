@@ -31,7 +31,7 @@ const TUNE = tuneFor(TYPES);
 const TRAITS = TYPES.filter((t) => TYPE_TRAITS[t]);
 const GG = window.G || {};
 const FIGHT_CAST = (Q.get('cast') ? Q.get('cast').split(',').map(Number) : [19, 16, 43, 74, 133, 41, 92, 1, 58, 63, 32, 39, 35, 95, 10]).filter((d) => d !== DEX && META[d] && META[d].a && META[d].a.Walk && !META[d].src);
-const MOVES = !FIGHT ? [] : Q.get('moves') ? Q.get('moves').split(',').map((m) => { const [id, lv] = m.split(':'); return [id, +lv || 1]; }).filter((m) => GG.Moves.BY_ID[m[0]])
+const MOVES = !FIGHT ? [] : Q.get('moves') ? Q.get('moves').split(',').map((m) => { const [id, lv] = m.split(':'); return [id, +lv || 1]; }).filter((m) => GG.Moves.BY_ID[m[0]] || (GG.ExpMoves && GG.ExpMoves.isExpMove(m[0])))
 	: [[GG.Moves.startFor(SPECIES), 3], ['tackle', 2]].filter((m, i, a) => a.findIndex((q) => q[0] === m[0]) === i);
 // (P3) bosses arrive at the 2D game's times (3:00, 6:00, …): ?bosses=143,130; ?boss=143 puts one in at the start
 const BOSSES = (Q.get('bosses') ? Q.get('bosses').split(',').map(Number) : [143, 130, 149, 6, 150]).filter((d) => META[d] && META[d].a && META[d].a.Walk && !META[d].src);
@@ -186,6 +186,14 @@ function draw(t) {
 		for (const p of world.pickups) shots.add(p.x, p.y + 0.3 + Math.abs(Math.sin(p.t * 0.8)) * 0.18, p.z, p.kind === 'xpBig' ? 0.24 : p.kind === 'xp' ? 0.15 : 0.26, PICK_COLOR[p.kind]);
 		for (const e of world.enemies) if (e.shield > 0) shots.add(e.a.x, e.a.y + Math.max(1.2, e.cr * 2) + 0.35, e.a.z, 0.16, '#7fc8ff');   // a shield: a blue bead over its head
 		for (const p of world.eshots) shots.add(p.x, p.y, p.z, Math.max(0.2, p.r), '#ff5f8f');   // an enemy's shot: always the same angry pink
+		// Expedition's effects: a bomb on its arc, a whirl on the floor, a wave's ring spreading
+		for (const f of world.effects) {
+			const c = TYPE_COLOR[f.m.type];
+			if (f.k === 'lob') { const k = Math.min(1, f.t / f.dur); shots.add(f.x0 + (f.x - f.x0) * k, f.y0 + (f.y - f.y0) * k + Math.sin(k * Math.PI) * CK.EXP.lobHigh * 0.0625, f.z0 + (f.z - f.z0) * k, 0.3, c); if (!f.seen) { f.seen = true; flashes.arc(f.x, f.y, f.z, f.r, 0, 6.2832, c, f.dur, 0.9); } }
+			else if (f.k === 'smite' && !f.seen) { f.seen = true; flashes.arc(f.x, f.y, f.z, f.r, 0, 6.2832, c, f.dur, 0.85); }
+			else if (f.k === 'vortex' && !f.seen) { f.seen = true; flashes.arc(f.x, f.y, f.z, f.r, 0, 6.2832, c, f.dur, 0.25); }
+			else if (f.k === 'wave' && (simTicks & 3) === 0) flashes.arc(f.x, f.y, f.z, f.r, 0, 6.2832, c, 0.12, 0.93);
+		}
 		for (const f of world.fields) {
 			const c = TYPE_COLOR[f.m.type];
 			if (f.kind === 'mine') shots.add(f.x, f.y + 0.18, f.z, 0.2, c);
@@ -249,7 +257,7 @@ function showMap() {
 }
 /** (P3) What this tick of the fight did, as things to see. */
 function fightEvents() {
-	const col = (id) => TYPE_COLOR[(GG.Moves.BY_ID[id] || {}).type];
+	const col = (id) => TYPE_COLOR[(GG.Moves.BY_ID[id] || (GG.ExpMoves && GG.ExpMoves.MOVES[id]) || {}).type];
 	for (const ev of world.events) {
 		if (ev.k === 'melee') flashes.arc(state.x, state.y, state.z, ev.r, ev.aim, Math.min(ev.arc, 6.2832), col(ev.id));
 		else if (ev.k === 'aura') flashes.arc(state.x, state.y, state.z, ev.r, 0, 6.2832, col(ev.id));
@@ -262,6 +270,7 @@ function fightEvents() {
 			if (h.kind === 'zone') flashes.arc(h.x, h.y, h.z, h.r, 0, 6.2832, c, life, ev.k === 'boom' ? 0 : 0.86);
 			else flashes.bar([h.x, h.y + (ev.k === 'boom' ? 0.6 : 0.1), h.z], [Math.cos(h.angle), 0, Math.sin(h.angle)], h.len, ev.k === 'boom' ? h.w : h.w * 0.5, c, life);
 		}
+		else if (ev.k === 'smite') { flashes.bar([ev.x, ev.y + 14, ev.z], [0, -1, 0], 14, 0.3, col(ev.id), 0.2); flashes.arc(ev.x, ev.y, ev.z, ev.r, 0, 6.2832, col(ev.id), 0.3, 0.3); }
 		else if (ev.k === 'bomb') flashes.arc(ev.x, ev.y, ev.z, ev.r, 0, 6.2832, '#ff7b3d', 0.5, 0.92);
 		else if (ev.k === 'levelup') showCards();
 		else if (ev.k === 'boss') note(`a wild ${(GG.DEX_BY[ev.dex] || {}).name || 'boss'} appeared!`, 3200);

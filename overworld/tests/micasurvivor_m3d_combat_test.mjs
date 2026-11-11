@@ -27,6 +27,9 @@
 //     stop it), uses its own four attacks, is enraged under half HP, shakes off a state sooner and is then immune,
 //     bursts into fourteen orbs with a berry and a magnet, arrives on time and thins the other arrivals; its stomp
 //     and its marks can be jumped clear of
+//   * Expedition's own move kinds (seven of its eight): each does its work; a lob and a smite reach a target behind
+//     a wall that a straight shot cannot; a wave and a spin stay on your level; a vortex cannot drag a body through a
+//     wall
 //   * arrivals: enemies appear 16-32 m away on floor they can walk to you from, never past the cap
 //   * the fight is deterministic (same seed: the same fight to the last digit), stays in the world through 3 minutes
 //     of random play on generated levels, and a tick with 110 enemies is cheap
@@ -422,6 +425,28 @@ const at = (cx, cz) => [(cx + 0.5) * CELL, (cz + 0.5) * CELL];
 		for (let i = 0; i < 120; i++) { const tt = i / 60; tick(q, { mx: 0, mz: 0, jump: jump && tt > 0.62 && tt < 1.3, crouch: false }); if (q.events.some((ev) => ev.k === 'boom')) boomAt = q.t; } return { taken: q.stats.taken, boomAt, touched: q.stats.touched }; };
 	const stood = stomp(false), hopped = stomp(true);
 	A(stood.taken > 0 && stood.boomAt > 0.9 && hopped.taken === 0 && hopped.boomAt === stood.boomAt, `a boss's stomp goes off ${stood.boomAt.toFixed(2)} s after it starts: standing in the ring you are hit; time a jump and you are over it`, [stood, hopped]);
+}
+
+// ---------------------------------------------------------------- Expedition's kinds
+{
+	const ids = data.expMoves(), byKind = {}; for (const id of ids) (byKind[data.moveDef(id).kind] = byKind[data.moveDef(id).kind] || []).push(id);
+	const flat = () => { const q = makeRoom(40, 40, 0); q.spawn = [40, 0, 40]; return q; };
+	const each = Object.keys(byKind).filter((k) => !CK.EXP_LATER.includes(k)).map((k) => { const w = newWorld(flat(), data, { dex: 25, moves: [byKind[k][0]], seed: 4 }); w.pl.invuln = 1e9; addEnemy(w, RAT, 43.5, 40, { dummy: true, hp: 1e5 }); run(w, 600); return [k, w.stats.hits]; });
+	A(ids.length === 18 && each.length === 7 && each.every(([, h]) => h > 0), `seven of Expedition's eight kinds do their work here (${each.map((e) => e[0]).join(', ')}); weather is still to come`, each);
+	const r = yard(), behind = (id) => { const w = newWorld(r, data, { dex: 25, moves: [id], seed: 4 }); w.pl.s.x = 11 * CELL; w.pl.s.z = 15 * CELL; w.pl.invuln = 1e9; const e = addEnemy(w, RAT, 6 * CELL, 15 * CELL, { dummy: true, hp: 1e5 }); run(w, 480); return { hits: w.stats.hits, blocked: w.stats.blocked, lost: e.maxHp - e.hp }; };
+	const lob = behind('mud-bomb'), smite = behind('sky-attack'), straight = behind('ember');
+	A(lob.hits >= 3 && smite.hits >= 3 && straight.hits === 0 && straight.blocked > 5, `a target behind the 4 m wall: a lob comes down on it (${lob.hits} hits) and a smite falls on it (${smite.hits}); Ember only hits the wall`, [lob, smite, straight]);
+	const ledge = (id) => { const w = newWorld(r, data, { dex: 25, moves: [id], seed: 4 }); w.pl.s.x = 16 * CELL - 1; w.pl.s.z = 15 * CELL; w.pl.invuln = 1e9; const up = addEnemy(w, RAT, 16 * CELL + 0.8, 15 * CELL, { dummy: true, hp: 1e5 }), level = addEnemy(w, RAT, 16 * CELL - 3, 15 * CELL, { dummy: true, hp: 1e5 }); run(w, 300); return [up.maxHp - up.hp, level.maxHp - level.hp]; };
+	const wave = ledge('surf'), spin = ledge('rapid-spin');
+	A(wave[0] === 0 && wave[1] > 0 && spin[0] === 0 && spin[1] > 0, 'a wave and a spin hit what is on your level, not the enemy on the ledge 1.5 m above', [wave, spin]);
+	// a vortex west of the wall, an enemy east of it within its pull: it is dragged to the wall and no further
+	const vw = newWorld(r, data, { dex: 25, moves: [], seed: 4 }); vw.pl.invuln = 1e9; const wh = data.move('whirlpool');
+	vw.effects.push({ k: 'vortex', id: 1, m: wh, x: 8 * CELL - 1.5, y: 0, z: 15 * CELL, t: 0, dur: 6, tick: 0, dmg: 1, r: wh.radius * U });
+	const east = addEnemy(vw, RAT, 9 * CELL + 2, 15 * CELL, { dummy: true, hp: 1e5 }), west = addEnemy(vw, RAT, 8 * CELL - 5, 15 * CELL, { dummy: true, hp: 1e5 }); run(vw, 300);
+	A(east.a.x >= 9 * CELL + 0.3 && east.a.x < 9 * CELL + 1 && Math.abs(west.a.x - (8 * CELL - 1.5)) < 0.3, 'a vortex drags an enemy in the open to its middle; one on the far side of a wall is pulled up against the wall and held there', [east.a.x, west.a.x]);
+	// a lob's own arc is what the page draws: it is in the air for its 0.55 s, then gone
+	const lw = newWorld(flat(), data, { dex: 25, moves: ['mud-bomb'], seed: 4 }); lw.pl.invuln = 1e9; addEnemy(lw, RAT, 48, 40, { dummy: true, hp: 1e5 }); let flying = 0; for (let i = 0; i < 60; i++) { tick(lw, null); if (lw.effects.some((q) => q.k === 'lob')) flying++; }
+	A(flying >= 30 && flying <= 36 && lw.stats.hits === 1, `a bomb is in the air ${(flying / 60).toFixed(2)} s before it lands`, [flying, lw.stats.hits]);
 }
 
 // ---------------------------------------------------------------- arrivals
