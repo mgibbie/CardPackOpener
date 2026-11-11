@@ -29,6 +29,8 @@ export function makeRenderer(canvas) {
 // (no lamps: the terrain is unlit, each face a flat colour with its shade baked in by which way it faces — the retro
 // look, and the cheapest thing a phone can draw)
 const TOP = [0x7fbf6a, 0x74b45f], SLOPE = [0xd2b877, 0xc6ab69], SIDE = 0xa5855c, RIM = 0x8497ab;
+const MAT = { ice: [0xcfeeff, 0xbfe4fa], mud: [0x7a5a3c, 0x705236], bounce: [0xff7ab8, 0xff5fa6] };   // (P1: a cell's surface)
+const BED = [0xcdbb86, 0xc2af7b];   // (a pool's floor)
 function cornerHeights(room, cx, cz) {
 	const i = cz * room.w + cx, base = room.cells[i], s = room.slopes.get(i);
 	// [nw, ne, sw, se]: x grows east, z grows south
@@ -43,7 +45,8 @@ export function buildTerrain(room) {
 	for (let cz = 0; cz < room.h; cz++) for (let cx = 0; cx < room.w; cx++) {
 		const [nw, ne, sw, se] = cornerHeights(room, cx, cz), x0 = cx * CELL, x1 = x0 + CELL, z0 = cz * CELL, z1 = z0 + CELL;
 		const rim = nw >= 8 && !room.slopes.has(cz * room.w + cx), sl = room.slopes.has(cz * room.w + cx), k = (cx + cz) & 1;
-		quad([x0, nw, z0], [x0, sw, z1], [x1, se, z1], [x1, ne, z0], rim ? RIM : (sl ? SLOPE : TOP)[k], 1);
+		const ci = cz * room.w + cx, m = room.mats && room.mats.get(ci), wet = room.water && room.water.has(ci);
+		quad([x0, nw, z0], [x0, sw, z1], [x1, se, z1], [x1, ne, z0], rim ? RIM : (m ? MAT[m] : wet ? BED : sl ? SLOPE : TOP)[k], 1);
 		// a wall on each side where this cell's edge stands above the neighbour's
 		const side = (ax, az, bx, bz, ha, hb, nx, nz, shade) => {
 			if (!inside(nx, nz)) return;
@@ -64,6 +67,20 @@ export function buildTerrain(room) {
 	g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
 	const mesh = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide }));
 	mesh.matrixAutoUpdate = false;
+	return mesh;
+}
+
+/** The water: a flat sheet at each wet cell's surface, see-through, drawn after everything solid. */
+export function buildWater(room) {
+	const pos = [];
+	for (const [i, level] of room.water || []) {
+		const cx = i % room.w, cz = Math.floor(i / room.w), x0 = cx * CELL, x1 = x0 + CELL, z0 = cz * CELL, z1 = z0 + CELL;
+		pos.push(x0, level, z0, x0, level, z1, x1, level, z1, x0, level, z0, x1, level, z1, x1, level, z0);
+	}
+	const g = new THREE.BufferGeometry();
+	g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+	const mesh = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ color: 0x3f8fe0, transparent: true, opacity: 0.55, depthWrite: false, side: THREE.DoubleSide }));
+	mesh.matrixAutoUpdate = false; mesh.renderOrder = 2;
 	return mesh;
 }
 

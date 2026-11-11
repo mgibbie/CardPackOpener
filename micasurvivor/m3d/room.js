@@ -12,8 +12,9 @@
 //   │  CHUTE  a slope too steep to stand on      │   you slide off it
 //   │  PIT    2 m down, with a ramp out          │
 //   │  WALL   a 6 m block                        │
+//   │  P1: an ICE patch, a MUD patch, two BOUNCE pads, a POOL with a shallow way in
 //   └───────────────────────────────────────────┘
-import { CELL, makeRoom, setCell } from './sim.js';
+import { CELL, makeRoom, setCell, idx } from './sim.js';
 
 export const ROOM_W = 24, ROOM_H = 24;
 export const SPOTS = {};   // named places (world x, z), for tests and for placing the crowd
@@ -54,6 +55,16 @@ export function buildRoom() {
 	// a wall
 	box(5, 16, 6, 20, 6);
 	SPOTS.wallWest = at(3, 18);
+
+	// ---- P1
+	const mat = (x0, z0, x1, z1, m) => { for (let z = z0; z <= z1; z++) for (let x = x0; x <= x1; x++) r.mats.set(idx(r, x, z), m); };
+	mat(8, 17, 10, 19, 'ice'); SPOTS.ice = at(9, 18); SPOTS.iceWest = at(7, 18);
+	mat(1, 13, 3, 15, 'mud'); SPOTS.mud = at(2, 14);
+	mat(2, 8, 2, 8, 'bounce'); SPOTS.bounce = at(2, 8);
+	mat(21, 13, 21, 13, 'bounce');
+	// a pool: two wading steps down from the west (-0.4, -0.8), then deep water; the surface is 0.2 m below the floor
+	for (let z = 7; z <= 9; z++) { setCell(r, 17, z, -0.4); setCell(r, 18, z, -0.8); for (let x = 19; x <= 22; x++) setCell(r, x, z, -2.6); for (let x = 17; x <= 22; x++) r.water.set(idx(r, x, z), -0.2); }
+	SPOTS.poolEdge = at(16, 8); SPOTS.shallow = at(18, 8); SPOTS.pool = at(20, 8);
 
 	// the open floor along the south side (clear for 10 m east and west)
 	SPOTS.open = at(12, 21);

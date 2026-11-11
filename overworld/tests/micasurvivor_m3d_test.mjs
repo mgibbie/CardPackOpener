@@ -8,6 +8,9 @@
 //   * a still sprite shows a different one of its 8 facing rows as the camera orbits it
 //   * the phone layout: the same scene at 390 × 844, with the touch buttons shown
 //   * the rules cost a small fraction of a frame; frame times are REPORTED (software GL here: not a phone's numbers)
+//   * P1: who you play decides how it moves (?dex=6: Charizard is Fire / Flying — the readout names its traits and it has
+//     two air jumps); the camera, left alone, swings round behind the way you run, and any camera input takes it back;
+//     ?follow=0 turns that off; the pool is drawn and you can swim in it through the page's own loop
 //   node overworld/tests/micasurvivor_m3d_test.mjs      (SHOTS=<dir> for screenshots)
 import http from 'http';
 import fs from 'fs';
@@ -106,6 +109,33 @@ try {
 	A(p.simP95 < 2, `the rules cost a small fraction of a frame (p95 ${p.simP95} ms of 16.7)`, JSON.stringify(p));
 	console.log(`     frame times here (software GL, NOT a phone): median ${p.p50} ms, p95 ${p.p95} ms, ${p.calls} draw calls, ${p.triangles} triangles`);
 	await page.close();
+
+	// ======================== P1: traits, the follow camera, the pool
+	{
+		const z = await open({ width: 1280, height: 720, deviceScaleFactor: 1 }, '?n=20&dex=6');
+		A(z.ok, '?dex=6 boots (Charizard)');
+		await sleep(600);
+		const t = await z.page.evaluate(() => { const m = window.__m3d; return { types: m.TYPES, traits: m.TRAITS, airJumps: m.TUNE.AIR_JUMPS, glide: m.TUNE.GLIDE, boost: m.TUNE.SLIDE_BOOST, base: m.K.AIR_JUMPS, hud: document.getElementById('hud').textContent, state: m.state.airJumps }; });
+		A(t.types.join() === 'fire,flying' && t.airJumps === 2 && t.glide && t.boost === 3.6 && t.base === 1 && t.state === 2, 'Charizard is Fire / Flying: two air jumps, a glide, a bigger slide kick (the base tuning untouched)', JSON.stringify(t));
+		A(/Charizard \(fire \/ flying\)/.test(t.hud) && /traits: fire, flying/.test(t.hud), 'the readout names who you play and its traits', t.hud);
+		// the follow camera: run east for a while with no camera input
+		const f = await z.page.evaluate(async () => { const m = window.__m3d, wait = (ms) => new Promise(r => setTimeout(r, ms)); m.respawn(); m.cam.yaw = Math.PI; m.cam.manual = 0; m.setInput({ mx: -1, mz: 0 }); await wait(1800); const yaw = m.cam.yaw; m.setInput(null); return { yaw, want: Math.atan2(-1, 0) }; });
+		const dy = Math.abs(Math.atan2(Math.sin(f.yaw - Math.PI), Math.cos(f.yaw - Math.PI)));
+		A(dy > 0.35, 'left alone, the camera swings round behind the way you are running', JSON.stringify([f, dy]));
+		const man = await z.page.evaluate(async () => { const m = window.__m3d, wait = (ms) => new Promise(r => setTimeout(r, ms)); m.respawn(); m.cam.yaw = Math.PI; m.cam.manual = performance.now() + 60000; m.setInput({ mx: -1, mz: 0 }); await wait(900); const yaw = m.cam.yaw; m.setInput(null); return yaw; });
+		A(Math.abs(man - Math.PI) < 1e-6, '...and stays where you put it while you are steering it yourself', String(man));
+		// the pool, through the page's own loop
+		const sw = await z.page.evaluate(async () => { const m = window.__m3d, wait = (ms) => new Promise(r => setTimeout(r, ms)); m.put(41, 17, -1.1); m.cam.yaw = Math.PI / 2; m.cam.manual = performance.now() + 60000; await wait(500); const a = { swimming: m.state.swimming, y: +m.state.y.toFixed(2), hud: document.getElementById('hud').textContent }; return a; });
+		A(sw.swimming && Math.abs(sw.y + 1.1) < 0.06 && /swimming/.test(sw.hud), 'put in the pool you float at the surface, and the readout says swimming', JSON.stringify(sw));
+		const cw = await colours(z.page);
+		A(cw.sky + cw.green > 0 && cw.distinct > 30, 'the pool is drawn (a scene with the water in it)', JSON.stringify(cw));
+		await shot(z.page, 'm3d_pool.png');
+		await z.page.close();
+		const nf = await open({ width: 900, height: 600, deviceScaleFactor: 1 }, '?n=5&follow=0');
+		const off = await nf.page.evaluate(async () => { const m = window.__m3d, wait = (ms) => new Promise(r => setTimeout(r, ms)); m.cam.yaw = Math.PI; m.cam.manual = 0; m.setInput({ mx: -1, mz: 0 }); await wait(1500); return { yaw: m.cam.yaw, follow: m.cam.follow }; });
+		A(off.follow === false && Math.abs(off.yaw - Math.PI) < 1e-6, '?follow=0: the camera never moves by itself', JSON.stringify(off));
+		await nf.page.close();
+	}
 
 	// ======================== phone
 	const ph = await open({ width: 390, height: 844, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
