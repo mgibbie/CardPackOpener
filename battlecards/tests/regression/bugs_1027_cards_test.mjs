@@ -58,8 +58,13 @@ const frozenNow = (st, c) => c.frozen === st.turnNumber;
 	}
 	ok('both rung-D bosses can close a run (so the boss is not fixed)', JSON.stringify(Swordcoast.enemyRosterFor(11).sort()) === JSON.stringify(['Asmodeus the Archfiend', 'Tiamat']), Swordcoast.enemyRosterFor(11));
 	const src = gameSource();
-	const fn = src.slice(src.indexOf('function swordCoastRunComplete'), src.indexOf('function swordCoastRunOver'));
-	ok('swordCoastRunComplete builds its headline from run.enemy (no hard-coded Tiamat)', !fn.includes("'12 WINS - TIAMAT IS SLAIN!'") && /clearHeadline\(run\.enemy/.test(fn));
+	// the Sword Coast's win screen is the rung runs' shared one (game_lorequest.js rungRunFlow runComplete), which
+	// shows its config's clearHeadline(run); the Sword Coast's config builds that from the foe just beaten
+	const i = src.indexOf("mode: 'swordcoast', tag: 'sc'");
+	const cfg = i < 0 ? '' : src.slice(i, src.indexOf('});', i));
+	ok('the Sword Coast win screen builds its headline from run.enemy (no hard-coded Tiamat)',
+		!src.includes("'12 WINS - TIAMAT IS SLAIN!'") && /clearHeadline: run => Swordcoast\.clearHeadline\(run\.enemy/.test(cfg)
+		&& /dungeonOverlay\(cfg\.clearHeadline\(run\), cfg\.clearBody\(run\)\)/.test(src));
 }
 
 // ---------- 2) "your OTHER creatures" Battlecries skip the source ----------

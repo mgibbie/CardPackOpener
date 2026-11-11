@@ -46,11 +46,16 @@ const game = gameSource();
 for (const [fn, basics] of [['bootMiddleEarthEncounter', "allowedBasicsFor(cardsById, 'meDeck'"], ['bootSwordCoastEncounter', "allowedBasicsFor(cardsById, 'scDeck'"],
 	['bootFinalFantasyEncounter', "allowedBasicsFor(cardsById, 'ffDeck'"], ['bootMultiverseEncounter', "allowedBasicsFor(cardsById, 'mvDeck'"],
 	['bootLorequestEncounter', 'Lorequest.allowedBasics(cardsById,']]) {
-	const i = game.indexOf(`function ${fn}(`);
-	const body = i < 0 ? '' : game.slice(i, game.indexOf('\n}\n', i));
+	// Middle-earth / Sword Coast / Final Fantasy share ONE boot (game_lorequest.js rungRunFlow's `boot`,
+	// exported as `boot: <fn>`), which locks basics by `DECK` = the run's tag + 'Deck'
+	const tagM = /'(\w\w)Deck'/.exec(basics);
+	const shared = new RegExp(`boot: ${fn},[\\s\\S]{0,400}?rungRunFlow\\(\\{\\s*mode: '\\w+', tag: '${tagM ? tagM[1] : '-'}',`).test(game);
+	const i = shared ? game.indexOf('\tfunction boot(') : game.indexOf(`function ${fn}(`);
+	const body = i < 0 ? '' : game.slice(i, game.indexOf(shared ? '\n\t}\n' : '\n}\n', i));
 	ok(`${fn} exists`, i >= 0);
+	if (shared) ok(`${fn}: the shared flow's DECK is the run's tag`, /const DECK = cfg\.tag \+ 'Deck';/.test(game));
 	const mirrored = ['E.createGame(', 'E.resetDeckAndHand(GS.state, 1,', 'E.drawCards(GS.state, 1, 4)', 'E.addCoin(GS.state, 1)', 'E.stripLoadouts(GS.state)',
-		'setRunLife((run.wins || 0) + (run.losses || 0) + 1)', basics];
+		'setRunLife((run.wins || 0) + (run.losses || 0) + 1)', shared ? 'allowedBasicsFor(cardsById, DECK,' : basics];
 	const missing = mirrored.filter(s => !body.includes(s));
 	ok(`${fn} still does what the simulator mirrors`, missing.length === 0, missing);
 	const extra = ['applyRunAnomaly'].filter(s => body.includes(s));
