@@ -833,6 +833,8 @@ const RATE_LIMITS = {
 const HIT_LIMIT = [240, 60_000];    // per-IP analytics beacon
 const ERR_LIMIT = [120, 60_000];    // per-IP error beacon
 const LOGIN_LIMIT = [30, 60_000];   // per-IP login attempts — humans retry a handful; this stops scrypt-grinding brute force
+const LOGIN_REFUSED = 'wrong username or password'; // the ONE login refusal: never says whether the account exists
+const LOGIN_DUMMY_SALT = '00000000000000000000000000000000'; // not a secret: an unknown username still costs one scrypt, so timing doesn't tell either
 const REG_LIMIT = [20, 3600_000];   // per-IP account creation — a LAN party fits; a squatting flood does not
 const RGET_LIMIT = [120, 60_000];   // per-IP public replay fetch
 const TGET_LIMIT = [60, 60_000];    // per-IP public tuning fetch (2 per game boot)
@@ -1629,11 +1631,14 @@ export default async function handler(req, env) {
 		// password brute-force lane and a CPU amplifier (one scrypt per attempt)
 		if (!(await rateLimit(store, 'login:' + clientIp(req), LOGIN_LIMIT[0], LOGIN_LIMIT[1]))) return json({ error: 'too many attempts — wait a minute' }, 429);
 		const username = String(body.username || '').trim().toLowerCase();
-		const user = await store.get(username);
-		if (!user) return json({ error: 'no such account' }, 401);
-		const hash = (await scrypt(String(body.password || ''), user.salt)).toString('hex');
-		const a = Buffer.from(hash), b = Buffer.from(user.hash);
-		if (a.length !== b.length || !timingSafeEqual(a, b)) return json({ error: 'wrong password' }, 401);
+		const row = await store.get(username);
+		// One answer for "no such account" and "wrong password", and one scrypt either way: the
+		// reply (and its timing) must not say which usernames exist. A row that isn't an account
+		// (an unprefixed system key that happens to fit the username rule) counts as no account.
+		const user = row && typeof row.salt === 'string' && typeof row.hash === 'string' ? row : null;
+		const hash = (await scrypt(String(body.password || ''), user ? user.salt : LOGIN_DUMMY_SALT)).toString('hex');
+		const a = Buffer.from(hash), b = Buffer.from(user ? user.hash : '');
+		if (!user || a.length !== b.length || !timingSafeEqual(a, b)) return json({ error: LOGIN_REFUSED }, 401);
 		return json({ token: makeToken(username), state: publicState(user, username) });
 	}
 
