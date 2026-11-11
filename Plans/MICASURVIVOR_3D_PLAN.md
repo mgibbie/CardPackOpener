@@ -128,7 +128,13 @@ parameterised by*, not their exact numbers. Numbers have to come from playing it
   All of them reuse one offer window.
 - Tomes have **synergies** shown in the UI.
 
-### 2.4 How characters read in 3D — a correction
+### 2.4 How characters read in 3D
+*Owner, 2026-11-11: in play, Megabonk's own character is a model and its enemies are 2D sprites in the 3D world. The
+structure read here could not settle that either way (it shows mesh-frame animation classes and no sprite classes, but
+not what the meshes are). The owner's eyes on the game are the authority. Our decision does not depend on it:
+**2D sprites for the characters we play and for the enemies — think Doom, or Paper Mario.***
+
+What the structure showed:
 **Megabonk does not use 2D sprites.** The player is a rigged 3D model; enemies are 3D meshes animated by **swapping
 whole pre-baked meshes at a low frame rate**, which is where its choppy, retro look comes from. Status effects tint the
 material (freeze, stun, charm). Only small things turn to face the camera.
@@ -230,6 +236,40 @@ for this stack). That is a backend decision with a cost, so it is measured first
 
 The 2D Expedition and Dive stay playable until P4 and P6 replace them, then are removed (Classic keeps the 2D engine).
 
+## 5.1 P0: built (2026-11-11)
+
+`/micasurvivor/m3d/` — a test room, not linked from the menu (`?n=` the crowd, `?dex=` who you play).
+
+- **The rules** (`micasurvivor/m3d/sim.js`, pure: no browser needed): a height-field room; a velocity controller with
+  ground friction and acceleration, air control with an air cap, a jump with a faster fall, a short hop on a tap, one air
+  jump, coyote time, a jump buffer, steps walked up, walls slid along, floor slopes, a chute too steep to stand on, and a
+  crouch-slide that a jump keeps the speed of. Deterministic to the last bit.
+- **Drawing** (`render.js`): the terrain as one unlit mesh; sprites as upright billboards, one instanced batch per sheet,
+  the facing row picked per sprite from the camera's side; blob shadows on the floor; fog; a third-person camera that
+  pulls in rather than pass through terrain.
+- **Input**: keyboard, controller, and touch (a left-thumb stick, a right-thumb camera drag, JUMP and SLIDE buttons).
+- **One change from the bar, found by test**: pure Quake air control (an air cap about a tenth of the run speed) cannot
+  get a standing jump on to a ledge it is pressed against. The air cap is 3 m/s here (run speed 7): a turn in the air
+  still never costs speed and holding straight on still adds none, but a standing jump can be steered.
+
+**Question 1, performance.** Measured in headless Chrome at a phone's viewport (844 × 390, pixel ratio capped at 1.5)
+with the CPU slowed 4×, running, jumping and turning the camera throughout:
+
+| Crowd | This PC's GPU (AMD integrated) | Software rendering (no GPU at all) |
+|---|---|---|
+| 100 sprites | 16.7 ms median, 17.0 p95 | 16.7 median, 16.8 p95 |
+| 300 sprites | 16.7 median, 17.0 p95 | 16.7 median, 16.8 p95 |
+| 1,000 sprites | 16.7 median, 17.1 p95 | 33.3 median, 50 p95 |
+
+13 draw calls whatever the crowd (one per sprite sheet); the rules cost under 0.6 ms a frame. That is a pass on
+everything that can be measured here. **It is not a phone**: a real device's GPU, fill rate and heat are untested, and
+that check is the owner's — open the page on the iPhone and read the frame time in the corner.
+
+**Question 2, the feel of the jump.** Only the owner can answer it. Every number is in `K` at the top of `sim.js`.
+
+Not in P0: the object-in-the-way fade (the camera pulls in instead), outlines, rails, wall-running, surf, enemies that
+move, combat, generation.
+
 ## 6. Dive in 2D: built
 
 **D0 — find the stairs (small; can ship first, on its own).** *Built 2026-11-11 (`overworld/tests/micasurvivor_dive_stairs_test.mjs`). As built: the stairs took their own orange mark, so the rocks and Meowth keep their gold; the HUD arrow comes up after 25 s on a floor, or at once when its boss falls.*
@@ -268,9 +308,8 @@ The 2D Expedition and Dive stay playable until P4 and P6 replace them, then are 
 
 ## 7. Decisions for the owner
 
-1. **Sprites, knowing Megabonk has none.** Its characters are 3D models. Keep our 2D sprites in the 3D world (this plan),
-   or is the look you want actually low-poly models? Sprites are what we have for all 1,025 species; models would be a
-   different, far larger project.
+1. ~~Sprites or models?~~ **Decided 2026-11-11: 2D sprites for the characters we play and for the enemies** (Doom, Paper
+   Mario).
 2. **Collision: our own height-field, or a physics engine?** Recommended: our own. It is what keeps a phone at 60 fps and
    keeps runs reproducible. The cost is that free-form geometry (overhangs, loops) is limited to what the grid can
    describe.
