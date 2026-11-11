@@ -14,6 +14,7 @@ import { fileURLToPath, pathToFileURL } from 'url';
 import { DatabaseSync } from 'node:sqlite';
 import { buildSync } from 'esbuild';
 import * as Lorequest from '../../battlecards/lorequest.js';
+import { gameSource } from '../../battlecards/tests/helpers/gamesource.mjs';
 
 process.env.MP_GC_RATE = '0';
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -93,7 +94,7 @@ const again = await api('run-walkaway', { mode: 'swordcoast', character: 'Nobody
 ok('an unknown hero is a harmless no-op', again.status === 200 && !again.body.state?.stats?.chars?.['swordcoast|Nobody']);
 
 // ---- 3. the client wires concede + abandon to it in every Lorequest-family mode ----
-const game = fs.readFileSync(path.join(ROOT, 'battlecards/game.js'), 'utf8');
+const game = gameSource();
 const ci = game.indexOf("overlayButton('Concede the run'");
 ok('the run Concede button reports the walkaway', ci > 0 && /mpRunWalkaway\(runModeName\(\), run\)/.test(game.slice(ci, ci + 200)));
 for (const [fn, m] of [['resumeLorequestOverlay', 'lorequest'], ['resumeMiddleEarthOverlay', 'middleearth'], ['resumeSwordCoastOverlay', 'swordcoast'], ['resumeFinalFantasyOverlay', 'finalfantasy'], ['resumeMultiverseOverlay', 'multiverse']])

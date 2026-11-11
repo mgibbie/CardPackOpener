@@ -11,9 +11,10 @@
 // This is a source guard: a new modal that paints a card face without a tip is a
 // blind pick, and that regression is invisible in any state-level test.
 //   node battlecards/tests/unit/modal_card_tips_test.mjs
+import { gameSource } from '../helpers/gamesource.mjs';   // game.js + the modules split out of it
 import fs from 'fs';
 
-const src = fs.readFileSync(new URL('../../game.js', import.meta.url), 'utf8');
+const src = gameSource();
 const html = fs.readFileSync(new URL('../../index.html', import.meta.url), 'utf8');
 let pass = 0, fail = 0;
 const ok = (l, c, x) => { if (c) { pass++; } else { fail++; console.log('FAIL:', l, x ?? ''); } };

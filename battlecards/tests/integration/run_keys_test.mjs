@@ -11,6 +11,7 @@
 //      run key, the three new modes included
 //
 //   node battlecards/tests/integration/run_keys_test.mjs
+import { gameSource } from '../helpers/gamesource.mjs';   // game.js + the modules split out of it
 import { spawn } from 'child_process';
 import fs from 'fs';
 import os from 'os';
@@ -26,7 +27,7 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 // ===== 1. static: client run keys vs server RUN_KEYS =====
-const game = fs.readFileSync(path.join(ROOT, 'battlecards', 'game.js'), 'utf8');
+const game = gameSource();
 const mp = fs.readFileSync(path.join(ROOT, 'server', 'mp.mjs'), 'utf8');
 // a run mode's key: `const XYZ_KEY = 'magepunk_..._v1'` (RUN_KEY is the dungeon's); not the *_UNLOCK_KEY flags
 const clientKeys = [...game.matchAll(/const ([A-Z_]*KEY) = '(magepunk_[a-z0-9]+_v\d)'/g)]

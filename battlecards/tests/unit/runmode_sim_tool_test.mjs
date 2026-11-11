@@ -6,6 +6,7 @@
 //   3. an override reaches the fight (a trial nerf changes the outcome)
 //   4. bad input is refused
 //   5. game.js's boot<Mode>Encounter still does what fight() mirrors, for all three modes
+import { gameSource } from '../helpers/gamesource.mjs';   // game.js + the modules split out of it
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
@@ -41,7 +42,7 @@ const who = spawnSync(process.execPath, [TOOL, '--mode=middleearth', '--enemies=
 ok('an unknown enemy is refused', who.status === 2 && /unknown enemies/.test(who.stderr), who.stderr);
 
 // ===== 5 =====
-const game = fs.readFileSync(path.join(ROOT, 'battlecards/game.js'), 'utf8');
+const game = gameSource();
 for (const [fn, basics] of [['bootMiddleEarthEncounter', "allowedBasicsFor(cardsById, 'meDeck'"], ['bootSwordCoastEncounter', "allowedBasicsFor(cardsById, 'scDeck'"],
 	['bootFinalFantasyEncounter', "allowedBasicsFor(cardsById, 'ffDeck'"], ['bootMultiverseEncounter', "allowedBasicsFor(cardsById, 'mvDeck'"],
 	['bootLorequestEncounter', 'Lorequest.allowedBasics(cardsById,']]) {

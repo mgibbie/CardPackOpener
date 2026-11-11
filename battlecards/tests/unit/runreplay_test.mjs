@@ -5,6 +5,7 @@
 // store is a 10-deep ring buffer and a 12-win Lorequest run is ~14 fights, so the
 // opening fights would already be evicted by the time the run is cleared.
 //   node battlecards/tests/unit/runreplay_test.mjs
+import { gameSource } from '../helpers/gamesource.mjs';   // game.js + the modules split out of it
 import fs from 'fs';
 import { appendFightReplay, playlistFights, canBuildPlaylist, playlistMeta, fightLabel, MAX_RUN_FIGHTS } from '../../runreplay.js';
 
@@ -73,7 +74,7 @@ const ok = (l, c, x) => { if (c) { pass++; } else { fail++; console.log('FAIL:',
 // (a new mode added to activeRunIO must wire addRunReplayButtons into its win
 // screen too, or its cleared runs quietly lose the feature)
 {
-	const src = fs.readFileSync(new URL('../../game.js', import.meta.url), 'utf8');
+	const src = gameSource();
 	const wired = new Set([...src.matchAll(/addRunReplayButtons\(el, run, '([a-z]+)'/g)].map(m => m[1]));
 	// the run modes the save layer knows about: `if (<mode>RunMode) return { load: ... }`
 	const ioBlock = src.slice(src.indexOf('function activeRunIO'), src.indexOf('function activeRunIO') + 1400);

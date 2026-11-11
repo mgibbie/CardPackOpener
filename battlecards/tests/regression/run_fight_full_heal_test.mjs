@@ -7,6 +7,7 @@
 // design (damage.js healHero: "starting life is not a ceiling") and stays that way.
 // FIX: setRunLife always records the fight's starting life as maxLife (the full-heal reference),
 // exactly what Dungeon/Heist/Tombs already did. The balance sim mirrors it.
+import { gameSource } from '../helpers/gamesource.mjs';   // game.js + the modules split out of it
 import fs from 'fs';
 import * as E from '../../engine.js';
 import { seededRng } from '../../engine/rng.js';
@@ -17,8 +18,8 @@ let pass = 0, fail = 0;
 const ok = (l, c, x) => { if (c) { pass++; console.log('ok  - ' + l); } else { fail++; console.log('FAIL: ' + l + (x != null ? '  ' + x : '')); } };
 
 // run game.js's own runLifeFor + setRunLife against an engine state
-const src = fs.readFileSync(new URL('../../game.js', import.meta.url), 'utf8').replace(/\r\n/g, '\n');
-const grab = name => { const i = src.indexOf(`function ${name}(`); return src.slice(i, src.indexOf('\n}\n', i) + 3); };
+const src = gameSource().replace(/\r\n/g, '\n');
+const grab = name => { const i = src.indexOf(`function ${name}(`); return src.slice(i, src.indexOf('\n}\n', i) + 3).replace(/^export /gm, ''); }; // (a split-out module imports setRunLife, so it carries `export`)
 // game.js keeps its shared state on GS (game_state.js), so the lifted functions get a GS of their own
 const make = new Function('GS', 'log', grab('runLifeFor') + grab('setRunLife') + '; return (st, r, o) => { GS.state = st; setRunLife(r, o); };');
 const setRunLife = make({ HUMAN: 0 }, () => {});

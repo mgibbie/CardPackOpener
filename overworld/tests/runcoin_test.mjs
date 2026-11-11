@@ -14,6 +14,7 @@ import path from 'path';
 import http from 'http';
 import { fileURLToPath } from 'url';
 import puppeteer from 'puppeteer-core';
+import { gameSource } from '../../battlecards/tests/helpers/gamesource.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '../../');
@@ -30,7 +31,7 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 
 // ---------- source: every run mode's boss deal re-adds the Coin ----------
 {
-	const src = fs.readFileSync(path.join(ROOT, 'battlecards/game.js'), 'utf8');
+	const src = gameSource();
 	// (game.js may be checked out with CRLF line endings)
 	const deals = [...src.matchAll(/\r?\n\tE\.resetDeckAndHand\(GS\.state, 1, [^\r\n]*\);\r?\n\tE\.drawCards\(GS\.state, 1, 4\);\r?\n([^\r\n]*)\r?\n/g)];
 	A(deals.length === 10, 'all ten run modes deal the boss a fresh hand', String(deals.length));

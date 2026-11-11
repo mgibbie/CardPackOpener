@@ -71,6 +71,21 @@ import { openProfile } from './profile.js';
 import { initPadboard } from './padboard.js';
 import { rumble } from '../site/gamepad.js';
 import { GS } from './game_state.js';
+// game_lorequest.js — the Lorequest family of runs
+import {
+	advanceFinalFantasy, advanceLorequest, advanceMiddleEarth, advanceMultiverse, advanceSwordCoast,
+	afterFinalFantasyReward, afterLorequestBucket, afterMiddleEarthReward, afterMultiverseBucket,
+	afterSwordCoastReward, bootFinalFantasyEncounter, bootLorequestEncounter,
+	bootMiddleEarthEncounter, bootMultiverseEncounter, bootSwordCoastEncounter, finalFantasyDefeat,
+	finalFantasyLoot, finalFantasyVictory, genFinalFantasyEnemy, genLorequestEnemy,
+	genMiddleEarthEnemy, genMultiverseEnemy, genSwordCoastEnemy, lorequestDefeat, lorequestLoot,
+	lorequestVictory, middleEarthDefeat, middleEarthLoot, middleEarthVictory, multiverseDefeat,
+	multiverseLoot, multiverseVictory, pickFinalFantasyHeroOverlay, pickLorequestDeckOverlay,
+	pickMiddleEarthHeroOverlay, pickMultiverseHeroOverlay, pickSwordCoastHeroOverlay,
+	resumeFinalFantasyOverlay, resumeLorequestOverlay, resumeMiddleEarthOverlay,
+	resumeMultiverseOverlay, resumeSwordCoastOverlay, swordCoastDefeat, swordCoastLoot,
+	swordCoastVictory,
+} from './game_lorequest.js';
 // game_replays.js — replays: record live games, rewatch recorded tapes
 import {
 	addReplayButtons, addRunReplayButtons, finalizeReplay, maybeRecordFrame, replayTape,
@@ -103,16 +118,16 @@ export const arenaRunMode = !dungeonRunMode && !heistRunMode && !tombsRunMode &&
 const LOREQUEST_KEY = 'magepunk_lorequest_v1';
 export const lorequestRunMode = !dungeonRunMode && !heistRunMode && !tombsRunMode && !duelsRunMode && !arenaRunMode && new URLSearchParams(location.search).has('lorequest');
 const MIDDLEEARTH_KEY = 'magepunk_middleearth_v1';
-const MIDDLEEARTH_UNLOCK_KEY = 'magepunk_middleearth_tom_unlocked'; // Tom Bombadil secret hero
+export const MIDDLEEARTH_UNLOCK_KEY = 'magepunk_middleearth_tom_unlocked'; // Tom Bombadil secret hero
 export const middleearthRunMode = !dungeonRunMode && !heistRunMode && !tombsRunMode && !duelsRunMode && !arenaRunMode && !lorequestRunMode && new URLSearchParams(location.search).has('middleearth');
 const SWORDCOAST_KEY = 'magepunk_swordcoast_v1';
-const SWORDCOAST_UNLOCK_KEY = 'magepunk_swordcoast_gale_unlocked'; // Gale secret hero
+export const SWORDCOAST_UNLOCK_KEY = 'magepunk_swordcoast_gale_unlocked'; // Gale secret hero
 export const swordcoastRunMode = !dungeonRunMode && !heistRunMode && !tombsRunMode && !duelsRunMode && !arenaRunMode && !lorequestRunMode && !middleearthRunMode && new URLSearchParams(location.search).has('swordcoast');
 const FINALFANTASY_KEY = 'magepunk_finalfantasy_v1';
-const FINALFANTASY_UNLOCK_KEY = 'magepunk_finalfantasy_gilgamesh_unlocked'; // Gilgamesh secret hero
+export const FINALFANTASY_UNLOCK_KEY = 'magepunk_finalfantasy_gilgamesh_unlocked'; // Gilgamesh secret hero
 export const finalfantasyRunMode = !dungeonRunMode && !heistRunMode && !tombsRunMode && !duelsRunMode && !arenaRunMode && !lorequestRunMode && !middleearthRunMode && !swordcoastRunMode && new URLSearchParams(location.search).has('finalfantasy');
 const MULTIVERSE_KEY = 'magepunk_multiverse_v1';
-const MULTIVERSE_UNLOCK_KEY = 'magepunk_multiverse_surfer_unlocked'; // Silver Surfer secret hero
+export const MULTIVERSE_UNLOCK_KEY = 'magepunk_multiverse_surfer_unlocked'; // Silver Surfer secret hero
 export const multiverseRunMode = !dungeonRunMode && !heistRunMode && !tombsRunMode && !duelsRunMode && !arenaRunMode && !lorequestRunMode && !middleearthRunMode && !swordcoastRunMode && !finalfantasyRunMode && new URLSearchParams(location.search).has('multiverse');
 GS.dungeonBossId = (id => Dungeon.BOSSES[id] ? id : null)(
 	new URLSearchParams(location.search).get('boss'));
@@ -213,24 +228,24 @@ const loadArena = () => safeLoad(ARENA_KEY, null);
 const saveArena = saverFor(ARENA_KEY);
 const clearArena = () => endRunKey(ARENA_KEY);
 const loadLorequest = () => safeLoad(LOREQUEST_KEY, null);
-const saveLorequest = saverFor(LOREQUEST_KEY);
-const clearLorequest = () => endRunKey(LOREQUEST_KEY);
+export const saveLorequest = saverFor(LOREQUEST_KEY);
+export const clearLorequest = () => endRunKey(LOREQUEST_KEY);
 const loadMiddleearth = () => safeLoad(MIDDLEEARTH_KEY, null);
-const saveMiddleearth = saverFor(MIDDLEEARTH_KEY);
-const clearMiddleearth = () => endRunKey(MIDDLEEARTH_KEY);
-const middleearthTomUnlocked = () => { try { return localStorage.getItem(MIDDLEEARTH_UNLOCK_KEY) === '1'; } catch (e) { return false; } };
+export const saveMiddleearth = saverFor(MIDDLEEARTH_KEY);
+export const clearMiddleearth = () => endRunKey(MIDDLEEARTH_KEY);
+export const middleearthTomUnlocked = () => { try { return localStorage.getItem(MIDDLEEARTH_UNLOCK_KEY) === '1'; } catch (e) { return false; } };
 const loadSwordcoast = () => safeLoad(SWORDCOAST_KEY, null);
-const saveSwordcoast = saverFor(SWORDCOAST_KEY);
-const clearSwordcoast = () => endRunKey(SWORDCOAST_KEY);
-const swordcoastGaleUnlocked = () => { try { return localStorage.getItem(SWORDCOAST_UNLOCK_KEY) === '1'; } catch (e) { return false; } };
+export const saveSwordcoast = saverFor(SWORDCOAST_KEY);
+export const clearSwordcoast = () => endRunKey(SWORDCOAST_KEY);
+export const swordcoastGaleUnlocked = () => { try { return localStorage.getItem(SWORDCOAST_UNLOCK_KEY) === '1'; } catch (e) { return false; } };
 const loadFinalfantasy = () => safeLoad(FINALFANTASY_KEY, null);
-const saveFinalfantasy = saverFor(FINALFANTASY_KEY);
-const clearFinalfantasy = () => endRunKey(FINALFANTASY_KEY);
-const finalfantasyGilgameshUnlocked = () => { try { return localStorage.getItem(FINALFANTASY_UNLOCK_KEY) === '1'; } catch (e) { return false; } };
+export const saveFinalfantasy = saverFor(FINALFANTASY_KEY);
+export const clearFinalfantasy = () => endRunKey(FINALFANTASY_KEY);
+export const finalfantasyGilgameshUnlocked = () => { try { return localStorage.getItem(FINALFANTASY_UNLOCK_KEY) === '1'; } catch (e) { return false; } };
 const loadMultiverse = () => safeLoad(MULTIVERSE_KEY, null);
-const saveMultiverse = saverFor(MULTIVERSE_KEY);
-const clearMultiverse = () => endRunKey(MULTIVERSE_KEY);
-const multiverseSurferUnlocked = () => { try { return localStorage.getItem(MULTIVERSE_UNLOCK_KEY) === '1'; } catch (e) { return false; } };
+export const saveMultiverse = saverFor(MULTIVERSE_KEY);
+export const clearMultiverse = () => endRunKey(MULTIVERSE_KEY);
+export const multiverseSurferUnlocked = () => { try { return localStorage.getItem(MULTIVERSE_UNLOCK_KEY) === '1'; } catch (e) { return false; } };
 
 // ---------- deterministic mid-fight resume (Phase 1) ----------
 // Single-player run fights used to re-deal a fresh hand on every resume because the boot re-ran
@@ -241,7 +256,7 @@ const multiverseSurferUnlocked = () => { try { return localStorage.getItem(MULTI
 // mana, secrets, ring/dungeon progress, turn/current — everything needed to restore the fight.
 const RUN_SNAP_MAX = 600_000; // bytes; skip persisting a pathologically large board (localStorage safety)
 // a seeded RNG for a run fight (random seed at boot, but the STREAM is snapshot-able so resume is exact)
-const seededGame = () => E.seededRng((Math.random() * 0x100000000) >>> 0);
+export const seededGame = () => E.seededRng((Math.random() * 0x100000000) >>> 0);
 // the active single-player run mode's load/save + its localStorage key (null outside a run)
 export function activeRunIO() {
 	if (dungeonRunMode) return { load: loadRun, save: saveRun, key: RUN_KEY };
@@ -667,7 +682,7 @@ function endRunKey(key) {
 // new tab, another run) still asks.
 const FIGHT_GO_KEY = 'magepunk_fight_go_v1';
 let _fightGo = null;
-function fightNow() {
+export function fightNow() {
 	try {
 		const io = activeRunIO(); const run = io && io.load();
 		if (io && run && run.runId) sessionStorage.setItem(FIGHT_GO_KEY, JSON.stringify({ key: io.key, runId: String(run.runId), at: Date.now() }));
@@ -2013,7 +2028,7 @@ function openLogCard(l) {
 	}
 	if (c) showCardFocus(c);
 }
-function log(msg, refs) {
+export function log(msg, refs) {
 	const links = findLogLinks(msg, refs);
 	logHistory.push(msg);
 	logLinks.push(links);
@@ -7217,7 +7232,7 @@ async function start() {
 		}
 		if (run.pendingResult) settlePendingResult(run, duelsVictory, duelsDefeat); else if (run.postGame) resumePostGame(run, duelsLoot, afterDuelsLootBucket, advanceDuels); else if (resumeRunSnapshot(run, cardsById)) log('Resumed your paused Duels fight.'); else bootDuelsEncounter(cardsById, run);
 	} else if (lorequestRunMode) {
-		lorequestCardsById = cardsById; // pre-state overlays need the card defs
+		GS.lorequestCardsById = cardsById; // pre-state overlays need the card defs
 		let run = loadLorequest();
 		if (run && run.active && !fightGoFor(run) && !(await resumeLorequestOverlay(run))) { mpRunWalkaway('lorequest', run); clearLorequest(); run = null; }
 		if (!run || !run.active) {
@@ -7229,7 +7244,7 @@ async function start() {
 		}
 		if (run.pendingResult) settlePendingResult(run, lorequestVictory, lorequestDefeat); else if (run.postGame) resumePostGame(run, lorequestLoot, afterLorequestBucket, advanceLorequest); else if (resumeRunSnapshot(run, cardsById)) log('Resumed your paused Lorequest fight.'); else bootLorequestEncounter(cardsById, run);
 	} else if (middleearthRunMode) {
-		middleearthCardsById = cardsById; // pre-state overlays need the card defs
+		GS.middleearthCardsById = cardsById; // pre-state overlays need the card defs
 		let run = loadMiddleearth();
 		if (run && run.active && !fightGoFor(run) && !(await resumeMiddleEarthOverlay(run))) { mpRunWalkaway('middleearth', run); clearMiddleearth(); run = null; }
 		if (!run || !run.active) {
@@ -7241,7 +7256,7 @@ async function start() {
 		}
 		if (run.pendingResult) settlePendingResult(run, middleEarthVictory, middleEarthDefeat); else if (run.postGame) resumePostGame(run, middleEarthLoot, afterMiddleEarthReward, advanceMiddleEarth); else if (resumeRunSnapshot(run, cardsById)) log('Resumed your paused Middle-earth fight.'); else bootMiddleEarthEncounter(cardsById, run);
 		} else if (swordcoastRunMode) {
-			swordcoastCardsById = cardsById; // pre-state overlays need the card defs
+			GS.swordcoastCardsById = cardsById; // pre-state overlays need the card defs
 			let run = loadSwordcoast();
 			if (run && run.active && !fightGoFor(run) && !(await resumeSwordCoastOverlay(run))) { mpRunWalkaway('swordcoast', run); clearSwordcoast(); run = null; }
 			if (!run || !run.active) {
@@ -7253,7 +7268,7 @@ async function start() {
 			}
 			if (run.pendingResult) settlePendingResult(run, swordCoastVictory, swordCoastDefeat); else if (run.postGame) resumePostGame(run, swordCoastLoot, afterSwordCoastReward, advanceSwordCoast); else if (resumeRunSnapshot(run, cardsById)) log('Resumed your paused Sword Coast fight.'); else bootSwordCoastEncounter(cardsById, run);
 		} else if (finalfantasyRunMode) {
-			finalfantasyCardsById = cardsById; // pre-state overlays need the card defs
+			GS.finalfantasyCardsById = cardsById; // pre-state overlays need the card defs
 			let run = loadFinalfantasy();
 			if (run && run.active && !fightGoFor(run) && !(await resumeFinalFantasyOverlay(run))) { mpRunWalkaway('finalfantasy', run); clearFinalfantasy(); run = null; }
 			if (!run || !run.active) {
@@ -7265,7 +7280,7 @@ async function start() {
 			}
 			if (run.pendingResult) settlePendingResult(run, finalFantasyVictory, finalFantasyDefeat); else if (run.postGame) resumePostGame(run, finalFantasyLoot, afterFinalFantasyReward, advanceFinalFantasy); else if (resumeRunSnapshot(run, cardsById)) log('Resumed your paused Final Fantasy fight.'); else bootFinalFantasyEncounter(cardsById, run);
 		} else if (multiverseRunMode) {
-			multiverseCardsById = cardsById; // pre-state overlays need the card defs
+			GS.multiverseCardsById = cardsById; // pre-state overlays need the card defs
 			let run = loadMultiverse();
 			if (run && run.active && !fightGoFor(run) && !(await resumeMultiverseOverlay(run))) { mpRunWalkaway('multiverse', run); clearMultiverse(); run = null; }
 			if (!run || !run.active) {
@@ -7539,7 +7554,7 @@ export function dungeonOverlay(title, sub) {
 	el.style.display = 'flex';
 	return el;
 }
-function hideDungeonOverlay() {
+export function hideDungeonOverlay() {
 	const el = $('dungeon-overlay');
 	if (el) el.style.display = 'none';
 	hideMiniTip();
@@ -7619,7 +7634,7 @@ function attachTip(el, def) {
 	el.addEventListener('pointerleave', cancel);
 }
 
-function miniFace(def, width = 96) {
+export function miniFace(def, width = 96) {
 	const c = drawCardFace(def, {});
 	const height = Math.round(width * 134 / 96);
 	c.style.cssText = `width:${width}px;height:${height}px;border-radius:6px;`;
@@ -7744,7 +7759,7 @@ function runLifeFor(round) { return 10 + 5 * (round - 1); }
 //   reference (Reno/Wish, Alexstrasza's "full Health") follows the fight's life now.
 //   opts.full is kept for the call sites that pass it.
 // opts.humanBonus: life the player earned on top (Heist's Good Food boon).
-function setRunLife(round, opts = {}) {
+export function setRunLife(round, opts = {}) {
 	if (!round || round < 1) return;
 	const life = runLifeFor(round);
 	GS.state.players.forEach((p, i) => {
@@ -7754,7 +7769,7 @@ function setRunLife(round, opts = {}) {
 	log(`❤️ Round ${round}: both sides start at ${life} life.`);
 }
 
-function applyRunAnomaly(id) {
+export function applyRunAnomaly(id) {
 	const a = id && Heist.ANOMALIES[id];
 	if (!a || !Heist.applyAnomaly(GS.state, id)) return;
 	log(`🌀 Anomaly: ${a.name} — ${a.text}`);
@@ -7768,7 +7783,7 @@ function mpRunWalkaway(mode, run) {
 	try { MPX.call('run-walkaway', { mode, character: String(run.characterId) }).catch(() => {}); } catch (e) {}
 }
 
-async function mpRunReward(el, result, score) {
+export async function mpRunReward(el, result, score) {
 	if (!MP_ON) return;
 	// the Duels-family climbs post their score to the mode's leaderboard
 	const mode = runModeName();
@@ -8757,179 +8772,7 @@ function duelsRunOver(run) {
 	el.appendChild(overlayButton('New Run', () => location.reload()));
 }
 
-// ---------- Lorequest run ----------
-// Pick 1 of 3 planeswalker 30-card decks, then climb to 12 wins / 3 losses. Battles 1-8 are
-// vs other planeswalkers, 9+ vs the Eldrazi & legendary bosses. Every WIN loots a bucket
-// (+ a treasure at milestones); the generated enemy is kept at exact WIN-parity. Hero powers
-// are each character's class default (Ajani=paladin, Chandra=mage, ...).
-let lorequestCardsById = null;
-
-function resumeLorequestOverlay(run) {
-	return new Promise(resolve => {
-		const el = dungeonOverlay('LOREQUEST IN PROGRESS',
-			`${run.characterId} - ${winLossLabel(run)}, ${run.deck.length} cards. Reach 12 wins before 3 losses.`);
-		el.appendChild(overlayButton('Continue the run', () => { hideDungeonOverlay(); resolve(true); }));
-		el.appendChild(overlayButton('Abandon - start a new run', () => { hideDungeonOverlay(); resolve(false); }));
-	});
-}
-
-// ---------- full character roster & unlock requirements ----------
-// A drawer layered OVER the pick overlay (the pick's promise stays pending
-// underneath, so ✕ simply closes it). Locked characters show exactly what
-// earns them; progress comes from the same server stats the offer uses.
-function showRosterOverlay(cfg) {
-	const { title, modeKey, heroes, order, starters, enemies, unlocks, secrets, secretOn, deckTag, cardsById, stats, unlockedList } = cfg;
-	if (!$('roster-style')) {
-		const st = document.createElement('style');
-		st.id = 'roster-style';
-		st.textContent = `
-#roster-ov{position:fixed;inset:0;z-index:10002;background:rgba(6,4,14,.94);overflow-y:auto;padding:18px 14px 40px;color:#e8e2f4}
-#roster-ov h2{font-size:20px;letter-spacing:2px;color:#e8c37a;text-align:center;margin-top:4px}
-#roster-ov .ro-sub{text-align:center;color:#9d8fd4;font-size:12.5px;margin-bottom:10px}
-#roster-ov .ro-sec{max-width:1080px;margin:0 auto 6px;color:#c9b8ff;font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;padding:12px 6px 6px}
-#roster-ov .ro-grid{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;max-width:1080px;margin:0 auto}
-#roster-ov .ro-tile{width:132px;background:#1c1830;border:1px solid #3a3055;border-radius:10px;padding:8px;text-align:center}
-#roster-ov .ro-tile.locked{border-color:#2a2340}
-#roster-ov .ro-tile.locked canvas{filter:grayscale(1) brightness(.55)}
-#roster-ov .ro-name{font-weight:700;font-size:12.5px;margin:5px 0 2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-#roster-ov .ro-state{font-size:10.5px;line-height:1.35;color:#9fd8b0;min-height:14px}
-#roster-ov .ro-tile.locked .ro-state{color:#b7a8d6}
-#roster-ov .ro-close{position:fixed;top:14px;right:16px;background:#241b38;color:#cdbcff;border:1px solid #4a3f6b;border-radius:8px;padding:8px 16px;font-size:14px;font-weight:700;cursor:pointer;z-index:2}
-#roster-ov .ro-close:hover{background:#372c56}`;
-		document.head.appendChild(st);
-	}
-	$('roster-ov')?.remove();
-	const ov = document.createElement('div');
-	ov.id = 'roster-ov';
-	const unlockedSet = new Set(unlockedList);
-	const runs = stats?.modes?.[modeKey]?.runs || 0;
-	const csOf = h => stats?.chars?.[modeKey + '|' + h] || {};
-	const secretUnlocked = secrets?.length && secretOn ? secretOn() : false;
-	const total = heroes.length + enemies.length + (secrets?.length || 0);
-	const owned = heroes.filter(h => unlockedSet.has(h)).length
-		+ enemies.filter(e => unlockedSet.has(e)).length
-		+ (secretUnlocked ? secrets.length : 0);
-	const coresDone = heroes.every(h => unlockedSet.has(h));
-	ov.innerHTML = `<button class="ro-close">✕ Back</button><h2>${title} — ROSTER</h2>
-		<div class="ro-sub">${stats ? `${owned} / ${total} characters unlocked` : 'Free play — every character is unlocked'}</div>`;
-	const section = label => {
-		const d = document.createElement('div'); d.className = 'ro-sec'; d.textContent = label; ov.appendChild(d);
-		const g = document.createElement('div'); g.className = 'ro-grid'; ov.appendChild(g);
-		return g;
-	};
-	const tile = (grid, name, open, hint) => {
-		const t = document.createElement('div');
-		t.className = 'ro-tile' + (open ? '' : ' locked');
-		const sig = Object.values(cardsById).find(d => d[deckTag] === name && d.rarity === 'legendary')
-			|| Object.values(cardsById).find(d => d[deckTag] === name);
-		if (sig) t.appendChild(miniFace(sig, 116));
-		const nm = document.createElement('div'); nm.className = 'ro-name'; nm.textContent = name; nm.title = name; t.appendChild(nm);
-		const stl = document.createElement('div'); stl.className = 'ro-state'; stl.textContent = open ? '✓ Unlocked' : hint; t.appendChild(stl);
-		grid.appendChild(t);
-	};
-	const hg = section(`Heroes (${stats ? heroes.filter(h => unlockedSet.has(h)).length : heroes.length}/${heroes.length})`);
-	for (const h of [...starters, ...order]) {
-		const open = !stats || unlockedSet.has(h);
-		const idx = order.indexOf(h);
-		tile(hg, h, open, starters.includes(h) ? 'Starter'
-			: `Unlocks after ${idx + 1} completed run${idx ? 's' : ''} — you've done ${runs}`);
-	}
-	const eg = section(`Enemy characters (${stats ? enemies.filter(e => unlockedSet.has(e)).length : enemies.length}/${enemies.length})`);
-	for (const en of enemies) {
-		const open = !stats || unlockedSet.has(en);
-		const [hero, need] = unlocks[en] || ['?', 2];
-		const cs = csOf(hero);
-		const prog = ` — best streak ${cs.best || 0}${cs.streak ? `, current ${cs.streak}` : ''}`;
-		tile(eg, en, open, (coresDone ? '' : `Unlock all ${heroes.length} heroes first · then `)
-			+ `win ${need} runs in a row as ${hero}${stats && coresDone ? prog : ''}`);
-	}
-	if (secrets && secrets.length) {
-		const sg = section('Secret');
-		for (const s of secrets) tile(sg, s, !stats || secretUnlocked, 'A secret unlock — keep exploring…');
-	}
-	ov.querySelector('.ro-close').addEventListener('click', () => ov.remove());
-	document.body.appendChild(ov);
-}
-
-// pick 1 of 3 planeswalker starter decks (shows the deck's signature card)
-async function pickLorequestDeckOverlay(cardsById) {
-	// account progression: 3 random UNLOCKED characters per run. Free play (no
-	// account) keeps the whole roster. See Lorequest.STARTERS / BOSS_UNLOCKS.
-	let stats = null;
-	if (MP_ON) {
-		try { stats = (await MPX.freshState())?.stats || null; }
-		catch (e) { stats = MPX.cachedState()?.stats || null; }
-	}
-	const unlocked = Lorequest.unlockedCharacters(stats);
-	const total = Lorequest.PLANESWALKERS.length + Lorequest.BOSSES.length;
-	return new Promise(resolve => {
-		const choices = Lorequest.offerFrom(unlocked, Math.random, 3, Lorequest.streakPins(unlocked, stats, 'lorequest', Math.random));
-		const sub = stats
-			? `Pick a 30-card starter deck. ${unlocked.length}/${total} characters unlocked — each finished run unlocks another; bosses unlock through character feats.`
-			: 'Pick a 30-card starter deck (2 copies of each of its 15 cards).';
-		const el = dungeonOverlay('CHOOSE YOUR CHARACTER', sub);
-		const row = document.createElement('div');
-		row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:14px;';
-		for (const ch of choices) {
-			const cls = Lorequest.classOf(ch);
-			const stk = stats?.chars?.['lorequest|' + ch]?.streak || 0;
-			const clsName = (GS.classRegistry.find(c => c.id === cls)?.name) || cls;
-			const sig = Object.values(cardsById).find(d => d.loreDeck === ch && d.rarity === 'legendary');
-			const box = document.createElement('div');
-			box.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:6px;background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:12px;max-width:200px;';
-			box.innerHTML = `<div style="font-weight:bold;">${ch}</div><div style="font-size:12px;color:#e8c37a;margin-bottom:6px;">${clsName}</div>`
-				+ (stk ? `<div style="font-size:11px;color:#ffb04d;font-weight:bold;">🔥 ${stk}-run win streak</div>` : '');
-			if (sig) box.appendChild(miniFace(sig, 130));
-			box.appendChild(overlayButton('Play this deck', () => { hideDungeonOverlay(); resolve(ch); }));
-			row.appendChild(box);
-		}
-		el.appendChild(row);
-		el.appendChild(overlayButton('📜 Full roster & unlocks', () => showRosterOverlay({
-			title: 'LOREQUEST', modeKey: 'lorequest', cardsById, stats,
-			heroes: Lorequest.PLANESWALKERS, order: Lorequest.CORE_UNLOCK_ORDER, starters: Lorequest.STARTERS,
-			enemies: Lorequest.BOSSES, unlocks: Lorequest.BOSS_UNLOCKS, deckTag: 'loreDeck',
-			unlockedList: unlocked,
-		})));
-	});
-}
-
-// roll the next enemy: roster by `games` (planeswalkers < 8, then bosses), deck at `wins`-parity
-function genLorequestEnemy(cardsById, games, wins, avoidId, selfId, faced) {
-	const character = Lorequest.randomEnemy(games, Math.random, avoidId, selfId, faced);
-	return Lorequest.generateEnemy(cardsById, character, wins, Math.random);
-}
-
-// the class def used to seat a Lorequest character — its class power, but displayed under the character's name
-function lorequestSeat(character) {
-	const cls = Lorequest.classOf(character);
-	const def = GS.classRegistry.find(c => c.id === cls) || { id: cls, power: null };
-	return { ...def, id: cls, name: character };
-}
-
-function bootLorequestEncounter(cardsById, run) {
-	lorequestCardsById = cardsById;
-	const games = (run.wins || 0) + (run.losses || 0);
-	const enemy = run.enemy || (run.enemy = genLorequestEnemy(cardsById, games, run.wins || 0, null, run.characterId));
-	GS.heistBossName = enemy.name; // shared enemy-name slot for nameOf()
-	const picks = [lorequestSeat(run.characterId), lorequestSeat(enemy.name)];
-	GS.state = E.createGame(cardsById, seededGame(), [...run.deck], 2, picks); // seeded -> snapshot-able for resume
-	GS.state.classPicks = picks;
-	// both sides use their class default hero power (seated above) — no HP scaling, equal footing
-	E.resetDeckAndHand(GS.state, 1, [...enemy.deck]);
-	E.drawCards(GS.state, 1, 4);
-	E.addCoin(GS.state, 1);   // the boss goes second: re-deal its opening Coin (resetDeckAndHand wiped createGame's)
-	E.stripLoadouts(GS.state);
-	applyRunAnomaly(run.anomaly);
-	setRunLife((run.wins || 0) + (run.losses || 0) + 1);
-	// basics are color-locked to each character's identity (Karn -> Wastes only,
-	// Chandra -> Mountain + Wastes) — applies to you AND the AI enemy
-	GS.state.players[0].allowedBasics = Lorequest.allowedBasics(cardsById, run.characterId);
-	GS.state.players[1].allowedBasics = Lorequest.allowedBasics(cardsById, enemy.name);
-	const tier = games < Lorequest.PW_BATTLES ? 'Planeswalker' : 'Boss';
-	log(`Lorequest - ${winLossLabel(run)}. Facing ${enemy.name} (${tier}).`);
-	log(`You are ${run.characterId} with a ${run.deck.length}-card deck; ${enemy.name} fields ${enemy.deck.length}.`);
-}
-
+// ---------- the post-fight checkpoint every run mode shares ----------
 // POST-FIGHT CHECKPOINT. A won (or, in Duels, any) fight banks its result and
 // then shows a reward screen; the next enemy was only chosen after the pick. A
 // reload on that screen (Bryan: laptop asleep on the card select) found the run
@@ -8939,838 +8782,23 @@ function bootLorequestEncounter(cardsById, run) {
 // second) with a seed, every offer is rolled from that seed (a reload shows the
 // SAME choices: resume is frame-exact), each pick is saved as it is made, and
 // boot reopens the reward instead of a fight. Advancing clears it.
-function beginPostGame(run, won) { delete run.pendingResult; run.postGame = { won: !!won, seed: (Math.random() * 2 ** 31) >>> 0, stage: 1 }; }
+export function beginPostGame(run, won) { delete run.pendingResult; run.postGame = { won: !!won, seed: (Math.random() * 2 ** 31) >>> 0, stage: 1 }; }
 // Every enemy this run has already met, the one just fought included — the next pick
 // skips them (The Balrog at F10 and again at F12; Azog likewise). Saves from before the
 // list existed still name their foes in the fight-replay labels ("Fight 3 — Azog (win)").
-function noteFaced(run) {
+export function noteFaced(run) {
 	const seen = new Set(Array.isArray(run.faced) ? run.faced : []);
 	for (const f of Array.isArray(run.fightReplays) ? run.fightReplays : []) { const m = /—\s*(.+?)(?:\s\((?:win|loss)\))?$/.exec((f && f.label) || ''); if (m) seen.add(m[1]); }
 	if (run.enemy && run.enemy.id) seen.add(run.enemy.id);
 	return (run.faced = [...seen]);
 }
-function postGameRng(run, salt) { return E.seededRng(((run.postGame ? run.postGame.seed : (Math.random() * 2 ** 31) >>> 0) + salt * 7919) >>> 0); }
-function postGameStage(run, stage, save) { if (run.postGame) { run.postGame.stage = stage; save(run); } }
+export function postGameRng(run, salt) { return E.seededRng(((run.postGame ? run.postGame.seed : (Math.random() * 2 ** 31) >>> 0) + salt * 7919) >>> 0); }
+export function postGameStage(run, stage, save) { if (run.postGame) { run.postGame.stage = stage; save(run); } }
 function resumePostGame(run, step1, step2, advance) {
 	const pg = run.postGame;
 	if (pg.stage === 2) return step2(run);
 	if (step1.length > 1) return step1(run, pg.won);   // Duels loots after losses too
 	return pg.won ? step1(run) : advance(run);
-}
-
-function lorequestVictory(run) { afterLorequestGame(run, true); }
-function lorequestDefeat(run) { afterLorequestGame(run, false); }
-
-// one game resolved: bank it, end at 12 wins / 3 losses; loot only on a WIN, else straight to the next fight
-function afterLorequestGame(run, won) {
-	if (won) run.wins = (run.wins || 0) + 1; else run.losses = (run.losses || 0) + 1;
-	beginPostGame(run, won);   // checkpoint: a reload resumes the reward, not the fight
-	saveLorequest(run);
-	if (run.wins >= Lorequest.WINS_TO_CLEAR) { lorequestRunComplete(run); return; }
-	if (run.losses >= Lorequest.LOSSES_TO_END) { lorequestRunOver(run); return; }
-	if (won) lorequestLoot(run); else advanceLorequest(run);
-}
-
-// win loot: choose 1 of 3 class buckets (3 cards each); all 3 join your deck
-function lorequestLoot(run) {
-	const lootRng = postGameRng(run, 1);   // same offer after a reload
-	const cls = [run.cls];
-	const el = dungeonOverlay(`WIN - ${run.wins}/12`, 'Choose a loot bucket - all 3 cards join your deck.');
-	const offered = Duels.offerBuckets(lorequestCardsById, cls, lootRng, 3);
-	const row = document.createElement('div');
-	row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:14px;';
-	for (const bucket of offered) {
-		const ids = Duels.rollBucket(lorequestCardsById, cls, bucket, lootRng, 3);
-		const box = document.createElement('div');
-		box.style.cssText = 'background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:12px;max-width:330px;';
-		box.innerHTML = `<div style="font-weight:bold;margin-bottom:8px;letter-spacing:1px;">${bucket.name}</div>`;
-		for (const id of ids) if (lorequestCardsById[id]) box.appendChild(miniFace(lorequestCardsById[id]));
-		box.appendChild(document.createElement('br'));
-		box.appendChild(overlayButton('Take these', () => { run.deck.push(...ids); afterLorequestBucket(run); }));
-		row.appendChild(box);
-	}
-	el.appendChild(row);
-}
-
-// milestone wins (2/5/8/11) also grant a treasure card, then the next fight
-function afterLorequestBucket(run) {
-	postGameStage(run, 2, saveLorequest);   // the step-1 pick is saved
-	const lootRng = postGameRng(run, 2);
-	if (Lorequest.TREASURE_WINS.includes(run.wins)) {
-		const el = dungeonOverlay('TREASURE!', 'One of these joins your deck.');
-		const options = Object.values(lorequestCardsById).filter(d => Duels.isActiveTreasure(d) && !run.deck.includes(d.id));
-		const row = document.createElement('div');
-		row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:14px;';
-		for (let i = 0; i < 3 && options.length; i++) {
-			const d = options.splice(Math.floor(lootRng() * options.length), 1)[0];
-			const box = document.createElement('div');
-			box.style.cssText = 'background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:12px;';
-			box.appendChild(miniFace(d));
-			box.appendChild(document.createElement('br'));
-			box.appendChild(overlayButton('Take it', () => { run.deck.push(d.id); advanceLorequest(run); }));
-			row.appendChild(box);
-		}
-		el.appendChild(row);
-	} else advanceLorequest(run);
-}
-
-function advanceLorequest(run) {
-	delete run.postGame;   // the reward is done: the next fight is the checkpoint now
-	const games = (run.wins || 0) + (run.losses || 0);
-	run.enemy = genLorequestEnemy(lorequestCardsById, games, run.wins || 0, run.enemy && run.enemy.id, run.characterId, noteFaced(run));
-	saveLorequest(run);
-	const tier = games < Lorequest.PW_BATTLES ? 'Planeswalker' : 'Boss';
-	const el = dungeonOverlay(`NEXT: ${run.enemy.name}`, `${winLossLabel(run)} - your deck is ${run.deck.length} cards. (${tier})`);
-	el.appendChild(overlayButton('Fight!', fightNow));
-}
-
-function lorequestRunComplete(run) {
-	const el = dungeonOverlay('12 WINS - RUN CLEARED!', `${run.characterId} takes 12 wins with a ${run.deck.length}-card deck.`);
-	Col.earnGold(1000);
-	mpRunReward(el, 'win', { wins: run.wins || 0, losses: run.losses || 0, hero: run.characterId });
-	addRunReplayButtons(el, run, 'lorequest'); // before the clear — the ids live on the run
-	clearLorequest();
-	el.appendChild(overlayButton('New Run (+1000 gold banked)', () => location.reload()));
-}
-
-function lorequestRunOver(run) {
-	const el = dungeonOverlay('3 LOSSES - RUN OVER', `${run.characterId} bows out at ${run.wins || 0} wins.`);
-	clearLorequest();
-	mpRunReward(el, 'loss', { wins: run.wins || 0, losses: run.losses || 0, hero: run.characterId });
-	el.appendChild(overlayButton('New Run', () => location.reload()));
-}
-
-// ---------- Lorequest: Middle-earth (dungeon run) ----------
-// Pick ONE hero (10-card singleton starter). Climb rungs of Sauron's forces — each a STATIC
-// 15×2 = 30-card deck with its own UNIQUE signature hero power — to 12 wins or 3 losses. No
-// win-parity: enemies never gain buckets/treasures; difficulty scales by RUNG only. Every win
-// grows YOUR deck: a spoils draft (1 of 3 from the fallen foe) + an alternating treasure/bucket.
-let middleearthCardsById = null;
-
-function resumeMiddleEarthOverlay(run) {
-	return new Promise(resolve => {
-		const el = dungeonOverlay('MIDDLE-EARTH RUN IN PROGRESS',
-			`${run.characterId} - ${winLossLabel(run)}, ${run.deck.length} cards. Reach 12 wins before 3 losses.`);
-		el.appendChild(overlayButton('Continue the run', () => { hideDungeonOverlay(); resolve(true); }));
-		el.appendChild(overlayButton('Abandon - start a new run', () => { hideDungeonOverlay(); resolve(false); }));
-	});
-}
-
-// full choice of all 10 heroes (+ Tom Bombadil once unlocked), each showing its signature + power
-async function pickMiddleEarthHeroOverlay(cardsById) {
-	// account progression: 3 random UNLOCKED characters per run (secret heroes
-	// join the pool once their own unlock fires). Free play = the full roster.
-	let stats = null;
-	if (MP_ON) {
-		try { stats = (await MPX.freshState())?.stats || null; }
-		catch (e) { stats = MPX.cachedState()?.stats || null; }
-	}
-	const pool = Middleearth.unlockedCharacters(stats);
-	if (middleearthTomUnlocked()) for (const sh of Middleearth.SECRET_HEROES) if (!pool.includes(sh)) pool.push(sh);
-	return new Promise(resolve => {
-		const heroes = stats ? Lorequest.offerFrom(pool, Math.random, 3, Lorequest.streakPins(pool, stats, 'middleearth', Math.random)) : pool;
-		const el = dungeonOverlay('CHOOSE YOUR HERO', 'Pick a hero of the Free Peoples - a 10-card starter deck you grow as you climb.');
-		const row = document.createElement('div');
-		row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:12px;max-width:920px;';
-		for (const ch of heroes) {
-			const cls = Middleearth.classOf(ch);
-			const stk = stats?.chars?.['middleearth|' + ch]?.streak || 0;
-			const clsName = (GS.classRegistry.find(c => c.id === cls)?.name) || cls;
-			const sig = Object.values(cardsById).find(d => d.meDeck === ch && d.rarity === 'legendary');
-			const pw = Middleearth.powerOf(ch);
-			const box = document.createElement('div');
-			box.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:5px;background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:10px;max-width:180px;';
-			box.innerHTML = `<div style="font-weight:bold;">${ch}</div><div style="font-size:12px;color:#e8c37a;">${clsName}</div>`
-				+ (pw ? `<div style="font-size:11px;color:#bdb;line-height:1.25;">${pw.name}: ${pw.text}</div>` : '')
-				+ (stk ? `<div style="font-size:11px;color:#ffb04d;font-weight:bold;">🔥 ${stk}-run win streak</div>` : '');
-			if (sig) box.appendChild(miniFace(sig, 120));
-			box.appendChild(overlayButton('Play this hero', () => { hideDungeonOverlay(); resolve(ch); }));
-			row.appendChild(box);
-		}
-		el.appendChild(row);
-		el.appendChild(overlayButton('📜 Full roster & unlocks', () => showRosterOverlay({
-			title: 'MIDDLE-EARTH', modeKey: 'middleearth', cardsById, stats,
-			heroes: Middleearth.HEROES, order: Middleearth.CORE_UNLOCK_ORDER, starters: Middleearth.STARTERS,
-			enemies: Middleearth.ENEMIES, unlocks: Middleearth.ENEMY_UNLOCKS, deckTag: 'meDeck',
-			secrets: Middleearth.SECRET_HEROES, secretOn: () => middleearthTomUnlocked(),
-			unlockedList: pool,
-		})));
-	});
-}
-
-// roll the next enemy: rung by `wins`, avoiding an immediate repeat. STATIC (no loot/parity).
-function genMiddleEarthEnemy(cardsById, wins, avoidId, faced) {
-	const character = Middleearth.randomEnemy(wins, Math.random, avoidId, faced);
-	return Middleearth.generateEnemy(cardsById, character);
-}
-
-// seat a Middle-earth character: its class (for buckets/color) but its OWN unique hero power
-function middleEarthSeat(character) {
-	const cls = Middleearth.classOf(character);
-	const def = GS.classRegistry.find(c => c.id === cls) || { id: cls, power: null };
-	return { ...def, id: cls, name: character, power: Middleearth.powerOf(character) };
-}
-
-function bootMiddleEarthEncounter(cardsById, run) {
-	middleearthCardsById = cardsById;
-	const enemy = run.enemy || (run.enemy = genMiddleEarthEnemy(cardsById, run.wins || 0, null));
-	GS.heistBossName = enemy.name; // shared enemy-name slot for nameOf()
-	const picks = [middleEarthSeat(run.characterId), middleEarthSeat(enemy.name)];
-	GS.state = E.createGame(cardsById, seededGame(), [...run.deck], 2, picks); // seeded -> snapshot-able for resume
-	GS.state.classPicks = picks;
-	E.resetDeckAndHand(GS.state, 1, [...enemy.deck]);
-	E.drawCards(GS.state, 1, 4);
-	E.addCoin(GS.state, 1);   // the boss goes second: re-deal its opening Coin (resetDeckAndHand wiped createGame's)
-	E.stripLoadouts(GS.state);
-	applyRunAnomaly(run.anomaly);
-	setRunLife((run.wins || 0) + (run.losses || 0) + 1);
-	// basics are color-locked to each character's identity (see PR #85)
-	GS.state.players[0].allowedBasics = Duels.allowedBasicsFor(cardsById, 'meDeck', run.characterId);
-	GS.state.players[1].allowedBasics = Duels.allowedBasicsFor(cardsById, 'meDeck', enemy.name);
-	log(`Lorequest: Middle-earth - ${winLossLabel(run)}. Facing ${enemy.name} (${Middleearth.rungLabel(run.wins || 0)}).`);
-	log(`You are ${run.characterId} with a ${run.deck.length}-card deck; ${enemy.name} fields ${enemy.deck.length}.`);
-}
-
-function middleEarthVictory(run) { afterMiddleEarthGame(run, true); }
-function middleEarthDefeat(run) { afterMiddleEarthGame(run, false); }
-
-function afterMiddleEarthGame(run, won) {
-	if (won) run.wins = (run.wins || 0) + 1; else run.losses = (run.losses || 0) + 1;
-	beginPostGame(run, won);   // checkpoint: a reload resumes the reward, not the fight
-	saveMiddleearth(run);
-	if (run.wins >= Middleearth.WINS_TO_CLEAR) { middleEarthRunComplete(run); return; }
-	if (run.losses >= Middleearth.LOSSES_TO_END) { middleEarthRunOver(run); return; }
-	if (won) middleEarthLoot(run); else advanceMiddleEarth(run);
-}
-
-// win loot step 1 — SPOILS: take 1 of 3 cards drawn from the vanquished foe's own deck, or none
-function middleEarthLoot(run) {
-	const lootRng = postGameRng(run, 1);   // same offer after a reload
-	const fallen = run.enemy ? run.enemy.name : null;
-	const options = fallen ? Middleearth.spoilsChoices(middleearthCardsById, fallen, lootRng, 3) : [];
-	const el = dungeonOverlay(`WIN - ${run.wins}/12`, `Spoils of war: take one card from ${fallen || 'the fallen'}'s arsenal, or leave it.`);
-	const row = document.createElement('div');
-	row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:14px;';
-	for (const id of options) {
-		if (!middleearthCardsById[id]) continue;
-		const box = document.createElement('div');
-		box.style.cssText = 'background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:12px;';
-		box.appendChild(miniFace(middleearthCardsById[id]));
-		box.appendChild(document.createElement('br'));
-		box.appendChild(overlayButton('Take it', () => { run.deck.push(id); afterMiddleEarthReward(run); }));
-		row.appendChild(box);
-	}
-	el.appendChild(row);
-	el.appendChild(overlayButton('Take none', () => afterMiddleEarthReward(run)));
-}
-
-// win loot step 2 — ALTERNATING AID: a treasure on odd wins, a class bucket on even wins
-function afterMiddleEarthReward(run) {
-	postGameStage(run, 2, saveMiddleearth);   // the step-1 pick is saved
-	const lootRng = postGameRng(run, 2);
-	if (Middleearth.rewardForWin(run.wins) === 'bucket') {
-		const cls = [run.cls];
-		const el = dungeonOverlay(`AID - ${run.wins}/12`, 'Choose a loot bucket - all 3 cards join your deck.');
-		const offered = Duels.offerBuckets(middleearthCardsById, cls, lootRng, 3);
-		const row = document.createElement('div');
-		row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:14px;';
-		for (const bucket of offered) {
-			const ids = Duels.rollBucket(middleearthCardsById, cls, bucket, lootRng, 3);
-			const box = document.createElement('div');
-			box.style.cssText = 'background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:12px;max-width:330px;';
-			box.innerHTML = `<div style="font-weight:bold;margin-bottom:8px;letter-spacing:1px;">${bucket.name}</div>`;
-			for (const id of ids) if (middleearthCardsById[id]) box.appendChild(miniFace(middleearthCardsById[id]));
-			box.appendChild(document.createElement('br'));
-			box.appendChild(overlayButton('Take these', () => { run.deck.push(...ids); advanceMiddleEarth(run); }));
-			row.appendChild(box);
-		}
-		el.appendChild(row);
-	} else {
-		const el = dungeonOverlay(`TREASURE! - ${run.wins}/12`, 'One of these joins your deck.');
-		const options = Middleearth.treasurePool(middleearthCardsById).filter(d => !run.deck.includes(d.id));
-		const row = document.createElement('div');
-		row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:14px;';
-		for (let i = 0; i < 3 && options.length; i++) {
-			const d = options.splice(Math.floor(lootRng() * options.length), 1)[0];
-			const box = document.createElement('div');
-			box.style.cssText = 'background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:12px;';
-			box.appendChild(miniFace(d));
-			box.appendChild(document.createElement('br'));
-			box.appendChild(overlayButton('Take it', () => { run.deck.push(d.id); advanceMiddleEarth(run); }));
-			row.appendChild(box);
-		}
-		el.appendChild(row);
-	}
-}
-
-function advanceMiddleEarth(run) {
-	delete run.postGame;   // the reward is done: the next fight is the checkpoint now
-	run.enemy = genMiddleEarthEnemy(middleearthCardsById, run.wins || 0, run.enemy && run.enemy.id, noteFaced(run));
-	saveMiddleearth(run);
-	const el = dungeonOverlay(`NEXT: ${run.enemy.name}`, `${winLossLabel(run)} - your deck is ${run.deck.length} cards. (${Middleearth.rungLabel(run.wins || 0)})`);
-	el.appendChild(overlayButton('Fight!', fightNow));
-}
-
-function middleEarthRunComplete(run) {
-	try { localStorage.setItem(MIDDLEEARTH_UNLOCK_KEY, '1'); } catch (e) { }
-	const el = dungeonOverlay('12 WINS - SAURON IS THROWN DOWN!',
-		`${run.characterId} clears Middle-earth with a ${run.deck.length}-card deck. Tom Bombadil is now a playable hero!`);
-	Col.earnGold(1000);
-	mpRunReward(el, 'win', { wins: run.wins || 0, losses: run.losses || 0, hero: run.characterId });
-	addRunReplayButtons(el, run, 'middleearth'); // before the clear — the ids live on the run
-	clearMiddleearth();
-	el.appendChild(overlayButton('New Run (+1000 gold banked)', () => location.reload()));
-}
-
-function middleEarthRunOver(run) {
-	const el = dungeonOverlay('3 LOSSES - THE SHADOW PREVAILS', `${run.characterId} falls at ${run.wins || 0} wins.`);
-	clearMiddleearth();
-	mpRunReward(el, 'loss', { wins: run.wins || 0, losses: run.losses || 0, hero: run.characterId });
-	el.appendChild(overlayButton('New Run', () => location.reload()));
-}
-
-// ---------- Lorequest: Sword Coast (D&D) ----------
-// Mirror of Middle-earth: pick 1 Companion hero (10-card starter), Advance through the
-// Sword Coast's villains (rung-gated static 30-card decks) to 12 wins or 3 losses. Loot the
-// fallen. Signature mechanic = Advance (venture) + d20 rolls. Data tagged scDeck/scSide, ids sc_*.
-let swordcoastCardsById = null;
-
-function resumeSwordCoastOverlay(run) {
-	return new Promise(resolve => {
-		const el = dungeonOverlay('SWORD COAST RUN IN PROGRESS',
-			`${run.characterId} - ${winLossLabel(run)}, ${run.deck.length} cards. Reach 12 wins before 3 losses.`);
-		el.appendChild(overlayButton('Continue the run', () => { hideDungeonOverlay(); resolve(true); }));
-		el.appendChild(overlayButton('Abandon - start a new run', () => { hideDungeonOverlay(); resolve(false); }));
-	});
-}
-
-// full choice of all 10 heroes (+ Gale once unlocked), each showing its signature + power
-async function pickSwordCoastHeroOverlay(cardsById) {
-	// account progression: 3 random UNLOCKED characters per run (secret heroes
-	// join the pool once their own unlock fires). Free play = the full roster.
-	let stats = null;
-	if (MP_ON) {
-		try { stats = (await MPX.freshState())?.stats || null; }
-		catch (e) { stats = MPX.cachedState()?.stats || null; }
-	}
-	const pool = Swordcoast.unlockedCharacters(stats);
-	if (swordcoastGaleUnlocked()) for (const sh of Swordcoast.SECRET_HEROES) if (!pool.includes(sh)) pool.push(sh);
-	return new Promise(resolve => {
-		const heroes = stats ? Lorequest.offerFrom(pool, Math.random, 3, Lorequest.streakPins(pool, stats, 'swordcoast', Math.random)) : pool;
-		const el = dungeonOverlay('CHOOSE YOUR HERO', 'Pick a Companion of the Realms - a 10-card starter deck you grow as you Advance.');
-		const row = document.createElement('div');
-		row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:12px;max-width:920px;';
-		for (const ch of heroes) {
-			const cls = Swordcoast.classOf(ch);
-			const stk = stats?.chars?.['swordcoast|' + ch]?.streak || 0;
-			const clsName = (GS.classRegistry.find(c => c.id === cls)?.name) || cls;
-			const sig = Object.values(cardsById).find(d => d.scDeck === ch && d.rarity === 'legendary');
-			const pw = Swordcoast.powerOf(ch);
-			const box = document.createElement('div');
-			box.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:5px;background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:10px;max-width:180px;';
-			box.innerHTML = `<div style="font-weight:bold;">${ch}</div><div style="font-size:12px;color:#e8c37a;">${clsName}</div>`
-				+ (pw ? `<div style="font-size:11px;color:#bdb;line-height:1.25;">${pw.name}: ${pw.text}</div>` : '')
-				+ (stk ? `<div style="font-size:11px;color:#ffb04d;font-weight:bold;">🔥 ${stk}-run win streak</div>` : '');
-			if (sig) box.appendChild(miniFace(sig, 120));
-			box.appendChild(overlayButton('Play this hero', () => { hideDungeonOverlay(); resolve(ch); }));
-			row.appendChild(box);
-		}
-		el.appendChild(row);
-		el.appendChild(overlayButton('📜 Full roster & unlocks', () => showRosterOverlay({
-			title: 'SWORD COAST', modeKey: 'swordcoast', cardsById, stats,
-			heroes: Swordcoast.HEROES, order: Swordcoast.CORE_UNLOCK_ORDER, starters: Swordcoast.STARTERS,
-			enemies: Swordcoast.ENEMIES, unlocks: Swordcoast.ENEMY_UNLOCKS, deckTag: 'scDeck',
-			secrets: Swordcoast.SECRET_HEROES, secretOn: () => swordcoastGaleUnlocked(),
-			unlockedList: pool,
-		})));
-	});
-}
-
-// roll the next enemy: rung by `wins`, avoiding an immediate repeat. STATIC (no loot/parity).
-function genSwordCoastEnemy(cardsById, wins, avoidId, faced) {
-	const character = Swordcoast.randomEnemy(wins, Math.random, avoidId, faced);
-	return Swordcoast.generateEnemy(cardsById, character);
-}
-
-// seat a Sword Coast character: its class (for buckets/color) but its OWN unique hero power
-function swordCoastSeat(character) {
-	const cls = Swordcoast.classOf(character);
-	const def = GS.classRegistry.find(c => c.id === cls) || { id: cls, power: null };
-	return { ...def, id: cls, name: character, power: Swordcoast.powerOf(character) };
-}
-
-function bootSwordCoastEncounter(cardsById, run) {
-	swordcoastCardsById = cardsById;
-	const enemy = run.enemy || (run.enemy = genSwordCoastEnemy(cardsById, run.wins || 0, null));
-	GS.heistBossName = enemy.name; // shared enemy-name slot for nameOf()
-	const picks = [swordCoastSeat(run.characterId), swordCoastSeat(enemy.name)];
-	GS.state = E.createGame(cardsById, seededGame(), [...run.deck], 2, picks); // seeded -> snapshot-able for resume
-	GS.state.classPicks = picks;
-	E.resetDeckAndHand(GS.state, 1, [...enemy.deck]);
-	E.drawCards(GS.state, 1, 4);
-	E.addCoin(GS.state, 1);   // the boss goes second: re-deal its opening Coin (resetDeckAndHand wiped createGame's)
-	E.stripLoadouts(GS.state);
-	applyRunAnomaly(run.anomaly);
-	setRunLife((run.wins || 0) + (run.losses || 0) + 1);
-	// basics are color-locked to each character's identity (see PR #85)
-	GS.state.players[0].allowedBasics = Duels.allowedBasicsFor(cardsById, 'scDeck', run.characterId);
-	GS.state.players[1].allowedBasics = Duels.allowedBasicsFor(cardsById, 'scDeck', enemy.name);
-	log(`Lorequest: Sword Coast - ${winLossLabel(run)}. Facing ${enemy.name} (${Swordcoast.rungLabel(run.wins || 0)}).`);
-	log(`You are ${run.characterId} with a ${run.deck.length}-card deck; ${enemy.name} fields ${enemy.deck.length}.`);
-}
-
-function swordCoastVictory(run) { afterSwordCoastGame(run, true); }
-function swordCoastDefeat(run) { afterSwordCoastGame(run, false); }
-
-function afterSwordCoastGame(run, won) {
-	if (won) run.wins = (run.wins || 0) + 1; else run.losses = (run.losses || 0) + 1;
-	beginPostGame(run, won);   // checkpoint: a reload resumes the reward, not the fight
-	saveSwordcoast(run);
-	if (run.wins >= Swordcoast.WINS_TO_CLEAR) { swordCoastRunComplete(run); return; }
-	if (run.losses >= Swordcoast.LOSSES_TO_END) { swordCoastRunOver(run); return; }
-	if (won) swordCoastLoot(run); else advanceSwordCoast(run);
-}
-
-// win loot step 1 — SPOILS: take 1 of 3 cards drawn from the vanquished foe's own deck, or none
-function swordCoastLoot(run) {
-	const lootRng = postGameRng(run, 1);   // same offer after a reload
-	const fallen = run.enemy ? run.enemy.name : null;
-	const options = fallen ? Swordcoast.spoilsChoices(swordcoastCardsById, fallen, lootRng, 3) : [];
-	const el = dungeonOverlay(`WIN - ${run.wins}/12`, `Spoils of war: take one card from ${fallen || 'the fallen'}'s arsenal, or leave it.`);
-	const row = document.createElement('div');
-	row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:14px;';
-	for (const id of options) {
-		if (!swordcoastCardsById[id]) continue;
-		const box = document.createElement('div');
-		box.style.cssText = 'background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:12px;';
-		box.appendChild(miniFace(swordcoastCardsById[id]));
-		box.appendChild(document.createElement('br'));
-		box.appendChild(overlayButton('Take it', () => { run.deck.push(id); afterSwordCoastReward(run); }));
-		row.appendChild(box);
-	}
-	el.appendChild(row);
-	el.appendChild(overlayButton('Take none', () => afterSwordCoastReward(run)));
-}
-
-// win loot step 2 — ALTERNATING AID: a treasure on odd wins, a class bucket on even wins
-function afterSwordCoastReward(run) {
-	postGameStage(run, 2, saveSwordcoast);   // the step-1 pick is saved
-	const lootRng = postGameRng(run, 2);
-	if (Swordcoast.rewardForWin(run.wins) === 'bucket') {
-		const cls = [run.cls];
-		const el = dungeonOverlay(`AID - ${run.wins}/12`, 'Choose a loot bucket - all 3 cards join your deck.');
-		const offered = Duels.offerBuckets(swordcoastCardsById, cls, lootRng, 3);
-		const row = document.createElement('div');
-		row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:14px;';
-		for (const bucket of offered) {
-			const ids = Duels.rollBucket(swordcoastCardsById, cls, bucket, lootRng, 3);
-			const box = document.createElement('div');
-			box.style.cssText = 'background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:12px;max-width:330px;';
-			box.innerHTML = `<div style="font-weight:bold;margin-bottom:8px;letter-spacing:1px;">${bucket.name}</div>`;
-			for (const id of ids) if (swordcoastCardsById[id]) box.appendChild(miniFace(swordcoastCardsById[id]));
-			box.appendChild(document.createElement('br'));
-			box.appendChild(overlayButton('Take these', () => { run.deck.push(...ids); advanceSwordCoast(run); }));
-			row.appendChild(box);
-		}
-		el.appendChild(row);
-	} else {
-		const el = dungeonOverlay(`TREASURE! - ${run.wins}/12`, 'One of these joins your deck.');
-		const options = Swordcoast.treasurePool(swordcoastCardsById).filter(d => !run.deck.includes(d.id));
-		const row = document.createElement('div');
-		row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:14px;';
-		for (let i = 0; i < 3 && options.length; i++) {
-			const d = options.splice(Math.floor(lootRng() * options.length), 1)[0];
-			const box = document.createElement('div');
-			box.style.cssText = 'background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:12px;';
-			box.appendChild(miniFace(d));
-			box.appendChild(document.createElement('br'));
-			box.appendChild(overlayButton('Take it', () => { run.deck.push(d.id); advanceSwordCoast(run); }));
-			row.appendChild(box);
-		}
-		el.appendChild(row);
-	}
-}
-
-function advanceSwordCoast(run) {
-	delete run.postGame;   // the reward is done: the next fight is the checkpoint now
-	run.enemy = genSwordCoastEnemy(swordcoastCardsById, run.wins || 0, run.enemy && run.enemy.id, noteFaced(run));
-	saveSwordcoast(run);
-	const el = dungeonOverlay(`NEXT: ${run.enemy.name}`, `${winLossLabel(run)} - your deck is ${run.deck.length} cards. (${Swordcoast.rungLabel(run.wins || 0)})`);
-	el.appendChild(overlayButton('Fight!', fightNow));
-}
-
-function swordCoastRunComplete(run) {
-	try { localStorage.setItem(SWORDCOAST_UNLOCK_KEY, '1'); } catch (e) { }
-	const el = dungeonOverlay(Swordcoast.clearHeadline(run.enemy && run.enemy.name),
-		`${run.characterId} clears the Sword Coast with a ${run.deck.length}-card deck. Gale, Waterdeep Prodigy is now a playable hero!`);
-	Col.earnGold(1000);
-	mpRunReward(el, 'win', { wins: run.wins || 0, losses: run.losses || 0, hero: run.characterId });
-	addRunReplayButtons(el, run, 'swordcoast'); // before the clear — the ids live on the run
-	clearSwordcoast();
-	el.appendChild(overlayButton('New Run (+1000 gold banked)', () => location.reload()));
-}
-
-function swordCoastRunOver(run) {
-	const el = dungeonOverlay('3 LOSSES - THE REALMS FALL', `${run.characterId} falls at ${run.wins || 0} wins.`);
-	clearSwordcoast();
-	mpRunReward(el, 'loss', { wins: run.wins || 0, losses: run.losses || 0, hero: run.characterId });
-	el.appendChild(overlayButton('New Run', () => location.reload()));
-}
-
-// ---------- Lorequest: Final Fantasy ----------
-// Mirror of Sword Coast: pick 1 FF hero (10-card starter), battle FF villains (rung-gated static
-// 30-card decks) to 12 wins or 3 losses. Signature mechanics = Spritsummon (random Sprit) + Limit
-// Break. Data tagged ffDeck/ffSide, ids ff_*.
-let finalfantasyCardsById = null;
-
-function resumeFinalFantasyOverlay(run) {
-	return new Promise(resolve => {
-		const el = dungeonOverlay('FINAL FANTASY RUN IN PROGRESS',
-			`${run.characterId} - ${winLossLabel(run)}, ${run.deck.length} cards. Reach 12 wins before 3 losses.`);
-		el.appendChild(overlayButton('Continue the run', () => { hideDungeonOverlay(); resolve(true); }));
-		el.appendChild(overlayButton('Abandon - start a new run', () => { hideDungeonOverlay(); resolve(false); }));
-	});
-}
-
-// full choice of all 10 heroes (+ Gilgamesh once unlocked), each showing its signature + power
-async function pickFinalFantasyHeroOverlay(cardsById) {
-	// account progression: 3 random UNLOCKED characters per run (secret heroes
-	// join the pool once their own unlock fires). Free play = the full roster.
-	let stats = null;
-	if (MP_ON) {
-		try { stats = (await MPX.freshState())?.stats || null; }
-		catch (e) { stats = MPX.cachedState()?.stats || null; }
-	}
-	const pool = Finalfantasy.unlockedCharacters(stats);
-	if (finalfantasyGilgameshUnlocked()) for (const sh of Finalfantasy.SECRET_HEROES) if (!pool.includes(sh)) pool.push(sh);
-	return new Promise(resolve => {
-		const heroes = stats ? Lorequest.offerFrom(pool, Math.random, 3, Lorequest.streakPins(pool, stats, 'finalfantasy', Math.random)) : pool;
-		const el = dungeonOverlay('CHOOSE YOUR HERO', 'Pick a Final Fantasy hero - a 10-card starter deck you grow as you climb.');
-		const row = document.createElement('div');
-		row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:12px;max-width:920px;';
-		for (const ch of heroes) {
-			const cls = Finalfantasy.classOf(ch);
-			const stk = stats?.chars?.['finalfantasy|' + ch]?.streak || 0;
-			const clsName = (GS.classRegistry.find(c => c.id === cls)?.name) || cls;
-			const sig = Object.values(cardsById).find(d => d.ffDeck === ch && d.rarity === 'legendary');
-			const pw = Finalfantasy.powerOf(ch);
-			const box = document.createElement('div');
-			box.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:5px;background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:10px;max-width:180px;';
-			box.innerHTML = `<div style="font-weight:bold;">${ch}</div><div style="font-size:12px;color:#e8c37a;">${clsName}</div>`
-				+ (pw ? `<div style="font-size:11px;color:#bdb;line-height:1.25;">${pw.name}: ${pw.text}</div>` : '')
-				+ (stk ? `<div style="font-size:11px;color:#ffb04d;font-weight:bold;">🔥 ${stk}-run win streak</div>` : '');
-			if (sig) box.appendChild(miniFace(sig, 120));
-			box.appendChild(overlayButton('Play this hero', () => { hideDungeonOverlay(); resolve(ch); }));
-			row.appendChild(box);
-		}
-		el.appendChild(row);
-		el.appendChild(overlayButton('📜 Full roster & unlocks', () => showRosterOverlay({
-			title: 'FINAL FANTASY', modeKey: 'finalfantasy', cardsById, stats,
-			heroes: Finalfantasy.HEROES, order: Finalfantasy.CORE_UNLOCK_ORDER, starters: Finalfantasy.STARTERS,
-			enemies: Finalfantasy.ENEMIES, unlocks: Finalfantasy.ENEMY_UNLOCKS, deckTag: 'ffDeck',
-			secrets: Finalfantasy.SECRET_HEROES, secretOn: () => finalfantasyGilgameshUnlocked(),
-			unlockedList: pool,
-		})));
-	});
-}
-
-function genFinalFantasyEnemy(cardsById, wins, avoidId, faced) {
-	const character = Finalfantasy.randomEnemy(wins, Math.random, avoidId, faced);
-	return Finalfantasy.generateEnemy(cardsById, character);
-}
-
-function finalFantasySeat(character) {
-	const cls = Finalfantasy.classOf(character);
-	const def = GS.classRegistry.find(c => c.id === cls) || { id: cls, power: null };
-	return { ...def, id: cls, name: character, power: Finalfantasy.powerOf(character) };
-}
-
-function bootFinalFantasyEncounter(cardsById, run) {
-	finalfantasyCardsById = cardsById;
-	const enemy = run.enemy || (run.enemy = genFinalFantasyEnemy(cardsById, run.wins || 0, null));
-	GS.heistBossName = enemy.name; // shared enemy-name slot for nameOf()
-	const picks = [finalFantasySeat(run.characterId), finalFantasySeat(enemy.name)];
-	GS.state = E.createGame(cardsById, seededGame(), [...run.deck], 2, picks); // seeded -> snapshot-able for resume
-	GS.state.classPicks = picks;
-	E.resetDeckAndHand(GS.state, 1, [...enemy.deck]);
-	E.drawCards(GS.state, 1, 4);
-	E.addCoin(GS.state, 1);   // the boss goes second: re-deal its opening Coin (resetDeckAndHand wiped createGame's)
-	E.stripLoadouts(GS.state);
-	applyRunAnomaly(run.anomaly);
-	setRunLife((run.wins || 0) + (run.losses || 0) + 1);
-	// basics are color-locked to each character's identity (see PR #85)
-	GS.state.players[0].allowedBasics = Duels.allowedBasicsFor(cardsById, 'ffDeck', run.characterId);
-	GS.state.players[1].allowedBasics = Duels.allowedBasicsFor(cardsById, 'ffDeck', enemy.name);
-	log(`Lorequest: Final Fantasy - ${winLossLabel(run)}. Facing ${enemy.name} (${Finalfantasy.rungLabel(run.wins || 0)}).`);
-	log(`You are ${run.characterId} with a ${run.deck.length}-card deck; ${enemy.name} fields ${enemy.deck.length}.`);
-}
-
-function finalFantasyVictory(run) { afterFinalFantasyGame(run, true); }
-function finalFantasyDefeat(run) { afterFinalFantasyGame(run, false); }
-
-function afterFinalFantasyGame(run, won) {
-	if (won) run.wins = (run.wins || 0) + 1; else run.losses = (run.losses || 0) + 1;
-	beginPostGame(run, won);   // checkpoint: a reload resumes the reward, not the fight
-	saveFinalfantasy(run);
-	if (run.wins >= Finalfantasy.WINS_TO_CLEAR) { finalFantasyRunComplete(run); return; }
-	if (run.losses >= Finalfantasy.LOSSES_TO_END) { finalFantasyRunOver(run); return; }
-	if (won) finalFantasyLoot(run); else advanceFinalFantasy(run);
-}
-
-function finalFantasyLoot(run) {
-	const lootRng = postGameRng(run, 1);   // same offer after a reload
-	const fallen = run.enemy ? run.enemy.name : null;
-	const options = fallen ? Finalfantasy.spoilsChoices(finalfantasyCardsById, fallen, lootRng, 3) : [];
-	const el = dungeonOverlay(`WIN - ${run.wins}/12`, `Spoils of war: take one card from ${fallen || 'the fallen'}'s arsenal, or leave it.`);
-	const rowr = document.createElement('div');
-	rowr.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:14px;';
-	for (const id of options) {
-		if (!finalfantasyCardsById[id]) continue;
-		const box = document.createElement('div');
-		box.style.cssText = 'background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:12px;';
-		box.appendChild(miniFace(finalfantasyCardsById[id]));
-		box.appendChild(document.createElement('br'));
-		box.appendChild(overlayButton('Take it', () => { run.deck.push(id); afterFinalFantasyReward(run); }));
-		rowr.appendChild(box);
-	}
-	el.appendChild(rowr);
-	el.appendChild(overlayButton('Take none', () => afterFinalFantasyReward(run)));
-}
-
-function afterFinalFantasyReward(run) {
-	postGameStage(run, 2, saveFinalfantasy);   // the step-1 pick is saved
-	const lootRng = postGameRng(run, 2);
-	if (Finalfantasy.rewardForWin(run.wins) === 'bucket') {
-		const cls = [run.cls];
-		const el = dungeonOverlay(`AID - ${run.wins}/12`, 'Choose a loot bucket - all 3 cards join your deck.');
-		const offered = Duels.offerBuckets(finalfantasyCardsById, cls, lootRng, 3);
-		const rowr = document.createElement('div');
-		rowr.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:14px;';
-		for (const bucket of offered) {
-			const ids = Duels.rollBucket(finalfantasyCardsById, cls, bucket, lootRng, 3);
-			const box = document.createElement('div');
-			box.style.cssText = 'background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:12px;max-width:330px;';
-			box.innerHTML = `<div style="font-weight:bold;margin-bottom:8px;letter-spacing:1px;">${bucket.name}</div>`;
-			for (const id of ids) if (finalfantasyCardsById[id]) box.appendChild(miniFace(finalfantasyCardsById[id]));
-			box.appendChild(document.createElement('br'));
-			box.appendChild(overlayButton('Take these', () => { run.deck.push(...ids); advanceFinalFantasy(run); }));
-			rowr.appendChild(box);
-		}
-		el.appendChild(rowr);
-	} else {
-		const el = dungeonOverlay(`TREASURE! - ${run.wins}/12`, 'One of these joins your deck.');
-		const options = Finalfantasy.treasurePool(finalfantasyCardsById).filter(d => !run.deck.includes(d.id));
-		const rowr = document.createElement('div');
-		rowr.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:14px;';
-		for (let i = 0; i < 3 && options.length; i++) {
-			const d = options.splice(Math.floor(lootRng() * options.length), 1)[0];
-			const box = document.createElement('div');
-			box.style.cssText = 'background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:12px;';
-			box.appendChild(miniFace(d));
-			box.appendChild(document.createElement('br'));
-			box.appendChild(overlayButton('Take it', () => { run.deck.push(d.id); advanceFinalFantasy(run); }));
-			rowr.appendChild(box);
-		}
-		el.appendChild(rowr);
-	}
-}
-
-function advanceFinalFantasy(run) {
-	delete run.postGame;   // the reward is done: the next fight is the checkpoint now
-	run.enemy = genFinalFantasyEnemy(finalfantasyCardsById, run.wins || 0, run.enemy && run.enemy.id, noteFaced(run));
-	saveFinalfantasy(run);
-	const el = dungeonOverlay(`NEXT: ${run.enemy.name}`, `${winLossLabel(run)} - your deck is ${run.deck.length} cards. (${Finalfantasy.rungLabel(run.wins || 0)})`);
-	el.appendChild(overlayButton('Fight!', fightNow));
-}
-
-function finalFantasyRunComplete(run) {
-	try { localStorage.setItem(FINALFANTASY_UNLOCK_KEY, '1'); } catch (e) { }
-	const el = dungeonOverlay('12 WINS - THE VOID IS SEALED!',
-		`${run.characterId} clears Final Fantasy with a ${run.deck.length}-card deck. Gilgamesh is now a playable hero!`);
-	Col.earnGold(1000);
-	mpRunReward(el, 'win', { wins: run.wins || 0, losses: run.losses || 0, hero: run.characterId });
-	addRunReplayButtons(el, run, 'finalfantasy'); // before the clear — the ids live on the run
-	clearFinalfantasy();
-	el.appendChild(overlayButton('New Run (+1000 gold banked)', () => location.reload()));
-}
-
-function finalFantasyRunOver(run) {
-	const el = dungeonOverlay('3 LOSSES - GAME OVER', `${run.characterId} falls at ${run.wins || 0} wins.`);
-	clearFinalfantasy();
-	mpRunReward(el, 'loss', { wins: run.wins || 0, losses: run.losses || 0, hero: run.characterId });
-	el.appendChild(overlayButton('New Run', () => location.reload()));
-}
-
-// ---------- Lorequest: Multiverse (Marvel, WIN-PARITY) ----------
-// Pick ONE Marvel hero (10-card singleton starter) with a UNIQUE hero power. Climb villains to 12
-// wins or 3 losses. RETURNS to Duels/Lorequest parity: every win YOU pick a class bucket (+ a
-// treasure at milestones 2/5/8/11), and the next villain is regenerated at your exact WIN-parity
-// (10-card base + one bucket per win + a treasure per milestone) — no spoils draft. mvDeck/mvSide, mv_*.
-let multiverseCardsById = null;
-
-function resumeMultiverseOverlay(run) {
-	return new Promise(resolve => {
-		const el = dungeonOverlay('MULTIVERSE RUN IN PROGRESS',
-			`${run.characterId} - ${winLossLabel(run)}, ${run.deck.length} cards. Reach 12 wins before 3 losses.`);
-		el.appendChild(overlayButton('Continue the run', () => { hideDungeonOverlay(); resolve(true); }));
-		el.appendChild(overlayButton('Abandon - start a new run', () => { hideDungeonOverlay(); resolve(false); }));
-	});
-}
-
-// full choice of all 10 heroes (+ Silver Surfer once unlocked), each showing its signature + power
-async function pickMultiverseHeroOverlay(cardsById) {
-	// account progression: 3 random UNLOCKED characters per run (secret heroes
-	// join the pool once their own unlock fires). Free play = the full roster.
-	let stats = null;
-	if (MP_ON) {
-		try { stats = (await MPX.freshState())?.stats || null; }
-		catch (e) { stats = MPX.cachedState()?.stats || null; }
-	}
-	const pool = Multiverse.unlockedCharacters(stats);
-	if (multiverseSurferUnlocked()) for (const sh of Multiverse.SECRET_HEROES) if (!pool.includes(sh)) pool.push(sh);
-	return new Promise(resolve => {
-		const heroes = stats ? Lorequest.offerFrom(pool, Math.random, 3, Lorequest.streakPins(pool, stats, 'multiverse', Math.random)) : pool;
-		const el = dungeonOverlay('CHOOSE YOUR HERO', 'Pick a Marvel hero - a 10-card starter deck you grow as you climb. Enemies always match your loot.');
-		const row = document.createElement('div');
-		row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:12px;max-width:920px;';
-		for (const ch of heroes) {
-			const cls = Multiverse.classOf(ch);
-			const stk = stats?.chars?.['multiverse|' + ch]?.streak || 0;
-			const clsName = (GS.classRegistry.find(c => c.id === cls)?.name) || cls;
-			const sig = Object.values(cardsById).find(d => d.mvDeck === ch && d.rarity === 'legendary');
-			const pw = Multiverse.powerOf(ch);
-			const box = document.createElement('div');
-			box.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:5px;background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:10px;max-width:180px;';
-			box.innerHTML = `<div style="font-weight:bold;">${ch}</div><div style="font-size:12px;color:#e8c37a;">${clsName}</div>`
-				+ (pw ? `<div style="font-size:11px;color:#bdb;line-height:1.25;">${pw.name}: ${pw.text}</div>` : '')
-				+ (stk ? `<div style="font-size:11px;color:#ffb04d;font-weight:bold;">🔥 ${stk}-run win streak</div>` : '');
-			if (sig) box.appendChild(miniFace(sig, 120));
-			box.appendChild(overlayButton('Play this hero', () => { hideDungeonOverlay(); resolve(ch); }));
-			row.appendChild(box);
-		}
-		el.appendChild(row);
-		el.appendChild(overlayButton('📜 Full roster & unlocks', () => showRosterOverlay({
-			title: 'MULTIVERSE', modeKey: 'multiverse', cardsById, stats,
-			heroes: Multiverse.HEROES, order: Multiverse.CORE_UNLOCK_ORDER, starters: Multiverse.STARTERS,
-			enemies: Multiverse.ENEMIES, unlocks: Multiverse.ENEMY_UNLOCKS, deckTag: 'mvDeck',
-			secrets: Multiverse.SECRET_HEROES, secretOn: () => multiverseSurferUnlocked(),
-			unlockedList: pool,
-		})));
-	});
-}
-
-// roll the next villain: roster by `wins`, deck at `wins`-parity, avoiding an immediate repeat
-function genMultiverseEnemy(cardsById, wins, avoidId, faced) {
-	const character = Multiverse.randomEnemy(wins, Math.random, avoidId, faced);
-	return Multiverse.generateEnemy(cardsById, character, wins, Math.random);
-}
-
-// seat a Multiverse character: its class (for buckets/color) but its OWN unique hero power
-function multiverseSeat(character) {
-	const cls = Multiverse.classOf(character);
-	const def = GS.classRegistry.find(c => c.id === cls) || { id: cls, power: null };
-	return { ...def, id: cls, name: character, power: Multiverse.powerOf(character) };
-}
-
-function bootMultiverseEncounter(cardsById, run) {
-	multiverseCardsById = cardsById;
-	const enemy = run.enemy || (run.enemy = genMultiverseEnemy(cardsById, run.wins || 0, null));
-	GS.heistBossName = enemy.name; // shared enemy-name slot for nameOf()
-	const picks = [multiverseSeat(run.characterId), multiverseSeat(enemy.name)];
-	GS.state = E.createGame(cardsById, seededGame(), [...run.deck], 2, picks); // seeded -> snapshot-able for resume
-	GS.state.classPicks = picks;
-	E.resetDeckAndHand(GS.state, 1, [...enemy.deck]);
-	E.drawCards(GS.state, 1, 4);
-	E.addCoin(GS.state, 1);   // the boss goes second: re-deal its opening Coin (resetDeckAndHand wiped createGame's)
-	E.stripLoadouts(GS.state);
-	applyRunAnomaly(run.anomaly);
-	setRunLife((run.wins || 0) + (run.losses || 0) + 1);
-	// basics are color-locked to each character's identity (see PR #85)
-	GS.state.players[0].allowedBasics = Duels.allowedBasicsFor(cardsById, 'mvDeck', run.characterId);
-	GS.state.players[1].allowedBasics = Duels.allowedBasicsFor(cardsById, 'mvDeck', enemy.name);
-	log(`Lorequest: Multiverse - ${winLossLabel(run)}. Facing ${enemy.name} (${Multiverse.rungLabel(run.wins || 0)}).`);
-	log(`You are ${run.characterId} with a ${run.deck.length}-card deck; ${enemy.name} fields ${enemy.deck.length} at win-parity.`);
-}
-
-function multiverseVictory(run) { afterMultiverseGame(run, true); }
-function multiverseDefeat(run) { afterMultiverseGame(run, false); }
-
-function afterMultiverseGame(run, won) {
-	if (won) run.wins = (run.wins || 0) + 1; else run.losses = (run.losses || 0) + 1;
-	beginPostGame(run, won);   // checkpoint: a reload resumes the reward, not the fight
-	saveMultiverse(run);
-	if (run.wins >= Multiverse.WINS_TO_CLEAR) { multiverseRunComplete(run); return; }
-	if (run.losses >= Multiverse.LOSSES_TO_END) { multiverseRunOver(run); return; }
-	if (won) multiverseLoot(run); else advanceMultiverse(run);
-}
-
-// win loot: choose 1 of 3 class buckets (3 cards each); all 3 join your deck (the enemy matches at parity)
-function multiverseLoot(run) {
-	const lootRng = postGameRng(run, 1);   // same offer after a reload
-	const cls = [run.cls];
-	const el = dungeonOverlay(`WIN - ${run.wins}/12`, 'Choose a loot bucket - all 3 cards join your deck. (The next foe matches your loot.)');
-	const offered = Duels.offerBuckets(multiverseCardsById, cls, lootRng, 3);
-	const row = document.createElement('div');
-	row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:14px;';
-	for (const bucket of offered) {
-		const ids = Duels.rollBucket(multiverseCardsById, cls, bucket, lootRng, 3);
-		const box = document.createElement('div');
-		box.style.cssText = 'background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:12px;max-width:330px;';
-		box.innerHTML = `<div style="font-weight:bold;margin-bottom:8px;letter-spacing:1px;">${bucket.name}</div>`;
-		for (const id of ids) if (multiverseCardsById[id]) box.appendChild(miniFace(multiverseCardsById[id]));
-		box.appendChild(document.createElement('br'));
-		box.appendChild(overlayButton('Take these', () => { run.deck.push(...ids); afterMultiverseBucket(run); }));
-		row.appendChild(box);
-	}
-	el.appendChild(row);
-}
-
-// milestone wins (2/5/8/11) also grant a treasure card, then the next fight
-function afterMultiverseBucket(run) {
-	postGameStage(run, 2, saveMultiverse);   // the step-1 pick is saved
-	const lootRng = postGameRng(run, 2);
-	if (Multiverse.TREASURE_WINS.includes(run.wins)) {
-		const el = dungeonOverlay(`TREASURE! - ${run.wins}/12`, 'One of these joins your deck.');
-		const options = Multiverse.treasurePool(multiverseCardsById).filter(d => !run.deck.includes(d.id));
-		const row = document.createElement('div');
-		row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:14px;';
-		for (let i = 0; i < 3 && options.length; i++) {
-			const d = options.splice(Math.floor(lootRng() * options.length), 1)[0];
-			const box = document.createElement('div');
-			box.style.cssText = 'background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:12px;';
-			box.appendChild(miniFace(d));
-			box.appendChild(document.createElement('br'));
-			box.appendChild(overlayButton('Take it', () => { run.deck.push(d.id); advanceMultiverse(run); }));
-			row.appendChild(box);
-		}
-		el.appendChild(row);
-	} else advanceMultiverse(run);
-}
-
-function advanceMultiverse(run) {
-	delete run.postGame;   // the reward is done: the next fight is the checkpoint now
-	run.enemy = genMultiverseEnemy(multiverseCardsById, run.wins || 0, run.enemy && run.enemy.id, noteFaced(run));
-	saveMultiverse(run);
-	const el = dungeonOverlay(`NEXT: ${run.enemy.name}`, `${winLossLabel(run)} - your deck is ${run.deck.length} cards. (${Multiverse.rungLabel(run.wins || 0)})`);
-	el.appendChild(overlayButton('Fight!', fightNow));
-}
-
-function multiverseRunComplete(run) {
-	try { localStorage.setItem(MULTIVERSE_UNLOCK_KEY, '1'); } catch (e) { }
-	const el = dungeonOverlay('12 WINS - THE MULTIVERSE IS SAVED!',
-		`${run.characterId} clears the Multiverse with a ${run.deck.length}-card deck. Silver Surfer is now a playable hero!`);
-	Col.earnGold(1000);
-	mpRunReward(el, 'win', { wins: run.wins || 0, losses: run.losses || 0, hero: run.characterId });
-	addRunReplayButtons(el, run, 'multiverse'); // before the clear — the ids live on the run
-	clearMultiverse();
-	el.appendChild(overlayButton('New Run (+1000 gold banked)', () => location.reload()));
-}
-
-function multiverseRunOver(run) {
-	const el = dungeonOverlay('3 LOSSES - THE VILLAINS PREVAIL', `${run.characterId} falls at ${run.wins || 0} wins.`);
-	clearMultiverse();
-	mpRunReward(el, 'loss', { wins: run.wins || 0, losses: run.losses || 0, hero: run.characterId });
-	el.appendChild(overlayButton('New Run', () => location.reload()));
 }
 
 // ---------- Arena (draft) run ----------

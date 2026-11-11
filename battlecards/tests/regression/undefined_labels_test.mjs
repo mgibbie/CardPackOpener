@@ -5,6 +5,7 @@
 // B) bug:1793975867085 — Poison Seeds logged "undefined was transformed into Treant" x4: the
 //    'transformed' events from transform-all-into-token (and heist's legendary roll) carried no
 //    `from`, which game.js's log line prints.
+import { gameSource } from '../helpers/gamesource.mjs';   // game.js + the modules split out of it
 import fs from 'fs';
 import * as E from '../../engine.js';
 import { seededRng } from '../../engine/rng.js';
@@ -17,7 +18,7 @@ const ok = (l, c, x) => { if (c) { pass++; console.log('ok  - ' + l); } else { f
 
 // A) the chooser label: evaluate the exact template from game.js against a real instance
 {
-	const src = fs.readFileSync(new URL('../../game.js', import.meta.url), 'utf8');
+	const src = gameSource();
 	const fn = src.slice(src.indexOf('function openAdventureMenu'));
 	const m = fn.match(/cbtn\.innerHTML = `[^`]*Summon \$\{card\.name\} \((\$\{[^}]+\})\/(\$\{[^}]+\})\)`/);
 	ok('found the summon label template', !!m);

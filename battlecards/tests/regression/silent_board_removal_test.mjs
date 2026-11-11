@@ -28,6 +28,7 @@
 // board-vanish detector added alongside will name the true cause next time.
 //
 //   node battlecards/tests/regression/silent_board_removal_test.mjs
+import { gameSource } from '../helpers/gamesource.mjs';   // game.js + the modules split out of it
 import fs from 'fs';
 import * as E from '../../engine.js';
 import { seededRng } from '../../engine/rng.js';
@@ -94,7 +95,7 @@ function game() {
 
 // ---------- the detector exists and is wired ----------
 {
-	const g = fs.readFileSync(new URL('../../game.js', import.meta.url), 'utf8');
+	const g = gameSource();
 	ok('a board-vanish detector exists', /\[board-vanish\]/.test(g));
 	ok('it is driven from pump, against the events of that batch', /checkBoardDepartures\(accounted\)/.test(g));
 	ok('and its log is readable from the test hook', /get boardVanishLog\(\)/.test(g));
