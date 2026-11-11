@@ -83,7 +83,8 @@ export async function call(action, payload = {}, opts = {}) {
 	// cached state to decide whose local data a page uses)
 	const stillSame = (localStorage.getItem(TOKEN_KEY) || '') === sentToken;
 	if (res.status === 401 && !AUTH_ACTIONS[action]) {
-		if (stillSame) logout(); // stale/forged token: back to the door
+		// a stale / forged login: forget it. (Only a browser that HAS one: a guest's refused call signs nobody out.)
+		if (stillSame && sentToken) expire();
 		return data;
 	}
 	if (data.state && stillSame) safeSave(STATE_KEY, data.state);
@@ -101,6 +102,20 @@ export async function auth(action, username, password) {
 		pagePrincipal = principalOf(data.token);   // this page signed in: it is now that account's
 	}
 	return data;
+}
+
+/** The server no longer accepts this browser's login (it expired, or was ended from elsewhere). Forget it and load
+ *  the page again. A page that needs a login then shows the door, with the way back to it; a page that is open to
+ *  everyone (Pair of Pears, Micatro, MicaSurvivor …) comes back as a guest's and can be played. It used to send the
+ *  player to the login page from wherever they were, open game or not (owner, 2026-11-11: "make sure pair of pears
+ *  is playable by people who are not logged in"). A reload, not a quiet sign-out: whose local data a page reads
+ *  is settled when it loads (site/account_silo.js), so the page must not go on as someone it no longer is. */
+function expire() {
+	localStorage.removeItem(TOKEN_KEY);
+	localStorage.removeItem(STATE_KEY);
+	if (_reloading || typeof location === 'undefined' || location.pathname.startsWith('/login')) return;
+	_reloading = true;
+	try { location.reload(); } catch (e) {}
 }
 
 export function logout() {
