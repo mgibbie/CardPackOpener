@@ -204,15 +204,24 @@ export function frameAt(meta, t) {
  *  shadow), not its lowest pixel: front feet, a tail, a rump are drawn below it. Top-down that is right; on an upright
  *  billboard everything below the anchor would be under the floor. So a sprite is stood on its lowest pixel instead:
  *  lifted by this much. One number per row (not per frame), so a walk cycle's bob stays a bob. */
-export function footLift(meta, img) {
+export function footLift(meta, img, o = {}) {
 	const c = document.createElement('canvas'); c.width = img.width; c.height = img.height;
 	const g = c.getContext('2d', { willReadFrequently: true }); g.drawImage(img, 0, 0);
 	const rows = Math.min(meta.r, Math.floor(img.height / meta.h)), frames = Math.min(meta.n, Math.floor(img.width / meta.w)), out = [];
 	for (let r = 0; r < rows; r++) {
-		const d = g.getImageData(0, r * meta.h, frames * meta.w, meta.h).data, w = frames * meta.w;
-		let low = -1;
-		for (let y = meta.h - 1; y >= 0 && low < 0; y--) for (let x = 0; x < w; x++) if (d[(y * w + x) * 4 + 3] > 127) { low = y; break; }
-		out.push(low < 0 ? 0 : Math.max(0, low + 1 - meta.ay));
+		const d = g.getImageData(0, r * meta.h, frames * meta.w, meta.h).data, w = frames * meta.w, per = [];
+		for (let f = 0; f < frames; f++) {
+			let low = -1;
+			for (let y = meta.h - 1; y >= 0 && low < 0; y--) for (let x = f * meta.w; x < (f + 1) * meta.w; x++) if (d[(y * w + x) * 4 + 3] > 127) { low = y; break; }
+			per.push(low < 0 ? 0 : low + 1 - meta.ay);
+		}
+		// (the owner, 2026-11-11: "fix the floating sprite") One number for a whole row is right for a WALK: its frames
+		// differ by a pixel or two, and that is the step's bob. It is wrong for a STANDING sheet, whose frames can be
+		// different poses drawn at different heights (Pikachu's first idle frame stands, the rest sit 6 px higher): lifted
+		// for the lowest of them, the others hung in the air over their shadow. So a standing sheet puts EACH frame on
+		// its own lowest pixel, up or down. A species that hovers is never pulled down to the floor.
+		const floor = (v) => (o.hover ? Math.max(0, v) : v);
+		out.push(o.perFrame ? per.map(floor) : Math.max(0, ...per));
 	}
 	return out;
 }
@@ -221,7 +230,8 @@ export function footLift(meta, img) {
  *  is raised so its lowest pixel, not its anchor, is on the ground. */
 export function spriteQuad(meta, img, frame, row, scale = 1, lift = null) {
 	const s = PX * scale, W = img.width, H = img.height;
-	const up = lift ? (lift[Math.min(row, lift.length - 1)] || 0) * s : 0;
+	const lr = lift ? lift[Math.min(row, lift.length - 1)] : 0;   // a number for the row, or one for each frame
+	const up = (Array.isArray(lr) ? lr[Math.min(frame, lr.length - 1)] : lr || 0) * s;
 	const rect = [-meta.ax * s, -(meta.h - meta.ay) * s + up, (meta.w - meta.ax) * s, meta.ay * s + up];
 	const r = Math.min(row, meta.r - 1);
 	const uv = [frame * meta.w / W, r * meta.h / H, (frame + 1) * meta.w / W, (r + 1) * meta.h / H];

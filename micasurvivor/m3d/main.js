@@ -131,7 +131,7 @@ async function sheet(dex, anim, max) {
 	const tex = await loadSheet(`../assets/pokemon/${dex}/${anim}.png`);
 	const batch = new SpriteBatch(tex, max);
 	scene.add(batch.mesh);
-	const o = { batch, meta, img: tex.image, lift: footLift(meta, tex.image), shadow: 0.35 + 0.18 * ((META[dex].s | 0) + 1) };
+	const o = { batch, meta, img: tex.image, lift: footLift(meta, tex.image, { perFrame: anim === 'Idle', hover: !!META[dex].hv }), shadow: 0.35 + 0.18 * ((META[dex].s | 0) + 1) };
 	sheets.set(key, o);
 	return o;
 }

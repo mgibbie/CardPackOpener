@@ -110,30 +110,39 @@ try {
 	A(new Set(rows).size === 8, 'orbiting the camera round a still sprite shows all 8 of its facing rows', rows.join(''));
 
 	// ---- feet on the floor: a sheet's anchor is the middle of the footprint, and the feet / tail are drawn BELOW it.
-	// (the owner, on the live page: "my pikachu has its feet/butt sinking through the floor")
+	// (the owner, on the live page: "my pikachu has its feet/butt sinking through the floor"; then, of the first fix:
+	// "fix the floating sprite" — a standing sheet's frames are different poses at different heights, and one lift
+	// for the whole row left most of them hanging over their shadow)
 	const feet = await page.evaluate(() => {
-		const m = window.__m3d, out = [];
+		const m = window.__m3d, out = [], META = window.G.SPRITE_META;
 		for (const [key, s] of m.sheets) {
-			// independently: the lowest opaque pixel of each row, by reading the sheet
+			const [dex, anim] = key.split('/'), hover = !!META[dex].hv;
 			const c = document.createElement('canvas'); c.width = s.img.width; c.height = s.img.height; const g = c.getContext('2d'); g.drawImage(s.img, 0, 0);
-			const d = g.getImageData(0, 0, c.width, c.height).data; let worstBelow = 0, sunk = 0;
+			const d = g.getImageData(0, 0, c.width, c.height).data; let worstBelow = 0, sunk = 0, floats = 0, worstFloat = 0, spread = 0;
 			for (let r = 0; r < s.meta.r; r++) {
-				let low = -1;
-				for (let y = s.meta.h - 1; y >= 0 && low < 0; y--) for (let x = 0; x < s.meta.n * s.meta.w; x++) if (d[((r * s.meta.h + y) * c.width + x) * 4 + 3] > 127) { low = y; break; }
-				const below = Math.max(0, low + 1 - s.meta.ay);          // px drawn under the anchor
-				worstBelow = Math.max(worstBelow, below);
-				// the quad as the page builds it: where is that lowest pixel's bottom edge, relative to the feet?
-				const q = m.quadOf(key, 0, r), px = (q.rect[3] - q.rect[1]) / s.meta.h, bottomOfLowest = q.rect[3] - (low + 1) * px;
-				// never under the floor; and exactly on it when the art went below the anchor (a row whose lowest pixel is above
-				// the anchor is a hovering sprite — Gastly — and is left hovering)
-				if (bottomOfLowest < -1e-6 || (below > 0 && bottomOfLowest > 1e-6)) sunk++;
+				const lows = [];
+				for (let f = 0; f < s.meta.n; f++) {
+					// independently: this frame's lowest opaque pixel, by reading the sheet
+					let low = -1;
+					for (let y = s.meta.h - 1; y >= 0 && low < 0; y--) for (let x = 0; x < s.meta.w; x++) if (d[((r * s.meta.h + y) * c.width + f * s.meta.w + x) * 4 + 3] > 127) { low = y; break; }
+					if (low < 0) continue;
+					lows.push(low); worstBelow = Math.max(worstBelow, low + 1 - s.meta.ay);
+					// the quad as the page builds it: where is that pixel's bottom edge, relative to the floor? (in art px)
+					const q = m.quadOf(key, f, r), px = (q.rect[3] - q.rect[1]) / s.meta.h, gap = (q.rect[3] - (low + 1) * px) / px;
+					if (gap < -1e-6) sunk++;                                  // drawn under the floor
+					if (!hover) { worstFloat = Math.max(worstFloat, gap); if (anim === 'Idle' ? gap > 1e-6 : gap > 3.01) floats++; }
+				}
+				spread = Math.max(spread, Math.max(...lows) - Math.min(...lows));
 			}
-			out.push({ key, worstBelow, sunk });
+			out.push({ key, hover, worstBelow, sunk, floats, worstFloat: +worstFloat.toFixed(2), spread });
 		}
 		return out;
 	});
 	A(feet.length >= 8 && feet.some(f => f.worstBelow >= 3), 'the sheets really do draw below their anchor (some by 3 px or more: feet, tails)', JSON.stringify(feet.map(f => f.key + ':' + f.worstBelow)));
-	A(feet.every(f => f.sunk === 0), 'every sprite stands on its lowest pixel: in each of its 8 facings nothing is drawn under the floor (and one that hovers still hovers)', JSON.stringify(feet.filter(f => f.sunk)));
+	A(feet.every(f => f.sunk === 0), 'no frame of any sprite, in any of its 8 facings, is drawn under the floor', JSON.stringify(feet.filter(f => f.sunk)));
+	A(feet.some(f => /Idle/.test(f.key) && !f.hover && f.spread >= 5), 'standing sheets really do hold poses at different heights (the frames of one row differ by 5 px or more)', JSON.stringify(feet.map(f => f.key + ':' + f.spread)));
+	A(feet.every(f => f.floats === 0), 'no frame floats: every frame of a standing sprite is exactly on the floor, and a walk cycle\'s frames are within its 3 px bob', JSON.stringify(feet.filter(f => f.floats)));
+	A(feet.some(f => f.hover) ? feet.filter(f => f.hover).every(f => f.sunk === 0) : true, 'a species that hovers is not pulled down to the floor');
 
 	// ---- cost
 	await sleep(1500);
