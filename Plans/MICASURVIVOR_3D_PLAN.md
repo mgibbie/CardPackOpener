@@ -137,7 +137,17 @@ Three seams have to be cut first, all in 2D, all behaviour-neutral:
   (so it ends the wandering without replacing the exploring).
 - Test: the marker is recorded on every floor, distinct from every other icon; the full map has it.
 
-**D1 — make it bite (numbers and behaviour; no generator change).**
+**D1 — make it bite (numbers and behaviour; no generator change).** *Built 2026-11-11 (`overworld/tests/micasurvivor_dive_difficulty_test.mjs`). As built:*
+- *Numbers: HP x3.3 and damage x2.4 (Classic's); past floor 25 +3 % HP and +1.5 % damage a floor; one more stats tier from floor 40.*
+- *Waking: 11 tiles, and a waking group wakes the groups within 9 tiles of it (one hop).*
+- *Elites from floor 6: 8 % of plain foes, +0.8 % a floor up to 30 %; swift x1.4 speed, tough x2.4 HP or rage x1.55 damage; x2.5 XP; a ring in the affix's colour.*
+- *Pressure: after 45 s on a floor a pack of 2-4 arrives 11-20 tiles from the nearest player, out of sight, every 14 s and 1.5 s faster each time (6 s at least; 40 foes at most). x0.3 XP, no loot. Not at the far entrance as first planned: the base game recycles a foe more than 1400 px from the players, so those packs never arrived.*
+- *Healing: a berry bush heals a quarter (Classic keeps its half); a shrine heals half.*
+- *The balance bot (it still runs for the stairs, 4 seeds): fresh profile floor 7.5 (was 9), half-upgraded 14.3 (was 19), maxed 20 (was 20-25). The alpha floors (5, 10, 15, 20) are where it falls.*
+- *Not done: the group mix by AI type (ranged / charger / bomber by depth) is unchanged. `G.Expedition.DV` was not raised: replays are position tapes and co-op is host-run, so nothing replays old numbers. An elite's ring is drawn on the host's screen only; a co-op guest sees its size and feels its numbers.*
+- *Still to do by hand: an owner playtest. The bot cannot tell whether fighting through a floor feels fair, only how far a rusher gets.*
+
+*The plan as written:*
 - Bring HP and damage factors to at least Classic's (2.8 → 3.3, 1.68 → 2.4), let the tier reach 5, and keep scaling
   past floor 25.
 - Groups wake from farther (7 → about 11 tiles) and wake their neighbours, so a pull is a fight.

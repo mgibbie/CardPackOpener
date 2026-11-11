@@ -91,6 +91,7 @@ const BEFORE = (save) => {
 	H.downTo = f => {
 		let n = 0;
 		while (G.ExpDive.run && G.ExpDive.run.floor < f && n++ < 400) {
+			{ const pl = G.Game.player; if (pl && !pl.dead) pl.hp = pl.maxHp; }   // (the way down is plumbing here, not a fight: D1 made the foes hit hard)
 			H.thin();
 			const S = G.ExpDive.run;
 			if (S.boss && !S.boss.dead) { S.boss.hurt(S.boss.maxHp * 2); H.step(2); }

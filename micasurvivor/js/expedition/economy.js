@@ -529,9 +529,10 @@ G.ExpEco = (() => {
       case 'berry': {
         if (d > 0.85 * tsz + pr || pl.hp >= pl.maxHp) return;
         markUsed(Z, o); S.log.berries++;
-        if (m) { toMate(m, ['heal', K.BERRY]); G.Audio.sfx('heal'); return; }   // (D11: the base co-op heal event, on the guest's side)
+        const share = G.World.zone && G.World.zone.dive && G.ExpDive ? G.ExpDive.K.BERRY : K.BERRY;   // (Dive D1: a quarter, not half)
+        if (m) { toMate(m, ['heal', share]); G.Audio.sfx('heal'); return; }   // (D11: the base co-op heal event, on the guest's side)
         const before = pl.hp;
-        pl.heal(pl.maxHp * K.BERRY);
+        pl.heal(pl.maxHp * share);
         say(F('¡Bayas! +{x} de vida', Math.round(pl.hp - before)), 2.2); G.Audio.sfx('heal');
         return;
       }
