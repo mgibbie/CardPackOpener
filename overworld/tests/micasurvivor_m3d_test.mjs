@@ -238,7 +238,7 @@ try {
 
 	// ======================== P3: a fight on a generated level (?gen=<seed>&fight=1)
 	{
-		const f = await open({ width: 1280, height: 720, deviceScaleFactor: 1 }, '?gen=7&fight=1&moves=ember:3,tackle:2,bug-buzz');
+		const f = await open({ width: 1280, height: 720, deviceScaleFactor: 1 }, '?gen=7&fight=1&moves=ember:3,tackle:2,bug-buzz&cast=19,16,41,1,4,7');   // (a cast of plain chasers: they all come straight for you)
 		A(f.ok, '?gen=7&fight=1 boots: the level, the 2D game\'s data, the fight');
 		const f0 = await f.page.evaluate(() => { const m = window.__m3d, w = m.world; return { world: !!w, moves: w.pl.moves.map(q => q.id + ':' + q.lvl), hp: w.pl.hp, max: w.pl.maxHp, cast: w.cast, crowd: m.crowd.length, sheets: [...m.sheets.keys()].filter(k => /Walk/.test(k)).length, same: w.pl.s === m.state, g: !!(window.G.Moves && window.G.Types && window.G.Enemies.defFor) }; });
 		A(f0.world && f0.g && f0.same && f0.moves.join() === 'ember:3,tackle:2,bug-buzz:1' && f0.hp === f0.max && f0.crowd === 0, 'the fight is on: your moves are the ones asked for, you are at full HP, the idle crowd is gone', JSON.stringify(f0));

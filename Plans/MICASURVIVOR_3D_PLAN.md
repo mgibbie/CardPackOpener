@@ -407,6 +407,24 @@ jumpers; bosses; XP and level-ups (with P5's upgrade cards).
 
 Tests: parity 46 checks, combat 64 checks, the page test 59.
 
+## 5.7 P3, fourth part: built (2026-11-11)
+
+- **The last four enemy behaviours**, so every behaviour in the 2D game's table is in the 3D rules: healers (7 % of
+  a hurt neighbour's HP a cast), shielders (30 % of HP as a shield for the nearest five for 7 s, none again for
+  14 s), summoners (four minions a cast, eight of their own at most, twenty on the map), jumpers (a crouch, an arc,
+  and a marked landing where you were).
+- **What height changes.** A jumper leaps UP onto the ledge you are standing on: the first enemy that does not need
+  a ramp. Healers and summoners do their work without seeing you, but only stand off when they do. Minions never
+  appear inside a wall.
+- **The comparison with 2D** covers them (51 checks): the HP a healer restores, what a shield soaks up, a
+  summoner's minions and their numbers, a jumper's landing.
+- **Standing sprites** no longer float over their shadow (each standing frame is put on its own lowest pixel).
+
+**Still to do in P3:** Expedition's eight move kinds; abilities and held items; bosses; XP and level-ups (with P5's
+upgrade cards).
+
+Tests: parity 51 checks, combat 74 checks, the page test 62.
+
 ## 6. Dive in 2D: built
 
 **D0 — find the stairs (small; can ship first, on its own).** *Built 2026-11-11 (`overworld/tests/micasurvivor_dive_stairs_test.mjs`). As built: the stairs took their own orange mark, so the rocks and Meowth keep their gold; the HUD arrow comes up after 25 s on a floor, or at once when its boss falls.*

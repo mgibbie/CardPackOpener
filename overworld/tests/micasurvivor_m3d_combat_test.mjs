@@ -16,6 +16,9 @@
 //   * enemy behaviours and height: a ranged enemy must see you to shoot (behind a wall it comes round instead), its
 //     shot stops at terrain and passes under you when you jump; a mark on the ground can be jumped clear of, and goes
 //     through your moment of grace; a charger charges off a ledge; a bomber on the ledge above does not light
+//   * the supports and the jumper: a jumper leaps UP onto the ledge you are standing on and cannot touch you in the
+//     air; a shield soaks up hits, runs out, and cannot be renewed at once; a healer works through a wall; a
+//     summoner's minions never appear inside one
 //   * arrivals: enemies appear 16-32 m away on floor they can walk to you from, never past the cap
 //   * the fight is deterministic (same seed: the same fight to the last digit), stays in the world through 3 minutes
 //     of random play on generated levels, and a tick with 110 enemies is cheap
@@ -274,6 +277,39 @@ const at = (cx, cz) => [(cx + 0.5) * CELL, (cz + 0.5) * CELL];
 	A(!bad && seen.eshot > 10 && seen.hazard > 5 && seen.boom > 5 && seen.aim > 2 && w.eshots.length < 80, `150 s against all of them on a generated level: ${seen.eshot} volleys, ${seen.hazard} marks, ${seen.aim} charges, and the fight goes on`, [seen, w.stats]);
 }
 
+// ---------------------------------------------------------------- the supports and the jumper
+{
+	const r = yard(), JUMP = 39, HEALER = 35, SHIELDER = 95, SUMMONER = 10;
+	const beh = (d) => G.Enemies.behaviorOf(G.DEX_BY[d]);
+	A(beh(JUMP) === 'jumper' && beh(HEALER) === 'healer' && beh(SHIELDER) === 'shielder' && beh(SUMMONER) === 'summoner' && CK.LATER.length === 0, 'Jigglypuff jumps, Clefairy heals, Onix shields, Caterpie summons (the 2D game\'s table): every behaviour in it is in the 3D rules now', [JUMP, HEALER, SHIELDER, SUMMONER].map(beh));
+	// you on the plateau by its west edge, a jumper on the floor below: no ramp needed
+	const w = newWorld(r, data, { dex: 25, moves: [], seed: 3 }); w.pl.s.x = 16 * CELL + 1.5; w.pl.s.z = 15 * CELL; w.pl.s.y = 1.5; w.pl.invuln = 1e9;
+	const j = addEnemy(w, JUMP, 16 * CELL - 5, 15 * CELL); j.skillCd = 0.2; j.a.speed = 0;
+	let top = 0, touchedInAir = 0, marks = 0, t0 = w.stats.touched, landed = null, was = false; for (let i = 0; i < 120; i++) { tick(w, null); const high = j.a.y - w.pl.s.y > CK.TOUCH_UP; top = Math.max(top, j.a.y); marks += w.events.filter((q) => q.k === 'hazard').length; if (high && w.stats.touched > t0) touchedInAir++; t0 = w.stats.touched; if (was && !j.jump && !landed) landed = { x: j.a.x, y: j.a.y, z: j.a.z, grounded: j.a.grounded }; was = !!j.jump; }
+	A(marks === 1 && top > 2.5 && landed && landed.y === 1.5 && Math.hypot(landed.x - w.pl.s.x, landed.z - w.pl.s.z) < 0.5 && landed.grounded, `a jumper on the floor below leaps up onto the plateau where you stand (its arc tops out at ${top.toFixed(1)} m) and lands on your spot`, [marks, top, j.a]);
+	A(touchedInAir === 0, 'while it is more than a metre above you in its arc it cannot touch you');
+	// a shield: 30 % of its HP soaked up; gone after 7 s; not renewed for 14 s
+	const flat = makeRoom(40, 40, 0); flat.spawn = [40, 0, 40];
+	const s = newWorld(flat, data, { dex: 25, moves: [], seed: 3 }); s.pl.invuln = 1e9;
+	const sh = addEnemy(s, SHIELDER, 52, 40, { hp: 10 }); sh.skillCd = 0.1; sh.a.speed = 0; const friend = addEnemy(s, RAT, 53, 46, { dummy: true, hp: 50 }), far = addEnemy(s, RAT, 40 + 14, 40 + 14, { dummy: true });
+	run(s, 12);
+	A(near(sh.shield, sh.maxHp * 0.3) && near(friend.shield, friend.maxHp * 0.3) && far.shield === 0, `a shielder shields itself and those within 10 m for 30 % of their HP (${Math.round(friend.shield)} on a ${friend.maxHp} HP Rattata), not one 18 m away`, [sh.shield, friend.shield, far.shield]);
+	const big = Math.round(friend.shield) + 40, hp0 = friend.hp; s.shots.push({ id: 0, x: friend.a.x - 1.5, y: 0.8, z: friend.a.z, vx: 12, vy: 0, vz: 0, dmg: big, r: 0.3, life: 1, t: 0, pierce: 0, homing: 0, hits: new Set(), px: null, py: 0, pz: 0 }); run(s, 12);
+	A(friend.shield === 0 && hp0 - friend.hp === 40, `a hit of ${big} on it: the shield takes its ${big - 40} and 40 gets through`, [friend.shield, hp0 - friend.hp]);
+	run(s, 60 * 7.2); A(sh.shield === 0 && sh.shieldLock > 0, 'an unused shield is gone after 7 s'); run(s, 60 * 2);
+	A(sh.shield === 0 && friend.shield === 0, '...and the next cast (8 s after the first) cannot renew it: 14 s must pass', [sh.shield, sh.shieldLock]);
+	run(s, 60 * 8); A(sh.shield > 0, 'after that it is shielded again', sh.shield);
+	// a healer behind the wall still heals its neighbour; and it comes round rather than standing off
+	const hw = newWorld(r, data, { dex: 25, moves: [], seed: 3 }); hw.pl.s.x = 11 * CELL; hw.pl.s.z = 15 * CELL; hw.pl.invuln = 1e9;
+	const he = addEnemy(hw, HEALER, 6 * CELL, 15 * CELL); he.shotCd = 0.2; const hurt = addEnemy(hw, RAT, 5 * CELL, 15 * CELL, { dummy: true, hp: 10 }); hurt.hp = Math.round(hurt.maxHp * 0.5); const h0 = hurt.hp;
+	run(hw, 30); A(hurt.hp > h0 && near(hurt.hp - h0, hurt.maxHp * 0.07, 1), `a healer with a wall between you and it still heals its neighbour (+${hurt.hp - h0} of ${hurt.maxHp} HP)`, [h0, hurt.hp]);
+	// a summoner hard against the wall: its minions are never inside it
+	const sw = newWorld(r, data, { dex: 25, moves: [], seed: 3 }); sw.pl.s.x = 11 * CELL; sw.pl.s.z = 15 * CELL; sw.pl.invuln = 1e9;
+	const su = addEnemy(sw, SUMMONER, 9 * CELL + 0.5, 15 * CELL); su.shotCd = 0.1; su.a.speed = 0; let inWall = 0, made = 0; const known = new Set([su.id]);
+	for (let i = 0; i < 60 * 20; i++) { tick(sw, null); for (const e of sw.enemies) if (!known.has(e.id)) { known.add(e.id); made++; if (groundAt(r, e.a.x, e.a.z) > 1) inWall++; if (!e.minion) inWall += 100; } }
+	A(made === 8 && inWall === 0 && sw.enemies.filter((e) => e.minion).every((e) => e.xp < su.xp && e.dmg < su.dmg), `a summoner against the wall calls its ${made} minions onto the floor, never into the wall; they are weaker and worth less than it`, [made, inWall]);
+}
+
 // ---------------------------------------------------------------- arrivals
 {
 	const room = generate(7, 'meadow'), w = newWorld(room, data, { dex: 25, seed: 11, cast: [RAT, ZUBAT, 10, 41] });
@@ -282,7 +318,7 @@ const at = (cx, cz) => [(cx + 0.5) * CELL, (cz + 0.5) * CELL];
 	const known = new Set();
 	for (let i = 0; i < 60 * 90; i++) {
 		tick(w, null);
-		for (const e of w.enemies) { if (known.has(e.id)) continue; known.add(e.id); seen++;
+		for (const e of w.enemies) { if (known.has(e.id)) continue; known.add(e.id); if (e.minion) continue; seen++;   // (a summoner's minions are not arrivals)
 			const d = Math.hypot(e.a.x - w.pl.s.x, e.a.z - w.pl.s.z), ci = Math.floor(e.a.z / CELL) * room.w + Math.floor(e.a.x / CELL);
 			if (d < CK.SPAWN_MIN - 0.5 || d > CK.SPAWN_MAX + 0.5) bad.push(['distance', d]);
 			if (room.cells[ci] >= room.rimH) bad.push(['in the rim']);

@@ -15,6 +15,8 @@
 //   * enemy behaviours: a charger (aim, then through you at 3.4 × speed), a ranged enemy (walks into range, holds
 //     its distance, backs off when you are close, shoots), a fan of shots, a beamer and a zoner (a mark on the ground
 //     that goes off after a delay, through your moment of grace), a bomber (a fuse, and it takes itself with it)
+//   * the supports: a healer mends a hurt neighbour, a shielder's shield soaks up hits, a summoner calls four of its
+//     kind at a time and keeps at most eight; and a jumper leaps to where you were
 //   * an enemy's touch: a chaser walks up and hits you — the same number of touches, the same HP lost, and it is
 //     knocked back the same distance
 // Lengths: the 2D game's unit is 1/16 m here (32 units = one 2 m cell).
@@ -100,7 +102,7 @@ try {
 					const e = new G.Enemy(def, pl.x + f.dx, pl.y + (f.dy || 0), { hp: 1, spd: 1, dmg: 1 }, false);
 					e.flying = true;   // (straight lines: no walls or pathing between you)
 					const hurt = e.hurt.bind(e); e.hurt = (...a) => { const h0 = e.hp; const r = hurt(...a); removed += h0 - e.hp; if (a[4] !== undefined || a.length > 2) hits++; return r; };
-					if (f.shotCd !== undefined) e.shotCd = f.shotCd;
+					if (f.shotCd !== undefined) e.shotCd = f.shotCd; if (f.skillCd !== undefined) e.skillCd = f.skillCd; if (f.hurt) e.hp -= f.hurt;
 					G.EnemyMgr.add(e); if (f.state) G.Status.apply(e, f.state); return e;
 				});
 				G.EnemyMgr.rebuildGrid();
@@ -127,7 +129,9 @@ try {
 					if (!first && taken > 0) first = t;
 				}
 				pl.hurt = plHurt;
-				return { first, dealt: pl.dmgDealt, removed, taken, touches, hp: pl.hp, maxHp: pl.maxHp, far, foes: foes.map((e) => ({ hp: e.maxHp - e.hp, d: Math.hypot(e.x - x0, e.y - y0), dead: e.dead })),
+				const all = G.EnemyMgr.all().filter((e) => !e.dead), mins = all.filter((e) => e.isMinion);
+				return { count: all.length, minions: mins.length, minion: mins[0] ? { hp: mins[0].maxHp, dmg: mins[0].dmg, spd: mins[0].spd, xp: mins[0].xp } : null, left: foes.map((e) => Math.round(e.hp)), shields: foes.map((e) => Math.round(e.shield || 0)),
+					first, dealt: pl.dmgDealt, removed, taken, touches, hp: pl.hp, maxHp: pl.maxHp, far, foes: foes.map((e) => ({ hp: e.maxHp - e.hp, d: Math.hypot(e.x - x0, e.y - y0), dead: e.dead })),
 					atkK, afDmg: pl.afDmg, dex: pl.mon.dex, crit: pl.critChance, r: pl.r, reduction: pl.reduction, takenK: G.Abilities.inK(pl, 'normal', null) };
 			} finally { for (const k in keep) Wd[k] = keep[k]; Math.random = R; G.EnemyMgr.clear(); G.Projectiles.clear(); G.Projectiles.clearOrbs(G.Game.player); G.Combat.clearFields(); G.EnemyMgr.rebuildGrid(); G.Game.player.invuln = 1e9; }
 		}
@@ -139,15 +143,18 @@ try {
 			if (sc.noProc) for (const m of w.pl.moves) m.ccp = 0;
 			const foes = sc.foes.map((f) => {
 				const e = C.addEnemy(w, f.dex, 80 + f.dx * U, 80 + (f.dy || 0) * U, { t: 0, ti: 0, behavior: f.b || 'chase' });   // (a target that stands still is an enemy with no speed: it still touches, as in 2D)
-				if (f.def) Object.assign(e.def = { ...e.def }, f.def); if (f.shotCd !== undefined) e.shotCd = f.shotCd;
-				e.maxHp = e.hp = f.hp || 1e6; e.dmg = f.dmg || 10; e.a.speed = (f.still ? 0 : f.spd || 56) * U;
+				if (f.def) Object.assign(e.def = { ...e.def }, f.def); if (f.shotCd !== undefined) e.shotCd = f.shotCd; if (f.skillCd !== undefined) e.skillCd = f.skillCd;
+				if (f.def2) { e.def = { ...e.def, hp: f.def2.hp, spd: f.def2.spd, dmg: f.def2.dmg, xp: f.def2.xp }; }
+				e.maxHp = e.hp = f.hp || 1e6; e.dmg = f.dmg || 10; e.a.speed = (f.still ? 0 : f.spd || 56) * U; if (f.hurt) e.hp -= f.hurt;
 				e.fly = false; e.a.fly = false; e.a.y = 0; e.a.grounded = true;   // (flat ground: everyone walks)
 				if (f.state) C.applyState(w, e, f.state);
 				return e;
 			});
 			let far = 0, first = 0;
 			for (let i = 0, n = Math.round(sc.secs / DT); i < n; i++) { C.tick(w, null, DT); for (const e of foes) far = Math.max(far, Math.hypot(e.a.x - 80, e.a.z - 80) / U); if (!first && w.stats.taken > 0) first = w.t; }
-			return { first, dealt: w.stats.dealt, removed: w.stats.removed, hits: w.stats.hits, taken: w.stats.taken, touches: w.stats.touched, hp: w.pl.hp, maxHp: w.pl.maxHp, far, r: w.pl.r / U,
+			const mins = w.enemies.filter((e) => e.minion && !e.dead);
+			return { count: w.enemies.length, minions: mins.length, minion: mins[0] ? { hp: mins[0].maxHp, dmg: mins[0].dmg, spd: mins[0].a.speed / U, xp: mins[0].xp } : null, left: foes.map((e) => Math.round(e.hp)), shields: foes.map((e) => Math.round(e.shield || 0)),
+				first, dealt: w.stats.dealt, removed: w.stats.removed, hits: w.stats.hits, taken: w.stats.taken, touches: w.stats.touched, hp: w.pl.hp, maxHp: w.pl.maxHp, far, r: w.pl.r / U,
 				foes: foes.map((e) => ({ hp: e.maxHp - e.hp, d: Math.hypot(e.a.x - 80, e.a.z - 80) / U, dead: e.dead })) };
 		}
 		window.P = { both(sc) { const a = play2d(sc); return { a, b: play3d(sc, a) }; } };
@@ -243,6 +250,24 @@ try {
 		A(zn.a.taken > 0 && Math.abs(zn.a.taken - zn.b.taken) < 0.02 && Math.abs(zn.a.first - zn.b.first) < 0.05, `a zoner marks the ground under you and it goes off 1.2 s later: first hit after ${zn.a.first.toFixed(2)} s / ${zn.b.first.toFixed(2)} s, ${hpOf(zn)}`, zn);
 		const bo = await E((sc) => P.both(sc), big('bomber', { dx: 200, secs: 8 }));
 		A(bo.a.taken > 0 && Math.abs(bo.a.taken - bo.b.taken) < 0.02 && Math.abs(bo.a.first - bo.b.first) < 0.05 && bo.a.foes[0].dead && bo.b.foes[0].dead, `a bomber walks up, lights its fuse and goes off a second later, taking itself with it: after ${bo.a.first.toFixed(2)} s / ${bo.b.first.toFixed(2)} s, ${hpOf(bo)}`, bo);
+	}
+	// ---------- the supports and the jumper
+	{
+		// (the 2D test enemy is built from a bare definition: hp / spd / dmg / xp as given, and the 3D one is given the same)
+		const d2 = { hp: 1000, spd: 56, dmg: 6, xp: 1 };
+		const heal = await E((d2) => P.both({ moves: [], secs: 5, foes: [{ dex: 19, dx: 200, spd: 56, dmg: 6, hp: 1000, b: 'healer', def: { shotCd: 3.5, range: 230 }, def2: d2, shotCd: 1 }, { dex: 1, dx: 240, still: true, hp: 1000, hurt: 400 }] }), d2);
+		A(heal.a.left[1] > 600 && heal.a.left[1] === heal.b.left[1], `a healer mends a hurt neighbour by 7 % of its HP each time (from 600 to ${heal.a.left[1]} / ${heal.b.left[1]} in 5 s)`, heal);
+		const sh = await E((d2) => P.both({ moves: [['ember', 1]], secs: 9, noProc: true, foes: [{ dex: 19, dx: 120, still: true, hp: 1000, b: 'shielder', def2: d2, skillCd: 1 }] }), d2);
+		const bare = await E((d2) => P.both({ moves: [['ember', 1]], secs: 9, noProc: true, foes: [{ dex: 19, dx: 120, still: true, hp: 1000, def2: d2 }] }), d2);
+		A(sh.a.left[0] === sh.b.left[0] && sh.a.left[0] > bare.a.left[0] + 200, `a shielder's shield soaks up 30 % of its HP before it is hurt (after 9 s of Ember it has ${sh.a.left[0]} / ${sh.b.left[0]} HP; unshielded ${bare.a.left[0]})`, [sh, bare]);
+		const su = await E((d2) => P.both({ moves: [], secs: 6, foes: [{ dex: 19, dx: 200, spd: 56, dmg: 6, hp: 1000, b: 'summoner', def: { shotCd: 7, range: 230 }, def2: d2, shotCd: 1 }] }), d2);
+		// (HP: the 2D test enemy carries no run scaling, a 3D enemy carries the run's × 3.3 at the start, and its minions with it)
+		A(su.a.minions === 4 && su.b.minions === 4 && su.a.minion.hp === 350 && su.b.minion.hp === Math.round(350 * 3.3) && su.a.minion.dmg === su.b.minion.dmg && su.a.minion.spd === su.b.minion.spd && su.a.minion.xp === su.b.minion.xp,
+			`a summoner calls four of its kind, each 35 % of its HP, 60 % of its damage, 10 % faster (2D ${JSON.stringify(su.a.minion)} · 3D ${JSON.stringify(su.b.minion)})`, su);
+		const su2 = await E((d2) => P.both({ moves: [], secs: 30, foes: [{ dex: 19, dx: 200, still: true, dmg: 6, hp: 1000, b: 'summoner', def: { shotCd: 7, range: 230 }, def2: d2, shotCd: 1 }] }), d2);
+		A(su2.a.minions === 8 && su2.b.minions === 8, 'and never has more than eight of its own alive (after 30 s: 8 / 8)', [su2.a.minions, su2.b.minions]);
+		const jm = await E((d2) => P.both({ moves: [], secs: 4, hurtable: true, foes: [{ dex: 19, dx: 200, still: true, dmg: 6, hp: 1000, b: 'jumper', def2: d2, skillCd: 0.5 }] }), d2);
+		A(jm.a.taken > 0 && Math.abs(jm.a.taken - jm.b.taken) < 0.02 && Math.abs(jm.a.first - jm.b.first) < 0.05 && Math.abs(jm.a.foes[0].d - jm.b.foes[0].d) < 3, `a jumper crouches, leaps and lands where you were, hurting you if you are still there: hit after ${jm.a.first.toFixed(2)} s / ${jm.b.first.toFixed(2)} s for ${jm.a.taken.toFixed(2)} / ${jm.b.taken.toFixed(2)} HP`, jm);
 	}
 	// ---------- a kill
 	{

@@ -31,7 +31,10 @@ export const CK = {
 	CONF_REACH: 380, CONF_CD: 0.6, CONF_KNOCK: 140,
 	UNPORTED: [],   // base move kinds still to come (Expedition's eight are their own step)
 	// enemy behaviours (the 2D game's entities/enemy.js): the ones here; the rest chase until they are ported
-	BEHAVIOURS: ['chase', 'tank', 'runner', 'charger', 'ranged', 'fan', 'beamer', 'zoner', 'bomber'], LATER: ['healer', 'shielder', 'summoner', 'jumper'],
+	BEHAVIOURS: ['chase', 'tank', 'runner', 'charger', 'ranged', 'fan', 'beamer', 'zoner', 'bomber', 'healer', 'shielder', 'summoner', 'jumper'], LATER: [],
+	// the supports (the 2D game's SUPPORT_CAPS) and the jumper
+	HEAL: { r: 150, k: 0.07, powMax: 2.5, powExp: 0.35, many: 4, manyK: 0.9 }, SHIELD: { r: 160, k: 0.3, t: 7, lock: 14, max: 5, cd: 8 },
+	SUMMON: { perCast: 4, perSummoner: 8, total: 20, capPad: 15, hp: 0.35, spd: 1.1, dmg: 0.6, xp: 0.25 }, LEAP: { near: 250, wait: 0.45, dur: 0.6, high: 46, r: 50, delay: 1.05, dmg: 1.2 },
 	CHARGE: { near: 200, aim: 0.55, dash: 0.42, rest: 1.1, speed: 3.4 }, ESHOT: { speed: 190, r: 7, life: 2.4 },
 	FUSE: { reach: 26, r: 62, delay: 1, dmg: 1.4 }, EBEAM: { len: 360, w: 22, delay: 1, dmg: 1.05 }, EZONE: { r: 44, delay: 1.2, dmg: 0.95 }, HAZARD_END: 0.3,
 };
@@ -72,29 +75,34 @@ const atk = (pl) => pl.baseAtk * pl.atkMul * (1 + pl.buffs.atk.n * pl.buffs.atk.
 const rnd = (w, a, b) => a + w.rand() * (b - a);
 
 /** Put an enemy in. o: { t (the run time its stats are scaled for; default now), ti (tier), hp, dmg, spd (factors),
- *  dummy (it does not chase and never touches; a shove still moves it), behavior (instead of the species' own), y } */
+ *  dummy (it does not chase and never touches; a shove still moves it), behavior (instead of the species' own), y,
+ *  def (a ready definition instead of the species' own for the tier), minion (a summoner's: its damage and XP are
+ *  not multiplied up as an arrival's are) } */
 export function addEnemy(w, dex, x, z, o = {}) {
-	const d = w.data, t = o.t === undefined ? w.t : o.t, ti = o.ti === undefined ? d.tierAt(t) : o.ti, def = d.defFor(dex, ti), mon = d.mon(dex);
+	const d = w.data, t = o.t === undefined ? w.t : o.t, ti = o.ti === undefined ? d.tierAt(t) : o.ti, def = o.def || d.defFor(dex, ti), mon = d.mon(dex);
 	const fly = !!d.hovers(dex), cr = d.radius(dex);
 	const maxHp = Math.round(def.hp * (1 + t / 95) * CK.HP_K(t) * (o.hp || 1));
 	const a = newActor(w.room, { x, z, y: o.y, r: Math.min(0.45, cr), speed: def.spd * (1 + Math.min(0.35, t / 1400)) * (o.spd === undefined ? 1 : o.spd) * U, fly, hover: CK.FLY_HOVER });
 	const e = { id: w.nextId++, a, dex, def, types: mon.types && mon.types.length ? mon.types : ['normal'], cr, fly, maxHp, hp: maxHp,
-		dmg: def.dmg * (1 + t / 420) * CK.DMG_K * (o.dmg || 1), xp: Math.round(def.xp * CK.XP_K), touchCd: 0, frozenT: 0, paraT: 0, sleepT: 0, confT: 0, confCd: 0, zig: 0, slow: 0, slowT: 0, burn: 0, burnT: 0, burnTick: 0, poison: 0, poisonT: 0, poisonTick: 0,
+		dmg: def.dmg * (1 + t / 420) * (o.minion ? 1 : CK.DMG_K) * (o.dmg || 1), xp: o.minion ? def.xp : Math.round(def.xp * CK.XP_K), t0: t, ti, minion: !!o.minion, minions: [], shield: 0, shieldT: 0, shieldLock: 0, skillCd: 0, jump: null, touchCd: 0, frozenT: 0, paraT: 0, sleepT: 0, confT: 0, confCd: 0, zig: 0, slow: 0, slowT: 0, burn: 0, burnT: 0, burnTick: 0, poison: 0, poisonT: 0, poisonTick: 0,
 		dead: false, dummy: !!o.dummy, flash: 0, phase: 'walk', pt: 0, dx: 0, dz: 0, shotCd: 0 };
 	e.atkType = e.types[0];
 	e.behavior = o.behavior || (CK.BEHAVIOURS.includes(def.behavior) ? def.behavior : 'chase');
 	if (KEEPS.includes(e.behavior) && def.shotCd) e.shotCd = rnd(w, 0.3, def.shotCd);
+	if (e.behavior === 'shielder' || e.behavior === 'jumper') e.skillCd = rnd(w, 1, 4);
 	w.enemies.push(e); w.stats.spawned++;
 	return e;
 }
 const bodyH = (e) => Math.max(CK.BODY_MIN, e.cr * 2);
-const KEEPS = ['ranged', 'fan', 'beamer', 'zoner'];   // they hold their distance and attack from it
+const KEEPS = ['ranged', 'fan', 'beamer', 'zoner', 'healer', 'summoner'];   // they hold their distance and act from it
+const SUPPORT = ['healer', 'summoner'];   // …and these two do not need to see you to do their work
 
 // ---------------------------------------------------------------- damage
 function hurtEnemy(w, e, amount, kx, kz, knockU) {
 	if (e.dead) return 0;
 	if (e.frozenT > 0) amount *= CK.FROZEN_TAKEN;
-	const d = Math.max(1, Math.round(amount));
+	let d = Math.max(1, Math.round(amount));
+	if (e.shield > 0) { const a = Math.min(e.shield, d); e.shield -= a; if (a >= d) { e.flash = 0.06; w.events.push({ k: 'absorbed', id: e.id }); return 0; } d = Math.max(1, Math.round(d - a)); }   // a shielder's shield takes it first
 	e.hp -= d; e.flash = 0.12; w.stats.removed += d;
 	if (knockU > 0) { const l = Math.hypot(kx, kz) || 1; knock(e.a, kx / l * knockU * U, kz / l * knockU * U); }
 	if (e.hp <= 0) { e.dead = true; w.stats.kills++; w.stats.xp += e.xp; w.events.push({ k: 'kill', id: e.id, x: e.a.x, y: e.a.y, z: e.a.z, xp: e.xp }); }
@@ -446,6 +454,25 @@ function special(w, e) {
 	else if (e.behavior === 'beamer') hazard(w, { kind: 'beam', x: e.a.x, y: e.a.y, z: e.a.z, angle: Math.atan2(s.z - e.a.z, s.x - e.a.x), len: CK.EBEAM.len * U, w: CK.EBEAM.w * U, delay: CK.EBEAM.delay, dmg: shotDmg(e) * CK.EBEAM.dmg, type: e.atkType });
 	else if (e.behavior === 'zoner') { const n = Math.floor(1 + w.rand() * (d.zones || 3));
 		for (let i = 0; i < n; i++) { const x = s.x + (i ? rnd(w, -70, 70) * U : 0), z = s.z + (i ? rnd(w, -55, 55) * U : 0); hazard(w, { kind: 'zone', x, z, y: i ? groundAt(w.room, x, z) : s.grounded ? s.y : groundAt(w.room, x, z), r: CK.EZONE.r * U, delay: CK.EZONE.delay, dmg: shotDmg(e) * CK.EZONE.dmg, type: e.atkType }); } }
+	else if (e.behavior === 'healer') {   // 7 % of each hurt neighbour's HP (more against a strong attacker, less when there are many healers)
+		const H = CK.HEAL, pl = w.pl, pow = Math.max(1, atk(pl) / pl.baseAtk); let k = H.k * Math.min(H.powMax, Math.pow(pow, H.powExp)), healers = 0, n = 0;
+		for (const o of w.enemies) if (!o.dead && o.behavior === 'healer') healers++;
+		if (healers > H.many) k *= H.manyK;
+		for (const o of w.enemies) { if (o.dead || o.hp >= o.maxHp || Math.hypot(o.a.x - e.a.x, o.a.z - e.a.z) > H.r * U + o.cr) continue; o.hp = Math.min(o.maxHp, o.hp + o.maxHp * k); n++; }
+		w.events.push({ k: 'heal', id: e.id, x: e.a.x, y: e.a.y, z: e.a.z, r: H.r * U, n });
+	}
+	else if (e.behavior === 'summoner') {   // four of its kind at a time: at most 8 of its own alive, 20 on the map
+		const M = CK.SUMMON; e.minions = e.minions.filter((m) => !m.dead);
+		let total = 0; for (const o of w.enemies) if (o.minion && !o.dead) total++;
+		if (e.minions.length >= M.perSummoner || total >= M.total || w.enemies.length > w.cap + M.capPad) return;
+		const dex = d.minion || e.dex, def = { dex, name: '', hp: Math.round(d.hp * M.hp), spd: Math.round(d.spd * M.spd), dmg: Math.round(d.dmg * M.dmg), xp: Math.max(1, Math.round(d.xp * M.xp)), behavior: 'chase' };
+		for (let i = 0, n = Math.min(M.perCast, M.total - total); i < n; i++) {
+			const a = w.rand() * 6.2832; let x = e.a.x + Math.cos(a) * 30 * U, z = e.a.z + Math.sin(a) * 22 * U;
+			if (groundAt(w.room, x, z) > e.a.y + K.STEP) { x = e.a.x; z = e.a.z; }   // (not inside a wall: beside its summoner then)
+			const m = addEnemy(w, dex, x, z, { def, t: e.t0, ti: e.ti, minion: true, behavior: 'chase' }); e.minions.push(m);
+		}
+		w.events.push({ k: 'summon', id: e.id, x: e.a.x, y: e.a.y, z: e.a.z });
+	}
 	else enemyShoot(w, e);
 }
 /** What an enemy that is free to act does this tick: where it wants to go (WISH) and at what speed factor. */
@@ -453,6 +480,23 @@ function behave(w, e, dt) {
 	const pl = w.pl, s = pl.s, dx = s.x - e.a.x, dz = s.z - e.a.z, dist = Math.hypot(dx, dz) || 1e-9, ux = dx / dist, uz = dz / dist, level = Math.abs(s.y - e.a.y) <= CK.REACH_UP || e.fly;
 	steer(w.room, w.field, e.a, WISH);
 	const b = e.behavior;
+	if (b === 'shielder' || b === 'jumper') {
+		e.skillCd -= dt;
+		if (e.skillCd <= 0) {
+			if (b === 'shielder') {   // a shield of 30 % of their HP for the nearest five (itself among them) for 7 s; none again for 14 s
+				const S = CK.SHIELD; e.skillCd = S.cd;
+				const nearby = w.enemies.filter((o) => !o.dead && Math.hypot(o.a.x - e.a.x, o.a.z - e.a.z) <= S.r * U + o.cr).sort((p, q) => Math.hypot(p.a.x - e.a.x, p.a.z - e.a.z) - Math.hypot(q.a.x - e.a.x, q.a.z - e.a.z));
+				let given = 0; for (const o of nearby) { if (given >= S.max) break; if (o.shield > 0 || o.shieldLock > 0) continue; o.shield = o.maxHp * S.k; o.shieldT = S.t; o.shieldLock = S.lock; given++; }
+				w.events.push({ k: 'shield', id: e.id, x: e.a.x, y: e.a.y, z: e.a.z, r: S.r * U, n: given });
+			} else if (dist < CK.LEAP.near * U) {   // a leap: it crouches, flies in an arc and lands where you WERE (the spot is marked)
+				const L = CK.LEAP, ty = s.grounded ? s.y : groundAt(w.room, s.x, s.z); e.skillCd = rnd(w, 5, 7);
+				e.jump = { sx: e.a.x, sy: e.a.y, sz: e.a.z, tx: s.x, ty, tz: s.z, t: -L.wait };
+				hazard(w, { kind: 'zone', x: s.x, y: ty, z: s.z, r: L.r * U, delay: L.delay, dmg: e.dmg * L.dmg, type: e.atkType });
+				w.events.push({ k: 'leap', id: e.id });
+			} else e.skillCd = 0.5;
+		}
+		return 1;
+	}
 	if (b === 'runner') {   // it goes where you are GOING
 		const lead = Math.max(0, Math.min(1.4, dist / Math.max(60 * U, e.a.speed))), tx = s.x + s.vx * lead, tz = s.z + s.vz * lead;
 		if (e.fly || clearRun(w.room, e.a.x, e.a.z, e.a.y, tx, tz)) { const l = Math.hypot(tx - e.a.x, tz - e.a.z) || 1; WISH[0] = (tx - e.a.x) / l; WISH[1] = (tz - e.a.z) / l; }
@@ -475,6 +519,7 @@ function behave(w, e, dt) {
 		// (3D: it must SEE you to hold its ground and attack; with a wall between you it comes round like anyone else)
 		const sees = dist < range && clearLine(w.room, e.a.x, e.a.y + CK.MUZZLE, e.a.z, s.x, s.y + CK.MUZZLE, s.z);
 		e.shotCd -= dt * (e.paraT > 0 ? CK.PARA_SLOW : 1);
+		if (SUPPORT.includes(b) && e.shotCd <= 0 && dist < range) { e.shotCd = e.def.shotCd || 2; special(w, e); }
 		if (!sees) return 1;
 		let k = 1;
 		if (dist < keep * 0.75) { WISH[0] = -ux; WISH[1] = -uz; k = 0.8; } else if (dist < keep) { WISH[0] = ux; WISH[1] = uz; k = 0.1; }
@@ -531,12 +576,20 @@ function updateEnemies(w, dt) {
 		if (e.dead) continue;
 		if (e.flash > 0) e.flash -= dt;
 		if (e.touchCd > 0) e.touchCd -= dt * (e.paraT > 0 ? CK.PARA_SLOW : 1);
+		if (e.shieldLock > 0) e.shieldLock -= dt;
+		if (e.shieldT > 0 && (e.shieldT -= dt) <= 0) e.shield = 0;
 		if (e.frozenT > 0) e.frozenT = Math.max(0, e.frozenT - dt); if (e.sleepT > 0) e.sleepT = Math.max(0, e.sleepT - dt);
 		if (e.paraT > 0) e.paraT = Math.max(0, e.paraT - dt); if (e.confT > 0) e.confT = Math.max(0, e.confT - dt); if (e.confCd > 0) e.confCd -= dt;
 		if (e.slowT > 0) { e.slowT -= dt; if (e.slowT <= 0) e.slow = 0; }
 		if (e.burn > 0) { e.burnT -= dt; e.burnTick -= dt; if (e.burnTick <= 0) { e.burnTick = 0.5; hurtEnemy(w, e, 1.6 * e.burn * (1 + pl.level * 0.06), 0, 0, 0); } if (e.burnT <= 0) e.burn = 0; }
 		if (e.poison > 0) { e.poisonT -= dt; e.poisonTick -= dt; if (e.poisonTick <= 0) { e.poisonTick = 0.6; hurtEnemy(w, e, e.maxHp * 0.012 * e.poison + 1, 0, 0, 0); } if (e.poisonT <= 0) e.poison = 0; }
 		if (e.dead) continue;
+		if (e.jump) {   // in a leap nothing else happens to it: it is carried along its arc and lands
+			const j = e.jump, L = CK.LEAP; j.t += dt;
+			if (j.t >= 0) { const f = Math.min(1, j.t / L.dur); e.a.x = j.sx + (j.tx - j.sx) * f; e.a.z = j.sz + (j.tz - j.sz) * f; e.a.y = j.sy + (j.ty - j.sy) * f + Math.sin(f * Math.PI) * L.high * U; e.a.grounded = false; e.a.facing = Math.atan2(j.tx - j.sx, j.tz - j.sz);
+				if (f >= 1) { e.jump = null; const g = groundAt(w.room, e.a.x, e.a.z); e.a.y = e.fly ? g + e.a.hover : g; e.a.grounded = !e.fly; e.a.vy = 0; } }
+			continue;
+		}
 		let k = 1 - e.slow;
 		if (e.dummy || e.frozenT > 0 || e.sleepT > 0) WISH[0] = WISH[1] = 0;   // (only a shove moves it)
 		else if (e.confT > 0) { k *= 0.9; confused(w, e, dt); }
