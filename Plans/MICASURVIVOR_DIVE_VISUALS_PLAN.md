@@ -2,6 +2,7 @@
 
 Status: PLAN (2026-11-03). Visual-only. No gameplay, layout, collision or hash changes.
 Update (2026-11-03, owner): D1 changed: the code-drawn painter is the PRIMARY renderer (no tilesets; they are optional, small decorations only). DV1 + DV2 shipped that way on feat/micasurvivor-dive-visuals: `js/expedition/dive-art.js`, test `micasurvivor_dive_visuals_test.mjs`.
+Progress (2026-11-11): DV1–DV5 are built (covered by `overworld/tests/micasurvivor_dive_visuals_test.mjs`) and merged to main at the owner's word. DV6 (perf tuning) is not done and is superseded by `Plans/MICASURVIVOR_3D_PLAN.md`, where this painter becomes the 3D terrain texture.
 Rule: no PokéDive files in the repo or the deploy. We use our own shipped decomp tilesets (`overworld/data/tilesets`) and redraw PokéDive's *style* in our own code.
 
 ## 1. What PokéDive does (read from its client + 8 route screenshots, 2026-11-03)
