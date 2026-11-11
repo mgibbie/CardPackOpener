@@ -43,9 +43,9 @@ export function frame(w, events = null) {
 		t: w.tick,
 		// you: where, how fast, which way, what you are doing; then the numbers the readout shows
 		p: [q(s.x, P), q(s.y, P), q(s.z, P), q(s.vx, V), q(s.vy, V), q(s.vz, V), q(((s.facing % 6.2832) + 6.2832) % 6.2832 * 256 / 6.2832, 1) & 255, bits, Math.ceil(pl.hp), pl.maxHp, pl.level, Math.floor(pl.xp), pl.xpNext, w.stats.kills],
-		// enemies: id, species, where, facing, HP in thousandths, flags (1 hit just now, 2 boss, 4 shielded, 8 in the air, 16 a flyer), size in halves
+		// enemies: id, species, where, facing, HP in thousandths, flags (1 hit just now, 2 boss, 4 shielded, 8 in the air, 16 a flyer, 32 stunned), size in halves
 		e: w.enemies.filter((e) => !e.dead).map((e) => [e.id, e.dex, q(e.a.x, P), q(e.a.y, P), q(e.a.z, P), q(((e.a.facing % 6.2832) + 6.2832) % 6.2832 * 256 / 6.2832, 1) & 255, Math.max(0, Math.round(e.hp / e.maxHp * 1000)),
-			(e.flash > 0 ? 1 : 0) | (e.boss ? 2 : 0) | (e.shield > 0 ? 4 : 0) | (!e.fly && !e.a.grounded && !e.a.swimming ? 8 : 0) | (e.fly ? 16 : 0), Math.round((e.scale || 1) * 2)]),
+			(e.flash > 0 ? 1 : 0) | (e.boss ? 2 : 0) | (e.shield > 0 ? 4 : 0) | (!e.fly && !e.a.grounded && !e.a.swimming ? 8 : 0) | (e.fly ? 16 : 0) | (e.frozenT > 0 || e.sleepT > 0 || e.confT > 0 ? 32 : 0), Math.round((e.scale || 1) * 2)]),
 		// everything drawn as a ball: your shots and orbs (their type's colour), enemy shots (type 31), pickups (32 + kind)
 		b: [...w.shots.map((p) => [p.id, q(p.x, P), q(p.y, P), q(p.z, P), q(Math.max(0.14, p.r), P), ti(p.mtype)]), ...w.orbs.map((p) => [p.id, q(p.x, P), q(p.y, P), q(p.z, P), q(Math.max(0.16, p.r), P), ti(p.mtype)]),
 			...w.eshots.map((p) => [p.id, q(p.x, P), q(p.y, P), q(p.z, P), q(Math.max(0.2, p.r), P), 31]),
@@ -71,7 +71,7 @@ export function keepEvents(into, events) {
 	for (const ev of events) {
 		if (!NK.EVENTS.includes(ev.k) || into.length >= 60) continue;
 		if (ev.k === 'hit') into.push({ k: 'hit', x: r(ev.x), y: r(ev.y), z: r(ev.z), d: Math.round(ev.d), crit: ev.crit ? 1 : 0, eff: ev.eff > 1.2 ? 2 : ev.eff < 0.9 ? 0 : 1 });
-		else if (ev.k === 'hazard' || ev.k === 'boom') { const h = ev.h; into.push({ k: ev.k, h: { kind: h.kind, x: r(h.x), y: r(h.y), z: r(h.z), r: r(h.r || 0), angle: r(h.angle || 0), len: r(h.len || 0), w: r(h.w || 0), delay: h.delay, type: h.type } }); }
+		else if (ev.k === 'hazard' || ev.k === 'boom') { const h = ev.h; into.push({ k: ev.k, h: { kind: h.kind, x: r(h.x), y: r(h.y), z: r(h.z), r: r(h.r || 0), angle: r(h.angle || 0), len: r(h.len || 0), w: r(h.w || 0), delay: h.delay, type: h.type, dmg: r(h.dmg || 0) } }); }
 		else if (ev.k === 'beam' || ev.k === 'dash') into.push({ k: ev.k, id: ev.id, from: ev.from.map(r), dir: ev.dir.map((v) => Math.round(v * 1000) / 1000), len: r(ev.len), w: r(ev.w) });
 		else if (ev.k === 'chain') into.push({ k: 'chain', id: ev.id, links: ev.links.map((l) => l.map(r)) });
 		else { const o = {}; for (const key in ev) o[key] = r(ev[key]); into.push(o); }
@@ -114,6 +114,7 @@ export function diff(prev, cur) {
 	if (!d.eg.length) delete d.eg; if (!d.bg.length) delete d.bg;
 	if (cur.w) d.w = cur.w; else if (prev.w) d.w = 0;
 	if (cur.v) d.v = cur.v;
+	for (const key of ['m', 'x', 'c']) if (cur[key]) d[key] = cur[key];   // (co-op's lanes: the other players, enemy shots, the party's state)
 	return d;
 }
 /** The frame a difference stands for, given the frame before it. */
@@ -123,6 +124,7 @@ export function patch(prev, d) {
 	f.e = lanePatch(prev.e, d.e, d.eg, 1); f.b = lanePatch(prev.b, d.b, d.bg, 0);
 	if (d.w) f.w = d.w; else if (d.w === undefined && prev.w) f.w = prev.w;
 	if (d.v) f.v = d.v;
+	for (const key of ['m', 'x', 'c']) if (d[key]) f[key] = d[key];
 	return f;
 }
 /** Two frames hold the same fight (rows compared as sets, by id). */
@@ -161,7 +163,7 @@ export class Viewer {
 		const at = (c) => (H ? hermite(pa[c] / P, pa[c + 3] / V, pb[c] / P, pb[c + 3] / V, k, dt) : (pa[c] + (pb[c] - pa[c]) * k) / P);
 		const s = { x: at(0), y: at(1), z: at(2), vx: (pa[3] + (pb[3] - pa[3]) * k) / V, vy: (pa[4] + (pb[4] - pa[4]) * k) / V, vz: (pa[5] + (pb[5] - pa[5]) * k) / V,
 			facing: lerpAng(ang(pa[6]), ang(pb[6]), k), grounded: !!(cur[7] & 1), sliding: !!(cur[7] & 2), swimming: !!(cur[7] & 4), gliding: !!(cur[7] & 8), stagger: cur[7] & 16 ? 0.1 : 0, t, airJumps: 0 };
-		const view = { t, pl: { s, hp: cur[8], maxHp: cur[9], level: cur[10], xp: cur[11], xpNext: cur[12], dead: !!(cur[7] & 32), hurt: !!(cur[7] & 64) }, kills: cur[13], enemies: [], balls: [], weather: cur === pa ? a.w || null : b.w || null, events: [] };
+		const view = { t, fa: a, fb: b, k, pl: { s, hp: cur[8], maxHp: cur[9], level: cur[10], xp: cur[11], xpNext: cur[12], dead: !!(cur[7] & 32), hurt: !!(cur[7] & 64) }, kills: cur[13], enemies: [], balls: [], weather: cur === pa ? a.w || null : b.w || null, events: [] };
 		// enemies and balls: between the two nearest frames that carry them (a relay's thin frames carry only you)
 		let ia = i; while (ia > 0 && !F[ia].e) ia--; let ib = Math.min(F.length - 1, i + 1); while (ib < F.length - 1 && !F[ib].e) ib++;
 		const EA = F[ia].e ? F[ia] : F[ib], EB = F[ib].e ? F[ib] : EA;

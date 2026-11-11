@@ -11,6 +11,7 @@ import { buildRoom, SPOTS } from './room.js';
 import { makeRenderer, buildTerrain, buildWater, buildScatter, buildExit, drawMap, SpriteBatch, Shadows, Shots, Flashes, loadSheet, frameAt, spriteQuad, footLift, placeCamera } from './render.js';
 import { newWorld, addEnemy, addBoss, tick, dataFrom, choose, drop, CK } from './combat.js';
 import { frame as netFrame, keepEvents, diff as netDiff, Viewer, Tape, ballColour, typeName, NK } from './net.js';
+import { hostAdd, hostStep, hostFrame, hostApply, guestWorld, guestSync, guestMsg, guestApply } from './coop.js';
 import { generate, BIOMES } from './gen.js';
 
 const Q = new URLSearchParams(location.search);
@@ -18,8 +19,10 @@ const Q = new URLSearchParams(location.search);
 // themselves at what you can see. ?moves=ember:3,tackle picks them (id:level); R starts the level again.
 // P3n: &host=<name> shows this fight to other tabs of this browser (a BroadcastChannel: the test room's transport);
 // ?watch=<name> watches it, with a camera of its own; &tape=1 records it (window.__m3d.tape).
-const WATCH = Q.get('watch') || null, HOST = Q.get('host') || null;
-const FIGHT = !WATCH && Q.has('gen') && Q.get('fight') === '1';
+// ?join=<name> JOINS that fight as a second player (co-op: coop.js), with your own ?dex= and ?moves=.
+const WATCH = Q.get('watch') || null, HOST = Q.get('host') || null, JOIN = !WATCH && Q.get('join') || null;
+const MYID = JOIN ? +(Q.get('id') || 0) || 1 + (Date.now() % 90000) : 0;
+const FIGHT = !WATCH && (!!JOIN || (Q.has('gen') && Q.get('fight') === '1'));
 const N = Math.max(0, Math.min(2000, +(Q.get('n') ?? (FIGHT ? 0 : 100)) || 0));
 const DEX = +(Q.get('dex') ?? 25) || 25;
 const META = (window.G && window.G.SPRITE_META) || {};
@@ -39,7 +42,8 @@ const MOVES = !FIGHT ? [] : Q.get('moves') ? Q.get('moves').split(',').map((m) =
 	: [[GG.Moves.startFor(SPECIES), 3], ['tackle', 2]].filter((m, i, a) => a.findIndex((q) => q[0] === m[0]) === i);
 // (P3) bosses arrive at the 2D game's times (3:00, 6:00, …): ?bosses=143,130; ?boss=143 puts one in at the start
 const BOSSES = (Q.get('bosses') ? Q.get('bosses').split(',').map(Number) : [143, 130, 149, 6, 150]).filter((d) => META[d] && META[d].a && META[d].a.Walk && !META[d].src);
-const world = FIGHT ? newWorld(room, dataFrom(GG), { bosses: BOSSES, ability: Q.get('ability') === '0' ? null : Q.get('ability') || 'auto', items: Q.get('items') ? Q.get('items').split(',') : [], dex: DEX, moves: MOVES, seed: (GEN + 1) * 7919, tune: TUNE, cast: FIGHT_CAST, cap: Q.has('cap') ? +Q.get('cap') | 0 : undefined, weather: Q.get('weather') === '0' ? false : undefined, autoPick: Q.has('auto') ? +Q.get('auto') | 0 : undefined }) : null;
+const world = JOIN ? guestWorld(room, dataFrom(GG), { id: MYID, dex: DEX, moves: MOVES, seed: MYID * 7919 + 13, tune: TUNE, ability: Q.get('ability') === '0' ? null : Q.get('ability') || 'auto', items: Q.get('items') ? Q.get('items').split(',') : [], autoPick: Q.has('auto') ? +Q.get('auto') | 0 : undefined })
+	: FIGHT ? newWorld(room, dataFrom(GG), { bosses: BOSSES, ability: Q.get('ability') === '0' ? null : Q.get('ability') || 'auto', items: Q.get('items') ? Q.get('items').split(',') : [], dex: DEX, moves: MOVES, seed: (GEN + 1) * 7919, tune: TUNE, cast: FIGHT_CAST, cap: Q.has('cap') ? +Q.get('cap') | 0 : undefined, weather: Q.get('weather') === '0' ? false : undefined, autoPick: Q.has('auto') ? +Q.get('auto') | 0 : undefined }) : null;
 const state = world ? world.pl.s : newState(room, TUNE);
 const TYPE_COLOR = (GG.U && GG.U.TYPE_COLOR) || {};
 const PICK_COLOR = { xp: '#6fd3ff', xpBig: '#3da8ff', heal: '#5fe08a', magnet: '#ff9ed8', bomb: '#ff7b3d' };
@@ -188,6 +192,7 @@ function draw(t) {
 			for (const e of E) if (e.shield > 0) shots.add(e.a.x, e.a.y + 1.6 * (e.scale || 1), e.a.z, 0.16, '#7fc8ff');
 		}
 		for (const p of world ? world.shots : []) shots.add(p.x, p.y, p.z, Math.max(0.14, p.r), TYPE_COLOR[p.mtype]);
+		if (JOIN && coView) for (const b of coView.balls) if (b[4] !== 31) shots.add(b[0], b[1], b[2], b[3], ballColour(b[4], TYPE_COLOR, PICK_COLOR));   // (a guest: the host's shots and the floor's pickups; enemy shots are its own copies)
 		if (world) for (const p of world.orbs) shots.add(p.x, p.y, p.z, Math.max(0.16, p.r), TYPE_COLOR[p.mtype]);
 		// what lies in the world: mines (a small ball on the floor), turrets (a ball that hangs and bobs), meteors (a ball
 		// coming down on its mark), patches (a disc on the floor, drawn once, fading over its life)
@@ -212,6 +217,13 @@ function draw(t) {
 		}
 		shots.end();
 	}
+	// (P3n) the other players
+	for (const m of mates()) {
+		const sh = sheets.get(m.dex + '/Walk'); if (!sh) { wantSheet(m.dex); continue; }
+		const moving = Math.hypot(m.s.vx || 0, m.s.vz || 0) > 0.6 || !m.s.grounded, q = spriteQuad(sh.meta, sh.img, moving ? frameAt(sh.meta, t) : 0, facingRow(m.s.facing, cam.yaw), 1.15, sh.lift);
+		sh.batch.add(m.s.x, m.s.y, m.s.z, q.rect, q.uv, m.dead ? 0.45 : 1);
+		shadows.add(room, m.s.x, m.s.z, m.s.y, sh.shadow * 1.15);
+	}
 	// the lead
 	const name = stateName(state), anim = name === 'idle' || name === 'staggered' ? 'Idle' : 'Walk', ps = sheets.get(DEX + '/' + anim) || sheets.get(DEX + '/Idle');
 	if (ps) {
@@ -235,7 +247,12 @@ function frame(now) {
 	followCam(dt);
 	while (perf.acc >= K.TICK) {
 		if (WATCH) { perf.acc -= K.TICK; simTicks++; continue; }   // (watching: nothing is simulated here)
-		if (world) { tick(world, input, K.TICK); fightEvents(world.events); share(); } else step(state, input, room, K.TICK, TUNE);
+		if (world) {
+			if (JOIN) coView = guestSync(world); else if (world.mates.length) hostStep(world);   // (co-op: the copies / the puppets, brought up to now)
+			tick(world, input, K.TICK); fightEvents(world.events);
+			if (coView && coView.events.length) fightEvents(coView.events.filter((ev) => !(ev.k === 'hit' && ev.by === MYID) && ev.k !== 'levelup' && ev.k !== 'hurt' && ev.k !== 'level'));   // what the host and the others did
+			share();
+		} else step(state, input, room, K.TICK, TUNE);
 		perf.acc -= K.TICK; simTicks++;
 		if (state.landed > 9) bob = Math.min(0.5, state.landed * 0.02);
 		if (state.hard) note('hard landing: hold SLIDE as you land to break a fall', 2200); else if (state.broke) note('fall broken (' + state.broke + ')', 1400);
@@ -261,6 +278,7 @@ function showMap() {
 	// the exit: a ring that beats; the spawn: a small dot
 	g.lineWidth = 2; g.strokeStyle = '#fff2a0'; g.beginPath(); g.arc(room.exit[0] * k, room.exit[2] * k, 5 + 2 * Math.sin(performance.now() / 260), 0, 6.2832); g.stroke();
 	g.fillStyle = '#fff'; g.fillRect(room.spawn[0] * k - 1.5, room.spawn[2] * k - 1.5, 3, 3);
+	g.fillStyle = '#5fc8ff'; for (const m of mates()) g.fillRect(m.s.x * k - 2, m.s.z * k - 2, 5, 5);   // (P3n) the other players: blue squares
 	if (world || view) { g.fillStyle = '#5b1630'; for (const e of world ? world.enemies : view.enemies) g.fillRect(e.a.x * k - 1, e.a.z * k - 1, 3, 3); }   // (P3) enemies: dark dots
 	// you: an arrow the way you face (map: +x right, +z down)
 	const fx = Math.sin(state.facing), fz = Math.cos(state.facing), x = state.x * k, z = state.z * k;
@@ -297,7 +315,10 @@ function fightEvents(events) {
 	if (world && world.pl.dead) note('you are down: R to start the level again', 60000);
 }
 // ---------------------------------------------------------------- (P3n) showing a fight to others, and watching one
-const chan = (HOST || WATCH) && typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('m3d:' + (HOST || WATCH)) : null;
+const chan = (HOST || WATCH || JOIN) && typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('m3d:' + (HOST || WATCH || JOIN)) : null;
+let coView = null;
+/** The other players in the fight: a host's puppets of its guests; a guest's view of the host and the other guests. */
+const mates = () => (!world ? [] : JOIN ? world.co.mates : world.mates);
 const HEAD = { gen: GEN, biome: BIOME, size: SIZE, dex: DEX };
 const tape = FIGHT && Q.get('tape') === '1' ? new Tape({ ...HEAD, at: 0 }) : null;
 const net = { sent: 0, chars: 0, got: 0, evLive: [], evTape: [], prev: null, n: 0 };
@@ -305,9 +326,15 @@ const net = { sent: 0, chars: 0, got: 0, evLive: [], evTape: [], prev: null, n: 
  *  differences), and one every 12 onto the tape. */
 function share() {
 	if (!chan && !tape) return;
+	if (JOIN) {   // a guest: where you are, what you hit, what touched you — ten times a second; and "let me in" until the host has you
+		if (simTicks % Math.round(60 / NK.HZ) !== 0) return;
+		const msg = JSON.stringify({ g: MYID, m: guestMsg(world) }); chan.postMessage(msg); net.sent++; net.chars += msg.length;
+		if (!net.joined && simTicks % 60 < 6) chan.postMessage(JSON.stringify({ join: { id: MYID, dex: DEX } }));
+		return;
+	}
 	keepEvents(net.evLive, world.events); if (tape) keepEvents(net.evTape, world.events);
-	if (chan && world.tick % Math.round(60 / NK.HZ) === 0) {
-		const f = netFrame(world, net.evLive), whole = net.n % NK.HZ === 0 || !net.prev, msg = JSON.stringify(whole ? { h: HEAD, f } : { f: netDiff(net.prev, f) });
+	if (chan && simTicks % Math.round(60 / NK.HZ) === 0) {   // (by this page's own count: the fight's clock stands still while a card is being chosen, and the others must still hear)
+		const f = world.mates.length ? hostFrame(world, net.evLive) : netFrame(world, net.evLive), whole = net.n % NK.HZ === 0 || !net.prev, msg = JSON.stringify(whole ? { h: HEAD, f } : { f: netDiff(net.prev, f) });
 		chan.postMessage(msg); net.prev = f; net.n++; net.sent++; net.chars += msg.length; net.evLive = [];
 	}
 	if (tape && world.tick % Math.round(60 / NK.TAPE_HZ) === 0) { tape.add(netFrame(world, net.evTape)); net.evTape = []; }
@@ -315,6 +342,19 @@ function share() {
 /** The watcher's side. Frames come in; the fight is drawn a moment in the past, so there is always a frame on each
  *  side of what is on screen. The camera is this screen's own. */
 let viewer = WATCH ? new Viewer() : null, view = null, watchT = -1, watchSrc = WATCH ? 'live' : null, tapeEnd = 0;
+if (chan && HOST && world) chan.onmessage = (m) => {   // the host: a guest asks to join, or reports
+	const o = JSON.parse(m.data); net.got++;
+	if (o.join && !world.mates.some((q) => q.id === o.join.id) && world.mates.length < 3) { hostAdd(world, o.join.id, o.join.dex); note(`${(GG.DEX_BY[o.join.dex] || {}).name || 'a player'} joined`, 2500); }
+	else if (o.g) hostApply(world, o.g, o.m);
+};
+if (chan && JOIN) chan.onmessage = (m) => {   // a guest: the host's frames
+	const o = JSON.parse(m.data); if (!o.f) return; net.got++;
+	// the level being played is not the one this page built: load it (once), as the same player
+	if (o.h && (o.h.gen !== GEN || o.h.biome !== BIOME || (o.h.size || null) !== (SIZE || null))) { if (!net.moving) { net.moving = true; const q = new URLSearchParams(location.search); q.set('gen', o.h.gen); q.set('biome', o.h.biome); if (o.h.size) q.set('size', o.h.size); else q.delete('size'); q.set('id', MYID); q.set('dex', DEX); location.search = q.toString(); } return; }
+	if (!o.h && !world.co.viewer.frames.length) return;   // (wait for a whole frame to start from)
+	guestApply(world, o.f);
+	if (o.f.m && o.f.m.some((r) => r[0] === MYID)) net.joined = true;
+};
 if (chan && WATCH) chan.onmessage = (m) => {
 	const o = JSON.parse(m.data); net.got++; net.chars += m.data.length;
 	// the level being played is not the one this page built: load it (once), keeping the watch
@@ -386,7 +426,8 @@ function showHud() {
 		+ `${SPECIES.name} (${TYPES.join(' / ') || 'no type'})${TRAITS.length ? ' · traits: ' + TRAITS.join(', ') : ''}`
 		+ (GEN === null ? '' : `\nlevel ${GEN} · ${BIOME} · ${room.size} × ${room.size} tiles · exit ${Math.round(exitDist())} m`)
 		+ (!WATCH ? '' : `\n${watchSrc === 'tape' ? 'replay' : 'watching ' + WATCH}` + (!view ? ' · waiting for the fight…' : ` · ${Math.floor(view.t / 60)}:${String(Math.floor(view.t % 60)).padStart(2, '0')}\nLv ${view.pl.level} · HP ${view.pl.hp} / ${view.pl.maxHp} · ${view.enemies.length} enemies · ${view.kills} KOs` + (view.weather ? ` · ${view.weather[0]}` : '')))
-		+ (!world || !world.enemies.some((e) => e.boss) ? '' : world.enemies.filter((e) => e.boss).map((e) => `\nBOSS ${(GG.DEX_BY[e.dex] || {}).name}: ${Math.max(0, e.hp)} / ${e.maxHp}${e.ai.fury ? ' · enraged' : ''}`).join(''))
+		+ (!world || !mates().length ? '' : `\nco-op: ${mates().length + 1} players${world.waiting ? ' · waiting for the others to choose' : ''}`)
+		+ (!world || JOIN || !world.enemies.some((e) => e.boss) ? '' : world.enemies.filter((e) => e.boss).map((e) => `\nBOSS ${(GG.DEX_BY[e.dex] || {}).name}: ${Math.max(0, e.hp)} / ${e.maxHp}${e.ai.fury ? ' · enraged' : ''}`).join(''))
 		+ (!world || !world.weather ? '' : `\nweather: ${world.weather.kind} (${Math.ceil(world.weather.dur - world.weather.t)} s)`)
 		+ (!world || !world.pl.ability ? '' : `\nability: ${world.pl.ability}${world.pl.items.length ? ' · holding: ' + world.pl.items.join(', ') : ''}`)
 		+ (!world ? '' : `\nLv ${world.pl.level} · XP ${Math.floor(world.pl.xp)} / ${world.pl.xpNext}\nHP ${Math.ceil(world.pl.hp)} / ${world.pl.maxHp} · ${world.enemies.length} enemies · ${world.stats.kills} KOs · ${Math.floor(world.t / 60)}:${String(Math.floor(world.t % 60)).padStart(2, '0')} · ${world.pl.moves.map((m) => m.id + ' Lv' + m.lvl).join(', ')}`) + (noteText && performance.now() < noteUntil ? `\n» ${noteText}` : '');
@@ -400,8 +441,8 @@ function showHud() {
 	const want = (d, a, n) => need.set(d + '/' + a, { d, a, n: ((need.get(d + '/' + a) || {}).n || 0) + n });
 	want(DEX, 'Idle', 1); want(DEX, 'Walk', 1);
 	for (const e of crowd) want(e.dex, 'Idle', 1);
-	if (world) for (const d of FIGHT_CAST) want(d, 'Walk', world.cap);
-	if (world) for (const d of BOSSES) if (!FIGHT_CAST.includes(d)) want(d, 'Walk', 2);
+	if (world && !JOIN) for (const d of FIGHT_CAST) want(d, 'Walk', world.cap);
+	if (world && !JOIN) for (const d of BOSSES) if (!FIGHT_CAST.includes(d)) want(d, 'Walk', 2);
 	if (world && Q.get('boss') && BOSSES.includes(+Q.get('boss'))) addBoss(world, +Q.get('boss'), state.x + 12, state.z, { slot: 0 });
 	await Promise.all([...need.values()].map(({ d, a, n }) => sheet(d, a, n).catch((e) => console.warn(e.message))));
 	ready = true;
@@ -411,7 +452,7 @@ function showHud() {
 
 // what a test (and a curious owner in the console) can reach
 window.__m3d = {
-	get ready() { return ready; }, state, room, K, TUNE, TYPES, TRAITS, cam, crowd, sheets, stats, gen: GEN, biome: BIOME, world, numbers, net, tape, playTape, get view() { return view; }, get viewer() { return viewer; }, get watchT() { return watchT; }, addBoss: (dex, x, z, o) => addBoss(world, dex, x, z, o), drop: (kind, x, z, v) => drop(world, kind, x, groundAt(room, x, z), z, v), pickCard, addEnemy: (dex, x, z, o) => addEnemy(world, dex, x, z, o), holdExit: false, get leaving() { return leaving; },
+	get ready() { return ready; }, state, room, K, TUNE, TYPES, TRAITS, cam, crowd, sheets, stats, gen: GEN, biome: BIOME, world, numbers, net, tape, myId: MYID, mates, get coView() { return coView; }, playTape, get view() { return view; }, get viewer() { return viewer; }, get watchT() { return watchT; }, addBoss: (dex, x, z, o) => addBoss(world, dex, x, z, o), drop: (kind, x, z, v) => drop(world, kind, x, groundAt(room, x, z), z, v), pickCard, addEnemy: (dex, x, z, o) => addEnemy(world, dex, x, z, o), holdExit: false, get leaving() { return leaving; },
 	setInput(o) { override = o ? { ...noInput(), ...o } : null; },
 	rowOf: (facing, yaw) => facingRow(facing, yaw === undefined ? cam.yaw : yaw),
 	quadOf: (key, frame, row) => { const s = sheets.get(key); return spriteQuad(s.meta, s.img, frame, row, 1, s.lift); },
