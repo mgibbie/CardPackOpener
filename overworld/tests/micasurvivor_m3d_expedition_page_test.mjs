@@ -13,6 +13,8 @@
 //     Support Alpha
 //   * the final swarm is announced at 10:00 of the zone's clock
 //   * the whole run to the shrine and the legendary: the page says the expedition is complete, with its score
+//   * a League run (the page's default): you start as the member's first stage with its kit's first move, and are
+//     drawn as the stage you become when you evolve
 //   node overworld/tests/micasurvivor_m3d_expedition_page_test.mjs      (SHOTS=<dir> for screenshots)
 import http from 'http';
 import fs from 'fs';
@@ -173,6 +175,20 @@ try {
 	const still = await page.evaluate(() => window.__m3d.world.t);
 	A(still === end.t, 'and the run has stopped');
 	await shot('m3d_exp_over.png');
+	// ---- a League run: the page's default
+	await page.goto(`http://localhost:${PORT}/micasurvivor/m3d/?exp=9&dex=6&weather=0&auto=0`, { waitUntil: 'domcontentloaded' });
+	const ok2 = await waitFor(() => page.evaluate(() => !!(window.__m3d && window.__m3d.ready && window.__m3d.run && window.__m3d.run.lg)), 30000);
+	const l0 = await page.evaluate(() => { const m = window.__m3d; return { member: m.run.lg.member, dex: m.world.pl.mon.dex, moves: m.world.pl.moves.map((q) => q.id), hp: m.world.pl.maxHp }; });
+	A(ok2 && l0.member === 4 && l0.dex === 4 && l0.moves.join() === 'ember' && l0.hp === 88 && await hudHas(/Charmander .fire. · League member Charmander · assault · kit 1\/4/), 'asked for as Charizard with no moves named, the page starts a League run: Charmander, its kit\'s first move', JSON.stringify(l0) + (await hud()));
+	const drawn4 = await waitFor(() => page.evaluate(() => !!window.__m3d.sheets.get('4/Idle')), 10000);
+	A(drawn4, 'and it is drawn as a Charmander');
+	await page.evaluate(() => { const m = window.__m3d, s = m.state; m.world.pl.maxHp = m.world.pl.hp = 1e9; m.run.acc = -1e9; m.drop('xp', s.x, s.z, 6000); });
+	const evolved = await waitFor(() => page.evaluate(() => window.__m3d.run.lg.form === 5 && window.__m3d.world.pl.pending === 0), 20000);
+	const l1 = await page.evaluate(() => { const m = window.__m3d; return { lv: m.world.pl.level, form: m.run.lg.form, kit: m.run.lg.kit, moves: m.world.pl.moves.length }; });
+	A(evolved && l1.lv >= 16 && l1.kit === 4 && l1.moves === 4 && await hudHas(/Charmeleon .fire. · League member Charmander · assault · kit 4\/4/), `a lot of XP later (Lv ${l1.lv}): the whole kit, and a Charmeleon`, JSON.stringify(l1) + (await hud()));
+	const drawn5 = await waitFor(() => page.evaluate(() => !!window.__m3d.sheets.get('5/Idle') && !!window.__m3d.sheets.get('5/Walk')), 10000);
+	A(drawn5, 'drawn as a Charmeleon now');
+	await shot('m3d_exp_league.png');
 	A(errors.length === 0, 'no page errors', errors.slice(0, 5).join(' | '));
 } catch (e) {
 	fail++; console.log('FAIL: crashed: ' + (e && e.stack || e));

@@ -15,6 +15,7 @@
 // Not here yet: the League's kits and evolutions (so Eviolite does nothing), and the Lab's extra slots.
 import { rng as makeRng } from './gen.js';
 import { moveActor } from './actors.js';
+import { processLeague, branchCards } from './expleague.js';
 import { canFire, land, attackOf, CK, U } from './combat.js';
 
 /** The 2D game's level-up tables, as this module reads them. G: its global with expedition/items.js, levelups.js,
@@ -51,7 +52,7 @@ export function setup(S, L, lv = []) {
 	S.lv = { draw: 0, refreshes: K.REFRESH, skips: K.SKIP, bans: K.BANISH, banned: new Set(), log: [], items: 0, rifts: [] };
 	S.coins = S.coins || 0;
 	w.xpNeed = L.need; pl.xpNext = L.need(pl.level);
-	w.offerCards = () => offerCards(S);
+	w.offerCards = () => { if (S.lg) { processLeague(S); const b = branchCards(S); if (b) return b; } return offerCards(S); };   // (a League run: the level's news first; a branch to choose is the level's cards)
 	w.hooks = {
 		// a hit you take: a dodge (never above 40 %), then the shield soaks what it can
 		hurt: (ww, d) => {
@@ -115,6 +116,7 @@ function proc(S, p, n) {
 export function takeItem(S, id) {
 	const L = S.L, pl = S.w.pl, it = L.I.IT[id]; if (!it) return 0;
 	const n = L.I.takeItem(pl, id);
+	if (n && S.syncPerks) S.syncPerks();
 	if (n) { S.lv.log.push([pl.level, 'item', id, it.rar]); S.w.events.push({ k: 'say', text: `Item: ${L.en(it.name)}${n > 1 ? ' ×' + n : ''}`, s: 2.6 }); }
 	else pl.hp = Math.min(pl.maxHp, pl.hp + pl.maxHp * 0.2);
 	return n;
@@ -156,10 +158,10 @@ const banned = (S, k) => S.lv.banned.has(k);
  *  move at most). */
 export function moveCands(S) {
 	const L = S.L, pl = S.w.pl, types = pl.mon.types && pl.mon.types.length ? pl.mon.types : ['normal'], seen = new Set(), out = [];
-	const buffs = pl.moves.filter((m) => m.kind === 'buff' || m.kind === 'weather').length;
+	const buffs = pl.moves.filter((m) => m.kind === 'buff' || m.kind === 'weather').length, kit = S.lg ? S.X.G.BY[S.lg.member].kit : [];
 	for (const id of L.pool(types)) {
 		const d = L.def(id);
-		if (!d || seen.has(id) || pl.moves.some((m) => m.id === id) || banned(S, id) || !types.includes(d.type) || !canFire(d.kind)) continue;
+		if (!d || seen.has(id) || pl.moves.some((m) => m.id === id) || banned(S, id) || kit.includes(id) || !types.includes(d.type) || !canFire(d.kind)) continue;
 		if ((d.kind === 'buff' || d.kind === 'weather') && buffs >= 1) continue;
 		seen.add(id); out.push(id);
 	}
@@ -185,6 +187,7 @@ function newCard(S, id, ti, rng, old = null) {
 			else if (pl.moves.length >= L.K.MAX_MOVES) return;
 			pl.moves.splice(at, 0, m);
 			L.M.base(m);
+			if (S.lg) m.xk = S.X.G.factorOf(id, S.lg.st);   // (a League run: the move at its class's factor for your stage)
 			if (rolls.length) L.M.addRolls(pl, m, rolls); else L.M.refresh(pl, m);
 			S.lv.log.push([pl.level, old ? 'swap' : 'new', old ? id + '>' + old.id : id, ti]);
 		} }, ti);
@@ -215,8 +218,9 @@ export function candidates(S) {
 	for (const m of pl.moves) if (levelOf(m) < L.MK.MAX_LV) out.push({ key: 'up:' + m.id, w: K.W.up, kind: 'move', make: (ti, rng) => upCard(S, m, ti, rng) });
 	const cs = moveCands(S);
 	// (the 2D run fills its four slots from the League's kit; until the League is here, a free slot is offered a move)
-	if (pl.moves.length < K.MAX_MOVES) for (const id of cs) out.push({ key: 'new:' + id, w: K.W.newMove, kind: 'move', make: (ti, rng) => newCard(S, id, ti, rng) });
-	else { const old = swapOut(S); if (old && cs.length) for (const id of cs) out.push({ key: 'swap:' + id, w: K.W.swap / cs.length, kind: 'move', make: (ti, rng) => newCard(S, id, ti, rng, old) }); }
+	if (S.lg) { /* a League run: the kit owns the four slots; a new move only ever comes as a swap */ }
+	else if (pl.moves.length < K.MAX_MOVES) for (const id of cs) out.push({ key: 'new:' + id, w: K.W.newMove, kind: 'move', make: (ti, rng) => newCard(S, id, ti, rng) });
+	if (pl.moves.length >= K.MAX_MOVES) { const old = swapOut(S); if (old && cs.length) for (const id of cs) out.push({ key: 'swap:' + id, w: K.W.swap / cs.length, kind: 'move', make: (ti, rng) => newCard(S, id, ti, rng, old) }); }
 	if (pl.xv.length < L.IK.VIT_SLOTS) for (const v of L.VITAMINS) if (!L.I.vitOf(pl, v.id) && !banned(S, 'v:' + v.id)) out.push({ key: 'vit:' + v.id, w: K.W.newVit, kind: 'vit', make: (ti) => vitCard(S, v.id, ti) });
 	for (const x of pl.xv) if (x.lvl < L.IK.VIT_MAX) out.push({ key: 'vit:' + x.id, w: K.W.vitUp, kind: 'vit', make: (ti) => vitCard(S, x.id, ti) });
 	return out;

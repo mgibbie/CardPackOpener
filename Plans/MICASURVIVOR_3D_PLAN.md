@@ -787,6 +787,35 @@ co-op, spectate and replay of a run.
 
 Tests: `micasurvivor_m3d_expend_test.mjs` (21 checks, node).
 
+## 5.22 P4, sixth part: built (2026-11-11). The League.
+
+`micasurvivor/m3d/expleague.js`. A 3D Expedition run can now be a League run, as every 2D one is (the page's
+default: `?exp=1&dex=6` plays Charizard's family from Charmander; naming `&moves=` or `&league=0` gives the plain
+run the earlier parts were tested with).
+
+- **A member**: the species' family, from its first stage. That stage's HP, armour, attack and speed come from
+  its real base stats; it has its role (healer, assault, defender, speedster) and its final stage's ability.
+- **The kit**: one move to start, the others at Lv 2, 4 and 7. It owns the four slots: no new-move cards; a new
+  move only comes as a rare swap, never a kit move. (This removes the difference noted in 5.18.)
+- **A move's class**: a physical move on a special attacker (or the other way) is scaled down to its own stat.
+- **Evolution** at the real level: the new stage's body, types and stats; HP back up to at least half, then 30 %
+  more. With two or more targets (Gloom, Eevee's eight), that level's cards are the choice.
+- **Maturity** at Lv 24 and 44 for a stage that evolves no further: + 12 % damage and max HP.
+- **Eviolite** now works: its 15 armour while your stage can still evolve.
+
+The roster (553 members), the kits, the evolution levels, the stat formulas and the roles are the 2D game's own
+(`league.js`, `league-data.js`), read as they are.
+
+**3D's own.** A body here does not run at its species' speed (how it moves comes from its types), so a stage's
+speed is a factor on the run speed: 1 at the League's baseline of 105. When an evolution changes your types, how
+you move changes with them: a Charmeleon that becomes a Charizard can glide.
+
+**Not yet**: Mega Evolution; other members' kit moves on your cards; the wild encounters; the TM and Repertoire
+upgrades; which members you own (every member can be played on the test page); a shiny's look. Still of P4:
+Survival, the fog of war and the zone map, and co-op, spectate and replay of a run.
+
+Tests: `micasurvivor_m3d_expleague_test.mjs` (34 checks, node), the page test 31 (was 27).
+
 ## 6. Dive in 2D: built
 
 **D0 — find the stairs (small; can ship first, on its own).** *Built 2026-11-11 (`overworld/tests/micasurvivor_dive_stairs_test.mjs`). As built: the stairs took their own orange mark, so the rocks and Meowth keep their gold; the HUD arrow comes up after 25 s on a floor, or at once when its boss falls.*

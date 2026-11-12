@@ -17,6 +17,7 @@ import { moveActor } from './actors.js';
 import { CK, U, drop, shoot, attackOf } from './combat.js';
 import { XK, spawn, free, say } from './expedition.js';
 import { dropItem } from './explevel.js';
+import { canEvolve } from './expleague.js';
 
 function mix(...vals) {
 	let h = 0x9E3779B9 | 0;
@@ -139,13 +140,20 @@ export function holdCine(S, dt) {
 // ---------------------------------------------------------------- Support Alphas
 /** The Support Alphas' perks, summed by stat (the 2D game's stats add them like any other bonus). */
 function perks(S) { const out = {}; for (const a of S.cap.sa) { const [st, v] = S.X.C.perkOf(a.type); out[st] = (out[st] || 0) + v; } return out; }
+/** The run's own extra stats, kept on the player for the 2D game's sum: the Support Alphas' perks, and Eviolite's
+ *  armour while your stage can still evolve. */
+export function syncPerks(S) {
+	const pl = S.w.pl, out = S.cap ? perks(S) : {};
+	if (S.L && S.L.I.has(pl, 'eviolite') && canEvolve(S)) out.armor = (out.armor || 0) + S.L.I.IT.eviolite.stats.eviolite;
+	pl.xperk = out;
+	if (S.L) S.L.I.apply(pl);
+}
 export function recruit(S, dex, slot, at) {
 	const C = S.cap, w = S.w, s = w.pl.s, types = ((S.data.mon(dex) || {}).types || ['normal']).slice();
 	const a = { dex, type: types[0] || 'normal', types, x: at ? at.x : s.x, y: at ? at.y : s.y, z: at ? at.z : s.z, cd: 0.6, aim: 0, facing: 0, shots: 0, moving: false };
 	if (slot != null && C.sa[slot]) { C.sa[slot] = a; C.log.swaps++; } else C.sa.push(a);
 	C.log.alpha++; C.log.best = Math.max(C.log.best, C.sa.length);
-	w.pl.xperk = perks(S);
-	if (S.L) S.L.I.apply(w.pl);
+	syncPerks(S);
 	return a;
 }
 /** Where Support Alpha i of n stands: behind you, fanned out. */
