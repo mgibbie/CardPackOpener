@@ -259,8 +259,8 @@ try {
 
 	// ================= 3. the mode screen: the card and "Choose partner" by mouse, touch, pad =================
 	if (!ONLY.length || ONLY.includes('3')) {
-		await page.click('#scr-menu [data-go=modes]');
-		A(await waitFor(() => visible('scr-modes'), 4000), 'the menu\'s Game modes opens "Choose a mode" (mouse)');
+		await page.evaluate(() => G.ModesUI.open());
+		A(await waitFor(() => visible('scr-modes'), 4000), 'the old mode screen opens ("Choose a mode")');
 		await sleep(300);
 		const c = await E(() => ({ cards: [...document.querySelectorAll('#modes-list [data-mode]')].map(b => b.dataset.mode), card: document.querySelector('#modes-list [data-mode=coop]').innerText, btn: (document.getElementById('modes-coop-pick') || {}).innerText }));
 		A(JSON.stringify(c.cards) === '["normal","daily","rush","party","coop","tower","rifts","type","team"]' && /Co-op Mode/.test(c.card) && /A second Pokémon comes along and attacks on its own\. Plug in a second controller and player 2 moves it with the left stick\. It shares your upgrades\. -20% coins\. Partner: Bulbasaur/.test(c.card)
@@ -297,7 +297,7 @@ try {
 		await page.setViewport({ width: 844, height: 390, deviceScaleFactor: 1 });
 		await touchOn(true);
 		await sleep(500);
-		await tapEl('#scr-menu [data-go=modes]');
+		await page.evaluate(() => G.ModesUI.open());
 		A(await waitFor(() => visible('scr-modes'), 3000), 'a tap opens "Choose a mode" on a phone');
 		await sleep(300);
 		await tapEl('#modes-coop-pick');
@@ -325,8 +325,7 @@ try {
 		await E(() => { window.__pads[0] = window.__mkPad(0, 'Synthetic Pro Controller (STANDARD GAMEPAD)'); });
 		await sleep(2200);
 		await press(13); await sleep(150);
-		A(await navTo('#scr-menu [data-go=modes]'), 'the D-pad reaches "Game modes"');
-		await press(1);
+		await page.evaluate(() => G.ModesUI.open());   // (the menu has no "Game modes" button now: the screen is opened by its own call)
 		A(await waitFor(() => visible('scr-modes'), 3000), 'confirm opens the modes screen');
 		await sleep(300);
 		A(await navTo('#modes-coop-pick'), 'the D-pad reaches "Choose partner"');

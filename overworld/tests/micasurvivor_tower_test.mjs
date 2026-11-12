@@ -267,8 +267,8 @@ try {
 
 	// ================= 3. the mode screen: card, checkpoints (mouse, touch, pad) =================
 	if (!ONLY.length || ONLY.includes('3')) {
-		await page.click('#scr-menu [data-go=modes]');
-		A(await waitFor(() => visible('scr-modes'), 4000), 'the menu\'s Game modes opens "Choose a mode"');
+		await page.evaluate(() => G.ModesUI.open());
+		A(await waitFor(() => visible('scr-modes'), 4000), 'the old mode screen opens ("Choose a mode")');
 		await sleep(300);
 		const c = await E(() => ({ cards: [...document.querySelectorAll('#modes-list [data-mode]')].map(b => b.dataset.mode), card: document.querySelector('#modes-list [data-mode=tower]').innerText, start: !!document.getElementById('modes-tower-start') }));
 		A(c.cards.join() === 'normal,daily,rush,party,coop,tower,rifts,type,team' && /Floor Tower/.test(c.card) && /30 floors, each with a fixed boss/.test(c.card) && /Best floor: 0 · Relics: 0 \/ 6\./.test(c.card) && !c.start,
@@ -292,7 +292,7 @@ try {
 		await page.setViewport({ width: 844, height: 390, deviceScaleFactor: 1 });
 		await touchOn(true);
 		await sleep(500);
-		await tapEl('#scr-menu [data-go=modes]');
+		await page.evaluate(() => G.ModesUI.open());
 		await waitFor(() => visible('scr-modes'), 3000);
 		await sleep(300);
 		await tapEl('#modes-tower-start');
@@ -310,8 +310,7 @@ try {
 		await E(() => { window.__pads[0] = window.__mkPad(0, 'Synthetic Pro Controller (STANDARD GAMEPAD)'); });
 		await sleep(2200);
 		await press(13); await sleep(150);
-		A(await navTo('#scr-menu [data-go=modes]'), 'the D-pad reaches "Game modes"');
-		await press(1);
+		await page.evaluate(() => G.ModesUI.open());   // (the menu has no "Game modes" button now: the screen is opened by its own call)
 		A(await waitFor(() => visible('scr-modes'), 3000), 'confirm opens the modes screen');
 		await sleep(300);
 		A(await navTo('#modes-tower-start'), 'the D-pad reaches "Starting floor"');

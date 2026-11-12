@@ -253,7 +253,7 @@ try {
 		return out;
 	}, sel);
 	/** the menu -> "Choose a mode" */
-	const toModes = async d => { await d.page.click('#scr-menu [data-go=modes]'); return waitFor(() => d.visible('scr-modes'), 3000); };
+	const toModes = async d => { await d.page.evaluate(() => G.ModesUI.open()); return waitFor(() => d.visible('scr-modes'), 3000); };
 	/** start Classic with whatever is picked, freeze the frames, a sturdy player */
 	const startClassic = page => E(page, async () => {
 		if (G.Game.state === 'over') { document.getElementById('btn-again').click(); await new Promise(r => setTimeout(r, 300)); }

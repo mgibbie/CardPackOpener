@@ -441,7 +441,7 @@ try {
 		await d.E(() => G.PlayUI.open());
 		await d.click('#mx-back'); await sleep(100);
 		A(await d.visible('scr-menu'), 'the Back button on step 1 -> the menu');
-		A(await d.E(() => !!document.querySelector('#scr-menu [data-go=modes]')), '"Game modes" is still on the menu (League HQ etc.)');
+		A(await d.E(() => !document.querySelector('#scr-menu [data-go=modes]')), 'the menu has no "Game modes" button: the mode is chosen here, after Play');
 		await d.ctx.close();
 	}
 

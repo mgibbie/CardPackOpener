@@ -247,7 +247,7 @@ try {
 		A(d.expFetches().length === 0 && !(await d.E(() => typeof G.Exp !== 'undefined')), 'the network log: a base run fetches nothing from js/expedition/ either');
 
 		// the mode select: the Expedition group
-		await d.page.click('#scr-menu [data-go=modes]');
+		await d.page.evaluate(() => G.ModesUI.open());
 		A(await waitFor(() => d.visible('scr-modes'), 3000), 'the menu opens "Choose a mode"');
 		await sleep(250);
 		const ui = await d.E(() => ({

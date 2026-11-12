@@ -282,7 +282,7 @@ try {
 	A(d0.menu, 'boots to the menu signed in (alice)');
 
 	// ======================== 2. League mode: the card, the screen, the roster
-	await page.click('#scr-menu [data-go=modes]');
+	await page.evaluate(() => G.ModesUI.open());
 	await waitFor(() => d0.visible('scr-modes'), 3000);
 	await sleep(200);
 	const c0 = await E(page, () => { const b = document.querySelector('#modes-exp [data-exp=exp-league]'); return { soon: b.classList.contains('soon'), aria: b.getAttribute('aria-disabled'), txt: b.innerText.replace(/\s+/g, ' ').trim(), on: G.Expedition.enabled('exp-league'), hub: G.Expedition.hub('exp-league'), plan: G.Modes.plan('exp-league').mode, dv: G.Expedition.DV }; });

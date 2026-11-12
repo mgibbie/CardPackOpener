@@ -137,7 +137,7 @@ try {
 	const d0 = await bootPage();
 	const { page } = d0;
 	A(d0.menu, 'boots to the menu as a guest');
-	await page.click('#scr-menu [data-go=modes]');
+	await page.evaluate(() => G.ModesUI.open());
 	A(await waitFor(() => d0.visible('scr-modes'), 3000), 'the menu opens "Choose a mode"');
 	await sleep(250);
 	const card = await E(page, () => { const b = document.querySelector('#modes-exp [data-exp=exp-dive]'); return b && { soon: b.classList.contains('soon'), aria: b.getAttribute('aria-disabled'), txt: b.innerText.replace(/\s+/g, ' ').trim() }; });
@@ -640,7 +640,7 @@ try {
 	{
 		const d = await bootPage();
 		const pg = d.page;
-		await pg.click('#scr-menu [data-go=modes]');
+		await pg.evaluate(() => G.ModesUI.open());
 		await waitFor(() => d.visible('scr-modes'), 3000);
 		await sleep(250);
 		const lbl0 = await E(pg, () => { const b = document.getElementById('modes-dive-pick'); return b && b.innerText.trim(); });
