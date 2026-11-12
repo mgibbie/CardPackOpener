@@ -23,6 +23,7 @@ import { ecoFrom, setupEco, tickEco, mods, pickTake, pickClose } from './expeco.
 import { capFrom, setupCap, tickCap, holdCine, mark, syncPerks } from './expcap.js';
 import { leagueFrom, memberOf, setupLeague } from './expleague.js';
 import { survFrom, setupSurv, tickSurv, foeK, migrated, survHud, survResult } from './expsurv.js';
+import { tickFog } from './expfog.js';
 
 export const XK = {
 	BIOME: { viridian: 'meadow', mtmoon: 'peaks', cerulean: 'marsh' },
@@ -433,6 +434,7 @@ export function stepRun(S, input, dt = K.TICK) {
 	tick(w, input, dt);
 	if (w.t === t0) return S;
 	const t = w.t;
+	tickFog(S);   // (where you stand is explored: the minimap and the zone map show only what you have found)
 	if (w.pl.dead && !w.guest && (!w.mates.length || w.mates.every((m) => m.dead || m.away))) { S.ended = true; S.lost = true; w.events.push({ k: 'runover', won: false }); return S; }   // (co-op: only when everyone is down)
 	if (S.lv) { tickStats(S, dt); for (const ev of w.events) if (ev.k === 'pickup') { const m = ev.by ? w.mates.find((q) => q.id === ev.by) : null;   // (co-op: an item is whoever picked it up's)
 		if (ev.kind === 'item') { if (m) m.gifts.push({ k: 'xgi', id: ev.value }); else takeItem(S, ev.value); } else if (ev.kind === 'held' && !m) takeHeld(S, ev.value); } }

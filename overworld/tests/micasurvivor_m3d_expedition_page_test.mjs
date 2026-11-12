@@ -7,6 +7,8 @@
 //     the new level (the old one's meshes are gone, the minimap is the new one's)
 //   * a level-up: Expedition's own cards (a rarity, a move first), the three tools, and with two levels waiting the
 //     second set of cards comes up when the first is taken
+//   * the fog of war: the minimap is dark where you have not been and shows only the things you have found; M opens
+//     the zone map with its legend
 //   * the economy: the zone's things are drawn and on the minimap; a gold rock pays; a Poké Ball opens a choice of
 //     three items that holds the fight, and the one clicked is yours
 //   * capture: an alpha faints, you stand by it, the ball shakes while the world holds, and it follows you as a
@@ -86,6 +88,25 @@ try {
 	const c2 = await page.evaluate(() => { const m = window.__m3d; return { pending: m.world.pl.pending, coins: m.run.coins, shown: document.getElementById('cards').style.display, moves: m.world.pl.moves.map((q) => q.id + (q.xlv || 1)) }; });
 	A(c2.pending === 0 && c2.coins === 10 && c2.shown === 'none' && await hudHas(/vitamins: .* · ₽ 10 · luck 0/), 'Skip (G): no card, 10 of the run\'s money; the readout shows the vitamins, the money and the luck', JSON.stringify(c2) + (await hud()));
 	await page.evaluate(() => { window.__m3d.world.autoPick = 0; });   // (from here the test takes the first card of any level)
+
+	// ---- the fog of war and the zone map
+	const fg = await page.evaluate(() => { const m = window.__m3d, f = m.fog(), el = document.getElementById('map'), g = el.getContext('2d'), sp = m.room.spawn, px = 4, all = m.ecoView();
+		let far = null, fd = 0; for (let cz = 2; cz < f.h - 2; cz++) for (let cx = 2; cx < f.w - 2; cx++) if (!f.a[cz * f.w + cx] && m.room.cells[cz * f.w + cx] < m.room.rimH) { const d = Math.hypot(cx - sp[0] / 2, cz - sp[2] / 2); if (d > fd) { fd = d; far = [cx, cz]; } }
+		const at = (c) => [...g.getImageData(c[0] * px + 1, c[1] * px + 1, 1, 1).data], here = [Math.floor(sp[0] / 2) + 3, Math.floor(sp[2] / 2) + 3];
+		return { n: f.n, cells: f.w * f.h, dark: at(far), lit: at(here), far, things: all.length, hidden: all.filter((o) => !f.a[Math.floor(o.z / 2) * f.w + Math.floor(o.x / 2)]).length }; });
+	const lum = (c) => c[0] + c[1] + c[2];
+	A(fg.n > 300 && fg.n < fg.cells && lum(fg.dark) < 90 && lum(fg.lit) > 200 && fg.hidden > 0, `the minimap shows where you have been (${fg.n} of ${fg.cells} cells) and is all but black beyond; ${fg.hidden} of the zone's ${fg.things} things are still in the dark`, JSON.stringify(fg));
+	await page.keyboard.press('KeyM');
+	await sleep(400);
+	const big = await page.evaluate(() => { const el = document.getElementById('map'), lg = document.getElementById('maplegend'); return { big: window.__m3d.mapBig, w: el.getBoundingClientRect().width, legend: lg.textContent, shown: lg.style.display }; });
+	A(big.big && big.w > 300 && big.shown === 'block' && /explored \d+ %/.test(big.legend) && /altar/.test(big.legend), `M opens the zone map (${Math.round(big.w)} px across) with its legend: ${big.legend.replace(/\s+/g, ' ').slice(0, 90)}`, JSON.stringify(big));
+	await shot('m3d_exp_zonemap.png');
+	await page.keyboard.press('KeyM');
+	A(await page.evaluate(() => !window.__m3d.mapBig && document.getElementById('maplegend').style.display === 'none'), 'M again closes it');
+	await page.evaluate((c) => { const m = window.__m3d; m.put((c[0] + 0.5) * 2, (c[1] + 0.5) * 2); }, fg.far);
+	const lit2 = await waitFor(() => page.evaluate((c) => { const m = window.__m3d, g = document.getElementById('map').getContext('2d'), d = g.getImageData(c[0] * 4 + 1, c[1] * 4 + 1, 1, 1).data; return m.fog().a[c[1] * m.fog().w + c[0]] === 1 && d[0] + d[1] + d[2] > 200; }, fg.far), 4000);
+	A(lit2, 'go to the far corner: it is explored, and drawn');
+	await page.evaluate(() => window.__m3d.respawn());
 
 	// ---- the economy: a rock, a ball
 	const things = await page.evaluate(() => window.__m3d.ecoView().map((o) => o.kind));

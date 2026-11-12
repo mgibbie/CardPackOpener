@@ -17,6 +17,7 @@ import { expFrom, newRun, stepRun, hudLine, result as runResult, setZoneTime, fi
 import { runRow, rowView, teamSpot } from './expnet.js';
 import { guestRun, guestRunApply, stepGuest } from './expcoop.js';
 import { hazardsNow } from './expsurv.js';
+import { newFog, reveal, found, fogOf, share as fogShare } from './expfog.js';
 import { refresh as refreshCards, skip as skipCards, banish as banishCard } from './explevel.js';
 import { EK, ecoView, pickTake, pickClose, shopPrices } from './expeco.js';
 import { capView } from './expcap.js';
@@ -85,6 +86,8 @@ let override = null;        // (tests: a fixed input instead of the devices)
 const touch = { stick: null, look: null, jump: false, slide: false };
 addEventListener('keydown', (e) => { keys.add(e.code); if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) e.preventDefault(); if (e.code === 'KeyR') { if (world) location.reload(); else { Object.assign(state, newState(room, TUNE)); state.facing = cam.yaw; } } });
 addEventListener('keyup', (e) => keys.delete(e.code));
+addEventListener('keydown', (e) => { if (e.code === 'KeyM') toggleMap(); else if (e.code === 'Escape' && mapBig) toggleMap(false); });   // (P4) the zone map
+document.getElementById('map').addEventListener('click', () => toggleMap());
 addEventListener('blur', () => keys.clear());
 // the mouse turns the camera while a button is held
 let drag = null;
@@ -321,18 +324,42 @@ const HAZ_COL = { mud: '#7a5a34', brambles: '#3f7a3a', quicksand: '#d9b56a', bur
 const exitDist = () => Math.hypot(state.x - room.exit[0], state.z - room.exit[2]);
 /** The next level: the next seed, same biome and options (a fresh page: nothing of this level is kept). */
 function nextLevel() { const q = new URLSearchParams(location.search); q.set('gen', String((GEN + 1) >>> 0)); if (!window.__m3d.holdExit) setTimeout(() => { location.search = q.toString(); }, 700); }
+let mapBig = false, watchFog = null, fogCv = null, fogN = -1;
+/** (P4) The fog of this screen: a run's own (yours, a guest's), or a watcher's (it follows the player it watches). null: no fog (not a run). */
+function fogNow() {
+	if (myRun) return fogOf(myRun);
+	if (!rv) return null;
+	if (!watchFog || watchFog.room !== room) watchFog = newFog(room);
+	reveal(watchFog, state.x, state.z);
+	return watchFog;
+}
+/** (P4) The zone map: the minimap, big, with what you have found named under it. M or a tap on the minimap. */
+function toggleMap(on = !mapBig) {
+	mapBig = !!on && GEN !== null;
+	document.getElementById('map').classList.toggle('big', mapBig);
+	const lg = document.getElementById('maplegend'); lg.style.display = mapBig ? 'block' : 'none';
+	return mapBig;
+}
 function showMap() {
 	const el = document.getElementById('map'), px = 4;
-	if (!mapBase) { mapBase = drawMap(room, px); el.width = mapBase.width; el.height = mapBase.height; el.style.display = 'block'; }
-	const g = el.getContext('2d'), k = px / CELL;
+	if (!mapBase) { mapBase = drawMap(room, px); el.width = mapBase.width; el.height = mapBase.height; el.style.display = 'block'; fogN = -1; }
+	const g = el.getContext('2d'), k = px / CELL, fog = fogNow();
 	g.drawImage(mapBase, 0, 0);
+	if (fog) {   // what you have not explored is all but black (the overlay is redrawn only when more is explored)
+		if (!fogCv || fogCv.width !== el.width) { fogCv = document.createElement('canvas'); fogCv.width = el.width; fogCv.height = el.height; fogN = -1; }
+		if (fogN !== fog.n) { fogN = fog.n; const fg = fogCv.getContext('2d'); fg.clearRect(0, 0, fogCv.width, fogCv.height); fg.fillStyle = 'rgba(6, 9, 18, 0.9)'; for (let cz = 0; cz < fog.h; cz++) for (let cx = 0; cx < fog.w; cx++) if (!fog.a[cz * fog.w + cx]) fg.fillRect(cx * px, cz * px, px, px); }
+		g.drawImage(fogCv, 0, 0);
+	}
+	const seen = (o) => !fog || found(fog, o, state);
 	// the exit: a ring that beats; the spawn: a small dot
 	g.lineWidth = 2; g.strokeStyle = '#fff2a0'; g.beginPath(); g.arc(room.exit[0] * k, room.exit[2] * k, 5 + 2 * Math.sin(performance.now() / 260), 0, 6.2832); g.stroke();
 	g.fillStyle = '#fff'; g.fillRect(room.spawn[0] * k - 1.5, room.spawn[2] * k - 1.5, 3, 3);
-	for (const o of run && run.eco ? ecoView(run) : rv ? rv.eco : []) { g.fillStyle = EK.COL[o.kind]; g.fillRect(o.x * k - 1.5, o.z * k - 1.5, 4, 4); }   // (P4) what the zone holds, in its colours
-	for (const o of run && run.sv ? hazardsNow(run) : rv && rv.surv ? rv.hazards : []) { g.strokeStyle = HAZ_COL[o.kind]; g.lineWidth = 1.5; g.beginPath(); g.arc(o.x * k, o.z * k, Math.max(2, o.r * k), 0, 6.2832); g.stroke(); }   // (P4) Survival: hostile ground, as rings
+	const things = (run && run.eco ? ecoView(run) : rv ? rv.eco : []).filter(seen);
+	for (const o of things) { g.fillStyle = EK.COL[o.kind]; g.fillRect(o.x * k - 1.5, o.z * k - 1.5, 4, 4); }
+	if (mapBig) { const n = {}; for (const o of things) n[o.kind] = (n[o.kind] || 0) + 1; document.getElementById('maplegend').innerHTML = (fog ? `explored ${Math.round(fogShare(fog) * 100)} %` : '') + Object.keys(n).map((kd) => `<i style="background:${EK.COL[kd]}"></i>${EK.NAME[kd] || kd}${n[kd] > 1 ? ' ×' + n[kd] : ''}`).join('') + ' <i style="background:#fff2a0"></i>altar'; }   // (P4) what the zone holds, in its colours
+	for (const o of (run && run.sv ? hazardsNow(run) : rv && rv.surv ? rv.hazards : []).filter(seen)) { g.strokeStyle = HAZ_COL[o.kind]; g.lineWidth = 1.5; g.beginPath(); g.arc(o.x * k, o.z * k, Math.max(2, o.r * k), 0, 6.2832); g.stroke(); }   // (P4) Survival: hostile ground, as rings
 	g.fillStyle = '#5fc8ff'; for (const m of mates()) g.fillRect(m.s.x * k - 2, m.s.z * k - 2, 5, 5);   // (P3n) the other players: blue squares
-	if (world || view) { g.fillStyle = '#5b1630'; for (const e of world ? world.enemies : view.enemies) g.fillRect(e.a.x * k - 1, e.a.z * k - 1, 3, 3); }   // (P3) enemies: dark dots
+	if (world || view) { g.fillStyle = '#5b1630'; for (const e of world ? world.enemies : view.enemies) if (!fog || found(fog, e.a, null, 0)) g.fillRect(e.a.x * k - 1, e.a.z * k - 1, 3, 3); }   // (P3) enemies: dark dots
 	// you: an arrow the way you face (map: +x right, +z down)
 	const fx = Math.sin(state.facing), fz = Math.cos(state.facing), x = state.x * k, z = state.z * k;
 	g.fillStyle = '#ff3b3b'; g.strokeStyle = '#fff'; g.lineWidth = 1; g.beginPath(); g.moveTo(x + fx * 7, z + fz * 7); g.lineTo(x - fx * 4 - fz * 4, z - fz * 4 + fx * 4); g.lineTo(x - fx * 4 + fz * 4, z - fz * 4 - fx * 4); g.closePath(); g.fill(); g.stroke();
@@ -556,7 +583,7 @@ function showHud() {
 
 // what a test (and a curious owner in the console) can reach
 window.__m3d = {
-	get ready() { return ready; }, state, get room() { return room; }, run, setZoneTime: (sec) => run && setZoneTime(run, sec), useTool, takePick, ecoView: () => (run ? ecoView(run) : []), capView: () => (run ? capView(run) : null), hazards: () => (run ? hazardsNow(run) : []), get rv() { return rv; }, noteLog, grun, fire: (ev) => run && fireEvent(run, ev), K, TUNE, TYPES, TRAITS, cam, crowd, sheets, stats, gen: GEN, biome: BIOME, world, numbers, net, tape, myId: MYID, mates, get coView() { return coView; }, playTape, get view() { return view; }, get viewer() { return viewer; }, get watchT() { return watchT; }, addBoss: (dex, x, z, o) => addBoss(world, dex, x, z, o), drop: (kind, x, z, v) => drop(world, kind, x, groundAt(room, x, z), z, v), pickCard, addEnemy: (dex, x, z, o) => addEnemy(world, dex, x, z, o), holdExit: false, get leaving() { return leaving; },
+	get ready() { return ready; }, state, get room() { return room; }, run, setZoneTime: (sec) => run && setZoneTime(run, sec), useTool, takePick, ecoView: () => (run ? ecoView(run) : []), capView: () => (run ? capView(run) : null), hazards: () => (run ? hazardsNow(run) : []), fog: () => fogNow(), toggleMap, get mapBig() { return mapBig; }, get rv() { return rv; }, noteLog, grun, fire: (ev) => run && fireEvent(run, ev), K, TUNE, TYPES, TRAITS, cam, crowd, sheets, stats, gen: GEN, biome: BIOME, world, numbers, net, tape, myId: MYID, mates, get coView() { return coView; }, playTape, get view() { return view; }, get viewer() { return viewer; }, get watchT() { return watchT; }, addBoss: (dex, x, z, o) => addBoss(world, dex, x, z, o), drop: (kind, x, z, v) => drop(world, kind, x, groundAt(room, x, z), z, v), pickCard, addEnemy: (dex, x, z, o) => addEnemy(world, dex, x, z, o), holdExit: false, get leaving() { return leaving; },
 	setInput(o) { override = o ? { ...noInput(), ...o } : null; },
 	rowOf: (facing, yaw) => facingRow(facing, yaw === undefined ? cam.yaw : yaw),
 	quadOf: (key, frame, row) => { const s = sheets.get(key); return spriteQuad(s.meta, s.img, frame, row, 1, s.lift); },
