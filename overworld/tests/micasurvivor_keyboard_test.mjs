@@ -193,7 +193,7 @@ try {
 	A(f && /play/.test(f.cls) && f.n === 1 && f.ring === 'solid', 'menu: the ring sits on Play', JSON.stringify(f));
 	await key('KeyS');
 	f = await focus();
-	A(f && /Game modes/.test(f.text), 'S (WASD) moves the ring down to Game modes', JSON.stringify(f));
+	A(f && /Pokémon/.test(f.text), 'S (WASD) moves the ring down to the entry under Play (Pokémon)', JSON.stringify(f));
 	await key('KeyW');
 	f = await focus();
 	A(f && /play/.test(f.cls), 'W moves it back up', JSON.stringify(f));
@@ -202,9 +202,10 @@ try {
 	// ---- 3. every menu screen: Z opens, arrows walk, Q / E tabs, X back
 	const tabOn = (ev, id) => ev(id => { const t = document.querySelector('#' + id + ' .gen-tab.on, #' + id + ' .tab.on'); return t && t.textContent.trim(); }, id);
 	const visitScreens = async ({ page, ev, visible, key, focus, navTo }, list) => { let f; for (const [go, id, tabs] of list) {
-		A(await navTo(`#scr-menu [data-go=${go}]`), `menu: the arrows reach ${go}`);
-		await key('KeyZ');
-		A(await waitFor(() => visible(id), 4000), `${go}: Z opens it`);
+		/* (the menu has no "Game modes" button now: that screen is opened by its own call) */
+		if (go === 'modes') await ev(() => G.ModesUI.open());
+		else { A(await navTo(`#scr-menu [data-go=${go}]`), `menu: the arrows reach ${go}`); await key('KeyZ'); }
+		A(await waitFor(() => visible(id), 4000), `${go}: it opens`);
 		await sleep(200);
 		f = await focus();
 		A(f && f.scope === id && f.ring === 'solid', `${go}: the ring is inside the screen`, JSON.stringify(f));

@@ -235,7 +235,7 @@ try {
 
 	// ================= 3. the mode screen =================
 	if (!ONLY.length || ONLY.includes('3')) {
-		await page.click('#scr-menu [data-go=modes]');
+		await page.evaluate(() => G.ModesUI.open());
 		A(await waitFor(() => visible('scr-modes'), 4000), '"Choose a mode" opens');
 		await sleep(300);
 		const c = await E(() => ({ cards: [...document.querySelectorAll('#modes-list [data-mode]')].map(b => b.dataset.mode), card: document.querySelector('#modes-list [data-mode=rush]').innerText }));
@@ -253,8 +253,7 @@ try {
 		await E(() => { window.__pads[0] = window.__mkPad(0, 'Synthetic Pro Controller (STANDARD GAMEPAD)'); });
 		await sleep(2200);
 		await press(13); await sleep(150);
-		A(await navTo('#scr-menu [data-go=modes]'), 'the D-pad reaches "Game modes"');
-		await press(1);
+		await page.evaluate(() => G.ModesUI.open());   // (the menu has no "Game modes" button now: the screen is opened by its own call)
 		await waitFor(() => visible('scr-modes'), 3000);
 		await sleep(300);
 		A(await navTo('#modes-list [data-mode=rush]'), 'the D-pad reaches the Boss Rush card');
@@ -266,7 +265,7 @@ try {
 		await page.setViewport({ width: 844, height: 390, deviceScaleFactor: 1 });
 		await touchOn(true);
 		await sleep(500);
-		await tapEl('#scr-menu [data-go=modes]');
+		await page.evaluate(() => G.ModesUI.open());
 		await waitFor(() => visible('scr-modes'), 3000);
 		await sleep(300);
 		await E(() => document.querySelector('#modes-list [data-mode=rush]').scrollIntoView({ block: 'center' }));

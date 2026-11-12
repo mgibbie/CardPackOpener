@@ -153,7 +153,7 @@ try {
 	A(ring === 'solid', 'the focus ring is visible (gold outline)', ring);
 	await press(B.down);
 	f = await focus();
-	A(f && /Game modes/.test(f.text), 'D-pad down moves the ring to Game modes (the M5 batch 6 entry under Play)', JSON.stringify(f));
+	A(f && /Pokémon/.test(f.text), 'D-pad down moves the ring to the entry under Play (Pokémon)', JSON.stringify(f));
 	await shot('pad_menu_focus.png');
 
 	// ---- every menu screen, opened and left with the pad

@@ -137,7 +137,7 @@ try {
 	const d0 = await bootPage();
 	const { page } = d0;
 	A(d0.menu, 'boots to the menu as a guest');
-	await page.click('#scr-menu [data-go=modes]');
+	await page.evaluate(() => G.ModesUI.open());
 	await waitFor(() => d0.visible('scr-modes'), 3000);
 	await sleep(250);
 	await page.click('#modes-exp [data-exp=exp-dive]');

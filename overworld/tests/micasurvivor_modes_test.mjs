@@ -228,9 +228,9 @@ try {
 
 	// ================= 2. the modes screen: mouse =================
 	if (!ONLY.length || ONLY.includes('2')) {
-		A(await E(() => !!document.querySelector('#scr-menu [data-go=modes]')), 'the menu has a "Game modes" entry');
-		await page.click('#scr-menu [data-go=modes]');
-		A(await waitFor(() => visible('scr-modes'), 4000), 'clicking it opens the mode-select screen');
+		A(await E(() => !document.querySelector('#scr-menu [data-go=modes]') && !!document.querySelector('#scr-menu [data-go=play]') && document.querySelectorAll('#scr-menu .menu-item').length === 9), 'the menu has no "Game modes" button (the mode is chosen after Play): Play and eight more');
+		await page.evaluate(() => G.ModesUI.open());
+		A(await waitFor(() => visible('scr-modes'), 4000), 'its own call opens the mode-select screen');
 		await sleep(400);
 		const r = await E(() => ({
 			title: document.getElementById('modes-title').innerText,
@@ -276,8 +276,7 @@ try {
 		await sleep(2200);
 		await press(13); await sleep(150);
 		const fdesc = () => E(() => { const f = document.querySelector('.pad-focus'); return f ? f.outerHTML.slice(0, 90) : 'none'; });
-		A(await navTo('#scr-menu [data-go=modes]'), 'the D-pad reaches "Game modes" on the menu', await fdesc());
-		await press(1);   // Nintendo: right face confirms
+		await page.evaluate(() => G.ModesUI.open());   // (the menu has no "Game modes" button now: the screen is opened by its own call)
 		A(await waitFor(() => visible('scr-modes'), 3000), 'confirm opens the modes screen');
 		await sleep(300);
 		const home = await E(() => { const f = document.querySelector('.pad-focus'); return f && f.dataset.mode; });
@@ -303,8 +302,8 @@ try {
 		await page.setViewport({ width: 844, height: 390, deviceScaleFactor: 1, hasTouch: true, isMobile: true });
 		await sleep(600);
 		const tapEl = async (sel) => { const b = await E(sel => { const el = document.querySelector(sel); if (!el) return null; el.scrollIntoView({ block: 'center' }); const r = el.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; }, sel); if (b) await page.touchscreen.tap(b.x, b.y); return !!b; };
-		await tapEl('#scr-menu [data-go=modes]');
-		A(await waitFor(() => visible('scr-modes'), 3000), 'a tap on "Game modes" opens the screen on a phone');
+		await page.evaluate(() => G.ModesUI.open());
+		A(await waitFor(() => visible('scr-modes'), 3000), 'the screen opens on a phone');
 		await sleep(400);
 		await shot('modes_screen_phone.png');
 		const fit = await E(() => {

@@ -245,8 +245,8 @@ try {
 
 	// ================= 3. the team select: mouse, touch, pad =================
 	if (!ONLY.length || ONLY.includes('3')) {
-		await page.click('#scr-menu [data-go=modes]');
-		A(await waitFor(() => visible('scr-modes'), 4000), 'the menu\'s Game modes opens "Choose a mode" (mouse)');
+		await page.evaluate(() => G.ModesUI.open());
+		A(await waitFor(() => visible('scr-modes'), 4000), 'the old mode screen opens ("Choose a mode")');
 		await sleep(300);
 		const c = await E(() => ({ cards: [...document.querySelectorAll('#modes-list [data-mode]')].map(b => b.dataset.mode), card: document.querySelector('#modes-list [data-mode=team]').innerText, btn: (document.getElementById('modes-team-pick') || {}).innerText }));
 		A(c.cards.includes('team') && /Team Mode/.test(c.card) && /Bring up to 3 Pokémon and swap them mid-run/.test(c.card) && /Team: Charmander, Bulbasaur, Squirtle/.test(c.card) && /Choose team \(up to 3\)/.test(c.btn || ''),
@@ -289,7 +289,7 @@ try {
 		await page.setViewport({ width: 844, height: 390, deviceScaleFactor: 1 });
 		await touchOn(true);
 		await sleep(500);
-		await tapEl('#scr-menu [data-go=modes]');
+		await page.evaluate(() => G.ModesUI.open());
 		A(await waitFor(() => visible('scr-modes'), 3000), 'a tap opens "Choose a mode" on a phone');
 		await sleep(300);
 		await tapEl('#modes-team-pick');
@@ -317,8 +317,7 @@ try {
 		await E(() => { window.__pads[0] = window.__mkPad(0, 'Synthetic Pro Controller (STANDARD GAMEPAD)'); });
 		await sleep(2200);
 		await press(13); await sleep(150);
-		A(await navTo('#scr-menu [data-go=modes]'), 'the D-pad reaches "Game modes"');
-		await press(1);
+		await page.evaluate(() => G.ModesUI.open());   // (the menu has no "Game modes" button now: the screen is opened by its own call)
 		A(await waitFor(() => visible('scr-modes'), 3000), 'confirm opens the modes screen');
 		await sleep(300);
 		A(await navTo('#modes-team-pick'), 'the D-pad reaches "Choose team (up to 3)"');
