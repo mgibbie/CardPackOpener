@@ -12,9 +12,12 @@
 //   * the slide: crouch at speed; it keeps speed far longer than running friction; a jump out of it keeps the speed
 //   * determinism: the same inputs give the same run to the last bit; 40,000 random ticks never put you under the
 //     floor, inside a wall or outside the room
+//   * wall-running: in the air, going along a wall and leaning into it, the wall carries you (for a time; not if you only
+//     fall past it, hold away, or are slow); a jump off it kicks you away and up and costs no air jump; the same wall
+//     will not take you twice in one flight, but two facing walls can be climbed; the room's edge is no wall
 //   * sprites in 3D: which of a sheet's 8 facing rows the camera should see
 //   node overworld/tests/micasurvivor_m3d_sim_test.mjs
-import { K, CELL, step, newState, noInput, groundAt, normalAt, surfaceAt, stateName, facingRow } from '../../micasurvivor/m3d/sim.js';
+import { K, CELL, step, newState, noInput, groundAt, normalAt, surfaceAt, stateName, facingRow, makeRoom, setCell, wallBeside, tuneFor } from '../../micasurvivor/m3d/sim.js';
 import { buildRoom, SPOTS, ROOM_W, ROOM_H } from '../../micasurvivor/m3d/room.js';
 
 let pass = 0, fail = 0;
@@ -192,6 +195,59 @@ const script = (seed, n) => { const r = rng(seed), out = []; let cur = noInput()
 	for (let i = 0; i < 8; i++) rows.push(facingRow(f(0, -1), i * 45 * D));
 	A(rows.join('') === '07654321' || rows.join('') === '01234567', 'orbiting the camera once round a still character shows all 8 rows in turn', rows.join(''));
 	A(facingRow(f(0.3, -1), 0) === 0 && facingRow(f(0, -1), 20 * D) === 0, 'a small turn (under 22.5°) keeps the row'); }
+
+// ---------------------------------------------------------------- wall-running
+{
+	// a hall: flat floor, a long wall 6 m high along its north side (the cells of row 3), open to the south
+	const hall = () => { const r = makeRoom(40, 14, 0); for (let cx = 2; cx < 38; cx++) setCell(r, cx, 3, 6); return r; };
+	const R = hall(), WZ = 4 * CELL;   // (the wall's south face is at z = 8)
+	const go = (s, n, input, room = R, tune = K) => { for (let i = 0; i < n; i++) step(s, typeof input === 'function' ? input(i, s) : input, room, K.TICK, tune); return s; };
+	const start = (z, room = R, tune = K) => { const s = newState(room, tune); s.x = 8; s.z = z; s.y = 0; return go(s, secs(1.2), inp(EAST), room, tune); };   // (at the run speed, going east)
+	const LEAN = { mx: 1, mz: -0.6 }, ALONG = EAST, AWAY = { mx: 1, mz: 0.6 };
+	/** Jump, then hold `hold` for `t` seconds. */
+	const leap = (s, hold, t, room = R, tune = K) => go(s, secs(t), (i) => inp({ ...hold, jump: i < 20 }), room, tune);   // (the jump held for a third of a second: a full jump)
+	const byWall = WZ + K.RADIUS + 0.1, open = 20;
+	A(K.WALLRUN && K.WALLRUN_TIME === 1.1 && K.WALLRUN_MIN === 4.5 && K.WALL_MIN === 1, 'the wall tech\'s numbers');
+	const a = leap(start(byWall), LEAN, 0.2);
+	const wb = wallBeside(a, R);
+	A(a.wall === 4 && stateName(a) === 'wallrunning' && wb && wb.side === 4 && wb.nz === 1 && wb.tx === 1 && wb.along >= K.RUN - 0.2, 'a jump beside a wall, going along it and leaning into it: the wall carries you', [a.wall, stateName(a), wb]);
+	go(a, secs(0.7), inp(LEAN));   // (0.9 s after the jump)
+	const free = leap(start(open), LEAN, 0.9);
+	A(!a.grounded && a.wall === 4 && a.y > 0.5 && speed(a) >= K.RUN - 0.1 && free.grounded && free.wall === 0, `0.9 s after the jump you are still on it, ${a.y.toFixed(1)} m up and at the run speed (the same jump in the open has landed)`, [a.y, speed(a), free.grounded]);
+	go(a, secs(0.3), inp(LEAN));
+	A(a.wall === 0 && (a.wallLast === 4 || a.grounded), `after ${K.WALLRUN_TIME} s the wall lets go`, [a.wall, a.wallLast, a.y]);
+	go(a, secs(1), inp(LEAN));
+	A(a.grounded && a.wallLast === 0, 'and you come down');
+	const b = leap(start(byWall), ALONG, 0.3), c = leap(start(byWall), AWAY, 0.3), d = (() => { const s = newState(R); s.x = 30; s.z = byWall; s.y = 0; return leap(s, { mx: 0.3, mz: -1 }, 0.3); })();
+	A(b.wall === 0 && c.wall === 0 && d.wall === 0, 'not if you hold straight along it (you only pass it), away from it, or are too slow along it');
+	// the wall jump
+	const e = leap(start(byWall), LEAN, 0.4), air0 = e.airJumps, vx0 = e.vx;
+	step(e, inp(LEAN), R); step(e, inp({ ...LEAN, jump: true }), R);
+	A(e.jumped === 3 && near(e.vy, K.WALLJUMP_V, 0.6), 'a jump on the wall is a wall jump', [e.jumped, e.vy]);
+	A(e.vz >= K.WALLJUMP_OUT - 0.5 && e.vx >= vx0 - 0.3 && e.airJumps === air0 && e.wall === 0 && e.wallLast === 4, `it kicks you off the wall (${e.vz.toFixed(1)} m/s away) and up, keeps your speed along it, and costs no air jump`, [e.vz, e.vx, vx0, e.airJumps]);
+	go(e, secs(0.12), inp(LEAN)); const back = go(e, secs(0.5), inp({ mx: 1, mz: -1 }));
+	A(!back.grounded ? back.wall === 0 : true, 'steering back to the same wall in the same flight: it does not take you again');
+	go(e, secs(1.5), inp(EAST)); e.z = byWall; const again = leap(e, LEAN, 0.2);
+	A(again.wall === 4, 'once you have landed, it does');
+	// two facing walls, 4 m apart: wall to wall, upward
+	const S2 = (() => { const r = makeRoom(60, 14, 0); for (let cx = 2; cx < 58; cx++) { setCell(r, cx, 3, 14); setCell(r, cx, 6, 14); } return r; })();
+	const f = start(byWall, S2); let top = 0, kicks = 0, sides = [];
+	go(f, 4, (i) => inp({ ...LEAN, jump: i < 4 }), S2);
+	for (let i = 0; i < secs(5) && !(f.grounded && i > 20); i++) {
+		const lean = f.wallLast === 4 || f.wall === 3 ? { mx: 1, mz: 0.6 } : LEAN, onIt = f.wall && f.wallT < K.WALLRUN_TIME - 0.15;
+		step(f, inp({ ...lean, jump: !!onIt || (!f.wall && f.vy > 1) }), S2); /* (the jump is held while it carries you up: a tap is a short hop, off a wall too) */ if (f.jumped === 3) { kicks++; sides.push(f.wallLast); } top = Math.max(top, f.y);
+	}
+	A(kicks >= 5 && sides.slice(0, 3).join() === '4,3,4' && top > 2 * K.JUMP_V * K.JUMP_V / (2 * K.GRAVITY) + 1, `two facing walls are climbed, kick by kick (${kicks} kicks, ${top.toFixed(1)} m up: a double jump reaches ${(2 * K.JUMP_V * K.JUMP_V / (2 * K.GRAVITY)).toFixed(1)} m)`, [kicks, sides, top]);
+	// its own tuning; the room's edge
+	const BUG = tuneFor(['bug']), g = leap(start(byWall, R, BUG), LEAN, 1.4, R, BUG);
+	A(BUG.WALLRUN_TIME === 2 && g.wall === 4 && tuneFor(['fighting']).WALLJUMP_V === 10.5, 'a Bug type is carried twice as long (still on it 1.4 s after the jump); a Fighting type jumps higher off it');
+	const FLY = tuneFor(['flying']), h = leap(start(byWall, R, FLY), { ...LEAN, jump: true }, 0.8, R, FLY);
+	A(FLY.GLIDE && !h.gliding, 'on a wall you do not glide');
+	const edge = (() => { const r = makeRoom(40, 14, 0), s = newState(r); s.x = 8; s.z = K.RADIUS + 0.1; s.y = 0; go(s, secs(1.2), inp(EAST), r); return go(s, secs(0.3), (i) => inp({ ...LEAN, jump: i < 4 }), r); })();
+	A(edge.wall === 0 && wallBeside(edge, makeRoom(40, 14, 0)) === null, 'the room\'s edge is not a wall to run on');
+	const off = leap(start(byWall, R, { ...K, WALLRUN: false }), LEAN, 0.3, R, { ...K, WALLRUN: false });
+	A(off.wall === 0, 'and with the tech off (WALLRUN: false) a jump is as it was');
+}
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

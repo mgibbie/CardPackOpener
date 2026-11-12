@@ -26,7 +26,7 @@ const yard = () => { const r = makeRoom(30, 30, 0); for (let z = 10; z <= 20; z+
 
 // ---------------------------------------------------------------- a frame
 {
-	const room = generate(7, 'meadow'), w = newWorld(room, data, { dex: 25, moves: ['ember', 'fire-spin'], seed: 3, cast: [RAT, 41, 74], autoPick: 0, weather: false });
+	const room = generate(7, 'meadow'), w = newWorld(room, data, { tune: { ...K, WALLRUN: false } /* (a scripted walk: the fight this check was written on, without the wall tech) */, dex: 25, moves: ['ember', 'fire-spin'], seed: 3, cast: [RAT, 41, 74], autoPick: 0, weather: false });
 	for (let i = 0; i < 60 * 40; i++) tick(w, { mx: Math.sin(i / 90), mz: Math.cos(i / 130), jump: i % 200 < 8, crouch: false });
 	const f = frame(w), s = w.pl.s, text = JSON.stringify(f);
 	A(f.e.length === w.enemies.length && f.e.length > 5 && /^[\[\]{}",:\-0-9a-zA-Z]*$/.test(text) && !/\d\.\d/.test(text), `a frame of a fight 40 s in: you, ${f.e.length} enemies, ${f.b.length} balls, all whole numbers (${text.length} characters)`, text.slice(0, 200));
