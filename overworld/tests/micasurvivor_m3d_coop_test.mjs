@@ -12,12 +12,16 @@
 //   * experience is the team's: whoever is nearest picks it up, both level, and the fight WAITS for both to choose
 //   * with two players more enemies arrive (× 1.75) and they are tougher (× 1.3)
 //   * it still holds with 300 ms each way; and a second of co-op traffic is small
+//   * down in a party: a teammate standing beside you gets you up in 3 s at half HP; alone you stay down
+//   * a guest that goes quiet is AWAY (enemies leave it, nobody waits for its card); a host that goes quiet stops the
+//     guest's fight until it is heard again
+//   * three players: two guests and a host, each seeing the other two
 //   node overworld/tests/micasurvivor_m3d_coop_test.mjs
 import { K, CELL, makeRoom, setCell } from '../../micasurvivor/m3d/sim.js';
 import { generate } from '../../micasurvivor/m3d/gen.js';
 import { newWorld, addEnemy, tick, dataFrom, drop, choose, xpFor, CK, U } from '../../micasurvivor/m3d/combat.js';
 import { keepEvents, diff, NK } from '../../micasurvivor/m3d/net.js';
-import { hostAdd, hostStep, hostFrame, hostApply, guestWorld, guestSync, guestMsg, guestApply } from '../../micasurvivor/m3d/coop.js';
+import { hostAdd, hostStep, hostFrame, hostApply, guestWorld, guestSync, guestMsg, guestApply, CO } from '../../micasurvivor/m3d/coop.js';
 import { loadG } from './m3d_data.mjs';
 
 let pass = 0, fail = 0;
@@ -157,6 +161,60 @@ const dist = (a, b) => Math.hypot(a.x - b.x, a.z - b.z);
 	let bad = '';
 	for (let i = 0; i < 60 * 120; i++) { f.step({ mx: Math.sin(i / 90), mz: Math.cos(i / 130), jump: i % 200 < 8, crouch: false }, { mx: Math.cos(i / 110), mz: Math.sin(i / 70), jump: i % 260 < 8, crouch: false }); if (i % 120 === 0) for (const c of f.gw.enemies) if (!Number.isFinite(c.a.x + c.a.y + c.a.z)) bad = 'a copy at no place'; }
 	A(!bad && f.hw.stats.kills > 10 && f.gw.stats.hits > 20 && f.hw.pl.level === f.gw.pl.level && f.hw.pl.level >= 2, `two minutes with both playing (cards taken as they come): ${f.hw.stats.kills} KOs between them, the guest landed ${f.gw.stats.hits} hits, both are level ${f.hw.pl.level}`, [bad, f.hw.stats.kills, f.gw.stats.hits, f.hw.pl.level, f.gw.pl.level]);
+}
+
+// ---------------------------------------------------------------- down, and up again
+{
+	const p = party({ guestAt: [70, 50] }); p.hw.pl.invuln = 1e9;
+	p.gw.pl.hp = 0; p.gw.pl.dead = true;
+	p.step(null, null, 60 * 5);
+	A(p.gw.pl.dead && p.gw.pl.reviveT === 0 && p.mate.dead, 'a guest who is down, with the host 20 m away, stays down');
+	p.step({ mx: 1, mz: 0, jump: false, crouch: false }, null, 60 * 3);   // the host runs over (7 m/s) and stands by
+	const partway = p.gw.pl.reviveT;
+	p.step((n) => (Math.hypot(p.hw.pl.s.x - 70, p.hw.pl.s.z - 50) > 1.5 ? { mx: Math.sign(70 - p.hw.pl.s.x), mz: 0, jump: false, crouch: false } : null), null, 60 * 4);
+	A(!p.gw.pl.dead && Math.abs(p.gw.pl.hp - p.gw.pl.maxHp * 0.5) < 0.6 && !p.mate.dead, `the host comes and stands beside it: after ${CK.REVIVE.time} s the guest is up at half HP (and the host knows)`, [p.gw.pl.dead, p.gw.pl.hp, partway, p.mate.dead]);
+	// the other way: the host down, the guest beside it
+	const q = party({ guestAt: [51, 50] }); q.gw.pl.invuln = 1e9; q.hw.pl.hp = 0; q.hw.pl.dead = true;
+	q.step(null, null, 60 * 2); const half = q.hw.pl.reviveT; q.step(null, null, 60 * 2);
+	A(half > 1.5 && half < 2.1 && !q.hw.pl.dead && Math.abs(q.hw.pl.hp - q.hw.pl.maxHp * 0.5) < 0.6, `a host who is down with the guest beside it: ${half.toFixed(1)} s of the 3 after two seconds, then up`, [half, q.hw.pl.dead, q.hw.pl.hp]);
+	const r = party({ guestAt: [51, 50] }); r.gw.pl.invuln = 1e9; r.hw.pl.hp = 0; r.hw.pl.dead = true; r.step(null, null, 90); const got = r.hw.pl.reviveT;
+	r.step(null, { mx: 1, mz: 0, jump: false, crouch: false }, 240);   // the guest walks off (it is out of reach after about half a second)
+	A(got > 1 && r.hw.pl.reviveT < got - 0.2 && r.hw.pl.dead, 'if the teammate walks away, what they had done drains away', [got, r.hw.pl.reviveT]);
+	const both = party({ guestAt: [70, 50] }); both.hw.pl.hp = 0; both.hw.pl.dead = true; both.gw.pl.hp = 0; both.gw.pl.dead = true; both.step(null, null, 60);
+	A(both.hw.allDown && both.gw.co.over, 'with everyone down the host says so, and the guest hears it');
+}
+
+// ---------------------------------------------------------------- going quiet
+{
+	// the guest's messages stop arriving: after 3 s it is away
+	const p = party({ guestAt: [70, 50] }); p.hw.pl.invuln = 1e9; p.gw.pl.invuln = 1e9;
+	const e = addEnemy(p.hw, RAT, 76, 50); p.step(null, null, 30);
+	const went = e.tg; const cut = (ticks) => { for (let i = 0; i < ticks; i++) { hostStep(p.hw); tick(p.hw, null); } };   // (only the host runs: nothing arrives)
+	cut(60 * 2); const still = p.mate.away; cut(60 * 2);
+	A(went === 1 && !still && p.mate.away && e.tg === 0, `a guest not heard from for ${CO.AWAY} s is away: the enemy that was going for it turns to the host`, [went, still, p.mate.away, e.tg]);
+	const orb = drop(p.hw, 'xp', p.hw.pl.s.x + 1, 0, p.hw.pl.s.z, xpFor(1) + 1); orb.vx = orb.vz = 0; cut(40); choose(p.hw, 0); const t0 = p.hw.t; cut(40);
+	A(p.hw.pl.level === 2 && !p.hw.waiting && p.hw.t > t0, '...and the fight does not wait for an away player to choose a card', [p.hw.pl.level, p.hw.waiting]);
+	// the host's frames stop arriving: the guest's fight stands still, and goes on when it is heard again
+	const g = party({ guestAt: [70, 50] }); g.hw.pl.invuln = 1e9; g.gw.pl.invuln = 1e9; g.step(null, null, 60);
+	const lone = (ticks) => { for (let i = 0; i < ticks; i++) { guestSync(g.gw); tick(g.gw, { mx: 1, mz: 0, jump: false, crouch: false }); } };
+	lone(60 * 2); const before = g.gw.co.stalled, x1 = g.gw.pl.s.x; lone(60); const x2 = g.gw.pl.s.x; lone(60);
+	A(!before && g.gw.co.stalled && g.gw.waiting && g.gw.pl.s.x === x2 && x2 > x1, `a host not heard from for ${CO.STALL} s: the guest's fight stands still ("waiting for the host")`, [before, g.gw.co.stalled, x1, x2, g.gw.pl.s.x]);
+	g.step(null, { mx: 1, mz: 0, jump: false, crouch: false }, 40);
+	A(!g.gw.co.stalled && !g.gw.waiting && g.gw.pl.s.x > x2, 'heard again, it goes on');
+}
+
+// ---------------------------------------------------------------- three players
+{
+	const room = flat(), hw = newWorld(room, data, { dex: 25, moves: ['ember'], seed: 5, weather: false, autoPick: 0 });
+	const g1 = guestWorld(room, data, { dex: 4, moves: ['water-gun'], seed: 71, id: 1, autoPick: 0 }), g2 = guestWorld(room, data, { dex: 7, moves: ['bug-buzz'], seed: 72, id: 2, autoPick: 0 });
+	hostAdd(hw, 1, 4); hostAdd(hw, 2, 7); g1.pl.s.x = 64; g2.pl.s.z = 64; hw.pl.invuln = g1.pl.invuln = g2.pl.invuln = 1e9;
+	const eH = addEnemy(hw, RAT, 46, 50, { dummy: true, hp: 2 }), e1 = addEnemy(hw, RAT, 69, 50, { dummy: true, hp: 2 }), e2 = addEnemy(hw, RAT, 50, 66, { dummy: true, hp: 2 }); let ev = [], prev = null;
+	for (let n = 1; n <= 60 * 14; n++) { hostStep(hw); tick(hw, null); keepEvents(ev, hw.events); guestSync(g1); tick(g1, null); guestSync(g2); tick(g2, null);
+		if (n % EVERY === 0) { const f = hostFrame(hw, ev), text = JSON.stringify(prev && (n / EVERY) % NK.HZ ? diff(prev, f) : f); prev = f; ev = []; guestApply(g1, JSON.parse(text)); guestApply(g2, JSON.parse(text)); hostApply(hw, 1, JSON.parse(JSON.stringify(guestMsg(g1)))); hostApply(hw, 2, JSON.parse(JSON.stringify(guestMsg(g2)))); } }
+	const seen1 = g1.co.mates.map((m) => m.id + ':' + m.dex).sort().join(), seen2 = g2.co.mates.map((m) => m.id + ':' + m.dex).sort().join();
+	A(hw.mates.length === 2 && seen1 === '0:25,2:7' && seen2 === '0:25,1:4', 'a host and two guests: each guest has the other two (the host and the other guest), by species', [seen1, seen2]);
+	A(eH.dead && e1.dead && e2.dead && g1.stats.hits > 0 && g2.stats.hits > 0 && hw.stats.kills === 3, `each finishes the enemy beside it (the host ${hw.stats.fired} shots, the guests ${g1.stats.hits} and ${g2.stats.hits} hits): three KOs on the host`, [eH.dead, e1.dead, e2.dead, hw.stats.kills]);
+	A(hw.pl.level === g1.pl.level && g1.pl.level === g2.pl.level, `and all three are the team's level (${hw.pl.level})`, [hw.pl.level, g1.pl.level, g2.pl.level]);
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);

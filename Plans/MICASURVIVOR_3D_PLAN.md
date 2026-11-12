@@ -613,6 +613,28 @@ transport decision (decision 8).
 Tests: `micasurvivor_m3d_coop_test.mjs` (node, 26 checks: a host and a guest through a delayed line),
 `micasurvivor_m3d_coopplay_test.mjs` (Chrome, two windows, 15 checks).
 
+## 5.16 P3n, third part: built (2026-11-11). Down and up, going quiet, three players, the relay's pace.
+
+- **Down in a party.** A teammate standing beside you (56 units, about your own height) gets you up in 3 s at half
+  HP, safe for 2 s; if they walk off, what they had done drains away at half the pace. Each player decides their
+  own getting-up, as in 2D. With everyone down the host says so.
+- **Going quiet.** A guest not heard from for 3 s is away: enemies stop going for it and nobody waits for it to
+  choose a card. A host not heard from for 2.5 s stops the guest's fight ("waiting for the host") until it is
+  heard again.
+- **Three players** (a host and two guests) in the rules: each guest has the other two.
+- **The relay's pace, on the page.** `&relay=1` makes a host send as the site's relay would carry it: one message
+  a second holding that second's frames. A watcher of it sees a jump whole (1.57 m of 1.58 m) and runs between
+  one and two and a half seconds behind; the biggest message in the test is far under the 16,000-character cap.
+
+**What is left of P3n needs the site, and two decisions.** Everything that can be proved in the test room is
+proved. Left: carrying these messages over the real lines (peer-to-peer signalling and the relay are actions of
+`server/mp.mjs`, the live backend); the lobby, spectate and replay screens, which belong with P4 when Expedition
+itself runs on these rules; decision 7 (local co-op on one screen) and decision 8 (peer-to-peer only, or a new
+backend, for co-op).
+
+Tests: co-op rules 38 checks, the watch test 25 (three windows, then two more at the relay's pace), the co-op
+page test 15.
+
 ## 6. Dive in 2D: built
 
 **D0 — find the stairs (small; can ship first, on its own).** *Built 2026-11-11 (`overworld/tests/micasurvivor_dive_stairs_test.mjs`). As built: the stairs took their own orange mark, so the rocks and Meowth keep their gold; the HUD arrow comes up after 25 s on a floor, or at once when its boss falls.*

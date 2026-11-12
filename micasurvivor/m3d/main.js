@@ -10,7 +10,7 @@ import { K, CELL, step, newState, noInput, groundAt, stateName, facingRow, tuneF
 import { buildRoom, SPOTS } from './room.js';
 import { makeRenderer, buildTerrain, buildWater, buildScatter, buildExit, drawMap, SpriteBatch, Shadows, Shots, Flashes, loadSheet, frameAt, spriteQuad, footLift, placeCamera } from './render.js';
 import { newWorld, addEnemy, addBoss, tick, dataFrom, choose, drop, CK } from './combat.js';
-import { frame as netFrame, keepEvents, diff as netDiff, Viewer, Tape, ballColour, typeName, NK } from './net.js';
+import { frame as netFrame, keepEvents, diff as netDiff, bundle, unbundle, Viewer, Tape, ballColour, typeName, NK } from './net.js';
 import { hostAdd, hostStep, hostFrame, hostApply, guestWorld, guestSync, guestMsg, guestApply } from './coop.js';
 import { generate, BIOMES } from './gen.js';
 
@@ -312,7 +312,7 @@ function fightEvents(events) {
 		else if (ev.k === 'hit') numbers.push({ x: ev.x, y: ev.y + 0.6, z: ev.z, text: String(Math.max(1, Math.round(ev.d))), css: ev.crit ? '#ffe14d' : (WATCH ? ev.eff === 2 : ev.eff > 1.2) ? '#ffffff' : (WATCH ? ev.eff === 0 : ev.eff < 0.9) ? '#9aa6b5' : '#f2ede2', big: ev.crit || ev.eff > 1.2, t: 0 });
 		else if (ev.k === 'hurt') { bob = 0.35; note(`hit for ${(+ev.d).toFixed(0)}`, 700); }
 	}
-	if (world && world.pl.dead) note('you are down: R to start the level again', 60000);
+	if (world && world.pl.dead && !mates().length) note('you are down: R to start the level again', 60000);
 }
 // ---------------------------------------------------------------- (P3n) showing a fight to others, and watching one
 const chan = (HOST || WATCH || JOIN) && typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('m3d:' + (HOST || WATCH || JOIN)) : null;
@@ -321,7 +321,8 @@ let coView = null;
 const mates = () => (!world ? [] : JOIN ? world.co.mates : world.mates);
 const HEAD = { gen: GEN, biome: BIOME, size: SIZE, dex: DEX };
 const tape = FIGHT && Q.get('tape') === '1' ? new Tape({ ...HEAD, at: 0 }) : null;
-const net = { sent: 0, chars: 0, got: 0, evLive: [], evTape: [], prev: null, n: 0 };
+const net = { sent: 0, chars: 0, got: 0, evLive: [], evTape: [], prev: null, n: 0, batch: [], relay: false };
+const RELAY = Q.get('relay') === '1';
 /** The host's side, once a tick: a frame every 6 ticks to whoever is watching (a whole one every second, the rest as
  *  differences), and one every 12 onto the tape. */
 function share() {
@@ -333,7 +334,10 @@ function share() {
 		return;
 	}
 	keepEvents(net.evLive, world.events); if (tape) keepEvents(net.evTape, world.events);
-	if (chan && simTicks % Math.round(60 / NK.HZ) === 0) {   // (by this page's own count: the fight's clock stands still while a card is being chosen, and the others must still hear)
+	if (chan && RELAY && simTicks % Math.round(60 / NK.HZ) === 0) {   // &relay=1: as the site's relay would carry it — ONE message a second, holding that second's frames (you in all ten, the enemies in two)
+		net.batch.push(netFrame(world, net.evLive)); net.evLive = [];
+		if (net.batch.length >= NK.HZ) { const msg = JSON.stringify({ h: HEAD, b: bundle(net.batch) }); chan.postMessage(msg); net.sent++; net.chars += msg.length; net.biggest = Math.max(net.biggest || 0, msg.length); net.batch = []; }
+	} else if (chan && simTicks % Math.round(60 / NK.HZ) === 0) {   // (by this page's own count: the fight's clock stands still while a card is being chosen, and the others must still hear)
 		const f = world.mates.length ? hostFrame(world, net.evLive) : netFrame(world, net.evLive), whole = net.n % NK.HZ === 0 || !net.prev, msg = JSON.stringify(whole ? { h: HEAD, f } : { f: netDiff(net.prev, f) });
 		chan.postMessage(msg); net.prev = f; net.n++; net.sent++; net.chars += msg.length; net.evLive = [];
 	}
@@ -359,7 +363,8 @@ if (chan && WATCH) chan.onmessage = (m) => {
 	const o = JSON.parse(m.data); net.got++; net.chars += m.data.length;
 	// the level being played is not the one this page built: load it (once), keeping the watch
 	if (o.h && (o.h.gen !== GEN || o.h.biome !== BIOME || (o.h.size || null) !== (SIZE || null) || o.h.dex !== DEX)) { if (!net.moving) { net.moving = true; const q = new URLSearchParams(); q.set('watch', WATCH); q.set('gen', o.h.gen); q.set('biome', o.h.biome); if (o.h.size) q.set('size', o.h.size); q.set('dex', o.h.dex); location.search = q.toString(); } return; }
-	if (watchSrc === 'live') viewer.push(o.f);
+	if (watchSrc !== 'live') return;
+	if (o.b) { net.relay = true; for (const f of unbundle(o.b)) viewer.push(f); } else viewer.push(o.f);   // (a relay's message: a second's frames at once)
 };
 const sheetAsked = new Set();
 /** A species walks into view that this page has no sheet for yet (a watcher does not know the cast beforehand). */
@@ -368,7 +373,7 @@ function watchStep(dt) {
 	if (!viewer.frames.length) return;
 	const newest = viewer.newest;
 	if (watchSrc === 'tape') watchT = Math.min(tapeEnd, watchT + dt);
-	else { const want = newest - NK.DELAY; watchT = watchT < 0 || Math.abs(want - watchT) > 0.6 ? want : Math.min(newest, watchT + dt * (want - watchT > 0.05 ? 1.08 : want - watchT < -0.05 ? 0.92 : 1)); }
+	else { const want = newest - (net.relay ? NK.RELAY_DELAY : NK.DELAY); watchT = watchT < 0 || Math.abs(want - watchT) > 0.6 ? want : Math.min(newest, watchT + dt * (want - watchT > 0.05 ? 1.08 : want - watchT < -0.05 ? 0.92 : 1)); }
 	view = viewer.sample(watchT);
 	if (!view) return;
 	Object.assign(state, view.pl.s);
@@ -426,7 +431,8 @@ function showHud() {
 		+ `${SPECIES.name} (${TYPES.join(' / ') || 'no type'})${TRAITS.length ? ' · traits: ' + TRAITS.join(', ') : ''}`
 		+ (GEN === null ? '' : `\nlevel ${GEN} · ${BIOME} · ${room.size} × ${room.size} tiles · exit ${Math.round(exitDist())} m`)
 		+ (!WATCH ? '' : `\n${watchSrc === 'tape' ? 'replay' : 'watching ' + WATCH}` + (!view ? ' · waiting for the fight…' : ` · ${Math.floor(view.t / 60)}:${String(Math.floor(view.t % 60)).padStart(2, '0')}\nLv ${view.pl.level} · HP ${view.pl.hp} / ${view.pl.maxHp} · ${view.enemies.length} enemies · ${view.kills} KOs` + (view.weather ? ` · ${view.weather[0]}` : '')))
-		+ (!world || !mates().length ? '' : `\nco-op: ${mates().length + 1} players${world.waiting ? ' · waiting for the others to choose' : ''}`)
+		+ (!world || !mates().length ? '' : `\nco-op: ${mates().length + 1} players${JOIN && world.co.stalled ? ' · waiting for the host…' : world.waiting ? ' · waiting for the others to choose' : ''}`
+			+ (world.pl.dead ? `\ndown: a teammate beside you gets you up (${world.pl.reviveT.toFixed(1)} / ${CK.REVIVE.time} s)` : ''))
 		+ (!world || JOIN || !world.enemies.some((e) => e.boss) ? '' : world.enemies.filter((e) => e.boss).map((e) => `\nBOSS ${(GG.DEX_BY[e.dex] || {}).name}: ${Math.max(0, e.hp)} / ${e.maxHp}${e.ai.fury ? ' · enraged' : ''}`).join(''))
 		+ (!world || !world.weather ? '' : `\nweather: ${world.weather.kind} (${Math.ceil(world.weather.dur - world.weather.t)} s)`)
 		+ (!world || !world.pl.ability ? '' : `\nability: ${world.pl.ability}${world.pl.items.length ? ' · holding: ' + world.pl.items.join(', ') : ''}`)
