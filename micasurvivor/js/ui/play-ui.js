@@ -590,17 +590,21 @@ G.PlayUI = (() => {
     return home;
   }
 
-  // ---------------- 3D Expedition (micasurvivor/m3d/): the way in, behind a switch ----------------
-  // Owner, 2026-11-12: the 2D Expedition stays what players get until the 3D one is complete. Until then the 3D one is
-  // reached from here only on a browser that asked for it: /micasurvivor/?exp3d=1 turns the switch on (this browser
-  // only), ?exp3d=0 off. With it on, START on Expedition · Classic or Survival, playing alone, opens the 3D page with
-  // the same choices (your League member, the map, the tier). Local and online play stay 2D: the 3D one has neither.
+  // ---------------- 3D Expedition (micasurvivor/m3d/): what START gives ----------------
+  // GO-LIVE (Plans/MICASURVIVOR_3D_PLAN.md §5.51): START on Expedition · Classic or Survival, playing alone, opens the 3D
+  // page with the same choices (your League member, the map, the tier). The 2D Expedition is ARCHIVED, not deleted
+  // (owner, 2026-11-12): its code is all here, it is what local and online play still run (the 3D one has neither),
+  // and a browser can go back to it with /micasurvivor/?exp3d=0 (this browser only; ?exp3d=1 returns to 3D). A
+  // browser that cannot draw the 3D page (no WebGL 2) keeps the 2D run without being asked.
   const X3D_KEY = 'micasurvivor_exp3d';
-  try { const m = /[?&]exp3d=([01])\b/.exec(location.search); if (m) { if (m[1] === '1') localStorage.setItem(X3D_KEY, '1'); else localStorage.removeItem(X3D_KEY); } } catch (e) { /* a convenience */ }
-  const exp3d = () => { try { return localStorage.getItem(X3D_KEY) === '1'; } catch (e) { return false; } };
+  try { const m = /[?&]exp3d=([01])\b/.exec(location.search); if (m) { if (m[1] === '0') localStorage.setItem(X3D_KEY, '0'); else localStorage.removeItem(X3D_KEY); } } catch (e) { /* a convenience */ }
+  let gl2 = null;
+  /** Can this browser draw the 3D page? (asked once) */
+  const canDraw3d = () => { if (gl2 === null) { try { gl2 = !!document.createElement('canvas').getContext('webgl2'); } catch (e) { gl2 = false; } } return gl2; };
+  const exp3d = () => { try { return localStorage.getItem(X3D_KEY) !== '0'; } catch (e) { return true; } };
   /** The 3D page's address for this setup, or null when this run is a 2D one. */
   function exp3dUrl(mode) {
-    if (!exp3d() || st.players !== 'solo' || (mode !== 'exp-classic' && mode !== 'exp-survival') || st.variant !== mode) return null;
+    if (!exp3d() || !canDraw3d() || st.players !== 'solo' || (mode !== 'exp-classic' && mode !== 'exp-survival') || st.variant !== mode) return null;
     const L = G.ExpLeague, dex = L && L.pickFor ? L.pickFor() : 0;
     if (!dex) return null;
     let seed = 1; try { const a = new Uint32Array(1); crypto.getRandomValues(a); seed = (a[0] % 2147483646) + 1; } catch (e) { seed = (Date.now() % 2147483646) + 1; }
@@ -706,7 +710,7 @@ G.PlayUI = (() => {
   }
 
   return {
-    init, open, back, render, start, plan, playersOf, modeOf, owned, syncLeague, lobbyOpts, exp3d, exp3dUrl,
+    init, open, back, render, start, plan, playersOf, modeOf, owned, syncLeague, lobbyOpts, exp3d, exp3dUrl, canDraw3d,
     VARIANTS, CATS,
     get state() { return { step: st.step, cat: st.cat, variant: st.variant, players: st.players, sub: st.sub, map: st.map, diff: st.diff, route: st.route }; }
   };

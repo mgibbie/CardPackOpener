@@ -14,9 +14,9 @@
 //      setup; the D-pad reaches tiles / arrows; cancel goes back
 //   8. phone 844x390 (touch) and 1280x720: every step fits, no horizontal scroll, nothing outside the screen
 //   9. English everywhere (no Spanish left), no page errors
-//  10. 3D Expedition's way in, behind a switch (off: START is the 2D run, as always; /micasurvivor/?exp3d=1 turns it on for
-//      this browser: START on Classic, alone, opens the 3D page with the same member, map and tier, and it runs; local play
-//      stays 2D; ?exp3d=0 turns it off)
+//  10. 3D Expedition is what START gives (go-live): alone on Classic it opens the 3D page with the same member, map and
+//      tier, and it runs; local play stays 2D; /micasurvivor/?exp3d=0 goes back to the archived 2D Expedition on this
+//      browser (?exp3d=1 returns); a browser with no WebGL 2 keeps the 2D run
 //   node overworld/tests/micasurvivor_playflow_test.mjs   (SHOTS=<dir> saves a screenshot of every step)
 // (In a git worktree add MAGEPUNK_ASSET_ROOT=<main checkout> for the gitignored micasurvivor/assets and overworld/data.)
 import fs from 'fs';
@@ -110,6 +110,9 @@ const SAVE = (name) => ({
 	pupg: Object.fromEntries(OWN.map(d => [d, { hp: 10, atk: 10, def: 8, regen: 5, cd: 8, spd: 8, magnet: 6, xp: 8, coins: 8, crit: 10, size: 6, moves: 1, revive: 2, reroll: 5, bag: 1 }])),
 });
 const BEFORE = (o) => {
+	// (exp2d: the archived 2D Expedition on this browser, /micasurvivor/?exp3d=0's own key: sections 1-9 pin what the Play
+	//  flow's setups start in the 2D game; section 10 is the 3D way in, which is what START gives by default)
+	if (o.exp2d) { try { localStorage.setItem('micasurvivor_exp3d', '0'); } catch (e) { /* ignore */ } }
 	window.__pads = [];
 	window.__mkPad = (i, id) => ({
 		index: i, id, connected: true, mapping: 'standard', timestamp: 0,
@@ -212,7 +215,7 @@ try {
 
 	// ================= 1-6. a guest at 1280x720: the whole flow by mouse =================
 	{
-		const d = await device({ guestSave: SAVE('Trainer') });
+		const d = await device({ exp2d: true, guestSave: SAVE('Trainer') });
 		A(await d.boot(), 'a guest boots to the menu (1280x720)');
 		const menuStyle = await d.E(() => { const s = getComputedStyle(document.getElementById('scr-menu')); return { font: s.fontFamily, bgImage: s.backgroundImage, bgColor: s.backgroundColor, panel: getComputedStyle(document.querySelector('#scr-menu .box')).backgroundColor }; });
 		A(/m6x11/.test(menuStyle.font) && menuStyle.panel === 'rgb(58, 75, 79)', 'main menu uses Micatro font and slate panels', JSON.stringify(menuStyle));
@@ -447,7 +450,7 @@ try {
 
 	// ================= 5b. signed in: Online opens a lobby =================
 	{
-		const d = await device({ user: 'flowtester', token: TOKEN, state: STATE, save: SAVE('flowtester') });
+		const d = await device({ exp2d: true, user: 'flowtester', token: TOKEN, state: STATE, save: SAVE('flowtester') });
 		A(await d.boot(), 'a signed-in player boots to the menu');
 		await d.E(() => G.PlayUI.open());
 		await d.click('#mx-next'); await d.click('[data-cat="survival"]'); await d.click('[data-var="normal"]');
@@ -496,7 +499,7 @@ try {
 
 	// ================= 7. the pad =================
 	{
-		const d = await device({ guestSave: SAVE('Trainer') });
+		const d = await device({ exp2d: true, guestSave: SAVE('Trainer') });
 		A(await d.boot(), 'pad device boots');
 		await d.E(() => { window.__pads[0] = window.__mkPad(0, 'Synthetic Pro Controller (STANDARD GAMEPAD)'); });
 		await waitFor(() => d.E(() => G.Pad && G.Pad.ready), 5000);
@@ -551,7 +554,7 @@ try {
 
 	// ================= 8. phone 844x390 (touch) =================
 	{
-		const d = await device({ guestSave: SAVE('Trainer') }, { width: 844, height: 390, hasTouch: true, isMobile: true });
+		const d = await device({ exp2d: true, guestSave: SAVE('Trainer') }, { width: 844, height: 390, hasTouch: true, isMobile: true });
 		A(await d.boot(), 'phone 844x390 boots');
 		await d.shot('menu_micatro_phone.png');
 		await d.E(() => document.querySelector('#scr-menu [data-go=upgrades]').click());
@@ -588,31 +591,41 @@ try {
 		await endRun(d);
 		await d.ctx.close();
 	}
-	// ===== 10. 3D Expedition's way in, behind a switch =====
+	// ===== 10. 3D Expedition is what START gives (go-live) =====
 	{
 		const d = await device({ guestSave: SAVE('Trainer') });
 		await d.boot();
 		const toClassic = async (players = 'solo') => { await d.E(() => G.PlayUI.open()); await d.click('#mx-next'); await d.click('[data-cat="expedition"]'); await waitFor(async () => (await d.state()).step === 3, 6000); await d.click('[data-var="exp-classic"]'); await d.click(`[data-players="${players}"]`); await waitFor(() => d.E(() => !!G.ExpLeague && !!G.ExpTier), 15000); };
-		await toClassic();
-		const off = await d.E(() => ({ on: G.PlayUI.exp3d(), url: G.PlayUI.exp3dUrl('exp-classic'), key: localStorage.getItem('micasurvivor_exp3d') }));
-		A(!off.on && off.url === null && off.key === null, 'the switch is off by default: START on Expedition is the 2D run, as always', JSON.stringify(off));
-		await d.page.goto(`http://localhost:${PORT}/micasurvivor/?exp3d=1`, { waitUntil: 'domcontentloaded' });
-		await waitFor(() => d.E(() => typeof G === 'object' && G.Game && document.getElementById('boot').classList.contains('hidden')), 30000); await sleep(300);
-		if (await d.visible('tap-start')) await d.page.click('#tap-start');
-		await waitFor(() => d.visible('scr-menu'), 15000);
+		const menu = async (q) => { await d.page.goto(q ? `http://localhost:${PORT}/micasurvivor/?${q}` : `http://localhost:${PORT}/micasurvivor/`, { waitUntil: 'domcontentloaded' }); await waitFor(() => d.E(() => typeof G === 'object' && G.Game && document.getElementById('boot').classList.contains('hidden')), 30000); await sleep(300); if (await d.visible('tap-start')) await d.page.click('#tap-start'); await waitFor(() => d.visible('scr-menu'), 15000); };
+		// local play stays 2D
 		await toClassic('local');
-		const loc = await d.E(() => ({ on: G.PlayUI.exp3d(), url: G.PlayUI.exp3dUrl('exp-classic') }));
-		A(loc.on && loc.url === null, '/micasurvivor/?exp3d=1 turns it on for this browser; a local-play setup still starts the 2D run', JSON.stringify(loc));
+		const loc = await d.E(() => ({ on: G.PlayUI.exp3d(), can: G.PlayUI.canDraw3d(), url: G.PlayUI.exp3dUrl('exp-classic'), key: localStorage.getItem('micasurvivor_exp3d') }));
+		A(loc.on && loc.can && loc.key === null && loc.url === null, '3D is on by default (nothing stored); a local-play setup still starts the 2D run', JSON.stringify(loc));
+		// alone on Classic: the 3D page
 		await d.E(() => G.PlayUI.back()); await d.click('[data-players="solo"]');
 		const want = await d.E(() => ({ url: G.PlayUI.exp3dUrl('exp-classic'), dex: G.ExpLeague.pickFor(), map: G.PlayUI.state.map, diff: G.PlayUI.state.diff, surv: G.PlayUI.exp3dUrl('exp-survival') }));
 		A(new RegExp(`^/micasurvivor/m3d/\\?exp=\\d+&map=${want.map}&diff=${want.diff}&dex=${want.dex}(&form=\\d+)?$`).test(want.url || '') && want.surv === null, `alone on Classic it is the 3D page's address, with the same member, map and tier (${want.url})`, JSON.stringify(want));
 		await Promise.all([d.page.waitForNavigation({ waitUntil: 'domcontentloaded' }), d.click('#mx-start')]);
 		const in3d = await waitFor(() => d.E(() => !!(window.__m3d && window.__m3d.ready && window.__m3d.run)), 40000);
-		const r3 = await d.E(() => ({ path: location.pathname, map: window.__m3d.run.map, diff: window.__m3d.run.diff, member: window.__m3d.run.lg && window.__m3d.run.lg.member, practice: window.__m3d.practice, ui: !!document.getElementById('rx') }));
-		A(in3d && r3.path === '/micasurvivor/m3d/' && r3.map === want.map && r3.diff === want.diff && r3.member === want.dex && r3.practice === null && r3.ui, 'START opens it: a 3D run of that map and tier as that member, one that can be kept (no test parameter)', JSON.stringify(r3));
-		await d.page.goto(`http://localhost:${PORT}/micasurvivor/?exp3d=0`, { waitUntil: 'domcontentloaded' });
-		await waitFor(() => d.E(() => typeof G === 'object' && !!G.PlayUI), 30000);
-		A(await d.E(() => !G.PlayUI.exp3d() && localStorage.getItem('micasurvivor_exp3d') === null), '/micasurvivor/?exp3d=0 turns it off again');
+		const r3 = await d.E(() => ({ path: location.pathname, map: window.__m3d.run.map, diff: window.__m3d.run.diff, member: window.__m3d.run.lg && window.__m3d.run.lg.member, practice: window.__m3d.practice, ui: !!document.getElementById('rx'), title: document.title, robots: !!document.querySelector('meta[name=robots]'), canon: (document.querySelector('link[rel=canonical]') || {}).href || '' }));
+		A(in3d && r3.path === '/micasurvivor/m3d/' && r3.map === want.map && r3.diff === want.diff && r3.member === want.dex && r3.practice === null && r3.ui, 'START opens it, with no switch asked for: a 3D run of that map and tier as that member, one that can be kept', JSON.stringify(r3));
+		A(r3.title === 'MicaSurvivor · Expedition' && !r3.robots && /\/micasurvivor\/$/.test(r3.canon), 'the 3D page is the game\'s page now: its own title, not hidden from search, and it names the game\'s page as the one to find', JSON.stringify(r3));
+		// the archived 2D Expedition: ?exp3d=0 on this browser
+		await menu('exp3d=0');
+		await toClassic();
+		const off = await d.E(() => ({ on: G.PlayUI.exp3d(), url: G.PlayUI.exp3dUrl('exp-classic'), key: localStorage.getItem('micasurvivor_exp3d') }));
+		A(!off.on && off.url === null && off.key === '0', '/micasurvivor/?exp3d=0 goes back to the archived 2D Expedition on this browser', JSON.stringify(off));
+		await d.click('#mx-start');
+		const in2d = await waitFor(() => d.E(() => location.pathname === '/micasurvivor/' && G.Game.state === 'playing' && G.Modes.isExp() && !!G.Game.player), 30000);
+		A(in2d, '…START there is the 2D run, which still plays', JSON.stringify(await d.E(() => ({ path: location.pathname, state: G.Game.state }))));
+		await menu('exp3d=1');
+		A(await d.E(() => G.PlayUI.exp3d() && localStorage.getItem('micasurvivor_exp3d') === null), '/micasurvivor/?exp3d=1 returns to 3D');
+		// a browser that cannot draw it keeps the 2D run
+		await d.page.evaluateOnNewDocument(() => { const g = HTMLCanvasElement.prototype.getContext; HTMLCanvasElement.prototype.getContext = function (t, ...a) { return t === 'webgl2' ? null : g.call(this, t, ...a); }; });
+		await menu('');
+		await toClassic();
+		const no = await d.E(() => ({ on: G.PlayUI.exp3d(), can: G.PlayUI.canDraw3d(), url: G.PlayUI.exp3dUrl('exp-classic') }));
+		A(no.on && !no.can && no.url === null, 'a browser with no WebGL 2 keeps the 2D run, without being asked', JSON.stringify(no));
 		await d.ctx.close();
 	}
 } catch (e) {
