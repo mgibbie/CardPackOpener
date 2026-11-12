@@ -171,7 +171,7 @@ function itemOut(w, e, type) {
 	return k;
 }
 /** How big your moves are: the Calibre upgrade (12 % a step) and the Big Orb (30 %). */
-const sizeK = (pl) => Math.pow(CK.IT.calibre, pl.statsTaken.size || 0) * (has(pl, 'bigorb') ? 1.3 : 1);
+const sizeK = (pl) => (pl.sizePerk || 1) * Math.pow(CK.IT.calibre, pl.statsTaken.size || 0) * (has(pl, 'bigorb') ? 1.3 : 1);   // (sizePerk: the Calibre you bought for the family, 8 % a level)
 /** A move as it fires now: its areas, shots and beams sized by Calibre and the Big Orb, its radius by the Wide Lens.
  *  (A view of the move: the move itself is not changed.) */
 function sized(pl, m) {

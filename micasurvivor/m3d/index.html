@@ -64,6 +64,8 @@
 	<script src="../js/systems/weather.js"></script>
 	<script src="../js/systems/abilities.js"></script>
 	<script src="../js/data/items.js"></script>
+	<!-- the upgrades bought for a Pokémon's family (read from the base save, never written): expperks.js -->
+	<script src="../js/data/upgrades.js"></script>
 	<!-- (P3) Expedition's own moves (its 8 extra kinds). It registers its English texts with the game's translation
 	     table: a stand-in is enough here (the real one rewrites the page's text as it is drawn) -->
 	<script>G.I18n = G.I18n || { lang: 'en', en: {}, add(o) { Object.assign(this.en, o); }, f: (s) => s, t: (s) => { const en = G.ExpEN && G.ExpEN[s]; if (en) return en; const N = G.U && G.U.TYPE_NAME; if (N) for (const k in N) if (N[k] === s) return k[0].toUpperCase() + k.slice(1); return s; } };</script>
@@ -79,6 +81,7 @@
 	<script src="../js/expedition/levelups.js"></script>
 	<!-- the 58 regional formes and the Megas as enemies (the 2D game's U3): before the League, which learns the formes as stages -->
 	<script src="../js/data/mega-data.js"></script>
+	<script src="../js/data/families.js"></script>
 	<script src="../js/data/forms.js"></script>
 	<script src="../js/systems/forms.js"></script>
 	<script src="../js/expedition/league-data.js"></script>
