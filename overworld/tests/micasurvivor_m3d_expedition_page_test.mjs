@@ -168,7 +168,7 @@ try {
 	A(won && await hudHas(/COMPLETE!/), 'the legendary falls at the pedestal: the expedition is complete', await hud());
 	const over = await waitFor(() => page.evaluate(() => window.__m3d.run.ended), 6000);
 	const end = await page.evaluate(() => { const m = window.__m3d, r = m.run; return { splits: r.splits.length, bosses: r.bosses.length, t: m.world.t }; });
-	A(over && end.splits === 4 && end.bosses === 4 && await hudHas(/EXPEDITION COMPLETE! Map complete! · score \d+/), 'three seconds later the run is over: the page shows the result and the score', await hud());
+	A(over && end.splits === 4 && end.bosses === 4 && await hudHas(/EXPEDITION COMPLETE! Map complete! · score \d+ · pay \d+ · champion medal/), 'three seconds later the run is over: the page shows the result, the score, the pay and the medal', await hud());
 	await sleep(500);
 	const still = await page.evaluate(() => window.__m3d.world.t);
 	A(still === end.t, 'and the run has stopped');

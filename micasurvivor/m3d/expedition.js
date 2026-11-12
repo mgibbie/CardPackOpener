@@ -16,7 +16,7 @@
 // Still to come: the League, the run's pay.
 import { K, CELL, makeRoom, setCell, groundAt, newState } from './sim.js';
 import { generate, footGraph, rng as makeRng, LEVEL } from './gen.js';
-import { CK, U, newWorld, tick, addEnemy, addBoss, drop, hazard, spawnRate, xpFor } from './combat.js';
+import { CK, U, newWorld, tick, addEnemy, addBoss, drop, hazard, spawnRate, xpFor, equip } from './combat.js';
 import { levelFrom, setup as setupLevels, tickStats, curse, takeItem, dropItem } from './explevel.js';
 import { ecoFrom, setupEco, tickEco, mods, pickTake, pickClose } from './expeco.js';
 import { capFrom, setupCap, tickCap, holdCine, mark } from './expcap.js';
@@ -32,6 +32,12 @@ export const XK = {
 	BOSS_NORTH: 70,                // units north of the altar the guardian appears (the 2D game's)
 	ESCORT_R: 90, TOTEM_R: 40,     // units
 	SHRINE: { w: 44, h: 44, ped: [0, -13], rim: 9 },
+	// a run's pay in Pokémonedas (the 2D game's meta.js PAY and SCALE; its Lab and save are not loaded here, so the table
+	// is written out and a test holds it to the 2D function)
+	PAY: { BASE: 10, KO: 1 / 150, ZONE: 25, BOSS: 30, WIN: 120, CATCH: 15, MIN_T: 60, SCALE: 3 },
+	MEDAL: ['', 'bronze', 'silver', 'gold', 'champion'],
+	// the base held items a guardian drops (the 2D game's levelups.js HELD_POOL): one is held at a time
+	HELD: { focussash: 'Focus Sash', eternalice: 'Never-Melt Ice', bigorb: 'Big Orb', typegem: 'Type Gem', safetygoggles: 'Safety Goggles', lightball: 'Light Ball', thickclub: 'Thick Club' },
 };
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 function mix(...vals) {
@@ -45,7 +51,7 @@ function mix(...vals) {
 export function expFrom(G) {
 	const C = G.ExpClassic, T = G.ExpTier;
 	return { K: C.K, MAPS: C.MAPS, MAP_IDS: C.MAP_IDS, DIFFS: C.DIFFS, plan: (seed, map, zone, diff) => C.plan(seed, map, zone, diff), tier: (d) => T.of(d),
-		ESCORT: T.K.ESCORT, L: G.ExpLevel && G.ExpItems ? levelFrom(G) : null, E: G.ExpEco ? ecoFrom(G) : null, C: G.ExpCap ? capFrom(G) : null, score: (parts, diff) => T.score(parts, diff), medal: T.medal ? (s, diff, map) => T.medal(s, diff, map) : null, exhaustion: C.exhaustion };
+		ESCORT: T.K.ESCORT, medalOf: (time, diff, map) => T.medalOf(time, diff, map), L: G.ExpLevel && G.ExpItems ? levelFrom(G) : null, E: G.ExpEco ? ecoFrom(G) : null, C: G.ExpCap ? capFrom(G) : null, score: (parts, diff) => T.score(parts, diff), medal: T.medal ? (s, diff, map) => T.medal(s, diff, map) : null, exhaustion: C.exhaustion };
 }
 
 // ---------------------------------------------------------------- the zones
@@ -78,22 +84,34 @@ export function altarOf(room, seed) {
 	return far.length ? far[0].slice(0, 3) : room.exit.slice();
 }
 /** The shrine (zone 4, hand-made, the 2D game's plan of it): a round grove inside a wall, two ponds, and to the north
- *  a raised dais with stairs up to the pedestal. */
+ *  a raised dais with stairs up to the pedestal. Mt. Moon's is a crater: rock pillars where the ponds were, a ring of
+ *  crystals. Cerulean Cape's is an island: a ring of sea round the grove, the ponds kept. The dais, its stairs and the
+ *  pedestal are the same on every map. */
 export function shrineRoom(map = 'viridian') {
 	const { w, h, ped, rim } = XK.SHRINE, cx = w >> 1, cz = h >> 1, room = makeRoom(w, h, 0);
 	const d = (x, z) => Math.hypot(x - cx, (z - cz) * 1.1);
 	const dais = (x, z) => Math.abs(x - cx) <= 4 && z - cz >= -16 && z - cz <= -10;
 	const pond = (x, z) => Math.hypot(Math.abs(x - cx) - 11, z - cz - 4) < 2.6;
+	const cave = map === 'mtmoon', sea = (x, z) => map === 'cerulean' && d(x, z) > 16.2 && d(x, z) <= 19.5, wet = (x, z) => { setCell(room, x, z, -0.35); room.water.set(z * w + x, -0.05); };
+	room.scatter = [];
 	for (let z = 0; z < h; z++) for (let x = 0; x < w; x++) {
-		if (d(x, z) > 19.5) setCell(room, x, z, rim);
+		const r = d(x, z);
+		if (r > 19.5) setCell(room, x, z, rim);
 		else if (dais(x, z)) setCell(room, x, z, LEVEL);
-		else if (pond(x, z)) { setCell(room, x, z, -0.35); room.water.set(z * w + x, -0.05); }
+		else if (sea(x, z)) wet(x, z);
+		else if (pond(x, z)) { if (cave) setCell(room, x, z, rim); else wet(x, z); }
+		else if (!(Math.abs(x - cx) <= 2 && z - cz >= -10 && z - cz <= -6)) {   // what grows there (never on or by the stairs)
+			const put = (kind, s) => room.scatter.push({ kind, x: (x + 0.5) * CELL, z: (z + 0.5) * CELL, s, y: 0 });
+			if (cave) { if (r > 17.6 && (x * 7 + z * 3) % 3 === 0) put('pebble', 1.3); else if (r < 15 && r > 9 && (x * 13 + z * 5) % 13 === 0) put('pebble', 0.9); }
+			else if (map === 'cerulean') { if (r > 15 && r <= 16.2 && (x * 7 + z * 3) % 5 === 0) put('grass', 1.2); else if (r < 15 && r > 9 && (x * 13 + z * 5) % 11 === 0) put('flower', 1); }
+			else if (r > 17.6 && (x * 7 + z * 3) % 4 === 0) put('grass', 1.3); else if (r < 17 && r > 9 && (x * 13 + z * 5) % 11 === 0) put('flower', 1);
+		}
 	}
 	// the stairs: two cells of slope up to the dais's south edge (each rises half a level towards the north)
 	for (let x = cx - 1; x <= cx + 1; x++) { setCell(room, x, cz - 9, LEVEL, { ax: 'z', rise: -LEVEL / 2 }); setCell(room, x, cz - 8, LEVEL / 2, { ax: 'z', rise: -LEVEL / 2 }); }
 	room.spawn = [(cx + 0.5) * CELL, 0, (cz + 0.5) * CELL];
 	room.altar = [(cx + ped[0] + 0.5) * CELL, LEVEL, (cz + ped[1] + 0.5) * CELL]; room.exit = room.altar;
-	room.scatter = []; room.rimH = rim; room.maxH = LEVEL; room.size = 0; room.biome = XK.BIOME[map] || 'meadow'; room.shrine = true;
+	room.rimH = rim; room.maxH = LEVEL; room.size = 0; room.biome = XK.BIOME[map] || 'meadow'; room.shrine = true;
 	return room;
 }
 /** The room of (seed, map, zone): zones 1-3 from the generator, zone 4 the shrine. The same for the host and every
@@ -333,6 +351,7 @@ function tickBoss(S, t) {
 		const b = S.bosses[S.bosses.length - 1]; if (b) b.down = Math.round((t - b.at) * 10) / 10;
 		if (e.xk === 'legend') { S.ph = 4; S.won = true; S.wonT = 0; S.splits[3] = t; say(S, 'EXPEDITION COMPLETE!', S.X.K.WIN_T + 1); }
 		else { S.ph = 2; S.portalT = 0; for (const p of S.w.pickups) p.pulled = true; say(S, 'The portal opens! Step into it', 3.4); }
+		if (S.lv) { const id = heldRoll(S); if (id) drop(S.w, 'held', e.a.x + 26 * U, groundAt(S.w.room, e.a.x, e.a.z), e.a.z, id).pulled = e.xk !== 'legend'; }   // a guardian leaves a held item too
 		return;
 	}
 	const k = S.X.exhaustion(t - e.xborn, e.xtarget);
@@ -346,6 +365,21 @@ function nextZone(S, t) {
 	zoneStart(S, z, t);
 }
 
+/** The base held item the next guardian drops: one of the pool you can use and do not hold (the run's own stream). */
+export function heldRoll(S) {
+	const w = S.w, pool = Object.keys(XK.HELD).filter((id) => { const it = S.data.item(id); return it && !it.instant && S.data.itemOk(id, w.pl.mon.dex) && id !== S.held; });
+	if (!pool.length) return null;
+	return pool[Math.floor(makeRng(mix(S.seed, 0x4E1D, S.heldN = (S.heldN || 0) + 1))() * pool.length)];
+}
+/** Pick up a held item. You hold one: the first is simply yours; with one already, you choose (the fight holds). */
+export function takeHeld(S, id) {
+	const w = S.w, pl = w.pl; if (!XK.HELD[id] || id === S.held) return false;
+	const swap = () => { if (S.held) { const i = pl.items.indexOf(S.held); if (i >= 0) pl.items.splice(i, 1); } if (!equip(w, id)) return false; S.held = id; say(S, `Held item: ${XK.HELD[id]}`, 2.6); return true; };
+	if (!S.held) return swap();
+	S.pick = { kind: 'held', title: 'Held item', sub: `You hold ${XK.HELD[S.held]}`, picks: 1, taken: [], ids: [], cancel: `Keep ${XK.HELD[S.held]}`, cards: [{ title: XK.HELD[id], tag: `Replaces ${XK.HELD[S.held]}`, desc: '' }], onTake: () => swap(), onClose: () => true };
+	w.events.push({ k: 'pick', kind: 'held' });
+	return true;
+}
 /** Are you on a site? Within `r` cells of it on the ground, and on its level. */
 export function onSite(S, r) {
 	const s = S.w.pl.s, a = S.w.room.altar;
@@ -369,7 +403,7 @@ export function stepRun(S, input, dt = K.TICK) {
 	if (w.t === t0) return S;
 	const t = w.t;
 	if (w.pl.dead && !w.mates.length && !w.guest) { S.ended = true; S.lost = true; w.events.push({ k: 'runover', won: false }); return S; }
-	if (S.lv) { tickStats(S, dt); for (const ev of w.events) if (ev.k === 'pickup' && ev.kind === 'item') takeItem(S, ev.value); }
+	if (S.lv) { tickStats(S, dt); for (const ev of w.events) if (ev.k === 'pickup') { if (ev.kind === 'item') takeItem(S, ev.value); else if (ev.kind === 'held') takeHeld(S, ev.value); } }
 	if (S.cap) tickCap(S, dt);
 	if (S.eco) tickEco(S, dt);
 	dpsSample(S, t);
@@ -406,10 +440,17 @@ export function hudLine(S) {
 	if (S.eco) parts.push('₽ ' + S.coins);
 	return parts.join(' · ');
 }
-/** The run's parts for the score, the score itself, and the end screen's lines. */
+/** A run's pay in Pokémonedas: { base, mul (the tier's), pay }. Under a minute a run pays nothing. */
+export function payOf(S, p) {
+	const P = XK.PAY, mul = S.X.tier(S.diff).pay || 1;
+	if (!(p.time >= P.MIN_T)) return { base: 0, mul, pay: 0 };
+	const base = P.BASE + p.kills * P.KO + P.ZONE * Math.max(0, p.zone - 1) + P.BOSS * p.bosses + (p.won ? P.WIN : 0) + P.CATCH * p.catches;
+	return { base: Math.round(base), mul, pay: Math.max(0, Math.round(base * mul * P.SCALE / 5) * 5) };
+}
+/** The run's parts for the score, the score itself, its pay and medal, and the end screen's lines. */
 export function result(S) {
 	const w = S.w, parts = { kills: w.stats.kills, time: Math.floor(w.t), dmg: Math.round(w.stats.dealt), zone: S.zone, bosses: S.bosses.filter((b) => b.down !== null).length, won: S.won, catches: S.cap ? S.cap.n : 0 };
-	return { won: S.won, title: S.won ? 'EXPEDITION COMPLETE!' : 'RUN OVER', line: S.won ? 'Map complete!' : S.zone === 4 ? 'Reached the shrine' : `Reached zone ${S.zone}`, parts, score: S.X.score(parts, S.diff), splits: S.splits.slice(), bosses: S.bosses.map((b) => ({ ...b })) };
+	return { won: S.won, title: S.won ? 'EXPEDITION COMPLETE!' : 'RUN OVER', line: S.won ? 'Map complete!' : S.zone === 4 ? 'Reached the shrine' : `Reached zone ${S.zone}`, parts, score: S.X.score(parts, S.diff), pay: payOf(S, parts), medal: S.won ? XK.MEDAL[S.X.medalOf(w.t, S.diff, S.map)] : '', splits: S.splits.slice(), bosses: S.bosses.map((b) => ({ ...b })) };
 }
 /** For tests and the page: put the zone's clock at `sec` (events between fire on the next step, in order). */
 export const setZoneTime = (S, sec) => { S.zs = S.w.t - sec; };

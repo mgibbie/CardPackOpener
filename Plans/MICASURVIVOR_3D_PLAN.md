@@ -766,6 +766,27 @@ shrines' looks, Survival, and co-op, spectate and replay of a run.
 
 Tests: `micasurvivor_m3d_expcap_test.mjs` (43 checks, node), the page test 27 (was 23).
 
+## 5.21 P4, fifth part: built (2026-11-11). The run's end, the other shrines, the held item.
+
+- **Pay and medal.** A run's result now carries its pay in Pokémonedas (by KOs, zones, guardians, the win and
+  catches, times the tier; nothing under a minute) and, for a won run, its medal (bronze for finishing; silver,
+  gold, champion by the clock and the tier). The medal is the 2D function, called. The pay table is written out
+  in `expedition.js`, because the 2D file it lives in (`meta.js`) brings the Lab and the save with it; a test
+  loads that file apart and holds the 3D pay to the 2D function over 18 cases.
+- **The other two shrines** have their own layouts, as in 2D: Mt. Moon's is a dry crater (rock pillars where the
+  ponds were, crystals round it), Cerulean Cape's an island (a ring of sea round the grove). The dais, its stairs
+  and the pedestal are the same on each.
+- **A guardian's held item.** It leaves one of the 2D pool of seven base held items that your species can use
+  and you do not hold. You hold one: the first is simply yours, a second asks whether to replace it.
+
+**Nothing is saved.** Pay, medals, records and a caught shiny are worked out and shown, not written anywhere:
+the test page has no account. Writing them belongs with putting the mode on the site.
+
+**Still of P4**: the League (kits, evolutions, wild encounters), Survival, the fog of war and the zone map, and
+co-op, spectate and replay of a run.
+
+Tests: `micasurvivor_m3d_expend_test.mjs` (21 checks, node).
+
 ## 6. Dive in 2D: built
 
 **D0 — find the stairs (small; can ship first, on its own).** *Built 2026-11-11 (`overworld/tests/micasurvivor_dive_stairs_test.mjs`). As built: the stairs took their own orange mark, so the rocks and Meowth keep their gold; the HUD arrow comes up after 25 s on a floor, or at once when its boss falls.*

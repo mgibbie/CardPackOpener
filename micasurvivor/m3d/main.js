@@ -55,7 +55,7 @@ const world = run ? run.w : JOIN ? guestWorld(room, dataFrom(GG), { id: MYID, de
 	: FIGHT ? newWorld(room, dataFrom(GG), { bosses: BOSSES, ability: Q.get('ability') === '0' ? null : Q.get('ability') || 'auto', items: Q.get('items') ? Q.get('items').split(',') : [], dex: DEX, moves: MOVES, seed: (GEN + 1) * 7919, tune: TUNE, cast: FIGHT_CAST, cap: Q.has('cap') ? +Q.get('cap') | 0 : undefined, weather: Q.get('weather') === '0' ? false : undefined, autoPick: Q.has('auto') ? +Q.get('auto') | 0 : undefined }) : null;
 const state = world ? world.pl.s : newState(room, TUNE);
 const TYPE_COLOR = (GG.U && GG.U.TYPE_COLOR) || {};
-const PICK_COLOR = { xp: '#6fd3ff', xpBig: '#3da8ff', heal: '#5fe08a', magnet: '#ff9ed8', bomb: '#ff7b3d', item: '#ffd23f' };
+const PICK_COLOR = { xp: '#6fd3ff', xpBig: '#3da8ff', heal: '#5fe08a', magnet: '#ff9ed8', bomb: '#ff7b3d', item: '#ffd23f', held: '#ff8fd0' };
 const { renderer, scene, camera } = makeRenderer(canvas);
 let roomMeshes = [];
 /** Show a level (P4: a run moves from one to the next: the old one's meshes go). */
@@ -279,7 +279,7 @@ function frame(now) {
 				for (const q of run.says) note(q.text, q.s * 1000);
 				if (run.pick !== shownPick) showPick();
 				if (run.w.room !== room) { room = run.w.room; mapBase = null; showRoom(); state.facing = cam.yaw; }
-				if (run.ended && !runOver) { runOver = runResult(run); note(`${runOver.title} ${runOver.line} · score ${runOver.score}`, 600000); }
+				if (run.ended && !runOver) { runOver = runResult(run); note(`${runOver.title} ${runOver.line} · score ${runOver.score} · pay ${runOver.pay.pay}${runOver.medal ? ' · ' + runOver.medal + ' medal' : ''}`, 600000); }
 			} else tick(world, input, K.TICK);
 			fightEvents(world.events);
 			if (coView && coView.events.length) fightEvents(coView.events.filter((ev) => !(ev.k === 'hit' && ev.by === MYID) && ev.k !== 'levelup' && ev.k !== 'hurt' && ev.k !== 'level'));   // what the host and the others did
@@ -496,7 +496,7 @@ function showHud() {
 		+ (!world || !world.weather ? '' : `\nweather: ${world.weather.kind} (${Math.ceil(world.weather.dur - world.weather.t)} s)`)
 		+ (!world || !world.pl.ability ? '' : `\nability: ${world.pl.ability}${world.pl.items.length ? ' · holding: ' + world.pl.items.join(', ') : ''}`)
 		+ (!world ? '' : `\nLv ${world.pl.level} · XP ${Math.floor(world.pl.xp)} / ${world.pl.xpNext}\nHP ${Math.ceil(world.pl.hp)} / ${world.pl.maxHp} · ${world.enemies.length} enemies · ${world.stats.kills} KOs · ${Math.floor(world.t / 60)}:${String(Math.floor(world.t % 60)).padStart(2, '0')} · ${world.pl.moves.map((m) => m.id + ' Lv' + (m.xlv || m.lvl)).join(', ')}`)
-		+ (!run || !run.lv ? '' : `\nvitamins: ${world.pl.xv.map((v) => v.id + ' ' + v.lvl).join(', ') || 'none'} · ₽ ${run.coins} · luck ${Math.round(world.pl.xluck || 0)}${world.pl.xproc.shield > 0 ? ' · shield ' + Math.round(world.pl.xproc.shield) : ''}${run.cap && run.cap.sa.length ? '\nteam: ' + run.cap.sa.map((a) => (GG.DEX_BY[a.dex] || {}).name + ' (' + a.type + ')').join(', ') : ''}\nitems: ${Object.keys(world.pl.xi).map((id) => id + (world.pl.xi[id] > 1 ? ' ×' + world.pl.xi[id] : '')).join(', ') || 'none'}`) + (noteText && performance.now() < noteUntil ? `\n» ${noteText}` : '');
+		+ (!run || !run.lv ? '' : `\nvitamins: ${world.pl.xv.map((v) => v.id + ' ' + v.lvl).join(', ') || 'none'} · ₽ ${run.coins} · luck ${Math.round(world.pl.xluck || 0)}${world.pl.xproc.shield > 0 ? ' · shield ' + Math.round(world.pl.xproc.shield) : ''}${run.cap && run.cap.sa.length ? '\nteam: ' + run.cap.sa.map((a) => (GG.DEX_BY[a.dex] || {}).name + ' (' + a.type + ')').join(', ') : ''}${run.held ? ' · holding ' + run.held : ''}\nitems: ${Object.keys(world.pl.xi).map((id) => id + (world.pl.xi[id] > 1 ? ' ×' + world.pl.xi[id] : '')).join(', ') || 'none'}`) + (noteText && performance.now() < noteUntil ? `\n» ${noteText}` : '');
 }
 
 // ---------------------------------------------------------------- boot
