@@ -61,6 +61,24 @@ export function resetEliteFour() {
 	for (const f of ELITE_FOUR_RESET.flags) if (Story.getFlag(f)) Story.clearFlag(f);
 	for (const v of ELITE_FOUR_RESET.vars) if (Story.getVar(v)) Story.setVar(v, 0);
 }
+// THE LEAGUE'S LOBBY. In FireRed you cannot leave an Elite Four run except by losing (Fly does not work indoors), so
+// you only ever stand in the Indigo Plateau POKeMON CENTER between runs. Here Fly works from inside the League, and
+// a player who flew out to heal came back through the lobby door onto LORELEI's entry warp with the run still
+// "started": her entry stays sealed and the walk-in (scene 0 only) never plays, so they could not go on (tester
+// reports 2026-11-11, twice). Crystal has the rule this needs (IndigoPlateauPokecenter1F's PrepareElite4 callback
+// resets the rooms whenever you are in the lobby), so KANTO's lobby does the same: arriving there ends any run in
+// progress, and the next walk through the door starts one. KANTO's own flags and scene only: HOENN's rooms are open
+// (no seal to be shut out by), and its run is not this lobby's to end.
+const KANTO_LEAGUE_LOBBY = 'IndigoPlateau_PokemonCenter_1F';
+const KANTO_LEAGUE_RUN = { flags: ['FLAG_DEFEATED_LORELEI', 'FLAG_DEFEATED_BRUNO', 'FLAG_DEFEATED_AGATHA', 'FLAG_DEFEATED_LANCE'], vars: ['VAR_MAP_SCENE_POKEMON_LEAGUE'] };   // (not FLAG_DEFEATED_CHAMP: a champion who was never crowned is healed from it on load, ow_progression.js)
+/** Arriving on `mapName`: in KANTO's League lobby, a League run in progress is over. -> true if one was reset */
+export function leagueLobbyArrival(mapName) {
+	if (mapName !== KANTO_LEAGUE_LOBBY) return false;
+	let any = false;
+	for (const f of KANTO_LEAGUE_RUN.flags) if (Story.getFlag(f)) { Story.clearFlag(f); any = true; }
+	for (const v of KANTO_LEAGUE_RUN.vars) if (Story.getVar(v)) { Story.setVar(v, 0); any = true; }
+	return any;
+}
 export function whiteOut() {
 	resetEliteFour();
 	const lost = Math.floor(Bag.getMoney() / WHITEOUT_MONEY_FRACTION);

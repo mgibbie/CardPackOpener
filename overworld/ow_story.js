@@ -34,7 +34,7 @@ import { BOSS_CLASSES } from './trainers.js';
 import { openRadio, playerTID } from './ow_features.js';
 import { startNpcTrade } from './ow_screens.js';
 import { bossLevelFor, inJohKanto, johkantoLeagueKind, routeTrainerLevel, startCutscene, startMarowakBattle, startScriptedWildBattle } from './ow_scaling.js';
-import { enterSafariMode, exitSafariMode, whiteOut } from './ow_places.js';
+import { enterSafariMode, exitSafariMode, leagueLobbyArrival, whiteOut } from './ow_places.js';
 import { PC_BOXES, PC_BOX_CAP, getBox, openSeagallopMenu, seagallopSpawn } from './ow_menukeys.js';
 import { enterHallOfFame, notePostBattleFinished, onTrainerDefeated, playerRegion } from './ow_progression.js';
 import { buildMonForGift } from './ow_gamecorner.js';
@@ -515,6 +515,7 @@ export async function runMapSetupScripts(isBoot, opts) {
 		try { runSetupPass(); } finally { _setupMode = null; }
 	};
 	const runSetupPass = () => {
+		try { leagueLobbyArrival(world.current?.name); } catch (e) { console.warn('[plot] league lobby reset failed', e); }   // (KANTO's League lobby: a run in progress is over)
 		try { runCrystalCallbacks(); } catch (e) { console.warn('[plot] crystal callback failed', e); if (cutscene.blocking) cutscene.stop(); }
 		try { runChamberWallScene(); } catch (e) { console.warn('[plot] chamber wall scene failed', e); if (cutscene.blocking) cutscene.stop(); }
 		try { runMapOnLoad(); } catch (e) { console.warn('[plot] onLoad failed', e); if (cutscene.blocking) cutscene.stop(); }
