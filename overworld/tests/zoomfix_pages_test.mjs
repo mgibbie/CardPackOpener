@@ -2,7 +2,8 @@
 // (a tester got stuck zoomed into Micatro; the same pattern was on these pages).
 // Covers site/zoomfix.js + site/zoomguard.js and the pages that load it:
 // overworld/index.html, overworld/pokechess.html, battlecards/viewer.html,
-// pairofpears/index.html (the Micatro-UI card game), scoundrel/index.html + scoundrel/classic/ (Micatro: micatro_zoom_test.mjs).
+// pairofpears/index.html (the Micatro-UI card game), scoundrel/index.html + scoundrel/classic/, micasurvivor/m3d/ (3D Expedition;
+// it also refuses the pinch itself: see the end of this file) (Micatro: micatro_zoom_test.mjs).
 //   node overworld/tests/zoomfix_pages_test.mjs
 import http from 'http';
 import fs from 'fs';
@@ -30,6 +31,7 @@ const PAGES = [
 	['/pairofpears/index.html', true],
 	['/scoundrel/index.html', true],
 	['/scoundrel/classic/index.html', true],   // (the original love.js build, kept reachable)
+	['/micasurvivor/m3d/index.html', true],   // (3D Expedition: two thumbs on the screen were taken for a pinch, owner 2026-11-12)
 	['/overworld/pokechess.html', false],
 ];
 
@@ -74,6 +76,23 @@ try {
 			});
 			A(n >= 2, `${url}: a zoom (scale 2) is snapped back`, n);
 		}
+		await page.close();
+	}
+	// 3D Expedition: the pinch itself is refused (two thumbs are how it is played)
+	{
+		const page = await browser.newPage();
+		await page.setViewport({ width: 844, height: 390, deviceScaleFactor: 3, isMobile: true, hasTouch: true });
+		await page.goto(`http://localhost:${PORT}/micasurvivor/m3d/index.html`, { waitUntil: 'domcontentloaded' });
+		await page.waitForFunction(() => !!(window.__m3d && window.__m3d.ready), { timeout: 30000 }).catch(() => {});
+		const r = await page.evaluate(() => {
+			const fire = (type, init) => { const e = new Event(type, { bubbles: true, cancelable: true }); Object.assign(e, init || {}); document.getElementById('c').dispatchEvent(e); return e.defaultPrevented; };
+			const two = { touches: [{ identifier: 1 }, { identifier: 2 }] }, one = { touches: [{ identifier: 1 }] };
+			const inp = document.createElement('input'); document.body.appendChild(inp);
+			const ie = new Event('gesturestart', { bubbles: true, cancelable: true }); inp.dispatchEvent(ie); inp.remove();
+			return { gs: fire('gesturestart'), gc: fire('gesturechange'), two: fire('touchmove', two), one: fire('touchmove', one), typing: ie.defaultPrevented, ready: !!(window.__m3d && window.__m3d.ready) };
+		});
+		A(r.ready && r.gs && r.gc && r.two, '/micasurvivor/m3d/: a pinch is refused (Safari\'s gesture events, and a move with two fingers down)', JSON.stringify(r));
+		A(!r.one && !r.typing, '/micasurvivor/m3d/: one finger moving is left alone, and so is a text box', JSON.stringify(r));
 		await page.close();
 	}
 } finally {

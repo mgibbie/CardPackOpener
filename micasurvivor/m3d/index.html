@@ -100,6 +100,9 @@
 	<!-- going live: the 2D game's sound (a synthesizer: no files) and its themes; m3d/runsound.js says what a run plays -->
 	<script src="../js/data/music.js"></script>
 	<script src="../js/core/audio.js"></script>
+	<!-- iPhone: no stuck zoom. Safari ignores the viewport's "no zoom", so the site's fix stops double-tap zoom and snaps
+	     any zoom that still happens back to 1x (owner, 2026-11-12: zoomed in on an iPhone and could not get out) -->
+	<script type="module" src="/site/zoomfix.js"></script>
 	<script type="module" src="main.js"></script>
 	<!-- the site's Games switcher (` / hold Esc / Start + Select), as on MicaSurvivor's own page -->
 	<script type="module" src="/site/switcher.js"></script>
