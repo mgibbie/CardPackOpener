@@ -8,6 +8,7 @@
 // tables and this row, into what there is to draw and say. Nothing here simulates anything.
 import { CELL } from './sim.js';
 import { zoneRoom } from './expedition.js';
+import { hazardsOf } from './expsurv.js';
 import { layoutOf, FRESH, USED, GONE, READY, ACTIVE } from './expeco.js';
 
 const R = Math.round, KIND = { alpha: 1, shiny: 8 }, KIND_OF = { 1: 'alpha', 8: 'shiny' };
@@ -25,6 +26,7 @@ export function runRow(S) {
 	}
 	if (S.lg) row.l = [S.lg.member, S.lg.form, S.lg.kit, S.lg.mat];
 	if (S.held) row.i = S.held;
+	if (S.surv && S.sv) row.s = [S.sv.land, S.sv.miles, S.sv.downs, S.sv.legends, S.ph === 2 ? Math.max(0, Math.ceil(S.sv.portalUntil - w.t)) : 0, R(w.t), S.sv.siege.on || S.sv.siege.k < 1 ? R(S.sv.siege.k * 100) : 0, S.sv.pacts.length];   // (Survival: the land, the milestones, the portal, the run's clock, the siege)
 	return row;
 }
 const mmss = (s) => { s = Math.max(0, Math.ceil(s)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
@@ -34,8 +36,9 @@ const mmss = (s) => { s = Math.max(0, Math.ceil(s)); return Math.floor(s / 60) +
  *  X: expFrom(G). keep: an object of the caller's, for the level. */
 export function rowView(row, X, keep = {}) {
 	const [seed, mi, di] = row.h, map = X.MAP_IDS[mi] || 'viridian', diff = X.DIFFS[di] || 'normal', [zone, ph, ch, fs, coins, zt, over] = row.z;
-	const key = seed + ':' + map + ':' + zone;
-	if (keep.key !== key) { keep.key = key; keep.room = zoneRoom(seed, map, zone, X); keep.lay = X.E ? layoutOf(keep.room, { seed, X, map, zone }) : null; }
+	const sv = row.s ? { land: row.s[0], miles: row.s[1], downs: row.s[2], legends: row.s[3], portal: row.s[4], t: row.s[5], siege: row.s[6] / 100, pacts: row.s[7] } : null;
+	const key = seed + ':' + map + ':' + zone + ':' + (sv ? sv.land : 0);
+	if (keep.key !== key) { keep.key = key; keep.room = zoneRoom(seed, map, zone, X, sv ? sv.land : 0); keep.lay = X.E ? layoutOf(keep.room, { seed, X, map, zone }) : null; }
 	const room = keep.room, eco = [];
 	if (keep.lay && row.o) {
 		const st = new Map(); for (let k = 0; k < row.o.length; k += 3) st.set(row.o[k], [row.o[k + 1], row.o[k + 2] / 100]);
@@ -49,7 +52,21 @@ export function rowView(row, X, keep = {}) {
 	for (let k = 0; c.f && k < c.f.length; k += 5) faint.push({ kind: KIND_OF[c.f[k]] || 'alpha', dex: c.f[k + 1], x: c.f[k + 2] / 10, y: c.f[k + 3] / 10, z: c.f[k + 4] / 10 });
 	const cine = c.k ? { kind: KIND_OF[c.k[0]] || 'alpha', dex: c.k[1], x: c.k[2] / 10, y: c.k[3] / 10, z: c.k[4] / 10, t: c.k[5] / 20, phase: X.C ? X.C.phase(c.k[5] / 20) : { n: 'shake', u: 0, k: 0 } } : null;
 	const boss = row.b ? { dex: row.b[0], exhausted: row.b[1] / 10 } : null;
+	const V = X.V, hazards = sv && V ? hazardsOf(room, { seed, X }).filter((o) => o.phase <= V.phaseOf(sv.t)) : [];
+	const survHud = () => {   // (Survival's line, as expsurv.js's own, from what the row says)
+		const parts = ['SURVIVAL', `PHASE ${V.phaseOf(sv.t) + 1}`]; if (diff !== 'normal') parts.push(diff.toUpperCase());
+		const m = V.milestone(sv.miles + 1, map, seed), left = mmss(m.at - sv.t);
+		parts.push(m.mewtwo ? `MEWTWO IN ${left}` : m.legend ? `LEGENDARY IN ${left}` : `BOSS IN ${left}`);
+		if (sv.portal > 0) parts.push(`PORTAL ${sv.portal} s`);
+		const n = V.nightOf(sv.t), wk = V.woundK(sv.t);
+		if (n.hp > 1) parts.push('NIGHT ×' + n.hp.toFixed(1)); else if (wk < 1) parts.push(`WOUNDS −${Math.round((1 - wk) * 100)}%`);
+		if (sv.siege > 0) parts.push(`SIEGE · DAMAGE ${Math.round(sv.siege * 100)}%`);
+		if (boss && boss.exhausted > 1) parts.push('EXHAUSTED ×' + boss.exhausted.toFixed(1));
+		if (X.E) parts.push('₽ ' + coins);
+		return parts.join(' · ');
+	};
 	const hud = (pos) => {
+		if (sv && V) return survHud();
 		const a = room.altar, m = pos ? Math.round(Math.hypot(pos.x - a[0], pos.z - a[2])) : 0, parts = [zone === 4 ? 'SHRINE' : `ZONE ${zone}/3`];
 		if (diff !== 'normal') parts.push(diff.toUpperCase());
 		if (zone <= 3 && ph < 2) parts.push(fs ? 'FINAL SWARM!' : 'FINAL SWARM IN ' + mmss(X.K.FINAL - zt));
@@ -59,7 +76,7 @@ export function rowView(row, X, keep = {}) {
 		return parts.join(' · ') + (ph === 0 ? ` · charge ${ch} %` : '');
 	};
 	return { seed, map, diff, zone, ph, charge: ch / 100, fs: !!fs, coins, zt, over: over === 2 ? 'won' : over === 1 ? 'lost' : '', room, boss, eco, sa: c.s || [], faint, cine,
-		league: row.l ? { member: row.l[0], form: row.l[1], kit: row.l[2], mat: row.l[3] } : null, held: row.i || null, hud };
+		league: row.l ? { member: row.l[0], form: row.l[1], kit: row.l[2], mat: row.l[3] } : null, held: row.i || null, surv: sv, hazards, night: sv && V ? V.nightOf(sv.t).dark : 0, hud };
 }
 /** Where a watcher draws Support Alpha i of n: behind the player it sees, fanned out (the playing side's own are a
  *  little livelier: they lag and catch up; a watcher's stand in their places). */

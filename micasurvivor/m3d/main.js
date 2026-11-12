@@ -16,6 +16,7 @@ import { generate, BIOMES } from './gen.js';
 import { expFrom, newRun, stepRun, hudLine, result as runResult, setZoneTime, fire as fireEvent, zoneRoom } from './expedition.js';
 import { runRow, rowView, teamSpot } from './expnet.js';
 import { guestRun, guestRunApply, stepGuest } from './expcoop.js';
+import { hazardsNow } from './expsurv.js';
 import { refresh as refreshCards, skip as skipCards, banish as banishCard } from './explevel.js';
 import { EK, ecoView, pickTake, pickClose, shopPrices } from './expeco.js';
 import { capView } from './expcap.js';
@@ -288,6 +289,10 @@ function frame(now) {
 				stepRun(run, input, K.TICK);
 				for (const q of run.says) note(q.text, q.s * 1000);
 				if (run.pick !== shownPick) showPick();
+				if (run.sv && simTicks % 30 === 0) {   // (P4) Survival: the hostile ground near you, kept lit, and the night's dark
+					for (const o of hazardsNow(run)) if (Math.hypot(o.x - state.x, o.z - state.z) < 60) flashes.arc(o.x, o.y + 0.04, o.z, o.r, 0, 6.2832, HAZ_COL[o.kind], 0.95, 0);
+					const dark = GG.ExpSurv ? GG.ExpSurv.nightOf(world.t).dark : 0; canvas.style.filter = dark > 0 ? `brightness(${(1 - dark).toFixed(2)})` : '';
+				}
 				if (run.w.room !== room) { room = run.w.room; mapBase = null; showRoom(); state.facing = cam.yaw; }
 				if (run.ended && !runOver) { runOver = runResult(run); note(runOver.survival ? `${runOver.lines.join(' · ')} · score ${runOver.score}` : `${runOver.title} ${runOver.line} · score ${runOver.score} · pay ${runOver.pay.pay}${runOver.medal ? ' · ' + runOver.medal + ' medal' : ''}`, 600000); }
 			} else if (grun) { stepGuest(grun, input, K.TICK); for (const q of grun.says) note(q.text, q.s * 1000); if (grun.pick !== shownPick) showPick(); if (runOver === null && grun.ended) { runOver = grun.won ? 'won' : 'lost'; note(grun.won ? 'EXPEDITION COMPLETE!' : 'RUN OVER', 600000); } }
@@ -310,6 +315,7 @@ function frame(now) {
 }
 // ---------------------------------------------------------------- (P2) a generated level: the exit and the minimap
 let leaving = false, mapBase = null, runOver = null;
+const HAZ_COL = { mud: '#7a5a34', brambles: '#3f7a3a', quicksand: '#d9b56a', burning: '#ff6a2a' };   // (the 2D game's colours for them)
 const exitDist = () => Math.hypot(state.x - room.exit[0], state.z - room.exit[2]);
 /** The next level: the next seed, same biome and options (a fresh page: nothing of this level is kept). */
 function nextLevel() { const q = new URLSearchParams(location.search); q.set('gen', String((GEN + 1) >>> 0)); if (!window.__m3d.holdExit) setTimeout(() => { location.search = q.toString(); }, 700); }
@@ -322,6 +328,7 @@ function showMap() {
 	g.lineWidth = 2; g.strokeStyle = '#fff2a0'; g.beginPath(); g.arc(room.exit[0] * k, room.exit[2] * k, 5 + 2 * Math.sin(performance.now() / 260), 0, 6.2832); g.stroke();
 	g.fillStyle = '#fff'; g.fillRect(room.spawn[0] * k - 1.5, room.spawn[2] * k - 1.5, 3, 3);
 	for (const o of run && run.eco ? ecoView(run) : rv ? rv.eco : []) { g.fillStyle = EK.COL[o.kind]; g.fillRect(o.x * k - 1.5, o.z * k - 1.5, 4, 4); }   // (P4) what the zone holds, in its colours
+	for (const o of run && run.sv ? hazardsNow(run) : rv && rv.surv ? rv.hazards : []) { g.strokeStyle = HAZ_COL[o.kind]; g.lineWidth = 1.5; g.beginPath(); g.arc(o.x * k, o.z * k, Math.max(2, o.r * k), 0, 6.2832); g.stroke(); }   // (P4) Survival: hostile ground, as rings
 	g.fillStyle = '#5fc8ff'; for (const m of mates()) g.fillRect(m.s.x * k - 2, m.s.z * k - 2, 5, 5);   // (P3n) the other players: blue squares
 	if (world || view) { g.fillStyle = '#5b1630'; for (const e of world ? world.enemies : view.enemies) g.fillRect(e.a.x * k - 1, e.a.z * k - 1, 3, 3); }   // (P3) enemies: dark dots
 	// you: an arrow the way you face (map: +x right, +z down)
@@ -365,9 +372,9 @@ let coView = null;
 /** The other players in the fight: a host's puppets of its guests; a guest's view of the host and the other guests. */
 const mates = () => (!world ? [] : JOIN ? world.co.mates : world.mates);
 const HEAD = { gen: GEN, biome: BIOME, size: SIZE, dex: DEX };
-if (run && !run.surv) HEAD.exp = { seed: GEN, map: run.map, diff: run.diff };   // (P4) a run: a watcher needs its seed and map to build the zones
+if (run) HEAD.exp = { seed: GEN, map: run.map, diff: run.diff };   // (P4) a run: a watcher needs its seed and map to build the zones
 /** (P4) A frame with the run's row on it (expnet.js), when this is a run. */
-const rowed = (f) => { if (run && !run.surv) f.r = runRow(run); return f; };   // (a Survival run is not yet told to a watcher: its lands are its own)
+const rowed = (f) => { if (run) f.r = runRow(run); return f; };
 const tape = FIGHT && Q.get('tape') === '1' ? new Tape({ ...HEAD, at: 0 }) : null;
 const net = { sent: 0, chars: 0, got: 0, evLive: [], evTape: [], prev: null, n: 0, batch: [], relay: false };
 const RELAY = Q.get('relay') === '1';
@@ -433,6 +440,7 @@ function watchStep(dt) {
 		rv = rowView(view.fa.r, XF, rowKeep);
 		if (rv.room !== room) { room = rv.room; mapBase = null; showRoom(); }
 		if (rv.over && !runOver) { runOver = rv.over; note(rv.over === 'won' ? 'EXPEDITION COMPLETE!' : 'RUN OVER', 600000); }
+		if (rv.surv && simTicks % 30 === 0) { for (const o of rv.hazards) if (Math.hypot(o.x - state.x, o.z - state.z) < 60) flashes.arc(o.x, o.y + 0.04, o.z, o.r, 0, 6.2832, HAZ_COL[o.kind], 0.95, 0); canvas.style.filter = rv.night > 0 ? `brightness(${(1 - rv.night).toFixed(2)})` : ''; }   // (a watched Survival run: its hostile ground and its night)
 	}
 	fightEvents(view.events);
 	if (view.pl.dead) note('down', 2000);
@@ -546,7 +554,7 @@ function showHud() {
 
 // what a test (and a curious owner in the console) can reach
 window.__m3d = {
-	get ready() { return ready; }, state, get room() { return room; }, run, setZoneTime: (sec) => run && setZoneTime(run, sec), useTool, takePick, ecoView: () => (run ? ecoView(run) : []), capView: () => (run ? capView(run) : null), get rv() { return rv; }, noteLog, grun, fire: (ev) => run && fireEvent(run, ev), K, TUNE, TYPES, TRAITS, cam, crowd, sheets, stats, gen: GEN, biome: BIOME, world, numbers, net, tape, myId: MYID, mates, get coView() { return coView; }, playTape, get view() { return view; }, get viewer() { return viewer; }, get watchT() { return watchT; }, addBoss: (dex, x, z, o) => addBoss(world, dex, x, z, o), drop: (kind, x, z, v) => drop(world, kind, x, groundAt(room, x, z), z, v), pickCard, addEnemy: (dex, x, z, o) => addEnemy(world, dex, x, z, o), holdExit: false, get leaving() { return leaving; },
+	get ready() { return ready; }, state, get room() { return room; }, run, setZoneTime: (sec) => run && setZoneTime(run, sec), useTool, takePick, ecoView: () => (run ? ecoView(run) : []), capView: () => (run ? capView(run) : null), hazards: () => (run ? hazardsNow(run) : []), get rv() { return rv; }, noteLog, grun, fire: (ev) => run && fireEvent(run, ev), K, TUNE, TYPES, TRAITS, cam, crowd, sheets, stats, gen: GEN, biome: BIOME, world, numbers, net, tape, myId: MYID, mates, get coView() { return coView; }, playTape, get view() { return view; }, get viewer() { return viewer; }, get watchT() { return watchT; }, addBoss: (dex, x, z, o) => addBoss(world, dex, x, z, o), drop: (kind, x, z, v) => drop(world, kind, x, groundAt(room, x, z), z, v), pickCard, addEnemy: (dex, x, z, o) => addEnemy(world, dex, x, z, o), holdExit: false, get leaving() { return leaving; },
 	setInput(o) { override = o ? { ...noInput(), ...o } : null; },
 	rowOf: (facing, yaw) => facingRow(facing, yaw === undefined ? cam.yaw : yaw),
 	quadOf: (key, frame, row) => { const s = sheets.get(key); return spriteQuad(s.meta, s.img, frame, row, 1, s.lift); },

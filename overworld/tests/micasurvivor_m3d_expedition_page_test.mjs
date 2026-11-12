@@ -205,6 +205,13 @@ try {
 	await page.click('#cards button[data-p="0"]');
 	const sealed = await page.evaluate(() => ({ pacts: window.__m3d.run.sv.pacts, pick: !!window.__m3d.run.pick }));
 	A(!sealed.pick && sealed.pacts.join() === pk.ids[0] && await hudHas(new RegExp('pacts: ' + pk.ids[0])), 'click one: sealed, and in the readout', JSON.stringify(sealed));
+	// hostile ground: walk into the mud
+	const mud = await page.evaluate(() => { const m = window.__m3d, o = m.hazards().find((q) => q.kind === 'mud'); m.run.acc = -1e9; for (const e of m.world.enemies) e.dead = true; m.put(o.x, o.z); return { n: m.hazards().length, kinds: [...new Set(m.hazards().map((q) => q.kind))] }; });
+	A(mud.n >= 2 && mud.kinds.join() === 'mud' && await hudHas(/ · MUD/), `the land's hostile ground (${mud.n} patches awake in phase 1, all mud): standing in one, the readout says MUD`, JSON.stringify(mud) + (await hud()));
+	await shot('m3d_exp_mud.png');
+	await page.evaluate(() => { const m = window.__m3d; m.world.t = 2760; m.run.sv.miles = 99; m.run.sv.seg = 9; m.run.sv.segEv = []; m.run.sv.nextMig = 1e9; });
+	const dark = await waitFor(() => page.evaluate(() => /brightness\(0\.7/.test(document.getElementById('c').style.filter)), 4000);
+	A(dark && await hudHas(/NIGHT ×1\.1/), 'at 46:00 the Endless Night: the screen darkens, and the readout counts it', await page.evaluate(() => document.getElementById('c').style.filter));
 	A(errors.length === 0, 'no page errors', errors.slice(0, 5).join(' | '));
 } catch (e) {
 	fail++; console.log('FAIL: crashed: ' + (e && e.stack || e));
