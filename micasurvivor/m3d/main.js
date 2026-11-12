@@ -14,11 +14,11 @@ import { frame as netFrame, keepEvents, diff as netDiff, bundle, unbundle, Viewe
 import { hostAdd, hostStep, hostFrame, hostApply, guestWorld, guestSync, guestMsg, guestApply } from './coop.js';
 import { generate, BIOMES } from './gen.js';
 import { mountRunUi, pretty } from './runui.js';
-import { unfair, clean as cleanRun, deviceId, missing as saveMissing, runSum, recordOps, applyOps, scoreBody, WHY, SV, wildOf, catchOps, newlyMet } from './expsave.js';
+import { unfair, clean as cleanRun, deviceId, missing as saveMissing, runSum, recordOps, applyOps, scoreBody, WHY, SV, wildOf, catchOps, newlyMet, boardAsk, boardRows } from './expsave.js';
 import { rng as seedRng } from './gen.js';
 import { startInput } from '/site/input.js';
 import { createFocusNav } from '/site/focusnav.js';
-import { expFrom, newRun, stepRun, hudLine, result as runResult, setZoneTime, fire as fireEvent, zoneRoom } from './expedition.js';
+import { expFrom, newRun, stepRun, hudLine, result as runResult, setZoneTime, fire as fireEvent, zoneRoom, XK } from './expedition.js';
 import { runRow, rowView, teamSpot } from './expnet.js';
 import { guestRun, guestRunApply, stepGuest } from './expcoop.js';
 import { hazardsNow } from './expsurv.js';
@@ -591,7 +591,21 @@ if (FIGHT) {
 }
 /** (the shipping path) A run's own screen, in Micatro's look: runui.js draws this view of the run. The test room's
  *  readout is still filled (tests and ?debug=1 read it), but it is not what a player sees. */
-const RUNUI = myRun || XW ? mountRunUi(document, { debug: Q.has('debug'), onMenu: () => setMenu(!menuUp), onResume: () => setMenu(false) }) : null;
+const RUNUI = myRun || XW ? mountRunUi(document, { debug: Q.has('debug'), onMenu: () => setMenu(!menuUp), onResume: () => setMenu(false), onBoard: (id) => openBoard(id) }) : null;
+/** The 3D boards of this run's map and tier (the menu's or the run's end's button): the server's top ten and yours. */
+let boardUp = null;
+async function openBoard(id) {
+	const show = () => RUNUI.update(runView()), map = myRun ? myRun.map : XW ? XW.map : 'viridian', diff = myRun ? myRun.diff : 'normal';
+	if (!id) { boardUp = null; return show(); }
+	const view = id === 'open' ? (myRun && myRun.surv ? 'survival' : 'score') : id, A = GG.MicaAccount, me = A && A.name();
+	const mine = boardUp = { view, map, diff, rows: [], note: me ? 'Loading…' : 'Log in to Magepunk to see the 3D boards.' };
+	show(); if (!me) return;
+	const d = await A.call('run-leaderboard', boardAsk(map, diff, view));
+	if (boardUp !== mine) return;   // (another board was asked for meanwhile, or this one closed)
+	if (!d.ok || !d.body) mine.note = "Couldn't load the board.";
+	else { mine.rows = boardRows(d.body, (dex) => (GG.DEX_BY[dex] || {}).name || '', me); mine.note = mine.rows.length ? (d.body.you && d.body.you.rank ? `Your best: #${d.body.you.rank}` : 'You have no mark on this board yet.') : 'No one has a mark on this board yet.'; }
+	show();
+}
 /** The menu (Esc, P, or its button). Alone in your own run the fight waits while it is up; a guest's or a watcher's
  *  fight is someone else's and goes on. */
 let menuUp = false, paused = false, escAt = 0;
@@ -607,6 +621,7 @@ if (RUNUI) addEventListener('keydown', (e) => {
 	if (e.code !== 'Escape' && e.code !== 'KeyP') return;
 	// (the Games switcher holds an Esc tap back and replays it when the key comes up: one press is one Esc here)
 	if (e.code === 'Escape') { if (e.isTrusted) escAt = performance.now(); else if (performance.now() - escAt < 1500) return; }
+	if (boardUp) { openBoard(null); return; }
 	if (!menuUp && (mapBig || (myRun && myRun.pick) || (world && world.pl.choices))) return;   // (Esc closes those first)
 	setMenu(!menuUp);
 }, true);
@@ -624,11 +639,12 @@ function runView() {
 	for (const d of myRun && myRun.cap ? myRun.cap.sa.map((a) => a.dex) : rv ? rv.sa : []) v.bag.push({ text: nameOf(d), kind: 'warn' });
 	const b = world && !JOIN ? world.enemies.find((e) => e.boss) : null;
 	if (b) v.boss = { name: nameOf(b.dex), hp: b.hp, maxHp: b.maxHp, enraged: !!(b.ai && b.ai.fury) };
-	if (menuUp && !runOver) v.menu = { title: paused ? 'PAUSED' : 'MENU', line: (paused ? '' : 'The fight goes on while this is open. ') + CONTROLS, restart: run ? location.search || '?' : null, leave: '../' };
+	if (boardUp) v.board = { title: `3D · ${XK.MAP_NAME[boardUp.map] || boardUp.map} · ${boardUp.diff[0].toUpperCase() + boardUp.diff.slice(1)}`, tabs: [['score', 'Score'], ['time', 'Time attack'], ['survival', 'Survival']].map(([id, text]) => ({ id, text, on: id === boardUp.view })), rows: boardUp.rows, note: boardUp.note };
+	if (menuUp && !runOver) v.menu = { boards: true, title: paused ? 'PAUSED' : 'MENU', line: (paused ? '' : 'The fight goes on while this is open. ') + CONTROLS, restart: run ? location.search || '?' : null, leave: '../' };
 	if (runOver) {
 		const r = runOver, q = new URLSearchParams(location.search); q.set('exp', (+q.get('exp') || 0) + 1);
 		v.over = typeof r === 'string' ? { won: r === 'won', title: r === 'won' ? 'EXPEDITION COMPLETE!' : 'RUN OVER', line: '', rows: [], again: null, leave: '../' }
-			: { won: r.won, title: r.title, line: r.survival ? r.lines.join(' · ') : r.line, again: run ? '?' + q : null, leave: '../', kept: kept ? { ok: kept.ok, text: kept.text } : null,
+			: { won: r.won, title: r.title, line: r.survival ? r.lines.join(' · ') : r.line, again: run ? '?' + q : null, leave: '../', boards: true, kept: kept ? { ok: kept.ok, text: kept.text } : null,
 				rows: [['Time', `${Math.floor(r.parts.time / 60)}:${String(r.parts.time % 60).padStart(2, '0')}`], ['KOs', String(r.parts.kills)], ['Level', String(v.level)], ['Score', String(r.score)], ['Pay', '₽ ' + r.pay.pay]].concat(r.medal ? [['Medal', r.medal]] : []) };
 	} else if (noteText && performance.now() < noteUntil) v.note = noteText;
 	return v;
@@ -638,8 +654,8 @@ function runView() {
 // confirms and jumps, X / B cancels and slides, Q / E and L / R turn the camera, Enter / Start is the menu, Backspace
 // / Select the zone map. While a screen is up (the run's end, the menu, a level's cards, a choice) the same actions
 // move a focus ring over its buttons and press them (site/focusnav.js), so a run can be played with no mouse.
-const uiLayer = () => { const el = (id) => document.getElementById(id); return RUNUI && el('rx-end').classList.contains('show') ? el('rx-end') : menuUp ? el('rx-menu') : el('cards').style.display === 'grid' ? el('cards') : null; };
-const uiNav = createFocusNav({ scope: uiLayer, domFocus: false, scrollFallback: false, onCancel: () => { if (menuUp) setMenu(false); else if (myRun && myRun.pick) takePick(-1); }, onMenu: () => { if (menuUp) setMenu(false); } });
+const uiLayer = () => { const el = (id) => document.getElementById(id); return RUNUI && boardUp ? el('rx-board') : RUNUI && el('rx-end').classList.contains('show') ? el('rx-end') : menuUp ? el('rx-menu') : el('cards').style.display === 'grid' ? el('cards') : null; };
+const uiNav = createFocusNav({ scope: uiLayer, domFocus: false, scrollFallback: false, onCancel: () => { if (boardUp) openBoard(null); else if (menuUp) setMenu(false); else if (myRun && myRun.pick) takePick(-1); }, onMenu: () => { if (menuUp) setMenu(false); } });
 const siteInput = startInput({ pad: true,
 	onAction(a, info) {
 		if (!info.repeat) acts.add(a);
@@ -736,6 +752,7 @@ function showHud() {
 
 // what a test (and a curious owner in the console) can reach
 window.__m3d = {
+	openBoard, get boardUp() { return boardUp; },
 	wild: WILD, saveOk: SAVE_OK, keepCatch,
 	get kept() { return kept; }, practice: PRACTICE,
 	acts, uiNav, siteInput,

@@ -7,7 +7,8 @@
 //
 //   view: { name, level, hp, maxHp, shield, xp, xpNext, time (s), kos, parts: [the run's line, in pieces], note,
 //           boss: { name, hp, maxHp, enraged } | null, moves: [{ name, lv, col }], bag: [{ text, kind }],
-//           menu: null | { title, line, restart: url | null, leave: url } (the pause menu),
+//           board: null | { title, tabs: [{ id, text, on }], rows: [{ rank, name, who, score, time, me }], note } (the 3D boards),
+//           menu: null | { title, line, restart: url | null, leave: url, boards: bool } (the pause menu),
 //           over: null | { won, title, line, rows: [[label, value]], kept: { ok, text } | null (what the save did),
 //                          again: url | null, leave: url } }
 
@@ -20,7 +21,8 @@ export const short = (n) => { n = Math.ceil(n); return n >= 1e9 ? (n / 1e9).toFi
 export const chipKind = (text, i) => (i === 0 ? 'on' : /^₽/.test(text) ? 'money' : /SWARM!|GUARDIAN|LEGENDARY|MEWTWO|BOSS IN|EXHAUSTED|NIGHT|SIEGE/.test(text) ? 'warn' : '');
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
-/** Put the run's screen on the page. o.onMenu(): the menu's button was pressed; o.onResume(): its "Resume".
+/** Put the run's screen on the page. o.onMenu(): the menu's button was pressed; o.onResume(): its "Resume";
+ *  o.onBoard(id | null): a board was asked for ('score' | 'time' | 'survival'), or closed.
  *  -> { update(view), root } */
 export function mountRunUi(doc, o = {}) {
 	doc.body.classList.add('rx'); if (o.debug) doc.body.classList.add('rx-debug');
@@ -32,9 +34,9 @@ export function mountRunUi(doc, o = {}) {
 		+ `<div class="rx-panel rx-boss" id="rx-boss"><div class="rx-who"><span class="rx-name" id="rx-bname"></span></div><div class="rx-bar"><i id="rx-bhp"></i><span id="rx-bhpt"></span></div></div>`
 		+ `<div class="rx-bottom"><div class="rx-chips rx-bag" id="rx-bag"></div><div class="rx-moves" id="rx-moves"></div></div>`
 		+ `<button class="rx-menu-btn" id="rx-menu-btn" aria-label="Menu">II</button>`
-		+ `<div class="rx-end" id="rx-menu"></div><div class="rx-end" id="rx-end"></div>`;
+		+ `<div class="rx-end" id="rx-menu"></div><div class="rx-end" id="rx-end"></div><div class="rx-end" id="rx-board"></div>`;
 	doc.body.appendChild(root);
-	root.addEventListener('click', (e) => { const b = e.target.closest('#rx-menu-btn, #rx-resume'); if (!b) return; e.preventDefault(); b.blur(); if (b.id === 'rx-resume') { if (o.onResume) o.onResume(); } else if (o.onMenu) o.onMenu(); });
+	root.addEventListener('click', (e) => { const b = e.target.closest('#rx-menu-btn, #rx-resume, [data-board]'); if (!b) return; e.preventDefault(); b.blur(); if (b.dataset.board !== undefined) { if (o.onBoard) o.onBoard(b.dataset.board || null); } else if (b.id === 'rx-resume') { if (o.onResume) o.onResume(); } else if (o.onMenu) o.onMenu(); });
 	const $ = (id) => doc.getElementById(id), last = {};
 	const text = (id, v) => { if (last[id] !== v) { last[id] = v; $(id).textContent = v; } };
 	const html = (id, v) => { if (last[id] !== v) { last[id] = v; $(id).innerHTML = v; } };
@@ -53,11 +55,19 @@ export function mountRunUi(doc, o = {}) {
 		const mv = (v.moves || []).slice(0, 4); while (v.moves && mv.length < 4) mv.push(null);
 		html('rx-moves', mv.map((m) => (m ? `<div class="rx-move" style="border-top-color:${esc(m.col || '#5f7377')}"><b>${esc(m.name)}</b><i>Lv ${m.lv | 0}</i></div>` : '<div class="rx-move empty"><b>—</b><i>&nbsp;</i></div>')).join(''));
 		html('rx-bag', (v.bag || []).map((b) => `<span class="rx-chip ${b.kind || 'dim'}">${esc(b.text)}</span>`).join(''));
+		const bk = v.board ? JSON.stringify(v.board) : '';
+		if (last.board !== bk) {
+			last.board = bk; const b = v.board;
+			$('rx-board').innerHTML = !b ? '' : `<div class="rx-panel wide"><h1>${esc(b.title)}</h1><div class="rx-btns">${b.tabs.map((t) => `<button class="rx-btn small ${t.on ? 'red' : ''}" data-board="${esc(t.id)}">${esc(t.text)}</button>`).join('')}</div>`
+				+ (b.rows.length ? `<div class="rx-board">${b.rows.map((r) => `<div class="rx-brow ${r.me ? 'me' : ''}"><span>#${r.rank}</span><span>${esc(r.name)}</span><span>${esc(r.who)}</span><span>${esc(r.time)}</span><span>${esc(r.score)}</span></div>`).join('')}</div>` : '')
+				+ `<p id="rx-board-note">${esc(b.note || '')}</p><div class="rx-btns"><button class="rx-btn blue" id="rx-board-close" data-board="">Close</button></div></div>`;
+			$('rx-board').classList.toggle('show', !!b);
+		}
 		const mk = v.menu && !v.over ? JSON.stringify(v.menu) : '';
 		if (last.menu !== mk) {
 			last.menu = mk; const m = mk ? v.menu : null;
 			$('rx-menu').innerHTML = !m ? '' : `<div class="rx-panel"><h1>${esc(m.title)}</h1><p>${esc(m.line || '')}</p><div class="rx-btns col"><button class="rx-btn blue" id="rx-resume">Resume</button>`
-				+ `${m.restart ? `<a class="rx-btn orange" id="rx-restart" href="${esc(m.restart)}">Restart the run</a>` : ''}<a class="rx-btn red" id="rx-quit" href="${esc(m.leave || '../')}">Leave</a></div></div>`;
+				+ `${m.boards ? '<button class="rx-btn" id="rx-boards" data-board="open">3D boards</button>' : ''}${m.restart ? `<a class="rx-btn orange" id="rx-restart" href="${esc(m.restart)}">Restart the run</a>` : ''}<a class="rx-btn red" id="rx-quit" href="${esc(m.leave || '../')}">Leave</a></div></div>`;
 			$('rx-menu').classList.toggle('show', !!m);
 		}
 		cls('rx-menu-btn', 'hide', !!v.over);
@@ -67,7 +77,7 @@ export function mountRunUi(doc, o = {}) {
 			$('rx-end').innerHTML = `<div class="rx-panel"><h1 class="${r.won ? 'won' : 'lost'}">${esc(r.title)}</h1><p>${esc(r.line || '')}</p>`
 				+ (r.kept ? `<p class="rx-kept ${r.kept.ok ? 'ok' : ''}" id="rx-kept">${esc(r.kept.text)}</p>` : '')
 				+ (r.rows && r.rows.length ? `<div class="rx-rows">${r.rows.map(([a, b]) => `<span>${esc(a)}</span><span>${esc(b)}</span>`).join('')}</div>` : '')
-				+ `<div class="rx-btns">${r.again ? `<a class="rx-btn blue" id="rx-again" href="${esc(r.again)}">Play again</a>` : ''}<a class="rx-btn red" id="rx-leave" href="${esc(r.leave || '../')}">Leave</a></div></div>`;
+				+ `<div class="rx-btns">${r.again ? `<a class="rx-btn blue" id="rx-again" href="${esc(r.again)}">Play again</a>` : ''}${r.boards ? '<button class="rx-btn" id="rx-boards" data-board="open">3D boards</button>' : ''}<a class="rx-btn red" id="rx-leave" href="${esc(r.leave || '../')}">Leave</a></div></div>`;
 			$('rx-end').classList.add('show');
 		}
 	}

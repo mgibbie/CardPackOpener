@@ -6,6 +6,8 @@
 //     what the run says as a banner
 //   * a card's art (a move's type, a vitamin's picture) and a move's name written for a player
 //   * the menu (Esc, P or its button): alone, the fight waits; Resume, Restart the run, Leave
+//   * the 3D boards (the menu's button): the server's top ten of this map and tier, asked for with d3; its tabs;
+//     logged out, a line saying so
 //   * the run's end: a panel with the result, "Play again" (the next seed) and "Leave"
 //   * a narrow phone screen: nothing runs off it, nothing sits under the minimap
 //   * the test room without a run is as it was
@@ -33,8 +35,12 @@ async function waitFor(fn, ms) { const t0 = Date.now(); while (Date.now() - t0 <
 A(pretty('flame-wheel') === 'Flame Wheel' && short(1234) === '1,234' && short(1120000019) === '1.12B' && mmss(125) === '2:05', 'names, numbers and times are written for a player (Flame Wheel, 1,234, 1.12B, 2:05)');
 A(chipKind('ZONE 1/3', 0) === 'on' && chipKind('₽ 12', 3) === 'money' && chipKind('FINAL SWARM!', 1) === 'warn' && chipKind('ALTAR 28 m', 2) === '', 'the run\'s line in chips: the zone lit, money gold, a danger orange');
 
+// (the boards' server, stood in for: what the page asks is kept, and three marks are answered)
+const asked = [];
+const TOP = [{ name: 'ash', score: 9100, time: 1500, level: 44, dex: 6 }, { name: 'tester', score: 4321, time: 800, level: 30, dex: 5 }, { name: 'misty', score: 1200, time: 300, level: 12, dex: 7 }];
 const server = http.createServer((req, res) => {
 	const u = decodeURIComponent(req.url.split('?')[0]);
+	if (u === '/api/mp' && req.method === 'POST') { let b = ''; req.on('data', (c) => { b += c; }); req.on('end', () => { let q = {}; try { q = JSON.parse(b); } catch { } asked.push({ ...q, auth: req.headers.authorization || '' }); res.writeHead(200, { 'content-type': 'application/json' }); res.end(JSON.stringify(q.action === 'run-leaderboard' ? { top: q.board === 'time' ? TOP.slice(0, 1) : TOP, you: q.board === 'time' ? null : { ...TOP[1], rank: 2 } } : { ok: true })); }); return; }
 	const f = u.endsWith('/') ? u + 'index.html' : u;
 	const base = /^\/(micasurvivor\/assets|overworld\/data)\//.test(f) ? AROOT : ROOT;
 	fs.readFile(path.join(base, f), (e, d) => { if (e) { res.writeHead(404); res.end('nf'); return; } res.writeHead(200, { 'content-type': TYPES[path.extname(f)] || 'application/octet-stream' }); res.end(d); });
@@ -112,6 +118,28 @@ try {
 	await page.evaluate(() => window.__m3d.toggleMap(true)); await page.keyboard.press('Escape'); await sleep(200);
 	const mapEsc = await page.evaluate(() => ({ big: window.__m3d.mapBig, menu: document.getElementById('rx-menu').classList.contains('show') }));
 	A(!mapEsc.big && !mapEsc.menu, 'with the zone map open, Esc closes the map and not more', mapEsc);
+
+	// ---- the 3D boards
+	await page.keyboard.press('Escape'); await page.click('#rx-boards');
+	const out = await waitFor(() => page.evaluate(() => document.getElementById('rx-board').classList.contains('show') && /Log in to Magepunk/.test(document.getElementById('rx-board-note').textContent)), 3000);
+	A(out && asked.length === 0, 'the menu\'s "3D boards", logged out: a line saying to log in, and nothing is asked of the server');
+	await page.click('#rx-board-close');
+	await page.evaluate(() => { localStorage.setItem('magepunk_mp_token_v1', 'tok'); localStorage.setItem('magepunk_mp_state_v1', JSON.stringify({ username: 'Tester' })); });
+	await page.click('#rx-boards');
+	const listed = await waitFor(() => page.evaluate(() => document.querySelectorAll('#rx-board .rx-brow').length === 3), 4000);
+	const b0 = await page.evaluate(() => ({ h: document.querySelector('#rx-board h1').textContent, rows: [...document.querySelectorAll('#rx-board .rx-brow')].map((r) => [...r.children].map((c) => c.textContent).join('|') + (r.classList.contains('me') ? ' <me' : '')), tabs: [...document.querySelectorAll('#rx-board [data-board].small')].map((t) => t.textContent + (t.classList.contains('red') ? '*' : '')), note: document.getElementById('rx-board-note').textContent, paused: window.__m3d.paused }));
+	const q0 = asked[asked.length - 1];
+	A(listed && q0.action === 'run-leaderboard' && q0.mode === 'micasurvivor_expedition' && q0.d3 === true && q0.map === 'viridian' && q0.diff === 'normal' && q0.rules === 2 && !('board' in q0) && q0.auth === 'Bearer tok', 'logged in: the page asks for this map\'s and tier\'s 3D score board (d3)', q0);
+	A(b0.h === '3D · Viridian Forest · Normal' && b0.rows[0] === '#1|ash|Charizard Lv 44|25:00|9,100' && b0.rows[1] === '#2|tester|Charmeleon Lv 30|13:20|4,321 <me' && b0.tabs.join() === 'Score*,Time attack,Survival' && b0.note === 'Your best: #2' && b0.paused, 'its marks, yours lit, the tabs, your rank; the fight still waits under it', b0);
+	await shot('m3d_runui_board.png');
+	await page.click('#rx-board [data-board="time"]');
+	const timed = await waitFor(() => page.evaluate(() => document.querySelectorAll('#rx-board .rx-brow').length === 1 && /no mark on this board yet/.test(document.getElementById('rx-board-note').textContent)), 4000);
+	A(timed && asked[asked.length - 1].board === 'time' && asked[asked.length - 1].d3 === true, 'the "Time attack" tab asks for that board');
+	await page.keyboard.press('Escape');
+	const closed = await page.evaluate(() => ({ board: document.getElementById('rx-board').classList.contains('show'), menu: document.getElementById('rx-menu').classList.contains('show') }));
+	A(!closed.board && closed.menu, 'Esc closes the board, back to the menu', closed);
+	await page.keyboard.press('Escape');
+	await page.evaluate(() => { localStorage.removeItem('magepunk_mp_token_v1'); localStorage.removeItem('magepunk_mp_state_v1'); });
 
 	// ---- the run's end
 	await page.evaluate(() => { const m = window.__m3d; m.world.pl.xproc.shield = 0; m.world.pl.invuln = 0; m.world.pl.hp = 1; m.addBoss(150, m.state.x + 1.5, m.state.z, { slot: 0 }); for (const e of m.world.enemies) e.atk = 1e6; });

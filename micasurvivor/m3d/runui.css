@@ -106,3 +106,12 @@ body.rx #cards button em .rx-type { border-radius: .4em; padding: .3em .6em .22e
 /* ---- the run's end: what the save did with it */
 .rx-end p.rx-kept { color: #c6d1d3; font-size: .9em; margin-top: -.3em; }
 .rx-end p.rx-kept.ok { color: var(--green); }
+/* ---- the 3D boards (from the menu or the run's end) */
+#rx-board { z-index: 3; }
+.rx-end .rx-panel.wide { width: min(32em, 100%); }
+.rx-btn.small { font-size: 1em; padding: .4em .7em .3em; }
+.rx-board { background: var(--panel-d); border-radius: .6em; padding: .4em .6em; margin: .7em 0; text-align: left; max-height: 46vh; overflow: auto; }
+.rx-brow { display: grid; grid-template-columns: 2.6em minmax(0, 1.3fr) minmax(0, 1fr) 3.4em 5em; gap: .5em; padding: .28em .2em; white-space: nowrap; }
+.rx-brow span { overflow: hidden; text-overflow: ellipsis; } .rx-brow span:first-child { color: var(--money); } .rx-brow span:nth-child(n+4) { text-align: right; }
+.rx-brow.me { background: var(--panel); border-radius: .4em; color: var(--money); }
+#rx-board .rx-panel { animation: none; }   /* (it is drawn again as its rows arrive: no rise each time) */
