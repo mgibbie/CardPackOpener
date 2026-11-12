@@ -1000,6 +1000,32 @@ met, so they come with saving). Then the shipping path.
 
 Tests: `micasurvivor_m3d_expfog_test.mjs` (15 checks, node), the page test 41 (was 37).
 
+## 5.30 P4, fourteenth part: built (2026-11-12). Mega Evolution.
+
+In `micasurvivor/m3d/expleague.js`, with the 2D game's own data and numbers (`js/data/mega-data.js`,
+`js/expedition/mega.js`): from Lv 40 a League member whose form has a Mega is offered it. That level's cards are
+its Megas (Charizard: X or Y) and "Not yet" (asked again 5 levels on), and the fight waits for the choice.
+
+- Once a run, for the rest of the run: the Mega's real base stats and types. The kit, the role, the ability and
+  Maturity stay the member's. It cannot be hurt for 1.2 s.
+- 3D's own: how a body moves comes from its types, so a Mega that changes type moves differently (Mega
+  Charizard X is Fire / Dragon: it no longer glides as the Fire / Flying Charizard did).
+- The order of a level's cards: a branch evolution, then the Megas, then the usual cards.
+- The run's row tells a watcher (and a co-op guest) which Mega the player is.
+- On the page: a Mega has no walking sheet, so it is drawn as its one battle sprite (the 2D game's art for it),
+  cut to what is drawn, mirrored when it faces right, 1.12x the form's height.
+
+Fixed on the way: what a card picked by hand says (an evolution, a Mega) was cleared by the run's next step
+before the screen showed it.
+
+Not covered: Megas as enemies (zone 3's and Survival's Mega elites), the Mega look of a co-op mate (a mate is
+still drawn as its species), the 2D game's aura and emblem.
+
+**Still of P4**: wild League encounters (they read which members your save says you have met, so they come
+with saving). Then the shipping path.
+
+Tests: `micasurvivor_m3d_expleague_test.mjs` 51 checks (was 34), the page test 44 (was 41).
+
 ## 6. Dive in 2D: built
 
 **D0 — find the stairs (small; can ship first, on its own).** *Built 2026-11-11 (`overworld/tests/micasurvivor_dive_stairs_test.mjs`). As built: the stairs took their own orange mark, so the rocks and Meowth keep their gold; the HUD arrow comes up after 25 s on a floor, or at once when its boss falls.*

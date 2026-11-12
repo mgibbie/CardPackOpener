@@ -8,7 +8,7 @@
 import * as THREE from 'three';
 import { K, CELL, step, newState, noInput, groundAt, stateName, facingRow, tuneFor, TYPE_TRAITS } from './sim.js';
 import { buildRoom, SPOTS } from './room.js';
-import { makeRenderer, buildTerrain, buildWater, buildScatter, buildExit, drawMap, SpriteBatch, Shadows, Shots, Flashes, loadSheet, frameAt, spriteQuad, footLift, placeCamera } from './render.js';
+import { makeRenderer, buildTerrain, buildWater, buildScatter, buildExit, drawMap, SpriteBatch, Shadows, Shots, Flashes, loadSheet, frameAt, spriteQuad, footLift, placeCamera, PX } from './render.js';
 import { newWorld, addEnemy, addBoss, tick, dataFrom, choose, drop, CK } from './combat.js';
 import { frame as netFrame, keepEvents, diff as netDiff, bundle, unbundle, Viewer, Tape, ballColour, typeName, NK } from './net.js';
 import { hostAdd, hostStep, hostFrame, hostApply, guestWorld, guestSync, guestMsg, guestApply } from './coop.js';
@@ -174,6 +174,27 @@ async function sheet(dex, anim, max) {
 	sheets.set(key, o);
 	return o;
 }
+// A Mega has no walking sheet: it is drawn as its one battle sprite (the 2D game's own art for it), cut to what is
+// drawn of it, mirrored when it faces the viewer's right, 1.12x the height of the form it came from (the 2D game's).
+const megaSheets = new Map();   // Mega id -> { batch, img, box } (null while it loads)
+let megaNow = 0;                // (the Mega drawn this frame)
+/** What is drawn inside a part of an image: [x0, y0, x1, y1] in its pixels. */
+function inkBox(img, x, y, w, h) {
+	const c = document.createElement('canvas'); c.width = w; c.height = h;
+	const g = c.getContext('2d', { willReadFrequently: true }); g.drawImage(img, x, y, w, h, 0, 0, w, h);
+	const d = g.getImageData(0, 0, w, h).data; let x0 = w, y0 = h, x1 = -1, y1 = -1;
+	for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) if (d[(j * w + i) * 4 + 3] > 16) { if (i < x0) x0 = i; if (i > x1) x1 = i; if (j < y0) y0 = j; if (j > y1) y1 = j; }
+	return x1 < 0 ? [x, y, x + w, y + h] : [x + x0, y + y0, x + x1 + 1, y + y1 + 1];
+}
+function megaSheet(id) {
+	if (megaSheets.has(id)) return megaSheets.get(id);
+	megaSheets.set(id, null);
+	const M = GG.ExpMega, src = M && M.BY[id] && M.srcOf(M.BY[id]); if (!src) return null;
+	loadSheet(src).then((tex) => { const batch = new SpriteBatch(tex, 1); scene.add(batch.mesh); megaSheets.set(id, { batch, img: tex.image, box: inkBox(tex.image, 0, 0, tex.image.width, tex.image.height) }); }).catch((e) => console.warn(e.message));
+	return null;
+}
+/** How tall a sheet's first frame is drawn, in its pixels. */
+function inkH(ps) { if (!ps.inkH) { const b = inkBox(ps.img, 0, 0, ps.meta.w, ps.meta.h); ps.inkH = b[3] - b[1]; } return ps.inkH; }
 const shadows = new Shadows(N + 4 + (world ? world.cap : WATCH ? CK.CAP + 20 : 0));
 scene.add(shadows.mesh);
 const shots = world || WATCH ? new Shots(600) : null, flashes = world || WATCH ? new Flashes(scene) : null;
@@ -197,6 +218,7 @@ function draw(t) {
 	right = placeCamera(camera, room, [state.x, state.y + 1.3 - bob, state.z], cam.yaw, cam.pitch, camDist);
 
 	for (const s of sheets.values()) s.batch.begin();
+	for (const s of megaSheets.values()) if (s) s.batch.begin();
 	shadows.begin();
 	// the crowd
 	for (const e of crowd) {
@@ -267,12 +289,20 @@ function draw(t) {
 	}
 	// the lead
 	const name = stateName(state), anim = name === 'idle' || name === 'staggered' ? 'Idle' : 'Walk', LD = world && world.pl.mon.dex !== DEX ? world.pl.mon.dex : rv && rv.league ? rv.league.form : DEX, ps = sheets.get(LD + '/' + anim) || sheets.get(LD + '/Idle') || (wantLead(LD), sheets.get(DEX + '/' + anim) || sheets.get(DEX + '/Idle'));   // (P4: a League member is drawn as the stage it is)
-	if (ps) {
+	const MG = myRun && myRun.lg ? myRun.lg.mega : rv && rv.league ? rv.league.mega : 0, ms = MG && ps ? megaSheet(MG) : null;
+	megaNow = ms ? MG : 0;
+	if (ms) {
+		const b = ms.box, bw = b[2] - b[0], bh = b[3] - b[1], k = PX * 1.15 * GG.ExpMega.K.H_K * inkH(ps) / bh, row = facingRow(state.facing, cam.yaw), flip = row >= 1 && row <= 3;
+		const u0 = b[0] / ms.img.width, u1 = b[2] / ms.img.width;
+		ms.batch.add(state.x, state.y, state.z, [-bw / 2 * k, 0, bw / 2 * k, bh * k], [flip ? u1 : u0, b[1] / ms.img.height, flip ? u0 : u1, b[3] / ms.img.height], 1);
+		shadows.add(room, state.x, state.z, state.y, ps.shadow * 1.15 * GG.ExpMega.K.H_K);
+	} else if (ps) {
 		const q = spriteQuad(ps.meta, ps.img, name === 'sliding' ? 0 : frameAt(ps.meta, state.t * (name === 'running' ? 1.25 : 1)), facingRow(state.facing, cam.yaw), 1.15, ps.lift);
 		ps.batch.add(state.x, state.y, state.z, q.rect, q.uv, 1);
 		shadows.add(room, state.x, state.z, state.y, ps.shadow * 1.15);
 	}
 	for (const s of sheets.values()) s.batch.end(right);
+	for (const s of megaSheets.values()) if (s) s.batch.end(right);
 	shadows.end();
 	renderer.render(scene, camera);
 }
@@ -527,6 +557,7 @@ function useTool(name) {
 function pickCard(i) {
 	if (banMode) { banMode = false; if (world && world.pl.choices) { banishCard(myRun, i); showCards(); } return; }
 	if (!world || !world.pl.choices || !choose(world, i)) return;
+	if (myRun) { for (const q of myRun.says) note(q.text, q.s * 1000); myRun.says.length = 0; }   // (what a card you picked says: an evolution, a Mega. The run's next step would clear it unshown)
 	const el = document.getElementById('cards'); el.style.display = 'none'; el.innerHTML = '';
 	if (world.pl.pending > 0) { tick(world, null, K.TICK); fightEvents(world.events); }   // (another level waiting: its cards come up at once)
 }
@@ -548,7 +579,7 @@ function showHud() {
 	hud.textContent = `${s.p50 ? Math.round(1000 / s.p50) : 0} fps · frame ${s.p50} ms (p95 ${s.p95}) · rules ${s.simP95} ms\n`
 		+ `${s.crowd} sprites · ${s.calls} draw calls · ${s.triangles} triangles\n`
 		+ `${stateName(state)} · ${sp.toFixed(1)} m/s · height ${state.y.toFixed(2)} m · air jumps ${state.airJumps}\n`
-		+ (rv && rv.league && !grun ? `${(GG.DEX_BY[rv.league.form] || {}).name} (${((GG.DEX_BY[rv.league.form] || {}).types || []).join(' / ')}) · League member ${(GG.DEX_BY[rv.league.member] || {}).name}`
+		+ (rv && rv.league && !grun ? `${rv.league.mega && GG.ExpMega.BY[rv.league.mega] ? GG.ExpMega.nameOf(GG.ExpMega.BY[rv.league.mega]) : (GG.DEX_BY[rv.league.form] || {}).name} (${((rv.league.mega && GG.ExpMega.BY[rv.league.mega] || GG.DEX_BY[rv.league.form] || {}).types || []).join(' / ')}) · League member ${(GG.DEX_BY[rv.league.member] || {}).name}`
 			: myRun && myRun.lg ? `${world.pl.mon.name} (${(world.pl.mon.types || []).join(' / ')}) · League member ${(GG.DEX_BY[myRun.lg.member] || {}).name} · ${myRun.lg.role} · kit ${myRun.lg.kit}/4${myRun.lg.mat ? ' · Maturity ' + myRun.lg.mat : ''}`
 			: `${SPECIES.name} (${TYPES.join(' / ') || 'no type'})${TRAITS.length ? ' · traits: ' + TRAITS.join(', ') : ''}`)
 		+ (!run ? '' : `\n${hudLine(run)}${run.ph === 0 && !run.surv ? ' · charge ' + Math.round(run.charge * 100) + ' %' : ''}${run.sv && run.sv.pacts.length ? '\npacts: ' + run.sv.pacts.join(', ') : ''}`)
@@ -583,6 +614,7 @@ function showHud() {
 
 // what a test (and a curious owner in the console) can reach
 window.__m3d = {
+	get megaNow() { return megaNow; }, megaSheets,
 	get ready() { return ready; }, state, get room() { return room; }, run, setZoneTime: (sec) => run && setZoneTime(run, sec), useTool, takePick, ecoView: () => (run ? ecoView(run) : []), capView: () => (run ? capView(run) : null), hazards: () => (run ? hazardsNow(run) : []), fog: () => fogNow(), toggleMap, get mapBig() { return mapBig; }, get rv() { return rv; }, noteLog, grun, fire: (ev) => run && fireEvent(run, ev), K, TUNE, TYPES, TRAITS, cam, crowd, sheets, stats, gen: GEN, biome: BIOME, world, numbers, net, tape, myId: MYID, mates, get coView() { return coView; }, playTape, get view() { return view; }, get viewer() { return viewer; }, get watchT() { return watchT; }, addBoss: (dex, x, z, o) => addBoss(world, dex, x, z, o), drop: (kind, x, z, v) => drop(world, kind, x, groundAt(room, x, z), z, v), pickCard, addEnemy: (dex, x, z, o) => addEnemy(world, dex, x, z, o), holdExit: false, get leaving() { return leaving; },
 	setInput(o) { override = o ? { ...noInput(), ...o } : null; },
 	rowOf: (facing, yaw) => facingRow(facing, yaw === undefined ? cam.yaw : yaw),

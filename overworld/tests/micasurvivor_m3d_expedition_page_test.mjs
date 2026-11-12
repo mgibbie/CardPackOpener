@@ -211,6 +211,26 @@ try {
 	const drawn5 = await waitFor(() => page.evaluate(() => !!window.__m3d.sheets.get('5/Idle') && !!window.__m3d.sheets.get('5/Walk')), 10000);
 	A(drawn5, 'drawn as a Charmeleon now');
 	await shot('m3d_exp_league.png');
+	// ---- Mega Evolution: the cards are picked by hand until the Megas come up (all that XP lands as many levels at
+	// once: it is past Lv 40 by its next cards)
+	await page.evaluate(() => { const m = window.__m3d, s = m.state; m.world.autoPick = undefined; m.drop('xp', s.x, s.z, 400000); });
+	let mc = [], megaUp = false;
+	for (let i = 0; i < 40 && !megaUp; i++) {
+		await waitFor(() => page.evaluate(() => { const m = window.__m3d; return !!m.world.pl.choices && document.querySelectorAll('#cards button[data-i]').length >= 2; }), 20000);
+		mc = await page.evaluate(() => [...document.querySelectorAll('#cards button[data-i] b')].map((q) => q.textContent));
+		megaUp = mc.some((q) => /Mega Charizard/.test(q));
+		if (!megaUp) await page.click('#cards button[data-i="0"]');
+	}
+	const mlv = await page.evaluate(() => window.__m3d.world.pl.level);
+	A(megaUp && mlv >= 40 && mc.length === 3 && /Charizard > Mega Charizard X/.test(mc[0]) && /Charizard > Mega Charizard Y/.test(mc[1]) && /Not yet/.test(mc[2]), `from Lv 40 (Lv ${mlv}) a level's cards are Charizard's two Megas and "Not yet" (${mc.join(' | ')})`);
+	await page.evaluate(() => { window.__m3d.world.pl.pending = 1; });   // (only this level is waiting)
+	await page.click('#cards button[data-i="0"]'); await sleep(300);
+	const said = await page.evaluate(() => window.__m3d.noteLog.includes('Charizard Mega Evolved into Mega Charizard X!') && document.getElementById('cards').style.display === 'none');
+	A(said, 'picked by hand: the cards go, and the screen says it Mega Evolved', await page.evaluate(() => window.__m3d.noteLog.slice(-4)));
+	const mega = await waitFor(() => page.evaluate(() => window.__m3d.run.lg.mega === 10034 && window.__m3d.megaNow === 10034), 40000);
+	const g1 = await page.evaluate(() => { const m = window.__m3d, s = m.megaSheets.get(10034); return { lv: m.world.pl.level, form: m.run.lg.form, mega: m.run.lg.mega, types: m.world.pl.mon.types.join(), box: s && s.box, n: s && s.batch.n }; });
+	A(mega && g1.form === 6 && g1.types === 'fire,dragon' && g1.box && g1.box[2] > g1.box[0] && g1.n === 1 && await hudHas(/Mega Charizard X .fire \/ dragon. · League member Charmander/), `Mega Charizard X (Lv ${g1.lv}), drawn as the Mega's own sprite`, JSON.stringify(g1) + (await hud()));
+	await shot('m3d_exp_mega.png');
 	// ---- Survival
 	await page.goto(`http://localhost:${PORT}/micasurvivor/m3d/?exp=5&mode=survival&dex=6&weather=0`, { waitUntil: 'domcontentloaded' });
 	const ok3 = await waitFor(() => page.evaluate(() => !!(window.__m3d && window.__m3d.ready && window.__m3d.run && window.__m3d.run.sv)), 30000);

@@ -10,13 +10,16 @@
 //   * two or more targets: that level's cards are the choice, and the fight waits for it
 //   * Maturity at Lv 24 and 44 for a stage that evolves no further
 //   * Eviolite: its armour only while you can still evolve
+//   * Mega Evolution: from Lv 40 a form with a Mega is offered it (or "Not yet": again five levels on); once a run;
+//     the Mega's base stats and types, the kit / role / ability / Maturity kept; a watcher is told which Mega
 //   * a run that is not a League run is as it was
 //   node overworld/tests/micasurvivor_m3d_expleague_test.mjs
 import { tuneFor } from '../../micasurvivor/m3d/sim.js';
 import { dataFrom, gainXp, choose } from '../../micasurvivor/m3d/combat.js';
 import { expFrom, newRun, stepRun } from '../../micasurvivor/m3d/expedition.js';
 import { candidates, moveCands, takeItem, total, levelOf } from '../../micasurvivor/m3d/explevel.js';
-import { memberOf, canEvolve } from '../../micasurvivor/m3d/expleague.js';
+import { memberOf, canEvolve, megaCards, megaEvolve } from '../../micasurvivor/m3d/expleague.js';
+import { runRow, rowView } from '../../micasurvivor/m3d/expnet.js';
 import { loadG } from './m3d_data.mjs';
 
 let pass = 0, fail = 0;
@@ -124,6 +127,47 @@ const ids = (S) => S.w.pl.moves.map((m) => m.id);
 	A(near(total(T, 'armor'), a2) && near(T.w.pl.baseReduce, b2), 'on a Charizard (it cannot): nothing');
 	const U = run(4, { eco: true }); takeItem(U, 'eviolite'); levelTo(U, 16); const mid = U.w.pl.xperk.armor; levelTo(U, 36);
 	A(mid === 15 && !U.w.pl.xperk.armor, 'held through its evolutions, it stops working at the last one');
+}
+
+// ---------------------------------------------------------------- Mega Evolution
+{
+	const M = LG.M, X6 = M.BY[10034], Y6 = M.BY[10035];
+	A(M.K.LV === 40 && M.K.AGAIN === 5 && M.of(6).length === 2 && !M.of(5).length && !M.of(182).length, 'the 2D game\'s numbers: offered from Lv 40, asked again 5 levels on; Charizard has two Megas, Charmeleon and Bellossom none');
+	const S = run(4), pl = S.w.pl;
+	levelTo(S, 39);
+	A(S.lg.form === 6 && !S.lg.mega && megaCards(S) === null, 'a Charizard at Lv 39: no Mega yet');
+	S.w.autoPick = undefined;
+	gainXp(S.w, (pl.xpNext - pl.xp + 0.5) / pl.xpMul); step(S);
+	const cs = pl.choices;
+	A(pl.level === 40 && cs && cs.length === 3 && cs.map((c) => c.key).join() === 'xmega:10034,xmega:10035,xmega:later' && cs[0].title === 'Charizard > Mega Charizard X' && cs[0].tag === 'MEGA EVOLUTION' && /^fire \/ dragon · HP \d+ > \d+/.test(cs[0].desc) && cs[2].title === 'Not yet', `at Lv 40 the level's cards are its Megas and "Not yet" (${cs && cs.map((c) => c.title).join(' | ')})`);
+	const t = S.w.t; for (let i = 0; i < 30; i++) step(S);
+	A(S.w.t === t && !S.lg.mega, 'the fight waits for it');
+	const before = { hp: pl.maxHp, atk: pl.baseAtk, red: pl.baseReduce, spd: pl.spdMul, st: S.lg.st, kit: ids(S).join(), ability: pl.ability, role: S.lg.role, mat: S.lg.mat, lvs: pl.moves.map((m) => m.lv || 0).join() };
+	says.length = 0; choose(S.w, 0); says.push(...S.says.map((q) => q.text)); step(S);
+	const st = LG.statsFrom(X6.base);
+	A(S.lg.mega === 10034 && S.lg.form === 6 && pl.mon.dex === 6 && pl.mon.types.join() === 'fire,dragon' && pl.mon.name === 'Mega Charizard X' && S.w.t > t, 'Mega Charizard X: Fire / Dragon, still the species Charizard, and the fight goes on');
+	A(near(pl.maxHp, before.hp + st.hp - before.st.hp) && near(pl.baseAtk, st.atk) && st.atk > before.atk && near(pl.baseReduce, before.red - before.st.taken + st.taken) && near(pl.spdMul, before.spd * st.spd / before.st.spd), `its stats are from the Mega's real base stats (attack ${before.atk.toFixed(1)} > ${pl.baseAtk.toFixed(1)}, HP ${Math.round(before.hp)} > ${Math.round(pl.maxHp)})`);
+	A(ids(S).join() === before.kit && pl.ability === before.ability && S.lg.role === before.role && S.lg.mat === before.mat, 'the kit, the ability, the role and Maturity are kept');
+	A(JSON.stringify(S.w.tune) === JSON.stringify(tuneFor(['fire', 'dragon'])) && JSON.stringify(S.w.tune) !== JSON.stringify(tuneFor(['fire', 'flying'])), 'it moves as a Fire / Dragon now (not as the Fire / Flying it was)');
+	A(pl.invuln >= M.K.IFRAMES - 0.05 && says.some((q) => q === 'Charizard Mega Evolved into Mega Charizard X!'), 'it cannot be hurt for a moment, and the run says so', says.slice(-3));
+	A(megaCards(S) === null && megaEvolve(S, 10035) === false && S.lg.mega === 10034, 'once a run: no second Mega');
+	S.w.autoPick = (w, c) => Math.max(0, c.findIndex((q) => q.type !== 'swap')); levelTo(S, 46);
+	A(S.lg.mega === 10034 && S.lg.mat === before.mat + 1 && pl.mon.types.join() === 'fire,dragon', 'levels later it is still the Mega, and it matured at Lv 44 as a Charizard does');
+	const v = rowView(runRow(S), X);
+	A(v.league && v.league.mega === 10034 && v.league.form === 6, 'a watcher is told which Mega it is');
+}
+{
+	const S = run(4), pl = S.w.pl; S.want = 'xmega:later';
+	levelTo(S, 40); step(S);
+	A(pl.level === 40 && !S.lg.mega && S.lg.megaAt === 45 && pl.mon.types.join() === 'fire,flying' && !pl.choices, '"Not yet": it stays a Charizard');
+	levelTo(S, 44);
+	A(megaCards(S) === null && !S.lg.mega, 'not asked at Lv 41 to 44');
+	S.want = 'xmega:10035'; levelTo(S, 45); step(S);
+	A(S.lg.mega === 10035 && pl.mon.name === 'Mega Charizard Y' && pl.mon.types.join() === 'fire,flying', 'asked again at Lv 45: Mega Charizard Y this time');
+	const B = run(43); B.want = 'xevo:182'; levelTo(B, 46);
+	A(B.lg.form === 182 && !B.lg.mega && megaCards(B) === null && B.w.pl.level >= 46, 'a form with no Mega (Bellossom) is never asked');
+	const P = newRun(data, X, { seed: 7, dex: 6, league: false, moves: ['ember'], weather: false, eco: false, cap: false, autoPick: 0 });
+	A(!P.lg && megaCards(P) === null, 'nor is a run that is not a League run');
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);
