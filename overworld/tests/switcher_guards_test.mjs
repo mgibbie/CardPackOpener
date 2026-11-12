@@ -120,7 +120,7 @@ try {
 		A(await t.page.evaluate(() => window.mpLeaveGuard().state === 'safe'), 'menus: leaving is safe');
 		await t.page.click('#btn-guest');
 		await waitFor(() => visible('scr-starters'), 8000);
-		await t.page.evaluate(() => { const c = document.querySelector('#starter-grid .cell'); if (c) c.click(); }); await sleep(200);   // (the first starter)
+		await t.page.evaluate(() => { const c = document.querySelector('#starter-grid .cell[data-dex="813"]'); if (c) c.click(); }); await sleep(200);   // (Scorbunny: the partner the old personality test gave this suite)
 		await sleep(150);
 		await t.page.click('#starter-ok');
 		await waitFor(() => visible('scr-menu'), 10000);

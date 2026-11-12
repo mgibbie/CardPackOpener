@@ -156,7 +156,7 @@ try {
 		const ok = await waitFor(() => p.E(() => document.getElementById('boot').classList.contains('hidden') && !!G.Social && !!G.WatchUI), 30000);
 		await sleep(200); if (await p.visible('tap-start')) await p.page.click('#tap-start');
 		await waitFor(() => p.visible('scr-starters'), 10000);
-		await p.E(() => { const c = document.querySelector('#starter-grid .cell'); if (c) c.click(); }); await sleep(200);   // (the first starter)
+		await p.E(() => { const c = document.querySelector('#starter-grid .cell[data-dex="813"]'); if (c) c.click(); }); await sleep(200);   // (Scorbunny: the partner the old personality test gave this suite)
 		await sleep(150);
 		await p.click('#starter-ok');
 		return ok && await waitFor(() => p.visible('scr-menu'), 10000);

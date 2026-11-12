@@ -121,7 +121,7 @@ try {
 	// guest start -> choose a partner
 	await page.click('#btn-guest');
 	A(await waitFor(() => visible('scr-starters'), 8000) && !(await page.evaluate(() => !!document.getElementById('scr-test') || !!document.getElementById('scr-result'))), 'guest start goes straight to choosing a partner (no personality test)');
-	await page.evaluate(() => { const c = document.querySelector('#starter-grid .cell'); if (c) c.click(); }); await sleep(200);
+	await page.evaluate(() => { const c = document.querySelector('#starter-grid .cell[data-dex="813"]'); if (c) c.click(); }); await sleep(200);
 	A(await page.evaluate(() => !document.getElementById('starter-ok').disabled && document.querySelectorAll('#starter-grid .cell').length === G.STARTERS.length), 'every starter is there, and one is picked');
 	await page.click('#starter-ok');
 	A(await waitFor(() => visible('scr-menu'), 10000), 'main menu opens');

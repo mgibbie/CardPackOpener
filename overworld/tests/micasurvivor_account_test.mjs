@@ -126,7 +126,7 @@ try {
 			if (await visible('tap-start')) await page.click('#tap-start');
 		};
 		const doTest = async () => {
-			await page.evaluate(() => { const c = document.querySelector('#starter-grid .cell'); if (c) c.click(); }); await sleep(200);   // (the first starter)
+			await page.evaluate(() => { const c = document.querySelector('#starter-grid .cell[data-dex="813"]'); if (c) c.click(); }); await sleep(200);   // (Scorbunny: the partner the old personality test gave this suite)
 			await sleep(150);
 			await page.click('#starter-ok');
 			return waitFor(() => visible('scr-menu'), 10000);

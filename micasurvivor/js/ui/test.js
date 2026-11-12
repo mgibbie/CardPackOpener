@@ -26,7 +26,7 @@ G.TestUI = (() => {
     for (const s of G.STARTERS) {
       const mon = G.DEX_BY[s.dex];
       const cell = document.createElement('div');
-      cell.className = 'cell';
+      cell.className = 'cell'; cell.dataset.dex = s.dex;
       cell.appendChild(G.UI.spriteCanvas(s.dex, 92, 80, { scale: 2 }));
       cell.insertAdjacentHTML('beforeend', `<b>${mon.name}</b>`);
       cell.onclick = () => {

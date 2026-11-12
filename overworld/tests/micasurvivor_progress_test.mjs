@@ -194,7 +194,7 @@ try {
 	// ---------- boot (logged in) -> personality test -> menu
 	A(await boot(), 'boots logged in (Magepunk account); G.DmgLog + G.TrainerCard loaded', errors.slice(0, 3).join(' | '));
 	A(await waitFor(() => visible('scr-starters'), 10000), 'straight to choosing a partner');
-	await E(() => { const c = document.querySelector('#starter-grid .cell'); if (c) c.click(); }); await sleep(200);   // (the first starter)
+	await E(() => { const c = document.querySelector('#starter-grid .cell[data-dex="813"]'); if (c) c.click(); }); await sleep(200);   // (Scorbunny: the partner the old personality test gave this suite)
 	await sleep(150);
 	await page.click('#starter-ok');
 	A(await waitFor(() => visible('scr-menu'), 10000), 'main menu');

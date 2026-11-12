@@ -80,7 +80,7 @@ try {
 	await shot('phone_title.png');
 	await tapEl('#btn-guest');
 	A(await waitFor(() => visible('scr-starters'), 8000), 'tap Play -> choosing a partner');
-	await tapEl('#starter-grid .cell:nth-child(2)'); await sleep(200);   /* (Charmander: its Ember reaches what it walks towards, so the run below levels up in time; Bulbasaur's whip is too short for it) */
+	await tapEl('#starter-grid .cell[data-dex="813"]'); await sleep(200);   /* (Scorbunny: the partner the old personality test gave this suite) */
 	A(await page.evaluate(() => !document.getElementById('starter-ok').disabled), 'a starter tapped is picked');
 	await tapEl('#starter-ok');
 	A(await waitFor(() => visible('scr-menu'), 10000), 'menu');

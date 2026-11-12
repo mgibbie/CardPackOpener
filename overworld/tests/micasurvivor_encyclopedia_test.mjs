@@ -143,7 +143,7 @@ try {
 	A(await waitFor(() => E(() => document.getElementById('boot').classList.contains('hidden') && G.Pad && G.Pad.ready && !!G.LexiconUI), 30000), 'boots logged in; G.LexiconUI loaded', errors.slice(0, 3).join(' | '));
 	await sleep(300); if (await visible('tap-start')) await page.click('#tap-start');
 	await waitFor(() => visible('scr-starters'), 10000);
-	await E(() => { const c = document.querySelector('#starter-grid .cell'); if (c) c.click(); }); await sleep(200);   // (the first starter)
+	await E(() => { const c = document.querySelector('#starter-grid .cell[data-dex="813"]'); if (c) c.click(); }); await sleep(200);   // (Scorbunny: the partner the old personality test gave this suite)
 	await sleep(150);
 	await page.click('#starter-ok');
 	A(await waitFor(() => visible('scr-menu'), 10000), 'main menu');

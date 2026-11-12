@@ -91,7 +91,7 @@ try {
 	await page.click('#btn-guest');
 	await waitFor(() => visible('scr-starters'), 8000);
 	await sweep('starters', '#scr-starters');
-	await page.evaluate(() => { const c = document.querySelector('#starter-grid .cell'); if (c) c.click(); }); await sleep(400);
+	await page.evaluate(() => { const c = document.querySelector('#starter-grid .cell[data-dex="813"]'); if (c) c.click(); }); await sleep(400);
 	await sweep('starters (one picked)', '#scr-starters');
 	await page.click('#starter-ok');
 	await waitFor(() => visible('scr-menu'), 10000);
