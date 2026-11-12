@@ -136,3 +136,13 @@ body.rx #cards button em .rx-type { border-radius: .4em; padding: .3em .6em .22e
 @keyframes rx-cut { 0% { transform: translateX(-30%); opacity: 0; } 14% { transform: none; opacity: 1; } 80% { transform: none; opacity: 1; } 100% { transform: translateX(12%); opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .rx-cut.show { animation-name: rx-cut-calm; } .rx-ult.ready > i { animation: none; } }
 @keyframes rx-cut-calm { 0% { opacity: 0; } 14% { opacity: 1; } 80% { opacity: 1; } 100% { opacity: 0; } }
+
+/* ---- art: a move's emblem on its tile and its card, a Pokémon's still (an evolution's card, the Ultimate's cut-in) */
+.rx-move > img.pix { float: right; height: 1.25em; width: auto; margin-left: .3em; image-rendering: pixelated; filter: drop-shadow(0 2px 0 rgba(0, 0, 0, .3)); }
+body.rx #cards button em { gap: .5em; }
+.rx-spr { display: inline-block; overflow: hidden; flex: none; }
+.rx-spr > span { display: block; transform-origin: 0 0; image-rendering: pixelated; }
+.rx-cut > i { display: flex; align-items: flex-end; justify-content: center; height: 0; overflow: visible; font-style: normal; }
+.rx-cut > i > * { transform: translateY(-.35em); filter: drop-shadow(0 4px 0 rgba(0, 0, 0, .35)); }
+.rx-cut > i img { height: 168px; image-rendering: pixelated; }
+body.rx #cards button em.tall { height: 4.6em; }

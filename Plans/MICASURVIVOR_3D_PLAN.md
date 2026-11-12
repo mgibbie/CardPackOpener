@@ -1481,6 +1481,26 @@ Not drawn shiny: a Mega (it is one battle sprite; the 2D game has no shiny art f
 Tests: `micasurvivor_m3d_expshiny_test.mjs` 7 checks in node; `micasurvivor_m3d_shiny_page_test.mjs` 10 in a
 browser (the shiny sheet is another picture than the plain one, and each is used for the right enemy).
 
+## 5.52 Polish: built (2026-11-12). Art on the cards and tiles, the cut-in's picture, sparks, the rail's sound.
+
+The list left as optional before the swap. Looks and sounds only: no rule changes, and the fight does not know
+any of it.
+
+- **A move's emblem** (the 2D game's own pixel icon, `js/ui/icons.js`, now loaded by the 3D page) is on its tile
+  at the bottom and on its level-up card, beside the type. A training card has its picture (fist, heart, berry).
+- **An evolution's card** shows who you would become: the form's own still (shiny if you play shiny). Items,
+  vitamins and Megas already had theirs.
+- **The Ultimate's cut-in** shows your Pokémon standing on the banner (your Mega's battle sprite if you are one).
+- **Sparks.** Small balls in the type's colour that fly out and fade: an Ultimate's rings, beams and strikes, a
+  reaction, a Second chance, and a trail under you while you grind a rail. Never more than 420 at once, drawn
+  after the shots so they cannot take a shot's place.
+- **A rail hisses** while you grind it (catching it and leaving it already had their sounds).
+
+Not done, because the art does not exist: a shiny Mega (a Mega is one battle sprite, and the game has no shiny
+one for it). The choreographies' sparks are generic, not the 2D game's per-type particle sprites.
+
+Tests: `micasurvivor_m3d_polish_page_test.mjs` 10 checks in a browser.
+
 ## 6. Dive in 2D: built
 
 **D0 — find the stairs (small; can ship first, on its own).** *Built 2026-11-11 (`overworld/tests/micasurvivor_dive_stairs_test.mjs`). As built: the stairs took their own orange mark, so the rocks and Meowth keep their gold; the HUD arrow comes up after 25 s on a floor, or at once when its boss falls.*

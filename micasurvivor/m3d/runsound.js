@@ -46,6 +46,7 @@ export function moveSounds(s) {
 	if (s.hard) out.push(['quake']); else if (s.landed > 9) out.push(['land']);
 	if (s.bounced) out.push(['surge']);
 	if (s.railed) out.push(['shake']);
+	else if (s.rail >= 0 && s.tick % 9 === 0) out.push(['grass']);   // (grinding: a short hiss, about seven a second, while you are on the rail)
 	if (s.jumped === 3 || s.jumped === 4 || s.jumped === 5) out.push(['select']);   // (off a wall, a rail, a bank)
 	return out;
 }
