@@ -234,7 +234,10 @@ const BEFORE = (o) => {
 		let i = want ? offers.findIndex(c => c.key === want) : -1;
 		if (i < 0) i = offers.findIndex(c => c.type === 'xevo' && !/^xmega/.test(c.key || ''));
 		if (i < 0) i = offers.findIndex(c => c.key === 'xmega:later');
-		if (i < 0) i = Math.max(0, offers.findIndex(c => c.type !== 'new' && c.type !== 'swap'));
+		if (i < 0) i = offers.findIndex(c => c.type !== 'new' && c.type !== 'swap');
+		// (never a swap by default: with the kit's four moves in, a level's cards can be one swap and two NEW vitamins, and taking
+		//  the first of them forgot a kit move: a new vitamin is taken instead)
+		if (i < 0) i = Math.max(0, offers.findIndex(c => c.type !== 'swap'));
 		if (cards[i]) cards[i].click();
 		H.step(1);
 		return p.level;
