@@ -1179,6 +1179,30 @@ like the other screens.
 
 Tests: `micasurvivor_m3d_runui_test.mjs` 28 checks (was 23), `micasurvivor_m3d_expsave_test.mjs` 33 (was 31).
 
+## 5.37 The shipping path, seventh part: built (2026-11-12). Watching a 3D run live.
+
+Owner: "just keep spectating": no new transport. `micasurvivor/m3d/exprelay.js` is the 2D game's spectating as
+it already is on the server (`publish-micasurvivor` / `micasurvivor-state`): no sockets, the player's page
+publishes and a friend's page polls. **No server change.**
+
+- **The player.** Logged in, a run asks every 10 s, with no snapshot, whether a friend is watching (the server
+  only reads then, and keeps the beacon that puts you in your friends' "live now" lists). While one is, it
+  sends a second of frames a second, as P3n's relay bundles them (you in all ten, the enemies in two, the
+  run's row): 6-9 KB against the server's 24. At the end, once more with `over`. The screen says "N watching".
+- **A friend.** `/micasurvivor/m3d/?live=<name>` polls once a second and hands each snapshot to the page as the
+  test room's relay would, so the watching code is the one P3n and P4 built. It is shown 2.6 s in the past (a
+  publish and a poll each take up to a second). Friends only, both ways; eight at most (the server's rules).
+  Each state has its line: waiting, over, not in a run, in the 2D game, not a friend, full, logged out.
+- **Finding it.** The beacon's mode is `exp-threed`. The 2D game's watcher (`js/mica/spectate.js`, one line)
+  sends anyone watching such a friend to the 3D page, so every "live now" list on the site already leads here.
+
+**The owner's order (2026-11-12): 3D Expedition is complete and live on the site before 3D Dive is even
+started.** So from here: the movement tech (rails, wall-running, surfing: in the first version), what is still
+missing of a run's polish, the way in from the Play flow, going live (the 2D Expedition archived), and only
+then P5 (upgrades) and P6 (Dive in 3D).
+
+Tests: `micasurvivor_m3d_exprelay_test.mjs` (18 checks, node, the REAL server handler and a real run's frames;
+the 2D game's spectate.js run as it is), `micasurvivor_m3d_live_page_test.mjs` (8 checks, two real browsers).
 ## 5.38 The movement tech, first part: built (2026-11-12). Wall-running.
 
 Owner, 2026-11-12: rails, wall-running and surfing are in the first version. This is the first of the three,
