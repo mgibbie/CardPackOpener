@@ -15,6 +15,7 @@
 //   * the whole run to the shrine and the legendary: the page says the expedition is complete, with its score
 //   * a League run (the page's default): you start as the member's first stage with its kit's first move, and are
 //     drawn as the stage you become when you evolve
+//   * Survival (&mode=survival): the countdown to the first milestone, its boss, and a pact chosen from its cards
 //   node overworld/tests/micasurvivor_m3d_expedition_page_test.mjs      (SHOTS=<dir> for screenshots)
 import http from 'http';
 import fs from 'fs';
@@ -189,6 +190,21 @@ try {
 	const drawn5 = await waitFor(() => page.evaluate(() => !!window.__m3d.sheets.get('5/Idle') && !!window.__m3d.sheets.get('5/Walk')), 10000);
 	A(drawn5, 'drawn as a Charmeleon now');
 	await shot('m3d_exp_league.png');
+	// ---- Survival
+	await page.goto(`http://localhost:${PORT}/micasurvivor/m3d/?exp=5&mode=survival&dex=6&weather=0`, { waitUntil: 'domcontentloaded' });
+	const ok3 = await waitFor(() => page.evaluate(() => !!(window.__m3d && window.__m3d.ready && window.__m3d.run && window.__m3d.run.sv)), 30000);
+	A(ok3 && await hudHas(/SURVIVAL · PHASE 1 · BOSS IN 4:5\d · ₽ 0/), 'a Survival run on the page: the readout counts down to the first milestone', await hud());
+	await page.evaluate(() => { const m = window.__m3d, w = m.world; w.pl.maxHp = w.pl.hp = 1e9; w.pl.xpMul = 0; m.run.acc = -1e9; m.run.sv.seg = 0; m.run.sv.segEv = []; w.t = 299.5; });
+	const mile = await waitFor(() => page.evaluate(() => !!window.__m3d.run.boss && window.__m3d.run.sv.miles === 1), 6000);
+	A(mile && await hudHas(/BOSS /) && await waitFor(() => page.evaluate(() => window.__m3d.noteLog.some((q) => /Milestone boss: /.test(q))), 3000), 'at 5:00 the milestone boss arrives, announced', await hud());
+	await page.evaluate(() => { const m = window.__m3d, e = m.run.boss; m.world.hit(e, e.hp + 10, 0, 0, 0); });
+	const pact = await waitFor(() => page.evaluate(() => !!window.__m3d.run.pick && window.__m3d.run.pick.kind === 'pact' && document.querySelectorAll('#cards button[data-p]').length === 4), 6000);
+	const pk = await page.evaluate(() => ({ title: document.querySelector('#cards h2').textContent, cards: [...document.querySelectorAll('#cards button[data-p] b')].map((b) => b.textContent), ids: window.__m3d.run.pick.cards.map((c) => c.id), none: document.querySelector('#cards .tools button').textContent }));
+	A(pact && /A pact: a boon for a price · Milestone 1 · choose 1 of 3/.test(pk.title) && pk.cards.length === 3 && /No pact/.test(pk.none), `beaten: three pacts on the screen, or none (${pk.cards.slice(0, 3).join(', ')})`, JSON.stringify(pk));
+	await shot('m3d_exp_pact.png');
+	await page.click('#cards button[data-p="0"]');
+	const sealed = await page.evaluate(() => ({ pacts: window.__m3d.run.sv.pacts, pick: !!window.__m3d.run.pick }));
+	A(!sealed.pick && sealed.pacts.join() === pk.ids[0] && await hudHas(new RegExp('pacts: ' + pk.ids[0])), 'click one: sealed, and in the readout', JSON.stringify(sealed));
 	A(errors.length === 0, 'no page errors', errors.slice(0, 5).join(' | '));
 } catch (e) {
 	fail++; console.log('FAIL: crashed: ' + (e && e.stack || e));

@@ -877,6 +877,39 @@ site's lines: decision 8). Still of P4 besides: Survival, the fog of war and the
 Tests: `micasurvivor_m3d_expcoop_test.mjs` (25 checks, node) and `micasurvivor_m3d_expcoopplay_test.mjs` (9
 checks, two windows).
 
+## 5.25 P4, ninth part: built (2026-11-12). Survival.
+
+`micasurvivor/m3d/expsurv.js`: Expedition's other mode, an endless run on one map, on the same spawner, events
+and bosses as Classic. On the page: `?exp=1&mode=survival`.
+
+- **Milestones**: a boss every 5:00, every third a legendary (the map's own first), Mewtwo at 45:00 (it does not
+  end the run). Each one down leaves an item and a berry (two items for a legendary) and a pact to choose.
+- **Pacts**: nine boon-for-a-price pacts, three offered, one taken or none. The boon and its price are your
+  stats; some prices fall on every enemy instead (more damage, more HP, more of them, more elites, tougher
+  milestone bosses).
+- **Phases** at 12:00 and 24:00: the next band of enemies. **Each 5:00 segment** has its own timeline of events.
+- **Pacing**: half as many arrivals as Classic, each with 1.8 times the HP and XP.
+- **Migration**: at 11:00, and every 11:00 after, a portal opens on the land's altar for 90 s (not while a
+  milestone boss is up). Through it: a new land.
+- **Deep wounds** from 30:00 (a heal is worth 4 % less a minute, never under a fifth) and the **Endless Night**
+  from 45:00 (each new enemy 12 % more HP and 6 % more damage a minute).
+- **Siege**: from 5:00, 20 s within 6 m of one spot starts one: your damage falls toward 30 % and a flock of
+  five fliers comes every 8 s. Move on and it lifts.
+- **Its own curve** above Lv 40, **its score**, and no win: the run ends when you go down.
+
+The milestones, each segment's plan, the pacts and their offer, the night, the wounds, the curve and the score
+are the 2D game's own functions (`survival.js`), called as they are.
+
+**3D's own.** A new land is new ground: the 2D game comes back to the same three zones, here the land's number
+seeds the level, so land 4 is zone 1's kind of land but not land 1's ground. The siege's 6 m is measured on
+the ground.
+
+**Not yet**: the hostile terrain (mud, brambles, quicksand, burning ground), the night's darkness on screen,
+Mega bosses, Survival for a watcher or in co-op (its lands are not in the run's row yet), its records. Still of
+P4 besides: a co-op guest opening the zone's things or catching, the fog of war and the zone map, the lobby.
+
+Tests: `micasurvivor_m3d_expsurv_test.mjs` (59 checks, node), the page test 35 (was 31).
+
 ## 6. Dive in 2D: built
 
 **D0 — find the stairs (small; can ship first, on its own).** *Built 2026-11-11 (`overworld/tests/micasurvivor_dive_stairs_test.mjs`). As built: the stairs took their own orange mark, so the rocks and Meowth keep their gold; the HUD arrow comes up after 25 s on a floor, or at once when its boss falls.*

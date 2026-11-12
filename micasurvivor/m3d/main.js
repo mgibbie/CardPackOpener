@@ -54,7 +54,7 @@ const MOVES = !FIGHT ? [] : Q.get('moves') ? Q.get('moves').split(',').map((m) =
 	: [[GG.Moves.startFor(SPECIES), 3], ['tackle', 2]].filter((m, i, a) => a.findIndex((q) => q[0] === m[0]) === i);
 // (P3) bosses arrive at the 2D game's times (3:00, 6:00, …): ?bosses=143,130; ?boss=143 puts one in at the start
 const BOSSES = (Q.get('bosses') ? Q.get('bosses').split(',').map(Number) : [143, 130, 149, 6, 150]).filter((d) => META[d] && META[d].a && META[d].a.Walk && !META[d].src);
-const run = EXP ? newRun(dataFrom(GG), XF, { seed: GEN, map: Q.get('map'), diff: Q.get('diff'), dex: DEX, moves: MOVES, tune: TUNE, touch: matchMedia('(pointer: coarse)').matches, league: !Q.has('moves') && Q.get('league') !== '0', ability: Q.get('ability') === '0' ? null : Q.get('ability') || 'auto', items: Q.get('items') ? Q.get('items').split(',') : [], weather: Q.get('weather') === '0' ? false : undefined, autoPick: Q.has('auto') ? +Q.get('auto') | 0 : undefined }) : null;
+const run = EXP ? newRun(dataFrom(GG), XF, { seed: GEN, map: Q.get('map'), diff: Q.get('diff'), mode: Q.get('mode') || undefined, dex: DEX, moves: MOVES, tune: TUNE, touch: matchMedia('(pointer: coarse)').matches, league: !Q.has('moves') && Q.get('league') !== '0', ability: Q.get('ability') === '0' ? null : Q.get('ability') || 'auto', items: Q.get('items') ? Q.get('items').split(',') : [], weather: Q.get('weather') === '0' ? false : undefined, autoPick: Q.has('auto') ? +Q.get('auto') | 0 : undefined }) : null;
 if (run) room = run.w.room;
 // (P4) a guest in a run: its own League member in the host's run (expcoop.js); it builds each zone from the run's row
 const grun = XJ ? guestRun(dataFrom(GG), XF, { seed: XJ.seed, map: XJ.map, diff: XJ.diff, id: MYID, dex: DEX, league: !Q.has('moves'), moves: MOVES, tune: TUNE, ability: Q.get('ability') === '0' ? null : Q.get('ability') || undefined, autoPick: Q.has('auto') ? +Q.get('auto') | 0 : undefined }) : null;
@@ -288,7 +288,7 @@ function frame(now) {
 				for (const q of run.says) note(q.text, q.s * 1000);
 				if (run.pick !== shownPick) showPick();
 				if (run.w.room !== room) { room = run.w.room; mapBase = null; showRoom(); state.facing = cam.yaw; }
-				if (run.ended && !runOver) { runOver = runResult(run); note(`${runOver.title} ${runOver.line} · score ${runOver.score} · pay ${runOver.pay.pay}${runOver.medal ? ' · ' + runOver.medal + ' medal' : ''}`, 600000); }
+				if (run.ended && !runOver) { runOver = runResult(run); note(runOver.survival ? `${runOver.lines.join(' · ')} · score ${runOver.score}` : `${runOver.title} ${runOver.line} · score ${runOver.score} · pay ${runOver.pay.pay}${runOver.medal ? ' · ' + runOver.medal + ' medal' : ''}`, 600000); }
 			} else if (grun) { stepGuest(grun, input, K.TICK); if (runOver === null && grun.ended) { runOver = grun.won ? 'won' : 'lost'; note(grun.won ? 'EXPEDITION COMPLETE!' : 'RUN OVER', 600000); } }
 			else tick(world, input, K.TICK);
 			fightEvents(world.events);
@@ -364,9 +364,9 @@ let coView = null;
 /** The other players in the fight: a host's puppets of its guests; a guest's view of the host and the other guests. */
 const mates = () => (!world ? [] : JOIN ? world.co.mates : world.mates);
 const HEAD = { gen: GEN, biome: BIOME, size: SIZE, dex: DEX };
-if (run) HEAD.exp = { seed: GEN, map: run.map, diff: run.diff };   // (P4) a run: a watcher needs its seed and map to build the zones
+if (run && !run.surv) HEAD.exp = { seed: GEN, map: run.map, diff: run.diff };   // (P4) a run: a watcher needs its seed and map to build the zones
 /** (P4) A frame with the run's row on it (expnet.js), when this is a run. */
-const rowed = (f) => { if (run) f.r = runRow(run); return f; };
+const rowed = (f) => { if (run && !run.surv) f.r = runRow(run); return f; };   // (a Survival run is not yet told to a watcher: its lands are its own)
 const tape = FIGHT && Q.get('tape') === '1' ? new Tape({ ...HEAD, at: 0 }) : null;
 const net = { sent: 0, chars: 0, got: 0, evLive: [], evTape: [], prev: null, n: 0, batch: [], relay: false };
 const RELAY = Q.get('relay') === '1';
@@ -513,7 +513,7 @@ function showHud() {
 		+ (rv && rv.league && !grun ? `${(GG.DEX_BY[rv.league.form] || {}).name} (${((GG.DEX_BY[rv.league.form] || {}).types || []).join(' / ')}) · League member ${(GG.DEX_BY[rv.league.member] || {}).name}`
 			: myRun && myRun.lg ? `${world.pl.mon.name} (${(world.pl.mon.types || []).join(' / ')}) · League member ${(GG.DEX_BY[myRun.lg.member] || {}).name} · ${myRun.lg.role} · kit ${myRun.lg.kit}/4${myRun.lg.mat ? ' · Maturity ' + myRun.lg.mat : ''}`
 			: `${SPECIES.name} (${TYPES.join(' / ') || 'no type'})${TRAITS.length ? ' · traits: ' + TRAITS.join(', ') : ''}`)
-		+ (!run ? '' : `\n${hudLine(run)}${run.ph === 0 ? ' · charge ' + Math.round(run.charge * 100) + ' %' : ''}`)
+		+ (!run ? '' : `\n${hudLine(run)}${run.ph === 0 && !run.surv ? ' · charge ' + Math.round(run.charge * 100) + ' %' : ''}${run.sv && run.sv.pacts.length ? '\npacts: ' + run.sv.pacts.join(', ') : ''}`)
 		+ (GEN === null || run || XW || XJ ? '' : `\nlevel ${GEN} · ${BIOME} · ${room.size} × ${room.size} tiles · exit ${Math.round(exitDist())} m`)
 		+ (!rv ? '' : `\n${rv.hud(state)}${rv.league ? ' · ' + ((GG.DEX_BY[rv.league.form] || {}).name || '') + ' · kit ' + rv.league.kit + '/4' : ''}${rv.sa.length ? ' · team: ' + rv.sa.map((d) => (GG.DEX_BY[d] || {}).name).join(', ') : ''}`)
 		+ (!WATCH ? '' : `\n${watchSrc === 'tape' ? 'replay' : 'watching ' + WATCH}` + (!view ? ' · waiting for the fight…' : ` · ${Math.floor(view.t / 60)}:${String(Math.floor(view.t % 60)).padStart(2, '0')}\nLv ${view.pl.level} · HP ${view.pl.hp} / ${view.pl.maxHp} · ${view.enemies.length} enemies · ${view.kills} KOs` + (view.weather ? ` · ${view.weather[0]}` : '')))
