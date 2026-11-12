@@ -67,6 +67,10 @@ const reach = (m) => (m.xreach ? m.xreach : m.kind === 'melee' ? m.radius + 30 :
 /** The 2D game's data, as this module reads it. G: the game's global, with util, pokedex, sprites-meta, sprites, moves,
  *  types and enemies loaded. */
 export function dataFrom(G) {
+	// (the regional formes and the Megas are named in Spanish in the 2D game's data, with their English in its translation
+	// table: the 3D game's screen is English, so here they take those names, once)
+	const en = G.I18n && G.I18n.en;
+	if (en && !G.m3dNames) { G.m3dNames = true; for (const p of (G.FORMS || []).concat(G.Megas ? G.Megas.LIST : [])) p.name = en[p.name] || p.name.replace(/^Mega-/, 'Mega '); }
 	return {
 		move: (id, lvl = 1) => { if (G.ExpMoves && G.ExpMoves.isExpMove(id)) return G.ExpMoves.instance(id); const m = G.Moves.instance(id, lvl); m.knock = G.Moves.knockOf(m); return m; },
 		weatherKinds: (G.Weather && G.Weather.KINDS) || {},

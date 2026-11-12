@@ -196,14 +196,21 @@ const crowd = [];
 // ---------------------------------------------------------------- sheets
 const sheets = new Map();   // 'dex/Anim' -> { batch, meta, img }
 async function sheet(dex, anim, max) {
-	const key = dex + '/' + anim, meta = META[dex] && META[dex].a && META[dex].a[anim];
+	const key = dex + '/' + anim, pm = META[dex], meta = pm && pm.a && pm.a[anim];
 	if (!meta) return null;
-	const tex = await loadSheet(`../assets/pokemon/${dex}/${anim}.png`);
+	const tex = await loadSheet(`../assets/pokemon/${pm.al || dex}/${pm.src ? pm.src + '/' : ''}${anim}.png`);   // (a fallback sheet is in a folder of its own: 42 species, the Megas, some formes)
 	const batch = new SpriteBatch(tex, max);
 	scene.add(batch.mesh);
-	const o = { batch, meta, img: tex.image, lift: footLift(meta, tex.image, { perFrame: anim === 'Idle', hover: !!META[dex].hv }), shadow: 0.35 + 0.18 * ((META[dex].s | 0) + 1) };
+	const o = { batch, meta, img: tex.image, lift: footLift(meta, tex.image, { perFrame: anim === 'Idle', hover: !!META[dex].hv }), shadow: 0.35 + 0.18 * ((META[dex].s | 0) + 1), dm: pm.dm || null, fx: pm.fx || null, k: pm.k || 1 };
 	sheets.set(key, o);
 	return o;
+}
+/** A sheet's quad for a direction (0-7). A fallback sheet has fewer rows (`dm`: which row is each direction's), may be
+ *  mirrored (`fx`: in which directions, about its anchor), and may be drawn larger (`k`), as the 2D game draws it. */
+function sq(s, frame, dir, scale) {
+	const q = spriteQuad(s.meta, s.img, frame, s.dm ? s.dm[dir] || 0 : dir, scale * s.k, s.lift);
+	if (s.fx && s.fx[dir]) { const r = q.rect, u = q.uv; q.rect = [-r[2], r[1], -r[0], r[3]]; q.uv = [u[2], u[1], u[0], u[3]]; }
+	return q;
 }
 // A Mega has no walking sheet: it is drawn as its one battle sprite (the 2D game's own art for it), cut to what is
 // drawn of it, mirrored when it faces the viewer's right, 1.12x the height of the form it came from (the 2D game's).
@@ -254,7 +261,7 @@ function draw(t) {
 	// the crowd
 	for (const e of crowd) {
 		const s = sheets.get(e.dex + '/Idle'); if (!s) continue;
-		const y = groundAt(room, e.x, e.z), q = spriteQuad(s.meta, s.img, frameAt(s.meta, t + e.t0), facingRow(e.facing + e.turn * t, cam.yaw), 1, s.lift);
+		const y = groundAt(room, e.x, e.z), q = sq(s, frameAt(s.meta, t + e.t0), facingRow(e.facing + e.turn * t, cam.yaw), 1);
 		s.batch.add(e.x, y, e.z, q.rect, q.uv, 1);
 		shadows.add(room, e.x, e.z, y, s.shadow);
 	}
@@ -263,7 +270,7 @@ function draw(t) {
 	if (E) {
 		for (const e of E) {
 			const s = sheets.get(e.dex + '/Walk'); if (!s) { wantSheet(e.dex); continue; }
-			const q = spriteQuad(s.meta, s.img, frameAt(s.meta, t + e.id * 0.37), facingRow(e.a.facing, cam.yaw), e.scale || 1, s.lift);
+			const q = sq(s, frameAt(s.meta, t + e.id * 0.37), facingRow(e.a.facing, cam.yaw), e.scale || 1);
 			s.batch.add(e.a.x, e.a.y, e.a.z, q.rect, q.uv, e.flash > 0 ? 1.7 : 1);
 			shadows.add(room, e.a.x, e.a.z, e.a.y, s.shadow * (e.scale || 1));
 		}
@@ -303,7 +310,7 @@ function draw(t) {
 	// (P3n) the other players
 	for (const m of mates()) {
 		const sh = sheets.get(m.dex + '/Walk'); if (!sh) { wantSheet(m.dex); continue; }
-		const moving = Math.hypot(m.s.vx || 0, m.s.vz || 0) > 0.6 || !m.s.grounded, q = spriteQuad(sh.meta, sh.img, moving ? frameAt(sh.meta, t) : 0, facingRow(m.s.facing, cam.yaw), 1.15, sh.lift);
+		const moving = Math.hypot(m.s.vx || 0, m.s.vz || 0) > 0.6 || !m.s.grounded, q = sq(sh, moving ? frameAt(sh.meta, t) : 0, facingRow(m.s.facing, cam.yaw), 1.15);
 		sh.batch.add(m.s.x, m.s.y, m.s.z, q.rect, q.uv, m.dead ? 0.45 : 1);
 		shadows.add(room, m.s.x, m.s.z, m.s.y, sh.shadow * 1.15);
 	}
@@ -314,8 +321,8 @@ function draw(t) {
 		if (grun && grun.cap) { const own = capView(grun); cv.sa = cv.sa.concat(own.sa); if (own.cine) cv.cine = own.cine; }   // (a guest: its own team and its own ball, with the host's)
 		// (co-op) the others' teams, behind each of them: a host has its guests' from their own word, a guest or a watcher from the run's row
 		for (const m of mates()) { const theirs = run ? (world.mates.find((q) => q.id === m.id) || {}).sa : rv && rv.mateSa.get(m.id); if (!theirs || m.id === MYID) continue; theirs.forEach((dex, i) => { const [x, z] = teamSpot(m.s, m.s.facing, i, theirs.length); cv.sa.push({ dex, x, z, y: Math.min(groundAt(room, x, z), m.s.y + 2), facing: m.s.facing, moving: false }); }); }
-		for (const a of cv.sa) { const sh = sheets.get(a.dex + '/Walk'); if (!sh) { wantSheet(a.dex); continue; } const q = spriteQuad(sh.meta, sh.img, a.moving ? frameAt(sh.meta, t) : 0, facingRow(a.facing, cam.yaw), 1.15, sh.lift); sh.batch.add(a.x, a.y, a.z, q.rect, q.uv, 1); shadows.add(room, a.x, a.z, a.y, sh.shadow * 1.15); }
-		for (const f of cv.faint) { const sh = sheets.get(f.dex + '/Walk'); if (sh) { const q = spriteQuad(sh.meta, sh.img, 0, 0, 1.4, sh.lift); sh.batch.add(f.x, f.y, f.z, q.rect, q.uv, 0.45); } else wantSheet(f.dex); shots.add(f.x, f.y + 1.9 + Math.sin(t * 6) * 0.12, f.z, 0.28, f.kind === 'alpha' ? '#ff4d5e' : '#9ae6ff'); }
+		for (const a of cv.sa) { const sh = sheets.get(a.dex + '/Walk'); if (!sh) { wantSheet(a.dex); continue; } const q = sq(sh, a.moving ? frameAt(sh.meta, t) : 0, facingRow(a.facing, cam.yaw), 1.15); sh.batch.add(a.x, a.y, a.z, q.rect, q.uv, 1); shadows.add(room, a.x, a.z, a.y, sh.shadow * 1.15); }
+		for (const f of cv.faint) { const sh = sheets.get(f.dex + '/Walk'); if (sh) { const q = sq(sh, 0, 0, 1.4); sh.batch.add(f.x, f.y, f.z, q.rect, q.uv, 0.45); } else wantSheet(f.dex); shots.add(f.x, f.y + 1.9 + Math.sin(t * 6) * 0.12, f.z, 0.28, f.kind === 'alpha' ? '#ff4d5e' : '#9ae6ff'); }
 		if (cv.cine) { const p = cv.cine.phase, wob = p.n === 'shake' ? Math.sin(p.u * 6.2832) * 0.18 : 0; shots.add(cv.cine.x + wob, cv.cine.y + (p.n === 'throw' ? 1.6 - p.u * 1.2 : 0.4), cv.cine.z, 0.34, p.n === 'click' ? '#ffe14d' : cv.cine.kind === 'alpha' ? '#3fa35a' : '#ff4d5e'); note(p.n === 'click' ? 'Gotcha!' : p.n === 'shake' ? '. '.repeat(p.k + 1) : cv.cine.kind === 'alpha' ? 'Friend Ball!' : 'Poké Ball!', 250); }
 	}
 	// the lead
@@ -328,7 +335,7 @@ function draw(t) {
 		ms.batch.add(state.x, state.y, state.z, [-bw / 2 * k, 0, bw / 2 * k, bh * k], [flip ? u1 : u0, b[1] / ms.img.height, flip ? u0 : u1, b[3] / ms.img.height], 1);
 		shadows.add(room, state.x, state.z, state.y, ps.shadow * 1.15 * GG.ExpMega.K.H_K);
 	} else if (ps) {
-		const q = spriteQuad(ps.meta, ps.img, name === 'sliding' || name === 'grinding' || name === 'surfing' ? 0 : frameAt(ps.meta, state.t * (name === 'running' || name === 'wallrunning' ? 1.25 : 1)), facingRow(state.facing, cam.yaw), 1.15, ps.lift);
+		const q = sq(ps, name === 'sliding' || name === 'grinding' || name === 'surfing' ? 0 : frameAt(ps.meta, state.t * (name === 'running' || name === 'wallrunning' ? 1.25 : 1)), facingRow(state.facing, cam.yaw), 1.15);
 		ps.batch.add(state.x, state.y, state.z, q.rect, q.uv, 1);
 		shadows.add(room, state.x, state.z, state.y, ps.shadow * 1.15);
 	}
@@ -852,6 +859,7 @@ window.__m3d = {
 	get ready() { return ready; }, state, get room() { return room; }, run, setZoneTime: (sec) => run && setZoneTime(run, sec), useTool, takePick, ecoView: () => (run ? ecoView(run) : []), capView: () => (run ? capView(run) : null), hazards: () => (run ? hazardsNow(run) : []), fog: () => fogNow(), toggleMap, get mapBig() { return mapBig; }, get rv() { return rv; }, noteLog, grun, fire: (ev) => run && fireEvent(run, ev), K, TUNE, TYPES, TRAITS, cam, crowd, sheets, stats, gen: GEN, biome: BIOME, world, numbers, net, tape, myId: MYID, mates, get coView() { return coView; }, playTape, get view() { return view; }, get viewer() { return viewer; }, get watchT() { return watchT; }, addBoss: (dex, x, z, o) => addBoss(world, dex, x, z, o), drop: (kind, x, z, v) => drop(world, kind, x, groundAt(room, x, z), z, v), pickCard, addEnemy: (dex, x, z, o) => addEnemy(world, dex, x, z, o), holdExit: false, get leaving() { return leaving; },
 	setInput(o) { override = o ? { ...noInput(), ...o } : null; },
 	rowOf: (facing, yaw) => facingRow(facing, yaw === undefined ? cam.yaw : yaw),
+	sq: (key, frame, dir, scale = 1) => sq(sheets.get(key), frame, dir, scale),
 	quadOf: (key, frame, row) => { const s = sheets.get(key); return spriteQuad(s.meta, s.img, frame, row, 1, s.lift); },
 	respawn() { Object.assign(state, newState(room, TUNE)); state.facing = cam.yaw; },
 	put(x, z, y) { Object.assign(state, newState(room, TUNE)); state.x = x; state.z = z; state.y = y === undefined ? groundAt(room, x, z) : y; state.grounded = y === undefined; },
