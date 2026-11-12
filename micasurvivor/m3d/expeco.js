@@ -16,7 +16,7 @@ import { rng as makeRng } from './gen.js';
 import { U, gainXp } from './combat.js';
 import { XK, spawn, free, walkable, flat3, say } from './expedition.js';
 import { takeItem } from './explevel.js';
-import { excluded } from './expmeta.js';
+import { excluded, researchKo, researchCage } from './expmeta.js';
 
 export const EK = {
 	// what each zone holds (the 2D game's list and order: the big ones are placed first)
@@ -323,7 +323,7 @@ function step(S, Z, o, st, d, dt, zt, m = null) {
 			P.latch.add(o.i); P.t[o.i] = 0;
 			const cost = E.cageCost(zoneNow(S));
 			if (!spend(S, cost)) { lacking(S, cost); return; }
-			markUsed(S, Z, o); S.eco.log.freed++;
+			markUsed(S, Z, o); S.eco.log.freed++; researchCage(S, o.v);
 			const xp = Math.round(pl.xpNext * K.CAGE_XP); gainXp(w, xp / (pl.xpMul || 1));   // (the team's XP is the host's: a guest freeing a cage levels everyone)
 			say(S, `You free ${(S.data.mon(o.v) || {}).name || ''}! +${xp} XP`, 2.8);
 			return;
@@ -357,7 +357,7 @@ function guestBuy(S, Z, m, slot) {
 /** Every tick of the run (after the fight's): KOs pay, and the things round every player. */
 export function tickEco(S, dt) {
 	const E = S.eco, w = S.w, pl = w.pl; if (!E) return;
-	if (w.kos) for (const ko of w.kos.splice(0)) onKill(S, ko);   // (every KO since the last look, whoever finished it)
+	if (w.kos) for (const ko of w.kos.splice(0)) { onKill(S, ko); researchKo(S, ko); }   // (every KO since the last look, whoever finished it)
 	const lay = layoutOf(w.room, S);
 	if (!lay) { E.z = null; return; }
 	if (!E.z || E.z.lay !== lay) E.z = zoneState(lay);

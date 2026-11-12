@@ -278,7 +278,7 @@ function kill(w, e) {
 	if (e.dead) return;
 	e.dead = true; e.hp = Math.min(e.hp, 0); w.stats.kills++; w.stats.xp += e.xp;
 	w.events.push({ k: 'kill', id: e.id, x: e.a.x, y: e.a.y, z: e.a.z, xp: e.xp, boss: !!e.boss, xk: e.xk || null });
-	if (w.kos) w.kos.push({ boss: !!e.boss, xk: e.xk || null });   // (a mode that pays for KOs reads them here: an event lives one tick, and a co-op guest's hit lands between ticks)
+	if (w.kos) w.kos.push({ boss: !!e.boss, xk: e.xk || null, dex: e.dex });   // (a mode that pays for KOs reads them here: an event lives one tick, and a co-op guest's hit lands between ticks)
 	const y = groundAt(w.room, e.a.x, e.a.z);
 	if (e.boss) {   // a boss bursts into a heap of big orbs, with a berry and a magnet
 		for (let i = 0; i < CK.BOSS.orbs; i++) { const a = w.rand() * 6.2832, dd = rnd(w, 10, 70) * U, x = e.a.x + Math.cos(a) * dd, z = e.a.z + Math.sin(a) * dd, g = groundAt(w.room, x, z); drop(w, 'xpBig', g >= (w.room.rimH || 8) ? e.a.x : x, g >= (w.room.rimH || 8) ? y : g, g >= (w.room.rimH || 8) ? e.a.z : z, Math.ceil(e.xp / CK.BOSS.orbs)); }

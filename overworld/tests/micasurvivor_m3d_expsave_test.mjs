@@ -9,6 +9,9 @@
 //   * the pay is OWED to this browser, never paid here: the 2D game's claim3d() pays it into the wallet once, and
 //     the forms a run evolved into join the collection
 //   * no profile yet: nothing is paid and nothing is lost (it waits)
+//   * research: a run's KOs and freed cages give their families points (more with the Lab), written with the run
+//   * the tasks: a run leaves its metrics for the 2D game, whose claim counts them into the day's and the week's tasks
+//     (and pays the ones they finish), once
 //   * the mark for the 3D boards
 //   * wild League members: a challenge done after a kept run makes its member wild; up to five wait for a run, in an
 //     order of the run's seed; a catch is saved at once and is then yours (and joins the collection at the claim)
@@ -18,6 +21,7 @@ import { expFrom, newRun, stepRun, result } from '../../micasurvivor/m3d/expedit
 import { megaEvolve } from '../../micasurvivor/m3d/expleague.js';
 import { SV, unfair, clean, deviceId, missing, runSum, recordOps, applyOps, scoreBody, WHY, hasMember, wildOf, catchOps, shinyOps, newlyMet, boardAsk, boardRows } from '../../micasurvivor/m3d/expsave.js';
 import { rng as seedRng } from '../../micasurvivor/m3d/gen.js';
+import { noMeta, researchKo, researchCage, researchOf } from '../../micasurvivor/m3d/expmeta.js';
 import { loadG } from './m3d_data.mjs';
 
 let pass = 0, fail = 0;
@@ -83,15 +87,16 @@ const dev = deviceId(ls, Sv.who, globalThis.crypto);
 
 	// ---- the 2D game pays what is owed, once
 	const paid = M.claim3d();
-	A(paid === res.pay.pay && G.DB.save.coins === before.coins + res.pay.pay && Sv.get('pay3d.claimed.' + dev) === res.pay.pay && Sv.get('pay.total') === res.pay.pay && Sv.get('pay.coins') === res.pay.pay && Sv.get('m3d.seen.' + dev) === 1, `the 2D game's claim3d(): ₽ ${paid} into the wallet`);
+	const tasks1 = G.DB.save.coins - before.coins - res.pay.pay;   // (what the tasks this run finished paid, on top of its pay)
+	A(paid === res.pay.pay && tasks1 >= 0 && Sv.get('pay3d.claimed.' + dev) === res.pay.pay && Sv.get('pay.total') === res.pay.pay && Sv.get('pay.coins') === res.pay.pay + tasks1 && Sv.get('m3d.seen.' + dev) === 1, `the 2D game's claim3d(): ₽ ${paid} into the wallet (and ₽ ${tasks1} for the tasks the run finished)`);
 	A([5, 6].every((d) => unlocked.includes(d)), 'and the forms the run evolved into join the collection', unlocked);
 	const again = M.claim3d(), n0 = unlocked.length;
-	A(again === 0 && G.DB.save.coins === before.coins + res.pay.pay && unlocked.length === n0, 'claimed again: nothing more (never twice)');
+	A(again === 0 && G.DB.save.coins === before.coins + res.pay.pay + tasks1 && unlocked.length === n0, 'claimed again: nothing more (never twice)');
 	// a second run, lost
 	const S2 = mk(); S2.w.t = 200; S2.w.stats.kills = 300; S2.ended = true; S2.lost = true;
-	const r2 = result(S2), ops2b = recordOps(S2, r2, { T, dev });
+	const r2 = result(S2), ops2b = recordOps(S2, r2, { T, dev, seen: Sv.get('m3d.seen.' + dev) }), c2 = G.DB.save.coins;
 	applyOps(Sv, ops2b);
-	A(!r2.won && !ops2b.some((q) => /^(wins|clear|medal|tier)/.test(q[1])) && Sv.get('runs') === 2 && Sv.get('pay3d.' + dev) === res.pay.pay + r2.pay.pay && M.claim3d() === r2.pay.pay && G.DB.save.coins === before.coins + res.pay.pay + r2.pay.pay && M.claim3d() === 0, `a lost run: no win, no medal; its pay (₽ ${r2.pay.pay}) is owed and then paid, once`);
+	A(!r2.won && !ops2b.some((q) => /^(wins|clear|medal|tier)/.test(q[1])) && Sv.get('runs') === 2 && Sv.get('pay3d.' + dev) === res.pay.pay + r2.pay.pay && M.claim3d() === r2.pay.pay && G.DB.save.coins >= c2 + r2.pay.pay && M.claim3d() === 0, `a lost run: no win, no medal; its pay (₽ ${r2.pay.pay}) is owed and then paid, once`);
 	const S3 = mk(); S3.w.t = 30; S3.ended = true; const r3 = result(S3), ops3 = recordOps(S3, r3, { T, dev });
 	A(r3.pay.pay === 0 && !ops3.some((q) => /^pay/.test(q[1])) && ops3.some((q) => q[1] === 'm3d.n.' + dev), 'under a minute: a run, but no pay owed');
 }
@@ -153,6 +158,43 @@ const dev = deviceId(ls, Sv.who, globalThis.crypto);
 	A(o['bump cap.alpha'] === 2 && o['best sa.best'] === 2 && o['add sa.types:normal'] === 'normal' && o['add sa.types:rock'] === 'rock' && o['bump shiny.seen'] === 1 && o['bump cap.fled'] === 1, 'the capture\'s: alphas recruited, the largest team, its types, shinies seen, the ones that fled');
 	const sh = shinyOps(25, 172), sh2 = shinyOps(999999, 0);
 	A(sh.map((q) => q.join()).join('|') === 'add,shiny.caught,25|bump,cap.shiny,1|add,league.shiny,172' && sh2.length === 2, 'a shiny caught is kept at once: its species, the count, and its family\'s shiny for the League');
+}
+
+// ---------------------------------------------------------------- research, and the tasks
+{
+	const q = game(), G2 = q.G, Sv2 = G2.ExpSave, M2 = G2.ExpMeta; await Sv2.open();
+	const d2 = deviceId(q.ls, Sv2.who, globalThis.crypto), X2 = expFrom(G2), data2 = dataFrom(G2), T2 = G2.ExpTier;
+	const S = newRun(data2, X2, { seed: 7, dex: 4, league: true, weather: false, autoPick: 0, meta: noMeta() }); S.plan.events = []; S.acc = -1e9; stepRun(S, null);
+	// research: a Rattata and an alpha Rattata fall, a Pidgey's cage is opened; a Charmander that is no family's member counts for its own
+	A(researchKo(S, { dex: 19 }) === 1 && researchKo(S, { dex: 20, xk: 'alpha' }) === 5 && researchKo(S, { dex: 16, boss: true }) === 10 && researchKo(S, { dex: 19, xk: 'elite' }) === 2 && researchCage(S, 17) === 25 && researchKo(S, { dex: 999999 }) === 0, 'a KO gives its family research: 1, an elite 2, an alpha 5, a boss 10; a freed cage 25');
+	const rs = Object.fromEntries(researchOf(S));
+	A(rs[19] === 8 && rs[16] === 35 && Object.keys(rs).length === 2, 'by family: Rattata\'s 8 (its evolution\'s too), Pidgey\'s 35', rs);
+	S.meta.eff.lab.research = 2; const rs2 = Object.fromEntries(researchOf(S)); S.meta.eff.lab.research = 0;
+	A(rs2[19] === 12 && rs2[16] === 53, 'the Lab\'s "Research" adds 25 % a level (two levels: 12 and 53)', rs2);
+	// the run: 12 minutes, 400 KOs, zone 2, an alpha recruited, two balls and an altar, a cage, one evolution
+	S.w.t = 720; S.w.stats.kills = 400; S.zone = 2; S.ended = true; S.cap.log.alpha = 1; S.cap.n = 1; S.eco.log.balls = 2; S.eco.log.altars = 1; S.eco.log.freed = 1; S.lg.evo = 1;
+	S.bosses = [{ zone: 1, down: 300 }];
+	const res = result(S), ops = recordOps(S, res, { T: T2, dev: d2, research: researchOf(S), seen: Sv2.get('m3d.seen.' + d2), final: false }), o = ops2(ops);
+	A(o['bump rs.19'] === 8 && o['bump rs.16'] === 35, 'the research is written with the run, in the 2D game\'s keys');
+	const tk = (k) => o['bump m3d.t.' + d2 + '.' + k];
+	A(tk('runs') === 1 && tk('kos') === 400 && tk('secs') === 720 && tk('guardians') === 1 && tk('balls') === 2 && tk('altars') === 1 && tk('freed') === 1 && tk('alphas') === 1 && tk('catches') === 1 && tk('evos') === 1 && tk('wins') === undefined && o['best m3d.x.' + d2 + '.zone'] === 1e6 + 2, 'the run leaves its tasks\' metrics for this browser: a run, 400 KOs, 12 minutes, a guardian, balls, an altar, a cage, an alpha, a catch, an evolution; zone 2 as its best', o);
+	applyOps(Sv2, ops);
+	A(M2.research(19) === 8 && M2.research(16) === 35, 'the 2D game reads the research');
+	// the 2D game counts them into the day's and the week's tasks, and pays the ones they finish
+	const NOW = Date.UTC(2026, 10, 12, 12); M2.clock = () => NOW;
+	const t0 = M2.tasksOf('d', NOW).concat(M2.tasksOf('w', NOW)).map((t) => ({ m: t.m, have: t.have, need: t.need, claimed: t.claimed })), c0 = G2.DB.save.coins;
+	const paid = M2.claim3d();
+	const t1 = M2.tasksOf('d', NOW).concat(M2.tasksOf('w', NOW)).map((t) => ({ m: t.m, have: t.have, need: t.need, claimed: t.claimed }));
+	const mOf = { runs: 1, kos: 400, mins: 12, zone: 2, guardians: 1, balls: 2, altars: 1, freed: 1, alphas: 1, catches: 1, evos: 1 };
+	const moved = t1.filter((t, i) => t.have > t0[i].have || (t.claimed && !t0[i].claimed)), right = t1.every((t, i) => t.m in mOf ? (t.claimed || t.have === Math.min(t.need, Math.floor(t0[i].have + mOf[t.m])) || t.have === Math.floor(mOf[t.m])) : t.have === t0[i].have);
+	const done = t1.filter((t, i) => t.claimed && !t0[i].claimed).length, extra = G2.DB.save.coins - c0 - paid;
+	A(paid === res.pay.pay && moved.length >= 1 && right && (done > 0) === (extra > 0), `claim3d counts them into today's and this week's tasks (${moved.length} moved, ${done} finished and paid ₽ ${extra} on top of the run's ₽ ${paid})`, { t0, t1 });
+	const c1 = G2.DB.save.coins, t2 = JSON.stringify(M2.tasksOf('d', NOW).concat(M2.tasksOf('w', NOW)).map((t) => [t.have, t.claimed]));
+	A(M2.claim3d() === 0 && G2.DB.save.coins === c1 && JSON.stringify(M2.tasksOf('d', NOW).concat(M2.tasksOf('w', NOW)).map((t) => [t.have, t.claimed])) === t2 && Sv2.get('m3d.tc.' + d2 + '.kos') === 400, 'claimed again: no task moves, nothing is paid (never twice)');
+	// a second run's best zone is its own, not added to the first's
+	const S3 = newRun(data2, X2, { seed: 8, dex: 4, league: true, weather: false, autoPick: 0, meta: noMeta() }); S3.w.t = 100; S3.zone = 1; S3.ended = true;
+	const o3 = ops2(recordOps(S3, result(S3), { T: T2, dev: d2, research: [], seen: Sv2.get('m3d.seen.' + d2), final: false }));
+	A(o3['best m3d.x.' + d2 + '.zone'] === 2e6 + 1 && Sv2.get('m3d.seen.' + d2) === 1, 'the next run\'s best zone is counted from the last claim (zone 1 of count 2), not added to the old one');
 }
 
 // ---------------------------------------------------------------- the 3D boards, asked for and read
