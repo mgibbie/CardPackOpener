@@ -736,6 +736,36 @@ the League, the run's pay and records, the other two shrines' looks, Survival, c
 
 Tests: `micasurvivor_m3d_expeco_test.mjs` (109 checks, node), the page test 23 (was 18).
 
+## 5.20 P4, fourth part: built (2026-11-11). Capture.
+
+`micasurvivor/m3d/expcap.js`.
+
+- **An alpha faints.** No hit takes it under 1 HP; at 1 HP it faints where it stands (its XP falls, the KO
+  counts and pays) and an 8 s window opens. Left alone it comes round and leaves its prize (an item, a berry).
+- **The throw.** Stand beside it 0.35 s, on its level: the Friend Ball goes out. No odds. The world holds for the
+  cinematic (3.2 s: the throw, three shakes, the click).
+- **Support Alphas.** It follows you for the rest of the run (through portals too), shoots the nearest enemy
+  within 20 m every 1.25 s (9 x your attack, + 6 % a level; Fire burns, Poison poisons, Ice slows), and its first
+  type gives a perk that adds up with your vitamins and items. Two at most: with two, you choose which to swap, or
+  keep your team and take the prize.
+- **Shinies.** The 2D odds (8 % a zone, more with luck and the Shiny Charm). It wanders 14-30 m from you, never
+  attacks, flees after two minutes, and is caught the same way (a 10 s window). It does not join your team.
+- A catch counts in the run's score (400).
+
+The numbers, the perks, the shiny roll and the cinematic's phases are the 2D game's own (`G.ExpCap`).
+
+**One line of the 2D game changed**: `G.ExpItems.total` now also adds a player's own `xperk` (stat -> value).
+The 3D run puts its Support Alphas' perks there; a 2D player has no `xperk`, so 2D plays as before.
+
+**3D's own**: a Support Alpha is not a body in the rules: it stands on whatever floor is under it and is never
+blocked (as in 2D, where it ignores walls). Its shots are real shots: terrain stops them.
+
+**Not yet**: the League's wild encounters (they need the League and its save), keeping a caught shiny in the
+save, the Lab's third slot, the Master Ball. Still of P4: the League, the run's pay and records, the other two
+shrines' looks, Survival, and co-op, spectate and replay of a run.
+
+Tests: `micasurvivor_m3d_expcap_test.mjs` (43 checks, node), the page test 27 (was 23).
+
 ## 6. Dive in 2D: built
 
 **D0 — find the stairs (small; can ship first, on its own).** *Built 2026-11-11 (`overworld/tests/micasurvivor_dive_stairs_test.mjs`). As built: the stairs took their own orange mark, so the rocks and Meowth keep their gold; the HUD arrow comes up after 25 s on a floor, or at once when its boss falls.*

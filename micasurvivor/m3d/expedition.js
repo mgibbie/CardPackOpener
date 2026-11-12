@@ -12,12 +12,14 @@
 // events (alpha, swarm, stampede, flock, rock slide, elite wave, totem, summoner, roaming legendary); the score.
 // Level-ups are Expedition's own (explevel.js): move levels and rolls, vitamins, Training, the three tools.
 // The run's money, its 60 items and what a zone holds to stand in are expeco.js's.
-// Still to come: capture, the League, the run's pay.
+// Capture (an alpha faints and can join you; shinies) is expcap.js's.
+// Still to come: the League, the run's pay.
 import { K, CELL, makeRoom, setCell, groundAt, newState } from './sim.js';
 import { generate, footGraph, rng as makeRng, LEVEL } from './gen.js';
 import { CK, U, newWorld, tick, addEnemy, addBoss, drop, hazard, spawnRate, xpFor } from './combat.js';
 import { levelFrom, setup as setupLevels, tickStats, curse, takeItem, dropItem } from './explevel.js';
 import { ecoFrom, setupEco, tickEco, mods, pickTake, pickClose } from './expeco.js';
+import { capFrom, setupCap, tickCap, holdCine, mark } from './expcap.js';
 
 export const XK = {
 	BIOME: { viridian: 'meadow', mtmoon: 'peaks', cerulean: 'marsh' },
@@ -43,7 +45,7 @@ function mix(...vals) {
 export function expFrom(G) {
 	const C = G.ExpClassic, T = G.ExpTier;
 	return { K: C.K, MAPS: C.MAPS, MAP_IDS: C.MAP_IDS, DIFFS: C.DIFFS, plan: (seed, map, zone, diff) => C.plan(seed, map, zone, diff), tier: (d) => T.of(d),
-		ESCORT: T.K.ESCORT, L: G.ExpLevel && G.ExpItems ? levelFrom(G) : null, E: G.ExpEco ? ecoFrom(G) : null, score: (parts, diff) => T.score(parts, diff), medal: T.medal ? (s, diff, map) => T.medal(s, diff, map) : null, exhaustion: C.exhaustion };
+		ESCORT: T.K.ESCORT, L: G.ExpLevel && G.ExpItems ? levelFrom(G) : null, E: G.ExpEco ? ecoFrom(G) : null, C: G.ExpCap ? capFrom(G) : null, score: (parts, diff) => T.score(parts, diff), medal: T.medal ? (s, diff, map) => T.medal(s, diff, map) : null, exhaustion: C.exhaustion };
 }
 
 // ---------------------------------------------------------------- the zones
@@ -113,7 +115,7 @@ export function zoneRoom(seed, map, zone, X) {
 // ---------------------------------------------------------------- the run
 /** A Classic run. o: { map, diff, seed, touch (a phone: the lower cap), and combat.js's newWorld options (dex, moves,
  *  ability, items, autoPick, …); a move given as [id, n] starts at Expedition level n; levels: false keeps the
- *  base game's level-ups instead of Expedition's (and then no economy either); eco: false leaves the economy out }. -> the run: { w (the fight), map, diff, seed, zone, ph, charge, portalT, fs, boss,
+ *  base game's level-ups instead of Expedition's (and then no economy either); eco: false leaves the economy out; cap: false leaves capture out }. -> the run: { w (the fight), map, diff, seed, zone, ph, charge, portalT, fs, boss,
  *  splits, bosses, log, won, lost, ended, says: [this step's banners] } */
 export function newRun(data, X, o = {}) {
 	const map = X.MAPS[o.map] ? o.map : 'viridian', diff = X.DIFFS.includes(o.diff) ? o.diff : 'normal', seed = (o.seed >>> 0) || 1;
@@ -124,6 +126,7 @@ export function newRun(data, X, o = {}) {
 	zoneStart(S, 1, 0);
 	if (own) setupLevels(S, X.L, lv);
 	if (own && X.E && o.eco !== false) setupEco(S);
+	if (own && X.C && o.cap !== false) setupCap(S);
 	return S;
 }
 const zIdx = (S) => Math.min(3, S.zone) - 1;
@@ -184,6 +187,7 @@ export function spawn(S, dex, x, z, o = {}) {
 	if (xm.diff > 0) { e.maxHp = e.hp = Math.round(e.maxHp * (1 + xm.diff)); e.dmg *= 1 + xm.diff; }
 	if (xm.xp > 0) e.xp = Math.round(e.xp * (1 + xm.xp));
 	if (o.scale) { e.scale = o.scale; e.cr = S.data.radius(dex, o.scale); }
+	if (o.kind === 'alpha') mark(S, e, 'alpha');   // (it faints at 1 HP: the Friend Ball's window)
 	if (o.kind) { e.xk = o.kind; S.specials.set(e.id, { kind: o.kind, e, t0: t, next: XKK.TOTEM.every, rng: makeRng(mix(S.seed, e.id, 0x70)) }); }
 	return e;
 }
@@ -277,6 +281,7 @@ function tickSpecials(S, dt, t) {
 		const e = sp.e;
 		if (e.dead) {
 			const g = groundAt(w.room, e.a.x, e.a.z);
+			if (sp.kind === 'alpha' && S.cap) { S.specials.delete(id); continue; }   // (capture owns a fainted alpha: its prize only if you leave it)
 			if (!sp.left) drop(w, 'heal', e.a.x + (S.lv ? 20 * U : 0), g, e.a.z, 0);
 			if (!sp.left && S.lv && (sp.kind === 'alpha' || sp.kind === 'roam')) drop(w, 'item', e.a.x - 20 * U, g, e.a.z, dropItem(S));   // an alpha and a roamer leave an item too
 			S.specials.delete(id); continue;
@@ -351,10 +356,11 @@ export function stepRun(S, input, dt = K.TICK) {
 	const w = S.w, XKK = S.X.K;
 	S.says.length = 0;
 	if (S.ended) return S;
+	if (holdCine(S, dt)) { w.events.length = 0; return S; }   // (a ball is shaking: the world holds)
 	if (S.pick) {   // a choice is up (a ball's items, Meowth's stall, Hypno): the fight holds until it is made
 		w.events.length = 0;
 		if (w.autoPick === undefined || w.autoPick === null) return S;
-		if (S.pick.kind === 'shop' || S.pick.kind === 'hypno') pickClose(S); else for (let i = 0; S.pick && i < S.pick.ids.length; i++) pickTake(S, i);
+		if (S.pick.onTake) pickTake(S, 0); else if (S.pick.kind === 'shop' || S.pick.kind === 'hypno') pickClose(S); else for (let i = 0; S.pick && i < S.pick.ids.length; i++) pickTake(S, i);
 		S.pick = null;
 	}
 	const t0 = w.t;
@@ -364,6 +370,7 @@ export function stepRun(S, input, dt = K.TICK) {
 	const t = w.t;
 	if (w.pl.dead && !w.mates.length && !w.guest) { S.ended = true; S.lost = true; w.events.push({ k: 'runover', won: false }); return S; }
 	if (S.lv) { tickStats(S, dt); for (const ev of w.events) if (ev.k === 'pickup' && ev.kind === 'item') takeItem(S, ev.value); }
+	if (S.cap) tickCap(S, dt);
 	if (S.eco) tickEco(S, dt);
 	dpsSample(S, t);
 	tickSpecials(S, dt, t);
@@ -401,7 +408,7 @@ export function hudLine(S) {
 }
 /** The run's parts for the score, the score itself, and the end screen's lines. */
 export function result(S) {
-	const w = S.w, parts = { kills: w.stats.kills, time: Math.floor(w.t), dmg: Math.round(w.stats.dealt), zone: S.zone, bosses: S.bosses.filter((b) => b.down !== null).length, won: S.won, catches: 0 };
+	const w = S.w, parts = { kills: w.stats.kills, time: Math.floor(w.t), dmg: Math.round(w.stats.dealt), zone: S.zone, bosses: S.bosses.filter((b) => b.down !== null).length, won: S.won, catches: S.cap ? S.cap.n : 0 };
 	return { won: S.won, title: S.won ? 'EXPEDITION COMPLETE!' : 'RUN OVER', line: S.won ? 'Map complete!' : S.zone === 4 ? 'Reached the shrine' : `Reached zone ${S.zone}`, parts, score: S.X.score(parts, S.diff), splits: S.splits.slice(), bosses: S.bosses.map((b) => ({ ...b })) };
 }
 /** For tests and the page: put the zone's clock at `sec` (events between fire on the next step, in order). */

@@ -9,6 +9,8 @@
 //     second set of cards comes up when the first is taken
 //   * the economy: the zone's things are drawn and on the minimap; a gold rock pays; a Poké Ball opens a choice of
 //     three items that holds the fight, and the one clicked is yours
+//   * capture: an alpha faints, you stand by it, the ball shakes while the world holds, and it follows you as a
+//     Support Alpha
 //   * the final swarm is announced at 10:00 of the zone's clock
 //   * the whole run to the shrine and the legendary: the page says the expedition is complete, with its score
 //   node overworld/tests/micasurvivor_m3d_expedition_page_test.mjs      (SHOTS=<dir> for screenshots)
@@ -102,6 +104,28 @@ try {
 	const p1 = await page.evaluate(() => { const m = window.__m3d; return { pick: !!m.run.pick, items: Object.keys(m.world.pl.xi), shown: document.getElementById('cards').style.display }; });
 	A(!p1.pick && p1.items.length === 1 && p1.items[0] === p0.ids[1] && p1.shown === 'none' && await hudHas(new RegExp('items: ' + p0.ids[1])), 'click the second: it is yours (the readout lists it), and the fight goes on', JSON.stringify(p1));
 	await page.evaluate(() => { window.__m3d.world.autoPick = 0; });
+
+	// ---- capture: an alpha faints and joins you
+	await page.evaluate(() => { const m = window.__m3d; m.run.acc = -1e9; for (const e of m.world.enemies) e.dead = true; m.respawn(); });
+	await sleep(200);
+	const al = await page.evaluate(() => { const m = window.__m3d; for (let k = 1; k < 40; k++) { m.fire({ at: 0, kind: 'alpha', n: 1, dex: [74], seed: k }); const e = m.world.enemies.find((q) => q.xk === 'alpha' && !q.dead); if (e) { e.dummy = true; m.world.hit(e, 1e12, 0, 0, 0); return { hp: e.hp, floor: e.hpFloor }; } } return null; });
+	const down = await waitFor(() => page.evaluate(() => window.__m3d.capView().faint.length === 1), 3000);
+	A(al && al.hp === 1 && down, 'an alpha Geodude is beaten down to 1 HP: it faints, and waits');
+	await shot('m3d_exp_faint.png');
+	await page.evaluate(() => { const m = window.__m3d, f = m.capView().faint[0]; m.run.acc = -1e9; m.put(f.x + 1, f.z); });
+	const thrown = await waitFor(() => page.evaluate(() => !!window.__m3d.capView().cine), 3000);
+	const t0 = await page.evaluate(() => window.__m3d.world.t);
+	await sleep(1200);
+	const mid = await page.evaluate(() => ({ t: window.__m3d.world.t, phase: (window.__m3d.capView().cine || { phase: {} }).phase.n }));
+	A(thrown && mid.t === t0 && /shake|drop|absorb|click/.test(mid.phase), `stand by it: the Friend Ball goes out and the world holds while it shakes (${mid.phase})`, JSON.stringify(mid));
+	await shot('m3d_exp_ball_shake.png');
+	const joined = await waitFor(() => page.evaluate(() => window.__m3d.run.cap.sa.length === 1), 6000);
+	A(joined && await hudHas(/team: Geodude .rock./), 'then Geodude joins your team (the readout names it)', await hud());
+	await page.evaluate(() => { window.__m3d.setInput({ mx: 1, mz: 0 }); });
+	await sleep(1500);
+	const fol = await page.evaluate(() => { const m = window.__m3d, a = m.capView().sa[0]; m.setInput(null); return { d: Math.hypot(a.x - m.state.x, a.z - m.state.z), sheet: !!m.sheets.get('74/Walk') }; });
+	A(fol.d < 9 && fol.sheet, `and follows you as you run (${fol.d.toFixed(1)} m behind), drawn as itself`, JSON.stringify(fol));
+	await shot('m3d_exp_support.png');
 
 	// ---- the altar, the guardian, the portal
 	const hush = () => page.evaluate(() => { const m = window.__m3d; m.run.acc = -1e9; for (const e of m.world.enemies) if (e !== m.run.boss) e.dead = true; });

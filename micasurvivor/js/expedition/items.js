@@ -184,6 +184,7 @@ G.ExpItems = (() => {
     for (const id in pl.xi) { const st = IT[id] && IT[id].stats[s]; if (st) v += st * pl.xi[id]; }
     if (s === 'dmg') v += pl.xtr.dmg;
     if (G.ExpCap) v += G.ExpCap.perk(pl, s);   // (D8: the Support Alphas' type perks add like any same-stat bonus)
+    if (pl.xperk) v += pl.xperk[s] || 0;       // (3D, micasurvivor/m3d/expcap.js: its Support Alphas' perks; a 2D player has no xperk)
     if (G.ExpMeta) v += G.ExpMeta.statOf(pl, s);   // (D10: the Lab, the shiny perks and the boosts of the run's row, the same way)
     if (G.ExpSurv) v += G.ExpSurv.statOf(pl, s);   // (D11: Survival's pacts, their boons and banes)
     if (s === 'hp') v += pl.xtr.hp;
