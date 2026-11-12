@@ -268,6 +268,7 @@ function hurtEnemy(w, e, amount, kx, kz, knockU) {
 	let d = Math.max(1, Math.round(amount));
 	if (e.shield > 0) { const a = Math.min(e.shield, d); e.shield -= a; if (a >= d) { e.flash = 0.06; w.events.push({ k: 'absorbed', id: e.id }); return 0; } d = Math.max(1, Math.round(d - a)); }   // a shielder's shield takes it first
 	e.hp -= d; e.flash = 0.12; w.stats.removed += d;
+	if (e.hpFloor && e.hp < e.hpFloor) e.hp = e.hpFloor;   // (Expedition: one that can be caught does not fall: it faints at 1 HP)
 	if (knockU > 0 && !e.boss) { const l = Math.hypot(kx, kz) || 1; knock(e.a, kx / l * knockU * U, kz / l * knockU * U); }
 	if (e.hp <= 0) kill(w, e);
 	return d;
@@ -392,7 +393,7 @@ function aimDir(w, a) {
 // ---------------------------------------------------------------- the moves
 function payload(m) { return { burn: m.burn || 0, poison: m.poison || 0, slow: m.slow || 0, knock: m.knock || 0, cc: m.cc || '', ccp: m.ccp || 0, mtype: m.type, mkind: m.kind, mid: m.id, xcrit: m.xcrit || 0 }; }
 /** A shot leaves. o: { off (how far in front it starts, units), speed, life, from: [x, y, z] (not the player: a turret), pierce, size, dmg, extra } */
-function shoot(w, m, dir, o = {}) {
+export function shoot(w, m, dir, o = {}) {
 	const s = w.pl.s, off = (o.off === undefined ? 3 : o.off) * U, sp = (o.speed || m.speed) * U, f = o.from || [s.x, s.y + CK.MUZZLE, s.z];
 	const p = Object.assign({ id: w.nextId++, x: f[0] + dir[0] * off, y: f[1] + dir[1] * off, z: f[2] + dir[2] * off, vx: dir[0] * sp, vy: dir[1] * sp, vz: dir[2] * sp,
 		dmg: o.dmg === undefined ? m.dmg * atk(w.pl) : o.dmg, r: (o.size || m.size) * U, life: o.life || m.life, t: 0, pierce: o.pierce === undefined ? m.pierce | 0 : o.pierce, homing: m.homing || 0, hits: new Set(), px: null, py: 0, pz: 0 }, payload(m), o.extra || null);

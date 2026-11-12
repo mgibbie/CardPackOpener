@@ -13,9 +13,10 @@ import { newWorld, addEnemy, addBoss, tick, dataFrom, choose, drop, CK } from '.
 import { frame as netFrame, keepEvents, diff as netDiff, bundle, unbundle, Viewer, Tape, ballColour, typeName, NK } from './net.js';
 import { hostAdd, hostStep, hostFrame, hostApply, guestWorld, guestSync, guestMsg, guestApply } from './coop.js';
 import { generate, BIOMES } from './gen.js';
-import { expFrom, newRun, stepRun, hudLine, result as runResult, setZoneTime } from './expedition.js';
+import { expFrom, newRun, stepRun, hudLine, result as runResult, setZoneTime, fire as fireEvent } from './expedition.js';
 import { refresh as refreshCards, skip as skipCards, banish as banishCard } from './explevel.js';
 import { EK, ecoView, pickTake, pickClose, shopPrices } from './expeco.js';
+import { capView } from './expcap.js';
 
 const Q = new URLSearchParams(location.search);
 // P3: ?gen=<seed>&fight=1 is a FIGHT on that level (combat.js): enemies arrive and come for you, your moves fire by
@@ -240,6 +241,14 @@ function draw(t) {
 		sh.batch.add(m.s.x, m.s.y, m.s.z, q.rect, q.uv, m.dead ? 0.45 : 1);
 		shadows.add(room, m.s.x, m.s.z, m.s.y, sh.shadow * 1.15);
 	}
+	// (P4) capture: your Support Alphas (sprites that follow you), the fainted (dimmed, a bead over them while the window
+	// is open), and the ball while it shakes
+	if (run && run.cap) {
+		const cv = capView(run);
+		for (const a of cv.sa) { const sh = sheets.get(a.dex + '/Walk'); if (!sh) { wantSheet(a.dex); continue; } const q = spriteQuad(sh.meta, sh.img, a.moving ? frameAt(sh.meta, t) : 0, facingRow(a.facing, cam.yaw), 1.15, sh.lift); sh.batch.add(a.x, a.y, a.z, q.rect, q.uv, 1); shadows.add(room, a.x, a.z, a.y, sh.shadow * 1.15); }
+		for (const f of cv.faint) { const sh = sheets.get(f.dex + '/Walk'); if (sh) { const q = spriteQuad(sh.meta, sh.img, 0, 0, 1.4, sh.lift); sh.batch.add(f.x, f.y, f.z, q.rect, q.uv, 0.45); } else wantSheet(f.dex); shots.add(f.x, f.y + 1.9 + Math.sin(t * 6) * 0.12, f.z, 0.28, f.kind === 'alpha' ? '#ff4d5e' : '#9ae6ff'); }
+		if (cv.cine) { const p = cv.cine.phase, wob = p.n === 'shake' ? Math.sin(p.u * 6.2832) * 0.18 : 0; shots.add(cv.cine.x + wob, cv.cine.y + (p.n === 'throw' ? 1.6 - p.u * 1.2 : 0.4), cv.cine.z, 0.34, p.n === 'click' ? '#ffe14d' : cv.cine.kind === 'alpha' ? '#3fa35a' : '#ff4d5e'); note(p.n === 'click' ? 'Gotcha!' : p.n === 'shake' ? '. '.repeat(p.k + 1) : cv.cine.kind === 'alpha' ? 'Friend Ball!' : 'Poké Ball!', 250); }
+	}
 	// the lead
 	const name = stateName(state), anim = name === 'idle' || name === 'staggered' ? 'Idle' : 'Walk', ps = sheets.get(DEX + '/' + anim) || sheets.get(DEX + '/Idle');
 	if (ps) {
@@ -438,10 +447,10 @@ function showPick() {
 	const el = document.getElementById('cards'), P = run.pick; shownPick = P;
 	if (!P) { if (!world.pl.choices) { el.style.display = 'none'; el.innerHTML = ''; } return; }
 	const I = GG.ExpItems, EN = GG.ExpEN || {}, en = (s) => EN[s] || s, prices = P.kind === 'shop' ? shopPrices(run, P.ids) : null;
-	const list = P.vit ? P.vit.map((id) => ({ title: en(I.VIT[id].name), tag: 'Vitamin', desc: 'Forget it', col: '#f6d860' }))
+	const list = P.cards ? P.cards.map((c) => ({ ...c, col: '#3fa35a' })) : P.vit ? P.vit.map((id) => ({ title: en(I.VIT[id].name), tag: 'Vitamin', desc: 'Forget it', col: '#f6d860' }))
 		: P.ids.map((id, i) => ({ title: en(I.IT[id].name), tag: I.RAR[I.IT[id].rar].toUpperCase() + (prices ? ' · ' + prices[i] + ' ₽' : ''), desc: I.itemText(id), col: I.RAR_COL[I.IT[id].rar] }));
 	el.innerHTML = `<h2>${P.title}${P.sub ? ' · ' + P.sub : ''}${prices ? ' · you have ' + run.coins + ' ₽' : ''}</h2>` + list.map((c, i) => `<button data-p="${i}"${P.taken.includes(i) ? ' disabled style="opacity:.35' : ' style="'};border-color:${c.col}"><b>${i + 1} · ${c.title}</b><i>${c.tag}</i><span>${c.desc}</span></button>`).join('')
-		+ (P.kind === 'shop' || P.kind === 'hypno' ? '<div class="tools"><button data-p="-1">Esc · Leave</button></div>' : '');
+		+ (P.kind === 'shop' || P.kind === 'hypno' || P.onClose ? `<div class="tools"><button data-p="-1">Esc · ${P.cancel || 'Leave'}</button></div>` : '');
 	el.style.display = 'grid';
 }
 function takePick(i) { if (!run || !run.pick) return false; const ok = i < 0 ? pickClose(run) : pickTake(run, i); shownPick = null; showPick(); return ok; }
@@ -487,7 +496,7 @@ function showHud() {
 		+ (!world || !world.weather ? '' : `\nweather: ${world.weather.kind} (${Math.ceil(world.weather.dur - world.weather.t)} s)`)
 		+ (!world || !world.pl.ability ? '' : `\nability: ${world.pl.ability}${world.pl.items.length ? ' · holding: ' + world.pl.items.join(', ') : ''}`)
 		+ (!world ? '' : `\nLv ${world.pl.level} · XP ${Math.floor(world.pl.xp)} / ${world.pl.xpNext}\nHP ${Math.ceil(world.pl.hp)} / ${world.pl.maxHp} · ${world.enemies.length} enemies · ${world.stats.kills} KOs · ${Math.floor(world.t / 60)}:${String(Math.floor(world.t % 60)).padStart(2, '0')} · ${world.pl.moves.map((m) => m.id + ' Lv' + (m.xlv || m.lvl)).join(', ')}`)
-		+ (!run || !run.lv ? '' : `\nvitamins: ${world.pl.xv.map((v) => v.id + ' ' + v.lvl).join(', ') || 'none'} · ₽ ${run.coins} · luck ${Math.round(world.pl.xluck || 0)}${world.pl.xproc.shield > 0 ? ' · shield ' + Math.round(world.pl.xproc.shield) : ''}\nitems: ${Object.keys(world.pl.xi).map((id) => id + (world.pl.xi[id] > 1 ? ' ×' + world.pl.xi[id] : '')).join(', ') || 'none'}`) + (noteText && performance.now() < noteUntil ? `\n» ${noteText}` : '');
+		+ (!run || !run.lv ? '' : `\nvitamins: ${world.pl.xv.map((v) => v.id + ' ' + v.lvl).join(', ') || 'none'} · ₽ ${run.coins} · luck ${Math.round(world.pl.xluck || 0)}${world.pl.xproc.shield > 0 ? ' · shield ' + Math.round(world.pl.xproc.shield) : ''}${run.cap && run.cap.sa.length ? '\nteam: ' + run.cap.sa.map((a) => (GG.DEX_BY[a.dex] || {}).name + ' (' + a.type + ')').join(', ') : ''}\nitems: ${Object.keys(world.pl.xi).map((id) => id + (world.pl.xi[id] > 1 ? ' ×' + world.pl.xi[id] : '')).join(', ') || 'none'}`) + (noteText && performance.now() < noteUntil ? `\n» ${noteText}` : '');
 }
 
 // ---------------------------------------------------------------- boot
@@ -509,7 +518,7 @@ function showHud() {
 
 // what a test (and a curious owner in the console) can reach
 window.__m3d = {
-	get ready() { return ready; }, state, get room() { return room; }, run, setZoneTime: (sec) => run && setZoneTime(run, sec), useTool, takePick, ecoView: () => (run ? ecoView(run) : []), K, TUNE, TYPES, TRAITS, cam, crowd, sheets, stats, gen: GEN, biome: BIOME, world, numbers, net, tape, myId: MYID, mates, get coView() { return coView; }, playTape, get view() { return view; }, get viewer() { return viewer; }, get watchT() { return watchT; }, addBoss: (dex, x, z, o) => addBoss(world, dex, x, z, o), drop: (kind, x, z, v) => drop(world, kind, x, groundAt(room, x, z), z, v), pickCard, addEnemy: (dex, x, z, o) => addEnemy(world, dex, x, z, o), holdExit: false, get leaving() { return leaving; },
+	get ready() { return ready; }, state, get room() { return room; }, run, setZoneTime: (sec) => run && setZoneTime(run, sec), useTool, takePick, ecoView: () => (run ? ecoView(run) : []), capView: () => (run ? capView(run) : null), fire: (ev) => run && fireEvent(run, ev), K, TUNE, TYPES, TRAITS, cam, crowd, sheets, stats, gen: GEN, biome: BIOME, world, numbers, net, tape, myId: MYID, mates, get coView() { return coView; }, playTape, get view() { return view; }, get viewer() { return viewer; }, get watchT() { return watchT; }, addBoss: (dex, x, z, o) => addBoss(world, dex, x, z, o), drop: (kind, x, z, v) => drop(world, kind, x, groundAt(room, x, z), z, v), pickCard, addEnemy: (dex, x, z, o) => addEnemy(world, dex, x, z, o), holdExit: false, get leaving() { return leaving; },
 	setInput(o) { override = o ? { ...noInput(), ...o } : null; },
 	rowOf: (facing, yaw) => facingRow(facing, yaw === undefined ? cam.yaw : yaw),
 	quadOf: (key, frame, row) => { const s = sheets.get(key); return spriteQuad(s.meta, s.img, frame, row, 1, s.lift); },

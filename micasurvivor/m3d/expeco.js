@@ -129,6 +129,7 @@ export function shopPrices(S, stock) { const E = S.X.E, h = E.heatOf(S.eco.buys,
 /** Take choice i of the pick that is up. -> whether it was taken */
 export function pickTake(S, i) {
 	const P = S.pick, Z = S.eco && S.eco.z; if (!P || P.taken.includes(i)) return false;
+	if (P.onTake) { const ok = P.onTake(i); if (ok && S.pick === P) S.pick = null; return ok; }   // (a choice with its own answer: capture's swap)
 	if (P.kind === 'hypno') {   // forget a vitamin: its slot is free again
 		const pl = S.w.pl, k = pl.xv.findIndex((x) => x.id === P.vit[i]); if (k < 0) return false;
 		pl.xv.splice(k, 1); S.L.I.apply(pl);
@@ -149,7 +150,7 @@ export function pickTake(S, i) {
 	return true;
 }
 /** Leave the pick that is up (a shop, Hypno; a ball's choice cannot be left). */
-export function pickClose(S) { const P = S.pick; if (!P || !(P.kind === 'shop' || P.kind === 'hypno')) return false; S.pick = null; return true; }
+export function pickClose(S) { const P = S.pick; if (!P || !(P.kind === 'shop' || P.kind === 'hypno' || P.onClose)) return false; S.pick = null; if (P.onClose) P.onClose(); return true; }
 
 // ---------------------------------------------------------------- a zone's state
 const zoneState = (lay) => { const n = lay.objs.length; return { lay, st: new Array(n).fill(FRESH), ch: new Array(n).fill(0), t: new Array(n).fill(0), latch: new Set(), wave: new Map(), visit: -1, stock: null, sold: 0, spot: -1, slot: new Map() }; };

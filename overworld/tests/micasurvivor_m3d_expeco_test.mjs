@@ -338,9 +338,9 @@ const says = (S, sec) => { const out = []; for (let i = 0, n = Math.round(sec * 
 	const pulled = S.lv.rifts.length === 1, x6 = e.a.x; steps(S, 1); const moved = Math.abs(e.a.x - x6) + Math.abs(e4.a.x - x4); steps(S, 0.6);
 	A(pulled && moved > 3 && S.lv.rifts.length === 0 && (e.hp < 1e6 || e4.hp < 1e6), `a Meteorite: every 8 s a rift drags them in (${moved.toFixed(1)} m in a second), then bursts`);
 	// drops
-	S = mk(); S.w.pl.s.x += 0; const ev = { at: 0, kind: 'alpha', n: 1, dex: [19], seed: 5 }; fire(S, ev); const al = S.w.enemies[0]; slay(S, al); steps(S, 0.05);
+	S = mk(); S.w.pl.s.x += 0; const ev = { at: 0, kind: 'alpha', n: 1, dex: [19], seed: 5 }; fire(S, ev); const al = S.w.enemies[0]; slay(S, al); steps(S, 8.2);   // (it faints; left alone its prize falls)
 	const it = S.w.pickups.find((p) => p.kind === 'item');
-	A(it && L.I.IT[it.value] && S.w.pickups.some((p) => p.kind === 'heal') && S.coins === 5, `an alpha leaves an item (${it && it.value}) and a berry, and pays 5 ₽`);
+	A(it && L.I.IT[it.value] && S.w.pickups.some((p) => p.kind === 'heal') && S.coins === 5, `an alpha pays 5 ₽ and, not caught, leaves an item (${it && it.value}) and a berry`);
 	put(S, it.x, it.z, it.y); steps(S, 0.3);
 	A(S.w.pl.xi[it.value] === 1 && !S.w.pickups.includes(it), 'walk over it: it is yours');
 }

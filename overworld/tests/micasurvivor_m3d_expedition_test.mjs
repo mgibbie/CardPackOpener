@@ -175,7 +175,9 @@ const clearZone = (S) => { hush(S); toAltar(S); steps(S, XKK.ALTAR_T + 0.1); sla
 		const S = quiet(), en = fire(S, ev('alpha', { dex: [19] })), e = S.w.enemies[0];
 		A(en.spawned === 1 && e.xk === 'alpha' && e.scale === XKK.ALPHA.scale && near(e.maxHp, base(S, 19, e.ti) * XKK.ALPHA.hp, 0.01) && e.xp === Math.round(e.def.xp * XKK.XP_K * XKK.ALPHA.xp) && S.says.length === 1, `an alpha: ${XKK.ALPHA.hp} times the HP, ${XKK.ALPHA.scale} times the size, ${XKK.ALPHA.xp} times the XP`, [e.maxHp, base(S, 19, e.ti)]);
 		S.w.hit(e, e.hp + 1, 0, 0, 0); steps(S, 0.05);
-		A(S.w.pickups.some((p) => p.kind === 'heal') && S.specials.size === 0, 'beaten, it leaves a berry');
+		A(e.dead && S.cap.faint.length === 1 && !S.w.pickups.some((p) => p.kind === 'heal') && S.specials.size === 0, 'beaten, it faints where it stands (capture: micasurvivor_m3d_expcap_test.mjs)');
+		S.acc = -1e9; steps(S, 8.1);
+		A(S.w.pickups.some((p) => p.kind === 'heal') && S.w.pickups.some((p) => p.kind === 'item') && S.cap.faint.length === 0, 'left alone for 8 s, it comes round and leaves its prize: an item and a berry');
 	}
 	{
 		const S = quiet(), en = fire(S, ev('elite', { n: 5, dex: [19, 16] })), L = S.w.enemies;
