@@ -816,6 +816,35 @@ Survival, the fog of war and the zone map, and co-op, spectate and replay of a r
 
 Tests: `micasurvivor_m3d_expleague_test.mjs` (34 checks, node), the page test 31 (was 27).
 
+## 5.23 P4, seventh part: built (2026-11-11). Watching and replaying a run.
+
+`micasurvivor/m3d/expnet.js`. P3n's frames carry the fight. A run has more that a watcher must have, and it
+now travels with them as the run's **row**: the seed, map and tier; the zone, the altar's phase and charge, the
+money, the zone clock; the boss and its exhaustion; what each of the zone's things is doing; who has fainted, the
+ball in the air, your team; your League stage; the held item; whether the run is over.
+
+- **The watcher builds each zone's level itself**, from the seed, and where the zone's things stand too: only
+  their states are sent. Through a portal it builds the next.
+- **The row is sent only when it changes** and stays until a new one comes (net.js's diff and patch). It is
+  under 400 characters with a dozen things changed; a quiet second sends none.
+- **On tape** it is recorded the same way, so a replay goes through the run as it happened: altar, guardian,
+  portal, the next zone, a capture, an evolution.
+- **Banners** (the guardian wakes, the portal opens, an item) reach a watcher as events.
+- **On the page**: a tab opened with `?watch=<name>` on a hosted run (`?exp=1&host=<name>`) is sent to the run's
+  page and shows it: the level, the things, the fainted, the ball, the team behind the player, the player drawn
+  as the stage it is, the run's readout line. `&tape=1` records; `playTape` replays.
+
+**Two things the watcher's screen had wrong, fixed** (seen in a screenshot, then pinned by checks): the test
+room's decorative crowd was wandering through a watched run, and where the player's species was also one of the
+crowd's, the player was not drawn at all (the crowd had filled that sprite sheet).
+
+**Not yet**: co-op in a run (a guest's own items, level-ups and captures, and the host's say over the zone:
+the 2D game's D11 rules), and the lobby and the screens to find a run to watch. Still of P4 besides: Survival,
+the fog of war and the zone map.
+
+Tests: `micasurvivor_m3d_expnet_test.mjs` (21 checks, node) and `micasurvivor_m3d_expwatch_test.mjs` (14 checks:
+three windows, a player, a watcher and a replay).
+
 ## 6. Dive in 2D: built
 
 **D0 — find the stairs (small; can ship first, on its own).** *Built 2026-11-11 (`overworld/tests/micasurvivor_dive_stairs_test.mjs`). As built: the stairs took their own orange mark, so the rocks and Meowth keep their gold; the HUD arrow comes up after 25 s on a floor, or at once when its boss falls.*

@@ -13,7 +13,8 @@ import { newWorld, addEnemy, addBoss, tick, dataFrom, choose, drop, CK } from '.
 import { frame as netFrame, keepEvents, diff as netDiff, bundle, unbundle, Viewer, Tape, ballColour, typeName, NK } from './net.js';
 import { hostAdd, hostStep, hostFrame, hostApply, guestWorld, guestSync, guestMsg, guestApply } from './coop.js';
 import { generate, BIOMES } from './gen.js';
-import { expFrom, newRun, stepRun, hudLine, result as runResult, setZoneTime, fire as fireEvent } from './expedition.js';
+import { expFrom, newRun, stepRun, hudLine, result as runResult, setZoneTime, fire as fireEvent, zoneRoom } from './expedition.js';
+import { runRow, rowView, teamSpot } from './expnet.js';
 import { refresh as refreshCards, skip as skipCards, banish as banishCard } from './explevel.js';
 import { EK, ecoView, pickTake, pickClose, shopPrices } from './expeco.js';
 import { capView } from './expcap.js';
@@ -30,14 +31,16 @@ const MYID = JOIN ? +(Q.get('id') || 0) || 1 + (Date.now() % 90000) : 0;
 // Find the altar (the column of light, on the minimap), stand on it, beat the guardian, take the portal.
 const EXP = !WATCH && !JOIN && Q.has('exp');
 const FIGHT = !WATCH && (!!JOIN || EXP || (Q.has('gen') && Q.get('fight') === '1'));
-const N = Math.max(0, Math.min(2000, +(Q.get('n') ?? (FIGHT ? 0 : 100)) || 0));
+const N = Math.max(0, Math.min(2000, +(Q.get('n') ?? (FIGHT || (WATCH && Q.has('xw')) ? 0 : 100)) || 0));   // (the test room's crowd: not in a fight, and not on a watched run)
 const DEX = +(Q.get('dex') ?? 25) || 25;
 const META = (window.G && window.G.SPRITE_META) || {};
 const CROWD_DEX = [1, 4, 7, 16, 19, 25, 43, 74, 92, 133].filter((d) => META[d] && META[d].a && META[d].a.Idle && !META[d].src);
 const hud = document.getElementById('hud'), canvas = document.getElementById('c');
-const GEN = EXP ? (+Q.get('exp') >>> 0) || 1 : Q.has('gen') ? (+Q.get('gen') >>> 0) : null, BIOME = BIOMES[Q.get('biome')] ? Q.get('biome') : 'meadow';
+const XW = WATCH && Q.has('xw') ? { seed: (+Q.get('xw') >>> 0) || 1, map: Q.get('map') || 'viridian' } : null;   // (P4) watching an Expedition run: its seed and map
+const XF = (EXP || XW) && window.G && window.G.ExpClassic ? expFrom(window.G) : null;
+const GEN = EXP ? (+Q.get('exp') >>> 0) || 1 : XW ? XW.seed : Q.has('gen') ? (+Q.get('gen') >>> 0) : null, BIOME = BIOMES[Q.get('biome')] ? Q.get('biome') : 'meadow';
 const SIZE = Q.has('size') ? Math.max(3, Math.min(8, +Q.get('size') | 0 || 5)) : null;
-let room = EXP ? null : GEN === null ? buildRoom() : generate(GEN, BIOME, SIZE ? { size: SIZE } : null);
+let room = EXP ? null : XW ? zoneRoom(XW.seed, XW.map, 1, XF) : GEN === null ? buildRoom() : generate(GEN, BIOME, SIZE ? { size: SIZE } : null);
 // (P1) who you play decides how it moves: its types' traits (sim.js TYPE_TRAITS). ?types=flying,water tries others.
 const SPECIES = ((window.G && window.G.DEX) || []).find((p) => p.dex === DEX) || { name: '#' + DEX, types: [] };
 const TYPES = Q.get('types') ? Q.get('types').split(',') : SPECIES.types;
@@ -49,7 +52,7 @@ const MOVES = !FIGHT ? [] : Q.get('moves') ? Q.get('moves').split(',').map((m) =
 	: [[GG.Moves.startFor(SPECIES), 3], ['tackle', 2]].filter((m, i, a) => a.findIndex((q) => q[0] === m[0]) === i);
 // (P3) bosses arrive at the 2D game's times (3:00, 6:00, …): ?bosses=143,130; ?boss=143 puts one in at the start
 const BOSSES = (Q.get('bosses') ? Q.get('bosses').split(',').map(Number) : [143, 130, 149, 6, 150]).filter((d) => META[d] && META[d].a && META[d].a.Walk && !META[d].src);
-const run = EXP ? newRun(dataFrom(GG), expFrom(GG), { seed: GEN, map: Q.get('map'), diff: Q.get('diff'), dex: DEX, moves: MOVES, tune: TUNE, touch: matchMedia('(pointer: coarse)').matches, league: !Q.has('moves') && Q.get('league') !== '0', ability: Q.get('ability') === '0' ? null : Q.get('ability') || 'auto', items: Q.get('items') ? Q.get('items').split(',') : [], weather: Q.get('weather') === '0' ? false : undefined, autoPick: Q.has('auto') ? +Q.get('auto') | 0 : undefined }) : null;
+const run = EXP ? newRun(dataFrom(GG), XF, { seed: GEN, map: Q.get('map'), diff: Q.get('diff'), dex: DEX, moves: MOVES, tune: TUNE, touch: matchMedia('(pointer: coarse)').matches, league: !Q.has('moves') && Q.get('league') !== '0', ability: Q.get('ability') === '0' ? null : Q.get('ability') || 'auto', items: Q.get('items') ? Q.get('items').split(',') : [], weather: Q.get('weather') === '0' ? false : undefined, autoPick: Q.has('auto') ? +Q.get('auto') | 0 : undefined }) : null;
 if (run) room = run.w.room;
 const world = run ? run.w : JOIN ? guestWorld(room, dataFrom(GG), { id: MYID, dex: DEX, moves: MOVES, seed: MYID * 7919 + 13, tune: TUNE, ability: Q.get('ability') === '0' ? null : Q.get('ability') || 'auto', items: Q.get('items') ? Q.get('items').split(',') : [], autoPick: Q.has('auto') ? +Q.get('auto') | 0 : undefined })
 	: FIGHT ? newWorld(room, dataFrom(GG), { bosses: BOSSES, ability: Q.get('ability') === '0' ? null : Q.get('ability') || 'auto', items: Q.get('items') ? Q.get('items').split(',') : [], dex: DEX, moves: MOVES, seed: (GEN + 1) * 7919, tune: TUNE, cast: FIGHT_CAST, cap: Q.has('cap') ? +Q.get('cap') | 0 : undefined, weather: Q.get('weather') === '0' ? false : undefined, autoPick: Q.has('auto') ? +Q.get('auto') | 0 : undefined }) : null;
@@ -214,7 +217,7 @@ function draw(t) {
 		// pickups: beads that bob over the floor (XP blue, a big one for a big orb; a berry green, a magnet pink, a bomb orange)
 		if (world) for (const p of world.pickups) shots.add(p.x, p.y + 0.3 + Math.abs(Math.sin(p.t * 0.8)) * 0.18, p.z, p.kind === 'xpBig' ? 0.24 : p.kind === 'xp' ? 0.15 : 0.26, PICK_COLOR[p.kind]);
 		// (P4) what the zone holds: a bead in each thing's colour (a big one for an altar; one being charged swells)
-		if (run && run.eco) for (const o of ecoView(run)) { const big = /unown|comet|challenge|cursedaltar|greed|meowth|slots/.test(o.kind); shots.add(o.x, o.y + (big ? 1.1 : 0.55) + Math.sin(t * 2 + o.i) * 0.08, o.z, (big ? 0.42 : EK.SMALL.includes(o.kind) ? 0.22 : 0.3) * (1 + o.ch * 0.8), EK.COL[o.kind]); }
+		for (const o of run && run.eco ? ecoView(run) : rv ? rv.eco : []) { const big = /unown|comet|challenge|cursedaltar|greed|meowth|slots/.test(o.kind); shots.add(o.x, o.y + (big ? 1.1 : 0.55) + Math.sin(t * 2 + o.i) * 0.08, o.z, (big ? 0.42 : EK.SMALL.includes(o.kind) ? 0.22 : 0.3) * (1 + o.ch * 0.8), EK.COL[o.kind]); }
 		if (world) for (const e of world.enemies) if (e.shield > 0) shots.add(e.a.x, e.a.y + Math.max(1.2, e.cr * 2) + 0.35, e.a.z, 0.16, '#7fc8ff');   // a shield: a blue bead over its head
 		if (world) for (const p of world.eshots) shots.add(p.x, p.y, p.z, Math.max(0.2, p.r), '#ff5f8f');   // an enemy's shot: always the same angry pink
 		// Expedition's effects: a bomb on its arc, a whirl on the floor, a wave's ring spreading
@@ -243,14 +246,14 @@ function draw(t) {
 	}
 	// (P4) capture: your Support Alphas (sprites that follow you), the fainted (dimmed, a bead over them while the window
 	// is open), and the ball while it shakes
-	if (run && run.cap) {
-		const cv = capView(run);
+	if ((run && run.cap) || rv) {
+		const cv = run ? capView(run) : { faint: rv.faint, cine: rv.cine, sa: rv.sa.map((dex, i) => { const [x, z] = teamSpot(state, state.facing, i, rv.sa.length); return { dex, x, z, y: Math.min(groundAt(room, x, z), state.y + 2), facing: state.facing, moving: Math.hypot(state.vx, state.vz) > 0.6 }; }) };
 		for (const a of cv.sa) { const sh = sheets.get(a.dex + '/Walk'); if (!sh) { wantSheet(a.dex); continue; } const q = spriteQuad(sh.meta, sh.img, a.moving ? frameAt(sh.meta, t) : 0, facingRow(a.facing, cam.yaw), 1.15, sh.lift); sh.batch.add(a.x, a.y, a.z, q.rect, q.uv, 1); shadows.add(room, a.x, a.z, a.y, sh.shadow * 1.15); }
 		for (const f of cv.faint) { const sh = sheets.get(f.dex + '/Walk'); if (sh) { const q = spriteQuad(sh.meta, sh.img, 0, 0, 1.4, sh.lift); sh.batch.add(f.x, f.y, f.z, q.rect, q.uv, 0.45); } else wantSheet(f.dex); shots.add(f.x, f.y + 1.9 + Math.sin(t * 6) * 0.12, f.z, 0.28, f.kind === 'alpha' ? '#ff4d5e' : '#9ae6ff'); }
 		if (cv.cine) { const p = cv.cine.phase, wob = p.n === 'shake' ? Math.sin(p.u * 6.2832) * 0.18 : 0; shots.add(cv.cine.x + wob, cv.cine.y + (p.n === 'throw' ? 1.6 - p.u * 1.2 : 0.4), cv.cine.z, 0.34, p.n === 'click' ? '#ffe14d' : cv.cine.kind === 'alpha' ? '#3fa35a' : '#ff4d5e'); note(p.n === 'click' ? 'Gotcha!' : p.n === 'shake' ? '. '.repeat(p.k + 1) : cv.cine.kind === 'alpha' ? 'Friend Ball!' : 'Poké Ball!', 250); }
 	}
 	// the lead
-	const name = stateName(state), anim = name === 'idle' || name === 'staggered' ? 'Idle' : 'Walk', LD = world && world.pl.mon.dex !== DEX ? world.pl.mon.dex : DEX, ps = sheets.get(LD + '/' + anim) || sheets.get(LD + '/Idle') || (wantLead(LD), sheets.get(DEX + '/' + anim) || sheets.get(DEX + '/Idle'));   // (P4: a League member is drawn as the stage it is)
+	const name = stateName(state), anim = name === 'idle' || name === 'staggered' ? 'Idle' : 'Walk', LD = world && world.pl.mon.dex !== DEX ? world.pl.mon.dex : rv && rv.league ? rv.league.form : DEX, ps = sheets.get(LD + '/' + anim) || sheets.get(LD + '/Idle') || (wantLead(LD), sheets.get(DEX + '/' + anim) || sheets.get(DEX + '/Idle'));   // (P4: a League member is drawn as the stage it is)
 	if (ps) {
 		const q = spriteQuad(ps.meta, ps.img, name === 'sliding' ? 0 : frameAt(ps.meta, state.t * (name === 'running' ? 1.25 : 1)), facingRow(state.facing, cam.yaw), 1.15, ps.lift);
 		ps.batch.add(state.x, state.y, state.z, q.rect, q.uv, 1);
@@ -310,7 +313,7 @@ function showMap() {
 	// the exit: a ring that beats; the spawn: a small dot
 	g.lineWidth = 2; g.strokeStyle = '#fff2a0'; g.beginPath(); g.arc(room.exit[0] * k, room.exit[2] * k, 5 + 2 * Math.sin(performance.now() / 260), 0, 6.2832); g.stroke();
 	g.fillStyle = '#fff'; g.fillRect(room.spawn[0] * k - 1.5, room.spawn[2] * k - 1.5, 3, 3);
-	if (run && run.eco) for (const o of ecoView(run)) { g.fillStyle = EK.COL[o.kind]; g.fillRect(o.x * k - 1.5, o.z * k - 1.5, 4, 4); }   // (P4) what the zone holds, in its colours
+	for (const o of run && run.eco ? ecoView(run) : rv ? rv.eco : []) { g.fillStyle = EK.COL[o.kind]; g.fillRect(o.x * k - 1.5, o.z * k - 1.5, 4, 4); }   // (P4) what the zone holds, in its colours
 	g.fillStyle = '#5fc8ff'; for (const m of mates()) g.fillRect(m.s.x * k - 2, m.s.z * k - 2, 5, 5);   // (P3n) the other players: blue squares
 	if (world || view) { g.fillStyle = '#5b1630'; for (const e of world ? world.enemies : view.enemies) g.fillRect(e.a.x * k - 1, e.a.z * k - 1, 3, 3); }   // (P3) enemies: dark dots
 	// you: an arrow the way you face (map: +x right, +z down)
@@ -336,6 +339,7 @@ function fightEvents(events) {
 		else if (ev.k === 'smite') { flashes.bar([ev.x, ev.y + 14, ev.z], [0, -1, 0], 14, 0.3, col(ev.id), 0.2); flashes.arc(ev.x, ev.y, ev.z, ev.r, 0, 6.2832, col(ev.id), 0.3, 0.3); }
 		else if (ev.k === 'bomb') flashes.arc(ev.x, ev.y, ev.z, ev.r, 0, 6.2832, '#ff7b3d', 0.5, 0.92);
 		else if (ev.k === 'levelup') { if (world) showCards(); }
+		else if (ev.k === 'say') { if (WATCH) note(ev.text, (ev.s || 3) * 1000); }   // (a run's banner, on a watcher's screen)
 		else if (ev.k === 'weather') { const d = ev.kind && GG.Weather.KINDS[ev.kind], el = document.getElementById('wx'); if (el) { el.style.background = d ? `rgba(${d.tint[0]}, ${d.tint[1]}, ${d.tint[2]}, ${Math.min(0.3, d.tint[3] * 2.2)})` : 'transparent'; } if (ev.kind) note('the weather turns: ' + ev.kind, 3000); }
 		else if (ev.k === 'boss') note(`a wild ${(GG.DEX_BY[ev.dex] || {}).name || 'boss'} appeared!`, 3200);
 		else if (ev.k === 'enrage') note('it is enraged!', 2400);
@@ -353,6 +357,9 @@ let coView = null;
 /** The other players in the fight: a host's puppets of its guests; a guest's view of the host and the other guests. */
 const mates = () => (!world ? [] : JOIN ? world.co.mates : world.mates);
 const HEAD = { gen: GEN, biome: BIOME, size: SIZE, dex: DEX };
+if (run) HEAD.exp = { seed: GEN, map: run.map, diff: run.diff };   // (P4) a run: a watcher needs its seed and map to build the zones
+/** (P4) A frame with the run's row on it (expnet.js), when this is a run. */
+const rowed = (f) => { if (run) f.r = runRow(run); return f; };
 const tape = FIGHT && Q.get('tape') === '1' ? new Tape({ ...HEAD, at: 0 }) : null;
 const net = { sent: 0, chars: 0, got: 0, evLive: [], evTape: [], prev: null, n: 0, batch: [], relay: false };
 const RELAY = Q.get('relay') === '1';
@@ -368,16 +375,17 @@ function share() {
 	}
 	keepEvents(net.evLive, world.events); if (tape) keepEvents(net.evTape, world.events);
 	if (chan && RELAY && simTicks % Math.round(60 / NK.HZ) === 0) {   // &relay=1: as the site's relay would carry it — ONE message a second, holding that second's frames (you in all ten, the enemies in two)
-		net.batch.push(netFrame(world, net.evLive)); net.evLive = [];
+		net.batch.push(rowed(netFrame(world, net.evLive))); net.evLive = [];
 		if (net.batch.length >= NK.HZ) { const msg = JSON.stringify({ h: HEAD, b: bundle(net.batch) }); chan.postMessage(msg); net.sent++; net.chars += msg.length; net.biggest = Math.max(net.biggest || 0, msg.length); net.batch = []; }
 	} else if (chan && simTicks % Math.round(60 / NK.HZ) === 0) {   // (by this page's own count: the fight's clock stands still while a card is being chosen, and the others must still hear)
-		const f = world.mates.length ? hostFrame(world, net.evLive) : netFrame(world, net.evLive), whole = net.n % NK.HZ === 0 || !net.prev, msg = JSON.stringify(whole ? { h: HEAD, f } : { f: netDiff(net.prev, f) });
+		const f = rowed(world.mates.length ? hostFrame(world, net.evLive) : netFrame(world, net.evLive)), whole = net.n % NK.HZ === 0 || !net.prev, msg = JSON.stringify(whole ? { h: HEAD, f } : { f: netDiff(net.prev, f) });
 		chan.postMessage(msg); net.prev = f; net.n++; net.sent++; net.chars += msg.length; net.evLive = [];
 	}
-	if (tape && world.tick % Math.round(60 / NK.TAPE_HZ) === 0) { tape.add(netFrame(world, net.evTape)); net.evTape = []; }
+	if (tape && world.tick % Math.round(60 / NK.TAPE_HZ) === 0 && world.tick !== net.taped) { net.taped = world.tick; tape.add(rowed(netFrame(world, net.evTape))); net.evTape = []; }   // (once a tick: the clock stands still while a card or a choice is up)
 }
 /** The watcher's side. Frames come in; the fight is drawn a moment in the past, so there is always a frame on each
  *  side of what is on screen. The camera is this screen's own. */
+let rv = null; const rowKeep = {};
 let viewer = WATCH ? new Viewer() : null, view = null, watchT = -1, watchSrc = WATCH ? 'live' : null, tapeEnd = 0;
 if (chan && HOST && world) chan.onmessage = (m) => {   // the host: a guest asks to join, or reports
 	const o = JSON.parse(m.data); net.got++;
@@ -395,7 +403,7 @@ if (chan && JOIN) chan.onmessage = (m) => {   // a guest: the host's frames
 if (chan && WATCH) chan.onmessage = (m) => {
 	const o = JSON.parse(m.data); net.got++; net.chars += m.data.length;
 	// the level being played is not the one this page built: load it (once), keeping the watch
-	if (o.h && (o.h.gen !== GEN || o.h.biome !== BIOME || (o.h.size || null) !== (SIZE || null) || o.h.dex !== DEX)) { if (!net.moving) { net.moving = true; const q = new URLSearchParams(); q.set('watch', WATCH); q.set('gen', o.h.gen); q.set('biome', o.h.biome); if (o.h.size) q.set('size', o.h.size); q.set('dex', o.h.dex); location.search = q.toString(); } return; }
+	if (o.h && (o.h.gen !== GEN || o.h.biome !== BIOME || (o.h.size || null) !== (SIZE || null) || o.h.dex !== DEX || (o.h.exp ? !XW || XW.map !== o.h.exp.map : !!XW))) { if (!net.moving) { net.moving = true; const q = new URLSearchParams(); q.set('watch', WATCH); if (o.h.exp) { q.set('xw', o.h.exp.seed); q.set('map', o.h.exp.map); } q.set('gen', o.h.gen); q.set('biome', o.h.biome); if (o.h.size) q.set('size', o.h.size); q.set('dex', o.h.dex); location.search = q.toString(); } return; }
 	if (watchSrc !== 'live') return;
 	if (o.b) { net.relay = true; for (const f of unbundle(o.b)) viewer.push(f); } else viewer.push(o.f);   // (a relay's message: a second's frames at once)
 };
@@ -412,6 +420,11 @@ function watchStep(dt) {
 	view = viewer.sample(watchT);
 	if (!view) return;
 	Object.assign(state, view.pl.s);
+	if (XW && view.fa && view.fa.r) {   // (P4) the run as it was at that moment: its zone's level, its things, its team
+		rv = rowView(view.fa.r, XF, rowKeep);
+		if (rv.room !== room) { room = rv.room; mapBase = null; showRoom(); }
+		if (rv.over && !runOver) { runOver = rv.over; note(rv.over === 'won' ? 'EXPEDITION COMPLETE!' : 'RUN OVER', 600000); }
+	}
 	fightEvents(view.events);
 	if (view.pl.dead) note('down', 2000);
 }
@@ -476,7 +489,8 @@ if (FIGHT) {
 	addEventListener('keydown', (e) => { const i = ['Digit1', 'Digit2', 'Digit3', 'Digit4'].indexOf(e.code); if (run && run.pick) { if (i >= 0) takePick(i); else if (e.code === 'Escape') takePick(-1); return; } if (i >= 0 && i < 3) pickCard(i); const tl = { KeyF: 'refresh', KeyG: 'skip', KeyB: 'banish' }[e.code]; if (tl) useTool(tl); });
 }
 let noteText = '', noteUntil = 0;
-function note(t, ms) { noteText = t; noteUntil = performance.now() + ms; }
+const noteLog = [];   // (the last notes shown: one can be gone from the screen in a moment)
+function note(t, ms) { noteText = t; noteUntil = performance.now() + ms; if (noteLog[noteLog.length - 1] !== t) { noteLog.push(t); if (noteLog.length > 60) noteLog.shift(); } }
 const pct = (a, p) => { if (!a.length) return 0; const s = a.slice().sort((x, y) => x - y); return s[Math.min(s.length - 1, Math.floor(s.length * p))]; };
 function stats() {
 	const info = renderer.info.render;
@@ -488,10 +502,12 @@ function showHud() {
 	hud.textContent = `${s.p50 ? Math.round(1000 / s.p50) : 0} fps · frame ${s.p50} ms (p95 ${s.p95}) · rules ${s.simP95} ms\n`
 		+ `${s.crowd} sprites · ${s.calls} draw calls · ${s.triangles} triangles\n`
 		+ `${stateName(state)} · ${sp.toFixed(1)} m/s · height ${state.y.toFixed(2)} m · air jumps ${state.airJumps}\n`
-		+ (run && run.lg ? `${world.pl.mon.name} (${(world.pl.mon.types || []).join(' / ')}) · League member ${(GG.DEX_BY[run.lg.member] || {}).name} · ${run.lg.role} · kit ${run.lg.kit}/4${run.lg.mat ? ' · Maturity ' + run.lg.mat : ''}`
+		+ (rv && rv.league ? `${(GG.DEX_BY[rv.league.form] || {}).name} (${((GG.DEX_BY[rv.league.form] || {}).types || []).join(' / ')}) · League member ${(GG.DEX_BY[rv.league.member] || {}).name}`
+			: run && run.lg ? `${world.pl.mon.name} (${(world.pl.mon.types || []).join(' / ')}) · League member ${(GG.DEX_BY[run.lg.member] || {}).name} · ${run.lg.role} · kit ${run.lg.kit}/4${run.lg.mat ? ' · Maturity ' + run.lg.mat : ''}`
 			: `${SPECIES.name} (${TYPES.join(' / ') || 'no type'})${TRAITS.length ? ' · traits: ' + TRAITS.join(', ') : ''}`)
 		+ (!run ? '' : `\n${hudLine(run)}${run.ph === 0 ? ' · charge ' + Math.round(run.charge * 100) + ' %' : ''}`)
-		+ (GEN === null || run ? '' : `\nlevel ${GEN} · ${BIOME} · ${room.size} × ${room.size} tiles · exit ${Math.round(exitDist())} m`)
+		+ (GEN === null || run || XW ? '' : `\nlevel ${GEN} · ${BIOME} · ${room.size} × ${room.size} tiles · exit ${Math.round(exitDist())} m`)
+		+ (!rv ? '' : `\n${rv.hud(state)}${rv.league ? ' · ' + ((GG.DEX_BY[rv.league.form] || {}).name || '') + ' · kit ' + rv.league.kit + '/4' : ''}${rv.sa.length ? ' · team: ' + rv.sa.map((d) => (GG.DEX_BY[d] || {}).name).join(', ') : ''}`)
 		+ (!WATCH ? '' : `\n${watchSrc === 'tape' ? 'replay' : 'watching ' + WATCH}` + (!view ? ' · waiting for the fight…' : ` · ${Math.floor(view.t / 60)}:${String(Math.floor(view.t % 60)).padStart(2, '0')}\nLv ${view.pl.level} · HP ${view.pl.hp} / ${view.pl.maxHp} · ${view.enemies.length} enemies · ${view.kills} KOs` + (view.weather ? ` · ${view.weather[0]}` : '')))
 		+ (!world || !mates().length ? '' : `\nco-op: ${mates().length + 1} players${JOIN && world.co.stalled ? ' · waiting for the host…' : world.waiting ? ' · waiting for the others to choose' : ''}`
 			+ (world.pl.dead ? `\ndown: a teammate beside you gets you up (${world.pl.reviveT.toFixed(1)} / ${CK.REVIVE.time} s)` : ''))
@@ -521,7 +537,7 @@ function showHud() {
 
 // what a test (and a curious owner in the console) can reach
 window.__m3d = {
-	get ready() { return ready; }, state, get room() { return room; }, run, setZoneTime: (sec) => run && setZoneTime(run, sec), useTool, takePick, ecoView: () => (run ? ecoView(run) : []), capView: () => (run ? capView(run) : null), fire: (ev) => run && fireEvent(run, ev), K, TUNE, TYPES, TRAITS, cam, crowd, sheets, stats, gen: GEN, biome: BIOME, world, numbers, net, tape, myId: MYID, mates, get coView() { return coView; }, playTape, get view() { return view; }, get viewer() { return viewer; }, get watchT() { return watchT; }, addBoss: (dex, x, z, o) => addBoss(world, dex, x, z, o), drop: (kind, x, z, v) => drop(world, kind, x, groundAt(room, x, z), z, v), pickCard, addEnemy: (dex, x, z, o) => addEnemy(world, dex, x, z, o), holdExit: false, get leaving() { return leaving; },
+	get ready() { return ready; }, state, get room() { return room; }, run, setZoneTime: (sec) => run && setZoneTime(run, sec), useTool, takePick, ecoView: () => (run ? ecoView(run) : []), capView: () => (run ? capView(run) : null), get rv() { return rv; }, noteLog, fire: (ev) => run && fireEvent(run, ev), K, TUNE, TYPES, TRAITS, cam, crowd, sheets, stats, gen: GEN, biome: BIOME, world, numbers, net, tape, myId: MYID, mates, get coView() { return coView; }, playTape, get view() { return view; }, get viewer() { return viewer; }, get watchT() { return watchT; }, addBoss: (dex, x, z, o) => addBoss(world, dex, x, z, o), drop: (kind, x, z, v) => drop(world, kind, x, groundAt(room, x, z), z, v), pickCard, addEnemy: (dex, x, z, o) => addEnemy(world, dex, x, z, o), holdExit: false, get leaving() { return leaving; },
 	setInput(o) { override = o ? { ...noInput(), ...o } : null; },
 	rowOf: (facing, yaw) => facingRow(facing, yaw === undefined ? cam.yaw : yaw),
 	quadOf: (key, frame, row) => { const s = sheets.get(key); return spriteQuad(s.meta, s.img, frame, row, 1, s.lift); },

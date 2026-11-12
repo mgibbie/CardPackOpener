@@ -29,7 +29,7 @@ export const NK = {
 	RELAY_DELAY: 1.15,   // …and this far when frames come a second's worth at a time
 	RELAY_CAP: 16000,    // characters in one relay message (the server's)
 	RELAY_ENEMY_EVERY: 5,   // in a bundle of ten frames the enemies are in every fifth: two a second
-	EVENTS: ['melee', 'aura', 'beam', 'chain', 'blast', 'smite', 'bomb', 'heal', 'shield', 'summon', 'hazard', 'boom', 'hit', 'kill', 'hurt', 'dash', 'weather', 'boss', 'enrage', 'level', 'pickup'],
+	EVENTS: ['melee', 'aura', 'beam', 'chain', 'blast', 'smite', 'bomb', 'heal', 'shield', 'summon', 'hazard', 'boom', 'hit', 'kill', 'hurt', 'dash', 'weather', 'boss', 'enrage', 'level', 'pickup', 'say'],
 };
 const q = (v, k) => Math.round(v * k);
 const TYPES = ['normal', 'fire', 'water', 'grass', 'electric', 'ice', 'fighting', 'poison', 'ground', 'flying', 'psychic', 'bug', 'rock', 'ghost', 'dragon', 'dark', 'steel', 'fairy'];
@@ -116,6 +116,7 @@ export function diff(prev, cur) {
 	if (cur.w) d.w = cur.w; else if (prev.w) d.w = 0;
 	if (cur.v) d.v = cur.v;
 	for (const key of ['m', 'x', 'c']) if (cur[key]) d[key] = cur[key];   // (co-op's lanes: the other players, enemy shots, the party's state)
+	if (cur.r && JSON.stringify(cur.r) !== JSON.stringify(prev.r || null)) d.r = cur.r;   // (an Expedition run's row, expnet.js: only when it has changed)
 	return d;
 }
 /** The frame a difference stands for, given the frame before it. */
@@ -126,6 +127,7 @@ export function patch(prev, d) {
 	if (d.w) f.w = d.w; else if (d.w === undefined && prev.w) f.w = prev.w;
 	if (d.v) f.v = d.v;
 	for (const key of ['m', 'x', 'c']) if (d[key]) f[key] = d[key];
+	if (d.r) f.r = d.r; else if (prev.r) f.r = prev.r;   // (the run's row stays until a new one comes)
 	return f;
 }
 /** Two frames hold the same fight (rows compared as sets, by id). */
