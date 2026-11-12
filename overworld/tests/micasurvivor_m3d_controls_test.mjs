@@ -106,7 +106,7 @@ try {
 	let pr3 = pr2; for (let i = 0; i < 3 && pr3 !== 'rx-resume'; i++) { await tap(12); pr3 = await ring(); }   // (back up to Resume, wherever the ring began)
 	await tap(1);
 	const p2 = await menu();
-	A(p1.up && p1.paused && /^rx-(resume|boards|restart|quit)$/.test(pr1 || '') && pr2 !== pr1 && pr3 === 'rx-resume' && !p2.up && !p2.paused && (await page.evaluate(() => window.__m3d.run.seed === 7 && window.__picked !== undefined)), 'a controller: Start opens the menu, the d-pad walks it, the right face button presses (Resume)', { p1, pr1, pr2, pr3, p2 });
+	A(p1.up && p1.paused && /^rx-(resume|boards|mute|restart|quit)$/.test(pr1 || '') && pr2 !== pr1 && pr3 === 'rx-resume' && !p2.up && !p2.paused && (await page.evaluate(() => window.__m3d.run.seed === 7 && window.__picked !== undefined)), 'a controller: Start opens the menu, the d-pad walks it, the right face button presses (Resume)', { p1, pr1, pr2, pr3, p2 });
 	await tap(9); await tap(0);
 	const p3 = await menu();
 	A(!p3.up, 'the bottom face button cancels (the menu closes)');

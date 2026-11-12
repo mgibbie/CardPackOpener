@@ -1314,6 +1314,23 @@ Not here: research (the points a run's KOs give a family); the tasks; the row on
 Tests: `micasurvivor_m3d_expmeta_test.mjs` (24 checks, node, against the 2D game's own meta.js and save.js):
 new. `micasurvivor_m3d_save_page_test.mjs` 16 checks (was 13).
 
+## 5.43 Going live, third part: built (2026-11-12). Sound.
+
+The 2D game makes all of its sound as it plays (`js/core/audio.js`: a synthesizer, no files) and names each
+effect. `micasurvivor/m3d/runsound.js` says which of those names a 3D run's events are, and the page hands
+them to the 2D game's own `G.Audio` (now loaded on the page, with its themes):
+
+- a shot in its move's voice, a hit, a faint, a boss down, a hurt, a level, a pickup of each kind, an item,
+  a choice opening, the ball and the catch, a wild League member, an evolution or a Mega, a new zone, the
+  run's end;
+- how you move: a landing, a hard one, a bounce pad, a rail caught, a jump off a wall, a rail or a bank;
+- the map's theme (Viridian: forest, Mt. Moon: cave, Cerulean: volcano), the boss's while one is on the
+  field, none at the end or while the fight waits under the menu;
+- the menu has "Sound: on / off". The volumes are the 2D game's own setting (this browser's), so muting in
+  one is muted in the other.
+
+Tests: `micasurvivor_m3d_runui_test.mjs` 35 checks (was 29).
+
 ## 6. Dive in 2D: built
 
 **D0 — find the stairs (small; can ship first, on its own).** *Built 2026-11-11 (`overworld/tests/micasurvivor_dive_stairs_test.mjs`). As built: the stairs took their own orange mark, so the rocks and Meowth keep their gold; the HUD arrow comes up after 25 s on a floor, or at once when its boss falls.*
