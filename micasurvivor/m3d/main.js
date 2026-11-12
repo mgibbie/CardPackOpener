@@ -13,6 +13,7 @@ import { newWorld, addEnemy, addBoss, tick, dataFrom, choose, drop, CK } from '.
 import { frame as netFrame, keepEvents, diff as netDiff, bundle, unbundle, Viewer, Tape, ballColour, typeName, NK } from './net.js';
 import { hostAdd, hostStep, hostFrame, hostApply, guestWorld, guestSync, guestMsg, guestApply } from './coop.js';
 import { generate, BIOMES } from './gen.js';
+import { mountRunUi, pretty } from './runui.js';
 import { expFrom, newRun, stepRun, hudLine, result as runResult, setZoneTime, fire as fireEvent, zoneRoom } from './expedition.js';
 import { runRow, rowView, teamSpot } from './expnet.js';
 import { guestRun, guestRunApply, stepGuest } from './expcoop.js';
@@ -565,6 +566,31 @@ if (FIGHT) {
 	document.getElementById('cards').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b && b.dataset.p !== undefined) takePick(+b.dataset.p); else if (b && b.dataset.tool) useTool(b.dataset.tool); else if (b) pickCard(+b.dataset.i); });
 	addEventListener('keydown', (e) => { const i = ['Digit1', 'Digit2', 'Digit3', 'Digit4'].indexOf(e.code); if (myRun && myRun.pick) { if (i >= 0) takePick(i); else if (e.code === 'Escape') takePick(-1); return; } if (i >= 0 && i < 3) pickCard(i); const tl = { KeyF: 'refresh', KeyG: 'skip', KeyB: 'banish' }[e.code]; if (tl) useTool(tl); });
 }
+/** (the shipping path) A run's own screen, in Micatro's look: runui.js draws this view of the run. The test room's
+ *  readout is still filled (tests and ?debug=1 read it), but it is not what a player sees. */
+const RUNUI = myRun || XW ? mountRunUi(document, { debug: Q.has('debug') }) : null;
+function runView() {
+	const pl = world ? world.pl : null, vp = view ? view.pl : null, I = GG.ExpItems, en = (s) => (GG.ExpEN && GG.ExpEN[s]) || s, nameOf = (d) => (GG.DEX_BY[d] || {}).name || '';
+	const M = GG.ExpMega, lg = rv && rv.league, mg = lg && lg.mega && M && M.BY[lg.mega];
+	const v = { name: pl ? pl.mon.name : mg ? M.nameOf(mg) : lg ? nameOf(lg.form) : SPECIES.name, level: pl ? pl.level : vp ? vp.level : 1, hp: pl ? pl.hp : vp ? vp.hp : 0, maxHp: pl ? pl.maxHp : vp ? vp.maxHp : 0,
+		shield: pl && pl.xproc ? pl.xproc.shield || 0 : 0, xp: pl ? pl.xp : 0, xpNext: pl ? pl.xpNext : 0, time: world ? world.t : view ? view.t : 0, kos: world ? world.stats.kills : view ? view.kills : null, parts: [], bag: [], boss: null, over: null };
+	if (run) { v.parts = hudLine(run).split(' · '); if (run.ph === 0 && !run.surv && run.charge > 0) v.parts.push(`CHARGE ${Math.round(run.charge * 100)} %`); }
+	else if (rv) v.parts = rv.hud(state).split(' · ');
+	if (pl) v.moves = pl.moves.map((m) => ({ name: pretty(m.id), lv: m.xlv || m.lvl, col: TYPE_COLOR[(GG.Moves.BY_ID[m.id] || (GG.ExpMoves && GG.ExpMoves.MOVES[m.id]) || {}).type] }));
+	if (pl && pl.xv && I) for (const q of pl.xv) v.bag.push({ text: `${en(I.VIT[q.id].name)} ${q.lvl}`, kind: 'dim' });
+	if (pl && pl.xi && I) for (const id of Object.keys(pl.xi)) v.bag.push({ text: en(I.IT[id].name) + (pl.xi[id] > 1 ? ' ×' + pl.xi[id] : ''), kind: '' });
+	if (myRun && myRun.held) v.bag.push({ text: 'Holding ' + pretty(myRun.held), kind: 'money' });
+	for (const d of myRun && myRun.cap ? myRun.cap.sa.map((a) => a.dex) : rv ? rv.sa : []) v.bag.push({ text: nameOf(d), kind: 'warn' });
+	const b = world && !JOIN ? world.enemies.find((e) => e.boss) : null;
+	if (b) v.boss = { name: nameOf(b.dex), hp: b.hp, maxHp: b.maxHp, enraged: !!(b.ai && b.ai.fury) };
+	if (runOver) {
+		const r = runOver, q = new URLSearchParams(location.search); q.set('exp', (+q.get('exp') || 0) + 1);
+		v.over = typeof r === 'string' ? { won: r === 'won', title: r === 'won' ? 'EXPEDITION COMPLETE!' : 'RUN OVER', line: '', rows: [], again: null, leave: '../' }
+			: { won: r.won, title: r.title, line: r.survival ? r.lines.join(' · ') : r.line, again: run ? '?' + q : null, leave: '../',
+				rows: [['Time', `${Math.floor(r.parts.time / 60)}:${String(r.parts.time % 60).padStart(2, '0')}`], ['KOs', String(r.parts.kills)], ['Level', String(v.level)], ['Score', String(r.score)], ['Pay', '₽ ' + r.pay.pay]].concat(r.medal ? [['Medal', r.medal]] : []) };
+	} else if (noteText && performance.now() < noteUntil) v.note = noteText;
+	return v;
+}
 let noteText = '', noteUntil = 0;
 const noteLog = [];   // (the last notes shown: one can be gone from the screen in a moment)
 function note(t, ms) { noteText = t; noteUntil = performance.now() + ms; if (noteLog[noteLog.length - 1] !== t) { noteLog.push(t); if (noteLog.length > 60) noteLog.shift(); } }
@@ -593,6 +619,7 @@ function showHud() {
 		+ (!world || !world.pl.ability ? '' : `\nability: ${world.pl.ability}${world.pl.items.length ? ' · holding: ' + world.pl.items.join(', ') : ''}`)
 		+ (!world ? '' : `\nLv ${world.pl.level} · XP ${Math.floor(world.pl.xp)} / ${world.pl.xpNext}\nHP ${Math.ceil(world.pl.hp)} / ${world.pl.maxHp} · ${world.enemies.length} enemies · ${world.stats.kills} KOs · ${Math.floor(world.t / 60)}:${String(Math.floor(world.t % 60)).padStart(2, '0')} · ${world.pl.moves.map((m) => m.id + ' Lv' + (m.xlv || m.lvl)).join(', ')}`)
 		+ (!myRun || !myRun.lv ? '' : `\nvitamins: ${world.pl.xv.map((v) => v.id + ' ' + v.lvl).join(', ') || 'none'} · ₽ ${run ? run.coins : rv ? rv.coins : 0} · luck ${Math.round(world.pl.xluck || 0)}${world.pl.xproc.shield > 0 ? ' · shield ' + Math.round(world.pl.xproc.shield) : ''}${myRun.cap && myRun.cap.sa.length ? '\nteam: ' + myRun.cap.sa.map((a) => (GG.DEX_BY[a.dex] || {}).name + ' (' + a.type + ')').join(', ') : ''}${myRun.held ? ' · holding ' + myRun.held : ''}\nitems: ${Object.keys(world.pl.xi).map((id) => id + (world.pl.xi[id] > 1 ? ' ×' + world.pl.xi[id] : '')).join(', ') || 'none'}`) + (noteText && performance.now() < noteUntil ? `\n» ${noteText}` : '');
+	if (RUNUI) RUNUI.update(runView());
 }
 
 // ---------------------------------------------------------------- boot
@@ -614,6 +641,7 @@ function showHud() {
 
 // what a test (and a curious owner in the console) can reach
 window.__m3d = {
+	runView: () => (RUNUI ? runView() : null),
 	get megaNow() { return megaNow; }, megaSheets,
 	get ready() { return ready; }, state, get room() { return room; }, run, setZoneTime: (sec) => run && setZoneTime(run, sec), useTool, takePick, ecoView: () => (run ? ecoView(run) : []), capView: () => (run ? capView(run) : null), hazards: () => (run ? hazardsNow(run) : []), fog: () => fogNow(), toggleMap, get mapBig() { return mapBig; }, get rv() { return rv; }, noteLog, grun, fire: (ev) => run && fireEvent(run, ev), K, TUNE, TYPES, TRAITS, cam, crowd, sheets, stats, gen: GEN, biome: BIOME, world, numbers, net, tape, myId: MYID, mates, get coView() { return coView; }, playTape, get view() { return view; }, get viewer() { return viewer; }, get watchT() { return watchT; }, addBoss: (dex, x, z, o) => addBoss(world, dex, x, z, o), drop: (kind, x, z, v) => drop(world, kind, x, groundAt(room, x, z), z, v), pickCard, addEnemy: (dex, x, z, o) => addEnemy(world, dex, x, z, o), holdExit: false, get leaving() { return leaving; },
 	setInput(o) { override = o ? { ...noInput(), ...o } : null; },
