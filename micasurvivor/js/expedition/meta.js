@@ -448,6 +448,17 @@ G.ExpMeta = (() => {
     const owed = Sv().get('pay3d.' + d) - Sv().get('pay3d.claimed.' + d);
     const got = owed > 0 ? credit(owed) : 0;
     if (got) { Sv().bump('pay3d.claimed.' + d, got); Sv().bump('pay.total', got); }
+    // the tasks: those runs' metrics, counted into the day's and the week's as they are now (a task pays Pokémonedas, so it
+    // is counted here, where the wallet is)
+    const seen = Sv().get('m3d.seen.' + d), m = {};
+    for (const k of ['runs', 'kos', 'secs', 'wins', 'guardians', 'balls', 'altars', 'freed', 'alphas', 'catches', 'evos', 'megas', 'finals', 'miles']) {
+      const v = Sv().get('m3d.t.' + d + '.' + k) - Sv().get('m3d.tc.' + d + '.' + k);
+      if (v > 0) { m[k] = v; Sv().bump('m3d.tc.' + d + '.' + k, v); }
+    }
+    const one = k => { const v = Sv().get('m3d.x.' + d + '.' + k); return Math.floor(v / 1e6) === seen + 1 ? v % 1e6 : 0; };   // (a single run's best since the last count)
+    m.mins = (m.secs || 0) / 60; m.zone = one('zone'); m.smins = one('ssecs') / 60;
+    const lines = m.runs ? taskRun(m, clock()) : [];
+    if (lines.length && G.UI && G.UI.toast) G.UI.toast(lines[lines.length - 1], 3200);
     if (got || !(owed > 0)) Sv().best('m3d.seen.' + d, n);   // (not paid, e.g. no profile yet: it waits for the next time)
     Sv().commit();
     if (got && G.UI && G.UI.toast) G.UI.toast(F('Expedición 3D: +{x} Pokémonedas', got), 3200);

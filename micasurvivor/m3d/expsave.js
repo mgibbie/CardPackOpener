@@ -18,7 +18,11 @@
 // saved at once (catchOps), and after a kept run the challenges now complete make new ones wild (newlyMet).
 //
 // Pure: the page (main.js) hands in the run, its result and the saves. The level-ups', the economy's and the capture's
-// counters are kept too (the 2D game's keys: its achievements and its Lab's goals read them). Not kept yet: the tasks.
+// counters are kept too (the 2D game's keys: its achievements and its Lab's goals read them), and its RESEARCH.
+//
+// The daily and weekly TASKS pay Pokémonedas, so they are the 2D game's to count (as a run's pay is its to pay): a 3D run
+// leaves its metrics in the save for this browser (`m3d.t.<device>.<metric>` summed; `m3d.x.<device>.<metric>` for the two
+// that are a single run's best), and the 2D game's claim3d counts them into the tasks of the day and week it is then.
 
 export const SV = { RULES: 2 /* the rules the boards are filed under (js/entities/player.js RULES; the server's MSURV_RULES) */, DV: 20 /* the Expedition's content version (js/systems/expedition.js DV: the boards file a score by it) */, INV: 1e9, BOARD: 'micasurvivor_expedition', OK: ['exp', 'map', 'diff', 'mode', 'dex', 'form', 'debug'], MAX_HP: 50000, MAX_ATK: 2000, MAX_SPD: 25 };
 
@@ -141,6 +145,19 @@ export function recordOps(S, res, o) {
 		const L = S.cap.log;
 		bump('cap.alpha', L.alpha); best('sa.best', L.best); for (const a of S.cap.sa) add('sa.types', a.type);
 		bump('shiny.seen', L.seen); bump('cap.fled', L.fled);
+	}
+	// research (js/expedition/meta.js record): each family's points
+	for (const [fam, pts] of o.research || []) bump('rs.' + fam, pts);
+	// the tasks' metrics of this run, for the 2D game to count (meta.js claim3d -> taskRun)
+	{
+		const T3 = 'm3d.t.' + o.dev + '.', X3 = 'm3d.x.' + o.dev + '.', gen = (o.seen | 0) + 1, cap = S.cap ? S.cap.log : null, eco = S.eco ? S.eco.log : null;
+		bump(T3 + 'runs'); bump(T3 + 'kos', sum.kills); bump(T3 + 'secs', t); bump(T3 + 'wins', S.won ? 1 : 0);
+		if (!S.surv) bump(T3 + 'guardians', S.bosses.filter((b) => b.zone <= 3 && b.down != null).length);
+		if (eco) { bump(T3 + 'balls', eco.balls); bump(T3 + 'altars', eco.altars); bump(T3 + 'freed', eco.freed); }
+		if (cap) { bump(T3 + 'alphas', cap.alpha); bump(T3 + 'catches', S.cap.n); }
+		if (S.lg) { bump(T3 + 'evos', S.lg.evo); bump(T3 + 'megas', S.lg.mega ? 1 : 0); bump(T3 + 'finals', o.final ? 1 : 0); }
+		if (S.surv && S.sv) { bump(T3 + 'miles', S.sv.downs); best(X3 + 'ssecs', gen * 1e6 + Math.min(999999, t)); }
+		else best(X3 + 'zone', gen * 1e6 + Math.min(4, S.zone));   // (a single run's best, since the 2D game last counted: its count is in the number)
 	}
 	// 3D's own: one more 3D run from this browser, and its pay owed to it (the 2D game pays it into the wallet)
 	bump('m3d.n.' + o.dev);

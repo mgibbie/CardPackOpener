@@ -1364,6 +1364,24 @@ form you chose.
 
 Tests: `micasurvivor_m3d_expleague_test.mjs` 57 checks (was 51), `micasurvivor_m3d_expsave_test.mjs` 38 (was 37).
 
+## 5.46 Going live, sixth part: built (2026-11-12). Research; the daily and weekly tasks.
+
+The last of what a 2D run leaves behind that a 3D run did not.
+
+- **Research.** Each KO gives its Pokémon's family points (1; an elite 2, a summoner 4, an alpha 5, a boss 10), a
+  freed cage 25; the Lab's "Research" adds 25 % a level. Written with the run (`rs.<family>`); a family
+  researched to its need gives its avatar. The 2D game's numbers.
+- **The tasks.** A task pays Pokémonedas, so it is the 2D game's to count, as a run's pay is its to pay. A 3D run
+  leaves its metrics in the save for its browser (runs, KOs, time, wins, guardians, balls, altars, cages, alphas,
+  catches, evolutions, Megas, final stages, Survival's milestone bosses; and a single run's best zone and
+  Survival time). The 2D game's `claim3d` counts them into the tasks of the day and the week it is then, pays the
+  ones they finish, and never counts a run twice.
+
+Two tasks a 3D run cannot move: "cast N ultimates" and "cause N reactions". Ultimates and reactions are not in
+the 3D game. Before going live either they are built, or those two tasks leave the pool: the owner's call.
+
+Tests: `micasurvivor_m3d_expsave_test.mjs` 47 checks (was 38), against the 2D game's own meta.js.
+
 ## 6. Dive in 2D: built
 
 **D0 — find the stairs (small; can ship first, on its own).** *Built 2026-11-11 (`overworld/tests/micasurvivor_dive_stairs_test.mjs`). As built: the stairs took their own orange mark, so the rocks and Meowth keep their gold; the HUD arrow comes up after 25 s on a floor, or at once when its boss falls.*

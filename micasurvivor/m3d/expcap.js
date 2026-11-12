@@ -106,7 +106,7 @@ function faint(S, e, g) {
 		drop(w, e.xp >= CK.BIG_XP ? 'xpBig' : 'xp', e.a.x, y, e.a.z, e.xp);
 		e.dead = true; e.hp = 0; w.stats.kills++; w.stats.xp += e.xp;
 		w.events.push({ k: 'kill', id: e.id, x: e.a.x, y: e.a.y, z: e.a.z, xp: e.xp, boss: false, xk: e.xk || null, faint: true });
-		if (w.kos) w.kos.push({ boss: false, xk: e.xk || null });
+		if (w.kos) w.kos.push({ boss: false, xk: e.xk || null, dex: e.dex });
 	}
 	C.faint.push(f);
 	say(S, g.kind === 'alpha' ? `The alpha ${name(S, e.dex)} faints! Stand beside it to throw a Friend Ball` : `${name(S, e.dex)} faints! Stand beside it to throw a Poké Ball`, 3);   // (a shiny, a wild League member)

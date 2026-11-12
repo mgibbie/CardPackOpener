@@ -17,7 +17,8 @@ import { mountRunUi, pretty } from './runui.js';
 import { HostLink, WatchLink, runId, SAYS as LIVE_SAYS } from './exprelay.js';
 import { unfair, clean as cleanRun, deviceId, missing as saveMissing, runSum, recordOps, applyOps, scoreBody, WHY, SV, wildOf, catchOps, shinyOps, newlyMet, boardAsk, boardRows, hasMember, hasForm } from './expsave.js';
 import { rng as seedRng } from './gen.js';
-import { metaFor, spendBoosts } from './expmeta.js';
+import { metaFor, spendBoosts, researchOf } from './expmeta.js';
+import { canEvolve } from './expleague.js';
 import { soundsOf, moveSounds, musicOf } from './runsound.js';
 import { startInput } from '/site/input.js';
 import { createFocusNav } from '/site/focusnav.js';
@@ -733,8 +734,10 @@ async function keepRun(res) {
 		if (!fine) return say(false, WHY.unclean, { why: 'unclean' });
 		const miss = saveMissing(run, { L: GG.ExpLeague, T: GG.ExpTier, Sv, base: baseSave() });
 		if (miss) return say(false, WHY[miss], { why: miss });
-		const dev = deviceId(localStorage, Sv.who, crypto), ops = recordOps(run, res, { T: GG.ExpTier, dev });
+		const dev = deviceId(localStorage, Sv.who, crypto), ops = recordOps(run, res, { T: GG.ExpTier, dev, research: researchOf(run), seen: Sv.get('m3d.seen.' + dev), final: !!run.lg && !canEvolve(run) });
 		applyOps(Sv, ops);
+		// (a family researched to its need: its avatar, as the 2D game gives it)
+		if (GG.ExpMeta && GG.ExpMeta.research) { let got = false; for (const [fam] of researchOf(run)) if (GG.ExpMeta.research(fam) >= GG.ExpMeta.needOf(fam) && Sv.add('avatar', String(fam))) got = true; if (got) Sv.commit(); }
 		const pay = res.pay ? res.pay.pay : 0;
 		const met = newlyMet({ L: GG.ExpLeague, Sv, base: baseSave() });   // (challenges now complete: those members are wild in your next runs)
 		say(true, (pay > 0 ? `Saved. ₽ ${pay} will be in your wallet when you next open the Expedition.` : 'Saved.') + (met.length ? ` New in the wild: ${met.slice(0, 3).map((d) => (GG.DEX_BY[d] || {}).name).join(', ')}${met.length > 3 ? ' and ' + (met.length - 3) + ' more' : ''}.` : ''), { ops: ops.length, pay, met });
