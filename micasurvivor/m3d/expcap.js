@@ -146,6 +146,7 @@ function perks(S) { const out = {}; for (const a of S.cap.sa) { const [st, v] = 
 export function syncPerks(S) {
 	const pl = S.w.pl, out = S.cap ? perks(S) : {};
 	if (S.L && S.L.I.has(pl, 'eviolite') && canEvolve(S)) out.armor = (out.armor || 0) + S.L.I.IT.eviolite.stats.eviolite;
+	if (S.sv) for (const id of S.sv.pacts) { const p = S.X.V.PACT_BY[id]; for (const src of [p.boon, p.bane]) for (const k in src) out[k] = (out[k] || 0) + src[k]; }   // (Survival: a pact's boon and its price)
 	pl.xperk = out;
 	if (S.L) S.L.I.apply(pl);
 }

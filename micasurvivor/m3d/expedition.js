@@ -14,7 +14,7 @@
 // The run's money, its 60 items and what a zone holds to stand in are expeco.js's.
 // Capture (an alpha faints and can join you; shinies) is expcap.js's.
 // The League (you play a member: its kit, its evolutions) is expleague.js's.
-// Still to come: Survival; co-op, spectate and replay of a run.
+// Survival (an endless run on one map: milestone bosses, phases, pacts, siege, migration) is expsurv.js's.
 import { K, CELL, makeRoom, setCell, groundAt, newState } from './sim.js';
 import { generate, footGraph, rng as makeRng, LEVEL } from './gen.js';
 import { CK, U, newWorld, tick, addEnemy, addBoss, drop, hazard, spawnRate, xpFor, equip } from './combat.js';
@@ -22,6 +22,7 @@ import { levelFrom, setup as setupLevels, tickStats, curse, takeItem, dropItem }
 import { ecoFrom, setupEco, tickEco, mods, pickTake, pickClose } from './expeco.js';
 import { capFrom, setupCap, tickCap, holdCine, mark, syncPerks } from './expcap.js';
 import { leagueFrom, memberOf, setupLeague } from './expleague.js';
+import { survFrom, setupSurv, tickSurv, foeK, migrated, survHud, survResult } from './expsurv.js';
 
 export const XK = {
 	BIOME: { viridian: 'meadow', mtmoon: 'peaks', cerulean: 'marsh' },
@@ -54,7 +55,7 @@ function mix(...vals) {
 export function expFrom(G) {
 	const C = G.ExpClassic, T = G.ExpTier;
 	return { K: C.K, MAPS: C.MAPS, MAP_IDS: C.MAP_IDS, DIFFS: C.DIFFS, plan: (seed, map, zone, diff) => C.plan(seed, map, zone, diff), tier: (d) => T.of(d),
-		ESCORT: T.K.ESCORT, medalOf: (time, diff, map) => T.medalOf(time, diff, map), L: G.ExpLevel && G.ExpItems ? levelFrom(G) : null, E: G.ExpEco ? ecoFrom(G) : null, C: G.ExpCap ? capFrom(G) : null, G: G.ExpLeague ? leagueFrom(G) : null, score: (parts, diff) => T.score(parts, diff), medal: T.medal ? (s, diff, map) => T.medal(s, diff, map) : null, exhaustion: C.exhaustion };
+		ESCORT: T.K.ESCORT, medalOf: (time, diff, map) => T.medalOf(time, diff, map), L: G.ExpLevel && G.ExpItems ? levelFrom(G) : null, E: G.ExpEco ? ecoFrom(G) : null, C: G.ExpCap ? capFrom(G) : null, G: G.ExpLeague ? leagueFrom(G) : null, V: G.ExpSurv ? survFrom(G) : null, score: (parts, diff) => T.score(parts, diff), medal: T.medal ? (s, diff, map) => T.medal(s, diff, map) : null, exhaustion: C.exhaustion };
 }
 
 // ---------------------------------------------------------------- the zones
@@ -118,13 +119,13 @@ export function shrineRoom(map = 'viridian') {
 	return room;
 }
 /** The room of (seed, map, zone): zones 1-3 from the generator, zone 4 the shrine. The same for the host and every
- *  viewer. It carries `altar` (the exit marker is the altar too), `map` and `zone`. */
-export function zoneRoom(seed, map, zone, X) {
+ *  viewer. It carries `altar` (the exit marker is the altar too), `map` and `zone`. land: Survival's (1, 2, …). */
+export function zoneRoom(seed, map, zone, X, land = 0) {
 	const mi = X ? X.MAP_IDS.indexOf(map) + 1 : 1;
 	let room;
 	if (zone >= 4) room = shrineRoom(map);
 	else {
-		const s = mix(seed, mi, zone, 0x3D);
+		const s = land ? mix(seed, mi, zone, 0x3D, land) : mix(seed, mi, zone, 0x3D);   // (Survival: each new land is new ground)
 		room = generate(s, XK.BIOME[map] || 'meadow', { size: XK.ZONE_TILES });
 		room.biome = XK.BIOME[map] || 'meadow'; room.seed = s;
 		room.altar = altarOf(room, s); room.exit = room.altar;
@@ -137,7 +138,8 @@ export function zoneRoom(seed, map, zone, X) {
 /** A Classic run. o: { map, diff, seed, touch (a phone: the lower cap), and combat.js's newWorld options (dex, moves,
  *  ability, items, autoPick, …); a move given as [id, n] starts at Expedition level n; levels: false keeps the
  *  base game's level-ups instead of Expedition's (and then no economy either); eco: false leaves the economy out; cap: false leaves capture out; league: true makes it a League run: you play
- *  the member `dex` belongs to, from its first stage, with its kit (`moves` is then not used) }. -> the run: { w (the fight), map, diff, seed, zone, ph, charge, portalT, fs, boss,
+ *  the member `dex` belongs to, from its first stage, with its kit (`moves` is then not used); mode: 'survival'
+ *  for an endless run on the map (expsurv.js) }. -> the run: { w (the fight), map, diff, seed, zone, ph, charge, portalT, fs, boss,
  *  splits, bosses, log, won, lost, ended, says: [this step's banners] } */
 export function newRun(data, X, o = {}) {
 	const map = X.MAPS[o.map] ? o.map : 'viridian', diff = X.DIFFS.includes(o.diff) ? o.diff : 'normal', seed = (o.seed >>> 0) || 1;
@@ -146,15 +148,16 @@ export function newRun(data, X, o = {}) {
 	const lv = league ? [] : (o.moves || []).map((m) => (Array.isArray(m) ? m : [m, 1]));
 	const w = newWorld(room, data, { ...o, dex: league ? member : o.dex, moves: own ? lv.map((m) => m[0]) : o.moves, seed, cast: null, bosses: null,
 		ability: league && o.ability === undefined ? X.G.abilityOf(X.G.finalsOf(X.G.BY[member])[0]) : o.ability });   // (a member has its final stage's ability all run)
-	const S = { w, X, data, map, diff, seed, touch: !!o.touch, zone: 0, zs: 0, splits: [], log: [], bosses: [], won: false, lost: false, ended: false, dps: [], says: [], wonT: 0 };
+	const S = { w, X, data, map, diff, seed, surv: o.mode === 'survival' && !!X.V, zi: 0, pzs: 0, touch: !!o.touch, zone: 0, zs: 0, splits: [], log: [], bosses: [], won: false, lost: false, ended: false, dps: [], says: [], wonT: 0 };
 	zoneStart(S, 1, 0);
 	if (own) { setupLevels(S, X.L, lv); S.syncPerks = () => syncPerks(S); }
 	if (league) setupLeague(S, member);
+	if (S.surv) setupSurv(S);
 	if (own && X.E && o.eco !== false) setupEco(S);
 	if (own && X.C && o.cap !== false) setupCap(S);
 	return S;
 }
-const zIdx = (S) => Math.min(3, S.zone) - 1;
+const zIdx = (S) => (S.surv ? S.zi : Math.min(3, S.zone) - 1);   // (Survival: the enemies' band follows the PHASE, not the land)
 const diffIdx = (S) => Math.max(0, S.X.DIFFS.indexOf(S.diff));
 export const say = (S, text, s = 3) => { S.says.push({ text, s }); S.w.events.push({ k: 'say', text, s }); };
 const name = (S, dex) => { const m = S.data.mon(dex); return m ? m.name : ''; };
@@ -162,9 +165,10 @@ const name = (S, dex) => { const m = S.data.mon(dex); return m ? m.name : ''; };
 export const capNow = (S) => Math.round((S.touch ? S.X.K.CAP_TOUCH : S.X.K.CAP) * (S.fs ? S.X.K.FINAL_CAP : 1) * S.X.tier(S.diff).cap);
 
 function zoneStart(S, z, t) {
-	const p = S.X.plan(S.seed, S.map, z, S.diff);
+	const p = S.X.plan(S.seed, S.map, S.surv ? S.zi + 1 : z, S.diff);
+	if (S.surv) p.events = [];   // (Survival's timeline is its own)
 	Object.assign(S, { zone: z, zs: t, plan: p, n: 0, ph: 0, charge: 0, portalT: 0, fs: false, boss: null, exhSaid: false, acc: 0, trick: makeRng(mix(S.seed, S.X.MAP_IDS.indexOf(S.map) + 1, z, 0xC4)), specials: new Map() });
-	say(S, z === 4 ? `— Shrine of ${name(S, p.legend)} —` : `— Zone ${z} · ${XK.MAP_NAME[S.map] || S.map} —`, 3.2);
+	say(S, S.surv ? `— Land ${S.sv ? S.sv.land : 1} · ${XK.MAP_NAME[S.map] || S.map} —` : z === 4 ? `— Shrine of ${name(S, p.legend)} —` : `— Zone ${z} · ${XK.MAP_NAME[S.map] || S.map} —`, 3.2);
 	S.w.events.push({ k: 'zone', zone: z });
 }
 /** How far to the side of the host a player arrives, by its number in the party (any number: an id can be large). */
@@ -209,7 +213,9 @@ export function spawn(S, dex, x, z, o = {}) {
 	if (o.behavior === 'summoner') def = { ...def, behavior: 'summoner', minion: o.minion, shotCd: 5, range: 420 };
 	const e = addEnemy(w, dex, x, z, { t: teff, ti, def, behavior: o.behavior,
 		hp: (1 + CK.COOP.hp * (party - 1)) * Math.pow(XKK.FINAL_HP, m) * (o.hp || 1) * TR.hp, dmg: Math.pow(XKK.FINAL_DMG, m) * (o.dmg || 1) * TR.dmg, spd: (o.spd === undefined ? 1 : o.spd) * TR.spd });
-	e.xp = Math.round(def.xp * XKK.XP_K * (o.xp || 1) * TR.xp);
+	const sk = S.surv && S.sv ? foeK(S, t) : null;   // (Survival: the pacing, the Endless Night, the pacts' banes)
+	if (sk) { e.maxHp = e.hp = Math.round(e.maxHp * sk.hp); e.dmg *= sk.dmg; }
+	e.xp = Math.round(def.xp * XKK.XP_K * (o.xp || 1) * TR.xp * (sk ? sk.xp : 1));
 	const cu = curse(S); if (cu > 0) { e.maxHp = e.hp = Math.round(e.maxHp * (1 + cu)); e.dmg *= 1 + cu; }   // (the Cursed Incense: + 12 % a level)
 	const xm = mods(S);   // (the cursed balls and altars: + difficulty; Gengar's greed: + XP)
 	if (xm.diff > 0) { e.maxHp = e.hp = Math.round(e.maxHp * (1 + xm.diff)); e.dmg *= 1 + xm.diff; }
@@ -226,7 +232,7 @@ export function free(S, x, z, fly) {
 	return fly || !(w.room.water.has(i) || (w.field && w.field.dist[i] < 0));
 }
 /** A place for an arrival: round you at angle `ang`, `ring[0]` m away or up to `ring[1]` more. */
-function spot(S, rng, ang, fly, ring = [CK.SPAWN_MIN, CK.SPAWN_MAX - CK.SPAWN_MIN]) {
+export function spot(S, rng, ang, fly, ring = [CK.SPAWN_MIN, CK.SPAWN_MAX - CK.SPAWN_MIN]) {
 	const s = S.w.pl.s;
 	for (let i = 0; i < 10; i++) {
 		const a = ang + (i ? (rng() - 0.5) * 1.8 : 0), d = ring[0] + rng() * ring[1], x = s.x + Math.cos(a) * d, z = s.z + Math.sin(a) * d;
@@ -242,7 +248,7 @@ function trickle(S, dt, t, zt) {
 	const cap = capNow(S);
 	if (w.enemies.length >= cap) { S.acc = 0; return; }
 	const zi = zIdx(S), teff = Math.max(t, XKK.ZMIN[zi]), TR = S.X.tier(S.diff), party = 1 + w.mates.length;
-	const k = TR.amount * (1 + CK.COOP.rate * (party - 1)) * (S.boss ? XKK.BOSS_RATE : 1) * (S.fs ? XKK.FINAL_SPAWN : 1) * (S.zone === 4 ? XKK.SHRINE_RATE : 1) * (1 + XKK.ZONE_RATE * zi) * (1 + mods(S).rate);
+	const k = TR.amount * (1 + CK.COOP.rate * (party - 1)) * (S.boss ? XKK.BOSS_RATE : 1) * (S.fs ? XKK.FINAL_SPAWN : 1) * (S.zone === 4 ? XKK.SHRINE_RATE : 1) * (1 + XKK.ZONE_RATE * zi) * (1 + mods(S).rate) * (S.surv && S.sv ? foeK(S, t).rate : 1);
 	S.acc = Math.min(8, S.acc + spawnRate(teff) * k * dt);
 	const cards = S.plan.cards, nC = Math.min(cards.length, XKK.CARDS0 + Math.floor(Math.max(0, zt) / XKK.CARD_EVERY));
 	while (S.acc >= 1 && w.enemies.length < cap) {
@@ -255,7 +261,8 @@ function trickle(S, dt, t, zt) {
 		const wd = S.plan.wander;
 		if (wd && wd.length && rng() < XKK.WANDER) dex = wd[Math.floor(rng() * wd.length) % wd.length];
 		const pt = spot(S, rng, rng() * 6.2832, S.data.hovers(dex));
-		if (pt) spawn(S, dex, pt[0], pt[1], TR.elite > 0 && rng() < TR.elite ? { ...XKK.ELITE, kind: 'elite' } : undefined);
+		const el = TR.elite + (S.surv && S.sv ? foeK(S, t).elite : 0);
+		if (pt) spawn(S, dex, pt[0], pt[1], el > 0 && rng() < el ? { ...XKK.ELITE, kind: 'elite' } : undefined);
 	}
 }
 
@@ -331,26 +338,38 @@ function tickSpecials(S, dt, t) {
 }
 
 // ---------------------------------------------------------------- guardians
-function wake(S, t) {
-	const w = S.w, XKK = S.X.K, legend = S.zone === 4, dex = legend ? S.plan.legend : S.plan.guardian, zi = zIdx(S), TR = S.X.tier(S.diff);
-	const d0 = dps(S), hp = bossHp(XKK, { zone: S.zone, dps: d0, tier: diffIdx(S), t, legend, players: 1 + w.mates.length });
-	const dmg = (legend ? XKK.LEGEND_DMG : XKK.GUARD_DMG[zi]) * TR.dmg, sp = S.data.baseSpd(dex), b = S.data.behaviorOf(dex);
+/** A guardian or a legendary at (x, z): HP from your damage (bossHp), its touch and shots by zone and tier. o: { dex,
+ *  legend, zone (1-4: the curve and the target), x, z, target (s, instead of the zone's), hpK, dmgK }. -> the enemy */
+export function makeBoss(S, o, t) {
+	const w = S.w, XKK = S.X.K, legend = !!o.legend, dex = o.dex, zi = Math.min(3, o.zone) - 1, TR = S.X.tier(S.diff);
+	const d0 = dps(S), hp = bossHp(XKK, { zone: o.zone, dps: d0, tier: diffIdx(S), t, legend, players: 1 + w.mates.length });
+	if (o.target) { const k = o.target / hp.target; hp.fromDps = Math.round(hp.fromDps * k); hp.hp = Math.max(hp.curve, hp.fromDps); hp.target = o.target; }
+	if (o.hpK) hp.hp = Math.round(hp.hp * o.hpK);
+	const dmg = (legend ? XKK.LEGEND_DMG : XKK.GUARD_DMG[zi]) * TR.dmg * (o.dmgK || 1), sp = S.data.baseSpd(dex), b = S.data.behaviorOf(dex);
 	const def = { dex, boss: true, hp: hp.hp, spd: Math.round(clamp(40 + sp * 0.5, 40, 100)), dmg: Math.round(dmg * 1.2), xp: (w.xpNeed || xpFor)(w.pl.level) * (legend ? XKK.LEGEND_XP : XKK.GUARD_XP[zi]),
 		behavior: b === 'ranged' || legend ? 'ranged' : sp > 90 ? 'charger' : 'chase', shotDmg: Math.round(dmg * 0.55), shotCd: 1.1, range: 260 };
-	const [ax, , az] = w.room.altar, bz = az - XK.BOSS_NORTH * U;
-	const e = addBoss(w, dex, ax, bz, { def, t });
+	const e = addBoss(w, dex, o.x, o.z, { def, t });
 	e.maxHp = e.hp = hp.hp;   // (its HP is already the curve's: only its damage grows with the clock)
 	e.xk = legend ? 'legend' : 'guardian'; e.xborn = t; e.xtarget = hp.target;
-	S.bosses.push({ zone: S.zone, dex, hp: e.maxHp, curve: hp.curve, fromDps: hp.fromDps, dps: Math.round(d0), target: hp.target, at: t, down: null });
-	S.boss = e; S.ph = legend ? 3 : 1; S.charge = 1; S.exhSaid = false;
-	// Hard brings one escort, Nightmare two: elites of the zone's first cards
-	const rng = makeRng(mix(S.seed, S.zone, S.X.MAP_IDS.indexOf(S.map) + 1, 0xE5C));
+	S.bosses.push({ zone: o.zone, dex, hp: e.maxHp, curve: hp.curve, fromDps: hp.fromDps, dps: Math.round(d0), target: hp.target, at: t, down: null });
+	return e;
+}
+/** A boss's escorts: Hard brings one, Nightmare two: elites of the zone's first cards, round (x, z). */
+export function escorts(S, x, z) {
+	const TR = S.X.tier(S.diff), rng = makeRng(mix(S.seed, S.zone, S.X.MAP_IDS.indexOf(S.map) + 1, 0xE5C));
 	for (let i = 0; i < TR.escorts; i++) {
 		const ed = S.plan.cards[Math.floor(rng() * Math.min(S.plan.cards.length, 6))], a = (i + 0.5) / TR.escorts * 6.2832 + rng() * 0.6;
-		let x = ax + Math.cos(a) * XK.ESCORT_R * U, z = bz + Math.sin(a) * XK.ESCORT_R * U;
-		if (!free(S, x, z, S.data.hovers(ed))) { x = ax; z = az; }
-		spawn(S, ed, x, z, { ...S.X.ESCORT, kind: 'elite' }).xescort = 1;
+		let ex = x + Math.cos(a) * XK.ESCORT_R * U, ez = z + Math.sin(a) * XK.ESCORT_R * U;
+		if (!free(S, ex, ez, S.data.hovers(ed))) { ex = x; ez = z + XK.BOSS_NORTH * U; }
+		spawn(S, ed, ex, ez, { ...S.X.ESCORT, kind: 'elite' }).xescort = 1;
 	}
+}
+function wake(S, t) {
+	const w = S.w, legend = S.zone === 4, dex = legend ? S.plan.legend : S.plan.guardian;
+	const [ax, , az] = w.room.altar, bz = az - XK.BOSS_NORTH * U;
+	const e = makeBoss(S, { dex, legend, zone: S.zone, x: ax, z: bz }, t);
+	S.boss = e; S.ph = legend ? 3 : 1; S.charge = 1; S.exhSaid = false;
+	escorts(S, ax, bz);
 	say(S, legend ? `${name(S, dex)} appears at the shrine!` : `${name(S, dex)}, the guardian, awakens!`, 3.4);
 	return e;
 }
@@ -369,9 +388,9 @@ function tickBoss(S, t) {
 	if (k > 1 && !S.exhSaid) { S.exhSaid = true; say(S, `${name(S, e.dex)} is exhausted!`, 2.6); }
 }
 function nextZone(S, t) {
-	const z = S.zone + 1;
-	S.splits[S.zone - 1] = t;
-	enterRoom(S, zoneRoom(S.seed, S.map, z, S.X));
+	const z = S.surv ? S.zone % 3 + 1 : S.zone + 1;   // (Survival's migration: the next land, zones 1 > 2 > 3 > 1 again, no splits)
+	if (S.surv) migrated(S, t); else S.splits[S.zone - 1] = t;
+	enterRoom(S, zoneRoom(S.seed, S.map, z, S.X, S.surv ? S.sv.land : 0));
 	zoneStart(S, z, t);
 }
 
@@ -418,6 +437,12 @@ export function stepRun(S, input, dt = K.TICK) {
 	if (S.eco) tickEco(S, dt);
 	dpsSample(S, t);
 	tickSpecials(S, dt, t);
+	if (S.surv) {   // Survival: its own clock (milestones, phases, timeline, the migration portal), and the trickle by phase
+		tickSurv(S, dt, t);
+		if (S.ph === 2) { S.portalT = onSite(S, XKK.PORTAL_R) ? S.portalT + dt : Math.max(0, S.portalT - dt); if (S.portalT >= XKK.PORTAL_T) { nextZone(S, t); return S; } }
+		trickle(S, dt, t, t - S.pzs);
+		return S;
+	}
 	tickBoss(S, t);
 	if (S.ph === 0) {
 		S.charge = clamp(S.charge + (onSite(S, XKK.ALTAR_R) ? dt / XKK.ALTAR_T : -dt / XKK.ALTAR_T * 0.5), 0, 1);
@@ -442,6 +467,7 @@ export function stepRun(S, input, dt = K.TICK) {
 const mmss = (s) => { s = Math.max(0, Math.ceil(s)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
 /** The HUD's line: the zone, the tier, the final swarm's countdown, and the objective with its distance. */
 export function hudLine(S) {
+	if (S.surv && S.sv) return survHud(S);
 	const w = S.w, XKK = S.X.K, s = w.pl.s, a = w.room.altar, m = Math.round(Math.hypot(s.x - a[0], s.z - a[2])), parts = [S.zone === 4 ? 'SHRINE' : `ZONE ${S.zone}/3`];
 	if (S.diff !== 'normal') parts.push(S.diff.toUpperCase());
 	if (S.zone <= 3 && S.ph < 2) parts.push(S.fs ? 'FINAL SWARM!' : 'FINAL SWARM IN ' + mmss(XKK.FINAL - (w.t - S.zs)));
@@ -459,6 +485,7 @@ export function payOf(S, p) {
 }
 /** The run's parts for the score, the score itself, its pay and medal, and the end screen's lines. */
 export function result(S) {
+	if (S.surv && S.sv) return survResult(S);
 	const w = S.w, parts = { kills: w.stats.kills, time: Math.floor(w.t), dmg: Math.round(w.stats.dealt), zone: S.zone, bosses: S.bosses.filter((b) => b.down !== null).length, won: S.won, catches: S.cap ? S.cap.n : 0 };
 	return { won: S.won, title: S.won ? 'EXPEDITION COMPLETE!' : 'RUN OVER', line: S.won ? 'Map complete!' : S.zone === 4 ? 'Reached the shrine' : `Reached zone ${S.zone}`, parts, score: S.X.score(parts, S.diff), pay: payOf(S, parts), medal: S.won ? XK.MEDAL[S.X.medalOf(w.t, S.diff, S.map)] : '', splits: S.splits.slice(), bosses: S.bosses.map((b) => ({ ...b })) };
 }
