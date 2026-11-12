@@ -15,7 +15,7 @@
 // Not here yet: the League's kits and evolutions (so Eviolite does nothing), and the Lab's extra slots.
 import { rng as makeRng } from './gen.js';
 import { moveActor } from './actors.js';
-import { processLeague, branchCards } from './expleague.js';
+import { processLeague, branchCards, megaCards } from './expleague.js';
 import { canFire, land, attackOf, CK, U } from './combat.js';
 
 /** The 2D game's level-up tables, as this module reads them. G: its global with expedition/items.js, levelups.js,
@@ -52,7 +52,7 @@ export function setup(S, L, lv = []) {
 	S.lv = { draw: 0, refreshes: K.REFRESH, skips: K.SKIP, bans: K.BANISH, banned: new Set(), log: [], items: 0, rifts: [] };
 	S.coins = S.coins || 0;
 	w.xpNeed = L.need; pl.xpNext = L.need(pl.level);
-	w.offerCards = () => { if (S.lg) { processLeague(S); const b = branchCards(S); if (b) return b; } return offerCards(S); };   // (a League run: the level's news first; a branch to choose is the level's cards)
+	w.offerCards = () => { if (S.lg) { processLeague(S); const b = branchCards(S) || megaCards(S); if (b) return b; } return offerCards(S); };   // (a League run: the level's news first; a branch to choose is the level's cards)
 	w.hooks = {
 		// a hit you take: a dodge (never above 40 %), then the shield soaks what it can
 		hurt: (ww, d) => {
