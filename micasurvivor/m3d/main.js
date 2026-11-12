@@ -8,7 +8,7 @@
 import * as THREE from 'three';
 import { K, CELL, step, newState, noInput, groundAt, stateName, facingRow, tuneFor, TYPE_TRAITS } from './sim.js';
 import { buildRoom, SPOTS } from './room.js';
-import { makeRenderer, buildTerrain, buildWater, buildScatter, buildExit, drawMap, SpriteBatch, Shadows, Shots, Flashes, loadSheet, frameAt, spriteQuad, footLift, placeCamera, PX } from './render.js';
+import { makeRenderer, buildTerrain, buildWater, buildRails, buildScatter, buildExit, drawMap, SpriteBatch, Shadows, Shots, Flashes, loadSheet, frameAt, spriteQuad, footLift, placeCamera, PX } from './render.js';
 import { newWorld, addEnemy, addBoss, tick, dataFrom, choose, drop, CK } from './combat.js';
 import { frame as netFrame, keepEvents, diff as netDiff, bundle, unbundle, Viewer, Tape, ballColour, typeName, NK } from './net.js';
 import { hostAdd, hostStep, hostFrame, hostApply, guestWorld, guestSync, guestMsg, guestApply } from './coop.js';
@@ -87,6 +87,7 @@ let roomMeshes = [];
 function showRoom() {
 	for (const m of roomMeshes) { scene.remove(m); m.traverse((o) => { if (o.geometry) o.geometry.dispose(); }); }
 	roomMeshes = [buildTerrain(room), buildWater(room)];
+	if (room.rails && room.rails.length) roomMeshes.push(buildRails(room));
 	if (GEN !== null) roomMeshes.push(buildScatter(room), buildExit(room.exit));
 	for (const m of roomMeshes) scene.add(m);
 }
@@ -311,7 +312,7 @@ function draw(t) {
 		ms.batch.add(state.x, state.y, state.z, [-bw / 2 * k, 0, bw / 2 * k, bh * k], [flip ? u1 : u0, b[1] / ms.img.height, flip ? u0 : u1, b[3] / ms.img.height], 1);
 		shadows.add(room, state.x, state.z, state.y, ps.shadow * 1.15 * GG.ExpMega.K.H_K);
 	} else if (ps) {
-		const q = spriteQuad(ps.meta, ps.img, name === 'sliding' ? 0 : frameAt(ps.meta, state.t * (name === 'running' || name === 'wallrunning' ? 1.25 : 1)), facingRow(state.facing, cam.yaw), 1.15, ps.lift);
+		const q = spriteQuad(ps.meta, ps.img, name === 'sliding' || name === 'grinding' ? 0 : frameAt(ps.meta, state.t * (name === 'running' || name === 'wallrunning' ? 1.25 : 1)), facingRow(state.facing, cam.yaw), 1.15, ps.lift);
 		ps.batch.add(state.x, state.y, state.z, q.rect, q.uv, 1);
 		shadows.add(room, state.x, state.z, state.y, ps.shadow * 1.15);
 	}
@@ -625,7 +626,7 @@ async function openBoard(id) {
 /** The menu (Esc, P, or its button). Alone in your own run the fight waits while it is up; a guest's or a watcher's
  *  fight is someone else's and goes on. */
 let menuUp = false, paused = false, escAt = 0;
-const CONTROLS = 'Move: arrows / WASD · Jump: Z or Space · Slide: X or Shift · Wall-run: jump beside a wall and lean into it (jump again to kick off) · Camera: Q / E or drag · Map: Backspace or M · Menu: Enter or Esc';
+const CONTROLS = 'Move: arrows / WASD · Jump: Z or Space · Slide: X or Shift · Wall-run: jump beside a wall and lean into it (jump again to kick off) · Rails: come down on one to grind it (jump to leap off, slide to drop) · Camera: Q / E or drag · Map: Backspace or M · Menu: Enter or Esc';
 function setMenu(on) {
 	if (!RUNUI || runOver) on = false;
 	menuUp = !!on; paused = menuUp && !!run && !world.mates.length;

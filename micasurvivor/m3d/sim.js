@@ -86,6 +86,20 @@ export const K = {
 	WALLJUMP_OUT: 6.5,    // m/s away from the wall
 	WALLJUMP_V: 9.5,      // m/s up
 	WALL_COYOTE: 0.12,    // s after leaving a wall in which its jump still counts
+	// RAILS: a room may have rails (room.rails: [{ pts: [[x, y, z], …] }], lines through the air). Come down on one and you
+	// GRIND it: carried along it the way you were going, at RAIL_SPEED or what you came with (downhill adds, uphill takes,
+	// never under RAIL_MIN). Jump to leap off it with your speed (your air jumps are back); slide to drop off; at its end
+	// you fly off the way it points. A rail will not take you back for RAIL_LOCK after you leave one.
+	RAIL_R: 0.75,         // m beside a rail (on the ground plane) that still catches it
+	RAIL_ABOVE: 0.55,     // m your feet may be above the rail…
+	RAIL_BELOW: 0.7,      // …or below it, to catch it
+	RAIL_CATCH_VY: 3,     // m/s: not while you are still going up faster than this
+	RAIL_MIN: 8,          // m/s along a rail, at the least
+	RAIL_SPEED: 11,       // m/s a rail brings you up to
+	RAIL_MAX: 19,         // m/s at the most (down a long drop)
+	RAIL_ACCEL: 6,        // m/s² toward RAIL_SPEED
+	RAIL_SLOPE: 0.8,      // how much of gravity along the rail you feel
+	RAIL_LOCK: 0.35,      // s after leaving a rail before one catches you again
 	WALL_INTO: 0.2,       // how much of what you hold must point INTO the wall (a diagonal along it does; straight along it, or away, lets go: you never stick to a cliff you only fall past)
 };
 
@@ -170,7 +184,8 @@ export function newState(room, tune = K) {
 	return { x, y, z, vx: 0, vy: 0, vz: 0, grounded: true, sliding: false, swimming: false, gliding: false, facing: 0, coyote: 0, buffer: 0,
 		airJumps: tune.AIR_JUMPS, jumpHeld: false, crouchHeld: false, stagger: 0, gvy: 0, bouncing: false, t: 0, tick: 0,
 		landed: 0, hard: 0, broke: '', jumped: 0, bounced: 0, respawns: 0,
-		wall: 0, wallT: 0, wallLast: 0, wallCoyote: 0, wallNx: 0, wallNz: 0 };   // (the wall carrying you: 1 +x, 2 -x, 3 +z, 4 -z; 0 none)
+		wall: 0, wallT: 0, wallLast: 0, wallCoyote: 0, wallNx: 0, wallNz: 0,
+		rail: -1, railSeg: 0, railU: 0, railDir: 1, railV: 0, railLock: 0, railed: 0 };   // (the rail you grind: which, where on it, which way, how fast)   // (the wall carrying you: 1 +x, 2 -x, 3 +z, 4 -z; 0 none)
 }
 /** No input. { mx, mz: the wished direction on the ground plane in WORLD axes (any length up to 1), jump, crouch: held } */
 export const noInput = () => ({ mx: 0, mz: 0, jump: false, crouch: false });
@@ -222,7 +237,7 @@ export function wallBeside(s, room, T = K) {
 /** One tick. Mutates and returns `s`. `tune`: the character's tuning (tuneFor(types)); K if none. */
 export function step(s, input, room, dt = K.TICK, tune = K) {
 	const T = tune, inp = input || noInput();
-	s.landed = 0; s.hard = 0; s.broke = ''; s.jumped = 0; s.bounced = 0;
+	s.landed = 0; s.hard = 0; s.broke = ''; s.jumped = 0; s.bounced = 0; s.railed = 0;
 	// what you hold
 	const wl0 = Math.hypot(inp.mx || 0, inp.mz || 0), wl = Math.min(1, wl0);
 	const wishing = wl0 > 0.05;
@@ -244,6 +259,7 @@ export function step(s, input, room, dt = K.TICK, tune = K) {
 	if (!s.swimming && canSwim && depth >= T.SWIM_DEPTH - 1e-6) s.swimming = true;
 	if (s.swimming && (!canSwim || depth < T.SWIM_DEPTH - 0.35)) s.swimming = false;
 
+	if (s.rail >= 0) return grind(s, inp, room, T, dt, pressed);
 	if (s.swimming) return swim(s, inp, room, T, dt, { wishing, dx, dz, wl, pressed, water });
 
 	const surface = s.grounded ? surfaceAt(room, s.x, s.z, T) : 'air';
@@ -345,6 +361,69 @@ export function step(s, input, room, dt = K.TICK, tune = K) {
 		s.airJumps = T.AIR_JUMPS; s.coyote = 0; s.buffer = 0; s.stagger = 0;
 	}
 	if (s.y < T.KILL_Y) { const r = newState(room, T); Object.assign(s, r, { respawns: s.respawns + 1, t: s.t, tick: s.tick }); }
+	// a rail under you as you come down
+	s.railLock = Math.max(0, s.railLock - dt);
+	if (!s.grounded && !s.swimming && s.railLock <= 0 && s.vy <= T.RAIL_CATCH_VY && room.rails && room.rails.length) catchRail(s, room, T);
+	s.t += dt; s.tick++;
+	return s;
+}
+
+/** The rail (if any) under a body: the nearest within reach. Puts the body on it. */
+function catchRail(s, room, T) {
+	let best = null;
+	for (let i = 0; i < room.rails.length; i++) {
+		const pts = room.rails[i].pts;
+		for (let k = 0; k < pts.length - 1; k++) {
+			const a = pts[k], b = pts[k + 1], ex = b[0] - a[0], ez = b[2] - a[2], l2 = ex * ex + ez * ez; if (l2 < 1e-9) continue;
+			const u = Math.max(0, Math.min(1, ((s.x - a[0]) * ex + (s.z - a[2]) * ez) / l2)), px = a[0] + ex * u, pz = a[2] + ez * u, py = a[1] + (b[1] - a[1]) * u, d = Math.hypot(s.x - px, s.z - pz);
+			if (d > T.RAIL_R || s.y > py + T.RAIL_ABOVE || s.y < py - T.RAIL_BELOW) continue;
+			if (!best || d < best.d) best = { i, k, u, d, ex, ez, l: Math.sqrt(l2) };
+		}
+	}
+	if (!best) return false;
+	const tx = best.ex / best.l, tz = best.ez / best.l, al = s.vx * tx + s.vz * tz;
+	s.rail = best.i; s.railSeg = best.k; s.railU = best.u;
+	s.railDir = Math.abs(al) > 0.3 ? Math.sign(al) : (Math.sin(s.facing) * tx + Math.cos(s.facing) * tz >= 0 ? 1 : -1);   // (the way you were going; from a straight drop, the way you face)
+	s.railV = Math.max(T.RAIL_MIN, Math.abs(al)); s.railed = 1;
+	s.sliding = false; s.gliding = false; s.wall = 0; s.wallLast = 0; s.wallCoyote = 0; s.stagger = 0; s.bouncing = false;
+	return true;
+}
+/** One tick on a rail. */
+function grind(s, inp, room, T, dt, pressed) {
+	const rail = room.rails[s.rail], pts = rail && rail.pts;
+	const off = () => { s.rail = -1; s.railLock = T.RAIL_LOCK; };
+	if (!pts || pts.length < 2) { off(); s.t += dt; s.tick++; return s; }
+	s.grounded = false; s.airJumps = T.AIR_JUMPS; s.coyote = 0; s.gvy = 0;
+	const seg = () => { const a = pts[s.railSeg], b = pts[s.railSeg + 1], ex = b[0] - a[0], ey = b[1] - a[1], ez = b[2] - a[2], l = Math.hypot(ex, ey, ez) || 1e-9; return { a, b, l, tx: ex / l * s.railDir, ty: ey / l * s.railDir, tz: ez / l * s.railDir }; };
+	let g = seg();
+	// its speed: toward RAIL_SPEED; the rail's slope adds or takes
+	let v = s.railV;
+	if (v < T.RAIL_SPEED) v = Math.min(T.RAIL_SPEED, v + T.RAIL_ACCEL * dt);
+	v = Math.max(T.RAIL_MIN, Math.min(T.RAIL_MAX, v - T.GRAVITY * g.ty * T.RAIL_SLOPE * dt));
+	s.railV = v;
+	// leaving it: a jump (with your speed), or a slide (you drop)
+	if (pressed || (inp.crouch && !s.crouchHeld)) {
+		s.vx = g.tx * v; s.vz = g.tz * v; s.vy = pressed ? T.JUMP_V + Math.max(0, g.ty * v) : Math.min(0, g.ty * v);
+		if (pressed) { s.jumped = 4; s.buffer = 0; }
+		s.crouchHeld = !!inp.crouch; off();
+		s.x += s.vx * dt; s.y += s.vy * dt; s.z += s.vz * dt; s.t += dt; s.tick++;
+		return s;
+	}
+	s.crouchHeld = !!inp.crouch;
+	// along it
+	let d = v * dt, ended = false;
+	while (d > 0) {
+		const left = (s.railDir > 0 ? 1 - s.railU : s.railU) * g.l;
+		if (d < left) { s.railU += s.railDir * d / g.l; d = 0; break; }
+		d -= left;
+		const nx = s.railSeg + s.railDir;
+		if (nx < 0 || nx >= pts.length - 1) { s.railU = s.railDir > 0 ? 1 : 0; ended = true; break; }
+		s.railSeg = nx; s.railU = s.railDir > 0 ? 0 : 1; g = seg();
+	}
+	const a = g.a, b = g.b;
+	s.x = a[0] + (b[0] - a[0]) * s.railU; s.y = a[1] + (b[1] - a[1]) * s.railU; s.z = a[2] + (b[2] - a[2]) * s.railU;
+	s.vx = g.tx * v; s.vy = g.ty * v; s.vz = g.tz * v; s.facing = Math.atan2(g.tx, g.tz);
+	if (ended) off();   // (its end: you fly off the way it points)
 	s.t += dt; s.tick++;
 	return s;
 }
@@ -394,6 +473,7 @@ function swim(s, inp, room, T, dt, w) {
 
 /** What the character is doing, for the animation and the HUD. */
 export function stateName(s) {
+	if (s.rail >= 0) return 'grinding';
 	if (s.swimming) return 'swimming';
 	if (!s.grounded) return s.wall ? 'wallrunning' : s.gliding ? 'gliding' : s.vy > 0 ? 'rising' : 'falling';
 	if (s.stagger > 0) return 'staggered';

@@ -40,7 +40,7 @@ const ti = (t) => Math.max(0, TYPES.indexOf(t));
 /** The fight now, as a frame. `events`: the fight's events since the last frame (the caller gathers them each tick). */
 export function frame(w, events = null) {
 	const pl = w.pl, s = pl.s, P = NK.POS, V = NK.VEL;
-	const bits = (s.grounded ? 1 : 0) | (s.sliding ? 2 : 0) | (s.swimming ? 4 : 0) | (s.gliding ? 8 : 0) | (s.stagger > 0 ? 16 : 0) | (pl.dead ? 32 : 0) | (pl.invuln > 0 && pl.invuln < 1e8 ? 64 : 0) | (s.wall ? 128 : 0);   // (128: carried by a wall)
+	const bits = (s.grounded ? 1 : 0) | (s.sliding ? 2 : 0) | (s.swimming ? 4 : 0) | (s.gliding ? 8 : 0) | (s.stagger > 0 ? 16 : 0) | (pl.dead ? 32 : 0) | (pl.invuln > 0 && pl.invuln < 1e8 ? 64 : 0) | (s.wall ? 128 : 0) | (s.rail >= 0 ? 256 : 0);   // (128: carried by a wall; 256: on a rail)
 	const f = {
 		t: w.tick,
 		// you: where, how fast, which way, what you are doing; then the numbers the readout shows
@@ -166,7 +166,7 @@ export class Viewer {
 		const pa = a.p, pb = b.p, cur = k < 0.5 ? pa : pb, H = dt <= 0.34 && !(pa[7] & 1 && pb[7] & 1);
 		const at = (c) => (H ? hermite(pa[c] / P, pa[c + 3] / V, pb[c] / P, pb[c + 3] / V, k, dt) : (pa[c] + (pb[c] - pa[c]) * k) / P);
 		const s = { x: at(0), y: at(1), z: at(2), vx: (pa[3] + (pb[3] - pa[3]) * k) / V, vy: (pa[4] + (pb[4] - pa[4]) * k) / V, vz: (pa[5] + (pb[5] - pa[5]) * k) / V,
-			facing: lerpAng(ang(pa[6]), ang(pb[6]), k), grounded: !!(cur[7] & 1), sliding: !!(cur[7] & 2), swimming: !!(cur[7] & 4), gliding: !!(cur[7] & 8), stagger: cur[7] & 16 ? 0.1 : 0, wall: cur[7] & 128 ? 1 : 0, t, airJumps: 0 };
+			facing: lerpAng(ang(pa[6]), ang(pb[6]), k), grounded: !!(cur[7] & 1), sliding: !!(cur[7] & 2), swimming: !!(cur[7] & 4), gliding: !!(cur[7] & 8), stagger: cur[7] & 16 ? 0.1 : 0, wall: cur[7] & 128 ? 1 : 0, rail: cur[7] & 256 ? 0 : -1, t, airJumps: 0 };
 		const view = { t, fa: a, fb: b, k, pl: { s, hp: cur[8], maxHp: cur[9], level: cur[10], xp: cur[11], xpNext: cur[12], dead: !!(cur[7] & 32), hurt: !!(cur[7] & 64) }, kills: cur[13], enemies: [], balls: [], weather: cur === pa ? a.w || null : b.w || null, events: [] };
 		// enemies and balls: between the two nearest frames that carry them (a relay's thin frames carry only you)
 		let ia = i; while (ia > 0 && !F[ia].e) ia--; let ib = Math.min(F.length - 1, i + 1); while (ib < F.length - 1 && !F[ib].e) ib++;
