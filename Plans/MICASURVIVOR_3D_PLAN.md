@@ -1525,6 +1525,35 @@ one for it). The choreographies' sparks are generic, not the 2D game's per-type 
 
 Tests: `micasurvivor_m3d_polish_page_test.mjs` 10 checks in a browser.
 
+## 5.53 3D Dive, first part: built (2026-11-12). A Dive floor you can stand in.
+
+Owner, 2026-11-12: 3D Dive is **today's Dive in 3D**: open floors, sleeping groups, find the stairs, an alpha
+every 5 floors, a guardian every 25, loot at stake, the Escape Rope. Not the rooms-and-doors redesign of P6.
+
+P5 (upgrades) needs no part of its own: the 3D Expedition already carries the 2D game's level-ups, family
+perks, TMs, formes, Megas, reactions and Ultimates (5.4x to 5.5x), and Dive reads the same tables.
+
+`m3d/divegen.js` does not invent floors. It asks the 2D game's own `js/expedition/dive-gen.js` for the layout
+of `{seed, route, floor}` and raises it into a room the 3D game walks, one 2D tile to one 2 m cell, so every
+distance in the Dive's rules stays the same distance:
+
+- a floor tile is ground; a wall tile is rock 6 m high (a jump clears 1.67 m: a wall, not a step);
+- a liquid tile is a pool 0.6 m deep. You wade it, slower than you run, and a jump takes you out. It is
+  deeper than a step, so you do not walk out of it;
+- tall grass is scatter; a secret pocket's plug (boulder or thicket) is rock until it is opened;
+- the spawn, the stairs, the lost Pokémon, the foe groups, the chests and the landmark sit on the same tiles
+  as in 2D, so a seed gives the same floor in both games.
+
+`checkFloor(room)` says what is wrong with a floor: everything must be reachable on foot from the spawn, a
+pocket's chest only once its plug is open, and the stairs by a dry way. All 486 floors tried (9 routes, floors
+1 to 54) pass.
+
+Nothing on the page yet: no floor is drawn and nothing in a run uses this. Next parts: walking a floor and
+taking the stairs down; sleeping groups; alphas and guardians; the rescue; loot at stake, the bank and the
+Escape Rope; routes, stages and seals; saving, tasks and boards; the Micatro-style UI.
+
+Tests: `micasurvivor_m3d_divegen_test.mjs` 24 checks in node.
+
 ## 6. Dive in 2D: built
 
 **D0 — find the stairs (small; can ship first, on its own).** *Built 2026-11-11 (`overworld/tests/micasurvivor_dive_stairs_test.mjs`). As built: the stairs took their own orange mark, so the rocks and Meowth keep their gold; the HUD arrow comes up after 25 s on a floor, or at once when its boss falls.*
