@@ -204,6 +204,8 @@ export function tickCap(S, dt) {
 		if (e.roam) roam(S, e, dt);
 		if (g.flee && w.t - g.t0 >= g.flee) { C.tg.delete(id); e.dead = true; C.log.fled++; say(S, `The shiny ${name(S, e.dex)} got away!`, 3); }
 	}
+	// (co-op) a guest kept its full team: the alpha's prize falls where it lay
+	for (const m of w.mates) if (m.inbox) for (let i = m.inbox.length - 1; i >= 0; i--) if (m.inbox[i][0] === 'xcp') { prize(S, { x: +m.inbox[i][1], y: +m.inbox[i][2], z: +m.inbox[i][3] }); m.inbox.splice(i, 1); }
 	for (let k = C.faint.length - 1; k >= 0; k--) {
 		const f = C.faint[k];
 		if (w.t >= f.end) { C.faint.splice(k, 1); expire(S, f); continue; }
@@ -211,7 +213,34 @@ export function tickCap(S, dt) {
 		const s = pl.s, d = Math.hypot(s.x - f.x, s.z - f.z);
 		if (d < K.THROW_R * CELL + pl.r && Math.abs(s.y - f.y) <= XK.SITE_UP) { if (f.latch) continue; f.stand += dt; if (f.stand >= K.THROW_T) throwAt(S, f); }
 		else { f.stand = Math.max(0, f.stand - dt * 2); f.latch = false; }
+		// (co-op: a guest standing by it is handed the catch: its throw, its team or its shiny, on its side)
+		if (C.faint.includes(f)) for (const m of w.mates) {
+			if (m.dead || m.away) continue;
+			const gs = f.gs || (f.gs = new Map()), near = Math.hypot(m.s.x - f.x, m.s.z - f.z) < K.THROW_R * CELL + m.r && Math.abs(m.s.y - f.y) <= XK.SITE_UP, v = near ? (gs.get(m.id) || 0) + dt : 0;
+			gs.set(m.id, v);
+			if (v >= K.THROW_T) { out(C, f); C.done.add(f.eid); m.gifts.push({ k: 'xcg', kind: f.kind, dex: f.dex, x: Math.round(f.x * 10) / 10, y: Math.round(f.y * 10) / 10, z: Math.round(f.z * 10) / 10, scale: f.scale }); say(S, f.kind === 'alpha' ? 'A teammate throws a Friend Ball!' : 'A teammate throws a Poké Ball!', 2.4); break; }
+		}
 	}
+	tickSupport(S, dt);
+}
+/** A GUEST's catch (the host handed it over): the throw on its side. With its team full an alpha asks which to swap;
+ *  keeping its team sends the prize back to the host's floor. g: the host's message. */
+export function guestCatch(S, g) {
+	const C = S.cap, f = { eid: -(S.w.nextId++), kind: g.kind, dex: g.dex, x: g.x, y: g.y, z: g.z, scale: g.scale || 1, shiny: g.kind === 'shiny' };
+	if (f.kind === 'alpha' && C.sa.length >= slotsMax(S)) {
+		const [st, v] = S.X.C.perkOf(typeOf(S, f.dex));
+		S.pick = { kind: 'friend', title: 'Your team is full', sub: `Who do you swap for ${name(S, f.dex)}?`, picks: 1, taken: [], ids: [], dex: f.dex, cancel: 'Keep my team',
+			cards: C.sa.map((a) => ({ title: `Swap ${name(S, a.dex)} for ${name(S, f.dex)}`, tag: 'Support Alpha', desc: S.L ? S.L.I.statText(st, v) : '' })),
+			onTake: (i) => { if (!C.sa[i]) return false; startCine(S, f, i); return true; },
+			onClose: () => { S.w.co.outbox.push(['xcp', f.x, f.y, f.z]); return true; } };
+		return S.pick;
+	}
+	return startCine(S, f, null);
+}
+/** Every tick of a GUEST's side: its ball's shakes (the fight does not hold for them in a party) and its own team. */
+export function tickGuestCap(S, dt) {
+	const C = S.cap; if (!C) return;
+	if (C.cine) { C.cine.t += dt; S.w.pl.invuln = Math.max(S.w.pl.invuln, 0.5); if (C.cine.t >= S.X.C.CINE_T) finish(S, C.cine); }
 	tickSupport(S, dt);
 }
 /** What there is to see: the fainted, the ball in the air, your team. */

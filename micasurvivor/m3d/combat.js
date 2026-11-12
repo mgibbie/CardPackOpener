@@ -1012,7 +1012,7 @@ function updatePickups(w, dt) {
 }
 function collect(w, p, who = w.pl) {
 	const pl = w.pl, s = who.s; w.stats.collected++;
-	w.events.push({ k: 'pickup', kind: p.kind, value: p.value });
+	w.events.push({ k: 'pickup', kind: p.kind, value: p.value, by: who === pl ? 0 : who.id });   // (by: which co-op player picked it up; 0: you)
 	if (p.kind === 'xp' || p.kind === 'xpBig') gainXp(w, p.value);
 	else if (p.kind === 'heal') { if (who === pl) pl.hp = Math.min(pl.maxHp, pl.hp + pl.maxHp * CK.HEAL_ORB); else who.gifts.push({ k: 'heal', v: CK.HEAL_ORB }); }   // (a mate's berry: they are told)
 	else if (p.kind === 'magnet') for (const o of w.pickups) o.pulled = true;

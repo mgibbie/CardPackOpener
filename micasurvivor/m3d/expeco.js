@@ -129,12 +129,12 @@ export function shopPrices(S, stock) { const E = S.X.E, h = E.heatOf(S.eco.buys,
 /** Take choice i of the pick that is up. -> whether it was taken */
 export function pickTake(S, i) {
 	const P = S.pick, Z = S.eco && S.eco.z; if (!P || P.taken.includes(i)) return false;
-	if (P.onTake) { const ok = P.onTake(i); if (ok && S.pick === P) S.pick = null; return ok; }   // (a choice with its own answer: capture's swap)
+	if (P.onTake) { const ok = P.onTake(i); if (ok && S.pick === P && !P.hold) S.pick = null; return ok; }   // (a choice with its own answer: capture's swap)
 	if (P.kind === 'hypno') {   // forget a vitamin: its slot is free again
 		const pl = S.w.pl, k = pl.xv.findIndex((x) => x.id === P.vit[i]); if (k < 0) return false;
 		pl.xv.splice(k, 1); S.L.I.apply(pl);
 		if (Z && P.obj != null) markUsed(S, Z, Z.lay.objs[P.obj]);
-		S.eco.log.hypno++; S.pick = null; return true;
+		if (S.eco) S.eco.log.hypno++; S.pick = null; return true;   // (a co-op guest forgets its own: it has no economy of its own to log to)
 	}
 	const id = P.ids[i]; if (!id) return false;
 	if (P.kind === 'shop') {
@@ -153,7 +153,7 @@ export function pickTake(S, i) {
 export function pickClose(S) { const P = S.pick; if (!P || !(P.kind === 'shop' || P.kind === 'hypno' || P.onClose)) return false; S.pick = null; if (P.onClose) P.onClose(); return true; }
 
 // ---------------------------------------------------------------- a zone's state
-const zoneState = (lay) => { const n = lay.objs.length; return { lay, st: new Array(n).fill(FRESH), ch: new Array(n).fill(0), t: new Array(n).fill(0), latch: new Set(), wave: new Map(), visit: -1, stock: null, sold: 0, spot: -1, slot: new Map() }; };
+const zoneState = (lay) => { const n = lay.objs.length; return { lay, st: new Array(n).fill(FRESH), ch: new Array(n).fill(0), t: new Array(n).fill(0), latch: new Set(), wave: new Map(), visit: -1, stock: null, sold: 0, spot: -1, slot: new Map(), per: new Map() }; };   // (per: each co-op guest's own stand clocks and latches)
 function markUsed(S, Z, o, st = USED) { Z.st[o.i] = st; if (st === USED) { S.eco.used++; S.eco.last = o.i; } }
 /** A wave of the zone's Pokémon round a thing (its own stream). opt: { hp, dex: [..], d (units away) }. -> the new enemies */
 export function horde(S, o, n, opt = {}) {
@@ -175,41 +175,52 @@ export function horde(S, o, n, opt = {}) {
 }
 
 // ---------------------------------------------------------------- balls, blessings, the slot machine
-function openBall(S, Z, o, as) {
-	const E = S.X.E, K = E.K, kind = as || o.kind, pl = S.w.pl;
+// (co-op: `m` is the GUEST standing there, by its puppet on the host; null: the host itself. The host keeps every
+// thing's state and the team's money; what is a player's own (an item, a choice of items) goes to a guest as a SEED,
+// and the guest rolls it from its own pool on its side: its items, its room for them.)
+const per = (Z, m) => { if (!m) return Z; let P = Z.per.get(m.id); if (!P) { P = { t: new Array(Z.st.length).fill(0), latch: new Set() }; Z.per.set(m.id, P); } return P; };
+const lacking = (S, cost) => say(S, `You need ${cost - S.coins} ₽ more`, 2.4);
+function openBall(S, Z, o, as, m = null) {
+	const E = S.X.E, K = E.K, kind = as || o.kind, pl = S.w.pl, P = per(Z, m), who = m || pl;
 	if (kind === 'ball') {
-		const cost = E.ballCost(S.eco.balls, pl.xluck || 0);
-		Z.latch.add(o.i); Z.t[o.i] = 0;
-		if (S.coins < cost) { say(S, `You need ${cost - S.coins} ₽ more`, 2.4); return false; }
+		const cost = E.ballCost(S.eco.balls, m ? 0 : pl.xluck || 0);
+		P.latch.add(o.i); P.t[o.i] = 0;
+		if (S.coins < cost) { lacking(S, cost); return false; }
 		spend(S, cost); S.eco.balls++;
 	}
 	markUsed(S, Z, o); S.eco.opened++; S.eco.log.balls++;
-	const rng = makeRng(seedFor(S, o.i, 0xBA11));
-	if (kind === 'ball' || kind === 'great') { const ids = rollOffers(S, rng, K.OFFERS + (S.eco.mods.loot | 0), kind === 'great' ? 1 : 0); openPick(S, { kind: 'ball', title: EK.NAME[kind], sub: `Choose 1 of ${ids.length}`, ids, picks: 1 }); return true; }
-	if (kind === 'freeball') { const id = rollOffers(S, rng, 1, 0)[0]; if (id) takeItem(S, id); return true; }
+	const sd = seedFor(S, o.i, 0xBA11), rng = makeRng(sd);
+	if (kind === 'ball' || kind === 'great') {
+		const n = K.OFFERS + (S.eco.mods.loot | 0), min = kind === 'great' ? 1 : 0;
+		if (m) { m.gifts.push({ k: 'xo', kind: 'ball', title: EK.NAME[kind], sd, n, min, picks: 1 }); return true; }
+		const ids = rollOffers(S, rng, n, min); openPick(S, { kind: 'ball', title: EK.NAME[kind], sub: `Choose 1 of ${ids.length}`, ids, picks: 1 }); return true;
+	}
+	if (kind === 'freeball') { if (m) m.gifts.push({ k: 'xg', sd, n: 1, min: 0 }); else { const id = rollOffers(S, rng, 1, 0)[0]; if (id) takeItem(S, id); } return true; }
 	// cursed: + 5 % difficulty, a ghost ambush, an item (a second at 40 % x (1 + luck / 100))
 	S.eco.mods.diff += K.CURSE_BALL;
-	const two = rng() < K.CURSE_2ND * (1 + (pl.xluck || 0) / 100);
-	for (const id of rollOffers(S, rng, two ? 2 : 1, 0)) takeItem(S, id);
-	horde(S, { i: o.i, x: pl.s.x, z: pl.s.z }, K.GHOSTS[0] + K.GHOSTS[1] * zoneNow(S), { dex: K.GHOST_DEX.filter((d) => S.data.mon(d)), d: 220 });
+	const two = rng() < K.CURSE_2ND * (1 + (m ? 0 : pl.xluck || 0) / 100);
+	if (m) m.gifts.push({ k: 'xg', sd, n: two ? 2 : 1, min: 0, skip: 1 });   // (the guest's items, from the same stream past the "two" draw)
+	else for (const id of rollOffers(S, rng, two ? 2 : 1, 0)) takeItem(S, id);
+	horde(S, { i: o.i, x: who.s.x, z: who.s.z }, K.GHOSTS[0] + K.GHOSTS[1] * zoneNow(S), { dex: K.GHOST_DEX.filter((d) => S.data.mon(d)), d: 220 });
 	say(S, 'The Poké Ball was cursed! +5% difficulty · Ghost ambush!', 3);
 	return true;
 }
 /** An Unown altar (tier 0-3) or the comet (tier null) is full. */
-function blessing(S, Z, o, tier) {
+function blessing(S, Z, o, tier, m = null) {
 	const K = S.X.E.K;
 	markUsed(S, Z, o); Z.ch[o.i] = 1; S.eco.log.altars++;
-	const rng = makeRng(seedFor(S, o.i, 0xB1E5));
-	if (tier == null) { const ids = rollOffers(S, rng, 3, 1); openPick(S, { kind: 'comet', title: EK.NAME.comet, sub: `Choose 1 of ${ids.length}`, ids, picks: 1 }); return; }   // (its + 25 % Ultimate charge waits for Ultimates)
-	const [n, picks, min] = K.UNOWN_OFFERS[tier], ids = rollOffers(S, rng, n, min);
-	openPick(S, { kind: 'unown', title: tier === 3 ? 'Golden blessing!' : 'Unown blessing', sub: `Choose ${Math.min(picks, ids.length)} of ${ids.length}`, ids, picks: Math.min(picks, ids.length) });
+	const sd = seedFor(S, o.i, 0xB1E5), rng = makeRng(sd);
+	const [n, picks, min] = tier == null ? [3, 1, 1] : K.UNOWN_OFFERS[tier], kind = tier == null ? 'comet' : 'unown', title = tier == null ? EK.NAME.comet : tier === 3 ? 'Golden blessing!' : 'Unown blessing';   // (the comet's + 25 % Ultimate charge waits for Ultimates)
+	if (m) { m.gifts.push({ k: 'xo', kind, title, sd, n, min, picks }); return; }
+	const ids = rollOffers(S, rng, n, min);
+	openPick(S, { kind, title, sub: `Choose ${Math.min(picks, ids.length)} of ${ids.length}`, ids, picks: Math.min(picks, ids.length) });
 }
 /** The reels slot machine i would roll next (it draws nothing). */
 export const peekSpin = (S, i) => S.X.E.reels(makeRng(mix(S.seed, S.X.MAP_IDS.indexOf(S.map) + 1, S.zone, i, 0x5107, S.eco.draws)));
-function spin(S, Z, o) {
+function spin(S, Z, o, m = null) {
 	const E = S.X.E, K = E.K, pl = S.w.pl, zone = zoneNow(S), cost = E.slotCost(zone);
-	if (!spend(S, cost)) { say(S, `You need ${cost - S.coins} ₽ more`, 2.4); return false; }
-	const rng = makeRng(seedFor(S, o.i, 0x5107)), r = E.reels(rng), p = E.payout(r), sym = K.SLOT_SYM[p.sym];
+	if (!spend(S, cost)) { lacking(S, cost); return false; }
+	const sd = seedFor(S, o.i, 0x5107), rng = makeRng(sd), r = E.reels(rng), p = E.payout(r), sym = K.SLOT_SYM[p.sym];
 	Z.slot.set(o.i, { n: ((Z.slot.get(o.i) || {}).n || 0) + 1, r, win: p.kind });
 	S.eco.log.spins++; S.eco.used++;
 	S.w.events.push({ k: 'spin', r, win: p.kind });
@@ -223,23 +234,33 @@ function spin(S, Z, o) {
 	S.eco.log.slotWins++;
 	if (p.kind === 'pair') { say(S, `A pair: +${earn(S, cost * K.SLOT_PAIR)} ₽`, 2.4); return true; }
 	if (sym === 'nugget') { say(S, `Jackpot! +${earn(S, cost * K.SLOT_JACKPOT)} ₽`, 3); return true; }
-	if (sym === 'berry') { pl.hp = Math.min(pl.maxHp, pl.hp + pl.maxHp * K.BERRY); const id = rollOffers(S, rng, 1, 0)[0]; if (id) takeItem(S, id); say(S, 'Prize! Berries and an item', 2.6); return true; }
-	const [n, picks, min] = { poke: [3, 1, 0], great: [3, 1, 1], ultra: [3, 1, 2], master: [4, 2, 3] }[sym], ids = rollOffers(S, rng, n, min);
+	if (sym === 'berry') {
+		say(S, 'Prize! Berries and an item', 2.6);
+		if (m) { m.gifts.push({ k: 'heal', v: K.BERRY }, { k: 'xg', sd, n: 1, min: 0, skip: 3 }); return true; }   // (past the three reels' draws)
+		pl.hp = Math.min(pl.maxHp, pl.hp + pl.maxHp * K.BERRY); const id = rollOffers(S, rng, 1, 0)[0]; if (id) takeItem(S, id); return true;
+	}
+	const [n, picks, min] = { poke: [3, 1, 0], great: [3, 1, 1], ultra: [3, 1, 2], master: [4, 2, 3] }[sym];
+	if (m) { m.gifts.push({ k: 'xo', kind: 'ball', title: EK.NAME.slots, sd, n, min, picks, skip: 3 }); return true; }
+	const ids = rollOffers(S, rng, n, min);
 	openPick(S, { kind: 'ball', title: EK.NAME.slots, sub: `Choose ${Math.min(picks, ids.length)} of ${ids.length}`, ids, picks: Math.min(picks, ids.length) });
 	return true;
 }
 
 // ---------------------------------------------------------------- standing in things
-/** One thing's step. d: how far you are from it on the ground (Infinity when you are not on its level). */
-function step(S, Z, o, st, d, dt, zt) {
-	const E = S.X.E, K = E.K, w = S.w, pl = w.pl, pr = pl.r, T = CELL;
-	const stand = (r, need) => { if (d < r) { Z.t[o.i] += dt; return Z.t[o.i] >= need; } Z.t[o.i] = Math.max(0, Z.t[o.i] - dt * 2); return false; };
+/** The altars that charge for whoever stands in them: one clock for everyone. */
+const SHARED = ['unown1', 'unown2', 'unown3', 'unown4', 'comet'];
+/** One thing's step for one player. d: how far they are from it on the ground (Infinity when not on its level).
+ *  m: the co-op guest standing there (its puppet), or null for the host. */
+function step(S, Z, o, st, d, dt, zt, m = null) {
+	const E = S.X.E, K = E.K, w = S.w, pl = w.pl, who = m || pl, pr = who.r, T = CELL, P = per(Z, m);
+	const stand = (r, need) => { if (d < r) { P.t[o.i] += dt; return P.t[o.i] >= need; } P.t[o.i] = Math.max(0, P.t[o.i] - dt * 2); return false; };
 	switch (o.kind) {
-		case 'ball': case 'freeball': case 'cursedball': if (!Z.latch.has(o.i) && stand(1.15 * T + pr, K.OPEN_T)) openBall(S, Z, o); return;
+		case 'ball': case 'freeball': case 'cursedball': if (!P.latch.has(o.i) && stand(1.15 * T + pr, K.OPEN_T)) openBall(S, Z, o, null, m); return;
 		case 'meowth': {
-			if (Z.spot !== o.i || Z.latch.has(o.i) || d > 1.7 * T + pr) return;
-			Z.latch.add(o.i);
-			openPick(S, { kind: 'shop', title: EK.NAME.meowth, sub: 'Buy what you like; walk away to leave', ids: Z.stock || [], picks: 99, prices: shopPrices(S, Z.stock) });
+			if (Z.spot !== o.i || P.latch.has(o.i) || d > 1.7 * T + pr) return;
+			P.latch.add(o.i);
+			if (m) m.gifts.push({ k: 'xs', visit: Z.visit, stock: (Z.stock || []).slice(), sold: Z.sold, prices: shopPrices(S, Z.stock) });   // (the guest's shop opens on its side; its buys come back)
+			else openPick(S, { kind: 'shop', title: EK.NAME.meowth, sub: 'Buy what you like; walk away to leave', ids: Z.stock || [], picks: 99, prices: shopPrices(S, Z.stock) });
 			return;
 		}
 		case 'unown1': case 'unown2': case 'unown3': case 'unown4': case 'comet': {
@@ -252,31 +273,36 @@ function step(S, Z, o, st, d, dt, zt) {
 			Z.ch[o.i] = Math.max(0, Math.min(1, Z.ch[o.i] + (inside ? dt / need : -dt / need * K.DRAIN)));
 			Z.st[o.i] = Z.ch[o.i] > 0 ? ACTIVE : comet ? READY : FRESH;
 			if (inside && !comet && tier >= 2 && Z.ch[o.i] < 1) { Z.t[o.i] -= dt; if (Z.t[o.i] <= 0) { Z.t[o.i] = K.HORDE_EVERY; horde(S, o, K.HORDE[0] + K.HORDE[1] * zoneNow(S) + (tier === 3 ? K.HORDE[2] : 0)); say(S, 'Horde!', 2); } }
-			if (Z.ch[o.i] >= 1) blessing(S, Z, o, comet ? null : tier);
+			if (Z.ch[o.i] >= 1) blessing(S, Z, o, comet ? null : tier, m);
 			return;
 		}
 		case 'challenge': {
 			if (st === FRESH) {
 				if (!stand(1.6 * T + pr, K.CHAL_T)) return;
-				Z.st[o.i] = ACTIVE; Z.t[o.i] = 0;
+				Z.st[o.i] = ACTIVE; P.t[o.i] = 0;
 				const es = horde(S, o, K.CHAL_N[0] + K.CHAL_N[1] * zoneNow(S), { hp: K.CHAL_HP }); Z.wave.set(o.i, es);
 				say(S, 'Challenge! Beat the wave', 2.6);
 			} else if (st === ACTIVE) {
-				if (!(Z.wave.get(o.i) || []).some((e) => !e.dead)) { Z.st[o.i] = READY; Z.wave.delete(o.i); Z.t[o.i] = 0; say(S, 'Challenge beaten! A Great Ball', 2.8); }
-			} else if (st === READY && !Z.latch.has(o.i) && stand(1.15 * T + pr, K.OPEN_T)) openBall(S, Z, o, 'great');
+				if (!(Z.wave.get(o.i) || []).some((e) => !e.dead)) { Z.st[o.i] = READY; Z.wave.delete(o.i); P.t[o.i] = 0; say(S, 'Challenge beaten! A Great Ball', 2.8); }
+			} else if (st === READY && !P.latch.has(o.i) && stand(1.15 * T + pr, K.OPEN_T)) openBall(S, Z, o, 'great', m);
 			return;
 		}
 		case 'cursedaltar': case 'greed': {
 			if (!stand(1.6 * T + pr, K.ALTAR_T)) return;
 			markUsed(S, Z, o); S.eco.log.altars++;
 			const M = S.eco.mods;
-			if (o.kind === 'cursedaltar') { M.diff += K.CURSE_ALTAR.diff; M.rate += K.CURSE_ALTAR.rate; const id = rollOffers(S, makeRng(seedFor(S, o.i, 0xC0A5)), 1, 2)[0]; if (id) takeItem(S, id); say(S, 'Cursed! More enemies, more difficulty', 3); }
-			else { M.diff += K.GREED.diff; M.xp += K.GREED.xp; M.money += K.GREED.money; M.loot = Math.max(M.loot, K.GREED.loot); say(S, "Gengar's greed! More difficulty, more loot", 3); }
+			if (o.kind === 'cursedaltar') {
+				M.diff += K.CURSE_ALTAR.diff; M.rate += K.CURSE_ALTAR.rate;
+				const sd = seedFor(S, o.i, 0xC0A5);
+				if (m) m.gifts.push({ k: 'xg', sd, n: 1, min: 2 }); else { const id = rollOffers(S, makeRng(sd), 1, 2)[0]; if (id) takeItem(S, id); }
+				say(S, 'Cursed! More enemies, more difficulty', 3);
+			} else { M.diff += K.GREED.diff; M.xp += K.GREED.xp; M.money += K.GREED.money; M.loot = Math.max(M.loot, K.GREED.loot); say(S, "Gengar's greed! More difficulty, more loot", 3); }
 			return;
 		}
 		case 'ditto': {
-			if (Z.latch.has(o.i) || !stand(1.3 * T + pr, K.MEET_T)) return;
-			Z.latch.add(o.i); Z.t[o.i] = 0;
+			if (P.latch.has(o.i) || !stand(1.3 * T + pr, K.MEET_T)) return;
+			P.latch.add(o.i); P.t[o.i] = 0;
+			if (m) { markUsed(S, Z, o); S.eco.log.ditto++; m.gifts.push({ k: 'xd', sd: seedFor(S, o.i, 0xD170) }); return; }   // (the guest's own items: it copies one on its side)
 			const I = S.L.I, have = Object.keys(pl.xi).filter((id) => I.IT[id] && I.room(pl, id));
 			if (!have.length) { say(S, 'Ditto has nothing to copy', 2.4); return; }
 			const id = have[Math.floor(makeRng(seedFor(S, o.i, 0xD170))() * have.length) % have.length];
@@ -284,23 +310,24 @@ function step(S, Z, o, st, d, dt, zt) {
 			return;
 		}
 		case 'hypno': {
-			if (Z.latch.has(o.i) || !stand(1.3 * T + pr, K.MEET_T)) return;
-			Z.latch.add(o.i); Z.t[o.i] = 0;
+			if (P.latch.has(o.i) || !stand(1.3 * T + pr, K.MEET_T)) return;
+			P.latch.add(o.i); P.t[o.i] = 0;
+			if (m) { m.gifts.push({ k: 'xh', obj: o.i }); return; }   // (the guest forgets one of its own vitamins on its side; Hypno stays for the others)
 			if (!pl.xv.length) { say(S, 'You have no vitamins to forget', 2.4); return; }
 			openPick(S, { kind: 'hypno', title: EK.NAME.hypno, sub: 'Forget a vitamin to free its slot (or walk away)', vit: pl.xv.map((x) => x.id), picks: 1, obj: o.i });
 			return;
 		}
 		case 'cage': {
-			if (Z.latch.has(o.i) || !stand(1.3 * T + pr, K.MEET_T)) return;
-			Z.latch.add(o.i); Z.t[o.i] = 0;
+			if (P.latch.has(o.i) || !stand(1.3 * T + pr, K.MEET_T)) return;
+			P.latch.add(o.i); P.t[o.i] = 0;
 			const cost = E.cageCost(zoneNow(S));
-			if (!spend(S, cost)) { say(S, `You need ${cost - S.coins} ₽ more`, 2.4); return; }
+			if (!spend(S, cost)) { lacking(S, cost); return; }
 			markUsed(S, Z, o); S.eco.log.freed++;
-			const xp = Math.round(pl.xpNext * K.CAGE_XP); gainXp(w, xp / (pl.xpMul || 1));
+			const xp = Math.round(pl.xpNext * K.CAGE_XP); gainXp(w, xp / (pl.xpMul || 1));   // (the team's XP is the host's: a guest freeing a cage levels everyone)
 			say(S, `You free ${(S.data.mon(o.v) || {}).name || ''}! +${xp} XP`, 2.8);
 			return;
 		}
-		case 'slots': if (!Z.latch.has(o.i) && stand(1.3 * T + pr, K.SLOT_T)) { Z.latch.add(o.i); Z.t[o.i] = 0; spin(S, Z, o); } return;
+		case 'slots': if (!P.latch.has(o.i) && stand(1.3 * T + pr, K.SLOT_T)) { P.latch.add(o.i); P.t[o.i] = 0; spin(S, Z, o, m); } return;
 		case 'rock': {
 			if (d > 0.75 * T + pr) return;
 			markUsed(S, Z, o); S.eco.log.rocks++;
@@ -308,15 +335,25 @@ function step(S, Z, o, st, d, dt, zt) {
 			return;
 		}
 		case 'berry': {
-			if (d > 0.85 * T + pr || pl.hp >= pl.maxHp) return;
+			if (d > 0.85 * T + pr || who.hp >= who.maxHp) return;
 			markUsed(S, Z, o); S.eco.log.berries++;
+			if (m) { m.gifts.push({ k: 'heal', v: K.BERRY }); return; }
 			const before = pl.hp; pl.hp = Math.min(pl.maxHp, pl.hp + pl.maxHp * K.BERRY);
 			say(S, `Berries! +${Math.round(pl.hp - before)} HP`, 2.2);
 			return;
 		}
 	}
 }
-/** Every tick of the run (after the fight's): KOs pay, and the things round you. */
+/** A guest buys slot `slot` of Meowth's stock (its message to the host): the team pays, the item goes to the guest. */
+function guestBuy(S, Z, m, slot) {
+	if (!Z.stock || !(slot >= 0) || slot >= Z.stock.length || (Z.sold & (1 << slot))) return false;
+	const cost = shopPrices(S, Z.stock)[slot];
+	if (!spend(S, cost)) { lacking(S, cost); return false; }
+	Z.sold |= 1 << slot; S.eco.buys++; S.eco.log.shop++; S.eco.used++;
+	m.gifts.push({ k: 'xgi', id: Z.stock[slot], slot });
+	return true;
+}
+/** Every tick of the run (after the fight's): KOs pay, and the things round every player. */
 export function tickEco(S, dt) {
 	const E = S.eco, w = S.w, pl = w.pl; if (!E) return;
 	if (w.kos) for (const ko of w.kos.splice(0)) onKill(S, ko);   // (every KO since the last look, whoever finished it)
@@ -331,14 +368,29 @@ export function tickEco(S, dt) {
 		Z.stock = rollOffers(S, makeRng(mix(S.seed, S.X.MAP_IDS.indexOf(S.map) + 1, S.zone, 0x3E0, vis.v)), K.STOCK, 0);
 		say(S, 'Meowth has opened his stall!', 2.6);
 	} else if (!vis && Z.visit >= 0 && Z.spot >= 0) { if (S.pick && S.pick.kind === 'shop') S.pick = null; Z.spot = -1; Z.stock = null; say(S, 'Meowth packs up', 2.2); }
-	if (pl.dead) return;
-	const s = pl.s;
+	// (co-op) what the guests have asked for
+	const guests = w.mates.filter((m) => !m.dead && !m.away);
+	for (const m of w.mates) if (m.inbox) for (let i = m.inbox.length - 1; i >= 0; i--) if (m.inbox[i][0] === 'xb') { guestBuy(S, Z, m, m.inbox[i][1] | 0); m.inbox.splice(i, 1); }
+	const reach = (p) => (o) => { const flat = Math.hypot(p.s.x - o.x, p.s.z - o.z); return [flat, Math.abs(p.s.y - o.y) <= XK.SITE_UP ? flat : Infinity]; };
+	const mine = reach(pl), theirs = guests.map((m) => [m, reach(m)]);
 	for (const o of lay.objs) {
-		const st = Z.st[o.i]; if (st === USED || st === GONE) continue;
-		const flat = Math.hypot(s.x - o.x, s.z - o.z), d = Math.abs(s.y - o.y) <= XK.SITE_UP ? flat : Infinity;
+		if (Z.st[o.i] === USED || Z.st[o.i] === GONE) continue;
+		const [flat, d] = pl.dead ? [Infinity, Infinity] : mine(o);
 		if (Z.latch.has(o.i) && flat > 3.2 * CELL + pl.r) Z.latch.delete(o.i);
-		step(S, Z, o, st, d, dt, zt);
-		if (S.pick) break;   // (a choice opened: the fight holds)
+		if (theirs.length && SHARED.includes(o.kind)) {   // an altar charges for whoever is nearest
+			let who = null, best = d, bf = flat;
+			for (const [m, at] of theirs) { const [f2, d2] = at(o); if (d2 < best || (best === Infinity && f2 < bf)) { best = d2; bf = f2; who = m; } }
+			if ((!pl.dead && !(S.pick && !who)) || who) step(S, Z, o, Z.st[o.i], best, dt, zt, who);
+			continue;
+		}
+		if (!pl.dead && !S.pick) step(S, Z, o, Z.st[o.i], d, dt, zt);   // (with a choice of yours up, you open nothing else)
+		if (S.pick && !theirs.length) break;   // (alone: a choice opened, the fight holds)
+		for (const [m, at] of theirs) {
+			if (Z.st[o.i] === USED || Z.st[o.i] === GONE) break;
+			const P = per(Z, m), [f2, d2] = at(o);
+			if (P.latch.has(o.i) && f2 > 3.2 * CELL + m.r) P.latch.delete(o.i);
+			step(S, Z, o, Z.st[o.i], d2, dt, zt, m);
+		}
 	}
 }
 /** What there is to see: every thing of the zone with its state, for the page and the minimap. */

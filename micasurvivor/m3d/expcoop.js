@@ -7,10 +7,14 @@
 //                 are its own), its evolutions. It is told the run by the run's row (expnet.js) in the host's frames,
 //                 and builds each zone's level itself.
 //
-// Here so far: a guest in a run (fighting, levelling, evolving, charging the altar, taking the portal with the team),
-// and the run ending only when everyone is down.
-// Not yet: a guest opening the zone's things or catching (the 2D game's D11 messages: an offer rolled on the guest's
-// side from a seed the host sends); a guest's Support Alphas.
+// A guest uses the zone's things and catches, too. The host sees it standing there (its puppet), keeps the thing's
+// state and pays from the team's money; what is a player's own comes to the guest as a SEED and it rolls the offer from
+// its own pool on its side (the 2D game's rule and messages):
+//   xo   a choice of items (a ball, a blessing, the comet, a slot machine's ball)     xg   items at once
+//   xs   Meowth's stall (the guest's buy goes back as 'xb'; the item comes as 'xgi')   xd   Ditto: a copy of one of its own
+//   xh   Hypno: forget one of its own vitamins        xcg  a catch (kept its full team: 'xcp' back, the prize falls)
+// A choice does not hold the fight for a guest: a party does not stop for one player's choosing.
+// Not yet: a guest's Support Alphas on the other screens; Survival in co-op.
 import { K, newState } from './sim.js';
 import { tick } from './combat.js';
 import { guestWorld } from './coop.js';
@@ -18,6 +22,10 @@ import { zoneRoom, besideHost } from './expedition.js';
 import { setup as setupLevels, tickStats } from './explevel.js';
 import { memberOf, setupLeague } from './expleague.js';
 import { rowView } from './expnet.js';
+import { rng as makeRng } from './gen.js';
+import { rollOffers, pickTake } from './expeco.js';
+import { takeItem } from './explevel.js';
+import { setupCap, guestCatch, tickGuestCap, syncPerks } from './expcap.js';
 
 /** A guest's side of a run. o: { seed, map, diff, dex (its species: it plays that family's member), id (its number in
  *  the party; the host is 0), league: false for a plain body with `moves`, and guestWorld's options }.
@@ -31,6 +39,9 @@ export function guestRun(data, X, o = {}) {
 	const S = { w, X, data, map, diff, seed, guest: true, slot: o.id || 1, zone: 1, zs: 0, ph: 0, charge: 0, coins: 0, says: [], rv: null, keep: {}, ended: false, won: false, lost: false, plan: { cards: [] } };
 	setupLevels(S, X.L, lv);
 	if (league) setupLeague(S, member);
+	S.syncPerks = () => syncPerks(S);
+	if (X.C) setupCap(S);
+	S.pick = null;
 	place(S);
 	return S;
 }
@@ -61,6 +72,24 @@ export function stepGuest(S, input, dt = K.TICK) {
 	const w = S.w, t0 = w.t;
 	tick(w, input, dt);
 	for (const ev of w.events) if (ev.k === 'say') S.says.push({ text: ev.text, s: ev.s });
-	if (w.t !== t0) tickStats(S, dt);
+	if (w.t !== t0) { tickStats(S, dt); tickGuestCap(S, dt); }
+	for (const ev of w.events) if (ev.k === 'pickup' && ev.kind === 'item') takeItem(S, ev.value);
+	for (const g of w.co.inbox.splice(0)) guestGift(S, g);
+	if (S.pick && (w.autoPick !== undefined && w.autoPick !== null)) { const P = S.pick; if (P.kind === 'shop' || P.kind === 'hypno') S.pick = null; else if (P.onTake) pickTake(S, 0); else for (let i = 0; S.pick === P && i < P.ids.length; i++) pickTake(S, i); if (S.pick === P) S.pick = null; }
 	return S;
+}
+/** The host's word for this guest: what it has opened, been given, or been handed to catch. */
+export function guestGift(S, g) {
+	const w = S.w, pl = w.pl, L = S.L, rngOf = () => { const r = makeRng(g.sd); for (let i = 0; i < (g.skip || 0); i++) r(); return r; };
+	if (g.k === 'xo') { const ids = rollOffers(S, rngOf(), g.n, g.min), picks = Math.min(g.picks || 1, ids.length); if (ids.length) { S.pick = { kind: g.kind, title: g.title, sub: `Choose ${picks} of ${ids.length}`, ids, picks, taken: [] }; w.events.push({ k: 'pick', kind: g.kind }); } }
+	else if (g.k === 'xg') { for (const id of rollOffers(S, rngOf(), g.n, g.min)) takeItem(S, id); }
+	else if (g.k === 'xgi') { takeItem(S, g.id); if (g.slot != null && S.pick && S.pick.kind === 'shop') S.pick.taken.push(g.slot); }
+	else if (g.k === 'xs') {   // Meowth: the host's stock and prices; a buy is asked of the host
+		S.pick = { kind: 'shop', title: "Meowth's stall", sub: 'Buy what you like; leave when you are done', ids: g.stock, prices: g.prices, picks: 99, taken: g.stock.map((_, i) => i).filter((i) => g.sold & (1 << i)),
+			onTake: (i) => { if (S.pick.asked && S.pick.asked.includes(i)) return false; (S.pick.asked || (S.pick.asked = [])).push(i); w.co.outbox.push(['xb', i]); S.pick.hold = true; return true; }, onClose: () => true };
+		w.events.push({ k: 'pick', kind: 'shop' });
+	}
+	else if (g.k === 'xd') { const have = Object.keys(pl.xi).filter((id) => L.I.IT[id] && L.I.room(pl, id)); if (have.length) takeItem(S, have[Math.floor(makeRng(g.sd)() * have.length) % have.length]); else S.says.push({ text: 'Ditto has nothing to copy', s: 2.4 }); }
+	else if (g.k === 'xh') { if (pl.xv.length) { S.pick = { kind: 'hypno', title: 'Hypno', sub: 'Forget a vitamin to free its slot (or walk away)', vit: pl.xv.map((x) => x.id), picks: 1, taken: [], ids: [] }; w.events.push({ k: 'pick', kind: 'hypno' }); } else S.says.push({ text: 'You have no vitamins to forget', s: 2.4 }); }
+	else if (g.k === 'xcg' && S.cap) guestCatch(S, g);
 }

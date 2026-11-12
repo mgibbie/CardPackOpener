@@ -254,6 +254,7 @@ function draw(t) {
 	// is open), and the ball while it shakes
 	if ((run && run.cap) || rv) {
 		const cv = run ? capView(run) : { faint: rv.faint, cine: rv.cine, sa: rv.sa.map((dex, i) => { const who = grun && mates()[0] ? mates()[0].s : state, [x, z] = teamSpot(who, who.facing, i, rv.sa.length); return { dex, x, z, y: Math.min(groundAt(room, x, z), who.y + 2), facing: who.facing, moving: Math.hypot(who.vx || 0, who.vz || 0) > 0.6 }; }) };
+		if (grun && grun.cap) { const own = capView(grun); cv.sa = cv.sa.concat(own.sa); if (own.cine) cv.cine = own.cine; }   // (a guest: its own team and its own ball, with the host's)
 		for (const a of cv.sa) { const sh = sheets.get(a.dex + '/Walk'); if (!sh) { wantSheet(a.dex); continue; } const q = spriteQuad(sh.meta, sh.img, a.moving ? frameAt(sh.meta, t) : 0, facingRow(a.facing, cam.yaw), 1.15, sh.lift); sh.batch.add(a.x, a.y, a.z, q.rect, q.uv, 1); shadows.add(room, a.x, a.z, a.y, sh.shadow * 1.15); }
 		for (const f of cv.faint) { const sh = sheets.get(f.dex + '/Walk'); if (sh) { const q = spriteQuad(sh.meta, sh.img, 0, 0, 1.4, sh.lift); sh.batch.add(f.x, f.y, f.z, q.rect, q.uv, 0.45); } else wantSheet(f.dex); shots.add(f.x, f.y + 1.9 + Math.sin(t * 6) * 0.12, f.z, 0.28, f.kind === 'alpha' ? '#ff4d5e' : '#9ae6ff'); }
 		if (cv.cine) { const p = cv.cine.phase, wob = p.n === 'shake' ? Math.sin(p.u * 6.2832) * 0.18 : 0; shots.add(cv.cine.x + wob, cv.cine.y + (p.n === 'throw' ? 1.6 - p.u * 1.2 : 0.4), cv.cine.z, 0.34, p.n === 'click' ? '#ffe14d' : cv.cine.kind === 'alpha' ? '#3fa35a' : '#ff4d5e'); note(p.n === 'click' ? 'Gotcha!' : p.n === 'shake' ? '. '.repeat(p.k + 1) : cv.cine.kind === 'alpha' ? 'Friend Ball!' : 'Poké Ball!', 250); }
@@ -289,7 +290,7 @@ function frame(now) {
 				if (run.pick !== shownPick) showPick();
 				if (run.w.room !== room) { room = run.w.room; mapBase = null; showRoom(); state.facing = cam.yaw; }
 				if (run.ended && !runOver) { runOver = runResult(run); note(runOver.survival ? `${runOver.lines.join(' · ')} · score ${runOver.score}` : `${runOver.title} ${runOver.line} · score ${runOver.score} · pay ${runOver.pay.pay}${runOver.medal ? ' · ' + runOver.medal + ' medal' : ''}`, 600000); }
-			} else if (grun) { stepGuest(grun, input, K.TICK); if (runOver === null && grun.ended) { runOver = grun.won ? 'won' : 'lost'; note(grun.won ? 'EXPEDITION COMPLETE!' : 'RUN OVER', 600000); } }
+			} else if (grun) { stepGuest(grun, input, K.TICK); for (const q of grun.says) note(q.text, q.s * 1000); if (grun.pick !== shownPick) showPick(); if (runOver === null && grun.ended) { runOver = grun.won ? 'won' : 'lost'; note(grun.won ? 'EXPEDITION COMPLETE!' : 'RUN OVER', 600000); } }
 			else tick(world, input, K.TICK);
 			fightEvents(world.events);
 			if (coView && coView.events.length) fightEvents(coView.events.filter((ev) => !(ev.k === 'hit' && ev.by === MYID) && ev.k !== 'levelup' && ev.k !== 'hurt' && ev.k !== 'level'));   // what the host and the others did
@@ -467,16 +468,16 @@ function showCards() {
 let banMode = false, shownPick = null;
 /** (P4) A choice of the run's economy: a ball's or an altar's items, Meowth's stall (with prices), Hypno's question. */
 function showPick() {
-	const el = document.getElementById('cards'), P = run.pick; shownPick = P;
+	const el = document.getElementById('cards'), P = myRun.pick; shownPick = P;
 	if (!P) { if (!world.pl.choices) { el.style.display = 'none'; el.innerHTML = ''; } return; }
-	const I = GG.ExpItems, EN = GG.ExpEN || {}, en = (s) => EN[s] || s, prices = P.kind === 'shop' ? shopPrices(run, P.ids) : null;
+	const I = GG.ExpItems, EN = GG.ExpEN || {}, en = (s) => EN[s] || s, prices = P.kind === 'shop' ? (run ? shopPrices(run, P.ids) : P.prices) : null, coins = run ? run.coins : (rv ? rv.coins : 0);
 	const list = P.cards ? P.cards.map((c) => ({ ...c, col: '#3fa35a' })) : P.vit ? P.vit.map((id) => ({ title: en(I.VIT[id].name), tag: 'Vitamin', desc: 'Forget it', col: '#f6d860' }))
 		: P.ids.map((id, i) => ({ title: en(I.IT[id].name), tag: I.RAR[I.IT[id].rar].toUpperCase() + (prices ? ' · ' + prices[i] + ' ₽' : ''), desc: I.itemText(id), col: I.RAR_COL[I.IT[id].rar] }));
-	el.innerHTML = `<h2>${P.title}${P.sub ? ' · ' + P.sub : ''}${prices ? ' · you have ' + run.coins + ' ₽' : ''}</h2>` + list.map((c, i) => `<button data-p="${i}"${P.taken.includes(i) ? ' disabled style="opacity:.35' : ' style="'};border-color:${c.col}"><b>${i + 1} · ${c.title}</b><i>${c.tag}</i><span>${c.desc}</span></button>`).join('')
+	el.innerHTML = `<h2>${P.title}${P.sub ? ' · ' + P.sub : ''}${prices ? ' · you have ' + coins + ' ₽' : ''}</h2>` + list.map((c, i) => `<button data-p="${i}"${P.taken.includes(i) ? ' disabled style="opacity:.35' : ' style="'};border-color:${c.col}"><b>${i + 1} · ${c.title}</b><i>${c.tag}</i><span>${c.desc}</span></button>`).join('')
 		+ (P.kind === 'shop' || P.kind === 'hypno' || P.onClose ? `<div class="tools"><button data-p="-1">Esc · ${P.cancel || 'Leave'}</button></div>` : '');
 	el.style.display = 'grid';
 }
-function takePick(i) { if (!run || !run.pick) return false; const ok = i < 0 ? pickClose(run) : pickTake(run, i); shownPick = null; showPick(); return ok; }
+function takePick(i) { if (!myRun || !myRun.pick) return false; const ok = i < 0 ? pickClose(myRun) : pickTake(myRun, i); shownPick = null; showPick(); return ok; }
 /** (P4) A run's tools at a level-up: 'refresh' (other cards), 'skip' (no card, a little money), 'banish' (then pick a card). */
 function useTool(name) {
 	if (!myRun || !myRun.lv || !world.pl.choices) return false;
@@ -494,7 +495,7 @@ function pickCard(i) {
 }
 if (FIGHT) {
 	document.getElementById('cards').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b && b.dataset.p !== undefined) takePick(+b.dataset.p); else if (b && b.dataset.tool) useTool(b.dataset.tool); else if (b) pickCard(+b.dataset.i); });
-	addEventListener('keydown', (e) => { const i = ['Digit1', 'Digit2', 'Digit3', 'Digit4'].indexOf(e.code); if (run && run.pick) { if (i >= 0) takePick(i); else if (e.code === 'Escape') takePick(-1); return; } if (i >= 0 && i < 3) pickCard(i); const tl = { KeyF: 'refresh', KeyG: 'skip', KeyB: 'banish' }[e.code]; if (tl) useTool(tl); });
+	addEventListener('keydown', (e) => { const i = ['Digit1', 'Digit2', 'Digit3', 'Digit4'].indexOf(e.code); if (myRun && myRun.pick) { if (i >= 0) takePick(i); else if (e.code === 'Escape') takePick(-1); return; } if (i >= 0 && i < 3) pickCard(i); const tl = { KeyF: 'refresh', KeyG: 'skip', KeyB: 'banish' }[e.code]; if (tl) useTool(tl); });
 }
 let noteText = '', noteUntil = 0;
 const noteLog = [];   // (the last notes shown: one can be gone from the screen in a moment)
@@ -523,7 +524,7 @@ function showHud() {
 		+ (!world || !world.weather ? '' : `\nweather: ${world.weather.kind} (${Math.ceil(world.weather.dur - world.weather.t)} s)`)
 		+ (!world || !world.pl.ability ? '' : `\nability: ${world.pl.ability}${world.pl.items.length ? ' · holding: ' + world.pl.items.join(', ') : ''}`)
 		+ (!world ? '' : `\nLv ${world.pl.level} · XP ${Math.floor(world.pl.xp)} / ${world.pl.xpNext}\nHP ${Math.ceil(world.pl.hp)} / ${world.pl.maxHp} · ${world.enemies.length} enemies · ${world.stats.kills} KOs · ${Math.floor(world.t / 60)}:${String(Math.floor(world.t % 60)).padStart(2, '0')} · ${world.pl.moves.map((m) => m.id + ' Lv' + (m.xlv || m.lvl)).join(', ')}`)
-		+ (!run || !run.lv ? '' : `\nvitamins: ${world.pl.xv.map((v) => v.id + ' ' + v.lvl).join(', ') || 'none'} · ₽ ${run.coins} · luck ${Math.round(world.pl.xluck || 0)}${world.pl.xproc.shield > 0 ? ' · shield ' + Math.round(world.pl.xproc.shield) : ''}${run.cap && run.cap.sa.length ? '\nteam: ' + run.cap.sa.map((a) => (GG.DEX_BY[a.dex] || {}).name + ' (' + a.type + ')').join(', ') : ''}${run.held ? ' · holding ' + run.held : ''}\nitems: ${Object.keys(world.pl.xi).map((id) => id + (world.pl.xi[id] > 1 ? ' ×' + world.pl.xi[id] : '')).join(', ') || 'none'}`) + (noteText && performance.now() < noteUntil ? `\n» ${noteText}` : '');
+		+ (!myRun || !myRun.lv ? '' : `\nvitamins: ${world.pl.xv.map((v) => v.id + ' ' + v.lvl).join(', ') || 'none'} · ₽ ${run ? run.coins : rv ? rv.coins : 0} · luck ${Math.round(world.pl.xluck || 0)}${world.pl.xproc.shield > 0 ? ' · shield ' + Math.round(world.pl.xproc.shield) : ''}${myRun.cap && myRun.cap.sa.length ? '\nteam: ' + myRun.cap.sa.map((a) => (GG.DEX_BY[a.dex] || {}).name + ' (' + a.type + ')').join(', ') : ''}${myRun.held ? ' · holding ' + myRun.held : ''}\nitems: ${Object.keys(world.pl.xi).map((id) => id + (world.pl.xi[id] > 1 ? ' ×' + world.pl.xi[id] : '')).join(', ') || 'none'}`) + (noteText && performance.now() < noteUntil ? `\n» ${noteText}` : '');
 }
 
 // ---------------------------------------------------------------- boot
