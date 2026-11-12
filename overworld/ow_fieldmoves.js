@@ -527,6 +527,14 @@ function enterWarp(w) {
 	{
 		const dest = parseInt(w.dest_warp_id, 10);
 		if (dest === -1) { backWarp(); return; } // backward warp — never gated
+		// POKeMON TOWER 6F: the stairs to 7F are the MAROWAK ghost's to guard. Its two trigger tiles turn you back, but a
+		// player already STANDING on one (a save or a reload made while its words were up leaves you there) could step
+		// on to the stairs and go up with the ghost never met: MR. FUJI rescued, the scene never played (tester report
+		// 2026-11-11). The stairs themselves ask the ghost now: until it is laid to rest they run its script instead.
+		if (world.current.name === 'PokemonTower_6F' && /POKEMON_TOWER_7F/.test(w.dest_map || '') && !Story.getVar('VAR_MAP_SCENE_POKEMON_TOWER_6F') && S.mapScripts && S.mapScripts.PokemonTower_6F_EventScript_MarowakGhost) {
+			if (!cutscene.blocking) runScriptLabel('PokemonTower_6F_EventScript_MarowakGhost');
+			return;
+		}
 		// TRICK HOUSE doors: the maze exit wants the scroll, the entrance door
 		// leads to the CURRENT puzzle, and the End room lets out at the entrance
 		const th = trickWarp(w);
