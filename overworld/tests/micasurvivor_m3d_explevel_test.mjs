@@ -201,9 +201,9 @@ const mv = (S, id) => S.w.pl.moves.find((m) => m.id === id);
 	const up = pl.choices.findIndex((q) => q.type === 'up' && q.kind === 'move');
 	A(up < 0 || !pl.choices[up].xban, 'a move you already have cannot be banished');
 	const lv = pl.level;
-	A(skip(S) && S.lv.coins === 10 && pl.pending === pend - 1 && pl.level === lv && S.lv.log.some((q) => q[1] === 'skip'), 'Skip: no card, 10 of the run\'s money in zone 1');
+	A(skip(S) && S.coins === 10 && pl.pending === pend - 1 && pl.level === lv && S.lv.log.some((q) => q[1] === 'skip'), 'Skip: no card, 10 of the run\'s money in zone 1');
 	S.zone = 3; stepRun(S, null);
-	A(pl.choices && skip(S) && S.lv.coins === 40 && !skip(S), 'in zone 3 a Skip pays 30; twice, then no more', [S.lv.coins, S.lv.skips]);
+	A(pl.choices && skip(S) && S.coins === 40 && !skip(S), 'in zone 3 a Skip pays 30; twice, then no more', [S.coins, S.lv.skips]);
 	S.zone = 1;
 }
 
