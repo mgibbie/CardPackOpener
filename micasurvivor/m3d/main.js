@@ -15,6 +15,7 @@ import { hostAdd, hostStep, hostFrame, hostApply, guestWorld, guestSync, guestMs
 import { generate, BIOMES } from './gen.js';
 import { expFrom, newRun, stepRun, hudLine, result as runResult, setZoneTime } from './expedition.js';
 import { refresh as refreshCards, skip as skipCards, banish as banishCard } from './explevel.js';
+import { EK, ecoView, pickTake, pickClose, shopPrices } from './expeco.js';
 
 const Q = new URLSearchParams(location.search);
 // P3: ?gen=<seed>&fight=1 is a FIGHT on that level (combat.js): enemies arrive and come for you, your moves fire by
@@ -53,7 +54,7 @@ const world = run ? run.w : JOIN ? guestWorld(room, dataFrom(GG), { id: MYID, de
 	: FIGHT ? newWorld(room, dataFrom(GG), { bosses: BOSSES, ability: Q.get('ability') === '0' ? null : Q.get('ability') || 'auto', items: Q.get('items') ? Q.get('items').split(',') : [], dex: DEX, moves: MOVES, seed: (GEN + 1) * 7919, tune: TUNE, cast: FIGHT_CAST, cap: Q.has('cap') ? +Q.get('cap') | 0 : undefined, weather: Q.get('weather') === '0' ? false : undefined, autoPick: Q.has('auto') ? +Q.get('auto') | 0 : undefined }) : null;
 const state = world ? world.pl.s : newState(room, TUNE);
 const TYPE_COLOR = (GG.U && GG.U.TYPE_COLOR) || {};
-const PICK_COLOR = { xp: '#6fd3ff', xpBig: '#3da8ff', heal: '#5fe08a', magnet: '#ff9ed8', bomb: '#ff7b3d' };
+const PICK_COLOR = { xp: '#6fd3ff', xpBig: '#3da8ff', heal: '#5fe08a', magnet: '#ff9ed8', bomb: '#ff7b3d', item: '#ffd23f' };
 const { renderer, scene, camera } = makeRenderer(canvas);
 let roomMeshes = [];
 /** Show a level (P4: a run moves from one to the next: the old one's meshes go). */
@@ -211,6 +212,8 @@ function draw(t) {
 		// coming down on its mark), patches (a disc on the floor, drawn once, fading over its life)
 		// pickups: beads that bob over the floor (XP blue, a big one for a big orb; a berry green, a magnet pink, a bomb orange)
 		if (world) for (const p of world.pickups) shots.add(p.x, p.y + 0.3 + Math.abs(Math.sin(p.t * 0.8)) * 0.18, p.z, p.kind === 'xpBig' ? 0.24 : p.kind === 'xp' ? 0.15 : 0.26, PICK_COLOR[p.kind]);
+		// (P4) what the zone holds: a bead in each thing's colour (a big one for an altar; one being charged swells)
+		if (run && run.eco) for (const o of ecoView(run)) { const big = /unown|comet|challenge|cursedaltar|greed|meowth|slots/.test(o.kind); shots.add(o.x, o.y + (big ? 1.1 : 0.55) + Math.sin(t * 2 + o.i) * 0.08, o.z, (big ? 0.42 : EK.SMALL.includes(o.kind) ? 0.22 : 0.3) * (1 + o.ch * 0.8), EK.COL[o.kind]); }
 		if (world) for (const e of world.enemies) if (e.shield > 0) shots.add(e.a.x, e.a.y + Math.max(1.2, e.cr * 2) + 0.35, e.a.z, 0.16, '#7fc8ff');   // a shield: a blue bead over its head
 		if (world) for (const p of world.eshots) shots.add(p.x, p.y, p.z, Math.max(0.2, p.r), '#ff5f8f');   // an enemy's shot: always the same angry pink
 		// Expedition's effects: a bomb on its arc, a whirl on the floor, a wave's ring spreading
@@ -265,6 +268,7 @@ function frame(now) {
 			if (run) {   // (P4) the run's own rules round the fight's tick: banners, the next zone's level, the end
 				stepRun(run, input, K.TICK);
 				for (const q of run.says) note(q.text, q.s * 1000);
+				if (run.pick !== shownPick) showPick();
 				if (run.w.room !== room) { room = run.w.room; mapBase = null; showRoom(); state.facing = cam.yaw; }
 				if (run.ended && !runOver) { runOver = runResult(run); note(`${runOver.title} ${runOver.line} · score ${runOver.score}`, 600000); }
 			} else tick(world, input, K.TICK);
@@ -297,6 +301,7 @@ function showMap() {
 	// the exit: a ring that beats; the spawn: a small dot
 	g.lineWidth = 2; g.strokeStyle = '#fff2a0'; g.beginPath(); g.arc(room.exit[0] * k, room.exit[2] * k, 5 + 2 * Math.sin(performance.now() / 260), 0, 6.2832); g.stroke();
 	g.fillStyle = '#fff'; g.fillRect(room.spawn[0] * k - 1.5, room.spawn[2] * k - 1.5, 3, 3);
+	if (run && run.eco) for (const o of ecoView(run)) { g.fillStyle = EK.COL[o.kind]; g.fillRect(o.x * k - 1.5, o.z * k - 1.5, 4, 4); }   // (P4) what the zone holds, in its colours
 	g.fillStyle = '#5fc8ff'; for (const m of mates()) g.fillRect(m.s.x * k - 2, m.s.z * k - 2, 5, 5);   // (P3n) the other players: blue squares
 	if (world || view) { g.fillStyle = '#5b1630'; for (const e of world ? world.enemies : view.enemies) g.fillRect(e.a.x * k - 1, e.a.z * k - 1, 3, 3); }   // (P3) enemies: dark dots
 	// you: an arrow the way you face (map: +x right, +z down)
@@ -427,7 +432,19 @@ function showCards() {
 	el.innerHTML = `<h2>Level ${world.pl.level}</h2>` + cs.map((c, i) => `<button data-i="${i}" style="border-color:${c.tier > 0 && RC[c.tier] ? RC[c.tier] : TYPE_COLOR[c.mtype] || '#8fa3c4'}"><b>${i + 1} · ${c.title}</b><i>${(c.tier > 0 ? c.rarName.toUpperCase() + ' · ' : '') + (c.tag || '')}</i><span>${c.desc || (GG.Moves.BY_ID[c.id] ? GG.Moves.BY_ID[c.id].kind : '')}</span></button>`).join('') + tools;
 	el.style.display = 'grid';
 }
-let banMode = false;
+let banMode = false, shownPick = null;
+/** (P4) A choice of the run's economy: a ball's or an altar's items, Meowth's stall (with prices), Hypno's question. */
+function showPick() {
+	const el = document.getElementById('cards'), P = run.pick; shownPick = P;
+	if (!P) { if (!world.pl.choices) { el.style.display = 'none'; el.innerHTML = ''; } return; }
+	const I = GG.ExpItems, EN = GG.ExpEN || {}, en = (s) => EN[s] || s, prices = P.kind === 'shop' ? shopPrices(run, P.ids) : null;
+	const list = P.vit ? P.vit.map((id) => ({ title: en(I.VIT[id].name), tag: 'Vitamin', desc: 'Forget it', col: '#f6d860' }))
+		: P.ids.map((id, i) => ({ title: en(I.IT[id].name), tag: I.RAR[I.IT[id].rar].toUpperCase() + (prices ? ' · ' + prices[i] + ' ₽' : ''), desc: I.itemText(id), col: I.RAR_COL[I.IT[id].rar] }));
+	el.innerHTML = `<h2>${P.title}${P.sub ? ' · ' + P.sub : ''}${prices ? ' · you have ' + run.coins + ' ₽' : ''}</h2>` + list.map((c, i) => `<button data-p="${i}"${P.taken.includes(i) ? ' disabled style="opacity:.35' : ' style="'};border-color:${c.col}"><b>${i + 1} · ${c.title}</b><i>${c.tag}</i><span>${c.desc}</span></button>`).join('')
+		+ (P.kind === 'shop' || P.kind === 'hypno' ? '<div class="tools"><button data-p="-1">Esc · Leave</button></div>' : '');
+	el.style.display = 'grid';
+}
+function takePick(i) { if (!run || !run.pick) return false; const ok = i < 0 ? pickClose(run) : pickTake(run, i); shownPick = null; showPick(); return ok; }
 /** (P4) A run's tools at a level-up: 'refresh' (other cards), 'skip' (no card, a little money), 'banish' (then pick a card). */
 function useTool(name) {
 	if (!run || !run.lv || !world.pl.choices) return false;
@@ -444,8 +461,8 @@ function pickCard(i) {
 	if (world.pl.pending > 0) { tick(world, null, K.TICK); fightEvents(world.events); }   // (another level waiting: its cards come up at once)
 }
 if (FIGHT) {
-	document.getElementById('cards').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b && b.dataset.tool) useTool(b.dataset.tool); else if (b) pickCard(+b.dataset.i); });
-	addEventListener('keydown', (e) => { const i = ['Digit1', 'Digit2', 'Digit3'].indexOf(e.code); if (i >= 0) pickCard(i); const tl = { KeyF: 'refresh', KeyG: 'skip', KeyB: 'banish' }[e.code]; if (tl) useTool(tl); });
+	document.getElementById('cards').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b && b.dataset.p !== undefined) takePick(+b.dataset.p); else if (b && b.dataset.tool) useTool(b.dataset.tool); else if (b) pickCard(+b.dataset.i); });
+	addEventListener('keydown', (e) => { const i = ['Digit1', 'Digit2', 'Digit3', 'Digit4'].indexOf(e.code); if (run && run.pick) { if (i >= 0) takePick(i); else if (e.code === 'Escape') takePick(-1); return; } if (i >= 0 && i < 3) pickCard(i); const tl = { KeyF: 'refresh', KeyG: 'skip', KeyB: 'banish' }[e.code]; if (tl) useTool(tl); });
 }
 let noteText = '', noteUntil = 0;
 function note(t, ms) { noteText = t; noteUntil = performance.now() + ms; }
@@ -470,7 +487,7 @@ function showHud() {
 		+ (!world || !world.weather ? '' : `\nweather: ${world.weather.kind} (${Math.ceil(world.weather.dur - world.weather.t)} s)`)
 		+ (!world || !world.pl.ability ? '' : `\nability: ${world.pl.ability}${world.pl.items.length ? ' · holding: ' + world.pl.items.join(', ') : ''}`)
 		+ (!world ? '' : `\nLv ${world.pl.level} · XP ${Math.floor(world.pl.xp)} / ${world.pl.xpNext}\nHP ${Math.ceil(world.pl.hp)} / ${world.pl.maxHp} · ${world.enemies.length} enemies · ${world.stats.kills} KOs · ${Math.floor(world.t / 60)}:${String(Math.floor(world.t % 60)).padStart(2, '0')} · ${world.pl.moves.map((m) => m.id + ' Lv' + (m.xlv || m.lvl)).join(', ')}`)
-		+ (!run || !run.lv ? '' : `\nvitamins: ${world.pl.xv.map((v) => v.id + ' ' + v.lvl).join(', ') || 'none'} · ₽ ${run.lv.coins} · luck ${Math.round(world.pl.xluck || 0)}${world.pl.xproc.shield > 0 ? ' · shield ' + Math.round(world.pl.xproc.shield) : ''}`) + (noteText && performance.now() < noteUntil ? `\n» ${noteText}` : '');
+		+ (!run || !run.lv ? '' : `\nvitamins: ${world.pl.xv.map((v) => v.id + ' ' + v.lvl).join(', ') || 'none'} · ₽ ${run.coins} · luck ${Math.round(world.pl.xluck || 0)}${world.pl.xproc.shield > 0 ? ' · shield ' + Math.round(world.pl.xproc.shield) : ''}\nitems: ${Object.keys(world.pl.xi).map((id) => id + (world.pl.xi[id] > 1 ? ' ×' + world.pl.xi[id] : '')).join(', ') || 'none'}`) + (noteText && performance.now() < noteUntil ? `\n» ${noteText}` : '');
 }
 
 // ---------------------------------------------------------------- boot
@@ -492,7 +509,7 @@ function showHud() {
 
 // what a test (and a curious owner in the console) can reach
 window.__m3d = {
-	get ready() { return ready; }, state, get room() { return room; }, run, setZoneTime: (sec) => run && setZoneTime(run, sec), useTool, K, TUNE, TYPES, TRAITS, cam, crowd, sheets, stats, gen: GEN, biome: BIOME, world, numbers, net, tape, myId: MYID, mates, get coView() { return coView; }, playTape, get view() { return view; }, get viewer() { return viewer; }, get watchT() { return watchT; }, addBoss: (dex, x, z, o) => addBoss(world, dex, x, z, o), drop: (kind, x, z, v) => drop(world, kind, x, groundAt(room, x, z), z, v), pickCard, addEnemy: (dex, x, z, o) => addEnemy(world, dex, x, z, o), holdExit: false, get leaving() { return leaving; },
+	get ready() { return ready; }, state, get room() { return room; }, run, setZoneTime: (sec) => run && setZoneTime(run, sec), useTool, takePick, ecoView: () => (run ? ecoView(run) : []), K, TUNE, TYPES, TRAITS, cam, crowd, sheets, stats, gen: GEN, biome: BIOME, world, numbers, net, tape, myId: MYID, mates, get coView() { return coView; }, playTape, get view() { return view; }, get viewer() { return viewer; }, get watchT() { return watchT; }, addBoss: (dex, x, z, o) => addBoss(world, dex, x, z, o), drop: (kind, x, z, v) => drop(world, kind, x, groundAt(room, x, z), z, v), pickCard, addEnemy: (dex, x, z, o) => addEnemy(world, dex, x, z, o), holdExit: false, get leaving() { return leaving; },
 	setInput(o) { override = o ? { ...noInput(), ...o } : null; },
 	rowOf: (facing, yaw) => facingRow(facing, yaw === undefined ? cam.yaw : yaw),
 	quadOf: (key, frame, row) => { const s = sheets.get(key); return spriteQuad(s.meta, s.img, frame, row, 1, s.lift); },

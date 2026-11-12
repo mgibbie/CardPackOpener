@@ -702,6 +702,40 @@ shrines' looks, Survival, and co-op, spectate and replay of a run.
 
 Tests: `micasurvivor_m3d_explevel_test.mjs` (66 checks, node), the run suite 76, the page test 18 (was 14).
 
+## 5.19 P4, third part: built (2026-11-11). The run's money, its items, and what a zone holds.
+
+`micasurvivor/m3d/expeco.js` (the economy) and more of `explevel.js` (the items).
+
+- **Money (₽)**: 0.2 a KO, 1 an elite or a summoner, 5 an alpha or a totem, 20 x zone a guardian; gold rocks; a
+  Skip. The Nugget, the Amulet Coin and Gengar's greed multiply it. It is the run's own and is not kept.
+- **What a zone holds** (the 2D list, 18 kinds): Poké Balls (paid, free, cursed), Meowth's stalls, the four Unown
+  altars, the comet, the challenge altar, the cursed altar, Gengar's altar, Ditto, Hypno, cages, gold rocks,
+  berry bushes, a slot machine. No button: you stand in a thing, as in 2D. A choice (a ball's items, Meowth's
+  stall, Hypno) holds the fight.
+- **The 60 items**: they stack to a cap and their stats add up with the vitamins'. The ones that do something
+  do it: thorns, the Focus Band, Revive, Max Revive, the Revival Herb, Sitrus, the Weakness Policy, the Expert
+  Belt, the Deep Sea Tooth, execute, flinch, the Relic Crown's time stop, and the four epic strikes (bolts, a
+  solar strike, a ring of fire, a rift). An alpha and a roaming legendary leave one where they fall.
+- **The curses**: a cursed ball, the cursed altar and Gengar's raise the enemies' HP and damage, the arrivals,
+  the XP, the money and the cards in a ball, as in 2D.
+
+**The 2D game's prices and tables are called as they are**: a ball's price, Meowth's list and the market's
+heat, a cage's and a spin's cost, the reels and the pay table (`G.ExpEco`), the items' table and stats
+(`G.ExpItems`).
+
+**Where 3D had to decide.**
+- A 3D zone is 98 m across, far smaller than a 2D one. Things stand 5 cells apart (3 for rocks and bushes; 2D: 8
+  and 4), and a zone without room for all 43 gets as many as fit, the big ones first (42.8 of them on average over 180
+  zones, never fewer than 37).
+- A thing counts you only on its own level, as the altar does.
+- An item's strike reaches what is near it on about its own level (2.4 m up or down).
+
+**Not yet**: the comet's + 25 % Ultimate charge (no Ultimates yet); a guardian's base held item; Eviolite (it
+needs the League); the fog of war, the zone map and the tips; Survival's respawns. And still of P4: capture,
+the League, the run's pay and records, the other two shrines' looks, Survival, co-op, spectate and replay.
+
+Tests: `micasurvivor_m3d_expeco_test.mjs` (109 checks, node), the page test 23 (was 18).
+
 ## 6. Dive in 2D: built
 
 **D0 — find the stairs (small; can ship first, on its own).** *Built 2026-11-11 (`overworld/tests/micasurvivor_dive_stairs_test.mjs`). As built: the stairs took their own orange mark, so the rocks and Meowth keep their gold; the HUD arrow comes up after 25 s on a floor, or at once when its boss falls.*

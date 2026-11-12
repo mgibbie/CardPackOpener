@@ -11,11 +11,13 @@
 // swarm; guardians and the legendary with HP from your damage and exhaustion; the difficulty tiers; the timeline's
 // events (alpha, swarm, stampede, flock, rock slide, elite wave, totem, summoner, roaming legendary); the score.
 // Level-ups are Expedition's own (explevel.js): move levels and rolls, vitamins, Training, the three tools.
-// Still to come: the in-run economy and its interactables, the 60 items, capture, the run's pay.
+// The run's money, its 60 items and what a zone holds to stand in are expeco.js's.
+// Still to come: capture, the League, the run's pay.
 import { K, CELL, makeRoom, setCell, groundAt, newState } from './sim.js';
 import { generate, footGraph, rng as makeRng, LEVEL } from './gen.js';
 import { CK, U, newWorld, tick, addEnemy, addBoss, drop, hazard, spawnRate, xpFor } from './combat.js';
-import { levelFrom, setup as setupLevels, tickStats, curse } from './explevel.js';
+import { levelFrom, setup as setupLevels, tickStats, curse, takeItem, dropItem } from './explevel.js';
+import { ecoFrom, setupEco, tickEco, mods, pickTake, pickClose } from './expeco.js';
 
 export const XK = {
 	BIOME: { viridian: 'meadow', mtmoon: 'peaks', cerulean: 'marsh' },
@@ -41,12 +43,12 @@ function mix(...vals) {
 export function expFrom(G) {
 	const C = G.ExpClassic, T = G.ExpTier;
 	return { K: C.K, MAPS: C.MAPS, MAP_IDS: C.MAP_IDS, DIFFS: C.DIFFS, plan: (seed, map, zone, diff) => C.plan(seed, map, zone, diff), tier: (d) => T.of(d),
-		ESCORT: T.K.ESCORT, L: G.ExpLevel && G.ExpItems ? levelFrom(G) : null, score: (parts, diff) => T.score(parts, diff), medal: T.medal ? (s, diff, map) => T.medal(s, diff, map) : null, exhaustion: C.exhaustion };
+		ESCORT: T.K.ESCORT, L: G.ExpLevel && G.ExpItems ? levelFrom(G) : null, E: G.ExpEco ? ecoFrom(G) : null, score: (parts, diff) => T.score(parts, diff), medal: T.medal ? (s, diff, map) => T.medal(s, diff, map) : null, exhaustion: C.exhaustion };
 }
 
 // ---------------------------------------------------------------- the zones
 /** Cells you can walk to from the spawn and back again (no jumps). */
-function walkable(room) {
+export function walkable(room) {
 	const g = footGraph(room), n = g.length, back = Array.from({ length: n }, () => []);
 	for (let i = 0; i < n; i++) for (const b of g[i]) back[b].push(i);
 	const flood = (edges) => { const seen = new Uint8Array(n), from = Math.floor(room.spawn[2] / CELL) * room.w + Math.floor(room.spawn[0] / CELL), q = [from]; seen[from] = 1; for (let k = 0; k < q.length; k++) for (const b of edges[q[k]]) if (!seen[b]) { seen[b] = 1; q.push(b); } return seen; };
@@ -54,7 +56,7 @@ function walkable(room) {
 	for (let i = 0; i < n; i++) a[i] = a[i] && b[i] ? 1 : 0;
 	return a;
 }
-const flat3 = (room, cx, cz) => {
+export const flat3 = (room, cx, cz) => {
 	const h = room.cells[cz * room.w + cx];
 	for (let dz = -1; dz <= 1; dz++) for (let dx = -1; dx <= 1; dx++) { const i = (cz + dz) * room.w + cx + dx; if (room.cells[i] !== h || room.slopes.has(i) || room.water.has(i) || room.mats.has(i)) return false; }
 	return true;
@@ -111,7 +113,7 @@ export function zoneRoom(seed, map, zone, X) {
 // ---------------------------------------------------------------- the run
 /** A Classic run. o: { map, diff, seed, touch (a phone: the lower cap), and combat.js's newWorld options (dex, moves,
  *  ability, items, autoPick, …); a move given as [id, n] starts at Expedition level n; levels: false keeps the
- *  base game's level-ups instead of Expedition's }. -> the run: { w (the fight), map, diff, seed, zone, ph, charge, portalT, fs, boss,
+ *  base game's level-ups instead of Expedition's (and then no economy either); eco: false leaves the economy out }. -> the run: { w (the fight), map, diff, seed, zone, ph, charge, portalT, fs, boss,
  *  splits, bosses, log, won, lost, ended, says: [this step's banners] } */
 export function newRun(data, X, o = {}) {
 	const map = X.MAPS[o.map] ? o.map : 'viridian', diff = X.DIFFS.includes(o.diff) ? o.diff : 'normal', seed = (o.seed >>> 0) || 1;
@@ -121,11 +123,12 @@ export function newRun(data, X, o = {}) {
 	const S = { w, X, data, map, diff, seed, touch: !!o.touch, zone: 0, zs: 0, splits: [], log: [], bosses: [], won: false, lost: false, ended: false, dps: [], says: [], wonT: 0 };
 	zoneStart(S, 1, 0);
 	if (own) setupLevels(S, X.L, lv);
+	if (own && X.E && o.eco !== false) setupEco(S);
 	return S;
 }
 const zIdx = (S) => Math.min(3, S.zone) - 1;
 const diffIdx = (S) => Math.max(0, S.X.DIFFS.indexOf(S.diff));
-const say = (S, text, s = 3) => { S.says.push({ text, s }); S.w.events.push({ k: 'say', text, s }); };
+export const say = (S, text, s = 3) => { S.says.push({ text, s }); S.w.events.push({ k: 'say', text, s }); };
 const name = (S, dex) => { const m = S.data.mon(dex); return m ? m.name : ''; };
 /** How many enemies there may be at once. */
 export const capNow = (S) => Math.round((S.touch ? S.X.K.CAP_TOUCH : S.X.K.CAP) * (S.fs ? S.X.K.FINAL_CAP : 1) * S.X.tier(S.diff).cap);
@@ -177,13 +180,16 @@ export function spawn(S, dex, x, z, o = {}) {
 		hp: (1 + CK.COOP.hp * (party - 1)) * Math.pow(XKK.FINAL_HP, m) * (o.hp || 1) * TR.hp, dmg: Math.pow(XKK.FINAL_DMG, m) * (o.dmg || 1) * TR.dmg, spd: (o.spd === undefined ? 1 : o.spd) * TR.spd });
 	e.xp = Math.round(def.xp * XKK.XP_K * (o.xp || 1) * TR.xp);
 	const cu = curse(S); if (cu > 0) { e.maxHp = e.hp = Math.round(e.maxHp * (1 + cu)); e.dmg *= 1 + cu; }   // (the Cursed Incense: + 12 % a level)
+	const xm = mods(S);   // (the cursed balls and altars: + difficulty; Gengar's greed: + XP)
+	if (xm.diff > 0) { e.maxHp = e.hp = Math.round(e.maxHp * (1 + xm.diff)); e.dmg *= 1 + xm.diff; }
+	if (xm.xp > 0) e.xp = Math.round(e.xp * (1 + xm.xp));
 	if (o.scale) { e.scale = o.scale; e.cr = S.data.radius(dex, o.scale); }
 	if (o.kind) { e.xk = o.kind; S.specials.set(e.id, { kind: o.kind, e, t0: t, next: XKK.TOTEM.every, rng: makeRng(mix(S.seed, e.id, 0x70)) }); }
 	return e;
 }
 const inRoom = (room, x, z) => { const cx = Math.floor(x / CELL), cz = Math.floor(z / CELL); return cx >= 1 && cz >= 1 && cx < room.w - 1 && cz < room.h - 1 && room.cells[cz * room.w + cx] < (room.rimH || 8) ? cz * room.w + cx : -1; };
 /** Can a body of this kind arrive at (x, z)? A walker needs floor it can walk to you from. */
-function free(S, x, z, fly) {
+export function free(S, x, z, fly) {
 	const w = S.w, i = inRoom(w.room, x, z); if (i < 0) return false;
 	return fly || !(w.room.water.has(i) || (w.field && w.field.dist[i] < 0));
 }
@@ -204,7 +210,7 @@ function trickle(S, dt, t, zt) {
 	const cap = capNow(S);
 	if (w.enemies.length >= cap) { S.acc = 0; return; }
 	const zi = zIdx(S), teff = Math.max(t, XKK.ZMIN[zi]), TR = S.X.tier(S.diff), party = 1 + w.mates.length;
-	const k = TR.amount * (1 + CK.COOP.rate * (party - 1)) * (S.boss ? XKK.BOSS_RATE : 1) * (S.fs ? XKK.FINAL_SPAWN : 1) * (S.zone === 4 ? XKK.SHRINE_RATE : 1) * (1 + XKK.ZONE_RATE * zi);
+	const k = TR.amount * (1 + CK.COOP.rate * (party - 1)) * (S.boss ? XKK.BOSS_RATE : 1) * (S.fs ? XKK.FINAL_SPAWN : 1) * (S.zone === 4 ? XKK.SHRINE_RATE : 1) * (1 + XKK.ZONE_RATE * zi) * (1 + mods(S).rate);
 	S.acc = Math.min(8, S.acc + spawnRate(teff) * k * dt);
 	const cards = S.plan.cards, nC = Math.min(cards.length, XKK.CARDS0 + Math.floor(Math.max(0, zt) / XKK.CARD_EVERY));
 	while (S.acc >= 1 && w.enemies.length < cap) {
@@ -270,7 +276,9 @@ function tickSpecials(S, dt, t) {
 	for (const [id, sp] of S.specials) {
 		const e = sp.e;
 		if (e.dead) {
-			if (!sp.left) drop(w, 'heal', e.a.x, groundAt(w.room, e.a.x, e.a.z), e.a.z, 0);   // (an alpha's and a roamer's item comes with the economy)
+			const g = groundAt(w.room, e.a.x, e.a.z);
+			if (!sp.left) drop(w, 'heal', e.a.x + (S.lv ? 20 * U : 0), g, e.a.z, 0);
+			if (!sp.left && S.lv && (sp.kind === 'alpha' || sp.kind === 'roam')) drop(w, 'item', e.a.x - 20 * U, g, e.a.z, dropItem(S));   // an alpha and a roamer leave an item too
 			S.specials.delete(id); continue;
 		}
 		if (sp.kind === 'totem' && (sp.next -= dt) <= 0) {
@@ -343,13 +351,20 @@ export function stepRun(S, input, dt = K.TICK) {
 	const w = S.w, XKK = S.X.K;
 	S.says.length = 0;
 	if (S.ended) return S;
+	if (S.pick) {   // a choice is up (a ball's items, Meowth's stall, Hypno): the fight holds until it is made
+		w.events.length = 0;
+		if (w.autoPick === undefined || w.autoPick === null) return S;
+		if (S.pick.kind === 'shop' || S.pick.kind === 'hypno') pickClose(S); else for (let i = 0; S.pick && i < S.pick.ids.length; i++) pickTake(S, i);
+		S.pick = null;
+	}
 	const t0 = w.t;
 	w.cap = capNow(S);
 	tick(w, input, dt);
 	if (w.t === t0) return S;
 	const t = w.t;
 	if (w.pl.dead && !w.mates.length && !w.guest) { S.ended = true; S.lost = true; w.events.push({ k: 'runover', won: false }); return S; }
-	if (S.lv) tickStats(S, dt);
+	if (S.lv) { tickStats(S, dt); for (const ev of w.events) if (ev.k === 'pickup' && ev.kind === 'item') takeItem(S, ev.value); }
+	if (S.eco) tickEco(S, dt);
 	dpsSample(S, t);
 	tickSpecials(S, dt, t);
 	tickBoss(S, t);
@@ -381,6 +396,7 @@ export function hudLine(S) {
 	if (S.zone <= 3 && S.ph < 2) parts.push(S.fs ? 'FINAL SWARM!' : 'FINAL SWARM IN ' + mmss(XKK.FINAL - (w.t - S.zs)));
 	parts.push(S.ph === 0 ? `ALTAR ${m} m` : S.ph === 1 ? 'GUARDIAN' : S.ph === 2 ? `PORTAL ${m} m` : S.ph === 3 ? 'LEGENDARY' : 'COMPLETE!');
 	if (S.boss && S.boss.takenK > 1) parts.push('EXHAUSTED ×' + S.boss.takenK.toFixed(1));
+	if (S.eco) parts.push('₽ ' + S.coins);
 	return parts.join(' · ');
 }
 /** The run's parts for the score, the score itself, and the end screen's lines. */

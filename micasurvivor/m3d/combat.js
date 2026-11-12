@@ -209,6 +209,8 @@ function abIn(w, type, eff) {
 	return k;
 }
 const abSpd = (w) => { const pl = w.pl, fx = pl.ab; if (!fx) return 1; return 1 + abN(pl, 'spd') + (fx.wspd && w.weather && w.weather.kind === fx.wspd && wxLevel(w) > CK.AB.wx ? abN(pl, 'wspd_k') : 0); };
+/** Your attack as a hit uses it (base x upgrades x buffs x ability). */
+export const attackOf = (pl) => atk(pl);
 const atk = (pl) => pl.baseAtk * pl.atkMul * (1 + pl.buffs.atk.n * pl.buffs.atk.amount) * pl.atkK * abAtk(pl) * (pl.wpT > 0 ? 1.5 : 1);   // (… × 1.5 while a Weakness Policy is up)
 const rnd = (w, a, b) => a + w.rand() * (b - a);
 
@@ -274,7 +276,7 @@ function hurtEnemy(w, e, amount, kx, kz, knockU) {
 function kill(w, e) {
 	if (e.dead) return;
 	e.dead = true; e.hp = Math.min(e.hp, 0); w.stats.kills++; w.stats.xp += e.xp;
-	w.events.push({ k: 'kill', id: e.id, x: e.a.x, y: e.a.y, z: e.a.z, xp: e.xp });
+	w.events.push({ k: 'kill', id: e.id, x: e.a.x, y: e.a.y, z: e.a.z, xp: e.xp, boss: !!e.boss, xk: e.xk || null });
 	const y = groundAt(w.room, e.a.x, e.a.z);
 	if (e.boss) {   // a boss bursts into a heap of big orbs, with a berry and a magnet
 		for (let i = 0; i < CK.BOSS.orbs; i++) { const a = w.rand() * 6.2832, dd = rnd(w, 10, 70) * U, x = e.a.x + Math.cos(a) * dd, z = e.a.z + Math.sin(a) * dd, g = groundAt(w.room, x, z); drop(w, 'xpBig', g >= (w.room.rimH || 8) ? e.a.x : x, g >= (w.room.rimH || 8) ? y : g, g >= (w.room.rimH || 8) ? e.a.z : z, Math.ceil(e.xp / CK.BOSS.orbs)); }
@@ -291,7 +293,7 @@ export function drop(w, kind, x, y, z, value = 0) {
 	w.pickups.push(p); return p;
 }
 /** A move's hit lands (the 2D game's `land`): type chart, crit, the all-moves factor. src: the move or the shot. */
-function land(w, e, dmg, kx, kz, knockU, src) {
+export function land(w, e, dmg, kx, kz, knockU, src) {
 	const pl = w.pl, type = src.mtype || src.type;
 	const asleep = e.sleepT > 0 && src.cc !== 'sleep';
 	let k = type ? w.data.typeMult(type, e.types) : 1;
@@ -983,7 +985,7 @@ function spawnTick(w, dt) {
 }
 
 // ---------------------------------------------------------------- experience and level-ups
-function gainXp(w, amount) {
+export function gainXp(w, amount) {
 	const pl = w.pl; pl.xp += amount * pl.xpMul; w.stats.gained += amount * pl.xpMul;
 	while (pl.xp >= pl.xpNext) { pl.xp -= pl.xpNext; pl.level++; pl.xpNext = (w.xpNeed || xpFor)(pl.level); pl.pending++; w.stats.levels++; w.events.push({ k: 'level', level: pl.level }); }
 }

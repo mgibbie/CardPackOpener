@@ -7,6 +7,8 @@
 //     the new level (the old one's meshes are gone, the minimap is the new one's)
 //   * a level-up: Expedition's own cards (a rarity, a move first), the three tools, and with two levels waiting the
 //     second set of cards comes up when the first is taken
+//   * the economy: the zone's things are drawn and on the minimap; a gold rock pays; a Poké Ball opens a choice of
+//     three items that holds the fight, and the one clicked is yours
 //   * the final swarm is announced at 10:00 of the zone's clock
 //   * the whole run to the shrine and the legendary: the page says the expedition is complete, with its score
 //   node overworld/tests/micasurvivor_m3d_expedition_page_test.mjs      (SHOTS=<dir> for screenshots)
@@ -53,7 +55,7 @@ try {
 	await page.evaluate(() => { const w = window.__m3d.world; w.pl.maxHp = w.pl.hp = 1e9; });   // (the run's course is what is tested)
 	const s0 = await page.evaluate(() => { const m = window.__m3d, G = window.G, p = G.ExpClassic.plan(7, 'viridian', 1, 'normal'); return { zone: m.run.zone, ph: m.run.ph, w: m.room.w, same: JSON.stringify(m.run.plan) === JSON.stringify(p), guardian: G.DEX_BY[p.guardian].name, altar: m.room.altar, map: document.getElementById('map').style.display }; });
 	A(s0.zone === 1 && s0.ph === 0 && s0.w === 51 && s0.same && s0.map === 'block', `zone 1 of the run: a 7 x 7-tile level, the 2D game's plan for it (guardian: ${s0.guardian}), the minimap up`, JSON.stringify(s0));
-	A(await hudHas(/ZONE 1\/3 · FINAL SWARM IN 9:\d\d · ALTAR \d+ m · charge 0 %/), 'the readout says the zone, the final swarm\'s countdown and how far the altar is', await hud());
+	A(await hudHas(/ZONE 1\/3 · FINAL SWARM IN 9:\d\d · ALTAR \d+ m · ₽ 0 · charge 0 %/), 'the readout says the zone, the final swarm\'s countdown and how far the altar is', await hud());
 
 	// ---- arrivals: the zone's own species, drawn
 	const arrived = await waitFor(() => page.evaluate(() => window.__m3d.world.stats.spawned >= 3 && window.__m3d.world.enemies.length >= 1), 30000);
@@ -76,9 +78,30 @@ try {
 	const second = await waitFor(() => page.evaluate(() => { const m = window.__m3d; return m.world.pl.pending === 1 && !!m.world.pl.choices && document.querySelectorAll('#cards button[data-i]').length === 3 && document.getElementById('cards').style.display === 'grid'; }), 3000);
 	A(second, 'one card taken: the second level\'s cards come up at once');
 	await page.keyboard.press('KeyG');
-	const c2 = await page.evaluate(() => { const m = window.__m3d; return { pending: m.world.pl.pending, coins: m.run.lv.coins, shown: document.getElementById('cards').style.display, moves: m.world.pl.moves.map((q) => q.id + (q.xlv || 1)) }; });
+	const c2 = await page.evaluate(() => { const m = window.__m3d; return { pending: m.world.pl.pending, coins: m.run.coins, shown: document.getElementById('cards').style.display, moves: m.world.pl.moves.map((q) => q.id + (q.xlv || 1)) }; });
 	A(c2.pending === 0 && c2.coins === 10 && c2.shown === 'none' && await hudHas(/vitamins: .* · ₽ 10 · luck 0/), 'Skip (G): no card, 10 of the run\'s money; the readout shows the vitamins, the money and the luck', JSON.stringify(c2) + (await hud()));
 	await page.evaluate(() => { window.__m3d.world.autoPick = 0; });   // (from here the test takes the first card of any level)
+
+	// ---- the economy: a rock, a ball
+	const things = await page.evaluate(() => window.__m3d.ecoView().map((o) => o.kind));
+	A(things.includes('ball') && things.includes('rock') && things.length >= 12, `the zone holds ${things.length} things to find (balls, rocks, altars…)`, things.join());
+	const goTo = (kind) => page.evaluate((k) => { const m = window.__m3d, o = m.ecoView().find((q) => q.kind === k); m.run.acc = -1e9; for (const e of m.world.enemies) e.dead = true; m.put(o.x, o.z); return o.i; }, kind);
+	await goTo('rock');
+	const paid = await waitFor(() => page.evaluate(() => window.__m3d.run.coins > 10), 3000);
+	A(paid && await hudHas(/ZONE 1\/3 .* · ₽ \d\d/), 'a gold rock, touched: its ₽ are in the readout', await hud());
+	await page.evaluate(() => { window.__m3d.run.coins = 60; window.__m3d.world.autoPick = undefined; });   // (this choice is made by hand)
+	await goTo('ball');
+	const open = await waitFor(() => page.evaluate(() => !!window.__m3d.run.pick && document.querySelectorAll('#cards button[data-p]').length === 3), 4000);
+	const p0 = await page.evaluate(() => { const m = window.__m3d; return { ids: m.run.pick.ids, coins: m.run.coins, t: m.world.t, title: document.querySelector('#cards h2').textContent, first: document.querySelector('#cards button[data-p] b').textContent }; });
+	A(open && p0.coins === 42 && /Poké Ball · Choose 1 of 3/.test(p0.title), `a Poké Ball: 18 ₽, and three items to choose from ("${p0.first}" …)`, JSON.stringify(p0));
+	await shot('m3d_exp_ball.png');
+	await sleep(400);
+	const held = await page.evaluate(() => window.__m3d.world.t);
+	A(held === p0.t, 'the fight holds while you choose');
+	await page.click('#cards button[data-p="1"]');
+	const p1 = await page.evaluate(() => { const m = window.__m3d; return { pick: !!m.run.pick, items: Object.keys(m.world.pl.xi), shown: document.getElementById('cards').style.display }; });
+	A(!p1.pick && p1.items.length === 1 && p1.items[0] === p0.ids[1] && p1.shown === 'none' && await hudHas(new RegExp('items: ' + p0.ids[1])), 'click the second: it is yours (the readout lists it), and the fight goes on', JSON.stringify(p1));
+	await page.evaluate(() => { window.__m3d.world.autoPick = 0; });
 
 	// ---- the altar, the guardian, the portal
 	const hush = () => page.evaluate(() => { const m = window.__m3d; m.run.acc = -1e9; for (const e of m.world.enemies) if (e !== m.run.boss) e.dead = true; });
