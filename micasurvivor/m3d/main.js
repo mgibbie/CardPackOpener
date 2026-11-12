@@ -88,7 +88,9 @@ const LAB_META = (() => {
 	} catch (e) { console.warn('the Lab could not be read: ' + (e && e.message)); return null; }
 })();
 const UPGRADES = SAVE_OK ? perksOf(GG, baseSave(), DEX) : null;   // (the upgrades bought for this Pokémon's family: a run that can be kept starts with them)
-const run = EXP ? newRun(dataFrom(GG), XF, { perks: UPGRADES, ultAuto: SAVE_OK && GG.ExpSave.get('ult.auto.on') > GG.ExpSave.get('ult.auto.off'), wild: WILD, meta: LAB_META, form: +Q.get('form') || 0, seed: GEN, map: Q.get('map'), diff: Q.get('diff'), mode: Q.get('mode') || undefined, dex: DEX, moves: MOVES, tune: TUNE, touch: matchMedia('(pointer: coarse)').matches, league: !Q.has('moves') && Q.get('league') !== '0', ability: Q.get('ability') === '0' ? null : Q.get('ability') || 'auto', items: Q.get('items') ? Q.get('items').split(',') : [], weather: Q.get('weather') === '0' ? false : undefined, autoPick: Q.has('auto') ? +Q.get('auto') | 0 : undefined }) : null;
+// (your League member plays shiny when a shiny of its family is yours: caught in an Expedition, or the one you chose to play as in the 2D game)
+const LEAD_SHINY = SAVE_OK && (() => { const b = baseSave(), fam = GG.ExpLeague && (GG.ExpLeague.BY[DEX] ? DEX : GG.ExpLeague.FAM[DEX]); return (!!fam && GG.ExpSave.has('league.shiny', String(fam))) || !!(b && b.partnerShiny && b.shiny && b.shiny[DEX]); })();
+const run = EXP ? newRun(dataFrom(GG), XF, { shiny: LEAD_SHINY, perks: UPGRADES, ultAuto: SAVE_OK && GG.ExpSave.get('ult.auto.on') > GG.ExpSave.get('ult.auto.off'), wild: WILD, meta: LAB_META, form: +Q.get('form') || 0, seed: GEN, map: Q.get('map'), diff: Q.get('diff'), mode: Q.get('mode') || undefined, dex: DEX, moves: MOVES, tune: TUNE, touch: matchMedia('(pointer: coarse)').matches, league: !Q.has('moves') && Q.get('league') !== '0', ability: Q.get('ability') === '0' ? null : Q.get('ability') || 'auto', items: Q.get('items') ? Q.get('items').split(',') : [], weather: Q.get('weather') === '0' ? false : undefined, autoPick: Q.has('auto') ? +Q.get('auto') | 0 : undefined }) : null;
 if (run) room = run.w.room;
 // (P4) a guest in a run: its own League member in the host's run (expcoop.js); it builds each zone from the run's row
 const grun = XJ ? guestRun(dataFrom(GG), XF, { seed: XJ.seed, map: XJ.map, diff: XJ.diff, id: MYID, dex: DEX, league: !Q.has('moves'), moves: MOVES, tune: TUNE, ability: Q.get('ability') === '0' ? null : Q.get('ability') || undefined, autoPick: Q.has('auto') ? +Q.get('auto') | 0 : undefined }) : null;
@@ -197,10 +199,12 @@ const crowd = [];
 
 // ---------------------------------------------------------------- sheets
 const sheets = new Map();   // 'dex/Anim' -> { batch, meta, img }
-async function sheet(dex, anim, max) {
-	const key = dex + '/' + anim, pm = META[dex], meta = pm && pm.a && pm.a[anim];
+/** The key of a species' sheets: its shiny ones' when it is shiny and has them (`sh` in the sprites' table), as the 2D game. */
+const skey = (dex, shiny) => (shiny && META[dex] && META[dex].sh ? dex + 's' : String(dex));
+async function sheet(dex, anim, max, shiny = false) {
+	const pm = META[dex], meta = pm && pm.a && pm.a[anim], sh = !!shiny && !!pm && !!pm.sh, key = (sh ? dex + 's' : dex) + '/' + anim;
 	if (!meta) return null;
-	const tex = await loadSheet(`../assets/pokemon/${pm.al || dex}/${pm.src ? pm.src + '/' : ''}${anim}.png`);   // (a fallback sheet is in a folder of its own: 42 species, the Megas, some formes)
+	const tex = await loadSheet(`../assets/pokemon/${pm.al || dex}/${pm.src ? pm.src + '/' : ''}${sh ? 's/' : ''}${anim}.png`);   // (a fallback sheet is in a folder of its own: 42 species, the Megas, some formes)
 	const batch = new SpriteBatch(tex, max);
 	scene.add(batch.mesh);
 	const o = { batch, meta, img: tex.image, lift: footLift(meta, tex.image, { perFrame: anim === 'Idle', hover: !!META[dex].hv }), shadow: 0.35 + 0.18 * ((META[dex].s | 0) + 1), dm: pm.dm || null, fx: pm.fx || null, k: pm.k || 1 };
@@ -271,12 +275,15 @@ function draw(t) {
 	const E = world ? world.enemies : view ? view.enemies : null;
 	if (E) {
 		for (const e of E) {
-			const s = sheets.get(e.dex + '/Walk'); if (!s) { wantSheet(e.dex); continue; }
+			let s = sheets.get(e.dex + '/Walk');
+			if (e.shiny) { const ss = sheets.get(skey(e.dex, true) + '/Walk'); if (ss) s = ss; else wantSheet(e.dex, true); }   // (a shiny: its own colours, once its sheet is here)
+			if (!s) { wantSheet(e.dex); continue; }
 			const q = sq(s, frameAt(s.meta, t + e.id * 0.37), facingRow(e.a.facing, cam.yaw), e.scale || 1);
 			s.batch.add(e.a.x, e.a.y, e.a.z, q.rect, q.uv, e.flash > 0 ? 1.7 : 1);
 			shadows.add(room, e.a.x, e.a.z, e.a.y, s.shadow * (e.scale || 1));
 		}
 		shots.begin();
+		for (const e of E) if (e.shiny) for (let k = 0; k < 3; k++) { const a = t * 2.6 + k * 2.094, r = (e.cr || 0.4) + 0.35; shots.add(e.a.x + Math.cos(a) * r, e.a.y + 0.5 + (e.cr || 0.4) * (1 + Math.sin(t * 4 + k * 1.7)) , e.a.z + Math.sin(a) * r, 0.07, '#fff3c4'); }   // (a shiny's sparkles)
 		if (!world) {   // watching: everything that is a ball comes ready-made in the frame
 			for (const b of view.balls) shots.add(b[0], b[1], b[2], b[3], ballColour(b[4], TYPE_COLOR, PICK_COLOR));
 			for (const e of E) if (e.shield > 0) shots.add(e.a.x, e.a.y + 1.6 * (e.scale || 1), e.a.z, 0.16, '#7fc8ff');
@@ -324,11 +331,11 @@ function draw(t) {
 		// (co-op) the others' teams, behind each of them: a host has its guests' from their own word, a guest or a watcher from the run's row
 		for (const m of mates()) { const theirs = run ? (world.mates.find((q) => q.id === m.id) || {}).sa : rv && rv.mateSa.get(m.id); if (!theirs || m.id === MYID) continue; theirs.forEach((dex, i) => { const [x, z] = teamSpot(m.s, m.s.facing, i, theirs.length); cv.sa.push({ dex, x, z, y: Math.min(groundAt(room, x, z), m.s.y + 2), facing: m.s.facing, moving: false }); }); }
 		for (const a of cv.sa) { const sh = sheets.get(a.dex + '/Walk'); if (!sh) { wantSheet(a.dex); continue; } const q = sq(sh, a.moving ? frameAt(sh.meta, t) : 0, facingRow(a.facing, cam.yaw), 1.15); sh.batch.add(a.x, a.y, a.z, q.rect, q.uv, 1); shadows.add(room, a.x, a.z, a.y, sh.shadow * 1.15); }
-		for (const f of cv.faint) { const sh = sheets.get(f.dex + '/Walk'); if (sh) { const q = sq(sh, 0, 0, 1.4); sh.batch.add(f.x, f.y, f.z, q.rect, q.uv, 0.45); } else wantSheet(f.dex); shots.add(f.x, f.y + 1.9 + Math.sin(t * 6) * 0.12, f.z, 0.28, f.kind === 'alpha' ? '#ff4d5e' : '#9ae6ff'); }
+		for (const f of cv.faint) { const fs2 = f.kind === 'shiny' ? sheets.get(skey(f.dex, true) + '/Walk') : null, sh = fs2 || sheets.get(f.dex + '/Walk'); if (f.kind === 'shiny' && !fs2) wantSheet(f.dex, true); if (sh) { const q = sq(sh, 0, 0, 1.4); sh.batch.add(f.x, f.y, f.z, q.rect, q.uv, 0.45); } else wantSheet(f.dex); shots.add(f.x, f.y + 1.9 + Math.sin(t * 6) * 0.12, f.z, 0.28, f.kind === 'alpha' ? '#ff4d5e' : '#9ae6ff'); }
 		if (cv.cine) { const p = cv.cine.phase, wob = p.n === 'shake' ? Math.sin(p.u * 6.2832) * 0.18 : 0; shots.add(cv.cine.x + wob, cv.cine.y + (p.n === 'throw' ? 1.6 - p.u * 1.2 : 0.4), cv.cine.z, 0.34, p.n === 'click' ? '#ffe14d' : cv.cine.kind === 'alpha' ? '#3fa35a' : '#ff4d5e'); note(p.n === 'click' ? 'Gotcha!' : p.n === 'shake' ? '. '.repeat(p.k + 1) : cv.cine.kind === 'alpha' ? 'Friend Ball!' : 'Poké Ball!', 250); }
 	}
 	// the lead
-	const name = stateName(state), anim = name === 'idle' || name === 'staggered' ? 'Idle' : 'Walk', LD = world && world.pl.mon.dex !== DEX ? world.pl.mon.dex : rv && rv.league ? rv.league.form : DEX, ps = sheets.get(LD + '/' + anim) || sheets.get(LD + '/Idle') || (wantLead(LD), sheets.get(DEX + '/' + anim) || sheets.get(DEX + '/Idle'));   // (P4: a League member is drawn as the stage it is)
+	const name = stateName(state), anim = name === 'idle' || name === 'staggered' ? 'Idle' : 'Walk', LD = world && world.pl.mon.dex !== DEX ? world.pl.mon.dex : rv && rv.league ? rv.league.form : DEX, LS = !!(myRun && myRun.lg ? myRun.lg.shiny : rv && rv.league && rv.league.shiny), LK = skey(LD, LS), ps = sheets.get(LK + '/' + anim) || sheets.get(LK + '/Idle') || (wantLead(LD, LS), sheets.get(LD + '/' + anim) || sheets.get(LD + '/Idle')) || (wantLead(LD), sheets.get(DEX + '/' + anim) || sheets.get(DEX + '/Idle'));   // (P4: a League member is drawn as the stage it is)
 	const MG = myRun && myRun.lg ? myRun.lg.mega : rv && rv.league ? rv.league.mega : 0, ms = MG && ps ? megaSheet(MG) : null;
 	megaNow = ms ? MG : 0;
 	if (myRun && myRun.ult && myRun.ult.hidden) { /* (a Flying Ultimate: you are in the sky until you come down) */ } else if (ms) {
@@ -579,8 +586,8 @@ if (SITE_WATCH) {   // a friend's run over the site's lines: what its state is, 
 const sheetAsked = new Set();
 /** A species walks into view that this page has no sheet for yet (a watcher does not know the cast beforehand). */
 const leadAsked = new Set();
-function wantLead(dex) { if (leadAsked.has(dex)) return; leadAsked.add(dex); for (const a of ['Idle', 'Walk']) sheet(dex, a, 1).catch((e) => console.warn(e.message)); }
-function wantSheet(dex) { if (sheetAsked.has(dex) || !META[dex] || !META[dex].a || !META[dex].a.Walk) return; sheetAsked.add(dex); sheet(dex, 'Walk', 130).catch((e) => console.warn(e.message)); }
+function wantLead(dex, shiny = false) { const k = skey(dex, shiny); if (leadAsked.has(k)) return; leadAsked.add(k); for (const a of ['Idle', 'Walk']) sheet(dex, a, 1, shiny).catch((e) => console.warn(e.message)); }
+function wantSheet(dex, shiny = false) { const k = skey(dex, shiny); if (sheetAsked.has(k) || !META[dex] || !META[dex].a || !META[dex].a.Walk) return; sheetAsked.add(k); sheet(dex, 'Walk', k === String(dex) ? 130 : 8, shiny).catch((e) => console.warn(e.message)); }   // (a shiny is rare: its sheet holds a few)
 function watchStep(dt) {
 	if (!viewer.frames.length) return;
 	const newest = viewer.newest;
@@ -849,7 +856,7 @@ const G_MUSIC = GG.BIOME_MUSIC || null, XK_MAPS = ['viridian', 'mtmoon', 'cerule
 
 // what a test (and a curious owner in the console) can reach
 window.__m3d = {
-	meta: LAB_META, upgrades: UPGRADES,
+	meta: LAB_META, upgrades: UPGRADES, leadShiny: LEAD_SHINY, skey,
 	keepShiny,
 	siteHost: SITE_HOST, siteWatch: SITE_WATCH,
 	openBoard, get boardUp() { return boardUp; },
