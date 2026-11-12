@@ -66,7 +66,7 @@
 	<script src="../js/data/items.js"></script>
 	<!-- (P3) Expedition's own moves (its 8 extra kinds). It registers its English texts with the game's translation
 	     table: a stand-in is enough here (the real one rewrites the page's text as it is drawn) -->
-	<script>G.I18n = G.I18n || { lang: 'en', add() {}, f: (s) => s, t: (s) => { const en = G.ExpEN && G.ExpEN[s]; if (en) return en; const N = G.U && G.U.TYPE_NAME; if (N) for (const k in N) if (N[k] === s) return k[0].toUpperCase() + k.slice(1); return s; } };</script>
+	<script>G.I18n = G.I18n || { lang: 'en', en: {}, add(o) { Object.assign(this.en, o); }, f: (s) => s, t: (s) => { const en = G.ExpEN && G.ExpEN[s]; if (en) return en; const N = G.U && G.U.TYPE_NAME; if (N) for (const k in N) if (N[k] === s) return k[0].toUpperCase() + k.slice(1); return s; } };</script>
 	<!-- the shipping path: who is signed in, and the Expedition save (never the base save: m3d/expsave.js) -->
 	<script src="../js/mica/account.js"></script>
 	<script src="../js/expedition/save.js"></script>
@@ -84,6 +84,9 @@
 	<script src="../js/expedition/economy.js"></script>
 	<script src="../js/expedition/capture.js"></script>
 	<script src="../js/expedition/survival.js"></script>
+	<script src="../js/expedition/reactions.js"></script>
+	<script src="../js/systems/zmoves.js"></script>
+	<script src="../js/expedition/ultimates.js"></script>
 	<!-- going live: the Lab (its tables and what a save's row gives a run: m3d/expmeta.js reads it; nothing of it is drawn here) -->
 	<script src="../js/expedition/meta.js"></script>
 	<!-- going live: the 2D game's sound (a synthesizer: no files) and its themes; m3d/runsound.js says what a run plays -->

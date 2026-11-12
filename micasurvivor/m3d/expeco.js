@@ -211,10 +211,12 @@ function blessing(S, Z, o, tier, m = null) {
 	const K = S.X.E.K;
 	markUsed(S, Z, o); Z.ch[o.i] = 1; S.eco.log.altars++;
 	const sd = seedFor(S, o.i, 0xB1E5), rng = makeRng(sd);
-	const [n, picks, min] = tier == null ? [3, 1, 1] : K.UNOWN_OFFERS[tier], kind = tier == null ? 'comet' : 'unown', title = tier == null ? EK.NAME.comet : tier === 3 ? 'Golden blessing!' : 'Unown blessing';   // (the comet's + 25 % Ultimate charge waits for Ultimates)
+	const [n, picks, min] = tier == null ? [3, 1, 1] : K.UNOWN_OFFERS[tier], kind = tier == null ? 'comet' : 'unown', title = tier == null ? EK.NAME.comet : tier === 3 ? 'Golden blessing!' : 'Unown blessing';
 	if (m) { m.gifts.push({ k: 'xo', kind, title, sd, n, min, picks }); return; }
 	const ids = rollOffers(S, rng, n, min);
-	openPick(S, { kind, title, sub: `Choose ${Math.min(picks, ids.length)} of ${ids.length}`, ids, picks: Math.min(picks, ids.length) });
+	const ult = tier == null && !!S.ult && !S.ult.cast;   // the comet: + 25 % Ultimate charge (not while one is being cast)
+	if (ult) S.ult.c = Math.min(1, S.ult.c + K.COMET_ULT);
+	openPick(S, { kind, title, sub: `Choose ${Math.min(picks, ids.length)} of ${ids.length}` + (ult ? ' · Ultimate +25 %' : ''), ids, picks: Math.min(picks, ids.length) });
 }
 /** The reels slot machine i would roll next (it draws nothing). */
 export const peekSpin = (S, i) => S.X.E.reels(makeRng(mix(S.seed, S.X.MAP_IDS.indexOf(S.map) + 1, S.zone, i, 0x5107, S.eco.draws)));

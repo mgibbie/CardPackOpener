@@ -169,8 +169,9 @@ const says = (S, sec) => { const out = []; for (let i = 0, n = Math.round(sec * 
 	A(stOf(C, c) === FRESH && !ecoView(C).some((o) => o.kind === 'comet'), 'the comet is not there yet');
 	away(C); setZoneTime(C, lay.cometAt - 0.05); const t = says(C, 0.2);
 	A(stOf(C, c) === READY && t.some((q) => /comet shard has fallen/.test(q)) && ecoView(C).some((o) => o.kind === 'comet'), `at ${lay.cometAt} s it lands`);
-	at(C, c); steps(C, K.COMET_T + 0.1);
+	at(C, c); steps(C, K.COMET_T - 0.2); const uc = C.ult.c; steps(C, 0.3);
 	A(C.pick && C.pick.kind === 'comet' && C.pick.ids.length === 3 && C.pick.ids.every((id) => L.I.IT[id].rar >= 1) && stOf(C, c) === USED, `${K.COMET_T} s in it: one of three, Uncommon or better`);
+	A(K.COMET_ULT === 0.25 && C.ult.c - uc > 0.25 && C.ult.c - uc < 0.26 && C.pick.sub.endsWith(' · Ultimate +25 %'), 'the comet also gives + 25 % Ultimate charge, and says so', [uc, C.ult.c, C.pick && C.pick.sub]);
 	const D = run(), d = objs(D, 'comet')[0], lay2 = layoutOf(D.w.room, D); setZoneTime(D, lay2.cometAt + 1); steps(D, 0.1); setZoneTime(D, lay2.cometAt + K.COMET_LIFE + 0.1); steps(D, 0.2);
 	A(stOf(D, d) === GONE, `left alone it burns out after ${K.COMET_LIFE} s`);
 }
@@ -332,7 +333,7 @@ const says = (S, sec) => { const out = []; for (let i = 0, n = Math.round(sec * 
 	A(four.slice(0, 3).every((q) => q.hp < 1e6) && four[3].hp === 1e6, 'an Electirizer: a bolt on the three nearest every 2.5 s');
 	S = mk(); takeItem(S, 'magmarizer'); e = foe(S, 5); const out = foe(S, 9); steps(S, 4.05);
 	A(e.hp < 1e6 && e.burn > 0 && out.hp === 1e6, 'a Magmarizer: a ring of fire round you every 4 s, and it burns');
-	S = mk(); takeItem(S, 'sunstone'); e = foe(S, 6); const by = foe(S, 9), off = foe(S, 16); steps(S, 6.05);
+	S = mk(); takeItem(S, 'sunstone'); e = foe(S, 6); const by = foe(S, 9), off = foe(S, 24); steps(S, 6.05);   /* (24 m, not 16: the strike is Grass, and on a foe your Ember has set alight it is an Inferno, whose burn spreads 7 m from each it hits) */
 	A(e.hp < 1e6 && by.hp < 1e6 && off.hp === 1e6, 'a Sun Stone: a strike on the nearest every 6 s, and on what stands by it');
 	S = mk(); takeItem(S, 'meteorite'); e = foe(S, 6); const e4 = foe(S, 12); const x4 = e4.a.x; steps(S, 8.05);
 	const pulled = S.lv.rifts.length === 1, x6 = e.a.x; steps(S, 1); const moved = Math.abs(e.a.x - x6) + Math.abs(e4.a.x - x4); steps(S, 0.6);
