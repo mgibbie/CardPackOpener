@@ -57,7 +57,7 @@ const ids = (S) => S.w.pl.moves.map((m) => m.id);
 {
 	const S = run(4), pl = S.w.pl, kit = LG.BY[4].kit;
 	says.length = 0; levelTo(S, 2);
-	A(ids(S).join() === kit.slice(0, 2).join() && S.lg.kit === 2 && says.some((q) => /Kit move: flame-wheel \(2\/4\)/.test(q)), 'at Lv 2 the kit\'s second move is learned (the level still has its cards)', [ids(S), says]);
+	A(ids(S).join() === kit.slice(0, 2).join() && S.lg.kit === 2 && says.some((q) => /Kit move: Flame Wheel \(2\/4\)/.test(q)), 'at Lv 2 the kit\'s second move is learned (the level still has its cards)', [ids(S), says]);
 	levelTo(S, 3); A(ids(S).length === 2, 'nothing at Lv 3');
 	levelTo(S, 4); A(ids(S).join() === kit.slice(0, 3).join(), 'the third at Lv 4');
 	levelTo(S, 6); A(ids(S).length === 3 && !candidates(S).some((c) => c.key.startsWith('new:')) && !candidates(S).some((c) => c.key.startsWith('swap:')), 'with a slot still free a League run is offered no new move: the kit owns the slots');

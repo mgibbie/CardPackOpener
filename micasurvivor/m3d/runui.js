@@ -7,6 +7,7 @@
 //
 //   view: { name, level, hp, maxHp, shield, xp, xpNext, time (s), kos, parts: [the run's line, in pieces], note,
 //           boss: { name, hp, maxHp, enraged } | null, moves: [{ name, lv, col }], bag: [{ text, kind }],
+//           menu: null | { title, line, restart: url | null, leave: url } (the pause menu),
 //           over: null | { won, title, line, rows: [[label, value]], again: url | null, leave: url } }
 
 export const mmss = (t) => `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, '0')}`;
@@ -18,7 +19,8 @@ export const short = (n) => { n = Math.ceil(n); return n >= 1e9 ? (n / 1e9).toFi
 export const chipKind = (text, i) => (i === 0 ? 'on' : /^₽/.test(text) ? 'money' : /SWARM!|GUARDIAN|LEGENDARY|MEWTWO|BOSS IN|EXHAUSTED|NIGHT|SIEGE/.test(text) ? 'warn' : '');
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
-/** Put the run's screen on the page. -> { update(view), root } */
+/** Put the run's screen on the page. o.onMenu(): the menu's button was pressed; o.onResume(): its "Resume".
+ *  -> { update(view), root } */
 export function mountRunUi(doc, o = {}) {
 	doc.body.classList.add('rx'); if (o.debug) doc.body.classList.add('rx-debug');
 	const root = doc.createElement('div'); root.id = 'rx';
@@ -28,8 +30,10 @@ export function mountRunUi(doc, o = {}) {
 		+ `<div class="rx-note" id="rx-note"></div>`
 		+ `<div class="rx-panel rx-boss" id="rx-boss"><div class="rx-who"><span class="rx-name" id="rx-bname"></span></div><div class="rx-bar"><i id="rx-bhp"></i><span id="rx-bhpt"></span></div></div>`
 		+ `<div class="rx-bottom"><div class="rx-chips rx-bag" id="rx-bag"></div><div class="rx-moves" id="rx-moves"></div></div>`
-		+ `<div class="rx-end" id="rx-end"></div>`;
+		+ `<button class="rx-menu-btn" id="rx-menu-btn" aria-label="Menu">II</button>`
+		+ `<div class="rx-end" id="rx-menu"></div><div class="rx-end" id="rx-end"></div>`;
 	doc.body.appendChild(root);
+	root.addEventListener('click', (e) => { const b = e.target.closest('#rx-menu-btn, #rx-resume'); if (!b) return; e.preventDefault(); b.blur(); if (b.id === 'rx-resume') { if (o.onResume) o.onResume(); } else if (o.onMenu) o.onMenu(); });
 	const $ = (id) => doc.getElementById(id), last = {};
 	const text = (id, v) => { if (last[id] !== v) { last[id] = v; $(id).textContent = v; } };
 	const html = (id, v) => { if (last[id] !== v) { last[id] = v; $(id).innerHTML = v; } };
@@ -48,6 +52,14 @@ export function mountRunUi(doc, o = {}) {
 		const mv = (v.moves || []).slice(0, 4); while (v.moves && mv.length < 4) mv.push(null);
 		html('rx-moves', mv.map((m) => (m ? `<div class="rx-move" style="border-top-color:${esc(m.col || '#5f7377')}"><b>${esc(m.name)}</b><i>Lv ${m.lv | 0}</i></div>` : '<div class="rx-move empty"><b>—</b><i>&nbsp;</i></div>')).join(''));
 		html('rx-bag', (v.bag || []).map((b) => `<span class="rx-chip ${b.kind || 'dim'}">${esc(b.text)}</span>`).join(''));
+		const mk = v.menu && !v.over ? JSON.stringify(v.menu) : '';
+		if (last.menu !== mk) {
+			last.menu = mk; const m = mk ? v.menu : null;
+			$('rx-menu').innerHTML = !m ? '' : `<div class="rx-panel"><h1>${esc(m.title)}</h1><p>${esc(m.line || '')}</p><div class="rx-btns col"><button class="rx-btn blue" id="rx-resume">Resume</button>`
+				+ `${m.restart ? `<a class="rx-btn orange" id="rx-restart" href="${esc(m.restart)}">Restart the run</a>` : ''}<a class="rx-btn red" id="rx-quit" href="${esc(m.leave || '../')}">Leave</a></div></div>`;
+			$('rx-menu').classList.toggle('show', !!m);
+		}
+		cls('rx-menu-btn', 'hide', !!v.over);
 		if (v.over && !last.over) {
 			last.over = true; const r = v.over;
 			$('rx-end').innerHTML = `<div class="rx-panel"><h1 class="${r.won ? 'won' : 'lost'}">${esc(r.title)}</h1><p>${esc(r.line || '')}</p>`
