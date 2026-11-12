@@ -103,3 +103,6 @@ body.rx #cards .tools button[disabled] { background: #59676a; box-shadow: 0 .3em
 body.rx #cards button em { display: flex; align-items: center; height: 2.4em; font-style: normal; }
 body.rx #cards button em img { height: 100%; image-rendering: pixelated; filter: drop-shadow(0 3px 0 rgba(0, 0, 0, .3)); }
 body.rx #cards button em .rx-type { border-radius: .4em; padding: .3em .6em .22em; box-shadow: 0 3px 0 rgba(0, 0, 0, .3); text-transform: uppercase; }
+/* ---- the run's end: what the save did with it */
+.rx-end p.rx-kept { color: #c6d1d3; font-size: .9em; margin-top: -.3em; }
+.rx-end p.rx-kept.ok { color: var(--green); }

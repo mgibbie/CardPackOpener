@@ -334,6 +334,31 @@ try {
 	});
 
 	// the co-op lobby: mode + dv on an Expedition lobby; the version gate on joining
+	// 3D Expedition (owner 2026-11-12: "separate"): a 3D score has its own boards (`d3: true` puts ':3d' in every key)
+	await part('3D boards', async () => {
+	await reg('trixie');
+	const K2 = 'runboard:micasurvivor_expedition:r2:viridian:normal', K3 = 'runboard:micasurvivor_expedition:r2:3d:viridian:normal', K0 = 'runboard:micasurvivor_expedition:viridian:normal';
+	const was = [JSON.stringify(row(K2) || null), JSON.stringify(row(K0) || null)];
+	// (zone 1, not won: 2 x 90 KOs + 3 x 400 s + 20000 damage / 200 = 1480)
+	const run3 = { mode: 'micasurvivor_expedition', d3: true, expMode: 'exp-classic', dv: 20, map: 'viridian', diff: 'normal', score: 1480, time: 400, kills: 90, level: 12, dex: 6, shiny: false, zone: 1, won: false, dmg: 20000, bosses: 0, catches: 0 };
+	const r1 = await raw('run-score', run3, tokens.trixie);
+	A(r1.status === 200 && r1.body.ok && r1.body.better && r1.body.rank === 1 && r1.body.board === 'micasurvivor_expedition:r2:3d:viridian:normal' && r1.body.season && r1.body.season.rank === 1, '3D board: a 3D score lands at #1 on micasurvivor_expedition:r2:3d:viridian:normal (and on a season board of its own)', JSON.stringify(r1.body));
+	const b3 = row(K3);
+	A(b3 && b3.length === 1 && b3[0].name === 'trixie' && b3[0].score === 1480, '3D board: the row ' + K3 + ' holds it', JSON.stringify(b3));
+	A(JSON.stringify(row(K2) || null) === was[0] && JSON.stringify(row(K0) || null) === was[1], '3D board: the 2D boards of the same map are untouched');
+	const tb = row('trixie').runBest;
+	A(tb['micasurvivor_expedition:r2:3d:viridian:normal'].score === 1480 && !tb['micasurvivor_expedition:r2:viridian:normal'] && !tb['micasurvivor_expedition:viridian:normal'], '3D board: your best is kept apart from your 2D best');
+	const r2d = await raw('run-score', { ...run3, d3: undefined }, tokens.trixie);
+	A(r2d.status === 200 && r2d.body.board === 'micasurvivor_expedition:r2:viridian:normal' && row(K3).length === 1, '3D board: the same run without d3 is a 2D score, on the 2D board', JSON.stringify(r2d.body));
+	const l3 = await raw('run-leaderboard', { mode: 'micasurvivor_expedition', map: 'viridian', diff: 'normal', rules: 2, d3: true }, tokens.trixie);
+	A(l3.status === 200 && l3.body.top.length === 1 && l3.body.top[0].name === 'trixie' && l3.body.you && l3.body.you.rank === 1, '3D board: read with d3, it lists the 3D scores only', JSON.stringify(l3.body).slice(0, 300));
+	for (const [label, b] of [['d3: false', { d3: false }], ['d3: "1"', { d3: '1' }], ['a replay', { replay: 'abc' }], ['a score its parts do not add up to', { score: 99999 }]]) {
+		const r = await raw('run-score', { ...run3, ...b }, tokens.trixie);
+		A(r.status === 400, `3D board refuses ${label} (400)`, JSON.stringify(r));
+	}
+	A(row(K3).length === 1 && row(K3)[0].score === 1480, '3D board: unchanged by the refused scores');
+	});
+
 	await part('lobby', async () => {
 	await call('add-friend', { username: 'carl' }, tokens.bob);
 	await call('add-friend', { username: 'carl' }, tokens.dora);
