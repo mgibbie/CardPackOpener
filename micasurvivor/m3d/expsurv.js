@@ -23,7 +23,9 @@
 // 3D's own: a new land is new ground (the 2D game comes back to the same three zones; here the land's number seeds the
 // level). The siege's 6 m is measured on the ground, whatever your height.
 // A land here is far smaller than a 2D one, so its hazards stand closer (5 cells apart; 2D: 7), as its things do.
-// Not here yet: Mega bosses, Survival in co-op and for a watcher, its records.
+// In co-op each player has its own pacts, siege, wounds and ground underfoot (tickOwn); the host has the clock, the
+// bosses and the flocks, and the team pays for everyone's pacts.
+// Not here yet: Mega bosses, its records.
 import { K as SK, CELL, groundAt } from './sim.js';
 import { rng as makeRng } from './gen.js';
 import { CK, U, drop } from './combat.js';
@@ -89,7 +91,8 @@ export function setupSurv(S) {
 /** The team's price for its pacts: { hp, dmg, rate, boss, elite }. */
 export function foeTeam(S) {
 	const out = { hp: 0, dmg: 0, rate: 0, boss: 0, elite: 0 };
-	for (const id of S.sv.pacts) { const p = S.X.V.PACT_BY[id]; for (const k in p.team) out[k] += p.team[k]; }
+	const add = (ids) => { for (const id of ids || []) { const p = S.X.V.PACT_BY[id]; if (p) for (const k in p.team) out[k] += p.team[k]; } };
+	add(S.sv.pacts); for (const m of S.w.mates) add(m.pacts);   // (co-op: everyone's pacts are the team's price)
 	return out;
 }
 /** What Survival does to a new enemy at t: { hp, dmg, rate, elite, xp } (the pacing, the night, the pacts). */
@@ -139,6 +142,7 @@ export function takePact(S, id) {
 	const sv = S.sv, p = S.X.V.PACT_BY[id]; if (!p || sv.pacts.includes(id)) return false;
 	sv.pacts.push(id);
 	if (S.syncPerks) S.syncPerks();
+	if (S.w.co) S.w.co.outbox.push(['xp', sv.pacts.join(',')]);   // (a guest: the host is told, for the team's price)
 	say(S, `Pact sealed: ${S.X.V.en(p.name)}`, 2.6);
 	return true;
 }
@@ -171,6 +175,33 @@ export function tickSurv(S, dt, t) {
 	// the migration portal (it waits while a milestone boss is up: the portal empties the land)
 	if (S.ph === 2 && t >= sv.portalUntil) { S.ph = 0; S.portalT = 0; sv.nextMig = t + K.MIGRATE_EVERY - K.PORTAL_OPEN; say(S, 'The migration portal closes', 2.4); }
 	else if (S.ph !== 2 && t >= sv.nextMig && !sv.bosses.length) { S.ph = 2; S.portalT = 0; sv.portalUntil = t + K.PORTAL_OPEN; say(S, 'A migration portal opens! Step in to travel to new lands', 3.6); }
+	// (co-op) what the guests have said: their pacts (the team pays their price too); and their sieges, by where they stand
+	for (const m of w.mates) {
+		if (m.inbox) for (let i = m.inbox.length - 1; i >= 0; i--) if (m.inbox[i][0] === 'xp') { m.pacts = String(m.inbox[i][1] || '').split(',').filter((id) => V.PACT_BY[id]); m.inbox.splice(i, 1); }
+		if (m.dead || m.away) continue;
+		const sg = m.sg || (m.sg = { ax: m.s.x, az: m.s.z, t: 0, on: false, cd: 1 });
+		if (t < K.SIEGE_FROM || Math.hypot(m.s.x - sg.ax, m.s.z - sg.az) > K.SIEGE_R) { sg.ax = m.s.x; sg.az = m.s.z; sg.t = 0; sg.on = false; } else { sg.t += dt; if (!sg.on && sg.t >= K.SIEGE_T) { sg.on = true; sg.cd = 1; } }
+		if (sg.on && (sg.cd -= dt) <= 0) { sg.cd = K.SIEGE_FLOCK; flock(S, m.s, t, m.id); }
+	}
+	tickOwn(S, dt, t, sv.downs);
+	const sg0 = sv.siege; if (!pl.dead && sg0.on && (sg0.cd -= dt) <= 0) { sg0.cd = K.SIEGE_FLOCK; flock(S, s, t, 0); say(S, 'A flock hunts you!', 2.2); }
+}
+/** A siege's flock: five fliers that come for whoever is under it. */
+function flock(S, at, t, who) {
+	const K = S.X.V.K, w = S.w, rng = makeRng(mix(S.seed, Math.floor(t * 10), who | 0, 0x5146)), pool = S.X.MAPS[S.map].flock[S.zi], dex = pool[Math.min(pool.length - 1, Math.floor(rng() * pool.length))], a0 = rng() * 6.2832;
+	for (let i = 0; i < K.SIEGE_N; i++) {
+		const a = a0 + (rng() - 0.5) * 0.9, d = CK.SPAWN_MIN * 0.9 + rng() * 4, x = at.x + Math.cos(a) * d, z = at.z + Math.sin(a) * d;
+		const e = spawn(S, dex, x, z, { spd: 1.25 });
+		if (!e.fly) { e.fly = true; e.a.fly = true; e.a.grounded = false; e.a.hover = CK.FLY_HOVER; e.a.y = groundAt(w.room, x, z) + CK.FLY_HOVER; }
+		e.xsiege = 1;
+	}
+	S.sv.log.flocks++;
+}
+/** Each player's own part of Survival, on its own side (the host's, and every guest's): the hostile ground under its
+ *  feet, its wounds, its siege (its damage), and a pact for each milestone boss the team has beaten. t: the run's
+ *  clock; downs: milestone bosses beaten. */
+export function tickOwn(S, dt, t, downs) {
+	const sv = S.sv, V = S.X.V, K = V.K, w = S.w, pl = w.pl, s = pl.s;
 	if (pl.dead) return;
 	// hostile ground (your feet must be on it: a jump clears it)
 	if (!(sv.px === sv.px)) { sv.px = s.x; sv.pz = s.z; }   // (a new land: you have only just arrived)
@@ -197,19 +228,8 @@ export function tickSurv(S, dt, t) {
 	if (t < K.SIEGE_FROM || Math.hypot(s.x - sg.ax, s.z - sg.az) > K.SIEGE_R) { sg.ax = s.x; sg.az = s.z; sg.t = 0; sg.on = false; if (was) say(S, 'The siege lifts', 1.8); }
 	else { sg.t += dt; if (!sg.on && sg.t >= K.SIEGE_T) { sg.on = true; sg.cd = 1; sv.log.sieges++; say(S, 'Siege! Keep moving or they will hunt you', 2.8); } }
 	sg.k = sg.on ? Math.max(K.SIEGE_MIN, sg.k - K.SIEGE_FALL * dt) : Math.min(1, sg.k + K.SIEGE_RISE * dt);
-	if (sg.on && (sg.cd -= dt) <= 0) {
-		sg.cd = K.SIEGE_FLOCK;
-		const rng = makeRng(mix(S.seed, Math.floor(t * 10), 0x5146)), pool = S.X.MAPS[S.map].flock[S.zi], dex = pool[Math.min(pool.length - 1, Math.floor(rng() * pool.length))], a0 = rng() * 6.2832;
-		for (let i = 0; i < K.SIEGE_N; i++) {
-			const a = a0 + (rng() - 0.5) * 0.9, d = CK.SPAWN_MIN * 0.9 + rng() * 4, x = s.x + Math.cos(a) * d, z = s.z + Math.sin(a) * d;
-			const e = spawn(S, dex, x, z, { spd: 1.25 });
-			if (!e.fly) { e.fly = true; e.a.fly = true; e.a.grounded = false; e.a.hover = CK.FLY_HOVER; e.a.y = groundAt(w.room, x, z) + CK.FLY_HOVER; }
-			e.xsiege = 1;
-		}
-		sv.log.flocks++; say(S, 'A flock hunts you!', 2.2);
-	}
 	// a pact for each milestone boss down
-	if (sv.downs > sv.pactSeen && !S.pick && !(S.cap && S.cap.cine)) offerPact(S);
+	if (downs > sv.pactSeen && !S.pick && !(S.cap && S.cap.cine)) offerPact(S);
 }
 /** The readout's line: Survival, the phase, the next milestone, the portal, the night or the wounds, the money. */
 export function survHud(S) {
