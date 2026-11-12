@@ -303,7 +303,7 @@ G.I18n.add({
   // colección
   'Volver': 'Back', 'Todos': 'All', 'Tengo': 'Owned', 'Me faltan': 'Missing', 'Legendaria': 'Legendary', 'Épica': 'Epic', 'Rara': 'Rare',
   'Poco común': 'Uncommon', 'Común': 'Common', 'Ninguno con este filtro.': 'None with this filter.', 'Ataque': 'Attack', 'Vida': 'HP', 'Velocidad': 'Speed',
-  'Empieza con': 'Starts with', 'Es tu compañero': 'It\'s your partner', 'Elegir de compañero{x}': 'Choose as partner{x}', '(shiny)': '(shiny)',
+  'Empieza con': 'Starts with', 'Es tu compañero': 'It\'s your partner', 'Elegir de compañero': 'Choose as partner', 'Elegir de compañero{x}': 'Choose as partner{x}', '(shiny)': '(shiny)',
   'Aún no lo tienes.': 'You don\'t have it yet.', 'Consíguelo en el banner de': 'Get it from the banner of', 'o derrotándolo cuando salga shiny.': 'or by defeating it when it shows up shiny.',
   '{x} es ahora tu compañero': '{x} is now your partner', '{x} shiny es ahora tu compañero': 'Shiny {x} is now your partner',
   '· {x} shiny': '· {x} shiny', '{x} · {x}: nivel {x}': '{x} · {x}: level {x}',

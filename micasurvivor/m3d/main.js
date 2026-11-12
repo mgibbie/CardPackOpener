@@ -10,7 +10,8 @@ import { K, CELL, step, newState, noInput, groundAt, stateName, facingRow, tuneF
 import { buildRoom, SPOTS } from './room.js';
 import { makeRenderer, buildTerrain, buildWater, buildRails, buildScatter, buildExit, drawMap, SpriteBatch, Shadows, Shots, Flashes, loadSheet, frameAt, spriteQuad, footLift, placeCamera, PX } from './render.js';
 import { newWorld, addEnemy, addBoss, tick, dataFrom, choose, drop, CK } from './combat.js';
-import { frame as netFrame, keepEvents, diff as netDiff, bundle, unbundle, Viewer, Tape, ballColour, typeName, NK } from './net.js';
+import { frame as netFrame, keepEvents, diff as netDiff, bundle, unbundle, Viewer, Tape, ballColour, typeName, NK, PICK } from './net.js';
+import { Props, PROP_MON, BOBS } from './props.js';
 import { hostAdd, hostStep, hostFrame, hostApply, guestWorld, guestSync, guestMsg, guestApply } from './coop.js';
 import { generate, BIOMES } from './gen.js';
 import { mountRunUi, pretty } from './runui.js';
@@ -264,6 +265,29 @@ const shadows = new Shadows(N + 4 + (world ? world.cap : WATCH ? CK.CAP + 20 : 0
 scene.add(shadows.mesh);
 const shots = world || WATCH ? new Shots(600) : null, flashes = world || WATCH ? new Flashes(scene) : null;
 if (shots) scene.add(shots.mesh);
+// what lies on the ground, as pictures (props.js): XP, berries, items, what a zone holds
+const props = shots ? (() => {
+	const cv = document.createElement('canvas'); cv.width = cv.height = 512;
+	const tex = new THREE.CanvasTexture(cv); tex.magFilter = tex.minFilter = THREE.NearestFilter; tex.generateMipmaps = false; tex.flipY = false; tex.colorSpace = THREE.NoColorSpace;
+	const batch = new SpriteBatch(tex, 900); scene.add(batch.mesh);
+	const atlas = new Props({ canvas: cv, onChange: () => { tex.needsUpdate = true; }, ecoCol: EK.COL,
+		uiIcon: (n) => (GG.Icons && GG.Icons.UI && GG.Icons.UI[n] ? GG.Icons.canvas(n) : null),
+		imgUrl: (n) => (GG.ExpItems && GG.ExpItems.icon ? GG.ExpItems.icon(n) : '/overworld/item_icons/' + n + '.png'),
+		itemIcon: (id) => { const it = GG.ExpItems && GG.ExpItems.IT && GG.ExpItems.IT[id]; return it && it.icon ? { img: it.icon } : GG.Icons && GG.Icons.UI && GG.Icons.UI[id] ? { ui: id } : null; } });
+	return { atlas, batch, n: 0, beads: 0 };
+})() : null;
+/** A thing on the ground: its picture if it has one (-> true), else nothing is drawn here (the caller's bead). */
+function prop(key, x, y, z, k = 1) {
+	const c = props && props.atlas.get(key); if (!c) { if (props) props.beads++; return false; }
+	if (!c.empty) { const r = c.rect; props.batch.add(x, y, z, k === 1 ? r : [r[0] * k, r[1] * k, r[2] * k, r[3] * k], c.uv, 1); }
+	props.n++; return true;
+}
+/** The Pokémon that stands at a thing of the zone (Meowth at its stall, the Unown over its stone, who is in a cage). */
+function propMon(dex, x, y, z, t) {
+	const s = sheets.get(dex + '/Walk'); if (!s) { wantSheet(dex); return; }
+	const q = sq(s, frameAt(s.meta, t), facingRow(cam.yaw + Math.PI, cam.yaw), 1);
+	s.batch.add(x, y, z, q.rect, q.uv, 1);
+}
 
 // ---------------------------------------------------------------- the loop
 const perf = { frames: [], sim: [], last: 0, acc: 0 };
@@ -284,6 +308,7 @@ function draw(t) {
 
 	for (const s of sheets.values()) s.batch.begin();
 	for (const s of megaSheets.values()) if (s) s.batch.begin();
+	if (props) { props.batch.begin(); props.n = 0; props.beads = 0; }
 	shadows.begin();
 	// the crowd
 	for (const e of crowd) {
@@ -304,20 +329,29 @@ function draw(t) {
 			shadows.add(room, e.a.x, e.a.z, e.a.y, s.shadow * (e.scale || 1));
 		}
 		shots.begin();
+		const ball = (b) => { if (!(b[4] >= 32 && PICK[b[4] - 32] && prop(PICK[b[4] - 32], b[0], b[1] - 0.3, b[2]))) shots.add(b[0], b[1], b[2], b[3], ballColour(b[4], TYPE_COLOR, PICK_COLOR)); };
 		for (const e of E) if (e.shiny) for (let k = 0; k < 3; k++) { const a = t * 2.6 + k * 2.094, r = (e.cr || 0.4) + 0.35; shots.add(e.a.x + Math.cos(a) * r, e.a.y + 0.5 + (e.cr || 0.4) * (1 + Math.sin(t * 4 + k * 1.7)) , e.a.z + Math.sin(a) * r, 0.07, '#fff3c4'); }   // (a shiny's sparkles)
 		if (!world) {   // watching: everything that is a ball comes ready-made in the frame
-			for (const b of view.balls) shots.add(b[0], b[1], b[2], b[3], ballColour(b[4], TYPE_COLOR, PICK_COLOR));
+			for (const b of view.balls) ball(b);
 			for (const e of E) if (e.shield > 0) shots.add(e.a.x, e.a.y + 1.6 * (e.scale || 1), e.a.z, 0.16, '#7fc8ff');
 		}
 		for (const p of world ? world.shots : []) shots.add(p.x, p.y, p.z, Math.max(0.14, p.r), TYPE_COLOR[p.mtype]);
-		if (JOIN && coView) for (const b of coView.balls) if (b[4] !== 31) shots.add(b[0], b[1], b[2], b[3], ballColour(b[4], TYPE_COLOR, PICK_COLOR));   // (a guest: the host's shots and the floor's pickups; enemy shots are its own copies)
+		if (JOIN && coView) for (const b of coView.balls) if (b[4] !== 31) ball(b);   // (a guest: the host's shots and the floor's pickups; enemy shots are its own copies)
 		if (world) for (const p of world.orbs) shots.add(p.x, p.y, p.z, Math.max(0.16, p.r), TYPE_COLOR[p.mtype]);
 		// what lies in the world: mines (a small ball on the floor), turrets (a ball that hangs and bobs), meteors (a ball
 		// coming down on its mark), patches (a disc on the floor, drawn once, fading over its life)
-		// pickups: beads that bob over the floor (XP blue, a big one for a big orb; a berry green, a magnet pink, a bomb orange)
-		if (world) for (const p of world.pickups) shots.add(p.x, p.y + 0.3 + Math.abs(Math.sin(p.t * 0.8)) * 0.18, p.z, p.kind === 'xpBig' ? 0.24 : p.kind === 'xp' ? 0.15 : 0.26, PICK_COLOR[p.kind]);
-		// (P4) what the zone holds: a bead in each thing's colour (a big one for an altar; one being charged swells)
-		for (const o of run && run.eco ? ecoView(run) : rv ? rv.eco : []) { const big = /unown|comet|challenge|cursedaltar|greed|meowth|slots/.test(o.kind); shots.add(o.x, o.y + (big ? 1.1 : 0.55) + Math.sin(t * 2 + o.i) * 0.08, o.z, (big ? 0.42 : EK.SMALL.includes(o.kind) ? 0.22 : 0.3) * (1 + o.ch * 0.8), EK.COL[o.kind]); }
+		// pickups: the 2D game's pictures, bobbing over the floor (the XP gem, the berry, the magnet, the bomb, an item on its gold disc)
+		if (world) for (const p of world.pickups) {
+			const up = Math.abs(Math.sin(p.t * 0.8)) * 0.18, key = p.kind === 'item' || p.kind === 'held' ? 'item:' + p.value : p.kind;
+			if (prop(key, p.x, p.y + up, p.z)) shadows.add(room, p.x, p.z, p.y + up, p.kind === 'xp' ? 0.2 : 0.3);
+			else shots.add(p.x, p.y + 0.3 + up, p.z, p.kind === 'xpBig' ? 0.24 : p.kind === 'xp' ? 0.15 : 0.26, PICK_COLOR[p.kind]);
+		}
+		// (P4) what the zone holds: its picture (one being charged swells), with the Pokémon that stands at it
+		for (const o of run && run.eco ? ecoView(run) : rv ? rv.eco : []) {
+			const key = 'eco:' + o.kind, up = BOBS.has(key) ? 0.12 + Math.sin(t * 3 + o.i) * 0.12 : 0, pm = PROP_MON[o.kind];
+			if (prop(key, o.x, o.y + up, o.z, 1 + (o.ch || 0) * 0.3)) { shadows.add(room, o.x, o.z, o.y + up, /ball|great|comet/.test(o.kind) ? 0.45 : 0.9); if (pm) propMon(pm[0], o.x, o.y + pm[1] + (pm[1] ? Math.sin(t * 3 + o.i) * 0.12 : 0), o.z, t + o.i); else if (o.kind === 'cage' && o.v) propMon(o.v, o.x, o.y, o.z, t + o.i); }
+			else { const big = /unown|comet|challenge|cursedaltar|greed|meowth|slots/.test(o.kind); shots.add(o.x, o.y + (big ? 1.1 : 0.55) + Math.sin(t * 2 + o.i) * 0.08, o.z, (big ? 0.42 : EK.SMALL.includes(o.kind) ? 0.22 : 0.3) * (1 + o.ch * 0.8), EK.COL[o.kind]); }
+		}
 		if (world) for (const e of world.enemies) if (e.shield > 0) shots.add(e.a.x, e.a.y + Math.max(1.2, e.cr * 2) + 0.35, e.a.z, 0.16, '#7fc8ff');   // a shield: a blue bead over its head
 		if (world) for (const p of world.eshots) shots.add(p.x, p.y, p.z, Math.max(0.2, p.r), '#ff5f8f');   // an enemy's shot: always the same angry pink
 		// Expedition's effects: a bomb on its arc, a whirl on the floor, a wave's ring spreading
@@ -373,6 +407,7 @@ function draw(t) {
 	}
 	for (const s of sheets.values()) s.batch.end(right);
 	for (const s of megaSheets.values()) if (s) s.batch.end(right);
+	if (props) props.batch.end(right);
 	shadows.end();
 	renderer.render(scene, camera);
 }
@@ -912,6 +947,7 @@ window.__m3d = {
 	rowOf: (facing, yaw) => facingRow(facing, yaw === undefined ? cam.yaw : yaw),
 	sq: (key, frame, dir, scale = 1) => sq(sheets.get(key), frame, dir, scale),
 	sparks, burst, spriteHtml,
+	props: () => (props ? { n: props.n, beads: props.beads, keys: [...props.atlas.cells.keys()], canvas: props.atlas.cv, ink: (key) => { const c = props.atlas.cells.get(key); if (!c) return -1; const d = props.atlas.ctx.getImageData(c.x, c.y, 64, 64).data; let n = 0; for (let i = 3; i < d.length; i += 4) if (d[i] > 127) n++; return n; }, colours: (key) => { const c = props.atlas.cells.get(key); if (!c) return 0; const d = props.atlas.ctx.getImageData(c.x, c.y, 64, 64).data, s = new Set(); for (let i = 0; i < d.length; i += 4) if (d[i + 3] > 127) s.add(d[i] << 16 | d[i + 1] << 8 | d[i + 2]); return s.size; } } : null),
 	quadOf: (key, frame, row) => { const s = sheets.get(key); return spriteQuad(s.meta, s.img, frame, row, 1, s.lift); },
 	respawn() { Object.assign(state, newState(room, TUNE)); state.facing = cam.yaw; },
 	put(x, z, y) { Object.assign(state, newState(room, TUNE)); state.x = x; state.z = z; state.y = y === undefined ? groundAt(room, x, z) : y; state.grounded = y === undefined; },
