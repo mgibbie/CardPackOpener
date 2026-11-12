@@ -24,6 +24,8 @@ export function runRow(S) {
 		if (C.faint.length) row.c.f = C.faint.flatMap((f) => [KIND[f.kind] || 1, f.dex, R(f.x * 10), R(f.y * 10), R(f.z * 10)]);
 		if (C.cine) row.c.k = [KIND[C.cine.kind] || 1, C.cine.dex, R(C.cine.x * 10), R(C.cine.y * 10), R(C.cine.z * 10), R(C.cine.t * 20)];
 	}
+	for (const m of w.mates) { if (m.inbox) for (let i = m.inbox.length - 1; i >= 0; i--) if (m.inbox[i][0] === 'xsa') { m.sa = String(m.inbox[i][1] || '').split(',').filter(Boolean).map(Number); m.inbox.splice(i, 1); } }
+	const g = w.mates.filter((m) => m.sa && m.sa.length).map((m) => [m.id, ...m.sa]); if (g.length) row.g = g;   // (co-op: each guest's Support Alphas, for the other screens)
 	if (S.lg) row.l = [S.lg.member, S.lg.form, S.lg.kit, S.lg.mat];
 	if (S.held) row.i = S.held;
 	if (S.surv && S.sv) row.s = [S.sv.land, S.sv.miles, S.sv.downs, S.sv.legends, S.ph === 2 ? Math.max(0, Math.ceil(S.sv.portalUntil - w.t)) : 0, R(w.t), S.sv.siege.on || S.sv.siege.k < 1 ? R(S.sv.siege.k * 100) : 0, S.sv.pacts.length];   // (Survival: the land, the milestones, the portal, the run's clock, the siege)
@@ -76,7 +78,7 @@ export function rowView(row, X, keep = {}) {
 		return parts.join(' · ') + (ph === 0 ? ` · charge ${ch} %` : '');
 	};
 	return { seed, map, diff, zone, ph, charge: ch / 100, fs: !!fs, coins, zt, over: over === 2 ? 'won' : over === 1 ? 'lost' : '', room, boss, eco, sa: c.s || [], faint, cine,
-		league: row.l ? { member: row.l[0], form: row.l[1], kit: row.l[2], mat: row.l[3] } : null, held: row.i || null, surv: sv, hazards, night: sv && V ? V.nightOf(sv.t).dark : 0, hud };
+		league: row.l ? { member: row.l[0], form: row.l[1], kit: row.l[2], mat: row.l[3] } : null, held: row.i || null, mateSa: new Map((row.g || []).map((r) => [r[0], r.slice(1)])), surv: sv, hazards, night: sv && V ? V.nightOf(sv.t).dark : 0, hud };
 }
 /** Where a watcher draws Support Alpha i of n: behind the player it sees, fanned out (the playing side's own are a
  *  little livelier: they lag and catch up; a watcher's stand in their places). */

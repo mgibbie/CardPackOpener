@@ -26,6 +26,7 @@ import { rng as makeRng } from './gen.js';
 import { rollOffers, pickTake } from './expeco.js';
 import { takeItem } from './explevel.js';
 import { setupCap, guestCatch, tickGuestCap, syncPerks } from './expcap.js';
+import { setupSurv, tickOwn } from './expsurv.js';
 
 /** A guest's side of a run. o: { seed, map, diff, dex (its species: it plays that family's member), id (its number in
  *  the party; the host is 0), league: false for a plain body with `moves`, and guestWorld's options }.
@@ -62,6 +63,7 @@ export function guestRunApply(S, row) {
 		w.events.push({ k: 'zone', zone: rv.zone });
 	}
 	S.zone = rv.zone; S.ph = rv.ph; S.charge = rv.charge; S.coins = rv.coins;
+	if (rv.surv && !S.sv && S.X.V) { S.surv = true; setupSurv(S); }   // (a Survival run: its own pacts, siege, wounds and ground underfoot)
 	if (rv.over && !S.ended) { S.ended = true; S.won = rv.over === 'won'; S.lost = !S.won; }
 	return rv;
 }
@@ -72,7 +74,11 @@ export function stepGuest(S, input, dt = K.TICK) {
 	const w = S.w, t0 = w.t;
 	tick(w, input, dt);
 	for (const ev of w.events) if (ev.k === 'say') S.says.push({ text: ev.text, s: ev.s });
-	if (w.t !== t0) { tickStats(S, dt); tickGuestCap(S, dt); }
+	if (w.t !== t0) {
+		tickStats(S, dt); tickGuestCap(S, dt);
+		if (S.sv && S.rv && S.rv.surv) tickOwn(S, dt, S.rv.surv.t, S.rv.surv.downs);
+		const sa = S.cap ? S.cap.sa.map((a) => a.dex).join(',') : ''; if (sa !== (S.saSent || '')) { S.saSent = sa; w.co.outbox.push(['xsa', sa]); }   // (its team, for the other screens)
+	}
 	for (const ev of w.events) if (ev.k === 'pickup' && ev.kind === 'item') takeItem(S, ev.value);
 	for (const g of w.co.inbox.splice(0)) guestGift(S, g);
 	if (S.pick && (w.autoPick !== undefined && w.autoPick !== null)) { const P = S.pick; if (P.kind === 'shop' || P.kind === 'hypno') S.pick = null; else if (P.onTake) pickTake(S, 0); else for (let i = 0; S.pick === P && i < P.ids.length; i++) pickTake(S, i); if (S.pick === P) S.pick = null; }

@@ -13,6 +13,8 @@
 //   * a guest uses the zone's things: the host keeps their state and the team's money, the guest rolls and keeps what
 //     is its own (rocks, berries, the three balls, altars, Ditto, Hypno, cages, Meowth, the slot machine)
 //   * a guest catches: its own Support Alpha, fighting from its side; a full team kept sends the prize back
+//   * Survival together: each player's own pacts, siege and ground underfoot; the team pays for everyone's pacts; a
+//     guest takes the team through the migration portal; a guest's team is told to the other screens
 //   node overworld/tests/micasurvivor_m3d_expcoop_test.mjs
 import { hashRoom } from '../../micasurvivor/m3d/gen.js';
 import { dataFrom, gainXp, choose } from '../../micasurvivor/m3d/combat.js';
@@ -21,7 +23,9 @@ import { hostAdd, hostStep, hostFrame, hostApply, guestSync, guestMsg, guestAppl
 import { expFrom, newRun, stepRun, spawn, fire, bossHp, capNow, setZoneTime } from '../../micasurvivor/m3d/expedition.js';
 import { EK, FRESH, USED, layoutOf, mods, pickTake, pickClose, shopPrices } from '../../micasurvivor/m3d/expeco.js';
 import { total } from '../../micasurvivor/m3d/explevel.js';
-import { runRow } from '../../micasurvivor/m3d/expnet.js';
+import { runRow, rowView } from '../../micasurvivor/m3d/expnet.js';
+import { hazardsOf, foeTeam, takePact } from '../../micasurvivor/m3d/expsurv.js';
+import { recruit } from '../../micasurvivor/m3d/expcap.js';
 import { guestRun, guestRunApply, stepGuest } from '../../micasurvivor/m3d/expcoop.js';
 import { loadG } from './m3d_data.mjs';
 
@@ -234,6 +238,45 @@ function party(o = {}) {
 		P.step(0.8);
 		A(H.cap.log.prizes === 1 && Gs.cap.sa.map((a) => a.dex).join() === '74,4' && items(Gs) === gi + 1 && items(H) === hi, 'and the alpha\'s prize falls on the floor; the guest, standing right there, picks it up: the item is the GUEST\'s, not the host\'s', [H.w.pickups.map((p) => p.kind), H.cap.log, items(Gs), gi, items(H), hi]);
 	}
+}
+
+// ---------------------------------------------------------------- Survival, together
+{
+	const P = party({ host: { mode: 'survival' }, hostPick: null, guestPick: null }), { H, G: Gs } = P;
+	H.w.pl.xpMul = 0;
+	A(H.surv && Gs.surv && Gs.sv && Gs.rv.surv && Gs.rv.surv.land === 1 && hashRoom(Gs.w.room) === hashRoom(H.w.room) && /^SURVIVAL · PHASE 1 · BOSS IN/.test(Gs.rv.hud()), 'a guest in a Survival run: it is told so, builds the land, and has its own side of it (' + Gs.rv.hud() + ')');
+	// its own ground underfoot
+	const mud = hazardsOf(Gs.w.room, Gs).find((o) => o.kind === 'mud'); P.put(Gs, [mud.x, mud.y, mud.z]); Gs.sv.px = NaN; P.step(0.3);
+	A(Gs.sv.haz === 'mud' && H.sv.haz === null, 'the guest stands in mud: it is the GUEST that is slowed, on its side');
+	P.put(Gs, H.w.room.spawn); P.step(0.2);
+	// a milestone: a pact for each
+	H.sv.seg = 0; H.sv.segEv = []; H.w.t = 299.9; H.w.tick = Math.round(299.9 * 60); P.step(0.5);
+	A(H.boss && H.sv.miles === 1 && Gs.w.enemies.some((e) => e.boss), 'at 5:00 the milestone boss, for both');
+	H.w.hit(H.boss, 1e12, 0, 0, 0); P.step(0.8);
+	const hp = H.pick, gp = Gs.pick;
+	A(hp && gp && hp.kind === 'pact' && gp.kind === 'pact' && hp.cards.length === 3 && gp.cards.length === 3 && hp.cards.map((c) => c.id).join() !== gp.cards.map((c) => c.id).join(), `it falls: each player is offered pacts of their own (the host: ${hp && hp.cards.map((c) => c.id).join(', ')}; the guest: ${gp && gp.cards.map((c) => c.id).join(', ')})`);
+	const t = H.w.t; P.step(0.5); A(H.w.t > t, 'the fight goes on while they choose');
+	pickClose(H); pickClose(Gs);
+	const e0 = spawn(H, 19, H.w.pl.s.x + 6, H.w.pl.s.z); e0.dead = true;
+	takePact(Gs, 'frenzy'); P.step(0.5);
+	const e1 = spawn(H, 19, H.w.pl.s.x + 6, H.w.pl.s.z); e1.dead = true;
+	A(Gs.sv.pacts.join() === 'frenzy' && P.mate.pacts && P.mate.pacts.join() === 'frenzy' && near(foeTeam(H).dmg, 0.15) && near(e1.dmg / e0.dmg, 1.15, 0.01) && near(total(Gs, 'atkspd'), 0.15) && total(H, 'atkspd') === 0, 'the guest seals Frenzy: the boon is the guest\'s alone, the price is on every enemy of the team');
+	// the guest's siege
+	H.sv.miles = 99; H.sv.nextMig = 1e9; H.sv.seg = 1; for (const e of H.w.enemies) e.dead = true;
+	P.put(H, [H.w.room.spawn[0] + 12, H.w.room.spawn[1], H.w.room.spawn[2]]);
+	let moved = 0; for (let k = 0; k < 21 * 4; k++) { P.put(H, [H.w.room.spawn[0] + 12 + (k % 2 ? 8 : 0), H.w.room.spawn[1], H.w.room.spawn[2]]); P.step(0.25); moved++; for (const e of H.w.enemies) if (!e.xsiege) e.dead = true; }
+	const flock = H.w.enemies.filter((e) => e.xsiege && !e.dead), gs = Gs.w.pl.s;
+	A(Gs.sv.siege.on && Gs.sv.siege.k < 1 && !H.sv.siege.on && flock.length >= 5 && flock.every((e) => Math.hypot(e.a.x - gs.x, e.a.z - gs.z) < 30), `the guest stands still 20 s while the host keeps moving: the siege is the GUEST's (its damage ${Math.round(Gs.sv.siege.k * 100)} %), and the flock comes for it`, [Gs.sv.siege, H.sv.siege.on, flock.length]);
+	for (const e of H.w.enemies) e.dead = true;
+	// migration, by the guest
+	H.sv.nextMig = H.w.t; P.step(0.3); const h1 = hashRoom(H.w.room);
+	A(H.ph === 2 && Gs.ph === 2 && Gs.rv.surv.portal > 80, 'the migration portal opens for both');
+	P.put(Gs, H.w.room.altar); P.step(2);
+	A(H.sv.land === 2 && Gs.rv.surv.land === 2 && hashRoom(H.w.room) !== h1 && hashRoom(Gs.w.room) === hashRoom(H.w.room) && Gs.sv.pacts.join() === 'frenzy', 'the guest steps in: the team migrates, and both are on land 2\'s new ground (its pact came along)');
+	// a guest's team, on the other screens
+	recruit(Gs, 74, null, null); P.step(0.6);
+	const row = JSON.parse(JSON.stringify(runRow(H))), seen = rowView(row, XG, {});
+	A(P.mate.sa && P.mate.sa.join() === '74' && seen.mateSa.get(1) && seen.mateSa.get(1).join() === '74' && seen.sa.length === 0, 'the guest\'s Support Alpha is told to the host, and is in the run\'s row for every other screen (as the guest\'s, not the host\'s)');
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);

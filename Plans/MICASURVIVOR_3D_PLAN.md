@@ -964,6 +964,21 @@ guest's Support Alphas on the other screens, then the shipping path (the real, M
 
 Tests: Survival 74 checks (was 59), the row 26 (was 21), the run's end 23 (was 21), the page test 37 (was 35).
 
+## 5.28 P4, twelfth part: built (2026-11-12). Survival together; a guest's team on every screen.
+
+- **Survival in co-op**, by the 2D rule. The host has the clock, the milestone bosses, the timeline, the portal
+  and the flocks. Each player has, on its own side: its pacts (offered from its own seeded draw), its siege
+  (its own damage; the host sends the flock to whoever is under one), its wounds and the hostile ground under
+  its feet. The team pays the price of everyone's pacts. Either player takes the team through the migration
+  portal.
+- **A guest's Support Alphas** are told to the host and ride in the run's row, so the host, the other guests,
+  a watcher and a replay draw them behind that guest.
+
+**Still of P4**: the fog of war and the zone map, Mega Evolution, wild League encounters. Then the shipping
+path (the real, Micatro-style screens; saving).
+
+Tests: the co-op rules 66 checks (was 56).
+
 ## 6. Dive in 2D: built
 
 **D0 — find the stairs (small; can ship first, on its own).** *Built 2026-11-11 (`overworld/tests/micasurvivor_dive_stairs_test.mjs`). As built: the stairs took their own orange mark, so the rocks and Meowth keep their gold; the HUD arrow comes up after 25 s on a floor, or at once when its boss falls.*
