@@ -1106,6 +1106,43 @@ remapping, as everywhere on the site.
 
 Tests: `micasurvivor_m3d_controls_test.mjs` (15 checks, a real browser, with site/gamepad.js's test controller): new.
 
+## 5.34 The shipping path, fourth part: built (2026-11-12). What a run leaves behind.
+
+Owner: a 3D run pays into the same save as a 2D one; 3D scores have their own boards. `micasurvivor/m3d/expsave.js`.
+
+**Two saves, and only one is written from the 3D page.**
+
+- The **Expedition save** (`js/expedition/save.js`: counters merged by the largest, sets by union) is safe to write
+  from any page. A 3D run writes it with the 2D game's own keys: the run, its best time, its splits, its zone, a
+  win with its clear, medal and next tier, Survival's records, the League's counters and forms, a Mega seen.
+  The 2D game's own code then reads the medal, the next tier and the next map from them.
+- The **base save** (Pokémonedas, the collection) is merged by the whole game (its Tower, its modes, its co-op
+  each merge their part). A page without those would drop their part on a conflict, so the 3D page never opens
+  it. A run's pay is written into the Expedition save as **owed to this browser** (`pay3d.<device>`), and the 2D
+  game pays it into the wallet the next time the Expedition opens there (`meta.js claim3d`, `pay3d.claimed.
+  <device>`); the forms a run evolved into join the collection there too. Both counters are written by one
+  browser only, so merging by the largest neither pays twice nor loses a payment. No profile yet: it waits.
+
+**A run is kept only if** it is fair (the page's own address: the seed, the map, the tier, the member, Survival;
+any test parameter makes it a practice run), it is a League run as a member the save has, on a map and at a tier
+the save has open, and it is clean (the 2D game's checks: the run's clock no faster than the real one, stats
+within what a run can reach). The run's end says what happened: "Saved. ₽ N will be in your wallet when you
+next open the Expedition.", or why nothing was saved.
+
+**The 3D boards.** `run-score` with `d3: true` files a score under `:3d` in every key (the score, time, Survival
+and season boards and the player's bests): `runboard:micasurvivor_expedition:r2:3d:<map>:<diff>`. The parts and
+the plausibility checks are the 2D boards'; a 3D score carries no replay. Signed in and alone, a kept run posts
+its mark and the run's end shows the rank.
+
+Not kept yet: the economy's, the capture's and the level-ups' counters, the tasks; achievements are checked by
+the 2D game from the counters there are. Pay owed to a browser whose storage was cleared before the 2D game
+opened there stays owed (it is in the save, under that browser's id). Next: wild League encounters, which read
+this save; a screen for the 3D boards; live watching over the site's lines.
+
+Tests: `micasurvivor_m3d_expsave_test.mjs` (24 checks, node, against the 2D game's own save.js / tiers.js /
+meta.js), `micasurvivor_m3d_save_page_test.mjs` (9 checks, a real browser, a 65 s run), `micasurvivor_server_test
+.mjs` 161 checks (was 150: the 3D boards).
+
 ## 6. Dive in 2D: built
 
 **D0 — find the stairs (small; can ship first, on its own).** *Built 2026-11-11 (`overworld/tests/micasurvivor_dive_stairs_test.mjs`). As built: the stairs took their own orange mark, so the rocks and Meowth keep their gold; the HUD arrow comes up after 25 s on a floor, or at once when its boss falls.*

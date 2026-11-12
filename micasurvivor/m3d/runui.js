@@ -8,7 +8,8 @@
 //   view: { name, level, hp, maxHp, shield, xp, xpNext, time (s), kos, parts: [the run's line, in pieces], note,
 //           boss: { name, hp, maxHp, enraged } | null, moves: [{ name, lv, col }], bag: [{ text, kind }],
 //           menu: null | { title, line, restart: url | null, leave: url } (the pause menu),
-//           over: null | { won, title, line, rows: [[label, value]], again: url | null, leave: url } }
+//           over: null | { won, title, line, rows: [[label, value]], kept: { ok, text } | null (what the save did),
+//                          again: url | null, leave: url } }
 
 export const mmss = (t) => `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, '0')}`;
 /** 'flame-wheel' -> 'Flame Wheel'. */
@@ -60,9 +61,11 @@ export function mountRunUi(doc, o = {}) {
 			$('rx-menu').classList.toggle('show', !!m);
 		}
 		cls('rx-menu-btn', 'hide', !!v.over);
-		if (v.over && !last.over) {
-			last.over = true; const r = v.over;
+		const ok = v.over ? JSON.stringify(v.over) : '';
+		if (v.over && last.over !== ok) {   // (it is drawn again when it changes: the save's line comes a moment later)
+			last.over = ok; const r = v.over;
 			$('rx-end').innerHTML = `<div class="rx-panel"><h1 class="${r.won ? 'won' : 'lost'}">${esc(r.title)}</h1><p>${esc(r.line || '')}</p>`
+				+ (r.kept ? `<p class="rx-kept ${r.kept.ok ? 'ok' : ''}" id="rx-kept">${esc(r.kept.text)}</p>` : '')
 				+ (r.rows && r.rows.length ? `<div class="rx-rows">${r.rows.map(([a, b]) => `<span>${esc(a)}</span><span>${esc(b)}</span>`).join('')}</div>` : '')
 				+ `<div class="rx-btns">${r.again ? `<a class="rx-btn blue" id="rx-again" href="${esc(r.again)}">Play again</a>` : ''}<a class="rx-btn red" id="rx-leave" href="${esc(r.leave || '../')}">Leave</a></div></div>`;
 			$('rx-end').classList.add('show');

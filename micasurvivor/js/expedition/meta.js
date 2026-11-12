@@ -432,6 +432,28 @@ G.ExpMeta = (() => {
     return moved;
   }
 
+  // ---------------- 3D Expedition (micasurvivor/m3d/expsave.js): what its runs left for this game to do ----------------
+  /**
+   * A 3D run never opens the base save (only the whole game merges it): it writes its pay into the Expedition save as owed
+   * to its browser (`pay3d.<device>`) and counts itself (`m3d.n.<device>`). Here, on that browser, the difference with
+   * `pay3d.claimed.<device>` goes into the wallet and the forms those runs evolved into join the collection. Both
+   * counters are written by this browser only, so merging by the largest neither pays twice nor loses a payment.
+   * -> the Pokémonedas paid
+   */
+  function claim3d() {
+    if (!Sv() || !Sv().data || !G.Expedition || !G.Expedition.wallet || !(G.DB && G.DB.save)) return 0;
+    const d = dev(), n = Sv().get('m3d.n.' + d);
+    if (!(n > Sv().get('m3d.seen.' + d))) return 0;
+    if (G.Unlocks) G.Unlocks.add(Sv().list('league.form').map(Number), 'expedition');
+    const owed = Sv().get('pay3d.' + d) - Sv().get('pay3d.claimed.' + d);
+    const got = owed > 0 ? credit(owed) : 0;
+    if (got) { Sv().bump('pay3d.claimed.' + d, got); Sv().bump('pay.total', got); }
+    if (got || !(owed > 0)) Sv().best('m3d.seen.' + d, n);   // (not paid, e.g. no profile yet: it waits for the next time)
+    Sv().commit();
+    if (got && G.UI && G.UI.toast) G.UI.toast(F('Expedición 3D: +{x} Pokémonedas', got), 3200);
+    return got;
+  }
+
   // ---------------- DLC D16 / D18: the retired Lab rows, refunded once per account ----------------
   const refundKey = (id, i) => 'rf.lab.' + id + '.' + i;
   /** The refunds this save still owes: every level bought of a retired row that no device has refunded. -> ['rf.lab.<id>.<i>'] */
@@ -864,6 +886,7 @@ G.ExpMeta = (() => {
     const diff = sum.diff || 'normal', pay = sum.mode === 'exp-dive' && p.divePay != null ? { base: p.divePay, mul: 1, pay: coinsOf(p.divePay) }   // (Dive V2: the loot it banked)
       : payOf(sum.mode === 'exp-survival' ? Object.assign({}, p, { surv: true }) : p, diff);   // (D11: Survival's minutes)
     reconcile();   // (a double payment from another device, undone before this run pays)
+    claim3d();     // (what 3D runs on this browser left owed)
     refundRetired();   // (DLC D16 / D18: the retired Lab rows' refunds, once per account)
     if (pay.pay > 0) {
       const got = credit(pay.pay); Svv.bump('pay.total', got); Svv.best('pay.best', got);
@@ -974,6 +997,7 @@ G.ExpMeta = (() => {
     const box = document.querySelector('#scr-modes .modes-box');
     if (box) { scrollWas = box.scrollTop; box.scrollTop = 0; }
     reconcile();
+    claim3d();   // (what 3D runs on this browser left owed)
     refundRetired();   // (DLC D16 / D18)
     for (const a of checkAch()) G.UI.toast(F('¡Logro: {x}! +{x} Pokémonedas', T.t(a.name), coinsOf(a.star)), 3000);
     render();
@@ -1176,7 +1200,7 @@ G.ExpMeta = (() => {
 
   return {
     K, LAB, LAB_BY, BOOSTS, BOOST_BY, UNLOCKS, ACH, ACH_BY, TASKS, FRAMES, TITLES,
-    price, labCost, labLv, buyLab, labText, balance, earned, credit, debit, coinsOf, reconcile, amountOf, payOf, dev,
+    price, labCost, labLv, buyLab, labText, balance, earned, credit, debit, coinsOf, reconcile, claim3d, amountOf, payOf, dev,
     locked, bought, buyItem, stat, goalText, archived, toggleArchive, arcSlots,
     research, needOf, avatars, koPts, shinies, perkTier, boostHave, giveBoost, armed, arm,
     tasksOf, reroll, taskRun, dayOf, weekOf, periodOf, dailyStreak, checkAch, achHave,

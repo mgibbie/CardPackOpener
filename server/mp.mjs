@@ -2375,6 +2375,10 @@ export default async function handler(req, env) {
 			if (!MSURV_EXP_MAPS.includes(body.map) || !MSURV_EXP_DIFFS.includes(body.diff)) return json({ error: 'an Expedition board needs its map and difficulty', maps: MSURV_EXP_MAPS, diffs: MSURV_EXP_DIFFS }, 400);
 			if (action === 'run-score' && (!MSURV_EXP_MODE_RE.test(String(body.expMode)) || !msurvExpDvOk(body.dv))) return json({ error: 'an Expedition score needs its mode and content version' }, 400);
 			if (action === 'run-score' ? body.dv >= MSURV_EXP_AF_DV : body.rules === MSURV_RULES) rulesSub = ':r2';
+			// 3D Expedition (owner 2026-11-12): a 3D zone plays faster than a 2D one, so its scores have their own boards:
+			// `d3: true` puts ':3d' in every key (the score, time, survival and season boards and the player's bests)
+			if (body.d3 !== undefined && body.d3 !== true) return json({ error: 'd3 is true or absent' }, 400);
+			if (body.d3 === true) { if (body.replay !== undefined) return json({ error: 'a 3D score carries no replay' }, 400); rulesSub += ':3d'; }
 			expSub = rulesSub + ':' + body.map + ':' + body.diff;
 		}
 		const key = 'runboard:' + mode + (mode === 'micasurvivor' ? rulesSub : '') + expSub;

@@ -9,15 +9,16 @@ const JS = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../mic
 export const DATA_SCRIPTS = ['core/util.js', 'data/pokedex.js', 'data/sprites-meta.js', 'core/sprites.js', 'data/moves.js', 'data/types.js', 'data/enemies.js', 'systems/weather.js', 'systems/abilities.js', 'data/items.js', 'expedition/moves.js', "expedition/terrain.js", "expedition/tiers.js", "expedition/classic.js", "expedition/items.js", "expedition/levelups.js", "expedition/league-data.js", "expedition/league.js", "data/mega-data.js", "expedition/mega.js", "expedition/economy.js", "expedition/capture.js", "expedition/survival.js"];
 
 /** The game's global `G`, with the data scripts run. */
-export function loadG(extra = []) {
+export function loadG(extra = [], o = {}) {   // (o.localStorage: a store of the test's own; o.pre(G): before the scripts run)
 	const ctx = { console, Math, performance, setTimeout, clearTimeout };
 	ctx.window = ctx; ctx.globalThis = ctx; ctx.G = {};
 	ctx.document = { addEventListener() { }, createElement: () => ({ getContext: () => null, style: {} }), getElementById: () => null, documentElement: { style: {} }, head: { appendChild() { } } };
-	ctx.localStorage = { getItem: () => null, setItem() { } }; ctx.navigator = { userAgent: 'node' }; ctx.addEventListener = () => { };
+	ctx.localStorage = o.localStorage || { getItem: () => null, setItem() { } }; ctx.crypto = globalThis.crypto; ctx.Date = Date; ctx.JSON = JSON; ctx.navigator = { userAgent: 'node' }; ctx.addEventListener = () => { };
 	ctx.location = { search: '', hostname: 'localhost', href: '' };
 	vm.createContext(ctx);
 	// (expedition/moves.js registers its English texts with the game's translation table: a stand-in is enough here)
 	ctx.G.I18n = { lang: 'en', add() { }, t: (s) => s, f: (s) => s };
+	if (o.pre) o.pre(ctx.G);
 	for (const f of DATA_SCRIPTS.concat(extra)) vm.runInContext(fs.readFileSync(path.join(JS, f), 'utf8'), ctx, { filename: f });
 	return ctx.G;
 }

@@ -14,6 +14,7 @@ import { frame as netFrame, keepEvents, diff as netDiff, bundle, unbundle, Viewe
 import { hostAdd, hostStep, hostFrame, hostApply, guestWorld, guestSync, guestMsg, guestApply } from './coop.js';
 import { generate, BIOMES } from './gen.js';
 import { mountRunUi, pretty } from './runui.js';
+import { unfair, clean as cleanRun, deviceId, missing as saveMissing, runSum, recordOps, applyOps, scoreBody, WHY, SV } from './expsave.js';
 import { startInput } from '/site/input.js';
 import { createFocusNav } from '/site/focusnav.js';
 import { expFrom, newRun, stepRun, hudLine, result as runResult, setZoneTime, fire as fireEvent, zoneRoom } from './expedition.js';
@@ -333,7 +334,7 @@ function frame(now) {
 					const dark = GG.ExpSurv ? GG.ExpSurv.nightOf(world.t).dark : 0; canvas.style.filter = dark > 0 ? `brightness(${(1 - dark).toFixed(2)})` : '';
 				}
 				if (run.w.room !== room) { room = run.w.room; mapBase = null; showRoom(); state.facing = cam.yaw; }
-				if (run.ended && !runOver) { runOver = runResult(run); note(runOver.survival ? `${runOver.lines.join(' · ')} · score ${runOver.score}` : `${runOver.title} ${runOver.line} · score ${runOver.score} · pay ${runOver.pay.pay}${runOver.medal ? ' · ' + runOver.medal + ' medal' : ''}`, 600000); }
+				if (run.ended && !runOver) { runOver = runResult(run); keepRun(runOver); note(runOver.survival ? `${runOver.lines.join(' · ')} · score ${runOver.score}` : `${runOver.title} ${runOver.line} · score ${runOver.score} · pay ${runOver.pay.pay}${runOver.medal ? ' · ' + runOver.medal + ' medal' : ''}`, 600000); }
 			} else if (grun) { stepGuest(grun, input, K.TICK); for (const q of grun.says) note(q.text, q.s * 1000); if (grun.pick !== shownPick) showPick(); if (runOver === null && grun.ended) { runOver = grun.won ? 'won' : 'lost'; note(grun.won ? 'EXPEDITION COMPLETE!' : 'RUN OVER', 600000); } }
 			else tick(world, input, K.TICK);
 			fightEvents(world.events);
@@ -467,7 +468,7 @@ let rv = null; const rowKeep = {};
 let viewer = WATCH ? new Viewer() : null, view = null, watchT = -1, watchSrc = WATCH ? 'live' : null, tapeEnd = 0;
 if (chan && HOST && world) chan.onmessage = (m) => {   // the host: a guest asks to join, or reports
 	const o = JSON.parse(m.data); net.got++;
-	if (o.join && !world.mates.some((q) => q.id === o.join.id) && world.mates.length < 3) { hostAdd(world, o.join.id, o.join.dex); note(`${(GG.DEX_BY[o.join.dex] || {}).name || 'a player'} joined`, 2500); }
+	if (o.join && !world.mates.some((q) => q.id === o.join.id) && world.mates.length < 3) { coopSeen = true; hostAdd(world, o.join.id, o.join.dex); note(`${(GG.DEX_BY[o.join.dex] || {}).name || 'a player'} joined`, 2500); }
 	else if (o.g) hostApply(world, o.g, o.m);
 };
 if (chan && JOIN) chan.onmessage = (m) => {   // a guest: the host's frames
@@ -619,7 +620,7 @@ function runView() {
 	if (runOver) {
 		const r = runOver, q = new URLSearchParams(location.search); q.set('exp', (+q.get('exp') || 0) + 1);
 		v.over = typeof r === 'string' ? { won: r === 'won', title: r === 'won' ? 'EXPEDITION COMPLETE!' : 'RUN OVER', line: '', rows: [], again: null, leave: '../' }
-			: { won: r.won, title: r.title, line: r.survival ? r.lines.join(' · ') : r.line, again: run ? '?' + q : null, leave: '../',
+			: { won: r.won, title: r.title, line: r.survival ? r.lines.join(' · ') : r.line, again: run ? '?' + q : null, leave: '../', kept: kept ? { ok: kept.ok, text: kept.text } : null,
 				rows: [['Time', `${Math.floor(r.parts.time / 60)}:${String(r.parts.time % 60).padStart(2, '0')}`], ['KOs', String(r.parts.kills)], ['Level', String(v.level)], ['Score', String(r.score)], ['Pay', '₽ ' + r.pay.pay]].concat(r.medal ? [['Medal', r.medal]] : []) };
 	} else if (noteText && performance.now() < noteUntil) v.note = noteText;
 	return v;
@@ -645,6 +646,34 @@ const siteInput = startInput({ pad: true,
 // the Games switcher (site/switcher.js): the fight waits under it, and leaving a run asks first
 addEventListener('mp-switcher-open', () => { acts.clear(); keys.clear(); if (RUNUI && !runOver) setMenu(true); });
 window.mpLeaveGuard = () => (myRun && !runOver ? { state: 'confirm', message: 'Leaving ends this run.' } : { state: 'safe' });
+// ---------------------------------------------------------------- what a run leaves behind (the shipping path, part 4)
+// expsave.js: a fair, clean run of your own is written into the Expedition save (its pay as owed: the 2D game pays
+// it into the wallet) and, signed in and alone, posted to the 3D boards. `kept` is what the run's end says of it.
+const PRACTICE = run ? unfair([...Q.entries()]) : null, runBegan = performance.now();
+const saveOpen = run && !PRACTICE && GG.ExpSave ? GG.ExpSave.open().then(() => true, () => false) : null;
+let kept = null, coopSeen = false;
+async function keepRun(res) {
+	const say = (ok, text, extra) => { kept = { ok, text, ...extra }; if (RUNUI) RUNUI.update(runView()); return kept; };
+	if (PRACTICE) return say(false, WHY.practice, { why: 'practice', param: PRACTICE });
+	try {
+		const Sv = GG.ExpSave, real = (performance.now() - runBegan) / 1000, fine = cleanRun(run, real);
+		if (!saveOpen || !(await saveOpen) || !Sv.data) return say(false, WHY.nosave, { why: 'nosave' });
+		if (!fine) return say(false, WHY.unclean, { why: 'unclean' });
+		let base = null; try { base = JSON.parse(localStorage.getItem('micasurvivor_save.' + (Sv.who || 'guest')) || 'null'); } catch (e) { /* no base save here: the Expedition save alone decides */ }
+		const miss = saveMissing(run, { L: GG.ExpLeague, T: GG.ExpTier, Sv, base });
+		if (miss) return say(false, WHY[miss], { why: miss });
+		const dev = deviceId(localStorage, Sv.who, crypto), ops = recordOps(run, res, { T: GG.ExpTier, dev });
+		applyOps(Sv, ops);
+		const pay = res.pay ? res.pay.pay : 0;
+		say(true, pay > 0 ? `Saved. ₽ ${pay} will be in your wallet when you next open the Expedition.` : 'Saved.', { ops: ops.length, pay });
+		const A = GG.MicaAccount;
+		if (A && A.name() && !coopSeen) {
+			const d = await A.call('run-score', scoreBody(runSum(run, res, SV.DV)));
+			if (d.ok && d.body && d.body.rank) say(true, kept.text + (d.body.better ? ` New best on the 3D board: #${d.body.rank}.` : ` 3D board: #${d.body.rank}.`), { rank: d.body.rank, board: d.body.board });
+		}
+	} catch (e) { console.warn('the run was not saved: ' + (e && e.message)); say(false, WHY.nosave, { why: 'error' }); }
+	return kept;
+}
 let noteText = '', noteUntil = 0;
 const noteLog = [];   // (the last notes shown: one can be gone from the screen in a moment)
 function note(t, ms) { noteText = t; noteUntil = performance.now() + ms; if (noteLog[noteLog.length - 1] !== t) { noteLog.push(t); if (noteLog.length > 60) noteLog.shift(); } }
@@ -695,6 +724,7 @@ function showHud() {
 
 // what a test (and a curious owner in the console) can reach
 window.__m3d = {
+	get kept() { return kept; }, practice: PRACTICE,
 	acts, uiNav, siteInput,
 	setMenu, get paused() { return paused; },
 	runView: () => (RUNUI ? runView() : null),

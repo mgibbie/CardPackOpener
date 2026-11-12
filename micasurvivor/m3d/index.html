@@ -67,6 +67,9 @@
 	<!-- (P3) Expedition's own moves (its 8 extra kinds). It registers its English texts with the game's translation
 	     table: a stand-in is enough here (the real one rewrites the page's text as it is drawn) -->
 	<script>G.I18n = G.I18n || { lang: 'en', add() {}, f: (s) => s, t: (s) => { const en = G.ExpEN && G.ExpEN[s]; if (en) return en; const N = G.U && G.U.TYPE_NAME; if (N) for (const k in N) if (N[k] === s) return k[0].toUpperCase() + k.slice(1); return s; } };</script>
+	<!-- the shipping path: who is signed in, and the Expedition save (never the base save: m3d/expsave.js) -->
+	<script src="../js/mica/account.js"></script>
+	<script src="../js/expedition/save.js"></script>
 	<script src="../js/expedition/moves.js"></script>
 	<!-- P4: Expedition's plan, tiers and numbers (terrain.js for the seeded stream they draw from) -->
 	<script src="../js/expedition/terrain.js"></script>
