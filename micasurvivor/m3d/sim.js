@@ -86,6 +86,17 @@ export const K = {
 	WALLJUMP_OUT: 6.5,    // m/s away from the wall
 	WALLJUMP_V: 9.5,      // m/s up
 	WALL_COYOTE: 0.12,    // s after leaving a wall in which its jump still counts
+	// SURFING: a slope too steep to stand on used to be only a chute (it threw you down it). Now you can SURF it: what you
+	// hold ACROSS it carries you along it (up to SURF_SPEED), and holding INTO it while you are fast across takes most of
+	// its pull away, so a fast line across a bank holds its height. A jump leaves it (only while you are surfing: you cannot
+	// hop your way up a bank from a standstill), off the slope and up.
+	SURF_ACCEL: 14,       // m/s² along the slope's contour, the way you hold
+	SURF_SPEED: 13,       // m/s across it that holding brings you to
+	SURF_MIN: 5,          // m/s across it to be surfing: to hold a line, and to jump off it
+	SURF_HOLD: 0.95,      // of the slope's pull that holding into it takes away (at SURF_MIN across or more)
+	SURF_INTO: 0.6,       // how much of what you hold must point into the slope for the whole of that (a diagonal does)
+	SURF_MAX: 20,         // m/s on a slope too steep to stand on (above MAX_SPEED: the pull adds to your line)
+	SURF_JUMP_OUT: 3,     // m/s off the slope with a jump from it
 	// RAILS: a room may have rails (room.rails: [{ pts: [[x, y, z], …] }], lines through the air). Come down on one and you
 	// GRIND it: carried along it the way you were going, at RAIL_SPEED or what you came with (downhill adds, uphill takes,
 	// never under RAIL_MIN). Jump to leap off it with your speed (your air jumps are back); slide to drop off; at its end
@@ -185,7 +196,7 @@ export function newState(room, tune = K) {
 		airJumps: tune.AIR_JUMPS, jumpHeld: false, crouchHeld: false, stagger: 0, gvy: 0, bouncing: false, t: 0, tick: 0,
 		landed: 0, hard: 0, broke: '', jumped: 0, bounced: 0, respawns: 0,
 		wall: 0, wallT: 0, wallLast: 0, wallCoyote: 0, wallNx: 0, wallNz: 0,
-		rail: -1, railSeg: 0, railU: 0, railDir: 1, railV: 0, railLock: 0, railed: 0 };   // (the rail you grind: which, where on it, which way, how fast)   // (the wall carrying you: 1 +x, 2 -x, 3 +z, 4 -z; 0 none)
+		rail: -1, railSeg: 0, railU: 0, railDir: 1, railV: 0, railLock: 0, railed: 0, surfing: false };   // (the rail you grind: which, where on it, which way, how fast)   // (the wall carrying you: 1 +x, 2 -x, 3 +z, 4 -z; 0 none)
 }
 /** No input. { mx, mz: the wished direction on the ground plane in WORLD axes (any length up to 1), jump, crouch: held } */
 export const noInput = () => ({ mx: 0, mz: 0, jump: false, crouch: false });
@@ -289,7 +300,8 @@ export function step(s, input, room, dt = K.TICK, tune = K) {
 	}
 	// the jump: from the ground (or within the coyote time), off a wall, else an air jump
 	if (s.buffer > 0 && s.stagger <= 0) {
-		const fromGround = (s.grounded || s.coyote > 0) && surface !== 'steep';
+		const surfJump = surface === 'steep' && s.surfing;
+		const fromGround = (s.grounded || s.coyote > 0) && (surface !== 'steep' || surfJump);
 		if (!fromGround && (s.wall || s.wallCoyote > 0)) {
 			// off the wall: away from it and up, keeping the speed along it; it costs no air jump
 			const into = s.vx * s.wallNx + s.vz * s.wallNz;
@@ -299,6 +311,7 @@ export function step(s, input, room, dt = K.TICK, tune = K) {
 		} else if (fromGround || s.airJumps > 0) {
 			if (!fromGround) s.airJumps--;
 			s.vy = T.JUMP_V; s.grounded = false; s.coyote = 0; s.buffer = 0; s.jumped = fromGround ? 1 : 2;
+			if (surfJump) { const n = normalAt(room, s.x, s.z), hl = Math.hypot(n[0], n[2]) || 1; s.vx += n[0] / hl * T.SURF_JUMP_OUT; s.vz += n[2] / hl * T.SURF_JUMP_OUT; s.jumped = 5; }   // (off the slope)
 			// (a jump out of a slide keeps the slide's speed: the velocity is untouched)
 			s.sliding = false;
 		}
@@ -309,8 +322,15 @@ export function step(s, input, room, dt = K.TICK, tune = K) {
 	if (s.grounded) {
 		const n = normalAt(room, s.x, s.z), hl = Math.hypot(n[0], n[2]);
 		if (surface === 'steep') {
-			// too steep to stand: pulled downhill, no grip
-			s.vx += n[0] / hl * T.STEEP_PULL * dt; s.vz += n[2] / hl * T.STEEP_PULL * dt;
+			// too steep to stand: no grip, and it pulls you down it. But it can be surfed: what you hold across it carries you
+			// along its contour, and holding into it while you are fast across takes most of the pull away.
+			const ux = n[0] / hl, uz = n[2] / hl, cx = -uz, cz = ux;   // (u: downhill on the ground plane; c: along the contour)
+			const wc = wishing ? dx * cx + dz * cz : 0, across = Math.abs(s.vx * cx + s.vz * cz);
+			if (Math.abs(wc) > 0.2) { const sg = Math.sign(wc); accelerate(s, cx * sg, cz * sg, T.SURF_SPEED, T.SURF_ACCEL / T.SURF_SPEED, T.SURF_SPEED, dt);   /* (a diagonal carries you as well as a straight hold) */ }
+			const into = wishing ? Math.min(1, Math.max(0, -(dx * ux + dz * uz)) / T.SURF_INTO) : 0, hold = T.SURF_HOLD * into * Math.min(1, across / T.SURF_MIN);
+			s.vx += ux * T.STEEP_PULL * (1 - hold) * dt; s.vz += uz * T.STEEP_PULL * (1 - hold) * dt;
+			if (hold > 0) { const down = s.vx * ux + s.vz * uz; if (down > 0) { const k = Math.min(1, 6 * hold * dt); s.vx -= ux * down * k; s.vz -= uz * down * k; } }   // (and bleeds the slide you already had)
+			s.surfing = across >= T.SURF_MIN;
 		} else if (s.sliding) {
 			// a slide feels the slope: down it you gain (and the floor barely holds you back), up it you bleed
 			const downhill = hl > 1e-6 && s.vx * n[0] + s.vz * n[2] > 0;
@@ -327,7 +347,8 @@ export function step(s, input, room, dt = K.TICK, tune = K) {
 	} else if (wishing) {
 		accelerate(s, dx, dz, T.RUN * wl, T.AIR_ACCEL, T.AIR_CAP, dt);
 	}
-	{ const sp = Math.hypot(s.vx, s.vz); if (sp > T.MAX_SPEED) { s.vx *= T.MAX_SPEED / sp; s.vz *= T.MAX_SPEED / sp; } }
+	if (!(s.grounded && surface === 'steep')) s.surfing = false;
+	{ const cap = s.surfing ? Math.max(T.MAX_SPEED, T.SURF_MAX) : T.MAX_SPEED, sp = Math.hypot(s.vx, s.vz); if (sp > cap) { s.vx *= cap / sp; s.vz *= cap / sp; } }
 
 	const y0 = s.y;
 	moveXZ(s, room, T, dt);
@@ -477,6 +498,7 @@ export function stateName(s) {
 	if (s.swimming) return 'swimming';
 	if (!s.grounded) return s.wall ? 'wallrunning' : s.gliding ? 'gliding' : s.vy > 0 ? 'rising' : 'falling';
 	if (s.stagger > 0) return 'staggered';
+	if (s.surfing) return 'surfing';
 	if (s.sliding) return 'sliding';
 	return Math.hypot(s.vx, s.vz) > 0.6 ? 'running' : 'idle';
 }
