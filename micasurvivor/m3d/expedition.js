@@ -17,7 +17,7 @@
 // Survival (an endless run on one map: milestone bosses, phases, pacts, siege, migration) is expsurv.js's.
 import { K, CELL, makeRoom, setCell, groundAt, newState } from './sim.js';
 import { generate, footGraph, rng as makeRng, LEVEL } from './gen.js';
-import { CK, U, newWorld, tick, addEnemy, addBoss, drop, hazard, spawnRate, xpFor, equip } from './combat.js';
+import { CK, U, newWorld, tick, addEnemy, addBoss, drop, hazard, spawnRate, xpFor, equip, gainXp } from './combat.js';
 import { levelFrom, setup as setupLevels, tickStats, curse, takeItem, dropItem } from './explevel.js';
 import { ecoFrom, setupEco, tickEco, mods, pickTake, pickClose } from './expeco.js';
 import { capFrom, setupCap, tickCap, holdCine, mark, syncPerks } from './expcap.js';
@@ -149,13 +149,18 @@ export function newRun(data, X, o = {}) {
 	const lv = league ? [] : (o.moves || []).map((m) => (Array.isArray(m) ? m : [m, 1]));
 	const w = newWorld(room, data, { ...o, dex: league ? member : o.dex, moves: own ? lv.map((m) => m[0]) : o.moves, seed, cast: null, bosses: null,
 		ability: league && o.ability === undefined ? X.G.abilityOf(X.G.finalsOf(X.G.BY[member])[0]) : o.ability });   // (a member has its final stage's ability all run)
-	const S = { w, X, data, map, diff, seed, surv: o.mode === 'survival' && !!X.V, zi: 0, pzs: 0, touch: !!o.touch, zone: 0, zs: 0, splits: [], log: [], bosses: [], won: false, lost: false, ended: false, dps: [], says: [], wonT: 0 };
+	const S = { w, X, data, map, diff, seed, surv: o.mode === 'survival' && !!X.V, zi: 0, pzs: 0, touch: !!o.touch, zone: 0, zs: 0, splits: [], log: [], bosses: [], won: false, lost: false, ended: false, dps: [], says: [], wonT: 0, meta: own ? o.meta || null : null };   // (meta: what the Lab gives this run, expmeta.js)
 	zoneStart(S, 1, 0);
 	if (own) { setupLevels(S, X.L, lv); S.syncPerks = () => syncPerks(S); }
 	if (league) setupLeague(S, member);
 	if (S.surv) setupSurv(S);
 	if (own && X.E && o.eco !== false) setupEco(S);
 	if (own && X.C && o.cap !== false) setupCap(S, { wild: o.wild });   // (wild: the League members waiting to be caught, from the save)
+	if (S.meta) {   // the Lab's: its stats, a Max Revive to start with, the Rare Candy's two levels
+		if (S.syncPerks) S.syncPerks();
+		if (S.meta.eff.lab.revive && S.lv && X.L.I.IT.maxrevive) takeItem(S, 'maxrevive');
+		if (S.meta.candy) { S.meta.candy = false; const pl = w.pl; for (let k = 0; k < 2; k++) gainXp(w, (pl.xpNext - pl.xp + 0.01) / (pl.xpMul || 1)); }
+	}
 	return S;
 }
 const zIdx = (S) => (S.surv ? S.zi : Math.min(3, S.zone) - 1);   // (Survival: the enemies' band follows the PHASE, not the land)

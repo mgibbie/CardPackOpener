@@ -6,6 +6,8 @@
 //     browser, and its end says "Saved"
 //   * a wild League member (met, not caught, in this browser's save) comes into the run; caught, it is saved at once
 //     and does not come again
+//   * the Lab: a practice run has nothing of it; a run that can be kept starts with the save's row (its Lab levels,
+//     the items not bought out of its pool) and spends the boosts armed for it, once
 //   * the base save (your Pokémonedas, your collection) is never created or written by the 3D page
 //   node overworld/tests/micasurvivor_m3d_save_page_test.mjs      (SHOTS=<dir> for screenshots; it plays 65 s)
 import http from 'http';
@@ -106,6 +108,18 @@ try {
 	const ok5 = await boot('exp=10&map=viridian&dex=' + WM);
 	const w1 = await page.evaluate(() => ({ wild: window.__m3d.wild, member: window.__m3d.run.lg.member }));
 	await hush(); const ended5 = await die(), k5 = await keptLine();
+	// ---- the Lab: this browser's save has two levels of "Refresh", and a Lucky Egg armed for the next run
+	await page.evaluate(() => { const k = 'micasurvivorexp_save.guest', s = JSON.parse(localStorage.getItem(k)), dev = localStorage.getItem('micasurvivorexp_dev.guest'); s.counters['lab.refresh'] = 2; s.counters['bg.egg.' + dev] = 1; localStorage.setItem(k, JSON.stringify(s)); localStorage.setItem('micasurvivorexp_boosts', '["egg"]'); });
+	await boot('exp=11&map=viridian&dex=4&weather=0');
+	const lp = await page.evaluate(() => ({ meta: window.__m3d.meta, refreshes: window.__m3d.run.lv.refreshes, armed: localStorage.getItem('micasurvivorexp_boosts') }));
+	A(lp.meta === null && lp.armed === '["egg"]', 'the Lab: a practice run has nothing of it, and the Lucky Egg armed stays armed', lp);
+	const base = lp.refreshes;
+	await boot('exp=11&map=viridian&dex=4');
+	const lf = await page.evaluate(() => { const m = window.__m3d, s = JSON.parse(localStorage.getItem('micasurvivorexp_save.guest')), dev = localStorage.getItem('micasurvivorexp_dev.guest'); return { lab: m.meta && m.meta.eff.lab.refresh, used: m.meta && m.meta.used, xp: m.meta && m.meta.eff.stats.xp, excl: m.meta && m.meta.excl.size, refreshes: m.run.lv.refreshes, armed: localStorage.getItem('micasurvivorexp_boosts'), spent: s.counters['bu.egg.' + dev] }; });
+	A(lf.lab === 2 && lf.refreshes === base + 2 && lf.excl === 25 && lf.used.join() === 'egg' && lf.xp === 0.25 && lf.armed === '[]' && lf.spent === 1, 'a run that can be kept starts with the save\'s row: + 2 Refresh, the 25 items not bought out of its pool, and the Lucky Egg spent (+ 25 % XP)', lf);
+	await boot('exp=12&map=viridian&dex=4');
+	const l2 = await page.evaluate(() => { const m = window.__m3d, s = JSON.parse(localStorage.getItem('micasurvivorexp_save.guest')), dev = localStorage.getItem('micasurvivorexp_dev.guest'); return { used: m.meta.used, xp: m.meta.eff.stats.xp || 0, spent: s.counters['bu.egg.' + dev], lab: m.meta.eff.lab.refresh }; });
+	A(l2.used.length === 0 && l2.xp === 0 && l2.spent === 1 && l2.lab === 2, 'the next run: the Lab is still there, the egg is not spent again', l2);
 	A(ok5 && w1.wild.length === 0 && w1.member === WM && ended5 && k5.kept.ok === true, `the next run: it is not wild any more, and a run played as ${wname} is kept`, { w1, k5 });
 	A(errors.length === 0, 'no page errors', errors.slice(0, 5).join(' | '));
 } catch (e) {

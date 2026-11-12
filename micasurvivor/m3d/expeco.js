@@ -16,6 +16,7 @@ import { rng as makeRng } from './gen.js';
 import { U, gainXp } from './combat.js';
 import { XK, spawn, free, walkable, flat3, say } from './expedition.js';
 import { takeItem } from './explevel.js';
+import { excluded } from './expmeta.js';
 
 export const EK = {
 	// what each zone holds (the 2D game's list and order: the big ones are placed first)
@@ -111,7 +112,7 @@ export function rollOffers(S, rng, n, min = 0) {
 	for (let k = 0; k < n; k++) {
 		const ti = Math.max(min, L.rollRarity(rng, { level: pl.level, luck: pl.xluck || 0, zone: zoneNow(S) })), order = [ti];
 		for (let d = 1; d < 5; d++) { if (ti - d >= min) order.push(ti - d); if (ti + d <= 4) order.push(ti + d); }
-		for (const t of order) { const pool = L.I.ITEMS.filter((it) => it.rar === t && L.I.room(pl, it.id) && !out.includes(it.id)); if (pool.length) { out.push(pool[Math.min(pool.length - 1, Math.floor(rng() * pool.length))].id); break; } }
+		for (const t of order) { const pool = L.I.ITEMS.filter((it) => it.rar === t && L.I.room(pl, it.id) && !out.includes(it.id) && !excluded(S, it.id)); if (pool.length) { out.push(pool[Math.min(pool.length - 1, Math.floor(rng() * pool.length))].id); break; } }
 	}
 	return out;
 }

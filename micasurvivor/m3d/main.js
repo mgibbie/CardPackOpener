@@ -15,8 +15,9 @@ import { hostAdd, hostStep, hostFrame, hostApply, guestWorld, guestSync, guestMs
 import { generate, BIOMES } from './gen.js';
 import { mountRunUi, pretty } from './runui.js';
 import { HostLink, WatchLink, runId, SAYS as LIVE_SAYS } from './exprelay.js';
-import { unfair, clean as cleanRun, deviceId, missing as saveMissing, runSum, recordOps, applyOps, scoreBody, WHY, SV, wildOf, catchOps, shinyOps, newlyMet, boardAsk, boardRows } from './expsave.js';
+import { unfair, clean as cleanRun, deviceId, missing as saveMissing, runSum, recordOps, applyOps, scoreBody, WHY, SV, wildOf, catchOps, shinyOps, newlyMet, boardAsk, boardRows, hasMember } from './expsave.js';
 import { rng as seedRng } from './gen.js';
+import { metaFor, spendBoosts } from './expmeta.js';
 import { startInput } from '/site/input.js';
 import { createFocusNav } from '/site/focusnav.js';
 import { expFrom, newRun, stepRun, hudLine, result as runResult, setZoneTime, fire as fireEvent, zoneRoom, XK } from './expedition.js';
@@ -70,7 +71,17 @@ const PRACTICE = EXP ? unfair([...Q.entries()]) : null;
 const SAVE_OK = EXP && !PRACTICE && !!GG.ExpSave && await GG.ExpSave.open().then(() => !!GG.ExpSave.data, () => false);
 const baseSave = () => { try { return JSON.parse(localStorage.getItem('micasurvivor_save.' + (GG.ExpSave.who || 'guest')) || 'null'); } catch (e) { return null; } };   // (read, never written: the collection decides what you have)
 const WILD = SAVE_OK && GG.ExpLeague && GG.ExpCap ? wildOf(GEN, { L: GG.ExpLeague, Sv: GG.ExpSave, base: baseSave(), max: GG.ExpCap.K.PER_RUN, rng: seedRng }) : [];
-const run = EXP ? newRun(dataFrom(GG), XF, { wild: WILD, seed: GEN, map: Q.get('map'), diff: Q.get('diff'), mode: Q.get('mode') || undefined, dex: DEX, moves: MOVES, tune: TUNE, touch: matchMedia('(pointer: coarse)').matches, league: !Q.has('moves') && Q.get('league') !== '0', ability: Q.get('ability') === '0' ? null : Q.get('ability') || 'auto', items: Q.get('items') ? Q.get('items').split(',') : [], weather: Q.get('weather') === '0' ? false : undefined, autoPick: Q.has('auto') ? +Q.get('auto') | 0 : undefined }) : null;
+// (going live) What the Lab gives this run (expmeta.js): only a run that can be kept has it (your member, a map and a
+// tier you have open), and only then are the boosts you armed spent.
+const LAB_META = (() => {
+	if (!SAVE_OK || !GG.ExpMeta || !GG.ExpLeague || !GG.ExpTier || Q.get('league') === '0') return null;
+	try {
+		const L = GG.ExpLeague, T = GG.ExpTier, Sv = GG.ExpSave, member = L.BY[DEX] ? DEX : L.FAM[DEX] || DEX, map = Q.get('map') || 'viridian', diff = Q.get('diff') || 'normal';
+		if (!hasMember(member, { L, Sv, base: baseSave() }) || !T.mapOpen(map) || T.unlocked(map) < T.idx(diff)) return null;
+		return metaFor(GG.ExpMeta, { Sv, member, boosts: spendBoosts(GG.ExpMeta, Sv, deviceId(localStorage, Sv.who, crypto), localStorage) });
+	} catch (e) { console.warn('the Lab could not be read: ' + (e && e.message)); return null; }
+})();
+const run = EXP ? newRun(dataFrom(GG), XF, { wild: WILD, meta: LAB_META, seed: GEN, map: Q.get('map'), diff: Q.get('diff'), mode: Q.get('mode') || undefined, dex: DEX, moves: MOVES, tune: TUNE, touch: matchMedia('(pointer: coarse)').matches, league: !Q.has('moves') && Q.get('league') !== '0', ability: Q.get('ability') === '0' ? null : Q.get('ability') || 'auto', items: Q.get('items') ? Q.get('items').split(',') : [], weather: Q.get('weather') === '0' ? false : undefined, autoPick: Q.has('auto') ? +Q.get('auto') | 0 : undefined }) : null;
 if (run) room = run.w.room;
 // (P4) a guest in a run: its own League member in the host's run (expcoop.js); it builds each zone from the run's row
 const grun = XJ ? guestRun(dataFrom(GG), XF, { seed: XJ.seed, map: XJ.map, diff: XJ.diff, id: MYID, dex: DEX, league: !Q.has('moves'), moves: MOVES, tune: TUNE, ability: Q.get('ability') === '0' ? null : Q.get('ability') || undefined, autoPick: Q.has('auto') ? +Q.get('auto') | 0 : undefined }) : null;
@@ -560,7 +571,7 @@ function showCards() {
 	const lv = myRun && myRun.lv, RC = (GG.ExpItems && GG.ExpItems.RAR_COL) || [];   // (P4) an Expedition card has a rarity, and the run its three tools
 	const tools = !lv ? '' : `<div class="tools"><button data-tool="refresh"${lv.refreshes ? '' : ' disabled'}>F · Refresh (${lv.refreshes})</button><button data-tool="skip"${lv.skips ? '' : ' disabled'}>G · Skip (${lv.skips})</button><button data-tool="banish"${lv.bans ? '' : ' disabled'}>${banMode ? 'pick a card to banish…' : 'B · Banish (' + lv.bans + ')'}</button></div>`;
 	el.innerHTML = `<h2>Level ${world.pl.level}</h2>` + cs.map((c, i) => `<button data-i="${i}" style="border-color:${c.tier > 0 && RC[c.tier] ? RC[c.tier] : TYPE_COLOR[c.mtype] || '#8fa3c4'}">${cardArt(c)}<b>${i + 1} · ${RUNUI && c.kind === 'move' ? pretty(c.title) : c.title}</b><i>${(c.tier > 0 ? c.rarName.toUpperCase() + ' · ' : '') + (RUNUI ? String(c.tag || '').replace(/^Replaces (.+)$/, (q, id) => 'Replaces ' + pretty(id)) : c.tag || '')}</i><span>${c.desc || (GG.Moves.BY_ID[c.id] ? GG.Moves.BY_ID[c.id].kind : '')}</span></button>`).join('') + tools;
-	el.style.display = 'grid';
+	el.style.display = 'grid'; el.classList.toggle('four', cs.length === 4);
 }
 /** (the shipping path) A card's art on a run's screen: an item's or a vitamin's picture (the overworld's own, as the
  *  2D game shows them), a Mega's sprite, a move's type. */
@@ -604,7 +615,7 @@ function pickCard(i) {
 }
 if (FIGHT) {
 	document.getElementById('cards').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b && b.dataset.p !== undefined) takePick(+b.dataset.p); else if (b && b.dataset.tool) useTool(b.dataset.tool); else if (b) pickCard(+b.dataset.i); });
-	addEventListener('keydown', (e) => { const i = ['Digit1', 'Digit2', 'Digit3', 'Digit4'].indexOf(e.code); if (myRun && myRun.pick) { if (i >= 0) takePick(i); else if (e.code === 'Escape') takePick(-1); return; } if (i >= 0 && i < 3) pickCard(i); const tl = { KeyF: 'refresh', KeyG: 'skip', KeyB: 'banish' }[e.code]; if (tl) useTool(tl); });
+	addEventListener('keydown', (e) => { const i = ['Digit1', 'Digit2', 'Digit3', 'Digit4'].indexOf(e.code); if (myRun && myRun.pick) { if (i >= 0) takePick(i); else if (e.code === 'Escape') takePick(-1); return; } if (i >= 0 && i < 4) pickCard(i); const tl = { KeyF: 'refresh', KeyG: 'skip', KeyB: 'banish' }[e.code]; if (tl) useTool(tl); });
 }
 /** (the shipping path) A run's own screen, in Micatro's look: runui.js draws this view of the run. The test room's
  *  readout is still filled (tests and ?debug=1 read it), but it is not what a player sees. */
@@ -776,6 +787,7 @@ function showHud() {
 
 // what a test (and a curious owner in the console) can reach
 window.__m3d = {
+	meta: LAB_META,
 	keepShiny,
 	siteHost: SITE_HOST, siteWatch: SITE_WATCH,
 	openBoard, get boardUp() { return boardUp; },
