@@ -542,27 +542,61 @@
 	// Continue recovered each time. When the game module never starts (a module that failed
 	// to load, or threw while loading — before the error beacon in /site/topbar.js is up),
 	// keep the evidence: collect early errors, report them once, and offer the way back.
+	//
+	// What the reports it sent back showed (2026-11-10, -12): every time it was a module that
+	// FAILED TO LOAD, on a connection that was dropping requests (the same sessions logged
+	// "server unreachable" and timeouts). One failed file out of the game's hundred or so fails
+	// the whole game, and the browser will not try that file again on the same page. So when
+	// that is what happened, the page now loads itself again by itself, twice at most (what
+	// did load is in the browser's cache, so each try has less left to fetch); Fight!'s
+	// marker is still there, so the fight opens as if nothing had happened. Only when that has
+	// failed too does it stop and offer the Reload button.
 	(function () {
-		var errs = [];
-		window.__bootErrors = errs;
-		addEventListener('error', function (e) { if (errs.length < 5) errs.push(String((e && (e.message || (e.target && e.target.src))) || 'error').slice(0, 160)); }, true);
+		var errs = [], KEY = 'bc_boot_retry', MAX = 2, tried = 0, acted = false, scriptFailed = false;
+		try { tried = Math.max(0, Math.min(MAX, +sessionStorage.getItem(KEY) || 0)); } catch (e) {}
+		window.__bootErrors = errs; window.__bootRetries = tried;
+		function box(id, text) {
+			var d = document.createElement('div');
+			d.id = id;
+			d.style.cssText = 'position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);z-index:200;background:rgba(30,22,48,0.97);border:1px solid #4a3f6b;border-radius:10px;padding:16px 20px;color:#e8e2f4;font-size:15px;text-align:center;max-width:90vw;';
+			d.textContent = text;
+			(document.body || document.documentElement).appendChild(d);
+			return d;
+		}
+		/** The game cannot start on this load. loadError: a script of it failed to download. */
+		function failed(loadError) {
+			if (acted || window.__gameBooted) return;
+			acted = true;
+			var again = loadError && tried < MAX;
+			var msg = 'battlecards: the game module never started (' + (errs.join(' | ') || 'no error seen') + ')' + (tried ? ' [after ' + tried + ' automatic reload' + (tried > 1 ? 's' : '') + ']' : '') + (again ? ' [reloading]' : '');
+			try { console.error(msg); } catch (e) {}
+			try { navigator.sendBeacon && navigator.sendBeacon('/api/mp', new Blob([JSON.stringify({ action: 'err', msg: msg.slice(0, 300), where: 'index.html boot watchdog', page: location.pathname, ua: navigator.userAgent.slice(0, 120) })], { type: 'application/json' })); } catch (e) {}
+			if (again) {
+				try { sessionStorage.setItem(KEY, String(tried + 1)); } catch (e) { again = false; }   // (no way to count the tries: do not loop)
+			}
+			if (again) {
+				box('boot-retry', 'The connection dropped part of the game. Loading it again…');
+				setTimeout(function () { location.reload(); }, 1200 * (tried + 1));
+				return;
+			}
+			var d = box('boot-failed', 'The game did not finish loading. Your run is saved — ');
+			var b = document.createElement('button');
+			b.textContent = 'Reload';
+			b.style.cssText = 'margin-left:6px;padding:6px 14px;cursor:pointer;';
+			b.onclick = function () { try { sessionStorage.removeItem(KEY); } catch (e) {} location.reload(); };
+			d.appendChild(b);
+		}
+		addEventListener('error', function (e) {
+			var t = e && e.target, src = t && t.tagName === 'SCRIPT' ? String(t.src || '') : '';
+			if (errs.length < 5) errs.push(String((e && (e.message || src)) || 'error').slice(0, 160));
+			// the game's own script (game.js, or a file it imports: the failure is reported on game.js): act now, not in 12 s
+			if (src && /\/battlecards\/game\.js(\?|$)/.test(src)) { scriptFailed = true; setTimeout(function () { failed(true); }, 0); }
+		}, true);
 		addEventListener('unhandledrejection', function (e) { if (errs.length < 5) errs.push(String((e && e.reason && (e.reason.message || e.reason)) || 'rejection').slice(0, 160)); });
 		addEventListener('load', function () {
 			setTimeout(function () {
-				if (window.__gameBooted) return;
-				var msg = 'battlecards: the game module never started (' + (errs.join(' | ') || 'no error seen') + ')';
-				try { console.error(msg); } catch (e) {}
-				try { navigator.sendBeacon && navigator.sendBeacon('/api/mp', new Blob([JSON.stringify({ action: 'err', msg: msg.slice(0, 300), where: 'index.html boot watchdog', page: location.pathname, ua: navigator.userAgent.slice(0, 120) })], { type: 'application/json' })); } catch (e) {}
-				var d = document.createElement('div');
-				d.id = 'boot-failed';
-				d.style.cssText = 'position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);z-index:200;background:rgba(30,22,48,0.97);border:1px solid #4a3f6b;border-radius:10px;padding:16px 20px;color:#e8e2f4;font-size:15px;text-align:center;max-width:90vw;';
-				d.textContent = 'The game did not finish loading. Your run is saved — ';
-				var b = document.createElement('button');
-				b.textContent = 'Reload';
-				b.style.cssText = 'margin-left:6px;padding:6px 14px;cursor:pointer;';
-				b.onclick = function () { location.reload(); };
-				d.appendChild(b);
-				document.body.appendChild(d);
+				if (window.__gameBooted) { try { sessionStorage.removeItem(KEY); } catch (e) {} return; }   // (it started: the next failure starts counting afresh)
+				failed(scriptFailed);
 			}, 12000);
 		});
 	})();
