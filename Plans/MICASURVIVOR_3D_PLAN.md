@@ -1417,6 +1417,29 @@ Tests: `micasurvivor_m3d_exprx_test.mjs` 45 checks, `micasurvivor_m3d_expult_tes
 game's own scripts; `micasurvivor_m3d_ult_page_test.mjs` 16 in a browser; `micasurvivor_m3d_expeco_test.mjs` 110
 (was 109).
 
+## 5.48 Going live, eighth part: built (2026-11-12). Regional formes, Megas as enemies, and a sprite bug.
+
+Found by reading what the 2D Expedition loads that the 3D page did not: `js/data/forms.js` and
+`js/systems/forms.js` (the 2D game's U3). Without them a 3D run had no regional formes in the League and no Mega
+ever came as an enemy. The 3D page now loads both, before the League reads its data.
+
+- **Megas as enemies.** Zone 3's plan has its one Mega elite (8 x the life, 1.4 x the damage, 1.3 x the size),
+  and the run brings it. Survival: from 15:00 every 5:00 segment has a Mega elite, and a milestone boss that is
+  no legendary is a Mega 30 % of the time. All of it is the 2D game's own plan; the run only had to act on it.
+- **Regional formes in the League.** A run can start as a forme (Alolan Vulpix), evolves along the forme's own
+  line, and a line with a forme at its end offers the choice on the cards (Pikachu: Raichu or Alolan Raichu).
+  A forme's Ultimate is its own first type's.
+- **Names.** Formes and Megas are named in Spanish in the 2D game's data; the 3D screen is English, so on the 3D
+  side they take the English the 2D game registers for them ("Alolan Vulpix", "Mega Chandelure").
+- **A bug fixed: species that were never drawn.** 42 species have no eight-way sheet of their own: 24 use a
+  follower sprite and 18 a battle sprite, each in a folder of its own, with fewer rows (and the battle ones
+  mirrored when they face the other side). The 3D page asked for the wrong file, so such an enemy fought but was
+  never drawn. The Megas and some formes are the same kind. The page now loads the right file and draws it as
+  the 2D game does (which row is each direction's, mirrored where it says, the follower ones 1.2 x).
+
+Tests: `micasurvivor_m3d_expformes_test.mjs` 17 checks in node; `micasurvivor_m3d_formes_page_test.mjs` 10 in a
+browser (it fails with the sheet fix reverted: the sheet never loads).
+
 ## 6. Dive in 2D: built
 
 **D0 — find the stairs (small; can ship first, on its own).** *Built 2026-11-11 (`overworld/tests/micasurvivor_dive_stairs_test.mjs`). As built: the stairs took their own orange mark, so the rocks and Meowth keep their gold; the HUD arrow comes up after 25 s on a floor, or at once when its boss falls.*

@@ -14,8 +14,8 @@
 // speed is a factor on the run speed, 1 at the League's baseline (105). When an evolution changes your types, how you
 // move changes with them (a Charmeleon that becomes a Charizard can glide).
 //
-// Not here yet: Megas as enemies (zone 3's and Survival's Mega elites), the League's own moves on other members' cards, the wild encounters, the TM and
-// Repertoire upgrades, which members you have (every member can be played here), a shiny's look.
+// The regional formes are stages of their species' families (the 2D game's js/systems/forms.js patches the League's data).
+// Not here yet: the family's upgrades from the base save (among them the TM and Repertoire), a shiny's look.
 import { tuneFor } from './sim.js';
 import { say } from './expedition.js';
 

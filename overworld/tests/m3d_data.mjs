@@ -6,7 +6,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 const JS = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../micasurvivor/js');
-export const DATA_SCRIPTS = ['core/util.js', 'data/pokedex.js', 'data/sprites-meta.js', 'core/sprites.js', 'data/moves.js', 'data/types.js', 'data/enemies.js', 'systems/weather.js', 'systems/abilities.js', 'data/items.js', 'expedition/moves.js', "expedition/terrain.js", "expedition/tiers.js", "expedition/classic.js", "expedition/items.js", "expedition/levelups.js", "expedition/league-data.js", "expedition/league.js", "data/mega-data.js", "expedition/mega.js", "expedition/economy.js", "expedition/capture.js", "expedition/survival.js", "expedition/reactions.js", "systems/zmoves.js", "expedition/ultimates.js"];
+export const DATA_SCRIPTS = ['core/util.js', 'data/pokedex.js', 'data/sprites-meta.js', 'core/sprites.js', 'data/moves.js', 'data/types.js', 'data/enemies.js', 'systems/weather.js', 'systems/abilities.js', 'data/items.js', 'data/mega-data.js', 'data/forms.js', 'systems/forms.js', 'expedition/moves.js', "expedition/terrain.js", "expedition/tiers.js", "expedition/classic.js", "expedition/items.js", "expedition/levelups.js", "expedition/league-data.js", "expedition/league.js", "expedition/mega.js", "expedition/economy.js", "expedition/capture.js", "expedition/survival.js", "expedition/reactions.js", "systems/zmoves.js", "expedition/ultimates.js"];
 
 /** The game's global `G`, with the data scripts run. */
 export function loadG(extra = [], o = {}) {   // (o.localStorage: a store of the test's own; o.pre(G): before the scripts run)

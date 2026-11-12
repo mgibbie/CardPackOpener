@@ -285,7 +285,8 @@ export function fire(S, ev) {
 	const add = (e) => { if (e) entry.spawned++; return e; };
 	const one = (dex, o, ring) => { const pt = spot(S, rng, rng() * 6.2832, S.data.hovers(dex) || o.behavior === 'summoner', ring); return pt ? add(spawn(S, dex, pt[0], pt[1], o)) : null; };
 	if (ev.kind === 'alpha') { one(ev.dex[0], { ti: 1, ...XKK.ALPHA, spd: 0.9, kind: 'alpha' }); say(S, `An alpha ${name(S, ev.dex[0])} appears!`); }
-	else if (ev.kind === 'swarm' || (ev.kind === 'elite' && !ev.mega)) {
+	else if (ev.kind === 'elite' && ev.mega) { one(ev.dex[0], { ti: 1, ...XKK.MEGA, kind: 'elite' }); say(S, `A wild ${name(S, ev.dex[0])} appears!`, 3.2); }   // (a Mega as an enemy: an elite, a bit more)
+	else if (ev.kind === 'swarm' || ev.kind === 'elite') {
 		const a0 = rng() * 6.2832, el = ev.kind === 'elite';
 		for (let i = 0; i < ev.n; i++) { const dex = ev.dex[i % ev.dex.length], pt = spot(S, rng, a0 + i / ev.n * 6.2832, S.data.hovers(dex), el ? undefined : XK.SWARM); if (pt) add(spawn(S, dex, pt[0], pt[1], el ? { ...XKK.ELITE, kind: 'elite' } : undefined)); }
 		say(S, el ? 'Elite wave!' : 'Swarm! They surround you', 2.6);
