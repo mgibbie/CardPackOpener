@@ -56,6 +56,8 @@ const ops2 = (ops) => Object.fromEntries(ops.map(([op, k, v]) => [op + ' ' + k +
 	A(L.free(4) && missing(mk(), o) === null, 'Charmander on Viridian at Normal: a starter, the first map, the first tier');
 	A(!L.free(149) && missing(mk({ dex: 149 }), o) === 'member' && missing(mk({ dex: 149 }), { ...o, base: { owned: { 148: { at: 1 } } } }) === null, 'a member the save does not have: not kept; owned in the base save (any stage of its family): kept');
 	A(missing(mk({ map: 'mtmoon' }), o) === 'map' && missing(mk({ diff: 'hard' }), o) === 'tier' && missing(mk({ league: false, moves: ['ember'] }), o) === 'league', 'a map not open yet, a tier not open yet, a run that is not a League run: not kept');
+	const F = mk({ form: 6 });
+	A(F.lg.start === 6 && missing(F, o) === 'form' && missing(F, { ...o, base: { owned: { 6: { at: 1 } } } }) === null && unfair([['exp', '7'], ['form', '6']]) === null, 'started as a later form (Charizard): kept only if you own that form or a run has evolved into it');
 	A(Object.keys(WHY).every((k) => /nothing is saved|host's save/.test(WHY[k])), 'each reason has its line for the run\'s end');
 }
 // ---------------------------------------------------------------- a won Classic run

@@ -604,7 +604,8 @@ G.PlayUI = (() => {
     const L = G.ExpLeague, dex = L && L.pickFor ? L.pickFor() : 0;
     if (!dex) return null;
     let seed = 1; try { const a = new Uint32Array(1); crypto.getRandomValues(a); seed = (a[0] % 2147483646) + 1; } catch (e) { seed = (Date.now() % 2147483646) + 1; }
-    return '/micasurvivor/m3d/?exp=' + seed + '&map=' + encodeURIComponent(st.map) + '&diff=' + encodeURIComponent(st.diff) + '&dex=' + dex + (mode === 'exp-survival' ? '&mode=survival' : '');
+    const form = L.formFor ? L.formFor(dex) : dex;   // (the form you chose to start as, if it is a later stage)
+    return '/micasurvivor/m3d/?exp=' + seed + '&map=' + encodeURIComponent(st.map) + '&diff=' + encodeURIComponent(st.diff) + '&dex=' + dex + (form && form !== dex ? '&form=' + form : '') + (mode === 'exp-survival' ? '&mode=survival' : '');
   }
 
   // ---------------- START ----------------

@@ -55,7 +55,7 @@ function learnKit(S, i) {
 	return true;
 }
 /** Make a run a League run: the member's first stage (the world was built as it), its role, the kit's first move. */
-export function setupLeague(S, member) {
+export function setupLeague(S, member, form = 0) {
 	const w = S.w, pl = w.pl, LG = S.X.G, m = LG.BY[member], K = LG.K;
 	S.lg = { member, form: member, kit: 0, mat: 0, evo: 0, done: 1, pending: null, st: null, role: m.role, ability: pl.ability, mega: 0, megaAt: LG.M ? LG.M.K.LV : 0, log: [] };
 	// (the world gave it the species' base-game HP and attack: the League's own take their place)
@@ -69,6 +69,12 @@ export function setupLeague(S, member) {
 	if (r.spd) pl.spdMul *= 1 + r.spd;
 	pl.moves.length = 0; w.orbs.length = 0;
 	learnKit(S, 0);
+	// the starting form (the 2D game's rule): a run may START as a later stage of its family, that stage's body and stats,
+	// quietly (it is not an evolution of this run). Later evolutions still come at their levels.
+	if (form && form !== member && LG.FAM[form] === member && S.data.mon(form)) {
+		become(S, form, S.lg.st); pl.hp = pl.maxHp;
+		S.lg.form = form; S.lg.start = form; S.lg.log.push([1, 'start', form]);
+	}
 	return S.lg;
 }
 /** Evolve into `to`: its body, types and stats; HP up to at least half, then 30 % more. */

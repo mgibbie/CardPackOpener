@@ -12,6 +12,8 @@
 //   * Eviolite: its armour only while you can still evolve
 //   * Mega Evolution: from Lv 40 a form with a Mega is offered it (or "Not yet": again five levels on); once a run;
 //     the Mega's base stats and types, the kit / role / ability / Maturity kept; a watcher is told which Mega
+//   * the starting form: a run may start as a later stage (its body and stats, the kit's first move, Lv 1, no evolution
+//     counted); what is left of its line still comes at its level
 //   * a run that is not a League run is as it was
 //   node overworld/tests/micasurvivor_m3d_expleague_test.mjs
 import { tuneFor } from '../../micasurvivor/m3d/sim.js';
@@ -127,6 +129,22 @@ const ids = (S) => S.w.pl.moves.map((m) => m.id);
 	A(near(total(T, 'armor'), a2) && near(T.w.pl.baseReduce, b2), 'on a Charizard (it cannot): nothing');
 	const U = run(4, { eco: true }); takeItem(U, 'eviolite'); levelTo(U, 16); const mid = U.w.pl.xperk.armor; levelTo(U, 36);
 	A(mid === 15 && !U.w.pl.xperk.armor, 'held through its evolutions, it stops working at the last one');
+}
+
+// ---------------------------------------------------------------- the starting form
+{
+	const mkf = (form, dex = 4) => { const S = newRun(data, X, { seed: 7, dex, form, league: true, weather: false, eco: false, cap: false, autoPick: (w, cs) => Math.max(0, cs.findIndex((c) => c.type !== 'swap')) }); S.plan.events = []; S.acc = -1e9; stepRun(S, null); return S; };
+	const Z = mkf(6), pl = Z.w.pl, st = LG.statsOf(6), base = mkf(0);
+	A(Z.lg.member === 4 && Z.lg.form === 6 && Z.lg.start === 6 && pl.mon.dex === 6 && pl.mon.types.join() === 'fire,flying' && pl.level === 1 && Z.lg.evo === 0 && ids(Z).join() === LG.BY[4].kit[0] && Z.lg.log.some((e) => e[1] === 'start' && e[2] === 6), 'started as Charizard: its body and types from the first moment, at Lv 1, with the kit\'s first move, and no evolution counted');
+	A(near(pl.baseAtk, st.atk) && pl.hp === pl.maxHp && pl.maxHp > base.w.pl.maxHp && JSON.stringify(Z.w.tune) === JSON.stringify(tuneFor(['fire', 'flying'])), `its stats are Charizard's (HP ${Math.round(pl.maxHp)} against Charmander's ${Math.round(base.w.pl.maxHp)}), full, and it moves as a Fire / Flying does`);
+	levelTo(Z, 37);
+	A(Z.lg.form === 6 && Z.lg.evo === 0 && Z.lg.kit === 4, 'at Lv 36 there is nothing left to evolve into: it is still Charizard, with its whole kit');
+	const M = mkf(5); levelTo(M, 20);
+	A(M.lg.start === 5 && M.lg.form === 5 && M.lg.evo === 0, 'started as Charmeleon: at Lv 16 (Charmander\'s evolution) nothing happens');
+	levelTo(M, 36);
+	A(M.lg.form === 6 && M.lg.evo === 1, 'at Lv 36 it evolves into Charizard, as the line does');
+	const W = mkf(9), B = mkf(0);
+	A(W.lg.form === 4 && !W.lg.start && B.lg.form === 4 && !B.lg.start, 'a form of another family (Blastoise for Charmander), or none: the run starts as the member');
 }
 
 // ---------------------------------------------------------------- Mega Evolution

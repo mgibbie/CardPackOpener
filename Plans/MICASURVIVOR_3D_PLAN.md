@@ -1353,6 +1353,17 @@ of the member (a 3D run starts at the family's first stage).
 Tests: `micasurvivor_playflow_test.mjs` 168 checks (was 162): off by default, on by the address, the 3D page's
 address for the setup, START opening a 3D run of it, local play staying 2D, off again.
 
+## 5.45 Going live, fifth part: built (2026-11-12). The starting form.
+
+The 2D game lets a run START as a later stage of its family, one you own in the base collection or a run has
+evolved into ("how come I can't play Expedition as Annihilape"). A 3D run always started at the first stage.
+Now `&form=<dex>` starts it as that stage: its body, types and stats from the first moment, at Lv 1 with the
+kit's first move, quietly (it is not an evolution of this run); what is left of its line still comes at its
+level. A run started as a form the save has not reached is not kept. The Play flow's switch (5.44) sends the
+form you chose.
+
+Tests: `micasurvivor_m3d_expleague_test.mjs` 57 checks (was 51), `micasurvivor_m3d_expsave_test.mjs` 38 (was 37).
+
 ## 6. Dive in 2D: built
 
 **D0 — find the stairs (small; can ship first, on its own).** *Built 2026-11-11 (`overworld/tests/micasurvivor_dive_stairs_test.mjs`). As built: the stairs took their own orange mark, so the rocks and Meowth keep their gold; the HUD arrow comes up after 25 s on a floor, or at once when its boss falls.*
