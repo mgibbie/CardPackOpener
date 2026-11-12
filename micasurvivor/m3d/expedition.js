@@ -38,7 +38,7 @@ export const XK = {
 	SHRINE: { w: 44, h: 44, ped: [0, -13], rim: 9 },
 	// a run's pay in Pokémonedas (the 2D game's meta.js PAY and SCALE; its Lab and save are not loaded here, so the table
 	// is written out and a test holds it to the 2D function)
-	PAY: { BASE: 10, KO: 1 / 150, ZONE: 25, BOSS: 30, WIN: 120, CATCH: 15, MIN_T: 60, SCALE: 3 },
+	PAY: { BASE: 10, KO: 1 / 150, ZONE: 25, BOSS: 30, WIN: 120, CATCH: 15, MIN_T: 60, LEGEND: 60, SURV_MIN: 4, SCALE: 3 },   // (LEGEND, SURV_MIN: a Survival run's: a legendary milestone, a minute survived)
 	MEDAL: ['', 'bronze', 'silver', 'gold', 'champion'],
 	// the base held items a guardian drops (the 2D game's levelups.js HELD_POOL): one is held at a time
 	HELD: { focussash: 'Focus Sash', eternalice: 'Never-Melt Ice', bigorb: 'Big Orb', typegem: 'Type Gem', safetygoggles: 'Safety Goggles', lightball: 'Light Ball', thickclub: 'Thick Club' },
@@ -125,7 +125,7 @@ export function zoneRoom(seed, map, zone, X, land = 0) {
 	let room;
 	if (zone >= 4) room = shrineRoom(map);
 	else {
-		const s = land ? mix(seed, mi, zone, 0x3D, land) : mix(seed, mi, zone, 0x3D);   // (Survival: each new land is new ground)
+		const s = land > 1 ? mix(seed, mi, zone, 0x3D, land) : mix(seed, mi, zone, 0x3D);   // (Survival: each new land is new ground; land 1 is the run's first, built as a Classic zone 1 is)
 		room = generate(s, XK.BIOME[map] || 'meadow', { size: XK.ZONE_TILES });
 		room.biome = XK.BIOME[map] || 'meadow'; room.seed = s;
 		room.altar = altarOf(room, s); room.exit = room.altar;
@@ -483,7 +483,7 @@ export function hudLine(S) {
 export function payOf(S, p) {
 	const P = XK.PAY, mul = S.X.tier(S.diff).pay || 1;
 	if (!(p.time >= P.MIN_T)) return { base: 0, mul, pay: 0 };
-	const base = P.BASE + p.kills * P.KO + P.ZONE * Math.max(0, p.zone - 1) + P.BOSS * p.bosses + (p.won ? P.WIN : 0) + P.CATCH * p.catches;
+	const base = P.BASE + p.kills * P.KO + P.ZONE * Math.max(0, p.zone - 1) + P.BOSS * p.bosses + (p.won ? P.WIN : 0) + P.CATCH * p.catches + P.LEGEND * (p.legends || 0) + P.SURV_MIN * (p.surv ? p.time / 60 : 0);
 	return { base: Math.round(base), mul, pay: Math.max(0, Math.round(base * mul * P.SCALE / 5) * 5) };
 }
 /** The run's parts for the score, the score itself, its pay and medal, and the end screen's lines. */

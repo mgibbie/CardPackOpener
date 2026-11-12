@@ -14,17 +14,20 @@
 //   migration    at 11:00, and every 11:00 after, a portal opens on the land's altar for 90 s: step in and the run
 //                moves to a new land (new ground, new things).
 //   its curve    above Lv 40 a level needs more XP than Classic's.
+//   hazards      hostile ground on every land: mud slows you, quicksand slows and pulls you in, brambles cut you while
+//                you move, burning ground burns. More kinds wake with the phases. A jump clears them; they never
+//                finish you.
 // The numbers, the milestones, each segment's plan, the pacts, the night, the wounds and the score are the 2D game's
 // own (js/expedition/survival.js), called as they are.
 //
 // 3D's own: a new land is new ground (the 2D game comes back to the same three zones; here the land's number seeds the
 // level). The siege's 6 m is measured on the ground, whatever your height.
-// Not here yet: the hostile terrain (mud, brambles, quicksand, burning ground), the darkness of the night on screen,
-// Mega bosses, Survival in co-op and for a watcher, its records.
-import { groundAt } from './sim.js';
+// A land here is far smaller than a 2D one, so its hazards stand closer (5 cells apart; 2D: 7), as its things do.
+// Not here yet: Mega bosses, Survival in co-op and for a watcher, its records.
+import { K as SK, CELL, groundAt } from './sim.js';
 import { rng as makeRng } from './gen.js';
 import { CK, U, drop } from './combat.js';
-import { spawn, fire, makeBoss, escorts, spot, say } from './expedition.js';
+import { XK, spawn, fire, makeBoss, escorts, spot, say, walkable, flat3, payOf } from './expedition.js';
 import { dropItem } from './explevel.js';
 
 function mix(...vals) {
@@ -35,16 +38,47 @@ function mix(...vals) {
 /** The 2D game's Survival tables, as this module reads them. G: its global with expedition/survival.js loaded. */
 export function survFrom(G) {
 	const V = G.ExpSurv, EN = G.ExpEN || {};
-	return { K: V.K, PACTS: V.PACTS, PACT_BY: V.PACT_BY, phaseOf: V.phaseOf, woundK: V.woundK, nightOf: V.nightOf, milestone: V.milestone, segPlan: V.segPlan, offerOf: V.offerOf, curveK: V.curveK, scoreOf: V.scoreOf, en: (s) => EN[s] || s };
+	return { K: V.K, PACTS: V.PACTS, PACT_BY: V.PACT_BY, phaseOf: V.phaseOf, woundK: V.woundK, nightOf: V.nightOf, milestone: V.milestone, segPlan: V.segPlan, offerOf: V.offerOf, curveK: V.curveK, scoreOf: V.scoreOf, HAZ: V.HAZ, en: (s) => EN[s] || s };
 }
 const name = (S, dex) => { const m = S.data.mon(dex); return m ? m.name : '#' + dex; };
 const mmss = (s) => { s = Math.max(0, Math.ceil(s)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
 
+/** How a land's hazards stand in 3D: cells from where you arrive, from the altar, and from each other. */
+export const HZ = { FROM_SPAWN: 5, FROM_ALTAR: 4, GAP: 5 };
+/** A land's hostile ground: [{ i, kind ('mud' | 'brambles' | 'quicksand' | 'burning'), phase (it wakes in), x, y, z,
+ *  r (m) }]. From the room and the seed only: the same for every viewer. Kept on the room. */
+export function hazardsOf(room, S) {
+	if (!room || room.shrine) return [];
+	if (room.haz) return room.haz;
+	const V = S.X.V, K = V.K, rng = makeRng(mix(S.seed, S.X.MAP_IDS.indexOf(room.map) + 1, room.zone, 0x4A2, room.seed | 0)), ok = walkable(room), cand = [], out = [];
+	const sx = room.spawn[0] / CELL, sz = room.spawn[2] / CELL, ax = room.altar[0] / CELL, az = room.altar[2] / CELL;
+	for (let cz = 2; cz < room.h - 2; cz++) for (let cx = 2; cx < room.w - 2; cx++) {
+		const i = cz * room.w + cx; if (!ok[i] || room.cells[i] >= room.rimH || !flat3(room, cx, cz)) continue;
+		if (Math.hypot(cx + 0.5 - sx, cz + 0.5 - sz) < HZ.FROM_SPAWN || Math.hypot(cx + 0.5 - ax, cz + 0.5 - az) < HZ.FROM_ALTAR) continue;
+		cand.push([cx, cz]);
+	}
+	for (let i = cand.length - 1; i > 0; i--) { const j = Math.floor(rng() * (i + 1)); [cand[i], cand[j]] = [cand[j], cand[i]]; }
+	for (const [cx, cz] of cand) {
+		if (out.length >= K.HAZ_N) break;
+		if (out.some((o) => Math.hypot(o.cx - cx, o.cz - cz) < HZ.GAP)) continue;
+		const kind = V.HAZ[out.length % V.HAZ.length];
+		out.push({ i: out.length, cx, cz, kind: kind.id, phase: kind.phase, x: (cx + 0.5) * CELL, y: room.cells[cz * room.w + cx], z: (cz + 0.5) * CELL, r: (K.HAZ_R[0] + rng() * (K.HAZ_R[1] - K.HAZ_R[0])) * CELL / 2 });
+	}
+	return (room.haz = out);
+}
+/** The hazard under a point at run time t (only those awake in its phase, and only on their own level), or null. */
+export function hazardAt(S, x, y, z, t) {
+	const ph = S.X.V.phaseOf(t);
+	for (const o of hazardsOf(S.w.room, S)) if (o.phase <= ph && Math.abs(y - o.y) <= XK.SITE_UP && (x - o.x) ** 2 + (z - o.z) ** 2 < o.r * o.r) return o;
+	return null;
+}
+/** The land's hazards that are awake now, for the page to draw. */
+export const hazardsNow = (S) => { const ph = S.X.V.phaseOf(S.w.t); return S.sv ? hazardsOf(S.w.room, S).filter((o) => o.phase <= ph) : []; };
 /** Make a run a Survival run. */
 export function setupSurv(S) {
 	const V = S.X.V, w = S.w, pl = w.pl, s = pl.s;
 	S.sv = { phase: 0, miles: 0, downs: 0, legends: 0, mewtwo: 0, land: 1, seg: -1, segEv: [], segN: 0, nextMig: V.K.MIGRATE_AT, portalUntil: 0, bosses: [], pacts: [], pactSeen: 0,
-		siege: { ax: s.x, az: s.z, t: 0, on: false, k: 1, cd: 1 }, lastHp: pl.hp, lastMax: pl.maxHp, said: { wounds: false, night: false }, log: { lands: 1, sieges: 0, flocks: 0 } };
+		siege: { ax: s.x, az: s.z, t: 0, on: false, k: 1, cd: 1 }, px: s.x, pz: s.z, haz: null, hazDmg: 0, lastHp: pl.hp, lastMax: pl.maxHp, said: { wounds: false, night: false }, log: { lands: 1, sieges: 0, flocks: 0 } };
 	// its own curve: Classic's up to Lv 40, then slower
 	if (S.L) { w.xpNeed = (lv) => Math.round(S.L.need(lv) * V.curveK(lv)); pl.xpNext = w.xpNeed(pl.level); }
 	// the siege: your hits are worth less while it lasts
@@ -64,7 +98,7 @@ export function foeK(S, t) {
 	return { hp: n.hp * (1 + tm.hp) * P.hp, dmg: n.dmg * (1 + tm.dmg), rate: (1 + tm.rate) * P.rate, elite: tm.elite, xp: P.xp };
 }
 /** The run has stepped through the migration portal. */
-export function migrated(S, t) { S.sv.land++; S.sv.log.lands++; S.sv.nextMig = t + S.X.V.K.MIGRATE_EVERY; S.sv.portalUntil = 0; }
+export function migrated(S, t) { S.sv.land++; S.sv.log.lands++; S.sv.nextMig = t + S.X.V.K.MIGRATE_EVERY; S.sv.portalUntil = 0; S.sv.px = NaN; }
 
 function spawnMile(S, m, t) {
 	const V = S.X.V, K = V.K, w = S.w, s = w.pl.s, rng = makeRng(mix(S.seed, m.n, 0xB055)), a = rng() * 6.2832;
@@ -138,6 +172,22 @@ export function tickSurv(S, dt, t) {
 	if (S.ph === 2 && t >= sv.portalUntil) { S.ph = 0; S.portalT = 0; sv.nextMig = t + K.MIGRATE_EVERY - K.PORTAL_OPEN; say(S, 'The migration portal closes', 2.4); }
 	else if (S.ph !== 2 && t >= sv.nextMig && !sv.bosses.length) { S.ph = 2; S.portalT = 0; sv.portalUntil = t + K.PORTAL_OPEN; say(S, 'A migration portal opens! Step in to travel to new lands', 3.6); }
 	if (pl.dead) return;
+	// hostile ground (your feet must be on it: a jump clears it)
+	if (!(sv.px === sv.px)) { sv.px = s.x; sv.pz = s.z; }   // (a new land: you have only just arrived)
+	const moved = Math.hypot(s.x - sv.px, s.z - sv.pz), hz = (s.grounded || s.sliding) && moved < 4 ? hazardAt(S, s.x, s.y, s.z, t) : null;
+	sv.haz = hz ? hz.kind : null;
+	if (hz) {
+		const to = (x, z) => { if (Math.abs(groundAt(w.room, x, z) - s.y) <= SK.STEP) { s.x = x; s.z = z; s.y = groundAt(w.room, x, z); } };
+		if (hz.kind === 'mud' || hz.kind === 'quicksand') {   // this tick's step is worth less; quicksand also draws you to its middle
+			const k = hz.kind === 'mud' ? K.MUD : K.QUICK;
+			to(sv.px + (s.x - sv.px) * k, sv.pz + (s.z - sv.pz) * k);
+			if (hz.kind === 'quicksand') { const d = Math.hypot(hz.x - s.x, hz.z - s.z); if (d > 4 * U) to(s.x + (hz.x - s.x) / d * K.QUICK_PULL * U * dt, s.z + (hz.z - s.z) / d * K.QUICK_PULL * U * dt); }
+		} else {
+			const rate = hz.kind === 'burning' ? K.BURN : moved > 0.4 * U ? K.BRAMBLE : 0;
+			if (rate > 0 && pl.invuln <= 0) { const d = pl.maxHp * rate * dt; pl.hp = Math.max(1, pl.hp - d); sv.hazDmg += d; }   // (it bites; it never finishes you)
+		}
+	}
+	sv.px = s.x; sv.pz = s.z;
 	// deep wounds: what this tick healed is worth less (a max-HP gain is left alone)
 	const wk = V.woundK(t);
 	if (wk < 1 && sv.lastHp > 0 && pl.hp > sv.lastHp && pl.maxHp === sv.lastMax) pl.hp = sv.lastHp + (pl.hp - sv.lastHp) * wk;
@@ -171,6 +221,7 @@ export function survHud(S) {
 	const n = V.nightOf(t), wk = V.woundK(t);
 	if (n.hp > 1) parts.push('NIGHT ×' + n.hp.toFixed(1)); else if (wk < 1) parts.push(`WOUNDS −${Math.round((1 - wk) * 100)}%`);
 	if (sv.siege.on || sv.siege.k < 1) parts.push(`SIEGE · DAMAGE ${Math.round(sv.siege.k * 100)}%`);
+	if (sv.haz) parts.push({ mud: 'MUD', brambles: 'BRAMBLES', quicksand: 'QUICKSAND', burning: 'BURNING GROUND' }[sv.haz]);
 	if (S.boss && S.boss.takenK > 1) parts.push('EXHAUSTED ×' + S.boss.takenK.toFixed(1));
 	if (S.eco) parts.push('₽ ' + S.coins);
 	return parts.join(' · ');
@@ -184,5 +235,5 @@ export function survResult(S) {
 	if (sv.mewtwo) lines.push('Mewtwo defeated!');
 	if (sv.pacts.length) lines.push('Pacts: ' + sv.pacts.map((id) => V.en(V.PACT_BY[id].name)).join(', '));
 	if (sv.land > 1) lines.push(`Lands visited: ${sv.land}`);
-	return { won: false, survival: true, title: 'SURVIVAL', line: lines[0], lines, parts, score: V.scoreOf(parts, S.diff), pay: { base: 0, mul: 1, pay: 0 }, medal: '', splits: [], bosses: S.bosses.map((b) => ({ ...b })) };
+	return { won: false, survival: true, title: 'SURVIVAL', line: lines[0], lines, parts, score: V.scoreOf(parts, S.diff), pay: payOf(S, { ...parts, surv: true }), medal: '', splits: [], bosses: S.bosses.map((b) => ({ ...b })) };
 }

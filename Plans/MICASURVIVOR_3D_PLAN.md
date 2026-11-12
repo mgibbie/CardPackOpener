@@ -943,6 +943,27 @@ encounters, the lobby, and the real screens.
 
 Tests: the co-op rules 56 checks (was 25), the two-window page test 11 (was 9).
 
+## 5.27 P4, eleventh part: built (2026-11-12). Survival's leftovers.
+
+- **Hostile ground.** Every Survival land has up to 16 patches, in turn mud (slows to 60 %), brambles (3 % of
+  your HP a second while you move), quicksand (slows to half and draws you to its middle) and burning ground
+  (5 % a second). Mud is awake from the start, brambles and quicksand from phase 2, burning ground from phase 3.
+  Your feet must be on it: a jump clears it. It never finishes you. The numbers and the kinds are the 2D game's.
+  In 3D a patch is 1.6 to 2.8 m across its radius (2D: twice that) and they stand 5 cells apart, because a land
+  here is far smaller.
+- **The Endless Night on screen**: the picture darkens from 45:00, as the 2D night does.
+- **Survival pays**: the 2D rule (60 a legendary milestone, 4 a minute survived, with KOs, bosses and catches,
+  times the tier), held to the 2D function by a test. It paid nothing before.
+- **A Survival run can be watched and replayed.** The run's row carries the land, the milestones, the portal's
+  seconds, the run's clock and the siege; the watcher builds each new land itself, with its hostile ground.
+- The run's first land is now built the same by every viewer (it was seeded one way by the run and another by a
+  rebuild; a check found it).
+
+**Still of P4**: Survival in co-op, the fog of war and the zone map, Mega Evolution, wild League encounters, a
+guest's Support Alphas on the other screens, then the shipping path (the real, Micatro-style screens; saving).
+
+Tests: Survival 74 checks (was 59), the row 26 (was 21), the run's end 23 (was 21), the page test 37 (was 35).
+
 ## 6. Dive in 2D: built
 
 **D0 — find the stairs (small; can ship first, on its own).** *Built 2026-11-11 (`overworld/tests/micasurvivor_dive_stairs_test.mjs`). As built: the stairs took their own orange mark, so the rocks and Meowth keep their gold; the HUD arrow comes up after 25 s on a floor, or at once when its boss falls.*

@@ -11,14 +11,17 @@
 //   * the migration portal: at 11:00 for 90 s, not while a milestone boss is up; through it, a new land on new ground
 //   * deep wounds from 30:00; the Endless Night from 45:00
 //   * the siege: stay put and your damage falls and flocks come; move and it lifts
+//   * hostile ground: seeded patches of mud (slows), quicksand (slows and pulls), brambles (cut you as you move) and
+//     burning ground, waking with the phases; a jump clears them; they never finish you
 //   * Survival's own curve above Lv 40; its score; the run ends only when you go down
 //   node overworld/tests/micasurvivor_m3d_expsurv_test.mjs
 import { hashRoom, validate } from '../../micasurvivor/m3d/gen.js';
 import { dataFrom, land } from '../../micasurvivor/m3d/combat.js';
-import { expFrom, newRun, stepRun, spawn, hudLine, result, capNow } from '../../micasurvivor/m3d/expedition.js';
+import { expFrom, newRun, stepRun, spawn, hudLine, result, capNow, walkable, flat3, zoneRoom } from '../../micasurvivor/m3d/expedition.js';
 import { total } from '../../micasurvivor/m3d/explevel.js';
 import { pickTake, pickClose } from '../../micasurvivor/m3d/expeco.js';
-import { foeK, foeTeam, takePact } from '../../micasurvivor/m3d/expsurv.js';
+import { foeK, foeTeam, takePact, hazardsOf, hazardAt, hazardsNow, HZ } from '../../micasurvivor/m3d/expsurv.js';
+import { U } from '../../micasurvivor/m3d/combat.js';
 import { loadG } from './m3d_data.mjs';
 
 let pass = 0, fail = 0;
@@ -32,6 +35,8 @@ const steps = (S, sec, quiet = true) => { const out = []; for (let i = 0, n = Ma
 const at = (S, t) => { S.w.t = t; S.w.tick = Math.round(t * 60); };
 const clear = (S) => { for (const e of S.w.enemies) e.dead = true; S.w.hazards.length = 0; };
 const move = (S, dx) => { S.w.pl.s.x += dx; };
+/** The run's land, built again from nothing (as another viewer would). */
+const zoneRoomOf = (S) => zoneRoom(S.seed, S.map, S.zone, X, S.sv.land);
 
 // ---------------------------------------------------------------- a Survival run
 {
@@ -187,6 +192,45 @@ const move = (S, dx) => { S.w.pl.s.x += dx; };
 	A(/SURVIVAL · PHASE 1 · NIGHTMARE · BOSS IN/.test(hudLine(H)) && SV.scoreOf(parts, 'nightmare') === Math.floor(SV.scoreOf(parts, 'normal') * 2 + 0.5) || SV.scoreOf(parts, 'nightmare') > SV.scoreOf(parts, 'normal') * 1.99, 'on Nightmare the readout says so, and the score is doubled');
 	const a = run({ seed: 9 }), b = run({ seed: 9 }); for (const q of [a, b]) { at(q, 290); steps(q, 12, false); }
 	A(a.w.stats.spawned === b.w.stats.spawned && a.w.stats.spawned > 5 && a.boss && b.boss && a.boss.dex === b.boss.dex && a.log.length === b.log.length, 'the same seed, the same run');
+}
+
+// ---------------------------------------------------------------- hostile ground
+{
+	const S = run(), H = hazardsOf(S.w.room, S), room = S.w.room, ok = walkable(room);
+	const kinds = H.map((o) => o.kind);
+	A(H.length >= 8 && H.length <= K.HAZ_N && H.every((o, i) => o.kind === V.HAZ[i % 4].id && o.phase === V.HAZ[i % 4].phase) && new Set(kinds).size === 4, `a land has ${H.length} patches of hostile ground: mud, brambles, quicksand, burning ground, in turn`, kinds);
+	const sp = room.spawn, al = room.altar;
+	A(H.every((o) => ok[o.cz * room.w + o.cx] && flat3(room, o.cx, o.cz) && Math.hypot(o.x - sp[0], o.z - sp[2]) >= HZ.FROM_SPAWN * 2 && Math.hypot(o.x - al[0], o.z - al[2]) >= HZ.FROM_ALTAR * 2 && o.r >= K.HAZ_R[0] && o.r <= K.HAZ_R[1])
+		&& H.every((o) => H.every((q) => q === o || Math.hypot(q.cx - o.cx, q.cz - o.cz) >= HZ.GAP)), 'each on flat ground you can walk to, away from where you arrive, from the altar and from each other');
+	const again = hazardsOf(zoneRoomOf(S), S), other = run({ seed: 8 });
+	A(JSON.stringify(again) === JSON.stringify(H) && JSON.stringify(hazardsOf(other.w.room, other)) !== JSON.stringify(H) && hazardsOf(newRun(data, X, { seed: 7, dex: 6 }).w.room, S).length >= 0, 'the same land has the same patches; another seed others');
+	A(hazardsNow(S).every((o) => o.kind === 'mud') && hazardsNow(S).length === H.filter((o) => o.phase === 0).length, 'in phase 1 only the mud is awake');
+	const P2 = run(); P2.sv.miles = 99; P2.sv.seg = 2; P2.sv.segEv = []; P2.sv.nextMig = 1e9; at(P2, 730); steps(P2, 0.1);
+	A(new Set(hazardsNow(P2).map((o) => o.kind)).size === 3 && !hazardsNow(P2).some((o) => o.kind === 'burning'), 'in phase 2 the brambles and the quicksand wake');
+	const P3 = run(); P3.sv.miles = 99; P3.sv.seg = 4; P3.sv.segEv = []; P3.sv.nextMig = 1e9; at(P3, 1450); steps(P3, 0.1);
+	A(hazardsNow(P3).length === hazardsOf(P3.w.room, P3).length, 'in phase 3 the burning ground too');
+	// what each does
+	const on = (R, kind) => { const o = hazardsOf(R.w.room, R).find((q) => q.kind === kind), s = R.w.pl.s; s.x = o.x; s.y = o.y; s.z = o.z; s.vx = s.vy = s.vz = 0; s.grounded = true; R.sv.px = NaN; return o; };
+	const walk = (R, sec, mx) => { const s0 = R.w.pl.s.x; for (let i = 0; i < Math.round(sec * 60); i++) { R.acc = -1e9; stepRun(R, { mx, mz: 0, jump: false, crouch: false }); } return Math.abs(R.w.pl.s.x - s0); };
+	const free = run(); free.w.pl.s.x = free.w.room.spawn[0]; walk(free, 0.5, 1); const plain = walk(free, 0.25, 1);
+	const M = run(), mud = on(M, 'mud'); M.w.pl.s.x = mud.x - mud.r * 0.5; M.sv.px = NaN; walk(M, 0.5, 1); const slow = walk(M, 0.25, 1);
+	A(near(slow / plain, K.MUD, 0.12) && /MUD/.test(hudLine(M)) && hazardAt(M, M.w.pl.s.x, M.w.pl.s.y, M.w.pl.s.z, M.w.t) === mud, `mud: you run at ${(slow / plain).toFixed(2)} of your speed in it (the readout says MUD)`, [slow, plain]);
+	const hp0 = M.w.pl.hp; steps(M, 1); A(M.w.pl.hp === hp0, 'it does not hurt');
+	const Q = P2, qs = on(Q, 'quicksand'); Q.w.pl.s.x = qs.x + qs.r * 0.7; Q.sv.px = NaN; const d0 = Math.hypot(Q.w.pl.s.x - qs.x, Q.w.pl.s.z - qs.z); steps(Q, 0.5);
+	const d1 = Math.hypot(Q.w.pl.s.x - qs.x, Q.w.pl.s.z - qs.z);
+	A(d1 < d0 - K.QUICK_PULL * U * 0.5 * 0.8 && /QUICKSAND/.test(hudLine(Q)), `quicksand: standing in it you are drawn to its middle (${(d0 - d1).toFixed(2)} m in half a second)`);
+	const B = P2, br = on(B, 'brambles'); B.w.pl.maxHp = 1000; B.w.pl.hp = 1000; steps(B, 1);
+	A(B.w.pl.hp === 1000, 'brambles: standing still in them does not hurt');
+	B.w.pl.s.x = br.x - br.r * 0.6; B.sv.px = NaN; B.w.pl.hp = 1000; B.w.pl.invuln = 0; walk(B, 0.5, 1);
+	A(near(1000 - B.w.pl.hp, 1000 * K.BRAMBLE * 0.5, 0.25) && B.w.pl.hp < 1000, `moving through them does: 3 % of your HP a second (${(1000 - B.w.pl.hp).toFixed(1)} in half a second)`);
+	const F = P3, bu = on(F, 'burning'); F.w.pl.maxHp = 1000; F.w.pl.hp = 1000; F.w.pl.invuln = 0; steps(F, 1);
+	A(near(1000 - F.w.pl.hp, 1000 * K.BURN, 0.1), `burning ground: 5 % a second just for standing on it (${(1000 - F.w.pl.hp).toFixed(0)})`);
+	F.w.pl.hp = 3; F.w.pl.invuln = 0; steps(F, 2);
+	A(F.w.pl.hp === 1 && !F.w.pl.dead && !F.ended, 'hostile ground bites; it never finishes you');
+	on(F, 'burning'); F.w.pl.hp = 500; F.w.pl.s.y += 1.5; F.w.pl.s.grounded = false; F.w.pl.s.vy = 4; stepRun(F, null);
+	A(F.w.pl.hp === 500 && F.sv.haz === null, 'in the air over it nothing happens: a jump clears it');
+	const C = newRun(data, X, { seed: 7, dex: 6, moves: [] }); stepRun(C, null);
+	A(hazardsNow(C).length === 0, 'a Classic run has none');
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);

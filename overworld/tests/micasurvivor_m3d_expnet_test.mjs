@@ -6,6 +6,7 @@
 //     and the same readout line as the playing side
 //   * it rides in net.js's frames only when it has changed, and stays until a new one comes
 //   * a run on tape: recorded, packed, unpacked, played: the same rows at the same times, through a portal and all
+//   * a Survival run: its land (a new one after a migration), its milestones and clock, its hostile ground
 //   * it is small
 //   node overworld/tests/micasurvivor_m3d_expnet_test.mjs
 import { dataFrom, gainXp } from '../../micasurvivor/m3d/combat.js';
@@ -15,6 +16,7 @@ import { expFrom, newRun, stepRun, hudLine, fire, setZoneTime } from '../../mica
 import { layoutOf, ecoView, pickTake } from '../../micasurvivor/m3d/expeco.js';
 import { capView } from '../../micasurvivor/m3d/expcap.js';
 import { runRow, rowView, teamSpot } from '../../micasurvivor/m3d/expnet.js';
+import { hazardsNow } from '../../micasurvivor/m3d/expsurv.js';
 import { loadG } from './m3d_data.mjs';
 
 let pass = 0, fail = 0;
@@ -94,6 +96,24 @@ const over = (S, keep) => rowView(JSON.parse(JSON.stringify(runRow(S))), XW, kee
 	A(sent < F.length * 0.75, `and the row is on the tape only where it changed (${sent} of ${F.length} frames)`);
 	const said = []; keepEvents(said, [{ k: 'say', text: 'The portal opens!', s: 3 }]);
 	A(said.length === 1 && said[0].text === 'The portal opens!', 'the run\'s banners go to a watcher too');
+}
+
+// ---------------------------------------------------------------- a Survival run, watched
+{
+	const S = newRun(data, X, { seed: 21, dex: 6, league: true, weather: false, autoPick: 0, mode: 'survival' }); S.acc = -1e9; S.w.pl.maxHp = S.w.pl.hp = 1e7; stepRun(S, null);
+	const keep = {}, see = () => rowView(JSON.parse(JSON.stringify(runRow(S))), XW, keep);
+	let v = see();
+	A(v.surv && v.surv.land === 1 && hashRoom(v.room) === hashRoom(S.w.room) && v.hud(S.w.pl.s) === hudLine(S) && /^SURVIVAL · PHASE 1 · BOSS IN 5:00/.test(v.hud()), 'a watcher of a Survival run builds its land and reads its line: ' + v.hud());
+	A(JSON.stringify(v.hazards.map((o) => [o.kind, o.x, o.z, o.r])) === JSON.stringify(hazardsNow(S).map((o) => [o.kind, o.x, o.z, o.r])) && v.hazards.length > 0, `and its hostile ground (${v.hazards.length} patches of mud awake)`);
+	S.sv.miles = 2; S.sv.seg = 2; S.sv.segEv = []; S.w.t = 659.9; for (let i = 0; i < 30; i++) { S.acc = -1e9; stepRun(S, null); }
+	v = see();
+	A(S.ph === 2 && v.ph === 2 && v.surv.portal > 85 && v.hud() === hudLine(S), 'the migration portal, with its seconds: ' + v.hud());
+	put(S, S.w.room.altar); for (let i = 0; i < 70; i++) { S.acc = -1e9; stepRun(S, null); }
+	const h1 = hashRoom(v.room); v = see();
+	A(S.sv.land === 2 && v.surv.land === 2 && hashRoom(v.room) === hashRoom(S.w.room) && hashRoom(v.room) !== h1 && v.eco.length > 20, 'through it: the watcher builds land 2, the new ground and its new things');
+	S.sv.miles = 99; S.sv.seg = 9; S.sv.nextMig = 1e9; S.sv.phase = 2; S.zi = 2; S.w.t = 2760; for (let i = 0; i < 5; i++) { S.acc = -1e9; stepRun(S, null); }
+	v = see();
+	A(v.night > 0.25 && /NIGHT ×1\.1/.test(v.hud()) && v.hud() === hudLine(S) && new Set(v.hazards.map((o) => o.kind)).size === 4, 'at 46:00: the night, and every kind of hostile ground awake');
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);

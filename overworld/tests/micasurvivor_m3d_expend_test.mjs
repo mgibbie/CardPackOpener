@@ -1,6 +1,7 @@
 // micasurvivor_m3d_expend_test.mjs — MicaSurvivor 3D, P4 (Plans/MICASURVIVOR_3D_PLAN.md): the rest of a Classic run
 // (micasurvivor/m3d/expedition.js), in node, against the 2D game's own functions:
 //   * a run's pay in Pokémonedas is the 2D game's payOf, case by case (by tier; nothing under a minute)
+//   * a Survival run's pay too (a legendary milestone, a minute survived)
 //   * a won run's medal is the 2D game's medalOf (bronze for finishing; silver, gold, champion by the clock and tier)
 //   * the three shrines: Viridian's grove with its ponds, Mt. Moon's crater (rock pillars for the ponds, crystals),
 //     Cerulean Cape's island (a ring of sea); the dais, its stairs and the pedestal the same on each; all walkable
@@ -84,6 +85,18 @@ const toAltar = (S) => { const s = S.w.pl.s, a = S.w.room.altar; s.x = a[0]; s.y
 	A(!before.has(other) && before.size === 4, 'the next guardian will not drop the one you hold');
 	const B = newRun(data, X, { seed: 7, dex: 6, moves: [], levels: false });
 	A(heldRoll(B) !== undefined && !B.lv, 'a run with the base game\'s level-ups is left alone');
+}
+
+// ---------------------------------------------------------------- a Survival run's pay
+{
+	const cases = [{ kills: 900, time: 700, zone: 1, bosses: 2, legends: 0, won: false, catches: 0, surv: true }, { kills: 6000, time: 1900, zone: 3, bosses: 6, legends: 2, won: false, catches: 1, surv: true }, { kills: 12000, time: 2800, zone: 3, bosses: 9, legends: 3, won: false, catches: 4, surv: true }, { kills: 10, time: 40, zone: 1, bosses: 0, legends: 0, won: false, catches: 0, surv: true }];
+	let same = true; const seen = [];
+	for (const diff of X.DIFFS) for (const p of cases) { const a = payOf({ X, diff }, p), b = G2.ExpMeta.payOf(p, diff); seen.push([diff, a.pay, b.pay]); if (a.pay !== b.pay || a.base !== b.base) same = false; }
+	A(same && XK.PAY.LEGEND === G2.ExpMeta.K.PAY.LEGEND && XK.PAY.SURV_MIN === G2.ExpMeta.K.PAY.SURV_MIN, `a Survival run's pay is the 2D game's for all ${seen.length} cases tried (60 a legendary, 4 a minute survived; 31:40 with two legendaries on Normal: ${payOf({ X, diff: 'normal' }, cases[1]).pay})`, seen);
+	const S = newRun(data, X, { seed: 7, dex: 6, moves: [], mode: 'survival', weather: false }); S.w.pl.maxHp = S.w.pl.hp = 1e7; stepRun(S, null);
+	S.sv.miles = 99; S.sv.downs = 3; S.sv.legends = 1; S.sv.seg = 3; S.sv.segEv = []; S.sv.pactSeen = 3; S.sv.nextMig = 1e9; S.w.t = 1000; S.w.stats.kills = 1500; S.w.pl.hp = 0; S.w.pl.dead = true; stepRun(S, null);
+	const R = result(S);
+	A(S.ended && R.survival && R.pay.pay === G2.ExpMeta.payOf({ ...R.parts, surv: true }, 'normal').pay && R.pay.pay > 500, `a Survival run that ends at 16:40 with three milestone bosses pays ${R.pay.pay}`, R.pay);
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);
