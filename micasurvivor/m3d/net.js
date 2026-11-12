@@ -30,7 +30,7 @@ export const NK = {
 	RELAY_DELAY: 1.15,   // …and this far when frames come a second's worth at a time
 	RELAY_CAP: 16000,    // characters in one relay message (the server's)
 	RELAY_ENEMY_EVERY: 5,   // in a bundle of ten frames the enemies are in every fifth: two a second
-	EVENTS: ['melee', 'aura', 'beam', 'chain', 'blast', 'smite', 'bomb', 'heal', 'shield', 'summon', 'hazard', 'boom', 'hit', 'kill', 'hurt', 'dash', 'weather', 'boss', 'enrage', 'level', 'pickup', 'say'],
+	EVENTS: ['melee', 'aura', 'beam', 'chain', 'blast', 'smite', 'bomb', 'heal', 'shield', 'summon', 'hazard', 'boom', 'hit', 'kill', 'hurt', 'dash', 'weather', 'boss', 'enrage', 'level', 'pickup', 'say', 'rx', 'rxchain', 'ult'],
 };
 const q = (v, k) => Math.round(v * k);
 const TYPES = ['normal', 'fire', 'water', 'grass', 'electric', 'ice', 'fighting', 'poison', 'ground', 'flying', 'psychic', 'bug', 'rock', 'ghost', 'dragon', 'dark', 'steel', 'fairy'];
@@ -75,6 +75,9 @@ export function keepEvents(into, events) {
 		if (ev.k === 'hit') into.push({ k: 'hit', x: r(ev.x), y: r(ev.y), z: r(ev.z), d: Math.round(ev.d), crit: ev.crit ? 1 : 0, eff: ev.eff > 1.2 ? 2 : ev.eff < 0.9 ? 0 : 1 });
 		else if (ev.k === 'hazard' || ev.k === 'boom') { const h = ev.h; into.push({ k: ev.k, h: { kind: h.kind, x: r(h.x), y: r(h.y), z: r(h.z), r: r(h.r || 0), angle: r(h.angle || 0), len: r(h.len || 0), w: r(h.w || 0), delay: h.delay, type: h.type, dmg: r(h.dmg || 0) } }); }
 		else if (ev.k === 'beam' || ev.k === 'dash') into.push({ k: ev.k, id: ev.id, from: ev.from.map(r), dir: ev.dir.map((v) => Math.round(v * 1000) / 1000), len: r(ev.len), w: r(ev.w) });
+		else if (ev.k === 'ult') { const o = { ...ev }; for (const key of ['x', 'y', 'z', 'r', 'len', 'w']) if (typeof o[key] === 'number') o[key] = r(o[key]); if (o.from) o.from = o.from.map(r); into.push(o); }
+		else if (ev.k === 'rx') into.push({ k: 'rx', kind: ev.kind, x: r(ev.x), y: r(ev.y), z: r(ev.z), r: r(ev.r || 0) });
+		else if (ev.k === 'rxchain') into.push({ k: 'rxchain', from: ev.from.map(r), links: ev.links.map((l) => l.map(r)) });
 		else if (ev.k === 'chain') into.push({ k: 'chain', id: ev.id, links: ev.links.map((l) => l.map(r)) });
 		else { const o = {}; for (const key in ev) o[key] = r(ev[key]); into.push(o); }
 	}

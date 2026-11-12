@@ -451,7 +451,7 @@ G.ExpMeta = (() => {
     // the tasks: those runs' metrics, counted into the day's and the week's as they are now (a task pays Pokémonedas, so it
     // is counted here, where the wallet is)
     const seen = Sv().get('m3d.seen.' + d), m = {};
-    for (const k of ['runs', 'kos', 'secs', 'wins', 'guardians', 'balls', 'altars', 'freed', 'alphas', 'catches', 'evos', 'megas', 'finals', 'miles']) {
+    for (const k of ['runs', 'kos', 'secs', 'wins', 'guardians', 'balls', 'altars', 'freed', 'alphas', 'catches', 'evos', 'megas', 'finals', 'miles', 'reactions', 'casts']) {
       const v = Sv().get('m3d.t.' + d + '.' + k) - Sv().get('m3d.tc.' + d + '.' + k);
       if (v > 0) { m[k] = v; Sv().bump('m3d.tc.' + d + '.' + k, v); }
     }

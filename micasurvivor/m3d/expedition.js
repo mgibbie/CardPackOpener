@@ -24,6 +24,8 @@ import { capFrom, setupCap, tickCap, holdCine, mark, syncPerks } from './expcap.
 import { leagueFrom, memberOf, setupLeague } from './expleague.js';
 import { survFrom, setupSurv, tickSurv, foeK, migrated, survHud, survResult } from './expsurv.js';
 import { tickFog } from './expfog.js';
+import { rxFrom, setupRx, tickRx } from './exprx.js';
+import { ultFrom, setupUlt, holdUlt, tickUlt } from './expult.js';
 
 export const XK = {
 	BIOME: { viridian: 'meadow', mtmoon: 'peaks', cerulean: 'marsh' },
@@ -56,7 +58,7 @@ function mix(...vals) {
 export function expFrom(G) {
 	const C = G.ExpClassic, T = G.ExpTier;
 	return { K: C.K, MAPS: C.MAPS, MAP_IDS: C.MAP_IDS, DIFFS: C.DIFFS, plan: (seed, map, zone, diff) => C.plan(seed, map, zone, diff), tier: (d) => T.of(d),
-		ESCORT: T.K.ESCORT, medalOf: (time, diff, map) => T.medalOf(time, diff, map), L: G.ExpLevel && G.ExpItems ? levelFrom(G) : null, E: G.ExpEco ? ecoFrom(G) : null, C: G.ExpCap ? capFrom(G) : null, G: G.ExpLeague ? leagueFrom(G) : null, V: G.ExpSurv ? survFrom(G) : null, score: (parts, diff) => T.score(parts, diff), medal: T.medal ? (s, diff, map) => T.medal(s, diff, map) : null, exhaustion: C.exhaustion };
+		ESCORT: T.K.ESCORT, medalOf: (time, diff, map) => T.medalOf(time, diff, map), L: G.ExpLevel && G.ExpItems ? levelFrom(G) : null, E: G.ExpEco ? ecoFrom(G) : null, C: G.ExpCap ? capFrom(G) : null, G: G.ExpLeague ? leagueFrom(G) : null, V: G.ExpSurv ? survFrom(G) : null, R: G.ExpRx ? rxFrom(G) : null, Uu: G.ExpUlt && G.ZMoves ? ultFrom(G) : null, score: (parts, diff) => T.score(parts, diff), medal: T.medal ? (s, diff, map) => T.medal(s, diff, map) : null, exhaustion: C.exhaustion };
 }
 
 // ---------------------------------------------------------------- the zones
@@ -154,6 +156,8 @@ export function newRun(data, X, o = {}) {
 	if (own) { setupLevels(S, X.L, lv); S.syncPerks = () => syncPerks(S); }
 	if (league) setupLeague(S, member, o.form | 0);   // (form: a later stage of the family to start as)
 	if (S.surv) setupSurv(S);
+	if (X.R && o.rx !== false) setupRx(S);   // (the elemental reactions and the weather's boosts: exprx.js)
+	if (X.Uu && o.ult !== false) setupUlt(S, { walk: walkable, auto: !!o.ultAuto });   // (the Ultimates: expult.js)
 	if (own && X.E && o.eco !== false) setupEco(S);
 	if (own && X.C && o.cap !== false) setupCap(S, { wild: o.wild });   // (wild: the League members waiting to be caught, from the save)
 	if (S.meta) {   // the Lab's: its stats, a Max Revive to start with, the Rare Candy's two levels
@@ -426,6 +430,7 @@ export function stepRun(S, input, dt = K.TICK) {
 	S.says.length = 0;
 	if (S.ended) return S;
 	{ const n0 = w.events.length; if (holdCine(S, dt)) { w.events.splice(0, n0); return S; } }   // (a ball is shaking: the world holds. What the ball itself says this step, "caught", is kept for the page)
+	if (S.ult && holdUlt(S, dt)) { w.events.length = 0; return S; }   // (an Ultimate's hit-stop: the world holds)
 	if (S.pick) {   // a choice is up (a ball's items, Meowth's stall, Hypno): the fight holds until it is made (alone: a party does not stop for one player's choosing)
 		if (!w.mates.length) w.events.length = 0;
 		if ((w.autoPick === undefined || w.autoPick === null) && !w.mates.length) return S;
@@ -439,6 +444,8 @@ export function stepRun(S, input, dt = K.TICK) {
 	tick(w, input, dt);
 	if (w.t === t0) return S;
 	const t = w.t;
+	if (S.rx) tickRx(S);
+	if (S.ult) tickUlt(S, dt);
 	tickFog(S);   // (where you stand is explored: the minimap and the zone map show only what you have found)
 	if (w.pl.dead && !w.guest && (!w.mates.length || w.mates.every((m) => m.dead || m.away))) { S.ended = true; S.lost = true; w.events.push({ k: 'runover', won: false }); return S; }   // (co-op: only when everyone is down)
 	if (S.lv) { tickStats(S, dt); for (const ev of w.events) if (ev.k === 'pickup') { const m = ev.by ? w.mates.find((q) => q.id === ev.by) : null;   // (co-op: an item is whoever picked it up's)

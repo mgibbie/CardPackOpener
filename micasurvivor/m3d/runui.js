@@ -22,7 +22,8 @@ export const chipKind = (text, i) => (i === 0 ? 'on' : /^₽/.test(text) ? 'mone
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
 /** Put the run's screen on the page. o.onMenu(): the menu's button was pressed; o.onResume(): its "Resume";
- *  o.onBoard(id | null): a board was asked for ('score' | 'time' | 'survival'), or closed; o.onMute(): "Sound" was pressed.
+ *  o.onBoard(id | null): a board was asked for ('score' | 'time' | 'survival'), or closed; o.onMute(): "Sound" was pressed;
+ *  o.onUlt(): the Ultimate's button; o.onAuto(): the menu's "Auto-Ultimate".
  *  -> { update(view), root } */
 export function mountRunUi(doc, o = {}) {
 	doc.body.classList.add('rx'); if (o.debug) doc.body.classList.add('rx-debug');
@@ -32,11 +33,12 @@ export function mountRunUi(doc, o = {}) {
 		+ `<div class="rx-sub"><span id="rx-time"></span><span id="rx-kos"></span></div></div><div class="rx-chips" id="rx-parts"></div></div>`
 		+ `<div class="rx-note" id="rx-note"></div>`
 		+ `<div class="rx-panel rx-boss" id="rx-boss"><div class="rx-who"><span class="rx-name" id="rx-bname"></span></div><div class="rx-bar"><i id="rx-bhp"></i><span id="rx-bhpt"></span></div></div>`
-		+ `<div class="rx-bottom"><div class="rx-chips rx-bag" id="rx-bag"></div><div class="rx-moves" id="rx-moves"></div></div>`
+		+ `<div class="rx-bottom"><div class="rx-chips rx-bag" id="rx-bag"></div><button class="rx-ult" id="rx-ult" aria-label="Ultimate"><i id="rx-ult-fill"></i><b id="rx-ult-name"></b><span id="rx-ult-pct"></span></button><div class="rx-moves" id="rx-moves"></div></div>`
+		+ `<div class="rx-cut" id="rx-cut"><span id="rx-cut-sub"></span><b id="rx-cut-name"></b></div>`
 		+ `<button class="rx-menu-btn" id="rx-menu-btn" aria-label="Menu">II</button>`
 		+ `<div class="rx-end" id="rx-menu"></div><div class="rx-end" id="rx-end"></div><div class="rx-end" id="rx-board"></div>`;
 	doc.body.appendChild(root);
-	root.addEventListener('click', (e) => { const b = e.target.closest('#rx-menu-btn, #rx-resume, #rx-mute, [data-board]'); if (!b) return; e.preventDefault(); b.blur(); if (b.id === 'rx-mute') { if (o.onMute) o.onMute(); } else if (b.dataset.board !== undefined) { if (o.onBoard) o.onBoard(b.dataset.board || null); } else if (b.id === 'rx-resume') { if (o.onResume) o.onResume(); } else if (o.onMenu) o.onMenu(); });
+	root.addEventListener('click', (e) => { const b = e.target.closest('#rx-menu-btn, #rx-resume, #rx-mute, #rx-ult, #rx-auto, [data-board]'); if (!b) return; e.preventDefault(); b.blur(); if (b.id === 'rx-mute') { if (o.onMute) o.onMute(); } else if (b.id === 'rx-ult') { if (o.onUlt) o.onUlt(); } else if (b.id === 'rx-auto') { if (o.onAuto) o.onAuto(); } else if (b.dataset.board !== undefined) { if (o.onBoard) o.onBoard(b.dataset.board || null); } else if (b.id === 'rx-resume') { if (o.onResume) o.onResume(); } else if (o.onMenu) o.onMenu(); });
 	const $ = (id) => doc.getElementById(id), last = {};
 	const text = (id, v) => { if (last[id] !== v) { last[id] = v; $(id).textContent = v; } };
 	const html = (id, v) => { if (last[id] !== v) { last[id] = v; $(id).innerHTML = v; } };
@@ -55,6 +57,15 @@ export function mountRunUi(doc, o = {}) {
 		const mv = (v.moves || []).slice(0, 4); while (v.moves && mv.length < 4) mv.push(null);
 		html('rx-moves', mv.map((m) => (m ? `<div class="rx-move" style="border-top-color:${esc(m.col || '#5f7377')}"><b>${esc(m.name)}</b><i>Lv ${m.lv | 0}</i></div>` : '<div class="rx-move empty"><b>—</b><i>&nbsp;</i></div>')).join(''));
 		html('rx-bag', (v.bag || []).map((b) => `<span class="rx-chip ${b.kind || 'dim'}">${esc(b.text)}</span>`).join(''));
+		// the Ultimate: its meter (a button: press it to cast), and the cut-in when it is cast
+		const u = v.ult || null;
+		cls('rx-ult', 'show', !!u);
+		if (u) { text('rx-ult-name', u.name); text('rx-ult-pct', u.casting ? 'CASTING' : u.ready ? 'READY' + (u.key ? ' [' + u.key + ']' : '') : u.pct + ' %' + (u.auto ? ' · AUTO' : '')); width('rx-ult-fill', u.casting ? 1 : u.pct / 100); cls('rx-ult', 'ready', u.ready); cls('rx-ult', 'casting', u.casting); if (last.ultCol !== u.col) { last.ultCol = u.col; $('rx-ult').style.setProperty('--ult', u.col || '#fda200'); } }
+		const ck = v.cut ? v.cut.id : 0;
+		if (last.cut !== ck) {
+			last.cut = ck; const c = $('rx-cut'); c.classList.remove('show');
+			if (v.cut) { $('rx-cut-name').textContent = v.cut.name; $('rx-cut-sub').textContent = v.cut.sub || ''; c.style.setProperty('--ult', v.cut.col || '#fda200'); void c.offsetWidth; c.classList.add('show'); }
+		}
 		const bk = v.board ? JSON.stringify(v.board) : '';
 		if (last.board !== bk) {
 			last.board = bk; const b = v.board;
@@ -67,7 +78,7 @@ export function mountRunUi(doc, o = {}) {
 		if (last.menu !== mk) {
 			last.menu = mk; const m = mk ? v.menu : null;
 			$('rx-menu').innerHTML = !m ? '' : `<div class="rx-panel"><h1>${esc(m.title)}</h1><p>${esc(m.line || '')}</p><div class="rx-btns col"><button class="rx-btn blue" id="rx-resume">Resume</button>`
-				+ `${m.boards ? '<button class="rx-btn" id="rx-boards" data-board="open">3D boards</button>' : ''}${m.sound ? `<button class="rx-btn" id="rx-mute">Sound: ${esc(m.sound)}</button>` : ''}${m.restart ? `<a class="rx-btn orange" id="rx-restart" href="${esc(m.restart)}">Restart the run</a>` : ''}<a class="rx-btn red" id="rx-quit" href="${esc(m.leave || '../')}">Leave</a></div></div>`;
+				+ `${m.boards ? '<button class="rx-btn" id="rx-boards" data-board="open">3D boards</button>' : ''}${m.sound ? `<button class="rx-btn" id="rx-mute">Sound: ${esc(m.sound)}</button>` : ''}${m.auto ? `<button class="rx-btn" id="rx-auto">Auto-Ultimate: ${esc(m.auto)}</button>` : ''}${m.restart ? `<a class="rx-btn orange" id="rx-restart" href="${esc(m.restart)}">Restart the run</a>` : ''}<a class="rx-btn red" id="rx-quit" href="${esc(m.leave || '../')}">Leave</a></div></div>`;
 			$('rx-menu').classList.toggle('show', !!m);
 		}
 		cls('rx-menu-btn', 'hide', !!v.over);

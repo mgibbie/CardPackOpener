@@ -22,6 +22,8 @@ import { canEvolve } from './expleague.js';
 import { soundsOf, moveSounds, musicOf } from './runsound.js';
 import { startInput } from '/site/input.js';
 import { createFocusNav } from '/site/focusnav.js';
+import { marksOf } from './exprx.js';
+import { pressUlt, ultView, setCharge } from './expult.js';
 import { expFrom, newRun, stepRun, hudLine, result as runResult, setZoneTime, fire as fireEvent, zoneRoom, XK } from './expedition.js';
 import { runRow, rowView, teamSpot } from './expnet.js';
 import { guestRun, guestRunApply, stepGuest } from './expcoop.js';
@@ -84,7 +86,7 @@ const LAB_META = (() => {
 		return metaFor(GG.ExpMeta, { Sv, member, boosts: spendBoosts(GG.ExpMeta, Sv, deviceId(localStorage, Sv.who, crypto), localStorage) });
 	} catch (e) { console.warn('the Lab could not be read: ' + (e && e.message)); return null; }
 })();
-const run = EXP ? newRun(dataFrom(GG), XF, { wild: WILD, meta: LAB_META, form: +Q.get('form') || 0, seed: GEN, map: Q.get('map'), diff: Q.get('diff'), mode: Q.get('mode') || undefined, dex: DEX, moves: MOVES, tune: TUNE, touch: matchMedia('(pointer: coarse)').matches, league: !Q.has('moves') && Q.get('league') !== '0', ability: Q.get('ability') === '0' ? null : Q.get('ability') || 'auto', items: Q.get('items') ? Q.get('items').split(',') : [], weather: Q.get('weather') === '0' ? false : undefined, autoPick: Q.has('auto') ? +Q.get('auto') | 0 : undefined }) : null;
+const run = EXP ? newRun(dataFrom(GG), XF, { ultAuto: SAVE_OK && GG.ExpSave.get('ult.auto.on') > GG.ExpSave.get('ult.auto.off'), wild: WILD, meta: LAB_META, form: +Q.get('form') || 0, seed: GEN, map: Q.get('map'), diff: Q.get('diff'), mode: Q.get('mode') || undefined, dex: DEX, moves: MOVES, tune: TUNE, touch: matchMedia('(pointer: coarse)').matches, league: !Q.has('moves') && Q.get('league') !== '0', ability: Q.get('ability') === '0' ? null : Q.get('ability') || 'auto', items: Q.get('items') ? Q.get('items').split(',') : [], weather: Q.get('weather') === '0' ? false : undefined, autoPick: Q.has('auto') ? +Q.get('auto') | 0 : undefined }) : null;
 if (run) room = run.w.room;
 // (P4) a guest in a run: its own League member in the host's run (expcoop.js); it builds each zone from the run's row
 const grun = XJ ? guestRun(dataFrom(GG), XF, { seed: XJ.seed, map: XJ.map, diff: XJ.diff, id: MYID, dex: DEX, league: !Q.has('moves'), moves: MOVES, tune: TUNE, ability: Q.get('ability') === '0' ? null : Q.get('ability') || undefined, autoPick: Q.has('auto') ? +Q.get('auto') | 0 : undefined }) : null;
@@ -320,7 +322,7 @@ function draw(t) {
 	const name = stateName(state), anim = name === 'idle' || name === 'staggered' ? 'Idle' : 'Walk', LD = world && world.pl.mon.dex !== DEX ? world.pl.mon.dex : rv && rv.league ? rv.league.form : DEX, ps = sheets.get(LD + '/' + anim) || sheets.get(LD + '/Idle') || (wantLead(LD), sheets.get(DEX + '/' + anim) || sheets.get(DEX + '/Idle'));   // (P4: a League member is drawn as the stage it is)
 	const MG = myRun && myRun.lg ? myRun.lg.mega : rv && rv.league ? rv.league.mega : 0, ms = MG && ps ? megaSheet(MG) : null;
 	megaNow = ms ? MG : 0;
-	if (ms) {
+	if (myRun && myRun.ult && myRun.ult.hidden) { /* (a Flying Ultimate: you are in the sky until you come down) */ } else if (ms) {
 		const b = ms.box, bw = b[2] - b[0], bh = b[3] - b[1], k = PX * 1.15 * GG.ExpMega.K.H_K * inkH(ps) / bh, row = facingRow(state.facing, cam.yaw), flip = row >= 1 && row <= 3;
 		const u0 = b[0] / ms.img.width, u1 = b[2] / ms.img.width;
 		ms.batch.add(state.x, state.y, state.z, [-bw / 2 * k, 0, bw / 2 * k, bh * k], [flip ? u1 : u0, b[1] / ms.img.height, flip ? u0 : u1, b[3] / ms.img.height], 1);
@@ -359,6 +361,9 @@ function frame(now) {
 				if (run.sv && simTicks % 30 === 0) {   // (P4) Survival: the hostile ground near you, kept lit, and the night's dark
 					for (const o of hazardsNow(run)) if (Math.hypot(o.x - state.x, o.z - state.z) < 60) flashes.arc(o.x, o.y + 0.04, o.z, o.r, 0, 6.2832, HAZ_COL[o.kind], 0.95, 0);
 					const dark = GG.ExpSurv ? GG.ExpSurv.nightOf(world.t).dark : 0; canvas.style.filter = dark > 0 ? `brightness(${(1 - dark).toFixed(2)})` : '';
+				}
+				if (run.rx && simTicks % 12 === 0) {   // the marks a reaction needs, shown on the foes near you: wet (blue), chilled (pale, a ring a stack)
+					for (const e of world.enemies) { if (e.dead || Math.hypot(e.a.x - state.x, e.a.z - state.z) > 40) continue; const [wet, ch] = marksOf(e, world.t); if (wet) flashes.arc(e.a.x, e.a.y + 0.05, e.a.z, e.cr * 1.3 + 0.2, 0, 6.2832, '#4fa3ff', 0.4, 0.55); for (let i = 0; i < ch; i++) flashes.arc(e.a.x, e.a.y + 0.07, e.a.z, e.cr * 0.5 + 0.25 * i + 0.15, 0, 6.2832, '#bff2ff', 0.4, 0.85); }
 				}
 				if (run.w.room !== room) { room = run.w.room; mapBase = null; showRoom(); state.facing = cam.yaw; }
 				if (run.ended && !runOver) { runOver = runResult(run); keepRun(runOver); if (SITE_HOST) setTimeout(() => SITE_HOST.end(), 1300);   /* (the last second's frames carry the end) */ note(runOver.survival ? `${runOver.lines.join(' · ')} · score ${runOver.score}` : `${runOver.title} ${runOver.line} · score ${runOver.score} · pay ${runOver.pay.pay}${runOver.medal ? ' · ' + runOver.medal + ' medal' : ''}`, 600000); }
@@ -434,6 +439,17 @@ function showMap() {
 const SOUND = () => (RUNUI && GG.Audio ? GG.Audio : null);
 const moveOf = (id) => GG.Moves.BY_ID[id] || (GG.ExpMoves && GG.ExpMoves.MOVES[id]) || null;
 function play(list) { const A = SOUND(); if (A) for (const [name, o] of list) A.sfx(name, o); }
+let cutIn = null, cutN = 0;   // (the Ultimate's cut-in on screen now)
+/** Auto-Ultimate on or off: the run's, and the Expedition save's setting (two counters: the latest switch wins on every device, as in the 2D game). */
+function setUltAuto(on) {
+	if (!run || !run.ult) return false;
+	run.ult.auto = !!on;
+	if (SAVE_OK) { const Sv = GG.ExpSave; applyOps(Sv, [['best', on ? 'ult.auto.on' : 'ult.auto.off', Math.max(Sv.get('ult.auto.on'), Sv.get('ult.auto.off')) + 1]]); }
+	note('Auto-Ultimate: ' + (on ? 'on' : 'off'), 1400);
+	if (RUNUI) RUNUI.update(runView());
+	return run.ult.auto;
+}
+addEventListener('keydown', (e) => { if (e.code === 'KeyU' && !e.repeat && run && run.ult && !runOver) setUltAuto(!run.ult.auto); });
 function fightEvents(events) {
 	play(soundsOf(events, moveOf));
 	const col = (id) => TYPE_COLOR[(GG.Moves.BY_ID[id] || (GG.ExpMoves && GG.ExpMoves.MOVES[id]) || {}).type];
@@ -462,6 +478,24 @@ function fightEvents(events) {
 		else if (ev.k === 'shield') flashes.arc(ev.x, ev.y, ev.z, ev.r, 0, 6.2832, '#7fc8ff', 0.5, 0.9);
 		else if (ev.k === 'summon') flashes.arc(ev.x, ev.y, ev.z, 3, 0, 6.2832, '#c47bff', 0.4, 0.5);
 		else if (ev.k === 'hit') numbers.push({ x: ev.x, y: ev.y + 0.6, z: ev.z, text: String(Math.max(1, Math.round(ev.d))), css: ev.crit ? '#ffe14d' : (WATCH ? ev.eff === 2 : ev.eff > 1.2) ? '#ffffff' : (WATCH ? ev.eff === 0 : ev.eff < 0.9) ? '#9aa6b5' : '#f2ede2', big: ev.crit || ev.eff > 1.2, t: 0 });
+		else if (ev.k === 'ult') {   // an Ultimate: its cut-in, its rings, beams and strikes
+			const c = TYPE_COLOR[ev.type] || '#ffd23f', A = SOUND();
+			if (ev.sub === 'cast') { cutIn = { id: ++cutN, name: ev.name, sub: 'ULTIMATE' + (ev.tier > 0 ? ' · TIER ' + ev.tier : ''), col: c, until: performance.now() + 1100 }; flashes.arc(ev.x, ev.y + 0.05, ev.z, 15, 0, 6.2832, c, 0.7, 0.05); bob = 0.5; if (A) A.sfx('legend'); if (RUNUI) RUNUI.update(runView()); }
+			else if (ev.sub === 'piece') note(ev.name, 1400);
+			else if (ev.sub === 'ring') flashes.arc(ev.x, ev.y + 0.06, ev.z, ev.r, 0, 6.2832, c, ev.life || 0.4, ev.life > 0.6 ? 0.9 : 0.3);
+			else if (ev.sub === 'bar') flashes.bar(ev.from, ev.dir, ev.len, ev.w, c, ev.life || 0.25);
+			else if (ev.sub === 'strike') { flashes.bar([ev.x, ev.y + 14, ev.z], [0, -1, 0], 14, 0.35, c, 0.2); flashes.arc(ev.x, ev.y + 0.06, ev.z, ev.r, 0, 6.2832, c, 0.3, 0.2); }
+			else if (ev.sub === 'heal') numbers.push({ x: ev.x, y: ev.y + 2, z: ev.z, text: '+' + ev.amount, css: '#7dffb0', big: true, t: 0 });
+			else if (ev.sub === 'ready') { note('Ultimate ready!', 1500); if (A) A.sfx('select'); }
+			else if (ev.sub === 'no') { if (A) A.sfx('error'); }
+			else if (ev.sub === 'end') { if (RUNUI) RUNUI.update(runView()); }
+		}
+		else if (ev.k === 'rx') {   // a reaction: its name over the foe, a ring as wide as it reaches
+			const R = GG.ExpRx, c = ev.kind === 'frozen' ? '#8fe3ff' : (R && R.COL[ev.kind]) || '#ffffff';
+			numbers.push({ x: ev.x, y: ev.y + 1.6, z: ev.z, text: ev.kind === 'frozen' ? 'Frozen solid!' : (R && GG.ExpEN[R.NAME[ev.kind]]) || ev.kind, css: c, big: true, t: 0 });
+			flashes.arc(ev.x, ev.y + 0.05, ev.z, ev.r > 0 ? ev.r : 1.2, 0, 6.2832, c, 0.42, ev.r > 0 ? 0.9 : 0.4);
+		}
+		else if (ev.k === 'rxchain') { for (const b of ev.links) { const a = ev.from, d = [b[0] - a[0], b[1] - a[1], b[2] - a[2]], l = Math.hypot(d[0], d[1], d[2]) || 1; flashes.bar([a[0], a[1] + 0.6, a[2]], [d[0] / l, d[1] / l, d[2] / l], l, 0.12, '#ffe14d', 0.25); } }
 		else if (ev.k === 'hurt') { bob = 0.35; note(`hit for ${(+ev.d).toFixed(0)}`, 700); }
 	}
 	if (world && world.pl.dead && !mates().length) note('you are down: R to start the level again', 60000);
@@ -629,7 +663,7 @@ if (FIGHT) {
 }
 /** (the shipping path) A run's own screen, in Micatro's look: runui.js draws this view of the run. The test room's
  *  readout is still filled (tests and ?debug=1 read it), but it is not what a player sees. */
-const RUNUI = myRun || XW ? mountRunUi(document, { debug: Q.has('debug'), onMenu: () => setMenu(!menuUp), onResume: () => setMenu(false), onBoard: (id) => openBoard(id), onMute: () => { if (GG.Audio) { GG.Audio.toggleMute(); RUNUI.update(runView()); } } }) : null;
+const RUNUI = myRun || XW ? mountRunUi(document, { debug: Q.has('debug'), onMenu: () => setMenu(!menuUp), onResume: () => setMenu(false), onBoard: (id) => openBoard(id), onMute: () => { if (GG.Audio) { GG.Audio.toggleMute(); RUNUI.update(runView()); } }, onUlt: () => { if (run) pressUlt(run); }, onAuto: () => { if (run && run.ult) setUltAuto(!run.ult.auto); } }) : null;
 /** The 3D boards of this run's map and tier (the menu's or the run's end's button): the server's top ten and yours. */
 let boardUp = null;
 async function openBoard(id) {
@@ -647,7 +681,7 @@ async function openBoard(id) {
 /** The menu (Esc, P, or its button). Alone in your own run the fight waits while it is up; a guest's or a watcher's
  *  fight is someone else's and goes on. */
 let menuUp = false, paused = false, escAt = 0;
-const CONTROLS = 'Move: arrows / WASD · Jump: Z or Space · Slide: X or Shift · Wall-run: jump beside a wall and lean into it (jump again to kick off) · Rails: come down on one to grind it (jump to leap off, slide to drop) · Surf: on a steep bank, hold along it and into it · Camera: Q / E or drag · Map: Backspace or M · Menu: Enter or Esc';
+const CONTROLS = 'Move: arrows / WASD · Jump: Z or Space · Slide: X or Shift · Wall-run: jump beside a wall and lean into it (jump again to kick off) · Rails: come down on one to grind it (jump to leap off, slide to drop) · Surf: on a steep bank, hold along it and into it · Ultimate: V when its meter is full (U: cast by itself) · Camera: Q / E or drag · Map: Backspace or M · Menu: Enter or Esc';
 function setMenu(on) {
 	if (!RUNUI || runOver) on = false;
 	menuUp = !!on; paused = menuUp && !!run && !world.mates.length;
@@ -672,6 +706,8 @@ function runView() {
 	if (LIVE) v.bag.push({ text: 'Watching ' + LIVE, kind: 'on' });
 	if (run) { v.parts = hudLine(run).split(' · '); if (run.ph === 0 && !run.surv && run.charge > 0) v.parts.push(`CHARGE ${Math.round(run.charge * 100)} %`); }
 	else if (rv) v.parts = rv.hud(state).split(' · ');
+	if (run && run.ult && !runOver) { v.ult = ultView(run); v.ult.col = TYPE_COLOR[v.ult.type]; v.ult.key = matchMedia('(pointer: coarse)').matches ? '' : 'V'; }
+	if (cutIn && performance.now() < cutIn.until) v.cut = cutIn;
 	if (pl) v.moves = pl.moves.map((m) => ({ name: pretty(m.id), lv: m.xlv || m.lvl, col: TYPE_COLOR[(GG.Moves.BY_ID[m.id] || (GG.ExpMoves && GG.ExpMoves.MOVES[m.id]) || {}).type] }));
 	if (pl && pl.xv && I) for (const q of pl.xv) v.bag.push({ text: `${en(I.VIT[q.id].name)} ${q.lvl}`, kind: 'dim' });
 	if (pl && pl.xi && I) for (const id of Object.keys(pl.xi)) v.bag.push({ text: en(I.IT[id].name) + (pl.xi[id] > 1 ? ' ×' + pl.xi[id] : ''), kind: '' });
@@ -680,7 +716,7 @@ function runView() {
 	const b = world && !JOIN ? world.enemies.find((e) => e.boss) : null;
 	if (b) v.boss = { name: nameOf(b.dex), hp: b.hp, maxHp: b.maxHp, enraged: !!(b.ai && b.ai.fury) };
 	if (boardUp) v.board = { title: `3D · ${XK.MAP_NAME[boardUp.map] || boardUp.map} · ${boardUp.diff[0].toUpperCase() + boardUp.diff.slice(1)}`, tabs: [['score', 'Score'], ['time', 'Time attack'], ['survival', 'Survival']].map(([id, text]) => ({ id, text, on: id === boardUp.view })), rows: boardUp.rows, note: boardUp.note };
-	if (menuUp && !runOver) v.menu = { boards: true, sound: GG.Audio ? (GG.Audio.settings.muted ? 'off' : 'on') : null, title: paused ? 'PAUSED' : 'MENU', line: (paused ? '' : 'The fight goes on while this is open. ') + CONTROLS, restart: run ? location.search || '?' : null, leave: '../' };
+	if (menuUp && !runOver) v.menu = { auto: run && run.ult ? (run.ult.auto ? 'on' : 'off') : null, boards: true, sound: GG.Audio ? (GG.Audio.settings.muted ? 'off' : 'on') : null, title: paused ? 'PAUSED' : 'MENU', line: (paused ? '' : 'The fight goes on while this is open. ') + CONTROLS, restart: run ? location.search || '?' : null, leave: '../' };
 	if (runOver) {
 		const r = runOver, q = new URLSearchParams(location.search); q.set('exp', (+q.get('exp') || 0) + 1);
 		v.over = typeof r === 'string' ? { won: r === 'won', title: r === 'won' ? 'EXPEDITION COMPLETE!' : 'RUN OVER', line: '', rows: [], again: null, leave: '../' }
@@ -702,6 +738,7 @@ const siteInput = startInput({ pad: true,
 		if (uiLayer()) return uiNav.onAction(a, info);
 		if (info.repeat) return false;
 		if (a === 'menu' && RUNUI) { setMenu(true); return true; }
+		if (a === 'context' && run && run.ult) { pressUlt(run); return true; }   // (V / the pad's Y: the Ultimate)
 		if (a === 'select' && FIGHT) { toggleMap(); return true; }
 		if (a === 'cancel' && mapBig) { toggleMap(false); return true; }
 		return false;   // (moving, jumping, sliding and the camera read what is held: readInput)
@@ -809,6 +846,7 @@ window.__m3d = {
 	get kept() { return kept; }, practice: PRACTICE,
 	acts, uiNav, siteInput,
 	setMenu, get paused() { return paused; },
+	ult: { press: () => { if (run) pressUlt(run); }, charge: (v) => { if (run) setCharge(run, v); }, view: () => (run ? ultView(run) : null), setAuto: (on) => setUltAuto(on), get cut() { return cutIn; } },
 	runView: () => (RUNUI ? runView() : null),
 	get megaNow() { return megaNow; }, megaSheets,
 	get ready() { return ready; }, state, get room() { return room; }, run, setZoneTime: (sec) => run && setZoneTime(run, sec), useTool, takePick, ecoView: () => (run ? ecoView(run) : []), capView: () => (run ? capView(run) : null), hazards: () => (run ? hazardsNow(run) : []), fog: () => fogNow(), toggleMap, get mapBig() { return mapBig; }, get rv() { return rv; }, noteLog, grun, fire: (ev) => run && fireEvent(run, ev), K, TUNE, TYPES, TRAITS, cam, crowd, sheets, stats, gen: GEN, biome: BIOME, world, numbers, net, tape, myId: MYID, mates, get coView() { return coView; }, playTape, get view() { return view; }, get viewer() { return viewer; }, get watchT() { return watchT; }, addBoss: (dex, x, z, o) => addBoss(world, dex, x, z, o), drop: (kind, x, z, v) => drop(world, kind, x, groundAt(room, x, z), z, v), pickCard, addEnemy: (dex, x, z, o) => addEnemy(world, dex, x, z, o), holdExit: false, get leaving() { return leaving; },

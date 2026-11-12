@@ -148,6 +148,8 @@ export function recordOps(S, res, o) {
 	}
 	// research (js/expedition/meta.js record): each family's points
 	for (const [fam, pts] of o.research || []) bump('rs.' + fam, pts);
+	if (S.rx) { for (const k of Object.keys(S.rx.by)) bump('rx.' + k, S.rx.by[k]); bump('rx.total', S.rx.n); }   // (the reactions: js/expedition/reactions.js record)
+	if (S.ult) { bump('ult.casts', S.ult.casts); best('ult.best', S.ult.casts); bump('ult.sig', S.ult.sigs); }   // (the Ultimates: js/expedition/ultimates.js record)
 	// the tasks' metrics of this run, for the 2D game to count (meta.js claim3d -> taskRun)
 	{
 		const T3 = 'm3d.t.' + o.dev + '.', X3 = 'm3d.x.' + o.dev + '.', gen = (o.seen | 0) + 1, cap = S.cap ? S.cap.log : null, eco = S.eco ? S.eco.log : null;
@@ -156,6 +158,8 @@ export function recordOps(S, res, o) {
 		if (eco) { bump(T3 + 'balls', eco.balls); bump(T3 + 'altars', eco.altars); bump(T3 + 'freed', eco.freed); }
 		if (cap) { bump(T3 + 'alphas', cap.alpha); bump(T3 + 'catches', S.cap.n); }
 		if (S.lg) { bump(T3 + 'evos', S.lg.evo); bump(T3 + 'megas', S.lg.mega ? 1 : 0); bump(T3 + 'finals', o.final ? 1 : 0); }
+		if (S.rx) bump(T3 + 'reactions', S.rx.n);
+		if (S.ult) bump(T3 + 'casts', S.ult.casts);
 		if (S.surv && S.sv) { bump(T3 + 'miles', S.sv.downs); best(X3 + 'ssecs', gen * 1e6 + Math.min(999999, t)); }
 		else best(X3 + 'zone', gen * 1e6 + Math.min(4, S.zone));   // (a single run's best, since the 2D game last counted: its count is in the number)
 	}

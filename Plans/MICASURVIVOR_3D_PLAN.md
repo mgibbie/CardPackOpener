@@ -1382,6 +1382,41 @@ the 3D game. Before going live either they are built, or those two tasks leave t
 
 Tests: `micasurvivor_m3d_expsave_test.mjs` 47 checks (was 38), against the 2D game's own meta.js.
 
+## 5.47 Going live, seventh part: built (2026-11-12). Ultimates and elemental reactions.
+
+The owner's call on §5.46's open question: build them. Both read the 2D game's own numbers
+(`js/expedition/reactions.js`, `js/expedition/ultimates.js`, `js/systems/zmoves.js`), which the 3D page now loads.
+
+- **Reactions** (`m3d/exprx.js`). The marks: a Water hit wets a foe for 4 s; three Ice hits (one on a wet foe)
+  freeze it for 1.6 s. The seven reactions, one a hit, 0.25 s apart per foe: Electrocuted (× 1.5, chains to 12 wet
+  foes within 9 m at half the hit, paralysis 60 %), Steam (× 1.4, confuses and roots within 6 m), Inferno (the burn
+  spreads 7 m), Wreckage (× 2.6 on a frozen foe), Poison Gas (× 1.3, poisons within 6 m), Psychic Meltdown
+  (× 1.6), Dragon Rage (× 1.8 on two statuses). The weather: Sun boosts Grass and Fog boosts Dark (× 1.3), and
+  the weather that favours your type gives every hit + 10 %. On screen: the reaction's name over the foe, a ring
+  as wide as it reaches, the chain's bolts; a wet foe has a blue ring under it, a chilled one a pale ring a stack.
+- **Ultimates** (`m3d/expult.js`). The charge (95 s by itself; KOs from a bucket; elites, alphas, bosses; damage
+  taken), the cast (a 0.32 s hit-stop, no damage taken during it nor 0.6 s after), the damage formula, the 28 %
+  cap a piece against a boss, the tier (evolutions + Maturity + Mega), the sixteen signatures with their beats by
+  tier, Mew's copies (seeded), and auto. The eighteen type choreographies are the 2D game's Z-moves, written again
+  beat for beat (they are code there, not a table): same times, reaches, weights and effects. An Ultimate reaches
+  every height. A dive or a dash never puts you where you could not walk back from.
+  - Cast with **V** (a controller's Y), or press the meter (a tap on a phone). **U**, or the menu's button,
+    switches Auto-Ultimate; the setting is the 2D game's own (`ult.auto.on` / `.off` in the Expedition save).
+  - The screen: a meter above the four moves (its name, how full, READY), and a cut-in with the name when cast.
+  - The comet shard now gives its + 25 % Ultimate charge (§5.19 had left it waiting).
+- **The save and the tasks.** A run writes `rx.<kind>`, `rx.total`, `ult.casts`, `ult.best`, `ult.sig` with the 2D
+  game's keys, and leaves `reactions` and `casts` for the tasks; the 2D game's `claim3d` counts them. So every
+  task in the pool can now be moved by a 3D run.
+- **Watching.** The reactions' and the Ultimate's events ride the frames: a watcher sees the names, the rings and
+  the cut-in. The meter itself is not sent.
+
+Not built: the caster's sprite in the cut-in (the 2D game draws it; here the banner has the name and the tier),
+and the particles of each choreography (rings, beams and strikes in the type's colour stand in for them).
+
+Tests: `micasurvivor_m3d_exprx_test.mjs` 45 checks, `micasurvivor_m3d_expult_test.mjs` 62, both against the 2D
+game's own scripts; `micasurvivor_m3d_ult_page_test.mjs` 16 in a browser; `micasurvivor_m3d_expeco_test.mjs` 110
+(was 109).
+
 ## 6. Dive in 2D: built
 
 **D0 — find the stairs (small; can ship first, on its own).** *Built 2026-11-11 (`overworld/tests/micasurvivor_dive_stairs_test.mjs`). As built: the stairs took their own orange mark, so the rocks and Meowth keep their gold; the HUD arrow comes up after 25 s on a floor, or at once when its boss falls.*
