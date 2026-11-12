@@ -18,7 +18,8 @@ import { CELL, groundAt } from './sim.js';
 import { rng as makeRng } from './gen.js';
 import { moveActor } from './actors.js';
 import { CK, U, drop, shoot, attackOf } from './combat.js';
-import { XK, spawn, free, say } from './expedition.js';
+import { XK, spawn, free, say, fire } from './expedition.js';
+import { lab, boost, useMaster } from './expmeta.js';
 import { dropItem } from './explevel.js';
 import { canEvolve } from './expleague.js';
 
@@ -34,17 +35,18 @@ export function capFrom(G) {
 }
 /** Give a run its captures. */
 export function setupCap(S, o = {}) {
-	S.cap = { sa: [], tg: new Map(), faint: [], cine: null, n: 0, last: 0, zone: 0, zplan: null, shDone: false, lgDone: false, lg2Done: false, pend: (o.wild || []).slice(0, S.X.C.K.PER_RUN), done: new Set(), log: { alpha: 0, league: [], shiny: [], seen: 0, fled: 0, prizes: 0, swaps: 0, best: 0 } };
+	S.cap = { sa: [], tg: new Map(), faint: [], cine: null, n: 0, last: 0, zone: 0, zplan: null, shDone: false, lgDone: false, lg2Done: false, honey: {}, pend: (o.wild || []).slice(0, S.X.C.K.PER_RUN), done: new Set(), log: { alpha: 0, league: [], shiny: [], seen: 0, fled: 0, prizes: 0, swaps: 0, best: 0 } };
 	return S.cap;
 }
 const name = (S, dex) => { const m = S.data.mon(dex); return m ? m.name : '#' + dex; };
 const typeOf = (S, dex) => ((S.data.mon(dex) || {}).types || ['normal'])[0] || 'normal';
 /** How many Support Alphas you may have. */
-export const slotsMax = (S) => S.X.C.K.SLOTS;
+export const slotsMax = (S) => S.X.C.K.SLOTS + Math.min(S.X.C.K.LAB_SLOTS || 0, lab(S, 'support'));   // (two, three with the Lab's "Support team")
 /** Mark an enemy as one that can be caught: it faints at 1 HP instead of falling. o: { flee (s) } */
 export function mark(S, e, kind, o = {}) {
 	if (!S.cap || !e) return e;
 	e.hpFloor = 1; e.xcap = kind;
+	if ((kind === 'league' || kind === 'shiny') && useMaster(S)) { e.hp = 1; say(S, 'Master Ball!', 2); }   // (the run's first: it faints at once)
 	S.cap.tg.set(e.id, Object.assign({ kind, e, t0: S.w.t, dex: e.dex }, o));
 	return e;
 }
@@ -165,6 +167,7 @@ function perks(S) { const out = {}; for (const a of S.cap.sa) { const [st, v] = 
  *  armour while your stage can still evolve. */
 export function syncPerks(S) {
 	const pl = S.w.pl, out = S.cap ? perks(S) : {};
+	if (S.meta) for (const k in S.meta.eff.stats) out[k] = (out[k] || 0) + S.meta.eff.stats[k];   // (the Lab, the shiny perks, the boosts: the run's row)
 	if (S.L && S.L.I.has(pl, 'eviolite') && canEvolve(S)) out.armor = (out.armor || 0) + S.L.I.IT.eviolite.stats.eviolite;
 	if (S.sv) for (const id of S.sv.pacts) { const p = S.X.V.PACT_BY[id]; for (const src of [p.boon, p.bane]) for (const k in src) out[k] = (out[k] || 0) + src[k]; }   // (Survival: a pact's boon and its price)
 	pl.xperk = out;
@@ -213,10 +216,15 @@ export function tickCap(S, dt) {
 	if (C.zone !== S.zone) {
 		C.zone = S.zone; C.shDone = false; C.lgDone = false; C.lg2Done = false; C.faint.length = 0; C.tg.clear();
 		const member = S.zone <= 3 ? C.pend[S.zone - 1] || 0 : 0, member2 = S.zone <= 2 ? C.pend[S.zone + 2] || 0 : 0;   // (the 4th and 5th: zones 1 and 2)
-		C.zplan = X.zonePlan(S.seed, S.map, S.zone, { member, member2, luck: pl.xluck || 0, charm: !!(S.L && S.L.I.has(pl, 'shinycharm')), force: !!S.forceShiny });
+		C.zplan = X.zonePlan(S.seed, S.map, S.zone, { member, member2, luck: pl.xluck || 0, charm: !!(S.L && S.L.I.has(pl, 'shinycharm')) || !!(S.meta && S.meta.eff.charm), force: !!S.forceShiny || (boost(S, 'dawn') && S.zone === 1) });   // (the 6-shiny perk is a Shiny Charm every run; the Dawn Stone: a shiny in zone 1)
 		for (const a of C.sa) { a.x = pl.s.x; a.z = pl.s.z; a.y = pl.s.y; }   // (your team comes through the portal with you)
 	}
 	const zt = w.t - S.zs, P = C.zplan;
+	// Honey: an extra alpha in each zone, at a time of the zone's own
+	if (boost(S, 'honey') && S.zone >= 1 && S.zone <= 3 && !C.honey[S.zone] && S.plan && S.plan.cards && S.plan.cards.length) {
+		const hr = makeRng(mix(S.seed, S.zone, 0x40E7)), HA = S.meta.honeyAt, at = HA[0] + Math.floor(hr() * (HA[1] - HA[0]));
+		if (zt >= at) { C.honey[S.zone] = true; const cards = S.plan.cards, dex = cards[Math.floor(hr() * Math.min(10, cards.length))]; fire(S, { at, kind: 'alpha', n: 1, dex: [dex], seed: mix(S.seed, S.zone, 0x40E8) }); say(S, `Honey: an alpha ${name(S, dex)} appears!`, 3); }
+	}
 	if (P && P.league && !C.lgDone && zt >= P.league.at) { C.lgDone = true; spawnLeague(S, P.league.member); }
 	if (P && P.league2 && !C.lg2Done && zt >= P.league2.at) { C.lg2Done = true; spawnLeague(S, P.league2.member); }
 	if (P && P.shiny && !C.shDone && zt >= P.shiny.at) { C.shDone = true; spawnShiny(S, P.shiny.pick); }

@@ -115,3 +115,5 @@ body.rx #cards button em .rx-type { border-radius: .4em; padding: .3em .6em .22e
 .rx-brow span { overflow: hidden; text-overflow: ellipsis; } .rx-brow span:first-child { color: var(--money); } .rx-brow span:nth-child(n+4) { text-align: right; }
 .rx-brow.me { background: var(--panel); border-radius: .4em; color: var(--money); }
 #rx-board .rx-panel { animation: none; }   /* (it is drawn again as its rows arrive: no rise each time) */
+/* (the Lab's fourth option: four cards in a row where there is room) */
+@media (min-width: 900px) { body.rx #cards.four { grid-template-columns: repeat(4, minmax(0, 12.5em)); } }

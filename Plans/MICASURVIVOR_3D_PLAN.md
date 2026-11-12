@@ -1291,6 +1291,29 @@ items not bought yet staying out of the pool, the boosts and the Master Ball), t
 
 Tests: `micasurvivor_m3d_expsave_test.mjs` 37 checks (was 33).
 
+## 5.42 Going live, second part: built (2026-11-12). The Lab in a 3D run.
+
+In the 2D game a run starts with a row read from your save: your Lab's levels, your shiny perks, the boosts you
+armed. A 3D run did not, so it was not the same game: every item dropped whether you had bought it or not, and
+nothing you had paid for in the Lab was there. `micasurvivor/m3d/expmeta.js`: a 3D run that can be kept now
+starts with the same row, read by the 2D game's own code (`meta.js rowNow / effects`, loaded on the page).
+
+- **The Lab**: + uses of Refresh / Skip / Banish; + vitamin slots; a fourth card at each level; a Max Revive to
+  start with; a third Support Alpha slot; your Archive. A retired row does nothing, as in 2D.
+- **The items**: the 25 the Lab sells stay out of a run's pool (level-up items, balls, the stall) until bought.
+- **Shiny perks**: + 3 luck, + 4 % XP, a Shiny Charm every run, + 3 % damage, and + 20 % as your League's
+  shiny member.
+- **Boosts**: the ones you armed and still have are spent when the run starts, once, with the 2D game's keys:
+  Rare Candy (two levels), Lucky Egg, Amulet Coin, Honey (an extra alpha in each zone), Dawn Stone (a shiny in
+  zone 1), Master Ball (your first wild League member or shiny faints at once).
+- Only a run that can be kept has a row (your member, a map and a tier you have open): a practice run has
+  nothing of the Lab and spends nothing.
+
+Not here: research (the points a run's KOs give a family); the tasks; the row on a watcher's screen.
+
+Tests: `micasurvivor_m3d_expmeta_test.mjs` (24 checks, node, against the 2D game's own meta.js and save.js):
+new. `micasurvivor_m3d_save_page_test.mjs` 16 checks (was 13).
+
 ## 6. Dive in 2D: built
 
 **D0 — find the stairs (small; can ship first, on its own).** *Built 2026-11-11 (`overworld/tests/micasurvivor_dive_stairs_test.mjs`). As built: the stairs took their own orange mark, so the rocks and Meowth keep their gold; the HUD arrow comes up after 25 s on a floor, or at once when its boss falls.*

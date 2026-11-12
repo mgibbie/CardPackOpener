@@ -14,6 +14,7 @@
 // time stop, and the four epic items' timed strikes. The economy (expeco.js) hands them out.
 // Not here yet: the League's kits and evolutions (so Eviolite does nothing), and the Lab's extra slots.
 import { rng as makeRng } from './gen.js';
+import { lab, excluded } from './expmeta.js';
 import { moveActor } from './actors.js';
 import { processLeague, branchCards, megaCards } from './expleague.js';
 import { canFire, land, attackOf, CK, U } from './combat.js';
@@ -49,7 +50,7 @@ export function setup(S, L, lv = []) {
 	L.I.ensure(pl);
 	for (const m of pl.moves) L.M.base(m);
 	for (const [id, n] of lv) { const m = pl.moves.find((q) => q.id === id); for (let i = 1; m && i < n; i++) L.M.levelUp(pl, m, []); }
-	S.lv = { draw: 0, refreshes: K.REFRESH, skips: K.SKIP, bans: K.BANISH, banned: new Set(), log: [], items: 0, rifts: [] };
+	S.lv = { draw: 0, refreshes: K.REFRESH + lab(S, 'refresh'), skips: K.SKIP + lab(S, 'skip'), bans: K.BANISH + lab(S, 'banish'),   /* (+ the Lab's) */ banned: new Set(), log: [], items: 0, rifts: [] };
 	S.coins = S.coins || 0;
 	w.xpNeed = L.need; pl.xpNext = L.need(pl.level);
 	w.offerCards = () => { if (S.lg) { processLeague(S); const b = branchCards(S) || megaCards(S); if (b) return b; } return offerCards(S); };   // (a League run: the level's news first; a branch to choose is the level's cards)
@@ -124,7 +125,7 @@ export function takeItem(S, id) {
 /** An item for a drop (an alpha's, a roamer's): a rarity by your level, luck and zone, then one of it you have room for. */
 export function rollItem(S, rng) {
 	const L = S.L, pl = S.w.pl, ti = L.rollRarity(rng, { level: pl.level, luck: pl.xluck || 0, zone: Math.min(4, S.zone), item: true });
-	for (let t = ti; t >= 0; t--) { const pool = L.I.ITEMS.filter((it) => it.rar === t && L.I.room(pl, it.id)); if (pool.length) return pool[Math.min(pool.length - 1, Math.floor(rng() * pool.length))].id; }
+	for (let t = ti; t >= 0; t--) { const pool = L.I.ITEMS.filter((it) => it.rar === t && L.I.room(pl, it.id) && !excluded(S, it.id)); if (pool.length) return pool[Math.min(pool.length - 1, Math.floor(rng() * pool.length))].id; }
 	return null;
 }
 /** The next dropped item of the run (its own seeded stream). */
@@ -197,7 +198,7 @@ function newCard(S, id, ti, rng, old = null) {
 function vitCard(S, id, ti) {
 	const L = S.L, pl = S.w.pl, v = L.VIT[id], x = L.I.vitOf(pl, id), lv = x ? x.lvl : 0;
 	const c = dress(S, { type: x ? 'up' : 'new', kind: 'vit', key: 'vit:' + id, id, title: L.en(v.name), tag: x ? `Vitamin Lv ${lv} > ${lv + 1}` : 'Vitamin',
-		desc: L.I.vitText(id, L.RAR_MUL[ti]) + (x ? '' : ` · Slot ${pl.xv.length + 1}/${L.IK.VIT_SLOTS}`),
+		desc: L.I.vitText(id, L.RAR_MUL[ti]) + (x ? '' : ` · Slot ${pl.xv.length + 1}/${vitSlots(S)}`),
 		apply: () => { L.I.takeVitamin(pl, id, ti); S.lv.log.push([pl.level, 'vit', id, ti]); } }, ti);
 	if (!x) c.xban = 'v:' + id;
 	return c;
@@ -221,13 +222,15 @@ export function candidates(S) {
 	if (S.lg) { /* a League run: the kit owns the four slots; a new move only ever comes as a swap */ }
 	else if (pl.moves.length < K.MAX_MOVES) for (const id of cs) out.push({ key: 'new:' + id, w: K.W.newMove, kind: 'move', make: (ti, rng) => newCard(S, id, ti, rng) });
 	if (pl.moves.length >= K.MAX_MOVES) { const old = swapOut(S); if (old && cs.length) for (const id of cs) out.push({ key: 'swap:' + id, w: K.W.swap / cs.length, kind: 'move', make: (ti, rng) => newCard(S, id, ti, rng, old) }); }
-	if (pl.xv.length < L.IK.VIT_SLOTS) for (const v of L.VITAMINS) if (!L.I.vitOf(pl, v.id) && !banned(S, 'v:' + v.id)) out.push({ key: 'vit:' + v.id, w: K.W.newVit, kind: 'vit', make: (ti) => vitCard(S, v.id, ti) });
+	if (pl.xv.length < vitSlots(S)) for (const v of L.VITAMINS) if (!L.I.vitOf(pl, v.id) && !banned(S, 'v:' + v.id)) out.push({ key: 'vit:' + v.id, w: K.W.newVit, kind: 'vit', make: (ti) => vitCard(S, v.id, ti) });
 	for (const x of pl.xv) if (x.lvl < L.IK.VIT_MAX) out.push({ key: 'vit:' + x.id, w: K.W.vitUp, kind: 'vit', make: (ti) => vitCard(S, x.id, ti) });
 	return out;
 }
 /** A level's cards: three, drawn by weight from the run's own seeded stream; a move card is always among them and
  *  comes first; each gets a rarity by your level, luck and zone. */
-export function offerCards(S, n = S.L.K.CARDS) {
+/** Vitamin slots: three, and the Lab's. */
+export const vitSlots = (S) => S.L.IK.VIT_SLOTS + lab(S, 'vitamins');
+export function offerCards(S, n = S.L.K.CARDS + lab(S, 'option')) {   // (three cards, four with the Lab's "fourth option")
 	const L = S.L, pl = S.w.pl;
 	L.M.refreshAll(pl);
 	const rng = makeRng(mix(S.seed, S.slot | 0, pl.level, S.lv.draw++, 0xD5));   // (S.slot: a co-op guest's number, so each player is dealt their own cards)
