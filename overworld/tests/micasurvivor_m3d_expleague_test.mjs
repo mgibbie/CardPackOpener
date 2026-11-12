@@ -120,10 +120,10 @@ const ids = (S) => S.w.pl.moves.map((m) => m.id);
 	const S = newRun(data, X, { seed: 7, dex: 4, league: true, weather: false, autoPick: 0 }); S.plan.events = []; S.acc = -1e9; stepRun(S, null);
 	const base = S.w.pl.baseReduce; takeItem(S, 'eviolite');
 	A(near(total(S, 'armor'), 15) && near(S.w.pl.baseReduce, base + 0.15), 'Eviolite on a Charmander (it can still evolve): 15 armour');
-	const T = run(4, { eco: true }); levelTo(T, 36); const b2 = T.w.pl.baseReduce; takeItem(T, 'eviolite');
-	A(total(T, 'armor') === 0 && near(T.w.pl.baseReduce, b2), 'on a Charizard (it cannot): nothing');
-	const U = run(4, { eco: true }); takeItem(U, 'eviolite'); levelTo(U, 16); const mid = total(U, 'armor'); levelTo(U, 36);
-	A(mid === 15 && total(U, 'armor') === 0, 'held through its evolutions, it stops working at the last one');
+	const T = run(4, { eco: true }); levelTo(T, 36); const b2 = T.w.pl.baseReduce, a2 = total(T, 'armor'); takeItem(T, 'eviolite');
+	A(near(total(T, 'armor'), a2) && near(T.w.pl.baseReduce, b2), 'on a Charizard (it cannot): nothing');
+	const U = run(4, { eco: true }); takeItem(U, 'eviolite'); levelTo(U, 16); const mid = U.w.pl.xperk.armor; levelTo(U, 36);
+	A(mid === 15 && !U.w.pl.xperk.armor, 'held through its evolutions, it stops working at the last one');
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);

@@ -25,6 +25,7 @@ import { leagueFrom, memberOf, setupLeague } from './expleague.js';
 
 export const XK = {
 	BIOME: { viridian: 'meadow', mtmoon: 'peaks', cerulean: 'marsh' },
+	MAP_NAME: { viridian: 'Viridian Forest', mtmoon: 'Mt. Moon', cerulean: 'Cerulean Cape' },
 	ZONE_TILES: 7,                 // a zone is 7 x 7 tiles (98 m a side); a Dive room is 5 x 5
 	ALTAR_MIN: 26, ALTAR_MAX: 96,  // m from where you arrive (the 2D game: 26-48 tiles on a far bigger map)
 	SITE_UP: CK.REACH_UP,          // m: a site counts you only on its own level (not from the ledge above it)
@@ -163,14 +164,17 @@ export const capNow = (S) => Math.round((S.touch ? S.X.K.CAP_TOUCH : S.X.K.CAP) 
 function zoneStart(S, z, t) {
 	const p = S.X.plan(S.seed, S.map, z, S.diff);
 	Object.assign(S, { zone: z, zs: t, plan: p, n: 0, ph: 0, charge: 0, portalT: 0, fs: false, boss: null, exhSaid: false, acc: 0, trick: makeRng(mix(S.seed, S.X.MAP_IDS.indexOf(S.map) + 1, z, 0xC4)), specials: new Map() });
-	say(S, z === 4 ? `— Shrine of ${name(S, p.legend)} —` : `— Zone ${z} · ${S.X.MAPS[S.map].name} —`, 3.2);
+	say(S, z === 4 ? `— Shrine of ${name(S, p.legend)} —` : `— Zone ${z} · ${XK.MAP_NAME[S.map] || S.map} —`, 3.2);
 	S.w.events.push({ k: 'zone', zone: z });
 }
+/** How far to the side of the host a player arrives, by its number in the party (any number: an id can be large). */
+export const besideHost = (id) => 1.4 * (1 + (Math.abs(id | 0) + 2) % 3);
 /** Put the fight in another room: nothing of the old one comes along but you. */
 function enterRoom(S, room) {
 	const w = S.w;
 	for (const k of ['enemies', 'shots', 'orbs', 'fields', 'effects', 'eshots', 'hazards', 'pickups']) w[k].length = 0;
 	w.room = room; Object.assign(w.pl.s, newState(room, w.tune));
+	for (const m of w.mates) { m.s.x = room.spawn[0] + besideHost(m.id); m.s.y = room.spawn[1]; m.s.z = room.spawn[2]; m.s.vx = m.s.vy = m.s.vz = 0; m.s.grounded = true; m.field = null; m.fieldCell = -2; }   // (co-op: the others' puppets too, until they say where they are)
 	w.field = null; w.fieldCell = -2; w.pl.target = null;
 }
 
@@ -388,8 +392,8 @@ export function takeHeld(S, id) {
 }
 /** Are you on a site? Within `r` cells of it on the ground, and on its level. */
 export function onSite(S, r) {
-	const s = S.w.pl.s, a = S.w.room.altar;
-	return !S.w.pl.dead && Math.hypot(s.x - a[0], s.z - a[2]) < r * CELL && Math.abs(s.y - a[1]) <= XK.SITE_UP;
+	const w = S.w, a = w.room.altar, on = (p) => !p.dead && !p.away && Math.hypot(p.s.x - a[0], p.s.z - a[2]) < r * CELL && Math.abs(p.s.y - a[1]) <= XK.SITE_UP;
+	return on(w.pl) || w.mates.some(on);   // (co-op: anyone standing on it counts)
 }
 /** One tick of the run: the fight's tick, then the run's own rules. While you choose a level-up card nothing moves. */
 export function stepRun(S, input, dt = K.TICK) {
@@ -408,7 +412,7 @@ export function stepRun(S, input, dt = K.TICK) {
 	tick(w, input, dt);
 	if (w.t === t0) return S;
 	const t = w.t;
-	if (w.pl.dead && !w.mates.length && !w.guest) { S.ended = true; S.lost = true; w.events.push({ k: 'runover', won: false }); return S; }
+	if (w.pl.dead && !w.guest && (!w.mates.length || w.mates.every((m) => m.dead || m.away))) { S.ended = true; S.lost = true; w.events.push({ k: 'runover', won: false }); return S; }   // (co-op: only when everyone is down)
 	if (S.lv) { tickStats(S, dt); for (const ev of w.events) if (ev.k === 'pickup') { if (ev.kind === 'item') takeItem(S, ev.value); else if (ev.kind === 'held') takeHeld(S, ev.value); } }
 	if (S.cap) tickCap(S, dt);
 	if (S.eco) tickEco(S, dt);

@@ -15,6 +15,7 @@ import { hostAdd, hostStep, hostFrame, hostApply, guestWorld, guestSync, guestMs
 import { generate, BIOMES } from './gen.js';
 import { expFrom, newRun, stepRun, hudLine, result as runResult, setZoneTime, fire as fireEvent, zoneRoom } from './expedition.js';
 import { runRow, rowView, teamSpot } from './expnet.js';
+import { guestRun, guestRunApply, stepGuest } from './expcoop.js';
 import { refresh as refreshCards, skip as skipCards, banish as banishCard } from './explevel.js';
 import { EK, ecoView, pickTake, pickClose, shopPrices } from './expeco.js';
 import { capView } from './expcap.js';
@@ -37,10 +38,11 @@ const META = (window.G && window.G.SPRITE_META) || {};
 const CROWD_DEX = [1, 4, 7, 16, 19, 25, 43, 74, 92, 133].filter((d) => META[d] && META[d].a && META[d].a.Idle && !META[d].src);
 const hud = document.getElementById('hud'), canvas = document.getElementById('c');
 const XW = WATCH && Q.has('xw') ? { seed: (+Q.get('xw') >>> 0) || 1, map: Q.get('map') || 'viridian' } : null;   // (P4) watching an Expedition run: its seed and map
-const XF = (EXP || XW) && window.G && window.G.ExpClassic ? expFrom(window.G) : null;
-const GEN = EXP ? (+Q.get('exp') >>> 0) || 1 : XW ? XW.seed : Q.has('gen') ? (+Q.get('gen') >>> 0) : null, BIOME = BIOMES[Q.get('biome')] ? Q.get('biome') : 'meadow';
+const XJ = !WATCH && Q.get('join') && Q.has('xj') ? { seed: (+Q.get('xj') >>> 0) || 1, map: Q.get('map') || 'viridian', diff: Q.get('diff') || 'normal' } : null;   // (P4) joining an Expedition run
+const XF = (EXP || XW || XJ) && window.G && window.G.ExpClassic ? expFrom(window.G) : null;
+const GEN = EXP ? (+Q.get('exp') >>> 0) || 1 : XW ? XW.seed : XJ ? XJ.seed : Q.has('gen') ? (+Q.get('gen') >>> 0) : null, BIOME = BIOMES[Q.get('biome')] ? Q.get('biome') : 'meadow';
 const SIZE = Q.has('size') ? Math.max(3, Math.min(8, +Q.get('size') | 0 || 5)) : null;
-let room = EXP ? null : XW ? zoneRoom(XW.seed, XW.map, 1, XF) : GEN === null ? buildRoom() : generate(GEN, BIOME, SIZE ? { size: SIZE } : null);
+let room = EXP || XJ ? null : XW ? zoneRoom(XW.seed, XW.map, 1, XF) : GEN === null ? buildRoom() : generate(GEN, BIOME, SIZE ? { size: SIZE } : null);
 // (P1) who you play decides how it moves: its types' traits (sim.js TYPE_TRAITS). ?types=flying,water tries others.
 const SPECIES = ((window.G && window.G.DEX) || []).find((p) => p.dex === DEX) || { name: '#' + DEX, types: [] };
 const TYPES = Q.get('types') ? Q.get('types').split(',') : SPECIES.types;
@@ -54,7 +56,11 @@ const MOVES = !FIGHT ? [] : Q.get('moves') ? Q.get('moves').split(',').map((m) =
 const BOSSES = (Q.get('bosses') ? Q.get('bosses').split(',').map(Number) : [143, 130, 149, 6, 150]).filter((d) => META[d] && META[d].a && META[d].a.Walk && !META[d].src);
 const run = EXP ? newRun(dataFrom(GG), XF, { seed: GEN, map: Q.get('map'), diff: Q.get('diff'), dex: DEX, moves: MOVES, tune: TUNE, touch: matchMedia('(pointer: coarse)').matches, league: !Q.has('moves') && Q.get('league') !== '0', ability: Q.get('ability') === '0' ? null : Q.get('ability') || 'auto', items: Q.get('items') ? Q.get('items').split(',') : [], weather: Q.get('weather') === '0' ? false : undefined, autoPick: Q.has('auto') ? +Q.get('auto') | 0 : undefined }) : null;
 if (run) room = run.w.room;
-const world = run ? run.w : JOIN ? guestWorld(room, dataFrom(GG), { id: MYID, dex: DEX, moves: MOVES, seed: MYID * 7919 + 13, tune: TUNE, ability: Q.get('ability') === '0' ? null : Q.get('ability') || 'auto', items: Q.get('items') ? Q.get('items').split(',') : [], autoPick: Q.has('auto') ? +Q.get('auto') | 0 : undefined })
+// (P4) a guest in a run: its own League member in the host's run (expcoop.js); it builds each zone from the run's row
+const grun = XJ ? guestRun(dataFrom(GG), XF, { seed: XJ.seed, map: XJ.map, diff: XJ.diff, id: MYID, dex: DEX, league: !Q.has('moves'), moves: MOVES, tune: TUNE, ability: Q.get('ability') === '0' ? null : Q.get('ability') || undefined, autoPick: Q.has('auto') ? +Q.get('auto') | 0 : undefined }) : null;
+if (grun) room = grun.w.room;
+const myRun = run || grun;   // (the run this page plays in, as a host or a guest)
+const world = run ? run.w : grun ? grun.w : JOIN ? guestWorld(room, dataFrom(GG), { id: MYID, dex: DEX, moves: MOVES, seed: MYID * 7919 + 13, tune: TUNE, ability: Q.get('ability') === '0' ? null : Q.get('ability') || 'auto', items: Q.get('items') ? Q.get('items').split(',') : [], autoPick: Q.has('auto') ? +Q.get('auto') | 0 : undefined })
 	: FIGHT ? newWorld(room, dataFrom(GG), { bosses: BOSSES, ability: Q.get('ability') === '0' ? null : Q.get('ability') || 'auto', items: Q.get('items') ? Q.get('items').split(',') : [], dex: DEX, moves: MOVES, seed: (GEN + 1) * 7919, tune: TUNE, cast: FIGHT_CAST, cap: Q.has('cap') ? +Q.get('cap') | 0 : undefined, weather: Q.get('weather') === '0' ? false : undefined, autoPick: Q.has('auto') ? +Q.get('auto') | 0 : undefined }) : null;
 const state = world ? world.pl.s : newState(room, TUNE);
 const TYPE_COLOR = (GG.U && GG.U.TYPE_COLOR) || {};
@@ -247,7 +253,7 @@ function draw(t) {
 	// (P4) capture: your Support Alphas (sprites that follow you), the fainted (dimmed, a bead over them while the window
 	// is open), and the ball while it shakes
 	if ((run && run.cap) || rv) {
-		const cv = run ? capView(run) : { faint: rv.faint, cine: rv.cine, sa: rv.sa.map((dex, i) => { const [x, z] = teamSpot(state, state.facing, i, rv.sa.length); return { dex, x, z, y: Math.min(groundAt(room, x, z), state.y + 2), facing: state.facing, moving: Math.hypot(state.vx, state.vz) > 0.6 }; }) };
+		const cv = run ? capView(run) : { faint: rv.faint, cine: rv.cine, sa: rv.sa.map((dex, i) => { const who = grun && mates()[0] ? mates()[0].s : state, [x, z] = teamSpot(who, who.facing, i, rv.sa.length); return { dex, x, z, y: Math.min(groundAt(room, x, z), who.y + 2), facing: who.facing, moving: Math.hypot(who.vx || 0, who.vz || 0) > 0.6 }; }) };
 		for (const a of cv.sa) { const sh = sheets.get(a.dex + '/Walk'); if (!sh) { wantSheet(a.dex); continue; } const q = spriteQuad(sh.meta, sh.img, a.moving ? frameAt(sh.meta, t) : 0, facingRow(a.facing, cam.yaw), 1.15, sh.lift); sh.batch.add(a.x, a.y, a.z, q.rect, q.uv, 1); shadows.add(room, a.x, a.z, a.y, sh.shadow * 1.15); }
 		for (const f of cv.faint) { const sh = sheets.get(f.dex + '/Walk'); if (sh) { const q = spriteQuad(sh.meta, sh.img, 0, 0, 1.4, sh.lift); sh.batch.add(f.x, f.y, f.z, q.rect, q.uv, 0.45); } else wantSheet(f.dex); shots.add(f.x, f.y + 1.9 + Math.sin(t * 6) * 0.12, f.z, 0.28, f.kind === 'alpha' ? '#ff4d5e' : '#9ae6ff'); }
 		if (cv.cine) { const p = cv.cine.phase, wob = p.n === 'shake' ? Math.sin(p.u * 6.2832) * 0.18 : 0; shots.add(cv.cine.x + wob, cv.cine.y + (p.n === 'throw' ? 1.6 - p.u * 1.2 : 0.4), cv.cine.z, 0.34, p.n === 'click' ? '#ffe14d' : cv.cine.kind === 'alpha' ? '#3fa35a' : '#ff4d5e'); note(p.n === 'click' ? 'Gotcha!' : p.n === 'shake' ? '. '.repeat(p.k + 1) : cv.cine.kind === 'alpha' ? 'Friend Ball!' : 'Poké Ball!', 250); }
@@ -283,7 +289,8 @@ function frame(now) {
 				if (run.pick !== shownPick) showPick();
 				if (run.w.room !== room) { room = run.w.room; mapBase = null; showRoom(); state.facing = cam.yaw; }
 				if (run.ended && !runOver) { runOver = runResult(run); note(`${runOver.title} ${runOver.line} · score ${runOver.score} · pay ${runOver.pay.pay}${runOver.medal ? ' · ' + runOver.medal + ' medal' : ''}`, 600000); }
-			} else tick(world, input, K.TICK);
+			} else if (grun) { stepGuest(grun, input, K.TICK); if (runOver === null && grun.ended) { runOver = grun.won ? 'won' : 'lost'; note(grun.won ? 'EXPEDITION COMPLETE!' : 'RUN OVER', 600000); } }
+			else tick(world, input, K.TICK);
 			fightEvents(world.events);
 			if (coView && coView.events.length) fightEvents(coView.events.filter((ev) => !(ev.k === 'hit' && ev.by === MYID) && ev.k !== 'levelup' && ev.k !== 'hurt' && ev.k !== 'level'));   // what the host and the others did
 			share();
@@ -298,7 +305,7 @@ function frame(now) {
 	draw(now / 1000);
 	if (world || WATCH) drawNumbers(dt);
 	if ((simTicks & 15) === 0) showHud();
-	if (GEN !== null) { showMap(); if (!WATCH && !EXP && !leaving && state.grounded && exitDist() < 1.5) { leaving = true; note('exit reached: next level…', 4000); nextLevel(); } }
+	if (GEN !== null) { showMap(); if (!WATCH && !EXP && !XJ && !leaving && state.grounded && exitDist() < 1.5) { leaving = true; note('exit reached: next level…', 4000); nextLevel(); } }
 }
 // ---------------------------------------------------------------- (P2) a generated level: the exit and the minimap
 let leaving = false, mapBase = null, runOver = null;
@@ -339,7 +346,7 @@ function fightEvents(events) {
 		else if (ev.k === 'smite') { flashes.bar([ev.x, ev.y + 14, ev.z], [0, -1, 0], 14, 0.3, col(ev.id), 0.2); flashes.arc(ev.x, ev.y, ev.z, ev.r, 0, 6.2832, col(ev.id), 0.3, 0.3); }
 		else if (ev.k === 'bomb') flashes.arc(ev.x, ev.y, ev.z, ev.r, 0, 6.2832, '#ff7b3d', 0.5, 0.92);
 		else if (ev.k === 'levelup') { if (world) showCards(); }
-		else if (ev.k === 'say') { if (WATCH) note(ev.text, (ev.s || 3) * 1000); }   // (a run's banner, on a watcher's screen)
+		else if (ev.k === 'say') { if (WATCH || grun) note(ev.text, (ev.s || 3) * 1000); }   // (a run's banner, on a watcher's screen)
 		else if (ev.k === 'weather') { const d = ev.kind && GG.Weather.KINDS[ev.kind], el = document.getElementById('wx'); if (el) { el.style.background = d ? `rgba(${d.tint[0]}, ${d.tint[1]}, ${d.tint[2]}, ${Math.min(0.3, d.tint[3] * 2.2)})` : 'transparent'; } if (ev.kind) note('the weather turns: ' + ev.kind, 3000); }
 		else if (ev.k === 'boss') note(`a wild ${(GG.DEX_BY[ev.dex] || {}).name || 'boss'} appeared!`, 3200);
 		else if (ev.k === 'enrage') note('it is enraged!', 2400);
@@ -395,9 +402,10 @@ if (chan && HOST && world) chan.onmessage = (m) => {   // the host: a guest asks
 if (chan && JOIN) chan.onmessage = (m) => {   // a guest: the host's frames
 	const o = JSON.parse(m.data); if (!o.f) return; net.got++;
 	// the level being played is not the one this page built: load it (once), as the same player
-	if (o.h && (o.h.gen !== GEN || o.h.biome !== BIOME || (o.h.size || null) !== (SIZE || null))) { if (!net.moving) { net.moving = true; const q = new URLSearchParams(location.search); q.set('gen', o.h.gen); q.set('biome', o.h.biome); if (o.h.size) q.set('size', o.h.size); else q.delete('size'); q.set('id', MYID); q.set('dex', DEX); location.search = q.toString(); } return; }
+	if (o.h && (o.h.gen !== GEN || o.h.biome !== BIOME || (o.h.size || null) !== (SIZE || null))) { if (!net.moving) { net.moving = true; const q = new URLSearchParams(location.search); q.set('gen', o.h.gen); q.set('biome', o.h.biome); if (o.h.size) q.set('size', o.h.size); else q.delete('size'); q.set('id', MYID); q.set('dex', DEX); if (o.h.exp) { q.set('xj', o.h.exp.seed); q.set('map', o.h.exp.map); q.set('diff', o.h.exp.diff); } location.search = q.toString(); } return; }
 	if (!o.h && !world.co.viewer.frames.length) return;   // (wait for a whole frame to start from)
 	guestApply(world, o.f);
+	if (grun) { const last = world.co.viewer.last; if (last && last.r) { rv = guestRunApply(grun, last.r); if (grun.w.room !== room) { room = grun.w.room; mapBase = null; showRoom(); state.facing = cam.yaw; } } }   // (P4) the run: its zone's level, its things, its line
 	if (o.f.m && o.f.m.some((r) => r[0] === MYID)) net.joined = true;
 };
 if (chan && WATCH) chan.onmessage = (m) => {
@@ -451,7 +459,7 @@ function drawNumbers(dt) {
 /** (P3) A level-up: the fight is waiting; three cards to choose from (click or tap one, or press 1 / 2 / 3). */
 function showCards() {
 	const el = document.getElementById('cards'), cs = world.pl.choices; if (!el || !cs) return;
-	const lv = run && run.lv, RC = (GG.ExpItems && GG.ExpItems.RAR_COL) || [];   // (P4) an Expedition card has a rarity, and the run its three tools
+	const lv = myRun && myRun.lv, RC = (GG.ExpItems && GG.ExpItems.RAR_COL) || [];   // (P4) an Expedition card has a rarity, and the run its three tools
 	const tools = !lv ? '' : `<div class="tools"><button data-tool="refresh"${lv.refreshes ? '' : ' disabled'}>F · Refresh (${lv.refreshes})</button><button data-tool="skip"${lv.skips ? '' : ' disabled'}>G · Skip (${lv.skips})</button><button data-tool="banish"${lv.bans ? '' : ' disabled'}>${banMode ? 'pick a card to banish…' : 'B · Banish (' + lv.bans + ')'}</button></div>`;
 	el.innerHTML = `<h2>Level ${world.pl.level}</h2>` + cs.map((c, i) => `<button data-i="${i}" style="border-color:${c.tier > 0 && RC[c.tier] ? RC[c.tier] : TYPE_COLOR[c.mtype] || '#8fa3c4'}"><b>${i + 1} · ${c.title}</b><i>${(c.tier > 0 ? c.rarName.toUpperCase() + ' · ' : '') + (c.tag || '')}</i><span>${c.desc || (GG.Moves.BY_ID[c.id] ? GG.Moves.BY_ID[c.id].kind : '')}</span></button>`).join('') + tools;
 	el.style.display = 'grid';
@@ -471,15 +479,15 @@ function showPick() {
 function takePick(i) { if (!run || !run.pick) return false; const ok = i < 0 ? pickClose(run) : pickTake(run, i); shownPick = null; showPick(); return ok; }
 /** (P4) A run's tools at a level-up: 'refresh' (other cards), 'skip' (no card, a little money), 'banish' (then pick a card). */
 function useTool(name) {
-	if (!run || !run.lv || !world.pl.choices) return false;
-	if (name === 'banish') { banMode = run.lv.bans > 0 && !banMode; showCards(); return banMode; }
-	const ok = name === 'refresh' ? refreshCards(run) : name === 'skip' ? skipCards(run) : false;
+	if (!myRun || !myRun.lv || !world.pl.choices) return false;
+	if (name === 'banish') { banMode = myRun.lv.bans > 0 && !banMode; showCards(); return banMode; }
+	const ok = name === 'refresh' ? refreshCards(myRun) : name === 'skip' ? skipCards(myRun) : false;
 	if (!ok) return false;
 	if (world.pl.choices) showCards(); else { const el = document.getElementById('cards'); el.style.display = 'none'; el.innerHTML = ''; if (world.pl.pending > 0) { tick(world, null, K.TICK); fightEvents(world.events); } }
 	return true;
 }
 function pickCard(i) {
-	if (banMode) { banMode = false; if (world && world.pl.choices) { banishCard(run, i); showCards(); } return; }
+	if (banMode) { banMode = false; if (world && world.pl.choices) { banishCard(myRun, i); showCards(); } return; }
 	if (!world || !world.pl.choices || !choose(world, i)) return;
 	const el = document.getElementById('cards'); el.style.display = 'none'; el.innerHTML = '';
 	if (world.pl.pending > 0) { tick(world, null, K.TICK); fightEvents(world.events); }   // (another level waiting: its cards come up at once)
@@ -502,11 +510,11 @@ function showHud() {
 	hud.textContent = `${s.p50 ? Math.round(1000 / s.p50) : 0} fps · frame ${s.p50} ms (p95 ${s.p95}) · rules ${s.simP95} ms\n`
 		+ `${s.crowd} sprites · ${s.calls} draw calls · ${s.triangles} triangles\n`
 		+ `${stateName(state)} · ${sp.toFixed(1)} m/s · height ${state.y.toFixed(2)} m · air jumps ${state.airJumps}\n`
-		+ (rv && rv.league ? `${(GG.DEX_BY[rv.league.form] || {}).name} (${((GG.DEX_BY[rv.league.form] || {}).types || []).join(' / ')}) · League member ${(GG.DEX_BY[rv.league.member] || {}).name}`
-			: run && run.lg ? `${world.pl.mon.name} (${(world.pl.mon.types || []).join(' / ')}) · League member ${(GG.DEX_BY[run.lg.member] || {}).name} · ${run.lg.role} · kit ${run.lg.kit}/4${run.lg.mat ? ' · Maturity ' + run.lg.mat : ''}`
+		+ (rv && rv.league && !grun ? `${(GG.DEX_BY[rv.league.form] || {}).name} (${((GG.DEX_BY[rv.league.form] || {}).types || []).join(' / ')}) · League member ${(GG.DEX_BY[rv.league.member] || {}).name}`
+			: myRun && myRun.lg ? `${world.pl.mon.name} (${(world.pl.mon.types || []).join(' / ')}) · League member ${(GG.DEX_BY[myRun.lg.member] || {}).name} · ${myRun.lg.role} · kit ${myRun.lg.kit}/4${myRun.lg.mat ? ' · Maturity ' + myRun.lg.mat : ''}`
 			: `${SPECIES.name} (${TYPES.join(' / ') || 'no type'})${TRAITS.length ? ' · traits: ' + TRAITS.join(', ') : ''}`)
 		+ (!run ? '' : `\n${hudLine(run)}${run.ph === 0 ? ' · charge ' + Math.round(run.charge * 100) + ' %' : ''}`)
-		+ (GEN === null || run || XW ? '' : `\nlevel ${GEN} · ${BIOME} · ${room.size} × ${room.size} tiles · exit ${Math.round(exitDist())} m`)
+		+ (GEN === null || run || XW || XJ ? '' : `\nlevel ${GEN} · ${BIOME} · ${room.size} × ${room.size} tiles · exit ${Math.round(exitDist())} m`)
 		+ (!rv ? '' : `\n${rv.hud(state)}${rv.league ? ' · ' + ((GG.DEX_BY[rv.league.form] || {}).name || '') + ' · kit ' + rv.league.kit + '/4' : ''}${rv.sa.length ? ' · team: ' + rv.sa.map((d) => (GG.DEX_BY[d] || {}).name).join(', ') : ''}`)
 		+ (!WATCH ? '' : `\n${watchSrc === 'tape' ? 'replay' : 'watching ' + WATCH}` + (!view ? ' · waiting for the fight…' : ` · ${Math.floor(view.t / 60)}:${String(Math.floor(view.t % 60)).padStart(2, '0')}\nLv ${view.pl.level} · HP ${view.pl.hp} / ${view.pl.maxHp} · ${view.enemies.length} enemies · ${view.kills} KOs` + (view.weather ? ` · ${view.weather[0]}` : '')))
 		+ (!world || !mates().length ? '' : `\nco-op: ${mates().length + 1} players${JOIN && world.co.stalled ? ' · waiting for the host…' : world.waiting ? ' · waiting for the others to choose' : ''}`
@@ -537,7 +545,7 @@ function showHud() {
 
 // what a test (and a curious owner in the console) can reach
 window.__m3d = {
-	get ready() { return ready; }, state, get room() { return room; }, run, setZoneTime: (sec) => run && setZoneTime(run, sec), useTool, takePick, ecoView: () => (run ? ecoView(run) : []), capView: () => (run ? capView(run) : null), get rv() { return rv; }, noteLog, fire: (ev) => run && fireEvent(run, ev), K, TUNE, TYPES, TRAITS, cam, crowd, sheets, stats, gen: GEN, biome: BIOME, world, numbers, net, tape, myId: MYID, mates, get coView() { return coView; }, playTape, get view() { return view; }, get viewer() { return viewer; }, get watchT() { return watchT; }, addBoss: (dex, x, z, o) => addBoss(world, dex, x, z, o), drop: (kind, x, z, v) => drop(world, kind, x, groundAt(room, x, z), z, v), pickCard, addEnemy: (dex, x, z, o) => addEnemy(world, dex, x, z, o), holdExit: false, get leaving() { return leaving; },
+	get ready() { return ready; }, state, get room() { return room; }, run, setZoneTime: (sec) => run && setZoneTime(run, sec), useTool, takePick, ecoView: () => (run ? ecoView(run) : []), capView: () => (run ? capView(run) : null), get rv() { return rv; }, noteLog, grun, fire: (ev) => run && fireEvent(run, ev), K, TUNE, TYPES, TRAITS, cam, crowd, sheets, stats, gen: GEN, biome: BIOME, world, numbers, net, tape, myId: MYID, mates, get coView() { return coView; }, playTape, get view() { return view; }, get viewer() { return viewer; }, get watchT() { return watchT; }, addBoss: (dex, x, z, o) => addBoss(world, dex, x, z, o), drop: (kind, x, z, v) => drop(world, kind, x, groundAt(room, x, z), z, v), pickCard, addEnemy: (dex, x, z, o) => addEnemy(world, dex, x, z, o), holdExit: false, get leaving() { return leaving; },
 	setInput(o) { override = o ? { ...noInput(), ...o } : null; },
 	rowOf: (facing, yaw) => facingRow(facing, yaw === undefined ? cam.yaw : yaw),
 	quadOf: (key, frame, row) => { const s = sheets.get(key); return spriteQuad(s.meta, s.img, frame, row, 1, s.lift); },

@@ -230,7 +230,7 @@ export function candidates(S) {
 export function offerCards(S, n = S.L.K.CARDS) {
 	const L = S.L, pl = S.w.pl;
 	L.M.refreshAll(pl);
-	const rng = makeRng(mix(S.seed, pl.level, S.lv.draw++, 0xD5));
+	const rng = makeRng(mix(S.seed, S.slot | 0, pl.level, S.lv.draw++, 0xD5));   // (S.slot: a co-op guest's number, so each player is dealt their own cards)
 	const pool = candidates(S), picked = [], o = { level: pl.level, luck: pl.xluck || 0, zone: Math.min(4, S.zone) };
 	while (picked.length < n && pool.length) {
 		const tot = pool.reduce((a, c) => a + c.w, 0);

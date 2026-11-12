@@ -68,6 +68,7 @@ export function hostApply(w, id, msg) {
 	m.heard = 0;
 	if (msg.p) { bodyFrom(m.s, msg.p); m.dead = !!(msg.p[7] & 32); m.hp = msg.p[8]; m.maxHp = msg.p[9]; }
 	if (msg.lv) m.lv = Math.max(m.lv, msg.lv);
+	if (msg.dx && msg.dx !== m.dex && w.data.mon(msg.dx)) { m.dex = msg.dx; m.mon = w.data.mon(msg.dx); m.r = w.data.radius(msg.dx); }   // (it has evolved: its puppet is the new stage)
 	for (const h of msg.h || []) {
 		const e = w.enemies.find((q) => q.id === h.id); if (!e || e.dead) continue;
 		w.hit(e, h.d, h.kx, h.kz, h.kn);
@@ -156,5 +157,5 @@ export function guestSync(w, dt = K.TICK) {
 /** What a guest tells the host: where it is, what its moves hit since the last message, which enemies touched it, and
  *  the level it has chosen cards through. */
 export function guestMsg(w) {
-	return { p: frame(w).p.slice(0, 10), h: w.out.splice(0), tc: w.touches.splice(0), lv: w.pl.level - w.pl.pending };
+	return { dx: w.pl.mon.dex, p: frame(w).p.slice(0, 10), h: w.out.splice(0), tc: w.touches.splice(0), lv: w.pl.level - w.pl.pending };
 }

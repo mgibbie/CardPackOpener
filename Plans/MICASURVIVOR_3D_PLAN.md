@@ -845,6 +845,38 @@ the fog of war and the zone map.
 Tests: `micasurvivor_m3d_expnet_test.mjs` (21 checks, node) and `micasurvivor_m3d_expwatch_test.mjs` (14 checks:
 three windows, a player, a watcher and a replay).
 
+## 5.24 P4, eighth part: built (2026-11-11). Two players in one run.
+
+`micasurvivor/m3d/expcoop.js`, on P3n's `coop.js`. Who decides what is the 2D game's rule:
+
+- **The host** has the run: the zone and its level, the altar and the portal, the guardian, the timeline, the
+  zone's things, the money (the team's), the captures.
+- **A guest** has its own League member: its stats, its kit, its level-up cards (the level is the team's, the
+  cards its own, dealt from its own stream), its evolutions. It is told the run by the run's row and builds each
+  zone's level itself.
+
+What works: a guest fights in the run (its KOs pay the team); a party's run is tougher (arrivals x 1.75,
+enemies x 1.3, a guardian x 1.82); **anyone** standing on the altar or the portal counts, so a guest alone
+wakes the guardian and either player takes the team through the portal, both arriving in the next zone; the
+fight waits for both to choose a card; a guest that evolves is the new stage on the host's side; the run ends
+only when everyone is down, and a teammate still gets you up.
+
+On the page: `?join=<name>&dex=9` on a hosted run (`?exp=1&host=<name>`). The guest is sent to the run's page.
+
+**Three bugs found and fixed on the way** (each pinned by a check that fails without the fix):
+- A KO finished by a guest's hit paid the team nothing: the pay was read from the tick's events, and a
+  guest's hit lands between ticks. KOs are now kept until the run has read them.
+- A guest arrived kilometres away: its arrival offset was its player number, which on the page is a large random
+  one.
+- A guest standing on the altar had its page reloaded by the test room's old "reached the exit" rule.
+
+**Not yet**: a guest opening the zone's things, buying, or catching (the 2D game sends the guest a seed and it
+rolls its own offer: its D11 messages), a guest's Support Alphas, more than the test room's transport (the
+site's lines: decision 8). Still of P4 besides: Survival, the fog of war and the zone map, the lobby.
+
+Tests: `micasurvivor_m3d_expcoop_test.mjs` (25 checks, node) and `micasurvivor_m3d_expcoopplay_test.mjs` (9
+checks, two windows).
+
 ## 6. Dive in 2D: built
 
 **D0 — find the stairs (small; can ship first, on its own).** *Built 2026-11-11 (`overworld/tests/micasurvivor_dive_stairs_test.mjs`). As built: the stairs took their own orange mark, so the rocks and Meowth keep their gold; the HUD arrow comes up after 25 s on a floor, or at once when its boss falls.*
