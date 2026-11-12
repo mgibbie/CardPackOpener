@@ -41,7 +41,7 @@ await new Promise(r => server.listen(PORT, r));
 // Spanish tells: ¿ ¡ ñ, accented vowels (outside names), and common Spanish words.
 const SPANISH = /[¿¡ñÑ]|(?<![\p{L}])(?:el|los|las|del|una|unos|para|pero|con|sin|por|que|tus|tu|su|sus|más|muy|cuando|también|está|están|tienes|puedes|pulsa|elige|volver|cerrar|salir|jugar|partida|mejoras|ajustes|sonido|música|logros|misiones|objetivos|recompensa|nivel|tiempo|derrotados|monedas|tickets? del|compañero|cuenta|idioma|pantalla|ataque|daño|vida|velocidad)(?![\p{L}])/iu;
 // proper names / intentional non-English text allowed to appear
-const ALLOW = [/Pokémon/g, /PokéSurvivor/g, /Pokédex/g, /Pokémonedas?/g, /Español/g, /Flabébé/g, /\bPoké\b/g];
+const ALLOW = [/Pokémon/g, /PokéSurvivor/g, /Pokédex/g, /Pokémonedas?/g, /Pok[ée]coins?/gi,   /* ("PokéCoins earned": English, shown in capitals on the run's summary) */ /Español/g, /Flabébé/g, /\bPoké\b/g];
 function spanishLines(text) {
 	const out = [];
 	for (const raw of String(text || '').split(/\n+/)) {
@@ -73,11 +73,7 @@ try {
 	await waitFor(() => visible('scr-login'), 10000);
 	await sweep('title', '#scr-login');
 
-	// 1. every personality trait name has an English name
-	const traits = await page.evaluate(() => Object.keys(G.TRAIT_TEXT).map(k => { const name = k.charAt(0).toUpperCase() + k.slice(1); return [name, G.I18n.t(name), G.I18n.t(G.TRAIT_TEXT[k])]; }));
-	const untranslated = traits.filter(([es, en]) => es === en);
-	A(traits.length >= 16 && untranslated.length === 0, `all ${traits.length} personality trait names are translated (e.g. Leal -> ${traits.find(t => t[0] === 'Leal')?.[1]})`, JSON.stringify(untranslated));
-	A(traits.every(([, , d]) => !spanishLines(d).length), 'every trait description is translated');
+	// 1. (the personality test and its traits' texts are gone, owner 2026-11-12: a starter's traits are swept on its screen, below)
 
 	// 1b. every species shows its official English name (bug 2026-10-17: the Paradox Pokémon kept their
 	// Spanish names — "A wild Ferropúas appeared!" instead of Iron Thorns)
@@ -91,26 +87,13 @@ try {
 	const wild = shown.find(r => r[0] === 995);
 	A(wild && wild[3] === 'A wild Iron Thorns appeared!', `the wild-encounter notice uses the English name ("${wild && wild[3]}")`);
 
-	// 2. the test result screen shows the trait in English
+	// 2. choosing a partner: the starters, and one picked (its types, move, traits and ability), in English
 	await page.click('#btn-guest');
-	await waitFor(() => visible('scr-test'), 8000);
-	await sweep('personality test', '#scr-test');
-	for (let i = 0; i < 40 && await visible('scr-test'); i++) {
-		await page.evaluate(() => { const b = document.querySelector('#test-a button'); if (b) b.click(); });
-		await sleep(120);
-		if (i === 2) await sweep('personality test (question)', '#scr-test');
-	}
-	await waitFor(() => visible('scr-result'), 8000);
-	await sleep(300);
-	const res = await page.evaluate(() => ({ shown: document.getElementById('res-trait').innerText.trim(), key: G.DB.save?.personality?.trait || null }));
-	const english = new Set(traits.map(t => t[1]));
-	A(english.has(res.shown) && !traits.some(t => t[0] === res.shown), `the result screen shows the trait in English ("${res.shown}")`, JSON.stringify(res));
-	await sweep('personality result', '#scr-result');
-	// "choose another" -> starters list
-	const other = await page.$('#res-other, #res-change, [data-starters]');
-	if (other) { await other.click(); await sleep(500); if (await visible('scr-starters')) { await sweep('starters', '#scr-starters'); await page.evaluate(() => { const b = document.querySelector('#scr-starters [data-back], #scr-starters .close, #starters-back'); if (b) b.click(); }); await sleep(300); } }
-	if (await visible('scr-result')) await page.click('#res-ok');
-	else if (await visible('scr-starters')) await page.evaluate(() => { const b = document.querySelector('#scr-starters button'); if (b) b.click(); });
+	await waitFor(() => visible('scr-starters'), 8000);
+	await sweep('starters', '#scr-starters');
+	await page.evaluate(() => { const c = document.querySelector('#starter-grid .cell'); if (c) c.click(); }); await sleep(400);
+	await sweep('starters (one picked)', '#scr-starters');
+	await page.click('#starter-ok');
 	await waitFor(() => visible('scr-menu'), 10000);
 	await sleep(600);
 	await sweep('main menu', '#scr-menu');

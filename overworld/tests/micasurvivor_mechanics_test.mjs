@@ -72,10 +72,10 @@ try {
 	await sleep(300); if (await visible('tap-start')) await page.click('#tap-start');
 	await waitFor(() => visible('scr-login'), 10000);
 	await page.click('#btn-guest');
-	await waitFor(() => visible('scr-test'), 8000);
-	for (let i = 0; i < 40 && await visible('scr-test'); i++) { await E(() => { const b = document.querySelector('#test-a button'); if (b) b.click(); }); await sleep(100); }
-	await waitFor(() => visible('scr-result'), 8000);
-	await page.click('#res-ok');
+	await waitFor(() => visible('scr-starters'), 8000);
+	await E(() => { const c = document.querySelector('#starter-grid .cell'); if (c) c.click(); }); await sleep(200);   // (the first starter)
+	await sleep(150);
+	await page.click('#starter-ok');
 	A(await waitFor(() => visible('scr-menu'), 10000), 'main menu');
 	await page.click('#scr-menu [data-go=play]');
 	await page.evaluate(() => { for (const s of ['[data-cat=survival]', '[data-var=normal]', '[data-players=solo]', '#mx-start']) document.querySelector('#scr-play ' + s).click(); });

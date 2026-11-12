@@ -482,7 +482,7 @@ G.Pad = (() => {
     return out;
   }
   const isBack = el => el.matches('[data-back]') || /-(close|back|cancel)$/.test(el.id || '');
-  const HOME = ['#btn-guest', '.menu-item.play', '#btn-resume', '#btn-again', '#pull-close', '#res-ok', '#lobby-start',
+  const HOME = ['#btn-guest', '.menu-item.play', '#btn-resume', '#btn-again', '#pull-close', '#lobby-start',
                 '.cell.on', '.card:not(.picked)', '.answer', '.gen-tab.on', '.tab.on'];
   function home(scope, list) {
     const mem = remembered.get(scope.id || scope);
@@ -615,7 +615,7 @@ G.Pad = (() => {
   function clickIf(sel) { const el = typeof sel === 'string' ? document.querySelector(sel) : sel; if (el && usable(el)) { el.click(); return true; } return false; }
   const BACK = {
     'scr-settings': '#set-close', 'scr-legal': '#legal-close', 'scr-news': '#news-close', 'scr-profile': '#prof-close',
-    'scr-layout': '#lay-cancel', 'scr-starters': '#starter-back', 'scr-bond': '#bond-back', 'scr-mod': '#mod-back',
+    'scr-layout': '#lay-cancel', 'scr-bond': '#bond-back', 'scr-mod': '#mod-back',
     'scr-recover': '#rec-later', 'scr-nick': '#nick-later', 'scr-lobby': '#lobby-menu', 'scr-pause': '#btn-resume',
     'scr-modes': '#party-back',  // (M5 batch 6: the party picker goes back to the list; else the screen's Back)
     'scr-tower': '#tower-skip'   // (M5 batch 8: on the Tower's risk cards, cancel = "No risks"; the rest has no way out)

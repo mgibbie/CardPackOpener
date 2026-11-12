@@ -140,10 +140,10 @@ try {
 	await page.goto(`http://localhost:${PORT}/micasurvivor/`, { waitUntil: 'domcontentloaded' });
 	A(await waitFor(() => E(() => document.getElementById('boot').classList.contains('hidden') && G.Pad && G.Pad.ready), 30000), 'boots logged in (Magepunk account)', errors.slice(0, 3).join(' | '));
 	await sleep(300); if (await visible('tap-start')) await page.click('#tap-start');
-	A(await waitFor(() => visible('scr-test'), 10000), 'straight to the personality test');
-	for (let i = 0; i < 40 && await visible('scr-test'); i++) { await E(() => { const b = document.querySelector('#test-a button'); if (b) b.click(); }); await sleep(100); }
-	await waitFor(() => visible('scr-result'), 8000);
-	await page.click('#res-ok');
+	A(await waitFor(() => visible('scr-starters'), 10000), 'straight to choosing a partner');
+	await E(() => { const c = document.querySelector('#starter-grid .cell'); if (c) c.click(); }); await sleep(200);   // (the first starter)
+	await sleep(150);
+	await page.click('#starter-ok');
 	A(await waitFor(() => visible('scr-menu'), 10000), 'main menu');
 	// Charmander as partner (fire: Blaze does nothing at full HP), with plenty of Pokémonedas
 	await E(() => { const s = G.DB.save; G.DB.grant(4, 'starter'); s.partner = 4; s.partnerShiny = false; s.coins = 50000; G.DB.commit(true); G.UI.refreshCoins(); });

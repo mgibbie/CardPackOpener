@@ -85,32 +85,6 @@
   </div>
 </section>
 
-<!-- ====== Test de personalidad ====== -->
-<section id="scr-test" class="scr dim hidden">
-  <div class="box test-box">
-    <div class="progress"><i id="test-bar"></i></div>
-    <p class="sub" id="test-count"></p>
-    <p class="q" id="test-q"></p>
-    <div class="answers" id="test-a"></div>
-  </div>
-</section>
-
-<!-- ====== Resultado del test ====== -->
-<section id="scr-result" class="scr dim hidden">
-  <div class="box result">
-    <p class="sub">Tu personalidad es…</p>
-    <div class="trait" id="res-trait"></div>
-    <p id="res-text"></p>
-    <canvas id="res-stage" class="stage" width="200" height="150"></canvas>
-    <h3>Tu compañero: <span class="gold" id="res-name"></span></h3>
-    <div id="res-ability"></div> <!-- MicaSurvivor (M5): the partner's ability -->
-    <div class="row" style="justify-content:center;margin-top:14px">
-      <button id="res-ok" class="btn gold">¡Vamos juntos!</button>
-      <button id="res-other" class="btn">Elegir otro</button>
-    </div>
-  </div>
-</section>
-
 <!-- ====== Elegir compañero ====== -->
 <section id="scr-starters" class="scr dim hidden">
   <div class="box wide">
@@ -118,7 +92,6 @@
     <p class="sub">Los iniciales de todas las regiones, y dos amigos más.</p>
     <div class="grid" id="starter-grid"></div>
     <div class="row between" style="margin-top:14px">
-      <button id="starter-back" class="btn ghost">Volver</button>
       <span id="starter-info" class="grow" style="color:var(--muted)"></span>
       <button id="starter-ok" class="btn gold" disabled>Elegir</button>
     </div>

@@ -7,7 +7,7 @@
  */
 G.UI = (() => {
   const $ = id => document.getElementById(id);
-  const SCREENS = ['scr-login', 'scr-test', 'scr-result', 'scr-starters', 'scr-menu',
+  const SCREENS = ['scr-login', 'scr-starters', 'scr-menu',
                    'scr-dex', 'scr-upgrades', 'scr-gacha', 'scr-levelup', 'scr-pause', 'scr-over',
                    'scr-nick', 'scr-friends', 'scr-lobby', 'scr-rank', 'scr-item', 'scr-goals', 'scr-bond', 'scr-mod',
                    'scr-modes',    // MicaSurvivor (M5 lote 6)

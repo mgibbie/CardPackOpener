@@ -79,10 +79,10 @@ try {
 	A(noScroll, 'no horizontal overflow');
 	await shot('phone_title.png');
 	await tapEl('#btn-guest');
-	A(await waitFor(() => visible('scr-test'), 8000), 'tap Play -> personality test');
-	for (let i = 0; i < 40 && await visible('scr-test'); i++) { await tapEl('#test-a button'); await sleep(150); }
-	A(await waitFor(() => visible('scr-result'), 8000), 'result');
-	await tapEl('#res-ok');
+	A(await waitFor(() => visible('scr-starters'), 8000), 'tap Play -> choosing a partner');
+	await tapEl('#starter-grid .cell:nth-child(2)'); await sleep(200);   /* (Charmander: its Ember reaches what it walks towards, so the run below levels up in time; Bulbasaur's whip is too short for it) */
+	A(await page.evaluate(() => !document.getElementById('starter-ok').disabled), 'a starter tapped is picked');
+	await tapEl('#starter-ok');
 	A(await waitFor(() => visible('scr-menu'), 10000), 'menu');
 	await sleep(1500);
 	await shot('phone_menu.png');
