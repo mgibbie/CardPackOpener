@@ -1081,6 +1081,31 @@ encounters and the 3D boards), live watching over the site's lines, the movement
 
 Tests: `micasurvivor_m3d_runui_test.mjs` 23 checks (was 18).
 
+## 5.33 The shipping path, third part: built (2026-11-12). The site's controls.
+
+The 3D page now speaks the site's one vocabulary (`site/input.js` + `site/gamepad.js`, the owner's scheme), from
+the keyboard and a controller alike:
+
+| | keyboard | controller |
+|---|---|---|
+| move | arrows / WASD | stick |
+| jump (confirm) | Z, Space | A (the player's layout: the right face button by default) |
+| slide (cancel) | X, C, Shift | B |
+| camera | Q / E, drag | L / R, right stick |
+| menu | Enter, Esc, P | Start |
+| zone map | Backspace, M | Select |
+
+- While a screen is up (the run's end, the menu, a level's cards, a choice) the same actions move a focus ring
+  over its buttons and press them (`site/focusnav.js`): a run can be played start to end with no mouse.
+- The Games switcher (` / hold Esc / Start + Select) is on the page: the fight waits under it, and leaving a run
+  asks first (`mpLeaveGuard`). The switcher holds an Esc tap back and replays it; one press is one Esc here.
+- The menu lists the controls.
+
+A controller's face buttons used to be read raw (bottom = jump); they now follow the player's saved layout and
+remapping, as everywhere on the site.
+
+Tests: `micasurvivor_m3d_controls_test.mjs` (15 checks, a real browser, with site/gamepad.js's test controller): new.
+
 ## 6. Dive in 2D: built
 
 **D0 — find the stairs (small; can ship first, on its own).** *Built 2026-11-11 (`overworld/tests/micasurvivor_dive_stairs_test.mjs`). As built: the stairs took their own orange mark, so the rocks and Meowth keep their gold; the HUD arrow comes up after 25 s on a floor, or at once when its boss falls.*

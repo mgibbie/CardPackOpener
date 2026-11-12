@@ -14,6 +14,8 @@ import { frame as netFrame, keepEvents, diff as netDiff, bundle, unbundle, Viewe
 import { hostAdd, hostStep, hostFrame, hostApply, guestWorld, guestSync, guestMsg, guestApply } from './coop.js';
 import { generate, BIOMES } from './gen.js';
 import { mountRunUi, pretty } from './runui.js';
+import { startInput } from '/site/input.js';
+import { createFocusNav } from '/site/focusnav.js';
 import { expFrom, newRun, stepRun, hudLine, result as runResult, setZoneTime, fire as fireEvent, zoneRoom } from './expedition.js';
 import { runRow, rowView, teamSpot } from './expnet.js';
 import { guestRun, guestRunApply, stepGuest } from './expcoop.js';
@@ -84,6 +86,7 @@ const cam = { yaw: Math.PI, pitch: 0.5, dist: 10.5, manual: 0, follow: Q.get('fo
 state.facing = cam.yaw;                                  // (you start with your back to the camera)
 const keys = new Set();
 let override = null;        // (tests: a fixed input instead of the devices)
+const acts = new Set();     // (the site's actions held now: site/input.js, from the keyboard and a controller alike)
 const touch = { stick: null, look: null, jump: false, slide: false };
 addEventListener('keydown', (e) => { keys.add(e.code); if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) e.preventDefault(); if (e.code === 'KeyR') { if (world) location.reload(); else { Object.assign(state, newState(room, TUNE)); state.facing = cam.yaw; } } });
 addEventListener('keyup', (e) => keys.delete(e.code));
@@ -131,14 +134,13 @@ function readInput(dt) {
 	if (keys.has('KeyA') || keys.has('ArrowLeft')) ix -= 1;
 	if (keys.has('KeyW') || keys.has('ArrowUp')) iy += 1;
 	if (keys.has('KeyS') || keys.has('ArrowDown')) iy -= 1;
-	jump = keys.has('Space') || keys.has('KeyZ'); crouch = keys.has('ShiftLeft') || keys.has('ShiftRight') || keys.has('KeyC') || keys.has('KeyX');
-	if (keys.has('KeyQ')) turn += 1; if (keys.has('KeyE')) turn -= 1;
-	const pad = (navigator.getGamepads ? [...navigator.getGamepads()] : []).find((p) => p && p.connected);
+	jump = keys.has('Space') || acts.has('confirm'); crouch = keys.has('ShiftLeft') || keys.has('ShiftRight') || acts.has('cancel') || acts.has('secondary');   // (the site's scheme: Z / A jumps, X / B and C slide)
+	if (acts.has('prev')) turn += 1; if (acts.has('next')) turn -= 1;   // (Q / E, L / R)
+	const pad = (window.__owFakePads || (navigator.getGamepads ? [...navigator.getGamepads()] : [])).find((p) => p && p.connected);   // (__owFakePads: a test's controller, as site/gamepad.js reads it)
 	if (pad) {
 		const dz = (v) => (Math.abs(v) < 0.18 ? 0 : v);
 		ix += dz(pad.axes[0] || 0); iy -= dz(pad.axes[1] || 0); turn -= dz(pad.axes[2] || 0) * 1.4;
 		cam.pitch = Math.max(0.15, Math.min(1.1, cam.pitch + dz(pad.axes[3] || 0) * dt * 1.2));
-		jump = jump || !!(pad.buttons[0] && pad.buttons[0].pressed); crouch = crouch || !!(pad.buttons[1] && pad.buttons[1].pressed) || !!(pad.buttons[2] && pad.buttons[2].pressed);
 	}
 	if (touch.stick) { ix += touch.stick.x; iy -= touch.stick.y; }
 	jump = jump || touch.jump; crouch = crouch || touch.slide;
@@ -583,16 +585,19 @@ if (FIGHT) {
 const RUNUI = myRun || XW ? mountRunUi(document, { debug: Q.has('debug'), onMenu: () => setMenu(!menuUp), onResume: () => setMenu(false) }) : null;
 /** The menu (Esc, P, or its button). Alone in your own run the fight waits while it is up; a guest's or a watcher's
  *  fight is someone else's and goes on. */
-let menuUp = false, paused = false;
+let menuUp = false, paused = false, escAt = 0;
+const CONTROLS = 'Move: arrows / WASD · Jump: Z or Space · Slide: X or Shift · Camera: Q / E or drag · Map: Backspace or M · Menu: Enter or Esc';
 function setMenu(on) {
 	if (!RUNUI || runOver) on = false;
 	menuUp = !!on; paused = menuUp && !!run && !world.mates.length;
-	if (menuUp) keys.clear();   // (no key stays held under the menu)
+	if (menuUp) { keys.clear(); acts.clear(); }   // (nothing stays held under the menu)
 	RUNUI && RUNUI.update(runView());
 	return menuUp;
 }
 if (RUNUI) addEventListener('keydown', (e) => {
 	if (e.code !== 'Escape' && e.code !== 'KeyP') return;
+	// (the Games switcher holds an Esc tap back and replays it when the key comes up: one press is one Esc here)
+	if (e.code === 'Escape') { if (e.isTrusted) escAt = performance.now(); else if (performance.now() - escAt < 1500) return; }
 	if (!menuUp && (mapBig || (myRun && myRun.pick) || (world && world.pl.choices))) return;   // (Esc closes those first)
 	setMenu(!menuUp);
 }, true);
@@ -610,7 +615,7 @@ function runView() {
 	for (const d of myRun && myRun.cap ? myRun.cap.sa.map((a) => a.dex) : rv ? rv.sa : []) v.bag.push({ text: nameOf(d), kind: 'warn' });
 	const b = world && !JOIN ? world.enemies.find((e) => e.boss) : null;
 	if (b) v.boss = { name: nameOf(b.dex), hp: b.hp, maxHp: b.maxHp, enraged: !!(b.ai && b.ai.fury) };
-	if (menuUp && !runOver) v.menu = { title: paused ? 'PAUSED' : 'MENU', line: paused ? '' : 'The fight goes on while this is open.', restart: run ? location.search || '?' : null, leave: '../' };
+	if (menuUp && !runOver) v.menu = { title: paused ? 'PAUSED' : 'MENU', line: (paused ? '' : 'The fight goes on while this is open. ') + CONTROLS, restart: run ? location.search || '?' : null, leave: '../' };
 	if (runOver) {
 		const r = runOver, q = new URLSearchParams(location.search); q.set('exp', (+q.get('exp') || 0) + 1);
 		v.over = typeof r === 'string' ? { won: r === 'won', title: r === 'won' ? 'EXPEDITION COMPLETE!' : 'RUN OVER', line: '', rows: [], again: null, leave: '../' }
@@ -619,6 +624,27 @@ function runView() {
 	} else if (noteText && performance.now() < noteUntil) v.note = noteText;
 	return v;
 }
+// ---------------------------------------------------------------- the site's controls (the shipping path, part 3)
+// One vocabulary from the keyboard and a controller (site/input.js + site/gamepad.js, the owner's scheme): Z / A
+// confirms and jumps, X / B cancels and slides, Q / E and L / R turn the camera, Enter / Start is the menu, Backspace
+// / Select the zone map. While a screen is up (the run's end, the menu, a level's cards, a choice) the same actions
+// move a focus ring over its buttons and press them (site/focusnav.js), so a run can be played with no mouse.
+const uiLayer = () => { const el = (id) => document.getElementById(id); return RUNUI && el('rx-end').classList.contains('show') ? el('rx-end') : menuUp ? el('rx-menu') : el('cards').style.display === 'grid' ? el('cards') : null; };
+const uiNav = createFocusNav({ scope: uiLayer, domFocus: false, scrollFallback: false, onCancel: () => { if (menuUp) setMenu(false); else if (myRun && myRun.pick) takePick(-1); }, onMenu: () => { if (menuUp) setMenu(false); } });
+const siteInput = startInput({ pad: true,
+	onAction(a, info) {
+		if (!info.repeat) acts.add(a);
+		if (uiLayer()) return uiNav.onAction(a, info);
+		if (info.repeat) return false;
+		if (a === 'menu' && RUNUI) { setMenu(true); return true; }
+		if (a === 'select' && FIGHT) { toggleMap(); return true; }
+		if (a === 'cancel' && mapBig) { toggleMap(false); return true; }
+		return false;   // (moving, jumping, sliding and the camera read what is held: readInput)
+	},
+	onRelease(a) { acts.delete(a); } });
+// the Games switcher (site/switcher.js): the fight waits under it, and leaving a run asks first
+addEventListener('mp-switcher-open', () => { acts.clear(); keys.clear(); if (RUNUI && !runOver) setMenu(true); });
+window.mpLeaveGuard = () => (myRun && !runOver ? { state: 'confirm', message: 'Leaving ends this run.' } : { state: 'safe' });
 let noteText = '', noteUntil = 0;
 const noteLog = [];   // (the last notes shown: one can be gone from the screen in a moment)
 function note(t, ms) { noteText = t; noteUntil = performance.now() + ms; if (noteLog[noteLog.length - 1] !== t) { noteLog.push(t); if (noteLog.length > 60) noteLog.shift(); } }
@@ -669,6 +695,7 @@ function showHud() {
 
 // what a test (and a curious owner in the console) can reach
 window.__m3d = {
+	acts, uiNav, siteInput,
 	setMenu, get paused() { return paused; },
 	runView: () => (RUNUI ? runView() : null),
 	get megaNow() { return megaNow; }, megaSheets,
