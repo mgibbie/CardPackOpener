@@ -1249,6 +1249,32 @@ Next: surfing a steep slope under control.
 Tests: `micasurvivor_m3d_sim_test.mjs` 78 checks (was 65), `micasurvivor_m3d_gen_test.mjs` 38 (was 35: every
 rail of 30 levels is ridden from its top to the ground beyond its foot, never under the floor).
 
+## 5.40 The movement tech, third part: built (2026-11-12). Surfing. The three are in.
+
+- **The surf** (`sim.js`). A slope too steep to stand on was only a chute: it threw you down it. It still does if
+  you let it. But what you hold ACROSS it now carries you along it (up to 13 m/s), and holding INTO it while you
+  are fast across (5 m/s or more) takes 95 % of its pull away: a fast line across a bank holds its height. Up to
+  20 m/s on a bank. A jump leaves it, up and off the slope, with your speed; only while you are surfing (from a
+  standstill you cannot hop up a bank).
+- **Banks in the levels** (`gen.js`). Where two tiles that are not linked stand two levels or more apart, the
+  cliff between them may be a bank: the five middle cells of the higher tile's edge, 56 degrees for a two-level
+  drop and steeper for more. About three on a meadow zone of 7 x 7 tiles, five or six on a mountain one, none
+  in a marsh (it is too flat). They are laid over the level from a stream of their own: no other cell moves
+  (the 50 pinned fingerprints are the level without its banks, unchanged), and the level's check knows a bank
+  for what it is: one-way on foot, down.
+- A level whose banks fail its check is built without them (none of 180 tried needed it).
+
+With wall-running (5.38) and rails (5.39) the movement tech the owner asked for in the first version is in.
+All of its numbers are first guesses, at the top of `sim.js`, for the owner to feel on a phone and tune.
+
+What is left before 3D Expedition can go live (the owner's order: before 3D Dive is started): the way in from
+the Play flow; the counters a 3D run does not keep yet (the economy's, the capture's, the level-ups', the
+tasks); the Master Ball and the Lab's effects on a run; sound; the owner's tuning pass; then going live, with
+the 2D Expedition archived.
+
+Tests: `micasurvivor_m3d_sim_test.mjs` 87 checks (was 78), `micasurvivor_m3d_gen_test.mjs` 41 (was 38: every
+bank of 20 levels surfed along and slid down).
+
 ## 6. Dive in 2D: built
 
 **D0 — find the stairs (small; can ship first, on its own).** *Built 2026-11-11 (`overworld/tests/micasurvivor_dive_stairs_test.mjs`). As built: the stairs took their own orange mark, so the rocks and Meowth keep their gold; the HUD arrow comes up after 25 s on a floor, or at once when its boss falls.*

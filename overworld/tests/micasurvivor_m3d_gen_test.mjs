@@ -22,7 +22,7 @@ const SEEDS = Array.from({ length: 50 }, (_, i) => i + 1), NAMES = Object.keys(B
 // ---------------------------------------------------------------- determinism: 50 pinned fingerprints
 const PINNED = 'b21b2a8f 10c6314e 8aab1460 43e12374 d8e2f4b9 d9385f00 4f708ff0 34066181 51dd20c6 ce23aa50 eddb5347 835535ae 54be8041 aaf0b229 9ee1bc70 0b0362ad f9392f9b 77db48c5 b27a7ab4 e3453d6d 439818c0 385022c2 de1cc38c 887054a8 04885e82 849aeeb9 3b4ce721 bca243dd 75bac70f 1c01fd33 a20ca64e ae6f3bae da7b9489 d282e254 fbf85027 b0a9d8a6 b4ead112 00ee5afe 928625b6 d0fa5a3b 0d42112e c38bf4fa 19714205 8a71f238 df0e7f3a a4b212fa 07f4daf1 8e374310 503404e6 803233be';
 {
-	const now = SEEDS.map((s) => hashRoom(generate(s, 'meadow'))).join(' ');
+	const now = SEEDS.map((s) => hashRoom(generate(s, 'meadow', { banks: 0 }))).join(' ');   // (the level itself: its banks are laid over it, and are checked below)
 	if (process.argv.includes('--print')) console.log(now);
 	A(now === PINNED, 'seeds 1-50 (meadow) build exactly the levels they always have (50 pinned fingerprints)', now);
 	A(new Set(now.split(' ')).size === 50, '...and they are 50 different levels');
@@ -105,7 +105,7 @@ function walk(room, to, limit = 60 * 240) {
 	// ramps: 0.75 m a cell, in pairs across a tile boundary, three cells wide; they join tiles one level apart
 	let ramps = 0, wrong = 0, links = 0, cliffs = 0, ridges = 0, far = 0;
 	for (const s of SEEDS) {
-		const r = generate(s, 'meadow'), N = r.size;
+		const r = generate(s, 'meadow', { banks: 0 }), N = r.size;   // (the ramps: the banks are another kind of slope, checked below)
 		for (const [, sl] of r.slopes) { ramps++; if (Math.abs(Math.abs(sl.rise) - LEVEL / 2) > 1e-9) wrong++; }
 		let need = 0;
 		for (const t of r.tiles) for (const [d, dx, dz] of [['e', 1, 0], ['s', 0, 1]]) {
@@ -162,6 +162,40 @@ function walk(room, to, limit = 60 * 240) {
 	const t0 = Date.now(); for (let s = 100; s < 150; s++) generate(s, 'peaks');
 	const ms = (Date.now() - t0) / 50;
 	A(ms < 60, `building a level is quick (${ms.toFixed(1)} ms each here, checked and all)`, ms);
+}
+
+// ---------------------------------------------------------------- banks (slopes to surf)
+{
+	let banks = 0, cellsN = 0, wrong = [], moved = 0, noFoot = 0, withBanks = 0;
+	for (const b of NAMES) for (const s of SEEDS.slice(0, 25)) {
+		const r = generate(s, b, { size: 7 }), base = generate(s, b, { size: 7, banks: 0 }), N = r.size;
+		banks += r.banks.length; cellsN += r.bankCells.size; if (r.banks.length) withBanks++;
+		for (const q of r.banks) {
+			const t = r.tiles[q.tz * N + q.tx], o = r.tiles[(q.tz + (q.d === 's' ? 1 : 0)) * N + q.tx + (q.d === 'e' ? 1 : 0)];
+			if (t.link[q.d] || Math.abs(t.level - o.level) < 2 || Math.abs(q.drop - Math.abs(t.level - o.level) * LEVEL) > 1e-9) wrong.push([s, b, 'where', q]);
+		}
+		for (const i of r.bankCells) { const sl = r.slopes.get(i); if (!sl || Math.atan(Math.abs(sl.rise) / CELL) * 180 / Math.PI <= K.FLOOR_ANGLE) wrong.push([s, b, 'not steep', i]); }
+		for (let i = 0; i < r.cells.length; i++) if (!r.bankCells.has(i) && (r.cells[i] !== base.cells[i] || JSON.stringify(r.slopes.get(i) || null) !== JSON.stringify(base.slopes.get(i) || null))) moved++;
+		if (!validate(r).ok || !footPath(r, r.exit) || (footPath(r, r.exit) || []).length !== (footPath(base, base.exit) || []).length) noFoot++;
+	}
+	A(BIOMES.meadow.banks > 0 && BIOMES.marsh.banks === 0 && banks > 100 && wrong.length === 0, `banks: where two unlinked tiles stand two levels or more apart, the cliff may be a bank too steep to stand on (${banks} banks, ${cellsN} cells, on ${withBanks} of 75 levels; a marsh is too flat for any)`, wrong.slice(0, 3));
+	A(moved === 0 && noFoot === 0, 'they are laid over the level: not one other cell moves, every level still passes its check, and the way to the exit on foot is as long as it was', [moved, noFoot]);
+	// surfed: come on to a bank from its top, holding along it and into it
+	let tried = 0, surfed = 0, down = 0;
+	for (const s of SEEDS.slice(0, 20)) {
+		const r = generate(s, 'meadow', { size: 7 }), N = r.size;
+		for (const i of r.bankCells) {
+			const cx = i % r.w, cz = Math.floor(i / r.w), sl = r.slopes.get(i), g = -Math.sign(sl.rise), dn = sl.ax === 'x' ? [g, 0] : [0, g], along = [dn[1], dn[0]];
+			if (!r.bankCells.has(i + (sl.ax === 'x' ? r.w : 1)) || !r.bankCells.has(i + 2 * (sl.ax === 'x' ? r.w : 1)) || r.bankCells.has(i - (sl.ax === 'x' ? r.w : 1))) continue;   // (the first cell of a bank, with two more after it)
+			tried++;
+			const st = newState(r); st.x = (cx + 0.5 - dn[0] * 0.3 + along[0] * -0.4) * CELL; st.z = (cz + 0.5 - dn[1] * 0.3 + along[1] * -0.4) * CELL; st.y = groundAt(r, st.x, st.z); st.vx = along[0] * 9; st.vz = along[1] * 9;
+			let was = false, y0 = st.y; for (let k = 0; k < 40; k++) { step(st, { mx: along[0] - dn[0], mz: along[1] - dn[1], jump: false, crouch: false }, r); if (st.surfing) was = true; }
+			if (was) surfed++;
+			const dr = newState(r); dr.x = (cx + 0.5 - dn[0] * 0.3) * CELL; dr.z = (cz + 0.5 - dn[1] * 0.3) * CELL; dr.y = groundAt(r, dr.x, dr.z); for (let k = 0; k < 90; k++) step(dr, noInput(), r);
+			if (dr.grounded && dr.y < y0 - 1 && dr.y >= groundAt(r, dr.x, dr.z) - 0.01) down++;
+		}
+	}
+	A(tried > 20 && surfed === tried && down === tried, `each bank is surfed along from its first cell, and left alone it puts you down on the lower ground (${surfed} of ${tried})`, [tried, surfed, down]);
 }
 
 // ---------------------------------------------------------------- rails

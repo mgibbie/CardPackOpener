@@ -18,6 +18,8 @@
 //   * rails: come down on one and you grind it, the way you were going (downhill faster, uphill never under the least);
 //     a jump leaps off it with your speed, a slide drops off it, its end throws you on; not caught going up through it,
 //     nor from too far to the side, nor at once after leaving one
+//   * surfing: a slope too steep to stand on still throws you down it, but holding across it carries you along it and
+//     holding into it while fast keeps your height; a jump leaves it (only while surfing)
 //   * sprites in 3D: which of a sheet's 8 facing rows the camera should see
 //   node overworld/tests/micasurvivor_m3d_sim_test.mjs
 import { K, CELL, step, newState, noInput, groundAt, normalAt, surfaceAt, stateName, facingRow, makeRoom, setCell, wallBeside, tuneFor } from '../../micasurvivor/m3d/sim.js';
@@ -294,6 +296,37 @@ const script = (seed, n) => { const r = rng(seed), out = []; let cur = noInput()
 	const top = at(SPOTS.plateau); top.x = SPOTS.railTop[0]; top.z = SPOTS.railTop[1] - 3; run(top, secs(0.35), inp(SOUTH)); run(top, secs(0.45), (i) => inp({ ...SOUTH, jump: i < 12 }));
 	const caught = top.rail === 0; run(top, secs(3), noInput());
 	A(caught && top.rail === -1 && top.grounded && top.z > SPOTS.railFoot[1] - 1 && groundAt(room, top.x, top.z) === 0, 'in the test room: a jump off the plateau\'s south edge lands on its rail, which takes you down to the floor', [caught, top.z, top.y]);
+}
+
+// ---------------------------------------------------------------- surfing
+{
+	// a plateau 6 m up along the north, a bank 4 m deep down from it to the floor (56°: too steep to stand on), 112 m long
+	const bank = () => { const r = makeRoom(60, 20, 0); for (let cx = 2; cx < 58; cx++) { for (let cz = 2; cz <= 7; cz++) setCell(r, cx, cz, 6); setCell(r, cx, 8, 6, { ax: 'z', rise: -3 }); setCell(r, cx, 9, 3, { ax: 'z', rise: -3 }); } return r; };
+	const R = bank(), TOP = 8 * CELL + 0.3;   // (just on to the bank from the plateau's edge)
+	const go = (s, n, input) => { for (let i = 0; i < n; i++) step(s, typeof input === 'function' ? input(i, s) : input, R); return s; };
+	const on = (vx = 0) => { const s = newState(R); s.x = 20; s.z = TOP; s.y = groundAt(R, s.x, s.z); s.vx = vx; return s; };
+	const ACROSS = { mx: 1, mz: 0 }, CARVE = { mx: 1, mz: -1 };   // (east along the bank; east and into it: uphill is north)
+	A(surfaceAt(R, 20, TOP) === 'steep' && K.SURF_MIN === 5 && K.SURF_SPEED === 13, 'the bank is too steep to stand on (56°); the surf\'s numbers');
+	const a = go(on(), secs(0.9), noInput());
+	A(a.z > 10 * CELL && a.y === 0 && stateName(a) !== 'surfing', 'left alone it is a chute, as it was: it throws you down to the floor');
+	const b = go(on(8), secs(1.5), inp(CARVE)), bz = b.z;
+	const c = go(on(8), secs(1.5), inp(ACROSS));
+	A(b.surfing && stateName(b) === 'surfing' && surfaceAt(R, b.x, b.z) === 'steep' && b.y > 2.5 && b.vx >= K.SURF_SPEED - 1 && c.y === 0, `come on to it fast and hold across and into it: 1.5 s later you are still on it, ${b.y.toFixed(1)} m up, at ${b.vx.toFixed(1)} m/s (holding only across, you are on the floor)`, [b.y, b.vx, b.z, c.y]);
+	const d = go(on(0), secs(0.5), inp(ACROSS));
+	A(d.vx > 4, `what you hold across it carries you along it, from a standstill too (${d.vx.toFixed(1)} m/s after half a second)`);
+	const e = go(on(2), secs(1.6), inp({ mx: 0, mz: -1 }));
+	A(e.y === 0 && !e.surfing, 'slow across it, holding into it does not hold you: you cannot stand on a bank');
+	// the jump
+	const f = go(on(8), secs(0.6), inp(CARVE)), fv = [f.vx, f.vz];
+	step(f, inp({ ...CARVE, jump: true }), R);
+	A(f.jumped === 5 && near(f.vy, K.JUMP_V, 0.8) && f.vz > fv[1] + K.SURF_JUMP_OUT - 1 && f.vx >= fv[0] - 0.5 && !f.grounded, 'a jump while surfing leaves it: up, off the slope, with your speed', [f.jumped, f.vy, f.vz, fv]);
+	const g = on(0); step(g, noInput(), R); step(g, inp({ jump: true }), R);
+	A(g.jumped !== 5 && g.jumped !== 1, 'from a standstill on it there is no surf jump (you cannot hop up a bank)');
+	const h = go(on(8), secs(3), inp(CARVE));
+	A(Math.hypot(h.vx, h.vz) <= K.SURF_MAX + 1e-6, `its speed has a top (${K.SURF_MAX} m/s)`);
+	// the test room's chute
+	const ch = at(SPOTS.chuteTop); run(ch, secs(1.2), inp(EAST));
+	A(ch.x > SPOTS.chuteFoot[0] - 3 && ch.grounded, 'the test room\'s chute still throws you off the plateau to the floor');
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);

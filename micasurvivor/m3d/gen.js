@@ -24,11 +24,12 @@ const MID = 3, RAMP = LEVEL / 2;   // a ramp is two cells long (one in each tile
 
 /** What a biome's levels are like. size: tiles along a side. levels: how many height levels. volatility: how often the
  *  level changes from tile to tile. bias / center: the target profile. loops: extra links beyond the tree. closed: how
- *  often two unlinked tiles at the same level get a ridge between them. pieces: the set pieces' weights. */
+ *  often two unlinked tiles at the same level get a ridge between them. pieces: the set pieces' weights. banks: how
+ *  often a cliff of two levels or more between two unlinked tiles is a steep BANK to surf instead (sim.js SURF_*). */
 export const BIOMES = {
-	meadow: { size: 5, levels: 3, volatility: 0.55, bias: 'gaussian', center: 1.4, loops: 0.2, closed: 0.5, pieces: { plain: 5, blocks: 3, pond: 1.2, ice: 0, mud: 0.6, bounce: 0.8, mound: 1 } },
-	peaks: { size: 5, levels: 5, volatility: 0.85, bias: 'linear', center: 4, loops: 0.1, closed: 0.7, pieces: { plain: 4, blocks: 4, pond: 0.4, ice: 1.6, mud: 0, bounce: 1.6, mound: 1.4 } },
-	marsh: { size: 5, levels: 2, volatility: 0.3, bias: 'gaussian', center: 0.6, loops: 0.35, closed: 0.3, pieces: { plain: 3, blocks: 1.5, pond: 4, ice: 0, mud: 3, bounce: 0.4, mound: 0.5 } },
+	meadow: { banks: 0.6, size: 5, levels: 3, volatility: 0.55, bias: 'gaussian', center: 1.4, loops: 0.2, closed: 0.5, pieces: { plain: 5, blocks: 3, pond: 1.2, ice: 0, mud: 0.6, bounce: 0.8, mound: 1 } },
+	peaks: { banks: 0.5, size: 5, levels: 5, volatility: 0.85, bias: 'linear', center: 4, loops: 0.1, closed: 0.7, pieces: { plain: 4, blocks: 4, pond: 0.4, ice: 1.6, mud: 0, bounce: 1.6, mound: 1.4 } },
+	marsh: { banks: 0, size: 5, levels: 2, volatility: 0.3, bias: 'gaussian', center: 0.6, loops: 0.35, closed: 0.3, pieces: { plain: 3, blocks: 1.5, pond: 4, ice: 0, mud: 3, bounce: 0.4, mound: 0.5 } },
 };
 
 export function rng(seed) {
@@ -41,7 +42,7 @@ const OPP = { e: 'w', w: 'e', s: 'n', n: 's' };
 /** generate(seed, biome | params) -> a room, plus: tiles (the plan it was built from), exit [x, y, z], scatter
  *  [{ kind, x, z, s }], biome, seed, repaired (how many ridges / pieces the check took out). */
 export function generate(seed, biome = 'meadow', overrides = null) {
-	const P = { ...(typeof biome === 'string' ? BIOMES[biome] || BIOMES.meadow : biome), ...(overrides || {}) };
+	let P = { ...(typeof biome === 'string' ? BIOMES[biome] || BIOMES.meadow : biome), ...(overrides || {}) };
 	const N = P.size, r = rng((seed >>> 0) * 2654435761 + 97);
 	const pick = (n) => Math.floor(r() * n);
 	const T = (tx, tz) => tz * N + tx;
@@ -102,8 +103,11 @@ export function generate(seed, biome = 'meadow', overrides = null) {
 
 	// 4-6. build, check, and take out whatever broke the check
 	let room = build(seed, P, tiles, start, exit), check = validate(room), repaired = 0;
+	// (the banks first: they are laid over a level that is whole without them, so a level the banks broke is that level again)
+	if (!check.ok && P.banks > 0) { const P0 = { ...P, banks: 0 }, r0 = build(seed, P0, tiles, start, exit), c0 = validate(r0); if (c0.problems.length < check.problems.length) { P = P0; room = r0; check = c0; repaired++; } }
 	if (!check.ok) { for (const t of tiles) for (const d of ['e', 's']) if (t.ridge[d]) { delete t.ridge[d]; repaired++; } room = build(seed, P, tiles, start, exit); check = validate(room); }
 	if (!check.ok) { for (const t of tiles) if (t.piece !== 'plain') { t.piece = 'plain'; repaired++; } room = build(seed, P, tiles, start, exit); check = validate(room); }
+
 	room.repaired = repaired; room.check = check;
 	room.rails = railsFor(room, seed);   // (laid over the finished level, from a stream of their own: the level itself is as it was)
 	room.biome = typeof biome === 'string' ? biome : 'custom'; room.seed = seed >>> 0;
@@ -134,6 +138,29 @@ function build(seed, P, tiles, start, exit) {
 			}
 		}
 	}
+	// banks (the movement tech: slopes to surf). Where two tiles that are NOT linked stand two levels or more apart, the
+	// cliff between them may be a steep bank: the five middle cells of the higher tile's edge, one cell deep (a two-level drop
+	// is 56°; more is steeper: it ends on the lower tile's own edge, which is always plain floor). Too steep to walk, so the routes on foot
+	// are as they were; from a stream of their own, so nothing else of the level changes.
+	room.banks = []; room.bankCells = new Set();
+	const bankCell = (c, h, slope) => { setCell(room, c[0], c[1], h, slope); room.bankCells.add(idx(room, c[0], c[1])); };
+	if (P.banks > 0) {
+		const br = rng(((seed >>> 0) ^ 0xB4A75) * 2654435761 + 17);
+		for (const t of tiles) for (const d of ['e', 's']) {
+			const ox = t.tx + (d === 'e' ? 1 : 0), oz = t.tz + (d === 's' ? 1 : 0), roll = br();   // (drawn for every edge, so one bank more or less moves no other)
+			if (ox >= N || oz >= N || t.link[d]) continue;
+			const o = tiles[T(ox, oz)], diff = o.level - t.level;
+			if (Math.abs(diff) < 2 || roll >= P.banks) continue;
+			const x0 = cx0(t), z0 = cz0(t), ax = d === 'e' ? 'x' : 'z', H = Math.max(t.level, o.level) * LEVEL, D = Math.abs(diff) * LEVEL, deep = 1, up = diff > 0;   // up: rising toward +x / +z
+			for (let k = 1; k <= 5; k++) {
+				const a = d === 'e' ? [x0 + TS - 1, z0 + k] : [x0 + k, z0 + TS - 1], b = d === 'e' ? [x0 + TS, z0 + k] : [x0 + k, z0 + TS];   // this tile's last cell, the other's first
+				if (deep === 2) { if (up) { bankCell(a, H - D, { ax, rise: D / 2 }); bankCell(b, H - D / 2, { ax, rise: D / 2 }); } else { bankCell(a, H, { ax, rise: -D / 2 }); bankCell(b, H - D / 2, { ax, rise: -D / 2 }); } }
+				else if (up) bankCell(b, H - D, { ax, rise: D });   // (the higher tile's own edge cell)
+				else bankCell(a, H, { ax, rise: -D });
+			}
+			room.banks.push({ tx: t.tx, tz: t.tz, d, drop: D, deep });
+		}
+	}
 	// set pieces: inside the tile's edge ring only (cells 1..5), so links and ramps are never touched
 	room.scatter = [];
 	for (const t of tiles) {
@@ -149,7 +176,7 @@ function build(seed, P, tiles, start, exit) {
 			for (let z = 1; z <= 5; z++) for (let x = 1; x <= 5; x++) {
 				const ring = Math.max(Math.abs(x - MID), Math.abs(z - MID));   // 2: the outside, 1: inside it, 0: the middle
 				// beside a ramp the bank stays dry floor: stepping out of the water straight onto a rising ramp is more than a step
-				if (ring === 2 && [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dz]) => room.slopes.has(at(x + dx, z + dz)))) continue;
+				if (ring === 2 && [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dz]) => room.slopes.has(at(x + dx, z + dz)) && !room.bankCells.has(at(x + dx, z + dz)))) continue;   /* (a ramp, not a bank: a bank comes down into the pond) */
 				setCell(room, x0 + x, z0 + z, h - (ring === 2 ? 0.34 : ring === 1 ? 0.68 : 2.2));   // (floating in the middle you are at -1.0: each lip out is 0.32-0.34 m, well inside a step)
 				room.water.set(at(x, z), h - 0.1);
 			}
@@ -219,14 +246,19 @@ function standAt(room, cx, cz, x, z) {
 /** The on-foot graph: from cell a you can step to its neighbour b if b's floor is no more than a step above a's where
  *  they meet (down any distance: a drop). No jumping. You are not a point: the floor is compared from a body's radius
  *  back in a to a body's radius on into b, whichever is worse, so a lip that leads straight onto a rising ramp counts
- *  as the climb it is. -> { can(a) -> [b…] } over cell indices. */
+ *  as the climb it is. A slope too steep to stand on (a bank, a chute) is one-way: you come on to it from its high side
+ *  and leave it by its low side, and no other way. -> { can(a) -> [b…] } over cell indices. */
 export function footGraph(room) {
 	const W = room.w, H = room.h;
 	const out = new Array(W * H);
+	/** The way DOWN a cell too steep to stand on ([dx, dz]), or null for a cell you can stand on. */
+	const chute = (i) => { const s = room.slopes.get(i); if (!s || Math.atan(Math.abs(s.rise) / CELL) * 180 / Math.PI <= K.FLOOR_ANGLE) return null; const g = -Math.sign(s.rise); return s.ax === 'x' ? [g, 0] : [0, g]; };
 	for (let cz = 0; cz < H; cz++) for (let cx = 0; cx < W; cx++) {
 		const a = idx(room, cx, cz), list = out[a] = [];
 		for (const [dx, dz] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
 			const nx = cx + dx, nz = cz + dz; if (nx < 0 || nz < 0 || nx >= W || nz >= H) continue;
+			const ca = chute(a), cb = chute(idx(room, nx, nz));
+			if ((ca && (ca[0] !== dx || ca[1] !== dz)) || (cb && (cb[0] !== dx || cb[1] !== dz))) continue;   // (a chute: on from its high side, off by its low side)
 			// the midpoint of the shared edge, nudged a hair into each cell
 			const ex = (cx + 0.5 + dx * 0.5) * CELL, ez = (cz + 0.5 + dz * 0.5) * CELL, e = 1e-6;
 			const R = K.RADIUS;
@@ -250,7 +282,7 @@ export function validate(room) {
 	if (traps) problems.push(`${traps} cells you can reach on foot but not walk back from`);
 	for (const t of room.tiles || []) if (!reach[cellOf(t.centre)]) problems.push(`tile ${t.tx},${t.tz} is not reachable on foot`);
 	if (room.exit && !reach[cellOf(room.exit)]) problems.push('the exit is not reachable on foot');
-	for (const [i, s] of room.slopes) if (Math.atan(Math.abs(s.rise) / CELL) * 180 / Math.PI > K.FLOOR_ANGLE) problems.push(`a slope too steep to stand on at cell ${i}`);
+	for (const [i, s] of room.slopes) if (!(room.bankCells && room.bankCells.has(i)) && Math.atan(Math.abs(s.rise) / CELL) * 180 / Math.PI > K.FLOOR_ANGLE) problems.push(`a slope too steep to stand on at cell ${i}`);
 	for (let i = 0; i < room.cells.length; i++) if (!Number.isFinite(room.cells[i])) problems.push(`a hole at cell ${i}`);
 	if (room.exit && room.spawn && Math.hypot(room.exit[0] - room.spawn[0], room.exit[2] - room.spawn[2]) < TS * CELL) problems.push('the exit is on top of the spawn');
 	return { ok: problems.length === 0, problems, reach: n, cells: W * room.h };
