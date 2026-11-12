@@ -8,6 +8,8 @@
 //   * the menu (Esc, P or its button): alone, the fight waits; Resume, Restart the run, Leave
 //   * the 3D boards (the menu's button): the server's top ten of this map and tier, asked for with d3; its tabs;
 //     logged out, a line saying so
+//   * sound: a run's events are the 2D game's own effects, its theme the map's (the boss's while one is on the field,
+//     none at the end); the menu's "Sound" turns it off and on
 //   * the run's end: a panel with the result, "Play again" (the next seed) and "Leave"
 //   * a narrow phone screen: nothing runs off it, nothing sits under the minimap
 //   * a slow device (every frame a tenth of a second of ticks): the screen is drawn by the clock, not by the tick count
@@ -19,6 +21,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import puppeteer from 'puppeteer-core';
 import { pretty, short, mmss, chipKind } from '../../micasurvivor/m3d/runui.js';
+import { soundsOf, moveSounds, musicOf } from '../../micasurvivor/m3d/runsound.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '../../');
@@ -39,6 +42,15 @@ A(chipKind('ZONE 1/3', 0) === 'on' && chipKind('₽ 12', 3) === 'money' && chipK
 // (the boards' server, stood in for: what the page asks is kept, and three marks are answered)
 const asked = [];
 const TOP = [{ name: 'ash', score: 9100, time: 1500, level: 44, dex: 6 }, { name: 'tester', score: 4321, time: 800, level: 30, dex: 5 }, { name: 'misty', score: 1200, time: 300, level: 12, dex: 7 }];
+// ---- a run's sound, named (pure)
+{
+	const mv = (id) => ({ ember: { kind: 'bolt', type: 'fire' }, tackle: { kind: 'melee', type: 'normal' } }[id] || null);
+	const names = soundsOf([{ k: 'shot', id: 'ember' }, { k: 'melee', id: 'tackle' }, { k: 'hit' }, { k: 'kill', boss: false }, { k: 'kill', boss: true }, { k: 'hurt' }, { k: 'levelup' }, { k: 'pickup', kind: 'xp' }, { k: 'pickup', kind: 'coin' }, { k: 'pickup', kind: 'heal' }, { k: 'pickup', kind: 'item' }, { k: 'cine' }, { k: 'caught', kind: 'league' }, { k: 'caught', kind: 'shiny' }, { k: 'wild' }, { k: 'mega' }, { k: 'zone' }, { k: 'runover', won: true }, { k: 'runover', won: false }, { k: 'say' }, { k: 'mark' }], mv);
+	A(names.map((q) => q[0]).join() === 'shot,shot,hit,faint,bossDown,hurt,levelup,xp,coin,heal,chest,ball,legend,shinyGet,boss,surge,descend,legend,gameover' && names[0][1].kind === 'bolt' && names[0][1].type === 'fire' && names[1][1].kind === 'melee', 'a run\'s events are the 2D game\'s own effects (a shot has its move\'s voice; what has no sound has none)', names.map((q) => q[0]).join());
+	A(moveSounds({ landed: 12 }).join() === 'land' && moveSounds({ landed: 20, hard: 20 }).join() === 'quake' && moveSounds({ landed: 3 }).length === 0 && moveSounds({ railed: 1 }).join() === 'shake' && moveSounds({ jumped: 3 }).join() === 'select' && moveSounds({ jumped: 1 }).length === 0 && moveSounds({ bounced: 1 }).join() === 'surge', 'how you move has its sounds: a landing, a hard one, a rail caught, a jump off a wall, a bounce pad');
+	const T3 = ['forest', 'cave', 'volcano'];
+	A(musicOf({ mapIndex: 0, tracks: T3 }) === 'forest' && musicOf({ mapIndex: 1, tracks: T3 }) === 'cave' && musicOf({ mapIndex: 2, tracks: T3 }) === 'volcano' && musicOf({ mapIndex: 1, boss: true, tracks: T3 }) === 'boss' && musicOf({ mapIndex: 1, over: true, boss: true, tracks: T3 }) === null && musicOf({ mapIndex: -1, tracks: T3 }) === 'volcano' && musicOf({}) === null, 'each map has its theme; a boss on the field has the boss\'s; a run that is over has none');
+}
 const server = http.createServer((req, res) => {
 	const u = decodeURIComponent(req.url.split('?')[0]);
 	if (u === '/api/mp' && req.method === 'POST') { let b = ''; req.on('data', (c) => { b += c; }); req.on('end', () => { let q = {}; try { q = JSON.parse(b); } catch { } asked.push({ ...q, auth: req.headers.authorization || '' }); res.writeHead(200, { 'content-type': 'application/json' }); res.end(JSON.stringify(q.action === 'run-leaderboard' ? { top: q.board === 'time' ? TOP.slice(0, 1) : TOP, you: q.board === 'time' ? null : { ...TOP[1], rank: 2 } } : { ok: true })); }); return; }
@@ -67,6 +79,8 @@ try {
 	const ok = await boot('exp=7&map=viridian&dex=6&weather=0');
 	await hush();
 	const first = await has('#rx-name', /^Charmander$/);
+	// (what the page asks the 2D game's sound to play, kept: a headless browser makes no sound to listen to)
+	await page.evaluate(() => { const A = window.G.Audio, s = A.sfx, m = A.music; window.__snd = []; window.__mus = []; A.sfx = (n, o) => { window.__snd.push(n); return s(n, o); }; A.music = (n) => { if (window.__mus[window.__mus.length - 1] !== n) window.__mus.push(n); return m(n); }; });
 	const s0 = await page.evaluate(() => ({ rx: document.body.classList.contains('rx'), font: getComputedStyle(document.getElementById('rx')).fontFamily, loaded: document.fonts.check('16px m6x11'), filled: document.getElementById('hud').textContent.length > 40, lv: document.getElementById('rx-lv').textContent, hp: document.getElementById('rx-hpt').textContent, w: document.getElementById('rx-hp').style.width }));
 	A(ok && first && s0.rx && /m6x11/.test(s0.font) && s0.lv === 'Lv 1' && s0.hp === '88 / 88' && parseFloat(s0.w) === 100, 'a run\'s page shows the run\'s screen in Micatro\'s font: Charmander, Lv 1, 88 / 88 HP', s0);
 	A(!(await shown('#hud')) && !(await shown('#help')) && s0.filled, 'the test room\'s readout and help are not on it (the readout is still filled, for tests)');
@@ -120,6 +134,18 @@ try {
 	const mapEsc = await page.evaluate(() => ({ big: window.__m3d.mapBig, menu: document.getElementById('rx-menu').classList.contains('show') }));
 	A(!mapEsc.big && !mapEsc.menu, 'with the zone map open, Esc closes the map and not more', mapEsc);
 
+	// ---- sound
+	const snd = await page.evaluate(() => ({ snd: [...new Set(window.__snd)], mus: window.__mus.slice(), has: !!window.G.Audio && typeof window.G.MUSIC === 'object' }));
+	A(snd.has && ['xp', 'levelup', 'confirm'].every((n) => snd.snd.includes(n)) && snd.mus[0] === 'forest' && snd.mus.includes('boss'), `the page plays the 2D game's sound: so far ${snd.snd.join(', ')}; Viridian's theme, then the boss's while Mewtwo is on the field`, snd);
+	await page.keyboard.press('Escape');
+	const mu0 = await page.evaluate(() => ({ label: document.getElementById('rx-mute').textContent, muted: window.G.Audio.settings.muted }));
+	await page.click('#rx-mute');
+	await sleep(450);   // (the theme follows four times a second)
+	const mu1 = await page.evaluate(() => ({ label: document.getElementById('rx-mute').textContent, muted: window.G.Audio.settings.muted, mus: window.__mus[window.__mus.length - 1] }));
+	await page.click('#rx-mute'); await page.keyboard.press('Escape');
+	const mu2 = await page.evaluate(() => window.G.Audio.settings.muted);
+	A(mu0.label === 'Sound: on' && !mu0.muted && mu1.label === 'Sound: off' && mu1.muted && mu1.mus === null && !mu2, 'the menu\'s "Sound" turns it off and on (and the theme rests while the fight waits)', { mu0, mu1, mu2 });
+
 	// ---- the 3D boards
 	await page.keyboard.press('Escape'); await page.click('#rx-boards');
 	const out = await waitFor(() => page.evaluate(() => document.getElementById('rx-board').classList.contains('show') && /Log in to Magepunk/.test(document.getElementById('rx-board-note').textContent)), 3000);
@@ -147,6 +173,8 @@ try {
 	const over = await waitFor(() => page.evaluate(() => window.__m3d.run.ended && document.getElementById('rx-end').classList.contains('show')), 20000);
 	const e0 = await page.evaluate(() => ({ h: document.querySelector('#rx-end h1').textContent, cls: document.querySelector('#rx-end h1').className, p: document.querySelector('#rx-end p').textContent, rows: [...document.querySelectorAll('#rx-end .rx-rows span')].map((e) => e.textContent), again: document.getElementById('rx-again').getAttribute('href'), leave: document.getElementById('rx-leave').getAttribute('href'), note: document.getElementById('rx-note').classList.contains('show') }));
 	A(over && e0.h === 'RUN OVER' && e0.cls === 'lost' && /Reached zone 1/.test(e0.p) && e0.rows.join('|').startsWith('Time|0:') && e0.rows.includes('KOs') && e0.rows.includes('Score') && e0.rows[e0.rows.indexOf('Pay') + 1].startsWith('₽ ') && !e0.note && !(await shown('#rx-menu-btn')), 'down: the run\'s end is a panel with its result (time, KOs, level, score, pay)', e0);
+	const endSnd = await page.evaluate(() => ({ over: window.__snd.includes('gameover'), mus: window.__mus[window.__mus.length - 1] }));
+	A(endSnd.over && endSnd.mus === null, 'the run\'s end has its sound, and the theme stops', endSnd);
 	A(/[?&]exp=8(&|$)/.test(e0.again) && /map=viridian/.test(e0.again) && e0.leave === '../', '"Play again" is the next seed on the same map; "Leave" goes back to MicaSurvivor', e0.again);
 	await shot('m3d_runui_end.png');
 	await Promise.all([page.waitForNavigation({ waitUntil: 'domcontentloaded' }), page.click('#rx-again')]);

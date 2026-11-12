@@ -18,6 +18,7 @@ import { HostLink, WatchLink, runId, SAYS as LIVE_SAYS } from './exprelay.js';
 import { unfair, clean as cleanRun, deviceId, missing as saveMissing, runSum, recordOps, applyOps, scoreBody, WHY, SV, wildOf, catchOps, shinyOps, newlyMet, boardAsk, boardRows, hasMember } from './expsave.js';
 import { rng as seedRng } from './gen.js';
 import { metaFor, spendBoosts } from './expmeta.js';
+import { soundsOf, moveSounds, musicOf } from './runsound.js';
 import { startInput } from '/site/input.js';
 import { createFocusNav } from '/site/focusnav.js';
 import { expFrom, newRun, stepRun, hudLine, result as runResult, setZoneTime, fire as fireEvent, zoneRoom, XK } from './expedition.js';
@@ -366,6 +367,7 @@ function frame(now) {
 			share();
 		} else step(state, input, room, K.TICK, TUNE);
 		perf.acc -= K.TICK; simTicks++;
+		play(moveSounds(state));
 		if (state.landed > 9) bob = Math.min(0.5, state.landed * 0.02);
 		if (state.hard) note('hard landing: hold SLIDE as you land to break a fall', 2200); else if (state.broke) note('fall broken (' + state.broke + ')', 1400);
 	}
@@ -426,7 +428,12 @@ function showMap() {
 	g.fillStyle = '#ff3b3b'; g.strokeStyle = '#fff'; g.lineWidth = 1; g.beginPath(); g.moveTo(x + fx * 7, z + fz * 7); g.lineTo(x - fx * 4 - fz * 4, z - fz * 4 + fx * 4); g.lineTo(x - fx * 4 + fz * 4, z - fz * 4 - fx * 4); g.closePath(); g.fill(); g.stroke();
 }
 /** (P3) What this tick of the fight did, as things to see. */
+/** (going live) A run's sound: the 2D game's own effects and themes (G.Audio), named by runsound.js. Only on a run's page. */
+const SOUND = () => (RUNUI && GG.Audio ? GG.Audio : null);
+const moveOf = (id) => GG.Moves.BY_ID[id] || (GG.ExpMoves && GG.ExpMoves.MOVES[id]) || null;
+function play(list) { const A = SOUND(); if (A) for (const [name, o] of list) A.sfx(name, o); }
 function fightEvents(events) {
+	play(soundsOf(events, moveOf));
 	const col = (id) => TYPE_COLOR[(GG.Moves.BY_ID[id] || (GG.ExpMoves && GG.ExpMoves.MOVES[id]) || {}).type];
 	for (const ev of events) if (ev.k === 'caught' && run) { if (ev.kind === 'league') keepCatch(ev.member || ev.dex); else if (ev.kind === 'shiny') keepShiny(ev.dex); }   // (a wild League member, a shiny: saved at once)
 	for (const ev of events) {
@@ -609,6 +616,7 @@ function useTool(name) {
 function pickCard(i) {
 	if (banMode) { banMode = false; if (world && world.pl.choices) { banishCard(myRun, i); showCards(); } return; }
 	if (!world || !world.pl.choices || !choose(world, i)) return;
+	play([['confirm']]);
 	if (myRun) { for (const q of myRun.says) note(q.text, q.s * 1000); myRun.says.length = 0; }   // (what a card you picked says: an evolution, a Mega. The run's next step would clear it unshown)
 	const el = document.getElementById('cards'); el.style.display = 'none'; el.innerHTML = '';
 	if (world.pl.pending > 0) { tick(world, null, K.TICK); fightEvents(world.events); }   // (another level waiting: its cards come up at once)
@@ -619,7 +627,7 @@ if (FIGHT) {
 }
 /** (the shipping path) A run's own screen, in Micatro's look: runui.js draws this view of the run. The test room's
  *  readout is still filled (tests and ?debug=1 read it), but it is not what a player sees. */
-const RUNUI = myRun || XW ? mountRunUi(document, { debug: Q.has('debug'), onMenu: () => setMenu(!menuUp), onResume: () => setMenu(false), onBoard: (id) => openBoard(id) }) : null;
+const RUNUI = myRun || XW ? mountRunUi(document, { debug: Q.has('debug'), onMenu: () => setMenu(!menuUp), onResume: () => setMenu(false), onBoard: (id) => openBoard(id), onMute: () => { if (GG.Audio) { GG.Audio.toggleMute(); RUNUI.update(runView()); } } }) : null;
 /** The 3D boards of this run's map and tier (the menu's or the run's end's button): the server's top ten and yours. */
 let boardUp = null;
 async function openBoard(id) {
@@ -670,7 +678,7 @@ function runView() {
 	const b = world && !JOIN ? world.enemies.find((e) => e.boss) : null;
 	if (b) v.boss = { name: nameOf(b.dex), hp: b.hp, maxHp: b.maxHp, enraged: !!(b.ai && b.ai.fury) };
 	if (boardUp) v.board = { title: `3D · ${XK.MAP_NAME[boardUp.map] || boardUp.map} · ${boardUp.diff[0].toUpperCase() + boardUp.diff.slice(1)}`, tabs: [['score', 'Score'], ['time', 'Time attack'], ['survival', 'Survival']].map(([id, text]) => ({ id, text, on: id === boardUp.view })), rows: boardUp.rows, note: boardUp.note };
-	if (menuUp && !runOver) v.menu = { boards: true, title: paused ? 'PAUSED' : 'MENU', line: (paused ? '' : 'The fight goes on while this is open. ') + CONTROLS, restart: run ? location.search || '?' : null, leave: '../' };
+	if (menuUp && !runOver) v.menu = { boards: true, sound: GG.Audio ? (GG.Audio.settings.muted ? 'off' : 'on') : null, title: paused ? 'PAUSED' : 'MENU', line: (paused ? '' : 'The fight goes on while this is open. ') + CONTROLS, restart: run ? location.search || '?' : null, leave: '../' };
 	if (runOver) {
 		const r = runOver, q = new URLSearchParams(location.search); q.set('exp', (+q.get('exp') || 0) + 1);
 		v.over = typeof r === 'string' ? { won: r === 'won', title: r === 'won' ? 'EXPEDITION COMPLETE!' : 'RUN OVER', line: '', rows: [], again: null, leave: '../' }
@@ -766,7 +774,9 @@ function showHud() {
 		+ (!world ? '' : `\nLv ${world.pl.level} · XP ${Math.floor(world.pl.xp)} / ${world.pl.xpNext}\nHP ${Math.ceil(world.pl.hp)} / ${world.pl.maxHp} · ${world.enemies.length} enemies · ${world.stats.kills} KOs · ${Math.floor(world.t / 60)}:${String(Math.floor(world.t % 60)).padStart(2, '0')} · ${world.pl.moves.map((m) => m.id + ' Lv' + (m.xlv || m.lvl)).join(', ')}`)
 		+ (!myRun || !myRun.lv ? '' : `\nvitamins: ${world.pl.xv.map((v) => v.id + ' ' + v.lvl).join(', ') || 'none'} · ₽ ${run ? run.coins : rv ? rv.coins : 0} · luck ${Math.round(world.pl.xluck || 0)}${world.pl.xproc.shield > 0 ? ' · shield ' + Math.round(world.pl.xproc.shield) : ''}${myRun.cap && myRun.cap.sa.length ? '\nteam: ' + myRun.cap.sa.map((a) => (GG.DEX_BY[a.dex] || {}).name + ' (' + a.type + ')').join(', ') : ''}${myRun.held ? ' · holding ' + myRun.held : ''}\nitems: ${Object.keys(world.pl.xi).map((id) => id + (world.pl.xi[id] > 1 ? ' ×' + world.pl.xi[id] : '')).join(', ') || 'none'}`) + (noteText && performance.now() < noteUntil ? `\n» ${noteText}` : '');
 	if (RUNUI) RUNUI.update(runView());
+	{ const A = SOUND(); if (A && G_MUSIC) A.music(menuUp && paused ? null : musicOf({ over: !!runOver, boss: !!(world && world.enemies.some((e) => e.boss && !e.dead)), mapIndex: XK_MAPS.indexOf(myRun ? myRun.map : XW ? XW.map : ''), tracks: G_MUSIC })); }
 }
+const G_MUSIC = GG.BIOME_MUSIC || null, XK_MAPS = ['viridian', 'mtmoon', 'cerulean'];
 
 // ---------------------------------------------------------------- boot
 (async () => {
