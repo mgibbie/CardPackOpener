@@ -13,13 +13,15 @@
 // Level-ups are Expedition's own (explevel.js): move levels and rolls, vitamins, Training, the three tools.
 // The run's money, its 60 items and what a zone holds to stand in are expeco.js's.
 // Capture (an alpha faints and can join you; shinies) is expcap.js's.
-// Still to come: the League, the run's pay.
+// The League (you play a member: its kit, its evolutions) is expleague.js's.
+// Still to come: Survival; co-op, spectate and replay of a run.
 import { K, CELL, makeRoom, setCell, groundAt, newState } from './sim.js';
 import { generate, footGraph, rng as makeRng, LEVEL } from './gen.js';
 import { CK, U, newWorld, tick, addEnemy, addBoss, drop, hazard, spawnRate, xpFor, equip } from './combat.js';
 import { levelFrom, setup as setupLevels, tickStats, curse, takeItem, dropItem } from './explevel.js';
 import { ecoFrom, setupEco, tickEco, mods, pickTake, pickClose } from './expeco.js';
-import { capFrom, setupCap, tickCap, holdCine, mark } from './expcap.js';
+import { capFrom, setupCap, tickCap, holdCine, mark, syncPerks } from './expcap.js';
+import { leagueFrom, memberOf, setupLeague } from './expleague.js';
 
 export const XK = {
 	BIOME: { viridian: 'meadow', mtmoon: 'peaks', cerulean: 'marsh' },
@@ -51,7 +53,7 @@ function mix(...vals) {
 export function expFrom(G) {
 	const C = G.ExpClassic, T = G.ExpTier;
 	return { K: C.K, MAPS: C.MAPS, MAP_IDS: C.MAP_IDS, DIFFS: C.DIFFS, plan: (seed, map, zone, diff) => C.plan(seed, map, zone, diff), tier: (d) => T.of(d),
-		ESCORT: T.K.ESCORT, medalOf: (time, diff, map) => T.medalOf(time, diff, map), L: G.ExpLevel && G.ExpItems ? levelFrom(G) : null, E: G.ExpEco ? ecoFrom(G) : null, C: G.ExpCap ? capFrom(G) : null, score: (parts, diff) => T.score(parts, diff), medal: T.medal ? (s, diff, map) => T.medal(s, diff, map) : null, exhaustion: C.exhaustion };
+		ESCORT: T.K.ESCORT, medalOf: (time, diff, map) => T.medalOf(time, diff, map), L: G.ExpLevel && G.ExpItems ? levelFrom(G) : null, E: G.ExpEco ? ecoFrom(G) : null, C: G.ExpCap ? capFrom(G) : null, G: G.ExpLeague ? leagueFrom(G) : null, score: (parts, diff) => T.score(parts, diff), medal: T.medal ? (s, diff, map) => T.medal(s, diff, map) : null, exhaustion: C.exhaustion };
 }
 
 // ---------------------------------------------------------------- the zones
@@ -133,16 +135,20 @@ export function zoneRoom(seed, map, zone, X) {
 // ---------------------------------------------------------------- the run
 /** A Classic run. o: { map, diff, seed, touch (a phone: the lower cap), and combat.js's newWorld options (dex, moves,
  *  ability, items, autoPick, …); a move given as [id, n] starts at Expedition level n; levels: false keeps the
- *  base game's level-ups instead of Expedition's (and then no economy either); eco: false leaves the economy out; cap: false leaves capture out }. -> the run: { w (the fight), map, diff, seed, zone, ph, charge, portalT, fs, boss,
+ *  base game's level-ups instead of Expedition's (and then no economy either); eco: false leaves the economy out; cap: false leaves capture out; league: true makes it a League run: you play
+ *  the member `dex` belongs to, from its first stage, with its kit (`moves` is then not used) }. -> the run: { w (the fight), map, diff, seed, zone, ph, charge, portalT, fs, boss,
  *  splits, bosses, log, won, lost, ended, says: [this step's banners] } */
 export function newRun(data, X, o = {}) {
 	const map = X.MAPS[o.map] ? o.map : 'viridian', diff = X.DIFFS.includes(o.diff) ? o.diff : 'normal', seed = (o.seed >>> 0) || 1;
 	const room = zoneRoom(seed, map, 1, X);
-	const own = !!X.L && o.levels !== false, lv = (o.moves || []).map((m) => (Array.isArray(m) ? m : [m, 1]));
-	const w = newWorld(room, data, { ...o, moves: own ? lv.map((m) => m[0]) : o.moves, seed, cast: null, bosses: null });
+	const own = !!X.L && o.levels !== false, league = own && !!X.G && !!o.league, member = league ? memberOf(X.G, o.dex || 25) : 0;
+	const lv = league ? [] : (o.moves || []).map((m) => (Array.isArray(m) ? m : [m, 1]));
+	const w = newWorld(room, data, { ...o, dex: league ? member : o.dex, moves: own ? lv.map((m) => m[0]) : o.moves, seed, cast: null, bosses: null,
+		ability: league && o.ability === undefined ? X.G.abilityOf(X.G.finalsOf(X.G.BY[member])[0]) : o.ability });   // (a member has its final stage's ability all run)
 	const S = { w, X, data, map, diff, seed, touch: !!o.touch, zone: 0, zs: 0, splits: [], log: [], bosses: [], won: false, lost: false, ended: false, dps: [], says: [], wonT: 0 };
 	zoneStart(S, 1, 0);
-	if (own) setupLevels(S, X.L, lv);
+	if (own) { setupLevels(S, X.L, lv); S.syncPerks = () => syncPerks(S); }
+	if (league) setupLeague(S, member);
 	if (own && X.E && o.eco !== false) setupEco(S);
 	if (own && X.C && o.cap !== false) setupCap(S);
 	return S;
