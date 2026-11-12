@@ -125,6 +125,20 @@ addEventListener('keyup', (e) => keys.delete(e.code));
 addEventListener('keydown', (e) => { if (e.code === 'KeyM') toggleMap(); else if (e.code === 'Escape' && mapBig) toggleMap(false); });   // (P4) the zone map
 document.getElementById('map').addEventListener('click', () => toggleMap());
 addEventListener('blur', () => keys.clear());
+// iPhone: two thumbs on the screen are how this is played (the stick and a button), and Safari took them for a pinch:
+// the page zoomed in, and since every touch after that is the game's, there was no pinching back out (owner,
+// 2026-11-12). Safari does not honour `touch-action: none` for this, so the pinch is refused here: its own gesture
+// events, and any move with two fingers down. (/site/zoomfix.js, loaded by the page, snaps back whatever still gets
+// through.) A text box keeps its normal behaviour.
+{
+	const typing = (el) => !!el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable);
+	for (const t of ['gesturestart', 'gesturechange', 'gestureend']) document.addEventListener(t, (e) => { if (!typing(e.target)) e.preventDefault(); }, { passive: false });
+	document.addEventListener('touchmove', (e) => { if (e.touches && e.touches.length > 1 && !typing(e.target)) e.preventDefault(); }, { passive: false });
+	// …and a quick second tap on the field or on JUMP / SLIDE is a second jump, not a double-tap zoom. (Only there: they
+	// are read as pointers, so no click is lost; a menu's buttons keep their taps.)
+	let tapAt = -1e9;
+	document.addEventListener('touchend', (e) => { const t = e.target, game = !!t && (t.id === 'c' || (t.classList && t.classList.contains('btn'))); if (!game) return; const now = performance.now(); if (now - tapAt < 400) e.preventDefault(); tapAt = now; }, { passive: false });
+}
 // the mouse turns the camera while a button is held
 let drag = null;
 canvas.addEventListener('pointerdown', (e) => {
