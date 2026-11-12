@@ -79,7 +79,7 @@ export function setupEco(S) {
 	S.coins = S.coins || 0;
 	S.eco = { frac: 0, earned: 0, spent: 0, balls: 0, opened: 0, buys: 0, mods: { diff: 0, rate: 0, xp: 0, money: 0, loot: 0 }, used: 0, draws: 0, waves: 0, z: null, hordes: [],
 		log: { balls: 0, shop: 0, altars: 0, freed: 0, rocks: 0, berries: 0, ditto: 0, hypno: 0, spins: 0, slotWins: 0, ambush: 0 } };
-	S.pick = null;
+	S.pick = null; S.w.kos = [];
 	return S.eco;
 }
 /** What the run's curses and altars have done: { diff, rate, xp, money, loot }. */
@@ -319,7 +319,7 @@ function step(S, Z, o, st, d, dt, zt) {
 /** Every tick of the run (after the fight's): KOs pay, and the things round you. */
 export function tickEco(S, dt) {
 	const E = S.eco, w = S.w, pl = w.pl; if (!E) return;
-	for (const ev of w.events) if (ev.k === 'kill') onKill(S, ev);
+	if (w.kos) for (const ko of w.kos.splice(0)) onKill(S, ko);   // (every KO since the last look, whoever finished it)
 	const lay = layoutOf(w.room, S);
 	if (!lay) { E.z = null; return; }
 	if (!E.z || E.z.lay !== lay) E.z = zoneState(lay);

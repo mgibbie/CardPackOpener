@@ -132,7 +132,7 @@ const clearZone = (S) => { hush(S); toAltar(S); steps(S, XKK.ALTAR_T + 0.1); sla
 
 // ---------------------------------------------------------------- the trickle, the cap, the final swarm
 {
-	const S = run({ seed: 21 }); S.plan.events = [];
+	const S = run({ seed: 21 }); S.plan.events = []; S.w.pl.xpMul = 0;   // (no level-ups here: a card could hand you a move, and this counts who ARRIVES)
 	steps(S, 55);
 	const first = new Set(S.plan.cards.slice(0, XKK.CARDS0).concat(S.plan.wander)), seen = new Set(S.w.enemies.map((e) => e.dex));
 	A(S.w.enemies.length > 10 && [...seen].every((d) => first.has(d)), `the first minute: only the zone's first four species (and a wanderer now and then) arrive (${S.w.enemies.length} of ${seen.size} species)`, [...seen]);
