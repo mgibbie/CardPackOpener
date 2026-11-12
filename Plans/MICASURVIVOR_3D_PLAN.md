@@ -979,6 +979,27 @@ path (the real, Micatro-style screens; saving).
 
 Tests: the co-op rules 66 checks (was 56).
 
+## 5.29 P4, thirteenth part: built (2026-11-12). The fog of war and the zone map.
+
+`micasurvivor/m3d/expfog.js`. The 2D game's rule and numbers: the cells within 14 of where you have stood are
+explored and stay explored; a thing of the zone (or a patch of hostile ground, or an enemy's dot) shows on the
+map once its cell is explored, or while you are within 9 cells of it. A new zone starts dark.
+
+- Each screen has its own fog: yours, a co-op guest's own, and a watcher's (it follows the player from when the
+  watching began).
+- On the page the minimap is all but black where you have not been, and **M** (or a tap on the minimap) opens
+  the zone map: the same map, large, with a legend of what you have found and how much is explored.
+- The altar's ring is always on the map, as the 2D game always points you to it.
+
+A 3D zone is 49 cells across, so the 14-cell sight uncovers it faster than a 2D zone (15 % from where you
+arrive). The numbers are kept as the 2D game's; the real map screen is to be built Micatro-style on the
+shipping path.
+
+**Still of P4**: Mega Evolution, and wild League encounters (they read which members your save says you have
+met, so they come with saving). Then the shipping path.
+
+Tests: `micasurvivor_m3d_expfog_test.mjs` (15 checks, node), the page test 41 (was 37).
+
 ## 6. Dive in 2D: built
 
 **D0 — find the stairs (small; can ship first, on its own).** *Built 2026-11-11 (`overworld/tests/micasurvivor_dive_stairs_test.mjs`). As built: the stairs took their own orange mark, so the rocks and Meowth keep their gold; the HUD arrow comes up after 25 s on a floor, or at once when its boss falls.*

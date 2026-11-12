@@ -27,6 +27,7 @@ import { rollOffers, pickTake } from './expeco.js';
 import { takeItem } from './explevel.js';
 import { setupCap, guestCatch, tickGuestCap, syncPerks } from './expcap.js';
 import { setupSurv, tickOwn } from './expsurv.js';
+import { tickFog } from './expfog.js';
 
 /** A guest's side of a run. o: { seed, map, diff, dex (its species: it plays that family's member), id (its number in
  *  the party; the host is 0), league: false for a plain body with `moves`, and guestWorld's options }.
@@ -75,7 +76,7 @@ export function stepGuest(S, input, dt = K.TICK) {
 	tick(w, input, dt);
 	for (const ev of w.events) if (ev.k === 'say') S.says.push({ text: ev.text, s: ev.s });
 	if (w.t !== t0) {
-		tickStats(S, dt); tickGuestCap(S, dt);
+		tickStats(S, dt); tickGuestCap(S, dt); tickFog(S);   // (a guest's fog is its own: where IT has been)
 		if (S.sv && S.rv && S.rv.surv) tickOwn(S, dt, S.rv.surv.t, S.rv.surv.downs);
 		const sa = S.cap ? S.cap.sa.map((a) => a.dex).join(',') : ''; if (sa !== (S.saSent || '')) { S.saSent = sa; w.co.outbox.push(['xsa', sa]); }   // (its team, for the other screens)
 	}
