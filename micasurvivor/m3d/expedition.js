@@ -157,7 +157,7 @@ export function newRun(data, X, o = {}) {
 	if (o.perks && !w.guest) applyPerks(S, o.perks);   // (the upgrades bought for this Pokémon's family: expperks.js)
 	if (own) { setupLevels(S, X.L, lv); S.syncPerks = () => syncPerks(S); }
 	if (S.up) perkTools(S);
-	if (league) setupLeague(S, member, o.form | 0);   // (form: a later stage of the family to start as)
+	if (league) { setupLeague(S, member, o.form | 0); S.lg.shiny = !!o.shiny; }   // (shiny: a shiny of this family is yours, so it plays shiny: its look only)   // (form: a later stage of the family to start as)
 	if (S.surv) setupSurv(S);
 	if (X.R && o.rx !== false) setupRx(S);   // (the elemental reactions and the weather's boosts: exprx.js)
 	if (X.Uu && o.ult !== false) setupUlt(S, { walk: walkable, auto: !!o.ultAuto });   // (the Ultimates: expult.js)

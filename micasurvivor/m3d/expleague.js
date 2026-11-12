@@ -16,7 +16,6 @@
 //
 // The regional formes are stages of their species' families (the 2D game's js/systems/forms.js patches the League's data).
 // The family's upgrades (expperks.js): the TM's move in place of the kit's first, Repertoire's second move from level 1.
-// Not here yet: a shiny's look.
 import { tuneFor } from './sim.js';
 import { say } from './expedition.js';
 import { canFire } from './combat.js';

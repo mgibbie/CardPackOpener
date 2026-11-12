@@ -1462,6 +1462,25 @@ too (`m3d/expperks.js`).
 Tests: `micasurvivor_m3d_expperks_test.mjs` 36 checks in node, against the 2D game's own table and families;
 `micasurvivor_m3d_perks_page_test.mjs` 7 in a browser.
 
+## 5.50 Going live, tenth part: built (2026-11-12). Shinies look like shinies.
+
+A wild shiny was a shiny by its rules (it wanders, it flees, it can be caught) but was drawn in its plain colours,
+and your own shiny League member was drawn plain too.
+
+- **A wild shiny** is drawn from its shiny sheet (the 2D game's own art, for every species that has one), with
+  three sparkles circling it. While its sheet loads it is drawn plain; so is a species with no shiny sheet.
+  Fainted and waiting for its ball, it keeps its colours.
+- **Your League member** plays shiny when a shiny of its family is yours: caught in an Expedition (the 2D game's
+  rule), or the shiny one you chose to play as in the 2D game. It stays shiny through its evolutions. Its look
+  only: the fight is the same to the last number. A practice run is never shiny.
+- **Watching.** A frame marks a shiny enemy, and the run's row says whether the player is shiny: a watcher sees
+  both.
+
+Not drawn shiny: a Mega (it is one battle sprite; the 2D game has no shiny art for most).
+
+Tests: `micasurvivor_m3d_expshiny_test.mjs` 7 checks in node; `micasurvivor_m3d_shiny_page_test.mjs` 10 in a
+browser (the shiny sheet is another picture than the plain one, and each is used for the right enemy).
+
 ## 6. Dive in 2D: built
 
 **D0 — find the stairs (small; can ship first, on its own).** *Built 2026-11-11 (`overworld/tests/micasurvivor_dive_stairs_test.mjs`). As built: the stairs took their own orange mark, so the rocks and Meowth keep their gold; the HUD arrow comes up after 25 s on a floor, or at once when its boss falls.*
