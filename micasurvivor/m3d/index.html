@@ -2,10 +2,12 @@
 <html lang="en">
 <head>
 	<meta charset="UTF-8">
-	<title>MicaSurvivor 3D — test room</title>
+	<title>MicaSurvivor · Expedition</title>
 	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-	<!-- a test room (Plans/MICASURVIVOR_3D_PLAN.md, phase P0), not a page for the public: keep it out of search -->
-	<meta name="robots" content="noindex">
+	<!-- MicaSurvivor's Expedition, in 3D: reached from the game's Play flow, which gives it the run to play (who, where,
+	     which tier). The game's own page is the one to find it by. -->
+	<meta name="description" content="MicaSurvivor's Expedition: explore, fight and catch in 3D with your League Pokémon.">
+	<link rel="canonical" href="https://www.michaelgibalerio.com/micasurvivor/">
 	<link rel="icon" href="../favicon.ico">
 	<style>
 		html, body { margin: 0; height: 100%; overflow: hidden; background: #9fc4e8; font: 13px/1.35 ui-monospace, Menlo, Consolas, monospace; color: #fff; touch-action: none; user-select: none; -webkit-user-select: none; }
@@ -48,8 +50,8 @@
 	<div id="help">Move WASD / arrows · Jump Space (again in the air) · Slide Shift while running (hold it as you land to break a fall) · Camera: drag, or Q / E · R: back to the start · ?dex=6 plays another species · ?gen=1 a generated level (&amp;biome=peaks / marsh) · &amp;fight=1 a fight on it · &amp;host=me shows it to a tab opened with ?watch=me, and lets one opened with ?join=me&amp;dex=4 play in it · ?exp=1 an Expedition run as ?dex's League member (&amp;map=viridian / mtmoon / cerulean, &amp;diff=normal / hard / nightmare, &amp;mode=survival)</div>
 	<button class="btn" id="b-slide">SLIDE</button>
 	<button class="btn" id="b-jump">JUMP</button>
-	<div id="boot">MicaSurvivor 3D test room…</div>
-	<noscript><p style="padding:20px">This test room needs JavaScript.</p></noscript>
+	<div id="boot">Loading the Expedition…</div>
+	<noscript><p style="padding:20px">MicaSurvivor needs JavaScript.</p></noscript>
 	<!-- the sprites' geometry, as the 2D game reads it (a plain script that fills G.SPRITE_META) -->
 	<script>window.G = {};</script>
 	<!-- (P3) the 2D game's helpers and data, as the fight reads them: its moves, type chart and enemy tiers -->

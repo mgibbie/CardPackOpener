@@ -1481,6 +1481,30 @@ Not drawn shiny: a Mega (it is one battle sprite; the 2D game has no shiny art f
 Tests: `micasurvivor_m3d_expshiny_test.mjs` 7 checks in node; `micasurvivor_m3d_shiny_page_test.mjs` 10 in a
 browser (the shiny sheet is another picture than the plain one, and each is used for the right enemy).
 
+## 5.51 Go-live: written (2026-11-12), merged on the owner's word after the tuning pass.
+
+The swap itself. It is small because everything before it was built behind the switch.
+
+- **START gives the 3D run.** In the Play flow, Expedition (Classic or Survival), playing alone, opens the 3D
+  page with your League member, map and tier. No switch is asked for: nothing stored means 3D.
+- **The 2D Expedition is archived, not deleted.** All of its code stays. `/micasurvivor/?exp3d=0` goes back to
+  it on that browser (`?exp3d=1` returns to 3D).
+- **What still runs in 2D**: local play (2 to 4 on one device) and online lobbies of Expedition, because the 3D
+  one has neither; and Dive, which is not built in 3D yet. A browser that cannot draw the 3D page (no WebGL 2)
+  keeps the 2D run without being asked.
+- **The 3D page is the game's page now**: its own title ("MicaSurvivor · Expedition"), no longer hidden from
+  search, and it names `/micasurvivor/` as the page to find it by.
+
+Open for the owner (none blocks the swap):
+- Local and online Expedition stay 2D. Leave them so, or take Expedition out of those two until 3D has them?
+- The 2D game's ranking screen still shows the 2D Expedition boards; the 3D boards are in the 3D page's menu.
+  Point the 2D screen at the 3D boards, or show both?
+- Old 2D Expedition replays still play in the 2D game (its code is all there). The decision was to refuse
+  them once 3D is live: say the word and the 2D game turns them away.
+
+Tests: `micasurvivor_playflow_test.mjs` 171 checks (was 168): 3D by default, local play 2D, `?exp3d=0` and back,
+no WebGL 2, the page's title and tags. Its sections that pin the 2D runs use the archive switch.
+
 ## 6. Dive in 2D: built
 
 **D0 — find the stairs (small; can ship first, on its own).** *Built 2026-11-11 (`overworld/tests/micasurvivor_dive_stairs_test.mjs`). As built: the stairs took their own orange mark, so the rocks and Meowth keep their gold; the HUD arrow comes up after 25 s on a floor, or at once when its boss falls.*
