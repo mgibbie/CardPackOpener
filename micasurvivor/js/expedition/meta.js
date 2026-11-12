@@ -444,7 +444,7 @@ G.ExpMeta = (() => {
     if (!Sv() || !Sv().data || !G.Expedition || !G.Expedition.wallet || !(G.DB && G.DB.save)) return 0;
     const d = dev(), n = Sv().get('m3d.n.' + d);
     if (!(n > Sv().get('m3d.seen.' + d))) return 0;
-    if (G.Unlocks) G.Unlocks.add(Sv().list('league.form').map(Number), 'expedition');
+    if (G.Unlocks) G.Unlocks.add(Sv().list('league.form').concat(Sv().list('league.own')).map(Number), 'expedition');   // (the forms evolved into, the members caught)
     const owed = Sv().get('pay3d.' + d) - Sv().get('pay3d.claimed.' + d);
     const got = owed > 0 ? credit(owed) : 0;
     if (got) { Sv().bump('pay3d.claimed.' + d, got); Sv().bump('pay.total', got); }

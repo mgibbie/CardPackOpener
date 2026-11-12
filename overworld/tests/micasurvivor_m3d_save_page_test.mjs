@@ -4,6 +4,8 @@
 //   * a member the save does not have: its end says so, and nothing is written
 //   * a fair run of over a minute: the Expedition save holds it with the 2D game's keys, its pay is owed to this
 //     browser, and its end says "Saved"
+//   * a wild League member (met, not caught, in this browser's save) comes into the run; caught, it is saved at once
+//     and does not come again
 //   * the base save (your Pokémonedas, your collection) is never created or written by the 3D page
 //   node overworld/tests/micasurvivor_m3d_save_page_test.mjs      (SHOTS=<dir> for screenshots; it plays 65 s)
 import http from 'http';
@@ -11,6 +13,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import puppeteer from 'puppeteer-core';
+import { loadG } from './m3d_data.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '../../');
@@ -73,12 +76,37 @@ try {
 	const s3 = await store(), x = expSave(s3), c = (x && x.counters) || {}, sets = (x && x.sets) || {}, dev = s3['micasurvivorexp_dev.guest'];
 	const res = await page.evaluate(() => { const m = window.__m3d, v = m.runView().over; return { rows: v.rows, t: m.world.t, lv: m.world.pl.level }; });
 	const pay = +String((res.rows.find((r) => r[0] === 'Pay') || [])[1]).replace(/\D/g, '');
-	A(ok3 && prac === null && ended3 && k3.kept.ok === true && k3.ok && /^Saved\. ₽ \d+ will be in your wallet when you next open the Expedition\.$/.test(k3.text) && pay > 0 && k3.kept.pay === pay, `a fair run of ${Math.floor(res.t)} s: its end says "Saved" and what it paid (₽ ${pay})`, { k3, res });
+	A(ok3 && prac === null && ended3 && k3.kept.ok === true && k3.ok && /^Saved\. ₽ \d+ will be in your wallet when you next open the Expedition\.( New in the wild: .+\.)?$/.test(k3.text) && pay > 0 && k3.kept.pay === pay, `a fair run of ${Math.floor(res.t)} s: its end says "Saved" and what it paid (₽ ${pay})`, { k3, res });
 	A(x && x.v === 1 && c.runs === 1 && c['runs.exp-classic'] === 1 && c['best.time.viridian.normal'] === Math.floor(res.t) && c['zone.viridian.normal'] === 1 && c['lg.runs.4'] === 1 && c['lg.best.4'] === res.lv && (sets['league.played'] || []).includes('4') && (sets['league.form'] || []).includes('4') && !c['wins.viridian.normal'], 'the Expedition save in this browser holds it, with the 2D game\'s keys (the run, its time, its zone, the League\'s)', c);
 	A(/^[a-z0-9]{4,12}$/.test(dev || '') && c['m3d.n.' + dev] === 1 && c['pay3d.' + dev] === pay && !c['pay3d.claimed.' + dev] && !c['pay.coins'], 'its pay is owed to this browser (the 2D game pays it into the wallet), not paid here', { dev, c });
 	A(!Object.keys(s3).some((k) => /^micasurvivor_(save|session|rev|backup|accounts|dev)/.test(k)), 'the base save (your Pokémonedas, your collection) was never created or written by the 3D page', Object.keys(s3));
 	A(!calls.some((q) => /POST/.test(q)), 'a guest asks nothing of the server (no score is posted)', calls);
 	await shot('m3d_save_end.png');
+
+	// ---- a wild League member: met and wild in this browser's save
+	const G0 = loadG(), WM = Object.values(G0.ExpLeague.BY).find((m) => m.rank === 'common' && m.ch && G0.DEX_BY[m.dex] && G0.SPRITE_META[m.dex] && G0.SPRITE_META[m.dex].a && G0.SPRITE_META[m.dex].a.Walk).dex, wname = G0.DEX_BY[WM].name;
+	await page.evaluate((d) => { const k = 'micasurvivorexp_save.guest', s = JSON.parse(localStorage.getItem(k)); s.sets['league.met'] = [String(d)]; s.sets['league.wild'] = [String(d)]; localStorage.setItem(k, JSON.stringify(s)); }, WM);
+	const ok4 = await boot('exp=9&map=viridian&dex=4');
+	const w0 = await page.evaluate(() => { const m = window.__m3d; return { wild: m.wild, pend: m.run.cap.pend, at: m.run.cap.zplan ? m.run.cap.zplan.league && m.run.cap.zplan.league.at : null }; });
+	await hush();
+	await waitFor(() => page.evaluate(() => !!window.__m3d.run.cap.zplan), 3000);
+	await page.evaluate(() => { const m = window.__m3d; m.setZoneTime(m.run.cap.zplan.league.at); });
+	const came = await waitFor(() => page.evaluate(() => window.__m3d.world.enemies.some((e) => e.xk === 'league')), 5000);
+	A(ok4 && w0.wild.join() === String(WM) && w0.pend.join() === String(WM) && came && await page.evaluate((n) => window.__m3d.noteLog.includes(`A wild ${n} appeared!`), wname), `the save's wild member comes into the run: a wild ${wname} appeared`, w0);
+	await page.evaluate(() => { const m = window.__m3d, e = m.world.enemies.find((q) => q.xk === 'league'); e.dummy = true; m.world.hit(e, 1e12, 0, 0, 0); });
+	await waitFor(() => page.evaluate(() => window.__m3d.run.cap.faint.length === 1), 3000);
+	await page.evaluate(() => { const m = window.__m3d, f = m.run.cap.faint[0]; m.put(f.x + 1, f.z); });
+	// (its XP can bring a level: its cards are picked as a player would, and the catch goes on)
+	const caught = await waitFor(async () => { if (await page.evaluate(() => !!window.__m3d.world.pl.choices && !!document.querySelector('#cards button[data-i="0"]'))) await page.click('#cards button[data-i="0"]'); return page.evaluate(() => window.__m3d.run.cap.log.league.length === 1 && !window.__m3d.run.cap.cine); }, 15000);
+	await sleep(300);
+	const s4 = await store(), x4 = expSave(s4);
+	A(caught && x4 && (x4.sets['league.own'] || []).includes(String(WM)) && x4.counters['cap.league'] === 1 && await page.evaluate((n) => window.__m3d.noteLog.includes(`Gotcha! ${n} joins the League`), wname), `fainted and caught: ${wname} joins the League, and the save has it at once (the run is not over)`, x4 && x4.sets);
+	A(!Object.keys(s4).some((k) => /^micasurvivor_(save|session|rev|backup|accounts|dev)/.test(k)), 'still without touching the base save');
+	await shot('m3d_save_wild.png');
+	const ok5 = await boot('exp=10&map=viridian&dex=' + WM);
+	const w1 = await page.evaluate(() => ({ wild: window.__m3d.wild, member: window.__m3d.run.lg.member }));
+	await hush(); const ended5 = await die(), k5 = await keptLine();
+	A(ok5 && w1.wild.length === 0 && w1.member === WM && ended5 && k5.kept.ok === true, `the next run: it is not wild any more, and a run played as ${wname} is kept`, { w1, k5 });
 	A(errors.length === 0, 'no page errors', errors.slice(0, 5).join(' | '));
 } catch (e) {
 	fail++; console.log('FAIL: crashed: ' + (e && e.stack || e));

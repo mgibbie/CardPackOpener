@@ -1143,6 +1143,32 @@ Tests: `micasurvivor_m3d_expsave_test.mjs` (24 checks, node, against the 2D game
 meta.js), `micasurvivor_m3d_save_page_test.mjs` (9 checks, a real browser, a 65 s run), `micasurvivor_server_test
 .mjs` 161 checks (was 150: the 3D boards).
 
+## 5.35 The shipping path, fifth part: built (2026-11-12). Wild League members. P4's rules are complete.
+
+The last of P4's rules, which had to wait for the save. The 2D game's rule and numbers
+(`js/expedition/capture.js`, `league.js`):
+
+- **Becoming wild.** After a kept run, every member whose challenge is now complete is met, and wild until
+  caught (`expsave.js newlyMet`). The run's end names them ("New in the wild: …").
+- **Coming into a run.** Up to five of the save's wild members wait for a run, in an order of its seed
+  (`wildOf`; the page opens the save before it makes the run). Zones 1 to 3 bring the first three at 50-120 s;
+  zones 1 and 2 bring the other two at 150-230 s. "A wild X appeared!": bigger, 9 times the HP of its kind
+  times its rank (a legendary: 5 times that), and it fights back.
+- **Catching.** It flees after 150 s (a legendary: 240 s). Beaten, it faints with a 12 s window; a Poké Ball
+  as for a shiny. Caught, it is a member of your League from that moment: saved at once, whatever the run's
+  end (`league.own`, `cap.league`), and its species joins the collection at the 2D game's next claim.
+- What you have counts the base collection too (read, never written), as in 2D: a member there is not wild.
+
+Fixed on the way: what the ball says as its shakes end ("caught") was wiped by the hold of that very step, so
+the page never heard of a catch (the alpha's and the shiny's were drawn from the cinematic instead). The new
+node check of the catch's event fails without the fix.
+
+Not here: the Master Ball, a co-op guest catching the host's wild member, keeping a caught shiny.
+
+Tests: `micasurvivor_m3d_expcap_test.mjs` 54 checks (was 43), `micasurvivor_m3d_expsave_test.mjs` 31 (was 24),
+`micasurvivor_m3d_save_page_test.mjs` 13 (was 9: a wild member comes, is caught, is saved at once, and is not
+wild in the next run).
+
 ## 6. Dive in 2D: built
 
 **D0 — find the stairs (small; can ship first, on its own).** *Built 2026-11-11 (`overworld/tests/micasurvivor_dive_stairs_test.mjs`). As built: the stairs took their own orange mark, so the rocks and Meowth keep their gold; the HUD arrow comes up after 25 s on a floor, or at once when its boss falls.*

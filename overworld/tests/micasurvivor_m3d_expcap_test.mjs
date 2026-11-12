@@ -7,6 +7,8 @@
 //     is a Support Alpha: it follows you, shoots the nearest enemy every 1.25 s, and its type gives a perk (they add)
 //   * with two already: which one to swap, or keep your team and take the prize
 //   * your team comes through the portal with you
+//   * a wild League member (newRun's `wild`): up to five a run, zones 1-3 at 50-120 s and zones 1-2 again at 150-230 s;
+//     it fights back, flees after 150 s (a legendary: 240 s), faints with a 12 s window, and caught it joins the League
 //   * a shiny: the 2D game's odds; it wanders near you, never attacks, flees after two minutes; caught the same way
 //   * a catch counts in the run's score
 //   node overworld/tests/micasurvivor_m3d_expcap_test.mjs
@@ -156,6 +158,35 @@ const catchOne = (S, dex) => { alpha(S, dex, true); const f = S.cap.faint[S.cap.
 	A(!S.cap && e.dead && !e.hpFloor && S.w.pickups.some((p) => p.kind === 'item') && S.w.pickups.some((p) => p.kind === 'heal'), 'a run asked for without capture: an alpha simply falls and leaves its prize');
 	const R = run(); recruit(R, 25, null, null);
 	A(R.cap.sa.length === 1 && near(total(R, 'atkspd'), 0.08), 'an Electric Support Alpha: + 8 % attack speed');
+}
+
+// ---------------------------------------------------------------- a wild League member
+{
+	const LG = X.G, by = (rank) => Object.values(LG.BY).filter((m) => m.rank === rank && m.ch && data.mon(m.dex)).map((m) => m.dex);
+	const com = by('common'), leg = by('legendary'), wild = [com[0], com[1], leg[0], com[2], com[3], com[4]];
+	A(K.PER_RUN === 5 && K.LG_AT.join() === '50,120' && K.LG_AT2.join() === '150,230' && K.LG_FLEE === 150 && K.LG_FLEE_LEG === 240 && K.LG_WINDOW === 12 && K.LG_HP === 9 && K.LG_SCALE === 1.3, 'the numbers are the 2D game\'s: five a run, when they come, when they flee, the window');
+	const S = run({ wild }), P = S.cap.zplan;
+	A(S.cap.pend.join() === wild.slice(0, 5).join() && P.league && P.league.member === wild[0] && P.league.at >= 50 && P.league.at <= 120 && P.league2 && P.league2.member === wild[3] && P.league2.at >= 150 && P.league2.at <= 230, `five of the six wait for this run; zone 1 brings the 1st at ${P.league && P.league.at} s and the 4th at ${P.league2 && P.league2.at} s`);
+	setZoneTime(S, P.league.at - 0.5); steps(S, 0.3); A(!S.w.enemies.some((e) => e.xk === 'league'), 'not before its time');
+	const t1 = steps(S, 0.4), e = S.w.enemies.find((q) => q.xk === 'league');
+	const plain = (() => { const T = run(); setZoneTime(T, P.league.at); steps(T, 0.02); return spawn(T, wild[0], T.w.pl.s.x + 20, T.w.pl.s.z, { ti: 1 }); })();
+	A(e && e.dex === wild[0] && e.hpFloor === 1 && e.scale === K.LG_SCALE && near(e.maxHp / plain.maxHp, K.LG_HP * K.LG_RANK.common, 0.03) && !e.dummy && S.cap.tg.get(e.id).member === wild[0] && S.cap.tg.get(e.id).flee === K.LG_FLEE && t1.some((q) => q === `A wild ${data.mon(wild[0]).name} appeared!`), `then: a wild ${data.mon(wild[0]).name}, bigger, ${(K.LG_HP * K.LG_RANK.common).toFixed(1)} times the HP of its kind, and it fights back`, t1);
+	e.dummy = true; S.w.hit(e, 1e12, 0, 0, 0); const t2 = steps(S, 0.05), f = S.cap.faint[0];
+	A(e.dead && f && f.kind === 'league' && f.member === wild[0] && near(capView(S).faint[0].left, K.LG_WINDOW, 0.02) && t2.some((q) => /faints! Stand beside it to throw a Poké Ball/.test(q)), `beaten, it faints: a ${K.LG_WINDOW} s window`);
+	beside(S, f); steps(S, K.THROW_T + 0.05);
+	const cine = S.cap.cine, ev = []; for (let i = 0; i < Math.round((X.C.CINE_T + 0.2) * 60); i++) { calm(S); stepRun(S, null); ev.push(...S.w.events.filter((q) => q.k === 'caught')); }
+	A(cine && cine.kind === 'league' && ev.length === 1 && ev[0].kind === 'league' && ev[0].member === wild[0] && ev[0].dex === wild[0] && S.cap.log.league.join() === String(wild[0]) && S.cap.sa.length === 0 && result(S).parts.catches === 1, 'a Poké Ball: it joins the League (the run says which member, for the save), and counts as a catch');
+	setZoneTime(S, P.league2.at); const t3 = steps(S, 0.1), e2 = S.w.enemies.find((q) => q.xk === 'league' && !q.dead);
+	A(e2 && e2.dex === wild[3] && t3.some((q) => /A wild .* appeared!/.test(q)), `later in the zone, the 4th: a wild ${data.mon(wild[3]).name}`);
+	e2.dummy = true; const t4 = steps(S, K.LG_FLEE + 0.5);
+	A(e2.dead && !S.cap.tg.has(e2.id) && S.cap.log.league.length === 1 && S.cap.log.fled === 1 && t4.some((q) => /fled! It will be back in another run/.test(q)), `left alone for ${K.LG_FLEE} s, it flees (and waits for another run)`);
+	// a legendary, and the window running out
+	const Z = run({ wild: [leg[0]] }); setZoneTime(Z, Z.cap.zplan.league.at); steps(Z, 0.1); const el = Z.w.enemies.find((q) => q.xk === 'league');
+	A(el && Z.cap.tg.get(el.id).flee === K.LG_FLEE_LEG && near(el.maxHp / plain.maxHp * (data.defFor(wild[0], 1).hp / data.defFor(leg[0], 1).hp), K.LG_HP * K.LG_RANK.legendary, 0.6) && Z.cap.zplan.league2 === null, `a legendary (${data.mon(leg[0]).name}) is far tougher and stays ${K.LG_FLEE_LEG} s`);
+	el.dummy = true; Z.w.hit(el, 1e12, 0, 0, 0); const t5 = steps(Z, K.LG_WINDOW + 0.3);
+	A(Z.cap.faint.length === 0 && Z.cap.log.league.length === 0 && t5.some((q) => /got away! It will be back in another run/.test(q)), 'the window runs out: it got away, and nothing is caught');
+	const N = run(); setZoneTime(N, 125); steps(N, 0.2);
+	A(N.cap.pend.length === 0 && N.cap.zplan.league === null && !N.w.enemies.some((q) => q.xk === 'league'), 'a run with no one waiting has no wild League member');
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);

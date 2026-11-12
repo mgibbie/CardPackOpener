@@ -10,11 +10,14 @@
 //     the forms a run evolved into join the collection
 //   * no profile yet: nothing is paid and nothing is lost (it waits)
 //   * the mark for the 3D boards
+//   * wild League members: a challenge done after a kept run makes its member wild; up to five wait for a run, in an
+//     order of the run's seed; a catch is saved at once and is then yours (and joins the collection at the claim)
 //   node overworld/tests/micasurvivor_m3d_expsave_test.mjs
 import { dataFrom, gainXp } from '../../micasurvivor/m3d/combat.js';
 import { expFrom, newRun, stepRun, result } from '../../micasurvivor/m3d/expedition.js';
 import { megaEvolve } from '../../micasurvivor/m3d/expleague.js';
-import { SV, unfair, clean, deviceId, missing, runSum, recordOps, applyOps, scoreBody, WHY } from '../../micasurvivor/m3d/expsave.js';
+import { SV, unfair, clean, deviceId, missing, runSum, recordOps, applyOps, scoreBody, WHY, hasMember, wildOf, catchOps, newlyMet } from '../../micasurvivor/m3d/expsave.js';
+import { rng as seedRng } from '../../micasurvivor/m3d/gen.js';
 import { loadG } from './m3d_data.mjs';
 
 let pass = 0, fail = 0;
@@ -109,6 +112,29 @@ const dev = deviceId(ls, Sv.who, globalThis.crypto);
 	q.G.DB.save = { coins: 0, stats: {}, owned: {} };
 	const later = M2.claim3d();
 	A(none === 0 && Sv2.get('pay3d.' + d2) === res.pay.pay && later === res.pay.pay && q.G.DB.save.coins === res.pay.pay && M2.claim3d() === 0, 'no profile on this browser yet: nothing is paid and nothing is lost; with one, it is paid (once)');
+}
+
+// ---------------------------------------------------------------- wild League members
+{
+	const q = game(), G2 = q.G, Sv2 = G2.ExpSave, L2 = G2.ExpLeague, M2 = G2.ExpMeta; await Sv2.open();
+	const o = { L: L2, Sv: Sv2, base: null };
+	A(wildOf(7, { ...o, max: 5, rng: seedRng }).length === 0 && newlyMet(o).length === 0 && Sv2.list('league.met').length === 0, 'a new save: no one is wild, and no challenge is done');
+	// the counters of a few good runs: the challenges that read them are now complete
+	Sv2.bump('runs', 60); Sv2.bump('kos', 60000); Sv2.best('zone.viridian.normal', 4); Sv2.bump('wins.viridian.normal', 5); Sv2.bump('guardians', 40); for (const ty of ['fire', 'water', 'grass', 'normal', 'bug', 'flying']) Sv2.bump('ko.t.' + ty, 20000);
+	const want = L2.D.members.filter((m) => m.ch && !hasMember(m.dex, o) && L2.progress(m.ch).done).map((m) => m.dex);
+	const met = newlyMet(o);
+	A(want.length >= 6 && want.every((d) => met.includes(d)) && met.every((d) => Sv2.has('league.met', d) && Sv2.has('league.wild', d) && L2.wild(d)) && newlyMet(o).length === 0, `after those runs ${met.length} members' challenges are done: each is met, and wild until caught (the 2D game's own wild() says so); asked again, no one new`);
+	const w7 = wildOf(7, { ...o, max: 5, rng: seedRng }), w7b = wildOf(7, { ...o, max: 5, rng: seedRng }), w8 = wildOf(8, { ...o, max: 5, rng: seedRng });
+	A(w7.length === 5 && w7.every((d) => met.includes(d)) && new Set(w7).size === 5 && w7.join() === w7b.join() && w7.join() !== w8.join(), `five of them wait for a run, in an order of its seed (seed 7: ${w7.join(', ')})`);
+	const c = w7[0], ops = catchOps(c);
+	A(ops.length === 2 && ops[0].join() === 'add,league.own,' + c && ops[1].join() === 'bump,cap.league,1', 'a catch: the member is yours, in the 2D game\'s keys');
+	applyOps(Sv2, ops);
+	A(hasMember(c, o) && L2.own(c) && !L2.wild(c) && !wildOf(7, { ...o, max: 5, rng: seedRng }).includes(c) && !wildOf(8, { ...o, max: 99, rng: seedRng }).includes(c) && missing({ lg: { member: c }, map: 'viridian', diff: 'normal' }, { ...o, T: G2.ExpTier }) === null, 'saved: it is yours (the 2D game\'s own() says so), it is wild no more, and a run as it is kept');
+	const inBase = met.find((d) => d !== c);
+	A(!wildOf(7, { ...o, base: { owned: { [inBase]: { at: 1 } } }, max: 99, rng: seedRng }).includes(inBase), 'one that is in the base collection does not come as wild');
+	// the collection: at the 2D game's claim
+	const d2 = deviceId(q.ls, Sv2.who, globalThis.crypto); Sv2.bump('m3d.n.' + d2); M2.claim3d();
+	A(q.unlocked.includes(c), 'at the 2D game\'s next claim the member caught joins the collection', q.unlocked);
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);

@@ -14,7 +14,8 @@ import { frame as netFrame, keepEvents, diff as netDiff, bundle, unbundle, Viewe
 import { hostAdd, hostStep, hostFrame, hostApply, guestWorld, guestSync, guestMsg, guestApply } from './coop.js';
 import { generate, BIOMES } from './gen.js';
 import { mountRunUi, pretty } from './runui.js';
-import { unfair, clean as cleanRun, deviceId, missing as saveMissing, runSum, recordOps, applyOps, scoreBody, WHY, SV } from './expsave.js';
+import { unfair, clean as cleanRun, deviceId, missing as saveMissing, runSum, recordOps, applyOps, scoreBody, WHY, SV, wildOf, catchOps, newlyMet } from './expsave.js';
+import { rng as seedRng } from './gen.js';
 import { startInput } from '/site/input.js';
 import { createFocusNav } from '/site/focusnav.js';
 import { expFrom, newRun, stepRun, hudLine, result as runResult, setZoneTime, fire as fireEvent, zoneRoom } from './expedition.js';
@@ -60,7 +61,13 @@ const MOVES = !FIGHT ? [] : Q.get('moves') ? Q.get('moves').split(',').map((m) =
 	: [[GG.Moves.startFor(SPECIES), 3], ['tackle', 2]].filter((m, i, a) => a.findIndex((q) => q[0] === m[0]) === i);
 // (P3) bosses arrive at the 2D game's times (3:00, 6:00, …): ?bosses=143,130; ?boss=143 puts one in at the start
 const BOSSES = (Q.get('bosses') ? Q.get('bosses').split(',').map(Number) : [143, 130, 149, 6, 150]).filter((d) => META[d] && META[d].a && META[d].a.Walk && !META[d].src);
-const run = EXP ? newRun(dataFrom(GG), XF, { seed: GEN, map: Q.get('map'), diff: Q.get('diff'), mode: Q.get('mode') || undefined, dex: DEX, moves: MOVES, tune: TUNE, touch: matchMedia('(pointer: coarse)').matches, league: !Q.has('moves') && Q.get('league') !== '0', ability: Q.get('ability') === '0' ? null : Q.get('ability') || 'auto', items: Q.get('items') ? Q.get('items').split(',') : [], weather: Q.get('weather') === '0' ? false : undefined, autoPick: Q.has('auto') ? +Q.get('auto') | 0 : undefined }) : null;
+// (the shipping path) The Expedition save is opened before the run is made: a fair run brings the wild League members
+// waiting in it (expsave.js). A practice run (any test parameter) reads and writes nothing.
+const PRACTICE = EXP ? unfair([...Q.entries()]) : null;
+const SAVE_OK = EXP && !PRACTICE && !!GG.ExpSave && await GG.ExpSave.open().then(() => !!GG.ExpSave.data, () => false);
+const baseSave = () => { try { return JSON.parse(localStorage.getItem('micasurvivor_save.' + (GG.ExpSave.who || 'guest')) || 'null'); } catch (e) { return null; } };   // (read, never written: the collection decides what you have)
+const WILD = SAVE_OK && GG.ExpLeague && GG.ExpCap ? wildOf(GEN, { L: GG.ExpLeague, Sv: GG.ExpSave, base: baseSave(), max: GG.ExpCap.K.PER_RUN, rng: seedRng }) : [];
+const run = EXP ? newRun(dataFrom(GG), XF, { wild: WILD, seed: GEN, map: Q.get('map'), diff: Q.get('diff'), mode: Q.get('mode') || undefined, dex: DEX, moves: MOVES, tune: TUNE, touch: matchMedia('(pointer: coarse)').matches, league: !Q.has('moves') && Q.get('league') !== '0', ability: Q.get('ability') === '0' ? null : Q.get('ability') || 'auto', items: Q.get('items') ? Q.get('items').split(',') : [], weather: Q.get('weather') === '0' ? false : undefined, autoPick: Q.has('auto') ? +Q.get('auto') | 0 : undefined }) : null;
 if (run) room = run.w.room;
 // (P4) a guest in a run: its own League member in the host's run (expcoop.js); it builds each zone from the run's row
 const grun = XJ ? guestRun(dataFrom(GG), XF, { seed: XJ.seed, map: XJ.map, diff: XJ.diff, id: MYID, dex: DEX, league: !Q.has('moves'), moves: MOVES, tune: TUNE, ability: Q.get('ability') === '0' ? null : Q.get('ability') || undefined, autoPick: Q.has('auto') ? +Q.get('auto') | 0 : undefined }) : null;
@@ -402,6 +409,7 @@ function showMap() {
 /** (P3) What this tick of the fight did, as things to see. */
 function fightEvents(events) {
 	const col = (id) => TYPE_COLOR[(GG.Moves.BY_ID[id] || (GG.ExpMoves && GG.ExpMoves.MOVES[id]) || {}).type];
+	for (const ev of events) if (ev.k === 'caught' && ev.kind === 'league' && run) keepCatch(ev.member || ev.dex);   // (a wild League member: saved at once)
 	for (const ev of events) {
 		if (ev.k === 'mark') { flashes.arc(ev.x, ev.y, ev.z, ev.r, 0, 6.2832, TYPE_COLOR[typeName(ev.type)], ev.life, ev.inner); continue; }   // (watching: something was put down)
 		if (ev.k === 'melee') flashes.arc(state.x, state.y, state.z, ev.r, ev.aim, Math.min(ev.arc, 6.2832), col(ev.id));
@@ -649,23 +657,27 @@ window.mpLeaveGuard = () => (myRun && !runOver ? { state: 'confirm', message: 'L
 // ---------------------------------------------------------------- what a run leaves behind (the shipping path, part 4)
 // expsave.js: a fair, clean run of your own is written into the Expedition save (its pay as owed: the 2D game pays
 // it into the wallet) and, signed in and alone, posted to the 3D boards. `kept` is what the run's end says of it.
-const PRACTICE = run ? unfair([...Q.entries()]) : null, runBegan = performance.now();
-const saveOpen = run && !PRACTICE && GG.ExpSave ? GG.ExpSave.open().then(() => true, () => false) : null;
+const runBegan = performance.now();
 let kept = null, coopSeen = false;
+/** A wild League member caught: a member of your League from this moment (as in the 2D game, whatever the run's end). */
+function keepCatch(member) {
+	if (!run || PRACTICE || !SAVE_OK || !member || !cleanRun(run, (performance.now() - runBegan) / 1000)) return false;
+	applyOps(GG.ExpSave, catchOps(member)); return true;
+}
 async function keepRun(res) {
 	const say = (ok, text, extra) => { kept = { ok, text, ...extra }; if (RUNUI) RUNUI.update(runView()); return kept; };
 	if (PRACTICE) return say(false, WHY.practice, { why: 'practice', param: PRACTICE });
 	try {
 		const Sv = GG.ExpSave, real = (performance.now() - runBegan) / 1000, fine = cleanRun(run, real);
-		if (!saveOpen || !(await saveOpen) || !Sv.data) return say(false, WHY.nosave, { why: 'nosave' });
+		if (!SAVE_OK || !Sv.data) return say(false, WHY.nosave, { why: 'nosave' });
 		if (!fine) return say(false, WHY.unclean, { why: 'unclean' });
-		let base = null; try { base = JSON.parse(localStorage.getItem('micasurvivor_save.' + (Sv.who || 'guest')) || 'null'); } catch (e) { /* no base save here: the Expedition save alone decides */ }
-		const miss = saveMissing(run, { L: GG.ExpLeague, T: GG.ExpTier, Sv, base });
+		const miss = saveMissing(run, { L: GG.ExpLeague, T: GG.ExpTier, Sv, base: baseSave() });
 		if (miss) return say(false, WHY[miss], { why: miss });
 		const dev = deviceId(localStorage, Sv.who, crypto), ops = recordOps(run, res, { T: GG.ExpTier, dev });
 		applyOps(Sv, ops);
 		const pay = res.pay ? res.pay.pay : 0;
-		say(true, pay > 0 ? `Saved. ₽ ${pay} will be in your wallet when you next open the Expedition.` : 'Saved.', { ops: ops.length, pay });
+		const met = newlyMet({ L: GG.ExpLeague, Sv, base: baseSave() });   // (challenges now complete: those members are wild in your next runs)
+		say(true, (pay > 0 ? `Saved. ₽ ${pay} will be in your wallet when you next open the Expedition.` : 'Saved.') + (met.length ? ` New in the wild: ${met.slice(0, 3).map((d) => (GG.DEX_BY[d] || {}).name).join(', ')}${met.length > 3 ? ' and ' + (met.length - 3) + ' more' : ''}.` : ''), { ops: ops.length, pay, met });
 		const A = GG.MicaAccount;
 		if (A && A.name() && !coopSeen) {
 			const d = await A.call('run-score', scoreBody(runSum(run, res, SV.DV)));
@@ -724,6 +736,7 @@ function showHud() {
 
 // what a test (and a curious owner in the console) can reach
 window.__m3d = {
+	wild: WILD, saveOk: SAVE_OK, keepCatch,
 	get kept() { return kept; }, practice: PRACTICE,
 	acts, uiNav, siteInput,
 	setMenu, get paused() { return paused; },
