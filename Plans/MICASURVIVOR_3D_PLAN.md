@@ -1228,6 +1228,27 @@ Next: rails (splines to grind, placed by the level generator), then surfing a st
 
 Tests: `micasurvivor_m3d_sim_test.mjs` 65 checks (was 50).
 
+## 5.39 The movement tech, second part: built (2026-11-12). Rails.
+
+- **Grinding** (`sim.js`). A room may have rails (`room.rails`: lines through the air). Come down on one (within
+  0.75 m of it, not while still going up fast) and it carries you along it the way you were going: at least
+  8 m/s, up to 11 m/s by itself, faster downhill (19 m/s at most), slower uphill. A jump leaps off it with the
+  speed it gave you; a slide drops off it; at its end you fly off the way it points. Your air jumps are back
+  on a rail. A rail will not take you back for 0.35 s after you leave one.
+- **In every level** (`gen.js railsFor`). Each generated level gets rails (three on a 7 x 7-tile zone): from high
+  ground to lower (one to four levels down), 20 to 62 m long, each end half a metre over the floor, arched over
+  whatever is in the way (clearance checked every 20 cm). They come from a stream of their own, so the levels
+  themselves (their 50 pinned fingerprints) are as they were, and a watcher builds the same rails.
+- **Seen**: a steel bar with a post under each end; pale lines on the minimap. The test room has one, from the
+  plateau down to the floor.
+
+Not yet: enemies do not use rails; a rail has no sparks or sound.
+
+Next: surfing a steep slope under control.
+
+Tests: `micasurvivor_m3d_sim_test.mjs` 78 checks (was 65), `micasurvivor_m3d_gen_test.mjs` 38 (was 35: every
+rail of 30 levels is ridden from its top to the ground beyond its foot, never under the floor).
+
 ## 6. Dive in 2D: built
 
 **D0 — find the stairs (small; can ship first, on its own).** *Built 2026-11-11 (`overworld/tests/micasurvivor_dive_stairs_test.mjs`). As built: the stairs took their own orange mark, so the rocks and Meowth keep their gold; the HUD arrow comes up after 25 s on a floor, or at once when its boss falls.*

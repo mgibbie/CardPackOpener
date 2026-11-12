@@ -13,7 +13,7 @@
 //     really differ (marsh is wet and flat, peaks are high and icy); ?size= makes bigger and smaller levels
 //   node overworld/tests/micasurvivor_m3d_gen_test.mjs
 import { K, CELL, step, newState, noInput, groundAt, waterAt } from '../../micasurvivor/m3d/sim.js';
-import { generate, validate, footPath, hashRoom, BIOMES, TS, LEVEL } from '../../micasurvivor/m3d/gen.js';
+import { generate, validate, footPath, hashRoom, railsFor, BIOMES, TS, LEVEL } from '../../micasurvivor/m3d/gen.js';
 
 let pass = 0, fail = 0;
 const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else { fail++; console.log('FAIL: ' + m + (extra != null ? '\n      ' + String(typeof extra === 'string' ? extra : JSON.stringify(extra)).slice(0, 700) : '')); } };
@@ -162,6 +162,26 @@ function walk(room, to, limit = 60 * 240) {
 	const t0 = Date.now(); for (let s = 100; s < 150; s++) generate(s, 'peaks');
 	const ms = (Date.now() - t0) / 50;
 	A(ms < 60, `building a level is quick (${ms.toFixed(1)} ms each here, checked and all)`, ms);
+}
+
+// ---------------------------------------------------------------- rails
+{
+	const levels = SEEDS.slice(0, 30).map((s) => generate(s, NAMES[s % NAMES.length], { size: 7 })), all = levels.flatMap((r) => r.rails.map((q) => [r, q]));
+	const same = levels.every((r, i) => JSON.stringify(generate(SEEDS[i], NAMES[SEEDS[i] % NAMES.length], { size: 7 }).rails) === JSON.stringify(r.rails));
+	A(same && levels.every((r) => r.rails.length >= 1 && r.rails.length <= 4) && JSON.stringify(railsFor(levels[0], SEEDS[0])) === JSON.stringify(levels[0].rails) && railsFor(levels[0], SEEDS[0], 0).length === 0, `every level has its rails (${all.length} on 30 levels of 7 x 7 tiles), the same for the same seed`);
+	const near = (a, b, e = 0.02) => Math.abs(a - b) <= e;
+	const ends = all.every(([r, q]) => { const a = q.pts[0], b = q.pts[q.pts.length - 1], L = Math.hypot(a[0] - b[0], a[2] - b[2]); return near(a[1] - groundAt(r, a[0], a[2]), 0.5) && near(b[1] - groundAt(r, b[0], b[2]), 0.5) && a[1] - b[1] >= LEVEL - 0.01 && a[1] - b[1] <= 4 * LEVEL + 0.01 && L >= 19.9 && L <= 63; });
+	const clear = all.every(([r, q]) => q.pts.every((p, k) => k === 0 || k === q.pts.length - 1 || groundAt(r, p[0], p[2]) <= p[1] - 0.3));
+	A(ends && clear, 'a rail runs from high ground to lower (1 to 4 levels down, 20 to 62 m), each end half a metre over the floor, clear of the ground between');
+	// ridden: drop on to the top of each and let it carry you
+	let rode = 0, bad = [];
+	for (const [r, q] of all) {
+		const a = q.pts[0], b = q.pts[q.pts.length - 1], s = newState(r); s.x = a[0]; s.z = a[2]; s.y = a[1] + 0.4; s.grounded = false; s.facing = Math.atan2(b[0] - a[0], b[2] - a[2]);
+		let on = false, under = false, k = 0;
+		for (; k < 60 * 12; k++) { step(s, noInput(), r); if (s.rail >= 0) on = true; else if (on && s.grounded) break; if (s.y < groundAt(r, s.x, s.z) - 0.01) under = true; }
+		if (on && !under && s.grounded && Math.hypot(s.x - b[0], s.z - b[2]) < 16) rode++; else bad.push([r.seed, on, under, s.grounded, Math.round(Math.hypot(s.x - b[0], s.z - b[2]))]);
+	}
+	A(rode === all.length, `each is ridden from its top to the ground beyond its foot, never under the floor (${rode} of ${all.length})`, bad.slice(0, 5));
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);

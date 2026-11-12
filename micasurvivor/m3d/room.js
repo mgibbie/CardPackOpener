@@ -13,6 +13,7 @@
 //   │  PIT    2 m down, with a ramp out          │
 //   │  WALL   a 6 m block                        │
 //   │  P1: an ICE patch, a MUD patch, two BOUNCE pads, a POOL with a shallow way in
+//   │  A RAIL from the plateau's south edge down to the floor (jump on to it)
 //   └───────────────────────────────────────────┘
 import { CELL, makeRoom, setCell, idx } from './sim.js';
 
@@ -55,6 +56,9 @@ export function buildRoom() {
 	// a wall
 	box(5, 16, 6, 20, 6);
 	SPOTS.wallWest = at(3, 18);
+
+	// a rail: from just over the plateau's south edge, 18 m south and down to half a metre over the floor
+	{ const [x, z0] = at(10, 12), z1 = at(10, 21)[1], n = 6; r.rails = [{ pts: Array.from({ length: n + 1 }, (_, k) => [x, 3.5 - 3 * k / n, z0 + (z1 - z0) * k / n]) }]; SPOTS.railTop = [x, z0]; SPOTS.railFoot = [x, z1]; }
 
 	// ---- P1
 	const mat = (x0, z0, x1, z1, m) => { for (let z = z0; z <= z1; z++) for (let x = x0; x <= x1; x++) r.mats.set(idx(r, x, z), m); };

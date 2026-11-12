@@ -15,6 +15,9 @@
 //   * wall-running: in the air, going along a wall and leaning into it, the wall carries you (for a time; not if you only
 //     fall past it, hold away, or are slow); a jump off it kicks you away and up and costs no air jump; the same wall
 //     will not take you twice in one flight, but two facing walls can be climbed; the room's edge is no wall
+//   * rails: come down on one and you grind it, the way you were going (downhill faster, uphill never under the least);
+//     a jump leaps off it with your speed, a slide drops off it, its end throws you on; not caught going up through it,
+//     nor from too far to the side, nor at once after leaving one
 //   * sprites in 3D: which of a sheet's 8 facing rows the camera should see
 //   node overworld/tests/micasurvivor_m3d_sim_test.mjs
 import { K, CELL, step, newState, noInput, groundAt, normalAt, surfaceAt, stateName, facingRow, makeRoom, setCell, wallBeside, tuneFor } from '../../micasurvivor/m3d/sim.js';
@@ -247,6 +250,50 @@ const script = (seed, n) => { const r = rng(seed), out = []; let cur = noInput()
 	A(edge.wall === 0 && wallBeside(edge, makeRoom(40, 14, 0)) === null, 'the room\'s edge is not a wall to run on');
 	const off = leap(start(byWall, R, { ...K, WALLRUN: false }), LEAN, 0.3, R, { ...K, WALLRUN: false });
 	A(off.wall === 0, 'and with the tech off (WALLRUN: false) a jump is as it was');
+}
+
+// ---------------------------------------------------------------- rails
+{
+	// a flat hall with one rail through the air: from 4 m up at x = 20 down to 1 m at x = 60 (a drop of 3 m over 40 m), along z = 14
+	const RZ = 14, yAt = (x) => 4 - 3 * (x - 20) / 40;
+	const hall = () => { const r = makeRoom(50, 14, 0); r.rails = [{ pts: Array.from({ length: 11 }, (_, k) => [20 + 4 * k, yAt(20 + 4 * k), RZ]) }]; return r; };
+	const R = hall();
+	const go = (s, n, input) => { for (let i = 0; i < n; i++) step(s, typeof input === 'function' ? input(i, s) : input, R); return s; };
+	const over = (x, up, vx = 0, z = RZ) => { const s = newState(R); s.x = x; s.z = z; s.y = yAt(x) + up; s.vx = vx; s.grounded = false; s.airJumps = 0; return s; };
+	const onLine = (s) => Math.abs(s.z - RZ) < 1e-6 && Math.abs(s.y - yAt(s.x)) < 0.02;
+	A(K.RAIL_MIN === 8 && K.RAIL_SPEED === 11 && K.RAIL_LOCK === 0.35, 'the rails\' numbers');
+	const a = go(over(30, 1.2, 3), secs(0.6), noInput());
+	A(a.rail === 0 && stateName(a) === 'grinding' && a.railDir === 1 && onLine(a) && !a.grounded && a.airJumps === K.AIR_JUMPS, 'come down on a rail and you grind it, the way you were going; your air jumps are back', [a.rail, a.x, a.y, a.z]);
+	const v0 = a.railV; go(a, secs(1.5), noInput());
+	A(a.rail === 0 && onLine(a) && a.railV > v0 && a.railV >= K.RAIL_SPEED && near(Math.hypot(a.vx, a.vy, a.vz), a.railV, 0.01) && a.vy < 0, `it carries you along it: ${v0.toFixed(1)} m/s when you came down, ${a.railV.toFixed(1)} m/s a second and a half on (downhill adds)`, [v0, a.railV]);
+	go(a, secs(3), noInput());
+	A(a.rail === -1 && a.grounded && a.x > 60, `at its end it throws you on: you land ${(a.x - 60).toFixed(1)} m past it`, [a.rail, a.x, a.y]);
+	const b = go(over(50, 1.2, -3), secs(2.5), noInput());
+	A(b.railDir === -1 && (b.rail === 0 ? b.railV >= K.RAIL_MIN - 1e-9 && b.vy > 0 : b.x < 22), 'the other way it takes you up it, never under the least speed', [b.rail, b.x, b.railV]);
+	// leaving it
+	const c = go(over(30, 1.2, 3), secs(0.8), noInput()), cv = c.railV;
+	step(c, inp({ jump: true }), R);
+	A(c.jumped === 4 && c.rail === -1 && c.vy >= K.JUMP_V - 1 && near(Math.hypot(c.vx, c.vz), cv, 0.3) && c.railLock > 0, 'a jump leaps off it, with the speed it gave you', [c.jumped, c.vy, c.vx, cv]);
+	go(c, secs(0.3), inp({ jump: true }));
+	A(c.rail === -1 && c.y > yAt(c.x) + 0.5, 'and up, clear of it');
+	const d = go(over(30, 1.2, 3), secs(0.8), noInput());
+	step(d, inp({ crouch: true }), R); const dy = d.y; go(d, secs(0.25), inp({ crouch: true }));
+	A(d.rail === -1 && d.y < dy - 0.3, 'a slide drops off it, and it does not take you back at once');
+	// what does not catch
+	const e = (() => { const s = newState(R); s.x = 56; s.z = RZ; s.y = 0; return go(s, 8, (i) => inp({ jump: i < 8 })); })();   // (under the rail's low end, 1.3 m up: a jump goes up through it)
+	const through = e.rail === -1 && e.y > 0.9 && e.vy > K.RAIL_CATCH_VY;
+	let onIt = false; for (let i = 0; i < secs(0.7); i++) { step(e, inp({ jump: true }), R); onIt = onIt || e.rail === 0; }   // (it then carries you off its end, 4 m on)
+	A(through && onIt,'going up through a rail you pass it; coming back down you are on it (a jump from under a low rail lands on it)', [through, e.rail, e.y]);
+	const f = go(over(30, 1.2, 3, RZ + 1.3), secs(1), noInput());
+	A(f.rail === -1 && f.grounded, 'too far to the side: you fall past it');
+	const g = (() => { const s = over(30, 1.2, 0); s.facing = -Math.PI / 2; return go(s, secs(0.6), noInput()); })();
+	A(g.rail === 0 && g.railDir === -1, 'from a straight drop it takes you the way you face');
+	const bare = (() => { const r = makeRoom(50, 14, 0), s = newState(r); s.x = 30; s.z = RZ; s.y = 5; s.grounded = false; for (let i = 0; i < secs(1.5); i++) step(s, noInput(), r); return s; })();
+	A(bare.rail === -1 && bare.grounded, 'a room with no rails is as it was');
+	// the test room's own rail: from the plateau to the floor
+	const top = at(SPOTS.plateau); top.x = SPOTS.railTop[0]; top.z = SPOTS.railTop[1] - 3; run(top, secs(0.35), inp(SOUTH)); run(top, secs(0.45), (i) => inp({ ...SOUTH, jump: i < 12 }));
+	const caught = top.rail === 0; run(top, secs(3), noInput());
+	A(caught && top.rail === -1 && top.grounded && top.z > SPOTS.railFoot[1] - 1 && groundAt(room, top.x, top.z) === 0, 'in the test room: a jump off the plateau\'s south edge lands on its rail, which takes you down to the floor', [caught, top.z, top.y]);
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);

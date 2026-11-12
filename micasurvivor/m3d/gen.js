@@ -16,7 +16,7 @@
 //      the exit are reachable on foot, no slope is too steep to stand on. If a ridge or a set piece broke that, they
 //      are taken out until it holds.
 // The level it returns is a sim.js room (a height field), so the rules and the renderer need nothing new.
-import { CELL, K, makeRoom, setCell, idx } from './sim.js';
+import { CELL, K, makeRoom, setCell, idx, groundAt } from './sim.js';
 
 export const TS = 7;          // cells along a tile (14 m)
 export const LEVEL = 1.5;     // metres between height levels: one jump (1.67 m) clears one level
@@ -105,6 +105,7 @@ export function generate(seed, biome = 'meadow', overrides = null) {
 	if (!check.ok) { for (const t of tiles) for (const d of ['e', 's']) if (t.ridge[d]) { delete t.ridge[d]; repaired++; } room = build(seed, P, tiles, start, exit); check = validate(room); }
 	if (!check.ok) { for (const t of tiles) if (t.piece !== 'plain') { t.piece = 'plain'; repaired++; } room = build(seed, P, tiles, start, exit); check = validate(room); }
 	room.repaired = repaired; room.check = check;
+	room.rails = railsFor(room, seed);   // (laid over the finished level, from a stream of their own: the level itself is as it was)
 	room.biome = typeof biome === 'string' ? biome : 'custom'; room.seed = seed >>> 0;
 	return room;
 }
@@ -174,6 +175,37 @@ function build(seed, P, tiles, start, exit) {
 	room.start = start; room.exitTile = exit; room.size = N;
 	room.rimH = top; room.maxH = (P.levels - 1) * LEVEL;   // (the renderer: what is the rim, and how high the floor goes)
 	return room;
+}
+
+// ---------------------------------------------------------------- rails
+/** Rails for a finished level: lines through the air from high ground to lower ground, 20 to 44 m long, each end half a
+ *  metre over the floor (a jump catches it), clear of the ground in between (arched over what is in the way). Seeded: the
+ *  same level always has the same rails. -> [{ pts: [[x, y, z], …] }] */
+export function railsFor(room, seed, want = null) {
+	const r = rng(((seed >>> 0) ^ 0x5A17C0DE) * 2654435761 + 331), out = [], W = room.w, H = room.h;
+	const n = want === null ? Math.max(1, Math.min(4, Math.round(W * H / 870))) : want;
+	const flat = (cx, cz) => { if (cx < 2 || cz < 2 || cx >= W - 2 || cz >= H - 2) return false; const i = cz * W + cx; return !room.slopes.has(i) && !room.mats.has(i) && !room.water.has(i) && room.cells[i] < (room.rimH || 1e3); };
+	const D8 = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]];
+	for (let tries = 0; tries < 400 && out.length < n; tries++) {
+		const ax = 2 + Math.floor(r() * (W - 4)), az = 2 + Math.floor(r() * (H - 4)), [dx, dz] = D8[Math.floor(r() * 8)], len = 10 + Math.floor(r() * 13);
+		const bx = ax + dx * len, bz = az + dz * len;
+		if (!flat(ax, az) || !flat(bx, bz)) continue;
+		const ha = room.cells[az * W + ax], hb = room.cells[bz * W + bx];
+		if (ha - hb < LEVEL - 1e-6 || ha - hb > 4 * LEVEL + 1e-6) continue;   // from high ground to lower: one to four levels down
+		const A = [(ax + 0.5) * CELL, ha + 0.5, (az + 0.5) * CELL], B = [(bx + 0.5) * CELL, hb + 0.5, (bz + 0.5) * CELL];
+		if (Math.hypot(A[0] - room.spawn[0], A[2] - room.spawn[2]) < 5 || Math.hypot(B[0] - room.spawn[0], B[2] - room.spawn[2]) < 5) continue;
+		if (out.some((q) => { const p = q.pts[0], e = q.pts[q.pts.length - 1]; return Math.hypot(p[0] - A[0], p[2] - A[2]) < 8 || Math.hypot(e[0] - B[0], e[2] - B[2]) < 8; })) continue;
+		const L = Math.hypot(B[0] - A[0], B[2] - A[2]), steps = Math.max(4, Math.round(L / 2));
+		let pts = null;
+		for (const arch of [0, 1.5, 3, 4.5]) {
+			const line = (t) => [A[0] + (B[0] - A[0]) * t, A[1] + (B[1] - A[1]) * t + arch * 4 * t * (1 - t), A[2] + (B[2] - A[2]) * t];
+			let clear = true;
+			for (let k = 1, m = Math.ceil(L * 5); k < m && clear; k++) { const t = k / m, p = line(t),   /* (every 20 cm: a cliff's corner is not stepped over) */ near = Math.min(t, 1 - t) * L; if (groundAt(room, p[0], p[2]) > p[1] - (near < 2.5 ? 0.3 : 1.1)) clear = false; }
+			if (clear) { pts = []; for (let k = 0; k <= steps; k++) pts.push(line(k / steps).map((v) => Math.round(v * 100) / 100)); break; }
+		}
+		if (pts) out.push({ pts });
+	}
+	return out;
 }
 
 // ---------------------------------------------------------------- the check

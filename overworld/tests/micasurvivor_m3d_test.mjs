@@ -72,7 +72,7 @@ try {
 	await sleep(1200);
 	const s0 = await page.evaluate(() => { const m = window.__m3d, s = m.stats(); return { stats: s, sheets: [...m.sheets.keys()], crowd: m.crowd.length, species: new Set(m.crowd.map(e => e.dex)).size, k: [m.K.JUMP_V, m.K.RUN, m.K.AIR_CAP], hud: document.getElementById('hud').textContent }; });
 	A(s0.crowd === 100 && s0.species >= 6, `a crowd of 100 sprites of ${s0.species} species`, JSON.stringify(s0));
-	A(s0.stats.calls > 0 && s0.stats.calls <= s0.sheets.length + 3 && s0.stats.calls < 20, `sprites are batched by sheet: ${s0.stats.calls} draw calls for ${s0.crowd} sprites + the terrain + the shadows (${s0.sheets.length} sheets)`, JSON.stringify(s0.stats));
+	A(s0.stats.calls > 0 && s0.stats.calls <= s0.sheets.length + 4 && s0.stats.calls < 20, `sprites are batched by sheet: ${s0.stats.calls} draw calls for ${s0.crowd} sprites + the terrain, the water, the rails and the shadows (${s0.sheets.length} sheets)`, JSON.stringify(s0.stats));
 	A(s0.stats.triangles > 1500, 'the terrain mesh, the sprites and their shadows are in the frame', String(s0.stats.triangles));
 	A(/fps/.test(s0.hud) && /100 sprites/.test(s0.hud) && /idle/.test(s0.hud), 'the readout shows the frame rate, the crowd and what the lead is doing', s0.hud);
 	const c0 = await colours(page);
@@ -206,7 +206,7 @@ try {
 			// the exit ring: pale yellow pixels 3-8 px from the exit's place
 			let ring = 0; for (let a = 0; a < 6.28; a += 0.2) for (let rr = 3; rr <= 8; rr++) { const p = px(Math.round(r.exit[0] * k + Math.cos(a) * rr), Math.round(r.exit[2] * k + Math.sin(a) * rr)); if (p[0] > 230 && p[1] > 220 && p[2] > 120 && p[2] < 200) ring++; }
 			res({ water, waterOk, rim, rimOk, lo, hi, red, redFar, ring }); }))));
-		A(mm.rim > 100 && mm.rimOk === mm.rim && mm.water > 5 && mm.waterOk === mm.water, `the minimap agrees with the level: every rim cell dark (${mm.rim}), every water cell blue (${mm.water})`, JSON.stringify(mm));
+		A(mm.rim > 100 && mm.rimOk === mm.rim && mm.water > 5 && mm.water - mm.waterOk <= 8, `the minimap agrees with the level: every rim cell dark (${mm.rim}), every water cell blue (${mm.waterOk} of ${mm.water}: a rail's pale line may cross a pond)`, JSON.stringify(mm));
 		A(mm.lo && mm.hi && mm.hi[1] > mm.lo[1] + 40, '...and higher floor is drawn lighter', JSON.stringify([mm.lo, mm.hi]));
 		A(mm.red > 15 && mm.redFar === 0 && mm.ring > 8, 'you are an arrow on it, and the exit a ring', JSON.stringify(mm));
 		const cg = await colours(g.page);

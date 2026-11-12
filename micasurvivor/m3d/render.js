@@ -115,10 +115,37 @@ export function drawMap(room, px = 4) {
 		else { const t = Math.max(0, Math.min(1.25, h / top)); fill = `rgb(${Math.round(70 + 90 * t)},${Math.round(130 + 95 * t)},${Math.round(70 + 60 * t)})`; }
 		g.fillStyle = fill; g.fillRect(cx * px, cz * px, px, px);
 	}
+	// the rails: pale lines
+	g.strokeStyle = '#eef3f7'; g.lineWidth = 1.5; const k = px / CELL;
+	for (const rail of room.rails || []) { g.beginPath(); rail.pts.forEach((p, i) => (i ? g.lineTo(p[0] * k, p[2] * k) : g.moveTo(p[0] * k, p[2] * k))); g.stroke(); }
 	return c;
 }
 
 /** The water: a flat sheet at each wet cell's surface, see-through, drawn after everything solid. */
+/** (the movement tech) The room's rails: a steel bar along each (two crossed ribbons, so it shows from every side), and a
+ *  post under each end. */
+export function buildRails(room) {
+	const pos = [], col = [], c = new THREE.Color(), W = 0.16;
+	const quad = (p, q, r, s, hex) => { c.setHex(hex); for (const v of [p, q, r, p, r, s]) { pos.push(v[0], v[1], v[2]); col.push(c.r, c.g, c.b); } };
+	for (const rail of room.rails || []) {
+		const pts = rail.pts;
+		for (let k = 0; k < pts.length - 1; k++) {
+			const a = pts[k], b = pts[k + 1], ex = b[0] - a[0], ez = b[2] - a[2], l = Math.hypot(ex, ez) || 1, nx = -ez / l * W, nz = ex / l * W;
+			quad([a[0] - nx, a[1], a[2] - nz], [a[0] + nx, a[1], a[2] + nz], [b[0] + nx, b[1], b[2] + nz], [b[0] - nx, b[1], b[2] - nz], 0xdfe7ee);   // across
+			quad([a[0], a[1] - W, a[2]], [a[0], a[1] + W, a[2]], [b[0], b[1] + W, b[2]], [b[0], b[1] - W, b[2]], 0x9fb0bd);                           // upright
+		}
+		for (const e of [pts[0], pts[pts.length - 1]]) {
+			const g0 = groundAt(room, e[0], e[2]);
+			quad([e[0] - W, g0, e[2]], [e[0] + W, g0, e[2]], [e[0] + W, e[1], e[2]], [e[0] - W, e[1], e[2]], 0x6f7f8b);
+			quad([e[0], g0, e[2] - W], [e[0], g0, e[2] + W], [e[0], e[1], e[2] + W], [e[0], e[1], e[2] - W], 0x6f7f8b);
+		}
+	}
+	const g = new THREE.BufferGeometry();
+	g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+	const mesh = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide }));
+	mesh.matrixAutoUpdate = false;
+	return mesh;
+}
 export function buildWater(room) {
 	const pos = [];
 	for (const [i, level] of room.water || []) {
