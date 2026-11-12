@@ -16,7 +16,7 @@
 import { dataFrom, gainXp } from '../../micasurvivor/m3d/combat.js';
 import { expFrom, newRun, stepRun, result } from '../../micasurvivor/m3d/expedition.js';
 import { megaEvolve } from '../../micasurvivor/m3d/expleague.js';
-import { SV, unfair, clean, deviceId, missing, runSum, recordOps, applyOps, scoreBody, WHY, hasMember, wildOf, catchOps, newlyMet, boardAsk, boardRows } from '../../micasurvivor/m3d/expsave.js';
+import { SV, unfair, clean, deviceId, missing, runSum, recordOps, applyOps, scoreBody, WHY, hasMember, wildOf, catchOps, shinyOps, newlyMet, boardAsk, boardRows } from '../../micasurvivor/m3d/expsave.js';
 import { rng as seedRng } from '../../micasurvivor/m3d/gen.js';
 import { loadG } from './m3d_data.mjs';
 
@@ -135,6 +135,22 @@ const dev = deviceId(ls, Sv.who, globalThis.crypto);
 	// the collection: at the 2D game's claim
 	const d2 = deviceId(q.ls, Sv2.who, globalThis.crypto); Sv2.bump('m3d.n.' + d2); M2.claim3d();
 	A(q.unlocked.includes(c), 'at the 2D game\'s next claim the member caught joins the collection', q.unlocked);
+}
+
+// ---------------------------------------------------------------- the level-ups', the economy's and the capture's counters
+{
+	const S = mk({ eco: true }), pl = S.w.pl;
+	S.lv.log.push([2, 'up', 'ember', 0], [3, 'vit', 'protein', 2], [4, 'new', 'x', 1], [5, 'swap', 'a>b', 3], [6, 'item', 'leftovers', 0], [7, 'item', 'quickclaw', 1], [8, 'skip', 'skip', 0], [9, 'train', 'dmg', 0]);
+	pl.xv = [{ id: 'protein', lvl: 3 }, { id: 'zinc', lvl: 5 }]; pl.xi = { leftovers: 2, quickclaw: 1 }; pl.moves[0].xlv = S.L.MK.MAX_LV;
+	S.eco.earned = 140; S.eco.spent = 60; Object.assign(S.eco.log, { balls: 3, shop: 2, altars: 1, spins: 4, slotWins: 1 });
+	S.cap.log.alpha = 2; S.cap.log.best = 2; S.cap.log.seen = 1; S.cap.log.fled = 1; S.cap.sa = [{ dex: 19, type: 'normal' }, { dex: 74, type: 'rock' }];
+	S.w.t = 300; S.ended = true;
+	const o = ops2(recordOps(S, result(S), { T, dev }));
+	A(o['bump lv.cards'] === 4 && o['bump lv.rar.1'] === 1 && o['bump lv.rar.3'] === 1 && o['bump lv.rar.2'] === 1 && o['bump lv.rar.4'] === 1 && o['bump lv.swaps'] === 1 && o['bump lv.items'] === 2 && o['bump lv.skips'] === 1 && o['best lv.vitmax'] === 5 && o['best lv.move8'] === 1 && o['best lv.stacks'] === 3, 'the level-ups\' counters: the cards taken by rarity, swaps, items, skips, the best vitamin, moves at their top level, the items held', o);
+	A(o['bump eco.earned'] === 140 && o['best eco.best'] === 140 && o['bump eco.spent'] === 60 && o['bump eco.balls'] === 3 && o['bump eco.shop'] === 2 && o['bump eco.altars'] === 1 && o['bump eco.spins'] === 4 && o['bump eco.slotWins'] === 1 && !('bump eco.freed' in o), 'the economy\'s: earned, spent, and what was opened, bought, used and spun');
+	A(o['bump cap.alpha'] === 2 && o['best sa.best'] === 2 && o['add sa.types:normal'] === 'normal' && o['add sa.types:rock'] === 'rock' && o['bump shiny.seen'] === 1 && o['bump cap.fled'] === 1, 'the capture\'s: alphas recruited, the largest team, its types, shinies seen, the ones that fled');
+	const sh = shinyOps(25, 172), sh2 = shinyOps(999999, 0);
+	A(sh.map((q) => q.join()).join('|') === 'add,shiny.caught,25|bump,cap.shiny,1|add,league.shiny,172' && sh2.length === 2, 'a shiny caught is kept at once: its species, the count, and its family\'s shiny for the League');
 }
 
 // ---------------------------------------------------------------- the 3D boards, asked for and read

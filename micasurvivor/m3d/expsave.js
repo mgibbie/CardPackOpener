@@ -17,8 +17,8 @@
 // WILD LEAGUE MEMBERS read and write this save too: the ones met and not caught wait for a run (wildOf), a catch is
 // saved at once (catchOps), and after a kept run the challenges now complete make new ones wild (newlyMet).
 //
-// Pure: the page (main.js) hands in the run, its result and the saves. Not kept yet: the economy's, the capture's and
-// the level-ups' counters, the tasks, the achievements (they are checked by the 2D game from the counters there are).
+// Pure: the page (main.js) hands in the run, its result and the saves. The level-ups', the economy's and the capture's
+// counters are kept too (the 2D game's keys: its achievements and its Lab's goals read them). Not kept yet: the tasks.
 
 export const SV = { RULES: 2 /* the rules the boards are filed under (js/entities/player.js RULES; the server's MSURV_RULES) */, DV: 20 /* the Expedition's content version (js/systems/expedition.js DV: the boards file a score by it) */, INV: 1e9, BOARD: 'micasurvivor_expedition', OK: ['exp', 'map', 'diff', 'mode', 'dex', 'debug'], MAX_HP: 50000, MAX_ATK: 2000, MAX_SPD: 25 };
 
@@ -57,6 +57,9 @@ export function wildOf(seed, o) {
 /** Caught in a run: a member of your League from this moment (the 2D game's keys; its species joins the collection when
  *  the 2D game next claims: meta.js claim3d). */
 export function catchOps(member) { return [['add', 'league.own', String(member)], ['bump', 'cap.league', 1]]; }
+/** A shiny caught in a run: kept at once, as the 2D game keeps it (its species, the count, and its family's shiny for the
+ *  League). fam: its League family's first stage, or 0. */
+export function shinyOps(dex, fam) { return [['add', 'shiny.caught', String(dex)], ['bump', 'cap.shiny', 1]].concat(fam ? [['add', 'league.shiny', String(fam)]] : []); }
 /** After a run: every member whose challenge is now complete is MET, and wild until caught (the 2D game's rule:
  *  js/expedition/league.js checkChallenges, with `hasMember` for what you have). -> the newly met */
 export function newlyMet(o) {
@@ -110,6 +113,31 @@ export function recordOps(S, res, o) {
 		add('league.played', G.member); add('league.form', G.form);
 		for (const e of G.log) if (e[1] === 'evo') add('league.form', e[2]);
 		if (G.mega) { bump('lg.mega'); add('mega.seen', G.mega); }
+	}
+	// the level-ups' counters (js/expedition/levelups.js record)
+	if (S.lv) {
+		const pl = S.w.pl; let picks = 0, items = 0;
+		for (const [, kind, , ti] of S.lv.log) {
+			if (kind === 'up' || kind === 'new' || kind === 'vit' || kind === 'swap') { picks++; bump('lv.rar.' + ((ti | 0) + 1)); }
+			if (kind === 'swap') bump('lv.swaps');
+			if (kind === 'item') items++;
+			if (kind === 'skip') bump('lv.skips');
+		}
+		bump('lv.cards', picks); bump('lv.items', items);
+		if (pl.xv) best('lv.vitmax', pl.xv.reduce((a, x) => Math.max(a, x.lvl), 0));
+		if (S.L) best('lv.move8', pl.moves.filter((m) => (m.xlv || 1) >= S.L.MK.MAX_LV).length);
+		if (pl.xi) best('lv.stacks', Object.values(pl.xi).reduce((a, n) => a + n, 0));
+	}
+	// the economy's (js/expedition/economy.js record)
+	if (S.eco) {
+		bump('eco.earned', S.eco.earned); best('eco.best', S.eco.earned); bump('eco.spent', S.eco.spent);
+		for (const k of ['balls', 'shop', 'altars', 'freed', 'rocks', 'berries', 'ditto', 'hypno', 'spins', 'slotWins', 'ambush', 'respawns']) bump('eco.' + k, S.eco.log[k] || 0);
+	}
+	// the capture's (js/expedition/capture.js record)
+	if (S.cap) {
+		const L = S.cap.log;
+		bump('cap.alpha', L.alpha); best('sa.best', L.best); for (const a of S.cap.sa) add('sa.types', a.type);
+		bump('shiny.seen', L.seen); bump('cap.fled', L.fled);
 	}
 	// 3D's own: one more 3D run from this browser, and its pay owed to it (the 2D game pays it into the wallet)
 	bump('m3d.n.' + o.dev);

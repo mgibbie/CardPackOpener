@@ -1275,6 +1275,22 @@ the 2D Expedition archived.
 Tests: `micasurvivor_m3d_sim_test.mjs` 87 checks (was 78), `micasurvivor_m3d_gen_test.mjs` 41 (was 38: every
 bank of 20 levels surfed along and slid down).
 
+## 5.41 Going live, first part: built (2026-11-12). The counters a 3D run did not keep; a caught shiny.
+
+The first of what is left before 3D Expedition can go live (§5.40).
+
+- A kept 3D run now writes the level-ups', the economy's and the capture's counters too, with the 2D game's keys
+  (`lv.*`, `eco.*`, `cap.alpha`, `sa.best`, `sa.types`, `shiny.seen`, `cap.fled`): the 2D game's achievements and
+  the goals that reveal items in the Lab read them, so a 3D run now counts toward both.
+- A shiny caught in a 3D run is kept at once, as a wild League member is (`shiny.caught`, `cap.shiny`, and its
+  family's shiny for the League).
+- Fixed: a wild League member coming into a run was counted as a shiny seen.
+
+Still not kept: the tasks (daily and weekly). Next: the Lab's effects on a 3D run (what it adds to a run, the
+items not bought yet staying out of the pool, the boosts and the Master Ball), then sound and the way in.
+
+Tests: `micasurvivor_m3d_expsave_test.mjs` 37 checks (was 33).
+
 ## 6. Dive in 2D: built
 
 **D0 — find the stairs (small; can ship first, on its own).** *Built 2026-11-11 (`overworld/tests/micasurvivor_dive_stairs_test.mjs`). As built: the stairs took their own orange mark, so the rocks and Meowth keep their gold; the HUD arrow comes up after 25 s on a floor, or at once when its boss falls.*
