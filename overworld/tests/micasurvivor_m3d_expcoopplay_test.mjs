@@ -6,6 +6,8 @@
 //   * the guest standing on the altar wakes the guardian for both; it falls for both
 //   * the team levels; the guest learns its own kit's move
 //   * the guest takes the team through the portal: both are on zone 2's level
+//   * the guest opens a Poké Ball: the team's money pays, the choice of three comes up on the GUEST's screen, and the
+//     item it clicks is its own
 //   node overworld/tests/micasurvivor_m3d_expcoopplay_test.mjs      (SHOTS=<dir> for screenshots)
 import http from 'http';
 import fs from 'fs';
@@ -93,6 +95,19 @@ try {
 	A(z2 && Math.hypot(g.at[0] - h.at[0], g.at[1] - h.at[1]) < 5 && Math.hypot(mate[0] - g.at[0], mate[1] - g.at[1]) < 1, 'the GUEST steps into the portal: both are on zone 2\'s level, side by side, and the host has the guest there', JSON.stringify([h, g, mate]));
 	await shot(Gp.page, 'm3d_expcoop_zone2.png');
 	await shot(H.page, 'm3d_expcoop_host.png');
+
+	// ---- the guest opens a Poké Ball on the team's money
+	await quiet();
+	await H.page.evaluate(() => { window.__m3d.run.coins = 60; });
+	await Gp.page.evaluate(() => { const m = window.__m3d, o = m.rv.eco.find((q) => q.kind === 'ball'); m.world.autoPick = undefined; m.put(o.x, o.z); });
+	const up = await waitFor(async () => { await quiet(); return Gp.page.evaluate(() => !!window.__m3d.grun.pick && document.querySelectorAll('#cards button[data-p]').length === 3); }, 10000);
+	const b0 = await Promise.all([H.page.evaluate(() => ({ coins: window.__m3d.run.coins, pick: !!window.__m3d.run.pick, items: Object.keys(window.__m3d.world.pl.xi).length, t: window.__m3d.world.t })),
+		Gp.page.evaluate(() => ({ title: document.querySelector('#cards h2').textContent, ids: window.__m3d.grun.pick.ids, items: Object.keys(window.__m3d.world.pl.xi).length }))]);
+	A(up && b0[0].coins === 42 && !b0[0].pick && /Poké Ball · Choose 1 of 3/.test(b0[1].title), `the GUEST stands on a Poké Ball: the team pays its 18 ₽, and the three items come up on the guest's screen (not the host's)`, JSON.stringify(b0));
+	await shot(Gp.page, 'm3d_expcoop_ball.png');
+	await Gp.page.click('#cards button[data-p="2"]');
+	const b1 = await Promise.all([H.page.evaluate(() => ({ items: Object.keys(window.__m3d.world.pl.xi).length, t: window.__m3d.world.t })), Gp.page.evaluate(() => ({ items: Object.keys(window.__m3d.world.pl.xi), pick: !!window.__m3d.grun.pick, shown: document.getElementById('cards').style.display }))]);
+	A(!b1[1].pick && b1[1].items.join() === b0[1].ids[2] && b1[1].shown === 'none' && b1[0].items === b0[0].items && b1[0].t > b0[0].t, 'it clicks the third: the item is the guest\'s, the host has nothing new, and the fight never stopped', JSON.stringify(b1));
 	A(errors.length === 0, 'no page errors on either side', errors.slice(0, 5).join(' | '));
 } catch (e) {
 	fail++; console.log('FAIL: crashed: ' + (e && e.stack || e));

@@ -910,6 +910,39 @@ P4 besides: a co-op guest opening the zone's things or catching, the fog of war 
 
 Tests: `micasurvivor_m3d_expsurv_test.mjs` (59 checks, node), the page test 35 (was 31).
 
+## 5.26 P4, tenth part: built (2026-11-12). A guest and the zone's things; a guest's catch.
+
+A co-op guest now uses everything a zone holds, and catches, by the 2D game's rule: **the host sees it standing
+there (its puppet), keeps the thing's state and pays from the team's money; what is a player's own goes to the
+guest as a seed, and the guest rolls it from its own pool on its side.**
+
+- Gold rocks and cages pay or cost the team; a berry bush heals whoever is hurt and standing in it.
+- The three Poké Balls, the Unown altars (they charge for whoever is nearest), the comet, the challenge altar
+  and its Great Ball, the cursed altar, Ditto, Hypno, the slot machine: the guest gets its own items or its own
+  choice. A cursed ball's ghosts come round the guest.
+- Meowth: the stall opens on the guest's screen with the host's stock and prices; a buy is asked of the host,
+  the team pays, the item comes back.
+- **A catch**: a guest standing by a fainted alpha (or shiny) is handed it. Its Support Alpha is its own, fights
+  from its side (its shots are a guest's hits like any other) and gives it its perk. With its team full it may
+  keep it: the prize then falls on the host's floor.
+- A host and a guest can each be at a thing of their own at the same moment: each has its own stand clocks.
+
+**A choice does not hold a party's fight.** Alone, a ball's choice stops the world; in a party it stays up while
+the fight goes on, for the host and the guest alike (the 2D rule).
+
+**Fixed on the way** (pinned by a check that fails without it): an item on the floor picked up by a guest was
+credited to the host. A pickup now says who took it.
+
+**UI direction (owner, 2026-11-12)**: 3D Expedition and 3D Dive use Micatro-style UI wherever possible. The test
+page's readout and plain card buttons are placeholders; the real screens (menu, League picker, level-up cards,
+the choices, the HUD, run-over, lobby) are to be built from Micatro's.
+
+**Not yet**: a guest's Support Alphas on the other screens; a held item for a guest; Survival in co-op. Still
+of P4 besides: Survival's hostile terrain, the fog of war and the zone map, Mega Evolution, wild League
+encounters, the lobby, and the real screens.
+
+Tests: the co-op rules 56 checks (was 25), the two-window page test 11 (was 9).
+
 ## 6. Dive in 2D: built
 
 **D0 — find the stairs (small; can ship first, on its own).** *Built 2026-11-11 (`overworld/tests/micasurvivor_dive_stairs_test.mjs`). As built: the stairs took their own orange mark, so the rocks and Meowth keep their gold; the HUD arrow comes up after 25 s on a floor, or at once when its boss falls.*

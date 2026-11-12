@@ -420,11 +420,13 @@ export function stepRun(S, input, dt = K.TICK) {
 	S.says.length = 0;
 	if (S.ended) return S;
 	if (holdCine(S, dt)) { w.events.length = 0; return S; }   // (a ball is shaking: the world holds)
-	if (S.pick) {   // a choice is up (a ball's items, Meowth's stall, Hypno): the fight holds until it is made
-		w.events.length = 0;
-		if (w.autoPick === undefined || w.autoPick === null) return S;
+	if (S.pick) {   // a choice is up (a ball's items, Meowth's stall, Hypno): the fight holds until it is made (alone: a party does not stop for one player's choosing)
+		if (!w.mates.length) w.events.length = 0;
+		if ((w.autoPick === undefined || w.autoPick === null) && !w.mates.length) return S;
+		if (w.autoPick === undefined || w.autoPick === null) { /* co-op: the choice stays up while the fight goes on */ } else {
 		if (S.pick.onTake) pickTake(S, 0); else if (S.pick.kind === 'shop' || S.pick.kind === 'hypno') pickClose(S); else for (let i = 0; S.pick && i < S.pick.ids.length; i++) pickTake(S, i);
 		S.pick = null;
+		}
 	}
 	const t0 = w.t;
 	w.cap = capNow(S);
@@ -432,7 +434,8 @@ export function stepRun(S, input, dt = K.TICK) {
 	if (w.t === t0) return S;
 	const t = w.t;
 	if (w.pl.dead && !w.guest && (!w.mates.length || w.mates.every((m) => m.dead || m.away))) { S.ended = true; S.lost = true; w.events.push({ k: 'runover', won: false }); return S; }   // (co-op: only when everyone is down)
-	if (S.lv) { tickStats(S, dt); for (const ev of w.events) if (ev.k === 'pickup') { if (ev.kind === 'item') takeItem(S, ev.value); else if (ev.kind === 'held') takeHeld(S, ev.value); } }
+	if (S.lv) { tickStats(S, dt); for (const ev of w.events) if (ev.k === 'pickup') { const m = ev.by ? w.mates.find((q) => q.id === ev.by) : null;   // (co-op: an item is whoever picked it up's)
+		if (ev.kind === 'item') { if (m) m.gifts.push({ k: 'xgi', id: ev.value }); else takeItem(S, ev.value); } else if (ev.kind === 'held' && !m) takeHeld(S, ev.value); } }
 	if (S.cap) tickCap(S, dt);
 	if (S.eco) tickEco(S, dt);
 	dpsSample(S, t);

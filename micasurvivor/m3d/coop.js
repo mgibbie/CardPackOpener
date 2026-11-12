@@ -68,6 +68,7 @@ export function hostApply(w, id, msg) {
 	m.heard = 0;
 	if (msg.p) { bodyFrom(m.s, msg.p); m.dead = !!(msg.p[7] & 32); m.hp = msg.p[8]; m.maxHp = msg.p[9]; }
 	if (msg.lv) m.lv = Math.max(m.lv, msg.lv);
+	if (msg.x) (m.inbox || (m.inbox = [])).push(...msg.x);   // (a mode's own messages from the guest: the run reads them)
 	if (msg.dx && msg.dx !== m.dex && w.data.mon(msg.dx)) { m.dex = msg.dx; m.mon = w.data.mon(msg.dx); m.r = w.data.radius(msg.dx); }   // (it has evolved: its puppet is the new stage)
 	for (const h of msg.h || []) {
 		const e = w.enemies.find((q) => q.id === h.id); if (!e || e.dead) continue;
@@ -94,7 +95,7 @@ export function hostApply(w, id, msg) {
  *  the party (the host is 0). */
 export function guestWorld(room, data, o = {}) {
 	const w = newWorld(room, data, { ...o, guest: true, weather: false, cast: null, bosses: null });
-	w.co = { id: o.id || 1, viewer: new Viewer(), hostT: -1, known: new Map(), shots: new Set(), queue: [], mates: [], hostDex: 0, seenEv: -1, silent: 0, stalled: false, over: false };
+	w.co = { id: o.id || 1, viewer: new Viewer(), hostT: -1, known: new Map(), shots: new Set(), queue: [], inbox: [], outbox: [], mates: [], hostDex: 0, seenEv: -1, silent: 0, stalled: false, over: false };
 	w.partners = () => w.co.mates;
 	return w;
 }
@@ -107,7 +108,7 @@ export function guestApply(w, f) {
 	while (pl.level < whole.p[10]) { pl.level++; pl.pending++; w.stats.levels++; }
 	pl.xp = whole.p[11]; pl.xpNext = whole.p[12];
 	w.waiting = !!(whole.c && whole.c.wait) && pl.pending === 0;
-	if (whole.c) { co.hostDex = whole.c.host; for (const g of (whole.c.gifts && whole.c.gifts[co.id]) || []) if (g.k === 'heal') pl.hp = Math.min(pl.maxHp, pl.hp + pl.maxHp * g.v); }
+	if (whole.c) { co.hostDex = whole.c.host; for (const g of (whole.c.gifts && whole.c.gifts[co.id]) || []) { if (g.k === 'heal') pl.hp = Math.min(pl.maxHp, pl.hp + pl.maxHp * g.v); else co.inbox.push(g); } }   // (anything else is a mode's own: the run reads it)
 	// what will hurt you: enemy shots and marks on the ground, each released when the fight you see reaches its moment
 	for (const r of whole.x || []) { if (co.shots.has(r[0])) continue; co.shots.add(r[0]); co.queue.push({ at, shot: r }); }
 	if (co.shots.size > 3000) co.shots = new Set((whole.x || []).map((r) => r[0]));
@@ -157,5 +158,7 @@ export function guestSync(w, dt = K.TICK) {
 /** What a guest tells the host: where it is, what its moves hit since the last message, which enemies touched it, and
  *  the level it has chosen cards through. */
 export function guestMsg(w) {
-	return { dx: w.pl.mon.dex, p: frame(w).p.slice(0, 10), h: w.out.splice(0), tc: w.touches.splice(0), lv: w.pl.level - w.pl.pending };
+	const msg = { dx: w.pl.mon.dex, p: frame(w).p.slice(0, 10), h: w.out.splice(0), tc: w.touches.splice(0), lv: w.pl.level - w.pl.pending };
+	if (w.co.outbox.length) msg.x = w.co.outbox.splice(0);
+	return msg;
 }
