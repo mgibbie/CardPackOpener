@@ -57,6 +57,21 @@ register('draw-minions-set-stats', ({ state, pi }, e) => {
 	}
 });
 
+/** What a discard sets off, once the card is in the graveyard and the discard is announced: the log, and the cards
+ *  that do something when discarded (Silverware Golem, Tiny Knight of Evil, High Priestess Jeklik …). One place for it:
+ *  it was written out three times below, and "discard any spells drawn" makes a fourth caller. */
+function afterDiscard(state, pi, c) {
+	if (!c.token) state.players[pi].discardLogIds.push(c.id); if (c.summonOnDiscard && state.cardsById[c.id]) summon(state, pi, state.cardsById[c.id]); if (c.returnBuffedOnDiscard && state.players[pi].hand.length < MAX_HAND) { c.attack += 2; c.maxHealth += 2; c.zone='hand'; state.players[pi].hand.push(c); const gi = state.players[pi].graveyard.indexOf(c); if (gi>=0) state.players[pi].graveyard.splice(gi,1); emit(state,{type:'conjure',player:pi,card:c,color:null}); } if (c.copiesOnDiscard && state.cardsById[c.id]) { for (let n = 0; n < c.copiesOnDiscard && state.players[pi].hand.length < MAX_HAND; n++) { const cp = instantiate(state.cardsById[c.id], pi); cp.zone = 'hand'; state.players[pi].hand.push(cp); emit(state, { type: 'conjure', player: pi, card: cp, color: null }); } } { const _dd = c.castOnDiscard ? c : state.cardsById[c.id]; if (_dd && _dd.castOnDiscard && _dd.effects) execEffects(state, pi, JSON.parse(JSON.stringify(_dd.effects)), null, c); } fireOngoing(state, pi, 'card-discarded', { card: c }); /* High Priestess Jekliik */
+}
+/** Discard this very card from its owner's hand (not at random): into the graveyard, announced, with what that sets off. */
+function discardThis(state, pi, c) {
+	const p = state.players[pi], j = p.hand.indexOf(c); if (j < 0) return false;
+	p.hand.splice(j, 1); toGraveyard(state, pi, c);
+	emit(state, { type: 'discard', player: pi, card: c });
+	afterDiscard(state, pi, c);
+	return true;
+}
+
 register('draw', ({ state, pi, scaled, enemies, source }, e) => {
 	// count-vs-value tolerance (docs/06 pinned it; king_llane regression): a
 	// handful of imported cards write `count` instead of `value` — the old
@@ -70,7 +85,11 @@ register('draw', ({ state, pi, scaled, enemies, source }, e) => {
 		// note the drawn cards so a later effect can act on them (Lunar Visions / Fast Forward)
 		const hand = state.players[pi].hand, before = new Set(hand);
 		drawCards(state, pi, n);
-		noteResult(source, 'draw', state.players[pi].hand.filter(c => !before.has(c)));
+		const drawn = state.players[pi].hand.filter(c => !before.has(c));
+		// discardDrawn: 'spells' | 'creatures' — "Draw 3 cards. Discard any spells drawn." (Book of Specters; Fungal
+		// Fortunes: creatures). Only the cards this draw put in your hand: what you already held stays.
+		if (e.discardDrawn) for (const c of drawn) if (e.discardDrawn === 'creatures' ? c.type === 'creature' : isSpellType(c)) discardThis(state, pi, c);
+		noteResult(source, 'draw', drawn.filter(c => state.players[pi].hand.includes(c)));
 	}
 });
 
@@ -1521,7 +1540,7 @@ register('discard-all', ({ state, pi, target, source, enemies, scaled, hm, pickE
 				const c = p.hand.pop();
 				toGraveyard(state, pi, c);
 				emit(state, { type: 'discard', player: pi, card: c });
-				if (!c.token) state.players[pi].discardLogIds.push(c.id); if (c.summonOnDiscard && state.cardsById[c.id]) summon(state, pi, state.cardsById[c.id]); if (c.returnBuffedOnDiscard && state.players[pi].hand.length < MAX_HAND) { c.attack += 2; c.maxHealth += 2; c.zone='hand'; state.players[pi].hand.push(c); const gi = state.players[pi].graveyard.indexOf(c); if (gi>=0) state.players[pi].graveyard.splice(gi,1); emit(state,{type:'conjure',player:pi,card:c,color:null}); } if (c.copiesOnDiscard && state.cardsById[c.id]) { for (let n = 0; n < c.copiesOnDiscard && state.players[pi].hand.length < MAX_HAND; n++) { const cp = instantiate(state.cardsById[c.id], pi); cp.zone = 'hand'; state.players[pi].hand.push(cp); emit(state, { type: 'conjure', player: pi, card: cp, color: null }); } } { const _dd = c.castOnDiscard ? c : state.cardsById[c.id]; if (_dd && _dd.castOnDiscard && _dd.effects) execEffects(state, pi, JSON.parse(JSON.stringify(_dd.effects)), null, c); } fireOngoing(state, pi, 'card-discarded', { card: c }); /* High Priestess Jekliik */
+				afterDiscard(state, pi, c);
 			}
 } });
 
@@ -1561,7 +1580,7 @@ register('discard-random', ({ state, pi, target, source, enemies, scaled, hm, pi
 				const [c] = p.hand.splice(j, 1);
 				toGraveyard(state, pi, c);
 				emit(state, { type: 'discard', player: pi, card: c });
-				if (!c.token) state.players[pi].discardLogIds.push(c.id); if (c.summonOnDiscard && state.cardsById[c.id]) summon(state, pi, state.cardsById[c.id]); if (c.returnBuffedOnDiscard && state.players[pi].hand.length < MAX_HAND) { c.attack += 2; c.maxHealth += 2; c.zone='hand'; state.players[pi].hand.push(c); const gi = state.players[pi].graveyard.indexOf(c); if (gi>=0) state.players[pi].graveyard.splice(gi,1); emit(state,{type:'conjure',player:pi,card:c,color:null}); } if (c.copiesOnDiscard && state.cardsById[c.id]) { for (let n = 0; n < c.copiesOnDiscard && state.players[pi].hand.length < MAX_HAND; n++) { const cp = instantiate(state.cardsById[c.id], pi); cp.zone = 'hand'; state.players[pi].hand.push(cp); emit(state, { type: 'conjure', player: pi, card: cp, color: null }); } } { const _dd = c.castOnDiscard ? c : state.cardsById[c.id]; if (_dd && _dd.castOnDiscard && _dd.effects) execEffects(state, pi, JSON.parse(JSON.stringify(_dd.effects)), null, c); } fireOngoing(state, pi, 'card-discarded', { card: c }); /* High Priestess Jekliik */ // Tiny Knight of Evil
+				afterDiscard(state, pi, c);
 			}
 } });
 
@@ -1578,7 +1597,7 @@ register('discard-lowest', ({ state, pi, target, source, enemies, scaled, hm, pi
 				if (e.remember && source) source.discardedId = c.id; // Expired Merchant deathrattle
 				toGraveyard(state, pi, c);
 				emit(state, { type: 'discard', player: pi, card: c });
-				if (!c.token) state.players[pi].discardLogIds.push(c.id); if (c.summonOnDiscard && state.cardsById[c.id]) summon(state, pi, state.cardsById[c.id]); if (c.returnBuffedOnDiscard && state.players[pi].hand.length < MAX_HAND) { c.attack += 2; c.maxHealth += 2; c.zone='hand'; state.players[pi].hand.push(c); const gi = state.players[pi].graveyard.indexOf(c); if (gi>=0) state.players[pi].graveyard.splice(gi,1); emit(state,{type:'conjure',player:pi,card:c,color:null}); } if (c.copiesOnDiscard && state.cardsById[c.id]) { for (let n = 0; n < c.copiesOnDiscard && state.players[pi].hand.length < MAX_HAND; n++) { const cp = instantiate(state.cardsById[c.id], pi); cp.zone = 'hand'; state.players[pi].hand.push(cp); emit(state, { type: 'conjure', player: pi, card: cp, color: null }); } } { const _dd = c.castOnDiscard ? c : state.cardsById[c.id]; if (_dd && _dd.castOnDiscard && _dd.effects) execEffects(state, pi, JSON.parse(JSON.stringify(_dd.effects)), null, c); } fireOngoing(state, pi, 'card-discarded', { card: c }); /* High Priestess Jekliik */
+				afterDiscard(state, pi, c);
 			}
 } });
 

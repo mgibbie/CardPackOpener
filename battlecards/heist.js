@@ -168,7 +168,7 @@ export const BOSSES = {
 	jepetto_joybuzz: { name: 'Jepetto Joybuzz', health: 30, hsId: 'DALA_BOSS_25h', power: { name: 'Assembly', cost: 2, text: 'Create a 1/1 copy of a random creature in your hand.', effects: [{ type: 'summon-hand-copy', attack: 1, health: 1 }] }, theme: { cardClass: 'neutral' } },
 	dalaran_fountain_golem: { name: 'Dalaran Fountain Golem', health: 30, hsId: 'DALA_BOSS_26h', power: { name: 'Cold Water', cost: 1, text: 'Freeze an enemy creature.', effects: [{ type: 'freeze', target: 'enemy-creature' }] }, theme: { tribe: 'Elemental' } },
 	rasil_fireborne: { name: 'Rasil Fireborne', health: 30, hsId: 'DALA_BOSS_27h', power: { name: 'Masterpiece!', cost: 3, text: 'Create a random creature that costs (5).', effects: [{ type: 'summon-random', cost: 5 }] }, theme: { tribe: 'Elemental' } },
-	xur_ios: { name: "Xur'ios", health: 30, hsId: 'DALA_BOSS_28h', power: { name: 'Scroll Savvy', cost: 1, text: 'Draw a card. A random card in your hand costs (2) less.', effects: [{ type: 'draw', value: 1 }, { type: 'reduce-random-hand-cost', value: 2 }] }, theme: { cardClass: 'mage' } },
+	xur_ios: { name: "Xur'ios", health: 30, hsId: 'DALA_BOSS_28h', power: { name: 'Scroll Savvy', cost: 1, text: 'Draw a card. A random card in your hand costs (2) less.', effects: [{ type: 'draw', value: 1 }, { type: 'reduce-random-hand-cost', anyCard: true, value: 2 }] }, theme: { cardClass: 'mage' } },
 	mama_diggs: { name: 'Mama Diggs', health: 40, hsId: 'DALA_BOSS_29h', power: { name: 'Excavate', cost: 1, text: 'Excavate a treasure.', effects: [{ type: 'excavate' }] }, theme: { tribe: 'Elemental' } },
 	the_rat_king: { name: 'The Rat King', health: 10, hsId: 'DALA_BOSS_30h', power: { name: 'A Tale of Kings', cost: 3, text: 'Create a 2/2 Underbelly Rat.', effects: [{ type: 'summon', count: 1, attack: 2, health: 2, name: 'Underbelly Rat', tribe: 'Beast' }] }, theme: { tribe: 'Beast', maxCost: 4 } },
 	timothy_jones: { name: 'Timothy Jones', health: 30, hsId: 'DALA_BOSS_31h', power: { name: 'Bling it On!', cost: 2, text: 'Give a random friendly creature +2/+2.', effects: [{ type: 'buff-random-friendly', attack: 2, health: 2 }] }, theme: { cardClass: 'paladin' } },
@@ -298,12 +298,17 @@ export function applyRunMods(state, pi, run) {
 	}
 	// persistent buffs: stat buffs on hand copies + one deckIdBuffs entry per
 	// remaining deck copy; cost deltas via deckCostPersist (set base + delta)
-	const costDelta = {};
+	const costDelta = {}, statSum = {};
 	for (const b of run.deckBuffs || []) {
 		for (const c of p.hand) if (c.id === b.id) { c.attack += b.attack || 0; c.maxHealth += b.health || 0; c.cost = Math.max(0, c.cost + (b.cost || 0)); }
-		const copies = p.deck.filter(id => id === b.id).length;
-		for (let k = 0; k < copies; k++) (p.deckIdBuffs = p.deckIdBuffs || []).push({ id: b.id, attack: b.attack || 0, health: b.health || 0 });
+		const s = statSum[b.id] || (statSum[b.id] = { attack: 0, health: 0 }); s.attack += b.attack || 0; s.health += b.health || 0;
 		if (b.cost) costDelta[b.id] = (costDelta[b.id] || 0) + b.cost;
+	}
+	// (a draw takes ONE deckIdBuffs entry for its card, so the buffs on a card are summed into one entry a copy: two
+	//  Tell a Story on Cave Hydra gave the drawn copy only one of them. Tester report 2026-11-12)
+	for (const [id, s] of Object.entries(statSum)) {
+		const copies = p.deck.filter(d => d === id).length;
+		for (let k = 0; k < copies; k++) (p.deckIdBuffs = p.deckIdBuffs || []).push({ id, attack: s.attack, health: s.health });
 	}
 	for (const [id, delta] of Object.entries(costDelta)) {
 		const base = state.cardsById[id]?.cost || 0;
