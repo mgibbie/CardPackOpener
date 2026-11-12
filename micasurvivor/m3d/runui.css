@@ -92,3 +92,14 @@ body.rx #cards .tools button[disabled] { background: #59676a; box-shadow: 0 .3em
 .rx-btn { font: inherit; font-size: 1.25em; color: #fff; text-decoration: none; background: var(--grey); border: 0; border-radius: .5em; padding: .5em .9em .4em; box-shadow: 0 .28em 0 var(--grey-d); text-shadow: 0 2px 0 rgba(0, 0, 0, .3); cursor: pointer; touch-action: manipulation; transition: transform .06s, box-shadow .06s, filter .1s; }
 .rx-btn:hover { filter: brightness(1.1); } .rx-btn:active { transform: translateY(4px); box-shadow: 0 1px 0 var(--grey-d); }
 .rx-btn.blue { background: var(--blue); box-shadow: 0 .28em 0 var(--blue-d); } .rx-btn.red { background: var(--red); box-shadow: 0 .28em 0 var(--red-d); }
+
+/* ---- the menu (Esc, P, or its button under the minimap): the fight waits while it is up, when you play alone */
+.rx-menu-btn { position: absolute; right: max(10px, env(safe-area-inset-right)); top: calc(max(8px, env(safe-area-inset-top)) + min(30vmin, 190px) + 16px); pointer-events: auto; font: inherit; color: #fff; background: var(--grey); border: 0; border-radius: .45em; padding: .4em .7em .3em; box-shadow: 0 .25em 0 var(--grey-d); text-shadow: 0 2px 0 rgba(0, 0, 0, .3); cursor: pointer; touch-action: manipulation; }
+.rx-menu-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--grey-d); }
+.rx-menu-btn.hide { display: none; }
+.rx-btns.col { flex-direction: column; align-items: stretch; gap: .75em; }
+.rx-btn.orange { background: var(--orange); box-shadow: 0 .28em 0 var(--orange-d); }
+/* ---- a card's art: an item's or a vitamin's picture, a Mega's sprite, a move's type */
+body.rx #cards button em { display: flex; align-items: center; height: 2.4em; font-style: normal; }
+body.rx #cards button em img { height: 100%; image-rendering: pixelated; filter: drop-shadow(0 3px 0 rgba(0, 0, 0, .3)); }
+body.rx #cards button em .rx-type { border-radius: .4em; padding: .3em .6em .22em; box-shadow: 0 3px 0 rgba(0, 0, 0, .3); text-transform: uppercase; }

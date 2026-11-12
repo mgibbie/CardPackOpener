@@ -1060,6 +1060,27 @@ bars in co-op, a pause menu.
 
 Tests: `micasurvivor_m3d_runui_test.mjs` (18 checks, a real browser): new.
 
+## 5.32 The shipping path, second part: built (2026-11-12). The menu, the cards' art, names for a player.
+
+- **The menu** (Esc, P, or its button under the minimap): Resume, Restart the run, Leave. Alone in your own run
+  the fight waits while it is up; a guest's or a watcher's fight is someone else's and goes on. With the zone
+  map, a choice or a level's cards open, Esc closes those first.
+- **A card's art**: a move's type, a vitamin's or an item's picture (the overworld's own, as the 2D game shows
+  them), a Mega's sprite.
+- **Names for a player**: a move is "Flame Wheel" on its card, in "Replaces …" and in "Kit move: …" (as the 2D
+  game writes it), not its id.
+
+**The owner's decisions (2026-11-12)**, which set the rest of the path (see §7): the old 2D modes stay until
+the 3D ones are complete; a 3D run pays into the same save; 3D scores have their own boards; no local co-op;
+over the site's lines only watching ships (no new transport: live co-op stays on the test page); the 2D modes
+are archived, not deleted, when their 3D counterparts go live; old 2D tapes are refused; rails, wall-running
+and surfing are in the first version; upgrades (P5) come before Dive in 3D (P6).
+
+So the order from here: the site's controls on the 3D page, the way in, the save (with wild League
+encounters and the 3D boards), live watching over the site's lines, the movement tech, P5, P6, P7.
+
+Tests: `micasurvivor_m3d_runui_test.mjs` 23 checks (was 18).
+
 ## 6. Dive in 2D: built
 
 **D0 — find the stairs (small; can ship first, on its own).** *Built 2026-11-11 (`overworld/tests/micasurvivor_dive_stairs_test.mjs`). As built: the stairs took their own orange mark, so the rocks and Meowth keep their gold; the HUD arrow comes up after 25 s on a floor, or at once when its boss falls.*
@@ -1103,15 +1124,15 @@ Tests: `micasurvivor_m3d_runui_test.mjs` (18 checks, a real browser): new.
 2. **Collision: our own height-field, or a physics engine?** Recommended: our own. It is what keeps a phone at 60 fps and
    keeps runs reproducible. The cost is that free-form geometry (overhangs, loops) is limited to what the grid can
    describe.
-3. **How far to take movement tech.** Slide, multi-jump and air control are in P1. Rails, wall-running and surfing are
-   each a real piece of work: in the first version, or later?
-4. **Upgrades (P5) first?** It needs no 3D and would improve both modes now.
-5. **Old 2D Expedition and Dive: remove once replaced, or keep as an option?** Recommended: remove. Two versions of two
-   modes would double the testing.
-6. **Old replays.** Refuse 2D Expedition / Dive tapes once the modes are 3D (they expire within 30 days anyway), or
-   keep the 2D renderer only to play them back? Recommended: refuse, with a notice.
-7. **Local co-op in third person.** Split screen, a pulled-back shared camera, or drop local co-op for these two modes?
-8. **Transport.** If the measurement in P3n says the polled relay is not enough: peer-to-peer only for 3D co-op (no new
+3. ~~How far to take movement tech.~~ **Decided 2026-11-12: rails, wall-running and surfing are in the first version.**
+4. ~~Upgrades (P5) first?~~ **Decided 2026-11-12: yes, P5 before Dive in 3D (P6).**
+5. ~~Old 2D Expedition and Dive.~~ **Decided 2026-11-12: they stay until the 3D ones are complete; when a 3D
+   counterpart goes live the 2D mode is removed from the game but its code is kept, archived, not deleted.**
+6. ~~Old replays.~~ **Decided 2026-11-12: refuse 2D Expedition / Dive tapes once the modes are 3D, with a notice.**
+7. ~~Local co-op in third person.~~ **Decided 2026-11-12: dropped for these two modes.**
+8. ~~Transport.~~ **Decided 2026-11-12: "just keep spectating": no peer-to-peer and no new backend; watching over the
+   site's relay ships, live co-op does not (it stays on the test page).** Also decided: a 3D run pays into the same
+   save as a 2D one, and 3D scores have their own boards. The question as it stood: if the relay is not enough: peer-to-peer only for 3D co-op (no new
    backend, but it fails behind some networks), or a WebSocket backend (works everywhere, new infrastructure and a
    running cost)? No recommendation until it is measured.
 

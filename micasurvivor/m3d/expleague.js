@@ -27,6 +27,8 @@ export function leagueFrom(G) {
 }
 /** The member a species belongs to (its family's first stage), or Bulbasaur. */
 export const memberOf = (LG, dex) => (LG.BY[dex] ? dex : LG.FAM[dex] && LG.BY[LG.FAM[dex]] ? LG.FAM[dex] : LG.K.DEFAULT);
+/** A move's id as a player reads it: 'flame-wheel' -> 'Flame Wheel'. */
+const nice = (id) => String(id).split('-').map((w) => (w ? w[0].toUpperCase() + w.slice(1) : '')).join(' ');
 const name = (S, dex) => { const m = S.data.mon(dex); return m ? m.name : '#' + dex; };
 
 /** A move at its class's factor for the stage you are (a physical move on a special attacker is scaled down to it). */
@@ -93,7 +95,7 @@ export function processLeague(S) {
 	const m = LG.BY[G.member];
 	while (G.done < pl.level && !G.pending) {
 		const lv = G.done + 1, ki = K.KIT_AT.indexOf(lv);
-		if (ki > 0 && learnKit(S, ki)) { G.log.push([lv, 'kit', m.kit[ki]]); say(S, `Kit move: ${m.kit[ki]} (${ki + 1}/4)`, 2.6); }
+		if (ki > 0 && learnKit(S, ki)) { G.log.push([lv, 'kit', m.kit[ki]]); say(S, `Kit move: ${nice(m.kit[ki])} (${ki + 1}/4)`, 2.6); }
 		const nx = LG.nextOf(m, G.form);
 		if (nx.length && lv >= LG.evoLevel(m, G.form)) {
 			if (nx.length === 1) evolve(S, nx[0][0], lv);

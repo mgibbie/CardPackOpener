@@ -314,6 +314,7 @@ function frame(now) {
 	if (perf.last) { perf.frames.push(now - perf.last); if (perf.frames.length > 240) perf.frames.shift(); }
 	perf.last = now;
 	perf.acc += dt;
+	if (paused) perf.acc = 0;   // (the menu is up, alone: the fight waits)
 	const t0 = performance.now();
 	const input = readInput(dt);
 	followCam(dt);
@@ -530,8 +531,19 @@ function showCards() {
 	const el = document.getElementById('cards'), cs = world.pl.choices; if (!el || !cs) return;
 	const lv = myRun && myRun.lv, RC = (GG.ExpItems && GG.ExpItems.RAR_COL) || [];   // (P4) an Expedition card has a rarity, and the run its three tools
 	const tools = !lv ? '' : `<div class="tools"><button data-tool="refresh"${lv.refreshes ? '' : ' disabled'}>F · Refresh (${lv.refreshes})</button><button data-tool="skip"${lv.skips ? '' : ' disabled'}>G · Skip (${lv.skips})</button><button data-tool="banish"${lv.bans ? '' : ' disabled'}>${banMode ? 'pick a card to banish…' : 'B · Banish (' + lv.bans + ')'}</button></div>`;
-	el.innerHTML = `<h2>Level ${world.pl.level}</h2>` + cs.map((c, i) => `<button data-i="${i}" style="border-color:${c.tier > 0 && RC[c.tier] ? RC[c.tier] : TYPE_COLOR[c.mtype] || '#8fa3c4'}"><b>${i + 1} · ${c.title}</b><i>${(c.tier > 0 ? c.rarName.toUpperCase() + ' · ' : '') + (c.tag || '')}</i><span>${c.desc || (GG.Moves.BY_ID[c.id] ? GG.Moves.BY_ID[c.id].kind : '')}</span></button>`).join('') + tools;
+	el.innerHTML = `<h2>Level ${world.pl.level}</h2>` + cs.map((c, i) => `<button data-i="${i}" style="border-color:${c.tier > 0 && RC[c.tier] ? RC[c.tier] : TYPE_COLOR[c.mtype] || '#8fa3c4'}">${cardArt(c)}<b>${i + 1} · ${RUNUI && c.kind === 'move' ? pretty(c.title) : c.title}</b><i>${(c.tier > 0 ? c.rarName.toUpperCase() + ' · ' : '') + (RUNUI ? String(c.tag || '').replace(/^Replaces (.+)$/, (q, id) => 'Replaces ' + pretty(id)) : c.tag || '')}</i><span>${c.desc || (GG.Moves.BY_ID[c.id] ? GG.Moves.BY_ID[c.id].kind : '')}</span></button>`).join('') + tools;
 	el.style.display = 'grid';
+}
+/** (the shipping path) A card's art on a run's screen: an item's or a vitamin's picture (the overworld's own, as the
+ *  2D game shows them), a Mega's sprite, a move's type. */
+function cardArt(c) {
+	if (!RUNUI) return '';
+	const I = GG.ExpItems, M = GG.ExpMega, img = (src) => `<em><img src="${src}" alt=""></em>`;
+	if (c.mega && M && M.BY[c.mega] && M.srcOf(M.BY[c.mega])) return img(M.srcOf(M.BY[c.mega]));
+	if (c.kind === 'move' && c.mtype) return `<em><span class="rx-type" style="background:${TYPE_COLOR[c.mtype] || '#5f7377'}">${c.mtype}</span></em>`;
+	if (I && c.kind === 'vit' && I.VIT[c.id]) return img(I.icon(I.VIT[c.id].icon));
+	if (I && c.item && I.IT[c.item]) return img(I.icon(I.IT[c.item].icon));
+	return '<em></em>';
 }
 let banMode = false, shownPick = null;
 /** (P4) A choice of the run's economy: a ball's or an altar's items, Meowth's stall (with prices), Hypno's question. */
@@ -539,9 +551,9 @@ function showPick() {
 	const el = document.getElementById('cards'), P = myRun.pick; shownPick = P;
 	if (!P) { if (!world.pl.choices) { el.style.display = 'none'; el.innerHTML = ''; } return; }
 	const I = GG.ExpItems, EN = GG.ExpEN || {}, en = (s) => EN[s] || s, prices = P.kind === 'shop' ? (run ? shopPrices(run, P.ids) : P.prices) : null, coins = run ? run.coins : (rv ? rv.coins : 0);
-	const list = P.cards ? P.cards.map((c) => ({ ...c, col: '#3fa35a' })) : P.vit ? P.vit.map((id) => ({ title: en(I.VIT[id].name), tag: 'Vitamin', desc: 'Forget it', col: '#f6d860' }))
-		: P.ids.map((id, i) => ({ title: en(I.IT[id].name), tag: I.RAR[I.IT[id].rar].toUpperCase() + (prices ? ' · ' + prices[i] + ' ₽' : ''), desc: I.itemText(id), col: I.RAR_COL[I.IT[id].rar] }));
-	el.innerHTML = `<h2>${P.title}${P.sub ? ' · ' + P.sub : ''}${prices ? ' · you have ' + coins + ' ₽' : ''}</h2>` + list.map((c, i) => `<button data-p="${i}"${P.taken.includes(i) ? ' disabled style="opacity:.35' : ' style="'};border-color:${c.col}"><b>${i + 1} · ${c.title}</b><i>${c.tag}</i><span>${c.desc}</span></button>`).join('')
+	const list = P.cards ? P.cards.map((c) => ({ ...c, col: '#3fa35a' })) : P.vit ? P.vit.map((id) => ({ kind: 'vit', id, title: en(I.VIT[id].name), tag: 'Vitamin', desc: 'Forget it', col: '#f6d860' }))
+		: P.ids.map((id, i) => ({ item: id, title: en(I.IT[id].name), tag: I.RAR[I.IT[id].rar].toUpperCase() + (prices ? ' · ' + prices[i] + ' ₽' : ''), desc: I.itemText(id), col: I.RAR_COL[I.IT[id].rar] }));
+	el.innerHTML = `<h2>${P.title}${P.sub ? ' · ' + P.sub : ''}${prices ? ' · you have ' + coins + ' ₽' : ''}</h2>` + list.map((c, i) => `<button data-p="${i}"${P.taken.includes(i) ? ' disabled style="opacity:.35' : ' style="'};border-color:${c.col}">${cardArt(c)}<b>${i + 1} · ${c.title}</b><i>${c.tag}</i><span>${c.desc}</span></button>`).join('')
 		+ (P.kind === 'shop' || P.kind === 'hypno' || P.onClose ? `<div class="tools"><button data-p="-1">Esc · ${P.cancel || 'Leave'}</button></div>` : '');
 	el.style.display = 'grid';
 }
@@ -568,7 +580,22 @@ if (FIGHT) {
 }
 /** (the shipping path) A run's own screen, in Micatro's look: runui.js draws this view of the run. The test room's
  *  readout is still filled (tests and ?debug=1 read it), but it is not what a player sees. */
-const RUNUI = myRun || XW ? mountRunUi(document, { debug: Q.has('debug') }) : null;
+const RUNUI = myRun || XW ? mountRunUi(document, { debug: Q.has('debug'), onMenu: () => setMenu(!menuUp), onResume: () => setMenu(false) }) : null;
+/** The menu (Esc, P, or its button). Alone in your own run the fight waits while it is up; a guest's or a watcher's
+ *  fight is someone else's and goes on. */
+let menuUp = false, paused = false;
+function setMenu(on) {
+	if (!RUNUI || runOver) on = false;
+	menuUp = !!on; paused = menuUp && !!run && !world.mates.length;
+	if (menuUp) keys.clear();   // (no key stays held under the menu)
+	RUNUI && RUNUI.update(runView());
+	return menuUp;
+}
+if (RUNUI) addEventListener('keydown', (e) => {
+	if (e.code !== 'Escape' && e.code !== 'KeyP') return;
+	if (!menuUp && (mapBig || (myRun && myRun.pick) || (world && world.pl.choices))) return;   // (Esc closes those first)
+	setMenu(!menuUp);
+}, true);
 function runView() {
 	const pl = world ? world.pl : null, vp = view ? view.pl : null, I = GG.ExpItems, en = (s) => (GG.ExpEN && GG.ExpEN[s]) || s, nameOf = (d) => (GG.DEX_BY[d] || {}).name || '';
 	const M = GG.ExpMega, lg = rv && rv.league, mg = lg && lg.mega && M && M.BY[lg.mega];
@@ -583,6 +610,7 @@ function runView() {
 	for (const d of myRun && myRun.cap ? myRun.cap.sa.map((a) => a.dex) : rv ? rv.sa : []) v.bag.push({ text: nameOf(d), kind: 'warn' });
 	const b = world && !JOIN ? world.enemies.find((e) => e.boss) : null;
 	if (b) v.boss = { name: nameOf(b.dex), hp: b.hp, maxHp: b.maxHp, enraged: !!(b.ai && b.ai.fury) };
+	if (menuUp && !runOver) v.menu = { title: paused ? 'PAUSED' : 'MENU', line: paused ? '' : 'The fight goes on while this is open.', restart: run ? location.search || '?' : null, leave: '../' };
 	if (runOver) {
 		const r = runOver, q = new URLSearchParams(location.search); q.set('exp', (+q.get('exp') || 0) + 1);
 		v.over = typeof r === 'string' ? { won: r === 'won', title: r === 'won' ? 'EXPEDITION COMPLETE!' : 'RUN OVER', line: '', rows: [], again: null, leave: '../' }
@@ -641,6 +669,7 @@ function showHud() {
 
 // what a test (and a curious owner in the console) can reach
 window.__m3d = {
+	setMenu, get paused() { return paused; },
 	runView: () => (RUNUI ? runView() : null),
 	get megaNow() { return megaNow; }, megaSheets,
 	get ready() { return ready; }, state, get room() { return room; }, run, setZoneTime: (sec) => run && setZoneTime(run, sec), useTool, takePick, ecoView: () => (run ? ecoView(run) : []), capView: () => (run ? capView(run) : null), hazards: () => (run ? hazardsNow(run) : []), fog: () => fogNow(), toggleMap, get mapBig() { return mapBig; }, get rv() { return rv; }, noteLog, grun, fire: (ev) => run && fireEvent(run, ev), K, TUNE, TYPES, TRAITS, cam, crowd, sheets, stats, gen: GEN, biome: BIOME, world, numbers, net, tape, myId: MYID, mates, get coView() { return coView; }, playTape, get view() { return view; }, get viewer() { return viewer; }, get watchT() { return watchT; }, addBoss: (dex, x, z, o) => addBoss(world, dex, x, z, o), drop: (kind, x, z, v) => drop(world, kind, x, groundAt(room, x, z), z, v), pickCard, addEnemy: (dex, x, z, o) => addEnemy(world, dex, x, z, o), holdExit: false, get leaving() { return leaving; },
