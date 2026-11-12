@@ -1026,6 +1026,40 @@ with saving). Then the shipping path.
 
 Tests: `micasurvivor_m3d_expleague_test.mjs` 51 checks (was 34), the page test 44 (was 41).
 
+## 5.31 The shipping path, first part: built (2026-11-12). A run's own screen.
+
+P4's rules are built; what is left before a player can be sent to 3D Expedition is the path to the live site.
+Its parts, in the order planned:
+
+1. **A run's own screen** (this part).
+2. The rest of the screens in the same look: a run's choices with their art, the zone map, the co-op party's
+   bars, watching, a pause menu, touch controls.
+3. The site's controls (`/site/` input, gamepad, the Games switcher) on the 3D page.
+4. The way in: an opt-in "3D" choice in MicaSurvivor's Play flow (the member, the map, the tier, the mode).
+5. What a run leaves behind: pay, records, medals and the League's progress in the save; wild League
+   encounters come with it. A 3D score must be told from a 2D one on the server.
+6. Live co-op and watching over the site's lines (decisions 7 and 8).
+
+**This part.** `micasurvivor/m3d/runui.js` + `runui.css`: while a run is on the page (or one is watched), the
+test room's readout gives way to a screen in Micatro's look (the palette, the m6x11 font, slate panels with a
+lip and buttons that press down are the ones `css/mx.css` ported):
+
+- who you are, HP (with a shield) and XP as bars, the clock and the KOs;
+- the run's line as chips (the zone lit, money gold, a danger orange);
+- what the run says as a banner; a boss's name and HP as a bar;
+- the bag (vitamins, items, the held item, the team) and the four move slots in their types' colours;
+- the level-up cards and the run's choices in the same look (the same buttons and keys);
+- the run's end as a panel: the result, "Play again" (the next seed) and "Leave".
+
+runui.js only draws: the page hands it a plain view of the run a few times a second. The readout is still
+filled (tests read it) and `?debug=1` shows it. One size (`--u`) scales the whole screen, so a phone held
+upright fits. The test room without a run is untouched.
+
+Not yet: art on the cards and the moves, move names written for a player in the run's own texts, the party's
+bars in co-op, a pause menu.
+
+Tests: `micasurvivor_m3d_runui_test.mjs` (18 checks, a real browser): new.
+
 ## 6. Dive in 2D: built
 
 **D0 — find the stairs (small; can ship first, on its own).** *Built 2026-11-11 (`overworld/tests/micasurvivor_dive_stairs_test.mjs`). As built: the stairs took their own orange mark, so the rocks and Meowth keep their gold; the HUD arrow comes up after 25 s on a floor, or at once when its boss falls.*
