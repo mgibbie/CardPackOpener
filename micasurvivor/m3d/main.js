@@ -15,7 +15,7 @@ import { hostAdd, hostStep, hostFrame, hostApply, guestWorld, guestSync, guestMs
 import { generate, BIOMES } from './gen.js';
 import { mountRunUi, pretty } from './runui.js';
 import { HostLink, WatchLink, runId, SAYS as LIVE_SAYS } from './exprelay.js';
-import { unfair, clean as cleanRun, deviceId, missing as saveMissing, runSum, recordOps, applyOps, scoreBody, WHY, SV, wildOf, catchOps, newlyMet, boardAsk, boardRows } from './expsave.js';
+import { unfair, clean as cleanRun, deviceId, missing as saveMissing, runSum, recordOps, applyOps, scoreBody, WHY, SV, wildOf, catchOps, shinyOps, newlyMet, boardAsk, boardRows } from './expsave.js';
 import { rng as seedRng } from './gen.js';
 import { startInput } from '/site/input.js';
 import { createFocusNav } from '/site/focusnav.js';
@@ -417,7 +417,7 @@ function showMap() {
 /** (P3) What this tick of the fight did, as things to see. */
 function fightEvents(events) {
 	const col = (id) => TYPE_COLOR[(GG.Moves.BY_ID[id] || (GG.ExpMoves && GG.ExpMoves.MOVES[id]) || {}).type];
-	for (const ev of events) if (ev.k === 'caught' && ev.kind === 'league' && run) keepCatch(ev.member || ev.dex);   // (a wild League member: saved at once)
+	for (const ev of events) if (ev.k === 'caught' && run) { if (ev.kind === 'league') keepCatch(ev.member || ev.dex); else if (ev.kind === 'shiny') keepShiny(ev.dex); }   // (a wild League member, a shiny: saved at once)
 	for (const ev of events) {
 		if (ev.k === 'mark') { flashes.arc(ev.x, ev.y, ev.z, ev.r, 0, 6.2832, TYPE_COLOR[typeName(ev.type)], ev.life, ev.inner); continue; }   // (watching: something was put down)
 		if (ev.k === 'melee') flashes.arc(state.x, state.y, state.z, ev.r, ev.aim, Math.min(ev.arc, 6.2832), col(ev.id));
@@ -699,6 +699,11 @@ function keepCatch(member) {
 	if (!run || PRACTICE || !SAVE_OK || !member || !cleanRun(run, (performance.now() - runBegan) / 1000)) return false;
 	applyOps(GG.ExpSave, catchOps(member)); return true;
 }
+/** A shiny caught: kept at once too. */
+function keepShiny(dex) {
+	if (!run || PRACTICE || !SAVE_OK || !dex || !cleanRun(run, (performance.now() - runBegan) / 1000)) return false;
+	applyOps(GG.ExpSave, shinyOps(dex, GG.ExpLeague && GG.ExpLeague.FAM[dex] || 0)); return true;
+}
 async function keepRun(res) {
 	const say = (ok, text, extra) => { kept = { ok, text, ...extra }; if (RUNUI) RUNUI.update(runView()); return kept; };
 	if (PRACTICE) return say(false, WHY.practice, { why: 'practice', param: PRACTICE });
@@ -771,6 +776,7 @@ function showHud() {
 
 // what a test (and a curious owner in the console) can reach
 window.__m3d = {
+	keepShiny,
 	siteHost: SITE_HOST, siteWatch: SITE_WATCH,
 	openBoard, get boardUp() { return boardUp; },
 	wild: WILD, saveOk: SAVE_OK, keepCatch,

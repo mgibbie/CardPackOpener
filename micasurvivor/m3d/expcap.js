@@ -12,7 +12,7 @@
 // The numbers, the perks, the zone's shiny roll and the cinematic's length are the 2D game's own
 // (js/expedition/capture.js: K, perkOf, shinyChance, zonePlan, CINE_T).
 //
-// Not here yet: keeping a caught shiny (the save), a guest catching the host's wild member,
+// Not here yet: a guest catching the host's wild member,
 // the Lab's third slot, the Master Ball.
 import { CELL, groundAt } from './sim.js';
 import { rng as makeRng } from './gen.js';
@@ -86,8 +86,7 @@ function spawnLeague(S, member) {
 	if (!pt) pt = [s.x + Math.cos(ang) * 120 * U, s.z + Math.sin(ang) * 120 * U];
 	const e = spawn(S, m.dex, pt[0], pt[1], { ti: 1, hp: K.LG_HP * (K.LG_RANK[m.rank] || 1), dmg: K.LG_DMG, xp: K.LG_XP, scale: K.LG_SCALE });
 	e.xk = 'league';
-	mark(S, e, 'league', { member, flee: m.rank === 'legendary' ? K.LG_FLEE_LEG : K.LG_FLEE });
-	S.cap.log.seen++;
+	mark(S, e, 'league', { member, flee: m.rank === 'legendary' ? K.LG_FLEE_LEG : K.LG_FLEE });   // (log.seen counts the shinies seen, as the 2D game's does: not these)
 	say(S, `A wild ${name(S, m.dex)} appeared!`, 3.4);
 	S.w.events.push({ k: 'wild', member, dex: m.dex });
 	return e;
