@@ -635,6 +635,39 @@ backend, for co-op).
 Tests: co-op rules 38 checks, the watch test 25 (three windows, then two more at the relay's pace), the co-op
 page test 15.
 
+## 5.17 P4, first part: built (2026-11-11). A Classic Expedition run, start to finish.
+
+`micasurvivor/m3d/expedition.js`: the run, pure and seeded, on top of `combat.js`. On the page:
+`/micasurvivor/m3d/?exp=<seed>&map=viridian|mtmoon|cerulean&diff=normal|hard|nightmare`.
+
+- **What a zone holds is the 2D game's own plan.** The module reads `G.ExpClassic.plan` (species, guardian,
+  timeline), its `K` and the tier table: nothing is copied but the tier ranges. Change a number in 2D and 3D
+  follows.
+- **The run.** Three generated zones (7 x 7 tiles, 98 m a side; Viridian is meadow, Mt. Moon peaks, Cerulean Cape
+  marsh) and the hand-made shrine (a walled grove, two ponds, stairs up to the pedestal). In each zone: find the
+  altar, stand on it 3 s, beat the guardian, stand in the portal 0.8 s. The legendary at the shrine ends the run;
+  so does going down alone. Splits, the result lines and the 2D game's score.
+- **The altar** is a seeded pick among flat 3 x 3 places you can walk to, 26 m or more from where you arrive.
+- **Pacing.** The trickle (four species, one more a minute), the per-zone floor on enemy strength, the cap, the
+  final swarm at 10:00, guardians with HP from your damage and exhaustion, escorts on Hard and Nightmare.
+- **The timeline's events**: alpha, swarm, stampede, flock, rock slide, elite wave, totem, summoner, roaming
+  legendary.
+
+**Where 3D had to decide.**
+- There is no camera in the rules, so "just off screen" is a distance: arrivals 16-32 m away, a swarm 13-17 m, a
+  herd starts 20 m behind you. The 2D game's flattened ovals are circles.
+- A site counts you only on its own level (within 1.2 m of its floor): not from the ledge above, not mid-jump.
+- A stampede runner is stopped by a wall or a ledge it cannot climb; a flock goes over everything.
+- A rock slide's marks lie on the ground where they fall: jump and one misses you, as any mark does.
+- Enemies that reach you shove you off an altar or a portal, as they shove you anywhere. Clear a space first.
+
+**Not yet in P4**: the in-run economy and its interactables (balls, Meowth, Unown, altars, slots), capture (an
+alpha still simply falls, leaving a berry), Expedition's own level-up cards and XP curve, the run's pay and
+records, the Mt. Moon and Cerulean shrines' own looks, Survival, and co-op, spectate and replay of a run.
+
+Tests: `micasurvivor_m3d_expedition_test.mjs` (76 checks, node: the Classic suite's state checks made of the 3D
+run) and `micasurvivor_m3d_expedition_page_test.mjs` (14 checks: a whole run on the page).
+
 ## 6. Dive in 2D: built
 
 **D0 — find the stairs (small; can ship first, on its own).** *Built 2026-11-11 (`overworld/tests/micasurvivor_dive_stairs_test.mjs`). As built: the stairs took their own orange mark, so the rocks and Meowth keep their gold; the HUD arrow comes up after 25 s on a floor, or at once when its boss falls.*

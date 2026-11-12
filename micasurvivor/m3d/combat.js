@@ -262,6 +262,7 @@ function hurtEnemy(w, e, amount, kx, kz, knockU) {
 	if (e.dead) return 0;
 	if (w.guest) { e.flash = 0.12; w.out.push({ id: e.id, d: Math.round(amount * 100) / 100, kx: Math.round(kx * 100) / 100, kz: Math.round(kz * 100) / 100, kn: knockU }); w.stats.removed += Math.max(1, Math.round(amount)); return amount; }
 	if (e.frozenT > 0) amount *= CK.FROZEN_TAKEN;
+	if (e.takenK > 1) amount *= e.takenK;   // (Expedition: an exhausted guardian takes more)
 	let d = Math.max(1, Math.round(amount));
 	if (e.shield > 0) { const a = Math.min(e.shield, d); e.shield -= a; if (a >= d) { e.flash = 0.06; w.events.push({ k: 'absorbed', id: e.id }); return 0; } d = Math.max(1, Math.round(d - a)); }   // a shielder's shield takes it first
 	e.hp -= d; e.flash = 0.12; w.stats.removed += d;
@@ -712,7 +713,7 @@ function enemyShoot(w, e, spread = 0, n = 1, k = 1) {
 	w.events.push({ k: 'eshot', id: e.id, n });
 }
 /** A telegraphed attack: a mark on the ground that goes off after `delay`. kind 'zone' (a circle) or 'beam' (a bar). */
-function hazard(w, h) { const o = Object.assign({ id: w.nextId++, t: 0, hit: false }, h); w.hazards.push(o); w.events.push({ k: 'hazard', h: o }); return o; }
+export function hazard(w, h) { const o = Object.assign({ id: w.nextId++, t: 0, hit: false }, h); w.hazards.push(o); w.events.push({ k: 'hazard', h: o }); return o; }
 function special(w, e) {
 	const s = w.pl.s, d = e.def;
 	if (e.behavior === 'fan') { const n = d.fanN || 5; enemyShoot(w, e, n === 3 ? 0.6 : 0.9, n, 0.65); }
@@ -905,6 +906,15 @@ function updateEnemies(w, dt) {
 		let k = (1 - e.slow) * wxSpeed(w, e.types);
 		if (e.dummy || e.frozenT > 0 || e.sleepT > 0) WISH[0] = WISH[1] = 0;   // (only a shove moves it)
 		else if (e.confT > 0) { k *= 0.9; confused(w, e, dt); }
+		else if (e.run) {   // a straight run across (Expedition’s stampede and flock): it does not turn for you, and a wall ends it
+			const r = e.run, ox = e.a.x, oz = e.a.z; r.t -= dt;
+			WISH[0] = r.dx; WISH[1] = r.dz; e.a.facing = Math.atan2(r.dx, r.dz);
+			stepActor(e.a, w.room, WISH[0], WISH[1], dt, k * r.spd / (e.a.speed || 1));
+			if (!e.fly && Math.hypot(e.a.x - ox, e.a.z - oz) < r.spd * dt * 0.3) r.t = Math.min(r.t, 0.15);
+			if (r.t <= 0) e.run = null;
+			if (e.a.gone) e.dead = true;
+			continue;
+		}
 		else {
 			const tg = others.length ? aimAt(e) : pl; e.tg = tg === pl ? 0 : tg.id;
 			if (tg !== pl) { w.pl = tg; w.field = tg.field; }
@@ -935,7 +945,8 @@ function updateEnemies(w, dt) {
 }
 
 // ---------------------------------------------------------------- arrivals
-const spawnRate = (t) => (1.6 + t * 0.028 + Math.pow(t / 60, 1.6) * 0.5) * CK.DENSITY;
+/** Arrivals a second at a run time (the 2D game’s systems/spawner.js rate). */
+export const spawnRate = (t) => (1.6 + t * 0.028 + Math.pow(t / 60, 1.6) * 0.5) * CK.DENSITY;
 function spawnTick(w, dt) {
 	// a boss at each of the 2D game's times, from the fight's own list
 	while (w.bosses && w.bossIdx < Math.min(w.bosses.length, w.data.bossSlots.length) && w.t >= w.data.bossSlots[w.bossIdx].at) {

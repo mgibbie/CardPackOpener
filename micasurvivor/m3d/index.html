@@ -35,7 +35,7 @@
 	<div id="hud"></div>
 	<div id="cards"></div>
 	<canvas id="map" width="8" height="8"></canvas>
-	<div id="help">Move WASD / arrows · Jump Space (again in the air) · Slide Shift while running (hold it as you land to break a fall) · Camera: drag, or Q / E · R: back to the start · ?dex=6 plays another species · ?gen=1 a generated level (&amp;biome=peaks / marsh) · &amp;fight=1 a fight on it · &amp;host=me shows it to a tab opened with ?watch=me, and lets one opened with ?join=me&amp;dex=4 play in it</div>
+	<div id="help">Move WASD / arrows · Jump Space (again in the air) · Slide Shift while running (hold it as you land to break a fall) · Camera: drag, or Q / E · R: back to the start · ?dex=6 plays another species · ?gen=1 a generated level (&amp;biome=peaks / marsh) · &amp;fight=1 a fight on it · &amp;host=me shows it to a tab opened with ?watch=me, and lets one opened with ?join=me&amp;dex=4 play in it · ?exp=1 an Expedition run (&amp;map=viridian / mtmoon / cerulean, &amp;diff=normal / hard / nightmare)</div>
 	<button class="btn" id="b-slide">SLIDE</button>
 	<button class="btn" id="b-jump">JUMP</button>
 	<div id="boot">MicaSurvivor 3D test room…</div>
@@ -58,6 +58,10 @@
 	     table: a stand-in is enough here (the real one rewrites the page's text as it is drawn) -->
 	<script>G.I18n = G.I18n || { lang: 'en', add() {}, t: (s) => s, f: (s) => s };</script>
 	<script src="../js/expedition/moves.js"></script>
+	<!-- P4: Expedition's plan, tiers and numbers (terrain.js for the seeded stream they draw from) -->
+	<script src="../js/expedition/terrain.js"></script>
+	<script src="../js/expedition/tiers.js"></script>
+	<script src="../js/expedition/classic.js"></script>
 	<script type="module" src="main.js"></script>
 </body>
 </html>

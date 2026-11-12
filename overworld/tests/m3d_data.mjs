@@ -6,7 +6,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 const JS = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../micasurvivor/js');
-export const DATA_SCRIPTS = ['core/util.js', 'data/pokedex.js', 'data/sprites-meta.js', 'core/sprites.js', 'data/moves.js', 'data/types.js', 'data/enemies.js', 'systems/weather.js', 'systems/abilities.js', 'data/items.js', 'expedition/moves.js'];
+export const DATA_SCRIPTS = ['core/util.js', 'data/pokedex.js', 'data/sprites-meta.js', 'core/sprites.js', 'data/moves.js', 'data/types.js', 'data/enemies.js', 'systems/weather.js', 'systems/abilities.js', 'data/items.js', 'expedition/moves.js', "expedition/terrain.js", "expedition/tiers.js", "expedition/classic.js"];
 
 /** The game's global `G`, with the data scripts run. */
 export function loadG() {
