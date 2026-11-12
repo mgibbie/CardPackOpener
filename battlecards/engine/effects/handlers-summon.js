@@ -1445,6 +1445,9 @@ register('summon', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy,
 					if (sc && e.doom) sc.doomTurn = state.turnNumber; // Ghoul Blitz (Duels): dies at end of turn
 					return;
 				}
+				// (a summonId that names no card, with no token written beside it: nothing to make. It used to throw on opt.name
+				//  and strand the turn of whoever cast it: Ungan Oddkind's Summon Companion, tester report 2026-11-12)
+				if (!opt.name) return;
 				// randomKeywords: each token rolls its own bonus (Bucket of Soldiers)
 				const kws = [...(opt.keywords || [])];
 				if (e.randomKeywords?.length) kws.push(e.randomKeywords[Math.floor(state.rng() * e.randomKeywords.length)]);

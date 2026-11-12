@@ -4441,7 +4441,12 @@ function maybeRunAI() {
 		// mulligan the AI's opening hand on its first turn, then act on the next tick
 		if (mulliganEnabled() && !GS.state.players[seat].mulliganed) { E.mulligan(GS.state, seat, aiMulliganUids(seat)); pump(); if (duel.on) publishDuel(); return; }
 		const before = GS.state.turnNumber + ':' + GS.state.current;
-		const acted = AI.step(GS.state, seat);
+		// AN AI ACTION THAT THROWS must not strand the run: this timer is the only thing that moves an AI's turn on, so an
+		// uncaught error here left "…'s Turn" on screen for good (Ungan Oddkind's Summon Companion, tester report
+		// 2026-11-12). The error is still thrown for the site's error report, a tick later; the AI's turn ends instead.
+		let acted = false;
+		try { acted = AI.step(GS.state, seat); }
+		catch (err) { console.error('[ai-watchdog] AI seat', seat, 'threw while acting: ending its turn', err); setTimeout(() => { throw err; }, 0); }
 		if (!acted) E.endTurn(GS.state);
 		// AI-TURN WATCHDOG. endTurn refuses while the active seat owes a forced
 		// decision, and AI.step can only answer the queues it knows about — so a
