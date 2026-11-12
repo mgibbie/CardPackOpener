@@ -4,12 +4,15 @@
 // SUPPORT ALPHA for the rest of the run: it follows you, shoots the nearest enemy, and its type gives you a perk. Two
 // at most: with two, you choose which to swap, or keep your team and take its prize (an item and a berry), which is
 // also what it leaves if the window runs out. A SHINY may wander into a zone: it never attacks, it flees after two
-// minutes, and it can be caught the same way.
+// minutes, and it can be caught the same way. So can a WILD LEAGUE MEMBER: one you have met (its challenge is done)
+// and not caught yet. Up to five wait for a run (the page reads them from the save: newRun's `wild`); zones 1 to 3
+// bring the first three at 50-120 s, zones 1 and 2 the other two at 150-230 s. It fights back, it flees after two and
+// a half minutes (a legendary: four), and caught it is a member of your League from that moment (the page saves it).
 //
 // The numbers, the perks, the zone's shiny roll and the cinematic's length are the 2D game's own
 // (js/expedition/capture.js: K, perkOf, shinyChance, zonePlan, CINE_T).
 //
-// Not here yet: the League's wild encounters (they need the League and its save), keeping a caught shiny (the save),
+// Not here yet: keeping a caught shiny (the save), a guest catching the host's wild member,
 // the Lab's third slot, the Master Ball.
 import { CELL, groundAt } from './sim.js';
 import { rng as makeRng } from './gen.js';
@@ -30,8 +33,8 @@ export function capFrom(G) {
 	return { K: C.K, CINE_T: C.CINE_T, perkOf: C.perkOf, shinyChance: C.shinyChance, zonePlan: C.zonePlan, phase: C.phase, hasShiny: (dex) => G.Sprites.hasShiny(dex) };
 }
 /** Give a run its captures. */
-export function setupCap(S) {
-	S.cap = { sa: [], tg: new Map(), faint: [], cine: null, n: 0, last: 0, zone: 0, zplan: null, shDone: false, done: new Set(), log: { alpha: 0, shiny: [], seen: 0, fled: 0, prizes: 0, swaps: 0, best: 0 } };
+export function setupCap(S, o = {}) {
+	S.cap = { sa: [], tg: new Map(), faint: [], cine: null, n: 0, last: 0, zone: 0, zplan: null, shDone: false, lgDone: false, lg2Done: false, pend: (o.wild || []).slice(0, S.X.C.K.PER_RUN), done: new Set(), log: { alpha: 0, league: [], shiny: [], seen: 0, fled: 0, prizes: 0, swaps: 0, best: 0 } };
 	return S.cap;
 }
 const name = (S, dex) => { const m = S.data.mon(dex); return m ? m.name : '#' + dex; };
@@ -73,14 +76,31 @@ function roam(S, e, dt) {
 	moveActor(e.a, S.w.room, dx / d * st, dz / d * st); e.a.facing = Math.atan2(dx, dz);
 }
 
+// ---------------------------------------------------------------- a wild League member in the zone
+/** "A wild X appeared!": League member `member` (its first stage), weaker or stronger by its rank. */
+function spawnLeague(S, member) {
+	const w = S.w, K = S.X.C.K, LG = S.X.G, m = LG && LG.BY[member], s = w.pl.s; if (!m || S.cap.log.league.includes(member) || !S.data.mon(m.dex)) return null;
+	const rng = makeRng(mix(S.seed, S.zone, member, 0x1EA7)), ang = rng() * 6.2832, fly = S.data.hovers(m.dex);
+	let pt = null;
+	for (const f of [1, 0.7, 1.3, 0.45]) { const d = K.SH_ROAM[1] * U * f, x = s.x + Math.cos(ang + f) * d, z = s.z + Math.sin(ang + f) * d; if (free(S, x, z, fly)) { pt = [x, z]; break; } }
+	if (!pt) pt = [s.x + Math.cos(ang) * 120 * U, s.z + Math.sin(ang) * 120 * U];
+	const e = spawn(S, m.dex, pt[0], pt[1], { ti: 1, hp: K.LG_HP * (K.LG_RANK[m.rank] || 1), dmg: K.LG_DMG, xp: K.LG_XP, scale: K.LG_SCALE });
+	e.xk = 'league';
+	mark(S, e, 'league', { member, flee: m.rank === 'legendary' ? K.LG_FLEE_LEG : K.LG_FLEE });
+	S.cap.log.seen++;
+	say(S, `A wild ${name(S, m.dex)} appeared!`, 3.4);
+	S.w.events.push({ k: 'wild', member, dex: m.dex });
+	return e;
+}
+
 // ---------------------------------------------------------------- the faint window
 /** A target is down to 1 HP: it faints in place (its XP falls, the KO counts), and the window opens. */
 function faint(S, e, g) {
 	const C = S.cap, K = S.X.C.K, w = S.w;
 	C.tg.delete(e.id);
 	if (C.done.has(e.id) || C.faint.some((f) => f.eid === e.id)) return null;
-	const win = g.kind === 'alpha' ? K.FAINT_T : K.SH_WINDOW, y = groundAt(w.room, e.a.x, e.a.z);
-	const f = { eid: e.id, kind: g.kind, dex: e.dex, x: e.a.x, y, z: e.a.z, scale: e.scale || 1, shiny: g.kind === 'shiny', t0: w.t, end: w.t + win, stand: 0, latch: false };
+	const win = g.kind === 'alpha' ? K.FAINT_T : g.kind === 'league' ? K.LG_WINDOW : K.SH_WINDOW, y = groundAt(w.room, e.a.x, e.a.z);
+	const f = { eid: e.id, kind: g.kind, dex: e.dex, x: e.a.x, y, z: e.a.z, scale: e.scale || 1, shiny: g.kind === 'shiny', member: g.member || 0, t0: w.t, end: w.t + win, stand: 0, latch: false };
 	if (!e.dead) {
 		drop(w, e.xp >= CK.BIG_XP ? 'xpBig' : 'xp', e.a.x, y, e.a.z, e.xp);
 		e.dead = true; e.hp = 0; w.stats.kills++; w.stats.xp += e.xp;
@@ -88,7 +108,7 @@ function faint(S, e, g) {
 		if (w.kos) w.kos.push({ boss: false, xk: e.xk || null });
 	}
 	C.faint.push(f);
-	say(S, g.kind === 'alpha' ? `The alpha ${name(S, e.dex)} faints! Stand beside it to throw a Friend Ball` : `${name(S, e.dex)} faints! Stand beside it to throw a Poké Ball`, 3);
+	say(S, g.kind === 'alpha' ? `The alpha ${name(S, e.dex)} faints! Stand beside it to throw a Friend Ball` : `${name(S, e.dex)} faints! Stand beside it to throw a Poké Ball`, 3);   // (a shiny, a wild League member)
 	return f;
 }
 /** An alpha's prize: an item and a berry. */
@@ -100,12 +120,12 @@ function prize(S, f) {
 function expire(S, f) {
 	S.cap.done.add(f.eid);
 	if (f.kind === 'alpha') { prize(S, f); say(S, `${name(S, f.dex)} comes round and leaves its prize`, 2.6); }
-	else { S.cap.log.fled++; say(S, `The shiny ${name(S, f.dex)} got away!`, 3); }
+	else { S.cap.log.fled++; say(S, f.kind === 'league' ? `${name(S, f.dex)} got away! It will be back in another run` : `The shiny ${name(S, f.dex)} got away!`, 3); }
 }
 const out = (C, f) => { const i = C.faint.indexOf(f); if (i >= 0) C.faint.splice(i, 1); };
 function startCine(S, f, slot) {
 	const C = S.cap; out(C, f); C.done.add(f.eid);
-	C.cine = { kind: f.kind, dex: f.dex, x: f.x, y: f.y, z: f.z, scale: f.scale, shiny: f.shiny, slot, t: 0 };
+	C.cine = { kind: f.kind, dex: f.dex, x: f.x, y: f.y, z: f.z, scale: f.scale, shiny: f.shiny, member: f.member || 0, slot, t: 0 };
 	S.w.events.push({ k: 'cine', kind: f.kind, dex: f.dex });
 	return C.cine;
 }
@@ -127,8 +147,9 @@ function finish(S, c) {
 	const C = S.cap, pl = S.w.pl;
 	C.cine = null; pl.invuln = Math.max(pl.invuln, S.X.C.K.AFTER); C.n++; C.last = c.dex;
 	if (c.kind === 'alpha') { recruit(S, c.dex, c.slot, c); const [st, v] = S.X.C.perkOf(typeOf(S, c.dex)); say(S, `Gotcha! ${name(S, c.dex)} joins your team` + (S.L ? ' · ' + S.L.I.statText(st, v) : ''), 3.4); }
+	else if (c.kind === 'league') { C.log.league.push(c.member || c.dex); say(S, `Gotcha! ${name(S, c.dex)} joins the League`, 4); }
 	else { C.log.shiny.push(c.dex); say(S, `Gotcha! The shiny ${name(S, c.dex)} is caught!`, 4); }
-	S.w.events.push({ k: 'caught', kind: c.kind, dex: c.dex });
+	S.w.events.push({ k: 'caught', kind: c.kind, dex: c.dex, member: c.member || 0 });
 }
 /** While the ball shakes the world holds. -> true while it does */
 export function holdCine(S, dt) {
@@ -191,18 +212,21 @@ function tickSupport(S, dt) {
 export function tickCap(S, dt) {
 	const C = S.cap, w = S.w, pl = w.pl, X = S.X.C, K = X.K; if (!C) return;
 	if (C.zone !== S.zone) {
-		C.zone = S.zone; C.shDone = false; C.faint.length = 0; C.tg.clear();
-		C.zplan = X.zonePlan(S.seed, S.map, S.zone, { luck: pl.xluck || 0, charm: !!(S.L && S.L.I.has(pl, 'shinycharm')), force: !!S.forceShiny });
+		C.zone = S.zone; C.shDone = false; C.lgDone = false; C.lg2Done = false; C.faint.length = 0; C.tg.clear();
+		const member = S.zone <= 3 ? C.pend[S.zone - 1] || 0 : 0, member2 = S.zone <= 2 ? C.pend[S.zone + 2] || 0 : 0;   // (the 4th and 5th: zones 1 and 2)
+		C.zplan = X.zonePlan(S.seed, S.map, S.zone, { member, member2, luck: pl.xluck || 0, charm: !!(S.L && S.L.I.has(pl, 'shinycharm')), force: !!S.forceShiny });
 		for (const a of C.sa) { a.x = pl.s.x; a.z = pl.s.z; a.y = pl.s.y; }   // (your team comes through the portal with you)
 	}
 	const zt = w.t - S.zs, P = C.zplan;
+	if (P && P.league && !C.lgDone && zt >= P.league.at) { C.lgDone = true; spawnLeague(S, P.league.member); }
+	if (P && P.league2 && !C.lg2Done && zt >= P.league2.at) { C.lg2Done = true; spawnLeague(S, P.league2.member); }
 	if (P && P.shiny && !C.shDone && zt >= P.shiny.at) { C.shDone = true; spawnShiny(S, P.shiny.pick); }
 	for (const [id, g] of C.tg) {
 		const e = g.e;
 		if (e.dead || e.hp <= 1) { faint(S, e, g); continue; }
 		if (!w.enemies.includes(e)) { C.tg.delete(id); continue; }
 		if (e.roam) roam(S, e, dt);
-		if (g.flee && w.t - g.t0 >= g.flee) { C.tg.delete(id); e.dead = true; C.log.fled++; say(S, `The shiny ${name(S, e.dex)} got away!`, 3); }
+		if (g.flee && w.t - g.t0 >= g.flee) { C.tg.delete(id); e.dead = true; C.log.fled++; say(S, g.kind === 'league' ? `The wild ${name(S, e.dex)} fled! It will be back in another run` : `The shiny ${name(S, e.dex)} got away!`, 3); }
 	}
 	// (co-op) a guest kept its full team: the alpha's prize falls where it lay
 	for (const m of w.mates) if (m.inbox) for (let i = m.inbox.length - 1; i >= 0; i--) if (m.inbox[i][0] === 'xcp') { prize(S, { x: +m.inbox[i][1], y: +m.inbox[i][2], z: +m.inbox[i][3] }); m.inbox.splice(i, 1); }
@@ -214,7 +238,7 @@ export function tickCap(S, dt) {
 		if (d < K.THROW_R * CELL + pl.r && Math.abs(s.y - f.y) <= XK.SITE_UP) { if (f.latch) continue; f.stand += dt; if (f.stand >= K.THROW_T) throwAt(S, f); }
 		else { f.stand = Math.max(0, f.stand - dt * 2); f.latch = false; }
 		// (co-op: a guest standing by it is handed the catch: its throw, its team or its shiny, on its side)
-		if (C.faint.includes(f)) for (const m of w.mates) {
+		if (C.faint.includes(f) && f.kind !== 'league') for (const m of w.mates) {   // (a wild League member is the host's to catch: it is the host's save)
 			if (m.dead || m.away) continue;
 			const gs = f.gs || (f.gs = new Map()), near = Math.hypot(m.s.x - f.x, m.s.z - f.z) < K.THROW_R * CELL + m.r && Math.abs(m.s.y - f.y) <= XK.SITE_UP, v = near ? (gs.get(m.id) || 0) + dt : 0;
 			gs.set(m.id, v);

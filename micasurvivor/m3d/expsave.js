@@ -14,6 +14,9 @@
 // member, on a map and at a tier the save has, and CLEAN (the 2D game's own checks: the run's clock no faster than
 // the real one, stats within what a run can reach).
 //
+// WILD LEAGUE MEMBERS read and write this save too: the ones met and not caught wait for a run (wildOf), a catch is
+// saved at once (catchOps), and after a kept run the challenges now complete make new ones wild (newlyMet).
+//
 // Pure: the page (main.js) hands in the run, its result and the saves. Not kept yet: the economy's, the capture's and
 // the level-ups' counters, the tasks, the achievements (they are checked by the 2D game from the counters there are).
 
@@ -37,14 +40,40 @@ export function deviceId(store, who, cryptoObj) {
 	}
 	return d;
 }
+/** Does the save have League member `m`? (A starter, one caught, or any stage of its family in the base collection.) */
+export function hasMember(m, o) {
+	const { L, Sv, base } = o;
+	if (L.free(m) || Sv.has('league.own', String(m))) return true;
+	return !!(base && base.owned) && Object.keys(L.FAM).some((d) => L.FAM[d] === m && base.owned[d]) || !!(base && base.owned && base.owned[m]);
+}
+function mixS(...vals) { let h = 0x9E3779B9 | 0; for (const v of vals) { h ^= v | 0; h = Math.imul(h ^ (h >>> 16), 0x85EBCA6B); h = Math.imul(h ^ (h >>> 13), 0xC2B2AE35); h ^= h >>> 16; } return h >>> 0; }
+/** The League members waiting to be caught in a run of this seed: met, wild and not had, in a seeded order, five at most
+ *  (the 2D game's rule: js/expedition/capture.js pendingOf). o: { L, Sv, base, max, rng: (seed) -> () => 0..1 }. */
+export function wildOf(seed, o) {
+	const list = o.Sv.list('league.wild').map(Number).filter((d) => o.L.BY[d] && !hasMember(d, o)).sort((a, b) => a - b), rng = o.rng(mixS(seed | 0, 0x1EA6));
+	for (let i = list.length - 1; i > 0; i--) { const j = Math.floor(rng() * (i + 1)); [list[i], list[j]] = [list[j], list[i]]; }
+	return list.slice(0, o.max || 5);
+}
+/** Caught in a run: a member of your League from this moment (the 2D game's keys; its species joins the collection when
+ *  the 2D game next claims: meta.js claim3d). */
+export function catchOps(member) { return [['add', 'league.own', String(member)], ['bump', 'cap.league', 1]]; }
+/** After a run: every member whose challenge is now complete is MET, and wild until caught (the 2D game's rule:
+ *  js/expedition/league.js checkChallenges, with `hasMember` for what you have). -> the newly met */
+export function newlyMet(o) {
+	const { L, Sv } = o, out = [];
+	for (let pass = 0; pass < 2; pass++) for (const m of L.D.members) {
+		if (!m.ch || L.met(m.dex) || hasMember(m.dex, o)) continue;
+		if (L.progress(m.ch).done && Sv.add('league.met', m.dex)) { out.push(m.dex); if (L.K.CATCH) Sv.add('league.wild', m.dex); }
+	}
+	if (out.length) Sv.commit();
+	return out;
+}
 /** Does the save have this member, this map and this tier? o: { L: G.ExpLeague, T: G.ExpTier, Sv: G.ExpSave, base: the
  *  base save as read (never written) from this browser, or null }. -> null, or what is missing. */
 export function missing(S, o) {
 	const { L, T, Sv, base } = o;
 	if (!S.lg) return 'league';
-	const m = S.lg.member, fam = Object.keys(L.FAM).filter((d) => L.FAM[d] === m).map(Number).concat(m);
-	const has = L.free(m) || Sv.has('league.own', String(m)) || !!(base && base.owned && fam.some((d) => base.owned[d]));
-	if (!has) return 'member';
+	if (!hasMember(S.lg.member, o)) return 'member';
 	if (!T.mapOpen(S.map)) return 'map';
 	if (T.unlocked(S.map) < T.idx(S.diff)) return 'tier';
 	return null;

@@ -155,7 +155,7 @@ export function newRun(data, X, o = {}) {
 	if (league) setupLeague(S, member);
 	if (S.surv) setupSurv(S);
 	if (own && X.E && o.eco !== false) setupEco(S);
-	if (own && X.C && o.cap !== false) setupCap(S);
+	if (own && X.C && o.cap !== false) setupCap(S, { wild: o.wild });   // (wild: the League members waiting to be caught, from the save)
 	return S;
 }
 const zIdx = (S) => (S.surv ? S.zi : Math.min(3, S.zone) - 1);   // (Survival: the enemies' band follows the PHASE, not the land)
@@ -420,7 +420,7 @@ export function stepRun(S, input, dt = K.TICK) {
 	const w = S.w, XKK = S.X.K;
 	S.says.length = 0;
 	if (S.ended) return S;
-	if (holdCine(S, dt)) { w.events.length = 0; return S; }   // (a ball is shaking: the world holds)
+	{ const n0 = w.events.length; if (holdCine(S, dt)) { w.events.splice(0, n0); return S; } }   // (a ball is shaking: the world holds. What the ball itself says this step, "caught", is kept for the page)
 	if (S.pick) {   // a choice is up (a ball's items, Meowth's stall, Hypno): the fight holds until it is made (alone: a party does not stop for one player's choosing)
 		if (!w.mates.length) w.events.length = 0;
 		if ((w.autoPick === undefined || w.autoPick === null) && !w.mates.length) return S;
