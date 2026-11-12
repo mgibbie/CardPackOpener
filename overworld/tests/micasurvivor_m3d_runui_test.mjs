@@ -10,6 +10,7 @@
 //     logged out, a line saying so
 //   * the run's end: a panel with the result, "Play again" (the next seed) and "Leave"
 //   * a narrow phone screen: nothing runs off it, nothing sits under the minimap
+//   * a slow device (every frame a tenth of a second of ticks): the screen is drawn by the clock, not by the tick count
 //   * the test room without a run is as it was
 //   node overworld/tests/micasurvivor_m3d_runui_test.mjs      (SHOTS=<dir> for screenshots)
 import http from 'http';
@@ -167,6 +168,22 @@ try {
 	const room = await boot('dex=6');
 	const r0 = await page.evaluate(() => ({ rx: document.body.classList.contains('rx'), el: !!document.getElementById('rx'), view: window.__m3d.runView() }));
 	A(room && !r0.rx && !r0.el && r0.view === null && await shown('#hud') && await shown('#help'), 'the test room without a run is as it was: its readout and help, no run screen', r0);
+	// ---- a slow device: every frame a second apart by the frame clock (so about 6 ticks each), as fast as this machine draws.
+	// (The page has two frame loops, the game's and the controller's: half of the frames counted are the game's. By the tick
+	// count the screen was drawn once in 16 of them: 3 times in 48.)
+	{
+		const slow = await browser.newPage();
+		await slow.setViewport({ width: 900, height: 560, deviceScaleFactor: 1 });
+		slow.on('pageerror', e => errors.push('slow pageerr: ' + e.message));
+		await slow.evaluateOnNewDocument(() => { const raf = window.requestAnimationFrame.bind(window); let t = 0; window.__frames = 0; window.requestAnimationFrame = (cb) => raf(() => { t += 1000; window.__frames++; cb(t); }); });
+		await slow.goto(`http://localhost:${PORT}/micasurvivor/m3d/?exp=7&map=viridian&dex=6&weather=0`, { waitUntil: 'domcontentloaded' });
+		const up = await waitFor(() => slow.evaluate(() => !!(window.__m3d && window.__m3d.ready && document.getElementById('rx-hpt').textContent)), 30000);
+		await slow.evaluate(() => { const m = window.__m3d; m.run.plan.events = []; m.world.enemies.length = 0; m.world.pl.maxHp = 1e4; m.world.pl.hp = 4400; window.__drawn = 0; window.__from = window.__frames; new MutationObserver(() => { window.__drawn++; }).observe(document.getElementById('hud'), { childList: true, characterData: true, subtree: true }); });
+		await waitFor(() => slow.evaluate(() => window.__frames - window.__from >= 40), 20000);
+		const sl = await slow.evaluate(() => ({ frames: window.__frames - window.__from, drawn: window.__drawn, hp: document.getElementById('rx-hpt').textContent }));
+		A(up && sl.frames >= 40 && sl.drawn >= sl.frames * 0.4 && sl.hp === '4,400 / 10,000', `on a slow device the screen is drawn by the clock, not by the tick count: ${sl.drawn} times in ${sl.frames} slow frames, and it has the hit`, sl);
+		await slow.close();
+	}
 	A(errors.length === 0, 'no page errors', errors.slice(0, 5).join(' | '));
 } catch (e) {
 	fail++; console.log('FAIL: crashed: ' + (e && e.stack || e));
