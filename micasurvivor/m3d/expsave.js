@@ -20,7 +20,7 @@
 // Pure: the page (main.js) hands in the run, its result and the saves. The level-ups', the economy's and the capture's
 // counters are kept too (the 2D game's keys: its achievements and its Lab's goals read them). Not kept yet: the tasks.
 
-export const SV = { RULES: 2 /* the rules the boards are filed under (js/entities/player.js RULES; the server's MSURV_RULES) */, DV: 20 /* the Expedition's content version (js/systems/expedition.js DV: the boards file a score by it) */, INV: 1e9, BOARD: 'micasurvivor_expedition', OK: ['exp', 'map', 'diff', 'mode', 'dex', 'debug'], MAX_HP: 50000, MAX_ATK: 2000, MAX_SPD: 25 };
+export const SV = { RULES: 2 /* the rules the boards are filed under (js/entities/player.js RULES; the server's MSURV_RULES) */, DV: 20 /* the Expedition's content version (js/systems/expedition.js DV: the boards file a score by it) */, INV: 1e9, BOARD: 'micasurvivor_expedition', OK: ['exp', 'map', 'diff', 'mode', 'dex', 'form', 'debug'], MAX_HP: 50000, MAX_ATK: 2000, MAX_SPD: 25 };
 
 /** The first parameter of the page's address that makes its run a practice run (null: none). params: [[key, value]]. */
 export function unfair(params) { for (const [k, v] of params) if (!SV.OK.includes(k) || (k === 'mode' && v !== 'survival')) return k; return null; }
@@ -71,12 +71,15 @@ export function newlyMet(o) {
 	if (out.length) Sv.commit();
 	return out;
 }
+/** May a run START as this later stage of its family? One you own in the base collection, or a run has evolved into. */
+export const hasForm = (form, o) => o.Sv.has('league.form', String(form)) || !!(o.base && o.base.owned && o.base.owned[form]);
 /** Does the save have this member, this map and this tier? o: { L: G.ExpLeague, T: G.ExpTier, Sv: G.ExpSave, base: the
  *  base save as read (never written) from this browser, or null }. -> null, or what is missing. */
 export function missing(S, o) {
 	const { L, T, Sv, base } = o;
 	if (!S.lg) return 'league';
 	if (!hasMember(S.lg.member, o)) return 'member';
+	if (S.lg.start && !hasForm(S.lg.start, o)) return 'form';
 	if (!T.mapOpen(S.map)) return 'map';
 	if (T.unlocked(S.map) < T.idx(S.diff)) return 'tier';
 	return null;
@@ -162,5 +165,5 @@ export function boardRows(body, nameOf, me) {
 	return rows;
 }
 /** Why a run was not kept, for the run's end. */
-export const WHY = { league: 'Practice run (not a League run): nothing is saved.', member: 'You do not have this League member yet: nothing is saved.', map: 'This map is not open in your save yet: nothing is saved.', tier: 'This tier is not open in your save yet: nothing is saved.',
+export const WHY = { league: 'Practice run (not a League run): nothing is saved.', member: 'You do not have this League member yet: nothing is saved.', form: 'You have not reached this form yet: nothing is saved.', map: 'This map is not open in your save yet: nothing is saved.', tier: 'This tier is not open in your save yet: nothing is saved.',
 	unclean: 'This run could not be verified: nothing is saved.', nosave: 'Your save could not be opened: nothing is saved.', practice: 'Practice run (a test setting is on): nothing is saved.', guest: 'You were a guest in this run: the host\'s save keeps it.' };

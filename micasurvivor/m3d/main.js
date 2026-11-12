@@ -15,7 +15,7 @@ import { hostAdd, hostStep, hostFrame, hostApply, guestWorld, guestSync, guestMs
 import { generate, BIOMES } from './gen.js';
 import { mountRunUi, pretty } from './runui.js';
 import { HostLink, WatchLink, runId, SAYS as LIVE_SAYS } from './exprelay.js';
-import { unfair, clean as cleanRun, deviceId, missing as saveMissing, runSum, recordOps, applyOps, scoreBody, WHY, SV, wildOf, catchOps, shinyOps, newlyMet, boardAsk, boardRows, hasMember } from './expsave.js';
+import { unfair, clean as cleanRun, deviceId, missing as saveMissing, runSum, recordOps, applyOps, scoreBody, WHY, SV, wildOf, catchOps, shinyOps, newlyMet, boardAsk, boardRows, hasMember, hasForm } from './expsave.js';
 import { rng as seedRng } from './gen.js';
 import { metaFor, spendBoosts } from './expmeta.js';
 import { soundsOf, moveSounds, musicOf } from './runsound.js';
@@ -78,11 +78,12 @@ const LAB_META = (() => {
 	if (!SAVE_OK || !GG.ExpMeta || !GG.ExpLeague || !GG.ExpTier || Q.get('league') === '0') return null;
 	try {
 		const L = GG.ExpLeague, T = GG.ExpTier, Sv = GG.ExpSave, member = L.BY[DEX] ? DEX : L.FAM[DEX] || DEX, map = Q.get('map') || 'viridian', diff = Q.get('diff') || 'normal';
-		if (!hasMember(member, { L, Sv, base: baseSave() }) || !T.mapOpen(map) || T.unlocked(map) < T.idx(diff)) return null;
+		const form = +Q.get('form') || 0;
+		if (!hasMember(member, { L, Sv, base: baseSave() }) || !T.mapOpen(map) || T.unlocked(map) < T.idx(diff) || (form && form !== member && !hasForm(form, { Sv, base: baseSave() }))) return null;
 		return metaFor(GG.ExpMeta, { Sv, member, boosts: spendBoosts(GG.ExpMeta, Sv, deviceId(localStorage, Sv.who, crypto), localStorage) });
 	} catch (e) { console.warn('the Lab could not be read: ' + (e && e.message)); return null; }
 })();
-const run = EXP ? newRun(dataFrom(GG), XF, { wild: WILD, meta: LAB_META, seed: GEN, map: Q.get('map'), diff: Q.get('diff'), mode: Q.get('mode') || undefined, dex: DEX, moves: MOVES, tune: TUNE, touch: matchMedia('(pointer: coarse)').matches, league: !Q.has('moves') && Q.get('league') !== '0', ability: Q.get('ability') === '0' ? null : Q.get('ability') || 'auto', items: Q.get('items') ? Q.get('items').split(',') : [], weather: Q.get('weather') === '0' ? false : undefined, autoPick: Q.has('auto') ? +Q.get('auto') | 0 : undefined }) : null;
+const run = EXP ? newRun(dataFrom(GG), XF, { wild: WILD, meta: LAB_META, form: +Q.get('form') || 0, seed: GEN, map: Q.get('map'), diff: Q.get('diff'), mode: Q.get('mode') || undefined, dex: DEX, moves: MOVES, tune: TUNE, touch: matchMedia('(pointer: coarse)').matches, league: !Q.has('moves') && Q.get('league') !== '0', ability: Q.get('ability') === '0' ? null : Q.get('ability') || 'auto', items: Q.get('items') ? Q.get('items').split(',') : [], weather: Q.get('weather') === '0' ? false : undefined, autoPick: Q.has('auto') ? +Q.get('auto') | 0 : undefined }) : null;
 if (run) room = run.w.room;
 // (P4) a guest in a run: its own League member in the host's run (expcoop.js); it builds each zone from the run's row
 const grun = XJ ? guestRun(dataFrom(GG), XF, { seed: XJ.seed, map: XJ.map, diff: XJ.diff, id: MYID, dex: DEX, league: !Q.has('moves'), moves: MOVES, tune: TUNE, ability: Q.get('ability') === '0' ? null : Q.get('ability') || undefined, autoPick: Q.has('auto') ? +Q.get('auto') | 0 : undefined }) : null;

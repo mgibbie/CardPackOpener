@@ -605,7 +605,7 @@ try {
 		A(loc.on && loc.url === null, '/micasurvivor/?exp3d=1 turns it on for this browser; a local-play setup still starts the 2D run', JSON.stringify(loc));
 		await d.E(() => G.PlayUI.back()); await d.click('[data-players="solo"]');
 		const want = await d.E(() => ({ url: G.PlayUI.exp3dUrl('exp-classic'), dex: G.ExpLeague.pickFor(), map: G.PlayUI.state.map, diff: G.PlayUI.state.diff, surv: G.PlayUI.exp3dUrl('exp-survival') }));
-		A(new RegExp(`^/micasurvivor/m3d/\\?exp=\\d+&map=${want.map}&diff=${want.diff}&dex=${want.dex}$`).test(want.url || '') && want.surv === null, `alone on Classic it is the 3D page's address, with the same member, map and tier (${want.url})`, JSON.stringify(want));
+		A(new RegExp(`^/micasurvivor/m3d/\\?exp=\\d+&map=${want.map}&diff=${want.diff}&dex=${want.dex}(&form=\\d+)?$`).test(want.url || '') && want.surv === null, `alone on Classic it is the 3D page's address, with the same member, map and tier (${want.url})`, JSON.stringify(want));
 		await Promise.all([d.page.waitForNavigation({ waitUntil: 'domcontentloaded' }), d.click('#mx-start')]);
 		const in3d = await waitFor(() => d.E(() => !!(window.__m3d && window.__m3d.ready && window.__m3d.run)), 40000);
 		const r3 = await d.E(() => ({ path: location.pathname, map: window.__m3d.run.map, diff: window.__m3d.run.diff, member: window.__m3d.run.lg && window.__m3d.run.lg.member, practice: window.__m3d.practice, ui: !!document.getElementById('rx') }));

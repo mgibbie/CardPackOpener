@@ -152,7 +152,7 @@ export function newRun(data, X, o = {}) {
 	const S = { w, X, data, map, diff, seed, surv: o.mode === 'survival' && !!X.V, zi: 0, pzs: 0, touch: !!o.touch, zone: 0, zs: 0, splits: [], log: [], bosses: [], won: false, lost: false, ended: false, dps: [], says: [], wonT: 0, meta: own ? o.meta || null : null };   // (meta: what the Lab gives this run, expmeta.js)
 	zoneStart(S, 1, 0);
 	if (own) { setupLevels(S, X.L, lv); S.syncPerks = () => syncPerks(S); }
-	if (league) setupLeague(S, member);
+	if (league) setupLeague(S, member, o.form | 0);   // (form: a later stage of the family to start as)
 	if (S.surv) setupSurv(S);
 	if (own && X.E && o.eco !== false) setupEco(S);
 	if (own && X.C && o.cap !== false) setupCap(S, { wild: o.wild });   // (wild: the League members waiting to be caught, from the save)
