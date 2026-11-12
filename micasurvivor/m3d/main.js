@@ -321,6 +321,7 @@ function draw(t) {
 	renderer.render(scene, camera);
 }
 
+let hudAt = -1e9, hazAt = -1e9;   // (when the screen's text, and a watched run's hostile ground, were last drawn)
 function frame(now) {
 	requestAnimationFrame(frame);
 	if (SITE_HOST) SITE_HOST.tick();   // (asks whether a friend is watching; sends a second's frames while one is)
@@ -361,7 +362,9 @@ function frame(now) {
 	if (flashes) flashes.update(dt);
 	draw(now / 1000);
 	if (world || WATCH) drawNumbers(dt);
-	if ((simTicks & 15) === 0) showHud();
+	// The screen's text, four times a second BY THE CLOCK. (It used to be "when the tick count is a multiple of 16": a slow
+	// device runs about 6 ticks a frame, and from an odd count that seldom lands on a multiple of 16: the screen stood still for seconds.)
+	if (now - hudAt >= 250 || now < hudAt) { hudAt = now; showHud(); }
 	if (GEN !== null) { showMap(); if (!WATCH && !EXP && !XJ && !leaving && state.grounded && exitDist() < 1.5) { leaving = true; note('exit reached: next level…', 4000); nextLevel(); } }
 }
 // ---------------------------------------------------------------- (P2) a generated level: the exit and the minimap
@@ -525,7 +528,7 @@ function watchStep(dt) {
 		rv = rowView(view.fa.r, XF, rowKeep);
 		if (rv.room !== room) { room = rv.room; mapBase = null; showRoom(); }
 		if (rv.over && !runOver) { runOver = rv.over; note(rv.over === 'won' ? 'EXPEDITION COMPLETE!' : 'RUN OVER', 600000); }
-		if (rv.surv && simTicks % 30 === 0) { for (const o of rv.hazards) if (Math.hypot(o.x - state.x, o.z - state.z) < 60) flashes.arc(o.x, o.y + 0.04, o.z, o.r, 0, 6.2832, HAZ_COL[o.kind], 0.95, 0); canvas.style.filter = rv.night > 0 ? `brightness(${(1 - rv.night).toFixed(2)})` : ''; }   // (a watched Survival run: its hostile ground and its night)
+		if (rv.surv && performance.now() - hazAt >= 500) { hazAt = performance.now();   /* (by the clock, as the screen's text: see frame()) */ for (const o of rv.hazards) if (Math.hypot(o.x - state.x, o.z - state.z) < 60) flashes.arc(o.x, o.y + 0.04, o.z, o.r, 0, 6.2832, HAZ_COL[o.kind], 0.95, 0); canvas.style.filter = rv.night > 0 ? `brightness(${(1 - rv.night).toFixed(2)})` : ''; }   // (a watched Survival run: its hostile ground and its night)
 	}
 	fightEvents(view.events);
 	if (view.pl.dead) note('down', 2000);

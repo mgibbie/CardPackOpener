@@ -60,6 +60,7 @@ try {
 	const ok = await waitFor(() => page.evaluate(() => !!(window.__m3d && window.__m3d.ready)), 30000);
 	A(ok, 'the page boots into an Expedition run (?exp=7)');
 	await page.evaluate(() => { const w = window.__m3d.world; w.pl.maxHp = w.pl.hp = 1e9; });   // (the run's course is what is tested)
+	await waitFor(() => page.evaluate(() => document.getElementById('map').style.display === 'block'), 5000);   // (the minimap comes up with the first frame drawn)
 	const s0 = await page.evaluate(() => { const m = window.__m3d, G = window.G, p = G.ExpClassic.plan(7, 'viridian', 1, 'normal'); return { zone: m.run.zone, ph: m.run.ph, w: m.room.w, same: JSON.stringify(m.run.plan) === JSON.stringify(p), guardian: G.DEX_BY[p.guardian].name, altar: m.room.altar, map: document.getElementById('map').style.display }; });
 	A(s0.zone === 1 && s0.ph === 0 && s0.w === 51 && s0.same && s0.map === 'block', `zone 1 of the run: a 7 x 7-tile level, the 2D game's plan for it (guardian: ${s0.guardian}), the minimap up`, JSON.stringify(s0));
 	A(await hudHas(/ZONE 1\/3 · FINAL SWARM IN 9:\d\d · ALTAR \d+ m · ₽ 0 · charge 0 %/), 'the readout says the zone, the final swarm\'s countdown and how far the altar is', await hud());
@@ -161,8 +162,10 @@ try {
 	await shot('m3d_exp_guardian.png');
 	await page.evaluate(() => { const m = window.__m3d, e = m.run.boss; m.world.hit(e, e.hp + 10, 0, 0, 0); });
 	A(await waitFor(() => page.evaluate(() => window.__m3d.run.ph === 2), 4000) && await hudHas(/PORTAL \d+ m/), 'beaten: the portal opens', await hud());
-	const before = await page.evaluate(() => ({ tris: window.__m3d.stats().triangles, w: window.__m3d.room.w, altar: window.__m3d.room.altar.join() }));
-	await hush(); await onAltar();
+	const before = await page.evaluate(() => ({ tris: window.__m3d.stats().triangles, w: window.__m3d.room.w, altar: window.__m3d.run.zone === 1 ? window.__m3d.room.altar.join() : 'zone 1 is behind already' }));
+	// (you may still stand on the altar from the guardian's fight, and the portal may take you before this line runs: step
+	//  on it only while this is still zone 1, or it would be zone 2's altar you are put on, 30 m from where zone 2 starts)
+	await hush(); await page.evaluate(() => { const m = window.__m3d, a = m.room.altar; if (m.run.zone === 1) m.put(a[0], a[2]); });
 	const z2 = await waitFor(() => page.evaluate(() => window.__m3d.run.zone === 2), 6000);
 	await sleep(400);
 	const after = await page.evaluate(() => { const m = window.__m3d, s = m.state, sp = m.room.spawn; return { zone: m.room.zone, altar: m.room.altar.join(), at: Math.hypot(s.x - sp[0], s.z - sp[2]), split: m.run.splits[0], enemies: m.world.enemies.length, same: m.world.room === m.room, mapW: document.getElementById('map').width }; });
