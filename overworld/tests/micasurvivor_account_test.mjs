@@ -2,7 +2,7 @@
 // server handler (server/mp.mjs bundled like the dev server, over sqlite) behind a static server,
 // headless Chrome, one browser context per device:
 //   1. logged in (the site's magepunk_mp_token_v1 + state): no login screen, straight to the
-//      personality test / menu as that user; the user pill shows the Magepunk username; Settings >
+//      choosing a partner / menu as that user; the user pill shows the Magepunk username; Settings >
 //      Account says "Magepunk account" with no Log out / Delete account (a link to Magepunk instead);
 //      the save reaches micasurvivor:<user> (also via the pagehide flush on a reload)
 //   2. a second device opens the same account's progress; both change the save at once: the stale
@@ -126,9 +126,9 @@ try {
 			if (await visible('tap-start')) await page.click('#tap-start');
 		};
 		const doTest = async () => {
-			for (let i = 0; i < 40 && await visible('scr-test'); i++) { await page.evaluate(() => { const b = document.querySelector('#test-a button'); if (b) b.click(); }); await sleep(120); }
-			await waitFor(() => visible('scr-result'), 8000);
-			await page.click('#res-ok');
+			await page.evaluate(() => { const c = document.querySelector('#starter-grid .cell[data-dex="813"]'); if (c) c.click(); }); await sleep(200);   // (Scorbunny: the partner the old personality test gave this suite)
+			await sleep(150);
+			await page.click('#starter-ok');
 			return waitFor(() => visible('scr-menu'), 10000);
 		};
 		const synced = () => waitFor(() => page.evaluate(() => G.DB.syncState === 'ok'), 15000);
@@ -139,7 +139,7 @@ try {
 	// ===== 1. logged in: straight in as the Magepunk user =====
 	const a1 = await device('alice');
 	await a1.boot();
-	A(await waitFor(() => a1.visible('scr-test'), 10000) && !(await a1.visible('scr-login')), 'logged in: no login screen, straight to the personality test');
+	A(await waitFor(() => a1.visible('scr-starters'), 10000) && !(await a1.visible('scr-login')), 'logged in: no login screen, straight to choosing a partner');
 	A(await a1.page.evaluate(() => G.DB.mode === 'magepunk' && G.DB.magepunk === 'alice' && G.DB.user === 'alice'), 'the game plays as the Magepunk user (alice)');
 	A(await a1.doTest(), 'partner chosen, main menu');
 	A(/alice/.test(await a1.page.evaluate(() => document.getElementById('user-pill').textContent)), 'the user pill shows the Magepunk username');
@@ -185,7 +185,7 @@ try {
 	const lg = await g1.page.evaluate(() => { const b = document.getElementById('btn-mp-login'); return { shown: !b.classList.contains('hidden'), text: b.textContent, note: document.getElementById('login-mode').textContent }; });
 	A(lg.shown && lg.text === 'Log in with Magepunk' && /Log in to Magepunk/.test(lg.note), 'a guest is offered "Log in with Magepunk"', JSON.stringify(lg));
 	await g1.page.click('#btn-guest');
-	await waitFor(() => g1.visible('scr-test'), 8000);
+	await waitFor(() => g1.visible('scr-starters'), 8000);
 	A(await g1.doTest(), 'guest: partner chosen, main menu');
 	await g1.page.evaluate(() => { G.DB.save.coins += 1234; G.DB.grant(133, 'gacha'); G.DB.commit(true); });
 	const guestSave = await g1.page.evaluate(() => JSON.parse(localStorage.getItem('micasurvivor_save.guest')));
@@ -204,7 +204,7 @@ try {
 		"the offer shows the guest's progress and says an empty account takes it over", offer.text.slice(0, 300));
 	await g1.shot('account_carry_offer.png');
 	await g1.page.click('#carry-yes');
-	A(await waitFor(() => g1.visible('scr-menu'), 10000), 'carried: straight to the menu (the guest partner, no personality test)');
+	A(await waitFor(() => g1.visible('scr-menu'), 10000), 'carried: straight to the menu (the guest partner, no choosing again)');
 	const carol = await g1.page.evaluate(() => ({ partner: G.DB.save.partner, coins: G.DB.save.coins, owned: Object.keys(G.DB.save.owned), user: G.DB.user, marker: JSON.parse(localStorage.getItem('micasurvivor_migrated.guest') || 'null'), backups: Object.keys(localStorage).filter(k => k.startsWith('micasurvivor_backup.mp:carol.')), guestKept: !!localStorage.getItem('micasurvivor_save.guest') }));
 	A(carol.user === 'carol' && carol.partner === guestSave.partner && carol.coins === guestSave.coins && carol.owned.includes('133'), 'the account took the guest save over: partner, Pokémon, exact coins (no +500)', JSON.stringify({ carol, guest: { partner: guestSave.partner, coins: guestSave.coins } }));
 	A(carol.marker && carol.marker.to === 'carol' && carol.marker.choice === 'carry' && carol.backups.length === 1 && carol.guestKept, 'remembered once, the account backed up first, the guest save left in place', JSON.stringify(carol));
@@ -218,7 +218,7 @@ try {
 	await g2.boot();
 	await waitFor(() => g2.visible('scr-login'), 10000);
 	await g2.page.click('#btn-guest');
-	await waitFor(() => g2.visible('scr-test'), 8000);
+	await waitFor(() => g2.visible('scr-starters'), 8000);
 	await g2.doTest();
 	await g2.page.evaluate(() => { G.DB.save.coins += 2000; G.DB.grant(150, 'gacha'); G.DB.save.stats.bestTime = 999; G.DB.commit(true); });
 	const guest2 = await g2.page.evaluate(() => JSON.parse(localStorage.getItem('micasurvivor_save.guest')));
@@ -248,17 +248,17 @@ try {
 	await g3.boot();
 	await waitFor(() => g3.visible('scr-login'), 10000);
 	await g3.page.click('#btn-guest');
-	await waitFor(() => g3.visible('scr-test'), 8000);
+	await waitFor(() => g3.visible('scr-starters'), 8000);
 	await g3.doTest();
 	await g3.page.evaluate((t, s) => { localStorage.setItem('magepunk_mp_token_v1', t); localStorage.setItem('magepunk_mp_state_v1', JSON.stringify(s)); }, tokens.dave, states.dave);
 	await g3.reload();
 	A(await waitFor(() => g3.visible('scr-carry'), 10000), 'dave: offered');
 	await g3.page.click('#carry-no');
-	A(await waitFor(() => g3.visible('scr-test'), 10000), '"No, thanks": the empty account starts fresh (personality test)');
+	A(await waitFor(() => g3.visible('scr-starters'), 10000), '"No, thanks": the empty account starts fresh (choosing a partner)');
 	const dave = await g3.page.evaluate(() => ({ partner: G.DB.save.partner, coins: G.DB.save.coins, marker: JSON.parse(localStorage.getItem('micasurvivor_migrated.guest') || 'null'), backups: Object.keys(localStorage).filter(k => k.startsWith('micasurvivor_backup.')).length }));
 	A(!dave.partner && dave.coins === 500 && dave.marker && dave.marker.choice === 'skip' && dave.backups === 0, 'nothing carried, no backup needed, the answer remembered', JSON.stringify(dave));
 	await g3.reload();
-	A(await waitFor(() => g3.visible('scr-test'), 10000) && !(await g3.visible('scr-carry')), 'reload: not asked again');
+	A(await waitFor(() => g3.visible('scr-starters'), 10000) && !(await g3.visible('scr-carry')), 'reload: not asked again');
 	await g3.ctx.close();
 
 	// ===== 4. the leaderboard =====

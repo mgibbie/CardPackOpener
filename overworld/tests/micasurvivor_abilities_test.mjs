@@ -14,7 +14,7 @@
 //     Launcher by move kind (also through real casts); Adaptability; Drought & co; Levitate vs map
 //     traps; Sand Veil & co vs weather chip; Inner Focus / Limber status immunity (the hook)
 //   - G.Abilities.set swaps an ability cleanly (what team mode will call)
-//   - shown: HUD chip, Pokédex detail, the partner card, the personality result, the starter
+//   - shown: HUD chip, Pokédex detail, the partner card, the starter
 //     choice and the pause screen; all in English
 // Screenshots go to MICASURVIVOR_SHOTS=<dir> when set.
 // Covers micasurvivor/js/systems/abilities.js, entities/player.js, systems/combat.js,
@@ -70,21 +70,14 @@ try {
 	const E = (fn, ...a) => page.evaluate(fn, ...a);
 	const text = sel => E(sel => { const el = document.querySelector(sel); return el ? el.innerText.replace(/\s+/g, ' ').trim() : null; }, sel);
 
-	// ---------- boot -> guest -> personality test -> result (ability shown) -> starters (shown) -> menu
+	// ---------- boot -> guest -> choosing a partner (its ability shown) -> menu
 	await page.goto(`http://localhost:${PORT}/micasurvivor/`, { waitUntil: 'domcontentloaded' });
 	A(await waitFor(() => E(() => document.getElementById('boot').classList.contains('hidden')), 30000), 'boots', errors.slice(0, 3).join(' | '));
 	await sleep(300); if (await visible('tap-start')) await page.click('#tap-start');
 	await waitFor(() => visible('scr-login'), 10000);
 	await page.click('#btn-guest');
-	await waitFor(() => visible('scr-test'), 8000);
-	for (let i = 0; i < 40 && await visible('scr-test'); i++) { await E(() => { const b = document.querySelector('#test-a button'); if (b) b.click(); }); await sleep(100); }
-	A(await waitFor(() => visible('scr-result'), 8000), 'personality result');
+	await waitFor(() => visible('scr-starters'), 8000);
 	{
-		const want = await E(() => { const dex = G.DEX.find(m => m.name === document.getElementById('res-name').textContent).dex; const a = G.Abilities.def(G.Abilities.of(dex)); return { name: G.I18n.t(a.name), desc: G.I18n.t(a.desc) }; });
-		const got = await text('#res-ability');
-		A(got && got.includes('Ability: ' + want.name) && got.includes(want.desc), `the result screen shows the partner's ability ("${got}")`, JSON.stringify(want));
-		await page.click('#res-other');
-		await waitFor(() => visible('scr-starters'), 5000);
 		await E(() => {
 			const cells = [...document.querySelectorAll('#starter-grid .cell')];
 			const i = G.STARTERS.findIndex(s => s.dex === 4);   // Charmander: Blaze

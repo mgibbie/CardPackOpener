@@ -119,10 +119,10 @@ try {
 		await waitFor(() => visible('scr-login'), 10000);
 		A(await t.page.evaluate(() => window.mpLeaveGuard().state === 'safe'), 'menus: leaving is safe');
 		await t.page.click('#btn-guest');
-		await waitFor(() => visible('scr-test'), 8000);
-		for (let i = 0; i < 40 && await visible('scr-test'); i++) { await t.page.evaluate(() => { const b = document.querySelector('#test-a button'); if (b) b.click(); }); await sleep(120); }
-		await waitFor(() => visible('scr-result'), 8000);
-		await t.page.click('#res-ok');
+		await waitFor(() => visible('scr-starters'), 8000);
+		await t.page.evaluate(() => { const c = document.querySelector('#starter-grid .cell[data-dex="813"]'); if (c) c.click(); }); await sleep(200);   // (Scorbunny: the partner the old personality test gave this suite)
+		await sleep(150);
+		await t.page.click('#starter-ok');
 		await waitFor(() => visible('scr-menu'), 10000);
 		await sleep(600);
 		A(await t.page.evaluate(() => [...document.querySelectorAll('[data-mp-switcher]')].some(b => b.id === 'btn-games' && b.getClientRects().length)), 'the menu bar has a ⚙️ Games button');

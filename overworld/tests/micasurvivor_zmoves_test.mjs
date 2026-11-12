@@ -134,10 +134,10 @@ try {
 	await page.goto(`http://localhost:${PORT}/micasurvivor/`, { waitUntil: 'domcontentloaded' });
 	A(await waitFor(() => E(() => document.getElementById('boot').classList.contains('hidden') && G.Pad && G.Pad.ready && !!G.ZMoves), 30000), 'boots logged in (Magepunk account); G.ZMoves loaded', errors.slice(0, 3).join(' | '));
 	await sleep(300); if (await visible('tap-start')) await page.click('#tap-start');
-	A(await waitFor(() => visible('scr-test'), 10000), 'straight to the personality test');
-	for (let i = 0; i < 40 && await visible('scr-test'); i++) { await E(() => { const b = document.querySelector('#test-a button'); if (b) b.click(); }); await sleep(100); }
-	await waitFor(() => visible('scr-result'), 8000);
-	await page.click('#res-ok');
+	A(await waitFor(() => visible('scr-starters'), 10000), 'straight to choosing a partner');
+	await E(() => { const c = document.querySelector('#starter-grid .cell[data-dex="813"]'); if (c) c.click(); }); await sleep(200);   // (Scorbunny: the partner the old personality test gave this suite)
+	await sleep(150);
+	await page.click('#starter-ok');
 	A(await waitFor(() => visible('scr-menu'), 10000), 'main menu');
 	// Charmander as partner (fire); Charizard (fire/flying) and Geodude (rock/ground) owned too
 	await E(() => { const s = G.DB.save; for (const d of [4, 6, 74]) G.DB.grant(d, 'starter'); s.partner = 4; s.partnerShiny = false; G.DB.commit(true); });

@@ -185,10 +185,10 @@ try {
 	const boot = async (p) => {
 		const ok = await waitFor(() => p.E(() => document.getElementById('boot').classList.contains('hidden') && !!G.Social && !!G.MicaNet), 30000);
 		await sleep(200); if (await p.visible('tap-start')) await p.page.click('#tap-start');
-		await waitFor(() => p.visible('scr-test'), 10000);
-		for (let i = 0; i < 40 && await p.visible('scr-test'); i++) { await p.E(() => { const b = document.querySelector('#test-a button'); if (b) b.click(); }); await sleep(90); }
-		await waitFor(() => p.visible('scr-result'), 8000);
-		await p.click('#res-ok');
+		await waitFor(() => p.visible('scr-starters'), 10000);
+		await p.E(() => { const c = document.querySelector('#starter-grid .cell[data-dex="813"]'); if (c) c.click(); }); await sleep(200);   // (Scorbunny: the partner the old personality test gave this suite)
+		await sleep(150);
+		await p.click('#starter-ok');
 		return ok && await waitFor(() => p.visible('scr-menu'), 10000);
 	};
 	const spanish = (p, sel) => p.E((sel, src) => {
@@ -565,9 +565,9 @@ try {
 	await sleep(200); if (await guest.visible('tap-start')) await gp.click('#tap-start');
 	await waitFor(() => guest.visible('scr-login'), 8000);
 	await guest.E(() => { const b = [...document.querySelectorAll('#scr-login button')].find(b => b.offsetParent && /^Play/.test(b.textContent.trim())); if (b) b.click(); });
-	await waitFor(() => guest.visible('scr-test'), 8000);
-	for (let i = 0; i < 40 && await guest.visible('scr-test'); i++) { await guest.E(() => { const b = document.querySelector('#test-a button'); if (b) b.click(); }); await sleep(90); }
-	await waitFor(() => guest.visible('scr-result'), 8000); await guest.click('#res-ok');
+	await waitFor(() => guest.visible('scr-starters'), 8000);
+	await guest.E(() => { const c = document.querySelector('#starter-grid .cell[data-dex="813"]'); if (c) c.click(); }); await sleep(200);   // (Scorbunny: the partner the old personality test gave this suite)
+	await sleep(150); await guest.click('#starter-ok');
 	A(await waitFor(() => guest.visible('scr-menu'), 10000), 'a guest (no Magepunk account) reaches the menu');
 	A(/Sign in to play with friends/.test(await guest.E(() => document.getElementById('menu-friends-sub').textContent)), 'the guest\'s Friends item says "Sign in to play with friends"');
 	await gp.click('#scr-menu [data-go=friends]');

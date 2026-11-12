@@ -193,10 +193,10 @@ try {
 
 	// ---------- boot (logged in) -> personality test -> menu
 	A(await boot(), 'boots logged in (Magepunk account); G.DmgLog + G.TrainerCard loaded', errors.slice(0, 3).join(' | '));
-	A(await waitFor(() => visible('scr-test'), 10000), 'straight to the personality test');
-	for (let i = 0; i < 40 && await visible('scr-test'); i++) { await E(() => { const b = document.querySelector('#test-a button'); if (b) b.click(); }); await sleep(100); }
-	await waitFor(() => visible('scr-result'), 8000);
-	await page.click('#res-ok');
+	A(await waitFor(() => visible('scr-starters'), 10000), 'straight to choosing a partner');
+	await E(() => { const c = document.querySelector('#starter-grid .cell[data-dex="813"]'); if (c) c.click(); }); await sleep(200);   // (Scorbunny: the partner the old personality test gave this suite)
+	await sleep(150);
+	await page.click('#starter-ok');
 	A(await waitFor(() => visible('scr-menu'), 10000), 'main menu');
 	await E(() => { const s = G.DB.save; s.owned = { 4: { at: 1000, from: 'starter' }, 1: { at: 2000, from: 'gacha' }, 7: { at: 3000, from: 'gacha' } }; s.partner = 4; s.modes = {}; G.DB.commit(true); });
 

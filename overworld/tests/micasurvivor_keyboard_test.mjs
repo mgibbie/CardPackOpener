@@ -5,7 +5,7 @@
 //   run, "choose" in a menu) · Backspace Select (Dynamax).
 //   1. title: before B4 the keyboard was stuck here (nothing moved, Tab was blocked). Z shows the ring on Play, Z again plays;
 //      the ring is drawn for the keyboard (body.nav-ring) and the DOM focus follows it; Tab is no longer swallowed
-//   2. the personality test, its result and the menu, with Z alone; the menu hint bar shows the keys (Z / X)
+//   2. choosing a partner (Z picks, Z again chooses) and the menu, with Z alone; the menu hint bar shows the keys (Z / X)
 //   3. every menu screen (Pokémon, Upgrades, Gacha, Missions, Lexicon, Ranking, Friends, Game modes) opened with Z, walked with
 //      arrows and WASD, tabs cycled with Q / E, left with X; a key press never hides the ring
 //   4. a gacha pull, Settings (the Controls tab lists the new keys), Credits; typing in a text field (a friend's name) moves
@@ -181,11 +181,10 @@ try {
 	await key('KeyK');   // an unmapped key: the ring stays (before, any key hid it)
 	A(await ev(() => document.body.classList.contains('nav-ring') && getComputedStyle(document.querySelector('.pad-focus')).outlineStyle === 'solid'), 'a key press never hides the ring');
 	await key('KeyZ');
-	A(await waitFor(() => visible('scr-test'), 5000), 'Z on Play: the personality test');
-	for (let i = 0; i < 40 && await visible('scr-test'); i++) await key('KeyZ', 150);
-	A(await waitFor(() => visible('scr-result'), 5000), 'the test is answered with Z alone');
+	A(await waitFor(() => visible('scr-starters'), 5000), 'Z on Play: choosing a partner');
+	await sleep(250); await key('KeyZ', 200);
 	f = await focus();
-	A(f && f.id === 'res-ok', 'result: the ring is on "Let\'s go together!"', JSON.stringify(f));
+	A(f && /\bcell\b/.test(f.cls) && /\bon\b/.test(f.cls) && await ev(() => !document.getElementById('starter-ok').disabled), 'Z on a starter picks it (the ring stays on it)', JSON.stringify(f));
 	await key('KeyZ');
 	A(await waitFor(() => visible('scr-menu'), 8000), 'the main menu, reached with the keyboard only');
 	await sleep(300);

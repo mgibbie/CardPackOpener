@@ -4,7 +4,7 @@
 //     no fonts CDN, no STUN outside a co-op lobby, no analytics); English by default; "MicaSurvivor" title and the
 //     "based on PokéSurvivor by JPTER78" credit visible; the Credits screen shows the Required
 //     Notice, the SpriteCollab artists and the JayElDragon controller credit
-//   - guest start (one "Play" button) -> personality test -> partner -> main menu
+//   - guest start (one "Play" button) -> choose a partner -> main menu
 //   - Friends asks a guest to sign in (M5 batch 12b: online co-op needs a Magepunk account); Ranking (M3: the
 //     Magepunk leaderboard) asks a guest to log in
 //   - start a run; a bot walking in circles survives ~30 s; level-up cards are picked
@@ -118,15 +118,12 @@ try {
 	await shot('desktop_credits.png');
 	await page.click('#legal-close');
 
-	// guest start -> personality test -> partner
+	// guest start -> choose a partner
 	await page.click('#btn-guest');
-	A(await waitFor(() => visible('scr-test'), 8000), 'guest start opens the personality test');
-	for (let i = 0; i < 40 && await visible('scr-test'); i++) {
-		await page.evaluate(() => { const b = document.querySelector('#test-a button'); if (b) b.click(); });
-		await sleep(120);
-	}
-	A(await waitFor(() => visible('scr-result'), 8000), 'test result shows a partner');
-	await page.click('#res-ok');
+	A(await waitFor(() => visible('scr-starters'), 8000) && !(await page.evaluate(() => !!document.getElementById('scr-test') || !!document.getElementById('scr-result'))), 'guest start goes straight to choosing a partner (no personality test)');
+	await page.evaluate(() => { const c = document.querySelector('#starter-grid .cell[data-dex="813"]'); if (c) c.click(); }); await sleep(200);
+	A(await page.evaluate(() => !document.getElementById('starter-ok').disabled && document.querySelectorAll('#starter-grid .cell').length === G.STARTERS.length), 'every starter is there, and one is picked');
+	await page.click('#starter-ok');
 	A(await waitFor(() => visible('scr-menu'), 10000), 'main menu opens');
 	await sleep(800);
 	const menu = await page.evaluate(() => ({ partner: G.DB.save.partner, coins: G.DB.save.coins, keys: Object.keys(localStorage), text: document.getElementById('scr-menu').innerText }));

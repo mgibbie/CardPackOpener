@@ -5,7 +5,7 @@
 //   - a guest's pad drives too (owner, 2026-10-18: controllers no longer need a Magepunk sign-in; M5 batch 12a
 //     removed the gate and its "Log in to Magepunk to use a controller" toast)
 //   - default layout = Nintendo (site standard: RIGHT face confirms, bottom face cancels)
-//   - title -> personality test -> partner -> menu with the pad only; focus ring on every screen;
+//   - title -> choosing a partner -> menu with the pad only; focus ring on every screen;
 //     Pokémon / Upgrades / Gacha / Missions / Settings / Credits opened and left with cancel;
 //     LB / RB cycle a screen's tabs; the menu hint bar shows the pad's glyphs
 //   - a gacha pull: confirm hurries the slot machine, Continue closes the results
@@ -137,11 +137,10 @@ try {
 	await ev(() => { localStorage.setItem('magepunk_mp_token_v1', 'test-token'); localStorage.setItem('magepunk_mp_state_v1', JSON.stringify({ username: 'padtester' })); });
 	await sleep(300);
 	await press(B.confirm);
-	A(await waitFor(() => visible('scr-test'), 5000), 'confirm on Play: the personality test');
-	for (let i = 0; i < 40 && await visible('scr-test'); i++) await press(B.confirm);
-	A(await waitFor(() => visible('scr-result'), 5000), 'the test is answered with confirm alone');
+	A(await waitFor(() => visible('scr-starters'), 5000), 'confirm on Play: choosing a partner');
+	await sleep(250); await press(B.confirm);
 	f = await focus();
-	A(f && f.id === 'res-ok', 'result screen: focus on "Let\'s go together!"', JSON.stringify(f));
+	A(f && /\bcell\b/.test(f.cls) && /\bon\b/.test(f.cls) && await ev(() => !document.getElementById('starter-ok').disabled), 'confirm on a starter picks it (the ring stays on it)', JSON.stringify(f));
 	await press(B.confirm);
 	A(await waitFor(() => visible('scr-menu'), 8000), 'main menu, reached with the pad only');
 	await sleep(300);
