@@ -1169,6 +1169,16 @@ Tests: `micasurvivor_m3d_expcap_test.mjs` 54 checks (was 43), `micasurvivor_m3d_
 `micasurvivor_m3d_save_page_test.mjs` 13 (was 9: a wild member comes, is caught, is saved at once, and is not
 wild in the next run).
 
+## 5.36 The shipping path, sixth part: built (2026-11-12). A screen for the 3D boards.
+
+"3D boards" in the menu and on the run's end opens the boards of the run's map and tier: the server's top ten
+and your own mark (lit; under the ten when it is further down), with tabs for Score, Time attack and
+Survival. Asked for with `d3` (`expsave.js boardAsk`, read by `boardRows`). Logged out, a line says to log in
+and nothing is asked. Esc / X / B closes it, back to where it was opened from; it is walked with the arrows
+like the other screens.
+
+Tests: `micasurvivor_m3d_runui_test.mjs` 28 checks (was 23), `micasurvivor_m3d_expsave_test.mjs` 33 (was 31).
+
 ## 6. Dive in 2D: built
 
 **D0 — find the stairs (small; can ship first, on its own).** *Built 2026-11-11 (`overworld/tests/micasurvivor_dive_stairs_test.mjs`). As built: the stairs took their own orange mark, so the rocks and Meowth keep their gold; the HUD arrow comes up after 25 s on a floor, or at once when its boss falls.*

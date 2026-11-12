@@ -20,7 +20,7 @@
 // Pure: the page (main.js) hands in the run, its result and the saves. Not kept yet: the economy's, the capture's and
 // the level-ups' counters, the tasks, the achievements (they are checked by the 2D game from the counters there are).
 
-export const SV = { DV: 20 /* the Expedition's content version (js/systems/expedition.js DV: the boards file a score by it) */, INV: 1e9, BOARD: 'micasurvivor_expedition', OK: ['exp', 'map', 'diff', 'mode', 'dex', 'debug'], MAX_HP: 50000, MAX_ATK: 2000, MAX_SPD: 25 };
+export const SV = { RULES: 2 /* the rules the boards are filed under (js/entities/player.js RULES; the server's MSURV_RULES) */, DV: 20 /* the Expedition's content version (js/systems/expedition.js DV: the boards file a score by it) */, INV: 1e9, BOARD: 'micasurvivor_expedition', OK: ['exp', 'map', 'diff', 'mode', 'dex', 'debug'], MAX_HP: 50000, MAX_ATK: 2000, MAX_SPD: 25 };
 
 /** The first parameter of the page's address that makes its run a practice run (null: none). params: [[key, value]]. */
 export function unfair(params) { for (const [k, v] of params) if (!SV.OK.includes(k) || (k === 'mode' && v !== 'survival')) return k; return null; }
@@ -123,6 +123,15 @@ export function scoreBody(sum) {
 	const p = sum.parts, surv = sum.mode === 'exp-survival';
 	return Object.assign({ mode: SV.BOARD, d3: true, expMode: sum.mode, dv: sum.dv, map: sum.map, diff: sum.diff, score: Math.floor(sum.score), time: sum.time, kills: Math.floor(sum.kills || 0), level: Math.floor(sum.level || 1), dex: sum.dex | 0, shiny: false },
 		surv ? { dmg: p.dmg, bosses: p.bosses, legends: p.legends, catches: p.catches } : { zone: p.zone, won: p.won, dmg: p.dmg, bosses: p.bosses, catches: p.catches });
+}
+/** What to ask the server for a 3D board. view: 'score' | 'time' | 'survival'. */
+export function boardAsk(map, diff, view) { return Object.assign({ mode: SV.BOARD, d3: true, map, diff, rules: SV.RULES }, view && view !== 'score' ? { board: view } : {}); }
+/** The server's rows, for the screen: ten, and yours. body: { top, you }; nameOf(dex); me: your name. */
+export function boardRows(body, nameOf, me) {
+	const mmss = (t) => `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, '0')}`, row = (e, rank) => ({ rank, name: e.name || '?', who: nameOf(e.dex) + (e.level ? ' Lv ' + e.level : ''), time: mmss(e.time || 0), score: Math.floor(e.score != null ? e.score : e.time || 0).toLocaleString('en-US'), me: e.name === me });
+	const rows = (body.top || []).slice(0, 10).map((e, i) => row(e, i + 1));
+	if (body.you && body.you.rank > 10) rows.push(row({ ...body.you, name: me }, body.you.rank));
+	return rows;
 }
 /** Why a run was not kept, for the run's end. */
 export const WHY = { league: 'Practice run (not a League run): nothing is saved.', member: 'You do not have this League member yet: nothing is saved.', map: 'This map is not open in your save yet: nothing is saved.', tier: 'This tier is not open in your save yet: nothing is saved.',

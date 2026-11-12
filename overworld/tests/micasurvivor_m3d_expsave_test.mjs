@@ -16,7 +16,7 @@
 import { dataFrom, gainXp } from '../../micasurvivor/m3d/combat.js';
 import { expFrom, newRun, stepRun, result } from '../../micasurvivor/m3d/expedition.js';
 import { megaEvolve } from '../../micasurvivor/m3d/expleague.js';
-import { SV, unfair, clean, deviceId, missing, runSum, recordOps, applyOps, scoreBody, WHY, hasMember, wildOf, catchOps, newlyMet } from '../../micasurvivor/m3d/expsave.js';
+import { SV, unfair, clean, deviceId, missing, runSum, recordOps, applyOps, scoreBody, WHY, hasMember, wildOf, catchOps, newlyMet, boardAsk, boardRows } from '../../micasurvivor/m3d/expsave.js';
 import { rng as seedRng } from '../../micasurvivor/m3d/gen.js';
 import { loadG } from './m3d_data.mjs';
 
@@ -135,6 +135,15 @@ const dev = deviceId(ls, Sv.who, globalThis.crypto);
 	// the collection: at the 2D game's claim
 	const d2 = deviceId(q.ls, Sv2.who, globalThis.crypto); Sv2.bump('m3d.n.' + d2); M2.claim3d();
 	A(q.unlocked.includes(c), 'at the 2D game\'s next claim the member caught joins the collection', q.unlocked);
+}
+
+// ---------------------------------------------------------------- the 3D boards, asked for and read
+{
+	const a = boardAsk('mtmoon', 'hard', 'score'), t = boardAsk('mtmoon', 'hard', 'time');
+	A(JSON.stringify(a) === JSON.stringify({ mode: 'micasurvivor_expedition', d3: true, map: 'mtmoon', diff: 'hard', rules: 2 }) && t.board === 'time' && t.d3 === true && boardAsk('viridian', 'normal', 'survival').board === 'survival', 'a 3D board is asked for with d3 (and the rules the boards are filed under); its view when it is not the score\'s');
+	const top = Array.from({ length: 14 }, (_, i) => ({ name: 'p' + i, score: 5000 - i * 100, time: 600 + i, level: 20, dex: 6 }));
+	const rows = boardRows({ top, you: { name: 'p12', score: 3800, time: 612, level: 20, dex: 6, rank: 13 } }, (d) => (G.DEX_BY[d] || {}).name, 'p12');
+	A(rows.length === 11 && rows[0].rank === 1 && rows[0].score === '5,000' && rows[0].time === '10:00' && rows[0].who === 'Charizard Lv 20' && rows[10].rank === 13 && rows[10].me && !rows[0].me && boardRows({ top: top.slice(0, 3), you: { ...top[1], rank: 2 } }, () => 'x', 'p1').filter((r) => r.me).length === 1 && boardRows({}, () => '', 'a').length === 0, 'read: the top ten, and yours under them when it is further down');
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);

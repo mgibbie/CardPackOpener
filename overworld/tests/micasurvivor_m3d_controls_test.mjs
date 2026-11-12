@@ -75,7 +75,7 @@ try {
 	await page.keyboard.press('ArrowDown'); const r1 = await ring();
 	await page.keyboard.press('ArrowDown'); const r2 = await ring();
 	await page.keyboard.press('ArrowUp'); const r3 = await ring();
-	A(m1.up && m1.paused && r1 === 'rx-resume' && r2 === 'rx-restart' && r3 === 'rx-resume', 'Enter opens the menu (the site\'s menu); the arrows walk its buttons with a ring', { m1, r1, r2, r3 });
+	A(m1.up && m1.paused && r1 === 'rx-resume' && r2 === 'rx-boards' && r3 === 'rx-resume', 'Enter opens the menu (the site\'s menu); the arrows walk its buttons with a ring', { m1, r1, r2, r3 });
 	await page.keyboard.press('KeyZ');
 	const m2 = await menu();
 	await page.keyboard.press('Enter'); const m3 = await menu();
@@ -106,7 +106,7 @@ try {
 	let pr3 = pr2; for (let i = 0; i < 3 && pr3 !== 'rx-resume'; i++) { await tap(12); pr3 = await ring(); }   // (back up to Resume, wherever the ring began)
 	await tap(1);
 	const p2 = await menu();
-	A(p1.up && p1.paused && /^rx-(resume|restart|quit)$/.test(pr1 || '') && pr2 !== pr1 && pr3 === 'rx-resume' && !p2.up && !p2.paused && (await page.evaluate(() => window.__m3d.run.seed === 7 && window.__picked !== undefined)), 'a controller: Start opens the menu, the d-pad walks it, the right face button presses (Resume)', { p1, pr1, pr2, pr3, p2 });
+	A(p1.up && p1.paused && /^rx-(resume|boards|restart|quit)$/.test(pr1 || '') && pr2 !== pr1 && pr3 === 'rx-resume' && !p2.up && !p2.paused && (await page.evaluate(() => window.__m3d.run.seed === 7 && window.__picked !== undefined)), 'a controller: Start opens the menu, the d-pad walks it, the right face button presses (Resume)', { p1, pr1, pr2, pr3, p2 });
 	await tap(9); await tap(0);
 	const p3 = await menu();
 	A(!p3.up, 'the bottom face button cancels (the menu closes)');
@@ -135,11 +135,13 @@ try {
 	await page.evaluate(() => window.__m3d.setMenu(false));
 	await page.evaluate(() => { const m = window.__m3d; m.world.pl.maxHp = 10; m.world.pl.xproc.shield = 0; m.world.pl.invuln = 0; m.world.pl.hp = 1; m.addBoss(150, m.state.x + 1.5, m.state.z, { slot: 0 }); for (const e of m.world.enemies) e.atk = 1e6; });
 	const over = await waitFor(() => page.evaluate(() => window.__m3d.run.ended && document.getElementById('rx-end').classList.contains('show')), 20000);
-	await page.keyboard.press('ArrowRight'); const e1 = await ring();
+	for (let i = 0; i < 3; i++) await page.keyboard.press('ArrowLeft');   // (to its first button, wherever the ring began)
+	const e1 = await ring();
 	await page.keyboard.press('ArrowRight'); const e2 = await ring();
+	await page.keyboard.press('ArrowRight'); const e3 = await ring();
 	const g2 = await page.evaluate(() => window.mpLeaveGuard().state);
-	A(over && e1 === 'rx-again' && e2 === 'rx-leave' && g2 === 'safe', 'the run\'s end: the arrows walk "Play again" and "Leave"; leaving a finished run asks nothing', { e1, e2, g2 });
-	await page.keyboard.press('ArrowLeft');
+	A(over && e1 === 'rx-again' && e2 === 'rx-boards' && e3 === 'rx-leave' && g2 === 'safe', 'the run\'s end: the arrows walk "Play again", "3D boards" and "Leave"; leaving a finished run asks nothing', { e1, e2, e3, g2 });
+	await page.keyboard.press('ArrowLeft'); await page.keyboard.press('ArrowLeft');
 	await Promise.all([page.waitForNavigation({ waitUntil: 'domcontentloaded' }), page.keyboard.press('KeyZ')]);
 	const again = await waitFor(() => page.evaluate(() => !!(window.__m3d && window.__m3d.ready && window.__m3d.run && window.__m3d.run.seed === 8)), 30000);
 	A(again, 'Z on "Play again": a new run, with no mouse from start to end');
