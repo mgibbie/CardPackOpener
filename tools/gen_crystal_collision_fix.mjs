@@ -52,7 +52,12 @@ const collFile = {};
 	const g = read(path.join(CR, 'gfx', 'tilesets.asm')).split(/\r?\n/);
 	for (let i = 0; i < g.length; i++) {
 		const m = /^Tileset(\w+)Coll::/.exec(g[i]);
-		const inc = m && /INCLUDE "([^"]+)"/.exec(g[i + 1] || '');
+		if (!m) continue;
+		// (two tilesets may share one table: `TilesetCaveColl::`, then `TilesetDarkCaveColl::`, then the INCLUDE. Reading
+		//  only the next line gave the table to the second label and left the first with none, so every TILESET_CAVE map
+		//  was skipped: Tohjo Falls, Union Cave, Mount Mortar …)
+		let j = i + 1; while (j < g.length && /^Tileset\w+Coll::/.test(g[j])) j++;
+		const inc = /INCLUDE "([^"]+)"/.exec(g[j] || '');
 		if (inc) collFile[m[1]] = path.join(CR, inc[1]);
 	}
 }
@@ -65,6 +70,14 @@ function blockColl(ts) {
 	return quads[ts];
 }
 
+// SIDE WALLS (COLL_RIGHT_WALL $b0 … COLL_UP_LEFT_WALL $b7): floor you can stand on, with a wall along one edge (or two).
+// home/map.asm GetMovementPermissions: you cannot LEAVE such a tile across that edge, nor ENTER it across it (the tile
+// below being an UP_WALL blocks walking down onto it). They are the tops and sides of ledges all over Johto; without
+// them a cliff's edge was plain floor, and Tohjo Falls could be walked round below its waterfall (tester report
+// 2026-11-11). Written to overworld/crystal_side_walls.json: { maps: { MAP_ID: [[x, y, edges], …] } }, edges a bit
+// each: 1 right, 2 left, 4 up, 8 down. World.edgeBlocked (engine.js) reads them.
+const SIDE = { 0xb0: 1, 0xb1: 2, 0xb2: 4, 0xb3: 8, 0xb4: 8 | 1, 0xb5: 8 | 2, 0xb6: 4 | 1, 0xb7: 4 | 2 };
+const sideOut = {}; let sideTotal = 0;
 const out = {};
 let total = 0;
 const perMap = [];
@@ -73,10 +86,12 @@ for (const c of loadCrystalMaps(ROOT, CR)) {
 	if (!bc) continue;
 	const map = JSON.parse(read(path.join(DATA, 'maps', c.stem + '_map.json')));
 	const warps = new Set((map.warp_events || []).map(w => +w.x + ',' + +w.y));
-	const cells = [];
+	const cells = [], side = [];
 	for (let y = 0; y < c.hb * 2; y++) for (let x = 0; x < c.wb * 2; x++) {
+		const sc = bc[c.blk[(y >> 1) * c.wb + (x >> 1)]]?.[(y & 1) * 2 + (x & 1)];
+		if (sc != null && SIDE[sc]) side.push([x, y, SIDE[sc]]);
 		if (warps.has(x + ',' + y)) continue;
-		const coll = bc[c.blk[(y >> 1) * c.wb + (x >> 1)]]?.[(y & 1) * 2 + (x & 1)];
+		const coll = sc;
 		if (coll == null || coll === COLL.BUOY) continue;
 		const open = /^(LAND|WATER)_TILE/.test(PERM[coll] || 'WALL_TILE');
 		const v = c.grid[y]?.[x];
@@ -85,6 +100,9 @@ for (const c of loadCrystalMaps(ROOT, CR)) {
 		if (ours !== open) cells.push([x, y, open ? 1 : 0]);
 	}
 	if (cells.length) { out[c.id] = cells; total += cells.length; perMap.push(`${c.stem} ${cells.length}`); }
+	if (side.length) { sideOut[c.id] = side; sideTotal += side.length; }
 }
 fs.writeFileSync(OUT, JSON.stringify({ generated: 'tools/gen_crystal_collision_fix.mjs', maps: out }) + '\n');
+fs.writeFileSync(path.join(ROOT, 'overworld', 'crystal_side_walls.json'), JSON.stringify({ generated: 'tools/gen_crystal_collision_fix.mjs', maps: sideOut }) + '\n');
+console.log(`side walls: ${sideTotal} cell(s) on ${Object.keys(sideOut).length} map(s)`);
 console.log(`collision fixed: ${total} cell(s) on ${Object.keys(out).length} map(s): ${perMap.join(', ')}`);

@@ -493,6 +493,10 @@ export class World {
 			const row = layout.map[y];
 			if (row && row[x] != null) row[x] = open ? row[x] & ~COLLISION_MASK : row[x] | COLLISION_MASK;
 		}
+		// Crystal's side walls (tools/gen_crystal_collision_fix.mjs): floor with a wall along an edge. 'x,y' -> edges
+		// (1 right, 2 left, 4 up, 8 down). A map with none (every FRLG / Emerald map) has no table.
+		const sw = (await getJSON('crystal_side_walls.json').catch(() => null))?.maps?.[map.id];
+		map.sideWalls = sw && sw.length ? new Map(sw.map(([x, y, e]) => [x + ',' + y, e])) : null;
 		captureLockedPristine(name, layout);
 		const ts = await loadTilesetsFor(layout);
 		return { name, map, layout, ts };
@@ -703,6 +707,13 @@ export class World {
 		return n;
 	}
 
+	/** Is the step from (tx, ty) one tile `dir` barred by a side wall? The tile you stand on may have a wall along the
+	 *  edge you would cross, or the tile you would enter one along its facing edge (pokecrystal GetMovementPermissions). */
+	edgeBlocked(tx, ty, dir) {
+		const sw = this.current?.map?.sideWalls; if (!sw) return false;
+		const E = { right: [1, 2, 1, 0], left: [2, 1, -1, 0], up: [4, 8, 0, -1], down: [8, 4, 0, 1] }[dir]; if (!E) return false;
+		return !!((sw.get(tx + ',' + ty) || 0) & E[0]) || !!((sw.get((tx + E[2]) + ',' + (ty + E[3])) || 0) & E[1]);
+	}
 	isPassable(tx, ty) {
 		if (this.warpAt(tx, ty)) {
 			// doors are always enterable — FRLG/Emerald walk INTO a wall-collision door —
@@ -1002,6 +1013,8 @@ export class Player {
 			? (this.world.isSurfable(nx, ny) || this.world.isPassable(nx, ny))
 			: this.world.isPassable(nx, ny) && !this.world.isSurfable(nx, ny);
 		if (!open) { this.moveOutcome = 'bump'; this.onBump?.(nx, ny); return; }   // walls thud too, not just blockers
+		// a side wall along the edge between the two tiles (Crystal's ledge tops and sides): on foot only
+		if (!this.surfing && this.world.edgeBlocked?.(this.tx, this.ty, dir)) { this.moveOutcome = 'bump'; this.onBump?.(nx, ny); return; }
 		// a WATERFALL (MB_WATERFALL 0x13) is a current that pushes the surfer south
 		// (ForcedMovement_PushedSouthByCurrent, FRLG + Emerald): you can ride it
 		// down, never up or across it. Climbing is the WATERFALL field move's job,
