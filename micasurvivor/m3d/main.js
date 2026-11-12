@@ -24,6 +24,7 @@ import { startInput } from '/site/input.js';
 import { createFocusNav } from '/site/focusnav.js';
 import { marksOf } from './exprx.js';
 import { pressUlt, ultView, setCharge } from './expult.js';
+import { perksOf } from './expperks.js';
 import { expFrom, newRun, stepRun, hudLine, result as runResult, setZoneTime, fire as fireEvent, zoneRoom, XK } from './expedition.js';
 import { runRow, rowView, teamSpot } from './expnet.js';
 import { guestRun, guestRunApply, stepGuest } from './expcoop.js';
@@ -86,7 +87,8 @@ const LAB_META = (() => {
 		return metaFor(GG.ExpMeta, { Sv, member, boosts: spendBoosts(GG.ExpMeta, Sv, deviceId(localStorage, Sv.who, crypto), localStorage) });
 	} catch (e) { console.warn('the Lab could not be read: ' + (e && e.message)); return null; }
 })();
-const run = EXP ? newRun(dataFrom(GG), XF, { ultAuto: SAVE_OK && GG.ExpSave.get('ult.auto.on') > GG.ExpSave.get('ult.auto.off'), wild: WILD, meta: LAB_META, form: +Q.get('form') || 0, seed: GEN, map: Q.get('map'), diff: Q.get('diff'), mode: Q.get('mode') || undefined, dex: DEX, moves: MOVES, tune: TUNE, touch: matchMedia('(pointer: coarse)').matches, league: !Q.has('moves') && Q.get('league') !== '0', ability: Q.get('ability') === '0' ? null : Q.get('ability') || 'auto', items: Q.get('items') ? Q.get('items').split(',') : [], weather: Q.get('weather') === '0' ? false : undefined, autoPick: Q.has('auto') ? +Q.get('auto') | 0 : undefined }) : null;
+const UPGRADES = SAVE_OK ? perksOf(GG, baseSave(), DEX) : null;   // (the upgrades bought for this Pokémon's family: a run that can be kept starts with them)
+const run = EXP ? newRun(dataFrom(GG), XF, { perks: UPGRADES, ultAuto: SAVE_OK && GG.ExpSave.get('ult.auto.on') > GG.ExpSave.get('ult.auto.off'), wild: WILD, meta: LAB_META, form: +Q.get('form') || 0, seed: GEN, map: Q.get('map'), diff: Q.get('diff'), mode: Q.get('mode') || undefined, dex: DEX, moves: MOVES, tune: TUNE, touch: matchMedia('(pointer: coarse)').matches, league: !Q.has('moves') && Q.get('league') !== '0', ability: Q.get('ability') === '0' ? null : Q.get('ability') || 'auto', items: Q.get('items') ? Q.get('items').split(',') : [], weather: Q.get('weather') === '0' ? false : undefined, autoPick: Q.has('auto') ? +Q.get('auto') | 0 : undefined }) : null;
 if (run) room = run.w.room;
 // (P4) a guest in a run: its own League member in the host's run (expcoop.js); it builds each zone from the run's row
 const grun = XJ ? guestRun(dataFrom(GG), XF, { seed: XJ.seed, map: XJ.map, diff: XJ.diff, id: MYID, dex: DEX, league: !Q.has('moves'), moves: MOVES, tune: TUNE, ability: Q.get('ability') === '0' ? null : Q.get('ability') || undefined, autoPick: Q.has('auto') ? +Q.get('auto') | 0 : undefined }) : null;
@@ -485,6 +487,7 @@ function fightEvents(events) {
 		else if (ev.k === 'shield') flashes.arc(ev.x, ev.y, ev.z, ev.r, 0, 6.2832, '#7fc8ff', 0.5, 0.9);
 		else if (ev.k === 'summon') flashes.arc(ev.x, ev.y, ev.z, 3, 0, 6.2832, '#c47bff', 0.4, 0.5);
 		else if (ev.k === 'hit') numbers.push({ x: ev.x, y: ev.y + 0.6, z: ev.z, text: String(Math.max(1, Math.round(ev.d))), css: ev.crit ? '#ffe14d' : (WATCH ? ev.eff === 2 : ev.eff > 1.2) ? '#ffffff' : (WATCH ? ev.eff === 0 : ev.eff < 0.9) ? '#9aa6b5' : '#f2ede2', big: ev.crit || ev.eff > 1.2, t: 0 });
+		else if (ev.k === 'secondchance') { note('Second chance!', 2200); flashes.arc(ev.x, ev.y + 0.06, ev.z, ev.r, 0, 6.2832, '#ff8ad8', 0.8, 0.2); bob = 0.6; const A = SOUND(); if (A) A.sfx('legend'); if (RUNUI) RUNUI.update(runView()); }
 		else if (ev.k === 'ult') {   // an Ultimate: its cut-in, its rings, beams and strikes
 			const c = TYPE_COLOR[ev.type] || '#ffd23f', A = SOUND();
 			if (ev.sub === 'cast') { cutIn = { id: ++cutN, name: ev.name, sub: 'ULTIMATE' + (ev.tier > 0 ? ' · TIER ' + ev.tier : ''), col: c, until: performance.now() + 1100 }; flashes.arc(ev.x, ev.y + 0.05, ev.z, 15, 0, 6.2832, c, 0.7, 0.05); bob = 0.5; if (A) A.sfx('legend'); if (RUNUI) RUNUI.update(runView()); }
@@ -718,6 +721,7 @@ function runView() {
 	if (pl) v.moves = pl.moves.map((m) => ({ name: pretty(m.id), lv: m.xlv || m.lvl, col: TYPE_COLOR[(GG.Moves.BY_ID[m.id] || (GG.ExpMoves && GG.ExpMoves.MOVES[m.id]) || {}).type] }));
 	if (pl && pl.xv && I) for (const q of pl.xv) v.bag.push({ text: `${en(I.VIT[q.id].name)} ${q.lvl}`, kind: 'dim' });
 	if (pl && pl.xi && I) for (const id of Object.keys(pl.xi)) v.bag.push({ text: en(I.IT[id].name) + (pl.xi[id] > 1 ? ' ×' + pl.xi[id] : ''), kind: '' });
+	if (run && run.up && run.up.revives > 0) v.bag.push({ text: 'Second chance' + (run.up.revives > 1 ? ' ×' + run.up.revives : ''), kind: 'on' });
 	if (myRun && myRun.held) v.bag.push({ text: 'Holding ' + pretty(myRun.held), kind: 'money' });
 	for (const d of myRun && myRun.cap ? myRun.cap.sa.map((a) => a.dex) : rv ? rv.sa : []) v.bag.push({ text: nameOf(d), kind: 'warn' });
 	const b = world && !JOIN ? world.enemies.find((e) => e.boss) : null;
@@ -845,7 +849,7 @@ const G_MUSIC = GG.BIOME_MUSIC || null, XK_MAPS = ['viridian', 'mtmoon', 'cerule
 
 // what a test (and a curious owner in the console) can reach
 window.__m3d = {
-	meta: LAB_META,
+	meta: LAB_META, upgrades: UPGRADES,
 	keepShiny,
 	siteHost: SITE_HOST, siteWatch: SITE_WATCH,
 	openBoard, get boardUp() { return boardUp; },

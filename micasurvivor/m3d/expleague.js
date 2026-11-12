@@ -15,9 +15,11 @@
 // move changes with them (a Charmeleon that becomes a Charizard can glide).
 //
 // The regional formes are stages of their species' families (the 2D game's js/systems/forms.js patches the League's data).
-// Not here yet: the family's upgrades from the base save (among them the TM and Repertoire), a shiny's look.
+// The family's upgrades (expperks.js): the TM's move in place of the kit's first, Repertoire's second move from level 1.
+// Not here yet: a shiny's look.
 import { tuneFor } from './sim.js';
 import { say } from './expedition.js';
+import { canFire } from './combat.js';
 
 /** The 2D game's League, as this module reads it. G: its global with expedition/league-data.js and league.js loaded. */
 export function leagueFrom(G) {
@@ -68,7 +70,12 @@ export function setupLeague(S, member, form = 0) {
 	if (r.taken) pl.baseReduce += r.taken;
 	if (r.spd) pl.spdMul *= 1 + r.spd;
 	pl.moves.length = 0; w.orbs.length = 0;
-	learnKit(S, 0);
+	// the family's upgrades (the 2D game's rule): the TM puts the move you picked in place of the kit's first; Repertoire
+	// gives the kit's second from level 1
+	const P = S.up, td = P && P.tmMove ? w.data.moveDef(P.tmMove) : null;
+	if (td && canFire(td.kind)) { const mv = w.data.move(P.tmMove); pl.moves.push(mv); S.L.M.base(mv); scaleMove(S, mv); S.lg.kit = 1; S.lg.tm = P.tmMove; S.lg.log.push([1, 'tm', P.tmMove]); }
+	else learnKit(S, 0);
+	if (P && P.startMoves >= 2 && learnKit(S, 1)) S.lg.log.push([1, 'kit', m.kit[1]]);
 	// the starting form (the 2D game's rule): a run may START as a later stage of its family, that stage's body and stats,
 	// quietly (it is not an evolution of this run). Later evolutions still come at their levels.
 	if (form && form !== member && LG.FAM[form] === member && S.data.mon(form)) {

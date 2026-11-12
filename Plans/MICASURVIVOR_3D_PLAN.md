@@ -1440,6 +1440,28 @@ ever came as an enemy. The 3D page now loads both, before the League reads its d
 Tests: `micasurvivor_m3d_expformes_test.mjs` 17 checks in node; `micasurvivor_m3d_formes_page_test.mjs` 10 in a
 browser (it fails with the sheet fix reverted: the sheet never loads).
 
+## 5.49 Going live, ninth part: built (2026-11-12). The upgrades bought for your Pokémon.
+
+The menu's "Upgrades" screen sells upgrades for a Pokémon, shared by its family, and a 2D Expedition run starts
+with them. A 3D run did not: a player's Charizard would have been weaker in 3D than in 2D. Now it starts with them
+too (`m3d/expperks.js`).
+
+- **Where they come from.** The base save, which the 3D page reads and never writes. The levels that count are
+  the family's: the best of each among its stages. They become the 2D game's own perks (`js/data/upgrades.js`),
+  so a hand-edited level gives no more than the upgrade's max. A practice run has none, as it has no Lab.
+- **The stats.** Vitality, Strength, Stride, Reflexes, Shell, Synthesis, Magnet, Wisdom, Critical Hit, Calibre.
+- **The cards.** Card change adds Refreshes and Veto adds Banishes (never above six of each, with the Lab's); the
+  moves you vetoed never come on the cards.
+- **Second chance.** When you fall you are back at full HP, 2.5 s unhurt, and what is within 260 px is thrown
+  back; a heart a level. It is asked after every item that could have saved you. The screen shows it.
+- **The TM and Repertoire.** The TM puts the move you picked in place of the League kit's first; Repertoire gives
+  the kit's second from level 1. The 2D game's rule for a League run.
+- **Fortune** (+ 8 % Pokémonedas a level) does nothing in an Expedition run, in 2D either: its pay is the
+  Expedition's own.
+
+Tests: `micasurvivor_m3d_expperks_test.mjs` 36 checks in node, against the 2D game's own table and families;
+`micasurvivor_m3d_perks_page_test.mjs` 7 in a browser.
+
 ## 6. Dive in 2D: built
 
 **D0 — find the stairs (small; can ship first, on its own).** *Built 2026-11-11 (`overworld/tests/micasurvivor_dive_stairs_test.mjs`). As built: the stairs took their own orange mark, so the rocks and Meowth keep their gold; the HUD arrow comes up after 25 s on a floor, or at once when its boss falls.*

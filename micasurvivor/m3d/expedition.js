@@ -26,6 +26,7 @@ import { survFrom, setupSurv, tickSurv, foeK, migrated, survHud, survResult } fr
 import { tickFog } from './expfog.js';
 import { rxFrom, setupRx, tickRx } from './exprx.js';
 import { ultFrom, setupUlt, holdUlt, tickUlt } from './expult.js';
+import { applyPerks, perkTools } from './expperks.js';
 
 export const XK = {
 	BIOME: { viridian: 'meadow', mtmoon: 'peaks', cerulean: 'marsh' },
@@ -153,7 +154,9 @@ export function newRun(data, X, o = {}) {
 		ability: league && o.ability === undefined ? X.G.abilityOf(X.G.finalsOf(X.G.BY[member])[0]) : o.ability });   // (a member has its final stage's ability all run)
 	const S = { w, X, data, map, diff, seed, surv: o.mode === 'survival' && !!X.V, zi: 0, pzs: 0, touch: !!o.touch, zone: 0, zs: 0, splits: [], log: [], bosses: [], won: false, lost: false, ended: false, dps: [], says: [], wonT: 0, meta: own ? o.meta || null : null };   // (meta: what the Lab gives this run, expmeta.js)
 	zoneStart(S, 1, 0);
+	if (o.perks && !w.guest) applyPerks(S, o.perks);   // (the upgrades bought for this Pokémon's family: expperks.js)
 	if (own) { setupLevels(S, X.L, lv); S.syncPerks = () => syncPerks(S); }
+	if (S.up) perkTools(S);
 	if (league) setupLeague(S, member, o.form | 0);   // (form: a later stage of the family to start as)
 	if (S.surv) setupSurv(S);
 	if (X.R && o.rx !== false) setupRx(S);   // (the elemental reactions and the weather's boosts: exprx.js)
