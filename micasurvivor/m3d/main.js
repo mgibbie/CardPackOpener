@@ -14,6 +14,7 @@ import { frame as netFrame, keepEvents, diff as netDiff, bundle, unbundle, Viewe
 import { hostAdd, hostStep, hostFrame, hostApply, guestWorld, guestSync, guestMsg, guestApply } from './coop.js';
 import { generate, BIOMES } from './gen.js';
 import { mountRunUi, pretty } from './runui.js';
+import { HostLink, WatchLink, runId, SAYS as LIVE_SAYS } from './exprelay.js';
 import { unfair, clean as cleanRun, deviceId, missing as saveMissing, runSum, recordOps, applyOps, scoreBody, WHY, SV, wildOf, catchOps, newlyMet, boardAsk, boardRows } from './expsave.js';
 import { rng as seedRng } from './gen.js';
 import { startInput } from '/site/input.js';
@@ -33,7 +34,9 @@ const Q = new URLSearchParams(location.search);
 // P3n: &host=<name> shows this fight to other tabs of this browser (a BroadcastChannel: the test room's transport);
 // ?watch=<name> watches it, with a camera of its own; &tape=1 records it (window.__m3d.tape).
 // ?join=<name> JOINS that fight as a second player (co-op: coop.js), with your own ?dex= and ?moves=.
-const WATCH = Q.get('watch') || null, HOST = Q.get('host') || null, JOIN = !WATCH && Q.get('join') || null;
+// (the shipping path) ?live=<friend> watches a friend's run over the site's own lines (exprelay.js): as ?watch=, but polled from the server
+const LIVE = Q.get('live') || null;
+const WATCH = Q.get('watch') || LIVE || null, HOST = Q.get('host') || null, JOIN = !WATCH && Q.get('join') || null;
 const MYID = JOIN ? +(Q.get('id') || 0) || 1 + (Date.now() % 90000) : 0;
 // P4: ?exp=<seed> plays a Classic EXPEDITION run (expedition.js): &map=viridian|mtmoon|cerulean, &diff=normal|hard|nightmare.
 // Find the altar (the column of light, on the minimap), stand on it, beat the guardian, take the portal.
@@ -320,6 +323,7 @@ function draw(t) {
 
 function frame(now) {
 	requestAnimationFrame(frame);
+	if (SITE_HOST) SITE_HOST.tick();   // (asks whether a friend is watching; sends a second's frames while one is)
 	const dt = Math.min(0.1, (now - (perf.last || now)) / 1000);
 	if (perf.last) { perf.frames.push(now - perf.last); if (perf.frames.length > 240) perf.frames.shift(); }
 	perf.last = now;
@@ -341,7 +345,7 @@ function frame(now) {
 					const dark = GG.ExpSurv ? GG.ExpSurv.nightOf(world.t).dark : 0; canvas.style.filter = dark > 0 ? `brightness(${(1 - dark).toFixed(2)})` : '';
 				}
 				if (run.w.room !== room) { room = run.w.room; mapBase = null; showRoom(); state.facing = cam.yaw; }
-				if (run.ended && !runOver) { runOver = runResult(run); keepRun(runOver); note(runOver.survival ? `${runOver.lines.join(' · ')} · score ${runOver.score}` : `${runOver.title} ${runOver.line} · score ${runOver.score} · pay ${runOver.pay.pay}${runOver.medal ? ' · ' + runOver.medal + ' medal' : ''}`, 600000); }
+				if (run.ended && !runOver) { runOver = runResult(run); keepRun(runOver); if (SITE_HOST) setTimeout(() => SITE_HOST.end(), 1300);   /* (the last second's frames carry the end) */ note(runOver.survival ? `${runOver.lines.join(' · ')} · score ${runOver.score}` : `${runOver.title} ${runOver.line} · score ${runOver.score} · pay ${runOver.pay.pay}${runOver.medal ? ' · ' + runOver.medal + ' medal' : ''}`, 600000); }
 			} else if (grun) { stepGuest(grun, input, K.TICK); for (const q of grun.says) note(q.text, q.s * 1000); if (grun.pick !== shownPick) showPick(); if (runOver === null && grun.ended) { runOver = grun.won ? 'won' : 'lost'; note(grun.won ? 'EXPEDITION COMPLETE!' : 'RUN OVER', 600000); } }
 			else tick(world, input, K.TICK);
 			fightEvents(world.events);
@@ -439,7 +443,11 @@ function fightEvents(events) {
 	if (world && world.pl.dead && !mates().length) note('you are down: R to start the level again', 60000);
 }
 // ---------------------------------------------------------------- (P3n) showing a fight to others, and watching one
-const chan = (HOST || WATCH || JOIN) && typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('m3d:' + (HOST || WATCH || JOIN)) : null;
+// (the shipping path) Logged in, your own run is shown to your friends over the site's lines; ?live=<friend> watches one.
+const siteCall = GG.MicaAccount && GG.MicaAccount.name() ? (a, b) => GG.MicaAccount.call(a, b) : null;
+const SITE_HOST = run && !HOST && siteCall ? new HostLink({ call: siteCall, run: runId(crypto), label: '3D Expedition · ' + ((GG.DEX_BY[run.lg ? run.lg.member : DEX] || {}).name || ''), dex: DEX, now: () => performance.now() }) : null;
+const SITE_WATCH = LIVE ? new WatchLink({ call: siteCall || (async () => ({ ok: false, status: 401, body: {} })), who: LIVE.toLowerCase(), later: (fn, ms) => setTimeout(fn, ms) }) : null;
+const chan = SITE_WATCH || SITE_HOST || ((HOST || WATCH || JOIN) && typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('m3d:' + (HOST || WATCH || JOIN)) : null);
 let coView = null;
 /** The other players in the fight: a host's puppets of its guests; a guest's view of the host and the other guests. */
 const mates = () => (!world ? [] : JOIN ? world.co.mates : world.mates);
@@ -449,7 +457,7 @@ if (run) HEAD.exp = { seed: GEN, map: run.map, diff: run.diff };   // (P4) a run
 const rowed = (f) => { if (run) f.r = runRow(run); return f; };
 const tape = FIGHT && Q.get('tape') === '1' ? new Tape({ ...HEAD, at: 0 }) : null;
 const net = { sent: 0, chars: 0, got: 0, evLive: [], evTape: [], prev: null, n: 0, batch: [], relay: false };
-const RELAY = Q.get('relay') === '1';
+const RELAY = Q.get('relay') === '1' || !!SITE_HOST;   // (the site's lines carry one message a second)
 /** The host's side, once a tick: a frame every 6 ticks to whoever is watching (a whole one every second, the rest as
  *  differences), and one every 12 onto the tape. */
 function share() {
@@ -461,7 +469,8 @@ function share() {
 		return;
 	}
 	keepEvents(net.evLive, world.events); if (tape) keepEvents(net.evTape, world.events);
-	if (chan && RELAY && simTicks % Math.round(60 / NK.HZ) === 0) {   // &relay=1: as the site's relay would carry it — ONE message a second, holding that second's frames (you in all ten, the enemies in two)
+	if (SITE_HOST && !SITE_HOST.watched) { net.evLive.length = 0; net.batch.length = 0; }   // (no friend is watching: nothing is built)
+	else if (chan && RELAY && simTicks % Math.round(60 / NK.HZ) === 0) {   // &relay=1: as the site's relay would carry it — ONE message a second, holding that second's frames (you in all ten, the enemies in two)
 		net.batch.push(rowed(netFrame(world, net.evLive))); net.evLive = [];
 		if (net.batch.length >= NK.HZ) { const msg = JSON.stringify({ h: HEAD, b: bundle(net.batch) }); chan.postMessage(msg); net.sent++; net.chars += msg.length; net.biggest = Math.max(net.biggest || 0, msg.length); net.batch = []; }
 	} else if (chan && simTicks % Math.round(60 / NK.HZ) === 0) {   // (by this page's own count: the fight's clock stands still while a card is being chosen, and the others must still hear)
@@ -491,10 +500,14 @@ if (chan && JOIN) chan.onmessage = (m) => {   // a guest: the host's frames
 if (chan && WATCH) chan.onmessage = (m) => {
 	const o = JSON.parse(m.data); net.got++; net.chars += m.data.length;
 	// the level being played is not the one this page built: load it (once), keeping the watch
-	if (o.h && (o.h.gen !== GEN || o.h.biome !== BIOME || (o.h.size || null) !== (SIZE || null) || o.h.dex !== DEX || (o.h.exp ? !XW || XW.map !== o.h.exp.map : !!XW))) { if (!net.moving) { net.moving = true; const q = new URLSearchParams(); q.set('watch', WATCH); if (o.h.exp) { q.set('xw', o.h.exp.seed); q.set('map', o.h.exp.map); } q.set('gen', o.h.gen); q.set('biome', o.h.biome); if (o.h.size) q.set('size', o.h.size); q.set('dex', o.h.dex); location.search = q.toString(); } return; }
+	if (o.h && (o.h.gen !== GEN || o.h.biome !== BIOME || (o.h.size || null) !== (SIZE || null) || o.h.dex !== DEX || (o.h.exp ? !XW || XW.map !== o.h.exp.map : !!XW))) { if (!net.moving) { net.moving = true; const q = new URLSearchParams(); q.set(LIVE ? 'live' : 'watch', WATCH); if (o.h.exp) { q.set('xw', o.h.exp.seed); q.set('map', o.h.exp.map); } q.set('gen', o.h.gen); q.set('biome', o.h.biome); if (o.h.size) q.set('size', o.h.size); q.set('dex', o.h.dex); location.search = q.toString(); } return; }
 	if (watchSrc !== 'live') return;
 	if (o.b) { net.relay = true; for (const f of unbundle(o.b)) viewer.push(f); } else viewer.push(o.f);   // (a relay's message: a second's frames at once)
 };
+if (SITE_WATCH) {   // a friend's run over the site's lines: what its state is, on the screen; then start asking
+	SITE_WATCH.onstatus = (st) => { if (LIVE_SAYS[st]) note(LIVE_SAYS[st], st === 'over' ? 600000 : 5000); };
+	SITE_WATCH.start();
+}
 const sheetAsked = new Set();
 /** A species walks into view that this page has no sheet for yet (a watcher does not know the cast beforehand). */
 const leadAsked = new Set();
@@ -504,7 +517,7 @@ function watchStep(dt) {
 	if (!viewer.frames.length) return;
 	const newest = viewer.newest;
 	if (watchSrc === 'tape') watchT = Math.min(tapeEnd, watchT + dt);
-	else { const want = newest - (net.relay ? NK.RELAY_DELAY : NK.DELAY); watchT = watchT < 0 || Math.abs(want - watchT) > 0.6 ? want : Math.min(newest, watchT + dt * (want - watchT > 0.05 ? 1.08 : want - watchT < -0.05 ? 0.92 : 1)); }
+	else { const want = newest - (LIVE ? NK.SITE_DELAY : net.relay ? NK.RELAY_DELAY : NK.DELAY); watchT = watchT < 0 || Math.abs(want - watchT) > 0.6 ? want : Math.min(newest, watchT + dt * (want - watchT > 0.05 ? 1.08 : want - watchT < -0.05 ? 0.92 : 1)); }
 	view = viewer.sample(watchT);
 	if (!view) return;
 	Object.assign(state, view.pl.s);
@@ -630,6 +643,8 @@ function runView() {
 	const M = GG.ExpMega, lg = rv && rv.league, mg = lg && lg.mega && M && M.BY[lg.mega];
 	const v = { name: pl ? pl.mon.name : mg ? M.nameOf(mg) : lg ? nameOf(lg.form) : SPECIES.name, level: pl ? pl.level : vp ? vp.level : 1, hp: pl ? pl.hp : vp ? vp.hp : 0, maxHp: pl ? pl.maxHp : vp ? vp.maxHp : 0,
 		shield: pl && pl.xproc ? pl.xproc.shield || 0 : 0, xp: pl ? pl.xp : 0, xpNext: pl ? pl.xpNext : 0, time: world ? world.t : view ? view.t : 0, kos: world ? world.stats.kills : view ? view.kills : null, parts: [], bag: [], boss: null, over: null };
+	if (SITE_HOST && SITE_HOST.watched) v.bag.push({ text: SITE_HOST.watchers + ' watching', kind: 'on' });
+	if (LIVE) v.bag.push({ text: 'Watching ' + LIVE, kind: 'on' });
 	if (run) { v.parts = hudLine(run).split(' · '); if (run.ph === 0 && !run.surv && run.charge > 0) v.parts.push(`CHARGE ${Math.round(run.charge * 100)} %`); }
 	else if (rv) v.parts = rv.hud(state).split(' · ');
 	if (pl) v.moves = pl.moves.map((m) => ({ name: pretty(m.id), lv: m.xlv || m.lvl, col: TYPE_COLOR[(GG.Moves.BY_ID[m.id] || (GG.ExpMoves && GG.ExpMoves.MOVES[m.id]) || {}).type] }));
@@ -752,6 +767,7 @@ function showHud() {
 
 // what a test (and a curious owner in the console) can reach
 window.__m3d = {
+	siteHost: SITE_HOST, siteWatch: SITE_WATCH,
 	openBoard, get boardUp() { return boardUp; },
 	wild: WILD, saveOk: SAVE_OK, keepCatch,
 	get kept() { return kept; }, practice: PRACTICE,
