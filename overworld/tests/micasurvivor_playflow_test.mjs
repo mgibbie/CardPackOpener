@@ -14,6 +14,9 @@
 //      setup; the D-pad reaches tiles / arrows; cancel goes back
 //   8. phone 844x390 (touch) and 1280x720: every step fits, no horizontal scroll, nothing outside the screen
 //   9. English everywhere (no Spanish left), no page errors
+//  10. 3D Expedition's way in, behind a switch (off: START is the 2D run, as always; /micasurvivor/?exp3d=1 turns it on for
+//      this browser: START on Classic, alone, opens the 3D page with the same member, map and tier, and it runs; local play
+//      stays 2D; ?exp3d=0 turns it off)
 //   node overworld/tests/micasurvivor_playflow_test.mjs   (SHOTS=<dir> saves a screenshot of every step)
 // (In a git worktree add MAGEPUNK_ASSET_ROOT=<main checkout> for the gitignored micasurvivor/assets and overworld/data.)
 import fs from 'fs';
@@ -583,6 +586,33 @@ try {
 		await d.shot('play_5_normal_phone.png');
 		A(await tap('#mx-start') && await waitFor(() => d.E(() => G.Game.state === 'playing'), 15000), 'phone: tapping START starts the run');
 		await endRun(d);
+		await d.ctx.close();
+	}
+	// ===== 10. 3D Expedition's way in, behind a switch =====
+	{
+		const d = await device({ guestSave: SAVE('Trainer') });
+		await d.boot();
+		const toClassic = async (players = 'solo') => { await d.E(() => G.PlayUI.open()); await d.click('#mx-next'); await d.click('[data-cat="expedition"]'); await waitFor(async () => (await d.state()).step === 3, 6000); await d.click('[data-var="exp-classic"]'); await d.click(`[data-players="${players}"]`); await waitFor(() => d.E(() => !!G.ExpLeague && !!G.ExpTier), 15000); };
+		await toClassic();
+		const off = await d.E(() => ({ on: G.PlayUI.exp3d(), url: G.PlayUI.exp3dUrl('exp-classic'), key: localStorage.getItem('micasurvivor_exp3d') }));
+		A(!off.on && off.url === null && off.key === null, 'the switch is off by default: START on Expedition is the 2D run, as always', JSON.stringify(off));
+		await d.page.goto(`http://localhost:${PORT}/micasurvivor/?exp3d=1`, { waitUntil: 'domcontentloaded' });
+		await waitFor(() => d.E(() => typeof G === 'object' && G.Game && document.getElementById('boot').classList.contains('hidden')), 30000); await sleep(300);
+		if (await d.visible('tap-start')) await d.page.click('#tap-start');
+		await waitFor(() => d.visible('scr-menu'), 15000);
+		await toClassic('local');
+		const loc = await d.E(() => ({ on: G.PlayUI.exp3d(), url: G.PlayUI.exp3dUrl('exp-classic') }));
+		A(loc.on && loc.url === null, '/micasurvivor/?exp3d=1 turns it on for this browser; a local-play setup still starts the 2D run', JSON.stringify(loc));
+		await d.E(() => G.PlayUI.back()); await d.click('[data-players="solo"]');
+		const want = await d.E(() => ({ url: G.PlayUI.exp3dUrl('exp-classic'), dex: G.ExpLeague.pickFor(), map: G.PlayUI.state.map, diff: G.PlayUI.state.diff, surv: G.PlayUI.exp3dUrl('exp-survival') }));
+		A(new RegExp(`^/micasurvivor/m3d/\\?exp=\\d+&map=${want.map}&diff=${want.diff}&dex=${want.dex}$`).test(want.url || '') && want.surv === null, `alone on Classic it is the 3D page's address, with the same member, map and tier (${want.url})`, JSON.stringify(want));
+		await Promise.all([d.page.waitForNavigation({ waitUntil: 'domcontentloaded' }), d.click('#mx-start')]);
+		const in3d = await waitFor(() => d.E(() => !!(window.__m3d && window.__m3d.ready && window.__m3d.run)), 40000);
+		const r3 = await d.E(() => ({ path: location.pathname, map: window.__m3d.run.map, diff: window.__m3d.run.diff, member: window.__m3d.run.lg && window.__m3d.run.lg.member, practice: window.__m3d.practice, ui: !!document.getElementById('rx') }));
+		A(in3d && r3.path === '/micasurvivor/m3d/' && r3.map === want.map && r3.diff === want.diff && r3.member === want.dex && r3.practice === null && r3.ui, 'START opens it: a 3D run of that map and tier as that member, one that can be kept (no test parameter)', JSON.stringify(r3));
+		await d.page.goto(`http://localhost:${PORT}/micasurvivor/?exp3d=0`, { waitUntil: 'domcontentloaded' });
+		await waitFor(() => d.E(() => typeof G === 'object' && !!G.PlayUI), 30000);
+		A(await d.E(() => !G.PlayUI.exp3d() && localStorage.getItem('micasurvivor_exp3d') === null), '/micasurvivor/?exp3d=0 turns it off again');
 		await d.ctx.close();
 	}
 } catch (e) {

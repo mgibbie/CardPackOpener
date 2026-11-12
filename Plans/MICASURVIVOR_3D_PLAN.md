@@ -1331,6 +1331,28 @@ them to the 2D game's own `G.Audio` (now loaded on the page, with its themes):
 
 Tests: `micasurvivor_m3d_runui_test.mjs` 35 checks (was 29).
 
+## 5.44 Going live, fourth part: built (2026-11-12). The way in, behind a switch.
+
+Owner: the 2D Expedition stays what players get until the 3D one is complete. So the way in from the Play flow is
+built, and off:
+
+- `/micasurvivor/?exp3d=1` turns a switch on **for that browser only** (`?exp3d=0` turns it off). Nothing in the
+  game shows it; a player who has not been given the address is not affected.
+- With it on, START on Expedition · Classic or Survival, playing alone, opens the 3D page with the same choices: your League
+  member, the map, the tier, a fresh seed. That run can be kept (it has no test parameter), so it has the Lab's
+  row, its pay is owed, and its mark goes to the 3D boards.
+- Local and online play, and every other mode, start the 2D run as always.
+- "Leave" on the 3D page comes back to MicaSurvivor, where opening the Expedition pays what the run earned.
+
+This is how the owner's tuning pass is meant to be played: the real flow, a real save. Going live is then one
+change: the switch's default, the 2D Expedition archived, the test room's `noindex` and title.
+
+Survival goes the same way when it is the variant chosen (`&mode=survival`). Not yet: starting as a later form
+of the member (a 3D run starts at the family's first stage).
+
+Tests: `micasurvivor_playflow_test.mjs` 168 checks (was 162): off by default, on by the address, the 3D page's
+address for the setup, START opening a 3D run of it, local play staying 2D, off again.
+
 ## 6. Dive in 2D: built
 
 **D0 — find the stairs (small; can ship first, on its own).** *Built 2026-11-11 (`overworld/tests/micasurvivor_dive_stairs_test.mjs`). As built: the stairs took their own orange mark, so the rocks and Meowth keep their gold; the HUD arrow comes up after 25 s on a floor, or at once when its boss falls.*
