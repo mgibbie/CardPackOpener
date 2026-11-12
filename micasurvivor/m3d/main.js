@@ -244,6 +244,13 @@ function inkBox(img, x, y, w, h) {
 	for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) if (d[(j * w + i) * 4 + 3] > 16) { if (i < x0) x0 = i; if (i > x1) x1 = i; if (j < y0) y0 = j; if (j > y1) y1 = j; }
 	return x1 < 0 ? [x, y, x + w, y + h] : [x + x0, y + y0, x + x1 + 1, y + y1 + 1];
 }
+/** One still of a species, as HTML: its Idle sheet's first frame, facing you, `px` tall (a fallback sheet has its own
+ *  folder; a shiny its own sheet). For an evolution's card and the Ultimate's cut-in. */
+function spriteHtml(dex, shiny, px) {
+	const pm = META[dex], anim = pm && pm.a ? (pm.a.Idle ? 'Idle' : pm.a.Walk ? 'Walk' : '') : '', m = anim ? pm.a[anim] : null; if (!m) return '';
+	const k = px / m.h, url = `../assets/pokemon/${pm.al || dex}/${pm.src ? pm.src + '/' : ''}${shiny && pm.sh ? 's/' : ''}${anim}.png`;
+	return `<span class="rx-spr" style="width:${Math.round(m.w * k)}px;height:${Math.round(px)}px"><span style="width:${m.w}px;height:${m.h}px;background:url(${url}) 0 0 no-repeat;transform:scale(${k.toFixed(3)})"></span></span>`;
+}
 function megaSheet(id) {
 	if (megaSheets.has(id)) return megaSheets.get(id);
 	megaSheets.set(id, null);
@@ -328,6 +335,8 @@ function draw(t) {
 			else if (f.kind === 'meteor') { const k = Math.max(0, Math.min(1, f.t / f.fall)); if (f.t > 0) shots.add(f.x + (1 - k) * 2.5, f.y + 0.3 + (1 - k) * 10, f.z, 0.45, c); if (!f.seen) { f.seen = true; flashes.arc(f.x, f.y, f.z, f.r, 0, 6.2832, c, f.fall - Math.min(0, f.t), 0.9); } }
 			else if (f.kind === 'patch' && !f.seen) { f.seen = true; flashes.arc(f.x, f.y, f.z, f.r, 0, 6.2832, c, f.life, 0); }
 		}
+		if (!paused && state.rail >= 0 && simTicks % 3 === 0) burst(state.x, state.y + 0.05, state.z, '#ffe9a0', 2, 2.2, { up: 2.2, life: 0.3, r: 0.06 });   // (grinding a rail: sparks under you)
+		drawSparks(t);
 		shots.end();
 	}
 	// (P3n) the other players
@@ -470,6 +479,19 @@ const SOUND = () => (RUNUI && GG.Audio ? GG.Audio : null);
 const moveOf = (id) => GG.Moves.BY_ID[id] || (GG.ExpMoves && GG.ExpMoves.MOVES[id]) || null;
 function play(list) { const A = SOUND(); if (A) for (const [name, o] of list) A.sfx(name, o); }
 let cutIn = null, cutN = 0;   // (the Ultimate's cut-in on screen now)
+// Sparks: small balls that fly out and fade, in the colour of what made them (an Ultimate's rings, beams and strikes, a
+// reaction, a Second chance, a rail under you). Drawn with the shots, after them (never in place of one). A look only:
+// the fight does not know them, so their scatter is the page's own.
+const sparks = []; let sparkAt = 0;
+function burst(x, y, z, col, n, speed, o = {}) {
+	if (document.hidden) return;
+	for (let i = 0; i < n; i++) { const a = Math.random() * 6.2832, s = speed * (0.45 + Math.random() * 0.55), d = o.ring ? o.ring * Math.sqrt(0.6 + Math.random() * 0.4) : 0; sparks.push({ x: x + Math.cos(a) * d, y: y + (o.h || 0) * Math.random(), z: z + Math.sin(a) * d, vx: Math.cos(a) * s, vy: (o.up === undefined ? 3 : o.up) * (0.4 + Math.random() * 0.8), vz: Math.sin(a) * s, t: 0, life: (o.life || 0.5) * (0.6 + Math.random() * 0.7), col, r: o.r || 0.09 }); }
+	if (sparks.length > 420) sparks.splice(0, sparks.length - 420);
+}
+function drawSparks(t) {
+	const dt = Math.min(0.05, Math.max(0, t - sparkAt)); sparkAt = t;
+	for (let i = sparks.length - 1; i >= 0; i--) { const p = sparks[i]; p.t += dt; if (p.t >= p.life) { sparks.splice(i, 1); continue; } p.vy -= 9 * dt; p.x += p.vx * dt; p.y += p.vy * dt; p.z += p.vz * dt; shots.add(p.x, p.y, p.z, p.r * (1 - p.t / p.life) + 0.02, p.col); }
+}
 /** Auto-Ultimate on or off: the run's, and the Expedition save's setting (two counters: the latest switch wins on every device, as in the 2D game). */
 function setUltAuto(on) {
 	if (!run || !run.ult) return false;
@@ -508,14 +530,14 @@ function fightEvents(events) {
 		else if (ev.k === 'shield') flashes.arc(ev.x, ev.y, ev.z, ev.r, 0, 6.2832, '#7fc8ff', 0.5, 0.9);
 		else if (ev.k === 'summon') flashes.arc(ev.x, ev.y, ev.z, 3, 0, 6.2832, '#c47bff', 0.4, 0.5);
 		else if (ev.k === 'hit') numbers.push({ x: ev.x, y: ev.y + 0.6, z: ev.z, text: String(Math.max(1, Math.round(ev.d))), css: ev.crit ? '#ffe14d' : (WATCH ? ev.eff === 2 : ev.eff > 1.2) ? '#ffffff' : (WATCH ? ev.eff === 0 : ev.eff < 0.9) ? '#9aa6b5' : '#f2ede2', big: ev.crit || ev.eff > 1.2, t: 0 });
-		else if (ev.k === 'secondchance') { note('Second chance!', 2200); flashes.arc(ev.x, ev.y + 0.06, ev.z, ev.r, 0, 6.2832, '#ff8ad8', 0.8, 0.2); bob = 0.6; const A = SOUND(); if (A) A.sfx('legend'); if (RUNUI) RUNUI.update(runView()); }
+		else if (ev.k === 'secondchance') { burst(ev.x, ev.y + 0.4, ev.z, '#ff8ad8', 30, 7, { up: 6, life: 0.8, r: 0.11 }); note('Second chance!', 2200); flashes.arc(ev.x, ev.y + 0.06, ev.z, ev.r, 0, 6.2832, '#ff8ad8', 0.8, 0.2); bob = 0.6; const A = SOUND(); if (A) A.sfx('legend'); if (RUNUI) RUNUI.update(runView()); }
 		else if (ev.k === 'ult') {   // an Ultimate: its cut-in, its rings, beams and strikes
 			const c = TYPE_COLOR[ev.type] || '#ffd23f', A = SOUND();
-			if (ev.sub === 'cast') { cutIn = { id: ++cutN, name: ev.name, sub: 'ULTIMATE' + (ev.tier > 0 ? ' · TIER ' + ev.tier : ''), col: c, until: performance.now() + 1100 }; flashes.arc(ev.x, ev.y + 0.05, ev.z, 15, 0, 6.2832, c, 0.7, 0.05); bob = 0.5; if (A) A.sfx('legend'); if (RUNUI) RUNUI.update(runView()); }
+			if (ev.sub === 'cast') { const cm = myRun && myRun.lg ? myRun.lg.mega : rv && rv.league ? rv.league.mega : 0, cM = GG.ExpMega, cd = world ? world.pl.mon.dex : rv && rv.league ? rv.league.form : DEX, cs = !!(myRun && myRun.lg ? myRun.lg.shiny : rv && rv.league && rv.league.shiny); cutIn = { art: cm && cM && cM.BY[cm] && cM.srcOf(cM.BY[cm]) ? `<img src="${cM.srcOf(cM.BY[cm])}" alt="">` : spriteHtml(cd, cs, 168), id: ++cutN, name: ev.name, sub: 'ULTIMATE' + (ev.tier > 0 ? ' · TIER ' + ev.tier : ''), col: c, until: performance.now() + 1100 }; flashes.arc(ev.x, ev.y + 0.05, ev.z, 15, 0, 6.2832, c, 0.7, 0.05); bob = 0.5; if (A) A.sfx('legend'); if (RUNUI) RUNUI.update(runView()); }
 			else if (ev.sub === 'piece') note(ev.name, 1400);
-			else if (ev.sub === 'ring') flashes.arc(ev.x, ev.y + 0.06, ev.z, ev.r, 0, 6.2832, c, ev.life || 0.4, ev.life > 0.6 ? 0.9 : 0.3);
-			else if (ev.sub === 'bar') flashes.bar(ev.from, ev.dir, ev.len, ev.w, c, ev.life || 0.25);
-			else if (ev.sub === 'strike') { flashes.bar([ev.x, ev.y + 14, ev.z], [0, -1, 0], 14, 0.35, c, 0.2); flashes.arc(ev.x, ev.y + 0.06, ev.z, ev.r, 0, 6.2832, c, 0.3, 0.2); }
+			else if (ev.sub === 'ring') { flashes.arc(ev.x, ev.y + 0.06, ev.z, ev.r, 0, 6.2832, c, ev.life || 0.4, ev.life > 0.6 ? 0.9 : 0.3); if (!(ev.life > 0.6)) burst(ev.x, ev.y + 0.1, ev.z, c, Math.min(26, 6 + Math.round(ev.r * 1.6)), 3 + ev.r * 0.5, { ring: ev.r * 0.8, up: 4, life: 0.55 }); }
+			else if (ev.sub === 'bar') { flashes.bar(ev.from, ev.dir, ev.len, ev.w, c, ev.life || 0.25); for (let q = 0; q < 4; q++) { const u = Math.random() * ev.len; burst(ev.from[0] + ev.dir[0] * u, ev.from[1] - 0.5, ev.from[2] + ev.dir[2] * u, c, 1, 2, { up: 3, life: 0.4 }); } }
+			else if (ev.sub === 'strike') { flashes.bar([ev.x, ev.y + 14, ev.z], [0, -1, 0], 14, 0.35, c, 0.2); flashes.arc(ev.x, ev.y + 0.06, ev.z, ev.r, 0, 6.2832, c, 0.3, 0.2); burst(ev.x, ev.y + 0.1, ev.z, c, 8, 4, { up: 5, life: 0.45 }); }
 			else if (ev.sub === 'heal') numbers.push({ x: ev.x, y: ev.y + 2, z: ev.z, text: '+' + ev.amount, css: '#7dffb0', big: true, t: 0 });
 			else if (ev.sub === 'ready') { note('Ultimate ready!', 1500); if (A) A.sfx('select'); }
 			else if (ev.sub === 'no') { if (A) A.sfx('error'); }
@@ -525,6 +547,7 @@ function fightEvents(events) {
 			const R = GG.ExpRx, c = ev.kind === 'frozen' ? '#8fe3ff' : (R && R.COL[ev.kind]) || '#ffffff';
 			numbers.push({ x: ev.x, y: ev.y + 1.6, z: ev.z, text: ev.kind === 'frozen' ? 'Frozen solid!' : (R && GG.ExpEN[R.NAME[ev.kind]]) || ev.kind, css: c, big: true, t: 0 });
 			flashes.arc(ev.x, ev.y + 0.05, ev.z, ev.r > 0 ? ev.r : 1.2, 0, 6.2832, c, 0.42, ev.r > 0 ? 0.9 : 0.4);
+			burst(ev.x, ev.y + 0.6, ev.z, c, 10, 3.5, { up: 4, life: 0.5 });
 		}
 		else if (ev.k === 'rxchain') { for (const b of ev.links) { const a = ev.from, d = [b[0] - a[0], b[1] - a[1], b[2] - a[2]], l = Math.hypot(d[0], d[1], d[2]) || 1; flashes.bar([a[0], a[1] + 0.6, a[2]], [d[0] / l, d[1] / l, d[2] / l], l, 0.12, '#ffe14d', 0.25); } }
 		else if (ev.k === 'hurt') { bob = 0.35; note(`hit for ${(+ev.d).toFixed(0)}`, 700); }
@@ -653,7 +676,10 @@ function cardArt(c) {
 	if (!RUNUI) return '';
 	const I = GG.ExpItems, M = GG.ExpMega, img = (src) => `<em><img src="${src}" alt=""></em>`;
 	if (c.mega && M && M.BY[c.mega] && M.srcOf(M.BY[c.mega])) return img(M.srcOf(M.BY[c.mega]));
-	if (c.kind === 'move' && c.mtype) return `<em><span class="rx-type" style="background:${TYPE_COLOR[c.mtype] || '#5f7377'}">${c.mtype}</span></em>`;
+	const Ic = GG.Icons, LS = !!(myRun && myRun.lg && myRun.lg.shiny);
+	if (c.kind === 'evo' && c.id && META[c.id]) return `<em class="tall">${spriteHtml(c.id, LS, 76)}</em>`;   // (an evolution: who you would become)
+	if (c.kind === 'move' && c.mtype) return `<em>${Ic && c.id ? Ic.html('move:' + c.id, 36) : ''}<span class="rx-type" style="background:${TYPE_COLOR[c.mtype] || '#5f7377'}">${c.mtype}</span></em>`;
+	if (c.kind === 'train' && Ic) return `<em>${Ic.html({ 'xtrain:dmg': 'fist', 'xtrain:hp': 'heart', 'xtrain:rest': 'berry' }[c.key] || 'up', 36)}</em>`;
 	if (I && c.kind === 'vit' && I.VIT[c.id]) return img(I.icon(I.VIT[c.id].icon));
 	if (I && c.item && I.IT[c.item]) return img(I.icon(I.IT[c.item].icon));
 	return '<em></em>';
@@ -739,7 +765,7 @@ function runView() {
 	else if (rv) v.parts = rv.hud(state).split(' · ');
 	if (run && run.ult && !runOver) { v.ult = ultView(run); v.ult.col = TYPE_COLOR[v.ult.type]; v.ult.key = matchMedia('(pointer: coarse)').matches ? '' : 'V'; }
 	if (cutIn && performance.now() < cutIn.until) v.cut = cutIn;
-	if (pl) v.moves = pl.moves.map((m) => ({ name: pretty(m.id), lv: m.xlv || m.lvl, col: TYPE_COLOR[(GG.Moves.BY_ID[m.id] || (GG.ExpMoves && GG.ExpMoves.MOVES[m.id]) || {}).type] }));
+	if (pl) v.moves = pl.moves.map((m) => ({ icon: GG.Icons ? GG.Icons.html('move:' + m.id, 18) : '', name: pretty(m.id), lv: m.xlv || m.lvl, col: TYPE_COLOR[(GG.Moves.BY_ID[m.id] || (GG.ExpMoves && GG.ExpMoves.MOVES[m.id]) || {}).type] }));
 	if (pl && pl.xv && I) for (const q of pl.xv) v.bag.push({ text: `${en(I.VIT[q.id].name)} ${q.lvl}`, kind: 'dim' });
 	if (pl && pl.xi && I) for (const id of Object.keys(pl.xi)) v.bag.push({ text: en(I.IT[id].name) + (pl.xi[id] > 1 ? ' ×' + pl.xi[id] : ''), kind: '' });
 	if (run && run.up && run.up.revives > 0) v.bag.push({ text: 'Second chance' + (run.up.revives > 1 ? ' ×' + run.up.revives : ''), kind: 'on' });
@@ -885,6 +911,7 @@ window.__m3d = {
 	setInput(o) { override = o ? { ...noInput(), ...o } : null; },
 	rowOf: (facing, yaw) => facingRow(facing, yaw === undefined ? cam.yaw : yaw),
 	sq: (key, frame, dir, scale = 1) => sq(sheets.get(key), frame, dir, scale),
+	sparks, burst, spriteHtml,
 	quadOf: (key, frame, row) => { const s = sheets.get(key); return spriteQuad(s.meta, s.img, frame, row, 1, s.lift); },
 	respawn() { Object.assign(state, newState(room, TUNE)); state.facing = cam.yaw; },
 	put(x, z, y) { Object.assign(state, newState(room, TUNE)); state.x = x; state.z = z; state.y = y === undefined ? groundAt(room, x, z) : y; state.grounded = y === undefined; },

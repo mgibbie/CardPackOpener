@@ -34,7 +34,7 @@ export function mountRunUi(doc, o = {}) {
 		+ `<div class="rx-note" id="rx-note"></div>`
 		+ `<div class="rx-panel rx-boss" id="rx-boss"><div class="rx-who"><span class="rx-name" id="rx-bname"></span></div><div class="rx-bar"><i id="rx-bhp"></i><span id="rx-bhpt"></span></div></div>`
 		+ `<div class="rx-bottom"><div class="rx-chips rx-bag" id="rx-bag"></div><button class="rx-ult" id="rx-ult" aria-label="Ultimate"><i id="rx-ult-fill"></i><b id="rx-ult-name"></b><span id="rx-ult-pct"></span></button><div class="rx-moves" id="rx-moves"></div></div>`
-		+ `<div class="rx-cut" id="rx-cut"><span id="rx-cut-sub"></span><b id="rx-cut-name"></b></div>`
+		+ `<div class="rx-cut" id="rx-cut"><i id="rx-cut-art"></i><span id="rx-cut-sub"></span><b id="rx-cut-name"></b></div>`
 		+ `<button class="rx-menu-btn" id="rx-menu-btn" aria-label="Menu">II</button>`
 		+ `<div class="rx-end" id="rx-menu"></div><div class="rx-end" id="rx-end"></div><div class="rx-end" id="rx-board"></div>`;
 	doc.body.appendChild(root);
@@ -55,7 +55,7 @@ export function mountRunUi(doc, o = {}) {
 		cls('rx-boss', 'show', !!v.boss);
 		if (v.boss) { text('rx-bname', v.boss.name + (v.boss.enraged ? ' · ENRAGED' : '')); width('rx-bhp', v.boss.hp / v.boss.maxHp); text('rx-bhpt', `${short(Math.max(0, v.boss.hp))} / ${short(v.boss.maxHp)}`); }
 		const mv = (v.moves || []).slice(0, 4); while (v.moves && mv.length < 4) mv.push(null);
-		html('rx-moves', mv.map((m) => (m ? `<div class="rx-move" style="border-top-color:${esc(m.col || '#5f7377')}"><b>${esc(m.name)}</b><i>Lv ${m.lv | 0}</i></div>` : '<div class="rx-move empty"><b>—</b><i>&nbsp;</i></div>')).join(''));
+		html('rx-moves', mv.map((m) => (m ? `<div class="rx-move" style="border-top-color:${esc(m.col || '#5f7377')}">${m.icon || ''}<b>${esc(m.name)}</b><i>Lv ${m.lv | 0}</i></div>` : '<div class="rx-move empty"><b>—</b><i>&nbsp;</i></div>')).join(''));
 		html('rx-bag', (v.bag || []).map((b) => `<span class="rx-chip ${b.kind || 'dim'}">${esc(b.text)}</span>`).join(''));
 		// the Ultimate: its meter (a button: press it to cast), and the cut-in when it is cast
 		const u = v.ult || null;
@@ -64,7 +64,7 @@ export function mountRunUi(doc, o = {}) {
 		const ck = v.cut ? v.cut.id : 0;
 		if (last.cut !== ck) {
 			last.cut = ck; const c = $('rx-cut'); c.classList.remove('show');
-			if (v.cut) { $('rx-cut-name').textContent = v.cut.name; $('rx-cut-sub').textContent = v.cut.sub || ''; c.style.setProperty('--ult', v.cut.col || '#fda200'); void c.offsetWidth; c.classList.add('show'); }
+			if (v.cut) { $('rx-cut-name').textContent = v.cut.name; $('rx-cut-sub').textContent = v.cut.sub || ''; $('rx-cut-art').innerHTML = v.cut.art || '';   /* (art: the caster's picture, made by the page from the game's own sheets) */ c.style.setProperty('--ult', v.cut.col || '#fda200'); void c.offsetWidth; c.classList.add('show'); }
 		}
 		const bk = v.board ? JSON.stringify(v.board) : '';
 		if (last.board !== bk) {
