@@ -14,6 +14,7 @@ import { frame as netFrame, keepEvents, diff as netDiff, bundle, unbundle, Viewe
 import { hostAdd, hostStep, hostFrame, hostApply, guestWorld, guestSync, guestMsg, guestApply } from './coop.js';
 import { generate, BIOMES } from './gen.js';
 import { expFrom, newRun, stepRun, hudLine, result as runResult, setZoneTime } from './expedition.js';
+import { refresh as refreshCards, skip as skipCards, banish as banishCard } from './explevel.js';
 
 const Q = new URLSearchParams(location.search);
 // P3: ?gen=<seed>&fight=1 is a FIGHT on that level (combat.js): enemies arrive and come for you, your moves fire by
@@ -421,17 +422,30 @@ function drawNumbers(dt) {
 /** (P3) A level-up: the fight is waiting; three cards to choose from (click or tap one, or press 1 / 2 / 3). */
 function showCards() {
 	const el = document.getElementById('cards'), cs = world.pl.choices; if (!el || !cs) return;
-	el.innerHTML = `<h2>Level ${world.pl.level}</h2>` + cs.map((c, i) => `<button data-i="${i}" style="border-color:${TYPE_COLOR[c.mtype] || '#8fa3c4'}"><b>${i + 1} · ${c.title}</b><i>${c.tag || ''}</i><span>${c.desc || (GG.Moves.BY_ID[c.id] ? GG.Moves.BY_ID[c.id].kind : '')}</span></button>`).join('');
+	const lv = run && run.lv, RC = (GG.ExpItems && GG.ExpItems.RAR_COL) || [];   // (P4) an Expedition card has a rarity, and the run its three tools
+	const tools = !lv ? '' : `<div class="tools"><button data-tool="refresh"${lv.refreshes ? '' : ' disabled'}>F · Refresh (${lv.refreshes})</button><button data-tool="skip"${lv.skips ? '' : ' disabled'}>G · Skip (${lv.skips})</button><button data-tool="banish"${lv.bans ? '' : ' disabled'}>${banMode ? 'pick a card to banish…' : 'B · Banish (' + lv.bans + ')'}</button></div>`;
+	el.innerHTML = `<h2>Level ${world.pl.level}</h2>` + cs.map((c, i) => `<button data-i="${i}" style="border-color:${c.tier > 0 && RC[c.tier] ? RC[c.tier] : TYPE_COLOR[c.mtype] || '#8fa3c4'}"><b>${i + 1} · ${c.title}</b><i>${(c.tier > 0 ? c.rarName.toUpperCase() + ' · ' : '') + (c.tag || '')}</i><span>${c.desc || (GG.Moves.BY_ID[c.id] ? GG.Moves.BY_ID[c.id].kind : '')}</span></button>`).join('') + tools;
 	el.style.display = 'grid';
 }
+let banMode = false;
+/** (P4) A run's tools at a level-up: 'refresh' (other cards), 'skip' (no card, a little money), 'banish' (then pick a card). */
+function useTool(name) {
+	if (!run || !run.lv || !world.pl.choices) return false;
+	if (name === 'banish') { banMode = run.lv.bans > 0 && !banMode; showCards(); return banMode; }
+	const ok = name === 'refresh' ? refreshCards(run) : name === 'skip' ? skipCards(run) : false;
+	if (!ok) return false;
+	if (world.pl.choices) showCards(); else { const el = document.getElementById('cards'); el.style.display = 'none'; el.innerHTML = ''; if (world.pl.pending > 0) { tick(world, null, K.TICK); fightEvents(world.events); } }
+	return true;
+}
 function pickCard(i) {
+	if (banMode) { banMode = false; if (world && world.pl.choices) { banishCard(run, i); showCards(); } return; }
 	if (!world || !world.pl.choices || !choose(world, i)) return;
 	const el = document.getElementById('cards'); el.style.display = 'none'; el.innerHTML = '';
-	if (world.pl.pending > 0) { tick(world, null, K.TICK); fightEvents(); }   // (another level waiting: its cards come up at once)
+	if (world.pl.pending > 0) { tick(world, null, K.TICK); fightEvents(world.events); }   // (another level waiting: its cards come up at once)
 }
 if (FIGHT) {
-	document.getElementById('cards').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) pickCard(+b.dataset.i); });
-	addEventListener('keydown', (e) => { const i = ['Digit1', 'Digit2', 'Digit3'].indexOf(e.code); if (i >= 0) pickCard(i); });
+	document.getElementById('cards').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b && b.dataset.tool) useTool(b.dataset.tool); else if (b) pickCard(+b.dataset.i); });
+	addEventListener('keydown', (e) => { const i = ['Digit1', 'Digit2', 'Digit3'].indexOf(e.code); if (i >= 0) pickCard(i); const tl = { KeyF: 'refresh', KeyG: 'skip', KeyB: 'banish' }[e.code]; if (tl) useTool(tl); });
 }
 let noteText = '', noteUntil = 0;
 function note(t, ms) { noteText = t; noteUntil = performance.now() + ms; }
@@ -455,7 +469,8 @@ function showHud() {
 		+ (!world || JOIN || !world.enemies.some((e) => e.boss) ? '' : world.enemies.filter((e) => e.boss).map((e) => `\nBOSS ${(GG.DEX_BY[e.dex] || {}).name}: ${Math.max(0, e.hp)} / ${e.maxHp}${e.ai.fury ? ' · enraged' : ''}`).join(''))
 		+ (!world || !world.weather ? '' : `\nweather: ${world.weather.kind} (${Math.ceil(world.weather.dur - world.weather.t)} s)`)
 		+ (!world || !world.pl.ability ? '' : `\nability: ${world.pl.ability}${world.pl.items.length ? ' · holding: ' + world.pl.items.join(', ') : ''}`)
-		+ (!world ? '' : `\nLv ${world.pl.level} · XP ${Math.floor(world.pl.xp)} / ${world.pl.xpNext}\nHP ${Math.ceil(world.pl.hp)} / ${world.pl.maxHp} · ${world.enemies.length} enemies · ${world.stats.kills} KOs · ${Math.floor(world.t / 60)}:${String(Math.floor(world.t % 60)).padStart(2, '0')} · ${world.pl.moves.map((m) => m.id + ' Lv' + m.lvl).join(', ')}`) + (noteText && performance.now() < noteUntil ? `\n» ${noteText}` : '');
+		+ (!world ? '' : `\nLv ${world.pl.level} · XP ${Math.floor(world.pl.xp)} / ${world.pl.xpNext}\nHP ${Math.ceil(world.pl.hp)} / ${world.pl.maxHp} · ${world.enemies.length} enemies · ${world.stats.kills} KOs · ${Math.floor(world.t / 60)}:${String(Math.floor(world.t % 60)).padStart(2, '0')} · ${world.pl.moves.map((m) => m.id + ' Lv' + (m.xlv || m.lvl)).join(', ')}`)
+		+ (!run || !run.lv ? '' : `\nvitamins: ${world.pl.xv.map((v) => v.id + ' ' + v.lvl).join(', ') || 'none'} · ₽ ${run.lv.coins} · luck ${Math.round(world.pl.xluck || 0)}${world.pl.xproc.shield > 0 ? ' · shield ' + Math.round(world.pl.xproc.shield) : ''}`) + (noteText && performance.now() < noteUntil ? `\n» ${noteText}` : '');
 }
 
 // ---------------------------------------------------------------- boot
@@ -477,7 +492,7 @@ function showHud() {
 
 // what a test (and a curious owner in the console) can reach
 window.__m3d = {
-	get ready() { return ready; }, state, get room() { return room; }, run, setZoneTime: (sec) => run && setZoneTime(run, sec), K, TUNE, TYPES, TRAITS, cam, crowd, sheets, stats, gen: GEN, biome: BIOME, world, numbers, net, tape, myId: MYID, mates, get coView() { return coView; }, playTape, get view() { return view; }, get viewer() { return viewer; }, get watchT() { return watchT; }, addBoss: (dex, x, z, o) => addBoss(world, dex, x, z, o), drop: (kind, x, z, v) => drop(world, kind, x, groundAt(room, x, z), z, v), pickCard, addEnemy: (dex, x, z, o) => addEnemy(world, dex, x, z, o), holdExit: false, get leaving() { return leaving; },
+	get ready() { return ready; }, state, get room() { return room; }, run, setZoneTime: (sec) => run && setZoneTime(run, sec), useTool, K, TUNE, TYPES, TRAITS, cam, crowd, sheets, stats, gen: GEN, biome: BIOME, world, numbers, net, tape, myId: MYID, mates, get coView() { return coView; }, playTape, get view() { return view; }, get viewer() { return viewer; }, get watchT() { return watchT; }, addBoss: (dex, x, z, o) => addBoss(world, dex, x, z, o), drop: (kind, x, z, v) => drop(world, kind, x, groundAt(room, x, z), z, v), pickCard, addEnemy: (dex, x, z, o) => addEnemy(world, dex, x, z, o), holdExit: false, get leaving() { return leaving; },
 	setInput(o) { override = o ? { ...noInput(), ...o } : null; },
 	rowOf: (facing, yaw) => facingRow(facing, yaw === undefined ? cam.yaw : yaw),
 	quadOf: (key, frame, row) => { const s = sheets.get(key); return spriteQuad(s.meta, s.img, frame, row, 1, s.lift); },

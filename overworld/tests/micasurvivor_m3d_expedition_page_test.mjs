@@ -5,6 +5,8 @@
 //   * the zone's own species arrive and are drawn
 //   * standing on the altar wakes the guardian; beaten, the portal opens; the portal is the next zone: the page shows
 //     the new level (the old one's meshes are gone, the minimap is the new one's)
+//   * a level-up: Expedition's own cards (a rarity, a move first), the three tools, and with two levels waiting the
+//     second set of cards comes up when the first is taken
 //   * the final swarm is announced at 10:00 of the zone's clock
 //   * the whole run to the shrine and the legendary: the page says the expedition is complete, with its score
 //   node overworld/tests/micasurvivor_m3d_expedition_page_test.mjs      (SHOTS=<dir> for screenshots)
@@ -45,7 +47,7 @@ try {
 	const hud = () => page.evaluate(() => document.getElementById('hud').textContent);
 	const hudHas = (re, ms = 5000) => waitFor(async () => re.test(await hud()), ms);
 
-	await page.goto(`http://localhost:${PORT}/micasurvivor/m3d/?exp=7&map=viridian&dex=6&moves=ember:3&weather=0&auto=0&ability=0`, { waitUntil: 'domcontentloaded' });
+	await page.goto(`http://localhost:${PORT}/micasurvivor/m3d/?exp=7&map=viridian&dex=6&moves=ember:3&weather=0&ability=0`, { waitUntil: 'domcontentloaded' });
 	const ok = await waitFor(() => page.evaluate(() => !!(window.__m3d && window.__m3d.ready)), 30000);
 	A(ok, 'the page boots into an Expedition run (?exp=7)');
 	await page.evaluate(() => { const w = window.__m3d.world; w.pl.maxHp = w.pl.hp = 1e9; });   // (the run's course is what is tested)
@@ -60,6 +62,23 @@ try {
 	const drawn = await waitFor(() => page.evaluate(() => { const m = window.__m3d; return m.world.enemies.some((e) => { const s = m.sheets.get(e.dex + '/Walk'); return !!(s && s.img); }); }), 15000);
 	A(drawn, 'and they are drawn');
 	await shot('m3d_exp_zone1.png');
+
+	// ---- a level-up: Expedition's cards and tools
+	await page.evaluate(() => { const m = window.__m3d, s = m.state; m.drop('xp', s.x, s.z, 90); });   // (enough for two levels)
+	const cardsUp = await waitFor(() => page.evaluate(() => document.querySelectorAll('#cards button[data-i]').length === 3), 6000);
+	const c0 = await page.evaluate(() => { const m = window.__m3d, cs = m.world.pl.choices; return { pending: m.world.pl.pending, first: cs[0].kind, keys: cs.map((q) => q.key), tools: [...document.querySelectorAll('#cards .tools button')].map((b) => b.textContent), xpNext: m.world.pl.xpNext, need: window.G.ExpLevel.need(m.world.pl.level) }; });
+	A(cardsUp && c0.pending === 2 && c0.first === 'move' && c0.tools.length === 3 && /Refresh .2./.test(c0.tools[0]) && /Skip .2./.test(c0.tools[1]) && /Banish .1./.test(c0.tools[2]) && c0.xpNext === c0.need, 'XP for two levels: three Expedition cards (a move first) and the tools Refresh, Skip and Banish; the curve is Expedition\'s', JSON.stringify(c0));
+	await shot('m3d_exp_cards.png');
+	await page.click('#cards .tools button[data-tool="refresh"]');
+	const c1 = await page.evaluate(() => ({ keys: window.__m3d.world.pl.choices.map((q) => q.key), left: window.__m3d.run.lv.refreshes, label: document.querySelector('#cards .tools button').textContent }));
+	A(c1.keys.join() !== c0.keys.join() && c1.left === 1 && /Refresh .1./.test(c1.label), 'Refresh: other cards, one Refresh left', JSON.stringify(c1));
+	await page.click('#cards button[data-i="0"]');
+	const second = await waitFor(() => page.evaluate(() => { const m = window.__m3d; return m.world.pl.pending === 1 && !!m.world.pl.choices && document.querySelectorAll('#cards button[data-i]').length === 3 && document.getElementById('cards').style.display === 'grid'; }), 3000);
+	A(second, 'one card taken: the second level\'s cards come up at once');
+	await page.keyboard.press('KeyG');
+	const c2 = await page.evaluate(() => { const m = window.__m3d; return { pending: m.world.pl.pending, coins: m.run.lv.coins, shown: document.getElementById('cards').style.display, moves: m.world.pl.moves.map((q) => q.id + (q.xlv || 1)) }; });
+	A(c2.pending === 0 && c2.coins === 10 && c2.shown === 'none' && await hudHas(/vitamins: .* · ₽ 10 · luck 0/), 'Skip (G): no card, 10 of the run\'s money; the readout shows the vitamins, the money and the luck', JSON.stringify(c2) + (await hud()));
+	await page.evaluate(() => { window.__m3d.world.autoPick = 0; });   // (from here the test takes the first card of any level)
 
 	// ---- the altar, the guardian, the portal
 	const hush = () => page.evaluate(() => { const m = window.__m3d; m.run.acc = -1e9; for (const e of m.world.enemies) if (e !== m.run.boss) e.dead = true; });
@@ -94,9 +113,9 @@ try {
 		await hush(); await onAltar();
 		return waitFor(async () => { await hush(); return page.evaluate((q) => window.__m3d.run.zone === q + 1, z); }, 6000);
 	};
-	const c2 = await clearZone(2), c3 = await clearZone(3);
+	const z2ok = await clearZone(2), z3ok = await clearZone(3);
 	const sh = await page.evaluate(() => { const m = window.__m3d; return { zone: m.run.zone, shrine: !!m.room.shrine, w: m.room.w, enemies: m.world.enemies.length }; });
-	A(c2 && c3 && sh.zone === 4 && sh.shrine && sh.w === 44 && await hudHas(/SHRINE · ALTAR/), 'zones 2 and 3 cleared: the third portal leads to the shrine', JSON.stringify(sh));
+	A(z2ok && z3ok && sh.zone === 4 && sh.shrine && sh.w === 44 && await hudHas(/SHRINE · ALTAR/), 'zones 2 and 3 cleared: the third portal leads to the shrine', JSON.stringify(sh));
 	await shot('m3d_exp_shrine.png');
 	const won = await clearZone(4);
 	A(won && await hudHas(/COMPLETE!/), 'the legendary falls at the pedestal: the expedition is complete', await hud());

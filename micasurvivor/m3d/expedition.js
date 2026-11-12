@@ -10,10 +10,12 @@
 // Here so far: the run's phases, zones and splits; the trickle with its cards, the per-zone floor and the final
 // swarm; guardians and the legendary with HP from your damage and exhaustion; the difficulty tiers; the timeline's
 // events (alpha, swarm, stampede, flock, rock slide, elite wave, totem, summoner, roaming legendary); the score.
-// Still to come: the in-run economy and its interactables, capture, Expedition's own level-up cards, the run's pay.
+// Level-ups are Expedition's own (explevel.js): move levels and rolls, vitamins, Training, the three tools.
+// Still to come: the in-run economy and its interactables, the 60 items, capture, the run's pay.
 import { K, CELL, makeRoom, setCell, groundAt, newState } from './sim.js';
 import { generate, footGraph, rng as makeRng, LEVEL } from './gen.js';
 import { CK, U, newWorld, tick, addEnemy, addBoss, drop, hazard, spawnRate, xpFor } from './combat.js';
+import { levelFrom, setup as setupLevels, tickStats, curse } from './explevel.js';
 
 export const XK = {
 	BIOME: { viridian: 'meadow', mtmoon: 'peaks', cerulean: 'marsh' },
@@ -39,7 +41,7 @@ function mix(...vals) {
 export function expFrom(G) {
 	const C = G.ExpClassic, T = G.ExpTier;
 	return { K: C.K, MAPS: C.MAPS, MAP_IDS: C.MAP_IDS, DIFFS: C.DIFFS, plan: (seed, map, zone, diff) => C.plan(seed, map, zone, diff), tier: (d) => T.of(d),
-		ESCORT: T.K.ESCORT, score: (parts, diff) => T.score(parts, diff), medal: T.medal ? (s, diff, map) => T.medal(s, diff, map) : null, exhaustion: C.exhaustion };
+		ESCORT: T.K.ESCORT, L: G.ExpLevel && G.ExpItems ? levelFrom(G) : null, score: (parts, diff) => T.score(parts, diff), medal: T.medal ? (s, diff, map) => T.medal(s, diff, map) : null, exhaustion: C.exhaustion };
 }
 
 // ---------------------------------------------------------------- the zones
@@ -108,14 +110,17 @@ export function zoneRoom(seed, map, zone, X) {
 
 // ---------------------------------------------------------------- the run
 /** A Classic run. o: { map, diff, seed, touch (a phone: the lower cap), and combat.js's newWorld options (dex, moves,
- *  ability, items, autoPick, …) }. -> the run: { w (the fight), map, diff, seed, zone, ph, charge, portalT, fs, boss,
+ *  ability, items, autoPick, …); a move given as [id, n] starts at Expedition level n; levels: false keeps the
+ *  base game's level-ups instead of Expedition's }. -> the run: { w (the fight), map, diff, seed, zone, ph, charge, portalT, fs, boss,
  *  splits, bosses, log, won, lost, ended, says: [this step's banners] } */
 export function newRun(data, X, o = {}) {
 	const map = X.MAPS[o.map] ? o.map : 'viridian', diff = X.DIFFS.includes(o.diff) ? o.diff : 'normal', seed = (o.seed >>> 0) || 1;
 	const room = zoneRoom(seed, map, 1, X);
-	const w = newWorld(room, data, { ...o, seed, cast: null, bosses: null });
+	const own = !!X.L && o.levels !== false, lv = (o.moves || []).map((m) => (Array.isArray(m) ? m : [m, 1]));
+	const w = newWorld(room, data, { ...o, moves: own ? lv.map((m) => m[0]) : o.moves, seed, cast: null, bosses: null });
 	const S = { w, X, data, map, diff, seed, touch: !!o.touch, zone: 0, zs: 0, splits: [], log: [], bosses: [], won: false, lost: false, ended: false, dps: [], says: [], wonT: 0 };
 	zoneStart(S, 1, 0);
+	if (own) setupLevels(S, X.L, lv);
 	return S;
 }
 const zIdx = (S) => Math.min(3, S.zone) - 1;
@@ -171,6 +176,7 @@ export function spawn(S, dex, x, z, o = {}) {
 	const e = addEnemy(w, dex, x, z, { t: teff, ti, def, behavior: o.behavior,
 		hp: (1 + CK.COOP.hp * (party - 1)) * Math.pow(XKK.FINAL_HP, m) * (o.hp || 1) * TR.hp, dmg: Math.pow(XKK.FINAL_DMG, m) * (o.dmg || 1) * TR.dmg, spd: (o.spd === undefined ? 1 : o.spd) * TR.spd });
 	e.xp = Math.round(def.xp * XKK.XP_K * (o.xp || 1) * TR.xp);
+	const cu = curse(S); if (cu > 0) { e.maxHp = e.hp = Math.round(e.maxHp * (1 + cu)); e.dmg *= 1 + cu; }   // (the Cursed Incense: + 12 % a level)
 	if (o.scale) { e.scale = o.scale; e.cr = S.data.radius(dex, o.scale); }
 	if (o.kind) { e.xk = o.kind; S.specials.set(e.id, { kind: o.kind, e, t0: t, next: XKK.TOTEM.every, rng: makeRng(mix(S.seed, e.id, 0x70)) }); }
 	return e;
@@ -288,7 +294,7 @@ function wake(S, t) {
 	const w = S.w, XKK = S.X.K, legend = S.zone === 4, dex = legend ? S.plan.legend : S.plan.guardian, zi = zIdx(S), TR = S.X.tier(S.diff);
 	const d0 = dps(S), hp = bossHp(XKK, { zone: S.zone, dps: d0, tier: diffIdx(S), t, legend, players: 1 + w.mates.length });
 	const dmg = (legend ? XKK.LEGEND_DMG : XKK.GUARD_DMG[zi]) * TR.dmg, sp = S.data.baseSpd(dex), b = S.data.behaviorOf(dex);
-	const def = { dex, boss: true, hp: hp.hp, spd: Math.round(clamp(40 + sp * 0.5, 40, 100)), dmg: Math.round(dmg * 1.2), xp: xpFor(w.pl.level) * (legend ? XKK.LEGEND_XP : XKK.GUARD_XP[zi]),
+	const def = { dex, boss: true, hp: hp.hp, spd: Math.round(clamp(40 + sp * 0.5, 40, 100)), dmg: Math.round(dmg * 1.2), xp: (w.xpNeed || xpFor)(w.pl.level) * (legend ? XKK.LEGEND_XP : XKK.GUARD_XP[zi]),
 		behavior: b === 'ranged' || legend ? 'ranged' : sp > 90 ? 'charger' : 'chase', shotDmg: Math.round(dmg * 0.55), shotCd: 1.1, range: 260 };
 	const [ax, , az] = w.room.altar, bz = az - XK.BOSS_NORTH * U;
 	const e = addBoss(w, dex, ax, bz, { def, t });
@@ -343,6 +349,7 @@ export function stepRun(S, input, dt = K.TICK) {
 	if (w.t === t0) return S;
 	const t = w.t;
 	if (w.pl.dead && !w.mates.length && !w.guest) { S.ended = true; S.lost = true; w.events.push({ k: 'runover', won: false }); return S; }
+	if (S.lv) tickStats(S, dt);
 	dpsSample(S, t);
 	tickSpecials(S, dt, t);
 	tickBoss(S, t);

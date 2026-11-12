@@ -302,8 +302,10 @@ function land(w, e, dmg, kx, kz, knockU, src) {
 	const c = pl.crit + (src.xcrit || 0), crit = c > 0 && w.rand() < c;
 	if (crit) { k *= CK.CRIT; w.stats.crits++; }
 	if (src.mid || src.id) k *= pl.afDmg * (has(pl, 'choiceband') ? (pl.moves[0] && pl.moves[0].id === (src.mid || src.id) ? CK.IT.cbMain : CK.IT.cbRest) : 1);   // Choice Band: your first move + 40 %, the others - 20 %
+	if (w.hooks && w.hooks.out) k *= w.hooks.out(w, e, src, dmg * k);
 	const d = dmg * k;
 	hurtEnemy(w, e, d, kx, kz, knockU);
+	if (w.hooks && w.hooks.dealt) w.hooks.dealt(w, d);
 	if (has(pl, 'shellbell')) pl.bellHeal = Math.min(CK.IT.bellMax, pl.bellHeal + d * CK.IT.bell);
 	w.stats.dealt += d; w.stats.hits++;
 	w.events.push({ k: 'hit', id: e.id, x: e.a.x, y: e.a.y + bodyH(e) * 0.5, z: e.a.z, d, crit, type, eff: type ? w.data.typeMult(type, e.types) : 1 });
@@ -340,7 +342,8 @@ function hurtPlayer(w, amount, type, through = false) {
 	let eff = null;
 	if (type) { const tk = w.data.typeMult(type, pl.mon.types); eff = w.data.typeLabel(tk); amount *= tk * wxMult(w, type); }
 	amount *= pl.takenK * abIn(w, type, eff);
-	const d = Math.max(1, amount * (1 - pl.reduction) * (pl.meleeT > 0 ? CK.MELEE_TAKEN : 1));
+	let d = Math.max(1, amount * (1 - pl.reduction) * (pl.meleeT > 0 ? CK.MELEE_TAKEN : 1));
+	if (w.hooks && w.hooks.hurt) { d = w.hooks.hurt(w, d); if (!(d > 0)) { pl.invuln = CK.INVULN; return 0; } }   // (a mode's own: a dodge, a shield)
 	pl.hp -= d; pl.invuln = CK.INVULN; w.stats.taken += d;
 	w.events.push({ k: 'hurt', d, type });
 	if (pl.items.length) {   // Weakness Policy, Sitrus Berry, Focus Sash
@@ -350,6 +353,7 @@ function hurtPlayer(w, amount, type, through = false) {
 		if (pl.hp <= 0 && has(pl, 'focussash') && pl.itemClock - pl.sashT > CK.IT.sash) { pl.sashT = pl.itemClock; pl.hp = 1; pl.invuln = CK.IT.sashInvuln; w.events.push({ k: 'item', id: 'focussash' }); }
 	}
 	if (pl.hp <= 0 && pl.ab && pl.ab.sturdy && pl.abT - pl.abSturdyT > pl.ab.sturdy) { pl.abSturdyT = pl.abT; pl.hp = 1; pl.invuln = CK.AB.sturdyInvuln; w.events.push({ k: 'sturdy' }); }   // Sturdy: the hit that would have finished you leaves 1 HP
+	if (pl.hp <= 0 && w.hooks && w.hooks.ko && w.hooks.ko(w)) return d;   // (a mode's own second chance)
 	if (pl.hp <= 0) { pl.hp = 0; pl.dead = true; }
 	return d;
 }
@@ -574,6 +578,8 @@ function updateEffects(w, dt) {
 	}
 }
 const KINDS_END = 0;
+/** Can this module fire a move of this kind? */
+export const canFire = (kind) => kind === 'orbit' || !!KINDS[kind];
 /** Mines wait and go off, meteors land, turrets shoot, patches tick. */
 function updateFields(w, dt) {
 	for (let i = w.fields.length - 1; i >= 0; i--) {
@@ -979,7 +985,7 @@ function spawnTick(w, dt) {
 // ---------------------------------------------------------------- experience and level-ups
 function gainXp(w, amount) {
 	const pl = w.pl; pl.xp += amount * pl.xpMul; w.stats.gained += amount * pl.xpMul;
-	while (pl.xp >= pl.xpNext) { pl.xp -= pl.xpNext; pl.level++; pl.xpNext = xpFor(pl.level); pl.pending++; w.stats.levels++; w.events.push({ k: 'level', level: pl.level }); }
+	while (pl.xp >= pl.xpNext) { pl.xp -= pl.xpNext; pl.level++; pl.xpNext = (w.xpNeed || xpFor)(pl.level); pl.pending++; w.stats.levels++; w.events.push({ k: 'level', level: pl.level }); }
 }
 /** Pickups: inside your reach (or once a magnet has called them) they fly to you, in space; touched, they are yours. */
 function updatePickups(w, dt) {
@@ -1054,7 +1060,7 @@ export function tick(w, input, dt = K.TICK) {
 	w.events.length = 0;
 	// a level-up: the fight waits for a card to be chosen (or takes one at once, if it was told how)
 	while (pl.pending > 0 && !pl.dead) {
-		if (!pl.choices) { pl.choices = offer(w); if (!pl.choices.length) { pl.choices = null; pl.pending--; continue; } w.events.push({ k: 'levelup', level: pl.level }); }
+		if (!pl.choices) { pl.choices = w.offerCards ? w.offerCards(w) : offer(w); if (!pl.choices.length) { pl.choices = null; pl.pending--; continue; } w.events.push({ k: 'levelup', level: pl.level }); }
 		if (w.autoPick === undefined || w.autoPick === null) return w;
 		choose(w, Math.min(pl.choices.length - 1, typeof w.autoPick === 'function' ? w.autoPick(w, pl.choices) | 0 : w.autoPick | 0));
 	}

@@ -668,6 +668,40 @@ records, the Mt. Moon and Cerulean shrines' own looks, Survival, and co-op, spec
 Tests: `micasurvivor_m3d_expedition_test.mjs` (76 checks, node: the Classic suite's state checks made of the 3D
 run) and `micasurvivor_m3d_expedition_page_test.mjs` (14 checks: a whole run on the page).
 
+## 5.18 P4, second part: built (2026-11-11). Expedition's own level-ups.
+
+`micasurvivor/m3d/explevel.js`. An Expedition run in 3D now levels as the 2D one does, not as the base game:
+
+- **The curve** is Expedition's: 2 x (8 + 5.5 L + L^1.8).
+- **A move has levels 1 to 8** (+8 % damage each), and each level-up card brings rolls (damage, cooldown, count,
+  area, speed, duration, crit, status) sized by the card's rarity.
+- **Rarity**: the 2D odds, with Rare and above gated by level, luck and zone.
+- **Vitamins**: 21, three slots, ten levels. Every stat lands where it acts: damage by class and type, armour,
+  HP, speed, cooldown, crit, regeneration, XP, reach, luck, projectiles, area, duration, status chance; in a
+  fight, the dodge (never above 40 %), the shield (back 4 s after a hit), lifesteal, and the Cursed Incense.
+- **The deal**: three cards from the run's own seeded stream, a move card always among them and first. With four
+  moves, a rare swap card replaces your lowest-level move in place. With nothing left, Training.
+- **The tools**: Refresh (2), Skip (2, pays 10 x zone of the run's money), Banish (1). On the page: F, G, B.
+
+**The 2D game's functions are called as they are.** Card weights, rarity odds, the vitamins' table, how stats add
+up and land on the player (`G.ExpItems.total` / `apply`), a move's levels and rolls (`G.ExpMoves.levelUp` /
+`refresh`), which moves are physical (`G.ExpLeague.classOf`). Only the deal itself is written again, for this
+module's player.
+
+**One difference, until the League is here.** In 2D a run's four move slots are filled by the League member's
+kit, so a new move only ever arrives as a swap. The 3D run has no League yet, so a free slot is offered a move of
+your types (weight 6).
+
+**A page bug fixed on the way**: with two level-ups waiting, taking the first card threw ("events is not
+iterable") and the second set never came up. The page test now takes two levels at once; it fails with the fix
+reverted.
+
+**Not yet in P4**: the in-run economy and its interactables, the 60 items and their procs (they arrive with the
+economy that hands them out), capture, the League's kits and evolutions, the run's pay and records, the other two
+shrines' looks, Survival, and co-op, spectate and replay of a run.
+
+Tests: `micasurvivor_m3d_explevel_test.mjs` (66 checks, node), the run suite 76, the page test 18 (was 14).
+
 ## 6. Dive in 2D: built
 
 **D0 — find the stairs (small; can ship first, on its own).** *Built 2026-11-11 (`overworld/tests/micasurvivor_dive_stairs_test.mjs`). As built: the stairs took their own orange mark, so the rocks and Meowth keep their gold; the HUD arrow comes up after 25 s on a floor, or at once when its boss falls.*
