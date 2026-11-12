@@ -1179,6 +1179,31 @@ like the other screens.
 
 Tests: `micasurvivor_m3d_runui_test.mjs` 28 checks (was 23), `micasurvivor_m3d_expsave_test.mjs` 33 (was 31).
 
+## 5.38 The movement tech, first part: built (2026-11-12). Wall-running.
+
+Owner, 2026-11-12: rails, wall-running and surfing are in the first version. This is the first of the three,
+in `sim.js` (pure, fixed tick, as all of the movement): every wall of every level is already one to run on.
+
+- **The wall carries you.** In the air, beside a wall (a rise of 1 m or more above your feet), going along it at
+  4.5 m/s or more and holding a direction that leans INTO it: you keep your speed (toward the run speed) and
+  barely sink (1 m/s at most). A wall adds no height: going up, gravity is the air's.
+- **You must lean in.** Holding straight along a wall, or away from it, lets go: you never stick to a cliff you
+  only fall past. (First built without this: a walk off a ledge stuck to its own cliff.)
+- **The wall jump.** A jump on a wall (or within 0.12 s of leaving it) kicks you 6.5 m/s off it and 9.5 m/s up,
+  keeps your speed along it, and costs no air jump. A tap is a short hop, as any jump.
+- **One wall, once.** A wall holds you 1.1 s, and the same wall will not take you again until you have touched
+  the ground or another wall. So one wall cannot be climbed, and two facing walls can, kick by kick.
+- **Types.** A Bug type is carried twice as long; a Fighting type jumps higher off a wall. The room's edge is
+  not a wall to run on.
+- Watchers see it (a bit in the frame); the menu's controls line says how.
+
+Two scripted fights in the tests (a walk with no jumps, four minutes) took another course with the tech on;
+they now run with it off, on the path they were written for.
+
+Next: rails (splines to grind, placed by the level generator), then surfing a steep slope under control.
+
+Tests: `micasurvivor_m3d_sim_test.mjs` 65 checks (was 50).
+
 ## 6. Dive in 2D: built
 
 **D0 — find the stairs (small; can ship first, on its own).** *Built 2026-11-11 (`overworld/tests/micasurvivor_dive_stairs_test.mjs`). As built: the stairs took their own orange mark, so the rocks and Meowth keep their gold; the HUD arrow comes up after 25 s on a floor, or at once when its boss falls.*

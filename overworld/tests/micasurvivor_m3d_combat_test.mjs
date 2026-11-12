@@ -387,7 +387,7 @@ const at = (cx, cz) => [(cx + 0.5) * CELL, (cz + 0.5) * CELL];
 	const capW = base(); capW.pl.statsTaken.spd = 8; capW.pl.statsTaken.mag = 6; let over = 0; for (let i = 0; i < 100; i++) for (const c of offer(capW)) if (c.key === 'stat:spd' || c.key === 'stat:mag') over++;
 	A(over === 0, 'an upgrade taken as often as it allows (Sprint 8 times, Magnet 6) is not offered again');
 	// a whole run with the cards taken as they come
-	const room = generate(7, 'meadow'), runW = newWorld(room, data, { dex: 25, moves: ['ember'], seed: 31, cast: [RAT, ZUBAT, 1, 4, 7], autoPick: (w, cards) => Math.max(0, cards.findIndex((c) => c.type !== 'stat')) });
+	const room = generate(7, 'meadow'), runW = newWorld(room, data, { tune: { ...K, WALLRUN: false } /* (a scripted walk with no jumps: the path this check was written on, without the wall tech) */, dex: 25, moves: ['ember'], seed: 31, cast: [RAT, ZUBAT, 1, 4, 7], autoPick: (w, cards) => Math.max(0, cards.findIndex((c) => c.type !== 'stat')) });
 	let ticks = 0; for (; ticks < 60 * 240 && !runW.pl.dead; ticks++) tick(runW, { mx: Math.sin(ticks / 140), mz: Math.cos(ticks / 190), jump: false, crouch: false });
 	A(runW.pl.level >= 5 && runW.pl.moves.length === 4 && runW.pl.moves.some((mv) => mv.lvl > 1) && runW.stats.collected > 30, `four minutes on a level, taking cards as they come: level ${runW.pl.level}, ${runW.pl.moves.map((mv) => mv.id + ' Lv' + mv.lvl).join(', ')}; ${runW.stats.kills} KOs${runW.pl.dead ? ' (and down at ' + (ticks / 60).toFixed(0) + ' s)' : ''}`, [runW.pl.level, runW.stats]);
 }

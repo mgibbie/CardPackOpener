@@ -71,6 +71,22 @@ export const K = {
 	GLIDE: false,         // holding jump while falling caps the fall at GLIDE_FALL
 	GLIDE_FALL: 3,        // m/s
 	KILL_Y: -30,          // m: below this you are put back at the room's spawn
+	// --- the movement tech (owner, 2026-11-12: in the first version). WALL-RUNNING: in the air, beside a wall and moving
+	// along it while you hold a direction that leans INTO it, the wall carries you: you keep your speed, you barely sink.
+	// A jump from it kicks you off the wall and up, and costs no air jump. One wall holds you for WALLRUN_TIME; the same
+	// wall will not take you again until you have touched the ground or another wall (two facing walls can be climbed).
+	WALLRUN: true,
+	WALL_MIN: 1,          // m: a wall is a rise of at least this above your feet…
+	WALL_REACH: 0.25,     // m beyond your radius: …this close beside you
+	WALLRUN_MIN: 4.5,     // m/s along the wall to be carried by it
+	WALLRUN_TIME: 1.1,    // s one wall carries you
+	WALLRUN_GRAVITY: 6,   // m/s² once you are coming down on the wall (against 42 in the air; going up it is the air's: a wall adds no height)
+	WALLRUN_FALL: 1,      // m/s: the fastest you sink on it
+	WALLRUN_ACCEL: 6,     // toward the run speed, along the wall
+	WALLJUMP_OUT: 6.5,    // m/s away from the wall
+	WALLJUMP_V: 9.5,      // m/s up
+	WALL_COYOTE: 0.12,    // s after leaving a wall in which its jump still counts
+	WALL_INTO: 0.2,       // how much of what you hold must point INTO the wall (a diagonal along it does; straight along it, or away, lets go: you never stick to a cliff you only fall past)
 };
 
 /** Movement traits by Pokémon type: what each type changes in K. First guesses, one line each, for the owner to feel.
@@ -84,11 +100,11 @@ export const TYPE_TRAITS = {
 	rock: { HARD_LAND: 1e9, JUMP_V: 9.4 },                         // no fall staggers it; a slightly lower jump
 	steel: { HARD_LAND: 1e9, JUMP_V: 9.4 },
 	electric: { RUN: 7.9 },                                        // faster on its feet
-	fighting: { JUMP_V: 11 },                                      // a higher jump (2.0 m)
+	fighting: { JUMP_V: 11, WALLJUMP_V: 10.5 },                    // a higher jump (2.0 m), off a wall too
 	fire: { SLIDE_BOOST: 3.6 },                                    // a bigger kick into a slide
 	psychic: { AIR_CAP: 4.2 },                                     // steers more in the air
 	ghost: { FALL_GRAVITY: 28, HARD_LAND: 1e9 },                   // floats down; no fall staggers it
-	bug: { STEP: 0.65 },                                           // climbs a higher lip
+	bug: { STEP: 0.65, WALLRUN_TIME: 2 },                         // climbs a higher lip; a wall carries it twice as long
 	grass: { STEP: 0.65 },
 	fairy: { GLIDE: true },                                        // hold jump to glide down
 };
@@ -153,7 +169,8 @@ export function newState(room, tune = K) {
 	const [x, y, z] = room.spawn;
 	return { x, y, z, vx: 0, vy: 0, vz: 0, grounded: true, sliding: false, swimming: false, gliding: false, facing: 0, coyote: 0, buffer: 0,
 		airJumps: tune.AIR_JUMPS, jumpHeld: false, crouchHeld: false, stagger: 0, gvy: 0, bouncing: false, t: 0, tick: 0,
-		landed: 0, hard: 0, broke: '', jumped: 0, bounced: 0, respawns: 0 };
+		landed: 0, hard: 0, broke: '', jumped: 0, bounced: 0, respawns: 0,
+		wall: 0, wallT: 0, wallLast: 0, wallCoyote: 0, wallNx: 0, wallNz: 0 };   // (the wall carrying you: 1 +x, 2 -x, 3 +z, 4 -z; 0 none)
 }
 /** No input. { mx, mz: the wished direction on the ground plane in WORLD axes (any length up to 1), jump, crouch: held } */
 export const noInput = () => ({ mx: 0, mz: 0, jump: false, crouch: false });
@@ -186,6 +203,20 @@ function moveXZ(s, room, T, dt) {
 	};
 	tryAxis(s.vx * dt, 0);
 	tryAxis(0, s.vz * dt);
+}
+
+const WALL_SIDES = [[1, 1, 0], [2, -1, 0], [3, 0, 1], [4, 0, -1]];   // [side, toward the wall x, z]
+/** The wall beside a body in the air that could carry it: { side, nx, nz (the wall's normal, pointing off it), along
+ *  (the speed along it), tx, tz (the way along it you are going) } or null. The room's edge is not a wall to run on. */
+export function wallBeside(s, room, T = K) {
+	let best = null;
+	for (const [side, wx, wz] of WALL_SIDES) {
+		const h = groundAt(room, s.x + wx * (T.RADIUS + T.WALL_REACH), s.z + wz * (T.RADIUS + T.WALL_REACH));
+		if (h < s.y + T.WALL_MIN || h >= OUT) continue;
+		const al = wx ? s.vz : s.vx, along = Math.abs(al);   // (a wall on the x side runs along z, and the other way round)
+		if (!best || along > best.along) best = { side, nx: -wx, nz: -wz, along, tx: wx ? 0 : Math.sign(al) || 1, tz: wx ? Math.sign(al) || 1 : 0 };
+	}
+	return best;
 }
 
 /** One tick. Mutates and returns `s`. `tune`: the character's tuning (tuneFor(types)); K if none. */
@@ -230,10 +261,26 @@ export function step(s, input, room, dt = K.TICK, tune = K) {
 	if (s.sliding && (!inp.crouch || !s.grounded || Math.hypot(s.vx, s.vz) < T.SLIDE_END)) s.sliding = false;
 	s.crouchHeld = !!inp.crouch;
 
-	// the jump: from the ground (or within the coyote time), else an air jump
+	// a wall: in the air, beside one and going along it while what you hold leans into it
+	if (s.grounded) { s.wall = 0; s.wallLast = 0; s.wallCoyote = 0; }
+	else {
+		const wb = T.WALLRUN ? wallBeside(s, room, T) : null;
+		const holds = !!wb && wishing && dx * wb.nx + dz * wb.nz <= -T.WALL_INTO && wb.along >= T.WALLRUN_MIN;
+		if (holds && s.wall !== wb.side && wb.side !== s.wallLast) { s.wall = wb.side; s.wallT = T.WALLRUN_TIME; }   // a new wall takes you
+		if (s.wall && (!holds || wb.side !== s.wall || s.wallT <= 0)) { s.wallLast = s.wall; s.wall = 0; s.wallCoyote = T.WALL_COYOTE; }   // it lets go
+		else if (!s.wall) s.wallCoyote = Math.max(0, s.wallCoyote - dt);
+		if (s.wall) { s.wallNx = wb.nx; s.wallNz = wb.nz; s.wallT -= dt; }
+	}
+	// the jump: from the ground (or within the coyote time), off a wall, else an air jump
 	if (s.buffer > 0 && s.stagger <= 0) {
 		const fromGround = (s.grounded || s.coyote > 0) && surface !== 'steep';
-		if (fromGround || s.airJumps > 0) {
+		if (!fromGround && (s.wall || s.wallCoyote > 0)) {
+			// off the wall: away from it and up, keeping the speed along it; it costs no air jump
+			const into = s.vx * s.wallNx + s.vz * s.wallNz;
+			s.vx += s.wallNx * (T.WALLJUMP_OUT - Math.min(0, into)); s.vz += s.wallNz * (T.WALLJUMP_OUT - Math.min(0, into));
+			s.vy = T.WALLJUMP_V; s.buffer = 0; s.jumped = 3; s.facing = Math.atan2(s.vx, s.vz);
+			if (s.wall) s.wallLast = s.wall; s.wall = 0; s.wallCoyote = 0;
+		} else if (fromGround || s.airJumps > 0) {
 			if (!fromGround) s.airJumps--;
 			s.vy = T.JUMP_V; s.grounded = false; s.coyote = 0; s.buffer = 0; s.jumped = fromGround ? 1 : 2;
 			// (a jump out of a slide keeps the slide's speed: the velocity is untouched)
@@ -257,6 +304,10 @@ export function step(s, input, room, dt = K.TICK, tune = K) {
 			friction(s, T.FRICTION * (grip ? grip.friction : 1), T.STOP_SPEED, dt);
 			if (wishing) accelerate(s, dx, dz, wishSpeed, T.ACCEL * (grip ? grip.accel : 1), wishSpeed, dt);
 		}
+	} else if (s.wall) {
+		// carried by the wall: along it, toward the run speed (never losing what you came with)
+		const wb = wallBeside(s, room, T);
+		if (wb) accelerate(s, wb.tx, wb.tz, Math.max(T.RUN, wb.along), T.WALLRUN_ACCEL, Math.max(T.RUN, wb.along), dt);
 	} else if (wishing) {
 		accelerate(s, dx, dz, T.RUN * wl, T.AIR_ACCEL, T.AIR_CAP, dt);
 	}
@@ -279,8 +330,9 @@ export function step(s, input, room, dt = K.TICK, tune = K) {
 		}
 	}
 	if (!s.grounded) {
-		s.gliding = !!(T.GLIDE && inp.jump && s.vy < 0);
-		s.vy -= (s.vy > 0 ? T.GRAVITY : T.FALL_GRAVITY) * dt;
+		s.gliding = !!(T.GLIDE && inp.jump && s.vy < 0) && !s.wall;
+		s.vy -= (s.vy > 0 ? T.GRAVITY : s.wall ? T.WALLRUN_GRAVITY : T.FALL_GRAVITY) * dt;
+		if (s.wall && s.vy < -T.WALLRUN_FALL) s.vy = -T.WALLRUN_FALL;   // (the wall holds you up)
 		if (s.gliding && s.vy < -T.GLIDE_FALL) s.vy = -T.GLIDE_FALL;
 		s.y += s.vy * dt;
 		if (s.vy <= 0) s.bouncing = false;
@@ -301,7 +353,7 @@ export function step(s, input, room, dt = K.TICK, tune = K) {
  *  sliding), by a slope (it carries you down it), by water, or by a bounce pad. */
 function land(s, inp, room, T, g) {
 	const fall = -s.vy;
-	s.landed = fall; s.y = g; s.vy = 0; s.grounded = true; s.airJumps = T.AIR_JUMPS; s.gliding = false; s.gvy = 0;
+	s.landed = fall; s.y = g; s.vy = 0; s.grounded = true; s.airJumps = T.AIR_JUMPS; s.gliding = false; s.gvy = 0; s.wall = 0; s.wallLast = 0; s.wallCoyote = 0;
 	if (fall <= T.HARD_LAND) return;
 	if (matAt(room, s.x, s.z) === 'bounce') return;
 	if (waterAt(room, s.x, s.z) - g > 0.3) { s.broke = 'water'; return; }
@@ -321,7 +373,7 @@ function land(s, inp, room, T, g) {
 /** One tick in deep water: you float with your feet SWIM_DEPTH under the surface, sink a little when you let go, rise
  *  while jump is held, and leap out with a jump at the surface. */
 function swim(s, inp, room, T, dt, w) {
-	s.grounded = false; s.sliding = false; s.gliding = false; s.coyote = 0; s.gvy = 0; s.airJumps = T.AIR_JUMPS; s.stagger = 0;
+	s.grounded = false; s.sliding = false; s.gliding = false; s.coyote = 0; s.gvy = 0; s.airJumps = T.AIR_JUMPS; s.stagger = 0; s.wall = 0; s.wallLast = 0; s.wallCoyote = 0;
 	friction(s, T.SWIM_DRAG, 0.5, dt);
 	if (w.wishing) accelerate(s, w.dx, w.dz, T.RUN * T.SWIM_SPEED * w.wl, T.ACCEL, T.RUN * T.SWIM_SPEED * w.wl, dt);
 	moveXZ(s, room, T, dt);
@@ -343,7 +395,7 @@ function swim(s, inp, room, T, dt, w) {
 /** What the character is doing, for the animation and the HUD. */
 export function stateName(s) {
 	if (s.swimming) return 'swimming';
-	if (!s.grounded) return s.gliding ? 'gliding' : s.vy > 0 ? 'rising' : 'falling';
+	if (!s.grounded) return s.wall ? 'wallrunning' : s.gliding ? 'gliding' : s.vy > 0 ? 'rising' : 'falling';
 	if (s.stagger > 0) return 'staggered';
 	if (s.sliding) return 'sliding';
 	return Math.hypot(s.vx, s.vz) > 0.6 ? 'running' : 'idle';
