@@ -590,6 +590,23 @@ G.PlayUI = (() => {
     return home;
   }
 
+  // ---------------- 3D Expedition (micasurvivor/m3d/): the way in, behind a switch ----------------
+  // Owner, 2026-11-12: the 2D Expedition stays what players get until the 3D one is complete. Until then the 3D one is
+  // reached from here only on a browser that asked for it: /micasurvivor/?exp3d=1 turns the switch on (this browser
+  // only), ?exp3d=0 off. With it on, START on Expedition · Classic or Survival, playing alone, opens the 3D page with
+  // the same choices (your League member, the map, the tier). Local and online play stay 2D: the 3D one has neither.
+  const X3D_KEY = 'micasurvivor_exp3d';
+  try { const m = /[?&]exp3d=([01])\b/.exec(location.search); if (m) { if (m[1] === '1') localStorage.setItem(X3D_KEY, '1'); else localStorage.removeItem(X3D_KEY); } } catch (e) { /* a convenience */ }
+  const exp3d = () => { try { return localStorage.getItem(X3D_KEY) === '1'; } catch (e) { return false; } };
+  /** The 3D page's address for this setup, or null when this run is a 2D one. */
+  function exp3dUrl(mode) {
+    if (!exp3d() || st.players !== 'solo' || (mode !== 'exp-classic' && mode !== 'exp-survival') || st.variant !== mode) return null;
+    const L = G.ExpLeague, dex = L && L.pickFor ? L.pickFor() : 0;
+    if (!dex) return null;
+    let seed = 1; try { const a = new Uint32Array(1); crypto.getRandomValues(a); seed = (a[0] % 2147483646) + 1; } catch (e) { seed = (Date.now() % 2147483646) + 1; }
+    return '/micasurvivor/m3d/?exp=' + seed + '&map=' + encodeURIComponent(st.map) + '&diff=' + encodeURIComponent(st.diff) + '&dex=' + dex + (mode === 'exp-survival' ? '&mode=survival' : '');
+  }
+
   // ---------------- START ----------------
   function start() {
     const pl = plan(), v = st.variant, X = G.Expedition;
@@ -603,6 +620,8 @@ G.PlayUI = (() => {
       try { localStorage.setItem('micasurvivorexp_mate', '0'); } catch (e) { /* a convenience (U2: the old local partner is off: the players count instead) */ }
       syncLeague();
       if (v === 'weekly') X.playWeekly();
+      const url3 = exp3dUrl(mode);   // (the switch: this run is the 3D one)
+      if (url3) { if (G.DB && G.DB.flush) G.DB.flush(); location.assign(url3); return Promise.resolve(true); }
     }
     return Promise.resolve(G.Flow.play(mode)).then(r => r !== false);
   }
@@ -686,7 +705,7 @@ G.PlayUI = (() => {
   }
 
   return {
-    init, open, back, render, start, plan, playersOf, modeOf, owned, syncLeague, lobbyOpts,
+    init, open, back, render, start, plan, playersOf, modeOf, owned, syncLeague, lobbyOpts, exp3d, exp3dUrl,
     VARIANTS, CATS,
     get state() { return { step: st.step, cat: st.cat, variant: st.variant, players: st.players, sub: st.sub, map: st.map, diff: st.diff, route: st.route }; }
   };
