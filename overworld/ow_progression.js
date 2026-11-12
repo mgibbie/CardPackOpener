@@ -14,6 +14,7 @@ import { S } from './ow_state.js';
 import { runScriptLabel, syncStoryVars } from './ow_story.js';
 import { healParty, saveParty } from './party.js';
 import * as Dex from './pokedex.js';
+import { LEGENDARY_ENCOUNTERS } from './ow_legendaries.js';
 import * as Quest from './quest.js';
 import { safeLoad, safeSave, safeSaveStr } from './safestore.js';
 import { sfx } from './sound.js';
@@ -600,9 +601,25 @@ function watchPendingHallOfFame() {
 // record the team, heal, and warp home — otherwise the player is stranded in the
 // Champion's Room / Hall of Fame (the decomp's credits roll and title-screen return
 // were never ported). This is what makes the post-game reachable at all.
+// A LEGENDARY KNOCKED OUT COMES BACK (owner, 2026-11-12). A placed legendary that faints is gone, the same flag a catch
+// sets, so one slip (a critical hit, poison taking the last HP) cost the player that POKeMON for the whole save: a
+// tester's ZAPDOS, with a catch-them-all goal. Each time you enter a HALL OF FAME, every legendary whose encounter is
+// spent but which you have never caught is there again. One you caught stays caught (the POKeDEX is the proof); one
+// you have not met yet is untouched. Only the encounter's own flag is cleared: no decomp flag, no object.
+export function returnFaintedLegendaries() {
+	const back = [], seen = new Set();
+	for (const v of Object.values(LEGENDARY_ENCOUNTERS)) for (const e of Array.isArray(v) ? v : [v]) {
+		if (!e || !e.flag || seen.has(e.flag)) continue;
+		seen.add(e.flag);   // (a legendary with a lair in two regions shares one flag: once)
+		if (Story.getFlag(e.flag) && !Dex.isCaught(e.species)) { Story.clearFlag(e.flag); back.push(e.species); }
+	}
+	if (back.length) Journal.add(back.length === 1 ? `Word is that ${String(back[0]).toUpperCase()} has been seen again.` : `Word is that ${back.length} legendary POKeMON you drove off have been seen again.`);
+	return back;
+}
 export function closeHallOfFame(region, fresh) {
 	if (fresh) recordHallOfFame(region, S.party);
 	resetEliteFour(); // the HALL OF FAME resets the League run (both decomps)
+	try { returnFaintedLegendaries(); } catch (e) { console.warn('[legend] return failed', e); }
 	healParty(S.party); saveParty(S.party);
 	const home = Quest.START[region];
 	const goHome = () => { if (home) moveToMap(home); refreshObjective(); syncOverworldAchievements(); };
