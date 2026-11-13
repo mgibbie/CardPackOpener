@@ -16,7 +16,7 @@ import { hostAdd, hostStep, hostFrame, hostApply, guestWorld, guestSync, guestMs
 import { generate, BIOMES } from './gen.js';
 import { mountRunUi, pretty } from './runui.js';
 import { HostLink, WatchLink, runId, SAYS as LIVE_SAYS } from './exprelay.js';
-import { unfair, clean as cleanRun, deviceId, missing as saveMissing, runSum, recordOps, applyOps, scoreBody, WHY, SV, wildOf, catchOps, shinyOps, newlyMet, boardAsk, boardRows, hasMember, hasForm } from './expsave.js';
+import { unfair, LOBBY_OK, guestOps, clean as cleanRun, deviceId, missing as saveMissing, runSum, recordOps, applyOps, scoreBody, WHY, SV, wildOf, catchOps, shinyOps, newlyMet, boardAsk, boardRows, hasMember, hasForm } from './expsave.js';
 import { rng as seedRng } from './gen.js';
 import { metaFor, spendBoosts, researchOf } from './expmeta.js';
 import { canEvolve } from './expleague.js';
@@ -95,7 +95,7 @@ const MOVES = !FIGHT ? [] : Q.get('moves') ? Q.get('moves').split(',').map((m) =
 const BOSSES = (Q.get('bosses') ? Q.get('bosses').split(',').map(Number) : [143, 130, 149, 6, 150]).filter((d) => META[d] && META[d].a && META[d].a.Walk && !META[d].src);
 // (the shipping path) The Expedition save is opened before the run is made: a fair run brings the wild League members
 // waiting in it (expsave.js). A practice run (any test parameter) reads and writes nothing.
-const PRACTICE = EXP ? unfair([...Q.entries()]) : null;
+const PRACTICE = EXP ? unfair([...Q.entries()], LOBBY ? LOBBY_OK.host : []) : null;   // (a lobby's host: its start's own parameters are fair)
 const SAVE_OK = EXP && !PRACTICE && !!GG.ExpSave && await GG.ExpSave.open().then(() => !!GG.ExpSave.data, () => false);
 const baseSave = () => { try { return JSON.parse(localStorage.getItem('micasurvivor_save.' + (GG.ExpSave.who || 'guest')) || 'null'); } catch (e) { return null; } };   // (read, never written: the collection decides what you have)
 const WILD = SAVE_OK && GG.ExpLeague && GG.ExpCap ? wildOf(GEN, { L: GG.ExpLeague, Sv: GG.ExpSave, base: baseSave(), max: GG.ExpCap.K.PER_RUN, rng: seedRng }) : [];
@@ -121,7 +121,7 @@ if (DIVE && !DR) throw new Error('3D Dive: the Dive rules did not load');
 // (the kit: your League member's first three moves, the basic and two specials; ?moves= picks others)
 const DMOVES = DR && !Q.get('moves') && GG.ExpLeague ? (() => { const L = GG.ExpLeague, m = L.BY[L.BY[DEX] ? DEX : L.FAM[DEX]], kit = m ? m.kit.filter((id) => { const d = GG.Moves.BY_ID[id] || (GG.ExpMoves && GG.ExpMoves.MOVES[id]); return !!d && canFire(d.kind); }).slice(0, DR.K.SLOTS) : []; return kit.length >= 2 ? kit.map((id) => [id, 1]) : MOVES; })() : MOVES;
 // (part 6) a Dive that can be kept: the save is opened before the run (the start floor and the route's Seal are its)
-const DPRACTICE = DIVE ? DS.unfairDive([...Q.entries()]) : null;
+const DPRACTICE = DIVE ? DS.unfairDive([...Q.entries()], LOBBY ? LOBBY_OK.host : []) : null;
 const DSAVE_OK = DIVE && !!DR && !DPRACTICE && !!GG.ExpSave && await GG.ExpSave.open().then(() => !!GG.ExpSave.data, () => false);
 // (part 15) ?weekly: this week's Weekly Dive: its seed, its route and its modifier are the week's, whatever else the address says
 const DWEEK = DR && Q.has('weekly') && GG.Expedition && GG.Expedition.diveWeekly ? GG.Expedition.diveWeekly() : null;
@@ -524,8 +524,8 @@ function frame(now) {
 				stepGuestDive(gdrun, input, K.TICK);
 				for (const q of gdrun.says) note(q.text, q.s * 1000);
 				if (gdrun.pick !== shownPick) showPick();
-				if (runOver === null && gdrun.ended) { runOver = gdrun.won ? 'won' : 'lost'; note(gdrun.won ? 'You escape with everything!' : 'RUN OVER', 600000); }
-			} else if (grun) { stepGuest(grun, input, K.TICK); for (const q of grun.says) note(q.text, q.s * 1000); if (grun.pick !== shownPick) showPick(); if (runOver === null && grun.ended) { runOver = grun.won ? 'won' : 'lost'; note(grun.won ? 'EXPEDITION COMPLETE!' : 'RUN OVER', 600000); } }
+				if (runOver === null && gdrun.ended) { runOver = gdrun.won ? 'won' : 'lost'; keepGuest(gdrun); note(gdrun.won ? 'You escape with everything!' : 'RUN OVER', 600000); }
+			} else if (grun) { stepGuest(grun, input, K.TICK); for (const q of grun.says) note(q.text, q.s * 1000); if (grun.pick !== shownPick) showPick(); if (runOver === null && grun.ended) { runOver = grun.won ? 'won' : 'lost'; keepGuest(grun); note(grun.won ? 'EXPEDITION COMPLETE!' : 'RUN OVER', 600000); } }
 			else tick(world, input, K.TICK);
 			fightEvents(world.events);
 			if (coView && coView.events.length) fightEvents(coView.events.filter((ev) => !(ev.k === 'hit' && ev.by === MYID) && ev.k !== 'levelup' && ev.k !== 'hurt' && ev.k !== 'level'));   // what the host and the others did
@@ -700,7 +700,9 @@ const HEAD = { gen: GEN, biome: BIOME, size: SIZE, dex: DEX };
 if (run) HEAD.exp = { seed: GEN, map: run.map, diff: run.diff };
 if (drun) HEAD.dive = { seed: drun.seed, route: drun.route };   // (part 16) a Dive: a watcher needs its seed and route to build the floors   // (P4) a run: a watcher needs its seed and map to build the zones
 /** (P4) A frame with the run's row on it (expnet.js), when this is a run. */
-const rowed = (f) => { if (run) f.r = runRow(run); else if (drun) f.r = diveRow(drun); return f; };
+/** (§5.73) The run's end as its host kept it, for the guests: [pay, kills, seconds, the zone or the deepest floor, won]. */
+const endRow = () => { const r = runOver; if (!r || typeof r !== 'object' || !r.parts) return null; return drun ? [DS.coinsOf(r.parts.divePay), r.parts.kills | 0, r.parts.time | 0, r.parts.deepest | 0, r.parts.escaped ? 1 : 0] : [r.pay ? r.pay.pay | 0 : 0, r.parts.kills | 0, r.parts.time | 0, run.zone | 0, r.won ? 1 : 0]; };
+const rowed = (f) => { if (run) f.r = runRow(run); else if (drun) f.r = diveRow(drun); if (f.r && world.mates.length) { const e = endRow(); if (e) f.r.e = e; } return f; };
 const tape = FIGHT && Q.get('tape') === '1' ? new Tape({ ...HEAD, at: 0 }) : null;
 const net = { sent: 0, chars: 0, got: 0, evLive: [], evTape: [], prev: null, n: 0, batch: [], relay: false };
 const RELAY = Q.get('relay') === '1' || !!SITE_HOST;   // (the site's lines carry one message a second)
@@ -930,7 +932,7 @@ function runView() {
 			v.over = { won: r.won, title: r.title, line: r.lines[0], again: '?' + qd, leave: '../', boards: true, kept: kept ? { ok: kept.ok, text: kept.text } : null,
 				rows: [['Floor', String(r.parts.floor)], ['Time', `${Math.floor(r.parts.time / 60)}:${String(r.parts.time % 60).padStart(2, '0')}`], ['KOs', String(r.parts.kills)], ['Level', String(v.level)], ['Loot kept', String(r.parts.divePay)], ['Rescued', String(r.parts.rescued)], ['Best combo', String(r.parts.combo)], ['Poké Balls', String(r.parts.chests)], ['Secrets', String(r.parts.secrets)], ['Alphas', String(r.parts.alphas)], ['Guardians', String(r.parts.guardians)]] };
 		} else
-		v.over = typeof r === 'string' ? { won: r === 'won', title: r === 'won' ? 'EXPEDITION COMPLETE!' : 'RUN OVER', line: '', rows: [], again: null, leave: '../' }
+		v.over = typeof r === 'string' ? { won: r === 'won', title: r === 'won' ? (gdrun ? 'You escape with everything!' : 'EXPEDITION COMPLETE!') : 'RUN OVER', line: '', rows: rv && rv.end ? [['Time', `${Math.floor(rv.end.time / 60)}:${String(rv.end.time % 60).padStart(2, '0')}`], ['KOs', String(rv.end.kills)], ['Pay', '₽ ' + rv.end.pay]] : [], again: null, leave: '../', kept: kept ? { ok: kept.ok, text: kept.text } : null }
 			: { won: r.won, title: r.title, line: r.survival ? r.lines.join(' · ') : r.line, again: run ? '?' + q : null, leave: '../', boards: true, kept: kept ? { ok: kept.ok, text: kept.text } : null,
 				rows: [['Time', `${Math.floor(r.parts.time / 60)}:${String(r.parts.time % 60).padStart(2, '0')}`], ['KOs', String(r.parts.kills)], ['Level', String(v.level)], ['Score', String(r.score)], ['Pay', '₽ ' + r.pay.pay]].concat(r.medal ? [['Medal', r.medal]] : []) };
 	} else if (noteText && performance.now() < noteUntil) v.note = noteText;
@@ -974,6 +976,26 @@ function keepCatch(member) {
 function keepShiny(dex) {
 	if (!run || PRACTICE || !SAVE_OK || !dex || !cleanRun(run, (performance.now() - runBegan) / 1000)) return false;
 	applyOps(GG.ExpSave, shinyOps(dex, GG.ExpLeague && GG.ExpLeague.FAM[dex] || 0)); return true;
+}
+/** (§5.73) A GUEST of a lobby's run keeps it in its own save: the team's result and the same pay (the 2D game's rule).
+ *  The end is the host's word (the row's `e`): it may come a moment after the run is over, so this waits for it. */
+const GPRACTICE = (XJ || DJ) ? (LOBBY ? unfair([...Q.entries()].filter(([k]) => !LOBBY_OK.guest.includes(k))) : 'join') : null;
+let guestKeeping = false;
+async function keepGuest(S) {
+	if (guestKeeping) return kept; guestKeeping = true;
+	const say = (ok, text, extra) => { kept = { ok, text, ...extra }; if (RUNUI) RUNUI.update(runView()); return kept; };
+	if (GPRACTICE) return say(false, GPRACTICE === 'join' ? 'A run joined by its address is a practice one: nothing is saved.' : WHY.practice, { why: 'practice', param: GPRACTICE });
+	try {
+		const Sv = GG.ExpSave, real = (performance.now() - runBegan) / 1000;
+		if (!Sv || !(await Sv.open().then(() => !!Sv.data, () => false))) return say(false, WHY.nosave, { why: 'nosave' });
+		if (!cleanRun(S, real)) return say(false, WHY.unclean, { why: 'unclean' });
+		if (!S.lg || !hasMember(S.lg.member, { L: GG.ExpLeague, Sv, base: baseSave() })) return say(false, WHY.member, { why: 'member' });
+		for (let i = 0; i < 40 && !(rv && rv.end); i++) await new Promise((r) => setTimeout(r, 100));   // (the host's word for the end)
+		if (!rv || !rv.end) return say(false, 'The host did not say how the run ended: nothing is saved.', { why: 'noend' });
+		const ops = guestOps(S, rv.end, { dev: deviceId(localStorage, Sv.who, crypto), T: GG.ExpTier });
+		applyOps(Sv, ops);
+		return say(true, rv.end.pay > 0 ? `Saved. ₽ ${rv.end.pay} will be in your wallet when you next open the Expedition.` : 'Saved.', { ops: ops.length, pay: rv.end.pay });
+	} catch (e) { console.warn('the run was not saved: ' + (e && e.message)); return say(false, WHY.nosave, { why: 'error' }); }
 }
 /** (part 6) Can this Dive be kept? -> null, or why not (divesave.js WHY's key) */
 function diveWhyNot() {

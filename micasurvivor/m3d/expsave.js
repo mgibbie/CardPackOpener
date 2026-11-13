@@ -27,7 +27,24 @@
 export const SV = { RULES: 2 /* the rules the boards are filed under (js/entities/player.js RULES; the server's MSURV_RULES) */, DV: 20 /* the Expedition's content version (js/systems/expedition.js DV: the boards file a score by it) */, INV: 1e9, BOARD: 'micasurvivor_expedition', OK: ['exp', 'map', 'diff', 'mode', 'dex', 'form', 'debug'], MAX_HP: 50000, MAX_ATK: 2000, MAX_SPD: 25 };
 
 /** The first parameter of the page's address that makes its run a practice run (null: none). params: [[key, value]]. */
-export function unfair(params) { for (const [k, v] of params) if (!SV.OK.includes(k) || (k === 'mode' && v !== 'survival')) return k; return null; }
+export function unfair(params, also = []) { for (const [k, v] of params) if ((!SV.OK.includes(k) && !also.includes(k)) || (k === 'mode' && v !== 'survival')) return k; return null; }
+/** (co-op from the online lobby, §5.73) What a lobby's start adds to a player's address: the host's, and a guest's. */
+export const LOBBY_OK = { host: ['host', 'lobby'], guest: ['join', 'lobby', 'lh', 'id', 'gen', 'biome', 'xj', 'dj', 'map', 'diff', 'route', 'dex'] };
+/** What a GUEST of a co-op run writes into its own Expedition save (the 2D game's rule: every player records the run
+ *  as its own, with the team's result and the same pay). S: the guest's side of the run (expcoop.js / divecoop.js);
+ *  end: what the host said of the end: { pay (Pokémonedas), kills, time, depth (the zone, or the Dive's deepest floor),
+ *  won }; o: { dev, T: G.ExpTier (an Expedition) }. A guest keeps no best time, medal, stage or Seal: those are the host's run's. */
+export function guestOps(S, end, o) {
+	const ops = [], bump = (k, n = 1) => { n = Math.floor(n); if (n > 0) ops.push(['bump', k, n]); }, best = (k, v) => { v = Math.floor(v); if (v > 0) ops.push(['best', k, v]); }, add = (set, id) => ops.push(['add', set, String(id)]);
+	const pl = S.w.pl, won = !!end.won;
+	if (S.dive) { bump('dive.runs'); if (won) bump('dive.escapes'); if (!S.weekly) best('dive.' + S.route + '.best', end.depth); else bump('dive.weekly'); }
+	else { const md = S.map + '.' + S.diff; bump('runs'); bump('runs.exp-classic'); best('zone.' + md, end.depth); if (won) { bump('wins.' + md); if (o.T) best('tier.' + S.map, Math.min(2, o.T.idx(S.diff) + 1)); } }
+	if (S.lg) { const G = S.lg; bump('lg.evo', G.evo); best('lg.mat', G.mat); best('lg.lv', pl.level); bump('lg.runs.' + G.member); best('lg.best.' + G.member, pl.level); add('league.played', G.member); add('league.form', G.form); for (const e of G.log) if (e[1] === 'evo') add('league.form', e[2]); if (G.mega) { bump('lg.mega'); add('mega.seen', G.mega); } }
+	const T3 = 'm3d.t.' + o.dev + '.'; bump(T3 + 'runs'); bump(T3 + 'kos', end.kills); bump(T3 + 'secs', end.time); bump(T3 + 'wins', won && !S.dive ? 1 : 0); if (S.lg) bump(T3 + 'evos', S.lg.evo);
+	bump('m3d.n.' + o.dev);
+	if (end.pay > 0) { bump('pay3d.' + o.dev, end.pay); best('pay.best', end.pay); }
+	return ops;
+}
 /** Is the run within what a run can be? realSec: the real seconds since it began. */
 export function clean(S, realSec) {
 	const pl = S.w.pl, t = S.w.t;

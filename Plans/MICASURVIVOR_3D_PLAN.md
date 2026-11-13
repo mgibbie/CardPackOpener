@@ -1967,6 +1967,27 @@ done: returning to the lobby after the run (the 3D end screen leads to the menu;
 Tests: `micasurvivor_m3d_lobbystart_test.mjs` 16 checks (the 2D menu's lobby with real accounts: a Dive and an
 Expedition start in 3D for both players; off by default; the server's mark). The 2D online suites still pass.
 
+## 5.73 3D co-op from the online lobby, third part: built (2026-11-13). What a co-op run keeps.
+
+Owner: follow the 2D rule: every player records the run in their own save, with the team's result and the
+same pay.
+
+- **The host** of a lobby's run keeps it as a run of its own: the parameters a lobby's start adds to its
+  address (`host`, `lobby`) are fair. Any other test parameter still makes it a practice run. A run with
+  guests is not posted to the solo boards.
+- **A guest** keeps it too (`expsave.js guestOps`). The host says how the run ended in the run's row (its
+  pay, KOs, time, the zone or deepest floor, won or not), and the guest writes into its OWN save: the run,
+  a win and the next tier (an Expedition), the route's best floor or an escape (a Dive), its own League
+  member's counters and forms, the tasks' metrics, and the same pay owed to its own browser.
+- A guest keeps no best time, medal, stage, Seal or rescued: those are the host's run's. A guest must have
+  the League member it played; a run joined by its address alone (no lobby) stays a practice one.
+
+Still to do before 3D co-op can be the default: going back to the lobby after a run; a real two-machine
+play. The switch (`?coop3d=1`) stays off.
+
+Tests: `micasurvivor_m3d_coopsave_test.mjs` 15 checks in node; `micasurvivor_m3d_lobbystart_test.mjs` now 22
+(a real two-account Dive from the lobby ends: both saves have it, each with the same pay on its own browser).
+
 ## 6. Dive in 2D: built
 
 **D0 — find the stairs (small; can ship first, on its own).** *Built 2026-11-11 (`overworld/tests/micasurvivor_dive_stairs_test.mjs`). As built: the stairs took their own orange mark, so the rocks and Meowth keep their gold; the HUD arrow comes up after 25 s on a floor, or at once when its boss falls.*

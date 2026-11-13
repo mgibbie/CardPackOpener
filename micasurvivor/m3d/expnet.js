@@ -78,6 +78,7 @@ export function rowView(row, X, keep = {}) {
 		return parts.join(' · ') + (ph === 0 ? ` · charge ${ch} %` : '');
 	};
 	return { seed, map, diff, zone, ph, charge: ch / 100, fs: !!fs, coins, zt, over: over === 2 ? 'won' : over === 1 ? 'lost' : '', room, boss, eco, sa: c.s || [], faint, cine,
+		end: row.e ? { pay: row.e[0], kills: row.e[1], time: row.e[2], depth: row.e[3], won: !!row.e[4] } : null,   /* (the run's end, as its host kept it: a guest keeps the same) */
 		league: row.l ? { member: row.l[0], form: row.l[1], kit: row.l[2], mat: row.l[3], mega: row.l[4] || 0, shiny: !!row.l[5] } : null, held: row.i || null, mateSa: new Map((row.g || []).map((r) => [r[0], r.slice(1)])), surv: sv, hazards, night: sv && V ? V.nightOf(sv.t).dark : 0, hud };
 }
 /** Where a watcher draws Support Alpha i of n: behind the player it sees, fanned out (the playing side's own are a

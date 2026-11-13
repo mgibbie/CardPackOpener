@@ -155,6 +155,19 @@ try {
 	A(joined && pair[0].stairs === pair[1].stairs && pair[0].mates.length === 1 && pair[0].mates[0].startsWith('1:') && pair[1].floor === 1 && (pair[1].mode === 'direct' || pair[1].mode === 'relay'), 'they are in one 3D Dive, linked, bob as player 1', JSON.stringify(pair));
 	const direct = await waitFor(() => A1.evaluate(() => window.__m3d.link.modes.bob === 'direct'), 60000);
 	A(direct, 'the link becomes a direct one (the relay carries the first moments, while the two new pages find each other)', JSON.stringify(await A1.evaluate(() => window.__m3d.link.modes)));
+	// ---- (part 3) the run is kept by both: the team's result, the same pay, each in their own save
+	const saveOf = (p, who) => p.evaluate((who) => { try { const s = JSON.parse(localStorage.getItem('micasurvivorexp_save.mp:' + who) || 'null'); return s ? { c: s.counters || {}, dev: localStorage.getItem('micasurvivorexp_dev.mp:' + who) } : null; } catch (e) { return null; } }, who);
+	A(await A1.evaluate(() => window.__m3d.diveSave.practice === null && window.__m3d.diveSave.ok === true), "a lobby's host plays a Dive that can be kept (its start's own parameters are fair)", JSON.stringify(await A1.evaluate(() => window.__m3d.diveSave)));
+	await A1.evaluate(() => { const m = window.__m3d; m.world.enemies.length = 0; m.dive.groups.length = 0; m.dive.ft = 1e9; m.dive.bank = 40; m.world.pl.hp = 0; m.world.pl.dead = true; });
+	const hk = await waitFor(() => A1.evaluate(() => !!window.__m3d.kept && window.__m3d.kept.ok === true), 15000);
+	const gk = await waitFor(() => B1.evaluate(() => !!window.__m3d.kept), 20000);
+	const ka = await A1.evaluate(() => window.__m3d.kept), kb = await B1.evaluate(() => window.__m3d.kept);
+	A(hk && ka.pay === 120, 'the host faints with 40 secured: its Dive is saved, ₽ 120 owed', JSON.stringify(ka));
+	A(gk && kb.ok === true && kb.pay === 120 && await B1.evaluate(() => { const e = document.getElementById('rx-kept'); return !!e && e.textContent.includes('Saved.') && document.getElementById('rx-end').textContent.includes('120'); }), "the guest's screen says it is saved too, with the same ₽ 120", JSON.stringify(kb));
+	const sa = await saveOf(A1, 'alice'), sb = await saveOf(B1, 'bob');
+	A(sa && sa.c['dive.runs'] === 1 && sa.c['pay3d.' + sa.dev] === 120, "alice's save has the Dive and her pay", JSON.stringify(sa && [sa.c['dive.runs'], sa.c['pay3d.' + sa.dev]]));
+	A(sb && sb.c['dive.runs'] === 1 && sb.c['pay3d.' + sb.dev] === 120 && sb.c['dive.forest.best'] === 1 && sb.c['lg.runs.1'] === 1, "bob's own save has it too: the Dive, his pay, his League member's run", JSON.stringify(sb && sb.c));
+	A(sa.dev !== sb.dev && !sb.c['pay3d.' + sa.dev], 'each is owed on their own browser only');
 	await A1.close(); await B1.close();
 
 	// ---- an Expedition · Classic lobby
