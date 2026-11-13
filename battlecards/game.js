@@ -4320,7 +4320,9 @@ function nextEvent() {
 			banner(ev.winner == null ? 'Draw!' : won ? 'VICTORY!' : `DEFEAT — ${nameOf(ev.winner)} wins`, 0);
 			const reward = ev.winner == null ? 50 : won ? 100 : 25;
 			Col.earnGold(reward);
-			log(`+${reward} gold (${Col.getGold()} total)`);
+			// signed in, gold is the ACCOUNT's (the server decides the amount); the line above is the offline wallet
+			if (MP_ON) accountGold({ kind: 'fight', result: ev.winner == null ? 'draw' : won ? 'win' : 'loss' });
+			else log(`+${reward} gold (${Col.getGold()} total)`);
 			finalizeReplay(ev.winner); // save the recorded tape for rewatching
 			if (duel.on) {
 				publishDuel(); // push the final board (over + winner) to the guest/spectators
@@ -7144,6 +7146,7 @@ async function start() {
 		menuChosen = true;
 	}
 	_fightGo = takeFightGo(); // a Fight! click on the NEXT screen boots straight into the fight
+	importLocalGold();
 	await hydrateRunsFromServer(); // server-authoritative: refresh the localStorage run caches from D1 before booting
 	if (activeRunIO() && _runsEndedAtBoot.has(activeRunIO().key)) { log('Your last run had already ended — its result is saved on the server. Pick a new run.'); banner('Your last run had already ended — its result is saved.', 4000); }
 	if (dungeonRunMode) {
@@ -7788,6 +7791,21 @@ function mpRunWalkaway(mode, run) {
 	try { MPX.call('run-walkaway', { mode, character: String(run.characterId) }).catch(() => {}); } catch (e) {}
 }
 
+// Gold on the account (owner, 2026-11-13; bug:1794534122917): it was a counter in this browser only, so a fresh sign-in
+// showed an older number. The server pays it now and the log says what the account holds.
+const goldLine = (n, total) => `💰 +${n} gold (${Number(total || 0).toLocaleString('en-US')} on your account)`;
+function accountGold(payload) {
+	if (!MP_ON || replayMode || spectateMode) return Promise.resolve(null);
+	return MPX.call('gold-earn', payload).then(d => { if (d && !d.error && d.gold > 0 && d.state) log(goldLine(d.gold, d.state.gold)); return d; }).catch(() => null);
+}
+/** Once per account: the gold this browser had counted before gold was the account's comes along. The browser's own counter is left as it is. */
+function importLocalGold() {
+	if (!MP_ON) return;
+	const st = MPX.cachedState();
+	if (!st || st.goldImported !== false) return;   // (already carried over, or a state from before this shipped: the next one says)
+	let had = 0; try { had = parseInt(localStorage.getItem('magepunk_cardgold_v1'), 10) || 0; } catch (e) { had = 0; }
+	MPX.call('gold-earn', { kind: 'import', amount: had }).then(d => { if (d && d.gold > 0) log(`💰 ${d.gold.toLocaleString('en-US')} gold from this browser is now on your account.`); }).catch(() => {});
+}
 export async function mpRunReward(el, result, score) {
 	if (!MP_ON) return;
 	// the Duels-family climbs post their score to the mode's leaderboard
@@ -7807,7 +7825,7 @@ export async function mpRunReward(el, result, score) {
 	const note = document.createElement('div');
 	note.style.cssText = 'margin:10px 0;font-size:15px;color:#ffd27a;';
 	note.textContent = data.error ? data.error
-		: data.won ? `🎁 +1 pack earned (${data.state.packs} waiting) — open it from the Test Realm menu.`
+		: data.won ? `🎁 +1 pack earned (${data.state.packs} waiting) — open it from the Test Realm menu.` + (data.gold > 0 ? ' ' + goldLine(data.gold, data.state.gold) : '')
 		: 'Run recorded — win a run to earn a pack.';
 	el.appendChild(note);
 }
@@ -8883,6 +8901,7 @@ function arenaRunOver(run) {
 	const hero = Duels.HEROES.find(h => h.id === run.heroId);
 	const gold = 100 + (run.wins || 0) * 120;
 	Col.earnGold(gold);
+	accountGold({ kind: 'arena', wins: run.wins || 0 });
 	const el = dungeonOverlay('3 LOSSES - RUN OVER', `${hero?.name || run.heroId} finishes ${run.wins || 0}-3. +${gold} gold banked.`);
 	const sub = submitArenaScore(run);
 	clearArena();
