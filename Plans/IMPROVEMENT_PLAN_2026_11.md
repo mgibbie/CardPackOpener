@@ -63,7 +63,8 @@ Things that shipped without being checked the way a player uses them.
 
 ## 4. Content and players
 
-- [ ] 4a. The thirteen other cards whose rules are written into a token's name (found with BEEEES!!!). Each is read
+- [x] 4a. (Done: a fresh sweep found sixteen, not thirteen; all sixteen now do what their text says, no cost
+      changed; token_name_rules_test.mjs.) The thirteen other cards whose rules are written into a token's name (found with BEEEES!!!). Each is read
       against its card text; a buff never lowers a mana cost.
 - [x] 4b. (Done, #1177.) Field-move hints: a Cut tree, a Rock Smash rock and a Strength boulder say when you hold the HM and no
       Pokémon knows the move (two tester "blockers" on 2026-11-13 were this).
