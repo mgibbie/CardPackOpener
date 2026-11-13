@@ -27,13 +27,15 @@
 //   pockets    (part 5) a BOULDER breaks for a Rock / Ground / Fighting / Steel Pokémon, a THICKET burns for a Fire
 //              type: stand against it PLUG.T s. Behind it, a pocket with a chest.
 //   landmarks  (part 5) the route's own, on some floors: stand on it LM.T s, once (LANDMARKS below).
+//   learning   (part 8) at levels 4, 10, 16… the level's cards are a new special: "learn X, forget special 1", "… special 2",
+//              or train and keep your moves. X is your League member's next kit move, then a move of your types.
 //   the save   (part 6) divesave.js: the deepest floor, the stage, the Seal (o.seal: +10 % damage, -10 % taken), the pay.
 // Not here yet (later parts): a new special at levels 4, 10, 16…, the League, the red ground, the stall, the bushes
 // and the gold rocks, routes and stages in the save, the Weekly Dive, co-op.
 // Pure and seeded: no DOM, no clock.
 import { K as SK, CELL, groundAt, newState, setCell } from './sim.js';
-import { CK, U, newWorld, tick, addEnemy, addBoss, gainXp } from './combat.js';
-import { setup as setupLevels, tickStats, takeItem } from './explevel.js';
+import { CK, U, newWorld, tick, addEnemy, addBoss, gainXp, canFire } from './combat.js';
+import { setup as setupLevels, tickStats, takeItem, newCard, moveCands, trainCards } from './explevel.js';
 import { rollOffers } from './expeco.js';
 import { setupRx, tickRx } from './exprx.js';
 import { setupUlt, holdUlt, tickUlt } from './expult.js';
@@ -54,7 +56,7 @@ const ROPE_STILL = 0.5;   // m/s: slower than this is standing still (the rope)
 export function rulesFrom(G) {
 	const E = G.ExpDive, F = diveFrom(G); if (!E || !F) return null;
 	const en = (G.I18n && G.I18n.en) || {}, tr = (s) => en[s] || s;
-	return { F, K: E.K, ESCORT: E.ESCORT, GUARDIANS: E.GUARDIANS, COMBO: E.COMBO, PLUG: E.PLUG, LM: E.LM, SEAL: E.SEAL, MAIN: E.MAIN.slice(), target: E.target, pool: (route, floor) => E.pool(route, floor), guardianOf: E.guardianOf,
+	return { F, K: E.K, ESCORT: E.ESCORT, GUARDIANS: E.GUARDIANS, COMBO: E.COMBO, PLUG: E.PLUG, LM: E.LM, SEAL: E.SEAL, MAIN: E.MAIN.slice(), LEARN_AT: E.LEARN_AT, target: E.target, pool: (route, floor) => E.pool(route, floor), guardianOf: E.guardianOf,
 		megaRoll: (seed, route, f) => E.megaRoll(seed, route, f), legendRoll: (seed, route, f) => E.legendRoll(seed, route, f),
 		rng: (seed, route, floor, k) => G.DLC.rng(G.DiveGen.seedOf(seed | 0, route, floor, k)), nameOf: (route) => tr(E.NAME[route] || route),
 		strays: (route, floor) => { const tg = E.target(floor) - 60, types = F.ROUTES[route].types; return G.DEX.filter((p) => !p.leg && Math.abs(p.bst - tg) < 70 && p.types.some((t) => types.includes(t))).map((p) => p.dex); } };
@@ -89,6 +91,7 @@ export function newDive(data, X, R, o = {}) {
 	S.seal = !!o.seal;   // (part 6: the route's Seal, from your save)
 	S.opened = 0; S.secrets = 0; S.marks = 0; S.obeliskT = 0; S.plugTip = false;
 	roles(S);
+	if (S.kit && S.lv && w.offerCards) { const offer0 = w.offerCards; S.learnAt = {}; w.offerCards = () => learnCards(S) || offer0(); }   // (part 8)
 	startFloor(S, f0, 0);
 	return S;
 }
@@ -98,6 +101,23 @@ function roles(S) {
 	const mv = S.w.pl.moves; if (!S.kit) return;
 	while (mv.length > S.R.K.SLOTS) S.spare.push(mv.pop());
 	mv.forEach((m, i) => { m.xman = i > 0; if (!m.xman) m.xreq = 0; });
+}
+/** (part 8) The new special of levels 4, 10, 16…: the level's cards, or null on any other level (or with nothing to learn).
+ *  X: your League member's kit beyond the first K.SLOTS moves, then a move of your types (the level-ups' own candidates). */
+export function learnCards(S) {
+	const R = S.R, pl = S.w.pl, X = S.X;
+	if (!S.kit || !S.lv || !R.LEARN_AT || !R.LEARN_AT(pl.level) || S.learnAt[pl.level] || pl.moves.length < 2) return null;
+	S.learnAt[pl.level] = 1;
+	const r = R.rng(S.seed, S.route, pl.level, 0x1EA), has = (id) => pl.moves.some((m) => m.id === id);
+	const LG = X && X.G, dex = pl.mon.dex, member = LG ? (LG.BY[dex] ? LG.BY[dex] : LG.BY[LG.FAM[dex]]) : null, kit = member && member.kit ? member.kit : [];
+	let id = kit.slice(R.K.SLOTS).find((k) => { const d = k && X.L.def(k); return !!d && canFire(d.kind) && !has(k); }) || null;
+	if (!id) { const cs = moveCands(S).filter((c) => !has(c)); if (cs.length) id = cs[Math.floor(r() * cs.length)]; }
+	if (!id) return null;
+	const cards = [];
+	for (let i = 1; i < pl.moves.length; i++) cards.push(newCard(S, id, 0, r, pl.moves[i]));
+	const keep = trainCards(S)[0];
+	if (keep) cards.push(keep);
+	return cards;
 }
 const isSpecial = (S, id) => S.w.pl.moves.some((m, i) => i > 0 && m.id === id);
 /** Special i (1 or 2) pressed: kept if its cool-down is over or nearly. -> true when it will fire */

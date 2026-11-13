@@ -177,7 +177,7 @@ function upCard(S, m, ti, rng) {
 	return dress(S, { type: 'up', kind: 'move', key: 'up:' + m.id, id: m.id, title: m.id, mtype: m.type, rolls, tag: `Lv ${lv} > ${lv + 1}`, desc: [`+${Math.round(L.MK.LV_DMG * 100)}% damage`].concat(rollsText(S, rolls)).join(' · '),
 		apply: () => { L.M.levelUp(pl, m, rolls); S.lv.log.push([pl.level, 'up', m.id, ti]); } }, ti);
 }
-function newCard(S, id, ti, rng, old = null) {
+export function newCard(S, id, ti, rng, old = null) {
 	const L = S.L, w = S.w, pl = w.pl, d = L.def(id), tmp = L.M.instance(id), rolls = ti > 0 ? L.M.drawRolls(tmp, ti, L.RAR_MUL[ti], rng) : [];
 	const c = dress(S, { type: old ? 'swap' : 'new', kind: 'move', key: (old ? 'swap:' : 'new:') + id, id, xban: id, title: id, mtype: d.type, rolls, tag: old ? `Replaces ${old.id}` : d.type + ' · ' + d.kind,
 		desc: (old ? `Forgets ${old.id} (Lv ${levelOf(old)}). ` : '') + rollsText(S, rolls).join(' · '),
