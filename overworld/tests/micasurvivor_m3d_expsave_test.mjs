@@ -117,8 +117,11 @@ const dev = deviceId(ls, Sv.who, globalThis.crypto);
 	applyOps(Sv2, recordOps(S, res, { T: q.G.ExpTier, dev: d2 }));
 	const none = M2.claim3d();
 	q.G.DB.save = { coins: 0, stats: {}, owned: {} };
-	const later = M2.claim3d();
-	A(none === 0 && Sv2.get('pay3d.' + d2) === res.pay.pay && later === res.pay.pay && q.G.DB.save.coins === res.pay.pay && M2.claim3d() === 0, 'no profile on this browser yet: nothing is paid and nothing is lost; with one, it is paid (once)');
+	const later = M2.claim3d(), coins = q.G.DB.save.coins;
+	// (the wallet may hold MORE than the run's pay: the claim also counts the run into the day's and the week's tasks, and on a day whose
+	// task one run completes, that task pays too. 2026-11-13 was such a day: 30 of pay + 180 of a task, and this check, which asked for
+	// exactly the pay, failed on main all day. What is checked: the pay arrived, and asking again pays nothing.)
+	A(none === 0 && Sv2.get('pay3d.' + d2) === res.pay.pay && later === res.pay.pay && coins >= res.pay.pay && M2.claim3d() === 0 && q.G.DB.save.coins === coins && Sv2.get('pay3d.claimed.' + d2) === res.pay.pay, 'no profile on this browser yet: nothing is paid and nothing is lost; with one, it is paid (once)', [none, later, coins, res.pay.pay]);
 }
 
 // ---------------------------------------------------------------- wild League members
