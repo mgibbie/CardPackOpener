@@ -58,7 +58,11 @@ export function floorRoom(X, L, o = {}) {
 	room.groups = (L.groups || []).map((g) => ({ ...g, at: at(g.at) }));
 	room.chests = (L.chests || []).map((c) => at(Array.isArray(c) ? c : c.at));
 	room.landmark = L.landmark ? { ...(Array.isArray(L.landmark) ? {} : L.landmark), at: at(Array.isArray(L.landmark) ? L.landmark : L.landmark.at) } : null;
-	room.plugs = (L.plugs || []).map((pl, i) => ({ kind: pl.kind, at: at(pl.at), at2: pl.at2 ? at(pl.at2) : null, open: opened.has(i), chest: pl.chest ? at(pl.chest) : null }));
+	room.plugs = (L.plugs || []).map((pl, i) => ({ kind: pl.kind, at: at(pl.at), at2: pl.at2 ? at(pl.at2) : null, open: opened.has(i), chest: pl.chest ? at(pl.chest) : null, faces: [] }));
+	// (a shut plug is rock: what shows it stands against its face, on the side the spawn reaches)
+	{ const n = L.w * L.h, seen = new Uint8Array(n), q = [cellI(L, L.spawn)]; seen[q[0]] = 1;
+		for (let k = 0; k < q.length; k++) { const i = q[k], x = i % L.w, z = (i - x) / L.w; for (const [dx, dz] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const nx = x + dx, nz = z + dz; if (nx < 0 || nz < 0 || nx >= L.w || nz >= L.h) continue; const j = nz * L.w + nx; if (!seen[j] && room.cells[j] < DK.WALL_H) { seen[j] = 1; q.push(j); } } }
+		(L.plugs || []).forEach((pl, pi) => { for (const c of [pl.at, pl.at2]) { if (!c) continue; for (const [dx, dz] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const nx = c[0] + dx, nz = c[1] + dz; if (nx < 0 || nz < 0 || nx >= L.w || nz >= L.h || !seen[nz * L.w + nx]) continue; room.plugs[pi].faces.push([(c[0] + 0.5 + dx * 0.62) * CELL, 0, (c[1] + 0.5 + dz * 0.62) * CELL]); break; } } }); }
 	// (a chest behind a plug is its pocket's: it is listed with the plug, and with the floor's chests too)
 	const pocket = new Set(room.plugs.filter((pl) => pl.chest).map((pl) => pl.chest[0] + ',' + pl.chest[2]));
 	room.pocketChest = (c) => pocket.has(c[0] + ',' + c[2]);

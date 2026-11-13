@@ -140,6 +140,29 @@ try {
 	const cb = await waitFor(async () => (await chips()).includes('COMBO x3'), 3000);
 	A(cb, '6. three KOs in a moment: the chips say COMBO x3', await chips());
 
+	// ---- 6b. (part 5) chests, a secret pocket, a landmark (seed 3, floor 1: a thicket, a shrine, 4 chests; Charmander burns thickets)
+	ok = await boot('dive=3&route=forest&dex=4&auto=1');
+	await strong();
+	await M(() => { const m = window.__m3d; m.world.enemies.length = 0; m.dive.groups.length = 0; m.dive.ft = 1e9; });
+	await sleep(400);
+	let th = await M(() => { const m = window.__m3d, r = m.dive.w.room; return { keys: m.propKeys(), chests: m.dive.chests.length, plugs: r.plugs.map((p) => [p.kind, p.open, p.faces.length]), lm: m.dive.lm && m.dive.lm.kind, builds: m.roomBuilds() }; });
+	A(ok && th.chests === 4 && th.keys.includes('eco:freeball') && th.keys.includes('eco:thicket') && th.keys.includes('eco:lm_shrine'), '6b. the floor shows its chests (Poké Balls), its thicket and its shrine', th);
+	const goTo = (x, z) => M((x, z) => { const s = window.__m3d.state; s.x = x; s.z = z; s.vx = s.vz = 0; }, x, z);
+	const c0 = await M(() => { const c = window.__m3d.dive.chests.find((q) => !q.pocket); return [c.x, c.z]; });
+	await goTo(c0[0] + 1, c0[1]);
+	A(await waitFor(() => M(() => window.__m3d.dive.opened === 1), 3000), '6b. standing by a Poké Ball opens it');
+	A(await waitFor(async () => (await M(() => document.body.innerText)).includes('Item: '), 3000), '6b. …and the screen names the item');
+	const fc = await M(() => { const p = window.__m3d.dive.w.room.plugs.find((q) => q.kind === 'thicket'); return p.faces[0]; });
+	await goTo(fc[0], fc[2]);
+	const opened = await waitFor(() => M(() => window.__m3d.dive.w.room.plugs.find((q) => q.kind === 'thicket').open), 4000);
+	await sleep(300);
+	const th2 = await M(() => { const m = window.__m3d; return { builds: m.roomBuilds(), secrets: m.dive.secrets, text: document.body.innerText }; });
+	A(opened && th2.secrets === 1 && th2.builds === th.builds + 1 && th2.text.includes('thicket burns'), '6b. Charmander against the thicket: it burns, and the floor is built again without it', { builds: [th.builds, th2.builds], secrets: th2.secrets });
+	await M(() => { const m = window.__m3d; m.world.pl.maxHp = 1000; m.world.pl.hp = 100; });
+	const lmAt = await M(() => [window.__m3d.dive.lm.x, window.__m3d.dive.lm.z]);
+	await goTo(lmAt[0], lmAt[1]);
+	A(await waitFor(() => M(() => window.__m3d.dive.lm.used && window.__m3d.world.pl.hp >= 600), 4000), '6b. standing on the shrine: half your HP back', await M(() => window.__m3d.world.pl.hp));
+
 	// ---- 7. an Expedition is untouched
 	ok = await boot('exp=7&map=viridian&dex=4&weather=0');
 	d = await M(() => { const m = window.__m3d; return { run: !!m.run, dive: m.dive, zone: m.run && m.run.zone, slide: document.getElementById('b-slide').textContent, man: m.world.pl.moves.some((q) => q.xman) }; });

@@ -1640,6 +1640,32 @@ at levels 4, 10, 16… and the League (evolutions) are not in.
 
 Tests: `micasurvivor_m3d_dive_kit_test.mjs` 41 checks in node; `micasurvivor_m3d_dive_page_test.mjs` now 30.
 
+## 5.57 3D Dive, fifth part: built (2026-11-13). Chests, secret pockets, landmarks.
+
+What a floor holds besides foes. The 2D layout already placed all of it; this part makes it work. Numbers are
+the 2D Dive's (`PLUG`, `LM`) and the 2D economy's (`OPEN_T`).
+
+- **Chests.** A Poké Ball that bobs. Stand by it 0.45 s: one item, of a rarity by your level, luck and the
+  floor's zone (a zone every 10 floors). Once each. A run with no room for an item gets a little loot
+  (3 + the floor): that rule is the 3D game's own.
+- **Secret pockets.** A boulder breaks for a Rock, Ground, Fighting or Steel Pokémon; a thicket burns for a
+  Fire type. Stand against it 0.6 s. Another type gets one tip. The rock becomes ground, the page builds the
+  floor again, and the pocket's chest can be reached.
+- **Landmarks.** The route's own, on some floors; stand on it 1 s, once a floor. Shrine: half your HP.
+  Obelisk: +30 % damage for 60 s (the chips count it). Altar: 30 % of your HP for loot. Shipwreck: loot.
+  Ice spire: foes within 6 tiles freeze 4 s. Totem / Monolith: 35 % / 60 % of a level in XP. Fairy ring: full
+  heal. It names itself when you come within 5 tiles.
+
+On the page: a boulder or a thicket is drawn against the rock on the side you come from; a landmark is a
+standing stone in its colour, with a bead over it until used. The end screen counts Poké Balls and secrets.
+An item's name now shows on a Dive's screen (it was said to the fight only).
+
+Known, for later: the minimap does not mark chests or landmarks; item drops from alphas still roll with the
+floor number as the zone (richer than the 2D Dive from floor 3); the 2D floor's stall, berry bushes and gold
+rocks are not in.
+
+Tests: `micasurvivor_m3d_dive_things_test.mjs` 53 checks in node; `micasurvivor_m3d_dive_page_test.mjs` now 35.
+
 ## 6. Dive in 2D: built
 
 **D0 — find the stairs (small; can ship first, on its own).** *Built 2026-11-11 (`overworld/tests/micasurvivor_dive_stairs_test.mjs`). As built: the stairs took their own orange mark, so the rocks and Meowth keep their gold; the HUD arrow comes up after 25 s on a floor, or at once when its boss falls.*

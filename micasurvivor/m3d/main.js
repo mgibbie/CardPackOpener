@@ -34,7 +34,7 @@ import { newFog, reveal, found, fogOf, share as fogShare } from './expfog.js';
 import { refresh as refreshCards, skip as skipCards, banish as banishCard } from './explevel.js';
 import { EK, ecoView, pickTake, pickClose, shopPrices } from './expeco.js';
 import { capView } from './expcap.js';
-import { rulesFrom, newDive, stepDive, hudLine as diveHud, result as diveResult, pressSpecial, specials } from './dive.js';
+import { rulesFrom, newDive, stepDive, hudLine as diveHud, result as diveResult, pressSpecial, specials, LANDMARKS } from './dive.js';
 
 const Q = new URLSearchParams(location.search);
 // P3: ?gen=<seed>&fight=1 is a FIGHT on that level (combat.js): enemies arrive and come for you, your moves fire by
@@ -120,7 +120,9 @@ const PICK_COLOR = { xp: '#6fd3ff', xpBig: '#3da8ff', heal: '#5fe08a', magnet: '
 const { renderer, scene, camera } = makeRenderer(canvas);
 let roomMeshes = [];
 /** Show a level (P4: a run moves from one to the next: the old one's meshes go). */
+let roomBuilds = 0;
 function showRoom() {
+	roomBuilds++;
 	for (const m of roomMeshes) { scene.remove(m); m.traverse((o) => { if (o.geometry) o.geometry.dispose(); }); }
 	roomMeshes = [buildTerrain(room), buildWater(room)];
 	if (room.rails && room.rails.length) roomMeshes.push(buildRails(room));
@@ -285,7 +287,7 @@ const props = shots ? (() => {
 	const cv = document.createElement('canvas'); cv.width = cv.height = 512;
 	const tex = new THREE.CanvasTexture(cv); tex.magFilter = tex.minFilter = THREE.NearestFilter; tex.generateMipmaps = false; tex.flipY = false; tex.colorSpace = THREE.NoColorSpace;
 	const batch = new SpriteBatch(tex, 900); scene.add(batch.mesh);
-	const atlas = new Props({ canvas: cv, onChange: () => { tex.needsUpdate = true; }, ecoCol: EK.COL,
+	const atlas = new Props({ canvas: cv, onChange: () => { tex.needsUpdate = true; }, ecoCol: { ...EK.COL, ...Object.fromEntries(Object.entries(LANDMARKS).map(([k, v]) => ['lm_' + k, v[2]])) },
 		uiIcon: (n) => (GG.Icons && GG.Icons.UI && GG.Icons.UI[n] ? GG.Icons.canvas(n) : null),
 		imgUrl: (n) => (GG.ExpItems && GG.ExpItems.icon ? GG.ExpItems.icon(n) : '/overworld/item_icons/' + n + '.png'),
 		itemIcon: (id) => { const it = GG.ExpItems && GG.ExpItems.IT && GG.ExpItems.IT[id]; return it && it.icon ? { img: it.icon } : GG.Icons && GG.Icons.UI && GG.Icons.UI[id] ? { ui: id } : null; } });
@@ -386,6 +388,10 @@ function draw(t) {
 		}
 		if (drun) {   // a Dive: who sleeps (a pale bead that bobs), the elites (a bead in their affix's colour), the lost Pokémon
 			for (const e of world.enemies) { if (e.dead) continue; const top = e.a.y + Math.max(1.1, (e.cr || 0.4) * 2) + 0.4; if (e.asleep) shots.add(e.a.x + 0.25, top + Math.sin(t * 1.6 + e.id) * 0.12, e.a.z, 0.09, '#dbe8ff'); else if (e.xaff) shots.add(e.a.x, top, e.a.z, 0.13, DIVE_AFF[e.xaff]); }
+			// (part 5) the chests (a Poké Ball that bobs), the shut plugs (a boulder, a thicket, against the rock), the landmark
+			for (const c of drun.chests) if (!c.open) { const up = 0.12 + Math.sin(t * 3 + c.x) * 0.12; if (prop('eco:freeball', c.x, up, c.z)) shadows.add(room, c.x, c.z, up, 0.45); }
+			for (const pg of room.plugs) if (!pg.open) for (const fc of pg.faces) prop('eco:' + pg.kind, fc[0], 0, fc[2], 1.9);
+			if (drun.lm) { const lm = drun.lm; prop('eco:lm_' + lm.kind, lm.x, 0, lm.z, 1.7); shadows.add(room, lm.x, lm.z, 0, 0.9); if (!lm.used) shots.add(lm.x, 3.6 + Math.sin(t * 2.2) * 0.15, lm.z, 0.16, LANDMARKS[lm.kind][2]); }
 			const lo = drun.stray;
 			if (lo && !lo.done) { propMon(lo.dex, lo.x, lo.y, lo.z, lo.follow ? t : 0); shadows.add(room, lo.x, lo.z, lo.y, 0.5); if (!lo.follow) shots.add(lo.x, lo.y + 1.7 + Math.sin(t * 4) * 0.12, lo.z, 0.2, '#7dffb0'); }
 		}
@@ -616,6 +622,9 @@ function fightEvents(events) {
 		}
 		else if (ev.k === 'rxchain') { for (const b of ev.links) { const a = ev.from, d = [b[0] - a[0], b[1] - a[1], b[2] - a[2]], l = Math.hypot(d[0], d[1], d[2]) || 1; flashes.bar([a[0], a[1] + 0.6, a[2]], [d[0] / l, d[1] / l, d[2] / l], l, 0.12, '#ffe14d', 0.25); } }
 		else if (ev.k === 'hurt') { bob = 0.35; note(`hit for ${(+ev.d).toFixed(0)}`, 700); }
+		else if (ev.k === 'plug') { showRoom(); mapBase = null; burst(ev.x, 1, ev.z, ev.kind === 'boulder' ? '#9c917f' : '#ff9a3d', 26, 5, { up: 3, life: 0.6, r: 0.12 }); play([['break']]); }   // (the rock is gone: the floor is built again)
+		else if (ev.k === 'chest') { burst(ev.x, 0.6, ev.z, '#ffe9a0', 16, 3.5, { up: 3, life: 0.5, r: 0.08 }); play([['chest']]); }
+		else if (ev.k === 'landmark') { const c = LANDMARKS[ev.kind][2]; flashes.arc(ev.x, 0.05, ev.z, 3, 0, 6.2832, c, 0.9, 0.9); burst(ev.x, 1.5, ev.z, c, 22, 4, { up: 3.5, life: 0.7, r: 0.1 }); play([['heal']]); }
 		else if (ev.k === 'dodge') { burst(state.x, state.y + 0.3, state.z, '#cfe3ff', 10, 3, { up: 1.5, life: 0.3, r: 0.07 }); play([['shot', { kind: 'melee' }]]); }
 	}
 	if (world && world.pl.dead && !mates().length) note('you are down: R to start the level again', 60000);
@@ -854,7 +863,7 @@ function runView() {
 		const r = runOver, q = new URLSearchParams(location.search); q.set('exp', (+q.get('exp') || 0) + 1);
 		if (drun) { const qd = new URLSearchParams(location.search); qd.set('dive', (+qd.get('dive') || 0) + 1);
 			v.over = { won: r.won, title: r.title, line: r.lines[0], again: '?' + qd, leave: '../', boards: false, kept: kept ? { ok: kept.ok, text: kept.text } : null,
-				rows: [['Floor', String(r.parts.floor)], ['Time', `${Math.floor(r.parts.time / 60)}:${String(r.parts.time % 60).padStart(2, '0')}`], ['KOs', String(r.parts.kills)], ['Level', String(v.level)], ['Loot kept', String(r.parts.divePay)], ['Rescued', String(r.parts.rescued)], ['Best combo', String(r.parts.combo)], ['Alphas', String(r.parts.alphas)], ['Guardians', String(r.parts.guardians)]] };
+				rows: [['Floor', String(r.parts.floor)], ['Time', `${Math.floor(r.parts.time / 60)}:${String(r.parts.time % 60).padStart(2, '0')}`], ['KOs', String(r.parts.kills)], ['Level', String(v.level)], ['Loot kept', String(r.parts.divePay)], ['Rescued', String(r.parts.rescued)], ['Best combo', String(r.parts.combo)], ['Poké Balls', String(r.parts.chests)], ['Secrets', String(r.parts.secrets)], ['Alphas', String(r.parts.alphas)], ['Guardians', String(r.parts.guardians)]] };
 		} else
 		v.over = typeof r === 'string' ? { won: r === 'won', title: r === 'won' ? 'EXPEDITION COMPLETE!' : 'RUN OVER', line: '', rows: [], again: null, leave: '../' }
 			: { won: r.won, title: r.title, line: r.survival ? r.lines.join(' · ') : r.line, again: run ? '?' + q : null, leave: '../', boards: true, kept: kept ? { ok: kept.ok, text: kept.text } : null,
@@ -977,7 +986,7 @@ const G_MUSIC = GG.BIOME_MUSIC || null, XK_MAPS = ['viridian', 'mtmoon', 'cerule
 
 // what a test (and a curious owner in the console) can reach
 window.__m3d = {
-	dive: drun, diveRules: DR, special,
+	dive: drun, diveRules: DR, special, propKeys: () => (props ? [...props.atlas.cells.keys()] : []), roomBuilds: () => roomBuilds,
 	meta: LAB_META, upgrades: UPGRADES, leadShiny: LEAD_SHINY, skey,
 	keepShiny,
 	siteHost: SITE_HOST, siteWatch: SITE_WATCH,
