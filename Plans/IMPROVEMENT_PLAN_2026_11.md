@@ -13,8 +13,9 @@ Things that shipped without being checked the way a player uses them.
 - [x] 1b. The Dive's red ground: look at the slam circle and the charge lane; fix what looks wrong. Done: both
       showed, but dull and with no sense of when they land. They are brighter and fill from the foe outward as they
       wind up (full: it lands), as the 2D game's do.
-- [ ] 1c. Watching a friend's 3D Dive over the site's own relay (two signed-in accounts, the real server code), not the
-      test channel.
+- [x] 1c. Watching a friend's 3D Dive over the site's own relay (two signed-in accounts, the real server code), not the
+      test channel. Done: it works as built (floor, chests, stairs, the end; largest message 4,343 of 23,000
+      characters); pinned by micasurvivor_m3d_dive_live_test.mjs (13 checks).
 - [ ] 1d. 3D co-op with three and four players (one machine, separate browser sessions).
 - [ ] 1e. OWNER: 3D co-op on two real machines on different networks. Cannot be done from here.
 
