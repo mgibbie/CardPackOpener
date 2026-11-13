@@ -47,9 +47,9 @@ function become(S, d, prev, mega = null) {
 	for (const m of pl.moves) scaleMove(S, m);
 	return st;
 }
-function learnKit(S, i) {
+export function learnKit(S, i) {
 	const w = S.w, pl = w.pl, id = S.X.G.BY[S.lg.member].kit[i];
-	if (!id || pl.moves.some((m) => m.id === id) || pl.moves.length >= S.L.K.MAX_MOVES) return false;
+	if (!id || pl.moves.some((m) => m.id === id) || pl.moves.length >= (S.maxMoves || S.L.K.MAX_MOVES)) return false;
 	const m = w.data.move(id); pl.moves.push(m);
 	S.L.M.base(m); scaleMove(S, m);
 	S.lg.kit = Math.max(S.lg.kit, i + 1);

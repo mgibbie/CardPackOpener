@@ -13,6 +13,7 @@
 // after it does not lose them.
 // A Dive is kept only if it is FAIR: no test parameters, as a League member you have, on a route that is open, and
 // CLEAN (expsave.js clean). A start floor the save does not have becomes floor 1.
+// THE LEAGUE (part 10): a Dive as a member writes the League's counters and the forms it reached, as an Expedition does.
 // THE BOARDS (part 7): a kept Dive of a signed-in player is posted to the 3D board of its route (the server's Dive
 // boards with `d3: true`: the deepest floor, then the shorter time), and the end screen and the menu show it.
 // Not here yet: the Weekly Dive, the tasks' and the level-ups' counters.
@@ -53,6 +54,15 @@ export function recordOps(S, res, o) {
 	best(k + '.best', p.deepest);
 	ops.push(...guardianOps(S));
 	bump('dive.rescued', p.rescued);
+	// the League's (as an Expedition's, expsave.js): the forms reached are yours from now on
+	if (S.lg) {
+		const G = S.lg, add = (set, id) => ops.push(['add', set, String(id)]);
+		bump('lg.evo', G.evo); best('lg.mat', G.mat); best('lg.lv', S.w.pl.level);
+		bump('lg.runs.' + G.member); best('lg.best.' + G.member, S.w.pl.level);
+		add('league.played', G.member); add('league.form', G.form);
+		for (const e of G.log) if (e[1] === 'evo') add('league.form', e[2]);
+		if (G.mega) { bump('lg.mega'); add('mega.seen', G.mega); }
+	}
 	// 3D's own: one more 3D run from this browser, and its pay owed to it (the 2D game pays it into the wallet)
 	bump('m3d.n.' + o.dev);
 	const pay = coinsOf(p.divePay);
