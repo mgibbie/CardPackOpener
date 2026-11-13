@@ -51,6 +51,11 @@ A fresh clone has neither (see "start setup").
   wrappers; the split is in `micatro_engine_parts.mjs`, balanced on `micatro-engine-timings.json`), so they land on
   different shards. After adding/removing many micatro tests or changing `PARTS`: `node overworld/tests/micatro_engine_parts.mjs
   --update <a micatro_engine_test.mjs log>` and `--gen`; `micatro_engine_parts_test.mjs` checks every suite runs exactly once.
+- **Stacked PRs** (a branch cut from another open PR's branch; every PR targets `main`): merging the top one merges
+  everything under it, whatever those PRs' own gates say, and GitHub then marks them merged. So: say in the PR body
+  what it is stacked on; never set auto-merge on a stacked PR; merge from the bottom up, each only when its OWN gate is
+  green; and after pushing a fix to a lower PR, wait for that PR's gate again before merging anything above it. A
+  flaky-test fix is cut from `main`, never stacked.
 - Battlecards engine tests: `npm run test-battlecards` (`battlecards/tests/run-all.mjs`). `npm test` runs Battlecards followed by the full overworld gate.
 - Tests need a Chrome (`CHROME`, or `/opt/chrome/chrome` after cloud setup) and `overworld/data`
   (micasurvivor/micatro suites also serve their gitignored assets: `node tools/cloud/fetch-assets.mjs`;

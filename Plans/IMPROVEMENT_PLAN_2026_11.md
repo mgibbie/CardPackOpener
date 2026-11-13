@@ -23,11 +23,17 @@ Things that shipped without being checked the way a player uses them.
 
 ## 2. Reliability
 
-- [ ] 2a. Flaky: the Pears controller checks (`pairofpears_ui_test`, `controls_b7_test`).
-- [ ] 2b. Flaky: the 2D Expedition economy test (`micasurvivor_expedition_economy_test`).
-- [ ] 2c. Flaky: the 2D Dive suite (`micasurvivor_dive_test`, two timing checks).
-- [ ] 2d. Stacked PRs: a PR stacked on another is not set to merge by itself until the one below it has merged (a
-      working rule, written into CLAUDE.md), so a later green gate cannot carry in earlier red work.
+- [x] 2a. Flaky: the Pears controller checks (`pairofpears_ui_test`, `controls_b7_test`). Done for
+      `pairofpears_ui_test` (#1172): a press now lasts until the page has drawn frames with it. Likeliest cause, not
+      reproduced. `controls_b7_test` has no failure on record, so it is untouched.
+- [x] 2b. Flaky: the 2D Expedition economy test (`micasurvivor_expedition_economy_test`). Done (#1174): one cause
+      was a real bug (on a phone the tip box pushed the minimap down the screen and followed it), the other a test
+      assumption about the purse.
+- [x] 2c. Flaky: the 2D Dive suite (`micasurvivor_dive_test`, two timing checks). Done (#1173): one check misread a
+      foe winding up an attack as asleep; the other is the likeliest cause only (damage on the way down), and now
+      reports what it found if it happens again.
+- [x] 2d. Stacked PRs: a PR stacked on another is not set to merge by itself until the one below it has merged (a
+      working rule, written into CLAUDE.md), so a later green gate cannot carry in earlier red work. Done.
 - [ ] 2e. Heist: the ended-runs list is kept per browser, so a fresh sign-in can resume an older state. Move it to the
       account, as gold was.
 - [ ] 2f. Phone shape in page tests: each game's page test also runs its main screens at 390 x 700 (a phone browser
