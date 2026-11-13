@@ -13,6 +13,8 @@ import { daycareMenu, halfParty, moveShop, nameRater, tradeMenu } from './ow_mus
 import { editView } from './ow_render.js';
 import { friendsMenu, mailMenu } from './ow_screens.js';
 import { S } from './ow_state.js';
+import * as Quest from './quest.js';
+import { playerRegion } from './ow_progression.js';
 import { contestMenu, unownDex } from './ow_venues.js';
 import { blender } from './minigames/blender/blender.js';
 import { pbCase } from './pokeblock_case.js';
@@ -45,6 +47,15 @@ export function aheadReport(dir = player.facing) {
 	const [dx, dy] = FACE[dir] || [0, 0];
 	const x = player.tx + dx, y = player.ty + dy;
 	if (!world.current) return { x, y, refusal: null };
+	// off the map's edge: the step is a crossing into the map connected there, which the progression gate may refuse.
+	// (It read as "open, passable, no refusal", which is how a sealed edge came to be reported as a broken connection.)
+	{
+		const lay = world.current.layout;
+		if (lay && (x < 0 || y < 0 || x >= lay.width || y >= lay.height)) {
+			const hit = world.connectionAt?.(x, y), qb = hit ? Quest.blocked(playerRegion(), hit.conn.name, world.current.name) : null;
+			return { x, y, behavior: null, passable: !!hit && !qb, water: false, edge: hit ? hit.conn.name : null, refusal: !hit ? 'map edge (nothing connects here)' : qb ? 'sealed: ' + String(qb.msg || 'the way is blocked').split('\n').join(' ') : null };
+		}
+	}
 	const passable = !!world.isPassable(x, y), water = !!world.isSurfable(x, y);
 	const refusal = (player.surfing ? !(water || passable) : !passable) ? 'wall'
 		: !player.surfing && water ? 'water (needs SURF)'

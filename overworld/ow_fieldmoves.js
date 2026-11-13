@@ -510,6 +510,7 @@ player.onArrive = () => {
 // ...and standing on one, pushing the arrow's way into the wall takes it (once:
 // the bump repeats every held frame, and warpTo only sets S.loading after its fade)
 let arrowWarpAt = 0;
+let sealSaidAt = -1e9;   // (when a sealed map edge last said why: holding the key into it does not repeat the line every step)
 export function tryArrowWarpBump() {
 	if (S.loading || cutscene.blocking || dialog.blocking || battle.blocking) return false;
 	if (performance.now() - arrowWarpAt < 1500) return false;
@@ -586,9 +587,12 @@ function afterStep() {
 			// unlocked yet — bounce the player back inside (backtracking is never gated)
 			const qb = Quest.blocked(playerRegion(), hit.conn.name, world.current.name);
 			if (qb) {
-				// silent strand backstop — a physical blocker on the near side shows the reason
+				// the backstop: where a physical blocker stands on the near side, IT shows the reason and you never get here.
+				// Where none does (Route 15's west edge into FUCHSIA CITY), this was a silent bounce: the edge looked open and
+				// simply did not work, and a tester filed it as a broken connection (2026-11-12). So the edge says why.
 				maybePortalTutorial(qb);
 				player.setTile(Math.max(0, Math.min(player.tx, lay.width - 1)), Math.max(0, Math.min(player.ty, lay.height - 1)));
+				if (qb.msg && !dialog.blocking && performance.now() - sealSaidAt > 2500) { sealSaidAt = performance.now(); dialog.open(qb.msg); }
 				return;
 			}
 			crossConnection(hit); return;
