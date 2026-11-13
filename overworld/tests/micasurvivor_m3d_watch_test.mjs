@@ -155,7 +155,11 @@ try {
 		const [tH, tW] = await Promise.all([peak(H2.page), peak(W2.page)]);
 		const rs = await Promise.all([H2.page.evaluate(() => ({ sent: window.__m3d.net.sent, biggest: window.__m3d.net.biggest, t: window.__m3d.world.t })), W2.page.evaluate(() => ({ got: window.__m3d.net.got, relay: window.__m3d.net.relay, behind: 0, frames: window.__m3d.viewer.frames.length, t: window.__m3d.watchT }))]);
 		A(rs[1].relay && Math.abs(rs[0].sent - rs[0].t) < 2.5 && rs[0].biggest < 16000, `the host sent ${rs[0].sent} messages in ${rs[0].t.toFixed(0)} s (one a second), the biggest ${rs[0].biggest} characters (the relay's cap is 16,000)`, JSON.stringify(rs));
-		A(tH > 1.4 && Math.abs(tW - tH) < 0.25, `a jump inside one of those messages is seen whole by the watcher: ${tW.toFixed(2)} m of ${tH.toFixed(2)} m`, JSON.stringify([tH, tW]));
+		// (what this guards: the jump is IN the message, not lost between one-a-second messages: a watcher given only the
+		//  message's last position would see about 0 m. It is not a height match. On a loaded runner the host's held jump is
+		//  lower (main gate 2026-11-13: 1.35 m) and each page samples its own top a little off (1.22 m of 1.56 m), so
+		//  "host above 1.4 m and within 0.25 m" failed twice with the jump plainly seen.)
+		A(tH > 1.0 && tW > 0.6 * tH && tW < tH + 0.5,`a jump inside one of those messages is seen whole by the watcher: ${tW.toFixed(2)} m of ${tH.toFixed(2)} m`, JSON.stringify([tH, tW]));
 		A(rs[0].t - rs[1].t > 0.9 && rs[0].t - rs[1].t < 2.6, `the watcher runs ${(rs[0].t - rs[1].t).toFixed(1)} s behind: the price of one message a second`, JSON.stringify([rs[0].t, rs[1].t]));
 	}
 	A(errors.length === 0, 'no page errors on the host, the watcher or the replay', errors.slice(0, 5).join(' | '));
