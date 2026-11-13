@@ -35,7 +35,7 @@ import { refresh as refreshCards, skip as skipCards, banish as banishCard } from
 import { EK, ecoView, pickTake, pickClose, shopPrices } from './expeco.js';
 import { capView } from './expcap.js';
 import * as DS from './divesave.js';
-import { lightOf } from './divelight.js';
+import { lightOf, lavaAt, glowAt, GLOW } from './divelight.js';
 import { diveRow, diveView } from './divenet.js';
 import { guestDive, guestDiveApply, stepGuestDive, slamOn } from './divecoop.js';
 import { LobbyLink } from './lobbylink.js';
@@ -179,6 +179,8 @@ if (DLIGHT && DLIGHT.dark > 0) {
 let roomMeshes = [];
 /** Show a level (P4: a run moves from one to the next: the old one's meshes go). */
 let roomBuilds = 0;
+let glowT = 0, glows = 0;
+const CALM = (() => { try { return !!(GG.Settings && GG.Settings.get && GG.Settings.get('calm')); } catch (e) { return false; } })() || Q.get('calm') === '1';   // (the 2D game's setting: no flicker)
 function showRoom() {
 	roomBuilds++;
 	for (const m of roomMeshes) { scene.remove(m); m.traverse((o) => { if (o.geometry) o.geometry.dispose(); }); }
@@ -457,7 +459,8 @@ function draw(t) {
 			// (part 5) the chests (a Poké Ball that bobs), the shut plugs (a boulder, a thicket, against the rock), the landmark
 			for (const c of dv.chests) if (!c.open) { const up = 0.12 + Math.sin(t * 3 + c.x) * 0.12; if (prop('eco:freeball', c.x, up, c.z)) shadows.add(room, c.x, c.z, up, 0.45); }
 			for (const pg of room.plugs || []) if (!pg.open) for (const fc of pg.faces) prop('eco:' + pg.kind, fc[0], 0, fc[2], 1.9);
-			if (dv.lm) { const lm = dv.lm; prop('eco:lm_' + lm.kind, lm.x, 0, lm.z, 1.7); shadows.add(room, lm.x, lm.z, 0, 0.9); if (!lm.used) shots.add(lm.x, 3.6 + Math.sin(t * 2.2) * 0.15, lm.z, 0.16, LANDMARKS[lm.kind][2]); }
+			if (dv.lm) { const lm = dv.lm; prop('eco:lm_' + lm.kind, lm.x, 0, lm.z, 1.7); shadows.add(room, lm.x, lm.z, 0, 0.9); if (!lm.used) { shots.add(lm.x, 3.6 + Math.sin(t * 2.2) * 0.15, lm.z, 0.16, LANDMARKS[lm.kind][2]); if (t - glowT > GLOW.EVERY || t < glowT) { glowT = t; flashes.arc(lm.x, 0.07, lm.z, glowAt(t, CALM), 0, 6.2832, LANDMARKS[lm.kind][2], GLOW.LIFE, 0, GLOW.A); glows++; } } }   // (plan 3e: its glow on the ground round it, until it is used)
+			{ const lava = lavaAt(room.look, t, CALM), wm = roomMeshes[1]; if (lava && wm && wm.material) { wm.material.color.setHex(lava.color); wm.material.opacity = lava.opacity; } }   // (plan 3e: the lava flickers)
 			const lo = dv.stray;
 			if (lo && !lo.done) { propMon(lo.dex, lo.x, lo.y, lo.z, lo.follow ? t : 0); shadows.add(room, lo.x, lo.z, lo.y, 0.5); if (!lo.follow) shots.add(lo.x, lo.y + 1.7 + Math.sin(t * 4) * 0.12, lo.z, 0.2, '#7dffb0'); }
 		}
@@ -1167,7 +1170,7 @@ window.__m3d = {
 	ult: { press: () => { if (run) pressUlt(run); }, charge: (v) => { if (run) setCharge(run, v); }, view: () => (run ? ultView(run) : null), setAuto: (on) => setUltAuto(on), get cut() { return cutIn; } },
 	runView: () => (RUNUI ? runView() : null),
 	get megaNow() { return megaNow; }, megaSheets,
-	get ready() { return ready; }, get mapMarks() { return mapMarks.map((o) => ({ ...o })); }, state, get room() { return room; }, run, setZoneTime: (sec) => run && setZoneTime(run, sec), useTool, takePick, ecoView: () => (solo ? ecoView(solo) : []), capView: () => (run ? capView(run) : null), hazards: () => (run ? hazardsNow(run) : []), fog: () => fogNow(), toggleMap, get mapBig() { return mapBig; }, get rv() { return rv; }, noteLog, grun, fire: (ev) => run && fireEvent(run, ev), K, TUNE, TYPES, TRAITS, cam, crowd, sheets, stats, gen: GEN, biome: BIOME, world, numbers, net, tape, myId: MYID, mates, get coView() { return coView; }, playTape, get view() { return view; }, get viewer() { return viewer; }, get watchT() { return watchT; }, addBoss: (dex, x, z, o) => addBoss(world, dex, x, z, o), drop: (kind, x, z, v) => drop(world, kind, x, groundAt(room, x, z), z, v), pickCard, addEnemy: (dex, x, z, o) => addEnemy(world, dex, x, z, o), holdExit: false, get leaving() { return leaving; },
+	get ready() { return ready; }, get mapMarks() { return mapMarks.map((o) => ({ ...o })); }, get lights() { const wm = roomMeshes[1]; return { glows, calm: CALM, liquid: wm && wm.userData ? wm.userData.liquid : null, lava: wm && wm.material ? { color: wm.material.color.getHex(), opacity: wm.material.opacity, fog: wm.material.fog } : null, look: room.look || null }; }, state, get room() { return room; }, run, setZoneTime: (sec) => run && setZoneTime(run, sec), useTool, takePick, ecoView: () => (solo ? ecoView(solo) : []), capView: () => (run ? capView(run) : null), hazards: () => (run ? hazardsNow(run) : []), fog: () => fogNow(), toggleMap, get mapBig() { return mapBig; }, get rv() { return rv; }, noteLog, grun, fire: (ev) => run && fireEvent(run, ev), K, TUNE, TYPES, TRAITS, cam, crowd, sheets, stats, gen: GEN, biome: BIOME, world, numbers, net, tape, myId: MYID, mates, get coView() { return coView; }, playTape, get view() { return view; }, get viewer() { return viewer; }, get watchT() { return watchT; }, addBoss: (dex, x, z, o) => addBoss(world, dex, x, z, o), drop: (kind, x, z, v) => drop(world, kind, x, groundAt(room, x, z), z, v), pickCard, addEnemy: (dex, x, z, o) => addEnemy(world, dex, x, z, o), holdExit: false, get leaving() { return leaving; },
 	setInput(o) { override = o ? { ...noInput(), ...o } : null; },
 	rowOf: (facing, yaw) => facingRow(facing, yaw === undefined ? cam.yaw : yaw),
 	sq: (key, frame, dir, scale = 1) => sq(sheets.get(key), frame, dir, scale),

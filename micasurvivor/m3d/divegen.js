@@ -14,6 +14,7 @@
 // Pure and seeded: no DOM, no clock.
 import { CELL, makeRoom, setCell } from './sim.js';
 import { footGraph } from './gen.js';
+import { lookOf } from './divelight.js';
 
 export const DK = {
 	WALL_H: 6,        // a wall's height, metres (a jump clears 1.67)
@@ -50,6 +51,7 @@ export function floorRoom(X, L, o = {}) {
 	}
 	const R = X.ROUTES[L.route] || {};
 	room.biome = DK.BIOME[R.biome] || 'meadow';
+	room.look = lookOf(L.route);   // (plan 3e: a route's own floor, e.g. the crater's basalt and lava; null: the 3D game's ground)
 	room.rimH = DK.WALL_H; room.maxH = 0; room.tiles = []; room.rails = []; room.size = 0;
 	room.seed = (L.seed >>> 0) || 1;
 	room.spawn = at(L.spawn);
