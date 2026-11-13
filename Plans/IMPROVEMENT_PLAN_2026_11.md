@@ -34,8 +34,10 @@ Things that shipped without being checked the way a player uses them.
       reports what it found if it happens again.
 - [x] 2d. Stacked PRs: a PR stacked on another is not set to merge by itself until the one below it has merged (a
       working rule, written into CLAUDE.md), so a later green gate cannot carry in earlier red work. Done.
-- [ ] 2e. Heist: the ended-runs list is kept per browser, so a fresh sign-in can resume an older state. Move it to the
-      account, as gold was.
+- [x] 2e. Heist: the ended-runs list is kept per browser, so a fresh sign-in can resume an older state. Move it to the
+      account, as gold was. Done (#1176), for all ten run modes: the server already kept an ended marker; the gap was
+      the message that sets it not arriving. It is now sent so a closing tab still sends it, and a boot resends it.
+      Not covered: the message is lost AND that browser never opens Battlecards again.
 - [ ] 2f. Phone shape in page tests: each game's page test also runs its main screens at 390 x 700 (a phone browser
       with its bars), where the Pears shop broke.
 
@@ -53,7 +55,7 @@ Things that shipped without being checked the way a player uses them.
 
 - [ ] 4a. The thirteen other cards whose rules are written into a token's name (found with BEEEES!!!). Each is read
       against its card text; a buff never lowers a mana cost.
-- [ ] 4b. Field-move hints: a Cut tree, a Rock Smash rock and a Strength boulder say when you hold the HM and no
+- [x] 4b. (Done, #1177.) Field-move hints: a Cut tree, a Rock Smash rock and a Strength boulder say when you hold the HM and no
       Pokémon knows the move (two tester "blockers" on 2026-11-13 were this).
 
 ## Not planned
