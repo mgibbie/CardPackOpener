@@ -1719,6 +1719,23 @@ Not in yet: the League in a Dive (evolutions, the member's stage factor on its m
 
 Tests: `micasurvivor_m3d_dive_learn_test.mjs` 19 checks in node.
 
+## 5.61 3D Dive, ninth part: built (2026-11-13). The red ground.
+
+The 2D Dive's telegraphs, with its numbers (`TELE`).
+
+- **Slam.** A brawler (a foe with no shot) within 2.2 tiles winds up: it holds still, a red circle of 1.6
+  tiles shows round it for 0.8 s, then everyone inside is hit for its damage x1.35. Then it waits 2.6 to
+  4.2 s.
+- **Alphas and guardians** slam wider (2.6 / 3.4 tiles) and, from farther than 2 tiles (or by the dice
+  up close), **charge**: a red lane 7 tiles long toward you for 0.9 s, then a dash along it in 0.35 s that
+  hits what it crosses once, for x1.6. A wall stops the dash.
+- Step out, or dodge through the moment it lands: the dodge takes nothing. A foe that shoots, a sleeper and
+  a frozen foe do not slam. A foe that faints while winding up does nothing.
+
+The dice are the fight's own seeded ones, so the same run gives the same slams.
+
+Tests: `micasurvivor_m3d_dive_tele_test.mjs` 22 checks in node; `micasurvivor_m3d_dive_page_test.mjs` now 47.
+
 ## 6. Dive in 2D: built
 
 **D0 — find the stairs (small; can ship first, on its own).** *Built 2026-11-11 (`overworld/tests/micasurvivor_dive_stairs_test.mjs`). As built: the stairs took their own orange mark, so the rocks and Meowth keep their gold; the HUD arrow comes up after 25 s on a floor, or at once when its boss falls.*

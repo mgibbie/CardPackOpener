@@ -343,7 +343,7 @@ export function applyState(w, e, kind) {
 	if (kind === 'freeze') { e.sleepT = 0; e.confT = 0; } else if (kind === 'sleep') e.confT = 0;
 	return dur;
 }
-function hurtPlayer(w, amount, type, through = false) {
+export function hurtPlayer(w, amount, type, through = false) {
 	const pl = w.pl;
 	if (through && pl.invuln < 1e8) pl.invuln = 0;   // (a telegraphed attack: the moment of grace after a hit does not save you)
 	if (pl.invuln > 0 || pl.dead) return 0;
