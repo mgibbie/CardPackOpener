@@ -14,7 +14,7 @@ import { Journal } from './journal.js';
 import { battle, blockers, cutscene, dialog, encounters, hud, items, player, trainers, world } from './ow_core.js';
 import { roamerHere, shoalWarp, startRoamerBattle } from './ow_features.js';
 import { checkAwakeningTrigger } from './ow_legendaries.js';
-import { maybePortalTutorial } from './ow_menukeys.js';
+import { maybePortalTutorial, tmMoveId } from './ow_menukeys.js';
 import { hillWarp } from './ow_minigames.js';
 import { spawnStepFx } from './ow_render.js';
 import { S } from './ow_state.js';
@@ -396,6 +396,29 @@ export const HM_FIELD = {
 		openTownMap();
 	} },
 };
+// What Z says on a field obstacle (a cut tree, a smash rock, a boulder): what it is and which move clears it, then
+// the NEXT STEP for this player. Two tester "blockers" on 2026-11-13 were a player holding the HM and its badge with no
+// POKeMON that knew the move: the old text named the move and nothing else.
+const OBSTACLE = {
+	tree: { move: 'cut', text: 'A leafy tree grows here.\n\nCUT could clear a path through it.' },
+	rock: { move: 'rocksmash', text: 'A rugged rock blocks the way.\n\nROCK SMASH could break it apart.' },
+	boulder: { move: 'strength', text: "It's a hefty boulder.\n\nSTRENGTH could push it aside." },
+};
+export function obstacleHint(kind) {
+	const o = OBSTACLE[kind] || OBSTACLE.tree, name = HM_FIELD[o.move].name;
+	let next = '';
+	try {
+		const knower = (S.party || []).find(m => m && (m.moves || []).some(mv => mv && mv.id === o.move));
+		const disc = Object.keys(Bag.getBag() || {}).find(id => Bag.count(id) > 0 && tmMoveId(id) === o.move);
+		const region = Badges.regionOfMap(world.current?.map?.id, playerRegion());
+		const req = Badges.hmReq(region, o.move), gb = req > Badges.count(region) ? Badges.list(region)[req - 1] : null;
+		if (!knower && !disc) next = '';   // (neither the move nor its disc yet: the story will bring it)
+		else if (gb) next = `But ${name} can't be used outside of battle\nuntil you have the ${gb.name}.`;
+		else if (knower) next = `${knower.name} knows ${name}.\n\nOpen the party menu, choose ${knower.name}\nand pick ${name}.`;
+		else next = `You have ${Bag.nameOf(disc)}, but no POKeMON\nin your party knows ${name}.\n\nTeach it from the BAG, then pick ${name}\nfrom the party menu.`;
+	} catch (e) { next = ''; }   // (a hint must never break Z)
+	return o.text + (next ? '\n\n' + next : '');
+}
 export function fieldMovesOf(mon) { return (mon?.moves || []).filter(mv => HM_FIELD[mv.id]); }
 export function useFieldMove(hmId, mon) {
 	partyMenu.open = false; partyMenu.action = null; partyMenu.summary = false;

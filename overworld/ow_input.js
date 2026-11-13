@@ -10,7 +10,7 @@ import * as Story from './events.js';
 import * as Frontier from './frontier.js';
 import { arcade, battle, blockers, cutscene, dialog, hud, items, npcs, player, portals, services, trainers, world } from './ow_core.js';
 import { baseDecoInteract, kurtGSBallDue, kurtTalk, secretSpotInteract, shoalDig, shoalHermitTalk } from './ow_features.js';
-import { bikeShopTalk, glassBlowerTalk, silphDoorAt } from './ow_fieldmoves.js';
+import { bikeShopTalk, glassBlowerTalk, obstacleHint, silphDoorAt } from './ow_fieldmoves.js';
 import { FACILITY_LOBBIES, frontier, startFacility } from './ow_frontier.js';
 import { bagMenu, ferryMenu, menuBlocking, openBpShop, pcMenu, portalMenu, shopMenu } from './ow_menukeys.js';
 import { hillGuardAt, hillPrizeTalk, hillReceptionTalk, startHillBattle } from './ow_minigames.js';
@@ -364,9 +364,7 @@ export function interact() {
 	// field obstacles: point the player at the right HM (used from the party menu)
 	const fo = items.fieldObjAt(fx, fy);
 	if (fo) {
-		dialog.open(fo.kind === 'rock' ? 'A rugged rock blocks the way.\n\nROCK SMASH could break it apart.'
-			: fo.kind === 'boulder' ? "It's a hefty boulder.\n\nSTRENGTH could push it aside."
-			: 'A leafy tree grows here.\n\nCUT could clear a path through it.');
+		dialog.open(obstacleHint(fo.kind));   // (what it is, the move that clears it, and this player's next step)
 		return;
 	}
 	// a static legendary on the faced tile — walk up and challenge it
