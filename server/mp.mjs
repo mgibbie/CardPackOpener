@@ -354,6 +354,17 @@ const MSURV_EXP_MODE_RE = /^exp-[a-z]{1,12}$/;
 // A floor takes at least MSURV_DIVE_SEC_PER_FLOOR s (the stairs and a whole floor between): a faster claim is refused.
 const MSURV_DIVE_ROUTES = ['forest', 'canyon', 'crater', 'reef', 'grotto', 'marsh', 'ruins', 'fungal', 'origin'];
 const MSURV_DIVE_SEC_PER_FLOOR = 4, MSURV_DIVE_MAX_FLOOR = 5000;
+// 3D co-op (Plans/IMPROVEMENT_PLAN_2026_11.md 3f): a lobby's 3D run goes to boards of its OWN (':co' after ':3d'): a party's
+// result is not a solo player's. Every player of the party posts the team's result under their own name, with the party's
+// size and the others' names. A score says `coop: <2-4>` (+ `team`); a read says `coop: true`. -> { n, team } | { error }
+function msurvCoop(body, scoring) {
+	if (body.coop === undefined) return { n: 0, team: [] };
+	if (body.d3 !== true) return { error: 'a co-op board is a 3D one (d3: true)' };
+	if (!scoring) return body.coop === true || (Number.isInteger(body.coop) && body.coop >= 2 && body.coop <= MSURV_MAX) ? { n: 2, team: [] } : { error: 'coop is true (a read) or the party size' };
+	if (!Number.isInteger(body.coop) || body.coop < 2 || body.coop > MSURV_MAX) return { error: 'coop is the party size', min: 2, max: MSURV_MAX };
+	const team = [...new Set((Array.isArray(body.team) ? body.team : []).map(x => String(x).toLowerCase()).filter(x => /^[a-z0-9_.-]{1,40}$/.test(x)))].slice(0, body.coop - 1);
+	return { n: body.coop, team };
+}
 const msurvDiveWeek = now => Math.floor((now - Date.UTC(2026, 0, 5)) / 604800000);
 const MSURV_EXP_NAME_RE = /^[a-z][a-z0-9_.:-]{0,63}$/;
 const MSURV_EXP_ID_RE = /^[A-Za-z0-9_.:-]{1,64}$/;
@@ -2339,7 +2350,10 @@ export default async function handler(req, env) {
 			if (weekly && action === 'run-score' && body.week !== wk) return json({ error: 'that Weekly Dive is over', week: wk }, 400);
 			// `d3: true`: a 3D Dive's own boards and bests (owner, 2026-11-12: same save, separate boards): ':3d' in both keys
 			if (body.d3 !== undefined && body.d3 !== true) return json({ error: 'd3 is true or absent' }, 400);
-			const sub = (weekly ? 'weekly:' + week : body.route) + (body.d3 === true ? ':3d' : '');
+			const co = msurvCoop(body, action === 'run-score');
+			if (co.error) return json({ error: co.error }, 400);
+			if (co.n && weekly) return json({ error: 'the Weekly Dive has no co-op board' }, 400);
+			const sub = (weekly ? 'weekly:' + week : body.route) + (body.d3 === true ? ':3d' : '') + (co.n ? ':co' : '');
 			const dKey = 'runboard:micasurvivor_expedition:dive:' + sub, bestKey = 'micasurvivor_expedition:dive:' + sub;
 			user.runBest = user.runBest || {};
 			const cmp = (a, b) => (a.floor - b.floor) || (b.time - a.time);
@@ -2353,7 +2367,7 @@ export default async function handler(req, env) {
 				const dex = int(body.dex);
 				const run = { score: floor, floor, time, start, escaped: body.escaped === true, route: weekly ? String(body.route || '').slice(0, 12) : body.route,
 					kills: Math.max(0, Math.min(10_000_000, int(body.kills) || 0)), level: Math.max(1, Math.min(9999, int(body.level) || 1)),
-					dex: msurvDexOk(dex) ? dex : 0, shiny: body.shiny === true, expMode: 'exp-dive', dv: body.dv };
+					dex: msurvDexOk(dex) ? dex : 0, shiny: body.shiny === true, expMode: 'exp-dive', dv: body.dv, ...(co.n ? { n: co.n, team: co.team } : {}) };
 				const now = Date.now(), prev = user.runBest[bestKey];
 				const better = !prev || typeof prev.floor !== 'number' || cmp(run, prev) > 0;
 				if (better) { user.runBest[bestKey] = { ...run, when: now }; await store.setJSON(username, user); }
@@ -2381,7 +2395,7 @@ export default async function handler(req, env) {
 			return json({ board: 'league', top: lb.slice(0, 50), you: mineL ? { ...mineL, rank: lr || null } : null });
 		}
 		// DLC D16: the ruleset's board (MSURV_RULES above): a new-rules run, or a read of the new boards, adds ':r2'
-		let rulesSub = '';
+		let rulesSub = '', expCo = { n: 0, team: [] };
 		if (mode === 'micasurvivor') {
 			const rules = action === 'run-score' ? msurvRulesOf(body.rules) : body.rules === MSURV_RULES ? MSURV_RULES : 1;
 			if (!rules) return json({ error: 'bad rules', max: MSURV_RULES }, 400);
@@ -2395,6 +2409,10 @@ export default async function handler(req, env) {
 			// `d3: true` puts ':3d' in every key (the score, time, survival and season boards and the player's bests)
 			if (body.d3 !== undefined && body.d3 !== true) return json({ error: 'd3 is true or absent' }, 400);
 			if (body.d3 === true) { if (body.replay !== undefined) return json({ error: 'a 3D score carries no replay' }, 400); rulesSub += ':3d'; }
+			expCo = msurvCoop(body, action === 'run-score');
+			if (expCo.error) return json({ error: expCo.error }, 400);
+			if (expCo.n && (body.expMode === 'exp-survival' || body.board === 'survival')) return json({ error: 'Survival has no co-op board' }, 400);
+			if (expCo.n) rulesSub += ':co';
 			expSub = rulesSub + ':' + body.map + ':' + body.diff;
 		}
 		const key = 'runboard:' + mode + (mode === 'micasurvivor' ? rulesSub : '') + expSub;
@@ -2468,6 +2486,7 @@ export default async function handler(req, env) {
 				expMode: body.expMode, dv: body.dv,
 				...(parts ? { zone: parts.zone, won: parts.won, bosses: parts.bosses, catches: parts.catches } : {}),
 				...(replay ? { replay } : {}),
+				...(expCo.n ? { n: expCo.n, team: expCo.team } : {}),
 			};
 			const now = Date.now();
 			const cmp = (a, b) => (a.score - b.score) || (a.time - b.time);   // (D0b's order: the score, then the time)
