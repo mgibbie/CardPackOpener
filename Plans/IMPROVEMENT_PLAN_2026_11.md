@@ -38,7 +38,9 @@ Things that shipped without being checked the way a player uses them.
       account, as gold was. Done (#1176), for all ten run modes: the server already kept an ended marker; the gap was
       the message that sets it not arriving. It is now sent so a closing tab still sends it, and a boot resends it.
       Not covered: the message is lost AND that browser never opens Battlecards again.
-- [ ] 2f. Phone shape in page tests: each game's page test also runs its main screens at 390 x 700 (a phone browser
+- [x] 2f. (Done as ONE test over every game, phone_shape_pages_test.mjs: each game's FIRST screen at 390 x 700 and
+      390 x 600, MicaSurvivor on its side too. It found no fault. Deeper screens stay with each game's own page test.)
+      Phone shape in page tests: each game's page test also runs its main screens at 390 x 700 (a phone browser
       with its bars), where the Pears shop broke.
 
 ## 3. Finish the 3D Dive and 3D co-op
