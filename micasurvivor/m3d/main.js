@@ -38,6 +38,7 @@ import * as DS from './divesave.js';
 import { lightOf } from './divelight.js';
 import { diveRow, diveView } from './divenet.js';
 import { guestDive, guestDiveApply, stepGuestDive, slamOn } from './divecoop.js';
+import { LobbyLink } from './lobbylink.js';
 import { rulesFrom, newDive, stepDive, hudLine as diveHud, result as diveResult, pressSpecial, specials, LANDMARKS } from './dive.js';
 
 const Q = new URLSearchParams(location.search);
@@ -60,6 +61,14 @@ const DJ = !WATCH && Q.get('join') && Q.has('dj') ? { seed: +Q.get('dj') | 0, ro
 const DW = WATCH && Q.has('dw') ? { seed: +Q.get('dw') | 0, route: Q.get('route') || 'forest' } : null;   // (part 16) watching a Dive: its seed and route
 // (the 2D Dive's floors and rules, read by divegen.js and dive.js, are loaded only here: an Expedition's page is as it was. With them
 // on every page, the 2D game's own Expedition object changed what an Expedition's save does.)
+// (co-op from the online lobby, §5.71) ?lobby=<id>: the players of that lobby are linked by the 2D game's own online line
+// (js/net/net.js over js/mica/online.js: a direct link, or the site's relay). Signed in only; its two scripts are loaded here.
+const LOBBY = !WATCH && /^[0-9a-f]{12}$/.test(Q.get('lobby') || '') && (Q.get('host') || Q.get('join')) && window.G && window.G.MicaAccount && window.G.MicaAccount.name() ? Q.get('lobby') : null;
+if (LOBBY && !window.G.Net) {
+	window.G.Social = window.G.Social || { uid: window.G.MicaAccount.name() };   // (net.js reads your name here)
+	window.G.Coop = window.G.Coop || { active: true };                             // (…and whether a run is on: the relay only carries one)
+	for (const src of ['../js/mica/online.js', '../js/net/net.js']) await new Promise((res, rej) => { const el = document.createElement('script'); el.src = src; el.async = false; el.onload = res; el.onerror = () => rej(new Error('3D co-op: could not load ' + src)); document.head.appendChild(el); });
+}
 if ((DIVE || DW || DJ) && window.G && !window.G.ExpDive) for (const src of ['../js/systems/expedition.js', '../js/expedition/dive-gen.js', '../js/expedition/dive.js']) await new Promise((res, rej) => { const el = document.createElement('script'); el.src = src; el.async = false; el.onload = res; el.onerror = () => rej(new Error('3D Dive: could not load ' + src)); document.head.appendChild(el); });
 const FIGHT = !WATCH && (!!JOIN || EXP || DIVE || (Q.has('gen') && Q.get('fight') === '1'));
 const N = Math.max(0, Math.min(2000, +(Q.get('n') ?? (FIGHT || (WATCH && Q.has('xw')) ? 0 : 100)) || 0));   // (the test room's crowd: not in a fight, and not on a watched run)
@@ -680,7 +689,10 @@ function fightEvents(events) {
 const siteCall = GG.MicaAccount && GG.MicaAccount.name() ? (a, b) => GG.MicaAccount.call(a, b) : null;
 const SITE_HOST = solo && !HOST && siteCall ? new HostLink({ call: siteCall, run: runId(crypto), label: (drun ? (drun.weekly ? '3D Weekly Dive · ' : '3D Dive · ') : '3D Expedition · ') + ((GG.DEX_BY[solo.lg ? solo.lg.member : DEX] || {}).name || ''), dex: DEX, now: () => performance.now() }) : null;
 const SITE_WATCH = LIVE ? new WatchLink({ call: siteCall || (async () => ({ ok: false, status: 401, body: {} })), who: LIVE.toLowerCase(), later: (fn, ms) => setTimeout(fn, ms) }) : null;
-const chan = SITE_WATCH || SITE_HOST || ((HOST || WATCH || JOIN) && typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('m3d:' + (HOST || WATCH || JOIN)) : null);
+const LINK = LOBBY && GG.Net ? new LobbyLink({ Net: GG.Net, call: (a, b) => GG.MicaAccount.call(a, b), id: LOBBY, host: HOST ? GG.MicaAccount.name() : String(Q.get('lh') || '').toLowerCase(), isHost: !!HOST }) : null;
+const chan = SITE_WATCH || LINK || SITE_HOST || ((HOST || WATCH || JOIN) && typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('m3d:' + (HOST || WATCH || JOIN)) : null);
+/** Ticks between two messages: ten a second; two a second while a player is only reached by the site's relay. */
+const sendEvery = () => (LINK && LINK.slow ? 30 : Math.round(60 / NK.HZ));
 let coView = null;
 /** The other players in the fight: a host's puppets of its guests; a guest's view of the host and the other guests. */
 const mates = () => (!world ? [] : JOIN ? world.co.mates : world.mates);
@@ -697,7 +709,7 @@ const RELAY = Q.get('relay') === '1' || !!SITE_HOST;   // (the site's lines carr
 function share() {
 	if (!chan && !tape) return;
 	if (JOIN) {   // a guest: where you are, what you hit, what touched you — ten times a second; and "let me in" until the host has you
-		if (simTicks % Math.round(60 / NK.HZ) !== 0) return;
+		if (simTicks % sendEvery() !== 0) return;
 		const msg = JSON.stringify({ g: MYID, m: guestMsg(world) }); chan.postMessage(msg); net.sent++; net.chars += msg.length;
 		if (!net.joined && simTicks % 60 < 6) chan.postMessage(JSON.stringify({ join: { id: MYID, dex: DEX } }));
 		return;
@@ -707,7 +719,7 @@ function share() {
 	else if (chan && RELAY && simTicks % Math.round(60 / NK.HZ) === 0) {   // &relay=1: as the site's relay would carry it — ONE message a second, holding that second's frames (you in all ten, the enemies in two)
 		net.batch.push(rowed(netFrame(world, net.evLive))); net.evLive = [];
 		if (net.batch.length >= NK.HZ) { const msg = JSON.stringify({ h: HEAD, b: bundle(net.batch) }); chan.postMessage(msg); net.sent++; net.chars += msg.length; net.biggest = Math.max(net.biggest || 0, msg.length); net.batch = []; }
-	} else if (chan && simTicks % Math.round(60 / NK.HZ) === 0) {   // (by this page's own count: the fight's clock stands still while a card is being chosen, and the others must still hear)
+	} else if (chan && simTicks % sendEvery() === 0) {   // (by this page's own count: the fight's clock stands still while a card is being chosen, and the others must still hear)
 		const f = rowed(world.mates.length ? hostFrame(world, net.evLive) : netFrame(world, net.evLive)), whole = net.n % NK.HZ === 0 || !net.prev, msg = JSON.stringify(whole ? { h: HEAD, f } : { f: netDiff(net.prev, f) });
 		chan.postMessage(msg); net.prev = f; net.n++; net.sent++; net.chars += msg.length; net.evLive = [];
 	}
@@ -1068,7 +1080,7 @@ const G_MUSIC = GG.BIOME_MUSIC || null, XK_MAPS = ['viridian', 'mtmoon', 'cerule
 
 // what a test (and a curious owner in the console) can reach
 window.__m3d = {
-	dive: drun, guestDive: gdrun, diveRules: DR, special, light: () => ({ dive: DLIGHT, near: scene.fog.near, far: scene.fog.far, color: scene.fog.color.getHex(), vignette: !!document.getElementById('dive-dark') }), diveSave: { week: DWEEK, practice: DPRACTICE, ok: DSAVE_OK, start: DSTART, member: DMEMBER, form: DFORM, keep: DKEEP, meta: !!DMETA }, propKeys: () => (props ? [...props.atlas.cells.keys()] : []), roomBuilds: () => roomBuilds,
+	link: LINK, dive: drun, guestDive: gdrun, diveRules: DR, special, light: () => ({ dive: DLIGHT, near: scene.fog.near, far: scene.fog.far, color: scene.fog.color.getHex(), vignette: !!document.getElementById('dive-dark') }), diveSave: { week: DWEEK, practice: DPRACTICE, ok: DSAVE_OK, start: DSTART, member: DMEMBER, form: DFORM, keep: DKEEP, meta: !!DMETA }, propKeys: () => (props ? [...props.atlas.cells.keys()] : []), roomBuilds: () => roomBuilds,
 	meta: LAB_META, upgrades: UPGRADES, leadShiny: LEAD_SHINY, skey,
 	keepShiny,
 	siteHost: SITE_HOST, siteWatch: SITE_WATCH,
