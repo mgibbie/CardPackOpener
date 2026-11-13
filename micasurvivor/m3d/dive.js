@@ -27,6 +27,7 @@
 //   pockets    (part 5) a BOULDER breaks for a Rock / Ground / Fighting / Steel Pokémon, a THICKET burns for a Fire
 //              type: stand against it PLUG.T s. Behind it, a pocket with a chest.
 //   landmarks  (part 5) the route's own, on some floors: stand on it LM.T s, once (LANDMARKS below).
+//   the save   (part 6) divesave.js: the deepest floor, the stage, the Seal (o.seal: +10 % damage, -10 % taken), the pay.
 // Not here yet (later parts): a new special at levels 4, 10, 16…, the League, the red ground, the stall, the bushes
 // and the gold rocks, routes and stages in the save, the Weekly Dive, co-op.
 // Pure and seeded: no DOM, no clock.
@@ -53,7 +54,7 @@ const ROPE_STILL = 0.5;   // m/s: slower than this is standing still (the rope)
 export function rulesFrom(G) {
 	const E = G.ExpDive, F = diveFrom(G); if (!E || !F) return null;
 	const en = (G.I18n && G.I18n.en) || {}, tr = (s) => en[s] || s;
-	return { F, K: E.K, ESCORT: E.ESCORT, GUARDIANS: E.GUARDIANS, COMBO: E.COMBO, PLUG: E.PLUG, LM: E.LM, target: E.target, pool: (route, floor) => E.pool(route, floor), guardianOf: E.guardianOf,
+	return { F, K: E.K, ESCORT: E.ESCORT, GUARDIANS: E.GUARDIANS, COMBO: E.COMBO, PLUG: E.PLUG, LM: E.LM, SEAL: E.SEAL, MAIN: E.MAIN.slice(), target: E.target, pool: (route, floor) => E.pool(route, floor), guardianOf: E.guardianOf,
 		megaRoll: (seed, route, f) => E.megaRoll(seed, route, f), legendRoll: (seed, route, f) => E.legendRoll(seed, route, f),
 		rng: (seed, route, floor, k) => G.DLC.rng(G.DiveGen.seedOf(seed | 0, route, floor, k)), nameOf: (route) => tr(E.NAME[route] || route),
 		strays: (route, floor) => { const tg = E.target(floor) - 60, types = F.ROUTES[route].types; return G.DEX.filter((p) => !p.leg && Math.abs(p.bst - tg) < 70 && p.types.some((t) => types.includes(t))).map((p) => p.dex); } };
@@ -83,8 +84,9 @@ export function newDive(data, X, R, o = {}) {
 	// the kit, the dodge, the combo
 	S.kit = o.kit !== false; S.dodge = { t: 0, cd: 0, dx: 0, dz: 0, n: 0, held: false }; S.combo = { n: 0, t: 0, best: 0, k: 1 }; S.spare = [];
 	{ const hooks = w.hooks || (w.hooks = {}), hurt0 = hooks.hurt, out0 = hooks.out;
-		hooks.hurt = (ww, d) => (S.dodge.t > 0 ? 0 : hurt0 ? hurt0(ww, d) : d);
-		hooks.out = (ww, e, src, dmg) => { const k0 = out0 ? out0(ww, e, src, dmg) : 1, id = src && (src.mid || src.id); return k0 * (S.kit && id && isSpecial(S, id) ? R.K.SPECIAL_K : 1) * (S.obeliskT > 0 ? 1 + R.LM.OBELISK : 1); }; }
+		hooks.hurt = (ww, d) => (S.dodge.t > 0 ? 0 : (hurt0 ? hurt0(ww, d) : d) * (S.seal ? 1 - R.SEAL.TAKEN : 1));
+		hooks.out = (ww, e, src, dmg) => { const k0 = out0 ? out0(ww, e, src, dmg) : 1, id = src && (src.mid || src.id); return k0 * (S.kit && id && isSpecial(S, id) ? R.K.SPECIAL_K : 1) * (S.obeliskT > 0 ? 1 + R.LM.OBELISK : 1) * (S.seal ? 1 + R.SEAL.DMG : 1); }; }
+	S.seal = !!o.seal;   // (part 6: the route's Seal, from your save)
 	S.opened = 0; S.secrets = 0; S.marks = 0; S.obeliskT = 0; S.plugTip = false;
 	roles(S);
 	startFloor(S, f0, 0);
