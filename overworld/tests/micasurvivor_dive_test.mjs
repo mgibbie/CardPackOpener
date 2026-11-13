@@ -89,6 +89,8 @@ const BEFORE = (save) => {
 	/** down to floor f: thin, beat any alpha / guardian, the stairs */
 	H.downTo = f => {
 		let n = 0;
+		const pl0 = G.Game.player, own = Object.prototype.hasOwnProperty.call(pl0, 'hurt'), was = pl0.hurt;
+		pl0.hurt = function () {};   // (the way down is plumbing, not a fight: combat rolls are Math.random, and a fall on the way left the test on the wrong floor)
 		while (G.ExpDive.run && G.ExpDive.run.floor < f && n++ < 400) {
 			{ const pl = G.Game.player; if (pl && !pl.dead) pl.hp = pl.maxHp; }   // (the way down is plumbing here, not a fight: D1 made the foes hit hard)
 			H.thin();
@@ -97,6 +99,8 @@ const BEFORE = (save) => {
 			const f0 = S.floor;
 			H.toStairs(); H.step(24, 1 / 30, () => { if (G.ExpDive.run.floor !== f0) return false; H.toStairs(); });
 		}
+		if (own) pl0.hurt = was; else delete pl0.hurt;
+		H.downN = n;
 		return G.ExpDive.run && G.ExpDive.run.floor;
 	};
 };
@@ -183,7 +187,7 @@ try {
 		const woke = g.awake, d0 = Math.min(...g.list.map(e => Math.hypot(e.x - G.Game.player.x, e.y - G.Game.player.y)));
 		H.step(30, 1 / 30, () => { H.put(spot[0], spot[1]); });
 		const d1 = Math.min(...g.list.filter(e => !e.dead).map(e => Math.hypot(e.x - G.Game.player.x, e.y - G.Game.player.y)));
-		return { still, woke, d0: Math.round(d0), d1: Math.round(d1), xm: g.list.map(e => !!e.xmove), dbg: H.dbg };
+		return { still, woke, d0: Math.round(d0), d1: Math.round(d1), xm: g.list.map(e => !!e.xmove && e.xtele == null), dbg: H.dbg };   // (a woken foe winding up its telegraphed move is held by the telegraph, e.xtele: that is acting. A CI run had one, and this read it as still asleep.)
 	});
 	A(sl.still, 'a far group sleeps where it was put (no move in 2 s)', JSON.stringify(sl));
 	A(sl.woke && sl.xm.every(x => !x), 'coming close wakes the whole group (its foes act: no sleeper hold)', JSON.stringify(sl));
@@ -687,6 +691,7 @@ try {
 			out.k0 = G.ExpDive.out(1, pl, null, null);
 			H.downTo(50);
 			out.floor = S.floor; out.guardian = S.boss && S.boss.xk; out.dex = S.boss && S.boss.dex;
+			if (!S.boss) { out.why = { state: G.Game.state, dead: !!pl.dead, hp: pl.hp, loops: H.downN, sealed: S.sealed, fell: S.bossFell, same: S === G.ExpDive.run }; return out; }   // (no guardian: say what the way down left, don't throw)
 			S.boss.hurt(S.boss.maxHp * 2); H.step(3);
 			out.after = G.ExpDive.sealOf('reef'); out.k1 = +G.ExpDive.out(1, pl, null, null).toFixed(3); out.taken = +G.ExpDive.hurtK(10).toFixed(3); out.stage = S.stage;
 			return out;
