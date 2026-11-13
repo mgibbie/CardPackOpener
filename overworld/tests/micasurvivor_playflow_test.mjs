@@ -112,7 +112,7 @@ const SAVE = (name) => ({
 const BEFORE = (o) => {
 	// (exp2d: the archived 2D Expedition on this browser, /micasurvivor/?exp3d=0's own key: sections 1-9 pin what the Play
 	//  flow's setups start in the 2D game; section 10 is the 3D way in, which is what START gives by default)
-	if (o.exp2d) { try { localStorage.setItem('micasurvivor_exp3d', '0'); } catch (e) { /* ignore */ } }
+	if (o.exp2d) { try { localStorage.setItem('micasurvivor_exp3d', '0'); localStorage.setItem('micasurvivor_dive3d', '0');   /* (and the archived 2D Dive: ?dive3d=0's key) */ } catch (e) { /* ignore */ } }
 	window.__pads = [];
 	window.__mkPad = (i, id) => ({
 		index: i, id, connected: true, mapping: 'standard', timestamp: 0,
@@ -620,24 +620,27 @@ try {
 		A(in2d, '…START there is the 2D run, which still plays', JSON.stringify(await d.E(() => ({ path: location.pathname, state: G.Game.state }))));
 		await menu('exp3d=1');
 		A(await d.E(() => G.PlayUI.exp3d() && localStorage.getItem('micasurvivor_exp3d') === null), '/micasurvivor/?exp3d=1 returns to 3D');
-		// 3D DIVE is not live: alone on Dive it is the 2D run, unless this browser opted in with ?dive3d=1
+		// 3D DIVE is live (owner, 2026-11-13): alone on Dive, START is the 3D page; ?dive3d=0 is the archived 2D Dive on this browser
 		const toDive = async () => { await d.E(() => G.PlayUI.open()); await d.click('#mx-next'); await d.click('[data-cat="dive"]'); await waitFor(async () => (await d.state()).step === 3, 6000); await d.click('[data-var="dive"]'); await d.click('[data-players="solo"]'); await waitFor(() => d.E(() => !!G.ExpLeague && !!G.ExpDive && G.PlayUI.state.variant === 'dive'), 15000); };
+		await menu('dive3d=0');
 		await toDive();
-		const dv0 = await d.E(() => ({ on: G.PlayUI.dive3d(), url: G.PlayUI.dive3dUrl('exp-dive'), key: localStorage.getItem('micasurvivor_dive3d'), exp: G.PlayUI.exp3dUrl('exp-dive') }));
-		A(!dv0.on && dv0.url === null && dv0.key === null && dv0.exp === null, '3D Dive is off by default: alone on Dive, START is still the 2D Dive', JSON.stringify(dv0));
+		const dv0 = await d.E(() => ({ on: G.PlayUI.dive3d(), url: G.PlayUI.dive3dUrl('exp-dive'), key: localStorage.getItem('micasurvivor_dive3d') }));
+		A(!dv0.on && dv0.url === null && dv0.key === '0', '/micasurvivor/?dive3d=0 goes back to the archived 2D Dive on this browser', JSON.stringify(dv0));
+		await d.click('#mx-start');
+		const dive2d = await waitFor(() => d.E(() => location.pathname === '/micasurvivor/' && G.Game.state === 'playing' && G.Modes.isExp() && !!G.Game.player && !!(G.ExpDive && G.ExpDive.run)), 30000);
+		A(dive2d, '…START there is the 2D Dive, which still plays', JSON.stringify(await d.E(() => ({ path: location.pathname, state: G.Game.state }))));
 		await menu('dive3d=1');
 		await toDive();
-		const dv1 = await d.E(() => ({ on: G.PlayUI.dive3d(), url: G.PlayUI.dive3dUrl('exp-dive'), classic: G.PlayUI.dive3dUrl('exp-classic'), dex: G.ExpLeague.pickFor(), route: G.PlayUI.state.route || G.Expedition.diveRoute(), key: localStorage.getItem('micasurvivor_dive3d') }));
-		A(dv1.on && dv1.key === '1' && dv1.classic === null && new RegExp(`^/micasurvivor/m3d/\\?dive=\\d+&route=${dv1.route}&dex=${dv1.dex}$`).test(dv1.url || ''), `/micasurvivor/?dive3d=1 opts this browser in: alone on Dive it is the 3D page's address, with the same member and route (${dv1.url})`, JSON.stringify(dv1));
+		const dv1 = await d.E(() => ({ on: G.PlayUI.dive3d(), url: G.PlayUI.dive3dUrl('exp-dive'), classic: G.PlayUI.dive3dUrl('exp-classic'), exp: G.PlayUI.exp3dUrl('exp-dive'), dex: G.ExpLeague.pickFor(), route: G.PlayUI.state.route || G.Expedition.diveRoute(), key: localStorage.getItem('micasurvivor_dive3d') }));
+		A(dv1.on && dv1.key === null && dv1.classic === null && dv1.exp === null && new RegExp(`^/micasurvivor/m3d/\\?dive=\\d+&route=${dv1.route}&dex=${dv1.dex}(&form=\\d+)?$`).test(dv1.url || ''), `3D Dive is on by default (nothing stored; ?dive3d=1 returns to it): alone on Dive it is the 3D page's address, with the same member and route (${dv1.url})`, JSON.stringify(dv1));
 		await d.E(() => G.PlayUI.back()); await d.click('[data-players="local"]'); await sleep(200);
 		A(await d.E(() => G.PlayUI.dive3dUrl('exp-dive')) === null, '…a local-play Dive stays 2D');
 		await d.E(() => G.PlayUI.back()); await d.click('[data-players="solo"]'); await sleep(200);
 		await Promise.all([d.page.waitForNavigation({ waitUntil: 'domcontentloaded' }), d.click('#mx-start')]);
 		const inDive = await waitFor(() => d.E(() => !!(window.__m3d && window.__m3d.ready && window.__m3d.dive)), 40000);
 		const rd = await d.E(() => ({ path: location.pathname, route: window.__m3d.dive.route, floor: window.__m3d.dive.floor, member: window.__m3d.dive.lg && window.__m3d.dive.lg.member, save: window.__m3d.diveSave }));
-		A(inDive && rd.path === '/micasurvivor/m3d/' && rd.route === dv1.route && rd.floor === 1 && rd.member === dv1.dex && rd.save.practice === null && rd.save.ok === true, 'START opens it: a 3D Dive of that route as that member, one that can be kept', JSON.stringify(rd));
-		await menu('dive3d=0');
-		A(await d.E(() => !G.PlayUI.dive3d() && localStorage.getItem('micasurvivor_dive3d') === null), '/micasurvivor/?dive3d=0 goes back to the 2D Dive');
+		A(inDive && rd.path === '/micasurvivor/m3d/' && rd.route === dv1.route && rd.floor === 1 && rd.member === dv1.dex && rd.save.practice === null && rd.save.ok === true, 'START opens it, with no switch asked for: a 3D Dive of that route as that member, one that can be kept', JSON.stringify(rd));
+		await menu('');
 		// a browser that cannot draw it keeps the 2D run
 		await d.page.evaluateOnNewDocument(() => { const g = HTMLCanvasElement.prototype.getContext; HTMLCanvasElement.prototype.getContext = function (t, ...a) { return t === 'webgl2' ? null : g.call(this, t, ...a); }; });
 		await menu('');
