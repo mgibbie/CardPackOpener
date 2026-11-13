@@ -56,7 +56,11 @@ const ECO = {
 	},
 	cage: (c) => { c.fillStyle = '#c9ced8'; for (let i = 0; i <= 5; i++) c.fillRect(-17 + i * 6.4, -34, 2, 34); c.fillRect(-17, -2, 34, 2); c.fillStyle = '#9aa3b2'; c.fillRect(-18, -37, 36, 4); },
 };
-const ecoPainter = (kind) => ECO[kind] || (/^unown/.test(kind) ? ECO.unown : /ball$|^great$/.test(kind) ? ECO.ball : /challenge|cursedaltar|greed/.test(kind) ? ECO.altar : null);
+// A Dive's things: a boulder and a thicket (the plugs of the secret pockets), a landmark (a standing stone in its colour)
+ECO.boulder = (c) => { poly(c, '#4a4338', [[-24, 0], [-21, -24], [-9, -40], [10, -42], [23, -26], [25, 0]]); poly(c, '#7d7262', [[-21, 0], [-18, -22], [-8, -36], [9, -38], [20, -24], [22, 0]]); poly(c, '#9c917f', [[-12, -20], [-6, -33], [7, -35], [3, -22]]); c.fillStyle = '#4a4338'; c.fillRect(-3, -16, 2, 12); c.fillRect(-1, -6, 9, 2); };
+ECO.thicket = (c) => { for (const [dx, dy, r] of [[-13, -10, 13], [12, -11, 13], [0, -26, 14], [-9, -32, 10], [10, -33, 10], [0, -9, 13]]) circle(c, dx, dy, r, '#173f1c'); for (const [dx, dy, r] of [[-13, -10, 11], [12, -11, 11], [0, -26, 12], [-9, -32, 8], [10, -33, 8], [0, -9, 11]]) circle(c, dx, dy, r, '#2a6b2f'); c.strokeStyle = '#5a3d1e'; c.lineWidth = 2; for (const [x0, x1] of [[-16, 6], [15, -4], [-4, 12]]) { c.beginPath(); c.moveTo(x0, 0); c.lineTo(x1, -34); c.stroke(); } };
+ECO.lm = (c, P, k, col) => { poly(c, '#2c2a36', [[-15, 0], [15, 0], [11, -6], [-11, -6]]); poly(c, '#3a3846', [[-9, -6], [9, -6], [6, -46], [0, -52], [-6, -46]]); poly(c, '#565368', [[-7, -6], [7, -6], [4, -44], [0, -49], [-4, -44]]); c.fillStyle = col; c.fillRect(-2, -38, 4, 22); c.fillRect(-5, -31, 10, 4); circle(c, 0, -44, 2.5, col); };
+const ecoPainter = (kind) => ECO[kind] || (/^lm_/.test(kind) ? ECO.lm : /^unown/.test(kind) ? ECO.unown : /ball$|^great$/.test(kind) ? ECO.ball : /challenge|cursedaltar|greed/.test(kind) ? ECO.altar : null);
 
 /** The atlas. o: { canvas (512 x 512 or any multiple of the cell), uiIcon(name) -> a small canvas or null (the game's
  *  pixel icons), imgUrl(name) -> the URL of an item picture, itemIcon(id) -> { ui } | { img } | null (an item's

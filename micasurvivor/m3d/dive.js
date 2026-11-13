@@ -23,12 +23,17 @@
 //              ends is kept; a press with no foe in reach is kept K.HOLD s.
 //   the dodge  (part 4) slide = dodge: DODGE.T s the way you push (or face), nothing can hurt you, DODGE.CD s to cool.
 //   the combo  (part 4) KOs within COMBO.WINDOW s chain: more XP a step, loot every COMBO.MILESTONE.
-// Not here yet (later parts): a new special at levels 4, 10, 16…, the League, the red ground, landmarks, secret
-// pockets, chests, routes and stages in the save, the Weekly Dive, co-op.
+//   chests     (part 5) the floor's chests are free Poké Balls: stand by one OPEN_T s and it gives one item.
+//   pockets    (part 5) a BOULDER breaks for a Rock / Ground / Fighting / Steel Pokémon, a THICKET burns for a Fire
+//              type: stand against it PLUG.T s. Behind it, a pocket with a chest.
+//   landmarks  (part 5) the route's own, on some floors: stand on it LM.T s, once (LANDMARKS below).
+// Not here yet (later parts): a new special at levels 4, 10, 16…, the League, the red ground, the stall, the bushes
+// and the gold rocks, routes and stages in the save, the Weekly Dive, co-op.
 // Pure and seeded: no DOM, no clock.
-import { K as SK, CELL, groundAt, newState } from './sim.js';
-import { CK, U, newWorld, tick, addEnemy, addBoss } from './combat.js';
+import { K as SK, CELL, groundAt, newState, setCell } from './sim.js';
+import { CK, U, newWorld, tick, addEnemy, addBoss, gainXp } from './combat.js';
 import { setup as setupLevels, tickStats, takeItem } from './explevel.js';
+import { rollOffers } from './expeco.js';
 import { setupRx, tickRx } from './exprx.js';
 import { setupUlt, holdUlt, tickUlt } from './expult.js';
 import { applyPerks, perkTools } from './expperks.js';
@@ -48,7 +53,7 @@ const ROPE_STILL = 0.5;   // m/s: slower than this is standing still (the rope)
 export function rulesFrom(G) {
 	const E = G.ExpDive, F = diveFrom(G); if (!E || !F) return null;
 	const en = (G.I18n && G.I18n.en) || {}, tr = (s) => en[s] || s;
-	return { F, K: E.K, ESCORT: E.ESCORT, GUARDIANS: E.GUARDIANS, COMBO: E.COMBO, target: E.target, pool: (route, floor) => E.pool(route, floor), guardianOf: E.guardianOf,
+	return { F, K: E.K, ESCORT: E.ESCORT, GUARDIANS: E.GUARDIANS, COMBO: E.COMBO, PLUG: E.PLUG, LM: E.LM, target: E.target, pool: (route, floor) => E.pool(route, floor), guardianOf: E.guardianOf,
 		megaRoll: (seed, route, f) => E.megaRoll(seed, route, f), legendRoll: (seed, route, f) => E.legendRoll(seed, route, f),
 		rng: (seed, route, floor, k) => G.DLC.rng(G.DiveGen.seedOf(seed | 0, route, floor, k)), nameOf: (route) => tr(E.NAME[route] || route),
 		strays: (route, floor) => { const tg = E.target(floor) - 60, types = F.ROUTES[route].types; return G.DEX.filter((p) => !p.leg && Math.abs(p.bst - tg) < 70 && p.types.some((t) => types.includes(t))).map((p) => p.dex); } };
@@ -79,7 +84,8 @@ export function newDive(data, X, R, o = {}) {
 	S.kit = o.kit !== false; S.dodge = { t: 0, cd: 0, dx: 0, dz: 0, n: 0, held: false }; S.combo = { n: 0, t: 0, best: 0, k: 1 }; S.spare = [];
 	{ const hooks = w.hooks || (w.hooks = {}), hurt0 = hooks.hurt, out0 = hooks.out;
 		hooks.hurt = (ww, d) => (S.dodge.t > 0 ? 0 : hurt0 ? hurt0(ww, d) : d);
-		hooks.out = (ww, e, src, dmg) => { const k0 = out0 ? out0(ww, e, src, dmg) : 1, id = src && (src.mid || src.id); return k0 * (S.kit && id && isSpecial(S, id) ? R.K.SPECIAL_K : 1); }; }
+		hooks.out = (ww, e, src, dmg) => { const k0 = out0 ? out0(ww, e, src, dmg) : 1, id = src && (src.mid || src.id); return k0 * (S.kit && id && isSpecial(S, id) ? R.K.SPECIAL_K : 1) * (S.obeliskT > 0 ? 1 + R.LM.OBELISK : 1); }; }
+	S.opened = 0; S.secrets = 0; S.marks = 0; S.obeliskT = 0; S.plugTip = false;
 	roles(S);
 	startFloor(S, f0, 0);
 	return S;
@@ -177,6 +183,9 @@ function place(S, x, z, cx, cz, fly) {
 function startFloor(S, f, t) {
 	const w = S.w, R = S.R, K = R.K, room = w.room, L = room.dive;
 	Object.assign(S, { floor: f, zone: f, ft: t, groups: [], boss: null, sealed: false, bossFell: false, stairsT: 0, ropeT: 0, ropeSaid: false, sealSaid: false, stray: null, reinT: null, reinN: 0, cadence: L.cadence });
+	// (part 5) the chests (the floor's, and each pocket's), the landmark
+	{ const seen = new Set(), list = []; for (const c of [...room.chests, ...room.plugs.map((pg) => pg.chest)]) { if (!c) continue; const key = c[0] + ',' + c[2]; if (seen.has(key)) continue; seen.add(key); list.push({ x: c[0], z: c[2], t: 0, open: false, pocket: room.pocketChest(c) }); }
+		S.chests = list; S.lm = room.landmark && LANDMARKS[room.landmark.kind] ? { kind: room.landmark.kind, x: room.landmark.at[0], z: room.landmark.at[2], t: 0, used: false, seen: false } : null; }
 	S.deepest = Math.max(S.deepest, f); S.tags.clear();
 	const r = R.rng(S.seed, S.route, f, 0xD1), P = R.pool(S.route, f), er = R.rng(S.seed, S.route, f, 0xE17E);
 	const n = Math.min(K.GROUP[1], K.GROUP[0] + Math.floor(f / 8));
@@ -254,6 +263,73 @@ export function reinforce(S) {
 }
 
 export const loot = (S, n) => { if (n > 0) S.stake += n; };
+/** An item is yours, and the page is told which (what explevel.js says of it is one of the run's lines too). */
+function give(S, id) { const ev = S.w.events, n0 = ev.length, n = takeItem(S, id); for (let i = n0; i < ev.length; i++) if (ev[i].k === 'say') S.says.push({ text: ev[i].text, s: ev[i].s }); return n; }
+
+// ---------------------------------------------------------------- (part 5) chests, secret pockets, landmarks
+/** The landmarks (the 2D game's LM numbers): [name, what it says, colour]. */
+export const LANDMARKS = { shrine: ['Shrine', 'you recover half your HP', '#9fffc8'], obelisk: ['Obelisk', '+30 % damage for 60 s', '#ffb347'], altar: ['Altar', 'you pay HP for loot', '#ff6b7a'],
+	shipwreck: ['Shipwreck', "the wreck's loot", '#ffd23f'], spire: ['Ice spire', 'the foes near it freeze', '#9fe8ff'], totem: ['Totem', 'experience', '#c9a6ff'],
+	monolith: ['Monolith', 'a lot of experience', '#e0e0ff'], fairy: ['Fairy ring', 'you are fully healed', '#ff9ed8'] };
+export const CHEST = { R: 1.15, T: 0.45, SEE: 5 };   // (tiles to open from, the 2D economy's; its OPEN_T is read when it is there; SEE: a landmark names itself from here)
+const typesOf = (S) => ((S.w.pl.mon && S.w.pl.mon.types) || []).map((t) => String(t).toLowerCase());
+/** Can your Pokémon open this kind of plug ('boulder' | 'thicket')? */
+export const canOpen = (S, kind) => typesOf(S).some((t) => (S.R.PLUG.TYPES[kind] || []).includes(t));
+/** Plug i of the floor opens: its tiles become ground. -> whether it did */
+export function openPlug(S, i) {
+	const room = S.w.room, pg = room.plugs[i]; if (!pg || pg.open) return false;
+	for (const p of [pg.at, pg.at2]) if (p) setCell(room, Math.floor(p[0] / CELL), Math.floor(p[2] / CELL), 0);
+	pg.open = true; S.secrets++; S.plugsOpen = (S.plugsOpen | 0) | (1 << i);
+	say(S, pg.kind === 'boulder' ? 'The boulder breaks! Something is behind it' : 'The thicket burns! Something is behind it', 2.6);
+	S.w.events.push({ k: 'plug', i, kind: pg.kind, x: pg.at[0], z: pg.at[2] });
+	return true;
+}
+/** The landmark is used: once a floor. */
+function useLandmark(S, lm) {
+	const w = S.w, pl = w.pl, LM = S.R.LM, k = lm.kind, f = S.floor;
+	lm.used = true; S.marks++;
+	if (k === 'shrine') pl.hp = Math.min(pl.maxHp, pl.hp + pl.maxHp * LM.SHRINE_HP);
+	else if (k === 'obelisk') S.obeliskT = LM.OBELISK_T;
+	else if (k === 'altar') { pl.hp = Math.max(1, pl.hp - pl.maxHp * LM.ALTAR_HP); loot(S, 20 + 3 * f); }
+	else if (k === 'shipwreck') loot(S, 15 + 2 * f);
+	else if (k === 'spire') { for (const e of w.enemies) if (!e.dead && !e.boss && Math.hypot(e.a.x - lm.x, e.a.z - lm.z) < tiles(LM.SPIRE_R)) e.frozenT = Math.max(e.frozenT || 0, LM.SPIRE_T); }
+	else if (k === 'totem' || k === 'monolith') gainXp(w, Math.round((pl.xpNext || 20) * (k === 'monolith' ? 0.6 : 0.35) / (pl.xpMul || 1)));
+	else if (k === 'fairy') pl.hp = pl.maxHp;
+	say(S, `${LANDMARKS[k][0]}: ${LANDMARKS[k][1]}`, 3);
+	w.events.push({ k: 'landmark', kind: k, x: lm.x, z: lm.z });
+}
+/** One tick of the floor's things. */
+function thingsTick(S, dt) {
+	const w = S.w, R = S.R, s = w.pl.s, room = w.room, f = S.floor;
+	if (S.obeliskT > 0) S.obeliskT = Math.max(0, S.obeliskT - dt);
+	if (R.PLUG) room.plugs.forEach((pg, i) => {
+		if (pg.open) return;
+		const mx = pg.at2 ? (pg.at[0] + pg.at2[0]) / 2 : pg.at[0], mz = pg.at2 ? (pg.at[2] + pg.at2[2]) / 2 : pg.at[2];
+		const by = Math.hypot(s.x - mx, s.z - mz) < tiles(R.PLUG.R + (pg.at2 ? 0.5 : 0)), ok = by && canOpen(S, pg.kind);
+		pg.t = ok ? (pg.t || 0) + dt : 0;
+		if (by && !ok && !S.plugTip) { S.plugTip = true; say(S, pg.kind === 'boulder' ? 'A boulder: a Rock, Ground, Fighting or Steel Pokémon breaks it' : 'A thicket: a Fire Pokémon burns it', 3.2); }
+		if (pg.t >= R.PLUG.T) openPlug(S, i);
+	});
+	const OT = (S.X && S.X.E && S.X.E.K && S.X.E.K.OPEN_T) || CHEST.T;
+	S.chests.forEach((c, i) => {
+		if (c.open) return;
+		c.t = Math.hypot(s.x - c.x, s.z - c.z) < tiles(CHEST.R) ? c.t + dt : 0;
+		if (c.t < OT) return;
+		c.open = true; S.opened++;
+		// one item, of a rarity by your level, your luck and the floor's zone (a zone every 10 floors, as the 2D Dive's)
+		let id = null;
+		if (S.lv) { const z0 = S.zone; S.zone = Math.min(3, 1 + Math.floor((f - 1) / 10)); id = rollOffers(S, R.rng(S.seed, S.route, f, 0xC4E5 + i), 1, 0)[0] || null; S.zone = z0; }
+		if (id) give(S, id); else { loot(S, 3 + f); say(S, 'A Poké Ball: a little loot', 2.2); }   // (no room for an item, or no items in this run)
+		w.events.push({ k: 'chest', i, x: c.x, z: c.z, item: id, pocket: c.pocket });
+	});
+	const lm = S.lm;
+	if (lm && !lm.used && R.LM) {
+		const d = Math.hypot(s.x - lm.x, s.z - lm.z);
+		if (!lm.seen && d < tiles(CHEST.SEE)) { lm.seen = true; say(S, `${LANDMARKS[lm.kind][0]}: stand on it (${LANDMARKS[lm.kind][1]})`, 3); }
+		lm.t = d < tiles(R.LM.R) ? lm.t + dt : 0;
+		if (lm.t >= R.LM.T) useLandmark(S, lm);
+	}
+}
 const secure = (S) => { S.bank += S.stake; S.stake = 0; S.rescuedBank = S.rescued.length; };
 function bossDown(S) {
 	const K = S.R.K, e = S.boss, guard = e.xk === 'guardian';
@@ -309,7 +385,7 @@ export function stepDive(S, input, dt = SK.TICK) {
 	if (S.ult) tickUlt(S, dt);
 	tickFog(S);
 	if (w.pl.dead) { end(S, false); return S; }
-	if (S.lv) { tickStats(S, dt); for (const ev of w.events) if (ev.k === 'pickup' && ev.kind === 'item') takeItem(S, ev.value); }
+	if (S.lv) { tickStats(S, dt); for (const ev of w.events) if (ev.k === 'pickup' && ev.kind === 'item') give(S, ev.value); }
 	let hurt = false;
 	for (const ev of w.events) {
 		if (ev.k === 'hurt') hurt = true;
@@ -330,6 +406,7 @@ export function stepDive(S, input, dt = SK.TICK) {
 	const lo = S.stray;
 	if (lo && !lo.done && !lo.follow && Math.hypot(s.x - lo.x, s.z - lo.z) < tiles(K.RESCUE_R)) { lo.follow = true; say(S, `${name(S, lo.dex)} follows you! Take it to the stairs`, 2.6); w.events.push({ k: 'follow', dex: lo.dex }); }
 	escortTick(S, dt);
+	thingsTick(S, dt);
 	if (S.boss && S.boss.dead) bossDown(S);
 	// the rope: stand still in the circle where you arrived
 	if (S.cadence.rope) {
@@ -358,13 +435,14 @@ export function hudLine(S) {
 	parts.push(S.boss ? (S.boss.xk === 'guardian' ? 'GUARDIAN' : 'ALPHA') : `STAIRS ${m} m`);
 	if (S.ropeT > 0) parts.push('ROPE ' + Math.max(0, S.R.K.ROPE_T - S.ropeT).toFixed(1) + ' s');
 	if (S.combo.n >= 2) parts.push('COMBO x' + S.combo.n);
+	if (S.obeliskT > 0) parts.push('OBELISK ' + Math.ceil(S.obeliskT) + ' s');
 	return parts.join(' · ');
 }
 /** The end screen's parts and lines (the 2D game's scoreParts and result). */
 export function result(S) {
 	const w = S.w;
-	const parts = { floor: S.floor, deepest: S.deepest, route: S.route, kills: S.kills, time: Math.floor(w.t), alphas: S.alphas, guardians: S.guardians, rescued: rescuedOf(S), combo: S.combo.best, escaped: S.escaped, divePay: payOf(S), zone: Math.min(4, 1 + Math.floor(S.floor / 10)), start: S.start, weekly: null };
+	const parts = { floor: S.floor, deepest: S.deepest, route: S.route, kills: S.kills, time: Math.floor(w.t), alphas: S.alphas, guardians: S.guardians, rescued: rescuedOf(S), combo: S.combo.best, chests: S.opened, secrets: S.secrets, landmarks: S.marks, escaped: S.escaped, divePay: payOf(S), zone: Math.min(4, 1 + Math.floor(S.floor / 10)), start: S.start, weekly: null };
 	return { won: S.escaped, title: S.escaped ? 'You escape with everything!' : 'RUN OVER', parts, stage: S.stage,
 		lines: [`Dive · ${S.R.nameOf(S.route)}: floor ${S.floor}`, `Loot secured: ${Math.floor(S.bank)} · at stake: ${Math.floor(S.stake)}`,
-			S.escaped ? 'You escaped: you keep all the loot' : 'You fell: you keep what was secured and a quarter of the rest', `Rescued: ${rescuedOf(S)}`, `Alphas: ${S.alphas} · Guardians: ${S.guardians}`, `Best combo: ${S.combo.best}`] };
+			S.escaped ? 'You escaped: you keep all the loot' : 'You fell: you keep what was secured and a quarter of the rest', `Rescued: ${rescuedOf(S)}`, `Alphas: ${S.alphas} · Guardians: ${S.guardians}`, `Best combo: ${S.combo.best}`, `Poké Balls opened: ${S.opened} · Secret pockets: ${S.secrets}`] };
 }
