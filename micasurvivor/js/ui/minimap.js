@@ -46,7 +46,7 @@ G.Minimap = (() => {
    */
   function place(w, h, rects, H = h) {
     if (!shown()) return null;
-    const list = (rects || []).filter(r => r.name !== 'minimap' && r.name !== 'xp');
+    const list = (rects || []).filter(r => r.name !== 'minimap' && r.name !== 'xp' && r.name !== 'xtip');   // (xtip: the Expedition's tip box hangs UNDER the minimap on a phone; if it could push the minimap, the two chased each other down the screen)
     const k = Math.min(1, H / K.refH);
     const s0 = Math.round(K.size * k), y0 = Math.max(K.y * k, 8);
     const sa = G.Touch && G.Touch.active ? G.Touch.safeArea() : { left: 0 };
