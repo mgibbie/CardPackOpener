@@ -1822,6 +1822,28 @@ Still missing next to the 2D Dive: the dark floors' lighting; the Weekly Dive an
 Tests: `micasurvivor_m3d_dive_eco_test.mjs` 22 checks in node; `micasurvivor_m3d_dive_yours_test.mjs` now 26;
 `micasurvivor_m3d_dive_page_test.mjs` now 56.
 
+## 5.67 3D Dive, fourteenth part: built (2026-11-13). The dark routes.
+
+The 2D Dive fills the view with the route's darkness and cuts a hole for your lamp. In 3D the same thing is
+the air (`m3d/divelight.js`): the darker the route, the nearer the fog and the closer its colour to the
+route's dark, so what is near you is lit and the rest of the floor is lost; the screen's edges are tinted.
+The darkness of each route is the 2D game's number.
+
+| Route | 2D darkness | You see about |
+|---|---|---|
+| Forest, Canyon, Origin | none | 78 m (the open sky) |
+| Ruins | 0.12 | 70 m |
+| Grotto | 0.24 | 62 m |
+| Reef | 0.38 | 53 m |
+| Marsh | 0.50 | 46 m |
+| Fungal | 0.60 | 39 m |
+| Crater | 0.74 | 30 m |
+
+Not in: the 2D light map's other lights (the landmark's glow, the lava's flicker, sun shafts).
+Seen while checking: the crater's ground is drawn as green meadow; the 3D biomes do not have a lava floor.
+
+Tests: `micasurvivor_m3d_dive_light_test.mjs` 12 checks in node; `micasurvivor_m3d_dive_page_test.mjs` now 59.
+
 ## 6. Dive in 2D: built
 
 **D0 — find the stairs (small; can ship first, on its own).** *Built 2026-11-11 (`overworld/tests/micasurvivor_dive_stairs_test.mjs`). As built: the stairs took their own orange mark, so the rocks and Meowth keep their gold; the HUD arrow comes up after 25 s on a floor, or at once when its boss falls.*

@@ -247,10 +247,20 @@ try {
 	await page.keyboard.press('Escape');
 	A(await waitFor(() => M(() => !window.__m3d.dive.pick && document.getElementById('cards').style.display !== 'grid'), 3000), '6f. Esc closes it and the Dive goes on');
 
+	// ---- 6g. (part 14) the dark routes
+	ok = await boot('dive=3&route=crater&dex=4&auto=1');
+	let lt = await M(() => window.__m3d.light());
+	A(ok && lt.dive.dark > 0.9 && lt.far < 32 && lt.near < 10 && lt.color === lt.dive.color && lt.color !== 0x9fc4e8 && lt.vignette, '6g. the crater is dark: the fog is close and the colour of its dark, the screen edges are tinted', lt);
+	ok = await boot('dive=3&route=forest&dex=4&auto=1');
+	lt = await M(() => window.__m3d.light());
+	A(ok && lt.dive.dark === 0 && lt.far === 78 && lt.near === 26 && lt.color === 0x9fc4e8 && !lt.vignette, '6g. the woods are lit: the 3D game\'s own sky and fog', lt);
+
 	// ---- 7. an Expedition is untouched
 	ok = await boot('exp=7&map=viridian&dex=4&weather=0');
 	d = await M(() => { const m = window.__m3d; return { run: !!m.run, dive: m.dive, zone: m.run && m.run.zone, slide: document.getElementById('b-slide').textContent, man: m.world.pl.moves.some((q) => q.xman) }; });
 	A(ok && d.run && d.dive === null && d.slide !== 'DODGE' && !d.man, '7. an Expedition on the same page boots as before (no Dive there)', d);
+	const xl = await M(() => window.__m3d.light());
+	A(xl.dive === null && xl.far === 78 && xl.near === 26 && xl.color === 0x9fc4e8 && !xl.vignette, '7. …with its own sky and fog', xl);
 	A(errors.length === 0, 'no page errors', errors.slice(0, 5).join(' | '));
 } catch (e) {
 	fail++; console.log('FAIL: crashed: ' + (e && e.stack || e));

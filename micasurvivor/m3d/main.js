@@ -8,7 +8,7 @@
 import * as THREE from 'three';
 import { K, CELL, step, newState, noInput, groundAt, stateName, facingRow, tuneFor, TYPE_TRAITS } from './sim.js';
 import { buildRoom, SPOTS } from './room.js';
-import { makeRenderer, buildTerrain, buildWater, buildRails, buildScatter, buildExit, drawMap, SpriteBatch, Shadows, Shots, Flashes, loadSheet, frameAt, spriteQuad, footLift, placeCamera, PX } from './render.js';
+import { makeRenderer, buildTerrain, buildWater, buildRails, buildScatter, buildExit, drawMap, SpriteBatch, Shadows, Shots, Flashes, loadSheet, frameAt, spriteQuad, footLift, placeCamera, PX, setFog, FOG0 } from './render.js';
 import { newWorld, addEnemy, addBoss, tick, dataFrom, choose, drop, CK, canFire } from './combat.js';
 import { frame as netFrame, keepEvents, diff as netDiff, bundle, unbundle, Viewer, Tape, ballColour, typeName, NK, PICK } from './net.js';
 import { Props, PROP_MON, BOBS } from './props.js';
@@ -35,6 +35,7 @@ import { refresh as refreshCards, skip as skipCards, banish as banishCard } from
 import { EK, ecoView, pickTake, pickClose, shopPrices } from './expeco.js';
 import { capView } from './expcap.js';
 import * as DS from './divesave.js';
+import { lightOf } from './divelight.js';
 import { rulesFrom, newDive, stepDive, hudLine as diveHud, result as diveResult, pressSpecial, specials, LANDMARKS } from './dive.js';
 
 const Q = new URLSearchParams(location.search);
@@ -120,6 +121,8 @@ const DMETA = (() => { if (!DKEEP || !GG.ExpMeta) return null; try { return meta
 const DSHINY = DKEEP && (() => { const b = baseSave(); return GG.ExpSave.has('league.shiny', String(DMEMBER)) || !!(b && b.partnerShiny && b.shiny && b.shiny[DEX]); })();
 const drun = DR ? newDive(dataFrom(GG), XF, DR, { form: DFORM, perks: DKEEP ? perksOf(GG, baseSave(), DEX) : null, meta: DMETA, shiny: DSHINY, route: DROUTE, seed: GEN, start: DSTART, seal: DSAVE_OK && DS.sealOf(GG.ExpSave, DROUTE), league: !Q.has('moves') && Q.get('league') !== '0', dex: DEX, moves: DMOVES, tune: TUNE, touch: matchMedia('(pointer: coarse)').matches, ability: Q.get('ability') === '0' ? null : Q.get('ability') || 'auto', items: Q.get('items') ? Q.get('items').split(',') : [], weather: false, autoPick: Q.has('auto') ? +Q.get('auto') | 0 : undefined }) : null;
 if (drun) { room = drun.w.room; drun.w.cap = DR.K.REIN.cap + 60; }
+// (part 14) a dark route: its air (the fog comes close and takes the route's colour: your lamp), its tint at the screen's edges
+const DLIGHT = drun ? lightOf(drun.route, FOG0) : null;
 const solo = run || drun;   // (a run of your own, alone on this page: an Expedition or a Dive)
 // (P4) a guest in a run: its own League member in the host's run (expcoop.js); it builds each zone from the run's row
 const grun = XJ ? guestRun(dataFrom(GG), XF, { seed: XJ.seed, map: XJ.map, diff: XJ.diff, id: MYID, dex: DEX, league: !Q.has('moves'), moves: MOVES, tune: TUNE, ability: Q.get('ability') === '0' ? null : Q.get('ability') || undefined, autoPick: Q.has('auto') ? +Q.get('auto') | 0 : undefined }) : null;
@@ -131,6 +134,12 @@ const state = world ? world.pl.s : newState(room, TUNE);
 const TYPE_COLOR = (GG.U && GG.U.TYPE_COLOR) || {};
 const PICK_COLOR = { xp: '#6fd3ff', xpBig: '#3da8ff', heal: '#5fe08a', magnet: '#ff9ed8', bomb: '#ff7b3d', item: '#ffd23f', held: '#ff8fd0' };
 const { renderer, scene, camera } = makeRenderer(canvas);
+if (DLIGHT && DLIGHT.dark > 0) {
+	setFog(renderer, scene, DLIGHT);
+	const v = document.createElement('div'); v.id = 'dive-dark';
+	v.style.cssText = `position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse at 50% 55%, rgba(0,0,0,0) 42%, ${DLIGHT.vignette} 100%)`;
+	canvas.insertAdjacentElement('afterend', v);
+}
 let roomMeshes = [];
 /** Show a level (P4: a run moves from one to the next: the old one's meshes go). */
 let roomBuilds = 0;
@@ -1035,7 +1044,7 @@ const G_MUSIC = GG.BIOME_MUSIC || null, XK_MAPS = ['viridian', 'mtmoon', 'cerule
 
 // what a test (and a curious owner in the console) can reach
 window.__m3d = {
-	dive: drun, diveRules: DR, special, diveSave: { practice: DPRACTICE, ok: DSAVE_OK, start: DSTART, member: DMEMBER, form: DFORM, keep: DKEEP, meta: !!DMETA }, propKeys: () => (props ? [...props.atlas.cells.keys()] : []), roomBuilds: () => roomBuilds,
+	dive: drun, diveRules: DR, special, light: () => ({ dive: DLIGHT, near: scene.fog.near, far: scene.fog.far, color: scene.fog.color.getHex(), vignette: !!document.getElementById('dive-dark') }), diveSave: { practice: DPRACTICE, ok: DSAVE_OK, start: DSTART, member: DMEMBER, form: DFORM, keep: DKEEP, meta: !!DMETA }, propKeys: () => (props ? [...props.atlas.cells.keys()] : []), roomBuilds: () => roomBuilds,
 	meta: LAB_META, upgrades: UPGRADES, leadShiny: LEAD_SHINY, skey,
 	keepShiny,
 	siteHost: SITE_HOST, siteWatch: SITE_WATCH,
