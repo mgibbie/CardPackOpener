@@ -74,6 +74,7 @@ export function guestDiveApply(S, row) {
 			w.events.push({ k: 'floor', floor: rv.floor });
 		}
 	}
+	S.stage = Math.max(S.stage | 0, rv.stage | 0);   // (the stage the party's last guardian saved)
 	S.floor = rv.floor; S.zone = rv.floor; S.route = rv.route; S.seed = rv.seed; S.coins = rv.coins; S.weekly = rv.weekly;
 	if (rv.over && !S.ended) { S.ended = true; S.escaped = rv.over === 'won'; S.won = S.escaped; S.lost = !S.won; }
 	return rv;

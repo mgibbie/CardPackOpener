@@ -33,7 +33,8 @@ export const LOBBY_OK = { host: ['host', 'lobby'], guest: ['join', 'lobby', 'lh'
 /** What a GUEST of a co-op run writes into its own Expedition save (the 2D game's rule: every player records the run
  *  as its own, with the team's result and the same pay). S: the guest's side of the run (expcoop.js / divecoop.js);
  *  end: what the host said of the end: { pay (Pokémonedas), kills, time, depth (the zone, or the Dive's deepest floor),
- *  won }; o: { dev, T: G.ExpTier (an Expedition) }. A guest keeps no best time, medal, stage or Seal: those are the host's run's. */
+ *  won }; o: { dev, T: G.ExpTier (an Expedition) }. A guest keeps no best time or medal: those are the host's run's.
+ *  (A Dive's stage and Seal a guest keeps the moment a guardian falls: main.js keepGuestGuardian.) */
 export function guestOps(S, end, o) {
 	const ops = [], bump = (k, n = 1) => { n = Math.floor(n); if (n > 0) ops.push(['bump', k, n]); }, best = (k, v) => { v = Math.floor(v); if (v > 0) ops.push(['best', k, v]); }, add = (set, id) => ops.push(['add', set, String(id)]);
 	const pl = S.w.pl, won = !!end.won;

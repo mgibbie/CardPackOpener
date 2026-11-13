@@ -770,7 +770,7 @@ if (chan && JOIN) chan.onmessage = (m) => {   // a guest: the host's frames
 	if (o.h && (o.h.gen !== GEN || o.h.biome !== BIOME || (o.h.size || null) !== (SIZE || null) || (o.h.dive ? !DJ || DJ.seed !== (o.h.dive.seed | 0) || DJ.route !== o.h.dive.route : !!DJ))) { if (!net.moving) { net.moving = true; const q = new URLSearchParams(location.search); q.set('gen', o.h.gen); q.set('biome', o.h.biome); if (o.h.size) q.set('size', o.h.size); else q.delete('size'); q.set('id', MYID); q.set('dex', DEX); if (o.h.exp) { q.set('xj', o.h.exp.seed); q.set('map', o.h.exp.map); q.set('diff', o.h.exp.diff); } if (o.h.dive) { q.set('dj', o.h.dive.seed); q.set('route', o.h.dive.route); } else { q.delete('dj'); q.delete('route'); } location.search = q.toString(); } return; }
 	if (!o.h && !world.co.viewer.frames.length) return;   // (wait for a whole frame to start from)
 	guestApply(world, o.f);
-	if (gdrun) { const last = world.co.viewer.last; if (last && last.r) { rv = guestDiveApply(gdrun, last.r); if (gdrun.w.room !== room) { room = gdrun.w.room; mapBase = null; showRoom(); } } }   // (part 17) the Dive: its floor, its things, its line
+	if (gdrun) { const last = world.co.viewer.last; if (last && last.r) { rv = guestDiveApply(gdrun, last.r); if ((gdrun.stage | 0) > guestStage) { guestStage = gdrun.stage | 0; if (keepGuestGuardian()) note('Stage and Seal saved', 3000); } if (gdrun.w.room !== room) { room = gdrun.w.room; mapBase = null; showRoom(); } } }   // (part 17) the Dive: its floor, its things, its line
 	if (grun) { const last = world.co.viewer.last; if (last && last.r) { rv = guestRunApply(grun, last.r); if (grun.w.room !== room) { room = grun.w.room; mapBase = null; showRoom(); state.facing = cam.yaw; } } }   // (P4) the run: its zone's level, its things, its line
 	if (o.f.m && o.f.m.some((r) => r[0] === MYID)) net.joined = true;
 };
@@ -1007,7 +1007,15 @@ function keepShiny(dex) {
 }
 /** (§5.73) A GUEST of a lobby's run keeps it in its own save: the team's result and the same pay (the 2D game's rule).
  *  The end is the host's word (the row's `e`): it may come a moment after the run is over, so this waits for it. */
-let guestKeeping = false;
+let guestKeeping = false, guestStage = 0;
+/** (plan 3b) The party beat a guardian: a lobby's guest keeps the stage and the route's Seal in its OWN save, the moment it
+ *  falls (as the host does, keepGuardian). Only in a run the guest will keep, with its own member; never the Weekly Dive. */
+function keepGuestGuardian() {
+	if (!gdrun || GPRACTICE || !GSAVE_OK || !GG.ExpSave.data || !('perks' in GOWN) || !gdrun.lg || !cleanRun(gdrun, (performance.now() - runBegan) / 1000)) return false;
+	const ops = DS.guardianOps({ stage: gdrun.stage | 0, weekly: gdrun.weekly, route: gdrun.route });
+	if (!ops.length) return false;
+	applyOps(GG.ExpSave, ops); return true;
+}
 async function keepGuest(S) {
 	if (guestKeeping) return kept; guestKeeping = true;
 	const say = (ok, text, extra) => { kept = { ok, text, ...extra }; if (RUNUI) RUNUI.update(runView()); return kept; };

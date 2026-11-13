@@ -23,6 +23,7 @@ export function diveRow(S) {
 	const Z = S.eco && S.eco.z;
 	if (Z) { const o = []; for (const q of Z.lay.objs) if (Z.st[q.i] !== FRESH) o.push(q.i, Z.st[q.i]); if (o.length) row.o = o; if (Z.spot >= 0) row.sp = Z.spot; }
 	if (S.lg) row.l = [S.lg.member, S.lg.form, S.lg.kit, S.lg.mat, S.lg.mega || 0, S.lg.shiny ? 1 : 0];
+	if (S.stage > 0) row.g = S.stage;   // (a guardian has fallen: the stage it saved. A guest keeps it in its own save, plan 3b)
 	return row;
 }
 /** A row, read. R: rulesFrom(G); X: expFrom(G); keep: an object of the caller's, for the floor.
@@ -59,6 +60,7 @@ export function diveView(row, RR, X, keep = {}) {
 		return parts.join(' · ');
 	};
 	return { dive: true, seed, route, floor, weekly: week >= 0 ? { week, mod } : null, room, chests, lm, stray, eco, bank, stake, coins, rescued, sealed: !!(fl & 1), boss: boss === 2 ? 'guardian' : boss === 1 ? 'alpha' : '',
+		stage: row.g | 0,
 		end: row.e ? { pay: row.e[0], kills: row.e[1], time: row.e[2], depth: row.e[3], won: !!row.e[4] } : null,
 		over: over === 2 ? 'won' : over === 1 ? 'lost' : '', league: row.l ? { member: row.l[0], form: row.l[1], kit: row.l[2], mat: row.l[3], mega: row.l[4] || 0, shiny: !!row.l[5] } : null,
 		zone: floor, sa: [], faint: [], cine: null, held: null, mateSa: new Map(), surv: null, hazards: [], night: 0, hud };
