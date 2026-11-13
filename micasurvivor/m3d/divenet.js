@@ -61,7 +61,7 @@ export function diveView(row, RR, X, keep = {}) {
 	};
 	return { dive: true, seed, route, floor, weekly: week >= 0 ? { week, mod } : null, room, chests, lm, stray, eco, bank, stake, coins, rescued, sealed: !!(fl & 1), boss: boss === 2 ? 'guardian' : boss === 1 ? 'alpha' : '',
 		stage: row.g | 0,
-		end: row.e ? { pay: row.e[0], kills: row.e[1], time: row.e[2], depth: row.e[3], won: !!row.e[4], start: row.e[5] || 1 } : null,
+		end: row.e ? { pay: row.e[0], kills: row.e[1], time: row.e[2], depth: row.e[3], won: !!row.e[4], start: row.e[5] || 1, replay: row.e[6] } : null,
 		over: over === 2 ? 'won' : over === 1 ? 'lost' : '', league: row.l ? { member: row.l[0], form: row.l[1], kit: row.l[2], mat: row.l[3], mega: row.l[4] || 0, shiny: !!row.l[5] } : null,
 		zone: floor, sa: [], faint: [], cine: null, held: null, mateSa: new Map(), surv: null, hazards: [], night: 0, hud };
 }

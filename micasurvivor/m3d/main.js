@@ -12,7 +12,7 @@ import { makeRenderer, buildTerrain, buildWater, buildRails, buildScatter, build
 import { newWorld, addEnemy, addBoss, tick, dataFrom, choose, drop, CK, canFire } from './combat.js';
 import { frame as netFrame, keepEvents, diff as netDiff, bundle, unbundle, Viewer, Tape, ballColour, typeName, NK, PICK } from './net.js';
 import { Props, PROP_MON, BOBS } from './props.js';
-import { hostAdd, hostStep, hostFrame, hostApply, guestWorld, guestSync, guestMsg, guestApply } from './coop.js';
+import { hostAdd, hostStep, hostFrame, hostApply, guestWorld, guestSync, guestMsg, guestApply, mateRows } from './coop.js';
 import { generate, BIOMES } from './gen.js';
 import { mountRunUi, pretty } from './runui.js';
 import { HostLink, WatchLink, runId, SAYS as LIVE_SAYS } from './exprelay.js';
@@ -49,7 +49,9 @@ const Q = new URLSearchParams(location.search);
 // ?join=<name> JOINS that fight as a second player (co-op: coop.js), with your own ?dex= and ?moves=.
 // (the shipping path) ?live=<friend> watches a friend's run over the site's own lines (exprelay.js): as ?watch=, but polled from the server
 const LIVE = Q.get('live') || null;
-const WATCH = Q.get('watch') || LIVE || null, HOST = Q.get('host') || null, JOIN = !WATCH && Q.get('join') || null;
+// (plan 3f) ?replay=<id>: a kept run's tape, from the server (a board's ▶): watched like a live one, from its start
+const REPLAY = /^[a-f0-9]{8,20}$/.test(Q.get('replay') || '') ? Q.get('replay') : null;
+const WATCH = Q.get('watch') || LIVE || (REPLAY ? 'replay' : null), HOST = Q.get('host') || null, JOIN = !WATCH && Q.get('join') || null;
 const MYID = JOIN ? +(Q.get('id') || 0) || 1 + (Date.now() % 90000) : 0;
 // P4: ?exp=<seed> plays a Classic EXPEDITION run (expedition.js): &map=viridian|mtmoon|cerulean, &diff=normal|hard|nightmare.
 // Find the altar (the column of light, on the minimap), stand on it, beat the guardian, take the portal.
@@ -741,7 +743,14 @@ const chan = SITE_WATCH || LINK || SITE_HOST || ((HOST || WATCH || JOIN) && type
 const sendEvery = () => (LINK && LINK.slow ? 30 : Math.round(60 / NK.HZ));
 let coView = null;
 /** The other players in the fight: a host's puppets of its guests; a guest's view of the host and the other guests. */
-const mates = () => (!world ? [] : JOIN ? world.co.mates : world.mates);
+/** (plan 3f) The other players as a WATCHER sees them (a live co-op run, or its replay): from the two frames either side of now. */
+const NO_MATES = [];
+function viewMates() {
+	const v = view; if (!v || !v.fb || !v.fb.m || !v.fb.m.length) return NO_MATES;
+	const A = new Map((v.fa.m || []).map((r) => [r[0], r])), k = v.k, P = NK.POS, dt = Math.max(0.05, (v.fb.t - v.fa.t) * K.TICK);
+	return v.fb.m.map((b) => { const a = A.get(b[0]) || b, L = (i) => (a[i] + (b[i] - a[i]) * k) / P; return { id: b[0], dex: b[1], dead: !!(b[6] & 32), hp: b[7], maxHp: b[8], s: { x: L(2), y: L(3), z: L(4), facing: b[5] * 6.2832 / 256, grounded: !!(b[6] & 1), sliding: !!(b[6] & 2), swimming: !!(b[6] & 4), vx: (b[2] - a[2]) / P / dt, vz: (b[4] - a[4]) / P / dt } }; });
+}
+const mates = () => (!world ? viewMates() : JOIN ? world.co.mates : world.mates);
 const HEAD = { gen: GEN, biome: BIOME, size: SIZE, dex: DEX };
 if (run) HEAD.exp = { seed: GEN, map: run.map, diff: run.diff };
 if (drun) HEAD.dive = { seed: drun.seed, route: drun.route };   // (part 16) a Dive: a watcher needs its seed and route to build the floors   // (P4) a run: a watcher needs its seed and map to build the zones
@@ -749,17 +758,39 @@ if (drun) HEAD.dive = { seed: drun.seed, route: drun.route };   // (part 16) a D
 /** (§5.73) The run's end as its host kept it, for the guests: [pay, kills, seconds, the zone or the deepest floor, won]. */
 const endRow = () => {
 	const r = runOver; if (!r || typeof r !== 'object' || !r.parts) return null;
-	if (drun) return [DS.coinsOf(r.parts.divePay), r.parts.kills | 0, r.parts.time | 0, r.parts.deepest | 0, r.parts.escaped ? 1 : 0, r.parts.start || 1];   // (start: for a guest's mark on the co-op board)
+	if (drun) return [DS.coinsOf(r.parts.divePay), r.parts.kills | 0, r.parts.time | 0, r.parts.deepest | 0, r.parts.escaped ? 1 : 0, r.parts.start || 1].concat(replayId === undefined ? [] : [replayId]);   // (start: for a guest's mark on the co-op board; then the replay's id, once its upload has settled)
 	const sb = scoreBody(runSum(run, r, SV.DV));   // (the score and its parts, as the host posts them: a guest posts the same, plan 3f)
-	return [r.pay ? r.pay.pay | 0 : 0, r.parts.kills | 0, r.parts.time | 0, run.zone | 0, r.won ? 1 : 0, sb.score, sb.dmg, sb.bosses, sb.catches, sb.kills, sb.time, sb.zone];
+	return [r.pay ? r.pay.pay | 0 : 0, r.parts.kills | 0, r.parts.time | 0, run.zone | 0, r.won ? 1 : 0, sb.score, sb.dmg, sb.bosses, sb.catches, sb.kills, sb.time, sb.zone].concat(replayId === undefined ? [] : [replayId]);
 };
 /** (plan 3f) A lobby's 3D co-op run goes to the co-op boards: the party's size (the most it has been) and the others' names. */
 let teamPeak = 0;
+/** (plan 3f) The run's tape, packed as the server stores replays ('G1.' + base64url(gzip(JSON))) and sent. -> its id, or '' (none:
+ *  not recorded, too large, or the upload failed: the run is kept all the same). replayId: undefined until this has settled. */
+let replayId;
+const b64url = (bytes) => { let s = ''; for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000)); return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); };
+const fromB64url = (t) => { const b = atob(t.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((t.length + 3) % 4)), out = new Uint8Array(b.length); for (let i = 0; i < b.length; i++) out[i] = b.charCodeAt(i); return out; };
+const packTape = async (text) => 'G1.' + b64url(new Uint8Array(await new Response(new Blob([text]).stream().pipeThrough(new CompressionStream('gzip'))).arrayBuffer()));
+const unpackTape = async (code) => (code.startsWith('R1.') ? new TextDecoder().decode(fromB64url(code.slice(3))) : await new Response(new Blob([fromB64url(code.slice(3))]).stream().pipeThrough(new DecompressionStream('gzip'))).text());
+const REPLAY_MAX = 1_200_000;   // (the server's cap on a packed replay)
+async function sendReplay(meta) {
+	if (replayId !== undefined) return replayId;
+	let id = '';
+	try {
+		if (REC && tape && tape.f.length > 1 && siteCall) {
+			const code = await packTape(tape.pack());
+			if (code.length <= REPLAY_MAX) { const d = await siteCall('micasurvivor-replay-put', { d3: true, code, meta }); if (d && d.ok && d.body && d.body.id) id = String(d.body.id); else console.warn('the replay was not stored: ' + JSON.stringify((d && d.body) || '')); }
+			else console.warn('the replay is too large to store: ' + code.length);
+		}
+	} catch (e) { console.warn('the replay was not stored: ' + (e && e.message)); }
+	replayId = id; return id;
+}
 const keptRest = () => { const { ok: _ok, text: _text, ...rest } = kept || {}; return rest; };   // (what the end screen already says of the save: its pay, its record: the board's line is added to it, not put in its place)
 const coopOf = () => { const me = GG.MicaAccount && GG.MicaAccount.name(), n = Math.max(2, Math.min(4, 1 + Math.max(teamPeak, mates().length))); return { coop: n, team: LINK && LINK.modes ? Object.keys(LINK.modes).filter((q) => q !== me).slice(0, n - 1) : [] }; };
 const coopRun = () => !!LOBBY && (coopSeen || !!JOIN);
 const rowed = (f) => { if (run) f.r = runRow(run); else if (drun) f.r = diveRow(drun); if (f.r && world.mates.length) { const e = endRow(); if (e) f.r.e = e; } return f; };
-const tape = FIGHT && Q.get('tape') === '1' ? new Tape({ ...HEAD, at: 0 }) : null;
+// (plan 3f) a run that can be kept by a signed-in player is recorded for its replay: its own run, never a guest's side of one
+const REC = FIGHT && !JOIN && !!siteCall && ((!!run && SAVE_OK && !PRACTICE) || (!!drun && DSAVE_OK && !DPRACTICE)) && Q.get('rec') !== '0';
+const tape = FIGHT && (Q.get('tape') === '1' || REC) ? new Tape({ ...HEAD, at: 0 }) : null;
 const net = { sent: 0, chars: 0, got: 0, evLive: [], evTape: [], prev: null, n: 0, batch: [], relay: false };
 const RELAY = Q.get('relay') === '1' || !!SITE_HOST;   // (the site's lines carry one message a second)
 /** The host's side, once a tick: a frame every 6 ticks to whoever is watching (a whole one every second, the rest as
@@ -781,7 +812,7 @@ function share() {
 		const f = rowed(world.mates.length ? hostFrame(world, net.evLive) : netFrame(world, net.evLive)), whole = net.n % NK.HZ === 0 || !net.prev, msg = JSON.stringify(whole ? { h: HEAD, f } : { f: netDiff(net.prev, f) });
 		chan.postMessage(msg); net.prev = f; net.n++; net.sent++; net.chars += msg.length; net.biggest = Math.max(net.biggest || 0, msg.length); net.evLive = [];
 	}
-	if (tape && world.tick % Math.round(60 / NK.TAPE_HZ) === 0 && world.tick !== net.taped) { net.taped = world.tick; tape.add(rowed(netFrame(world, net.evTape))); net.evTape = []; }   // (once a tick: the clock stands still while a card or a choice is up)
+	if (tape && world.tick % Math.round(60 / NK.TAPE_HZ) === 0 && world.tick !== net.taped) { net.taped = world.tick; { const tf = netFrame(world, net.evTape); if (world.mates.length) tf.m = mateRows(world); tape.add(rowed(tf)); } net.evTape = []; }   // (once a tick: the clock stands still while a card or a choice is up)
 }
 /** The watcher's side. Frames come in; the fight is drawn a moment in the past, so there is always a frame on each
  *  side of what is on screen. The camera is this screen's own. */
@@ -841,6 +872,24 @@ function watchStep(dt) {
 	if (view.pl.dead) note('down', 2000);
 }
 /** Play a tape (its text) on this page instead of a live fight. */
+let replayState = REPLAY ? 'loading' : '';
+if (REPLAY) (async () => {
+	try {
+		const res = await fetch('/api/mp', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'micasurvivor-replay-get', id: REPLAY }) });
+		const d = await res.json().catch(() => null);
+		if (!res.ok || !d || !d.code) { replayState = 'gone'; note(res.status === 404 ? 'This replay is no longer kept.' : "Couldn't load the replay.", 600000); return; }
+		const text = await unpackTape(d.code), h = JSON.parse(text).h || {};
+		// the run is not the one this page built: load it (once), keeping the replay
+		if (h.gen !== GEN || h.biome !== BIOME || (h.size || null) !== (SIZE || null) || h.dex !== DEX || (h.exp ? !XW || XW.map !== h.exp.map : !!XW) || (h.dive ? !DW || DW.seed !== (h.dive.seed | 0) || DW.route !== h.dive.route : !!DW)) {
+			if (Q.has('rr')) { replayState = 'gone'; note("Couldn't set this replay up.", 600000); return; }   // (once only: never a loop)
+			const q = new URLSearchParams(); q.set('replay', REPLAY); q.set('rr', '1'); if (h.exp) { q.set('xw', h.exp.seed); q.set('map', h.exp.map); } if (h.dive) { q.set('dw', h.dive.seed); q.set('route', h.dive.route); } q.set('gen', h.gen); q.set('biome', h.biome); if (h.size) q.set('size', h.size); q.set('dex', h.dex);
+			location.search = q.toString(); return;
+		}
+		const p = playTape(text); replayState = 'playing'; replayInfo = { by: d.by || '', frames: p.frames, to: p.to, meta: d.meta || {} };
+		note(`Replay${d.by ? ' · ' + d.by : ''}`, 4000);
+	} catch (e) { replayState = 'gone'; console.warn('the replay could not be played: ' + (e && e.message)); note("Couldn't load the replay.", 600000); }
+})();
+let replayInfo = null;
 function playTape(text) { const t = Tape.unpack(text), p = t.play(); viewer = p.viewer; watchSrc = 'tape'; watchT = p.from; tapeEnd = p.to; return { header: t.h, from: p.from, to: p.to, frames: p.viewer.frames.length }; }
 /** (P3) Damage numbers: text that rises from where a hit landed, drawn on a flat canvas over the scene (each is placed
  *  by projecting its point in the world through the camera). */
@@ -968,6 +1017,7 @@ function runView() {
 		shield: pl && pl.xproc ? pl.xproc.shield || 0 : 0, xp: pl ? pl.xp : 0, xpNext: pl ? pl.xpNext : 0, time: world ? world.t : view ? view.t : 0, kos: world ? world.stats.kills : view ? view.kills : null, parts: [], bag: [], boss: null, over: null };
 	if (SITE_HOST && SITE_HOST.watched) v.bag.push({ text: SITE_HOST.watchers + ' watching', kind: 'on' });
 	if (LIVE) v.bag.push({ text: 'Watching ' + LIVE, kind: 'on' });
+	if (REPLAY) v.bag.push({ text: replayState === 'playing' ? 'Replay' + (replayInfo && replayInfo.by ? ' · ' + replayInfo.by : '') + (watchT >= tapeEnd - 0.05 ? ' · the end' : '') : replayState === 'gone' ? 'Replay not found' : 'Loading the replay…', kind: 'on' });   // (plan 3f: it says what you are watching, all the way through)
 	if (run) { v.parts = hudLine(run).split(' · '); if (run.ph === 0 && !run.surv && run.charge > 0) v.parts.push(`CHARGE ${Math.round(run.charge * 100)} %`); }
 	else if (drun) v.parts = diveHud(drun).split(' · ');
 	else if (rv) v.parts = rv.hud(state).split(' · ');
@@ -1068,7 +1118,9 @@ async function keepGuest(S) {
 		if (A && A.name() && coopRun() && !S.weekly && !S.surv && (S.dive || e.board)) {
 			const body = S.dive ? DS.scoreBody(S, { parts: { route: S.route, deepest: e.depth, start: e.start || 1, time: e.time, escaped: e.won, kills: e.kills } }, { dv: SV.DV, board: SV.BOARD })
 				: scoreBody({ mode: 'exp-classic', dv: SV.DV, map: S.map, diff: S.diff, score: e.board.score, time: e.board.time, kills: e.board.kills, level: pl.level, dex: S.lg ? S.lg.form : pl.mon.dex, parts: { zone: e.board.zone, won: e.won, dmg: e.board.dmg, bosses: e.board.bosses, catches: e.board.catches } });
-			const d = await A.call('run-score', Object.assign(body, coopOf()));
+			for (let i = 0; i < 80 && rv.end && rv.end.replay === undefined; i++) await new Promise((r) => setTimeout(r, 100));   // (the host's replay: its upload settles a moment after the end)
+			const hr = rv.end && typeof rv.end.replay === 'string' && /^[a-f0-9]{8,20}$/.test(rv.end.replay) ? rv.end.replay : '';
+			const d = await A.call('run-score', Object.assign(body, coopOf(), hr ? { replay: hr } : {}));
 			if (d.ok && d.body && d.body.rank) say(true, kept.text + (d.body.better ? ` New best on the 3D co-op board: #${d.body.rank}.` : ` 3D co-op board: #${d.body.rank}.`), { ops: ops.length, pay: e.pay, rank: d.body.rank, board: d.body.board });
 			else if (!d.ok) console.warn('the co-op board did not take the run: ' + JSON.stringify(d.body || d.error || ''));
 		}
@@ -1098,7 +1150,9 @@ async function keepDive(res) {
 		say(true, (rec ? `New record on this route: floor ${res.parts.deepest}. ` : '') + (pay > 0 ? `Saved. ₽ ${pay} will be in your wallet when you next open the Expedition.` : 'Saved.'), { ops: ops.length, pay, record: rec });
 		const A = GG.MicaAccount;   // (part 7) signed in: its mark on the route's 3D board
 		if (A && A.name() && (!coopSeen || (coopRun() && !drun.weekly))) {   // (a party's run: the co-op board, a lobby's only)
-			const d = await A.call('run-score', Object.assign(DS.scoreBody(drun, res, { dv: SV.DV, board: SV.BOARD }), coopSeen ? coopOf() : {}));
+			const co = coopSeen ? coopOf() : {}, sbd = DS.scoreBody(drun, res, { dv: SV.DV, board: SV.BOARD });
+			const rid = await sendReplay({ d3: true, dex: sbd.dex, mon: (GG.DEX_BY[sbd.dex] || {}).name || '', mode: 'exp-dive', time: sbd.time, level: sbd.level, kills: sbd.kills, dv: SV.DV, map: drun.route, diff: '', coop: co.team || [] });
+			const d = await A.call('run-score', Object.assign(sbd, co, rid ? { replay: rid } : {}));
 			const bn = coopSeen ? '3D co-op board' : '3D board';
 			if (d.ok && d.body && d.body.rank) say(true, kept.text + (d.body.better ? ` New best on the ${bn}: #${d.body.rank}.` : ` ${bn}: #${d.body.rank}.`), { ...keptRest(), rank: d.body.rank, board: d.body.board });
 		}
@@ -1123,7 +1177,9 @@ async function keepRun(res) {
 		say(true, (pay > 0 ? `Saved. ₽ ${pay} will be in your wallet when you next open the Expedition.` : 'Saved.') + (met.length ? ` New in the wild: ${met.slice(0, 3).map((d) => (GG.DEX_BY[d] || {}).name).join(', ')}${met.length > 3 ? ' and ' + (met.length - 3) + ' more' : ''}.` : ''), { ops: ops.length, pay, met });
 		const A = GG.MicaAccount;
 		if (A && A.name() && (!coopSeen || (coopRun() && !run.surv))) {   // (a party's run: the co-op board, a lobby's only)
-			const d = await A.call('run-score', Object.assign(scoreBody(runSum(run, res, SV.DV)), coopSeen ? coopOf() : {}));
+			const co = coopSeen ? coopOf() : {}, sbx = scoreBody(runSum(run, res, SV.DV));
+			const rid = run.surv ? '' : await sendReplay({ d3: true, dex: sbx.dex, mon: (GG.DEX_BY[sbx.dex] || {}).name || '', mode: sbx.expMode, time: sbx.time, level: sbx.level, kills: sbx.kills, dv: SV.DV, map: run.map, diff: run.diff, coop: co.team || [] });
+			const d = await A.call('run-score', Object.assign(sbx, co, rid ? { replay: rid } : {}));
 			const bn = coopSeen ? '3D co-op board' : '3D board';
 			if (d.ok && d.body && d.body.rank) say(true, kept.text + (d.body.better ? ` New best on the ${bn}: #${d.body.rank}.` : ` ${bn}: #${d.body.rank}.`), { ...keptRest(), rank: d.body.rank, board: d.body.board });
 		}
@@ -1194,7 +1250,7 @@ window.__m3d = {
 	ult: { press: () => { if (run) pressUlt(run); }, charge: (v) => { if (run) setCharge(run, v); }, view: () => (run ? ultView(run) : null), setAuto: (on) => setUltAuto(on), get cut() { return cutIn; } },
 	runView: () => (RUNUI ? runView() : null),
 	get megaNow() { return megaNow; }, megaSheets,
-	get ready() { return ready; }, get mapMarks() { return mapMarks.map((o) => ({ ...o })); }, get lights() { const wm = roomMeshes[1]; return { glows, calm: CALM, liquid: wm && wm.userData ? wm.userData.liquid : null, lava: wm && wm.material ? { color: wm.material.color.getHex(), opacity: wm.material.opacity, fog: wm.material.fog } : null, look: room.look || null }; }, state, get room() { return room; }, run, setZoneTime: (sec) => run && setZoneTime(run, sec), useTool, takePick, ecoView: () => (solo ? ecoView(solo) : []), capView: () => (run ? capView(run) : null), hazards: () => (run ? hazardsNow(run) : []), fog: () => fogNow(), toggleMap, get mapBig() { return mapBig; }, get rv() { return rv; }, noteLog, grun, fire: (ev) => run && fireEvent(run, ev), K, TUNE, TYPES, TRAITS, cam, crowd, sheets, stats, gen: GEN, biome: BIOME, world, numbers, net, tape, myId: MYID, mates, get coView() { return coView; }, playTape, get view() { return view; }, get viewer() { return viewer; }, get watchT() { return watchT; }, addBoss: (dex, x, z, o) => addBoss(world, dex, x, z, o), drop: (kind, x, z, v) => drop(world, kind, x, groundAt(room, x, z), z, v), pickCard, addEnemy: (dex, x, z, o) => addEnemy(world, dex, x, z, o), holdExit: false, get leaving() { return leaving; },
+	get ready() { return ready; }, get mapMarks() { return mapMarks.map((o) => ({ ...o })); }, get replay() { return { id: REPLAY, state: replayState, info: replayInfo, rec: REC, sent: replayId, taped: tape ? tape.f.length : 0, src: watchSrc, at: watchT, end: tapeEnd, mates: viewMates().length }; }, sendReplay, get lights() { const wm = roomMeshes[1]; return { glows, calm: CALM, liquid: wm && wm.userData ? wm.userData.liquid : null, lava: wm && wm.material ? { color: wm.material.color.getHex(), opacity: wm.material.opacity, fog: wm.material.fog } : null, look: room.look || null }; }, state, get room() { return room; }, run, setZoneTime: (sec) => run && setZoneTime(run, sec), useTool, takePick, ecoView: () => (solo ? ecoView(solo) : []), capView: () => (run ? capView(run) : null), hazards: () => (run ? hazardsNow(run) : []), fog: () => fogNow(), toggleMap, get mapBig() { return mapBig; }, get rv() { return rv; }, noteLog, grun, fire: (ev) => run && fireEvent(run, ev), K, TUNE, TYPES, TRAITS, cam, crowd, sheets, stats, gen: GEN, biome: BIOME, world, numbers, net, tape, myId: MYID, mates, get coView() { return coView; }, playTape, get view() { return view; }, get viewer() { return viewer; }, get watchT() { return watchT; }, addBoss: (dex, x, z, o) => addBoss(world, dex, x, z, o), drop: (kind, x, z, v) => drop(world, kind, x, groundAt(room, x, z), z, v), pickCard, addEnemy: (dex, x, z, o) => addEnemy(world, dex, x, z, o), holdExit: false, get leaving() { return leaving; },
 	setInput(o) { override = o ? { ...noInput(), ...o } : null; },
 	rowOf: (facing, yaw) => facingRow(facing, yaw === undefined ? cam.yaw : yaw),
 	sq: (key, frame, dir, scale = 1) => sq(sheets.get(key), frame, dir, scale),

@@ -186,6 +186,17 @@ try {
 	const rowOf = (b, n) => (b.top || []).find((e) => e.name === n) || {};
 	A(/:3d:co$/.test(cb.board || '') && (cb.top || []).length === 2 && rowOf(cb, 'alice').n === 2 && rowOf(cb, 'alice').team.join() === 'bob' && rowOf(cb, 'bob').team.join() === 'alice' && rowOf(cb, 'alice').floor === 1 && rowOf(cb, 'bob').floor === 1 && rowOf(cb, 'bob').time === rowOf(cb, 'alice').time, "the route's 3D CO-OP board has both players: the same floor and time, each with the other's name", JSON.stringify(cb).slice(0, 500));
 	A((solo.top || []).length === 0 && !solo.you, 'the solo 3D board has neither: a party\'s run is not a solo mark', JSON.stringify(solo).slice(0, 200));
+	// (plan 3f, part 2) the run's ONE replay, the host's tape, is on both rows; played back, the other player is in it
+	const crid = rowOf(cb, 'alice').replay || '';
+	A(/^[a-f0-9]{8,20}$/.test(crid) && rowOf(cb, 'bob').replay === crid, "both rows carry the run's one replay (the host's tape); the guest's row may, because the tape names him in its party", JSON.stringify([rowOf(cb, 'alice').replay, rowOf(cb, 'bob').replay]));
+	{
+		const vctx = await browser.createBrowserContext(), vp = await vctx.newPage();
+		await vp.setViewport({ width: 800, height: 500, deviceScaleFactor: 1 });
+		await vp.goto(`http://localhost:${PORT}/micasurvivor/m3d/?replay=${crid}`, { waitUntil: 'domcontentloaded' });
+		const both2 = await waitFor(() => vp.evaluate(() => !!(window.__m3d && window.__m3d.ready && window.__m3d.replay && window.__m3d.replay.state === 'playing' && window.__m3d.replay.mates === 1)), 60000);
+		A(both2, 'a logged-out browser plays it: the host, and the other player beside her', JSON.stringify(await vp.evaluate(() => window.__m3d && window.__m3d.replay).catch(() => null)).slice(0, 300));
+		await vctx.close();
+	}
 	const kt = [await A1.evaluate(() => window.__m3d.kept.text), await B1.evaluate(() => window.__m3d.kept.text)];
 	A(kt.every((q) => /3D co-op board: #[12]\./.test(q)), 'both end screens say their place on the co-op board', JSON.stringify(kt));
 	const bad = [await call('run-score', { mode: 'micasurvivor_expedition', expMode: 'exp-dive', dv: 20, route: 'forest', floor: 1, time: 9, coop: 2 }, tokens.fay), await call('run-score', { mode: 'micasurvivor_expedition', d3: true, expMode: 'exp-dive', dv: 20, route: 'forest', floor: 1, time: 9, coop: 5 }, tokens.fay), await call('run-leaderboard', { ...DASK, route: undefined, weekly: true, coop: true }, tokens.fay)];

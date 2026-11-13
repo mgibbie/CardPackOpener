@@ -56,7 +56,10 @@ Things that shipped without being checked the way a player uses them.
       the dark; a landmark has a soft glow on the ground until used. No sun shafts: the 2D light map has none. The
       lava is a look only: you wade through it as through any route's water, and it does not hurt.) The crater's floor (the 3D game has no lava biome), and the 2D light map's lights: the landmark's glow, the
       lava's flicker, sun shafts.
-- [ ] 3f. 3D co-op runs on a board of their own, and a replay. (Largest item here; last.)
+- [x] 3f. 3D co-op runs on a board of their own, and a replay. (Largest item here; last.)
+      Part 2 done: every kept 3D run (solo or co-op, a Dive or an Expedition · Classic) is recorded, stored with its
+      score, and played from the ▶ on its board row by anyone. Not for Survival. A tape over the server's size cap is
+      not stored (the run is kept all the same).
       Part 1 done: the co-op boards (a Dive's route, an Expedition · Classic's map and tier; every player of a lobby's
       run has their own mark with the team's result and the others' names). Part 2, the replay, is not started: a 3D
       run has no replay at all yet, solo or co-op (the server refuses one on a 3D score).
