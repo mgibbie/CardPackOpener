@@ -1,0 +1,305 @@
+// dive.js — MicaSurvivor 3D, Dive (Plans/MICASURVIVOR_3D_PLAN.md §5.54): a Dive run, floor by floor.
+//
+// Owner, 2026-11-12: today's Dive in 3D. So the rules are the 2D game's own (js/expedition/dive.js), read through
+// rulesFrom(G): its numbers (K), its species curve (pool), its guardians, its Mega and legendary draws, and its seeded
+// streams, drawn in the same order, so the same {seed, route, floor} holds the same foes in both games. The floor is
+// divegen.js's room (the 2D layout raised into 3D); the fight is combat.js's.
+//
+//   floors     walk to the STAIRS and stand on them K.STAIRS_T s: the next floor. Nothing of the old one comes along.
+//   foes       the floor's groups SLEEP where the layout put them until you come within K.WAKE_R tiles or hit one; a
+//              group wakes together, and wakes the groups within K.WAKE_CHAIN of it (one hop). From floor K.ELITE.from
+//              a plain foe may be an elite (swift, tough or rage).
+//   pressure   K.REIN.grace s after you arrive, packs keep arriving, awake, faster each time (little XP, no loot).
+//   alpha      every 5th floor: a big foe by the stairs; the stairs are SEALED until it falls. To floor 25 its fall
+//              SECURES your loot.
+//   guardian   every 25th floor: the route's legendary; its fall banks everything and saves the stage.
+//   Megas, legendaries   below floor K.MEGA.from a floor may hold a Mega; from K.LEGEND.from a legendary (with a pity).
+//   rescue     reach the floor's lost Pokémon and it follows you; leave the floor with it near and it is rescued.
+//   loot       at stake until an alpha (to floor 25) or a guardian banks it. Faint: the bank and a quarter of the stake.
+//   the rope   on a rope floor, stand still K.ROPE_T s in the circle where you arrived (a hit cancels): you leave
+//              with everything.
+// Not here yet (later parts): the kit (basic + two specials), the dodge, the combo, the red ground, landmarks, secret
+// pockets, chests, routes and stages in the save, the Weekly Dive, co-op.
+// Pure and seeded: no DOM, no clock.
+import { K as SK, CELL, groundAt, newState } from './sim.js';
+import { CK, U, newWorld, tick, addEnemy, addBoss } from './combat.js';
+import { setup as setupLevels, tickStats, takeItem } from './explevel.js';
+import { setupRx, tickRx } from './exprx.js';
+import { setupUlt, holdUlt, tickUlt } from './expult.js';
+import { applyPerks, perkTools } from './expperks.js';
+import { tickFog } from './expfog.js';
+import { diveFrom, diveRoom } from './divegen.js';
+import { walkable } from './expedition.js';
+
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const TAU = 6.2832;
+const ROPE_STILL = 0.5;   // m/s: slower than this is standing still (the rope)
+
+/** The 2D game's Dive rules, as the 3D game reads them (G with systems/expedition.js, expedition/dive-gen.js and
+ *  expedition/dive.js loaded). -> { F (the floors: divegen.js), K, pool, target, guardianOf, megaRoll, legendRoll,
+ *  rng(seed, route, floor, k) (the 2D game's own stream), nameOf(route) (English) } */
+export function rulesFrom(G) {
+	const E = G.ExpDive, F = diveFrom(G); if (!E || !F) return null;
+	const en = (G.I18n && G.I18n.en) || {}, tr = (s) => en[s] || s;
+	return { F, K: E.K, ESCORT: E.ESCORT, GUARDIANS: E.GUARDIANS, target: E.target, pool: (route, floor) => E.pool(route, floor), guardianOf: E.guardianOf,
+		megaRoll: (seed, route, f) => E.megaRoll(seed, route, f), legendRoll: (seed, route, f) => E.legendRoll(seed, route, f),
+		rng: (seed, route, floor, k) => G.DLC.rng(G.DiveGen.seedOf(seed | 0, route, floor, k)), nameOf: (route) => tr(E.NAME[route] || route),
+		strays: (route, floor) => { const tg = E.target(floor) - 60, types = F.ROUTES[route].types; return G.DEX.filter((p) => !p.leg && Math.abs(p.bst - tg) < 70 && p.types.some((t) => types.includes(t))).map((p) => p.dex); } };
+}
+const draw = (P, r) => { const v = r() * P.sum; for (const [d, c] of P.list) if (c >= v) return d; return P.list[P.list.length - 1][0]; };
+export const say = (S, text, s = 3) => { S.says.push({ text, s }); S.w.events.push({ k: 'say', text, s }); };
+const name = (S, dex) => { const m = S.data.mon(dex); return m ? m.name : ''; };
+const tiles = (n) => n * CELL;
+
+/** A Dive run. o: { route, seed, start (the floor to begin on), and combat.js's newWorld options (dex, moves [id or
+ *  [id, level]], ability, items, autoPick, …); levels: false keeps the base game's level-ups; perks; rx / ult: false
+ *  leave the reactions / the Ultimates out }.
+ *  -> the run: { w (the fight), route, seed, floor, bank, stake, rescued, groups, boss, sealed, stray (the lost
+ *  Pokémon), ended, escaped, lost (you fainted), says } */
+export function newDive(data, X, R, o = {}) {
+	const route = R.F.ROUTES[o.route] ? o.route : 'forest', seed = (o.seed | 0) || 1, f0 = Math.max(1, o.start | 0);
+	const room = diveRoom(R.F, seed, route, f0);
+	const own = !!(X && X.L) && o.levels !== false, lv = (o.moves || []).map((m) => (Array.isArray(m) ? m : [m, 1]));
+	const w = newWorld(room, data, { ...o, moves: own ? lv.map((m) => m[0]) : o.moves, seed: seed >>> 0, cast: null, bosses: null });
+	const S = { w, X, R, data, dive: true, route, map: 'dive:' + route, seed, floor: 0, zone: f0, start: f0, bank: 0, stake: 0, rescued: [], rescuedBank: 0, kills: 0, alphas: 0, guardians: 0,
+		deepest: 0, ended: false, escaped: false, lost: false, won: false, groups: [], boss: null, sealed: false, stray: null, tags: new Map(), says: [], legPity: 0, stage: 0, meta: null };
+	if (o.perks) applyPerks(S, o.perks);
+	if (own) setupLevels(S, X.L, lv);
+	if (S.up) perkTools(S);
+	if (X && X.R && o.rx !== false) setupRx(S);
+	if (X && X.Uu && o.ult !== false) setupUlt(S, { walk: walkable, auto: !!o.ultAuto });
+	startFloor(S, f0, 0);
+	return S;
+}
+
+/** A foe of this floor at (x, z) metres. o: { alpha, boss (a guardian), legend, rein (a reinforcement), er (the
+ *  floor's elite stream) } */
+export function spawnFoe(S, dex, x, z, o = {}) {
+	const w = S.w, K = S.R.K, f = S.floor, teff = f * K.T_PER_FLOOR, deep = Math.max(0, f - K.DEEP.from), party = 1 + w.mates.length;
+	const ti = clamp(Math.floor((S.R.target(f) - 260) / K.TIER_BST) + (f >= K.DEEP.tierAt ? 1 : 0), 0, 5);
+	const Xk = o.boss ? K.GUARD : o.legend ? K.LEGEND : o.alpha ? K.ALPHA : null;
+	// the 2D numbers: the base curve at this floor's "run time", x the Dive's own HP / damage, x the big ones', x the depth
+	const hpK = (K.HP_K + Math.min(1.7, teff / 210)) / CK.HP_K(teff) * (Xk ? Xk.hp : 1) * (1 + K.DEEP.hp * deep) * (1 + CK.COOP.hp * (party - 1));
+	const dmgK = K.DMG_K / CK.DMG_K * (Xk ? Xk.dmg : 1) * (1 + K.DEEP.dmg * deep);
+	const base = data0(S, dex, ti); if (!base) return null;
+	let e;
+	if (o.boss) {
+		const hp = Math.round(base.hp * (1 + teff / 95) * CK.HP_K(teff) * hpK), dmg = base.dmg * (1 + teff / 420) * CK.DMG_K * dmgK, sp = S.data.baseSpd(dex), b = S.data.behaviorOf(dex);
+		const def = { dex, boss: true, hp, spd: Math.round(clamp(40 + sp * 0.5, 40, 100)), dmg: Math.round(dmg), xp: Math.round(base.xp * K.XP_K * Xk.xp), behavior: b === 'ranged' ? 'ranged' : sp > 90 ? 'charger' : 'chase', shotDmg: Math.round(dmg * 0.55), shotCd: 1.1, range: 260 };
+		e = addBoss(w, dex, x, z, { def, t: 0 });
+		e.xk = 'guardian';
+	} else {
+		e = addEnemy(w, dex, x, z, { t: teff, ti, def: base, hp: hpK, dmg: dmgK });
+		e.xp = Math.round(base.xp * K.XP_K * (Xk ? Xk.xp : 1));
+		if (Xk) { e.scale = Xk.scale; e.cr = S.data.radius(dex, Xk.scale); e.xk = o.legend ? 'legend' : 'alpha'; }
+	}
+	// an elite: one affix, from the floor's own elite stream (the same floor, the same elites)
+	if (!Xk && o.er && f >= K.ELITE.from && o.er() < Math.min(K.ELITE.max, K.ELITE.p0 + K.ELITE.per * (f - K.ELITE.from))) {
+		const aff = ['swift', 'tough', 'rage'][Math.floor(o.er() * 3)];
+		e.xaff = aff; e.xk = 'elite';
+		if (aff === 'swift') e.a.speed *= K.ELITE.swift; else if (aff === 'tough') e.maxHp = e.hp = Math.round(e.maxHp * K.ELITE.tough); else e.dmg *= K.ELITE.rage;
+		e.xp = Math.round(e.xp * K.ELITE.xp);
+		e.scale = K.ELITE.scale; e.cr = S.data.radius(dex, K.ELITE.scale);
+	}
+	if (o.rein) { e.xrein = true; e.xp = Math.max(1, Math.round(e.xp * K.REIN.xp)); S.tags.set(e.id, 'rein'); }
+	return e;
+}
+const data0 = (S, dex, ti) => (S.data.mon(dex) ? S.data.defFor(dex, ti) : null);
+/** A place on the floor for a body near (x, z): there if it is not rock (a walker: nor a pool), else the centre. */
+function place(S, x, z, cx, cz, fly) {
+	const room = S.w.room, i = Math.floor(z / CELL) * room.w + Math.floor(x / CELL);
+	const ok = x > 0 && z > 0 && x < room.w * CELL && z < room.h * CELL && room.cells[i] < room.rimH && (fly || !room.water.has(i));
+	return ok ? [x, z] : [cx, cz];
+}
+
+/** Floor f begins: its room is already the fight's. The groups (asleep), the lost Pokémon, the alpha or the guardian. */
+function startFloor(S, f, t) {
+	const w = S.w, R = S.R, K = R.K, room = w.room, L = room.dive;
+	Object.assign(S, { floor: f, zone: f, ft: t, groups: [], boss: null, sealed: false, bossFell: false, stairsT: 0, ropeT: 0, ropeSaid: false, sealSaid: false, stray: null, reinT: null, reinN: 0, cadence: L.cadence });
+	S.deepest = Math.max(S.deepest, f); S.tags.clear();
+	const r = R.rng(S.seed, S.route, f, 0xD1), P = R.pool(S.route, f), er = R.rng(S.seed, S.route, f, 0xE17E);
+	const n = Math.min(K.GROUP[1], K.GROUP[0] + Math.floor(f / 8));
+	room.groups.forEach((g, gi) => {
+		const k = Math.max(1, n + (g.guard ? K.GUARD_PLUS : 0) + Math.floor(r() * 3) - 1), list = [], cx = g.at[0], cz = g.at[2];
+		for (let i = 0; i < k; i++) {
+			const a = r() * TAU, d = (i ? 18 + r() * 22 : 0) * U, dex = draw(P, r);
+			const [x, z] = place(S, cx + Math.cos(a) * d, cz + Math.sin(a) * d, cx, cz, S.data.hovers(dex));
+			const e = spawnFoe(S, dex, x, z, { er });
+			if (e) { e.xdive = gi; e.dummy = true; e.asleep = true; list.push(e); }   // (asleep: it neither moves nor touches until its group wakes)
+		}
+		S.groups.push({ awake: false, list, at: [cx, cz] });
+	});
+	// the lost Pokémon: a gentle species of the route
+	if (room.rescue) {
+		const lr = R.rng(S.seed, S.route, f, 0x105), cand = R.strays(S.route, f);
+		S.stray = { dex: cand.length ? cand[Math.floor(lr() * cand.length)] : 25, x: room.rescue[0], y: 0, z: room.rescue[2], follow: false, done: false };
+	}
+	let said = false;
+	if (L.cadence.guardian) {
+		const dex = R.guardianOf(S.route, f), x = (40 + 0.5) * CELL, z = (L.h / 2 + 0.5) * CELL;
+		const e = spawnFoe(S, dex, x, z, { boss: true });
+		if (e) { S.boss = e; S.sealed = true; said = true; say(S, `${name(S, dex)}, the route's guardian!`, 3.6); }
+	} else if (L.cadence.arena) {
+		const ar = R.rng(S.seed, S.route, f, 0xA1), p = L.path[Math.max(0, L.path.length - 5)], x = (p[0] + 0.5) * CELL, z = (p[1] + 0.5) * CELL;
+		let dex = draw(R.pool(S.route, f + 4), ar);
+		const mg = f > K.MEGA.from ? R.megaRoll(S.seed, S.route, f) : null;
+		if (mg && mg.arena && S.data.mon(mg.dex)) dex = mg.dex;
+		const e = spawnFoe(S, dex, x, z, { alpha: true });
+		if (e) { S.boss = e; S.sealed = true; said = true; say(S, 'An alpha! Beat it to open the stairs', 3.4); }
+	}
+	if (!L.cadence.guardian) said = u3Floor(S, f) || said;
+	if (!said) say(S, `— Floor ${f} · ${R.nameOf(S.route)} —`, 2.8);
+	w.events.push({ k: 'floor', floor: f });
+}
+/** Floor f's Mega (below floor K.MEGA.from) and legendary (from K.LEGEND.from, with the pity): awake, alpha-sized. */
+function u3Floor(S, f) {
+	const R = S.R, K = R.K, room = S.w.room, L = room.dive; let said = false;
+	const spot = (salt) => { const r = R.rng(S.seed, S.route, f, salt), g = room.groups.length ? room.groups[Math.floor(r() * room.groups.length)] : null, p = L.path[Math.floor(L.path.length / 2)] || [L.w / 2, L.h / 2];
+		return g ? [g.at[0], g.at[2]] : [(p[0] + 0.5) * CELL, (p[1] + 0.5) * CELL]; };
+	if (f > K.MEGA.from && !L.cadence.arena) {
+		const mg = R.megaRoll(S.seed, S.route, f);
+		if (mg.elite && S.data.mon(mg.dex)) { const [x, z] = spot(0x3E6B), e = spawnFoe(S, mg.dex, x, z, { alpha: true }); if (e) { S.tags.set(e.id, 'mega'); said = true; say(S, `A wild ${name(S, mg.dex)} appears!`, 3.2); } }
+	}
+	if (f >= K.LEGEND.from) {
+		const lr = R.legendRoll(S.seed, S.route, f);
+		if (lr.dex && S.data.mon(lr.dex) && (lr.hit || S.legPity >= K.LEGEND.pity)) {
+			S.legPity = 0;
+			const [x, z] = spot(0x1EA), e = spawnFoe(S, lr.dex, x, z, { legend: true });
+			if (e) { S.tags.set(e.id, 'legend'); said = true; say(S, `A legendary ${name(S, lr.dex)} appears!`, 3.4); }
+		} else S.legPity++;
+	}
+	return said;
+}
+/** A group wakes, and (hop) the groups within K.WAKE_CHAIN tiles of it. */
+export function wake(S, g, hop = true) {
+	if (g.awake) return;
+	g.awake = true; for (const e of g.list) if (!e.dead) { e.dummy = false; e.asleep = false; }
+	S.w.events.push({ k: 'wake', n: g.list.length, x: g.at[0], z: g.at[1] });
+	if (hop) { const r = tiles(S.R.K.WAKE_CHAIN); for (const o of S.groups) if (!o.awake && Math.hypot(o.at[0] - g.at[0], o.at[1] - g.at[1]) < r) wake(S, o, false); }
+}
+/** Pressure: a pack arrives K.REIN.near..far tiles from you, awake. -> how many */
+export function reinforce(S) {
+	const w = S.w, R = S.R, K = R.K, room = w.room, L = room.dive, f = S.floor, s = w.pl.s;
+	if (w.enemies.filter((e) => !e.dead).length >= K.REIN.cap) return 0;
+	const cands = [L.spawn, ...(L.path || []), ...(L.groups || []).map((g) => g.at)].map((p) => [(p[0] + 0.5) * CELL, (p[1] + 0.5) * CELL]);
+	let at = null, best = Infinity, fallback = null, fb = -1;
+	for (const c of cands) { const d = Math.hypot(c[0] - s.x, c[1] - s.z) / CELL; if (d >= K.REIN.near && d <= K.REIN.far && d < best) { best = d; at = c; } if (d <= K.REIN.far && d > fb) { fb = d; fallback = c; } }
+	at = at || fallback || [room.spawn[0], room.spawn[2]];
+	const rr = R.rng(S.seed, S.route, f, 0x8E1F + S.reinN), P = R.pool(S.route, f), n = Math.min(K.REIN.max, K.REIN.n + Math.floor(f / K.REIN.perFloors));
+	let made = 0;
+	for (let i = 0; i < n; i++) { const a = rr() * TAU, d = (10 + rr() * 22) * U, dex = draw(P, rr), [x, z] = place(S, at[0] + Math.cos(a) * d, at[1] + Math.sin(a) * d, at[0], at[1], S.data.hovers(dex)); if (spawnFoe(S, dex, x, z, { rein: true })) made++; }
+	if (made && !S.reinN) say(S, 'Something stirs: reinforcements are coming', 3);
+	return made;
+}
+
+export const loot = (S, n) => { if (n > 0) S.stake += n; };
+const secure = (S) => { S.bank += S.stake; S.stake = 0; S.rescuedBank = S.rescued.length; };
+function bossDown(S) {
+	const K = S.R.K, e = S.boss, guard = e.xk === 'guardian';
+	S.boss = null; S.sealed = false; S.bossFell = true;
+	if (guard) { S.guardians++; loot(S, K.LOOT.guard + K.LOOT.guardPer * S.floor); secure(S); S.stage = S.floor + 1; say(S, 'Guardian defeated! Stage saved', 3.4); }
+	else { S.alphas++; loot(S, K.LOOT.alpha + K.LOOT.alphaPer * S.floor); if (S.floor <= 25) { secure(S); say(S, 'Alpha defeated! Loot secured', 3); } else say(S, 'Alpha defeated! The stairs are clear', 3); }
+	S.w.events.push({ k: 'bossdown', guardian: guard });
+}
+/** On the way out (the stairs, the rope): the lost Pokémon, if it follows you and is near, is rescued. */
+function escortOut(S) {
+	const lo = S.stray, s = S.w.pl.s, K = S.R.K;
+	if (!lo || !lo.follow || lo.done || Math.hypot(s.x - lo.x, s.z - lo.z) >= tiles(S.R.ESCORT.R)) return;
+	lo.done = true; S.rescued.push(lo.dex); loot(S, K.LOOT.rescue + K.LOOT.rescuePer * S.floor);
+	say(S, `${name(S, lo.dex)} rescued!`, 2.4); S.w.events.push({ k: 'rescued', dex: lo.dex });
+}
+function escortTick(S, dt) {
+	const lo = S.stray, s = S.w.pl.s;
+	if (!lo || !lo.follow || lo.done) return;
+	const want = tiles(1.6), d = Math.hypot(s.x - lo.x, s.z - lo.z);
+	if (d > want) { const v = Math.min(d - want, SK.RUN * S.R.ESCORT.SPEED * dt); lo.x += (s.x - lo.x) / d * v; lo.z += (s.z - lo.z) / d * v; }
+	if (d > tiles(14)) { lo.x = s.x - 1.2; lo.z = s.z; }   // (never left behind)
+	lo.y = Math.max(0, groundAt(S.w.room, lo.x, lo.z));
+}
+/** Put the fight on floor f: nothing of the old floor comes along but you. */
+function enterFloor(S, f) {
+	const w = S.w, room = diveRoom(S.R.F, S.seed, S.route, f);
+	for (const k of ['enemies', 'shots', 'orbs', 'fields', 'effects', 'eshots', 'hazards', 'pickups']) w[k].length = 0;
+	w.room = room; Object.assign(w.pl.s, newState(room, w.tune));
+	w.field = null; w.fieldCell = -2; w.pl.target = null;
+}
+function nextFloor(S, t) {
+	escortOut(S);
+	loot(S, S.R.K.LOOT.floor + S.R.K.LOOT.floorPer * S.floor);
+	enterFloor(S, S.floor + 1);
+	startFloor(S, S.floor + 1, t);
+}
+function end(S, escaped) { S.ended = true; S.escaped = escaped; S.won = escaped; S.lost = !escaped; S.w.events.push({ k: 'runover', won: escaped }); }
+
+/** One tick of the run: the fight's tick, then the Dive's rules. */
+export function stepDive(S, input, dt = SK.TICK) {
+	const w = S.w, K = S.R.K;
+	S.says.length = 0;
+	if (S.ended) return S;
+	if (S.ult && holdUlt(S, dt)) { w.events.length = 0; return S; }
+	const t0 = w.t;
+	w.cap = K.REIN.cap + 60;
+	tick(w, input, dt);
+	if (w.t === t0) return S;   // (a level-up card is up: nothing moves)
+	const t = w.t, s = w.pl.s, room = w.room;
+	if (S.rx) tickRx(S);
+	if (S.ult) tickUlt(S, dt);
+	tickFog(S);
+	if (w.pl.dead) { end(S, false); return S; }
+	if (S.lv) { tickStats(S, dt); for (const ev of w.events) if (ev.k === 'pickup' && ev.kind === 'item') takeItem(S, ev.value); }
+	let hurt = false;
+	for (const ev of w.events) {
+		if (ev.k === 'hurt') hurt = true;
+		else if (ev.k === 'kill') { S.kills++; const tag = S.tags.get(ev.id);
+			if (tag !== 'rein') loot(S, K.LOOT.ko + K.LOOT.koPer * S.floor);
+			if (tag === 'mega') loot(S, K.LOOT.alpha + K.LOOT.alphaPer * S.floor); else if (tag === 'legend') loot(S, K.LEGEND.loot + K.LEGEND.lootPer * S.floor); }
+	}
+	// the groups: one wakes when you come close, or when one of it is hit
+	const wr = tiles(K.WAKE_R);
+	for (const g of S.groups) if (!g.awake && (Math.hypot(s.x - g.at[0], s.z - g.at[1]) < wr || g.list.some((e) => !e.dead ? e.hp < e.maxHp : true))) wake(S, g);
+	// pressure
+	if (!S.cadence.guardian && t - S.ft >= K.REIN.grace) {
+		S.reinT = (S.reinT == null ? 0 : S.reinT) - dt;
+		if (S.reinT <= 0) { reinforce(S); S.reinT = Math.max(K.REIN.min, K.REIN.every - K.REIN.faster * S.reinN); S.reinN++; }
+	}
+	// the lost Pokémon
+	const lo = S.stray;
+	if (lo && !lo.done && !lo.follow && Math.hypot(s.x - lo.x, s.z - lo.z) < tiles(K.RESCUE_R)) { lo.follow = true; say(S, `${name(S, lo.dex)} follows you! Take it to the stairs`, 2.6); w.events.push({ k: 'follow', dex: lo.dex }); }
+	escortTick(S, dt);
+	if (S.boss && S.boss.dead) bossDown(S);
+	// the rope: stand still in the circle where you arrived
+	if (S.cadence.rope) {
+		const inR = Math.hypot(s.x - room.spawn[0], s.z - room.spawn[2]) < tiles(K.ROPE_R), still = Math.hypot(s.vx, s.vz) < ROPE_STILL && s.grounded;
+		if (inR && still && !hurt) {
+			if (!S.ropeSaid) { S.ropeSaid = true; say(S, 'Escape Rope: hold still…', K.ROPE_T); }
+			S.ropeT += dt;
+			if (S.ropeT >= K.ROPE_T) { escortOut(S); say(S, 'You escape with everything!', 3); end(S, true); return S; }
+		} else { S.ropeT = 0; S.ropeSaid = false; }
+	}
+	// the stairs
+	const onS = Math.hypot(s.x - room.stairs[0], s.z - room.stairs[2]) < tiles(K.STAIRS_R);
+	if (onS && S.sealed) { if (!S.sealSaid) { S.sealSaid = true; say(S, 'The stairs are sealed', 2); } } else if (!onS) S.sealSaid = false;
+	S.stairsT = onS && !S.sealed ? S.stairsT + dt : 0;
+	if (S.stairsT >= K.STAIRS_T) nextFloor(S, t);
+	return S;
+}
+
+/** The run's pay, in the Expedition's pay units: the bank, plus the stake on an escape or a quarter of it on a faint. */
+export const payOf = (S) => Math.floor(S.bank + (S.escaped ? S.stake : S.stake * S.R.K.FAINT_KEEP));
+const rescuedOf = (S) => (S.escaped ? S.rescued.length : S.rescuedBank);
+/** The HUD's line. */
+export function hudLine(S) {
+	const s = S.w.pl.s, st = S.w.room.stairs, m = Math.round(Math.hypot(s.x - st[0], s.z - st[2]));
+	const parts = [`FLOOR ${S.floor}`, `${Math.floor(S.bank)} secured · ${Math.floor(S.stake)} at stake`];
+	parts.push(S.boss ? (S.boss.xk === 'guardian' ? 'GUARDIAN' : 'ALPHA') : `STAIRS ${m} m`);
+	if (S.ropeT > 0) parts.push('ROPE ' + Math.max(0, S.R.K.ROPE_T - S.ropeT).toFixed(1) + ' s');
+	return parts.join(' · ');
+}
+/** The end screen's parts and lines (the 2D game's scoreParts and result). */
+export function result(S) {
+	const w = S.w;
+	const parts = { floor: S.floor, deepest: S.deepest, route: S.route, kills: S.kills, time: Math.floor(w.t), alphas: S.alphas, guardians: S.guardians, rescued: rescuedOf(S), escaped: S.escaped, divePay: payOf(S), zone: Math.min(4, 1 + Math.floor(S.floor / 10)), start: S.start, weekly: null };
+	return { won: S.escaped, title: S.escaped ? 'You escape with everything!' : 'RUN OVER', parts, stage: S.stage,
+		lines: [`Dive · ${S.R.nameOf(S.route)}: floor ${S.floor}`, `Loot secured: ${Math.floor(S.bank)} · at stake: ${Math.floor(S.stake)}`,
+			S.escaped ? 'You escaped: you keep all the loot' : 'You fell: you keep what was secured and a quarter of the rest', `Rescued: ${rescuedOf(S)}`, `Alphas: ${S.alphas} · Guardians: ${S.guardians}`] };
+}

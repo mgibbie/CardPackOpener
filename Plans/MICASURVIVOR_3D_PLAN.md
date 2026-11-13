@@ -1525,6 +1525,69 @@ one for it). The choreographies' sparks are generic, not the 2D game's per-type 
 
 Tests: `micasurvivor_m3d_polish_page_test.mjs` 10 checks in a browser.
 
+## 5.53 3D Dive, first part: built (2026-11-12). A Dive floor you can stand in.
+
+Owner, 2026-11-12: 3D Dive is **today's Dive in 3D**: open floors, sleeping groups, find the stairs, an alpha
+every 5 floors, a guardian every 25, loot at stake, the Escape Rope. Not the rooms-and-doors redesign of P6.
+
+P5 (upgrades) needs no part of its own: the 3D Expedition already carries the 2D game's level-ups, family
+perks, TMs, formes, Megas, reactions and Ultimates (5.4x to 5.5x), and Dive reads the same tables.
+
+`m3d/divegen.js` does not invent floors. It asks the 2D game's own `js/expedition/dive-gen.js` for the layout
+of `{seed, route, floor}` and raises it into a room the 3D game walks, one 2D tile to one 2 m cell, so every
+distance in the Dive's rules stays the same distance:
+
+- a floor tile is ground; a wall tile is rock 6 m high (a jump clears 1.67 m: a wall, not a step);
+- a liquid tile is a pool 0.6 m deep. You wade it, slower than you run, and a jump takes you out. It is
+  deeper than a step, so you do not walk out of it;
+- tall grass is scatter; a secret pocket's plug (boulder or thicket) is rock until it is opened;
+- the spawn, the stairs, the lost Pokémon, the foe groups, the chests and the landmark sit on the same tiles
+  as in 2D, so a seed gives the same floor in both games.
+
+`checkFloor(room)` says what is wrong with a floor: everything must be reachable on foot from the spawn, a
+pocket's chest only once its plug is open, and the stairs by a dry way. All 486 floors tried (9 routes, floors
+1 to 54) pass.
+
+Nothing on the page yet: no floor is drawn and nothing in a run uses this. Next parts: walking a floor and
+taking the stairs down; sleeping groups; alphas and guardians; the rescue; loot at stake, the bank and the
+Escape Rope; routes, stages and seals; saving, tasks and boards; the Micatro-style UI.
+
+Tests: `micasurvivor_m3d_divegen_test.mjs` 24 checks in node.
+
+## 5.54 3D Dive, second part: built (2026-11-12). The run's rules, floor by floor.
+
+`m3d/dive.js`: a Dive run on top of the 3D fight, with the 2D game's own rules (`js/expedition/dive.js`) read
+through `rulesFrom(G)`: its numbers, its species curve, its guardians, its Mega and legendary draws, and its
+seeded streams drawn in the same order. So a `{seed, route, floor}` holds the same species, the same elites
+and the same lost Pokémon in both games, with the 2D game's HP, damage and XP.
+
+- **Floors.** Stand on the stairs half a second: the next floor. Nothing of the old one comes along.
+- **Sleeping groups.** They hold still and do not touch you until you come within 11 tiles or hit one. A
+  waking group wakes the groups within 9 tiles of it, one hop.
+- **Elites** from floor 6 (swift, tough or rage). **Pressure**: 45 s after you arrive, packs keep arriving,
+  awake, worth little XP and no loot. Not on a guardian's floor.
+- **Alpha** every 5th floor: the stairs are sealed until it falls; to floor 25 its fall secures the loot.
+- **Guardian** every 25th floor: the route's legendary, a boss. Its fall banks everything and sets the stage.
+- **Megas** below floor 30 and **legendaries** from floor 26 (never more than 3 floors apart), awake.
+- **The lost Pokémon** follows you once reached and is rescued when you leave the floor with it near.
+- **Loot** is at stake until secured. A faint keeps the bank and a quarter of the stake. **The Escape Rope**
+  (floors 10, 20 and every 25th): stand still 3 s where you arrived and you leave with everything.
+- Your Pokémon levels up as in an Expedition (the same cards), with reactions and Ultimates.
+
+Different from 2D, on purpose:
+- "Standing still" for the rope is moving slower than 0.5 m/s. The 2D check (under 2 px a frame) let a slow
+  walk count.
+- Reinforcements arrive 11 to 20 tiles away; the 2D game also asks that the spot is off screen, and the
+  rules here have no camera.
+- A pool blocks walking foes, as liquid does in 2D. A walker shoved into one cannot climb out (0.6 m is more
+  than a step). Known, left for the tuning.
+
+Still not on the page: no run uses this yet. Next: the page (start a Dive, draw the floor, the stairs, the
+sleepers, the HUD), then the kit (basic + two specials) and the dodge, the combo, the red ground, landmarks,
+pockets and chests, the save (bests, stages, Seals), the Weekly Dive, co-op.
+
+Tests: `micasurvivor_m3d_dive_test.mjs` 53 checks in node.
+
 ## 6. Dive in 2D: built
 
 **D0 — find the stairs (small; can ship first, on its own).** *Built 2026-11-11 (`overworld/tests/micasurvivor_dive_stairs_test.mjs`). As built: the stairs took their own orange mark, so the rocks and Meowth keep their gold; the HUD arrow comes up after 25 s on a floor, or at once when its boss falls.*
