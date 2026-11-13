@@ -107,7 +107,11 @@ try {
 	A(over && /RUN OVER/.test(end.text) && /Floor/.test(end.text) && /Loot kept/.test(end.text) && /Rescued/.test(end.text), '5. a faint ends the run: the end screen, with the floor, the loot kept and who was rescued', end.text.slice(0, 300));
 	const kept = +end.pay.find((r) => r[0] === 'Loot kept')[1], bank = await M(() => window.__m3d.dive.bank);
 	A(kept === Math.floor(bank + 100), '5. the loot kept is the bank and a quarter of what was at stake', [kept, bank]);
-	A(end.kept.includes('Practice run') && end.kept.includes('nothing is saved') && !end.board, '5. a Dive with a test parameter (auto) is a practice run: its end says nothing is saved, and offers no board', end);
+	A(end.kept.includes('Practice run') && end.kept.includes('nothing is saved') && end.board, '5. a Dive with a test parameter (auto) is a practice run: its end says nothing is saved; it offers the 3D boards', end);
+	await M(() => document.getElementById('rx-boards').click());
+	const bd = await waitFor(() => M(() => { const b = window.__m3d.runView().board; return b && b.title.startsWith('3D Dive · ') && b.title.endsWith('deepest floor') && b.tabs.length === 0 && b.note.includes('Log in') ? b : null; }), 3000);
+	A(!!bd, "5. the board is the route's 3D Dive board (a guest is asked to log in)", await M(() => window.__m3d.runView().board));
+	await M(() => window.__m3d.openBoard(null));
 	A(/[?&]dive=8\b/.test(end.again) && /floor=5/.test(end.again), '5. Play again is the next seed, same route and floor', end.again);
 	A(calls.length === 0, '5. a Dive asked nothing of the server', calls.slice(0, 5));
 
