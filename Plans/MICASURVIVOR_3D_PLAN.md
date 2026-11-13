@@ -1687,6 +1687,22 @@ Not in yet: the 3D boards for a Dive, the Weekly Dive, the tasks' and the level-
 
 Tests: `micasurvivor_m3d_dive_save_test.mjs` 29 checks in node; `micasurvivor_m3d_dive_page_test.mjs` now 44.
 
+## 5.59 3D Dive, seventh part: built (2026-11-13). Its own boards.
+
+Same save, separate boards. A kept Dive of a signed-in player is posted to the 3D board of its route: the
+deepest floor, then the shorter time. The 2D board of the route does not see it, and a 2D score does not
+reach the 3D board.
+
+- **Server** (`server/mp.mjs`, the Dive boards): `d3: true` puts `:3d` in the board's key and in the player's
+  best. Everything else (the checks on floor, start and time) is the 2D Dive board's own.
+- **Page:** the end screen says your place ("New best on the 3D board: #2"); the end screen and the menu have
+  the **3D boards** button, which shows the route's top ten and your row (floor, an arrow for an escape, time).
+
+Not in yet: the Weekly Dive and its board.
+
+Tests: `micasurvivor_m3d_dive_boards_test.mjs` 13 checks against the real server handler;
+`micasurvivor_m3d_dive_page_test.mjs` now 45.
+
 ## 6. Dive in 2D: built
 
 **D0 — find the stairs (small; can ship first, on its own).** *Built 2026-11-11 (`overworld/tests/micasurvivor_dive_stairs_test.mjs`). As built: the stairs took their own orange mark, so the rocks and Meowth keep their gold; the HUD arrow comes up after 25 s on a floor, or at once when its boss falls.*

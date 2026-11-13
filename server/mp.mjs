@@ -2333,7 +2333,9 @@ export default async function handler(req, env) {
 			if (!weekly && !MSURV_DIVE_ROUTES.includes(body.route)) return json({ error: 'a Dive board needs its route', routes: MSURV_DIVE_ROUTES }, 400);
 			const week = action === 'run-score' ? wk : (Number.isInteger(body.week) && body.week >= 0 && body.week <= wk ? body.week : wk);
 			if (weekly && action === 'run-score' && body.week !== wk) return json({ error: 'that Weekly Dive is over', week: wk }, 400);
-			const sub = weekly ? 'weekly:' + week : body.route;
+			// `d3: true`: a 3D Dive's own boards and bests (owner, 2026-11-12: same save, separate boards): ':3d' in both keys
+			if (body.d3 !== undefined && body.d3 !== true) return json({ error: 'd3 is true or absent' }, 400);
+			const sub = (weekly ? 'weekly:' + week : body.route) + (body.d3 === true ? ':3d' : '');
 			const dKey = 'runboard:micasurvivor_expedition:dive:' + sub, bestKey = 'micasurvivor_expedition:dive:' + sub;
 			user.runBest = user.runBest || {};
 			const cmp = (a, b) => (a.floor - b.floor) || (b.time - a.time);

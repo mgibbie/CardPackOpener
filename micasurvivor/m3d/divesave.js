@@ -13,7 +13,9 @@
 // after it does not lose them.
 // A Dive is kept only if it is FAIR: no test parameters, as a League member you have, on a route that is open, and
 // CLEAN (expsave.js clean). A start floor the save does not have becomes floor 1.
-// Not here yet: the 3D boards for a Dive, the Weekly Dive, the tasks' and the level-ups' counters.
+// THE BOARDS (part 7): a kept Dive of a signed-in player is posted to the 3D board of its route (the server's Dive
+// boards with `d3: true`: the deepest floor, then the shorter time), and the end screen and the menu show it.
+// Not here yet: the Weekly Dive, the tasks' and the level-ups' counters.
 // Pure: the page (main.js) hands in the run, its result and the save.
 import { hasMember } from './expsave.js';
 
@@ -56,6 +58,20 @@ export function recordOps(S, res, o) {
 	const pay = coinsOf(p.divePay);
 	if (pay > 0) { bump('pay3d.' + o.dev, pay); best('pay.best', pay); }
 	return ops;
+}
+/** The Dive as its 3D board takes it (server/mp.mjs, the Dive boards). o: { dv, board } */
+export function scoreBody(S, res, o) {
+	const p = res.parts, pl = S.w.pl;
+	return { mode: o.board, d3: true, expMode: 'exp-dive', dv: o.dv, route: p.route, floor: p.deepest, start: p.start || 1, time: Math.floor(p.time || 0), escaped: !!p.escaped, kills: Math.floor(p.kills || 0), level: Math.floor(pl.level || 1), dex: pl.mon.dex | 0, shiny: false };
+}
+/** What to ask the server for a route's 3D Dive board. */
+export const boardAsk = (route, board) => ({ mode: board, d3: true, expMode: 'exp-dive', board: 'dive', route });
+/** The server's rows, for the screen: ten, and yours. body: { top, you }; nameOf(dex); me: your name. */
+export function boardRows(body, nameOf, me) {
+	const mmss = (t) => `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, '0')}`, row = (e, rank) => ({ rank, name: e.name || '?', who: nameOf(e.dex) + (e.level ? ' Lv ' + e.level : ''), time: mmss(e.time || 0), score: 'Floor ' + Math.floor(e.floor || 0) + (e.escaped ? ' ↑' : ''), me: e.name === me });
+	const rows = (body.top || []).slice(0, 10).map((e, i) => row(e, i + 1));
+	if (body.you && body.you.rank > 10) rows.push(row({ ...body.you, name: me }, body.you.rank));
+	return rows;
 }
 export const WHY = { practice: 'Practice run (a test parameter in the address): nothing is saved.', nosave: 'Your save could not be opened: nothing is saved.', unclean: 'This run could not be checked: nothing is saved.',
 	member: 'You do not have this League member yet: nothing is saved.', route: 'This route is not open in your save yet: nothing is saved.', start: 'Your save has not reached this stage yet: nothing is saved.' };

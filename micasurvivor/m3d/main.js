@@ -818,10 +818,10 @@ async function openBoard(id) {
 	const view = id === 'open' ? (myRun && myRun.surv ? 'survival' : 'score') : id, A = GG.MicaAccount, me = A && A.name();
 	const mine = boardUp = { view, map, diff, rows: [], note: me ? 'Loading…' : 'Log in to Magepunk to see the 3D boards.' };
 	show(); if (!me) return;
-	const d = await A.call('run-leaderboard', boardAsk(map, diff, view));
+	const d = await A.call('run-leaderboard', drun ? DS.boardAsk(drun.route, SV.BOARD) : boardAsk(map, diff, view));
 	if (boardUp !== mine) return;   // (another board was asked for meanwhile, or this one closed)
 	if (!d.ok || !d.body) mine.note = "Couldn't load the board.";
-	else { mine.rows = boardRows(d.body, (dex) => (GG.DEX_BY[dex] || {}).name || '', me); mine.note = mine.rows.length ? (d.body.you && d.body.you.rank ? `Your best: #${d.body.you.rank}` : 'You have no mark on this board yet.') : 'No one has a mark on this board yet.'; }
+	else { mine.rows = (drun ? DS.boardRows : boardRows)(d.body, (dex) => (GG.DEX_BY[dex] || {}).name || '', me); mine.note = mine.rows.length ? (d.body.you && d.body.you.rank ? `Your best: #${d.body.you.rank}` : 'You have no mark on this board yet.') : 'No one has a mark on this board yet.'; }
 	show();
 }
 /** The menu (Esc, P, or its button). Alone in your own run the fight waits while it is up; a guest's or a watcher's
@@ -865,12 +865,12 @@ function runView() {
 	for (const d of myRun && myRun.cap ? myRun.cap.sa.map((a) => a.dex) : rv ? rv.sa : []) v.bag.push({ text: nameOf(d), kind: 'warn' });
 	const b = drun ? (drun.boss && !drun.boss.dead ? drun.boss : null) : world && !JOIN ? world.enemies.find((e) => e.boss) : null;
 	if (b) v.boss = { name: nameOf(b.dex), hp: b.hp, maxHp: b.maxHp, enraged: !!(b.ai && b.ai.fury) };
-	if (boardUp) v.board = { title: `3D · ${XK.MAP_NAME[boardUp.map] || boardUp.map} · ${boardUp.diff[0].toUpperCase() + boardUp.diff.slice(1)}`, tabs: [['score', 'Score'], ['time', 'Time attack'], ['survival', 'Survival']].map(([id, text]) => ({ id, text, on: id === boardUp.view })), rows: boardUp.rows, note: boardUp.note };
-	if (menuUp && !runOver) v.menu = { auto: run && run.ult ? (run.ult.auto ? 'on' : 'off') : null, boards: !drun, sound: GG.Audio ? (GG.Audio.settings.muted ? 'off' : 'on') : null, title: paused ? 'PAUSED' : 'MENU', line: (paused ? '' : 'The fight goes on while this is open. ') + (drun ? DIVE_CONTROLS : CONTROLS), restart: solo ? location.search || '?' : null, leave: '../' };
+	if (boardUp) v.board = { title: drun ? `3D Dive · ${DR.nameOf(drun.route)} · deepest floor` : `3D · ${XK.MAP_NAME[boardUp.map] || boardUp.map} · ${boardUp.diff[0].toUpperCase() + boardUp.diff.slice(1)}`, tabs: drun ? [] : [['score', 'Score'], ['time', 'Time attack'], ['survival', 'Survival']].map(([id, text]) => ({ id, text, on: id === boardUp.view })), rows: boardUp.rows, note: boardUp.note };
+	if (menuUp && !runOver) v.menu = { auto: run && run.ult ? (run.ult.auto ? 'on' : 'off') : null, boards: true, sound: GG.Audio ? (GG.Audio.settings.muted ? 'off' : 'on') : null, title: paused ? 'PAUSED' : 'MENU', line: (paused ? '' : 'The fight goes on while this is open. ') + (drun ? DIVE_CONTROLS : CONTROLS), restart: solo ? location.search || '?' : null, leave: '../' };
 	if (runOver) {
 		const r = runOver, q = new URLSearchParams(location.search); q.set('exp', (+q.get('exp') || 0) + 1);
 		if (drun) { const qd = new URLSearchParams(location.search); qd.set('dive', (+qd.get('dive') || 0) + 1);
-			v.over = { won: r.won, title: r.title, line: r.lines[0], again: '?' + qd, leave: '../', boards: false, kept: kept ? { ok: kept.ok, text: kept.text } : null,
+			v.over = { won: r.won, title: r.title, line: r.lines[0], again: '?' + qd, leave: '../', boards: true, kept: kept ? { ok: kept.ok, text: kept.text } : null,
 				rows: [['Floor', String(r.parts.floor)], ['Time', `${Math.floor(r.parts.time / 60)}:${String(r.parts.time % 60).padStart(2, '0')}`], ['KOs', String(r.parts.kills)], ['Level', String(v.level)], ['Loot kept', String(r.parts.divePay)], ['Rescued', String(r.parts.rescued)], ['Best combo', String(r.parts.combo)], ['Poké Balls', String(r.parts.chests)], ['Secrets', String(r.parts.secrets)], ['Alphas', String(r.parts.alphas)], ['Guardians', String(r.parts.guardians)]] };
 		} else
 		v.over = typeof r === 'string' ? { won: r === 'won', title: r === 'won' ? 'EXPEDITION COMPLETE!' : 'RUN OVER', line: '', rows: [], again: null, leave: '../' }
@@ -928,7 +928,7 @@ function diveWhyNot() {
 /** A guardian fell: its stage and its Seal are kept at once. */
 function keepGuardian() { if (!drun || diveWhyNot()) return false; applyOps(GG.ExpSave, DS.guardianOps(drun)); return true; }
 /** The Dive is over: into the save, and what the end screen says of it. */
-function keepDive(res) {
+async function keepDive(res) {
 	const say = (ok, text, extra) => { kept = { ok, text, ...extra }; if (RUNUI) RUNUI.update(runView()); return kept; };
 	try {
 		const why = diveWhyNot();
@@ -936,7 +936,13 @@ function keepDive(res) {
 		const Sv = GG.ExpSave, was = DS.bestOf(Sv, drun.route), ops = DS.recordOps(drun, res, { dev: deviceId(localStorage, Sv.who, crypto) });
 		applyOps(Sv, ops);
 		const pay = DS.coinsOf(res.parts.divePay), rec = res.parts.deepest > was;
-		return say(true, (rec ? `New record on this route: floor ${res.parts.deepest}. ` : '') + (pay > 0 ? `Saved. ₽ ${pay} will be in your wallet when you next open the Expedition.` : 'Saved.'), { ops: ops.length, pay, record: rec });
+		say(true, (rec ? `New record on this route: floor ${res.parts.deepest}. ` : '') + (pay > 0 ? `Saved. ₽ ${pay} will be in your wallet when you next open the Expedition.` : 'Saved.'), { ops: ops.length, pay, record: rec });
+		const A = GG.MicaAccount;   // (part 7) signed in: its mark on the route's 3D board
+		if (A && A.name()) {
+			const d = await A.call('run-score', DS.scoreBody(drun, res, { dv: SV.DV, board: SV.BOARD }));
+			if (d.ok && d.body && d.body.rank) say(true, kept.text + (d.body.better ? ` New best on the 3D board: #${d.body.rank}.` : ` 3D board: #${d.body.rank}.`), { rank: d.body.rank, board: d.body.board });
+		}
+		return kept;
 	} catch (e) { console.warn('the Dive was not saved: ' + (e && e.message)); return say(false, DS.WHY.nosave, { why: 'error' }); }
 }
 async function keepRun(res) {
