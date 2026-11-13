@@ -62,9 +62,9 @@ const REWARD_COOLDOWN_MS = 60_000;
 const GOLD_CLEAR = { dungeon: 500, heist: 750, tombs: 750, duels: 1000, lorequest: 1000, middleearth: 1000, swordcoast: 1000, finalfantasy: 1000, multiverse: 1000, arena: 1600 };
 const GOLD_FIGHT = { win: 100, draw: 50, loss: 25 };
 const GOLD_CAP = 9_999_999, GOLD_IMPORT_CAP = 1_000_000;
-// Gold buys packs (owner, 2026-11-13: "gold buys packs for a signed in player"). The price is this one number: a cleared
-// run pays 500 to 1,600 gold and a pack, so at 1,000 a clear is worth about one pack more.
-const GOLD_PACK_PRICE = 1000;
+// Gold buys packs (owner, 2026-11-13: "gold buys packs for a signed in player"). The price is this one
+// number, and the owner set it: "a pack should be 150 gold" (2026-11-13).
+const GOLD_PACK_PRICE = 150;
 const addGold = (user, n) => { const before = user.gold || 0; user.gold = Math.min(GOLD_CAP, before + Math.max(0, Math.floor(n) || 0)); return user.gold - before; };  // one run reward a minute tops
 const PACK_TIMER_MS = 12 * 60 * 60 * 1000; // a free pack drops every 12 hours
 const PACK_INBOX_CAP = 120;         // the special pack inbox holds up to 120 packs

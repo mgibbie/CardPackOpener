@@ -99,17 +99,17 @@ ok('a fresh sign-in sees the same gold (the reported case)', again.status === 20
 // ---- gold buys packs (owner, 2026-11-13: "gold buys packs for a signed in player")
 {
 	const P = await reg("goldbuyer"), pt = P.token;
-	ok("the state says what a pack costs (1,000 gold)", P.state.packPrice === 1000, String(P.state.packPrice));
+	ok("the state says what a pack costs (150 gold: the owner's number)", P.state.packPrice === 150, String(P.state.packPrice));
 	let q = await api("gold-buy-pack", {}, pt);
 	ok("no gold: refused, nothing changes", q.status === 409 && /not enough gold/.test(q.body.error) && q.body.state.gold === 0 && q.body.state.packs === P.state.packs, JSON.stringify(q.body).slice(0, 160));
-	await api("gold-earn", { kind: "import", amount: 2350 }, pt);
+	await api("gold-earn", { kind: "import", amount: 350 }, pt);
 	q = await api("gold-buy-pack", { price: 1, gold: 999999, count: 50 }, pt);
-	ok("with 2,350: one pack for 1,000 (whatever the client names)", q.status === 200 && q.body.price === 1000 && q.body.state.gold === 1350 && q.body.state.packs === P.state.packs + 1, JSON.stringify([q.status, q.body.state && q.body.state.gold, q.body.state && q.body.state.packs]));
+	ok("with 350: one pack for 150 (whatever the client names)", q.status === 200 && q.body.price === 150 && q.body.state.gold === 200 && q.body.state.packs === P.state.packs + 1, JSON.stringify([q.status, q.body.state && q.body.state.gold, q.body.state && q.body.state.packs]));
 	q = await api("gold-buy-pack", {}, pt);
 	const q2 = await api("gold-buy-pack", {}, pt);
-	ok("a second one, then refused at 350", q.body.state.gold === 350 && q.body.state.packs === P.state.packs + 2 && q2.status === 409 && q2.body.state.gold === 350 && q2.body.state.packs === P.state.packs + 2);
+	ok("a second one, then refused at 50", q.body.state.gold === 50 && q.body.state.packs === P.state.packs + 2 && q2.status === 409 && q2.body.state.gold === 50 && q2.body.state.packs === P.state.packs + 2);
 	const o = await api("open-pack", {}, pt);
-	ok("a bought pack opens like any other", o.status === 200 && Array.isArray(o.body.cards) && o.body.cards.length > 0 && o.body.state.packs === P.state.packs + 1 && o.body.state.gold === 350, JSON.stringify([o.status, o.body.state && o.body.state.packs]));
+	ok("a bought pack opens like any other", o.status === 200 && Array.isArray(o.body.cards) && o.body.cards.length > 0 && o.body.state.packs === P.state.packs + 1 && o.body.state.gold === 50, JSON.stringify([o.status, o.body.state && o.body.state.packs]));
 	ok("buying needs an account", (await api("gold-buy-pack", {})).status === 401);
 	const packs = fs.readFileSync(path.join(ROOT, "battlecards/packs.js"), "utf8"), html = fs.readFileSync(path.join(ROOT, "battlecards/packs.html"), "utf8");
 	ok("the pack screen has a Buy button that asks the server, and shows the gold", html.includes("id=\"buy-btn\"") && packs.includes("MPX.call('gold-buy-pack')") && packs.includes("Buy a pack — ${fmtGold(mpPrice)} gold") && packs.includes("${fmtGold(mpGold)} gold"));
