@@ -42,6 +42,10 @@
 //   the Weekly (part 15) o.weekly { week, mod }: this week's Dive, the same for everyone (the page gives its seed and route):
 //   Dive       from floor 1, no stage, no Seal, and one modifier: glass (you hit and are hit x1.5), horde (+2 foes a group),
 //              swift (foes x1.25 speed), iron (foes x1.4 HP).
+//   together   (part 17) co-op (coop.js shares the fight; divecoop.js is a guest's side): the HOST has the Dive. ANY player near
+//              wakes a group, opens a chest (a guest's item is its own: it comes as a seed), leans on a plug, stands on the
+//              landmark, the stairs or in the rope's circle; the lost Pokémon follows the nearest; a slam or a charge goes
+//              for the nearest and hits whoever is in it (a guest takes its own, from the event).
 //   the save   (part 6) divesave.js: the deepest floor, the stage, the Seal (o.seal: +10 % damage, -10 % taken), the pay.
 // Not here yet (later parts): a new special at levels 4, 10, 16…, the League, the red ground, the stall, the bushes
 // and the gold rocks, routes and stages in the save, the Weekly Dive, co-op.
@@ -58,7 +62,7 @@ import { syncPerks } from './expcap.js';
 import { researchKo } from './expmeta.js';
 import { tickFog } from './expfog.js';
 import { diveFrom, diveRoom } from './divegen.js';
-import { walkable } from './expedition.js';
+import { walkable, besideHost } from './expedition.js';
 
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const TAU = 6.2832;
@@ -73,7 +77,7 @@ export function rulesFrom(G) {
 	const E = G.ExpDive, F = diveFrom(G); if (!E || !F) return null;
 	const en = (G.I18n && G.I18n.en) || {}, tr = (s) => en[s] || s;
 	return { F, K: E.K, ESCORT: E.ESCORT, GUARDIANS: E.GUARDIANS, COMBO: E.COMBO, PLUG: E.PLUG, LM: E.LM, SEAL: E.SEAL, MAIN: E.MAIN.slice(), LEARN_AT: E.LEARN_AT, TELE: E.TELE, WEEKLY: E.WEEKLY, modName: (mod) => tr(E.MOD_NAME[mod] || mod), target: E.target, pool: (route, floor) => E.pool(route, floor), guardianOf: E.guardianOf,
-		megaRoll: (seed, route, f) => E.megaRoll(seed, route, f), legendRoll: (seed, route, f) => E.legendRoll(seed, route, f),
+		megaRoll: (seed, route, f) => E.megaRoll(seed, route, f), seedOf: (seed, route, floor, k) => G.DiveGen.seedOf(seed | 0, route, floor, k) >>> 0, legendRoll: (seed, route, f) => E.legendRoll(seed, route, f),
 		rng: (seed, route, floor, k) => G.DLC.rng(G.DiveGen.seedOf(seed | 0, route, floor, k)), nameOf: (route) => tr(E.NAME[route] || route),
 		strays: (route, floor) => { const tg = E.target(floor) - 60, types = F.ROUTES[route].types; return G.DEX.filter((p) => !p.leg && Math.abs(p.bst - tg) < 70 && p.types.some((t) => types.includes(t))).map((p) => p.dex); } };
 }
@@ -104,16 +108,9 @@ export function newDive(data, X, R, o = {}) {
 	if (league) { S.maxMoves = R.K.SLOTS; setupLeague(S, member, o.form | 0); S.lg.shiny = !!o.shiny; for (let i = 1; i < R.K.SLOTS; i++) learnKit(S, i); }   // (part 10: the basic and both specials from the start)
 	if (X && X.R && o.rx !== false) setupRx(S);
 	if (X && X.Uu && o.ult !== false) setupUlt(S, { walk: walkable, auto: !!o.ultAuto });
-	// the kit, the dodge, the combo
-	S.kit = o.kit !== false; S.dodge = { t: 0, cd: 0, dx: 0, dz: 0, n: 0, held: false }; S.combo = { n: 0, t: 0, best: 0, k: 1 }; S.spare = [];
-	{ const hooks = w.hooks || (w.hooks = {}), hurt0 = hooks.hurt, out0 = hooks.out;
-		const glass = weekly && weekly.mod === 'glass' ? R.WEEKLY.GLASS : 1;   // (the Weekly Dive's Glass Cannon: you hit and are hit x1.5)
-		hooks.hurt = (ww, d) => (S.dodge.t > 0 ? 0 : (hurt0 ? hurt0(ww, d) : d) * (S.seal ? 1 - R.SEAL.TAKEN : 1) * glass);
-		hooks.out = (ww, e, src, dmg) => { const k0 = out0 ? out0(ww, e, src, dmg) : 1, id = src && (src.mid || src.id); return k0 * (S.kit && id && isSpecial(S, id) ? R.K.SPECIAL_K : 1) * (S.obeliskT > 0 ? 1 + R.LM.OBELISK : 1) * (S.seal ? 1 + R.SEAL.DMG : 1) * glass; }; }
 	S.seal = !!o.seal && !weekly;   // (part 6: the route's Seal, from your save; the Weekly Dive has none)
 	S.opened = 0; S.secrets = 0; S.marks = 0; S.obeliskT = 0; S.plugTip = false;
-	roles(S);
-	if (S.kit && S.lv && w.offerCards) { const offer0 = w.offerCards; S.learnAt = {}; w.offerCards = () => { if (S.lg) { processLeague(S); if (S.lg.pending) return offer0(); } return learnCards(S) || offer0(); }; }   // (a League run: the level's evolution first; a branch to choose is the level's cards)   // (part 8)
+	setupKit(S, o);
 	startFloor(S, f0, 0); S.opening = true;
 	if (S.meta && !w.kos) w.kos = [];   // (part 13: research: every KO is read from here, as an Expedition's)
 	if (S.meta) {   // the Lab's (as an Expedition's): its stats, a Max Revive to start with, the Rare Candy's two levels
@@ -124,6 +121,25 @@ export function newDive(data, X, R, o = {}) {
 	return S;
 }
 
+/** The kit, the dodge and the combo on a Dive's player: this page's own Pokémon, as a host or as a guest (divecoop.js).
+ *  S: { w, R, X, weekly?, seal?, obeliskT? }. o.kit: false leaves the kit out (every move fires by itself). */
+export function setupKit(S, o = {}) {
+	const w = S.w, R = S.R;
+	S.kit = o.kit !== false; S.dodge = { t: 0, cd: 0, dx: 0, dz: 0, n: 0, held: false }; S.combo = S.combo || { n: 0, t: 0, best: 0, k: 1 }; S.spare = [];
+	const hooks = w.hooks || (w.hooks = {}), hurt0 = hooks.hurt, out0 = hooks.out;
+	const glass = () => (S.weekly && S.weekly.mod === 'glass' ? R.WEEKLY.GLASS : 1);   // (the Weekly Dive's Glass Cannon: you hit and are hit x1.5)
+	hooks.hurt = (ww, d) => (S.dodge.t > 0 ? 0 : (hurt0 ? hurt0(ww, d) : d) * (S.seal ? 1 - R.SEAL.TAKEN : 1) * glass());
+	hooks.out = (ww, e, src, dmg) => { const k0 = out0 ? out0(ww, e, src, dmg) : 1, id = src && (src.mid || src.id); return k0 * (S.kit && id && isSpecial(S, id) ? R.K.SPECIAL_K : 1) * (S.obeliskT > 0 ? 1 + R.LM.OBELISK : 1) * (S.seal ? 1 + R.SEAL.DMG : 1) * glass(); };
+	roles(S);
+	if (S.kit && S.lv && w.offerCards) { const offer0 = w.offerCards; S.learnAt = {}; w.offerCards = () => { if (S.lg) { processLeague(S); if (S.lg.pending) return offer0(); } return learnCards(S) || offer0(); }; }   // (a League run: the level's evolution first; a branch to choose is the level's cards)   // (part 8)
+}
+/** A tick's input through the kit: the slots' roles, and the dodge (a level's cards up: the input as it is). */
+export function kitInput(S, input, dt) { if (!S.kit) return input; roles(S); return S.w.pl.choices ? input : dodgeInput(S, input, dt); }
+/** (part 17) Every player in the Dive who is up: you, and (a host's) the guests' puppets. Each has `s` (its body) and `mon`. */
+export const bodies = (S) => { const w = S.w, out = w.pl.dead ? [] : [w.pl]; for (const m of w.mates || []) if (!m.dead && !m.away) out.push(m); return out; };
+/** The player nearest to (x, z): { b, d }; b null when no one is up. */
+export function nearest(S, x, z) { let b = null, d = Infinity; for (const q of bodies(S)) { const v = Math.hypot(q.s.x - x, q.s.z - z); if (v < d) { d = v; b = q; } } return { b, d }; }
+const typesOfBody = (b) => ((b.mon && b.mon.types) || []).map((t) => String(t).toLowerCase());
 /** The kit's roles, by slot: the first move fires by itself, the next are specials (pressed). More than K.SLOTS moves: the rest are put away. */
 function roles(S) {
 	const mv = S.w.pl.moves; if (!S.kit) return;
@@ -373,13 +389,14 @@ export function openPlug(S, i) {
 function useLandmark(S, lm) {
 	const w = S.w, pl = w.pl, LM = S.R.LM, k = lm.kind, f = S.floor;
 	lm.used = true; S.marks++;
-	if (k === 'shrine') pl.hp = Math.min(pl.maxHp, pl.hp + pl.maxHp * LM.SHRINE_HP);
+	const mates = (w.mates || []).filter((m) => !m.dead && !m.away);
+	if (k === 'shrine') { pl.hp = Math.min(pl.maxHp, pl.hp + pl.maxHp * LM.SHRINE_HP); for (const m of mates) m.gifts.push({ k: 'heal', v: LM.SHRINE_HP }); }
 	else if (k === 'obelisk') S.obeliskT = LM.OBELISK_T;
 	else if (k === 'altar') { pl.hp = Math.max(1, pl.hp - pl.maxHp * LM.ALTAR_HP); loot(S, 20 + 3 * f); }
 	else if (k === 'shipwreck') loot(S, 15 + 2 * f);
 	else if (k === 'spire') { for (const e of w.enemies) if (!e.dead && !e.boss && Math.hypot(e.a.x - lm.x, e.a.z - lm.z) < tiles(LM.SPIRE_R)) e.frozenT = Math.max(e.frozenT || 0, LM.SPIRE_T); }
 	else if (k === 'totem' || k === 'monolith') gainXp(w, Math.round((pl.xpNext || 20) * (k === 'monolith' ? 0.6 : 0.35) / (pl.xpMul || 1)));
-	else if (k === 'fairy') pl.hp = pl.maxHp;
+	else if (k === 'fairy') { pl.hp = pl.maxHp; for (const m of mates) m.gifts.push({ k: 'heal', v: 1 }); }
 	say(S, `${LANDMARKS[k][0]}: ${LANDMARKS[k][1]}`, 3);
 	w.events.push({ k: 'landmark', kind: k, x: lm.x, z: lm.z });
 }
@@ -397,12 +414,13 @@ function teleTick(S, dt) {
 		if (e.frozenT > 0 || e.sleepT > 0) continue;
 		e.xtcd = (e.xtcd == null ? 1 + w.rand() * 1.5 : e.xtcd) - dt;
 		if (e.xtcd > 0) continue;
-		const d = Math.hypot(s.x - e.a.x, s.z - e.a.z), reach = tiles(big ? TE.chargeLen : TE.REACH);
+		const tb = nearest(S, e.a.x, e.a.z); if (!tb.b) continue;
+		const ts = tb.b.s, d = tb.d, reach = tiles(big ? TE.chargeLen : TE.REACH);
 		if (d > reach) { e.xtcd = 0.3; continue; }
 		const cd = e.xk === 'guardian' ? TE.GUARD_CD : big ? TE.ALPHA_CD : TE.CD;
 		e.xtcd = cd[0] + w.rand() * (cd[1] - cd[0]);
 		const charge = big && (d > tiles(2) || w.rand() < (e.xk === 'guardian' ? 0.45 : 0.35));
-		const t = charge ? { k: 'charge', e, x: e.a.x, z: e.a.z, a: Math.atan2(s.z - e.a.z, s.x - e.a.x), len: tiles(TE.chargeLen), w: tiles(TE.chargeW), t: 0, T: TE.charge }
+		const t = charge ? { k: 'charge', e, x: e.a.x, z: e.a.z, a: Math.atan2(ts.z - e.a.z, ts.x - e.a.x), len: tiles(TE.chargeLen), w: tiles(TE.chargeW), t: 0, T: TE.charge }
 			: { k: 'slam', e, x: e.a.x, z: e.a.z, r: tiles(e.xk === 'guardian' ? TE.guardR : big ? TE.alphaR : TE.slamR), t: 0, T: TE.slam };
 		e.xtele = t; e.dummy = true;   // (it holds still while winding up)
 		S.tg.push(t);
@@ -422,9 +440,9 @@ function teleTick(S, dt) {
 		if (t.t < t.T) continue;
 		if (t.k === 'slam') {
 			if (!pl.dead && Math.hypot(s.x - t.x, s.z - t.z) < t.r) hurtPlayer(w, e.dmg * TE.SLAM_DMG, 'normal', true);
-			w.events.push({ k: 'slam', x: t.x, z: t.z, r: t.r, big: !!e.xk });
+			w.events.push({ k: 'slam', x: t.x, z: t.z, r: t.r, big: !!e.xk, d: Math.round(e.dmg * TE.SLAM_DMG * 10) / 10 });   // (d: what it does to whoever is in it: a guest takes its own)
 			S.tg.splice(i, 1); release(e);
-		} else { t.k = 'dash'; t.t = 0; t.hit = false; w.events.push({ k: 'charge', x: t.x, z: t.z, a: t.a, len: t.len }); }   // (the charge's wind-up is over)
+		} else { t.k = 'dash'; t.t = 0; t.hit = false; w.events.push({ k: 'charge', x: t.x, z: t.z, a: t.a, len: t.len, w: t.w, d: Math.round(e.dmg * TE.CHARGE_DMG * 10) / 10 }); }   // (the charge's wind-up is over)
 	}
 }
 /** One tick of the floor's things. */
@@ -434,7 +452,7 @@ function thingsTick(S, dt) {
 	if (R.PLUG) room.plugs.forEach((pg, i) => {
 		if (pg.open) return;
 		const mx = pg.at2 ? (pg.at[0] + pg.at2[0]) / 2 : pg.at[0], mz = pg.at2 ? (pg.at[2] + pg.at2[2]) / 2 : pg.at[2];
-		const by = Math.hypot(s.x - mx, s.z - mz) < tiles(R.PLUG.R + (pg.at2 ? 0.5 : 0)), ok = by && canOpen(S, pg.kind);
+		const pr = tiles(R.PLUG.R + (pg.at2 ? 0.5 : 0)), at = bodies(S).filter((b) => Math.hypot(b.s.x - mx, b.s.z - mz) < pr), by = at.length > 0, ok = at.some((b) => typesOfBody(b).some((t) => (R.PLUG.TYPES[pg.kind] || []).includes(t)));   // (any player of the right type opens it for everyone)
 		pg.t = ok ? (pg.t || 0) + dt : 0;
 		if (by && !ok && !S.plugTip) { S.plugTip = true; say(S, pg.kind === 'boulder' ? 'A boulder: a Rock, Ground, Fighting or Steel Pokémon breaks it' : 'A thicket: a Fire Pokémon burns it', 3.2); }
 		if (pg.t >= R.PLUG.T) openPlug(S, i);
@@ -442,18 +460,20 @@ function thingsTick(S, dt) {
 	const OT = (S.X && S.X.E && S.X.E.K && S.X.E.K.OPEN_T) || CHEST.T;
 	S.chests.forEach((c, i) => {
 		if (c.open) return;
-		c.t = Math.hypot(s.x - c.x, s.z - c.z) < tiles(CHEST.R) ? c.t + dt : 0;
+		const opener = nearest(S, c.x, c.z);
+		c.t = opener.d < tiles(CHEST.R) ? c.t + dt : 0;
 		if (c.t < OT) return;
 		c.open = true; S.opened++;
 		// one item, of a rarity by your level, your luck and the floor's zone (a zone every 10 floors, as the 2D Dive's)
 		let id = null;
+		if (opener.b && opener.b !== w.pl) { opener.b.gifts.push({ k: 'xg', sd: R.seedOf(S.seed, S.route, f, 0xC4E5 + i), n: 1, min: 0 }); w.events.push({ k: 'chest', i, x: c.x, z: c.z, item: null, pocket: c.pocket, by: opener.b.id }); return; }   // (a guest's: it rolls its own item from this seed)
 		if (S.lv) { const z0 = S.zone; S.zone = Math.min(3, 1 + Math.floor((f - 1) / 10)); id = rollOffers(S, R.rng(S.seed, S.route, f, 0xC4E5 + i), 1, 0)[0] || null; S.zone = z0; }
 		if (id) give(S, id); else { loot(S, 3 + f); say(S, 'A Poké Ball: a little loot', 2.2); }   // (no room for an item, or no items in this run)
 		w.events.push({ k: 'chest', i, x: c.x, z: c.z, item: id, pocket: c.pocket });
 	});
 	const lm = S.lm;
 	if (lm && !lm.used && R.LM) {
-		const d = Math.hypot(s.x - lm.x, s.z - lm.z);
+		const d = nearest(S, lm.x, lm.z).d;
 		if (!lm.seen && d < tiles(CHEST.SEE)) { lm.seen = true; say(S, `${LANDMARKS[lm.kind][0]}: stand on it (${LANDMARKS[lm.kind][1]})`, 3); }
 		lm.t = d < tiles(R.LM.R) ? lm.t + dt : 0;
 		if (lm.t >= R.LM.T) useLandmark(S, lm);
@@ -469,15 +489,16 @@ function bossDown(S) {
 }
 /** On the way out (the stairs, the rope): the lost Pokémon, if it follows you and is near, is rescued. */
 function escortOut(S) {
-	const lo = S.stray, s = S.w.pl.s, K = S.R.K;
-	if (!lo || !lo.follow || lo.done || Math.hypot(s.x - lo.x, s.z - lo.z) >= tiles(S.R.ESCORT.R)) return;
+	const lo = S.stray, K = S.R.K;
+	if (!lo || !lo.follow || lo.done || nearest(S, lo.x, lo.z).d >= tiles(S.R.ESCORT.R)) return;
 	lo.done = true; S.rescued.push(lo.dex); loot(S, K.LOOT.rescue + K.LOOT.rescuePer * S.floor);
 	say(S, `${name(S, lo.dex)} rescued!`, 2.4); S.w.events.push({ k: 'rescued', dex: lo.dex });
 }
 function escortTick(S, dt) {
-	const lo = S.stray, s = S.w.pl.s;
+	const lo = S.stray;
 	if (!lo || !lo.follow || lo.done) return;
-	const want = tiles(1.6), d = Math.hypot(s.x - lo.x, s.z - lo.z);
+	const nb = nearest(S, lo.x, lo.z); if (!nb.b) return;
+	const s = nb.b.s, want = tiles(1.6), d = nb.d;
 	if (d > want) { const v = Math.min(d - want, SK.RUN * S.R.ESCORT.SPEED * dt); lo.x += (s.x - lo.x) / d * v; lo.z += (s.z - lo.z) / d * v; }
 	if (d > tiles(14)) { lo.x = s.x - 1.2; lo.z = s.z; }   // (never left behind)
 	lo.y = Math.max(0, groundAt(S.w.room, lo.x, lo.z));
@@ -488,6 +509,8 @@ function enterFloor(S, f) {
 	for (const k of ['enemies', 'shots', 'orbs', 'fields', 'effects', 'eshots', 'hazards', 'pickups']) w[k].length = 0;
 	w.room = room; Object.assign(w.pl.s, newState(room, w.tune));
 	w.field = null; w.fieldCell = -2; w.pl.target = null;
+	// (co-op: the guests' puppets arrive beside you; a guest that was down is up again on the new floor)
+	for (const m of w.mates || []) { m.s.x = room.spawn[0] + besideHost(m.id); m.s.y = room.spawn[1]; m.s.z = room.spawn[2]; m.s.vx = m.s.vy = m.s.vz = 0; m.s.grounded = true; m.field = null; m.fieldCell = -2; m.dead = false; }
 }
 function nextFloor(S, t) {
 	escortOut(S);
@@ -511,7 +534,7 @@ export function stepDive(S, input, dt = SK.TICK) {
 	}
 	const t0 = w.t;
 	w.cap = K.REIN.cap + 60;
-	if (S.kit) { roles(S); input = w.pl.choices ? input : dodgeInput(S, input, dt); }
+	input = kitInput(S, input, dt);
 	tick(w, input, dt);
 	if (S.dodgeEv) { S.dodgeEv = false; if (w.t !== t0) w.events.push({ k: 'dodge' }); }   // (the tick clears the events: said again, for the page)
 	if (w.t === t0) return S;   // (a level-up card is up: nothing moves)
@@ -533,7 +556,7 @@ export function stepDive(S, input, dt = SK.TICK) {
 	comboTick(S, dt);
 	// the groups: one wakes when you come close, or when one of it is hit
 	const wr = tiles(K.WAKE_R);
-	for (const g of S.groups) if (!g.awake && (Math.hypot(s.x - g.at[0], s.z - g.at[1]) < wr || g.list.some((e) => !e.dead ? e.hp < e.maxHp : true))) wake(S, g);
+	for (const g of S.groups) if (!g.awake && (nearest(S, g.at[0], g.at[1]).d < wr || g.list.some((e) => !e.dead ? e.hp < e.maxHp : true))) wake(S, g);
 	// pressure
 	if (!S.cadence.guardian && t - S.ft >= K.REIN.grace) {
 		S.reinT = (S.reinT == null ? 0 : S.reinT) - dt;
@@ -541,14 +564,15 @@ export function stepDive(S, input, dt = SK.TICK) {
 	}
 	// the lost Pokémon
 	const lo = S.stray;
-	if (lo && !lo.done && !lo.follow && Math.hypot(s.x - lo.x, s.z - lo.z) < tiles(K.RESCUE_R)) { lo.follow = true; say(S, `${name(S, lo.dex)} follows you! Take it to the stairs`, 2.6); w.events.push({ k: 'follow', dex: lo.dex }); }
+	if (lo && !lo.done && !lo.follow && nearest(S, lo.x, lo.z).d < tiles(K.RESCUE_R)) { lo.follow = true; say(S, `${name(S, lo.dex)} follows you! Take it to the stairs`, 2.6); w.events.push({ k: 'follow', dex: lo.dex }); }
 	escortTick(S, dt);
 	thingsTick(S, dt);
 	teleTick(S, dt);
 	if (S.boss && S.boss.dead) bossDown(S);
 	// the rope: stand still in the circle where you arrived
 	if (S.cadence.rope) {
-		const inR = Math.hypot(s.x - room.spawn[0], s.z - room.spawn[2]) < tiles(K.ROPE_R), still = Math.hypot(s.vx, s.vz) < ROPE_STILL && s.grounded;
+		// (co-op: any player standing still in the circle holds the rope, and the whole party leaves by it)
+		const roper = bodies(S).find((b) => Math.hypot(b.s.x - room.spawn[0], b.s.z - room.spawn[2]) < tiles(K.ROPE_R) && Math.hypot(b.s.vx, b.s.vz) < ROPE_STILL && b.s.grounded), inR = !!roper, still = inR;
 		if (inR && still && !hurt) {
 			if (!S.ropeSaid) { S.ropeSaid = true; say(S, 'Escape Rope: hold still…', K.ROPE_T); }
 			S.ropeT += dt;
@@ -556,7 +580,7 @@ export function stepDive(S, input, dt = SK.TICK) {
 		} else { S.ropeT = 0; S.ropeSaid = false; }
 	}
 	// the stairs
-	const onS = Math.hypot(s.x - room.stairs[0], s.z - room.stairs[2]) < tiles(K.STAIRS_R);
+	const onS = nearest(S, room.stairs[0], room.stairs[2]).d < tiles(K.STAIRS_R);   // (anyone on the stairs)
 	if (onS && S.sealed) { if (!S.sealSaid) { S.sealSaid = true; say(S, 'The stairs are sealed', 2); } } else if (!onS) S.sealSaid = false;
 	S.stairsT = onS && !S.sealed ? S.stairsT + dt : 0;
 	if (S.stairsT >= K.STAIRS_T) nextFloor(S, t);

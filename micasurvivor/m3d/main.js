@@ -37,6 +37,7 @@ import { capView } from './expcap.js';
 import * as DS from './divesave.js';
 import { lightOf } from './divelight.js';
 import { diveRow, diveView } from './divenet.js';
+import { guestDive, guestDiveApply, stepGuestDive, slamOn } from './divecoop.js';
 import { rulesFrom, newDive, stepDive, hudLine as diveHud, result as diveResult, pressSpecial, specials, LANDMARKS } from './dive.js';
 
 const Q = new URLSearchParams(location.search);
@@ -55,10 +56,11 @@ const EXP = !WATCH && !JOIN && Q.has('exp');
 // 3D Dive (dive.js): ?dive=<seed> plays a Dive run: &route=forest|…, &floor=<the floor to begin on>. Find the stairs (the
 // column of light), stand on them; an alpha every 5th floor seals them. A preview: not linked from the menu, nothing is saved.
 const DIVE = !WATCH && !JOIN && !EXP && Q.has('dive');
+const DJ = !WATCH && Q.get('join') && Q.has('dj') ? { seed: +Q.get('dj') | 0, route: Q.get('route') || 'forest' } : null;   // (part 17) joining a Dive: its seed and route
 const DW = WATCH && Q.has('dw') ? { seed: +Q.get('dw') | 0, route: Q.get('route') || 'forest' } : null;   // (part 16) watching a Dive: its seed and route
 // (the 2D Dive's floors and rules, read by divegen.js and dive.js, are loaded only here: an Expedition's page is as it was. With them
 // on every page, the 2D game's own Expedition object changed what an Expedition's save does.)
-if ((DIVE || DW) && window.G && !window.G.ExpDive) for (const src of ['../js/systems/expedition.js', '../js/expedition/dive-gen.js', '../js/expedition/dive.js']) await new Promise((res, rej) => { const el = document.createElement('script'); el.src = src; el.async = false; el.onload = res; el.onerror = () => rej(new Error('3D Dive: could not load ' + src)); document.head.appendChild(el); });
+if ((DIVE || DW || DJ) && window.G && !window.G.ExpDive) for (const src of ['../js/systems/expedition.js', '../js/expedition/dive-gen.js', '../js/expedition/dive.js']) await new Promise((res, rej) => { const el = document.createElement('script'); el.src = src; el.async = false; el.onload = res; el.onerror = () => rej(new Error('3D Dive: could not load ' + src)); document.head.appendChild(el); });
 const FIGHT = !WATCH && (!!JOIN || EXP || DIVE || (Q.has('gen') && Q.get('fight') === '1'));
 const N = Math.max(0, Math.min(2000, +(Q.get('n') ?? (FIGHT || (WATCH && Q.has('xw')) ? 0 : 100)) || 0));   // (the test room's crowd: not in a fight, and not on a watched run)
 const DEX = +(Q.get('dex') ?? 25) || 25;
@@ -67,10 +69,10 @@ const CROWD_DEX = [1, 4, 7, 16, 19, 25, 43, 74, 92, 133].filter((d) => META[d] &
 const hud = document.getElementById('hud'), canvas = document.getElementById('c');
 const XW = WATCH && Q.has('xw') ? { seed: (+Q.get('xw') >>> 0) || 1, map: Q.get('map') || 'viridian' } : null;   // (P4) watching an Expedition run: its seed and map
 const XJ = !WATCH && Q.get('join') && Q.has('xj') ? { seed: (+Q.get('xj') >>> 0) || 1, map: Q.get('map') || 'viridian', diff: Q.get('diff') || 'normal' } : null;   // (P4) joining an Expedition run
-const XF = (EXP || XW || XJ || DIVE || DW) && window.G && window.G.ExpClassic ? expFrom(window.G) : null;
+const XF = (EXP || XW || XJ || DIVE || DW || DJ) && window.G && window.G.ExpClassic ? expFrom(window.G) : null;
 const GEN = EXP ? (+Q.get('exp') >>> 0) || 1 : DIVE ? (+Q.get('dive') >>> 0) || 1 : XW ? XW.seed : XJ ? XJ.seed : Q.has('gen') ? (+Q.get('gen') >>> 0) : null, BIOME = BIOMES[Q.get('biome')] ? Q.get('biome') : 'meadow';
 const SIZE = Q.has('size') ? Math.max(3, Math.min(8, +Q.get('size') | 0 || 5)) : null;
-let room = EXP || XJ || DIVE ? null : XW ? zoneRoom(XW.seed, XW.map, 1, XF) : GEN === null ? buildRoom() : generate(GEN, BIOME, SIZE ? { size: SIZE } : null);
+let room = EXP || XJ || DIVE || DJ ? null : XW ? zoneRoom(XW.seed, XW.map, 1, XF) : GEN === null ? buildRoom() : generate(GEN, BIOME, SIZE ? { size: SIZE } : null);
 // (P1) who you play decides how it moves: its types' traits (sim.js TYPE_TRAITS). ?types=flying,water tries others.
 const SPECIES = ((window.G && window.G.DEX) || []).find((p) => p.dex === DEX) || { name: '#' + DEX, types: [] };
 const TYPES = Q.get('types') ? Q.get('types').split(',') : SPECIES.types;
@@ -105,7 +107,7 @@ const LEAD_SHINY = SAVE_OK && (() => { const b = baseSave(), fam = GG.ExpLeague 
 const run = EXP ? newRun(dataFrom(GG), XF, { shiny: LEAD_SHINY, perks: UPGRADES, ultAuto: SAVE_OK && GG.ExpSave.get('ult.auto.on') > GG.ExpSave.get('ult.auto.off'), wild: WILD, meta: LAB_META, form: +Q.get('form') || 0, seed: GEN, map: Q.get('map'), diff: Q.get('diff'), mode: Q.get('mode') || undefined, dex: DEX, moves: MOVES, tune: TUNE, touch: matchMedia('(pointer: coarse)').matches, league: !Q.has('moves') && Q.get('league') !== '0', ability: Q.get('ability') === '0' ? null : Q.get('ability') || 'auto', items: Q.get('items') ? Q.get('items').split(',') : [], weather: Q.get('weather') === '0' ? false : undefined, autoPick: Q.has('auto') ? +Q.get('auto') | 0 : undefined }) : null;
 if (run) room = run.w.room;
 // 3D Dive: the run (dive.js), with the 2D game's own rules
-const DR = (DIVE || DW) && XF ? rulesFrom(GG) : null;
+const DR = (DIVE || DW || DJ) && XF ? rulesFrom(GG) : null;
 if (DIVE && !DR) throw new Error('3D Dive: the Dive rules did not load');
 // (the kit: your League member's first three moves, the basic and two specials; ?moves= picks others)
 const DMOVES = DR && !Q.get('moves') && GG.ExpLeague ? (() => { const L = GG.ExpLeague, m = L.BY[L.BY[DEX] ? DEX : L.FAM[DEX]], kit = m ? m.kit.filter((id) => { const d = GG.Moves.BY_ID[id] || (GG.ExpMoves && GG.ExpMoves.MOVES[id]); return !!d && canFire(d.kind); }).slice(0, DR.K.SLOTS) : []; return kit.length >= 2 ? kit.map((id) => [id, 1]) : MOVES; })() : MOVES;
@@ -126,13 +128,17 @@ const DSHINY = DKEEP && (() => { const b = baseSave(); return GG.ExpSave.has('le
 const drun = DIVE && DR ? newDive(dataFrom(GG), XF, DR, { form: DFORM, perks: DKEEP ? perksOf(GG, baseSave(), DEX) : null, meta: DMETA, shiny: DSHINY, weekly: DWEEK ? { week: DWEEK.week, mod: DWEEK.mod } : null, route: DROUTE, seed: DWEEK ? DWEEK.seed : GEN, start: DSTART, seal: DSAVE_OK && DS.sealOf(GG.ExpSave, DROUTE), league: !Q.has('moves') && Q.get('league') !== '0', dex: DEX, moves: DMOVES, tune: TUNE, touch: matchMedia('(pointer: coarse)').matches, ability: Q.get('ability') === '0' ? null : Q.get('ability') || 'auto', items: Q.get('items') ? Q.get('items').split(',') : [], weather: false, autoPick: Q.has('auto') ? +Q.get('auto') | 0 : undefined }) : null;
 if (drun) { room = drun.w.room; drun.w.cap = DR.K.REIN.cap + 60; }
 // (part 14) a dark route: its air (the fog comes close and takes the route's colour: your lamp), its tint at the screen's edges
-const DLIGHT = drun ? lightOf(drun.route, FOG0) : DW ? lightOf(DW.route, FOG0) : null;   // (a watched Dive has its route's air too)
+const DLIGHT = drun ? lightOf(drun.route, FOG0) : DW || DJ ? lightOf((DW || DJ).route, FOG0) : null;   // (a watched Dive has its route's air too)
 const solo = run || drun;   // (a run of your own, alone on this page: an Expedition or a Dive)
 // (P4) a guest in a run: its own League member in the host's run (expcoop.js); it builds each zone from the run's row
 const grun = XJ ? guestRun(dataFrom(GG), XF, { seed: XJ.seed, map: XJ.map, diff: XJ.diff, id: MYID, dex: DEX, league: !Q.has('moves'), moves: MOVES, tune: TUNE, ability: Q.get('ability') === '0' ? null : Q.get('ability') || undefined, autoPick: Q.has('auto') ? +Q.get('auto') | 0 : undefined }) : null;
 if (grun) room = grun.w.room;
-const myRun = run || grun || drun;   // (the run this page plays in, as a host or a guest)
-const world = run ? run.w : drun ? drun.w : grun ? grun.w : JOIN ? guestWorld(room, dataFrom(GG), { id: MYID, dex: DEX, moves: MOVES, seed: MYID * 7919 + 13, tune: TUNE, ability: Q.get('ability') === '0' ? null : Q.get('ability') || 'auto', items: Q.get('items') ? Q.get('items').split(',') : [], autoPick: Q.has('auto') ? +Q.get('auto') | 0 : undefined })
+// (part 17) a guest in a Dive: its own League member in the host's Dive (divecoop.js); it builds each floor from the Dive's row
+const gdrun = DJ && DR ? guestDive(dataFrom(GG), XF, DR, { seed: DJ.seed, route: DJ.route, id: MYID, dex: DEX, league: !Q.has('moves'), moves: MOVES, tune: TUNE, ability: Q.get('ability') === '0' ? null : Q.get('ability') || undefined, autoPick: Q.has('auto') ? +Q.get('auto') | 0 : undefined }) : null;
+if (gdrun) room = gdrun.w.room;
+const dk = drun || gdrun;   // (the Dive this page plays in, as its host or a guest: the kit, the dodge)
+const myRun = run || grun || drun || gdrun;   // (the run this page plays in, as a host or a guest)
+const world = run ? run.w : drun ? drun.w : grun ? grun.w : gdrun ? gdrun.w : JOIN ? guestWorld(room, dataFrom(GG), { id: MYID, dex: DEX, moves: MOVES, seed: MYID * 7919 + 13, tune: TUNE, ability: Q.get('ability') === '0' ? null : Q.get('ability') || 'auto', items: Q.get('items') ? Q.get('items').split(',') : [], autoPick: Q.has('auto') ? +Q.get('auto') | 0 : undefined })
 	: FIGHT ? newWorld(room, dataFrom(GG), { bosses: BOSSES, ability: Q.get('ability') === '0' ? null : Q.get('ability') || 'auto', items: Q.get('items') ? Q.get('items').split(',') : [], dex: DEX, moves: MOVES, seed: (GEN + 1) * 7919, tune: TUNE, cast: FIGHT_CAST, cap: Q.has('cap') ? +Q.get('cap') | 0 : undefined, weather: Q.get('weather') === '0' ? false : undefined, autoPick: Q.has('auto') ? +Q.get('auto') | 0 : undefined }) : null;
 const state = world ? world.pl.s : newState(room, TUNE);
 const TYPE_COLOR = (GG.U && GG.U.TYPE_COLOR) || {};
@@ -224,7 +230,7 @@ function readInput(dt) {
 	if (keys.has('KeyA') || keys.has('ArrowLeft')) ix -= 1;
 	if (keys.has('KeyW') || keys.has('ArrowUp')) iy += 1;
 	if (keys.has('KeyS') || keys.has('ArrowDown')) iy -= 1;
-	jump = keys.has('Space') || acts.has('confirm'); crouch = keys.has('ShiftLeft') || keys.has('ShiftRight') || acts.has('cancel') || (!drun && acts.has('secondary'));   // (a Dive: slide is the DODGE, and C / X is special 1)   // (the site's scheme: Z / A jumps, X / B and C slide)
+	jump = keys.has('Space') || acts.has('confirm'); crouch = keys.has('ShiftLeft') || keys.has('ShiftRight') || acts.has('cancel') || (!dk && acts.has('secondary'));   // (a Dive: slide is the DODGE, and C / X is special 1)   // (the site's scheme: Z / A jumps, X / B and C slide)
 	if (acts.has('prev')) turn += 1; if (acts.has('next')) turn -= 1;   // (Q / E, L / R)
 	const pad = (window.__owFakePads || (navigator.getGamepads ? [...navigator.getGamepads()] : [])).find((p) => p && p.connected);   // (__owFakePads: a test's controller, as site/gamepad.js reads it)
 	if (pad) {
@@ -504,6 +510,12 @@ function frame(now) {
 					if (drun.sealed) flashes.arc(room.stairs[0], room.stairs[1] + 0.05, room.stairs[2], DR.K.STAIRS_R * CELL + 0.6, 0, 6.2832, '#ff4d5e', 0.8, 0.8);
 				}
 				if (drun.ended && !runOver) { runOver = diveResult(drun); keepDive(runOver); if (SITE_HOST) setTimeout(() => SITE_HOST.end(), 1300);   /* (the last second's frames carry the end) */ note(runOver.title, 600000); }
+			} else if (gdrun) {   // (part 17) a guest in a Dive: the red ground that lands on it; its kit, its dodge, its fight
+				if (coView && coView.events.length) slamOn(gdrun, coView.events);
+				stepGuestDive(gdrun, input, K.TICK);
+				for (const q of gdrun.says) note(q.text, q.s * 1000);
+				if (gdrun.pick !== shownPick) showPick();
+				if (runOver === null && gdrun.ended) { runOver = gdrun.won ? 'won' : 'lost'; note(gdrun.won ? 'You escape with everything!' : 'RUN OVER', 600000); }
 			} else if (grun) { stepGuest(grun, input, K.TICK); for (const q of grun.says) note(q.text, q.s * 1000); if (grun.pick !== shownPick) showPick(); if (runOver === null && grun.ended) { runOver = grun.won ? 'won' : 'lost'; note(grun.won ? 'EXPEDITION COMPLETE!' : 'RUN OVER', 600000); } }
 			else tick(world, input, K.TICK);
 			fightEvents(world.events);
@@ -523,7 +535,7 @@ function frame(now) {
 	// The screen's text, four times a second BY THE CLOCK. (It used to be "when the tick count is a multiple of 16": a slow
 	// device runs about 6 ticks a frame, and from an odd count that seldom lands on a multiple of 16: the screen stood still for seconds.)
 	if (now - hudAt >= 250 || now < hudAt) { hudAt = now; showHud(); }
-	if (GEN !== null) { showMap(); if (!WATCH && !EXP && !DIVE && !XJ && !leaving && state.grounded && exitDist() < 1.5) { leaving = true; note('exit reached: next level…', 4000); nextLevel(); } }
+	if (GEN !== null) { showMap(); if (!WATCH && !EXP && !DIVE && !XJ && !DJ && !leaving && state.grounded && exitDist() < 1.5) { leaving = true; note('exit reached: next level…', 4000); nextLevel(); } }
 }
 // ---------------------------------------------------------------- (P2) a generated level: the exit and the minimap
 let leaving = false, mapBase = null, runOver = null;
@@ -713,9 +725,10 @@ if (chan && HOST && world) chan.onmessage = (m) => {   // the host: a guest asks
 if (chan && JOIN) chan.onmessage = (m) => {   // a guest: the host's frames
 	const o = JSON.parse(m.data); if (!o.f) return; net.got++;
 	// the level being played is not the one this page built: load it (once), as the same player
-	if (o.h && (o.h.gen !== GEN || o.h.biome !== BIOME || (o.h.size || null) !== (SIZE || null))) { if (!net.moving) { net.moving = true; const q = new URLSearchParams(location.search); q.set('gen', o.h.gen); q.set('biome', o.h.biome); if (o.h.size) q.set('size', o.h.size); else q.delete('size'); q.set('id', MYID); q.set('dex', DEX); if (o.h.exp) { q.set('xj', o.h.exp.seed); q.set('map', o.h.exp.map); q.set('diff', o.h.exp.diff); } location.search = q.toString(); } return; }
+	if (o.h && (o.h.gen !== GEN || o.h.biome !== BIOME || (o.h.size || null) !== (SIZE || null) || (o.h.dive ? !DJ || DJ.seed !== (o.h.dive.seed | 0) || DJ.route !== o.h.dive.route : !!DJ))) { if (!net.moving) { net.moving = true; const q = new URLSearchParams(location.search); q.set('gen', o.h.gen); q.set('biome', o.h.biome); if (o.h.size) q.set('size', o.h.size); else q.delete('size'); q.set('id', MYID); q.set('dex', DEX); if (o.h.exp) { q.set('xj', o.h.exp.seed); q.set('map', o.h.exp.map); q.set('diff', o.h.exp.diff); } if (o.h.dive) { q.set('dj', o.h.dive.seed); q.set('route', o.h.dive.route); } else { q.delete('dj'); q.delete('route'); } location.search = q.toString(); } return; }
 	if (!o.h && !world.co.viewer.frames.length) return;   // (wait for a whole frame to start from)
 	guestApply(world, o.f);
+	if (gdrun) { const last = world.co.viewer.last; if (last && last.r) { rv = guestDiveApply(gdrun, last.r); if (gdrun.w.room !== room) { room = gdrun.w.room; mapBase = null; showRoom(); } } }   // (part 17) the Dive: its floor, its things, its line
 	if (grun) { const last = world.co.viewer.last; if (last && last.r) { rv = guestRunApply(grun, last.r); if (grun.w.room !== room) { room = grun.w.room; mapBase = null; showRoom(); state.facing = cam.yaw; } } }   // (P4) the run: its zone's level, its things, its line
 	if (o.f.m && o.f.m.some((r) => r[0] === MYID)) net.joined = true;
 };
@@ -834,9 +847,9 @@ if (FIGHT) {
 	addEventListener('keydown', (e) => { const i = ['Digit1', 'Digit2', 'Digit3', 'Digit4'].indexOf(e.code); if (myRun && myRun.pick) { if (i >= 0) takePick(i); else if (e.code === 'Escape') takePick(-1); return; } if (i >= 0 && i < 4) pickCard(i); const tl = { KeyF: 'refresh', KeyG: 'skip', KeyB: 'banish' }[e.code]; if (tl) useTool(tl); });
 }
 // A Dive's specials: 1 / 2 (or J / K), C / V (the pad's X / Y), or a tap on the move's chip; 3 (or L) is the Ultimate.
-function special(i) { if (!drun || runOver || menuUp || world.pl.choices) return false; const ok = pressSpecial(drun, i); if (!ok) play([['error']]); if (RUNUI) RUNUI.update(runView()); return ok; }
-if (drun) {
-	addEventListener('keydown', (e) => { if (e.repeat || world.pl.choices || menuUp) return; if (e.code === 'Digit1' || e.code === 'KeyJ') special(1); else if (e.code === 'Digit2' || e.code === 'KeyK') special(2); else if ((e.code === 'Digit3' || e.code === 'KeyL') && drun.ult) pressUlt(drun); });
+function special(i) { if (!dk || runOver || menuUp || world.pl.choices) return false; const ok = pressSpecial(dk, i); if (!ok) play([['error']]); if (RUNUI) RUNUI.update(runView()); return ok; }
+if (dk) {
+	addEventListener('keydown', (e) => { if (e.repeat || world.pl.choices || menuUp) return; if (e.code === 'Digit1' || e.code === 'KeyJ') special(1); else if (e.code === 'Digit2' || e.code === 'KeyK') special(2); else if ((e.code === 'Digit3' || e.code === 'KeyL') && drun && drun.ult) pressUlt(drun); });
 	document.getElementById('b-slide').textContent = 'DODGE';
 }
 /** (the shipping path) A run's own screen, in Micatro's look: runui.js draws this view of the run. The test room's
@@ -889,7 +902,7 @@ function runView() {
 	if (solo && solo.ult && !runOver) { v.ult = ultView(solo); v.ult.col = TYPE_COLOR[v.ult.type]; v.ult.key = matchMedia('(pointer: coarse)').matches ? '' : drun ? '3' : 'V'; }
 	if (cutIn && performance.now() < cutIn.until) v.cut = cutIn;
 	if (pl) v.moves = pl.moves.map((m) => ({ icon: GG.Icons ? GG.Icons.html('move:' + m.id, 18) : '', name: pretty(m.id), lv: m.xlv || m.lvl, col: TYPE_COLOR[(GG.Moves.BY_ID[m.id] || (GG.ExpMoves && GG.ExpMoves.MOVES[m.id]) || {}).type] }));
-	if (drun && v.moves) specials(drun).forEach((q, i) => { const m = v.moves[i + 1]; if (m) { m.sub = q.cd > 0.05 ? q.cd.toFixed(1) + ' s' : q.queued ? '…' : (matchMedia('(pointer: coarse)').matches ? 'TAP' : 'KEY ' + (i + 1)); m.dim = q.cd > 0.05; } });
+	if (dk && v.moves) specials(dk).forEach((q, i) => { const m = v.moves[i + 1]; if (m) { m.sub = q.cd > 0.05 ? q.cd.toFixed(1) + ' s' : q.queued ? '…' : (matchMedia('(pointer: coarse)').matches ? 'TAP' : 'KEY ' + (i + 1)); m.dim = q.cd > 0.05; } });
 	if (pl && pl.xv && I) for (const q of pl.xv) v.bag.push({ text: `${en(I.VIT[q.id].name)} ${q.lvl}`, kind: 'dim' });
 	if (pl && pl.xi && I) for (const id of Object.keys(pl.xi)) v.bag.push({ text: en(I.IT[id].name) + (pl.xi[id] > 1 ? ' ×' + pl.xi[id] : ''), kind: '' });
 	if (run && run.up && run.up.revives > 0) v.bag.push({ text: 'Second chance' + (run.up.revives > 1 ? ' ×' + run.up.revives : ''), kind: 'on' });
@@ -898,7 +911,7 @@ function runView() {
 	const b = drun ? (drun.boss && !drun.boss.dead ? drun.boss : null) : world && !JOIN ? world.enemies.find((e) => e.boss) : null;
 	if (b) v.boss = { name: nameOf(b.dex), hp: b.hp, maxHp: b.maxHp, enraged: !!(b.ai && b.ai.fury) };
 	if (boardUp) v.board = { title: drun ? (drun.weekly ? `3D Weekly Dive · ${DR.nameOf(drun.route)} · ${DR.modName(drun.weekly.mod)}` : `3D Dive · ${DR.nameOf(drun.route)} · deepest floor`) : `3D · ${XK.MAP_NAME[boardUp.map] || boardUp.map} · ${boardUp.diff[0].toUpperCase() + boardUp.diff.slice(1)}`, tabs: drun ? [] : [['score', 'Score'], ['time', 'Time attack'], ['survival', 'Survival']].map(([id, text]) => ({ id, text, on: id === boardUp.view })), rows: boardUp.rows, note: boardUp.note };
-	if (menuUp && !runOver) v.menu = { auto: run && run.ult ? (run.ult.auto ? 'on' : 'off') : null, boards: true, sound: GG.Audio ? (GG.Audio.settings.muted ? 'off' : 'on') : null, title: paused ? 'PAUSED' : 'MENU', line: (paused ? '' : 'The fight goes on while this is open. ') + (drun ? DIVE_CONTROLS : CONTROLS), restart: solo ? location.search || '?' : null, leave: '../' };
+	if (menuUp && !runOver) v.menu = { auto: run && run.ult ? (run.ult.auto ? 'on' : 'off') : null, boards: true, sound: GG.Audio ? (GG.Audio.settings.muted ? 'off' : 'on') : null, title: paused ? 'PAUSED' : 'MENU', line: (paused ? '' : 'The fight goes on while this is open. ') + (dk ? DIVE_CONTROLS : CONTROLS), restart: solo ? location.search || '?' : null, leave: '../' };
 	if (runOver) {
 		const r = runOver, q = new URLSearchParams(location.search); q.set('exp', (+q.get('exp') || 0) + 1);
 		if (drun) { const qd = new URLSearchParams(location.search); if (!drun.weekly) qd.set('dive', (+qd.get('dive') || 0) + 1);   // (the Weekly Dive again is the same Dive)
@@ -918,14 +931,14 @@ function runView() {
 // move a focus ring over its buttons and press them (site/focusnav.js), so a run can be played with no mouse.
 const uiLayer = () => { const el = (id) => document.getElementById(id); return RUNUI && boardUp ? el('rx-board') : RUNUI && el('rx-end').classList.contains('show') ? el('rx-end') : menuUp ? el('rx-menu') : el('cards').style.display === 'grid' ? el('cards') : null; };
 const uiNav = createFocusNav({ scope: uiLayer, domFocus: false, scrollFallback: false, onCancel: () => { if (boardUp) openBoard(null); else if (menuUp) setMenu(false); else if (myRun && myRun.pick) takePick(-1); }, onMenu: () => { if (menuUp) setMenu(false); } });
-if (drun && RUNUI) { const el = document.getElementById('rx-moves'); el.style.pointerEvents = 'auto'; el.addEventListener('click', (e) => { const c = e.target.closest('.rx-move'); if (c) special([...el.children].indexOf(c)); }); }
+if (dk && RUNUI) { const el = document.getElementById('rx-moves'); el.style.pointerEvents = 'auto'; el.addEventListener('click', (e) => { const c = e.target.closest('.rx-move'); if (c) special([...el.children].indexOf(c)); }); }
 const siteInput = startInput({ pad: true,
 	onAction(a, info) {
 		if (!info.repeat) acts.add(a);
 		if (uiLayer()) return uiNav.onAction(a, info);
 		if (info.repeat) return false;
 		if (a === 'menu' && RUNUI) { setMenu(true); return true; }
-		if (drun && (a === 'secondary' || a === 'context')) { special(a === 'secondary' ? 1 : 2); return true; }   // (a Dive: C / V, the pad's X / Y: the specials)
+		if (dk && (a === 'secondary' || a === 'context')) { special(a === 'secondary' ? 1 : 2); return true; }   // (a Dive: C / V, the pad's X / Y: the specials)
 		if (a === 'context' && solo && solo.ult) { pressUlt(solo); return true; }   // (V / the pad's Y: the Ultimate)
 		if (a === 'select' && FIGHT) { toggleMap(); return true; }
 		if (a === 'cancel' && mapBig) { toggleMap(false); return true; }
@@ -972,7 +985,7 @@ async function keepDive(res) {
 		const pay = DS.coinsOf(res.parts.divePay), rec = res.parts.deepest > was;
 		say(true, (rec ? `New record on this route: floor ${res.parts.deepest}. ` : '') + (pay > 0 ? `Saved. ₽ ${pay} will be in your wallet when you next open the Expedition.` : 'Saved.'), { ops: ops.length, pay, record: rec });
 		const A = GG.MicaAccount;   // (part 7) signed in: its mark on the route's 3D board
-		if (A && A.name()) {
+		if (A && A.name() && !coopSeen) {
 			const d = await A.call('run-score', DS.scoreBody(drun, res, { dv: SV.DV, board: SV.BOARD }));
 			if (d.ok && d.body && d.body.rank) say(true, kept.text + (d.body.better ? ` New best on the 3D board: #${d.body.rank}.` : ` 3D board: #${d.body.rank}.`), { rank: d.body.rank, board: d.body.board });
 		}
@@ -1055,7 +1068,7 @@ const G_MUSIC = GG.BIOME_MUSIC || null, XK_MAPS = ['viridian', 'mtmoon', 'cerule
 
 // what a test (and a curious owner in the console) can reach
 window.__m3d = {
-	dive: drun, diveRules: DR, special, light: () => ({ dive: DLIGHT, near: scene.fog.near, far: scene.fog.far, color: scene.fog.color.getHex(), vignette: !!document.getElementById('dive-dark') }), diveSave: { week: DWEEK, practice: DPRACTICE, ok: DSAVE_OK, start: DSTART, member: DMEMBER, form: DFORM, keep: DKEEP, meta: !!DMETA }, propKeys: () => (props ? [...props.atlas.cells.keys()] : []), roomBuilds: () => roomBuilds,
+	dive: drun, guestDive: gdrun, diveRules: DR, special, light: () => ({ dive: DLIGHT, near: scene.fog.near, far: scene.fog.far, color: scene.fog.color.getHex(), vignette: !!document.getElementById('dive-dark') }), diveSave: { week: DWEEK, practice: DPRACTICE, ok: DSAVE_OK, start: DSTART, member: DMEMBER, form: DFORM, keep: DKEEP, meta: !!DMETA }, propKeys: () => (props ? [...props.atlas.cells.keys()] : []), roomBuilds: () => roomBuilds,
 	meta: LAB_META, upgrades: UPGRADES, leadShiny: LEAD_SHINY, skey,
 	keepShiny,
 	siteHost: SITE_HOST, siteWatch: SITE_WATCH,
