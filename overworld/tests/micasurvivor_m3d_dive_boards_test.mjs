@@ -84,6 +84,15 @@ try {
 	A(r2.body.top.length === 1 && r2.body.top[0].floor === 20, 'the 2D board has only the 2D score', JSON.stringify(r2.body).slice(0, 200));
 	A((await ana('run-score', { ...b0, d3: false })).status === 400 && (await ana('run-score', { ...b0, d3: 1 })).status === 400, 'd3 is true or absent');
 	A((await ana('run-score', body({ route: 'nowhere' }))).status === 400 && (await ana('run-score', body({ deepest: 60, time: 20 }))).status === 400, 'the checks of the Dive boards still hold (an unknown route, an impossible depth)');
+	// the Weekly Dive: this week's 3D board, apart from the 2D one and from the routes'
+	const WEEK = Math.floor((Date.now() - Date.UTC(2026, 0, 5)) / 604800000);
+	const wb = body({ deepest: 8, time: 500, weekly: WEEK, route: 'grotto' });
+	const w1 = await ana('run-score', wb);
+	A(wb.weekly === true && wb.week === WEEK && w1.status === 200 && w1.body.board === 'micasurvivor_expedition:dive:weekly:' + WEEK + ':3d' && w1.body.rank === 1, "a 3D Weekly Dive: this week's 3D board", JSON.stringify([wb.week, w1.body]));
+	A(!row('runboard:micasurvivor_expedition:dive:weekly:' + WEEK) && !row('runboard:micasurvivor_expedition:dive:grotto:3d'), "…not the 2D weekly board, and not a route's");
+	const wr = await ben('run-leaderboard', DS.boardAsk('grotto', BOARD, WEEK));
+	A(wr.status === 200 && wr.body.top.length === 1 && wr.body.top[0].name === 'ana' && wr.body.top[0].floor === 8 && wr.body.you === null, 'read back by the week', JSON.stringify(wr.body).slice(0, 200));
+	A((await ana('run-score', { ...wb, week: WEEK - 1 })).status === 400, "last week's is refused");
 	// the rows the screen shows
 	const rows = DS.boardRows(r3.body, (dex) => ({ 4: 'Charmander', 7: 'Squirtle' })[dex] || '', 'ana');
 	A(rows.length === 2 && rows[0].rank === 1 && rows[0].name === 'ben' && rows[0].who === 'Squirtle Lv 14' && rows[0].score === 'Floor 15 ↑' && rows[0].time === '15:00' && !rows[0].me && rows[1].me && rows[1].score === 'Floor 12', 'the rows: rank, name, who, the floor (an arrow for an escape), the time; yours is marked', JSON.stringify(rows));

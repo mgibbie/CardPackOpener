@@ -1844,6 +1844,27 @@ Seen while checking: the crater's ground is drawn as green meadow; the 3D biomes
 
 Tests: `micasurvivor_m3d_dive_light_test.mjs` 12 checks in node; `micasurvivor_m3d_dive_page_test.mjs` now 59.
 
+## 5.68 3D Dive, fifteenth part: built (2026-11-13). The Weekly Dive.
+
+Owner: "close that gap then". The Weekly Dive plays in 3D, by the 2D game's own week (`diveWeekly()`): the same
+seed, route and modifier for everyone, so the floors are the 2D Weekly Dive's.
+
+- **Rules.** From floor 1, no stage, no Seal. One modifier: Glass Cannon (you hit and are hit x1.5), Horde
+  (+2 foes a group), Swift (foes x1.25 speed), Iron (foes x1.4 HP).
+- **The save.** Counted (`dive.weekly`) and paid; it keeps no record, stage, Seal or rescued (the 2D rule).
+  Its route is open to everyone that week.
+- **The board.** This week's 3D board (`…:dive:weekly:<week>:3d`), apart from the 2D weekly board.
+- **The way in.** START on the Weekly Dive, alone, opens the 3D page (`?dive=<seed>&weekly=<week>`). On the
+  page `?weekly` always means this week's: an old link plays the current week. Play again is the same Dive.
+
+Also: a Dive's opening line (the floor, or the Weekly Dive's modifier) now shows on the page; it was said
+before the page was listening.
+
+Co-op is the one thing the 3D Dive still lacks next to the 2D one. Local and online play keep the 2D Dive.
+
+Tests: `micasurvivor_m3d_dive_weekly_test.mjs` 17 checks in node; the 3D Dive boards test 17 (the real server);
+`micasurvivor_m3d_dive_page_test.mjs` 64; `micasurvivor_playflow_test.mjs` 178.
+
 ## 6. Dive in 2D: built
 
 **D0 — find the stairs (small; can ship first, on its own).** *Built 2026-11-11 (`overworld/tests/micasurvivor_dive_stairs_test.mjs`). As built: the stairs took their own orange mark, so the rocks and Meowth keep their gold; the HUD arrow comes up after 25 s on a floor, or at once when its boss falls.*

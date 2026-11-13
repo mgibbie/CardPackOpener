@@ -18,11 +18,12 @@
 // THE LEAGUE (part 10): a Dive as a member writes the League's counters and the forms it reached, as an Expedition does.
 // THE BOARDS (part 7): a kept Dive of a signed-in player is posted to the 3D board of its route (the server's Dive
 // boards with `d3: true`: the deepest floor, then the shorter time), and the end screen and the menu show it.
-// Not here yet: the Weekly Dive.
+// THE WEEKLY DIVE (part 15): it keeps no record, stage, Seal or rescued (the 2D game's rule): the save counts it
+// (dive.weekly) and pays it, and its mark goes to this week's 3D board.
 // Pure: the page (main.js) hands in the run, its result and the save.
 import { hasMember, hasForm } from './expsave.js';
 
-export const DSV = { OK: ['dive', 'route', 'floor', 'dex', 'form', 'debug'], SCALE: 3 /* the 2D game's meta.js K.SCALE (coinsOf); expedition.js XK.PAY.SCALE */ };
+export const DSV = { OK: ['dive', 'route', 'floor', 'dex', 'form', 'weekly', 'debug'], SCALE: 3 /* the 2D game's meta.js K.SCALE (coinsOf); expedition.js XK.PAY.SCALE */ };
 
 /** The first parameter of the page's address that makes its Dive a practice run (null: none). params: [[key, value]]. */
 export function unfairDive(params) { for (const [k] of params) if (!DSV.OK.includes(k)) return k; return null; }
@@ -42,12 +43,13 @@ export const startOf = (Sv, route, want) => (starts(Sv, route).includes(want | 0
 export function missing(S, o) {
 	if (!o.member || !hasMember(o.member, o)) return 'member';
 	if (S.lg && S.lg.start && !hasForm(S.lg.start, o)) return 'form';   // (it started as a later stage: one you have reached)
+	if (S.weekly) return null;   // (the Weekly Dive: its own route, from floor 1, for everyone)
 	if (!routeOpen(o.Sv, S.route, o.main)) return 'route';
 	if (S.start > 1 && !starts(o.Sv, S.route).includes(S.start)) return 'start';
 	return null;
 }
 /** A guardian fell: its stage and its route's Seal, kept at once. */
-export function guardianOps(S) { return S.stage > 0 ? [['best', 'dive.' + S.route + '.stage', S.stage], ['add', 'dive.seal', S.route]] : []; }
+export function guardianOps(S) { return S.stage > 0 && !S.weekly ? [['best', 'dive.' + S.route + '.stage', S.stage], ['add', 'dive.seal', S.route]] : []; }
 /** What the Dive writes into the Expedition save at its end: [['bump' | 'best' | 'add', key, value]].
  *  res: dive.js result(S). o: { dev: this browser's id, research: [[family, points]], seen: the 3D runs the 2D game has
  *  counted from this browser (m3d.seen.<dev>), final: the run ended at its line's last stage } */
@@ -55,9 +57,8 @@ export function recordOps(S, res, o) {
 	const ops = [], bump = (k, n = 1) => { n = Math.floor(n); if (n > 0) ops.push(['bump', k, n]); }, best = (k, v) => { v = Math.floor(v); if (v > 0) ops.push(['best', k, v]); };
 	const p = res.parts, k = 'dive.' + S.route;
 	bump('dive.runs'); if (p.escaped) bump('dive.escapes');
-	best(k + '.best', p.deepest);
-	ops.push(...guardianOps(S));
-	bump('dive.rescued', p.rescued);
+	if (S.weekly) bump('dive.weekly');   // (it keeps no record, stage, Seal or rescued)
+	else { best(k + '.best', p.deepest); ops.push(...guardianOps(S)); bump('dive.rescued', p.rescued); }
 	// the League's (as an Expedition's, expsave.js): the forms reached are yours from now on
 	if (S.lg) {
 		const G = S.lg, add = (set, id) => ops.push(['add', set, String(id)]);
@@ -103,10 +104,10 @@ export function recordOps(S, res, o) {
 /** The Dive as its 3D board takes it (server/mp.mjs, the Dive boards). o: { dv, board } */
 export function scoreBody(S, res, o) {
 	const p = res.parts, pl = S.w.pl;
-	return { mode: o.board, d3: true, expMode: 'exp-dive', dv: o.dv, route: p.route, floor: p.deepest, start: p.start || 1, time: Math.floor(p.time || 0), escaped: !!p.escaped, kills: Math.floor(p.kills || 0), level: Math.floor(pl.level || 1), dex: pl.mon.dex | 0, shiny: false };
+	return { mode: o.board, d3: true, expMode: 'exp-dive', dv: o.dv, route: p.route, floor: p.deepest, start: p.start || 1, time: Math.floor(p.time || 0), escaped: !!p.escaped, kills: Math.floor(p.kills || 0), level: Math.floor(pl.level || 1), dex: pl.mon.dex | 0, shiny: false, ...(p.weekly != null ? { weekly: true, week: p.weekly, start: 1 } : {}) };
 }
 /** What to ask the server for a route's 3D Dive board. */
-export const boardAsk = (route, board) => ({ mode: board, d3: true, expMode: 'exp-dive', board: 'dive', route });
+export const boardAsk = (route, board, week = null) => Object.assign({ mode: board, d3: true, expMode: 'exp-dive', board: 'dive' }, week != null ? { weekly: true, week } : { route });
 /** The server's rows, for the screen: ten, and yours. body: { top, you }; nameOf(dex); me: your name. */
 export function boardRows(body, nameOf, me) {
 	const mmss = (t) => `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, '0')}`, row = (e, rank) => ({ rank, name: e.name || '?', who: nameOf(e.dex) + (e.level ? ' Lv ' + e.level : ''), time: mmss(e.time || 0), score: 'Floor ' + Math.floor(e.floor || 0) + (e.escaped ? ' ↑' : ''), me: e.name === me });
