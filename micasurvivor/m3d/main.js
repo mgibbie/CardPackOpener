@@ -112,7 +112,7 @@ const DSAVE_OK = !!DR && !DPRACTICE && !!GG.ExpSave && await GG.ExpSave.open().t
 const DROUTE = DR && DR.F.ROUTES[Q.get('route')] ? Q.get('route') : 'forest';
 const DMEMBER = DR && GG.ExpLeague ? (GG.ExpLeague.BY[DEX] ? DEX : GG.ExpLeague.FAM[DEX] || 0) : 0;
 const DSTART = DSAVE_OK ? DS.startOf(GG.ExpSave, DROUTE, +Q.get('floor') || 1) : +Q.get('floor') || 1;
-const drun = DR ? newDive(dataFrom(GG), XF, DR, { route: DROUTE, seed: GEN, start: DSTART, seal: DSAVE_OK && DS.sealOf(GG.ExpSave, DROUTE), dex: DEX, moves: DMOVES, tune: TUNE, touch: matchMedia('(pointer: coarse)').matches, ability: Q.get('ability') === '0' ? null : Q.get('ability') || 'auto', items: Q.get('items') ? Q.get('items').split(',') : [], weather: false, autoPick: Q.has('auto') ? +Q.get('auto') | 0 : undefined }) : null;
+const drun = DR ? newDive(dataFrom(GG), XF, DR, { route: DROUTE, seed: GEN, start: DSTART, seal: DSAVE_OK && DS.sealOf(GG.ExpSave, DROUTE), league: !Q.has('moves') && Q.get('league') !== '0', dex: DEX, moves: DMOVES, tune: TUNE, touch: matchMedia('(pointer: coarse)').matches, ability: Q.get('ability') === '0' ? null : Q.get('ability') || 'auto', items: Q.get('items') ? Q.get('items').split(',') : [], weather: false, autoPick: Q.has('auto') ? +Q.get('auto') | 0 : undefined }) : null;
 if (drun) { room = drun.w.room; drun.w.cap = DR.K.REIN.cap + 60; }
 const solo = run || drun;   // (a run of your own, alone on this page: an Expedition or a Dive)
 // (P4) a guest in a run: its own League member in the host's run (expcoop.js); it builds each zone from the run's row

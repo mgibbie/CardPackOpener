@@ -1736,6 +1736,25 @@ The dice are the fight's own seeded ones, so the same run gives the same slams.
 
 Tests: `micasurvivor_m3d_dive_tele_test.mjs` 22 checks in node; `micasurvivor_m3d_dive_page_test.mjs` now 47.
 
+## 5.62 3D Dive, tenth part: built (2026-11-13). The League.
+
+A Dive on the page is now a League member's, as a 3D Expedition is (`expleague.js`, unchanged in what it does).
+
+- **The start.** The member's first stage, with the League's HP, attack, role and ability, and its kit's first
+  three moves: the basic and both specials (PokéDive's start; an Expedition starts with one). A Dive never
+  holds a fourth move: the kit's fourth comes as the new special of level 4.
+- **The levels.** It evolves at its level (also on a level that offers a new special: the evolution comes
+  first), reaches Maturity, and Mega Evolves, by the League's own rules. Its moves are re-scaled to each stage.
+- **The save.** A kept Dive writes the League's counters and the forms it reached, so a form first reached in
+  a Dive is yours.
+
+`?moves=` (or `league=0`) gives the Dive of before: the moves you name, no League. Both make it a practice run.
+
+Not in yet: starting a Dive as a later form you own (`?form=`), the family's bought upgrades and the Lab's
+boosts in a Dive.
+
+Tests: `micasurvivor_m3d_dive_league_test.mjs` 17 checks in node; `micasurvivor_m3d_dive_page_test.mjs` now 49.
+
 ## 6. Dive in 2D: built
 
 **D0 — find the stairs (small; can ship first, on its own).** *Built 2026-11-11 (`overworld/tests/micasurvivor_dive_stairs_test.mjs`). As built: the stairs took their own orange mark, so the rocks and Meowth keep their gold; the HUD arrow comes up after 25 s on a floor, or at once when its boss falls.*

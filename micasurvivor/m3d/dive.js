@@ -32,6 +32,8 @@
 //   red ground (part 9) a brawler that reaches you winds up a SLAM (a red circle, TELE.slam s, then all inside are hit); an alpha
 //              or a guardian slams wider and CHARGES (a red lane, then a dash along it). It holds still while winding up.
 //              Dodge or step out.
+//   the League (part 10) o.league: you dive as a League member: its stats and role, its kit's first three moves from the
+//              start (PokéDive's: the basic and both specials), its evolutions at their levels, Maturity, its Mega.
 //   the save   (part 6) divesave.js: the deepest floor, the stage, the Seal (o.seal: +10 % damage, -10 % taken), the pay.
 // Not here yet (later parts): a new special at levels 4, 10, 16…, the League, the red ground, the stall, the bushes
 // and the gold rocks, routes and stages in the save, the Weekly Dive, co-op.
@@ -43,6 +45,7 @@ import { rollOffers } from './expeco.js';
 import { setupRx, tickRx } from './exprx.js';
 import { setupUlt, holdUlt, tickUlt } from './expult.js';
 import { applyPerks, perkTools } from './expperks.js';
+import { memberOf, setupLeague, learnKit, processLeague } from './expleague.js';
 import { tickFog } from './expfog.js';
 import { diveFrom, diveRoom } from './divegen.js';
 import { walkable } from './expedition.js';
@@ -77,13 +80,16 @@ const tiles = (n) => n * CELL;
 export function newDive(data, X, R, o = {}) {
 	const route = R.F.ROUTES[o.route] ? o.route : 'forest', seed = (o.seed | 0) || 1, f0 = Math.max(1, o.start | 0);
 	const room = diveRoom(R.F, seed, route, f0);
-	const own = !!(X && X.L) && o.levels !== false, lv = (o.moves || []).map((m) => (Array.isArray(m) ? m : [m, 1]));
-	const w = newWorld(room, data, { ...o, moves: own ? lv.map((m) => m[0]) : o.moves, seed: seed >>> 0, cast: null, bosses: null });
+	const own = !!(X && X.L) && o.levels !== false, league = own && !!X.G && !!o.league && o.kit !== false, member = league ? memberOf(X.G, o.dex || 25) : 0;
+	const lv = league ? [] : (o.moves || []).map((m) => (Array.isArray(m) ? m : [m, 1]));
+	const w = newWorld(room, data, { ...o, dex: league ? member : o.dex, moves: own ? lv.map((m) => m[0]) : o.moves, seed: seed >>> 0, cast: null, bosses: null,
+		ability: league && o.ability === undefined ? X.G.abilityOf(X.G.finalsOf(X.G.BY[member])[0]) : o.ability });   // (a member has its final stage's ability all run)
 	const S = { w, X, R, data, dive: true, route, map: 'dive:' + route, seed, floor: 0, zone: f0, start: f0, bank: 0, stake: 0, rescued: [], rescuedBank: 0, kills: 0, alphas: 0, guardians: 0,
 		deepest: 0, ended: false, escaped: false, lost: false, won: false, groups: [], boss: null, sealed: false, stray: null, tags: new Map(), says: [], legPity: 0, stage: 0, meta: null };
 	if (o.perks) applyPerks(S, o.perks);
 	if (own) setupLevels(S, X.L, lv);
 	if (S.up) perkTools(S);
+	if (league) { S.maxMoves = R.K.SLOTS; setupLeague(S, member, 0); for (let i = 1; i < R.K.SLOTS; i++) learnKit(S, i); }   // (part 10: the basic and both specials from the start)
 	if (X && X.R && o.rx !== false) setupRx(S);
 	if (X && X.Uu && o.ult !== false) setupUlt(S, { walk: walkable, auto: !!o.ultAuto });
 	// the kit, the dodge, the combo
@@ -94,7 +100,7 @@ export function newDive(data, X, R, o = {}) {
 	S.seal = !!o.seal;   // (part 6: the route's Seal, from your save)
 	S.opened = 0; S.secrets = 0; S.marks = 0; S.obeliskT = 0; S.plugTip = false;
 	roles(S);
-	if (S.kit && S.lv && w.offerCards) { const offer0 = w.offerCards; S.learnAt = {}; w.offerCards = () => learnCards(S) || offer0(); }   // (part 8)
+	if (S.kit && S.lv && w.offerCards) { const offer0 = w.offerCards; S.learnAt = {}; w.offerCards = () => { if (S.lg) { processLeague(S); if (S.lg.pending) return offer0(); } return learnCards(S) || offer0(); }; }   // (a League run: the level's evolution first; a branch to choose is the level's cards)   // (part 8)
 	startFloor(S, f0, 0);
 	return S;
 }
@@ -511,7 +517,7 @@ export function hudLine(S) {
 /** The end screen's parts and lines (the 2D game's scoreParts and result). */
 export function result(S) {
 	const w = S.w;
-	const parts = { floor: S.floor, deepest: S.deepest, route: S.route, kills: S.kills, time: Math.floor(w.t), alphas: S.alphas, guardians: S.guardians, rescued: rescuedOf(S), combo: S.combo.best, chests: S.opened, secrets: S.secrets, landmarks: S.marks, escaped: S.escaped, divePay: payOf(S), zone: Math.min(4, 1 + Math.floor(S.floor / 10)), start: S.start, weekly: null };
+	const parts = { floor: S.floor, deepest: S.deepest, route: S.route, kills: S.kills, time: Math.floor(w.t), alphas: S.alphas, guardians: S.guardians, rescued: rescuedOf(S), combo: S.combo.best, form: S.lg ? S.lg.form : S.w.pl.mon.dex, evos: S.lg ? S.lg.evo : 0, chests: S.opened, secrets: S.secrets, landmarks: S.marks, escaped: S.escaped, divePay: payOf(S), zone: Math.min(4, 1 + Math.floor(S.floor / 10)), start: S.start, weekly: null };
 	return { won: S.escaped, title: S.escaped ? 'You escape with everything!' : 'RUN OVER', parts, stage: S.stage,
 		lines: [`Dive · ${S.R.nameOf(S.route)}: floor ${S.floor}`, `Loot secured: ${Math.floor(S.bank)} · at stake: ${Math.floor(S.stake)}`,
 			S.escaped ? 'You escaped: you keep all the loot' : 'You fell: you keep what was secured and a quarter of the rest', `Rescued: ${rescuedOf(S)}`, `Alphas: ${S.alphas} · Guardians: ${S.guardians}`, `Best combo: ${S.combo.best}`, `Poké Balls opened: ${S.opened} · Secret pockets: ${S.secrets}`] };

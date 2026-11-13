@@ -121,6 +121,11 @@ try {
 	await M(() => { const m = window.__m3d; m.world.enemies.length = 0; m.dive.groups.length = 0; });
 	let kit = await M(() => { const m = window.__m3d; return { ids: m.world.pl.moves.map((q) => q.id), man: m.world.pl.moves.map((q) => !!q.xman), view: m.runView().moves.map((q) => [q.name, q.sub || '', !!q.dim]), btn: document.getElementById('b-slide').textContent }; });
 	A(ok && kit.ids.length === 3 && kit.man.join() === 'false,true,true', `6. a Dive starts with a kit of three: the basic and two specials (${kit.ids.join(', ')})`, kit);
+	const lg = await M(() => { const m = window.__m3d, g = m.dive.lg; return g ? { member: g.member, form: g.form, dex: m.world.pl.mon.dex, hp: m.world.pl.maxHp } : null; });
+	A(!!lg && lg.member === 4 && lg.form === 4 && lg.dex === 4, '6. (part 10) the page dives as a League member (Charmander, at its first stage)', lg);
+	const evo = await M(async () => { const m = window.__m3d, L = await import('./expleague.js'); const ok = L.evolve(m.dive, 5, 16); return { ok, dex: m.world.pl.mon.dex, form: m.dive.lg.form }; });
+	await sleep(600);
+	A(evo.ok && evo.dex === 5 && evo.form === 5 && errors.length === 0, '6. …and an evolution shows on the page without an error (Charmeleon)', [evo, errors.slice(0, 3)]);
 	A(kit.view[1][1] === 'KEY 1' && kit.view[2][1] === 'KEY 2' && !kit.view[0][1] && kit.btn === 'DODGE', '6. the chips name the keys of the specials; the touch button says DODGE', kit);
 	await M(() => { const m = window.__m3d, s = m.state, e = m.addEnemy(19, s.x + Math.sin(s.facing) * 2.5, s.z + Math.cos(s.facing) * 2.5, { t: 0, ti: 0, hp: 1e6 }); e.dummy = true; });
 	await sleep(700);
