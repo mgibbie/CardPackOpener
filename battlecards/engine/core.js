@@ -1238,6 +1238,7 @@ export function concede(state, pi) {
 // playCard's creature branch both call this, once, right after the creature lands.
 export function applySummonReactors(state, pi, c) {
 	const p = state.players[pi];
+	if (c.type === 'creature' && / Watch Post$/.test(c.name || '')) p.watchPostsSummoned = (p.watchPostsSummoned || 0) + 1;   // Kargal Battlescar: "for each Watch Post entered the battlefield under your control this game"
 	if (p.collapsingStar && (c.tribe || '').includes('Demon')) for (const hpw of p.heroPowers) if (hpw.id === 'collapsing_star') hpw.usedThisTurn = false; // Collapsing Star: summoning a Demon refreshes it
 	// AV tactic passives (Duels): Neutral creatures the tactic-holder summons on their turn
 	if (state.current === pi && c.type === 'creature' && (c.cardClass || 'neutral') === 'neutral') {

@@ -367,8 +367,9 @@ register('equip', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, 
 			const w = instantiate({
 				id: 'token_' + e.name.toLowerCase().replace(/[^a-z0-9]+/g, '_'),
 				name: e.name, type: 'weapon', cost: 0, rarity: 'common',
-				description: `A ${e.attack}/${e.durability} weapon.`,
+				description: e.description || `A ${e.attack}/${e.durability} weapon.`,
 				attack: e.attack, durability: e.durability,
+				...(e.keywords && e.keywords.length ? { keywords: [...e.keywords] } : {}),   // (Cookie the Cook's Stirring Rod: Lifesteal. It was in the weapon's NAME.)
 			}, pi);
 			w.zone = 'weapon';
 			p.weapon = w;

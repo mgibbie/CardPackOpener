@@ -355,6 +355,11 @@ export const ART_ALIASES = {
 	token_queen_carnassa: 'ungoro_queen_carnassa', token_reffuh: 'duels_reffuh', token_risen_groom: 'poa_risen_groom',
 	token_servant_of_khadgar: 'kirin_tor_mage', token_soul_dragon: 'emberscale_drake', token_spectral_ninja: 'ninja_ambush',
 	token_spellbender: 'spellbender', token_timed_aura: 'lifesaving_aura',
+	// (plan 4a) six tokens were NAMED with their rule ("Glowfly for each spell in your hand"); renamed, they keep the art
+	// that was made under the old name's id
+	token_stirring_rod: 'token_stirring_rod_with_lifesteal', token_lookout: 'token_lookout_for_each_watch_post_you_ve_summoned_this_game',
+	token_glowfly: 'token_glowfly_for_each_spell_in_your_hand', token_rider: 'token_rider_with_rush_for_each_creature_in_your_hand',
+	token_pterrordax: 'token_pterrordax_that_steals_1_health_from_all_other', token_adventurer: 'token_adventurer_with_a_random_bonus_effect',
 };
 export const artIdOf = card => (card && card.artFrom) || (card && ART_ALIASES[card.id]) || (card && card.id) || '';
 function artFor(id) {

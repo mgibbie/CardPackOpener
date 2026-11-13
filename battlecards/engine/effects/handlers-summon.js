@@ -1424,12 +1424,30 @@ register('summon-attackers', ({ state, pi, chosenCreature }, e) => {
 	sweepDeaths(state);
 });
 
+// "for each …" counts a `summon` can read from the game (its `count`). They were written into the token's NAME, and the
+// card made ONE token called e.g. "Glowfly for each spell in your hand" (token_clause_test.mjs, plan 4a).
+const SUMMON_COUNTS = {
+	'hand-size': (p) => p.hand.length,                                              // Wispering Woods
+	'hand-spells': (p) => p.hand.filter(x => isSpellType(x)).length,                // Glowfly Swarm
+	'hand-creatures': (p) => p.hand.filter(x => x.type === 'creature').length,      // Derailed Coaster
+	'schools-cast-game': (p) => Object.keys(p.schoolsCastGame || {}).length,        // Coral Keeper
+	'watch-posts-summoned': (p) => p.watchPostsSummoned || 0,                       // Kargal Battlescar
+};
+// Deathborne: deal damage to all creatures, then a token for each one that died of it.
+register('damage-all-summon-per-kill', ({ state, pi, target, source }, e) => {
+	const before = state.players.flatMap(pl => pl.board.filter(c => !isDead(c) && c.type !== 'location'));
+	execEffects(state, pi, [{ type: 'damage', value: e.value || 1, target: 'all-creatures' }], target, source);
+	const killed = before.filter(c => isDead(c)).length, def = state.cardsById[e.summonId];
+	sweepDeaths(state);   // (the dead leave first: their places are free for the tokens)
+	if (def) for (let i = 0; i < killed; i++) if (!summon(state, pi, def)) break;
+});
+
 register('summon', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
 			// perEnemy: one token per enemy creature ("Unleash the Hounds");
 			// options: pick a random companion (Animal Companion);
 			// forEnemy: tokens go to a random opponent (Leeroy's Whelps);
 			// eachPlayer: every player summons the token(s) (Sokenzan's Arrival)
-			let n = e.count === 'X' ? (source?.xValue || 0) : e.count === 'source-attack' ? (source?.attack || 0) : e.count === 'mana-max' ? (state.players[pi].mana?.max || 0) : (e.count || 1); // Rat Pack / Vision of the Warden (a Treant per Mana Crystal)
+			let n = e.count === 'X' ? (source?.xValue || 0) : e.count === 'source-attack' ? (source?.attack || 0) : e.count === 'mana-max' ? (state.players[pi].mana?.max || 0) : SUMMON_COUNTS[e.count] ? SUMMON_COUNTS[e.count](state.players[pi]) : (e.count || 1); // Rat Pack / Vision of the Warden (a Treant per Mana Crystal)
 			if (e.per === 'secrets-controlled') n += (state.players[pi].secrets || []).length; // Petting Zoo: "Repeat for each Secret you control"
 			if (e.perEnemy) {
 				n = 0;
@@ -1473,6 +1491,16 @@ register('summon', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy,
 					deathrattle: opt.deathrattle || null, // Underbelly Network's Rat
 				});
 				if (inlineTok && e.doom) inlineTok.doomTurn = state.turnNumber; // Ghoul Blitz (Duels): dies at end of turn
+				if (inlineTok && e.stealHealthAll) {   // Pterrordax: it takes N Health from every OTHER creature (none below 1) and gains it all
+					let got = 0;
+					for (const pl of state.players) for (const c of pl.board) {
+						if (c === inlineTok || isDead(c) || c.type !== 'creature') continue;
+						const take = Math.min(e.stealHealthAll, c.maxHealth - 1); if (take <= 0) continue;
+						c.maxHealth -= take; c.damage = Math.min(c.damage || 0, c.maxHealth - 1); got += take;
+						emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) });
+					}
+					if (got) { inlineTok.maxHealth += got; emit(state, { type: 'buff', uid: inlineTok.uid, attack: inlineTok.attack, hp: hp(inlineTok) }); }
+				}
 			};
 			// forController: the token goes to the effect TARGET's controller — the
 			// owner of the destroyed creature (Beast Within). Falls back to pi.
