@@ -52,6 +52,9 @@ const EXP = !WATCH && !JOIN && Q.has('exp');
 // 3D Dive (dive.js): ?dive=<seed> plays a Dive run: &route=forest|…, &floor=<the floor to begin on>. Find the stairs (the
 // column of light), stand on them; an alpha every 5th floor seals them. A preview: not linked from the menu, nothing is saved.
 const DIVE = !WATCH && !JOIN && !EXP && Q.has('dive');
+// (the 2D Dive's floors and rules, read by divegen.js and dive.js, are loaded only here: an Expedition's page is as it was. With them
+// on every page, the 2D game's own Expedition object changed what an Expedition's save does.)
+if (DIVE && window.G && !window.G.ExpDive) for (const src of ['../js/systems/expedition.js', '../js/expedition/dive-gen.js', '../js/expedition/dive.js']) await new Promise((res, rej) => { const el = document.createElement('script'); el.src = src; el.async = false; el.onload = res; el.onerror = () => rej(new Error('3D Dive: could not load ' + src)); document.head.appendChild(el); });
 const FIGHT = !WATCH && (!!JOIN || EXP || DIVE || (Q.has('gen') && Q.get('fight') === '1'));
 const N = Math.max(0, Math.min(2000, +(Q.get('n') ?? (FIGHT || (WATCH && Q.has('xw')) ? 0 : 100)) || 0));   // (the test room's crowd: not in a fight, and not on a watched run)
 const DEX = +(Q.get('dex') ?? 25) || 25;

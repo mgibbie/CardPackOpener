@@ -1604,8 +1604,9 @@ any menu, and nothing is saved: the address is the only way in.
   Play again is the next seed.
 - Level-ups, reactions, the Ultimate, the menu, the map and the fog are the 3D Expedition's.
 
-The page now loads three more of the 2D game's scripts (`systems/expedition.js`, `expedition/dive-gen.js`,
-`expedition/dive.js`); an Expedition does not use them.
+A Dive page loads three more of the 2D game's scripts (`systems/expedition.js`, `expedition/dive-gen.js`,
+`expedition/dive.js`), itself, and only on `?dive=`. (Loaded on every page they broke Expedition pages: the 2D
+game's own Expedition object changes what the save and the run screen do. The gate caught it.)
 
 Fixed on the way: a Dive room's grass had no size, so it would not have been drawn.
 

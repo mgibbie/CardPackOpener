@@ -268,9 +268,10 @@ try {
 		A(cf.distinct > 40, 'the fight is drawn', JSON.stringify(cf));
 		await shot(f.page, 'm3d_fight.png');
 		// the minimap shows them
-		const dots = await f.page.evaluate(() => new Promise((res) => requestAnimationFrame(() => requestAnimationFrame(() => { const m = window.__m3d, map = document.getElementById('map'), c = map.getContext('2d'); let n = 0;
-			for (const e of m.world.enemies) { const p = c.getImageData(Math.round(e.a.x * 2), Math.round(e.a.z * 2), 1, 1).data; if (p[0] > 60 && p[0] < 130 && p[1] < 60 && p[2] < 90) n++; } res({ n, of: m.world.enemies.length }); }))));
-		A(dots.n >= Math.max(1, dots.of - 2), `the minimap shows the enemies as dots (${dots.n} of ${dots.of} found)`, JSON.stringify(dots));
+		const dots = await f.page.evaluate(() => new Promise((res) => requestAnimationFrame(() => requestAnimationFrame(() => { const m = window.__m3d, map = document.getElementById('map'), c = map.getContext('2d'); let n = 0, under = 0;
+			// (one standing on you is under your own arrow on the map: not counted either way. With three of seven there the check failed.)
+			for (const e of m.world.enemies) { if (Math.hypot(e.a.x - m.state.x, e.a.z - m.state.z) < 2.5) { under++; continue; } const p = c.getImageData(Math.round(e.a.x * 2), Math.round(e.a.z * 2), 1, 1).data; if (p[0] > 60 && p[0] < 130 && p[1] < 60 && p[2] < 90) n++; } res({ n, of: m.world.enemies.length - under, under }); }))));
+		A(dots.of >= 2 && dots.n >= dots.of - 1, `the minimap shows the enemies as dots (${dots.n} of the ${dots.of} not under your arrow found)`, JSON.stringify(dots));
 		// down
 		const dn = await f.page.evaluate(async () => { const m = window.__m3d, w = m.world, wait = (ms) => new Promise(r => setTimeout(r, ms)); w.pl.hp = 1; w.pl.invuln = 0; m.addEnemy(19, m.state.x + 0.4, m.state.z); await wait(900); const x = m.state.x; m.setInput({ mx: 1, mz: 0 }); await wait(400); m.setInput(null); return { dead: w.pl.dead, hp: w.pl.hp, moved: Math.abs(m.state.x - x), hud: document.getElementById('hud').textContent }; });
 		A(dn.dead && dn.hp === 0 && dn.moved < 0.01 && /you are down/.test(dn.hud), 'at 0 HP you are down: you stop, and the readout says how to start again', JSON.stringify(dn));
