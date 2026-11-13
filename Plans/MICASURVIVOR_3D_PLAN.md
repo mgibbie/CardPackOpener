@@ -1988,6 +1988,32 @@ play. The switch (`?coop3d=1`) stays off.
 Tests: `micasurvivor_m3d_coopsave_test.mjs` 15 checks in node; `micasurvivor_m3d_lobbystart_test.mjs` now 22
 (a real two-account Dive from the lobby ends: both saves have it, each with the same pay on its own browser).
 
+## 5.74 3D co-op from the online lobby: the way back to the lobby. Built (2026-11-13).
+
+A lobby's 3D run ends on a screen whose **Leave** leads back to the game with the lobby (`/micasurvivor/?lobby=<id>`).
+Once the menu is up, the game returns to that lobby (`js/mica/social.js resumeRoom`): its old start is not
+played again; the host opens it again, so everyone is "not ready" for the next run, as after a 2D one; the
+lobby screen opens. The next START from it is a new 3D run.
+
+## 5.75 3D co-op from the online lobby is LIVE (2026-11-13). Owner: "ship it anyway i will test soon".
+
+An online lobby of Expedition · Classic or of a Dive (not the Weekly one) starts as a 3D run for everyone in it.
+
+- It is the HOST's browser that decides. `/micasurvivor/?coop3d=0` on it goes back to 2D co-op (that browser
+  only); `?coop3d=1` returns. A host whose browser cannot draw the 3D page starts the 2D run.
+- A guest whose browser cannot draw it is told so and leaves the lobby.
+- Survival, the Weekly Dive and the base game's lobbies start the 2D run, as before. Local play is 2D.
+- 2D co-op is archived, not deleted: three suites pin it (`micasurvivor_online_modes_test`,
+  `micasurvivor_expedition_mp_test`, `micasurvivor_replay_v2_test`) with the switch's own key.
+
+**Shipped without a play on two real machines** (the owner will test). What is known to differ from 2D co-op:
+the first moments after START are carried by the relay (slow) until the direct link forms; a guest keeps no
+best time, medal, stage or Seal; a 3D co-op run is not on any board and makes no replay tape; more than two
+players was not tested (the fight allows four).
+
+Tests: `micasurvivor_m3d_lobbystart_test.mjs` 28 checks with real accounts: lobby, 3D run, both saves, Leave,
+back in the lobby, a second 3D run from it; the switch off and on again.
+
 ## 6. Dive in 2D: built
 
 **D0 — find the stairs (small; can ship first, on its own).** *Built 2026-11-11 (`overworld/tests/micasurvivor_dive_stairs_test.mjs`). As built: the stairs took their own orange mark, so the rocks and Meowth keep their gold; the HUD arrow comes up after 25 s on a floor, or at once when its boss falls.*

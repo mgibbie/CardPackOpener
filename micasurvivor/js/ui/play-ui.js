@@ -636,13 +636,13 @@ G.PlayUI = (() => {
     return '/micasurvivor/m3d/?dive=' + seed + '&route=' + encodeURIComponent(route) + (start > 1 ? '&floor=' + start : '') + '&dex=' + dex + (form && form !== dex ? '&form=' + form : '');
   }
 
-  // 3D CO-OP from the online lobby (Plans/MICASURVIVOR_3D_PLAN.md §5.72): NOT live. The HOST's browser opts in with
-  // /micasurvivor/?coop3d=1 (?coop3d=0 goes back): then an online lobby of Expedition · Classic or of a Dive (not the Weekly
-  // one) starts as a 3D run, for every player in it (the start says so: its `d3`). A guest needs no switch, only a
-  // browser that can draw the 3D page. A 3D co-op run saves nothing yet, which is why this is not the default.
+  // 3D CO-OP from the online lobby, LIVE (owner, 2026-11-13: "ship it anyway i will test soon"; Plans/MICASURVIVOR_3D_PLAN.md
+  // §5.72-5.75): an online lobby of Expedition · Classic or of a Dive (not the Weekly one) starts as a 3D run, for every
+  // player in it (the start says so: its `d3`). It is the HOST's browser that decides: /micasurvivor/?coop3d=0 on it goes
+  // back to 2D co-op (this browser only; ?coop3d=1 returns). A host that cannot draw the 3D page starts the 2D run.
   const C3D_KEY = 'micasurvivor_coop3d';
-  try { const m = /[?&]coop3d=([01])\b/.exec(location.search); if (m) { if (m[1] === '1') localStorage.setItem(C3D_KEY, '1'); else localStorage.removeItem(C3D_KEY); } } catch (e) { /* a convenience */ }
-  const coop3dOn = () => { try { return localStorage.getItem(C3D_KEY) === '1'; } catch (e) { return false; } };
+  try { const m = /[?&]coop3d=([01])\b/.exec(location.search); if (m) { if (m[1] === '0') localStorage.setItem(C3D_KEY, '0'); else localStorage.removeItem(C3D_KEY); } } catch (e) { /* a convenience */ }
+  const coop3dOn = () => { try { return localStorage.getItem(C3D_KEY) !== '0'; } catch (e) { return true; } };
   /** The host: is this lobby's run to be the 3D one? */
   function coop3d(room) { return !!room && coop3dOn() && canDraw3d() && (room.mode === 'exp-classic' || room.mode === 'exp-dive') && !(room.opts && room.opts.weekly != null); }
   /** A player's address on the 3D page for a lobby's start (cfg: the start), or null when this browser cannot draw it. */

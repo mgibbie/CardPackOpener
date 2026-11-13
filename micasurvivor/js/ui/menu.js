@@ -3,6 +3,7 @@ G.MenuUI = (() => {
   const $ = G.UI.$;
   const GEN_NAMES = ['Kanto', 'Johto', 'Hoenn', 'Sinnoh', 'Teselia', 'Kalos', 'Alola', 'Galar', 'Paldea'];
   let dexFilter = 'all', dexGen = 1, dexSel = null;
+  let lobbyBack = false;   // (3D co-op: the lobby in the address was returned to, once)
 
   function init() {
     const ICON = { play: 'ball', modes: 'm_daily', dex: 'book', upgrades: 'up', gacha: 'ball4', goals: 'medal3', lexicon: 'cards', friends: 'friends', rank: 'trophy', settings: 'gear' };
@@ -83,7 +84,18 @@ G.MenuUI = (() => {
     $('menu-goals-sub').classList.toggle('gold', pend > 0);
     // Con cuenta en la nube: amigos en línea, invitaciones y (una vez) el apodo.
     // MicaSurvivor (M5 batch 12b): with a Magepunk account (friends, lobbies and invites live there).
-    if (G.MicaAccount.name() && !G.Social.started) G.Social.start().then(() => socialLine());
+    if (G.MicaAccount.name()) {
+      if (!G.Social.started) G.Social.start().then(() => socialLine());   // (it sets who you are at once; its promise ends with its first look at your friends)
+      // 3D co-op (§5.74): the 3D run's end screen leads back here with the lobby it was started from (once)
+      const back = /[?&]lobby=([0-9a-f]{12})/.exec(location.search);
+      if (back && !lobbyBack && G.Social.resumeRoom) {
+        lobbyBack = true;
+        Promise.resolve().then(() => G.Social.resumeRoom(back[1])).then(ok => {
+          try { history.replaceState(null, '', location.pathname); } catch (e) { /* the address stays */ }
+          if (ok && G.LobbyUI && G.Game.state === 'ui') G.LobbyUI.open();
+        }).catch(() => { lobbyBack = false; });   // (asked again the next time the menu opens)
+      }
+    }
     G.InvitePop.refresh();
   }
 

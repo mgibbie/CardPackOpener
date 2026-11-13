@@ -689,6 +689,8 @@ function fightEvents(events) {
 const siteCall = GG.MicaAccount && GG.MicaAccount.name() ? (a, b) => GG.MicaAccount.call(a, b) : null;
 const SITE_HOST = solo && !HOST && siteCall ? new HostLink({ call: siteCall, run: runId(crypto), label: (drun ? (drun.weekly ? '3D Weekly Dive · ' : '3D Dive · ') : '3D Expedition · ') + ((GG.DEX_BY[solo.lg ? solo.lg.member : DEX] || {}).name || ''), dex: DEX, now: () => performance.now() }) : null;
 const SITE_WATCH = LIVE ? new WatchLink({ call: siteCall || (async () => ({ ok: false, status: 401, body: {} })), who: LIVE.toLowerCase(), later: (fn, ms) => setTimeout(fn, ms) }) : null;
+/** Where "leave" goes: the game's menu; from a lobby's run, back to that lobby (§5.74). */
+const LEAVE = LOBBY ? '../?lobby=' + LOBBY : '../';
 const LINK = LOBBY && GG.Net ? new LobbyLink({ Net: GG.Net, call: (a, b) => GG.MicaAccount.call(a, b), id: LOBBY, host: HOST ? GG.MicaAccount.name() : String(Q.get('lh') || '').toLowerCase(), isHost: !!HOST }) : null;
 const chan = SITE_WATCH || LINK || SITE_HOST || ((HOST || WATCH || JOIN) && typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('m3d:' + (HOST || WATCH || JOIN)) : null);
 /** Ticks between two messages: ten a second; two a second while a player is only reached by the site's relay. */
@@ -925,15 +927,15 @@ function runView() {
 	const b = drun ? (drun.boss && !drun.boss.dead ? drun.boss : null) : world && !JOIN ? world.enemies.find((e) => e.boss) : null;
 	if (b) v.boss = { name: nameOf(b.dex), hp: b.hp, maxHp: b.maxHp, enraged: !!(b.ai && b.ai.fury) };
 	if (boardUp) v.board = { title: drun ? (drun.weekly ? `3D Weekly Dive · ${DR.nameOf(drun.route)} · ${DR.modName(drun.weekly.mod)}` : `3D Dive · ${DR.nameOf(drun.route)} · deepest floor`) : `3D · ${XK.MAP_NAME[boardUp.map] || boardUp.map} · ${boardUp.diff[0].toUpperCase() + boardUp.diff.slice(1)}`, tabs: drun ? [] : [['score', 'Score'], ['time', 'Time attack'], ['survival', 'Survival']].map(([id, text]) => ({ id, text, on: id === boardUp.view })), rows: boardUp.rows, note: boardUp.note };
-	if (menuUp && !runOver) v.menu = { auto: run && run.ult ? (run.ult.auto ? 'on' : 'off') : null, boards: true, sound: GG.Audio ? (GG.Audio.settings.muted ? 'off' : 'on') : null, title: paused ? 'PAUSED' : 'MENU', line: (paused ? '' : 'The fight goes on while this is open. ') + (dk ? DIVE_CONTROLS : CONTROLS), restart: solo ? location.search || '?' : null, leave: '../' };
+	if (menuUp && !runOver) v.menu = { auto: run && run.ult ? (run.ult.auto ? 'on' : 'off') : null, boards: true, sound: GG.Audio ? (GG.Audio.settings.muted ? 'off' : 'on') : null, title: paused ? 'PAUSED' : 'MENU', line: (paused ? '' : 'The fight goes on while this is open. ') + (dk ? DIVE_CONTROLS : CONTROLS), restart: solo ? location.search || '?' : null, leave: LEAVE };
 	if (runOver) {
 		const r = runOver, q = new URLSearchParams(location.search); q.set('exp', (+q.get('exp') || 0) + 1);
 		if (drun) { const qd = new URLSearchParams(location.search); if (!drun.weekly) qd.set('dive', (+qd.get('dive') || 0) + 1);   // (the Weekly Dive again is the same Dive)
-			v.over = { won: r.won, title: r.title, line: r.lines[0], again: '?' + qd, leave: '../', boards: true, kept: kept ? { ok: kept.ok, text: kept.text } : null,
+			v.over = { won: r.won, title: r.title, line: r.lines[0], again: '?' + qd, leave: LEAVE, boards: true, kept: kept ? { ok: kept.ok, text: kept.text } : null,
 				rows: [['Floor', String(r.parts.floor)], ['Time', `${Math.floor(r.parts.time / 60)}:${String(r.parts.time % 60).padStart(2, '0')}`], ['KOs', String(r.parts.kills)], ['Level', String(v.level)], ['Loot kept', String(r.parts.divePay)], ['Rescued', String(r.parts.rescued)], ['Best combo', String(r.parts.combo)], ['Poké Balls', String(r.parts.chests)], ['Secrets', String(r.parts.secrets)], ['Alphas', String(r.parts.alphas)], ['Guardians', String(r.parts.guardians)]] };
 		} else
-		v.over = typeof r === 'string' ? { won: r === 'won', title: r === 'won' ? (gdrun ? 'You escape with everything!' : 'EXPEDITION COMPLETE!') : 'RUN OVER', line: '', rows: rv && rv.end ? [['Time', `${Math.floor(rv.end.time / 60)}:${String(rv.end.time % 60).padStart(2, '0')}`], ['KOs', String(rv.end.kills)], ['Pay', '₽ ' + rv.end.pay]] : [], again: null, leave: '../', kept: kept ? { ok: kept.ok, text: kept.text } : null }
-			: { won: r.won, title: r.title, line: r.survival ? r.lines.join(' · ') : r.line, again: run ? '?' + q : null, leave: '../', boards: true, kept: kept ? { ok: kept.ok, text: kept.text } : null,
+		v.over = typeof r === 'string' ? { won: r === 'won', title: r === 'won' ? (gdrun ? 'You escape with everything!' : 'EXPEDITION COMPLETE!') : 'RUN OVER', line: '', rows: rv && rv.end ? [['Time', `${Math.floor(rv.end.time / 60)}:${String(rv.end.time % 60).padStart(2, '0')}`], ['KOs', String(rv.end.kills)], ['Pay', '₽ ' + rv.end.pay]] : [], again: null, leave: LEAVE, kept: kept ? { ok: kept.ok, text: kept.text } : null }
+			: { won: r.won, title: r.title, line: r.survival ? r.lines.join(' · ') : r.line, again: run ? '?' + q : null, leave: LEAVE, boards: true, kept: kept ? { ok: kept.ok, text: kept.text } : null,
 				rows: [['Time', `${Math.floor(r.parts.time / 60)}:${String(r.parts.time % 60).padStart(2, '0')}`], ['KOs', String(r.parts.kills)], ['Level', String(v.level)], ['Score', String(r.score)], ['Pay', '₽ ' + r.pay.pay]].concat(r.medal ? [['Medal', r.medal]] : []) };
 	} else if (noteText && performance.now() < noteUntil) v.note = noteText;
 	return v;
