@@ -1666,6 +1666,27 @@ rocks are not in.
 
 Tests: `micasurvivor_m3d_dive_things_test.mjs` 53 checks in node; `micasurvivor_m3d_dive_page_test.mjs` now 35.
 
+## 5.58 3D Dive, sixth part: built (2026-11-13). The save.
+
+A 3D Dive is kept in the same save as a 2D one (`m3d/divesave.js`), under the 2D Dive's own keys. It is no
+longer a preview.
+
+- **What is written.** The run, an escape, the route's deepest floor, who was rescued. The pay (the loot kept,
+  in Pokémonedas by the 2D game's scale) is owed to this browser, as an Expedition's: the 2D game puts it in
+  the wallet the next time the Expedition opens here.
+- **Stages and Seals.** A guardian beaten gives the route its next stage (26, 51, …) and its Seal. Both are
+  written the moment it falls. A Dive may start on floor 1 or on a stage the save has; another floor asked for
+  becomes floor 1. With the Seal: +10 % damage, -10 % damage taken on that route. The Route of Origin needs
+  the 8 Seals.
+- **Which Dives are kept.** No test parameter in the address (only `dive`, `route`, `floor`, `dex`), a League
+  member you have, an open route, and a run that passes the Expedition's own checks. Anything else ends with
+  a line saying why nothing is saved.
+
+Not in yet: the 3D boards for a Dive, the Weekly Dive, the tasks' and the level-ups' counters for a Dive, a
+"new record" line on the 2D side.
+
+Tests: `micasurvivor_m3d_dive_save_test.mjs` 29 checks in node; `micasurvivor_m3d_dive_page_test.mjs` now 44.
+
 ## 6. Dive in 2D: built
 
 **D0 — find the stairs (small; can ship first, on its own).** *Built 2026-11-11 (`overworld/tests/micasurvivor_dive_stairs_test.mjs`). As built: the stairs took their own orange mark, so the rocks and Meowth keep their gold; the HUD arrow comes up after 25 s on a floor, or at once when its boss falls.*

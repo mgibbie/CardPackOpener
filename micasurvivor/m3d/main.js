@@ -34,6 +34,7 @@ import { newFog, reveal, found, fogOf, share as fogShare } from './expfog.js';
 import { refresh as refreshCards, skip as skipCards, banish as banishCard } from './explevel.js';
 import { EK, ecoView, pickTake, pickClose, shopPrices } from './expeco.js';
 import { capView } from './expcap.js';
+import * as DS from './divesave.js';
 import { rulesFrom, newDive, stepDive, hudLine as diveHud, result as diveResult, pressSpecial, specials, LANDMARKS } from './dive.js';
 
 const Q = new URLSearchParams(location.search);
@@ -105,7 +106,13 @@ const DR = DIVE && XF ? rulesFrom(GG) : null;
 if (DIVE && !DR) throw new Error('3D Dive: the Dive rules did not load');
 // (the kit: your League member's first three moves, the basic and two specials; ?moves= picks others)
 const DMOVES = DR && !Q.get('moves') && GG.ExpLeague ? (() => { const L = GG.ExpLeague, m = L.BY[L.BY[DEX] ? DEX : L.FAM[DEX]], kit = m ? m.kit.filter((id) => { const d = GG.Moves.BY_ID[id] || (GG.ExpMoves && GG.ExpMoves.MOVES[id]); return !!d && canFire(d.kind); }).slice(0, DR.K.SLOTS) : []; return kit.length >= 2 ? kit.map((id) => [id, 1]) : MOVES; })() : MOVES;
-const drun = DR ? newDive(dataFrom(GG), XF, DR, { route: Q.get('route') || 'forest', seed: GEN, start: +Q.get('floor') || 1, dex: DEX, moves: DMOVES, tune: TUNE, touch: matchMedia('(pointer: coarse)').matches, ability: Q.get('ability') === '0' ? null : Q.get('ability') || 'auto', items: Q.get('items') ? Q.get('items').split(',') : [], weather: false, autoPick: Q.has('auto') ? +Q.get('auto') | 0 : undefined }) : null;
+// (part 6) a Dive that can be kept: the save is opened before the run (the start floor and the route's Seal are its)
+const DPRACTICE = DR ? DS.unfairDive([...Q.entries()]) : null;
+const DSAVE_OK = !!DR && !DPRACTICE && !!GG.ExpSave && await GG.ExpSave.open().then(() => !!GG.ExpSave.data, () => false);
+const DROUTE = DR && DR.F.ROUTES[Q.get('route')] ? Q.get('route') : 'forest';
+const DMEMBER = DR && GG.ExpLeague ? (GG.ExpLeague.BY[DEX] ? DEX : GG.ExpLeague.FAM[DEX] || 0) : 0;
+const DSTART = DSAVE_OK ? DS.startOf(GG.ExpSave, DROUTE, +Q.get('floor') || 1) : +Q.get('floor') || 1;
+const drun = DR ? newDive(dataFrom(GG), XF, DR, { route: DROUTE, seed: GEN, start: DSTART, seal: DSAVE_OK && DS.sealOf(GG.ExpSave, DROUTE), dex: DEX, moves: DMOVES, tune: TUNE, touch: matchMedia('(pointer: coarse)').matches, ability: Q.get('ability') === '0' ? null : Q.get('ability') || 'auto', items: Q.get('items') ? Q.get('items').split(',') : [], weather: false, autoPick: Q.has('auto') ? +Q.get('auto') | 0 : undefined }) : null;
 if (drun) { room = drun.w.room; drun.w.cap = DR.K.REIN.cap + 60; }
 const solo = run || drun;   // (a run of your own, alone on this page: an Expedition or a Dive)
 // (P4) a guest in a run: its own League member in the host's run (expcoop.js); it builds each zone from the run's row
@@ -475,7 +482,7 @@ function frame(now) {
 					if (drun.cadence.rope) flashes.arc(room.spawn[0], room.spawn[1] + 0.05, room.spawn[2], DR.K.ROPE_R * CELL, 0, 6.2832, '#ffd23f', 0.8, 0.9);
 					if (drun.sealed) flashes.arc(room.stairs[0], room.stairs[1] + 0.05, room.stairs[2], DR.K.STAIRS_R * CELL + 0.6, 0, 6.2832, '#ff4d5e', 0.8, 0.8);
 				}
-				if (drun.ended && !runOver) { runOver = diveResult(drun); kept = { ok: false, text: '3D Dive is a preview: nothing is saved yet.' }; note(runOver.title, 600000); }
+				if (drun.ended && !runOver) { runOver = diveResult(drun); keepDive(runOver); note(runOver.title, 600000); }
 			} else if (grun) { stepGuest(grun, input, K.TICK); for (const q of grun.says) note(q.text, q.s * 1000); if (grun.pick !== shownPick) showPick(); if (runOver === null && grun.ended) { runOver = grun.won ? 'won' : 'lost'; note(grun.won ? 'EXPEDITION COMPLETE!' : 'RUN OVER', 600000); } }
 			else tick(world, input, K.TICK);
 			fightEvents(world.events);
@@ -622,6 +629,7 @@ function fightEvents(events) {
 		}
 		else if (ev.k === 'rxchain') { for (const b of ev.links) { const a = ev.from, d = [b[0] - a[0], b[1] - a[1], b[2] - a[2]], l = Math.hypot(d[0], d[1], d[2]) || 1; flashes.bar([a[0], a[1] + 0.6, a[2]], [d[0] / l, d[1] / l, d[2] / l], l, 0.12, '#ffe14d', 0.25); } }
 		else if (ev.k === 'hurt') { bob = 0.35; note(`hit for ${(+ev.d).toFixed(0)}`, 700); }
+		else if (ev.k === 'bossdown' && ev.guardian && drun) { if (keepGuardian()) note('Stage and Seal saved', 3000); }
 		else if (ev.k === 'plug') { showRoom(); mapBase = null; burst(ev.x, 1, ev.z, ev.kind === 'boulder' ? '#9c917f' : '#ff9a3d', 26, 5, { up: 3, life: 0.6, r: 0.12 }); play([['break']]); }   // (the rock is gone: the floor is built again)
 		else if (ev.k === 'chest') { burst(ev.x, 0.6, ev.z, '#ffe9a0', 16, 3.5, { up: 3, life: 0.5, r: 0.08 }); play([['chest']]); }
 		else if (ev.k === 'landmark') { const c = LANDMARKS[ev.kind][2]; flashes.arc(ev.x, 0.05, ev.z, 3, 0, 6.2832, c, 0.9, 0.9); burst(ev.x, 1.5, ev.z, c, 22, 4, { up: 3.5, life: 0.7, r: 0.1 }); play([['heal']]); }
@@ -910,6 +918,27 @@ function keepShiny(dex) {
 	if (!run || PRACTICE || !SAVE_OK || !dex || !cleanRun(run, (performance.now() - runBegan) / 1000)) return false;
 	applyOps(GG.ExpSave, shinyOps(dex, GG.ExpLeague && GG.ExpLeague.FAM[dex] || 0)); return true;
 }
+/** (part 6) Can this Dive be kept? -> null, or why not (divesave.js WHY's key) */
+function diveWhyNot() {
+	if (DPRACTICE) return 'practice';
+	if (!DSAVE_OK || !GG.ExpSave.data) return 'nosave';
+	if (!cleanRun(drun, (performance.now() - runBegan) / 1000)) return 'unclean';
+	return DS.missing(drun, { L: GG.ExpLeague, Sv: GG.ExpSave, base: baseSave(), main: DR.MAIN, member: DMEMBER });
+}
+/** A guardian fell: its stage and its Seal are kept at once. */
+function keepGuardian() { if (!drun || diveWhyNot()) return false; applyOps(GG.ExpSave, DS.guardianOps(drun)); return true; }
+/** The Dive is over: into the save, and what the end screen says of it. */
+function keepDive(res) {
+	const say = (ok, text, extra) => { kept = { ok, text, ...extra }; if (RUNUI) RUNUI.update(runView()); return kept; };
+	try {
+		const why = diveWhyNot();
+		if (why) return say(false, DS.WHY[why], Object.assign({ why }, why === 'practice' ? { param: DPRACTICE } : {}));
+		const Sv = GG.ExpSave, was = DS.bestOf(Sv, drun.route), ops = DS.recordOps(drun, res, { dev: deviceId(localStorage, Sv.who, crypto) });
+		applyOps(Sv, ops);
+		const pay = DS.coinsOf(res.parts.divePay), rec = res.parts.deepest > was;
+		return say(true, (rec ? `New record on this route: floor ${res.parts.deepest}. ` : '') + (pay > 0 ? `Saved. ₽ ${pay} will be in your wallet when you next open the Expedition.` : 'Saved.'), { ops: ops.length, pay, record: rec });
+	} catch (e) { console.warn('the Dive was not saved: ' + (e && e.message)); return say(false, DS.WHY.nosave, { why: 'error' }); }
+}
 async function keepRun(res) {
 	const say = (ok, text, extra) => { kept = { ok, text, ...extra }; if (RUNUI) RUNUI.update(runView()); return kept; };
 	if (PRACTICE) return say(false, WHY.practice, { why: 'practice', param: PRACTICE });
@@ -986,7 +1015,7 @@ const G_MUSIC = GG.BIOME_MUSIC || null, XK_MAPS = ['viridian', 'mtmoon', 'cerule
 
 // what a test (and a curious owner in the console) can reach
 window.__m3d = {
-	dive: drun, diveRules: DR, special, propKeys: () => (props ? [...props.atlas.cells.keys()] : []), roomBuilds: () => roomBuilds,
+	dive: drun, diveRules: DR, special, diveSave: { practice: DPRACTICE, ok: DSAVE_OK, start: DSTART, member: DMEMBER }, propKeys: () => (props ? [...props.atlas.cells.keys()] : []), roomBuilds: () => roomBuilds,
 	meta: LAB_META, upgrades: UPGRADES, leadShiny: LEAD_SHINY, skey,
 	keepShiny,
 	siteHost: SITE_HOST, siteWatch: SITE_WATCH,

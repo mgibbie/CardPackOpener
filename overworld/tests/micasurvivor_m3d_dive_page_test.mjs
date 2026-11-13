@@ -107,7 +107,7 @@ try {
 	A(over && /RUN OVER/.test(end.text) && /Floor/.test(end.text) && /Loot kept/.test(end.text) && /Rescued/.test(end.text), '5. a faint ends the run: the end screen, with the floor, the loot kept and who was rescued', end.text.slice(0, 300));
 	const kept = +end.pay.find((r) => r[0] === 'Loot kept')[1], bank = await M(() => window.__m3d.dive.bank);
 	A(kept === Math.floor(bank + 100), '5. the loot kept is the bank and a quarter of what was at stake', [kept, bank]);
-	A(/nothing is saved yet/.test(end.kept) && !end.board, '5. it says nothing is saved yet (a preview), and offers no board', end);
+	A(end.kept.includes('Practice run') && end.kept.includes('nothing is saved') && !end.board, '5. a Dive with a test parameter (auto) is a practice run: its end says nothing is saved, and offers no board', end);
 	A(/[?&]dive=8\b/.test(end.again) && /floor=5/.test(end.again), '5. Play again is the next seed, same route and floor', end.again);
 	A(calls.length === 0, '5. a Dive asked nothing of the server', calls.slice(0, 5));
 
@@ -162,6 +162,42 @@ try {
 	const lmAt = await M(() => [window.__m3d.dive.lm.x, window.__m3d.dive.lm.z]);
 	await goTo(lmAt[0], lmAt[1]);
 	A(await waitFor(() => M(() => window.__m3d.dive.lm.used && window.__m3d.world.pl.hp >= 600), 4000), '6b. standing on the shrine: half your HP back', await M(() => window.__m3d.world.pl.hp));
+
+	// ---- 6c. (part 6) a Dive that is kept: the same save as the 2D game's
+	const store = () => M(() => { const o = {}; for (let k = 0; k < localStorage.length; k++) { const key = localStorage.key(k); o[key] = localStorage.getItem(key); } return o; });
+	const expSave = (st) => { try { return JSON.parse(st['micasurvivorexp_save.guest'] || 'null'); } catch (e) { return null; } };
+	const faint = async () => { await M(() => { const m = window.__m3d; m.world.pl.hp = 0; m.world.pl.dead = true; }); return waitFor(() => M(() => document.getElementById('rx-end').classList.contains('show')), 5000); };
+	const sv0 = expSave(await store());
+	A(!sv0 || !(sv0.counters || {})['dive.runs'], '6c. the practice Dives above wrote nothing into the save');
+	ok = await boot('dive=7&route=forest&dex=4');
+	let ds = await M(() => window.__m3d.diveSave);
+	A(ok && ds.practice === null && ds.ok === true && ds.start === 1 && ds.member === 4, '6c. a Dive by its seed, route and Pokémon alone can be kept: the save is open', ds);
+	await M(() => { const m = window.__m3d; m.world.enemies.length = 0; m.dive.groups.length = 0; m.dive.ft = 1e9; m.dive.bank = 40; m.dive.stake = 100; });
+	const over6 = await faint();
+	await sleep(300);
+	const k6 = await M(() => ({ kept: window.__m3d.kept, line: (document.getElementById('rx-kept') || {}).textContent || '' }));
+	const st6 = await store(), x6 = expSave(st6), c6 = (x6 && x6.counters) || {}, dev = st6['micasurvivorexp_dev.guest'];
+	A(over6 && k6.kept && k6.kept.ok === true && k6.kept.pay === 195 && k6.line.includes('Saved.') && k6.line.includes('195'), '6c. its end says it is saved, and what will be in your wallet (40 secured + a quarter of 100 = 65 loot = 195)', k6);
+	A(c6['dive.runs'] === 1 && c6['dive.forest.best'] === 1 && c6['pay3d.' + dev] === 195 && c6['m3d.n.' + dev] === 1 && !c6['dive.escapes'], "6c. the save has it under the 2D Dive's keys, and the pay owed to this browser", c6);
+	A(calls.length === 0, '6c. a guest\'s Dive asked nothing of the server', calls.slice(0, 5));
+	// a guardian falls: its stage and its Seal are kept at once
+	ok = await boot('dive=8&route=forest&dex=4');
+	await M(() => { const m = window.__m3d; m.world.enemies.length = 0; m.dive.groups.length = 0; m.dive.ft = 1e9; m.dive.floor = 25; m.dive.boss = { dead: true, xk: 'guardian' }; });
+	const gd = await waitFor(async () => { const x = expSave(await store()); return !!(x && x.counters['dive.forest.stage'] === 26 && (x.sets['dive.seal'] || []).includes('forest')); }, 5000);
+	A(gd && await M(() => window.__m3d.noteLog.includes('Stage and Seal saved')), '6c. a guardian falls: stage 26 and the Seal of the route are in the save at once (the run is not over), and the screen says so');
+	// the next Dive on that route has the Seal, and may start on floor 26
+	ok = await boot('dive=9&route=forest&dex=4&floor=26');
+	ds = await M(() => ({ ...window.__m3d.diveSave, seal: window.__m3d.dive.seal, floor: window.__m3d.dive.floor }));
+	A(ok && ds.start === 26 && ds.floor === 26 && ds.seal === true, '6c. the next Dive there starts on floor 26 with the Seal', ds);
+	ok = await boot('dive=9&route=reef&dex=4&floor=26');
+	ds = await M(() => ({ ...window.__m3d.diveSave, seal: window.__m3d.dive.seal, floor: window.__m3d.dive.floor, route: window.__m3d.dive.route }));
+	A(ok && ds.route === 'reef' && ds.floor === 1 && ds.seal === false, '6c. another route has neither: floor 26 asked, floor 1 given', ds);
+	// a member the save does not have
+	ok = await boot('dive=7&route=forest&dex=149');
+	await M(() => { const m = window.__m3d; m.world.enemies.length = 0; m.dive.groups.length = 0; m.dive.ft = 1e9; m.dive.bank = 40; });
+	await faint(); await sleep(300);
+	const k7 = await M(() => window.__m3d.kept), c7 = (expSave(await store()) || {}).counters || {};
+	A(k7 && k7.ok === false && k7.why === 'member' && c7['dive.runs'] === 1, "6c. Dragonite's family, which a new save does not have: its end says so, and nothing is written", [k7, c7['dive.runs']]);
 
 	// ---- 7. an Expedition is untouched
 	ok = await boot('exp=7&map=viridian&dex=4&weather=0');
