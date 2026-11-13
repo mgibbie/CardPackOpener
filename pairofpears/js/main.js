@@ -160,6 +160,8 @@ function build() {
   el.tip = h('div', 'tip'); el.tip.style.display = 'none'; stage.appendChild(el.tip);
   el.banner = h('div', 'banner pp-banner'); el.banner.style.display = 'none'; stage.appendChild(el.banner);
   el.ghost = h('img', 'pp-ghost'); el.ghost.alt = ''; el.ghost.style.display = 'none'; stage.appendChild(el.ghost);
+  // the Sell ribbon: it comes out from under the charm you have selected in the shop (as a joker's in Micatro). The ONLY way to sell.
+  el.ribbon = btn('Sell', 'orange pp-ribbon b-sell', () => act('sell')); el.ribbon.style.display = 'none'; stage.appendChild(el.ribbon);
   el.modals = h('div', 'modal-layer'); stage.appendChild(el.modals);
 }
 
@@ -370,7 +372,6 @@ function dropTargetAt(ev) {
   const hit = document.elementsFromPoint(ev.clientX, ev.clientY);
   for (const e of hit) {
     const sl = e.closest && e.closest('.pp-slot'); if (sl) return { slot: +sl.dataset.i };
-    const sell = e.closest && e.closest('.pp-sell'); if (sell) return { sell: true };
   }
   return null;
 }
@@ -398,24 +399,24 @@ function wireSlots() {
     moveGhost(ev);
     const t = dropTargetAt(ev);
     for (const s of el.slots.children) s.classList.toggle('target', !!t && t.slot === +s.dataset.i);
-    const sell = el.shop.querySelector('.pp-sell'); if (sell) sell.classList.toggle('target', !!t && !!t.sell);
+    renderGhost();   // (dragging: the ribbon is away)
   });
   const up = (ev) => {
     if (!drag || ev.pointerId !== drag.pointerId) return;
     const d = drag; drag = null;
     for (const s of el.slots.children) s.classList.remove('target');
-    const sell = el.shop.querySelector('.pp-sell'); if (sell) sell.classList.remove('target');
-    if (!d.moved) { renderGhost(); return; }   // a click: the charm stays picked up (tap a slot or Sell next)
+    if (!d.moved) { renderGhost(); return; }   // a tap: the charm is selected, and its Sell ribbon is out
+    // (a drag only ever MOVES a charm: onto a slot, or back where it was. It used to sell when it ended over the shop's
+    //  Sell tile, and a tap that slid a few px counted as a drag: a charm was sold by two taps, owner 2026-11-13.)
     const t = ev.type === 'pointercancel' ? null : dropTargetAt(ev);
-    if (t && t.sell) act('sell');
-    else act('drop', t ? t.slot : -1);
+    act('drop', t ? t.slot : -1);
   };
   addEventListener('pointerup', up);
   addEventListener('pointercancel', up);
   // a press anywhere else while a charm is picked up puts it back
   stage.addEventListener('pointerdown', (ev) => {
     if (MODE !== 'normal' || !V || !V.held || drag) return;
-    if (ev.target.closest('.pp-slot, .pp-sell, .modal-layer, .b-sell')) return;
+    if (ev.target.closest('.pp-slot, .pp-ribbon, .modal-layer')) return;
     act('drop', -1);
   }, true);
 }
@@ -426,7 +427,17 @@ function moveGhost(ev) {
   el.ghost.style.display = '';
   el.ghost.style.left = p.x + 'px'; el.ghost.style.top = p.y + 'px';
 }
+function renderRibbon() {
+  const on = !!V && !!V.held && MODE === 'normal' && inShopPhase() && !(drag && drag.moved);
+  el.ribbon.style.display = on ? '' : 'none';
+  el.charmLbl.classList.toggle('away', on);
+  if (!on) return;
+  const c = slotCenter(V.held.origin), half = (portrait ? 100 : 110) / 2, k = V.held.id + ':' + V.held.sell;
+  if (el.ribbon.dataset.k !== k) { el.ribbon.dataset.k = k; el.ribbon.innerHTML = 'Sell · +' + V.held.sell + ' ' + ico('berry', ''); }
+  el.ribbon.style.left = c.x + 'px'; el.ribbon.style.top = (c.y + half + 6) + 'px';
+}
 function renderGhost() {
+  renderRibbon();
   if (!V || !V.held) { el.ghost.style.display = 'none'; return; }
   if (drag && drag.moved) return;   // following the pointer
   const c = slotCenter(V.held.origin);
@@ -448,7 +459,7 @@ function renderCharms(v) {
     else s.textContent = v.held && v.held.origin === i ? '' : 'Empty';
   }
   n = v.charms.filter(Boolean).length + (v.held ? 1 : 0);
-  el.charmLbl.textContent = 'Charms ' + n + '/4' + (shop && MODE === 'normal' ? (v.held ? ' · drop it on a slot or Sell' : ' · drag one to Sell') : '');
+  el.charmLbl.textContent = 'Charms ' + n + '/4' + (shop && MODE === 'normal' ? (v.held ? ' · Sell it, or tap it to put it back' : ' · tap one to sell it') : '');
   for (const s of el.slots.children) { const i = +s.dataset.i; const sv = s.querySelector('.pp-sv'); if (sv && !shop) sv.remove(); if (!sv && shop && v.charms[i]) s.insertAdjacentHTML('beforeend', `<span class="pp-sv">${v.charms[i].sell}</span>`); }
   renderGhost();
 }
@@ -562,7 +573,7 @@ function renderShop(v) {
     el.shop.innerHTML = `<div class="shop-panel"><div class="pp-sh-head"><div class="pp-sh-title">Level Shop</div>
         <div class="pp-sh-wallet"><div class="stat"><div class="stat-l">Berries</div><div class="stat-v money">${ico('berry', '')}<span class="pp-sh-b"></span></div></div></div></div>
       <div class="pp-offers"></div>
-      <div class="pp-sh-help">${MODE === 'normal' ? 'Buy charms (4 slots) and conditions for your deck · drag a charm onto Sell for Berries' : esc(SPECTATE) + ' is shopping…'}</div>
+      <div class="pp-sh-help">${MODE === 'normal' ? 'Buy charms (4 slots) and conditions for your deck · tap a charm of yours to sell it' : esc(SPECTATE) + ' is shopping…'}</div>
       <div class="pp-sh-foot"></div></div>`;
     const foot = el.shop.querySelector('.pp-sh-foot');
     if (MODE === 'normal') foot.appendChild(btn(last ? 'Finish Run' : 'Next Level', 'green big b-nextlevel', () => act('next')));
@@ -570,7 +581,7 @@ function renderShop(v) {
   el.shop.querySelector('.pp-sh-b').textContent = v.berries;
   const grid = el.shop.querySelector('.pp-offers');
   if (tipIs('offer')) hideTip();
-  grid.innerHTML = [0, 1, 2, 3].map((i) => offerHtml(v.offers[i], i, v)).join('');
+  grid.innerHTML = [0, 1, 2].map((i) => offerHtml(v.offers[i], i, v)).join('');   // (the engine's 4th entry was the Sell tile: a charm is sold from its own ribbon now)
   grid.querySelectorAll('.pp-offer').forEach((tile) => {
     const i = +tile.dataset.i, o = v.offers[i];
     if (!o) return;
@@ -725,7 +736,7 @@ function act(kind, arg) {
   else if (kind === 'buy') { why = P.buyRefusal(arg); if (!why) ok = P.buy(arg); }
   else if (kind === 'pick') ok = P.pickCharm(arg);
   else if (kind === 'drop') ok = P.dropCharm(arg);
-  else if (kind === 'sell') { ok = P.sellHeld(); if (!ok && inShopPhase()) why = 'pick up a charm to sell first'; }
+  else if (kind === 'sell') { ok = P.sellHeld(); if (!ok && inShopPhase()) why = 'select a charm to sell first'; }
   if (!ok) { if (why) { toast(upFirst(why)); sound.play('cancel'); } return false; }
   changed();
   return true;
@@ -856,7 +867,7 @@ function howTo() {
   <li>The two <b>Pears</b> ${ico('pear')} are special: matching them wins the level on the spot.</li>
   <li>Clearing a level heals 2 ${ico('heart')} (up to ${P.MAX_HEARTS}). Each level adds a new fruit — ${P.MAX_LEVEL} levels make the harvest.</li>
   <li>After each level the <b>Level Shop</b> sells <b>charms</b> (4 slots, they change the rules in your favour) and <b>conditions</b>
-  that stick to a fruit in your deck. Drag a charm onto <b>Sell</b> to get Berries back.</li>
+  that stick to a fruit in your deck. In the shop, tap a charm of yours and press its <b>Sell</b> ribbon to get Berries back.</li>
   </ul>
   <div class="pp-conds">${P.COND_ORDER.map((k) => `<div>${ico(P.COND_INFO[k].icon)}<span><b>${P.COND_INFO[k].name}</b> — ${esc(P.COND_INFO[k].desc)}</span></div>`).join('')}</div>
   <p class="muted">Keys: arrows / WASD move · Z (or Enter / Space) picks a card, charm or button · X or Esc backs out · C sells the charm you hold · V (or N) continues / next level · O options. Controllers and touch work too (long-press a card or charm for its details).</p>`;
@@ -1009,7 +1020,7 @@ function makePad() {
   // C / the X button: sell the charm you are holding (the shop's Sell)
   function secondary() {
     if (topModal() || MODE !== 'normal' || !V || V.phase !== 'shop') return;
-    if (V.held) act('sell'); else toast('Pick up a charm to sell first');
+    if (V.held) act('sell'); else toast('Select a charm to sell first');
   }
   // Start opens Options. Enter (a DOM game: Enter stays "pick") picks what the ring shows;
   // with no ring it opens Options too.

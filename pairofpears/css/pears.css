@@ -62,6 +62,17 @@
 .portrait .pp-slots { gap: 14px; }
 .portrait .pp-slot { width: 100px; height: 100px; }
 .portrait .pp-slot img { width: 68px; height: 68px; }
+/* The Sell ribbon: out from under the charm you have selected in the shop (Micatro's joker ribbon). */
+.btn.pp-ribbon { position: absolute; z-index: 71; transform: translateX(-50%); width: auto; min-width: 150px; padding: 8px 16px 6px; font-size: 28px; line-height: 1; white-space: nowrap; border-radius: 0 0 14px 14px; animation: pp-ribbon-out .16s ease-out; }
+.btn.pp-ribbon::before { content: ''; position: absolute; left: 50%; top: -10px; margin-left: -10px; border: 10px solid transparent; border-top: 0; border-bottom-color: var(--attn); }
+.btn.pp-ribbon img { width: 22px; height: 22px; vertical-align: -3px; image-rendering: pixelated; }
+@keyframes pp-ribbon-out { from { opacity: 0; transform: translateX(-50%) translateY(-14px) scaleY(.6); } to { opacity: 1; transform: translateX(-50%); } }
+#stage.readonly .pp-ribbon { display: none !important; }
+/* a phone: the stage is drawn at about a third of its design size, so the ribbon is made big enough to press */
+.portrait .btn.pp-ribbon { font-size: 52px; padding: 20px 30px 16px; min-width: 300px; border-radius: 0 0 22px 22px; }
+.portrait .btn.pp-ribbon img { width: 40px; height: 40px; vertical-align: -6px; }
+.portrait .btn.pp-ribbon::before { top: -16px; margin-left: -16px; border-width: 16px; border-top: 0; }
+.pp-charmlbl.away { visibility: hidden; }   /* (the ribbon comes out where the charms' label is) */
 .pp-ghost { position: absolute; z-index: 70; width: 96px; height: 96px; pointer-events: none; image-rendering: pixelated; transform: translate(-50%, -50%) rotate(-6deg); filter: drop-shadow(6px 10px 0 rgba(0,0,0,.35)); }
 .pp-hint { font-size: 22px; color: #dfe7e8; text-shadow: 0 2px 0 rgba(0,0,0,.4); text-align: center; white-space: nowrap; position: absolute; z-index: 3; pointer-events: none; }
 .pp-hint:empty { display: none; }
@@ -89,8 +100,9 @@
 .pp-sh-wallet .stat-v { font-size: 34px; }
 .pp-sh-wallet img { width: 28px; height: 28px; vertical-align: -3px; image-rendering: pixelated; margin-right: 4px; }
 .pp-sh-help { font-size: 20px; color: #f7d9a5; text-align: center; }
-.pp-offers { flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; min-height: 0; }
+.pp-offers { flex: 1; display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; min-height: 0; }
 .portrait .pp-offers { grid-template-columns: 1fr 1fr; }
+.portrait .pp-offers .pp-offer:nth-child(3) { grid-column: 1 / -1; }   /* (three offers: the third takes the second row whole) */
 .pp-offer { position: relative; background: var(--panel-d); border-radius: 16px; box-shadow: 0 6px 0 var(--panel-dd); padding: 12px 12px 8px; display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; min-height: 0; }
 .pp-of-card { width: 120px; height: 120px; border-radius: 14px; background: #e8ecee; box-shadow: 0 6px 0 #9aa6a9, inset 0 0 0 4px #bfc7d5; display: flex; align-items: center; justify-content: center; position: relative; flex: 0 0 auto; }
 .pp-of-card img { width: 84px; height: 84px; image-rendering: pixelated; animation: pp-bob 2.4s ease-in-out infinite; }

@@ -1,7 +1,7 @@
 // pairofpears_ui_test.mjs — Pair of Pears (/pairofpears/) in a real browser, desktop + phone: it boots
 // straight into the card game on Micatro's UI (micatro.css, the m6x11 font, Micatro's card sprites —
 // no love.js, no meadow), plays through the page's own inputs (card clicks / taps, the keyboard, a
-// controller), clears a level, buys a charm and sells it by dragging it onto Sell (a tap-then-Sell on
+// controller), clears a level, buys a charm and sells it by its Sell ribbon (select the charm, press the ribbon: on
 // the phone), resumes on the exact frame after a reload, loads an older save that still carries the
 // Love2D build's meadow data, and runs out of Hearts.
 //   node overworld/tests/pairofpears_ui_test.mjs      (screenshots: PEARS_SHOTS=<dir>)
@@ -205,20 +205,44 @@ try {
 		A(await waitFor(async () => (await view()).charms[0] && (await view()).berries === 0, 3000), `${name}: Buy puts the charm in the first slot (-6 Berries)`);
 		await shot('shop');
 		const charmId = (await view()).charms[0].id;
+		// ---- selling (owner, 2026-11-13, phone: "I just tapped my charm twice and it disappeared, I didn't even drag it to the
+		//      sell slot"). The shop has no Sell tile now: a Sell ribbon comes out of the charm you select, and nothing else sells.
+		const shopTiles = await page.evaluate(() => ({ n: document.querySelectorAll('.pp-offers .pp-offer').length, sell: !!document.querySelector('.pp-sell') }));
+		A(shopTiles.n === 3 && !shopTiles.sell, `${name}: the shop has its three offers and no Sell tile`, JSON.stringify(shopTiles));
+		const ribbon = () => page.evaluate(() => { const r = document.querySelector('.pp-ribbon'), s = document.querySelector('.pp-slot[data-i="0"]'); if (!r || getComputedStyle(r).display === 'none') return null; const b = r.getBoundingClientRect(), q = s.getBoundingClientRect(); return { text: r.textContent.trim(), under: b.top >= q.bottom - 12 && Math.abs((b.left + b.right) / 2 - (q.left + q.right) / 2) < 12, seen: b.left >= 0 && b.right <= innerWidth && b.bottom <= innerHeight && b.width > 60 && b.height > 20, top: document.elementFromPoint((b.left + b.right) / 2, (b.top + b.bottom) / 2) === r || r.contains(document.elementFromPoint((b.left + b.right) / 2, (b.top + b.bottom) / 2)) }; });
+		// two taps on the charm: selected, then put back. Never sold.
+		await clickSel('.pp-slot[data-i="0"]');
+		A(await waitFor(async () => (await view()).held && (await view()).held.id === charmId, 2000), `${name}: a ${vp.hasTouch ? 'tap' : 'click'} selects the charm`);
+		const rb = await ribbon();
+		A(rb && /^Sell · \+3/.test(rb.text) && rb.under && rb.seen && rb.top, `${name}: its Sell ribbon comes out from under it, on screen and on top (${rb && rb.text})`, JSON.stringify([rb, await page.evaluate(() => { const b = document.querySelector(".pp-ribbon").getBoundingClientRect(); return [b.left, b.top, b.right, b.bottom, innerWidth, innerHeight]; })]));
+		await sleep(350); await shot('shop_held');
+		await clickSel('.pp-slot[data-i="0"]');
+		await sleep(500);
+		let sv = await view();
+		A(!sv.held && sv.charms[0] && sv.charms[0].id === charmId && sv.berries === 0 && (await ribbon()) === null, `${name}: a second ${vp.hasTouch ? 'tap' : 'click'} on it puts it back: still yours, nothing sold, the ribbon is gone`, JSON.stringify({ held: sv.held, charms: sv.charms, berries: sv.berries, ribbon: await ribbon() }));
 		if (!vp.hasTouch) {
-			// drag it onto Sell with the mouse
-			const from = await centerOf('.pp-slot[data-i="0"]'), to = await centerOf('.pp-sell');
+			// a drag never sells: onto the shop's tiles (where the Sell tile was), it goes back where it came from
+			const from = await centerOf('.pp-slot[data-i="0"]'), to = await centerOf('.pp-offers .pp-offer:last-child');
 			await page.mouse.move(from.x, from.y); await page.mouse.down();
 			await page.mouse.move((from.x + to.x) / 2, (from.y + to.y) / 2, { steps: 6 });
-			A(await page.evaluate(() => getComputedStyle(document.querySelector('.pp-ghost')).display !== 'none'), `${name}: the dragged charm follows the pointer`);
+			A(await page.evaluate(() => getComputedStyle(document.querySelector('.pp-ghost')).display !== 'none') && (await ribbon()) === null, `${name}: the dragged charm follows the pointer (no ribbon while it is dragged)`);
 			await page.mouse.move(to.x, to.y, { steps: 6 }); await page.mouse.up();
-		} else {
-			// tap the charm (it lifts), then tap Sell
-			await clickSel('.pp-slot[data-i="0"]');
-			A(await waitFor(async () => (await view()).held && (await view()).held.id === charmId, 2000), `${name}: a tap picks the charm up`);
-			await shot('shop_held');
-			await clickSel('.b-sell');
+			await sleep(400);
+			sv = await view();
+			A(!sv.held && sv.charms[0] && sv.charms[0].id === charmId && sv.berries === 0, `${name}: dropped on the shop it goes back to its slot: a drag never sells`, JSON.stringify(sv));
+			// a drag to another slot still moves it
+			const s2 = await centerOf('.pp-slot[data-i="2"]');
+			await page.mouse.move(from.x, from.y); await page.mouse.down(); await page.mouse.move(s2.x, s2.y, { steps: 8 }); await page.mouse.up();
+			await sleep(300);
+			sv = await view();
+			A(sv.charms[2] && sv.charms[2].id === charmId && !sv.charms[0], `${name}: dragged onto another slot, it moves there`, JSON.stringify(sv.charms));
+			await page.mouse.move(s2.x, s2.y); await page.mouse.down(); await page.mouse.move(from.x, from.y, { steps: 8 }); await page.mouse.up();
+			await sleep(300);
 		}
+		// select it and press the ribbon: sold
+		await clickSel('.pp-slot[data-i="0"]');
+		await waitFor(async () => !!(await view()).held, 2000);
+		await clickSel('.pp-ribbon');
 		A(await waitFor(async () => { const x = await view(); return !x.held && !x.charms.some(Boolean) && x.berries === 3; }, 3000), `${name}: Sell: the charm goes for its sell value (+3 Berries)`, JSON.stringify(await view()));
 		await clickSel('.b-nextlevel');
 		// (8 = level 2's four pairs; a charm bought in the shop can add cards for good — selling it keeps them — so: at least 8)
