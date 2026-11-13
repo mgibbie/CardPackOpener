@@ -273,11 +273,12 @@ try {
 		out.poor = { st: H.st(b1), pick: !!Ec.pick, coins: pl.coins };
 		// with ₽ (after stepping away: the latch)
 		H.away(); pl.coins = 100;
+		const sp0 = Ec.run.spent;   // (the price is read from the ₽ spent: a kill while standing there earns some, and the purse then read 84 on a CI run)
 		H.stand(b1, 0.7);
 		const mr = Math.random; let draws = 0; Math.random = () => { draws++; return mr(); };
 		Ec.rollOffers(pl, G.DLC.rng(7), 4, 0); Ec.rollOffers(pl, G.DLC.rng(8), 3, 2);   // (the rolls: seeded streams only)
 		Math.random = mr;
-		out.paid = { st: H.st(b1), pick: Ec.pick && { kind: Ec.pick.kind, n: Ec.pick.ids.length, picks: Ec.pick.picks }, coins: pl.coins, state: G.Game.state, cards: H.cards(), draws };
+		out.paid = { st: H.st(b1), pick: Ec.pick && { kind: Ec.pick.kind, n: Ec.pick.ids.length, picks: Ec.pick.picks }, spent: Ec.run.spent - sp0, state: G.Game.state, cards: H.cards(), draws };
 		const n0 = H.nItems(), id = Ec.pick && Ec.pick.ids[1];
 		out.guard = G.ExpEco.choose(1);   // (too soon after it opened: ignored)
 		out.chose = H.choose(1);
@@ -286,8 +287,9 @@ try {
 		out.costs = [0, 1, 2, 3, 5, 10].map(n => Ec.ballCost(n));
 		out.luck = [Ec.ballCost(0, 40), Ec.ballCost(0, 100), Ec.ballCost(0, 300)];
 		H.away();
+		const sp1 = Ec.run.spent;
 		H.stand(b2, 0.7);
-		out.second = { coins: pl.coins, open: !!Ec.pick };
+		out.second = { spent: Ec.run.spent - sp1, open: !!Ec.pick };
 		if (Ec.pick) H.choose(0);
 		// a free ball: one item, no choice, no ₽
 		H.away();
@@ -313,11 +315,11 @@ try {
 		return out;
 	});
 	A(bl.poor && bl.poor.st === 0 && !bl.poor.pick && bl.poor.coins === 0, 'a paid ball with 0 ₽ doesn\'t open', JSON.stringify(bl.poor));
-	A(bl.paid && bl.paid.st === 1 && bl.paid.pick && bl.paid.pick.kind === 'ball' && bl.paid.pick.n === 3 && bl.paid.coins === 82 && bl.paid.state === 'choice' && bl.paid.cards.length === 3 && bl.paid.draws === 0,
+	A(bl.paid && bl.paid.st === 1 && bl.paid.pick && bl.paid.pick.kind === 'ball' && bl.paid.pick.n === 3 && bl.paid.spent === 18 && bl.paid.state === 'choice' && bl.paid.cards.length === 3 && bl.paid.draws === 0,
 		'with ₽: standing on it opens it for 18 ₽ and pauses on a pick of 3 items (rolled with no Math.random)', JSON.stringify(bl.paid));
 	A(bl.guard === false && bl.chose && bl.after.n === 1 && bl.after.got >= 1 && bl.after.state === 'playing' && !bl.after.open && !bl.after.shown, 'a pick right after it opens is ignored (the A that walked you in); then the picked item stacks and the run goes on', JSON.stringify(bl.after));
 	A(JSON.stringify(bl.costs) === '[18,20,23,27,34,66]' && JSON.stringify(bl.luck) === '[16,14,14]', 'the price after n balls: 18 x 1.22^(0.65 n) = 18, 20, 23, 27, 34, 66; luck 40 / 100 takes 10 / 25 % off (never more)', JSON.stringify({ c: bl.costs, l: bl.luck }));
-	A(bl.second && bl.second.coins === 62 && bl.second.open, 'the second paid ball costs 20 ₽', JSON.stringify(bl.second));
+	A(bl.second && bl.second.spent === 20 && bl.second.open, 'the second paid ball costs 20 ₽', JSON.stringify(bl.second));
 	A(bl.free && bl.free.st === 1 && bl.free.items === 1 && bl.free.coins === 0 && !bl.free.open, 'a free ball: one item at once, no ₽, no choice', JSON.stringify(bl.free));
 	A(bl.cursed && bl.cursed.st === 1 && bl.cursed.items >= 1 && bl.cursed.items <= 2 && near(bl.cursed.diff, 0.05) && bl.cursed.ghosts === 6 && bl.cursed.dex.every(d => [92, 93, 200, 355, 425, 562].includes(d)) && near(bl.cursed.hpK, 1.05, 0.02) && !bl.cursed.open,
 		'a cursed ball: free, +5 % difficulty (new foes +5 % HP), a ghost ambush of 4 + 2 x zone = 6, 1-2 items at once', JSON.stringify(bl.cursed));
@@ -690,6 +692,11 @@ try {
 			return { tip, hits: tip ? R.filter(o => o !== tip && hit(o, tip)).map(o => o.name) : [], names: R.map(o => o.name) };
 		});
 		A(!lay1.tip || (inV(lay1.tip, dims.W, dims.H) && lay1.hits.length === 0), `${tag}: the tip box is on screen and overlaps nothing on the HUD`, JSON.stringify(lay1));
+		// (a CI run, phone: the tip was once at y 368 of 390, half off the screen. The minimap looks for a free place among last
+		//  frame's boxes, and on a phone the tip hangs under the minimap: a tip that showed where the minimap wanted to be pushed
+		//  it down, and the tip followed it. The tip is placed BY the minimap, so it must never move it.)
+		const pushed = await E(d.page, () => { const k = G.HUD.k, w = innerWidth / k, h = innerHeight / k, R = G.HUD.rects().filter(o => o.name !== 'xtip'), a = G.Minimap.place(w, h, R, innerHeight); const b = G.Minimap.place(w, h, R.concat([{ name: 'xtip', x: a.x, y: a.y + 20, w: 250, h: 70 }]), innerHeight); return { a, b }; });
+		A(pushed.a && pushed.b && pushed.a.x === pushed.b.x && pushed.a.y === pushed.b.y && pushed.a.s === pushed.b.s, `${tag}: a tip box lying where the minimap goes does not move the minimap`, JSON.stringify(pushed));
 		if (SHOTS) await shoot(d.page, `altar_${tag}.png`, 250);
 		// a paid ball's choice
 		await E(d.page, () => { const H = window.__t, pl = G.Game.player; H.wipe(); H.away(); pl.coins = 200; G.ExpEco.zone.ch.fill(0); const b = H.objs('ball')[0]; H.stand(b, 0.7); });
