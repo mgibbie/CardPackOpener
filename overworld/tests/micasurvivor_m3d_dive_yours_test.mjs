@@ -76,5 +76,29 @@ const plain = run(), p0 = plain.w.pl;
 	A(N.meta === null, 'a Dive with the base game\'s levels takes nothing from the Lab');
 }
 
+// ---------------------------------------------------------------- (part 13) research, the counters, the tasks
+{
+	const { applyOps } = await import('../../micasurvivor/m3d/expsave.js');
+	const { researchOf } = await import('../../micasurvivor/m3d/expmeta.js');
+	const { addEnemy } = await import('../../micasurvivor/m3d/combat.js');
+	const meta = noMeta(), S = run({ meta }), pl = S.w.pl;
+	S.w.enemies.length = 0; S.groups.length = 0; S.ft = 1e9; pl.maxHp = pl.hp = 1e9;
+	const fam = Object.keys(LG.FAM).map(Number).find((d) => LG.FAM[d] && data.mon(d));
+	for (let i = 0; i < 3; i++) { const e = addEnemy(S.w, fam, pl.s.x + 3, pl.s.z, { t: 0, ti: 0 }); e.dummy = true; e.hp = 1e-6; e.poison = 1; e.poisonT = 1; e.poisonTick = 0; }
+	for (let i = 0; i < 90; i++) { if (pl.choices) choose(S.w, 0); stepDive(S, noInput()); }
+	const rs = researchOf(S);
+	A(S.kills === 3 && rs.length === 1 && rs[0][0] === LG.FAM[fam] && rs[0][1] === 3 * meta.RS.ko, `three KOs of a League family: its research (3 x ${meta.RS.ko})`, [S.kills, rs]);
+	A(researchOf(plain).length === 0, 'a Dive that cannot be kept (no Lab row) earns none');
+	S.ended = true; S.lost = true;
+	const c = {}, s = {}, Sv = { get: (k) => c[k] || 0, has: () => false, bump: (k, n) => { c[k] = (c[k] || 0) + n; }, best: (k, v) => { c[k] = Math.max(c[k] || 0, v); }, add: (k, v) => { (s[k] = s[k] || []).push(String(v)); }, commit: () => {} };
+	const res = result(S);
+	applyOps(Sv, DS.recordOps(S, res, { dev: 'dv1', research: rs, seen: 4, final: false }));
+	A(c['rs.' + LG.FAM[fam]] === 3 * meta.RS.ko, 'the save gets the research');
+	A(c['m3d.t.dv1.runs'] === 1 && c['m3d.t.dv1.kos'] === 3 && (c['m3d.t.dv1.secs'] || 0) === res.parts.time && c['m3d.x.dv1.zone'] === 5 * 1e6 + 1 && !c['m3d.t.dv1.finals'], "the tasks' metrics of the run are left for the 2D game to count (a run, its KOs, its time, its zone)", c);
+	A(c['lv.cards'] === S.lv.log.filter((q) => ['up', 'new', 'vit', 'swap'].includes(q[1])).length || (!c['lv.cards'] && !S.lv.log.some((q) => ['up', 'new', 'vit', 'swap'].includes(q[1]))), "the level-ups' counters too");
+	const o2 = DS.recordOps(S, res, { dev: 'dv1', final: true });
+	A(o2.some((q) => q[1] === 'm3d.t.dv1.finals' && q[2] === 1), "a Dive ended at its line's last stage counts as one");
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

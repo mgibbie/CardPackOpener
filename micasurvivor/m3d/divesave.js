@@ -13,10 +13,12 @@
 // after it does not lose them.
 // A Dive is kept only if it is FAIR: no test parameters, as a League member you have, on a route that is open, and
 // CLEAN (expsave.js clean). A start floor the save does not have becomes floor 1.
+// THE REST (part 13), as an Expedition writes them: research (o.research), the level-ups', the reactions' and the Ultimates'
+// counters, and the run's metrics for the daily and weekly tasks (the 2D game counts them: expsave.js).
 // THE LEAGUE (part 10): a Dive as a member writes the League's counters and the forms it reached, as an Expedition does.
 // THE BOARDS (part 7): a kept Dive of a signed-in player is posted to the 3D board of its route (the server's Dive
 // boards with `d3: true`: the deepest floor, then the shorter time), and the end screen and the menu show it.
-// Not here yet: the Weekly Dive, the tasks' and the level-ups' counters.
+// Not here yet: the Weekly Dive.
 // Pure: the page (main.js) hands in the run, its result and the save.
 import { hasMember, hasForm } from './expsave.js';
 
@@ -47,7 +49,8 @@ export function missing(S, o) {
 /** A guardian fell: its stage and its route's Seal, kept at once. */
 export function guardianOps(S) { return S.stage > 0 ? [['best', 'dive.' + S.route + '.stage', S.stage], ['add', 'dive.seal', S.route]] : []; }
 /** What the Dive writes into the Expedition save at its end: [['bump' | 'best' | 'add', key, value]].
- *  res: dive.js result(S). o: { dev: this browser's id } */
+ *  res: dive.js result(S). o: { dev: this browser's id, research: [[family, points]], seen: the 3D runs the 2D game has
+ *  counted from this browser (m3d.seen.<dev>), final: the run ended at its line's last stage } */
 export function recordOps(S, res, o) {
 	const ops = [], bump = (k, n = 1) => { n = Math.floor(n); if (n > 0) ops.push(['bump', k, n]); }, best = (k, v) => { v = Math.floor(v); if (v > 0) ops.push(['best', k, v]); };
 	const p = res.parts, k = 'dive.' + S.route;
@@ -63,6 +66,33 @@ export function recordOps(S, res, o) {
 		add('league.played', G.member); add('league.form', G.form);
 		for (const e of G.log) if (e[1] === 'evo') add('league.form', e[2]);
 		if (G.mega) { bump('lg.mega'); add('mega.seen', G.mega); }
+	}
+	// the level-ups' counters (js/expedition/levelups.js record; as expsave.js)
+	if (S.lv) {
+		const pl = S.w.pl; let picks = 0, items = 0;
+		for (const [, kind, , ti] of S.lv.log) {
+			if (kind === 'up' || kind === 'new' || kind === 'vit' || kind === 'swap') { picks++; bump('lv.rar.' + ((ti | 0) + 1)); }
+			if (kind === 'swap') bump('lv.swaps');
+			if (kind === 'item') items++;
+			if (kind === 'skip') bump('lv.skips');
+		}
+		bump('lv.cards', picks); bump('lv.items', items);
+		if (pl.xv) best('lv.vitmax', pl.xv.reduce((a, x) => Math.max(a, x.lvl), 0));
+		if (pl.xi) best('lv.stacks', Object.values(pl.xi).reduce((a, n) => a + n, 0));
+	}
+	// the economy's (js/expedition/economy.js record)
+	if (S.eco) { bump('eco.earned', S.eco.earned); best('eco.best', S.eco.earned); bump('eco.spent', S.eco.spent); for (const key of ['shop', 'rocks', 'berries']) bump('eco.' + key, S.eco.log[key] || 0); }
+	for (const [fam, pts] of o.research || []) bump('rs.' + fam, pts);   // (research: each family's points)
+	if (S.rx) { for (const key of Object.keys(S.rx.by)) bump('rx.' + key, S.rx.by[key]); bump('rx.total', S.rx.n); }
+	if (S.ult) { bump('ult.casts', S.ult.casts); best('ult.best', S.ult.casts); bump('ult.sig', S.ult.sigs); }
+	// the tasks' metrics of this run, for the 2D game to count (meta.js claim3d -> taskRun; a 2D Dive counts these too)
+	{
+		const T3 = 'm3d.t.' + o.dev + '.', X3 = 'm3d.x.' + o.dev + '.', gen = (o.seen | 0) + 1;
+		bump(T3 + 'runs'); bump(T3 + 'kos', p.kills); bump(T3 + 'secs', p.time);
+		if (S.lg) { bump(T3 + 'evos', S.lg.evo); bump(T3 + 'megas', S.lg.mega ? 1 : 0); bump(T3 + 'finals', o.final ? 1 : 0); }
+		if (S.rx) bump(T3 + 'reactions', S.rx.n);
+		if (S.ult) bump(T3 + 'casts', S.ult.casts);
+		best(X3 + 'zone', gen * 1e6 + Math.min(4, p.zone | 0));   // (a single run's best, since the 2D game last counted)
 	}
 	// 3D's own: one more 3D run from this browser, and its pay owed to it (the 2D game pays it into the wallet)
 	bump('m3d.n.' + o.dev);

@@ -37,6 +37,8 @@
 //   yours      (part 12) what your save brings, as to an Expedition: o.form (a later stage of the family you own: you start
 //              as it), o.perks (the family's bought upgrades), o.meta (the Lab: its stats, tools, a Max Revive, the Rare
 //              Candy's two levels, the items you have not unlocked left out), o.shiny (its look).
+//   the floor's (part 13) the 2D floor's own (its ecoLayout): Meowth's stall on about 1 plain floor in 4 (open all floor),
+//   economy    2 berry bushes, 3 gold rocks; KOs and rocks pay ₽ for the stall. The Expedition's economy runs it (expeco.js).
 //   the save   (part 6) divesave.js: the deepest floor, the stage, the Seal (o.seal: +10 % damage, -10 % taken), the pay.
 // Not here yet (later parts): a new special at levels 4, 10, 16…, the League, the red ground, the stall, the bushes
 // and the gold rocks, routes and stages in the save, the Weekly Dive, co-op.
@@ -44,12 +46,13 @@
 import { K as SK, CELL, groundAt, newState, setCell } from './sim.js';
 import { CK, U, newWorld, tick, addEnemy, addBoss, gainXp, canFire, hurtPlayer } from './combat.js';
 import { setup as setupLevels, tickStats, takeItem, newCard, moveCands, trainCards } from './explevel.js';
-import { rollOffers } from './expeco.js';
+import { rollOffers, setupEco, tickEco, pickTake, pickClose } from './expeco.js';
 import { setupRx, tickRx } from './exprx.js';
 import { setupUlt, holdUlt, tickUlt } from './expult.js';
 import { applyPerks, perkTools } from './expperks.js';
 import { memberOf, setupLeague, learnKit, processLeague } from './expleague.js';
 import { syncPerks } from './expcap.js';
+import { researchKo } from './expmeta.js';
 import { tickFog } from './expfog.js';
 import { diveFrom, diveRoom } from './divegen.js';
 import { walkable } from './expedition.js';
@@ -93,6 +96,7 @@ export function newDive(data, X, R, o = {}) {
 	if (o.perks) applyPerks(S, o.perks);
 	if (own) { setupLevels(S, X.L, lv); S.syncPerks = () => syncPerks(S); }
 	if (S.up) perkTools(S);
+	if (own && X.E && o.eco !== false) setupEco(S);   // (part 13: ₽, the stall, the bushes, the rocks)
 	if (league) { S.maxMoves = R.K.SLOTS; setupLeague(S, member, o.form | 0); S.lg.shiny = !!o.shiny; for (let i = 1; i < R.K.SLOTS; i++) learnKit(S, i); }   // (part 10: the basic and both specials from the start)
 	if (X && X.R && o.rx !== false) setupRx(S);
 	if (X && X.Uu && o.ult !== false) setupUlt(S, { walk: walkable, auto: !!o.ultAuto });
@@ -106,6 +110,7 @@ export function newDive(data, X, R, o = {}) {
 	roles(S);
 	if (S.kit && S.lv && w.offerCards) { const offer0 = w.offerCards; S.learnAt = {}; w.offerCards = () => { if (S.lg) { processLeague(S); if (S.lg.pending) return offer0(); } return learnCards(S) || offer0(); }; }   // (a League run: the level's evolution first; a branch to choose is the level's cards)   // (part 8)
 	startFloor(S, f0, 0);
+	if (S.meta && !w.kos) w.kos = [];   // (part 13: research: every KO is read from here, as an Expedition's)
 	if (S.meta) {   // the Lab's (as an Expedition's): its stats, a Max Revive to start with, the Rare Candy's two levels
 		S.syncPerks();
 		if (S.meta.eff.lab.revive && S.lv && X.L.I.IT.maxrevive) takeItem(S, 'maxrevive');
@@ -219,10 +224,36 @@ function place(S, x, z, cx, cz, fly) {
 	return ok ? [x, z] : [cx, cz];
 }
 
+/** (part 13) A Dive floor's stall, bushes and rocks, as the 2D game lays them (js/expedition/dive.js ecoLayout): Meowth's
+ *  stall on about 1 plain floor in 4, on the way (open all floor); 2 berry bushes; 3 gold rocks (6-14). They keep 5
+ *  tiles from each other and from the chests, 6 from the spawn, 4 from the stairs and the landmark. */
+export function ecoLayout(S, room) {
+	const L = room.dive, R = S.R, r = R.rng(S.seed, S.route, L.floor, 0xEC0), objs = [], held = [];
+	const near = (p, q, k) => Math.abs(p[0] - q[0]) + Math.abs(p[1] - q[1]) < k;
+	for (const c of [...(L.chests || []), ...(L.plugs || []).map((pg) => pg.chest)]) if (c) held.push(Array.isArray(c) ? c : c.at);
+	const put = (kind, p, v = 0) => { held.push(p); objs.push({ i: objs.length, kind, cx: p[0], cz: p[1], x: (p[0] + 0.5) * CELL, y: 0, z: (p[1] + 0.5) * CELL, v }); };
+	const lm = L.landmark ? (Array.isArray(L.landmark) ? L.landmark : L.landmark.at) : null, free = [];
+	for (let y = 2; y < L.h - 2; y++) for (let x = 2; x < L.w - 2; x++) {
+		const p = [x, y];
+		if (L.kind[y * L.w + x] !== R.F.FLOOR || near(p, L.spawn, 6) || near(p, L.stairs, 4) || held.some((q) => near(p, q, 5)) || (lm && near(p, lm, 4))) continue;
+		free.push(p);
+	}
+	const take = () => { if (!free.length) return null; const j = Math.floor(r() * free.length), p = free[j]; free.splice(j, 1); for (let k = free.length - 1; k >= 0; k--) if (near(free[k], p, 5)) free.splice(k, 1); return p; };
+	let spot = -1;
+	if (!L.cadence.arena && !L.cadence.guardian && r() < 0.25) {
+		const mid = L.path[Math.floor(L.path.length * (0.3 + r() * 0.3))], sp = mid && !held.some((q) => near(mid, q, 5)) ? [mid[0], mid[1]] : take();
+		if (sp) { spot = objs.length; put('meowth', sp); for (let k = free.length - 1; k >= 0; k--) if (near(free[k], sp, 5)) free.splice(k, 1); }   // (the bushes and the rocks keep off the stall too)
+	}
+	for (let k = 0; k < 2; k++) { const p = take(); if (p) put('berry', p); }
+	for (let k = 0; k < 3; k++) { const p = take(); if (p) put('rock', p, 6 + Math.floor(r() * 9)); }
+	return { objs, visits: spot >= 0 ? [{ v: 0, at: 0, until: 1e9, spot }] : [], cometAt: 1e9 };
+}
 /** Floor f begins: its room is already the fight's. The groups (asleep), the lost Pokémon, the alpha or the guardian. */
 function startFloor(S, f, t) {
 	const w = S.w, R = S.R, K = R.K, room = w.room, L = room.dive;
 	Object.assign(S, { floor: f, zone: f, ft: t, groups: [], boss: null, sealed: false, bossFell: false, stairsT: 0, ropeT: 0, ropeSaid: false, sealSaid: false, stray: null, reinT: null, reinN: 0, cadence: L.cadence, tg: [] });
+	S.zs = t; room.zone = Math.min(3, 1 + Math.floor((f - 1) / 10)); room.map = S.map;
+	if (S.eco) room.eco = ecoLayout(S, room);   // (part 13)
 	// (part 5) the chests (the floor's, and each pocket's), the landmark
 	{ const seen = new Set(), list = []; for (const c of [...room.chests, ...room.plugs.map((pg) => pg.chest)]) { if (!c) continue; const key = c[0] + ',' + c[2]; if (seen.has(key)) continue; seen.add(key); list.push({ x: c[0], z: c[2], t: 0, open: false, pocket: room.pocketChest(c) }); }
 		S.chests = list; S.lm = room.landmark && LANDMARKS[room.landmark.kind] ? { kind: room.landmark.kind, x: room.landmark.at[0], z: room.landmark.at[2], t: 0, used: false, seen: false } : null; }
@@ -458,6 +489,12 @@ export function stepDive(S, input, dt = SK.TICK) {
 	S.says.length = 0;
 	if (S.ended) return S;
 	if (S.ult && holdUlt(S, dt)) { w.events.length = 0; return S; }
+	if (S.pick) {   // (part 13) the stall is open: the fight holds until you close it (autoPick: closed at once)
+		w.events.length = 0;
+		if (w.autoPick === undefined || w.autoPick === null) return S;
+		if (S.pick.onTake) pickTake(S, 0); else if (S.pick.kind === 'shop' || S.pick.kind === 'hypno') pickClose(S); else for (let i = 0; S.pick && i < S.pick.ids.length; i++) pickTake(S, i);
+		S.pick = null;
+	}
 	const t0 = w.t;
 	w.cap = K.REIN.cap + 60;
 	if (S.kit) { roles(S); input = w.pl.choices ? input : dodgeInput(S, input, dt); }
@@ -477,6 +514,8 @@ export function stepDive(S, input, dt = SK.TICK) {
 			if (tag !== 'rein') loot(S, K.LOOT.ko + K.LOOT.koPer * S.floor);
 			if (tag === 'mega') loot(S, K.LOOT.alpha + K.LOOT.alphaPer * S.floor); else if (tag === 'legend') loot(S, K.LEGEND.loot + K.LEGEND.lootPer * S.floor); }
 	}
+	if (S.eco) tickEco(S, dt);   // (part 13: KOs pay ₽ and research; the stall, the bushes, the rocks)
+	else if (w.kos) for (const ko of w.kos.splice(0)) researchKo(S, ko);
 	comboTick(S, dt);
 	// the groups: one wakes when you come close, or when one of it is hit
 	const wr = tiles(K.WAKE_R);
@@ -521,6 +560,7 @@ export function hudLine(S) {
 	if (S.ropeT > 0) parts.push('ROPE ' + Math.max(0, S.R.K.ROPE_T - S.ropeT).toFixed(1) + ' s');
 	if (S.combo.n >= 2) parts.push('COMBO x' + S.combo.n);
 	if (S.obeliskT > 0) parts.push('OBELISK ' + Math.ceil(S.obeliskT) + ' s');
+	if (S.eco) parts.push('₽ ' + S.coins);
 	return parts.join(' · ');
 }
 /** The end screen's parts and lines (the 2D game's scoreParts and result). */
