@@ -10,7 +10,9 @@ Things that shipped without being checked the way a player uses them.
 
 - [x] 1a. Gold buys packs: click the Buy button in a browser, signed in, against the real server code. Done:
       it works; pinned by battlecards_gold_packs_page_test.mjs (10 checks).
-- [ ] 1b. The Dive's red ground: look at the slam circle and the charge lane; fix what looks wrong.
+- [x] 1b. The Dive's red ground: look at the slam circle and the charge lane; fix what looks wrong. Done: both
+      showed, but dull and with no sense of when they land. They are brighter and fill from the foe outward as they
+      wind up (full: it lands), as the 2D game's do.
 - [ ] 1c. Watching a friend's 3D Dive over the site's own relay (two signed-in accounts, the real server code), not the
       test channel.
 - [ ] 1d. 3D co-op with three and four players (one machine, separate browser sessions).

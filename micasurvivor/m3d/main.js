@@ -431,6 +431,13 @@ function draw(t) {
 			else if (f.kind === 'meteor') { const k = Math.max(0, Math.min(1, f.t / f.fall)); if (f.t > 0) shots.add(f.x + (1 - k) * 2.5, f.y + 0.3 + (1 - k) * 10, f.z, 0.45, c); if (!f.seen) { f.seen = true; flashes.arc(f.x, f.y, f.z, f.r, 0, 6.2832, c, f.fall - Math.min(0, f.t), 0.9); } }
 			else if (f.kind === 'patch' && !f.seen) { f.seen = true; flashes.arc(f.x, f.y, f.z, f.r, 0, 6.2832, c, f.life, 0); }
 		}
+		// the red ground fills from the foe outward while it winds up (the outline is the whole reach; full: it lands)
+		for (let i = teles.length - 1; i >= 0; i--) {
+			const q = teles[i], k = Math.min(1, (performance.now() - q.at) / 1000 / q.T);
+			if (q.kind === 'slam') flashes.arc(q.x, 0.08, q.z, Math.max(0.2, q.r * k), 0, 6.2832, '#ff2a1f', 0.06, 0);
+			else flashes.bar([q.x, 0.08, q.z], [Math.cos(q.a), 0, Math.sin(q.a)], Math.max(0.2, q.len * k), q.w * 0.5, '#ff2a1f', 0.06);
+			if (k >= 1) teles.splice(i, 1);
+		}
 		const dv = drun || (rv && rv.dive ? rv : null);   // (a Dive: this page's, or the one it watches)
 		if (dv) {   // a Dive: who sleeps (a pale bead that bobs), the elites (a bead in their affix's colour), the lost Pokémon
 			if (drun) for (const e of world.enemies) { if (e.dead) continue; const top = e.a.y + Math.max(1.1, (e.cr || 0.4) * 2) + 0.4; if (e.asleep) shots.add(e.a.x + 0.25, top + Math.sin(t * 1.6 + e.id) * 0.12, e.a.z, 0.09, '#dbe8ff'); else if (e.xaff) shots.add(e.a.x, top, e.a.z, 0.13, DIVE_AFF[e.xaff]); }
@@ -552,6 +559,7 @@ function frame(now) {
 }
 // ---------------------------------------------------------------- (P2) a generated level: the exit and the minimap
 let leaving = false, mapBase = null, runOver = null;
+const teles = [];   // (the red ground now winding up: { kind, x, z, r | a, len, w, T, at })
 const DIVE_AFF = { swift: '#ffe14d', tough: '#7fc8ff', rage: '#ff4d5e' };
 const HAZ_COL = { mud: '#7a5a34', brambles: '#3f7a3a', quicksand: '#d9b56a', burning: '#ff6a2a' };   // (the 2D game's colours for them)
 const exitDist = () => Math.hypot(state.x - room.exit[0], state.z - room.exit[2]);
@@ -677,7 +685,8 @@ function fightEvents(events) {
 		else if (ev.k === 'hurt') { bob = 0.35; note(`hit for ${(+ev.d).toFixed(0)}`, 700); }
 		else if (ev.k === 'bossdown' && ev.guardian && drun) { if (keepGuardian()) note('Stage and Seal saved', 3000); }
 		else if (ev.k === 'tele') {   // (part 9) the red ground: a circle (a slam) or a lane (a charge), for as long as it winds up
-			if (ev.kind === 'slam') { flashes.arc(ev.x, 0.06, ev.z, ev.r, 0, 6.2832, '#ff3b30', ev.T, 0.9); flashes.arc(ev.x, 0.05, ev.z, ev.r, 0, 6.2832, '#ff6b5a', ev.T, 0); }
+			teles.push({ ...ev, at: performance.now() });   // (it fills as it winds up: full is when it lands, as the 2D game's)
+			if (ev.kind === 'slam') { flashes.arc(ev.x, 0.07, ev.z, ev.r, 0, 6.2832, '#ff1f14', ev.T, 0.88); flashes.arc(ev.x, 0.05, ev.z, ev.r, 0, 6.2832, '#ff6b5a', ev.T, 0); }
 			else flashes.bar([ev.x, 0.06, ev.z], [Math.cos(ev.a), 0, Math.sin(ev.a)], ev.len, ev.w * 0.5, '#ff3b30', ev.T + 0.3);
 		}
 		else if (ev.k === 'slam') { burst(ev.x, 0.4, ev.z, '#ff6b5a', ev.big ? 26 : 14, ev.big ? 6 : 4, { up: 2.5, life: 0.4, r: 0.1 }); play([['quake']]); }
