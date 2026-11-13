@@ -1770,6 +1770,19 @@ gold rocks, the dark floors' lighting, the tasks' counters.
 
 Tests: `micasurvivor_playflow_test.mjs` grows by 5 checks (176).
 
+## 5.64 3D Dive is LIVE (2026-11-13). Owner: "go live with 3D Dive".
+
+START on Dive, playing alone, opens the 3D page (the default of `dive3d()` in `js/ui/play-ui.js`).
+
+- The Weekly Dive, local play and online play keep the 2D Dive: the 3D one has none of them.
+- The 2D Dive is archived, not deleted. A browser goes back to it with `/micasurvivor/?dive3d=0` (that browser
+  only); `?dive3d=1` returns to 3D.
+- A browser with no WebGL 2 keeps the 2D Dive without being asked.
+
+Gaps next to the 2D Dive when it went live, to close next: starting as a later form you own, the family's
+bought upgrades, the Lab's boosts. Then: the stall / berry bushes / gold rocks, the dark floors' lighting, the
+tasks' counters.
+
 ## 6. Dive in 2D: built
 
 **D0 — find the stairs (small; can ship first, on its own).** *Built 2026-11-11 (`overworld/tests/micasurvivor_dive_stairs_test.mjs`). As built: the stairs took their own orange mark, so the rocks and Meowth keep their gold; the HUD arrow comes up after 25 s on a floor, or at once when its boss falls.*

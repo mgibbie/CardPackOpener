@@ -612,13 +612,13 @@ G.PlayUI = (() => {
     return '/micasurvivor/m3d/?exp=' + seed + '&map=' + encodeURIComponent(st.map) + '&diff=' + encodeURIComponent(st.diff) + '&dex=' + dex + (form && form !== dex ? '&form=' + form : '') + (mode === 'exp-survival' ? '&mode=survival' : '');
   }
 
-  // 3D DIVE (Plans/MICASURVIVOR_3D_PLAN.md §5.63): NOT live. A browser opts in with /micasurvivor/?dive3d=1 (this browser
-  // only; ?dive3d=0 goes back): then START on Expedition · Dive, playing alone, opens the 3D page with the same member,
-  // route and start floor. Everyone else, the Weekly Dive, local and online play keep the 2D Dive. Going live is the
-  // owner's word and one line: dive3d()'s default.
+  // 3D DIVE, LIVE (owner, 2026-11-13: "go live with 3D Dive"; Plans/MICASURVIVOR_3D_PLAN.md §5.64): START on Dive,
+  // playing alone, opens the 3D page with the same member, route and start floor. The Weekly Dive, local and online play
+  // keep the 2D Dive (the 3D one has none of them), and the 2D Dive is ARCHIVED, not deleted: a browser goes back to it
+  // with /micasurvivor/?dive3d=0 (this browser only; ?dive3d=1 returns to 3D). No WebGL 2: the 2D Dive, without asking.
   const D3D_KEY = 'micasurvivor_dive3d';
-  try { const m = /[?&]dive3d=([01])\b/.exec(location.search); if (m) { if (m[1] === '1') localStorage.setItem(D3D_KEY, '1'); else localStorage.removeItem(D3D_KEY); } } catch (e) { /* a convenience */ }
-  const dive3d = () => { try { return localStorage.getItem(D3D_KEY) === '1'; } catch (e) { return false; } };
+  try { const m = /[?&]dive3d=([01])\b/.exec(location.search); if (m) { if (m[1] === '0') localStorage.setItem(D3D_KEY, '0'); else localStorage.removeItem(D3D_KEY); } } catch (e) { /* a convenience */ }
+  const dive3d = () => { try { return localStorage.getItem(D3D_KEY) !== '0'; } catch (e) { return true; } };
   /** The 3D page's address for this Dive, or null when it is a 2D one. */
   function dive3dUrl(mode) {
     if (!dive3d() || !canDraw3d() || st.players !== 'solo' || mode !== 'exp-dive' || st.variant !== 'dive') return null;
