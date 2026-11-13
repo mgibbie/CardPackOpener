@@ -160,6 +160,12 @@ try {
 	A(joined && own1.seal === false && own1.up === true && own1.maxHp > 0, "a guest with a new save: no Seal, its family's upgrades read (none bought)", JSON.stringify(own1));
 	const direct = await waitFor(() => A1.evaluate(() => window.__m3d.link.modes.bob === 'direct'), 45000);
 	A(direct, 'they are linked DIRECTLY: the old negotiation the 2D lobby left on the server is cleared first (before that fix the host read it and dropped to the slow relay for the whole run)', JSON.stringify(await A1.evaluate(() => [window.__m3d.link.modes, window.__m3d.link.waited])));
+	// ---- (plan 3b) the party beats a guardian: the guest keeps the stage and the Seal in its own save, at once
+	const bobSave = () => B1.evaluate(() => { try { const s = JSON.parse(localStorage.getItem('micasurvivorexp_save.mp:bob') || 'null'); return s ? { stage: s.counters['dive.forest.stage'] || 0, seal: (s.sets['dive.seal'] || []).includes('forest') } : null; } catch (e) { return null; } });
+	const bs0 = await bobSave();
+	await A1.evaluate(() => { window.__m3d.dive.stage = 26; });   // (what a guardian's fall on floor 25 leaves on the host's Dive)
+	const gotStage = await waitFor(async () => { const s = await bobSave(); return !!s && s.stage === 26 && s.seal; }, 15000);
+	A((!bs0 || (!bs0.stage && !bs0.seal)) && gotStage && await B1.evaluate(() => window.__m3d.noteLog.includes('Stage and Seal saved')), "a guardian falls: the guest's own save has stage 26 and the forest's Seal at once, and its screen says so", JSON.stringify([bs0, await bobSave()]));
 	// ---- (part 3) the run is kept by both: the team's result, the same pay, each in their own save
 	const saveOf = (p, who) => p.evaluate((who) => { try { const s = JSON.parse(localStorage.getItem('micasurvivorexp_save.mp:' + who) || 'null'); return s ? { c: s.counters || {}, dev: localStorage.getItem('micasurvivorexp_dev.mp:' + who) } : null; } catch (e) { return null; } }, who);
 	A(await A1.evaluate(() => window.__m3d.diveSave.practice === null && window.__m3d.diveSave.ok === true), "a lobby's host plays a Dive that can be kept (its start's own parameters are fair)", JSON.stringify(await A1.evaluate(() => window.__m3d.diveSave)));
@@ -196,7 +202,7 @@ try {
 	const own2 = await B1.evaluate(() => { const m = window.__m3d, S = m.guestDive; return { maxHp: m.world.pl.maxHp, seal: S.seal, hp: S.up && S.up.hp, meta: !!S.meta, practice: m.guestPractice }; });
 	A(own2.seal === true && own2.hp === 40 && own2.maxHp === own1.maxHp + 40, `the guest starts with what its own save brings: the route's Seal and its family's + 40 HP (${own1.maxHp} -> ${own2.maxHp})`, JSON.stringify(own2));
 	A(own2.meta === true, "and the Lab's row is its own too", JSON.stringify(own2));
-	A(await A1.evaluate(() => window.__m3d.dive.seal === false), "the host's Dive has no Seal: each player's is their own");
+	A(await A1.evaluate(() => window.__m3d.dive.seal === true && window.__m3d.dive.up && !window.__m3d.dive.up.hp), "the host has her own: the Seal from the first run's guardian, and none of bob's + 40 HP", JSON.stringify(await A1.evaluate(() => [window.__m3d.dive.seal, window.__m3d.dive.up && window.__m3d.dive.up.hp])));
 	await A1.close(); await B1.close();
 
 	// ---- an Expedition · Classic lobby
