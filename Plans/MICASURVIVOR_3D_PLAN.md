@@ -1703,6 +1703,22 @@ Not in yet: the Weekly Dive and its board.
 Tests: `micasurvivor_m3d_dive_boards_test.mjs` 13 checks against the real server handler;
 `micasurvivor_m3d_dive_page_test.mjs` now 45.
 
+## 5.60 3D Dive, eighth part: built (2026-11-13). A new special at levels 4, 10, 16…
+
+The 2D Dive's rule (`LEARN_AT`). On those levels the level's cards are:
+
+1. learn X, forget special 1
+2. learn X, forget special 2
+3. train, and keep your moves
+
+X is your League member's next kit move (Charmander: Wing Attack at level 4), then a move of your types, picked
+by the run's seed. The learned move takes the forgotten special's slot and key. The basic is never offered up.
+Other levels deal the usual cards.
+
+Not in yet: the League in a Dive (evolutions, the member's stage factor on its moves).
+
+Tests: `micasurvivor_m3d_dive_learn_test.mjs` 19 checks in node.
+
 ## 6. Dive in 2D: built
 
 **D0 — find the stairs (small; can ship first, on its own).** *Built 2026-11-11 (`overworld/tests/micasurvivor_dive_stairs_test.mjs`). As built: the stairs took their own orange mark, so the rocks and Meowth keep their gold; the HUD arrow comes up after 25 s on a floor, or at once when its boss falls.*
