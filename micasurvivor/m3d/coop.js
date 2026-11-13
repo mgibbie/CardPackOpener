@@ -52,11 +52,15 @@ export function hostStep(w, dt = K.TICK) {
 }
 /** The host's frame for its guests: the fight (net.js), and what a guest needs beyond what a watcher does: what each
  *  enemy's touch does, every other player, enemy shots with their damage, and whether the fight is waiting. */
+/** The other players, as a frame's `m` lane: [id, dex, x, y, z, facing, bits, hp, maxHp] each (the host's frame, and a tape's). */
+export function mateRows(w) {
+	return w.mates.map((m) => { const s = m.s; return [m.id, m.dex, Math.round(s.x * P), Math.round(s.y * P), Math.round(s.z * P), Math.round(((s.facing % 6.2832) + 6.2832) % 6.2832 * 256 / 6.2832) & 255,
+		(s.grounded ? 1 : 0) | (s.sliding ? 2 : 0) | (s.swimming ? 4 : 0) | (m.dead ? 32 : 0), Math.ceil(m.hp), m.maxHp]; });
+}
 export function hostFrame(w, events) {
 	const f = frame(w, events), by = new Map(w.enemies.map((e) => [e.id, e]));
 	for (const r of f.e) { const e = by.get(r[0]); r.push(Math.round(e.dmg * 10), e.tg || 0); }
-	f.m = w.mates.map((m) => { const s = m.s; return [m.id, m.dex, Math.round(s.x * P), Math.round(s.y * P), Math.round(s.z * P), Math.round(((s.facing % 6.2832) + 6.2832) % 6.2832 * 256 / 6.2832) & 255,
-		(s.grounded ? 1 : 0) | (s.sliding ? 2 : 0) | (s.swimming ? 4 : 0) | (m.dead ? 32 : 0), Math.ceil(m.hp), m.maxHp]; });
+	f.m = mateRows(w);
 	f.x = w.eshots.map((p) => [p.id, Math.round(p.x * P), Math.round(p.y * P), Math.round(p.z * P), Math.round(p.vx * V), Math.round(p.vy * V), Math.round(p.vz * V), Math.round(p.dmg * 10), Math.max(0, TYPES.indexOf(p.mtype)), Math.round((p.life - p.t) * 100)]);
 	f.c = { wait: w.waiting || w.pl.pending > 0 ? 1 : 0, host: w.pl.mon.dex }; if (w.allDown) f.c.over = 1;
 	const gifts = {}; for (const m of w.mates) if (m.gifts.length) gifts[m.id] = m.gifts.splice(0); if (Object.keys(gifts).length) f.c.gifts = gifts;

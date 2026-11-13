@@ -273,6 +273,7 @@ const MSURV_SNAPSHOT_MAX = 24_000;         // one serialized snapshot (a busy la
 const MSURV_REPLAY_MAX = 1_200_000;        // the packed code (measured: a busy 30-min run, ~65 foes on screen, packs to 679 KB)
 const MSURV_REPLAY_UNPACKED = 8_000_000;   // gunzip stops here
 const MSURV_REPLAY_FRAMES = 30_000;        // frames in one replay (4 h at 2 a second)
+const MSURV_REPLAY3D_PER_USER = 20;        // stored 3D replays per player (their own list: msurvreplays3d:<user>)
 const MSURV_REPLAY_PER_USER = 10;          // stored replays per player: a v1 tape, a one-segment v2 tape or a SESSION each
 // MICASURVIVOR replay SESSIONS (U4, format v2; micasurvivor/js/mica/replay.js): a long run is cut into segments (each one
 // packed tape under MSURV_REPLAY_MAX, starting with a keyframe), uploaded as the run goes by the HOST (or a solo player):
@@ -311,6 +312,7 @@ function cleanMsurvReplayMeta(m) {
 		time: int(m.time, 0, 12 * 3600), level: int(m.level, 0, 9999), kills: int(m.kills, 0, 1e8), bosses: int(m.bosses, 0, 1e5),
 		dead: !!m.dead, coop: (Array.isArray(m.coop) ? m.coop : []).map(x => str(x, 40)).filter(x => /^[a-z0-9_.-]{1,40}$/.test(x)).slice(0, 4),
 		frames: int(m.frames, 0, MSURV_SESSION_SEGS * MSURV_SEG_FRAMES),
+		...(m.d3 === true ? { d3: true } : {}),   // (a 3D run's tape, plan 3f: the 2D player cannot play it, and a 2D score cannot carry it)
 		// U4: a session's segments and players (absent on a v1 tape)
 		...(m.segs != null ? { segs: int(m.segs, 0, MSURV_SESSION_SEGS) } : {}), ...(m.np != null ? { np: int(m.np, 0, 8) } : {}),
 		// DLC D0b: an Expedition run's content version + map / difficulty (absent for a base run)
@@ -2364,8 +2366,16 @@ export default async function handler(req, env) {
 				if (!(start === 1 || (start > 25 && (start - 1) % 25 === 0)) || start > floor) return json({ error: 'bad start floor' }, 400);
 				if ((floor - start) * MSURV_DIVE_SEC_PER_FLOOR > time + 30) return json({ error: 'implausible depth', min: (floor - start) * MSURV_DIVE_SEC_PER_FLOOR - 30 }, 400);
 				if (!msurvExpDvOk(body.dv)) return json({ error: 'a Dive score needs its content version' }, 400);
+				// (plan 3f) a 3D Dive's replay: its own 3D tape (or its co-op party's host's), of this route and this long
+				let dReplay = '';
+				if (body.replay != null) {
+					const rid = String(body.replay), rr = body.d3 === true && REPLAY_ID_RE.test(rid) ? await store.get('msurvreplay:' + rid) : null, m = rr && rr.meta;
+					const ok = !!rr && !!m && m.d3 === true && (rr.by === username || (co.n > 0 && Array.isArray(m.coop) && m.coop.includes(username))) && m.mode === 'exp-dive' && m.map === (weekly ? String(body.route || '') : body.route) && Math.abs((m.time | 0) - time) <= 2;
+					if (!ok) return json({ error: 'replay does not match this run' }, 400);
+					dReplay = rid;
+				}
 				const dex = int(body.dex);
-				const run = { score: floor, floor, time, start, escaped: body.escaped === true, route: weekly ? String(body.route || '').slice(0, 12) : body.route,
+				const run = { ...(dReplay ? { replay: dReplay } : {}), score: floor, floor, time, start, escaped: body.escaped === true, route: weekly ? String(body.route || '').slice(0, 12) : body.route,
 					kills: Math.max(0, Math.min(10_000_000, int(body.kills) || 0)), level: Math.max(1, Math.min(9999, int(body.level) || 1)),
 					dex: msurvDexOk(dex) ? dex : 0, shiny: body.shiny === true, expMode: 'exp-dive', dv: body.dv, ...(co.n ? { n: co.n, team: co.team } : {}) };
 				const now = Date.now(), prev = user.runBest[bestKey];
@@ -2408,7 +2418,7 @@ export default async function handler(req, env) {
 			// 3D Expedition (owner 2026-11-12): a 3D zone plays faster than a 2D one, so its scores have their own boards:
 			// `d3: true` puts ':3d' in every key (the score, time, survival and season boards and the player's bests)
 			if (body.d3 !== undefined && body.d3 !== true) return json({ error: 'd3 is true or absent' }, 400);
-			if (body.d3 === true) { if (body.replay !== undefined) return json({ error: 'a 3D score carries no replay' }, 400); rulesSub += ':3d'; }
+			if (body.d3 === true) rulesSub += ':3d';   // (its replay, if any, must be a 3D tape: checked where the replay is)
 			expCo = msurvCoop(body, action === 'run-score');
 			if (expCo.error) return json({ error: expCo.error }, 400);
 			if (expCo.n && (body.expMode === 'exp-survival' || body.board === 'survival')) return json({ error: 'Survival has no co-op board' }, 400);
@@ -2472,7 +2482,10 @@ export default async function handler(req, env) {
 				const rid = String(body.replay);
 				const rr = REPLAY_ID_RE.test(rid) ? (await store.get('msurvreplay:' + rid)) || (await store.get('msurvsess:' + rid)) : null;   // (U4: or a session)
 				const m = rr && rr.meta;
-				if (!rr || rr.by !== username || !m || m.mode !== body.expMode || m.map !== body.map || m.diff !== body.diff
+				// (a 3D score: a 3D tape, and the other way round. A co-op party's run has ONE tape, its host's: a player named in that
+				//  tape's party may put it on their own row.)
+				const mine3 = !!rr && (rr.by === username || (expCo.n > 0 && !!m && Array.isArray(m.coop) && m.coop.includes(username)));
+				if (!rr || !mine3 || !m || (m.d3 === true) !== (body.d3 === true) || m.mode !== body.expMode || m.map !== body.map || m.diff !== body.diff
 					|| Math.abs((m.time | 0) - time) > 2 || (parts && (m.kills | 0) !== parts.kills)) return json({ error: 'replay does not match this run' }, 400);
 				replay = rid;
 			}
@@ -3844,6 +3857,23 @@ export default async function handler(req, env) {
 		const code = String(body.code || '');
 		if (code.length > MSURV_REPLAY_MAX) return json({ error: 'replay too large', max: MSURV_REPLAY_MAX }, 413);
 		if (!/^[GR]1\.[A-Za-z0-9_-]+$/.test(code)) return json({ error: 'bad replay' }, 400);
+		// (plan 3f) a 3D run's tape: {v: 3, h, f: [frame objects]} (m3d/net.js Tape). Kept in a list of the player's OWN 3D replays.
+		if (body.d3 === true) {
+			const text3 = await unpackCapped(code, MSURV_REPLAY_UNPACKED);
+			let t3 = null; try { t3 = text3 ? JSON.parse(text3) : null; } catch { t3 = null; }
+			if (!t3 || typeof t3 !== 'object' || Array.isArray(t3) || t3.v !== 3 || !t3.h || typeof t3.h !== 'object' || Array.isArray(t3.h) || !Array.isArray(t3.f) || !t3.f.length
+				|| !t3.f.every(x => x && typeof x === 'object' && !Array.isArray(x) && Number.isFinite(x.t) && Array.isArray(x.p))) return json({ error: 'not a 3D run replay' }, 400);
+			if (t3.f.length > MSURV_REPLAY_FRAMES) return json({ error: 'too many frames', max: MSURV_REPLAY_FRAMES }, 413);
+			const K3 = 'msurvreplays3d:' + username, i3 = (await store.get(K3)) || { ids: [] };
+			const l3 = Array.isArray(i3.ids) ? i3.ids.filter(e => e && REPLAY_ID_RE.test(String(e.id))) : [];
+			let id3 = null; for (let i = 0; i < 8; i++) { id3 = randomBytes(4).toString('hex'); if (!(await store.get('msurvreplay:' + id3))) break; }
+			const meta3 = { ...cleanMsurvReplayMeta({ ...(body.meta && typeof body.meta === 'object' ? body.meta : {}), d3: true }), frames: t3.f.length };
+			await store.setJSON('msurvreplay:' + id3, { code, meta: meta3, by: username, when: now });
+			const n3 = [{ id: id3, when: now }, ...l3], gone = [];
+			while (n3.length > MSURV_REPLAY3D_PER_USER) { const e = n3.pop(), old = await store.get('msurvreplay:' + e.id); if (old && old.by === username && old.meta && old.meta.d3 === true) { await store.delete('msurvreplay:' + e.id); gone.push(e.id); } }   // (only this player's own 3D rows)
+			await store.setJSON(K3, { ids: n3 });
+			return json({ ok: true, id: id3, evicted: gone, max: MSURV_REPLAY3D_PER_USER });
+		}
 		const rid = /^[0-9a-f]{8,16}$/.test(String(body.rid || '')) ? String(body.rid) : '';
 		const IKEY = 'msurvreplays:' + username;
 		const idx = (await store.get(IKEY)) || { ids: [] };

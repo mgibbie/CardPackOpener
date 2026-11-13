@@ -70,7 +70,7 @@ export function mountRunUi(doc, o = {}) {
 		if (last.board !== bk) {
 			last.board = bk; const b = v.board;
 			$('rx-board').innerHTML = !b ? '' : `<div class="rx-panel wide"><h1>${esc(b.title)}</h1><div class="rx-btns">${b.tabs.map((t) => `<button class="rx-btn small ${t.on ? 'red' : ''}" data-board="${esc(t.id)}">${esc(t.text)}</button>`).join('')}</div>`
-				+ (b.rows.length ? `<div class="rx-board">${b.rows.map((r) => `<div class="rx-brow ${r.me ? 'me' : ''}"><span>#${r.rank}</span><span>${esc(r.name)}</span><span>${esc(r.who)}</span><span>${esc(r.time)}</span><span>${esc(r.score)}</span></div>`).join('')}</div>` : '')
+				+ (b.rows.length ? `<div class="rx-board">${b.rows.map((r) => `<div class="rx-brow ${r.me ? 'me' : ''}"><span>#${r.rank}</span><span>${esc(r.name)}</span><span>${esc(r.who)}</span><span>${esc(r.time)}</span><span>${esc(r.score)}${r.replay ? ` <a class="rx-replay" href="?replay=${esc(r.replay)}" title="Watch this run" aria-label="Watch this run">▶</a>` : ''}</span></div>`).join('')}</div>` : '')
 				+ `<p id="rx-board-note">${esc(b.note || '')}</p><div class="rx-btns"><button class="rx-btn blue" id="rx-board-close" data-board="">Close</button></div></div>`;
 			$('rx-board').classList.toggle('show', !!b);
 		}

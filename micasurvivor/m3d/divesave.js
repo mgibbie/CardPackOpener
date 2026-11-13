@@ -110,7 +110,7 @@ export function scoreBody(S, res, o) {
 export const boardAsk = (route, board, week = null) => Object.assign({ mode: board, d3: true, expMode: 'exp-dive', board: 'dive' }, week != null ? { weekly: true, week } : { route });
 /** The server's rows, for the screen: ten, and yours. body: { top, you }; nameOf(dex); me: your name. */
 export function boardRows(body, nameOf, me) {
-	const mmss = (t) => `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, '0')}`, row = (e, rank) => ({ rank, name: e.name || '?', who: nameOf(e.dex) + (e.level ? ' Lv ' + e.level : ''), time: mmss(e.time || 0), score: 'Floor ' + Math.floor(e.floor || 0) + (e.escaped ? ' ↑' : ''), me: e.name === me });
+	const mmss = (t) => `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, '0')}`, row = (e, rank) => ({ rank, name: e.name || '?', who: nameOf(e.dex) + (e.level ? ' Lv ' + e.level : ''), time: mmss(e.time || 0), score: 'Floor ' + Math.floor(e.floor || 0) + (e.escaped ? ' ↑' : ''), me: e.name === me, replay: e.replay || '' });
 	const rows = (body.top || []).slice(0, 10).map((e, i) => row(e, i + 1));
 	if (body.you && body.you.rank > 10) rows.push(row({ ...body.you, name: me }, body.you.rank));
 	return rows;
