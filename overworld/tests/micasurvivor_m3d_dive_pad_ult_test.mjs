@@ -50,7 +50,10 @@ try {
 	const ok = await boot('dive=3&route=forest&dex=6&auto=1');
 	await calm();
 	A(ok && await page.evaluate(() => !!window.__m3d.dive.ult), 'a 3D Dive, with an Ultimate');
-	await charge(1); await sleep(300);
+	await charge(1);
+	// (the chip is redrawn a few times a second: wait for it, do not read it after a fixed 300 ms. On a loaded runner it still
+	//  read "0 %": main gate, 2026-11-13, the merge of #1182.)
+	await waitFor(async () => { const q = await ult(); return q.ready && /READY/.test(q.chip); }, 8000);
 	let u = await ult();
 	A(u.ready && /READY \[3 \/ L\+R\]/.test(u.chip), `charged: the chip says how to fire it (${u.chip})`, u);
 	await tap(4); const l = await ult();
@@ -65,7 +68,7 @@ try {
 	await btn(4, true); await btn(5, true); await sleep(300); await btn(4, false); await btn(5, false); await sleep(200);
 	u = await ult();
 	A(!u.ready && !u.casting && u.pct >= 15 && u.pct <= 40, 'not charged: L + R casts nothing and spends nothing', u);
-	await charge(1); await sleep(300);
+	await charge(1); await waitFor(async () => (await ult()).ready, 8000);
 	await page.keyboard.down('KeyQ'); await sleep(120); await page.keyboard.down('KeyE');
 	const keyed = await cast();
 	await page.keyboard.up('KeyQ'); await page.keyboard.up('KeyE');
