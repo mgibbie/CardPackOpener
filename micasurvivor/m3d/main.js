@@ -578,7 +578,7 @@ const HAZ_COL = { mud: '#7a5a34', brambles: '#3f7a3a', quicksand: '#d9b56a', bur
 const exitDist = () => Math.hypot(state.x - room.exit[0], state.z - room.exit[2]);
 /** The next level: the next seed, same biome and options (a fresh page: nothing of this level is kept). */
 function nextLevel() { const q = new URLSearchParams(location.search); q.set('gen', String((GEN + 1) >>> 0)); if (!window.__m3d.holdExit) setTimeout(() => { location.search = q.toString(); }, 700); }
-let mapBig = false, watchFog = null, fogCv = null, fogN = -1;
+let mapBig = false, watchFog = null, fogCv = null, fogN = -1, mapMarks = [];
 /** (P4) The fog of this screen: a run's own (yours, a guest's), or a watcher's (it follows the player it watches). null: no fog (not a run). */
 function fogNow() {
 	if (myRun) return fogOf(myRun);
@@ -611,6 +611,21 @@ function showMap() {
 	const things = (solo && solo.eco ? ecoView(solo) : rv ? rv.eco : []).filter(seen);
 	for (const o of things) { g.fillStyle = EK.COL[o.kind]; g.fillRect(o.x * k - 1.5, o.z * k - 1.5, 4, 4); }
 	if (mapBig) { const n = {}; for (const o of things) n[o.kind] = (n[o.kind] || 0) + 1; document.getElementById('maplegend').innerHTML = (fog ? `explored ${Math.round(fogShare(fog) * 100)} %` : '') + Object.keys(n).map((kd) => `<i style="background:${EK.COL[kd]}"></i>${EK.NAME[kd] || kd}${n[kd] > 1 ? ' ×' + n[kd] : ''}`).join('') + ' <i style="background:#fff2a0"></i>altar'; }   // (P4) what the zone holds, in its colours
+	// (plan 3d) a Dive: its chests (gold; dull once opened) and its landmark (a diamond in its colour; dull once used),
+	// each from the moment you have explored where it stands. Yours, a guest's or a watcher's.
+	const dv = drun || (rv && rv.dive ? rv : null);
+	mapMarks = [];
+	if (dv) {
+		for (const c of dv.chests || []) if (seen(c)) mapMarks.push({ kind: 'chest', x: c.x, z: c.z, done: !!c.open });
+		if (dv.lm && LANDMARKS[dv.lm.kind] && seen(dv.lm)) mapMarks.push({ kind: dv.lm.kind, x: dv.lm.x, z: dv.lm.z, done: !!dv.lm.used });
+		for (const o of mapMarks) {
+			const x = o.x * k, z = o.z * k;
+			g.lineWidth = 1; g.strokeStyle = 'rgba(0,0,0,.85)';
+			if (o.kind === 'chest') { g.fillStyle = o.done ? '#6b5a2a' : '#ffd23f'; g.fillRect(x - 2.5, z - 2, 5, 4); g.strokeRect(x - 2.5, z - 2, 5, 4); }
+			else { g.fillStyle = o.done ? '#5a5f6b' : LANDMARKS[o.kind][2]; g.beginPath(); g.moveTo(x, z - 4); g.lineTo(x + 4, z); g.lineTo(x, z + 4); g.lineTo(x - 4, z); g.closePath(); g.fill(); g.stroke(); }
+		}
+		if (mapBig && mapMarks.length) { const ch = mapMarks.filter((o) => o.kind === 'chest'), shut = ch.filter((o) => !o.done).length, lm = mapMarks.find((o) => o.kind !== 'chest'); document.getElementById('maplegend').innerHTML += (ch.length ? ` <i style="background:#ffd23f"></i>chest${ch.length > 1 ? ' ×' + ch.length : ''}${shut < ch.length ? ` (${ch.length - shut} opened)` : ''}` : '') + (lm ? ` <i style="background:${LANDMARKS[lm.kind][2]}"></i>${LANDMARKS[lm.kind][0]}${lm.done ? ' (used)' : ''}` : ''); }
+	}
 	for (const o of (run && run.sv ? hazardsNow(run) : rv && rv.surv ? rv.hazards : []).filter(seen)) { g.strokeStyle = HAZ_COL[o.kind]; g.lineWidth = 1.5; g.beginPath(); g.arc(o.x * k, o.z * k, Math.max(2, o.r * k), 0, 6.2832); g.stroke(); }   // (P4) Survival: hostile ground, as rings
 	g.fillStyle = '#5fc8ff'; for (const m of mates()) g.fillRect(m.s.x * k - 2, m.s.z * k - 2, 5, 5);   // (P3n) the other players: blue squares
 	if (world || view) { g.fillStyle = '#5b1630'; for (const e of world ? world.enemies : view.enemies) if (!fog || found(fog, e.a, null, 0)) g.fillRect(e.a.x * k - 1, e.a.z * k - 1, 3, 3); }   // (P3) enemies: dark dots
@@ -1152,7 +1167,7 @@ window.__m3d = {
 	ult: { press: () => { if (run) pressUlt(run); }, charge: (v) => { if (run) setCharge(run, v); }, view: () => (run ? ultView(run) : null), setAuto: (on) => setUltAuto(on), get cut() { return cutIn; } },
 	runView: () => (RUNUI ? runView() : null),
 	get megaNow() { return megaNow; }, megaSheets,
-	get ready() { return ready; }, state, get room() { return room; }, run, setZoneTime: (sec) => run && setZoneTime(run, sec), useTool, takePick, ecoView: () => (solo ? ecoView(solo) : []), capView: () => (run ? capView(run) : null), hazards: () => (run ? hazardsNow(run) : []), fog: () => fogNow(), toggleMap, get mapBig() { return mapBig; }, get rv() { return rv; }, noteLog, grun, fire: (ev) => run && fireEvent(run, ev), K, TUNE, TYPES, TRAITS, cam, crowd, sheets, stats, gen: GEN, biome: BIOME, world, numbers, net, tape, myId: MYID, mates, get coView() { return coView; }, playTape, get view() { return view; }, get viewer() { return viewer; }, get watchT() { return watchT; }, addBoss: (dex, x, z, o) => addBoss(world, dex, x, z, o), drop: (kind, x, z, v) => drop(world, kind, x, groundAt(room, x, z), z, v), pickCard, addEnemy: (dex, x, z, o) => addEnemy(world, dex, x, z, o), holdExit: false, get leaving() { return leaving; },
+	get ready() { return ready; }, get mapMarks() { return mapMarks.map((o) => ({ ...o })); }, state, get room() { return room; }, run, setZoneTime: (sec) => run && setZoneTime(run, sec), useTool, takePick, ecoView: () => (solo ? ecoView(solo) : []), capView: () => (run ? capView(run) : null), hazards: () => (run ? hazardsNow(run) : []), fog: () => fogNow(), toggleMap, get mapBig() { return mapBig; }, get rv() { return rv; }, noteLog, grun, fire: (ev) => run && fireEvent(run, ev), K, TUNE, TYPES, TRAITS, cam, crowd, sheets, stats, gen: GEN, biome: BIOME, world, numbers, net, tape, myId: MYID, mates, get coView() { return coView; }, playTape, get view() { return view; }, get viewer() { return viewer; }, get watchT() { return watchT; }, addBoss: (dex, x, z, o) => addBoss(world, dex, x, z, o), drop: (kind, x, z, v) => drop(world, kind, x, groundAt(room, x, z), z, v), pickCard, addEnemy: (dex, x, z, o) => addEnemy(world, dex, x, z, o), holdExit: false, get leaving() { return leaving; },
 	setInput(o) { override = o ? { ...noInput(), ...o } : null; },
 	rowOf: (facing, yaw) => facingRow(facing, yaw === undefined ? cam.yaw : yaw),
 	sq: (key, frame, dir, scale = 1) => sq(sheets.get(key), frame, dir, scale),

@@ -50,7 +50,8 @@ Things that shipped without being checked the way a player uses them.
       moment the guardian falls (never the Weekly Dive).
 - [x] 3c. A controller button for the Ultimate in a Dive. Done: both shoulders together, L + R (Q + E on the keys);
       the chip says so. The host's and a solo Dive's only: a guest has no Ultimate in a Dive.
-- [ ] 3d. The minimap marks chests and the landmark once seen.
+- [x] 3d. The minimap marks chests and the landmark once seen. Done: a chest is gold (dull once opened), the landmark a
+      diamond in its colour (dull once used); the big map's legend counts and names them. Yours, a guest's, a watcher's.
 - [ ] 3e. The crater's floor (the 3D game has no lava biome), and the 2D light map's lights: the landmark's glow, the
       lava's flicker, sun shafts.
 - [ ] 3f. 3D co-op runs on a board of their own, and a replay. (Largest item here; last.)
