@@ -1755,6 +1755,21 @@ boosts in a Dive.
 
 Tests: `micasurvivor_m3d_dive_league_test.mjs` 17 checks in node; `micasurvivor_m3d_dive_page_test.mjs` now 49.
 
+## 5.63 3D Dive, eleventh part: built (2026-11-13). A way in from the menu, by opt-in. NOT live.
+
+`/micasurvivor/?dive3d=1` opts this browser in (`?dive3d=0` goes back). Then START on Dive, playing alone,
+opens the 3D page with the same League member, route and start floor, as a Dive that can be kept.
+
+Everyone who has not opted in keeps the 2D Dive. So do the Weekly Dive, local play and online play, opted in
+or not. A browser with no WebGL 2 keeps the 2D Dive.
+
+**Going live is the owner's word**, and then one line: the default of `dive3d()` in `js/ui/play-ui.js` (as
+`exp3d()` is for the Expedition). What the 3D Dive still lacks next to the 2D one: the Weekly Dive, co-op,
+starting as a later form you own, the family's bought upgrades and the Lab's boosts, the stall / berry bushes /
+gold rocks, the dark floors' lighting, the tasks' counters.
+
+Tests: `micasurvivor_playflow_test.mjs` grows by 5 checks (176).
+
 ## 6. Dive in 2D: built
 
 **D0 — find the stairs (small; can ship first, on its own).** *Built 2026-11-11 (`overworld/tests/micasurvivor_dive_stairs_test.mjs`). As built: the stairs took their own orange mark, so the rocks and Meowth keep their gold; the HUD arrow comes up after 25 s on a floor, or at once when its boss falls.*
