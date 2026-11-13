@@ -338,7 +338,9 @@ export function pickCharm(i) {
 export function dropCharm(i) {
 	if (!S || !S.shop.dragging) return false;
 	const { origin, charm } = S.shop.dragging;
-	if (i >= 0 && i < 4) { const occ = S.charm.inventory[i]; S.charm.inventory[i] = charm; S.charm.inventory[origin] = occ; }
+	// (i === origin: dropped on the slot it came from. It goes back. The swap below wrote the charm into the slot and then
+	//  wrote "what was there" — nothing — over it: a charm tapped twice was gone, unsold. Owner, 2026-11-13.)
+	if (i >= 0 && i < 4 && i !== origin) { const occ = S.charm.inventory[i]; S.charm.inventory[i] = charm; S.charm.inventory[origin] = occ; }
 	else S.charm.inventory[origin] = charm;
 	S.shop.dragging = null;
 	bump(i >= 0 && i !== origin ? 'swap' : null, { from: origin, to: i });

@@ -81,6 +81,10 @@ A(v.charms[0].id === 'egg' && v.charms[1].id === 'grape' && v.charms[0].sell ===
 A(P.pickCharm(1) && P.view().held.id === 'grape' && P.view().charms[1] === null, 'picking up a charm holds it');
 A(P.dropCharm(3) && P.view().charms[3].id === 'grape', '...and drops it on another slot');
 A(P.pickCharm(3) && P.dropCharm(0) && P.view().charms[0].id === 'grape' && P.view().charms[3].id === 'egg', 'dropping on a full slot swaps the two');
+// (owner, 2026-11-13: "I just tapped my charm twice and it disappeared". The second tap dropped it on its own slot, and
+//  the swap wrote "what was there" — nothing — over it.)
+{ const before = JSON.stringify(P.view().charms), bb = P.run().berries;
+	A(P.pickCharm(0) && P.dropCharm(0) && !P.view().held && JSON.stringify(P.view().charms) === before && P.run().berries === bb, 'dropped on the slot it came from, a charm goes back: it is not lost, and nothing is sold', JSON.stringify(P.view().charms)); }
 const b0 = P.run().berries;
 A(P.pickCharm(0) && P.sellHeld() && P.run().berries === b0 + 3 && !P.view().charms.some((c) => c && c.id === 'grape'), 'Sell: the held charm goes for its sell value (+3 Berries)');
 A(!P.sellHeld(), 'nothing held: nothing to sell');

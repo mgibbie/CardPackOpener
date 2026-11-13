@@ -77,7 +77,7 @@ try {
 		A(!!cont, `${name}: the menu offers Continue`);
 		if (vp.hasTouch) await page.touchscreen.tap(cont.x, cont.y); else await page.mouse.click(cont.x, cont.y);
 		A(await waitFor(async () => (await view()) && (await view()).phase === 'shop', 5000), `${name}: the run resumes in the Level Shop`);
-		await waitFor(() => page.evaluate(() => document.querySelectorAll('.pp-offer').length === 4), 3000);
+		await waitFor(() => page.evaluate(() => document.querySelectorAll('.pp-offer').length === 3), 3000);
 		await sleep(900);   // (the shop panel rises: Micatro's risein)
 		if (!vp.hasTouch) { await page.mouse.move(8, 8, { steps: 3 }); await sleep(150); }   // (the shop rose under the pointer that clicked Continue)
 		const v = await view();
@@ -107,10 +107,9 @@ try {
 			A(t && t.for === 'offer1' && /Tart Apple/.test(t.text) && /first 3 pairs/.test(t.text) && /Every Apple in your deck gets it/.test(t.text) && /Costs 15 berries/.test(t.text), `${name}: the Tart Apple offer says what Tart does and who gets it`, JSON.stringify(t));
 			A(t && t.boxes === 1 && /mark on every card of one fruit/.test(t.text), `${name}: ...and what a condition is`, JSON.stringify(t));
 
-			// the Sell tile is not an offer to read
+			// there is no Sell tile (a charm is sold from its own ribbon): the shop is its three offers
 			await away();
-			t = await hover('.pp-offer.pp-sell .pp-of-name');
-			A(t === null, `${name}: the Sell tile shows no offer tip`, JSON.stringify(t));
+			A(await page.evaluate(() => !document.querySelector('.pp-sell') && document.querySelectorAll('.pp-offer').length === 3), `${name}: the shop has no Sell tile`);
 
 			// an owned charm that names a condition
 			t = await hover('.pp-slot[data-i="0"]');
