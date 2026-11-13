@@ -104,7 +104,7 @@ const BEFORE = (o) => {
 	const H = window.__t = { frozen: false, pending: null };
 	try {
 		localStorage.setItem('micasurvivor_dev', JSON.stringify('rv2' + (o.user || 'view').slice(0, 4)));
-		localStorage.setItem('micasurvivor_lang', 'en');
+		localStorage.setItem('micasurvivor_lang', 'en'); localStorage.setItem('micasurvivor_coop3d', '0');   // (this suite is the archived 2D co-op: /micasurvivor/?coop3d=0's own key. A lobby's run is the 3D one by default since 2026-11-13)
 		if (!sessionStorage.getItem('seeded')) {
 			sessionStorage.setItem('seeded', '1');
 			if (o.user && o.token) {

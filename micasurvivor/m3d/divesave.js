@@ -26,7 +26,7 @@ import { hasMember, hasForm } from './expsave.js';
 export const DSV = { OK: ['dive', 'route', 'floor', 'dex', 'form', 'weekly', 'debug'], SCALE: 3 /* the 2D game's meta.js K.SCALE (coinsOf); expedition.js XK.PAY.SCALE */ };
 
 /** The first parameter of the page's address that makes its Dive a practice run (null: none). params: [[key, value]]. */
-export function unfairDive(params) { for (const [k] of params) if (!DSV.OK.includes(k)) return k; return null; }
+export function unfairDive(params, also = []) { for (const [k] of params) if (!DSV.OK.includes(k) && !also.includes(k)) return k; return null; }   // (also: what a lobby's start adds, expsave.js LOBBY_OK)
 /** Pokémonedas for n pay units (the 2D game's coinsOf). */
 export const coinsOf = (n, scale = DSV.SCALE) => Math.max(0, Math.round(n * scale / 5) * 5);
 export const stageOf = (Sv, route) => Sv.get('dive.' + route + '.stage') || 0;

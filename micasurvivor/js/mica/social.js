@@ -233,6 +233,20 @@ G.Social = (() => {
     }
   }
 
+  /** 3D co-op (Plans/MICASURVIVOR_3D_PLAN.md §5.74): back from a 3D run to the lobby it was started from. The lobby is
+   *  still on the server, started: its old start is NOT played again here, and the host opens it again (everyone is
+   *  "not ready" for the next run, as after a 2D one). -> whether you are in that lobby again */
+  async function resumeRoom(id) {
+    if (!uid || !/^[0-9a-f]{12}$/.test(String(id || ''))) return false;
+    if (room && room.id !== id) return false;
+    const r = await call('msurv-lobby-poll', { id });
+    const lb = r.ok && r.body ? r.body.lobby : null;
+    if (!lb) return false;
+    if (lb.start) lastStart = lb.start.at;
+    applyLobby(lb);
+    if (room && room.isHost && (room.start || !room.open)) await update({ open: true });
+    return !!room;
+  }
   /** opts (DLC D0b): {mode: 'exp-…'} for an Expedition lobby (it carries this build's content version, dv); none = base.
    *  (DLC D11: and {map, diff}, the map + tier everyone plays.) */
   async function createRoom(opts) {
@@ -311,8 +325,8 @@ G.Social = (() => {
   /** U2: the host changes the lobby's run ({bmode, opts} / {opts, map} for a Dive); the guests ready up again. */
   function setCfg(cfg) { return update({ cfg }); }
   /** El anfitrión empieza: el servidor comprueba que estáis todos listos y guarda la semilla y los miembros. */
-  async function startRoom(seed) {
-    const r = await update({ start: { seed } });
+  async function startRoom(seed, d3) {   // (d3: this run is the 3D one: js/ui/play-ui.js coop3d)
+    const r = await update({ start: d3 ? { seed, d3: true } : { seed } });
     return r.ok && room && room.start ? { ok: true, cfg: Object.assign({ k: 'start' }, room.start) } : r;
   }
   function setPlaying(p) {
@@ -323,7 +337,7 @@ G.Social = (() => {
 
   return {
     start, stop, request, invite, acceptInvite, declineInvite,
-    createRoom, joinRoom, leaveRoom, setOpen, refreshMember, setReady, setCfg, startRoom, dstOf, COOP_V, setPlaying, refreshPresence,
+    createRoom, joinRoom, resumeRoom, leaveRoom, setOpen, refreshMember, setReady, setCfg, startRoom, dstOf, COOP_V, setPlaying, refreshPresence,
     pollRoom, pollInvites,
     // upstream's profile functions: no public profiles on Magepunk (yet), only your own preview
     claimNick: async () => ({ ok: false }),

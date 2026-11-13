@@ -389,7 +389,7 @@
       const room = G.Social.room;
       if (!room || !room.isHost || room.members.length < 2 || starting) return;
       starting = true; render();
-      const r = await G.Social.startRoom(Math.floor(Math.random() * 1e6));
+      const r = await G.Social.startRoom(Math.floor(Math.random() * 1e6), !!(G.PlayUI && G.PlayUI.coop3d && G.PlayUI.coop3d(room)));
       starting = false;
       if (!r.ok) { G.UI.toast(r.error || 'No se pudo empezar.', 2600); render(); return; }
       G.Net.broadcast(r.cfg);
