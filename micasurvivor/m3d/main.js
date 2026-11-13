@@ -36,6 +36,7 @@ import { EK, ecoView, pickTake, pickClose, shopPrices } from './expeco.js';
 import { capView } from './expcap.js';
 import * as DS from './divesave.js';
 import { lightOf } from './divelight.js';
+import { diveRow, diveView } from './divenet.js';
 import { rulesFrom, newDive, stepDive, hudLine as diveHud, result as diveResult, pressSpecial, specials, LANDMARKS } from './dive.js';
 
 const Q = new URLSearchParams(location.search);
@@ -54,9 +55,10 @@ const EXP = !WATCH && !JOIN && Q.has('exp');
 // 3D Dive (dive.js): ?dive=<seed> plays a Dive run: &route=forest|…, &floor=<the floor to begin on>. Find the stairs (the
 // column of light), stand on them; an alpha every 5th floor seals them. A preview: not linked from the menu, nothing is saved.
 const DIVE = !WATCH && !JOIN && !EXP && Q.has('dive');
+const DW = WATCH && Q.has('dw') ? { seed: +Q.get('dw') | 0, route: Q.get('route') || 'forest' } : null;   // (part 16) watching a Dive: its seed and route
 // (the 2D Dive's floors and rules, read by divegen.js and dive.js, are loaded only here: an Expedition's page is as it was. With them
 // on every page, the 2D game's own Expedition object changed what an Expedition's save does.)
-if (DIVE && window.G && !window.G.ExpDive) for (const src of ['../js/systems/expedition.js', '../js/expedition/dive-gen.js', '../js/expedition/dive.js']) await new Promise((res, rej) => { const el = document.createElement('script'); el.src = src; el.async = false; el.onload = res; el.onerror = () => rej(new Error('3D Dive: could not load ' + src)); document.head.appendChild(el); });
+if ((DIVE || DW) && window.G && !window.G.ExpDive) for (const src of ['../js/systems/expedition.js', '../js/expedition/dive-gen.js', '../js/expedition/dive.js']) await new Promise((res, rej) => { const el = document.createElement('script'); el.src = src; el.async = false; el.onload = res; el.onerror = () => rej(new Error('3D Dive: could not load ' + src)); document.head.appendChild(el); });
 const FIGHT = !WATCH && (!!JOIN || EXP || DIVE || (Q.has('gen') && Q.get('fight') === '1'));
 const N = Math.max(0, Math.min(2000, +(Q.get('n') ?? (FIGHT || (WATCH && Q.has('xw')) ? 0 : 100)) || 0));   // (the test room's crowd: not in a fight, and not on a watched run)
 const DEX = +(Q.get('dex') ?? 25) || 25;
@@ -65,7 +67,7 @@ const CROWD_DEX = [1, 4, 7, 16, 19, 25, 43, 74, 92, 133].filter((d) => META[d] &
 const hud = document.getElementById('hud'), canvas = document.getElementById('c');
 const XW = WATCH && Q.has('xw') ? { seed: (+Q.get('xw') >>> 0) || 1, map: Q.get('map') || 'viridian' } : null;   // (P4) watching an Expedition run: its seed and map
 const XJ = !WATCH && Q.get('join') && Q.has('xj') ? { seed: (+Q.get('xj') >>> 0) || 1, map: Q.get('map') || 'viridian', diff: Q.get('diff') || 'normal' } : null;   // (P4) joining an Expedition run
-const XF = (EXP || XW || XJ || DIVE) && window.G && window.G.ExpClassic ? expFrom(window.G) : null;
+const XF = (EXP || XW || XJ || DIVE || DW) && window.G && window.G.ExpClassic ? expFrom(window.G) : null;
 const GEN = EXP ? (+Q.get('exp') >>> 0) || 1 : DIVE ? (+Q.get('dive') >>> 0) || 1 : XW ? XW.seed : XJ ? XJ.seed : Q.has('gen') ? (+Q.get('gen') >>> 0) : null, BIOME = BIOMES[Q.get('biome')] ? Q.get('biome') : 'meadow';
 const SIZE = Q.has('size') ? Math.max(3, Math.min(8, +Q.get('size') | 0 || 5)) : null;
 let room = EXP || XJ || DIVE ? null : XW ? zoneRoom(XW.seed, XW.map, 1, XF) : GEN === null ? buildRoom() : generate(GEN, BIOME, SIZE ? { size: SIZE } : null);
@@ -103,13 +105,13 @@ const LEAD_SHINY = SAVE_OK && (() => { const b = baseSave(), fam = GG.ExpLeague 
 const run = EXP ? newRun(dataFrom(GG), XF, { shiny: LEAD_SHINY, perks: UPGRADES, ultAuto: SAVE_OK && GG.ExpSave.get('ult.auto.on') > GG.ExpSave.get('ult.auto.off'), wild: WILD, meta: LAB_META, form: +Q.get('form') || 0, seed: GEN, map: Q.get('map'), diff: Q.get('diff'), mode: Q.get('mode') || undefined, dex: DEX, moves: MOVES, tune: TUNE, touch: matchMedia('(pointer: coarse)').matches, league: !Q.has('moves') && Q.get('league') !== '0', ability: Q.get('ability') === '0' ? null : Q.get('ability') || 'auto', items: Q.get('items') ? Q.get('items').split(',') : [], weather: Q.get('weather') === '0' ? false : undefined, autoPick: Q.has('auto') ? +Q.get('auto') | 0 : undefined }) : null;
 if (run) room = run.w.room;
 // 3D Dive: the run (dive.js), with the 2D game's own rules
-const DR = DIVE && XF ? rulesFrom(GG) : null;
+const DR = (DIVE || DW) && XF ? rulesFrom(GG) : null;
 if (DIVE && !DR) throw new Error('3D Dive: the Dive rules did not load');
 // (the kit: your League member's first three moves, the basic and two specials; ?moves= picks others)
 const DMOVES = DR && !Q.get('moves') && GG.ExpLeague ? (() => { const L = GG.ExpLeague, m = L.BY[L.BY[DEX] ? DEX : L.FAM[DEX]], kit = m ? m.kit.filter((id) => { const d = GG.Moves.BY_ID[id] || (GG.ExpMoves && GG.ExpMoves.MOVES[id]); return !!d && canFire(d.kind); }).slice(0, DR.K.SLOTS) : []; return kit.length >= 2 ? kit.map((id) => [id, 1]) : MOVES; })() : MOVES;
 // (part 6) a Dive that can be kept: the save is opened before the run (the start floor and the route's Seal are its)
-const DPRACTICE = DR ? DS.unfairDive([...Q.entries()]) : null;
-const DSAVE_OK = !!DR && !DPRACTICE && !!GG.ExpSave && await GG.ExpSave.open().then(() => !!GG.ExpSave.data, () => false);
+const DPRACTICE = DIVE ? DS.unfairDive([...Q.entries()]) : null;
+const DSAVE_OK = DIVE && !!DR && !DPRACTICE && !!GG.ExpSave && await GG.ExpSave.open().then(() => !!GG.ExpSave.data, () => false);
 // (part 15) ?weekly: this week's Weekly Dive: its seed, its route and its modifier are the week's, whatever else the address says
 const DWEEK = DR && Q.has('weekly') && GG.Expedition && GG.Expedition.diveWeekly ? GG.Expedition.diveWeekly() : null;
 const DROUTE = DWEEK ? DWEEK.route : DR && DR.F.ROUTES[Q.get('route')] ? Q.get('route') : 'forest';
@@ -121,10 +123,10 @@ const DFORM = DR ? +Q.get('form') || 0 : 0;
 const DKEEP = DSAVE_OK && !!GG.ExpLeague && !!DMEMBER && hasMember(DMEMBER, { L: GG.ExpLeague, Sv: GG.ExpSave, base: baseSave() }) && (!!DWEEK || DS.routeOpen(GG.ExpSave, DROUTE, DR.MAIN)) && (!DFORM || DFORM === DMEMBER || hasForm(DFORM, { Sv: GG.ExpSave, base: baseSave() }));
 const DMETA = (() => { if (!DKEEP || !GG.ExpMeta) return null; try { return metaFor(GG.ExpMeta, { Sv: GG.ExpSave, member: DMEMBER, boosts: spendBoosts(GG.ExpMeta, GG.ExpSave, deviceId(localStorage, GG.ExpSave.who, crypto), localStorage) }); } catch (e) { console.warn('the Lab could not be read: ' + (e && e.message)); return null; } })();
 const DSHINY = DKEEP && (() => { const b = baseSave(); return GG.ExpSave.has('league.shiny', String(DMEMBER)) || !!(b && b.partnerShiny && b.shiny && b.shiny[DEX]); })();
-const drun = DR ? newDive(dataFrom(GG), XF, DR, { form: DFORM, perks: DKEEP ? perksOf(GG, baseSave(), DEX) : null, meta: DMETA, shiny: DSHINY, weekly: DWEEK ? { week: DWEEK.week, mod: DWEEK.mod } : null, route: DROUTE, seed: DWEEK ? DWEEK.seed : GEN, start: DSTART, seal: DSAVE_OK && DS.sealOf(GG.ExpSave, DROUTE), league: !Q.has('moves') && Q.get('league') !== '0', dex: DEX, moves: DMOVES, tune: TUNE, touch: matchMedia('(pointer: coarse)').matches, ability: Q.get('ability') === '0' ? null : Q.get('ability') || 'auto', items: Q.get('items') ? Q.get('items').split(',') : [], weather: false, autoPick: Q.has('auto') ? +Q.get('auto') | 0 : undefined }) : null;
+const drun = DIVE && DR ? newDive(dataFrom(GG), XF, DR, { form: DFORM, perks: DKEEP ? perksOf(GG, baseSave(), DEX) : null, meta: DMETA, shiny: DSHINY, weekly: DWEEK ? { week: DWEEK.week, mod: DWEEK.mod } : null, route: DROUTE, seed: DWEEK ? DWEEK.seed : GEN, start: DSTART, seal: DSAVE_OK && DS.sealOf(GG.ExpSave, DROUTE), league: !Q.has('moves') && Q.get('league') !== '0', dex: DEX, moves: DMOVES, tune: TUNE, touch: matchMedia('(pointer: coarse)').matches, ability: Q.get('ability') === '0' ? null : Q.get('ability') || 'auto', items: Q.get('items') ? Q.get('items').split(',') : [], weather: false, autoPick: Q.has('auto') ? +Q.get('auto') | 0 : undefined }) : null;
 if (drun) { room = drun.w.room; drun.w.cap = DR.K.REIN.cap + 60; }
 // (part 14) a dark route: its air (the fog comes close and takes the route's colour: your lamp), its tint at the screen's edges
-const DLIGHT = drun ? lightOf(drun.route, FOG0) : null;
+const DLIGHT = drun ? lightOf(drun.route, FOG0) : DW ? lightOf(DW.route, FOG0) : null;   // (a watched Dive has its route's air too)
 const solo = run || drun;   // (a run of your own, alone on this page: an Expedition or a Dive)
 // (P4) a guest in a run: its own League member in the host's run (expcoop.js); it builds each zone from the run's row
 const grun = XJ ? guestRun(dataFrom(GG), XF, { seed: XJ.seed, map: XJ.map, diff: XJ.diff, id: MYID, dex: DEX, league: !Q.has('moves'), moves: MOVES, tune: TUNE, ability: Q.get('ability') === '0' ? null : Q.get('ability') || undefined, autoPick: Q.has('auto') ? +Q.get('auto') | 0 : undefined }) : null;
@@ -410,13 +412,14 @@ function draw(t) {
 			else if (f.kind === 'meteor') { const k = Math.max(0, Math.min(1, f.t / f.fall)); if (f.t > 0) shots.add(f.x + (1 - k) * 2.5, f.y + 0.3 + (1 - k) * 10, f.z, 0.45, c); if (!f.seen) { f.seen = true; flashes.arc(f.x, f.y, f.z, f.r, 0, 6.2832, c, f.fall - Math.min(0, f.t), 0.9); } }
 			else if (f.kind === 'patch' && !f.seen) { f.seen = true; flashes.arc(f.x, f.y, f.z, f.r, 0, 6.2832, c, f.life, 0); }
 		}
-		if (drun) {   // a Dive: who sleeps (a pale bead that bobs), the elites (a bead in their affix's colour), the lost Pokémon
-			for (const e of world.enemies) { if (e.dead) continue; const top = e.a.y + Math.max(1.1, (e.cr || 0.4) * 2) + 0.4; if (e.asleep) shots.add(e.a.x + 0.25, top + Math.sin(t * 1.6 + e.id) * 0.12, e.a.z, 0.09, '#dbe8ff'); else if (e.xaff) shots.add(e.a.x, top, e.a.z, 0.13, DIVE_AFF[e.xaff]); }
+		const dv = drun || (rv && rv.dive ? rv : null);   // (a Dive: this page's, or the one it watches)
+		if (dv) {   // a Dive: who sleeps (a pale bead that bobs), the elites (a bead in their affix's colour), the lost Pokémon
+			if (drun) for (const e of world.enemies) { if (e.dead) continue; const top = e.a.y + Math.max(1.1, (e.cr || 0.4) * 2) + 0.4; if (e.asleep) shots.add(e.a.x + 0.25, top + Math.sin(t * 1.6 + e.id) * 0.12, e.a.z, 0.09, '#dbe8ff'); else if (e.xaff) shots.add(e.a.x, top, e.a.z, 0.13, DIVE_AFF[e.xaff]); }
 			// (part 5) the chests (a Poké Ball that bobs), the shut plugs (a boulder, a thicket, against the rock), the landmark
-			for (const c of drun.chests) if (!c.open) { const up = 0.12 + Math.sin(t * 3 + c.x) * 0.12; if (prop('eco:freeball', c.x, up, c.z)) shadows.add(room, c.x, c.z, up, 0.45); }
-			for (const pg of room.plugs) if (!pg.open) for (const fc of pg.faces) prop('eco:' + pg.kind, fc[0], 0, fc[2], 1.9);
-			if (drun.lm) { const lm = drun.lm; prop('eco:lm_' + lm.kind, lm.x, 0, lm.z, 1.7); shadows.add(room, lm.x, lm.z, 0, 0.9); if (!lm.used) shots.add(lm.x, 3.6 + Math.sin(t * 2.2) * 0.15, lm.z, 0.16, LANDMARKS[lm.kind][2]); }
-			const lo = drun.stray;
+			for (const c of dv.chests) if (!c.open) { const up = 0.12 + Math.sin(t * 3 + c.x) * 0.12; if (prop('eco:freeball', c.x, up, c.z)) shadows.add(room, c.x, c.z, up, 0.45); }
+			for (const pg of room.plugs || []) if (!pg.open) for (const fc of pg.faces) prop('eco:' + pg.kind, fc[0], 0, fc[2], 1.9);
+			if (dv.lm) { const lm = dv.lm; prop('eco:lm_' + lm.kind, lm.x, 0, lm.z, 1.7); shadows.add(room, lm.x, lm.z, 0, 0.9); if (!lm.used) shots.add(lm.x, 3.6 + Math.sin(t * 2.2) * 0.15, lm.z, 0.16, LANDMARKS[lm.kind][2]); }
+			const lo = dv.stray;
 			if (lo && !lo.done) { propMon(lo.dex, lo.x, lo.y, lo.z, lo.follow ? t : 0); shadows.add(room, lo.x, lo.z, lo.y, 0.5); if (!lo.follow) shots.add(lo.x, lo.y + 1.7 + Math.sin(t * 4) * 0.12, lo.z, 0.2, '#7dffb0'); }
 		}
 		if (!paused && state.rail >= 0 && simTicks % 3 === 0) burst(state.x, state.y + 0.05, state.z, '#ffe9a0', 2, 2.2, { up: 2.2, life: 0.3, r: 0.06 });   // (grinding a rail: sparks under you)
@@ -500,7 +503,7 @@ function frame(now) {
 					if (drun.cadence.rope) flashes.arc(room.spawn[0], room.spawn[1] + 0.05, room.spawn[2], DR.K.ROPE_R * CELL, 0, 6.2832, '#ffd23f', 0.8, 0.9);
 					if (drun.sealed) flashes.arc(room.stairs[0], room.stairs[1] + 0.05, room.stairs[2], DR.K.STAIRS_R * CELL + 0.6, 0, 6.2832, '#ff4d5e', 0.8, 0.8);
 				}
-				if (drun.ended && !runOver) { runOver = diveResult(drun); keepDive(runOver); note(runOver.title, 600000); }
+				if (drun.ended && !runOver) { runOver = diveResult(drun); keepDive(runOver); if (SITE_HOST) setTimeout(() => SITE_HOST.end(), 1300);   /* (the last second's frames carry the end) */ note(runOver.title, 600000); }
 			} else if (grun) { stepGuest(grun, input, K.TICK); for (const q of grun.says) note(q.text, q.s * 1000); if (grun.pick !== shownPick) showPick(); if (runOver === null && grun.ended) { runOver = grun.won ? 'won' : 'lost'; note(grun.won ? 'EXPEDITION COMPLETE!' : 'RUN OVER', 600000); } }
 			else tick(world, input, K.TICK);
 			fightEvents(world.events);
@@ -663,16 +666,17 @@ function fightEvents(events) {
 // ---------------------------------------------------------------- (P3n) showing a fight to others, and watching one
 // (the shipping path) Logged in, your own run is shown to your friends over the site's lines; ?live=<friend> watches one.
 const siteCall = GG.MicaAccount && GG.MicaAccount.name() ? (a, b) => GG.MicaAccount.call(a, b) : null;
-const SITE_HOST = run && !HOST && siteCall ? new HostLink({ call: siteCall, run: runId(crypto), label: '3D Expedition · ' + ((GG.DEX_BY[run.lg ? run.lg.member : DEX] || {}).name || ''), dex: DEX, now: () => performance.now() }) : null;
+const SITE_HOST = solo && !HOST && siteCall ? new HostLink({ call: siteCall, run: runId(crypto), label: (drun ? (drun.weekly ? '3D Weekly Dive · ' : '3D Dive · ') : '3D Expedition · ') + ((GG.DEX_BY[solo.lg ? solo.lg.member : DEX] || {}).name || ''), dex: DEX, now: () => performance.now() }) : null;
 const SITE_WATCH = LIVE ? new WatchLink({ call: siteCall || (async () => ({ ok: false, status: 401, body: {} })), who: LIVE.toLowerCase(), later: (fn, ms) => setTimeout(fn, ms) }) : null;
 const chan = SITE_WATCH || SITE_HOST || ((HOST || WATCH || JOIN) && typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('m3d:' + (HOST || WATCH || JOIN)) : null);
 let coView = null;
 /** The other players in the fight: a host's puppets of its guests; a guest's view of the host and the other guests. */
 const mates = () => (!world ? [] : JOIN ? world.co.mates : world.mates);
 const HEAD = { gen: GEN, biome: BIOME, size: SIZE, dex: DEX };
-if (run) HEAD.exp = { seed: GEN, map: run.map, diff: run.diff };   // (P4) a run: a watcher needs its seed and map to build the zones
+if (run) HEAD.exp = { seed: GEN, map: run.map, diff: run.diff };
+if (drun) HEAD.dive = { seed: drun.seed, route: drun.route };   // (part 16) a Dive: a watcher needs its seed and route to build the floors   // (P4) a run: a watcher needs its seed and map to build the zones
 /** (P4) A frame with the run's row on it (expnet.js), when this is a run. */
-const rowed = (f) => { if (run) f.r = runRow(run); return f; };
+const rowed = (f) => { if (run) f.r = runRow(run); else if (drun) f.r = diveRow(drun); return f; };
 const tape = FIGHT && Q.get('tape') === '1' ? new Tape({ ...HEAD, at: 0 }) : null;
 const net = { sent: 0, chars: 0, got: 0, evLive: [], evTape: [], prev: null, n: 0, batch: [], relay: false };
 const RELAY = Q.get('relay') === '1' || !!SITE_HOST;   // (the site's lines carry one message a second)
@@ -718,7 +722,7 @@ if (chan && JOIN) chan.onmessage = (m) => {   // a guest: the host's frames
 if (chan && WATCH) chan.onmessage = (m) => {
 	const o = JSON.parse(m.data); net.got++; net.chars += m.data.length;
 	// the level being played is not the one this page built: load it (once), keeping the watch
-	if (o.h && (o.h.gen !== GEN || o.h.biome !== BIOME || (o.h.size || null) !== (SIZE || null) || o.h.dex !== DEX || (o.h.exp ? !XW || XW.map !== o.h.exp.map : !!XW))) { if (!net.moving) { net.moving = true; const q = new URLSearchParams(); q.set(LIVE ? 'live' : 'watch', WATCH); if (o.h.exp) { q.set('xw', o.h.exp.seed); q.set('map', o.h.exp.map); } q.set('gen', o.h.gen); q.set('biome', o.h.biome); if (o.h.size) q.set('size', o.h.size); q.set('dex', o.h.dex); location.search = q.toString(); } return; }
+	if (o.h && (o.h.gen !== GEN || o.h.biome !== BIOME || (o.h.size || null) !== (SIZE || null) || o.h.dex !== DEX || (o.h.exp ? !XW || XW.map !== o.h.exp.map : !!XW) || (o.h.dive ? !DW || DW.seed !== (o.h.dive.seed | 0) || DW.route !== o.h.dive.route : !!DW))) { if (!net.moving) { net.moving = true; const q = new URLSearchParams(); q.set(LIVE ? 'live' : 'watch', WATCH); if (o.h.exp) { q.set('xw', o.h.exp.seed); q.set('map', o.h.exp.map); } if (o.h.dive) { q.set('dw', o.h.dive.seed); q.set('route', o.h.dive.route); } q.set('gen', o.h.gen); q.set('biome', o.h.biome); if (o.h.size) q.set('size', o.h.size); q.set('dex', o.h.dex); location.search = q.toString(); } return; }
 	if (watchSrc !== 'live') return;
 	if (o.b) { net.relay = true; for (const f of unbundle(o.b)) viewer.push(f); } else viewer.push(o.f);   // (a relay's message: a second's frames at once)
 };
@@ -739,6 +743,11 @@ function watchStep(dt) {
 	view = viewer.sample(watchT);
 	if (!view) return;
 	Object.assign(state, view.pl.s);
+	if (DW && view.fa && view.fa.r) {   // (part 16) a Dive as it was at that moment: its floor, its things, its loot
+		rv = diveView(view.fa.r, DR, XF, rowKeep);
+		if (rv.room !== room) { room = rv.room; mapBase = null; showRoom(); }
+		if (rv.over && !runOver) { runOver = rv.over; note(rv.over === 'won' ? 'They escape with everything!' : 'RUN OVER', 600000); }
+	}
 	if (XW && view.fa && view.fa.r) {   // (P4) the run as it was at that moment: its zone's level, its things, its team
 		rv = rowView(view.fa.r, XF, rowKeep);
 		if (rv.room !== room) { room = rv.room; mapBase = null; showRoom(); }
@@ -832,7 +841,7 @@ if (drun) {
 }
 /** (the shipping path) A run's own screen, in Micatro's look: runui.js draws this view of the run. The test room's
  *  readout is still filled (tests and ?debug=1 read it), but it is not what a player sees. */
-const RUNUI = myRun || XW ? mountRunUi(document, { debug: Q.has('debug'), onMenu: () => setMenu(!menuUp), onResume: () => setMenu(false), onBoard: (id) => openBoard(id), onMute: () => { if (GG.Audio) { GG.Audio.toggleMute(); RUNUI.update(runView()); } }, onUlt: () => { if (solo) pressUlt(solo); }, onAuto: () => { if (run && run.ult) setUltAuto(!run.ult.auto); } }) : null;
+const RUNUI = myRun || XW || DW ? mountRunUi(document, { debug: Q.has('debug'), onMenu: () => setMenu(!menuUp), onResume: () => setMenu(false), onBoard: (id) => openBoard(id), onMute: () => { if (GG.Audio) { GG.Audio.toggleMute(); RUNUI.update(runView()); } }, onUlt: () => { if (solo) pressUlt(solo); }, onAuto: () => { if (run && run.ult) setUltAuto(!run.ult.auto); } }) : null;
 /** The 3D boards of this run's map and tier (the menu's or the run's end's button): the server's top ten and yours. */
 let boardUp = null;
 async function openBoard(id) {
