@@ -54,7 +54,15 @@ function addCopies(user, ids) {
 	return refunded;
 }
 const MAX_DECK_SLOTS = 40;          // each player can save up to 40 PvP decks
-const REWARD_COOLDOWN_MS = 60_000;  // one run reward a minute tops
+const REWARD_COOLDOWN_MS = 60_000;
+// Gold lives on the ACCOUNT (owner, 2026-11-13; bug:1794534122917). It used to be a counter in the browser only, so a
+// fresh sign-in showed an older number. The server decides every amount (the client never sends one, except the
+// one-time carry-over of the browser's old counter): a cleared run by its mode (paid with run-reward), a finished
+// fight by its result, a finished Arena run by its wins.
+const GOLD_CLEAR = { dungeon: 500, heist: 750, tombs: 750, duels: 1000, lorequest: 1000, middleearth: 1000, swordcoast: 1000, finalfantasy: 1000, multiverse: 1000, arena: 1600 };
+const GOLD_FIGHT = { win: 100, draw: 50, loss: 25 };
+const GOLD_CAP = 9_999_999, GOLD_IMPORT_CAP = 1_000_000;
+const addGold = (user, n) => { const before = user.gold || 0; user.gold = Math.min(GOLD_CAP, before + Math.max(0, Math.floor(n) || 0)); return user.gold - before; };  // one run reward a minute tops
 const PACK_TIMER_MS = 12 * 60 * 60 * 1000; // a free pack drops every 12 hours
 const PACK_INBOX_CAP = 120;         // the special pack inbox holds up to 120 packs
 
@@ -778,6 +786,7 @@ const RATE_LIMITS = {
 	'replay-put': [20, 60_000], // uploading a shared replay tape — a rare, deliberate action
 	'arena-score': [20, 60_000], // submitting a finished Arena run — rare (a run takes minutes)
 	'run-score': [20, 60_000], 'duel-result': [10, 60_000], // run boards + Elo reports — one per finished run/duel
+	'gold-earn': [20, 60_000], // a finished fight's gold: a fight takes minutes
 	'craft': [60, 60_000], 'dust-extras': [10, 60_000], // crafting sprees are fine; bulk dusting is rare
 	// spectator / duel-guest polls: legit clients poll ~1/s (cardstate) and ~3/s
 	// (card-poll, fast during a turn); these ceilings are generous headroom that only
@@ -1536,6 +1545,7 @@ const publicState = (u, username) => ({
 	nextPackMs: packEtaMs(u, Date.now()),
 	stats: u.stats,
 	dust: u.dust || 0,
+	gold: u.gold || 0, goldImported: !!u.goldImported,
 	arenaBest: u.arenaBest || null,
 	friendCode: u.friendCode || null,
 	friends: u.friends || [],
@@ -4888,6 +4898,7 @@ export default async function handler(req, env) {
 		}
 		const won = body.result === 'win';
 		if (won) user.packs += 1;
+		const clearGold = won ? addGold(user, GOLD_CLEAR[String(body.mode || '').replace(/[^a-z]/g, '').slice(0, 12)] || 0) : 0;   // (a cleared run's gold, by its mode)
 		// per-mode counters (for achievements); 'pvp' = live duels, which don't
 		// count toward the run totals the profile's run achievements read
 		const mode = String(body.mode || '').replace(/[^a-z]/g, '').slice(0, 12);
@@ -4915,7 +4926,30 @@ export default async function handler(req, env) {
 		}
 		user.stats.lastReward = Date.now();
 		await store.setJSON(username, user);
-		return json({ won, state: publicState(user, username) });
+		return json({ won, gold: clearGold, state: publicState(user, username) });
+	}
+
+	if (action === 'gold-earn') {
+		// kind 'fight': a finished fight { result: 'win' | 'draw' | 'loss' }; 'arena': an Arena run that ended on its
+		// third loss { wins } (a flawless one is a clear: run-reward pays it), once a minute; 'import': the gold this
+		// browser had counted before gold was the account's { amount }, once per account, ever.
+		const kind = String(body.kind || '');
+		let got = 0;
+		if (kind === 'fight') {
+			const amt = GOLD_FIGHT[String(body.result || '')];
+			if (!amt) return json({ error: 'bad result' }, 400);
+			got = addGold(user, amt);
+		} else if (kind === 'arena') {
+			if (Date.now() - (user.stats.lastArenaGold || 0) < REWARD_COOLDOWN_MS) return json({ error: 'too soon — the last Arena run just paid out', state: publicState(user, username) }, 429);
+			got = addGold(user, 100 + Math.max(0, Math.min(11, parseInt(body.wins, 10) || 0)) * 120);
+			user.stats.lastArenaGold = Date.now();
+		} else if (kind === 'import') {
+			if (user.goldImported) return json({ ok: true, gold: 0, state: publicState(user, username) });
+			got = addGold(user, Math.max(0, Math.min(GOLD_IMPORT_CAP, parseInt(body.amount, 10) || 0)));
+			user.goldImported = true;
+		} else return json({ error: 'bad kind' }, 400);
+		await store.setJSON(username, user);
+		return json({ ok: true, gold: got, state: publicState(user, username) });
 	}
 
 	if (action === 'run-walkaway') {
