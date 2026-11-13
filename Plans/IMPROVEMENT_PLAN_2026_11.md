@@ -52,7 +52,9 @@ Things that shipped without being checked the way a player uses them.
       the chip says so. The host's and a solo Dive's only: a guest has no Ultimate in a Dive.
 - [x] 3d. The minimap marks chests and the landmark once seen. Done: a chest is gold (dull once opened), the landmark a
       diamond in its colour (dull once used); the big map's legend counts and names them. Yours, a guest's, a watcher's.
-- [ ] 3e. The crater's floor (the 3D game has no lava biome), and the 2D light map's lights: the landmark's glow, the
+- [x] 3e. (Done: the Ember Crater is basalt and lava, on the floor and the minimap; the lava flickers and shows through
+      the dark; a landmark has a soft glow on the ground until used. No sun shafts: the 2D light map has none. The
+      lava is a look only: you wade through it as through any route's water, and it does not hurt.) The crater's floor (the 3D game has no lava biome), and the 2D light map's lights: the landmark's glow, the
       lava's flicker, sun shafts.
 - [ ] 3f. 3D co-op runs on a board of their own, and a replay. (Largest item here; last.)
 

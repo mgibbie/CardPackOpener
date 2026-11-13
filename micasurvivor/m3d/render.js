@@ -51,13 +51,14 @@ export function buildTerrain(room) {
 	const tri = (a, b, d, hex, shade = 1) => { c.setHex(hex).multiplyScalar(shade); for (const p of [a, b, d]) { pos.push(p[0], p[1], p[2]); col.push(c.r, c.g, c.b); } };
 	const quad = (a, b, d, e, hex, shade) => { tri(a, b, d, hex, shade); tri(a, d, e, hex, shade); };
 	const inside = (x, z) => x >= 0 && z >= 0 && x < room.w && z < room.h;
+	const LK = room.look || {}, cTop = LK.top || TOP, cSlope = LK.slope || SLOPE, cBed = LK.bed || BED, cSide = LK.side != null ? LK.side : SIDE, cRim = LK.rim != null ? LK.rim : RIM;   // (a Dive route's own floor: divelight.js LOOK)
 	for (let cz = 0; cz < room.h; cz++) for (let cx = 0; cx < room.w; cx++) {
 		const [nw, ne, sw, se] = cornerHeights(room, cx, cz), x0 = cx * CELL, x1 = x0 + CELL, z0 = cz * CELL, z1 = z0 + CELL;
 		const rim = nw >= (room.rimH || 8) && !room.slopes.has(cz * room.w + cx), sl = room.slopes.has(cz * room.w + cx), k = (cx + cz) & 1;
 		const ci = cz * room.w + cx, m = room.mats && room.mats.get(ci), wet = room.water && room.water.has(ci);
 		// (P2) a generated level has height levels: higher floor is drawn lighter, so the lie of the land reads at a glance
 		const lit = rim || !room.maxH ? 1 : 0.84 + 0.2 * Math.max(0, Math.min(1.2, (nw + se) / 2 / room.maxH));
-		quad([x0, nw, z0], [x0, sw, z1], [x1, se, z1], [x1, ne, z0], rim ? RIM : (m ? MAT[m] : wet ? BED : sl ? SLOPE : TOP)[k], lit);
+		quad([x0, nw, z0], [x0, sw, z1], [x1, se, z1], [x1, ne, z0], rim ? cRim : (m ? MAT[m] : wet ? cBed : sl ? cSlope : cTop)[k], lit);
 		// a wall on each side where this cell's edge stands above the neighbour's
 		const side = (ax, az, bx, bz, ha, hb, nx, nz, shade) => {
 			if (!inside(nx, nz)) return;
@@ -66,7 +67,7 @@ export function buildTerrain(room) {
 			const pick = (x, z) => { const ex = x === nx * CELL ? 0 : 1, ez = z === nz * CELL ? 0 : 2; return n[ex + ez]; };
 			const la = pick(ax, az), lb = pick(bx, bz);
 			if (ha <= la + 1e-6 && hb <= lb + 1e-6) return;
-			quad([ax, ha, az], [ax, Math.min(la, ha), az], [bx, Math.min(lb, hb), bz], [bx, hb, bz], rim ? RIM : SIDE, shade);
+			quad([ax, ha, az], [ax, Math.min(la, ha), az], [bx, Math.min(lb, hb), bz], [bx, hb, bz], rim ? cRim : cSide, shade);
 		};
 		side(x0, z0, x1, z0, nw, ne, cx, cz - 1, 0.82);   // north
 		side(x1, z1, x0, z1, se, sw, cx, cz + 1, 0.92);   // south
@@ -113,14 +114,15 @@ export function buildExit(at) {
  *  lighter, water blue, ice / mud / bounce in their colours, ramps sand, the rim dark. -> a canvas, `px` a cell. */
 export function drawMap(room, px = 4) {
 	const c = document.createElement('canvas'); c.width = room.w * px; c.height = room.h * px;
-	const g = c.getContext('2d'), top = room.maxH || 4, rim = room.rimH || 8;
+	const g = c.getContext('2d'), top = room.maxH || 4, rim = room.rimH || 8, LM = room.look && room.look.map;
 	for (let cz = 0; cz < room.h; cz++) for (let cx = 0; cx < room.w; cx++) {
 		const i = cz * room.w + cx, h = room.cells[i], m = room.mats.get(i);
 		let fill;
-		if (h >= rim) fill = '#1c2433';
-		else if (room.water.has(i)) fill = '#3f8fe0';
+		if (h >= rim) fill = LM ? LM.rim : '#1c2433';
+		else if (room.water.has(i)) fill = LM ? LM.liquid : '#3f8fe0';
 		else if (m) fill = m === 'ice' ? '#cfeeff' : m === 'mud' ? '#7a5a3c' : '#ff5fa6';
-		else if (room.slopes.has(i)) fill = '#d2b877';
+		else if (room.slopes.has(i)) fill = LM ? LM.slope : '#d2b877';
+		else if (LM) { const t = 1 + 0.5 * Math.max(0, Math.min(1.25, h / top)); fill = `rgb(${Math.round(LM.ground[0] * t)},${Math.round(LM.ground[1] * t)},${Math.round(LM.ground[2] * t)})`; }
 		else { const t = Math.max(0, Math.min(1.25, h / top)); fill = `rgb(${Math.round(70 + 90 * t)},${Math.round(130 + 95 * t)},${Math.round(70 + 60 * t)})`; }
 		g.fillStyle = fill; g.fillRect(cx * px, cz * px, px, px);
 	}
@@ -163,7 +165,9 @@ export function buildWater(room) {
 	}
 	const g = new THREE.BufferGeometry();
 	g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
-	const mesh = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ color: 0x3f8fe0, transparent: true, opacity: 0.55, depthWrite: false, side: THREE.DoubleSide }));
+	const lq = room.look && room.look.liquid;   // (lava: nearly solid, and it shows through the dark: no fog on it)
+	const mesh = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ color: lq ? lq.color : 0x3f8fe0, transparent: true, opacity: lq ? lq.opacity : 0.55, depthWrite: false, side: THREE.DoubleSide, fog: !(lq && lq.glow) }));
+	mesh.userData.liquid = lq ? lq.name : 'water';
 	mesh.matrixAutoUpdate = false; mesh.renderOrder = 2;
 	return mesh;
 }
@@ -312,9 +316,9 @@ export class Flashes {
 	push(mesh, life) { mesh.renderOrder = 4; this.scene.add(mesh); this.list.push({ mesh, t: 0, life, o: mesh.material.opacity }); }
 	mat(css, opacity) { return new THREE.MeshBasicMaterial({ color: new THREE.Color(css || '#ffffff'), transparent: true, opacity, depthWrite: false, side: THREE.DoubleSide, fog: false }); }
 	/** An arc (or a full ring) lying on the floor. aim: the ground-plane angle ((cos, sin) on (x, z)). */
-	arc(x, y, z, r, aim, arc, css, life = 0.22, inner = null) {
+	arc(x, y, z, r, aim, arc, css, life = 0.22, inner = null, opacity = null) {   // (opacity: its own, e.g. a soft glow; else by its life)
 		const full = arc >= 6.2, g = new THREE.RingGeometry(inner !== null ? r * inner : full ? r * 0.82 : r * 0.35, r, 28, 1, full ? 0 : -aim - arc / 2, full ? 6.2832 : arc); g.rotateX(-Math.PI / 2);
-		const m = new THREE.Mesh(g, this.mat(css, life > 1 ? 0.35 : 0.55)); m.position.set(x, y + 0.12, z); this.push(m, life);
+		const m = new THREE.Mesh(g, this.mat(css, opacity !== null ? opacity : life > 1 ? 0.35 : 0.55)); m.position.set(x, y + 0.12, z); this.push(m, life);
 	}
 	/** A straight bar from a point along a unit direction. */
 	bar(from, dir, len, width, css, life = 0.2) {
