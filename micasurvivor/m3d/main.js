@@ -630,6 +630,11 @@ function fightEvents(events) {
 		else if (ev.k === 'rxchain') { for (const b of ev.links) { const a = ev.from, d = [b[0] - a[0], b[1] - a[1], b[2] - a[2]], l = Math.hypot(d[0], d[1], d[2]) || 1; flashes.bar([a[0], a[1] + 0.6, a[2]], [d[0] / l, d[1] / l, d[2] / l], l, 0.12, '#ffe14d', 0.25); } }
 		else if (ev.k === 'hurt') { bob = 0.35; note(`hit for ${(+ev.d).toFixed(0)}`, 700); }
 		else if (ev.k === 'bossdown' && ev.guardian && drun) { if (keepGuardian()) note('Stage and Seal saved', 3000); }
+		else if (ev.k === 'tele') {   // (part 9) the red ground: a circle (a slam) or a lane (a charge), for as long as it winds up
+			if (ev.kind === 'slam') { flashes.arc(ev.x, 0.06, ev.z, ev.r, 0, 6.2832, '#ff3b30', ev.T, 0.9); flashes.arc(ev.x, 0.05, ev.z, ev.r, 0, 6.2832, '#ff6b5a', ev.T, 0); }
+			else flashes.bar([ev.x, 0.06, ev.z], [Math.cos(ev.a), 0, Math.sin(ev.a)], ev.len, ev.w * 0.5, '#ff3b30', ev.T + 0.3);
+		}
+		else if (ev.k === 'slam') { burst(ev.x, 0.4, ev.z, '#ff6b5a', ev.big ? 26 : 14, ev.big ? 6 : 4, { up: 2.5, life: 0.4, r: 0.1 }); play([['quake']]); }
 		else if (ev.k === 'plug') { showRoom(); mapBase = null; burst(ev.x, 1, ev.z, ev.kind === 'boulder' ? '#9c917f' : '#ff9a3d', 26, 5, { up: 3, life: 0.6, r: 0.12 }); play([['break']]); }   // (the rock is gone: the floor is built again)
 		else if (ev.k === 'chest') { burst(ev.x, 0.6, ev.z, '#ffe9a0', 16, 3.5, { up: 3, life: 0.5, r: 0.08 }); play([['chest']]); }
 		else if (ev.k === 'landmark') { const c = LANDMARKS[ev.kind][2]; flashes.arc(ev.x, 0.05, ev.z, 3, 0, 6.2832, c, 0.9, 0.9); burst(ev.x, 1.5, ev.z, c, 22, 4, { up: 3.5, life: 0.7, r: 0.1 }); play([['heal']]); }

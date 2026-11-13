@@ -29,12 +29,15 @@
 //   landmarks  (part 5) the route's own, on some floors: stand on it LM.T s, once (LANDMARKS below).
 //   learning   (part 8) at levels 4, 10, 16… the level's cards are a new special: "learn X, forget special 1", "… special 2",
 //              or train and keep your moves. X is your League member's next kit move, then a move of your types.
+//   red ground (part 9) a brawler that reaches you winds up a SLAM (a red circle, TELE.slam s, then all inside are hit); an alpha
+//              or a guardian slams wider and CHARGES (a red lane, then a dash along it). It holds still while winding up.
+//              Dodge or step out.
 //   the save   (part 6) divesave.js: the deepest floor, the stage, the Seal (o.seal: +10 % damage, -10 % taken), the pay.
 // Not here yet (later parts): a new special at levels 4, 10, 16…, the League, the red ground, the stall, the bushes
 // and the gold rocks, routes and stages in the save, the Weekly Dive, co-op.
 // Pure and seeded: no DOM, no clock.
 import { K as SK, CELL, groundAt, newState, setCell } from './sim.js';
-import { CK, U, newWorld, tick, addEnemy, addBoss, gainXp, canFire } from './combat.js';
+import { CK, U, newWorld, tick, addEnemy, addBoss, gainXp, canFire, hurtPlayer } from './combat.js';
 import { setup as setupLevels, tickStats, takeItem, newCard, moveCands, trainCards } from './explevel.js';
 import { rollOffers } from './expeco.js';
 import { setupRx, tickRx } from './exprx.js';
@@ -56,7 +59,7 @@ const ROPE_STILL = 0.5;   // m/s: slower than this is standing still (the rope)
 export function rulesFrom(G) {
 	const E = G.ExpDive, F = diveFrom(G); if (!E || !F) return null;
 	const en = (G.I18n && G.I18n.en) || {}, tr = (s) => en[s] || s;
-	return { F, K: E.K, ESCORT: E.ESCORT, GUARDIANS: E.GUARDIANS, COMBO: E.COMBO, PLUG: E.PLUG, LM: E.LM, SEAL: E.SEAL, MAIN: E.MAIN.slice(), LEARN_AT: E.LEARN_AT, target: E.target, pool: (route, floor) => E.pool(route, floor), guardianOf: E.guardianOf,
+	return { F, K: E.K, ESCORT: E.ESCORT, GUARDIANS: E.GUARDIANS, COMBO: E.COMBO, PLUG: E.PLUG, LM: E.LM, SEAL: E.SEAL, MAIN: E.MAIN.slice(), LEARN_AT: E.LEARN_AT, TELE: E.TELE, target: E.target, pool: (route, floor) => E.pool(route, floor), guardianOf: E.guardianOf,
 		megaRoll: (seed, route, f) => E.megaRoll(seed, route, f), legendRoll: (seed, route, f) => E.legendRoll(seed, route, f),
 		rng: (seed, route, floor, k) => G.DLC.rng(G.DiveGen.seedOf(seed | 0, route, floor, k)), nameOf: (route) => tr(E.NAME[route] || route),
 		strays: (route, floor) => { const tg = E.target(floor) - 60, types = F.ROUTES[route].types; return G.DEX.filter((p) => !p.leg && Math.abs(p.bst - tg) < 70 && p.types.some((t) => types.includes(t))).map((p) => p.dex); } };
@@ -204,7 +207,7 @@ function place(S, x, z, cx, cz, fly) {
 /** Floor f begins: its room is already the fight's. The groups (asleep), the lost Pokémon, the alpha or the guardian. */
 function startFloor(S, f, t) {
 	const w = S.w, R = S.R, K = R.K, room = w.room, L = room.dive;
-	Object.assign(S, { floor: f, zone: f, ft: t, groups: [], boss: null, sealed: false, bossFell: false, stairsT: 0, ropeT: 0, ropeSaid: false, sealSaid: false, stray: null, reinT: null, reinN: 0, cadence: L.cadence });
+	Object.assign(S, { floor: f, zone: f, ft: t, groups: [], boss: null, sealed: false, bossFell: false, stairsT: 0, ropeT: 0, ropeSaid: false, sealSaid: false, stray: null, reinT: null, reinN: 0, cadence: L.cadence, tg: [] });
 	// (part 5) the chests (the floor's, and each pocket's), the landmark
 	{ const seen = new Set(), list = []; for (const c of [...room.chests, ...room.plugs.map((pg) => pg.chest)]) { if (!c) continue; const key = c[0] + ',' + c[2]; if (seen.has(key)) continue; seen.add(key); list.push({ x: c[0], z: c[2], t: 0, open: false, pocket: room.pocketChest(c) }); }
 		S.chests = list; S.lm = room.landmark && LANDMARKS[room.landmark.kind] ? { kind: room.landmark.kind, x: room.landmark.at[0], z: room.landmark.at[2], t: 0, used: false, seen: false } : null; }
@@ -320,6 +323,50 @@ function useLandmark(S, lm) {
 	say(S, `${LANDMARKS[k][0]}: ${LANDMARKS[k][1]}`, 3);
 	w.events.push({ k: 'landmark', kind: k, x: lm.x, z: lm.z });
 }
+// ---------------------------------------------------------------- (part 9) the red ground: slams and charges
+const release = (e) => { e.dummy = false; e.xtele = null; };
+const openAt = (room, x, z) => x > 0 && z > 0 && x < room.w * CELL && z < room.h * CELL && room.cells[Math.floor(z / CELL) * room.w + Math.floor(x / CELL)] < room.rimH;
+/** One tick of the telegraphs (the 2D game's teleTick, with the fight's own seeded dice). S.tg: what is on the ground:
+ *  { k: 'slam' | 'charge' | 'dash', e, x, z, r | (a, len, w), t, T }. */
+function teleTick(S, dt) {
+	const w = S.w, TE = S.R.TELE, pl = w.pl, s = pl.s, room = w.room; if (!TE) return;
+	for (const e of w.enemies) {
+		if (e.dead || e.asleep || e.xtele || e.minion) continue;
+		const big = e.xk === 'alpha' || e.xk === 'guardian';
+		if (!big && (e.def.shotCd || e.behavior === 'thief' || e.dummy)) continue;   // (a brawler: a foe with no shot)
+		if (e.frozenT > 0 || e.sleepT > 0) continue;
+		e.xtcd = (e.xtcd == null ? 1 + w.rand() * 1.5 : e.xtcd) - dt;
+		if (e.xtcd > 0) continue;
+		const d = Math.hypot(s.x - e.a.x, s.z - e.a.z), reach = tiles(big ? TE.chargeLen : TE.REACH);
+		if (d > reach) { e.xtcd = 0.3; continue; }
+		const cd = e.xk === 'guardian' ? TE.GUARD_CD : big ? TE.ALPHA_CD : TE.CD;
+		e.xtcd = cd[0] + w.rand() * (cd[1] - cd[0]);
+		const charge = big && (d > tiles(2) || w.rand() < (e.xk === 'guardian' ? 0.45 : 0.35));
+		const t = charge ? { k: 'charge', e, x: e.a.x, z: e.a.z, a: Math.atan2(s.z - e.a.z, s.x - e.a.x), len: tiles(TE.chargeLen), w: tiles(TE.chargeW), t: 0, T: TE.charge }
+			: { k: 'slam', e, x: e.a.x, z: e.a.z, r: tiles(e.xk === 'guardian' ? TE.guardR : big ? TE.alphaR : TE.slamR), t: 0, T: TE.slam };
+		e.xtele = t; e.dummy = true;   // (it holds still while winding up)
+		S.tg.push(t);
+		w.events.push(charge ? { k: 'tele', kind: 'charge', x: t.x, z: t.z, a: t.a, len: t.len, w: t.w, T: t.T } : { k: 'tele', kind: 'slam', x: t.x, z: t.z, r: t.r, T: t.T });
+	}
+	for (let i = S.tg.length - 1; i >= 0; i--) {
+		const t = S.tg[i], e = t.e;
+		if (e.dead) { S.tg.splice(i, 1); continue; }
+		t.t += dt;
+		if (t.k === 'dash') {
+			const u = Math.min(1, t.t / TE.chargeT), px = t.x + Math.cos(t.a) * t.len * u, pz = t.z + Math.sin(t.a) * t.len * u, wall = !openAt(room, px, pz);
+			if (!wall) { e.a.x = px; e.a.z = pz; }
+			if (!t.hit && !pl.dead && Math.hypot(s.x - e.a.x, s.z - e.a.z) < t.w * 0.6 + 0.35) { t.hit = true; hurtPlayer(w, e.dmg * TE.CHARGE_DMG, 'normal', true); }
+			if (u >= 1 || wall) { S.tg.splice(i, 1); release(e); }
+			continue;
+		}
+		if (t.t < t.T) continue;
+		if (t.k === 'slam') {
+			if (!pl.dead && Math.hypot(s.x - t.x, s.z - t.z) < t.r) hurtPlayer(w, e.dmg * TE.SLAM_DMG, 'normal', true);
+			w.events.push({ k: 'slam', x: t.x, z: t.z, r: t.r, big: !!e.xk });
+			S.tg.splice(i, 1); release(e);
+		} else { t.k = 'dash'; t.t = 0; t.hit = false; w.events.push({ k: 'charge', x: t.x, z: t.z, a: t.a, len: t.len }); }   // (the charge's wind-up is over)
+	}
+}
 /** One tick of the floor's things. */
 function thingsTick(S, dt) {
 	const w = S.w, R = S.R, s = w.pl.s, room = w.room, f = S.floor;
@@ -429,6 +476,7 @@ export function stepDive(S, input, dt = SK.TICK) {
 	if (lo && !lo.done && !lo.follow && Math.hypot(s.x - lo.x, s.z - lo.z) < tiles(K.RESCUE_R)) { lo.follow = true; say(S, `${name(S, lo.dex)} follows you! Take it to the stairs`, 2.6); w.events.push({ k: 'follow', dex: lo.dex }); }
 	escortTick(S, dt);
 	thingsTick(S, dt);
+	teleTick(S, dt);
 	if (S.boss && S.boss.dead) bossDown(S);
 	// the rope: stand still in the circle where you arrived
 	if (S.cadence.rope) {

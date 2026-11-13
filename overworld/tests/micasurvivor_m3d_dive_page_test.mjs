@@ -203,6 +203,16 @@ try {
 	const k7 = await M(() => window.__m3d.kept), c7 = (expSave(await store()) || {}).counters || {};
 	A(k7 && k7.ok === false && k7.why === 'member' && c7['dive.runs'] === 1, "6c. Dragonite's family, which a new save does not have: its end says so, and nothing is written", [k7, c7['dive.runs']]);
 
+	// ---- 6d. (part 9) the red ground: a brawler beside you winds up a slam, and it lands
+	ok = await boot('dive=7&route=forest&dex=4&auto=1');
+	await M(() => { const m = window.__m3d, s = m.state; m.world.enemies.length = 0; m.dive.groups.length = 0; m.dive.ft = 1e9; m.world.pl.maxHp = m.world.pl.hp = 1e6; m.world.pl.moves.length = 0;
+		let e = null; for (let d = 1; d <= 151 && !e; d++) { const q = m.addEnemy(d, s.x + 2, s.z, { t: 0, ti: 0, hp: 1e6 }); if (q && !q.def.shotCd && q.behavior !== 'thief' && !q.fly) e = q; else if (q) m.world.enemies.length = 0; }
+		e.a.speed = 0; e.touchCd = 1e9; window.__brawler = e; });
+	const wound = await waitFor(() => M(() => window.__m3d.dive.tg.length === 1 && window.__brawler.dummy === true), 6000);
+	A(ok && wound, '6d. a brawler beside you winds up a slam and holds still');
+	const landed = await waitFor(() => M(() => window.__m3d.dive.tg.length === 0 && window.__m3d.world.pl.hp < 1e6 && window.__brawler.dummy === false), 4000);
+	A(landed, '6d. the slam lands: you are hit, and the foe moves again', await M(() => [window.__m3d.dive.tg.length, window.__m3d.world.pl.hp]));
+
 	// ---- 7. an Expedition is untouched
 	ok = await boot('exp=7&map=viridian&dex=4&weather=0');
 	d = await M(() => { const m = window.__m3d; return { run: !!m.run, dive: m.dive, zone: m.run && m.run.zone, slide: document.getElementById('b-slide').textContent, man: m.world.pl.moves.some((q) => q.xman) }; });
