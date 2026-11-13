@@ -175,6 +175,26 @@ try {
 		A(await waitFor(async () => (await view()).phase === 'shop', 3000), `${name}: "To the Shop" opens the Level Shop`);
 		await waitFor(() => page.evaluate(() => document.querySelectorAll('.pp-offer').length === 4), 3000);
 		await sleep(700);   // (the shop panel rises: Micatro's risein)
+		if (vp.hasTouch) {
+			// (owner, 2026-11-13, iPhone in the browser: its bars leave a page about 1.8 times as tall as wide, and the shop's two
+			//  rows of tiles lay over each other: the top row's Buy buttons and every description were cut off)
+			const shopFit = () => page.evaluate(() => {
+				const R = (e) => e.getBoundingClientRect(), tiles = [...document.querySelectorAll('.pp-offer')], box = R(document.querySelector('.pp-offers')), grid = document.querySelector('.pp-offers'), foot = R(document.querySelector('.b-nextlevel')), panel = R(document.querySelector('.shop-panel'));
+				const over = (a, b) => a.left < b.right - 1 && b.left < a.right - 1 && a.top < b.bottom - 1 && b.top < a.bottom - 1;
+				let overlap = 0, cut = 0, thin = 0;
+				for (let a = 0; a < tiles.length; a++) for (let b = a + 1; b < tiles.length; b++) if (over(R(tiles[a]), R(tiles[b]))) overlap++;
+				for (const t of tiles) { const tr = R(t); for (const c of t.querySelectorAll('.btn, .pp-of-desc, .pp-of-name')) { const r = R(c); if (r.bottom > tr.bottom + 1 || r.top < tr.top - 1 || r.right > tr.right + 1) cut++; } const d = t.querySelector('.pp-of-desc'); if (d && d.textContent.trim() && (R(d).height < 18 || d.scrollHeight > d.clientHeight + 2)) thin++; }
+				const scroll = grid.scrollHeight > grid.clientHeight + 2, lastBottom = Math.max(...tiles.map((t) => R(t).bottom));
+				return { overlap, cut, thin, scroll, inBox: scroll || lastBottom <= box.bottom + 1, footClear: foot.top >= box.bottom - 1 && foot.bottom <= panel.bottom + 1, portrait: document.getElementById('stage').classList.contains('portrait') };
+			});
+			for (const [what, h] of [['short phone (a browser with its bars: 390 x 700)', 700], ['the shortest page (390 x 600)', 600], ['a tall phone (390 x 844)', 844]]) {
+				await page.setViewport({ ...vp, height: h }); await sleep(500);
+				const sf = await shopFit();
+				A(sf.portrait && sf.overlap === 0 && sf.cut === 0 && sf.thin === 0 && sf.inBox && sf.footClear, `${name}, ${what}: the four shop tiles do not lie over each other, each shows its whole text and button, and Next Level is clear of them${sf.scroll ? ' (the offers scroll)' : ''}`, JSON.stringify(sf));
+				if (h === 700) await shot('shop-short');
+			}
+			await page.setViewport(vp); await sleep(400);
+		}
 		v = await view();
 		const ci = v.offers.findIndex((o) => o && o.kind === 'charm' && o.cost <= v.berries);
 		A(ci >= 0, `${name}: an affordable charm is on offer`, JSON.stringify(v.offers));

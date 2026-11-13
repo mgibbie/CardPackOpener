@@ -107,9 +107,23 @@
 .pp-sell .pp-sell-big { font-size: 46px; color: var(--money); text-shadow: 0 3px 0 rgba(0,0,0,.35); margin-top: 10px; }
 .pp-sh-foot { display: flex; justify-content: center; gap: 16px; }
 .pp-sh-foot .btn { width: 320px; }
-.portrait .pp-of-card { width: 96px; height: 96px; }
-.portrait .pp-of-card img { width: 66px; height: 66px; }
-.portrait .pp-of-desc { font-size: 19px; }
+/* Portrait (a phone): a tile is its picture beside its name and text, with its button under them. Stacked (picture, name,
+   text, button) a tile was about 300 design px tall, and two rows of them did not fit the panel on a phone whose browser
+   bars leave a short page (owner, 2026-11-13, iPhone: the top row's Buy buttons and every description were cut off and the
+   rows lay over each other). Rows are as tall as their tiles now, never squeezed; on the shortest pages the offers scroll. */
+.portrait .pp-offers { grid-auto-rows: min-content; align-content: start; overflow-y: auto; overscroll-behavior: contain; padding-bottom: 8px; }
+.portrait .pp-offer { display: grid; grid-template-columns: 76px 1fr; grid-template-areas: "card name" "card desc" "btn btn"; column-gap: 10px; row-gap: 4px; align-items: start; text-align: left; padding: 10px 10px 8px; }
+.portrait .pp-of-card { grid-area: card; width: 76px; height: 76px; }
+.portrait .pp-of-card img { width: 52px; height: 52px; }
+.portrait .pp-of-card .pp-of-on { right: auto; left: -8px; top: -8px; width: 40px; height: 40px; }   /* (on the picture's outer corner: its name is to the right) */
+.portrait .pp-of-card .pp-of-on img { width: 28px; height: 28px; }
+.portrait .pp-of-name { grid-area: name; font-size: 24px; line-height: 1.05; }
+.portrait .pp-of-desc { grid-area: desc; font-size: 18px; min-height: 44px; }
+.portrait .pp-offer .btn { grid-area: btn; font-size: 26px; margin-top: 4px; }
+.portrait .pp-sell .pp-sell-big { grid-area: card; font-size: 30px; margin: 0; align-self: center; justify-self: center; }
+.portrait .pp-sh-title { font-size: 42px; }
+.portrait .pp-shop .shop-panel { gap: 10px; padding: 16px 16px 12px; }
+.portrait .pp-sh-help { font-size: 18px; }
 
 /* banner (spectating / watchers): landscape keeps it under the table (the charm row is at the top) */
 .pp-banner .pp-watch b { color: var(--attn); }
