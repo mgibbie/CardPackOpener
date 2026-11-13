@@ -1056,8 +1056,17 @@ register('resummon-self-diminished', ({ state, pi, target, source, enemies, scal
 
 register('summon-token-attack-random', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
 			// Factory Assemblybot: summon a token that immediately attacks a random enemy
-			const tok = summon(state, pi, state.cardsById[e.summonId] || { id: e.summonId || 'token_bot', name: e.name || 'Bot', type: 'creature', cost: 0, token: true, tribe: e.tribe || null, rarity: 'common', attack: e.attack || 6, health: e.health || 7 });
-			if (tok) { tok.sick = false; const foes = []; for (const o of enemies) { for (const c of state.players[o].board) if (!isDead(c) && c.type !== 'location' && !c.stealthed && c.dormantLeft <= 0) foes.push({ type: 'creature', uid: c.uid, player: o }); foes.push({ type: 'hero', player: o }); } if (foes.length && !isDead(tok)) resolveCombat(state, pi, tok.uid, foes[Math.floor(state.rng() * foes.length)]); }
+			// count: that many, one after another (Nagrand Slam, Carrier, Ghouls' Night ...). lowest: each attacks the enemy
+			// creature with the least Health instead (Extraterrestrial Egg). These shipped as a plain `summon` with the
+			// clause in the token's NAME ("Ghouls that attack random enemies"), so nothing attacked (tester report 2026-11-13).
+			for (let n = 0; n < (e.count || 1); n++) {
+				const tok = summon(state, pi, state.cardsById[e.summonId] || { id: e.summonId || 'token_' + String(e.name || 'bot').toLowerCase().replace(/[^a-z0-9]+/g, '_'), name: e.name || 'Bot', type: 'creature', cost: 0, token: true, tribe: e.tribe || null, rarity: 'common', attack: e.attack || 6, health: e.health || 7, ...(e.keywords ? { keywords: [...e.keywords] } : {}) });
+				if (!tok) break;   // (board full)
+				tok.sick = false; const foes = []; let low = null;
+				for (const o of enemies) { for (const c of state.players[o].board) if (!isDead(c) && c.type !== 'location' && !c.stealthed && !(c.dormantLeft > 0)) { foes.push({ type: 'creature', uid: c.uid, player: o }); if (!low || hp(c) < low.h) low = { h: hp(c), t: foes[foes.length - 1] }; } foes.push({ type: 'hero', player: o }); }
+				if (foes.length && !isDead(tok)) resolveCombat(state, pi, tok.uid, e.lowest && low ? low.t : foes[Math.floor(state.rng() * foes.length)]);
+			}
+			if ((e.count || 1) > 1) sweepDeaths(state);
 } });
 
 
@@ -1102,7 +1111,8 @@ register('reanimate', ({ state, pi, target, source, enemies, scaled, hm, pickEne
 register('transform-self-into-token', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
 			// Druid of the Plains (Frenzy): transform this minion into a fixed-stat token
 			if (source && source.zone === 'board' && !isDead(source)) {
-				const tok = instantiate({ id: 'token_' + (e.name || 'token').toLowerCase().replace(/[^a-z0-9]+/g, '_'), name: e.name || 'Token', type: 'creature', cost: e.cost || 0, rarity: 'common', token: true, tribe: e.tribe || source.tribe || null, attack: e.attack, health: e.health, keywords: e.keywords || [], description: e.description || `A ${e.attack}/${e.health} token.` }, pi);
+				// intoId: into a real card, with everything that card does (Ashes of Al'ar: back into Al'ar, Deathrattle and all)
+				const tok = e.intoId && state.cardsById[e.intoId] ? instantiate(state.cardsById[e.intoId], pi) : instantiate({ id: 'token_' + (e.name || 'token').toLowerCase().replace(/[^a-z0-9]+/g, '_'), name: e.name || 'Token', type: 'creature', cost: e.cost || 0, rarity: 'common', token: true, tribe: e.tribe || source.tribe || null, attack: e.attack, health: e.health, keywords: e.keywords || [], description: e.description || `A ${e.attack}/${e.health} token.` }, pi);
 				tok.zone = 'board'; tok.sick = source.sick;
 				const board = state.players[pi].board; board[board.indexOf(source)] = tok; source.zone = 'gone';
 				emit(state, { type: 'transformed', uid: source.uid, player: pi, from: source.name, card: tok }); recomputeAuras(state);
