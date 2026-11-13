@@ -941,7 +941,7 @@ function runView() {
 	if (run) { v.parts = hudLine(run).split(' · '); if (run.ph === 0 && !run.surv && run.charge > 0) v.parts.push(`CHARGE ${Math.round(run.charge * 100)} %`); }
 	else if (drun) v.parts = diveHud(drun).split(' · ');
 	else if (rv) v.parts = rv.hud(state).split(' · ');
-	if (solo && solo.ult && !runOver) { v.ult = ultView(solo); v.ult.col = TYPE_COLOR[v.ult.type]; v.ult.key = matchMedia('(pointer: coarse)').matches ? '' : drun ? '3' : 'V'; }
+	if (solo && solo.ult && !runOver) { v.ult = ultView(solo); v.ult.col = TYPE_COLOR[v.ult.type]; v.ult.key = matchMedia('(pointer: coarse)').matches ? '' : drun ? '3 / L+R' : 'V'; }
 	if (cutIn && performance.now() < cutIn.until) v.cut = cutIn;
 	if (pl) v.moves = pl.moves.map((m) => ({ icon: GG.Icons ? GG.Icons.html('move:' + m.id, 18) : '', name: pretty(m.id), lv: m.xlv || m.lvl, col: TYPE_COLOR[(GG.Moves.BY_ID[m.id] || (GG.ExpMoves && GG.ExpMoves.MOVES[m.id]) || {}).type] }));
 	if (dk && v.moves) specials(dk).forEach((q, i) => { const m = v.moves[i + 1]; if (m) { m.sub = q.cd > 0.05 ? q.cd.toFixed(1) + ' s' : q.queued ? '…' : (matchMedia('(pointer: coarse)').matches ? 'TAP' : 'KEY ' + (i + 1)); m.dim = q.cd > 0.05; } });
@@ -980,6 +980,9 @@ const siteInput = startInput({ pad: true,
 		if (uiLayer()) return uiNav.onAction(a, info);
 		if (info.repeat) return false;
 		if (a === 'menu' && RUNUI) { setMenu(true); return true; }
+		// (a Dive's Ultimate on a controller: both shoulders together, L + R (Q + E on the keys). X and Y are the specials
+		//  there, so the Expedition's Y was not free; before this a pad had no way to fire it.)
+		if (drun && drun.ult && !runOver && (a === 'prev' || a === 'next') && acts.has('prev') && acts.has('next')) { pressUlt(drun); return true; }
 		if (dk && (a === 'secondary' || a === 'context')) { special(a === 'secondary' ? 1 : 2); return true; }   // (a Dive: C / V, the pad's X / Y: the specials)
 		if (a === 'context' && solo && solo.ult) { pressUlt(solo); return true; }   // (V / the pad's Y: the Ultimate)
 		if (a === 'select' && FIGHT) { toggleMap(); return true; }

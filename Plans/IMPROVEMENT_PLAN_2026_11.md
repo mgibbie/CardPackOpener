@@ -48,7 +48,8 @@ Things that shipped without being checked the way a player uses them.
       team's), and the other players do not see a guest's shiny look.
 - [x] 3b. A co-op guest keeps the stage and the Seal when the party beats a guardian. Done: in its own save, the
       moment the guardian falls (never the Weekly Dive).
-- [ ] 3c. A controller button for the Ultimate in a Dive.
+- [x] 3c. A controller button for the Ultimate in a Dive. Done: both shoulders together, L + R (Q + E on the keys);
+      the chip says so. The host's and a solo Dive's only: a guest has no Ultimate in a Dive.
 - [ ] 3d. The minimap marks chests and the landmark once seen.
 - [ ] 3e. The crater's floor (the 3D game has no lava biome), and the 2D light map's lights: the landmark's glow, the
       lava's flicker, sun shafts.
