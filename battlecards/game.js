@@ -656,7 +656,8 @@ function serverClearRun(key, runId) {
 	if (!MP_ON) return;
 	// the end of a run must land too: retried with backoff (a clear that never arrives
 	// still can't resurrect the run — its pending result, already sent, settles it)
-	runWrite('run-clear', runId ? { key, runId } : { key }).then(d => {
+	// (keepalive: the browser still sends it when the tab closes right after the last fight)
+	runWrite('run-clear', runId ? { key, runId } : { key }, { keepalive: true }).then(d => {
 		if (!d || !d.ok) banner('⚠ Could not tell the server this run ended — it will settle the next time you open the mode.', 5000);
 	}).catch(() => {});
 }
@@ -712,7 +713,10 @@ async function hydrateRunsFromServer() {
 			// ...or a LATER run ended there since this copy was written: an older run's zombie (stashed, never deleted)
 			if (serverSupersededRun(safeLoad(key, null), entry)) { endLocalRunCopy(key, safeLoad(key, null), 'server-ended-later-run'); _runsEndedAtBoot.add(key); continue; }
 			if (!entry || !entry.run || typeof entry.run !== 'object') continue;
-			if (entry.run.runId && endedRunIds().includes(String(entry.run.runId))) continue; // a run this device ended
+			// a run this device ended, and the server still holds it: the clear never arrived (a closed
+			// tab). This device's list alone kept it away only HERE — a fresh sign-in on another browser
+			// took the finished run back. Tell the server again, so the ACCOUNT knows it ended.
+			if (entry.run.runId && endedRunIds().includes(String(entry.run.runId))) { serverClearRun(key, String(entry.run.runId)); continue; }
 			// Pick ONE canonical copy. entry.updated_at is the server's own write stamp —
 			// authoritative recency, immune to client clocks — and was previously thrown
 			// away here, leaving the decision to "does the server copy have a snapshot?".
