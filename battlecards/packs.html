@@ -50,6 +50,14 @@
 			box-shadow: 0 6px 22px rgba(0,0,0,0.55);
 		}
 		#next-btn:hover { filter: brightness(1.18); }
+		#buy-btn {
+			position: fixed; bottom: max(52px, env(safe-area-inset-bottom) + 40px); right: 16px;
+			padding: 10px 16px; border-radius: 10px; border: 1px solid #a8862c;
+			background: linear-gradient(180deg, #7a5c14, #4f3a0c); color: #fff3cf;
+			font: 600 14px 'Segoe UI', sans-serif; letter-spacing: 0.5px; cursor: pointer;
+			box-shadow: 0 6px 22px rgba(0,0,0,0.55);
+		}
+		#buy-btn:hover { filter: brightness(1.18); }
 	</style>
 	<script type="importmap">
 	{ "imports": { "three": "/battlecards/vendor/three.module.min.js" } }
@@ -62,6 +70,7 @@
 	<div id="hint" class="hud"></div>
 	<div id="toast" class="hud"></div>
 	<button id="next-btn" hidden>Open another pack</button>
+	<button id="buy-btn" hidden>Buy a pack</button>
 	<script type="module" src="packs.js"></script>
 	<script type="module" src="nav.js"></script>
 	<script type="module" src="/site/topbar.js"></script>
