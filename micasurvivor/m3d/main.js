@@ -110,16 +110,18 @@ const DMOVES = DR && !Q.get('moves') && GG.ExpLeague ? (() => { const L = GG.Exp
 // (part 6) a Dive that can be kept: the save is opened before the run (the start floor and the route's Seal are its)
 const DPRACTICE = DR ? DS.unfairDive([...Q.entries()]) : null;
 const DSAVE_OK = !!DR && !DPRACTICE && !!GG.ExpSave && await GG.ExpSave.open().then(() => !!GG.ExpSave.data, () => false);
-const DROUTE = DR && DR.F.ROUTES[Q.get('route')] ? Q.get('route') : 'forest';
+// (part 15) ?weekly: this week's Weekly Dive: its seed, its route and its modifier are the week's, whatever else the address says
+const DWEEK = DR && Q.has('weekly') && GG.Expedition && GG.Expedition.diveWeekly ? GG.Expedition.diveWeekly() : null;
+const DROUTE = DWEEK ? DWEEK.route : DR && DR.F.ROUTES[Q.get('route')] ? Q.get('route') : 'forest';
 const DMEMBER = DR && GG.ExpLeague ? (GG.ExpLeague.BY[DEX] ? DEX : GG.ExpLeague.FAM[DEX] || 0) : 0;
-const DSTART = DSAVE_OK ? DS.startOf(GG.ExpSave, DROUTE, +Q.get('floor') || 1) : +Q.get('floor') || 1;
+const DSTART = DWEEK ? 1 : DSAVE_OK ? DS.startOf(GG.ExpSave, DROUTE, +Q.get('floor') || 1) : +Q.get('floor') || 1;
 // (part 12) what your save brings to a Dive that can be kept, as to an Expedition: the form you start as (one you
 // own), the family's bought upgrades, the Lab (its boosts are spent only then), your shiny's look
 const DFORM = DR ? +Q.get('form') || 0 : 0;
-const DKEEP = DSAVE_OK && !!GG.ExpLeague && !!DMEMBER && hasMember(DMEMBER, { L: GG.ExpLeague, Sv: GG.ExpSave, base: baseSave() }) && DS.routeOpen(GG.ExpSave, DROUTE, DR.MAIN) && (!DFORM || DFORM === DMEMBER || hasForm(DFORM, { Sv: GG.ExpSave, base: baseSave() }));
+const DKEEP = DSAVE_OK && !!GG.ExpLeague && !!DMEMBER && hasMember(DMEMBER, { L: GG.ExpLeague, Sv: GG.ExpSave, base: baseSave() }) && (!!DWEEK || DS.routeOpen(GG.ExpSave, DROUTE, DR.MAIN)) && (!DFORM || DFORM === DMEMBER || hasForm(DFORM, { Sv: GG.ExpSave, base: baseSave() }));
 const DMETA = (() => { if (!DKEEP || !GG.ExpMeta) return null; try { return metaFor(GG.ExpMeta, { Sv: GG.ExpSave, member: DMEMBER, boosts: spendBoosts(GG.ExpMeta, GG.ExpSave, deviceId(localStorage, GG.ExpSave.who, crypto), localStorage) }); } catch (e) { console.warn('the Lab could not be read: ' + (e && e.message)); return null; } })();
 const DSHINY = DKEEP && (() => { const b = baseSave(); return GG.ExpSave.has('league.shiny', String(DMEMBER)) || !!(b && b.partnerShiny && b.shiny && b.shiny[DEX]); })();
-const drun = DR ? newDive(dataFrom(GG), XF, DR, { form: DFORM, perks: DKEEP ? perksOf(GG, baseSave(), DEX) : null, meta: DMETA, shiny: DSHINY, route: DROUTE, seed: GEN, start: DSTART, seal: DSAVE_OK && DS.sealOf(GG.ExpSave, DROUTE), league: !Q.has('moves') && Q.get('league') !== '0', dex: DEX, moves: DMOVES, tune: TUNE, touch: matchMedia('(pointer: coarse)').matches, ability: Q.get('ability') === '0' ? null : Q.get('ability') || 'auto', items: Q.get('items') ? Q.get('items').split(',') : [], weather: false, autoPick: Q.has('auto') ? +Q.get('auto') | 0 : undefined }) : null;
+const drun = DR ? newDive(dataFrom(GG), XF, DR, { form: DFORM, perks: DKEEP ? perksOf(GG, baseSave(), DEX) : null, meta: DMETA, shiny: DSHINY, weekly: DWEEK ? { week: DWEEK.week, mod: DWEEK.mod } : null, route: DROUTE, seed: DWEEK ? DWEEK.seed : GEN, start: DSTART, seal: DSAVE_OK && DS.sealOf(GG.ExpSave, DROUTE), league: !Q.has('moves') && Q.get('league') !== '0', dex: DEX, moves: DMOVES, tune: TUNE, touch: matchMedia('(pointer: coarse)').matches, ability: Q.get('ability') === '0' ? null : Q.get('ability') || 'auto', items: Q.get('items') ? Q.get('items').split(',') : [], weather: false, autoPick: Q.has('auto') ? +Q.get('auto') | 0 : undefined }) : null;
 if (drun) { room = drun.w.room; drun.w.cap = DR.K.REIN.cap + 60; }
 // (part 14) a dark route: its air (the fog comes close and takes the route's colour: your lamp), its tint at the screen's edges
 const DLIGHT = drun ? lightOf(drun.route, FOG0) : null;
@@ -839,7 +841,7 @@ async function openBoard(id) {
 	const view = id === 'open' ? (myRun && myRun.surv ? 'survival' : 'score') : id, A = GG.MicaAccount, me = A && A.name();
 	const mine = boardUp = { view, map, diff, rows: [], note: me ? 'Loading…' : 'Log in to Magepunk to see the 3D boards.' };
 	show(); if (!me) return;
-	const d = await A.call('run-leaderboard', drun ? DS.boardAsk(drun.route, SV.BOARD) : boardAsk(map, diff, view));
+	const d = await A.call('run-leaderboard', drun ? DS.boardAsk(drun.route, SV.BOARD, drun.weekly ? drun.weekly.week : null) : boardAsk(map, diff, view));
 	if (boardUp !== mine) return;   // (another board was asked for meanwhile, or this one closed)
 	if (!d.ok || !d.body) mine.note = "Couldn't load the board.";
 	else { mine.rows = (drun ? DS.boardRows : boardRows)(d.body, (dex) => (GG.DEX_BY[dex] || {}).name || '', me); mine.note = mine.rows.length ? (d.body.you && d.body.you.rank ? `Your best: #${d.body.you.rank}` : 'You have no mark on this board yet.') : 'No one has a mark on this board yet.'; }
@@ -886,11 +888,11 @@ function runView() {
 	for (const d of myRun && myRun.cap ? myRun.cap.sa.map((a) => a.dex) : rv ? rv.sa : []) v.bag.push({ text: nameOf(d), kind: 'warn' });
 	const b = drun ? (drun.boss && !drun.boss.dead ? drun.boss : null) : world && !JOIN ? world.enemies.find((e) => e.boss) : null;
 	if (b) v.boss = { name: nameOf(b.dex), hp: b.hp, maxHp: b.maxHp, enraged: !!(b.ai && b.ai.fury) };
-	if (boardUp) v.board = { title: drun ? `3D Dive · ${DR.nameOf(drun.route)} · deepest floor` : `3D · ${XK.MAP_NAME[boardUp.map] || boardUp.map} · ${boardUp.diff[0].toUpperCase() + boardUp.diff.slice(1)}`, tabs: drun ? [] : [['score', 'Score'], ['time', 'Time attack'], ['survival', 'Survival']].map(([id, text]) => ({ id, text, on: id === boardUp.view })), rows: boardUp.rows, note: boardUp.note };
+	if (boardUp) v.board = { title: drun ? (drun.weekly ? `3D Weekly Dive · ${DR.nameOf(drun.route)} · ${DR.modName(drun.weekly.mod)}` : `3D Dive · ${DR.nameOf(drun.route)} · deepest floor`) : `3D · ${XK.MAP_NAME[boardUp.map] || boardUp.map} · ${boardUp.diff[0].toUpperCase() + boardUp.diff.slice(1)}`, tabs: drun ? [] : [['score', 'Score'], ['time', 'Time attack'], ['survival', 'Survival']].map(([id, text]) => ({ id, text, on: id === boardUp.view })), rows: boardUp.rows, note: boardUp.note };
 	if (menuUp && !runOver) v.menu = { auto: run && run.ult ? (run.ult.auto ? 'on' : 'off') : null, boards: true, sound: GG.Audio ? (GG.Audio.settings.muted ? 'off' : 'on') : null, title: paused ? 'PAUSED' : 'MENU', line: (paused ? '' : 'The fight goes on while this is open. ') + (drun ? DIVE_CONTROLS : CONTROLS), restart: solo ? location.search || '?' : null, leave: '../' };
 	if (runOver) {
 		const r = runOver, q = new URLSearchParams(location.search); q.set('exp', (+q.get('exp') || 0) + 1);
-		if (drun) { const qd = new URLSearchParams(location.search); qd.set('dive', (+qd.get('dive') || 0) + 1);
+		if (drun) { const qd = new URLSearchParams(location.search); if (!drun.weekly) qd.set('dive', (+qd.get('dive') || 0) + 1);   // (the Weekly Dive again is the same Dive)
 			v.over = { won: r.won, title: r.title, line: r.lines[0], again: '?' + qd, leave: '../', boards: true, kept: kept ? { ok: kept.ok, text: kept.text } : null,
 				rows: [['Floor', String(r.parts.floor)], ['Time', `${Math.floor(r.parts.time / 60)}:${String(r.parts.time % 60).padStart(2, '0')}`], ['KOs', String(r.parts.kills)], ['Level', String(v.level)], ['Loot kept', String(r.parts.divePay)], ['Rescued', String(r.parts.rescued)], ['Best combo', String(r.parts.combo)], ['Poké Balls', String(r.parts.chests)], ['Secrets', String(r.parts.secrets)], ['Alphas', String(r.parts.alphas)], ['Guardians', String(r.parts.guardians)]] };
 		} else
@@ -1044,7 +1046,7 @@ const G_MUSIC = GG.BIOME_MUSIC || null, XK_MAPS = ['viridian', 'mtmoon', 'cerule
 
 // what a test (and a curious owner in the console) can reach
 window.__m3d = {
-	dive: drun, diveRules: DR, special, light: () => ({ dive: DLIGHT, near: scene.fog.near, far: scene.fog.far, color: scene.fog.color.getHex(), vignette: !!document.getElementById('dive-dark') }), diveSave: { practice: DPRACTICE, ok: DSAVE_OK, start: DSTART, member: DMEMBER, form: DFORM, keep: DKEEP, meta: !!DMETA }, propKeys: () => (props ? [...props.atlas.cells.keys()] : []), roomBuilds: () => roomBuilds,
+	dive: drun, diveRules: DR, special, light: () => ({ dive: DLIGHT, near: scene.fog.near, far: scene.fog.far, color: scene.fog.color.getHex(), vignette: !!document.getElementById('dive-dark') }), diveSave: { week: DWEEK, practice: DPRACTICE, ok: DSAVE_OK, start: DSTART, member: DMEMBER, form: DFORM, keep: DKEEP, meta: !!DMETA }, propKeys: () => (props ? [...props.atlas.cells.keys()] : []), roomBuilds: () => roomBuilds,
 	meta: LAB_META, upgrades: UPGRADES, leadShiny: LEAD_SHINY, skey,
 	keepShiny,
 	siteHost: SITE_HOST, siteWatch: SITE_WATCH,

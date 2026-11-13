@@ -39,6 +39,9 @@
 //              Candy's two levels, the items you have not unlocked left out), o.shiny (its look).
 //   the floor's (part 13) the 2D floor's own (its ecoLayout): Meowth's stall on about 1 plain floor in 4 (open all floor),
 //   economy    2 berry bushes, 3 gold rocks; KOs and rocks pay ₽ for the stall. The Expedition's economy runs it (expeco.js).
+//   the Weekly (part 15) o.weekly { week, mod }: this week's Dive, the same for everyone (the page gives its seed and route):
+//   Dive       from floor 1, no stage, no Seal, and one modifier: glass (you hit and are hit x1.5), horde (+2 foes a group),
+//              swift (foes x1.25 speed), iron (foes x1.4 HP).
 //   the save   (part 6) divesave.js: the deepest floor, the stage, the Seal (o.seal: +10 % damage, -10 % taken), the pay.
 // Not here yet (later parts): a new special at levels 4, 10, 16…, the League, the red ground, the stall, the bushes
 // and the gold rocks, routes and stages in the save, the Weekly Dive, co-op.
@@ -69,7 +72,7 @@ const ROPE_STILL = 0.5;   // m/s: slower than this is standing still (the rope)
 export function rulesFrom(G) {
 	const E = G.ExpDive, F = diveFrom(G); if (!E || !F) return null;
 	const en = (G.I18n && G.I18n.en) || {}, tr = (s) => en[s] || s;
-	return { F, K: E.K, ESCORT: E.ESCORT, GUARDIANS: E.GUARDIANS, COMBO: E.COMBO, PLUG: E.PLUG, LM: E.LM, SEAL: E.SEAL, MAIN: E.MAIN.slice(), LEARN_AT: E.LEARN_AT, TELE: E.TELE, target: E.target, pool: (route, floor) => E.pool(route, floor), guardianOf: E.guardianOf,
+	return { F, K: E.K, ESCORT: E.ESCORT, GUARDIANS: E.GUARDIANS, COMBO: E.COMBO, PLUG: E.PLUG, LM: E.LM, SEAL: E.SEAL, MAIN: E.MAIN.slice(), LEARN_AT: E.LEARN_AT, TELE: E.TELE, WEEKLY: E.WEEKLY, modName: (mod) => tr(E.MOD_NAME[mod] || mod), target: E.target, pool: (route, floor) => E.pool(route, floor), guardianOf: E.guardianOf,
 		megaRoll: (seed, route, f) => E.megaRoll(seed, route, f), legendRoll: (seed, route, f) => E.legendRoll(seed, route, f),
 		rng: (seed, route, floor, k) => G.DLC.rng(G.DiveGen.seedOf(seed | 0, route, floor, k)), nameOf: (route) => tr(E.NAME[route] || route),
 		strays: (route, floor) => { const tg = E.target(floor) - 60, types = F.ROUTES[route].types; return G.DEX.filter((p) => !p.leg && Math.abs(p.bst - tg) < 70 && p.types.some((t) => types.includes(t))).map((p) => p.dex); } };
@@ -85,14 +88,15 @@ const tiles = (n) => n * CELL;
  *  -> the run: { w (the fight), route, seed, floor, bank, stake, rescued, groups, boss, sealed, stray (the lost
  *  Pokémon), ended, escaped, lost (you fainted), says } */
 export function newDive(data, X, R, o = {}) {
-	const route = R.F.ROUTES[o.route] ? o.route : 'forest', seed = (o.seed | 0) || 1, f0 = Math.max(1, o.start | 0);
+	const weekly = o.weekly && R.WEEKLY ? { week: o.weekly.week | 0, mod: String(o.weekly.mod) } : null;
+	const route = R.F.ROUTES[o.route] ? o.route : 'forest', seed = (o.seed | 0) || 1, f0 = weekly ? 1 : Math.max(1, o.start | 0);
 	const room = diveRoom(R.F, seed, route, f0);
 	const own = !!(X && X.L) && o.levels !== false, league = own && !!X.G && !!o.league && o.kit !== false, member = league ? memberOf(X.G, o.dex || 25) : 0;
 	const lv = league ? [] : (o.moves || []).map((m) => (Array.isArray(m) ? m : [m, 1]));
 	const w = newWorld(room, data, { ...o, dex: league ? member : o.dex, moves: own ? lv.map((m) => m[0]) : o.moves, seed: seed >>> 0, cast: null, bosses: null,
 		ability: league && o.ability === undefined ? X.G.abilityOf(X.G.finalsOf(X.G.BY[member])[0]) : o.ability });   // (a member has its final stage's ability all run)
 	const S = { w, X, R, data, dive: true, route, map: 'dive:' + route, seed, floor: 0, zone: f0, start: f0, bank: 0, stake: 0, rescued: [], rescuedBank: 0, kills: 0, alphas: 0, guardians: 0,
-		deepest: 0, ended: false, escaped: false, lost: false, won: false, groups: [], boss: null, sealed: false, stray: null, tags: new Map(), says: [], legPity: 0, stage: 0, meta: own ? o.meta || null : null };   // (meta: what the Lab gives this run, expmeta.js)
+		deepest: 0, ended: false, escaped: false, lost: false, won: false, groups: [], boss: null, sealed: false, stray: null, tags: new Map(), says: [], legPity: 0, stage: 0, weekly, meta: own ? o.meta || null : null };   // (meta: what the Lab gives this run, expmeta.js)
 	if (o.perks) applyPerks(S, o.perks);
 	if (own) { setupLevels(S, X.L, lv); S.syncPerks = () => syncPerks(S); }
 	if (S.up) perkTools(S);
@@ -103,13 +107,14 @@ export function newDive(data, X, R, o = {}) {
 	// the kit, the dodge, the combo
 	S.kit = o.kit !== false; S.dodge = { t: 0, cd: 0, dx: 0, dz: 0, n: 0, held: false }; S.combo = { n: 0, t: 0, best: 0, k: 1 }; S.spare = [];
 	{ const hooks = w.hooks || (w.hooks = {}), hurt0 = hooks.hurt, out0 = hooks.out;
-		hooks.hurt = (ww, d) => (S.dodge.t > 0 ? 0 : (hurt0 ? hurt0(ww, d) : d) * (S.seal ? 1 - R.SEAL.TAKEN : 1));
-		hooks.out = (ww, e, src, dmg) => { const k0 = out0 ? out0(ww, e, src, dmg) : 1, id = src && (src.mid || src.id); return k0 * (S.kit && id && isSpecial(S, id) ? R.K.SPECIAL_K : 1) * (S.obeliskT > 0 ? 1 + R.LM.OBELISK : 1) * (S.seal ? 1 + R.SEAL.DMG : 1); }; }
-	S.seal = !!o.seal;   // (part 6: the route's Seal, from your save)
+		const glass = weekly && weekly.mod === 'glass' ? R.WEEKLY.GLASS : 1;   // (the Weekly Dive's Glass Cannon: you hit and are hit x1.5)
+		hooks.hurt = (ww, d) => (S.dodge.t > 0 ? 0 : (hurt0 ? hurt0(ww, d) : d) * (S.seal ? 1 - R.SEAL.TAKEN : 1) * glass);
+		hooks.out = (ww, e, src, dmg) => { const k0 = out0 ? out0(ww, e, src, dmg) : 1, id = src && (src.mid || src.id); return k0 * (S.kit && id && isSpecial(S, id) ? R.K.SPECIAL_K : 1) * (S.obeliskT > 0 ? 1 + R.LM.OBELISK : 1) * (S.seal ? 1 + R.SEAL.DMG : 1) * glass; }; }
+	S.seal = !!o.seal && !weekly;   // (part 6: the route's Seal, from your save; the Weekly Dive has none)
 	S.opened = 0; S.secrets = 0; S.marks = 0; S.obeliskT = 0; S.plugTip = false;
 	roles(S);
 	if (S.kit && S.lv && w.offerCards) { const offer0 = w.offerCards; S.learnAt = {}; w.offerCards = () => { if (S.lg) { processLeague(S); if (S.lg.pending) return offer0(); } return learnCards(S) || offer0(); }; }   // (a League run: the level's evolution first; a branch to choose is the level's cards)   // (part 8)
-	startFloor(S, f0, 0);
+	startFloor(S, f0, 0); S.opening = true;
 	if (S.meta && !w.kos) w.kos = [];   // (part 13: research: every KO is read from here, as an Expedition's)
 	if (S.meta) {   // the Lab's (as an Expedition's): its stats, a Max Revive to start with, the Rare Candy's two levels
 		S.syncPerks();
@@ -205,6 +210,8 @@ export function spawnFoe(S, dex, x, z, o = {}) {
 		e.xp = Math.round(base.xp * K.XP_K * (Xk ? Xk.xp : 1));
 		if (Xk) { e.scale = Xk.scale; e.cr = S.data.radius(dex, Xk.scale); e.xk = o.legend ? 'legend' : 'alpha'; }
 	}
+	if (S.weekly && S.weekly.mod === 'iron') e.maxHp = e.hp = Math.round(e.maxHp * S.R.WEEKLY.IRON);   // (the Weekly Dive's modifiers)
+	if (S.weekly && S.weekly.mod === 'swift') e.a.speed *= S.R.WEEKLY.SWIFT;
 	// an elite: one affix, from the floor's own elite stream (the same floor, the same elites)
 	if (!Xk && o.er && f >= K.ELITE.from && o.er() < Math.min(K.ELITE.max, K.ELITE.p0 + K.ELITE.per * (f - K.ELITE.from))) {
 		const aff = ['swift', 'tough', 'rage'][Math.floor(o.er() * 3)];
@@ -259,7 +266,7 @@ function startFloor(S, f, t) {
 		S.chests = list; S.lm = room.landmark && LANDMARKS[room.landmark.kind] ? { kind: room.landmark.kind, x: room.landmark.at[0], z: room.landmark.at[2], t: 0, used: false, seen: false } : null; }
 	S.deepest = Math.max(S.deepest, f); S.tags.clear();
 	const r = R.rng(S.seed, S.route, f, 0xD1), P = R.pool(S.route, f), er = R.rng(S.seed, S.route, f, 0xE17E);
-	const n = Math.min(K.GROUP[1], K.GROUP[0] + Math.floor(f / 8));
+	const n = Math.min(K.GROUP[1], K.GROUP[0] + Math.floor(f / 8)) + (S.weekly && S.weekly.mod === 'horde' ? 2 : 0);   // (the Weekly Dive's Horde)
 	room.groups.forEach((g, gi) => {
 		const k = Math.max(1, n + (g.guard ? K.GUARD_PLUS : 0) + Math.floor(r() * 3) - 1), list = [], cx = g.at[0], cz = g.at[2];
 		for (let i = 0; i < k; i++) {
@@ -289,7 +296,7 @@ function startFloor(S, f, t) {
 		if (e) { S.boss = e; S.sealed = true; said = true; say(S, 'An alpha! Beat it to open the stairs', 3.4); }
 	}
 	if (!L.cadence.guardian) said = u3Floor(S, f) || said;
-	if (!said) say(S, `— Floor ${f} · ${R.nameOf(S.route)} —`, 2.8);
+	if (!said) say(S, S.weekly && f === 1 ? `Weekly Dive · ${R.nameOf(S.route)} · ${R.modName(S.weekly.mod)}: ${WEEKLY_TXT[S.weekly.mod] || ''}` : `— Floor ${f} · ${R.nameOf(S.route)} —`, S.weekly && f === 1 ? 4.5 : 2.8);
 	w.events.push({ k: 'floor', floor: f });
 }
 /** Floor f's Mega (below floor K.MEGA.from) and legendary (from K.LEGEND.from, with the pity): awake, alpha-sized. */
@@ -333,6 +340,8 @@ export function reinforce(S) {
 	return made;
 }
 
+/** What each of the Weekly Dive's modifiers does. */
+export const WEEKLY_TXT = { glass: 'you hit and are hit x1.5', horde: '+2 foes a group', swift: 'foes x1.25 speed', iron: 'foes x1.4 HP' };
 export const loot = (S, n) => { if (n > 0) S.stake += n; };
 /** An item is yours, and the page is told which (what explevel.js says of it is one of the run's lines too). */
 function give(S, id) { const ev = S.w.events, n0 = ev.length, n = takeItem(S, id); for (let i = n0; i < ev.length; i++) if (ev[i].k === 'say') S.says.push({ text: ev[i].text, s: ev[i].s }); return n; }
@@ -449,7 +458,7 @@ const secure = (S) => { S.bank += S.stake; S.stake = 0; S.rescuedBank = S.rescue
 function bossDown(S) {
 	const K = S.R.K, e = S.boss, guard = e.xk === 'guardian';
 	S.boss = null; S.sealed = false; S.bossFell = true;
-	if (guard) { S.guardians++; loot(S, K.LOOT.guard + K.LOOT.guardPer * S.floor); secure(S); S.stage = S.floor + 1; say(S, 'Guardian defeated! Stage saved', 3.4); }
+	if (guard) { S.guardians++; loot(S, K.LOOT.guard + K.LOOT.guardPer * S.floor); secure(S); if (S.weekly) say(S, 'Guardian defeated! Loot secured', 3.4); else { S.stage = S.floor + 1; say(S, 'Guardian defeated! Stage saved', 3.4); } }
 	else { S.alphas++; loot(S, K.LOOT.alpha + K.LOOT.alphaPer * S.floor); if (S.floor <= 25) { secure(S); say(S, 'Alpha defeated! Loot secured', 3); } else say(S, 'Alpha defeated! The stairs are clear', 3); }
 	S.w.events.push({ k: 'bossdown', guardian: guard });
 }
@@ -486,7 +495,7 @@ function end(S, escaped) { S.ended = true; S.escaped = escaped; S.won = escaped;
 /** One tick of the run: the fight's tick, then the Dive's rules. */
 export function stepDive(S, input, dt = SK.TICK) {
 	const w = S.w, K = S.R.K;
-	S.says.length = 0;
+	if (S.opening) S.opening = false; else S.says.length = 0;   // (the first step keeps what the first floor said as the Dive was made: the page shows it)
 	if (S.ended) return S;
 	if (S.ult && holdUlt(S, dt)) { w.events.length = 0; return S; }
 	if (S.pick) {   // (part 13) the stall is open: the fight holds until you close it (autoPick: closed at once)
@@ -566,8 +575,8 @@ export function hudLine(S) {
 /** The end screen's parts and lines (the 2D game's scoreParts and result). */
 export function result(S) {
 	const w = S.w;
-	const parts = { floor: S.floor, deepest: S.deepest, route: S.route, kills: S.kills, time: Math.floor(w.t), alphas: S.alphas, guardians: S.guardians, rescued: rescuedOf(S), combo: S.combo.best, form: S.lg ? S.lg.form : S.w.pl.mon.dex, evos: S.lg ? S.lg.evo : 0, chests: S.opened, secrets: S.secrets, landmarks: S.marks, escaped: S.escaped, divePay: payOf(S), zone: Math.min(4, 1 + Math.floor(S.floor / 10)), start: S.start, weekly: null };
+	const parts = { floor: S.floor, deepest: S.deepest, route: S.route, kills: S.kills, time: Math.floor(w.t), alphas: S.alphas, guardians: S.guardians, rescued: rescuedOf(S), combo: S.combo.best, form: S.lg ? S.lg.form : S.w.pl.mon.dex, evos: S.lg ? S.lg.evo : 0, chests: S.opened, secrets: S.secrets, landmarks: S.marks, escaped: S.escaped, divePay: payOf(S), zone: Math.min(4, 1 + Math.floor(S.floor / 10)), start: S.start, weekly: S.weekly ? S.weekly.week : null };
 	return { won: S.escaped, title: S.escaped ? 'You escape with everything!' : 'RUN OVER', parts, stage: S.stage,
-		lines: [`Dive · ${S.R.nameOf(S.route)}: floor ${S.floor}`, `Loot secured: ${Math.floor(S.bank)} · at stake: ${Math.floor(S.stake)}`,
+		lines: [(S.weekly ? `Weekly Dive · ${S.R.modName(S.weekly.mod)} · ` : 'Dive · ') + `${S.R.nameOf(S.route)}: floor ${S.floor}`, `Loot secured: ${Math.floor(S.bank)} · at stake: ${Math.floor(S.stake)}`,
 			S.escaped ? 'You escaped: you keep all the loot' : 'You fell: you keep what was secured and a quarter of the rest', `Rescued: ${rescuedOf(S)}`, `Alphas: ${S.alphas} · Guardians: ${S.guardians}`, `Best combo: ${S.combo.best}`, `Poké Balls opened: ${S.opened} · Secret pockets: ${S.secrets}`] };
 }

@@ -255,6 +255,22 @@ try {
 	lt = await M(() => window.__m3d.light());
 	A(ok && lt.dive.dark === 0 && lt.far === 78 && lt.near === 26 && lt.color === 0x9fc4e8 && !lt.vignette, '6g. the woods are lit: the 3D game\'s own sky and fog', lt);
 
+	// ---- 6h. (part 15) the Weekly Dive
+	ok = await boot('dive=1&weekly=0&dex=4&route=forest&floor=26');
+	const wkp = await M(() => { const m = window.__m3d, w = m.diveSave.week; return { w, route: m.dive.route, seed: m.dive.seed, floor: m.dive.floor, weekly: m.dive.weekly, seal: m.dive.seal, practice: m.diveSave.practice, notes: m.noteLog.join(' | ') }; });
+	A(ok && wkp.w && wkp.route === wkp.w.route && wkp.seed === (wkp.w.seed | 0) && wkp.floor === 1 && wkp.weekly.week === wkp.w.week && wkp.weekly.mod === wkp.w.mod && wkp.seal === false && wkp.practice === null, "6h. ?weekly is this week's Weekly Dive: its seed, route and modifier, from floor 1, whatever else the address says", wkp);
+	A(wkp.notes.includes('Weekly Dive · '), '6h. the screen says so, with the modifier', wkp.notes.slice(0, 200));
+	await M(() => { const m = window.__m3d; m.world.enemies.length = 0; m.dive.groups.length = 0; m.dive.ft = 1e9; m.dive.bank = 40; });
+	const c0w = ((expSave(await store()) || {}).counters || {})['dive.weekly'] || 0;
+	await faint(); await sleep(300);
+	const wend = await M(() => ({ kept: window.__m3d.kept, again: (document.getElementById('rx-again') || {}).href || '', line: document.getElementById('rx-end').textContent }));
+	const cw = (expSave(await store()) || {}).counters || {};
+	A(wend.kept && wend.kept.ok === true && cw['dive.weekly'] === c0w + 1 && wend.line.includes('Weekly Dive'), '6h. it is kept and counted as a Weekly Dive', [wend.kept, cw['dive.weekly']]);
+	A(wend.again.includes('dive=1') && wend.again.includes('weekly=0'), '6h. Play again is the same Weekly Dive', wend.again);
+	await M(() => document.getElementById('rx-boards').click());
+	A(await waitFor(() => M(() => { const b = window.__m3d.runView().board; return !!b && b.title.startsWith('3D Weekly Dive · '); }), 3000), "6h. its board is the week's", await M(() => window.__m3d.runView().board));
+	await M(() => window.__m3d.openBoard(null));
+
 	// ---- 7. an Expedition is untouched
 	ok = await boot('exp=7&map=viridian&dex=4&weather=0');
 	d = await M(() => { const m = window.__m3d; return { run: !!m.run, dive: m.dive, zone: m.run && m.run.zone, slide: document.getElementById('b-slide').textContent, man: m.world.pl.moves.some((q) => q.xman) }; });

@@ -613,7 +613,7 @@ G.PlayUI = (() => {
   }
 
   // 3D DIVE, LIVE (owner, 2026-11-13: "go live with 3D Dive"; Plans/MICASURVIVOR_3D_PLAN.md §5.64): START on Dive,
-  // playing alone, opens the 3D page with the same member, route and start floor. The Weekly Dive, local and online play
+  // playing alone, opens the 3D page with the same member, route and start floor (the Weekly Dive too). Local and online play
   // keep the 2D Dive (the 3D one has none of them), and the 2D Dive is ARCHIVED, not deleted: a browser goes back to it
   // with /micasurvivor/?dive3d=0 (this browser only; ?dive3d=1 returns to 3D). No WebGL 2: the 2D Dive, without asking.
   const D3D_KEY = 'micasurvivor_dive3d';
@@ -621,8 +621,13 @@ G.PlayUI = (() => {
   const dive3d = () => { try { return localStorage.getItem(D3D_KEY) !== '0'; } catch (e) { return true; } };
   /** The 3D page's address for this Dive, or null when it is a 2D one. */
   function dive3dUrl(mode) {
-    if (!dive3d() || !canDraw3d() || st.players !== 'solo' || mode !== 'exp-dive' || st.variant !== 'dive') return null;
+    if (!dive3d() || !canDraw3d() || st.players !== 'solo' || mode !== 'exp-dive' || (st.variant !== 'dive' && st.variant !== 'weekly')) return null;
     const L = G.ExpLeague, D = G.ExpDive, X = G.Expedition, dex = L && L.pickFor ? L.pickFor() : 0;
+    if (st.variant === 'weekly') {   // (the Weekly Dive: the week's seed; the 3D page takes the route and the modifier from the week)
+      if (!dex) return null;
+      const w = X.diveWeekly(), wf = L.formFor ? L.formFor(dex) : dex;
+      return '/micasurvivor/m3d/?dive=' + w.seed + '&weekly=' + w.week + '&dex=' + dex + (wf && wf !== dex ? '&form=' + wf : '');
+    }
     const route = st.route || X.diveRoute();   // (the carousel's, or the route of your last Dive when it was never turned)
     if (!dex || !D || !route || !D.routeOpen(route)) return null;
     let seed = 1; try { const a = new Uint32Array(1); crypto.getRandomValues(a); seed = (a[0] % 2147483646) + 1; } catch (e) { seed = (Date.now() % 2147483646) + 1; }

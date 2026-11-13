@@ -641,6 +641,15 @@ try {
 		const rd = await d.E(() => ({ path: location.pathname, route: window.__m3d.dive.route, floor: window.__m3d.dive.floor, member: window.__m3d.dive.lg && window.__m3d.dive.lg.member, save: window.__m3d.diveSave }));
 		A(inDive && rd.path === '/micasurvivor/m3d/' && rd.route === dv1.route && rd.floor === 1 && rd.member === dv1.dex && rd.save.practice === null && rd.save.ok === true, 'START opens it, with no switch asked for: a 3D Dive of that route as that member, one that can be kept', JSON.stringify(rd));
 		await menu('');
+		// the Weekly Dive, alone: the 3D page too, by the week
+		await d.E(() => G.PlayUI.open()); await d.click('#mx-next'); await d.click('[data-cat="dive"]'); await waitFor(async () => (await d.state()).step === 3, 6000); await d.click('[data-var="weekly"]'); await d.click('[data-players="solo"]'); await waitFor(() => d.E(() => !!G.ExpLeague && !!G.ExpDive && G.PlayUI.state.variant === 'weekly'), 15000);
+		const wk = await d.E(() => ({ url: G.PlayUI.dive3dUrl('exp-dive'), w: G.Expedition.diveWeekly(), dex: G.ExpLeague.pickFor() }));
+		A(wk.url === `/micasurvivor/m3d/?dive=${wk.w.seed}&weekly=${wk.w.week}&dex=${wk.dex}`, `alone on the Weekly Dive it is the 3D page's address, by the week (${wk.url})`, JSON.stringify(wk));
+		await Promise.all([d.page.waitForNavigation({ waitUntil: 'domcontentloaded' }), d.click('#mx-start')]);
+		const inWk = await waitFor(() => d.E(() => !!(window.__m3d && window.__m3d.ready && window.__m3d.dive)), 40000);
+		const rw = await d.E(() => ({ route: window.__m3d.dive.route, weekly: window.__m3d.dive.weekly, floor: window.__m3d.dive.floor, seed: window.__m3d.dive.seed, save: window.__m3d.diveSave }));
+		A(inWk && rw.route === wk.w.route && rw.weekly && rw.weekly.week === wk.w.week && rw.weekly.mod === wk.w.mod && rw.floor === 1 && rw.seed === (wk.w.seed | 0) && rw.save.practice === null && rw.save.keep === true, "START opens this week's Weekly Dive in 3D: its route, its modifier, its seed, and it can be kept", JSON.stringify(rw));
+		await menu('');   // (back from the 3D page)
 		// a browser that cannot draw it keeps the 2D run
 		await d.page.evaluateOnNewDocument(() => { const g = HTMLCanvasElement.prototype.getContext; HTMLCanvasElement.prototype.getContext = function (t, ...a) { return t === 'webgl2' ? null : g.call(this, t, ...a); }; });
 		await menu('');
