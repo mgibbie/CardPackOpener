@@ -29,7 +29,7 @@ const server = http.createServer(async (req, res) => {
 	fs.readFile(path.join(ROOT, f), (e, d) => { if (e) { res.writeHead(404); res.end('nf'); return; } res.writeHead(200, { 'content-type': TYPES[path.extname(f)] || 'application/octet-stream' }); res.end(d); });
 });
 await new Promise((r) => server.listen(PORT, r));
-const browser = await puppeteer.launch({ executablePath: CHROME, headless: 'new', protocolTimeout: 180000, args: ['--no-sandbox', '--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--autoplay-policy=no-user-gesture-required'] });
+const browser = await puppeteer.launch({ executablePath: CHROME, headless: 'new', protocolTimeout: 180000, args: ['--no-sandbox', '--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--autoplay-policy=no-user-gesture-required', '--disable-background-timer-throttling', '--disable-renderer-backgrounding', '--disable-backgrounding-occluded-windows'] });
 
 const VIEWPORTS = [
 	['desktop', { width: 1600, height: 900, deviceScaleFactor: 1 }],
@@ -78,7 +78,10 @@ try {
 				if ((await upCount()) !== before) return;   // something else turned up: don't tap blindly again
 			}
 		};
-		const pad = async (i) => { await page.evaluate((i) => { window.__fakePad.buttons[i].pressed = true; window.__fakePad.buttons[i].value = 1; }, i); await sleep(120); await page.evaluate((i) => { window.__fakePad.buttons[i].pressed = false; window.__fakePad.buttons[i].value = 0; }, i); await sleep(120); };
+		// (the site's gamepad reader polls once per drawn frame: a press must last until frames have been drawn WITH it, and a
+		//  release likewise. A fixed 120 ms was shorter than one frame on a busy CI runner, so a press was sometimes never seen.)
+		const frames = (n) => page.evaluate((n) => new Promise((done) => { const step = () => (n-- > 0 ? requestAnimationFrame(step) : done()); step(); }), n);
+		const pad = async (i) => { await page.evaluate((i) => { window.__fakePad.buttons[i].pressed = true; window.__fakePad.buttons[i].value = 1; }, i); await frames(3); await sleep(60); await page.evaluate((i) => { window.__fakePad.buttons[i].pressed = false; window.__fakePad.buttons[i].value = 0; }, i); await frames(3); await sleep(60); };
 		const settled = () => waitFor(async () => !(await view()).busy, 3000);
 
 		// ---- boots straight into the card game's menu, on Micatro's look ----
