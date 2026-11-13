@@ -1588,6 +1588,32 @@ pockets and chests, the save (bests, stages, Seals), the Weekly Dive, co-op.
 
 Tests: `micasurvivor_m3d_dive_test.mjs` 53 checks in node.
 
+## 5.55 3D Dive, third part: built (2026-11-12). A Dive on the page (a preview).
+
+`/micasurvivor/m3d/?dive=<seed>&route=forest&floor=1&dex=4` plays a Dive run in the 3D page. Not linked from
+any menu, and nothing is saved: the address is the only way in.
+
+- The floor is drawn from the Dive room; the stairs are the column of light and the ring on the minimap.
+- Sleeping foes hold still, dimmed, with a pale bead over them. An elite has a bead in its affix's colour
+  (swift yellow, tough blue, rage red).
+- The lost Pokémon stands with a green bead over it until reached, then walks behind you.
+- The chips: FLOOR, loot secured and at stake, STAIRS n m (or ALPHA / GUARDIAN), the rope's countdown.
+- An alpha or a guardian has the boss bar. Sealed stairs have a red ring; a rope floor has a gold ring where
+  you arrived.
+- The end screen: floor, time, KOs, level, loot kept, rescued, alphas, guardians. It says nothing is saved.
+  Play again is the next seed.
+- Level-ups, reactions, the Ultimate, the menu, the map and the fog are the 3D Expedition's.
+
+The page now loads three more of the 2D game's scripts (`systems/expedition.js`, `expedition/dive-gen.js`,
+`expedition/dive.js`); an Expedition does not use them.
+
+Fixed on the way: a Dive room's grass had no size, so it would not have been drawn.
+
+Still to do: the kit (basic + two specials) and the dodge, the combo, the red ground, landmarks, pockets and
+chests, the save (bests, stages, Seals, pay), the Weekly Dive, co-op, watching, a way in from the menu.
+
+Tests: `micasurvivor_m3d_dive_page_test.mjs` 23 checks in a browser.
+
 ## 6. Dive in 2D: built
 
 **D0 — find the stairs (small; can ship first, on its own).** *Built 2026-11-11 (`overworld/tests/micasurvivor_dive_stairs_test.mjs`). As built: the stairs took their own orange mark, so the rocks and Meowth keep their gold; the HUD arrow comes up after 25 s on a floor, or at once when its boss falls.*

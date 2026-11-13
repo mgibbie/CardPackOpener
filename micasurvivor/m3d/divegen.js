@@ -46,7 +46,7 @@ export function floorRoom(X, L, o = {}) {
 		if (k === X.WALL && !unplugged.has(i)) continue;   // (rock: the room is filled with it)
 		if (k === X.LIQUID) { setCell(room, x, z, -DK.BED); room.water.set(i, -DK.WATER); continue; }
 		setCell(room, x, z, 0);
-		if (k !== X.WALL && L.prop && L.prop[i] === X.GRASS) room.scatter.push({ kind: 'grass', x: (x + 0.5) * CELL, z: (z + 0.5) * CELL, y: 0 });
+		if (k !== X.WALL && L.prop && L.prop[i] === X.GRASS) room.scatter.push({ kind: 'grass', x: (x + 0.5) * CELL, z: (z + 0.5) * CELL, y: 0, s: 1 });
 	}
 	const R = X.ROUTES[L.route] || {};
 	room.biome = DK.BIOME[R.biome] || 'meadow';
