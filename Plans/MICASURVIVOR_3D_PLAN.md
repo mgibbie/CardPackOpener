@@ -1615,6 +1615,31 @@ chests, the save (bests, stages, Seals, pay), the Weekly Dive, co-op, watching, 
 
 Tests: `micasurvivor_m3d_dive_page_test.mjs` 23 checks in a browser.
 
+## 5.56 3D Dive, fourth part: built (2026-11-12). The kit, the dodge, the combo.
+
+The 2D Dive's own numbers (`K.SLOTS`, `SPECIAL_K`, `BUFFER`, `HOLD`, `COMBO`, the dodge's from `verbs.js`).
+
+- **The kit.** Three moves. The first fires by itself. The second and third are specials: they fire when
+  pressed, at your target, and hit 25 % harder. A press just before the cool-down ends is kept; a press with
+  no foe in reach waits 0.6 s. A fourth move is put away. On the page the kit is your League member's first
+  three moves.
+- **The dodge.** Slide is the dodge in a Dive: 0.2 s the way you push (or face), about 3 tiles, nothing can
+  hurt you while it lasts, 1.2 s to cool. There is no slide in a Dive. Jump stays (pools).
+- **The combo.** KOs within 3 s chain: +2 % XP a step (to +30 %), a little loot every 10. The chips show it;
+  the end screen has the best.
+
+Controls: specials on 1 / 2 (or J / K, or C / V, the pad's X / Y, or a tap on the move's chip); the Ultimate on
+3 (or L, or its button); dodge on X / Shift, the pad's B, the DODGE button. A special's chip shows its key, then
+its cool-down.
+
+`combat.js`: a move marked `xman` fires only while a press (`xreq`) is kept. No other mode marks one.
+
+Known, for later: a controller has no button for the Ultimate in a Dive yet (the 2D game uses LB, which turns
+the 3D camera); a special of a kind that is always on (a trail, an orbit) is an odd special; the new special
+at levels 4, 10, 16… and the League (evolutions) are not in.
+
+Tests: `micasurvivor_m3d_dive_kit_test.mjs` 41 checks in node; `micasurvivor_m3d_dive_page_test.mjs` now 30.
+
 ## 6. Dive in 2D: built
 
 **D0 — find the stairs (small; can ship first, on its own).** *Built 2026-11-11 (`overworld/tests/micasurvivor_dive_stairs_test.mjs`). As built: the stairs took their own orange mark, so the rocks and Meowth keep their gold; the HUD arrow comes up after 25 s on a floor, or at once when its boss falls.*

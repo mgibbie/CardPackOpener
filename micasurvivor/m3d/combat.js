@@ -626,11 +626,13 @@ function fireMoves(w, dt) {
 	for (const m of pl.moves) {
 		if (m.kind === 'orbit') { orbit(w, sized(pl, m)); continue; }
 		m.t -= dt;
+		// (a mode's own: a move that fires only when pressed. `xreq` is how long the press is still kept, waiting for its cool-down or a foe in reach)
+		if (m.xman) { if (m.xreq > 0) m.xreq -= dt; if (!(m.xreq > 0)) { if (m.t < 0) m.t = 0; continue; } }
 		if (m.t > 0) continue;
 		const run = KINDS[m.kind], v = sized(pl, m);
 		if (!run) { m.t = 1; continue; }   // (a kind this module does not know: Expedition's eight are still to come)
 		if ((TARGETED.includes(m.kind) || m.xtarget) && !(pl.target && dist3(s, pl.target.a) <= reach(v) * U)) { m.t = 0.05; continue; }
-		m.t = Math.max(0.05, m.cd * pl.cdMul);
+		m.t = Math.max(0.05, m.cd * pl.cdMul); if (m.xman) { m.xreq = 0; w.events.push({ k: 'special', id: m.id }); }
 		if (has(pl, 'lifeorb') && m.kind !== 'trail') pl.hp = Math.max(1, pl.hp - Math.max(1, pl.maxHp * CK.IT.lifeOrb));   // Life Orb: every attack costs a little (never your last HP)
 		run(w, v);
 	}

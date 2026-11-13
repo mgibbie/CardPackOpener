@@ -9,7 +9,7 @@ import * as THREE from 'three';
 import { K, CELL, step, newState, noInput, groundAt, stateName, facingRow, tuneFor, TYPE_TRAITS } from './sim.js';
 import { buildRoom, SPOTS } from './room.js';
 import { makeRenderer, buildTerrain, buildWater, buildRails, buildScatter, buildExit, drawMap, SpriteBatch, Shadows, Shots, Flashes, loadSheet, frameAt, spriteQuad, footLift, placeCamera, PX } from './render.js';
-import { newWorld, addEnemy, addBoss, tick, dataFrom, choose, drop, CK } from './combat.js';
+import { newWorld, addEnemy, addBoss, tick, dataFrom, choose, drop, CK, canFire } from './combat.js';
 import { frame as netFrame, keepEvents, diff as netDiff, bundle, unbundle, Viewer, Tape, ballColour, typeName, NK, PICK } from './net.js';
 import { Props, PROP_MON, BOBS } from './props.js';
 import { hostAdd, hostStep, hostFrame, hostApply, guestWorld, guestSync, guestMsg, guestApply } from './coop.js';
@@ -34,7 +34,7 @@ import { newFog, reveal, found, fogOf, share as fogShare } from './expfog.js';
 import { refresh as refreshCards, skip as skipCards, banish as banishCard } from './explevel.js';
 import { EK, ecoView, pickTake, pickClose, shopPrices } from './expeco.js';
 import { capView } from './expcap.js';
-import { rulesFrom, newDive, stepDive, hudLine as diveHud, result as diveResult } from './dive.js';
+import { rulesFrom, newDive, stepDive, hudLine as diveHud, result as diveResult, pressSpecial, specials } from './dive.js';
 
 const Q = new URLSearchParams(location.search);
 // P3: ?gen=<seed>&fight=1 is a FIGHT on that level (combat.js): enemies arrive and come for you, your moves fire by
@@ -103,7 +103,9 @@ if (run) room = run.w.room;
 // 3D Dive: the run (dive.js), with the 2D game's own rules
 const DR = DIVE && XF ? rulesFrom(GG) : null;
 if (DIVE && !DR) throw new Error('3D Dive: the Dive rules did not load');
-const drun = DR ? newDive(dataFrom(GG), XF, DR, { route: Q.get('route') || 'forest', seed: GEN, start: +Q.get('floor') || 1, dex: DEX, moves: MOVES, tune: TUNE, touch: matchMedia('(pointer: coarse)').matches, ability: Q.get('ability') === '0' ? null : Q.get('ability') || 'auto', items: Q.get('items') ? Q.get('items').split(',') : [], weather: false, autoPick: Q.has('auto') ? +Q.get('auto') | 0 : undefined }) : null;
+// (the kit: your League member's first three moves, the basic and two specials; ?moves= picks others)
+const DMOVES = DR && !Q.get('moves') && GG.ExpLeague ? (() => { const L = GG.ExpLeague, m = L.BY[L.BY[DEX] ? DEX : L.FAM[DEX]], kit = m ? m.kit.filter((id) => { const d = GG.Moves.BY_ID[id] || (GG.ExpMoves && GG.ExpMoves.MOVES[id]); return !!d && canFire(d.kind); }).slice(0, DR.K.SLOTS) : []; return kit.length >= 2 ? kit.map((id) => [id, 1]) : MOVES; })() : MOVES;
+const drun = DR ? newDive(dataFrom(GG), XF, DR, { route: Q.get('route') || 'forest', seed: GEN, start: +Q.get('floor') || 1, dex: DEX, moves: DMOVES, tune: TUNE, touch: matchMedia('(pointer: coarse)').matches, ability: Q.get('ability') === '0' ? null : Q.get('ability') || 'auto', items: Q.get('items') ? Q.get('items').split(',') : [], weather: false, autoPick: Q.has('auto') ? +Q.get('auto') | 0 : undefined }) : null;
 if (drun) { room = drun.w.room; drun.w.cap = DR.K.REIN.cap + 60; }
 const solo = run || drun;   // (a run of your own, alone on this page: an Expedition or a Dive)
 // (P4) a guest in a run: its own League member in the host's run (expcoop.js); it builds each zone from the run's row
@@ -194,7 +196,7 @@ function readInput(dt) {
 	if (keys.has('KeyA') || keys.has('ArrowLeft')) ix -= 1;
 	if (keys.has('KeyW') || keys.has('ArrowUp')) iy += 1;
 	if (keys.has('KeyS') || keys.has('ArrowDown')) iy -= 1;
-	jump = keys.has('Space') || acts.has('confirm'); crouch = keys.has('ShiftLeft') || keys.has('ShiftRight') || acts.has('cancel') || acts.has('secondary');   // (the site's scheme: Z / A jumps, X / B and C slide)
+	jump = keys.has('Space') || acts.has('confirm'); crouch = keys.has('ShiftLeft') || keys.has('ShiftRight') || acts.has('cancel') || (!drun && acts.has('secondary'));   // (a Dive: slide is the DODGE, and C / X is special 1)   // (the site's scheme: Z / A jumps, X / B and C slide)
 	if (acts.has('prev')) turn += 1; if (acts.has('next')) turn -= 1;   // (Q / E, L / R)
 	const pad = (window.__owFakePads || (navigator.getGamepads ? [...navigator.getGamepads()] : [])).find((p) => p && p.connected);   // (__owFakePads: a test's controller, as site/gamepad.js reads it)
 	if (pad) {
@@ -614,6 +616,7 @@ function fightEvents(events) {
 		}
 		else if (ev.k === 'rxchain') { for (const b of ev.links) { const a = ev.from, d = [b[0] - a[0], b[1] - a[1], b[2] - a[2]], l = Math.hypot(d[0], d[1], d[2]) || 1; flashes.bar([a[0], a[1] + 0.6, a[2]], [d[0] / l, d[1] / l, d[2] / l], l, 0.12, '#ffe14d', 0.25); } }
 		else if (ev.k === 'hurt') { bob = 0.35; note(`hit for ${(+ev.d).toFixed(0)}`, 700); }
+		else if (ev.k === 'dodge') { burst(state.x, state.y + 0.3, state.z, '#cfe3ff', 10, 3, { up: 1.5, life: 0.3, r: 0.07 }); play([['shot', { kind: 'melee' }]]); }
 	}
 	if (world && world.pl.dead && !mates().length) note('you are down: R to start the level again', 60000);
 }
@@ -781,6 +784,12 @@ if (FIGHT) {
 	document.getElementById('cards').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b && b.dataset.p !== undefined) takePick(+b.dataset.p); else if (b && b.dataset.tool) useTool(b.dataset.tool); else if (b) pickCard(+b.dataset.i); });
 	addEventListener('keydown', (e) => { const i = ['Digit1', 'Digit2', 'Digit3', 'Digit4'].indexOf(e.code); if (myRun && myRun.pick) { if (i >= 0) takePick(i); else if (e.code === 'Escape') takePick(-1); return; } if (i >= 0 && i < 4) pickCard(i); const tl = { KeyF: 'refresh', KeyG: 'skip', KeyB: 'banish' }[e.code]; if (tl) useTool(tl); });
 }
+// A Dive's specials: 1 / 2 (or J / K), C / V (the pad's X / Y), or a tap on the move's chip; 3 (or L) is the Ultimate.
+function special(i) { if (!drun || runOver || menuUp || world.pl.choices) return false; const ok = pressSpecial(drun, i); if (!ok) play([['error']]); if (RUNUI) RUNUI.update(runView()); return ok; }
+if (drun) {
+	addEventListener('keydown', (e) => { if (e.repeat || world.pl.choices || menuUp) return; if (e.code === 'Digit1' || e.code === 'KeyJ') special(1); else if (e.code === 'Digit2' || e.code === 'KeyK') special(2); else if ((e.code === 'Digit3' || e.code === 'KeyL') && drun.ult) pressUlt(drun); });
+	document.getElementById('b-slide').textContent = 'DODGE';
+}
 /** (the shipping path) A run's own screen, in Micatro's look: runui.js draws this view of the run. The test room's
  *  readout is still filled (tests and ?debug=1 read it), but it is not what a player sees. */
 const RUNUI = myRun || XW ? mountRunUi(document, { debug: Q.has('debug'), onMenu: () => setMenu(!menuUp), onResume: () => setMenu(false), onBoard: (id) => openBoard(id), onMute: () => { if (GG.Audio) { GG.Audio.toggleMute(); RUNUI.update(runView()); } }, onUlt: () => { if (solo) pressUlt(solo); }, onAuto: () => { if (run && run.ult) setUltAuto(!run.ult.auto); } }) : null;
@@ -802,6 +811,7 @@ async function openBoard(id) {
  *  fight is someone else's and goes on. */
 let menuUp = false, paused = false, escAt = 0;
 const CONTROLS = 'Move: arrows / WASD · Jump: Z or Space · Slide: X or Shift · Wall-run: jump beside a wall and lean into it (jump again to kick off) · Rails: come down on one to grind it (jump to leap off, slide to drop) · Surf: on a steep bank, hold along it and into it · Ultimate: V when its meter is full (U: cast by itself) · Camera: Q / E or drag · Map: Backspace or M · Menu: Enter or Esc';
+const DIVE_CONTROLS = 'Move: arrows / WASD · Jump: Z or Space · Dodge: X or Shift (nothing hurts you while it lasts) · Specials: 1 and 2 (or C and V) · Ultimate: 3 when its meter is full · Stairs: stand on the column of light · Camera: Q / E or drag · Map: Backspace or M · Menu: Enter or Esc';
 function setMenu(on) {
 	if (!RUNUI || runOver) on = false;
 	menuUp = !!on; paused = menuUp && !!solo && !world.mates.length;
@@ -827,9 +837,10 @@ function runView() {
 	if (run) { v.parts = hudLine(run).split(' · '); if (run.ph === 0 && !run.surv && run.charge > 0) v.parts.push(`CHARGE ${Math.round(run.charge * 100)} %`); }
 	else if (drun) v.parts = diveHud(drun).split(' · ');
 	else if (rv) v.parts = rv.hud(state).split(' · ');
-	if (solo && solo.ult && !runOver) { v.ult = ultView(solo); v.ult.col = TYPE_COLOR[v.ult.type]; v.ult.key = matchMedia('(pointer: coarse)').matches ? '' : 'V'; }
+	if (solo && solo.ult && !runOver) { v.ult = ultView(solo); v.ult.col = TYPE_COLOR[v.ult.type]; v.ult.key = matchMedia('(pointer: coarse)').matches ? '' : drun ? '3' : 'V'; }
 	if (cutIn && performance.now() < cutIn.until) v.cut = cutIn;
 	if (pl) v.moves = pl.moves.map((m) => ({ icon: GG.Icons ? GG.Icons.html('move:' + m.id, 18) : '', name: pretty(m.id), lv: m.xlv || m.lvl, col: TYPE_COLOR[(GG.Moves.BY_ID[m.id] || (GG.ExpMoves && GG.ExpMoves.MOVES[m.id]) || {}).type] }));
+	if (drun && v.moves) specials(drun).forEach((q, i) => { const m = v.moves[i + 1]; if (m) { m.sub = q.cd > 0.05 ? q.cd.toFixed(1) + ' s' : q.queued ? '…' : (matchMedia('(pointer: coarse)').matches ? 'TAP' : 'KEY ' + (i + 1)); m.dim = q.cd > 0.05; } });
 	if (pl && pl.xv && I) for (const q of pl.xv) v.bag.push({ text: `${en(I.VIT[q.id].name)} ${q.lvl}`, kind: 'dim' });
 	if (pl && pl.xi && I) for (const id of Object.keys(pl.xi)) v.bag.push({ text: en(I.IT[id].name) + (pl.xi[id] > 1 ? ' ×' + pl.xi[id] : ''), kind: '' });
 	if (run && run.up && run.up.revives > 0) v.bag.push({ text: 'Second chance' + (run.up.revives > 1 ? ' ×' + run.up.revives : ''), kind: 'on' });
@@ -838,12 +849,12 @@ function runView() {
 	const b = drun ? (drun.boss && !drun.boss.dead ? drun.boss : null) : world && !JOIN ? world.enemies.find((e) => e.boss) : null;
 	if (b) v.boss = { name: nameOf(b.dex), hp: b.hp, maxHp: b.maxHp, enraged: !!(b.ai && b.ai.fury) };
 	if (boardUp) v.board = { title: `3D · ${XK.MAP_NAME[boardUp.map] || boardUp.map} · ${boardUp.diff[0].toUpperCase() + boardUp.diff.slice(1)}`, tabs: [['score', 'Score'], ['time', 'Time attack'], ['survival', 'Survival']].map(([id, text]) => ({ id, text, on: id === boardUp.view })), rows: boardUp.rows, note: boardUp.note };
-	if (menuUp && !runOver) v.menu = { auto: run && run.ult ? (run.ult.auto ? 'on' : 'off') : null, boards: !drun, sound: GG.Audio ? (GG.Audio.settings.muted ? 'off' : 'on') : null, title: paused ? 'PAUSED' : 'MENU', line: (paused ? '' : 'The fight goes on while this is open. ') + CONTROLS, restart: solo ? location.search || '?' : null, leave: '../' };
+	if (menuUp && !runOver) v.menu = { auto: run && run.ult ? (run.ult.auto ? 'on' : 'off') : null, boards: !drun, sound: GG.Audio ? (GG.Audio.settings.muted ? 'off' : 'on') : null, title: paused ? 'PAUSED' : 'MENU', line: (paused ? '' : 'The fight goes on while this is open. ') + (drun ? DIVE_CONTROLS : CONTROLS), restart: solo ? location.search || '?' : null, leave: '../' };
 	if (runOver) {
 		const r = runOver, q = new URLSearchParams(location.search); q.set('exp', (+q.get('exp') || 0) + 1);
 		if (drun) { const qd = new URLSearchParams(location.search); qd.set('dive', (+qd.get('dive') || 0) + 1);
 			v.over = { won: r.won, title: r.title, line: r.lines[0], again: '?' + qd, leave: '../', boards: false, kept: kept ? { ok: kept.ok, text: kept.text } : null,
-				rows: [['Floor', String(r.parts.floor)], ['Time', `${Math.floor(r.parts.time / 60)}:${String(r.parts.time % 60).padStart(2, '0')}`], ['KOs', String(r.parts.kills)], ['Level', String(v.level)], ['Loot kept', String(r.parts.divePay)], ['Rescued', String(r.parts.rescued)], ['Alphas', String(r.parts.alphas)], ['Guardians', String(r.parts.guardians)]] };
+				rows: [['Floor', String(r.parts.floor)], ['Time', `${Math.floor(r.parts.time / 60)}:${String(r.parts.time % 60).padStart(2, '0')}`], ['KOs', String(r.parts.kills)], ['Level', String(v.level)], ['Loot kept', String(r.parts.divePay)], ['Rescued', String(r.parts.rescued)], ['Best combo', String(r.parts.combo)], ['Alphas', String(r.parts.alphas)], ['Guardians', String(r.parts.guardians)]] };
 		} else
 		v.over = typeof r === 'string' ? { won: r === 'won', title: r === 'won' ? 'EXPEDITION COMPLETE!' : 'RUN OVER', line: '', rows: [], again: null, leave: '../' }
 			: { won: r.won, title: r.title, line: r.survival ? r.lines.join(' · ') : r.line, again: run ? '?' + q : null, leave: '../', boards: true, kept: kept ? { ok: kept.ok, text: kept.text } : null,
@@ -858,12 +869,14 @@ function runView() {
 // move a focus ring over its buttons and press them (site/focusnav.js), so a run can be played with no mouse.
 const uiLayer = () => { const el = (id) => document.getElementById(id); return RUNUI && boardUp ? el('rx-board') : RUNUI && el('rx-end').classList.contains('show') ? el('rx-end') : menuUp ? el('rx-menu') : el('cards').style.display === 'grid' ? el('cards') : null; };
 const uiNav = createFocusNav({ scope: uiLayer, domFocus: false, scrollFallback: false, onCancel: () => { if (boardUp) openBoard(null); else if (menuUp) setMenu(false); else if (myRun && myRun.pick) takePick(-1); }, onMenu: () => { if (menuUp) setMenu(false); } });
+if (drun && RUNUI) { const el = document.getElementById('rx-moves'); el.style.pointerEvents = 'auto'; el.addEventListener('click', (e) => { const c = e.target.closest('.rx-move'); if (c) special([...el.children].indexOf(c)); }); }
 const siteInput = startInput({ pad: true,
 	onAction(a, info) {
 		if (!info.repeat) acts.add(a);
 		if (uiLayer()) return uiNav.onAction(a, info);
 		if (info.repeat) return false;
 		if (a === 'menu' && RUNUI) { setMenu(true); return true; }
+		if (drun && (a === 'secondary' || a === 'context')) { special(a === 'secondary' ? 1 : 2); return true; }   // (a Dive: C / V, the pad's X / Y: the specials)
 		if (a === 'context' && solo && solo.ult) { pressUlt(solo); return true; }   // (V / the pad's Y: the Ultimate)
 		if (a === 'select' && FIGHT) { toggleMap(); return true; }
 		if (a === 'cancel' && mapBig) { toggleMap(false); return true; }
@@ -964,7 +977,7 @@ const G_MUSIC = GG.BIOME_MUSIC || null, XK_MAPS = ['viridian', 'mtmoon', 'cerule
 
 // what a test (and a curious owner in the console) can reach
 window.__m3d = {
-	dive: drun, diveRules: DR,
+	dive: drun, diveRules: DR, special,
 	meta: LAB_META, upgrades: UPGRADES, leadShiny: LEAD_SHINY, skey,
 	keepShiny,
 	siteHost: SITE_HOST, siteWatch: SITE_WATCH,

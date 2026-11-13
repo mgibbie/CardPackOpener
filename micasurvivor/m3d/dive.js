@@ -18,7 +18,12 @@
 //   loot       at stake until an alpha (to floor 25) or a guardian banks it. Faint: the bank and a quarter of the stake.
 //   the rope   on a rope floor, stand still K.ROPE_T s in the circle where you arrived (a hit cancels): you leave
 //              with everything.
-// Not here yet (later parts): the kit (basic + two specials), the dodge, the combo, the red ground, landmarks, secret
+//   the kit    (part 4) three moves: the first fires by itself (the basic); the second and third are SPECIALS, fired when
+//              pressed (pressSpecial), at your target, worth K.SPECIAL_K. A press up to K.BUFFER s before the cool-down
+//              ends is kept; a press with no foe in reach is kept K.HOLD s.
+//   the dodge  (part 4) slide = dodge: DODGE.T s the way you push (or face), nothing can hurt you, DODGE.CD s to cool.
+//   the combo  (part 4) KOs within COMBO.WINDOW s chain: more XP a step, loot every COMBO.MILESTONE.
+// Not here yet (later parts): a new special at levels 4, 10, 16…, the League, the red ground, landmarks, secret
 // pockets, chests, routes and stages in the save, the Weekly Dive, co-op.
 // Pure and seeded: no DOM, no clock.
 import { K as SK, CELL, groundAt, newState } from './sim.js';
@@ -33,6 +38,8 @@ import { walkable } from './expedition.js';
 
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const TAU = 6.2832;
+/** The dodge: the 2D game's (js/expedition/verbs.js DODGE_T, DODGE_CD, DODGE_TILES: tiles a second). */
+export const DODGE = { T: 0.2, CD: 1.2, TILES: 15.6 };
 const ROPE_STILL = 0.5;   // m/s: slower than this is standing still (the rope)
 
 /** The 2D game's Dive rules, as the 3D game reads them (G with systems/expedition.js, expedition/dive-gen.js and
@@ -41,7 +48,7 @@ const ROPE_STILL = 0.5;   // m/s: slower than this is standing still (the rope)
 export function rulesFrom(G) {
 	const E = G.ExpDive, F = diveFrom(G); if (!E || !F) return null;
 	const en = (G.I18n && G.I18n.en) || {}, tr = (s) => en[s] || s;
-	return { F, K: E.K, ESCORT: E.ESCORT, GUARDIANS: E.GUARDIANS, target: E.target, pool: (route, floor) => E.pool(route, floor), guardianOf: E.guardianOf,
+	return { F, K: E.K, ESCORT: E.ESCORT, GUARDIANS: E.GUARDIANS, COMBO: E.COMBO, target: E.target, pool: (route, floor) => E.pool(route, floor), guardianOf: E.guardianOf,
 		megaRoll: (seed, route, f) => E.megaRoll(seed, route, f), legendRoll: (seed, route, f) => E.legendRoll(seed, route, f),
 		rng: (seed, route, floor, k) => G.DLC.rng(G.DiveGen.seedOf(seed | 0, route, floor, k)), nameOf: (route) => tr(E.NAME[route] || route),
 		strays: (route, floor) => { const tg = E.target(floor) - 60, types = F.ROUTES[route].types; return G.DEX.filter((p) => !p.leg && Math.abs(p.bst - tg) < 70 && p.types.some((t) => types.includes(t))).map((p) => p.dex); } };
@@ -68,8 +75,62 @@ export function newDive(data, X, R, o = {}) {
 	if (S.up) perkTools(S);
 	if (X && X.R && o.rx !== false) setupRx(S);
 	if (X && X.Uu && o.ult !== false) setupUlt(S, { walk: walkable, auto: !!o.ultAuto });
+	// the kit, the dodge, the combo
+	S.kit = o.kit !== false; S.dodge = { t: 0, cd: 0, dx: 0, dz: 0, n: 0, held: false }; S.combo = { n: 0, t: 0, best: 0, k: 1 }; S.spare = [];
+	{ const hooks = w.hooks || (w.hooks = {}), hurt0 = hooks.hurt, out0 = hooks.out;
+		hooks.hurt = (ww, d) => (S.dodge.t > 0 ? 0 : hurt0 ? hurt0(ww, d) : d);
+		hooks.out = (ww, e, src, dmg) => { const k0 = out0 ? out0(ww, e, src, dmg) : 1, id = src && (src.mid || src.id); return k0 * (S.kit && id && isSpecial(S, id) ? R.K.SPECIAL_K : 1); }; }
+	roles(S);
 	startFloor(S, f0, 0);
 	return S;
+}
+
+/** The kit's roles, by slot: the first move fires by itself, the next are specials (pressed). More than K.SLOTS moves: the rest are put away. */
+function roles(S) {
+	const mv = S.w.pl.moves; if (!S.kit) return;
+	while (mv.length > S.R.K.SLOTS) S.spare.push(mv.pop());
+	mv.forEach((m, i) => { m.xman = i > 0; if (!m.xman) m.xreq = 0; });
+}
+const isSpecial = (S, id) => S.w.pl.moves.some((m, i) => i > 0 && m.id === id);
+/** Special i (1 or 2) pressed: kept if its cool-down is over or nearly. -> true when it will fire */
+export function pressSpecial(S, i) {
+	const pl = S.w.pl, m = S.kit && !S.ended && !pl.dead && i > 0 ? pl.moves[i] : null;
+	if (!m || !m.xman || m.t > S.R.K.BUFFER) return false;
+	m.xreq = S.R.K.HOLD + Math.max(0, m.t); return true;
+}
+/** The specials, for the screen: [{ id, cd (s left), cdMax, queued }] */
+export const specials = (S) => (S.kit ? S.w.pl.moves.slice(1).map((m) => ({ id: m.id, cd: Math.max(0, m.t), cdMax: Math.max(0.05, m.cd * S.w.pl.cdMul), queued: m.xreq > 0 })) : []);
+/** The dodge, before the fight's tick: slide pressed starts one (the way you push, or face); while it lasts you are carried. -> the input the fight gets */
+function dodgeInput(S, input, dt) {
+	const D = S.dodge, s = S.w.pl.s, inp = input || { mx: 0, mz: 0, jump: false, crouch: false }, press = !!inp.crouch && !D.held;
+	D.held = !!inp.crouch;
+	if (D.cd > 0) D.cd = Math.max(0, D.cd - dt);
+	if (press && D.t <= 0 && D.cd <= 0 && !S.w.pl.dead) {
+		const l = Math.hypot(inp.mx || 0, inp.mz || 0);
+		D.dx = l > 0.2 ? inp.mx / l : Math.sin(s.facing); D.dz = l > 0.2 ? inp.mz / l : Math.cos(s.facing);
+		D.t = DODGE.T; D.n++; S.w.events.push({ k: 'dodge' }); S.dodgeEv = true;
+		// (faster than a body may otherwise go: the speed cap is lifted while it lasts)
+		D.tune = S.w.tune; S.w.tune = { ...S.w.tune, MAX_SPEED: Math.max(S.w.tune.MAX_SPEED, DODGE.TILES * CELL) }; S.w.fastK = undefined;
+	}
+	if (D.t > 0) {
+		const v = DODGE.TILES * CELL; s.vx = D.dx * v; s.vz = D.dz * v;
+		D.t -= dt; if (D.t <= 1e-6) { D.t = 0; D.cd = DODGE.CD; s.vx = D.dx * SK.RUN; s.vz = D.dz * SK.RUN; S.w.tune = D.tune; D.tune = null; S.w.fastK = undefined; }
+		return { ...inp, mx: D.dx, mz: D.dz, crouch: false };
+	}
+	return { ...inp, crouch: false };   // (no slide in a Dive: the button is the dodge)
+}
+/** A KO chains the combo: every COMBO.MILESTONE, loot. */
+function comboKo(S) {
+	const C = S.R.COMBO, c = S.combo; if (!C) return;
+	c.n++; c.t = C.WINDOW; c.best = Math.max(c.best, c.n);
+	if (c.n % C.MILESTONE === 0) { loot(S, C.COINS_PER * c.n / C.MILESTONE); say(S, `Combo x${c.n}!`, 1.6); S.w.events.push({ k: 'combo', n: c.n }); }
+}
+/** The combo's window runs out; its XP (on the player's XP factor, the last combo's divided out). */
+function comboTick(S, dt) {
+	const C = S.R.COMBO, c = S.combo, pl = S.w.pl; if (!C) return;
+	if (c.n > 0) { c.t -= dt; if (c.t <= 0) { c.n = 0; c.t = 0; } }
+	const k = 1 + Math.min(C.XP_CAP, C.XP_PER * c.n);
+	pl.xpMul = pl.xpMul / c.k * k; c.k = k;
 }
 
 /** A foe of this floor at (x, z) metres. o: { alpha, boss (a guardian), legend, rein (a reinforcement), er (the
@@ -239,7 +300,9 @@ export function stepDive(S, input, dt = SK.TICK) {
 	if (S.ult && holdUlt(S, dt)) { w.events.length = 0; return S; }
 	const t0 = w.t;
 	w.cap = K.REIN.cap + 60;
+	if (S.kit) { roles(S); input = w.pl.choices ? input : dodgeInput(S, input, dt); }
 	tick(w, input, dt);
+	if (S.dodgeEv) { S.dodgeEv = false; if (w.t !== t0) w.events.push({ k: 'dodge' }); }   // (the tick clears the events: said again, for the page)
 	if (w.t === t0) return S;   // (a level-up card is up: nothing moves)
 	const t = w.t, s = w.pl.s, room = w.room;
 	if (S.rx) tickRx(S);
@@ -250,10 +313,11 @@ export function stepDive(S, input, dt = SK.TICK) {
 	let hurt = false;
 	for (const ev of w.events) {
 		if (ev.k === 'hurt') hurt = true;
-		else if (ev.k === 'kill') { S.kills++; const tag = S.tags.get(ev.id);
+		else if (ev.k === 'kill') { S.kills++; comboKo(S); const tag = S.tags.get(ev.id);
 			if (tag !== 'rein') loot(S, K.LOOT.ko + K.LOOT.koPer * S.floor);
 			if (tag === 'mega') loot(S, K.LOOT.alpha + K.LOOT.alphaPer * S.floor); else if (tag === 'legend') loot(S, K.LEGEND.loot + K.LEGEND.lootPer * S.floor); }
 	}
+	comboTick(S, dt);
 	// the groups: one wakes when you come close, or when one of it is hit
 	const wr = tiles(K.WAKE_R);
 	for (const g of S.groups) if (!g.awake && (Math.hypot(s.x - g.at[0], s.z - g.at[1]) < wr || g.list.some((e) => !e.dead ? e.hp < e.maxHp : true))) wake(S, g);
@@ -293,13 +357,14 @@ export function hudLine(S) {
 	const parts = [`FLOOR ${S.floor}`, `${Math.floor(S.bank)} secured · ${Math.floor(S.stake)} at stake`];
 	parts.push(S.boss ? (S.boss.xk === 'guardian' ? 'GUARDIAN' : 'ALPHA') : `STAIRS ${m} m`);
 	if (S.ropeT > 0) parts.push('ROPE ' + Math.max(0, S.R.K.ROPE_T - S.ropeT).toFixed(1) + ' s');
+	if (S.combo.n >= 2) parts.push('COMBO x' + S.combo.n);
 	return parts.join(' · ');
 }
 /** The end screen's parts and lines (the 2D game's scoreParts and result). */
 export function result(S) {
 	const w = S.w;
-	const parts = { floor: S.floor, deepest: S.deepest, route: S.route, kills: S.kills, time: Math.floor(w.t), alphas: S.alphas, guardians: S.guardians, rescued: rescuedOf(S), escaped: S.escaped, divePay: payOf(S), zone: Math.min(4, 1 + Math.floor(S.floor / 10)), start: S.start, weekly: null };
+	const parts = { floor: S.floor, deepest: S.deepest, route: S.route, kills: S.kills, time: Math.floor(w.t), alphas: S.alphas, guardians: S.guardians, rescued: rescuedOf(S), combo: S.combo.best, escaped: S.escaped, divePay: payOf(S), zone: Math.min(4, 1 + Math.floor(S.floor / 10)), start: S.start, weekly: null };
 	return { won: S.escaped, title: S.escaped ? 'You escape with everything!' : 'RUN OVER', parts, stage: S.stage,
 		lines: [`Dive · ${S.R.nameOf(S.route)}: floor ${S.floor}`, `Loot secured: ${Math.floor(S.bank)} · at stake: ${Math.floor(S.stake)}`,
-			S.escaped ? 'You escaped: you keep all the loot' : 'You fell: you keep what was secured and a quarter of the rest', `Rescued: ${rescuedOf(S)}`, `Alphas: ${S.alphas} · Guardians: ${S.guardians}`] };
+			S.escaped ? 'You escaped: you keep all the loot' : 'You fell: you keep what was secured and a quarter of the rest', `Rescued: ${rescuedOf(S)}`, `Alphas: ${S.alphas} · Guardians: ${S.guardians}`, `Best combo: ${S.combo.best}`] };
 }
