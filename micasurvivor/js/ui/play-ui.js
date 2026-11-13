@@ -652,8 +652,9 @@ G.PlayUI = (() => {
     const slot = cfg.members.findIndex(m => m.uid === me); if (slot < 0) return null;
     const dex = cfg.members[slot].dex | 0, seed = (cfg.seed | 0) || 1, dive = cfg.mode === 'exp-dive', route = dive ? String(cfg.map || 'dive:forest').slice(5) : '';
     const map = encodeURIComponent(cfg.map || 'viridian'), diff = encodeURIComponent(cfg.diff || 'normal'), start = cfg.opts && cfg.opts.start > 1 ? cfg.opts.start | 0 : 0;
-    if (cfg.host === me) return '/micasurvivor/m3d/?' + (dive ? 'dive=' + seed + '&route=' + route + (start ? '&floor=' + start : '') : 'exp=' + seed + '&map=' + map + '&diff=' + diff) + '&dex=' + dex + '&host=' + R.id + '&lobby=' + R.id;
-    return '/micasurvivor/m3d/?join=' + R.id + '&lobby=' + R.id + '&lh=' + encodeURIComponent(cfg.host) + '&id=' + slot + '&dex=' + dex + '&gen=' + (seed >>> 0) + '&biome=meadow' + (dive ? '&dj=' + seed + '&route=' + route : '&xj=' + seed + '&map=' + map + '&diff=' + diff);
+    const lf = G.ExpLeague && G.ExpLeague.formFor ? G.ExpLeague.formFor(dex) | 0 : 0, form = lf && lf !== dex ? '&form=' + lf : '';   // (the form you chose to start as, if it is a later stage: as a solo run's address)
+    if (cfg.host === me) return '/micasurvivor/m3d/?' + (dive ? 'dive=' + seed + '&route=' + route + (start ? '&floor=' + start : '') : 'exp=' + seed + '&map=' + map + '&diff=' + diff) + '&dex=' + dex + form + '&host=' + R.id + '&lobby=' + R.id;
+    return '/micasurvivor/m3d/?join=' + R.id + '&lobby=' + R.id + '&lh=' + encodeURIComponent(cfg.host) + '&id=' + slot + '&dex=' + dex + form + '&gen=' + (seed >>> 0) + '&biome=meadow' + (dive ? '&dj=' + seed + '&route=' + route : '&xj=' + seed + '&map=' + map + '&diff=' + diff);
   }
 
   // ---------------- START ----------------

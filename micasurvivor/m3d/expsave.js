@@ -29,7 +29,7 @@ export const SV = { RULES: 2 /* the rules the boards are filed under (js/entitie
 /** The first parameter of the page's address that makes its run a practice run (null: none). params: [[key, value]]. */
 export function unfair(params, also = []) { for (const [k, v] of params) if ((!SV.OK.includes(k) && !also.includes(k)) || (k === 'mode' && v !== 'survival')) return k; return null; }
 /** (co-op from the online lobby, §5.73) What a lobby's start adds to a player's address: the host's, and a guest's. */
-export const LOBBY_OK = { host: ['host', 'lobby'], guest: ['join', 'lobby', 'lh', 'id', 'gen', 'biome', 'xj', 'dj', 'map', 'diff', 'route', 'dex'] };
+export const LOBBY_OK = { host: ['host', 'lobby'], guest: ['join', 'lobby', 'lh', 'id', 'gen', 'biome', 'xj', 'dj', 'map', 'diff', 'route', 'dex', 'form'] };
 /** What a GUEST of a co-op run writes into its own Expedition save (the 2D game's rule: every player records the run
  *  as its own, with the team's result and the same pay). S: the guest's side of the run (expcoop.js / divecoop.js);
  *  end: what the host said of the end: { pay (Pokémonedas), kills, time, depth (the zone, or the Dive's deepest floor),

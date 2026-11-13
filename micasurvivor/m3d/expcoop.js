@@ -26,6 +26,7 @@ import { rng as makeRng } from './gen.js';
 import { rollOffers, pickTake } from './expeco.js';
 import { takeItem } from './explevel.js';
 import { setupCap, guestCatch, tickGuestCap, syncPerks } from './expcap.js';
+import { applyPerks, perkTools } from './expperks.js';
 import { setupSurv, tickOwn } from './expsurv.js';
 import { tickFog } from './expfog.js';
 
@@ -38,13 +39,17 @@ export function guestRun(data, X, o = {}) {
 	const lv = league ? [] : (o.moves || []).map((m) => (Array.isArray(m) ? m : [m, 1]));
 	const w = guestWorld(room, data, { ...o, dex: league ? member : o.dex, moves: lv.map((m) => m[0]),
 		ability: league && o.ability === undefined ? X.G.abilityOf(X.G.finalsOf(X.G.BY[member])[0]) : o.ability });
-	const S = { w, X, data, map, diff, seed, guest: true, slot: o.id || 1, zone: 1, zs: 0, ph: 0, charge: 0, coins: 0, says: [], rv: null, keep: {}, ended: false, won: false, lost: false, plan: { cards: [] } };
+	const S = { w, X, data, map, diff, seed, guest: true, slot: o.id || 1, zone: 1, zs: 0, ph: 0, charge: 0, coins: 0, says: [], rv: null, keep: {}, ended: false, won: false, lost: false, plan: { cards: [] }, meta: o.meta || null };
+	// (what the guest's own save brings, as a host's: its family's upgrades, the form it starts as, its shiny's look, the Lab)
+	if (o.perks) applyPerks(S, o.perks);
 	setupLevels(S, X.L, lv);
-	if (league) setupLeague(S, member);
+	if (S.up) perkTools(S);
+	if (league) { setupLeague(S, member, o.form | 0); S.lg.shiny = !!o.shiny; }
 	S.syncPerks = () => syncPerks(S);
 	if (X.C) setupCap(S);
 	S.pick = null;
 	place(S);
+	if (S.meta) { S.meta.candy = false; S.syncPerks(); if (S.meta.eff.lab.revive && S.lv && X.L.I.IT.maxrevive) takeItem(S, 'maxrevive'); }   // (not the Rare Candy: the level is the team's)
 	return S;
 }
 /** Where a guest arrives in a zone: beside where the host does, by its number. */
