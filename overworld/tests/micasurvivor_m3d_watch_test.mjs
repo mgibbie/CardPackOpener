@@ -144,12 +144,15 @@ try {
 		const up = await waitFor(() => W2.page.evaluate(() => /gen=7/.test(location.search) && !!(window.__m3d && window.__m3d.ready && window.__m3d.view)), 25000);
 		A(H2.ok && W2.ok && up, 'a host sending as the relay would, and a watcher of it');
 		await sleep(1500);
-		const seen = [];
+		// (each page keeps its own highest point, looked at every few ms inside the page. Asking both pages from here every
+		//  40 ms missed the top of the jump on a loaded runner: CI read "1.38 m of 1.35 m", then "1.15 m of 1.56 m", 2026-11-13)
+		const track = (p) => p.evaluate(() => { window.__peak = -1e9; clearInterval(window.__peakT); window.__peakT = setInterval(() => { const m = window.__m3d; window.__peak = Math.max(window.__peak, m.state.y - m.room.spawn[1]); }, 5); });
+		await Promise.all([track(H2.page), track(W2.page)]);
 		const hostP = H2.page.evaluate(async () => { const m = window.__m3d, wait = (ms) => new Promise(r => setTimeout(r, ms)); await wait(300); m.setInput({ mx: 0, mz: 0, jump: true }); await wait(350); m.setInput(null); });
-		const t0 = Date.now();
-		while (Date.now() - t0 < 3800) { const [h, w] = await Promise.all([H2.page.evaluate(() => window.__m3d.state.y - window.__m3d.room.spawn[1]), W2.page.evaluate(() => window.__m3d.state.y - window.__m3d.room.spawn[1])]); seen.push({ h, w }); await sleep(40); }
+		await sleep(3800);
 		await hostP;
-		const tH = Math.max(...seen.map(s => s.h)), tW = Math.max(...seen.map(s => s.w));
+		const peak = (p) => p.evaluate(() => { clearInterval(window.__peakT); return window.__peak; });
+		const [tH, tW] = await Promise.all([peak(H2.page), peak(W2.page)]);
 		const rs = await Promise.all([H2.page.evaluate(() => ({ sent: window.__m3d.net.sent, biggest: window.__m3d.net.biggest, t: window.__m3d.world.t })), W2.page.evaluate(() => ({ got: window.__m3d.net.got, relay: window.__m3d.net.relay, behind: 0, frames: window.__m3d.viewer.frames.length, t: window.__m3d.watchT }))]);
 		A(rs[1].relay && Math.abs(rs[0].sent - rs[0].t) < 2.5 && rs[0].biggest < 16000, `the host sent ${rs[0].sent} messages in ${rs[0].t.toFixed(0)} s (one a second), the biggest ${rs[0].biggest} characters (the relay's cap is 16,000)`, JSON.stringify(rs));
 		A(tH > 1.4 && Math.abs(tW - tH) < 0.25, `a jump inside one of those messages is seen whole by the watcher: ${tW.toFixed(2)} m of ${tH.toFixed(2)} m`, JSON.stringify([tH, tW]));
