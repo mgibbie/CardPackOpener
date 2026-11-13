@@ -1,5 +1,9 @@
 {
 	"tokens": {
+		"ashes_of_al_ar": {
+			"hs": "BT_735t",
+			"source": "HearthstoneJSON art"
+		},
 		"dal_drustvar_horror": {
 			"hs": "DAL_431t",
 			"source": "HearthstoneJSON art"
@@ -112,6 +116,10 @@
 			"src": "tdsc/8",
 			"source": "Scryfall token art"
 		},
+		"token_bee": {
+			"hs": "ULD_134t",
+			"source": "HearthstoneJSON art"
+		},
 		"token_beetle": {
 			"hs": "TOY_804t",
 			"source": "HearthstoneJSON art"
@@ -171,6 +179,10 @@
 		"token_citizen": {
 			"src": "tsnc/12",
 			"source": "Scryfall token art"
+		},
+		"token_clefthoof": {
+			"hs": "BT_163t",
+			"source": "HearthstoneJSON art"
 		},
 		"token_cleric": {
 			"src": "tvow/4",
@@ -324,6 +336,10 @@
 			"alias": "flame_imp",
 			"source": "an existing card already pictures it"
 		},
+		"token_forsaken_lilian": {
+			"hs": "SCH_426t",
+			"source": "HearthstoneJSON art"
+		},
 		"token_foundry_blade": {
 			"alias": "ymid_foundry_beetle",
 			"source": "an existing card already pictures it"
@@ -417,6 +433,10 @@
 		"token_insect": {
 			"src": "teoc/4",
 			"source": "Scryfall token art"
+		},
+		"token_interceptor": {
+			"hs": "SC_756t",
+			"source": "HearthstoneJSON art"
 		},
 		"token_jade_golem": {
 			"hs": "CFM_712_t01",
@@ -601,6 +621,10 @@
 		"token_rogue": {
 			"src": "totj/15",
 			"source": "Scryfall token art"
+		},
+		"token_ruffian": {
+			"hs": "SCH_337t",
+			"source": "HearthstoneJSON art"
 		},
 		"token_sack": {
 			"hs": "REV_828t",
