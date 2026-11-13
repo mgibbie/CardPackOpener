@@ -5,6 +5,7 @@
 //   * the lost Pokémon follows you once reached
 //   * floor 5: the alpha's bar, the stairs sealed until it falls
 //   * a faint: the end screen (floor, loot kept, rescued), 'nothing is saved yet', Play again = the next seed
+//   * (part 4) the kit: 1 / 2 fire the specials, their chips count the cool-down; X dodges; KOs chain a combo
 //   * an Expedition on the same page is untouched (no Dive there)
 //   node overworld/tests/micasurvivor_m3d_dive_page_test.mjs      (SHOTS=<dir> for screenshots)
 import http from 'http';
@@ -110,10 +111,39 @@ try {
 	A(/[?&]dive=8\b/.test(end.again) && /floor=5/.test(end.again), '5. Play again is the next seed, same route and floor', end.again);
 	A(calls.length === 0, '5. a Dive asked nothing of the server', calls.slice(0, 5));
 
-	// ---- 6. an Expedition is untouched
+	// ---- 6. (part 4) the kit, the dodge, the combo
+	ok = await boot('dive=7&route=forest&dex=4&auto=1');
+	await strong();
+	await M(() => { const m = window.__m3d; m.world.enemies.length = 0; m.dive.groups.length = 0; });
+	let kit = await M(() => { const m = window.__m3d; return { ids: m.world.pl.moves.map((q) => q.id), man: m.world.pl.moves.map((q) => !!q.xman), view: m.runView().moves.map((q) => [q.name, q.sub || '', !!q.dim]), btn: document.getElementById('b-slide').textContent }; });
+	A(ok && kit.ids.length === 3 && kit.man.join() === 'false,true,true', `6. a Dive starts with a kit of three: the basic and two specials (${kit.ids.join(', ')})`, kit);
+	A(kit.view[1][1] === 'KEY 1' && kit.view[2][1] === 'KEY 2' && !kit.view[0][1] && kit.btn === 'DODGE', '6. the chips name the keys of the specials; the touch button says DODGE', kit);
+	await M(() => { const m = window.__m3d, s = m.state, e = m.addEnemy(19, s.x + Math.sin(s.facing) * 2.5, s.z + Math.cos(s.facing) * 2.5, { t: 0, ti: 0, hp: 1e6 }); e.dummy = true; });
+	await sleep(700);
+	A(await M(() => window.__m3d.world.pl.moves[1].t === 0 && window.__m3d.world.pl.moves[2].t === 0), '6. beside a foe the specials wait to be pressed');
+	await page.keyboard.press('Digit1');
+	const sp1 = await waitFor(() => M(() => { const m = window.__m3d; if (!(m.world.pl.moves[1].t > 0.06)) return false; window.__kit = { t: m.world.pl.moves.map((q) => q.t), view: m.runView().moves.map((q) => [q.name, q.sub || String(), !!q.dim]) }; return true; }), 3000);   // (read the chip the moment it fired: a short cool-down is over before the next look)
+	await sleep(350);
+	kit = await M(() => window.__kit);
+	A(sp1 && kit.t[2] === 0 && kit.view[1][1].endsWith(String.fromCharCode(32, 115)) && parseFloat(kit.view[1][1]) > 0 && kit.view[1][2], '6. key 1 fires special 1: its chip dims and counts its cool-down; special 2 still waits', kit);
+	await page.keyboard.press('KeyV');
+	A(await waitFor(() => M(() => window.__m3d.world.pl.moves[2].t > 0), 3000), '6. V (the fourth button of the site) fires special 2');
+	// the dodge
+	await M(() => { window.__m3d.world.enemies.length = 0; });
+	const p0 = await M(() => [window.__m3d.state.x, window.__m3d.state.z]);
+	await page.keyboard.down('KeyX'); await sleep(80); await page.keyboard.up('KeyX');
+	await sleep(500);
+	const dg = await M(() => { const m = window.__m3d; return { n: m.dive.dodge.n, cd: m.dive.dodge.cd, at: [m.state.x, m.state.z], sliding: m.state.sliding }; });
+	A(dg.n === 1 && dg.cd > 0 && !dg.sliding && Math.hypot(dg.at[0] - p0[0], dg.at[1] - p0[1]) > 2, '6. X dodges: a dash the way you face, then it cools', [dg, p0]);
+	// the combo
+	await M(() => { const m = window.__m3d, s = m.state; for (let i = 0; i < 3; i++) { const e = m.addEnemy(19, s.x + 4 + i * 0.2, s.z, { t: 0, ti: 0 }); e.dummy = true; e.hp = 1e-6; e.poison = 1; e.poisonT = 1; e.poisonTick = 0; } });
+	const cb = await waitFor(async () => (await chips()).includes('COMBO x3'), 3000);
+	A(cb, '6. three KOs in a moment: the chips say COMBO x3', await chips());
+
+	// ---- 7. an Expedition is untouched
 	ok = await boot('exp=7&map=viridian&dex=4&weather=0');
-	d = await M(() => { const m = window.__m3d; return { run: !!m.run, dive: m.dive, zone: m.run && m.run.zone }; });
-	A(ok && d.run && d.dive === null, '6. an Expedition on the same page boots as before (no Dive there)', d);
+	d = await M(() => { const m = window.__m3d; return { run: !!m.run, dive: m.dive, zone: m.run && m.run.zone, slide: document.getElementById('b-slide').textContent, man: m.world.pl.moves.some((q) => q.xman) }; });
+	A(ok && d.run && d.dive === null && d.slide !== 'DODGE' && !d.man, '7. an Expedition on the same page boots as before (no Dive there)', d);
 	A(errors.length === 0, 'no page errors', errors.slice(0, 5).join(' | '));
 } catch (e) {
 	fail++; console.log('FAIL: crashed: ' + (e && e.stack || e));

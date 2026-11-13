@@ -6,7 +6,7 @@
 // elements whose text or width changed. Nothing here reads the fight or the run.
 //
 //   view: { name, level, hp, maxHp, shield, xp, xpNext, time (s), kos, parts: [the run's line, in pieces], note,
-//           boss: { name, hp, maxHp, enraged } | null, moves: [{ name, lv, col }], bag: [{ text, kind }],
+//           boss: { name, hp, maxHp, enraged } | null, moves: [{ name, lv, col, sub (in place of the level: a Dive special's key or cool-down), dim }], bag: [{ text, kind }],
 //           board: null | { title, tabs: [{ id, text, on }], rows: [{ rank, name, who, score, time, me }], note } (the 3D boards),
 //           menu: null | { title, line, restart: url | null, leave: url, boards: bool, sound: 'on' | 'off' | null } (the pause menu),
 //           over: null | { won, title, line, rows: [[label, value]], kept: { ok, text } | null (what the save did),
@@ -55,7 +55,7 @@ export function mountRunUi(doc, o = {}) {
 		cls('rx-boss', 'show', !!v.boss);
 		if (v.boss) { text('rx-bname', v.boss.name + (v.boss.enraged ? ' · ENRAGED' : '')); width('rx-bhp', v.boss.hp / v.boss.maxHp); text('rx-bhpt', `${short(Math.max(0, v.boss.hp))} / ${short(v.boss.maxHp)}`); }
 		const mv = (v.moves || []).slice(0, 4); while (v.moves && mv.length < 4) mv.push(null);
-		html('rx-moves', mv.map((m) => (m ? `<div class="rx-move" style="border-top-color:${esc(m.col || '#5f7377')}">${m.icon || ''}<b>${esc(m.name)}</b><i>Lv ${m.lv | 0}</i></div>` : '<div class="rx-move empty"><b>—</b><i>&nbsp;</i></div>')).join(''));
+		html('rx-moves', mv.map((m) => (m ? `<div class="rx-move" style="border-top-color:${esc(m.col || '#5f7377')}${m.dim ? ';opacity:.5' : ''}">${m.icon || ''}<b>${esc(m.name)}</b><i>${m.sub ? esc(m.sub) : 'Lv ' + (m.lv | 0)}</i></div>` : '<div class="rx-move empty"><b>—</b><i>&nbsp;</i></div>')).join(''));
 		html('rx-bag', (v.bag || []).map((b) => `<span class="rx-chip ${b.kind || 'dim'}">${esc(b.text)}</span>`).join(''));
 		// the Ultimate: its meter (a button: press it to cast), and the cut-in when it is cast
 		const u = v.ult || null;
