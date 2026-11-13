@@ -13,6 +13,7 @@ import { checkToasts as achCheck } from '../site/achievements.js';
 // test-realm mode: packs are earned from dungeon runs and rolled server-side
 const MP_ON = MPX.mpMode();
 let mpPacks = 0;
+let mpGold = 0, mpPrice = 0; // the account's gold, and what a pack costs (the server's number): gold buys packs
 let mpPulls = null; // ids the server rolled for the pack being torn open
 let mpState = null; // the post-open account state (collection drives the NEW!/dust badges)
 
@@ -298,15 +299,37 @@ const hud = {
 	hint: document.getElementById('hint'),
 	toast: document.getElementById('toast'),
 	nextBtn: document.getElementById('next-btn'),
+	buyBtn: document.getElementById('buy-btn'),
 };
 hud.nextBtn.addEventListener('click', startOpen);
+const fmtGold = n => Number(n || 0).toLocaleString('en-US');
+/** The account's numbers as the server last gave them. */
+function takeState(s) { if (!s) return; mpPacks = s.packs || 0; mpGold = s.gold || 0; mpPrice = s.packPrice || 0; }
+/** Signed in: one more pack for the account's gold (the server takes the gold and adds the pack). */
+let buying = false;
+async function buyPack() {
+	if (!MP_ON || buying || !(mpPrice > 0) || mpGold < mpPrice) return;
+	buying = true;
+	try {
+		const data = await MPX.call('gold-buy-pack');
+		if (data && data.state) takeState(data.state);
+		if (data && data.error) hud.hint.textContent = data.error; else if (!pack && (phase === 'idle' || phase === 'done')) spawnPack();
+	} catch (e) { hud.hint.textContent = 'Could not reach the server — nothing was spent.'; }
+	buying = false;
+	updateHud();
+}
+hud.buyBtn.addEventListener('click', buyPack);
 
 function updateHud() {
 	updateStack();
-	hud.gold.textContent = MP_ON ? `${mpPacks} pack${mpPacks === 1 ? '' : 's'}` : `${Col.getGold()} gold`;
+	hud.gold.textContent = MP_ON ? `${mpPacks} pack${mpPacks === 1 ? '' : 's'} · ${fmtGold(mpGold)} gold` : `${Col.getGold()} gold`;
+	const canBuy = MP_ON && mpPrice > 0 && mpGold >= mpPrice && (phase === 'idle' || phase === 'done');
+	hud.buyBtn.hidden = !canBuy;
+	if (canBuy) hud.buyBtn.textContent = `Buy a pack — ${fmtGold(mpPrice)} gold`;
 	if (phase === 'idle') {
 		hud.hint.textContent = MP_ON
 			? (mpPacks > 0 ? (drag ? 'Drop it in the ring' : `Drag a pack into the ring — ${mpPacks} waiting`)
+				: mpPrice > 0 && mpGold >= mpPrice ? `No packs — buy one for ${fmtGold(mpPrice)} gold, or finish a run to earn one`
 				: 'No packs — finish a dungeon run (win or lose) to earn one!')
 			: Col.getGold() >= Col.PACK_PRICE
 				? (drag ? 'Drop it in the ring' : `Drag the pack into the ring — ${Col.PACK_PRICE} gold`)
@@ -339,7 +362,7 @@ async function startOpen() {
 		const data = await MPX.call('open-pack');
 		if (data.error) { hud.hint.textContent = data.error; return; }
 		mpPulls = data.cards;
-		mpPacks = data.state.packs;
+		takeState(data.state);
 		mpState = data.state;
 		achCheck(data.state); // pack-count / collection achievements toast here
 		preloadArt(mpPulls); // load the art during the tear so the reveal shows it
@@ -815,7 +838,7 @@ fetch('cards.json').then(r => r.json()).then(async data => { // plain fetch: let
 	for (const d of cards) cardsById[d.id] = d;
 	if (MP_ON) {
 		const s = await MPX.freshState();
-		mpPacks = s ? s.packs : 0;
+		takeState(s);
 	} else {
 		Col.getCollection(cards); // seed starter collection on first visit
 	}

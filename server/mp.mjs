@@ -62,6 +62,9 @@ const REWARD_COOLDOWN_MS = 60_000;
 const GOLD_CLEAR = { dungeon: 500, heist: 750, tombs: 750, duels: 1000, lorequest: 1000, middleearth: 1000, swordcoast: 1000, finalfantasy: 1000, multiverse: 1000, arena: 1600 };
 const GOLD_FIGHT = { win: 100, draw: 50, loss: 25 };
 const GOLD_CAP = 9_999_999, GOLD_IMPORT_CAP = 1_000_000;
+// Gold buys packs (owner, 2026-11-13: "gold buys packs for a signed in player"). The price is this one
+// number, and the owner set it: "a pack should be 150 gold" (2026-11-13).
+const GOLD_PACK_PRICE = 150;
 const addGold = (user, n) => { const before = user.gold || 0; user.gold = Math.min(GOLD_CAP, before + Math.max(0, Math.floor(n) || 0)); return user.gold - before; };  // one run reward a minute tops
 const PACK_TIMER_MS = 12 * 60 * 60 * 1000; // a free pack drops every 12 hours
 const PACK_INBOX_CAP = 120;         // the special pack inbox holds up to 120 packs
@@ -787,6 +790,7 @@ const RATE_LIMITS = {
 	'arena-score': [20, 60_000], // submitting a finished Arena run — rare (a run takes minutes)
 	'run-score': [20, 60_000], 'duel-result': [10, 60_000], // run boards + Elo reports — one per finished run/duel
 	'gold-earn': [20, 60_000], // a finished fight's gold: a fight takes minutes
+	'gold-buy-pack': [60, 60_000],
 	'craft': [60, 60_000], 'dust-extras': [10, 60_000], // crafting sprees are fine; bulk dusting is rare
 	// spectator / duel-guest polls: legit clients poll ~1/s (cardstate) and ~3/s
 	// (card-poll, fast during a turn); these ceilings are generous headroom that only
@@ -1545,7 +1549,7 @@ const publicState = (u, username) => ({
 	nextPackMs: packEtaMs(u, Date.now()),
 	stats: u.stats,
 	dust: u.dust || 0,
-	gold: u.gold || 0, goldImported: !!u.goldImported,
+	gold: u.gold || 0, goldImported: !!u.goldImported, packPrice: GOLD_PACK_PRICE,
 	arenaBest: u.arenaBest || null,
 	friendCode: u.friendCode || null,
 	friends: u.friends || [],
@@ -4854,6 +4858,15 @@ export default async function handler(req, env) {
 		if (full) user.packTimerBase = now; // it was paused at the cap — resume from now
 		await store.setJSON(username, user);
 		return json({ claimed: n, state: publicState(user, username) });
+	}
+
+	if (action === 'gold-buy-pack') {
+		// one pack for GOLD_PACK_PRICE gold: the pack joins the ones waiting (open-pack opens it)
+		if ((user.gold || 0) < GOLD_PACK_PRICE) return json({ error: `not enough gold — a pack costs ${GOLD_PACK_PRICE.toLocaleString('en-US')}`, state: publicState(user, username) }, 409);
+		user.gold -= GOLD_PACK_PRICE; user.packs += 1;
+		user.stats.packsBought = (user.stats.packsBought || 0) + 1;
+		await store.setJSON(username, user);
+		return json({ ok: true, price: GOLD_PACK_PRICE, state: publicState(user, username) });
 	}
 
 	if (action === 'open-pack') {
