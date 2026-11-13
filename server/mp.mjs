@@ -3571,6 +3571,8 @@ export default async function handler(req, env) {
 					lb.start = { seed: seed >= 0 && seed < 1e9 ? seed : Math.floor(Math.random() * 1e6), at: now, host: lb.host,
 						members: live2.map(m => ({ uid: m.name, name: m.name, dex: m.dex, shiny: !!m.shiny })) };
 					if (lb.dv != null) { lb.start.mode = lb.mode; lb.start.dv = lb.dv; }   // (DLC D0b: an Expedition lobby's start)
+					// (3D co-op: the host says this run is the 3D one, and every player's page goes to it. Classic and Dive only)
+					if (body.start.d3 === true && (lb.mode === 'exp-classic' || lb.mode === 'exp-dive')) lb.start.d3 = true;
 					else if (lb.rules) lb.start.rules = lb.rules;   // (DLC D16: a base lobby's ruleset)
 					if (lb.dv != null && lb.map) { lb.start.map = lb.map; lb.start.diff = lb.diff; }   // (DLC D11: its map and tier)
 					if (lb.cv) { lb.start.cv = lb.cv; lb.start.opts = lb.opts || {}; if (lb.dv == null) lb.start.bmode = lb.bmode || 'normal'; }   // (U2)

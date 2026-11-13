@@ -636,6 +636,26 @@ G.PlayUI = (() => {
     return '/micasurvivor/m3d/?dive=' + seed + '&route=' + encodeURIComponent(route) + (start > 1 ? '&floor=' + start : '') + '&dex=' + dex + (form && form !== dex ? '&form=' + form : '');
   }
 
+  // 3D CO-OP from the online lobby (Plans/MICASURVIVOR_3D_PLAN.md §5.72): NOT live. The HOST's browser opts in with
+  // /micasurvivor/?coop3d=1 (?coop3d=0 goes back): then an online lobby of Expedition · Classic or of a Dive (not the Weekly
+  // one) starts as a 3D run, for every player in it (the start says so: its `d3`). A guest needs no switch, only a
+  // browser that can draw the 3D page. A 3D co-op run saves nothing yet, which is why this is not the default.
+  const C3D_KEY = 'micasurvivor_coop3d';
+  try { const m = /[?&]coop3d=([01])\b/.exec(location.search); if (m) { if (m[1] === '1') localStorage.setItem(C3D_KEY, '1'); else localStorage.removeItem(C3D_KEY); } } catch (e) { /* a convenience */ }
+  const coop3dOn = () => { try { return localStorage.getItem(C3D_KEY) === '1'; } catch (e) { return false; } };
+  /** The host: is this lobby's run to be the 3D one? */
+  function coop3d(room) { return !!room && coop3dOn() && canDraw3d() && (room.mode === 'exp-classic' || room.mode === 'exp-dive') && !(room.opts && room.opts.weekly != null); }
+  /** A player's address on the 3D page for a lobby's start (cfg: the start), or null when this browser cannot draw it. */
+  function coop3dUrl(cfg) {
+    const R = G.Social && G.Social.room, me = G.Social && G.Social.uid;
+    if (!canDraw3d() || !R || !cfg || !Array.isArray(cfg.members)) return null;
+    const slot = cfg.members.findIndex(m => m.uid === me); if (slot < 0) return null;
+    const dex = cfg.members[slot].dex | 0, seed = (cfg.seed | 0) || 1, dive = cfg.mode === 'exp-dive', route = dive ? String(cfg.map || 'dive:forest').slice(5) : '';
+    const map = encodeURIComponent(cfg.map || 'viridian'), diff = encodeURIComponent(cfg.diff || 'normal'), start = cfg.opts && cfg.opts.start > 1 ? cfg.opts.start | 0 : 0;
+    if (cfg.host === me) return '/micasurvivor/m3d/?' + (dive ? 'dive=' + seed + '&route=' + route + (start ? '&floor=' + start : '') : 'exp=' + seed + '&map=' + map + '&diff=' + diff) + '&dex=' + dex + '&host=' + R.id + '&lobby=' + R.id;
+    return '/micasurvivor/m3d/?join=' + R.id + '&lobby=' + R.id + '&lh=' + encodeURIComponent(cfg.host) + '&id=' + slot + '&dex=' + dex + '&gen=' + (seed >>> 0) + '&biome=meadow' + (dive ? '&dj=' + seed + '&route=' + route : '&xj=' + seed + '&map=' + map + '&diff=' + diff);
+  }
+
   // ---------------- START ----------------
   function start() {
     const pl = plan(), v = st.variant, X = G.Expedition;
@@ -734,7 +754,7 @@ G.PlayUI = (() => {
   }
 
   return {
-    init, open, back, render, start, plan, playersOf, modeOf, owned, syncLeague, lobbyOpts, exp3d, exp3dUrl, canDraw3d, dive3d, dive3dUrl,
+    init, open, back, render, start, plan, playersOf, modeOf, owned, syncLeague, lobbyOpts, exp3d, exp3dUrl, canDraw3d, dive3d, dive3dUrl, coop3d, coop3dUrl,
     VARIANTS, CATS,
     get state() { return { step: st.step, cat: st.cat, variant: st.variant, players: st.players, sub: st.sub, map: st.map, diff: st.diff, route: st.route }; }
   };

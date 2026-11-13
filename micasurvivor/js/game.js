@@ -1295,6 +1295,15 @@ G.Flow = {
       G.UI.toast('El juego del anfitrión no está actualizado: tiene que recargar la página.', 5000); G.Audio.sfx('error'); G.Social.leaveRoom();
       return;
     }
+    // 3D co-op (Plans/MICASURVIVOR_3D_PLAN.md §5.72): the host's start says this run is the 3D one: every player's page goes
+    // to the 3D game with its place in the lobby (the lobby stays on the server: the 3D page links the players through it)
+    if (cfg.d3) {
+      const url = G.PlayUI && G.PlayUI.coop3dUrl ? G.PlayUI.coop3dUrl(cfg) : null;
+      if (!url) { G.UI.toast('Este navegador no puede mostrar la partida en 3D.', 5000); G.Audio.sfx('error'); G.Social.leaveRoom(); return; }
+      if (G.DB && G.DB.flush) G.DB.flush();
+      location.assign(url);
+      return;
+    }
     G.LobbyUI.close();
     document.getElementById('invite-pop').classList.add('hidden');
     // MicaSurvivor (DLC D11): an Expedition lobby's start loads the Expedition code first (a base start: as always)

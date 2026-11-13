@@ -1944,6 +1944,29 @@ against the real server handler).
 Tests: `micasurvivor_m3d_lobbylink_test.mjs` 15 checks (two signed-in accounts: a direct link, a Dive joined
 over it both ways, the relay with WebRTC off, and no line without a lobby or an account).
 
+## 5.72 3D co-op from the online lobby, second part: built (2026-11-13). The lobby's START. NOT live.
+
+An online lobby of Expedition · Classic or of a Dive can start as a 3D run for everyone in it.
+
+- **Off by default.** The HOST's browser opts in with `/micasurvivor/?coop3d=1` (`?coop3d=0` goes back). A
+  guest needs no switch, only a browser that can draw the 3D page (one that cannot is told so and leaves the
+  lobby).
+- **How.** The host's start carries a mark (`d3`), kept by the server on the lobby's start (Classic and Dive
+  lobbies only). Each player's 2D page reads it and goes to the 3D page with its place: the host as
+  `?…&host=<lobby>&lobby=<lobby>`, a guest as `?join=<lobby>&lobby=<lobby>&lh=<host>&id=<its number>` with the
+  run's seed and map (or route), so no page is sent anywhere twice. The lobby stays on the server and the 3D
+  pages link through it (§5.71).
+- The Weekly Dive, Survival and the base game's lobbies always start the 2D run.
+
+Seen: for the first moments after the pages change the players are carried by the relay; the direct link
+forms once both new pages have found each other (within the host's 15 s retry).
+
+**Why it is not the default:** a 3D co-op run saves nothing yet, for the host or a guest (part 3). Also not
+done: returning to the lobby after the run (the 3D end screen leads to the menu; the lobby is left started).
+
+Tests: `micasurvivor_m3d_lobbystart_test.mjs` 16 checks (the 2D menu's lobby with real accounts: a Dive and an
+Expedition start in 3D for both players; off by default; the server's mark). The 2D online suites still pass.
+
 ## 6. Dive in 2D: built
 
 **D0 — find the stairs (small; can ship first, on its own).** *Built 2026-11-11 (`overworld/tests/micasurvivor_dive_stairs_test.mjs`). As built: the stairs took their own orange mark, so the rocks and Meowth keep their gold; the HUD arrow comes up after 25 s on a floor, or at once when its boss falls.*

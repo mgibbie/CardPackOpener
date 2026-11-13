@@ -57,6 +57,7 @@ G.I18n.add({
   'Tu Liga: 553 miembros con su kit, evoluciones, definitivo y reto; el laboratorio, las tareas, los logros y la clasificación de la Liga.': 'Your League: 553 members with their kit, evolutions, Ultimate and challenge; the Lab, tasks, achievements and the League board.',
   'La Expedición llegará pronto.': 'Expedition is coming soon.',
   'Tu juego no está actualizado: recarga la página.': 'Your game is out of date: reload.',
+  'Este navegador no puede mostrar la partida en 3D.': 'This browser cannot show the 3D game.',
   'No se pudo cargar la Expedición. Recarga la página.': "Couldn't load Expedition. Reload the page.",
   'Esta repetición es de una versión más nueva de la Expedición: recarga la página para verla bien.': 'This replay is from a newer version of Expedition: reload the page to watch it properly.',
   'Esta partida es de una versión más nueva de la Expedición: recarga la página para verla bien.': 'This run is from a newer version of Expedition: reload the page to watch it properly.',

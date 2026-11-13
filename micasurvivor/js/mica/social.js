@@ -311,8 +311,8 @@ G.Social = (() => {
   /** U2: the host changes the lobby's run ({bmode, opts} / {opts, map} for a Dive); the guests ready up again. */
   function setCfg(cfg) { return update({ cfg }); }
   /** El anfitrión empieza: el servidor comprueba que estáis todos listos y guarda la semilla y los miembros. */
-  async function startRoom(seed) {
-    const r = await update({ start: { seed } });
+  async function startRoom(seed, d3) {   // (d3: this run is the 3D one: js/ui/play-ui.js coop3d)
+    const r = await update({ start: d3 ? { seed, d3: true } : { seed } });
     return r.ok && room && room.start ? { ok: true, cfg: Object.assign({ k: 'start' }, room.start) } : r;
   }
   function setPlaying(p) {
