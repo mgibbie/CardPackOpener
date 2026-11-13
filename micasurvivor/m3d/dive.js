@@ -231,6 +231,12 @@ function place(S, x, z, cx, cz, fly) {
 	return ok ? [x, z] : [cx, cz];
 }
 
+/** A floor's chests, in their order (the floor's, then each pocket's): [{ x, z, t, open, pocket }]. */
+export function chestsOf(room) {
+	const seen = new Set(), list = [];
+	for (const c of [...room.chests, ...room.plugs.map((pg) => pg.chest)]) { if (!c) continue; const key = c[0] + ',' + c[2]; if (seen.has(key)) continue; seen.add(key); list.push({ x: c[0], z: c[2], t: 0, open: false, pocket: room.pocketChest(c) }); }
+	return list;
+}
 /** (part 13) A Dive floor's stall, bushes and rocks, as the 2D game lays them (js/expedition/dive.js ecoLayout): Meowth's
  *  stall on about 1 plain floor in 4, on the way (open all floor); 2 berry bushes; 3 gold rocks (6-14). They keep 5
  *  tiles from each other and from the chests, 6 from the spawn, 4 from the stairs and the landmark. */
@@ -258,12 +264,11 @@ export function ecoLayout(S, room) {
 /** Floor f begins: its room is already the fight's. The groups (asleep), the lost Pokémon, the alpha or the guardian. */
 function startFloor(S, f, t) {
 	const w = S.w, R = S.R, K = R.K, room = w.room, L = room.dive;
-	Object.assign(S, { floor: f, zone: f, ft: t, groups: [], boss: null, sealed: false, bossFell: false, stairsT: 0, ropeT: 0, ropeSaid: false, sealSaid: false, stray: null, reinT: null, reinN: 0, cadence: L.cadence, tg: [] });
+	Object.assign(S, { floor: f, zone: f, ft: t, groups: [], boss: null, sealed: false, bossFell: false, stairsT: 0, ropeT: 0, ropeSaid: false, sealSaid: false, stray: null, reinT: null, reinN: 0, cadence: L.cadence, tg: [], plugsOpen: 0 });   // (plugsOpen: this floor's opened pockets, a bitmask: a watcher builds the floor from it)
 	S.zs = t; room.zone = Math.min(3, 1 + Math.floor((f - 1) / 10)); room.map = S.map;
 	if (S.eco) room.eco = ecoLayout(S, room);   // (part 13)
 	// (part 5) the chests (the floor's, and each pocket's), the landmark
-	{ const seen = new Set(), list = []; for (const c of [...room.chests, ...room.plugs.map((pg) => pg.chest)]) { if (!c) continue; const key = c[0] + ',' + c[2]; if (seen.has(key)) continue; seen.add(key); list.push({ x: c[0], z: c[2], t: 0, open: false, pocket: room.pocketChest(c) }); }
-		S.chests = list; S.lm = room.landmark && LANDMARKS[room.landmark.kind] ? { kind: room.landmark.kind, x: room.landmark.at[0], z: room.landmark.at[2], t: 0, used: false, seen: false } : null; }
+	{ S.chests = chestsOf(room); S.lm = room.landmark && LANDMARKS[room.landmark.kind] ? { kind: room.landmark.kind, x: room.landmark.at[0], z: room.landmark.at[2], t: 0, used: false, seen: false } : null; }
 	S.deepest = Math.max(S.deepest, f); S.tags.clear();
 	const r = R.rng(S.seed, S.route, f, 0xD1), P = R.pool(S.route, f), er = R.rng(S.seed, S.route, f, 0xE17E);
 	const n = Math.min(K.GROUP[1], K.GROUP[0] + Math.floor(f / 8)) + (S.weekly && S.weekly.mod === 'horde' ? 2 : 0);   // (the Weekly Dive's Horde)

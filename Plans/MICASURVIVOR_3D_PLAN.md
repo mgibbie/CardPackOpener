@@ -1865,6 +1865,31 @@ Co-op is the one thing the 3D Dive still lacks next to the 2D one. Local and onl
 Tests: `micasurvivor_m3d_dive_weekly_test.mjs` 17 checks in node; the 3D Dive boards test 17 (the real server);
 `micasurvivor_m3d_dive_page_test.mjs` 64; `micasurvivor_playflow_test.mjs` 178.
 
+## 5.69 3D Dive, sixteenth part: built (2026-11-13). Watching a Dive.
+
+A live 3D Dive could not be watched; a 2D Dive could. Now a signed-in player's 3D Dive is shown to friends
+over the site's own lines, as a 3D Expedition is (`exprelay.js`, unchanged): it appears in their "live now"
+list and the 2D game sends a watcher to the 3D page.
+
+- **The Dive's row** (`m3d/divenet.js`, as `expnet.js` is an Expedition's): the floor, the opened pockets and
+  chests, the landmark, the lost Pokémon, the loot, the ₽ and the floor's things, the boss, the League
+  member's stage, the Weekly Dive's week, the end. Under 220 characters, sent with the frames.
+- **The watcher** learns the seed and route from the host's first frame, builds each floor itself, and draws
+  the same chests, boulders, landmark, stall and chips. A pocket opened rebuilds its floor. It has the
+  route's dark air too.
+- A Dive's red ground, chests, landmark and pockets are now among the events a watcher is sent.
+
+Fixed on the way: the opened pockets of a floor were still counted as open on the next floor (it only showed
+in the row).
+
+This is also the base co-op needs: the same frames and the same row.
+
+Not checked: a watch over the real site relay with two signed-in accounts (the page test uses the test
+room's channel, which the relay stands in for; the Expedition's relay test still passes).
+
+Tests: `micasurvivor_m3d_dive_net_test.mjs` 19 checks in node; `micasurvivor_m3d_dive_watch_test.mjs` 11 checks
+in two browser windows.
+
 ## 6. Dive in 2D: built
 
 **D0 — find the stairs (small; can ship first, on its own).** *Built 2026-11-11 (`overworld/tests/micasurvivor_dive_stairs_test.mjs`). As built: the stairs took their own orange mark, so the rocks and Meowth keep their gold; the HUD arrow comes up after 25 s on a floor, or at once when its boss falls.*
