@@ -43,7 +43,9 @@ Things that shipped without being checked the way a player uses them.
 
 ## 3. Finish the 3D Dive and 3D co-op
 
-- [ ] 3a. A co-op guest gets what its save brings: its starting form, its family's upgrades, the Lab, the route's Seal.
+- [x] 3a. A co-op guest gets what its save brings: its starting form, its family's upgrades, the Lab, the route's Seal.
+      Done, for a lobby's guest in a Dive and in an Expedition. Not the Rare Candy's two levels (the level is the
+      team's), and the other players do not see a guest's shiny look.
 - [ ] 3b. A co-op guest keeps the stage and the Seal when the party beats a guardian.
 - [ ] 3c. A controller button for the Ultimate in a Dive.
 - [ ] 3d. The minimap marks chests and the landmark once seen.

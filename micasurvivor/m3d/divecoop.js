@@ -12,7 +12,10 @@
 // and 'charge' carry `d`); a guest standing in it takes that itself (slamOn), unless it is dodging.
 // The Dive ends for everyone when the host faints or the party leaves by the rope (any player standing still in its
 // circle). A guest that faints is down until the next floor.
-// Not here: a guest's combo (the loot is the host's), the Seal, the family's upgrades and the Lab for a guest.
+// What a guest's own SAVE brings (o.form, o.perks, o.meta, o.shiny, o.seal: as a host's, dive.js): the form it starts as,
+// its family's bought upgrades, the Lab (its stats, tools and Max Revive; not the Rare Candy: the level is the team's),
+// its shiny's look, and its own Seal of this route.
+// Not here: a guest's combo (the loot is the host's).
 import { K, newState } from './sim.js';
 import { tick, hurtPlayer } from './combat.js';
 import { guestWorld } from './coop.js';
@@ -20,6 +23,7 @@ import { besideHost } from './expedition.js';
 import { setup as setupLevels, tickStats, takeItem } from './explevel.js';
 import { memberOf, setupLeague, learnKit } from './expleague.js';
 import { syncPerks } from './expcap.js';
+import { applyPerks, perkTools } from './expperks.js';
 import { pickTake } from './expeco.js';
 import { guestGift } from './expcoop.js';
 import { tickFog } from './expfog.js';
@@ -37,12 +41,15 @@ export function guestDive(data, X, R, o = {}) {
 	const w = guestWorld(room, data, { ...o, dex: league ? member : o.dex, moves: lv.map((m) => m[0]),
 		ability: league && o.ability === undefined ? X.G.abilityOf(X.G.finalsOf(X.G.BY[member])[0]) : o.ability });
 	const S = { w, X, R, data, dive: true, guest: true, slot: o.id || 1, route, map: 'dive:' + route, seed, floor: 1, zone: 1, zs: 0, coins: 0, says: [], rv: null, keep: {}, ended: false, won: false, lost: false, escaped: false,
-		weekly: null, seal: false, obeliskT: 0, meta: null, pick: null };
+		weekly: null, seal: !!o.seal, obeliskT: 0, meta: o.meta || null, pick: null };
+	if (o.perks) applyPerks(S, o.perks);
 	setupLevels(S, X.L, lv);
 	S.syncPerks = () => syncPerks(S);
-	if (league) { S.maxMoves = R.K.SLOTS; setupLeague(S, member); for (let i = 1; i < R.K.SLOTS; i++) learnKit(S, i); }   // (the basic and both specials from the start, as the host)
+	if (S.up) perkTools(S);
+	if (league) { S.maxMoves = R.K.SLOTS; setupLeague(S, member, o.form | 0); S.lg.shiny = !!o.shiny; for (let i = 1; i < R.K.SLOTS; i++) learnKit(S, i); }   // (the basic and both specials from the start, as the host)
 	setupKit(S, o);
 	place(S);
+	if (S.meta) { S.meta.candy = false; S.syncPerks(); if (S.meta.eff.lab.revive && S.lv && X.L.I.IT.maxrevive) takeItem(S, 'maxrevive'); }   // (the Lab's: its stats and a Max Revive; the Rare Candy's levels are not a guest's, the level is the team's)
 	return S;
 }
 /** Where a guest arrives on a floor: beside where the host does, by its number. */

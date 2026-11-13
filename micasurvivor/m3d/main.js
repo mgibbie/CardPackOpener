@@ -143,11 +143,24 @@ if (drun) { room = drun.w.room; drun.w.cap = DR.K.REIN.cap + 60; }
 // (part 14) a dark route: its air (the fog comes close and takes the route's colour: your lamp), its tint at the screen's edges
 const DLIGHT = drun ? lightOf(drun.route, FOG0) : DW || DJ ? lightOf((DW || DJ).route, FOG0) : null;   // (a watched Dive has its route's air too)
 const solo = run || drun;   // (a run of your own, alone on this page: an Expedition or a Dive)
+// (plan 3a) what a lobby GUEST's own save brings (as a host's): only to a run it will keep (its member is its own, and so is the form)
+const GPRACTICE = (XJ || DJ) ? (LOBBY ? unfair([...Q.entries()].filter(([k]) => !LOBBY_OK.guest.includes(k))) : 'join') : null;
+const GSAVE_OK = !!(XJ || DJ) && !GPRACTICE && !!GG.ExpSave && await GG.ExpSave.open().then(() => !!GG.ExpSave.data, () => false);
+const GOWN = (() => {
+	if (!GSAVE_OK || !GG.ExpLeague || Q.has('moves')) return {};
+	try {
+		const L = GG.ExpLeague, Sv = GG.ExpSave, base = baseSave(), member = L.BY[DEX] ? DEX : L.FAM[DEX] || 0, form = +Q.get('form') || 0;
+		if (!member || !hasMember(member, { L, Sv, base }) || (form && form !== member && !hasForm(form, { Sv, base }))) return {};
+		let meta = null;
+		try { if (GG.ExpMeta) meta = metaFor(GG.ExpMeta, { Sv, member, boosts: spendBoosts(GG.ExpMeta, Sv, deviceId(localStorage, Sv.who, crypto), localStorage) }); } catch (e) { console.warn('the Lab could not be read: ' + (e && e.message)); }
+		return { form, perks: perksOf(GG, base, DEX), meta, shiny: Sv.has('league.shiny', String(member)) || !!(base && base.partnerShiny && base.shiny && base.shiny[DEX]), seal: !!DJ && !!DS.sealOf(Sv, DJ.route) };
+	} catch (e) { console.warn('the save could not be read for this run: ' + (e && e.message)); return {}; }
+})();
 // (P4) a guest in a run: its own League member in the host's run (expcoop.js); it builds each zone from the run's row
-const grun = XJ ? guestRun(dataFrom(GG), XF, { seed: XJ.seed, map: XJ.map, diff: XJ.diff, id: MYID, dex: DEX, league: !Q.has('moves'), moves: MOVES, tune: TUNE, ability: Q.get('ability') === '0' ? null : Q.get('ability') || undefined, autoPick: Q.has('auto') ? +Q.get('auto') | 0 : undefined }) : null;
+const grun = XJ ? guestRun(dataFrom(GG), XF, { ...GOWN, seed: XJ.seed, map: XJ.map, diff: XJ.diff, id: MYID, dex: DEX, league: !Q.has('moves'), moves: MOVES, tune: TUNE, ability: Q.get('ability') === '0' ? null : Q.get('ability') || undefined, autoPick: Q.has('auto') ? +Q.get('auto') | 0 : undefined }) : null;
 if (grun) room = grun.w.room;
 // (part 17) a guest in a Dive: its own League member in the host's Dive (divecoop.js); it builds each floor from the Dive's row
-const gdrun = DJ && DR ? guestDive(dataFrom(GG), XF, DR, { seed: DJ.seed, route: DJ.route, id: MYID, dex: DEX, league: !Q.has('moves'), moves: MOVES, tune: TUNE, ability: Q.get('ability') === '0' ? null : Q.get('ability') || undefined, autoPick: Q.has('auto') ? +Q.get('auto') | 0 : undefined }) : null;
+const gdrun = DJ && DR ? guestDive(dataFrom(GG), XF, DR, { ...GOWN, seed: DJ.seed, route: DJ.route, id: MYID, dex: DEX, league: !Q.has('moves'), moves: MOVES, tune: TUNE, ability: Q.get('ability') === '0' ? null : Q.get('ability') || undefined, autoPick: Q.has('auto') ? +Q.get('auto') | 0 : undefined }) : null;
 if (gdrun) room = gdrun.w.room;
 const dk = drun || gdrun;   // (the Dive this page plays in, as its host or a guest: the kit, the dodge)
 const myRun = run || grun || drun || gdrun;   // (the run this page plays in, as a host or a guest)
@@ -994,7 +1007,6 @@ function keepShiny(dex) {
 }
 /** (§5.73) A GUEST of a lobby's run keeps it in its own save: the team's result and the same pay (the 2D game's rule).
  *  The end is the host's word (the row's `e`): it may come a moment after the run is over, so this waits for it. */
-const GPRACTICE = (XJ || DJ) ? (LOBBY ? unfair([...Q.entries()].filter(([k]) => !LOBBY_OK.guest.includes(k))) : 'join') : null;
 let guestKeeping = false;
 async function keepGuest(S) {
 	if (guestKeeping) return kept; guestKeeping = true;

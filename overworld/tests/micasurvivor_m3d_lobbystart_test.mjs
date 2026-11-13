@@ -156,6 +156,8 @@ try {
 	const joined = await waitFor(() => B1.evaluate(() => !!(window.__m3d.guestDive && window.__m3d.rv && window.__m3d.rv.dive && window.__m3d.net.joined)), 60000);
 	const pair = joined ? [await A1.evaluate(() => { const m = window.__m3d; return { stairs: m.room.stairs.join(), mates: m.world.mates.map((q) => q.id + ':' + q.dex), modes: m.link.modes, floor: m.dive.floor }; }), await B1.evaluate(() => { const m = window.__m3d; return { stairs: m.room.stairs.join(), floor: m.guestDive.floor, mode: m.link.modes.alice, reloaded: /gen=4242/.test(location.search) }; })] : [];
 	A(joined && pair[0].stairs === pair[1].stairs && pair[0].mates.length === 1 && pair[0].mates[0].startsWith('1:') && pair[1].floor === 1 && (pair[1].mode === 'direct' || pair[1].mode === 'relay'), 'they are in one 3D Dive, linked, bob as player 1', JSON.stringify(pair));
+	const own1 = joined ? await B1.evaluate(() => { const m = window.__m3d; return { maxHp: m.world.pl.maxHp, seal: m.guestDive.seal, up: !!m.guestDive.up }; }) : {};
+	A(joined && own1.seal === false && own1.up === true && own1.maxHp > 0, "a guest with a new save: no Seal, its family's upgrades read (none bought)", JSON.stringify(own1));
 	const direct = await waitFor(() => A1.evaluate(() => window.__m3d.link.modes.bob === 'direct'), 45000);
 	A(direct, 'they are linked DIRECTLY: the old negotiation the 2D lobby left on the server is cleared first (before that fix the host read it and dropped to the slow relay for the whole run)', JSON.stringify(await A1.evaluate(() => [window.__m3d.link.modes, window.__m3d.link.waited])));
 	// ---- (part 3) the run is kept by both: the team's result, the same pay, each in their own save
@@ -187,7 +189,14 @@ try {
 	// …and the next run starts from it
 	await B1.evaluate(() => G.Social.setReady(true));
 	await waitFor(() => A1.evaluate(() => G.Social.room.members.every((m) => m.ready)), 15000);
+	// (plan 3a) what the guest's OWN save brings: bob has since bought + 40 HP for his Pokémon's family and awakened the forest's Seal
+	await B1.evaluateOnNewDocument(() => { if (location.pathname !== '/micasurvivor/m3d/') return; try { const dex = new URLSearchParams(location.search).get('dex'); const bk = 'micasurvivor_save.mp:bob', b = JSON.parse(localStorage.getItem(bk) || '{}'); b.pupg = b.pupg || {}; b.pupg[dex] = { hp: 5 }; localStorage.setItem(bk, JSON.stringify(b)); const xk = 'micasurvivorexp_save.mp:bob', x = JSON.parse(localStorage.getItem(xk) || 'null'); if (x) { x.sets = x.sets || {}; x.sets['dive.seal'] = ['forest']; localStorage.setItem(xk, JSON.stringify(x)); } } catch (e) { console.error('seed: ' + e.message); } });
 	A(await startIt(A1) === true && await in3d(A1) && await in3d(B1), 'ready again, the host starts: both are in a new 3D Dive');
+	await waitFor(() => B1.evaluate(() => !!(window.__m3d.guestDive && window.__m3d.net.joined)), 60000);
+	const own2 = await B1.evaluate(() => { const m = window.__m3d, S = m.guestDive; return { maxHp: m.world.pl.maxHp, seal: S.seal, hp: S.up && S.up.hp, meta: !!S.meta, practice: m.guestPractice }; });
+	A(own2.seal === true && own2.hp === 40 && own2.maxHp === own1.maxHp + 40, `the guest starts with what its own save brings: the route's Seal and its family's + 40 HP (${own1.maxHp} -> ${own2.maxHp})`, JSON.stringify(own2));
+	A(own2.meta === true, "and the Lab's row is its own too", JSON.stringify(own2));
+	A(await A1.evaluate(() => window.__m3d.dive.seal === false), "the host's Dive has no Seal: each player's is their own");
 	await A1.close(); await B1.close();
 
 	// ---- an Expedition · Classic lobby
