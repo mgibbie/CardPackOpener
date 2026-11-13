@@ -2006,8 +2006,15 @@ An online lobby of Expedition · Classic or of a Dive (not the Weekly one) start
 - 2D co-op is archived, not deleted: three suites pin it (`micasurvivor_online_modes_test`,
   `micasurvivor_expedition_mp_test`, `micasurvivor_replay_v2_test`) with the switch's own key.
 
+**The stale negotiation (found in CI; go-live merged without the fix, which followed in its own PR the same day).** The players' browsers had already negotiated a
+link on the 2D lobby pages; the fresh 3D pages read those old messages from the server, the host answered an
+offer that no longer existed and dropped to the relay, and `net.js` tries the direct link only once: the whole
+run was then at two messages a second. `lobbylink.js` now clears its own old messages and waits (15 s at most)
+until the others have cleared theirs before the line opens, and the first try is given 20 s (it races the
+other page loading). The lobby test requires the direct link and fails with the fix reverted.
+
 **Shipped without a play on two real machines** (the owner will test). What is known to differ from 2D co-op:
-the first moments after START are carried by the relay (slow) until the direct link forms; a guest keeps no
+a pair whose browsers cannot reach each other plays over the relay (slow), as in 2D; a guest keeps no
 best time, medal, stage or Seal; a 3D co-op run is not on any board and makes no replay tape; more than two
 players was not tested (the fight allows four).
 

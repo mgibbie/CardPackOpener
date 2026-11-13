@@ -67,6 +67,10 @@ const LOBBY = !WATCH && /^[0-9a-f]{12}$/.test(Q.get('lobby') || '') && (Q.get('h
 if (LOBBY && !window.G.Net) {
 	window.G.Social = window.G.Social || { uid: window.G.MicaAccount.name() };   // (net.js reads your name here)
 	window.G.Coop = window.G.Coop || { active: true };                             // (…and whether a run is on: the relay only carries one)
+	// (the direct link is tried ONCE, and a pair that misses it stays on the slow relay for the whole run: js/net/net.js. In the 2D
+	//  game that try happens in the lobby; here it races the other player's page loading after START, so it is given 20 s, not 9.
+	//  Seen in CI, 2026-11-13: both pages up after 9 s, and the pair on the relay from then on.)
+	window.__msurvNet = Object.assign({ directMs: 20000 }, window.__msurvNet || {});
 	for (const src of ['../js/mica/online.js', '../js/net/net.js']) await new Promise((res, rej) => { const el = document.createElement('script'); el.src = src; el.async = false; el.onload = res; el.onerror = () => rej(new Error('3D co-op: could not load ' + src)); document.head.appendChild(el); });
 }
 if ((DIVE || DW || DJ) && window.G && !window.G.ExpDive) for (const src of ['../js/systems/expedition.js', '../js/expedition/dive-gen.js', '../js/expedition/dive.js']) await new Promise((res, rej) => { const el = document.createElement('script'); el.src = src; el.async = false; el.onload = res; el.onerror = () => rej(new Error('3D Dive: could not load ' + src)); document.head.appendChild(el); });

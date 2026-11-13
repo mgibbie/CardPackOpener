@@ -156,9 +156,8 @@ try {
 	const joined = await waitFor(() => B1.evaluate(() => !!(window.__m3d.guestDive && window.__m3d.rv && window.__m3d.rv.dive && window.__m3d.net.joined)), 60000);
 	const pair = joined ? [await A1.evaluate(() => { const m = window.__m3d; return { stairs: m.room.stairs.join(), mates: m.world.mates.map((q) => q.id + ':' + q.dex), modes: m.link.modes, floor: m.dive.floor }; }), await B1.evaluate(() => { const m = window.__m3d; return { stairs: m.room.stairs.join(), floor: m.guestDive.floor, mode: m.link.modes.alice, reloaded: /gen=4242/.test(location.search) }; })] : [];
 	A(joined && pair[0].stairs === pair[1].stairs && pair[0].mates.length === 1 && pair[0].mates[0].startsWith('1:') && pair[1].floor === 1 && (pair[1].mode === 'direct' || pair[1].mode === 'relay'), 'they are in one 3D Dive, linked, bob as player 1', JSON.stringify(pair));
-	await waitFor(() => A1.evaluate(() => window.__m3d.link.modes.bob === 'direct'), 30000);
-	const lm = await A1.evaluate(() => window.__m3d.link.modes.bob);
-	A(lm === 'direct' || lm === 'relay', `they stay linked (now: ${lm}; the relay carries the first moments, the direct link forms when the two new pages find each other)`);
+	const direct = await waitFor(() => A1.evaluate(() => window.__m3d.link.modes.bob === 'direct'), 45000);
+	A(direct, 'they are linked DIRECTLY: the old negotiation the 2D lobby left on the server is cleared first (before that fix the host read it and dropped to the slow relay for the whole run)', JSON.stringify(await A1.evaluate(() => [window.__m3d.link.modes, window.__m3d.link.waited])));
 	// ---- (part 3) the run is kept by both: the team's result, the same pay, each in their own save
 	const saveOf = (p, who) => p.evaluate((who) => { try { const s = JSON.parse(localStorage.getItem('micasurvivorexp_save.mp:' + who) || 'null'); return s ? { c: s.counters || {}, dev: localStorage.getItem('micasurvivorexp_dev.mp:' + who) } : null; } catch (e) { return null; } }, who);
 	A(await A1.evaluate(() => window.__m3d.diveSave.practice === null && window.__m3d.diveSave.ok === true), "a lobby's host plays a Dive that can be kept (its start's own parameters are fair)", JSON.stringify(await A1.evaluate(() => window.__m3d.diveSave)));
