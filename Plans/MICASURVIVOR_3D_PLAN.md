@@ -1783,6 +1783,24 @@ Gaps next to the 2D Dive when it went live, to close next: starting as a later f
 bought upgrades, the Lab's boosts. Then: the stall / berry bushes / gold rocks, the dark floors' lighting, the
 tasks' counters.
 
+## 5.65 3D Dive, twelfth part: built (2026-11-13). What your save brings: the form, the upgrades, the Lab.
+
+Owner: "upgrades lab boosts and starting form all need to be done". A Dive that can be kept now gets what an
+Expedition gets, by the same code:
+
+- **The starting form.** The menu sends the form you chose (`&form=`); the Dive starts as that stage, with its
+  stats and the kit of three. A form the save has not reached plays, but the Dive is not kept and says so.
+- **The family's upgrades** bought for that Pokémon: HP, attack, speed, cool-down, armour, regeneration, XP,
+  crit, the rerolls and bans, the vetoed moves, the second chance.
+- **The Lab:** its stats, its extra rerolls / skips / banishes, a Max Revive to start with, the Rare Candy's two
+  levels, and the items you have not unlocked are left out of levels and chests. Armed boosts are spent only
+  when the Dive can be kept.
+- Your shiny plays shiny.
+
+Not in a Dive: research points for KOs (the Expedition earns them through its economy, which a Dive has not).
+
+Tests: `micasurvivor_m3d_dive_yours_test.mjs` 20 checks in node; `micasurvivor_m3d_dive_page_test.mjs` now 52.
+
 ## 6. Dive in 2D: built
 
 **D0 — find the stairs (small; can ship first, on its own).** *Built 2026-11-11 (`overworld/tests/micasurvivor_dive_stairs_test.mjs`). As built: the stairs took their own orange mark, so the rocks and Meowth keep their gold; the HUD arrow comes up after 25 s on a floor, or at once when its boss falls.*

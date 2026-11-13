@@ -208,6 +208,19 @@ try {
 	const k7 = await M(() => window.__m3d.kept), c7 = (expSave(await store()) || {}).counters || {};
 	A(k7 && k7.ok === false && k7.why === 'member' && c7['dive.runs'] === 1, "6c. Dragonite's family, which a new save does not have: its end says so, and nothing is written", [k7, c7['dive.runs']]);
 
+	// ---- 6e. (part 12) what your save brings: the form you start as, the Lab
+	ok = await boot('dive=7&route=forest&dex=4&form=5');
+	let yf = await M(() => ({ ...window.__m3d.diveSave, form2: window.__m3d.dive.lg.form, dex: window.__m3d.world.pl.mon.dex }));
+	A(ok && yf.practice === null && yf.form === 5 && yf.dex === 5 && yf.keep === false && yf.meta === false, '6e. a Dive asked for as Charmeleon, a form this save has not reached: it plays, but brings nothing from the save', yf);
+	await M(() => { const m = window.__m3d; m.world.enemies.length = 0; m.dive.groups.length = 0; m.dive.ft = 1e9; m.dive.bank = 40; });
+	await faint(); await sleep(300);
+	const kf = await M(() => window.__m3d.kept);
+	A(kf && kf.ok === false && kf.why === 'form', '6e. …and its end says it is not kept (the form is not yours yet)', kf);
+	await M(() => { const k = 'micasurvivorexp_save.guest', sv = JSON.parse(localStorage.getItem(k)); sv.sets['league.form'] = (sv.sets['league.form'] || []).concat(['5']); localStorage.setItem(k, JSON.stringify(sv)); });
+	ok = await boot('dive=7&route=forest&dex=4&form=5');
+	yf = await M(() => ({ ...window.__m3d.diveSave, dex: window.__m3d.world.pl.mon.dex, lab: !!window.__m3d.dive.meta, xperk: !!window.__m3d.world.pl.xperk }));
+	A(ok && yf.keep === true && yf.dex === 5 && yf.meta === true && yf.lab && yf.xperk, '6e. once the form is yours the Dive starts as it, can be kept, and has the Lab', yf);
+
 	// ---- 6d. (part 9) the red ground: a brawler beside you winds up a slam, and it lands
 	ok = await boot('dive=7&route=forest&dex=4&auto=1');
 	await M(() => { const m = window.__m3d, s = m.state; m.world.enemies.length = 0; m.dive.groups.length = 0; m.dive.ft = 1e9; m.world.pl.maxHp = m.world.pl.hp = 1e6; m.world.pl.moves.length = 0;
