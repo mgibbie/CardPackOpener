@@ -179,6 +179,17 @@ try {
 	A(sa && sa.c['dive.runs'] === 1 && sa.c['pay3d.' + sa.dev] === 120, "alice's save has the Dive and her pay", JSON.stringify(sa && [sa.c['dive.runs'], sa.c['pay3d.' + sa.dev]]));
 	A(sb && sb.c['dive.runs'] === 1 && sb.c['pay3d.' + sb.dev] === 120 && sb.c['dive.forest.best'] === 1 && sb.c['lg.runs.1'] === 1, "bob's own save has it too: the Dive, his pay, his League member's run", JSON.stringify(sb && sb.c));
 	A(sa.dev !== sb.dev && !sb.c['pay3d.' + sa.dev], 'each is owed on their own browser only');
+	// ---- (plan 3f) the co-op board: each player's own mark, with the team's result
+	const DASK = { mode: 'micasurvivor_expedition', d3: true, expMode: 'exp-dive', board: 'dive', route: 'forest' };
+	await waitFor(async () => ((await call('run-leaderboard', { ...DASK, coop: true }, tokens.alice)).top || []).length === 2, 15000);
+	const cb = await call('run-leaderboard', { ...DASK, coop: true }, tokens.alice), solo = await call('run-leaderboard', DASK, tokens.alice);
+	const rowOf = (b, n) => (b.top || []).find((e) => e.name === n) || {};
+	A(/:3d:co$/.test(cb.board || '') && (cb.top || []).length === 2 && rowOf(cb, 'alice').n === 2 && rowOf(cb, 'alice').team.join() === 'bob' && rowOf(cb, 'bob').team.join() === 'alice' && rowOf(cb, 'alice').floor === 1 && rowOf(cb, 'bob').floor === 1 && rowOf(cb, 'bob').time === rowOf(cb, 'alice').time, "the route's 3D CO-OP board has both players: the same floor and time, each with the other's name", JSON.stringify(cb).slice(0, 500));
+	A((solo.top || []).length === 0 && !solo.you, 'the solo 3D board has neither: a party\'s run is not a solo mark', JSON.stringify(solo).slice(0, 200));
+	const kt = [await A1.evaluate(() => window.__m3d.kept.text), await B1.evaluate(() => window.__m3d.kept.text)];
+	A(kt.every((q) => /3D co-op board: #[12]\./.test(q)), 'both end screens say their place on the co-op board', JSON.stringify(kt));
+	const bad = [await call('run-score', { mode: 'micasurvivor_expedition', expMode: 'exp-dive', dv: 20, route: 'forest', floor: 1, time: 9, coop: 2 }, tokens.fay), await call('run-score', { mode: 'micasurvivor_expedition', d3: true, expMode: 'exp-dive', dv: 20, route: 'forest', floor: 1, time: 9, coop: 5 }, tokens.fay), await call('run-leaderboard', { ...DASK, route: undefined, weekly: true, coop: true }, tokens.fay)];
+	A(bad.every((q) => !!q.error), 'the server refuses a co-op score that is not 3D, a party of five, and a co-op Weekly board', JSON.stringify(bad.map((q) => q.error)));
 	// ---- (part 4) back to the lobby: the end screen's Leave
 	const leaveOf = (p) => p.evaluate(() => (document.getElementById('rx-leave') || {}).href || '');
 	const la = await leaveOf(A1), lb = await leaveOf(B1);
@@ -214,6 +225,15 @@ try {
 	A(a4 && b4 && ud.includes('exp=4242') && ud.includes('map=viridian') && ud.includes('diff=normal') && ud.includes('host=' + L2.id) && ue.includes('join=' + L2.id) && ue.includes('xj=4242') && ue.includes('map=viridian'), `both go to the 3D Expedition (${ud} / ${ue})`);
 	const joined2 = await waitFor(() => B2.evaluate(() => !!(window.__m3d.rv && window.__m3d.net.joined)), 60000);
 	A(joined2 && await A2.evaluate(() => window.__m3d.world.mates.length === 1 && !!window.__m3d.run), 'and are in one 3D Expedition run');
+	// (plan 3f) the Expedition ends: both are on the map's co-op board, with the same score
+	await B2.evaluate(() => { const m = window.__m3d; m.world.pl.hp = 0; m.world.pl.dead = true; });   // (the whole party is down: the guest, then the host)
+	await waitFor(() => A2.evaluate(() => window.__m3d.world.mates.every((q) => q.dead)), 10000);
+	await A2.evaluate(() => { const m = window.__m3d; m.world.enemies.length = 0; m.world.pl.hp = 0; m.world.pl.dead = true; });
+	const XASK = { mode: 'micasurvivor_expedition', d3: true, map: 'viridian', diff: 'normal', rules: 2, coop: true };
+	const xgot = await waitFor(async () => ((await call('run-leaderboard', XASK, tokens.dave)).top || []).length === 2, 40000);
+	const xb = await call('run-leaderboard', XASK, tokens.dave), xs = await call('run-leaderboard', { ...XASK, coop: undefined }, tokens.dave);
+	const xr = (n) => (xb.top || []).find((e) => e.name === n) || {};
+	A(xgot && xr('dave').n === 2 && xr('dave').team.join() === 'erin' && xr('erin').team.join() === 'dave' && xr('dave').score === xr('erin').score && (xs.top || []).length === 0, "the Expedition ends: the map's 3D co-op board has both, with the same score; the solo board has neither", JSON.stringify([xb, await A2.evaluate(() => window.__m3d.kept), await B2.evaluate(() => window.__m3d.kept)]).slice(0, 700));
 	await A2.close(); await B2.close();
 
 	// ---- a browser can go back to 2D co-op

@@ -747,7 +747,17 @@ if (run) HEAD.exp = { seed: GEN, map: run.map, diff: run.diff };
 if (drun) HEAD.dive = { seed: drun.seed, route: drun.route };   // (part 16) a Dive: a watcher needs its seed and route to build the floors   // (P4) a run: a watcher needs its seed and map to build the zones
 /** (P4) A frame with the run's row on it (expnet.js), when this is a run. */
 /** (§5.73) The run's end as its host kept it, for the guests: [pay, kills, seconds, the zone or the deepest floor, won]. */
-const endRow = () => { const r = runOver; if (!r || typeof r !== 'object' || !r.parts) return null; return drun ? [DS.coinsOf(r.parts.divePay), r.parts.kills | 0, r.parts.time | 0, r.parts.deepest | 0, r.parts.escaped ? 1 : 0] : [r.pay ? r.pay.pay | 0 : 0, r.parts.kills | 0, r.parts.time | 0, run.zone | 0, r.won ? 1 : 0]; };
+const endRow = () => {
+	const r = runOver; if (!r || typeof r !== 'object' || !r.parts) return null;
+	if (drun) return [DS.coinsOf(r.parts.divePay), r.parts.kills | 0, r.parts.time | 0, r.parts.deepest | 0, r.parts.escaped ? 1 : 0, r.parts.start || 1];   // (start: for a guest's mark on the co-op board)
+	const sb = scoreBody(runSum(run, r, SV.DV));   // (the score and its parts, as the host posts them: a guest posts the same, plan 3f)
+	return [r.pay ? r.pay.pay | 0 : 0, r.parts.kills | 0, r.parts.time | 0, run.zone | 0, r.won ? 1 : 0, sb.score, sb.dmg, sb.bosses, sb.catches, sb.kills, sb.time, sb.zone];
+};
+/** (plan 3f) A lobby's 3D co-op run goes to the co-op boards: the party's size (the most it has been) and the others' names. */
+let teamPeak = 0;
+const keptRest = () => { const { ok: _ok, text: _text, ...rest } = kept || {}; return rest; };   // (what the end screen already says of the save: its pay, its record: the board's line is added to it, not put in its place)
+const coopOf = () => { const me = GG.MicaAccount && GG.MicaAccount.name(), n = Math.max(2, Math.min(4, 1 + Math.max(teamPeak, mates().length))); return { coop: n, team: LINK && LINK.modes ? Object.keys(LINK.modes).filter((q) => q !== me).slice(0, n - 1) : [] }; };
+const coopRun = () => !!LOBBY && (coopSeen || !!JOIN);
 const rowed = (f) => { if (run) f.r = runRow(run); else if (drun) f.r = diveRow(drun); if (f.r && world.mates.length) { const e = endRow(); if (e) f.r.e = e; } return f; };
 const tape = FIGHT && Q.get('tape') === '1' ? new Tape({ ...HEAD, at: 0 }) : null;
 const net = { sent: 0, chars: 0, got: 0, evLive: [], evTape: [], prev: null, n: 0, batch: [], relay: false };
@@ -779,7 +789,7 @@ let rv = null; const rowKeep = {};
 let viewer = WATCH ? new Viewer() : null, view = null, watchT = -1, watchSrc = WATCH ? 'live' : null, tapeEnd = 0;
 if (chan && HOST && world) chan.onmessage = (m) => {   // the host: a guest asks to join, or reports
 	const o = JSON.parse(m.data); net.got++;
-	if (o.join && !world.mates.some((q) => q.id === o.join.id) && world.mates.length < 3) { coopSeen = true; hostAdd(world, o.join.id, o.join.dex); note(`${(GG.DEX_BY[o.join.dex] || {}).name || 'a player'} joined`, 2500); }
+	if (o.join && !world.mates.some((q) => q.id === o.join.id) && world.mates.length < 3) { coopSeen = true; hostAdd(world, o.join.id, o.join.dex); teamPeak = Math.max(teamPeak, world.mates.length); note(`${(GG.DEX_BY[o.join.dex] || {}).name || 'a player'} joined`, 2500); }
 	else if (o.g) hostApply(world, o.g, o.m);
 };
 if (chan && JOIN) chan.onmessage = (m) => {   // a guest: the host's frames
@@ -923,10 +933,12 @@ async function openBoard(id) {
 	const view = id === 'open' ? (myRun && myRun.surv ? 'survival' : 'score') : id, A = GG.MicaAccount, me = A && A.name();
 	const mine = boardUp = { view, map, diff, rows: [], note: me ? 'Loading…' : 'Log in to Magepunk to see the 3D boards.' };
 	show(); if (!me) return;
-	const d = await A.call('run-leaderboard', drun ? DS.boardAsk(drun.route, SV.BOARD, drun.weekly ? drun.weekly.week : null) : boardAsk(map, diff, view));
+	const dv = drun || gdrun, co = coopRun() && !(dv && dv.weekly) && !(myRun && myRun.surv);   // (plan 3f: a party's run shows the co-op board, to its guests too)
+	mine.coop = co;
+	const d = await A.call('run-leaderboard', Object.assign(dv ? DS.boardAsk(dv.route, SV.BOARD, dv.weekly ? dv.weekly.week : null) : boardAsk(map, diff, co ? 'score' : view), co ? { coop: true } : {}));
 	if (boardUp !== mine) return;   // (another board was asked for meanwhile, or this one closed)
 	if (!d.ok || !d.body) mine.note = "Couldn't load the board.";
-	else { mine.rows = (drun ? DS.boardRows : boardRows)(d.body, (dex) => (GG.DEX_BY[dex] || {}).name || '', me); mine.note = mine.rows.length ? (d.body.you && d.body.you.rank ? `Your best: #${d.body.you.rank}` : 'You have no mark on this board yet.') : 'No one has a mark on this board yet.'; }
+	else { mine.rows = (dv ? DS.boardRows : boardRows)(d.body, (dex) => (GG.DEX_BY[dex] || {}).name || '', me); mine.note = (co ? 'Co-op board. ' : '') + (mine.rows.length ? (d.body.you && d.body.you.rank ? `Your best: #${d.body.you.rank}` : 'You have no mark on this board yet.') : 'No one has a mark on this board yet.'); if (co) for (const [i, e] of (d.body.top || []).slice(0, 10).entries()) if (mine.rows[i] && e.team && e.team.length) mine.rows[i].who += ' · with ' + e.team.join(', '); }
 	show();
 }
 /** The menu (Esc, P, or its button). Alone in your own run the fight waits while it is up; a guest's or a watcher's
@@ -1050,7 +1062,17 @@ async function keepGuest(S) {
 		if (!rv || !rv.end) return say(false, 'The host did not say how the run ended: nothing is saved.', { why: 'noend' });
 		const ops = guestOps(S, rv.end, { dev: deviceId(localStorage, Sv.who, crypto), T: GG.ExpTier });
 		applyOps(Sv, ops);
-		return say(true, rv.end.pay > 0 ? `Saved. ₽ ${rv.end.pay} will be in your wallet when you next open the Expedition.` : 'Saved.', { ops: ops.length, pay: rv.end.pay });
+		say(true, rv.end.pay > 0 ? `Saved. ₽ ${rv.end.pay} will be in your wallet when you next open the Expedition.` : 'Saved.', { ops: ops.length, pay: rv.end.pay });
+		// (plan 3f) its own mark on the co-op board: the team's result as the host said it, the guest's own Pokémon and level
+		const A = GG.MicaAccount, e = rv.end, pl = S.w.pl;
+		if (A && A.name() && coopRun() && !S.weekly && !S.surv && (S.dive || e.board)) {
+			const body = S.dive ? DS.scoreBody(S, { parts: { route: S.route, deepest: e.depth, start: e.start || 1, time: e.time, escaped: e.won, kills: e.kills } }, { dv: SV.DV, board: SV.BOARD })
+				: scoreBody({ mode: 'exp-classic', dv: SV.DV, map: S.map, diff: S.diff, score: e.board.score, time: e.board.time, kills: e.board.kills, level: pl.level, dex: S.lg ? S.lg.form : pl.mon.dex, parts: { zone: e.board.zone, won: e.won, dmg: e.board.dmg, bosses: e.board.bosses, catches: e.board.catches } });
+			const d = await A.call('run-score', Object.assign(body, coopOf()));
+			if (d.ok && d.body && d.body.rank) say(true, kept.text + (d.body.better ? ` New best on the 3D co-op board: #${d.body.rank}.` : ` 3D co-op board: #${d.body.rank}.`), { ops: ops.length, pay: e.pay, rank: d.body.rank, board: d.body.board });
+			else if (!d.ok) console.warn('the co-op board did not take the run: ' + JSON.stringify(d.body || d.error || ''));
+		}
+		return kept;
 	} catch (e) { console.warn('the run was not saved: ' + (e && e.message)); return say(false, WHY.nosave, { why: 'error' }); }
 }
 /** (part 6) Can this Dive be kept? -> null, or why not (divesave.js WHY's key) */
@@ -1075,9 +1097,10 @@ async function keepDive(res) {
 		const pay = DS.coinsOf(res.parts.divePay), rec = res.parts.deepest > was;
 		say(true, (rec ? `New record on this route: floor ${res.parts.deepest}. ` : '') + (pay > 0 ? `Saved. ₽ ${pay} will be in your wallet when you next open the Expedition.` : 'Saved.'), { ops: ops.length, pay, record: rec });
 		const A = GG.MicaAccount;   // (part 7) signed in: its mark on the route's 3D board
-		if (A && A.name() && !coopSeen) {
-			const d = await A.call('run-score', DS.scoreBody(drun, res, { dv: SV.DV, board: SV.BOARD }));
-			if (d.ok && d.body && d.body.rank) say(true, kept.text + (d.body.better ? ` New best on the 3D board: #${d.body.rank}.` : ` 3D board: #${d.body.rank}.`), { rank: d.body.rank, board: d.body.board });
+		if (A && A.name() && (!coopSeen || (coopRun() && !drun.weekly))) {   // (a party's run: the co-op board, a lobby's only)
+			const d = await A.call('run-score', Object.assign(DS.scoreBody(drun, res, { dv: SV.DV, board: SV.BOARD }), coopSeen ? coopOf() : {}));
+			const bn = coopSeen ? '3D co-op board' : '3D board';
+			if (d.ok && d.body && d.body.rank) say(true, kept.text + (d.body.better ? ` New best on the ${bn}: #${d.body.rank}.` : ` ${bn}: #${d.body.rank}.`), { ...keptRest(), rank: d.body.rank, board: d.body.board });
 		}
 		return kept;
 	} catch (e) { console.warn('the Dive was not saved: ' + (e && e.message)); return say(false, DS.WHY.nosave, { why: 'error' }); }
@@ -1099,9 +1122,10 @@ async function keepRun(res) {
 		const met = newlyMet({ L: GG.ExpLeague, Sv, base: baseSave() });   // (challenges now complete: those members are wild in your next runs)
 		say(true, (pay > 0 ? `Saved. ₽ ${pay} will be in your wallet when you next open the Expedition.` : 'Saved.') + (met.length ? ` New in the wild: ${met.slice(0, 3).map((d) => (GG.DEX_BY[d] || {}).name).join(', ')}${met.length > 3 ? ' and ' + (met.length - 3) + ' more' : ''}.` : ''), { ops: ops.length, pay, met });
 		const A = GG.MicaAccount;
-		if (A && A.name() && !coopSeen) {
-			const d = await A.call('run-score', scoreBody(runSum(run, res, SV.DV)));
-			if (d.ok && d.body && d.body.rank) say(true, kept.text + (d.body.better ? ` New best on the 3D board: #${d.body.rank}.` : ` 3D board: #${d.body.rank}.`), { rank: d.body.rank, board: d.body.board });
+		if (A && A.name() && (!coopSeen || (coopRun() && !run.surv))) {   // (a party's run: the co-op board, a lobby's only)
+			const d = await A.call('run-score', Object.assign(scoreBody(runSum(run, res, SV.DV)), coopSeen ? coopOf() : {}));
+			const bn = coopSeen ? '3D co-op board' : '3D board';
+			if (d.ok && d.body && d.body.rank) say(true, kept.text + (d.body.better ? ` New best on the ${bn}: #${d.body.rank}.` : ` ${bn}: #${d.body.rank}.`), { ...keptRest(), rank: d.body.rank, board: d.body.board });
 		}
 	} catch (e) { console.warn('the run was not saved: ' + (e && e.message)); say(false, WHY.nosave, { why: 'error' }); }
 	return kept;
