@@ -88,7 +88,7 @@ const hp2D = (dex, f, k = 1) => { const teff = f * K.T_PER_FLOOR, ti = Math.max(
 	const F2 = floor2D(7, 'forest', 2);
 	A(S.floor === 2 && w.room.floor === 2 && w.room !== room && Math.hypot(w.pl.s.x - w.room.spawn[0], w.pl.s.z - w.room.spawn[2]) < 1 && JSON.stringify(S.groups.map((g) => g.list.map((q) => q.dex))) === JSON.stringify(F2.groups.map((g) => g.map((x) => x[0]))), 'then you are on floor 2: its room, its own foes, you where it begins; nothing of floor 1 came along', [S.floor, h1]);
 	A(near(S.stake - st1, K.LOOT.floor + K.LOOT.floorPer * 1) && S.deepest === 2 && S.groups.every((g) => !g.awake), 'a floor cleared is loot at stake too; the new floor sleeps');
-	A(/^FLOOR 2 · 0 secured · \d+ at stake · STAIRS \d+ m$/.test(hudLine(S)), 'the HUD line: the floor, the loot secured and at stake, how far the stairs are', hudLine(S));
+	A(/^FLOOR 2 · 0 secured · \d+ at stake · STAIRS \d+ m( · ₽ \d+)?$/.test(hudLine(S)), 'the HUD line: the floor, the loot secured and at stake, how far the stairs are', hudLine(S));
 }
 function name(dex) { return data.mon(dex).name; }
 

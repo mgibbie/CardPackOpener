@@ -231,10 +231,36 @@ try {
 	const landed = await waitFor(() => M(() => window.__m3d.dive.tg.length === 0 && window.__m3d.world.pl.hp < 1e6 && window.__brawler.dummy === false), 4000);
 	A(landed, '6d. the slam lands: you are hit, and the foe moves again', await M(() => [window.__m3d.dive.tg.length, window.__m3d.world.pl.hp]));
 
+	// ---- 6f. (part 13) the floor's stall, bushes and rocks (seed 2, floor 1: Meowth's stall, 2 bushes, 3 rocks)
+	ok = await boot('dive=2&route=forest&dex=4');
+	await M(() => { const m = window.__m3d; m.world.enemies.length = 0; m.dive.groups.length = 0; m.dive.ft = 1e9; });
+	await sleep(500);
+	const ecoV = await M(() => ({ kinds: window.__m3d.ecoView().map((o) => o.kind).sort().join(), keys: window.__m3d.propKeys(), chips: document.body.innerText.includes('₽ 0') }));
+	A(ok && ecoV.kinds === 'berry,berry,meowth,rock,rock,rock' && ecoV.keys.includes('eco:rock') && ecoV.keys.includes('eco:berry') && ecoV.keys.includes('eco:meowth') && ecoV.chips, "6f. the floor shows Meowth's stall, two berry bushes and three gold rocks, and the chips show your ₽", ecoV);
+	const rockAt = await M(() => { const o = window.__m3d.ecoView().find((q) => q.kind === 'rock'); return [o.x, o.z, o.v]; });
+	await M((x, z) => { const st = window.__m3d.state; st.x = x; st.z = z; st.vx = st.vz = 0; }, rockAt[0], rockAt[1]);
+	A(await waitFor(() => M((v) => window.__m3d.dive.coins === v, rockAt[2]), 3000), `6f. a gold rock pays its ${rockAt[2]} ₽`);
+	const stallAt = await M(() => { const o = window.__m3d.ecoView().find((q) => q.kind === 'meowth'); return [o.x, o.z]; });
+	await M((x, z) => { const st = window.__m3d.state; st.x = x + 1; st.z = z; st.vx = st.vz = 0; }, stallAt[0], stallAt[1]);
+	const shop = await waitFor(() => M(() => { const p = window.__m3d.dive.pick; return !!p && p.kind === 'shop' && document.getElementById('cards').style.display === 'grid'; }), 4000);
+	A(shop, "6f. walking up to the stall opens it on the screen", await M(() => ({ pick: window.__m3d.dive.pick && window.__m3d.dive.pick.kind, cards: document.getElementById('cards').style.display })));
+	await page.keyboard.press('Escape');
+	A(await waitFor(() => M(() => !window.__m3d.dive.pick && document.getElementById('cards').style.display !== 'grid'), 3000), '6f. Esc closes it and the Dive goes on');
+
+	// ---- 6g. (part 14) the dark routes
+	ok = await boot('dive=3&route=crater&dex=4&auto=1');
+	let lt = await M(() => window.__m3d.light());
+	A(ok && lt.dive.dark > 0.9 && lt.far < 32 && lt.near < 10 && lt.color === lt.dive.color && lt.color !== 0x9fc4e8 && lt.vignette, '6g. the crater is dark: the fog is close and the colour of its dark, the screen edges are tinted', lt);
+	ok = await boot('dive=3&route=forest&dex=4&auto=1');
+	lt = await M(() => window.__m3d.light());
+	A(ok && lt.dive.dark === 0 && lt.far === 78 && lt.near === 26 && lt.color === 0x9fc4e8 && !lt.vignette, '6g. the woods are lit: the 3D game\'s own sky and fog', lt);
+
 	// ---- 7. an Expedition is untouched
 	ok = await boot('exp=7&map=viridian&dex=4&weather=0');
 	d = await M(() => { const m = window.__m3d; return { run: !!m.run, dive: m.dive, zone: m.run && m.run.zone, slide: document.getElementById('b-slide').textContent, man: m.world.pl.moves.some((q) => q.xman) }; });
 	A(ok && d.run && d.dive === null && d.slide !== 'DODGE' && !d.man, '7. an Expedition on the same page boots as before (no Dive there)', d);
+	const xl = await M(() => window.__m3d.light());
+	A(xl.dive === null && xl.far === 78 && xl.near === 26 && xl.color === 0x9fc4e8 && !xl.vignette, '7. …with its own sky and fog', xl);
 	A(errors.length === 0, 'no page errors', errors.slice(0, 5).join(' | '));
 } catch (e) {
 	fail++; console.log('FAIL: crashed: ' + (e && e.stack || e));

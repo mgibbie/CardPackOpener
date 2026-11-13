@@ -97,7 +97,7 @@ export function earn(S, n) {
 	return whole;
 }
 export function spend(S, n) { if (!S.eco || S.coins < n) return false; S.coins -= n; S.eco.spent += n; return true; }
-const zoneNow = (S) => Math.min(3, S.zone || 1);
+const zoneNow = (S) => (S.dive ? Math.min(3, 1 + Math.floor(((S.floor || 1) - 1) / 10)) : Math.min(3, S.zone || 1));   // (a Dive: a zone every 10 floors, the 2D economy's rule)
 /** A KO pays: 0.2; an elite or a summoner 1; an alpha or a totem 5; a guardian 20 x zone. */
 function onKill(S, ev) {
 	const K = S.X.E.K;

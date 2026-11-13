@@ -13,6 +13,15 @@ import { CELL, groundAt, facingRow } from './sim.js';
 THREE.ColorManagement.enabled = false;
 export const PX = 0.11;   // metres per art pixel: a 2 m cell is about 18 px, as a tile is in the 2D game
 const FOG = { color: new THREE.Color(0x9fc4e8), near: 26, far: 78 };
+/** The sky and the fog as the game starts them. */
+export const FOG0 = { color: 0x9fc4e8, near: 26, far: 78 };
+const U_NEAR = { value: FOG.near }, U_FAR = { value: FOG.far };   // (one object each for every material: setFog moves them all)
+/** Another air (a Dive's dark route: divelight.js): the sky, the scene's fog and the sprites' own. o: { color, near, far } */
+export function setFog(renderer, scene, o) {
+	FOG.color.setHex(o.color); scene.fog.color.setHex(o.color);
+	scene.fog.near = U_NEAR.value = o.near; scene.fog.far = U_FAR.value = o.far;
+	renderer.setClearColor(FOG.color);
+}
 
 export function makeRenderer(canvas) {
 	const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance' });
@@ -193,7 +202,7 @@ export class SpriteBatch {
 		this.aPos = attr('iPos', 3); this.aRect = attr('iRect', 4); this.aUv = attr('iUv', 4); this.aTint = attr('iTint', 3);
 		this.material = new THREE.ShaderMaterial({ vertexShader: VERT, fragmentShader: FRAG, uniforms: {
 			map: { value: texture }, uRight: { value: new THREE.Vector3(1, 0, 0) },
-			uFogColor: { value: FOG.color }, uFogNear: { value: FOG.near }, uFogFar: { value: FOG.far } } });
+			uFogColor: { value: FOG.color }, uFogNear: U_NEAR, uFogFar: U_FAR } });
 		this.mesh = new THREE.Mesh(g, this.material);
 		this.mesh.frustumCulled = false;   // (the instances are anywhere; the quad's own bounds say nothing)
 		this.geometry = g;

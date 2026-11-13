@@ -8,7 +8,7 @@
 import * as THREE from 'three';
 import { K, CELL, step, newState, noInput, groundAt, stateName, facingRow, tuneFor, TYPE_TRAITS } from './sim.js';
 import { buildRoom, SPOTS } from './room.js';
-import { makeRenderer, buildTerrain, buildWater, buildRails, buildScatter, buildExit, drawMap, SpriteBatch, Shadows, Shots, Flashes, loadSheet, frameAt, spriteQuad, footLift, placeCamera, PX } from './render.js';
+import { makeRenderer, buildTerrain, buildWater, buildRails, buildScatter, buildExit, drawMap, SpriteBatch, Shadows, Shots, Flashes, loadSheet, frameAt, spriteQuad, footLift, placeCamera, PX, setFog, FOG0 } from './render.js';
 import { newWorld, addEnemy, addBoss, tick, dataFrom, choose, drop, CK, canFire } from './combat.js';
 import { frame as netFrame, keepEvents, diff as netDiff, bundle, unbundle, Viewer, Tape, ballColour, typeName, NK, PICK } from './net.js';
 import { Props, PROP_MON, BOBS } from './props.js';
@@ -35,6 +35,7 @@ import { refresh as refreshCards, skip as skipCards, banish as banishCard } from
 import { EK, ecoView, pickTake, pickClose, shopPrices } from './expeco.js';
 import { capView } from './expcap.js';
 import * as DS from './divesave.js';
+import { lightOf } from './divelight.js';
 import { rulesFrom, newDive, stepDive, hudLine as diveHud, result as diveResult, pressSpecial, specials, LANDMARKS } from './dive.js';
 
 const Q = new URLSearchParams(location.search);
@@ -120,6 +121,8 @@ const DMETA = (() => { if (!DKEEP || !GG.ExpMeta) return null; try { return meta
 const DSHINY = DKEEP && (() => { const b = baseSave(); return GG.ExpSave.has('league.shiny', String(DMEMBER)) || !!(b && b.partnerShiny && b.shiny && b.shiny[DEX]); })();
 const drun = DR ? newDive(dataFrom(GG), XF, DR, { form: DFORM, perks: DKEEP ? perksOf(GG, baseSave(), DEX) : null, meta: DMETA, shiny: DSHINY, route: DROUTE, seed: GEN, start: DSTART, seal: DSAVE_OK && DS.sealOf(GG.ExpSave, DROUTE), league: !Q.has('moves') && Q.get('league') !== '0', dex: DEX, moves: DMOVES, tune: TUNE, touch: matchMedia('(pointer: coarse)').matches, ability: Q.get('ability') === '0' ? null : Q.get('ability') || 'auto', items: Q.get('items') ? Q.get('items').split(',') : [], weather: false, autoPick: Q.has('auto') ? +Q.get('auto') | 0 : undefined }) : null;
 if (drun) { room = drun.w.room; drun.w.cap = DR.K.REIN.cap + 60; }
+// (part 14) a dark route: its air (the fog comes close and takes the route's colour: your lamp), its tint at the screen's edges
+const DLIGHT = drun ? lightOf(drun.route, FOG0) : null;
 const solo = run || drun;   // (a run of your own, alone on this page: an Expedition or a Dive)
 // (P4) a guest in a run: its own League member in the host's run (expcoop.js); it builds each zone from the run's row
 const grun = XJ ? guestRun(dataFrom(GG), XF, { seed: XJ.seed, map: XJ.map, diff: XJ.diff, id: MYID, dex: DEX, league: !Q.has('moves'), moves: MOVES, tune: TUNE, ability: Q.get('ability') === '0' ? null : Q.get('ability') || undefined, autoPick: Q.has('auto') ? +Q.get('auto') | 0 : undefined }) : null;
@@ -131,6 +134,12 @@ const state = world ? world.pl.s : newState(room, TUNE);
 const TYPE_COLOR = (GG.U && GG.U.TYPE_COLOR) || {};
 const PICK_COLOR = { xp: '#6fd3ff', xpBig: '#3da8ff', heal: '#5fe08a', magnet: '#ff9ed8', bomb: '#ff7b3d', item: '#ffd23f', held: '#ff8fd0' };
 const { renderer, scene, camera } = makeRenderer(canvas);
+if (DLIGHT && DLIGHT.dark > 0) {
+	setFog(renderer, scene, DLIGHT);
+	const v = document.createElement('div'); v.id = 'dive-dark';
+	v.style.cssText = `position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse at 50% 55%, rgba(0,0,0,0) 42%, ${DLIGHT.vignette} 100%)`;
+	canvas.insertAdjacentElement('afterend', v);
+}
 let roomMeshes = [];
 /** Show a level (P4: a run moves from one to the next: the old one's meshes go). */
 let roomBuilds = 0;
@@ -377,7 +386,7 @@ function draw(t) {
 			else shots.add(p.x, p.y + 0.3 + up, p.z, p.kind === 'xpBig' ? 0.24 : p.kind === 'xp' ? 0.15 : 0.26, PICK_COLOR[p.kind]);
 		}
 		// (P4) what the zone holds: its picture (one being charged swells), with the Pokémon that stands at it
-		for (const o of run && run.eco ? ecoView(run) : rv ? rv.eco : []) {
+		for (const o of solo && solo.eco ? ecoView(solo) : rv ? rv.eco : []) {
 			const key = 'eco:' + o.kind, up = BOBS.has(key) ? 0.12 + Math.sin(t * 3 + o.i) * 0.12 : 0, pm = PROP_MON[o.kind];
 			if (prop(key, o.x, o.y + up, o.z, 1 + (o.ch || 0) * 0.3)) { shadows.add(room, o.x, o.z, o.y + up, /ball|great|comet/.test(o.kind) ? 0.45 : 0.9); if (pm) propMon(pm[0], o.x, o.y + pm[1] + (pm[1] ? Math.sin(t * 3 + o.i) * 0.12 : 0), o.z, t + o.i); else if (o.kind === 'cage' && o.v) propMon(o.v, o.x, o.y, o.z, t + o.i); }
 			else { const big = /unown|comet|challenge|cursedaltar|greed|meowth|slots/.test(o.kind); shots.add(o.x, o.y + (big ? 1.1 : 0.55) + Math.sin(t * 2 + o.i) * 0.08, o.z, (big ? 0.42 : EK.SMALL.includes(o.kind) ? 0.22 : 0.3) * (1 + o.ch * 0.8), EK.COL[o.kind]); }
@@ -483,6 +492,7 @@ function frame(now) {
 			} else if (drun) {   // a Dive: the floor's rules round the fight's tick; the next floor's room; the end
 				stepDive(drun, input, K.TICK);
 				for (const q of drun.says) note(q.text, q.s * 1000);
+				if (drun.pick !== shownPick) showPick();   // (part 13: Meowth's stall)
 				if (drun.w.room !== room) { room = drun.w.room; mapBase = null; showRoom(); state.facing = cam.yaw; }
 				if (simTicks % 45 === 0) {   // the rope's circle where you arrived (gold); sealed stairs (red)
 					if (drun.cadence.rope) flashes.arc(room.spawn[0], room.spawn[1] + 0.05, room.spawn[2], DR.K.ROPE_R * CELL, 0, 6.2832, '#ffd23f', 0.8, 0.9);
@@ -547,7 +557,7 @@ function showMap() {
 	// the exit: a ring that beats; the spawn: a small dot
 	g.lineWidth = 2; g.strokeStyle = '#fff2a0'; g.beginPath(); g.arc(room.exit[0] * k, room.exit[2] * k, 5 + 2 * Math.sin(performance.now() / 260), 0, 6.2832); g.stroke();
 	g.fillStyle = '#fff'; g.fillRect(room.spawn[0] * k - 1.5, room.spawn[2] * k - 1.5, 3, 3);
-	const things = (run && run.eco ? ecoView(run) : rv ? rv.eco : []).filter(seen);
+	const things = (solo && solo.eco ? ecoView(solo) : rv ? rv.eco : []).filter(seen);
 	for (const o of things) { g.fillStyle = EK.COL[o.kind]; g.fillRect(o.x * k - 1.5, o.z * k - 1.5, 4, 4); }
 	if (mapBig) { const n = {}; for (const o of things) n[o.kind] = (n[o.kind] || 0) + 1; document.getElementById('maplegend').innerHTML = (fog ? `explored ${Math.round(fogShare(fog) * 100)} %` : '') + Object.keys(n).map((kd) => `<i style="background:${EK.COL[kd]}"></i>${EK.NAME[kd] || kd}${n[kd] > 1 ? ' ×' + n[kd] : ''}`).join('') + ' <i style="background:#fff2a0"></i>altar'; }   // (P4) what the zone holds, in its colours
 	for (const o of (run && run.sv ? hazardsNow(run) : rv && rv.surv ? rv.hazards : []).filter(seen)) { g.strokeStyle = HAZ_COL[o.kind]; g.lineWidth = 1.5; g.beginPath(); g.arc(o.x * k, o.z * k, Math.max(2, o.r * k), 0, 6.2832); g.stroke(); }   // (P4) Survival: hostile ground, as rings
@@ -944,8 +954,10 @@ async function keepDive(res) {
 	try {
 		const why = diveWhyNot();
 		if (why) return say(false, DS.WHY[why], Object.assign({ why }, why === 'practice' ? { param: DPRACTICE } : {}));
-		const Sv = GG.ExpSave, was = DS.bestOf(Sv, drun.route), ops = DS.recordOps(drun, res, { dev: deviceId(localStorage, Sv.who, crypto) });
+		const Sv = GG.ExpSave, was = DS.bestOf(Sv, drun.route), dev = deviceId(localStorage, Sv.who, crypto), ops = DS.recordOps(drun, res, { dev, research: researchOf(drun), seen: Sv.get('m3d.seen.' + dev), final: !!drun.lg && !canEvolve(drun) });
 		applyOps(Sv, ops);
+		// (a family researched to its need: its avatar, as the 2D game gives it)
+		if (GG.ExpMeta && GG.ExpMeta.research) { let got = false; for (const [fam] of researchOf(drun)) if (GG.ExpMeta.research(fam) >= GG.ExpMeta.needOf(fam) && Sv.add('avatar', String(fam))) got = true; if (got) Sv.commit(); }
 		const pay = DS.coinsOf(res.parts.divePay), rec = res.parts.deepest > was;
 		say(true, (rec ? `New record on this route: floor ${res.parts.deepest}. ` : '') + (pay > 0 ? `Saved. ₽ ${pay} will be in your wallet when you next open the Expedition.` : 'Saved.'), { ops: ops.length, pay, record: rec });
 		const A = GG.MicaAccount;   // (part 7) signed in: its mark on the route's 3D board
@@ -1032,7 +1044,7 @@ const G_MUSIC = GG.BIOME_MUSIC || null, XK_MAPS = ['viridian', 'mtmoon', 'cerule
 
 // what a test (and a curious owner in the console) can reach
 window.__m3d = {
-	dive: drun, diveRules: DR, special, diveSave: { practice: DPRACTICE, ok: DSAVE_OK, start: DSTART, member: DMEMBER, form: DFORM, keep: DKEEP, meta: !!DMETA }, propKeys: () => (props ? [...props.atlas.cells.keys()] : []), roomBuilds: () => roomBuilds,
+	dive: drun, diveRules: DR, special, light: () => ({ dive: DLIGHT, near: scene.fog.near, far: scene.fog.far, color: scene.fog.color.getHex(), vignette: !!document.getElementById('dive-dark') }), diveSave: { practice: DPRACTICE, ok: DSAVE_OK, start: DSTART, member: DMEMBER, form: DFORM, keep: DKEEP, meta: !!DMETA }, propKeys: () => (props ? [...props.atlas.cells.keys()] : []), roomBuilds: () => roomBuilds,
 	meta: LAB_META, upgrades: UPGRADES, leadShiny: LEAD_SHINY, skey,
 	keepShiny,
 	siteHost: SITE_HOST, siteWatch: SITE_WATCH,
@@ -1044,7 +1056,7 @@ window.__m3d = {
 	ult: { press: () => { if (run) pressUlt(run); }, charge: (v) => { if (run) setCharge(run, v); }, view: () => (run ? ultView(run) : null), setAuto: (on) => setUltAuto(on), get cut() { return cutIn; } },
 	runView: () => (RUNUI ? runView() : null),
 	get megaNow() { return megaNow; }, megaSheets,
-	get ready() { return ready; }, state, get room() { return room; }, run, setZoneTime: (sec) => run && setZoneTime(run, sec), useTool, takePick, ecoView: () => (run ? ecoView(run) : []), capView: () => (run ? capView(run) : null), hazards: () => (run ? hazardsNow(run) : []), fog: () => fogNow(), toggleMap, get mapBig() { return mapBig; }, get rv() { return rv; }, noteLog, grun, fire: (ev) => run && fireEvent(run, ev), K, TUNE, TYPES, TRAITS, cam, crowd, sheets, stats, gen: GEN, biome: BIOME, world, numbers, net, tape, myId: MYID, mates, get coView() { return coView; }, playTape, get view() { return view; }, get viewer() { return viewer; }, get watchT() { return watchT; }, addBoss: (dex, x, z, o) => addBoss(world, dex, x, z, o), drop: (kind, x, z, v) => drop(world, kind, x, groundAt(room, x, z), z, v), pickCard, addEnemy: (dex, x, z, o) => addEnemy(world, dex, x, z, o), holdExit: false, get leaving() { return leaving; },
+	get ready() { return ready; }, state, get room() { return room; }, run, setZoneTime: (sec) => run && setZoneTime(run, sec), useTool, takePick, ecoView: () => (solo ? ecoView(solo) : []), capView: () => (run ? capView(run) : null), hazards: () => (run ? hazardsNow(run) : []), fog: () => fogNow(), toggleMap, get mapBig() { return mapBig; }, get rv() { return rv; }, noteLog, grun, fire: (ev) => run && fireEvent(run, ev), K, TUNE, TYPES, TRAITS, cam, crowd, sheets, stats, gen: GEN, biome: BIOME, world, numbers, net, tape, myId: MYID, mates, get coView() { return coView; }, playTape, get view() { return view; }, get viewer() { return viewer; }, get watchT() { return watchT; }, addBoss: (dex, x, z, o) => addBoss(world, dex, x, z, o), drop: (kind, x, z, v) => drop(world, kind, x, groundAt(room, x, z), z, v), pickCard, addEnemy: (dex, x, z, o) => addEnemy(world, dex, x, z, o), holdExit: false, get leaving() { return leaving; },
 	setInput(o) { override = o ? { ...noInput(), ...o } : null; },
 	rowOf: (facing, yaw) => facingRow(facing, yaw === undefined ? cam.yaw : yaw),
 	sq: (key, frame, dir, scale = 1) => sq(sheets.get(key), frame, dir, scale),
