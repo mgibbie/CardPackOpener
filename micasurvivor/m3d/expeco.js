@@ -400,5 +400,5 @@ export function tickEco(S, dt) {
 export function ecoView(S) {
 	const Z = S.eco && S.eco.z; if (!Z) return [];
 	return Z.lay.objs.filter((o) => Z.st[o.i] !== USED && Z.st[o.i] !== GONE && (o.kind !== 'meowth' || Z.spot === o.i) && (o.kind !== 'comet' || Z.st[o.i] === READY || Z.st[o.i] === ACTIVE))
-		.map((o) => ({ i: o.i, kind: o.kind === 'challenge' && Z.st[o.i] === READY ? 'great' : o.kind, x: o.x, y: o.y, z: o.z, st: Z.st[o.i], ch: Z.ch[o.i] }));
+		.map((o) => ({ i: o.i, kind: o.kind === 'challenge' && Z.st[o.i] === READY ? 'great' : o.kind, x: o.x, y: o.y, z: o.z, st: Z.st[o.i], ch: Z.ch[o.i], v: o.v }));
 }

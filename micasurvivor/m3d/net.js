@@ -34,7 +34,7 @@ export const NK = {
 };
 const q = (v, k) => Math.round(v * k);
 const TYPES = ['normal', 'fire', 'water', 'grass', 'electric', 'ice', 'fighting', 'poison', 'ground', 'flying', 'psychic', 'bug', 'rock', 'ghost', 'dragon', 'dark', 'steel', 'fairy'];
-const PICK = ['xp', 'xpBig', 'heal', 'magnet', 'bomb'];
+export const PICK = ['xp', 'xpBig', 'heal', 'magnet', 'bomb'];
 const ti = (t) => Math.max(0, TYPES.indexOf(t));
 
 /** The fight now, as a frame. `events`: the fight's events since the last frame (the caller gathers them each tick). */
