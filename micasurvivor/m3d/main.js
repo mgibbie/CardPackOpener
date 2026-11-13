@@ -738,7 +738,7 @@ function share() {
 		if (net.batch.length >= NK.HZ) { const msg = JSON.stringify({ h: HEAD, b: bundle(net.batch) }); chan.postMessage(msg); net.sent++; net.chars += msg.length; net.biggest = Math.max(net.biggest || 0, msg.length); net.batch = []; }
 	} else if (chan && simTicks % sendEvery() === 0) {   // (by this page's own count: the fight's clock stands still while a card is being chosen, and the others must still hear)
 		const f = rowed(world.mates.length ? hostFrame(world, net.evLive) : netFrame(world, net.evLive)), whole = net.n % NK.HZ === 0 || !net.prev, msg = JSON.stringify(whole ? { h: HEAD, f } : { f: netDiff(net.prev, f) });
-		chan.postMessage(msg); net.prev = f; net.n++; net.sent++; net.chars += msg.length; net.evLive = [];
+		chan.postMessage(msg); net.prev = f; net.n++; net.sent++; net.chars += msg.length; net.biggest = Math.max(net.biggest || 0, msg.length); net.evLive = [];
 	}
 	if (tape && world.tick % Math.round(60 / NK.TAPE_HZ) === 0 && world.tick !== net.taped) { net.taped = world.tick; tape.add(rowed(netFrame(world, net.evTape))); net.evTape = []; }   // (once a tick: the clock stands still while a card or a choice is up)
 }
