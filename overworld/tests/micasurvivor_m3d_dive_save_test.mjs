@@ -90,7 +90,7 @@ A(DS.unfairDive([['dive', '7'], ['auto', '1']]) === 'auto' && DS.unfairDive([['d
 	A(DS.missing(run({ start: 26 }), o(4)) === 'start', 'a start on floor 26 the save has not reached: not kept');
 	Sv.best('dive.forest.stage', 26);
 	A(DS.missing(run({ start: 26 }), o(4)) === null, '…kept once the stage is reached');
-	A(Object.keys(DS.WHY).join() === 'practice,nosave,unclean,member,route,start' && Object.values(DS.WHY).every((t) => /nothing is saved\.$/.test(t)), 'every reason has its line, and each says nothing is saved');
+	A(Object.keys(DS.WHY).join() === 'practice,nosave,unclean,member,form,route,start' && Object.values(DS.WHY).every((t) => /nothing is saved\.$/.test(t)), 'every reason has its line, and each says nothing is saved');
 }
 
 // ---------------------------------------------------------------- the Seal in the run

@@ -34,6 +34,9 @@
 //              Dodge or step out.
 //   the League (part 10) o.league: you dive as a League member: its stats and role, its kit's first three moves from the
 //              start (PokéDive's: the basic and both specials), its evolutions at their levels, Maturity, its Mega.
+//   yours      (part 12) what your save brings, as to an Expedition: o.form (a later stage of the family you own: you start
+//              as it), o.perks (the family's bought upgrades), o.meta (the Lab: its stats, tools, a Max Revive, the Rare
+//              Candy's two levels, the items you have not unlocked left out), o.shiny (its look).
 //   the save   (part 6) divesave.js: the deepest floor, the stage, the Seal (o.seal: +10 % damage, -10 % taken), the pay.
 // Not here yet (later parts): a new special at levels 4, 10, 16…, the League, the red ground, the stall, the bushes
 // and the gold rocks, routes and stages in the save, the Weekly Dive, co-op.
@@ -46,6 +49,7 @@ import { setupRx, tickRx } from './exprx.js';
 import { setupUlt, holdUlt, tickUlt } from './expult.js';
 import { applyPerks, perkTools } from './expperks.js';
 import { memberOf, setupLeague, learnKit, processLeague } from './expleague.js';
+import { syncPerks } from './expcap.js';
 import { tickFog } from './expfog.js';
 import { diveFrom, diveRoom } from './divegen.js';
 import { walkable } from './expedition.js';
@@ -85,11 +89,11 @@ export function newDive(data, X, R, o = {}) {
 	const w = newWorld(room, data, { ...o, dex: league ? member : o.dex, moves: own ? lv.map((m) => m[0]) : o.moves, seed: seed >>> 0, cast: null, bosses: null,
 		ability: league && o.ability === undefined ? X.G.abilityOf(X.G.finalsOf(X.G.BY[member])[0]) : o.ability });   // (a member has its final stage's ability all run)
 	const S = { w, X, R, data, dive: true, route, map: 'dive:' + route, seed, floor: 0, zone: f0, start: f0, bank: 0, stake: 0, rescued: [], rescuedBank: 0, kills: 0, alphas: 0, guardians: 0,
-		deepest: 0, ended: false, escaped: false, lost: false, won: false, groups: [], boss: null, sealed: false, stray: null, tags: new Map(), says: [], legPity: 0, stage: 0, meta: null };
+		deepest: 0, ended: false, escaped: false, lost: false, won: false, groups: [], boss: null, sealed: false, stray: null, tags: new Map(), says: [], legPity: 0, stage: 0, meta: own ? o.meta || null : null };   // (meta: what the Lab gives this run, expmeta.js)
 	if (o.perks) applyPerks(S, o.perks);
-	if (own) setupLevels(S, X.L, lv);
+	if (own) { setupLevels(S, X.L, lv); S.syncPerks = () => syncPerks(S); }
 	if (S.up) perkTools(S);
-	if (league) { S.maxMoves = R.K.SLOTS; setupLeague(S, member, 0); for (let i = 1; i < R.K.SLOTS; i++) learnKit(S, i); }   // (part 10: the basic and both specials from the start)
+	if (league) { S.maxMoves = R.K.SLOTS; setupLeague(S, member, o.form | 0); S.lg.shiny = !!o.shiny; for (let i = 1; i < R.K.SLOTS; i++) learnKit(S, i); }   // (part 10: the basic and both specials from the start)
 	if (X && X.R && o.rx !== false) setupRx(S);
 	if (X && X.Uu && o.ult !== false) setupUlt(S, { walk: walkable, auto: !!o.ultAuto });
 	// the kit, the dodge, the combo
@@ -102,6 +106,11 @@ export function newDive(data, X, R, o = {}) {
 	roles(S);
 	if (S.kit && S.lv && w.offerCards) { const offer0 = w.offerCards; S.learnAt = {}; w.offerCards = () => { if (S.lg) { processLeague(S); if (S.lg.pending) return offer0(); } return learnCards(S) || offer0(); }; }   // (a League run: the level's evolution first; a branch to choose is the level's cards)   // (part 8)
 	startFloor(S, f0, 0);
+	if (S.meta) {   // the Lab's (as an Expedition's): its stats, a Max Revive to start with, the Rare Candy's two levels
+		S.syncPerks();
+		if (S.meta.eff.lab.revive && S.lv && X.L.I.IT.maxrevive) takeItem(S, 'maxrevive');
+		if (S.meta.candy) { S.meta.candy = false; const pl = w.pl; for (let k = 0; k < 2; k++) gainXp(w, (pl.xpNext - pl.xp + 0.01) / (pl.xpMul || 1)); }
+	}
 	return S;
 }
 

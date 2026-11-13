@@ -112,7 +112,13 @@ const DSAVE_OK = !!DR && !DPRACTICE && !!GG.ExpSave && await GG.ExpSave.open().t
 const DROUTE = DR && DR.F.ROUTES[Q.get('route')] ? Q.get('route') : 'forest';
 const DMEMBER = DR && GG.ExpLeague ? (GG.ExpLeague.BY[DEX] ? DEX : GG.ExpLeague.FAM[DEX] || 0) : 0;
 const DSTART = DSAVE_OK ? DS.startOf(GG.ExpSave, DROUTE, +Q.get('floor') || 1) : +Q.get('floor') || 1;
-const drun = DR ? newDive(dataFrom(GG), XF, DR, { route: DROUTE, seed: GEN, start: DSTART, seal: DSAVE_OK && DS.sealOf(GG.ExpSave, DROUTE), league: !Q.has('moves') && Q.get('league') !== '0', dex: DEX, moves: DMOVES, tune: TUNE, touch: matchMedia('(pointer: coarse)').matches, ability: Q.get('ability') === '0' ? null : Q.get('ability') || 'auto', items: Q.get('items') ? Q.get('items').split(',') : [], weather: false, autoPick: Q.has('auto') ? +Q.get('auto') | 0 : undefined }) : null;
+// (part 12) what your save brings to a Dive that can be kept, as to an Expedition: the form you start as (one you
+// own), the family's bought upgrades, the Lab (its boosts are spent only then), your shiny's look
+const DFORM = DR ? +Q.get('form') || 0 : 0;
+const DKEEP = DSAVE_OK && !!GG.ExpLeague && !!DMEMBER && hasMember(DMEMBER, { L: GG.ExpLeague, Sv: GG.ExpSave, base: baseSave() }) && DS.routeOpen(GG.ExpSave, DROUTE, DR.MAIN) && (!DFORM || DFORM === DMEMBER || hasForm(DFORM, { Sv: GG.ExpSave, base: baseSave() }));
+const DMETA = (() => { if (!DKEEP || !GG.ExpMeta) return null; try { return metaFor(GG.ExpMeta, { Sv: GG.ExpSave, member: DMEMBER, boosts: spendBoosts(GG.ExpMeta, GG.ExpSave, deviceId(localStorage, GG.ExpSave.who, crypto), localStorage) }); } catch (e) { console.warn('the Lab could not be read: ' + (e && e.message)); return null; } })();
+const DSHINY = DKEEP && (() => { const b = baseSave(); return GG.ExpSave.has('league.shiny', String(DMEMBER)) || !!(b && b.partnerShiny && b.shiny && b.shiny[DEX]); })();
+const drun = DR ? newDive(dataFrom(GG), XF, DR, { form: DFORM, perks: DKEEP ? perksOf(GG, baseSave(), DEX) : null, meta: DMETA, shiny: DSHINY, route: DROUTE, seed: GEN, start: DSTART, seal: DSAVE_OK && DS.sealOf(GG.ExpSave, DROUTE), league: !Q.has('moves') && Q.get('league') !== '0', dex: DEX, moves: DMOVES, tune: TUNE, touch: matchMedia('(pointer: coarse)').matches, ability: Q.get('ability') === '0' ? null : Q.get('ability') || 'auto', items: Q.get('items') ? Q.get('items').split(',') : [], weather: false, autoPick: Q.has('auto') ? +Q.get('auto') | 0 : undefined }) : null;
 if (drun) { room = drun.w.room; drun.w.cap = DR.K.REIN.cap + 60; }
 const solo = run || drun;   // (a run of your own, alone on this page: an Expedition or a Dive)
 // (P4) a guest in a run: its own League member in the host's run (expcoop.js); it builds each zone from the run's row
@@ -1026,7 +1032,7 @@ const G_MUSIC = GG.BIOME_MUSIC || null, XK_MAPS = ['viridian', 'mtmoon', 'cerule
 
 // what a test (and a curious owner in the console) can reach
 window.__m3d = {
-	dive: drun, diveRules: DR, special, diveSave: { practice: DPRACTICE, ok: DSAVE_OK, start: DSTART, member: DMEMBER }, propKeys: () => (props ? [...props.atlas.cells.keys()] : []), roomBuilds: () => roomBuilds,
+	dive: drun, diveRules: DR, special, diveSave: { practice: DPRACTICE, ok: DSAVE_OK, start: DSTART, member: DMEMBER, form: DFORM, keep: DKEEP, meta: !!DMETA }, propKeys: () => (props ? [...props.atlas.cells.keys()] : []), roomBuilds: () => roomBuilds,
 	meta: LAB_META, upgrades: UPGRADES, leadShiny: LEAD_SHINY, skey,
 	keepShiny,
 	siteHost: SITE_HOST, siteWatch: SITE_WATCH,

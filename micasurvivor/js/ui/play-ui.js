@@ -627,7 +627,8 @@ G.PlayUI = (() => {
     if (!dex || !D || !route || !D.routeOpen(route)) return null;
     let seed = 1; try { const a = new Uint32Array(1); crypto.getRandomValues(a); seed = (a[0] % 2147483646) + 1; } catch (e) { seed = (Date.now() % 2147483646) + 1; }
     const s0 = X.diveStart(), start = D.starts(route).includes(s0) ? s0 : 1;
-    return '/micasurvivor/m3d/?dive=' + seed + '&route=' + encodeURIComponent(route) + (start > 1 ? '&floor=' + start : '') + '&dex=' + dex;
+    const form = L.formFor ? L.formFor(dex) : dex;   // (the form you chose to start as, if it is a later stage)
+    return '/micasurvivor/m3d/?dive=' + seed + '&route=' + encodeURIComponent(route) + (start > 1 ? '&floor=' + start : '') + '&dex=' + dex + (form && form !== dex ? '&form=' + form : '');
   }
 
   // ---------------- START ----------------

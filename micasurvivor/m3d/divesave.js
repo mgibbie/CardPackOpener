@@ -18,9 +18,9 @@
 // boards with `d3: true`: the deepest floor, then the shorter time), and the end screen and the menu show it.
 // Not here yet: the Weekly Dive, the tasks' and the level-ups' counters.
 // Pure: the page (main.js) hands in the run, its result and the save.
-import { hasMember } from './expsave.js';
+import { hasMember, hasForm } from './expsave.js';
 
-export const DSV = { OK: ['dive', 'route', 'floor', 'dex', 'debug'], SCALE: 3 /* the 2D game's meta.js K.SCALE (coinsOf); expedition.js XK.PAY.SCALE */ };
+export const DSV = { OK: ['dive', 'route', 'floor', 'dex', 'form', 'debug'], SCALE: 3 /* the 2D game's meta.js K.SCALE (coinsOf); expedition.js XK.PAY.SCALE */ };
 
 /** The first parameter of the page's address that makes its Dive a practice run (null: none). params: [[key, value]]. */
 export function unfairDive(params) { for (const [k] of params) if (!DSV.OK.includes(k)) return k; return null; }
@@ -39,6 +39,7 @@ export const startOf = (Sv, route, want) => (starts(Sv, route).includes(want | 0
 /** Why this Dive cannot be kept (null: it can). o: { L: G.ExpLeague, Sv: G.ExpSave, base, main, member } */
 export function missing(S, o) {
 	if (!o.member || !hasMember(o.member, o)) return 'member';
+	if (S.lg && S.lg.start && !hasForm(S.lg.start, o)) return 'form';   // (it started as a later stage: one you have reached)
 	if (!routeOpen(o.Sv, S.route, o.main)) return 'route';
 	if (S.start > 1 && !starts(o.Sv, S.route).includes(S.start)) return 'start';
 	return null;
@@ -84,4 +85,4 @@ export function boardRows(body, nameOf, me) {
 	return rows;
 }
 export const WHY = { practice: 'Practice run (a test parameter in the address): nothing is saved.', nosave: 'Your save could not be opened: nothing is saved.', unclean: 'This run could not be checked: nothing is saved.',
-	member: 'You do not have this League member yet: nothing is saved.', route: 'This route is not open in your save yet: nothing is saved.', start: 'Your save has not reached this stage yet: nothing is saved.' };
+	member: 'You do not have this League member yet: nothing is saved.', form: 'You have not reached this form yet: nothing is saved.', route: 'This route is not open in your save yet: nothing is saved.', start: 'Your save has not reached this stage yet: nothing is saved.' };
