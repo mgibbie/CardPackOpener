@@ -1890,6 +1890,36 @@ room's channel, which the relay stands in for; the Expedition's relay test still
 Tests: `micasurvivor_m3d_dive_net_test.mjs` 19 checks in node; `micasurvivor_m3d_dive_watch_test.mjs` 11 checks
 in two browser windows.
 
+## 5.70 3D Dive, seventeenth part: built (2026-11-13). Playing a Dive together.
+
+Owner: co-op for the 3D Dive, yes. It stands on what the 3D Expedition's co-op stands on (`coop.js` shares
+the fight; the Dive's row tells a guest the rest), and reaches the same point: **a Dive can be hosted and
+joined by its address** (`?dive=…&host=<name>`, `?join=<name>`). Neither the 3D Expedition nor the 3D Dive
+has a lobby or a menu entry for co-op: local and online play from the menu are still the 2D game.
+
+- **The host has the Dive** (`dive.js`). **Any player counts** for it: who wakes a group, opens a chest, leans
+  on a boulder or a thicket (a guest of the right type opens it for everyone), stands on the landmark, the
+  stairs or in the rope's circle. The lost Pokémon follows the nearest player.
+- **A guest** (`divecoop.js`) is its own League member: its stats, its kit of three with its own keys, its
+  dodge, its level-up cards and evolutions. It learns the seed and route from the host and builds each floor
+  itself. A chest's item is the guest's own (rolled on its side from the host's seed); the stall works as in
+  an Expedition; a shrine or a fairy ring heals everyone.
+- **The red ground** goes for the nearest player and hits whoever stands in it; a guest takes its own from
+  the host's event, and its dodge saves it.
+- **The ends.** The party leaves by the rope when any player stands still in its circle. The host fainting
+  ends the Dive for all. A guest that faints is down until the next floor.
+
+3D's own choices here (the 2D game differs or is silent): the rope takes the whole party; a fainted guest
+returns on the next floor at half HP; a hosted Dive is a practice one (nothing is saved, nothing is posted).
+
+Not in: a guest's combo, Seal, bought upgrades and Lab; a guest starting as a later form; more than the
+two-player case tested (the fight allows four).
+
+Fixed on the way: a guest standing on the stairs set off the test room's "next level" reload.
+
+Tests: `micasurvivor_m3d_dive_coop_test.mjs` 26 checks in node (a host and a guest joined by a delayed
+line); `micasurvivor_m3d_dive_coopplay_test.mjs` 12 checks in two browser windows.
+
 ## 6. Dive in 2D: built
 
 **D0 — find the stairs (small; can ship first, on its own).** *Built 2026-11-11 (`overworld/tests/micasurvivor_dive_stairs_test.mjs`). As built: the stairs took their own orange mark, so the rocks and Meowth keep their gold; the HUD arrow comes up after 25 s on a floor, or at once when its boss falls.*
