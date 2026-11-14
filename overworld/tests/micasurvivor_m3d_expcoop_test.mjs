@@ -92,7 +92,7 @@ function party(o = {}) {
 	A(near(H.charge, 0.5, 0.08) && near(Gs.charge, H.charge, 0.12) && H.ph === 0, `the guest alone on the altar charges it (${Math.round(H.charge * 100)} %): the guest sees it charge too`);
 	P.step(1.9);
 	A(H.ph === 1 && H.boss && Gs.ph === 1 && Gs.rv.boss && Gs.rv.boss.dex === H.plan.guardian && Gs.w.enemies.some((e) => e.boss) && P.says.some((q) => /the guardian, awakens!/.test(q)), 'and wakes the guardian, for both');
-	A(H.boss.maxHp === bossHp(X.K, { zone: 1, t: H.bosses[0].at, players: 2, hpK: data.enemyHp }).hp,   // (+ 22 % on every enemy's HP since 2026-11-14)
+	A(H.boss.maxHp === bossHp(X.K, { zone: 1, t: H.bosses[0].at, players: 2, hpK: data.enemyHp }).hp,   // (+ 5 % on every enemy's HP since 2026-11-14)
 	 `it has a party's HP (${H.boss.maxHp})`);
 	P.put(Gs, H.w.room.spawn); P.put(H, H.w.room.spawn); H.w.hit(H.boss, 1e12, 0, 0, 0); P.step(0.5);
 	A(H.ph === 2 && Gs.ph === 2, 'it falls: the portal, for both');

@@ -33,6 +33,10 @@ export const NK = {
 	EVENTS: ['melee', 'aura', 'beam', 'chain', 'blast', 'smite', 'bomb', 'heal', 'shield', 'summon', 'hazard', 'boom', 'hit', 'kill', 'hurt', 'dash', 'weather', 'boss', 'enrage', 'level', 'pickup', 'say', 'rx', 'rxchain', 'ult', 'secondchance', 'tele', 'slam', 'chest', 'landmark', 'plug'],   // (the last five: a Dive's red ground, its chests, landmark and secret pockets)
 };
 const q = (v, k) => Math.round(v * k);
+/** What an enemy is suffering, as the flags' high bits (a watcher and a co-op guest draw the marks from them). */
+export const stBits = (e) => (e.burn > 0 ? 128 : 0) | (e.poison > 0 ? 256 : 0) | (e.frozenT > 0 ? 512 : 0) | (e.paraT > 0 ? 1024 : 0) | (e.sleepT > 0 ? 2048 : 0) | (e.confT > 0 ? 4096 : 0) | (e.slow > 0 ? 8192 : 0);
+/** …and back: { burn, poison, frozen, para, sleep, conf, slow } (an old tape has none). */
+export const stOf = (f) => ({ burn: !!(f & 128), poison: !!(f & 256), frozen: !!(f & 512), para: !!(f & 1024), sleep: !!(f & 2048), conf: !!(f & 4096), slow: !!(f & 8192) });
 const TYPES = ['normal', 'fire', 'water', 'grass', 'electric', 'ice', 'fighting', 'poison', 'ground', 'flying', 'psychic', 'bug', 'rock', 'ghost', 'dragon', 'dark', 'steel', 'fairy'];
 export const PICK = ['xp', 'xpBig', 'heal', 'magnet', 'bomb'];
 const ti = (t) => Math.max(0, TYPES.indexOf(t));
@@ -45,9 +49,10 @@ export function frame(w, events = null) {
 		t: w.tick,
 		// you: where, how fast, which way, what you are doing; then the numbers the readout shows
 		p: [q(s.x, P), q(s.y, P), q(s.z, P), q(s.vx, V), q(s.vy, V), q(s.vz, V), q(((s.facing % 6.2832) + 6.2832) % 6.2832 * 256 / 6.2832, 1) & 255, bits, Math.ceil(pl.hp), pl.maxHp, pl.level, Math.floor(pl.xp), pl.xpNext, w.stats.kills],
-		// enemies: id, species, where, facing, HP in thousandths, flags (1 hit just now, 2 boss, 4 shielded, 8 in the air, 16 a flyer, 32 stunned, 64 a shiny), size in halves
+		// enemies: id, species, where, facing, HP in thousandths, flags (1 hit just now, 2 boss, 4 shielded, 8 in the air, 16 a flyer, 32 stunned, 64 a shiny;
+		//  and what it is suffering: 128 burned, 256 poisoned, 512 frozen, 1024 paralysed, 2048 asleep, 4096 confused, 8192 slowed), size in halves
 		e: w.enemies.filter((e) => !e.dead).map((e) => [e.id, e.dex, q(e.a.x, P), q(e.a.y, P), q(e.a.z, P), q(((e.a.facing % 6.2832) + 6.2832) % 6.2832 * 256 / 6.2832, 1) & 255, Math.max(0, Math.round(e.hp / e.maxHp * 1000)),
-			(e.flash > 0 ? 1 : 0) | (e.boss ? 2 : 0) | (e.shield > 0 ? 4 : 0) | (!e.fly && !e.a.grounded && !e.a.swimming ? 8 : 0) | (e.fly ? 16 : 0) | (e.frozenT > 0 || e.sleepT > 0 || e.confT > 0 ? 32 : 0) | (e.shiny ? 64 : 0), Math.round((e.scale || 1) * 2)]),
+			(e.flash > 0 ? 1 : 0) | (e.boss ? 2 : 0) | (e.shield > 0 ? 4 : 0) | (!e.fly && !e.a.grounded && !e.a.swimming ? 8 : 0) | (e.fly ? 16 : 0) | (e.frozenT > 0 || e.sleepT > 0 || e.confT > 0 ? 32 : 0) | (e.shiny ? 64 : 0) | stBits(e), Math.round((e.scale || 1) * 2)]),
 		// everything drawn as a ball: your shots and orbs (their type's colour), enemy shots (type 31), pickups (32 + kind)
 		b: [...w.shots.map((p) => [p.id, q(p.x, P), q(p.y, P), q(p.z, P), q(Math.max(0.14, p.r), P), ti(p.mtype)]), ...w.orbs.map((p) => [p.id, q(p.x, P), q(p.y, P), q(p.z, P), q(Math.max(0.16, p.r), P), ti(p.mtype)]),
 			...w.eshots.map((p) => [p.id, q(p.x, P), q(p.y, P), q(p.z, P), q(Math.max(0.2, p.r), P), 31]),
@@ -78,7 +83,7 @@ export function keepEvents(into, events) {
 		else if (ev.k === 'ult') { const o = { ...ev }; for (const key of ['x', 'y', 'z', 'r', 'len', 'w']) if (typeof o[key] === 'number') o[key] = r(o[key]); if (o.from) o.from = o.from.map(r); into.push(o); }
 		else if (ev.k === 'rx') into.push({ k: 'rx', kind: ev.kind, x: r(ev.x), y: r(ev.y), z: r(ev.z), r: r(ev.r || 0) });
 		else if (ev.k === 'rxchain') into.push({ k: 'rxchain', from: ev.from.map(r), links: ev.links.map((l) => l.map(r)) });
-		else if (ev.k === 'chain') into.push({ k: 'chain', id: ev.id, links: ev.links.map((l) => l.map(r)) });
+		else if (ev.k === 'chain') into.push({ k: 'chain', id: ev.id, links: ev.links.map((l) => l.map(r)), ...(ev.from ? { from: ev.from.map(r) } : null) });
 		else { const o = {}; for (const key in ev) o[key] = r(ev[key]); into.push(o); }
 	}
 	return into;
@@ -180,7 +185,7 @@ export class Viewer {
 		for (const r of EB.e) {
 			const o = old.get(r[0]) || r, inAir = !!(o[7] & 8) || !!(r[7] & 8);   // (in the air at either frame: an arc, not a line)
 			view.enemies.push({ id: r[0], dex: r[1], a: { x: (o[2] + (r[2] - o[2]) * kE) / P, y: arc(o[3] / P, r[3] / P, kE, dE, AK.GRAVITY, inAir), z: (o[4] + (r[4] - o[4]) * kE) / P, facing: lerpAng(ang(o[5]), ang(r[5]), kE), hover: CK.FLY_HOVER },
-				hp: r[6] / 1000, flash: (kE < 0.5 ? o[7] : r[7]) & 1 ? 0.1 : 0, boss: !!(r[7] & 2), shield: r[7] & 4 ? 1 : 0, fly: !!(r[7] & 16), shiny: !!(r[7] & 64), scale: r[8] / 2 });
+				hp: r[6] / 1000, flash: (kE < 0.5 ? o[7] : r[7]) & 1 ? 0.1 : 0, boss: !!(r[7] & 2), shield: r[7] & 4 ? 1 : 0, fly: !!(r[7] & 16), shiny: !!(r[7] & 64), st: r[7] >> 7, scale: r[8] / 2 });
 		}
 		const oldB = new Map(EA.b.map((r) => [r[0], r]));
 		for (const r of EB.b) { const o = oldB.get(r[0]) || r; view.balls.push([(o[1] + (r[1] - o[1]) * kE) / P, (o[2] + (r[2] - o[2]) * kE) / P, (o[3] + (r[3] - o[3]) * kE) / P, r[4] / P, r[5]]); }

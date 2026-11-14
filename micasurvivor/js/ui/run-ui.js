@@ -112,6 +112,10 @@ G.RunUI = (() => {
       // (DLC D5: an Expedition vitamin / item card shows its item picture, c.img: a URL; and its rarity's name, c.rarName)
       if (c.img) { const ico = el.querySelector('.ico'); ico.innerHTML = `<img class="pix ico-item" src="${c.img}" width="32" height="32" alt="" draggable="false">`; }
       if (c.rarName) el.querySelector('.nm').insertAdjacentHTML('beforeend', `<span class="rar-chip">${c.rarName}</span>`);
+      // (the games' own type chart, 2026-11-14: a move's card says how its type does against the enemies here; a bad
+      //  matchup can now be "nothing happens". Not for a buff, an item, an upgrade)
+      const mid = c.mid || (/^(new|up|swap):/.test(c.key || '') ? c.key.split(':')[1] : null), md = mid && (G.Moves.BY_ID[mid] || (G.ExpMoves && G.ExpMoves.MOVES[mid]));
+      if (md && md.type && md.kind !== 'buff' && md.kind !== 'weather' && G.EnemyMgr) el.querySelector('.txt').insertAdjacentHTML('beforeend', G.Types.matchupHtml(G.Types.matchup(md.type, G.EnemyMgr.all())));
       el.dataset.sfx = 'none';             // el juego pone su propio sonido al elegir
       el.onclick = () => pick(i);
       box.appendChild(el);

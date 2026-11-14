@@ -225,7 +225,7 @@ const rnd = (w, a, b) => a + w.rand() * (b - a);
 export function addEnemy(w, dex, x, z, o = {}) {
 	const d = w.data, t = o.t === undefined ? w.t : o.t, ti = o.ti === undefined ? d.tierAt(t) : o.ti, def = o.def || d.defFor(dex, ti), mon = d.mon(dex);
 	const fly = !!d.hovers(dex), cr = d.radius(dex);
-	const maxHp = Math.round(def.hp * (1 + t / 95) * (d.enemyHp || 1) * CK.HP_K(t) * (o.hp || 1));   // (enemyHp: + 22 %, the owner's answer to STAB, 2026-11-14; the 2D game's G.Enemies.scale)
+	const maxHp = Math.round(def.hp * (1 + t / 95) * (d.enemyHp || 1) * CK.HP_K(t) * (o.hp || 1));   // (enemyHp: + 5 %, for STAB, 2026-11-14; the 2D game's G.Enemies.scale)
 	const a = newActor(w.room, { x, z, y: o.y, r: Math.min(0.45, cr), speed: def.spd * (1 + Math.min(0.35, t / 1400)) * (o.spd === undefined ? 1 : o.spd) * U, fly, hover: CK.FLY_HOVER });
 	const e = { id: w.nextId++, a, dex, def, types: mon.types && mon.types.length ? mon.types : ['normal'], cr, fly, maxHp, hp: maxHp,
 		dmg: def.dmg * (1 + t / 420) * (o.minion ? 1 : CK.DMG_K) * (o.dmg || 1), xp: o.minion ? def.xp : Math.round(def.xp * CK.XP_K), t0: t, ti, minion: !!o.minion, minions: [], shield: 0, shieldT: 0, shieldLock: 0, skillCd: 0, jump: null, touchCd: 0, frozenT: 0, paraT: 0, sleepT: 0, confT: 0, confCd: 0, zig: 0, slow: 0, slowT: 0, burn: 0, burnT: 0, burnTick: 0, poison: 0, poisonT: 0, poisonTick: 0,
@@ -247,7 +247,7 @@ export function bossDef(data, dex, slot = 0) {
 /** Put a boss in. o: { slot (which of the 2D game's five), t (the run time it is scaled for; default now), def }. It is
  *  bigger, it goes over any terrain (as a 2D boss ignores walls), a hit does not shove it, and it fights by bossMove. */
 export function addBoss(w, dex, x, z, o = {}) {
-	const d = w.data, t = o.t === undefined ? w.t : o.t, def = o.def || bossDef(d, dex, o.slot || 0), mon = d.mon(dex), scale = d.bossScale(dex), cr = d.radius(dex, scale), k = 1 + t / 600, hk = k * (d.enemyHp || 1);   // (hk: a boss's HP has the + 22 % too, as the 2D game's bossScale)
+	const d = w.data, t = o.t === undefined ? w.t : o.t, def = o.def || bossDef(d, dex, o.slot || 0), mon = d.mon(dex), scale = d.bossScale(dex), cr = d.radius(dex, scale), k = 1 + t / 600, hk = k * (d.enemyHp || 1);   // (hk: a boss's HP has the + 5 % too, as the 2D game's bossScale)
 	const e = addEnemy(w, dex, x, z, { def, t: 0, ti: 0, minion: true, behavior: 'boss' });   // (built bare, then given a boss's numbers)
 	Object.assign(e, { boss: true, minion: false, scale, cr, fly: true, maxHp: Math.round(def.hp * hk), dmg: def.dmg * k, xp: def.xp, ccImm: 0 });
 	// (it goes over any terrain, as a 2D boss ignores walls; one that does not hover by nature keeps its feet on whatever is under it)
@@ -441,7 +441,7 @@ const KINDS = {
 			if (Math.abs(((Math.atan2(dz, dx) - pl.aim + Math.PI * 3) % 6.2832) - Math.PI) > half) continue;
 			land(w, e, dmg, dx, dz, m.knock || 0, m);
 		}
-		w.events.push({ k: 'melee', id: m.id, aim: pl.aim, r: R, arc: m.arc });
+		w.events.push({ k: 'melee', id: m.id, aim: pl.aim, r: R, arc: m.arc, x: s.x, y: s.y, z: s.z });   // (x, y, z: who swung, for a page that is not theirs)
 	},
 	beam(w, m) {
 		const pl = w.pl, s = pl.s, dir = aimDir(w, pl.aim), W = m.width * U, ox = s.x, oy = s.y + CK.MUZZLE, oz = s.z, dmg = m.dmg * atk(pl);
@@ -463,7 +463,7 @@ const KINDS = {
 			const dx = e.a.x - s.x, dz = e.a.z - s.z, rr = R + e.cr;
 			if (dx * dx + dz * dz <= rr * rr) land(w, e, dmg, dx, dz, m.knock || 0, m);
 		}
-		w.events.push({ k: 'aura', id: m.id, r: R });
+		w.events.push({ k: 'aura', id: m.id, r: R, x: s.x, y: s.y, z: s.z });
 	},
 	chain(w, m) {
 		const pl = w.pl, s = pl.s;
@@ -479,7 +479,7 @@ const KINDS = {
 			for (const e of w.enemies) { if (e.dead || done.has(e.id)) continue; const d = dist3(cur.a, e.a); if (d < bd) { bd = d; best = e; } }
 			cur = best;
 		}
-		w.events.push({ k: 'chain', id: m.id, links });
+		w.events.push({ k: 'chain', id: m.id, links, from: [s.x, s.y + CK.MUZZLE, s.z] });
 	},
 	buff(w, m) { const b = w.pl.buffs[m.stat]; if (!b) return; b.amount = m.amount; b.n = Math.min(m.stacks | 0, b.n + 1); b.t = m.dur; w.events.push({ k: 'buff', id: m.id, stat: m.stat, n: b.n }); },
 	boomerang(w, m) {
@@ -558,7 +558,7 @@ const KINDS = {
 	spin(w, m) {
 		const pl = w.pl, s = pl.s, R = m.radius * U, dmg = m.dmg * atk(pl);
 		for (const e of w.enemies) { if (e.dead || Math.abs(e.a.y - s.y) > CK.REACH_UP) continue; const dx = e.a.x - s.x, dz = e.a.z - s.z, rr = R + e.cr; if (dx * dx + dz * dz <= rr * rr) land(w, e, dmg, dx, dz, m.knock || 0, m); }
-		w.events.push({ k: 'aura', id: m.id, r: R });
+		w.events.push({ k: 'aura', id: m.id, r: R, x: s.x, y: s.y, z: s.z });
 	},
 };
 /** The n living enemies nearest a point (in space), within r. */

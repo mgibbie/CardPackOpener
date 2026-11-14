@@ -45,10 +45,11 @@ G.Types = (() => {
     fairy:    { fire: .5, fighting: 2, poison: .5, dragon: 2, dark: 2, steel: .5 }
   };
   const STRUGGLE = 0.25, PLAYER_MIN = 0.25, STAB = 1.5;
-  // El dueño, 2026-11-14: "raise enemy HP by 22%". Con el STAB haces de media un 31 % más de daño que antes
-  // (tools/micasurvivor/type_balance.mjs): los enemigos que llegan y los jefes tienen un 22 % más de vida. Lo leen
-  // data/enemies.js (scale, bossScale) y m3d/combat.js (addEnemy, addBoss).
-  const ENEMY_HP = 1.22;
+  // El dueño, 2026-11-14: los enemigos que llegan y los jefes tienen un 5 % más de vida, por el STAB. Primero fue un 22 %
+  // (la cuenta, tools/micasurvivor/type_balance.mjs, daba +31 % de daño con el STAB); jugado, el STAB apenas sube los KO
+  // (la tabla real, más dura con las resistencias, se come casi todo) y el 22 % dejaba un 13 % menos de KO que antes:
+  // "yes cut". Lo leen data/enemies.js (scale, bossScale) y m3d/combat.js (addEnemy, addBoss).
+  const ENEMY_HP = 1.05;
   const ABILITY_IMMUNE = { levitate: 'ground', waterabsorb: 'water', voltabsorb: 'electric', flashfire: 'fire', sapsipper: 'grass' };
   /** El tipo al que una especie es inmune por su habilidad, o undefined. */
   const immuneBy = dex => (dex != null && G.Abilities && G.Abilities.of ? ABILITY_IMMUNE[G.Abilities.of(dex)] : undefined);
@@ -77,6 +78,22 @@ G.Types = (() => {
     return any;
   }
 
+  /** Cómo le va a un tipo de ataque contra los enemigos de ahora (cada especie cuenta una vez):
+   *  { n, strong, weak, immune }. enemies: [{ dex, types, dead }] */
+  function matchup(type, enemies) {
+    const out = { n: 0, strong: 0, weak: 0, immune: 0 }, seen = new Set();
+    if (!type) return out;
+    for (const e of enemies || []) { if (!e || e.dead || seen.has(e.dex)) continue; seen.add(e.dex); out.n++; const m = mult(type, e.types, e.dex); if (m === 0) out.immune++; else if (m > 1) out.strong++; else if (m < 1) out.weak++; }
+    return out;
+  }
+  /** …como una línea para la carta de un movimiento (vacía si no hay nada que decir). Cada trozo de texto va en su propio
+   *  elemento y los números aparte: el traductor de la página (core/i18n.js) traduce cada trozo con lang-en.js. */
+  function matchupHtml(q) {
+    if (!q.n || !(q.strong + q.weak + q.immune)) return '';
+    const bit = (n, cls, txt) => (n ? `<span class="${cls}"><u>${txt}</u> ${n}</span>` : '');
+    return `<div class="mu">${bit(q.strong, 'mu-s', 'Fuerte contra')}${bit(q.weak, 'mu-w', 'Débil contra')}${bit(q.immune, 'mu-i', 'Sin efecto en')}<em>${q.n} <i>tipos aquí</i></em></div>`;
+  }
+
   /** El aviso "Inmune" sobre `o` (un enemigo, tú): como mucho uno cada 0,7 s por cuerpo. */
   function showImmune(o) {
     const now = performance.now();
@@ -85,5 +102,5 @@ G.Types = (() => {
     if (G.FX) G.FX.dmgText(o.x, o.y - (o.bodyH || 0) - 4, 'Inmune', '#a3abb8');
   }
 
-  return { CHART, STRUGGLE, PLAYER_MIN, STAB, ENEMY_HP, ABILITY_IMMUNE, immuneBy, mult, multIn, label, noAnswer, showImmune };
+  return { CHART, STRUGGLE, PLAYER_MIN, STAB, ENEMY_HP, ABILITY_IMMUNE, immuneBy, mult, multIn, label, noAnswer, showImmune, matchup, matchupHtml };
 })();

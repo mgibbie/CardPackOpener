@@ -79,6 +79,25 @@ try {
 	A(await boot(), 'the page is loaded again');
 	A((await hf()).on === false, 'still off after a reload');
 
+	// the run menu: Hit-stop and Effects, as buttons
+	{
+		await M(() => { localStorage.removeItem('m3d.fx'); });
+		A(await boot(), 'the page is loaded again (for the menu)');
+		await page.keyboard.press('Escape');
+		const shown = await waitFor(() => M(() => !!document.getElementById('rx-hitfeel') && !!document.getElementById('rx-fx')), 5000);
+		const t0 = await M(() => ({ hf: document.getElementById('rx-hitfeel').textContent, fx: document.getElementById('rx-fx').textContent, s: window.__m3d.fxSettings() }));
+		A(shown && /Hit-stop and shake: off/.test(t0.hf) && t0.fx === 'Effects: Auto' && t0.s.q === 1, 'the run menu has "Hit-stop and shake" (off, as chosen) and "Effects: Auto" (full to start with)', t0);
+		await M(() => document.getElementById('rx-hitfeel').click());
+		const hfOn = await waitFor(() => M(() => window.__m3d.hitFeel().on && /: on/.test(document.getElementById('rx-hitfeel').textContent)), 3000);
+		A(hfOn, 'its Hit-stop button turns it on, and says so');
+		const seen = [];
+		for (let i = 0; i < 3; i++) { await M(() => document.getElementById('rx-fx').click()); await sleep(150); seen.push(await M(() => ({ label: document.getElementById('rx-fx').textContent, q: window.__m3d.fxSettings().q, kept: localStorage.getItem('m3d.fx') }))); }
+		A(seen[0].label === 'Effects: Full' && seen[0].q === 1 && seen[1].label === 'Effects: Reduced' && seen[1].q === 0.5 && seen[1].kept === 'reduced' && seen[2].label === 'Effects: Auto' && seen[2].kept === 'auto', 'Effects goes Auto → Full → Reduced → Auto; Reduced halves the effects; the choice is kept on this device', seen);
+		await M(() => window.__m3d.setFxSlow(true));
+		const auto = await M(() => window.__m3d.fxSettings());
+		A(auto.q === 0.5 && auto.label === 'Auto (reduced)', 'on Auto, slow frames drop it to reduced (and the menu says so)', auto);
+		await page.keyboard.press('Escape');
+	}
 	// reduced motion, no choice made: off from the start
 	await M(() => localStorage.removeItem('m3d.hitfeel'));
 	await page.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'reduce' }]);
