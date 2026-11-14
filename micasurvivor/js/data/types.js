@@ -78,6 +78,22 @@ G.Types = (() => {
     return any;
   }
 
+  /** Cómo le va a un tipo de ataque contra los enemigos de ahora (cada especie cuenta una vez):
+   *  { n, strong, weak, immune }. enemies: [{ dex, types, dead }] */
+  function matchup(type, enemies) {
+    const out = { n: 0, strong: 0, weak: 0, immune: 0 }, seen = new Set();
+    if (!type) return out;
+    for (const e of enemies || []) { if (!e || e.dead || seen.has(e.dex)) continue; seen.add(e.dex); out.n++; const m = mult(type, e.types, e.dex); if (m === 0) out.immune++; else if (m > 1) out.strong++; else if (m < 1) out.weak++; }
+    return out;
+  }
+  /** …como una línea para la carta de un movimiento (vacía si no hay nada que decir). Cada trozo de texto va en su propio
+   *  elemento y los números aparte: el traductor de la página (core/i18n.js) traduce cada trozo con lang-en.js. */
+  function matchupHtml(q) {
+    if (!q.n || !(q.strong + q.weak + q.immune)) return '';
+    const bit = (n, cls, txt) => (n ? `<span class="${cls}"><u>${txt}</u> ${n}</span>` : '');
+    return `<div class="mu">${bit(q.strong, 'mu-s', 'Fuerte contra')}${bit(q.weak, 'mu-w', 'Débil contra')}${bit(q.immune, 'mu-i', 'Sin efecto en')}<em>${q.n} <i>tipos aquí</i></em></div>`;
+  }
+
   /** El aviso "Inmune" sobre `o` (un enemigo, tú): como mucho uno cada 0,7 s por cuerpo. */
   function showImmune(o) {
     const now = performance.now();
@@ -86,5 +102,5 @@ G.Types = (() => {
     if (G.FX) G.FX.dmgText(o.x, o.y - (o.bodyH || 0) - 4, 'Inmune', '#a3abb8');
   }
 
-  return { CHART, STRUGGLE, PLAYER_MIN, STAB, ENEMY_HP, ABILITY_IMMUNE, immuneBy, mult, multIn, label, noAnswer, showImmune };
+  return { CHART, STRUGGLE, PLAYER_MIN, STAB, ENEMY_HP, ABILITY_IMMUNE, immuneBy, mult, multIn, label, noAnswer, showImmune, matchup, matchupHtml };
 })();
