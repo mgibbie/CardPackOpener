@@ -96,7 +96,10 @@ try {
 
 	// ===== mouse =====
 	const pos = uid => page.evaluate(u => window.__game.screenPosOf(u), uid);
-	const h1 = await pos(seed.hand[1]);
+	// (where the card has come to REST: the hand fans in after the setup, and a fixed second was not always enough on a loaded
+	//  runner. The click then landed on the NEXT card, and five checks failed together: two of main's eight gate runs on 2026-11-13.)
+	const rest = async (uid) => { let a = await pos(uid); for (let i = 0; i < 40; i++) { await sleep(150); const b = await pos(uid); if (a && b && Math.abs(a.x - b.x) < 0.6 && Math.abs(a.y - b.y) < 0.6) return b; a = b; } return a; };
+	const h1 = await rest(seed.hand[1]);
 	await page.mouse.move(h1.x, h1.y); await sleep(250);
 	await page.mouse.click(h1.x, h1.y, { button: 'right' });
 	await sleep(300);
