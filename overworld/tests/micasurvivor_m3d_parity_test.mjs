@@ -322,7 +322,7 @@ try {
 		A(sh.a.left[0] === sh.b.left[0] && sh.a.left[0] > bare.a.left[0] + 200, `a shielder's shield soaks up 30 % of its HP before it is hurt (after 9 s of Ember it has ${sh.a.left[0]} / ${sh.b.left[0]} HP; unshielded ${bare.a.left[0]})`, [sh, bare]);
 		const su = await E((d2) => P.both({ moves: [], secs: 6, foes: [{ dex: 19, dx: 200, spd: 56, dmg: 6, hp: 1000, b: 'summoner', def: { shotCd: 7, range: 230 }, def2: d2, shotCd: 1 }] }), d2);
 		// (HP: the 2D test enemy carries no run scaling, a 3D enemy carries the run's × 3.3 at the start, and its minions with it)
-		A(su.a.minions === 4 && su.b.minions === 4 && su.a.minion.hp === 350 && su.b.minion.hp === Math.round(350 * 3.3) && su.a.minion.dmg === su.b.minion.dmg && su.a.minion.spd === su.b.minion.spd && su.a.minion.xp === su.b.minion.xp,
+		A(su.a.minions === 4 && su.b.minions === 4 && su.a.minion.hp === 350 && su.b.minion.hp === Math.round(350 * 1.22 * 3.3) /* (+ 22 % on every enemy that arrives in a fight: the owner, 2026-11-14) */ && su.a.minion.dmg === su.b.minion.dmg && su.a.minion.spd === su.b.minion.spd && su.a.minion.xp === su.b.minion.xp,
 			`a summoner calls four of its kind, each 35 % of its HP, 60 % of its damage, 10 % faster (2D ${JSON.stringify(su.a.minion)} · 3D ${JSON.stringify(su.b.minion)})`, su);
 		const su2 = await E((d2) => P.both({ moves: [], secs: 30, foes: [{ dex: 19, dx: 200, still: true, dmg: 6, hp: 1000, b: 'summoner', def: { shotCd: 7, range: 230 }, def2: d2, shotCd: 1 }] }), d2);
 		A(su2.a.minions === 8 && su2.b.minions === 8, 'and never has more than eight of its own alive (after 30 s: 8 / 8)', [su2.a.minions, su2.b.minions]);

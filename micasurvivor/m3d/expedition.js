@@ -208,9 +208,9 @@ function dpsSample(S, t) {
 }
 /** A guardian's or the legendary's HP: the greater of its curve and what your damage would take `target` seconds to
  *  halve (the 2D game's rule). */
-export function bossHp(XKK, { zone, dps: d = 0, tier = 0, t = 0, legend = false, players = 1 }) {
+export function bossHp(XKK, { zone, dps: d = 0, tier = 0, t = 0, legend = false, players = 1, hpK = 1 }) {   // (hpK: the + 22 % every enemy's HP has since 2026-11-14, on the curve only: the other side of the max is your own damage)
 	const zi = Math.min(3, zone) - 1;
-	const curve = (legend ? XKK.LEGEND_HP : XKK.GUARD_HP[zi]) * (1 + t / 600) * (1 + CK.COOP.hp * Math.max(0, players - 1)) * (players > 1 ? 1.4 : 1);
+	const curve = (legend ? XKK.LEGEND_HP : XKK.GUARD_HP[zi]) * (1 + t / 600) * hpK * (1 + CK.COOP.hp * Math.max(0, players - 1)) * (players > 1 ? 1.4 : 1);
 	const target = legend ? XKK.LEGEND_TARGET : XKK.TARGET[zi], fromDps = d * target * XKK.SINGLE * (1 + XKK.TIER_K * tier);
 	return { hp: Math.round(Math.max(curve, fromDps)), curve: Math.round(curve), fromDps: Math.round(fromDps), target };
 }
@@ -356,7 +356,7 @@ function tickSpecials(S, dt, t) {
  *  legend, zone (1-4: the curve and the target), x, z, target (s, instead of the zone's), hpK, dmgK }. -> the enemy */
 export function makeBoss(S, o, t) {
 	const w = S.w, XKK = S.X.K, legend = !!o.legend, dex = o.dex, zi = Math.min(3, o.zone) - 1, TR = S.X.tier(S.diff);
-	const d0 = dps(S), hp = bossHp(XKK, { zone: o.zone, dps: d0, tier: diffIdx(S), t, legend, players: 1 + w.mates.length });
+	const d0 = dps(S), hp = bossHp(XKK, { zone: o.zone, dps: d0, tier: diffIdx(S), t, legend, players: 1 + w.mates.length, hpK: w.data.enemyHp || 1 });
 	if (o.target) { const k = o.target / hp.target; hp.fromDps = Math.round(hp.fromDps * k); hp.hp = Math.max(hp.curve, hp.fromDps); hp.target = o.target; }
 	if (o.hpK) hp.hp = Math.round(hp.hp * o.hpK);
 	const dmg = (legend ? XKK.LEGEND_DMG : XKK.GUARD_DMG[zi]) * TR.dmg * (o.dmgK || 1), sp = S.data.baseSpd(dex), b = S.data.behaviorOf(dex);

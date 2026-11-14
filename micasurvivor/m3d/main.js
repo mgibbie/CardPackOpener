@@ -437,7 +437,7 @@ function draw(t) {
 			if (prop(key, o.x, o.y + up, o.z, 1 + (o.ch || 0) * 0.3)) { shadows.add(room, o.x, o.z, o.y + up, /ball|great|comet/.test(o.kind) ? 0.45 : 0.9); if (pm) propMon(pm[0], o.x, o.y + pm[1] + (pm[1] ? Math.sin(t * 3 + o.i) * 0.12 : 0), o.z, t + o.i); else if (o.kind === 'cage' && o.v) propMon(o.v, o.x, o.y, o.z, t + o.i); }
 			else { const big = /unown|comet|challenge|cursedaltar|greed|meowth|slots/.test(o.kind); shots.add(o.x, o.y + (big ? 1.1 : 0.55) + Math.sin(t * 2 + o.i) * 0.08, o.z, (big ? 0.42 : EK.SMALL.includes(o.kind) ? 0.22 : 0.3) * (1 + o.ch * 0.8), EK.COL[o.kind]); }
 		}
-		if (world) for (const e of world.enemies) if (!e.dead && GG.Types.noAnswer(world.pl.moves, e.types)) shots.add(e.a.x, e.a.y + Math.max(1.2, e.cr * 2) + 0.3, e.a.z, 0.13, '#9aa6b5');   // none of your moves can hurt it (your hits are a Struggle): a grey bead over its head
+		if (world) for (const e of world.enemies) if (!e.dead && GG.Types.noAnswer(world.pl.moves, e.types, e.dex)) shots.add(e.a.x, e.a.y + Math.max(1.2, e.cr * 2) + 0.3, e.a.z, 0.13, '#9aa6b5');   // none of your moves can hurt it (your hits are a Struggle): a grey bead over its head
 		if (world && fx) {   // what each enemy is suffering, drawn on it; and the weather in the air round you (fx.js)
 			for (const e of world.enemies) { if (e.dead || !(e.burn > 0 || e.poison > 0 || e.frozenT > 0 || e.paraT > 0 || e.sleepT > 0 || e.confT > 0 || e.slow > 0)) continue; fx.status({ x: e.a.x, y: e.a.y, z: e.a.z, r: Math.max(0.35, e.cr || 0.4), h: Math.max(1.1, (e.cr || 0.4) * 2), id: e.id }, { burn: e.burn > 0, poison: e.poison > 0, frozen: e.frozenT > 0, para: e.paraT > 0, sleep: e.sleepT > 0, conf: e.confT > 0, slow: e.slow > 0 }); }
 			if (world.weather && !paused) fx.weatherAir(world.weather.kind, wxLevel(world), state.x, state.y, state.z);
@@ -952,7 +952,7 @@ function drawNumbers(dt) {
 function matchup(type) {
 	const out = { n: 0, strong: 0, weak: 0, immune: 0 }, seen = new Set();
 	if (!world || !type) return out;
-	for (const e of world.enemies) { if (e.dead || seen.has(e.dex)) continue; seen.add(e.dex); out.n++; const m = GG.Types.mult(type, e.types); if (m === 0) out.immune++; else if (m > 1) out.strong++; else if (m < 1) out.weak++; }
+	for (const e of world.enemies) { if (e.dead || seen.has(e.dex)) continue; seen.add(e.dex); out.n++; const m = GG.Types.mult(type, e.types, e.dex); if (m === 0) out.immune++; else if (m > 1) out.strong++; else if (m < 1) out.weak++; }
 	return out;
 }
 function matchupHtml(c) {
@@ -1305,7 +1305,7 @@ const G_MUSIC = GG.BIOME_MUSIC || null, XK_MAPS = ['viridian', 'mtmoon', 'cerule
 window.__m3d = {
 	hitFeel: () => ({ on: hitFeel.on, stops: hitFeel.stops, kicks: hitFeel.kicks, stopped: performance.now() < hitFeel.until, K: HF }), setHitFeel,
 	setWeather: (kind, dur = 30) => (world ? setWeather(world, kind, dur) : false), applyState: (e, kind) => (world ? applyState(world, e, kind) : 0),   // (for the tests: a weather, a state on an enemy)
-	matchup, walled: () => (world ? world.enemies.filter((e) => !e.dead && GG.Types.noAnswer(world.pl.moves, e.types)).length : 0),   // (how many enemies wear the grey bead)
+	matchup, walled: () => (world ? world.enemies.filter((e) => !e.dead && GG.Types.noAnswer(world.pl.moves, e.types, e.dex)).length : 0),   // (how many enemies wear the grey bead)
 	fx: () => (fx ? { ...fx.stats, byShape: { ...fx.stats.byShape }, byLight: { ...fx.stats.byLight }, lit: fxLights, atlas: [fx.atlas.cols, fx.atlas.rows], max: { ...FXK } } : null), fxLayer: fx,
 	link: LINK, dive: drun, guestDive: gdrun, diveRules: DR, special, light: () => ({ dive: DLIGHT, near: scene.fog.near, far: scene.fog.far, color: scene.fog.color.getHex(), vignette: !!document.getElementById('dive-dark') }), diveSave: { week: DWEEK, practice: DPRACTICE, ok: DSAVE_OK, start: DSTART, member: DMEMBER, form: DFORM, keep: DKEEP, meta: !!DMETA }, propKeys: () => (props ? [...props.atlas.cells.keys()] : []), roomBuilds: () => roomBuilds,
 	meta: LAB_META, upgrades: UPGRADES, leadShiny: LEAD_SHINY, skey,

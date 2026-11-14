@@ -356,7 +356,7 @@ try {
 			const T = G.Tower, e = T.boss, d = T.def(1, G.Game.player.level);
 			return { dex: e.dex, want: d.dex, hp: e.maxHp, def: d.hp, sc: 1 + 15 / 600, k: T.K.bossHp * Math.min(T.adaptHp, T.ADAPT.maxBoss), adapt: T.adaptHp, line: T.hudLine(), banner: G.I18n.t((G.Spawner.banner() || {}).text || ''), name: G.I18n.t(d.name) };
 		});
-		A(b.dex === b.want && near(b.hp, Math.round(Math.round(b.def * b.sc) * b.k), 1.5), 'at 50 s the floor\'s fixed boss appears, created at t = 15 x floor and x1.2 x adaptive boss HP (main.gd 3362-3368 / 3160)', JSON.stringify(b));
+		A(b.dex === b.want && near(b.hp, Math.round(b.def * b.sc * b.k * 1.22 /* (G.Types.ENEMY_HP: + 22 % on every enemy's HP, the owner's answer to STAB, 2026-11-14) */), 2.5), 'at 50 s the floor\'s fixed boss appears, created at t = 15 x floor and x1.2 x adaptive boss HP (main.gd 3362-3368 / 3160)', JSON.stringify(b));
 		A(/  ·  Boss!$/.test(b.line) && b.banner === 'Floor 1: ' + b.name, 'the HUD says "Boss!" and the banner "Floor 1: <boss>"', JSON.stringify(b));
 		await shot('tower_boss.png');
 		// knock it down: the floor clear
@@ -543,7 +543,7 @@ try {
 		await killBoss();
 		await waitFor(() => E(() => !!G.Tower.boss), 15000);
 		const bossHp = await E(() => ({ hp: G.Tower.boss.maxHp, def: G.Tower.def(1, G.Game.player.level).hp, k: G.Tower.K.bossHp * Math.min(G.Tower.adaptHp, 1.5) * 1.25 }));
-		A(near(bossHp.hp, Math.round(Math.round(bossHp.def * (1 + 15 / 600)) * bossHp.k), 1.5), 'Boss contract: the boss has x1.25 HP', JSON.stringify(bossHp));
+		A(near(bossHp.hp, Math.round(bossHp.def * (1 + 15 / 600) * bossHp.k * 1.22 /* (G.Types.ENEMY_HP: + 22 % on every enemy's HP, the owner's answer to STAB, 2026-11-14) */), 2.5), 'Boss contract: the boss has x1.25 HP', JSON.stringify(bossHp));
 		await E(() => G.Tower.boss.hurt(1e9));
 		await waitFor(() => visible('scr-tower'), 4000);
 		const cc = await E(() => G.DB.save.coins);

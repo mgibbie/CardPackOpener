@@ -29,6 +29,8 @@ import { loadG } from './m3d_data.mjs';
 let pass = 0, fail = 0;
 const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else { fail++; console.log('FAIL: ' + m + (extra != null ? '\n      ' + String(typeof extra === 'string' ? extra : JSON.stringify(extra)).slice(0, 700) : '')); } };
 const G = loadG(), data = dataFrom(G), X = expFrom(G), L = X.L, E = X.E, K = E.K;
+const st = (S, ty) => ((S.w || S).pl.mon.types.includes(ty) ? data.stab : 1);   // (STAB, 2026-11-14: a move of one of your own types does x 1.5)
+
 const near = (a, b, tol = 1e-6) => Math.abs(a - b) <= tol * Math.max(1, Math.abs(b));
 const KINDS = EK.PLACE.map((p) => p[0]);
 /** A quiet run you cannot lose, on a zone that has every kind of thing. */
@@ -130,7 +132,7 @@ const says = (S, sec) => { const out = []; for (let i = 0, n = Math.round(sec * 
 	const n1 = count(S), dex0 = S.plan.cards[0], e0 = spawn(S, dex0, pl.s.x + 9, pl.s.z); e0.dead = true;
 	at(S, cursed); S.w.enemies.length = 0; steps(S, 0.5);
 	const ghosts = S.w.enemies.filter((e) => K.GHOST_DEX.includes(e.dex)), e1 = spawn(S, dex0, pl.s.x + 9, pl.s.z);
-	A(near(mods(S).diff, 0.05) && ghosts.length === 6 && count(S) >= n1 + 1 && count(S) <= n1 + 2 && near(e1.maxHp / e0.maxHp, 1.05, 0.01) && near(e1.dmg / e0.dmg, 1.05, 0.01), `a cursed ball: free, ${count(S) - n1} item(s), ${ghosts.length} ghosts round you, and from now on enemies have 5 % more HP and damage`, [ghosts.length, count(S) - n1, e1.maxHp / e0.maxHp]);
+	A(near(mods(S).diff, 0.05) && ghosts.length === 6 && count(S) >= n1 + 1 && count(S) <= n1 + 2 && near(e1.maxHp / e0.maxHp, 1.05, 0.04) && near(e1.dmg / e0.dmg, 1.05, 0.01),   /* (HP is a small whole number here, and the two arrive half a second apart: its ratio is 1.05 give or take a point of HP) */ `a cursed ball: free, ${count(S) - n1} item(s), ${ghosts.length} ghosts round you, and from now on enemies have 5 % more HP and damage`, [ghosts.length, count(S) - n1, e1.maxHp / e0.maxHp]);
 }
 
 // ---------------------------------------------------------------- the Unown altars and the comet
@@ -318,7 +320,7 @@ const says = (S, sec) => { const out = []; for (let i = 0, n = Math.round(sec * 
 	A(near(boosted / plain, 1.3) && near(after, plain), 'a Weakness Policy: for 6 s after a hit you deal 30 % more');
 	// the hit modifiers
 	S = mk(); takeItem(S, 'expertbelt'); e = foe(S); e.types = ['grass'];
-	A(near(land(S.w, e, 100, 0, 0, 0, { type: 'fire', kind: 'item' }), 100 * data.typeMult('fire', ['grass']) * 1.3) && near(land(S.w, e, 100, 0, 0, 0, { type: 'normal', kind: 'item' }), 100), 'an Expert Belt: + 30 % on a super-effective hit only');
+	A(near(land(S.w, e, 100, 0, 0, 0, { type: 'fire', kind: 'item' }), 100 * data.typeMult('fire', ['grass']) * 1.3 * st(S, 'fire')) && near(land(S.w, e, 100, 0, 0, 0, { type: 'normal', kind: 'item' }), 100 * st(S, 'normal')), 'an Expert Belt: + 30 % on a super-effective hit only');
 	S = mk(); takeItem(S, 'deepseatooth'); e = foe(S); const b = foe(S); b.boss = true;
 	A(near(land(S.w, b, 100, 0, 0, 0, { kind: 'item' }), 125) && near(land(S.w, e, 100, 0, 0, 0, { kind: 'item' }), 100), 'a Deep Sea Tooth: + 25 % to bosses');
 	S = mk(); takeItem(S, 'razorfang'); e = foe(S, 1.2, { hpSet: 1000 }); e.hp = 79; const e2 = foe(S, 1.5, { hpSet: 1000 }); e2.hp = 81; land(S.w, e, 5, 0, 0, 0, { kind: 'item' }); land(S.w, e2, 5, 0, 0, 0, { kind: 'item' });
