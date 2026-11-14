@@ -69,7 +69,7 @@ try {
 	await shot('perks_start.png');
 
 	// ---- Second chance
-	await M(() => { const m = window.__m3d, pl = m.world.pl; pl.xproc.shield = 0; pl.invuln = 0; pl.hp = 1; const e = m.addEnemy(19, m.state.x + 0.3, m.state.z, {}); e.dmg = 1e6; });
+	await M(() => { const m = window.__m3d, pl = m.world.pl; pl.xproc.shield = 0; pl.invuln = 0; pl.hp = 1; const e = m.addEnemy(19, m.state.x + 0.3, m.state.z, {}); e.dmg = 1e6; e.hp = e.maxHp = 1e9; });   // (it must live to touch you: with STAB (2026-11-14) your Ember sometimes felled it first, and nothing hit you)
 	const used = await waitFor(() => M(() => window.__m3d.run.up.revives === 0), 8000);
 	await M(() => { window.__m3d.world.enemies.length = 0; });
 	await sleep(500);
