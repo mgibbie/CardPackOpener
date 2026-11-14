@@ -20,7 +20,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { makeRoom } from '../../micasurvivor/m3d/sim.js';
-import { newWorld, addEnemy, dataFrom, land, hurtPlayer } from '../../micasurvivor/m3d/combat.js';
+import { newWorld, addEnemy, dataFrom, land, hurtPlayer, matchupOf } from '../../micasurvivor/m3d/combat.js';
 import { keepEvents } from '../../micasurvivor/m3d/net.js';
 import { loadG } from './m3d_data.mjs';
 
@@ -106,6 +106,17 @@ const T = G.Types, data = dataFrom(G);
 	A(Math.abs(dg - 60) < 1e-9, '3D: …and a Ghost hit on it is x2', dg);
 	const kept = keepEvents([], [0, 0.25, 0.5, 1, 2, 4].map((eff) => ({ k: 'hit', x: 1, y: 2, z: 3, d: 5, crit: false, eff })));
 	A(kept.map((q) => q.eff).join() === '3,0,0,1,2,4', 'a watcher\'s frame carries the cases: immune 3, resisted 0, plain 1, super 2, doubly super 4', kept.map((q) => q.eff));
+}
+
+// ---------- a zone's types against yours, as it begins (3D: m3d/combat.js matchupOf)
+{
+	const w = newWorld(makeRoom(20, 20, 0), data, { dex: 25, moves: ['thunder-shock'], seed: 3, weather: false });
+	const q = matchupOf(w, [27, 27, 7, 1, 92]);   // (Sandshrew twice, Squirtle, Bulbasaur, Gastly)
+	A(q.kinds === 4 && q.strong === 1 && q.walled === 1 && q.top.length === 2 && /^Mostly /.test(q.text) && /strong against 1 of its 4 kinds/.test(q.text) && /1 kind your moves cannot hurt/.test(q.text),
+		'Thunder Shock against Sandshrew (twice), Squirtle, Bulbasaur, Gastly: 4 kinds, strong against 1 (Squirtle), 1 it cannot hurt (Sandshrew)', q);
+	w.pl.moves.push(data.move('water-gun'));
+	const q2 = matchupOf(w, [27, 7, 1, 92]);
+	A(q2.walled === 0 && q2.strong === 2 && !/cannot hurt/.test(q2.text), 'with Water Gun as well: strong against 2, none it cannot hurt', q2);
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);

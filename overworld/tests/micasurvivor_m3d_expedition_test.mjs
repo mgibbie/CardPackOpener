@@ -300,6 +300,10 @@ const clearZone = (S) => { hush(S); toAltar(S); steps(S, XKK.ALTAR_T + 0.1); sla
 	const a = play(5), b = play(5), c = play(6);
 	A(a === b && a !== c, 'the same seed and inputs give the same run to the last number; another seed another run', [a, b, c]);
 }
+{   // (the games' own type chart: a zone begins with its types against yours, combat.js matchupOf)
+	const S = run({ moves: ['ember'] });
+	A(!!S.matchup && S.matchup.kinds >= 3 && /^Mostly /.test(S.matchup.text), `zone 1 begins with its types against yours ("${S.matchup && S.matchup.text}")`, S.matchup);
+}
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

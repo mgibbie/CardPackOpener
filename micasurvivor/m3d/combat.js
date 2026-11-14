@@ -127,6 +127,24 @@ const wxDef = (w) => (w.weather ? w.data.weatherKinds[w.weather.kind] : null);
 const wxMult = (w, type) => { const d = wxDef(w); return d && d.mult[type] ? 1 + (d.mult[type] - 1) * wxLevel(w) : 1; };
 const wxHurts = (w, types) => { const d = wxDef(w); return !!(d && d.safe && !types.some((t) => d.safe.includes(t))); };
 const wxSpeed = (w, types) => { const d = wxDef(w); return d && d.slow && !types.includes('ice') ? 1 - CK.WX.slow * wxLevel(w) : 1; };
+/** (the games' own type chart: a bad matchup can be "nothing happens") A zone's or a floor's species against your moves, as it begins:
+ *  { kinds, strong (kinds one of your moves is super effective on), walled (kinds none of your moves can hurt), top: [its two
+ *  commonest types], text }. Pushed as a 'matchup' event (the page shows it under the zone's banner). */
+const TYPE_EN = { normal: 'Normal', fire: 'Fire', water: 'Water', grass: 'Grass', electric: 'Electric', ice: 'Ice', fighting: 'Fighting', poison: 'Poison', ground: 'Ground', flying: 'Flying', psychic: 'Psychic', bug: 'Bug', rock: 'Rock', ghost: 'Ghost', dragon: 'Dragon', dark: 'Dark', steel: 'Steel', fairy: 'Fairy' };
+export function matchupOf(w, dexes) {
+	const d = w.data, moves = w.pl.moves.filter((m) => m.type && m.kind !== 'buff' && m.kind !== 'weather'), seen = new Set(), count = {};
+	let kinds = 0, strong = 0, walled = 0;
+	for (const dex of dexes) {
+		if (seen.has(dex)) continue; const mon = d.mon(dex); if (!mon) continue; seen.add(dex); kinds++;
+		const types = mon.types && mon.types.length ? mon.types : ['normal']; for (const t of types) count[t] = (count[t] || 0) + 1;
+		const ks = moves.map((m) => d.typeMult(m.type, types, dex)); if (ks.some((k) => k > 1)) strong++; if (moves.length && ks.every((k) => k === 0)) walled++;
+	}
+	const top = Object.keys(count).sort((a, b) => count[b] - count[a]).slice(0, 2);
+	const bits = [top.length ? 'Mostly ' + top.map((t) => TYPE_EN[t] || t).join(' and ') : ''];
+	if (kinds && moves.length) bits.push(strong ? `your moves are strong against ${strong} of its ${kinds} kinds` : `none of your moves is strong here`);
+	if (walled) bits.push(`${walled} ${walled === 1 ? 'kind' : 'kinds'} your moves cannot hurt`);
+	return { kinds, strong, walled, top, text: bits.filter(Boolean).join(' · ') };
+}
 /** Start a weather: 'sun' | 'rain' | 'sand' | 'snow' | 'fog', for `dur` seconds. */
 export function setWeather(w, kind, dur) { if (!w.data.weatherKinds[kind]) return false; w.weather = { kind, t: 0, dur }; w.events.push({ k: 'weather', kind, dur }); return true; }
 function updateWeather(w, dt) {

@@ -219,6 +219,10 @@ function name(dex) { return data.mon(dex).name; }
 	const sp = run(); const e = spawnFoe(sp, 25, sp.w.room.spawn[0], sp.w.room.spawn[2], { alpha: true });
 	A(e && e.xk === 'alpha' && !e.dummy, '(spawnFoe: a foe made by hand is awake)');
 }
+{   // (the games' own type chart: a floor begins with its types against yours, combat.js matchupOf)
+	const S = run();
+	A(!!S.matchup && S.matchup.kinds >= 1 && /^Mostly /.test(S.matchup.text), `a floor begins with its types against yours ("${S.matchup && S.matchup.text}")`, S.matchup);
+}
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

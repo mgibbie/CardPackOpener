@@ -51,7 +51,7 @@
 // and the gold rocks, routes and stages in the save, the Weekly Dive, co-op.
 // Pure and seeded: no DOM, no clock.
 import { K as SK, CELL, groundAt, newState, setCell } from './sim.js';
-import { CK, U, newWorld, tick, addEnemy, addBoss, gainXp, canFire, hurtPlayer } from './combat.js';
+import { CK, U, newWorld, tick, addEnemy, addBoss, gainXp, canFire, hurtPlayer, matchupOf } from './combat.js';
 import { setup as setupLevels, tickStats, takeItem, newCard, moveCands, trainCards } from './explevel.js';
 import { rollOffers, setupEco, tickEco, pickTake, pickClose } from './expeco.js';
 import { setupRx, tickRx } from './exprx.js';
@@ -319,6 +319,7 @@ function startFloor(S, f, t) {
 	if (!L.cadence.guardian) said = u3Floor(S, f) || said;
 	if (!said) say(S, S.weekly && f === 1 ? `Weekly Dive · ${R.nameOf(S.route)} · ${R.modName(S.weekly.mod)}: ${WEEKLY_TXT[S.weekly.mod] || ''}` : `— Floor ${f} · ${R.nameOf(S.route)} —`, S.weekly && f === 1 ? 4.5 : 2.8);
 	w.events.push({ k: 'floor', floor: f });
+	const fd = S.groups.flatMap((g) => g.list.map((e) => e.dex)); if (fd.length) { const q = matchupOf(w, fd); S.matchup = q; w.events.push({ k: 'matchup', text: q.text, walled: q.walled }); }   // (the floor's types against yours)
 }
 /** Floor f's Mega (below floor K.MEGA.from) and legendary (from K.LEGEND.from, with the pity): awake, alpha-sized. */
 function u3Floor(S, f) {

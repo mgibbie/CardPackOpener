@@ -30,7 +30,7 @@ export const NK = {
 	RELAY_DELAY: 1.15,   // …and this far when frames come a second's worth at a time
 	RELAY_CAP: 16000,    // characters in one relay message (the server's)
 	RELAY_ENEMY_EVERY: 5,   // in a bundle of ten frames the enemies are in every fifth: two a second
-	EVENTS: ['melee', 'aura', 'beam', 'chain', 'blast', 'smite', 'bomb', 'heal', 'shield', 'summon', 'hazard', 'boom', 'hit', 'kill', 'hurt', 'dash', 'weather', 'boss', 'enrage', 'level', 'pickup', 'say', 'rx', 'rxchain', 'ult', 'secondchance', 'tele', 'slam', 'chest', 'landmark', 'plug', 'bosscast'],   // (the last five: a Dive's red ground, its chests, landmark and secret pockets)
+	EVENTS: ['melee', 'aura', 'beam', 'chain', 'blast', 'smite', 'bomb', 'heal', 'shield', 'summon', 'hazard', 'boom', 'hit', 'kill', 'hurt', 'dash', 'weather', 'boss', 'enrage', 'level', 'pickup', 'say', 'rx', 'rxchain', 'ult', 'secondchance', 'tele', 'slam', 'chest', 'landmark', 'plug', 'bosscast', 'matchup'],   // (the last five: a Dive's red ground, its chests, landmark and secret pockets)
 };
 const q = (v, k) => Math.round(v * k);
 /** What an enemy is suffering, as the flags' high bits (a watcher and a co-op guest draw the marks from them). */
