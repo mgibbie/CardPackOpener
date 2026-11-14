@@ -254,8 +254,13 @@ try {
 		await waitFor(() => page.evaluate(() => !!window.__micatroPad), 10000);
 		await newRun(page, SEEDS.pad);
 		const tap = async (b) => { await page.evaluate((b) => window.__padTap(b), b); await sleep(160); };
-		await tap(B.right); // (the first press only shows the reticle)
+		// (the first press only shows the reticle. Wait until it IS showing before LB: on a loaded runner LB came while the
+		//  blind screen was still settling and went nowhere, four of main's eight gate runs on 2026-11-13. One more LB if the
+		//  first drew no answer.)
+		const reticle = () => page.evaluate(() => { const x = window.__micatroPad && window.__micatroPad.focus; return !!(x && x.el); });
+		for (let i = 0; i < 4 && !(await reticle()); i++) { await tap(B.right); await sleep(250); }
 		await tap(B.L);     // LB: Select
+		if (!(await waitFor(async () => (await look(page)).state === 'PAGES', 5000))) await tap(B.L);
 		A(await onPages(page), 'pad: LB selects the blind -> the Pages screen');
 		await tap(B.right); await sleep(200);
 		let f = await page.evaluate(() => { const x = window.__micatroPad.focus; return x && x.el ? x.el.dataset.page || x.cls : null; });

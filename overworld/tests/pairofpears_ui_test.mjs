@@ -137,12 +137,16 @@ try {
 		const fruit1 = cs.find((c) => c.id === f1).fruit;
 		// move the reticle to a card of another fruit, then press the controller's confirm (Nintendo layout: the right face button)
 		let other = null;
-		for (let i = 0; i < 8 && !other; i++) {
-			await pad(15); // d-pad right
+		// (the d-pad walks a SNAKE over the table: right, right, down, left, left, down, right, right, up, up, left, left. It went
+		//  only right and down, and the cards are dealt at random: when the two cards of the other fruit lay up or left of the
+		//  reticle it reached the corner and stayed there. THAT was this test's "controller flake" (one run in five here, and
+		//  on main's gate); #1172's longer button press did not cure it because it was never a missed press.)
+		for (const b of [15, 15, 13, 14, 14, 13, 15, 15, 12, 12, 14, 14]) {
+			if (other) break;
+			await pad(b);
 			const fid = await focusId();
 			const c = cs.find((x) => x.id === fid);
 			if (c && !c.faceUp && !c.matched && c.fruit !== fruit1) other = c;
-			if (!other) { await pad(13); const f2 = await focusId(); const c2 = cs.find((x) => x.id === f2); if (c2 && !c2.faceUp && !c2.matched && c2.fruit !== fruit1) other = c2; }
 		}
 		A(!!other, `${name}: the controller's d-pad moves the reticle`);
 		await pad(1);

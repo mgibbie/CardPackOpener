@@ -125,7 +125,7 @@ try {
 	const ch = await H.page.evaluate(() => { const c = window.__m3d.dive.chests.find((q) => !q.pocket); return [c.x, c.z]; });
 	await H.page.evaluate((x, z) => { const s = window.__m3d.state; s.x = x + 1; s.z = z; s.vx = s.vz = 0; }, ch[0], ch[1]);
 	await waitFor(() => H.page.evaluate(() => window.__m3d.dive.chests.some((q) => q.open)), 8000);
-	await sleep(2500);
+	await waitFor(async () => (await rp(H.page)).taped >= 15, 30000);   // (frames, not seconds: a loaded runner tapes them slower)
 	r = await rp(H.page);
 	A(r.taped >= 15, `the tape grows as she plays (${r.taped} frames at 5 a second)`, JSON.stringify(r));
 	await H.page.evaluate(() => { const m = window.__m3d; m.world.enemies.length = 0; m.dive.groups.length = 0; m.dive.bank = 40; m.world.pl.hp = 0; m.world.pl.dead = true; });
@@ -171,7 +171,7 @@ try {
 	r = await rp(Pp.page);
 	A(Pp.ok && r.rec === false && r.taped === 0, 'a practice Dive (a test parameter) is not recorded', JSON.stringify(r));
 	const X = await open('alice', '?exp=7&map=viridian&dex=4');
-	await sleep(2500);
+	await waitFor(async () => (await rp(X.page)).taped >= 5, 30000);   // (it read 0 frames after a fixed 2.5 s on a loaded runner: main gate 2026-11-13)
 	r = await rp(X.page);
 	A(X.ok && r.rec === true && r.taped >= 5, `an Expedition that will be kept is recorded too (${r.taped} frames)`, JSON.stringify(r));
 	A(errors.length === 0, 'no page errors', errors.slice(0, 6).join(' | '));

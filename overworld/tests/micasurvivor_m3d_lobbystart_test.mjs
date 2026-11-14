@@ -237,9 +237,13 @@ try {
 	const joined2 = await waitFor(() => B2.evaluate(() => !!(window.__m3d.rv && window.__m3d.net.joined)), 60000);
 	A(joined2 && await A2.evaluate(() => window.__m3d.world.mates.length === 1 && !!window.__m3d.run), 'and are in one 3D Expedition run');
 	// (plan 3f) the Expedition ends: both are on the map's co-op board, with the same score
-	await B2.evaluate(() => { const m = window.__m3d; m.world.pl.hp = 0; m.world.pl.dead = true; });   // (the whole party is down: the guest, then the host)
-	await waitFor(() => A2.evaluate(() => window.__m3d.world.mates.every((q) => q.dead)), 10000);
-	await A2.evaluate(() => { const m = window.__m3d; m.world.enemies.length = 0; m.world.pl.hp = 0; m.world.pl.dead = true; });
+	// (the whole party is down: the guest, then the host; said again until the run HAS ended. Once, with a fixed 10 s for the host
+	//  to hear of the guest, the run never ended on a loaded runner: main gate 2026-11-13.)
+	for (let i = 0; i < 80 && !(await A2.evaluate(() => !!window.__m3d.run.ended)); i++) {
+		await B2.evaluate(() => { const m = window.__m3d; m.world.pl.hp = 0; m.world.pl.dead = true; });
+		if (await A2.evaluate(() => window.__m3d.world.mates.every((q) => q.dead || q.away))) await A2.evaluate(() => { const m = window.__m3d; m.world.enemies.length = 0; m.world.pl.hp = 0; m.world.pl.dead = true; });
+		await sleep(500);
+	}
 	const XASK = { mode: 'micasurvivor_expedition', d3: true, map: 'viridian', diff: 'normal', rules: 2, coop: true };
 	const xgot = await waitFor(async () => ((await call('run-leaderboard', XASK, tokens.dave)).top || []).length === 2, 40000);
 	const xb = await call('run-leaderboard', XASK, tokens.dave), xs = await call('run-leaderboard', { ...XASK, coop: undefined }, tokens.dave);
