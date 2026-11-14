@@ -16,7 +16,7 @@ import { K, CELL, makeRoom, setCell, groundAt } from '../../micasurvivor/m3d/sim
 import { generate } from '../../micasurvivor/m3d/gen.js';
 import { newWorld, addEnemy, tick, dataFrom, CK } from '../../micasurvivor/m3d/combat.js';
 import { knock } from '../../micasurvivor/m3d/actors.js';
-import { frame, keepEvents, diff, patch, sameFrame, Viewer, Tape, bundle, unbundle, arc, hermite, NK } from '../../micasurvivor/m3d/net.js';
+import { frame, keepEvents, diff, patch, sameFrame, Viewer, Tape, bundle, unbundle, arc, hermite, NK, stBits, stOf } from '../../micasurvivor/m3d/net.js';
 import { loadG } from './m3d_data.mjs';
 
 let pass = 0, fail = 0;
@@ -111,6 +111,22 @@ const yard = () => { const r = makeRoom(30, 30, 0); for (let z = 10; z <= 20; z+
 	A(zipped < 1200000 * 4, `ten minutes gzipped is ${(zipped / 1e6).toFixed(2)} MB: ${Math.ceil(zipped / 1200000)} segment(s) of the server's 1.2 MB`, zipped);
 	const one = fight(60).tape.pack();
 	console.log(`     (the first minute alone: ${(gz(one) / 1e3).toFixed(0)} KB gzipped)`);
+}
+
+// ---------------------------------------------------------------- what a watcher and a co-op guest need to draw the effects
+{
+	const w = newWorld(yard(), data, { dex: 25, moves: [], seed: 3, weather: false }), s = w.pl.s;
+	const a = addEnemy(w, RAT, s.x + 3, s.z, { dummy: true }), b = addEnemy(w, RAT, s.x - 3, s.z, { dummy: true }), c = addEnemy(w, RAT, s.x, s.z + 3, { dummy: true });
+	a.burn = 2; a.poison = 1; a.slow = 0.3; b.frozenT = 1; b.paraT = 1; c.sleepT = 2; c.confT = 1;
+	const v = new Viewer(), f = frame(w); v.push(f); v.push(frame(w));
+	const view = v.sample(0), st = (e) => stOf(view.enemies.find((q) => q.id === e.id).st << 7);
+	A(JSON.stringify(st(a)) === JSON.stringify({ burn: true, poison: true, frozen: false, para: false, sleep: false, conf: false, slow: true }) && st(b).frozen && st(b).para && !st(b).burn && st(c).sleep && st(c).conf,
+		'an enemy\'s states ride in its flags: a watcher knows it is burned, poisoned, slowed, frozen, paralysed, asleep, confused', [st(a), st(b), st(c)]);
+	const r = f.e.find((q) => q[0] === b.id);
+	A((r[7] & 32) && r.length === 9, '…above the old flags (32 still says stunned), in the same nine columns: an old tape reads as before', r);
+	const kept = keepEvents([], [{ k: 'aura', id: 'discharge', r: 3.2, x: 1.234, y: 0, z: 5.678 }, { k: 'melee', id: 'tackle', aim: 1, r: 2, arc: 1, x: 2, y: 0, z: 3 }, { k: 'chain', id: 'thunderbolt', links: [[1, 2, 3]], from: [4.004, 5, 6] }]);
+	A(kept[0].x === 1.23 && kept[0].z === 5.68 && kept[1].x === 2 && kept[2].from.join() === '4,5,6', 'a swing, an aura and a chain say where they were cast: a guest draws the host\'s round the host, not round itself', kept);
+	A(stBits({ burn: 1 }) === 128 && stBits({}) === 0, 'stBits: nothing suffered, nothing set');
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);

@@ -122,6 +122,15 @@ try {
 	A(nums, 'the host\'s hits show on the watcher as damage numbers');
 	const camsApart = await (async () => { await W.page.evaluate(() => { const m = window.__m3d; m.cam.manual = performance.now() + 60000; m.cam.yaw = 1.1; }); await sleep(300); const [a, b] = await Promise.all([H.page.evaluate(() => window.__m3d.cam.yaw), W.page.evaluate(() => window.__m3d.cam.yaw)]); return [a, b]; })();
 	A(Math.abs(camsApart[1] - 1.1) < 1e-6 && Math.abs(camsApart[0] - 1.1) > 0.05, 'the watcher turns its own camera; the host\'s does not move with it', JSON.stringify(camsApart));
+	// ---- the effects a watcher draws from the frame: an enemy's states, the weather in the air
+	{
+		await H.page.evaluate(() => { const m = window.__m3d, s = m.state; window.__sick = m.addEnemy(19, s.x + 4, s.z + 2, { dummy: true }); window.__sick.hp = window.__sick.maxHp = 1e9; m.setWeather('rain', 60); });
+		const keep = setInterval(() => { H.page.evaluate(() => { const e = window.__sick; e.burn = 3; e.burnT = 3; e.confT = 2; const w = window.__m3d.world.weather; if (w) w.t = Math.max(w.t, 4); }).catch(() => { }); }, 200);
+		const fxw = await waitFor(() => W.page.evaluate(() => { const f = window.__m3d.fx(); return !!f && f.marks.burn > 0 && f.marks.conf > 0 && f.weather.rain > 0; }), 20000);
+		clearInterval(keep);
+		A(fxw, 'a watcher draws what a host\'s enemy is suffering (burned, confused) and the host\'s rain in the air', await W.page.evaluate(() => { const f = window.__m3d.fx(); return f && { marks: f.marks, weather: f.weather }; }));
+		await H.page.evaluate(() => { const m = window.__m3d; window.__sick.dead = true; m.world.weather = null; });
+	}
 	// ---- sizes
 	const per = h1.chars / h1.sent;
 	A(h1.sent > 50 && per < 16000 && h1.chars / h1.t < 60000, `what the host sent: ${h1.sent} messages, ${Math.round(per)} characters each on average, ${(h1.chars / h1.t / 1024).toFixed(1)} KB a second with ${h1.n} enemies`, JSON.stringify([h1.sent, h1.chars, h1.t]));
