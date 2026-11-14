@@ -33,7 +33,7 @@ const toStairs = (S) => put(S, S.w.room.stairs[0], S.w.room.stairs[2]);
 const quiet = (S) => { for (const e of S.w.enemies) if (e !== S.boss) e.dead = true; };   // (clear the floor's small fry without loot)
 
 A(!!R && R.K === K && R.target(10) === E.target(10) && R.guardianOf('forest', 25) === 251 && R.nameOf('forest') === 'Mossy Woods', 'the 3D game reads the 2D game\'s own Dive rules: its numbers, its species curve, its guardians; a route\'s name in English', R && R.nameOf('forest'));
-A(near(G.Enemies.scale(130).hp, (1 + 130 / 95) * G.Types.ENEMY_HP, 1e-9) && G.Types.ENEMY_HP === 1.22 &&   /* (+ 22 % on every enemy's HP: the owner's answer to STAB, 2026-11-14) */ near(G.Enemies.scale(130).dmg, 1 + 130 / 420, 1e-9) && K.HP_K === 3.3 && K.DMG_K === CK.DMG_K, '(the base curves the 3D fight scales a foe by are the 2D game\'s)');
+A(near(G.Enemies.scale(130).hp, (1 + 130 / 95) * G.Types.ENEMY_HP, 1e-9) && G.Types.ENEMY_HP === 1.05 &&   /* (+ 5 % on every enemy's HP: for STAB, 2026-11-14) */ near(G.Enemies.scale(130).dmg, 1 + 130 / 420, 1e-9) && K.HP_K === 3.3 && K.DMG_K === CK.DMG_K, '(the base curves the 3D fight scales a foe by are the 2D game\'s)');
 
 // ---------------------------------------------------------------- the 2D game's floor, said again on its own
 const draw = (P, r) => { const v = r() * P.sum; for (const [d, c] of P.list) if (c >= v) return d; return P.list[P.list.length - 1][0]; };

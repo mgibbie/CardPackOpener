@@ -208,7 +208,7 @@ function dpsSample(S, t) {
 }
 /** A guardian's or the legendary's HP: the greater of its curve and what your damage would take `target` seconds to
  *  halve (the 2D game's rule). */
-export function bossHp(XKK, { zone, dps: d = 0, tier = 0, t = 0, legend = false, players = 1, hpK = 1 }) {   // (hpK: the + 22 % every enemy's HP has since 2026-11-14, on the curve only: the other side of the max is your own damage)
+export function bossHp(XKK, { zone, dps: d = 0, tier = 0, t = 0, legend = false, players = 1, hpK = 1 }) {   // (hpK: the + 5 % every enemy's HP has since 2026-11-14, on the curve only: the other side of the max is your own damage)
 	const zi = Math.min(3, zone) - 1;
 	const curve = (legend ? XKK.LEGEND_HP : XKK.GUARD_HP[zi]) * (1 + t / 600) * hpK * (1 + CK.COOP.hp * Math.max(0, players - 1)) * (players > 1 ? 1.4 : 1);
 	const target = legend ? XKK.LEGEND_TARGET : XKK.TARGET[zi], fromDps = d * target * XKK.SINGLE * (1 + XKK.TIER_K * tier);

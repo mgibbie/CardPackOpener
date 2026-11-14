@@ -45,10 +45,11 @@ G.Types = (() => {
     fairy:    { fire: .5, fighting: 2, poison: .5, dragon: 2, dark: 2, steel: .5 }
   };
   const STRUGGLE = 0.25, PLAYER_MIN = 0.25, STAB = 1.5;
-  // El dueño, 2026-11-14: "raise enemy HP by 22%". Con el STAB haces de media un 31 % más de daño que antes
-  // (tools/micasurvivor/type_balance.mjs): los enemigos que llegan y los jefes tienen un 22 % más de vida. Lo leen
-  // data/enemies.js (scale, bossScale) y m3d/combat.js (addEnemy, addBoss).
-  const ENEMY_HP = 1.22;
+  // El dueño, 2026-11-14: los enemigos que llegan y los jefes tienen un 5 % más de vida, por el STAB. Primero fue un 22 %
+  // (la cuenta, tools/micasurvivor/type_balance.mjs, daba +31 % de daño con el STAB); jugado, el STAB apenas sube los KO
+  // (la tabla real, más dura con las resistencias, se come casi todo) y el 22 % dejaba un 13 % menos de KO que antes:
+  // "yes cut". Lo leen data/enemies.js (scale, bossScale) y m3d/combat.js (addEnemy, addBoss).
+  const ENEMY_HP = 1.05;
   const ABILITY_IMMUNE = { levitate: 'ground', waterabsorb: 'water', voltabsorb: 'electric', flashfire: 'fire', sapsipper: 'grass' };
   /** El tipo al que una especie es inmune por su habilidad, o undefined. */
   const immuneBy = dex => (dex != null && G.Abilities && G.Abilities.of ? ABILITY_IMMUNE[G.Abilities.of(dex)] : undefined);

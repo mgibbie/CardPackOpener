@@ -298,7 +298,7 @@ try {
 			return { n: G.EnemyMgr.count, dex: e.dex, hp: e.maxHp, def: e.def.hp, rush: e.def.rush, i: G.BossRush.i, say: window.__says[window.__says.length - 1], name: G.I18n.t(e.def.name), z: G.ZMoves.blocked(), dyn: G.Dynamax.blocked() };
 		});
 		A(b1.n === 1 && b1.rush === 1 && b1.i === 1 && b1.say === 'Boss 1: ' + b1.name, 'the first boss comes alone: "Boss 1: <name>"', JSON.stringify(b1));
-		A(b1.hp === Math.round(Math.round(b1.def * 1.22 /* (G.Types.ENEMY_HP: + 22 % on every enemy's HP, the owner's answer to STAB, 2026-11-14) */) * 1.6), 'its HP: the def\'s (created at t = 0) x1.6 for Tough (modifiers apply to the Rush)', JSON.stringify(b1));
+		A(b1.hp === Math.round(Math.round(b1.def * 1.05 /* (G.Types.ENEMY_HP: + 5 % on every enemy's HP, 2026-11-14) */) * 1.6), 'its HP: the def\'s (created at t = 0) x1.6 for Tough (modifiers apply to the Rush)', JSON.stringify(b1));
 		A(!b1.z && !b1.dyn, 'the Z-move and Dynamax are allowed in the Rush (only the Tower blocks them)', JSON.stringify(b1));
 		await sleep(600);
 		await shot('rush_fight.png');
@@ -329,7 +329,7 @@ try {
 		await E(() => G.BossRush.debugRest(0.01));
 		await waitFor(() => E(() => G.EnemyMgr.bossAlive()), 4000);
 		const b2 = await E(() => { const e = G.EnemyMgr.all().find(x => x.boss); return { hp: e.maxHp, def: e.def.hp, rush: e.def.rush, dmg: e.dmg, ddef: e.def.dmg }; });
-		A(b2.rush === 2 && b2.hp === Math.round(Math.round(b2.def * 1.1 * 1.22) * 1.6) && near(b2.dmg, b2.ddef * 1.1, 1e-6), 'boss 2 is created as at second 60: HP and damage x(1 + 60/600) = x1.1 (then Tough)', JSON.stringify(b2));
+		A(b2.rush === 2 && b2.hp === Math.round(Math.round(b2.def * 1.1 * 1.05) * 1.6) && near(b2.dmg, b2.ddef * 1.1, 1e-6), 'boss 2 is created as at second 60: HP and damage x(1 + 60/600) = x1.1 (then Tough)', JSON.stringify(b2));
 		await E(() => { const e = G.EnemyMgr.all().find(x => x.boss); e.hurt(1e9); });
 		await sleep(300);
 		await E(() => G.BossRush.debugRest(0.01));
