@@ -6,12 +6,16 @@
 //   * SPRITES: camera-facing quads from the atlas, turned on the screen to point the way they fly; hard-edged, so they
 //     write depth and sort against the world like the Pokémon do. One draw call;
 //   * GLOWS: soft additive light behind them, in the type's colour. One draw call;
-//   * PARTICLES: short-lived sprites (a trail, an impact, a swing's bite) that fly, fall, grow and animate.
+//   * PARTICLES: short-lived sprites (a trail, an impact, a swing's bite) that fly, fall, grow and animate;
+//   * LIGHTS (B3): soft textures drawn as light and tinted in the type's colour: a flare where a hit lands, a slash
+//     through a swing, a shockwave ring, lightning along a chain, a muzzle flash at a beam's mouth. They come from one
+//     downloaded atlas, fx/particles.png: Kenney's Particle Pack, CC0 (tools/micasurvivor/pack_fx_atlas.mjs packs
+//     it; micasurvivor/CREDITS.md). Until it has loaded, and if it never does, everything else still draws. One draw call.
 // It only DRAWS: the rules (combat.js) are untouched, and it reads what a fight already publishes.
 import * as THREE from 'three';
 
 export const CELL_PX = 16;          // one atlas cell (the largest shape is 15 × 15)
-export const FX = { SPRITES: 1400, GLOWS: 700, PARTS: 900, IMPACTS_A_FRAME: 16 };
+export const FX = { SPRITES: 1400, GLOWS: 700, LIGHTS: 500, PARTS: 900, IMPACTS_A_FRAME: 16 };
 // a move's trail in the 2D game (a kind of particle there) -> the shape that stands for it here
 const TRAIL = { ember: 'fire', drip: 'drop', spark: 'star', wisp: 'shadow', bubbles: 'bubble', dirt: 'rock' };
 const MELEE = { impact: 'impact', jaws: 'jaws', claw: 'claw', vine: 'claw', feather: 'wind' };
@@ -51,7 +55,7 @@ uniform sampler2D map; varying vec2 vUv; varying vec4 vTint;
 void main() { vec4 c = texture2D(map, vUv); if (c.a < 0.5) discard; gl_FragColor = vec4(c.rgb * vTint.rgb, 1.0); }`;
 const FRAG_GLOW = `
 uniform sampler2D map; varying vec2 vUv; varying vec4 vTint;
-void main() { float a = texture2D(map, vUv).a * vTint.a; gl_FragColor = vec4(vTint.rgb * a, a); }`;
+void main() { float a = min(1.0, texture2D(map, vUv).a * vTint.a); gl_FragColor = vec4(mix(vTint.rgb, vec3(1.0), a * a * 0.7) * a, a * 0.72); }`;   // (premultiplied: part cover, part glow, a white-hot core. Pure additive vanished on sunlit grass.)
 const QUAD = (() => { const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute([0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0], 3)); g.setIndex([0, 1, 2, 0, 2, 3]); return g; })();
 
 /** Up to `max` camera-facing quads from one texture, one draw call. glow: additive, soft, no depth written. */
@@ -62,7 +66,7 @@ class Batch {
 		const attr = (name, size) => { const a = new THREE.InstancedBufferAttribute(new Float32Array(max * size), size); a.setUsage(THREE.DynamicDrawUsage); g.setAttribute(name, a); return a; };
 		this.aPos = attr('iPos', 3); this.aSR = attr('iSR', 4); this.aUv = attr('iUv', 4); this.aTint = attr('iTint', 4);
 		this.material = new THREE.ShaderMaterial({ vertexShader: VERT, fragmentShader: glow ? FRAG_GLOW : FRAG_SPRITE, uniforms: { map: { value: texture }, uRight: { value: new THREE.Vector3(1, 0, 0) }, uUp: { value: new THREE.Vector3(0, 1, 0) } },
-			transparent: !!glow, depthWrite: !glow, blending: glow ? THREE.AdditiveBlending : THREE.NormalBlending });
+			transparent: !!glow, depthWrite: !glow, ...(glow ? { blending: THREE.CustomBlending, blendEquation: THREE.AddEquation, blendSrc: THREE.OneFactor, blendDst: THREE.OneMinusSrcAlphaFactor } : { blending: THREE.NormalBlending }) });
 		this.mesh = new THREE.Mesh(g, this.material); this.mesh.frustumCulled = false; this.mesh.renderOrder = glow ? 6 : 3; this.geometry = g;
 	}
 	add(x, y, z, w, h, rot, uv, r, gg, b, a) {
@@ -94,9 +98,26 @@ export class Effects {
 		const tex = new THREE.CanvasTexture(this.atlas.canvas); tex.magFilter = tex.minFilter = THREE.NearestFilter; tex.generateMipmaps = false; tex.flipY = false; tex.colorSpace = THREE.NoColorSpace;
 		this.sprites = new Batch(tex, FX.SPRITES, false); this.glows = new Batch(glowTexture(doc), FX.GLOWS, true);
 		scene.add(this.sprites.mesh); scene.add(this.glows.mesh);
+		this.scene = scene; this.lights = null; this.cells = null;   // (the downloaded lights: loadLights)
 		this.parts = []; this.right = new THREE.Vector3(1, 0, 0); this.up = new THREE.Vector3(0, 1, 0); this.at = 0; this.t = 0; this.impacts = 0; this.looks = new Map();
-		this.stats = { sprites: 0, glows: 0, parts: 0, shots: 0, impacts: 0, swings: 0, beams: 0, auras: 0, chains: 0, blasts: 0, dashes: 0, byShape: {} };   // (the last frame's; `byShape`, `impacts`, `swings`: since the page opened)
+		this.stats = { sprites: 0, glows: 0, lights: 0, byLight: {}, parts: 0, shots: 0, impacts: 0, swings: 0, beams: 0, auras: 0, chains: 0, blasts: 0, dashes: 0, byShape: {} };   // (the last frame's; `byShape`, `impacts`, `swings`: since the page opened)
 	}
+	/** The downloaded lights: the atlas and its list of cells ({ cell, cols, rows, names }). */
+	loadLights(url, info) {
+		return new Promise((resolve) => new THREE.TextureLoader().load(url, (t) => {
+			t.flipY = false; t.colorSpace = THREE.NoColorSpace; t.generateMipmaps = false; t.minFilter = t.magFilter = THREE.LinearFilter;
+			this.lights = new Batch(t, FX.LIGHTS, true); this.lights.mesh.renderOrder = 7; this.scene.add(this.lights.mesh);
+			this.cells = {}; info.names.forEach((n, i) => { const c = i % info.cols, r = Math.floor(i / info.cols); this.cells[n] = [c / info.cols, r / info.rows, (c + 1) / info.cols, (r + 1) / info.rows]; });
+			resolve(true);
+		}, undefined, () => resolve(false)));
+	}
+	/** One light, now. name: a cell of the lights atlas. size: metres across. */
+	light(name, x, y, z, size, css, alpha = 0.7, rot = 0) {
+		if (!this.lights || !this.cells[name]) return;
+		COL.set(css || '#ffffff'); if (this.lights.add(x, y, z, size, size, rot, this.cells[name], COL.r, COL.g, COL.b, alpha)) this.stats.byLight[name] = (this.stats.byLight[name] || 0) + 1;
+	}
+	/** A light that lives a moment: it grows from s0 to s1 and fades. o: { light, x, y, z, life, s0, s1, css, a, rot, spin, vx, vy, vz } */
+	flash(o) { if (this.lights) this.part(o); }
 	/** How a move looks: { proj, pal, trail, melee, … } (the 2D game's table, by move id; a type's default without one). */
 	look(mid, type) {
 		const k = (mid || '') + '|' + (type || '');
@@ -105,7 +126,7 @@ export class Effects {
 		return v;
 	}
 	begin(camera, t) {
-		this.sprites.n = 0; this.glows.n = 0; this.stats.shots = 0; this.impacts = 0;
+		this.sprites.n = 0; this.glows.n = 0; if (this.lights) this.lights.n = 0; this.stats.shots = 0; this.impacts = 0;
 		const e = camera.matrixWorld.elements; this.right.set(e[0], e[1], e[2]); this.up.set(e[4], e[5], e[6]);
 		this.dt = Math.min(0.05, Math.max(0, t - this.at)); this.at = t; this.t = t;
 	}
@@ -137,14 +158,20 @@ export class Effects {
 	impact(x, y, z, type, big = false, weak = false) {
 		if (this.impacts++ >= FX.IMPACTS_A_FRAME) return;
 		const pal = this.VFX.PAL[type] ? type : 'normal', k = big ? 1.5 : weak ? 0.7 : 1, L = this.VFX.forType(pal);
-		this.part({ shape: 'impact', pal, x, y, z, life: 0.16, s0: 0.7 * k, s1: 1.45 * k, anim: 12, glow: this.VFX.PAL[pal][3], ga: weak ? 0.25 : 0.6 });
+		const P = this.VFX.PAL[pal], lit = !!this.lights;
+		this.part({ shape: 'impact', pal, x, y, z, life: 0.16, s0: 0.7 * k, s1: (lit ? 1.05 : 1.45) * k, anim: 12, glow: P[3], ga: weak ? 0.25 : 0.6 });
+		if (!weak) this.flash({ light: big ? 'burst' : 'star', x, y, z, life: big ? 0.26 : 0.18, s0: 1.3 * k, s1: 3 * k, css: P[3], a: 1.3, rot: Math.random() * 6.28 });
+		if (big) this.flash({ light: 'ring', x, y, z, life: 0.3, s0: 0.6, s1: 3.4, css: P[2], a: 1.1 });
+		else if (weak) this.flash({ light: 'puff', x, y, z, life: 0.25, s0: 0.6, s1: 1.2, css: '#8b93a0', a: 0.35 });
 		for (let i = 0, n = weak ? 1 : big ? 5 : 3; i < n; i++) { const a = Math.random() * 6.2832, sp = 2.2 + Math.random() * 2.4; this.part({ shape: L.proj, pal, x, y, z, vx: Math.cos(a) * sp, vy: 1.5 + Math.random() * 2.5, vz: Math.sin(a) * sp, g: 9, life: 0.28 + Math.random() * 0.2, s0: 0.42 * k, s1: 0.1, rot: a, spin: 8 }); }
 		this.stats.impacts++;
 	}
 	/** A swing: the move's bite, claw or blow, in front of whoever swings. aim: the ground-plane angle. */
 	swing(x, y, z, aim, reach, mid, type) {
 		const L = this.look(mid, type), shape = MELEE[L.melee] || 'impact', d = Math.max(0.6, reach * 0.62), px = x + Math.cos(aim) * d, pz = z + Math.sin(aim) * d;
-		this.part({ shape, pal: L.pal, x: px, y: y + 0.85, z: pz, life: 0.2, s0: Math.max(1.1, reach * 0.7), s1: Math.max(1.5, reach * 1.05), anim: 10, glow: this.VFX.PAL[L.pal][3], ga: 0.45 });
+		this.part({ shape, pal: L.pal, x: px, y: y + 0.85, z: pz, life: 0.2, s0: this.lights ? 0.8 : Math.max(1.1, reach * 0.7), s1: this.lights ? 1.2 : Math.max(1.5, reach * 1.05), anim: 10, glow: this.VFX.PAL[L.pal][3], ga: 0.45 });
+		const sl = L.melee === 'claw' ? 'scratch' : L.melee === 'jaws' ? 'crescent' : 'slash', turn = this.screenAngle(Math.cos(aim), 0, Math.sin(aim));
+		this.flash({ light: sl, x: px, y: y + 0.85, z: pz, life: 0.2, s0: Math.max(1.6, reach * 1.2), s1: Math.max(2.3, reach * 1.9), css: this.VFX.PAL[L.pal][3], a: 1.6, rot: turn - 1.5708 });
 		this.stats.swings++;
 	}
 	/** A beam: the move's shape streaming along it from the mouth, a flare where it starts, light all the way. */
@@ -152,8 +179,14 @@ export class Effects {
 		const L = this.look(mid, type), A = this.atlas, b = L.beam === 'lightning' ? 'bolt' : L.beam, shape = A.has(b) ? b : A.has(L.proj) ? L.proj : 'ball', rot = A.dir(shape) ? this.screenAngle(dir[0], dir[1], dir[2]) : 0;
 		const size = Math.max(0.7, w * 1.5), step = Math.max(0.55, size * 0.6), sp = 14, css = this.VFX.PAL[L.pal][3];
 		for (let d = 0.3; d < len; d += step) { const j = (Math.random() - 0.5) * w * 0.35; this.part({ shape, pal: L.pal, x: from[0] + dir[0] * d, y: from[1] + dir[1] * d + j, z: from[2] + dir[2] * d, vx: dir[0] * sp, vy: dir[1] * sp, vz: dir[2] * sp, life: 0.2 + Math.random() * 0.08, s0: size, s1: size * 0.45, rot, spin: A.spins(shape) ? 9 : 0, anim: 10, glow: css, ga: 0.5 }); }
-		this.part({ shape: 'impact', pal: L.pal, x: from[0] + dir[0] * 0.4, y: from[1] + dir[1] * 0.4, z: from[2] + dir[2] * 0.4, life: 0.18, s0: size * 1.2, s1: size * 2, anim: 12, glow: css, ga: 0.8 });
-		this.part({ shape: 'impact', pal: L.pal, x: from[0] + dir[0] * len, y: from[1] + dir[1] * len, z: from[2] + dir[2] * len, life: 0.2, s0: size, s1: size * 1.8, anim: 10, glow: css, ga: 0.6 });
+		if (this.lights) {
+			this.flash({ light: 'muzzle', x: from[0] + dir[0] * 0.7, y: from[1] + dir[1] * 0.7, z: from[2] + dir[2] * 0.7, life: 0.2, s0: size * 2.2, s1: size * 3.2, css, a: 1.5, rot: rot - 1.5708 });
+			this.flash({ light: 'flare', x: from[0] + dir[0] * len, y: from[1] + dir[1] * len, z: from[2] + dir[2] * len, life: 0.24, s0: size * 2, s1: size * 4.5, css, a: 1.5 });
+			for (let d = 1; d < len; d += 2.2) this.flash({ light: 'streak', x: from[0] + dir[0] * d, y: from[1] + dir[1] * d, z: from[2] + dir[2] * d, life: 0.2, s0: Math.max(2.4, size * 2.6), s1: Math.max(2.8, size * 3), css, a: 1.1, rot: rot - 1.5708 });
+		} else {
+			this.part({ shape: 'impact', pal: L.pal, x: from[0] + dir[0] * 0.4, y: from[1] + dir[1] * 0.4, z: from[2] + dir[2] * 0.4, life: 0.18, s0: size * 1.2, s1: size * 2, anim: 12, glow: css, ga: 0.8 });
+			this.part({ shape: 'impact', pal: L.pal, x: from[0] + dir[0] * len, y: from[1] + dir[1] * len, z: from[2] + dir[2] * len, life: 0.2, s0: size, s1: size * 1.8, anim: 10, glow: css, ga: 0.6 });
+		}
 		this.stats.beams++;
 	}
 	/** An aura: the move's pieces thrown out from the middle to its edge (drawn in, for a drain; rising, for what comes out of the ground). */
@@ -166,6 +199,7 @@ export class Effects {
 			else this.part({ shape, pal: L.pal, x: x + c * 0.3, y: y + 0.5 + Math.random() * 0.5, z: z + s * 0.3, vx: c * sp, vz: s * sp, life, s0: size, s1: size * 0.35, rot, spin: A.spins(shape) ? 8 : 0, anim: 8 });
 		}
 		this.part({ shape: 'ring', pal: L.pal, x, y: y + 0.8, z, life: 0.22, s0: 0.8, s1: Math.min(6, r * 1.4), glow: css, ga: 0.55 });
+		this.flash({ light: L.inward ? 'twirl' : 'ringsoft', x, y: y + 0.6, z, life: 0.32, s0: L.inward ? r * 2.4 : 1, s1: L.inward ? 1 : r * 2.6, css, a: 1, spin: L.inward ? 6 : 0 });
 		this.stats.auras++;
 	}
 	/** A chain: a jagged run of sparks from link to link, a burst on each. from: [x, y, z]. links: [[x, y, z], …] */
@@ -175,7 +209,9 @@ export class Effects {
 		for (const b of links) {
 			const d = [b[0] - a[0], b[1] - a[1], b[2] - a[2]], l = Math.hypot(d[0], d[1], d[2]) || 1, rot = this.screenAngle(d[0], d[1], d[2]);
 			for (let q = 0.35; q < l; q += 0.7) { const k = q / l, j = () => (Math.random() - 0.5) * 0.45; this.part({ shape, pal: L.pal, x: a[0] + d[0] * k + j(), y: a[1] + d[1] * k + j(), z: a[2] + d[2] * k + j(), life: 0.14 + Math.random() * 0.1, s0: 0.95, s1: 0.5, rot: rot + (Math.random() - 0.5) * 0.9, anim: 14, glow: css, ga: 0.6 }); }
-			this.part({ shape: 'impact', pal: L.pal, x: b[0], y: b[1], z: b[2], life: 0.18, s0: 0.8, s1: 1.5, anim: 12, glow: css, ga: 0.8 });
+			this.part({ shape: 'impact', pal: L.pal, x: b[0], y: b[1], z: b[2], life: 0.18, s0: 0.8, s1: this.lights ? 1 : 1.5, anim: 12, glow: css, ga: 0.8 });
+			this.flash({ light: 'bolt', x: (a[0] + b[0]) / 2, y: (a[1] + b[1]) / 2, z: (a[2] + b[2]) / 2, life: 0.2, s0: l * 1.15, s1: l * 1.25, css, a: 1.6, rot: rot - 1.5708 });
+			this.flash({ light: 'star', x: b[0], y: b[1], z: b[2], life: 0.2, s0: 1, s1: 2.2, css, a: 1.3 });
 			a = b;
 		}
 		this.stats.chains++;
@@ -183,7 +219,11 @@ export class Effects {
 	/** Something goes off on the ground (a mine, a meteor, a bomb): a burst, a ring of pieces flung out and up, a flash of light. */
 	blast(x, y, z, r, mid, type) {
 		const L = this.look(mid, type), A = this.atlas, shape = A.has(L.proj) ? L.proj : 'ball', css = this.VFX.PAL[L.pal][3], n = Math.max(6, Math.min(18, Math.round(r * 4)));
-		this.part({ shape: 'impact', pal: L.pal, x, y: y + 0.6, z, life: 0.24, s0: Math.max(1, r * 0.8), s1: Math.max(1.8, r * 1.9), anim: 9, glow: css, ga: 0.9 });
+		if (this.lights) {
+			this.flash({ light: 'burst', x, y: y + 0.6, z, life: 0.26, s0: Math.max(1.4, r), s1: Math.max(3, r * 2.6), css, a: 1.6, rot: Math.random() * 6.28 });
+			this.flash({ light: 'ring', x, y: y + 0.4, z, life: 0.34, s0: 0.8, s1: Math.max(3, r * 2.4), css: this.VFX.PAL[L.pal][2], a: 1.2 });
+			for (let i = 0; i < 3; i++) this.flash({ light: i ? 'puff' : 'smoke', x: x + (Math.random() - 0.5) * r * 0.8, y: y + 0.5, z: z + (Math.random() - 0.5) * r * 0.8, vy: 1.4 + Math.random(), life: 0.6 + Math.random() * 0.3, s0: Math.max(1, r * 0.8), s1: Math.max(2, r * 1.6), css: '#4a4f58', a: 0.55, rot: Math.random() * 6.28, spin: 0.6 });
+		} else this.part({ shape: 'impact', pal: L.pal, x, y: y + 0.6, z, life: 0.24, s0: Math.max(1, r * 0.8), s1: Math.max(1.8, r * 1.9), anim: 9, glow: css, ga: 0.9 });
 		for (let i = 0; i < n; i++) { const a = (i / n) * 6.2832 + Math.random() * 0.4, sp = r * (2 + Math.random() * 1.5); this.part({ shape, pal: L.pal, x, y: y + 0.3, z, vx: Math.cos(a) * sp, vy: 3 + Math.random() * 4, vz: Math.sin(a) * sp, g: 12, life: 0.35 + Math.random() * 0.25, s0: 0.6, s1: 0.15, rot: a, spin: 7 }); }
 		this.stats.blasts++;
 	}
@@ -202,10 +242,12 @@ export class Effects {
 			if (p.g) p.vy -= p.g * dt;
 			if (p.vx) p.x += p.vx * dt; if (p.vy) p.y += p.vy * dt; if (p.vz) p.z += p.vz * dt;
 			const k = p.t / p.life, s = p.s0 + (p.s1 - p.s0) * k;
+			if (p.light) { this.light(p.light, p.x, p.y, p.z, s, p.css, (p.a || 0.7) * (1 - k * k), (p.rot || 0) + (p.spin || 0) * p.t); continue; }
 			this.sprite(p.shape, p.pal, p.anim ? Math.floor(p.t * p.anim) : 0, p.x, p.y, p.z, s, (p.rot || 0) + (p.spin || 0) * p.t);
 			if (p.glow) this.glow(p.x, p.y, p.z, s * 2.2, p.glow, (p.ga || 0.5) * (1 - k));
 		}
 		this.stats.sprites = this.sprites.n; this.stats.glows = this.glows.n; this.stats.parts = P.length;
-		this.sprites.end(this.right, this.up); this.glows.end(this.right, this.up);
+		this.stats.lights = this.lights ? this.lights.n : 0;
+		this.sprites.end(this.right, this.up); this.glows.end(this.right, this.up); if (this.lights) this.lights.end(this.right, this.up);
 	}
 }
