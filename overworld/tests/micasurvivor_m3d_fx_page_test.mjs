@@ -129,6 +129,25 @@ try {
 		await shot('fx-ground.png');
 	}
 
+	// ---- 2f. what an enemy is suffering is drawn on it; the weather is in the air (B6)
+	{
+		const mark = () => M(() => { const m = window.__m3d, s = m.state, e = m.world.enemies.find((q) => !q.dead); if (!e) return null; e.a.x = s.x + 3; e.a.z = s.z; e.a.y = s.y; e.hp = e.maxHp = 1e9; e.burn = 3; e.burnT = 3; e.poison = 3; e.poisonT = 4; e.slow = 0.4; e.slowT = 2; e.paraT = 3; e.confT = 3; return m.fx().marks; });
+		await waitFor(async () => { const q = await mark(); return !!q && ['burn', 'poison', 'para', 'conf', 'slow'].every((k) => q[k] > 0); }, 20000);
+		let mk = await mark();
+		A(!!mk && mk.burn > 0 && mk.poison > 0 && mk.para > 0 && mk.conf > 0 && mk.slow > 0, '2f. a burned, poisoned, paralysed, confused and slowed enemy wears each of those', mk);
+		await shot('fx-status.png');
+		await M(() => { const m = window.__m3d, e = m.world.enemies.find((q) => !q.dead); e.paraT = 0; e.confT = 0; e.sleepT = 4; });
+		await waitFor(async () => (await fx()).marks.sleep > 0, 8000);
+		await M(() => { const m = window.__m3d, e = m.world.enemies.find((q) => !q.dead); e.sleepT = 0; e.frozenT = 2; });
+		const frozen = await waitFor(async () => (await fx()).marks.frozen > 0, 8000);
+		A(frozen, '2f. …and one asleep, then frozen, wears that');
+		const seen = {};
+		for (const kind of ['rain', 'snow', 'sand', 'fog', 'sun']) { await M((k) => window.__m3d.setWeather(k, 30), kind); await M(() => { const w = window.__m3d.world.weather; if (w) w.t = 5; }); seen[kind] = await waitFor(async () => (await fx()).weather[kind] > 0, 12000); if (kind === 'rain' && SHOTS) { await sleep(700); await shot('fx-rain.png'); } }
+		A(Object.values(seen).every(Boolean), '2f. rain, snow, sand, fog and sun are each in the air round you, not only a tint on the screen', seen);
+		v = await fx();
+		A(v.parts <= v.max.PARTS && v.lights <= v.max.LIGHTS, '2f. …inside the budget', { parts: v.parts, lights: v.lights });
+	}
+
 	// ---- 2d. a KO is a burst, not a vanish (B5)
 	{
 		const k0 = (await fx()).kos;

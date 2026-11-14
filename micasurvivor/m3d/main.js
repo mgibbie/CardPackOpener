@@ -9,7 +9,7 @@ import * as THREE from 'three';
 import { K, CELL, step, newState, noInput, groundAt, stateName, facingRow, tuneFor, TYPE_TRAITS } from './sim.js';
 import { buildRoom, SPOTS } from './room.js';
 import { makeRenderer, buildTerrain, buildWater, buildRails, buildScatter, buildExit, drawMap, SpriteBatch, Shadows, Shots, Flashes, loadSheet, frameAt, spriteQuad, footLift, placeCamera, PX, setFog, FOG0 } from './render.js';
-import { newWorld, addEnemy, addBoss, tick, dataFrom, choose, drop, CK, canFire } from './combat.js';
+import { newWorld, addEnemy, addBoss, tick, dataFrom, choose, drop, CK, canFire, wxLevel, setWeather, applyState } from './combat.js';
 import { Effects, FX as FXK } from './fx.js';
 import { frame as netFrame, keepEvents, diff as netDiff, bundle, unbundle, Viewer, Tape, ballColour, typeName, NK, PICK } from './net.js';
 import { Props, PROP_MON, BOBS } from './props.js';
@@ -438,6 +438,10 @@ function draw(t) {
 			else { const big = /unown|comet|challenge|cursedaltar|greed|meowth|slots/.test(o.kind); shots.add(o.x, o.y + (big ? 1.1 : 0.55) + Math.sin(t * 2 + o.i) * 0.08, o.z, (big ? 0.42 : EK.SMALL.includes(o.kind) ? 0.22 : 0.3) * (1 + o.ch * 0.8), EK.COL[o.kind]); }
 		}
 		if (world) for (const e of world.enemies) if (!e.dead && GG.Types.noAnswer(world.pl.moves, e.types)) shots.add(e.a.x, e.a.y + Math.max(1.2, e.cr * 2) + 0.3, e.a.z, 0.13, '#9aa6b5');   // none of your moves can hurt it (your hits are a Struggle): a grey bead over its head
+		if (world && fx) {   // what each enemy is suffering, drawn on it; and the weather in the air round you (fx.js)
+			for (const e of world.enemies) { if (e.dead || !(e.burn > 0 || e.poison > 0 || e.frozenT > 0 || e.paraT > 0 || e.sleepT > 0 || e.confT > 0 || e.slow > 0)) continue; fx.status({ x: e.a.x, y: e.a.y, z: e.a.z, r: Math.max(0.35, e.cr || 0.4), h: Math.max(1.1, (e.cr || 0.4) * 2), id: e.id }, { burn: e.burn > 0, poison: e.poison > 0, frozen: e.frozenT > 0, para: e.paraT > 0, sleep: e.sleepT > 0, conf: e.confT > 0, slow: e.slow > 0 }); }
+			if (world.weather && !paused) fx.weatherAir(world.weather.kind, wxLevel(world), state.x, state.y, state.z);
+		}
 		if (world) for (const e of world.enemies) if (e.shield > 0) shots.add(e.a.x, e.a.y + Math.max(1.2, e.cr * 2) + 0.35, e.a.z, 0.16, '#7fc8ff');   // a shield: a blue bead over its head
 		if (world) for (const p of world.eshots) { if (fx) fx.shot(p.x, p.y, p.z, Math.max(0.2, p.r), null, p.mtype || 'normal', [p.vx, p.vy, p.vz], p.id, '#ff5f8f'); else shots.add(p.x, p.y, p.z, Math.max(0.2, p.r), '#ff5f8f'); }   // an enemy's shot: its type's shape, always in the same angry pink light
 		// Expedition's effects: a bomb on its arc, a whirl on the floor, a wave's ring spreading
@@ -1285,6 +1289,7 @@ const G_MUSIC = GG.BIOME_MUSIC || null, XK_MAPS = ['viridian', 'mtmoon', 'cerule
 
 // what a test (and a curious owner in the console) can reach
 window.__m3d = {
+	setWeather: (kind, dur = 30) => (world ? setWeather(world, kind, dur) : false), applyState: (e, kind) => (world ? applyState(world, e, kind) : 0),   // (for the tests: a weather, a state on an enemy)
 	matchup, walled: () => (world ? world.enemies.filter((e) => !e.dead && GG.Types.noAnswer(world.pl.moves, e.types)).length : 0),   // (how many enemies wear the grey bead)
 	fx: () => (fx ? { ...fx.stats, byShape: { ...fx.stats.byShape }, byLight: { ...fx.stats.byLight }, lit: fxLights, atlas: [fx.atlas.cols, fx.atlas.rows], max: { ...FXK } } : null), fxLayer: fx,
 	link: LINK, dive: drun, guestDive: gdrun, diveRules: DR, special, light: () => ({ dive: DLIGHT, near: scene.fog.near, far: scene.fog.far, color: scene.fog.color.getHex(), vignette: !!document.getElementById('dive-dark') }), diveSave: { week: DWEEK, practice: DPRACTICE, ok: DSAVE_OK, start: DSTART, member: DMEMBER, form: DFORM, keep: DKEEP, meta: !!DMETA }, propKeys: () => (props ? [...props.atlas.cells.keys()] : []), roomBuilds: () => roomBuilds,
