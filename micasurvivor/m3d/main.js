@@ -347,6 +347,8 @@ const shots = world || WATCH ? new Shots(600) : null, flashes = world || WATCH ?
 if (shots) scene.add(shots.mesh);
 // the attacks themselves: the 2D game's move art, with light, trails and impacts (fx.js)
 const fx = shots && GG.VFX ? new Effects(scene, GG.VFX, (id) => GG.Moves.BY_ID[id] || (GG.ExpMoves && GG.ExpMoves.MOVES[id]) || null) : null;
+let fxAnims = false;   // (the games' own battle animations, assets/fx/anims1.png: fx.js)
+if (fx) fetch('../assets/fx/anims1.json').then((r) => (r.ok ? r.json() : null)).then((info) => (info && info.sprites ? fx.loadAnims('../assets/fx/anims1.png', info) : false)).then((ok) => { fxAnims = !!ok; }).catch(() => { });
 let fxLights = false;   // (the downloaded lights, fx/particles.png: a flare on a hit, a slash through a swing … The page does not wait for them.)
 if (fx) fetch('fx/particles.json').then((r) => (r.ok ? r.json() : null)).then((info) => (info ? fx.loadLights('fx/particles.png', info) : false)).then((ok) => { fxLights = !!ok; }).catch(() => { });
 // what lies on the ground, as pictures (props.js): XP, berries, items, what a zone holds
@@ -1306,7 +1308,7 @@ window.__m3d = {
 	hitFeel: () => ({ on: hitFeel.on, stops: hitFeel.stops, kicks: hitFeel.kicks, stopped: performance.now() < hitFeel.until, K: HF }), setHitFeel,
 	setWeather: (kind, dur = 30) => (world ? setWeather(world, kind, dur) : false), applyState: (e, kind) => (world ? applyState(world, e, kind) : 0),   // (for the tests: a weather, a state on an enemy)
 	matchup, walled: () => (world ? world.enemies.filter((e) => !e.dead && GG.Types.noAnswer(world.pl.moves, e.types)).length : 0),   // (how many enemies wear the grey bead)
-	fx: () => (fx ? { ...fx.stats, byShape: { ...fx.stats.byShape }, byLight: { ...fx.stats.byLight }, lit: fxLights, atlas: [fx.atlas.cols, fx.atlas.rows], max: { ...FXK } } : null), fxLayer: fx,
+	fx: () => (fx ? { ...fx.stats, byShape: { ...fx.stats.byShape }, byLight: { ...fx.stats.byLight }, lit: fxLights, bySheet: { ...fx.stats.bySheet }, animated: fxAnims, atlas: [fx.atlas.cols, fx.atlas.rows], max: { ...FXK } } : null), fxLayer: fx,
 	link: LINK, dive: drun, guestDive: gdrun, diveRules: DR, special, light: () => ({ dive: DLIGHT, near: scene.fog.near, far: scene.fog.far, color: scene.fog.color.getHex(), vignette: !!document.getElementById('dive-dark') }), diveSave: { week: DWEEK, practice: DPRACTICE, ok: DSAVE_OK, start: DSTART, member: DMEMBER, form: DFORM, keep: DKEEP, meta: !!DMETA }, propKeys: () => (props ? [...props.atlas.cells.keys()] : []), roomBuilds: () => roomBuilds,
 	meta: LAB_META, upgrades: UPGRADES, leadShiny: LEAD_SHINY, skey,
 	keepShiny,

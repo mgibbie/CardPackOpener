@@ -67,7 +67,7 @@ try {
 	A(v.shots > 0 && v.glows >= v.shots && v.parts > 0, '1. a shot has its light, and leaves a trail', { shots: v.shots, glows: v.glows, parts: v.parts });
 	await waitFor(async () => (await fx()).impacts > 0, 30000);
 	v = await fx();
-	A(v.impacts > 0 && v.byShape.impact > 0, '1. a hit that lands shows an impact', { impacts: v.impacts, impact: v.byShape.impact });
+	A(v.impacts > 0 && (v.byShape.impact > 0 || v.bySheet.hit > 0), '1. a hit that lands shows an impact (the burst from the games; the 2D star without the atlas)', { impacts: v.impacts, impact: v.byShape.impact, hit: v.bySheet.hit });
 	await shot('fx-ember.png');
 
 	// ---- 2. other moves, other shapes
@@ -155,6 +155,21 @@ try {
 		await waitFor(async () => (await fx()).kos > k0, 8000);
 		v = await fx();
 		A(dex > 0 && v.kos > k0 && v.byLight.glint > 0 && (v.byLight.puff > 0 || v.byLight.smoke > 0), '2d. an enemy that goes down leaves a puff and a star of light where it stood', { kos: v.kos, k0, glint: v.byLight.glint });
+	}
+	// ---- 2h. the games' own battle animations (the owner, 2026-11-14): an atlas from the Emerald decomp, in the assets project
+	{
+		const manifest = fs.readFileSync(path.join(ROOT, 'tools/cloud/micasurvivor_manifest.txt'), 'utf8');
+		A(/^fx\/anims1\.png$/m.test(manifest) && /^fx\/anims1\.json$/m.test(manifest) && !fs.existsSync(path.join(ROOT, 'micasurvivor/m3d/fx/anims1.png')), '2h. the atlas is in the assets manifest (deployed with the game\'s other art), not in the repository');
+		A(await boot('dex=1&moves=tackle:2,razor-leaf:2,rock-slide'), '2h. Bulbasaur: Tackle, Razor Leaf, Rock Slide');
+		const ready = await waitFor(async () => (await fx()).animated, 20000);
+		A(ready, '2h. the page loaded the atlas');
+		await waitFor(async () => { const q = await M(() => { const m = window.__m3d; for (const e of m.world.enemies) if (!e.dead) { e.a.x = m.state.x + 1.2; e.a.z = m.state.z; e.a.y = m.state.y; e.hp = e.maxHp = 1e9; break; } return m.fx(); }); return q.bySheet.hit > 0 && q.bySheet.punch_impact > 0 && q.bySheet.explosion_2 > 0; }, 40000);
+		v = await fx();
+		A(v.bySheet.hit > 0, '2h. a hit is the games\' own burst', v.bySheet);
+		A(v.bySheet.punch_impact > 0, '2h. Tackle\'s blow is the games\' own', v.bySheet);
+		A(v.bySheet.explosion_2 > 0, '2h. a meteor goes off as the games\' explosion', v.bySheet);
+		A(v.anims <= v.max.ANIMS, '2h. …inside the budget', v.anims);
+		await shot('fx-anims.png');
 	}
 	A(errors.length === 0, '3. the page raised no error', errors.slice(0, 4));
 } finally {
