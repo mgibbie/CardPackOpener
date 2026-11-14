@@ -931,6 +931,7 @@ G.I18n.add({
   'Torre: piso {x}': 'Tower: floor {x}', 'Jefes (piso: tiempo, vida perdida) {x}': 'Bosses (floor: time, health lost) {x}',
   '¡TORRE COMPLETA!': 'TOWER COMPLETE!', 'Pisos superados: {x}': 'Floors cleared: {x}',
   'Elige cómo descansar': 'Choose how to rest', 'Descanso': 'Rest', 'Entrenamiento': 'Training', 'Escudo': 'Shield', 'Inmune': 'Immune',
+  'Fuerte contra': 'Strong vs', 'Débil contra': 'Weak vs', 'Sin efecto en': 'No effect on', 'tipos aquí': 'kinds here',
   'Cura': 'Heal', 'Defensa': 'Defense', 'Riesgo': 'Risk', 'Seguir': 'Continue', 'Sin riesgos': 'No risks', '+PS': '+HP',
   'Recuperas el {x}% de tu vida.': 'You recover {x}% of your health.', 'Obtienes una mejora extra ahora mismo.': 'You get an extra upgrade right now.',
   'Un escudo del 35% de tu vida absorbe el daño del siguiente piso.': 'A shield worth 35% of your health absorbs damage on the next floor.',

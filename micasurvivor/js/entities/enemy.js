@@ -826,6 +826,13 @@
 
       // MicaSurvivor (M5): indicadores de congelado / dormido / confundido / paralizado.
       G.Status.draw(ctx, this, lift);
+      // (the games' own type chart, 2026-11-14: none of your moves can hurt it: your hits are a Struggle. A grey bead over it)
+      const me = G.Game && G.Game.player;
+      if (me && me.moves && G.Types.noAnswer(me.moves, this.types, this.dex)) {
+        const by = Math.round(this.y - lift - this.bodyH - 8);
+        ctx.fillStyle = '#2a2f38'; ctx.beginPath(); ctx.arc(Math.round(this.x), by, 4, 0, 6.2832); ctx.fill();
+        ctx.fillStyle = '#b9c2cf'; ctx.beginPath(); ctx.arc(Math.round(this.x), by, 3, 0, 6.2832); ctx.fill();
+      }
 
       // Apoyos: icono encima, para saber a quién ir primero.
       const SUP = { healer: 'heart', shielder: 'shield', summoner: 'friends' };
