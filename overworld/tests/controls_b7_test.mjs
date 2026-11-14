@@ -317,6 +317,9 @@ async function pearsToShop(t, p) {
 	A((await p.view()).phase === 'clear', 'Pears keyboard: (level 1 cleared)');
 	await t.key('KeyV', 600);
 	A(await waitFor(async () => (await p.view()).phase === 'shop', 3000), 'Pears keyboard: V continues to the shop');
+	// (enough berries for a charm (6): level 1's take is random, and with less than 6 nothing on offer was affordable: 3 of main's 14 gate
+	//  runs to 2026-11-14. This part is about the ring, not the earnings)
+	await t.page.evaluate(() => { const S = window.__pears.engine.run(); if (S && S.berries < 6) S.berries = 6; });
 	await sleep(700);
 	// buy a charm with the ring, pick it up from its slot, sell it with C
 	const v = await p.view();

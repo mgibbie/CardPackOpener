@@ -67,12 +67,14 @@ try {
 	await hush();
 	const P = () => M(() => { const p = window.__m3d.props(); return p ? { n: p.n, beads: p.beads, keys: p.keys } : null; });
 	A(ok && !!(await P()), '2. the page has its pictures of the ground');
-	// one of each pickup, a few metres off (out of reach, so they stay)
-	await M(() => { const m = window.__m3d, s = m.state; m.world.pl.magnet = 0.01; m.world.pickups.length = 0; ['xp', 'xpBig', 'heal', 'magnet', 'bomb'].forEach((k, i) => m.drop(k, s.x + 3 + i * 0.8, s.z + 3, 5)); m.drop('item', s.x + 3, s.z + 4.5, 'leftovers'); });
-	await sleep(400);
 	// (the zone's things are laid out on the run's first ticks: wait for them. A fixed 400 ms read none on a loaded runner,
 	//  "0 things of 0 kinds": four of main's eight gate runs on 2026-11-13.)
 	await waitFor(() => M(() => window.__m3d.ecoView().length >= 3 && window.__m3d.props().keys.some((k) => k.startsWith('eco:'))), 20000);
+	// (the zone first, THEN the pickups: dropped before a wait of up to 20 s, they were gone by the read on a loaded runner: 8 of
+	//  main's 14 gate runs to 2026-11-14. The first wait came from a fix of mine of 2026-11-13.)
+	// one of each pickup, a few metres off (out of reach, so they stay)
+	await M(() => { const m = window.__m3d, s = m.state; m.world.pl.magnet = 0.01; m.world.pickups.length = 0; ['xp', 'xpBig', 'heal', 'magnet', 'bomb'].forEach((k, i) => m.drop(k, s.x + 3 + i * 0.8, s.z + 3, 5)); m.drop('item', s.x + 3, s.z + 4.5, 'leftovers'); });
+	await sleep(400);
 	const eco = await M(() => window.__m3d.ecoView().map((o) => o.kind));
 	let v = await P();
 	const picks = ['xp', 'xpBig', 'heal', 'magnet', 'bomb', 'item:leftovers'];

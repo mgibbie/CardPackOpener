@@ -44,7 +44,8 @@ try {
     await page.tap('.rb-ante-more');
     check(await page.evaluate(() => document.querySelector('.rb-ante-more').getAttribute('aria-expanded') === 'true' && getComputedStyle(document.querySelector('.rb-antes')).flexWrap === 'wrap'), 'ante list expands and wraps');
     await page.tap('.rb-ante[data-ante="8"]');
-    check(await page.evaluate(index => window.__micatro.replay.index === index && document.querySelector('.rb-ante-more').getAttribute('aria-expanded') === 'false', ante8.index), 'tapping Ante 8 seeks and collapses the list');
+    // (waited for, not read at once: the seek and the collapse can land a frame or two after the tap on a loaded runner, 4 of main's 14 gate runs to 2026-11-14)
+    check(await page.waitForFunction(index => window.__micatro.replay.index === index && document.querySelector('.rb-ante-more').getAttribute('aria-expanded') === 'false', { timeout: 5000 }, ante8.index).then(() => true, () => false), 'tapping Ante 8 seeks and collapses the list');
     await page.tap('.rb-ante-more');
     check(await page.evaluate(() => { const b = document.querySelector('.replay-bar').getBoundingClientRect(); return b.top >= 0 && b.bottom <= innerHeight && document.documentElement.scrollWidth <= innerWidth; }), 'expanded controls fit the phone screen without horizontal page overflow');
     await page.tap('.rb-ante-more');
