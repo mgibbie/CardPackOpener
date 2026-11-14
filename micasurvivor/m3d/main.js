@@ -440,16 +440,16 @@ function draw(t) {
 		// Expedition's effects: a bomb on its arc, a whirl on the floor, a wave's ring spreading
 		for (const f of world ? world.effects : []) {
 			const c = TYPE_COLOR[f.m.type];
-			if (f.k === 'lob') { const k = Math.min(1, f.t / f.dur); shots.add(f.x0 + (f.x - f.x0) * k, f.y0 + (f.y - f.y0) * k + Math.sin(k * Math.PI) * CK.EXP.lobHigh * 0.0625, f.z0 + (f.z - f.z0) * k, 0.3, c); if (!f.seen) { f.seen = true; flashes.arc(f.x, f.y, f.z, f.r, 0, 6.2832, c, f.dur, 0.9); } }
+			if (f.k === 'lob') { const k = Math.min(1, f.t / f.dur), lx = f.x0 + (f.x - f.x0) * k, ly = f.y0 + (f.y - f.y0) * k + Math.sin(k * Math.PI) * CK.EXP.lobHigh * 0.0625, lz = f.z0 + (f.z - f.z0) * k; if (fx) fx.shot(lx, ly, lz, 0.3, f.m.id, f.m.type, [f.x - f.x0, Math.cos(k * Math.PI) * 6, f.z - f.z0], f.x0 * 5 + f.z0); else shots.add(lx, ly, lz, 0.3, c); if (!f.seen) { f.seen = true; flashes.arc(f.x, f.y, f.z, f.r, 0, 6.2832, c, f.dur, 0.9); } }
 			else if (f.k === 'smite' && !f.seen) { f.seen = true; flashes.arc(f.x, f.y, f.z, f.r, 0, 6.2832, c, f.dur, 0.85); }
 			else if (f.k === 'vortex' && !f.seen) { f.seen = true; flashes.arc(f.x, f.y, f.z, f.r, 0, 6.2832, c, f.dur, 0.25); }
 			else if (f.k === 'wave' && (simTicks & 3) === 0) flashes.arc(f.x, f.y, f.z, f.r, 0, 6.2832, c, 0.12, 0.93);
 		}
 		for (const f of world ? world.fields : []) {
 			const c = TYPE_COLOR[f.m.type];
-			if (f.kind === 'mine') shots.add(f.x, f.y + 0.18, f.z, 0.2, c);
-			else if (f.kind === 'turret') shots.add(f.x, f.y + 1 + Math.sin(t * 4 + f.id) * 0.12, f.z, 0.34, c);
-			else if (f.kind === 'meteor') { const k = Math.max(0, Math.min(1, f.t / f.fall)); if (f.t > 0) shots.add(f.x + (1 - k) * 2.5, f.y + 0.3 + (1 - k) * 10, f.z, 0.45, c); if (!f.seen) { f.seen = true; flashes.arc(f.x, f.y, f.z, f.r, 0, 6.2832, c, f.fall - Math.min(0, f.t), 0.9); } }
+			if (f.kind === 'mine') { if (fx) fx.shot(f.x, f.y + 0.3, f.z, 0.22, f.m.id, f.m.type, null, f.id); else shots.add(f.x, f.y + 0.18, f.z, 0.2, c); }
+			else if (f.kind === 'turret') { const ty = f.y + 1 + Math.sin(t * 4 + f.id) * 0.12; if (fx) fx.shot(f.x, ty, f.z, 0.36, f.m.id, f.m.type, null, f.id); else shots.add(f.x, ty, f.z, 0.34, c); }
+			else if (f.kind === 'meteor') { const k = Math.max(0, Math.min(1, f.t / f.fall)); if (f.t > 0) { if (fx) fx.shot(f.x + (1 - k) * 2.5, f.y + 0.3 + (1 - k) * 10, f.z, 0.5, f.m.id, f.m.type, [-2.5, -10, 0], f.id); else shots.add(f.x + (1 - k) * 2.5, f.y + 0.3 + (1 - k) * 10, f.z, 0.45, c); } if (!f.seen) { f.seen = true; flashes.arc(f.x, f.y, f.z, f.r, 0, 6.2832, c, f.fall - Math.min(0, f.t), 0.9); } }
 			else if (f.kind === 'patch' && !f.seen) { f.seen = true; flashes.arc(f.x, f.y, f.z, f.r, 0, 6.2832, c, f.life, 0); }
 		}
 		// the red ground fills from the foe outward while it winds up (the outline is the whole reach; full: it lands)
@@ -679,6 +679,14 @@ function fightEvents(events) {
 	for (const ev of events) {
 		if (fx && ev.k === 'hit' && !(ev.d === 0)) fx.impact(ev.x, ev.y, ev.z, ev.type || 'normal', !!ev.crit || ev.eff >= 2, WATCH ? false : ev.eff < 1);   // (a hit lands: fx.js)
 		if (fx && ev.k === 'melee') fx.swing(state.x, state.y, state.z, ev.aim, ev.r, ev.id, null);
+		if (fx && ev.id && !document.hidden) {   // (the other kinds of move, each in its own shape: fx.js)
+			if (ev.k === 'beam') fx.beam(ev.from, ev.dir, ev.len, ev.w, ev.id, null);
+			else if (ev.k === 'aura') fx.aura(state.x, state.y, state.z, ev.r, ev.id, null);
+			else if (ev.k === 'chain' && ev.links.length) fx.chain([state.x, state.y + CK.MUZZLE, state.z], ev.links, ev.id, null);
+			else if (ev.k === 'blast') fx.blast(ev.x, ev.y, ev.z, ev.r, ev.id, null);
+			else if (ev.k === 'dash') fx.dash(ev.from, ev.dir, Math.max(0.1, ev.len), ev.id, null);
+			else if (ev.k === 'smite') fx.blast(ev.x, ev.y, ev.z, ev.r, ev.id, null);
+		}
 		if (ev.k === 'mark') { flashes.arc(ev.x, ev.y, ev.z, ev.r, 0, 6.2832, TYPE_COLOR[typeName(ev.type)], ev.life, ev.inner); continue; }   // (watching: something was put down)
 		if (ev.k === 'melee') flashes.arc(state.x, state.y, state.z, ev.r, ev.aim, Math.min(ev.arc, 6.2832), col(ev.id));
 		else if (ev.k === 'aura') flashes.arc(state.x, state.y, state.z, ev.r, 0, 6.2832, col(ev.id));
