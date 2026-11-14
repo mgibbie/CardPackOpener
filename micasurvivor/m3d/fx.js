@@ -114,6 +114,7 @@ export class Effects {
 		scene.add(this.sprites.mesh); scene.add(this.glows.mesh);
 		this.scene = scene; this.lights = null; this.cells = null;   // (the downloaded lights: loadLights)
 		this.anims = null; this.sheets = null;   // (the games' own animations: loadAnims)
+		this.q = 1;   // (the quality: 1 full; 0.5 reduced: no trails or shot light, half the small pieces, half the weather. setQuality)
 		this.parts = []; this.right = new THREE.Vector3(1, 0, 0); this.up = new THREE.Vector3(0, 1, 0); this.at = 0; this.t = 0; this.impacts = 0; this.looks = new Map();
 		this.stats = { sprites: 0, glows: 0, lights: 0, byLight: {}, anims: 0, bySheet: {}, parts: 0, shots: 0, impacts: 0, swings: 0, ownShots: 0, beams: 0, auras: 0, chains: 0, blasts: 0, dashes: 0, kos: 0, flat: 0, vortexes: 0, waves: 0, patches: 0, ults: 0, marks: {}, weather: {}, warns: 0, booms: 0, helps: {}, byShape: {} };   // (the last frame's; `byShape`, `impacts`, `swings`: since the page opened)
 	}
@@ -151,6 +152,8 @@ export class Effects {
 	}
 	/** A light that lives a moment: it grows from s0 to s1 and fades. o: { light, x, y, z, life, s0, s1, css, a, rot, spin, vx, vy, vz } */
 	flash(o) { if (this.lights) this.part(o); }
+	/** Full (1) or reduced (0.5). */
+	setQuality(q) { this.q = q >= 1 ? 1 : 0.5; return this.q; }
 	/** How a move looks: { proj, pal, trail, melee, … } (the 2D game's table, by move id; a type's default without one). */
 	look(mid, type) {
 		const k = (mid || '') + '|' + (type || '');
@@ -180,9 +183,9 @@ export class Effects {
 		const own = this.anims && animFor(shape, L.pal), S = own && this.sheets.sprites[own];
 		if (S) { this.sheet(own, Math.floor(t * 12 + seed) % S.n, x, y, z, size * 1.25 / (S.w * ANIM_PX), A.spins(shape) ? t * 9 + seed : 0); this.stats.ownShots = (this.stats.ownShots || 0) + 1; }   // (the games' own sprite for it)
 		else this.sprite(v || !A.dir(shape) ? shape : 'ball', L.pal, Math.floor(t * 10 + seed), x, y, z, size, rot);
-		this.glow(x, y, z, size * 2.3, css || this.VFX.PAL[L.pal][2], 0.62);
+		if (this.q >= 1 || css) this.glow(x, y, z, size * 2.3, css || this.VFX.PAL[L.pal][2], 0.62);   // (reduced: an enemy's shot keeps its light; yours go without)
 		this.stats.shots++;
-		if (v && this.dt > 0 && Math.random() < this.dt * 26) {   // its trail: small, left behind, sinking or rising a little
+		if (v && this.q >= 1 && this.dt > 0 && Math.random() < this.dt * 26) {   // its trail: small, left behind, sinking or rising a little
 			const ts = TRAIL[L.trail] || shape, up = L.trail === 'ember' || L.trail === 'wisp' || L.trail === 'bubbles' ? 0.9 : L.trail ? -1.2 : 0;
 			this.part({ shape: A.has(ts) ? ts : 'ball', pal: L.pal, x: x + (Math.random() - 0.5) * 0.2, y: y + (Math.random() - 0.5) * 0.2, z: z + (Math.random() - 0.5) * 0.2, vx: v[0] * 0.08, vy: up, vz: v[2] * 0.08, life: 0.3 + Math.random() * 0.2, s0: size * 0.5, s1: size * 0.12, rot: Math.random() * 6.28, spin: 3 });
 		}
@@ -190,6 +193,7 @@ export class Effects {
 	/** Something short-lived. o: { shape, pal, x, y, z, vx, vy, vz, g (gravity), life, s0, s1 (size at its start and end), rot, spin, anim (frames a second), glow (css), ga } */
 	part(o) {
 		if (this.parts.length >= FX.PARTS) this.parts.shift();
+		if (this.q < 1 && o.shape && !o.anim && Math.random() > this.q) return o;   // (reduced: half the small pieces thrown off)
 		if (o.shape && !o.sheet && !o.light && this.anims) { const a = animFor(o.shape, o.pal); if (a && this.sheets.sprites[a]) { o.sheet = a; o.loop = o.anim || 10; } }
 		o.t = 0; this.parts.push(o); return o;
 	}
@@ -347,7 +351,7 @@ export class Effects {
 	 *  level: 0 … 1 (it fades in and out). Called every frame it lasts. */
 	weatherAir(kind, level, x, y, z) {
 		if (!this.lights || !(level > 0) || !(this.dt > 0)) return;
-		const W = this.stats.weather, R = 12, at = () => { const a = Math.random() * 6.2832, d = Math.sqrt(Math.random()) * R; return [x + Math.cos(a) * d, z + Math.sin(a) * d]; }, n = (rate) => { const q = rate * level * this.dt; return Math.floor(q) + (Math.random() < q % 1 ? 1 : 0); };
+		const W = this.stats.weather, R = 12, at = () => { const a = Math.random() * 6.2832, d = Math.sqrt(Math.random()) * R; return [x + Math.cos(a) * d, z + Math.sin(a) * d]; }, n = (rate) => { const q = rate * level * this.q * this.dt; return Math.floor(q) + (Math.random() < q % 1 ? 1 : 0); };
 		const put = (o) => { this.part(o); W[kind] = (W[kind] || 0) + 1; };
 		if (kind === 'rain') for (let i = n(170); i > 0; i--) { const p = at(); put({ light: 'streak', x: p[0], y: y + 9 + Math.random() * 3, z: p[1], vx: -1.5, vy: -22, life: 0.5, s0: 1.7, s1: 1.7, css: '#cfe6ff', a: 1.1 }); }
 		else if (kind === 'snow') for (let i = n(60); i > 0; i--) { const p = at(); put({ light: 'glint', x: p[0], y: y + 6 + Math.random() * 3, z: p[1], vx: Math.random() - 0.5, vy: -2.2, vz: Math.random() - 0.5, life: 2.6, s0: 0.32, s1: 0.26, css: '#ffffff', a: 0.9, spin: 1 }); }

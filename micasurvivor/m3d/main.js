@@ -538,6 +538,7 @@ function frame(now) {
 	if (perf.last) { perf.frames.push(now - perf.last); if (perf.frames.length > 240) perf.frames.shift(); }
 	perf.last = now;
 	perf.acc += dt;
+	watchFx(now);
 	if (paused || now < hitFeel.until) perf.acc = 0;   // (the menu is up, alone: the fight waits; so it does for the moment of a hit-stop)
 	const t0 = performance.now();
 	if (fxlab) fxlab.tick();
@@ -1043,7 +1044,7 @@ if (dk) {
 }
 /** (the shipping path) A run's own screen, in Micatro's look: runui.js draws this view of the run. The test room's
  *  readout is still filled (tests and ?debug=1 read it), but it is not what a player sees. */
-const RUNUI = myRun || XW || DW ? mountRunUi(document, { debug: Q.has('debug'), onMenu: () => setMenu(!menuUp), onResume: () => setMenu(false), onBoard: (id) => openBoard(id), onMute: () => { if (GG.Audio) { GG.Audio.toggleMute(); RUNUI.update(runView()); } }, onUlt: () => { if (solo) pressUlt(solo); }, onAuto: () => { if (run && run.ult) setUltAuto(!run.ult.auto); } }) : null;
+const RUNUI = myRun || XW || DW ? mountRunUi(document, { debug: Q.has('debug'), onMenu: () => setMenu(!menuUp), onResume: () => setMenu(false), onBoard: (id) => openBoard(id), onMute: () => { if (GG.Audio) { GG.Audio.toggleMute(); RUNUI.update(runView()); } }, onUlt: () => { if (solo) pressUlt(solo); }, onAuto: () => { if (run && run.ult) setUltAuto(!run.ult.auto); }, onHitFeel: () => setHitFeel(!hitFeel.on), onFx: () => cycleFx() }) : null;
 /** The 3D boards of this run's map and tier (the menu's or the run's end's button): the server's top ten and yours. */
 let boardUp = null;
 async function openBoard(id) {
@@ -1074,7 +1075,19 @@ function feel(kind) {
 	if (kind === 'crit') { if (now - hitFeel.critAt < HF.CRIT_EVERY) return; hitFeel.critAt = now; bob = Math.max(bob, HF.CRIT_KICK); hitFeel.kicks++; if (alone) { hitFeel.until = Math.max(hitFeel.until, now + HF.CRIT_STOP); hitFeel.stops++; } }
 	else if (kind === 'boss') { bob = Math.max(bob, HF.BOSS_KICK); hitFeel.kicks++; if (alone) { hitFeel.until = Math.max(hitFeel.until, now + HF.BOSS_STOP); hitFeel.stops++; } }
 }
-function setHitFeel(on) { hitFeel.on = !!on; try { localStorage.setItem('m3d.hitfeel', on ? '1' : '0'); } catch { } note('Hit-stop and camera kick: ' + (on ? 'on' : 'off'), 1600); return hitFeel.on; }
+// Effects (the run menu): 'auto' (the default: full, and reduced by itself if frames run slow), 'full', 'reduced'. Kept on this device.
+const fxSet = { mode: (() => { let v = null; try { v = localStorage.getItem('m3d.fx'); } catch { } return v === 'full' || v === 'reduced' ? v : 'auto'; })(), slow: false, checkedAt: 0 };
+const FX_SLOW = { avg: 20, p95: 30 };   // (ms, over the last 2 s: a frame's average above avg, or 1 frame in 20 slower than p95, and Auto drops to reduced for the rest of the page. Measured with tools/micasurvivor/fx_perf.mjs: a busy fight on a phone-shaped page at 4x CPU slowdown ran 19.3 ms average, 33 ms p95 Full; 16.7 / 17 Reduced)
+function applyFx() { if (fx) fx.setQuality(fxSet.mode === 'full' || (fxSet.mode === 'auto' && !fxSet.slow) ? 1 : 0.5); }
+function cycleFx() { fxSet.mode = fxSet.mode === 'auto' ? 'full' : fxSet.mode === 'full' ? 'reduced' : 'auto'; try { localStorage.setItem('m3d.fx', fxSet.mode); } catch { } applyFx(); note('Effects: ' + fxLabel(), 1600); if (RUNUI) RUNUI.update(runView()); }
+const fxLabel = () => (fxSet.mode === 'auto' ? (fxSet.slow ? 'Auto (reduced)' : 'Auto') : fxSet.mode === 'full' ? 'Full' : 'Reduced');
+function watchFx(now) {   // (Auto: once frames have run slow for 2 s, reduced for the rest of the page)
+	if (fxSet.mode !== 'auto' || fxSet.slow || now - fxSet.checkedAt < 2000 || perf.frames.length < 100 || document.hidden) return;
+	fxSet.checkedAt = now; const f = perf.frames.slice(-120), avg = f.reduce((a, b) => a + b, 0) / f.length, p95 = f.slice().sort((a, b) => a - b)[Math.floor(f.length * 0.95)];
+	if (avg > FX_SLOW.avg || p95 > FX_SLOW.p95) { fxSet.slow = true; applyFx(); note('Effects reduced to keep it smooth (menu: Effects)', 2600); }
+}
+applyFx();
+function setHitFeel(on) { hitFeel.on = !!on; try { localStorage.setItem('m3d.hitfeel', on ? '1' : '0'); } catch { } note('Hit-stop and camera kick: ' + (on ? 'on' : 'off'), 1600); if (RUNUI) RUNUI.update(runView()); return hitFeel.on; }
 addEventListener('keydown', (e) => { if (e.code === 'KeyH' && !e.repeat && world && !menuUp && !world.pl.choices) setHitFeel(!hitFeel.on); });
 const CONTROLS = 'Move: arrows / WASD · Jump: Z or Space · Slide: X or Shift · Wall-run: jump beside a wall and lean into it (jump again to kick off) · Rails: come down on one to grind it (jump to leap off, slide to drop) · Surf: on a steep bank, hold along it and into it · Ultimate: V when its meter is full (U: cast by itself) · Hit-stop and camera kick: H turns them off and on · Camera: Q / E or drag · Map: Backspace or M · Menu: Enter or Esc';
 const DIVE_CONTROLS = 'Move: arrows / WASD · Jump: Z or Space · Dodge: X or Shift (nothing hurts you while it lasts) · Specials: 1 and 2 (or C and V) · Ultimate: 3 when its meter is full · Stairs: stand on the column of light · Hit-stop and camera kick: H turns them off and on · Camera: Q / E or drag · Map: Backspace or M · Menu: Enter or Esc';
@@ -1116,7 +1129,7 @@ function runView() {
 	const b = drun ? (drun.boss && !drun.boss.dead ? drun.boss : null) : world && !JOIN ? world.enemies.find((e) => e.boss) : null;
 	if (b) v.boss = { name: nameOf(b.dex), hp: b.hp, maxHp: b.maxHp, enraged: !!(b.ai && b.ai.fury) };
 	if (boardUp) v.board = { title: drun ? (drun.weekly ? `3D Weekly Dive · ${DR.nameOf(drun.route)} · ${DR.modName(drun.weekly.mod)}` : `3D Dive · ${DR.nameOf(drun.route)} · deepest floor`) : `3D · ${XK.MAP_NAME[boardUp.map] || boardUp.map} · ${boardUp.diff[0].toUpperCase() + boardUp.diff.slice(1)}`, tabs: drun ? [] : [['score', 'Score'], ['time', 'Time attack'], ['survival', 'Survival']].map(([id, text]) => ({ id, text, on: id === boardUp.view })), rows: boardUp.rows, note: boardUp.note };
-	if (menuUp && !runOver) v.menu = { auto: run && run.ult ? (run.ult.auto ? 'on' : 'off') : null, boards: true, sound: GG.Audio ? (GG.Audio.settings.muted ? 'off' : 'on') : null, title: paused ? 'PAUSED' : 'MENU', line: (paused ? '' : 'The fight goes on while this is open. ') + (dk ? DIVE_CONTROLS : CONTROLS), restart: solo ? location.search || '?' : null, leave: LEAVE };
+	if (menuUp && !runOver) v.menu = { hitfeel: hitFeel.on ? 'on' : 'off', fx: fx ? fxLabel() : null, auto: run && run.ult ? (run.ult.auto ? 'on' : 'off') : null, boards: true, sound: GG.Audio ? (GG.Audio.settings.muted ? 'off' : 'on') : null, title: paused ? 'PAUSED' : 'MENU', line: (paused ? '' : 'The fight goes on while this is open. ') + (dk ? DIVE_CONTROLS : CONTROLS), restart: solo ? location.search || '?' : null, leave: LEAVE };
 	if (runOver) {
 		const r = runOver, q = new URLSearchParams(location.search); q.set('exp', (+q.get('exp') || 0) + 1);
 		if (drun) { const qd = new URLSearchParams(location.search); if (!drun.weekly) qd.set('dive', (+qd.get('dive') || 0) + 1);   // (the Weekly Dive again is the same Dive)
@@ -1322,6 +1335,7 @@ const G_MUSIC = GG.BIOME_MUSIC || null, XK_MAPS = ['viridian', 'mtmoon', 'cerule
 
 // what a test (and a curious owner in the console) can reach
 window.__m3d = {
+	fxSettings: () => ({ mode: fxSet.mode, slow: fxSet.slow, q: fx ? fx.q : null, label: fxLabel() }), cycleFx, setFxSlow: (v) => { fxSet.slow = !!v; applyFx(); },
 	get fxlab() { return fxlab; },
 	get hitShown() { return hitShown; },
 	hitFeel: () => ({ on: hitFeel.on, stops: hitFeel.stops, kicks: hitFeel.kicks, stopped: performance.now() < hitFeel.until, K: HF }), setHitFeel,
