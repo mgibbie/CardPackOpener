@@ -713,7 +713,10 @@ function fightEvents(events) {
 			else if (ev.sub === 'strike') fx.ultStrike(ev.x, ev.y, ev.z, ev.r, ev.type);
 		}
 		if (fx && fxLights && !document.hidden) {   // (the ENEMIES' side: what they mark on the ground, what goes off, what they do for each other: fx.js)
-			if (ev.k === 'hazard') fx.warn(ev.h.kind === 'zone' ? { x: ev.h.x, y: ev.h.y, z: ev.h.z, r: ev.h.r } : { x: ev.h.x, y: ev.h.y, z: ev.h.z, angle: ev.h.angle, len: ev.h.len, w: ev.h.w }, ev.h.type, ev.h.delay);
+			if (ev.k === 'bosscast') fx.bossCast(ev.attack, ev.type, ev.x, ev.y, ev.z, ev.r || 0.5, ev.wind);
+			else if (ev.k === 'hazard' && ev.h.bk) { fx.bossWarn(ev.h, ev.h.type); fx.warn(ev.h.kind === 'zone' ? { x: ev.h.x, y: ev.h.y, z: ev.h.z, r: ev.h.r } : { x: ev.h.x, y: ev.h.y, z: ev.h.z, angle: ev.h.angle, len: ev.h.len, w: ev.h.w }, ev.h.type, ev.h.delay); }
+			else if (ev.k === 'boom' && ev.h.bk) { fx.bossBoom(ev.h, ev.h.type); if (ev.h.bk === 'slam' || ev.h.bk === 'leap') bob = Math.max(bob, 0.3); }
+			else if (ev.k === 'hazard') fx.warn(ev.h.kind === 'zone' ? { x: ev.h.x, y: ev.h.y, z: ev.h.z, r: ev.h.r } : { x: ev.h.x, y: ev.h.y, z: ev.h.z, angle: ev.h.angle, len: ev.h.len, w: ev.h.w }, ev.h.type, ev.h.delay);
 			else if (ev.k === 'boom') fx.boom(ev.h.kind === 'zone' ? { x: ev.h.x, y: ev.h.y, z: ev.h.z, r: ev.h.r } : { x: ev.h.x, y: ev.h.y, z: ev.h.z, angle: ev.h.angle, len: ev.h.len, w: ev.h.w }, ev.h.type);
 			else if (ev.k === 'tele') fx.warn(ev.kind === 'slam' ? { x: ev.x, y: 0, z: ev.z, r: ev.r } : { x: ev.x, y: 0, z: ev.z, angle: ev.a, len: ev.len, w: ev.w }, 'fighting', ev.T);
 			else if (ev.k === 'slam') fx.boom({ x: ev.x, y: 0, z: ev.z, r: ev.r }, 'ground');
@@ -1342,6 +1345,7 @@ const G_MUSIC = GG.BIOME_MUSIC || null, XK_MAPS = ['viridian', 'mtmoon', 'cerule
 
 // what a test (and a curious owner in the console) can reach
 window.__m3d = {
+	addBoss: (dex, x, z, o = {}) => (world ? addBoss(world, dex, x, z, { slot: 0, ...o }) : null),   // (for the tests: a boss now)
 	fxSettings: () => ({ mode: fxSet.mode, slow: fxSet.slow, q: fx ? fx.q : null, label: fxLabel() }), cycleFx, setFxSlow: (v) => { fxSet.slow = !!v; applyFx(); },
 	get fxlab() { return fxlab; },
 	get hitShown() { return hitShown; },

@@ -30,7 +30,7 @@ export const NK = {
 	RELAY_DELAY: 1.15,   // …and this far when frames come a second's worth at a time
 	RELAY_CAP: 16000,    // characters in one relay message (the server's)
 	RELAY_ENEMY_EVERY: 5,   // in a bundle of ten frames the enemies are in every fifth: two a second
-	EVENTS: ['melee', 'aura', 'beam', 'chain', 'blast', 'smite', 'bomb', 'heal', 'shield', 'summon', 'hazard', 'boom', 'hit', 'kill', 'hurt', 'dash', 'weather', 'boss', 'enrage', 'level', 'pickup', 'say', 'rx', 'rxchain', 'ult', 'secondchance', 'tele', 'slam', 'chest', 'landmark', 'plug'],   // (the last five: a Dive's red ground, its chests, landmark and secret pockets)
+	EVENTS: ['melee', 'aura', 'beam', 'chain', 'blast', 'smite', 'bomb', 'heal', 'shield', 'summon', 'hazard', 'boom', 'hit', 'kill', 'hurt', 'dash', 'weather', 'boss', 'enrage', 'level', 'pickup', 'say', 'rx', 'rxchain', 'ult', 'secondchance', 'tele', 'slam', 'chest', 'landmark', 'plug', 'bosscast'],   // (the last five: a Dive's red ground, its chests, landmark and secret pockets)
 };
 const q = (v, k) => Math.round(v * k);
 /** What an enemy is suffering, as the flags' high bits (a watcher and a co-op guest draw the marks from them). */
@@ -78,7 +78,7 @@ export function keepEvents(into, events) {
 	for (const ev of events) {
 		if (!NK.EVENTS.includes(ev.k) || into.length >= 60) continue;
 		if (ev.k === 'hit') into.push({ k: 'hit', x: r(ev.x), y: r(ev.y), z: r(ev.z), d: Math.round(ev.d), crit: ev.crit ? 1 : 0, eff: ev.eff === 0 ? 3 : ev.eff >= 4 ? 4 : ev.eff > 1 ? 2 : ev.eff < 1 ? 0 : 1, ...(TYPES.indexOf(ev.type) >= 0 ? { ty: TYPES.indexOf(ev.type) } : null) });   // (ty: the hit's type, for its impact's colour)
-		else if (ev.k === 'hazard' || ev.k === 'boom') { const h = ev.h; into.push({ k: ev.k, h: { kind: h.kind, x: r(h.x), y: r(h.y), z: r(h.z), r: r(h.r || 0), angle: r(h.angle || 0), len: r(h.len || 0), w: r(h.w || 0), delay: h.delay, type: h.type, dmg: r(h.dmg || 0) } }); }
+		else if (ev.k === 'hazard' || ev.k === 'boom') { const h = ev.h; into.push({ k: ev.k, h: { kind: h.kind, x: r(h.x), y: r(h.y), z: r(h.z), r: r(h.r || 0), angle: r(h.angle || 0), len: r(h.len || 0), w: r(h.w || 0), delay: h.delay, type: h.type, dmg: r(h.dmg || 0), ...(h.bk ? { bk: h.bk } : null) } }); }
 		else if (ev.k === 'beam' || ev.k === 'dash') into.push({ k: ev.k, id: ev.id, from: ev.from.map(r), dir: ev.dir.map((v) => Math.round(v * 1000) / 1000), len: r(ev.len), w: r(ev.w) });
 		else if (ev.k === 'ult') { const o = { ...ev }; for (const key of ['x', 'y', 'z', 'r', 'len', 'w']) if (typeof o[key] === 'number') o[key] = r(o[key]); if (o.from) o.from = o.from.map(r); into.push(o); }
 		else if (ev.k === 'rx') into.push({ k: 'rx', kind: ev.kind, x: r(ev.x), y: r(ev.y), z: r(ev.z), r: r(ev.r || 0) });
