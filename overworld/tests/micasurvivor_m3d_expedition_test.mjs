@@ -75,7 +75,7 @@ const clearZone = (S) => { hush(S); toAltar(S); steps(S, XKK.ALTAR_T + 0.1); sla
 	G.Coop = G.Coop || { scaleHp: (n) => 1 + 0.3 * Math.max(0, n - 1) };   // (the 2D game's net/coop.js rule, which its bossHp reads)
 	let same = true; const seen = [];
 	for (const o of [{ zone: 1 }, { zone: 2, t: 400 }, { zone: 3, t: 900, dps: 800, tier: 2 }, { zone: 4, legend: true, t: 1300, dps: 300 }, { zone: 2, t: 300, players: 2 }, { zone: 1, dps: 5000, tier: 1 }]) {
-		const a = bossHp(XKK, { ...o, hpK: data.enemyHp }), b = G.ExpClassic.bossHp(o);   // (+ 22 % on every enemy's HP: the owner's answer to STAB, 2026-11-14) seen.push([a.hp, b.hp]);
+		const a = bossHp(XKK, { ...o, hpK: data.enemyHp }), b = G.ExpClassic.bossHp(o);   // (+ 5 % on every enemy's HP: for STAB, 2026-11-14) seen.push([a.hp, b.hp]);
 		if (a.hp !== b.hp || a.curve !== b.curve || a.fromDps !== b.fromDps || a.target !== b.target) same = false;
 	}
 	A(same, 'a guardian\'s HP is the 2D game\'s for every case tried (curve, your damage, tier, party, the legendary)', seen);
@@ -100,7 +100,7 @@ const clearZone = (S) => { hush(S); toAltar(S); steps(S, XKK.ALTAR_T + 0.1); sla
 	const e = S.boss, a = S.w.room.altar, b = S.bosses[0];
 	A(S.ph === 1 && e && e.boss && e.dex === S.plan.guardian && e.xk === 'guardian', `then the guardian wakes: ${data.mon(S.plan.guardian).name} (${hudLine(S)})`);
 	A(near(e.a.x, a[0], 0.02) && e.a.z < a[2] && near(a[2] - e.a.z, XK.BOSS_NORTH * U, 0.3), 'it appears just north of the altar');
-	const curve = Math.round(XKK.GUARD_HP[0] * (1 + b.at / 600) * data.enemyHp);   // (+ 22 % on every enemy's HP: the owner's answer to STAB, 2026-11-14)
+	const curve = Math.round(XKK.GUARD_HP[0] * (1 + b.at / 600) * data.enemyHp);   // (+ 5 % on every enemy's HP: for STAB, 2026-11-14)
 	A(e.maxHp === curve && b.hp === curve && b.fromDps === 0 && b.target === 40, `with no damage done yet its HP is the curve's (${curve})`, b);
 	A(Math.round(e.dmg) === Math.round(Math.round(XKK.GUARD_DMG[0] * 1.2) * (1 + b.at / 600)), `its touch is the 2D guardian's (${Math.round(e.dmg)})`);
 	// the trickle thins while it is up
