@@ -138,6 +138,9 @@ try {
 		await Gp.page.evaluate(() => { const m = window.__m3d; return { search: location.search, stairs: m.room.stairs.join(), member: m.guestDive.lg && m.guestDive.lg.member, moves: m.world.pl.moves.length, link: !!m.link, mode: m.link && m.link.modes.alice, sent: m.link ? m.link.sent : 0, got: m.link ? m.link.got : 0 }; })];
 	let [h, g] = joined ? await sides() : [{}, {}];
 	A(joined && /lobby=/.test(g.search) && g.link && g.mode === 'direct' && g.stairs === h.stairs && g.member === 4 && g.moves === 3 && h.mates.join() === '4', 'bob is a guest in alice\'s Dive, over the lobby\'s line: the same floor, its own Charmander and kit', JSON.stringify([h, g]));
+	// (the counts climb as the Dive runs: read them once at the join and a loaded runner had 3-6 each way: 5 of main's 14 gate runs to
+	//  2026-11-14. So: until both have more than 5, or 20 s)
+	if (joined) { await waitFor(async () => { [h, g] = await sides(); return h.sent > 5 && h.got > 5 && g.sent > 5 && g.got > 5; }, 20000); }
 	A(h.sent > 5 && h.got > 5 && g.sent > 5 && g.got > 5, `messages go both ways (alice sent ${h.sent}, got ${h.got}; bob sent ${g.sent}, got ${g.got})`);
 	const ch = await H.page.evaluate(() => { const c = window.__m3d.dive.chests.find((q) => !q.pocket); return [c.x, c.z]; });
 	await Gp.page.evaluate((x, z) => { const s = window.__m3d.state; s.x = x + 1; s.z = z; s.vx = s.vz = 0; }, ch[0], ch[1]);

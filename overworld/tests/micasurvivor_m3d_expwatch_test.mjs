@@ -114,7 +114,9 @@ try {
 	const info = await R.page.evaluate((t) => window.__m3d.playTape(t), text);
 	const seen = { zones: new Set(), phs: new Set(), team: false, max: 0 };
 	const t0 = Date.now();
-	while (Date.now() - t0 < (info.to - info.from) * 1000 + 6000) {
+	// (until the tape has played to its end, not its length + 6 s: on a loaded runner the replay page runs behind, and the read stopped
+	//  in zone 1 or before the team came: 7 of main's 14 gate runs to 2026-11-14)
+	while (Date.now() - t0 < (info.to - info.from) * 3000 + 30000) {
 		const s = await R.page.evaluate(() => { const m = window.__m3d; return m.rv ? { z: m.rv.zone, ph: m.rv.ph, sa: m.rv.sa.length, t: m.watchT, w: m.room.w, coins: m.rv.coins } : null; });
 		if (s) { seen.zones.add(s.z); seen.phs.add(s.z + ':' + s.ph); if (s.sa) seen.team = true; seen.max = Math.max(seen.max, s.coins); if (s.t >= info.to - 0.05) break; }
 		await sleep(100);
