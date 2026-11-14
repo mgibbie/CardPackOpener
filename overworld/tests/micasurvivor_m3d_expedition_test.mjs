@@ -75,7 +75,7 @@ const clearZone = (S) => { hush(S); toAltar(S); steps(S, XKK.ALTAR_T + 0.1); sla
 	G.Coop = G.Coop || { scaleHp: (n) => 1 + 0.3 * Math.max(0, n - 1) };   // (the 2D game's net/coop.js rule, which its bossHp reads)
 	let same = true; const seen = [];
 	for (const o of [{ zone: 1 }, { zone: 2, t: 400 }, { zone: 3, t: 900, dps: 800, tier: 2 }, { zone: 4, legend: true, t: 1300, dps: 300 }, { zone: 2, t: 300, players: 2 }, { zone: 1, dps: 5000, tier: 1 }]) {
-		const a = bossHp(XKK, o), b = G.ExpClassic.bossHp(o); seen.push([a.hp, b.hp]);
+		const a = bossHp(XKK, { ...o, hpK: data.enemyHp }), b = G.ExpClassic.bossHp(o);   // (+ 22 % on every enemy's HP: the owner's answer to STAB, 2026-11-14) seen.push([a.hp, b.hp]);
 		if (a.hp !== b.hp || a.curve !== b.curve || a.fromDps !== b.fromDps || a.target !== b.target) same = false;
 	}
 	A(same, 'a guardian\'s HP is the 2D game\'s for every case tried (curve, your damage, tier, party, the legendary)', seen);
@@ -100,7 +100,7 @@ const clearZone = (S) => { hush(S); toAltar(S); steps(S, XKK.ALTAR_T + 0.1); sla
 	const e = S.boss, a = S.w.room.altar, b = S.bosses[0];
 	A(S.ph === 1 && e && e.boss && e.dex === S.plan.guardian && e.xk === 'guardian', `then the guardian wakes: ${data.mon(S.plan.guardian).name} (${hudLine(S)})`);
 	A(near(e.a.x, a[0], 0.02) && e.a.z < a[2] && near(a[2] - e.a.z, XK.BOSS_NORTH * U, 0.3), 'it appears just north of the altar');
-	const curve = Math.round(XKK.GUARD_HP[0] * (1 + b.at / 600));
+	const curve = Math.round(XKK.GUARD_HP[0] * (1 + b.at / 600) * data.enemyHp);   // (+ 22 % on every enemy's HP: the owner's answer to STAB, 2026-11-14)
 	A(e.maxHp === curve && b.hp === curve && b.fromDps === 0 && b.target === 40, `with no damage done yet its HP is the curve's (${curve})`, b);
 	A(Math.round(e.dmg) === Math.round(Math.round(XKK.GUARD_DMG[0] * 1.2) * (1 + b.at / 600)), `its touch is the 2D guardian's (${Math.round(e.dmg)})`);
 	// the trickle thins while it is up
@@ -127,7 +127,7 @@ const clearZone = (S) => { hush(S); toAltar(S); steps(S, XKK.ALTAR_T + 0.1); sla
 	// the zone's floor
 	stepRun(S, null);
 	const e2 = spawn(S, S.plan.cards[0], sp[0] + 6, sp[2]), ti = e2.ti, def = data.defFor(S.plan.cards[0], ti);
-	A(S.w.t < 60 && ti >= 2 && ti <= 4 && e2.maxHp === Math.round(def.hp * (1 + 240 / 95) * CK.HP_K(240)) && e2.xp === Math.round(def.xp * XKK.XP_K), `zone 2 a minute into the run: its enemies are as tough as four minutes in (tier ${ti}, ${e2.maxHp} HP)`, [S.w.t, ti, e2.maxHp]);
+	A(S.w.t < 60 && ti >= 2 && ti <= 4 && e2.maxHp === Math.round(def.hp * (1 + 240 / 95) * data.enemyHp * CK.HP_K(240)) && e2.xp === Math.round(def.xp * XKK.XP_K), `zone 2 a minute into the run: its enemies are as tough as four minutes in (tier ${ti}, ${e2.maxHp} HP)`, [S.w.t, ti, e2.maxHp]);
 }
 
 // ---------------------------------------------------------------- the trickle, the cap, the final swarm
@@ -170,7 +170,7 @@ const clearZone = (S) => { hush(S); toAltar(S); steps(S, XKK.ALTAR_T + 0.1); sla
 	// each kind by itself, on a quiet zone
 	const quiet = (seed = 5) => { const S = run({ seed }); S.plan.events = []; steps(S, 0.5); S.w.enemies.length = 0; S.acc = -1e9; return S; };
 	const ev = (kind, o = {}) => ({ at: 0, kind, n: 1, dex: [16], seed: 99, ...o });
-	const base = (S, dex, ti) => { const d = data.defFor(dex, ti); return Math.round(d.hp * (1 + S.w.t / 95) * CK.HP_K(S.w.t)); };
+	const base = (S, dex, ti) => { const d = data.defFor(dex, ti); return Math.round(d.hp * (1 + S.w.t / 95) * data.enemyHp * CK.HP_K(S.w.t)); };
 	{
 		const S = quiet(), en = fire(S, ev('alpha', { dex: [19] })), e = S.w.enemies[0];
 		A(en.spawned === 1 && e.xk === 'alpha' && e.scale === XKK.ALPHA.scale && near(e.maxHp, base(S, 19, e.ti) * XKK.ALPHA.hp, 0.01) && e.xp === Math.round(e.def.xp * XKK.XP_K * XKK.ALPHA.xp) && S.says.length === 1, `an alpha: ${XKK.ALPHA.hp} times the HP, ${XKK.ALPHA.scale} times the size, ${XKK.ALPHA.xp} times the XP`, [e.maxHp, base(S, 19, e.ti)]);
@@ -264,7 +264,7 @@ const clearZone = (S) => { hush(S); toAltar(S); steps(S, XKK.ALTAR_T + 0.1); sla
 	while (walked < 60 * 30 && !(S.ph === 3)) { const s = S.w.pl.s, dx = a[0] - s.x, dz = a[2] - s.z, l = Math.hypot(dx, dz) || 1; stepRun(S, { mx: l > 0.3 ? dx / l : 0, mz: l > 0.3 ? dz / l : 0, jump: false, crouch: false }); walked++; }
 	const L = S.boss;
 	A(S.ph === 3 && L && L.dex === S.plan.legend && L.xk === 'legend' && near(S.w.pl.s.y, LEVEL, 0.05) && /LEGENDARY/.test(hudLine(S)), `walked up the stairs to the pedestal (${(walked / 60).toFixed(1)} s): ${data.mon(S.plan.legend).name} appears`, [S.ph, S.w.pl.s.y, walked]);
-	A(L.maxHp === Math.round(XKK.LEGEND_HP * (1 + S.bosses[3].at / 600)) && S.bosses[3].target === XKK.LEGEND_TARGET, `its HP is the legendary's curve (${L.maxHp})`);
+	A(L.maxHp === Math.round(XKK.LEGEND_HP * (1 + S.bosses[3].at / 600) * data.enemyHp) && S.bosses[3].target === XKK.LEGEND_TARGET, `its HP is the legendary's curve (${L.maxHp})`);
 	steps(S, 20);
 	A(S.w.stats.spawned > 4 + 2, 'now the shrine has arrivals too (at half the pace)');
 	slay(S);

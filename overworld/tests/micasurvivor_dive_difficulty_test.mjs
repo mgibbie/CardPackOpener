@@ -222,7 +222,9 @@ try {
 	A(rein.first === 2 && rein.near && rein.awake, 'then a pack of 2 arrives 11-20 tiles away (not at a far entrance, where the game would recycle it), awake', JSON.stringify(rein));
 	A(rein.say.some(t => /reinforcements are coming/.test(t)) && rein.say.filter(t => /reinforcements/.test(t)).length === 1, 'the first pack is announced, once', JSON.stringify(rein.say));
 	A(rein.t2 === 4 && rein.t3 === 6, 'another comes 14 s later, the next 12.5 s after that (faster each time)', JSON.stringify([rein.first, rein.t2, rein.t3]));
-	A(rein.xp[0] < rein.xp[1] * 0.6, 'a reinforcement is worth well under a plain foe\'s XP (x0.3)', JSON.stringify(rein.xp));
+	// (no plain foe left alive to compare with: null. Since STAB (2026-11-14) your moves can clear them all first; then, as the
+	//  payout check below, that half is not judged)
+	A(rein.xp[0] > 0 && (rein.xp[1] === null || rein.xp[0] < rein.xp[1] * 0.6), 'a reinforcement is worth well under a plain foe\'s XP (x0.3)' + (rein.xp[1] === null ? ' (no plain foe alive to compare: not judged)' : ''), JSON.stringify(rein.xp));
 	A(rein.reinPay === 0 && (rein.plainPay === null || rein.plainPay > 0), 'knocking one out pays no loot; a plain foe still does — lingering costs, it does not pay', JSON.stringify([rein.reinPay, rein.plainPay]));
 
 	// ---- 5. healing: a berry bush gives a quarter, a shrine half

@@ -23,6 +23,8 @@ import { loadG } from './m3d_data.mjs';
 let pass = 0, fail = 0;
 const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else { fail++; console.log('FAIL: ' + m + (extra != null ? '\n      ' + String(typeof extra === 'string' ? extra : JSON.stringify(extra)).slice(0, 700) : '')); } };
 const G = loadG(), data = dataFrom(G), X = expFrom(G), L = X.L, K = X.C.K;
+const stabOf = (S, ty) => ((S.w || S).pl.mon.types.includes(ty) ? data.stab : 1);   // (STAB, 2026-11-14: a move of one of your own types does x 1.5)
+
 const near = (a, b, tol = 1e-6) => Math.abs(a - b) <= tol * Math.max(1, Math.abs(b));
 const run = (o = {}) => { const S = newRun(data, X, { seed: 7, dex: 6, moves: [], weather: false, eco: true, ...o }); S.plan.events = []; S.acc = -1e9; S.w.pl.maxHp = S.w.pl.hp = 1e6; if (o.shiny) S.forceShiny = true; stepRun(S, null); return S; };
 const calm = (S) => { S.acc = -1e9; for (let i = S.w.pickups.length - 1; i >= 0; i--) if (/^xp/.test(S.w.pickups[i].kind)) S.w.pickups.splice(i, 1); };
@@ -89,7 +91,7 @@ const catchOne = (S, dex) => { alpha(S, dex, true); const f = S.cap.faint[S.cap.
 	put(R, R.w.room.spawn[0], R.w.room.spawn[2], R.w.room.spawn[1]); steps(R, 2);   // (back in the open, your team with you)
 	const a = R.cap.sa[0], e = spawn(R, 19, R.w.pl.s.x + 6, R.w.pl.s.z); e.dummy = true; e.maxHp = e.hp = 1e6; const fired0 = a.shots;
 	steps(R, 5);
-	const want = K.SA_DMG * attackOf(R.w.pl) * data.typeMult('fire', e.types);
+	const want = K.SA_DMG * attackOf(R.w.pl) * data.typeMult('fire', e.types) * stabOf(R, 'fire');
 	A(a.shots - fired0 >= 3 && a.shots - fired0 <= 5 && e.hp < 1e6 && e.burn > 0, `a Charmander Support Alpha: a shot at the nearest enemy every ${K.SA_CD} s (${a.shots - fired0} in 5 s), and a Fire one burns`);
 	const per = (1e6 - e.hp) / (a.shots - fired0);
 	A(per > want * 0.8 && per < want * 2.2, `each for about ${K.SA_DMG} x your attack (${per.toFixed(1)} a shot with its burn; a bare shot would be ${want.toFixed(1)})`);

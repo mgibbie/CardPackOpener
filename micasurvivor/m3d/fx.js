@@ -110,7 +110,7 @@ export class Effects {
 		this.scene = scene; this.lights = null; this.cells = null;   // (the downloaded lights: loadLights)
 		this.anims = null; this.sheets = null;   // (the games' own animations: loadAnims)
 		this.parts = []; this.right = new THREE.Vector3(1, 0, 0); this.up = new THREE.Vector3(0, 1, 0); this.at = 0; this.t = 0; this.impacts = 0; this.looks = new Map();
-		this.stats = { sprites: 0, glows: 0, lights: 0, byLight: {}, anims: 0, bySheet: {}, parts: 0, shots: 0, impacts: 0, swings: 0, beams: 0, auras: 0, chains: 0, blasts: 0, dashes: 0, kos: 0, flat: 0, vortexes: 0, waves: 0, patches: 0, ults: 0, marks: {}, weather: {}, byShape: {} };   // (the last frame's; `byShape`, `impacts`, `swings`: since the page opened)
+		this.stats = { sprites: 0, glows: 0, lights: 0, byLight: {}, anims: 0, bySheet: {}, parts: 0, shots: 0, impacts: 0, swings: 0, beams: 0, auras: 0, chains: 0, blasts: 0, dashes: 0, kos: 0, flat: 0, vortexes: 0, waves: 0, patches: 0, ults: 0, marks: {}, weather: {}, warns: 0, booms: 0, helps: {}, byShape: {} };   // (the last frame's; `byShape`, `impacts`, `swings`: since the page opened)
 	}
 	/** The downloaded lights: the atlas and its list of cells ({ cell, cols, rows, names }). */
 	loadLights(url, info) {
@@ -342,6 +342,33 @@ export class Effects {
 		else if (kind === 'sand') for (let i = n(26); i > 0; i--) { const p = at(); put({ light: Math.random() < 0.5 ? 'dirt' : 'puff', x: p[0] - 6, y: y + 0.4 + Math.random() * 2.5, z: p[1], vx: 11 + Math.random() * 5, vy: 0.3, life: 1.1, s0: 1.2, s1: 2.4, css: '#d9b36a', a: 0.5, spin: 1.5, rot: Math.random() * 6.28 }); }
 		else if (kind === 'fog') for (let i = n(5); i > 0; i--) { const p = at(); put({ light: 'smoke', x: p[0], y: y + 0.8 + Math.random() * 1.5, z: p[1], vx: 0.5, life: 3.2, s0: 4, s1: 7, css: '#cfd8e3', a: 0.32, rot: Math.random() * 6.28, spin: 0.15 }); }
 		else if (kind === 'sun') for (let i = n(4); i > 0; i--) { const p = at(); put({ light: 'glint', x: p[0], y: y + 0.5 + Math.random() * 4, z: p[1], vy: 0.5, life: 1.4, s0: 0.3, s1: 0.7, css: '#fff2a0', a: 0.8 }); }
+	}
+	/** An enemy marks the ground before it strikes: a circle of its type's light that turns and tightens for as long as the warning lasts, ringed in
+	 *  danger red; or, for a lane, light running along it. o: { x, y, z, r } or { x, y, z, angle, len, w }. */
+	warn(o, type, life) {
+		const pal = this.VFX.PAL[type] ? type : 'normal', P = this.VFX.PAL[pal], RED = '#ff3b30';
+		if (o.r) {
+			this.flash({ flat: true, light: 'rune', x: o.x, y: o.y + 0.13, z: o.z, life, s0: o.r * 2.3, s1: o.r * 1.5, css: P[3], a: 1.1, spin: 2.6 });
+			this.flash({ flat: true, light: 'ring', x: o.x, y: o.y + 0.15, z: o.z, life, s0: o.r * 2.15, s1: o.r * 2.15, css: RED, a: 1.3 });
+			this.flash({ flat: true, light: 'ringsoft', x: o.x, y: o.y + 0.11, z: o.z, life, s0: o.r * 0.4, s1: o.r * 2, css: RED, a: 0.7 });
+		} else {
+			const dx = Math.cos(o.angle), dz = Math.sin(o.angle), n = Math.max(2, Math.round(o.len / Math.max(1.2, o.w * 1.6)));
+			for (let i = 0; i < n; i++) { const d = (i + 0.5) / n * o.len; this.flash({ flat: true, light: 'ringsoft', x: o.x + dx * d, y: o.y + 0.12, z: o.z + dz * d, life, s0: o.w * 0.6, s1: o.w * 2.2, css: i % 2 ? RED : P[3], a: 0.9 }); }
+		}
+		this.stats.warns++;
+	}
+	/** …and it goes off: a blast in its type for a circle, a beam of its type's shape down a lane. */
+	boom(o, type) {
+		const pal = this.VFX.PAL[type] ? type : 'normal';
+		if (o.r) this.blast(o.x, o.y, o.z, o.r, null, pal); else this.beam([o.x, o.y + 0.7, o.z], [Math.cos(o.angle), 0, Math.sin(o.angle)], o.len, Math.max(0.8, o.w), null, pal);
+		this.stats.booms++;
+	}
+	/** What enemies do for each other: 'heal' (green light and hearts rising), 'shield' (a blue shell closing), 'summon' (a violet circle on the floor). */
+	help(kind, x, y, z, r) {
+		const H = this.stats.helps; H[kind] = (H[kind] || 0) + 1;
+		if (kind === 'heal') { this.flash({ flat: true, light: 'ringsoft', x, y: y + 0.12, z, life: 0.6, s0: 1, s1: r * 2.1, css: '#5fe08a', a: 1.1 }); for (let i = 0; i < 8; i++) { const a = Math.random() * 6.2832, d = Math.random() * r * 0.7; this.part({ shape: 'heart', pal: 'grass', x: x + Math.cos(a) * d, y: y + 0.4, z: z + Math.sin(a) * d, vy: 2 + Math.random() * 1.5, life: 0.7, s0: 0.5, s1: 0.2 }); } }
+		else if (kind === 'shield') { this.flash({ flat: true, light: 'ring', x, y: y + 0.12, z, life: 0.5, s0: r * 2.1, s1: 1, css: '#7fc8ff', a: 1.2 }); this.flash({ light: 'glint', x, y: y + 1, z, life: 0.5, s0: 1.5, s1: 3.5, css: '#bfe4ff', a: 1.1 }); }
+		else if (kind === 'summon') { this.flash({ flat: true, light: 'rune', x, y: y + 0.12, z, life: 0.7, s0: 1.5, s1: 6, css: '#c47bff', a: 1.3, spin: -3 }); this.flash({ light: 'puff', x, y: y + 0.8, z, life: 0.5, s0: 1.5, s1: 3.5, css: '#8a5cc4', a: 0.6 }); }
 	}
 	/** A dash: streaks left along the way. */
 	dash(from, dir, len, mid, type) {
