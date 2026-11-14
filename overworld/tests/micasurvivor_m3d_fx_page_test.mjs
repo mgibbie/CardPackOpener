@@ -166,6 +166,23 @@ try {
 		await shot('fx-enemy.png');
 	}
 
+	// ---- 2i. a boss's attacks each have a look of their own, in its type
+	{
+		const bossLooks = async (dex, want, ms = 45000) => {
+			A(await boot('dex=25&moves=agility&cast='), `2i. a quiet fight for boss ${dex}`);
+			await waitFor(async () => (await fx()).lit, 15000);
+			await M((dex) => { const m = window.__m3d, s = m.state; m.world.pl.invuln = 1e9; m.world.enemies.length = 0; const b = m.addBoss(dex, s.x + 6, s.z); b.hp = b.maxHp = 1e9; }, dex);
+			await waitFor(async () => { const q = await fx(); return want.every((k) => q.bossLooks[k] > 0); }, ms);
+			return (await fx()).bossLooks;
+		};
+		let L = await bossLooks(6, ['rain', 'rainBoom']);   // (Charizard: Fire, its first ranged attack a rain of strikes)
+		A(L.rain > 0 && L.rainBoom > 0, '2i. a Fire boss\'s rain: it charges in its type, strikes fall from the sky onto the marks and burst', L);
+		await shot('fx-boss-rain.png');
+		L = await bossLooks(150, ['beam', 'beamBoom']);   // (Mewtwo: Psychic, its first ranged attack beams)
+		A(L.beam > 0 && L.beamBoom > 0, '2i. a Psychic boss\'s beams: light gathers at its mouth, then they fire as beams of its type', L);
+		await shot('fx-boss-beam.png');
+	}
+
 	// ---- 2d. a KO is a burst, not a vanish (B5)
 	{
 		A(await boot('dex=4&moves=ember:3'), '2d. a fight with a move that hurts (Ember)');
