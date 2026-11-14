@@ -680,6 +680,7 @@ function fightEvents(events) {
 	for (const ev of events) if (ev.k === 'caught' && run) { if (ev.kind === 'league') keepCatch(ev.member || ev.dex); else if (ev.kind === 'shiny') keepShiny(ev.dex); }   // (a wild League member, a shiny: saved at once)
 	for (const ev of events) {
 		if (fx && ev.k === 'hit' && !(ev.d === 0)) fx.impact(ev.x, ev.y, ev.z, ev.type || (ev.ty >= 0 ? typeName(ev.ty) : 'normal'), !!ev.crit || ev.eff >= 2, WATCH ? ev.eff === 0 : ev.eff < 1);   // (a hit lands: fx.js)
+		if (fx && ev.k === 'kill' && !document.hidden) { const e = (world ? world.enemies : []).find((q) => q.id === ev.id); fx.ko(ev.x, ev.y + 0.6, ev.z, e ? e.types[0] : 'normal', !!ev.boss); if (ev.boss) bob = Math.max(bob, 0.4); }   // (a KO is a burst, not a vanish; a boss's shakes the camera)
 		if (fx && ev.k === 'melee') fx.swing(state.x, state.y, state.z, ev.aim, ev.r, ev.id, null);
 		if (fx && ev.id && !document.hidden) {   // (the other kinds of move, each in its own shape: fx.js)
 			if (ev.k === 'beam') fx.beam(ev.from, ev.dir, ev.len, ev.w, ev.id, null);

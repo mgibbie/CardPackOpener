@@ -100,7 +100,7 @@ export class Effects {
 		scene.add(this.sprites.mesh); scene.add(this.glows.mesh);
 		this.scene = scene; this.lights = null; this.cells = null;   // (the downloaded lights: loadLights)
 		this.parts = []; this.right = new THREE.Vector3(1, 0, 0); this.up = new THREE.Vector3(0, 1, 0); this.at = 0; this.t = 0; this.impacts = 0; this.looks = new Map();
-		this.stats = { sprites: 0, glows: 0, lights: 0, byLight: {}, parts: 0, shots: 0, impacts: 0, swings: 0, beams: 0, auras: 0, chains: 0, blasts: 0, dashes: 0, byShape: {} };   // (the last frame's; `byShape`, `impacts`, `swings`: since the page opened)
+		this.stats = { sprites: 0, glows: 0, lights: 0, byLight: {}, parts: 0, shots: 0, impacts: 0, swings: 0, beams: 0, auras: 0, chains: 0, blasts: 0, dashes: 0, kos: 0, byShape: {} };   // (the last frame's; `byShape`, `impacts`, `swings`: since the page opened)
 	}
 	/** The downloaded lights: the atlas and its list of cells ({ cell, cols, rows, names }). */
 	loadLights(url, info) {
@@ -226,6 +226,16 @@ export class Effects {
 		} else this.part({ shape: 'impact', pal: L.pal, x, y: y + 0.6, z, life: 0.24, s0: Math.max(1, r * 0.8), s1: Math.max(1.8, r * 1.9), anim: 9, glow: css, ga: 0.9 });
 		for (let i = 0; i < n; i++) { const a = (i / n) * 6.2832 + Math.random() * 0.4, sp = r * (2 + Math.random() * 1.5); this.part({ shape, pal: L.pal, x, y: y + 0.3, z, vx: Math.cos(a) * sp, vy: 3 + Math.random() * 4, vz: Math.sin(a) * sp, g: 12, life: 0.35 + Math.random() * 0.25, s0: 0.6, s1: 0.15, rot: a, spin: 7 }); }
 		this.stats.blasts++;
+	}
+	/** An enemy goes down: a puff where it stood, a star in its own type's colour, pieces thrown up. A boss: all of it larger, and a ring. */
+	ko(x, y, z, type, boss = false) {
+		if (!boss && this.impacts++ >= FX.IMPACTS_A_FRAME) return;
+		const pal = this.VFX.PAL[type] ? type : 'normal', P = this.VFX.PAL[pal], L = this.VFX.forType(pal), k = boss ? 2.6 : 1;
+		for (let i = 0; i < (boss ? 5 : 2); i++) this.flash({ light: i % 2 ? 'smoke' : 'puff', x: x + (Math.random() - 0.5) * 0.6 * k, y: y + (Math.random() - 0.3) * 0.5 * k, z: z + (Math.random() - 0.5) * 0.6 * k, vy: 0.9 + Math.random() * 0.8, life: 0.45 + Math.random() * 0.25, s0: 0.9 * k, s1: 1.9 * k, css: '#c9d2df', a: 0.7, rot: Math.random() * 6.28, spin: 0.8 });
+		this.flash({ light: 'glint', x, y, z, life: 0.24, s0: 1.2 * k, s1: 2.6 * k, css: P[3], a: 1.3 });
+		if (boss) this.flash({ light: 'ring', x, y, z, life: 0.5, s0: 1, s1: 9, css: P[2], a: 1.2 });
+		for (let i = 0, n = boss ? 14 : 4; i < n; i++) { const a = Math.random() * 6.2832, sp = (1.6 + Math.random() * 2) * (boss ? 1.8 : 1); this.part({ shape: L.proj, pal, x, y, z, vx: Math.cos(a) * sp, vy: 2.5 + Math.random() * 3, vz: Math.sin(a) * sp, g: 11, life: 0.4 + Math.random() * 0.25, s0: 0.45, s1: 0.1, rot: a, spin: 7 }); }
+		this.stats.kos++;
 	}
 	/** A dash: streaks left along the way. */
 	dash(from, dir, len, mid, type) {
