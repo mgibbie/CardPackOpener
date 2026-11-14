@@ -82,6 +82,8 @@ try {
 	const over = await waitFor(() => M(() => !window.__m3d.run.ult.cast), 12000);
 	const hp1 = await M(() => window.__m3d.world.enemies.reduce((a, e) => a + Math.max(0, e.hp), 0)), u3 = await ult();
 	A(over && hp1 < hp0 && !u3.casting && !u3.ready && /^\d+ %$/.test(u3.pct), 'the cast ends: the foes near were hurt, and the meter starts again', { hp0, hp1, u3 });
+	const fxu = await M(() => window.__m3d.fx());   // (the effects layer drew it: a circle of light under you at the cast, and its pieces after)
+	A(fxu && fxu.lit && fxu.byLight.rune > 0 && fxu.ults >= 2, 'the Ultimate is drawn by the effects layer: the circle of light at the cast, then its rings, beams or strikes', fxu && { lit: fxu.lit, ults: fxu.ults, rune: fxu.byLight.rune });
 
 	// ---- the meter is a button
 	await M(() => window.__m3d.ult.charge(1));

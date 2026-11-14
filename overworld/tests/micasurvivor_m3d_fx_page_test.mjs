@@ -117,10 +117,41 @@ try {
 
 	// ---- 3. the budget
 	A(v.sprites <= v.max.SPRITES && v.glows <= v.max.GLOWS && v.parts <= v.max.PARTS, '3. the layer is inside its budget', { sprites: v.sprites, glows: v.glows, parts: v.parts });
+	// ---- 2e. what belongs on the floor lies on the floor; a whirl, a wave and a patch are drawn (B4, the rest)
+	{
+		A(await boot('dex=7&moves=whirlpool,surf,toxic'), '2e. Squirtle: Whirlpool (a vortex), Surf (a wave), Toxic (a trail of patches)');
+		await waitFor(async () => { const q = await M(() => { const m = window.__m3d, s = m.state; for (const e of m.world.enemies) if (!e.dead) { e.a.x = s.x + 3; e.a.z = s.z; e.a.y = s.y; e.hp = e.maxHp = 1e9; break; } return m.fx(); }); return q.lit && q.vortexes > 0 && q.waves > 0 && q.patches > 0 && q.flat > 0; }, 40000);
+		v = await fx();
+		A(v.vortexes > 0 && v.byLight.twirl > 0, '2e. a vortex is a whirl turning on the floor', { vortexes: v.vortexes, twirl: v.byLight.twirl });
+		A(v.waves > 0 && v.patches > 0, '2e. a wave is a ring travelling out; a patch is a stain with pieces rising', { waves: v.waves, patches: v.patches });
+		const flatSeen = await waitFor(async () => (await fx()).flat > 0, 15000);
+		A(flatSeen, '2e. those lights lie flat on the floor, not facing the camera');
+		await shot('fx-ground.png');
+	}
+
+	// ---- 2f. what an enemy is suffering is drawn on it; the weather is in the air (B6)
+	{
+		const mark = () => M(() => { const m = window.__m3d, s = m.state, e = m.world.enemies.find((q) => !q.dead); if (!e) return null; e.a.x = s.x + 3; e.a.z = s.z; e.a.y = s.y; e.hp = e.maxHp = 1e9; e.burn = 3; e.burnT = 3; e.poison = 3; e.poisonT = 4; e.slow = 0.4; e.slowT = 2; e.paraT = 3; e.confT = 3; return m.fx().marks; });
+		await waitFor(async () => { const q = await mark(); return !!q && ['burn', 'poison', 'para', 'conf', 'slow'].every((k) => q[k] > 0); }, 20000);
+		let mk = await mark();
+		A(!!mk && mk.burn > 0 && mk.poison > 0 && mk.para > 0 && mk.conf > 0 && mk.slow > 0, '2f. a burned, poisoned, paralysed, confused and slowed enemy wears each of those', mk);
+		await shot('fx-status.png');
+		await M(() => { const m = window.__m3d, e = m.world.enemies.find((q) => !q.dead); e.paraT = 0; e.confT = 0; e.sleepT = 4; });
+		await waitFor(async () => (await fx()).marks.sleep > 0, 8000);
+		await M(() => { const m = window.__m3d, e = m.world.enemies.find((q) => !q.dead); e.sleepT = 0; e.frozenT = 2; });
+		const frozen = await waitFor(async () => (await fx()).marks.frozen > 0, 8000);
+		A(frozen, '2f. …and one asleep, then frozen, wears that');
+		const seen = {};
+		for (const kind of ['rain', 'snow', 'sand', 'fog', 'sun']) { await M((k) => window.__m3d.setWeather(k, 30), kind); await M(() => { const w = window.__m3d.world.weather; if (w) w.t = 5; }); seen[kind] = await waitFor(async () => (await fx()).weather[kind] > 0, 12000); if (kind === 'rain' && SHOTS) { await sleep(700); await shot('fx-rain.png'); } }
+		A(Object.values(seen).every(Boolean), '2f. rain, snow, sand, fog and sun are each in the air round you, not only a tint on the screen', seen);
+		v = await fx();
+		A(v.parts <= v.max.PARTS && v.lights <= v.max.LIGHTS, '2f. …inside the budget', { parts: v.parts, lights: v.lights });
+	}
+
 	// ---- 2d. a KO is a burst, not a vanish (B5)
 	{
 		const k0 = (await fx()).kos;
-		const dex = await M(() => { const m = window.__m3d, e = m.world.enemies.find((q) => !q.dead); if (!e) return 0; e.hp = e.maxHp = 1e9; m.world.hit(e, 2e9, 0, 0, 0); return e.dex; });
+		const dex = await M(() => { const m = window.__m3d, e = m.world.enemies.find((q) => !q.dead); if (!e) return 0; for (const q of m.world.enemies) if (!q.dead) { q.hp = q.maxHp = 1; q.a.x = m.state.x + 2.5; q.a.z = m.state.z; q.a.y = m.state.y; } return e.dex; });   // (one hit from your own moves fells them: the KO comes through the fight's own events)
 		await waitFor(async () => (await fx()).kos > k0, 8000);
 		v = await fx();
 		A(dex > 0 && v.kos > k0 && v.byLight.glint > 0 && (v.byLight.puff > 0 || v.byLight.smoke > 0), '2d. an enemy that goes down leaves a puff and a star of light where it stood', { kos: v.kos, k0, glint: v.byLight.glint });

@@ -147,7 +147,7 @@ try {
 
 	// ---- anyone can watch it
 	const V = await open(null, '?replay=' + id);
-	const playing = await waitFor(() => V.page.evaluate(() => !!(window.__m3d && window.__m3d.ready && window.__m3d.replay && window.__m3d.replay.state === 'playing')), 60000);
+	const playing = await waitFor(() => V.page.evaluate(() => !!(window.__m3d && window.__m3d.ready && window.__m3d.replay && window.__m3d.replay.state === 'playing' && window.__m3d.room && window.__m3d.room.stairs)), 60000);   // (…and the Dive's floor is up: it arrives with the tape's first frame, a moment after 'playing'. Reading it at once crashed on the gate, main 2026-11-14.)
 	const v0 = playing ? await V.page.evaluate(() => { const m = window.__m3d; return { search: location.search, rp: m.replay, stairs: m.room.stairs.join(), x: m.state.x, z: m.state.z }; }) : {};
 	A(playing && /dw=3/.test(v0.search) && /route=forest/.test(v0.search) && /replay=/.test(v0.search) && v0.stairs === hostRoom && v0.rp.src === 'tape' && v0.rp.info.by === 'alice' && v0.rp.info.frames === r.taped, "a logged-out browser opens ?replay=<id>: the page goes to that Dive's floor and plays her tape", JSON.stringify(v0).slice(0, 500));
 	A(Math.hypot(v0.x - sp[0], v0.z - sp[1]) < 6, 'it starts where she started', JSON.stringify([v0.x, v0.z, sp]));
