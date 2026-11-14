@@ -154,7 +154,6 @@ G.Combat = (() => {
   }
 
   /** Tabla de tipos × clima para un ataque de tipo `type` contra `e`. */
-  function typeK(type, e) { return G.Types.mult(type, e.types) * G.Weather.mult(type); }
 
   function fireProjectiles(pl, m) {
     const col = G.U.TYPE_COLOR[m.type];
@@ -625,7 +624,11 @@ G.Combat = (() => {
   function land(e, dmg, col, dx, dy, knock, src, crit, pl) {
     const mt = src.mtype || src.type;
     const asleep = e.sleepT > 0 && src.cc !== 'sleep';
-    let k = mt ? typeK(mt, e) : 1;
+    // (the games' own chart, 2026-11-13: an immune enemy takes NOTHING, and nothing the hit carries. Unless none of your
+    //  moves can hurt it at all: then your hits on it are a Struggle, x0.25. data/types.js)
+    const tm = mt ? G.Types.mult(mt, e.types) : 1, struggle = tm === 0 && !!pl && G.Types.noAnswer(pl.moves, e.types);
+    if (tm === 0 && !struggle) { G.Types.showImmune(e); return 0; }
+    let k = mt ? (struggle ? G.Types.STRUGGLE : tm) * G.Weather.mult(mt) : 1;
     if (asleep) k *= G.Status.SLEEP_BONUS;
     if (mt === 'electric' && e.paraT > 0) k *= G.Status.PARA_ELECTRIC;
     if (crit) k *= CRIT_MUL;
@@ -635,7 +638,7 @@ G.Combat = (() => {
     if (pl && pl.af) k *= afK(pl, src);   // MicaSurvivor (DLC D16): the all-fire damage factor and the Choice Band's slot rule
     const d = dmg * k;
     // MicaSurvivor (M5 lote 11, main.gd 2481 / 5168 dmg_src): la vida que pierde va a la fuente de este golpe.
-    G.DmgLog.as(G.DmgLog.keyOf(src), () => e.hurt(d, col, dx, dy, knock, crit ? 'crit' : mt ? G.Types.label(G.Types.mult(mt, e.types)) : null));
+    G.DmgLog.as(G.DmgLog.keyOf(src), () => e.hurt(d, col, dx, dy, knock, crit ? 'crit' : mt ? (struggle ? 'weak' : G.Types.label(tm)) : null));
     if (!e.dead) {
       if (asleep) G.Status.wake(e);
       if (src.cc && src.ccp > 0 && Math.random() < src.ccp) G.Status.apply(e, src.cc);

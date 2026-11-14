@@ -1,13 +1,17 @@
 /* ============ types.js — tabla de tipos ============
- * La de los juegos (6.ª gen. en adelante), pero SUAVIZADA para un survivor,
- * donde sólo llevas un ataque activo y no puedes cambiar de Pokémon:
+ * La de los juegos (6.ª gen. en adelante), con SUS números (el dueño, 2026-11-13: "the full typing system of
+ * effectiveness from the full Pokemon game", Plans/MICASURVIVOR_TYPES_VFX_PLAN.md, parte A):
  *
- *   juegos   ×2      ×0,5    ×0 (inmune)
- *   aquí     ×1,6    ×0,6    ×0,3
+ *   ×2 muy eficaz    ×0,5 poco eficaz    ×0 inmune
  *
- * Con dos tipos se multiplican (×1,6 · ×1,6 = ×2,56), con tope en [×0,3, ×2,4].
- * Se usa en los dos sentidos: tus ataques contra los enemigos y los de los
- * enemigos contra ti (su tipo principal, o el de su disparo).
+ * Con dos tipos se multiplican (×4, ×0,25, ×0), sin tope. Hasta ese día estaba suavizada (×1,6 / ×0,6 / ×0,3, con
+ * tope en [×0,3, ×2,4]).
+ * Se usa en los dos sentidos: tus ataques contra los enemigos y los de los enemigos contra ti (su tipo principal, o
+ * el de su disparo). Los tres juegos leen ESTA tabla: el 2D, y la Expedición y el Dive en 3D (m3d/combat.js dataFrom).
+ *
+ * Sin callejón sin salida (STRUGGLE): si NINGUNO de tus movimientos de daño puede herir a un enemigo (es inmune a
+ * todos), tus golpes contra él entran como Forcejeo: ×0,25, peor que casi cualquier golpe resistido, pero nunca cero.
+ * Con un solo movimiento que sí le haga daño, los demás le hacen ×0 de verdad.
  */
 G.Types = (() => {
   // atacante -> { defensor: multiplicador de los juegos } (los ×1 no se apuntan)
@@ -31,20 +35,34 @@ G.Types = (() => {
     steel:    { fire: .5, water: .5, electric: .5, ice: 2, rock: 2, steel: .5, fairy: 2 },
     fairy:    { fire: .5, fighting: 2, poison: .5, dragon: 2, dark: 2, steel: .5 }
   };
-  const SOFT = { 2: 1.6, 0.5: 0.6, 0: 0.3 };
-  const MIN = 0.3, MAX = 2.4;
+  const STRUGGLE = 0.25;
 
-  /** Multiplicador de un ataque de tipo `atk` contra un Pokémon de tipos `def`. */
+  /** Multiplicador de un ataque de tipo `atk` contra un Pokémon de tipos `def`: 0, 0,25, 0,5, 1, 2 o 4. */
   function mult(atk, def) {
     const row = CHART[atk];
     if (!row || !def) return 1;
     let m = 1;
-    for (const t of def) if (row[t] != null) m *= SOFT[row[t]];
-    return G.U.clamp(m, MIN, MAX);
+    for (const t of def) if (row[t] != null) m *= row[t];
+    return m;
   }
 
-  /** 'super' | 'weak' | null, para enseñar el aviso. */
-  function label(m) { return m > 1.05 ? 'super' : m < 0.95 ? 'weak' : null; }
+  /** 'super' | 'weak' | 'immune' | null, para enseñar el aviso (y para lo que depende de él: Cinta Experto…). */
+  function label(m) { return m === 0 ? 'immune' : m > 1 ? 'super' : m < 1 ? 'weak' : null; }
 
-  return { CHART, mult, label };
+  /** ¿Ninguno de estos movimientos puede herir a un Pokémon de tipos `def`? (los de apoyo y los sin tipo no cuentan) */
+  function noAnswer(moves, def) {
+    let any = false;
+    for (const m of moves || []) { if (!m || m.kind === 'buff' || !m.type) continue; any = true; if (mult(m.type, def) > 0) return false; }
+    return any;
+  }
+
+  /** El aviso "Inmune" sobre `o` (un enemigo, tú): como mucho uno cada 0,7 s por cuerpo. */
+  function showImmune(o) {
+    const now = performance.now();
+    if (o.immAt != null && now - o.immAt < 700) return;
+    o.immAt = now;
+    if (G.FX) G.FX.dmgText(o.x, o.y - (o.bodyH || 0) - 4, 'Inmune', '#a3abb8');
+  }
+
+  return { CHART, STRUGGLE, mult, label, noAnswer, showImmune };
 })();
