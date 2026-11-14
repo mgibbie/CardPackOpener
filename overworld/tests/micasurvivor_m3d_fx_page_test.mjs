@@ -84,6 +84,20 @@ try {
 	A(v.swings > 0, '2. a swing (Tackle) shows its blow in front of you', v.swings);
 	await shot('fx-mix.png');
 
+	// ---- 2b. the other kinds of move (B4): each is drawn by the layer, in the move's own shape
+	// (an enemy is kept 3 m in front of you, so everything has a target and something to land on)
+	const near = () => M(() => { const m = window.__m3d; for (const e of m.world.enemies) if (!e.dead) { e.a.x = m.state.x + 3; e.a.z = m.state.z; e.a.y = m.state.y; e.hp = e.maxHp = 1e9; break; } return m.fx(); });
+	const until = async (keys, ms = 30000) => { await waitFor(async () => { const q = await near(); return keys.every((k) => q[k] > 0); }, ms); return fx(); };
+	A(await boot('dex=25&moves=thunderbolt:2,discharge:2,quick-attack'), '2b. Pikachu: Thunderbolt (a chain), Discharge (an aura), Quick Attack (a dash)');
+	v = await until(['chains', 'auras', 'dashes']);
+	A(v.chains > 0 && v.auras > 0 && v.dashes > 0 && v.byShape.streak > 0, '2b. the chain is a run of bolts, the aura throws its pieces out, the dash leaves streaks', { chains: v.chains, auras: v.auras, dashes: v.dashes, streak: v.byShape.streak });
+	await shot('fx-chain-aura.png');
+	A(await boot('dex=7&moves=hydro-pump:2,rock-slide:2,spikes'), '2b. Squirtle: Hydro Pump (a beam), Rock Slide (meteors), Spikes (mines)');
+	v = await until(['beams', 'blasts']);
+	A(v.beams > 0 && v.byShape.drop > 0, '2b. the beam is a stream of drops', { beams: v.beams, drop: v.byShape.drop });
+	A(v.blasts > 0 && v.byShape.rock > 0 && v.byShape.star > 0, '2b. a meteor falls as a rock and bursts where it lands; a mine lies there as its own shape', { blasts: v.blasts, rock: v.byShape.rock, star: v.byShape.star });
+	await shot('fx-beam-meteor.png');
+
 	// ---- 3. the budget
 	A(v.sprites <= v.max.SPRITES && v.glows <= v.max.GLOWS && v.parts <= v.max.PARTS, '3. the layer is inside its budget', { sprites: v.sprites, glows: v.glows, parts: v.parts });
 	A(errors.length === 0, '3. the page raised no error', errors.slice(0, 4));

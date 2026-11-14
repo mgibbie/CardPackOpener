@@ -95,7 +95,7 @@ export class Effects {
 		this.sprites = new Batch(tex, FX.SPRITES, false); this.glows = new Batch(glowTexture(doc), FX.GLOWS, true);
 		scene.add(this.sprites.mesh); scene.add(this.glows.mesh);
 		this.parts = []; this.right = new THREE.Vector3(1, 0, 0); this.up = new THREE.Vector3(0, 1, 0); this.at = 0; this.t = 0; this.impacts = 0; this.looks = new Map();
-		this.stats = { sprites: 0, glows: 0, parts: 0, shots: 0, impacts: 0, swings: 0, byShape: {} };   // (the last frame's; `byShape`, `impacts`, `swings`: since the page opened)
+		this.stats = { sprites: 0, glows: 0, parts: 0, shots: 0, impacts: 0, swings: 0, beams: 0, auras: 0, chains: 0, blasts: 0, dashes: 0, byShape: {} };   // (the last frame's; `byShape`, `impacts`, `swings`: since the page opened)
 	}
 	/** How a move looks: { proj, pal, trail, melee, … } (the 2D game's table, by move id; a type's default without one). */
 	look(mid, type) {
@@ -146,6 +146,52 @@ export class Effects {
 		const L = this.look(mid, type), shape = MELEE[L.melee] || 'impact', d = Math.max(0.6, reach * 0.62), px = x + Math.cos(aim) * d, pz = z + Math.sin(aim) * d;
 		this.part({ shape, pal: L.pal, x: px, y: y + 0.85, z: pz, life: 0.2, s0: Math.max(1.1, reach * 0.7), s1: Math.max(1.5, reach * 1.05), anim: 10, glow: this.VFX.PAL[L.pal][3], ga: 0.45 });
 		this.stats.swings++;
+	}
+	/** A beam: the move's shape streaming along it from the mouth, a flare where it starts, light all the way. */
+	beam(from, dir, len, w, mid, type) {
+		const L = this.look(mid, type), A = this.atlas, b = L.beam === 'lightning' ? 'bolt' : L.beam, shape = A.has(b) ? b : A.has(L.proj) ? L.proj : 'ball', rot = A.dir(shape) ? this.screenAngle(dir[0], dir[1], dir[2]) : 0;
+		const size = Math.max(0.7, w * 1.5), step = Math.max(0.55, size * 0.6), sp = 14, css = this.VFX.PAL[L.pal][3];
+		for (let d = 0.3; d < len; d += step) { const j = (Math.random() - 0.5) * w * 0.35; this.part({ shape, pal: L.pal, x: from[0] + dir[0] * d, y: from[1] + dir[1] * d + j, z: from[2] + dir[2] * d, vx: dir[0] * sp, vy: dir[1] * sp, vz: dir[2] * sp, life: 0.2 + Math.random() * 0.08, s0: size, s1: size * 0.45, rot, spin: A.spins(shape) ? 9 : 0, anim: 10, glow: css, ga: 0.5 }); }
+		this.part({ shape: 'impact', pal: L.pal, x: from[0] + dir[0] * 0.4, y: from[1] + dir[1] * 0.4, z: from[2] + dir[2] * 0.4, life: 0.18, s0: size * 1.2, s1: size * 2, anim: 12, glow: css, ga: 0.8 });
+		this.part({ shape: 'impact', pal: L.pal, x: from[0] + dir[0] * len, y: from[1] + dir[1] * len, z: from[2] + dir[2] * len, life: 0.2, s0: size, s1: size * 1.8, anim: 10, glow: css, ga: 0.6 });
+		this.stats.beams++;
+	}
+	/** An aura: the move's pieces thrown out from the middle to its edge (drawn in, for a drain; rising, for what comes out of the ground). */
+	aura(x, y, z, r, mid, type) {
+		const L = this.look(mid, type), A = this.atlas, shape = A.has(L.aura) ? L.aura : A.has(L.proj) ? L.proj : 'ball', n = Math.max(8, Math.min(26, Math.round(r * 5))), life = 0.3, css = this.VFX.PAL[L.pal][2];
+		for (let i = 0; i < n; i++) {
+			const a = (i / n) * 6.2832 + Math.random() * 0.3, c = Math.cos(a), s = Math.sin(a), sp = r / life, size = 0.5 + Math.random() * 0.3, rot = A.dir(shape) ? this.screenAngle(c, 0, s) : Math.random() * 6.28;
+			if (L.rise) this.part({ shape, pal: L.pal, x: x + c * r * Math.sqrt(Math.random()), y: y + 0.1, z: z + s * r * Math.sqrt(Math.random()), vy: 3 + Math.random() * 2.5, life: life + Math.random() * 0.2, s0: size, s1: size * 0.3, rot, spin: 4 });
+			else if (L.inward) this.part({ shape, pal: L.pal, x: x + c * r, y: y + 0.7, z: z + s * r, vx: -c * sp, vz: -s * sp, life, s0: size, s1: size * 0.4, rot });
+			else this.part({ shape, pal: L.pal, x: x + c * 0.3, y: y + 0.5 + Math.random() * 0.5, z: z + s * 0.3, vx: c * sp, vz: s * sp, life, s0: size, s1: size * 0.35, rot, spin: A.spins(shape) ? 8 : 0, anim: 8 });
+		}
+		this.part({ shape: 'ring', pal: L.pal, x, y: y + 0.8, z, life: 0.22, s0: 0.8, s1: Math.min(6, r * 1.4), glow: css, ga: 0.55 });
+		this.stats.auras++;
+	}
+	/** A chain: a jagged run of sparks from link to link, a burst on each. from: [x, y, z]. links: [[x, y, z], …] */
+	chain(from, links, mid, type) {
+		const L = this.look(mid, type), A = this.atlas, shape = A.has(L.proj) && A.dir(L.proj) ? L.proj : 'bolt', css = this.VFX.PAL[L.pal][3];
+		let a = from;
+		for (const b of links) {
+			const d = [b[0] - a[0], b[1] - a[1], b[2] - a[2]], l = Math.hypot(d[0], d[1], d[2]) || 1, rot = this.screenAngle(d[0], d[1], d[2]);
+			for (let q = 0.35; q < l; q += 0.7) { const k = q / l, j = () => (Math.random() - 0.5) * 0.45; this.part({ shape, pal: L.pal, x: a[0] + d[0] * k + j(), y: a[1] + d[1] * k + j(), z: a[2] + d[2] * k + j(), life: 0.14 + Math.random() * 0.1, s0: 0.95, s1: 0.5, rot: rot + (Math.random() - 0.5) * 0.9, anim: 14, glow: css, ga: 0.6 }); }
+			this.part({ shape: 'impact', pal: L.pal, x: b[0], y: b[1], z: b[2], life: 0.18, s0: 0.8, s1: 1.5, anim: 12, glow: css, ga: 0.8 });
+			a = b;
+		}
+		this.stats.chains++;
+	}
+	/** Something goes off on the ground (a mine, a meteor, a bomb): a burst, a ring of pieces flung out and up, a flash of light. */
+	blast(x, y, z, r, mid, type) {
+		const L = this.look(mid, type), A = this.atlas, shape = A.has(L.proj) ? L.proj : 'ball', css = this.VFX.PAL[L.pal][3], n = Math.max(6, Math.min(18, Math.round(r * 4)));
+		this.part({ shape: 'impact', pal: L.pal, x, y: y + 0.6, z, life: 0.24, s0: Math.max(1, r * 0.8), s1: Math.max(1.8, r * 1.9), anim: 9, glow: css, ga: 0.9 });
+		for (let i = 0; i < n; i++) { const a = (i / n) * 6.2832 + Math.random() * 0.4, sp = r * (2 + Math.random() * 1.5); this.part({ shape, pal: L.pal, x, y: y + 0.3, z, vx: Math.cos(a) * sp, vy: 3 + Math.random() * 4, vz: Math.sin(a) * sp, g: 12, life: 0.35 + Math.random() * 0.25, s0: 0.6, s1: 0.15, rot: a, spin: 7 }); }
+		this.stats.blasts++;
+	}
+	/** A dash: streaks left along the way. */
+	dash(from, dir, len, mid, type) {
+		const L = this.look(mid, type), rot = this.screenAngle(dir[0], dir[1], dir[2]), css = this.VFX.PAL[L.pal][2];
+		for (let d = 0; d < len; d += 0.5) this.part({ shape: 'streak', pal: L.pal, x: from[0] + dir[0] * d, y: from[1] + dir[1] * d + (Math.random() - 0.5) * 0.7, z: from[2] + dir[2] * d, vx: -dir[0] * 2, vz: -dir[2] * 2, life: 0.18 + d / Math.max(1, len) * 0.14, s0: 1.3, s1: 0.5, rot, glow: css, ga: 0.35 });
+		this.stats.dashes++;
 	}
 	/** Move and draw what is short-lived, then hand the frame to the GPU. */
 	end() {
