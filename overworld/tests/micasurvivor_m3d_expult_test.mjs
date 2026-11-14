@@ -29,6 +29,8 @@ G.DB = { save: { coins: 100, stats: {}, owned: {} }, commit() { return true; } }
 G.Expedition.wallet = { balance: () => G.DB.save.coins, earn(n) { n = Math.floor(+n); if (!(n > 0)) return false; G.DB.save.coins += n; return true; }, spend(n) { if (G.DB.save.coins < n) return false; G.DB.save.coins -= n; return true; } };
 G.Unlocks = { add: (list) => list.length }; G.UI = { toast() { } };
 const data = dataFrom(G), X = expFrom(G), UX = X.Uu, K = G.ExpUlt.K, DT = 1 / 60;
+const st = (S, ty) => ((S.w || S).pl.mon.types.includes(ty) ? data.stab : 1);   // (STAB, 2026-11-14: a move of one of your own types does x 1.5)
+
 
 A(!!UX && UX.K === K && UX.SIG_CODES.length === 16 && UX.ORDER.length === 18 && UX.BOSS_CAP === 0.28 && BEAT_NAMES.join() === 'ring,beams,smite,dive,meteors,nova,pull,drain,heal', 'the 3D run reads the 2D game\'s own Ultimates: its numbers, its 16 signatures, the 18 types, the boss cap, the nine beats');
 A(UX.SIGS[4].names.join() === 'Roaring Ember,Fire Vortex,Winged Inferno' && nameOf(UX, 4, 0) === 'Roaring Ember' && nameOf(UX, 4, 4) === 'Winged Inferno' && nameOf(UX, typeCode(UX, 'bug'), 0) === 'Devastating Plague' && typeOfCode(UX, 172) === 'electric', 'names in English: a signature\'s by tier, a type\'s Z-move');
@@ -108,7 +110,7 @@ const DEXOF = { normal: 16, fire: 4, water: 7, electric: 25, grass: 1, ice: 87, 
 	const d0 = dmgOf(S, 0), d3 = dmgOf(S, 3), atk = d0 / (40 * (1 + 0.1 * 12) * 0.62);
 	A(near(d3 / d0, 1.45) && atk > 0 && near(d0, K.DMG * (1 + K.DMG_LV * 12) * atk * K.DMG_K), 'damage: 40 × (1 + 0.1 level) × (1 + 0.15 tier) × attack × 0.62', [d0, d3]);
 	const fx = makeFx(S, typeCode(UX, 'normal'), 0), e = foe(S, 2);
-	A(near(fx.zhit(e, fx.dmg * 2, 1, 0), d0 * 2, 1e-6) && near(1e6 * e.def.hp, 0, 1e99) && e.maxHp - e.hp === Math.round(d0 * 2), 'a hit of weight 2 does twice that (Normal on a Rattata: no type factor)');
+	A(near(fx.zhit(e, fx.dmg * 2, 1, 0), d0 * 2 * st(S, 'normal'), 1e-6) && near(1e6 * e.def.hp, 0, 1e99) && e.maxHp - e.hp === Math.round(d0 * 2 * st(S, 'normal')), 'a hit of weight 2 does twice that (Normal on a Rattata: no type factor)');
 	// a boss: 28 % of its max HP a piece
 	const b = addBoss(w, 150, pl.s.x + 5, pl.s.z, { slot: 0 }); b.maxHp = b.hp = 1000; b.shield = 0;
 	fx.zhit(b, 1e6, 1, 0);
@@ -116,7 +118,7 @@ const DEXOF = { normal: 16, fire: 4, water: 7, electric: 25, grass: 1, ice: 87, 
 	fx.zhit(b, 1e6, 1, 0);
 	A(b.hp === 720, '…and nothing more from that piece');
 	const fx2 = makeFx(S, typeCode(UX, 'normal'), 0); fx2.zhit(b, 100, 1, 0);
-	A(b.hp === 620, 'the next piece has its own 28 % (a 100 hit: 620)');
+	A(b.hp === 720 - Math.round(100 * st(S, 'normal')), 'the next piece has its own 28 % (a 100 hit, with STAB if Normal is your type)', b.hp);
 	b.hp = 150; const fx3 = makeFx(S, typeCode(UX, 'normal'), 0); fx3.zhit(b, 1e6, 1, 0);
 	A(b.dead, 'a boss with less than that left falls');
 	// one that can be caught keeps its own floor
@@ -184,10 +186,10 @@ const DEXOF = { normal: 16, fire: 4, water: 7, electric: 25, grass: 1, ice: 87, 
 	// two of them to the number
 	const S = typed(87), w = S.w, e = foe(S, 5), far = foe(S, 49);
 	const fx = play(S, typeCode(UX, 'ice'), 0, (f) => { if (near(f.t, 1, DT)) S.frozeFor = e.frozenT; });
-	A(near(S.frozeFor, 1.8 * 2.4) && e.maxHp - e.hp === Math.round(fx.dmg * 2.6) && far.hp === far.maxHp, 'Absolute Zero: everything within 760 px (47.5 m) is frozen for 2.4 × a freeze, then shattered at × 2.6; at 49 m: untouched', [S.frozeFor, e.maxHp - e.hp, fx.dmg * 2.6]);
+	A(near(S.frozeFor, 1.8 * 2.4) && e.maxHp - e.hp === Math.round(fx.dmg * 2.6 * st(S, 'ice')) && far.hp === far.maxHp, 'Absolute Zero: everything within 760 px (47.5 m) is frozen for 2.4 × a freeze, then shattered at × 2.6; at 49 m: untouched', [S.frozeFor, e.maxHp - e.hp, fx.dmg * 2.6]);
 	const F = typed(21), fw = F.w, pack = [foe(F, 18, 0), foe(F, 19, 1), foe(F, 18, 1)], lone = foe(F, -10, 0);
 	const ffx = play(F, typeCode(UX, 'flying'), 0);
-	A(Math.hypot(fw.pl.s.x - pack[0].a.x, fw.pl.s.z - pack[0].a.z) < 2.5 && pack.every((q) => q.maxHp - q.hp === Math.round(ffx.dmg * 4.2)) && lone.hp === lone.maxHp, 'Supersonic Dive: you come down on the biggest group (× 4.2 within 320 px); a lone foe 28 m away is untouched');
+	A(Math.hypot(fw.pl.s.x - pack[0].a.x, fw.pl.s.z - pack[0].a.z) < 2.5 && pack.every((q) => q.maxHp - q.hp === Math.round(ffx.dmg * 4.2 * st(F, 'flying'))) && lone.hp === lone.maxHp, 'Supersonic Dive: you come down on the biggest group (× 4.2 within 320 px); a lone foe 28 m away is untouched');
 }
 
 // ---------------------------------------------------------------- the signatures' beats, by tier
@@ -206,7 +208,7 @@ const DEXOF = { normal: 16, fire: 4, water: 7, electric: 25, grass: 1, ice: 87, 
 	const B = mk({ dex: 1 }); B.w.pl.hp = B.w.pl.maxHp * 0.5; play(B, 1, 2);
 	A(near(B.w.pl.hp / B.w.pl.maxHp, 0.58, 1e-6), 'Solar Garden (Bulbasaur, tier 2): + 8 % of your max HP (no foe: nothing else heals)', B.w.pl.hp / B.w.pl.maxHp);
 	const Gs = mk({ dex: 92 }), g = addEnemy(Gs.w, 10, Gs.w.pl.s.x + 4, Gs.w.pl.s.z, { dummy: true }); g.hp = g.maxHp = 1e9;   /* (a Caterpie: Ghost is neither weak nor strong against Bug) */ const gfx = makeFx(Gs, 92, 2); let before = 0; while (!gfx.done) { if (gfx.t < 3.5 && gfx.t + DT >= 3.5) before = g.hp; gfx.tick(DT); }
-	A(before - g.hp > before * 0.12 && before - g.hp < before * 0.13 + gfx.dmg * 3, 'Evil Eye (Gastly, tier 2): a foe near loses 12 % of the life it has (and a little more)', [before, g.hp]);
+	A(before - g.hp > before * 0.12 * st(Gs, 'ghost') && before - g.hp < (before * 0.13 + gfx.dmg * 3) * st(Gs, 'ghost'), 'Evil Eye (Gastly, tier 2): a foe near loses 12 % of the life it has (and a little more)', [before, g.hp]);
 	const Mt = mk({ dex: 150 }), pulled = foe(Mt, 20), boss = addBoss(Mt.w, 144, Mt.w.pl.s.x - 20, Mt.w.pl.s.z, { slot: 0 }), bx = boss.a.x; play(Mt, 150, 0);
 	A(Math.hypot(pulled.a.x - Mt.w.pl.s.x, pulled.a.z - Mt.w.pl.s.z) < 8 && near(boss.a.x, bx, 0.01), 'Mind Wave (Mewtwo): foes within 520 px are pulled to you for 2.2 s (a boss is not)');
 }

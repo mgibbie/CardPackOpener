@@ -10,6 +10,11 @@
 //     carries the five cases
 //   * no dead end: when NONE of your moves can hurt an enemy, your hits on it are a Struggle (x0.25); with one move
 //     that can, the others really do x0
+// The owner's calls of 2026-11-14:
+//   * x0 is on ENEMIES only: you are never fully immune (what would be x0 on you is x0.25)
+//   * STAB: a move of one of your own types does x1.5
+//   * ability immunities: an enemy with Levitate takes nothing from Ground (Water Absorb: Water, Volt Absorb:
+//     Electric, Flash Fire: Fire, Sap Sipper: Grass); you, with one of them, take a quarter
 //   node overworld/tests/micasurvivor_types_test.mjs
 import fs from 'fs';
 import path from 'path';
@@ -63,10 +68,15 @@ const T = G.Types, data = dataFrom(G);
 	A(d1 === 100 * T.STRUGGLE && T.STRUGGLE === 0.25 && e.hp === 975, '2D: with no move that can hurt it, the hit is a Struggle: x0.25', { d1, hp: e.hp });
 	e = foe(['water', 'flying']);
 	A(G.Combat.land(e, 100, '#fff', 1, 0, 50, shot, false, pika) === 400 && e.hp === 600, '2D: Electric on Water / Flying is x4', e.hp);
-	const me = { invuln: 0, dead: false, hp: 100, mon: { types: ['ghost'] }, x: 0, y: 0, bodyH: 10 };
-	let threw = null; shown.length = 0;
-	try { G.Player.prototype.hurt.call(me, 30, 'normal'); } catch (err) { threw = err.message; }
-	A(!threw && me.hp === 100 && me.invuln === 0 && shown.join() === 'Inmune', '2D: a Normal hit on a Ghost player does nothing (no damage, no moment of grace spent)', { threw, hp: me.hp, shown });
+	A(T.multIn('normal', ['ghost']) === 0.25 && T.multIn('ground', ['flying', 'water']) === 0.25 && T.multIn('fire', ['grass']) === 2 && T.multIn('fire', ['water', 'dragon']) === 0.25 && T.PLAYER_MIN === 0.25, 'an attack ON YOU is never x0: what would be immune is x0.25 (the rest of the chart as it is)');
+	const src = fs.readFileSync(path.join(ROOT, 'micasurvivor/js/entities/player.js'), 'utf8') + fs.readFileSync(path.join(ROOT, 'micasurvivor/js/systems/localcoop.js'), 'utf8');
+	A((src.match(/G\.Types\.multIn\(type, /g) || []).length === 2 && !/G\.Types\.mult\(type, /.test(src), '2D: a hit on you, and one on your downed partner\'s stand-in, go through that rule');
+	const char = { moves: [{ type: 'fire', kind: 'projectile' }], mon: { types: ['fire'] }, af: false };
+	e = foe(['normal']);
+	A(G.Combat.land(e, 100, '#fff', 1, 0, 0, { type: 'fire', kind: 'projectile' }, false, char) === 150 && G.Combat.land(e, 100, '#fff', 1, 0, 0, { type: 'normal', kind: 'melee' }, false, char) === 100 && T.STAB === 1.5, '2D: STAB: a Fire move from a Fire type does x1.5; its Normal move does not');
+	e = foe(['ghost', 'poison']); e.dex = 92; const dig = { moves: [{ type: 'ground', kind: 'aura' }, { type: 'normal', kind: 'melee' }, { type: 'dark', kind: 'melee' }], af: false };
+	A(T.mult('ground', ['ghost', 'poison']) === 2 && T.mult('ground', ['ghost', 'poison'], 92) === 0 && G.Abilities.of(92) === 'levitate' && G.Combat.land(e, 100, '#fff', 1, 0, 0, { type: 'ground', kind: 'aura' }, false, dig) === 0 && e.hp === 1000, '2D: a Gastly has Levitate: Ground would be x2 on its types, and does nothing to it');
+	A(['waterabsorb:water', 'voltabsorb:electric', 'flashfire:fire', 'sapsipper:grass', 'levitate:ground'].every((q) => { const [ab, ty] = q.split(':'), fx = G.Abilities.FX[ab].fx; return T.ABILITY_IMMUNE[ab] === ty && fx.resist.includes(ty) && fx.resist_k === 0.25; }), 'the five abilities: an enemy with one is immune to its type; YOU with one take a quarter of it');
 }
 
 // ---------- the 3D modes
@@ -82,12 +92,18 @@ const T = G.Types, data = dataFrom(G);
 	A(d2 === 100, '3D: …and the Normal move hits it as ever', d2);
 	[w, e] = fight(['thunder-shock']);
 	const d1 = land(w, e, 100, 1, 0, 0, src), ev1 = w.events[w.events.length - 1];
-	A(d1 === 25 && ev1.eff === 0.25, '3D: with no move that can hurt it, the hit is a Struggle: x0.25', { d1, eff: ev1.eff });
+	A(d1 === 25 * 1.5 && ev1.eff === 0.25, '3D: with no move that can hurt it, the hit is a Struggle: x0.25 (and x1.5, an Electric move from a Pikachu)', { d1, eff: ev1.eff });
 	e.types = ['water', 'flying'];
-	A(land(w, e, 100, 1, 0, 0, src) === 400 && w.events[w.events.length - 1].eff === 4, '3D: Electric on Water / Flying is x4');
+	A(land(w, e, 100, 1, 0, 0, src) === 600 && w.events[w.events.length - 1].eff === 4, '3D: Electric on Water / Flying is x4, and with STAB x6');
+	e.types = ['normal'];
+	A(land(w, e, 100, 1, 0, 0, src) === 150 && land(w, e, 100, 1, 0, 0, { type: 'normal', kind: 'melee', id: 'y' }) === 100, '3D: STAB: Pikachu\'s Electric move does x1.5, a Normal one does not');
+	const lev = addEnemy(w, 92, 14, 14, { dummy: true }); lev.hp = lev.maxHp = 1000; w.pl.moves.push({ id: 'z', type: 'normal', kind: 'melee' });
+	A(land(w, lev, 100, 1, 0, 0, { type: 'ground', kind: 'aura', id: 'g' }) === 0 && lev.hp === 1000 && data.typeMult('ground', lev.types) === 2, '3D: a Gastly\'s Levitate: a Ground hit does nothing to it');
 	const g = newWorld(room, data, { dex: 92, moves: [], seed: 3, weather: false }), hp = g.pl.hp;   // (Gastly: Ghost / Poison)
-	A(hurtPlayer(g, 30, 'normal') === 0 && g.pl.hp === hp && g.pl.invuln === 0 && g.events.some((q) => q.k === 'immune'), '3D: a Normal hit on a Ghost player does nothing, and says so', { hp: g.pl.hp, inv: g.pl.invuln });
-	A(hurtPlayer(g, 30, 'ghost') > 30 && g.pl.hp < hp, '3D: …and a Ghost hit on it is super effective', g.pl.hp);
+	const dn = hurtPlayer(g, 30, 'normal');
+	A(dn > 0 && Math.abs(dn - 30 * 0.25) < 1e-9 && g.pl.hp < hp, '3D: a Normal hit on a Ghost player is x0.25, not nothing', dn);
+	g.pl.invuln = 0; const dg = hurtPlayer(g, 30, 'ghost');
+	A(Math.abs(dg - 60) < 1e-9, '3D: …and a Ghost hit on it is x2', dg);
 	const kept = keepEvents([], [0, 0.25, 0.5, 1, 2, 4].map((eff) => ({ k: 'hit', x: 1, y: 2, z: 3, d: 5, crit: false, eff })));
 	A(kept.map((q) => q.eff).join() === '3,0,0,1,2,4', 'a watcher\'s frame carries the cases: immune 3, resisted 0, plain 1, super 2, doubly super 4', kept.map((q) => q.eff));
 }
