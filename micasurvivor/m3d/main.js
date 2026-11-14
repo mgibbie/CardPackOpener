@@ -347,6 +347,8 @@ const shots = world || WATCH ? new Shots(600) : null, flashes = world || WATCH ?
 if (shots) scene.add(shots.mesh);
 // the attacks themselves: the 2D game's move art, with light, trails and impacts (fx.js)
 const fx = shots && GG.VFX ? new Effects(scene, GG.VFX, (id) => GG.Moves.BY_ID[id] || (GG.ExpMoves && GG.ExpMoves.MOVES[id]) || null) : null;
+let fxLights = false;   // (the downloaded lights, fx/particles.png: a flare on a hit, a slash through a swing … The page does not wait for them.)
+if (fx) fetch('fx/particles.json').then((r) => (r.ok ? r.json() : null)).then((info) => (info ? fx.loadLights('fx/particles.png', info) : false)).then((ok) => { fxLights = !!ok; }).catch(() => { });
 // what lies on the ground, as pictures (props.js): XP, berries, items, what a zone holds
 const props = shots ? (() => {
 	const cv = document.createElement('canvas'); cv.width = cv.height = 512;
@@ -677,7 +679,7 @@ function fightEvents(events) {
 	const col = (id) => TYPE_COLOR[(GG.Moves.BY_ID[id] || (GG.ExpMoves && GG.ExpMoves.MOVES[id]) || {}).type];
 	for (const ev of events) if (ev.k === 'caught' && run) { if (ev.kind === 'league') keepCatch(ev.member || ev.dex); else if (ev.kind === 'shiny') keepShiny(ev.dex); }   // (a wild League member, a shiny: saved at once)
 	for (const ev of events) {
-		if (fx && ev.k === 'hit' && !(ev.d === 0)) fx.impact(ev.x, ev.y, ev.z, ev.type || 'normal', !!ev.crit || ev.eff >= 2, WATCH ? false : ev.eff < 1);   // (a hit lands: fx.js)
+		if (fx && ev.k === 'hit' && !(ev.d === 0)) fx.impact(ev.x, ev.y, ev.z, ev.type || (ev.ty >= 0 ? typeName(ev.ty) : 'normal'), !!ev.crit || ev.eff >= 2, WATCH ? ev.eff === 0 : ev.eff < 1);   // (a hit lands: fx.js)
 		if (fx && ev.k === 'melee') fx.swing(state.x, state.y, state.z, ev.aim, ev.r, ev.id, null);
 		if (fx && ev.id && !document.hidden) {   // (the other kinds of move, each in its own shape: fx.js)
 			if (ev.k === 'beam') fx.beam(ev.from, ev.dir, ev.len, ev.w, ev.id, null);
@@ -1258,7 +1260,7 @@ const G_MUSIC = GG.BIOME_MUSIC || null, XK_MAPS = ['viridian', 'mtmoon', 'cerule
 
 // what a test (and a curious owner in the console) can reach
 window.__m3d = {
-	fx: () => (fx ? { ...fx.stats, byShape: { ...fx.stats.byShape }, atlas: [fx.atlas.cols, fx.atlas.rows], max: { ...FXK } } : null), fxLayer: fx,
+	fx: () => (fx ? { ...fx.stats, byShape: { ...fx.stats.byShape }, byLight: { ...fx.stats.byLight }, lit: fxLights, atlas: [fx.atlas.cols, fx.atlas.rows], max: { ...FXK } } : null), fxLayer: fx,
 	link: LINK, dive: drun, guestDive: gdrun, diveRules: DR, special, light: () => ({ dive: DLIGHT, near: scene.fog.near, far: scene.fog.far, color: scene.fog.color.getHex(), vignette: !!document.getElementById('dive-dark') }), diveSave: { week: DWEEK, practice: DPRACTICE, ok: DSAVE_OK, start: DSTART, member: DMEMBER, form: DFORM, keep: DKEEP, meta: !!DMETA }, propKeys: () => (props ? [...props.atlas.cells.keys()] : []), roomBuilds: () => roomBuilds,
 	meta: LAB_META, upgrades: UPGRADES, leadShiny: LEAD_SHINY, skey,
 	keepShiny,
