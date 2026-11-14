@@ -24,7 +24,11 @@ const CHROME = process.env.CHROME || ['/opt/chrome/chrome', 'C:/Program Files/Go
 const PORT = 9287;
 const CDN = 'https://magepunk-cardart.pages.dev/';
 const SHOTS = process.env.SHOTS_DIR || os.tmpdir();
-const HOLD_MS = 3000;   // art for these ids is held back, so the first paint is the fallback
+// art for these ids is held back, so the first paint is the fallback. It is held until the test has READ that first paint
+// (letArtGo), not for a fixed 3 s: on a loaded runner the steps before the read took longer than that, the art had landed,
+// and "they wear the fallback" failed (three of main's eight gate runs on 2026-11-13). HOLD_MS is only the longest it waits.
+const HOLD_MS = 90000;
+let letArtGo; const artGate = new Promise((r) => { letArtGo = r; });
 const HELD = /^(token_bloodhound|rattlegore)\.jpg$/;
 let pass = 0, fail = 0;
 const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else { fail++; console.log('FAIL: ' + m + (extra != null ? '  ' + JSON.stringify(extra) : '')); } };
@@ -57,7 +61,7 @@ async function artBytes(name) {
 		}
 		if (u.startsWith('/battlecards/art/')) {
 			const name = u.slice('/battlecards/art/'.length);
-			if (HELD.test(name)) { held.push(name); await sleep(HOLD_MS); }
+			if (HELD.test(name)) { held.push(name); await Promise.race([artGate, sleep(HOLD_MS)]); }
 			const d = await artBytes(name);
 			if (!d) { res.writeHead(404); res.end('nf'); return; }
 			res.writeHead(200, { 'content-type': TYPES[path.extname(name)] || 'application/octet-stream', 'access-control-allow-origin': '*' }); res.end(d); return;
@@ -125,6 +129,7 @@ async function artBytes(name) {
 		A(hounds0.length >= 1, 'Bubba put Bloodhounds on the board', early);
 		A(rg0.length === 1 && rg0[0].id !== 'rattlegore' && rg0[0].at === 7, 'Rattlegore came back twice: a 7/7 copy under a new id', rg0);
 		A(early.every(t => t.art === null), 'while the art is held back they wear the fallback (the repaint is what is tested)', early);
+		letArtGo();   // (the first paint has been read: now the art may land)
 
 		const settled = await waitFor(async () => {
 			const t = await faces();
@@ -141,6 +146,7 @@ async function artBytes(name) {
 	} catch (e) {
 		fail++; console.log('FAIL: threw ' + (e && e.stack || e));
 	} finally {
+		letArtGo();   // (whatever happened: no request is left waiting)
 		await browser.close();
 		server.close();
 	}
