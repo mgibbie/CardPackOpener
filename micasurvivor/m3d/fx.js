@@ -45,7 +45,7 @@ void main() {
 	vec2 q = (position.xy - 0.5) * iSR.xy;                       // the unit quad, centred, sized in metres
 	float c = cos(iSR.z), s = sin(iSR.z);
 	vec2 r = vec2(q.x * c - q.y * s, q.x * s + q.y * c);         // turned on the screen
-	vec3 wp = iPos + uRight * r.x + uUp * r.y;
+	vec3 wp = iSR.w > 0.5 ? iPos + vec3(r.x, 0.0, r.y) : iPos + uRight * r.x + uUp * r.y;   // (flat: it lies on the floor, as a ring round a blast does)
 	vUv = vec2(mix(iUv.x, iUv.z, position.x), mix(iUv.w, iUv.y, position.y));
 	vTint = iTint;
 	gl_Position = projectionMatrix * viewMatrix * vec4(wp, 1.0);
@@ -69,10 +69,10 @@ class Batch {
 			transparent: !!glow, depthWrite: !glow, ...(glow ? { blending: THREE.CustomBlending, blendEquation: THREE.AddEquation, blendSrc: THREE.OneFactor, blendDst: THREE.OneMinusSrcAlphaFactor } : { blending: THREE.NormalBlending }) });
 		this.mesh = new THREE.Mesh(g, this.material); this.mesh.frustumCulled = false; this.mesh.renderOrder = glow ? 6 : 3; this.geometry = g;
 	}
-	add(x, y, z, w, h, rot, uv, r, gg, b, a) {
+	add(x, y, z, w, h, rot, uv, r, gg, b, a, flat = 0) {
 		if (this.n >= this.max) return false;
 		const i = this.n++;
-		this.aPos.setXYZ(i, x, y, z); this.aSR.setXYZW(i, w, h, rot, 0); this.aUv.setXYZW(i, uv[0], uv[1], uv[2], uv[3]); this.aTint.setXYZW(i, r, gg, b, a);
+		this.aPos.setXYZ(i, x, y, z); this.aSR.setXYZW(i, w, h, rot, flat); this.aUv.setXYZW(i, uv[0], uv[1], uv[2], uv[3]); this.aTint.setXYZW(i, r, gg, b, a);
 		return true;
 	}
 	end(right, up) {
@@ -100,7 +100,7 @@ export class Effects {
 		scene.add(this.sprites.mesh); scene.add(this.glows.mesh);
 		this.scene = scene; this.lights = null; this.cells = null;   // (the downloaded lights: loadLights)
 		this.parts = []; this.right = new THREE.Vector3(1, 0, 0); this.up = new THREE.Vector3(0, 1, 0); this.at = 0; this.t = 0; this.impacts = 0; this.looks = new Map();
-		this.stats = { sprites: 0, glows: 0, lights: 0, byLight: {}, parts: 0, shots: 0, impacts: 0, swings: 0, beams: 0, auras: 0, chains: 0, blasts: 0, dashes: 0, kos: 0, byShape: {} };   // (the last frame's; `byShape`, `impacts`, `swings`: since the page opened)
+		this.stats = { sprites: 0, glows: 0, lights: 0, byLight: {}, parts: 0, shots: 0, impacts: 0, swings: 0, beams: 0, auras: 0, chains: 0, blasts: 0, dashes: 0, kos: 0, flat: 0, vortexes: 0, waves: 0, patches: 0, byShape: {} };   // (the last frame's; `byShape`, `impacts`, `swings`: since the page opened)
 	}
 	/** The downloaded lights: the atlas and its list of cells ({ cell, cols, rows, names }). */
 	loadLights(url, info) {
@@ -112,9 +112,9 @@ export class Effects {
 		}, undefined, () => resolve(false)));
 	}
 	/** One light, now. name: a cell of the lights atlas. size: metres across. */
-	light(name, x, y, z, size, css, alpha = 0.7, rot = 0) {
+	light(name, x, y, z, size, css, alpha = 0.7, rot = 0, flat = false) {
 		if (!this.lights || !this.cells[name]) return;
-		COL.set(css || '#ffffff'); if (this.lights.add(x, y, z, size, size, rot, this.cells[name], COL.r, COL.g, COL.b, alpha)) this.stats.byLight[name] = (this.stats.byLight[name] || 0) + 1;
+		COL.set(css || '#ffffff'); if (this.lights.add(x, y, z, size, size, rot, this.cells[name], COL.r, COL.g, COL.b, alpha, flat ? 1 : 0)) this.stats.byLight[name] = (this.stats.byLight[name] || 0) + 1;
 	}
 	/** A light that lives a moment: it grows from s0 to s1 and fades. o: { light, x, y, z, life, s0, s1, css, a, rot, spin, vx, vy, vz } */
 	flash(o) { if (this.lights) this.part(o); }
@@ -199,7 +199,7 @@ export class Effects {
 			else this.part({ shape, pal: L.pal, x: x + c * 0.3, y: y + 0.5 + Math.random() * 0.5, z: z + s * 0.3, vx: c * sp, vz: s * sp, life, s0: size, s1: size * 0.35, rot, spin: A.spins(shape) ? 8 : 0, anim: 8 });
 		}
 		this.part({ shape: 'ring', pal: L.pal, x, y: y + 0.8, z, life: 0.22, s0: 0.8, s1: Math.min(6, r * 1.4), glow: css, ga: 0.55 });
-		this.flash({ light: L.inward ? 'twirl' : 'ringsoft', x, y: y + 0.6, z, life: 0.32, s0: L.inward ? r * 2.4 : 1, s1: L.inward ? 1 : r * 2.6, css, a: 1, spin: L.inward ? 6 : 0 });
+		this.flash({ flat: true, light: L.inward ? 'twirl' : 'ringsoft', x, y: y + 0.1, z, life: 0.32, s0: L.inward ? r * 2.4 : 1, s1: L.inward ? 1 : r * 2.6, css, a: 1, spin: L.inward ? 6 : 0 });
 		this.stats.auras++;
 	}
 	/** A chain: a jagged run of sparks from link to link, a burst on each. from: [x, y, z]. links: [[x, y, z], …] */
@@ -221,7 +221,8 @@ export class Effects {
 		const L = this.look(mid, type), A = this.atlas, shape = A.has(L.proj) ? L.proj : 'ball', css = this.VFX.PAL[L.pal][3], n = Math.max(6, Math.min(18, Math.round(r * 4)));
 		if (this.lights) {
 			this.flash({ light: 'burst', x, y: y + 0.6, z, life: 0.26, s0: Math.max(1.4, r), s1: Math.max(3, r * 2.6), css, a: 1.6, rot: Math.random() * 6.28 });
-			this.flash({ light: 'ring', x, y: y + 0.4, z, life: 0.34, s0: 0.8, s1: Math.max(3, r * 2.4), css: this.VFX.PAL[L.pal][2], a: 1.2 });
+			this.flash({ flat: true, light: 'ring', x, y: y + 0.1, z, life: 0.34, s0: 0.8, s1: Math.max(3, r * 2.4), css: this.VFX.PAL[L.pal][2], a: 1.2 });
+			this.flash({ flat: true, light: 'scorch', x, y: y + 0.07, z, life: 1.6, s0: Math.max(1.6, r * 1.5), s1: Math.max(1.8, r * 1.7), css: '#1c1d22', a: 0.9, rot: Math.random() * 6.28 });   // (what it leaves on the floor, for a moment)
 			for (let i = 0; i < 3; i++) this.flash({ light: i ? 'puff' : 'smoke', x: x + (Math.random() - 0.5) * r * 0.8, y: y + 0.5, z: z + (Math.random() - 0.5) * r * 0.8, vy: 1.4 + Math.random(), life: 0.6 + Math.random() * 0.3, s0: Math.max(1, r * 0.8), s1: Math.max(2, r * 1.6), css: '#4a4f58', a: 0.55, rot: Math.random() * 6.28, spin: 0.6 });
 		} else this.part({ shape: 'impact', pal: L.pal, x, y: y + 0.6, z, life: 0.24, s0: Math.max(1, r * 0.8), s1: Math.max(1.8, r * 1.9), anim: 9, glow: css, ga: 0.9 });
 		for (let i = 0; i < n; i++) { const a = (i / n) * 6.2832 + Math.random() * 0.4, sp = r * (2 + Math.random() * 1.5); this.part({ shape, pal: L.pal, x, y: y + 0.3, z, vx: Math.cos(a) * sp, vy: 3 + Math.random() * 4, vz: Math.sin(a) * sp, g: 12, life: 0.35 + Math.random() * 0.25, s0: 0.6, s1: 0.15, rot: a, spin: 7 }); }
@@ -233,9 +234,30 @@ export class Effects {
 		const pal = this.VFX.PAL[type] ? type : 'normal', P = this.VFX.PAL[pal], L = this.VFX.forType(pal), k = boss ? 2.6 : 1;
 		for (let i = 0; i < (boss ? 5 : 2); i++) this.flash({ light: i % 2 ? 'smoke' : 'puff', x: x + (Math.random() - 0.5) * 0.6 * k, y: y + (Math.random() - 0.3) * 0.5 * k, z: z + (Math.random() - 0.5) * 0.6 * k, vy: 0.9 + Math.random() * 0.8, life: 0.45 + Math.random() * 0.25, s0: 0.9 * k, s1: 1.9 * k, css: '#c9d2df', a: 0.7, rot: Math.random() * 6.28, spin: 0.8 });
 		this.flash({ light: 'glint', x, y, z, life: 0.24, s0: 1.2 * k, s1: 2.6 * k, css: P[3], a: 1.3 });
-		if (boss) this.flash({ light: 'ring', x, y, z, life: 0.5, s0: 1, s1: 9, css: P[2], a: 1.2 });
+		if (boss) this.flash({ flat: true, light: 'ring', x, y: y - 0.45, z, life: 0.5, s0: 1, s1: 9, css: P[2], a: 1.2 });
 		for (let i = 0, n = boss ? 14 : 4; i < n; i++) { const a = Math.random() * 6.2832, sp = (1.6 + Math.random() * 2) * (boss ? 1.8 : 1); this.part({ shape: L.proj, pal, x, y, z, vx: Math.cos(a) * sp, vy: 2.5 + Math.random() * 3, vz: Math.sin(a) * sp, g: 11, life: 0.4 + Math.random() * 0.25, s0: 0.45, s1: 0.1, rot: a, spin: 7 }); }
 		this.stats.kos++;
+	}
+	/** A whirl on the floor (Whirlpool, Fire Spin …), every frame it lasts: it turns, and the move's pieces circle in to its middle. t: its age. */
+	vortex(x, y, z, r, t, mid, type) {
+		const L = this.look(mid, type), A = this.atlas, P = this.VFX.PAL[L.pal], shape = A.has(L.proj) ? L.proj : 'ball';
+		this.light('twirl', x, y + 0.1, z, r * 2.5, P[2], 0.75, -t * 5, true); this.light('twirl', x, y + 0.14, z, r * 1.5, P[3], 0.7, -t * 8 + 2, true);
+		if (this.dt > 0 && Math.random() < this.dt * 22) { const a = Math.random() * 6.2832, c = Math.cos(a), s = Math.sin(a), sp = r / 0.45; this.part({ shape, pal: L.pal, x: x + c * r, y: y + 0.25 + Math.random() * 0.5, z: z + s * r, vx: -c * sp * 0.6 - s * sp * 0.8, vy: 1.2, vz: -s * sp * 0.6 + c * sp * 0.8, life: 0.45, s0: 0.55, s1: 0.2, rot: a, spin: 9, anim: 8 }); }
+		this.stats.vortexes++;
+	}
+	/** A wave spreading over the floor (Surf, Earthquake …), every frame it travels: a ring at its front, the move's pieces thrown up along it. */
+	wave(x, y, z, r, max, mid, type) {
+		const L = this.look(mid, type), A = this.atlas, P = this.VFX.PAL[L.pal], shape = A.has(L.proj) ? L.proj : 'ball', k = Math.max(0, 1 - r / Math.max(0.1, max));
+		this.light('ring', x, y + 0.1, z, r * 2.15, P[3], 0.35 + 0.75 * k, 0, true); this.light('ringsoft', x, y + 0.12, z, r * 1.5, P[2], 0.3 * k, 0, true);
+		if (this.dt > 0) for (let i = 0, n = Math.min(5, Math.ceil(this.dt * r * 22)); i < n; i++) { const a = Math.random() * 6.2832; this.part({ shape, pal: L.pal, x: x + Math.cos(a) * r, y: y + 0.15, z: z + Math.sin(a) * r, vx: Math.cos(a) * 2, vy: 2.5 + Math.random() * 2, vz: Math.sin(a) * 2, g: 10, life: 0.35, s0: 0.5, s1: 0.15, rot: a, spin: 6 }); }
+		this.stats.waves++;
+	}
+	/** A patch left on the floor (a trail's puddle, a pool of poison), every frame it lasts: a stain of light, and now and then one of the move's pieces rising. k: 1 fresh … 0 about to go. */
+	patch(x, y, z, r, k, mid, type, seed = 0) {
+		const L = this.look(mid, type), A = this.atlas, P = this.VFX.PAL[L.pal], shape = A.has(L.aura) ? L.aura : A.has(L.proj) ? L.proj : 'ball', a = Math.min(1, k * 3);
+		this.light('smoke', x, y + 0.08, z, r * 2.5, P[1], 0.8 * a, seed, true); this.light('magic', x, y + 0.1, z, r * 1.9, P[3], 0.45 * a, this.t * 0.7 + seed, true);
+		if (this.dt > 0 && Math.random() < this.dt * 5) { const q = Math.random() * 6.2832, d = Math.sqrt(Math.random()) * r * 0.85; this.part({ shape, pal: L.pal, x: x + Math.cos(q) * d, y: y + 0.15, z: z + Math.sin(q) * d, vy: 1.3 + Math.random(), life: 0.5, s0: 0.42, s1: 0.12, rot: q, spin: 3, anim: 6 }); }
+		this.stats.patches++;
 	}
 	/** A dash: streaks left along the way. */
 	dash(from, dir, len, mid, type) {
@@ -252,12 +274,12 @@ export class Effects {
 			if (p.g) p.vy -= p.g * dt;
 			if (p.vx) p.x += p.vx * dt; if (p.vy) p.y += p.vy * dt; if (p.vz) p.z += p.vz * dt;
 			const k = p.t / p.life, s = p.s0 + (p.s1 - p.s0) * k;
-			if (p.light) { this.light(p.light, p.x, p.y, p.z, s, p.css, (p.a || 0.7) * (1 - k * k), (p.rot || 0) + (p.spin || 0) * p.t); continue; }
+			if (p.light) { this.light(p.light, p.x, p.y, p.z, s, p.css, (p.a || 0.7) * (1 - k * k), (p.rot || 0) + (p.spin || 0) * p.t, !!p.flat); continue; }
 			this.sprite(p.shape, p.pal, p.anim ? Math.floor(p.t * p.anim) : 0, p.x, p.y, p.z, s, (p.rot || 0) + (p.spin || 0) * p.t);
 			if (p.glow) this.glow(p.x, p.y, p.z, s * 2.2, p.glow, (p.ga || 0.5) * (1 - k));
 		}
 		this.stats.sprites = this.sprites.n; this.stats.glows = this.glows.n; this.stats.parts = P.length;
-		this.stats.lights = this.lights ? this.lights.n : 0;
+		this.stats.lights = this.lights ? this.lights.n : 0; if (this.lights) { let fl = 0; const a = this.lights.aSR.array; for (let i = 0; i < this.lights.n; i++) if (a[i * 4 + 3] > 0.5) fl++; this.stats.flat = fl; }
 		this.sprites.end(this.right, this.up); this.glows.end(this.right, this.up); if (this.lights) this.lights.end(this.right, this.up);
 	}
 }
