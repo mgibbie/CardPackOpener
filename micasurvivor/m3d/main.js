@@ -10,6 +10,7 @@ import { K, CELL, step, newState, noInput, groundAt, stateName, facingRow, tuneF
 import { buildRoom, SPOTS } from './room.js';
 import { makeRenderer, buildTerrain, buildWater, buildRails, buildScatter, buildExit, drawMap, SpriteBatch, Shadows, Shots, Flashes, loadSheet, frameAt, spriteQuad, footLift, placeCamera, PX, setFog, FOG0 } from './render.js';
 import { newWorld, addEnemy, addBoss, tick, dataFrom, choose, drop, CK, canFire } from './combat.js';
+import { Effects, FX as FXK } from './fx.js';
 import { frame as netFrame, keepEvents, diff as netDiff, bundle, unbundle, Viewer, Tape, ballColour, typeName, NK, PICK } from './net.js';
 import { Props, PROP_MON, BOBS } from './props.js';
 import { hostAdd, hostStep, hostFrame, hostApply, guestWorld, guestSync, guestMsg, guestApply, mateRows } from './coop.js';
@@ -344,6 +345,8 @@ const shadows = new Shadows(N + 4 + (world ? world.cap : WATCH ? CK.CAP + 20 : 0
 scene.add(shadows.mesh);
 const shots = world || WATCH ? new Shots(600) : null, flashes = world || WATCH ? new Flashes(scene) : null;
 if (shots) scene.add(shots.mesh);
+// the attacks themselves: the 2D game's move art, with light, trails and impacts (fx.js)
+const fx = shots && GG.VFX ? new Effects(scene, GG.VFX, (id) => GG.Moves.BY_ID[id] || (GG.ExpMoves && GG.ExpMoves.MOVES[id]) || null) : null;
 // what lies on the ground, as pictures (props.js): XP, berries, items, what a zone holds
 const props = shots ? (() => {
 	const cv = document.createElement('canvas'); cv.width = cv.height = 512;
@@ -407,16 +410,17 @@ function draw(t) {
 			s.batch.add(e.a.x, e.a.y, e.a.z, q.rect, q.uv, e.flash > 0 ? 1.7 : e.asleep ? 0.62 : 1);
 			shadows.add(room, e.a.x, e.a.z, e.a.y, s.shadow * (e.scale || 1));
 		}
-		shots.begin();
-		const ball = (b) => { if (!(b[4] >= 32 && PICK[b[4] - 32] && prop(PICK[b[4] - 32], b[0], b[1] - 0.3, b[2]))) shots.add(b[0], b[1], b[2], b[3], ballColour(b[4], TYPE_COLOR, PICK_COLOR)); };
+		shots.begin(); if (fx) fx.begin(camera, t);
+		// (a ball in a watcher's or a guest's frame: a pickup is its picture; a shot is its type's shape, an enemy's in angry pink light)
+		const ball = (b) => { if (b[4] >= 32 && PICK[b[4] - 32] && prop(PICK[b[4] - 32], b[0], b[1] - 0.3, b[2])) return; if (fx && b[4] <= 31) fx.shot(b[0], b[1], b[2], b[3], null, b[4] === 31 ? 'normal' : typeName(b[4]), null, b[0] * 7 + b[2] * 3, b[4] === 31 ? '#ff5f8f' : null); else shots.add(b[0], b[1], b[2], b[3], ballColour(b[4], TYPE_COLOR, PICK_COLOR)); };
 		for (const e of E) if (e.shiny) for (let k = 0; k < 3; k++) { const a = t * 2.6 + k * 2.094, r = (e.cr || 0.4) + 0.35; shots.add(e.a.x + Math.cos(a) * r, e.a.y + 0.5 + (e.cr || 0.4) * (1 + Math.sin(t * 4 + k * 1.7)) , e.a.z + Math.sin(a) * r, 0.07, '#fff3c4'); }   // (a shiny's sparkles)
 		if (!world) {   // watching: everything that is a ball comes ready-made in the frame
 			for (const b of view.balls) ball(b);
 			for (const e of E) if (e.shield > 0) shots.add(e.a.x, e.a.y + 1.6 * (e.scale || 1), e.a.z, 0.16, '#7fc8ff');
 		}
-		for (const p of world ? world.shots : []) shots.add(p.x, p.y, p.z, Math.max(0.14, p.r), TYPE_COLOR[p.mtype]);
+		for (const p of world ? world.shots : []) { if (fx) fx.shot(p.x, p.y, p.z, Math.max(0.14, p.r), p.mid, p.mtype, [p.vx, p.vy, p.vz], p.id); else shots.add(p.x, p.y, p.z, Math.max(0.14, p.r), TYPE_COLOR[p.mtype]); }
 		if (JOIN && coView) for (const b of coView.balls) if (b[4] !== 31) ball(b);   // (a guest: the host's shots and the floor's pickups; enemy shots are its own copies)
-		if (world) for (const p of world.orbs) shots.add(p.x, p.y, p.z, Math.max(0.16, p.r), TYPE_COLOR[p.mtype]);
+		if (world) for (const p of world.orbs) { if (fx) fx.shot(p.x, p.y, p.z, Math.max(0.16, p.r), p.mid, p.mtype, null, p.id); else shots.add(p.x, p.y, p.z, Math.max(0.16, p.r), TYPE_COLOR[p.mtype]); }
 		// what lies in the world: mines (a small ball on the floor), turrets (a ball that hangs and bobs), meteors (a ball
 		// coming down on its mark), patches (a disc on the floor, drawn once, fading over its life)
 		// pickups: the 2D game's pictures, bobbing over the floor (the XP gem, the berry, the magnet, the bomb, an item on its gold disc)
@@ -432,7 +436,7 @@ function draw(t) {
 			else { const big = /unown|comet|challenge|cursedaltar|greed|meowth|slots/.test(o.kind); shots.add(o.x, o.y + (big ? 1.1 : 0.55) + Math.sin(t * 2 + o.i) * 0.08, o.z, (big ? 0.42 : EK.SMALL.includes(o.kind) ? 0.22 : 0.3) * (1 + o.ch * 0.8), EK.COL[o.kind]); }
 		}
 		if (world) for (const e of world.enemies) if (e.shield > 0) shots.add(e.a.x, e.a.y + Math.max(1.2, e.cr * 2) + 0.35, e.a.z, 0.16, '#7fc8ff');   // a shield: a blue bead over its head
-		if (world) for (const p of world.eshots) shots.add(p.x, p.y, p.z, Math.max(0.2, p.r), '#ff5f8f');   // an enemy's shot: always the same angry pink
+		if (world) for (const p of world.eshots) { if (fx) fx.shot(p.x, p.y, p.z, Math.max(0.2, p.r), null, p.mtype || 'normal', [p.vx, p.vy, p.vz], p.id, '#ff5f8f'); else shots.add(p.x, p.y, p.z, Math.max(0.2, p.r), '#ff5f8f'); }   // an enemy's shot: its type's shape, always in the same angry pink light
 		// Expedition's effects: a bomb on its arc, a whirl on the floor, a wave's ring spreading
 		for (const f of world ? world.effects : []) {
 			const c = TYPE_COLOR[f.m.type];
@@ -468,7 +472,7 @@ function draw(t) {
 		}
 		if (!paused && state.rail >= 0 && simTicks % 3 === 0) burst(state.x, state.y + 0.05, state.z, '#ffe9a0', 2, 2.2, { up: 2.2, life: 0.3, r: 0.06 });   // (grinding a rail: sparks under you)
 		drawSparks(t);
-		shots.end();
+		shots.end(); if (fx) fx.end();
 	}
 	// (P3n) the other players
 	for (const m of mates()) {
@@ -672,6 +676,8 @@ function fightEvents(events) {
 	const col = (id) => TYPE_COLOR[(GG.Moves.BY_ID[id] || (GG.ExpMoves && GG.ExpMoves.MOVES[id]) || {}).type];
 	for (const ev of events) if (ev.k === 'caught' && run) { if (ev.kind === 'league') keepCatch(ev.member || ev.dex); else if (ev.kind === 'shiny') keepShiny(ev.dex); }   // (a wild League member, a shiny: saved at once)
 	for (const ev of events) {
+		if (fx && ev.k === 'hit' && !(ev.d === 0)) fx.impact(ev.x, ev.y, ev.z, ev.type || 'normal', !!ev.crit || ev.eff >= 2, WATCH ? false : ev.eff < 1);   // (a hit lands: fx.js)
+		if (fx && ev.k === 'melee') fx.swing(state.x, state.y, state.z, ev.aim, ev.r, ev.id, null);
 		if (ev.k === 'mark') { flashes.arc(ev.x, ev.y, ev.z, ev.r, 0, 6.2832, TYPE_COLOR[typeName(ev.type)], ev.life, ev.inner); continue; }   // (watching: something was put down)
 		if (ev.k === 'melee') flashes.arc(state.x, state.y, state.z, ev.r, ev.aim, Math.min(ev.arc, 6.2832), col(ev.id));
 		else if (ev.k === 'aura') flashes.arc(state.x, state.y, state.z, ev.r, 0, 6.2832, col(ev.id));
@@ -1238,6 +1244,7 @@ const G_MUSIC = GG.BIOME_MUSIC || null, XK_MAPS = ['viridian', 'mtmoon', 'cerule
 
 // what a test (and a curious owner in the console) can reach
 window.__m3d = {
+	fx: () => (fx ? { ...fx.stats, byShape: { ...fx.stats.byShape }, atlas: [fx.atlas.cols, fx.atlas.rows], max: { ...FXK } } : null), fxLayer: fx,
 	link: LINK, dive: drun, guestDive: gdrun, diveRules: DR, special, light: () => ({ dive: DLIGHT, near: scene.fog.near, far: scene.fog.far, color: scene.fog.color.getHex(), vignette: !!document.getElementById('dive-dark') }), diveSave: { week: DWEEK, practice: DPRACTICE, ok: DSAVE_OK, start: DSTART, member: DMEMBER, form: DFORM, keep: DKEEP, meta: !!DMETA }, propKeys: () => (props ? [...props.atlas.cells.keys()] : []), roomBuilds: () => roomBuilds,
 	meta: LAB_META, upgrades: UPGRADES, leadShiny: LEAD_SHINY, skey,
 	keepShiny,

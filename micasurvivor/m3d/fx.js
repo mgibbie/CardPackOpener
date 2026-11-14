@@ -1,0 +1,165 @@
+// m3d/fx.js — MicaSurvivor 3D: the effects layer (Plans/MICASURVIVOR_TYPES_VFX_PLAN.md, part B: B1 + B2). The owner,
+// 2026-11-13: "the worst part of those 3d modes is how unpolished the attacks look". Until now a shot was a flat
+// coloured sphere. Here it is the 2D game's own pixel art for that move (js/entities/vfx.js: a flame, a drop, a leaf, a
+// bolt … in its type's palette, with its frames), standing in the 3D world:
+//   * an ATLAS: every shape × every palette × every frame, baked once from G.VFX into one texture;
+//   * SPRITES: camera-facing quads from the atlas, turned on the screen to point the way they fly; hard-edged, so they
+//     write depth and sort against the world like the Pokémon do. One draw call;
+//   * GLOWS: soft additive light behind them, in the type's colour. One draw call;
+//   * PARTICLES: short-lived sprites (a trail, an impact, a swing's bite) that fly, fall, grow and animate.
+// It only DRAWS: the rules (combat.js) are untouched, and it reads what a fight already publishes.
+import * as THREE from 'three';
+
+export const CELL_PX = 16;          // one atlas cell (the largest shape is 15 × 15)
+export const FX = { SPRITES: 1400, GLOWS: 700, PARTS: 900, IMPACTS_A_FRAME: 16 };
+// a move's trail in the 2D game (a kind of particle there) -> the shape that stands for it here
+const TRAIL = { ember: 'fire', drip: 'drop', spark: 'star', wisp: 'shadow', bubbles: 'bubble', dirt: 'rock' };
+const MELEE = { impact: 'impact', jaws: 'jaws', claw: 'claw', vine: 'claw', feather: 'wind' };
+
+/** Bake G.VFX into one canvas. -> { canvas, cols, rows, has(shape), frames(shape), uv(shape, pal, frame), dir(shape), spins(shape), px(shape) } */
+export function bakeAtlas(VFX, doc = document) {
+	const shapes = Object.keys(VFX.SHAPES), pals = Object.keys(VFX.PAL), col = {}, C = CELL_PX;
+	let cols = 0; for (const s of shapes) { col[s] = cols; cols += VFX.frames(s); }
+	const canvas = doc.createElement('canvas'); canvas.width = cols * C; canvas.height = pals.length * C;
+	const g = canvas.getContext('2d'); g.imageSmoothingEnabled = false;
+	pals.forEach((pal, r) => { for (const s of shapes) for (let f = 0; f < VFX.frames(s); f++) { const cv = VFX.sprite(s, pal, f); g.drawImage(cv, (col[s] + f) * C + ((C - cv.width) >> 1), r * C + ((C - cv.height) >> 1)); } });
+	const row = {}; pals.forEach((p, i) => { row[p] = i; });
+	const W = canvas.width, H = canvas.height;
+	return {
+		canvas, cols, rows: pals.length, shapes, pals, has: (s) => col[s] !== undefined, frames: (s) => (col[s] === undefined ? 1 : VFX.frames(s)), dir: (s) => VFX.isDir(s), spins: (s) => VFX.spins(s),
+		px: (s) => { const S = VFX.SHAPES[s] || VFX.SHAPES.ball; return Math.max(S.w, S.h); },
+		/** The cell's texture window: [u0, v0, u1, v1] (v0 the top row of the image). */
+		uv(shape, pal, frame = 0) { const s = col[shape] === undefined ? 'ball' : shape, c = col[s] + ((frame | 0) % VFX.frames(s)), r = row[pal] === undefined ? row.normal : row[pal]; return [c * C / W, r * C / H, (c + 1) * C / W, (r + 1) * C / H]; },
+	};
+}
+
+const VERT = `
+attribute vec3 iPos; attribute vec4 iSR; attribute vec4 iUv; attribute vec4 iTint;
+uniform vec3 uRight; uniform vec3 uUp;
+varying vec2 vUv; varying vec4 vTint;
+void main() {
+	vec2 q = (position.xy - 0.5) * iSR.xy;                       // the unit quad, centred, sized in metres
+	float c = cos(iSR.z), s = sin(iSR.z);
+	vec2 r = vec2(q.x * c - q.y * s, q.x * s + q.y * c);         // turned on the screen
+	vec3 wp = iPos + uRight * r.x + uUp * r.y;
+	vUv = vec2(mix(iUv.x, iUv.z, position.x), mix(iUv.w, iUv.y, position.y));
+	vTint = iTint;
+	gl_Position = projectionMatrix * viewMatrix * vec4(wp, 1.0);
+}`;
+const FRAG_SPRITE = `
+uniform sampler2D map; varying vec2 vUv; varying vec4 vTint;
+void main() { vec4 c = texture2D(map, vUv); if (c.a < 0.5) discard; gl_FragColor = vec4(c.rgb * vTint.rgb, 1.0); }`;
+const FRAG_GLOW = `
+uniform sampler2D map; varying vec2 vUv; varying vec4 vTint;
+void main() { float a = texture2D(map, vUv).a * vTint.a; gl_FragColor = vec4(vTint.rgb * a, a); }`;
+const QUAD = (() => { const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute([0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0], 3)); g.setIndex([0, 1, 2, 0, 2, 3]); return g; })();
+
+/** Up to `max` camera-facing quads from one texture, one draw call. glow: additive, soft, no depth written. */
+class Batch {
+	constructor(texture, max, glow) {
+		this.max = max; this.n = 0;
+		const g = new THREE.InstancedBufferGeometry(); g.index = QUAD.index; g.setAttribute('position', QUAD.getAttribute('position'));
+		const attr = (name, size) => { const a = new THREE.InstancedBufferAttribute(new Float32Array(max * size), size); a.setUsage(THREE.DynamicDrawUsage); g.setAttribute(name, a); return a; };
+		this.aPos = attr('iPos', 3); this.aSR = attr('iSR', 4); this.aUv = attr('iUv', 4); this.aTint = attr('iTint', 4);
+		this.material = new THREE.ShaderMaterial({ vertexShader: VERT, fragmentShader: glow ? FRAG_GLOW : FRAG_SPRITE, uniforms: { map: { value: texture }, uRight: { value: new THREE.Vector3(1, 0, 0) }, uUp: { value: new THREE.Vector3(0, 1, 0) } },
+			transparent: !!glow, depthWrite: !glow, blending: glow ? THREE.AdditiveBlending : THREE.NormalBlending });
+		this.mesh = new THREE.Mesh(g, this.material); this.mesh.frustumCulled = false; this.mesh.renderOrder = glow ? 6 : 3; this.geometry = g;
+	}
+	add(x, y, z, w, h, rot, uv, r, gg, b, a) {
+		if (this.n >= this.max) return false;
+		const i = this.n++;
+		this.aPos.setXYZ(i, x, y, z); this.aSR.setXYZW(i, w, h, rot, 0); this.aUv.setXYZW(i, uv[0], uv[1], uv[2], uv[3]); this.aTint.setXYZW(i, r, gg, b, a);
+		return true;
+	}
+	end(right, up) {
+		this.geometry.instanceCount = this.n; this.mesh.visible = this.n > 0;
+		this.aPos.needsUpdate = this.aSR.needsUpdate = this.aUv.needsUpdate = this.aTint.needsUpdate = true;
+		this.material.uniforms.uRight.value.copy(right); this.material.uniforms.uUp.value.copy(up);
+	}
+}
+
+function glowTexture(doc) {
+	const c = doc.createElement('canvas'); c.width = c.height = 64;
+	const g = c.getContext('2d'), gr = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+	gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(0.25, 'rgba(255,255,255,0.55)'); gr.addColorStop(0.6, 'rgba(255,255,255,0.14)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
+	g.fillStyle = gr; g.fillRect(0, 0, 64, 64);
+	const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.NoColorSpace; return t;
+}
+const FULL = [0, 0, 1, 1], COL = new THREE.Color();
+
+/** The effects of one scene. VFX: the 2D game's G.VFX. moveDef: (id) -> the move's definition (its type, its id). */
+export class Effects {
+	constructor(scene, VFX, moveDef, doc = document) {
+		this.VFX = VFX; this.moveDef = moveDef; this.atlas = bakeAtlas(VFX, doc);
+		const tex = new THREE.CanvasTexture(this.atlas.canvas); tex.magFilter = tex.minFilter = THREE.NearestFilter; tex.generateMipmaps = false; tex.flipY = false; tex.colorSpace = THREE.NoColorSpace;
+		this.sprites = new Batch(tex, FX.SPRITES, false); this.glows = new Batch(glowTexture(doc), FX.GLOWS, true);
+		scene.add(this.sprites.mesh); scene.add(this.glows.mesh);
+		this.parts = []; this.right = new THREE.Vector3(1, 0, 0); this.up = new THREE.Vector3(0, 1, 0); this.at = 0; this.t = 0; this.impacts = 0; this.looks = new Map();
+		this.stats = { sprites: 0, glows: 0, parts: 0, shots: 0, impacts: 0, swings: 0, byShape: {} };   // (the last frame's; `byShape`, `impacts`, `swings`: since the page opened)
+	}
+	/** How a move looks: { proj, pal, trail, melee, … } (the 2D game's table, by move id; a type's default without one). */
+	look(mid, type) {
+		const k = (mid || '') + '|' + (type || '');
+		let v = this.looks.get(k);
+		if (!v) { const def = mid ? this.moveDef(mid) : null; v = def ? this.VFX.forMove({ id: def.id || mid, type: def.type || type }) : this.VFX.forType(type || 'normal'); this.looks.set(k, v); }
+		return v;
+	}
+	begin(camera, t) {
+		this.sprites.n = 0; this.glows.n = 0; this.stats.shots = 0; this.impacts = 0;
+		const e = camera.matrixWorld.elements; this.right.set(e[0], e[1], e[2]); this.up.set(e[4], e[5], e[6]);
+		this.dt = Math.min(0.05, Math.max(0, t - this.at)); this.at = t; this.t = t;
+	}
+	/** The angle on the screen of a direction in the world. */
+	screenAngle(dx, dy, dz) { return Math.atan2(dx * this.up.x + dy * this.up.y + dz * this.up.z, dx * this.right.x + dy * this.right.y + dz * this.right.z); }
+	/** One atlas sprite, centred on (x, y, z). size: metres across the cell. */
+	sprite(shape, pal, frame, x, y, z, size, rot = 0, tint = 1) {
+		if (this.sprites.add(x, y, z, size, size, rot, this.atlas.uv(shape, pal, frame), tint, tint, tint, 1)) this.stats.byShape[shape] = (this.stats.byShape[shape] || 0) + 1;
+	}
+	/** A soft light. r: metres across. */
+	glow(x, y, z, r, css, alpha = 0.5) { COL.set(css || '#ffffff'); this.glows.add(x, y, z, r, r, 0, FULL, COL.r, COL.g, COL.b, alpha); }
+	/** A shot in flight: the move's own shape, pointing where it goes (or spinning, or as it is), with its light and its trail.
+	 *  v: [vx, vy, vz] or null (a watcher's ball: no direction known). seed: any number of its own (its id). */
+	shot(x, y, z, r, mid, type, v, seed = 0, css = null) {
+		const L = this.look(mid, type), A = this.atlas, shape = A.has(L.proj) ? L.proj : 'ball', t = this.t;
+		const size = Math.max(0.62, r * 2.7) * CELL_PX / A.px(shape);
+		const rot = A.dir(shape) ? (v ? this.screenAngle(v[0], v[1], v[2]) : 0) : A.spins(shape) ? t * 9 + seed : 0;
+		this.sprite(v || !A.dir(shape) ? shape : 'ball', L.pal, Math.floor(t * 10 + seed), x, y, z, size, rot);
+		this.glow(x, y, z, size * 2.3, css || this.VFX.PAL[L.pal][2], 0.62);
+		this.stats.shots++;
+		if (v && this.dt > 0 && Math.random() < this.dt * 26) {   // its trail: small, left behind, sinking or rising a little
+			const ts = TRAIL[L.trail] || shape, up = L.trail === 'ember' || L.trail === 'wisp' || L.trail === 'bubbles' ? 0.9 : L.trail ? -1.2 : 0;
+			this.part({ shape: A.has(ts) ? ts : 'ball', pal: L.pal, x: x + (Math.random() - 0.5) * 0.2, y: y + (Math.random() - 0.5) * 0.2, z: z + (Math.random() - 0.5) * 0.2, vx: v[0] * 0.08, vy: up, vz: v[2] * 0.08, life: 0.3 + Math.random() * 0.2, s0: size * 0.5, s1: size * 0.12, rot: Math.random() * 6.28, spin: 3 });
+		}
+	}
+	/** Something short-lived. o: { shape, pal, x, y, z, vx, vy, vz, g (gravity), life, s0, s1 (size at its start and end), rot, spin, anim (frames a second), glow (css), ga } */
+	part(o) { if (this.parts.length >= FX.PARTS) this.parts.shift(); o.t = 0; this.parts.push(o); return o; }
+	/** A hit lands: the type's impact, a flash of light, a few pieces thrown off. big: a super-effective or critical hit. */
+	impact(x, y, z, type, big = false, weak = false) {
+		if (this.impacts++ >= FX.IMPACTS_A_FRAME) return;
+		const pal = this.VFX.PAL[type] ? type : 'normal', k = big ? 1.5 : weak ? 0.7 : 1, L = this.VFX.forType(pal);
+		this.part({ shape: 'impact', pal, x, y, z, life: 0.16, s0: 0.7 * k, s1: 1.45 * k, anim: 12, glow: this.VFX.PAL[pal][3], ga: weak ? 0.25 : 0.6 });
+		for (let i = 0, n = weak ? 1 : big ? 5 : 3; i < n; i++) { const a = Math.random() * 6.2832, sp = 2.2 + Math.random() * 2.4; this.part({ shape: L.proj, pal, x, y, z, vx: Math.cos(a) * sp, vy: 1.5 + Math.random() * 2.5, vz: Math.sin(a) * sp, g: 9, life: 0.28 + Math.random() * 0.2, s0: 0.42 * k, s1: 0.1, rot: a, spin: 8 }); }
+		this.stats.impacts++;
+	}
+	/** A swing: the move's bite, claw or blow, in front of whoever swings. aim: the ground-plane angle. */
+	swing(x, y, z, aim, reach, mid, type) {
+		const L = this.look(mid, type), shape = MELEE[L.melee] || 'impact', d = Math.max(0.6, reach * 0.62), px = x + Math.cos(aim) * d, pz = z + Math.sin(aim) * d;
+		this.part({ shape, pal: L.pal, x: px, y: y + 0.85, z: pz, life: 0.2, s0: Math.max(1.1, reach * 0.7), s1: Math.max(1.5, reach * 1.05), anim: 10, glow: this.VFX.PAL[L.pal][3], ga: 0.45 });
+		this.stats.swings++;
+	}
+	/** Move and draw what is short-lived, then hand the frame to the GPU. */
+	end() {
+		const dt = this.dt, P = this.parts;
+		for (let i = P.length - 1; i >= 0; i--) {
+			const p = P[i]; p.t += dt;
+			if (p.t >= p.life) { P.splice(i, 1); continue; }
+			if (p.g) p.vy -= p.g * dt;
+			if (p.vx) p.x += p.vx * dt; if (p.vy) p.y += p.vy * dt; if (p.vz) p.z += p.vz * dt;
+			const k = p.t / p.life, s = p.s0 + (p.s1 - p.s0) * k;
+			this.sprite(p.shape, p.pal, p.anim ? Math.floor(p.t * p.anim) : 0, p.x, p.y, p.z, s, (p.rot || 0) + (p.spin || 0) * p.t);
+			if (p.glow) this.glow(p.x, p.y, p.z, s * 2.2, p.glow, (p.ga || 0.5) * (1 - k));
+		}
+		this.stats.sprites = this.sprites.n; this.stats.glows = this.glows.n; this.stats.parts = P.length;
+		this.sprites.end(this.right, this.up); this.glows.end(this.right, this.up);
+	}
+}
