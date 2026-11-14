@@ -25,6 +25,11 @@ export const ANIM_PX = 0.075;   // metres an art pixel of the games' animations 
 // a type's own piece on a hard hit, and a swing's blow by its kind (sheets of the anims atlas)
 const TYPE_ANIM = { fire: 'fire_plume', water: 'bubble_burst', electric: 'electricity', ice: 'ice_chunk', grass: 'leaf', poison: 'poison_bubble', ghost: 'ghostly_spirit', dark: 'shadow_ball', psychic: 'sparkle_1', fairy: 'sparkle_1', rock: 'rocks', ground: 'rocks', flying: 'gust', dragon: 'wisp_fire', steel: 'cut', bug: 'needle' };
 const SWING_ANIM = { impact: 'punch_impact', jaws: 'teeth', claw: 'claw_slash', vine: 'slash', feather: 'gust' };
+// a 2D shape in a palette -> the games' own sprite for it, where the Emerald set has the right one (the rest keep the 2D
+// shape: a water drop, a rock, a crescent, a note … have no single sprite there that reads as a thing in flight)
+const SHAPE_ANIM = { 'fire|fire': 'small_ember', 'fire|dragon': 'wisp_fire', 'bubble|water': 'bubble', 'bubble|poison': 'poison_bubble', 'blob|poison': 'poison_bubble',
+	'leaf|grass': 'leaf', 'bolt|electric': 'spark_2', 'shard|ice': 'ice_crystals_0', 'shadow|ghost': 'shadow_ball', 'wind|flying': 'gust', 'web|bug': 'web', 'star|fairy': 'sparkle_1' };
+export const animFor = (shape, pal) => SHAPE_ANIM[shape + '|' + pal] || null;
 // a move's trail in the 2D game (a kind of particle there) -> the shape that stands for it here
 const TRAIL = { ember: 'fire', drip: 'drop', spark: 'star', wisp: 'shadow', bubbles: 'bubble', dirt: 'rock' };
 const MELEE = { impact: 'impact', jaws: 'jaws', claw: 'claw', vine: 'claw', feather: 'wind' };
@@ -110,7 +115,7 @@ export class Effects {
 		this.scene = scene; this.lights = null; this.cells = null;   // (the downloaded lights: loadLights)
 		this.anims = null; this.sheets = null;   // (the games' own animations: loadAnims)
 		this.parts = []; this.right = new THREE.Vector3(1, 0, 0); this.up = new THREE.Vector3(0, 1, 0); this.at = 0; this.t = 0; this.impacts = 0; this.looks = new Map();
-		this.stats = { sprites: 0, glows: 0, lights: 0, byLight: {}, anims: 0, bySheet: {}, parts: 0, shots: 0, impacts: 0, swings: 0, beams: 0, auras: 0, chains: 0, blasts: 0, dashes: 0, kos: 0, flat: 0, vortexes: 0, waves: 0, patches: 0, ults: 0, marks: {}, weather: {}, warns: 0, booms: 0, helps: {}, byShape: {} };   // (the last frame's; `byShape`, `impacts`, `swings`: since the page opened)
+		this.stats = { sprites: 0, glows: 0, lights: 0, byLight: {}, anims: 0, bySheet: {}, parts: 0, shots: 0, impacts: 0, swings: 0, ownShots: 0, beams: 0, auras: 0, chains: 0, blasts: 0, dashes: 0, kos: 0, flat: 0, vortexes: 0, waves: 0, patches: 0, ults: 0, marks: {}, weather: {}, warns: 0, booms: 0, helps: {}, byShape: {} };   // (the last frame's; `byShape`, `impacts`, `swings`: since the page opened)
 	}
 	/** The downloaded lights: the atlas and its list of cells ({ cell, cols, rows, names }). */
 	loadLights(url, info) {
@@ -154,7 +159,7 @@ export class Effects {
 		return v;
 	}
 	begin(camera, t) {
-		this.sprites.n = 0; this.glows.n = 0; if (this.lights) this.lights.n = 0; if (this.anims) this.anims.n = 0; this.stats.shots = 0; this.impacts = 0; this.stats.marks = {};
+		this.sprites.n = 0; this.glows.n = 0; if (this.lights) this.lights.n = 0; if (this.anims) this.anims.n = 0; this.stats.ownShots = 0; this.stats.shots = 0; this.impacts = 0; this.stats.marks = {};
 		const e = camera.matrixWorld.elements; this.right.set(e[0], e[1], e[2]); this.up.set(e[4], e[5], e[6]);
 		this.dt = Math.min(0.05, Math.max(0, t - this.at)); this.at = t; this.t = t;
 	}
@@ -172,7 +177,9 @@ export class Effects {
 		const L = this.look(mid, type), A = this.atlas, shape = A.has(L.proj) ? L.proj : 'ball', t = this.t;
 		const size = Math.max(0.62, r * 2.7) * CELL_PX / A.px(shape);
 		const rot = A.dir(shape) ? (v ? this.screenAngle(v[0], v[1], v[2]) : 0) : A.spins(shape) ? t * 9 + seed : 0;
-		this.sprite(v || !A.dir(shape) ? shape : 'ball', L.pal, Math.floor(t * 10 + seed), x, y, z, size, rot);
+		const own = this.anims && animFor(shape, L.pal), S = own && this.sheets.sprites[own];
+		if (S) { this.sheet(own, Math.floor(t * 12 + seed) % S.n, x, y, z, size * 1.25 / (S.w * ANIM_PX), A.spins(shape) ? t * 9 + seed : 0); this.stats.ownShots = (this.stats.ownShots || 0) + 1; }   // (the games' own sprite for it)
+		else this.sprite(v || !A.dir(shape) ? shape : 'ball', L.pal, Math.floor(t * 10 + seed), x, y, z, size, rot);
 		this.glow(x, y, z, size * 2.3, css || this.VFX.PAL[L.pal][2], 0.62);
 		this.stats.shots++;
 		if (v && this.dt > 0 && Math.random() < this.dt * 26) {   // its trail: small, left behind, sinking or rising a little
@@ -181,7 +188,11 @@ export class Effects {
 		}
 	}
 	/** Something short-lived. o: { shape, pal, x, y, z, vx, vy, vz, g (gravity), life, s0, s1 (size at its start and end), rot, spin, anim (frames a second), glow (css), ga } */
-	part(o) { if (this.parts.length >= FX.PARTS) this.parts.shift(); o.t = 0; this.parts.push(o); return o; }
+	part(o) {
+		if (this.parts.length >= FX.PARTS) this.parts.shift();
+		if (o.shape && !o.sheet && !o.light && this.anims) { const a = animFor(o.shape, o.pal); if (a && this.sheets.sprites[a]) { o.sheet = a; o.loop = o.anim || 10; } }
+		o.t = 0; this.parts.push(o); return o;
+	}
 	/** A hit lands: the type's impact, a flash of light, a few pieces thrown off. big: a super-effective or critical hit. */
 	impact(x, y, z, type, big = false, weak = false) {
 		if (this.impacts++ >= FX.IMPACTS_A_FRAME) return;
@@ -243,6 +254,7 @@ export class Effects {
 			this.part({ shape: 'impact', pal: L.pal, x: b[0], y: b[1], z: b[2], life: 0.18, s0: 0.8, s1: this.lights ? 1 : 1.5, anim: 12, glow: css, ga: 0.8 });
 			this.flash({ light: 'bolt', x: (a[0] + b[0]) / 2, y: (a[1] + b[1]) / 2, z: (a[2] + b[2]) / 2, life: 0.2, s0: l * 1.15, s1: l * 1.25, css, a: 1.6, rot: rot - 1.5708 });
 			this.flash({ light: 'star', x: b[0], y: b[1], z: b[2], life: 0.2, s0: 1, s1: 2.2, css, a: 1.3 });
+			if (L.pal === 'electric' && this.hasSheet('lightning')) { for (let q = 1.2; q < l; q += 2.2) this.play({ sheet: 'lightning', x: a[0] + d[0] * q / l, y: a[1] + d[1] * q / l, z: a[2] + d[2] * q / l, life: 0.22, scale: 1, rot: rot - 1.5708 }); this.play({ sheet: 'electricity', x: b[0], y: b[1], z: b[2], life: 0.25, scale: 0.8 }); }
 			a = b;
 		}
 		this.stats.chains++;
@@ -385,7 +397,7 @@ export class Effects {
 			if (p.g) p.vy -= p.g * dt;
 			if (p.vx) p.x += p.vx * dt; if (p.vy) p.y += p.vy * dt; if (p.vz) p.z += p.vz * dt;
 			const k = p.t / p.life, s = p.s0 + (p.s1 - p.s0) * k;
-			if (p.sheet) { const S = this.sheets.sprites[p.sheet]; this.sheet(p.sheet, p.loop ? Math.floor(p.t * p.loop) % S.n : Math.floor(k * S.n), p.x, p.y, p.z, p.scale || 1, p.rot || 0, !!p.flat); continue; }
+			if (p.sheet) { const S = this.sheets.sprites[p.sheet]; this.sheet(p.sheet, p.loop ? Math.floor(p.t * p.loop) % S.n : Math.floor(k * S.n), p.x, p.y, p.z, p.s0 != null ? s / (S.w * ANIM_PX) : p.scale || 1, p.rot || 0, !!p.flat); if (p.glow) this.glow(p.x, p.y, p.z, s * 2.2, p.glow, (p.ga || 0.5) * (1 - k)); continue; }
 			if (p.light) { this.light(p.light, p.x, p.y, p.z, s, p.css, (p.a || 0.7) * (1 - k * k), (p.rot || 0) + (p.spin || 0) * p.t, !!p.flat); continue; }
 			this.sprite(p.shape, p.pal, p.anim ? Math.floor(p.t * p.anim) : 0, p.x, p.y, p.z, s, (p.rot || 0) + (p.spin || 0) * p.t);
 			if (p.glow) this.glow(p.x, p.y, p.z, s * 2.2, p.glow, (p.ga || 0.5) * (1 - k));
