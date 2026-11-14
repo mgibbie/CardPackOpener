@@ -132,7 +132,7 @@ const says = (S, sec) => { const out = []; for (let i = 0, n = Math.round(sec * 
 	const n1 = count(S), dex0 = S.plan.cards[0], e0 = spawn(S, dex0, pl.s.x + 9, pl.s.z); e0.dead = true;
 	at(S, cursed); S.w.enemies.length = 0; steps(S, 0.5);
 	const ghosts = S.w.enemies.filter((e) => K.GHOST_DEX.includes(e.dex)), e1 = spawn(S, dex0, pl.s.x + 9, pl.s.z);
-	A(near(mods(S).diff, 0.05) && ghosts.length === 6 && count(S) >= n1 + 1 && count(S) <= n1 + 2 && near(e1.maxHp / e0.maxHp, 1.05, 0.01) && near(e1.dmg / e0.dmg, 1.05, 0.01), `a cursed ball: free, ${count(S) - n1} item(s), ${ghosts.length} ghosts round you, and from now on enemies have 5 % more HP and damage`, [ghosts.length, count(S) - n1, e1.maxHp / e0.maxHp]);
+	A(near(mods(S).diff, 0.05) && ghosts.length === 6 && count(S) >= n1 + 1 && count(S) <= n1 + 2 && near(e1.maxHp / e0.maxHp, 1.05, 0.04) && near(e1.dmg / e0.dmg, 1.05, 0.01),   /* (HP is a small whole number here, and the two arrive half a second apart: its ratio is 1.05 give or take a point of HP) */ `a cursed ball: free, ${count(S) - n1} item(s), ${ghosts.length} ghosts round you, and from now on enemies have 5 % more HP and damage`, [ghosts.length, count(S) - n1, e1.maxHp / e0.maxHp]);
 }
 
 // ---------------------------------------------------------------- the Unown altars and the comet

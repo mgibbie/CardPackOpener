@@ -262,14 +262,14 @@ G.Enemies = (() => {
   //  k = 1 fuera de la partida normal, ver systems/adaptive.js)
   const AD = () => G.Adaptive || { hpK: () => 1, dmgK: () => 1 };
   function scale(t) {
-    return { hp: (1 + t / 95) * AD().hpK(), dmg: (1 + t / 420) * AD().dmgK(), spd: 1 + Math.min(0.35, t / 1400) };
+    return { hp: (1 + t / 95) * AD().hpK() * G.Types.ENEMY_HP, dmg: (1 + t / 420) * AD().dmgK(), spd: 1 + Math.min(0.35, t / 1400) };
   }
 
   /**
    * Los jefes ya traen su vida base creciente (1.400 ... 16.000), así que
    * escalan mucho más suave: con la curva normal el último llegaba a 168.000 PV.
    */
-  function bossScale(t) { return { hp: (1 + t / 600) * AD().hpK(), dmg: (1 + t / 600) * AD().dmgK(), spd: 1 }; }
+  function bossScale(t) { return { hp: (1 + t / 600) * AD().hpK() * G.Types.ENEMY_HP, dmg: (1 + t / 600) * AD().dmgK(), spd: 1 }; }
 
   /** Tramo que toca en el segundo `t`. */
   function tierAt(t) { let ti = 0; TIERS.forEach((tr, i) => { if (t >= tr.from) ti = i; }); return ti; }
