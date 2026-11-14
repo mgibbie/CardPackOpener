@@ -9,7 +9,7 @@ import * as THREE from 'three';
 import { K, CELL, step, newState, noInput, groundAt, stateName, facingRow, tuneFor, TYPE_TRAITS } from './sim.js';
 import { buildRoom, SPOTS } from './room.js';
 import { makeRenderer, buildTerrain, buildWater, buildRails, buildScatter, buildExit, drawMap, SpriteBatch, Shadows, Shots, Flashes, loadSheet, frameAt, spriteQuad, footLift, placeCamera, PX, setFog, FOG0 } from './render.js';
-import { newWorld, addEnemy, addBoss, tick, dataFrom, choose, drop, CK, canFire } from './combat.js';
+import { newWorld, addEnemy, addBoss, tick, dataFrom, choose, drop, CK, canFire, wxLevel, setWeather, applyState } from './combat.js';
 import { Effects, FX as FXK } from './fx.js';
 import { frame as netFrame, keepEvents, diff as netDiff, bundle, unbundle, Viewer, Tape, ballColour, typeName, NK, PICK } from './net.js';
 import { Props, PROP_MON, BOBS } from './props.js';
@@ -438,6 +438,10 @@ function draw(t) {
 			else { const big = /unown|comet|challenge|cursedaltar|greed|meowth|slots/.test(o.kind); shots.add(o.x, o.y + (big ? 1.1 : 0.55) + Math.sin(t * 2 + o.i) * 0.08, o.z, (big ? 0.42 : EK.SMALL.includes(o.kind) ? 0.22 : 0.3) * (1 + o.ch * 0.8), EK.COL[o.kind]); }
 		}
 		if (world) for (const e of world.enemies) if (!e.dead && GG.Types.noAnswer(world.pl.moves, e.types)) shots.add(e.a.x, e.a.y + Math.max(1.2, e.cr * 2) + 0.3, e.a.z, 0.13, '#9aa6b5');   // none of your moves can hurt it (your hits are a Struggle): a grey bead over its head
+		if (world && fx) {   // what each enemy is suffering, drawn on it; and the weather in the air round you (fx.js)
+			for (const e of world.enemies) { if (e.dead || !(e.burn > 0 || e.poison > 0 || e.frozenT > 0 || e.paraT > 0 || e.sleepT > 0 || e.confT > 0 || e.slow > 0)) continue; fx.status({ x: e.a.x, y: e.a.y, z: e.a.z, r: Math.max(0.35, e.cr || 0.4), h: Math.max(1.1, (e.cr || 0.4) * 2), id: e.id }, { burn: e.burn > 0, poison: e.poison > 0, frozen: e.frozenT > 0, para: e.paraT > 0, sleep: e.sleepT > 0, conf: e.confT > 0, slow: e.slow > 0 }); }
+			if (world.weather && !paused) fx.weatherAir(world.weather.kind, wxLevel(world), state.x, state.y, state.z);
+		}
 		if (world) for (const e of world.enemies) if (e.shield > 0) shots.add(e.a.x, e.a.y + Math.max(1.2, e.cr * 2) + 0.35, e.a.z, 0.16, '#7fc8ff');   // a shield: a blue bead over its head
 		if (world) for (const p of world.eshots) { if (fx) fx.shot(p.x, p.y, p.z, Math.max(0.2, p.r), null, p.mtype || 'normal', [p.vx, p.vy, p.vz], p.id, '#ff5f8f'); else shots.add(p.x, p.y, p.z, Math.max(0.2, p.r), '#ff5f8f'); }   // an enemy's shot: its type's shape, always in the same angry pink light
 		// Expedition's effects: a bomb on its arc, a whirl on the floor, a wave's ring spreading
@@ -445,7 +449,8 @@ function draw(t) {
 			const c = TYPE_COLOR[f.m.type];
 			if (f.k === 'lob') { const k = Math.min(1, f.t / f.dur), lx = f.x0 + (f.x - f.x0) * k, ly = f.y0 + (f.y - f.y0) * k + Math.sin(k * Math.PI) * CK.EXP.lobHigh * 0.0625, lz = f.z0 + (f.z - f.z0) * k; if (fx) fx.shot(lx, ly, lz, 0.3, f.m.id, f.m.type, [f.x - f.x0, Math.cos(k * Math.PI) * 6, f.z - f.z0], f.x0 * 5 + f.z0); else shots.add(lx, ly, lz, 0.3, c); if (!f.seen) { f.seen = true; flashes.arc(f.x, f.y, f.z, f.r, 0, 6.2832, c, f.dur, 0.9); } }
 			else if (f.k === 'smite' && !f.seen) { f.seen = true; flashes.arc(f.x, f.y, f.z, f.r, 0, 6.2832, c, f.dur, 0.85); }
-			else if (f.k === 'vortex' && !f.seen) { f.seen = true; flashes.arc(f.x, f.y, f.z, f.r, 0, 6.2832, c, f.dur, 0.25); }
+			if (fx && fxLights && f.k === 'vortex') fx.vortex(f.x, f.y, f.z, f.r, f.t, f.m.id, f.m.type); else if (fx && fxLights && f.k === 'wave') fx.wave(f.x, f.y, f.z, f.r, f.max, f.m.id, f.m.type);
+			if (f.k === 'vortex' && !f.seen) { f.seen = true; flashes.arc(f.x, f.y, f.z, f.r, 0, 6.2832, c, f.dur, 0.25); }
 			else if (f.k === 'wave' && (simTicks & 3) === 0) flashes.arc(f.x, f.y, f.z, f.r, 0, 6.2832, c, 0.12, 0.93);
 		}
 		for (const f of world ? world.fields : []) {
@@ -453,6 +458,7 @@ function draw(t) {
 			if (f.kind === 'mine') { if (fx) fx.shot(f.x, f.y + 0.3, f.z, 0.22, f.m.id, f.m.type, null, f.id); else shots.add(f.x, f.y + 0.18, f.z, 0.2, c); }
 			else if (f.kind === 'turret') { const ty = f.y + 1 + Math.sin(t * 4 + f.id) * 0.12; if (fx) fx.shot(f.x, ty, f.z, 0.36, f.m.id, f.m.type, null, f.id); else shots.add(f.x, ty, f.z, 0.34, c); }
 			else if (f.kind === 'meteor') { const k = Math.max(0, Math.min(1, f.t / f.fall)); if (f.t > 0) { if (fx) fx.shot(f.x + (1 - k) * 2.5, f.y + 0.3 + (1 - k) * 10, f.z, 0.5, f.m.id, f.m.type, [-2.5, -10, 0], f.id); else shots.add(f.x + (1 - k) * 2.5, f.y + 0.3 + (1 - k) * 10, f.z, 0.45, c); } if (!f.seen) { f.seen = true; flashes.arc(f.x, f.y, f.z, f.r, 0, 6.2832, c, f.fall - Math.min(0, f.t), 0.9); } }
+			else if (f.kind === 'patch' && fx && fxLights) fx.patch(f.x, f.y, f.z, f.r, Math.max(0, 1 - f.t / f.life), f.m.id, f.m.type, f.id);
 			else if (f.kind === 'patch' && !f.seen) { f.seen = true; flashes.arc(f.x, f.y, f.z, f.r, 0, 6.2832, c, f.life, 0); }
 		}
 		// the red ground fills from the foe outward while it winds up (the outline is the whole reach; full: it lands)
@@ -683,6 +689,12 @@ function fightEvents(events) {
 		if (fx && ev.k === 'hit' && !(ev.d === 0)) fx.impact(ev.x, ev.y, ev.z, ev.type || (ev.ty >= 0 ? typeName(ev.ty) : 'normal'), !!ev.crit || ev.eff >= 2, WATCH ? ev.eff === 0 : ev.eff < 1);   // (a hit lands: fx.js)
 		if (ev.k === 'hit' && ev.crit && ev.d > 0 && !(ev.by !== undefined && ev.by !== MYID)) feel('crit'); else if (ev.k === 'kill' && ev.boss) feel('boss');   // (hit feel: yours, and a boss going down)
 		if (fx && ev.k === 'kill' && !document.hidden) { const e = (world ? world.enemies : []).find((q) => q.id === ev.id); fx.ko(ev.x, ev.y + 0.6, ev.z, e ? e.types[0] : 'normal', !!ev.boss); if (ev.boss) bob = Math.max(bob, 0.4); }   // (a KO is a burst, not a vanish; a boss's shakes the camera)
+		if (fx && fxLights && ev.k === 'ult' && !document.hidden) {   // (an Ultimate's pieces, in its type: fx.js)
+			if (ev.sub === 'cast') fx.ultCast(state.x, state.y, state.z, ev.type);
+			else if (ev.sub === 'ring') fx.ultRing(ev.x, ev.y, ev.z, ev.r, ev.type, ev.life || 0.4, ev.life > 0.6);
+			else if (ev.sub === 'bar') fx.beam(ev.from, ev.dir, ev.len, Math.max(0.8, ev.w), null, ev.type);
+			else if (ev.sub === 'strike') fx.ultStrike(ev.x, ev.y, ev.z, ev.r, ev.type);
+		}
 		if (fx && ev.k === 'melee') fx.swing(state.x, state.y, state.z, ev.aim, ev.r, ev.id, null);
 		if (fx && ev.id && !document.hidden) {   // (the other kinds of move, each in its own shape: fx.js)
 			if (ev.k === 'beam') fx.beam(ev.from, ev.dir, ev.len, ev.w, ev.id, null);
@@ -1292,6 +1304,7 @@ const G_MUSIC = GG.BIOME_MUSIC || null, XK_MAPS = ['viridian', 'mtmoon', 'cerule
 // what a test (and a curious owner in the console) can reach
 window.__m3d = {
 	hitFeel: () => ({ on: hitFeel.on, stops: hitFeel.stops, kicks: hitFeel.kicks, stopped: performance.now() < hitFeel.until, K: HF }), setHitFeel,
+	setWeather: (kind, dur = 30) => (world ? setWeather(world, kind, dur) : false), applyState: (e, kind) => (world ? applyState(world, e, kind) : 0),   // (for the tests: a weather, a state on an enemy)
 	matchup, walled: () => (world ? world.enemies.filter((e) => !e.dead && GG.Types.noAnswer(world.pl.moves, e.types)).length : 0),   // (how many enemies wear the grey bead)
 	fx: () => (fx ? { ...fx.stats, byShape: { ...fx.stats.byShape }, byLight: { ...fx.stats.byLight }, lit: fxLights, atlas: [fx.atlas.cols, fx.atlas.rows], max: { ...FXK } } : null), fxLayer: fx,
 	link: LINK, dive: drun, guestDive: gdrun, diveRules: DR, special, light: () => ({ dive: DLIGHT, near: scene.fog.near, far: scene.fog.far, color: scene.fog.color.getHex(), vignette: !!document.getElementById('dive-dark') }), diveSave: { week: DWEEK, practice: DPRACTICE, ok: DSAVE_OK, start: DSTART, member: DMEMBER, form: DFORM, keep: DKEEP, meta: !!DMETA }, propKeys: () => (props ? [...props.atlas.cells.keys()] : []), roomBuilds: () => roomBuilds,
