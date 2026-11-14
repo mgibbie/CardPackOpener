@@ -289,6 +289,7 @@ G.Player = class Player {
     let eff = null;
     if (type) {
       const k = G.Types.mult(type, this.mon.types);
+      if (k === 0) { G.Types.showImmune(this); return; }   // (the games' chart, 2026-11-13: an attack you are immune to does nothing)
       eff = G.Types.label(k);
       amount *= k * G.Weather.mult(type);
     }

@@ -359,7 +359,7 @@ try {
 				T.reset();
 				const mon = G.DEX.find(p => p.types.length === 1 && p.types[0] === type);
 				pl.dex = mon.dex;
-				const e = T.mk(19, 150, 0);
+				const e = T.mk(type === 'ghost' ? 10 : 19, 150, 0);   // (the games' own type chart, 2026-11-13: a Normal target is IMMUNE to Ghost, so the Ghost case meets a Caterpie)
 				T.start(); T.step(0.61);
 				st[type] = { type: D.type, frozen: e.frozenT > 0, para: e.paraT > 0, sleep: e.sleepT > 0, conf: e.confT > 0, poison: e.poison > 0, slow: e.slow > 0, hit: e.hp < e.maxHp };
 			}

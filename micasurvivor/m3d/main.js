@@ -648,6 +648,7 @@ let cutIn = null, cutN = 0;   // (the Ultimate's cut-in on screen now)
 // reaction, a Second chance, a rail under you). Drawn with the shots, after them (never in place of one). A look only:
 // the fight does not know them, so their scatter is the page's own.
 const sparks = []; let sparkAt = 0;
+let immuneT = -1e9, immuneMeT = -1e9;   // (when 'Immune' was last written: over an enemy, over you)
 function burst(x, y, z, col, n, speed, o = {}) {
 	if (document.hidden) return;
 	for (let i = 0; i < n; i++) { const a = Math.random() * 6.2832, s = speed * (0.45 + Math.random() * 0.55), d = o.ring ? o.ring * Math.sqrt(0.6 + Math.random() * 0.4) : 0; sparks.push({ x: x + Math.cos(a) * d, y: y + (o.h || 0) * Math.random(), z: z + Math.sin(a) * d, vx: Math.cos(a) * s, vy: (o.up === undefined ? 3 : o.up) * (0.4 + Math.random() * 0.8), vz: Math.sin(a) * s, t: 0, life: (o.life || 0.5) * (0.6 + Math.random() * 0.7), col, r: o.r || 0.09 }); }
@@ -694,7 +695,12 @@ function fightEvents(events) {
 		else if (ev.k === 'heal') flashes.arc(ev.x, ev.y, ev.z, ev.r, 0, 6.2832, '#5fe08a', 0.5, 0.9);
 		else if (ev.k === 'shield') flashes.arc(ev.x, ev.y, ev.z, ev.r, 0, 6.2832, '#7fc8ff', 0.5, 0.9);
 		else if (ev.k === 'summon') flashes.arc(ev.x, ev.y, ev.z, 3, 0, 6.2832, '#c47bff', 0.4, 0.5);
-		else if (ev.k === 'hit') numbers.push({ x: ev.x, y: ev.y + 0.6, z: ev.z, text: String(Math.max(1, Math.round(ev.d))), css: ev.crit ? '#ffe14d' : (WATCH ? ev.eff === 2 : ev.eff > 1.2) ? '#ffffff' : (WATCH ? ev.eff === 0 : ev.eff < 0.9) ? '#9aa6b5' : '#f2ede2', big: ev.crit || ev.eff > 1.2, t: 0 });
+		else if (ev.k === 'hit') {   // (a watcher's frame carries a code: net.js keepEvents)
+			const im = WATCH ? ev.eff === 3 : ev.eff === 0, x4 = WATCH ? ev.eff === 4 : ev.eff >= 4, sup = x4 || (WATCH ? ev.eff === 2 : ev.eff > 1), wk = !im && (WATCH ? ev.eff === 0 : ev.eff < 1);
+			if (im) { const now = performance.now(); if (now - immuneT > 350) { immuneT = now; numbers.push({ x: ev.x, y: ev.y + 0.6, z: ev.z, text: 'Immune', css: '#9aa6b5', t: 0 }); } }
+			else numbers.push({ x: ev.x, y: ev.y + 0.6, z: ev.z, text: String(Math.max(1, Math.round(ev.d))), css: ev.crit ? '#ffe14d' : sup ? '#ffffff' : wk ? '#9aa6b5' : '#f2ede2', big: ev.crit || sup, huge: x4, t: 0 });
+		}
+		else if (ev.k === 'immune') { const now = performance.now(); if (now - immuneMeT > 700) { immuneMeT = now; numbers.push({ x: state.x, y: state.y + 2, z: state.z, text: 'Immune', css: '#cfe3ff', t: 0 }); } }
 		else if (ev.k === 'secondchance') { burst(ev.x, ev.y + 0.4, ev.z, '#ff8ad8', 30, 7, { up: 6, life: 0.8, r: 0.11 }); note('Second chance!', 2200); flashes.arc(ev.x, ev.y + 0.06, ev.z, ev.r, 0, 6.2832, '#ff8ad8', 0.8, 0.2); bob = 0.6; const A = SOUND(); if (A) A.sfx('legend'); if (RUNUI) RUNUI.update(runView()); }
 		else if (ev.k === 'ult') {   // an Ultimate: its cut-in, its rings, beams and strikes
 			const c = TYPE_COLOR[ev.type] || '#ffd23f', A = SOUND();
@@ -904,7 +910,7 @@ function drawNumbers(dt) {
 		const n = numbers[i]; n.t += dt; if (n.t > 0.7) { numbers.splice(i, 1); continue; }
 		V3.set(n.x, n.y + n.t * 1.6, n.z).project(camera); if (V3.z > 1 || V3.z < -1) continue;
 		const x = (V3.x * 0.5 + 0.5) * el.width, y = (-V3.y * 0.5 + 0.5) * el.height;
-		g.globalAlpha = Math.min(1, (0.7 - n.t) * 4); g.font = `700 ${n.big ? 20 : 15}px ui-sans-serif, system-ui, sans-serif`;
+		g.globalAlpha = Math.min(1, (0.7 - n.t) * 4); g.font = `700 ${n.huge ? 26 : n.big ? 20 : 15}px ui-sans-serif, system-ui, sans-serif`;
 		g.lineWidth = 3; g.strokeStyle = 'rgba(12, 18, 30, .85)'; g.strokeText(n.text, x, y); g.fillStyle = n.css; g.fillText(n.text, x, y);
 	}
 	g.globalAlpha = 1;

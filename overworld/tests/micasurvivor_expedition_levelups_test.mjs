@@ -138,8 +138,8 @@ const BEFORE = (save) => {
 		return { cards, offers: offers.map(o => ({ type: o.type, key: o.key, rar: o.rar, rolls: o.rolls || null, title: o.title })) };
 	};
 	/** a still target dummy (a Pidgey with lots of HP that doesn't walk) */
-	H.dummy = (x, y, hp = 5000) => {
-		const e = new G.Enemy({ dex: 16, name: 'Pidgey', behavior: 'chaser', hp: 1, spd: 0, dmg: 0, xp: 0 }, x, y, { hp, dmg: 0, spd: 0 });
+	H.dummy = (x, y, hp = 5000, dex = 16) => {
+		const e = new G.Enemy({ dex, name: 'Pidgey', behavior: 'chaser', hp: 1, spd: 0, dmg: 0, xp: 0 }, x, y, { hp, dmg: 0, spd: 0 });
 		e.touchCd = 99;
 		G.EnemyMgr.add(e); G.EnemyMgr.rebuildGrid();
 		return e;
@@ -268,7 +268,7 @@ try {
 		for (const [kind, id] of Object.entries(one)) {
 			H.thin(); H.step(2); G.Projectiles.clear(); Mv.clear();
 			const m = Mv.instance(id); Mv.base(m); Mv.refresh(pl, m);
-			const ring = [[60, 0], [0, 60], [-60, 0], [0, -60], [150, 40], [210, 0]].map(([dx, dy]) => H.dummy(pl.x + dx, pl.y + dy));
+			const ring = [[60, 0], [0, 60], [-60, 0], [0, -60], [150, 40], [210, 0]].map(([dx, dy]) => H.dummy(pl.x + dx, pl.y + dy, 5000, kind === 'lob' ? 19 : 16));   // (the games' own type chart, 2026-11-13: a Pidgey is IMMUNE to Mud Bomb, so the lob meets Rattata)
 			pl.target = ring[0]; pl.aim = 0;
 			const hp = () => ring.map(e => Math.round(e.maxHp - e.hp));
 			const d0 = ring.map(e => Math.round(G.U.dist(e.x, e.y, pl.x, pl.y)));

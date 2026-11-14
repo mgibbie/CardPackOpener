@@ -269,6 +269,7 @@ const clearZone = (S) => { hush(S); toAltar(S); steps(S, XKK.ALTAR_T + 0.1); sla
 	A(S.w.stats.spawned > 4 + 2, 'now the shrine has arrivals too (at half the pace)');
 	slay(S);
 	A(S.ph === 4 && S.won && !S.ended && S.splits.length === 4 && /COMPLETE!/.test(hudLine(S)) && S.says.some((q) => /COMPLETE/.test(q.text)), 'it falls: the expedition is complete, four splits');
+	hush(S);   // (nobody else about: a summoner left standing calls its own minions, which are not the run's arrivals)
 	const spawned = S.w.stats.spawned; steps(S, XKK.WIN_T - 0.2);
 	A(!S.ended && S.w.stats.spawned === spawned, 'for 3 s the banner holds (nothing more arrives)');
 	steps(S, 0.4);

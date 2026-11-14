@@ -532,7 +532,7 @@ try {
 				pl.dex = mon.dex; s.pz[mon.dex] = { type, at: Date.now() };
 				pl.level = 30; pl.atkMul = 1; pl.critChance = 0; pl.hp = pl.maxHp * 0.5;
 				const x0 = pl.x, y0 = pl.y, hp0 = pl.hp;
-				const foes = T.ring(14);
+				const foes = T.ring(14, type === 'ghost' ? 10 : 19);   // (the games' own type chart, 2026-11-13: a Normal target is IMMUNE to Ghost, so the Ghost case meets a Caterpie)
 				const d0 = foes.reduce((a, e) => a + Math.hypot(e.x - x0, e.y - y0), 0) / foes.length;
 				const sig = { frozen: 0, para: 0, sleep: 0, conf: 0, poison: 0, hidden: false, wisps: 0, moved: 0, slow: 0 };
 				let err = null, t = 0;
