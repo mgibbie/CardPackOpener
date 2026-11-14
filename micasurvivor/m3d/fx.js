@@ -100,7 +100,7 @@ export class Effects {
 		scene.add(this.sprites.mesh); scene.add(this.glows.mesh);
 		this.scene = scene; this.lights = null; this.cells = null;   // (the downloaded lights: loadLights)
 		this.parts = []; this.right = new THREE.Vector3(1, 0, 0); this.up = new THREE.Vector3(0, 1, 0); this.at = 0; this.t = 0; this.impacts = 0; this.looks = new Map();
-		this.stats = { sprites: 0, glows: 0, lights: 0, byLight: {}, parts: 0, shots: 0, impacts: 0, swings: 0, beams: 0, auras: 0, chains: 0, blasts: 0, dashes: 0, kos: 0, flat: 0, vortexes: 0, waves: 0, patches: 0, ults: 0, byShape: {} };   // (the last frame's; `byShape`, `impacts`, `swings`: since the page opened)
+		this.stats = { sprites: 0, glows: 0, lights: 0, byLight: {}, parts: 0, shots: 0, impacts: 0, swings: 0, beams: 0, auras: 0, chains: 0, blasts: 0, dashes: 0, kos: 0, flat: 0, vortexes: 0, waves: 0, patches: 0, ults: 0, marks: {}, weather: {}, byShape: {} };   // (the last frame's; `byShape`, `impacts`, `swings`: since the page opened)
 	}
 	/** The downloaded lights: the atlas and its list of cells ({ cell, cols, rows, names }). */
 	loadLights(url, info) {
@@ -126,7 +126,7 @@ export class Effects {
 		return v;
 	}
 	begin(camera, t) {
-		this.sprites.n = 0; this.glows.n = 0; if (this.lights) this.lights.n = 0; this.stats.shots = 0; this.impacts = 0;
+		this.sprites.n = 0; this.glows.n = 0; if (this.lights) this.lights.n = 0; this.stats.shots = 0; this.impacts = 0; this.stats.marks = {};
 		const e = camera.matrixWorld.elements; this.right.set(e[0], e[1], e[2]); this.up.set(e[4], e[5], e[6]);
 		this.dt = Math.min(0.05, Math.max(0, t - this.at)); this.at = t; this.t = t;
 	}
@@ -284,6 +284,31 @@ export class Effects {
 		this.flash({ light: 'streak', x, y: y + 7, z, life: 0.3, s0: 15, s1: 17, css: P[2], a: 1.1 });
 		this.blast(x, y, z, Math.max(1.2, r), null, pal);
 		this.stats.ults++;
+	}
+	/** What an enemy is suffering, drawn on it every frame: flames licking it (burn), bubbles rising (poison), a shell of ice (frozen), sparks
+	 *  jumping (paralysed), rings drifting up (asleep), stars circling its head (confused), a drag of dust (slowed).
+	 *  e: { x, y, z, r (its radius), h (its height), id }. st: { burn, poison, frozen, para, sleep, conf, slow } (truthy: it has it). */
+	status(e, st) {
+		const t = this.t, top = e.y + e.h, mid = e.y + e.h * 0.5, k = e.id * 1.7, S = this.stats.marks, hit = (n) => { S[n] = (S[n] || 0) + 1; };
+		if (st.frozen) { hit('frozen'); this.light('glint', e.x, mid, e.z, e.h * 1.9, '#bff3ff', 0.75, k); for (let i = 0; i < 3; i++) { const a = k + i * 2.094; this.sprite('shard', 'ice', 0, e.x + Math.cos(a) * e.r * 0.9, mid + Math.sin(a * 2) * e.h * 0.25, e.z + Math.sin(a) * e.r * 0.9, 0.62, a); } }
+		if (st.burn) { hit('burn'); for (let i = 0; i < 2; i++) { const a = t * 3 + k + i * 3.14; this.sprite('fire', 'fire', Math.floor(t * 9 + i), e.x + Math.cos(a) * e.r * 0.7, e.y + e.h * (0.35 + 0.3 * i) + Math.sin(t * 7 + i) * 0.08, e.z + Math.sin(a) * e.r * 0.7, 0.85, 1.5708); } this.glow(e.x, mid, e.z, e.h * 1.5, '#ff6a1f', 0.28); }
+		if (st.poison) { hit('poison'); for (let i = 0; i < 2; i++) { const u = (t * 0.9 + k * 0.13 + i * 0.5) % 1; this.sprite('bubble', 'poison', Math.floor(t * 4 + i), e.x + Math.sin(k + i * 2.4) * e.r * 0.8, e.y + e.h * (0.3 + u * 0.9), e.z + Math.cos(k + i * 2.4) * e.r * 0.8, 0.75 * (1 - u * 0.5)); } }
+		if (st.para) { hit('para'); if (Math.floor(t * 9 + k) % 3 === 0) { const a = t * 23 + k; this.sprite('bolt', 'electric', Math.floor(t * 12), e.x + Math.cos(a) * e.r, mid + Math.sin(a * 1.7) * e.h * 0.3, e.z + Math.sin(a) * e.r, 0.6, a); } }
+		if (st.sleep) { hit('sleep'); for (let i = 0; i < 2; i++) { const u = (t * 0.5 + i * 0.5 + k * 0.1) % 1; this.sprite('ring', 'psychic', 0, e.x + 0.25 + u * 0.35, top + 0.1 + u * 0.8, e.z, 0.3 + u * 0.3); } }
+		if (st.conf) { hit('conf'); for (let i = 0; i < 3; i++) { const a = t * 4.5 + k + i * 2.094; this.sprite('star', 'electric', Math.floor(t * 6 + i), e.x + Math.cos(a) * (e.r + 0.2), top + 0.25, e.z + Math.sin(a) * (e.r + 0.2), 0.6, a); } }
+		if (st.slow && !st.frozen) { hit('slow'); this.light('puff', e.x, e.y + 0.25, e.z, e.r * 3, '#8fb6ff', 0.35, k + t, true); }
+	}
+	/** The weather, in the air round (x, y, z): rain coming down, snow drifting, sand blowing across, fog hanging, light in the sun.
+	 *  level: 0 … 1 (it fades in and out). Called every frame it lasts. */
+	weatherAir(kind, level, x, y, z) {
+		if (!this.lights || !(level > 0) || !(this.dt > 0)) return;
+		const W = this.stats.weather, R = 12, at = () => { const a = Math.random() * 6.2832, d = Math.sqrt(Math.random()) * R; return [x + Math.cos(a) * d, z + Math.sin(a) * d]; }, n = (rate) => { const q = rate * level * this.dt; return Math.floor(q) + (Math.random() < q % 1 ? 1 : 0); };
+		const put = (o) => { this.part(o); W[kind] = (W[kind] || 0) + 1; };
+		if (kind === 'rain') for (let i = n(170); i > 0; i--) { const p = at(); put({ light: 'streak', x: p[0], y: y + 9 + Math.random() * 3, z: p[1], vx: -1.5, vy: -22, life: 0.5, s0: 1.7, s1: 1.7, css: '#cfe6ff', a: 1.1 }); }
+		else if (kind === 'snow') for (let i = n(60); i > 0; i--) { const p = at(); put({ light: 'glint', x: p[0], y: y + 6 + Math.random() * 3, z: p[1], vx: Math.random() - 0.5, vy: -2.2, vz: Math.random() - 0.5, life: 2.6, s0: 0.32, s1: 0.26, css: '#ffffff', a: 0.9, spin: 1 }); }
+		else if (kind === 'sand') for (let i = n(26); i > 0; i--) { const p = at(); put({ light: Math.random() < 0.5 ? 'dirt' : 'puff', x: p[0] - 6, y: y + 0.4 + Math.random() * 2.5, z: p[1], vx: 11 + Math.random() * 5, vy: 0.3, life: 1.1, s0: 1.2, s1: 2.4, css: '#d9b36a', a: 0.5, spin: 1.5, rot: Math.random() * 6.28 }); }
+		else if (kind === 'fog') for (let i = n(5); i > 0; i--) { const p = at(); put({ light: 'smoke', x: p[0], y: y + 0.8 + Math.random() * 1.5, z: p[1], vx: 0.5, life: 3.2, s0: 4, s1: 7, css: '#cfd8e3', a: 0.32, rot: Math.random() * 6.28, spin: 0.15 }); }
+		else if (kind === 'sun') for (let i = n(4); i > 0; i--) { const p = at(); put({ light: 'glint', x: p[0], y: y + 0.5 + Math.random() * 4, z: p[1], vy: 0.5, life: 1.4, s0: 0.3, s1: 0.7, css: '#fff2a0', a: 0.8 }); }
 	}
 	/** A dash: streaks left along the way. */
 	dash(from, dir, len, mid, type) {
