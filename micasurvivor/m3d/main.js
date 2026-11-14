@@ -8,7 +8,7 @@
 import * as THREE from 'three';
 import { K, CELL, step, newState, noInput, groundAt, stateName, facingRow, tuneFor, TYPE_TRAITS } from './sim.js';
 import { buildRoom, SPOTS } from './room.js';
-import { makeRenderer, buildTerrain, buildWater, buildRails, buildScatter, buildExit, drawMap, SpriteBatch, Shadows, Shots, Flashes, loadSheet, frameAt, spriteQuad, footLift, placeCamera, PX, setFog, FOG0 } from './render.js';
+import { makeRenderer, buildTerrain, buildWater, buildRails, buildScatter, buildExit, drawMap, SpriteBatch, Shadows, Shots, Flashes, loadSheet, frameAt, spriteQuad, footLift, placeCamera, PX, setFog, FOG0, HIT_WHITE, HIT_SQUASH } from './render.js';
 import { newWorld, addEnemy, addBoss, tick, dataFrom, choose, drop, CK, canFire, wxLevel, setWeather, applyState } from './combat.js';
 import { Effects, FX as FXK } from './fx.js';
 import { frame as netFrame, keepEvents, diff as netDiff, bundle, unbundle, Viewer, Tape, ballColour, typeName, NK, PICK } from './net.js';
@@ -411,7 +411,10 @@ function draw(t) {
 			if (e.shiny) { const ss = sheets.get(skey(e.dex, true) + '/Walk'); if (ss) s = ss; else wantSheet(e.dex, true); }   // (a shiny: its own colours, once its sheet is here)
 			if (!s) { wantSheet(e.dex); continue; }
 			const q = sq(s, e.asleep ? 0 : frameAt(s.meta, t + e.id * 0.37), facingRow(e.a.facing, cam.yaw), e.scale || 1);
-			s.batch.add(e.a.x, e.a.y, e.a.z, q.rect, q.uv, e.flash > 0 ? 1.7 : e.asleep ? 0.62 : 1);
+			// (just hit: nearly white, squashed wide and low for an instant and springing back as the flash fades)
+			const hk = e.flash > 0 ? Math.min(1, e.flash / 0.12) : 0, rect = hk ? [q.rect[0] * (1 + HIT_SQUASH_K * hk), q.rect[1], q.rect[2] * (1 + HIT_SQUASH_K * hk), q.rect[1] + (q.rect[3] - q.rect[1]) * (1 - HIT_SQUASH_K * 0.8 * hk)] : q.rect;
+			s.batch.add(e.a.x, e.a.y, e.a.z, rect, q.uv, e.flash > 0.05 ? HIT_WHITE : e.flash > 0 ? 1.7 : e.asleep ? 0.62 : 1);
+			if (e.flash > 0) hitShown++;
 			shadows.add(room, e.a.x, e.a.z, e.a.y, s.shadow * (e.scale || 1));
 		}
 		shots.begin(); if (fx) fx.begin(camera, t);
@@ -439,7 +442,7 @@ function draw(t) {
 			if (prop(key, o.x, o.y + up, o.z, 1 + (o.ch || 0) * 0.3)) { shadows.add(room, o.x, o.z, o.y + up, /ball|great|comet/.test(o.kind) ? 0.45 : 0.9); if (pm) propMon(pm[0], o.x, o.y + pm[1] + (pm[1] ? Math.sin(t * 3 + o.i) * 0.12 : 0), o.z, t + o.i); else if (o.kind === 'cage' && o.v) propMon(o.v, o.x, o.y, o.z, t + o.i); }
 			else { const big = /unown|comet|challenge|cursedaltar|greed|meowth|slots/.test(o.kind); shots.add(o.x, o.y + (big ? 1.1 : 0.55) + Math.sin(t * 2 + o.i) * 0.08, o.z, (big ? 0.42 : EK.SMALL.includes(o.kind) ? 0.22 : 0.3) * (1 + o.ch * 0.8), EK.COL[o.kind]); }
 		}
-		if (world) for (const e of world.enemies) if (!e.dead && GG.Types.noAnswer(world.pl.moves, e.types)) shots.add(e.a.x, e.a.y + Math.max(1.2, e.cr * 2) + 0.3, e.a.z, 0.13, '#9aa6b5');   // none of your moves can hurt it (your hits are a Struggle): a grey bead over its head
+		if (world) for (const e of world.enemies) if (!e.dead && GG.Types.noAnswer(world.pl.moves, e.types, e.dex)) shots.add(e.a.x, e.a.y + Math.max(1.2, e.cr * 2) + 0.3, e.a.z, 0.13, '#9aa6b5');   // none of your moves can hurt it (your hits are a Struggle): a grey bead over its head
 		if (world && fx) {   // what each enemy is suffering, drawn on it; and the weather in the air round you (fx.js)
 			for (const e of world.enemies) { if (e.dead || !(e.burn > 0 || e.poison > 0 || e.frozenT > 0 || e.paraT > 0 || e.sleepT > 0 || e.confT > 0 || e.slow > 0)) continue; fx.status({ x: e.a.x, y: e.a.y, z: e.a.z, r: Math.max(0.35, e.cr || 0.4), h: Math.max(1.1, (e.cr || 0.4) * 2), id: e.id }, { burn: e.burn > 0, poison: e.poison > 0, frozen: e.frozenT > 0, para: e.paraT > 0, sleep: e.sleepT > 0, conf: e.confT > 0, slow: e.slow > 0 }); }
 			if (world.weather && !paused) fx.weatherAir(world.weather.kind, wxLevel(world), state.x, state.y, state.z);
@@ -663,7 +666,8 @@ let cutIn = null, cutN = 0;   // (the Ultimate's cut-in on screen now)
 // reaction, a Second chance, a rail under you). Drawn with the shots, after them (never in place of one). A look only:
 // the fight does not know them, so their scatter is the page's own.
 const sparks = []; let sparkAt = 0;
-let immuneT = -1e9, immuneMeT = -1e9;   // (when 'Immune' was last written: over an enemy, over you)
+let immuneT = -1e9, immuneMeT = -1e9, hitShown = 0;   // (hitShown: frames an enemy was drawn as just hit, for the tests)
+const HIT_SQUASH_K = HIT_SQUASH - 1;   // (when 'Immune' was last written: over an enemy, over you)
 function burst(x, y, z, col, n, speed, o = {}) {
 	if (document.hidden) return;
 	for (let i = 0; i < n; i++) { const a = Math.random() * 6.2832, s = speed * (0.45 + Math.random() * 0.55), d = o.ring ? o.ring * Math.sqrt(0.6 + Math.random() * 0.4) : 0; sparks.push({ x: x + Math.cos(a) * d, y: y + (o.h || 0) * Math.random(), z: z + Math.sin(a) * d, vx: Math.cos(a) * s, vy: (o.up === undefined ? 3 : o.up) * (0.4 + Math.random() * 0.8), vz: Math.sin(a) * s, t: 0, life: (o.life || 0.5) * (0.6 + Math.random() * 0.7), col, r: o.r || 0.09 }); }
@@ -696,6 +700,14 @@ function fightEvents(events) {
 			else if (ev.sub === 'ring') fx.ultRing(ev.x, ev.y, ev.z, ev.r, ev.type, ev.life || 0.4, ev.life > 0.6);
 			else if (ev.sub === 'bar') fx.beam(ev.from, ev.dir, ev.len, Math.max(0.8, ev.w), null, ev.type);
 			else if (ev.sub === 'strike') fx.ultStrike(ev.x, ev.y, ev.z, ev.r, ev.type);
+		}
+		if (fx && fxLights && !document.hidden) {   // (the ENEMIES' side: what they mark on the ground, what goes off, what they do for each other: fx.js)
+			if (ev.k === 'hazard') fx.warn(ev.h.kind === 'zone' ? { x: ev.h.x, y: ev.h.y, z: ev.h.z, r: ev.h.r } : { x: ev.h.x, y: ev.h.y, z: ev.h.z, angle: ev.h.angle, len: ev.h.len, w: ev.h.w }, ev.h.type, ev.h.delay);
+			else if (ev.k === 'boom') fx.boom(ev.h.kind === 'zone' ? { x: ev.h.x, y: ev.h.y, z: ev.h.z, r: ev.h.r } : { x: ev.h.x, y: ev.h.y, z: ev.h.z, angle: ev.h.angle, len: ev.h.len, w: ev.h.w }, ev.h.type);
+			else if (ev.k === 'tele') fx.warn(ev.kind === 'slam' ? { x: ev.x, y: 0, z: ev.z, r: ev.r } : { x: ev.x, y: 0, z: ev.z, angle: ev.a, len: ev.len, w: ev.w }, 'fighting', ev.T);
+			else if (ev.k === 'slam') fx.boom({ x: ev.x, y: 0, z: ev.z, r: ev.r }, 'ground');
+			else if (ev.k === 'heal' || ev.k === 'shield') fx.help(ev.k, ev.x, ev.y, ev.z, ev.r);
+			else if (ev.k === 'summon') fx.help('summon', ev.x, ev.y, ev.z, 3);
 		}
 		if (fx && ev.k === 'melee') fx.swing(state.x, state.y, state.z, ev.aim, ev.r, ev.id, null);
 		if (fx && ev.id && !document.hidden) {   // (the other kinds of move, each in its own shape: fx.js)
@@ -954,7 +966,7 @@ function drawNumbers(dt) {
 function matchup(type) {
 	const out = { n: 0, strong: 0, weak: 0, immune: 0 }, seen = new Set();
 	if (!world || !type) return out;
-	for (const e of world.enemies) { if (e.dead || seen.has(e.dex)) continue; seen.add(e.dex); out.n++; const m = GG.Types.mult(type, e.types); if (m === 0) out.immune++; else if (m > 1) out.strong++; else if (m < 1) out.weak++; }
+	for (const e of world.enemies) { if (e.dead || seen.has(e.dex)) continue; seen.add(e.dex); out.n++; const m = GG.Types.mult(type, e.types, e.dex); if (m === 0) out.immune++; else if (m > 1) out.strong++; else if (m < 1) out.weak++; }
 	return out;
 }
 function matchupHtml(c) {
@@ -1305,9 +1317,10 @@ const G_MUSIC = GG.BIOME_MUSIC || null, XK_MAPS = ['viridian', 'mtmoon', 'cerule
 
 // what a test (and a curious owner in the console) can reach
 window.__m3d = {
+	get hitShown() { return hitShown; },
 	hitFeel: () => ({ on: hitFeel.on, stops: hitFeel.stops, kicks: hitFeel.kicks, stopped: performance.now() < hitFeel.until, K: HF }), setHitFeel,
 	setWeather: (kind, dur = 30) => (world ? setWeather(world, kind, dur) : false), applyState: (e, kind) => (world ? applyState(world, e, kind) : 0),   // (for the tests: a weather, a state on an enemy)
-	matchup, walled: () => (world ? world.enemies.filter((e) => !e.dead && GG.Types.noAnswer(world.pl.moves, e.types)).length : 0),   // (how many enemies wear the grey bead)
+	matchup, walled: () => (world ? world.enemies.filter((e) => !e.dead && GG.Types.noAnswer(world.pl.moves, e.types, e.dex)).length : 0),   // (how many enemies wear the grey bead)
 	fx: () => (fx ? { ...fx.stats, byShape: { ...fx.stats.byShape }, byLight: { ...fx.stats.byLight }, lit: fxLights, bySheet: { ...fx.stats.bySheet }, animated: fxAnims, atlas: [fx.atlas.cols, fx.atlas.rows], max: { ...FXK } } : null), fxLayer: fx,
 	link: LINK, dive: drun, guestDive: gdrun, diveRules: DR, special, light: () => ({ dive: DLIGHT, near: scene.fog.near, far: scene.fog.far, color: scene.fog.color.getHex(), vignette: !!document.getElementById('dive-dark') }), diveSave: { week: DWEEK, practice: DPRACTICE, ok: DSAVE_OK, start: DSTART, member: DMEMBER, form: DFORM, keep: DKEEP, meta: !!DMETA }, propKeys: () => (props ? [...props.atlas.cells.keys()] : []), roomBuilds: () => roomBuilds,
 	meta: LAB_META, upgrades: UPGRADES, leadShiny: LEAD_SHINY, skey,

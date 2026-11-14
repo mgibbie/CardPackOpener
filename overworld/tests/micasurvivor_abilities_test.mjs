@@ -258,7 +258,7 @@ try {
 			T.reset();
 			return out;
 		});
-		A(near(r.low, 1.35, 1e-9) && near(r.high, 1, 1e-9) && near(r.lowWater, 1, 0.2) && r.lowWater < 1.01, `Blaze: fire hits x1.35 below 40% HP (x${r.low.toFixed(3)}), x1 at 41% (x${r.high.toFixed(3)}), other types unchanged`, JSON.stringify(r));
+		A(near(r.low, 1.35 * 1.5, 1e-9) && near(r.high, 1.5, 1e-9) && near(r.lowWater, 1, 0.2) && r.lowWater < 1.01, `Blaze: fire hits x1.35 below 40% HP, on top of STAB x1.5 (2026-11-14: a Fire move from a Fire type) (x${r.low.toFixed(3)}); STAB alone at 41% (x${r.high.toFixed(3)}); other types unchanged`, JSON.stringify(r));
 		for (const id of ['torrent', 'overgrow', 'swarm']) A(JSON.stringify(r[id]) === '[1.35,1,1]', `${id}: its type x1.35 below 40%, other types x1, x1 at full HP`, JSON.stringify(r[id]));
 	}
 
@@ -402,7 +402,7 @@ try {
 			return out;
 		});
 		A(near(r.thickfat[0], 0.5, 0.002) && near(r.thickfat[1], 0.5, 0.002) && near(r.thickfat[2], 1, 1e-9), `Thick Fat: fire and ice x0.5, water x1 (${r.thickfat.map(x => x.toFixed(3))})`);
-		for (const id of ['waterabsorb', 'voltabsorb', 'flashfire', 'sapsipper']) A(near(r[id][0], 0.5, 0.002) && near(r[id][1], 1, 1e-9), `${id}: its type x0.5, others x1 (${r[id].map(x => x.toFixed(3))})`);
+		for (const id of ['waterabsorb', 'voltabsorb', 'flashfire', 'sapsipper']) A(near(r[id][0], 0.25, 0.002) && near(r[id][1], 1, 1e-9), `${id}: its type x0.25 (2026-11-14: the absorb abilities are the player's side of an ability immunity; they halved it), others x1 (${r[id].map(x => x.toFixed(3))})`);
 		A(near(r.intimidate, 0.9, 0.002), `Intimidate: 10% less damage (x${r.intimidate.toFixed(3)})`);
 		A(near(r.solidrock[0], 0.75, 0.002) && near(r.solidrock[1], 1, 1e-9) && near(r.solidrock[2], 1, 1e-9), `Solid Rock: super-effective hits x0.75, the rest x1 (${r.solidrock.map(x => x.toFixed(3))})`);
 		A(r.multiscale[0] === 500 && r.multiscale[1] === 1000 && r.multiscale[2] === 1000 && r.multiscale[3] === 500, `Multiscale: first hit halved, then full; halved again only after 25 s (${r.multiscale})`);

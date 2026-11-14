@@ -324,11 +324,11 @@ try {
 			// the rift arena: off (and back to 100 %), like the port's arena != null
 			const d = Object.getOwnPropertyDescriptor(G.Rift, 'inArena');
 			Object.defineProperty(G.Rift, 'inArena', { configurable: true, get: () => true });
-			A.update(1, pl, t0); out.arena = { raw: A.raw, k: A.k(), pct: A.pct(), on: A.on(), hp: G.Enemies.scale(100).hp, want: 1 + 100 / 95 };
+			A.update(1, pl, t0); out.arena = { raw: A.raw, k: A.k(), pct: A.pct(), on: A.on(), hp: G.Enemies.scale(100).hp, want: (1 + 100 / 95) * G.Types.ENEMY_HP };   // (+ 22 % on every enemy's HP since 2026-11-14)
 			Object.defineProperty(G.Rift, 'inArena', d);
 			// every other mode: k = 1
 			out.modes = {};
-			for (const m of ['daily', 'party', 'rifts', 'type', 'team', 'rush', 'tower']) { G.Game.mode = m; A.debugSet({ k: 0.6 }); out.modes[m] = [A.on(), A.k(), A.pct(), G.Enemies.scale(100).hp === 1 + 100 / 95, A.xpK()]; }
+			for (const m of ['daily', 'party', 'rifts', 'type', 'team', 'rush', 'tower']) { G.Game.mode = m; A.debugSet({ k: 0.6 }); out.modes[m] = [A.on(), A.k(), A.pct(), Math.abs(G.Enemies.scale(100).hp - (1 + 100 / 95) * G.Types.ENEMY_HP) < 1e-12, A.xpK()]; }   // (+ 22 % on every enemy's HP since 2026-11-14: the plain curve, no adaptive factor)
 			G.Game.mode = 'normal'; A.debugSet({ k: 0.6 });
 			out.normal = [A.on(), A.k(), A.pct()];
 			// the setting off: k = 1 at once
@@ -484,7 +484,7 @@ try {
 					cast: E.cast.map(t => t.list.map(d => d.dex + ':' + d.behavior)), bosses: E.BOSSES.map(b => b.dex),
 					extras: ['forest', 'cave', 'volcano', 'fire', 'water', 'bug'].map(k => E.TIERS.map((_, ti) => E.bioExtra(ti, k).map(d => d.dex))),
 					on: G.Adaptive.on(), k: G.Adaptive.k(), pct: G.Adaptive.pct(), xp: pl.xpNext === G.Player.xpFor(1),
-					hp: G.Enemies.scale(300).hp === 1 + 300 / 95, rate: G.Adaptive.rateK(),
+					hp: Math.abs(G.Enemies.scale(300).hp - (1 + 300 / 95) * G.Types.ENEMY_HP) < 1e-12, rate: G.Adaptive.rateK(),
 				};
 			};
 			T.start('daily'); G.Adaptive.debugSet({ k: 0.6 }); const a = snap();

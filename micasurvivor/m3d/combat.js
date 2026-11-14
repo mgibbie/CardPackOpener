@@ -77,7 +77,7 @@ export function dataFrom(G) {
 		item: (id) => (G.Items ? G.Items.BY[id] : null), itemOk: (id, dex) => !!(G.Items && G.Items.okFor(id, dex)), itemList: () => (G.Items ? G.Items.LIST.map((i) => i.id) : []), IT: G.Items || {},
 		abilityOf: (dex) => (G.Abilities ? G.Abilities.of(dex) : null), abilityFx: (id) => (G.Abilities && G.Abilities.FX[id] ? G.Abilities.FX[id].fx : null), typeLabel: (k) => G.Types.label(k),
 		expMoves: () => (G.ExpMoves ? Object.keys(G.ExpMoves.MOVES) : []),   // (a move's knockback is worked out from its level, as the 2D game does)
-		typeMult: (t, types) => G.Types.mult(t, types), struggle: G.Types.STRUGGLE, noAnswer: (moves, types) => G.Types.noAnswer(moves, types), mon: (dex) => G.DEX_BY[dex],
+		typeMult: (t, types, dex) => G.Types.mult(t, types, dex), typeIn: (t, types) => G.Types.multIn(t, types), stab: G.Types.STAB, enemyHp: G.Types.ENEMY_HP, struggle: G.Types.STRUGGLE, noAnswer: (moves, types, dex) => G.Types.noAnswer(moves, types, dex), mon: (dex) => G.DEX_BY[dex],
 		radius: (dex, scale = 1) => G.Sprites.bodyRadius(dex, scale) * U, hovers: (dex) => G.Sprites.hovers(dex),
 		poolFor: (mon) => G.Moves.poolFor(mon), levelUp: (m) => { if (m.xexp) return false; const ok = G.Moves.levelUp(m); m.knock = G.Moves.knockOf(m); return ok; }, nextUp: (m) => (m.xexp ? null : G.Moves.nextUpText(m)), moveDef: (id) => G.Moves.BY_ID[id] || (G.ExpMoves && G.ExpMoves.MOVES[id]),
 		hash: (a, b, c) => G.U.hash(a, b, c), bossSlots: G.Enemies.BOSS_SLOTS, baseSpd: (dex) => G.Enemies.baseSpd(G.DEX_BY[dex]), behaviorOf: (dex) => G.Enemies.behaviorOf(G.DEX_BY[dex]),
@@ -225,7 +225,7 @@ const rnd = (w, a, b) => a + w.rand() * (b - a);
 export function addEnemy(w, dex, x, z, o = {}) {
 	const d = w.data, t = o.t === undefined ? w.t : o.t, ti = o.ti === undefined ? d.tierAt(t) : o.ti, def = o.def || d.defFor(dex, ti), mon = d.mon(dex);
 	const fly = !!d.hovers(dex), cr = d.radius(dex);
-	const maxHp = Math.round(def.hp * (1 + t / 95) * CK.HP_K(t) * (o.hp || 1));
+	const maxHp = Math.round(def.hp * (1 + t / 95) * (d.enemyHp || 1) * CK.HP_K(t) * (o.hp || 1));   // (enemyHp: + 22 %, the owner's answer to STAB, 2026-11-14; the 2D game's G.Enemies.scale)
 	const a = newActor(w.room, { x, z, y: o.y, r: Math.min(0.45, cr), speed: def.spd * (1 + Math.min(0.35, t / 1400)) * (o.spd === undefined ? 1 : o.spd) * U, fly, hover: CK.FLY_HOVER });
 	const e = { id: w.nextId++, a, dex, def, types: mon.types && mon.types.length ? mon.types : ['normal'], cr, fly, maxHp, hp: maxHp,
 		dmg: def.dmg * (1 + t / 420) * (o.minion ? 1 : CK.DMG_K) * (o.dmg || 1), xp: o.minion ? def.xp : Math.round(def.xp * CK.XP_K), t0: t, ti, minion: !!o.minion, minions: [], shield: 0, shieldT: 0, shieldLock: 0, skillCd: 0, jump: null, touchCd: 0, frozenT: 0, paraT: 0, sleepT: 0, confT: 0, confCd: 0, zig: 0, slow: 0, slowT: 0, burn: 0, burnT: 0, burnTick: 0, poison: 0, poisonT: 0, poisonTick: 0,
@@ -247,9 +247,9 @@ export function bossDef(data, dex, slot = 0) {
 /** Put a boss in. o: { slot (which of the 2D game's five), t (the run time it is scaled for; default now), def }. It is
  *  bigger, it goes over any terrain (as a 2D boss ignores walls), a hit does not shove it, and it fights by bossMove. */
 export function addBoss(w, dex, x, z, o = {}) {
-	const d = w.data, t = o.t === undefined ? w.t : o.t, def = o.def || bossDef(d, dex, o.slot || 0), mon = d.mon(dex), scale = d.bossScale(dex), cr = d.radius(dex, scale), k = 1 + t / 600;
+	const d = w.data, t = o.t === undefined ? w.t : o.t, def = o.def || bossDef(d, dex, o.slot || 0), mon = d.mon(dex), scale = d.bossScale(dex), cr = d.radius(dex, scale), k = 1 + t / 600, hk = k * (d.enemyHp || 1);   // (hk: a boss's HP has the + 22 % too, as the 2D game's bossScale)
 	const e = addEnemy(w, dex, x, z, { def, t: 0, ti: 0, minion: true, behavior: 'boss' });   // (built bare, then given a boss's numbers)
-	Object.assign(e, { boss: true, minion: false, scale, cr, fly: true, maxHp: Math.round(def.hp * k), dmg: def.dmg * k, xp: def.xp, ccImm: 0 });
+	Object.assign(e, { boss: true, minion: false, scale, cr, fly: true, maxHp: Math.round(def.hp * hk), dmg: def.dmg * k, xp: def.xp, ccImm: 0 });
 	// (it goes over any terrain, as a 2D boss ignores walls; one that does not hover by nature keeps its feet on whatever is under it)
 	const hov = d.hovers(dex) ? CK.FLY_HOVER : 0.04;
 	e.hp = e.maxHp; e.a.fly = true; e.a.hover = hov; e.a.grounded = false; e.a.y = groundAt(w.room, x, z) + hov; e.a.speed = def.spd * U; e.a.r = Math.min(0.45, cr);
@@ -304,9 +304,10 @@ export function land(w, e, dmg, kx, kz, knockU, src) {
 	const asleep = e.sleepT > 0 && src.cc !== 'sleep';
 	// (the games' own chart, 2026-11-13: an immune enemy takes nothing, and nothing the hit carries. Unless none of your
 	//  moves can hurt it at all: then your hits on it are a Struggle, x 0.25. The 2D game's rule: js/data/types.js)
-	const tm = type ? w.data.typeMult(type, e.types) : 1, struggle = tm === 0 && w.data.noAnswer(pl.moves, e.types), eff = struggle ? w.data.struggle : tm;
+	const tm = type ? w.data.typeMult(type, e.types, e.dex) : 1, struggle = tm === 0 && w.data.noAnswer(pl.moves, e.types, e.dex), eff = struggle ? w.data.struggle : tm;   // (e.dex: its ability can make it immune)
 	if (tm === 0 && !struggle) { w.stats.immune = (w.stats.immune || 0) + 1; w.events.push({ k: 'hit', id: e.id, x: e.a.x, y: e.a.y + bodyH(e) * 0.5, z: e.a.z, d: 0, crit: false, type, eff: 0 }); return 0; }
 	let k = eff;
+	if (type && pl.mon.types.includes(type)) k *= w.data.stab;   // (STAB, 2026-11-14: a move of one of your own types)
 	if (type) k *= wxMult(w, type);
 	k *= abOut(w, e, type, src.mkind || src.kind) * itemOut(w, e, type);
 	if (asleep) k *= CK.SLEEP_BONUS;
@@ -352,7 +353,7 @@ export function hurtPlayer(w, amount, type, through = false) {
 	if (through && pl.invuln < 1e8) pl.invuln = 0;   // (a telegraphed attack: the moment of grace after a hit does not save you)
 	if (pl.invuln > 0 || pl.dead) return 0;
 	let eff = null;
-	if (type) { const tk = w.data.typeMult(type, pl.mon.types); if (tk === 0) { w.events.push({ k: 'immune' }); return 0; } eff = w.data.typeLabel(tk); amount *= tk * wxMult(w, type); }   // (an attack you are immune to does nothing)
+	if (type) { const tk = w.data.typeIn(type, pl.mon.types); eff = w.data.typeLabel(tk); amount *= tk * wxMult(w, type); }   // (2026-11-14: you are never fully immune: what would be x 0 on you is x 0.25)
 	amount *= pl.takenK * abIn(w, type, eff);
 	let d = Math.max(1, amount * (1 - pl.reduction) * (pl.meleeT > 0 ? CK.MELEE_TAKEN : 1));
 	if (w.hooks && w.hooks.hurt) { d = w.hooks.hurt(w, d); if (!(d > 0)) { pl.invuln = CK.INVULN; return 0; } }   // (a mode's own: a dodge, a shield)

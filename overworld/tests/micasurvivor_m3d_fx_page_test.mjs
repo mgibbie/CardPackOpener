@@ -148,11 +148,27 @@ try {
 		A(v.parts <= v.max.PARTS && v.lights <= v.max.LIGHTS, '2f. …inside the budget', { parts: v.parts, lights: v.lights });
 	}
 
+	// ---- 2g. the enemies' attacks: what they mark on the ground, what goes off, what they do for each other
+	{
+		A(await boot('dex=4&moves=agility&cast='), '2g. a quiet fight (a buff only, nobody arriving by themselves)');
+		await waitFor(async () => (await fx()).lit, 15000);
+		await M(() => { const m = window.__m3d, s = m.state; m.world.enemies.length = 0; const put = (b, dx, dz) => { const e = m.addEnemy(19, s.x + dx, s.z + dz, { behavior: b }); e.hp = e.maxHp = 1e9; return e; }; put('zoner', 7, 0); put('beamer', -7, 0); put('shielder', 0, 6); put('summoner', 0, -7); const hurt = put('chase', 6, 6); hurt.dummy = true; hurt.hp = 5e8; put('healer', 7, 7); });
+		await waitFor(async () => { const q = await fx(); return q.warns > 0 && q.booms > 0; }, 40000);
+		v = await fx();
+		A(v.warns > 0 && v.byLight.rune > 0, '2g. an enemy marks the ground before it strikes: a turning circle of light, ringed in red', { warns: v.warns, rune: v.byLight.rune });
+		A(v.booms > 0, '2g. …and it goes off as a blast or a beam of its type', v.booms);
+		await waitFor(async () => { const q = await fx(); return q.helps.heal > 0 && q.helps.shield > 0 && q.helps.summon > 0; }, 40000);
+		v = await fx();
+		A(v.helps.heal > 0 && v.helps.shield > 0 && v.helps.summon > 0, '2g. a healer, a shielder and a summoner each show what they do', v.helps);
+		await shot('fx-enemy.png');
+	}
+
 	// ---- 2d. a KO is a burst, not a vanish (B5)
 	{
+		A(await boot('dex=4&moves=ember:3'), '2d. a fight with a move that hurts (Ember)');
 		const k0 = (await fx()).kos;
-		const dex = await M(() => { const m = window.__m3d, e = m.world.enemies.find((q) => !q.dead); if (!e) return 0; for (const q of m.world.enemies) if (!q.dead) { q.hp = q.maxHp = 1; q.a.x = m.state.x + 2.5; q.a.z = m.state.z; q.a.y = m.state.y; } return e.dex; });   // (one hit from your own moves fells them: the KO comes through the fight's own events)
-		await waitFor(async () => (await fx()).kos > k0, 8000);
+		const weaken = () => M(() => { const m = window.__m3d; let n = 0; for (const q of m.world.enemies) if (!q.dead) { q.hp = q.maxHp = 1; q.a.x = m.state.x + 2.5; q.a.z = m.state.z; q.a.y = m.state.y; n++; } return n; });   // (one hit from your own moves fells them: the KO comes through the fight's own events)
+		let dex = 0; await waitFor(async () => { dex += await weaken(); return (await fx()).kos > k0; }, 30000);   // (enemies arrive in their own time: each is weakened as it comes)
 		v = await fx();
 		A(dex > 0 && v.kos > k0 && v.byLight.glint > 0 && (v.byLight.puff > 0 || v.byLight.smoke > 0), '2d. an enemy that goes down leaves a puff and a star of light where it stood', { kos: v.kos, k0, glint: v.byLight.glint });
 	}

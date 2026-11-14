@@ -192,11 +192,16 @@ varying vec2 vUv; varying vec3 vTint; varying float vFog;
 void main() {
 	vec4 c = texture2D(map, vUv);
 	if (c.a < 0.5) discard;                                 // a hard edge: the sprite writes depth, so it sorts against the world
-	gl_FragColor = vec4(mix(c.rgb * vTint, uFogColor, vFog), 1.0);
+	vec3 col = vTint.x >= 1.99 ? mix(c.rgb, vec3(1.0), 0.78) : c.rgb * vTint;   // (a tint of 2 or more: the hit flash, nearly white, as the games do it)
+	gl_FragColor = vec4(mix(col, uFogColor, vFog), 1.0);
 }`;
 const QUAD = (() => { const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute([0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0], 3)); g.setIndex([0, 1, 2, 0, 2, 3]); return g; })();
 
 /** One sprite sheet's worth of billboards: up to `max` sprites, one draw call. */
+/** A sprite's tint that draws it nearly white for a moment (an enemy just hit). */
+export const HIT_WHITE = 2;
+/** …and how it is squashed: wider and lower by up to this much, as the flash fades. */
+export const HIT_SQUASH = 1.1;
 export class SpriteBatch {
 	constructor(texture, max) {
 		this.max = max; this.n = 0; this.texture = texture;
