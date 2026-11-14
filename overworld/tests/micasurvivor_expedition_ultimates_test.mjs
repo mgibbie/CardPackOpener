@@ -131,14 +131,14 @@ const BEFORE = (save) => {
 	H.unblock = () => { if (G.Game.state === 'choice' || G.UI.isOpen('scr-item')) { const c = [...document.querySelectorAll('#item-cards .card')].pop(); if (c) c.click(); } };
 	H.clear = () => { for (const e of G.EnemyMgr.all().slice()) G.EnemyMgr.remove ? G.EnemyMgr.remove(e) : null; };
 	/** a still target dummy (a Pidgey with lots of HP that doesn't walk or hurt) */
-	H.dummy = (x, y, hp = 5000) => {
-		const e = new G.Enemy({ dex: 16, name: 'Pidgey', behavior: 'chaser', hp: 1, spd: 0, dmg: 0, xp: 0 }, x, y, { hp, dmg: 0, spd: 0 });
+	H.dummy = (x, y, hp = 5000, dex = 16) => {
+		const e = new G.Enemy({ dex, name: 'Pidgey', behavior: 'chaser', hp: 1, spd: 0, dmg: 0, xp: 0 }, x, y, { hp, dmg: 0, spd: 0 });
 		e.touchCd = 99;
 		G.EnemyMgr.add(e); G.EnemyMgr.rebuildGrid();
 		return e;
 	};
 	/** a ring of dummies round the player; -> them */
-	H.ring = (n = 8, r = 120, hp = 1e7) => { const pl = G.Game.player, out = []; for (let i = 0; i < n; i++) { const a = 6.2832 * i / n; out.push(H.dummy(pl.x + Math.cos(a) * r, pl.y + Math.sin(a) * r, hp)); } return out; };
+	H.ring = (n = 8, r = 120, hp = 1e7, dex = 16) => { const pl = G.Game.player, out = []; for (let i = 0; i < n; i++) { const a = 6.2832 * i / n; out.push(H.dummy(pl.x + Math.cos(a) * r, pl.y + Math.sin(a) * r, hp, dex)); } return out; };
 	/** every live enemy gone, without counting as kills */
 	H.wipe = () => { for (const e of G.EnemyMgr.all()) { e.remote = true; } G.EnemyMgr.clear(); };
 	/** a key press seen by the next step (G.Input's taps) */
@@ -346,7 +346,7 @@ try {
 		const H = window.__t, U = G.ExpUlt, pl = G.Game.player, out = { types: [] };
 		for (const t of G.ZMoves.ORDER) {
 			H.wipe();
-			const foes = H.ring(10, 150, 1e6), hp0 = foes.reduce((a, e) => a + e.hp, 0);
+			const foes = H.ring(10, 150, 1e6, t === 'ghost' || t === 'ground' ? 10 : 16), hp0 =   /* (the games' own type chart, 2026-11-13: a Pidgey is IMMUNE to Ghost and to Ground, so those two meet Caterpie) */ foes.reduce((a, e) => a + e.hp, 0);
 			const code = U.typeCode(t), fx = U.makeFx(pl, code, 0, false);
 			let n = 0; while (!fx.done && n < 300) { fx.tick(1 / 30); G.ZMoves.updateWorld(1 / 30); n++; }
 			for (let i = 0; i < 60; i++) G.ZMoves.updateWorld(1 / 30);   // (the fire wisps land)
