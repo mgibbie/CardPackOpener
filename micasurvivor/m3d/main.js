@@ -8,7 +8,7 @@
 import * as THREE from 'three';
 import { K, CELL, step, newState, noInput, groundAt, stateName, facingRow, tuneFor, TYPE_TRAITS } from './sim.js';
 import { buildRoom, SPOTS } from './room.js';
-import { makeRenderer, buildTerrain, buildWater, buildRails, buildScatter, buildExit, drawMap, SpriteBatch, Shadows, Shots, Flashes, loadSheet, frameAt, spriteQuad, footLift, placeCamera, PX, setFog, FOG0 } from './render.js';
+import { makeRenderer, buildTerrain, buildWater, buildRails, buildScatter, buildExit, drawMap, SpriteBatch, Shadows, Shots, Flashes, loadSheet, frameAt, spriteQuad, footLift, placeCamera, PX, setFog, FOG0, HIT_WHITE, HIT_SQUASH } from './render.js';
 import { newWorld, addEnemy, addBoss, tick, dataFrom, choose, drop, CK, canFire, wxLevel, setWeather, applyState } from './combat.js';
 import { Effects, FX as FXK } from './fx.js';
 import { frame as netFrame, keepEvents, diff as netDiff, bundle, unbundle, Viewer, Tape, ballColour, typeName, NK, PICK } from './net.js';
@@ -409,7 +409,10 @@ function draw(t) {
 			if (e.shiny) { const ss = sheets.get(skey(e.dex, true) + '/Walk'); if (ss) s = ss; else wantSheet(e.dex, true); }   // (a shiny: its own colours, once its sheet is here)
 			if (!s) { wantSheet(e.dex); continue; }
 			const q = sq(s, e.asleep ? 0 : frameAt(s.meta, t + e.id * 0.37), facingRow(e.a.facing, cam.yaw), e.scale || 1);
-			s.batch.add(e.a.x, e.a.y, e.a.z, q.rect, q.uv, e.flash > 0 ? 1.7 : e.asleep ? 0.62 : 1);
+			// (just hit: nearly white, squashed wide and low for an instant and springing back as the flash fades)
+			const hk = e.flash > 0 ? Math.min(1, e.flash / 0.12) : 0, rect = hk ? [q.rect[0] * (1 + HIT_SQUASH_K * hk), q.rect[1], q.rect[2] * (1 + HIT_SQUASH_K * hk), q.rect[1] + (q.rect[3] - q.rect[1]) * (1 - HIT_SQUASH_K * 0.8 * hk)] : q.rect;
+			s.batch.add(e.a.x, e.a.y, e.a.z, rect, q.uv, e.flash > 0.05 ? HIT_WHITE : e.flash > 0 ? 1.7 : e.asleep ? 0.62 : 1);
+			if (e.flash > 0) hitShown++;
 			shadows.add(room, e.a.x, e.a.z, e.a.y, s.shadow * (e.scale || 1));
 		}
 		shots.begin(); if (fx) fx.begin(camera, t);
@@ -661,7 +664,8 @@ let cutIn = null, cutN = 0;   // (the Ultimate's cut-in on screen now)
 // reaction, a Second chance, a rail under you). Drawn with the shots, after them (never in place of one). A look only:
 // the fight does not know them, so their scatter is the page's own.
 const sparks = []; let sparkAt = 0;
-let immuneT = -1e9, immuneMeT = -1e9;   // (when 'Immune' was last written: over an enemy, over you)
+let immuneT = -1e9, immuneMeT = -1e9, hitShown = 0;   // (hitShown: frames an enemy was drawn as just hit, for the tests)
+const HIT_SQUASH_K = HIT_SQUASH - 1;   // (when 'Immune' was last written: over an enemy, over you)
 function burst(x, y, z, col, n, speed, o = {}) {
 	if (document.hidden) return;
 	for (let i = 0; i < n; i++) { const a = Math.random() * 6.2832, s = speed * (0.45 + Math.random() * 0.55), d = o.ring ? o.ring * Math.sqrt(0.6 + Math.random() * 0.4) : 0; sparks.push({ x: x + Math.cos(a) * d, y: y + (o.h || 0) * Math.random(), z: z + Math.sin(a) * d, vx: Math.cos(a) * s, vy: (o.up === undefined ? 3 : o.up) * (0.4 + Math.random() * 0.8), vz: Math.sin(a) * s, t: 0, life: (o.life || 0.5) * (0.6 + Math.random() * 0.7), col, r: o.r || 0.09 }); }
@@ -1311,6 +1315,7 @@ const G_MUSIC = GG.BIOME_MUSIC || null, XK_MAPS = ['viridian', 'mtmoon', 'cerule
 
 // what a test (and a curious owner in the console) can reach
 window.__m3d = {
+	get hitShown() { return hitShown; },
 	hitFeel: () => ({ on: hitFeel.on, stops: hitFeel.stops, kicks: hitFeel.kicks, stopped: performance.now() < hitFeel.until, K: HF }), setHitFeel,
 	setWeather: (kind, dur = 30) => (world ? setWeather(world, kind, dur) : false), applyState: (e, kind) => (world ? applyState(world, e, kind) : 0),   // (for the tests: a weather, a state on an enemy)
 	matchup, walled: () => (world ? world.enemies.filter((e) => !e.dead && GG.Types.noAnswer(world.pl.moves, e.types, e.dex)).length : 0),   // (how many enemies wear the grey bead)
