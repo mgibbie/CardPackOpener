@@ -116,7 +116,7 @@ export class Effects {
 		this.anims = null; this.sheets = null;   // (the games' own animations: loadAnims)
 		this.q = 1;   // (the quality: 1 full; 0.5 reduced: no trails or shot light, half the small pieces, half the weather. setQuality)
 		this.parts = []; this.right = new THREE.Vector3(1, 0, 0); this.up = new THREE.Vector3(0, 1, 0); this.at = 0; this.t = 0; this.impacts = 0; this.looks = new Map();
-		this.stats = { sprites: 0, glows: 0, lights: 0, byLight: {}, anims: 0, bySheet: {}, parts: 0, shots: 0, impacts: 0, swings: 0, ownShots: 0, beams: 0, auras: 0, chains: 0, blasts: 0, dashes: 0, kos: 0, flat: 0, vortexes: 0, waves: 0, patches: 0, ults: 0, marks: {}, weather: {}, warns: 0, booms: 0, helps: {}, byShape: {} };   // (the last frame's; `byShape`, `impacts`, `swings`: since the page opened)
+		this.stats = { sprites: 0, glows: 0, lights: 0, byLight: {}, anims: 0, bySheet: {}, parts: 0, shots: 0, impacts: 0, swings: 0, ownShots: 0, beams: 0, auras: 0, chains: 0, blasts: 0, dashes: 0, kos: 0, flat: 0, vortexes: 0, waves: 0, patches: 0, ults: 0, marks: {}, weather: {}, warns: 0, booms: 0, helps: {}, bossLooks: {}, byShape: {} };   // (the last frame's; `byShape`, `impacts`, `swings`: since the page opened)
 	}
 	/** The downloaded lights: the atlas and its list of cells ({ cell, cols, rows, names }). */
 	loadLights(url, info) {
@@ -378,6 +378,33 @@ export class Effects {
 		const pal = this.VFX.PAL[type] ? type : 'normal';
 		if (o.r) this.blast(o.x, o.y, o.z, o.r, null, pal); else this.beam([o.x, o.y + 0.7, o.z], [Math.cos(o.angle), 0, Math.sin(o.angle)], o.len, Math.max(0.8, o.w), null, pal);
 		this.stats.booms++;
+	}
+	/** A boss starts an attack: it charges in its type (light gathering in, its type's own sprite over it), longer for a bigger one.
+	 *  kind: 'slam' | 'dash' | 'leap' | 'rain' | 'beam' | 'volley' | 'nova'. */
+	bossCast(kind, type, x, y, z, r, wind) {
+		const pal = this.VFX.PAL[type] ? type : 'normal', P = this.VFX.PAL[pal], life = Math.max(0.35, wind || 0.6), h = y + Math.max(1.2, r * 2);
+		this.flash({ light: 'twirl', x, y: (y + h) / 2, z, life, s0: 7, s1: 2, css: P[3], a: 1.4, spin: kind === 'nova' ? -8 : 8 });
+		this.flash({ flat: true, light: 'rune', x, y: y + 0.12, z, life, s0: 3, s1: 6.5, css: P[2], a: 1.3, spin: 3 });
+		if (TYPE_ANIM[pal]) this.play({ sheet: TYPE_ANIM[pal], x, y: h + 0.6, z, life, scale: 1.3, loop: 10 });
+		if (kind === 'nova') this.flash({ flat: true, light: 'ring', x, y: y + 0.15, z, life, s0: 9, s1: 2, css: P[3], a: 1.2 });
+		const B = this.stats.bossLooks; B[kind] = (B[kind] || 0) + 1;
+	}
+	/** …its mark on the ground, by attack: strikes that fall from the sky onto a rain's marks, light gathering at a beam's mouth,
+	 *  a slam's or a leap's ground in its type, a dash's lane streaked. Then warn() as every mark. */
+	bossWarn(h, type) {
+		const pal = this.VFX.PAL[type] ? type : 'normal', P = this.VFX.PAL[pal], L = this.VFX.forType(pal), A = this.atlas, d = Math.max(0.3, h.delay || 1);
+		if (h.bk === 'rain') { const shape = A.has(L.proj) ? L.proj : 'ball'; this.part({ shape, pal, x: h.x + 2.5, y: h.y + 14, z: h.z, vx: -2.5 / d, vy: -14 / d, life: d, s0: 1.5, s1: 1.9, rot: -1.2, spin: A.spins(shape) ? 6 : 0, anim: 10, glow: P[3], ga: 0.8 }); }
+		else if (h.bk === 'beam') this.flash({ light: 'flare', x: h.x + Math.cos(h.angle) * 1.2, y: h.y + 1.2, z: h.z + Math.sin(h.angle) * 1.2, life: d, s0: 0.5, s1: 3.2, css: P[3], a: 1.5 });
+		else if (h.bk === 'slam' || h.bk === 'leap') this.flash({ flat: true, light: 'magic', x: h.x, y: h.y + 0.14, z: h.z, life: d, s0: h.r * 2.6, s1: h.r * 1.6, css: P[2], a: 1.2, spin: -2 });
+	}
+	/** …and it lands, by attack: a rain's strike a blast with its type's sprite, a beam the type's own, a slam or a leap a big
+	 *  burst, a ring and smoke, a dash streaks down its lane. */
+	bossBoom(h, type) {
+		const pal = this.VFX.PAL[type] ? type : 'normal', P = this.VFX.PAL[pal];
+		if (h.bk === 'beam') { this.beam([h.x, h.y + 1, h.z], [Math.cos(h.angle), 0, Math.sin(h.angle)], h.len, Math.max(1.2, h.w * 1.4), null, pal); }
+		else if (h.bk === 'dash') this.dash([h.x, h.y + 0.6, h.z], [Math.cos(h.angle), 0, Math.sin(h.angle)], h.len, null, pal);
+		else { const big = h.bk === 'slam' || h.bk === 'leap'; this.blast(h.x, h.y, h.z, big ? h.r * 1.1 : h.r, null, pal); if (TYPE_ANIM[pal]) this.play({ sheet: TYPE_ANIM[pal], x: h.x, y: h.y + 1, z: h.z, life: 0.5, scale: big ? 2.2 : 1.4 }); if (big) this.flash({ flat: true, light: 'smokering', x: h.x, y: h.y + 0.1, z: h.z, life: 0.8, s0: h.r, s1: h.r * 3, css: '#8a8f99', a: 0.8, spin: 0.5 }); }
+		const B = this.stats.bossLooks; B[h.bk + 'Boom'] = (B[h.bk + 'Boom'] || 0) + 1;
 	}
 	/** What enemies do for each other: 'heal' (green light and hearts rising), 'shield' (a blue shell closing), 'summon' (a violet circle on the floor). */
 	help(kind, x, y, z, r) {

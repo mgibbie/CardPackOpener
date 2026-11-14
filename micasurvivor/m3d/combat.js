@@ -858,13 +858,13 @@ function bossMove(w, e, dt) {
 		else id = du < 115 ? 'slam' : du < 430 ? pick(ai.ranged) : null;
 		if (id) {
 			const ang = Math.atan2(dz, dx), c = ai.cast = { id, t: 0, wind: 0.6 * f, after: 0.35, ang }, ey = gy(e.a.x, e.a.z), py = s.grounded ? s.y : gy(s.x, s.z);
-			w.events.push({ k: 'bosscast', id: e.id, attack: id });
-			if (id === 'slam') { c.wind = 0.85 * f; hazard(w, { kind: 'zone', x: e.a.x, y: ey, z: e.a.z, r: 96 * U + e.cr, delay: c.wind, dmg: e.dmg * 1.3, type }); }
-			else if (id === 'dash') { c.wind = 0.75 * f; c.len = 330; c.dur = 0.32; hazard(w, { kind: 'beam', x: e.a.x, y: ey, z: e.a.z, angle: ang, len: c.len * U + e.cr, w: e.cr * 2 + 16 * U, delay: c.wind + c.dur, dmg: e.dmg * 1.2, type }); }
-			else if (id === 'leap') { e.jump = { sx: e.a.x, sy: e.a.y, sz: e.a.z, tx: s.x, ty: py + e.a.hover, tz: s.z, t: -0.5 * f, dur: 0.65 }; hazard(w, { kind: 'zone', x: s.x, y: py, z: s.z, r: 82 * U, delay: 0.5 * f + 0.65, dmg: e.dmg * 1.25, type }); ai.cast = null; ai.cd = rnd(w, 1.4, 2) + 0.6; }
-			else if (id === 'rain') { const n = ai.fury ? 6 : 4; for (let i = 0; i < n; i++) { const a = i ? w.rand() * 6.2832 : 0, dd = i ? rnd(w, 40, 120) * U : 0, x = s.x + Math.cos(a) * dd, z = s.z + Math.sin(a) * dd * 0.8; hazard(w, { kind: 'zone', x, y: i ? gy(x, z) : py, z, r: 50 * U, delay: 1.05 + i * 0.12, dmg: shotDmg(e) * 1.15, type }); } c.wind = 0.5; }
-			else if (id === 'beam') { const n = ai.fury ? 5 : 3, spread = ai.fury ? 0.42 : 0.5; for (let i = 0; i < n; i++) hazard(w, { kind: 'beam', x: e.a.x, y: ey, z: e.a.z, angle: ang + (i - (n - 1) / 2) * spread, len: 400 * U, w: 26 * U, delay: 1.0, dmg: shotDmg(e) * 1.2, type }); c.wind = 1.0; c.after = 0.25; }
+			if (id === 'slam') { c.wind = 0.85 * f; hazard(w, { kind: 'zone', x: e.a.x, y: ey, z: e.a.z, r: 96 * U + e.cr, delay: c.wind, dmg: e.dmg * 1.3, type, bk: 'slam' }); }
+			else if (id === 'dash') { c.wind = 0.75 * f; c.len = 330; c.dur = 0.32; hazard(w, { kind: 'beam', x: e.a.x, y: ey, z: e.a.z, angle: ang, len: c.len * U + e.cr, w: e.cr * 2 + 16 * U, delay: c.wind + c.dur, dmg: e.dmg * 1.2, type, bk: 'dash' }); }
+			else if (id === 'leap') { e.jump = { sx: e.a.x, sy: e.a.y, sz: e.a.z, tx: s.x, ty: py + e.a.hover, tz: s.z, t: -0.5 * f, dur: 0.65 }; hazard(w, { kind: 'zone', x: s.x, y: py, z: s.z, r: 82 * U, delay: 0.5 * f + 0.65, dmg: e.dmg * 1.25, type, bk: 'leap' }); ai.cast = null; ai.cd = rnd(w, 1.4, 2) + 0.6; }
+			else if (id === 'rain') { const n = ai.fury ? 6 : 4; for (let i = 0; i < n; i++) { const a = i ? w.rand() * 6.2832 : 0, dd = i ? rnd(w, 40, 120) * U : 0, x = s.x + Math.cos(a) * dd, z = s.z + Math.sin(a) * dd * 0.8; hazard(w, { kind: 'zone', x, y: i ? gy(x, z) : py, z, r: 50 * U, delay: 1.05 + i * 0.12, dmg: shotDmg(e) * 1.15, type, bk: 'rain' }); } c.wind = 0.5; }
+			else if (id === 'beam') { const n = ai.fury ? 5 : 3, spread = ai.fury ? 0.42 : 0.5; for (let i = 0; i < n; i++) hazard(w, { kind: 'beam', x: e.a.x, y: ey, z: e.a.z, angle: ang + (i - (n - 1) / 2) * spread, len: 400 * U, w: 26 * U, delay: 1.0, dmg: shotDmg(e) * 1.2, type, bk: 'beam' }); c.wind = 1.0; c.after = 0.25; }
 			else c.wind = (id === 'nova' ? 0.7 : 0.5) * f;   // volley / nova: the shots leave at the end of the wind-up
+			w.events.push({ k: 'bosscast', id: e.id, attack: id, type, x: e.a.x, y: e.a.y, z: e.a.z, r: e.cr, wind: id === 'leap' ? 0.5 * f + 0.65 : c.wind });   // (what it does, for its look: fx.js bossCast)
 		}
 	}
 	const l = Math.hypot(vx, vz) || 1e-9; WISH[0] = vx / l; WISH[1] = vz / l;

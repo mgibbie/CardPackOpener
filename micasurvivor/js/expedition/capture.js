@@ -225,7 +225,7 @@ G.ExpCap = (() => {
     e.anim = new G.Sprites.Animator(dex, e.scale, true);
     G.Sprites.preload([dex], 6000, true);
     e.xk = 'shiny'; e.xsh = true;
-    e.xroam = { rng: R(mix(S.seed, S.zone, e.id, 0x40A)), t: 0, tx: x, ty: y };
+    e.xroam = { rng: R(mix(S.seed, S.zone, e.id, 0x40A)), t: 0, tx: x, ty: y, ct: 0, cx: x, cy: y };
     e.xmove = roam;
     const I = IT(), charm = !!(I && I.has(pl, 'shinycharm')) || !!(G.ExpMeta && G.ExpMeta.charm());
     mark(e, 'shiny', { flee: charm ? K.SH_FLEE_CHARM : K.SH_FLEE });
@@ -244,11 +244,15 @@ G.ExpCap = (() => {
     if (r.t <= 0 || d < 18) {
       const p = pl || G.Game.player, a = r.rng() * 6.2832, dd = K.SH_ROAM[0] + r.rng() * (K.SH_ROAM[1] - K.SH_ROAM[0]);
       r.t = 2.4 + r.rng() * 2.2; r.tx = p.x + Math.cos(a) * dd; r.ty = p.y + Math.sin(a) * dd * 0.8;
+      r.ct = 0; r.cx = this.x; r.cy = this.y;
     }
-    const [nx, ny] = G.U.norm(r.tx - this.x, r.ty - this.y), sp = this.spd * K.SH_SPD * (1 - (this.slow || 0));
+    const [nx, ny] = G.U.norm(r.tx - this.x, r.ty - this.y), sp = this.spd * K.SH_SPD * (1 - (this.slow || 0)), ox = this.x, oy = this.y;
     this.x += nx * sp * dt + this.kx * dt; this.y += ny * sp * dt + this.ky * dt;
     this.kx *= Math.pow(0.0015, dt); this.ky *= Math.pow(0.0015, dt);
-    if (!this.flying) G.World.collide(this);
+    // its target past a cliff / wall / prop: a new heading soon (as a stampede's runStep), not 2.4-4.6 s walking on the spot.
+    // Blocked this step, or (wedged in a corner, jittering) under a third of its walk made good over the last 0.4 s
+    if (!this.flying && G.World.collide(this) && Math.hypot(this.x - ox, this.y - oy) < sp * dt * 0.3) r.t = Math.min(r.t, 0.15);
+    if ((r.ct = (r.ct || 0) + dt) >= 0.4) { if (r.cx !== undefined && Math.hypot(this.x - r.cx, this.y - r.cy) < sp * r.ct / 3) r.t = 0; r.ct = 0; r.cx = this.x; r.cy = this.y; }
     this.anim.dir = G.Sprites.dirFromAngle(Math.atan2(ny, nx));
     this.anim.loop('Walk', 1.1);
     if ((this.sparkT -= dt) <= 0) { this.sparkT = 0.25; G.FX.twinkle(this.x + G.U.rand(-this.r, this.r), this.y - G.U.rand(4, this.bodyH)); }
@@ -847,7 +851,7 @@ G.ExpCap = (() => {
   return {
     K, PERK, CINE_T, KC, shinyChance, zonePlan, pendingOf, perkOf, perkText, slotsMax, phase,
     begin, reset, mark, tick, hold, alphaDown, perk, recruit, slotSpot, pBlock, applyP, drawables, drawGround, drawHud, drawOver, drawMini, record,
-    spawnLeague, spawnShiny, faint, startCine, netEvent, applyMate, grant,
+    spawnLeague, spawnShiny, faint, startCine, netEvent, applyMate, grant, roam,   // (roam: a shiny's walk, for the tests)
     get ghostShots() { return ghostShots; },
     get run() { return S; }, get view() { return view; }, get vcine() { return vcine; }, get hudRect() { return hudRect; },
     get overDrawn() { return overDrawn; }, get overText() { return overText; }, get overRect() { return overRect; }

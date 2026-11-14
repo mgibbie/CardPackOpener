@@ -289,6 +289,8 @@ try {
 	A(seeds.every(s => s === seeds[0] && s != null) && seeds[0] === startRow.start.seed, 'one world: the same seed on all three (the server\'s)', JSON.stringify(seeds));
 
 	// ===================== in the run =====================
+	// (waits, not single reads or 4-5 s: on a loaded runner the guest-to-guest relay, the host's tape and its live snapshot came late:
+	//  3 of main's 14 gate runs to 2026-11-14)
 	for (const p of [alice, bob, carl]) await calm(p);
 	await sleep(600);
 	const me = p => p.E(() => ({ x: Math.round(G.Game.player.x), y: Math.round(G.Game.player.y) }));
@@ -299,7 +301,7 @@ try {
 	const b1 = await me(bob);
 	A(b1.x - b0.x > 60, 'bob walks (keyboard) in his own game', JSON.stringify([b0, b1]));
 	A(await waitFor(async () => { const s = await seen(alice, 'bob'); return s && Math.abs(s.x - b1.x) < 12 && Math.abs(s.y - b1.y) < 12; }, 4000), 'the host sees bob where bob is', JSON.stringify([await seen(alice, 'bob'), b1]));
-	A(await waitFor(async () => { const s = await seen(carl, 'bob'); return s && Math.abs(s.x - b1.x) < 12; }, 4000), '...and so does carl (guest to guest, through the host)', JSON.stringify(await seen(carl, 'bob')));
+	A(await waitFor(async () => { const s = await seen(carl, 'bob'); return s && Math.abs(s.x - b1.x) < 12; }, 12000), '...and so does carl (guest to guest, through the host)', JSON.stringify(await seen(carl, 'bob')));
 	await alice.E(() => { G.Game.player.y -= 140; });
 	const a1 = await me(alice);
 	A(await waitFor(async () => { const s = await seen(bob, 'alice'); return s && Math.abs(s.y - a1.y) < 12 && Math.abs(s.x - a1.x) < 12; }, 4000), 'bob sees the host move', JSON.stringify([await seen(bob, 'alice'), a1]));
@@ -402,9 +404,9 @@ try {
 		let sa = null, sc = null, ca = null, cc = null, aa = null, ac = null, tp = null;
 		const okA = await waitFor(async () => { sa = await propOn(alice, spr); ca = await propOn(alice, bch); aa = await propOn(alice, alt); return sa && ca && aa && close(sa.c, sb.c) && close(ca.o, cb.o) && aa.used; }, 6000);
 		A(sb && sb.c < 60 && cb && cb.o > 15 && okA, `the HOST's world has bob's far spring (${sa && sa.c}% / his ${sb && sb.c}%), his altar used and his locked chest part-open (${ca && ca.o}% / his ${cb && cb.o}%)`, JSON.stringify([sb, cb, sa, ca, aa]));
-		const okT = await waitFor(async () => { tp = await tape15(); return close(tp.sp[spr.tx + ',' + spr.ty], sb.c) && close(tp.sp[bch.tx + ',' + bch.ty], cb.o) && tp.u.includes(alt.tx + ',' + alt.ty); }, 5000);
+		const okT = await waitFor(async () => { tp = await tape15(); return close(tp.sp[spr.tx + ',' + spr.ty], sb.c) && close(tp.sp[bch.tx + ',' + bch.ty], cb.o) && tp.u.includes(alt.tx + ',' + alt.ty); }, 15000);
 		A(okT, '...and so does the host\'s replay (field 15: the spring, the chest, the altar)', JSON.stringify([tp, spr, bch, alt]));
-		const ls = await alice.E((spr, alt) => { const s = G.Spectate.pubSnap({ ev: [], kd: [], w: 0 }), wa = s.wa || {}, i = (wa.s || []).findIndex((v, j) => j % 3 === 0 && v === spr.tx && wa.s[j + 1] === spr.ty); return { sp: i >= 0 ? wa.s[i + 2] : null, alt: G.World.unpackProps(wa.U || '').has(alt.tx + ',' + alt.ty) }; }, spr, alt);
+		let ls = null; await waitFor(async () => { ls = await alice.E((spr, alt) => { const s = G.Spectate.pubSnap({ ev: [], kd: [], w: 0 }), wa = s.wa || {}, i = (wa.s || []).findIndex((v, j) => j % 3 === 0 && v === spr.tx && wa.s[j + 1] === spr.ty); return { sp: i >= 0 ? wa.s[i + 2] : null, alt: G.World.unpackProps(wa.U || '').has(alt.tx + ',' + alt.ty) }; }, spr, alt); return close(ls.sp, sb.c) && ls.alt; }, 10000);
 		A(close(ls.sp, sb.c) && ls.alt, '...and the host\'s live snapshot (a spectator sees them)', JSON.stringify(ls));
 		const okC = await waitFor(async () => { sc = await propOn(carl, spr); cc = await propOn(carl, bch); ac = await propOn(carl, alt); return sc && cc && ac && close(sc.c, sb.c) && close(cc.o, cb.o) && ac.used; }, 6000);
 		A(okC, `...and CARL (the other guest, through the host) sees them too: spring ${sc && sc.c}%, chest ${cc && cc.o}%, altar used`, JSON.stringify([sc, cc, ac]));
