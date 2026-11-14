@@ -117,6 +117,14 @@ try {
 
 	// ---- 3. the budget
 	A(v.sprites <= v.max.SPRITES && v.glows <= v.max.GLOWS && v.parts <= v.max.PARTS, '3. the layer is inside its budget', { sprites: v.sprites, glows: v.glows, parts: v.parts });
+	// ---- 2d. a KO is a burst, not a vanish (B5)
+	{
+		const k0 = (await fx()).kos;
+		const dex = await M(() => { const m = window.__m3d, e = m.world.enemies.find((q) => !q.dead); if (!e) return 0; e.hp = e.maxHp = 1e9; m.world.hit(e, 2e9, 0, 0, 0); return e.dex; });
+		await waitFor(async () => (await fx()).kos > k0, 8000);
+		v = await fx();
+		A(dex > 0 && v.kos > k0 && v.byLight.glint > 0 && (v.byLight.puff > 0 || v.byLight.smoke > 0), '2d. an enemy that goes down leaves a puff and a star of light where it stood', { kos: v.kos, k0, glint: v.byLight.glint });
+	}
 	A(errors.length === 0, '3. the page raised no error', errors.slice(0, 4));
 } finally {
 	if (browser) await browser.close();
