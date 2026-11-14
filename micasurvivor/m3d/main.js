@@ -695,6 +695,14 @@ function fightEvents(events) {
 			else if (ev.sub === 'bar') fx.beam(ev.from, ev.dir, ev.len, Math.max(0.8, ev.w), null, ev.type);
 			else if (ev.sub === 'strike') fx.ultStrike(ev.x, ev.y, ev.z, ev.r, ev.type);
 		}
+		if (fx && fxLights && !document.hidden) {   // (the ENEMIES' side: what they mark on the ground, what goes off, what they do for each other: fx.js)
+			if (ev.k === 'hazard') fx.warn(ev.h.kind === 'zone' ? { x: ev.h.x, y: ev.h.y, z: ev.h.z, r: ev.h.r } : { x: ev.h.x, y: ev.h.y, z: ev.h.z, angle: ev.h.angle, len: ev.h.len, w: ev.h.w }, ev.h.type, ev.h.delay);
+			else if (ev.k === 'boom') fx.boom(ev.h.kind === 'zone' ? { x: ev.h.x, y: ev.h.y, z: ev.h.z, r: ev.h.r } : { x: ev.h.x, y: ev.h.y, z: ev.h.z, angle: ev.h.angle, len: ev.h.len, w: ev.h.w }, ev.h.type);
+			else if (ev.k === 'tele') fx.warn(ev.kind === 'slam' ? { x: ev.x, y: 0, z: ev.z, r: ev.r } : { x: ev.x, y: 0, z: ev.z, angle: ev.a, len: ev.len, w: ev.w }, 'fighting', ev.T);
+			else if (ev.k === 'slam') fx.boom({ x: ev.x, y: 0, z: ev.z, r: ev.r }, 'ground');
+			else if (ev.k === 'heal' || ev.k === 'shield') fx.help(ev.k, ev.x, ev.y, ev.z, ev.r);
+			else if (ev.k === 'summon') fx.help('summon', ev.x, ev.y, ev.z, 3);
+		}
 		if (fx && ev.k === 'melee') fx.swing(state.x, state.y, state.z, ev.aim, ev.r, ev.id, null);
 		if (fx && ev.id && !document.hidden) {   // (the other kinds of move, each in its own shape: fx.js)
 			if (ev.k === 'beam') fx.beam(ev.from, ev.dir, ev.len, ev.w, ev.id, null);
