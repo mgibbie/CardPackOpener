@@ -180,6 +180,14 @@ hechos en código. Pokémon © Nintendo / Creatures Inc. / GAME FREAK.
 Stats base y nombres en español: [PokeAPI](https://pokeapi.co/),
 descargados una vez y guardados en `js/data/pokedex.js`.
 
+## Efectos de los ataques (modos 3D)
+
+Luces de los ataques en los modos 3D (destellos, tajos, anillos, rayos, humo; `m3d/fx/particles.png`):
+[Particle Pack 1.1](https://kenney.nl/assets/particle-pack) de Kenney Vleugels (kenney.nl), con plantillas de
+Indigo Ray, Craig Nisbet, Zoltan Erdokovy, Heliagon, ThreeDee, Killst4r y Tim2501.
+Licencia Creative Commons Zero (CC0). 24 texturas, reducidas a 128 px y empaquetadas en un atlas con
+`tools/micasurvivor/pack_fx_atlas.mjs`.
+
 ## Fuente
 
 [Pixelify Sans](https://github.com/eifetx/Pixelify-Sans) (SIL Open Font License 1.1,
