@@ -530,7 +530,7 @@ function frame(now) {
 	if (perf.last) { perf.frames.push(now - perf.last); if (perf.frames.length > 240) perf.frames.shift(); }
 	perf.last = now;
 	perf.acc += dt;
-	if (paused) perf.acc = 0;   // (the menu is up, alone: the fight waits)
+	if (paused || now < hitFeel.until) perf.acc = 0;   // (the menu is up, alone: the fight waits; so it does for the moment of a hit-stop)
 	const t0 = performance.now();
 	const input = readInput(dt);
 	followCam(dt);
@@ -687,6 +687,7 @@ function fightEvents(events) {
 	for (const ev of events) if (ev.k === 'caught' && run) { if (ev.kind === 'league') keepCatch(ev.member || ev.dex); else if (ev.kind === 'shiny') keepShiny(ev.dex); }   // (a wild League member, a shiny: saved at once)
 	for (const ev of events) {
 		if (fx && ev.k === 'hit' && !(ev.d === 0)) fx.impact(ev.x, ev.y, ev.z, ev.type || (ev.ty >= 0 ? typeName(ev.ty) : 'normal'), !!ev.crit || ev.eff >= 2, WATCH ? ev.eff === 0 : ev.eff < 1);   // (a hit lands: fx.js)
+		if (ev.k === 'hit' && ev.crit && ev.d > 0 && !(ev.by !== undefined && ev.by !== MYID)) feel('crit'); else if (ev.k === 'kill' && ev.boss) feel('boss');   // (hit feel: yours, and a boss going down)
 		if (fx && ev.k === 'kill' && !document.hidden) { const e = (world ? world.enemies : []).find((q) => q.id === ev.id); fx.ko(ev.x, ev.y + 0.6, ev.z, e ? e.types[0] : 'normal', !!ev.boss); if (ev.boss) bob = Math.max(bob, 0.4); }   // (a KO is a burst, not a vanish; a boss's shakes the camera)
 		if (fx && fxLights && ev.k === 'ult' && !document.hidden) {   // (an Ultimate's pieces, in its type: fx.js)
 			if (ev.sub === 'cast') fx.ultCast(state.x, state.y, state.z, ev.type);
@@ -1044,8 +1045,21 @@ async function openBoard(id) {
 /** The menu (Esc, P, or its button). Alone in your own run the fight waits while it is up; a guest's or a watcher's
  *  fight is someone else's and goes on. */
 let menuUp = false, paused = false, escAt = 0;
-const CONTROLS = 'Move: arrows / WASD · Jump: Z or Space · Slide: X or Shift · Wall-run: jump beside a wall and lean into it (jump again to kick off) · Rails: come down on one to grind it (jump to leap off, slide to drop) · Surf: on a steep bank, hold along it and into it · Ultimate: V when its meter is full (U: cast by itself) · Camera: Q / E or drag · Map: Backspace or M · Menu: Enter or Esc';
-const DIVE_CONTROLS = 'Move: arrows / WASD · Jump: Z or Space · Dodge: X or Shift (nothing hurts you while it lasts) · Specials: 1 and 2 (or C and V) · Ultimate: 3 when its meter is full · Stairs: stand on the column of light · Camera: Q / E or drag · Map: Backspace or M · Menu: Enter or Esc';
+// Hit feel (the owner, 2026-11-14: "On, with a setting"): a critical hit and a boss's KO stop the fight for a moment and
+// kick the camera. H turns it off and on (kept on this device). Off from the start for anyone whose system asks for less
+// motion. The stop is only ever taken alone: with anyone else in the fight (co-op, a watcher's page) time is shared.
+const HF = { CRIT_STOP: 45, CRIT_EVERY: 600, CRIT_KICK: 0.12, BOSS_STOP: 150, BOSS_KICK: 0.45 };
+const hitFeel = { on: (() => { let v = null; try { v = localStorage.getItem('m3d.hitfeel'); } catch { } return v === null ? !(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) : v === '1'; })(), until: 0, critAt: -1e9, stops: 0, kicks: 0 };
+function feel(kind) {
+	if (!hitFeel.on || WATCH || document.hidden) return;
+	const now = performance.now(), alone = !!solo && !world.mates.length;
+	if (kind === 'crit') { if (now - hitFeel.critAt < HF.CRIT_EVERY) return; hitFeel.critAt = now; bob = Math.max(bob, HF.CRIT_KICK); hitFeel.kicks++; if (alone) { hitFeel.until = Math.max(hitFeel.until, now + HF.CRIT_STOP); hitFeel.stops++; } }
+	else if (kind === 'boss') { bob = Math.max(bob, HF.BOSS_KICK); hitFeel.kicks++; if (alone) { hitFeel.until = Math.max(hitFeel.until, now + HF.BOSS_STOP); hitFeel.stops++; } }
+}
+function setHitFeel(on) { hitFeel.on = !!on; try { localStorage.setItem('m3d.hitfeel', on ? '1' : '0'); } catch { } note('Hit-stop and camera kick: ' + (on ? 'on' : 'off'), 1600); return hitFeel.on; }
+addEventListener('keydown', (e) => { if (e.code === 'KeyH' && !e.repeat && world && !menuUp && !world.pl.choices) setHitFeel(!hitFeel.on); });
+const CONTROLS = 'Move: arrows / WASD · Jump: Z or Space · Slide: X or Shift · Wall-run: jump beside a wall and lean into it (jump again to kick off) · Rails: come down on one to grind it (jump to leap off, slide to drop) · Surf: on a steep bank, hold along it and into it · Ultimate: V when its meter is full (U: cast by itself) · Hit-stop and camera kick: H turns them off and on · Camera: Q / E or drag · Map: Backspace or M · Menu: Enter or Esc';
+const DIVE_CONTROLS = 'Move: arrows / WASD · Jump: Z or Space · Dodge: X or Shift (nothing hurts you while it lasts) · Specials: 1 and 2 (or C and V) · Ultimate: 3 when its meter is full · Stairs: stand on the column of light · Hit-stop and camera kick: H turns them off and on · Camera: Q / E or drag · Map: Backspace or M · Menu: Enter or Esc';
 function setMenu(on) {
 	if (!RUNUI || runOver) on = false;
 	menuUp = !!on; paused = menuUp && !!solo && !world.mates.length;
@@ -1289,6 +1303,7 @@ const G_MUSIC = GG.BIOME_MUSIC || null, XK_MAPS = ['viridian', 'mtmoon', 'cerule
 
 // what a test (and a curious owner in the console) can reach
 window.__m3d = {
+	hitFeel: () => ({ on: hitFeel.on, stops: hitFeel.stops, kicks: hitFeel.kicks, stopped: performance.now() < hitFeel.until, K: HF }), setHitFeel,
 	setWeather: (kind, dur = 30) => (world ? setWeather(world, kind, dur) : false), applyState: (e, kind) => (world ? applyState(world, e, kind) : 0),   // (for the tests: a weather, a state on an enemy)
 	matchup, walled: () => (world ? world.enemies.filter((e) => !e.dead && GG.Types.noAnswer(world.pl.moves, e.types)).length : 0),   // (how many enemies wear the grey bead)
 	fx: () => (fx ? { ...fx.stats, byShape: { ...fx.stats.byShape }, byLight: { ...fx.stats.byLight }, lit: fxLights, atlas: [fx.atlas.cols, fx.atlas.rows], max: { ...FXK } } : null), fxLayer: fx,
