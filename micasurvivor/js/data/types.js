@@ -12,6 +12,15 @@
  * Sin callejón sin salida (STRUGGLE): si NINGUNO de tus movimientos de daño puede herir a un enemigo (es inmune a
  * todos), tus golpes contra él entran como Forcejeo: ×0,25, peor que casi cualquier golpe resistido, pero nunca cero.
  * Con un solo movimiento que sí le haga daño, los demás le hacen ×0 de verdad.
+ *
+ * Decisiones del dueño, 2026-11-14 ("x0 on enemies only", "Add both"):
+ *   - El ×0 es sólo CONTRA LOS ENEMIGOS. Tú nunca eres del todo inmune a un ataque: lo que sería ×0 contra ti es
+ *     ×0,25 (PLAYER_MIN; multIn).
+ *   - STAB: un movimiento de uno de tus tipos hace ×1,5 (STAB). Los enemigos atacan siempre con su propio tipo, así
+ *     que a ellos no se les aplica: sería sólo un +50 % a todo lo que recibes.
+ *   - Inmunidades de habilidad (ABILITY_IMMUNE, con la habilidad que cada especie tiene en systems/abilities.js):
+ *     Levitación a Tierra, Absorbe Agua a Agua, Absorbe Elec a Eléctrico, Absorbe Fuego a Fuego, Herbívoro a Planta.
+ *     Un ENEMIGO con una de ellas es inmune (×0) a ese tipo; tú, con una de ellas, recibes ×0,25 de ese tipo.
  */
 G.Types = (() => {
   // atacante -> { defensor: multiplicador de los juegos } (los ×1 no se apuntan)
@@ -35,10 +44,15 @@ G.Types = (() => {
     steel:    { fire: .5, water: .5, electric: .5, ice: 2, rock: 2, steel: .5, fairy: 2 },
     fairy:    { fire: .5, fighting: 2, poison: .5, dragon: 2, dark: 2, steel: .5 }
   };
-  const STRUGGLE = 0.25;
+  const STRUGGLE = 0.25, PLAYER_MIN = 0.25, STAB = 1.5;
+  const ABILITY_IMMUNE = { levitate: 'ground', waterabsorb: 'water', voltabsorb: 'electric', flashfire: 'fire', sapsipper: 'grass' };
+  /** El tipo al que una especie es inmune por su habilidad, o undefined. */
+  const immuneBy = dex => (dex != null && G.Abilities && G.Abilities.of ? ABILITY_IMMUNE[G.Abilities.of(dex)] : undefined);
 
-  /** Multiplicador de un ataque de tipo `atk` contra un Pokémon de tipos `def`: 0, 0,25, 0,5, 1, 2 o 4. */
-  function mult(atk, def) {
+  /** Multiplicador de un ataque de tipo `atk` contra un Pokémon de tipos `def`: 0, 0,25, 0,5, 1, 2 o 4.
+   *  @param dex  la especie que lo recibe, si es un ENEMIGO: su habilidad puede hacerlo inmune (×0). */
+  function mult(atk, def, dex) {
+    if (dex != null && atk && immuneBy(dex) === atk) return 0;
     const row = CHART[atk];
     if (!row || !def) return 1;
     let m = 1;
@@ -46,13 +60,16 @@ G.Types = (() => {
     return m;
   }
 
+  /** …de un ataque CONTRA TI (o tu compañero): nunca ×0; lo que sería inmune es ×0,25. */
+  function multIn(atk, def) { const m = mult(atk, def); return m === 0 ? PLAYER_MIN : m; }
+
   /** 'super' | 'weak' | 'immune' | null, para enseñar el aviso (y para lo que depende de él: Cinta Experto…). */
   function label(m) { return m === 0 ? 'immune' : m > 1 ? 'super' : m < 1 ? 'weak' : null; }
 
   /** ¿Ninguno de estos movimientos puede herir a un Pokémon de tipos `def`? (los de apoyo y los sin tipo no cuentan) */
-  function noAnswer(moves, def) {
+  function noAnswer(moves, def, dex) {
     let any = false;
-    for (const m of moves || []) { if (!m || m.kind === 'buff' || !m.type) continue; any = true; if (mult(m.type, def) > 0) return false; }
+    for (const m of moves || []) { if (!m || m.kind === 'buff' || !m.type) continue; any = true; if (mult(m.type, def, dex) > 0) return false; }
     return any;
   }
 
@@ -64,5 +81,5 @@ G.Types = (() => {
     if (G.FX) G.FX.dmgText(o.x, o.y - (o.bodyH || 0) - 4, 'Inmune', '#a3abb8');
   }
 
-  return { CHART, STRUGGLE, mult, label, noAnswer, showImmune };
+  return { CHART, STRUGGLE, PLAYER_MIN, STAB, ABILITY_IMMUNE, immuneBy, mult, multIn, label, noAnswer, showImmune };
 })();

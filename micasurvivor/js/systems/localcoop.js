@@ -809,8 +809,7 @@ G.LocalCoop = (() => {
     const pl = G.Game && G.Game.player;
     let eff = null;
     if (type) {
-      const k = G.Types.mult(type, mate.mon.types);
-      if (k === 0) { G.Types.showImmune(mate); return; }
+      const k = G.Types.multIn(type, mate.mon.types);
       eff = G.Types.label(k);
       amount *= k * G.Weather.mult(type);
     }

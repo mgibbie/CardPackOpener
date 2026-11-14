@@ -77,7 +77,7 @@ export function dataFrom(G) {
 		item: (id) => (G.Items ? G.Items.BY[id] : null), itemOk: (id, dex) => !!(G.Items && G.Items.okFor(id, dex)), itemList: () => (G.Items ? G.Items.LIST.map((i) => i.id) : []), IT: G.Items || {},
 		abilityOf: (dex) => (G.Abilities ? G.Abilities.of(dex) : null), abilityFx: (id) => (G.Abilities && G.Abilities.FX[id] ? G.Abilities.FX[id].fx : null), typeLabel: (k) => G.Types.label(k),
 		expMoves: () => (G.ExpMoves ? Object.keys(G.ExpMoves.MOVES) : []),   // (a move's knockback is worked out from its level, as the 2D game does)
-		typeMult: (t, types) => G.Types.mult(t, types), struggle: G.Types.STRUGGLE, noAnswer: (moves, types) => G.Types.noAnswer(moves, types), mon: (dex) => G.DEX_BY[dex],
+		typeMult: (t, types, dex) => G.Types.mult(t, types, dex), typeIn: (t, types) => G.Types.multIn(t, types), stab: G.Types.STAB, struggle: G.Types.STRUGGLE, noAnswer: (moves, types, dex) => G.Types.noAnswer(moves, types, dex), mon: (dex) => G.DEX_BY[dex],
 		radius: (dex, scale = 1) => G.Sprites.bodyRadius(dex, scale) * U, hovers: (dex) => G.Sprites.hovers(dex),
 		poolFor: (mon) => G.Moves.poolFor(mon), levelUp: (m) => { if (m.xexp) return false; const ok = G.Moves.levelUp(m); m.knock = G.Moves.knockOf(m); return ok; }, nextUp: (m) => (m.xexp ? null : G.Moves.nextUpText(m)), moveDef: (id) => G.Moves.BY_ID[id] || (G.ExpMoves && G.ExpMoves.MOVES[id]),
 		hash: (a, b, c) => G.U.hash(a, b, c), bossSlots: G.Enemies.BOSS_SLOTS, baseSpd: (dex) => G.Enemies.baseSpd(G.DEX_BY[dex]), behaviorOf: (dex) => G.Enemies.behaviorOf(G.DEX_BY[dex]),
@@ -304,9 +304,10 @@ export function land(w, e, dmg, kx, kz, knockU, src) {
 	const asleep = e.sleepT > 0 && src.cc !== 'sleep';
 	// (the games' own chart, 2026-11-13: an immune enemy takes nothing, and nothing the hit carries. Unless none of your
 	//  moves can hurt it at all: then your hits on it are a Struggle, x 0.25. The 2D game's rule: js/data/types.js)
-	const tm = type ? w.data.typeMult(type, e.types) : 1, struggle = tm === 0 && w.data.noAnswer(pl.moves, e.types), eff = struggle ? w.data.struggle : tm;
+	const tm = type ? w.data.typeMult(type, e.types, e.dex) : 1, struggle = tm === 0 && w.data.noAnswer(pl.moves, e.types, e.dex), eff = struggle ? w.data.struggle : tm;   // (e.dex: its ability can make it immune)
 	if (tm === 0 && !struggle) { w.stats.immune = (w.stats.immune || 0) + 1; w.events.push({ k: 'hit', id: e.id, x: e.a.x, y: e.a.y + bodyH(e) * 0.5, z: e.a.z, d: 0, crit: false, type, eff: 0 }); return 0; }
 	let k = eff;
+	if (type && pl.mon.types.includes(type)) k *= w.data.stab;   // (STAB, 2026-11-14: a move of one of your own types)
 	if (type) k *= wxMult(w, type);
 	k *= abOut(w, e, type, src.mkind || src.kind) * itemOut(w, e, type);
 	if (asleep) k *= CK.SLEEP_BONUS;
@@ -352,7 +353,7 @@ export function hurtPlayer(w, amount, type, through = false) {
 	if (through && pl.invuln < 1e8) pl.invuln = 0;   // (a telegraphed attack: the moment of grace after a hit does not save you)
 	if (pl.invuln > 0 || pl.dead) return 0;
 	let eff = null;
-	if (type) { const tk = w.data.typeMult(type, pl.mon.types); if (tk === 0) { w.events.push({ k: 'immune' }); return 0; } eff = w.data.typeLabel(tk); amount *= tk * wxMult(w, type); }   // (an attack you are immune to does nothing)
+	if (type) { const tk = w.data.typeIn(type, pl.mon.types); eff = w.data.typeLabel(tk); amount *= tk * wxMult(w, type); }   // (2026-11-14: you are never fully immune: what would be x 0 on you is x 0.25)
 	amount *= pl.takenK * abIn(w, type, eff);
 	let d = Math.max(1, amount * (1 - pl.reduction) * (pl.meleeT > 0 ? CK.MELEE_TAKEN : 1));
 	if (w.hooks && w.hooks.hurt) { d = w.hooks.hurt(w, d); if (!(d > 0)) { pl.invuln = CK.INVULN; return 0; } }   // (a mode's own: a dodge, a shield)

@@ -344,7 +344,7 @@ try {
 			const h1 = hp();
 			out.p1 = [h0[0] - h1[0], h0[1] - h1[1], h0[2] - h1[2]];
 			const k = G.Types.mult('fire', eIn.types) * G.Weather.mult('fire') * (pl.abFx ? G.Abilities.outK(pl, eIn, 'fire', 'zmove') : 1) * G.Items.outK(pl, eIn, 'fire');
-			out.want1 = (30 + 8 * 25) * pl.atk * k;
+			out.want1 = (30 + 8 * 25) * pl.atk * k * G.Types.STAB;   // (STAB, 2026-11-14: the pulse is of your own first type)
 			T.step(1.5); out.n2 = D.pulses;
 			const h2 = hp();
 			T.step(1.5); out.n3 = D.pulses;
@@ -370,7 +370,7 @@ try {
 		A(r.total === 40 && !r.activeEnd, '40 pulses in the 60 s (0.6, 2.1, ... 59.1)', JSON.stringify(r));
 		A(r.p1[0] > 0 && r.p1[1] === 0 && r.p1[2] === 0, 'a normal pulse reaches 280 (the foe at 250, not 350 or 500)', JSON.stringify(r.p1));
 		A(r.p3[0] > 0 && r.p3[1] > 0 && r.p3[2] === 0, 'every 3rd pulse reaches 420 (250 and 350, not 500)', JSON.stringify(r.p3));
-		A(Math.abs(r.p1[0] - r.want1) <= 1.5, `pulse damage = (30 + 8 x level) x attack (x1.3 while giant) through G.Combat.land = ${r.want1.toFixed(1)} (got ${r.p1[0]})`, JSON.stringify(r));
+		A(Math.abs(r.p1[0] - r.want1) <= 1.5, `pulse damage = (30 + 8 x level) x attack (x1.3 while giant) x STAB 1.5 through G.Combat.land = ${r.want1.toFixed(1)} (got ${r.p1[0]})`, JSON.stringify(r));
 		A(Math.abs(r.p3[0] - r.want3) <= 2.5 && Math.abs(r.p3[1] - r.want3) <= 2.5, `the big pulse does x1.9 (${r.want3.toFixed(1)}; got ${r.p3[0]}, ${r.p3[1]})`, JSON.stringify(r.p3));
 		const S = r.st;
 		A(S.electric.para && S.ice.frozen && S.ghost.sleep && S.psychic.conf && S.fairy.conf, 'electric paralyses, ice freezes, ghost puts to sleep, psychic and fairy confuse', JSON.stringify(S));
