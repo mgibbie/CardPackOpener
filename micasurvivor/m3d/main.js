@@ -11,6 +11,7 @@ import { buildRoom, SPOTS } from './room.js';
 import { makeRenderer, buildTerrain, buildWater, buildRails, buildScatter, buildExit, drawMap, SpriteBatch, Shadows, Shots, Flashes, loadSheet, frameAt, spriteQuad, footLift, placeCamera, PX, setFog, FOG0, HIT_WHITE, HIT_SQUASH } from './render.js';
 import { newWorld, addEnemy, addBoss, tick, dataFrom, choose, drop, CK, canFire, wxLevel, setWeather, applyState } from './combat.js';
 import { Effects, FX as FXK } from './fx.js';
+import { stOf } from './net.js';
 import { frame as netFrame, keepEvents, diff as netDiff, bundle, unbundle, Viewer, Tape, ballColour, typeName, NK, PICK } from './net.js';
 import { Props, PROP_MON, BOBS } from './props.js';
 import { hostAdd, hostStep, hostFrame, hostApply, guestWorld, guestSync, guestMsg, guestApply, mateRows } from './coop.js';
@@ -449,6 +450,11 @@ function draw(t) {
 		if (world && fx) {   // what each enemy is suffering, drawn on it; and the weather in the air round you (fx.js)
 			for (const e of world.enemies) { if (e.dead || !(e.burn > 0 || e.poison > 0 || e.frozenT > 0 || e.paraT > 0 || e.sleepT > 0 || e.confT > 0 || e.slow > 0)) continue; fx.status({ x: e.a.x, y: e.a.y, z: e.a.z, r: Math.max(0.35, e.cr || 0.4), h: Math.max(1.1, (e.cr || 0.4) * 2), id: e.id }, { burn: e.burn > 0, poison: e.poison > 0, frozen: e.frozenT > 0, para: e.paraT > 0, sleep: e.sleepT > 0, conf: e.confT > 0, slow: e.slow > 0 }); }
 			if (world.weather && !paused) fx.weatherAir(world.weather.kind, wxLevel(world), state.x, state.y, state.z);
+			else if (!world.weather && JOIN && coView && coView.weather) fx.weatherAir(coView.weather[0], Math.min(1, coView.weather[1] / 3), state.x, state.y, state.z);   // (a guest: the host's weather, from its frames)
+		}
+		if (!world && fx && view) {   // (watching, or a replay: the marks and the weather from the frame)
+			for (const e of view.enemies) { if (!(e.st > 0)) continue; const r = 0.4 * (e.scale || 1); fx.status({ x: e.a.x, y: e.a.y, z: e.a.z, r, h: Math.max(1.1, r * 2), id: e.id }, stOf(e.st << 7)); }
+			if (view.weather) fx.weatherAir(view.weather[0], Math.min(1, view.weather[1] / 3), state.x, state.y, state.z);
 		}
 		if (world) for (const e of world.enemies) if (e.shield > 0) shots.add(e.a.x, e.a.y + Math.max(1.2, e.cr * 2) + 0.35, e.a.z, 0.16, '#7fc8ff');   // a shield: a blue bead over its head
 		if (world) for (const p of world.eshots) { if (fx) fx.shot(p.x, p.y, p.z, Math.max(0.2, p.r), null, p.mtype || 'normal', [p.vx, p.vy, p.vz], p.id, '#ff5f8f'); else shots.add(p.x, p.y, p.z, Math.max(0.2, p.r), '#ff5f8f'); }   // an enemy's shot: its type's shape, always in the same angry pink light
@@ -713,20 +719,21 @@ function fightEvents(events) {
 			else if (ev.k === 'heal' || ev.k === 'shield') fx.help(ev.k, ev.x, ev.y, ev.z, ev.r);
 			else if (ev.k === 'summon') fx.help('summon', ev.x, ev.y, ev.z, 3);
 		}
-		if (fx && ev.k === 'melee') fx.swing(state.x, state.y, state.z, ev.aim, ev.r, ev.id, null);
+		const at = ev.x !== undefined && (ev.k === 'melee' || ev.k === 'aura') ? [ev.x, ev.y, ev.z] : [state.x, state.y, state.z];   // (where it was cast: the host's own place on a guest's page; an old tape has none)
+		if (fx && ev.k === 'melee') fx.swing(at[0], at[1], at[2], ev.aim, ev.r, ev.id, null);
 		if (fx && ev.id && !document.hidden) {   // (the other kinds of move, each in its own shape: fx.js)
 			if (ev.k === 'beam') fx.beam(ev.from, ev.dir, ev.len, ev.w, ev.id, null);
-			else if (ev.k === 'aura') fx.aura(state.x, state.y, state.z, ev.r, ev.id, null);
-			else if (ev.k === 'chain' && ev.links.length) fx.chain([state.x, state.y + CK.MUZZLE, state.z], ev.links, ev.id, null);
+			else if (ev.k === 'aura') fx.aura(at[0], at[1], at[2], ev.r, ev.id, null);
+			else if (ev.k === 'chain' && ev.links.length) fx.chain(ev.from || [state.x, state.y + CK.MUZZLE, state.z], ev.links, ev.id, null);
 			else if (ev.k === 'blast') fx.blast(ev.x, ev.y, ev.z, ev.r, ev.id, null);
 			else if (ev.k === 'dash') fx.dash(ev.from, ev.dir, Math.max(0.1, ev.len), ev.id, null);
 			else if (ev.k === 'smite') fx.blast(ev.x, ev.y, ev.z, ev.r, ev.id, null);
 		}
 		if (ev.k === 'mark') { flashes.arc(ev.x, ev.y, ev.z, ev.r, 0, 6.2832, TYPE_COLOR[typeName(ev.type)], ev.life, ev.inner); continue; }   // (watching: something was put down)
-		if (ev.k === 'melee') flashes.arc(state.x, state.y, state.z, ev.r, ev.aim, Math.min(ev.arc, 6.2832), col(ev.id));
-		else if (ev.k === 'aura') flashes.arc(state.x, state.y, state.z, ev.r, 0, 6.2832, col(ev.id));
+		if (ev.k === 'melee') flashes.arc(at[0], at[1], at[2], ev.r, ev.aim, Math.min(ev.arc, 6.2832), col(ev.id));
+		else if (ev.k === 'aura') flashes.arc(at[0], at[1], at[2], ev.r, 0, 6.2832, col(ev.id));
 		else if (ev.k === 'beam') flashes.bar(ev.from, ev.dir, ev.len, ev.w, col(ev.id));
-		else if (ev.k === 'chain') { let a = [state.x, state.y + CK.MUZZLE, state.z]; for (const b of ev.links) { const d = [b[0] - a[0], b[1] - a[1], b[2] - a[2]], l = Math.hypot(d[0], d[1], d[2]) || 1; flashes.bar(a, [d[0] / l, d[1] / l, d[2] / l], l, 0.18, col(ev.id), 0.16); a = b; } }
+		else if (ev.k === 'chain') { let a = ev.from || [state.x, state.y + CK.MUZZLE, state.z]; for (const b of ev.links) { const d = [b[0] - a[0], b[1] - a[1], b[2] - a[2]], l = Math.hypot(d[0], d[1], d[2]) || 1; flashes.bar(a, [d[0] / l, d[1] / l, d[2] / l], l, 0.18, col(ev.id), 0.16); a = b; } }
 		else if (ev.k === 'blast') flashes.arc(ev.x, ev.y, ev.z, ev.r, 0, 6.2832, col(ev.id), 0.3, 0.4);
 		else if (ev.k === 'dash') flashes.bar(ev.from, ev.dir, Math.max(0.1, ev.len), ev.w * 0.5, col(ev.id), 0.25);
 		else if (ev.k === 'hazard' || ev.k === 'boom') {   // a mark on the ground fills in as a warning, then flashes when it goes off

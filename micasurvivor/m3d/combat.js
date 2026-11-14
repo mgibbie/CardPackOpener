@@ -441,7 +441,7 @@ const KINDS = {
 			if (Math.abs(((Math.atan2(dz, dx) - pl.aim + Math.PI * 3) % 6.2832) - Math.PI) > half) continue;
 			land(w, e, dmg, dx, dz, m.knock || 0, m);
 		}
-		w.events.push({ k: 'melee', id: m.id, aim: pl.aim, r: R, arc: m.arc });
+		w.events.push({ k: 'melee', id: m.id, aim: pl.aim, r: R, arc: m.arc, x: s.x, y: s.y, z: s.z });   // (x, y, z: who swung, for a page that is not theirs)
 	},
 	beam(w, m) {
 		const pl = w.pl, s = pl.s, dir = aimDir(w, pl.aim), W = m.width * U, ox = s.x, oy = s.y + CK.MUZZLE, oz = s.z, dmg = m.dmg * atk(pl);
@@ -463,7 +463,7 @@ const KINDS = {
 			const dx = e.a.x - s.x, dz = e.a.z - s.z, rr = R + e.cr;
 			if (dx * dx + dz * dz <= rr * rr) land(w, e, dmg, dx, dz, m.knock || 0, m);
 		}
-		w.events.push({ k: 'aura', id: m.id, r: R });
+		w.events.push({ k: 'aura', id: m.id, r: R, x: s.x, y: s.y, z: s.z });
 	},
 	chain(w, m) {
 		const pl = w.pl, s = pl.s;
@@ -479,7 +479,7 @@ const KINDS = {
 			for (const e of w.enemies) { if (e.dead || done.has(e.id)) continue; const d = dist3(cur.a, e.a); if (d < bd) { bd = d; best = e; } }
 			cur = best;
 		}
-		w.events.push({ k: 'chain', id: m.id, links });
+		w.events.push({ k: 'chain', id: m.id, links, from: [s.x, s.y + CK.MUZZLE, s.z] });
 	},
 	buff(w, m) { const b = w.pl.buffs[m.stat]; if (!b) return; b.amount = m.amount; b.n = Math.min(m.stacks | 0, b.n + 1); b.t = m.dur; w.events.push({ k: 'buff', id: m.id, stat: m.stat, n: b.n }); },
 	boomerang(w, m) {
@@ -558,7 +558,7 @@ const KINDS = {
 	spin(w, m) {
 		const pl = w.pl, s = pl.s, R = m.radius * U, dmg = m.dmg * atk(pl);
 		for (const e of w.enemies) { if (e.dead || Math.abs(e.a.y - s.y) > CK.REACH_UP) continue; const dx = e.a.x - s.x, dz = e.a.z - s.z, rr = R + e.cr; if (dx * dx + dz * dz <= rr * rr) land(w, e, dmg, dx, dz, m.knock || 0, m); }
-		w.events.push({ k: 'aura', id: m.id, r: R });
+		w.events.push({ k: 'aura', id: m.id, r: R, x: s.x, y: s.y, z: s.z });
 	},
 };
 /** The n living enemies nearest a point (in space), within r. */

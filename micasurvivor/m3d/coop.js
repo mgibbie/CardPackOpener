@@ -139,7 +139,7 @@ export function guestSync(w, dt = K.TICK) {
 			c.atkType = c.types[0]; co.known.set(e.id, c); }
 		const row = rows.get(e.id);
 		c.a.x = e.a.x; c.a.y = e.a.y; c.a.z = e.a.z; c.a.facing = e.a.facing; c.hp = e.hp * 1000; c.boss = e.boss; c.fly = e.fly; c.scale = e.scale; c.shield = e.shield; if (e.flash) c.flash = Math.max(c.flash, 0.1);
-		if (row) { c.dmg = (row[9] || 0) / 10; c.tg = row[10] || 0; c.frozenT = row[7] & 32 ? 1 : 0; }
+		if (row) { c.dmg = (row[9] || 0) / 10; c.tg = row[10] || 0; c.frozenT = row[7] & 32 ? 1 : 0; const f = row[7]; if (f >= 128) { c.frozenT = f & 512 ? 1 : f & 32 && !(f & (2048 | 4096)) ? 1 : 0; c.burn = f & 128 ? 1 : 0; c.poison = f & 256 ? 1 : 0; c.paraT = f & 1024 ? 1 : 0; c.sleepT = f & 2048 ? 1 : 0; c.confT = f & 4096 ? 1 : 0; c.slow = f & 8192 ? 0.3 : 0; } else { c.burn = c.poison = c.paraT = c.sleepT = c.confT = c.slow = 0; } }   // (the host's states: 128 and up, net.js stBits)
 	}
 	for (const id of [...co.known.keys()]) if (!alive.has(id)) co.known.delete(id);
 	w.enemies = [...co.known.values()];
