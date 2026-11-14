@@ -677,6 +677,7 @@ let cutIn = null, cutN = 0;   // (the Ultimate's cut-in on screen now)
 // reaction, a Second chance, a rail under you). Drawn with the shots, after them (never in place of one). A look only:
 // the fight does not know them, so their scatter is the page's own.
 const sparks = []; let sparkAt = 0;
+const matchupSeen = [];   // (what was shown: for the tests)
 let immuneT = -1e9, immuneMeT = -1e9, hitShown = 0;   // (hitShown: frames an enemy was drawn as just hit, for the tests)
 const HIT_SQUASH_K = HIT_SQUASH - 1;   // (when 'Immune' was last written: over an enemy, over you)
 function burst(x, y, z, col, n, speed, o = {}) {
@@ -747,6 +748,7 @@ function fightEvents(events) {
 		else if (ev.k === 'levelup') { if (world) showCards(); }
 		else if (ev.k === 'say') { if (WATCH || grun) note(ev.text, (ev.s || 3) * 1000); }   // (a run's banner, on a watcher's screen)
 		else if (ev.k === 'weather') { const d = ev.kind && GG.Weather.KINDS[ev.kind], el = document.getElementById('wx'); if (el) { el.style.background = d ? `rgba(${d.tint[0]}, ${d.tint[1]}, ${d.tint[2]}, ${Math.min(0.3, d.tint[3] * 2.2)})` : 'transparent'; } if (ev.kind) note('the weather turns: ' + ev.kind, 3000); }
+		else if (ev.k === 'matchup' && ev.text) { const tx = ev.text; setTimeout(() => note(tx, 5000), 3000); matchupSeen.push(tx); }   // (the zone's / floor's types against yours, after its banner)
 		else if (ev.k === 'boss') note(`a wild ${(GG.DEX_BY[ev.dex] || {}).name || 'boss'} appeared!`, 3200);
 		else if (ev.k === 'enrage') note('it is enraged!', 2400);
 		else if (ev.k === 'heal') flashes.arc(ev.x, ev.y, ev.z, ev.r, 0, 6.2832, '#5fe08a', 0.5, 0.9);
@@ -1333,6 +1335,7 @@ const G_MUSIC = GG.BIOME_MUSIC || null, XK_MAPS = ['viridian', 'mtmoon', 'cerule
 	if (world && !JOIN && !drun) for (const d of FIGHT_CAST) want(d, 'Walk', world.cap);
 	if (world && !JOIN && !drun) for (const d of BOSSES) if (!FIGHT_CAST.includes(d)) want(d, 'Walk', 2);
 	if (FXLAB_ON) fxlab = startLab({ world, data: world.data, addEnemy, state, fx, pretty, secs: Q.get('secs'), from: Q.get('from') });   // (the effects gallery: fxlab.js)
+	{ const first = (run && run.matchup) || (drun && drun.matchup); if (first && first.text) { matchupSeen.push(first.text); setTimeout(() => note(first.text, 5000), 3000); } }   // (the first zone / floor was laid out before the page listened: its types against yours, from the run)
 	if (world && Q.get('boss') && BOSSES.includes(+Q.get('boss'))) addBoss(world, +Q.get('boss'), state.x + 12, state.z, { slot: 0 });
 	await Promise.all([...need.values()].map(({ d, a, n }) => sheet(d, a, n).catch((e) => console.warn(e.message))));
 	ready = true;
@@ -1342,6 +1345,7 @@ const G_MUSIC = GG.BIOME_MUSIC || null, XK_MAPS = ['viridian', 'mtmoon', 'cerule
 
 // what a test (and a curious owner in the console) can reach
 window.__m3d = {
+	get matchupSeen() { return matchupSeen.slice(); },
 	fxSettings: () => ({ mode: fxSet.mode, slow: fxSet.slow, q: fx ? fx.q : null, label: fxLabel() }), cycleFx, setFxSlow: (v) => { fxSet.slow = !!v; applyFx(); },
 	get fxlab() { return fxlab; },
 	get hitShown() { return hitShown; },

@@ -83,6 +83,11 @@ try {
 	await M(() => { const m = window.__m3d; while (m.world.pl.choices) m.pickCard(0); m.world.pl.moves.push({ id: 'x', type: 'water', kind: 'projectile', cd: 1e9, t: 0 }); });
 	const w2 = await M(() => window.__m3d.walled());
 	A(w2 === 0, 'with one move that can hurt them (a Water move), nobody wears the bead', w2);
+	// an Expedition's zone begins with its types against yours, under the zone's banner
+	await page.goto(`http://localhost:${PORT}/micasurvivor/m3d/?exp=7&map=viridian&dex=4&weather=0`, { waitUntil: 'domcontentloaded' });
+	await waitFor(() => M(() => !!(window.__m3d && window.__m3d.ready)), 30000);
+	const zoneLine = await waitFor(() => M(() => { const m = window.__m3d, t = m.matchupSeen[0]; return !!t && m.noteLog.includes(t); }), 12000);
+	A(zoneLine, 'an Expedition\'s zone 1 begins with its types against yours, on screen after its banner', await M(() => ({ seen: window.__m3d.matchupSeen, notes: window.__m3d.noteLog.slice(-4) })));
 	A(errors.length === 0, 'the page raised no error', errors.slice(0, 4));
 } finally {
 	if (browser) await browser.close();

@@ -17,7 +17,7 @@
 // Survival (an endless run on one map: milestone bosses, phases, pacts, siege, migration) is expsurv.js's.
 import { K, CELL, makeRoom, setCell, groundAt, newState } from './sim.js';
 import { generate, footGraph, rng as makeRng, LEVEL } from './gen.js';
-import { CK, U, newWorld, tick, addEnemy, addBoss, drop, hazard, spawnRate, xpFor, equip, gainXp } from './combat.js';
+import { CK, U, newWorld, tick, addEnemy, addBoss, drop, hazard, spawnRate, xpFor, equip, gainXp, matchupOf } from './combat.js';
 import { levelFrom, setup as setupLevels, tickStats, curse, takeItem, dropItem } from './explevel.js';
 import { ecoFrom, setupEco, tickEco, mods, pickTake, pickClose } from './expeco.js';
 import { capFrom, setupCap, tickCap, holdCine, mark, syncPerks } from './expcap.js';
@@ -183,6 +183,7 @@ function zoneStart(S, z, t) {
 	Object.assign(S, { zone: z, zs: t, plan: p, n: 0, ph: 0, charge: 0, portalT: 0, fs: false, boss: null, exhSaid: false, acc: 0, trick: makeRng(mix(S.seed, S.X.MAP_IDS.indexOf(S.map) + 1, z, 0xC4)), specials: new Map() });
 	say(S, S.surv ? `— Land ${S.sv ? S.sv.land : 1} · ${XK.MAP_NAME[S.map] || S.map} —` : z === 4 ? `— Shrine of ${name(S, p.legend)} —` : `— Zone ${z} · ${XK.MAP_NAME[S.map] || S.map} —`, 3.2);
 	S.w.events.push({ k: 'zone', zone: z });
+	if (!S.surv && z <= 3 && p.cards && p.cards.length) { const q = matchupOf(S.w, p.cards); S.matchup = q; S.w.events.push({ k: 'matchup', text: q.text, walled: q.walled }); }   // (the zone's types against yours)
 }
 /** How far to the side of the host a player arrives, by its number in the party (any number: an id can be large). */
 export const besideHost = (id) => 1.4 * (1 + (Math.abs(id | 0) + 2) % 3);
