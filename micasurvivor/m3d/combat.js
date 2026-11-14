@@ -76,7 +76,7 @@ export function dataFrom(G) {
 		weatherKinds: (G.Weather && G.Weather.KINDS) || {},
 		item: (id) => (G.Items ? G.Items.BY[id] : null), itemOk: (id, dex) => !!(G.Items && G.Items.okFor(id, dex)), itemList: () => (G.Items ? G.Items.LIST.map((i) => i.id) : []), IT: G.Items || {},
 		abilityOf: (dex) => (G.Abilities ? G.Abilities.of(dex) : null), abilityFx: (id) => (G.Abilities && G.Abilities.FX[id] ? G.Abilities.FX[id].fx : null), typeLabel: (k) => G.Types.label(k),
-		expMoves: () => (G.ExpMoves ? Object.keys(G.ExpMoves.MOVES) : []),   // (a move's knockback is worked out from its level, as the 2D game does)
+		expMoves: () => (G.ExpMoves ? Object.keys(G.ExpMoves.MOVES) : []), moveDefs: () => G.Moves.BY_ID,   // (a move's knockback is worked out from its level, as the 2D game does)
 		typeMult: (t, types, dex) => G.Types.mult(t, types, dex), typeIn: (t, types) => G.Types.multIn(t, types), stab: G.Types.STAB, enemyHp: G.Types.ENEMY_HP, struggle: G.Types.STRUGGLE, noAnswer: (moves, types, dex) => G.Types.noAnswer(moves, types, dex), mon: (dex) => G.DEX_BY[dex],
 		radius: (dex, scale = 1) => G.Sprites.bodyRadius(dex, scale) * U, hovers: (dex) => G.Sprites.hovers(dex),
 		poolFor: (mon) => G.Moves.poolFor(mon), levelUp: (m) => { if (m.xexp) return false; const ok = G.Moves.levelUp(m); m.knock = G.Moves.knockOf(m); return ok; }, nextUp: (m) => (m.xexp ? null : G.Moves.nextUpText(m)), moveDef: (id) => G.Moves.BY_ID[id] || (G.ExpMoves && G.ExpMoves.MOVES[id]),

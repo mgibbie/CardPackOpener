@@ -16,6 +16,7 @@ import { Props, PROP_MON, BOBS } from './props.js';
 import { hostAdd, hostStep, hostFrame, hostApply, guestWorld, guestSync, guestMsg, guestApply, mateRows } from './coop.js';
 import { generate, BIOMES } from './gen.js';
 import { mountRunUi, pretty } from './runui.js';
+import { startLab } from './fxlab.js';
 import { HostLink, WatchLink, runId, SAYS as LIVE_SAYS } from './exprelay.js';
 import { unfair, LOBBY_OK, guestOps, clean as cleanRun, deviceId, missing as saveMissing, runSum, recordOps, applyOps, scoreBody, WHY, SV, wildOf, catchOps, shinyOps, newlyMet, boardAsk, boardRows, hasMember, hasForm } from './expsave.js';
 import { rng as seedRng } from './gen.js';
@@ -347,6 +348,8 @@ const shots = world || WATCH ? new Shots(600) : null, flashes = world || WATCH ?
 if (shots) scene.add(shots.mesh);
 // the attacks themselves: the 2D game's move art, with light, trails and impacts (fx.js)
 const fx = shots && GG.VFX ? new Effects(scene, GG.VFX, (id) => GG.Moves.BY_ID[id] || (GG.ExpMoves && GG.ExpMoves.MOVES[id]) || null) : null;
+// ?fxlab=1 on a plain fight (?gen=…&fight=1): every move's effect in turn, nobody arriving (fxlab.js)
+const FXLAB_ON = Q.get('fxlab') === '1' && !!world && !run && !drun && !JOIN && !WATCH; let fxlab = null;
 let fxAnims = false;   // (the games' own battle animations, assets/fx/anims1.png: fx.js)
 if (fx) fetch('../assets/fx/anims1.json').then((r) => (r.ok ? r.json() : null)).then((info) => (info && info.sprites ? fx.loadAnims('../assets/fx/anims1.png', info) : false)).then((ok) => { fxAnims = !!ok; }).catch(() => { });
 let fxLights = false;   // (the downloaded lights, fx/particles.png: a flare on a hit, a slash through a swing … The page does not wait for them.)
@@ -537,6 +540,7 @@ function frame(now) {
 	perf.acc += dt;
 	if (paused || now < hitFeel.until) perf.acc = 0;   // (the menu is up, alone: the fight waits; so it does for the moment of a hit-stop)
 	const t0 = performance.now();
+	if (fxlab) fxlab.tick();
 	const input = readInput(dt);
 	followCam(dt);
 	while (perf.acc >= K.TICK) {
@@ -1308,6 +1312,7 @@ const G_MUSIC = GG.BIOME_MUSIC || null, XK_MAPS = ['viridian', 'mtmoon', 'cerule
 	for (const e of crowd) want(e.dex, 'Idle', 1);
 	if (world && !JOIN && !drun) for (const d of FIGHT_CAST) want(d, 'Walk', world.cap);
 	if (world && !JOIN && !drun) for (const d of BOSSES) if (!FIGHT_CAST.includes(d)) want(d, 'Walk', 2);
+	if (FXLAB_ON) fxlab = startLab({ world, data: world.data, addEnemy, state, fx, pretty, secs: Q.get('secs'), from: Q.get('from') });   // (the effects gallery: fxlab.js)
 	if (world && Q.get('boss') && BOSSES.includes(+Q.get('boss'))) addBoss(world, +Q.get('boss'), state.x + 12, state.z, { slot: 0 });
 	await Promise.all([...need.values()].map(({ d, a, n }) => sheet(d, a, n).catch((e) => console.warn(e.message))));
 	ready = true;
@@ -1317,6 +1322,7 @@ const G_MUSIC = GG.BIOME_MUSIC || null, XK_MAPS = ['viridian', 'mtmoon', 'cerule
 
 // what a test (and a curious owner in the console) can reach
 window.__m3d = {
+	get fxlab() { return fxlab; },
 	get hitShown() { return hitShown; },
 	hitFeel: () => ({ on: hitFeel.on, stops: hitFeel.stops, kicks: hitFeel.kicks, stopped: performance.now() < hitFeel.until, K: HF }), setHitFeel,
 	setWeather: (kind, dur = 30) => (world ? setWeather(world, kind, dur) : false), applyState: (e, kind) => (world ? applyState(world, e, kind) : 0),   // (for the tests: a weather, a state on an enemy)
