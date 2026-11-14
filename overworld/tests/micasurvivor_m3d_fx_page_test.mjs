@@ -41,6 +41,9 @@ const errors = [];
 try {
 	browser = await puppeteer.launch({ executablePath: CHROME, headless: 'new', protocolTimeout: 240000, args: ['--no-sandbox', '--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--mute-audio', '--disable-background-timer-throttling', '--disable-renderer-backgrounding', '--disable-backgrounding-occluded-windows'] });
 	const page = await browser.newPage();
+	// (the effects pinned to Full: this checks what Full draws. On Auto, the default since #1211, a busy machine steps down to Reduced
+	//  mid-test, and your shots lose their light)
+	await page.evaluateOnNewDocument(() => { try { localStorage.setItem('m3d.fx', 'full'); } catch { } });
 	await page.setViewport({ width: 900, height: 560, deviceScaleFactor: 1 });
 	page.on('pageerror', e => errors.push('pageerr: ' + e.message));
 	page.on('console', m => { if (m.type() === 'error' && !/Failed to load resource|favicon/.test(m.text())) errors.push('console: ' + m.text().slice(0, 200)); });
