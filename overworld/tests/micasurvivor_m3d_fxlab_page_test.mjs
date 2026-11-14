@@ -59,6 +59,13 @@ try {
 	A(bad.length === 0, `each sampled move (${sample.length}) is yours alone, has its targets, and is drawn by the effects layer within its time; you are not hurt`, bad);
 	const left = await M(() => window.__m3d.world.enemies.filter((e) => !e.dead && e.dex !== 10).length);
 	A(left === 0, 'nobody arrives by themselves (only the lab\'s targets)', left);
+	// the games' own sprites in flight, where the Emerald set has the right one
+	const own = {};
+	for (const [id, sheet] of [['shadow-ball', 'shadow_ball'], ['ember', 'small_ember'], ['bubble', 'bubble']]) {
+		const n0 = await M(([id, sh]) => { const m = window.__m3d, L = m.fxlab; L.go(L.list.findIndex((q) => q.id === id)); return m.fx().bySheet[sh] || 0; }, [id, sheet]);
+		own[id] = await waitFor(() => M(([sh, n0]) => { const f = window.__m3d.fx(); return f.animated && (f.bySheet[sh] || 0) > n0 + 5 && f.ownShots >= 0; }, [sheet, n0]), 12000);
+	}
+	A(Object.values(own).every(Boolean), 'Shadow Ball, Ember and Bubble fly as the games\' own sprites', own);
 	// keys and the clock
 	const i0 = await M(() => window.__m3d.fxlab.i);
 	await page.keyboard.press('KeyN'); const i1 = await M(() => window.__m3d.fxlab.i);

@@ -76,8 +76,8 @@ try {
 	A(v.byShape.bolt > 0 && !v.byShape.fire, '2. Thunder Shock flies as bolts', v.byShape);
 	await shot('fx-bolt.png');
 	A(await boot('dex=1&moves=razor-leaf:3,sludge:2,tackle'), '2. Bulbasaur: Razor Leaf, Sludge, Tackle');
-	v = await shapes(['leaf', 'blob']);
-	A(v.byShape.leaf > 0 && v.byShape.blob > 0, '2. Razor Leaf flies as leaves, Sludge as blobs', v.byShape);
+	await waitFor(async () => { const q = await fx(); return (q.byShape.leaf > 0 || q.bySheet.leaf > 0) && (q.byShape.blob > 0 || q.bySheet.poison_bubble > 0); }, 25000); v = await fx();   // (the games' own leaf and poison bubble when the anims atlas is there; the 2D shapes without it)
+	A((v.byShape.leaf > 0 || v.bySheet.leaf > 0) && (v.byShape.blob > 0 || v.bySheet.poison_bubble > 0), '2. Razor Leaf flies as leaves, Sludge as blobs', { shapes: v.byShape, sheets: v.bySheet });
 	// an enemy brought within arm's reach: Tackle swings
 	await waitFor(() => M(() => { const m = window.__m3d, e = m.world.enemies.find((q) => !q.dead); if (!e) return false; e.a.x = m.state.x + 0.9; e.a.z = m.state.z; e.a.y = m.state.y; return m.fx().swings > 0; }), 30000);
 	v = await fx();
