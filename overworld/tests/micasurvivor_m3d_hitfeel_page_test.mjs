@@ -60,6 +60,14 @@ try {
 	const s1 = (await hf()).stops, sec = (Date.now() - t0) / 1000;
 	A(s1 - s0 <= Math.ceil(sec / (v.K.CRIT_EVERY / 1000)) + 1, `at most one every ${v.K.CRIT_EVERY / 1000} s, however often you crit (${s1 - s0} in ${sec.toFixed(1)} s)`, { s0, s1 });
 
+	// an enemy that is hit is drawn nearly white and squashed for an instant (render.js HIT_WHITE, HIT_SQUASH): sampled off the canvas
+	{
+		const h0 = await M(() => window.__m3d.hitShown);
+		await waitFor(async () => { await foe(); return (await M(() => window.__m3d.hitShown)) > h0 + 2; }, 15000);
+		const h1 = await M(() => window.__m3d.hitShown);
+		const src = fs.readFileSync(path.join(ROOT, 'micasurvivor/m3d/render.js'), 'utf8');
+		A(h1 > h0 && /vTint\.x >= 1\.99 \? mix\(c\.rgb, vec3\(1\.0\), 0\.78\)/.test(src) && /HIT_WHITE = 2/.test(src), 'an enemy that is hit is drawn nearly white and squashed for an instant', { h0, h1 });
+	}
 	// H: off
 	await page.keyboard.press('KeyH');
 	v = await hf();
