@@ -36,7 +36,7 @@ A(UX.SIGS[4].names.join() === 'Roaring Ember,Fire Vortex,Winged Inferno' && name
 /** A run with nothing in it but what a check puts there (rx off: an Ultimate's own damage is what is measured). */
 const mk = (o = {}) => { const S = newRun(data, X, { seed: 7, dex: 4, league: true, weather: false, autoPick: 0, meta: noMeta(), rx: false, ...o }); S.plan.events = []; S.w.pl.crit = 0; S.w.pl.maxHp = S.w.pl.hp = 1e5; return S; };
 const typed = (dex, o = {}) => mk({ dex, league: false, moves: ['tackle'], ...o });
-const foe = (S, dx, dz = 0, o = {}) => addEnemy(S.w, 19, S.w.pl.s.x + dx, S.w.pl.s.z + dz, { dummy: true, hp: 1e6, ...o });
+const foe = (S, dx, dz = 0, o = {}) => addEnemy(S.w, o.dex || 19, S.w.pl.s.x + dx, S.w.pl.s.z + dz, { dummy: true, hp: 1e6, ...o });
 const step = (S, n = 1) => { for (let i = 0; i < n; i++) { S.acc = -1e9; stepRun(S, null); } };
 const evs = (S, sub) => S.w.events.filter((ev) => ev.k === 'ult' && ev.sub === sub);
 /** One tick of the Ultimate's own clock with these events as the fight's (the charge reads them). */
@@ -146,8 +146,9 @@ const DEXOF = { normal: 16, fire: 4, water: 7, electric: 25, grass: 1, ice: 87, 
 	const bad = [], notes = [];
 	for (const ty of UX.ORDER) {
 		const S = typed(DEXOF[ty]), w = S.w, s = w.pl.s, mask = walkable(w.room), foes = [];
-		for (let i = 0; i < 12; i++) foes.push(foe(S, Math.cos(i * 0.9) * (4 + i % 4 * 3), Math.sin(i * 0.9) * (4 + i % 4 * 3)));
-		const big = foe(S, 6, 6, { hp: 5e6 }); foes.push(big);
+		const dex = ty === 'ghost' ? 10 : 19;   // (the games' own type chart, 2026-11-13: a Normal target is IMMUNE to Ghost, so the Ghost case meets a Caterpie)
+		for (let i = 0; i < 12; i++) foes.push(foe(S, Math.cos(i * 0.9) * (4 + i % 4 * 3), Math.sin(i * 0.9) * (4 + i % 4 * 3), { dex }));
+		const big = foe(S, 6, 6, { hp: 5e6, dex }); foes.push(big);
 		const d0 = foes.map((e) => Math.hypot(e.a.x - s.x, e.a.z - s.z)), x0 = s.x, z0 = s.z, hp0 = w.pl.hp = w.pl.maxHp * 0.5;
 		const seen = { frozen: 0, slept: 0, conf: 0, hidden: 0, slow: 0 };
 		const fx = play(S, typeCode(UX, ty), 0, (f) => { if (near(f.t, 1, DT)) { seen.frozen = foes.filter((e) => e.frozenT > 0).length; seen.slept = foes.filter((e) => e.sleepT > 0).length; seen.hidden = +S.ult.hidden; seen.slow = Math.max(...foes.map((e) => e.slow)); } });
