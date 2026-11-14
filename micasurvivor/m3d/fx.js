@@ -10,12 +10,21 @@
 //   * LIGHTS (B3): soft textures drawn as light and tinted in the type's colour: a flare where a hit lands, a slash
 //     through a swing, a shockwave ring, lightning along a chain, a muzzle flash at a beam's mouth. They come from one
 //     downloaded atlas, fx/particles.png: Kenney's Particle Pack, CC0 (tools/micasurvivor/pack_fx_atlas.mjs packs
-//     it; micasurvivor/CREDITS.md). Until it has loaded, and if it never does, everything else still draws. One draw call.
+//     it; micasurvivor/CREDITS.md). Until it has loaded, and if it never does, everything else still draws. One draw call;
+//   * ANIMS (the owner, 2026-11-14: "real games' animations"): the Pokémon games' own battle-animation sprites, from the
+//     Emerald decomp, in one atlas, assets/fx/anims1.png (tools/micasurvivor/pack_anim_atlas.mjs; not in the repository:
+//     with the game's other art, in its assets project). A hit's burst, an explosion, a slash, a bite, a claw, and a
+//     type's own piece on a hard hit. Hard-edged pixel art like the Pokémon. Without the atlas the 2D shapes and
+//     the lights stand in, as before. One draw call.
 // It only DRAWS: the rules (combat.js) are untouched, and it reads what a fight already publishes.
 import * as THREE from 'three';
 
 export const CELL_PX = 16;          // one atlas cell (the largest shape is 15 × 15)
-export const FX = { SPRITES: 1400, GLOWS: 700, LIGHTS: 500, PARTS: 900, IMPACTS_A_FRAME: 16 };
+export const FX = { SPRITES: 1400, GLOWS: 700, LIGHTS: 500, ANIMS: 400, PARTS: 900, IMPACTS_A_FRAME: 16 };
+export const ANIM_PX = 0.075;   // metres an art pixel of the games' animations is drawn at (a Pokémon's is 0.11: these are drawn a little finer, so a 32 px burst is 2.4 m)
+// a type's own piece on a hard hit, and a swing's blow by its kind (sheets of the anims atlas)
+const TYPE_ANIM = { fire: 'fire_plume', water: 'bubble_burst', electric: 'electricity', ice: 'ice_chunk', grass: 'leaf', poison: 'poison_bubble', ghost: 'ghostly_spirit', dark: 'shadow_ball', psychic: 'sparkle_1', fairy: 'sparkle_1', rock: 'rocks', ground: 'rocks', flying: 'gust', dragon: 'wisp_fire', steel: 'cut', bug: 'needle' };
+const SWING_ANIM = { impact: 'punch_impact', jaws: 'teeth', claw: 'claw_slash', vine: 'slash', feather: 'gust' };
 // a move's trail in the 2D game (a kind of particle there) -> the shape that stands for it here
 const TRAIL = { ember: 'fire', drip: 'drop', spark: 'star', wisp: 'shadow', bubbles: 'bubble', dirt: 'rock' };
 const MELEE = { impact: 'impact', jaws: 'jaws', claw: 'claw', vine: 'claw', feather: 'wind' };
@@ -99,8 +108,9 @@ export class Effects {
 		this.sprites = new Batch(tex, FX.SPRITES, false); this.glows = new Batch(glowTexture(doc), FX.GLOWS, true);
 		scene.add(this.sprites.mesh); scene.add(this.glows.mesh);
 		this.scene = scene; this.lights = null; this.cells = null;   // (the downloaded lights: loadLights)
+		this.anims = null; this.sheets = null;   // (the games' own animations: loadAnims)
 		this.parts = []; this.right = new THREE.Vector3(1, 0, 0); this.up = new THREE.Vector3(0, 1, 0); this.at = 0; this.t = 0; this.impacts = 0; this.looks = new Map();
-		this.stats = { sprites: 0, glows: 0, lights: 0, byLight: {}, parts: 0, shots: 0, impacts: 0, swings: 0, beams: 0, auras: 0, chains: 0, blasts: 0, dashes: 0, kos: 0, flat: 0, vortexes: 0, waves: 0, patches: 0, ults: 0, marks: {}, weather: {}, warns: 0, booms: 0, helps: {}, byShape: {} };   // (the last frame's; `byShape`, `impacts`, `swings`: since the page opened)
+		this.stats = { sprites: 0, glows: 0, lights: 0, byLight: {}, anims: 0, bySheet: {}, parts: 0, shots: 0, impacts: 0, swings: 0, beams: 0, auras: 0, chains: 0, blasts: 0, dashes: 0, kos: 0, flat: 0, vortexes: 0, waves: 0, patches: 0, ults: 0, marks: {}, weather: {}, warns: 0, booms: 0, helps: {}, byShape: {} };   // (the last frame's; `byShape`, `impacts`, `swings`: since the page opened)
 	}
 	/** The downloaded lights: the atlas and its list of cells ({ cell, cols, rows, names }). */
 	loadLights(url, info) {
@@ -111,6 +121,24 @@ export class Effects {
 			resolve(true);
 		}, undefined, () => resolve(false)));
 	}
+	/** The games' own battle animations: the atlas and its list ({ w, h, sprites: { name: { y, w, h, n } } }). */
+	loadAnims(url, info) {
+		return new Promise((resolve) => { const L = new THREE.TextureLoader(); L.setCrossOrigin('anonymous'); L.load(url, (t) => {
+			t.flipY = false; t.colorSpace = THREE.NoColorSpace; t.generateMipmaps = false; t.minFilter = t.magFilter = THREE.NearestFilter;
+			this.anims = new Batch(t, FX.ANIMS, false); this.anims.mesh.renderOrder = 4; this.scene.add(this.anims.mesh); this.sheets = info;
+			resolve(true);
+		}, undefined, () => resolve(false)); });
+	}
+	hasSheet(name) { return !!(this.anims && this.sheets.sprites[name]); }
+	/** One frame of one of the games' animations, now. scale: 1 = its own size (ANIM_PX a pixel). */
+	sheet(name, frame, x, y, z, scale = 1, rot = 0, flat = false) {
+		const S = this.anims && this.sheets.sprites[name]; if (!S) return false;
+		const f = Math.max(0, Math.min(S.n - 1, frame | 0)), W = this.sheets.w, H = this.sheets.h;
+		if (this.anims.add(x, y, z, S.w * ANIM_PX * scale, S.h * ANIM_PX * scale, rot, [f * S.w / W, S.y / H, (f + 1) * S.w / W, (S.y + S.h) / H], 1, 1, 1, 1, flat ? 1 : 0)) this.stats.bySheet[name] = (this.stats.bySheet[name] || 0) + 1;
+		return true;
+	}
+	/** One of the games' animations, played once through where it is. o: { sheet, x, y, z, life, scale, rot, loop (frames a second: it loops instead), vx, vy, vz, g } */
+	play(o) { if (!this.hasSheet(o.sheet)) return false; this.part(o); return true; }
 	/** One light, now. name: a cell of the lights atlas. size: metres across. */
 	light(name, x, y, z, size, css, alpha = 0.7, rot = 0, flat = false) {
 		if (!this.lights || !this.cells[name]) return;
@@ -126,7 +154,7 @@ export class Effects {
 		return v;
 	}
 	begin(camera, t) {
-		this.sprites.n = 0; this.glows.n = 0; if (this.lights) this.lights.n = 0; this.stats.shots = 0; this.impacts = 0; this.stats.marks = {};
+		this.sprites.n = 0; this.glows.n = 0; if (this.lights) this.lights.n = 0; if (this.anims) this.anims.n = 0; this.stats.shots = 0; this.impacts = 0; this.stats.marks = {};
 		const e = camera.matrixWorld.elements; this.right.set(e[0], e[1], e[2]); this.up.set(e[4], e[5], e[6]);
 		this.dt = Math.min(0.05, Math.max(0, t - this.at)); this.at = t; this.t = t;
 	}
@@ -159,7 +187,9 @@ export class Effects {
 		if (this.impacts++ >= FX.IMPACTS_A_FRAME) return;
 		const pal = this.VFX.PAL[type] ? type : 'normal', k = big ? 1.5 : weak ? 0.7 : 1, L = this.VFX.forType(pal);
 		const P = this.VFX.PAL[pal], lit = !!this.lights;
-		this.part({ shape: 'impact', pal, x, y, z, life: 0.16, s0: 0.7 * k, s1: (lit ? 1.05 : 1.45) * k, anim: 12, glow: P[3], ga: weak ? 0.25 : 0.6 });
+		const own = !weak && this.play({ sheet: 'hit', x, y, z, life: big ? 0.3 : 0.22, scale: big ? 1.15 : 0.7, rot: Math.random() * 6.28 });
+		if (own && big && TYPE_ANIM[pal]) this.play({ sheet: TYPE_ANIM[pal], x: x + (Math.random() - 0.5) * 0.5, y: y + 0.5, z: z + (Math.random() - 0.5) * 0.5, life: 0.4, scale: 0.8, vy: 0.8 });
+		if (!own) this.part({ shape: 'impact', pal, x, y, z, life: 0.16, s0: 0.7 * k, s1: (lit ? 1.05 : 1.45) * k, anim: 12, glow: P[3], ga: weak ? 0.25 : 0.6 });
 		if (!weak) this.flash({ light: big ? 'burst' : 'star', x, y, z, life: big ? 0.26 : 0.18, s0: 1.3 * k, s1: 3 * k, css: P[3], a: 1.3, rot: Math.random() * 6.28 });
 		if (big) this.flash({ light: 'ring', x, y, z, life: 0.3, s0: 0.6, s1: 3.4, css: P[2], a: 1.1 });
 		else if (weak) this.flash({ light: 'puff', x, y, z, life: 0.25, s0: 0.6, s1: 1.2, css: '#8b93a0', a: 0.35 });
@@ -169,7 +199,8 @@ export class Effects {
 	/** A swing: the move's bite, claw or blow, in front of whoever swings. aim: the ground-plane angle. */
 	swing(x, y, z, aim, reach, mid, type) {
 		const L = this.look(mid, type), shape = MELEE[L.melee] || 'impact', d = Math.max(0.6, reach * 0.62), px = x + Math.cos(aim) * d, pz = z + Math.sin(aim) * d;
-		this.part({ shape, pal: L.pal, x: px, y: y + 0.85, z: pz, life: 0.2, s0: this.lights ? 0.8 : Math.max(1.1, reach * 0.7), s1: this.lights ? 1.2 : Math.max(1.5, reach * 1.05), anim: 10, glow: this.VFX.PAL[L.pal][3], ga: 0.45 });
+		if (!this.play({ sheet: SWING_ANIM[L.melee] || 'slash', x: px, y: y + 0.9, z: pz, life: 0.24, scale: Math.max(0.8, Math.min(1.4, reach * 0.45)) }))
+			this.part({ shape, pal: L.pal, x: px, y: y + 0.85, z: pz, life: 0.2, s0: this.lights ? 0.8 : Math.max(1.1, reach * 0.7), s1: this.lights ? 1.2 : Math.max(1.5, reach * 1.05), anim: 10, glow: this.VFX.PAL[L.pal][3], ga: 0.45 });
 		const sl = L.melee === 'claw' ? 'scratch' : L.melee === 'jaws' ? 'crescent' : 'slash', turn = this.screenAngle(Math.cos(aim), 0, Math.sin(aim));
 		this.flash({ light: sl, x: px, y: y + 0.85, z: pz, life: 0.2, s0: Math.max(1.6, reach * 1.2), s1: Math.max(2.3, reach * 1.9), css: this.VFX.PAL[L.pal][3], a: 1.6, rot: turn - 1.5708 });
 		this.stats.swings++;
@@ -219,6 +250,7 @@ export class Effects {
 	/** Something goes off on the ground (a mine, a meteor, a bomb): a burst, a ring of pieces flung out and up, a flash of light. */
 	blast(x, y, z, r, mid, type) {
 		const L = this.look(mid, type), A = this.atlas, shape = A.has(L.proj) ? L.proj : 'ball', css = this.VFX.PAL[L.pal][3], n = Math.max(6, Math.min(18, Math.round(r * 4)));
+		this.play({ sheet: 'explosion_2', x, y: y + Math.max(0.9, r * 0.5), z, life: 0.42, scale: Math.max(0.9, Math.min(2.4, r * 0.75)) });
 		if (this.lights) {
 			this.flash({ light: 'burst', x, y: y + 0.6, z, life: 0.26, s0: Math.max(1.4, r), s1: Math.max(3, r * 2.6), css, a: 1.6, rot: Math.random() * 6.28 });
 			this.flash({ flat: true, light: 'ring', x, y: y + 0.1, z, life: 0.34, s0: 0.8, s1: Math.max(3, r * 2.4), css: this.VFX.PAL[L.pal][2], a: 1.2 });
@@ -233,6 +265,7 @@ export class Effects {
 		if (!boss && this.impacts++ >= FX.IMPACTS_A_FRAME) return;
 		const pal = this.VFX.PAL[type] ? type : 'normal', P = this.VFX.PAL[pal], L = this.VFX.forType(pal), k = boss ? 2.6 : 1;
 		for (let i = 0; i < (boss ? 5 : 2); i++) this.flash({ light: i % 2 ? 'smoke' : 'puff', x: x + (Math.random() - 0.5) * 0.6 * k, y: y + (Math.random() - 0.3) * 0.5 * k, z: z + (Math.random() - 0.5) * 0.6 * k, vy: 0.9 + Math.random() * 0.8, life: 0.45 + Math.random() * 0.25, s0: 0.9 * k, s1: 1.9 * k, css: '#c9d2df', a: 0.7, rot: Math.random() * 6.28, spin: 0.8 });
+		this.play({ sheet: 'explosion', x, y, z, life: 0.3, scale: boss ? 2.4 : 0.8 });
 		this.flash({ light: 'glint', x, y, z, life: 0.24, s0: 1.2 * k, s1: 2.6 * k, css: P[3], a: 1.3 });
 		if (boss) this.flash({ flat: true, light: 'ring', x, y: y - 0.45, z, life: 0.5, s0: 1, s1: 9, css: P[2], a: 1.2 });
 		for (let i = 0, n = boss ? 14 : 4; i < n; i++) { const a = Math.random() * 6.2832, sp = (1.6 + Math.random() * 2) * (boss ? 1.8 : 1); this.part({ shape: L.proj, pal, x, y, z, vx: Math.cos(a) * sp, vy: 2.5 + Math.random() * 3, vz: Math.sin(a) * sp, g: 11, life: 0.4 + Math.random() * 0.25, s0: 0.45, s1: 0.1, rot: a, spin: 7 }); }
@@ -352,12 +385,14 @@ export class Effects {
 			if (p.g) p.vy -= p.g * dt;
 			if (p.vx) p.x += p.vx * dt; if (p.vy) p.y += p.vy * dt; if (p.vz) p.z += p.vz * dt;
 			const k = p.t / p.life, s = p.s0 + (p.s1 - p.s0) * k;
+			if (p.sheet) { const S = this.sheets.sprites[p.sheet]; this.sheet(p.sheet, p.loop ? Math.floor(p.t * p.loop) % S.n : Math.floor(k * S.n), p.x, p.y, p.z, p.scale || 1, p.rot || 0, !!p.flat); continue; }
 			if (p.light) { this.light(p.light, p.x, p.y, p.z, s, p.css, (p.a || 0.7) * (1 - k * k), (p.rot || 0) + (p.spin || 0) * p.t, !!p.flat); continue; }
 			this.sprite(p.shape, p.pal, p.anim ? Math.floor(p.t * p.anim) : 0, p.x, p.y, p.z, s, (p.rot || 0) + (p.spin || 0) * p.t);
 			if (p.glow) this.glow(p.x, p.y, p.z, s * 2.2, p.glow, (p.ga || 0.5) * (1 - k));
 		}
 		this.stats.sprites = this.sprites.n; this.stats.glows = this.glows.n; this.stats.parts = P.length;
 		this.stats.lights = this.lights ? this.lights.n : 0; if (this.lights) { let fl = 0; const a = this.lights.aSR.array; for (let i = 0; i < this.lights.n; i++) if (a[i * 4 + 3] > 0.5) fl++; this.stats.flat = fl; }
-		this.sprites.end(this.right, this.up); this.glows.end(this.right, this.up); if (this.lights) this.lights.end(this.right, this.up);
+		this.stats.anims = this.anims ? this.anims.n : 0;
+		this.sprites.end(this.right, this.up); this.glows.end(this.right, this.up); if (this.lights) this.lights.end(this.right, this.up); if (this.anims) this.anims.end(this.right, this.up);
 	}
 }

@@ -1,3 +1,5 @@
+fx/anims1.json
+fx/anims1.png
 pokemon/1/Attack.png
 pokemon/1/Charge.png
 pokemon/1/Faint.png

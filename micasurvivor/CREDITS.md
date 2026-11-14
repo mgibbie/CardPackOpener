@@ -188,6 +188,12 @@ Indigo Ray, Craig Nisbet, Zoltan Erdokovy, Heliagon, ThreeDee, Killst4r y Tim250
 Licencia Creative Commons Zero (CC0). 24 texturas, reducidas a 128 px y empaquetadas en un atlas con
 `tools/micasurvivor/pack_fx_atlas.mjs`.
 
+Animaciones de los ataques en los modos 3D (golpes, explosiones, tajos, mordiscos, zarpazos y la pieza propia de
+cada tipo; `assets/fx/anims1.png`, que no está en el repositorio): los sprites de animación de combate de los
+juegos, tomados del proyecto [pret/pokeemerald](https://github.com/pret/pokeemerald)
+(`graphics/battle_anims/sprites`) y empaquetados con `tools/micasurvivor/pack_anim_atlas.mjs`.
+Pokémon © Nintendo / Creatures Inc. / GAME FREAK.
+
 ## Fuente
 
 [Pixelify Sans](https://github.com/eifetx/Pixelify-Sans) (SIL Open Font License 1.1,
