@@ -26,6 +26,9 @@
 		#cards .tools button { display: block; padding: 8px 12px; border-width: 2px; font-size: 13px; }
 		#cards .tools button[disabled] { opacity: .4; cursor: default; }
 		#cards button i { opacity: .7; font-style: normal; font-size: 12px; }
+		#cards .mu { display: flex; flex-wrap: wrap; gap: 3px 8px; justify-content: center; margin-top: 4px; font-size: 11px; line-height: 1.25; }
+		#cards .mu u { text-decoration: none; font-weight: 700; } #cards .mu em { opacity: .6; font-style: normal; }
+		#cards .mu-s { color: #8dffa8; } #cards .mu-w { color: #ffb38a; } #cards .mu-i { color: #b9c2cf; }
 		@media (max-width: 560px) { #cards { grid-template-columns: minmax(0, 320px); } }
 		#boot { position: fixed; inset: 0; display: grid; place-items: center; background: #9fc4e8; color: #17324d; font-size: 16px; }
 		.btn { position: fixed; right: max(16px, env(safe-area-inset-right)); width: 78px; height: 78px; border-radius: 50%; border: 3px solid rgba(255, 255, 255, .85); background: rgba(12, 18, 30, .45); color: #fff; font: 700 14px ui-sans-serif, system-ui, sans-serif; display: none; touch-action: none; }

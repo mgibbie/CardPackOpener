@@ -437,6 +437,7 @@ function draw(t) {
 			if (prop(key, o.x, o.y + up, o.z, 1 + (o.ch || 0) * 0.3)) { shadows.add(room, o.x, o.z, o.y + up, /ball|great|comet/.test(o.kind) ? 0.45 : 0.9); if (pm) propMon(pm[0], o.x, o.y + pm[1] + (pm[1] ? Math.sin(t * 3 + o.i) * 0.12 : 0), o.z, t + o.i); else if (o.kind === 'cage' && o.v) propMon(o.v, o.x, o.y, o.z, t + o.i); }
 			else { const big = /unown|comet|challenge|cursedaltar|greed|meowth|slots/.test(o.kind); shots.add(o.x, o.y + (big ? 1.1 : 0.55) + Math.sin(t * 2 + o.i) * 0.08, o.z, (big ? 0.42 : EK.SMALL.includes(o.kind) ? 0.22 : 0.3) * (1 + o.ch * 0.8), EK.COL[o.kind]); }
 		}
+		if (world) for (const e of world.enemies) if (!e.dead && GG.Types.noAnswer(world.pl.moves, e.types)) shots.add(e.a.x, e.a.y + Math.max(1.2, e.cr * 2) + 0.3, e.a.z, 0.13, '#9aa6b5');   // none of your moves can hurt it (your hits are a Struggle): a grey bead over its head
 		if (world) for (const e of world.enemies) if (e.shield > 0) shots.add(e.a.x, e.a.y + Math.max(1.2, e.cr * 2) + 0.35, e.a.z, 0.16, '#7fc8ff');   // a shield: a blue bead over its head
 		if (world) for (const p of world.eshots) { if (fx) fx.shot(p.x, p.y, p.z, Math.max(0.2, p.r), null, p.mtype || 'normal', [p.vx, p.vy, p.vz], p.id, '#ff5f8f'); else shots.add(p.x, p.y, p.z, Math.max(0.2, p.r), '#ff5f8f'); }   // an enemy's shot: its type's shape, always in the same angry pink light
 		// Expedition's effects: a bomb on its arc, a whirl on the floor, a wave's ring spreading
@@ -933,11 +934,26 @@ function drawNumbers(dt) {
 	g.globalAlpha = 1;
 }
 /** (P3) A level-up: the fight is waiting; three cards to choose from (click or tap one, or press 1 / 2 / 3). */
+/** (the games' own type chart: a bad matchup is no longer "slower", it can be "nothing happens", so a move's card says
+ *  it first) How a type does against the enemies alive now: { n, strong, weak, immune } (species counted once each). */
+function matchup(type) {
+	const out = { n: 0, strong: 0, weak: 0, immune: 0 }, seen = new Set();
+	if (!world || !type) return out;
+	for (const e of world.enemies) { if (e.dead || seen.has(e.dex)) continue; seen.add(e.dex); out.n++; const m = GG.Types.mult(type, e.types); if (m === 0) out.immune++; else if (m > 1) out.strong++; else if (m < 1) out.weak++; }
+	return out;
+}
+function matchupHtml(c) {
+	if (!c.mtype || (c.type !== 'new' && c.type !== 'up' && c.kind !== 'move')) return '';
+	const md = GG.Moves.BY_ID[c.id] || (GG.ExpMoves && GG.ExpMoves.MOVES[c.id]); if (md && md.kind === 'buff') return '';
+	const q = matchup(c.mtype); if (!q.n || !(q.strong + q.weak + q.immune)) return '';
+	const bit = (n, cls, txt) => (n ? `<u class="${cls}">${txt} ${n}</u>` : '');
+	return `<small class="mu" title="against the ${q.n} kinds of enemy here now">${bit(q.strong, 'mu-s', 'strong vs')}${bit(q.weak, 'mu-w', 'weak vs')}${bit(q.immune, 'mu-i', 'no effect on')}<em>of ${q.n} here</em></small>`;
+}
 function showCards() {
 	const el = document.getElementById('cards'), cs = world.pl.choices; if (!el || !cs) return;
 	const lv = myRun && myRun.lv, RC = (GG.ExpItems && GG.ExpItems.RAR_COL) || [];   // (P4) an Expedition card has a rarity, and the run its three tools
 	const tools = !lv ? '' : `<div class="tools"><button data-tool="refresh"${lv.refreshes ? '' : ' disabled'}>F · Refresh (${lv.refreshes})</button><button data-tool="skip"${lv.skips ? '' : ' disabled'}>G · Skip (${lv.skips})</button><button data-tool="banish"${lv.bans ? '' : ' disabled'}>${banMode ? 'pick a card to banish…' : 'B · Banish (' + lv.bans + ')'}</button></div>`;
-	el.innerHTML = `<h2>Level ${world.pl.level}</h2>` + cs.map((c, i) => `<button data-i="${i}" style="border-color:${c.tier > 0 && RC[c.tier] ? RC[c.tier] : TYPE_COLOR[c.mtype] || '#8fa3c4'}">${cardArt(c)}<b>${i + 1} · ${RUNUI && c.kind === 'move' ? pretty(c.title) : c.title}</b><i>${(c.tier > 0 ? c.rarName.toUpperCase() + ' · ' : '') + (RUNUI ? String(c.tag || '').replace(/^Replaces (.+)$/, (q, id) => 'Replaces ' + pretty(id)) : c.tag || '')}</i><span>${c.desc || (GG.Moves.BY_ID[c.id] ? GG.Moves.BY_ID[c.id].kind : '')}</span></button>`).join('') + tools;
+	el.innerHTML = `<h2>Level ${world.pl.level}</h2>` + cs.map((c, i) => `<button data-i="${i}" style="border-color:${c.tier > 0 && RC[c.tier] ? RC[c.tier] : TYPE_COLOR[c.mtype] || '#8fa3c4'}">${cardArt(c)}<b>${i + 1} · ${RUNUI && c.kind === 'move' ? pretty(c.title) : c.title}</b><i>${(c.tier > 0 ? c.rarName.toUpperCase() + ' · ' : '') + (RUNUI ? String(c.tag || '').replace(/^Replaces (.+)$/, (q, id) => 'Replaces ' + pretty(id)) : c.tag || '')}</i><span>${c.desc || (GG.Moves.BY_ID[c.id] ? GG.Moves.BY_ID[c.id].kind : '')}</span>${matchupHtml(c)}</button>`).join('') + tools;
 	el.style.display = 'grid'; el.classList.toggle('four', cs.length === 4);
 }
 /** (the shipping path) A card's art on a run's screen: an item's or a vitamin's picture (the overworld's own, as the
@@ -1261,6 +1277,7 @@ const G_MUSIC = GG.BIOME_MUSIC || null, XK_MAPS = ['viridian', 'mtmoon', 'cerule
 
 // what a test (and a curious owner in the console) can reach
 window.__m3d = {
+	matchup, walled: () => (world ? world.enemies.filter((e) => !e.dead && GG.Types.noAnswer(world.pl.moves, e.types)).length : 0),   // (how many enemies wear the grey bead)
 	fx: () => (fx ? { ...fx.stats, byShape: { ...fx.stats.byShape }, byLight: { ...fx.stats.byLight }, lit: fxLights, atlas: [fx.atlas.cols, fx.atlas.rows], max: { ...FXK } } : null), fxLayer: fx,
 	link: LINK, dive: drun, guestDive: gdrun, diveRules: DR, special, light: () => ({ dive: DLIGHT, near: scene.fog.near, far: scene.fog.far, color: scene.fog.color.getHex(), vignette: !!document.getElementById('dive-dark') }), diveSave: { week: DWEEK, practice: DPRACTICE, ok: DSAVE_OK, start: DSTART, member: DMEMBER, form: DFORM, keep: DKEEP, meta: !!DMETA }, propKeys: () => (props ? [...props.atlas.cells.keys()] : []), roomBuilds: () => roomBuilds,
 	meta: LAB_META, upgrades: UPGRADES, leadShiny: LEAD_SHINY, skey,
