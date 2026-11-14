@@ -100,7 +100,7 @@ export class Effects {
 		scene.add(this.sprites.mesh); scene.add(this.glows.mesh);
 		this.scene = scene; this.lights = null; this.cells = null;   // (the downloaded lights: loadLights)
 		this.parts = []; this.right = new THREE.Vector3(1, 0, 0); this.up = new THREE.Vector3(0, 1, 0); this.at = 0; this.t = 0; this.impacts = 0; this.looks = new Map();
-		this.stats = { sprites: 0, glows: 0, lights: 0, byLight: {}, parts: 0, shots: 0, impacts: 0, swings: 0, beams: 0, auras: 0, chains: 0, blasts: 0, dashes: 0, kos: 0, flat: 0, vortexes: 0, waves: 0, patches: 0, byShape: {} };   // (the last frame's; `byShape`, `impacts`, `swings`: since the page opened)
+		this.stats = { sprites: 0, glows: 0, lights: 0, byLight: {}, parts: 0, shots: 0, impacts: 0, swings: 0, beams: 0, auras: 0, chains: 0, blasts: 0, dashes: 0, kos: 0, flat: 0, vortexes: 0, waves: 0, patches: 0, ults: 0, byShape: {} };   // (the last frame's; `byShape`, `impacts`, `swings`: since the page opened)
 	}
 	/** The downloaded lights: the atlas and its list of cells ({ cell, cols, rows, names }). */
 	loadLights(url, info) {
@@ -258,6 +258,32 @@ export class Effects {
 		this.light('smoke', x, y + 0.08, z, r * 2.5, P[1], 0.8 * a, seed, true); this.light('magic', x, y + 0.1, z, r * 1.9, P[3], 0.45 * a, this.t * 0.7 + seed, true);
 		if (this.dt > 0 && Math.random() < this.dt * 5) { const q = Math.random() * 6.2832, d = Math.sqrt(Math.random()) * r * 0.85; this.part({ shape, pal: L.pal, x: x + Math.cos(q) * d, y: y + 0.15, z: z + Math.sin(q) * d, vy: 1.3 + Math.random(), life: 0.5, s0: 0.42, s1: 0.12, rot: q, spin: 3, anim: 6 }); }
 		this.stats.patches++;
+	}
+	/** An Ultimate is cast: a circle of light opens under you and turns, a burst, and your type's pieces rise all round. */
+	ultCast(x, y, z, type) {
+		const pal = this.VFX.PAL[type] ? type : 'normal', P = this.VFX.PAL[pal], L = this.VFX.forType(pal);
+		this.flash({ flat: true, light: 'rune', x, y: y + 0.1, z, life: 1.1, s0: 2, s1: 9, css: P[3], a: 1.5, spin: 2.2 });
+		this.flash({ flat: true, light: 'magic', x, y: y + 0.12, z, life: 1.1, s0: 6, s1: 7, css: P[2], a: 1.1, spin: -1.4 });
+		this.flash({ light: 'burst', x, y: y + 1, z, life: 0.5, s0: 2, s1: 7, css: P[4], a: 1.6 });
+		this.flash({ light: 'flare', x, y: y + 1, z, life: 0.8, s0: 5, s1: 9, css: P[3], a: 1.2 });
+		for (let i = 0; i < 22; i++) { const a = (i / 22) * 6.2832, d = 1.2 + Math.random() * 2.2; this.part({ shape: L.proj, pal, x: x + Math.cos(a) * d, y: y + 0.1, z: z + Math.sin(a) * d, vy: 3 + Math.random() * 3.5, life: 0.7 + Math.random() * 0.4, s0: 0.7, s1: 0.2, rot: a, spin: 5, anim: 8, glow: P[3], ga: 0.35 }); }
+		this.stats.ults++;
+	}
+	/** …one of its rings: light running out over the floor to its reach, pieces thrown up along the rim. long: one that stays (a field). */
+	ultRing(x, y, z, r, type, life = 0.4, long = false) {
+		const pal = this.VFX.PAL[type] ? type : 'normal', P = this.VFX.PAL[pal], L = this.VFX.forType(pal);
+		this.flash({ flat: true, light: 'ring', x, y: y + 0.12, z, life, s0: long ? r * 2 : 1, s1: r * 2.15, css: P[3], a: long ? 0.9 : 1.5 });
+		this.flash({ flat: true, light: long ? 'magic' : 'ringsoft', x, y: y + 0.1, z, life, s0: long ? r * 1.8 : 1, s1: r * 1.9, css: P[2], a: 0.9, spin: long ? 0.8 : 0 });
+		if (!long) for (let i = 0, n = Math.max(8, Math.min(28, Math.round(r * 3))); i < n; i++) { const a = (i / n) * 6.2832 + Math.random() * 0.3; this.part({ shape: L.proj, pal, x: x + Math.cos(a) * r * 0.2, y: y + 0.3, z: z + Math.sin(a) * r * 0.2, vx: Math.cos(a) * r / 0.4, vy: 2 + Math.random() * 3, vz: Math.sin(a) * r / 0.4, g: 9, life: 0.4 + Math.random() * 0.15, s0: 0.8, s1: 0.25, rot: a, spin: 7, anim: 8 }); }
+		this.stats.ults++;
+	}
+	/** …one of its strikes from the sky: a shaft of light coming down, and what it does where it lands. */
+	ultStrike(x, y, z, r, type) {
+		const pal = this.VFX.PAL[type] ? type : 'normal', P = this.VFX.PAL[pal];
+		this.flash({ light: type === 'electric' ? 'bolt' : 'streak', x, y: y + 7, z, life: 0.22, s0: 14, s1: 15, css: P[4], a: 1.8 });
+		this.flash({ light: 'streak', x, y: y + 7, z, life: 0.3, s0: 15, s1: 17, css: P[2], a: 1.1 });
+		this.blast(x, y, z, Math.max(1.2, r), null, pal);
+		this.stats.ults++;
 	}
 	/** A dash: streaks left along the way. */
 	dash(from, dir, len, mid, type) {
