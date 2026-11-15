@@ -101,14 +101,17 @@ export const K = {
 	// GRIND it: carried along it the way you were going, at RAIL_SPEED or what you came with (downhill adds, uphill takes,
 	// never under RAIL_MIN). Jump to leap off it with your speed (your air jumps are back); slide to drop off; at its end
 	// you fly off the way it points. A rail will not take you back for RAIL_LOCK after you leave one.
-	RAIL_R: 0.75,         // m beside a rail (on the ground plane) that still catches it
-	RAIL_ABOVE: 0.55,     // m your feet may be above the rail…
+	// (the owner, 2026-11-14: "I was not ever able to grind a rail": you had to come down within 0.75 m of a thin line, which is
+	//  hard to judge from behind; now 1.2 m, a taller window, and running along a rail onto its end puts you on it)
+	RAIL_R: 1.2,          // m beside a rail (on the ground plane) that still catches it
+	RAIL_ABOVE: 0.9,      // m your feet may be above the rail…
 	RAIL_BELOW: 0.7,      // …or below it, to catch it
 	RAIL_CATCH_VY: 3,     // m/s: not while you are still going up faster than this
 	RAIL_MIN: 8,          // m/s along a rail, at the least
 	RAIL_SPEED: 11,       // m/s a rail brings you up to
 	RAIL_MAX: 19,         // m/s at the most (down a long drop)
 	RAIL_ACCEL: 6,        // m/s² toward RAIL_SPEED
+	RAIL_RUN_ON: 3,       // m/s along a rail, on foot, that puts you on it when you run onto its high end (no jump needed)
 	RAIL_SLOPE: 0.8,      // how much of gravity along the rail you feel
 	RAIL_LOCK: 0.35,      // s after leaving a rail before one catches you again
 	WALL_INTO: 0.2,       // how much of what you hold must point INTO the wall (a diagonal along it does; straight along it, or away, lets go: you never stick to a cliff you only fall past)
@@ -385,6 +388,7 @@ export function step(s, input, room, dt = K.TICK, tune = K) {
 	// a rail under you as you come down
 	s.railLock = Math.max(0, s.railLock - dt);
 	if (!s.grounded && !s.swimming && s.railLock <= 0 && s.vy <= T.RAIL_CATCH_VY && room.rails && room.rails.length) catchRail(s, room, T);
+	else if (s.grounded && !s.swimming && s.railLock <= 0 && room.rails && room.rails.length && T.RAIL_RUN_ON) runOnRail(s, room, T);
 	s.t += dt; s.tick++;
 	return s;
 }
@@ -408,6 +412,22 @@ function catchRail(s, room, T) {
 	s.railV = Math.max(T.RAIL_MIN, Math.abs(al)); s.railed = 1;
 	s.sliding = false; s.gliding = false; s.wall = 0; s.wallLast = 0; s.wallCoyote = 0; s.stagger = 0; s.bouncing = false;
 	return true;
+}
+/** On foot, running along a rail onto its HIGH end (low enough to step on): you are on it, going down it. Only the high end:
+ *  a low end would carry a runner up onto ground the level does not lead back from on foot. */
+function runOnRail(s, room, T) {
+	for (let i = 0; i < room.rails.length; i++) {
+		const pts = room.rails[i].pts, n = pts.length; if (n < 2) continue;
+		for (const [e, nb, k, dir] of [[pts[0], pts[1], 0, 1], [pts[n - 1], pts[n - 2], n - 2, -1]]) {
+			if (nb[1] > e[1] - 1e-6 || Math.hypot(s.x - e[0], s.z - e[2]) > T.RAIL_R || e[1] - s.y > T.RAIL_BELOW || s.y - e[1] > T.RAIL_ABOVE) continue;   // (the high end only)
+			const ix = nb[0] - e[0], iz = nb[2] - e[2], l = Math.hypot(ix, iz) || 1, along = (s.vx * ix + s.vz * iz) / l;   // (your speed into the rail, from that end)
+			if (along < T.RAIL_RUN_ON) continue;
+			s.rail = i; s.railSeg = k; s.railU = dir > 0 ? 0 : 1; s.railDir = dir; s.railV = Math.max(T.RAIL_MIN, along); s.railed = 1; s.grounded = false;
+			s.sliding = false; s.gliding = false; s.wall = 0; s.wallLast = 0; s.wallCoyote = 0; s.stagger = 0; s.bouncing = false;
+			return true;
+		}
+	}
+	return false;
 }
 /** One tick on a rail. */
 function grind(s, inp, room, T, dt, pressed) {

@@ -281,6 +281,20 @@ const script = (seed, n) => { const r = rng(seed), out = []; let cur = noInput()
 	const d = go(over(30, 1.2, 3), secs(0.8), noInput());
 	step(d, inp({ crouch: true }), R); const dy = d.y; go(d, secs(0.25), inp({ crouch: true }));
 	A(d.rail === -1 && d.y < dy - 0.3, 'a slide drops off it, and it does not take you back at once');
+	// easier to get on (the owner, 2026-11-14: "I was not ever able to grind a rail": you had to come down within 0.75 m of it)
+	const wide = go(over(30, 1.2, 3, RZ + 1.0), secs(0.6), noInput());
+	A(K.RAIL_R >= 1.2 && wide.rail === 0, 'coming down a metre to the side of a rail still puts you on it', [wide.rail, K.RAIL_R]);
+	{
+		// a low rail on a flat floor: its high end 0.5 m up at x = 20, down to 0.3 m at x = 40
+		const lowRoom = () => { const r = makeRoom(50, 14, 0); r.rails = [{ pts: [[20, 0.5, RZ], [30, 0.4, RZ], [40, 0.3, RZ]] }]; return r; };
+		const L = lowRoom(), runAt = (x, mx, n) => { const s = newState(L); s.x = x; s.z = RZ; s.y = 0; let on = false; for (let i = 0; i < n; i++) { step(s, inp({ mx, mz: 0 }), L); on = on || s.rail === 0; } return { s, on }; };
+		const hi = runAt(14, 1, secs(1.5));
+		A(hi.on && hi.s.railDir === 1, 'running along a rail onto its high end puts you on it, without a jump, going down it', [hi.on, hi.s.railDir]);
+		const lo = runAt(46, -1, secs(1.5));
+		A(!lo.on, '…but not onto its low end (it would carry you up onto ground the level may not lead back from)', lo.on);
+		const across = (() => { const s = newState(L); s.x = 20; s.z = RZ - 6; s.y = 0; let on = false; for (let i = 0; i < secs(1.5); i++) { step(s, inp({ mx: 0, mz: 1 }), L); on = on || s.rail === 0; } return on; })();
+		A(!across, '…and not when you only cross its end');
+	}
 	// what does not catch
 	const e = (() => { const s = newState(R); s.x = 56; s.z = RZ; s.y = 0; return go(s, 8, (i) => inp({ jump: i < 8 })); })();   // (under the rail's low end, 1.3 m up: a jump goes up through it)
 	const through = e.rail === -1 && e.y > 0.9 && e.vy > K.RAIL_CATCH_VY;
@@ -293,8 +307,9 @@ const script = (seed, n) => { const r = rng(seed), out = []; let cur = noInput()
 	const bare = (() => { const r = makeRoom(50, 14, 0), s = newState(r); s.x = 30; s.z = RZ; s.y = 5; s.grounded = false; for (let i = 0; i < secs(1.5); i++) step(s, noInput(), r); return s; })();
 	A(bare.rail === -1 && bare.grounded, 'a room with no rails is as it was');
 	// the test room's own rail: from the plateau to the floor
-	const top = at(SPOTS.plateau); top.x = SPOTS.railTop[0]; top.z = SPOTS.railTop[1] - 3; run(top, secs(0.35), inp(SOUTH)); run(top, secs(0.45), (i) => inp({ ...SOUTH, jump: i < 12 }));
-	const caught = top.rail === 0; run(top, secs(3), noInput());
+	const top = at(SPOTS.plateau); top.x = SPOTS.railTop[0]; top.z = SPOTS.railTop[1] - 3; let caught = false;   // (on it at any moment: since 2026-11-14 running onto its high end puts you on it before the jump)
+	run(top, secs(0.35), (i, q) => { caught = caught || q.rail === 0; return inp(SOUTH); }); run(top, secs(0.45), (i, q) => { caught = caught || q.rail === 0; return inp({ ...SOUTH, jump: i < 12 }); });
+	run(top, secs(3), (i, q) => { caught = caught || q.rail === 0; return noInput(); });
 	A(caught && top.rail === -1 && top.grounded && top.z > SPOTS.railFoot[1] - 1 && groundAt(room, top.x, top.z) === 0, 'in the test room: a jump off the plateau\'s south edge lands on its rail, which takes you down to the floor', [caught, top.z, top.y]);
 }
 
