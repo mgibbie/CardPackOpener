@@ -153,7 +153,7 @@ function ferryKey(k) {
 		const dest = dests[ferryMenu.idx];
 		const seagallop = !!ferryMenu.list;
 		ferryMenu.open = false; ferryMenu.list = null;
-		moveToMap(dest.file, dest.x, dest.y).then(() => dialog.open(seagallop
+		moveToMap(dest.file, dest.x, dest.y).then(() => arrivalLine(seagallop
 			? `The SEAGALLOP sets sail...\n\nWelcome to ${dest.label}!`
 			: `The ferry sets sail...\n\nWelcome to ${dest.label}!`));
 	}
@@ -178,7 +178,16 @@ function portalKey(k) {
 // refreshMapContent re-registers the Fly point + reloads content under the new region.
 export function travelPortal(d) {
 	safeSaveStr('magepunk_region', d.regionLower);
-	flyTo(d.mapId, d.x, d.y).then(() => { refreshObjective(); dialog.open(`You step through the PORTAL...\n\nWelcome to ${d.town}!`); });
+	flyTo(d.mapId, d.x, d.y).then(() => { refreshObjective(); arrivalLine(`You step through the PORTAL...\n\nWelcome to ${d.town}!`); });
+}
+// The line a trip ends on (a portal, a ferry). The map's own arrival may already have started something that holds the
+// controls — the rival stepping out, a villain scene, a story script, a question — and dialog.open() REPLACES what is on
+// screen and drops its callback: the scene's first line was lost under "Welcome to…", and a scene waiting on an answer
+// would wait for ever. So the welcome only takes the text box when nothing else has it; otherwise it goes to the
+// status line under the screen.
+export function arrivalLine(text) {
+	if (menuBlocking()) { hud.textContent = text.replace(/\s*\n+\s*/g, ' '); return; }
+	dialog.open(text);
 }
 // one-time teaching moment: the FIRST time a cross-region tier wall turns the player
 // back, explain the badge-thirds rule + point them at the PORTAL. Villain seals and
