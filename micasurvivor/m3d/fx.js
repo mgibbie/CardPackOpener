@@ -116,7 +116,7 @@ export class Effects {
 		this.anims = null; this.sheets = null;   // (the games' own animations: loadAnims)
 		this.q = 1;   // (the quality: 1 full; 0.5 reduced: no trails or shot light, half the small pieces, half the weather. setQuality)
 		this.parts = []; this.right = new THREE.Vector3(1, 0, 0); this.up = new THREE.Vector3(0, 1, 0); this.at = 0; this.t = 0; this.impacts = 0; this.looks = new Map();
-		this.stats = { sprites: 0, glows: 0, lights: 0, byLight: {}, anims: 0, bySheet: {}, parts: 0, shots: 0, impacts: 0, swings: 0, ownShots: 0, beams: 0, auras: 0, chains: 0, blasts: 0, dashes: 0, kos: 0, flat: 0, vortexes: 0, waves: 0, patches: 0, ults: 0, marks: {}, weather: {}, warns: 0, booms: 0, helps: {}, bossLooks: {}, byShape: {} };   // (the last frame's; `byShape`, `impacts`, `swings`: since the page opened)
+		this.stats = { sprites: 0, glows: 0, lights: 0, byLight: {}, anims: 0, bySheet: {}, parts: 0, shots: 0, impacts: 0, swings: 0, ownShots: 0, beams: 0, auras: 0, chains: 0, blasts: 0, dashes: 0, kos: 0, flat: 0, vortexes: 0, waves: 0, patches: 0, ults: 0, marks: {}, weather: {}, warns: 0, booms: 0, helps: {}, bossLooks: {}, sigs: {}, byShape: {} };   // (the last frame's; `byShape`, `impacts`, `swings`: since the page opened)
 	}
 	/** The downloaded lights: the atlas and its list of cells ({ cell, cols, rows, names }). */
 	loadLights(url, info) {
@@ -299,6 +299,7 @@ export class Effects {
 		const L = this.look(mid, type), A = this.atlas, P = this.VFX.PAL[L.pal], shape = A.has(L.proj) ? L.proj : 'ball', k = Math.max(0, 1 - r / Math.max(0.1, max));
 		this.light('ring', x, y + 0.1, z, r * 2.15, P[3], 0.35 + 0.75 * k, 0, true); this.light('ringsoft', x, y + 0.12, z, r * 1.5, P[2], 0.3 * k, 0, true);
 		if (this.dt > 0) for (let i = 0, n = Math.min(5, Math.ceil(this.dt * r * 22)); i < n; i++) { const a = Math.random() * 6.2832; this.part({ shape, pal: L.pal, x: x + Math.cos(a) * r, y: y + 0.15, z: z + Math.sin(a) * r, vx: Math.cos(a) * 2, vy: 2.5 + Math.random() * 2, vz: Math.sin(a) * 2, g: 10, life: 0.35, s0: 0.5, s1: 0.15, rot: a, spin: 6 }); }
+		if (this.anims && (mid === 'earthquake' || mid === 'surf') && this.dt > 0) for (let q = 0, nq = Math.floor(this.dt * 32 + Math.random()); q < nq; q++) { const a = Math.random() * 6.2832, sh = mid === 'earthquake' ? 'rocks' : 'bubble_burst'; this.play({ sheet: sh, x: x + Math.cos(a) * r, y: y + 0.5, z: z + Math.sin(a) * r, vy: mid === 'earthquake' ? 3 : 1.5, g: mid === 'earthquake' ? 9 : 0, life: 0.5, scale: mid === 'earthquake' ? 1.9 : 1.6 }); const S = this.stats.sigs; S[mid] = (S[mid] || 0) + 1; }   // (the signature waves)
 		this.stats.waves++;
 	}
 	/** A patch left on the floor (a trail's puddle, a pool of poison), every frame it lasts: a stain of light, and now and then one of the move's pieces rising. k: 1 fresh … 0 about to go. */
@@ -412,6 +413,41 @@ export class Effects {
 		if (kind === 'heal') { this.flash({ flat: true, light: 'ringsoft', x, y: y + 0.12, z, life: 0.6, s0: 1, s1: r * 2.1, css: '#5fe08a', a: 1.1 }); for (let i = 0; i < 8; i++) { const a = Math.random() * 6.2832, d = Math.random() * r * 0.7; this.part({ shape: 'heart', pal: 'grass', x: x + Math.cos(a) * d, y: y + 0.4, z: z + Math.sin(a) * d, vy: 2 + Math.random() * 1.5, life: 0.7, s0: 0.5, s1: 0.2 }); } }
 		else if (kind === 'shield') { this.flash({ flat: true, light: 'ring', x, y: y + 0.12, z, life: 0.5, s0: r * 2.1, s1: 1, css: '#7fc8ff', a: 1.2 }); this.flash({ light: 'glint', x, y: y + 1, z, life: 0.5, s0: 1.5, s1: 3.5, css: '#bfe4ff', a: 1.1 }); }
 		else if (kind === 'summon') { this.flash({ flat: true, light: 'rune', x, y: y + 0.12, z, life: 0.7, s0: 1.5, s1: 6, css: '#c47bff', a: 1.3, spin: -3 }); this.flash({ light: 'puff', x, y: y + 0.8, z, life: 0.5, s0: 1.5, s1: 3.5, css: '#8a5cc4', a: 0.6 }); }
+	}
+	/** The signature moves (the owner's list, 2026-11-14: "choreography for signature moves"): on top of their kind's look, a
+	 *  sequence of their own from the games' sprites. ev: the fight's event; at: { x, y, z, aim } of who used it. -> drawn? */
+	signature(ev, at) {
+		if (!this.anims) return false;
+		const id = ev.id, S = this.stats.sigs, mark = () => { S[id] = (S[id] || 0) + 1; return true; };
+		if (id === 'flamethrower' && ev.k === 'shot' && at.aim != null) {   // a roaring stream: big flames carried out along the aim, swelling
+			const c = Math.cos(at.aim), s = Math.sin(at.aim);
+			for (let i = 0; i < 6; i++) this.play({ sheet: 'fire', x: at.x + c * (0.8 + i * 0.5), y: at.y + 0.8, z: at.z + s * (0.8 + i * 0.5), vx: c * 9, vz: s * 9, vy: 0.4, life: 0.35 + i * 0.03, s0: 0.7 + i * 0.12, s1: 1.4 + i * 0.2, loop: 14 });
+			this.flash({ light: 'muzzle', x: at.x + c * 0.8, y: at.y + 0.8, z: at.z + s * 0.8, life: 0.2, s0: 2, s1: 3.2, css: '#ffb22e', a: 1.4, rot: this.screenAngle(c, 0, s) - 1.5708 });
+			return mark();
+		}
+		if (id === 'thunderbolt' && ev.k === 'chain' && ev.links && ev.links.length) {   // the first foe struck from the sky as well
+			const b = ev.links[0];
+			for (let h = 0; h < 4; h++) this.play({ sheet: 'lightning', x: b[0], y: b[1] + 1.2 + h * 2.3, z: b[2], life: 0.28, scale: 1.25 });
+			this.flash({ flat: true, light: 'ring', x: b[0], y: b[1] - 0.6, z: b[2], life: 0.35, s0: 1, s1: 5, css: '#fff36a', a: 1.4 });
+			return mark();
+		}
+		if ((id === 'hydro-pump' || id === 'ice-beam') && ev.k === 'beam') {   // splashes / ice along it, a burst where it ends
+			const sh = id === 'hydro-pump' ? 'water_impact' : 'ice_crystals_0', end = id === 'hydro-pump' ? 'bubble_burst' : 'ice_chunk', f = ev.from, d = ev.dir;
+			for (let q = 1.5; q < ev.len; q += 1.6) this.play({ sheet: sh, x: f[0] + d[0] * q, y: f[1] + d[1] * q, z: f[2] + d[2] * q, life: 0.3, scale: id === 'hydro-pump' ? 0.9 : 1.6, vy: 0.6 });
+			this.play({ sheet: end, x: f[0] + d[0] * ev.len, y: f[1] + d[1] * ev.len, z: f[2] + d[2] * ev.len, life: 0.4, scale: 1.4 });
+			return mark();
+		}
+		if (id === 'psychic' && ev.k === 'shot') {   // a ring of sparkles opening round its user, a rune turning under it
+			for (let i = 0; i < 10; i++) { const a = i / 10 * 6.2832; this.play({ sheet: 'sparkle_1', x: at.x + Math.cos(a) * 0.8, y: at.y + 0.9, z: at.z + Math.sin(a) * 0.8, vx: Math.cos(a) * 7, vz: Math.sin(a) * 7, life: 0.45, scale: 0.9, loop: 16 }); }
+			this.flash({ flat: true, light: 'rune', x: at.x, y: at.y + 0.12, z: at.z, life: 0.5, s0: 2, s1: 6, css: '#ff9fcf', a: 1.3, spin: 4 });
+			return mark();
+		}
+		if (id === 'thunder' && ev.k === 'smite') {   // a column of lightning from the sky
+			for (let h = 0; h < 6; h++) this.play({ sheet: h % 2 ? 'lightning_2' : 'lightning', x: ev.x, y: ev.y + 1 + h * 2.3, z: ev.z, life: 0.3, scale: 1.4 });
+			this.play({ sheet: 'electricity', x: ev.x, y: ev.y + 0.8, z: ev.z, life: 0.4, scale: 1.6 });
+			return mark();
+		}
+		return false;
 	}
 	/** A dash: streaks left along the way. */
 	dash(from, dir, len, mid, type) {

@@ -463,6 +463,7 @@ function draw(t) {
 			const c = TYPE_COLOR[f.m.type];
 			if (f.k === 'lob') { const k = Math.min(1, f.t / f.dur), lx = f.x0 + (f.x - f.x0) * k, ly = f.y0 + (f.y - f.y0) * k + Math.sin(k * Math.PI) * CK.EXP.lobHigh * 0.0625, lz = f.z0 + (f.z - f.z0) * k; if (fx) fx.shot(lx, ly, lz, 0.3, f.m.id, f.m.type, [f.x - f.x0, Math.cos(k * Math.PI) * 6, f.z - f.z0], f.x0 * 5 + f.z0); else shots.add(lx, ly, lz, 0.3, c); if (!f.seen) { f.seen = true; flashes.arc(f.x, f.y, f.z, f.r, 0, 6.2832, c, f.dur, 0.9); } }
 			else if (f.k === 'smite' && !f.seen) { f.seen = true; flashes.arc(f.x, f.y, f.z, f.r, 0, 6.2832, c, f.dur, 0.85); }
+			if (f.k === 'wave' && f.m.id === 'earthquake') bob = Math.max(bob, 0.12);   // (Earthquake: the ground shakes while it runs)
 			if (fx && fxLights && f.k === 'vortex') fx.vortex(f.x, f.y, f.z, f.r, f.t, f.m.id, f.m.type); else if (fx && fxLights && f.k === 'wave') fx.wave(f.x, f.y, f.z, f.r, f.max, f.m.id, f.m.type);
 			if (f.k === 'vortex' && !f.seen) { f.seen = true; flashes.arc(f.x, f.y, f.z, f.r, 0, 6.2832, c, f.dur, 0.25); }
 			else if (f.k === 'wave' && (simTicks & 3) === 0) flashes.arc(f.x, f.y, f.z, f.r, 0, 6.2832, c, 0.12, 0.93);
@@ -736,6 +737,7 @@ function fightEvents(events) {
 			else if (ev.k === 'summon') fx.help('summon', ev.x, ev.y, ev.z, 3);
 		}
 		const at = ev.x !== undefined && (ev.k === 'melee' || ev.k === 'aura') ? [ev.x, ev.y, ev.z] : [state.x, state.y, state.z];   // (where it was cast: the host's own place on a guest's page; an old tape has none)
+		if (fx && fxLights && ev.id && !document.hidden) fx.signature(ev, { x: state.x, y: state.y, z: state.z, aim: world && !WATCH ? world.pl.aim : null });   // (the signature moves: fx.js)
 		if (fx && ev.k === 'melee') fx.swing(at[0], at[1], at[2], ev.aim, ev.r, ev.id, null);
 		if (fx && ev.id && !document.hidden) {   // (the other kinds of move, each in its own shape: fx.js)
 			if (ev.k === 'beam') fx.beam(ev.from, ev.dir, ev.len, ev.w, ev.id, null);
