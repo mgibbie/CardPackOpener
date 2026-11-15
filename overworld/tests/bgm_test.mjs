@@ -221,7 +221,7 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 
 		// every theme key BATTLE_THEMES references exists as a real file
 		{
-			const main = overworldSource();
+			const main = overworldSource() + fs.readFileSync(path.join(ROOT, 'overworld/bgm_themes.js'), 'utf8');   // (the themes: bgm_themes.js since the audio swaps)
 			const bgmDir = path.join(ROOT, 'overworld/data/sounds/bgm');
 			const refs = [...new Set([...main.matchAll(/'((?:crystal|firered|emerald)_MUS\w+)'/g)].map(m => m[1]))];
 			// tracks shipped from the main project live in overworld/bgm_extra/ (sound.js BGM_EXTRA)

@@ -201,7 +201,8 @@ const HA = moveWith('HIGHLY_APPEALING', 4); // a TOUGH move: no cheer in a COOL 
 // ---------- wiring ----------
 {
 	const mn = overworldSource();
-	A(/emerald_MUS_CONTEST'/.test(mn), 'the stage theme takes over during the appeal round');
+	// (the track's name is in bgm_themes.js since the audio swaps; ow_music.js plays EVENT_THEMES.contest while the stage is up)
+	A(/contest: 'emerald_MUS_CONTEST'/.test(fs.readFileSync(path.join(ROOT, 'overworld/bgm_themes.js'), 'utf8')) && mn.includes("(contestMenu.open && contestMenu.st) ? pick('ow.event', 'contest', EVENT_THEMES.contest)"), 'the stage theme takes over during the appeal round');
 	A(/contestReception\(\)/.test(mn), 'the lobby counter runs the reception script');
 	A(/'magepunk_contest_v1'/.test(fs.readFileSync(path.join(ROOT, 'site/owreset.js'), 'utf8')), 'contest progress joins the canonical save inventory');
 }

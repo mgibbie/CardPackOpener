@@ -20,6 +20,8 @@ import { bgm, sfx, syncBgmVolume } from './sound.js';
 import { OPTION_ACTIONS, OPTION_KEYS, optionsMenu, townMap } from './ow_menustate.js';
 import { flyTo, hasFlyPoint } from './ow_transitions.js';
 import { PAD_ROWS, padSettingPick } from './ow_gamepad.js';
+import { BATTLE_THEMES, EVENT_THEMES } from './bgm_themes.js';
+import { pick } from '../site/audioswap.js';   // the owner's audio swaps
 
 
 // ---------- background music ----------
@@ -34,37 +36,6 @@ import { PAD_ROWS, padSettingPick } from './ow_gamepad.js';
 // When an override ends, the map track restarts from the top — exactly what
 // the cartridges do.
 export let musicMap = null;
-const BATTLE_THEMES = {
-	crystal: {
-		wild: 'crystal_MUSIC_JOHTO_WILD_BATTLE', wildNight: 'crystal_MUSIC_JOHTO_WILD_BATTLE_NIGHT',
-		trainer: 'crystal_MUSIC_JOHTO_TRAINER_BATTLE', gym: 'crystal_MUSIC_JOHTO_GYM_LEADER_BATTLE',
-		kantoWild: 'crystal_MUSIC_KANTO_WILD_BATTLE', kantoTrainer: 'crystal_MUSIC_KANTO_TRAINER_BATTLE',
-		kantoGym: 'crystal_MUSIC_KANTO_GYM_LEADER_BATTLE',
-		// GSC's Elite Four ride the gym-leader theme; only the Champion differs
-		elite: 'crystal_MUSIC_JOHTO_GYM_LEADER_BATTLE',
-		champion: 'crystal_MUSIC_CHAMPION_BATTLE', rival: 'crystal_MUSIC_RIVAL_BATTLE',
-		evil: 'crystal_MUSIC_ROCKET_BATTLE', evilboss: 'crystal_MUSIC_ROCKET_BATTLE',
-		legendary: 'crystal_MUSIC_SUICUNE_BATTLE', regi: 'crystal_MUSIC_SUICUNE_BATTLE',
-		surf: 'crystal_MUSIC_SURF', bike: 'crystal_MUSIC_BICYCLE',
-	},
-	firered: {
-		wild: 'firered_MUS_VS_WILD', trainer: 'firered_MUS_VS_TRAINER',
-		gym: 'firered_MUS_VS_GYM_LEADER', elite: 'firered_MUS_VS_GYM_LEADER',
-		champion: 'firered_MUS_VS_CHAMPION',
-		// FR gives rockets and the mid-game rival plain trainer music — authentic
-		rival: 'firered_MUS_VS_TRAINER', evil: 'firered_MUS_VS_TRAINER', evilboss: 'firered_MUS_VS_TRAINER',
-		legendary: 'firered_MUS_VS_LEGEND', regi: 'firered_MUS_VS_LEGEND',
-		surf: 'firered_MUS_SURF', bike: 'firered_MUS_CYCLING',
-	},
-	emerald: {
-		wild: 'emerald_MUS_VS_WILD', trainer: 'emerald_MUS_VS_TRAINER',
-		gym: 'emerald_MUS_VS_GYM_LEADER', elite: 'emerald_MUS_VS_ELITE_FOUR',
-		champion: 'emerald_MUS_VS_CHAMPION', rival: 'emerald_MUS_VS_RIVAL',
-		evil: 'emerald_MUS_VS_AQUA_MAGMA', evilboss: 'emerald_MUS_VS_AQUA_MAGMA_LEADER',
-		legendary: 'emerald_MUS_VS_KYOGRE_GROUDON', regi: 'emerald_MUS_VS_REGI',
-		surf: 'emerald_MUS_SURF', bike: 'emerald_MUS_CYCLING',
-	},
-};
 // which game's soundtrack governs here: the map's own track says; a map with
 // no music falls back to the region
 export function bgmGame() {
@@ -73,24 +44,29 @@ export function bgmGame() {
 	const r = playerRegion();
 	return r === 'KANTO' ? 'firered' : r === 'HOENN' ? 'emerald' : 'crystal';
 }
+// the role a battle's music plays (a key of BATTLE_THEMES[game]); the owner's audio swaps are per soundtrack and role
 export function battleThemeKey(a) {
+	const g = BATTLE_THEMES[bgmGame()] ? bgmGame() : 'crystal', role = battleThemeRole(a);
+	return pick('ow.theme', g + '.' + role, BATTLE_THEMES[g][role]);
+}
+export function battleThemeRole(a) {
 	const T = BATTLE_THEMES[bgmGame()] || BATTLE_THEMES.crystal;
 	const jk = bgmGame() === 'crystal' && (world.current?.map?.id || '').startsWith('MAP_JOHKANTO');
 	if (!a.isTrainer) {
-		if (battle.themeHint === 'regi') return T.regi;
-		if (battle.themeHint === 'legendary') return T.legendary;
-		if (jk) return T.kantoWild;
-		if (T.wildNight && Clock.phase() === 'night') return T.wildNight;
-		return T.wild;
+		if (battle.themeHint === 'regi') return 'regi';
+		if (battle.themeHint === 'legendary') return 'legendary';
+		if (jk) return 'kantoWild';
+		if (T.wildNight && Clock.phase() === 'night') return 'wildNight';
+		return 'wild';
 	}
 	const n = a.info?.displayName || '';
-	if (/Champion/i.test(n)) return T.champion;
-	if (/Elite Four/i.test(n)) return T.elite;
-	if (/Aqua Leader|Magma Leader|Giovanni/i.test(n)) return T.evilboss;
-	if (/Rocket|Team Aqua|Team Magma|Aqua |Magma |Grunt/i.test(n)) return T.evil;
-	if (/Rival/i.test(n)) return T.rival;
-	if (/^(Gym )?Leader\b/i.test(n)) return jk ? T.kantoGym : T.gym;
-	return jk ? T.kantoTrainer : T.trainer;
+	if (/Champion/i.test(n)) return 'champion';
+	if (/Elite Four/i.test(n)) return 'elite';
+	if (/Aqua Leader|Magma Leader|Giovanni/i.test(n)) return 'evilboss';
+	if (/Rocket|Team Aqua|Team Magma|Aqua |Magma |Grunt/i.test(n)) return 'evil';
+	if (/Rival/i.test(n)) return 'rival';
+	if (/^(Gym )?Leader\b/i.test(n)) return jk ? 'kantoGym' : 'gym';
+	return jk ? 'kantoTrainer' : 'trainer';
 }
 let bgmWant = null;
 export function bgmTick() {
@@ -102,14 +78,16 @@ export function bgmTick() {
 		want = battleThemeKey(a);
 	} else {
 		battle.themeHint = null;               // any finished battle clears its hint
-		const T = BATTLE_THEMES[bgmGame()];
-		want = blender.open && blender.music ? 'emerald_MUS_CYCLING'   // the BERRY BLENDER spins to MUS_CYCLING
-			: (contestMenu.open && contestMenu.st) ? 'emerald_MUS_CONTEST' // the stage theme carries the appeal round
+		const g = bgmGame(), T = BATTLE_THEMES[g], id = world.current?.map?.id;
+		want = blender.open && blender.music ? pick('ow.event', 'blender', EVENT_THEMES.blender)   // the BERRY BLENDER spins to MUS_CYCLING
+			: (contestMenu.open && contestMenu.st) ? pick('ow.event', 'contest', EVENT_THEMES.contest) // the stage theme carries the appeal round
 			: S.radioTune ? S.radioTune                // a tuned-in radio takes over the room's music
-			: player.surfing ? T?.surf
-			: player.biking ? T?.bike
-			: (musicMap[world.current?.map?.id] || null);
+			: player.surfing ? (T ? pick('ow.theme', g + '.surf', T.surf) : undefined)
+			: player.biking ? (T ? pick('ow.theme', g + '.bike', T.bike) : undefined)
+			: pick('ow.map', id, musicMap[id] || null);
 	}
+	// (the owner's audio swaps, site/audioswap.js: the place first — above — then the track wherever it plays)
+	if (want) want = pick('ow.bgm', want, want);
 	if (want !== bgmWant) { bgmWant = want; bgm(want); }
 }
 export function syncMapBgm() { bgmTick(); }

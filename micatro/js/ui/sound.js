@@ -2,6 +2,7 @@
 // until the first user gesture (autoplay rules); SFX + music toggles persist.
 import { assetUrl } from './assets.js';
 import { SOUNDS } from '../mods/registry.js'; // mod sounds by full key ('mf_gun' -> {src, music?})
+import { pick } from '../../../site/audioswap.js';   // the owner's audio swaps (mt.sound:<name>, mt.music:<track key | base>)
 
 const KEY_SFX = 'micatro_sfx', KEY_MUSIC = 'micatro_music';
 const get = (k, d) => { try { const v = localStorage.getItem(k); return v == null ? d : v === '1'; } catch (e) { return d; } };
@@ -46,6 +47,7 @@ class Sound {
   /** play(name, pitch=1, vol=1) — name may be a Balatro sound id. */
   play(name, pitch = 1, vol = 1) {
     if (!this.sfx || !this.ctx || !name) return;
+    name = pick('mt.sound', name, name); if (!name) return;   // (the owner's swap; "-" is silence)
     if (!KNOWN.has(name) && !SOUNDS[name]) { const m = /^(crumple|coin|glass|whoosh)$/.exec(name); if (m) name = name + '1'; else return; }
     const now = performance.now();
     if (now - (this.lastAt[name] || 0) < 35) return; // de-dupe bursts
@@ -61,7 +63,11 @@ class Sound {
   }
   startMusic() {
     if (!this.unlocked) return;
-    const src = this.track && SOUNDS[this.track] ? SOUNDS[this.track].src : assetUrl('sounds/music1.ogg');
+    const own = this.track && SOUNDS[this.track] ? SOUNDS[this.track].src : assetUrl('sounds/music1.ogg');
+    // (the owner's swap for this track — 'base' is the base loop: another track's key, or a file on this site; "-" is silence)
+    const to = pick('mt.music', this.track && SOUNDS[this.track] ? this.track : 'base', undefined);
+    if (to === null) { this.stopMusic(); return; }
+    const src = to === undefined ? own : to.charAt(0) === '/' ? to : SOUNDS[to] ? SOUNDS[to].src : to === 'base' ? assetUrl('sounds/music1.ogg') : own;
     if (this.musicEl && this.musicEl.dataset.src !== src) { this.musicEl.pause(); this.musicEl = null; }
     if (!this.musicEl) {
       this.musicEl = new Audio(src);

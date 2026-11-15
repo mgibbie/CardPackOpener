@@ -1779,10 +1779,11 @@ export default async function handler(req, env) {
 	// files (tools/pull-live-tuning.mjs) and clears these keys.
 	if (action === 'tuning-get') {
 		if (!(await rateLimit(store, 'tget:' + clientIp(req), TGET_LIMIT[0], TGET_LIMIT[1]))) return json({ error: 'slow down' }, 429);
-		const [art, sprite, artIds] = await Promise.all([
-			store.get('owner_tuning_art'), store.get('owner_tuning_sprite'), store.get('owner_art_ids'),
+		const [art, sprite, artIds, audio] = await Promise.all([
+			store.get('owner_tuning_art'), store.get('owner_tuning_sprite'), store.get('owner_art_ids'), store.get('owner_tuning_audio'),
 		]);
-		return json({ art: art || null, sprite: sprite || null, artIds: artIds || [] });
+		// audio: the owner's audio swaps ("<kind>:<id>" -> replacement; site/audioswap.js), read by every game
+		return json({ art: art || null, sprite: sprite || null, artIds: artIds || [], audio: audio || null });
 	}
 
 	// a live replacement IMAGE (saved from arttune on the live site; ids listed by
@@ -1863,10 +1864,17 @@ export default async function handler(req, env) {
 	// override (public via tuning-get above). kind: 'art' | 'sprite'.
 	if (action === 'tuning-save') {
 		if (!isAdmin(username)) return json({ error: 'owner only' }, 403);
-		const kind = body.kind === 'sprite' ? 'sprite' : body.kind === 'art' ? 'art' : null;
+		const kind = body.kind === 'sprite' ? 'sprite' : body.kind === 'art' ? 'art' : body.kind === 'audio' ? 'audio' : null;
 		if (!kind) return json({ error: 'bad kind' }, 400);
 		const content = body.content;
 		if (!content || typeof content !== 'object' || Array.isArray(content)) return json({ error: 'bad content' }, 400);
+		// audio swaps (the /audioswap/ page): a flat table of short strings, "<kind>:<id>" -> replacement. Every game reads
+		// it, so its shape is checked here: nothing else gets into the table.
+		if (kind === 'audio') {
+			const es = Object.entries(content);
+			if (es.length > 4000) return json({ error: 'too many swaps' }, 400);
+			for (const [k, v] of es) if (!/^[a-z]{2}\.[a-z]+:[\w.\- ]{1,100}$/.test(k) || typeof v !== 'string' || !/^(-|[\w.\-]{1,100}|\/[\w.\-\/]{1,160}\.ogg)$/.test(v) || v.includes('..')) return json({ error: 'bad swap', key: String(k).slice(0, 120) }, 400);
+		}
 		if (JSON.stringify(content).length > 400000) return json({ error: 'too large' }, 400);
 		await store.setJSON('owner_tuning_' + kind, Object.keys(content).length ? content : null);
 		return json({ ok: true, count: Object.keys(content).length });
