@@ -61,7 +61,6 @@ if (!ASSETS) console.log('note: micasurvivor/assets/pokemon is missing locally ‚
 const external = [], notFound = [];
 const server = http.createServer((req, res) => {
 	const u = decodeURIComponent(req.url.split('?')[0]);
-	if (u.startsWith('/api/')) { res.writeHead(200, { 'content-type': 'application/json' }); res.end('{}'); return; }   // (the site's API: the page asks it for the owner's audio swaps, site/audioswap.js)
 	const f = u.endsWith('/') ? u + 'index.html' : u;
 	fs.readFile(path.join(/^\/(micasurvivor\/assets|overworld\/data)\//.test(f) ? AROOT : ROOT, f), (e, d) => {
 		if (e) { notFound.push(u); res.writeHead(404); res.end('nf'); return; }
@@ -129,7 +128,7 @@ try {
 	await sleep(800);
 	const menu = await page.evaluate(() => ({ partner: G.DB.save.partner, coins: G.DB.save.coins, keys: Object.keys(localStorage), text: document.getElementById('scr-menu').innerText }));
 	A(menu.partner > 0, 'a partner is saved', menu.partner);
-	A(menu.keys.includes('micasurvivor_save.guest') && menu.keys.every(k => k.startsWith('micasurvivor_') || k === 'magepunk_local_owner_v1' /* site/account_silo.js device tag */ || k.startsWith('audio_swaps_') /* site/audioswap.js: the owner's audio swaps, kept for the next visit */), 'saves under micasurvivor_* keys only', menu.keys.join(','));
+	A(menu.keys.includes('micasurvivor_save.guest') && menu.keys.every(k => k.startsWith('micasurvivor_') || k === 'magepunk_local_owner_v1' /* site/account_silo.js device tag */), 'saves under micasurvivor_* keys only', menu.keys.join(','));
 	A(/MicaSurvivor/.test(menu.text) && /Based on Pok√©Survivor by JPTER78/.test(menu.text), 'menu logo + credit');
 	await shot('desktop_menu.png');
 

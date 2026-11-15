@@ -22,6 +22,11 @@
 // (they read globalThis.AudioSwap).
 const LS = 'audio_swaps_v1', LS_AT = 'audio_swaps_at', EVERY = 5 * 60 * 1000;
 export const SWAPS = {};
+// MicaSurvivor loads this as audioswap.js?guest=local: its pages promise that a guest asks NOTHING of the server (its tests
+// hold it to that), so there a visitor who is not signed in plays by the table kept from their last visit to any other page
+// of the site, and a signed-in player (who talks to the server anyway) refreshes it as everywhere else.
+const GUEST_LOCAL = (() => { try { return new URL(import.meta.url).searchParams.get('guest') === 'local'; } catch { return false; } })();
+const signedIn = () => { try { return !!localStorage.getItem('magepunk_mp_token_v1'); } catch { return false; } };
 export const SILENT = '-';
 
 function fill(o) {
@@ -46,6 +51,7 @@ export function setLocal(o) {
 }
 /** Ask the server for the table (unless asked a few minutes ago; force: ask anyway). Never throws. -> the table */
 export async function refresh(force) {
+	if (!force && GUEST_LOCAL && !signedIn()) return SWAPS;
 	if (typeof location === 'undefined' || typeof fetch !== 'function' || !/^https?:$/.test(location.protocol)) return SWAPS;
 	try {
 		const s = ls(), at = +(s && s.getItem(LS_AT) || 0);
