@@ -10,6 +10,7 @@ import { rumble } from '../site/gamepad.js';
 import * as UI from './battleui.js';
 import { cry, sfx } from './sound.js';
 import { setKnown as setSwapKnown } from './species_swaps.js';
+import { applyFakemonEvos } from './fakemon_evos.js';
 import { animScale, charsPerSec } from './settings.js';
 import { expForLevel, levelForExp, MAX_LEVEL, CLASSIC_MAX_LEVEL } from './badges.js';
 
@@ -756,6 +757,8 @@ export class Battle {
 		setSwapKnown((id) => !!species[id]);   // (the owner's species swaps: a swap to a species the game lacks is ignored)
 		// regional forms' own movepools + the charm-gated regional evolutions (regional_forms.js)
 		applyRegionalForms(this.data);
+		// the Uranium and Radical Ransei fakemon's evolutions (fakemon_evos.js: the imports left them out)
+		applyFakemonEvos(this.data);
 		// the Love2D build's pixel font, so battle text matches the desktop game — Micatro's copy, which also draws ♀ / ♂ (tools/micatro/add_gender_glyphs.py); the original in data/fonts has neither
 		try {
 			const f = new FontFace('m6x11plus', 'url(../micatro/assets/fonts/m6x11plus.ttf?v=2)');

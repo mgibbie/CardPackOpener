@@ -50,6 +50,11 @@ const RULES = {
 		if (mon?.gender === 'F') return ids.includes('wormadam') ? 'wormadam' : null;
 		return null;
 	},
+	// (Uranium) Speed > Attack: Alpico; otherwise Anderind
+	pufluff(mon, ids) {
+		const want = (mon?.stats?.spe ?? 0) > (mon?.stats?.atk ?? 0) ? 'alpico' : 'anderind';
+		return ids.includes(want) ? want : null;
+	},
 	lechonk(mon, ids) {
 		const want = mon?.gender === 'F' ? 'oinkologne_f' : 'oinkologne';
 		return ids.includes(want) ? want : null;

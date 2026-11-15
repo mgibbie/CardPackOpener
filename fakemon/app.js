@@ -4,6 +4,7 @@
 // Save sends it to the server (tuning-save, kind 'species': the server checks the account, not this page).
 import * as MP from '/battlecards/mpmode.js';
 import { SWAPS, setLocal, refresh } from '/overworld/species_swaps.js';
+import { applyFakemonEvos } from '/overworld/fakemon_evos.js';   // (the evolutions the game lays over species_extra at load)
 
 const OWNER = 'mgibbie', D = '/overworld/data/';
 const $ = (id) => document.getElementById(id);
@@ -25,7 +26,8 @@ const moveName = (m) => MV[m]?.name || m;
 const abName = (a) => { const n = ABN[a] || String(a); return n === String(a) ? n.replace(/^[a-z]/, (c) => c.toUpperCase()) : n; };   // (the names table gives some back as their bare id: capitalise those)
 const dirty = () => JSON.stringify(Object.entries(work).sort()) !== JSON.stringify(Object.entries(saved).sort());
 const swapsOf = (id) => (work['all:' + id] ? 1 : 0) + (PL[id] || []).filter((p) => p.key && work[p.key]).length;
-const EVO = (e) => (e.type === 'level' ? 'at level ' + e.param : e.type === 'item' ? 'with ' + String(e.param).replace(/_/g, ' ').toLowerCase() : e.type === 'friendship' ? 'with high friendship' : e.type + (e.param ? ' ' + e.param : ''));
+const EVO = (e) => EVO1(e) + (e.time ? ' (' + e.time + ' only)' : '') + (e.was ? ' — in its own game: ' + e.was : '');
+const EVO1 = (e) => (e.type === 'level' ? 'at level ' + e.param : e.type === 'item' ? 'with ' + String(e.param).replace(/_/g, ' ').toLowerCase() : e.type === 'friendship' ? 'with high friendship' : e.type + (e.param ? ' ' + e.param : ''));
 
 function status(text, err) {
 	const n = Object.keys(work).length;
@@ -59,7 +61,7 @@ function detail() {
 	h += `<h2>Base stats<small>total ${total}</small></h2><table>${order.map((k) => `<tr><th>${k.toUpperCase()}</th><td>${st[k] || 0}</td><td><div class="statbar"><span style="width:${Math.min(100, (st[k] || 0) / 2)}%"></span></div></td></tr>`).join('')}</table>`;
 	h += '<h2>Evolution</h2>' + (from.length || evos.length
 		? '<div>' + from.map((f) => evoChip(f.id, 'evolves into this ' + EVO(f.e))).join('') + evos.map((e) => (SP[e.target] ? evoChip(e.target, EVO(e)) : `<span class="hint">${esc(e.target)} ${esc(EVO(e))} (not in the game)</span>`)).join('') + '</div>'
-		: `<div class="hint">No evolution recorded${source(s.num) === 'CAP' ? '' : ': the ' + source(s.num) + ' import brought stats, moves and abilities, not evolutions'}.</div>`);
+		: '<div class="hint">It does not evolve, and nothing evolves into it.</div>');
 	h += `<h2>Level-up moves<small>${(s.learnset || []).length}</small></h2>` + ((s.learnset || []).length ? `<div class="moves">${s.learnset.map((m) => `<div><span class="lv">${m[0]}</span>${esc(moveName(m[1]))}</div>`).join('')}</div>` : '<div class="hint">None: it cannot appear in the rift, and a battle would give it no moves.</div>');
 	h += `<h2>TM, tutor and egg moves<small>${learn.length}</small></h2>` + (learn.length ? `<div class="hint">${learn.map((m) => esc(moveName(m))).join(', ')}</div>` : '<div class="hint">None of its own recorded: a TM works on it when the move is its type or Normal.</div>');
 	h += `<h2>Where it is placed<small>${pl.length}</small></h2>`
@@ -92,7 +94,8 @@ async function start() {
 	if (!(await requireOwner())) return;
 	const get = (f) => fetch(D + f).then((r) => (r.ok ? r.json() : {})).catch(() => ({}));
 	const [sp, ab, ex, mv, pl] = await Promise.all([get('species_battle.json'), get('species_abilities.json'), get('species_extra.json'), get('moves_battle.json'), fetch('./placements.json').then((r) => r.json()), refresh(true)]);
-	SP = sp; AB = ab; ABN = ab._names || {}; EX = ex; MV = mv; PL = pl.placements || {};
+	SP = sp; AB = ab; ABN = ab._names || {}; MV = mv; PL = pl.placements || {};
+	{ const d = { species: sp, extra: ex }; applyFakemonEvos(d); EX = d.extra; }
 	ids = Object.keys(SP).filter((id) => (SP[id].num || 0) <= 0).sort((a, b) => SP[b].num - SP[a].num);
 	for (const [id, x] of Object.entries(EX)) for (const e of (x && x.evos) || []) if (SP[e.target] && (SP[e.target].num || 0) <= 0) (evoFrom[e.target] = evoFrom[e.target] || []).push({ id, e });
 	saved = { ...SWAPS }; work = { ...SWAPS };

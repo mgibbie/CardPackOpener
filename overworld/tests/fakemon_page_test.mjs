@@ -51,6 +51,33 @@ const KEY = FKP[0].key, [, TBL, MAP, KIND, PHASE, SLOT] = KEY.split(':');
 	A(PL.count >= 600 && PL.placed >= 100 && TBL && MAP.startsWith('MAP_') && KIND === 'land', `it covers ${PL.count} fakemon, ${PL.placed} with a place of their own`, KEY);
 }
 
+// ===== 1b. the Uranium and Ransei evolutions (overworld/fakemon_evos.js) =====
+// The owner, 2026-11-15: "look online for evolution data for the uranium fakemon as well".
+{
+	const { FAKEMON_EVOS, applyFakemonEvos } = await import(pathToFileURL(path.join(ROOT, 'overworld/fakemon_evos.js')).href);
+	const { pickEvolution } = await import(pathToFileURL(path.join(ROOT, 'overworld/evo_pick.js')).href);
+	const SP = JSON.parse(fs.readFileSync(path.join(ROOT, 'overworld/data/species_battle.json'), 'utf8')), EX = JSON.parse(fs.readFileSync(path.join(ROOT, 'overworld/data/species_extra.json'), 'utf8'));
+	const bag = fs.readFileSync(path.join(ROOT, 'overworld/bag.js'), 'utf8'), all = Object.entries(FAKEMON_EVOS), bad = [];
+	for (const [id, evos] of all) for (const e of evos) {
+		if (!SP[id] || SP[id].num > -100) bad.push(id + ': not a Uranium or Ransei fakemon');
+		if (!SP[e.target] || e.target === id) bad.push(id + ' -> ' + e.target + ': no such species');
+		if (e.type === 'level' ? !(e.param >= 2 && e.param <= 100) : e.type === 'item' ? !new RegExp('\\b' + e.param + '\\b').test(bag) : e.type === 'friendship' ? e.param !== 220 : true) bad.push(id + ': ' + e.type + ' ' + e.param);
+		if (e.time && e.time !== 'day' && e.time !== 'night') bad.push(id + ': time ' + e.time);
+	}
+	const uranium = all.filter(([id]) => SP[id] && SP[id].num >= -265).length;
+	A(uranium >= 70 && bad.length === 0, `${uranium} Uranium fakemon have an evolution, each to a species the game has, by a way the game can do (a level, an item it has, friendship)`, bad.slice(0, 6));
+	const E = FAKEMON_EVOS, is = (id, type, param, target) => (E[id] || []).some((e) => e.type === type && e.param === param && e.target === target);
+	A(is('orchynx', 'level', 28, 'metalynx') && is('cocaran', 'level', 24, 'cararalm') && is('fallengel', 'level', 72, 'beliaddon') && is('luxi', 'friendship', 220, 'luxor') && is('luxor', 'item', 'shinystone', 'luxelong') && is('minicorn', 'item', 'shinystone', 'kiricorn') && is('minicorn', 'item', 'duskstone', 'oblivicorn') && !E.neopunk,
+		'as the Uranium wiki has them: a starter by level, a chain\'s stages each their own, friendship, stones, a branch; one that does not evolve has none', ['orchynx', 'cocaran', 'fallengel', 'luxi', 'luxor', 'minicorn', 'neopunk'].map((id) => E[id]));
+	A(is('linkite', 'item', 'linkingcord', 'chainite') && E.linkite[0].was === 'traded' && is('felunge', 'level', 40, 'feliger') && /Rest/.test(E.felunge[0].was) && E.cararalm[0].type === 'level' && /Coconut Milk/.test(E.cararalm[0].was),
+		'a way the game cannot do becomes one it can, and says what it was: a trade is the Linking Cord, "knowing a move" is the level it learns it, an item the game lacks is a level', [E.linkite, E.felunge, E.cararalm]);
+	const pu = E.pufluff || [], fast = pickEvolution({ speciesId: 'pufluff', stats: { spe: 60, atk: 40 } }, pu), strong = pickEvolution({ speciesId: 'pufluff', stats: { spe: 40, atk: 60 } }, pu);
+	A(pu.length === 2 && fast && fast.target === 'alpico' && strong && strong.target === 'anderind', 'Pufluff becomes Alpico when its Speed is above its Attack, Anderind otherwise', [pu, fast, strong]);
+	const data = { species: SP, extra: JSON.parse(JSON.stringify(EX)) }, cap = Object.keys(EX).find((id) => SP[id] && SP[id].num < 0 && SP[id].num >= -78 && (EX[id].evos || []).length), before = JSON.stringify(EX[cap]);
+	applyFakemonEvos(data);
+	A(data.extra.orchynx.evos[0].target === 'metalynx' && JSON.stringify(data.extra[cap]) === before && data.extra.bulbasaur.evos[0].target === 'ivysaur', 'the game lays them over its species data at load, and leaves what it already had (CAP, the official species) as it was');
+}
+
 const dbFile = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'fakemon-')), 'users.sqlite');
 const server = spawn(process.execPath, [path.join(ROOT, 'mp-dev-server.mjs'), String(PORT)], { cwd: ROOT, stdio: 'ignore', env: { ...process.env, MP_DEV_DB: dbFile } });
 let browser;
@@ -89,8 +116,8 @@ try {
 	A(seen.art[0] > 0 && seen.stats === 6 && seen.abilities && seen.moves > 3 && seen.evo, 'a fakemon shows its sprite, its six base stats, its abilities, its level-up moves and its evolution', seen);
 	A(seen.places === FKP.length && seen.rows === FKP.length && seen.boxes === FKP.length + 1 && seen.rift, 'and every place it is placed, each with a box to swap it, one box for "everywhere", and the rift it shares with the others', seen);
 	if (SHOTS) { fs.mkdirSync(SHOTS, { recursive: true }); await page.screenshot({ path: path.join(SHOTS, 'fakemon-page.png') }); }
-	const evo = await page.evaluate(() => { const T = window.__fakemon, d = [...document.querySelectorAll('#dl-species option')].length; document.getElementById('filter').value = 'cap'; document.getElementById('filter').dispatchEvent(new Event('change')); const cap = document.querySelectorAll('#list .item').length; document.getElementById('q').value = 'syclant'; document.getElementById('q').dispatchEvent(new Event('input')); const it = document.querySelector('#list .item'); if (it) it.click(); return { d, cap, sel: T.sel(), chips: document.querySelectorAll('#main .evo').length }; });
-	A(evo.d > 1700 && evo.cap > 50 && evo.cap < 100 && evo.sel === 'syclant' && evo.chips >= 1, 'the list filters by source and by name; a fakemon that evolves shows what it comes from or becomes; a swap can be any species the game has', evo);
+	const evo = await page.evaluate(() => { const T = window.__fakemon, d = [...document.querySelectorAll('#dl-species option')].length; document.getElementById('filter').value = 'cap'; document.getElementById('filter').dispatchEvent(new Event('change')); const cap = document.querySelectorAll('#list .item').length; document.getElementById('filter').value = ''; document.getElementById('filter').dispatchEvent(new Event('change')); document.getElementById('q').value = 'orchynx'; document.getElementById('q').dispatchEvent(new Event('input')); const it = document.querySelector('#list .item'); if (it) it.click(); return { d, cap, sel: T.sel(), chips: document.querySelectorAll('#main .evo').length }; });
+	A(evo.d > 1700 && evo.cap > 50 && evo.cap < 100 && evo.sel === 'orchynx' && evo.chips >= 1, 'the list filters by source and by name; a fakemon that evolves shows what it comes from or becomes; a swap can be any species the game has', evo);
 	const edit = await page.evaluate(([FK, KEY]) => {
 		const T = window.__fakemon, out = {}; T.show(FK);
 		out.wrong = T.set(KEY, 'notapokemon'); out.slot = T.set(KEY, 'Eevee'); out.all = T.set('all:' + FK, 'pikachu'); out.self = T.set('all:pikachu', 'pikachu');
@@ -124,11 +151,13 @@ try {
 		ow.startWildBattle({ id: 'rattata', level: 5 });
 		for (let i = 0; i < 200 && !(ow.battle.active && ow.battle.active.foe); i++) await new Promise((r) => setTimeout(r, 60));
 		const foe = ow.battle.active && ow.battle.active.foe; out.wild = foe && (foe.speciesId || foe.id);
+		out.evo = (ow.battle.data.extra.orchynx || {}).evos;
 		return out;
 	}, [FK, MAP, KIND, PHASE, +SLOT]);
 	A(play.swapped.eevee > 0 && !play.swapped[FK] && play.own[FK] > 0 && !play.own.eevee, `the wild table plays by it: ${FK}'s slot on ${MAP} gives Eevee, and ${FK} again once the swap is gone`, play);
 	A(Array.isArray(play.team) && play.team.join() === 'mew,pidgey' && Array.isArray(play.teamOwn) && play.teamOwn.join() === 'zigzagoon,taillow', 'a trainer\'s member is swapped by its slot, another by "everywhere"; with no swaps the roster is its own', [play.team, play.teamOwn]);
 	A(play.wild === 'bulbasaur', 'a wild battle starts with the species swapped in "everywhere"', play.wild);
+	A(play.evo && play.evo[0].target === 'metalynx' && play.evo[0].param === 28, 'in the running game Orchynx (Uranium) evolves into Metalynx at level 28', play.evo);
 	await gctx.close();
 } finally {
 	if (browser) await browser.close();
