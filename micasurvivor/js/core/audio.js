@@ -322,6 +322,7 @@ G.Audio = (() => {
 
   /** Cambia de tema (con fundido). null = silencio. */
   function music(name) {
+    if (name && window.AudioSwap) name = window.AudioSwap.pick('ms.music', name, name);   // (the owner's audio swaps: site/audioswap.js)
     if (wanted === name) return;
     wanted = name;
     if (!ctx) return;                    // arrancará al primer clic
@@ -455,6 +456,7 @@ G.Audio = (() => {
 
   function sfx(name, opts) {
     if (!ctx || settings.muted || settings.sfx <= 0 || ctx.state !== 'running') return;
+    if (window.AudioSwap) name = window.AudioSwap.pick('ms.sfx', name, name);   // (the owner's audio swaps)
     const fn = SFX[name];
     if (!fn) return;
     const now = performance.now();

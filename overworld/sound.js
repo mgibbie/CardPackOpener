@@ -3,6 +3,7 @@
 // and only download when first played. Failures (missing cry, autoplay
 // policy before the first tap) are silent.
 import * as Settings from './settings.js';
+import { pick } from '../site/audioswap.js';   // the owner's audio swaps (ow.sfx:<name>)
 
 const cache = new Map();
 
@@ -30,7 +31,7 @@ export function play(url, vol = 0.6) {
 // will get an original recording). The full worklist lives in the design wiki
 // under "Missing Cries" (tools/gen_missing_cries.mjs).
 export const cry = speciesId => play(`data/sounds/cries/${speciesId}.ogg`, 0.5);
-export const sfx = name => play(`data/sounds/sfx/${name}.ogg`, 0.55);
+export const sfx = name => { const n = pick('ow.sfx', name, name); if (n) play(`data/sounds/sfx/${n}.ogg`, 0.55); };
 
 // ---------- background music ----------
 // One looping track at a time, keyed by music_map.json's file keys

@@ -9,6 +9,7 @@
 // The AudioContext is created lazily on the first user gesture (autoplay
 // policy) and every play() is a no-op until then. Mute is persisted.
 
+import { pick } from '../site/audioswap.js';   // the owner's audio swaps (bc.sfx:<name>)
 const MUTE_KEY = 'bc_sfx_muted_v1';
 let ctx = null, master = null;
 let muted = false;
@@ -106,6 +107,7 @@ const LIB = {
 // clear firing 7 'death's should thump once, not chorus)
 const lastAt = {};
 export function play(name) {
+	name = pick('bc.sfx', name, name);   // (the owner's audio swaps: site/audioswap.js)
 	if (muted || !LIB[name]) return;
 	if (!ensureCtx()) return;
 	if (ctx.state === 'suspended') { ctx.resume?.(); }
