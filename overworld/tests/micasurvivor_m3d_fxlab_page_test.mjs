@@ -69,6 +69,14 @@ try {
 		own[id] = await waitFor(() => M(([sh, n0]) => { const f = window.__m3d.fx(); return f.animated && (f.bySheet[sh] || 0) > n0 + 5 && f.ownShots >= 0; }, [sheet, n0]), 12000);
 	}
 	A(Object.values(own).every(Boolean), 'Shadow Ball, Ember and Bubble fly as the games\' own sprites', own);
+	// the signature moves: each plays a sequence of its own from the games' sprites
+	const SIG = ['flamethrower', 'thunderbolt', 'hydro-pump', 'ice-beam', 'psychic', 'thunder', 'surf', 'earthquake'], sigSeen = {};
+	for (const id of SIG) {
+		await M((id) => { const L = window.__m3d.fxlab; L.go(L.list.findIndex((q) => q.id === id)); }, id);
+		sigSeen[id] = await waitFor(() => M((id) => (window.__m3d.fx().sigs[id] || 0) > 0, id), 15000);
+		if (SHOTS) { await sleep(250); await page.screenshot({ path: path.join(SHOTS, `fxlab-sig-${id}.png`) }); }
+	}
+	A(Object.values(sigSeen).every(Boolean), 'Flamethrower, Thunderbolt, Hydro Pump, Ice Beam, Psychic, Thunder, Surf and Earthquake each play a sequence of their own', sigSeen);
 	// keys and the clock
 	const i0 = await M(() => window.__m3d.fxlab.i);
 	await page.keyboard.press('KeyN'); const i1 = await M(() => window.__m3d.fxlab.i);
