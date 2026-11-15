@@ -31,6 +31,7 @@ async function waitFor(fn, ms) { const t0 = Date.now(); while (Date.now() - t0 <
 
 const server = http.createServer((req, res) => {
 	const u = decodeURIComponent(req.url.split('?')[0]);
+	if (u.startsWith('/api/')) { res.writeHead(200, { 'content-type': 'application/json' }); res.end('{}'); return; }   // (the site's API: the page asks it for the owner's audio swaps, site/audioswap.js)
 	const f = u.endsWith('/') ? u + 'index.html' : u;
 	fs.readFile(path.join(ROOT, f), (e, d) => {
 		if (e) { res.writeHead(404); res.end('nf'); return; }

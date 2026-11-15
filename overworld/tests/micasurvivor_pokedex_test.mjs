@@ -214,6 +214,7 @@ const ROW = { rev: 0, save: null };
 const notFound = [];
 const server = http.createServer((req, res) => {
 	const u = decodeURIComponent(req.url.split('?')[0]);
+	if (u.startsWith('/api/')) { res.writeHead(200, { 'content-type': 'application/json' }); res.end('{}'); return; }   // (the site's API: the page asks it for the owner's audio swaps, site/audioswap.js)
 	if (u === '/api/mp') {
 		let raw = '';
 		req.on('data', c => { raw += c; });
