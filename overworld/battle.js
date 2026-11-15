@@ -9,6 +9,7 @@ import { applyRegionalForms } from './regional_forms.js';
 import { rumble } from '../site/gamepad.js';
 import * as UI from './battleui.js';
 import { cry, sfx } from './sound.js';
+import { setKnown as setSwapKnown } from './species_swaps.js';
 import { animScale, charsPerSec } from './settings.js';
 import { expForLevel, levelForExp, MAX_LEVEL, CLASSIC_MAX_LEVEL } from './badges.js';
 
@@ -752,6 +753,7 @@ export class Battle {
 			getJSON('data/egg_moves.json').catch(() => ({})),
 		]);
 		this.data = { species, moves, extra, abilities, tmLearn, genders, evYields, eggMoves };
+		setSwapKnown((id) => !!species[id]);   // (the owner's species swaps: a swap to a species the game lacks is ignored)
 		// regional forms' own movepools + the charm-gated regional evolutions (regional_forms.js)
 		applyRegionalForms(this.data);
 		// the Love2D build's pixel font, so battle text matches the desktop game — Micatro's copy, which also draws ♀ / ♂ (tools/micatro/add_gender_glyphs.py); the original in data/fonts has neither

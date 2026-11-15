@@ -1779,11 +1779,11 @@ export default async function handler(req, env) {
 	// files (tools/pull-live-tuning.mjs) and clears these keys.
 	if (action === 'tuning-get') {
 		if (!(await rateLimit(store, 'tget:' + clientIp(req), TGET_LIMIT[0], TGET_LIMIT[1]))) return json({ error: 'slow down' }, 429);
-		const [art, sprite, artIds, audio] = await Promise.all([
-			store.get('owner_tuning_art'), store.get('owner_tuning_sprite'), store.get('owner_art_ids'), store.get('owner_tuning_audio'),
+		const [art, sprite, artIds, audio, species] = await Promise.all([
+			store.get('owner_tuning_art'), store.get('owner_tuning_sprite'), store.get('owner_art_ids'), store.get('owner_tuning_audio'), store.get('owner_tuning_species'),
 		]);
 		// audio: the owner's audio swaps ("<kind>:<id>" -> replacement; site/audioswap.js), read by every game
-		return json({ art: art || null, sprite: sprite || null, artIds: artIds || [], audio: audio || null });
+		return json({ art: art || null, sprite: sprite || null, artIds: artIds || [], audio: audio || null, species: species || null });   // species: the owner's species swaps (overworld/species_swaps.js)
 	}
 
 	// a live replacement IMAGE (saved from arttune on the live site; ids listed by
@@ -1864,10 +1864,16 @@ export default async function handler(req, env) {
 	// override (public via tuning-get above). kind: 'art' | 'sprite'.
 	if (action === 'tuning-save') {
 		if (!isAdmin(username)) return json({ error: 'owner only' }, 403);
-		const kind = body.kind === 'sprite' ? 'sprite' : body.kind === 'art' ? 'art' : body.kind === 'audio' ? 'audio' : null;
+		const kind = body.kind === 'sprite' ? 'sprite' : body.kind === 'art' ? 'art' : body.kind === 'audio' ? 'audio' : body.kind === 'species' ? 'species' : null;
 		if (!kind) return json({ error: 'bad kind' }, 400);
 		const content = body.content;
 		if (!content || typeof content !== 'object' || Array.isArray(content)) return json({ error: 'bad content' }, 400);
+		// species swaps (the /fakemon/ page): "all:<species>" | "wild:…" | "trainer:…" -> a species id
+		if (kind === 'species') {
+			const es = Object.entries(content);
+			if (es.length > 4000) return json({ error: 'too many swaps' }, 400);
+			for (const [k, v] of es) if (!/^(all|wild|trainer):[\w:.\-]{1,160}$/.test(k) || typeof v !== 'string' || !/^[a-z0-9][a-z0-9\-]{0,40}$/.test(v)) return json({ error: 'bad swap', key: String(k).slice(0, 120) }, 400);
+		}
 		// audio swaps (the /audioswap/ page): a flat table of short strings, "<kind>:<id>" -> replacement. Every game reads
 		// it, so its shape is checked here: nothing else gets into the table.
 		if (kind === 'audio') {
