@@ -14,6 +14,7 @@ import { DAYNIGHT } from './encounters_daynight.js';
 import { FREM_NIGHT } from './encounters_frem_night.js';
 import { POSTGAME } from './encounters_postgame.js';
 import { CRYSTAL_RATE_MAPS } from './encounter_games.js';
+import { slotsFor } from './species_swaps.js';   // the owner's species swaps, laid over each table
 
 // The chance a step (or a smashed rock) starts an encounter, from a map's stored
 // rate. The two source games use different scales:
@@ -113,22 +114,22 @@ export class Encounters {
 		// JohKanto's postgame roster first — it is authored per phase, so raw weights.
 		const pg = POSTGAME[mapId]?.[kind];
 		const pgSlots = kind === 'land' ? pg?.[phase] : pg;
-		if (pgSlots?.length) return this.weightedPick(pgSlots, phase, true);
+		if (pgSlots?.length) return this.weightedPick(slotsFor('pg', mapId, kind, kind === 'land' ? phase : null, pgSlots), phase, true);
 		// AUTHENTIC per-map day/night table (Johto grass, from pokecrystal) takes precedence —
 		// it's already time-specific, so pick from it raw (no reweighting, no overlay).
 		const dn = DAYNIGHT[mapId]?.[kind]?.[phase];
-		if (dn && dn.length) return this.weightedPick(dn, phase, true);
+		if (dn && dn.length) return this.weightedPick(slotsFor('dn', mapId, kind, phase, dn), phase, true);
 		// FireRed Kanto / Emerald Hoenn NIGHT list: a biome-matched fakemon table (Gen-3 has
 		// no vanilla day/night). Night + land only — day/morning fall through to the base table.
 		if (phase === 'night' && kind === 'land') {
 			const fn = FREM_NIGHT[mapId]?.land?.night;
-			if (fn && fn.length) return this.weightedPick(fn, phase, true);
+			if (fn && fn.length) return this.weightedPick(slotsFor('night', mapId, 'land', 'night', fn), phase, true);
 		}
 		// else the base owdata table + the code reweighting/overlay (day/morning on Gen-3, and
 		// any map without a code night table — time-of-day is synthesized here)
 		const grp = this.data[mapId]?.[kind];
 		if (!grp || !grp.slots?.length) return null;
-		const base = this.weightedPick(grp.slots, phase);
+		const base = this.weightedPick(slotsFor('base', mapId, kind, null, grp.slots), phase);
 		if (!base) return null;
 		// NIGHT overlay: after dark, some LAND encounters are night dwellers not on the base
 		// table — keep the level from the base roll, swap the species.
@@ -146,8 +147,9 @@ export class Encounters {
 		// these rod bands still mean what they say
 		const pg = POSTGAME[mapId]?.fishing;
 		const grp = this.data[mapId]?.fishing;
-		const all = pg?.length ? pg : grp?.slots;
-		if (!all?.length) return null;
+		const own = pg?.length ? pg : grp?.slots;
+		if (!own?.length) return null;
+		const all = slotsFor(pg?.length ? 'pg' : 'base', mapId, 'fishing', null, own);
 		const [lo, hi] = ({ 1: [0, 1], 2: [2, 4], 3: [5, 9] })[tier] || [0, 1];
 		const slots = all.slice(lo, hi + 1);
 		if (!slots.length) return null;

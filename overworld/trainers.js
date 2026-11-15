@@ -7,6 +7,7 @@ import { buildMon } from './battle.js';
 import { safeLoad, safeSave } from './safestore.js';
 import { objectHiddenByFlag } from './events.js';
 import { TRAINER_GROUP } from './trainer_pairs.js';
+import { at as swapAt } from './species_swaps.js';   // the owner's species swaps (trainer:<script>:<slot>, all:<species>)
 
 const FACE_OF = {
 	MOVEMENT_TYPE_FACE_DOWN: 'down', MOVEMENT_TYPE_FACE_UP: 'up',
@@ -473,7 +474,9 @@ export class Trainers {
 		const bump = 2 * (this.rematch[this.keyOf(t)] || 0);
 		let party = [];
 		if (roster?.party?.length) {
-			party = roster.party.map(e => {
+			party = roster.party.map((e, slot) => {
+				const sp = swapAt('trainer:' + script + ':' + slot, e.s);
+				if (sp !== e.s) e = { s: sp, l: e.l };   // (a swapped member: the new species' own level-up moves, not the old one's set)
 				const mon = buildMon(e.s, scale(e.l + bump, { boss, ace: (e.l || 0) >= aceLevel, bump, script }), data);
 				if (!mon) return null;
 				// authentic movesets / held items when the roster carries them

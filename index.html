@@ -243,6 +243,10 @@
 				<div class="glyph">🎚️</div>
 				<div><h3>Audio Swap <span class="arrow">→</span></h3><p>Owner tools — change which track or sound plays anywhere in any game.</p></div>
 			</a>
+			<a class="tile" id="tile-fakemon" href="fakemon/" hidden>
+				<div class="glyph">🧬</div>
+				<div><h3>Fakemon <span class="arrow">→</span></h3><p>Owner tools — every fakemon, where it is placed, and a box to put another Pokémon there.</p></div>
+			</a>
 			<a class="tile" id="tile-spritetune" href="overworld/?spritetune=1" hidden>
 				<div class="glyph">🦴</div>
 				<div><h3>Sprite Tuner <span class="arrow">→</span></h3><p>Owner tools — size and position battle sprites in a live battle scene.</p></div>
@@ -282,7 +286,7 @@
 	// the playtesters' Report a Bug tile (the server re-checks who may file)
 	if (['instinctloretest0918', 'remygl', 'instinctgauntlet'].includes(MP.cachedState()?.username)) { const b = document.getElementById('tile-bugs'); if (b) b.hidden = false; }
 	if (MP.cachedState()?.username === 'mgibbie') {
-		for (const id of ['tile-todo', 'tile-bugreview', 'tile-arttune', 'tile-audioswap', 'tile-spritetune', 'tile-followtest', 'tile-mapedit', 'tile-owreset']) { const a = document.getElementById(id); if (a) a.hidden = false; }
+		for (const id of ['tile-todo', 'tile-bugreview', 'tile-arttune', 'tile-audioswap', 'tile-fakemon', 'tile-spritetune', 'tile-followtest', 'tile-mapedit', 'tile-owreset']) { const a = document.getElementById(id); if (a) a.hidden = false; }
 		// the reset tile DOES something rather than going somewhere, so it needs a
 		// handler — which re-checks ownership with the server before touching a thing
 		import('./site/owreset.js').then(m => m.mount(document.getElementById('tile-owreset'))).catch(() => {});

@@ -10,6 +10,7 @@ import { META } from './engine.js';
 import { Journal } from './journal.js';
 import { battle, cutscene, dialog, encounters, evolution, hud, player, world } from './ow_core.js';
 import { wildEncounterLevel } from './ow_scaling.js';
+import { everywhere as swapEverywhere } from './species_swaps.js';
 import { offerNickname } from './ow_screens.js';
 import { S } from './ow_state.js';
 import { CONTEST_KEY, bugContestCatch, contestProgress, contestSpriteFor, rollUnownLetter } from './ow_venues.js';
@@ -213,6 +214,8 @@ export function startWildBattle(pick, forceDouble) {
 			hud.textContent = 'The air crackles — a rift tears open!';
 		}
 	}
+	// the owner's species swaps: "wherever this one appears" also covers the rift and the picks made off the tables
+	pick = { ...pick, id: swapEverywhere(pick.id) };
 	// JohKanto scales its wilds to the party (wildEncounterLevel). The scaler is
 	// region-guarded itself, so this is a no-op everywhere else.
 	pick = { ...pick, level: wildEncounterLevel(pick.level) };
