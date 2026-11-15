@@ -544,7 +544,7 @@ function frame(now) {
 	if (perf.last) { perf.frames.push(now - perf.last); if (perf.frames.length > 240) perf.frames.shift(); }
 	perf.last = now;
 	perf.acc += dt;
-	watchFx(now);
+	watchFx(now); railCoach(now);
 	if (paused || now < hitFeel.until) perf.acc = 0;   // (the menu is up, alone: the fight waits; so it does for the moment of a hit-stop)
 	const t0 = performance.now();
 	if (fxlab) fxlab.tick();
@@ -628,6 +628,7 @@ function toggleMap(on = !mapBig) {
 	const lg = document.getElementById('maplegend'); lg.style.display = mapBig ? 'block' : 'none';
 	return mapBig;
 }
+let mapRails = 0;   // (rails drawn on the minimap just now: for the tests)
 function showMap() {
 	const el = document.getElementById('map'), px = 4;
 	if (!mapBase) { mapBase = drawMap(room, px); el.width = mapBase.width; el.height = mapBase.height; el.style.display = 'block'; fogN = -1; }
@@ -642,6 +643,16 @@ function showMap() {
 	// the exit: a ring that beats; the spawn: a small dot
 	g.lineWidth = 2; g.strokeStyle = '#fff2a0'; g.beginPath(); g.arc(room.exit[0] * k, room.exit[2] * k, 5 + 2 * Math.sin(performance.now() / 260), 0, 6.2832); g.stroke();
 	g.fillStyle = '#fff'; g.fillRect(room.spawn[0] * k - 1.5, room.spawn[2] * k - 1.5, 3, 3);
+	// the rails (the owner, 2026-11-14: "I was not ever able to grind a rail"): over the fog, bold, once any of one is explored; a dot at
+	// its high end, where you can run on
+	mapRails = 0;
+	for (const rl of room.rails || []) {
+		const P = rl.pts; if (!P || P.length < 2 || !P.some((p) => seen({ x: p[0], z: p[2] }))) continue;
+		mapRails++;
+		for (const [w, c] of [[4.5, 'rgba(0,0,0,.75)'], [2.5, '#7fe6ff']]) { g.lineWidth = w; g.strokeStyle = c; g.beginPath(); P.forEach((p, i) => (i ? g.lineTo(p[0] * k, p[2] * k) : g.moveTo(p[0] * k, p[2] * k))); g.stroke(); }
+		const hi = P[0][1] >= P[P.length - 1][1] ? P[0] : P[P.length - 1];
+		g.fillStyle = '#ffffff'; g.strokeStyle = 'rgba(0,0,0,.85)'; g.lineWidth = 1; g.beginPath(); g.arc(hi[0] * k, hi[2] * k, 3, 0, 6.2832); g.fill(); g.stroke();
+	}
 	const things = (solo && solo.eco ? ecoView(solo) : rv ? rv.eco : []).filter(seen);
 	for (const o of things) { g.fillStyle = EK.COL[o.kind]; g.fillRect(o.x * k - 1.5, o.z * k - 1.5, 4, 4); }
 	if (mapBig) { const n = {}; for (const o of things) n[o.kind] = (n[o.kind] || 0) + 1; document.getElementById('maplegend').innerHTML = (fog ? `explored ${Math.round(fogShare(fog) * 100)} %` : '') + Object.keys(n).map((kd) => `<i style="background:${EK.COL[kd]}"></i>${EK.NAME[kd] || kd}${n[kd] > 1 ? ' ×' + n[kd] : ''}`).join('') + ' <i style="background:#fff2a0"></i>altar'; }   // (P4) what the zone holds, in its colours
@@ -1093,6 +1104,24 @@ const FX_SLOW = { avg: 20, p95: 30 };   // (ms, over the last 2 s: a frame's ave
 function applyFx() { if (fx) fx.setQuality(fxSet.mode === 'full' || (fxSet.mode === 'auto' && !fxSet.slow) ? 1 : 0.5); }
 function cycleFx() { fxSet.mode = fxSet.mode === 'auto' ? 'full' : fxSet.mode === 'full' ? 'reduced' : 'auto'; try { localStorage.setItem('m3d.fx', fxSet.mode); } catch { } applyFx(); note('Effects: ' + fxLabel(), 1600); if (RUNUI) RUNUI.update(runView()); }
 const fxLabel = () => (fxSet.mode === 'auto' ? (fxSet.slow ? 'Auto (reduced)' : 'Auto') : fxSet.mode === 'full' ? 'Full' : 'Reduced');
+// The rail coach: until you have ground a rail on this device, coming near one says how to get on it (now and then, not every
+// second); the first time you are on one, how to get off. Kept on the device ('m3d.grinds').
+const coach = { ground: (() => { try { return +(localStorage.getItem('m3d.grinds') || 0); } catch { return 0; } })(), at: -1e9, said: 0, onSaid: false };
+const RAIL_NEAR = 7, COACH_EVERY = 25000;   // (m from a rail; ms between two tips)
+function railCoach(now) {
+	if (!solo || WATCH || !room || !room.rails || !room.rails.length || paused) return;   // (in a run of your own: an Expedition or a Dive)
+	if (state.rail >= 0) {
+		if (!coach.onSaid) { coach.onSaid = true; if (coach.ground < 3) note('Grinding! Jump to leap off with your speed, slide to drop off', 3500); coach.ground++; try { localStorage.setItem('m3d.grinds', String(coach.ground)); } catch { } }
+		return;
+	}
+	coach.onSaid = false;
+	if (coach.ground > 0 || now - coach.at < COACH_EVERY) return;
+	let near = Infinity, high = Infinity;
+	for (const rl of room.rails) { const P = rl.pts, hi = P[0][1] >= P[P.length - 1][1] ? P[0] : P[P.length - 1]; for (const p of P) near = Math.min(near, Math.hypot(p[0] - state.x, p[2] - state.z)); high = Math.min(high, Math.hypot(hi[0] - state.x, hi[2] - state.z)); }
+	if (near > RAIL_NEAR) return;
+	coach.at = now; coach.said++;
+	note(high < RAIL_NEAR + 2 ? 'A rail: run along it onto its high end, or jump and land on it, to grind it' : 'A rail: jump and land on it to grind it', 4200);
+}
 function watchFx(now) {   // (Auto: once frames have run slow for 2 s, reduced for the rest of the page. A page with no effects layer, a plain
 	//  level, has nothing to reduce: it said "Effects reduced" there all the same, over the level's own note ("exit reached"))
 	if (!fx || fxSet.mode !== 'auto' || fxSet.slow || now - fxSet.checkedAt < 2000 || perf.frames.length < 100 || document.hidden) return;
@@ -1349,6 +1378,7 @@ const G_MUSIC = GG.BIOME_MUSIC || null, XK_MAPS = ['viridian', 'mtmoon', 'cerule
 
 // what a test (and a curious owner in the console) can reach
 window.__m3d = {
+	get mapRails() { return mapRails; }, coach: () => ({ ...coach }), setCoach: (o) => Object.assign(coach, o),
 	get matchupSeen() { return matchupSeen.slice(); },
 	addBoss: (dex, x, z, o = {}) => (world ? addBoss(world, dex, x, z, { slot: 0, ...o }) : null),   // (for the tests: a boss now)
 	fxSettings: () => ({ mode: fxSet.mode, slow: fxSet.slow, q: fx ? fx.q : null, label: fxLabel() }), cycleFx, setFxSlow: (v) => { fxSet.slow = !!v; applyFx(); },
