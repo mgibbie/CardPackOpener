@@ -136,14 +136,23 @@ export function drawMap(room, px = 4) {
 /** (the movement tech) The room's rails: a steel bar along each (two crossed ribbons, so it shows from every side), and a
  *  post under each end. */
 export function buildRails(room) {
-	const pos = [], col = [], c = new THREE.Color(), W = 0.16;
+	const pos = [], col = [], c = new THREE.Color(), W = 0.22;   // (thicker than it was: 0.16)
 	const quad = (p, q, r, s, hex) => { c.setHex(hex); for (const v of [p, q, r, p, r, s]) { pos.push(v[0], v[1], v[2]); col.push(c.r, c.g, c.b); } };
 	for (const rail of room.rails || []) {
 		const pts = rail.pts;
 		for (let k = 0; k < pts.length - 1; k++) {
 			const a = pts[k], b = pts[k + 1], ex = b[0] - a[0], ez = b[2] - a[2], l = Math.hypot(ex, ez) || 1, nx = -ez / l * W, nz = ex / l * W;
-			quad([a[0] - nx, a[1], a[2] - nz], [a[0] + nx, a[1], a[2] + nz], [b[0] + nx, b[1], b[2] + nz], [b[0] - nx, b[1], b[2] - nz], 0xdfe7ee);   // across
+			quad([a[0] - nx, a[1], a[2] - nz], [a[0] + nx, a[1], a[2] + nz], [b[0] + nx, b[1], b[2] + nz], [b[0] - nx, b[1], b[2] - nz], 0xf4f8fc);   // across (brighter than it was)
 			quad([a[0], a[1] - W, a[2]], [a[0], a[1] + W, a[2]], [b[0], b[1] + W, b[2]], [b[0], b[1] - W, b[2]], 0x9fb0bd);                           // upright
+		}
+		// its shadow on the ground under it, every half metre: where it is, seen from behind
+		for (let k = 0; k < pts.length - 1; k++) {
+			const a = pts[k], b = pts[k + 1], L = Math.hypot(b[0] - a[0], b[2] - a[2]), n = Math.max(1, Math.ceil(L / 0.5)), nx = -(b[2] - a[2]) / (L || 1) * 0.14, nz = (b[0] - a[0]) / (L || 1) * 0.14;
+			for (let j = 0; j < n; j++) {
+				const p = [a[0] + (b[0] - a[0]) * j / n, 0, a[2] + (b[2] - a[2]) * j / n], q = [a[0] + (b[0] - a[0]) * (j + 1) / n, 0, a[2] + (b[2] - a[2]) * (j + 1) / n];
+				const gp = groundAt(room, p[0], p[2]) + 0.03, gq = groundAt(room, q[0], q[2]) + 0.03; if (gp > 100 || gq > 100 || Math.abs(gp - gq) > 0.3) continue;   // (not across a cliff's edge)
+				quad([p[0] - nx, gp, p[2] - nz], [p[0] + nx, gp, p[2] + nz], [q[0] + nx, gq, q[2] + nz], [q[0] - nx, gq, q[2] - nz], 0x3b4652);
+			}
 		}
 		for (const e of [pts[0], pts[pts.length - 1]]) {
 			const g0 = groundAt(room, e[0], e[2]);

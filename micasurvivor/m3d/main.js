@@ -1093,8 +1093,9 @@ const FX_SLOW = { avg: 20, p95: 30 };   // (ms, over the last 2 s: a frame's ave
 function applyFx() { if (fx) fx.setQuality(fxSet.mode === 'full' || (fxSet.mode === 'auto' && !fxSet.slow) ? 1 : 0.5); }
 function cycleFx() { fxSet.mode = fxSet.mode === 'auto' ? 'full' : fxSet.mode === 'full' ? 'reduced' : 'auto'; try { localStorage.setItem('m3d.fx', fxSet.mode); } catch { } applyFx(); note('Effects: ' + fxLabel(), 1600); if (RUNUI) RUNUI.update(runView()); }
 const fxLabel = () => (fxSet.mode === 'auto' ? (fxSet.slow ? 'Auto (reduced)' : 'Auto') : fxSet.mode === 'full' ? 'Full' : 'Reduced');
-function watchFx(now) {   // (Auto: once frames have run slow for 2 s, reduced for the rest of the page)
-	if (fxSet.mode !== 'auto' || fxSet.slow || now - fxSet.checkedAt < 2000 || perf.frames.length < 100 || document.hidden) return;
+function watchFx(now) {   // (Auto: once frames have run slow for 2 s, reduced for the rest of the page. A page with no effects layer, a plain
+	//  level, has nothing to reduce: it said "Effects reduced" there all the same, over the level's own note ("exit reached"))
+	if (!fx || fxSet.mode !== 'auto' || fxSet.slow || now - fxSet.checkedAt < 2000 || perf.frames.length < 100 || document.hidden) return;
 	fxSet.checkedAt = now; const f = perf.frames.slice(-120), avg = f.reduce((a, b) => a + b, 0) / f.length, p95 = f.slice().sort((a, b) => a - b)[Math.floor(f.length * 0.95)];
 	if (avg > FX_SLOW.avg || p95 > FX_SLOW.p95) { fxSet.slow = true; applyFx(); note('Effects reduced to keep it smooth (menu: Effects)', 2600); }
 }
