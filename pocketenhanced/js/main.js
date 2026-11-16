@@ -287,6 +287,14 @@ function fanHand(hand) {
 	cs.forEach((e, j) => { if (j) e.style.marginLeft = Math.round(step - W - GAP) + 'px'; });
 }
 
+/** On a phone the hand has the room the battle log had: the log opens from this button instead. */
+function logBtn() {
+	return btn('Log', 'grey pe-logbtn', () => {
+		const l = h('div', 'pe-log pe-logfull'); l.setAttribute('aria-label', 'Battle log');
+		for (const e of V.log) l.appendChild(h('div', e.k, esc(e.msg + (e.more ? ' ' + e.more : ''))));
+		modal(l, { title: 'Battle log' }); l.scrollTop = l.scrollHeight;
+	}, 'log');
+}
 function render() {
 	const keepLog = el.log ? el.log.scrollTop + el.log.clientHeight >= el.log.scrollHeight - 30 : true, handX = el.hand ? el.hand.scrollLeft : 0;
 	el.table.innerHTML = ''; el.log = el.hand = null;
@@ -344,7 +352,7 @@ function render() {
 		}
 		const bar = h('div', 'bar');
 		const ex = btn('Execute', 'red exec', () => execute(), 'exec'); ex.disabled = !myTurn(); ex.setAttribute('aria-label', 'Execute');
-		bar.append(ex, btn('Menu', 'grey', () => optionsMenu(), 'menu'));
+		bar.append(ex, logBtn(), btn('Menu', 'grey', () => optionsMenu(), 'menu'));
 		cmd.appendChild(bar);
 		cmd.appendChild(h('div', 'hint', (myTurn() ? 'Press an Active Pokémon to choose its attack and target. Execute resolves A, then B, and ends your turn.' : V.pending ? esc(`Waiting for ${V.players[V.pending.seat].name} to choose…`) : 'Waiting…') + (live.watchers ? ` <span class="pe-watch" title="${esc(live.names.join(', '))}">👁 ${live.watchers} watching</span>` : '')));
 	} else {
@@ -354,7 +362,7 @@ function render() {
 		const bar = h('div', 'bar');
 		if (mine && V.phase === 'setup' && !me.setup) { const r = btn('Ready', 'green exec', () => finishSetup(), 'ready'); r.disabled = !ui.setup.active.length; bar.appendChild(r); }
 		if (MODE === 'replay') cmd.appendChild(replayBar());
-		else { bar.appendChild(btn('Menu', 'grey', () => optionsMenu(), 'menu')); cmd.appendChild(bar); }
+		else { bar.append(logBtn(), btn('Menu', 'grey', () => optionsMenu(), 'menu')); cmd.appendChild(bar); }
 		if (mine && V.phase === 'setup' && !me.setup) cmd.appendChild(h('div', 'hint', 'Press Basic Pokémon in your hand: the first two go to Active A and B, the rest to your Bench. Then Ready.'));
 	}
 	// the log
