@@ -490,7 +490,7 @@ function render() {
 	el.table.append(h('div', 'pe-mat n' + others.length), opps, mePanel, hand, cmd, log);
 	if (V.stadium) {   // the Stadium in play: one for the whole table, shown on the mat; press it to read it
 		const sc = card(V.stadium.id), sb = h('button', 'pe-stadium', `<span class="tag">Stadium</span><b>${esc(sc.name)}</b><span class="by">${esc(V.players[V.stadium.seat].name)}</span>`); sb.type = 'button'; sb.dataset.k = 'stadium';
-		sb.setAttribute('aria-label', `Stadium in play: ${sc.name}, played by ${V.players[V.stadium.seat].name}`); sb.addEventListener('click', () => inspect(sc, null, null, mine && myTurn() && sc.fx.k === 'stadiumCoinPokemon' && !me.flags.stadiumUsed ? [['Use', () => { closeAll(); send({ t: 'stadium' }); }]] : [])); if (mine && myTurn() && sc.fx.k === 'stadiumCoinPokemon' && !me.flags.stadiumUsed) sb.classList.add('ready'); el.table.appendChild(sb);
+		sb.setAttribute('aria-label', `Stadium in play: ${sc.name}, played by ${V.players[V.stadium.seat].name}`); sb.addEventListener('click', () => inspect(sc, null, null, mine && myTurn() && sc.fx.k === 'stadiumCoinPokemon' && !me.flags.stadiumUsed ? [['Use', () => { closeAll(); send({ t: 'stadium' }); }, null, 'stadiumuse']] : [])); if (mine && myTurn() && sc.fx.k === 'stadiumCoinPokemon' && !me.flags.stadiumUsed) sb.classList.add('ready'); el.table.appendChild(sb);
 	}
 	fanHand(hand);
 	if (ui.pick) {

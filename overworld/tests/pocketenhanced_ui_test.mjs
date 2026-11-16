@@ -423,6 +423,27 @@ try {
 		const done = await page.waitForFunction(b => { const v = window.__pocket.view(); return v && v.players[1].active[1] && v.players[1].active[1].dmg >= b + 10; }, { timeout: 8000 }, before[1]).then(() => true, () => false);
 		const after = await page.evaluate(() => ({ dmg: window.__pocket.view().players[1].active.map(k => k && k.dmg), log: window.__pocket.view().log.some(e => /Snowy Terrain does 10 damage/.test(e.msg)) }));
 		A(done && after.dmg[0] === before[0] && after.log && errors.length === 0, '[choice] pressing one sends the 10 damage there (not to the other), and the match goes on', { before, after, errors });
+		// ---------- Mesagoza: a Stadium with something to use, through its Use button ----------
+		const mesa = await page.evaluate(async () => {
+			const P = window.__pocket, { card, CARDS } = await import('/pocketenhanced/js/data/cards.js');
+			P.start({ players: 2, seed: 'mesa' }); P.fast(true);
+			const v = P.view(), basic = v.players[0].hand.findIndex(id => { const c = card(id); return c.kind === 'pokemon' && c.stage === 0; });
+			P.act({ t: 'setup', seat: 0, active: [basic], bench: [] });
+			for (let i = 0; i < 400 && !(P.idle() && P.view().phase === 'main' && P.view().current === 0 && !P.view().pending); i++) await new Promise(r => setTimeout(r, 50));
+			const S = P.state(); S.stadium = { id: CARDS.find(c => c.name === 'Mesagoza').id, seat: 1 }; P.refresh();
+			return { mine: P.view().current === 0, ready: !!document.querySelector('[data-k="stadium"].ready'), hand: S.players[0].hand.length, deckPokemon: S.players[0].deck.some(id => card(id).kind === 'pokemon') };
+		});
+		const clickOn = async sel => { const b = await (await page.$(sel)).boundingBox(); await page.mouse.click(b.x + b.width / 2, b.y + b.height / 2); };
+		await clickOn('[data-k="stadium"]');
+		const offered = await page.waitForFunction(() => { const b = document.querySelector('.modal [data-k="stadiumuse"]'); return !!b && !b.disabled && /Mesagoza/.test(document.querySelector('.modal')?.textContent || ''); }, { timeout: 5000 }).then(() => true, () => false);
+		if (offered) await clickOn('.modal [data-k="stadiumuse"]');
+		const used = await page.waitForFunction(() => { const S = window.__pocket.state(); return S.log.filter(e => e.k === 'coin' && /Mesagoza/.test(e.msg)).length === 1 && !!S.players[0].flags.stadiumUsed && !document.querySelector('.modal'); }, { timeout: 5000 }).then(() => true, () => false);
+		const mesaAfter = await page.evaluate(async h0 => { const { card } = await import('/pocketenhanced/js/data/cards.js'); const S = window.__pocket.state(), heads = !!S.log.find(e => e.k === 'coin' && /Mesagoza/.test(e.msg))?.heads; return { heads, grew: S.players[0].hand.length - h0, newIsPokemon: S.players[0].hand.length > h0 ? card(S.players[0].hand.at(-1)).kind === 'pokemon' : null, ready: !!document.querySelector('[data-k="stadium"].ready'), chip: !!document.querySelector('[data-k="stadium"]') }; }, mesa.hand);
+		await clickOn('[data-k="stadium"]');
+		const spent = await page.waitForFunction(() => !!document.querySelector('.modal') && /Mesagoza/.test(document.querySelector('.modal').textContent) && !document.querySelector('.modal [data-k="stadiumuse"]'), { timeout: 5000 }).then(() => true, () => false);
+		await page.keyboard.press('Escape');
+		A(mesa.mine && mesa.ready && mesa.deckPokemon && offered && used && mesaAfter.chip && !mesaAfter.ready && mesaAfter.grew === (mesaAfter.heads ? 1 : 0) && (mesaAfter.heads ? mesaAfter.newIsPokemon === true : true) && spent && errors.length === 0,
+			'[stadium] on my turn Mesagoza is lit; pressing it reads the card with a Use button; Use flips its coin (heads: a Pokémon from my deck comes to my hand); after that it is no longer lit and offers no Use this turn', { mesa, offered, used, mesaAfter, spent, errors });
 		await ctx.close();
 	}
 	{	// ---------- your own card pictures (artconfig.js): shown where the folder has one, the default art everywhere else ----------
