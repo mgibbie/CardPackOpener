@@ -143,11 +143,13 @@ try {
 	}
 
 	// ===== 3. the store is FULL at the pick =====
-	// fill localStorage to within ~800 bytes; `replays` also puts a replay tape in
+	// fill localStorage to the last byte; `replays` also puts a replay tape in. (It used to stop within ~800 bytes, so whether the
+	// party still fitted beside the tape hung on the leftover: two small keys added elsewhere, the species swaps' of #1225, let it
+	// fit and this failed on main, 2026-11-15, with nothing wrong in the game.)
 	const fill = (page, replays) => page.evaluate(withTape => {
 		if (withTape) localStorage.setItem('magepunk_replays_v1', 'r'.repeat(200000));
 		let chunk = 'x'.repeat(100000), n = 0;
-		for (;;) { try { localStorage.setItem('junk_' + n++, chunk); } catch (e) { if (chunk.length <= 800) break; chunk = chunk.slice(0, chunk.length >> 1); } }
+		for (;;) { try { localStorage.setItem('junk_' + n++, chunk); } catch (e) { if (chunk.length <= 1) break; chunk = chunk.slice(0, chunk.length >> 1); } }
 	}, replays);
 	for (const withTape of [true, false]) {
 		const P = await open({
