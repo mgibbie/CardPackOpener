@@ -117,8 +117,10 @@ A(T.COMBAT_TYPES.length === 18 && T.CARD_TYPES.length === 10 && T.ENERGY_TYPES.l
 	}
 	// the printed card is kept, and nothing about it differs from the source
 	const diff = [], ex = t => t.replace(/\{ex\}/g, 'ex').replace(/’/g, "'").replace(/−/g, '-').replace(/\s+/g, ' ').replace(/Benched (\w+) or \1 ex/g, 'Benched $1 and $1 ex').trim();   // (and: a minus sign, a line break for a space, "or" for "and" between a Pokémon and its ex)   // (two printings of one card may write "ex" and "{ex}", or a curly apostrophe and a straight one)
+	const FIXED = new Set(['A1-055', 'A1-071', 'A1-112', 'A2b-025', 'A2b-103']);   // (four cards the first source has wrong, corrected under rules revision 5: section 26)
 	for (const s of src) {
 		const c = card(s.id);
+		if (FIXED.has(s.id)) continue;
 		if (s.category === 'Pokemon') {
 			if (c.hp !== s.hp || c.retreat !== (s.retreat || 0) || (s.evolveFrom ? c.evolvesFrom !== s.evolveFrom : c.stage === 0 ? c.evolvesFrom !== null : !c.evolvesFrom) || c.cardType !== s.types[0] || c.weakness !== ((s.weaknesses || [])[0]?.type || null)) diff.push(s.id + ' stats');
 			(s.attacks || []).forEach((a, i) => { const m = c.attacks[i]; if (!m || m.name !== a.name || ex(m.text) !== ex(a.effect || '') || m.cost.length !== (a.cost || []).length || String(a.damage ?? '').replace(/\D/g, '') !== (m.damage ? String(m.damage) : '')) diff.push(s.id + ' ' + a.name); });
@@ -1014,9 +1016,9 @@ function playOut(cfg, limit = 4000) {
 	S = arena(3); R(S, 0, 'active', 0, 'Wiglett', { energy: ['Water'] }); x = put(S, 1, 'active', 0, 'Snorlax'); y = put(S, 1, 'bench', 0, 'Snorlax'); z = put(S, 2, 'active', 0, 'Snorlax');
 	exec(S, { attack: 0, target: L(1, 'active', 0) });
 	A(x.dmg + y.dmg > 0 && z.dmg === 0 && dmgs(S).length === 1, 'Spring Out does its damage to one random Pokémon of the opponent it is aimed at');
-	S = arena(2); R(S, 0, 'active', 0, 'Pachirisu', { energy: ['Lightning'] }); x = put(S, 0, 'bench', 0, 'Snorlax'); y = put(S, 0, 'bench', 2, 'Snorlax'); put(S, 1, 'active', 0, 'Snorlax');
+	S = arena(2); R(S, 0, 'active', 0, 'Pachirisu', { energy: ['Lightning'] }); x = put(S, 0, 'bench', 0, 'Pikachu'); y = put(S, 0, 'bench', 2, 'Pikachu'); put(S, 1, 'active', 0, 'Snorlax');
 	exec(S, { attack: 0, target: L(1, 'active', 0), args: { bench: 2 } });
-	A(y.energy.join() === 'Lightning' && x.energy.length === 0, 'Plasma attaches a Lightning Energy to the chosen Benched Pokémon');
+	A(y.energy.join() === 'Lightning' && x.energy.length === 0, 'Plasma attaches a Lightning Energy to the chosen Benched Lightning Pokémon');
 	S = arena(2); R(S, 0, 'active', 0, 'Alakazam', { energy: ['Psychic', 'Psychic'] }); put(S, 1, 'active', 0, 'Snorlax'); x = put(S, 1, 'bench', 0, 'Snorlax', { energy: ['Fire'] }); y = put(S, 1, 'bench', 1, 'Snorlax');
 	exec(S, { attack: 0, target: L(1, 'active', 0) });
 	A(x.dmg > 0 && y.dmg === 0, 'Psychic Suppression also hits each Benched Pokémon that has Energy attached, and no other');
@@ -2282,7 +2284,7 @@ function playOut(cfg, limit = 4000) {
 		const m = dmgs(S).find(t => /Mega Steelix ex/.test(t) && /Crimson Storm/.test(t)) || '';
 		A(/Weakness ignored/.test(m) && /-20 \(guarding\)/.test(m) === (rules >= 4), rules >= 4 ? 'Adamantine Rolling: until its player\'s next turn Mega Steelix ex takes 20 less from attacks and has no Weakness' : 'a match recorded under rules revision 3 replays as it was played: no Weakness, and no reduction', m);
 	}
-	A(E.RULES === 4 && card(cb('Mega Steelix ex')).attacks[0].fx[0].reduce === 20 && /takes -20 damage from attacks and has no Weakness/.test(card(cb('Mega Steelix ex')).attacks[0].adapted), 'new matches are played under rules revision 4, and the card says -20');
+	A(E.RULES >= 4 && card(cb('Mega Steelix ex')).attacks[0].fx[0].reduce === 20 && /takes -20 damage from attacks and has no Weakness/.test(card(cb('Mega Steelix ex')).attacks[0].adapted), 'from rules revision 4 on, and the card says -20');
 	S = arena(2); x = G(S, 0, 'active', 0, 'Ditto', { energy: ['Fire'] }); put(S, 0, 'bench', 0, 'Charizard ex'); put(S, 0, 'bench', 1, 'Rattata'); y = foe(S);
 	exec(S, { attack: 0, ...T0, args: { from: L(0, 'bench', 0), attack: 0 } });
 	A(y.dmg === 0 && logHas(S, /Copy a Friend does nothing/), 'Copy a Friend cannot copy a Pokémon ex');
@@ -2808,6 +2810,28 @@ function playOut(cfg, limit = 4000) {
 			} catch (e) { bad.push(g + ': ' + e.message); }
 		}
 		A(over === 24 && bad.length === 0 && played.has('Hiking Trail') && played.has('Nasty Notice') && played.has('Calem'), 'computer players finish 24 matches with Mega Shine decks (2, 3 and 4 players): every replay matches and every card is accounted for', { over, played: [...played].join(), bad: bad.slice(0, 4) });
+	}
+}
+
+/// ===== 26. Rules revision 5: four cards whose source record was wrong, corrected =====
+{
+	const dmgs = S => S.log.filter(e => e.k === 'damage').map(e => e.msg);
+	const putId = (S, seat, zone, idx, cid, o = {}) => { const k = E.makePoke(S, cid); k.turnPlayed = -1; Object.assign(k, o); S.players[seat][zone][idx] = k; return k; };
+	const T0 = { target: L(1, 'active', 0) };
+	const a = cid => card(cid).attacks[0];
+	A(E.RULES === 5 && a('A1-055').cost.join() === 'Water,Water,Colorless' && a('A1-055').costWas.join() === 'Water,Colorless' && a('A1-071').cost.join() === 'Water,Water,Water' && a('A1-071').costWas.join() === 'Water,Water,Colorless' && a('A1-112').damage === 30 && a('A1-112').damageWas === 40 && a('A2b-025').fx[0].to === 'benchType' && a('A2b-025').fx[0].toWas === 'bench' && /Benched \{L\} Pokémon/.test(a('A2b-025').text) && card('A2b-103') === card('A2b-025') && card('A4b-143') !== card('A2b-025'),
+		'new matches are played under rules revision 5: Blastoise\'s Hydro Pump costs Water, Water, Colorless; Seadra\'s Water Arrow costs three Water; Pincurchin\'s Thunder Shock does 30; Pachirisu\'s Plasma attaches to a Benched Lightning Pokémon (each card keeps what it had)');
+	for (const rules of [5, 4]) {
+		let S = arena(2); S.rules = rules; let x = putId(S, 0, 'active', 0, 'A1-055', { energy: ['Water', 'Fire'] }); put(S, 1, 'active', 0, 'Snorlax');
+		A(!!E.attackBlock(S, 0, x, a('A1-055')) === (rules >= 5), rules >= 5 ? 'Blastoise cannot use Hydro Pump with a Water and one other Energy' : 'in a match recorded under revision 4 it still can', E.attackBlock(S, 0, x, a('A1-055')));
+		S = arena(2); S.rules = rules; x = putId(S, 0, 'active', 0, 'A1-071', { energy: ['Water', 'Water', 'Fire'] }); put(S, 1, 'active', 0, 'Snorlax');
+		A(!!E.attackBlock(S, 0, x, a('A1-071')) === (rules >= 5), rules >= 5 ? 'Seadra cannot use Water Arrow with two Water and one other Energy' : 'in a match recorded under revision 4 it still can');
+		S = arena(2); S.rules = rules; putId(S, 0, 'active', 0, 'A1-112', { energy: ['Lightning', 'Lightning'] }); put(S, 1, 'active', 0, 'Snorlax');
+		exec(S, { attack: 0, ...T0 });
+		A(new RegExp('base ' + (rules >= 5 ? 30 : 40) + '\\b').test(dmgs(S)[0]), rules >= 5 ? 'Thunder Shock does 30' : 'in a match recorded under revision 4 it still does 40', dmgs(S)[0]);
+		S = arena(2); S.rules = rules; putId(S, 0, 'active', 0, 'A2b-025', { energy: ['Lightning'] }); x = put(S, 0, 'bench', 0, 'Snorlax'); const y = put(S, 0, 'bench', 1, 'Pikachu'); put(S, 1, 'active', 0, 'Snorlax');
+		exec(S, { attack: 0, ...T0, args: { bench: 0 } });
+		A(rules >= 5 ? x.energy.length === 0 && y.energy.join() === 'Lightning' : x.energy.join() === 'Lightning' && y.energy.length === 0, rules >= 5 ? 'Plasma attaches only to a Benched Lightning Pokémon (a Benched Snorlax that was chosen gets nothing)' : 'in a match recorded under revision 4 it still goes to the Benched Pokémon chosen', [x.energy, y.energy]);
 	}
 }
 

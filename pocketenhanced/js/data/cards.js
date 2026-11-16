@@ -2571,6 +2571,11 @@ export const CARDS = deepFreeze([
 				"typeBasis": "move",
 				"cost": [
 					"Water",
+					"Water",
+					"Colorless"
+				],
+				"costWas": [
+					"Water",
 					"Colorless"
 				],
 				"damage": 80,
@@ -3322,6 +3327,11 @@ export const CARDS = deepFreeze([
 				"combatType": "Water",
 				"typeBasis": "named",
 				"cost": [
+					"Water",
+					"Water",
+					"Water"
+				],
+				"costWas": [
 					"Water",
 					"Water",
 					"Colorless"
@@ -5267,7 +5277,8 @@ export const CARDS = deepFreeze([
 					"Lightning",
 					"Lightning"
 				],
-				"damage": 40,
+				"damage": 30,
+				"damageWas": 40,
 				"damageMode": "",
 				"fx": [
 					{
@@ -25010,14 +25021,13 @@ export const CARDS = deepFreeze([
 					{
 						"k": "attachZone",
 						"type": "Lightning",
-						"to": "bench",
-						"n": 1,
-						"a": true
+						"to": "benchType",
+						"toWas": "bench"
 					}
 				],
 				"target": "oppActive",
-				"text": "Take a {L} Energy from your Energy Zone and attach it to 1 of your Benched  Pokémon.",
-				"adapted": "Take a {L} Energy from your Energy Zone and attach it to 1 of your Benched Pokémon.",
+				"text": "Take a {L} Energy from your Energy Zone and attach it to 1 of your Benched {L} Pokémon.",
+				"adapted": "Take a {L} Energy from your Energy Zone and attach it to 1 of your Benched {L} Pokémon.",
 				"note": null,
 				"id": "A2b-025:1"
 			}
