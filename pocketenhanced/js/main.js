@@ -208,10 +208,12 @@ function face(c, k) {
 		`<div class="ft"><span class="rt">${c.retreat ? 'retreat ' + '<i class="rp"></i>'.repeat(c.retreat) : ''}</span><span class="ct">${(c.combatTypes || []).map(ty).join('')}</span></div></div>`;
 }
 /** Card sizes on the table (the font size; a card is 10em wide): [Active, Bench, Bench on its own row]. */
+// The Active Pokémon are as large as the mat allows. Where a side has the height for it, its Bench stands beside them as a
+// 2x2 block ('grid') instead of taking a row of its own ('stack'), which is what lets the Active cards grow.
 function sizes(isMe, n) {
-	if (isMe) return portrait ? [16, 11.4, true] : [18, 11.6, false];
-	if (portrait) return n <= 1 ? [14.6, 10, true] : n === 2 ? [12, 8.6, true] : [9.6, 5.8, true];
-	return n <= 1 ? [14, 11, false] : [9.4, 7.2, true];
+	if (isMe) return portrait ? [25, 11.8, 'grid'] : [18, 11.6, 'row'];
+	if (portrait) return n <= 1 ? [25, 11.8, 'grid'] : n === 2 ? [18, 8.6, 'stack'] : [12.4, 5.8, 'stack'];
+	return n <= 1 ? [17, 8.2, 'grid'] : n === 2 ? [15.5, 7.5, 'grid'] : [9.4, 7.2, 'stack'];
 }
 function pokeEl(v, loc, fs, opts = {}) {
 	const k = at(v, loc), b = h('button', 'pe-poke' + (fs < 14 ? ' tiny' : '')); b.type = 'button'; b.dataset.k = keyOf(loc); b.style.fontSize = fs + 'px';
@@ -257,8 +259,8 @@ function headWithDiscard(v, p, fan) {
 	return head;
 }
 /** A player's Pokémon: the two Active and the four Benched (an opponent's Bench sits behind their Active, away from the middle of the mat). */
-function rowsEl(v, seat, [fa, fb, stack], flip) {
-	const w = h('div', 'pe-rows' + (stack ? ' stack' : '') + (flip ? ' flip' : '')), a = h('div', 'pe-row act'), b = h('div', 'pe-row ben');
+function rowsEl(v, seat, [fa, fb, mode], flip) {
+	const w = h('div', 'pe-rows ' + mode + (flip ? ' flip' : '')), a = h('div', 'pe-row act'), b = h('div', 'pe-row ben');
 	for (const i of [0, 1]) a.appendChild(pokeEl(v, { seat, zone: 'active', idx: i }, fa));
 	for (let i = 0; i < 4; i++) b.appendChild(pokeEl(v, { seat, zone: 'bench', idx: i }, fb));
 	w.append(a, b);
