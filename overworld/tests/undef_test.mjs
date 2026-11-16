@@ -30,6 +30,14 @@ A(!problems.length, 'no module uses an undeclared, un-imported name', problems.s
 	A(!bcProblems.length, 'no Battlecards module uses an undeclared, un-imported name', bcProblems.slice(0, 10).join(' | '));
 }
 
+// ---------- Pocket Enhanced: the same net for its engine, data, computer player and page ----------
+{
+	const pe = await eslint.lintFiles(['pocketenhanced/js/**/*.js']);
+	A(pe.length >= 5 && pe.some(r => path.basename(r.filePath) === 'engine.js'), `linted every Pocket Enhanced module (${pe.length})`);
+	const peProblems = pe.flatMap(r => r.messages.map(m => `${path.basename(r.filePath)}:${m.line} ${m.message}`));
+	A(!peProblems.length, 'no Pocket Enhanced module uses an undeclared, un-imported name', peProblems.slice(0, 10).join(' | '));
+}
+
 // ---------- every relative import names something its module exports ----------
 // no-undef can't see this: `import { x } from './ow_pvp.js'` when ow_pvp.js has no
 // `export x` is a LINK error that only shows up when the page loads (and takes the
