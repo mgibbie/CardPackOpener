@@ -1,0 +1,3701 @@
+{
+	"note": "Card data for Everyday Wonders (B3b), which TCGdex does not have. Rules text and stats as shown by the Limitless TCG Pocket card database (pocket.limitlesstcg.com); rarity and booster packs from the open dataset pokemon-tcg-pocket-database (MIT). No flavour text, illustrator or image is taken. Kept as fetched: this is the ORIGINAL printed card data and is never edited. tools/gen_pocket_cards.mjs builds the game data from it.",
+	"fetched": "2026-11-16",
+	"set": {
+		"id": "B3b",
+		"name": "Everyday Wonders",
+		"releaseDate": "2026-06-30",
+		"boosters": [
+			{
+				"name": "Everyday Wonders"
+			}
+		],
+		"pullRates": {
+			"Regular Pack": {
+				"appearance_rate": 94.711,
+				"cards": 5,
+				"slots": {
+					"1": {
+						"C": 100
+					},
+					"2": {
+						"C": 100
+					},
+					"3": {
+						"C": 100
+					},
+					"4": {
+						"UR": 0.04,
+						"IM": 0.222,
+						"SR": 0.499,
+						"AR": 2.572,
+						"RR": 1.667,
+						"R": 5,
+						"U": 89.999
+					},
+					"5": {
+						"UR": 0.16,
+						"IM": 0.889,
+						"SR": 2,
+						"AR": 10.286,
+						"RR": 6.667,
+						"R": 20,
+						"U": 59.998
+					}
+				}
+			},
+			"Rare Pack": {
+				"appearance_rate": 0.05,
+				"cards": 5,
+				"slots": {
+					"1": {
+						"UR": 8.695,
+						"IM": 4.347,
+						"SR": 52.173,
+						"AR": 34.782
+					},
+					"2": {
+						"UR": 8.695,
+						"IM": 4.347,
+						"SR": 52.173,
+						"AR": 34.782
+					},
+					"3": {
+						"UR": 8.695,
+						"IM": 4.347,
+						"SR": 52.173,
+						"AR": 34.782
+					},
+					"4": {
+						"UR": 8.695,
+						"IM": 4.347,
+						"SR": 52.173,
+						"AR": 34.782
+					},
+					"5": {
+						"UR": 8.695,
+						"IM": 4.347,
+						"SR": 52.173,
+						"AR": 34.782
+					}
+				}
+			},
+			"Regular Pack +1": {
+				"appearance_rate": 5.238,
+				"cards": 6,
+				"slots": {
+					"1": {
+						"C": 100
+					},
+					"2": {
+						"C": 100
+					},
+					"3": {
+						"C": 100
+					},
+					"4": {
+						"UR": 0.04,
+						"IM": 0.222,
+						"SR": 0.5,
+						"AR": 2.572,
+						"RR": 1.667,
+						"R": 5,
+						"U": 89.999
+					},
+					"5": {
+						"UR": 0.16,
+						"IM": 0.889,
+						"SR": 2,
+						"AR": 10.286,
+						"RR": 6.667,
+						"R": 20,
+						"U": 59.998
+					},
+					"6": {
+						"SSR": 31.82,
+						"S": 68.18
+					}
+				}
+			}
+		}
+	},
+	"cards": [
+		{
+			"id": "B3b-001",
+			"localId": "001",
+			"name": "Caterpie",
+			"rarity": "One Diamond",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 40,
+			"types": [
+				"Grass"
+			],
+			"stage": "Basic",
+			"abilities": [
+				{
+					"type": "Ability",
+					"name": "Quick Growth",
+					"effect": "At the end of your opponent's turn, if this Pokémon is in the Active Spot, put a random card from your deck that evolves from this Pokémon onto this Pokémon to evolve it."
+				}
+			],
+			"attacks": [
+				{
+					"cost": [
+						"Grass"
+					],
+					"name": "Hook",
+					"damage": "10"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fire",
+					"value": "+20"
+				}
+			],
+			"retreat": 1
+		},
+		{
+			"id": "B3b-002",
+			"localId": "002",
+			"name": "Metapod",
+			"rarity": "Two Diamond",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 80,
+			"types": [
+				"Grass"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Caterpie",
+			"attacks": [
+				{
+					"cost": [
+						"Grass"
+					],
+					"name": "Ram",
+					"damage": "30"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fire",
+					"value": "+20"
+				}
+			],
+			"retreat": 2
+		},
+		{
+			"id": "B3b-003",
+			"localId": "003",
+			"name": "Butterfree",
+			"rarity": "Three Diamond",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 130,
+			"types": [
+				"Grass"
+			],
+			"stage": "Stage2",
+			"evolveFrom": "Metapod",
+			"attacks": [
+				{
+					"cost": [
+						"Grass"
+					],
+					"name": "Sunny Wind",
+					"effect": "Heal 20 damage from this Pokémon.",
+					"damage": "60"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fire",
+					"value": "+20"
+				}
+			],
+			"retreat": 1
+		},
+		{
+			"id": "B3b-004",
+			"localId": "004",
+			"name": "Cacnea",
+			"rarity": "One Diamond",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 60,
+			"types": [
+				"Grass"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless"
+					],
+					"name": "Spike Sting",
+					"damage": "10"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fire",
+					"value": "+20"
+				}
+			],
+			"retreat": 1
+		},
+		{
+			"id": "B3b-005",
+			"localId": "005",
+			"name": "Tropius",
+			"rarity": "Two Diamond",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 100,
+			"types": [
+				"Grass"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Grass",
+						"Grass"
+					],
+					"name": "Solar Beam",
+					"damage": "50"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fire",
+					"value": "+20"
+				}
+			],
+			"retreat": 2
+		},
+		{
+			"id": "B3b-006",
+			"localId": "006",
+			"name": "Petilil",
+			"rarity": "One Diamond",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 60,
+			"types": [
+				"Grass"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Grass"
+					],
+					"name": "Double Spin",
+					"effect": "Flip 2 coins. This attack does 20 damage for each heads.",
+					"damage": "20×"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fire",
+					"value": "+20"
+				}
+			],
+			"retreat": 1
+		},
+		{
+			"id": "B3b-007",
+			"localId": "007",
+			"name": "Hisuian Lilligant",
+			"rarity": "Two Diamond",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 100,
+			"types": [
+				"Grass"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Petilil",
+			"attacks": [
+				{
+					"cost": [
+						"Grass"
+					],
+					"name": "Dress Up",
+					"effect": "If this Pokémon has a Pokémon Tool attached, this attack does 20 more damage.",
+					"damage": "40+"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fire",
+					"value": "+20"
+				}
+			],
+			"retreat": 1
+		},
+		{
+			"id": "B3b-008",
+			"localId": "008",
+			"name": "Vulpix",
+			"rarity": "One Diamond",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 60,
+			"types": [
+				"Fire"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless"
+					],
+					"name": "Hold Still",
+					"effect": "Heal 20 damage from this Pokémon."
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Water",
+					"value": "+20"
+				}
+			],
+			"retreat": 1
+		},
+		{
+			"id": "B3b-009",
+			"localId": "009",
+			"name": "Ninetales",
+			"rarity": "Two Diamond",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 100,
+			"types": [
+				"Fire"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Vulpix",
+			"attacks": [
+				{
+					"cost": [
+						"Fire",
+						"Colorless",
+						"Colorless"
+					],
+					"name": "Ember Dance",
+					"effect": "Flip 9 coins. This attack does 20 damage for each heads.",
+					"damage": "20×"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Water",
+					"value": "+20"
+				}
+			],
+			"retreat": 1
+		},
+		{
+			"id": "B3b-010",
+			"localId": "010",
+			"name": "Growlithe",
+			"rarity": "One Diamond",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 80,
+			"types": [
+				"Fire"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless",
+						"Colorless"
+					],
+					"name": "Puppy Pile",
+					"effect": "Reveal all of your Pokémon in play and in your hand that have the Puppy Pile attack, and this attack does 20 damage for each Pokémon you revealed in this way.",
+					"damage": "20×"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Water",
+					"value": "+20"
+				}
+			],
+			"retreat": 3
+		},
+		{
+			"id": "B3b-011",
+			"localId": "011",
+			"name": "Psyduck",
+			"rarity": "One Diamond",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 70,
+			"types": [
+				"Water"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless"
+					],
+					"name": "Confusion Wave",
+					"effect": "Both Active Pokémon are now Confused."
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Lightning",
+					"value": "+20"
+				}
+			],
+			"retreat": 1
+		},
+		{
+			"id": "B3b-012",
+			"localId": "012",
+			"name": "Goldeen",
+			"rarity": "One Diamond",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 50,
+			"types": [
+				"Water"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Water"
+					],
+					"name": "Horn Attack",
+					"damage": "30"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Lightning",
+					"value": "+20"
+				}
+			],
+			"retreat": 1
+		},
+		{
+			"id": "B3b-013",
+			"localId": "013",
+			"name": "Seaking",
+			"rarity": "Two Diamond",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 90,
+			"types": [
+				"Water"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Goldeen",
+			"attacks": [
+				{
+					"cost": [
+						"Water"
+					],
+					"name": "Aqua Bullet",
+					"effect": "This attack also does 20 damage to 1 of your opponent's Benched Pokémon.",
+					"damage": "30"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Lightning",
+					"value": "+20"
+				}
+			],
+			"retreat": 1
+		},
+		{
+			"id": "B3b-014",
+			"localId": "014",
+			"name": "Feebas",
+			"rarity": "One Diamond",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 30,
+			"types": [
+				"Water"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless"
+					],
+					"name": "Splash",
+					"damage": "10"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Lightning",
+					"value": "+20"
+				}
+			],
+			"retreat": 1
+		},
+		{
+			"id": "B3b-015",
+			"localId": "015",
+			"name": "Milotic ex",
+			"rarity": "Four Diamond",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 140,
+			"types": [
+				"Water"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Feebas",
+			"suffix": "EX",
+			"abilities": [
+				{
+					"type": "Ability",
+					"name": "Aqua Charge",
+					"effect": "Once during your turn, you may take a {W} Energy from your Energy Zone and attach it to this Pokémon."
+				}
+			],
+			"attacks": [
+				{
+					"cost": [
+						"Water",
+						"Water",
+						"Water"
+					],
+					"name": "Water Pulse",
+					"effect": "Your opponent's Active Pokémon is now Asleep.",
+					"damage": "80"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Lightning",
+					"value": "+20"
+				}
+			],
+			"retreat": 2
+		},
+		{
+			"id": "B3b-016",
+			"localId": "016",
+			"name": "Snorunt",
+			"rarity": "One Diamond",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 60,
+			"types": [
+				"Water"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless"
+					],
+					"name": "Headbutt",
+					"damage": "10"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Metal",
+					"value": "+20"
+				}
+			],
+			"retreat": 1
+		},
+		{
+			"id": "B3b-017",
+			"localId": "017",
+			"name": "Froslass",
+			"rarity": "Three Diamond",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 100,
+			"types": [
+				"Water"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Snorunt",
+			"attacks": [
+				{
+					"cost": [
+						"Water"
+					],
+					"name": "Soul Shot",
+					"effect": "Discard a card from your hand. If you can't, this attack does nothing.",
+					"damage": "70"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Metal",
+					"value": "+20"
+				}
+			],
+			"retreat": 1
+		},
+		{
+			"id": "B3b-018",
+			"localId": "018",
+			"name": "Luvdisc",
+			"rarity": "One Diamond",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 70,
+			"types": [
+				"Water"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Water"
+					],
+					"name": "Water Gun",
+					"damage": "30"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Lightning",
+					"value": "+20"
+				}
+			],
+			"retreat": 1
+		},
+		{
+			"id": "B3b-019",
+			"localId": "019",
+			"name": "Piplup",
+			"rarity": "One Diamond",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 60,
+			"types": [
+				"Water"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Water",
+						"Colorless"
+					],
+					"name": "Bubble Beam",
+					"effect": "Flip a coin. If heads, your opponent's Active Pokémon is now Paralyzed.",
+					"damage": "20"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Lightning",
+					"value": "+20"
+				}
+			],
+			"retreat": 1
+		},
+		{
+			"id": "B3b-020",
+			"localId": "020",
+			"name": "Iron Bundle",
+			"rarity": "Two Diamond",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 80,
+			"types": [
+				"Water"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Water",
+						"Colorless"
+					],
+					"name": "Bundled Pump",
+					"effect": "Flip a coin. If heads, this attack does 50 more damage. If tails, this Pokémon also does 50 damage to itself.",
+					"damage": "50+"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Lightning",
+					"value": "+20"
+				}
+			],
+			"retreat": 1
+		},
+		{
+			"id": "B3b-021",
+			"localId": "021",
+			"name": "Pikachu",
+			"rarity": "One Diamond",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 60,
+			"types": [
+				"Lightning"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Lightning",
+						"Lightning"
+					],
+					"name": "Electro Ball",
+					"damage": "40"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 1
+		},
+		{
+			"id": "B3b-022",
+			"localId": "022",
+			"name": "Raichu",
+			"rarity": "Two Diamond",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 110,
+			"types": [
+				"Lightning"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Pikachu",
+			"attacks": [
+				{
+					"cost": [
+						"Lightning",
+						"Lightning"
+					],
+					"name": "Mach Bolt",
+					"damage": "70"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 2
+		},
+		{
+			"id": "B3b-023",
+			"localId": "023",
+			"name": "Emolga",
+			"rarity": "One Diamond",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 70,
+			"types": [
+				"Lightning"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Lightning",
+						"Lightning"
+					],
+					"name": "Windup Thunder",
+					"effect": "This attack does 30 damage for each Pokémon Tool attached to all of your Pokémon.",
+					"damage": "30×"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Lightning",
+					"value": "+20"
+				}
+			],
+			"retreat": 1
+		},
+		{
+			"id": "B3b-024",
+			"localId": "024",
+			"name": "Dedenne ex",
+			"rarity": "Four Diamond",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 120,
+			"types": [
+				"Lightning"
+			],
+			"stage": "Basic",
+			"suffix": "EX",
+			"attacks": [
+				{
+					"cost": [
+						"Lightning",
+						"Lightning"
+					],
+					"name": "Dede-Circuit",
+					"effect": "This attack does 40 damage for each Pokémon Tool attached to all of your Pokémon.",
+					"damage": "40×"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 1
+		},
+		{
+			"id": "B3b-025",
+			"localId": "025",
+			"name": "Yamper",
+			"rarity": "One Diamond",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 60,
+			"types": [
+				"Lightning"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless",
+						"Colorless"
+					],
+					"name": "Puppy Pile",
+					"effect": "Reveal all of your Pokémon in play and in your hand that have the Puppy Pile attack, and this attack does 20 damage for each Pokémon you revealed in this way.",
+					"damage": "20×"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 1
+		},
+		{
+			"id": "B3b-026",
+			"localId": "026",
+			"name": "Slowpoke",
+			"rarity": "One Diamond",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 70,
+			"types": [
+				"Psychic"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless"
+					],
+					"name": "Growl",
+					"effect": "During your opponent's next turn, attacks used by the Defending Pokémon do −20 damage."
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Darkness",
+					"value": "+20"
+				}
+			],
+			"retreat": 2
+		},
+		{
+			"id": "B3b-027",
+			"localId": "027",
+			"name": "Slowbro",
+			"rarity": "Two Diamond",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 130,
+			"types": [
+				"Psychic"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Slowpoke",
+			"attacks": [
+				{
+					"cost": [
+						"Psychic",
+						"Psychic",
+						"Colorless"
+					],
+					"name": "Psybeam",
+					"effect": "Your opponent's Active Pokémon is now Confused.",
+					"damage": "70"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Darkness",
+					"value": "+20"
+				}
+			],
+			"retreat": 3
+		},
+		{
+			"id": "B3b-028",
+			"localId": "028",
+			"name": "Munna",
+			"rarity": "One Diamond",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 60,
+			"types": [
+				"Psychic"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Psychic"
+					],
+					"name": "Ram",
+					"damage": "20"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Darkness",
+					"value": "+20"
+				}
+			],
+			"retreat": 1
+		},
+		{
+			"id": "B3b-029",
+			"localId": "029",
+			"name": "Musharna",
+			"rarity": "Two Diamond",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 100,
+			"types": [
+				"Psychic"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Munna",
+			"attacks": [
+				{
+					"cost": [
+						"Psychic"
+					],
+					"name": "Zen Headbutt",
+					"damage": "50"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Darkness",
+					"value": "+20"
+				}
+			],
+			"retreat": 2
+		},
+		{
+			"id": "B3b-030",
+			"localId": "030",
+			"name": "Sylveon",
+			"rarity": "Three Diamond",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 100,
+			"types": [
+				"Psychic"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Eevee",
+			"abilities": [
+				{
+					"type": "Ability",
+					"name": "Soothing Ribbon",
+					"effect": "Once during your turn, if this Pokémon has a Pokémon Tool attached, you may heal 30 damage from 1 of your Pokémon."
+				}
+			],
+			"attacks": [
+				{
+					"cost": [
+						"Colorless",
+						"Colorless"
+					],
+					"name": "Magical Shot",
+					"damage": "60"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Metal",
+					"value": "+20"
+				}
+			],
+			"retreat": 1
+		},
+		{
+			"id": "B3b-031",
+			"localId": "031",
+			"name": "Carbink",
+			"rarity": "Two Diamond",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 50,
+			"types": [
+				"Psychic"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Psychic"
+					],
+					"name": "Glittering Gift",
+					"effect": "Choose 2 of your Benched Pokémon. For each of those Pokémon, take a {P} Energy from your Energy Zone and attach it to that Pokémon."
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Metal",
+					"value": "+20"
+				}
+			],
+			"retreat": 1
+		},
+		{
+			"id": "B3b-032",
+			"localId": "032",
+			"name": "Mega Diancie ex",
+			"rarity": "Four Diamond",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 170,
+			"types": [
+				"Psychic"
+			],
+			"stage": "Basic",
+			"suffix": "EX",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless",
+						"Colorless",
+						"Colorless"
+					],
+					"name": "Brilliant Storm",
+					"effect": "This attack does 20 more damage for each {P} Energy attached to all of your Pokémon.",
+					"damage": "40+"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Metal",
+					"value": "+20"
+				}
+			],
+			"retreat": 1
+		},
+		{
+			"id": "B3b-033",
+			"localId": "033",
+			"name": "Enamorus",
+			"rarity": "Three Diamond",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 100,
+			"types": [
+				"Psychic"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Psychic",
+						"Colorless",
+						"Colorless"
+					],
+					"name": "Smitten Strike",
+					"effect": "If this Pokémon and your opponent's Active Pokémon have 1 or more of the same type of Energy attached, this attack does 60 more damage.",
+					"damage": "60+"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Metal",
+					"value": "+20"
+				}
+			],
+			"retreat": 1
+		},
+		{
+			"id": "B3b-034",
+			"localId": "034",
+			"name": "Fidough",
+			"rarity": "One Diamond",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 40,
+			"types": [
+				"Psychic"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless",
+						"Colorless"
+					],
+					"name": "Puppy Pile",
+					"effect": "Reveal all of your Pokémon in play and in your hand that have the Puppy Pile attack, and this attack does 20 damage for each Pokémon you revealed in this way.",
+					"damage": "20×"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Metal",
+					"value": "+20"
+				}
+			],
+			"retreat": 0
+		},
+		{
+			"id": "B3b-035",
+			"localId": "035",
+			"name": "Flutter Mane",
+			"rarity": "Two Diamond",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 80,
+			"types": [
+				"Psychic"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Psychic",
+						"Colorless"
+					],
+					"name": "Hexing Flight",
+					"effect": "If this Pokémon didn't move from the Bench to the Active Spot this turn, this attack does nothing.",
+					"damage": "90"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Metal",
+					"value": "+20"
+				}
+			],
+			"retreat": 1
+		},
+		{
+			"id": "B3b-036",
+			"localId": "036",
+			"name": "Wooper",
+			"rarity": "One Diamond",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 60,
+			"types": [
+				"Fighting"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Fighting",
+						"Colorless"
+					],
+					"name": "Mud Shot",
+					"damage": "30"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Grass",
+					"value": "+20"
+				}
+			],
+			"retreat": 1
+		},
+		{
+			"id": "B3b-037",
+			"localId": "037",
+			"name": "Quagsire",
+			"rarity": "Two Diamond",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 120,
+			"types": [
+				"Fighting"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Wooper",
+			"attacks": [
+				{
+					"cost": [
+						"Fighting",
+						"Fighting",
+						"Colorless"
+					],
+					"name": "Amnesia",
+					"effect": "1 of your opponent's Active Pokémon's attacks is chosen at random. During your opponent's next turn, that Pokémon can't use the chosen attack.",
+					"damage": "60"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Grass",
+					"value": "+20"
+				}
+			],
+			"retreat": 3
+		},
+		{
+			"id": "B3b-038",
+			"localId": "038",
+			"name": "Rockruff",
+			"rarity": "One Diamond",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 60,
+			"types": [
+				"Fighting"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless",
+						"Colorless"
+					],
+					"name": "Puppy Pile",
+					"effect": "Reveal all of your Pokémon in play and in your hand that have the Puppy Pile attack, and this attack does 20 damage for each Pokémon you revealed in this way.",
+					"damage": "20×"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Grass",
+					"value": "+20"
+				}
+			],
+			"retreat": 1
+		},
+		{
+			"id": "B3b-039",
+			"localId": "039",
+			"name": "Sandygast",
+			"rarity": "One Diamond",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 80,
+			"types": [
+				"Fighting"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Fighting"
+					],
+					"name": "Sand Spray",
+					"damage": "20"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Grass",
+					"value": "+20"
+				}
+			],
+			"retreat": 3
+		},
+		{
+			"id": "B3b-040",
+			"localId": "040",
+			"name": "Palossand",
+			"rarity": "Two Diamond",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 130,
+			"types": [
+				"Fighting"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Sandygast",
+			"attacks": [
+				{
+					"cost": [
+						"Fighting"
+					],
+					"name": "Ambush",
+					"effect": "Flip a coin. If heads, this attack does 30 more damage.",
+					"damage": "30+"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Grass",
+					"value": "+20"
+				}
+			],
+			"retreat": 3
+		},
+		{
+			"id": "B3b-041",
+			"localId": "041",
+			"name": "Mega Sableye ex",
+			"rarity": "Four Diamond",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 170,
+			"types": [
+				"Darkness"
+			],
+			"stage": "Basic",
+			"suffix": "EX",
+			"attacks": [
+				{
+					"cost": [
+						"Darkness",
+						"Colorless"
+					],
+					"name": "Cursed Jewel",
+					"effect": "During your opponent's next turn, if this Pokémon is damaged by an attack, do 40 damage to the Attacking Pokémon.",
+					"damage": "80"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Grass",
+					"value": "+20"
+				}
+			],
+			"retreat": 1
+		},
+		{
+			"id": "B3b-042",
+			"localId": "042",
+			"name": "Cacturne",
+			"rarity": "Two Diamond",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 100,
+			"types": [
+				"Darkness"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Cacnea",
+			"attacks": [
+				{
+					"cost": [
+						"Darkness"
+					],
+					"name": "Finishing Blow",
+					"effect": "If your opponent's Active Pokémon has damage on it, this attack does 60 more damage.",
+					"damage": "10+"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Grass",
+					"value": "+20"
+				}
+			],
+			"retreat": 1
+		},
+		{
+			"id": "B3b-043",
+			"localId": "043",
+			"name": "Spiritomb",
+			"rarity": "Two Diamond",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 80,
+			"types": [
+				"Darkness"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Darkness",
+						"Colorless"
+					],
+					"name": "Dark Slumber",
+					"effect": "Your opponent's Active Pokémon is now Asleep.",
+					"damage": "30"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Grass",
+					"value": "+20"
+				}
+			],
+			"retreat": 1
+		},
+		{
+			"id": "B3b-044",
+			"localId": "044",
+			"name": "Scraggy",
+			"rarity": "One Diamond",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 70,
+			"types": [
+				"Darkness"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Darkness"
+					],
+					"name": "Low Kick",
+					"damage": "10"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Grass",
+					"value": "+20"
+				}
+			],
+			"retreat": 1
+		},
+		{
+			"id": "B3b-045",
+			"localId": "045",
+			"name": "Scrafty",
+			"rarity": "Two Diamond",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 110,
+			"types": [
+				"Darkness"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Scraggy",
+			"attacks": [
+				{
+					"cost": [
+						"Darkness",
+						"Darkness"
+					],
+					"name": "High Jump Kick",
+					"damage": "70"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Grass",
+					"value": "+20"
+				}
+			],
+			"retreat": 2
+		},
+		{
+			"id": "B3b-046",
+			"localId": "046",
+			"name": "Mareanie",
+			"rarity": "One Diamond",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 60,
+			"types": [
+				"Darkness"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Darkness",
+						"Colorless"
+					],
+					"name": "Venoshock",
+					"effect": "If your opponent's Active Pokémon is Poisoned, this attack does 60 more damage.",
+					"damage": "20+"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 1
+		},
+		{
+			"id": "B3b-047",
+			"localId": "047",
+			"name": "Toxapex",
+			"rarity": "Two Diamond",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 110,
+			"types": [
+				"Darkness"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Mareanie",
+			"attacks": [
+				{
+					"cost": [
+						"Darkness",
+						"Colorless"
+					],
+					"name": "Severe Poison",
+					"effect": "Your opponent's Active Pokémon is now Poisoned. Do 40 damage to this Pokémon instead of the usual amount for this Special Condition."
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 2
+		},
+		{
+			"id": "B3b-048",
+			"localId": "048",
+			"name": "Goomy",
+			"rarity": "One Diamond",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 50,
+			"types": [
+				"Dragon"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless"
+					],
+					"name": "Stampede",
+					"damage": "20"
+				}
+			],
+			"retreat": 1
+		},
+		{
+			"id": "B3b-049",
+			"localId": "049",
+			"name": "Hisuian Sliggoo",
+			"rarity": "Two Diamond",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 100,
+			"types": [
+				"Dragon"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Goomy",
+			"attacks": [
+				{
+					"cost": [
+						"Water",
+						"Metal"
+					],
+					"name": "Hammer In",
+					"damage": "60"
+				}
+			],
+			"retreat": 3
+		},
+		{
+			"id": "B3b-050",
+			"localId": "050",
+			"name": "Hisuian Goodra",
+			"rarity": "Three Diamond",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 150,
+			"types": [
+				"Dragon"
+			],
+			"stage": "Stage2",
+			"evolveFrom": "Hisuian Sliggoo",
+			"abilities": [
+				{
+					"type": "Ability",
+					"name": "Securely Sheltered",
+					"effect": "If any damage is done to this Pokémon by attacks, flip a coin. If heads, this Pokémon takes −80 damage from that attack."
+				}
+			],
+			"attacks": [
+				{
+					"cost": [
+						"Water",
+						"Metal",
+						"Colorless"
+					],
+					"name": "Heavy Impact",
+					"damage": "120"
+				}
+			],
+			"retreat": 3
+		},
+		{
+			"id": "B3b-051",
+			"localId": "051",
+			"name": "Jigglypuff",
+			"rarity": "One Diamond",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 60,
+			"types": [
+				"Colorless"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless",
+						"Colorless"
+					],
+					"name": "Stompy Stomp",
+					"effect": "Flip 2 coins. This attack does 30 damage for each heads.",
+					"damage": "30×"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 1
+		},
+		{
+			"id": "B3b-052",
+			"localId": "052",
+			"name": "Wigglytuff",
+			"rarity": "Two Diamond",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 100,
+			"types": [
+				"Colorless"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Jigglypuff",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless",
+						"Colorless"
+					],
+					"name": "Expand",
+					"effect": "During your opponent's next turn, this Pokémon takes −20 damage from attacks.",
+					"damage": "50"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 2
+		},
+		{
+			"id": "B3b-053",
+			"localId": "053",
+			"name": "Eevee",
+			"rarity": "One Diamond",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 70,
+			"types": [
+				"Colorless"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless"
+					],
+					"name": "Gnaw",
+					"damage": "10"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 1
+		},
+		{
+			"id": "B3b-054",
+			"localId": "054",
+			"name": "Munchlax",
+			"rarity": "Three Diamond",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 50,
+			"types": [
+				"Colorless"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [],
+					"name": "Hungrily Draw",
+					"effect": "Draw a card.",
+					"damage": "10"
+				}
+			],
+			"retreat": 2
+		},
+		{
+			"id": "B3b-055",
+			"localId": "055",
+			"name": "Snorlax",
+			"rarity": "Three Diamond",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 130,
+			"types": [
+				"Colorless"
+			],
+			"stage": "Basic",
+			"abilities": [
+				{
+					"type": "Ability",
+					"name": "Massive Body",
+					"effect": "As long as this Pokémon is in the Active Spot, your opponent can't play any Stadium cards from their hand."
+				}
+			],
+			"attacks": [
+				{
+					"cost": [
+						"Colorless",
+						"Colorless",
+						"Colorless"
+					],
+					"name": "Mega Punch",
+					"damage": "70"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 3
+		},
+		{
+			"id": "B3b-056",
+			"localId": "056",
+			"name": "Teddiursa",
+			"rarity": "One Diamond",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 60,
+			"types": [
+				"Colorless"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless"
+					],
+					"name": "Charm",
+					"effect": "During your opponent's next turn, attacks used by the Defending Pokémon do −20 damage."
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 1
+		},
+		{
+			"id": "B3b-057",
+			"localId": "057",
+			"name": "Ursaring",
+			"rarity": "Two Diamond",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 110,
+			"types": [
+				"Colorless"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Teddiursa",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless",
+						"Colorless",
+						"Colorless"
+					],
+					"name": "Confront",
+					"damage": "70"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 3
+		},
+		{
+			"id": "B3b-058",
+			"localId": "058",
+			"name": "Ursaluna",
+			"rarity": "Three Diamond",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 160,
+			"types": [
+				"Colorless"
+			],
+			"stage": "Stage2",
+			"evolveFrom": "Ursaring",
+			"abilities": [
+				{
+					"type": "Ability",
+					"name": "Guts",
+					"effect": "If this Pokémon would be Knocked Out by damage from an attack, flip a coin. If heads, this Pokémon is not Knocked Out, and its remaining HP becomes 10."
+				}
+			],
+			"attacks": [
+				{
+					"cost": [
+						"Colorless",
+						"Colorless",
+						"Colorless",
+						"Colorless"
+					],
+					"name": "Hammer Arm",
+					"effect": "Discard the top card of your opponent's deck.",
+					"damage": "110"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 3
+		},
+		{
+			"id": "B3b-059",
+			"localId": "059",
+			"name": "Hisuian Zorua",
+			"rarity": "One Diamond",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 60,
+			"types": [
+				"Colorless"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless"
+					],
+					"name": "Run Around",
+					"effect": "Switch this Pokémon with 1 of your Benched Pokémon."
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 1
+		},
+		{
+			"id": "B3b-060",
+			"localId": "060",
+			"name": "Hisuian Zoroark ex",
+			"rarity": "Four Diamond",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 150,
+			"types": [
+				"Colorless"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Hisuian Zorua",
+			"suffix": "EX",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless",
+						"Colorless",
+						"Colorless"
+					],
+					"name": "Spiteful Illusion",
+					"effect": "This attack does 20 more damage for each Pokémon in your discard pile.",
+					"damage": "80+"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 2
+		},
+		{
+			"id": "B3b-061",
+			"localId": "061",
+			"name": "Furfrou",
+			"rarity": "One Diamond",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 70,
+			"types": [
+				"Colorless"
+			],
+			"stage": "Basic",
+			"abilities": [
+				{
+					"type": "Ability",
+					"name": "Fur Coat",
+					"effect": "This Pokémon takes −20 damage from attacks."
+				}
+			],
+			"attacks": [
+				{
+					"cost": [
+						"Colorless"
+					],
+					"name": "Double Headbutt",
+					"effect": "Flip 2 coins. This attack does 30 damage for each heads.",
+					"damage": "30×"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 1
+		},
+		{
+			"id": "B3b-062",
+			"localId": "062",
+			"name": "Skwovet",
+			"rarity": "One Diamond",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 60,
+			"types": [
+				"Colorless"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless"
+					],
+					"name": "Tackle",
+					"damage": "20"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 1
+		},
+		{
+			"id": "B3b-063",
+			"localId": "063",
+			"name": "Greedent",
+			"rarity": "Two Diamond",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 130,
+			"types": [
+				"Colorless"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Skwovet",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless",
+						"Colorless",
+						"Colorless"
+					],
+					"name": "Collapse",
+					"effect": "This Pokémon is now Asleep.",
+					"damage": "100"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 3
+		},
+		{
+			"id": "B3b-064",
+			"localId": "064",
+			"name": "Small Balloon",
+			"rarity": "Two Diamond",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Trainer",
+			"trainerType": "Tool",
+			"effect": "The Retreat Cost of the Basic Pokémon this card is attached to is 1 less."
+		},
+		{
+			"id": "B3b-065",
+			"localId": "065",
+			"name": "Elegant Cape",
+			"rarity": "Two Diamond",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Trainer",
+			"trainerType": "Tool",
+			"effect": "The Stage 1 Pokémon this card is attached to gets +30 HP."
+		},
+		{
+			"id": "B3b-066",
+			"localId": "066",
+			"name": "Elesa",
+			"rarity": "Two Diamond",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Trainer",
+			"trainerType": "Supporter",
+			"effect": "Return all Pokémon Tools attached to each Pokémon (both yours and your opponent's) to their owner's hand."
+		},
+		{
+			"id": "B3b-067",
+			"localId": "067",
+			"name": "Puppy-Loving Girl",
+			"rarity": "Two Diamond",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Trainer",
+			"trainerType": "Supporter",
+			"effect": "Look at the top 4 cards of your deck. Put all Pokémon you find there that have the Puppy Pile attack into your hand. Shuffle the other cards back into your deck."
+		},
+		{
+			"id": "B3b-068",
+			"localId": "068",
+			"name": "Wallace",
+			"rarity": "Two Diamond",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Trainer",
+			"trainerType": "Supporter",
+			"effect": "Choose 1 of your {W} Pokémon in play with a maximum HP of 50 or less. Put a random {W} Pokémon from your deck that evolves from that Pokémon onto that Pokémon to evolve it."
+		},
+		{
+			"id": "B3b-069",
+			"localId": "069",
+			"name": "Kid's Room",
+			"rarity": "Two Diamond",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Trainer",
+			"trainerType": "Stadium",
+			"effect": "Once during each player's turn, that player may choose a card in their hand and switch it with a random Pokémon Tool card in their deck."
+		},
+		{
+			"id": "B3b-070",
+			"localId": "070",
+			"name": "Vulpix",
+			"rarity": "One Star",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 60,
+			"types": [
+				"Fire"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless"
+					],
+					"name": "Hold Still",
+					"effect": "Heal 20 damage from this Pokémon."
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Water",
+					"value": "+20"
+				}
+			],
+			"retreat": 1
+		},
+		{
+			"id": "B3b-071",
+			"localId": "071",
+			"name": "Piplup",
+			"rarity": "One Star",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 60,
+			"types": [
+				"Water"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Water",
+						"Colorless"
+					],
+					"name": "Bubble Beam",
+					"effect": "Flip a coin. If heads, your opponent's Active Pokémon is now Paralyzed.",
+					"damage": "20"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Lightning",
+					"value": "+20"
+				}
+			],
+			"retreat": 1
+		},
+		{
+			"id": "B3b-072",
+			"localId": "072",
+			"name": "Pikachu",
+			"rarity": "One Star",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 60,
+			"types": [
+				"Lightning"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Lightning",
+						"Lightning"
+					],
+					"name": "Electro Ball",
+					"damage": "40"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 1
+		},
+		{
+			"id": "B3b-073",
+			"localId": "073",
+			"name": "Sylveon",
+			"rarity": "One Star",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 100,
+			"types": [
+				"Psychic"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Eevee",
+			"abilities": [
+				{
+					"type": "Ability",
+					"name": "Soothing Ribbon",
+					"effect": "Once during your turn, if this Pokémon has a Pokémon Tool attached, you may heal 30 damage from 1 of your Pokémon."
+				}
+			],
+			"attacks": [
+				{
+					"cost": [
+						"Colorless",
+						"Colorless"
+					],
+					"name": "Magical Shot",
+					"damage": "60"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Metal",
+					"value": "+20"
+				}
+			],
+			"retreat": 1
+		},
+		{
+			"id": "B3b-074",
+			"localId": "074",
+			"name": "Mareanie",
+			"rarity": "One Star",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 60,
+			"types": [
+				"Darkness"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Darkness",
+						"Colorless"
+					],
+					"name": "Venoshock",
+					"effect": "If your opponent's Active Pokémon is Poisoned, this attack does 60 more damage.",
+					"damage": "20+"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 1
+		},
+		{
+			"id": "B3b-075",
+			"localId": "075",
+			"name": "Jigglypuff",
+			"rarity": "One Star",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 60,
+			"types": [
+				"Colorless"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless",
+						"Colorless"
+					],
+					"name": "Stompy Stomp",
+					"effect": "Flip 2 coins. This attack does 30 damage for each heads.",
+					"damage": "30×"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 1
+		},
+		{
+			"id": "B3b-076",
+			"localId": "076",
+			"name": "Snorlax",
+			"rarity": "One Star",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 130,
+			"types": [
+				"Colorless"
+			],
+			"stage": "Basic",
+			"abilities": [
+				{
+					"type": "Ability",
+					"name": "Massive Body",
+					"effect": "As long as this Pokémon is in the Active Spot, your opponent can't play any Stadium cards from their hand."
+				}
+			],
+			"attacks": [
+				{
+					"cost": [
+						"Colorless",
+						"Colorless",
+						"Colorless"
+					],
+					"name": "Mega Punch",
+					"damage": "70"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 3
+		},
+		{
+			"id": "B3b-077",
+			"localId": "077",
+			"name": "Greedent",
+			"rarity": "One Star",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 130,
+			"types": [
+				"Colorless"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Skwovet",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless",
+						"Colorless",
+						"Colorless"
+					],
+					"name": "Collapse",
+					"effect": "This Pokémon is now Asleep.",
+					"damage": "100"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 3
+		},
+		{
+			"id": "B3b-078",
+			"localId": "078",
+			"name": "Milotic ex",
+			"rarity": "Two Star",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 140,
+			"types": [
+				"Water"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Feebas",
+			"suffix": "EX",
+			"abilities": [
+				{
+					"type": "Ability",
+					"name": "Aqua Charge",
+					"effect": "Once during your turn, you may take a {W} Energy from your Energy Zone and attach it to this Pokémon."
+				}
+			],
+			"attacks": [
+				{
+					"cost": [
+						"Water",
+						"Water",
+						"Water"
+					],
+					"name": "Water Pulse",
+					"effect": "Your opponent's Active Pokémon is now Asleep.",
+					"damage": "80"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Lightning",
+					"value": "+20"
+				}
+			],
+			"retreat": 2
+		},
+		{
+			"id": "B3b-079",
+			"localId": "079",
+			"name": "Dedenne ex",
+			"rarity": "Two Star",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 120,
+			"types": [
+				"Lightning"
+			],
+			"stage": "Basic",
+			"suffix": "EX",
+			"attacks": [
+				{
+					"cost": [
+						"Lightning",
+						"Lightning"
+					],
+					"name": "Dede-Circuit",
+					"effect": "This attack does 40 damage for each Pokémon Tool attached to all of your Pokémon.",
+					"damage": "40×"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 1
+		},
+		{
+			"id": "B3b-080",
+			"localId": "080",
+			"name": "Mega Diancie ex",
+			"rarity": "Two Star",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 170,
+			"types": [
+				"Psychic"
+			],
+			"stage": "Basic",
+			"suffix": "EX",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless",
+						"Colorless",
+						"Colorless"
+					],
+					"name": "Brilliant Storm",
+					"effect": "This attack does 20 more damage for each {P} Energy attached to all of your Pokémon.",
+					"damage": "40+"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Metal",
+					"value": "+20"
+				}
+			],
+			"retreat": 1
+		},
+		{
+			"id": "B3b-081",
+			"localId": "081",
+			"name": "Mega Sableye ex",
+			"rarity": "Two Star",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 170,
+			"types": [
+				"Darkness"
+			],
+			"stage": "Basic",
+			"suffix": "EX",
+			"attacks": [
+				{
+					"cost": [
+						"Darkness",
+						"Colorless"
+					],
+					"name": "Cursed Jewel",
+					"effect": "During your opponent's next turn, if this Pokémon is damaged by an attack, do 40 damage to the Attacking Pokémon.",
+					"damage": "80"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Grass",
+					"value": "+20"
+				}
+			],
+			"retreat": 1
+		},
+		{
+			"id": "B3b-082",
+			"localId": "082",
+			"name": "Hisuian Zoroark ex",
+			"rarity": "Two Star",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 150,
+			"types": [
+				"Colorless"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Hisuian Zorua",
+			"suffix": "EX",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless",
+						"Colorless",
+						"Colorless"
+					],
+					"name": "Spiteful Illusion",
+					"effect": "This attack does 20 more damage for each Pokémon in your discard pile.",
+					"damage": "80+"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 2
+		},
+		{
+			"id": "B3b-083",
+			"localId": "083",
+			"name": "Elesa",
+			"rarity": "Two Star",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Trainer",
+			"trainerType": "Supporter",
+			"effect": "Return all Pokémon Tools attached to each Pokémon (both yours and your opponent's) to their owner's hand."
+		},
+		{
+			"id": "B3b-084",
+			"localId": "084",
+			"name": "Puppy-Loving Girl",
+			"rarity": "Two Star",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Trainer",
+			"trainerType": "Supporter",
+			"effect": "Look at the top 4 cards of your deck. Put all Pokémon you find there that have the Puppy Pile attack into your hand. Shuffle the other cards back into your deck."
+		},
+		{
+			"id": "B3b-085",
+			"localId": "085",
+			"name": "Wallace",
+			"rarity": "Two Star",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Trainer",
+			"trainerType": "Supporter",
+			"effect": "Choose 1 of your {W} Pokémon in play with a maximum HP of 50 or less. Put a random {W} Pokémon from your deck that evolves from that Pokémon onto that Pokémon to evolve it."
+		},
+		{
+			"id": "B3b-086",
+			"localId": "086",
+			"name": "Milotic ex",
+			"rarity": "Two Star",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 140,
+			"types": [
+				"Water"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Feebas",
+			"suffix": "EX",
+			"abilities": [
+				{
+					"type": "Ability",
+					"name": "Aqua Charge",
+					"effect": "Once during your turn, you may take a {W} Energy from your Energy Zone and attach it to this Pokémon."
+				}
+			],
+			"attacks": [
+				{
+					"cost": [
+						"Water",
+						"Water",
+						"Water"
+					],
+					"name": "Water Pulse",
+					"effect": "Your opponent's Active Pokémon is now Asleep.",
+					"damage": "80"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Lightning",
+					"value": "+20"
+				}
+			],
+			"retreat": 2
+		},
+		{
+			"id": "B3b-087",
+			"localId": "087",
+			"name": "Mega Diancie ex",
+			"rarity": "Two Star",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 170,
+			"types": [
+				"Psychic"
+			],
+			"stage": "Basic",
+			"suffix": "EX",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless",
+						"Colorless",
+						"Colorless"
+					],
+					"name": "Brilliant Storm",
+					"effect": "This attack does 20 more damage for each {P} Energy attached to all of your Pokémon.",
+					"damage": "40+"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Metal",
+					"value": "+20"
+				}
+			],
+			"retreat": 1
+		},
+		{
+			"id": "B3b-088",
+			"localId": "088",
+			"name": "Mega Sableye ex",
+			"rarity": "Two Star",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 170,
+			"types": [
+				"Darkness"
+			],
+			"stage": "Basic",
+			"suffix": "EX",
+			"attacks": [
+				{
+					"cost": [
+						"Darkness",
+						"Colorless"
+					],
+					"name": "Cursed Jewel",
+					"effect": "During your opponent's next turn, if this Pokémon is damaged by an attack, do 40 damage to the Attacking Pokémon.",
+					"damage": "80"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Grass",
+					"value": "+20"
+				}
+			],
+			"retreat": 1
+		},
+		{
+			"id": "B3b-089",
+			"localId": "089",
+			"name": "Hisuian Zoroark ex",
+			"rarity": "Two Star",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 150,
+			"types": [
+				"Colorless"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Hisuian Zorua",
+			"suffix": "EX",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless",
+						"Colorless",
+						"Colorless"
+					],
+					"name": "Spiteful Illusion",
+					"effect": "This attack does 20 more damage for each Pokémon in your discard pile.",
+					"damage": "80+"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 2
+		},
+		{
+			"id": "B3b-090",
+			"localId": "090",
+			"name": "Dedenne ex",
+			"rarity": "Three Star",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 120,
+			"types": [
+				"Lightning"
+			],
+			"stage": "Basic",
+			"suffix": "EX",
+			"attacks": [
+				{
+					"cost": [
+						"Lightning",
+						"Lightning"
+					],
+					"name": "Dede-Circuit",
+					"effect": "This attack does 40 damage for each Pokémon Tool attached to all of your Pokémon.",
+					"damage": "40×"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 1
+		},
+		{
+			"id": "B3b-091",
+			"localId": "091",
+			"name": "Caterpie",
+			"rarity": "One Shiny",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 40,
+			"types": [
+				"Grass"
+			],
+			"stage": "Basic",
+			"abilities": [
+				{
+					"type": "Ability",
+					"name": "Quick Growth",
+					"effect": "At the end of your opponent's turn, if this Pokémon is in the Active Spot, put a random card from your deck that evolves from this Pokémon onto this Pokémon to evolve it."
+				}
+			],
+			"attacks": [
+				{
+					"cost": [
+						"Grass"
+					],
+					"name": "Hook",
+					"damage": "10"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fire",
+					"value": "+20"
+				}
+			],
+			"retreat": 1
+		},
+		{
+			"id": "B3b-092",
+			"localId": "092",
+			"name": "Metapod",
+			"rarity": "One Shiny",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 80,
+			"types": [
+				"Grass"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Caterpie",
+			"attacks": [
+				{
+					"cost": [
+						"Grass"
+					],
+					"name": "Ram",
+					"damage": "30"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fire",
+					"value": "+20"
+				}
+			],
+			"retreat": 2
+		},
+		{
+			"id": "B3b-093",
+			"localId": "093",
+			"name": "Butterfree",
+			"rarity": "One Shiny",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 130,
+			"types": [
+				"Grass"
+			],
+			"stage": "Stage2",
+			"evolveFrom": "Metapod",
+			"attacks": [
+				{
+					"cost": [
+						"Grass"
+					],
+					"name": "Sunny Wind",
+					"effect": "Heal 20 damage from this Pokémon.",
+					"damage": "60"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fire",
+					"value": "+20"
+				}
+			],
+			"retreat": 1
+		},
+		{
+			"id": "B3b-094",
+			"localId": "094",
+			"name": "Mareep",
+			"rarity": "One Shiny",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 70,
+			"types": [
+				"Lightning"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Lightning"
+					],
+					"name": "Rear Kick",
+					"damage": "10"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 1
+		},
+		{
+			"id": "B3b-095",
+			"localId": "095",
+			"name": "Flaaffy",
+			"rarity": "One Shiny",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 90,
+			"types": [
+				"Lightning"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Mareep",
+			"attacks": [
+				{
+					"cost": [
+						"Lightning",
+						"Colorless"
+					],
+					"name": "Electric Punch",
+					"damage": "40"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 1
+		},
+		{
+			"id": "B3b-096",
+			"localId": "096",
+			"name": "Ampharos",
+			"rarity": "One Shiny",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 140,
+			"types": [
+				"Lightning"
+			],
+			"stage": "Stage2",
+			"evolveFrom": "Flaaffy",
+			"attacks": [
+				{
+					"cost": [
+						"Lightning",
+						"Lightning",
+						"Colorless"
+					],
+					"name": "Zapping Bullet",
+					"effect": "1 of your opponent's Benched Pokémon is chosen at random. This attack also does 20 damage to it.",
+					"damage": "90"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 1
+		},
+		{
+			"id": "B3b-097",
+			"localId": "097",
+			"name": "Slowbro",
+			"rarity": "One Shiny",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 130,
+			"types": [
+				"Psychic"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Slowpoke",
+			"attacks": [
+				{
+					"cost": [
+						"Psychic",
+						"Psychic",
+						"Colorless"
+					],
+					"name": "Psybeam",
+					"effect": "Your opponent's Active Pokémon is now Confused.",
+					"damage": "70"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Darkness",
+					"value": "+20"
+				}
+			],
+			"retreat": 3
+		},
+		{
+			"id": "B3b-098",
+			"localId": "098",
+			"name": "Kangaskhan",
+			"rarity": "One Shiny",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 110,
+			"types": [
+				"Colorless"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless",
+						"Colorless",
+						"Colorless"
+					],
+					"name": "Steady Punch",
+					"effect": "Flip a coin. If heads, this attack does 30 more damage.",
+					"damage": "60+"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 3
+		},
+		{
+			"id": "B3b-099",
+			"localId": "099",
+			"name": "Ditto",
+			"rarity": "One Shiny",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 60,
+			"types": [
+				"Colorless"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless"
+					],
+					"name": "Copy a Friend",
+					"effect": "Choose 1 of your Benched Pokémon's attacks, except any Pokémon ex, and use it as this attack. If this Pokémon doesn't have the necessary Energy to use that attack, this attack does nothing."
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 1
+		},
+		{
+			"id": "B3b-100",
+			"localId": "100",
+			"name": "Snorlax",
+			"rarity": "One Shiny",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 130,
+			"types": [
+				"Colorless"
+			],
+			"stage": "Basic",
+			"abilities": [
+				{
+					"type": "Ability",
+					"name": "Massive Body",
+					"effect": "As long as this Pokémon is in the Active Spot, your opponent can't play any Stadium cards from their hand."
+				}
+			],
+			"attacks": [
+				{
+					"cost": [
+						"Colorless",
+						"Colorless",
+						"Colorless"
+					],
+					"name": "Mega Punch",
+					"damage": "70"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 3
+		},
+		{
+			"id": "B3b-101",
+			"localId": "101",
+			"name": "Mega Gyarados ex",
+			"rarity": "Two Shiny",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 210,
+			"types": [
+				"Water"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Magikarp",
+			"suffix": "EX",
+			"attacks": [
+				{
+					"cost": [
+						"Water",
+						"Water",
+						"Water",
+						"Colorless"
+					],
+					"name": "Mega Blaster",
+					"effect": "Discard the top 3 cards of your opponent's deck.",
+					"damage": "140"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Lightning",
+					"value": "+20"
+				}
+			],
+			"retreat": 3
+		},
+		{
+			"id": "B3b-102",
+			"localId": "102",
+			"name": "Vaporeon ex",
+			"rarity": "Two Shiny",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 160,
+			"types": [
+				"Water"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Eevee",
+			"suffix": "EX",
+			"abilities": [
+				{
+					"type": "Ability",
+					"name": "Frozen Flow",
+					"effect": "Once during your turn, if this Pokémon is in the Active Spot, you may switch out your opponent's Active Pokémon to the Bench. (Your opponent chooses the new Active Pokémon.)"
+				}
+			],
+			"attacks": [
+				{
+					"cost": [
+						"Water",
+						"Water"
+					],
+					"name": "Wave Splash",
+					"damage": "80"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Lightning",
+					"value": "+20"
+				}
+			],
+			"retreat": 3
+		},
+		{
+			"id": "B3b-103",
+			"localId": "103",
+			"name": "Mega Ampharos ex",
+			"rarity": "Two Shiny",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 210,
+			"types": [
+				"Lightning"
+			],
+			"stage": "Stage2",
+			"evolveFrom": "Flaaffy",
+			"suffix": "EX",
+			"attacks": [
+				{
+					"cost": [
+						"Lightning",
+						"Lightning",
+						"Colorless"
+					],
+					"name": "Lightning Lancer",
+					"effect": "1 of your opponent's Benched Pokémon is chosen at random 3 times. For each time a Pokémon was chosen, also do 20 damage to it.",
+					"damage": "100"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 2
+		},
+		{
+			"id": "B3b-104",
+			"localId": "104",
+			"name": "Indeedee ex",
+			"rarity": "Two Shiny",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 130,
+			"types": [
+				"Psychic"
+			],
+			"stage": "Basic",
+			"suffix": "EX",
+			"abilities": [
+				{
+					"type": "Ability",
+					"name": "Watch Over",
+					"effect": "Once during your turn, you may heal 20 damage from your Active Pokémon."
+				}
+			],
+			"attacks": [
+				{
+					"cost": [
+						"Psychic",
+						"Psychic"
+					],
+					"name": "Psychic",
+					"effect": "This attack does 30 more damage for each Energy attached to your opponent's Active Pokémon.",
+					"damage": "30+"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Darkness",
+					"value": "+20"
+				}
+			],
+			"retreat": 1
+		},
+		{
+			"id": "B3b-105",
+			"localId": "105",
+			"name": "Munchlax",
+			"rarity": "Crown",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 50,
+			"types": [
+				"Colorless"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [],
+					"name": "Hungrily Draw",
+					"effect": "Draw a card.",
+					"damage": "10"
+				}
+			],
+			"retreat": 2
+		},
+		{
+			"id": "B3b-106",
+			"localId": "106",
+			"name": "Small Balloon",
+			"rarity": "Crown",
+			"boosters": [
+				{
+					"name": "Everyday Wonders"
+				}
+			],
+			"category": "Trainer",
+			"trainerType": "Tool",
+			"effect": "The Retreat Cost of the Basic Pokémon this card is attached to is 1 less."
+		}
+	]
+}
