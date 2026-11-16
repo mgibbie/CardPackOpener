@@ -10,9 +10,15 @@
 // tried twice. The last resort is always legal: Execute with both Active Pokémon passing.
 import { card, CARDS } from './data/cards.js';
 import { effectiveness } from './engine/types.js';
-import { canPay, extraEnergy, lessCost, typeOf } from './engine/engine.js';
+import { baseCost, canPay, extraEnergy, lessCost, typeOf } from './engine/engine.js';
 
-const def = k => card(k.id);
+const defx = new Map();
+/** A Pokémon's card. One holding Memory Light also has the attacks of the cards under it (the view lists them as `extra`). */
+const def = k => {
+	const c = card(k.id); if (!k.extra || !k.extra.length) return c;
+	const key = k.id + '|' + k.extra.join(';'); if (!defx.has(key)) defx.set(key, { ...c, attacks: [...c.attacks, ...k.extra.map(([i, n]) => card(i).attacks[n])] });
+	return defx.get(key);
+};
 const left = k => k.hp - k.dmg;
 const coins = { coinsMul: f => f.per * f.coins / 2, coinsUntilTails: f => f.per, coinsAllBonus: f => f.bonus / 4, coinBonus: f => f.bonus / 2 };
 
@@ -62,7 +68,7 @@ export function expectedDamage(v, me, poke, attack, target) {
 	for (const f of poke.fx) if (f.k === 'atkMinus') d -= f.n;
 	return Math.max(0, d);
 }
-const usable = (v, me, poke, a) => !(v.players[me].turns === 0 && me === v.first) && !def(poke).fossil && !poke.status.includes('asleep') && !poke.status.includes('paralyzed') && !poke.fx.some(f => f.k === 'cantAttack' || (f.k === 'cantUse' && f.name === a.name)) && canPay(poke.provides || poke.energy, lessCost(a.cost, poke.less || 0))
+const usable = (v, me, poke, a) => !(v.players[me].turns === 0 && me === v.first) && !def(poke).fossil && !poke.status.includes('asleep') && !poke.status.includes('paralyzed') && !poke.fx.some(f => f.k === 'cantAttack' || (f.k === 'cantUse' && f.name === a.name)) && canPay(poke.provides || poke.energy, lessCost(baseCost(poke, a), poke.less || 0))
 	&& a.fx.every(f => f.k !== 'needBench' || f.names.every(n => v.players[me].bench.some(b => b && def(b).name === n)));
 function targetsOf(v, me, a) {
 	const out = [];
@@ -99,7 +105,10 @@ function bestCommand(v, me, slot, aimed) {
 			if (a.fx.some(f => f.k === 'ownBenchDamage')) { if (!myBench.length) score += 0; else args.bench = myBench.slice().sort((x, y) => left(v.players[me].bench[y]) - left(v.players[me].bench[x]))[0]; }
 			if (a.fx.some(f => f.k === 'alsoBench')) { const b = v.players.filter(q => q.seat !== me && !q.eliminated).flatMap(q => q.bench.map((k, idx) => k && { k, loc: { seat: q.seat, zone: 'bench', idx } }).filter(Boolean)).sort((x, y) => left(x.k) - left(y.k))[0]; if (b) args.also = b.loc; }
 			if (a.fx.some(f => f.k === 'selfCantAttack' || f.k === 'selfCantUse')) score -= 5;
-			if (a.fx.some(f => f.k === 'switchSelf')) { if (!myBench.length) return; args.bench = myBench[0]; score = poke.dmg > poke.hp / 2 ? 30 : 1; }
+			if (a.fx.some(f => f.k === 'switchSelf' && f.may)) { if (myBench.length && poke.dmg > poke.hp / 2) args.bench = myBench[0]; }   // "you may switch": it leaves once it is badly hurt
+			else if (a.fx.some(f => f.k === 'switchSelf')) { if (!myBench.length) return; args.bench = myBench[0]; score = poke.dmg > poke.hp / 2 ? 30 : 1; }
+			if (a.fx.some(f => f.k === 'discardToolsBonus')) { const f = a.fx.find(g => g.k === 'discardToolsBonus'); args.tools = v.players[me].hand.map((id, n) => (card(id).kind === 'tool' ? n : -1)).filter(n => n >= 0).slice(0, f.max); if (!args.tools.length) return; }
+			if (a.fx.some(f => f.k === 'healBench')) { const hb = myBench.filter(n => v.players[me].bench[n].dmg > 0).sort((x, y) => v.players[me].bench[y].dmg - v.players[me].bench[x].dmg)[0]; if (hb == null) return; args.bench = hb; score = 20; }
 			if (a.fx.some(f => f.k === 'copyAttack')) {
 				let c = null; const cf = a.fx.find(f => f.k === 'copyAttack');
 				for (const q2 of v.players) if (q2.seat !== me && !q2.eliminated) for (const z of (cf.active ? ['active'] : ['active', 'bench'])) q2[z].forEach((k, idx) => { if (k) def(k).attacks.forEach((ca, n) => { if (ca.fx.some(f => f.k === 'copyAttack') || (!cf.free && !canPay(poke.provides || poke.energy, ca.cost))) return; const dd = expectedDamage(v, me, poke, ca, target); if (!c || dd > c.d) c = { d: dd, from: { seat: q2.seat, zone: z, idx }, attack: n }; }); });
@@ -177,7 +186,9 @@ export function nextAction(v, banned = new Set()) {
 		else if (f.k === 'revealSupporters' || f.k === 'penny') { if (opp.length) T({ opp: opp[0].seat }); }
 		else if (f.k === 'will') { if (P.active.some(k => k && def(k).attacks.some(q => usable(v, me, k, q) && q.fx.some(g => /^coin/.test(g.k))))) T({}); }   // a coin attack is about to be used
 		else if (f.k === 'coinsFromDiscard') { if (P.discard.some(d => card(d).kind === 'pokemon' && card(d).cardType === f.type)) T({}); }
-		else if (f.k === 'peekOrder') { if (mineAll.some(x => def(x.k).cardType === f.type)) T({}); }
+		else if (f.k === 'peekOrder') { if (mineAll.some(x => def(x.k).cardType === f.type)) T(f.opp ? { opp: opp[0].seat } : {}); }
+		else if (f.k === 'topTools') T({});
+		else if (f.k === 'healNamedCure') { const t = mineAll.filter(x => f.names.includes(def(x.k).name) && x.k.dmg >= 20).sort((x, y) => y.k.dmg - x.k.dmg)[0]; if (t) T({ at: t.loc }); }
 		else if (f.k === 'silver') { const q = opp.slice().sort((x, y) => y.handCount - x.handCount)[0]; if (q && q.handCount >= 3) T({ opp: q.seat }); }
 		else if (f.k === 'discardOppEnergy') { const t = opp.flatMap(o => o.active.map((k, idx) => k && { k, loc: { seat: o.seat, zone: 'active', idx } }).filter(Boolean)).filter(x => x.k.energy.includes(f.type)).sort((x, y) => x.k.energy.length - y.k.energy.length)[0]; if (t) T({ target: t.loc }); }
 		else if (f.k === 'moveEnergyTypes') { for (const to of mineAll.filter(x => x.loc.zone === 'active')) for (const t of f.types) { const from = P.bench.findIndex(b => b && b.energy.includes(t)); if (from >= 0 && unlocks(to.k, t)) { T({ bench: from, type: t, at: to.loc }); return; } } }

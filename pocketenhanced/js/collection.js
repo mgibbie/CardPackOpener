@@ -24,6 +24,7 @@ export const BOOSTERS = Object.freeze([
 	Object.freeze({ id: 'E', name: 'Eevee', dex: 133, type: 'Colorless', set: 'Eevee Grove' }),
 	Object.freeze({ id: 'L', name: 'Lugia', dex: 249, type: 'Colorless', set: 'Wisdom of Sea and Sky' }),
 	Object.freeze({ id: 'H', name: 'Ho-Oh', dex: 250, type: 'Fire', set: 'Wisdom of Sea and Sky' }),
+	Object.freeze({ id: 'G', name: 'Suicune', dex: 245, type: 'Water', set: 'Secluded Springs' }),
 ]);
 export const RARITY = Object.freeze({ '1D': '◆', '2D': '◆◆', '3D': '◆◆◆', '4D': '◆◆◆◆', '1S': '★', '2S': '★★', '3S': '★★★', '1H': '✦', '2H': '✦✦', CR: '♛', N: 'Promo' });
 export const RARITY_ORDER = Object.freeze(['N', '1D', '2D', '3D', '4D', '1S', '2S', '3S', '1H', '2H', 'CR']);   // (1H, 2H: the shiny rarities, from Shining Revelry on)

@@ -2680,7 +2680,8 @@ export const CARDS = deepFreeze([
 		"ability": null,
 		"dex": 54,
 		"printings": [
-			"A1-057"
+			"A1-057",
+			"A4a-093"
 		]
 	},
 	{
@@ -2722,7 +2723,8 @@ export const CARDS = deepFreeze([
 		"ability": null,
 		"dex": 55,
 		"printings": [
-			"A1-058"
+			"A1-058",
+			"A4a-094"
 		]
 	},
 	{
@@ -3172,7 +3174,8 @@ export const CARDS = deepFreeze([
 		"ability": null,
 		"dex": 98,
 		"printings": [
-			"A1-068"
+			"A1-068",
+			"A4a-095"
 		]
 	},
 	{
@@ -3221,7 +3224,8 @@ export const CARDS = deepFreeze([
 		"ability": null,
 		"dex": 99,
 		"printings": [
-			"A1-069"
+			"A1-069",
+			"A4a-096"
 		]
 	},
 	{
@@ -11725,7 +11729,8 @@ export const CARDS = deepFreeze([
 			"A1a-032",
 			"A1a-077",
 			"A1a-083",
-			"A1a-086"
+			"A1a-086",
+			"A4a-102"
 		]
 	},
 	{
@@ -14417,7 +14422,8 @@ export const CARDS = deepFreeze([
 		"ability": null,
 		"dex": 390,
 		"printings": [
-			"A2-027"
+			"A2-027",
+			"A4a-091"
 		]
 	},
 	{
@@ -14459,7 +14465,8 @@ export const CARDS = deepFreeze([
 		"ability": null,
 		"dex": 391,
 		"printings": [
-			"A2-028"
+			"A2-028",
+			"A4a-092"
 		]
 	},
 	{
@@ -14510,7 +14517,8 @@ export const CARDS = deepFreeze([
 		"printings": [
 			"A2-029",
 			"A2-181",
-			"A2-197"
+			"A2-197",
+			"A4a-101"
 		]
 	},
 	{
@@ -22263,7 +22271,8 @@ export const CARDS = deepFreeze([
 		"ability": null,
 		"dex": 443,
 		"printings": [
-			"A2a-045"
+			"A2a-045",
+			"A4a-098"
 		]
 	},
 	{
@@ -22306,7 +22315,8 @@ export const CARDS = deepFreeze([
 		"ability": null,
 		"dex": 444,
 		"printings": [
-			"A2a-046"
+			"A2a-046",
+			"A4a-099"
 		]
 	},
 	{
@@ -22374,7 +22384,8 @@ export const CARDS = deepFreeze([
 		"printings": [
 			"A2a-047",
 			"A2a-084",
-			"A2a-093"
+			"A2a-093",
+			"A4a-103"
 		]
 	},
 	{
@@ -25793,7 +25804,8 @@ export const CARDS = deepFreeze([
 		"dex": 194,
 		"sprite": "s6209.png",
 		"printings": [
-			"A2b-047"
+			"A2b-047",
+			"A4a-100"
 		]
 	},
 	{
@@ -25843,7 +25855,8 @@ export const CARDS = deepFreeze([
 		"printings": [
 			"A2b-048",
 			"A2b-085",
-			"A2b-093"
+			"A2b-093",
+			"A4a-104"
 		]
 	},
 	{
@@ -29372,7 +29385,8 @@ export const CARDS = deepFreeze([
 		"dex": 771,
 		"printings": [
 			"A3-054",
-			"A3-163"
+			"A3-163",
+			"A4a-097"
 		]
 	},
 	{
@@ -47117,6 +47131,3204 @@ export const CARDS = deepFreeze([
 		"printings": [
 			"A4-161",
 			"A4-201"
+		]
+	},
+	{
+		"id": "A4a-001",
+		"set": "A4a",
+		"rarity": "One Diamond",
+		"name": "Hoppip",
+		"kind": "pokemon",
+		"cardType": "Grass",
+		"combatTypes": [
+			"Grass",
+			"Flying"
+		],
+		"hp": 50,
+		"stage": 0,
+		"evolvesFrom": null,
+		"ex": false,
+		"retreat": 1,
+		"weakness": "Lightning",
+		"points": 1,
+		"attacks": [
+			{
+				"name": "Splash",
+				"combatType": "Normal",
+				"typeBasis": "move",
+				"cost": [
+					"Colorless"
+				],
+				"damage": 10,
+				"damageMode": "",
+				"fx": [],
+				"target": "oppActive",
+				"text": "",
+				"adapted": "",
+				"note": null,
+				"id": "A4a-001:1"
+			}
+		],
+		"ability": null,
+		"dex": 187,
+		"printings": [
+			"A4a-001"
+		]
+	},
+	{
+		"id": "A4a-002",
+		"set": "A4a",
+		"rarity": "Two Diamond",
+		"name": "Skiploom",
+		"kind": "pokemon",
+		"cardType": "Grass",
+		"combatTypes": [
+			"Grass",
+			"Flying"
+		],
+		"hp": 60,
+		"stage": 1,
+		"evolvesFrom": "Hoppip",
+		"ex": false,
+		"retreat": 1,
+		"weakness": "Lightning",
+		"points": 1,
+		"attacks": [
+			{
+				"name": "Bounce",
+				"combatType": "Flying",
+				"typeBasis": "move",
+				"cost": [
+					"Colorless"
+				],
+				"damage": 30,
+				"damageMode": "",
+				"fx": [
+					{
+						"k": "switchSelf"
+					}
+				],
+				"target": "oppActive",
+				"text": "Switch this Pokémon with 1 of your Benched Pokémon.",
+				"adapted": "Switch this Pokémon with 1 of your Benched Pokémon. It keeps the same Active slot.",
+				"note": "The Pokémon switched in takes the same Active slot.",
+				"id": "A4a-002:1"
+			}
+		],
+		"ability": null,
+		"dex": 188,
+		"printings": [
+			"A4a-002"
+		]
+	},
+	{
+		"id": "A4a-003",
+		"set": "A4a",
+		"rarity": "Four Diamond",
+		"name": "Jumpluff ex",
+		"kind": "pokemon",
+		"cardType": "Grass",
+		"combatTypes": [
+			"Grass",
+			"Flying"
+		],
+		"hp": 160,
+		"stage": 2,
+		"evolvesFrom": "Skiploom",
+		"ex": true,
+		"retreat": 1,
+		"weakness": "Lightning",
+		"points": 2,
+		"attacks": [
+			{
+				"name": "Breeze-By Attack",
+				"combatType": "Flying",
+				"typeBasis": "decided",
+				"cost": [
+					"Colorless"
+				],
+				"damage": 70,
+				"damageMode": "",
+				"fx": [
+					{
+						"k": "switchSelf",
+						"may": true
+					}
+				],
+				"target": "oppActive",
+				"text": "You may switch this Pokémon with 1 of your Benched Pokémon.",
+				"adapted": "You may switch this Pokémon with 1 of your Benched Pokémon. It keeps the same Active slot.",
+				"note": "The Pokémon switched in takes the same Active slot.",
+				"id": "A4a-003:1"
+			}
+		],
+		"ability": null,
+		"dex": 189,
+		"printings": [
+			"A4a-003",
+			"A4a-078",
+			"A4a-086"
+		]
+	},
+	{
+		"id": "A4a-004",
+		"set": "A4a",
+		"rarity": "One Diamond",
+		"name": "Sunkern",
+		"kind": "pokemon",
+		"cardType": "Grass",
+		"combatTypes": [
+			"Grass"
+		],
+		"hp": 50,
+		"stage": 0,
+		"evolvesFrom": null,
+		"ex": false,
+		"retreat": 1,
+		"weakness": "Fire",
+		"points": 1,
+		"attacks": [
+			{
+				"name": "Tackle",
+				"combatType": "Normal",
+				"typeBasis": "move",
+				"cost": [
+					"Colorless"
+				],
+				"damage": 10,
+				"damageMode": "",
+				"fx": [],
+				"target": "oppActive",
+				"text": "",
+				"adapted": "",
+				"note": null,
+				"id": "A4a-004:1"
+			}
+		],
+		"ability": null,
+		"dex": 191,
+		"printings": [
+			"A4a-004"
+		]
+	},
+	{
+		"id": "A4a-005",
+		"set": "A4a",
+		"rarity": "Two Diamond",
+		"name": "Sunflora",
+		"kind": "pokemon",
+		"cardType": "Grass",
+		"combatTypes": [
+			"Grass"
+		],
+		"hp": 90,
+		"stage": 1,
+		"evolvesFrom": "Sunkern",
+		"ex": false,
+		"retreat": 2,
+		"weakness": "Fire",
+		"points": 1,
+		"attacks": [
+			{
+				"name": "Trip Over",
+				"combatType": "Fighting",
+				"typeBasis": "decided",
+				"cost": [
+					"Grass",
+					"Colorless"
+				],
+				"damage": 50,
+				"damageMode": "+",
+				"fx": [
+					{
+						"k": "coinBonus",
+						"bonus": 30
+					}
+				],
+				"target": "oppActive",
+				"text": "Flip a coin. If heads, this attack does 30 more damage.",
+				"adapted": "Flip a coin. If heads, this attack does 30 more damage.",
+				"note": null,
+				"id": "A4a-005:1"
+			}
+		],
+		"ability": null,
+		"dex": 192,
+		"printings": [
+			"A4a-005"
+		]
+	},
+	{
+		"id": "A4a-006",
+		"set": "A4a",
+		"rarity": "Three Diamond",
+		"name": "Celebi",
+		"kind": "pokemon",
+		"cardType": "Grass",
+		"combatTypes": [
+			"Psychic",
+			"Grass"
+		],
+		"hp": 70,
+		"stage": 0,
+		"evolvesFrom": null,
+		"ex": false,
+		"retreat": 1,
+		"weakness": "Fire",
+		"points": 1,
+		"attacks": [
+			{
+				"name": "Temporal Leaves",
+				"combatType": "Grass",
+				"typeBasis": "named",
+				"cost": [
+					"Grass",
+					"Grass"
+				],
+				"damage": 40,
+				"damageMode": "",
+				"fx": [
+					{
+						"k": "devolveTarget"
+					}
+				],
+				"target": "oppActive",
+				"text": "If your opponent's Active Pokémon is an evolved Pokémon, devolve it by putting the highest Stage Evolution card on it into your opponent's hand.",
+				"adapted": "If the Defending Pokémon is an evolved Pokémon, devolve it by putting the highest Stage Evolution card on it into its owner's hand.",
+				"note": "\"Your opponent\" is the owner of the Defending Pokémon; \"their next turn\" is that player's.",
+				"id": "A4a-006:1"
+			}
+		],
+		"ability": null,
+		"dex": 251,
+		"printings": [
+			"A4a-006"
+		]
+	},
+	{
+		"id": "A4a-007",
+		"set": "A4a",
+		"rarity": "One Diamond",
+		"name": "Durant",
+		"kind": "pokemon",
+		"cardType": "Grass",
+		"combatTypes": [
+			"Bug",
+			"Steel"
+		],
+		"hp": 70,
+		"stage": 0,
+		"evolvesFrom": null,
+		"ex": false,
+		"retreat": 1,
+		"weakness": "Fire",
+		"points": 1,
+		"attacks": [
+			{
+				"name": "Mountain Munch",
+				"combatType": "Bug",
+				"typeBasis": "decided",
+				"cost": [
+					"Grass",
+					"Grass"
+				],
+				"damage": 40,
+				"damageMode": "",
+				"fx": [
+					{
+						"k": "millTarget",
+						"n": 1
+					}
+				],
+				"target": "oppActive",
+				"text": "Discard the top card of your opponent's deck.",
+				"adapted": "Discard the top card of the deck of the Defending Pokémon's owner.",
+				"note": "\"Your opponent\" is the owner of the Defending Pokémon; \"their next turn\" is that player's.",
+				"id": "A4a-007:1"
+			}
+		],
+		"ability": null,
+		"dex": 632,
+		"printings": [
+			"A4a-007"
+		]
+	},
+	{
+		"id": "A4a-008",
+		"set": "A4a",
+		"rarity": "One Diamond",
+		"name": "Slugma",
+		"kind": "pokemon",
+		"cardType": "Fire",
+		"combatTypes": [
+			"Fire"
+		],
+		"hp": 80,
+		"stage": 0,
+		"evolvesFrom": null,
+		"ex": false,
+		"retreat": 2,
+		"weakness": "Water",
+		"points": 1,
+		"attacks": [
+			{
+				"name": "Combustion",
+				"combatType": "Fire",
+				"typeBasis": "named",
+				"cost": [
+					"Fire",
+					"Fire"
+				],
+				"damage": 40,
+				"damageMode": "",
+				"fx": [],
+				"target": "oppActive",
+				"text": "",
+				"adapted": "",
+				"note": null,
+				"id": "A4a-008:1"
+			}
+		],
+		"ability": null,
+		"dex": 218,
+		"printings": [
+			"A4a-008"
+		]
+	},
+	{
+		"id": "A4a-009",
+		"set": "A4a",
+		"rarity": "Two Diamond",
+		"name": "Magcargo",
+		"kind": "pokemon",
+		"cardType": "Fire",
+		"combatTypes": [
+			"Fire",
+			"Rock"
+		],
+		"hp": 120,
+		"stage": 1,
+		"evolvesFrom": "Slugma",
+		"ex": false,
+		"retreat": 3,
+		"weakness": "Water",
+		"points": 1,
+		"attacks": [
+			{
+				"name": "Heat Blast",
+				"combatType": "Fire",
+				"typeBasis": "named",
+				"cost": [
+					"Fire",
+					"Fire",
+					"Fire"
+				],
+				"damage": 90,
+				"damageMode": "",
+				"fx": [],
+				"target": "oppActive",
+				"text": "",
+				"adapted": "",
+				"note": null,
+				"id": "A4a-009:1"
+			}
+		],
+		"ability": null,
+		"dex": 219,
+		"printings": [
+			"A4a-009"
+		]
+	},
+	{
+		"id": "A4a-010",
+		"set": "A4a",
+		"rarity": "Four Diamond",
+		"name": "Entei ex",
+		"kind": "pokemon",
+		"cardType": "Fire",
+		"combatTypes": [
+			"Fire"
+		],
+		"hp": 140,
+		"stage": 0,
+		"evolvesFrom": null,
+		"ex": true,
+		"retreat": 2,
+		"weakness": "Water",
+		"points": 2,
+		"attacks": [
+			{
+				"name": "Blazing Beatdown",
+				"combatType": "Fire",
+				"typeBasis": "named",
+				"cost": [
+					"Fire",
+					"Fire"
+				],
+				"damage": 60,
+				"damageMode": "+",
+				"fx": [
+					{
+						"k": "extraEnergyBonus",
+						"need": 2,
+						"type": "Fire",
+						"bonus": 60
+					}
+				],
+				"target": "oppActive",
+				"text": "If this Pokémon has at least 2 extra {R} Energy attached, this attack does 60 more damage.",
+				"adapted": "If this Pokémon has at least 2 extra {R} Energy attached, this attack does 60 more damage.",
+				"note": null,
+				"id": "A4a-010:1"
+			}
+		],
+		"ability": {
+			"name": "Legendary Pulse",
+			"fx": {
+				"k": "endTurnDraw",
+				"n": 1,
+				"passive": true
+			},
+			"text": "At the end of your turn, if this Pokémon is in the Active Spot, draw a card.",
+			"adapted": "At the end of your turn, if this Pokémon is in an Active slot, draw a card.",
+			"note": "\"The Active Spot\" is either of your two Active slots."
+		},
+		"dex": 244,
+		"printings": [
+			"A4a-010",
+			"A4a-079",
+			"A4a-087"
+		]
+	},
+	{
+		"id": "A4a-011",
+		"set": "A4a",
+		"rarity": "One Diamond",
+		"name": "Fletchinder",
+		"kind": "pokemon",
+		"cardType": "Fire",
+		"combatTypes": [
+			"Fire",
+			"Flying"
+		],
+		"hp": 70,
+		"stage": 1,
+		"evolvesFrom": "Fletchling",
+		"ex": false,
+		"retreat": 1,
+		"weakness": "Lightning",
+		"points": 1,
+		"attacks": [
+			{
+				"name": "Fire Wing",
+				"combatType": "Fire",
+				"typeBasis": "named",
+				"cost": [
+					"Fire"
+				],
+				"damage": 40,
+				"damageMode": "",
+				"fx": [],
+				"target": "oppActive",
+				"text": "",
+				"adapted": "",
+				"note": null,
+				"id": "A4a-011:1"
+			}
+		],
+		"ability": null,
+		"dex": 662,
+		"printings": [
+			"A4a-011"
+		]
+	},
+	{
+		"id": "A4a-012",
+		"set": "A4a",
+		"rarity": "Two Diamond",
+		"name": "Talonflame",
+		"kind": "pokemon",
+		"cardType": "Fire",
+		"combatTypes": [
+			"Fire",
+			"Flying"
+		],
+		"hp": 130,
+		"stage": 2,
+		"evolvesFrom": "Fletchinder",
+		"ex": false,
+		"retreat": 1,
+		"weakness": "Lightning",
+		"points": 1,
+		"attacks": [
+			{
+				"name": "Searing Flame",
+				"combatType": "Fire",
+				"typeBasis": "named",
+				"cost": [
+					"Fire"
+				],
+				"damage": 50,
+				"damageMode": "",
+				"fx": [
+					{
+						"k": "status",
+						"s": "burned"
+					}
+				],
+				"target": "oppActive",
+				"text": "Your opponent's Active Pokémon is now Burned.",
+				"adapted": "The Defending Pokémon is now Burned.",
+				"note": "\"Your opponent's Active Pokémon\" is the Defending Pokémon: the one this attack targets, since there are several.",
+				"id": "A4a-012:1"
+			}
+		],
+		"ability": null,
+		"dex": 663,
+		"printings": [
+			"A4a-012"
+		]
+	},
+	{
+		"id": "A4a-013",
+		"set": "A4a",
+		"rarity": "One Diamond",
+		"name": "Poliwag",
+		"kind": "pokemon",
+		"cardType": "Water",
+		"combatTypes": [
+			"Water"
+		],
+		"hp": 60,
+		"stage": 0,
+		"evolvesFrom": null,
+		"ex": false,
+		"retreat": 1,
+		"weakness": "Lightning",
+		"points": 1,
+		"attacks": [
+			{
+				"name": "Call for Family",
+				"combatType": "Normal",
+				"typeBasis": "named",
+				"cost": [
+					"Colorless"
+				],
+				"damage": 0,
+				"damageMode": "",
+				"fx": [
+					{
+						"k": "benchFromDeck",
+						"name": "Poliwag"
+					}
+				],
+				"target": "none",
+				"text": "Put 1 random Poliwag from your deck onto your Bench.",
+				"adapted": "Put 1 random Poliwag from your deck onto your Bench.",
+				"note": null,
+				"id": "A4a-013:1"
+			}
+		],
+		"ability": null,
+		"dex": 60,
+		"printings": [
+			"A4a-013"
+		]
+	},
+	{
+		"id": "A4a-014",
+		"set": "A4a",
+		"rarity": "Two Diamond",
+		"name": "Poliwhirl",
+		"kind": "pokemon",
+		"cardType": "Water",
+		"combatTypes": [
+			"Water"
+		],
+		"hp": 80,
+		"stage": 1,
+		"evolvesFrom": "Poliwag",
+		"ex": false,
+		"retreat": 1,
+		"weakness": "Lightning",
+		"points": 1,
+		"attacks": [
+			{
+				"name": "Ram",
+				"combatType": "Normal",
+				"typeBasis": "named",
+				"cost": [
+					"Colorless"
+				],
+				"damage": 30,
+				"damageMode": "",
+				"fx": [],
+				"target": "oppActive",
+				"text": "",
+				"adapted": "",
+				"note": null,
+				"id": "A4a-014:1"
+			}
+		],
+		"ability": null,
+		"dex": 61,
+		"printings": [
+			"A4a-014"
+		]
+	},
+	{
+		"id": "A4a-015",
+		"set": "A4a",
+		"rarity": "One Diamond",
+		"name": "Tentacool",
+		"kind": "pokemon",
+		"cardType": "Water",
+		"combatTypes": [
+			"Water",
+			"Poison"
+		],
+		"hp": 60,
+		"stage": 0,
+		"evolvesFrom": null,
+		"ex": false,
+		"retreat": 1,
+		"weakness": "Lightning",
+		"points": 1,
+		"attacks": [
+			{
+				"name": "Poison Sting",
+				"combatType": "Poison",
+				"typeBasis": "move",
+				"cost": [
+					"Water",
+					"Colorless"
+				],
+				"damage": 20,
+				"damageMode": "",
+				"fx": [
+					{
+						"k": "status",
+						"s": "poisoned"
+					}
+				],
+				"target": "oppActive",
+				"text": "Your opponent's Active Pokémon is now Poisoned.",
+				"adapted": "The Defending Pokémon is now Poisoned.",
+				"note": "\"Your opponent's Active Pokémon\" is the Defending Pokémon: the one this attack targets, since there are several.",
+				"id": "A4a-015:1"
+			}
+		],
+		"ability": null,
+		"dex": 72,
+		"printings": [
+			"A4a-015"
+		]
+	},
+	{
+		"id": "A4a-016",
+		"set": "A4a",
+		"rarity": "Two Diamond",
+		"name": "Tentacruel",
+		"kind": "pokemon",
+		"cardType": "Water",
+		"combatTypes": [
+			"Water",
+			"Poison"
+		],
+		"hp": 110,
+		"stage": 1,
+		"evolvesFrom": "Tentacool",
+		"ex": false,
+		"retreat": 2,
+		"weakness": "Lightning",
+		"points": 1,
+		"attacks": [
+			{
+				"name": "Stun Poison",
+				"combatType": "Poison",
+				"typeBasis": "named",
+				"cost": [
+					"Water",
+					"Water",
+					"Colorless"
+				],
+				"damage": 50,
+				"damageMode": "",
+				"fx": [
+					{
+						"k": "coinStatuses",
+						"list": [
+							"poisoned",
+							"paralyzed"
+						]
+					}
+				],
+				"target": "oppActive",
+				"text": "Flip a coin. If heads, your opponent's Active Pokémon is now Poisoned and Paralyzed.",
+				"adapted": "Flip a coin. If heads, the Defending Pokémon is now Poisoned and Paralyzed.",
+				"note": "\"Your opponent's Active Pokémon\" is the Defending Pokémon: the one this attack targets, since there are several.",
+				"id": "A4a-016:1"
+			}
+		],
+		"ability": null,
+		"dex": 73,
+		"printings": [
+			"A4a-016"
+		]
+	},
+	{
+		"id": "A4a-017",
+		"set": "A4a",
+		"rarity": "One Diamond",
+		"name": "Slowpoke",
+		"kind": "pokemon",
+		"cardType": "Water",
+		"combatTypes": [
+			"Water",
+			"Psychic"
+		],
+		"hp": 60,
+		"stage": 0,
+		"evolvesFrom": null,
+		"ex": false,
+		"retreat": 1,
+		"weakness": "Lightning",
+		"points": 1,
+		"attacks": [
+			{
+				"name": "Water Gun",
+				"combatType": "Water",
+				"typeBasis": "move",
+				"cost": [
+					"Water"
+				],
+				"damage": 20,
+				"damageMode": "",
+				"fx": [],
+				"target": "oppActive",
+				"text": "",
+				"adapted": "",
+				"note": null,
+				"id": "A4a-017:1"
+			}
+		],
+		"ability": null,
+		"dex": 79,
+		"printings": [
+			"A4a-017"
+		]
+	},
+	{
+		"id": "A4a-018",
+		"set": "A4a",
+		"rarity": "Two Diamond",
+		"name": "Slowking",
+		"kind": "pokemon",
+		"cardType": "Water",
+		"combatTypes": [
+			"Water",
+			"Psychic"
+		],
+		"hp": 130,
+		"stage": 1,
+		"evolvesFrom": "Slowpoke",
+		"ex": false,
+		"retreat": 3,
+		"weakness": "Lightning",
+		"points": 1,
+		"attacks": [
+			{
+				"name": "Litter",
+				"combatType": "Psychic",
+				"typeBasis": "decided",
+				"cost": [
+					"Water"
+				],
+				"damage": 50,
+				"damageMode": "x",
+				"fx": [
+					{
+						"k": "discardToolsBonus",
+						"max": 2,
+						"per": 50
+					}
+				],
+				"target": "oppActive",
+				"text": "Discard up to 2 Pokémon Tool cards from your hand. This attack does 50 damage for each card you discarded in this way.",
+				"adapted": "Discard up to 2 Pokémon Tool cards from your hand. This attack does 50 damage for each card you discarded in this way.",
+				"note": null,
+				"id": "A4a-018:1"
+			}
+		],
+		"ability": null,
+		"dex": 199,
+		"printings": [
+			"A4a-018"
+		]
+	},
+	{
+		"id": "A4a-019",
+		"set": "A4a",
+		"rarity": "One Diamond",
+		"name": "Jynx",
+		"kind": "pokemon",
+		"cardType": "Water",
+		"combatTypes": [
+			"Ice",
+			"Psychic"
+		],
+		"hp": 70,
+		"stage": 0,
+		"evolvesFrom": null,
+		"ex": false,
+		"retreat": 1,
+		"weakness": "Metal",
+		"points": 1,
+		"attacks": [
+			{
+				"name": "Dazzle Dance",
+				"combatType": "Psychic",
+				"typeBasis": "decided",
+				"cost": [
+					"Water",
+					"Water"
+				],
+				"damage": 40,
+				"damageMode": "",
+				"fx": [
+					{
+						"k": "status",
+						"s": "confused"
+					}
+				],
+				"target": "oppActive",
+				"text": "Your opponent's Active Pokémon is now Confused.",
+				"adapted": "The Defending Pokémon is now Confused.",
+				"note": "\"Your opponent's Active Pokémon\" is the Defending Pokémon: the one this attack targets, since there are several.",
+				"id": "A4a-019:1"
+			}
+		],
+		"ability": null,
+		"dex": 124,
+		"printings": [
+			"A4a-019"
+		]
+	},
+	{
+		"id": "A4a-020",
+		"set": "A4a",
+		"rarity": "Four Diamond",
+		"name": "Suicune ex",
+		"kind": "pokemon",
+		"cardType": "Water",
+		"combatTypes": [
+			"Water"
+		],
+		"hp": 140,
+		"stage": 0,
+		"evolvesFrom": null,
+		"ex": true,
+		"retreat": 2,
+		"weakness": "Lightning",
+		"points": 2,
+		"attacks": [
+			{
+				"name": "Crystal Waltz",
+				"combatType": "Water",
+				"typeBasis": "decided",
+				"cost": [
+					"Water",
+					"Water"
+				],
+				"damage": 20,
+				"damageMode": "x",
+				"fx": [
+					{
+						"k": "perAllBench",
+						"per": 20
+					}
+				],
+				"target": "oppActive",
+				"text": "This attack does 20 damage for each Benched Pokémon (both yours and your opponent's).",
+				"adapted": "This attack does 20 damage for each Benched Pokémon (both yours and the Defending Pokémon's owner's).",
+				"note": "It counts your Bench and the Bench of the Defending Pokémon's owner.",
+				"id": "A4a-020:1"
+			}
+		],
+		"ability": {
+			"name": "Legendary Pulse",
+			"fx": {
+				"k": "endTurnDraw",
+				"n": 1,
+				"passive": true
+			},
+			"text": "At the end of your turn, if this Pokémon is in the Active Spot, draw a card.",
+			"adapted": "At the end of your turn, if this Pokémon is in an Active slot, draw a card.",
+			"note": "\"The Active Spot\" is either of your two Active slots."
+		},
+		"dex": 245,
+		"printings": [
+			"A4a-020",
+			"A4a-080",
+			"A4a-090"
+		]
+	},
+	{
+		"id": "A4a-021",
+		"set": "A4a",
+		"rarity": "One Diamond",
+		"name": "Feebas",
+		"kind": "pokemon",
+		"cardType": "Water",
+		"combatTypes": [
+			"Water"
+		],
+		"hp": 30,
+		"stage": 0,
+		"evolvesFrom": null,
+		"ex": false,
+		"retreat": 1,
+		"weakness": "Lightning",
+		"points": 1,
+		"attacks": [
+			{
+				"name": "Leap Out",
+				"combatType": "Normal",
+				"typeBasis": "decided",
+				"cost": [
+					"Water"
+				],
+				"damage": 0,
+				"damageMode": "",
+				"fx": [
+					{
+						"k": "switchSelf"
+					}
+				],
+				"target": "none",
+				"text": "Switch this Pokémon with 1 of your Benched Pokémon.",
+				"adapted": "Switch this Pokémon with 1 of your Benched Pokémon. It keeps the same Active slot.",
+				"note": "The Pokémon switched in takes the same Active slot.",
+				"id": "A4a-021:1"
+			}
+		],
+		"ability": null,
+		"dex": 349,
+		"printings": [
+			"A4a-021"
+		]
+	},
+	{
+		"id": "A4a-022",
+		"set": "A4a",
+		"rarity": "Three Diamond",
+		"name": "Milotic",
+		"kind": "pokemon",
+		"cardType": "Water",
+		"combatTypes": [
+			"Water"
+		],
+		"hp": 120,
+		"stage": 1,
+		"evolvesFrom": "Feebas",
+		"ex": false,
+		"retreat": 2,
+		"weakness": "Lightning",
+		"points": 1,
+		"attacks": [
+			{
+				"name": "Aqua Edge",
+				"combatType": "Water",
+				"typeBasis": "named",
+				"cost": [
+					"Water",
+					"Colorless"
+				],
+				"damage": 60,
+				"damageMode": "",
+				"fx": [],
+				"target": "oppActive",
+				"text": "",
+				"adapted": "",
+				"note": null,
+				"id": "A4a-022:1"
+			}
+		],
+		"ability": {
+			"name": "Healing Ripples",
+			"fx": {
+				"k": "onEvolveHeal",
+				"n": 60,
+				"type": "Water",
+				"passive": true
+			},
+			"text": "Once during your turn, when you play this Pokémon from your hand to evolve 1 of your Pokémon, you may heal 60 damage from 1 of your {W} Pokémon.",
+			"adapted": "Once during your turn, when you play this Pokémon from your hand to evolve 1 of your Pokémon, you may heal 60 damage from 1 of your {W} Pokémon.",
+			"note": null
+		},
+		"dex": 350,
+		"printings": [
+			"A4a-022",
+			"A4a-072"
+		]
+	},
+	{
+		"id": "A4a-023",
+		"set": "A4a",
+		"rarity": "Three Diamond",
+		"name": "Mantyke",
+		"kind": "pokemon",
+		"cardType": "Water",
+		"combatTypes": [
+			"Water",
+			"Flying"
+		],
+		"hp": 30,
+		"stage": 0,
+		"evolvesFrom": null,
+		"ex": false,
+		"retreat": 0,
+		"weakness": "Colorless",
+		"points": 1,
+		"attacks": [
+			{
+				"name": "Splashy Toss",
+				"combatType": "Water",
+				"typeBasis": "decided",
+				"cost": [],
+				"damage": 0,
+				"damageMode": "",
+				"fx": [
+					{
+						"k": "attachZone",
+						"type": "Water",
+						"to": "bench",
+						"n": 1,
+						"a": true,
+						"basic": true
+					}
+				],
+				"target": "none",
+				"text": "Take a {W} Energy from your Energy Zone and attach it to 1 of your Benched Basic Pokémon.",
+				"adapted": "Take a {W} Energy from your Energy Zone and attach it to 1 of your Benched Basic Pokémon.",
+				"note": null,
+				"id": "A4a-023:1"
+			}
+		],
+		"ability": null,
+		"dex": 458,
+		"printings": [
+			"A4a-023",
+			"A4a-105"
+		]
+	},
+	{
+		"id": "A4a-024",
+		"set": "A4a",
+		"rarity": "One Diamond",
+		"name": "Cryogonal",
+		"kind": "pokemon",
+		"cardType": "Water",
+		"combatTypes": [
+			"Ice"
+		],
+		"hp": 80,
+		"stage": 0,
+		"evolvesFrom": null,
+		"ex": false,
+		"retreat": 1,
+		"weakness": "Metal",
+		"points": 1,
+		"attacks": [
+			{
+				"name": "Ice Blade",
+				"combatType": "Ice",
+				"typeBasis": "named",
+				"cost": [
+					"Water",
+					"Water"
+				],
+				"damage": 0,
+				"damageMode": "",
+				"fx": [
+					{
+						"k": "snipe",
+						"n": 40,
+						"zone": "any"
+					}
+				],
+				"target": "oppAny",
+				"text": "This attack does 40 damage to 1 of your opponent's Pokémon.",
+				"adapted": "This attack does 40 damage to 1 Pokémon of any opponent.",
+				"note": "With several opponents, you choose which one (or which of their Pokémon) this affects.",
+				"id": "A4a-024:1"
+			}
+		],
+		"ability": null,
+		"dex": 615,
+		"printings": [
+			"A4a-024"
+		]
+	},
+	{
+		"id": "A4a-025",
+		"set": "A4a",
+		"rarity": "Four Diamond",
+		"name": "Raikou ex",
+		"kind": "pokemon",
+		"cardType": "Lightning",
+		"combatTypes": [
+			"Electric"
+		],
+		"hp": 130,
+		"stage": 0,
+		"evolvesFrom": null,
+		"ex": true,
+		"retreat": 2,
+		"weakness": "Fighting",
+		"points": 2,
+		"attacks": [
+			{
+				"name": "Voltaic Bullet",
+				"combatType": "Electric",
+				"typeBasis": "named",
+				"cost": [
+					"Lightning",
+					"Lightning"
+				],
+				"damage": 60,
+				"damageMode": "",
+				"fx": [
+					{
+						"k": "alsoBench",
+						"n": 10
+					}
+				],
+				"target": "oppActive",
+				"text": "This attack also does 10 damage to 1 of your opponent's Benched Pokémon.",
+				"adapted": "This attack also does 10 damage to 1 Benched Pokémon of any opponent.",
+				"note": "The second hit may go to a Benched Pokémon of any opponent.",
+				"id": "A4a-025:1"
+			}
+		],
+		"ability": {
+			"name": "Legendary Pulse",
+			"fx": {
+				"k": "endTurnDraw",
+				"n": 1,
+				"passive": true
+			},
+			"text": "At the end of your turn, if this Pokémon is in the Active Spot, draw a card.",
+			"adapted": "At the end of your turn, if this Pokémon is in an Active slot, draw a card.",
+			"note": "\"The Active Spot\" is either of your two Active slots."
+		},
+		"dex": 243,
+		"printings": [
+			"A4a-025",
+			"A4a-081",
+			"A4a-088"
+		]
+	},
+	{
+		"id": "A4a-026",
+		"set": "A4a",
+		"rarity": "One Diamond",
+		"name": "Tynamo",
+		"kind": "pokemon",
+		"cardType": "Lightning",
+		"combatTypes": [
+			"Electric"
+		],
+		"hp": 40,
+		"stage": 0,
+		"evolvesFrom": null,
+		"ex": false,
+		"retreat": 0,
+		"weakness": "Fighting",
+		"points": 1,
+		"attacks": [
+			{
+				"name": "Tiny Bolt",
+				"combatType": "Electric",
+				"typeBasis": "named",
+				"cost": [
+					"Colorless"
+				],
+				"damage": 10,
+				"damageMode": "",
+				"fx": [],
+				"target": "oppActive",
+				"text": "",
+				"adapted": "",
+				"note": null,
+				"id": "A4a-026:1"
+			}
+		],
+		"ability": null,
+		"dex": 602,
+		"printings": [
+			"A4a-026"
+		]
+	},
+	{
+		"id": "A4a-027",
+		"set": "A4a",
+		"rarity": "One Diamond",
+		"name": "Eelektrik",
+		"kind": "pokemon",
+		"cardType": "Lightning",
+		"combatTypes": [
+			"Electric"
+		],
+		"hp": 90,
+		"stage": 1,
+		"evolvesFrom": "Tynamo",
+		"ex": false,
+		"retreat": 2,
+		"weakness": "Fighting",
+		"points": 1,
+		"attacks": [
+			{
+				"name": "Electro Ball",
+				"combatType": "Electric",
+				"typeBasis": "move",
+				"cost": [
+					"Lightning",
+					"Colorless"
+				],
+				"damage": 50,
+				"damageMode": "",
+				"fx": [],
+				"target": "oppActive",
+				"text": "",
+				"adapted": "",
+				"note": null,
+				"id": "A4a-027:1"
+			}
+		],
+		"ability": null,
+		"dex": 603,
+		"printings": [
+			"A4a-027"
+		]
+	},
+	{
+		"id": "A4a-028",
+		"set": "A4a",
+		"rarity": "Two Diamond",
+		"name": "Eelektross",
+		"kind": "pokemon",
+		"cardType": "Lightning",
+		"combatTypes": [
+			"Electric"
+		],
+		"hp": 150,
+		"stage": 2,
+		"evolvesFrom": "Eelektrik",
+		"ex": false,
+		"retreat": 3,
+		"weakness": "Fighting",
+		"points": 1,
+		"attacks": [
+			{
+				"name": "Wild Charge",
+				"combatType": "Electric",
+				"typeBasis": "move",
+				"cost": [
+					"Lightning",
+					"Lightning",
+					"Colorless"
+				],
+				"damage": 120,
+				"damageMode": "",
+				"fx": [
+					{
+						"k": "selfDamage",
+						"n": 20
+					}
+				],
+				"target": "oppActive",
+				"text": "This Pokémon also does 20 damage to itself.",
+				"adapted": "This Pokémon also does 20 damage to itself.",
+				"note": null,
+				"id": "A4a-028:1"
+			}
+		],
+		"ability": null,
+		"dex": 604,
+		"printings": [
+			"A4a-028"
+		]
+	},
+	{
+		"id": "A4a-029",
+		"set": "A4a",
+		"rarity": "One Diamond",
+		"name": "Stunfisk",
+		"kind": "pokemon",
+		"cardType": "Lightning",
+		"combatTypes": [
+			"Ground",
+			"Electric"
+		],
+		"hp": 90,
+		"stage": 0,
+		"evolvesFrom": null,
+		"ex": false,
+		"retreat": 2,
+		"weakness": "Fighting",
+		"points": 1,
+		"attacks": [
+			{
+				"name": "Static Shock",
+				"combatType": "Electric",
+				"typeBasis": "named",
+				"cost": [
+					"Lightning",
+					"Colorless"
+				],
+				"damage": 50,
+				"damageMode": "",
+				"fx": [],
+				"target": "oppActive",
+				"text": "",
+				"adapted": "",
+				"note": null,
+				"id": "A4a-029:1"
+			}
+		],
+		"ability": null,
+		"dex": 618,
+		"printings": [
+			"A4a-029",
+			"A4a-073"
+		]
+	},
+	{
+		"id": "A4a-030",
+		"set": "A4a",
+		"rarity": "One Diamond",
+		"name": "Yamper",
+		"kind": "pokemon",
+		"cardType": "Lightning",
+		"combatTypes": [
+			"Electric"
+		],
+		"hp": 60,
+		"stage": 0,
+		"evolvesFrom": null,
+		"ex": false,
+		"retreat": 1,
+		"weakness": "Fighting",
+		"points": 1,
+		"attacks": [
+			{
+				"name": "Zap Kick",
+				"combatType": "Electric",
+				"typeBasis": "named",
+				"cost": [
+					"Lightning"
+				],
+				"damage": 20,
+				"damageMode": "",
+				"fx": [],
+				"target": "oppActive",
+				"text": "",
+				"adapted": "",
+				"note": null,
+				"id": "A4a-030:1"
+			}
+		],
+		"ability": null,
+		"dex": 835,
+		"printings": [
+			"A4a-030",
+			"A4a-074"
+		]
+	},
+	{
+		"id": "A4a-031",
+		"set": "A4a",
+		"rarity": "Three Diamond",
+		"name": "Boltund",
+		"kind": "pokemon",
+		"cardType": "Lightning",
+		"combatTypes": [
+			"Electric"
+		],
+		"hp": 120,
+		"stage": 1,
+		"evolvesFrom": "Yamper",
+		"ex": false,
+		"retreat": 2,
+		"weakness": "Fighting",
+		"points": 1,
+		"attacks": [
+			{
+				"name": "Defiant Spark",
+				"combatType": "Electric",
+				"typeBasis": "named",
+				"cost": [
+					"Lightning",
+					"Colorless",
+					"Colorless"
+				],
+				"damage": 70,
+				"damageMode": "",
+				"fx": [
+					{
+						"k": "damagedCost",
+						"cost": [
+							"Lightning"
+						]
+					}
+				],
+				"target": "oppActive",
+				"text": "If this Pokémon has damage on it, this attack can be used for 1 {L} Energy.",
+				"adapted": "If this Pokémon has damage on it, this attack can be used for 1 {L} Energy.",
+				"note": null,
+				"id": "A4a-031:1"
+			}
+		],
+		"ability": null,
+		"dex": 836,
+		"printings": [
+			"A4a-031"
+		]
+	},
+	{
+		"id": "A4a-032",
+		"set": "A4a",
+		"rarity": "One Diamond",
+		"name": "Misdreavus",
+		"kind": "pokemon",
+		"cardType": "Psychic",
+		"combatTypes": [
+			"Ghost"
+		],
+		"hp": 50,
+		"stage": 0,
+		"evolvesFrom": null,
+		"ex": false,
+		"retreat": 1,
+		"weakness": "Darkness",
+		"points": 1,
+		"attacks": [
+			{
+				"name": "Will-O-Wisp",
+				"combatType": "Fire",
+				"typeBasis": "move",
+				"cost": [
+					"Psychic"
+				],
+				"damage": 20,
+				"damageMode": "",
+				"fx": [],
+				"target": "oppActive",
+				"text": "",
+				"adapted": "",
+				"note": null,
+				"id": "A4a-032:1"
+			}
+		],
+		"ability": {
+			"name": "Infiltrating Inspection",
+			"fx": {
+				"k": "onBenchReveal",
+				"passive": true
+			},
+			"text": "Once during your turn, when you put this Pokémon from your hand onto your Bench, you may have your opponent reveal their hand.",
+			"adapted": "Once during your turn, when you put this Pokémon from your hand onto your Bench, you may have an opponent of your choice reveal their hand to you.",
+			"note": "With several opponents, you choose which one (or which of their Pokémon) this affects."
+		},
+		"dex": 200,
+		"printings": [
+			"A4a-032"
+		]
+	},
+	{
+		"id": "A4a-033",
+		"set": "A4a",
+		"rarity": "Two Diamond",
+		"name": "Mismagius",
+		"kind": "pokemon",
+		"cardType": "Psychic",
+		"combatTypes": [
+			"Ghost"
+		],
+		"hp": 100,
+		"stage": 1,
+		"evolvesFrom": "Misdreavus",
+		"ex": false,
+		"retreat": 1,
+		"weakness": "Darkness",
+		"points": 1,
+		"attacks": [
+			{
+				"name": "Cursed Prose",
+				"combatType": "Ghost",
+				"typeBasis": "decided",
+				"cost": [
+					"Psychic"
+				],
+				"damage": 0,
+				"damageMode": "",
+				"fx": [
+					{
+						"k": "doom",
+						"n": 90
+					}
+				],
+				"target": "oppActive",
+				"text": "At the end of your opponent's next turn, do 90 damage to the Defending Pokémon.",
+				"adapted": "At the end of its owner's next turn, do 90 damage to the Defending Pokémon.",
+				"note": "\"Your opponent\" is the owner of the Defending Pokémon; \"their next turn\" is that player's.",
+				"id": "A4a-033:1"
+			}
+		],
+		"ability": null,
+		"dex": 429,
+		"printings": [
+			"A4a-033"
+		]
+	},
+	{
+		"id": "A4a-034",
+		"set": "A4a",
+		"rarity": "One Diamond",
+		"name": "Galarian Corsola",
+		"kind": "pokemon",
+		"cardType": "Psychic",
+		"combatTypes": [
+			"Ghost"
+		],
+		"hp": 60,
+		"stage": 0,
+		"evolvesFrom": null,
+		"ex": false,
+		"retreat": 1,
+		"weakness": "Darkness",
+		"points": 1,
+		"attacks": [
+			{
+				"name": "Tackle",
+				"combatType": "Normal",
+				"typeBasis": "move",
+				"cost": [
+					"Psychic"
+				],
+				"damage": 20,
+				"damageMode": "",
+				"fx": [],
+				"target": "oppActive",
+				"text": "",
+				"adapted": "",
+				"note": null,
+				"id": "A4a-034:1"
+			}
+		],
+		"ability": null,
+		"dex": 222,
+		"sprite": "s7105.png",
+		"printings": [
+			"A4a-034"
+		]
+	},
+	{
+		"id": "A4a-035",
+		"set": "A4a",
+		"rarity": "Three Diamond",
+		"name": "Galarian Cursola",
+		"kind": "pokemon",
+		"cardType": "Psychic",
+		"combatTypes": [
+			"Ghost"
+		],
+		"hp": 80,
+		"stage": 1,
+		"evolvesFrom": "Galarian Corsola",
+		"ex": false,
+		"retreat": 2,
+		"weakness": "Darkness",
+		"points": 1,
+		"attacks": [
+			{
+				"name": "Spooky Shot",
+				"combatType": "Ghost",
+				"typeBasis": "named",
+				"cost": [
+					"Psychic",
+					"Psychic"
+				],
+				"damage": 60,
+				"damageMode": "",
+				"fx": [],
+				"target": "oppActive",
+				"text": "",
+				"adapted": "",
+				"note": null,
+				"id": "A4a-035:1"
+			}
+		],
+		"ability": {
+			"name": "Perish Body",
+			"fx": {
+				"k": "koCoinKO",
+				"passive": true
+			},
+			"text": "If this Pokémon is in the Active Spot and is Knocked Out by damage from an attack from your opponent's Pokémon, flip a coin. If heads, the Attacking Pokémon is Knocked Out.",
+			"adapted": "If this Pokémon is in an Active slot and is Knocked Out by damage from an attack from an opposing Pokémon, flip a coin. If heads, the Attacking Pokémon is Knocked Out.",
+			"note": "\"The Active Spot\" is either of your two Active slots."
+		},
+		"dex": 864,
+		"printings": [
+			"A4a-035"
+		]
+	},
+	{
+		"id": "A4a-036",
+		"set": "A4a",
+		"rarity": "Three Diamond",
+		"name": "Latias",
+		"kind": "pokemon",
+		"cardType": "Psychic",
+		"combatTypes": [
+			"Dragon",
+			"Psychic"
+		],
+		"hp": 90,
+		"stage": 0,
+		"evolvesFrom": null,
+		"ex": false,
+		"retreat": 1,
+		"weakness": "Darkness",
+		"points": 1,
+		"attacks": [
+			{
+				"name": "Crossing Flights",
+				"combatType": "Flying",
+				"typeBasis": "decided",
+				"cost": [
+					"Psychic"
+				],
+				"damage": 20,
+				"damageMode": "+",
+				"fx": [
+					{
+						"k": "benchHasBonus",
+						"name": "Latios",
+						"bonus": 20
+					}
+				],
+				"target": "oppActive",
+				"text": "If Latios is on your Bench, this attack does 20 more damage.",
+				"adapted": "If Latios is on your Bench, this attack does 20 more damage.",
+				"note": null,
+				"id": "A4a-036:1"
+			}
+		],
+		"ability": null,
+		"dex": 380,
+		"printings": [
+			"A4a-036"
+		]
+	},
+	{
+		"id": "A4a-037",
+		"set": "A4a",
+		"rarity": "Three Diamond",
+		"name": "Latios",
+		"kind": "pokemon",
+		"cardType": "Psychic",
+		"combatTypes": [
+			"Dragon",
+			"Psychic"
+		],
+		"hp": 110,
+		"stage": 0,
+		"evolvesFrom": null,
+		"ex": false,
+		"retreat": 2,
+		"weakness": "Darkness",
+		"points": 1,
+		"attacks": [
+			{
+				"name": "Luster Purge",
+				"combatType": "Psychic",
+				"typeBasis": "move",
+				"cost": [
+					"Psychic",
+					"Psychic",
+					"Psychic"
+				],
+				"damage": 120,
+				"damageMode": "",
+				"fx": [
+					{
+						"k": "discardSelfEnergy",
+						"type": null,
+						"n": "all"
+					}
+				],
+				"target": "oppActive",
+				"text": "Discard all Energy from this Pokémon.",
+				"adapted": "Discard all Energy from this Pokémon.",
+				"note": null,
+				"id": "A4a-037:1"
+			}
+		],
+		"ability": {
+			"name": "Fantastical Floating",
+			"fx": {
+				"k": "linkFreeRetreat",
+				"names": [
+					"Latias"
+				],
+				"passive": true
+			},
+			"text": "If you have Latias in play, this Pokémon has no Retreat Cost.",
+			"adapted": "If you have Latias in play, this Pokémon has no Retreat Cost.",
+			"note": null
+		},
+		"dex": 381,
+		"printings": [
+			"A4a-037",
+			"A4a-075"
+		]
+	},
+	{
+		"id": "A4a-038",
+		"set": "A4a",
+		"rarity": "One Diamond",
+		"name": "Frillish",
+		"kind": "pokemon",
+		"cardType": "Psychic",
+		"combatTypes": [
+			"Water",
+			"Ghost"
+		],
+		"hp": 60,
+		"stage": 0,
+		"evolvesFrom": null,
+		"ex": false,
+		"retreat": 1,
+		"weakness": "Darkness",
+		"points": 1,
+		"attacks": [
+			{
+				"name": "Absorb",
+				"combatType": "Grass",
+				"typeBasis": "move",
+				"cost": [
+					"Psychic"
+				],
+				"damage": 10,
+				"damageMode": "",
+				"fx": [
+					{
+						"k": "heal",
+						"n": 10
+					}
+				],
+				"target": "oppActive",
+				"text": "Heal 10 damage from this Pokémon.",
+				"adapted": "Heal 10 damage from this Pokémon.",
+				"note": null,
+				"id": "A4a-038:1"
+			}
+		],
+		"ability": null,
+		"dex": 592,
+		"printings": [
+			"A4a-038"
+		]
+	},
+	{
+		"id": "A4a-039",
+		"set": "A4a",
+		"rarity": "Two Diamond",
+		"name": "Jellicent",
+		"kind": "pokemon",
+		"cardType": "Psychic",
+		"combatTypes": [
+			"Water",
+			"Ghost"
+		],
+		"hp": 110,
+		"stage": 1,
+		"evolvesFrom": "Frillish",
+		"ex": false,
+		"retreat": 2,
+		"weakness": "Darkness",
+		"points": 1,
+		"attacks": [
+			{
+				"name": "Devour Soul",
+				"combatType": "Ghost",
+				"typeBasis": "named",
+				"cost": [
+					"Psychic",
+					"Psychic",
+					"Colorless"
+				],
+				"damage": 80,
+				"damageMode": "",
+				"fx": [],
+				"target": "oppActive",
+				"text": "",
+				"adapted": "",
+				"note": null,
+				"id": "A4a-039:1"
+			}
+		],
+		"ability": null,
+		"dex": 593,
+		"printings": [
+			"A4a-039"
+		]
+	},
+	{
+		"id": "A4a-040",
+		"set": "A4a",
+		"rarity": "One Diamond",
+		"name": "Diglett",
+		"kind": "pokemon",
+		"cardType": "Fighting",
+		"combatTypes": [
+			"Ground"
+		],
+		"hp": 60,
+		"stage": 0,
+		"evolvesFrom": null,
+		"ex": false,
+		"retreat": 1,
+		"weakness": "Grass",
+		"points": 1,
+		"attacks": [
+			{
+				"name": "Headbutt",
+				"combatType": "Normal",
+				"typeBasis": "move",
+				"cost": [
+					"Colorless"
+				],
+				"damage": 10,
+				"damageMode": "",
+				"fx": [],
+				"target": "oppActive",
+				"text": "",
+				"adapted": "",
+				"note": null,
+				"id": "A4a-040:1"
+			}
+		],
+		"ability": null,
+		"dex": 50,
+		"printings": [
+			"A4a-040"
+		]
+	},
+	{
+		"id": "A4a-041",
+		"set": "A4a",
+		"rarity": "Two Diamond",
+		"name": "Dugtrio",
+		"kind": "pokemon",
+		"cardType": "Fighting",
+		"combatTypes": [
+			"Ground"
+		],
+		"hp": 90,
+		"stage": 1,
+		"evolvesFrom": "Diglett",
+		"ex": false,
+		"retreat": 1,
+		"weakness": "Grass",
+		"points": 1,
+		"attacks": [
+			{
+				"name": "Cliff Crumbler",
+				"combatType": "Ground",
+				"typeBasis": "decided",
+				"cost": [
+					"Fighting"
+				],
+				"damage": 40,
+				"damageMode": "+",
+				"fx": [
+					{
+						"k": "millSelfBonus",
+						"type": "Fighting",
+						"bonus": 60
+					}
+				],
+				"target": "oppActive",
+				"text": "Discard the top card of your deck. If that card is a {F} Pokémon, this attack does 60 more damage.",
+				"adapted": "Discard the top card of your deck. If that card is a {F} Pokémon, this attack does 60 more damage.",
+				"note": null,
+				"id": "A4a-041:1"
+			}
+		],
+		"ability": null,
+		"dex": 51,
+		"printings": [
+			"A4a-041"
+		]
+	},
+	{
+		"id": "A4a-042",
+		"set": "A4a",
+		"rarity": "Four Diamond",
+		"name": "Poliwrath ex",
+		"kind": "pokemon",
+		"cardType": "Fighting",
+		"combatTypes": [
+			"Water",
+			"Fighting"
+		],
+		"hp": 180,
+		"stage": 2,
+		"evolvesFrom": "Poliwhirl",
+		"ex": true,
+		"retreat": 3,
+		"weakness": "Psychic",
+		"points": 2,
+		"attacks": [
+			{
+				"name": "Hydro Knuckle",
+				"combatType": "Water",
+				"typeBasis": "decided",
+				"cost": [
+					"Fighting",
+					"Colorless",
+					"Colorless"
+				],
+				"damage": 100,
+				"damageMode": "+",
+				"fx": [
+					{
+						"k": "hasEnergyBonus",
+						"type": "Water",
+						"bonus": 40
+					}
+				],
+				"target": "oppActive",
+				"text": "If this Pokémon has any {W} Energy attached, this attack does 40 more damage.",
+				"adapted": "If this Pokémon has any {W} Energy attached, this attack does 40 more damage.",
+				"note": null,
+				"id": "A4a-042:1"
+			}
+		],
+		"ability": null,
+		"dex": 62,
+		"printings": [
+			"A4a-042",
+			"A4a-082",
+			"A4a-089"
+		]
+	},
+	{
+		"id": "A4a-043",
+		"set": "A4a",
+		"rarity": "One Diamond",
+		"name": "Phanpy",
+		"kind": "pokemon",
+		"cardType": "Fighting",
+		"combatTypes": [
+			"Ground"
+		],
+		"hp": 70,
+		"stage": 0,
+		"evolvesFrom": null,
+		"ex": false,
+		"retreat": 2,
+		"weakness": "Grass",
+		"points": 1,
+		"attacks": [
+			{
+				"name": "Flail",
+				"combatType": "Normal",
+				"typeBasis": "move",
+				"cost": [
+					"Fighting"
+				],
+				"damage": 0,
+				"damageMode": "",
+				"fx": [
+					{
+						"k": "selfDamageBonus",
+						"eq": true
+					}
+				],
+				"target": "oppActive",
+				"text": "This attack does damage to your opponent's Active Pokémon equal to the damage this Pokémon has on it.",
+				"adapted": "This attack does damage to the Defending Pokémon equal to the damage this Pokémon has on it.",
+				"note": "\"Your opponent's Active Pokémon\" is the Defending Pokémon: the one this attack targets, since there are several.",
+				"id": "A4a-043:1"
+			}
+		],
+		"ability": null,
+		"dex": 231,
+		"printings": [
+			"A4a-043",
+			"A4a-076"
+		]
+	},
+	{
+		"id": "A4a-044",
+		"set": "A4a",
+		"rarity": "Two Diamond",
+		"name": "Donphan",
+		"kind": "pokemon",
+		"cardType": "Fighting",
+		"combatTypes": [
+			"Ground"
+		],
+		"hp": 120,
+		"stage": 1,
+		"evolvesFrom": "Phanpy",
+		"ex": false,
+		"retreat": 4,
+		"weakness": "Grass",
+		"points": 1,
+		"attacks": [
+			{
+				"name": "Land Crush",
+				"combatType": "Ground",
+				"typeBasis": "named",
+				"cost": [
+					"Fighting",
+					"Fighting",
+					"Colorless"
+				],
+				"damage": 80,
+				"damageMode": "",
+				"fx": [],
+				"target": "oppActive",
+				"text": "",
+				"adapted": "",
+				"note": null,
+				"id": "A4a-044:1"
+			}
+		],
+		"ability": {
+			"name": "Exoskeleton",
+			"fx": {
+				"k": "reduce",
+				"n": 20,
+				"passive": true
+			},
+			"text": "This Pokémon takes −20 damage from attacks.",
+			"adapted": "This Pokémon takes -20 damage from attacks.",
+			"note": null
+		},
+		"dex": 232,
+		"printings": [
+			"A4a-044"
+		]
+	},
+	{
+		"id": "A4a-045",
+		"set": "A4a",
+		"rarity": "One Diamond",
+		"name": "Relicanth",
+		"kind": "pokemon",
+		"cardType": "Fighting",
+		"combatTypes": [
+			"Water",
+			"Rock"
+		],
+		"hp": 90,
+		"stage": 0,
+		"evolvesFrom": null,
+		"ex": false,
+		"retreat": 2,
+		"weakness": "Grass",
+		"points": 1,
+		"attacks": [
+			{
+				"name": "Take Down",
+				"combatType": "Normal",
+				"typeBasis": "move",
+				"cost": [
+					"Colorless",
+					"Colorless"
+				],
+				"damage": 50,
+				"damageMode": "",
+				"fx": [
+					{
+						"k": "selfDamage",
+						"n": 10
+					}
+				],
+				"target": "oppActive",
+				"text": "This Pokémon also does 10 damage to itself.",
+				"adapted": "This Pokémon also does 10 damage to itself.",
+				"note": null,
+				"id": "A4a-045:1"
+			}
+		],
+		"ability": null,
+		"dex": 369,
+		"printings": [
+			"A4a-045"
+		]
+	},
+	{
+		"id": "A4a-046",
+		"set": "A4a",
+		"rarity": "One Diamond",
+		"name": "Dwebble",
+		"kind": "pokemon",
+		"cardType": "Fighting",
+		"combatTypes": [
+			"Bug",
+			"Rock"
+		],
+		"hp": 70,
+		"stage": 0,
+		"evolvesFrom": null,
+		"ex": false,
+		"retreat": 2,
+		"weakness": "Grass",
+		"points": 1,
+		"attacks": [
+			{
+				"name": "Sand Spray",
+				"combatType": "Ground",
+				"typeBasis": "named",
+				"cost": [
+					"Fighting",
+					"Colorless"
+				],
+				"damage": 30,
+				"damageMode": "",
+				"fx": [],
+				"target": "oppActive",
+				"text": "",
+				"adapted": "",
+				"note": null,
+				"id": "A4a-046:1"
+			}
+		],
+		"ability": null,
+		"dex": 557,
+		"printings": [
+			"A4a-046"
+		]
+	},
+	{
+		"id": "A4a-047",
+		"set": "A4a",
+		"rarity": "Two Diamond",
+		"name": "Crustle",
+		"kind": "pokemon",
+		"cardType": "Fighting",
+		"combatTypes": [
+			"Bug",
+			"Rock"
+		],
+		"hp": 140,
+		"stage": 1,
+		"evolvesFrom": "Dwebble",
+		"ex": false,
+		"retreat": 4,
+		"weakness": "Grass",
+		"points": 1,
+		"attacks": [
+			{
+				"name": "Stone Edge",
+				"combatType": "Rock",
+				"typeBasis": "move",
+				"cost": [
+					"Fighting",
+					"Fighting",
+					"Fighting",
+					"Colorless"
+				],
+				"damage": 100,
+				"damageMode": "+",
+				"fx": [
+					{
+						"k": "coinBonus",
+						"bonus": 50
+					}
+				],
+				"target": "oppActive",
+				"text": "Flip a coin. If heads, this attack does 50 more damage.",
+				"adapted": "Flip a coin. If heads, this attack does 50 more damage.",
+				"note": null,
+				"id": "A4a-047:1"
+			}
+		],
+		"ability": null,
+		"dex": 558,
+		"printings": [
+			"A4a-047"
+		]
+	},
+	{
+		"id": "A4a-048",
+		"set": "A4a",
+		"rarity": "One Diamond",
+		"name": "Seviper",
+		"kind": "pokemon",
+		"cardType": "Darkness",
+		"combatTypes": [
+			"Poison"
+		],
+		"hp": 80,
+		"stage": 0,
+		"evolvesFrom": null,
+		"ex": false,
+		"retreat": 2,
+		"weakness": "Fighting",
+		"points": 1,
+		"attacks": [
+			{
+				"name": "Fateful Fang",
+				"combatType": "Poison",
+				"typeBasis": "decided",
+				"cost": [
+					"Darkness",
+					"Colorless"
+				],
+				"damage": 40,
+				"damageMode": "+",
+				"fx": [
+					{
+						"k": "targetNameBonus",
+						"name": "Zangoose",
+						"bonus": 40
+					}
+				],
+				"target": "oppActive",
+				"text": "If your opponent's Active Pokémon is Zangoose, this attack does 40 more damage.",
+				"adapted": "If the Defending Pokémon is Zangoose, this attack does 40 more damage.",
+				"note": "\"Your opponent's Active Pokémon\" is the Defending Pokémon: the one this attack targets, since there are several.",
+				"id": "A4a-048:1"
+			}
+		],
+		"ability": null,
+		"dex": 336,
+		"printings": [
+			"A4a-048"
+		]
+	},
+	{
+		"id": "A4a-049",
+		"set": "A4a",
+		"rarity": "One Diamond",
+		"name": "Zorua",
+		"kind": "pokemon",
+		"cardType": "Darkness",
+		"combatTypes": [
+			"Dark"
+		],
+		"hp": 60,
+		"stage": 0,
+		"evolvesFrom": null,
+		"ex": false,
+		"retreat": 1,
+		"weakness": "Grass",
+		"points": 1,
+		"attacks": [
+			{
+				"name": "Ram",
+				"combatType": "Normal",
+				"typeBasis": "named",
+				"cost": [
+					"Darkness"
+				],
+				"damage": 20,
+				"damageMode": "",
+				"fx": [],
+				"target": "oppActive",
+				"text": "",
+				"adapted": "",
+				"note": null,
+				"id": "A4a-049:1"
+			}
+		],
+		"ability": null,
+		"dex": 570,
+		"printings": [
+			"A4a-049"
+		]
+	},
+	{
+		"id": "A4a-050",
+		"set": "A4a",
+		"rarity": "Three Diamond",
+		"name": "Zoroark",
+		"kind": "pokemon",
+		"cardType": "Darkness",
+		"combatTypes": [
+			"Dark"
+		],
+		"hp": 100,
+		"stage": 1,
+		"evolvesFrom": "Zorua",
+		"ex": false,
+		"retreat": 2,
+		"weakness": "Grass",
+		"points": 1,
+		"attacks": [
+			{
+				"name": "Night Daze",
+				"combatType": "Dark",
+				"typeBasis": "move",
+				"cost": [
+					"Darkness",
+					"Darkness"
+				],
+				"damage": 70,
+				"damageMode": "",
+				"fx": [],
+				"target": "oppActive",
+				"text": "",
+				"adapted": "",
+				"note": null,
+				"id": "A4a-050:1"
+			}
+		],
+		"ability": {
+			"name": "Illusive Trickery",
+			"fx": {
+				"k": "koGuard",
+				"passive": true
+			},
+			"text": "If your opponent's Pokémon is Knocked Out by damage from this Pokémon's attacks, during your opponent's next turn, prevent all damage from—and effects of—attacks done to this Pokémon.",
+			"adapted": "If an opposing Pokémon is Knocked Out by damage from this Pokémon's attacks, until your next turn, prevent all damage from—and effects of—attacks done to this Pokémon.",
+			"note": "\"During your opponent's next turn\" becomes \"until your next turn\", so it covers every opponent's turn."
+		},
+		"dex": 571,
+		"printings": [
+			"A4a-050"
+		]
+	},
+	{
+		"id": "A4a-051",
+		"set": "A4a",
+		"rarity": "One Diamond",
+		"name": "Inkay",
+		"kind": "pokemon",
+		"cardType": "Darkness",
+		"combatTypes": [
+			"Dark",
+			"Psychic"
+		],
+		"hp": 60,
+		"stage": 0,
+		"evolvesFrom": null,
+		"ex": false,
+		"retreat": 1,
+		"weakness": "Grass",
+		"points": 1,
+		"attacks": [
+			{
+				"name": "Tackle",
+				"combatType": "Normal",
+				"typeBasis": "move",
+				"cost": [
+					"Darkness"
+				],
+				"damage": 20,
+				"damageMode": "",
+				"fx": [],
+				"target": "oppActive",
+				"text": "",
+				"adapted": "",
+				"note": null,
+				"id": "A4a-051:1"
+			}
+		],
+		"ability": null,
+		"dex": 686,
+		"printings": [
+			"A4a-051"
+		]
+	},
+	{
+		"id": "A4a-052",
+		"set": "A4a",
+		"rarity": "Two Diamond",
+		"name": "Malamar",
+		"kind": "pokemon",
+		"cardType": "Darkness",
+		"combatTypes": [
+			"Dark",
+			"Psychic"
+		],
+		"hp": 90,
+		"stage": 1,
+		"evolvesFrom": "Inkay",
+		"ex": false,
+		"retreat": 1,
+		"weakness": "Grass",
+		"points": 1,
+		"attacks": [
+			{
+				"name": "Mental Surge",
+				"combatType": "Psychic",
+				"typeBasis": "decided",
+				"cost": [
+					"Darkness"
+				],
+				"damage": 0,
+				"damageMode": "",
+				"fx": [
+					{
+						"k": "allOppDamage",
+						"n": 20
+					}
+				],
+				"target": "oppActive",
+				"text": "This attack does 20 damage to each of your opponent's Pokémon.",
+				"adapted": "Choose an opponent (by targeting one of their Active Pokémon). This attack does 20 damage to each of that player's Pokémon.",
+				"note": "It hits every Pokémon of one opponent: the owner of the Pokémon you target.",
+				"id": "A4a-052:1"
+			}
+		],
+		"ability": null,
+		"dex": 687,
+		"printings": [
+			"A4a-052"
+		]
+	},
+	{
+		"id": "A4a-053",
+		"set": "A4a",
+		"rarity": "One Diamond",
+		"name": "Skrelp",
+		"kind": "pokemon",
+		"cardType": "Darkness",
+		"combatTypes": [
+			"Poison",
+			"Water"
+		],
+		"hp": 50,
+		"stage": 0,
+		"evolvesFrom": null,
+		"ex": false,
+		"retreat": 1,
+		"weakness": "Fighting",
+		"points": 1,
+		"attacks": [
+			{
+				"name": "Melt",
+				"combatType": "Poison",
+				"typeBasis": "decided",
+				"cost": [
+					"Darkness"
+				],
+				"damage": 20,
+				"damageMode": "",
+				"fx": [],
+				"target": "oppActive",
+				"text": "",
+				"adapted": "",
+				"note": null,
+				"id": "A4a-053:1"
+			}
+		],
+		"ability": null,
+		"dex": 690,
+		"printings": [
+			"A4a-053"
+		]
+	},
+	{
+		"id": "A4a-054",
+		"set": "A4a",
+		"rarity": "One Diamond",
+		"name": "Dragalge",
+		"kind": "pokemon",
+		"cardType": "Darkness",
+		"combatTypes": [
+			"Poison",
+			"Dragon"
+		],
+		"hp": 110,
+		"stage": 1,
+		"evolvesFrom": "Skrelp",
+		"ex": false,
+		"retreat": 1,
+		"weakness": "Fighting",
+		"points": 1,
+		"attacks": [
+			{
+				"name": "Sludge Bomb",
+				"combatType": "Poison",
+				"typeBasis": "move",
+				"cost": [
+					"Darkness",
+					"Colorless",
+					"Colorless"
+				],
+				"damage": 70,
+				"damageMode": "",
+				"fx": [],
+				"target": "oppActive",
+				"text": "",
+				"adapted": "",
+				"note": null,
+				"id": "A4a-054:1"
+			}
+		],
+		"ability": null,
+		"dex": 691,
+		"printings": [
+			"A4a-054"
+		]
+	},
+	{
+		"id": "A4a-055",
+		"set": "A4a",
+		"rarity": "Three Diamond",
+		"name": "Altaria",
+		"kind": "pokemon",
+		"cardType": "Dragon",
+		"combatTypes": [
+			"Dragon",
+			"Flying"
+		],
+		"hp": 120,
+		"stage": 1,
+		"evolvesFrom": "Swablu",
+		"ex": false,
+		"retreat": 2,
+		"weakness": "Colorless",
+		"points": 1,
+		"attacks": [
+			{
+				"name": "Dragon Arcana",
+				"combatType": "Dragon",
+				"typeBasis": "named",
+				"cost": [
+					"Colorless",
+					"Colorless"
+				],
+				"damage": 40,
+				"damageMode": "+",
+				"fx": [
+					{
+						"k": "energyTypesBonus",
+						"need": 2,
+						"bonus": 60
+					}
+				],
+				"target": "oppActive",
+				"text": "If this Pokémon has 2 or more different types of Energy attached, this attack does 60 more damage.",
+				"adapted": "If this Pokémon has 2 or more different types of Energy attached, this attack does 60 more damage.",
+				"note": null,
+				"id": "A4a-055:1"
+			}
+		],
+		"ability": null,
+		"dex": 334,
+		"printings": [
+			"A4a-055"
+		]
+	},
+	{
+		"id": "A4a-056",
+		"set": "A4a",
+		"rarity": "One Diamond",
+		"name": "Farfetch'd",
+		"kind": "pokemon",
+		"cardType": "Colorless",
+		"combatTypes": [
+			"Normal",
+			"Flying"
+		],
+		"hp": 70,
+		"stage": 0,
+		"evolvesFrom": null,
+		"ex": false,
+		"retreat": 1,
+		"weakness": "Lightning",
+		"points": 1,
+		"attacks": [
+			{
+				"name": "Leek Slam",
+				"combatType": "Normal",
+				"typeBasis": "decided",
+				"cost": [
+					"Colorless",
+					"Colorless"
+				],
+				"damage": 60,
+				"damageMode": "",
+				"fx": [],
+				"target": "oppActive",
+				"text": "",
+				"adapted": "",
+				"note": null,
+				"id": "A4a-056:1"
+			}
+		],
+		"ability": null,
+		"dex": 83,
+		"printings": [
+			"A4a-056"
+		]
+	},
+	{
+		"id": "A4a-057",
+		"set": "A4a",
+		"rarity": "One Diamond",
+		"name": "Lickitung",
+		"kind": "pokemon",
+		"cardType": "Colorless",
+		"combatTypes": [
+			"Normal"
+		],
+		"hp": 80,
+		"stage": 0,
+		"evolvesFrom": null,
+		"ex": false,
+		"retreat": 3,
+		"weakness": "Fighting",
+		"points": 1,
+		"attacks": [
+			{
+				"name": "Stretch Tongue",
+				"combatType": "Normal",
+				"typeBasis": "decided",
+				"cost": [
+					"Colorless",
+					"Colorless"
+				],
+				"damage": 0,
+				"damageMode": "",
+				"fx": [
+					{
+						"k": "snipe",
+						"n": 30,
+						"zone": "any"
+					}
+				],
+				"target": "oppAny",
+				"text": "This attack does 30 damage to 1 of your opponent's Pokémon.",
+				"adapted": "This attack does 30 damage to 1 Pokémon of any opponent.",
+				"note": "With several opponents, you choose which one (or which of their Pokémon) this affects.",
+				"id": "A4a-057:1"
+			}
+		],
+		"ability": null,
+		"dex": 108,
+		"printings": [
+			"A4a-057"
+		]
+	},
+	{
+		"id": "A4a-058",
+		"set": "A4a",
+		"rarity": "Two Diamond",
+		"name": "Lickilicky",
+		"kind": "pokemon",
+		"cardType": "Colorless",
+		"combatTypes": [
+			"Normal"
+		],
+		"hp": 130,
+		"stage": 1,
+		"evolvesFrom": "Lickitung",
+		"ex": false,
+		"retreat": 3,
+		"weakness": "Fighting",
+		"points": 1,
+		"attacks": [
+			{
+				"name": "Stretch Tongue",
+				"combatType": "Normal",
+				"typeBasis": "decided",
+				"cost": [
+					"Colorless",
+					"Colorless",
+					"Colorless"
+				],
+				"damage": 0,
+				"damageMode": "",
+				"fx": [
+					{
+						"k": "snipe",
+						"n": 60,
+						"zone": "any"
+					}
+				],
+				"target": "oppAny",
+				"text": "This attack does 60 damage to 1 of your opponent's Pokémon.",
+				"adapted": "This attack does 60 damage to 1 Pokémon of any opponent.",
+				"note": "With several opponents, you choose which one (or which of their Pokémon) this affects.",
+				"id": "A4a-058:1"
+			}
+		],
+		"ability": null,
+		"dex": 463,
+		"printings": [
+			"A4a-058"
+		]
+	},
+	{
+		"id": "A4a-059",
+		"set": "A4a",
+		"rarity": "Three Diamond",
+		"name": "Igglybuff",
+		"kind": "pokemon",
+		"cardType": "Colorless",
+		"combatTypes": [
+			"Normal",
+			"Fairy"
+		],
+		"hp": 30,
+		"stage": 0,
+		"evolvesFrom": null,
+		"ex": false,
+		"retreat": 0,
+		"weakness": "Colorless",
+		"points": 1,
+		"attacks": [
+			{
+				"name": "Sleepy Lullaby",
+				"combatType": "Normal",
+				"typeBasis": "decided",
+				"cost": [],
+				"damage": 10,
+				"damageMode": "",
+				"fx": [
+					{
+						"k": "status",
+						"s": "asleep"
+					}
+				],
+				"target": "oppActive",
+				"text": "Your opponent's Active Pokémon is now Asleep.",
+				"adapted": "The Defending Pokémon is now Asleep.",
+				"note": "\"Your opponent's Active Pokémon\" is the Defending Pokémon: the one this attack targets, since there are several.",
+				"id": "A4a-059:1"
+			}
+		],
+		"ability": null,
+		"dex": 174,
+		"printings": [
+			"A4a-059"
+		]
+	},
+	{
+		"id": "A4a-060",
+		"set": "A4a",
+		"rarity": "One Diamond",
+		"name": "Teddiursa",
+		"kind": "pokemon",
+		"cardType": "Colorless",
+		"combatTypes": [
+			"Normal"
+		],
+		"hp": 60,
+		"stage": 0,
+		"evolvesFrom": null,
+		"ex": false,
+		"retreat": 1,
+		"weakness": "Fighting",
+		"points": 1,
+		"attacks": [
+			{
+				"name": "Surprise Attack",
+				"combatType": "Dark",
+				"typeBasis": "decided",
+				"cost": [
+					"Colorless"
+				],
+				"damage": 40,
+				"damageMode": "",
+				"fx": [
+					{
+						"k": "coinNothing"
+					}
+				],
+				"target": "oppActive",
+				"text": "Flip a coin. If tails, this attack does nothing.",
+				"adapted": "Flip a coin. If tails, this attack does nothing.",
+				"note": null,
+				"id": "A4a-060:1"
+			}
+		],
+		"ability": null,
+		"dex": 216,
+		"printings": [
+			"A4a-060"
+		]
+	},
+	{
+		"id": "A4a-061",
+		"set": "A4a",
+		"rarity": "Two Diamond",
+		"name": "Ursaring",
+		"kind": "pokemon",
+		"cardType": "Colorless",
+		"combatTypes": [
+			"Normal"
+		],
+		"hp": 130,
+		"stage": 1,
+		"evolvesFrom": "Teddiursa",
+		"ex": false,
+		"retreat": 3,
+		"weakness": "Fighting",
+		"points": 1,
+		"attacks": [
+			{
+				"name": "Claw Slash",
+				"combatType": "Ghost",
+				"typeBasis": "decided",
+				"cost": [
+					"Colorless",
+					"Colorless",
+					"Colorless",
+					"Colorless"
+				],
+				"damage": 110,
+				"damageMode": "",
+				"fx": [],
+				"target": "oppActive",
+				"text": "",
+				"adapted": "",
+				"note": null,
+				"id": "A4a-061:1"
+			}
+		],
+		"ability": null,
+		"dex": 217,
+		"printings": [
+			"A4a-061"
+		]
+	},
+	{
+		"id": "A4a-062",
+		"set": "A4a",
+		"rarity": "Two Diamond",
+		"name": "Miltank",
+		"kind": "pokemon",
+		"cardType": "Colorless",
+		"combatTypes": [
+			"Normal"
+		],
+		"hp": 110,
+		"stage": 0,
+		"evolvesFrom": null,
+		"ex": false,
+		"retreat": 3,
+		"weakness": "Fighting",
+		"points": 1,
+		"attacks": [
+			{
+				"name": "Rolling Frenzy",
+				"combatType": "Rock",
+				"typeBasis": "decided",
+				"cost": [
+					"Colorless"
+				],
+				"damage": 10,
+				"damageMode": "",
+				"fx": [
+					{
+						"k": "selfAtkPlusLasting",
+						"n": 30
+					}
+				],
+				"target": "oppActive",
+				"text": "Until this Pokémon leaves the Active Spot, this Pokémon's Rolling Frenzy attack does +30 damage. This effect stacks.",
+				"adapted": "Until this Pokémon leaves its Active slot, this attack does +30 damage. This effect stacks.",
+				"note": "\"The Active Spot\" is either of your two Active slots.",
+				"id": "A4a-062:1"
+			}
+		],
+		"ability": null,
+		"dex": 241,
+		"printings": [
+			"A4a-062"
+		]
+	},
+	{
+		"id": "A4a-063",
+		"set": "A4a",
+		"rarity": "Three Diamond",
+		"name": "Azurill",
+		"kind": "pokemon",
+		"cardType": "Colorless",
+		"combatTypes": [
+			"Normal",
+			"Fairy"
+		],
+		"hp": 30,
+		"stage": 0,
+		"evolvesFrom": null,
+		"ex": false,
+		"retreat": 0,
+		"weakness": "Colorless",
+		"points": 1,
+		"attacks": [
+			{
+				"name": "Squishy Healing",
+				"combatType": "Normal",
+				"typeBasis": "decided",
+				"cost": [],
+				"damage": 0,
+				"damageMode": "",
+				"fx": [
+					{
+						"k": "healBench",
+						"n": 50
+					}
+				],
+				"target": "none",
+				"text": "Heal 50 damage from 1 of your Benched Pokémon.",
+				"adapted": "Heal 50 damage from 1 of your Benched Pokémon.",
+				"note": null,
+				"id": "A4a-063:1"
+			}
+		],
+		"ability": null,
+		"dex": 298,
+		"printings": [
+			"A4a-063",
+			"A4a-077"
+		]
+	},
+	{
+		"id": "A4a-064",
+		"set": "A4a",
+		"rarity": "One Diamond",
+		"name": "Swablu",
+		"kind": "pokemon",
+		"cardType": "Colorless",
+		"combatTypes": [
+			"Normal",
+			"Flying"
+		],
+		"hp": 50,
+		"stage": 0,
+		"evolvesFrom": null,
+		"ex": false,
+		"retreat": 1,
+		"weakness": "Lightning",
+		"points": 1,
+		"attacks": [
+			{
+				"name": "Peck",
+				"combatType": "Flying",
+				"typeBasis": "move",
+				"cost": [
+					"Colorless"
+				],
+				"damage": 20,
+				"damageMode": "",
+				"fx": [],
+				"target": "oppActive",
+				"text": "",
+				"adapted": "",
+				"note": null,
+				"id": "A4a-064:1"
+			}
+		],
+		"ability": null,
+		"dex": 333,
+		"printings": [
+			"A4a-064"
+		]
+	},
+	{
+		"id": "A4a-065",
+		"set": "A4a",
+		"rarity": "Two Diamond",
+		"name": "Zangoose",
+		"kind": "pokemon",
+		"cardType": "Colorless",
+		"combatTypes": [
+			"Normal"
+		],
+		"hp": 80,
+		"stage": 0,
+		"evolvesFrom": null,
+		"ex": false,
+		"retreat": 1,
+		"weakness": "Fighting",
+		"points": 1,
+		"attacks": [
+			{
+				"name": "Slash",
+				"combatType": "Normal",
+				"typeBasis": "move",
+				"cost": [
+					"Colorless",
+					"Colorless"
+				],
+				"damage": 50,
+				"damageMode": "",
+				"fx": [],
+				"target": "oppActive",
+				"text": "",
+				"adapted": "",
+				"note": null,
+				"id": "A4a-065:1"
+			}
+		],
+		"ability": {
+			"name": "Counterattack",
+			"fx": {
+				"k": "counter",
+				"n": 20,
+				"passive": true
+			},
+			"text": "If this Pokémon is in the Active Spot and is damaged by an attack from your opponent's Pokémon, do 20 damage to the Attacking Pokémon.",
+			"adapted": "If this Pokémon is in an Active slot and is damaged by an attack from an opposing Pokémon, do 20 damage to the Attacking Pokémon.",
+			"note": "\"The Active Spot\" is either of your two Active slots."
+		},
+		"dex": 335,
+		"printings": [
+			"A4a-065"
+		]
+	},
+	{
+		"id": "A4a-066",
+		"set": "A4a",
+		"rarity": "One Diamond",
+		"name": "Fletchling",
+		"kind": "pokemon",
+		"cardType": "Colorless",
+		"combatTypes": [
+			"Normal",
+			"Flying"
+		],
+		"hp": 50,
+		"stage": 0,
+		"evolvesFrom": null,
+		"ex": false,
+		"retreat": 1,
+		"weakness": "Lightning",
+		"points": 1,
+		"attacks": [
+			{
+				"name": "Quick Attack",
+				"combatType": "Normal",
+				"typeBasis": "move",
+				"cost": [
+					"Colorless"
+				],
+				"damage": 10,
+				"damageMode": "+",
+				"fx": [
+					{
+						"k": "coinBonus",
+						"bonus": 30
+					}
+				],
+				"target": "oppActive",
+				"text": "Flip a coin. If heads, this attack does 30 more damage.",
+				"adapted": "Flip a coin. If heads, this attack does 30 more damage.",
+				"note": null,
+				"id": "A4a-066:1"
+			}
+		],
+		"ability": null,
+		"dex": 661,
+		"printings": [
+			"A4a-066"
+		]
+	},
+	{
+		"id": "A4a-067",
+		"set": "A4a",
+		"rarity": "Two Diamond",
+		"name": "Inflatable Boat",
+		"kind": "tool",
+		"fx": {
+			"k": "toolRetreatLess",
+			"type": "Water",
+			"n": 1
+		},
+		"text": "The Retreat Cost of the {W} Pokémon this card is attached to is 1 less.",
+		"adapted": "The Retreat Cost of the {W} Pokémon this card is attached to is 1 less.",
+		"note": null,
+		"printings": [
+			"A4a-067"
+		]
+	},
+	{
+		"id": "A4a-068",
+		"set": "A4a",
+		"rarity": "Two Diamond",
+		"name": "Memory Light",
+		"kind": "tool",
+		"fx": {
+			"k": "toolMemory"
+		},
+		"text": "The Pokémon this card is attached to can use any attack from its previous Evolutions. (You still need the necessary Energy to use each attack.)",
+		"adapted": "The Pokémon this card is attached to can use any attack from its previous Evolutions. (You still need the necessary Energy to use each attack.)",
+		"note": null,
+		"printings": [
+			"A4a-068"
+		]
+	},
+	{
+		"id": "A4a-069",
+		"set": "A4a",
+		"rarity": "Two Diamond",
+		"name": "Whitney",
+		"kind": "supporter",
+		"fx": {
+			"k": "healNamedCure",
+			"n": 60,
+			"names": [
+				"Miltank"
+			]
+		},
+		"text": "Heal 60 damage from 1 of your Miltank, and it recovers from being Asleep, Paralyzed, and Confused.",
+		"adapted": "Heal 60 damage from 1 of your Miltank, and it recovers from being Asleep, Paralyzed, and Confused.",
+		"note": null,
+		"printings": [
+			"A4a-069",
+			"A4a-083"
+		]
+	},
+	{
+		"id": "A4a-070",
+		"set": "A4a",
+		"rarity": "Two Diamond",
+		"name": "Traveling Merchant",
+		"kind": "supporter",
+		"fx": {
+			"k": "topTools",
+			"n": 4
+		},
+		"text": "Look at the top 4 cards of your deck. Put all Pokémon Tool cards you find there into your hand. Shuffle the other cards back into your deck.",
+		"adapted": "Look at the top 4 cards of your deck. Put all Pokémon Tool cards you find there into your hand. Shuffle the other cards back into your deck.",
+		"note": null,
+		"printings": [
+			"A4a-070",
+			"A4a-084"
+		]
+	},
+	{
+		"id": "A4a-071",
+		"set": "A4a",
+		"rarity": "Two Diamond",
+		"name": "Morty",
+		"kind": "supporter",
+		"fx": {
+			"k": "peekOrder",
+			"type": "Psychic",
+			"opp": true
+		},
+		"text": "For each of your {P} Pokémon in play, look at that many cards from the top of your opponent's deck and put them back in any order.",
+		"adapted": "Choose an opponent. For each of your {P} Pokémon in play, look at that many cards from the top of that player's deck and put them back in any order.",
+		"note": "With several opponents, you choose which one (or which of their Pokémon) this affects.",
+		"printings": [
+			"A4a-071",
+			"A4a-085"
 		]
 	}
 ]);
