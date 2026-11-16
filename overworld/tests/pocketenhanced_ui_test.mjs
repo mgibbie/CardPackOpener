@@ -320,7 +320,7 @@ try {
 		const col = () => page.evaluate(() => { const c = window.__pocket.collection(); return { packs: c.packs, points: c.points, opened: c.opened, n: Object.values(c.prints).reduce((a, b) => a + b, 0) }; });
 		const c0 = await col();
 		A(c0.packs >= 10 && c0.n === 14 && c0.opened === 0, `[${name}] a new player has packs to open and two of each starter Trainer`, c0);
-		A(await press(T('packs'), () => document.querySelectorAll('.pe-pack').length === 20), `[${name}] Open packs offers the twenty boosters of the thirteen sets`);
+		A(await press(T('packs'), () => document.querySelectorAll('.pe-pack').length === 21), `[${name}] Open packs offers the twenty-one boosters of the fourteen sets`);
 		A(await press(T('packC'), () => document.querySelectorAll('.pe-pull.down').length === 5), `[${name}] a pack is five face-down cards`);
 		const c1 = await col();
 		A(c1.packs === c0.packs - 1 && c1.n === c0.n + 5 && c1.points === 5 && c1.opened === 1, `[${name}] opening it adds its five cards and 5 pack points at once (closing the page loses nothing)`, c1);
@@ -333,9 +333,9 @@ try {
 		await tap(T('back'));
 		A(await waitFor(() => page.evaluate(n => new RegExp('^' + n + ' pack').test(document.querySelector('.modal:last-child .pe-note b')?.textContent || ''), c2.packs), 3000), `[${name}] back on the packs screen the count is current`);
 		// ---------- the collection ----------
-		A(await press(T('collection'), () => document.querySelectorAll('.pe-col .pe-card').length === 1574), `[${name}] the Collection lists all 1574 cards`);
+		A(await press(T('collection'), () => document.querySelectorAll('.pe-col .pe-card').length === 1667), `[${name}] the Collection lists all 1667 cards`);
 		const owned = await page.evaluate(() => ({ head: document.querySelector('.pe-colhead').textContent, lack: document.querySelectorAll('.pe-col .pe-card.lack').length, uniq: document.querySelectorAll('.pe-col .pe-card:not(.lack)').length }));
-		A(owned.uniq > 15 && owned.lack === 1574 - owned.uniq && owned.head.startsWith(`${owned.uniq} / 1574 cards`), `[${name}] owned cards show their count, the rest are greyed`, owned);
+		A(owned.uniq > 15 && owned.lack === 1667 - owned.uniq && owned.head.startsWith(`${owned.uniq} / 1667 cards`), `[${name}] owned cards show their count, the rest are greyed`, owned);
 		A(await press(T('sown'), () => document.querySelectorAll('.pe-col .pe-card').length > 0 && !document.querySelector('.pe-col .pe-card.lack')), `[${name}] the Owned filter shows only owned cards`);
 		await press(T('slack'), () => document.querySelectorAll('.pe-col .pe-card.lack').length === document.querySelectorAll('.pe-col .pe-card').length);
 		// exchange pack points for a card not owned (a one-diamond card costs 35)
@@ -350,8 +350,8 @@ try {
 		await shot('9_collection');
 		await tap(T('back')); await tap(T('back'));
 		// ---------- the deck builder ----------
-		A(await press(T('decks'), () => document.querySelectorAll('.pe-db .pool .pe-card').length === 1574), `[${name}] the deck builder lists all 1574 cards`);
-		{	// every card carries all its rules text, and it fits on the card (all 1574, at the builder's card size)
+		A(await press(T('decks'), () => document.querySelectorAll('.pe-db .pool .pe-card').length === 1667), `[${name}] the deck builder lists all 1667 cards`);
+		{	// every card carries all its rules text, and it fits on the card (all 1667, at the builder's card size)
 			const fitCheck = () => page.evaluate(async () => {
 				const { CARDS } = await import('/pocketenhanced/js/data/cards.js');
 				const norm = t => t.replace(/\{ex\}/g, 'ex').replace(/\{[A-Z]\}/g, '').replace(/\s+/g, ' ').trim();
@@ -371,7 +371,7 @@ try {
 			// a device whose font runs wide (CI's Linux has no Segoe UI: Victreebel's text ran off its card there): still all on the card
 			await page.addStyleTag({ content: '.pe .pf { font-family: Verdana, "DejaVu Sans", sans-serif !important; letter-spacing: .04em !important; }' });
 			await tap(T('fGrass')); await tap(T('fAll'));
-			await waitFor(() => page.evaluate(() => document.querySelectorAll('.pe-db .pool .pe-card').length === 1574), 4000);
+			await waitFor(() => page.evaluate(() => document.querySelectorAll('.pe-db .pool .pe-card').length === 1667), 4000);
 			const wide = await fitCheck();
 			A(wide.over.length === 0 && wide.missing.length === 0, `[${name}] in a wider font too: the text is set tighter until it fits`, { over: wide.over.slice(0, 12), missing: wide.missing.slice(0, 4) });
 			await page.evaluate(() => { [...document.querySelectorAll('style')].filter(x => /Verdana/.test(x.textContent)).forEach(x => x.remove()); });
@@ -423,6 +423,27 @@ try {
 		const done = await page.waitForFunction(b => { const v = window.__pocket.view(); return v && v.players[1].active[1] && v.players[1].active[1].dmg >= b + 10; }, { timeout: 8000 }, before[1]).then(() => true, () => false);
 		const after = await page.evaluate(() => ({ dmg: window.__pocket.view().players[1].active.map(k => k && k.dmg), log: window.__pocket.view().log.some(e => /Snowy Terrain does 10 damage/.test(e.msg)) }));
 		A(done && after.dmg[0] === before[0] && after.log && errors.length === 0, '[choice] pressing one sends the 10 damage there (not to the other), and the match goes on', { before, after, errors });
+		// ---------- Mesagoza: a Stadium with something to use, through its Use button ----------
+		const mesa = await page.evaluate(async () => {
+			const P = window.__pocket, { card, CARDS } = await import('/pocketenhanced/js/data/cards.js');
+			P.start({ players: 2, seed: 'mesa' }); P.fast(true);
+			const v = P.view(), basic = v.players[0].hand.findIndex(id => { const c = card(id); return c.kind === 'pokemon' && c.stage === 0; });
+			P.act({ t: 'setup', seat: 0, active: [basic], bench: [] });
+			for (let i = 0; i < 400 && !(P.idle() && P.view().phase === 'main' && P.view().current === 0 && !P.view().pending); i++) await new Promise(r => setTimeout(r, 50));
+			const S = P.state(); S.stadium = { id: CARDS.find(c => c.name === 'Mesagoza').id, seat: 1 }; P.refresh();
+			return { mine: P.view().current === 0, ready: !!document.querySelector('[data-k="stadium"].ready'), hand: S.players[0].hand.length, deckPokemon: S.players[0].deck.some(id => card(id).kind === 'pokemon') };
+		});
+		const clickOn = async sel => { const b = await (await page.$(sel)).boundingBox(); await page.mouse.click(b.x + b.width / 2, b.y + b.height / 2); };
+		await clickOn('[data-k="stadium"]');
+		const offered = await page.waitForFunction(() => { const b = document.querySelector('.modal [data-k="stadiumuse"]'); return !!b && !b.disabled && /Mesagoza/.test(document.querySelector('.modal')?.textContent || ''); }, { timeout: 5000 }).then(() => true, () => false);
+		if (offered) await clickOn('.modal [data-k="stadiumuse"]');
+		const used = await page.waitForFunction(() => { const S = window.__pocket.state(); return S.log.filter(e => e.k === 'coin' && /Mesagoza/.test(e.msg)).length === 1 && !!S.players[0].flags.stadiumUsed && !document.querySelector('.modal'); }, { timeout: 5000 }).then(() => true, () => false);
+		const mesaAfter = await page.evaluate(async h0 => { const { card } = await import('/pocketenhanced/js/data/cards.js'); const S = window.__pocket.state(), heads = !!S.log.find(e => e.k === 'coin' && /Mesagoza/.test(e.msg))?.heads; return { heads, grew: S.players[0].hand.length - h0, newIsPokemon: S.players[0].hand.length > h0 ? card(S.players[0].hand.at(-1)).kind === 'pokemon' : null, ready: !!document.querySelector('[data-k="stadium"].ready'), chip: !!document.querySelector('[data-k="stadium"]') }; }, mesa.hand);
+		await clickOn('[data-k="stadium"]');
+		const spent = await page.waitForFunction(() => !!document.querySelector('.modal') && /Mesagoza/.test(document.querySelector('.modal').textContent) && !document.querySelector('.modal [data-k="stadiumuse"]'), { timeout: 5000 }).then(() => true, () => false);
+		await page.keyboard.press('Escape');
+		A(mesa.mine && mesa.ready && mesa.deckPokemon && offered && used && mesaAfter.chip && !mesaAfter.ready && mesaAfter.grew === (mesaAfter.heads ? 1 : 0) && (mesaAfter.heads ? mesaAfter.newIsPokemon === true : true) && spent && errors.length === 0,
+			'[stadium] on my turn Mesagoza is lit; pressing it reads the card with a Use button; Use flips its coin (heads: a Pokémon from my deck comes to my hand); after that it is no longer lit and offers no Use this turn', { mesa, offered, used, mesaAfter, spent, errors });
 		await ctx.close();
 	}
 	{	// ---------- your own card pictures (artconfig.js): shown where the folder has one, the default art everywhere else ----------
@@ -450,7 +471,7 @@ try {
 		await p2.goto(`http://localhost:${PORT}/pocketenhanced/?seed=art`, { waitUntil: 'domcontentloaded' });
 		await p2.waitForFunction(() => window.__pocket && window.__pocket.ready, { timeout: 30000 });
 		await p2.evaluate(() => { [...document.querySelectorAll('.modal [data-k="collection"]')].pop().click(); }); await sleep(800);
-		A(asked2.length === 0 && await p2.evaluate(() => document.querySelectorAll('.pe-col .pe-card').length === 1574 && !document.querySelector('img.own') && !!document.querySelector('.pe-col .art.bg-Fire') && !!document.querySelector('.pe-col .art.bg-Water')), '[art] by default nothing is requested, and each card has the painted background of its type');
+		A(asked2.length === 0 && await p2.evaluate(() => document.querySelectorAll('.pe-col .pe-card').length === 1667 && !document.querySelector('img.own') && !!document.querySelector('.pe-col .art.bg-Fire') && !!document.querySelector('.pe-col .art.bg-Water')), '[art] by default nothing is requested, and each card has the painted background of its type');
 		await ctx2.close();
 	}
 } finally {

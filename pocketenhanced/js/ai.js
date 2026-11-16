@@ -68,7 +68,7 @@ export function expectedDamage(v, me, poke, attack, target) {
 	for (const f of poke.fx) if (f.k === 'atkMinus') d -= f.n;
 	return Math.max(0, d);
 }
-const usable = (v, me, poke, a) => !(v.players[me].turns === 0 && me === v.first) && !def(poke).fossil && !poke.status.includes('asleep') && !poke.status.includes('paralyzed') && !poke.fx.some(f => f.k === 'cantAttack' || (f.k === 'cantUse' && f.name === a.name)) && canPay(poke.provides || poke.energy, lessCost(baseCost(poke, a), poke.less || 0))
+const usable = (v, me, poke, a) => !(v.players[me].turns === 0 && me === v.first) && !def(poke).fossil && !poke.status.includes('asleep') && !poke.status.includes('paralyzed') && !poke.fx.some(f => f.k === 'cantAttack' || (f.k === 'cantUse' && f.name === a.name)) && canPay(poke.provides || poke.energy, lessCost(baseCost(poke, a, v.players[me].deck), poke.less || 0))
 	&& a.fx.every(f => f.k !== 'needBench' || f.names.every(n => v.players[me].bench.some(b => b && def(b).name === n)));
 function targetsOf(v, me, a) {
 	const out = [];
@@ -182,6 +182,9 @@ export function nextAction(v, banned = new Set()) {
 		const f = c.fx, T = args => tries.push(pen ? { t: 'trainer', seat: me, penny: true, args } : { t: 'trainer', seat: me, hand: i, args });
 		const hurt = mineAll.filter(m => m.k.dmg >= 20 && (!f.type || def(m.k).cardType === f.type)).sort((a, b) => b.k.dmg - a.k.dmg)[0];
 		if (f.k === 'draw' || f.k === 'basicToHand' || f.k === 'slab' || f.k === 'guard' || f.k === 'namedToHand' || f.k === 'prankSpinner' || f.k === 'may' || f.k === 'smallBasicsToHand' || f.k === 'namesToHand' || f.k === 'megaToHand') T({});
+		else if (f.k === 'coinAttachBenchType') { const bi = P.bench.findIndex(b => b && def(b).cardType === f.type); if (bi >= 0) T({ bench: bi }); }
+		else if (f.k === 'discardAbilityEnergy') { const q = opp.find(o => [...o.active, ...o.bench].some(k => k && def(k).ability && k.energy.length)); if (q) T({ opp: q.seat }); }
+		else if (f.k === 'coinItemOrTool') T({});
 		else if (c.kind === 'stadium') { if (!v.stadium || (v.stadium.seat !== me && card(v.stadium.id).name !== c.name)) T({}); }   // a Stadium of its own, unless its own is already up
 		else if (f.k === 'healActiveReturn') { const t = mineAll.filter(x => x.loc.zone === 'active' && x.k.dmg >= f.n).sort((x, y) => y.k.dmg - x.k.dmg)[0]; if (t) T({ at: t.loc }); }
 		else if (f.k === 'healForEnergy') { const t = mineAll.filter(x => def(x.k).cardType === f.type && x.k.dmg >= 40 && x.k.energy.filter(e2 => e2 === f.type).length >= f.need + 1).sort((x, y) => y.k.dmg - x.k.dmg)[0]; if (t) T({ at: t.loc }); }
@@ -244,6 +247,8 @@ export function nextAction(v, banned = new Set()) {
 	});
 	// 5. this turn's Energy
 	if (!P.flags.attached && P.zone.cur) { const m = mineAll.map(x => ({ ...x, h: hunger(v, me, x.k, x.loc, P.zone.cur) })).filter(x => x.h >= 0).sort((a, b) => b.h - a.h); for (const x of m.slice(0, 3)) tries.push({ t: 'attach', seat: me, at: x.loc }); }
+	// (the Stadium's own action, once a turn: Mesagoza)
+	if (v.stadium && card(v.stadium.id).fx.k === 'stadiumCoinPokemon' && !P.flags.stadiumUsed && P.hand.length < 10) tries.push({ t: 'stadium', seat: me });
 	// 6. Abilities
 	for (const m of mineAll) {
 		const ab = def(m.k).ability; if (!ab || ab.fx.passive || m.k.abilityUsed === v.turn) continue;
@@ -273,6 +278,8 @@ export function nextAction(v, banned = new Set()) {
 		else if (f.k === 'switchActiveType') { const can = k => def(k).attacks.some(q => canPay(k.provides || k.energy, lessCost(q.cost, k.less || 0))); const out = [0, 1].find(sl => P.active[sl] && def(P.active[sl]).cardType === f.type && !can(P.active[sl])), inn = P.bench.findIndex(b => b && can(b)); if (out != null && inn >= 0) A({ slot: out, bench: inn }); }
 		else if (f.k === 'toolsThenDiscardSelf') { const t = fa.find(x => x.k.tool); if (m.loc.zone === 'bench' && t) A({ target: t.loc }); }
 		else if (f.k === 'attachZoneSelfDmg') { if (left(m.k) > f.dmg + 30 && hunger(v, me, m.k, m.loc, f.type) >= 0) A({}); }
+		else if (f.k === 'healExForEnergy') { const t = mineAll.filter(x => def(x.k).ex && x.k.dmg >= 40 && x.k.energy.length >= 2).sort((x, y) => y.k.dmg - x.k.dmg)[0]; if (t) A({ at: t.loc }); }
+		else if (f.k === 'boostForEnergy') { if (m.k.energy.filter(e2 => e2 === f.type).length >= 2 && P.active.some(k => k && def(k).cardType === f.type && def(k).attacks.some(q => q.damage > 0 && usable(v, me, k, q)))) A({}); }
 		else if (f.k === 'statusActive') { const t = fa.filter(x => !x.k.status.includes(f.s)).sort((x, y) => left(y.k) - left(x.k))[0]; if (t) A({ target: t.loc }); }
 		else if (f.k === 'healAny') { const t = mineAll.filter(x => x.k.dmg >= 20).sort((x, y) => y.k.dmg - x.k.dmg)[0]; if (t) A({ at: t.loc }); }
 		else if (f.k === 'pullDamaged') { const t = foes.filter(x => x.loc.zone === 'bench' && x.k.dmg > 0).sort((x, y) => left(x.k) - left(y.k))[0]; if (t) { const o = v.players[t.loc.seat], slot = [0, 1].find(sl => o.active[sl]); if (slot != null) A({ target: { seat: o.seat, zone: 'active', idx: slot }, bench: t.loc.idx }); } }

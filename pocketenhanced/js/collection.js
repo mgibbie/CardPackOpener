@@ -30,6 +30,7 @@ export const BOOSTERS = Object.freeze([
 	Object.freeze({ id: 'T', name: 'Mega Altaria', dex: 334, type: 'Psychic', set: 'Mega Rising' }),
 	Object.freeze({ id: 'R', name: 'Mega Charizard Y', dex: 6, type: 'Fire', set: 'Crimson Blaze' }),
 	Object.freeze({ id: 'F', name: 'Mega Gardevoir', dex: 282, type: 'Psychic', set: 'Fantastical Parade' }),
+	Object.freeze({ id: 'N', name: 'Paldea', dex: 908, type: 'Grass', set: 'Paldean Wonders' }),
 ]);
 export const RARITY = Object.freeze({ '1D': '◆', '2D': '◆◆', '3D': '◆◆◆', '4D': '◆◆◆◆', '1S': '★', '2S': '★★', '3S': '★★★', '1H': '✦', '2H': '✦✦', CR: '♛', N: 'Promo' });
 export const RARITY_ORDER = Object.freeze(['N', '1D', '2D', '3D', '4D', '1S', '2S', '3S', '1H', '2H', 'CR']);   // (1H, 2H: the shiny rarities, from Shining Revelry on)

@@ -11,14 +11,14 @@ const A = (ok, msg, extra) => { if (ok) { pass++; console.log('ok  - ' + msg); }
 const rng = seed => { let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; };
 
 // ---- the data
-A(PRINTS.length === 2256 && PRINTS.every(p => card(p[0]) && card(p[0]).id === p[1]), 'every printing of the source is listed, and plays as its card');
+A(PRINTS.length === 2387 && PRINTS.every(p => card(p[0]) && card(p[0]).id === p[1]), 'every printing of the source is listed, and plays as its card');
 A(CARDS.every(c => c.printings.every(p => C.printInfo(p))), 'the printings of every card are in the pack data');
 for (const b of C.BOOSTERS.filter(x => x.set === 'Genetic Apex')) {
 	const n = r => PRINTS.filter(p => p[3].includes(b.id) && p[2] === r).length;
 	A(n('1D') === 50 && n('2D') === 35 && n('3D') === 14 && n('4D') === 5 && n('1S') === 8 && n('3S') === 1 && n('CR') === 3 && n('2S') >= 9, `the ${b.name} booster has its rarities (50/35/14/5 diamonds, 8 one-star, 1 immersive, 3 crowns)`);
 }
 { const n = r => PRINTS.filter(p => p[3] === 'W' && p[2] === r).length;
-	A(C.BOOSTERS.length === 20 && n('1D') === 32 && n('2D') === 23 && n('3D') === 8 && n('4D') === 5 && n('1S') === 6 && n('2S') === 10 && n('3S') === 1 && n('CR') === 1 && PRINTS.filter(p => p[0].startsWith('A1a-')).every(p => p[3] === 'W'), 'the Mew booster holds all 86 Mythical Island printings (32/23/8/5 diamonds, 6 one-star, 10 two-star, 1 immersive, 1 crown)'); }
+	A(C.BOOSTERS.length === 21 && n('1D') === 32 && n('2D') === 23 && n('3D') === 8 && n('4D') === 5 && n('1S') === 6 && n('2S') === 10 && n('3S') === 1 && n('CR') === 1 && PRINTS.filter(p => p[0].startsWith('A1a-')).every(p => p[3] === 'W'), 'the Mew booster holds all 86 Mythical Island printings (32/23/8/5 diamonds, 6 one-star, 10 two-star, 1 immersive, 1 crown)'); }
 { const n = (b, r) => PRINTS.filter(p => p[3].includes(b) && p[2] === r).length;
 	A(n('D', '1D') === 46 && n('K', '1D') === 44 && ['D', 'K'].every(b => n(b, '4D') === 5 && n(b, '3D') === 14 && n(b, '1S') === 12 && n(b, '2S') === 12 && n(b, '3S') === 1 && n(b, 'CR') === 2) && n('D', '2D') === 34 && n('K', '2D') === 36 && PRINTS.filter(p => p[0].startsWith('A2-')).every(p => /^(D|K|DK)$/.test(p[3]) && p[2] !== 'N'), 'the Dialga and Palkia boosters hold all 207 Space-Time Smackdown printings between them, every one with a rarity'); }
 { const n = r => PRINTS.filter(p => p[3] === 'A' && p[2] === r).length;
@@ -37,6 +37,7 @@ A(PRINTS.filter(p => p[0].startsWith('A4a-')).length === 105 && PRINTS.filter(p 
 A(PRINTS.filter(p => p[0].startsWith('B1-')).length === 331 && PRINTS.filter(p => p[0].startsWith('B1-')).every(p => /^[BTY]+$/.test(p[3])) && ['Y', 'B', 'T'].every(b => PRINTS.filter(p => p[0].startsWith('B1-') && p[3].includes(b)).length === 139 && C.oddsOf(b) === C.SHINY_SLOT_ODDS), 'the three Mega Rising boosters hold all 331 of its printings between them (139 each) and roll on the shiny table');
 A(PRINTS.filter(p => p[0].startsWith('B1a-')).length === 103 && PRINTS.filter(p => p[0].startsWith('B1a-')).every(p => p[3] === 'R') && C.oddsOf('R') === C.SHINY_SLOT_ODDS && C.rollPack('R', () => 0.5).every(id => id.startsWith('B1a-')), 'the Crimson Blaze booster holds all 103 of its printings and rolls on the shiny table');
 A(PRINTS.filter(p => p[0].startsWith('B2-')).length === 234 && PRINTS.filter(p => p[0].startsWith('B2-')).every(p => p[3] === 'F') && C.oddsOf('F') === C.SHINY_SLOT_ODDS && C.rollPack('F', () => 0.5).every(id => id.startsWith('B2-')), 'the Fantastical Parade booster holds all 234 of its printings and rolls on the shiny table');
+A(PRINTS.filter(p => p[0].startsWith('B2a-')).length === 131 && PRINTS.filter(p => p[0].startsWith('B2a-')).every(p => p[3] === 'N') && C.oddsOf('N') === C.SHINY_SLOT_ODDS && C.rollPack('N', () => 0.5).every(id => id.startsWith('B2a-')), 'the Paldean Wonders booster holds all 131 of its printings and rolls on the shiny table');
 A(Object.values(C.SLOT_ODDS).every(o => Math.abs(Object.values(o).reduce((a, b) => a + b, 0) - 100) < 1e-9), 'the odds of each rolled slot sum to 100%');
 
 // ---- a pack
