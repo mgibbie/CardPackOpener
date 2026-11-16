@@ -41,6 +41,8 @@ export const STARTERS = Object.freeze([
 	// Wisdom of Sea and Sky
 	{ id: 'hooh', name: 'Ho-Oh', energy: ['Fire', 'Water', 'Lightning'], cards: TWO(['Ho-Oh ex', 'Lugia ex', 'Magby', 'Pichu', 'Entei', 'Suicune', 'Raikou', 'Elemental Switch', 'Poké Ball', "Professor's Research"]) },
 	{ id: 'crobat', name: 'Crobat', energy: ['Darkness'], cards: TWO(['A4-107', 'A4-108', 'Crobat ex', 'Umbreon ex', 'A3b-055', 'Houndour', 'Houndoom', 'Dark Pendant', 'Poké Ball', "Professor's Research"]) },
+	// Secluded Springs
+	{ id: 'suicune', name: 'Suicune', energy: ['Water'], cards: TWO(['Suicune ex', 'Feebas', 'Milotic', 'Mantyke', 'A4a-015', 'Tentacruel', 'Cryogonal', 'Inflatable Boat', 'Poké Ball', "Professor's Research"]) },
 ]);
 const byName = name => CARDS.find(c => c.id === name) || CARDS.find(c => c.name === name);
 /** A starter as the engine takes it: { deck: [card ids], energy }. */

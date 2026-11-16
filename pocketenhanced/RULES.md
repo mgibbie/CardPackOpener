@@ -400,3 +400,34 @@ The ninth set: 241 printings, 161 new cards, two boosters (Lugia and Ho-Oh). The
 * **Jasmine** lasts until your next turn, against every opponent. **Lyra** and **Elemental Switch** work with either Active slot.
 * **Packs:** both boosters hold shiny printings and roll on the shiny table.
 * Matches, replays and saves from before this set still load: nothing about how existing cards play changed.
+
+## Secluded Springs (A4a)
+
+The tenth set: 105 printings, 71 new cards, one booster. These are the readings used here.
+
+* **Memory Light:** its holder may also use the attacks of the cards it evolved from; they are listed after its own. Its
+  Energy must still pay for them. A Basic Pokémon gets nothing from it.
+* **Celebi (Temporal Leaves):** the top Evolution card of an evolved target goes to its owner's hand. Damage, Energy, a Pokémon
+  Tool and Special Conditions stay. If the damage on it is then at least the lower Stage's HP, it is Knocked Out and Celebi's
+  player scores.
+* **Mismagius (Cursed Prose):** the 90 damage lands at the end of the Defending Pokémon's owner's next turn, during the Pokémon
+  Checkup. It is not attack damage (nothing reduces it), it is lost if the Pokémon leaves its Active slot or evolves first, and
+  a Knock Out by it is scored by Mismagius's player.
+* **Jumpluff ex (Breeze-By Attack):** "you may switch": it stays unless you choose a Benched Pokémon.
+* **Slowking (Litter):** you choose which Pokémon Tool cards in your hand to discard, up to 2; none chosen is 0 damage.
+* **Suicune ex (Crystal Waltz)** counts your Bench and the Bench of the Defending Pokémon's owner (not other opponents').
+* **Boltund (Defiant Spark):** with damage on Boltund the attack's whole cost is 1 Lightning Energy.
+* **Miltank (Rolling Frenzy):** each use adds 30 to the next ones until Miltank leaves its Active slot or evolves.
+* **Legendary Pulse** (Entei ex, Suicune ex, Raikou ex) draws at the end of its player's turn, before the Pokémon Checkup, from
+  either Active slot; two of them in the Active slots draw two cards.
+* **Milotic (Healing Ripples):** its player chooses which damaged Water Pokémon is healed; the match waits. Like Crawdaunt, it
+  is always used when there is something to heal.
+* **Misdreavus (Infiltrating Inspection):** with several opponents its player chooses whose hand is shown, by pointing at one of
+  that player's Active Pokémon. Only its player sees the hand. Not during setup, and not when played into an Active slot.
+* **Zoroark (Illusive Trickery)** protects it until its player's next turn, against every opponent.
+* **Galarian Cursola (Perish Body):** its owner flips; on heads the Attacking Pokémon is Knocked Out and Cursola's player
+  scores for it.
+* **Morty** looks at one opponent's deck; that player does not see the cards or their new order. **Whitney** cures Asleep,
+  Paralyzed and Confused, not Poisoned or Burned. **Inflatable Boat** does nothing on a Pokémon that is not Water.
+* **Packs:** the booster holds shiny printings and rolls on the shiny table.
+* Matches, replays and saves from before this set still load: nothing about how existing cards play changed.
