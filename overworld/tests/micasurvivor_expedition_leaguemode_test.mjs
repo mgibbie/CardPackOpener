@@ -440,7 +440,8 @@ try {
 		let seenBefore = 0, seenAfter = 0;
 		for (let who = 0; who < 300; who++) { if (M.tasksOf('d', before, who).some(t => t.id === 'final') || M.tasksOf('w', before, who).some(t => t.id === 'final')) seenBefore++; if (M.tasksOf('d', after, who).some(t => t.id === 'final')) seenAfter++; }
 		let day = null;
-		for (let k = 0; k < 120 && day == null; k++) if (M.tasksOf('d', after + k * DAY).some(t => t.id === 'final')) day = after + k * DAY;
+		const from = Math.max(after, Date.now() + 2 * DAY);   // (a day still ahead of the real clock: progress is kept as a best, so a day already behind the save's own reads 0)
+		for (let k = 0; k < 120 && day == null; k++) if (M.tasksOf('d', from + k * DAY).some(t => t.id === 'final')) day = from + k * DAY;
 		const t0 = day ? M.tasksOf('d', day).find(t => t.id === 'final') : null;
 		const lines = day ? M.taskRun({ finals: 1 }, day) : [];
 		const t1 = day ? M.tasksOf('d', day).find(t => t.id === 'final') : null;
