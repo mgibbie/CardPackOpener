@@ -72,7 +72,9 @@ try {
 			return true;
 		};
 		const K = k => `[data-k="${k}"]`;
-		const padPress = async i => { await page.evaluate(n => { window.__fakePad.buttons[n] = { pressed: true, value: 1, touched: true }; window.__fakePad.timestamp++; }, i); await sleep(120); await page.evaluate(n => { window.__fakePad.buttons[n] = { pressed: false, value: 0, touched: false }; window.__fakePad.timestamp++; }, i); await sleep(120); };
+		// A press is held, and then released, until the page has drawn frames: the page reads a controller once per frame, and a busy machine can go longer than a fixed wait without drawing one (the press was then never seen).
+		const frames = () => page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));   // (two frames: the page's own reader has run by then; short enough that a held direction does not start repeating)
+		const padPress = async i => { await page.evaluate(n => { window.__fakePad.buttons[n] = { pressed: true, value: 1, touched: true }; window.__fakePad.timestamp++; }, i); await frames(); await page.evaluate(n => { window.__fakePad.buttons[n] = { pressed: false, value: 0, touched: false }; window.__fakePad.timestamp++; }, i); await frames(); await sleep(120); };
 
 		// ---------- boot ----------
 		await page.goto(`http://localhost:${PORT}/pocketenhanced/?seed=${SEED}`, { waitUntil: "domcontentloaded" });
