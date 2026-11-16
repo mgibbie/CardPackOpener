@@ -25,8 +25,8 @@ import { fileURLToPath } from 'url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const CHECK = process.argv.includes('--check'), SURVEY = process.argv.includes('--survey'), gaps = [];
-// the sets, in release order: Genetic Apex (with the Promo-A starter Trainers), Mythical Island, Space-Time Smackdown, Triumphant Light, Shining Revelry, Celestial Guardians, Extradimensional Crisis, Eevee Grove, Wisdom of Sea and Sky, Secluded Springs
-const SOURCES = ['tcgdex_a1.json', 'tcgdex_a1a.json', 'tcgdex_a2.json', 'tcgdex_a2a.json', 'tcgdex_a2b.json', 'tcgdex_a3.json', 'tcgdex_a3a.json', 'tcgdex_a3b.json', 'tcgdex_a4.json', 'tcgdex_a4a.json'];
+// the sets, in release order: Genetic Apex (with the Promo-A starter Trainers), Mythical Island, Space-Time Smackdown, Triumphant Light, Shining Revelry, Celestial Guardians, Extradimensional Crisis, Eevee Grove, Wisdom of Sea and Sky, Secluded Springs, Mega Rising
+const SOURCES = ['tcgdex_a1.json', 'tcgdex_a1a.json', 'tcgdex_a2.json', 'tcgdex_a2a.json', 'tcgdex_a2b.json', 'tcgdex_a3.json', 'tcgdex_a3a.json', 'tcgdex_a3b.json', 'tcgdex_a4.json', 'tcgdex_a4a.json', 'tcgdex_b1.json'];
 const SRC = SOURCES.flatMap(f => JSON.parse(fs.readFileSync(path.join(ROOT, 'pocketenhanced/data/source', f), 'utf8')).cards);
 const setOf = id => id.slice(0, id.lastIndexOf('-'));
 const SPECIES = JSON.parse(fs.readFileSync(path.join(ROOT, 'overworld/data/species_battle.json'), 'utf8'));
@@ -133,6 +133,17 @@ const ATTACK_TYPE = {
 	'Defiant Spark': ['Electric', N, 'Spark'], 'Dragon Arcana': ['Dragon', N], 'Fateful Fang': ['Poison', J, "Seviper's own; Poison Fang"], 'Hydro Knuckle': ['Water', J, 'Hydro'], 'Leek Slam': ['Normal', J, 'Slam'], 'Litter': ['Psychic', J, "Slowking's own"],
 	'Melt': ['Poison', J, "Skrelp's own; Acid"], 'Mental Surge': ['Psychic', J, "Malamar's own"], 'Mountain Munch': ['Bug', J, "Durant's own"], 'Rolling Frenzy': ['Rock', J, 'Rollout'], 'Sand Spray': ['Ground', N], 'Sleepy Lullaby': ['Normal', J, 'Sing'],
 	'Splashy Toss': ['Water', J, "Mantyke's own"], 'Squishy Healing': ['Normal', J, "Azurill's own"], 'Stretch Tongue': ['Normal', J, "Lickitung's own"], 'Stun Poison': ['Poison', N], 'Temporal Leaves': ['Grass', N], 'Tiny Bolt': ['Electric', N], 'Voltaic Bullet': ['Electric', N],
+	// Mega Rising (B1)
+	'Ambush': ['Ghost', J, "Duskull's own; Shadow Sneak"], 'Attack the Wound': ['Electric', J, "Pachirisu's own"], 'Balloon Barrage': ['Ghost', J, "Drifblim's own"], 'Bite Together': ['Bug', J, 'Bug Bite'], 'Biting Fang': ['Normal', J, 'Super Fang'], 'Blessed Burn': ['Fire', N],
+	'Blocking Shell': ['Rock', J, "Carracosta's own; its shell"], 'Booming Roar': ['Normal', J, 'Boomburst'], 'Boundless Power': ['Normal', J, "Dubwool's own"], 'Cat Kick': ['Fighting', J, 'a kick'], 'Chomp Chomp Bite': ['Dark', N, 'Bite'], 'Coal Drop': ['Rock', J, "Coalossal's own"],
+	'Confounding Cologne': ['Fairy', J, "Aromatisse's own"], 'Continuous Tumble': ['Normal', J, "Wooloo's own"], 'Crashing Fangs': ['Ground', J, "Hippowdon's own"], 'Critical Scissors': ['Bug', J, 'X-Scissor'], 'Dangerous Bite': ['Dark', N, 'Bite'], 'Darkness Claw': ['Dark', N],
+	'Darmani-Hands': ['Fire', J, "Darmanitan's own"], 'Dig Claws': ['Ground', N, 'Dig'], 'Dirty Throw': ['Dark', J, 'Fling'], 'Dizzying Headbutt': ['Normal', N, 'Headbutt'], 'Draconic Whip': ['Dragon', N], 'Drum Rush': ['Grass', J, 'Drum Beating'], 'Electric Nibbling': ['Electric', N],
+	'Evil Admonition': ['Dark', J, 'evil'], 'Excited Tail': ['Normal', J, "Ambipom's own"], 'Flash Impact': ['Electric', J, "Luxray's own"], 'Frost Barrier': ['Ice', N], 'Giga Claw': ['Dragon', J, 'Dragon Claw'], 'Hammering Tail': ['Water', J, 'Aqua Tail'], 'Heavy Rocket': ['Ground', J, "Golurk's own"],
+	'Hyper Ray': ['Dragon', J, "Hydreigon's own"], 'Iron Wings': ['Steel', N, 'Steel Wing'], 'Jet Headbutt': ['Normal', N, 'Headbutt'], 'Jingly Noise': ['Psychic', J, "Chingling's own"], 'Last-Chance Punch': ['Fighting', J, 'a punch'], 'Life Sucker': ['Ghost', J, "Palossand's own"],
+	'Lightning Lancer': ['Electric', N], 'Mega Blaster': ['Water', J, "Mega Gyarados's own"], 'Mega Burning': ['Fire', N], 'Mega Harmony': ['Fairy', J, "Mega Altaria's own; a song, like Disarming Voice"], 'Nipping Cyclone': ['Flying', J, 'a cyclone'], 'Ominous Claw': ['Dark', J, "Absol's own"],
+	'Paired Tackle': ['Normal', N, 'Tackle'], 'Quick Straight': ['Fighting', J, 'a punch'], 'Rhythmic Steps': ['Water', J, "Ludicolo's own"], 'Select Powder': ['Bug', J, "Dustox's own"], 'Shadow Cage': ['Dark', J, "Darkrai's own"], 'Slapping Knockdown': ['Fighting', J, 'Arm Thrust'],
+	'Slicing Blade': ['Steel', J, "Aegislash's own"], 'Soul Shot': ['Ghost', J, 'a soul'], 'Speed Wing': ['Flying', N, 'Wing Attack'], 'Split Spiral Punch': ['Fighting', J, 'a punch'], 'Sprinting Flare': ['Fire', N], 'Stellar Cradle': ['Psychic', J, "Gothitelle's own"],
+	'Tongue Whip': ['Fire', J, "Heatmor's own; Fire Lash"], 'Waterfall Evolution': ['Water', N, 'Waterfall'], 'Whale Pump': ['Water', J, 'Hydro Pump'], 'Wild Spin': ['Rock', J, "Archeops's own"], 'Wind Blast': ['Flying', J, 'Gust'], 'Zapping Bullet': ['Electric', N],
 };
 
 // ---- calls made again, with one rule: an attack shared by Pokémon with nothing in common is not typed after one of them.
@@ -284,6 +295,34 @@ const ATTACK_FX = [
 	[/^Flip (\d) coins\. This attack does (\d+) damage for each heads\. If at least (\d) of them is heads, your opponent's Active Pokémon is now (\w+)\.$/, m => [{ k: 'coinsMul', coins: +m[1], per: +m[2] }, { k: 'headsStatus', need: +m[3], s: m[4].toLowerCase() }]],
 	[/^During your opponent's next turn, if this Pokémon is damaged by an attack, do (\d+) damage to the Attacking Pokémon\.$/, m => [{ k: 'selfThorns', n: +m[1] }]],
 	[/^Discard a random Item card from your opponent's hand\.$/, () => [{ k: 'discardItemFromHand' }]],
+	// Mega Rising (B1)
+	[/^During your opponent's next turn, prevent all damage done to this Pokémon by attacks if that damage is (\d+) or less\.$/, m => [{ k: 'selfPreventSmall', n: +m[1] }]],
+	[/^Choose either (\w+) or (\w+)\. Your opponent's Active Pokémon is now affected by that Special Condition\.$/, m => [{ k: 'chooseStatus', list: [m[1].toLowerCase(), m[2].toLowerCase()] }]],
+	[/^Heal (\d+) damage from each of your Benched Basic Pokémon\.$/, m => [{ k: 'healBenchBasics', n: +m[1] }]],
+	[/^Discard (?:Fire)?\{(\w)\} Energy from this Pokémon\. Your opponent's Active Pokémon is now Burned\.$/, m => [{ k: 'discardSelfEnergy', type: en(m[1]), n: 1 }, { k: 'status', s: 'burned' }]],
+	[/^Put a random card from your deck that evolves from this Pokémon onto this Pokémon to evolve it\.$/, () => [{ k: 'evolveSelfFromDeck' }]],
+	[/^Discard the top (\d) cards of your opponent's deck\.$/, m => [{ k: 'millTarget', n: +m[1] }]],
+	[/^If you have exactly ([\d, or]+) cards in your hand, this attack does (\d+) more damage\.$/, m => [{ k: 'handCountBonus', counts: m[1].match(/\d+/g).map(Number), bonus: +m[2] }]],
+	[/^Prevent all damage done to this Pokémon by attacks from Basic Pokémon during your opponent's next turn\.$/, () => [{ k: 'selfPreventFromBasic' }]],
+	[/^1 of your opponent's Benched Pokémon is chosen at random\. This attack also does (\d+) damage to it\.$/, m => [{ k: 'randomBench', times: 1, n: +m[1] }]],
+	[/^1 of your opponent's Benched Pokémon is chosen at random (\d) times\. For each time a Pokémon was chosen, also do (\d+) damage to it\.$/, m => [{ k: 'randomBench', times: +m[1], n: +m[2] }]],
+	[/^Discard a \{(\w)\} Energy from your opponent's Active Pokémon\.$/, m => [{ k: 'discardTargetEnergy', type: en(m[1]) }]],
+	[/^Discard a card from your hand\. If you can't, this attack does nothing\.$/, () => [{ k: 'discardHandCost', n: 1 }]],
+	[/^Discard (\d) cards from your hand\. If you can't discard \d cards, this attack does nothing\.$/, m => [{ k: 'discardHandCost', n: +m[1] }]],
+	[/^During your opponent's next turn, if they attach Energy from their Energy Zone to the Defending Pokémon, that Pokémon will be Asleep\.$/, () => [{ k: 'targetAttachSleep' }]],
+	[/^This attack's damage isn't affected by Weakness\.$/, () => [{ k: 'ignoreWeakness' }]],
+	[/^This attack does (\d+) damage to each of your opponent's Pokémon\. During your next turn, this Pokémon's [\w ]+ attack does \+(\d+) damage to each of your opponent's Pokémon\.$/, m => [{ k: 'allOppDamage', n: +m[1], grow: +m[2] }]],
+	[/^Reveal the top (\d) cards of your deck\. This attack does (\d+) damage for each Pokémon with a Retreat Cost of (\d) or more you find there\. Shuffle the revealed cards back into your deck\.$/, m => [{ k: 'topRetreatMul', n: +m[1], per: +m[2], need: +m[3] }]],
+	[/^If this Pokémon's remaining HP is (\d+) or less, this attack does (\d+) more damage\.$/, m => [{ k: 'lowHpBonus', hp: +m[1], bonus: +m[2] }]],
+	[/^This attack does (\d+) more damage for each of your opponent's Pokémon in play that has an Ability\.$/, m => [{ k: 'perOppAbility', n: +m[1] }]],
+	[/^Flip a coin\. If heads, your opponent reveals their hand\. Choose a Supporter card you find there and discard it\.$/, () => [{ k: 'discardSupporterFromHand', coin: true }]],
+	[/^Your opponent reveals their hand\. Choose a Supporter card you find there and discard it\.$/, () => [{ k: 'discardSupporterFromHand' }]],
+	[/^This attack's damage isn't affected by any effects on your opponent's Active Pokémon\.$/, () => [{ k: 'ignoreTargetEffects' }]],
+	[/^Discard (\d) \{(\w)\} Energy from this Pokémon\. During your opponent's next turn, this Pokémon takes -(\d+) damage from attacks\.$/, m => [{ k: 'discardSelfEnergy', type: en(m[2]), n: +m[1] }, { k: 'selfReduce', n: +m[3] }]],
+	[/^Flip (\d) coins\. If both of them are tails, this attack does nothing\.$/, m => [{ k: 'coinsAllTailsNothing', coins: +m[1] }]],
+	[/^Flip (\d) coins\. For each heads, discard a random Energy from your opponent's Active Pokémon\. If both of them are tails, this attack does nothing\.$/, m => [{ k: 'coinsDiscardOrNothing', coins: +m[1] }]],
+	[/^Flip (\d) coins\. This attack does (\d+) damage for each heads\. If this Pokémon has ([\w ]+) attached, flip (\d) coins instead\.$/, m => [{ k: 'coinsMul', coins: +m[1], per: +m[2], tool: m[3], toolCoins: +m[4] }]],
+	[/^Both Active Pokémon are now Confused\.$/, () => [{ k: 'status', s: 'confused' }, { k: 'selfStatus', s: 'confused' }]],
 	// Secluded Springs (A4a)
 	[/^You may switch this Pokémon with 1 of your Benched Pokémon\.$/, () => [{ k: 'switchSelf', may: true }]],
 	[/^If your opponent's Active Pokémon is an evolved Pokémon, devolve it by putting the highest Stage Evolution card on it into your opponent's hand\.$/, () => [{ k: 'devolveTarget' }]],
@@ -406,6 +445,21 @@ const ABILITY_FX = [
 	[/^If this Pokémon is in the Active Spot and is Knocked Out by damage from an attack from your opponent's Pokémon, move all \{(\w)\} Energy from this Pokémon to 1 of your Benched Pokémon\.$/, m => ({ k: 'koPassEnergy', type: en(m[1]), passive: true })],
 	[/^Once during your turn, if this Pokémon is on your Bench, you may switch it with your Active Pokémon\.$/, () => ({ k: 'benchSwap', once: true })],
 	[/^As long as this Pokémon is in the Active Spot, whenever you attach an Energy from your Energy Zone to it, it is now Asleep\.$/, () => ({ k: 'attachSleep', passive: true })],
+	// Mega Rising (B1)
+	[/^Each of your \{(\w)\} Pokémon gets \+(\d+) HP\.$/, m => ({ k: 'typeHp', type: en(m[1]), n: +m[2], passive: true })],
+	[/^Once during your turn, you may flip a coin\. If heads, switch in 1 of your opponent's Benched Pokémon to the Active Spot\.$/, () => ({ k: 'coinPull', once: true })],
+	[/^Once during your turn, you may discard the top card of your opponent's deck\.$/, () => ({ k: 'millOpp', n: 1, once: true })],
+	[/^If this Pokémon is in the Active Spot and is damaged by an attack from your opponent's Pokémon, take a \{(\w)\} Energy from your Energy Zone and attach it to 1 of your Benched Pokémon\.$/, m => ({ k: 'hitAttachBench', type: en(m[1]), passive: true })],
+	[/^Once during your turn, you may switch your Active \{(\w)\} Pokémon with 1 of your Benched Pokémon\.$/, m => ({ k: 'switchActiveType', type: en(m[1]), once: true })],
+	[/^If this Pokémon has full HP, it takes -(\d+) damage from attacks from your opponent's Pokémon\.$/, m => ({ k: 'fullHpReduce', n: +m[1], passive: true })],
+	[/^As long as this Pokémon is in the Active Spot, whenever your opponent attaches an Energy from their Energy Zone to 1 of their Pokémon, do (\d+) damage to that Pokémon\.$/, m => ({ k: 'oppAttachPing', n: +m[1], passive: true })],
+	[/^When this Pokémon is Knocked Out, flip a coin\. If heads, your opponent can't get any points for it\.$/, () => ({ k: 'koNoPoints', passive: true })],
+	[/^Once during your turn, if this Pokémon is on your Bench, you may discard all Pokémon Tools from your opponent's Active Pokémon\. If you do, discard this Pokémon\.$/, () => ({ k: 'toolsThenDiscardSelf', once: true })],
+	[/^Once during your turn, you may take (\d) \{(\w)\} Energy from your Energy Zone and attach it to this Pokémon\. If you do, do (\d+) damage to this Pokémon\.$/, m => ({ k: 'attachZoneSelfDmg', n: +m[1], type: en(m[2]), dmg: +m[3], once: true })],
+	[/^If this Pokémon is in the Active Spot and is damaged by an attack from your opponent's Pokémon, the Attacking Pokémon is now Poisoned\.$/, () => ({ k: 'poisonAttacker', passive: true })],
+	[/^Attacks used by your \{(\w)\} Pokémon and \{(\w)\} Pokémon do \+(\d+) damage to your opponent's Active Pokémon\.$/, m => ({ k: 'typesBoost', types: [en(m[1]), en(m[2])], n: +m[3], passive: true })],
+	[/^As long as this Pokémon is in the Active Spot, it can evolve during your first turn or the turn you play it\.$/, () => ({ k: 'fastEvolve', passive: true })],
+	[/^Once during your turn, when you play this Pokémon from your hand to evolve 1 of your Pokémon, you may put a Supporter card from your discard pile into your hand\.$/, () => ({ k: 'onEvolveSupporter', passive: true })],
 	// Secluded Springs (A4a)
 	[/^At the end of your turn, if this Pokémon is in the Active Spot, draw a card\.$/, () => ({ k: 'endTurnDraw', n: 1, passive: true })],
 	[/^If this Pokémon is in the Active Spot and is Knocked Out by damage from an attack from your opponent's Pokémon, flip a coin\. If heads, the Attacking Pokémon is Knocked Out\.$/, () => ({ k: 'koCoinKO', passive: true })],
@@ -495,6 +549,19 @@ const TRAINER_FX = [
 	[/^You can use this card only if you have (.+) in play\. Switch in 1 of your opponent's Benched Pokémon to the Active Spot\.$/, m => ({ k: 'pullDamaged', any: true, need: [m[1]] })],
 	[/^Heal all damage from 1 of (your .+)\. If you do, discard all Energy from that Pokémon\.$/, m => ({ k: 'healAllNamed', names: names(m[1]) })],
 	[/^Heal (\d+) damage from 1 of your Stage 2 Pokémon\.$/, m => ({ k: 'healOne', n: +m[1], type: null, stage: 2 })],
+	// Mega Rising (B1)
+	[/^A card from among both player's hands is chosen at random, revealed to the other player, and shuffled into its owner's deck\.$/, () => ({ k: 'prankSpinner' })],
+	[/^Flip (\d) coins\. If both of them are heads, discard a random Energy from your opponent's Active Pokémon\.$/, m => ({ k: 'coinsDiscardEnergy', coins: +m[1] })],
+	[/^Attach a \{(\w)\} Energy from your discard pile to your Active \{\w\} Pokémon\.$/, m => ({ k: 'attachDiscardActive', type: en(m[1]) })],
+	[/^At the end of each turn, if the Pokémon this card is attached to has half of its maximum HP or less remaining, heal (\d+) damage from it\. If you do, discard this card\.$/, m => ({ k: 'toolBerry', n: +m[1] })],
+	[/^If the Pokémon this card is attached to has a Retreat Cost of (\d) or more, it takes -(\d+) damage from attacks from your opponent's Pokémon\.$/, m => ({ k: 'toolHeavy', need: +m[1], n: +m[2] })],
+	[/^Whenever your opponent's Pokémon is Knocked Out by damage from an attack used by the Pokémon this card is attached to, draw a card\.$/, () => ({ k: 'toolKoDraw' })],
+	[/^Heal (\d+) damage from 1 of your (\w+) or (\w+)\.$/, m => ({ k: 'healOne', n: +m[1], type: null, names: [m[2], m[3]] })],
+	[/^During your opponent's next turn, if your (\w+) or (\w+) would be Knocked Out by damage from an attack, it is not Knocked Out and its remaining HP becomes (\d+)\.$/, m => ({ k: 'guardEndure', names: [m[1], m[2]], hp: +m[3] })],
+	[/^Put (\d) random Pokémon from your deck into your hand\. For each Pokémon you put into your hand in this way, choose a Pokémon to shuffle from your hand into your deck\.$/, m => ({ k: 'may', n: +m[1] })],
+	[/^Take a \{(\w)\} Energy from your Energy Zone and attach it to each of your (\w+) and (\w+)\.$/, m => ({ k: 'attachZoneEachNamed', type: en(m[1]), names: [m[2], m[3]] })],
+	[/^Shuffle your hand into your deck\. Draw a card for each card in your opponent's hand\.$/, () => ({ k: 'copycat' })],
+	[/^Put (\d) random Basic Pokémon with (\d+) HP or less from your deck into your hand\.$/, m => ({ k: 'smallBasicsToHand', n: +m[1], hp: +m[2] })],
 	// Secluded Springs (A4a)
 	[/^The Retreat Cost of the \{(\w)\} Pokémon this card is attached to is (\d) less\.$/, m => ({ k: 'toolRetreatLess', type: en(m[1]), n: +m[2] })],
 	[/^The Pokémon this card is attached to can use any attack from its previous Evolutions\. \(You still need the necessary Energy to use each attack\.\)$/, () => ({ k: 'toolMemory' })],
@@ -566,6 +633,12 @@ const NOTES = {
 	'TR:pullDamaged': 'You choose the opponent, their damaged Benched Pokémon, and which of their Active Pokémon it trades places with.',
 	'TR:moveEnergyAny': N_SLOT, 'TR:mars': N_CHOOSE, 'TR:toolCounter': N_SLOT,
 	// Triumphant Light (A2a)
+	selfPreventSmall: N_UNTIL, selfPreventFromBasic: N_UNTIL, chooseStatus: N_DEF, randomBench: 'The Pokémon are chosen from the Bench of the Defending Pokémon\'s owner.', targetAttachSleep: N_OWNER, ignoreWeakness: 'Here "Weakness" is the +20 of a Combat Type that is strong against the Defending Pokémon.',
+	perOppAbility: 'It counts the Pokémon of the Defending Pokémon\'s owner.', discardSupporterFromHand: N_OWNER, ignoreTargetEffects: N_DEF, coinsDiscardOrNothing: N_DEF, selfReduce: N_UNTIL,
+	'AB:coinPull': 'You choose the opponent, their Benched Pokémon, and which of their Active Pokémon it trades places with, before the coin.', 'AB:millOpp': N_CHOOSE, 'AB:hitAttachBench': N_SLOT, 'AB:switchActiveType': N_SLOT, 'AB:fullHpReduce': 'It covers attacks from every opponent.',
+	'AB:oppAttachPing': N_SLOT + ' It answers every opponent\'s Energy.', 'AB:koNoPoints': 'It answers a Knock Out by any opponent.', 'AB:toolsThenDiscardSelf': N_CHOOSE, 'AB:poisonAttacker': N_SLOT, 'AB:typesBoost': 'The bonus applies into any opponent\'s Active Pokémon.', 'AB:fastEvolve': N_SLOT,
+	'TR:prankSpinner': 'Every player\'s hand is in the draw, and the card is shown to everyone.', 'TR:coinsDiscardEnergy': N_CHOOSE, 'TR:attachDiscardActive': N_SLOT, 'TR:toolHeavy': 'It covers attacks from every opponent.', 'TR:toolKoDraw': 'It answers the Knock Out of any opponent\'s Pokémon.',
+	'TR:guardEndure': N_UNTIL, 'TR:copycat': N_CHOOSE,
 	devolveTarget: N_OWNER, millTarget: N_OWNER, coinStatuses: N_DEF, perAllBench: 'It counts your Bench and the Bench of the Defending Pokémon\'s owner.', doom: N_OWNER, targetNameBonus: N_DEF,
 	selfAtkPlusLasting: N_SLOT, 'AB:koCoinKO': N_SLOT, selfDamageBonus: N_DEF, 'AB:endTurnDraw': N_SLOT, 'AB:onBenchReveal': N_CHOOSE, 'AB:koGuard': N_UNTIL, 'TR:peekOrder': N_CHOOSE,
 	perTargetRetreat: N_DEF, targetBurnedBonus: N_DEF, coinStatus2: N_DEF, coinSetHp: N_DEF, targetEvolvedBonus: N_DEF, recolorEnergy: N_DEF, drawToMatch: N_OWNER, coinDiscardHand: N_OWNER, perTargetEnergy: N_DEF,
@@ -602,14 +675,14 @@ const ADAPT_ATTACK = {
 	randomHits: f => (f.times === 1 ? `Choose an opponent (by targeting one of their Active Pokémon). One of that player's Pokémon is chosen at random. Do ${f.n} damage to it.` : `Choose an opponent (by targeting one of their Active Pokémon). One of that player's Pokémon is chosen at random ${f.times} times. For each time a Pokémon was chosen, do ${f.n} damage to it.`),
 	copyAttack: f => (f.coin ? 'Flip a coin. If heads: ' : '') + (f.active ? "Choose an attack of any opposing Active Pokémon and use it as this attack, against this attack's target." : "Choose an attack of any opposing Pokémon in play and use it as this attack, against this attack's target.") + (f.free ? '' : " If this Pokémon doesn't have the necessary Energy to use that attack, this attack does nothing."),
 	discardSelfEnergy: f => (f.n === 'all' ? `Discard all ${f.type ? E(f.type) + ' ' : ''}Energy from this Pokémon.` : `Discard ${f.n} ${E(f.type)} Energy from this Pokémon.`),
-	discardTargetEnergy: f => (f.coin ? 'Flip a coin. If heads, discard' : 'Discard') + ' a random Energy from the Defending Pokémon.',
+	discardTargetEnergy: f => (f.type ? `Discard a ${E(f.type)} Energy from the Defending Pokémon.` : (f.coin ? 'Flip a coin. If heads, discard' : 'Discard') + ' a random Energy from the Defending Pokémon.'),
 	draw: f => (f.n === 1 ? 'Draw a card.' : `Draw ${f.n} cards.`),
 	targetCantAttack: f => (f.basic ? 'If the Defending Pokémon is a Basic Pokémon, it' : (f.coin ? 'Flip a coin. If heads, the' : 'The') + ' Defending Pokémon') + " can't attack during its owner's next turn.",
 	targetCantRetreat: () => "The Defending Pokémon can't retreat during its owner's next turn.",
 	selfReduce: f => `Until your next turn, this Pokémon takes -${f.n} damage from attacks.`,
 	targetAttackMinus: f => `During its owner's next turn, attacks used by the Defending Pokémon do -${f.n} damage.`,
 	coinsAllBonus: f => `Flip ${f.coins} coins. If both of them are heads, this attack does ${f.bonus} more damage.`,
-	coinsMul: f => `Flip ${f.coins} coins. This attack does ${f.per} damage for each heads.`,
+	coinsMul: f => `Flip ${f.coins} coins. This attack does ${f.per} damage for each heads.` + (f.tool ? ` If this Pokémon has ${f.tool} attached, flip ${f.toolCoins} coins instead.` : ''),
 	coinsUntilTails: f => `Flip a coin until you get tails. This attack does ${f.per} damage for each heads.`,
 	coinsAttachBench: f => `Flip ${f.coins} coins. Take an amount of ${E(f.type)} Energy from your Energy Zone equal to the number of heads and attach it to your Benched ${E(f.type)} Pokémon in any way you like.`,
 	coinDiscardHand: f => (f.sure ? 'Discard' : 'Flip a coin. If heads, discard') + " a random card from the hand of the Defending Pokémon's owner.",
@@ -663,7 +736,7 @@ const ADAPT_ATTACK = {
 	coinsBonusEach: f => `Flip ${f.coins} coins. This attack does ${f.bonus} more damage for each heads.`,
 	coinsUntilTailsBonus: f => `Flip a coin until you get tails. This attack does ${f.bonus} more damage for each heads.`,
 	koRecoil: f => `If the Defending Pokémon is Knocked Out by damage from this attack, this Pokémon also does ${f.n} damage to itself.`,
-	allOppDamage: f => `Choose an opponent (by targeting one of their Active Pokémon). This attack does ${f.n} damage to each of that player's Pokémon.`,
+	allOppDamage: f => `Choose an opponent (by targeting one of their Active Pokémon). This attack does ${f.n} damage to each of that player's Pokémon.` + (f.grow ? ` During your next turn, this attack does +${f.grow} damage to each of them.` : ''),
 	headsStatus: f => `If at least ${f.need} of them ${f.need === 1 ? 'is' : 'are'} heads, the Defending Pokémon is now ${f.s[0].toUpperCase() + f.s.slice(1)}.`,
 	coinsPerPokemon: f => `Flip a coin for each Pokémon you have in play. This attack does ${f.per} damage for each heads.`,
 	randomNextEnergy: () => "Change the type of the next Energy that will be generated for the Defending Pokémon's owner to 1 of the following at random: {G}, {R}, {W}, {L}, {P}, {F}, {D}, or {M}.",
@@ -693,9 +766,27 @@ const ADAPT_ATTACK = {
 	movedUpBonus: f => `If this Pokémon moved from your Bench to an Active slot this turn, this attack does ${f.bonus} more damage.`,
 	selfThorns: f => `Until your next turn, if this Pokémon is damaged by an attack, do ${f.n} damage to the Attacking Pokémon.`,
 	discardItemFromHand: f => `Discard a random ${f.kind === 'tool' ? 'Pokémon Tool' : 'Item'} card from the hand of the Defending Pokémon's owner.`,
+	// Mega Rising (B1)
+	selfPreventSmall: f => `Until your next turn, prevent all damage done to this Pokémon by attacks if that damage is ${f.n} or less.`,
+	chooseStatus: f => `Choose either ${f.list.map(s => s[0].toUpperCase() + s.slice(1)).join(' or ')}. The Defending Pokémon is now affected by that Special Condition.`,
+	healBenchBasics: f => `Heal ${f.n} damage from each of your Benched Basic Pokémon.`,
+	evolveSelfFromDeck: () => 'Put a random card from your deck that evolves from this Pokémon onto this Pokémon to evolve it.',
+	handCountBonus: f => `If you have exactly ${f.counts.slice(0, -1).join(', ')}, or ${f.counts.at(-1)} cards in your hand, this attack does ${f.bonus} more damage.`,
+	selfPreventFromBasic: () => 'Until your next turn, prevent all damage done to this Pokémon by attacks from Basic Pokémon.',
+	randomBench: f => (f.times === 1 ? `1 Benched Pokémon of the Defending Pokémon's owner is chosen at random. This attack also does ${f.n} damage to it.` : `1 Benched Pokémon of the Defending Pokémon's owner is chosen at random ${f.times} times. For each time a Pokémon was chosen, also do ${f.n} damage to it.`),
+	discardHandCost: f => (f.n === 1 ? "Discard a card from your hand. If you can't, this attack does nothing." : `Discard ${f.n} cards from your hand. If you can't discard ${f.n} cards, this attack does nothing.`),
+	targetAttachSleep: () => "During its owner's next turn, if they attach Energy from their Energy Zone to the Defending Pokémon, that Pokémon will be Asleep.",
+	ignoreWeakness: () => "This attack's damage isn't affected by Weakness.",
+	topRetreatMul: f => `Reveal the top ${f.n} cards of your deck. This attack does ${f.per} damage for each Pokémon with a Retreat Cost of ${f.need} or more you find there. Shuffle the revealed cards back into your deck.`,
+	lowHpBonus: f => `If this Pokémon's remaining HP is ${f.hp} or less, this attack does ${f.bonus} more damage.`,
+	perOppAbility: f => `This attack does ${f.n} more damage for each Pokémon in play of the Defending Pokémon's owner that has an Ability.`,
+	discardSupporterFromHand: f => (f.coin ? 'Flip a coin. If heads, the' : 'The') + " Defending Pokémon's owner reveals their hand. Choose a Supporter card you find there and discard it.",
+	ignoreTargetEffects: () => "This attack's damage isn't affected by any effects on the Defending Pokémon.",
+	coinsAllTailsNothing: f => `Flip ${f.coins} coins. If both of them are tails, this attack does nothing.`,
+	coinsDiscardOrNothing: f => `Flip ${f.coins} coins. For each heads, discard a random Energy from the Defending Pokémon. If both of them are tails, this attack does nothing.`,
 	// Secluded Springs (A4a)
 	devolveTarget: () => "If the Defending Pokémon is an evolved Pokémon, devolve it by putting the highest Stage Evolution card on it into its owner's hand.",
-	millTarget: () => "Discard the top card of the deck of the Defending Pokémon's owner.",
+	millTarget: f => (f.n > 1 ? `Discard the top ${f.n} cards of the deck of the Defending Pokémon's owner.` : "Discard the top card of the deck of the Defending Pokémon's owner."),
 	coinStatuses: f => `Flip a coin. If heads, the Defending Pokémon is now ${f.list.map(s => s[0].toUpperCase() + s.slice(1)).join(' and ')}.`,
 	discardToolsBonus: f => `Discard up to ${f.max} Pokémon Tool cards from your hand. This attack does ${f.per} damage for each card you discarded in this way.`,
 	perAllBench: f => `This attack does ${f.per} damage for each Benched Pokémon (both yours and the Defending Pokémon's owner's).`,
@@ -756,6 +847,21 @@ const ADAPT_ABILITY = {
 	activeAtkMinus: f => `As long as this Pokémon is in an Active slot, attacks used by opposing Active Pokémon do -${f.n} damage.`,
 	firstTurnAttach: f => `At the end of your first turn, take a ${E(f.type)} Energy from your Energy Zone and attach it to this Pokémon.`,
 	pokemonToHand: f => `Once during your turn, you may put a random ${f.kind === 'tool' ? 'Pokémon Tool card' : 'Pokémon'} from your deck into your hand.`,
+	// Mega Rising (B1)
+	typeHp: f => `Each of your ${E(f.type)} Pokémon gets +${f.n} HP.`,
+	coinPull: () => "Once during your turn, you may flip a coin. If heads, choose an opponent, one of their Benched Pokémon, and one of their Active Pokémon: those two switch places.",
+	millOpp: () => "Once during your turn, you may discard the top card of an opponent's deck.",
+	hitAttachBench: f => `If this Pokémon is in an Active slot and is damaged by an attack from an opposing Pokémon, take a ${E(f.type)} Energy from your Energy Zone and attach it to 1 of your Benched Pokémon.`,
+	switchActiveType: f => `Once during your turn, you may switch one of your ${E(f.type)} Pokémon in an Active slot with 1 of your Benched Pokémon.`,
+	fullHpReduce: f => `If this Pokémon has full HP, it takes -${f.n} damage from attacks from opposing Pokémon.`,
+	oppAttachPing: f => `As long as this Pokémon is in an Active slot, whenever an opponent attaches an Energy from their Energy Zone to 1 of their Pokémon, do ${f.n} damage to that Pokémon.`,
+	koNoPoints: () => "When this Pokémon is Knocked Out, flip a coin. If heads, no opponent can get any points for it.",
+	toolsThenDiscardSelf: () => 'Once during your turn, if this Pokémon is on your Bench, you may discard all Pokémon Tools from an opposing Active Pokémon of your choice. If you do, discard this Pokémon.',
+	attachZoneSelfDmg: f => `Once during your turn, you may take ${f.n} ${E(f.type)} Energy from your Energy Zone and attach it to this Pokémon. If you do, do ${f.dmg} damage to this Pokémon.`,
+	poisonAttacker: () => 'If this Pokémon is in an Active slot and is damaged by an attack from an opposing Pokémon, the Attacking Pokémon is now Poisoned.',
+	typesBoost: f => `Attacks used by your ${E(f.types[0])} Pokémon and ${E(f.types[1])} Pokémon do +${f.n} damage to opposing Active Pokémon.`,
+	fastEvolve: () => 'As long as this Pokémon is in an Active slot, it can evolve during your first turn or the turn you play it.',
+	onEvolveSupporter: () => 'Once during your turn, when you play this Pokémon from your hand to evolve 1 of your Pokémon, you may put a Supporter card from your discard pile into your hand.',
 	// Secluded Springs (A4a)
 	endTurnDraw: () => 'At the end of your turn, if this Pokémon is in an Active slot, draw a card.',
 	koCoinKO: () => 'If this Pokémon is in an Active slot and is Knocked Out by damage from an attack from an opposing Pokémon, flip a coin. If heads, the Attacking Pokémon is Knocked Out.',
@@ -825,11 +931,23 @@ const ADAPT_ABILITY = {
 };
 const ADAPT_TRAINER = {
 	fossil: f => `Play this card as if it were a ${f.hp}-HP Basic {C} Pokémon. At any time during your turn, you may discard this card from play. This card can't retreat.`,
-	healOne: f => `Heal ${f.n} damage from 1 of your ${f.type ? E(f.type) + ' ' : ''}${f.stage ? 'Stage ' + f.stage + ' ' : ''}Pokémon${f.cure ? ', and it recovers from all Special Conditions' : ''}.`,
+	healOne: f => (f.names ? `Heal ${f.n} damage from 1 of your ${f.names.join(' or ')}.` : `Heal ${f.n} damage from 1 of your ${f.type ? E(f.type) + ' ' : ''}${f.stage ? 'Stage ' + f.stage + ' ' : ''}Pokémon${f.cure ? ', and it recovers from all Special Conditions' : ''}.`),
 	// Celestial Guardians (A3)
 	healCureActive: f => `Heal ${f.n} damage and remove a random Special Condition from one of your Pokémon in an Active slot.`,
 	rareCandy: () => "Choose 1 of your Basic Pokémon in play. If you have a Stage 2 card in your hand that evolves from that Pokémon, put that card onto the Basic Pokémon to evolve it, skipping the Stage 1. You can't use this card during your first turn or on a Basic Pokémon that was put into play this turn.",
 	peekShuffle: () => 'Look at the top card of your deck. Then, you may shuffle your deck.',
+	// Mega Rising (B1)
+	prankSpinner: () => "A card from among every player's hands is chosen at random, revealed, and shuffled into its owner's deck.",
+	coinsDiscardEnergy: f => `Flip ${f.coins} coins. If both of them are heads, discard a random Energy from an opposing Active Pokémon of your choice.`,
+	attachDiscardActive: f => `Attach a ${E(f.type)} Energy from your discard pile to one of your ${E(f.type)} Pokémon in an Active slot.`,
+	toolBerry: f => `At the end of each turn, if the Pokémon this card is attached to has half of its maximum HP or less remaining, heal ${f.n} damage from it. If you do, discard this card.`,
+	toolHeavy: f => `If the Pokémon this card is attached to has a Retreat Cost of ${f.need} or more, it takes -${f.n} damage from attacks from opposing Pokémon.`,
+	toolKoDraw: () => "Whenever an opposing Pokémon is Knocked Out by damage from an attack used by the Pokémon this card is attached to, draw a card.",
+	guardEndure: f => `Until your next turn, if your ${f.names.join(' or ')} would be Knocked Out by damage from an attack, it is not Knocked Out and its remaining HP becomes ${f.hp}.`,
+	may: f => `Put ${f.n} random Pokémon from your deck into your hand. For each Pokémon you put into your hand in this way, choose a Pokémon to shuffle from your hand into your deck.`,
+	attachZoneEachNamed: f => `Take a ${E(f.type)} Energy from your Energy Zone and attach it to each of your ${f.names.join(' and ')}.`,
+	copycat: () => "Choose an opponent. Shuffle your hand into your deck. Draw a card for each card in that player's hand.",
+	smallBasicsToHand: f => `Put ${f.n} random Basic Pokémon with ${f.hp} HP or less from your deck into your hand.`,
 	// Secluded Springs (A4a)
 	toolRetreatLess: f => `The Retreat Cost of the ${E(f.type)} Pokémon this card is attached to is ${f.n} less.`,
 	toolMemory: () => 'The Pokémon this card is attached to can use any attack from its previous Evolutions. (You still need the necessary Energy to use each attack.)',
@@ -892,7 +1010,7 @@ const ADAPT_TRAINER = {
 };
 
 // what an attack is aimed at: 'oppActive' (one opposing Active), 'oppBench', 'oppAny', or 'none' (nothing to aim)
-const NEEDS_OPP = new Set(['randomHits', 'copyAttack', 'discardTargetEnergy', 'targetCantAttack', 'targetCantRetreat', 'targetAttackMinus', 'coinDiscardHand', 'coinShuffleTarget', 'status', 'healDealt', 'switchTarget', 'benchSplash', 'noSupporter', 'revealHand', 'smokescreen', 'mimicHand', 'perOppBench', 'targetExBonus', 'allOppDamage', 'halveTarget', 'randomNextEnergy', 'handToDeck', 'coinBounceTarget', 'discardTargetTools', 'headsStatus', 'targetTypeBonus', 'targetToolBonus', 'koRecoil', 'coinHandToDeck', 'targetBasicBonus', 'noItems', 'noZoneToActive', 'moreHpBonus', 'targetStatusBonus', 'targetAbilityBonus', 'targetCostMore', 'discardItemFromHand', 'randomStatus', 'coinsHandToDeck', 'flipDiscardTargetEnergy', 'coinsKO', 'perOppEnergyAll', 'discardTargetTools', 'coinHandToDeck', 'perTargetRetreat', 'targetBurnedBonus', 'coinStatus2', 'coinSetHp', 'targetEvolvedBonus', 'drawToMatch', 'recolorEnergy', 'perTargetEnergy', 'devolveTarget', 'millTarget', 'coinStatuses', 'perAllBench', 'doom', 'targetNameBonus', 'selfDamageBonus']);
+const NEEDS_OPP = new Set(['randomHits', 'copyAttack', 'discardTargetEnergy', 'targetCantAttack', 'targetCantRetreat', 'targetAttackMinus', 'coinDiscardHand', 'coinShuffleTarget', 'status', 'healDealt', 'switchTarget', 'benchSplash', 'noSupporter', 'revealHand', 'smokescreen', 'mimicHand', 'perOppBench', 'targetExBonus', 'allOppDamage', 'halveTarget', 'randomNextEnergy', 'handToDeck', 'coinBounceTarget', 'discardTargetTools', 'headsStatus', 'targetTypeBonus', 'targetToolBonus', 'koRecoil', 'coinHandToDeck', 'targetBasicBonus', 'noItems', 'noZoneToActive', 'moreHpBonus', 'targetStatusBonus', 'targetAbilityBonus', 'targetCostMore', 'discardItemFromHand', 'randomStatus', 'coinsHandToDeck', 'flipDiscardTargetEnergy', 'coinsKO', 'perOppEnergyAll', 'discardTargetTools', 'coinHandToDeck', 'perTargetRetreat', 'targetBurnedBonus', 'coinStatus2', 'coinSetHp', 'targetEvolvedBonus', 'drawToMatch', 'recolorEnergy', 'perTargetEnergy', 'devolveTarget', 'millTarget', 'coinStatuses', 'perAllBench', 'doom', 'targetNameBonus', 'selfDamageBonus', 'chooseStatus', 'randomBench', 'targetAttachSleep', 'perOppAbility', 'discardSupporterFromHand', 'coinsDiscardOrNothing']);
 const targetOf = (damage, fx) => {
 	const sn = fx.find(f => f.k === 'snipe'); if (sn) return sn.zone === 'bench' ? 'oppBench' : 'oppAny';
 	if (fx.some(f => f.k === 'snipePerEnergy')) return 'oppAny';
@@ -902,6 +1020,8 @@ const targetOf = (damage, fx) => {
 
 // ---- build -------------------------------------------------------------------------------------------------------
 const STAGE = { Basic: 0, Stage1: 1, Stage2: 2 };
+// Mega Evolutions: this site's species table has none, so each uses its base species' sprite and the types the games give the Mega form
+const MEGA_TYPES = { 'Mega Pinsir': ['Bug', 'Flying'], 'Mega Blaziken': ['Fire', 'Fighting'], 'Mega Gyarados': ['Water', 'Dark'], 'Mega Ampharos': ['Electric', 'Dragon'], 'Mega Altaria': ['Dragon', 'Fairy'], 'Mega Absol': ['Dark'] };
 // the Ultra Beasts (cards say "your Ultra Beasts"): the eleven species the games give that name
 const ULTRA_BEASTS = new Set(['Nihilego', 'Buzzwole', 'Pheromosa', 'Xurkitree', 'Celesteela', 'Kartana', 'Guzzlord', 'Poipole', 'Naganadel', 'Stakataka', 'Blacephalon']);
 // one name, several forms in the games: the card's own type says which (a Fighting-type Wormadam is the Sandy Cloak)
@@ -916,7 +1036,7 @@ const review = [], cards = [], byKey = new Map();
 for (const c of SRC) {
 	let def;
 	if (c.category === 'Pokemon') {
-		const base = c.name.replace(/\s+ex$/, ''), sp = SP_BY[norm((c.attacks || []).map(x => (FORM_BY_ATTACK[base] || {})[x.name]).find(Boolean) || '')] || SP_BY[norm((FORM_BY_CARD_TYPE[base] || {})[c.types[0]] || '')] || SP_BY[norm(base)] || SP_BY[norm(base.replace(/^(\w+) Rotom$/, 'Rotom-$1'))] || SP_BY[norm(base.replace(/^Origin Forme (\w+)$/, '$1-Origin'))] || SP_BY[norm(base.replace(/^Origin Forme /, ''))] || SP_BY[norm(base.replace(/^Paldean (.+)$/, '$1-Paldea'))] || SP_BY[norm(base.replace(/^Paldean /, ''))] || SP_BY[norm(base.replace(/^Alolan (.+)$/, '$1-Alola'))] || SP_BY[norm(base.replace(/^Galarian (.+)$/, '$1-Galar'))] || SP_BY[norm(base.replace(/^Galarian /, ''))];   // (this site has no Origin Forme Dialga or Palkia: the same types, the base sprite)   // (the card says "Wash Rotom", the games "Rotom-Wash")
+		const base = c.name.replace(/\s+ex$/, ''), sp = SP_BY[norm((c.attacks || []).map(x => (FORM_BY_ATTACK[base] || {})[x.name]).find(Boolean) || '')] || SP_BY[norm((FORM_BY_CARD_TYPE[base] || {})[c.types[0]] || '')] || SP_BY[norm(base)] || SP_BY[norm(base.replace(/^(\w+) Rotom$/, 'Rotom-$1'))] || SP_BY[norm(base.replace(/^Origin Forme (\w+)$/, '$1-Origin'))] || SP_BY[norm(base.replace(/^Origin Forme /, ''))] || SP_BY[norm(base.replace(/^Paldean (.+)$/, '$1-Paldea'))] || SP_BY[norm(base.replace(/^Paldean /, ''))] || SP_BY[norm(base.replace(/^Alolan (.+)$/, '$1-Alola'))] || SP_BY[norm(base.replace(/^Galarian (.+)$/, '$1-Galar'))] || SP_BY[norm(base.replace(/^Galarian /, ''))] || SP_BY[norm(base.replace(/^Mega (.+)$/, '$1-Mega'))] || SP_BY[norm(base.replace(/^Mega /, ''))];   // (this site has no Origin Forme Dialga or Palkia: the same types, the base sprite)   // (the card says "Wash Rotom", the games "Rotom-Wash")
 		if (!sp) { if (SURVEY) { gaps.push('no mainline species for ' + c.name); continue; } throw new Error('no mainline species for ' + c.name); }
 		let bad = false;
 		const attacks = (c.attacks || []).map((a, i) => {
@@ -936,8 +1056,8 @@ for (const c of SRC) {
 		const ab = (c.abilities || [])[0];
 		const afx = ab ? read(ABILITY_FX, ab.effect, `ability (${c.name}: ${ab.name})`) : null;
 		if (bad || (ab && !afx)) continue;
-		def = { name: c.name, kind: 'pokemon', cardType: c.types[0], combatTypes: sp.types.slice(0, 2), hp: c.hp, stage: STAGE[c.stage], evolvesFrom: c.evolveFrom || null, ex: /\sex$/.test(c.name),
-			retreat: c.retreat || 0, weakness: (c.weaknesses || [])[0]?.type || null, points: /\sex$/.test(c.name) ? 2 : 1, ...(ULTRA_BEASTS.has(base) ? { ub: true } : {}), attacks,
+		def = { name: c.name, kind: 'pokemon', cardType: c.types[0], combatTypes: (MEGA_TYPES[base] || sp.types).slice(0, 2), hp: c.hp, stage: STAGE[c.stage], evolvesFrom: c.evolveFrom || null, ex: /\sex$/.test(c.name),
+			retreat: c.retreat || 0, weakness: (c.weaknesses || [])[0]?.type || null, points: /^Mega .+\sex$/.test(c.name) ? 3 : /\sex$/.test(c.name) ? 2 : 1, ...(ULTRA_BEASTS.has(base) ? { ub: true } : {}), attacks,
 			ability: ab ? { name: ab.name, fx: afx, text: ab.effect, adapted: ADAPT_ABILITY[afx.k](afx), note: noteFor(['AB:' + afx.k], ab.effect, ADAPT_ABILITY[afx.k](afx)) } : null, dex: (c.dexId || [])[0] || null, ...(sp.sprite && (c.dexId || [])[0] && sp.sprite !== `s${(c.dexId || [])[0] * 32}.png` ? { sprite: sp.sprite } : {}) };   // (a form names its own sprite: Wash Rotom is not drawn as Rotom)
 	} else {
 		const fx = read(TRAINER_FX, c.effect, `Trainer (${c.name})`);
@@ -998,7 +1118,7 @@ ${rows.filter(r => r[3] === 'named').map(r => `| ${r[0]} | ${r[1]} | ${r[2]} | $
 ${rows.filter(r => r[3] === 'move').map(r => `| ${r[0]} | ${r[1]} | ${r[2]} |`).join('\n')}
 `;
 // every printing, for the pack opener: which card it is, how rare, and which of the set's three boosters hold it
-const BOOSTER = { Charizard: 'C', Mewtwo: 'M', Pikachu: 'P', Dialga: 'D', Palkia: 'K', Solgaleo: 'O', Lunala: 'U', Lugia: 'L', 'Ho-Oh': 'H' };
+const BOOSTER = { Charizard: 'C', Mewtwo: 'M', Pikachu: 'P', Dialga: 'D', Palkia: 'K', Solgaleo: 'O', Lunala: 'U', Lugia: 'L', 'Ho-Oh': 'H', 'Mega Gyarados': 'Y', 'Mega Blaziken': 'B', 'Mega Altaria': 'T' };
 const RARE = { 'One Diamond': '1D', 'Two Diamond': '2D', 'Three Diamond': '3D', 'Four Diamond': '4D', 'One Star': '1S', 'Two Star': '2S', 'Three Star': '3S', Crown: 'CR', 'One Shiny': '1H', 'Two Shiny': '2H' };
 // the source lists no rarity for these two printings (Wigglytuff ex, full art and rainbow). Their numbers sit inside the set's
 // two-star run (A1-251 to A1-280), so they are two-star here. Remove a line when the source gains the field.
