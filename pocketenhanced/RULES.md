@@ -684,8 +684,10 @@ The eighteenth set, from the second source: 109 printings, 75 new cards, one boo
 * **Ancient and Future Pokémon.** The cards print the label; neither source carries it. Here it is given by species, the
   Paradox Pokémon of the past and of the future. Ancient: Great Tusk, Scream Tail, Brute Bonnet, Flutter Mane, Slither
   Wing, Sandy Shocks, Roaring Moon, Koraidon, Walking Wake, Gouging Fire, Raging Bolt. Future: Iron Treads, Iron Bundle,
-  Iron Hands, Iron Jugulis, Iron Moth, Iron Thorns, Iron Valiant, Miraidon, Iron Leaves, Iron Boulder, Iron Crown. The
-  Koraidon and Miraidon of Paldean Wonders carry the label too. (Reviewable: `ANCIENT` and `FUTURE` in the generator.)
+  Iron Hands, Iron Jugulis, Iron Moth, Iron Thorns, Iron Valiant, Miraidon, Iron Leaves, Iron Boulder, Iron Crown.
+  Checked against two published lists of Ancient and Future cards (Serebii, Dittobase): they have every card of those
+  species from Paradox Drive on, and not the Koraidon and Miraidon of Paldean Wonders, which were printed before the
+  label existed. Those two carried it here at first, by mistake; rules revision 6 took it off (below).
 * **Legendary Drive (Koraidon ex, Miraidon ex).** Put onto the Bench from the hand, it may take the place of one of its
   player's Active Pokémon; if it does, all that player's Energy in play moves to it. Once a turn (the two share it).
 * **Ancient Roar (Roaring Moon).** Put onto the Bench from the hand, it may switch an opposing Active Pokémon out.
@@ -735,3 +737,11 @@ Goodra is Steel and Dragon, Hisuian Zoroark ex Normal and Ghost). Its Flutter Ma
 * **Kid's Room (Stadium).** Once a turn each player may switch a card in their hand with a random Pokémon Tool from their
   deck (the Stadium's Use button). It cannot be used with no Pokémon Tool in the deck.
 * Matches, replays and saves from before this set still load: nothing about how existing cards play changed.
+
+## Rules revision 6: Paldean Wonders' Koraidon and Miraidon
+
+When Paradox Drive was added, the Ancient and Future labels were given by species, and so also to the Koraidon and
+Miraidon of Paldean Wonders. The published lists of Ancient and Future cards do not have those two: the label starts
+with Paradox Drive. New matches are played under revision 6, where they have no label (no +40 HP from the Ancient
+Booster Energy Capsule, no Professor Sada, no Future System, no Professor Turo, no Future Booster bonus). A match
+recorded under revision 5 replays as it was played.

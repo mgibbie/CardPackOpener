@@ -22,7 +22,7 @@ export const ENGINE_VERSION = 1;
 // 3: six attacks shared by unrelated Pokémon changed Combat Type (cards.js `typeWas` holds the type they had); a match of
 // revision 1 or 2 is replayed with the old type. 4: Mega Steelix ex's -20. 5: four cards whose source record was wrong were
 // corrected (cards.js `costWas`, `damageWas`, `toWas` hold what they had); a match of an earlier revision replays with those.
-export const RULES = 5;
+export const RULES = 6;   // (6: the Koraidon and Miraidon of Paldean Wonders are not Ancient and Future; they were, wrongly, for part of revision 5)
 /** The Combat Type an attack has in this match. */
 export const typeOf = (rules, attack) => (rules < 3 && attack.typeWas) || attack.combatType;
 export const LIMITS = Object.freeze({ deck: 20, copies: 2, hand: 5, maxHand: 10, actives: 2, bench: 4, players: [2, 4], energyTypes: [1, 3] });
@@ -42,7 +42,7 @@ function typeHp(poke) {
 	{ const sh = stadiumFx('stadiumBasicHp'); if (sh && top(poke).stage === 0) n += sh.n; }
 	return n;
 }
-const hpOf = poke => top(poke).hp + (toolFx(poke) && toolFx(poke).k === 'toolHp' && (!toolFx(poke).type || isT(poke, toolFx(poke).type)) && (!toolFx(poke).ancient || top(poke).ancient) && (toolFx(poke).stage == null || top(poke).stage === toolFx(poke).stage) ? toolFx(poke).n : 0) + typeHp(poke) + energyHp(poke);
+const hpOf = poke => top(poke).hp + (toolFx(poke) && toolFx(poke).k === 'toolHp' && (!toolFx(poke).type || isT(poke, toolFx(poke).type)) && (!toolFx(poke).ancient || isAnc(poke)) && (toolFx(poke).stage == null || top(poke).stage === toolFx(poke).stage) ? toolFx(poke).n : 0) + typeHp(poke) + energyHp(poke);
 const ed = p => (p.energyDiscard = p.energyDiscard || []);          // Energy discarded from a player's Pokémon (Volkner takes it back)
 const blockHeal = S => S.players.some(p => inPlay(p).some(k => passive(k, 'healBlock')));
 /** How much of `n` is healed from `dmg` damage (nothing while a Pokémon in play stops healing). */
@@ -151,7 +151,7 @@ export function costLess(S, poke) {
 	const loc = locate(S, poke); if (!loc) return 0;
 	const v = link(S, poke, 'linkCostLess');
 	let more = 0; if (loc.zone === 'active') for (const q of opponents(S, loc.seat)) for (const m of actives(q)) { const f = passive(m, 'activeCostMore'); if (f) more += f.n; }
-	const fut = top(poke).future ? inPlay(S.players[loc.seat]).reduce((n, m) => { const f = passive(m, 'futureCostLess'); return n + (f ? f.n : 0); }, 0) : 0;   // Future System
+	const fut = isFut(poke) ? inPlay(S.players[loc.seat]).reduce((n, m) => { const f = passive(m, 'futureCostLess'); return n + (f ? f.n : 0); }, 0) : 0;   // Future System
 	return fut + (v ? v.n : 0) + (S.players[loc.seat].flags.costLess || []).filter(c => c.names.includes(pokeName(poke))).reduce((n, c) => n + c.n, 0) - poke.fx.filter(x => x.k === 'costMore').reduce((n, x) => n + x.n, 0) - more;
 }
 /** A cost with `n` of its Colorless Energy taken off. */
@@ -176,6 +176,9 @@ const hasFx = (poke, k) => poke.fx.some(f => f.k === k);
 /** Alolan Muk: while one is in play, Basic Pokémon (every player's) have no Abilities. */
 const mutedBasics = () => !!CUR && CUR.players.some(p => [...p.active, ...p.bench].some(m => { if (!m) return false; const ab = card(m.cards[m.cards.length - 1]).ability; return !!ab && ab.fx.k === 'noBasicAbilities'; }));
 const abilityOf = poke => { const c = top(poke); return c.ability && !(c.stage === 0 && mutedBasics()) && !poke.fx.some(f => f.k === 'noAbility') ? c.ability : null; };   // (noAbility: Budew's Prickly Powder)
+/** Is this Pokémon Ancient, or Future? (A match of rules revision 5 or earlier keeps the label two cards wrongly had.) */
+const isAnc = poke => { const c = top(poke); return !!c.ancient || (!!c.ancientWas && !!CUR && CUR.rules < 6); };
+const isFut = poke => { const c = top(poke); return !!c.future || (!!c.futureWas && !!CUR && CUR.rules < 6); };
 /** Is this Pokémon of that card type? (Urshifu's Double Type makes it two.) */
 const isT = (poke, type) => { const c = top(poke); if (c.cardType === type) return true; const ab = c.ability; return !!ab && ab.fx.k === 'doubleType' && ab.fx.types.includes(type) && !!abilityOf(poke); };
 const typesOf = poke => { const c = top(poke), ab = c.ability; return ab && ab.fx.k === 'doubleType' && abilityOf(poke) ? [...new Set([c.cardType, ...ab.fx.types])] : [c.cardType]; };
@@ -239,7 +242,7 @@ function attackDamage(S, ctx, target, base, note) {
 			for (const m of inPlay(atkP)) { const f = passive(m, 'unownPower'); if (f && unownOn(atkP, m)) { d += f.n; parts.push(`+${f.n} ${top(m).ability.name}`); } }
 		}
 		const bt = toolFx(ctx.poke); if (bt && bt.k === 'toolPointBoost' && top(ctx.poke).ub && atkP.points > 0 && tLoc.zone === 'active' && tLoc.seat !== ctx.seat) { d += bt.n * atkP.points; parts.push(`+${bt.n * atkP.points} ${card(ctx.poke.tool).name}`); }
-		if (bt && bt.k === 'toolFutureBoost' && top(ctx.poke).future && tLoc.zone === 'active' && tLoc.seat !== ctx.seat) { d += bt.n; parts.push(`+${bt.n} ${card(ctx.poke.tool).name}`); }
+		if (bt && bt.k === 'toolFutureBoost' && isFut(ctx.poke) && tLoc.zone === 'active' && tLoc.seat !== ctx.seat) { d += bt.n; parts.push(`+${bt.n} ${card(ctx.poke.tool).name}`); }
 		{ const al = locate(S, ctx.poke); if (al && al.zone === 'active') for (const q of opponents(S, ctx.seat)) for (const m of actives(q)) { const f = passive(m, 'activeAtkMinus'); if (f) { d -= f.n; parts.push(`-${f.n} ${top(m).ability.name}`); } } }
 		const lb = link(S, ctx.poke, 'linkBoost'); if (lb && tLoc.zone === 'active' && tLoc.seat !== ctx.seat) { d += lb.n; parts.push(`+${lb.n} ${top(ctx.poke).ability.name}`); }
 		for (const f of ctx.poke.fx) if (f.k === 'atkMinus') { d -= f.n; parts.push(`-${f.n} (weakened)`); }
@@ -1137,8 +1140,8 @@ const HANDLERS = {
 			if (x.at.zone === 'active' && opponents(S, p.seat).some(q => inPlay(q).some(m => passive(m, 'blockEvolveActive')))) no("an opposing Pokémon's Ability stops your Active Pokémon evolving");
 		}
 		else if (f.k === 'moveDamage') { k = named(); if (!k.dmg) no('that Pokémon has no damage'); opp = oppAt(S, p, x.target, 'active'); }
-		else if (f.k === 'shuffleFuture') { k = ownAt(S, p, x.at); if (!top(k).future) no('choose one of your Future Pokémon'); }
-		else if (f.k === 'attachDiscardAncient') { if (!inPlay(p).some(m => top(m).ancient)) no('you have no Ancient Pokémon in play'); if (!ed(p).length) no('there is no Energy in your discard pile'); }
+		else if (f.k === 'shuffleFuture') { k = ownAt(S, p, x.at); if (!isFut(k)) no('choose one of your Future Pokémon'); }
+		else if (f.k === 'attachDiscardAncient') { if (!inPlay(p).some(m => isAnc(m))) no('you have no Ancient Pokémon in play'); if (!ed(p).length) no('there is no Energy in your discard pile'); }
 		else if (f.k === 'returnTyped') { k = ownAt(S, p, x.at); if (!isT(k, f.type) || top(k).ex) no(`choose one of your ${f.type} Pokémon that is not a Pokémon ex`); }
 		else if (f.k === 'fieldBlower') { if (x.stadium) { if (!S.stadium) no('there is no Stadium in play'); } else { k = x.target && S.players[x.target.seat] && !S.players[x.target.seat].eliminated ? at(S, x.target) : null; if (!k || !k.tool) no('choose a Pokémon that has a Pokémon Tool, or the Stadium in play'); } }
 		else if (f.k === 'returnDamaged') { k = ownAt(S, p, x.at); if (!isT(k, f.type)) no(`choose one of your ${f.type} Pokémon`); if (!k.dmg) no('that Pokémon has no damage'); }
@@ -1302,7 +1305,7 @@ const HANDLERS = {
 		else if (f.k === 'shuffleFuture') { const back = k.cards.slice(); removeFromPlay(S, k); p.deck.push(...back); if (k.tool) { p.discard.push(k.tool); k.tool = null; } ed(p).push(...k.energy); k.energy = []; S.rand.shuffle(p.deck); log(S, { k: 'note', seat: p.seat, msg: `${p.name} shuffles ${back.map(i => card(i).name).join(', ')} into their deck.` }); yield* settle(S, null, null); }
 		else if (f.k === 'attachDiscardAncient') {
 			let types = [...new Set(ed(p))].sort(); if (types.length > f.n) { S.rand.shuffle(types); types = types.slice(0, f.n); }
-			for (const ty of types) { const locs = [...p.active.map((m, i) => (m && top(m).ancient ? { seat: p.seat, zone: 'active', idx: i } : null)), ...p.bench.map((m, i) => (m && top(m).ancient ? { seat: p.seat, zone: 'bench', idx: i } : null))].filter(Boolean); if (!locs.length) break;
+			for (const ty of types) { const locs = [...p.active.map((m, i) => (m && isAnc(m) ? { seat: p.seat, zone: 'active', idx: i } : null)), ...p.bench.map((m, i) => (m && isAnc(m) ? { seat: p.seat, zone: 'bench', idx: i } : null))].filter(Boolean); if (!locs.length) break;
 				const loc = yield* chooseTarget(S, p.seat, locs, `${c.name}: choose your Ancient Pokémon that takes the ${ty} Energy.`), m = loc ? at(S, loc) : null; if (!m) break;
 				ed(p).splice(ed(p).indexOf(ty), 1); m.energy.push(ty); log(S, { k: 'energy', seat: p.seat, msg: `A ${ty} Energy from ${p.name}'s discard pile is attached to ${pokeName(m)}.` }); }
 		}
