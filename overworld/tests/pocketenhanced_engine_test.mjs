@@ -62,7 +62,7 @@ A(T.COMBAT_TYPES.length === 18 && T.CARD_TYPES.length === 10 && T.ENERGY_TYPES.l
 
 // ===== 2. the data =====
 {
-	const src = ['tcgdex_a1.json', 'tcgdex_a1a.json', 'tcgdex_a2.json', 'tcgdex_a2a.json', 'tcgdex_a2b.json', 'tcgdex_a3.json', 'tcgdex_a3a.json'].flatMap(f => JSON.parse(fs.readFileSync(path.join(ROOT, 'pocketenhanced/data/source', f), 'utf8')).cards);
+	const src = ['tcgdex_a1.json', 'tcgdex_a1a.json', 'tcgdex_a2.json', 'tcgdex_a2a.json', 'tcgdex_a2b.json', 'tcgdex_a3.json', 'tcgdex_a3a.json', 'tcgdex_a3b.json'].flatMap(f => JSON.parse(fs.readFileSync(path.join(ROOT, 'pocketenhanced/data/source', f), 'utf8')).cards);
 	const a1 = CARDS.filter(c => c.set === 'A1'), pk = CARDS.filter(c => c.kind === 'pokemon');
 	const a1a = CARDS.filter(c => c.set === 'A1a');
 	A(src.filter(c => c.id.startsWith('A1-')).length === 286 && a1.length === 225 && src.every(c => card(c.id)), 'Genetic Apex: 286 printings are 225 different gameplay cards (alternate art shares one definition), plus 7 starter Trainers; every printing resolves', [a1.length, CARDS.length]);
@@ -76,7 +76,9 @@ A(T.COMBAT_TYPES.length === 18 && T.CARD_TYPES.length === 10 && T.ENERGY_TYPES.l
 	const a3 = CARDS.filter(c => c.set === 'A3');
 	A(src.filter(c => c.id.startsWith('A3-')).length === 239 && a3.length === 157 && a3.filter(c => c.kind === 'tool').length === 2, 'Celestial Guardians: 239 printings add 157 gameplay cards', [a3.length, CARDS.length]);
 	const a3a = CARDS.filter(c => c.set === 'A3a');
-	A(src.filter(c => c.id.startsWith('A3a-')).length === 103 && a3a.length === 69 && CARDS.length === 826 && card('A3a-099') === card('A1a-003') && card('A3a-102') === card('A1a-059') && a3a.filter(c => c.ub).length === 11, 'Extradimensional Crisis: 103 printings add 69 gameplay cards (its Celebi ex and Pidgeot ex are the cards already in the game): 826 cards in all', [a3a.length, CARDS.length, a3a.filter(c => c.ub).length]);
+	A(src.filter(c => c.id.startsWith('A3a-')).length === 103 && a3a.length === 69 && card('A3a-099') === card('A1a-003') && card('A3a-102') === card('A1a-059') && a3a.filter(c => c.ub).length === 11, 'Extradimensional Crisis: 103 printings add 69 gameplay cards (its Celebi ex and Pidgeot ex are the cards already in the game)', [a3a.length, CARDS.length, a3a.filter(c => c.ub).length]);
+	const a3b = CARDS.filter(c => c.set === 'A3b');
+	A(src.filter(c => c.id.startsWith('A3b-')).length === 107 && a3b.length === 69 && CARDS.length === 895 && card('A3b-099') === card('A1-132'), 'Eevee Grove: 107 printings add 69 gameplay cards (its Gardevoir is the card already in the game): 895 cards in all', [a3b.length, CARDS.length]);
 	const badType = pk.filter(c => !T.CARD_TYPES.includes(c.cardType) || c.combatTypes.length < 1 || c.combatTypes.length > 2 || c.combatTypes.some(t => !T.COMBAT_TYPES.includes(t)));
 	A(badType.length === 0, 'every Pokémon has a Card Type and one or two real Combat Types', badType.map(c => c.name).slice(0, 5));
 	const ct = n => card(id(n));
@@ -104,7 +106,7 @@ A(T.COMBAT_TYPES.length === 18 && T.CARD_TYPES.length === 10 && T.ENERGY_TYPES.l
 		if (s.category === 'Pokemon') {
 			if (c.hp !== s.hp || c.retreat !== (s.retreat || 0) || c.evolvesFrom !== (s.evolveFrom || null) || c.cardType !== s.types[0] || c.weakness !== ((s.weaknesses || [])[0]?.type || null)) diff.push(s.id + ' stats');
 			(s.attacks || []).forEach((a, i) => { const m = c.attacks[i]; if (!m || m.name !== a.name || ex(m.text) !== ex(a.effect || '') || m.cost.length !== (a.cost || []).length || String(a.damage ?? '').replace(/\D/g, '') !== (m.damage ? String(m.damage) : '')) diff.push(s.id + ' ' + a.name); });
-			if ((s.abilities || [])[0] && c.ability.text !== s.abilities[0].effect) diff.push(s.id + ' ability');
+			if ((s.abilities || [])[0] && c.ability.text !== s.abilities[0].effect && c.ability.text !== s.abilities[0].effect.replace('take a {', 'take 1 {')) diff.push(s.id + ' ability');   // (one reprint words "take 1 Energy" as "take a Energy": the same card)
 		} else if (c.text !== s.effect) diff.push(s.id + ' text');
 	}
 	A(diff.length === 0, "every card's HP, costs, damage, evolution, Weakness and printed text are the source's, unchanged", diff.slice(0, 6));
@@ -1445,6 +1447,159 @@ function playOut(cfg, limit = 4000) {
 			} catch (e) { bad.push(g + ': ' + e.message); }
 		}
 		A(over === 16 && bad.length === 0, 'computer players finish 16 matches with Extradimensional Crisis decks (2, 3 and 4 players): every replay matches and every card is accounted for', { over, bad: bad.slice(0, 4) });
+	}
+}
+
+//// ===== 18. Eevee Grove (A3b): each new effect, played =====
+{
+	const of = set => name => { const c = CARDS.find(x => x.set === set && x.name === name); if (!c) throw new Error(`no ${set} card ${name}`); return c.id; };
+	const eg = of('A3b'), a2 = of('A2'), a3 = of('A3');
+	const putId = (S, seat, zone, idx, cid, o = {}) => { const k = E.makePoke(S, cid); k.turnPlayed = -1; Object.assign(k, o); S.players[seat][zone][idx] = k; return k; };
+	const G = (S, seat, zone, idx, name, o) => putId(S, seat, zone, idx, eg(name), o);
+	const dmgs = S => S.log.filter(e => e.k === 'damage').map(e => e.msg);
+	const SN = () => card(id('Snorlax')).attacks.length - 1;
+	const seeds = (n, f) => { const out = {}; for (let g = 0; g < n; g++) { const r = f('e' + g); out[r] = (out[r] || 0) + 1; } return out; };
+	const FOUR = ['Fire', 'Fire', 'Fire', 'Fire'];
+	const foe = S => { put(S, 1, 'active', 0, 'Snorlax'); put(S, 1, 'bench', 0, 'Snorlax'); };
+	let S, x, y, z;
+
+	// --- attacks ---
+	S = arena(2); G(S, 0, 'active', 0, 'Leafeon', { energy: ['Grass', 'Grass', 'Fire'] }); foe(S);
+	exec(S, { attack: 0, target: L(1, 'active', 0) });
+	A(/base 50\b/.test(dmgs(S)[0]), 'Leaf Blast does 10 + 20 for each Grass Energy on its user (2), and not for other Energy');
+	S = arena(2); G(S, 0, 'active', 0, 'Tsareena', { energy: ['Grass'] }); foe(S); S.players[1].hand = [id('Potion')]; x = S.players[1].deck.length;
+	exec(S, { attack: 0, target: L(1, 'active', 0) });
+	A(S.players[1].deck.length === x && !S.log.some(e => e.k === 'coin') && logHas(S, /reveals Potion from their hand and shuffles it into their deck/), 'Kick Down sends a random card of its target\'s owner\'s hand into their deck, with no coin');
+	S = arena(2); G(S, 0, 'active', 0, 'Milcery', { energy: ['Fire'] }); G(S, 0, 'active', 1, 'Slurpuff', { energy: ['Fire', 'Fire'] }); x = G(S, 0, 'bench', 0, 'Alcremie', { energy: ['Fire'] }); put(S, 1, 'active', 0, 'Snorlax', { tool: a2('Giant Cape') }); put(S, 1, 'active', 1, 'Snorlax', { tool: a2('Giant Cape') }); put(S, 1, 'bench', 0, 'Snorlax'); put(S, 1, 'bench', 1, 'Snorlax');
+	exec(S, { attack: 0, target: L(1, 'active', 0) }, { attack: 0, target: L(1, 'active', 1) });
+	A(/base 10\b/.test(dmgs(S)[0]) && /base 30\b/.test(dmgs(S)[1]), 'Sweets Relay has no bonus the first time, and one used earlier in the same turn does not count');
+	exec(S); exec(S, { attack: 0, target: L(1, 'active', 0) }, { attack: 0, target: L(1, 'active', 1) });
+	A(/base 30\b/.test(dmgs(S)[2]) && /base 90\b/.test(dmgs(S)[3]), 'the turn after one was used, each does its bonus (10 + 20, 30 + 60)');
+	exec(S); exec(S); exec(S); exec(S, { attack: 0, target: L(1, 'active', 0) });
+	A(/base 10\b/.test(dmgs(S).at(-1)) && S.players[0].relays === 5, 'a turn without it breaks the chain; the match still counts every use (5)');
+	exec(S); S.players[0].active[0] = x; S.players[0].bench[0] = null; S.players[1].active[0].dmg = 0;
+	exec(S, { attack: 0, target: L(1, 'active', 0) });
+	A(/base 200\b/.test(dmgs(S).at(-1)), 'Sweets Overload does 40 for each time Sweets Relay was used this match (5)');
+	S = arena(2); x = G(S, 0, 'active', 0, 'Eevee', { energy: ['Lightning'] }); G(S, 0, 'active', 1, 'Jolteon', { energy: ['Lightning'] }); foe(S); put(S, 1, 'active', 1, 'Snorlax'); S.players[0].hand = [eg('Jolteon')];
+	E.apply(S, { t: 'evolve', seat: 0, hand: 0, at: L(0, 'active', 0) }); exec(S, { attack: 0, target: L(1, 'active', 0) }, { attack: 0, target: L(1, 'active', 1) });
+	A(/base 60\b/.test(dmgs(S)[0]) && /base 40\b/.test(dmgs(S)[1]), 'Beginning Bolt does 40 + 20 the turn its user evolved, and 40 otherwise');
+	S = arena(2); x = G(S, 0, 'active', 0, 'Galvantula', { energy: ['Lightning', 'Lightning', 'Fire'] }); foe(S);
+	exec(S, { attack: 0, target: L(1, 'active', 0) });
+	A(x.energy.length === 0 && logHas(S, /Snorlax is now Paralyzed/), 'Electric Shock discards all its user\'s Energy and Paralyzes its target');
+	S = arena(2); G(S, 0, 'active', 0, 'Espeon', { energy: ['Psychic'] }); put(S, 1, 'active', 0, 'Snorlax', { energy: ['Fire', 'Fire'] }); put(S, 1, 'bench', 0, 'Snorlax', { energy: ['Water'] }); put(S, 1, 'bench', 3, 'Snorlax');
+	exec(S, { attack: 0, target: L(1, 'active', 0) });
+	A(/base 60\b/.test(dmgs(S)[0]), 'Energy Crush does 20 for each Energy on all the Pokémon of its target\'s owner (3)');
+	S = arena(2); G(S, 0, 'active', 0, 'Sylveon', { energy: ['Psychic', 'Fire'] }); G(S, 0, 'active', 1, 'Leafeon'); G(S, 0, 'bench', 0, 'Leafeon'); put(S, 0, 'bench', 1, 'Charizard ex'); put(S, 0, 'bench', 2, 'Snorlax'); foe(S);
+	exec(S, { attack: 0, target: L(1, 'active', 0) });
+	A(/base 100\b/.test(dmgs(S)[0]), 'Evoharmony does 40 + 30 for each Evolution Pokémon on its player\'s Bench (2: not Basic ones, not the other Active)');
+	{ const r = seeds(12, sd => { const T = arena(2, sd); G(T, 0, 'active', 0, 'Mimikyu', { energy: ['Psychic', 'Psychic'] }); const d = put(T, 1, 'active', 0, 'Snorlax'); put(T, 1, 'active', 1, 'Charizard ex'); put(T, 1, 'bench', 0, 'Snorlax');
+			exec(T, { attack: 0, target: L(1, 'active', 0), args: { from: L(1, 'active', 1), attack: 0 } }); const heads = T.log.some(e => e.k === 'coin' && e.heads), copied = T.log.some(e => /copies Charizard ex's/.test(e.msg));
+			return heads === copied && (heads ? d.dmg > 0 : d.dmg === 0) ? (heads ? 'copy' : 'none') : 'bad'; });
+		A(!r.bad && r.copy > 0 && r.none > 0, 'Try to Imitate: on heads it uses the chosen attack of an opposing Active Pokémon; on tails it does nothing', r); }
+	S = arena(2); G(S, 0, 'active', 0, 'Whiscash', { energy: ['Fighting', 'Fire', 'Fire', 'Fire'] }); x = put(S, 0, 'bench', 0, 'Snorlax'); y = put(S, 0, 'bench', 3, 'Snorlax'); z = put(S, 0, 'active', 1, 'Snorlax'); foe(S);
+	exec(S, { attack: 0, target: L(1, 'active', 0) });
+	A(x.dmg === 10 && y.dmg === 10 && z.dmg === 0 && S.players[1].bench[0].dmg === 0, 'Earthquake also does 10 to each of its own player\'s Benched Pokémon (and to no other)');
+	S = arena(2); G(S, 0, 'active', 0, 'Umbreon', { energy: ['Darkness'] }); G(S, 0, 'active', 1, 'Umbreon', { energy: ['Darkness'] }); x = put(S, 1, 'active', 0, 'Snorlax', { energy: FOUR }); y = put(S, 1, 'active', 1, 'Charmeleon', { energy: FOUR }); put(S, 1, 'bench', 0, 'Snorlax');
+	exec(S, { attack: 0, target: L(1, 'active', 0) }, { attack: 0, target: L(1, 'active', 1) });
+	A(x.fx.some(f => f.k === 'cantAttack') && !y.fx.some(f => f.k === 'cantAttack') && /can't attack/.test(E.attackBlock(S, 1, x, card(id('Snorlax')).attacks[SN()]) || ''), 'Dark Binding: a Basic Pokémon it hits cannot attack on its owner\'s next turn; an evolved one can');
+	S = arena(2); G(S, 0, 'active', 0, 'Purrloin', { energy: ['Darkness'] }); x = put(S, 1, 'active', 0, 'Snorlax', { tool: a2('Giant Cape') }); put(S, 1, 'bench', 0, 'Snorlax');
+	exec(S, { attack: 0, target: L(1, 'active', 0) });
+	A(!x.tool && x.dmg === 0 && S.players[1].discard.includes(a2('Giant Cape')), 'Playful Knockdown discards the Pokémon Tool of its target and does no damage');
+	{ const r = seeds(12, sd => { const T = arena(2, sd); G(T, 0, 'active', 0, 'Drampa', { energy: ['Fire', 'Fire'] }); const d = put(T, 1, 'active', 0, 'Snorlax'); put(T, 1, 'bench', 0, 'Snorlax');
+			exec(T, { attack: 0, target: L(1, 'active', 0) }); const heads = T.log.some(e => e.k === 'coin' && e.heads), par = T.log.some(e => /Snorlax is now Paralyzed/.test(e.msg));
+			return heads ? (par && d.dmg > 0 ? 'hit' : 'bad') : (!par && d.dmg === 0 ? 'none' : 'bad'); });
+		A(!r.bad && r.hit > 0 && r.none > 0, 'Dragon Breath: on tails nothing; on heads its damage and Paralyzed', r); }
+
+	// --- Abilities ---
+	S = arena(2); x = G(S, 0, 'active', 0, 'Flareon ex'); foe(S);
+	A(/no Fire Energy in your discard pile/.test(refused(() => E.apply(S, { t: 'ability', seat: 0, at: L(0, 'active', 0), args: {} }))), 'Combust needs a Fire Energy in the discard pile');
+	S.players[0].energyDiscard = ['Water', 'Fire', 'Fire']; E.apply(S, { t: 'ability', seat: 0, at: L(0, 'active', 0), args: {} });
+	A(x.energy.join() === 'Fire' && x.dmg === 20 && S.players[0].energyDiscard.join() === 'Water,Fire' && /already been used/.test(refused(() => E.apply(S, { t: 'ability', seat: 0, at: L(0, 'active', 0), args: {} }))), 'it attaches one to Flareon ex and does 20 damage to it, once a turn');
+	S = arena(2); x = G(S, 0, 'bench', 0, 'Flareon ex', { dmg: card(eg('Flareon ex')).hp - 20 }); put(S, 0, 'active', 0, 'Snorlax'); foe(S); S.players[0].energyDiscard = ['Fire'];
+	E.apply(S, { t: 'ability', seat: 0, at: L(0, 'bench', 0), args: {} });
+	A(S.players[0].bench[0] === null && S.players[1].points === 2, 'a Flareon ex that knocks itself out with it gives its points to the opponent');
+	S = arena(2); x = G(S, 0, 'active', 0, 'Eevee'); y = G(S, 0, 'active', 1, 'Eevee'); foe(S); S.players[0].hand = [eg('Sylveon ex'), eg('Sylveon ex')]; S.players[0].deck = [id('Potion'), id('Giovanni'), id('Charmander'), id('Squirtle')];
+	E.apply(S, { t: 'evolve', seat: 0, hand: 0, at: L(0, 'active', 0) });
+	A(S.pending && S.pending.kind === 'confirm' && S.pending.seat === 0, 'Happy Ribbon: played from the hand to evolve, Sylveon ex offers its player 2 cards');
+	E.apply(S, { t: 'choose', seat: 0, pick: 1 });
+	A(S.players[0].hand.length === 3 && S.players[0].deck.length === 2, 'Yes draws them');
+	E.apply(S, { t: 'evolve', seat: 0, hand: 0, at: L(0, 'active', 1) });
+	A(!S.pending && S.players[0].hand.length === 2 && card(y.cards.at(-1)).name === 'Sylveon ex', 'once a turn: a second Sylveon ex that turn evolves without the offer');
+	S = arena(2); x = G(S, 0, 'active', 0, 'Eevee'); foe(S); S.players[0].hand = [eg('Sylveon ex')]; S.players[0].deck = [id('Potion'), id('Giovanni')];
+	E.apply(S, { t: 'evolve', seat: 0, hand: 0, at: L(0, 'active', 0) }); E.apply(S, { t: 'choose', seat: 0, pick: 0 });
+	A(S.players[0].hand.length === 0 && S.players[0].deck.length === 2, 'No draws nothing');
+	S = arena(2); x = G(S, 0, 'active', 0, 'Eevee ex'); y = put(S, 0, 'active', 1, 'Snorlax'); foe(S); S.players[0].hand = [id('Charmeleon'), eg('Flareon')];
+	A(/evolves from Charmander/.test(refused(() => E.apply(S, { t: 'evolve', seat: 0, hand: 0, at: L(0, 'active', 0) }))) && /evolves from Eevee/.test(refused(() => E.apply(S, { t: 'evolve', seat: 0, hand: 1, at: L(0, 'active', 1) }))), 'Veevee \'volve: Eevee ex takes only a card that evolves from Eevee (and no other Pokémon takes one)');
+	x.turnPlayed = S.turn;
+	A(/the turn it was played/.test(refused(() => E.apply(S, { t: 'evolve', seat: 0, hand: 1, at: L(0, 'active', 0) }))), 'not on the turn it is played');
+	x.turnPlayed = -1; E.apply(S, { t: 'evolve', seat: 0, hand: 1, at: L(0, 'active', 0) });
+	A(card(x.cards.at(-1)).name === 'Flareon' && x.cards.length === 2, 'and then it evolves into it');
+	S = arena(2); x = G(S, 0, 'active', 0, 'Snorlax ex', { dmg: 50 }); y = G(S, 0, 'bench', 0, 'Snorlax ex', { dmg: 50 }); z = put(S, 0, 'active', 1, 'Snorlax', { dmg: 50, tool: eg('Leftovers') }); const lb = put(S, 0, 'bench', 1, 'Snorlax', { dmg: 50, tool: eg('Leftovers') }); foe(S);
+	exec(S);
+	A(x.dmg === 30 && y.dmg === 50 && z.dmg === 40 && lb.dmg === 50, 'at the end of its player\'s turn Full-Mouth Manner heals 20 and Leftovers heals 10, in an Active slot only');
+	exec(S);
+	A(x.dmg === 30 && z.dmg === 40, 'and not at the end of an opponent\'s turn');
+	S = arena(2); G(S, 0, 'bench', 0, 'Ambipom'); put(S, 0, 'active', 0, 'Snorlax'); foe(S); S.players[0].hand = []; S.players[0].deck = [id('Potion'), id('Squirtle'), eg('Leftovers'), id('Giovanni')];
+	E.apply(S, { t: 'ability', seat: 0, at: L(0, 'bench', 0), args: {} });
+	A(S.players[0].hand.join() === eg('Leftovers') && S.players[0].deck.length === 3, 'Catching Tail puts a random Pokémon Tool card (never another card) from the deck into the hand');
+
+	// --- Trainers ---
+	S = arena(2); G(S, 0, 'active', 0, 'Leafeon', { energy: ['Fire'], dmg: 30 }); put(S, 0, 'active', 1, 'Rattata', { energy: ['Fire'], dmg: 20 }); x = G(S, 0, 'bench', 0, 'Flareon', { dmg: 10 }); foe(S); put(S, 1, 'active', 1, 'Snorlax'); S.players[0].hand = [eg('Eevee Bag'), eg('Eevee Bag')];
+	A(/choose one of the two effects/.test(refused(() => E.apply(S, { t: 'trainer', seat: 0, hand: 0, args: {} }))), 'Eevee Bag needs one of its two effects chosen');
+	E.apply(S, { t: 'trainer', seat: 0, hand: 0, args: { pick: 1 } });
+	A(S.players[0].active[0].dmg === 10 && S.players[0].active[1].dmg === 20 && x.dmg === 0, 'the second heals 20 from each of your Pokémon that evolves from Eevee (and from no other)');
+	E.apply(S, { t: 'trainer', seat: 0, hand: 0, args: { pick: 0 } }); exec(S, { attack: 0, target: L(1, 'active', 0) }, { attack: 0, target: L(1, 'active', 1) });
+	A(/\+10 Eevee Bag/.test(dmgs(S)[0]) && !/Eevee Bag/.test(dmgs(S)[1]), 'the first gives their attacks +10 this turn (and no other Pokémon\'s)');
+	S = arena(2); putId(S, 0, 'active', 0, a3('Decidueye ex'), { energy: ['Fire', 'Fire'] }); put(S, 0, 'active', 1, 'Rattata', { energy: ['Fire'] }); put(S, 1, 'active', 0, 'Snorlax', { dmg: 10 }); put(S, 1, 'active', 1, 'Snorlax'); put(S, 1, 'bench', 0, 'Snorlax'); S.players[0].hand = [eg('Hau')];
+	E.apply(S, { t: 'trainer', seat: 0, hand: 0, args: {} }); exec(S, { attack: 0, target: L(1, 'active', 0) }, { attack: 0, target: L(1, 'active', 1) });
+	A(/\+30 Hau/.test(dmgs(S)[0]) && !/Hau/.test(dmgs(S)[1]), 'Hau gives Decidueye ex +30 this turn, and no other Pokémon');
+	S = arena(2); put(S, 0, 'active', 0, 'Rattata', { energy: ['Fire'] }); foe(S); S.players[0].hand = [eg('Penny'), id('Sabrina')]; S.players[1].deck = [eg('Penny'), id('Potion'), id('Giovanni'), id('Charmander')];
+	A(/no effect for Penny/.test(refused(() => E.apply(S, { t: 'trainer', seat: 0, penny: true, args: {} }))) && /choose an opponent/.test(refused(() => E.apply(S, { t: 'trainer', seat: 0, hand: 0, args: {} }))), 'Penny needs an opponent, and has no effect to use before she is played');
+	E.apply(S, { t: 'trainer', seat: 0, hand: 0, args: { opp: 1 } });
+	A(E.view(S, 0).players[0].flags.penny === id('Giovanni') && E.view(S, 1).players[0].flags.penny === null && E.view(S, null).players[0].flags.penny === null && S.players[1].deck.length === 4 && E.view(S, 0).log.some(e => /It is Giovanni/.test(e.more || '')) && !E.view(S, 1).log.some(e => /Giovanni/.test(e.msg + (e.more || ''))),
+		'Penny finds a random Supporter that is not Penny in that opponent\'s deck (which keeps it); only her player is shown which');
+	A(/already played a Supporter/.test(refused(() => E.apply(S, { t: 'trainer', seat: 0, hand: 0, args: { target: L(1, 'active', 0) } }))), 'she was this turn\'s Supporter');
+	E.apply(S, { t: 'trainer', seat: 0, penny: true, args: {} });
+	A(S.players[0].flags.boost.length === 1 && logHas(S, /Penny: P1 uses the effect of Giovanni/) && S.players[0].discard.join() === eg('Penny') && /no effect for Penny/.test(refused(() => E.apply(S, { t: 'trainer', seat: 0, penny: true, args: {} }))), 'her player then uses that card\'s effect as hers, once (the card itself stays where it was)');
+	exec(S, { attack: 0, target: L(1, 'active', 0) });
+	A(/\+10 Giovanni/.test(dmgs(S)[0]), 'and it works as the card would');
+	S = arena(2); put(S, 0, 'active', 0, 'Snorlax'); foe(S); S.players[0].hand = [eg('Penny')]; S.players[1].deck = [id('Giovanni')];
+	E.apply(S, { t: 'trainer', seat: 0, hand: 0, args: { opp: 1 } }); exec(S); exec(S);
+	A(!S.players[0].flags.penny, 'an effect she found and her player did not use is gone when the turn ends');
+	S = arena(2); put(S, 0, 'active', 0, 'Snorlax'); foe(S); S.players[0].hand = [eg('Penny')]; S.players[1].deck = [eg('Penny'), id('Potion')];
+	E.apply(S, { t: 'trainer', seat: 0, hand: 0, args: { opp: 1 } });
+	A(!S.players[0].flags.penny && logHas(S, /has no other Supporter card/), 'with no other Supporter in that deck she finds nothing');
+
+	// --- the computer player ---
+	S = arena(2); S.players[0].zone.cur = null; S.players[0].flags.attached = true; S.players[0].hand = [eg('Flareon')]; G(S, 0, 'active', 0, 'Eevee ex'); put(S, 0, 'active', 1, 'Snorlax'); foe(S);
+	{ const a = nextAction(E.view(S, 0), new Set()); A(a && a.t === 'evolve' && a.at.idx === 0, 'the computer player evolves Eevee ex into an Eevee evolution it holds', a); }
+	S = arena(2); S.players[0].zone.cur = null; S.players[0].flags.attached = true; S.players[0].hand = [eg('Sylveon ex')]; S.players[0].deck = [id('Potion'), id('Potion'), id('Potion')]; G(S, 0, 'active', 0, 'Eevee'); put(S, 0, 'active', 1, 'Snorlax'); foe(S);
+	{ const a = nextAction(E.view(S, 0), new Set()); E.apply(S, a); const b = nextAction(E.view(S, 0), new Set()); A(a.t === 'evolve' && b && b.t === 'choose' && b.pick === 1, 'it takes Happy Ribbon\'s two cards', [a, b]); E.apply(S, b); }
+	S = arena(2); S.players[0].zone.cur = null; S.players[0].flags.attached = true; S.players[0].hand = [eg('Penny')]; S.players[1].deck = [id('Giovanni')]; put(S, 0, 'active', 0, 'Rattata', { energy: ['Fire'] }); put(S, 0, 'active', 1, 'Snorlax'); foe(S);
+	{ const a = nextAction(E.view(S, 0), new Set()); E.apply(S, a); const b = nextAction(E.view(S, 0), new Set()); A(a.t === 'trainer' && b && b.t === 'trainer' && b.penny === true, 'it plays Penny, then uses the effect she found', [a, b]); E.apply(S, b); A(S.players[0].flags.boost.length === 1, 'and the engine takes it'); }
+	{
+		const N = n => eg(n), two = l => l.flatMap(v => [v, v]);
+		const decks = [{ deck: two([N('Eevee ex'), 'A3b-055', N('Flareon ex'), N('Sylveon ex'), N('Espeon'), N('Umbreon'), N('Jolteon'), N('Eevee Bag'), N('Leftovers'), N('Penny')]), energy: ['Fire', 'Psychic'] },
+			{ deck: two([N('Milcery'), N('Alcremie'), N('Swirlix'), N('Slurpuff'), 'A3b-018', 'A3b-019', N('Snorlax ex'), N('Leftovers'), N('Mimikyu'), N('Penny')]), energy: ['Psychic', 'Water'] },
+			{ deck: two([N('Joltik'), N('Galvantula'), N('Aipom'), N('Ambipom'), N('Skwovet'), N('Greedent'), N('Drampa'), N('Chatot'), N('Leftovers'), N('Audino')]), energy: ['Lightning'] },
+			{ deck: two([N('Barboach'), N('Whiscash'), N('Purrloin'), N('Liepard'), N('Carbink'), N('Mienfoo'), N('Mienshao'), N('Togedemaru'), N('Mawile'), N('Hau')]), energy: ['Fighting', 'Darkness', 'Metal'] }];
+		A(decks.every(d => E.deckError(d.deck, d.energy) === null), 'four Eevee Grove decks are legal', decks.map(d => E.deckError(d.deck, d.energy)));
+		const bad = []; let over = 0;
+		for (let g = 0; g < 16; g++) {
+			const config = { seed: 'grove' + g, rules: E.RULES, players: [0, 1, 2, 3].slice(0, 2 + (g % 3)).map(i => ({ name: 'P' + i, ai: true, ...decks[(i + g) % 4] })) }, S2 = E.createGame(config), actions = [];
+			try {
+				for (let step = 0; step < 4000 && !S2.over; step++) {
+					const seat = S2.pending ? S2.pending.seat : S2.phase === 'setup' ? S2.players.find(p => !p.setup).seat : S2.current, banned = new Set();
+					let done = false;
+					for (let t = 0; t < 40 && !done; t++) { const a = nextAction(E.view(S2, seat), banned) || { t: 'execute', seat, commands: [null, null] }; try { E.apply(S2, a); actions.push(a); done = true; } catch (e) { if (!e.refused) throw e; banned.add(JSON.stringify(a)); } }
+					if (!done) { bad.push(g + ': stuck'); break; }
+				}
+				if (S2.over) over++;
+				if (E.digest(E.replay(config, actions)) !== E.digest(S2)) bad.push(g + ': replay differs');
+				for (const p of S2.players) { const total = p.deck.length + p.hand.length + p.discard.length + [...p.active, ...p.bench].filter(Boolean).reduce((a, k) => a + k.cards.length + (k.tool ? 1 : 0), 0); if (total !== 20) bad.push(`${g}: ${p.name} has ${total} cards`); }
+			} catch (e) { bad.push(g + ': ' + e.message); }
+		}
+		A(over === 16 && bad.length === 0, 'computer players finish 16 matches with Eevee Grove decks (2, 3 and 4 players): every replay matches and every card is accounted for', { over, bad: bad.slice(0, 4) });
 	}
 }
 

@@ -339,3 +339,31 @@ The seventh set: 103 printings, 69 new cards, one booster. These are the reading
   damage, the card shows the mark. This changes what five older cards display, and nothing about how they play.
 * **Packs:** the booster holds shiny printings and rolls on the shiny table.
 * Matches, replays and saves from before this set still load: nothing about how existing cards play changed.
+
+## Eevee Grove (A3b)
+
+The eighth set: 107 printings, 69 new cards, one booster. These are the readings used here.
+
+* **Eevee ex (Veevee 'volve)** takes any card that evolves from Eevee. The usual limits hold: not on your first turn, not the
+  turn it is played.
+* **Sylveon ex (Happy Ribbon):** when it is played from the hand to evolve, its player is asked whether to draw 2 cards, and the
+  match waits. The offer comes once a turn, whether it is taken or not.
+* **Sweets Relay.** "During your last turn" is your previous turn only: a Sweets Relay used earlier in the same turn (by your
+  other Active Pokémon) does not count, and a turn without one breaks the chain. **Alcremie** counts every use of the match.
+* **Penny** has two steps. You choose an opponent and are shown a random Supporter from their deck (not a Penny); the card
+  stays in their deck. A button then lets you use that card's effect as Penny's, with its own choices. An effect you do not
+  use is gone when your turn ends. Other players see what was copied only when it is used.
+* **Eevee Bag:** you choose one of its two effects when you play it. **Hau** and the bag's bonus apply into any opponent's
+  Active Pokémon.
+* **Snorlax ex (Full-Mouth Manner)** and **Leftovers** heal at the end of their player's own turn, in either Active slot, before
+  the Pokémon Checkup.
+* **Flareon ex (Combust):** if its 20 damage knocks Flareon ex out, the points go to the opponent that last damaged it, or to
+  the only opponent; with several opponents and no earlier damage, to no one.
+* **Mimikyu (Try to Imitate)** flips first; on heads it uses an attack of an opposing Active Pokémon of your choice, without
+  needing its Energy, against Mimikyu's own target.
+* **Espeon (Energy Crush)** counts the Energy on every Pokémon of the Defending Pokémon's owner. **Tsareena (Kick Down)** takes
+  a card from that player's hand. **Umbreon (Dark Binding)** stops a Basic Pokémon attacking on its owner's next turn.
+* **Whiscash (Earthquake)** hurts its own player's Bench only; a Knock Out from it goes to the Defending Pokémon's owner.
+* **Sylveon (Evoharmony)** counts Stage 1 and Stage 2 Pokémon on your Bench (not the other Active slot).
+* **Packs:** the booster holds shiny printings and rolls on the shiny table.
+* Matches, replays and saves from before this set still load: nothing about how existing cards play changed.
