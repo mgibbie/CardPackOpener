@@ -219,6 +219,13 @@ A(again.match && again.match.n >= 1 && !again.match.over && again.match.view.pha
 	A(stale.stale && stale.rev === 1 && stale.col.packs === 7 && row('pkcol:eve').col.packs === 7, 'a device working from an older copy does not overwrite it', stale);
 	const g1 = await call('pkcol-get', {}, tok.eve);
 	A(g1.rev === 1 && g1.col.opened === 3 && g1.ids.join() === 'device0001' && (await call('pkcol-get', {}, tok.dan)).col === null, 'she reads it back; dan does not see it', g1);
+	// her saved decks, the same way
+	const decks = [{ name: 'Fire', ...D('charizard') }];
+	A(!!(await call('pkdeck-get', {})).error && (await call('pkdeck-get', {}, tok.eve)).decks === null, 'decks on the account need an account; eve has none there yet');
+	const d1 = await call('pkdeck-put', { decks: [...decks, { name: 'Bad', deck: ['A1-001'], energy: ['Fire'] }], rev: 0, id: 'device0002' }, tok.eve);
+	A(d1.ok && row('pkdeck:eve').decks.length === 1 && row('pkdeck:eve').decks[0].name === 'Fire' && row('pkcol:eve').col.packs === 7, "eve's legal decks are kept in their own row (an illegal one is dropped; her collection is untouched)", d1);
+	const d2 = await call('pkdeck-put', { decks: [], rev: 0 }, tok.eve);
+	A(d2.stale && d2.decks.length === 1 && row('pkdeck:eve').decks.length === 1, 'an older copy of the deck list does not wipe the decks');
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);

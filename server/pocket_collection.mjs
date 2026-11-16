@@ -9,22 +9,29 @@
 // from an older copy overwrite a newer one. `ids` are the last few writes' ids (each put names itself): a device whose
 // page closed before it heard the answer can tell, next time, whether its write landed.
 import { cleanCollection } from '../pocketenhanced/js/collection.js';
+import { cleanDecks } from '../pocketenhanced/js/decklist.js';
+
+// The player's saved decks are kept the same way: `pkdeck:<user>` = { rev, decks, at, ids }, pkdeck-get / pkdeck-put
+// { decks, rev, id }. Only legal decks are kept (the engine's own check).
+const KINDS = { pkcol: { field: 'col', clean: cleanCollection, what: 'collection' }, pkdeck: { field: 'decks', clean: cleanDecks, what: 'deck list' } };
 
 export async function handlePkcol({ action, body, store, username, json, now }) {
 	if (!username) return json({ error: 'not logged in' }, 401);
-	const key = 'pkcol:' + username;
+	const [prefix, verb] = String(action).split('-'), K = KINDS[prefix];
+	if (!K) return json({ error: 'unknown action' }, 400);
+	const key = prefix + ':' + username, F = K.field;
 	const cur = await store.get(key), rev = (cur && Number.isInteger(cur.rev) && cur.rev > 0) ? cur.rev : 0;
-	const held = cur ? cleanCollection(cur.col) : null;
+	const held = cur ? K.clean(cur[F]) : null;
 	const ids = cur && Array.isArray(cur.ids) ? cur.ids.filter(x => typeof x === 'string').slice(-8) : [];
-	if (action === 'pkcol-get') return json({ rev, col: held, ids });
-	if (action === 'pkcol-put') {
-		const col = cleanCollection(body.col);
-		if (!col) return json({ error: 'that collection cannot be read' }, 400);
-		if (body.rev !== rev) return json({ stale: true, rev, col: held });
+	if (verb === 'get') return json({ rev, [F]: held, ids });
+	if (verb === 'put') {
+		const col = K.clean(body[F]);
+		if (!col) return json({ error: `that ${K.what} cannot be read` }, 400);
+		if (body.rev !== rev) return json({ stale: true, rev, [F]: held });
 		const id = /^[a-z0-9]{6,24}$/.test(String(body.id || '')) ? String(body.id) : null;
-		if (await store.setIfRev(key, { rev: rev + 1, col, at: now, ids: id ? [...ids, id].slice(-8) : ids }, rev)) return json({ ok: true, rev: rev + 1 });
+		if (await store.setIfRev(key, { rev: rev + 1, [F]: col, at: now, ids: id ? [...ids, id].slice(-8) : ids }, rev)) return json({ ok: true, rev: rev + 1 });
 		const after = await store.get(key);
-		return json({ stale: true, rev: (after && after.rev) || 0, col: after ? cleanCollection(after.col) : null });
+		return json({ stale: true, rev: (after && after.rev) || 0, [F]: after ? K.clean(after[F]) : null });
 	}
 	return json({ error: 'unknown action' }, 400);
 }

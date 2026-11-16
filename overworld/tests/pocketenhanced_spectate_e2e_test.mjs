@@ -262,6 +262,15 @@ try {
 		await dave1.page.reload({ waitUntil: 'domcontentloaded' }); await ready(dave1.page);
 		A(await waitFor(async () => { const c = await col(dave1); return c.opened === 3 && c.n === 29 && c.packs === 7; }, 10000), 'after a reload the first device shows all three packs', await col(dave1));
 		A(await dave1.page.evaluate(() => { window.__pocket.menu(); return true; }) && await press(dave1, '.modal:last-child [data-k="collection"]', () => /Saved to your account/.test(document.querySelector('.pe-sync')?.textContent || '')), 'the Collection says it is saved to the account');
+		// her decks follow her too (saved through the function the deck builder's Save button calls)
+		const starter = await dave1.page.evaluate(async () => { const m = await import('/pocketenhanced/js/decks.js'); return m.starterDeck(m.STARTERS[0].id); });
+		const saved = await dave1.page.evaluate((d) => window.__pocket.saveDeck({ name: 'Road deck', ...d }), starter);
+		const drow = () => { const r = sqlite.prepare('SELECT value FROM mp_store WHERE key = ?').get('pkdeck:dave'); return r ? JSON.parse(r.value).decks : null; };
+		A(saved === null && await waitFor(() => { const d = drow(); return !!d && d.length === 1 && d[0].name === 'Road deck'; }, 10000), 'a deck saved on one device reaches the account', drow());
+		await dave2.page.reload({ waitUntil: 'domcontentloaded' }); await ready(dave2.page);
+		A(await waitFor(() => dave2.page.evaluate(() => window.__pocket.decks().some((d) => d.name === 'Road deck') && window.__pocket.deckSync() === 'saved'), 10000), 'the other device has that deck after a reload');
+		await dave2.page.evaluate(() => { window.__pocket.menu(); });
+		A(await press(dave2, '.modal:last-child [data-k="new"]', () => !!document.querySelector('[data-k="dmy:Road deck"]')), 'and it can be chosen there for a new match');
 		const guestPage = { page: await (await browser.createBrowserContext()).newPage(), errors: [] };
 		guestPage.page.on('pageerror', (e) => guestPage.errors.push('pageerr: ' + e.message));
 		await guestPage.page.goto(`http://localhost:${PORT}/pocketenhanced/?seed=col-g`, { waitUntil: 'domcontentloaded' }); await ready(guestPage.page);

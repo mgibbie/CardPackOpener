@@ -108,7 +108,10 @@ These are choices made for this game (the spec does not cover them). Change them
 * **The collection is kept on your account** when you are signed in, so every device you sign in on has the same cards.
   Two devices never overwrite each other: what was opened or earned on each is added up. A device that signs in for the
   first time adds what was pulled on it to the account (its own new-player packs and starter Trainers are not given twice).
-  A guest's collection stays on the device. Decks are still kept on the device.
+  A guest's collection stays on the device.
+* **Your saved decks are kept on your account too**, the same way: a deck saved, changed or deleted on one device is
+  saved, changed or deleted on the others. A device signing in for the first time keeps its own decks as well; one whose
+  name is already taken by a different deck is kept under a new name ("My deck 2").
 * **A new player** has 10 packs to open and two of each of the 7 Promo-A starter Trainers.
 * **Earning packs.** A finished match pays 1 pack, a win pays 2 (against the computer from turn 3 on, and online). Each match pays once.
 * **A pack** is a Charizard, Mewtwo or Pikachu booster of Genetic Apex: 5 cards. Cards 1-3 are one-diamond. Card 4 and card 5
