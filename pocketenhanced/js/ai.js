@@ -108,6 +108,7 @@ function bestCommand(v, me, slot, aimed) {
 			if (a.fx.some(f => f.k === 'switchSelf' && f.may)) { if (myBench.length && poke.dmg > poke.hp / 2) args.bench = myBench[0]; }   // "you may switch": it leaves once it is badly hurt
 			else if (a.fx.some(f => f.k === 'switchSelf')) { if (!myBench.length) return; args.bench = myBench[0]; score = poke.dmg > poke.hp / 2 ? 30 : 1; }
 			if (a.fx.some(f => f.k === 'discardToolsBonus')) { const f = a.fx.find(g => g.k === 'discardToolsBonus'); args.tools = v.players[me].hand.map((id, n) => (card(id).kind === 'tool' ? n : -1)).filter(n => n >= 0).slice(0, f.max); if (!args.tools.length) return; }
+			if (a.fx.some(f => f.k === 'discardHandCost' && v.players[me].hand.length < f.n)) return;   // (it would do nothing)
 			if (a.fx.some(f => f.k === 'healBench')) { const hb = myBench.filter(n => v.players[me].bench[n].dmg > 0).sort((x, y) => v.players[me].bench[y].dmg - v.players[me].bench[x].dmg)[0]; if (hb == null) return; args.bench = hb; score = 20; }
 			if (a.fx.some(f => f.k === 'copyAttack')) {
 				let c = null; const cf = a.fx.find(f => f.k === 'copyAttack');
@@ -180,7 +181,12 @@ export function nextAction(v, banned = new Set()) {
 		const c = card(id); if (c.kind === 'pokemon' || c.fossil) return;
 		const f = c.fx, T = args => tries.push(pen ? { t: 'trainer', seat: me, penny: true, args } : { t: 'trainer', seat: me, hand: i, args });
 		const hurt = mineAll.filter(m => m.k.dmg >= 20 && (!f.type || def(m.k).cardType === f.type)).sort((a, b) => b.k.dmg - a.k.dmg)[0];
-		if (f.k === 'draw' || f.k === 'basicToHand' || f.k === 'slab' || f.k === 'guard' || f.k === 'namedToHand') T({});
+		if (f.k === 'draw' || f.k === 'basicToHand' || f.k === 'slab' || f.k === 'guard' || f.k === 'namedToHand' || f.k === 'prankSpinner' || f.k === 'may' || f.k === 'smallBasicsToHand') T({});
+		else if (f.k === 'guardEndure' || f.k === 'attachZoneEachNamed') { if (mineAll.some(x => f.names.includes(def(x.k).name))) T({}); }
+		else if (f.k === 'coinsDiscardEnergy') { const t = opp.flatMap(o => o.active.map((k, idx) => k && { k, loc: { seat: o.seat, zone: 'active', idx } }).filter(Boolean)).filter(x => x.k.energy.length).sort((x, y) => y.k.energy.length - x.k.energy.length)[0]; if (t) T({ target: t.loc }); }
+		else if (f.k === 'attachDiscardActive') { const t = mineAll.find(x => x.loc.zone === 'active' && def(x.k).cardType === f.type); if (t && (P.energyDiscard || []).includes(f.type)) T({ at: t.loc }); }
+		else if (f.k === 'copycat') { const q = opp.slice().sort((x, y) => y.handCount - x.handCount)[0]; if (q && q.handCount > P.hand.length) T({ opp: q.seat }); }
+		else if (f.k === 'healOne' && f.names) { const t = mineAll.filter(x => f.names.includes(def(x.k).name) && x.k.dmg >= 30).sort((x, y) => y.k.dmg - x.k.dmg)[0]; if (t) T({ at: t.loc }); }
 		else if (c.kind === 'tool') { const m = mineAll.filter(x => !x.k.tool && !def(x.k).fossil).sort((a, b) => (b.loc.zone === 'active') - (a.loc.zone === 'active') || def(b.k).hp - def(a.k).hp)[0]; if (m) T({ at: m.loc }); }
 		else if (f.k === 'attachDiscard' && f.ub) { const m = mineAll.filter(x => def(x.k).ub).sort((a, b) => (b.loc.zone === 'active') - (a.loc.zone === 'active'))[0]; if (m && (P.energyDiscard || []).length && opp.some(o => o.points > 0)) T({ at: m.loc }); }
 		else if (f.k === 'revealSupporters' || f.k === 'penny') { if (opp.length) T({ opp: opp[0].seat }); }
@@ -255,6 +261,11 @@ export function nextAction(v, banned = new Set()) {
 		else if (f.k === 'discardDraw') { const d = deadCard(-1); if (d >= 0) A({ hand: d }); }   // Garchomp: a card with no use yet, for a new one
 		else if (f.k === 'gatherFrom') { const to = mineAll.find(x => x.loc.zone === 'active' && unlocks(x.k, f.type)), from = P.bench.findIndex(b => b && def(b).cardType === f.type && b.energy.includes(f.type)); if (to && from >= 0) A({ bench: from, at: to.loc }); }
 		else if (f.k === 'pokemonToHand') { if (P.hand.length < 10) A({}); }
+		else if (f.k === 'coinPull') { const t = foes.filter(x => x.loc.zone === 'bench').sort((x, y) => left(x.k) - left(y.k))[0]; if (t) { const o = v.players[t.loc.seat], slot = [0, 1].find(sl => o.active[sl]); if (slot != null) A({ target: { seat: o.seat, zone: 'active', idx: slot }, bench: t.loc.idx }); } }
+		else if (f.k === 'millOpp') { if (opp.length) A({ opp: opp[0].seat }); }
+		else if (f.k === 'switchActiveType') { const can = k => def(k).attacks.some(q => canPay(k.provides || k.energy, lessCost(q.cost, k.less || 0))); const out = [0, 1].find(sl => P.active[sl] && def(P.active[sl]).cardType === f.type && !can(P.active[sl])), inn = P.bench.findIndex(b => b && can(b)); if (out != null && inn >= 0) A({ slot: out, bench: inn }); }
+		else if (f.k === 'toolsThenDiscardSelf') { const t = fa.find(x => x.k.tool); if (m.loc.zone === 'bench' && t) A({ target: t.loc }); }
+		else if (f.k === 'attachZoneSelfDmg') { if (left(m.k) > f.dmg + 30 && hunger(v, me, m.k, m.loc, f.type) >= 0) A({}); }
 		else if (f.k === 'statusActive') { const t = fa.filter(x => !x.k.status.includes(f.s)).sort((x, y) => left(y.k) - left(x.k))[0]; if (t) A({ target: t.loc }); }
 		else if (f.k === 'healAny') { const t = mineAll.filter(x => x.k.dmg >= 20).sort((x, y) => y.k.dmg - x.k.dmg)[0]; if (t) A({ at: t.loc }); }
 		else if (f.k === 'pullDamaged') { const t = foes.filter(x => x.loc.zone === 'bench' && x.k.dmg > 0).sort((x, y) => left(x.k) - left(y.k))[0]; if (t) { const o = v.players[t.loc.seat], slot = [0, 1].find(sl => o.active[sl]); if (slot != null) A({ target: { seat: o.seat, zone: 'active', idx: slot }, bench: t.loc.idx }); } }

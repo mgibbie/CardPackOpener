@@ -36,7 +36,7 @@ const SPECTATE = (params.get('spectate') || '').trim().toLowerCase().replace(/[^
 const SLOT = ['A', 'B'];
 const RIVALS = ['Blue', 'Green', 'Silver'];
 const STATUS_LABEL = { poisoned: 'PSN', asleep: 'SLP', paralyzed: 'PAR', burned: 'BRN', confused: 'CNF' };
-const FX_LABEL = { preventDamage: 'takes no damage from attacks', vulnerable: 'takes more damage', thorns: 'hurts its attackers', costMore: 'attacks and retreat cost more', cantUse: "can't use one attack", atkPlus: 'one attack is stronger', smokescreen: 'may miss its attack', cantAttack: "can't attack", cantRetreat: "can't retreat", atkMinus: 'attacks weaker', reduce: 'takes less', prevent: 'protected' };
+const FX_LABEL = { preventSmall: 'small hits do nothing', preventFromBasic: 'Basic Pokémon cannot hurt it', attachSleep: 'Energy from the Energy Zone puts it to sleep', doom: 'damage is coming', preventDamage: 'takes no damage from attacks', vulnerable: 'takes more damage', thorns: 'hurts its attackers', costMore: 'attacks and retreat cost more', cantUse: "can't use one attack", atkPlus: 'one attack is stronger', smokescreen: 'may miss its attack', cantAttack: "can't attack", cantRetreat: "can't retreat", atkMinus: 'attacks weaker', reduce: 'takes less', prevent: 'protected' };
 
 const h = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
 const play = (name, pitch, vol) => { try { sound.play(name, pitch, vol); } catch (e) { /* sound is optional */ } };
@@ -548,7 +548,7 @@ function onHand(i) {
 function playTrainer(i, c, pen) {   // (pen: the effect Penny found, used as her effect; it is not a card in the hand)
 	const you = YOU(), f = c.fx, go = args => send(pen ? { t: 'trainer', penny: true, args } : { t: 'trainer', hand: i, args });
 	const own = locsOf(V, you), named = l => !f.names || f.names.includes(def(at(V, l)).name);
-	if (f.k === 'healOne') pick(`${c.name}: choose one of your ${f.cure ? 'damaged or afflicted' : 'damaged'} ${f.stage ? 'Stage ' + f.stage + ' ' : ''}Pokémon`, own.filter(l => (at(V, l).dmg > 0 || (f.cure && at(V, l).status.length)) && (!f.type || def(at(V, l)).cardType === f.type) && (f.stage == null || def(at(V, l)).stage === f.stage)), l => go({ at: l }));
+	if (f.k === 'healOne') pick(`${c.name}: choose one of your ${f.cure ? 'damaged or afflicted' : 'damaged'} ${f.stage ? 'Stage ' + f.stage + ' ' : ''}Pokémon`, own.filter(l => (at(V, l).dmg > 0 || (f.cure && at(V, l).status.length)) && (!f.type || def(at(V, l)).cardType === f.type) && (!f.names || f.names.includes(def(at(V, l)).name)) && (f.stage == null || def(at(V, l)).stage === f.stage)), l => go({ at: l }));
 	else if (f.k === 'healCureActive') pick(`${c.name}: choose one of your Pokémon in an Active slot`, own.filter(l => l.zone === 'active' && (at(V, l).dmg > 0 || at(V, l).status.length)), l => go({ at: l }));
 	else if (f.k === 'healAllNamed') pick(`${c.name}: choose your damaged ${f.names.join(' or ')}`, own.filter(l => named(l) && at(V, l).dmg > 0), l => go({ at: l }));
 	else if (f.k === 'returnDamaged') pick(`${c.name}: choose one of your damaged ${f.type} Pokémon`, own.filter(l => def(at(V, l)).cardType === f.type && at(V, l).dmg > 0), l => go({ at: l }));
@@ -588,7 +588,9 @@ function playTrainer(i, c, pen) {   // (pen: the effect Penny found, used as her
 	});
 	else if (f.k === 'discardOppEnergy') pick(`${c.name}: choose an opposing Active Pokémon with ${f.type} Energy`, oppSeats(V).flatMap(s => locsOf(V, s, ['active'])).filter(l => at(V, l).energy.includes(f.type)), l => go({ target: l }));
 	else if (f.k === 'switchDamaged') pick(`${c.name}: choose your damaged Pokémon in an Active slot`, own.filter(l => l.zone === 'active' && at(V, l).dmg > 0), l => pick(`${c.name}: choose the Benched Pokémon that comes up`, own.filter(b => b.zone === 'bench'), b => go({ at: l, bench: b.idx })));
-	else if (f.k === 'silver' || (f.k === 'peekOrder' && f.opp)) chooseOpponent(`${c.name}: choose an opponent`, s => go({ opp: s }));
+	else if (f.k === 'coinsDiscardEnergy') pick(`${c.name}: choose an opposing Active Pokémon that has Energy`, oppSeats(V).flatMap(s => locsOf(V, s, ['active'])).filter(l => at(V, l).energy.length), l => go({ target: l }));
+	else if (f.k === 'attachDiscardActive') pick(`${c.name}: choose one of your ${f.type} Pokémon in an Active slot`, own.filter(l => l.zone === 'active' && def(at(V, l)).cardType === f.type), l => go({ at: l }));
+	else if (f.k === 'silver' || f.k === 'copycat' || (f.k === 'peekOrder' && f.opp)) chooseOpponent(`${c.name}: choose an opponent`, s => go({ opp: s }));
 	else if (f.k === 'healNamedCure') pick(`${c.name}: choose your ${f.names.join(' or ')}`, own.filter(named), l => go({ at: l }));
 	else if (f.k === 'chooseOne') {
 		closeAll(); const list = h('div', 'pe-list');
@@ -646,6 +648,16 @@ function chooseAttack(slot, i) {
 	if (has('attachZoneNamed')) { const fit = locsOf(V, you).filter(l => fxOf('attachZoneNamed').names.includes(def(at(V, l)).name)); if (fit.length > 1) steps.push(next => pick(`${a.name}: choose your ${fxOf('attachZoneNamed').names.join(' or ')}`, fit, loc => { cmd.args.at = loc; next(); })); }
 	{ const az = a.fx.find(f => f.k === 'attachZone' && f.to === 'bench'), fit = az ? bench.filter(l => !az.basic || def(at(V, l)).stage === 0) : []; if (fit.length > 1) steps.push(next => pick(`${a.name}: choose the Benched ${az.basic ? 'Basic ' : ''}Pokémon to attach to`, fit, loc => { cmd.args.bench = loc.idx; next(); })); }
 	if (has('attachZoneTypes')) { const fit = bench.filter(l => def(at(V, l)).stage === 0); if (fit.length > 1) { cmd.args.spread = []; fxOf('attachZoneTypes').types.forEach(t => steps.push(next => pick(`${a.name}: choose the Benched Basic Pokémon that takes the ${t} Energy`, fit, loc => { cmd.args.spread.push(loc.idx); next(); }))); } }
+	if (has('chooseStatus')) steps.push(next => {
+		closeAll(); const list = h('div', 'pe-list');
+		for (const st of fxOf('chooseStatus').list) { const o = h('button', 'pe-opt', cap(st)); o.type = 'button'; o.dataset.k = 'st' + st; o.addEventListener('click', () => { cmd.args.status = st; closeAll(); next(); }); list.appendChild(o); }
+		modal(list, { title: `${a.name}: which Special Condition?` });
+	});
+	if (has('discardHandCost')) { const f = fxOf('discardHandCost'); if (me.hand.length < f.n) { toast(`${a.name} needs ${f.n} card${f.n > 1 ? 's' : ''} in your hand to discard.`); return; } if (me.hand.length > f.n) steps.push(next => {   // exactly that many: tick, then Done
+		closeAll(); const chosen = new Set(), grid = h('div', 'pe-grid'), done = btn('Done', 'blue', () => { cmd.args.cards = [...chosen]; closeAll(); next(); }, 'dhdone'); done.disabled = true;
+		me.hand.forEach((id, n) => { const e = handCard(card(id), null); e.classList.add('small'); e.dataset.k = 'dh' + n; e.addEventListener('click', () => { if (chosen.has(n)) chosen.delete(n); else if (chosen.size < f.n) chosen.add(n); e.classList.toggle('playable', chosen.has(n)); done.disabled = chosen.size !== f.n; }); grid.appendChild(e); });
+		const box = h('div', ''); box.append(grid, done); modal(box, { title: `${a.name}: choose ${f.n} card${f.n > 1 ? 's' : ''} in your hand to discard` });
+	}); }
 	if (has('healBench')) { const fit = bench.filter(l => at(V, l).dmg > 0); if (fit.length > 1) steps.push(next => pick(`${a.name}: choose the Benched Pokémon to heal`, fit, loc => { cmd.args.bench = loc.idx; next(); })); else if (fit.length) cmd.args.bench = fit[0].idx; }
 	if (has('discardToolsBonus')) { const f = fxOf('discardToolsBonus'), tools = me.hand.map((id, n) => (card(id).kind === 'tool' ? n : -1)).filter(n => n >= 0); if (tools.length) steps.push(next => {   // up to that many: tick, then Done
 		closeAll(); const chosen = new Set(), list = h('div', 'pe-list');
@@ -687,6 +699,10 @@ function useAbility(loc) {
 	else if (f.k === 'attachZoneActiveType') pick(`${ab.name}: choose one of your ${f.type} Pokémon in an Active slot`, locsOf(V, you, ['active']).filter(l => def(at(V, l)).cardType === f.type), l => go({ at: l }));
 	else if (f.k === 'gatherFrom') pick(`${ab.name}: choose the Benched ${f.type} Pokémon whose ${f.type} Energy moves`, locsOf(V, you, ['bench']).filter(l => def(at(V, l)).cardType === f.type && at(V, l).energy.includes(f.type)),
 		b => pick(`${ab.name}: choose your Pokémon in an Active slot to give it to`, locsOf(V, you, ['active']), l => go({ bench: b.idx, at: l })));
+	else if (f.k === 'coinPull') pick(`${ab.name}: choose an opponent's Benched Pokémon to bring up on heads`, oppSeats(V).flatMap(s => locsOf(V, s, ['bench'])), b => pick(`${ab.name}: choose which of that player's Active Pokémon it replaces`, locsOf(V, b.seat, ['active']), l => go({ target: l, bench: b.idx })));
+	else if (f.k === 'millOpp') chooseOpponent(`${ab.name}: choose an opponent`, s => go({ opp: s }));
+	else if (f.k === 'switchActiveType') pick(`${ab.name}: choose your ${f.type} Pokémon in an Active slot`, locsOf(V, you, ['active']).filter(l => def(at(V, l)).cardType === f.type), l => pick(`${ab.name}: choose the Benched Pokémon that comes up`, locsOf(V, you, ['bench']), b => go({ slot: l.idx, bench: b.idx })));
+	else if (f.k === 'toolsThenDiscardSelf') pick(`${ab.name}: choose an opposing Active Pokémon with a Pokémon Tool (${def(k).name} is then discarded)`, oa.filter(l => at(V, l).tool), l => go({ target: l }));
 	else if (f.k === 'statusActive') pick(`${ab.name}: choose an opposing Active Pokémon`, oa, l => go({ target: l }));
 	else if (f.k === 'healAny') pick(`${ab.name}: choose one of your damaged Pokémon`, locsOf(V, you).filter(l => at(V, l).dmg > 0), l => go({ at: l }));
 	else if (f.k === 'pullDamaged') pick(`${ab.name}: choose an opponent's Benched Pokémon that has damage on it`, oppSeats(V).flatMap(s => locsOf(V, s, ['bench'])).filter(l => at(V, l).dmg > 0), b => pick(`${ab.name}: choose which of that player's Active Pokémon it replaces`, locsOf(V, b.seat, ['active']), l => go({ target: l, bench: b.idx })));
@@ -742,7 +758,7 @@ function inspect(c, k, loc, acts = []) {
 	const orig = (t, note) => (ui.showOriginal && t ? `<div class="orig">Original: ${tx(t)}${note ? `<br><span class="lbl">Why it differs: ${esc(note)}</span>` : ''}</div>` : '');
 	let html = '';
 	if (c.kind === 'pokemon') {
-		html += `<div class="row">${stageOf(c)}${c.evolvesFrom ? ' · evolves from ' + esc(c.evolvesFrom) : ''} · ${k ? Math.max(0, k.hp - k.dmg) + ' / ' : ''}${c.hp} HP${c.ex ? ' · Pokémon ex: 2 points' : ''}</div>`;
+		html += `<div class="row">${stageOf(c)}${c.evolvesFrom ? ' · evolves from ' + esc(c.evolvesFrom) : ''} · ${k ? Math.max(0, k.hp - k.dmg) + ' / ' : ''}${c.hp} HP${c.ex ? ' · Pokémon ex: ${c.points} points' : ''}</div>`;
 		html += `<div class="row"><span class="lbl">Card Type</span> ${ty(c.cardType)} <span class="lbl">(Energy and card effects)</span></div>`;
 		html += `<div class="row"><span class="lbl">Combat Type${c.combatTypes.length > 1 ? 's' : ''}</span> ${c.combatTypes.map(ty).join(' ')} <span class="lbl">(what attacks are strong or weak against)</span></div>`;
 		html += `<div class="row"><span class="lbl">Retreat</span> ${c.retreat}${c.weakness ? ` · <span class="lbl">printed Weakness ${esc(c.weakness)} (not used here)</span>` : ''}</div>`;
@@ -1033,7 +1049,7 @@ function finish() {
 }
 
 // ------------------------------------------------------------------ online: a lobby by code, a match the server holds
-const PKV = { pv: 10, ev: E.ENGINE_VERSION };
+const PKV = { pv: 11, ev: E.ENGINE_VERSION };
 const pk = async (action, body = {}) => { try { return await net.call('pkpvp-' + action, { ...PKV, ...body }); } catch (e) { return null; } };
 const deckById = id => (allDecks().find(d => d.id === id) || allDecks()[0]).get();
 function onlineMenu() {

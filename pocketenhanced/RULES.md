@@ -431,3 +431,39 @@ The tenth set: 105 printings, 71 new cards, one booster. These are the readings 
   Paralyzed and Confused, not Poisoned or Burned. **Inflatable Boat** does nothing on a Pokémon that is not Water.
 * **Packs:** the booster holds shiny printings and rolls on the shiny table.
 * Matches, replays and saves from before this set still load: nothing about how existing cards play changed.
+
+## Mega Rising (B1)
+
+The eleventh set: 331 printings, 224 new cards, three boosters (Mega Gyarados, Mega Blaziken, Mega Altaria). Deluxe Pack ex,
+released between Secluded Springs and this set, is a reprint set and is not in the card source, so it has no booster here.
+
+* **Mega Pokémon ex** are worth 3 points when Knocked Out. Each is played like any Pokémon of its Stage (Mega Absol ex and
+  Mega Pinsir ex are Basic). This site has no Mega sprites: each uses its base species' picture, with the Combat Types the
+  games give the Mega form (Mega Gyarados is Water and Dark, Mega Ampharos Electric and Dragon, Mega Altaria Dragon and
+  Fairy, Mega Pinsir Bug and Flying).
+* **Weakness** (Hitmonchan ex's Quick Straight) is the +20 of a Combat Type the Defending Pokémon is weak to; that attack
+  drops it and keeps any -20. **Morgrem (False Surrender)** ignores effects placed on its target by attacks (a damage
+  reduction or prevention that lasts a turn), not its Abilities or Pokémon Tools.
+* **Lilligant (Toughness Aroma):** the +20 HP belongs to every Grass Pokémon of its player while Lilligant is in play, itself
+  included, and two Lilligant give +40. When it leaves play, a Pokémon with more damage than its HP is Knocked Out at once; if
+  Lilligant was Knocked Out, the same player scores for both.
+* **Jolteon ex (Electromagnetic Wall)** answers every opponent's Energy from their Energy Zone, the turn's own or an effect's,
+  from either Active slot; a Knock Out by it is scored by Jolteon ex's player. **Jellicent (Bouncy Body):** its player chooses
+  the Benched Pokémon, and the match waits.
+* **Dusknoir (Fade into Darkness):** its owner flips whenever it is Knocked Out, by anything; on heads nobody scores.
+* **Rillaboom (Captivating Rhythm):** you choose the opponent's Benched Pokémon and the Active slot before the coin.
+  **Klefki (Dismantling Keys)** needs a Pokémon Tool to discard; Klefki then goes to the discard pile and nobody scores.
+* **Eevee (Boosted Evolution)** works only in an Active slot. **Delcatty (Search for Friends)** always takes a Supporter when
+  the discard pile has one; its player chooses which.
+* **Mega Absol ex and Absol:** their player is shown the hand of the Defending Pokémon's owner and chooses the Supporter.
+* **Cofagrigus and Sableye:** you choose the cards to discard; with too few in hand the attack does nothing and may still be used.
+* **Archeops (Wild Spin)** hits every Pokémon of one opponent (you pick them by a target); the +20 is for its next turn only.
+* **Mega Ampharos ex and Ampharos** pick from the Bench of the Defending Pokémon's owner. **Honchkrow** counts that player's
+  Pokémon with an Ability.
+* **Prank Spinner** draws from every player's hand, yours included, and the card is shown to everyone. **Copycat** counts one
+  opponent's hand. **May:** each Pokémon she finds is followed by a choice of a Pokémon in your hand to shuffle back.
+* **Hala** lasts until your next turn, against every opponent. **Sitrus Berry** is checked at the end of every player's turn,
+  before the Pokémon Checkup. **Heavy Helmet** reads the Retreat Cost its holder has at that moment.
+* **Lucky Mittens** draws once for each opposing Pokémon its holder's attack knocks out.
+* **Packs:** all three boosters hold shiny printings and roll on the shiny table.
+* Matches, replays and saves from before this set still load: nothing about how existing cards play changed.
