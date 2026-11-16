@@ -42,6 +42,7 @@ export const ENTRIES = [
 	{ id: 'micasurvivor', name: 'MicaSurvivor', icon: '🔥', href: '/micasurvivor/' },
 	{ id: 'pairofpears', name: 'Pair of Pears', icon: '🍐', href: '/pairofpears/' },
 	{ id: 'scoundrel', name: 'Scoundrel', icon: '🗡️', href: '/scoundrel/' },
+	{ id: 'pocketenhanced', name: 'Pocket Enhanced', icon: '⚡', href: '/pocketenhanced/' },
 	{ id: 'collection', name: 'Collection', icon: '📚', href: '/collection/', extra: true },
 	{ id: 'designwiki', name: 'Wiki', icon: '📖', href: '/designwiki/', extra: true },
 	{ id: 'news', name: 'News', icon: '📰', href: '/magepunknews/', extra: true },

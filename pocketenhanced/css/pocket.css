@@ -1,0 +1,158 @@
+/* Pocket Enhanced — the battle table, on Micatro's look (palette, buttons, modals: ../micatro/css/micatro.css).
+   #stage is a fixed design canvas (1600x900 landscape / 820x1500 portrait) scaled to the visible window (js/main.js). */
+#stage.pe { font-size: 20px; width: 1600px; height: 900px; }
+#stage.pe.portrait { width: 820px; height: 1500px; }
+.pe * { box-sizing: border-box; }
+.pe button { font-family: inherit; }
+
+/* card types and combat types share one palette */
+.pe { --t-Grass: #5fbd58; --t-Fire: #ff7d4a; --t-Water: #4fa3ea; --t-Lightning: #f2c531; --t-Electric: #f2c531; --t-Psychic: #c56ad0; --t-Fighting: #cf6a3a; --t-Darkness: #4b5b66; --t-Dark: #4b5b66;
+	--t-Metal: #8fa3ad; --t-Steel: #8fa3ad; --t-Dragon: #7a66d6; --t-Colorless: #b9bdb0; --t-Normal: #b9bdb0; --t-Ice: #7fd3e0; --t-Poison: #a35fc0; --t-Ground: #c9a25a; --t-Flying: #9fb4f0;
+	--t-Bug: #9cb832; --t-Rock: #b0a070; --t-Ghost: #6e63b5; --t-Fairy: #f3a0c8; }
+.pe .ty { display: inline-block; padding: 1px 7px 2px; border-radius: 8px; font-size: 15px; color: #10181a; background: var(--c, #b9bdb0); text-shadow: none; white-space: nowrap; }
+.pe .en { display: inline-block; width: 18px; height: 18px; border-radius: 50%; background: var(--c, #b9bdb0); box-shadow: inset 0 -2px 0 rgba(0,0,0,.3), 0 0 0 2px rgba(0,0,0,.35); vertical-align: middle; margin: 0 1px; }
+.pe .en.big { width: 34px; height: 34px; }
+
+/* ---------------------------------------------------------------- the table */
+.pe-opps { position: absolute; left: 10px; top: 8px; right: 64px; height: 262px; display: flex; gap: 10px; }
+.pe-side { flex: 1; min-width: 0; background: rgba(31,42,44,.78); border-radius: 16px; padding: 8px 10px; position: relative; box-shadow: 0 5px 0 rgba(0,0,0,.25); }
+.pe-side.turn { box-shadow: 0 0 0 4px var(--orange), 0 5px 0 rgba(0,0,0,.25); }
+.pe-side.out { opacity: .45; }
+.pe-head { display: flex; align-items: center; gap: 10px; font-size: 22px; height: 30px; white-space: nowrap; overflow: hidden; }
+.pe-head .nm { overflow: hidden; text-overflow: ellipsis; }
+.pe-head .pts { display: inline-flex; gap: 4px; }
+.pe-head .pt { width: 16px; height: 16px; border-radius: 50%; background: #1f2a2c; box-shadow: inset 0 0 0 2px #5f7377; }
+.pe-head .pt.on { background: var(--money); box-shadow: 0 0 8px var(--money); }
+.pe-head .cnt { margin-left: auto; font-size: 16px; color: #b9c9cc; display: flex; gap: 10px; align-items: center; }
+.pe-row { display: flex; gap: 8px; align-items: flex-end; margin-top: 6px; }
+.pe-row .gap { width: 14px; }
+
+.pe-me { position: absolute; left: 10px; top: 280px; width: 1050px; height: 250px; background: rgba(42,55,57,.82); border-radius: 18px; padding: 10px 12px; box-shadow: 0 6px 0 rgba(0,0,0,.25); }
+.pe-me.turn { box-shadow: 0 0 0 4px var(--orange), 0 6px 0 rgba(0,0,0,.25); }
+.pe-zone { position: absolute; right: 12px; top: 46px; width: 150px; text-align: center; font-size: 17px; color: #cfd9db; }
+.pe-zone .slot { display: block; width: 100%; margin: 4px 0 8px; padding: 8px 0; border: 0; border-radius: 12px; background: #1f2a2c; cursor: pointer; }
+.pe-zone .slot:disabled { cursor: default; opacity: .75; }
+.pe-zone .slot.ready { box-shadow: 0 0 0 3px var(--green); }
+
+/* a Pokémon in play (also an empty slot) */
+.pe-poke { position: relative; border: 0; border-radius: 12px; background: #24323a; padding: 4px; cursor: pointer; text-align: center; width: 132px; height: 176px; flex: none; overflow: hidden;
+	box-shadow: inset 0 0 0 3px var(--c, #5f7377), 0 4px 0 rgba(0,0,0,.3); color: #fff; }
+.pe-poke.md { width: 108px; height: 146px; } .pe-poke.sm { width: 74px; height: 100px; border-radius: 9px; } .pe-poke.xs { width: 58px; height: 80px; border-radius: 8px; }
+.pe-poke.empty { background: rgba(0,0,0,.22); box-shadow: inset 0 0 0 2px rgba(255,255,255,.14); cursor: default; }
+.pe-poke.empty.can { cursor: pointer; box-shadow: inset 0 0 0 3px var(--green); }
+.pe-poke .slot { position: absolute; left: 6px; top: 4px; font-size: 14px; color: #dfe8ea; opacity: .85; z-index: 2; }
+.pe-poke .art { width: 100%; height: 56%; display: flex; align-items: center; justify-content: center; }
+.pe-poke .art img { max-width: 92%; max-height: 100%; image-rendering: pixelated; }
+.pe-poke .art .ph { font-size: 44px; opacity: .55; }
+.pe-poke.sm .art .ph, .pe-poke.xs .art .ph { font-size: 26px; }
+.pe-poke .nm { font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pe-poke.sm .nm, .pe-poke.xs .nm { font-size: 12px; }
+.pe-poke .hp { height: 9px; background: #101719; border-radius: 5px; margin: 2px 4px; overflow: hidden; }
+.pe-poke .hp i { display: block; height: 100%; background: var(--green); }
+.pe-poke .hp.mid i { background: var(--orange); } .pe-poke .hp.low i { background: var(--red); }
+.pe-poke .hpn { font-size: 14px; } .pe-poke.sm .hpn, .pe-poke.xs .hpn { font-size: 11px; }
+.pe-poke .ens { position: absolute; left: 0; right: 0; bottom: 3px; line-height: 12px; }
+.pe-poke .ens .en { width: 13px; height: 13px; } .pe-poke.sm .ens .en, .pe-poke.xs .ens .en { width: 9px; height: 9px; margin: 0; }
+.pe-poke .st { position: absolute; right: 4px; top: 4px; display: flex; flex-direction: column; gap: 2px; z-index: 2; }
+.pe-poke .st b { font-size: 12px; padding: 0 4px 1px; border-radius: 6px; background: #8e5fb3; } .pe-poke .st b.asleep { background: #4f6f9a; } .pe-poke .st b.paralyzed { background: #b99a1e; } .pe-poke .st b.fx { background: #5f7377; }
+.pe-poke.legal { box-shadow: inset 0 0 0 3px var(--c, #5f7377), 0 0 0 4px var(--green), 0 0 16px var(--green); animation: pe-pulse 1s infinite; }
+.pe-poke.queued::after { content: attr(data-q); position: absolute; left: 0; right: 0; top: 38%; font-size: 15px; background: rgba(253,162,0,.92); color: #1f2a2c; padding: 1px 0; }
+.pe-poke.hit { animation: pe-hit .45s; }
+.pe-poke .dn { position: absolute; left: 0; right: 0; top: 30%; font-size: 30px; color: #ffd24a; text-shadow: 0 2px 0 #000; animation: pe-rise .9s forwards; pointer-events: none; z-index: 3; }
+@keyframes pe-pulse { 50% { filter: brightness(1.25); } }
+@keyframes pe-hit { 20% { transform: translateX(-6px); filter: brightness(2); } 60% { transform: translateX(5px); } }
+@keyframes pe-rise { to { transform: translateY(-34px); opacity: 0; } }
+
+/* the hand */
+.pe-hand { position: absolute; left: 10px; top: 540px; width: 1050px; height: 352px; background: rgba(31,42,44,.7); border-radius: 18px; padding: 8px 10px; display: flex; gap: 8px; align-items: center; overflow-x: auto; overflow-y: hidden; }
+.pe-card { position: relative; flex: none; width: 196px; height: 320px; border: 0; border-radius: 12px; background: #e9e4d2; color: #1f2a2c; padding: 6px 7px; text-align: left; cursor: pointer; overflow: hidden;
+	box-shadow: inset 0 0 0 5px var(--c, #b9bdb0), 0 5px 0 rgba(0,0,0,.35); font-size: 17px; line-height: 1.12; display: flex; flex-direction: column; justify-content: flex-start; }
+.pe-card:disabled { cursor: default; }
+.pe-card .top { display: flex; justify-content: space-between; align-items: baseline; font-size: 20px; gap: 4px; }
+.pe-card .top .n { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pe-card .top .h { color: #b3261e; white-space: nowrap; }
+.pe-card .sub { font-size: 14px; color: #55666a; white-space: nowrap; overflow: hidden; }
+.pe-card .art { height: 96px; display: flex; align-items: center; justify-content: center; background: color-mix(in srgb, var(--c, #b9bdb0) 35%, #fff); border-radius: 8px; margin: 3px 0; }
+.pe-card .art img { max-height: 92px; image-rendering: pixelated; }
+.pe-card .art .ph { font-size: 34px; color: #55666a; }
+.pe-card .atk { display: flex; align-items: center; gap: 3px; margin-top: 5px; font-size: 16px; }
+.pe-card .atk .d { margin-left: auto; font-size: 19px; }
+.pe-card .atk .en { width: 13px; height: 13px; margin: 0; }
+.pe-card .tx { font-size: 15px; color: #33423f; margin-top: 3px; overflow: hidden; }
+.pe-card.playable { box-shadow: inset 0 0 0 5px var(--c, #b9bdb0), 0 0 0 3px var(--green), 0 5px 0 rgba(0,0,0,.35); }
+.pe-card.small { width: 150px; height: 236px; font-size: 14px; }
+.pe-card.small .top { font-size: 16px; } .pe-card.small .atk { font-size: 13px; } .pe-card.small .tx { font-size: 12px; }
+.pe-card.small .art { height: 62px; } .pe-card.small .art img { max-height: 58px; }
+.pe.portrait .pe-card { width: 150px; height: 236px; font-size: 14px; }
+.pe.portrait .pe-card .top { font-size: 16px; } .pe.portrait .pe-card .atk { font-size: 13px; } .pe.portrait .pe-card .tx { font-size: 12px; } .pe.portrait .pe-card .art { height: 62px; } .pe.portrait .pe-card .art img { max-height: 58px; }
+
+/* the command panel and the log */
+.pe-cmd { position: absolute; left: 1070px; top: 280px; width: 520px; height: 252px; background: rgba(42,55,57,.9); border-radius: 18px; padding: 10px 14px; box-shadow: 0 6px 0 rgba(0,0,0,.25); }
+.pe-cmd h3 { margin: 0 0 6px; font-size: 22px; font-weight: normal; color: var(--orange); }
+.pe-cmd .q { font-size: 19px; background: #1f2a2c; border-radius: 10px; padding: 7px 10px; margin-bottom: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-height: 34px; }
+.pe-cmd .q b { color: var(--money); } .pe-cmd .q.pass { color: #9fb0b3; }
+.pe-cmd .bar { display: flex; gap: 10px; align-items: center; margin-top: 8px; }
+.pe-cmd .btn { font-size: 26px; }
+.pe-cmd .btn.exec { flex: 1; font-size: 34px; min-height: 64px; }
+.pe-cmd .hint { font-size: 16px; color: #b9c9cc; margin-top: 6px; min-height: 36px; }
+.pe-log { position: absolute; left: 1070px; top: 542px; width: 520px; height: 350px; background: rgba(20,28,30,.86); border-radius: 18px; padding: 8px 12px; overflow-y: auto; font-size: 16px; line-height: 1.25; user-select: text; -webkit-user-select: text; }
+.pe-log div { margin-bottom: 3px; color: #d5dfe1; }
+.pe-log .turn { color: var(--orange); margin-top: 6px; } .pe-log .ko, .pe-log .win { color: var(--money); } .pe-log .fail { color: var(--red); } .pe-log .damage { color: #fff; } .pe-log .coin { color: #9fb0b3; }
+.pe-prompt { position: absolute; left: 50%; top: 276px; transform: translate(-50%, -100%); background: var(--orange); color: #1f2a2c; padding: 8px 18px; border-radius: 14px; font-size: 22px; z-index: 30; box-shadow: 0 4px 0 rgba(0,0,0,.35); white-space: nowrap; display: flex; gap: 12px; align-items: center; }
+.pe-prompt .btn { font-size: 18px; padding: 4px 12px; margin: 0; box-shadow: 0 3px 0 var(--bd); }
+.pe-menu-btn { position: absolute; right: 12px; top: 8px; z-index: 5; font-size: 18px !important; padding: 5px 12px !important; }
+
+/* portrait: opponents across the top, my board, the hand, then the commands; the log opens over the table */
+.pe.portrait .pe-opps { height: 330px; flex-wrap: nowrap; gap: 6px; left: 6px; right: 6px; }
+.pe.portrait .pe-side { padding: 6px; } .pe.portrait .pe-side .pe-row { flex-wrap: wrap; gap: 4px; } .pe.portrait .pe-head { font-size: 18px; gap: 6px; } .pe.portrait .pe-head .cnt { font-size: 13px; gap: 5px; }
+.pe.portrait .pe-me { left: 6px; top: 346px; width: 808px; height: 232px; }
+.pe.portrait .pe-me .pe-poke { width: 110px; height: 150px; } .pe.portrait .pe-me .pe-poke.md { width: 88px; height: 124px; }
+.pe.portrait .pe-zone { width: 110px; }
+.pe.portrait .pe-hand { left: 6px; top: 586px; width: 808px; height: 256px; }
+.pe.portrait .pe-cmd { left: 6px; top: 850px; width: 808px; height: 250px; }
+.pe.portrait .pe-log { left: 6px; top: 1108px; width: 808px; height: 384px; }
+.pe.portrait .pe-opps { right: 6px; }
+.pe.portrait .pe-prompt { top: 342px; font-size: 19px; max-width: 800px; white-space: normal; text-align: center; }
+
+/* ---------------------------------------------------------------- modals (on Micatro's .modal-layer / .modal-box) */
+.pe .modal:not(:last-child) { visibility: hidden; }   /* one menu at a time: the one underneath does not show through */
+.pe .modal-box { min-width: 420px; max-width: 96%; font-size: 20px; }
+.pe .modal-title { font-size: 36px; margin-bottom: 10px; }
+.pe .modal-box .btn { font-size: 22px; }
+.pe .pe-list { display: flex; flex-direction: column; gap: 6px; max-height: 620px; overflow-y: auto; padding: 4px; }
+.pe .pe-grid { display: flex; flex-wrap: wrap; gap: 8px; max-height: 620px; overflow-y: auto; padding: 4px; justify-content: center; }
+.pe .pe-opt { display: flex; align-items: center; gap: 8px; text-align: left; font-size: 20px; padding: 9px 14px; border: 0; border-radius: 12px; background: #2a3739; color: #fff; cursor: pointer; box-shadow: 0 4px 0 #1f2a2c; }
+.pe .pe-opt:disabled { opacity: .5; cursor: default; }
+.pe .pe-opt .why { margin-left: auto; font-size: 15px; color: #f0b9b4; text-align: right; }
+.pe .pe-opt .d { margin-left: auto; font-size: 22px; color: var(--money); }
+.pe .pe-seg { display: flex; gap: 8px; justify-content: center; margin: 8px 0; flex-wrap: wrap; }
+.pe .pe-seg .btn.on { --b: var(--orange); --bd: var(--orange-d); }
+.pe .pe-note { font-size: 17px; color: #cfd9db; text-align: center; margin: 6px 0; line-height: 1.25; }
+
+/* the inspected card */
+.pe-insp { display: flex; gap: 16px; align-items: flex-start; max-width: 900px; }
+.pe-insp .big { width: 250px; flex: none; background: #e9e4d2; color: #1f2a2c; border-radius: 14px; padding: 12px; box-shadow: inset 0 0 0 7px var(--c, #b9bdb0); text-align: center; }
+.pe-insp .big .art { height: 150px; display: flex; align-items: center; justify-content: center; }
+.pe-insp .big .art img { max-height: 150px; image-rendering: pixelated; }
+.pe-insp .big .art .ph { font-size: 80px; color: #55666a; }
+.pe-insp .info { flex: 1; min-width: 300px; font-size: 19px; line-height: 1.25; }
+.pe-insp .info h4 { margin: 8px 0 3px; font-weight: normal; font-size: 22px; color: var(--orange); }
+.pe-insp .info .row { margin-bottom: 4px; }
+.pe-insp .info .orig { color: #b9c9cc; font-size: 16px; border-left: 3px solid #5f7377; padding-left: 8px; margin-top: 3px; }
+.pe-insp .info .lbl { color: #9fb0b3; }
+.pe.portrait .pe-insp { flex-direction: column; align-items: center; }
+
+/* the deck builder */
+.pe-db { display: flex; gap: 12px; width: 1480px; max-width: 100%; height: 760px; }
+.pe-db .pool { flex: 1; overflow-y: auto; display: flex; flex-wrap: wrap; gap: 6px; align-content: flex-start; padding: 4px; }
+.pe-db .mine { width: 380px; flex: none; display: flex; flex-direction: column; gap: 6px; }
+.pe-db .mine .rows { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; }
+.pe-db .rowb { display: flex; align-items: center; gap: 6px; font-size: 18px; padding: 5px 10px; border: 0; border-radius: 10px; background: #2a3739; color: #fff; cursor: pointer; text-align: left; }
+.pe-db .rowb .x { margin-left: auto; color: var(--money); }
+.pe-db .pool .pe-card .have { position: absolute; right: 6px; bottom: 6px; background: var(--orange); color: #1f2a2c; border-radius: 10px; padding: 0 7px; font-size: 16px; }
+.pe.portrait .pe-db { flex-direction: column; width: 780px; height: 1320px; } .pe.portrait .pe-db .mine { width: auto; height: 420px; }
+
+.pe-replaybar { display: flex; gap: 8px; align-items: center; font-size: 20px; flex-wrap: wrap; margin-top: 8px; }
+.pe-replaybar .btn { font-size: 20px; margin: 0; padding: 6px 12px; }
+.pe-replaybar input[type=range] { flex: 1; min-width: 160px; }
+.pe-banner { position: absolute; left: 50%; top: 4px; transform: translateX(-50%); z-index: 35; background: rgba(20,28,30,.92); border-radius: 12px; padding: 5px 16px; font-size: 19px; white-space: nowrap; }
