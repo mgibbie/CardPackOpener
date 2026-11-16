@@ -413,7 +413,8 @@ function render() {
 			ui.handPick = sig; closeAll();
 			const grid = h('div', 'pe-grid'), may = V.pending.options || [];
 			(V.pending.cards || []).forEach((id, n) => { const e = handCard(card(id), null); e.classList.add('small'); e.dataset.k = 'hp' + n; if (may.includes(n)) e.addEventListener('click', () => { closeAll(); send({ t: 'choose', pick: n }); }); else { e.classList.add('unowned'); e.setAttribute('aria-disabled', 'true'); } grid.appendChild(e); });
-			setTimeout(() => modal(grid, { title: V.pending ? V.pending.msg : 'Choose a card', noClose: true }), 0);
+			const body = may.includes(-1) ? (() => { const box = h('div', ''); box.append(grid, btn('Done', 'blue', () => { closeAll(); send({ t: 'choose', pick: -1 }); }, 'hpdone')); return box; })() : grid;   // (-1: "that is all", where any number may be chosen)
+			setTimeout(() => modal(body, { title: V.pending ? V.pending.msg : 'Choose a card', noClose: true }), 0);
 		}
 	} else if (mine && V.pending && V.pending.seat === you && V.pending.kind === 'confirm') {
 		const sig = 'c' + V.turn + ':' + V.log.length;
@@ -602,8 +603,9 @@ function playTrainer(i, c, pen) {   // (pen: the effect Penny found, used as her
 	else if (f.k === 'coinAttachBenchType') pick(`${c.name}: choose your Benched ${f.type} Pokémon that takes the Energy on heads`, own.filter(l => l.zone === 'bench' && def(at(V, l)).cardType === f.type), l => go({ bench: l.idx }));
 	else if (f.k === 'coinsDiscardEnergy') pick(`${c.name}: choose an opposing Active Pokémon that has Energy`, oppSeats(V).flatMap(s => locsOf(V, s, ['active'])).filter(l => at(V, l).energy.length), l => go({ target: l }));
 	else if (f.k === 'attachDiscardActive') pick(`${c.name}: choose one of your ${f.type} Pokémon in an Active slot`, own.filter(l => l.zone === 'active' && def(at(V, l)).cardType === f.type), l => go({ at: l }));
-	else if (f.k === 'silver' || f.k === 'copycat' || f.k === 'discardAbilityEnergy' || f.k === 'oppDiscardTo' || (f.k === 'peekOrder' && f.opp)) chooseOpponent(`${c.name}: choose an opponent`, s => go({ opp: s }));
+	else if (f.k === 'silver' || f.k === 'copycat' || f.k === 'discardAbilityEnergy' || f.k === 'oppDiscardTo' || f.k === 'thievingMachine' || f.k === 'gooRetreat' || f.k === 'bossBench' || (f.k === 'peekOrder' && f.opp)) chooseOpponent(`${c.name}: choose an opponent`, s => go({ opp: s }));
 	else if (f.k === 'healNamedCure') pick(`${c.name}: choose your ${f.names.join(' or ')}`, own.filter(named), l => go({ at: l }));
+	else if (f.k === 'masterPlan') pick(`${c.name}: choose an opposing Active Pokémon`, oppSeats(V).flatMap(s => locsOf(V, s, ['active'])), l => go({ target: l }));
 	else if (f.k === 'moveOppEnergy') pick(`${c.name}: choose an opponent's Benched Pokémon that has Energy`, oppSeats(V).flatMap(s => locsOf(V, s, ['bench'])).filter(l => at(V, l).energy.length), b => pick(`${c.name}: choose which of that player's Active Pokémon takes the Energy`, locsOf(V, b.seat, ['active']), l => go({ target: l, bench: b.idx })));
 	else if (f.k === 'switchActiveStage') pick(`${c.name}: choose your Stage ${f.stage} Pokémon in an Active slot`, locsOf(V, you, ['active']).filter(l => def(at(V, l)).stage === f.stage), l => pick(`${c.name}: choose the Benched Pokémon that comes up`, locsOf(V, you, ['bench']), b => go({ slot: l.idx, bench: b.idx })));
 	else if (f.k === 'attachZoneStage') pick(`${c.name}: choose one of your Stage ${f.stage} Pokémon`, own.filter(l => def(at(V, l)).stage === f.stage), l => go({ at: l }));
@@ -674,7 +676,7 @@ function chooseAttack(slot, i) {
 	if (has('ownAnyDamage')) steps.push(next => pick(`${a.name}: choose one of your Pokémon to take its damage`, locsOf(V, you), loc => { cmd.args.own = loc; next(); }));
 	if (has('ownBenchDamage') && bench.length) steps.push(next => pick(`${a.name}: choose one of your Benched Pokémon to take its damage`, bench, loc => { cmd.args.bench = loc.idx; next(); }));
 	const fxOf = x => a.fx.find(f => f.k === x), oppBench = oppSeats(V).flatMap(s => locsOf(V, s, ['bench']));
-	if (has('alsoBench') && oppBench.length) steps.push(next => pick(`${a.name}: choose the Benched Pokémon that takes ${fxOf('alsoBench').n} damage`, oppBench, loc => { cmd.args.also = loc; next(); }));
+	if (has('alsoBench') && oppBench.filter(l => !fxOf('alsoBench').damaged || at(V, l).dmg > 0).length) steps.push(next => pick(`${a.name}: choose the Benched Pokémon that takes ${fxOf('alsoBench').n} damage`, oppBench.filter(l => !fxOf('alsoBench').damaged || at(V, l).dmg > 0), loc => { cmd.args.also = loc; next(); }));
 	if (has('attachZoneEach') && bench.length > fxOf('attachZoneEach').n) { cmd.args.spread = []; for (let n = 0; n < fxOf('attachZoneEach').n; n++) steps.push(next => pick(`${a.name}: choose a Benched Pokémon to attach to (${n + 1} of ${fxOf('attachZoneEach').n})`, bench.filter(l => !cmd.args.spread.includes(l.idx)), loc => { cmd.args.spread.push(loc.idx); next(); })); }
 	if (has('attachZoneNamed')) { const fit = locsOf(V, you).filter(l => fxOf('attachZoneNamed').names.includes(def(at(V, l)).name)); if (fit.length > 1) steps.push(next => pick(`${a.name}: choose your ${fxOf('attachZoneNamed').names.join(' or ')}`, fit, loc => { cmd.args.at = loc; next(); })); }
 	{ const az = a.fx.find(f => f.k === 'attachZone' && f.to === 'bench'), fit = az ? bench.filter(l => !az.basic || def(at(V, l)).stage === 0) : []; if (fit.length > 1) steps.push(next => pick(`${a.name}: choose the Benched ${az.basic ? 'Basic ' : ''}Pokémon to attach to`, fit, loc => { cmd.args.bench = loc.idx; next(); })); }
@@ -738,7 +740,7 @@ function chooseAttack(slot, i) {
 	const next = () => { if (n < steps.length) steps[n++](next); else { ui.cmds[slot] = { uid: k.uid, cmd, text: describeCmd(k, cmd) }; play('cardSlide2'); closeAll(); render(); } };
 	closeAll(); next();
 }
-const STADIUM_USE = ['stadiumCoinPokemon', 'stadiumBasicToHand', 'stadiumSwapBasic', 'stadiumSwapTool', 'stadiumReroll'];   // Stadiums with a Use button
+const STADIUM_USE = ['stadiumCoinPokemon', 'stadiumBasicToHand', 'stadiumSwapBasic', 'stadiumSwapTool', 'stadiumReroll', 'stadiumCoinsDraw'];   // Stadiums with a Use button
 /** Area Zero: choose the Basic Pokémon in hand that goes into the deck. */
 function stadiumSwap(sc) {
 	const me = V.players[YOU()], grid = h('div', 'pe-grid');
@@ -776,6 +778,7 @@ function useAbility(loc) {
 	else if (f.k === 'pullDamaged') pick(`${ab.name}: choose an opponent's Benched Pokémon that has damage on it`, oppSeats(V).flatMap(s => locsOf(V, s, ['bench'])).filter(l => at(V, l).dmg > 0), b => pick(`${ab.name}: choose which of that player's Active Pokémon it replaces`, locsOf(V, b.seat, ['active']), l => go({ target: l, bench: b.idx })));
 	else if (f.k === 'ubSwap') pick(`${ab.name}: choose your Ultra Beast in an Active slot`, locsOf(V, you, ['active']).filter(l => def(at(V, l)).ub), l => pick(`${ab.name}: choose your Benched Ultra Beast to bring up`, locsOf(V, you, ['bench']).filter(b => def(at(V, b)).ub), b => go({ slot: l.idx, bench: b.idx })));
 	else if (f.k === 'benchSwap') pick(`${ab.name}: choose your Pokémon in an Active slot to trade places with`, locsOf(V, you, ['active']), l => go({ slot: l.idx }));
+	else if (f.k === 'spyOps') chooseOpponent(`${ab.name}: choose an opponent`, s => go({ opp: s }));
 	else if (f.k === 'benchAttachDiscard') pick(`${ab.name}: choose your ${f.type} Pokémon in an Active slot`, locsOf(V, you, ['active']).filter(l => def(at(V, l)).cardType === f.type), l => {
 		const types = [...new Set(V.players[you].energyDiscard || [])]; if (types.length <= 1) { go({ slot: l.idx, type: types[0] }); return; }
 		closeAll(); const list = h('div', 'pe-list');
@@ -1125,7 +1128,7 @@ function finish() {
 }
 
 // ------------------------------------------------------------------ online: a lobby by code, a match the server holds
-const PKV = { pv: 23, ev: E.ENGINE_VERSION };
+const PKV = { pv: 24, ev: E.ENGINE_VERSION };
 const pk = async (action, body = {}) => { try { return await net.call('pkpvp-' + action, { ...PKV, ...body }); } catch (e) { return null; } };
 const deckById = id => (allDecks().find(d => d.id === id) || allDecks()[0]).get();
 function onlineMenu() {

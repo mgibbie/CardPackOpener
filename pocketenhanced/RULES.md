@@ -780,3 +780,29 @@ on its Darkness card, fights as Hoopa Unbound (Psychic and Dark).
 * **Stadiums.** Soothing Shore: at the end of a player's turn, each of their Pokémon with a Water Energy heals 20.
   Rainbow Cave: once a turn a player may discard the Energy in their Energy Zone; the next one comes up (its Use button).
 * Matches, replays and saves from before this set still load: nothing about how existing cards play changed.
+
+## Team Rocket's Ambition (B4a)
+
+The twenty-first set, from the second source: 110 printings, 72 new cards, one booster (Team Rocket) on the shiny table.
+A "Team Rocket's" Pokémon is its species for art and Combat Types, and evolves only from the "Team Rocket's" card it names.
+
+* **Luxury Coin (Gholdengo).** Once a turn, after one of its player's Trainer cards has flipped coins (an Item or
+  Supporter they play, or the Use of a Stadium they played), they are shown the results and may ignore them: the match
+  goes back to before the card, and the card is carried out again with new flips. It works as Victory Star does.
+* **Team Rocket's Boss.** Its player chooses an opponent and sees their hand; each Basic Pokémon there may be put onto
+  that player's Bench, one at a time, until its player says Done or the Bench is full.
+* **Team Rocket's Thieving Machine** takes a random Item (not another Thieving Machine) from an opponent's discard pile:
+  the card changes owner for the rest of the match.
+* **Team Rocket's Goo-zooka.** Until the end of the chosen opponent's next turn, their Active Pokémon (whichever stand
+  there) retreat for 1 more.
+* **Team Rocket's Researcher** flips until tails and takes a Pokémon with "Team Rocket" in its name for each heads.
+  **Team Rocket's Master Plan** Confuses an opposing Active Pokémon; on tails one of its player's too.
+* **Arcade (Stadium).** Once a turn a player may flip 3 coins; three heads draws up to 7 cards in hand (its Use button).
+* **Soul Counter (Hisuian Basculegion)** counts the points its target's owner got during their own last turn: the game
+  now records that for each player.
+* **Draconic Slam (Regidrago)** is printed "140−": 140, less 100 when Regidrago has damage on it.
+* **Abilities.** Evil Inspiration (in an Active slot, draw a card); Boiler Smog and Thieving Incisors (on evolving from
+  the hand); Spy Ops (a random card of an opponent's hand, shown to its player only).
+* **Attacks.** Derisive Roasting (+50 for each Special Condition on its target), Heat Charged, Thunderclaw (a damaged
+  Benched Pokémon), Scavenge, Hand Kinesis, Punish (+70 into a "Team Rocket" Pokémon), Poison Absorption.
+* Matches, replays and saves from before this set still load: nothing about how existing cards play changed.

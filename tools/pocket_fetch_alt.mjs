@@ -57,8 +57,8 @@ for (const b of html.split('<div class="card-page-main">').slice(1)) {
 		if (ab.length) c.abilities = ab;
 		c.attacks = [...b.matchAll(/<div class="card-text-attack">[\s\S]*?card-text-attack-info">([\s\S]*?)<\/p>[\s\S]*?card-text-attack-effect">([\s\S]*?)<\/p>/g)].map(m => {
 			const cost = (one(/<span class="ptcg-symbol">([^<]*)<\/span>/, m[1]) || '').trim().split('').filter(x => TYPE[x]).map(x => TYPE[x]);
-			const line = plainText(m[1].replace(/<span class="ptcg-symbol">[^<]*<\/span>/, '')), dm = /^(.*?)\s+(\d+[+x×]?)$/.exec(line), eff = text(m[2]);
-			const a = { cost, name: (dm ? dm[1] : line).trim() }; if (eff) a.effect = eff; if (dm) a.damage = /\d$/.test(dm[2]) ? dm[2] : dm[2].replace(/x$/, '×'); return a;
+			const line = plainText(m[1].replace(/<span class="ptcg-symbol">[^<]*<\/span>/, '')), dm = /^(.*?)\s+(\d+[+x×\-−]?)$/.exec(line), eff = text(m[2]);
+			const a = { cost, name: (dm ? dm[1] : line).trim() }; if (eff) a.effect = eff; if (dm) a.damage = /\d$/.test(dm[2]) ? dm[2] : dm[2].replace(/x$/, '×').replace(/−$/, '-'); return a;   // ("140-": an attack whose effect takes damage off)
 		});
 		const wk = one(/Weakness:\s*([A-Za-z]+)/, b), rt = one(/Retreat:\s*(\d+)/, b);
 		if (wk && wk !== 'none') c.weaknesses = [{ type: wk, value: '+20' }];
