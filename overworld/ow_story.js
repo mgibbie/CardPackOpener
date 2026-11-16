@@ -8,6 +8,7 @@ import { buildMon as battleBuildMon, statsFor } from './battle.js';
 import { INIT_EVENTS } from './crystal_init_events.js';
 import { NEW_GAME_FLAGS } from './new_game_flags.js';
 import { SINNOH_NEW_GAME_FLAGS } from './sinnoh_newgame.js';
+import { runSinnohSpecial } from './ow_sinnoh.js';
 import * as Daycare from './daycare.js';
 import { getImage, scriptBool } from './engine.js';
 import * as Story from './events.js';
@@ -37,7 +38,7 @@ import { startNpcTrade } from './ow_screens.js';
 import { bossLevelFor, inJohKanto, inScaledRegion, johkantoLeagueKind, routeTrainerLevel, startCutscene, startMarowakBattle, startScriptedWildBattle } from './ow_scaling.js';
 import { enterSafariMode, exitSafariMode, leagueLobbyArrival, whiteOut } from './ow_places.js';
 import { PC_BOXES, PC_BOX_CAP, getBox, openSeagallopMenu, seagallopSpawn } from './ow_menukeys.js';
-import { enterHallOfFame, notePostBattleFinished, onTrainerDefeated, playerRegion } from './ow_progression.js';
+import { enterHallOfFame, leagueGateMessage, notePostBattleFinished, onTrainerDefeated, playerRegion } from './ow_progression.js';
 import { buildMonForGift } from './ow_gamecorner.js';
 import { dexMilestoneCheck, hideResolvedLegendaryObjects, legendariesHere, refreshFollower } from './ow_follower.js';
 import { halfParty, openHalfParty, openTownMap } from './ow_music.js';
@@ -168,6 +169,13 @@ function strainerContinuation() {
 }
 export function startScriptedBattle(trainerId, scriptLabel, talker) {
 	if (!S.party || !leadMon(S.party)) { Story.setVar('VAR_RESULT', 1); return 'skip'; }
+	// SINNOH's Elite Four and Champion are ordinary people you talk to, so their battles start here and not at a
+	// trainer's sight line (main.js trainers.onEngage, where the other Leagues' eight-badge gate sits): same gate
+	{
+		const key = progressKeyFor(talker), info = Badges.scriptInfo(key);
+		const gate = info && info.region === 'SINNOH' ? leagueGateMessage(key) : null;
+		if (gate) { Story.setVar('VAR_RESULT', 0); dialog.open(gate, () => cutscene.stop()); return 'wait'; }
+	}
 	// canonical team by TRAINER_ id first (exact species/level/moves), then the
 	// script-label roster, then a class-pool fallback at the map's level
 	const tid = (trainerId || '').replace(/^TRAINER_/, '');
@@ -1265,6 +1273,8 @@ export function runSpecial(name, store, op) {
 	// the decomp convention when a plain `special` (no store) is used
 	const set = v => Story.setVar(store || 'VAR_RESULT', v | 0);
 	const living = () => (S.party || []).filter(m => m.curHP > 0);
+	// SINNOH's own (ow_sinnoh.js): its honey trees, roamers, daily picks, and the scripted wild battles
+	if (/^(Sinnoh(?!ChooseStarter)|SnWild)/.test(name || '')) { const r = runSinnohSpecial(name, set); if (r !== undefined) return r === null ? undefined : r; }
 	switch (name) {
 		// --- action specials ---
 		// Crystal names it HealParty; FireRed/Emerald name it HealPlayerParty. Only the

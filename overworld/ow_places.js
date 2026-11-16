@@ -370,7 +370,7 @@ export function fossilUnderpassTalk() {
 	sfx('item_get');
 	dialog.open(`The fossil that sank with MIRAGE TOWER —\nwashed down into the underpass!\n\nYou found the ${Bag.ITEMS[id].name}!`);
 }
-export const FOSSIL_MONS = { rootfossil: 'lileep', clawfossil: 'anorith', helixfossil: 'omanyte', domefossil: 'kabuto', oldamber: 'aerodactyl' };
+export const FOSSIL_MONS = { rootfossil: 'lileep', clawfossil: 'anorith', helixfossil: 'omanyte', domefossil: 'kabuto', oldamber: 'aerodactyl', skullfossil: 'cranidos', armorfossil: 'shieldon' };
 export function fossilManiacTalk() {
 	const held = Object.keys(FOSSIL_MONS).find(id => Bag.count(id) > 0);
 	if (!held) {

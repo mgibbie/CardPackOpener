@@ -744,8 +744,15 @@ export class Cutscene {
 					// (on win) defeat text -> optional post-battle script. Expand it
 					// into a sub-sequence and run that.
 					const a = op.args || [];
-					const texts = a.filter(x => /_Text_/.test(x));
-					const post = a.find(x => /_EventScript_/.test(x));
+					// What an argument IS, not what it is called: SINNOH's source names some defeat lines like scripts
+					// ("GalacticHQ_4F_EventScript_SNCyrus_Defeat" is text). Taken for the post-battle script, the
+					// battle ended in a `goto` to a label that is no script, and the rest of the scene (Cyrus's
+					// speech, the MASTER BALL, the story moving on) never ran. A name with no script of its own that
+					// the map's text does hold is a text.
+					const isText = x => /_Text_/.test(x) || (typeof x === 'string' && /_EventScript_/.test(x) && !Array.isArray(c.program?.[x])
+						&& ((ctx.strings && ctx.strings[x] != null) || (ctx.common && ctx.common[x] != null)));
+					const texts = a.filter(isText);
+					const post = a.find(x => /_EventScript_/.test(x) && !isText(x));
 					const seq = [];
 					// `trainerbattle_no_intro TRAINER, DEFEAT_TEXT` (174 battles — scripted
 					// fights whose challenge is the script's own msgbox) carries ONE text,

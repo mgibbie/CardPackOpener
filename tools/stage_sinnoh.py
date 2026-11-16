@@ -87,7 +87,7 @@ for dec in ('pokeemerald', 'pokefirered'):
     for rel in ('include/constants/flags.h', 'include/constants/vars.h'):
         OTHER_FLAGS.update(defines(dec, rel))
 KEEP = re.compile(r'^(FLAG_SYS_|FLAG_BADGE0\d_GET$|FLAG_TEMP_|VAR_TEMP_|VAR_0x80|VAR_RESULT$|VAR_FACING$|VAR_LAST_TALKED$|'
-                  r'VAR_OBJ_GFX_ID_|VAR_SPECIAL_|VAR_UNUSED_|FLAG_UNUSED_|FLAG_HIDDEN_ITEMS_START$|FLAG_SINNOH_|VAR_SINNOH_|'
+                  r'VAR_OBJ_GFX_ID_|VAR_SPECIAL_|VAR_DAYS$|VAR_UNUSED_|FLAG_UNUSED_|FLAG_HIDDEN_ITEMS_START$|FLAG_SINNOH_|VAR_SINNOH_|'
                   r'FLAGS_COUNT$|VARS_START$|VARS_END$|SPECIAL_VARS_|FLAG_0x|FLAG_SPECIAL_|TEMP_FLAGS_|TRAINER_FLAGS_|SYSTEM_FLAGS$|DAILY_FLAGS_)')
 
 OPP = defines('sinnoh-pokeemerald-expansion', 'include/constants/opponents.h')
@@ -113,7 +113,25 @@ def canon_trainer(t):
     return t
 
 
+# ITEMS the source numbers or names its own way. Its TMs are pokeemerald-expansion's list (TM51 and up exist, and
+# the numbers are not Gen 3's), so a numbered TM/HM is written by its MOVE, which the game teaches by name
+# (ow_menukeys.js tmMoveId); and its X items carry the later games' names.
+def _tmhm():
+    h = read(os.path.join(SRC, 'include', 'constants', 'tms_hms.h'))
+    out = {}
+    for kind in ('TM', 'HM'):
+        m = re.search(r'#define FOREACH_%s\(F\)(.*?)\n\s*\n' % kind, h.replace('\r', ''), re.S)
+        for i, mv in enumerate(re.findall(r'F\(([A-Z0-9_]+)\)', m.group(1) if m else '')):
+            out['ITEM_%s%02d' % (kind, i + 1)] = 'ITEM_%s_%s' % (kind, mv)
+    return out
+
+
+ITEM_ALIAS = dict(_tmhm(), ITEM_X_DEFENSE='ITEM_X_DEFEND', ITEM_X_SP_ATK='ITEM_X_SPECIAL', ITEM_X_SP_DEF='ITEM_X_SPECIAL')
+
+
 def rename(tok):
+    if tok in ITEM_ALIAS:
+        return ITEM_ALIAS[tok]
     if tok.startswith('MAP_'):
         return 'MAP_SINNOH_' + tok[4:] if ('MAP_SINNOH_' + tok[4:] in SINNOH_IDS or tok in SRC_MAP_IDS) else tok
     if tok in TRAINERS:
@@ -172,8 +190,42 @@ def expand_sn(m):
     return nl.join(ind + l for l in lines) + cr
 
 
+# SCRIPTED WILD BATTLES AND ROAMERS name their species on one line and act on another, and the transpiler keeps
+# neither `setwildbattle` nor `dowildbattle`. Each act is written as ONE special that carries what was named
+# (overworld/ow_sinnoh.js runs them): `special SnWild__<SPECIES>__<LEVEL>`, `special SnWildHoney` where a honey tree
+# picked the species itself, `special SinnohAddRoamer__<SPECIES>__<LEVEL>`.
+SETWILD = re.compile(r'^[ \t]*setwildbattle\s+(SPECIES_[A-Z0-9_]+)\s*,\s*([0-9]+)')
+SETV = re.compile(r'^[ \t]*setvar\s+VAR_0x800([45])\s*,\s*([A-Z0-9_]+)')
+
+
+def carry_named(s):
+    out, wild, honey, v = [], None, False, {}
+    for line in s.split(chr(10)):
+        body = line.rstrip(chr(13))
+        cr = chr(13) if line.endswith(chr(13)) else ''
+        m = SETWILD.match(body)
+        if m:
+            wild, honey = (m.group(1), m.group(2)), False
+        m = SETV.match(body)
+        if m:
+            v[m.group(1)] = m.group(2)
+        t = body.strip().split('@')[0].strip()
+        ind = body[:len(body) - len(body.lstrip())]
+        if t == 'special SinnohHoneyTreeMon':
+            honey = True
+        elif t == 'special BattleSetup_StartLegendaryBattle' and wild:   # (the script's own waitstate follows)
+            body = ind + 'special SnWild__%s__%s' % (wild[0][len('SPECIES_'):], wild[1])
+        elif t == 'dowildbattle' and (wild or honey):
+            body = ind + ('special SnWildHoney' if honey else 'special SnWild__%s__%s' % (wild[0][len('SPECIES_'):], wild[1]))
+            body += chr(10) + ind + 'waitstate'
+        elif t == 'special SinnohAddRoamer' and v.get('4', '').startswith('SPECIES_'):
+            body = ind + 'special SinnohAddRoamer__%s__%s' % (v['4'][len('SPECIES_'):], v.get('5', '50'))
+        out.append(body + cr)
+    return chr(10).join(out)
+
+
 def stage_text(s):
-    return retoken(SN.sub(expand_sn, s))
+    return retoken(SN.sub(expand_sn, carry_named(s)))
 
 
 # ---- what this game changes in the source's scripts --------------------------------------------------------------

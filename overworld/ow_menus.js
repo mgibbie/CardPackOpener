@@ -424,7 +424,9 @@ export function drawTownMap(W, H) {
 	// region tabs
 	Fly.REGION_ORDER.forEach((r, i) => {
 		const bid = 'townreg:' + i;
-		const b = { id: bid, x: (24 + i * 150) * u, y: 62 * u, w: 142 * u, h: 30 * u,
+		// (the tabs share the width: a fifth region, Sinnoh, used to fall off the right edge at 150 each)
+		const step = Math.min(150, (W / u - 48) / Fly.REGION_ORDER.length);
+		const b = { id: bid, x: (24 + i * step) * u, y: 62 * u, w: (step - 8) * u, h: 30 * u,
 			label: Fly.REGION_LABEL[r], center: true };
 		S.menuUi.push(b);
 		BUI.button(sctx, b, S.menuHover === bid || townMap.region === i, u);
@@ -520,7 +522,7 @@ export function drawTownMap(W, H) {
 		const st = roamState();
 		const lines = Object.entries(ROAMERS)
 			.filter(([k, cfg]) => st[k] && !st[k].down && st[k].seen)
-			.map(([k, cfg]) => `${(battle.data.species[k]?.name || k).toUpperCase()} roams ${st[k].map.replace(/^Route/, 'ROUTE ')} (${cfg.region})`);
+			.map(([k, cfg]) => `${(battle.data.species[k]?.name || k).toUpperCase()} roams ${st[k].map.replace(/^(Sinnoh)?Route/, 'ROUTE ')} (${cfg.region})`);
 		if (lines.length) {
 			sctx.fillStyle = '#ffd27a';
 			sctx.font = `${Math.round(13 * u)}px m6x11plus, monospace`;
@@ -647,7 +649,8 @@ export function drawTrainerCard(W, H) {
 	// THE POSTGAME ROW — JohKanto's own eight, plus RED and the legend count.
 	// The card tracked the three shared regions and stopped; the sixteen-badge
 	// climb and the hunt had no progress surface at all.
-	if (Badges.isChampion('JOHTO')) {
+	const snRow = Badges.isChampion('JOHKANTO') || Badges.count('SINNOH') > 0;
+	if (Badges.isChampion('JOHTO') || snRow) {
 		const ry = cardY + (72 + 3 * 26) * u;
 		const jkList = Badges.list('JOHKANTO');
 		sctx.fillStyle = BUI.C.dim;
@@ -667,16 +670,29 @@ export function drawTrainerCard(W, H) {
 				sctx.fill();
 			}
 		}
+		// SINNOH's eight, once it is open (JohKanto's crown) or a badge of it is held: its own art, under the old Kanto's
+		if (snRow) {
+			const sy = ry + 26 * u, snList = Badges.list('SINNOH');
+			sctx.fillStyle = BUI.C.dim;
+			sctx.font = `${Math.round(12 * u)}px m6x11plus, monospace`;
+			sctx.fillText('SIN' + (Badges.isChampion('SINNOH') ? '*' : ''), rX, sy + 4 * u);
+			for (let i = 0; i < 8; i++) {
+				const px = pipAreaX + pgap * i + pgap / 2;
+				const art = snList[i].earned ? badgeSprite('SINNOH', snList[i].id) : badgeGhost('SINNOH', snList[i].id);
+				if (art) { const bs = 18 * u; sctx.drawImage(art, px - bs / 2, sy - bs / 2, bs, bs); }
+				else { sctx.beginPath(); sctx.arc(px, sy, pipR, 0, Math.PI * 2); sctx.fillStyle = snList[i].earned ? '#c9a24a' : 'rgba(255,255,255,0.12)'; sctx.fill(); }
+			}
+		}
 		const { caught, total } = legendStats();
 		sctx.fillStyle = BUI.C.dim;
 		sctx.font = `${Math.round(11 * u)}px m6x11plus, monospace`;
-		sctx.fillText(`LEGENDS ${caught}/${total}`, rX, ry + 20 * u);
+		sctx.fillText(`LEGENDS ${caught}/${total}`, rX, ry + (snRow ? 46 : 20) * u);
 	}
 	// FRONTIER SYMBOLS — a compact row of diamonds (gold/silver) under the tier tracker
 	const symbols = Frontier.getSymbols();
 	const facOrder = [['tower', 'TO'], ['dome', 'DO'], ['factory', 'FA'], ['palace', 'PA'], ['arena', 'AR'], ['pike', 'PI'], ['pyramid', 'PY']];
 	if (facOrder.some(([id]) => symbols[id])) {
-		const symY = cardY + 172 * u, r = 8 * u, rW = (cardX + cardW - 24 * u) - rX;
+		const symY = cardY + (snRow ? 222 : 172) * u, r = 8 * u, rW = (cardX + cardW - 24 * u) - rX;
 		sctx.fillStyle = BUI.C.dim;
 		sctx.font = `${Math.round(11 * u)}px m6x11plus, monospace`;
 		sctx.fillText('FRONTIER SYMBOLS', rX, symY - 14 * u);

@@ -34,12 +34,13 @@ try:
     import transpile_scripts as T  # noqa: E402
     TERM = {'end', 'return', 'goto', 'step_end', 'releaseall_end'}
     edges = 0
+    aliases = 0
     for stem in sorted(os.listdir(STAGED)):
         sp, jp = os.path.join(STAGED, stem, 'scripts.inc'), os.path.join(tmp, 'scripts', stem + '.json')
         if not os.path.isfile(sp) or not os.path.isfile(jp):
             continue
         out = json.load(open(jp, encoding='utf-8'))
-        order, last, count = [], {}, {}
+        order, last, count, body = [], {}, {}, {}
         cur = None
         for raw in open(sp, encoding='utf-8', errors='replace'):
             line = raw.rstrip('\r\n')
@@ -48,7 +49,10 @@ try:
                 cur = lm.group(1)
                 order.append(cur)
                 count[cur] = 0
+                body[cur] = 0
                 continue
+            if cur is not None and line.strip() and not line.strip().startswith('@'):
+                body[cur] += 1   # (any line at all: a text label has .string lines and is nobody's second name)
             cm = T.CMD_RE.match(line)
             if cm and cur is not None:
                 last[cur] = cm.group(1)
@@ -56,7 +60,16 @@ try:
         changed = False
         for i, lab in enumerate(order[:-1]):
             nxt = order[i + 1]
-            if not count.get(lab) or last.get(lab) in TERM or lab.endswith('_MapScripts'):
+            if not count.get(lab):
+                # two names for one script ("Route202_EventScript_Dawn::" straight above "…_DawnScene::"): the first
+                # has no line of its own, so the transpiler drops it and the object that names it goes mute
+                if not body.get(lab) and lab not in out and isinstance(out.get(nxt), list) and not lab.endswith('_MapScripts'):
+                    out[lab] = [{'op': 'goto', 'label': nxt}]
+                    edges += 1
+                    aliases += 1
+                    changed = True
+                continue
+            if last.get(lab) in TERM or lab.endswith('_MapScripts'):
                 continue
             if lab not in out and count[lab]:
                 # a label whose every command was dropped still has to lead somewhere, if it is a script at all
@@ -75,7 +88,7 @@ try:
             changed = True
         if changed:
             json.dump(out, open(jp, 'w', encoding='utf-8'))
-    print('fall-through edges restored:', edges)
+    print('fall-through edges restored:', edges, '(of them, second names for one script:', str(aliases) + ')')
 
     # LABELS DEFINED ELSEWHERE. The game loads ONE map's file, and the source calls helpers that live in another
     # map's file or in data/scripts (Sinnoh_EventScript_BufferCounterpartName is in Lake Verity's). Each map gets
