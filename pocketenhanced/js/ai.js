@@ -152,6 +152,7 @@ export function nextAction(v, banned = new Set()) {
 	if (v.pending) {
 		if (v.pending.seat !== me) return null;
 		if (v.pending.kind === 'handPick') return { t: 'choose', seat: me, pick: v.pending.options[0] };
+		if (v.pending.kind === 'confirm' && v.pending.flips) return { t: 'choose', seat: me, pick: v.pending.flips.filter(Boolean).length * 2 < v.pending.flips.length ? 1 : 0 };   // (Victory Star: flip again when most came up tails)
 		if (v.pending.kind === 'confirm') return { t: 'choose', seat: me, pick: (v.pending.cards || []).length ? 0 : 1 };   // (a shown card: leave the deck as it is; a plain offer, such as drawing cards: take it)
 		if (v.pending.kind === 'pickTarget') {   // the one closest to a Knock Out, a Pokémon ex first among equals
 			const locs = v.pending.locs || [], k = l => v.players[l.seat].active[l.idx];
@@ -184,6 +185,8 @@ export function nextAction(v, banned = new Set()) {
 		const hurt = mineAll.filter(m => m.k.dmg >= 20 && (!f.type || def(m.k).cardType === f.type)).sort((a, b) => b.k.dmg - a.k.dmg)[0];
 		if (f.k === 'draw' || f.k === 'basicToHand' || f.k === 'slab' || f.k === 'guard' || f.k === 'namedToHand' || f.k === 'prankSpinner' || f.k === 'may' || f.k === 'smallBasicsToHand' || f.k === 'namesToHand' || f.k === 'megaToHand') T({});
 		else if (f.k === 'coinAttachBenchType') { const bi = P.bench.findIndex(b => b && def(b).cardType === f.type); if (bi >= 0) T({ bench: bi }); }
+		else if (f.k === 'stadiumToHand') T({});
+		else if (f.k === 'fieldBlower') { const t = opp.flatMap(o => [...o.active.map((k, idx) => k && { k, loc: { seat: o.seat, zone: 'active', idx } }), ...o.bench.map((k, idx) => k && { k, loc: { seat: o.seat, zone: 'bench', idx } })]).filter(x => x && x.k.tool)[0]; if (t) T({ target: t.loc }); else if (v.stadium && v.stadium.seat !== me) T({ stadium: true }); }
 		else if (f.k === 'oppDiscardTo') { const q = opp.slice().sort((x, y) => y.handCount - x.handCount)[0]; if (q && q.handCount >= f.n + 2) T({ opp: q.seat }); }
 		else if (f.k === 'drawPerMega') { if ([P, ...opp].some(o => [...o.active, ...o.bench].some(k => k && def(k).ex && /^Mega /.test(def(k).name)))) T({}); }
 		else if (f.k === 'koBonusPoint') { if (P.active.some(k => k && f.names.includes(def(k).name) && k.energy.length >= 2)) T({}); }
@@ -252,7 +255,7 @@ export function nextAction(v, banned = new Set()) {
 	// 5. this turn's Energy
 	if (!P.flags.attached && P.zone.cur) { const m = mineAll.map(x => ({ ...x, h: hunger(v, me, x.k, x.loc, P.zone.cur) })).filter(x => x.h >= 0).sort((a, b) => b.h - a.h); for (const x of m.slice(0, 3)) tries.push({ t: 'attach', seat: me, at: x.loc }); }
 	// (the Stadium's own action, once a turn: Mesagoza)
-	if (v.stadium && card(v.stadium.id).fx.k === 'stadiumCoinPokemon' && !P.flags.stadiumUsed && P.hand.length < 10) tries.push({ t: 'stadium', seat: me });
+	if (v.stadium && (card(v.stadium.id).fx.k === 'stadiumCoinPokemon' || card(v.stadium.id).fx.k === 'stadiumBasicToHand') && !P.flags.stadiumUsed && P.hand.length < 10) tries.push({ t: 'stadium', seat: me });
 	// 6. Abilities
 	for (const m of mineAll) {
 		const ab = def(m.k).ability; if (!ab || ab.fx.passive || m.k.abilityUsed === v.turn) continue;
@@ -285,6 +288,8 @@ export function nextAction(v, banned = new Set()) {
 		else if (f.k === 'healExForEnergy') { const t = mineAll.filter(x => def(x.k).ex && x.k.dmg >= 40 && x.k.energy.length >= 2).sort((x, y) => y.k.dmg - x.k.dmg)[0]; if (t) A({ at: t.loc }); }
 		else if (f.k === 'boostForEnergy') { if (m.k.energy.filter(e2 => e2 === f.type).length >= 2 && P.active.some(k => k && def(k).cardType === f.type && def(k).attacks.some(q => q.damage > 0 && usable(v, me, k, q)))) A({}); }
 		else if (f.k === 'statusActive') { const t = fa.filter(x => !x.k.status.includes(f.s)).sort((x, y) => left(y.k) - left(x.k))[0]; if (t) A({ target: t.loc }); }
+		else if (f.k === 'takeSome') { const t = m.loc.zone === 'bench' && left(m.k) > f.n ? mineAll.filter(x => x.loc.zone === 'active' && x.k.dmg >= f.n).sort((x, y) => y.k.dmg - x.k.dmg)[0] : null; if (t) A({ slot: t.loc.idx }); }
+		else if (f.k === 'cureRandom') { const t = mineAll.find(x => x.loc.zone === 'active' && x.k.status.length); if (t) A({ slot: t.loc.idx }); }
 		else if (f.k === 'healAny') { const t = mineAll.filter(x => x.k.dmg >= 20).sort((x, y) => y.k.dmg - x.k.dmg)[0]; if (t) A({ at: t.loc }); }
 		else if (f.k === 'pullDamaged') { const t = foes.filter(x => x.loc.zone === 'bench' && x.k.dmg > 0).sort((x, y) => left(x.k) - left(y.k))[0]; if (t) { const o = v.players[t.loc.seat], slot = [0, 1].find(sl => o.active[sl]); if (slot != null) A({ target: { seat: o.seat, zone: 'active', idx: slot }, bench: t.loc.idx }); } }
 		else if (f.k === 'gatherAll') { if (m.loc.zone === 'active' && mineAll.some(x => x.k.uid !== m.k.uid && x.loc.zone === 'bench' && x.k.energy.includes(f.type)) && def(m.k).attacks.some(q => !canPay(m.k.provides || m.k.energy, lessCost(q.cost, m.k.less || 0)))) A({}); }

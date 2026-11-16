@@ -632,3 +632,47 @@ Four records from the first source were wrong. The second source has the printed
 
 New matches are played under revision 5. A match recorded under an earlier revision replays with what the card had then,
 so every old replay and every match in progress plays out as it was.
+
+## Pulsing Aura (B3)
+
+The seventeenth set, from the second source: 234 printings, 155 new cards, one booster (Mega Lucario) on the shiny table.
+Four new Mega Evolution Pokémon ex (Mega Sceptile ex, Mega Camerupt ex, Mega Lucario ex, Mega Audino ex), and reprints of
+Mega Blaziken ex, Mega Absol ex and Mega Steelix ex. Its record of Mega Steelix ex prints the -20 the owner confirmed.
+
+What the set needed that the game did not have:
+
+* **Victory Star (Victini).** After an attack of one of its player's Fire Pokémon has flipped coins, that player is shown
+  the results and may ignore them: the match goes back to where it stood before the attack, and the attack is carried out
+  again with new flips. Once a turn. What the first try wrote in the log stays written, with a line saying it was ignored.
+* **Time Recall (Celebi).** Each evolved Pokémon of its player may use the attacks of its previous Evolutions (as Memory
+  Light does for one Pokémon).
+* **Double Type (the two Urshifu).** The card is of two types for everything that asks a Pokémon's type: Trainer cards,
+  Abilities, Stadiums, Energy effects. Its types in combat are its own, as for every card.
+* **Prickly Powder (Budew).** The Defending Pokémon has no Ability until it leaves its Active slot (or evolves).
+* **Seal of Antiquity (Regigigas)** cannot attack without Regirock, Regice and Registeel on its player's Bench.
+* **Sand Slammer (Flygon ex)**, in an Active slot: at the end of every turn, 10 to each Pokémon of every opponent.
+* **Swift Shot (Drizzile, Inteleon).** When played from the hand to evolve, its player may do 20 (30) to an opposing
+  Active Pokémon of their choice; once a turn for each of the two amounts.
+* **Other Abilities.** Frozen Flow and Perplexing Ears work from an Active slot only. Accept Pain moves 30 damage from an
+  Active Pokémon to Brambleghast on the Bench. Happiness Supplement removes one random Special Condition from an Active
+  Pokémon. Villainous Delivery (on the Bench) takes 1 off an Active Darkness Pokémon's Retreat Cost.
+* **Evolution Jammer (Malamar).** The Defending Pokémon's owner cannot evolve from their hand on their next turn (Rare
+  Candy included).
+* **Dark Vengeance (Zarude)** asks which type of Pokémon fell: the game now records it.
+* **Attacks that read the board.** Powerful Friends (a Stage 2 on the Bench), Psychic Resonance (a Psychic Pokémon on the
+  other side), Puppy Pile (Pokémon with that attack in play and in hand), Raid (evolved from Poliwhirl this turn), and
+  the Castform forms (a Stadium in play).
+* **Coins.** Eruption discards a Fire Energy and adds 30 for each heads of 3. Flare Storm flips for each Fire Energy.
+  Mountain Crush flips until tails and discards from the top of the other deck. Stoke attaches 2 on heads.
+* **Field Blower** discards a Pokémon Tool from any player's Pokémon, or the Stadium in play. **Lucky Egg**: its holder
+  Knocked Out by an opposing attack, its player draws up to 5 cards in hand. **Cabbie** fetches a Stadium. **Korrina**:
+  +30 from Fighting Pokémon into a Pokémon ex. **Cheren**: Watchog and Stoutland take 100 less from Pokémon ex.
+  **Parasol Lady** returns a Water Pokémon that is not a Pokémon ex to the hand (its Energy is discarded).
+* **Stadiums.** Fragrant Forest: once a turn each player may take a random Basic Grass Pokémon from their deck (the
+  Stadium's Use button, no coin). Arena of Antiquity: Fighting Pokémon do +20 into a Pokémon ex.
+* **Bounded Field and Weakness.** This game has no ×2 Weakness: the flat +20 type bonus stands in for it. Under Bounded
+  Field, where that bonus would apply to an opposing Active Pokémon, the damage is ×2 in its place, unless the attacker
+  is a Mega Evolution Pokémon ex. A type penalty (-20) still applies.
+* **Two garbled texts corrected** (no change to play): Mega Blaziken ex's Mega Burning and Mega Steelix ex's Adamantine
+  Rolling now read as printed.
+* Matches, replays and saves from before this set still load: nothing about how existing cards play changed.
